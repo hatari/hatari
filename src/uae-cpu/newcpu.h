@@ -334,4 +334,6 @@ extern struct cputbl op_smalltbl_5_ff[];
 
 extern cpuop_func *cpufunctbl[65536];
 
+extern uae_u32 reg_caar, reg_cacr;
+
 #endif	/* UAE_NEWCPU_H */

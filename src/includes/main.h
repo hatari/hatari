@@ -10,16 +10,15 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.41" /* Name, version for window title */
-#define PROG_VERSION        "v0.41"
-#define VERSION_STRING      "0.41 "   /* Always 6 bytes (inc' NULL) */
+#define PROG_NAME      "Hatari v0.45" /* Name, version for window title */
+#define PROG_VERSION        "v0.45"
+#define VERSION_STRING      "0.45 "   /* Always 6 bytes (inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 //#define TOTALLY_FINAL_VERSION       /* Web release version... */
 
 #define FINAL_VERSION                 /* Full-speed non-debug version for release */
 //#define DEBUG_TO_FILE               /* Use debug.txt files */
-#define FIND_PERFORMANCE
 
 #ifndef FINAL_VERSION
   #define USE_DEBUGGER                /* Debugger version(non-release) */
@@ -28,7 +27,6 @@ typedef int BOOL;
 
 #ifdef TOTALLY_FINAL_VERSION
   #undef DEBUG_TO_FILE                /* Don't use debug files for final release */
-  #undef FIND_PERFORMANCE
 #endif
 
 #define MAX_FILENAME_LENGTH  256

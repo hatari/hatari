@@ -1,5 +1,9 @@
-/**
+/*
  * Hatari - Blitter emulation.
+ *
+ * This file is distributed under the GNU Public License, version 2 or at
+ * your option any later version. Read the file gpl.txt for details.
+ *
  * This file has been taken from STonX.
  *
  * Original information text follows:
@@ -20,14 +24,16 @@
  *  There seems to be a mirror for $ff8a30 used in TOS 1.02 at $ff7f30.
  *  
  */
+char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.3 2003-10-25 12:26:39 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "main.h"
 #include "blitter.h"
 #include "hatari-glue.h"
-#include "main.h"
+#include "memorySnapShot.h"
 #include "stMemory.h"
 
 
@@ -447,4 +453,33 @@ void Do_Blit(void)
     do_hop_op_N[hop][op]();
   else
     do_hop_op_P[hop][op]();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Save/Restore snapshot of Blitter variables.
+*/
+void Blitter_MemorySnapShot_Capture(BOOL bSave)
+{
+  /* Save/Restore details */
+  MemorySnapShot_Store(halftone_ram, sizeof(halftone_ram));
+  MemorySnapShot_Store(&end_mask_1, sizeof(end_mask_1));
+  MemorySnapShot_Store(&end_mask_2, sizeof(end_mask_2));
+  MemorySnapShot_Store(&end_mask_3, sizeof(end_mask_3));
+  MemorySnapShot_Store(&NFSR, sizeof(NFSR));
+  MemorySnapShot_Store(&FXSR, sizeof(FXSR));
+  MemorySnapShot_Store(&x_count, sizeof(y_count));
+  MemorySnapShot_Store(&hop, sizeof(hop));
+  MemorySnapShot_Store(&op, sizeof(op));
+  MemorySnapShot_Store(&line_num, sizeof(line_num));
+  MemorySnapShot_Store(&skewreg, sizeof(skewreg));
+  MemorySnapShot_Store(&dest_addr_reg, sizeof(dest_addr_reg));
+  MemorySnapShot_Store(&halftone_curroffset, sizeof(halftone_curroffset));
+  MemorySnapShot_Store(&halftone_direction, sizeof(halftone_direction));
+  MemorySnapShot_Store(&source_x_inc, sizeof(source_x_inc));
+  MemorySnapShot_Store(&source_y_inc, sizeof(source_y_inc));
+  MemorySnapShot_Store(&dest_x_inc, sizeof(dest_x_inc));
+  MemorySnapShot_Store(&dest_y_inc, sizeof(dest_y_inc));
+  MemorySnapShot_Store(&blit_flag, sizeof(blit_flag));
 }

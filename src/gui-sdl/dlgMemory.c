@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-static char rcsid[] = "Hatari $Id: dlgMemory.c,v 1.2 2003-09-28 19:57:36 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dlgMemory.c,v 1.3 2003-10-25 12:26:39 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -20,13 +20,12 @@ static char rcsid[] = "Hatari $Id: dlgMemory.c,v 1.2 2003-09-28 19:57:36 thothy 
 #define DLGMEM_2MB      6
 #define DLGMEM_4MB      7
 #define DLGMEM_FILENAME 11
-#define DLGMEM_BROWSE   12
-#define DLGMEM_SAVE     13
-#define DLGMEM_RESTORE  14
-#define DLGMEM_EXIT     15
+#define DLGMEM_SAVE     12
+#define DLGMEM_RESTORE  13
+#define DLGMEM_EXIT     14
 
 
-static char dlgSnapShotName[34+1];
+static char dlgSnapShotName[36+1];
 
 
 /* The memory dialog: */
@@ -45,8 +44,7 @@ static SGOBJ memorydlg[] =
   { SGBOX, 0, 0, 1,9, 38,8, NULL },
   { SGTEXT, 0, 0, 12,10, 17,1, "Memory state save" },
   { SGTEXT, 0, 0, 2,12, 20,1, "Snap-shot file name:" },
-  { SGTEXT, 0, 0, 2,13, 34,1, dlgSnapShotName },
-  { SGBUTTON, 0, 0, 32,12, 6,1, "Browse" },
+  { SGTEXT, 0, 0, 2,13, 36,1, dlgSnapShotName },
   { SGBUTTON, 0, 0, 8,15, 10,1, "Save" },
   { SGBUTTON, 0, 0, 22,15, 10,1, "Restore" },
 
@@ -90,24 +88,33 @@ void Dialog_MemDlg(void)
 
     switch(but)
     {
-     case DLGMEM_BROWSE:             /* Choose a new snap shot file */
+     case DLGMEM_SAVE:                  /* Save memory snap-shot */
         strcpy(tmpname, DialogParams.Memory.szMemoryCaptureFileName);
-        if( SDLGui_FileSelect(tmpname, NULL, TRUE) )
+        if( SDLGui_FileSelect(tmpname, NULL, TRUE) )  /* Choose file name */
         {
           if( !File_DoesFileNameEndWithSlash(tmpname) )
           {
             strcpy(DialogParams.Memory.szMemoryCaptureFileName, tmpname);
             File_ShrinkName(dlgSnapShotName, tmpname, memorydlg[DLGMEM_FILENAME].w);
+            MemorySnapShot_Capture(DialogParams.Memory.szMemoryCaptureFileName);
           }
         }
         Screen_SetFullUpdate();
         Screen_Draw();
         break;
-     case DLGMEM_SAVE:                  /* Save memory snap-shot */
-        MemorySnapShot_Capture(DialogParams.Memory.szMemoryCaptureFileName);
-        break;
      case DLGMEM_RESTORE:               /* Load memory snap-shot */
-        MemorySnapShot_Restore(DialogParams.Memory.szMemoryCaptureFileName);
+        strcpy(tmpname, DialogParams.Memory.szMemoryCaptureFileName);
+        if( SDLGui_FileSelect(tmpname, NULL, FALSE) )  /* Choose file name */
+        {
+          if( !File_DoesFileNameEndWithSlash(tmpname) )
+          {
+            strcpy(DialogParams.Memory.szMemoryCaptureFileName, tmpname);
+            File_ShrinkName(dlgSnapShotName, tmpname, memorydlg[DLGMEM_FILENAME].w);
+            MemorySnapShot_Restore(DialogParams.Memory.szMemoryCaptureFileName);
+          }
+        }
+        Screen_SetFullUpdate();
+        Screen_Draw();
         break;
     }
   }

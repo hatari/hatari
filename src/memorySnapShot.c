@@ -16,12 +16,13 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-static char rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.5 2003-09-28 19:57:36 thothy Exp $";
+char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.6 2003-10-25 12:26:39 thothy Exp $";
 
 #include <SDL_types.h>
 #include <errno.h>
 
 #include "main.h"
+#include "blitter.h"
 #include "debug.h"
 #include "dialog.h"
 #include "fdc.h"
@@ -231,6 +232,7 @@ void MemorySnapShot_Capture(char *pszFileName)
 		Sound_MemorySnapShot_Capture(TRUE);
 		TOS_MemorySnapShot_Capture(TRUE);
 		Video_MemorySnapShot_Capture(TRUE);
+		Blitter_MemorySnapShot_Capture(TRUE);
 
 		/* And close */
 		MemorySnapShot_CloseFile();
@@ -269,6 +271,7 @@ void MemorySnapShot_Restore(char *pszFileName)
 		Sound_MemorySnapShot_Capture(FALSE);
 		TOS_MemorySnapShot_Capture(FALSE);
 		Video_MemorySnapShot_Capture(FALSE);
+		Blitter_MemorySnapShot_Capture(FALSE);
 
 		/* And close */
 		MemorySnapShot_CloseFile();

@@ -38,4 +38,6 @@ extern void STORE_B_ff8a3b(Uint8 v);
 extern void STORE_B_ff8a3c(Uint8 v);
 extern void STORE_B_ff8a3d(Uint8 v);
 
+extern void Blitter_MemorySnapShot_Capture(BOOL bSave);
+
 #endif /* BLITTER_H */
