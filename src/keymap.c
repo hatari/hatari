@@ -454,13 +454,13 @@ void Keymap_KeyDown( unsigned int sdlkey, unsigned int sdlmod )
   /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
   if ( (ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
             && !(sdlmod&(KMOD_LSHIFT|KMOD_RSHIFT)) )
-   {
+  {
     if( Key==SDLK_UP )         { cursorJoyEmu |= 1; return; }
     else if( Key==SDLK_DOWN )  { cursorJoyEmu |= 2; return; }
     else if( Key==SDLK_LEFT )  { cursorJoyEmu |= 4; return; }
     else if( Key==SDLK_RIGHT ) { cursorJoyEmu |= 8; return; }
     else if( Key==SDLK_RCTRL || Key==SDLK_KP0 )  { cursorJoyEmu |= 128; return; }
-   }
+  }
 
   /* Set down */
   bPreviousKeyState = Keyboard.KeyStates[Key];
@@ -468,27 +468,28 @@ void Keymap_KeyDown( unsigned int sdlkey, unsigned int sdlmod )
 
   /* Jump directly to the debugger? */
   if( sdlkey==SDLK_PAUSE && bEnableDebug)
-   {
+  {
     if(bInFullScreen)  Screen_ReturnFromFullScreen();
     DebugUI();
-   }
+  }
 
   /* If pressed short-cut key, retain keypress until safe to execute (start of VBL) */
-  if ( (sdlmod&KMOD_MODE) || (sdlkey==SDLK_F11) || (sdlkey==SDLK_F12) || (sdlkey==SDLK_PAUSE) )
-   {
+  if ( (sdlmod&KMOD_MODE) || (sdlmod==KMOD_LMETA)
+       ||(sdlkey==SDLK_F11) || (sdlkey==SDLK_F12) )
+  {
     ShortCutKey.Key = sdlkey;
     if( sdlmod&(KMOD_LCTRL|KMOD_RCTRL) )  ShortCutKey.bCtrlPressed = TRUE;
     if( sdlmod&(KMOD_LSHIFT|KMOD_RSHIFT) )  ShortCutKey.bShiftPressed = TRUE;
-   }
+  }
   else
-   {
+  {
     STScanCode = Keymap_RemapKeyToSTScanCode(Key);
     if (STScanCode!=-1)
-     {
+    {
       if (!bPreviousKeyState)
         IKBD_PressSTKey(STScanCode,TRUE);
-     }
-   }
+    }
+  }
 
 }
 
@@ -508,17 +509,18 @@ void Keymap_KeyUp(unsigned int sdlkey, unsigned int sdlmod)
   /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
   if ( (ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
             && !(sdlmod&(KMOD_LSHIFT|KMOD_RSHIFT)) )
-   {
+  {
     if( Key==SDLK_UP )         { cursorJoyEmu &= ~1; return; }
     else if( Key==SDLK_DOWN )  { cursorJoyEmu &= ~2; return; }
     else if( Key==SDLK_LEFT )  { cursorJoyEmu &= ~4; return; }
     else if( Key==SDLK_RIGHT ) { cursorJoyEmu &= ~8; return; }
     else if( Key==SDLK_RCTRL || Key==SDLK_KP0 )  { cursorJoyEmu &= ~128; return; }
-   }
+  }
 
   /* Release key (only if was pressed) */
   STScanCode = Keymap_RemapKeyToSTScanCode(Key);
-  if (STScanCode!=-1) {
+  if (STScanCode!=-1)
+  {
     if (Keyboard.KeyStates[Key])
       IKBD_PressSTKey(STScanCode,FALSE);
   }
