@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.35 2005-04-01 11:14:46 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.36 2005-04-04 11:38:53 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -190,8 +190,6 @@ static const char *pszGemDOSNames[] =
 };
 #endif
 
-unsigned char GemDOS_ConvertAttribute(mode_t mode);
-
 
 
 
@@ -200,18 +198,18 @@ unsigned char GemDOS_ConvertAttribute(mode_t mode);
   Routines to convert time and date to MSDOS format.
   Originally from the STonX emulator. (cheers!)
 */
-static Uint16 time2dos(time_t t)
+static Uint16 GemDOS_Time2dos(time_t t)
 {
 	struct tm *x;
 	x = localtime (&t);
 	return (x->tm_sec>>1)|(x->tm_min<<5)|(x->tm_hour<<11);
 }
 
-static Uint16 date2dos(time_t t)
+static Uint16 GemDOS_Date2dos(time_t t)
 {
 	struct tm *x;
 	x = localtime (&t);
-	return x->tm_mday | ((x->tm_mon+1)<<5) | ( ((x->tm_year-80>0)?x->tm_year-80:0) << 9);
+	return x->tm_mday | ((x->tm_mon+1)<<5) | (((x->tm_year-80 > 0) ? x->tm_year-80 : 0) << 9);
 }
 
 
@@ -219,7 +217,7 @@ static Uint16 date2dos(time_t t)
 /*
   Populate a DATETIME structure with file info
 */
-static BOOL GetFileInformation(char *name, DATETIME *DateTime)
+static BOOL GemDOS_GetFileInformation(char *name, DATETIME *DateTime)
 {
 	struct stat filestat;
 	int n;
@@ -247,6 +245,28 @@ static BOOL GetFileInformation(char *name, DATETIME *DateTime)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Covert from FindFirstFile/FindNextFile attribute to GemDOS format
+*/
+static unsigned char GemDOS_ConvertAttribute(mode_t mode)
+{
+	unsigned char Attrib = 0;
+
+	/* Directory attribute */
+	if (S_ISDIR(mode))
+		Attrib |= GEMDOS_FILE_ATTRIB_SUBDIRECTORY;
+
+	/* Read-only attribute */
+	if (!(mode & S_IWUSR))
+		Attrib |= GEMDOS_FILE_ATTRIB_READONLY;
+	
+	/* TODO: Other attributes like GEMDOS_FILE_ATTRIB_HIDDEN ? */
+
+	return Attrib;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Populate the DTA buffer with file info
 */
 static BOOL PopulateDTA(char *path, struct dirent *file)
@@ -265,8 +285,8 @@ static BOOL PopulateDTA(char *path, struct dirent *file)
 	Misc_strupr(file->d_name);    /* convert to atari-style uppercase */
 	strncpy(pDTA->dta_name,file->d_name,TOS_NAMELEN); /* FIXME: better handling of long file names */
 	do_put_mem_long(pDTA->dta_size, filestat.st_size);
-	do_put_mem_word(pDTA->dta_time, time2dos(filestat.st_mtime));
-	do_put_mem_word(pDTA->dta_date, date2dos(filestat.st_mtime));
+	do_put_mem_word(pDTA->dta_time, GemDOS_Time2dos(filestat.st_mtime));
+	do_put_mem_word(pDTA->dta_date, GemDOS_Date2dos(filestat.st_mtime));
 	pDTA->dta_attrib = GemDOS_ConvertAttribute(filestat.st_mode);
 
 	return TRUE;
@@ -804,31 +824,6 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 #endif
 }
 
-
-/*-----------------------------------------------------------------------*/
-/*
-  Covert from FindFirstFile/FindNextFile attribute to GemDOS format
-*/
-unsigned char GemDOS_ConvertAttribute(mode_t mode)
-{
-	unsigned char Attrib=0;
-
-	/* FIXME: More attributes */
-	if (S_ISDIR(mode))
-		Attrib |= GEMDOS_FILE_ATTRIB_SUBDIRECTORY;
-
-	/* FIXME */
-	/*
-	  // Look up attributes
-	  if (dwFileAttributes&FILE_ATTRIBUTE_READONLY)
-	    Attrib |= GEMDOS_FILE_ATTRIB_READONLY;
-	  if (dwFileAttributes&FILE_ATTRIBUTE_HIDDEN)
-	    Attrib |= GEMDOS_FILE_ATTRIB_HIDDEN;
-	  if (dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)
-	    Attrib |= GEMDOS_FILE_ATTRIB_SUBDIRECTORY;
-	*/
-	return Attrib;
-}
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -1721,7 +1716,7 @@ static BOOL GemDOS_GSDToF(unsigned long Params)
 
 	Regs[REG_D0] = GEMDOS_ERROR;  /* Invalid parameter */
 
-	if (GetFileInformation(FileHandles[Handle].szActualName, &DateTime) == TRUE)
+	if (GemDOS_GetFileInformation(FileHandles[Handle].szActualName, &DateTime) == TRUE)
 	{
 		STMemory_WriteWord(pBuffer, DateTime.word1);
 		STMemory_WriteWord(pBuffer+2, DateTime.word2);
