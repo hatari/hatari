@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.18 2003-04-03 21:14:31 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.19 2003-04-04 12:48:43 emanne Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -738,6 +738,9 @@ void Exception(int nr, uaecptr oldpc)
     put_word (m68k_areg(regs, 7), regs.sr);
 
     /* 68000 bus/address errors: */
+    /* Well these 8 more bytes are not here just for debuging.
+       It seems adebug expects them to be on the stack when it receives
+       a bus error... */
     if (cpu_level==0 && (nr==2 || nr==3)) {
 	m68k_areg(regs, 7) -= 8;
 	if (nr == 3) {    /* Address error */
@@ -767,10 +770,10 @@ void Exception(int nr, uaecptr oldpc)
     unset_special (SPCFLAG_TRACE | SPCFLAG_DOTRACE);
 
     /* Store a backup of the PC after bus-/address error: */
-    if(nr==2 || nr==3) {
-        busAddressErrPC = regs.pc;
-        set_special(SPCFLAG_BUSERROR);
-    }
+/*     if(nr==2 || nr==3) { */
+/*         busAddressErrPC = regs.pc; */
+/*         set_special(SPCFLAG_BUSERROR); */
+/*     } */
 }
 
 static void Interrupt(int nr)
@@ -1219,8 +1222,9 @@ static int do_specialties (void)
 	 * UAE CPU core is not prepared for Exception() while accessing an
 	 * illegal ST memory address */
         unset_special(SPCFLAG_BUSERROR);
-	m68k_setpc(busAddressErrPC);
-	busAddressErrPC = 0;
+	// m68k_setpc(busAddressErrPC);
+	// busAddressErrPC = 0;
+	Exception(2,0);
     }
 
     if (regs.spcflags & SPCFLAG_DOTRACE) {

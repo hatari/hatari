@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-static char rcsid[] = "Hatari $Id: m68000.c,v 1.16 2003-04-01 16:11:33 thothy Exp $";
+static char rcsid[] = "Hatari $Id: m68000.c,v 1.17 2003-04-04 12:48:43 emanne Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -109,7 +109,7 @@ void M68000_Decode_MemorySnapShot_Capture(BOOL bSave)
   /*MemorySnapShot_Store(&Reg_SuperSP,sizeof(Reg_SuperSP));*//*FIXME*/
   /*MemorySnapShot_Store(&Reg_UserSP,sizeof(Reg_UserSP));*/
   /*MemorySnapShot_Store(&EmuCCode,sizeof(EmuCCode));*/
-  MemorySnapShot_Store(&ExceptionVector,sizeof(ExceptionVector));  
+  MemorySnapShot_Store(&ExceptionVector,sizeof(ExceptionVector));
 }
 
 
@@ -126,8 +126,9 @@ void M68000_BusError(unsigned long addr)
   }
 
   BusAddressLocation=addr;               /* Store for exception frame */
-  ExceptionVector = EXCEPTION_BUSERROR;  /* Handler */
-  M68000_Exception();                    /* Cause trap */
+/*   ExceptionVector = EXCEPTION_BUSERROR;  /\* Handler *\/ */
+/*   M68000_Exception();                    /\* Cause trap *\/ */
+    set_special(SPCFLAG_BUSERROR);
 }
 
 
@@ -189,7 +190,6 @@ void M68000_Exception(void)
         SR = (SR&SR_CLEAR_IPL)|0x0600; /* MFP, level 6 */
     }
     MakeFromSR();
-
   }
 }
 
