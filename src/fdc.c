@@ -12,7 +12,7 @@
   to perform the transfer of data from our disc image into the ST RAM area by simulating the
   DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.15 2005-01-31 22:15:47 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.16 2005-02-02 21:53:50 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -308,7 +308,7 @@ void FDC_DmaStatus_ReadWord(void)
   if (nIoMemAccessSize == SIZE_BYTE)
   {
     /* This register does not like to be accessed in byte mode on a normal ST */
-	M68000_BusError(BusAddressLocation, 1);
+	M68000_BusError(IoAccessBaseAddress, 1);
 	return;
   }
 
@@ -1092,7 +1092,7 @@ void FDC_DiscController_WriteWord(void)
   if (nIoMemAccessSize == SIZE_BYTE)
   {
     /* This register does not like to be accessed in byte mode on a normal ST */
-	M68000_BusError(BusAddressLocation, 0);
+	M68000_BusError(IoAccessBaseAddress, 0);
 	return;
   }
 
@@ -1138,7 +1138,7 @@ void FDC_DiscControllerStatus_ReadWord(void)
   if (nIoMemAccessSize == SIZE_BYTE)
   {
     /* This register does not like to be accessed in byte mode on a normal ST */
-	M68000_BusError(BusAddressLocation, 1);
+	M68000_BusError(IoAccessBaseAddress, 1);
 	return;
   }
 
@@ -1298,7 +1298,7 @@ void FDC_DmaModeControl_WriteWord(void)
   if (nIoMemAccessSize == SIZE_BYTE)
   {
     /* This register does not like to be accessed in byte mode on a normal ST */
-	M68000_BusError(BusAddressLocation, 0);
+	M68000_BusError(IoAccessBaseAddress, 0);
 	return;
   }
 

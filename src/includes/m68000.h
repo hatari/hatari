@@ -20,7 +20,7 @@
 extern void *PendingInterruptFunction;
 extern short int PendingInterruptCount;
 
-extern Uint32 BusAddressLocation;
+extern Uint32 BusErrorAddress;
 extern Uint32 BusErrorPC;
 extern BOOL bBusErrorReadWrite;
 

@@ -28,7 +28,7 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.3 2005-01-31 22:15:49 thothy Exp $";
+char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.4 2005-02-02 21:53:50 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -48,13 +48,15 @@ char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.3 2005-01-31 22:15:49 thothy Exp $
 
 
 
-void *pInterceptReadTable[0x8000];
-void *pInterceptWriteTable[0x8000];
+static void (*pInterceptReadTable[0x8000])(void);     /* Table with read access handlers */
+static void (*pInterceptWriteTable[0x8000])(void);    /* Table with write access handlers */
 
-BOOL bEnableBlitter = FALSE;                  /* TRUE if blitter is enabled */
+BOOL bEnableBlitter = FALSE;                          /* TRUE if blitter is enabled */
 
-int nIoMemAccessSize;                         /* Set to 1, 2 or 4 according to byte, word or long word access */
-static int nBusErrorAccesses;                 /* Needed to count bus error accesses */
+int nIoMemAccessSize;                                 /* Set to 1, 2 or 4 according to byte, word or long word access */
+Uint32 IoAccessBaseAddress;                           /* Stores the base address of the IO mem access */
+Uint32 IoAccessCurrentAddress;                        /* Current byte address while handling WORD and LONG accesses */
+static int nBusErrorAccesses;                         /* Needed to count bus error accesses */
 
 
 /*-----------------------------------------------------------------------*/
@@ -74,15 +76,15 @@ void IoMem_Init(void)
 	{
 		if (addr & 1)
 		{
-    		pInterceptReadTable[addr - 0xff8000] = IoMem_BusErrorOddReadAccess;     /* For 'read' */
-	    	pInterceptWriteTable[addr - 0xff8000] = IoMem_BusErrorOddWriteAccess;   /* and 'write' */
+			pInterceptReadTable[addr - 0xff8000] = IoMem_BusErrorOddReadAccess;     /* For 'read' */
+			pInterceptWriteTable[addr - 0xff8000] = IoMem_BusErrorOddWriteAccess;   /* and 'write' */
 		}
 		else
 		{
-    		pInterceptReadTable[addr - 0xff8000] = IoMem_BusErrorEvenReadAccess;    /* For 'read' */
-	    	pInterceptWriteTable[addr - 0xff8000] = IoMem_BusErrorEvenWriteAccess;  /* and 'write' */
+			pInterceptReadTable[addr - 0xff8000] = IoMem_BusErrorEvenReadAccess;    /* For 'read' */
+			pInterceptWriteTable[addr - 0xff8000] = IoMem_BusErrorEvenWriteAccess;  /* and 'write' */
 		}
-    }
+	}
 
 	/* Handle blitter */
 	if (bEnableBlitter)
@@ -110,7 +112,7 @@ void IoMem_Init(void)
 				pInterceptWriteTable[addr-0xff8000] = pInterceptAccessFuncs[i].WriteFunc;
 			}
 		}
-    }
+	}
 
 }
 
@@ -173,12 +175,13 @@ uae_u32 IoMem_bget(uaecptr addr)
 		return 0xff;
 	}
 
-	BusAddressLocation = addr;                    /* Store access location */
+	IoAccessBaseAddress = addr;                   /* Store access location */
 	nIoMemAccessSize = SIZE_BYTE;
 	nBusErrorAccesses = 0;
 	addr = IoMem_CheckMirrorAddresses(addr);
 
-	CALL_VAR(pInterceptReadTable[addr-0xff8000]); /* Call handler */
+	IoAccessCurrentAddress = addr;
+	pInterceptReadTable[addr-0xff8000]();         /* Call handler */
 
 	/* Check if we read from a bus-error region */
 	if (nBusErrorAccesses == 1)
@@ -210,15 +213,20 @@ uae_u32 IoMem_wget(uaecptr addr)
 		return 0xff;
 	}
 
-	BusAddressLocation = addr;                    /* Store for exception frame, just in case */
+	IoAccessBaseAddress = addr;                   /* Store for exception frame */
 	nIoMemAccessSize = SIZE_WORD;
 	nBusErrorAccesses = 0;
 	addr = IoMem_CheckMirrorAddresses(addr);
-
 	idx = addr - 0xff8000;
-	CALL_VAR(pInterceptReadTable[idx]);           /* Call 1st handler */
+
+	IoAccessCurrentAddress = addr;
+	pInterceptReadTable[idx]();                   /* Call 1st handler */
+
 	if (pInterceptReadTable[idx+1] != pInterceptReadTable[idx])
-		CALL_VAR(pInterceptReadTable[idx+1]);     /* Call 2nd handler */
+	{
+		IoAccessCurrentAddress = addr + 1;
+		pInterceptReadTable[idx+1]();             /* Call 2nd handler */
+	}
 
 	/* Check if we completely read from a bus-error region */
 	if (nBusErrorAccesses == 2)
@@ -250,19 +258,32 @@ uae_u32 IoMem_lget(uaecptr addr)
 		return 0;
 	}
 
-	BusAddressLocation = addr;                    /* Store for exception frame, just in case */
+	IoAccessBaseAddress = addr;                   /* Store for exception frame */
 	nIoMemAccessSize = SIZE_LONG;
 	nBusErrorAccesses = 0;
 	addr = IoMem_CheckMirrorAddresses(addr);
-
 	idx = addr - 0xff8000;
-	CALL_VAR(pInterceptReadTable[idx]);           /* Call 1st handler */
+
+	IoAccessCurrentAddress = addr;
+	pInterceptReadTable[idx]();                   /* Call 1st handler */
+
 	if (pInterceptReadTable[idx+1] != pInterceptReadTable[idx])
-		CALL_VAR(pInterceptReadTable[idx+1]);     /* Call 2nd handler */
+	{
+		IoAccessCurrentAddress = addr + 1;
+		pInterceptReadTable[idx+1]();             /* Call 2nd handler */
+	}
+
 	if (pInterceptReadTable[idx+2] != pInterceptReadTable[idx+1])
-		CALL_VAR(pInterceptReadTable[idx+2]);     /* Call 3rd handler */
+	{
+		IoAccessCurrentAddress = addr + 2;
+		pInterceptReadTable[idx+2]();             /* Call 3rd handler */
+	}
+
 	if (pInterceptReadTable[idx+3] != pInterceptReadTable[idx+2])
-		CALL_VAR(pInterceptReadTable[idx+3]);     /* Call 4th handler */
+	{
+		IoAccessCurrentAddress = addr + 3;
+		pInterceptReadTable[idx+3]();             /* Call 4th handler */
+	}
 
 	/* Check if we completely read from a bus-error region */
 	if (nBusErrorAccesses == 4)
@@ -292,14 +313,15 @@ void IoMem_bput(uaecptr addr, uae_u32 val)
 		return;
 	}
 
-	BusAddressLocation = addr;                    /* Store for exception frame, just in case */
+	IoAccessBaseAddress = addr;                   /* Store for exception frame, just in case */
 	nIoMemAccessSize = SIZE_BYTE;
 	nBusErrorAccesses = 0;
 	addr = IoMem_CheckMirrorAddresses(addr);
 
 	IoMem[addr] = val;
 
-	CALL_VAR(pInterceptWriteTable[addr-0xff8000]); /* Call handler */
+	IoAccessCurrentAddress = addr;
+	pInterceptWriteTable[addr-0xff8000]();        /* Call handler */
 
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 1)
@@ -328,17 +350,22 @@ void IoMem_wput(uaecptr addr, uae_u32 val)
 		return;
 	}
 
-	BusAddressLocation = addr;                    /* Store for exception frame, just in case */
+	IoAccessBaseAddress = addr;                   /* Store for exception frame, just in case */
 	nIoMemAccessSize = SIZE_WORD;
 	nBusErrorAccesses = 0;
 	addr = IoMem_CheckMirrorAddresses(addr);
 
 	IoMem_WriteWord(addr, val);
-
 	idx = addr - 0xff8000;
-	CALL_VAR(pInterceptWriteTable[idx]);          /* Call handler */
+
+	IoAccessCurrentAddress = addr;
+	pInterceptWriteTable[idx]();                  /* Call 1st handler */
+
 	if (pInterceptWriteTable[idx+1] != pInterceptWriteTable[idx])
-		CALL_VAR(pInterceptWriteTable[idx+1]);    /* Call 2nd handler */
+	{
+		IoAccessCurrentAddress = addr + 1;
+		pInterceptWriteTable[idx+1]();            /* Call 2nd handler */
+	}
 
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 2)
@@ -367,20 +394,34 @@ void IoMem_lput(uaecptr addr, uae_u32 val)
 		return;
 	}
 
-	BusAddressLocation = addr;                    /* Store for exception frame, just in case */
+	IoAccessBaseAddress = addr;                   /* Store for exception frame, just in case */
 	nIoMemAccessSize = SIZE_LONG;
 	nBusErrorAccesses = 0;
 	addr = IoMem_CheckMirrorAddresses(addr);
-	IoMem_WriteLong(addr, val);
 
+	IoMem_WriteLong(addr, val);
 	idx = addr - 0xff8000;
-	CALL_VAR(pInterceptWriteTable[idx]);          /* Call handler */
+
+	IoAccessCurrentAddress = addr;
+	pInterceptWriteTable[idx]();                  /* Call handler */
+
 	if (pInterceptWriteTable[idx+1] != pInterceptWriteTable[idx])
-		CALL_VAR(pInterceptWriteTable[idx+1]);    /* Call 2nd handler */
+	{
+		IoAccessCurrentAddress = addr + 1;
+		pInterceptWriteTable[idx+1]();            /* Call 2nd handler */
+	}
+
 	if (pInterceptWriteTable[idx+2] != pInterceptWriteTable[idx+1])
-		CALL_VAR(pInterceptWriteTable[idx+2]);    /* Call 3rd handler */
+	{
+		IoAccessCurrentAddress = addr + 2;
+		pInterceptWriteTable[idx+2]();            /* Call 3rd handler */
+	}
+
 	if (pInterceptWriteTable[idx+3] != pInterceptWriteTable[idx+2])
-		CALL_VAR(pInterceptWriteTable[idx+3]);    /* Call 4th handler */
+	{
+		IoAccessCurrentAddress = addr + 3;
+		pInterceptWriteTable[idx+3]();            /* Call 4th handler */
+	}
 
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 4)
@@ -402,6 +443,7 @@ void IoMem_lput(uaecptr addr, uae_u32 val)
 void IoMem_BusErrorEvenReadAccess(void)
 {
 	nBusErrorAccesses += 1;
+	IoMem[IoAccessCurrentAddress] = 0xff;
 }
 
 /*
@@ -411,6 +453,7 @@ void IoMem_BusErrorEvenReadAccess(void)
 void IoMem_BusErrorOddReadAccess(void)
 {
 	nBusErrorAccesses += 1;
+	IoMem[IoAccessCurrentAddress] = 0xff;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -429,6 +472,38 @@ void IoMem_BusErrorEvenWriteAccess(void)
 void IoMem_BusErrorOddWriteAccess(void)
 {
 	nBusErrorAccesses += 1;
+}
+
+
+/*-------------------------------------------------------------------------*/
+/*
+  This is the read handler for the IO memory locations without an assigned
+  IO register and which also do not generate a bus error. Reading from such
+  a register will return the result 0xff.
+*/
+void IoMem_VoidRead(void)
+{
+	int a;
+
+	/* handler is probably called only once, so we have to take care of the neighbour "void IO registers" */
+	for (a = IoAccessBaseAddress; a < IoAccessBaseAddress + nIoMemAccessSize; a++)
+	{
+		if (pInterceptReadTable[a - 0xff8000] == IoMem_VoidRead)
+		{
+			IoMem[a] = 0xff;
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------*/
+/*
+  This is the write handler for the IO memory locations without an assigned
+  IO register and which also do not generate a bus error. We simply ignore
+  a write access to these registers.
+*/
+void IoMem_VoidWrite(void)
+{
+	/* Nothing... */
 }
 
 

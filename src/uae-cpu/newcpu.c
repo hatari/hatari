@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.36 2004-12-08 10:27:53 thothy Exp $";
+char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.37 2005-02-02 21:53:52 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -784,12 +784,12 @@ void Exception(int nr, uaecptr oldpc)
 	    if (bBusErrorReadWrite)
 	      specialstatus |= 0x10;
 	    put_word (m68k_areg(regs, 7), specialstatus);
-	    put_long (m68k_areg(regs, 7)+2, BusAddressLocation);
+	    put_long (m68k_areg(regs, 7)+2, BusErrorAddress);
 	    put_word (m68k_areg(regs, 7)+6, get_word(BusErrorPC));  /* Opcode */
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {
 	      fprintf(stderr, "Detected double bus error at address $%x, PC=$%lx => CPU halted!\n",
-	              BusAddressLocation, (long)currpc);
+	              BusErrorAddress, (long)currpc);
 	      unset_special(SPCFLAG_BUSERROR);
 	      if (bEnableDebug)
 	        DebugUI();
@@ -797,8 +797,8 @@ void Exception(int nr, uaecptr oldpc)
 	      m68k_setstopped(TRUE);
 	      return;
 	    }
-	    if (bEnableDebug && BusAddressLocation!=0xff8a00) {
-	      fprintf(stderr,"Bus Error at address $%x, PC=$%lx\n",BusAddressLocation,(long)currpc);
+	    if (bEnableDebug && BusErrorAddress!=0xff8a00) {
+	      fprintf(stderr,"Bus Error at address $%x, PC=$%lx\n", BusErrorAddress, (long)currpc);
 	      DebugUI();
 	    }
 	}
