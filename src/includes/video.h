@@ -16,17 +16,15 @@
 #define BORDERMASK_LEFT    0x0004
 #define BORDERMASK_RIGHT   0x0008
 
-extern unsigned char VideoSyncByte,VideoShifterByte;
 extern BOOL bUseHighRes;
 extern int nVBLs,nHBL;
-extern int nStartHBL,nEndHBL;
+extern int nStartHBL, nEndHBL;
 extern int OverscanMode;
-extern unsigned short int HBLPalettes[(NUM_VISIBLE_LINES+1)*16];
+extern Uint16 HBLPalettes[(NUM_VISIBLE_LINES+1)*16];
+extern Uint16 *pHBLPalettes;
 extern unsigned long HBLPaletteMasks[NUM_VISIBLE_LINES+1];
-extern unsigned short int *pHBLPalettes;
 extern unsigned long *pHBLPaletteMasks;
-extern unsigned long VideoBase;
-extern unsigned long VideoRaster;
+extern Uint32 VideoBase;
 extern int VBLCounter;
 extern int nScreenRefreshRate;
 

@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.26 2005-02-13 16:18:50 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.27 2005-03-09 22:54:35 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -35,21 +35,20 @@ char Video_rcsid[] = "Hatari $Id: video.c,v 1.26 2005-02-13 16:18:50 thothy Exp 
 #include "ymFormat.h"
 
 
-unsigned char VideoShifterByte;                 /* VideoShifter (0xff8260) value store in video chip */
 BOOL bUseHighRes = FALSE;                       /* Use hi-res (ie Mono monitor) */
 int nVBLs, nHBL;                                /* VBL Counter, HBL line */
-int nStartHBL,nEndHBL;                          /* Start/End HBL for visible screen(64 lines in Top border) */
+int nStartHBL, nEndHBL;                         /* Start/End HBL for visible screen(64 lines in Top border) */
 int OverscanMode;                               /* OVERSCANMODE_xxxx for current display frame */
-unsigned short int HBLPalettes[(NUM_VISIBLE_LINES+1)*16];  /* 1x16 colour palette per screen line, +1 line just incase write after line 200 */
+Uint16 HBLPalettes[(NUM_VISIBLE_LINES+1)*16];   /* 1x16 colour palette per screen line, +1 line just incase write after line 200 */
+Uint16 *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
 unsigned long HBLPaletteMasks[NUM_VISIBLE_LINES+1];  /* Bit mask of palette colours changes, top bit set is resolution change */
-unsigned short int *pHBLPalettes;               /* Pointer to current palette lists, one per HBL */
 unsigned long *pHBLPaletteMasks;
-unsigned long VideoBase;                        /* Base address in ST Ram for screen(read on each VBL) */
-unsigned long VideoRaster;                      /* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
-int SyncHandler_Value;                          /* Value to pass to 'Video_SyncHandler_xxxx' functions */
-int LeftRightBorder;                            /* BORDERMASK_xxxx used to simulate left/right border removal */
 int VBLCounter;                                 /* VBL counter */
 int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 70 Hz in mono */
+Uint32 VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */
+static Uint8 *pVideoRaster;                     /* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
+static Uint8 VideoShifterByte;                  /* VideoShifter (0xff8260) value store in video chip */
+static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simulate left/right border removal */
 
 
 /*-----------------------------------------------------------------------*/
@@ -93,7 +92,7 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(HBLPalettes,sizeof(HBLPalettes));
   MemorySnapShot_Store(HBLPaletteMasks,sizeof(HBLPaletteMasks));
   MemorySnapShot_Store(&VideoBase,sizeof(VideoBase));
-  MemorySnapShot_Store(&VideoRaster,sizeof(VideoRaster));
+  MemorySnapShot_Store(&pVideoRaster,sizeof(pVideoRaster));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -108,9 +107,12 @@ void Video_ClearOnVBL(void)
   nEndHBL = SCREEN_START_HBL+SCREEN_HEIGHT_HBL;
   OverscanMode = OVERSCANMODE_NONE;
 
-  /* Get screen address pointer, align to 256 bytes(ie ignore lowest byte) */
-  VideoBase = (unsigned long)STMemory_ReadByte(0xff8201)<<16 | (unsigned long)STMemory_ReadByte(0xff8203)<<8;
-  VideoRaster = (unsigned long)STRam+VideoBase;
+  /* Get screen address pointer, aligned to 256 bytes on ST (ie ignore lowest byte) */
+  VideoBase = (Uint32)STMemory_ReadByte(0xff8201)<<16 | (Uint32)STMemory_ReadByte(0xff8203)<<8;
+  if (ConfigureParams.System.nMachineType != MACHINE_ST)
+    VideoBase |= STMemory_ReadByte(0xff820d);
+
+  pVideoRaster = &STRam[VideoBase];
   pSTScreen = pFrameBuffer->pSTScreen;
 
   Video_StartHBL();
@@ -459,8 +461,8 @@ static void Video_CopyScreenLine(int BorderMask)
 
     if (bUseHighRes) {
       /* Copy for hi-res (no overscan) */
-      memcpy(pSTScreen,(char *)VideoRaster,SCREENBYTES_MIDDLE);
-      VideoRaster += SCREENBYTES_MIDDLE;
+      memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MIDDLE);
+      pVideoRaster += SCREENBYTES_MIDDLE;
       /* Each screen line copied to buffer is always same length */
       pSTScreen += SCREENBYTES_MIDDLE;
     }
@@ -473,20 +475,20 @@ static void Video_CopyScreenLine(int BorderMask)
       else {
         /* Does have left border? If not, clear to colour '0' */
         if (BorderMask&BORDERMASK_LEFT) {
-          VideoRaster += 24-SCREENBYTES_LEFT;
-          memcpy(pSTScreen,(char *)VideoRaster,SCREENBYTES_LEFT);
-          VideoRaster += SCREENBYTES_LEFT;
+          pVideoRaster += 24-SCREENBYTES_LEFT;
+          memcpy(pSTScreen, pVideoRaster, SCREENBYTES_LEFT);
+          pVideoRaster += SCREENBYTES_LEFT;
         }
         else
           memset(pSTScreen,0,SCREENBYTES_LEFT);
         /* Copy middle - always present */
-        memcpy(pSTScreen+SCREENBYTES_LEFT,(char *)VideoRaster,SCREENBYTES_MIDDLE);
-        VideoRaster += SCREENBYTES_MIDDLE;
+        memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE);
+        pVideoRaster += SCREENBYTES_MIDDLE;
         /* Does have right border? If not, clear to colour '0' */
         if (BorderMask&BORDERMASK_RIGHT) {
-          memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,(char *)VideoRaster,SCREENBYTES_RIGHT);
-          VideoRaster += 46-SCREENBYTES_RIGHT;
-          VideoRaster += SCREENBYTES_RIGHT;
+          memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT);
+          pVideoRaster += 46-SCREENBYTES_RIGHT;
+          pVideoRaster += SCREENBYTES_RIGHT;
         }
         else
           memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,0,SCREENBYTES_RIGHT);
@@ -506,7 +508,7 @@ static void Video_CopyScreenLine(int BorderMask)
 void Video_CopyVDIScreen(void)
 {
   /* Copy whole screen, don't care about being exact as for GEM only */
-  memcpy(pSTScreen,(char *)VideoRaster,((VDIWidth*VDIPlanes)/8)*VDIHeight);  /* 640x400x16colour */
+  memcpy(pSTScreen, pVideoRaster, ((VDIWidth*VDIPlanes)/8)*VDIHeight);  /* 640x400x16colour */
 }
 
 
@@ -625,11 +627,13 @@ void Video_Sync_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Read video base address low byte (0xff820d)
+  Read video base address low byte (0xff820d). A plain ST can only store
+  screen addresses rounded to 256 bytes (i.e. no lower byte).
 */
 void Video_BaseLow_ReadByte(void)
 {
-  IoMem[0xff820d] = 0;        /* ST can only store screen address to 256 bytes (i.e. no lower byte) */
+  if (ConfigureParams.System.nMachineType == MACHINE_ST)
+    IoMem[0xff820d] = 0;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -663,7 +667,7 @@ static void Video_ColorReg_WriteWord(Uint32 addr)
 {
   if (!bUseHighRes)                                 /* Don't store if hi-res */
   {
-    unsigned short col;
+    Uint16 col;
     Video_SetHBLPaletteMaskPointers();              /* Set 'pHBLPalettes' etc.. according cycles into frame */
     col = IoMem_ReadWord(addr);
     col &= 0x777;                                   /* Mask off to 512 palette */
