@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-static char rcsid[] = "Hatari $Id: gemdos.c,v 1.24 2003-08-10 08:09:06 simonsunnyboy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.25 2004-04-14 22:36:57 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -198,14 +198,14 @@ unsigned char GemDOS_ConvertAttribute(mode_t mode);
   Routines to convert time and date to MSDOS format.
   Originally from the STonX emulator. (cheers!)
 */
-unsigned short time2dos (time_t t)
+static Uint16 time2dos (time_t t)
 {
 	struct tm *x;
 	x = localtime (&t);
 	return (x->tm_sec>>1)|(x->tm_min<<5)|(x->tm_hour<<11);
 }
 
-unsigned short date2dos (time_t t)
+static Uint16 date2dos (time_t t)
 {
 	struct tm *x;
 	x = localtime (&t);
@@ -217,7 +217,7 @@ unsigned short date2dos (time_t t)
 /*
   Populate a DATETIME structure with file info
 */
-BOOL GetFileInformation(char *name, DATETIME *DateTime)
+static BOOL GetFileInformation(char *name, DATETIME *DateTime)
 {
   struct stat filestat;
   int n;
@@ -246,7 +246,7 @@ BOOL GetFileInformation(char *name, DATETIME *DateTime)
 /*
   Populate the DTA buffer with file info
 */
-int PopulateDTA(char *path, struct dirent *file)
+static BOOL PopulateDTA(char *path, struct dirent *file)
 {
   char tempstr[MAX_PATH];
   struct stat filestat;
@@ -272,7 +272,8 @@ int PopulateDTA(char *path, struct dirent *file)
 /*
   Clear a used DTA structure.
 */
-void ClearInternalDTA(){
+static void ClearInternalDTA()
+{
   int i;
 
   /* clear the old DTA structure */
@@ -323,7 +324,8 @@ static int match (char *pat, char *name)
   Parse directory from sfirst mask
   - e.g.: input:  "hdemudir/auto/mask*.*" outputs: "hdemudir/auto"
 */
-void fsfirst_dirname(char *string, char *new){
+static void fsfirst_dirname(char *string, char *new)
+{
   int i=0;
 
   sprintf(new, string);
@@ -343,7 +345,8 @@ void fsfirst_dirname(char *string, char *new){
 /*
   Parse directory mask, e.g. "*.*"
 */
-void fsfirst_dirmask(char *string, char *new){
+static void fsfirst_dirmask(char *string, char *new)
+{
   int i=0, j=0;
   while(string[i] != '\0')i++;   /* go to end of string */
   while(string[i] != '/') i--;   /* find last slash */
@@ -351,6 +354,7 @@ void fsfirst_dirmask(char *string, char *new){
   while(string[i] != '\0')new[j++] = string[i++]; /* go to end of string */
   new[j++] = '\0';
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -593,9 +597,14 @@ int GemDOS_IsFileNameAHardDrive(char *pszFileName)
   return(-1);
 }
 
-int baselen(char *s) {
-  /* Returns the length of the basename of the file passed in parameter
-     (ie the file without extension) */
+
+/*-----------------------------------------------------------------------*/
+/*
+  Returns the length of the basename of the file passed in parameter
+   (ie the file without extension)
+*/
+static int baselen(char *s)
+{
   char *ext = strchr(s,'.');
   if (ext) return ext-s;
   return strlen(s);
@@ -637,7 +646,8 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
     {
       glob_t globbuf;
       char old1,old2,dest[256];
-      int len,j,found,base_len;
+      int len, found, base_len;
+      unsigned int j;
 
       *start++ = '/';
       old1 = *start; *start++ = '*';
@@ -695,7 +705,8 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
       /* We have a complete name after the path, not a wildcard */
       glob_t globbuf;
       char old1,old2,dest[256];
-      int len,j,found,base_len;
+      int len, found, base_len;
+      unsigned int j;
 
       old1 = *start; *start++ = '*';
       old2 = *start; *start = 0;

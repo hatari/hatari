@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.13 2004-02-19 15:22:13 thothy Exp $";
+char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.14 2004-04-14 22:36:59 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -25,8 +25,8 @@ char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.13 2004-02-19 15:22:13 thothy Ex
 #include "newcpu.h"
 
 
-uae_u32 STmem_size, TTmem_size = 0;
-uae_u32 TTmem_mask;
+static uae_u32 STmem_size, TTmem_size = 0;
+static uae_u32 TTmem_mask;
 
 #define STmem_start  0x00000000
 #define ROMmem_start 0x00E00000
@@ -82,15 +82,7 @@ static uae_u8 *STmem_xlate (uaecptr addr) REGPARAM;
 
 /* A dummy bank that only contains zeros */
 
-static uae_u32 dummy_lget (uaecptr) REGPARAM;
-static uae_u32 dummy_wget (uaecptr) REGPARAM;
-static uae_u32 dummy_bget (uaecptr) REGPARAM;
-static void dummy_lput (uaecptr, uae_u32) REGPARAM;
-static void dummy_wput (uaecptr, uae_u32) REGPARAM;
-static void dummy_bput (uaecptr, uae_u32) REGPARAM;
-static int dummy_check (uaecptr addr, uae_u32 size) REGPARAM;
-
-uae_u32 REGPARAM2 dummy_lget (uaecptr addr)
+static uae_u32 dummy_lget(uaecptr addr)
 {
     if (illegal_mem)
 	write_log ("Illegal lget at %08lx\n", (long)addr);
@@ -98,7 +90,7 @@ uae_u32 REGPARAM2 dummy_lget (uaecptr addr)
     return 0;
 }
 
-uae_u32 REGPARAM2 dummy_wget (uaecptr addr)
+static uae_u32 dummy_wget(uaecptr addr)
 {
     if (illegal_mem)
 	write_log ("Illegal wget at %08lx\n", (long)addr);
@@ -106,7 +98,7 @@ uae_u32 REGPARAM2 dummy_wget (uaecptr addr)
     return 0;
 }
 
-uae_u32 REGPARAM2 dummy_bget (uaecptr addr)
+static uae_u32 dummy_bget(uaecptr addr)
 {
     if (illegal_mem)
 	write_log ("Illegal bget at %08lx\n", (long)addr);
@@ -114,25 +106,25 @@ uae_u32 REGPARAM2 dummy_bget (uaecptr addr)
     return 0;
 }
 
-void REGPARAM2 dummy_lput (uaecptr addr, uae_u32 l)
+static void dummy_lput(uaecptr addr, uae_u32 l)
 {
     if (illegal_mem)
 	write_log ("Illegal lput at %08lx\n", (long)addr);
 }
 
-void REGPARAM2 dummy_wput (uaecptr addr, uae_u32 w)
+static void dummy_wput(uaecptr addr, uae_u32 w)
 {
     if (illegal_mem)
 	write_log ("Illegal wput at %08lx\n", (long)addr);
 }
 
-void REGPARAM2 dummy_bput (uaecptr addr, uae_u32 b)
+static void dummy_bput(uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
 	write_log ("Illegal bput at %08lx\n", (long)addr);
 }
 
-int REGPARAM2 dummy_check (uaecptr addr, uae_u32 size)
+static int dummy_check(uaecptr addr, uae_u32 size)
 {
     if (illegal_mem)
 	write_log ("Illegal check at %08lx\n", (long)addr);
@@ -140,7 +132,7 @@ int REGPARAM2 dummy_check (uaecptr addr, uae_u32 size)
     return 0;
 }
 
-uae_u8 REGPARAM2 *dummy_xlate (uaecptr addr)
+static uae_u8 *dummy_xlate(uaecptr addr)
 {
     write_log("Your Atari program just did something terribly stupid:"
               " dummy_xlate($%x)\n", addr);
@@ -151,7 +143,7 @@ uae_u8 REGPARAM2 *dummy_xlate (uaecptr addr)
 
 /* **** This memory bank only generates bus errors **** */
 
-uae_u32 REGPARAM2 BusErrMem_lget(uaecptr addr)
+static uae_u32 BusErrMem_lget(uaecptr addr)
 {
     if (illegal_mem)
 	write_log ("Bus error lget at %08lx\n", (long)addr);
@@ -160,7 +152,7 @@ uae_u32 REGPARAM2 BusErrMem_lget(uaecptr addr)
     return 0;
 }
 
-uae_u32 REGPARAM2 BusErrMem_wget(uaecptr addr)
+static uae_u32 BusErrMem_wget(uaecptr addr)
 {
     if (illegal_mem)
 	write_log ("Bus error wget at %08lx\n", (long)addr);
@@ -169,7 +161,7 @@ uae_u32 REGPARAM2 BusErrMem_wget(uaecptr addr)
     return 0;
 }
 
-uae_u32 REGPARAM2 BusErrMem_bget(uaecptr addr)
+static uae_u32 BusErrMem_bget(uaecptr addr)
 {
     if (illegal_mem)
 	write_log ("Bus error bget at %08lx\n", (long)addr);
@@ -178,7 +170,7 @@ uae_u32 REGPARAM2 BusErrMem_bget(uaecptr addr)
     return 0;
 }
 
-void REGPARAM2 BusErrMem_lput(uaecptr addr, uae_u32 l)
+static void BusErrMem_lput(uaecptr addr, uae_u32 l)
 {
     if (illegal_mem)
 	write_log ("Bus error lput at %08lx\n", (long)addr);
@@ -186,7 +178,7 @@ void REGPARAM2 BusErrMem_lput(uaecptr addr, uae_u32 l)
     M68000_BusError(addr, 0);
 }
 
-void REGPARAM2 BusErrMem_wput(uaecptr addr, uae_u32 w)
+static void BusErrMem_wput(uaecptr addr, uae_u32 w)
 {
     if (illegal_mem)
 	write_log ("Bus error wput at %08lx\n", (long)addr);
@@ -194,7 +186,7 @@ void REGPARAM2 BusErrMem_wput(uaecptr addr, uae_u32 w)
     M68000_BusError(addr, 0);
 }
 
-void REGPARAM2 BusErrMem_bput(uaecptr addr, uae_u32 b)
+static void BusErrMem_bput(uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
 	write_log ("Bus error bput at %08lx\n", (long)addr);
@@ -202,7 +194,7 @@ void REGPARAM2 BusErrMem_bput(uaecptr addr, uae_u32 b)
     M68000_BusError(addr, 0);
 }
 
-int REGPARAM2 BusErrMem_check(uaecptr addr, uae_u32 size)
+static int BusErrMem_check(uaecptr addr, uae_u32 size)
 {
     if (illegal_mem)
 	write_log ("Bus error check at %08lx\n", (long)addr);
@@ -210,7 +202,7 @@ int REGPARAM2 BusErrMem_check(uaecptr addr, uae_u32 size)
     return 0;
 }
 
-uae_u8 REGPARAM2 *BusErrMem_xlate (uaecptr addr)
+static uae_u8 *BusErrMem_xlate (uaecptr addr)
 {
     write_log("Your Atari program just did something terribly stupid:"
               " BusErrMem_xlate($%x)\n", addr);
@@ -222,9 +214,9 @@ uae_u8 REGPARAM2 *BusErrMem_xlate (uaecptr addr)
 
 /* **** ST RAM memory **** */
 
-uae_u8 *STmemory;
+static uae_u8 *STmemory;
 
-uae_u32 REGPARAM2 STmem_lget (uaecptr addr)
+static uae_u32 STmem_lget(uaecptr addr)
 {
     uae_u32 *m;
 
@@ -234,7 +226,7 @@ uae_u32 REGPARAM2 STmem_lget (uaecptr addr)
     return do_get_mem_long (m);
 }
 
-uae_u32 REGPARAM2 STmem_wget (uaecptr addr)
+static uae_u32 STmem_wget(uaecptr addr)
 {
     uae_u16 *m;
 
@@ -244,14 +236,14 @@ uae_u32 REGPARAM2 STmem_wget (uaecptr addr)
     return do_get_mem_word (m);
 }
 
-uae_u32 REGPARAM2 STmem_bget (uaecptr addr)
+static uae_u32 STmem_bget(uaecptr addr)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
     return STmemory[addr];
 }
 
-void REGPARAM2 STmem_lput (uaecptr addr, uae_u32 l)
+static void STmem_lput(uaecptr addr, uae_u32 l)
 {
     uae_u32 *m;
 
@@ -261,7 +253,7 @@ void REGPARAM2 STmem_lput (uaecptr addr, uae_u32 l)
     do_put_mem_long (m, l);
 }
 
-void REGPARAM2 STmem_wput (uaecptr addr, uae_u32 w)
+static void STmem_wput(uaecptr addr, uae_u32 w)
 {
     uae_u16 *m;
 
@@ -271,21 +263,21 @@ void REGPARAM2 STmem_wput (uaecptr addr, uae_u32 w)
     do_put_mem_word (m, w);
 }
 
-void REGPARAM2 STmem_bput (uaecptr addr, uae_u32 b)
+static void STmem_bput(uaecptr addr, uae_u32 b)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
     STmemory[addr] = b;
 }
 
-int REGPARAM2 STmem_check (uaecptr addr, uae_u32 size)
+static int STmem_check(uaecptr addr, uae_u32 size)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
     return (addr + size) <= STmem_size;
 }
 
-uae_u8 REGPARAM2 *STmem_xlate (uaecptr addr)
+static uae_u8 *STmem_xlate(uaecptr addr)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
@@ -300,7 +292,7 @@ uae_u8 REGPARAM2 *STmem_xlate (uaecptr addr)
  * 8 bytes of the ST memory are also a mirror of the TOS ROM, so they are write
  * protected!
  */
-uae_u32 REGPARAM2 SysMem_lget(uaecptr addr)
+static uae_u32 SysMem_lget(uaecptr addr)
 {
     uae_u32 *m;
 
@@ -316,7 +308,7 @@ uae_u32 REGPARAM2 SysMem_lget(uaecptr addr)
     return do_get_mem_long (m);
 }
 
-uae_u32 REGPARAM2 SysMem_wget(uaecptr addr)
+static uae_u32 SysMem_wget(uaecptr addr)
 {
     uae_u16 *m;
 
@@ -332,7 +324,7 @@ uae_u32 REGPARAM2 SysMem_wget(uaecptr addr)
     return do_get_mem_word (m);
 }
 
-uae_u32 REGPARAM2 SysMem_bget(uaecptr addr)
+static uae_u32 SysMem_bget(uaecptr addr)
 {
     if(addr < 0x800 && !regs.s)
     {
@@ -345,7 +337,7 @@ uae_u32 REGPARAM2 SysMem_bget(uaecptr addr)
     return STmemory[addr];
 }
 
-void REGPARAM2 SysMem_lput(uaecptr addr, uae_u32 l)
+static void SysMem_lput(uaecptr addr, uae_u32 l)
 {
     uae_u32 *m;
 
@@ -361,7 +353,7 @@ void REGPARAM2 SysMem_lput(uaecptr addr, uae_u32 l)
     do_put_mem_long (m, l);
 }
 
-void REGPARAM2 SysMem_wput(uaecptr addr, uae_u32 w)
+static void SysMem_wput(uaecptr addr, uae_u32 w)
 {
     uae_u16 *m;
 
@@ -377,7 +369,7 @@ void REGPARAM2 SysMem_wput(uaecptr addr, uae_u32 w)
     do_put_mem_word (m, w);
 }
 
-void REGPARAM2 SysMem_bput(uaecptr addr, uae_u32 b)
+static void SysMem_bput(uaecptr addr, uae_u32 b)
 {
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
@@ -397,34 +389,34 @@ void REGPARAM2 SysMem_bput(uaecptr addr, uae_u32 b)
  * Reading always returns the same value and writing does nothing at all.
  */
 
-uae_u32 REGPARAM2 VoidMem_lget(uaecptr addr)
+static uae_u32 VoidMem_lget(uaecptr addr)
 {
     return 0;
 }
 
-uae_u32 REGPARAM2 VoidMem_wget(uaecptr addr)
+static uae_u32 VoidMem_wget(uaecptr addr)
 {
     return 0;
 }
 
-uae_u32 REGPARAM2 VoidMem_bget(uaecptr addr)
+static uae_u32 VoidMem_bget(uaecptr addr)
 {
     return 0;
 }
 
-void REGPARAM2 VoidMem_lput(uaecptr addr, uae_u32 l)
+static void VoidMem_lput(uaecptr addr, uae_u32 l)
 {
 }
 
-void REGPARAM2 VoidMem_wput(uaecptr addr, uae_u32 w)
+static void VoidMem_wput(uaecptr addr, uae_u32 w)
 {
 }
 
-void REGPARAM2 VoidMem_bput (uaecptr addr, uae_u32 b)
+static void VoidMem_bput (uaecptr addr, uae_u32 b)
 {
 }
 
-int REGPARAM2 VoidMem_check(uaecptr addr, uae_u32 size)
+static int VoidMem_check(uaecptr addr, uae_u32 size)
 {
     if (illegal_mem)
 	write_log ("Void memory check at %08lx\n", (long)addr);
@@ -432,7 +424,7 @@ int REGPARAM2 VoidMem_check(uaecptr addr, uae_u32 size)
     return 0;
 }
 
-uae_u8 REGPARAM2 *VoidMem_xlate (uaecptr addr)
+static uae_u8 *VoidMem_xlate (uaecptr addr)
 {
     write_log("Your Atari program just did something terribly stupid:"
               " VoidMem_xlate($%x)\n", addr);
@@ -445,16 +437,7 @@ uae_u8 REGPARAM2 *VoidMem_xlate (uaecptr addr)
 
 static uae_u8 *TTmemory;
 
-static uae_u32 TTmem_lget (uaecptr) REGPARAM;
-static uae_u32 TTmem_wget (uaecptr) REGPARAM;
-static uae_u32 TTmem_bget (uaecptr) REGPARAM;
-static void TTmem_lput (uaecptr, uae_u32) REGPARAM;
-static void TTmem_wput (uaecptr, uae_u32) REGPARAM;
-static void TTmem_bput (uaecptr, uae_u32) REGPARAM;
-static int TTmem_check (uaecptr addr, uae_u32 size) REGPARAM;
-static uae_u8 *TTmem_xlate (uaecptr addr) REGPARAM;
-
-uae_u32 REGPARAM2 TTmem_lget (uaecptr addr)
+static uae_u32 TTmem_lget(uaecptr addr)
 {
     uae_u32 *m;
     addr -= TTmem_start & TTmem_mask;
@@ -463,7 +446,7 @@ uae_u32 REGPARAM2 TTmem_lget (uaecptr addr)
     return do_get_mem_long (m);
 }
 
-uae_u32 REGPARAM2 TTmem_wget (uaecptr addr)
+static uae_u32 TTmem_wget(uaecptr addr)
 {
     uae_u16 *m;
     addr -= TTmem_start & TTmem_mask;
@@ -472,14 +455,14 @@ uae_u32 REGPARAM2 TTmem_wget (uaecptr addr)
     return do_get_mem_word (m);
 }
 
-uae_u32 REGPARAM2 TTmem_bget (uaecptr addr)
+static uae_u32 TTmem_bget(uaecptr addr)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
     return TTmemory[addr];
 }
 
-void REGPARAM2 TTmem_lput (uaecptr addr, uae_u32 l)
+static void TTmem_lput(uaecptr addr, uae_u32 l)
 {
     uae_u32 *m;
     addr -= TTmem_start & TTmem_mask;
@@ -488,7 +471,7 @@ void REGPARAM2 TTmem_lput (uaecptr addr, uae_u32 l)
     do_put_mem_long (m, l);
 }
 
-void REGPARAM2 TTmem_wput (uaecptr addr, uae_u32 w)
+static void TTmem_wput(uaecptr addr, uae_u32 w)
 {
     uae_u16 *m;
     addr -= TTmem_start & TTmem_mask;
@@ -497,21 +480,21 @@ void REGPARAM2 TTmem_wput (uaecptr addr, uae_u32 w)
     do_put_mem_word (m, w);
 }
 
-void REGPARAM2 TTmem_bput (uaecptr addr, uae_u32 b)
+static void TTmem_bput(uaecptr addr, uae_u32 b)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
     TTmemory[addr] = b;
 }
 
-int REGPARAM2 TTmem_check (uaecptr addr, uae_u32 size)
+static int TTmem_check(uaecptr addr, uae_u32 size)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
     return (addr + size) <= TTmem_size;
 }
 
-uae_u8 REGPARAM2 *TTmem_xlate(uaecptr addr)
+static uae_u8 *TTmem_xlate(uaecptr addr)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
@@ -521,18 +504,9 @@ uae_u8 REGPARAM2 *TTmem_xlate(uaecptr addr)
 
 /* **** ROM memory **** */
 
-uae_u8 *ROMmemory;
+static uae_u8 *ROMmemory;
 
-static uae_u32 ROMmem_lget (uaecptr) REGPARAM;
-static uae_u32 ROMmem_wget (uaecptr) REGPARAM;
-static uae_u32 ROMmem_bget (uaecptr) REGPARAM;
-static void  ROMmem_lput (uaecptr, uae_u32) REGPARAM;
-static void  ROMmem_wput (uaecptr, uae_u32) REGPARAM;
-static void  ROMmem_bput (uaecptr, uae_u32) REGPARAM;
-static int  ROMmem_check (uaecptr addr, uae_u32 size) REGPARAM;
-static uae_u8 *ROMmem_xlate (uaecptr addr) REGPARAM;
-
-uae_u32 REGPARAM2 ROMmem_lget (uaecptr addr)
+static uae_u32 ROMmem_lget(uaecptr addr)
 {
     uae_u32 *m;
     addr -= ROMmem_start & ROMmem_mask;
@@ -541,7 +515,7 @@ uae_u32 REGPARAM2 ROMmem_lget (uaecptr addr)
     return do_get_mem_long (m);
 }
 
-uae_u32 REGPARAM2 ROMmem_wget (uaecptr addr)
+static uae_u32 ROMmem_wget(uaecptr addr)
 {
     uae_u16 *m;
     addr -= ROMmem_start & ROMmem_mask;
@@ -550,14 +524,14 @@ uae_u32 REGPARAM2 ROMmem_wget (uaecptr addr)
     return do_get_mem_word (m);
 }
 
-uae_u32 REGPARAM2 ROMmem_bget (uaecptr addr)
+static uae_u32 ROMmem_bget(uaecptr addr)
 {
     addr -= ROMmem_start & ROMmem_mask;
     addr &= ROMmem_mask;
     return ROMmemory[addr];
 }
 
-void REGPARAM2 ROMmem_lput (uaecptr addr, uae_u32 b)
+static void ROMmem_lput(uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
 	write_log ("Illegal ROMmem lput at %08lx\n", (long)addr);
@@ -565,7 +539,7 @@ void REGPARAM2 ROMmem_lput (uaecptr addr, uae_u32 b)
     M68000_BusError(addr, 0);
 }
 
-void REGPARAM2 ROMmem_wput (uaecptr addr, uae_u32 b)
+static void ROMmem_wput(uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
 	write_log ("Illegal ROMmem wput at %08lx\n", (long)addr);
@@ -573,7 +547,7 @@ void REGPARAM2 ROMmem_wput (uaecptr addr, uae_u32 b)
     M68000_BusError(addr, 0);
 }
 
-void REGPARAM2 ROMmem_bput (uaecptr addr, uae_u32 b)
+static void ROMmem_bput(uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
 	write_log ("Illegal ROMmem bput at %08lx\n", (long)addr);
@@ -581,14 +555,14 @@ void REGPARAM2 ROMmem_bput (uaecptr addr, uae_u32 b)
     M68000_BusError(addr, 0);
 }
 
-int REGPARAM2 ROMmem_check (uaecptr addr, uae_u32 size)
+static int ROMmem_check(uaecptr addr, uae_u32 size)
 {
     addr -= ROMmem_start & ROMmem_mask;
     addr &= ROMmem_mask;
     return (addr + size) <= ROMmem_size;
 }
 
-uae_u8 REGPARAM2 *ROMmem_xlate (uaecptr addr)
+static uae_u8 *ROMmem_xlate(uaecptr addr)
 {
     addr -= ROMmem_start & ROMmem_mask;
     addr &= ROMmem_mask;
@@ -599,19 +573,16 @@ uae_u8 REGPARAM2 *ROMmem_xlate (uaecptr addr)
 /* Hardware IO memory */
 /* see also intercept.c */
 
-uae_u8 *IOmemory;
+static uae_u8 *IOmemory;
 
-static int  IOmem_check (uaecptr addr, uae_u32 size) REGPARAM;
-static uae_u8 *IOmem_xlate (uaecptr addr) REGPARAM;
-
-int REGPARAM2 IOmem_check (uaecptr addr, uae_u32 size)
+static int IOmem_check(uaecptr addr, uae_u32 size)
 {
     addr -= IOmem_start;
     addr &= IOmem_mask;
     return (addr + size) <= IOmem_size;
 }
 
-uae_u8 REGPARAM2 *IOmem_xlate (uaecptr addr)
+static uae_u8 *IOmem_xlate(uaecptr addr)
 {
     addr -= IOmem_start;
     addr &= IOmem_mask;
@@ -622,57 +593,62 @@ uae_u8 REGPARAM2 *IOmem_xlate (uaecptr addr)
 
 /* **** Address banks **** */
 
-addrbank dummy_bank = {
+static addrbank dummy_bank =
+{
     dummy_lget, dummy_wget, dummy_bget,
     dummy_lput, dummy_wput, dummy_bput,
     dummy_xlate, dummy_check
 };
 
-addrbank BusErrMem_bank = {
+static addrbank BusErrMem_bank =
+{
     BusErrMem_lget, BusErrMem_wget, BusErrMem_bget,
     BusErrMem_lput, BusErrMem_wput, BusErrMem_bput,
     BusErrMem_xlate, BusErrMem_check
 };
 
-addrbank STmem_bank = {
+static addrbank STmem_bank =
+{
     STmem_lget, STmem_wget, STmem_bget,
     STmem_lput, STmem_wput, STmem_bput,
     STmem_xlate, STmem_check
 };
 
-addrbank SysMem_bank = {
+static addrbank SysMem_bank =
+{
     SysMem_lget, SysMem_wget, SysMem_bget,
     SysMem_lput, SysMem_wput, SysMem_bput,
     STmem_xlate, STmem_check
 };
 
-addrbank VoidMem_bank = {
+static addrbank VoidMem_bank =
+{
     VoidMem_lget, VoidMem_wget, VoidMem_bget,
     VoidMem_lput, VoidMem_wput, VoidMem_bput,
     VoidMem_xlate, VoidMem_check
 };
 
-addrbank TTmem_bank = {
+static addrbank TTmem_bank =
+{
     TTmem_lget, TTmem_wget, TTmem_bget,
     TTmem_lput, TTmem_wput, TTmem_bput,
     TTmem_xlate, TTmem_check
 };
 
-addrbank ROMmem_bank = {
+static addrbank ROMmem_bank =
+{
     ROMmem_lget, ROMmem_wget, ROMmem_bget,
     ROMmem_lput, ROMmem_wput, ROMmem_bput,
     ROMmem_xlate, ROMmem_check
 };
 
-addrbank IOmem_bank = {
+static addrbank IOmem_bank =
+{
     Intercept_ReadLong, Intercept_ReadWord, Intercept_ReadByte,
     Intercept_WriteLong, Intercept_WriteWord, Intercept_WriteByte,
     IOmem_xlate, IOmem_check
 };
 
-
-char *address_space, *good_address_map;
-int good_address_fd;
 
 
 static void init_mem_banks (void)

@@ -26,7 +26,6 @@
 #define CLEAR_PENDING_INTERRUPT_FLAG_TRACE 0xfffd
 
 
-extern  unsigned char STRam[16*1024*1024];
 extern  short int PendingInterruptFlag;
 extern  void *PendingInterruptFunction;
 extern  short int PendingInterruptCount;

@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.20 2004-03-01 13:57:29 thothy Exp $";
+char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.21 2004-04-14 22:36:58 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -226,8 +226,7 @@ void Intercept_UnInit(void)
 
 void Intercept_CreateTable(unsigned long *pInterceptTable[],int Span,int ReadWrite)
 {
-  unsigned int Address, LowAddress, HiAddress;
-  int i;
+  unsigned int Address, LowAddress, HiAddress, i;
 
   /* Scan each hardware address */
   for(Address=0xff8000; Address<=0xffffff; Address++)
@@ -749,7 +748,7 @@ static int timerd_tos_value;
 /* INTERCEPT_TIMERD_DATA(0xfffa25 byte) */
 void Intercept_TimerDData_ReadByte(void)
 {
- int pc = m68k_getpc();
+ Uint32 pc = m68k_getpc();
  if (pc >= TosAddress && pc <= TosAddress + TosSize) {
    STRam[0xfffa25] = timerd_tos_value; // trick the tos to believe it was changed
  } else {
@@ -876,7 +875,7 @@ void Intercept_LineWidth_WriteByte(void)
   /* Nothing... */
 }
 
-void Intercept_Colour_WriteWord(unsigned long addr)
+static void Intercept_Colour_WriteWord(Uint32 addr)
 {
  if( !bUseHighRes )                                 /* Don't store if hi-res */
   {
@@ -1215,7 +1214,7 @@ void Intercept_TimerCData_WriteByte(void)
 /* INTERCEPT_TIMERD_DATA(0xfffa25 byte) */
 void Intercept_TimerDData_WriteByte(void)
 {
- int pc = m68k_getpc();
+ Uint32 pc = m68k_getpc();
  if (pc >= TosAddress && pc <= TosAddress + TosSize) {
    timerd_tos_value = STRam[0xfffa25];
    STRam[0xfffa25] = 0x64; // slow down the useless interrupt from the bios for timer d

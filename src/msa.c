@@ -1,17 +1,27 @@
 /*
-  Hatari
+  Hatari - msa.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   MSA Disc support
 */
+char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.4 2004-04-14 22:36:58 thothy Exp $";
+
+#include <SDL_endian.h>
 
 #include "main.h"
 #include "file.h"
 #include "floppy.h"
 #include "memAlloc.h"
 #include "misc.h"
-#include "stMemory.h"
+
+#include "uae-cpu/sysdeps.h"
+#include "uae-cpu/maccess.h"
+
 
 #define SAVE_TO_MSA_IMAGES
+
 
 /*
     .MSA FILE FORMAT
@@ -106,12 +116,12 @@ int MSA_UnCompress(unsigned char *pMSAFile,unsigned char *pBuffer)
 
   /* Is an '.msa' file?? Check header */
   pMSAHeader = (MSAHEADERSTRUCT *)pMSAFile;
-  if (pMSAHeader->ID==STMemory_Swap68000Int(0x0E0F)) {
+  if (pMSAHeader->ID == SDL_SwapBE16(0x0E0F)) {
     /* First swap 'header' words around to PC format - easier later on */
-    pMSAHeader->SectorsPerTrack = STMemory_Swap68000Int(pMSAHeader->SectorsPerTrack);
-    pMSAHeader->Sides = STMemory_Swap68000Int(pMSAHeader->Sides);
-    pMSAHeader->StartingTrack = STMemory_Swap68000Int(pMSAHeader->StartingTrack);
-    pMSAHeader->EndingTrack = STMemory_Swap68000Int(pMSAHeader->EndingTrack);
+    pMSAHeader->SectorsPerTrack = SDL_SwapBE16(pMSAHeader->SectorsPerTrack);
+    pMSAHeader->Sides = SDL_SwapBE16(pMSAHeader->Sides);
+    pMSAHeader->StartingTrack = SDL_SwapBE16(pMSAHeader->StartingTrack);
+    pMSAHeader->EndingTrack = SDL_SwapBE16(pMSAHeader->EndingTrack);
 
     /* Set pointers */
     pImageBuffer = (unsigned char *)pBuffer;
@@ -121,7 +131,7 @@ int MSA_UnCompress(unsigned char *pMSAFile,unsigned char *pBuffer)
     for(Track=pMSAHeader->StartingTrack; Track<(pMSAHeader->EndingTrack+1); Track++) {
       for(Side=0; Side<(pMSAHeader->Sides+1); Side++) {
         /* Uncompress MSA Track, first check if is not compressed */
-        DataLength = STMemory_Swap68000Int(*(short int *)pMSAImageBuffer);
+        DataLength = do_get_mem_word((uae_u16 *)pMSAImageBuffer);
         pMSAImageBuffer += sizeof(short int);
         if (DataLength==(NUMBYTESPERSECTOR*pMSAHeader->SectorsPerTrack)) {
           /* No compression on track, simply copy and continue */
@@ -140,7 +150,7 @@ int MSA_UnCompress(unsigned char *pMSAFile,unsigned char *pBuffer)
             }
             else {
               Data = *pMSAImageBuffer++;                /* Byte to copy */
-              RunLength = STMemory_Swap68000Int(*(short int *)pMSAImageBuffer);  /* For length */
+              RunLength = do_get_mem_word((uae_u16 *)pMSAImageBuffer);  /* For length */
               /* Limit length to size of track, incorrect images may overflow */
               if ( (RunLength+NumBytesUnCompressed)>(NUMBYTESPERSECTOR*pMSAHeader->SectorsPerTrack) )
               {
@@ -254,13 +264,13 @@ BOOL MSA_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
 
   /* Store header */
   pMSAHeader = (MSAHEADERSTRUCT *)pMSAImageBuffer;
-  pMSAHeader->ID = STMemory_Swap68000Int(0x0E0F);
+  pMSAHeader->ID = SDL_SwapBE16(0x0E0F);
   Floppy_FindDiscDetails(pBuffer,ImageSize,&nSectorsPerTrack,&nSides);
-  pMSAHeader->SectorsPerTrack = STMemory_Swap68000Int(nSectorsPerTrack);
-  pMSAHeader->Sides = STMemory_Swap68000Int(nSides-1);
-  pMSAHeader->StartingTrack = STMemory_Swap68000Int(0);
+  pMSAHeader->SectorsPerTrack = SDL_SwapBE16(nSectorsPerTrack);
+  pMSAHeader->Sides = SDL_SwapBE16(nSides-1);
+  pMSAHeader->StartingTrack = SDL_SwapBE16(0);
   nTracks = ((ImageSize / NUMBYTESPERSECTOR) / nSectorsPerTrack) / nSides;
-  pMSAHeader->EndingTrack = STMemory_Swap68000Int(nTracks-1);
+  pMSAHeader->EndingTrack = SDL_SwapBE16(nTracks-1);
 
   /* Compress image */
   pMSABuffer = pMSAImageBuffer + sizeof(MSAHEADERSTRUCT);
@@ -289,7 +299,7 @@ BOOL MSA_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
           /* Store run! */
           *pMSABuffer++ = 0xE5;               /* Marker */
           *pMSABuffer++ = *pImageBuffer;      /* Byte, and follow with 16-bit length */
-          *(short int *)pMSABuffer = STMemory_Swap68000Int(nBytesRun);
+          do_put_mem_word((uae_u16 *)pMSABuffer, nBytesRun);
           pMSABuffer += sizeof(short int);
           pImageBuffer += nBytesRun;
           nCompressedBytes += 4;
@@ -300,12 +310,12 @@ BOOL MSA_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
       /* Is compressed track smaller than the original? */
       if (nCompressedBytes<(NUMBYTESPERSECTOR*nSectorsPerTrack)) {
         /* Yes, store size */
-        *pMSADataLength = STMemory_Swap68000Int(nCompressedBytes);
+        do_put_mem_word(pMSADataLength, nCompressedBytes);
       }
       else {
         /* No, just store uncompressed track */
-        *pMSADataLength++ = STMemory_Swap68000Int(NUMBYTESPERSECTOR*nSectorsPerTrack);
-        pMSABuffer = (unsigned char *)pMSADataLength;
+        do_put_mem_word(pMSADataLength, NUMBYTESPERSECTOR*nSectorsPerTrack);
+        pMSABuffer = ((unsigned char *)pMSADataLength) + 2;
         pImageBuffer = pBuffer + (nBytesPerTrack*Side) + ((nBytesPerTrack*nSides)*Track);
         memcpy(pMSABuffer,pImageBuffer,(NUMBYTESPERSECTOR*nSectorsPerTrack));
         pMSABuffer += (NUMBYTESPERSECTOR*nSectorsPerTrack);

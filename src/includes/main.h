@@ -187,6 +187,7 @@ extern BOOL bEnableDebug;
 extern BOOL bEmulationActive;
 extern char szBootDiscImage[FILENAME_MAX];
 extern char szWorkingDir[FILENAME_MAX];
+extern Uint8 STRam[16*1024*1024];
 
 extern void Main_MemorySnapShot_Capture(BOOL bSave);
 extern void Main_SysError(char *Error,char *Title);

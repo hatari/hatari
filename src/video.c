@@ -9,9 +9,10 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.20 2003-10-18 07:46:55 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.21 2004-04-14 22:36:58 thothy Exp $";
 
 #include <SDL.h>
+#include <SDL_endian.h>
 
 #include "main.h"
 #include "debug.h"
@@ -424,7 +425,7 @@ void Video_StoreFirstLinePalette(void)
 
   pp2 = (unsigned short int *)((unsigned long)STRam+0xff8240);
   for(i=0; i<16; i++)
-    HBLPalettes[i] = STMemory_Swap68000Int(*pp2++);
+    HBLPalettes[i] = SDL_SwapBE16(*pp2++);
   /* And set mask flag with palette and resolution */
   HBLPaletteMasks[0] = (PALETTEMASK_RESOLUTION|PALETTEMASK_PALETTE) | (((unsigned long)STMemory_ReadByte(0xff8260)&0x3)<<16);
 }

@@ -33,8 +33,6 @@ typedef int (*check_func)(uaecptr, uae_u32) REGPARAM;
 
 extern char *address_space, *good_address_map;
 
-#undef DIRECT_MEMFUNCS_SUCCESSFUL
-
 
 typedef struct {
     /* These ones should be self-explanatory... */
@@ -91,48 +89,43 @@ extern void byteput(uaecptr addr, uae_u32 b);
 
 #endif
 
-#ifndef MD_HAVE_MEM_1_FUNCS
 
-#define longget_1 longget
-#define wordget_1 wordget
-#define byteget_1 byteget
-#define longput_1 longput
-#define wordput_1 wordput
-#define byteput_1 byteput
-
-#endif
-
-STATIC_INLINE uae_u32 get_long(uaecptr addr)
+static inline uae_u32 get_long(uaecptr addr)
 {
-    return longget_1(addr);
-}
-STATIC_INLINE uae_u32 get_word(uaecptr addr)
-{
-    return wordget_1(addr);
-}
-STATIC_INLINE uae_u32 get_byte(uaecptr addr)
-{
-    return byteget_1(addr);
-}
-STATIC_INLINE void put_long(uaecptr addr, uae_u32 l)
-{
-    longput_1(addr, l);
-}
-STATIC_INLINE void put_word(uaecptr addr, uae_u32 w)
-{
-    wordput_1(addr, w);
-}
-STATIC_INLINE void put_byte(uaecptr addr, uae_u32 b)
-{
-    byteput_1(addr, b);
+    return longget(addr);
 }
 
-STATIC_INLINE uae_u8 *get_real_address(uaecptr addr)
+static inline uae_u32 get_word(uaecptr addr)
+{
+    return wordget(addr);
+}
+
+static inline uae_u32 get_byte(uaecptr addr)
+{
+    return byteget(addr);
+}
+
+static inline void put_long(uaecptr addr, uae_u32 l)
+{
+    longput(addr, l);
+}
+
+static inline void put_word(uaecptr addr, uae_u32 w)
+{
+    wordput(addr, w);
+}
+
+static inline void put_byte(uaecptr addr, uae_u32 b)
+{
+    byteput(addr, b);
+}
+
+static inline uae_u8 *get_real_address(uaecptr addr)
 {
     return get_mem_bank(addr).xlateaddr(addr);
 }
 
-STATIC_INLINE int valid_address(uaecptr addr, uae_u32 size)
+static inline int valid_address(uaecptr addr, uae_u32 size)
 {
     return get_mem_bank(addr).check(addr, size);
 }

@@ -47,8 +47,5 @@ static __inline__ void do_put_mem_byte(uae_u8 *a, uae_u8 v)
 #define call_mem_get_func(func, addr) ((*func)(addr))
 #define call_mem_put_func(func, addr, v) ((*func)(addr, v))
 
-#undef NO_INLINE_MEMORY_ACCESS
-#undef MD_HAVE_MEM_1_FUNCS
-
 
 #endif /* UAE_MACCESS_H */

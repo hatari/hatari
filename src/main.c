@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.52 2004-04-06 16:20:15 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.53 2004-04-14 22:36:58 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -55,7 +55,7 @@ BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
 char szBootDiscImage[FILENAME_MAX];
 char szWorkingDir[FILENAME_MAX];          /* Working directory */
 
-unsigned char STRam[16*1024*1024];        /* This is our ST Ram, includes all TOS/hardware areas for ease */
+Uint8 STRam[16*1024*1024];                /* This is our ST Ram, includes all TOS/hardware areas for ease */
 
 
 

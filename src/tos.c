@@ -15,9 +15,9 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-static char rcsid[] = "Hatari $Id: tos.c,v 1.17 2003-04-02 20:53:35 emanne Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.18 2004-04-14 22:36:58 thothy Exp $";
 
-#include <SDL_types.h>
+#include <SDL_endian.h>
 
 #include "main.h"
 #include "cart.h"
@@ -276,7 +276,7 @@ static void TOS_FixRom(void)
       }
       else
       {
-        fprintf(stderr, "Failed to apply TOS patch '%s' at %x (expected %x, found %lx).\n",
+        fprintf(stderr, "Failed to apply TOS patch '%s' at %x (expected %x, found %x).\n",
                 pPatch->pszName, pPatch->Address, pPatch->OldData, STMemory_ReadLong(pPatch->Address));
         nBadPatches += 1;
       }
@@ -370,7 +370,7 @@ int TOS_LoadImage(void)
   if(pTosFile && TosSize>0)
   {
     /* Check for RAM TOS images first: */
-    if(STMemory_Swap68000Long(*(Uint32 *)pTosFile) == 0x46FC2700)
+    if(SDL_SwapBE32(*(Uint32 *)pTosFile) == 0x46FC2700)
     {
       fprintf(stderr, "Warning: Detected a RAM TOS - this will probably not work very well!\n");
       /* RAM TOS images have a 256 bytes loader function before the real image
@@ -385,8 +385,8 @@ int TOS_LoadImage(void)
     }
 
     /* Now, look at start of image to find Version number and address */
-    TosVersion = STMemory_Swap68000Int(*(Uint16 *)((Uint32)pTosFile+2));
-    TosAddress = STMemory_Swap68000Long(*(Uint32 *)((Uint32)pTosFile+8));
+    TosVersion = SDL_SwapBE16(*(Uint16 *)((Uint32)pTosFile+2));
+    TosAddress = SDL_SwapBE32(*(Uint32 *)((Uint32)pTosFile+8));
 
     /* Check for reasonable TOS version: */
     if(TosVersion<0x100 || TosVersion>0x500 || TosSize>1024*1024L
