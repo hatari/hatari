@@ -259,15 +259,6 @@ void Convert_StartFrame(void)
  ebx &= 0x000000ff; \
  ecx = Remap_2_Planes[ebx]; \
 }
-/*
-	__asm	and		ebx,0x0f0f0f0f \
-	__asm	mov		eax,ebx \
-	__asm	shr		eax,12 \
-	__asm	or		eax,ebx \
-	__asm	mov		ebx,eax \
-	__asm	and		ebx,0x000000ff \
-	__asm	mov		ecx,Remap_2_Planes[ebx*4]
-*/
 
 #define MED_BUILD_PIXELS_1 \
 { \
@@ -276,12 +267,6 @@ void Convert_StartFrame(void)
  ebx &= 0x000000ff; \
  ecx = Remap_2_Planes[ebx]; \
 }
-/*
-	__asm	mov		ebx,eax \
-	__asm	shr		ebx,8 \
-	__asm	and		ebx,0x000000ff \
-	__asm	mov		ecx,Remap_2_Planes[ebx*4]
-*/
 
 #define MED_BUILD_PIXELS_2 \
 { \
@@ -295,17 +280,6 @@ void Convert_StartFrame(void)
  ebx &= 0x000000ff; \
  ecx = Remap_2_Planes[ebx]; \
 }
-/*
-	__asm	mov		ebx,[edi] \
-	__asm	and		ebx,0xf0f0f0f0 \
-	__asm	shr		ebx,4 \
-	__asm	mov		eax,ebx \
-	__asm	shr		ebx,12 \
-	__asm	or		eax,ebx \
-	__asm	mov		ebx,eax \
-	__asm	and		ebx,0x000000ff \
-	__asm	mov		ecx,Remap_2_Planes[ebx*4]
-*/
 
 #define MED_BUILD_PIXELS_3 \
 { \
@@ -314,15 +288,75 @@ void Convert_StartFrame(void)
  ebx &= 0x000000ff; \
  ecx = Remap_2_Planes[ebx]; \
 }
-/*
-	__asm	mov		ebx,eax \
-	__asm	shr		ebx,8 \
-	__asm	and		ebx,0x000000ff \
-	__asm	mov		ecx,Remap_2_Planes[ebx*4]
-*/
 
 /* Plot Medium Resolution(640xH) 16-Bit pixels */
 #define PLOT_MED_640_16BIT(offset) \
+{ \
+ ebx = ecx; \
+ ebx &= 0x000000ff; \
+ ecx >>= 8; \
+ ebx = STRGBPalette[ebx]; \
+ esi[offset] = (Uint16)ebx; \
+ ebx = ecx; \
+ ebx &= 0x000000ff; \
+ ecx >>= 8; \
+ ebx = STRGBPalette[ebx]; \
+ esi[offset+1] = (Uint16)ebx; \
+ ebx = ecx; \
+ ebx &= 0x000000ff; \
+ ecx >>= 8; \
+ ebx = STRGBPalette[ebx]; \
+ esi[offset+2] = (Uint16)ebx; \
+ ebx = ecx; \
+ ebx &= 0x000000ff; \
+ ebx = STRGBPalette[ebx]; \
+ esi[offset+3] = (Uint16)ebx; \
+}
+
+/* Plot Medium Resolution(640xH) 16-Bit pixels (Double on Y) */
+#define PLOT_MED_640_16BIT_DOUBLE_Y(offset) \
+{ \
+ ebx = ecx; \
+ ebx &= 0x000000ff; \
+ ecx >>= 8; \
+ ebx = STRGBPalette[ebx]; \
+ esi[offset] = (Uint16)ebx; \
+ esi[offset+(int)ebp/2] = (Uint16)ebx; \
+ ebx = ecx; \
+ ebx &= 0x000000ff; \
+ ecx >>= 8; \
+ ebx = STRGBPalette[ebx]; \
+ esi[offset+1] = (Uint16)ebx; \
+ esi[offset+1+(int)ebp/2] = (Uint16)ebx; \
+ ebx = ecx; \
+ ebx &= 0x000000ff; \
+ ecx >>= 8; \
+ ebx = STRGBPalette[ebx]; \
+ esi[offset+2] = (Uint16)ebx; \
+ esi[offset+2+(int)ebp/2] = (Uint16)ebx; \
+ ebx = ecx; \
+ ebx &= 0x000000ff; \
+ ebx = STRGBPalette[ebx]; \
+ esi[offset+3] = (Uint16)ebx; \
+ esi[offset+3+(int)ebp/2] = (Uint16)ebx; \
+}
+
+
+/* Plot Spectrum512 Resolution(320xH) 16-Bit pixels */
+#define PLOT_SPEC512_LEFT_LOW_320_16BIT(offset)	\
+{ \
+ ecx &= 0x000000ff; \
+ ebx = STRGBPalette[ecx]; \
+ esi[offset] = (Uint16)ebx; \
+}
+/*
+	__asm	and		ecx,0x000000ff \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ecx*4] \
+	__asm	mov		offset[esi],bx
+*/
+
+/* Plot Spectrum512 Resolution(320xH) 16-Bit pixels */
+#define PLOT_SPEC512_MID_320_16BIT(offset) \
 { \
  ebx = ecx; \
  ebx &= 0x000000ff; \
@@ -366,32 +400,24 @@ void Convert_StartFrame(void)
 	__asm	mov		offset[esi+6],bx
 */
 
-/* Plot Medium Resolution(640xH) 16-Bit pixels (Double on Y) */
-#define PLOT_MED_640_16BIT_DOUBLE_Y(offset) \
+/* Plot Spectrum512 Resolution(320xH) 16-Bit pixels */
+#define PLOT_SPEC512_END_LOW_320_16BIT(offset) \
 { \
  ebx = ecx; \
  ebx &= 0x000000ff; \
  ecx >>= 8; \
  ebx = STRGBPalette[ebx]; \
  esi[offset] = (Uint16)ebx; \
- esi[offset+(int)ebp/2] = (Uint16)ebx; \
  ebx = ecx; \
  ebx &= 0x000000ff; \
  ecx >>= 8; \
  ebx = STRGBPalette[ebx]; \
  esi[offset+1] = (Uint16)ebx; \
- esi[offset+1+(int)ebp/2] = (Uint16)ebx; \
  ebx = ecx; \
  ebx &= 0x000000ff; \
  ecx >>= 8; \
  ebx = STRGBPalette[ebx]; \
  esi[offset+2] = (Uint16)ebx; \
- esi[offset+2+(int)ebp/2] = (Uint16)ebx; \
- ebx = ecx; \
- ebx &= 0x000000ff; \
- ebx = STRGBPalette[ebx]; \
- esi[offset+3] = (Uint16)ebx; \
- esi[offset+3+(int)ebp/2] = (Uint16)ebx; \
 }
 /*
 	__asm	mov		ebx,ecx \
@@ -399,25 +425,18 @@ void Convert_StartFrame(void)
 	__asm	shr		ecx,8 \
 	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
 	__asm	mov		offset[esi],bx \
-	__asm	mov		offset[esi+ebp],bx \
 	__asm	mov		ebx,ecx \
 	__asm	and		ebx,0x000000ff \
 	__asm	shr		ecx,8 \
 	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
 	__asm	mov		offset[esi+2],bx \
-	__asm	mov		offset[esi+2+ebp],bx \
 	__asm	mov		ebx,ecx \
 	__asm	and		ebx,0x000000ff \
 	__asm	shr		ecx,8 \
 	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+4],bx \
-	__asm	mov		offset[esi+4+ebp],bx \
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+6],bx \
-	__asm	mov		offset[esi+6+ebp],bx
+	__asm	mov		offset[esi+4],bx
 */
+
 
 
 /* Conversion routines */
