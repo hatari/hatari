@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-static char rcsid[] = "Hatari $Id: screen.c,v 1.20 2003-02-02 22:41:34 thothy Exp $";
+static char rcsid[] = "Hatari $Id: screen.c,v 1.21 2003-03-23 19:20:30 thothy Exp $";
 
 #include <SDL.h>
 
@@ -75,7 +75,7 @@ void Screen_Init(void)
   int i;
 
   /* Clear frame buffer structures and set current pointer */
-  Memory_Clear(FrameBuffers,sizeof(FRAMEBUFFER)*2);
+  Memory_Clear(FrameBuffers, NUM_FRAMEBUFFERS * sizeof(FRAMEBUFFER));
 
   /* Allocate previous screen check workspace. We are going to double-buffer a double-buffered screen. Oh. */
   for(i=0; i<NUM_FRAMEBUFFERS; i++)
@@ -120,11 +120,11 @@ void Screen_UnInit(void)
   int i;
 
   /* Free memory used for copies */
-  for(i=0; i<NUM_FRAMEBUFFERS; i++) {
+  for(i=0; i<NUM_FRAMEBUFFERS; i++)
+  {
     Memory_Free(FrameBuffers[i].pSTScreen);
     Memory_Free(FrameBuffers[i].pSTScreenCopy);
   }
-
 }
 
 
@@ -195,7 +195,7 @@ void Screen_SetupRGBTable(void)
     for(g=0; g<8; g++)
     {
       for(b=0; b<8; b++)
-	  {
+      {
         STColour = (r<<8) | (g<<4) | (b);      /* ST format 0x777 */
 
         /*RGBColour = (r<<12) | (g<<7) | (b<<2);*/  /* format 0x1555 */
@@ -225,12 +225,12 @@ void Screen_EnterFullScreen(void)
     Screen_SetDrawModes();        /* Set draw modes(store which modes to use!) */
 
     if (bUseVDIRes)
-	{
+    {
       newsdlscrn = SDL_SetVideoMode(ScreenDrawVDIFullScreen[STRes].Width, ScreenDrawVDIFullScreen[STRes].Height,
                                  ScreenDrawVDIFullScreen[STRes].BitDepth, sdlvmode);
     }
     else
-	{
+    {
       newsdlscrn = SDL_SetVideoMode(ScreenDrawFullScreen[STRes].Width, ScreenDrawFullScreen[STRes].Height,
                                  ScreenDrawFullScreen[STRes].BitDepth, sdlvmode);
     }
@@ -245,16 +245,15 @@ void Screen_EnterFullScreen(void)
       pScreenBitmap = newsdlscrn->pixels;
       bInFullScreen = TRUE;
 
-      Screen_SetupRGBTable();       /* Set full screen RGB */
-      Screen_SetFullUpdate();       /* Cause full update of screen */
-      Screen_ClearScreen();         /* Black out Window's bitmap as will be invalid when return */
+      Screen_SetFullUpdate();           /* Cause full update of screen */
+      /* Re-init screen palette: */
+      if(sdlscrn->format->BitsPerPixel == 8)
+        Screen_Handle8BitPalettes();    /* Initialize new 8 bit palette */
+      else
+        Screen_SetupRGBTable();         /* Set fullscreen RGB table*/
+      Screen_ClearScreen();         /* Black out screen bitmap as will be invalid when return */
     }
     Main_UnPauseEmulation();        /* And off we go... */
-
-    if(ScreenDrawFullScreen[STRes].BitDepth==8)
-    {
-      Screen_Handle8BitPalettes();
-    }
 
     SDL_WM_GrabInput(SDL_GRAB_ON);  /* Grab mouse pointer in fullscreen */
   }
@@ -267,7 +266,8 @@ void Screen_EnterFullScreen(void)
 */
 void Screen_ReturnFromFullScreen(void)
 {
-  if (bInFullScreen) {
+  if (bInFullScreen)
+  {
     Main_PauseEmulation();        /* Hold things... */
     SDL_Delay(20);                /* To give sound time to clear! */
 
@@ -359,7 +359,8 @@ void Screen_SetDrawModes(void)
   ScreenDrawFullScreen[ST_LOWMEDIUM_MIX_RES] = *pScreenDisplay->pLowMediumMixRes;
 
   /* And VDI(8-bit), according to select resolution */
-  switch(VDIWidth) {
+  switch(VDIWidth)
+  {
     case 640:
       ScreenDrawVDIFullScreen[ST_LOW_RES] = VDIScreenDraw_640x480[0];
       ScreenDrawVDIFullScreen[ST_MEDIUM_RES] = VDIScreenDraw_640x480[1];
@@ -448,11 +449,15 @@ void Screen_DidResolutionChange(void)
         newsdlscrn = SDL_SetVideoMode(ScreenDrawFullScreen[STRes].Width, ScreenDrawFullScreen[STRes].Height,
                                ScreenDrawFullScreen[STRes].BitDepth, SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE);
       }
+
       if( newsdlscrn )
       {
         sdlscrn = newsdlscrn;
-        if(ScreenDrawFullScreen[STRes].BitDepth>8)
-          Screen_SetupRGBTable();
+        /* Re-init screen palette: */
+        if(sdlscrn->format->BitsPerPixel == 8)
+          Screen_Handle8BitPalettes();  /* Initialize new 8 bit palette */
+        else
+          Screen_SetupRGBTable();       /* Set fullscreen RGB table */
       }
       else
       {
@@ -507,7 +512,8 @@ void Screen_CompareResolution(int y, int *pUpdateLine, BOOL *pbLowMedMix)
   int Resolution;
 
   /* Check if wrote to resolution register */
-  if (HBLPaletteMasks[y]&PALETTEMASK_RESOLUTION) {  /* See 'Intercept_ShifterMode_WriteByte' */
+  if (HBLPaletteMasks[y]&PALETTEMASK_RESOLUTION)  /* See 'Intercept_ShifterMode_WriteByte' */
+  {
     Resolution = (HBLPaletteMasks[y]>>16)&0x1;
     /* Have used any low/medium res mix? */
     if (Resolution!=(STRes&0x1))
@@ -520,6 +526,7 @@ void Screen_CompareResolution(int y, int *pUpdateLine, BOOL *pbLowMedMix)
   }
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
   Check to see if palette changes cause screen update and keep 'HBLPalette[]' up-to-date
@@ -530,14 +537,17 @@ void Screen_ComparePalette(int y, int *pUpdateLine)
   int i;
 
   /* Did write to palette in this or previous frame? */
-  if (((HBLPaletteMasks[y]|pFrameBuffer->HBLPaletteMasks[y])&PALETTEMASK_PALETTE)!=0) {
+  if (((HBLPaletteMasks[y]|pFrameBuffer->HBLPaletteMasks[y])&PALETTEMASK_PALETTE)!=0)
+  {
     /* Check and update ones which changed */
-    for(i=0; i<16; i++) {
+    for(i=0; i<16; i++)
+    {
       if (HBLPaletteMasks[y]&(1<<i))        /* Update changes in ST palette */
         HBLPalette[i] = HBLPalettes[(y*16)+i];
     }
     /* Now check with same palette from previous frame for any differences(may be changing palette back) */
-    for(i=0; (i<16) && (!bPaletteChanged); i++) {
+    for(i=0; (i<16) && (!bPaletteChanged); i++)
+    {
       if (HBLPalette[i]!=pFrameBuffer->HBLPalettes[(y*16)+i])
         bPaletteChanged = TRUE;
     }
@@ -547,6 +557,7 @@ void Screen_ComparePalette(int y, int *pUpdateLine)
       *pUpdateLine &= ~PALETTEMASK_UPDATEPAL;
   }
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -562,19 +573,23 @@ int Screen_ComparePaletteMask(void)
   int y;
 
   /* Set for monochrome? */
-  if (bUseHighRes) {
+  if (bUseHighRes)
+  {
     OverscanMode = OVERSCANMODE_NONE;
-    /* Colours changed? */
-    if (HBLPalettes[0]!=PrevHBLPalette[0])
-      pFrameBuffer->bFullUpdate = TRUE;
 
     /* Just copy mono colours */
-    if (HBLPalettes[0]&0x777) {
+    if (HBLPalettes[0]&0x777)
+    {
       HBLPalettes[0] = 0x777;  HBLPalettes[1] = 0x000;
     }
-    else {
+    else
+    {
       HBLPalettes[0] = 0x000;  HBLPalettes[1] = 0x777;
     }
+
+    /* Colors changed? */
+    if (HBLPalettes[0] != PrevHBLPalette[0])
+      pFrameBuffer->bFullUpdate = TRUE;
 
     /* Set bit to flag 'full update' */
     if (pFrameBuffer->bFullUpdate)
@@ -584,11 +599,12 @@ int Screen_ComparePaletteMask(void)
   }
 
   /* Use VDI resolution? */
-  if (bUseVDIRes) {
+  if (bUseVDIRes)
+  {
     /* Force to VDI resolution screen, without overscan */
     STRes = VDIRes;
 
-    /* Colours changed? */
+    /* Colors changed? */
     if (HBLPalettes[0]!=PrevHBLPalette[0])
       pFrameBuffer->bFullUpdate = TRUE;
 
@@ -599,15 +615,18 @@ int Screen_ComparePaletteMask(void)
       ScrUpdateFlag = 0x00000000;
   }
   /* Are in Mono? Force to monochrome and no overscan */
-  else if (bUseHighRes) {
+  else if (bUseHighRes)
+  {
     /* Force to standard hi-resolution screen, without overscan */
     STRes = ST_HIGH_RES;
   }
-  else {  /* Full colour */
+  else    /* Full colour */
+  {
     /* Get resolution */
     STRes = (HBLPaletteMasks[0]>>16)&0x3;
     /* Do all lines - first is tagged as full-update */
-    for(y=0; y<NUM_VISIBLE_LINES; y++) {
+    for(y=0; y<NUM_VISIBLE_LINES; y++)
+    {
       /* Find any resolution/palette change and update palette/mask buffer */
       /* ( LineUpdate has top two bits set to say if line needs updating due to palette or resolution change ) */
       Screen_CompareResolution(y,&LineUpdate,&bLowMedMix);
@@ -638,13 +657,22 @@ void Screen_CreatePalette(void)
   SDL_Color sdlColors[16];
   int i, j;
 
+fprintf(stderr,"Creating palette %x\n",HBLPalettes[0]);
   if(bUseHighRes)
   {
     /* Colors for monochrome screen mode emulation */
-    sdlColors[0].r = sdlColors[0].g = sdlColors[0].b = 255;
-    sdlColors[1].r = sdlColors[1].g = sdlColors[1].b = 0;
-    SDL_SetColors(sdlscrn, sdlColors, 0, 2);
+    if(HBLPalettes[0])
+    {
+      sdlColors[0].r = sdlColors[0].g = sdlColors[0].b = 255;
+      sdlColors[1].r = sdlColors[1].g = sdlColors[1].b = 0;
+    }
+    else
+    {
+      sdlColors[0].r = sdlColors[0].g = sdlColors[0].b = 0;
+      sdlColors[1].r = sdlColors[1].g = sdlColors[1].b = 255;
+    }
     SDL_SetColors(sdlscrn, sdlColors, 10, 2);
+    /*SDL_SetColors(sdlscrn, sdlColors, 0, 2);*/
   }
   else
   {
@@ -704,6 +732,7 @@ void Screen_Handle8BitPalettes(void)
   memcpy(PrevHBLPalette,HBLPalettes,sizeof(short int)*16);
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
   Update Palette Mask to show 'full-update' required. This is usually done after a resolution change
@@ -716,6 +745,7 @@ void Screen_SetFullUpdateMask(void)
   for(y=0; y<NUM_VISIBLE_LINES; y++)
     HBLPaletteMasks[y] |= PALETTEMASK_UPDATEFULL;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -765,7 +795,7 @@ void Screen_SetWindowConvertDetails(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Set details for ST screen conversion(Full-Screen version)
+  Set details for ST screen conversion (Full-Screen version)
 */
 void Screen_SetFullScreenConvertDetails(void)
 {
@@ -774,35 +804,33 @@ void Screen_SetFullScreenConvertDetails(void)
   /* Reset Double Y, used for window medium res' and in full screen */
   bScrDoubleY = FALSE;
 
-  if (bInFullScreen) {
-    /* Select screen draw for standard or VDI display */
-    if (bUseVDIRes)
-      pScreenDraw = &ScreenDrawVDIFullScreen[VDIRes];
-    else
-      pScreenDraw = &ScreenDrawFullScreen[STRes];
+  /* Select screen draw for standard or VDI display */
+  if (bUseVDIRes)
+    pScreenDraw = &ScreenDrawVDIFullScreen[VDIRes];
+  else
+    pScreenDraw = &ScreenDrawFullScreen[STRes];
 
-    /* Only draw what can fit into full-screen and centre on Y */
-    STScreenLeftSkipBytes = pScreenDraw->Overscan[OverscanMode].STScreenLeftSkipBytes;
-    STScreenWidthBytes = pScreenDraw->Overscan[OverscanMode].STScreenWidthBytes;
+  /* Only draw what can fit into full-screen and centre on Y */
+  STScreenLeftSkipBytes = pScreenDraw->Overscan[OverscanMode].STScreenLeftSkipBytes;
+  STScreenWidthBytes = pScreenDraw->Overscan[OverscanMode].STScreenWidthBytes;
 
-    STScreenStartHorizLine = pScreenDraw->Overscan[OverscanMode].STScreenStartHorizLine;
-    STScreenEndHorizLine = pScreenDraw->Overscan[OverscanMode].STScreenEndHorizLine;
+  STScreenStartHorizLine = pScreenDraw->Overscan[OverscanMode].STScreenStartHorizLine;
+  STScreenEndHorizLine = pScreenDraw->Overscan[OverscanMode].STScreenEndHorizLine;
 
-    pSTScreen = pFrameBuffer->pSTScreen;          /* Source in ST memory */
-    pSTScreenCopy = pFrameBuffer->pSTScreenCopy;  /* Previous ST screen */
-    PCScreenBytesPerLine = sdlscrn->pitch;
-    pPCScreenDest = (unsigned char *)sdlscrn->pixels;  /* Destination PC screen */
-    /* Get start of line on screen according to overscan (scale if double line mode) */
-    pPCScreenDest += pScreenDraw->Overscan[OverscanMode].PCStartHorizLine
-       *pScreenDraw->VertPixelsPerLine*PCScreenBytesPerLine;
-    /* And offset on X */
-    pPCScreenDest += pScreenDraw->Overscan[OverscanMode].PCStartXOffset;
-    pHBLPalettes = pFrameBuffer->HBLPalettes;
+  pSTScreen = pFrameBuffer->pSTScreen;          /* Source in ST memory */
+  pSTScreenCopy = pFrameBuffer->pSTScreenCopy;  /* Previous ST screen */
+  PCScreenBytesPerLine = sdlscrn->pitch;
+  pPCScreenDest = (unsigned char *)sdlscrn->pixels;  /* Destination PC screen */
+  /* Get start of line on screen according to overscan (scale if double line mode) */
+  pPCScreenDest += pScreenDraw->Overscan[OverscanMode].PCStartHorizLine
+      * pScreenDraw->VertPixelsPerLine*PCScreenBytesPerLine;
+  /* And offset on X */
+  pPCScreenDest += pScreenDraw->Overscan[OverscanMode].PCStartXOffset;
+  pHBLPalettes = pFrameBuffer->HBLPalettes;
 
-    /* Is non-interlaced? May need to double up on Y */
-    if (!ConfigureParams.Screen.Advanced.bInterlacedFullScreen)
-      bScrDoubleY = TRUE;
-  }
+  /* Is non-interlaced? May need to double up on Y */
+  if (!ConfigureParams.Screen.Advanced.bInterlacedFullScreen)
+    bScrDoubleY = TRUE;
 }
 
 
@@ -812,8 +840,10 @@ void Screen_SetFullScreenConvertDetails(void)
 */
 BOOL Screen_Lock(void)
 {
-  if( SDL_MUSTLOCK(sdlscrn) ) {
-    if( SDL_LockSurface(sdlscrn) ) {
+  if(SDL_MUSTLOCK(sdlscrn))
+  {
+    if(SDL_LockSurface(sdlscrn))
+    {
       Screen_ReturnFromFullScreen();   /* All OK? If not need to jump back to a window */
       return(FALSE);
     }
@@ -841,13 +871,15 @@ void Screen_UnLock(void)
 void Screen_Blit(BOOL bSwapScreen)
 {
   /* Rectangle areas to Blit according to if overscan is enabled or not (source always includes all borders) */
-  static SDL_Rect SrcWindowBitmapSizes[] = {
+  static SDL_Rect SrcWindowBitmapSizes[] =
+  {
     { OVERSCAN_LEFT,OVERSCAN_TOP, 320,200 },                /* ST_LOW_RES */
     { (OVERSCAN_LEFT<<1),(OVERSCAN_TOP<<1), 640,400 },      /* ST_MEDIUM_RES */
     { 0,0, 640,400 },                                       /* ST_HIGH_RES */
     { (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400 },   /* ST_LOWMEDIUM_MIX_RES */
   };
-  static SDL_Rect SrcWindowOverscanBitmapSizes[] = {
+  static SDL_Rect SrcWindowOverscanBitmapSizes[] =
+  {
     { 0,0, OVERSCAN_LEFT+320+OVERSCAN_RIGHT,OVERSCAN_TOP+200+OVERSCAN_BOTTOM },
     { 0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1) },
     { 0,0, 640,400 },
@@ -858,25 +890,29 @@ void Screen_Blit(BOOL bSwapScreen)
   SDL_Rect *SrcRect;
 
   /* Blit to full screen or window? */
-  if (bInFullScreen) {
+  if (bInFullScreen)
+  {
     /* Swap screen */
     if (bSwapScreen)
       SDL_Flip(sdlscrn);
   }
-  else {
+  else
+  {
     /* VDI resolution? */
-    if (bUseVDIRes || ConfigureParams.Screen.bUseHighRes) {
+    if (bUseVDIRes || ConfigureParams.Screen.bUseHighRes)
+    {
       /* Show VDI or mono resolution, no overscan */
       SDL_UpdateRect(sdlscrn, 0,0,0,0);
     }
-    else {
-        /* Find rectangle to draw from... */
-        if (ConfigureParams.Screen.Advanced.bAllowOverscan)
-          SrcRect = &SrcWindowOverscanBitmapSizes[STRes];
-        else
-          SrcRect = &SrcWindowBitmapSizes[STRes];
-        /* Blit image */
-        SDL_UpdateRects(sdlscrn, 1, SrcRect);
+    else
+    {
+      /* Find rectangle to draw from... */
+      if (ConfigureParams.Screen.Advanced.bAllowOverscan)
+        SrcRect = &SrcWindowOverscanBitmapSizes[STRes];
+      else
+        SrcRect = &SrcWindowBitmapSizes[STRes];
+      /* Blit image */
+      SDL_UpdateRects(sdlscrn, 1, SrcRect);
     }
   }
 
@@ -893,25 +929,17 @@ void Screen_Blit(BOOL bSwapScreen)
 */
 void Screen_SwapSTBuffers(void)
 {
-  if (bInFullScreen) {
+#if NUM_FRAMEBUFFERS > 1
+  if (bInFullScreen)
+  {
     if (pFrameBuffer==&FrameBuffers[0])
       pFrameBuffer = &FrameBuffers[1];
     else
       pFrameBuffer = &FrameBuffers[0];
   }
+#endif
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Get pointer to other ST frame buffer
-*/
-FRAMEBUFFER *Screen_GetOtherFrameBuffer(void)
-{
-  if (pFrameBuffer==&FrameBuffers[0])
-    return(&FrameBuffers[1]);
-  else
-    return(&FrameBuffers[0]);
-}
 
 /*-----------------------------------------------------------------------*/
 /*

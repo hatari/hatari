@@ -1,15 +1,19 @@
 /*
-  Hatari
+  Hatari - screen.h
+
+  This file is distributed under the GNU Public License, version 2 or at your
+  option any later version. Read the file gpl.txt for details.
 */
 
-#ifndef SCREEN_H
-#define SCREEN_H
+#ifndef HATARI_SCREEN_H
+#define HATARI_SCREEN_H
 
 #include <SDL_video.h>    /* for SDL_Surface */
 
 
 /* Frame buffer, used to store details in screen conversion */
-typedef struct {
+typedef struct
+{
   unsigned short int HBLPalettes[(NUM_VISIBLE_LINES+1)*16];  /* 1x16 colour palette per screen line, +1 line as may write after line 200 */
   unsigned long HBLPaletteMasks[NUM_VISIBLE_LINES+1];        /* Bit mask of palette colours changes, top bit set is resolution change */
   unsigned char *pSTScreen;          /* Copy of screen built up during frame(copy each line on HBL to simulate monitor raster) */
@@ -17,23 +21,28 @@ typedef struct {
   int OverscanModeCopy;              /* Previous screen overscan mode */
   BOOL bFullUpdate;                  /* Set TRUE to cause full update on next draw */
 } FRAMEBUFFER;
-#define NUM_FRAMEBUFFERS  2
+
+/* WinSTon used NUM_FRAMEBUFFERS=2, but =1 seems to be working better in Hatari... */
+#define NUM_FRAMEBUFFERS  1
 
 /* Details for each display screen - both Window and FullScreen */
-typedef struct {
+typedef struct
+{
   int STScreenLeftSkipBytes,STScreenWidthBytes;     /* Bytes to skip on left and number of bytes of screen to draw */
   int STScreenStartHorizLine,STScreenEndHorizLine;  /* Start/End points in ST screen(28 is top of normal screen) */
   int PCStartHorizLine,PCStartXOffset;              /* Source ST lines/bytes to skip, Destination screen lines/bytes to skip */
 } SCREENDRAW_OVERSCAN;
 
-typedef struct {
+typedef struct
+{
   void *pDrawFunction;              /* Draw function */
   /*int DirectDrawMode;*/           /* Mode required for DirectDraw. eg MODE_320x200x256 */
   int Width,Height,BitDepth,VertPixelsPerLine;
   SCREENDRAW_OVERSCAN Overscan[4];  /* Details for starting offset for each overscan mode(none,top,bottom,both) */
 } SCREENDRAW;
 
-typedef struct {
+typedef struct
+{
   SCREENDRAW *pLowRes, *pAltLowRes;
   SCREENDRAW *pMediumRes, *pAltMediumRes;
   SCREENDRAW *pHighRes, *pAltHighRes;
@@ -41,7 +50,8 @@ typedef struct {
 } SCREENDRAW_DISPLAYOPTIONS;
 
 /* ST Resolution defines */
-enum {
+enum
+{
   ST_LOW_RES,
   ST_MEDIUM_RES,
   ST_HIGH_RES,
@@ -49,7 +59,8 @@ enum {
 };
 
 /* Update Palette defines */
-enum {
+enum
+{
   UPDATE_PALETTE_NONE,
   UPDATE_PALETTE_UPDATE,
   UPDATE_PALETTE_FULLUPDATE
@@ -64,7 +75,8 @@ enum {
 #define PALETTEMASK_UPDATEMASK  (PALETTEMASK_UPDATEFULL|PALETTEMASK_UPDATEPAL|PALETTEMASK_UPDATERES)
 
 /* Overscan values */
-enum {
+enum
+{
   OVERSCANMODE_NONE,     /* 0x00 */
   OVERSCANMODE_TOP,      /* 0x01 */
   OVERSCANMODE_BOTTOM    /* 0x02 (Top+Bottom) 0x03 */
@@ -72,13 +84,14 @@ enum {
 
 /* Available fullscreen modes */
 #define NUM_DISPLAYMODEOPTIONS	6
-enum {
-	DISPLAYMODE_16COL_LOWRES,		/* (fastest) */
-	DISPLAYMODE_16COL_HIGHRES,
-	DISPLAYMODE_16COL_FULL,
-	DISPLAYMODE_HICOL_LOWRES,
-	DISPLAYMODE_HICOL_HIGHRES,
-	DISPLAYMODE_HICOL_FULL			/* (slowest) */
+enum
+{
+  DISPLAYMODE_16COL_LOWRES,     /* (fastest) */
+  DISPLAYMODE_16COL_HIGHRES,
+  DISPLAYMODE_16COL_FULL,
+  DISPLAYMODE_HICOL_LOWRES,
+  DISPLAYMODE_HICOL_HIGHRES,
+  DISPLAYMODE_HICOL_FULL        /* (slowest) */
 };
 
 
@@ -117,8 +130,7 @@ extern void Screen_SetDrawModes(void);
 extern void Screen_SetWindowRes(int Width,int Height,int BitCount);
 extern void Screen_Handle8BitPalettes(void);
 extern void Screen_Blit(BOOL bSwapScreen);
-extern FRAMEBUFFER *Screen_GetOtherFrameBuffer(void);
 extern void Screen_DrawFrame(BOOL bForceFlip);
 extern void Screen_Draw(void);
 
-#endif  /* ifndef SCREEN_H */
+#endif  /* ifndef HATARI_SCREEN_H */
