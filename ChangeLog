@@ -1,3 +1,8 @@
+2001-07-21 (Thomas Huth):
+  * Added some shortcuts
+  * Added the possibility to switch between fullscreen and window mode.
+  * Started working on better CPU cycles emulation (well, they are
+    a real mess!).
 
 2001-07-11:
   * Added ST Medium resolution.

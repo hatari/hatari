@@ -23,8 +23,6 @@ extern   int SoundCycles;
 #define Regs regs.regs       /* Ouah - uggly hack - FIXME! */
 #define SR regs.sr
 #define PC regs.pc
-#define Reg_SuperSP regs.isp
-#define Reg_UserSP regs.usp
 
 
 /* Offset ST address to PC pointer: */

@@ -14,7 +14,7 @@
 #include "video.h"
 #include "view.h"
 #include "vdi.h"
-
+#include "screen.h"
 
 static FILE *ConfigFile;
 /*static OFSTRUCT ConfigFileInfo;*/
@@ -31,6 +31,8 @@ void Configuration_SetDefault(void)
 {
   ConfigureParams.Sound.bEnableSound = FALSE;
   ConfigureParams.Screen.Advanced.bFrameSkip = FALSE;
+  ConfigureParams.Screen.Advanced.bAllowOverscan = TRUE;
+  ConfigureParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
 }
 
 

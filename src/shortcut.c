@@ -77,7 +77,7 @@ void ShortCut_ClearKeys(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Check to see if pressed ayn shortcut keys, and call handling function
+  Check to see if pressed any shortcut keys, and call handling function
 */
 void ShortCut_CheckKeys(void)
 {
@@ -85,26 +85,40 @@ void ShortCut_CheckKeys(void)
   int PressedKey=SHORT_CUT_NONE;
 
   /* Check for F11 or F12 */
+  /*
   if (ShortCutKey.Key==SDLK_F11)
     PressedKey = SHORT_CUT_F11;
   else if (ShortCutKey.Key==SDLK_F12)
     PressedKey = SHORT_CUT_F12;
+  */
 
-  /* Well, at the moment we only handle two keys: */
+  /* Check for supported keys: */
   switch(ShortCutKey.Key) {
      case SDLK_F12:
        quit_program=1;
        bQuitProgram=1;
        break;
      case SDLK_F11:
-       ScreenSnapShot_SaveScreen();
+       if( !bInFullScreen )
+         Screen_EnterFullScreen();
+        else
+         Screen_ReturnFromFullScreen();
        break;
      case SDLK_PAUSE:
-       if(bEnableDebug == TRUE)DebugUI();
+       if(bEnableDebug == TRUE)  DebugUI();
+       break;
+     case SDLK_g:                    /* Grab screenshot */
+       ScreenSnapShot_SaveScreen();
+       break;
+     case SDLK_r:                    /* Warm reset */
+       ShortCut_WarmReset();
+       break;
+     case SDLK_c:                    /* Cold reset */
+       ShortCut_ColdReset();
        break;
   }
 
-/* FIXME */
+/* Winston originally supported remaple shortcuts... perhaps we will do so, too, one day... */
 /*
   // Did press key?
   if (PressedKey!=SHORT_CUT_NONE) {
@@ -362,7 +376,8 @@ void ShortCut_BossKey(void)
 */
 void ShortCut_ColdReset(void)
 {
-  Reset_Cold();                    // Reset emulator with 'cold'(clear all)
+  Reset_Cold();                 /* Reset emulator with 'cold' (clear all) */
+  m68k_reset();
 }
 
 //-----------------------------------------------------------------------
@@ -371,5 +386,6 @@ void ShortCut_ColdReset(void)
 */
 void ShortCut_WarmReset(void)
 {
-  Reset_Warm();                    // Emulator 'warm' reset
+  Reset_Warm();                 /* Emulator 'warm' reset */
+  m68k_reset();
 }

@@ -72,6 +72,20 @@ to "tos.img".
 **** at the moment, TOS 2.06 and other do _not_ work!           ****
 
 
+ 4) Keyboard shortcuts
+ ---------------------
+
+While the emulator is running, you can quit it by pressing F12.
+Pressing F11 will toggle fullscreen/windowed mode.
+And if you started Hatari with the debugger option, you can enter
+the debugger by pressing PAUSE.
+Beside those keys, there are some more usefull shortcuts:
+
+ ALTGR-g  :  Grab a screenshot.
+ ALTGR-w  :  Reset the ST (warm).
+ ALTGR-c  :  Reset the ST (cold).
+
+
 That's all for the moment. If you want to help me working on Hatari,
 write me an e-mail:
   thothy@gmx.net

@@ -36,8 +36,6 @@
 #include "view.h"
 
 
-/* FIXME */
-//BMP ScreenBMP;                                  /* Screen bitmap details used for blitting to window */
 SCREENDRAW ScreenDrawWindow[4];                   /* Set up with details of drawing functions for ST_xxx_RES */
 SCREENDRAW ScreenDrawFullScreen[4];               /* And for full-screen */
 SCREENDRAW ScreenDrawVDIWindow[4];
@@ -61,7 +59,6 @@ unsigned long ST2RGB[2048];                       /* Table to convert ST Palette
 unsigned short int HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
 
 SDL_Surface *sdlscrn;
-extern bUseFullscreen;
 
 
 /*-----------------------------------------------------------------------*/
@@ -83,13 +80,13 @@ void Screen_Init(void)
   pFrameBuffer = &FrameBuffers[0];
 
   if (bUseVDIRes)
-    Screen_AllocateScreenBitmap(VDIWidth,VDIHeight,bUseHighRes ? 1:8);  /* Allocate windows bitmap, for VDI */
+    Screen_SetWindowRes(VDIWidth,VDIHeight,bUseHighRes ? 8:16);  /* Allocate windows bitmap, for VDI */
   else
    {
     if(bUseHighRes)
-      Screen_AllocateScreenBitmap(640,400,8);     /* Allocate windows bitmap */
+      Screen_SetWindowRes(640,400,8);             /* Allocate windows bitmap */
      else
-      Screen_AllocateScreenBitmap(320,200,16);    /* Allocate windows bitmap, 320x200x16bit(with overscan) */
+      Screen_SetWindowRes(320,200,16);            /* Allocate windows bitmap, 320x200x16bit (with overscan) */
    }
 
   Video_SetScreenRasters();                       /* Set rasters ready for first screen */
@@ -161,38 +158,6 @@ void Screen_SetScreenLineOffsets(void)
     STScreenLineOffset[i] = i * SCREENBYTES_LINE;
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Set details of BMP header
-*/
-/* FIXME */
-/*
-void Screen_SetBMPHeaders(BMP *pBMP,int Width,int Height,int BitCount)
-{
-  pBMP->FileHeader.bfType = 0x4d42;
-  pBMP->FileHeader.bfSize = 0;
-  pBMP->FileHeader.bfReserved1 = 0;
-  pBMP->FileHeader.bfReserved2 = 0;
-  if (BitCount==1)
-    pBMP->FileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + (sizeof(RGBQUAD)*2);
-  else if (BitCount==8)
-    pBMP->FileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + (sizeof(RGBQUAD)*256);
-  else
-    pBMP->FileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-  // And BMP InfoHeader
-  pBMP->InfoHeader.biSize = sizeof(BITMAPINFOHEADER);
-  pBMP->InfoHeader.biWidth = Width;
-  pBMP->InfoHeader.biHeight = -Height;      // SetDIBits reverses Y; places 0,0 top left
-  pBMP->InfoHeader.biBitCount = BitCount;
-  pBMP->InfoHeader.biPlanes = 1;
-  pBMP->InfoHeader.biCompression = BI_RGB;
-  pBMP->InfoHeader.biSizeImage = ((Width*Height)*BitCount)/8;
-  pBMP->InfoHeader.biXPelsPerMeter = 1;
-  pBMP->InfoHeader.biYPelsPerMeter = 1;
-  pBMP->InfoHeader.biClrUsed = 0;
-  pBMP->InfoHeader.biClrImportant = 0;
-}
-*/
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -237,28 +202,42 @@ void Screen_SetupRGBTable(BOOL bFullScreen)
 */
 void Screen_EnterFullScreen(void)
 {
-  BOOL bRet;
+  SDL_Surface *newsdlscrn;
+  const unsigned int sdlvmode = SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN;
 
   if (!bInFullScreen) {
     Main_PauseEmulation();        /* Hold things... */
-//FIXME    Sleep(20);             /* To give sound time to clear! */
+    SDL_Delay(20);                /* To give sound time to clear! */
 
-    Screen_SetDrawModes();        /* Set draw modes(store which DirectDraw modes to use!) */
-    /* Select full-screen for standard or VDI resolution */
+    Screen_SetDrawModes();        /* Set draw modes(store which modes to use!) */
+
     if (bUseVDIRes)
-      bRet = 0/*DSurface_EnterDDrawFullScreen(ScreenDrawVDIFullScreen[VDIRes].DirectDrawMode)*/;
-    else
-      bRet = 0/*DSurface_EnterDDrawFullScreen(ScreenDrawFullScreen[STRes].DirectDrawMode)*/;
-    if (bRet) {
-//FIXME      View_ToggleWindowsMouse(MOUSE_ST);  /* Put mouse into ST mode */
-//FIXME      View_LimitCursorToScreen();    /* Free mouse from Window constraints */
+      newsdlscrn = SDL_SetVideoMode(ScreenDrawVDIFullScreen[STRes].Width, ScreenDrawVDIFullScreen[STRes].Height,
+                                 ScreenDrawVDIFullScreen[STRes].BitDepth, sdlvmode);
+     else
+      newsdlscrn = SDL_SetVideoMode(ScreenDrawFullScreen[STRes].Width, ScreenDrawFullScreen[STRes].Height,
+                                 ScreenDrawFullScreen[STRes].BitDepth, sdlvmode);
+
+    if( newsdlscrn==NULL )
+     {
+      fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
+     }
+     else
+     {
+      sdlscrn = newsdlscrn;
+      pScreenBitmap = newsdlscrn->pixels;
+      bInFullScreen = TRUE;
+
+      /*View_ToggleWindowsMouse(MOUSE_ST);*/  /* Put mouse into ST mode */
+      /*View_LimitCursorToScreen();*/    /* Free mouse from Window constraints */
       Screen_SetupRGBTable(TRUE);   /* Set full screen RGB */
       Screen_SetFullUpdate();       /* Cause full update of screen */
-      Screen_Clear_Window();        /* Black out Window's bitmap as will be invalid when return */
-    }
+      Screen_ClearScreen();         /* Black out Window's bitmap as will be invalid when return */
+     }
     Main_UnPauseEmulation();        /* And off we go... */
   }
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -268,18 +247,37 @@ void Screen_ReturnFromFullScreen(void)
 {
   if (bInFullScreen) {
     Main_PauseEmulation();        /* Hold things... */
-//FIXME    Sleep(20);             /* To give sound time to clear! */
-/*
-    if (DSurface_ReturnFromDDrawFullScreen()) {
-//FIXME      View_ResizeWindowToFull();    // Resize window to ST screen size
-//FIXME      View_LimitCursorToClient();   // And limit mouse in Window
-      Screen_SetupRGBTable(FALSE); // Set window RGB
-      Screen_SetFullUpdate();      // Cause full update of screen
-    }
-*/
-//FIXME    View_ToggleWindowsMouse(MOUSE_ST);    /* Put mouse into ST mode */
-    Main_UnPauseEmulation();      /* And off we go... */
-//    View_Update();              /* And refresh screen */
+    SDL_Delay(20);                /* To give sound time to clear! */
+
+    bInFullScreen = FALSE;
+
+    if (bUseVDIRes)
+      Screen_SetWindowRes(VDIWidth,VDIHeight,bUseHighRes ? 8:16);  /* Allocate windows bitmap, for VDI */
+    else
+     {
+      switch(STRes)
+       {
+        case ST_LOW_RES:
+          Screen_SetWindowRes(320,200,16);
+          break;
+        case ST_MEDIUM_RES:
+        case ST_LOWMEDIUM_MIX_RES:
+          Screen_SetWindowRes(640,400,16);
+          break;
+        case ST_HIGH_RES:
+          Screen_SetWindowRes(640,400,8);
+          break;
+       }
+     }
+
+    /*View_ResizeWindowToFull();*/    /* Resize window to ST screen size */
+    /*View_LimitCursorToClient();*/   /* And limit mouse in Window */
+    Screen_SetupRGBTable(FALSE);      /* Set window RGB */
+    Screen_SetFullUpdate();           /* Cause full update of screen */
+
+    /*View_ToggleWindowsMouse(MOUSE_ST);*/    /* Put mouse into ST mode */
+    Main_UnPauseEmulation();          /* And off we go... */
+    /*View_Update();*/                /* And refresh screen */
   }
 }
 
@@ -287,37 +285,11 @@ void Screen_ReturnFromFullScreen(void)
 /*
   Clear Window display memory
 */
-void Screen_Clear_Window(void)
+void Screen_ClearScreen(void)
 {
-  SDL_FillRect(sdlscrn,NULL, SDL_MapRGB(sdlscrn->format, 255, 255, 255) );
+  SDL_FillRect(sdlscrn,NULL, SDL_MapRGB(sdlscrn->format, 0, 0, 0) );
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Clear full screen display. Used as full-screen has changing top/bottom borders and also interlaced modes
-*/
-void Screen_Clear_FullScreen(void)
-{
-/* FIXME */
-/*
-  SCREENDRAW *pScreenDraw;
-  unsigned char *pSurface;
-  int y,nWidthBytes;
-
-  // Clear whole screen  
-  if (bUseVDIRes)
-    pScreenDraw = &ScreenDrawVDIFullScreen[VDIRes];
-  else
-    pScreenDraw = &ScreenDrawFullScreen[STRes];
-  pSurface = (unsigned char *)Surface.lpSurface;
-  nWidthBytes = pScreenDraw->Width*(pScreenDraw->BitDepth/8);
-  // One line at a time
-  for(y=0; y<pScreenDraw->Height; y++) {
-    Memory_Clear(pSurface,nWidthBytes);
-    pSurface += Surface.lPitch;
-  }
-*/
-}
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -359,30 +331,17 @@ void Screen_SetDrawModes(void)
   ScreenDrawVDIWindow[ST_HIGH_RES].Width = VDIWidth;  ScreenDrawVDIWindow[ST_HIGH_RES].Height = VDIHeight;  ScreenDrawVDIWindow[ST_HIGH_RES].BitDepth = 1;
 
   /* And full-screen, select from Overscan/Non-Overscan */
-/* FIXME */
-/*
   if (ConfigureParams.Screen.Advanced.bAllowOverscan)
     pScreenDisplay = &ScreenDisplayOptions[ConfigureParams.Screen.ChosenDisplayMode];
-  else*/
-    pScreenDisplay = &ScreenDisplayOptions_NoOverscan[0/*FIXME:*//*ConfigureParams.Screen.ChosenDisplayMode*/];
-
+  else
+    pScreenDisplay = &ScreenDisplayOptions_NoOverscan[ConfigureParams.Screen.ChosenDisplayMode];
 
   /* Assign full-screen draw modes from chosen option under dialog */
   ScreenDrawFullScreen[ST_LOW_RES] = *pScreenDisplay->pLowRes;
   ScreenDrawFullScreen[ST_MEDIUM_RES] = *pScreenDisplay->pMediumRes;
   ScreenDrawFullScreen[ST_HIGH_RES] = *pScreenDisplay->pHighRes;
   ScreenDrawFullScreen[ST_LOWMEDIUM_MIX_RES] = *pScreenDisplay->pLowMediumMixRes;
-  /* Check we do have mode to run, else choose alternative(MUST have one or other else option would be disabled) */
-/*
-  if (!bAvailableDDrawModes[ ScreenDrawFullScreen[ST_LOW_RES].DirectDrawMode ])
-    ScreenDrawFullScreen[ST_LOW_RES] = *pScreenDisplay->pAltLowRes;
-  if (!bAvailableDDrawModes[ ScreenDrawFullScreen[ST_MEDIUM_RES].DirectDrawMode ])
-    ScreenDrawFullScreen[ST_MEDIUM_RES] = *pScreenDisplay->pAltMediumRes;
-  if (!bAvailableDDrawModes[ ScreenDrawFullScreen[ST_HIGH_RES].DirectDrawMode ])
-    ScreenDrawFullScreen[ST_HIGH_RES] = *pScreenDisplay->pAltHighRes;
-  if (!bAvailableDDrawModes[ ScreenDrawFullScreen[ST_LOWMEDIUM_MIX_RES].DirectDrawMode ])
-    ScreenDrawFullScreen[ST_LOWMEDIUM_MIX_RES] = *pScreenDisplay->pAltLowMediumMixRes;
-*/
+
   /* And VDI(8-bit), according to select resolution */
   switch(VDIWidth) {
     case 640:
@@ -403,20 +362,14 @@ void Screen_SetDrawModes(void)
   }
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
-  Allocate memory to store ST screen ready for Windows 'Blit'
+  Set window size
 */
-extern int CurrentDisplayMode;
-
-void Screen_AllocateScreenBitmap(int Width,int Height,int BitCount)
+void Screen_SetWindowRes(int Width,int Height,int BitCount)
 {
-  long Size;
   SDL_Color cols[2];
-
-  /* Do we already have a screen allocated? If so, free */
-//  if (pScreenBitmap)
-//    DeleteObject(hBitmap);
 
   /* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
   if ( !(bUseVDIRes || bUseHighRes) ) {
@@ -430,23 +383,11 @@ void Screen_AllocateScreenBitmap(int Width,int Height,int BitCount)
     Height += OVERSCAN_TOP+OVERSCAN_BOTTOM;
   }
 
-  /* Allocate bitmap for screen */
-  Size = ((Width*Height)*BitCount)/8;
-
-  /* Set BMP FileHeader */
-//  Screen_SetBMPHeaders(&ScreenBMP, Width,Height,BitCount);
-
-  /* Create memory for bitmap, use 'CreateDIBSection' as faster than normal 'alloc' on some systems */
-  /*hBitmap = CreateDIBSection(MainDC,(BITMAPINFO *)&ScreenBMP.InfoHeader,DIB_RGB_COLORS,(void **)&pScreenBitmap,0,0);*/
-
-  fprintf(stderr, "Video mode: Width=%i  Height=%i  bpp=%i\n", Width, Height, BitCount);
-  if(bUseFullscreen)
-    sdlscrn=SDL_SetVideoMode(Width, Height, BitCount, SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN);
-   else
-    sdlscrn=SDL_SetVideoMode(Width, Height, BitCount, SDL_SWSURFACE|SDL_HWPALETTE);
+  sdlscrn=SDL_SetVideoMode(Width, Height, BitCount, SDL_SWSURFACE|SDL_HWPALETTE);
   if( sdlscrn==NULL )
    {
     fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
+    SDL_Quit();
     exit(-2);
    }
   pScreenBitmap=sdlscrn->pixels;
@@ -475,40 +416,43 @@ void Screen_DidResolutionChange(void)
   if (STRes!=PrevSTRes) {
     /* We've changed, allocate new Windows bitmap */
 
-    /* VDI or standard ST resolution? */
-    if (bUseVDIRes) {
-      /* Allocate to set VDI resolution */
-      Screen_AllocateScreenBitmap(VDIWidth,VDIHeight,bUseHighRes ? 1:8);
-    }
-    else {
-      /* Allocate accordingly to STRes(may be mix of low/medium) */
-      switch(STRes) {
-        case ST_LOW_RES:
-          Screen_AllocateScreenBitmap(320,200,16);
-            break;
-        case ST_MEDIUM_RES:
-        case ST_LOWMEDIUM_MIX_RES:
-          Screen_AllocateScreenBitmap(640,400,16);
-          break;
-        case ST_HIGH_RES:
-          Screen_AllocateScreenBitmap(640,400,8);
-          break;
-      }
+    /* Set new fullscreen display mode, if differs from current */
+    if (bInFullScreen) {
+      SDL_Surface *newsdlscrn;
+      if (bUseVDIRes)
+        newsdlscrn = SDL_SetVideoMode(ScreenDrawVDIFullScreen[STRes].Width, ScreenDrawVDIFullScreen[STRes].Height,
+                               ScreenDrawVDIFullScreen[STRes].BitDepth, SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN);
+       else
+        newsdlscrn = SDL_SetVideoMode(ScreenDrawFullScreen[STRes].Width, ScreenDrawFullScreen[STRes].Height,
+                               ScreenDrawFullScreen[STRes].BitDepth, SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN);
+      if( newsdlscrn )
+        sdlscrn = newsdlscrn;
+       else
+        bInFullScreen = FALSE;
     }
 
-    /* Set new DirectDraw display mode, if differs from current */
-/*
-    if (bInFullScreen) {
-      if (bUseVDIRes)
-        bRet = DSurface_EnterDDrawFullScreen(ScreenDrawVDIFullScreen[VDIRes].DirectDrawMode);
-      else
-        bRet = DSurface_EnterDDrawFullScreen(ScreenDrawFullScreen[STRes].DirectDrawMode);      
-      if (bRet)
-        Screen_SetFullUpdate();
+    if( !bInFullScreen ) {
+      /* VDI or standard ST resolution? */
+      if (bUseVDIRes) {
+        /* Allocate to set VDI resolution */
+        Screen_SetWindowRes(VDIWidth,VDIHeight,bUseHighRes ? 1:8);
+      }
+      else {
+        /* Allocate accordingly to STRes (may be mix of low/medium) */
+        switch(STRes) {
+          case ST_LOW_RES:
+            Screen_SetWindowRes(320,200,16);
+              break;
+          case ST_MEDIUM_RES:
+          case ST_LOWMEDIUM_MIX_RES:
+            Screen_SetWindowRes(640,400,16);
+            break;
+          case ST_HIGH_RES:
+            Screen_SetWindowRes(640,400,8);
+            break;
+        }
+      }
     }
-*/
-//    else  /* If not in full screen, resize window */
-//FIXME      View_ResizeWindowToFull();
 
     PrevSTRes = STRes;
     Screen_SetFullUpdate();
@@ -518,6 +462,7 @@ void Screen_DidResolutionChange(void)
   if (pFrameBuffer->OverscanModeCopy!=OverscanMode)
     pFrameBuffer->bFullUpdate = TRUE;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -779,44 +724,42 @@ void Screen_SetWindowConvertDetails(void)
 */
 void Screen_SetFullScreenConvertDetails(void)
 {
-/* FIXME */
-/*
   SCREENDRAW *pScreenDraw;
 
-  // Reset Double Y, used for Window medium res' and in full screen
+  /* Reset Double Y, used for window medium res' and in full screen */
   bScrDoubleY = FALSE;
 
   if (bInFullScreen) {
-    // Select screen draw for standard or VDI display
+    /* Select screen draw for standard or VDI display */
     if (bUseVDIRes)
       pScreenDraw = &ScreenDrawVDIFullScreen[VDIRes];
     else
       pScreenDraw = &ScreenDrawFullScreen[STRes];
 
-    // Only draw what can fit into full-screen and centre on Y
+    /* Only draw what can fit into full-screen and centre on Y */
     STScreenLeftSkipBytes = pScreenDraw->Overscan[OverscanMode].STScreenLeftSkipBytes;
     STScreenWidthBytes = pScreenDraw->Overscan[OverscanMode].STScreenWidthBytes;
 
     STScreenStartHorizLine = pScreenDraw->Overscan[OverscanMode].STScreenStartHorizLine;
     STScreenEndHorizLine = pScreenDraw->Overscan[OverscanMode].STScreenEndHorizLine;
 
-    pSTScreen = pFrameBuffer->pSTScreen;      // Source in ST memory
-    pSTScreenCopy = pFrameBuffer->pSTScreenCopy;  // Previous ST screen
-    PCScreenBytesPerLine = Surface.lPitch;
-    pPCScreenDest = (unsigned char *)Surface.lpSurface;  // Destination PC screen
-    // Get start of line on screen according to overscan(scale if double line mode)
+    pSTScreen = pFrameBuffer->pSTScreen;          /* Source in ST memory */
+    pSTScreenCopy = pFrameBuffer->pSTScreenCopy;  /* Previous ST screen */
+    PCScreenBytesPerLine = sdlscrn->pitch;
+    pPCScreenDest = (unsigned char *)sdlscrn->pixels;  /* Destination PC screen */
+    /* Get start of line on screen according to overscan (scale if double line mode) */
     pPCScreenDest += pScreenDraw->Overscan[OverscanMode].PCStartHorizLine
        *pScreenDraw->VertPixelsPerLine*PCScreenBytesPerLine;
-    // And offset on X
+    /* And offset on X */
     pPCScreenDest += pScreenDraw->Overscan[OverscanMode].PCStartXOffset;
     pHBLPalettes = pFrameBuffer->HBLPalettes;
 
-    // Is non-interlaced? May need to double up on Y
+    /* Is non-interlaced? May need to double up on Y */
     if (!ConfigureParams.Screen.Advanced.bInterlacedFullScreen)
       bScrDoubleY = TRUE;
   }
-*/
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -824,21 +767,13 @@ void Screen_SetFullScreenConvertDetails(void)
 */
 BOOL Screen_Lock(void)
 {
-/* FIXME */
-/*
-  if (bInFullScreen) {
-    // Get full screen DirectX details
-    Memory_Clear(&Surface,sizeof(DDSURFACEDESC));
-    Surface.dwSize = sizeof(DDSURFACEDESC);
-
-    // All OK? If not need to jump back to a window
-    if (pBackSurface->Lock(0,&Surface,DDLOCK_WAIT,0)!=DD_OK) {
-      Screen_ReturnFromFullScreen();
+  if( SDL_MUSTLOCK(sdlscrn) ) {
+    if( SDL_LockSurface(sdlscrn) ) {
+      Screen_ReturnFromFullScreen();   /* All OK? If not need to jump back to a window */
       return(FALSE);
     }
-    // Now 'Surface.lpSurface' is valid
   }
-*/
+
   return(TRUE);
 }
 
@@ -848,9 +783,10 @@ BOOL Screen_Lock(void)
 */
 void Screen_UnLock(void)
 {
-//  if (bInFullScreen)
-//FIXME    pBackSurface->Unlock(0);
+  if( SDL_MUSTLOCK(sdlscrn) )
+    SDL_LockSurface(sdlscrn);
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -1025,7 +961,7 @@ void Screen_DrawFrame(BOOL bForceFlip)
       Screen_SetFullScreenConvertDetails();
       /* Clear screen on full update to clear out borders and also interlaced lines */
       if (pFrameBuffer->bFullUpdate)
-        Screen_Clear_FullScreen();
+        Screen_ClearScreen();
       /* Call drawing for full-screen */
       if (bUseVDIRes)  {
         pDrawFunction = ScreenDrawVDIFullScreen[VDIRes].pDrawFunction;

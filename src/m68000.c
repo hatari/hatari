@@ -72,9 +72,7 @@ void M68000_Reset(BOOL bCold)
   bDoTraceException = FALSE;                  /* No TRACE exceptions */
   bInSuperMode = TRUE;                        /* We begin in supervisor mode */
   Regs[REG_A7] = Regs[REG_A8] = 0x0000f000;   /* Stack default */
-  Reg_SuperSP = (unsigned long)&Regs[REG_A7]; /* So use this register as our stack */
-  Reg_UserSP = (unsigned long)&Regs[REG_A8];
-  PendingInterruptFlag = 0;        // Clear pending flag
+  PendingInterruptFlag = 0;                   /* Clear pending flag */
 
   // Read Supervisor Stack/PC for warm reset
   if (!bCold) {
@@ -125,8 +123,8 @@ void M68000_Decode_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&SR,sizeof(SR));
   MemorySnapShot_Store(&SR_Before,sizeof(SR_Before));
   MemorySnapShot_Store(&bInSuperMode,sizeof(bInSuperMode));
-  MemorySnapShot_Store(&Reg_SuperSP,sizeof(Reg_SuperSP));
-  MemorySnapShot_Store(&Reg_UserSP,sizeof(Reg_UserSP));
+  /*MemorySnapShot_Store(&Reg_SuperSP,sizeof(Reg_SuperSP));*//*FIXME*/
+  /*MemorySnapShot_Store(&Reg_UserSP,sizeof(Reg_UserSP));*/
   MemorySnapShot_Store(&EmuCCode,sizeof(EmuCCode));
   MemorySnapShot_Store(&ExceptionVector,sizeof(ExceptionVector));  
 }
@@ -208,11 +206,6 @@ void M68000_CheckUserSuperToggle(void)
     TempSP = Regs[REG_A7];
     Regs[REG_A7] = Regs[REG_A8];
     Regs[REG_A8] = TempSP;
-
-    // And keep track of which of our registers is the supermode stack pointer
-    TempReg = (unsigned long *)Reg_SuperSP;
-    Reg_SuperSP = Reg_UserSP;
-    Reg_UserSP = (unsigned long)TempReg;
 
     // Swap super flag
     bInSuperMode^=TRUE;

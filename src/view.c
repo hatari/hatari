@@ -688,16 +688,14 @@ void View_KeyDown( unsigned int sdlkey, unsigned int sdlmod )
     else if( Key==SDLK_RCTRL || Key==SDLK_KP0 )  { cursorJoyEmu |= 128; return; }
    }
 
-  /* Bring up help on F1 */
-//FM  if ( (bWindowsMouseMode) && (Key==KEY_F1) )
-//FIXME    ToolBar_Activate_Help();
-
   /* Set down */
   bPreviousKeyState = Keyboard.KeyStates[Key];
   Keyboard.KeyStates[Key] = TRUE;
 
-  /* If pressed F11 or F12 or PAUSE, retain short-cut keypress until safe to execute(start of VBL) */
-  if ( (sdlkey==SDLK_F11) || (sdlkey==SDLK_F12) || (sdlkey==SDLK_PAUSE) )
+  /*fprintf(stderr,"sdlkey=%i, sdlmod=%x\n",sdlkey,sdlmod);*/
+
+  /* If pressed short-cut key, retain keypress until safe to execute (start of VBL) */
+  if ( (sdlmod&KMOD_MODE) || (sdlkey==SDLK_F11) || (sdlkey==SDLK_F12) || (sdlkey==SDLK_PAUSE) )
    {
     ShortCutKey.Key = sdlkey;
     if( sdlmod&(KMOD_LCTRL|KMOD_RCTRL) )  ShortCutKey.bCtrlPressed = TRUE;
@@ -706,7 +704,6 @@ void View_KeyDown( unsigned int sdlkey, unsigned int sdlmod )
   else
    {
     STScanCode = Keymap_RemapKeyToSTScanCode(Key);
-/*fprintf(stderr,"Key=%i, Scancode=%x\n",Key,STScanCode);*/
     if (STScanCode!=-1)
      {
       if (!bPreviousKeyState)

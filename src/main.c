@@ -116,8 +116,8 @@ int Main_Message(char *lpText, char *lpCaption/*,unsigned int uType*/)
   int Ret=0;
 
   /* Are we in full-screen? */
-  /*if (bInFullScreen)
-    Screen_ReturnFromFullScreen();*/
+  if (bInFullScreen)
+    Screen_ReturnFromFullScreen();
 
   /* Show message */
   fprintf(stderr,"Message (%s):\n %s\n", lpCaption, lpText);
@@ -131,6 +131,7 @@ int Main_Message(char *lpText, char *lpCaption/*,unsigned int uType*/)
 */
 void Main_PauseEmulation(void)
 {
+  SDL_PauseAudio(1);
   bEmulationActive = EMULATION_INACTIVE;
 }
 
@@ -140,7 +141,7 @@ void Main_PauseEmulation(void)
 */
 void Main_UnPauseEmulation(void)
 {
-//  SetMenu(hWnd,NULL);         /* Remove any menu's! */
+  SDL_PauseAudio(0);
   bFullScreenHold = FALSE;      /* Release hold  */
   Screen_SetFullUpdate();       /* Cause full screen update(to clear all) */
 
@@ -360,10 +361,8 @@ void Main_UnInit(void)
   Floppy_UnInit();
   RS232_UnInit();
   Printer_UnInit();
-//  DJoy_UnInit();
   Intercept_UnInit();
   Audio_UnInit();
-//  DSurface_UnInit();
   YMFormat_FreeRecording();
 //FM  View_LimitCursorToScreen();
   Screen_UnInit();
@@ -405,6 +404,10 @@ int main(int argc, char *argv[])
 
   /* Init emulator system */
   Main_Init();
+
+  /* Switch immediately to fullscreen if user wants to */
+  if( bUseFullscreen )
+    Screen_EnterFullScreen();
 
   /* Set timing threads to govern timing and debug display */
 //FM  Main_SetSpeedThreadTimer(ConfigureParams.Configure.nMinMaxSpeed);

@@ -2,12 +2,6 @@
   Hatari
 */
 
-/* BMP header */
-/*typedef struct {
-  BITMAPFILEHEADER FileHeader;
-  BITMAPINFOHEADER InfoHeader;
-  RGBQUAD Colours[256];
-} BMP;*/
 
 /* Frame buffer, used to store details in screen conversion */
 typedef struct {
@@ -58,9 +52,9 @@ enum {
 
 /* Palette mask values for 'HBLPaletteMask[]' */
 #define PALETTEMASK_RESOLUTION  0x00040000
-#define PALETTEMASK_PALETTE  0x0000ffff
-#define PALETTEMASK_UPDATERES  0x20000000
-#define PALETTEMASK_UPDATEPAL  0x40000000
+#define PALETTEMASK_PALETTE     0x0000ffff
+#define PALETTEMASK_UPDATERES   0x20000000
+#define PALETTEMASK_UPDATEPAL   0x40000000
 #define PALETTEMASK_UPDATEFULL  0x80000000
 #define PALETTEMASK_UPDATEMASK  (PALETTEMASK_UPDATEFULL|PALETTEMASK_UPDATEPAL|PALETTEMASK_UPDATERES)
 
@@ -70,6 +64,18 @@ enum {
   OVERSCANMODE_TOP,      /* 0x01 */
   OVERSCANMODE_BOTTOM    /* 0x02 (Top+Bottom) 0x03 */
 };
+
+/* Available fullscreen modes */
+#define NUM_DISPLAYMODEOPTIONS	6
+enum {
+	DISPLAYMODE_16COL_LOWRES,		/* (fastest) */
+	DISPLAYMODE_16COL_HIGHRES,
+	DISPLAYMODE_16COL_FULL,
+	DISPLAYMODE_HICOL_LOWRES,
+	DISPLAYMODE_HICOL_HIGHRES,
+	DISPLAYMODE_HICOL_FULL			/* (slowest) */
+};
+
 
 /* For palette we don't go from colour '0' as the whole background would change, so go from this value */
 #define  BASECOLOUR       0x0A
@@ -95,14 +101,13 @@ extern void Screen_Init(void);
 extern void Screen_UnInit(void);
 extern void Screen_Reset(void);
 extern void Screen_SetScreenLineOffsets(void);
-//extern void Screen_SetBMPHeaders(BMP *pBMP,int Width,int Height,int BitCount);
 extern void Screen_SetFullUpdate(void);
 extern void Screen_SetupRGBTable(BOOL bFullScreen);
 extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);
-extern void Screen_Clear_Window(void);
+extern void Screen_ClearScreen(void);
 extern void Screen_SetDrawModes(void);
-extern void Screen_AllocateScreenBitmap(int Width,int Height,int BitCount);
+extern void Screen_SetWindowRes(int Width,int Height,int BitCount);
 extern void Screen_Blit(BOOL bSwapScreen);
 extern FRAMEBUFFER *Screen_GetOtherFrameBuffer(void);
 extern void Screen_DrawFrame(BOOL bForceFlip);
