@@ -206,6 +206,7 @@ typedef struct
 
 extern BOOL bFirstTimeInstall;
 extern CNF_PARAMS ConfigureParams;
+extern char sConfigFileName[FILENAME_MAX];
 
 extern void Configuration_SetDefault(void);
 extern void Configuration_Load(void);

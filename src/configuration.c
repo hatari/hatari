@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.27 2004-03-01 13:57:29 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.28 2004-04-06 16:20:15 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -28,7 +28,7 @@ char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.27 2004-03-01 13:5
 
 BOOL bFirstTimeInstall = FALSE;             /* Has been run before? Used to set default joysticks etc... */
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
-static char cfgName[FILENAME_MAX];          /* Stores the name of the configuration file */
+char sConfigFileName[FILENAME_MAX];         /* Stores the name of the configuration file */
 
 
 /* Used to load/save screen options */
@@ -250,10 +250,10 @@ void Configuration_SetDefault(void)
 
   /* Initialize the configuration file name */
   homeDir = getenv("HOME");
-  if(homeDir != NULL && homeDir[0] != 0 && strlen(homeDir) < sizeof(cfgName)-13)
-    sprintf(cfgName, "%s/.hatari.cfg", homeDir);
+  if(homeDir != NULL && homeDir[0] != 0 && strlen(homeDir) < sizeof(sConfigFileName)-13)
+    sprintf(sConfigFileName, "%s/.hatari.cfg", homeDir);
   else
-    strcpy(cfgName, "hatari.cfg");
+    strcpy(sConfigFileName, "hatari.cfg");
 }
 
 
@@ -269,7 +269,7 @@ static int Configuration_LoadSection(const char *pFilename, struct Config_Tag co
 
    if(ret < 0)
      fprintf(stderr, "Can not load configuration file %s (section %s).\n",
-             cfgName, pSection);
+             sConfigFileName, pSection);
 
   return ret;
 }
@@ -284,24 +284,29 @@ void Configuration_Load(void)
   char sVersionString[VERSION_STRING_SIZE];
   int i,j;
 
-  if(Configuration_LoadSection(cfgName, configs_Screen, "[Screen]") < 0)
+  if (!File_Exists(sConfigFileName))
   {
     /* No configuration file, assume first-time install */
     bFirstTimeInstall = TRUE;
+    fprintf(stderr, "Configuration file %s not found.\n", sConfigFileName);
     return;
   }
-  Configuration_LoadSection(cfgName, configs_Joystick0, "[Joystick0]");
-  Configuration_LoadSection(cfgName, configs_Joystick1, "[Joystick1]");
-  Configuration_LoadSection(cfgName, configs_Keyboard, "[Keyboard]");
-  Configuration_LoadSection(cfgName, configs_Sound, "[Sound]");
-  Configuration_LoadSection(cfgName, configs_Memory, "[Memory]");
-  Configuration_LoadSection(cfgName, configs_Floppy, "[Floppy]");
-  Configuration_LoadSection(cfgName, configs_HardDisc, "[HardDisc]");
-  Configuration_LoadSection(cfgName, configs_TosGem, "[TOS-GEM]");
-  Configuration_LoadSection(cfgName, configs_Rs232, "[RS232]");
-  Configuration_LoadSection(cfgName, configs_Printer, "[Printer]");
-  Configuration_LoadSection(cfgName, configs_Midi, "[Midi]");
-  Configuration_LoadSection(cfgName, configs_System, "[System]");
+
+  bFirstTimeInstall = FALSE;
+
+  Configuration_LoadSection(sConfigFileName, configs_Screen, "[Screen]");
+  Configuration_LoadSection(sConfigFileName, configs_Joystick0, "[Joystick0]");
+  Configuration_LoadSection(sConfigFileName, configs_Joystick1, "[Joystick1]");
+  Configuration_LoadSection(sConfigFileName, configs_Keyboard, "[Keyboard]");
+  Configuration_LoadSection(sConfigFileName, configs_Sound, "[Sound]");
+  Configuration_LoadSection(sConfigFileName, configs_Memory, "[Memory]");
+  Configuration_LoadSection(sConfigFileName, configs_Floppy, "[Floppy]");
+  Configuration_LoadSection(sConfigFileName, configs_HardDisc, "[HardDisc]");
+  Configuration_LoadSection(sConfigFileName, configs_TosGem, "[TOS-GEM]");
+  Configuration_LoadSection(sConfigFileName, configs_Rs232, "[RS232]");
+  Configuration_LoadSection(sConfigFileName, configs_Printer, "[Printer]");
+  Configuration_LoadSection(sConfigFileName, configs_Midi, "[Midi]");
+  Configuration_LoadSection(sConfigFileName, configs_System, "[System]");
 
   /* Copy details to global variables */
   bEnableBlitter = ConfigureParams.System.bBlitter;
@@ -340,22 +345,22 @@ void Configuration_Save(void)
 {
   int i,j;
 
-  if(Configuration_SaveSection(cfgName, configs_Screen, "[Screen]") < 0)
+  if(Configuration_SaveSection(sConfigFileName, configs_Screen, "[Screen]") < 0)
   {
     fprintf(stderr, "Error saving config file.\n");
     return;
   }
-  Configuration_SaveSection(cfgName, configs_Joystick0, "[Joystick0]");
-  Configuration_SaveSection(cfgName, configs_Joystick1, "[Joystick1]");
-  Configuration_SaveSection(cfgName, configs_Keyboard, "[Keyboard]");
-  Configuration_SaveSection(cfgName, configs_Sound, "[Sound]");
-  Configuration_SaveSection(cfgName, configs_Memory, "[Memory]");
-  Configuration_SaveSection(cfgName, configs_Floppy, "[Floppy]");
-  Configuration_SaveSection(cfgName, configs_HardDisc, "[HardDisc]");
-  Configuration_SaveSection(cfgName, configs_TosGem, "[TOS-GEM]");
-  Configuration_SaveSection(cfgName, configs_Rs232, "[RS232]");
-  Configuration_SaveSection(cfgName, configs_Printer, "[Printer]");
-  Configuration_SaveSection(cfgName, configs_Midi, "[Midi]");
-  Configuration_SaveSection(cfgName, configs_System, "[System]");
+  Configuration_SaveSection(sConfigFileName, configs_Joystick0, "[Joystick0]");
+  Configuration_SaveSection(sConfigFileName, configs_Joystick1, "[Joystick1]");
+  Configuration_SaveSection(sConfigFileName, configs_Keyboard, "[Keyboard]");
+  Configuration_SaveSection(sConfigFileName, configs_Sound, "[Sound]");
+  Configuration_SaveSection(sConfigFileName, configs_Memory, "[Memory]");
+  Configuration_SaveSection(sConfigFileName, configs_Floppy, "[Floppy]");
+  Configuration_SaveSection(sConfigFileName, configs_HardDisc, "[HardDisc]");
+  Configuration_SaveSection(sConfigFileName, configs_TosGem, "[TOS-GEM]");
+  Configuration_SaveSection(sConfigFileName, configs_Rs232, "[RS232]");
+  Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");
+  Configuration_SaveSection(sConfigFileName, configs_Midi, "[Midi]");
+  Configuration_SaveSection(sConfigFileName, configs_System, "[System]");
 }
 

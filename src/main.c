@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.51 2004-02-12 15:56:02 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.52 2004-04-06 16:20:15 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -189,6 +189,40 @@ void Main_EventHandler()
 
 /*-----------------------------------------------------------------------*/
 /*
+  Show supported options.
+*/
+void Main_ShowOptions()
+{
+  printf("Usage:\n hatari [options] [disk image name]\n"
+         "Where options are:\n"
+         "  --help or -h          Print this help text and exit.\n"
+         "  --version or -v       Print version number and exit.\n"
+         "  --mono or -m          Start in monochrome mode instead of color.\n"
+         "  --fullscreen or -f    Try to use fullscreen mode.\n"
+         "  --joystick or -j      Emulate a ST joystick with the cursor keys.\n"
+         "  --nosound             Disable sound (faster!).\n"
+         "  --printer             Enable printer support (experimental).\n"
+         "  --midi <filename>     Enable midi support and write midi data to <filename>.\n"
+         "  --rs232 <filename>    Use <filename> as the serial port device.\n"
+         "  --frameskip           Skip every second frame (speeds up emulation!).\n"
+         "  --debug or -D         Allow debug interface.\n"
+         "  --harddrive <dir>     Emulate an ST harddrive\n"
+         "     or -d <dir>         (<dir> = root directory).\n"
+         "  --hdimage <imagename> Emulate an ST harddrive with an image.\n"
+         "  --tos <file>          Use TOS image <file>.\n"
+         "  --cpulevel <x>        Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
+         "  --compatible          Use a more compatible (but slower) 68000 CPU mode.\n"
+         "  --blitter             Enable blitter emulation (unstable!)\n"
+         "  --vdi                 Use extended VDI resolution\n"
+         "  --memsize <x>         Memory size in MB (x = 0, 1, 2 or 4; 0 for 512kB)\n"
+         "  --configfile <file>   Use <file> instead of ~/.hatari.cfg as configuration\n"
+         "     or -c <file>        file.\n"
+        );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Check for any passed parameters
 */
 void Main_ReadParameters(int argc, char *argv[])
@@ -202,29 +236,7 @@ void Main_ReadParameters(int argc, char *argv[])
     {
       if (!strcmp(argv[i],"--help") || !strcmp(argv[i],"-h"))
       {
-        printf("Usage:\n hatari [options] [disk image name]\n"
-               "Where options are:\n"
-               "  --help or -h          Print this help text and exit.\n"
-               "  --version or -v       Print version number and exit.\n"
-               "  --mono or -m          Start in monochrome mode instead of color.\n"
-               "  --fullscreen or -f    Try to use fullscreen mode.\n"
-               "  --joystick or -j      Emulate a ST joystick with the cursor keys.\n"
-               "  --nosound             Disable sound (faster!).\n"
-               "  --printer             Enable printer support (experimental).\n"
-               "  --midi <filename>     Enable midi support and write midi data to <filename>.\n"
-               /*"  --rs232 <filename>    Use <filename> as the serial port device.\n"*/
-               "  --frameskip           Skip every second frame (speeds up emulation!).\n"
-               "  --debug or -D         Allow debug interface.\n"
-               "  --harddrive <dir>     Emulate an ST harddrive\n"
-               "     or -d <dir>         (<dir> = root directory).\n"
-               "  --hdimage <imagename> Emulate an ST harddrive with an image.\n"
-               "  --tos <file>          Use TOS image <file>.\n"
-               "  --cpulevel <x>        Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
-               "  --compatible          Use a more compatible (but slower) 68000 CPU mode.\n"
-               "  --blitter             Enable blitter emulation (unstable!)\n"
-               "  --vdi                 Use extended VDI resolution\n"
-               "  --memsize <x>         Memory size in MB (x = 0, 1, 2 or 4; 0 for 512kB)\n"
-              );
+        Main_ShowOptions();
         exit(0);
       }
       else if (!strcmp(argv[i],"--version") || !strcmp(argv[i],"-v"))
@@ -373,13 +385,33 @@ void Main_ReadParameters(int argc, char *argv[])
         else  /* Use 1MB as default */
           ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_1Mb;
       }
+      else if (!strcmp(argv[i],"--configfile") || !strcmp(argv[i],"-c"))
+      {
+        if (i+1 >= argc)
+          fprintf(stderr, "Missing argument for --configfile\n");
+        else
+        {
+          if (strlen(argv[i+1]) <= sizeof(sConfigFileName))
+          {
+            strcpy(sConfigFileName, argv[i+1]);
+            Configuration_Load();
+          }
+          else
+            fprintf(stderr, "Config file name too long!\n");
+          i += 1;
+        }
+      }
       else
       {
         /* Possible passed disc image filename, ie starts with character other than '-' */
-        if (argv[i][0] != '-' && strlen(argv[i]) < sizeof(szBootDiscImage))
+        if (argv[i][0] != '-' && strlen(argv[i]) < sizeof(szBootDiscImage)
+            && File_Exists(argv[i]))
+        {
           strcpy(szBootDiscImage, argv[i]);
+          File_MakeAbsoluteName(szBootDiscImage);
+        }
         else
-          fprintf(stderr,"Illegal parameter: %s\n",argv[i]);
+          fprintf(stderr,"Illegal parameter: %s\n", argv[i]);
       }
     }
   }
