@@ -29,19 +29,28 @@ int cursorJoyEmu;                            /* set in view.c */
 
 /*-----------------------------------------------------------------------*/
 /*
-  Initialise joysticks, try to use DirectInput or, if this fails, standard Windows calls
+  This function initialises the (real) joysticks.
 */
 void Joy_Init(void)
 {
   int i, nPadsConnected, JoyID=1;            /* Store in ST joystick slot 1 then 0 */
 
+  /* Initialise SDL's joystick subsystem: */
+  if( SDL_InitSubSystem(SDL_INIT_JOYSTICK)<0 )
+  {
+    fprintf(stderr, "Could not init joysticks: %s\n", SDL_GetError() );
+    return;
+  }
+
   /* Scan joystick connection array for first two working joysticks */
   nPadsConnected = SDL_NumJoysticks();
-  for(i=0; (i<nPadsConnected) && (JoyID>=0); i++) {
+  for(i=0; (i<nPadsConnected) && (JoyID>=0); i++)
+  {
     /* Open the joystick for use */
     sdlJoystick[JoyID] = SDL_JoystickOpen(i);
     /* Is pad ok? */
-    if(sdlJoystick[JoyID]!=NULL) {
+    if(sdlJoystick[JoyID]!=NULL)
+    {
       /* Set as working (NOTE we assign ST joysticks 1 first), and store ID */
       ErrLog_File("Joystick: %d found\n", JoyID);
       bJoystickWorking[JoyID] = TRUE;

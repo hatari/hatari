@@ -60,16 +60,27 @@ void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 */
 void Audio_Init(void)
 {
-
   /* Is enabled? */
-  if (bDisableSound) {
+  if(bDisableSound)
+  {
     /* Stop any sound access */
     ErrLog_File("Sound: Disabled\n");
     bSoundWorking = FALSE;
     return;
   }
 
-  /* Init SDL audio: */
+  /* Init the SDL's audio subsystem: */
+  if( SDL_WasInit(SDL_INIT_AUDIO)==0 )
+  {
+    if( SDL_InitSubSystem(SDL_INIT_AUDIO)<0 )
+    {
+      fprintf(stderr, "Could not init audio: %s\n", SDL_GetError() );
+      bSoundWorking = FALSE;
+      return;
+    }
+  }
+
+  /* Set up SDL audio: */
   desiredAudioSpec.freq = SoundPlayBackFrequencies[OutputAudioFreqIndex];
   desiredAudioSpec.format = AUDIO_U8;            /* 8 Bit unsigned */
   desiredAudioSpec.channels = 1;                 /* Mono */
@@ -78,7 +89,7 @@ void Audio_Init(void)
   desiredAudioSpec.userdata = NULL;
   if( SDL_OpenAudio(&desiredAudioSpec, NULL) )   /* Open audio device */
   {
-    fprintf(stderr, "Can't use audio!\n");
+    fprintf(stderr, "Can't use audio: %s\n", SDL_GetError());
     bSoundWorking = FALSE;
     ConfigureParams.Sound.bEnableSound = FALSE;
     return;
