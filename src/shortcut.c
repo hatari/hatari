@@ -105,7 +105,10 @@ void ShortCut_CheckKeys(void)
          Screen_ReturnFromFullScreen();
        break;
      case SDLK_PAUSE:
-       if(bEnableDebug == TRUE)  DebugUI();
+       if(bEnableDebug == TRUE) {
+         if(bInFullScreen)  Screen_ReturnFromFullScreen();
+         DebugUI();
+       }
        break;
      case SDLK_g:                    /* Grab screenshot */
        ScreenSnapShot_SaveScreen();

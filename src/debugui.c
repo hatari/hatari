@@ -32,11 +32,13 @@
 #define DEBUG_QUIT     0
 #define DEBUG_CMD      1
 
-#define MEMDUMP_ROWS   4
-#define MEMDUMP_COLS   16
+#define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
+#define MEMDUMP_ROWS   4       /* memdump, number of rows */
+#define DISASM_INSTS   5       /* disasm - number of instructions */
 
 BOOL bMemDump;         /* has memdump been called? */
-unsigned long memdump_adr; /* memdump adress */
+unsigned long memdump_addr; /* memdump address */
+unsigned long disasm_addr;  /* disasm address */
 
 /* convert string to lowercase */
 void string_tolower(char *str)
@@ -70,6 +72,68 @@ BOOL isHex(char *str)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Load a binary file to a memory address.
+*/
+void DebugUI_LoadBin(char *args){
+  FILE *fp;
+  unsigned char c;
+  char dummy[100];
+  char filename[200];
+  unsigned long address;
+  int i=0;
+
+  if(sscanf(args, "%s%s%lx", dummy, filename, &address) != 3){
+    fprintf(stderr, "Invalid arguments!\n");
+    return;
+  }
+  address &= 0x00FFFFFF;
+  if((fp = fopen(filename, "rb")) == NULL){
+    fprintf(stderr,"Cannot open file!\n");
+  }
+
+  c = fgetc(fp);
+  while(!feof(fp)){
+    i++;
+    STMemory_WriteByte(address++, c);    
+    c = fgetc(fp);
+  }
+  fprintf(stderr,"  Read 0x%x bytes.\n", i);
+  fclose(fp);
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Dump memory from an address to a binary file.
+*/
+void DebugUI_SaveBin(char *args){
+  FILE *fp;
+  unsigned char c;
+  char filename[200];
+  char dummy[100];
+  unsigned long address;
+  unsigned long bytes;
+  int i=0;
+
+  if(sscanf(args, "%s%s%lx%lx", dummy, filename, &address, &bytes) != 4){
+    fprintf(stderr, "  Invalid arguments!");
+    return;
+  }
+  address &= 0x00FFFFFF;
+  if((fp = fopen(filename, "wb")) == NULL){
+    fprintf(stderr,"  Cannot open file!\n");
+  }
+
+  while(i < bytes){
+    c = STMemory_ReadByte(address++);    
+    fputc(c, fp);
+    i++;
+  }
+  fclose(fp);
+  fprintf(stderr, "  Wrote 0x%x bytes.\n", bytes); 
+}
+
+/*-----------------------------------------------------------------------*/
+/*
   Do a register dump.
 */
 void DebugUI_RegDump()
@@ -95,7 +159,36 @@ void DebugUI_RegDump()
 
 /*-----------------------------------------------------------------------*/
 /*
-  Do a memory dump, args = starting adress.
+  Dissassemble - arg = starting address, or PC.
+*/
+void DebugUI_DisAsm(char *arg, BOOL cont)
+{ 
+  int i;
+  uaecptr nextpc;
+  
+  if(cont != TRUE){    
+    if(!isHex(arg)) {
+      fprintf(stderr,"Invalid address!\n");
+      return;
+    }
+    i = sscanf(arg, "%lx", &disasm_addr);
+    
+    if(i == 0){
+      fprintf(stderr,"Invalid address!\n");
+      return;
+    }
+  } else 
+    if(!disasm_addr) disasm_addr = m68k_getpc();
+
+  disasm_addr &= 0x00FFFFFF;
+
+  m68k_disasm(stderr, (uaecptr)disasm_addr, &nextpc, 5);
+  disasm_addr = nextpc;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Do a memory dump, args = starting address.
 */
 void DebugUI_MemDump(char *arg, BOOL cont)
 { 
@@ -104,37 +197,37 @@ void DebugUI_MemDump(char *arg, BOOL cont)
   if(cont != TRUE){    
     if(!isHex(arg)) {
       bMemDump = FALSE;
-      fprintf(stderr,"Invalid adress!\n");
+      fprintf(stderr,"Invalid address!\n");
       return;
     }
-    i = sscanf(arg, "%lx", &memdump_adr);
+    i = sscanf(arg, "%lx", &memdump_addr);
     
     if(i == 0){
       bMemDump = FALSE;
-      fprintf(stderr,"Invalid adress!\n");
+      fprintf(stderr,"Invalid address!\n");
       return;
     }
   }
 
-  memdump_adr &= 0x00FFFFFF;
+  memdump_addr &= 0x00FFFFFF;
   bMemDump = TRUE;
 
-  fprintf(stderr, "%6.6X: ", memdump_adr);
+  fprintf(stderr, "%6.6X: ", memdump_addr);
   for(j=0;j<MEMDUMP_ROWS-1;j++){
     for(i=0;i<MEMDUMP_COLS;i++)
-      fprintf(stderr, "%2.2x ",STMemory_ReadByte(memdump_adr++));
-  fprintf(stderr, "\n%6.6X: ", memdump_adr);
+      fprintf(stderr, "%2.2x ",STMemory_ReadByte(memdump_addr++));
+  fprintf(stderr, "\n%6.6X: ", memdump_addr);
   }
   for(i=0;i<MEMDUMP_COLS;i++)
-    fprintf(stderr, "%2.2x ",STMemory_ReadByte(memdump_adr++));
+    fprintf(stderr, "%2.2x ",STMemory_ReadByte(memdump_addr++));
   fprintf(stderr,"\n"); 
 }
 
 /*-----------------------------------------------------------------------*/
 /*
-  Do a memory write, arg = starting adress, followed by bytes.
+  Do a memory write, arg = starting address, followed by bytes.
 */
-void DebugUI_MemWrite(char *adr_str, char *arg)
+void DebugUI_MemWrite(char *addr_str, char *arg)
 {
   int i, j, numBytes;
   long write_addr;
@@ -151,14 +244,14 @@ void DebugUI_MemWrite(char *adr_str, char *arg)
   while(arg[i] == ' ')i++; /* skip spaces */
 
   j = 0;
-  while(isxdigit(arg[i]) && j < 14) /* get adress */
+  while(isxdigit(arg[i]) && j < 14) /* get address */
     temp[j++] = arg[i++];
   temp[j] = '\0';
   j = sscanf(temp, "%x", &write_addr);
   
-  /* if next char is not valid, or it's not a valid adress */
+  /* if next char is not valid, or it's not a valid address */
   if((arg[i] != '\0' && arg[i] != ' ') || (j == 0)){
-    fprintf(stderr, "Bad adress!\n");
+    fprintf(stderr, "Bad address!\n");
     return;
   }
       
@@ -202,9 +295,12 @@ void DebugUI_MemWrite(char *adr_str, char *arg)
 void DebugUI_Help()
 {
   fprintf(stderr,"---- debug mode commands ----\n");
+  fprintf(stderr," d [address]- disassemble from PC, or given address. \n");
   fprintf(stderr," r - dump register values \n");
-  fprintf(stderr," m [address] - dump memory at adress, \n\tm alone continues from previous adress.\n");
-  fprintf(stderr," w adress bytes - write bytes to memory adress, bytes are space separated. \n");
+  fprintf(stderr," m [address] - dump memory at address, \n\tm alone continues from previous address.\n");
+  fprintf(stderr," w address bytes - write bytes to a memory address, bytes are space separated. \n");
+  fprintf(stderr," l filename address - load a file into memory starting at address. \n");
+  fprintf(stderr," s filename address length - dump length bytes from memory to a file. \n");
   fprintf(stderr," q - return to emulation\n");
   fprintf(stderr,"-----------------------------\n");
   fprintf(stderr,"\n");
@@ -223,8 +319,8 @@ int DebugUI_Getcommand()
   temp[0] = '\0';
   fgets(temp, 255, stdin);
 
-  string_tolower(temp);
   i = sscanf(temp, "%s%s", command, arg);
+  string_tolower(command);
 
   if(i == 0){
     fprintf(stderr,"  Unknown command.\n");
@@ -242,10 +338,16 @@ int DebugUI_Getcommand()
     return(DEBUG_CMD);
     break;
 
+  case 'd':
+    if(i < 2)  /* no arg? */
+      DebugUI_DisAsm(arg, TRUE);     /* No arg - disassemble at PC */
+    else DebugUI_DisAsm(arg, FALSE); /* disasm at address. */
+    break;
+
   case 'm':
     if(i < 2){  /* no arg? */
       if(bMemDump == FALSE){
-	fprintf(stderr,"Usage: m adress\n");
+	fprintf(stderr,"  Usage: m address\n");
 	return(DEBUG_CMD);
       }
       DebugUI_MemDump(arg, TRUE);     /* No arg - continue memdump */
@@ -254,7 +356,7 @@ int DebugUI_Getcommand()
 
   case 'w':
     if(i < 2){  /* no arg? */
-      fprintf(stderr,"Usage: w adress bytes\n");
+      fprintf(stderr,"  Usage: w address bytes\n");
       return(DEBUG_CMD);
     }
     DebugUI_MemWrite(arg, temp);
@@ -262,6 +364,22 @@ int DebugUI_Getcommand()
 
   case 'r':
     DebugUI_RegDump();
+    break;
+
+  case 'l':
+    if(i < 2){  /* no arg? */
+      fprintf(stderr,"  Usage: l filename address\n");
+      return(DEBUG_CMD);
+    }
+    DebugUI_LoadBin(temp);
+    break;
+
+  case 's':
+    if(i < 2){  /* no arg? */
+      fprintf(stderr,"  Usage: s filename address bytes\n");
+      return(DEBUG_CMD);
+    }
+    DebugUI_SaveBin(temp);
     break;
 
   default:
@@ -280,11 +398,16 @@ int DebugUI_Getcommand()
 void DebugUI()
 {
   bMemDump = FALSE;
-
+  disasm_addr = 0;
   fprintf(stderr,"\nYou have entered debug mode. Type q to quit, h for help. \n------------------------------\n");
   while(DebugUI_Getcommand() != DEBUG_QUIT);
   fprintf(stderr,"Returning to emulation...\n------------------------------\n\n");
 }
+
+
+
+
+
 
 
 
