@@ -1,12 +1,16 @@
 /*
-  Hatari
+  Hatari - file.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 */
 
 #ifndef HATARI_FILE_H
 #define HATARI_FILE_H
 
 /* File types */
-enum {
+enum
+{
   FILEFILTER_DISCFILES,
   FILEFILTER_ALLFILES,
   FILEFILTER_TOSROM,
@@ -43,5 +47,6 @@ extern BOOL File_FindPossibleExtFileName(char *pszFileName,char *ppszExts[]);
 extern void File_splitpath(char *pSrcFileName, char *pDir, char *pName, char *Ext);
 extern void File_makepath(char *pDestFileName, char *pDir, char *pName, char *pExt);
 extern void File_ShrinkName(char *pDestFileName, char *pSrcFileName, int maxlen);
+extern void File_MakeAbsoluteName(char *pszFileName);
 
 #endif /* HATARI_FILE_H */

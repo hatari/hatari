@@ -4,9 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgTosGem_rcsid[] = "Hatari $Id: dlgTosGem.c,v 1.3 2003-12-25 14:19:39 thothy Exp $";
-
-#include <unistd.h>
+char DlgTosGem_rcsid[] = "Hatari $Id: dlgTosGem.c,v 1.4 2003-12-25 18:45:22 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -92,12 +90,7 @@ void Dialog_TosGemDlg(void)
     {
       case DLGTOSGEM_ROMBROWSE:
         strcpy(tmpname, DialogParams.TOSGEM.szTOSImageFileName);
-        if(tmpname[0]=='.' && tmpname[1]=='/')  /* Is it in the actual working directory? */
-        {
-          getcwd(tmpname, FILENAME_MAX);
-          File_AddSlashToEndFileName(tmpname);
-          strcat(tmpname, &DialogParams.TOSGEM.szTOSImageFileName[2]);
-        }
+        File_MakeAbsoluteName(tmpname);
         if( SDLGui_FileSelect(tmpname, NULL, FALSE) )   /* Show and process the file selection dlg */
         {
           strcpy(DialogParams.TOSGEM.szTOSImageFileName, tmpname);

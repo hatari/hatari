@@ -6,11 +6,12 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.10 2003-12-25 14:19:38 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.11 2003-12-25 18:45:22 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include "main.h"
 #include "file.h"
@@ -567,3 +568,71 @@ void File_ShrinkName(char *pDestFileName, char *pSrcFileName, int maxlen)
   }
 }
 
+
+/*-----------------------------------------------------------------------*/
+/*
+  Create a clean absolute file name from a (possibly) relative file name.
+  I.e. filter out all occurancies of "./" and "../".
+  pFileName needs to point to a buffer of at least FILENAME_MAX bytes.
+*/
+void File_MakeAbsoluteName(char *pFileName)
+{
+  char *pTempName = Memory_Alloc(FILENAME_MAX);
+  int inpos, outpos;
+
+  inpos = 0;
+
+  /* Is it already an absolute name? */
+  if(pFileName[0] == '/')
+  {
+    outpos = 0;
+  }
+  else
+  {
+    getcwd(pTempName, FILENAME_MAX);
+    File_AddSlashToEndFileName(pTempName);
+    outpos = strlen(pTempName);
+  }
+
+  /* Now filter out the relative paths "./" and "../" */
+  while (pFileName[inpos] != 0 && outpos < FILENAME_MAX)
+  {
+    if (pFileName[inpos] == '.' && pFileName[inpos+1] == '/')
+    {
+      /* Ignore "./" */
+      inpos += 2;
+    }
+    else if (pFileName[inpos] == '.' && pFileName[inpos+1] == '.' && pFileName[inpos+2] == '/')
+    {
+      /* Handle "../" */
+      char *pSlashPos;
+      inpos += 3;
+      pTempName[outpos - 1] = 0;
+      pSlashPos = strrchr(pTempName, '/');
+      if (pSlashPos)
+      {
+        *(pSlashPos + 1) = 0;
+        outpos = strlen(pTempName);
+      }
+      else
+      {
+        pTempName[0] = '/';
+        outpos = 1;
+      }
+    }
+    else
+    {
+      /* Copy until next slash or end of input string */
+      while (pFileName[inpos] != 0 && outpos < FILENAME_MAX)
+      {
+        pTempName[outpos++] = pFileName[inpos++];
+        if (pFileName[inpos - 1] == '/')  break;
+      }
+    }
+  }
+
+  pTempName[outpos] = 0;
+
+  strcpy(pFileName, pTempName);          /* Copy back */
+  Memory_Free(pTempName);
+}
