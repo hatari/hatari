@@ -17,8 +17,6 @@ extern int address_space_24;
 extern int cpu_level;
 extern int cpu_compatible;
 extern int requestedInterrupt;
-extern long STmem_size;
-extern long TTmem_size;
 
 int Init680x0(void);
 void Exit680x0(void);

@@ -28,7 +28,6 @@ extern  short int PendingInterruptFlag;
 extern  void *PendingInterruptFunction;
 extern  short int PendingInterruptCount;
 extern  unsigned long STRamEnd;
-extern  unsigned long STRamEnd_BusErr;
 extern  unsigned long ExceptionVector;
 extern  unsigned long BusAddressLocation;
 

@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.15 2003-03-31 13:34:29 thothy Exp $";
+static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.16 2003-04-01 16:11:41 thothy Exp $";
 
 
 #include <stdio.h>
@@ -31,15 +31,12 @@ static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.15 2003-03-31 13:34:29 thot
 #endif
 
 
-int illegal_mem = FALSE;
+int illegal_mem = TRUE;
 int address_space_24 = TRUE;
 int cpu_level = 0;              /* 68000 (default) */
 int cpu_compatible = FALSE;
 
 int requestedInterrupt = -1;
-
-long STmem_size = 0x400000;     /* 4MB */
-long TTmem_size = 0;
 
 
 /* Reset custom chips */
@@ -62,7 +59,7 @@ int intlev(void)
 /* Initialize 680x0 emulation */
 int Init680x0(void)
 {
-  memory_init();
+  /* Note: memory_init() is now done in tos.c */
 
   init_m68k();
   return TRUE;
@@ -72,6 +69,7 @@ int Init680x0(void)
 /* Deinitialize 680x0 emulation */
 void Exit680x0(void)
 {
+  memory_uninit();
 }
 
 

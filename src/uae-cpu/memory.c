@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: memory.c,v 1.6 2003-03-31 11:05:11 emanne Exp $";
+static char rcsid[] = "Hatari $Id: memory.c,v 1.7 2003-04-01 16:11:39 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -20,23 +20,24 @@ static char rcsid[] = "Hatari $Id: memory.c,v 1.6 2003-03-31 11:05:11 emanne Exp
 #include "../includes/tos.h"
 #include "../includes/intercept.h"
 #include "../includes/reset.h"
+#include "../includes/decode.h"
 #include "newcpu.h"
 
-#ifdef USE_MAPPED_MEMORY
-#include <sys/mman.h>
-#endif
 
+uae_u32 STmem_size, TTmem_size = 0;
+uae_u32 TTmem_mask;
 
-extern   unsigned char STRam[16*1024*1024];  /* See hatari.c */
+#define STmem_start  0x00000000
+#define ROMmem_start 0x00E00000
+#define IOmem_start  0x00FF0000
+#define TTmem_start  0x01000000
 
+#define IOmem_size  65536
+#define ROMmem_size (0x00FF0000 - 0x00E00000)  /* So we cover both possible ROM regions + cartridge */
 
-/* Set by each memory handler that does not simply access real memory.  */
-int special_mem;
-
-uae_u32 allocated_STmem;
-uae_u32 allocated_TTmem;
-
-uae_u32 STmem_mask, ROMmem_mask, IOmem_mask, TTmem_mask, IDEmem_mask;
+#define STmem_mask  0x00ffffff
+#define ROMmem_mask 0x00ffffff
+#define IOmem_mask  (IOmem_size - 1)
 
 
 #ifdef SAVE_MEMORY_BANKS
@@ -73,6 +74,11 @@ __inline__ void byteput (uaecptr addr, uae_u32 b)
 #endif
 
 
+/* Some prototypes: */
+static int STmem_check (uaecptr addr, uae_u32 size) REGPARAM;
+static uae_u8 *STmem_xlate (uaecptr addr) REGPARAM;
+
+
 /* A dummy bank that only contains zeros */
 
 static uae_u32 dummy_lget (uaecptr) REGPARAM;
@@ -85,7 +91,6 @@ static int dummy_check (uaecptr addr, uae_u32 size) REGPARAM;
 
 uae_u32 REGPARAM2 dummy_lget (uaecptr addr)
 {
-    special_mem |= S_READ;
     if (illegal_mem)
 	write_log ("Illegal lget at %08lx\n", (long)addr);
 
@@ -94,7 +99,6 @@ uae_u32 REGPARAM2 dummy_lget (uaecptr addr)
 
 uae_u32 REGPARAM2 dummy_wget (uaecptr addr)
 {
-    special_mem |= S_READ;
     if (illegal_mem)
 	write_log ("Illegal wget at %08lx\n", (long)addr);
 
@@ -103,7 +107,6 @@ uae_u32 REGPARAM2 dummy_wget (uaecptr addr)
 
 uae_u32 REGPARAM2 dummy_bget (uaecptr addr)
 {
-    special_mem |= S_READ;
     if (illegal_mem)
 	write_log ("Illegal bget at %08lx\n", (long)addr);
 
@@ -112,19 +115,18 @@ uae_u32 REGPARAM2 dummy_bget (uaecptr addr)
 
 void REGPARAM2 dummy_lput (uaecptr addr, uae_u32 l)
 {
-    special_mem |= S_WRITE;
     if (illegal_mem)
 	write_log ("Illegal lput at %08lx\n", (long)addr);
 }
+
 void REGPARAM2 dummy_wput (uaecptr addr, uae_u32 w)
 {
-    special_mem |= S_WRITE;
     if (illegal_mem)
 	write_log ("Illegal wput at %08lx\n", (long)addr);
 }
+
 void REGPARAM2 dummy_bput (uaecptr addr, uae_u32 b)
 {
-    special_mem |= S_WRITE;
     if (illegal_mem)
 	write_log ("Illegal bput at %08lx\n", (long)addr);
 }
@@ -137,13 +139,96 @@ int REGPARAM2 dummy_check (uaecptr addr, uae_u32 size)
     return 0;
 }
 
+uae_u8 REGPARAM2 *dummy_xlate (uaecptr addr)
+{
+    write_log("Your Atari program just did something terribly stupid:"
+              " dummy_xlate($%x)\n", addr);
+    /*Reset_Warm();*/
+    return STmem_xlate(addr);  /* So we don't crash. */
+}
 
-/* ST RAM memory */
+
+/* **** This memory bank only generates bus errors **** */
+
+uae_u32 REGPARAM2 BusErrMem_lget(uaecptr addr)
+{
+    if (illegal_mem)
+	write_log ("Bus error lget at %08lx\n", (long)addr);
+
+    BusAddressLocation = addr;
+    Exception(2,0);
+    return 0;
+}
+
+uae_u32 REGPARAM2 BusErrMem_wget(uaecptr addr)
+{
+    if (illegal_mem)
+	write_log ("Bus error wget at %08lx\n", (long)addr);
+
+    BusAddressLocation = addr;
+    Exception(2,0);
+    return 0;
+}
+
+uae_u32 REGPARAM2 BusErrMem_bget(uaecptr addr)
+{
+    if (illegal_mem)
+	write_log ("Bus error bget at %08lx\n", (long)addr);
+
+    BusAddressLocation = addr;
+    Exception(2,0);
+    return 0;
+}
+
+void REGPARAM2 BusErrMem_lput(uaecptr addr, uae_u32 l)
+{
+    if (illegal_mem)
+	write_log ("Bus error lput at %08lx\n", (long)addr);
+
+    BusAddressLocation = addr;
+    Exception(2,0);
+}
+
+void REGPARAM2 BusErrMem_wput(uaecptr addr, uae_u32 w)
+{
+    if (illegal_mem)
+	write_log ("Bus error wput at %08lx\n", (long)addr);
+
+    BusAddressLocation = addr;
+    Exception(2,0);
+}
+
+void REGPARAM2 BusErrMem_bput(uaecptr addr, uae_u32 b)
+{
+    if (illegal_mem)
+	write_log ("Bus error bput at %08lx\n", (long)addr);
+
+    BusAddressLocation = addr;
+    Exception(2,0);
+}
+
+int REGPARAM2 BusErrMem_check(uaecptr addr, uae_u32 size)
+{
+    if (illegal_mem)
+	write_log ("Bus error check at %08lx\n", (long)addr);
+
+    return 0;
+}
+
+uae_u8 REGPARAM2 *BusErrMem_xlate (uaecptr addr)
+{
+    write_log("Your Atari program just did something terribly stupid:"
+              " BusErrMem_xlate($%x)\n", addr);
+
+    /*BusAddressLocation = addr;
+    Exception(2,0);*/
+    return STmem_xlate(addr);  /* So we don't crash. */
+}
+
+
+/* **** ST RAM memory **** */
 
 uae_u8 *STmemory;
-
-static int STmem_check (uaecptr addr, uae_u32 size) REGPARAM;
-static uae_u8 *STmem_xlate (uaecptr addr) REGPARAM;
 
 uae_u32 REGPARAM2 STmem_lget (uaecptr addr)
 {
@@ -176,46 +261,34 @@ void REGPARAM2 STmem_lput (uaecptr addr, uae_u32 l)
 {
     uae_u32 *m;
 
-    if (addr < 6)
-      Exception(2,0);
-    else {
-      addr -= STmem_start & STmem_mask;
-      addr &= STmem_mask;
-      m = (uae_u32 *)(STmemory + addr);
-      do_put_mem_long (m, l);
-    }
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    m = (uae_u32 *)(STmemory + addr);
+    do_put_mem_long (m, l);
 }
 
 void REGPARAM2 STmem_wput (uaecptr addr, uae_u32 w)
 {
     uae_u16 *m;
 
-    if (addr < 6)
-      Exception(2,0);
-    else {
-      addr -= STmem_start & STmem_mask;
-      addr &= STmem_mask;
-      m = (uae_u16 *)(STmemory + addr);
-      do_put_mem_word (m, w);
-    }
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    m = (uae_u16 *)(STmemory + addr);
+    do_put_mem_word (m, w);
 }
 
 void REGPARAM2 STmem_bput (uaecptr addr, uae_u32 b)
 {
-  if (addr < 6)
-    Exception(2,0);
-  else {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
     STmemory[addr] = b;
-  }
 }
 
 int REGPARAM2 STmem_check (uaecptr addr, uae_u32 size)
 {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
-    return (addr + size) <= allocated_STmem;
+    return (addr + size) <= STmem_size;
 }
 
 uae_u8 REGPARAM2 *STmem_xlate (uaecptr addr)
@@ -226,7 +299,161 @@ uae_u8 REGPARAM2 *STmem_xlate (uaecptr addr)
 }
 
 
-/* TT fast memory */
+/*
+ * **** ST RAM system memory ****
+ * We need a separate mem bank for this region since the first 0x800 bytes on
+ * the ST can only be accessed in supervisor mode. Note that the very first
+ * 8 bytes of the ST memory are also a mirror of the TOS ROM, so they are write
+ * protected! 
+ */
+uae_u32 REGPARAM2 SysMem_lget(uaecptr addr)
+{
+    uae_u32 *m;
+
+    if(addr < 0x800 && !regs.s)
+    {
+      BusAddressLocation = addr;
+      Exception(2,0);
+      return 0;
+    }
+
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    m = (uae_u32 *)(STmemory + addr);
+    return do_get_mem_long (m);
+}
+
+uae_u32 REGPARAM2 SysMem_wget(uaecptr addr)
+{
+    uae_u16 *m;
+
+    if(addr < 0x800 && !regs.s)
+    {
+      BusAddressLocation = addr;
+      Exception(2,0);
+      return 0;
+    }
+
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    m = (uae_u16 *)(STmemory + addr);
+    return do_get_mem_word (m);
+}
+
+uae_u32 REGPARAM2 SysMem_bget(uaecptr addr)
+{
+    if(addr < 0x800 && !regs.s)
+    {
+      BusAddressLocation = addr;
+      Exception(2,0);
+      return 0;
+    }
+
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    return STmemory[addr];
+}
+
+void REGPARAM2 SysMem_lput(uaecptr addr, uae_u32 l)
+{
+    uae_u32 *m;
+
+    if(addr < 0x8 || (addr < 0x800 && !regs.s))
+    {
+      BusAddressLocation = addr;
+      Exception(2,0);
+      return;
+    }
+
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    m = (uae_u32 *)(STmemory + addr);
+    do_put_mem_long (m, l);
+}
+
+void REGPARAM2 SysMem_wput(uaecptr addr, uae_u32 w)
+{
+    uae_u16 *m;
+
+    if(addr < 0x8 || (addr < 0x800 && !regs.s))
+    {
+      BusAddressLocation = addr;
+      Exception(2,0);
+      return;
+    }
+
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    m = (uae_u16 *)(STmemory + addr);
+    do_put_mem_word (m, w);
+}
+
+void REGPARAM2 SysMem_bput(uaecptr addr, uae_u32 b)
+{
+    if(addr < 0x8 || (addr < 0x800 && !regs.s))
+    {
+      BusAddressLocation = addr;
+      Exception(2,0);
+      return;
+    }
+
+    addr -= STmem_start & STmem_mask;
+    addr &= STmem_mask;
+    STmemory[addr] = b;
+}
+
+
+/*
+ * **** Void memory ****
+ * Between the ST-RAM end and the 4 MB barrier, there is a void memory space:
+ * Reading always returns the same value and writing does nothing at all.
+ */
+
+uae_u32 REGPARAM2 VoidMem_lget(uaecptr addr)
+{
+    return 0;
+}
+
+uae_u32 REGPARAM2 VoidMem_wget(uaecptr addr)
+{
+    return 0;
+}
+
+uae_u32 REGPARAM2 VoidMem_bget(uaecptr addr)
+{
+    return 0;
+}
+
+void REGPARAM2 VoidMem_lput(uaecptr addr, uae_u32 l)
+{
+}
+
+void REGPARAM2 VoidMem_wput(uaecptr addr, uae_u32 w)
+{
+}
+
+void REGPARAM2 VoidMem_bput (uaecptr addr, uae_u32 b)
+{
+}
+
+int REGPARAM2 VoidMem_check(uaecptr addr, uae_u32 size)
+{
+    if (illegal_mem)
+	write_log ("Void memory check at %08lx\n", (long)addr);
+
+    return 0;
+}
+
+uae_u8 REGPARAM2 *VoidMem_xlate (uaecptr addr)
+{
+    write_log("Your Atari program just did something terribly stupid:"
+              " VoidMem_xlate($%x)\n", addr);
+
+    return STmem_xlate(addr);  /* So we don't crash. */
+}
+
+
+/* **** TT fast memory (not yet supported) **** */
 
 static uae_u8 *TTmemory;
 
@@ -293,7 +520,7 @@ int REGPARAM2 TTmem_check (uaecptr addr, uae_u32 size)
 {
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
-    return (addr + size) <= allocated_TTmem;
+    return (addr + size) <= TTmem_size;
 }
 
 uae_u8 REGPARAM2 *TTmem_xlate(uaecptr addr)
@@ -303,7 +530,8 @@ uae_u8 REGPARAM2 *TTmem_xlate(uaecptr addr)
     return TTmemory + addr;
 }
 
-/* ROM memory */
+
+/* **** ROM memory **** */
 
 uae_u8 *ROMmemory;
 
@@ -345,7 +573,8 @@ void REGPARAM2 ROMmem_lput (uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
 	write_log ("Illegal ROMmem lput at %08lx\n", (long)addr);
-    // regs.spcflags |= SPCFLAG_EXCEPTION;
+
+    BusAddressLocation = addr;
     Exception(2,0);
 }
 
@@ -353,15 +582,17 @@ void REGPARAM2 ROMmem_wput (uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
 	write_log ("Illegal ROMmem wput at %08lx\n", (long)addr);
-    //regs.spcflags |= SPCFLAG_EXCEPTION;
+
+    BusAddressLocation = addr;
     Exception(2,0);
 }
 
 void REGPARAM2 ROMmem_bput (uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
-	write_log ("Illegal ROMmem lput at %08lx\n", (long)addr);
-    //regs.spcflags |= SPCFLAG_EXCEPTION;
+	write_log ("Illegal ROMmem bput at %08lx\n", (long)addr);
+
+    BusAddressLocation = addr;
     Exception(2,0);
 }
 
@@ -378,6 +609,7 @@ uae_u8 REGPARAM2 *ROMmem_xlate (uaecptr addr)
     addr &= ROMmem_mask;
     return ROMmemory + addr;
 }
+
 
 /* Hardware IO memory */
 /* see also intercept.c */
@@ -401,49 +633,38 @@ uae_u8 REGPARAM2 *IOmem_xlate (uaecptr addr)
     return IOmemory + addr;
 }
 
-uae_u8 *IDEmemory;
-
-int REGPARAM2 IDEmem_check (uaecptr addr, uae_u32 size)
-{
-    addr -= IDEmem_start;
-    addr &= IDEmem_mask;
-    return (addr + size) <= IDEmem_size;
-}
-
-uae_u8 REGPARAM2 *IDEmem_xlate (uaecptr addr)
-{
-    addr -= IDEmem_start;
-    addr &= IDEmem_mask;
-    return IDEmemory + addr;
-}
-
-/* Default memory access functions */
-
-int REGPARAM2 default_check (uaecptr a, uae_u32 b)
-{
-    return 0;
-}
-
-uae_u8 REGPARAM2 *default_xlate (uaecptr a)
-{
-    write_log ("Your Atari program just did something terribly stupid\n");
-    Reset_Warm();
-    return ROMmem_xlate (get_long (0xFC0000)); /* So we don't crash. */
-}
 
 
-/* Address banks */
+/* **** Address banks **** */
 
 addrbank dummy_bank = {
     dummy_lget, dummy_wget, dummy_bget,
     dummy_lput, dummy_wput, dummy_bput,
-    default_xlate, dummy_check
+    dummy_xlate, dummy_check
+};
+
+addrbank BusErrMem_bank = {
+    BusErrMem_lget, BusErrMem_wget, BusErrMem_bget,
+    BusErrMem_lput, BusErrMem_wput, BusErrMem_bput,
+    BusErrMem_xlate, BusErrMem_check
 };
 
 addrbank STmem_bank = {
     STmem_lget, STmem_wget, STmem_bget,
     STmem_lput, STmem_wput, STmem_bput,
     STmem_xlate, STmem_check
+};
+
+addrbank SysMem_bank = {
+    SysMem_lget, SysMem_wget, SysMem_bget,
+    SysMem_lput, SysMem_wput, SysMem_bput,
+    STmem_xlate, STmem_check
+};
+
+addrbank VoidMem_bank = {
+    VoidMem_lget, VoidMem_wget, VoidMem_bget,
+    VoidMem_lput, VoidMem_wput, VoidMem_bput,
+    VoidMem_xlate, VoidMem_check
 };
 
 addrbank TTmem_bank = {
@@ -464,14 +685,10 @@ addrbank IOmem_bank = {
     IOmem_xlate, IOmem_check
 };
 
-addrbank IDEmem_bank = {
-    Intercept_IDEReadLong, Intercept_IDEReadWord, Intercept_IDEReadByte,
-    Intercept_IDEWriteLong, Intercept_IDEWriteWord, Intercept_IDEWriteByte,
-    IDEmem_xlate, IDEmem_check
-};
 
 char *address_space, *good_address_map;
 int good_address_fd;
+
 
 static void init_mem_banks (void)
 {
@@ -480,95 +697,92 @@ static void init_mem_banks (void)
 	put_mem_bank (i<<16, &dummy_bank);
 }
 
-#define MAKE_USER_PROGRAMS_BEHAVE 1
-void memory_init (void)
-{
+
 /*
-    char buffer[4096];
-    char *nam;
-    int i, fd;
-*/
+ * Initialize the memory banks
+ */
+void memory_init(uae_u32 f_STMemSize, uae_u32 f_TTMemSize, uae_u32 f_RomMemStart)
+{
+    STmem_size = (f_STMemSize + 65535) & 0xFFFF0000;
+    TTmem_size = (f_TTMemSize + 65535) & 0xFFFF0000;
 
-    allocated_STmem = STmem_size;
-    allocated_TTmem = TTmem_size;
+    /*write_log("memory_init: STmem_size=$%x, TTmem_size=$%x, ROM-Start=$%x,\n",
+              STmem_size, TTmem_size, f_RomMemStart);*/
 
-#ifdef USE_MAPPED_MEMORY
-#error So nicht
-    fd = open ("/dev/zero", O_RDWR);
-    good_address_map = mmap (NULL, 1 << 24, PROT_READ, MAP_PRIVATE, fd, 0);
-    /* Don't believe USER_PROGRAMS_BEHAVE. Otherwise, we'd segfault as soon
-     * as a decrunch routine tries to do color register hacks. */
-    address_space = mmap (NULL, 1 << 24, PROT_READ | (USER_PROGRAMS_BEHAVE || MAKE_USER_PROGRAMS_BEHAVE? PROT_WRITE : 0), MAP_PRIVATE, fd, 0);
-    if ((int)address_space < 0 || (int)good_address_map < 0) {
-	write_log ("Your system does not have enough virtual memory - increase swap.\n");
-	abort ();
-    }
-#ifdef MAKE_USER_PROGRAMS_BEHAVE
-    memset (address_space + 0xDFF180, 0xFF, 32*2);
-#else
-    /* Likewise. This is mostly for mouse button checks. */
-    if (USER_PROGRAMS_BEHAVE)
-	memset (address_space + 0xA00000, 0xFF, 0xF00000 - 0xA00000);
-#endif
-    STmemory = mmap (address_space, 0x200000, PROT_READ|PROT_WRITE, MAP_PRIVATE | MAP_FIXED, fd, 0);
-    ROMmemory = mmap (address_space + ROMmem_start, ROMmem_size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED, fd, 0);
-
-    close(fd);
-
-    good_address_fd = open (nam = tmpnam (NULL), O_CREAT|O_RDWR, 0600);
-    memset (buffer, 1, sizeof(buffer));
-    write (good_address_fd, buffer, sizeof buffer);
-    unlink (nam);
-
-    for (i = 0; i < allocated_STmem; i += 4096)
-	mmap (good_address_map + i, 4096, PROT_READ, MAP_FIXED | MAP_PRIVATE,
-	      good_address_fd, 0);
-    for (i = 0; i < ROMmem_size; i += 4096)
-	mmap (good_address_map + i + 0x1000000 - ROMmem_size, 4096, PROT_READ,
-	      MAP_FIXED | MAP_PRIVATE, good_address_fd, 0);
-#else
-    ROMmemory = STRam+ROMmem_start;  /*(uae_u8 *)malloc (ROMmem_size)*/;
-    STmemory = STRam; /*(uae_u8 *)malloc (allocated_STmem);*/
+    STmemory = STRam;
+    ROMmemory = STRam + ROMmem_start;
     IOmemory = STRam + IOmem_start;
 /*
-    while (! STmemory && allocated_STmem > 512*1024) {
-	allocated_STmem >>= 1;
-	STmemory = (uae_u8 *)malloc (allocated_STmem);
+    while (! STmemory && STmem_size > 512*1024) {
+	STmem_size >>= 1;
+	STmemory = (uae_u8 *)malloc (STmem_size);
 	if (STmemory)
-	    fprintf (stderr, "Reducing STmem size to %dkb\n", allocated_STmem >> 10);
+	    fprintf (stderr, "Reducing STmem size to %dkb\n", STmem_size >> 10);
     }
     if (! STmemory) {
 	write_log ("virtual memory exhausted (STmemory)!\n");
 	abort ();
     }
 */
-#endif
 
-    init_mem_banks ();
+    init_mem_banks();
 
-    /* Map the STmem into all of the lower 16MB */
-    map_banks (&STmem_bank, 0x00, 256);
+    /* Map the ST RAM: */
+    map_banks(&SysMem_bank, 0x00, 1);
+    map_banks(&VoidMem_bank, 0x08, 0x38);  /* Between STRamEnd and 4MB barrier, there is void space! */
+    map_banks(&STmem_bank, 0x01, (STmem_size >> 16) - 1);
 
-    if (allocated_TTmem > 0)
-	TTmemory = (uae_u8 *)malloc (allocated_TTmem);
+    /* TT memory isn't really supported yet */
+    if (TTmem_size > 0)
+	TTmemory = (uae_u8 *)malloc (TTmem_size);
     if (TTmemory != 0)
-	map_banks (&TTmem_bank, TTmem_start >> 16, allocated_TTmem >> 16);
+	map_banks (&TTmem_bank, TTmem_start >> 16, TTmem_size >> 16);
     else
-	allocated_TTmem = 0;
+	TTmem_size = 0;
+    TTmem_mask = TTmem_size - 1;
 
-    map_banks(&ROMmem_bank, ROMmem_start >> 16, ROMmem_size/65536);
-/*    map_banks(&ROMmem_bank, 0xFFFC, 4);*/
+    /* ROM memory: */
+    /* Depending on which ROM version we are using, the other ROM region is illegal! */
+    if(f_RomMemStart == 0xFC0000)
+    {
+        map_banks(&ROMmem_bank, 0xFC0000 >> 16, 0x3);
+        map_banks(&BusErrMem_bank, 0xE00000 >> 16, 0x10);
+    }
+    else if(ROMmem_start == 0xE00000)
+    {
+        map_banks(&ROMmem_bank, 0xE00000 >> 16, 0x10);
+        map_banks(&BusErrMem_bank, 0xFC0000 >> 16, 0x3);
+    }
+    else
+    {
+        write_log("Illegal ROM memory start!\n");
+    }
 
-    map_banks(&IOmem_bank, IOmem_start>>16, 1);
-    map_banks(&IDEmem_bank, IDEmem_start>>16, 1);
+    /* Cartridge memory: */
+    map_banks(&ROMmem_bank, 0xFA0000 >> 16, 0x2);
 
-    STmem_mask = 0x00ffffff;
-    ROMmem_mask = 0x00ffffff;
-    TTmem_mask = allocated_TTmem - 1;
-    IOmem_mask = IOmem_size - 1;
-    IDEmem_mask = IDEmem_size - 1;
+    /* IO memory: */
+    map_banks(&IOmem_bank, IOmem_start>>16, 0x1);
 
+    /* Illegal memory regions cause a bus error on the ST: */
+    map_banks(&BusErrMem_bank, 0x400000 >> 16, 0xA0); /* Space between 4MB barrier and TOS ROM */
+    map_banks(&BusErrMem_bank, 0xF00000 >> 16, 0xA);  /* IDE controler on the Falcon */
 }
+
+
+/*
+ * Uninitialize the memory banks.
+ */
+void memory_uninit (void)
+{
+    /* Here, we free allocated memory from memory_init */
+    if(TTmem_size > 0)
+    {
+      free(TTmemory);
+      TTmemory = NULL;
+    }
+}
+
 
 void map_banks (addrbank *bank, int start, int size)
 {

@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-static char rcsid[] = "Hatari $Id: tos.c,v 1.14 2003-04-01 11:18:38 emanne Exp $";
+static char rcsid[] = "Hatari $Id: tos.c,v 1.15 2003-04-01 16:11:36 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -343,9 +343,8 @@ static void TOS_SetDefaultMemoryConfig(void)
   STMemory_WriteByte(0x424, MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryConfig);
   STMemory_WriteByte(0xff8001, MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryConfig);
 
-  /* Set memory range, and start of BUS error */
+  /* Set memory range */
   STRamEnd = MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryEnd;  /* Set end of RAM */
-  STRamEnd_BusErr = 0x00420000;    /* 4Mb */      /* Between RAM end and this is void space (0's), after is a BUS error */
 
   /* Set TOS floppies */
   STMemory_WriteWord(0x446, nBootDrive);          /* Boot up on A(0) or C(2) */
@@ -358,6 +357,10 @@ static void TOS_SetDefaultMemoryConfig(void)
   /* Mirror ROM boot vectors */
   STMemory_WriteLong(0x00, STMemory_ReadLong(TosAddress));
   STMemory_WriteLong(0x04, STMemory_ReadLong(TosAddress+4));
+
+  /* Initialize the memory banks: */
+  memory_uninit();
+  memory_init(STRamEnd, 0, TosAddress);
 }
 
 

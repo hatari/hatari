@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.36 2003-03-30 11:32:48 thothy Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.37 2003-04-01 16:11:34 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -80,7 +80,7 @@ void Main_MemorySnapShot_Capture(BOOL bSave)
   /* Save/Restore details */
   /* Only save/restore area of memory machine ie set to, eg 1Mb */
   if (bSave) {
-    nBytes = STRamEnd_BusErr;
+    nBytes = STRamEnd;  /* was: STRamEnd_BusErr */
     MemorySnapShot_Store(&nBytes,sizeof(nBytes));
     MemorySnapShot_Store(STRam,nBytes);
   }

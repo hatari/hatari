@@ -6,6 +6,9 @@
   * Copyright 1995 Bernd Schmidt
   *
   * Adaptation to Hatari by Thomas Huth
+  *
+  * This file is distributed under the GNU Public License, version 2 or at
+  * your option any later version. Read the file gpl.txt for details.
   */
 
 #ifndef UAE_MEMORY_H
@@ -22,9 +25,6 @@
 #define SAVE_MEMORY_BANKS
 #endif
 
-extern int special_mem;
-#define S_READ 1
-#define S_WRITE 2
 
 typedef uae_u32 (*mem_get_func)(uaecptr) REGPARAM;
 typedef void (*mem_put_func)(uaecptr, uae_u32) REGPARAM;
@@ -36,23 +36,11 @@ extern char *address_space, *good_address_map;
 #undef DIRECT_MEMFUNCS_SUCCESSFUL
 
 
-#define ROMmem_start 0x00E00000
-#define ROMmem_size  (0x00FF0000-0x00E00000)
-
-#define STmem_start 0x00000000
-#define TTmem_start 0x01000000
-
-#define IOmem_start 0x00FF8000
-#define IOmem_size  32768
-
-#define IDEmem_start 0xf00000
-#define IDEmem_size  64
-
 typedef struct {
     /* These ones should be self-explanatory... */
     mem_get_func lget, wget, bget;
     mem_put_func lput, wput, bput;
-    /* Use xlateaddr to translate an Amiga address to a uae_u8 * that can
+    /* Use xlateaddr to translate an Atari address to a uae_u8 * that can
      * be used to address memory without calling the wget/wput functions.
      * This doesn't work for all memory banks, so this function may call
      * abort(). */
@@ -64,27 +52,6 @@ typedef struct {
     check_func check;
 } addrbank;
 
-extern uae_u8 filesysory[65536];
-
-extern addrbank STmem_bank;
-extern addrbank ROMmem_bank;
-extern addrbank custom_bank;
-extern addrbank TTmem_bank;
-
-extern void rtarea_init (void);
-extern void rtarea_setup (void);
-extern void expamem_init (void);
-extern void expamem_reset (void);
-
-extern uae_u32 gfxmem_start;
-extern uae_u8 *gfxmemory;
-extern uae_u32 gfxmem_mask;
-extern int address_space_24;
-
-/* Default memory access functions */
-
-extern int default_check(uaecptr addr, uae_u32 size) REGPARAM;
-extern uae_u8 *default_xlate(uaecptr addr) REGPARAM;
 
 #define bankindex(addr) (((uaecptr)(addr)) >> 16)
 
@@ -98,7 +65,8 @@ extern addrbank mem_banks[65536];
 #define put_mem_bank(addr, b) (mem_banks[bankindex(addr)] = *(b))
 #endif
 
-extern void memory_init(void);
+extern void memory_init(uae_u32 f_STMemSize, uae_u32 f_TTMemSize, uae_u32 f_RomMemStart);
+extern void memory_uninit (void);
 extern void map_banks(addrbank *bank, int first, int count);
 
 #ifndef NO_INLINE_MEMORY_ACCESS
@@ -168,14 +136,6 @@ STATIC_INLINE int valid_address(uaecptr addr, uae_u32 size)
 {
     return get_mem_bank(addr).check(addr, size);
 }
-
-/* For faster access in custom chip emulation.  */
-extern uae_u32 chipmem_lget (uaecptr) REGPARAM;
-extern uae_u32 chipmem_wget (uaecptr) REGPARAM;
-extern uae_u32 chipmem_bget (uaecptr) REGPARAM;
-extern void chipmem_lput (uaecptr, uae_u32) REGPARAM;
-extern void chipmem_wput (uaecptr, uae_u32) REGPARAM;
-extern void chipmem_bput (uaecptr, uae_u32) REGPARAM;
 
 
 #endif /* UAE_MEMORY_H */
