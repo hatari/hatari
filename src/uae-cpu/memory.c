@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: memory.c,v 1.5 2003-03-24 11:00:38 emanne Exp $";
+static char rcsid[] = "Hatari $Id: memory.c,v 1.6 2003-03-31 11:05:11 emanne Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -20,6 +20,7 @@ static char rcsid[] = "Hatari $Id: memory.c,v 1.5 2003-03-24 11:00:38 emanne Exp
 #include "../includes/tos.h"
 #include "../includes/intercept.h"
 #include "../includes/reset.h"
+#include "newcpu.h"
 
 #ifdef USE_MAPPED_MEMORY
 #include <sys/mman.h>
@@ -175,27 +176,39 @@ void REGPARAM2 STmem_lput (uaecptr addr, uae_u32 l)
 {
     uae_u32 *m;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    m = (uae_u32 *)(STmemory + addr);
-    do_put_mem_long (m, l);
+    if (addr < 6)
+      Exception(2,0);
+    else {
+      addr -= STmem_start & STmem_mask;
+      addr &= STmem_mask;
+      m = (uae_u32 *)(STmemory + addr);
+      do_put_mem_long (m, l);
+    }
 }
 
 void REGPARAM2 STmem_wput (uaecptr addr, uae_u32 w)
 {
     uae_u16 *m;
 
-    addr -= STmem_start & STmem_mask;
-    addr &= STmem_mask;
-    m = (uae_u16 *)(STmemory + addr);
-    do_put_mem_word (m, w);
+    if (addr < 6)
+      Exception(2,0);
+    else {
+      addr -= STmem_start & STmem_mask;
+      addr &= STmem_mask;
+      m = (uae_u16 *)(STmemory + addr);
+      do_put_mem_word (m, w);
+    }
 }
 
 void REGPARAM2 STmem_bput (uaecptr addr, uae_u32 b)
 {
+  if (addr < 6)
+    Exception(2,0);
+  else {
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
     STmemory[addr] = b;
+  }
 }
 
 int REGPARAM2 STmem_check (uaecptr addr, uae_u32 size)
@@ -332,18 +345,24 @@ void REGPARAM2 ROMmem_lput (uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
 	write_log ("Illegal ROMmem lput at %08lx\n", (long)addr);
+    // regs.spcflags |= SPCFLAG_EXCEPTION;
+    Exception(2,0);
 }
 
 void REGPARAM2 ROMmem_wput (uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
 	write_log ("Illegal ROMmem wput at %08lx\n", (long)addr);
+    //regs.spcflags |= SPCFLAG_EXCEPTION;
+    Exception(2,0);
 }
 
 void REGPARAM2 ROMmem_bput (uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
 	write_log ("Illegal ROMmem lput at %08lx\n", (long)addr);
+    //regs.spcflags |= SPCFLAG_EXCEPTION;
+    Exception(2,0);
 }
 
 int REGPARAM2 ROMmem_check (uaecptr addr, uae_u32 size)
@@ -359,7 +378,6 @@ uae_u8 REGPARAM2 *ROMmem_xlate (uaecptr addr)
     addr &= ROMmem_mask;
     return ROMmemory + addr;
 }
-
 
 /* Hardware IO memory */
 /* see also intercept.c */
@@ -549,6 +567,7 @@ void memory_init (void)
     TTmem_mask = allocated_TTmem - 1;
     IOmem_mask = IOmem_size - 1;
     IDEmem_mask = IDEmem_size - 1;
+
 }
 
 void map_banks (addrbank *bank, int start, int size)
