@@ -1,3 +1,9 @@
+2003-03-04 (THH):
+  * The IKBD emulation does not longer duplicate joystick fire buttons when
+    a game (like Babarian) tries to use both, joystick and mouse => Games like
+    Lotus Turbo Esprit Challange are now working again!
+  * Improved audio timer function - the code should now be a little bit faster.
+
 2003-03-03 (THH):
   * Resynced Hatari's UAE CPU core with UAE 0.8.22 - this fixes some bugs in
     68k instructions like ABCD and SBCD.

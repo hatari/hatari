@@ -1,5 +1,8 @@
 /*
-  Hatari
+  Hatari - ikbd.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   The keyboard processor(6301) handles any joystick/mouse task and sends bytes to the ACIA(6850)
   When a byte arrives in the ACIA (which takes just over 7000 CPU cycles) an MFP interrupt is flagged.
@@ -11,6 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
+static char rcsid[] = "Hatari $Id: ikbd.c,v 1.12 2003-03-04 19:29:00 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -49,7 +53,9 @@ KEYBOARD_PROCESSOR KeyboardProcessor;   /* Keyboard processor details */
 BOOL DoubleClickPattern[] = {           /* Pattern of mouse button up/down in ST frames (run off a double-click message) */
  BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,
  0,0,0,0,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE };
-BOOL bMouseDisabled, bJoystickDisabled, bDuringResetCriticalTime;
+
+BOOL bMouseDisabled, bJoystickDisabled;
+BOOL bDuringResetCriticalTime, bDontDuplicateFire;
 
 /* ACIA */
 unsigned char ACIAControlRegister = 0;
@@ -223,9 +229,11 @@ void IKBD_Reset(BOOL bCold)
   Keyboard.LButtonDblClk = Keyboard.RButtonDblClk = 0;
   Keyboard.LButtonHistory = Keyboard.RButtonHistory = 0;
 
-  /* Store BOOL for when disable mouse or joystick - do emulate hardware 'quirk' where */
-  /* if disable both with 'x' time of a RESET command they are ignored! */
-  bMouseDisabled = bJoystickDisabled = bDuringResetCriticalTime = FALSE;
+  /* Store BOOL for when disable mouse or joystick */
+  bMouseDisabled = bJoystickDisabled = FALSE;
+  /* do emulate hardware 'quirk' where if disable both with 'x' time of a RESET
+   * command they are ignored! */
+  bDuringResetCriticalTime = bDontDuplicateFire = FALSE;
 }
 
 
@@ -378,8 +386,12 @@ BOOL IKBD_ButtonsEqual(int Button1,int Button2)
 */
 void IKBD_DuplicateMouseFireButtons(void)
 {
+  /* Don't duplicate fire button when program tries to use both! */
+  if(bDontDuplicateFire)  return;
+
   /* If mouse is off then joystick fire button goes to joystick */
-  if (KeyboardProcessor.MouseMode==AUTOMODE_OFF) {
+  if (KeyboardProcessor.MouseMode==AUTOMODE_OFF)
+  {
     /* If pressed right mouse button, should go to joystick 1 */
     if (Keyboard.bRButtonDown&BUTTON_MOUSE)
       KeyboardProcessor.Joy.JoyData[1] |= 0x80;
@@ -388,9 +400,11 @@ void IKBD_DuplicateMouseFireButtons(void)
       KeyboardProcessor.Joy.JoyData[0] |= 0x80;
   }
   /* If mouse if on, joystick 1 fire button goes to mouse not to the joystick */
-  else {
+  else
+  {
     /* Is fire button pressed? */
-    if (KeyboardProcessor.Joy.JoyData[1]&0x80) {
+    if (KeyboardProcessor.Joy.JoyData[1]&0x80)
+    {
       KeyboardProcessor.Joy.JoyData[1] &= 0x7f;  /* Clear fire button bit */
       Keyboard.bRButtonDown |= BUTTON_JOYSTICK;  /* Mimick on mouse right button */
     }
@@ -669,12 +683,16 @@ void IKBD_SendAutoKeyboardCommands(void)
 void IKBD_CheckResetDisableBug(void)
 {
   /* Have disabled BOTH mouse and joystick? */
-  if (bMouseDisabled && bJoystickDisabled) {
+  if (bMouseDisabled && bJoystickDisabled)
+  {
     /* And in critical time? */
-    if (bDuringResetCriticalTime) {
+    if (bDuringResetCriticalTime)
+    {
       /* Emulate relative mouse and joystick reports being turned back on */
       KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
       KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
+      bDontDuplicateFire = TRUE;
+
 #ifdef DEBUG_OUTPUT_IKBD
       Debug_IKBD("IKBD Mouse+Joystick disabled during RESET. Revert.\n");
       Debugger_TabIKBD_AddListViewItem("( Mouse+Joystick disabled during RESET. Revert. )");
@@ -752,6 +770,7 @@ void IKBD_Cmd_Reset(void)
     /* Set this 'critical' flag, gets reset when timer expires */
     bMouseDisabled = bJoystickDisabled = FALSE;
     bDuringResetCriticalTime = TRUE;
+    bDontDuplicateFire = FALSE;
   }
   /* else if not 0x80,0x01 just ignore */
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1044,13 +1063,18 @@ void IKBD_Cmd_StopKeyboardTransfer(void)
 */
 void IKBD_Cmd_ReturnJoystickAuto(void)
 {
- KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
- KeyboardProcessor.MouseMode = AUTOMODE_OFF;
- /* Again, if try to disable mouse within time of a reset it isn't disabled! */
- if (bDuringResetCriticalTime)
-   KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
+  KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
+  KeyboardProcessor.MouseMode = AUTOMODE_OFF;
+
+  /* Again, if try to disable mouse within time of a reset it isn't disabled! */
+  if (bDuringResetCriticalTime)
+  {
+    KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
+    bDontDuplicateFire = TRUE;
+  }
+
 #ifdef DEBUG_OUTPUT_IKBD
- Debug_IKBD("IKBD_Cmd_ReturnJoystickAuto\n");
+  Debug_IKBD("IKBD_Cmd_ReturnJoystickAuto\n");
 #endif
 }
 
