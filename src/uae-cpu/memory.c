@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: memory.c,v 1.12 2003-04-05 22:25:03 thothy Exp $";
+char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.13 2004-02-19 15:22:13 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -156,7 +156,7 @@ uae_u32 REGPARAM2 BusErrMem_lget(uaecptr addr)
     if (illegal_mem)
 	write_log ("Bus error lget at %08lx\n", (long)addr);
 
-    M68000_BusError(addr);
+    M68000_BusError(addr, 1);
     return 0;
 }
 
@@ -165,7 +165,7 @@ uae_u32 REGPARAM2 BusErrMem_wget(uaecptr addr)
     if (illegal_mem)
 	write_log ("Bus error wget at %08lx\n", (long)addr);
 
-    M68000_BusError(addr);
+    M68000_BusError(addr, 1);
     return 0;
 }
 
@@ -174,7 +174,7 @@ uae_u32 REGPARAM2 BusErrMem_bget(uaecptr addr)
     if (illegal_mem)
 	write_log ("Bus error bget at %08lx\n", (long)addr);
 
-    M68000_BusError(addr);
+    M68000_BusError(addr, 1);
     return 0;
 }
 
@@ -183,7 +183,7 @@ void REGPARAM2 BusErrMem_lput(uaecptr addr, uae_u32 l)
     if (illegal_mem)
 	write_log ("Bus error lput at %08lx\n", (long)addr);
 
-    M68000_BusError(addr);
+    M68000_BusError(addr, 0);
 }
 
 void REGPARAM2 BusErrMem_wput(uaecptr addr, uae_u32 w)
@@ -191,7 +191,7 @@ void REGPARAM2 BusErrMem_wput(uaecptr addr, uae_u32 w)
     if (illegal_mem)
 	write_log ("Bus error wput at %08lx\n", (long)addr);
 
-    M68000_BusError(addr);
+    M68000_BusError(addr, 0);
 }
 
 void REGPARAM2 BusErrMem_bput(uaecptr addr, uae_u32 b)
@@ -199,7 +199,7 @@ void REGPARAM2 BusErrMem_bput(uaecptr addr, uae_u32 b)
     if (illegal_mem)
 	write_log ("Bus error bput at %08lx\n", (long)addr);
 
-    M68000_BusError(addr);
+    M68000_BusError(addr, 0);
 }
 
 int REGPARAM2 BusErrMem_check(uaecptr addr, uae_u32 size)
@@ -306,7 +306,7 @@ uae_u32 REGPARAM2 SysMem_lget(uaecptr addr)
 
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr);
+      M68000_BusError(addr, 1);
       return 0;
     }
 
@@ -322,7 +322,7 @@ uae_u32 REGPARAM2 SysMem_wget(uaecptr addr)
 
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr);
+      M68000_BusError(addr, 1);
       return 0;
     }
 
@@ -336,7 +336,7 @@ uae_u32 REGPARAM2 SysMem_bget(uaecptr addr)
 {
     if(addr < 0x800 && !regs.s)
     {
-      M68000_BusError(addr);
+      M68000_BusError(addr, 1);
       return 0;
     }
 
@@ -351,7 +351,7 @@ void REGPARAM2 SysMem_lput(uaecptr addr, uae_u32 l)
 
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr);
+      M68000_BusError(addr, 0);
       return;
     }
 
@@ -367,7 +367,7 @@ void REGPARAM2 SysMem_wput(uaecptr addr, uae_u32 w)
 
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr);
+      M68000_BusError(addr, 0);
       return;
     }
 
@@ -381,7 +381,7 @@ void REGPARAM2 SysMem_bput(uaecptr addr, uae_u32 b)
 {
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      M68000_BusError(addr);
+      M68000_BusError(addr, 0);
       return;
     }
 
@@ -562,7 +562,7 @@ void REGPARAM2 ROMmem_lput (uaecptr addr, uae_u32 b)
     if (illegal_mem)
 	write_log ("Illegal ROMmem lput at %08lx\n", (long)addr);
 
-    M68000_BusError(addr);
+    M68000_BusError(addr, 0);
 }
 
 void REGPARAM2 ROMmem_wput (uaecptr addr, uae_u32 b)
@@ -570,7 +570,7 @@ void REGPARAM2 ROMmem_wput (uaecptr addr, uae_u32 b)
     if (illegal_mem)
 	write_log ("Illegal ROMmem wput at %08lx\n", (long)addr);
 
-    M68000_BusError(addr);
+    M68000_BusError(addr, 0);
 }
 
 void REGPARAM2 ROMmem_bput (uaecptr addr, uae_u32 b)
@@ -578,7 +578,7 @@ void REGPARAM2 ROMmem_bput (uaecptr addr, uae_u32 b)
     if (illegal_mem)
 	write_log ("Illegal ROMmem bput at %08lx\n", (long)addr);
 
-    M68000_BusError(addr);
+    M68000_BusError(addr, 0);
 }
 
 int REGPARAM2 ROMmem_check (uaecptr addr, uae_u32 size)

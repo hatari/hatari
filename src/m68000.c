@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.25 2003-12-28 22:32:40 thothy Exp $";
+char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.26 2004-02-19 15:22:12 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -32,6 +32,7 @@ short int PendingInterruptCount;
 Uint32 BusAddressLocation;       /* Stores the offending address for bus-/address errors */
 Uint32 BusErrorPC;               /* Value of the PC when bus error occurs */
 Uint16 BusErrorOpcode;           /* Opcode of faulting instruction */
+BOOL bBusErrorReadWrite;         /* 0 for write error, 1 for read error */
 
 
 /*-----------------------------------------------------------------------*/
@@ -146,9 +147,10 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
 
 /*-----------------------------------------------------------------------*/
 /*
-  BUSERROR - Access outside valid memory range
+  BUSERROR - Access outside valid memory range.
+  Use bReadWrite = 0 for write errors and bReadWrite = 1 for read errors!
 */
-void M68000_BusError(unsigned long addr)
+void M68000_BusError(unsigned long addr, BOOL bReadWrite)
 {
   /* FIXME: In prefetch mode, m68k_getpc() seems already to point to the next instruction */
   BusErrorPC = m68k_getpc();
@@ -161,6 +163,7 @@ void M68000_BusError(unsigned long addr)
 
   BusAddressLocation = addr;        /* Store for exception frame */
   BusErrorOpcode = get_word(BusErrorPC);
+  bBusErrorReadWrite = bReadWrite;
   set_special(SPCFLAG_BUSERROR);    /* The exception will be done in newcpu.c */
 }
 

@@ -11,10 +11,11 @@
 extern Uint32 BusAddressLocation;
 extern Uint32 BusErrorPC;
 extern Uint16 BusErrorOpcode;
+extern BOOL bBusErrorReadWrite;
 
 extern void M68000_Reset(BOOL bCold);
 extern void M68000_MemorySnapShot_Capture(BOOL bSave);
-extern void M68000_BusError(unsigned long addr);
+extern void M68000_BusError(unsigned long addr, BOOL bReadWrite);
 extern void M68000_AddressError(unsigned long addr);
 extern void M68000_Exception(Uint32 ExceptionVector);
 extern void M68000_WaitState(void);

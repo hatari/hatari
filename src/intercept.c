@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.17 2003-12-28 22:32:40 thothy Exp $";
+char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.18 2004-02-19 15:22:12 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -313,7 +313,7 @@ uae_u32 Intercept_ReadByte(uaecptr addr)
   if(addr < 0x00ff8000)
   {
     /* invalid memory addressing --> bus error */
-    M68000_BusError(addr);
+    M68000_BusError(addr, 1);
     return 0;
   }
 
@@ -338,7 +338,7 @@ uae_u32 Intercept_ReadWord(uaecptr addr)
   if(addr < 0x00ff8000)
   {
     /* invalid memory addressing --> bus error */
-    M68000_BusError(addr);
+    M68000_BusError(addr, 1);
     return 0;
   }
 
@@ -363,7 +363,7 @@ uae_u32 Intercept_ReadLong(uaecptr addr)
   if(addr < 0x00ff8000)
   {
     /* invalid memory addressing --> bus error */
-    M68000_BusError(addr);
+    M68000_BusError(addr, 1);
     return 0;
   }
 
@@ -385,7 +385,7 @@ void Intercept_WriteByte(uaecptr addr, uae_u32 val)
   if(addr < 0x00ff8000)
   {
     /* invalid memory addressing --> bus error */
-    M68000_BusError(addr);
+    M68000_BusError(addr, 0);
     return;
   }
 
@@ -409,7 +409,7 @@ void Intercept_WriteWord(uaecptr addr, uae_u32 val)
   if(addr < 0x00ff8000)
   {
     /* invalid memory addressing --> bus error */
-    M68000_BusError(addr);
+    M68000_BusError(addr, 0);
     return;
   }
 
@@ -433,7 +433,7 @@ void Intercept_WriteLong(uaecptr addr, uae_u32 val)
   if(addr < 0x00ff8000)
   {
     /* invalid memory addressing --> bus error */
-    M68000_BusError(addr);
+    M68000_BusError(addr, 0);
     return;
   }
 
@@ -1304,9 +1304,14 @@ INTERCEPT_ADDRESSRANGE InterceptBusErrors[] =
 /*
   Jump to the BusError handler with the correct bus address
 */
-void Intercept_BusError(void)
+void Intercept_BusErrorReadAccess(void)
 {
-  M68000_BusError(BusAddressLocation);
+  M68000_BusError(BusAddressLocation, 1);
+}
+
+void Intercept_BusErrorWriteAccess(void)
+{
+  M68000_BusError(BusAddressLocation, 0);
 }
 
 
@@ -1318,13 +1323,17 @@ void Intercept_BusError(void)
 */
 void Intercept_ModifyTablesForBusErrors(void)
 {
-  unsigned long *pInterceptList;
+  unsigned long *pInterceptListRead, *pInterceptListWrite;
   unsigned int Address;
   int i;
 
   /* Set routine list */
-  pInterceptList = pCurrentInterceptWorkspace;
-  *pCurrentInterceptWorkspace++ = (unsigned long)Intercept_BusError;
+  pInterceptListRead = pCurrentInterceptWorkspace;
+  *pCurrentInterceptWorkspace++ = (unsigned long)Intercept_BusErrorReadAccess;
+  *pCurrentInterceptWorkspace++ = 0L;
+
+  pInterceptListWrite = pCurrentInterceptWorkspace;
+  *pCurrentInterceptWorkspace++ = (unsigned long)Intercept_BusErrorWriteAccess;
   *pCurrentInterceptWorkspace++ = 0L;
 
   /* Set all bus-error entries */
@@ -1336,13 +1345,13 @@ void Intercept_ModifyTablesForBusErrors(void)
     for(Address=InterceptBusErrors[i].Start_Address; Address<InterceptBusErrors[i].End_Address; Address++)
     {
       /* For 'read' */
-      pInterceptReadByteTable[Address-0xff8000] = pInterceptList;
-      pInterceptReadWordTable[Address-0xff8000] = pInterceptList;
-      pInterceptReadLongTable[Address-0xff8000] = pInterceptList;
+      pInterceptReadByteTable[Address-0xff8000] = pInterceptListRead;
+      pInterceptReadWordTable[Address-0xff8000] = pInterceptListRead;
+      pInterceptReadLongTable[Address-0xff8000] = pInterceptListRead;
       /* and 'write' */
-      pInterceptWriteByteTable[Address-0xff8000] = pInterceptList;
-      pInterceptWriteWordTable[Address-0xff8000] = pInterceptList;
-      pInterceptWriteLongTable[Address-0xff8000] = pInterceptList;
+      pInterceptWriteByteTable[Address-0xff8000] = pInterceptListWrite;
+      pInterceptWriteWordTable[Address-0xff8000] = pInterceptListWrite;
+      pInterceptWriteLongTable[Address-0xff8000] = pInterceptListWrite;
     }
 
   }

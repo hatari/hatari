@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.30 2003-12-28 22:32:40 thothy Exp $";
+char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.31 2004-02-19 15:22:13 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -707,6 +707,7 @@ void Exception(int nr, uaecptr oldpc)
 
     MakeSR();
 
+    /* Change to supervisor mode if necessary */
     if (!regs.s) {
 	regs.usp = m68k_areg(regs, 7);
 	if (cpu_level >= 2)
@@ -715,6 +716,8 @@ void Exception(int nr, uaecptr oldpc)
 	    m68k_areg(regs, 7) = regs.isp;
 	regs.s = 1;
     }
+
+    /* Build additional exception stack frame for 68010 and higher */
     if (cpu_level > 0) {
 	if (nr == 2 || nr == 3) {
 	    int i;
@@ -756,32 +759,39 @@ void Exception(int nr, uaecptr oldpc)
     put_word (m68k_areg(regs, 7), regs.sr);
 
     /* 68000 bus/address errors: */
-    /* Well these 8 more bytes are not here just for debuging.
-       It seems adebug expects them to be on the stack when it receives
-       a bus error... */
     if (cpu_level==0 && (nr==2 || nr==3)) {
+	uae_u16 specialstatus = 0x2001;
+	/* Special status word emulation isn't perfect yet... :-( */
+	if (regs.sr & 0x2000)
+	    specialstatus |= 0x4;
 	m68k_areg(regs, 7) -= 8;
 	if (nr == 3) {    /* Address error */
-            put_word (m68k_areg(regs, 7), 0);  /* FIXME: Add real function code value */
+	    put_word (m68k_areg(regs, 7), specialstatus);
 	    put_long (m68k_areg(regs, 7)+2, last_fault_for_exception_3);
 	    put_word (m68k_areg(regs, 7)+6, last_op_for_exception_3);
 	    put_long (m68k_areg(regs, 7)+10, last_addr_for_exception_3);
-            if( bEnableDebug ) {
-              fprintf(stderr,"Address Error at address $%x, PC=$%x\n",last_fault_for_exception_3,currpc);
-              DebugUI();
-            }
+	    if (bEnableDebug) {
+	      fprintf(stderr,"Address Error at address $%x, PC=$%x\n",last_fault_for_exception_3,currpc);
+	      DebugUI();
+	    }
 	}
-        else {    /* Bus error */
-            put_word (m68k_areg(regs, 7), 0);  /* FIXME: Add real function code value */
+	else {    /* Bus error */
+	    if (bBusErrorReadWrite)
+	      specialstatus |= 0x10;
+	    put_word (m68k_areg(regs, 7), specialstatus);
 	    put_long (m68k_areg(regs, 7)+2, BusAddressLocation);
 	    put_word (m68k_areg(regs, 7)+6, BusErrorOpcode);
-            if( bEnableDebug && BusAddressLocation!=0xff8a00) {
-              fprintf(stderr,"Bus Error at address $%x, PC=$%lx\n",BusAddressLocation,(long)currpc);
-              DebugUI();
-            }
-        }
+	    if (bEnableDebug && BusAddressLocation!=0xff8a00) {
+	      fprintf(stderr,"Bus Error at address $%x, PC=$%lx\n",BusAddressLocation,(long)currpc);
+	      DebugUI();
+	    }
+	}
     }
 
+    /* Set PC and flags */
+    if (bEnableDebug && get_long (regs.vbr + 4*nr) == 0) {
+        write_log("Uninitialized exception handler #%i!\n", nr);
+    }
     m68k_setpc (get_long (regs.vbr + 4*nr));
     fill_prefetch_0 ();
     regs.t1 = regs.t0 = regs.m = 0;
@@ -1194,18 +1204,13 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 	return 4;
     }
 
-    if (get_long (0x10) == 0) {
-	write_log("Illegal instruction handler failure!\n");
-	set_special(SPCFLAG_BRK);
-	bQuitProgram = 1;
-    }
-
 #if 0
     write_log ("Illegal instruction: %04x at %08lx\n", opcode, (long)pc);
 #endif
     Exception (4,0);
     return 4;
 }
+
 
 void mmu_op(uae_u32 opcode, uae_u16 extra)
 {
