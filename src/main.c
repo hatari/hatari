@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.56 2004-04-28 09:04:58 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.57 2004-06-11 10:04:46 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -153,6 +153,7 @@ void Main_EventHandler(void)
    {
     case SDL_QUIT:
        bQuitProgram = TRUE;
+       set_special(SPCFLAG_BRK);        /* Assure that CPU core shuts down */
        break;
     case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */
        KeyboardProcessor.Mouse.dx += event.motion.xrel;

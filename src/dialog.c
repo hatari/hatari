@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.37 2004-04-19 08:53:33 thothy Exp $";
+char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.38 2004-06-11 10:04:45 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -235,6 +235,9 @@ BOOL Dialog_DoProperty(void)
     Dialog_CopyDialogParamsToConfiguration(bForceReset);
 
   Main_UnPauseEmulation();
+
+  if (bQuitProgram)
+    set_special(SPCFLAG_BRK);           /* Assure that CPU core shuts down */
 
   return(bOKDialog);
 }

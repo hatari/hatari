@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.23 2004-04-23 15:33:59 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.24 2004-06-11 10:04:46 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -236,8 +236,11 @@ void Video_InterruptHandler_VBL(void)
 
   /* And handle any messages, check for quit message */
   Main_EventHandler();         /* Process messages, set 'bQuitProgram' if user tries to quit */
-  if(bQuitProgram)
+  if (bQuitProgram)
+  {
     Int_AddAbsoluteInterrupt(4, 0L);  /* Pass NULL interrupt function to quit cleanly */
+    set_special(SPCFLAG_BRK);         /* Assure that CPU core shuts down */
+  }
 
   if (ConfigureParams.System.nMinMaxSpeed != MINMAXSPEED_MAX)
   {

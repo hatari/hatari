@@ -10,16 +10,16 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.34 2004-04-23 15:34:01 thothy Exp $";
+char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.35 2004-06-11 10:04:47 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
 #include "maccess.h"
 #include "memory.h"
 #include "newcpu.h"
-#include "events.h"
 #include "../includes/main.h"
 #include "../includes/m68000.h"
+#include "../includes/mfp.h"
 #include "../includes/tos.h"
 #include "../includes/vdi.h"
 #include "../includes/cart.h"
@@ -817,30 +817,30 @@ void Exception(int nr, uaecptr oldpc)
     /* Handle exception cycles: */
     if(nr >= 24 && nr <= 31)
     {
-      ADD_CYCLES(44+4, 5, 3);                 /* Interrupt */
+      M68000_AddCycles(44+4);                 /* Interrupt */
     }
     else if(nr >= 32 && nr <= 47)
     {
-      ADD_CYCLES(34, 5, 3);                   /* Trap */
+      M68000_AddCycles(34);                   /* Trap */
     }
     else switch(nr)
     {
-      case 2: ADD_CYCLES(50, 4, 7); break;    /* Bus error */
-      case 3: ADD_CYCLES(50, 4, 7); break;    /* Address error */
-      case 4: ADD_CYCLES(34, 4, 3); break;    /* Illegal instruction */
-      case 5: ADD_CYCLES(38, 4, 3); break;    /* Div by zero */
-      case 6: ADD_CYCLES(40, 4, 3); break;    /* CHK */
-      case 7: ADD_CYCLES(34, 5, 3); break;    /* TRAPV */
-      case 8: ADD_CYCLES(34, 4, 3); break;    /* Privilege violation */
-      case 9: ADD_CYCLES(34, 4, 3); break;    /* Trace */
-      case 10: ADD_CYCLES(34, 4, 3); break;   /* Line-A - probably wrong */
-      case 11: ADD_CYCLES(34, 4, 3); break;   /* Line-F - probably wrong */
+      case 2: M68000_AddCycles(50); break;    /* Bus error */
+      case 3: M68000_AddCycles(50); break;    /* Address error */
+      case 4: M68000_AddCycles(34); break;    /* Illegal instruction */
+      case 5: M68000_AddCycles(38); break;    /* Div by zero */
+      case 6: M68000_AddCycles(40); break;    /* CHK */
+      case 7: M68000_AddCycles(34); break;    /* TRAPV */
+      case 8: M68000_AddCycles(34); break;    /* Privilege violation */
+      case 9: M68000_AddCycles(34); break;    /* Trace */
+      case 10: M68000_AddCycles(34); break;   /* Line-A - probably wrong */
+      case 11: M68000_AddCycles(34); break;   /* Line-F - probably wrong */
       default:
         /* FIXME: Add right cycles value for MFP interrupts and copro exceptions ... */
         if(nr < 64)
-          ADD_CYCLES(0, 0, 0);       /* Coprocessor and unassigned exceptions (???) */
+          M68000_AddCycles(4);       /* Coprocessor and unassigned exceptions (???) */
         else
-          ADD_CYCLES(24, 0, 0);      /* Must be a MFP interrupt */
+          M68000_AddCycles(24);      /* Must be a MFP interrupt */
         break;
     }
 }
@@ -1297,19 +1297,26 @@ static int do_specialties (void)
     if(regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 	/* Add some extra cycles to simulate a wait state */
 	unset_special(SPCFLAG_EXTRA_CYCLES);
-	ADD_CYCLES(4,0,0);
+	M68000_AddCycles(4);
     }
 
     if (regs.spcflags & SPCFLAG_DOTRACE) {
 	Exception (9,last_trace_ad);
     }
+
     while (regs.spcflags & SPCFLAG_STOP) {
-	do_cycles (8);
-	if (regs.intmask>5) {
-            /* We still have to care about events when IPL==7 ! */
-            Main_EventHandler();
-            if(bQuitProgram)  unset_special(SPCFLAG_STOP);
-        }
+	if (regs.intmask > 5) {
+	    /* We still have to care about events when IPL==7 ! */
+	    Main_EventHandler();
+	    if (regs.spcflags & SPCFLAG_BRK)  return 1;
+	}
+	M68000_AddCycles(4);
+	if (PendingInterruptCount<=0 && PendingInterruptFunction) {
+	    CALL_VAR(PendingInterruptFunction);
+	}
+	if (regs.spcflags & SPCFLAG_MFP) {
+	    MFP_CheckPendingInterrupts();
+	}
 	if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
 	    int intr = intlev ();
 	    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
@@ -1320,6 +1327,7 @@ static int do_specialties (void)
 	    }
 	}
     }
+
     if (regs.spcflags & SPCFLAG_TRACE)
 	do_trace ();
 
@@ -1336,10 +1344,16 @@ static int do_specialties (void)
 	unset_special (SPCFLAG_INT);
 	set_special (SPCFLAG_DOINT);
     }
+
+    if (regs.spcflags & SPCFLAG_MFP) {          /* Check for MFP interrupts */
+	MFP_CheckPendingInterrupts();
+    }
+
     if (regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE)) {
-	unset_special (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE);
+	unset_special(SPCFLAG_MODE_CHANGE);
 	return 1;
     }
+
     return 0;
 }
 
@@ -1352,9 +1366,11 @@ static void m68k_run_1 (void)
     uae_u8 saved_bytes[20];
     uae_u16 *oldpcp;
 #endif
-    while(!bQuitProgram) {
+
+    for (;;) {
 	int cycles;
 	uae_u32 opcode = get_iword_prefetch (0);
+
 #ifdef DEBUG_PREFETCH
 	if (get_ilong (0) != do_get_mem_long (&regs.prefetch)) {
 	    fprintf (stderr, "Prefetch differs from memory.\n");
@@ -1387,7 +1403,10 @@ static void m68k_run_1 (void)
 	}
 #endif
 
-	do_cycles (cycles);
+	M68000_AddCycles(cycles);
+	if (PendingInterruptCount<=0 && PendingInterruptFunction)
+	  CALL_VAR(PendingInterruptFunction);
+
 	if (regs.spcflags) {
 	    if (do_specialties ())
 		return;
@@ -1399,7 +1418,7 @@ static void m68k_run_1 (void)
 /* Same thing, but don't use prefetch to get opcode.  */
 static void m68k_run_2 (void)
 {
-    while(!bQuitProgram) {
+    for (;;) {
 	int cycles;
 	uae_u32 opcode = get_iword (0);
 
@@ -1417,7 +1436,10 @@ static void m68k_run_2 (void)
 
 	cycles = (*cpufunctbl[opcode])(opcode);
 
-	do_cycles (cycles);
+	M68000_AddCycles(cycles);
+	if (PendingInterruptCount<=0 && PendingInterruptFunction)
+	  CALL_VAR(PendingInterruptFunction);
+
 	if (regs.spcflags) {
 	    if (do_specialties ())
 		return;
@@ -1426,22 +1448,23 @@ static void m68k_run_2 (void)
 }
 
 
-int in_m68k_go = 0;
-
 void m68k_go (int may_quit)
 {
+    static int in_m68k_go = 0;
+
     if (in_m68k_go || !may_quit) {
 	write_log ("Bug! m68k_go is not reentrant.\n");
 	abort ();
     }
 
     in_m68k_go++;
-    while(!bQuitProgram) {
+    while (!(regs.spcflags & SPCFLAG_BRK)) {
         if(cpu_compatible)
           m68k_run_1();
          else
           m68k_run_2();
     }
+    unset_special(SPCFLAG_BRK);
     in_m68k_go--;
 }
 

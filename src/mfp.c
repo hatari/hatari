@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.14 2004-04-23 15:33:59 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.15 2004-06-11 10:04:46 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -236,8 +236,9 @@ static BOOL MFP_InterruptRequest(int Exception, unsigned char Bit, unsigned char
 void MFP_CheckPendingInterrupts(void)
 {
   if ((MFP_IPRA & 0x35) == 0 && (MFP_IPRB & 0xf0) == 0)
-  {    /* Should never get here, but if do just clear flag (see 'MFP_UpdateFlags') */
-    PendingInterruptFlag &= CLEAR_PENDING_INTERRUPT_FLAG_MFP;
+  { 
+    /* Should never get here, but if do just clear flag (see 'MFP_UpdateFlags') */
+    unset_special(SPCFLAG_MFP);
     return;
   }
 
@@ -270,20 +271,20 @@ void MFP_CheckPendingInterrupts(void)
 /*-----------------------------------------------------------------------*/
 /*
   This is called whenever the MFP_IPRA or MFP_IPRB registers are modified.
-  We set the 'PendingInterruptFlag' accordingly (to say if an MFP interrupt
+  We set the special flag SPCFLAG_MFP accordingly (to say if an MFP interrupt
   is to be checked) so we only have one compare during the decode
   instruction loop.
 */
 void MFP_UpdateFlags(void)
 {
- if( MFP_IPRA|MFP_IPRB )
-   {
-    PendingInterruptFlag |= PENDING_INTERRUPT_FLAG_MFP;
-   }
+  if( MFP_IPRA|MFP_IPRB )
+  {
+    set_special(SPCFLAG_MFP);
+  }
   else
-   {
-    PendingInterruptFlag &= CLEAR_PENDING_INTERRUPT_FLAG_MFP;
-   }
+  {
+    unset_special(SPCFLAG_MFP);
+  }
 }
 
 

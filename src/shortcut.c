@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.16 2004-04-19 08:53:47 thothy Exp $";
+char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.17 2004-06-11 10:04:46 thothy Exp $";
 
 #include <SDL.h>
 
@@ -14,6 +14,7 @@ char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.16 2004-04-19 08:53:47 thoth
 #include "dialog.h"
 #include "audio.h"
 #include "joy.h"
+#include "m68000.h"
 #include "memAlloc.h"
 #include "memorySnapShot.h"
 #include "reset.h"
@@ -255,6 +256,7 @@ void ShortCut_CheckKeys(void)
     break;
    case SDLK_q:                    /* Quit program */
     bQuitProgram = TRUE;
+    set_special(SPCFLAG_BRK);
     break;
    case SDLK_x:                    /* Toggle Min/Max speed */
     ShortCut_MaximumSpeed();

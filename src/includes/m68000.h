@@ -16,10 +16,7 @@
 #define Regs regs.regs  /* Ugly hack to glue the WinSTon sources to the UAE CPU core. */
 #define SR regs.sr      /* Don't forget to call MakeFromSR() and MakeSR() */
 
-#define PENDING_INTERRUPT_FLAG_MFP      0x0001    /* 'PendingInterruptFlag' masks */
-#define CLEAR_PENDING_INTERRUPT_FLAG_MFP   0xfffe
 
-extern short int PendingInterruptFlag;
 extern void *PendingInterruptFunction;
 extern short int PendingInterruptCount;
 
@@ -29,11 +26,15 @@ extern BOOL bBusErrorReadWrite;
 
 
 /*-----------------------------------------------------------------------*/
-/* NOTE All times are rounded up to nearest 4 cycles */
-static inline void ADD_CYCLES(op,r,w)
+/*
+  Add CPU cycles.
+  NOTE: All times are rounded up to nearest 4 cycles.
+*/
+static inline void M68000_AddCycles(int cycles)
 {
-  PendingInterruptCount-= (op+3)&0xfffffffc;
-  SoundCycles += (op+3)&0xfffffffc;
+  cycles = (cycles + 3) & ~3;
+  PendingInterruptCount -= cycles;
+  SoundCycles += cycles;
 }
 
 extern void M68000_Reset(BOOL bCold);

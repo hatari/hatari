@@ -69,4 +69,4 @@ cpuemu8.o: cpuemu.c
 	$(CC) -DPART_8 -c $(CPPFLAGS) $(QUIETCFLAGS) $< -o $@
 
 
-newcpu.o: sysdeps.h hatari-glue.h maccess.h memory.h newcpu.h events.h
+newcpu.o: sysdeps.h hatari-glue.h maccess.h memory.h newcpu.h

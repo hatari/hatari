@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.27 2004-04-23 15:33:59 thothy Exp $";
+char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.28 2004-06-11 10:04:46 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -25,7 +25,6 @@ char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.27 2004-04-23 15:33:59 thothy Ex
 #include "xbios.h"
 
 
-short int PendingInterruptFlag;
 void *PendingInterruptFunction;
 short int PendingInterruptCount;
 
@@ -49,8 +48,6 @@ void M68000_Reset(BOOL bCold)
       Regs[i] = 0;
   }
 
-  PendingInterruptFlag = 0;     /* Clear pending flag */
-
   /* Now directly reset the UAE CPU core: */
   m68k_reset();
 }
@@ -69,7 +66,6 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(Regs,sizeof(Regs));
   MemorySnapShot_Store(&STRamEnd,sizeof(STRamEnd));
   MemorySnapShot_Store(&PendingInterruptCount,sizeof(PendingInterruptCount));
-  MemorySnapShot_Store(&PendingInterruptFlag,sizeof(PendingInterruptFlag));
   if (bSave)
   {
     /* Convert function to ID */
