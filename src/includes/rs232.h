@@ -1,6 +1,13 @@
 /*
-  Hatari
+  Hatari - rs232.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 */
+
+#ifndef HATARI_RS232_H
+#define HATARI_RS232_H
+
 
 /* Ctrl/Ucr defines for ST */
 #define CTRL_XON_XOFF   0x0001
@@ -15,13 +22,8 @@
 #define UCR_15STOPBIT   0x0010
 #define UCR_2STOPBIT    0x0018
 
-#define  MAX_TEMP_RS232INPUT_BUFFER  1024
+#define  MAX_RS232INPUT_BUFFER    2048  /* Must be ^2 */
 
-#define  MAX_RS232INPUT_BUFFER    2048  // Must be ^2
-#define  MAX_RS232INPUT_BUFFER_MASK  (MAX_RS232INPUT_BUFFER-1)
-
-//extern HANDLE hCom;
-extern unsigned char TempRS232InputBuffer[MAX_TEMP_RS232INPUT_BUFFER];
 extern unsigned char InputBuffer_RS232[MAX_RS232INPUT_BUFFER];
 extern int InputBuffer_Head,InputBuffer_Tail;
 
@@ -33,4 +35,7 @@ extern void RS232_SetConfig(int Baud,short int Ctrl,short int Ucr);
 extern BOOL RS232_TransferBytesTo(unsigned char *pBytes, int nBytes);
 extern BOOL RS232_ReadBytes(unsigned char *pBytes, int nBytes);
 extern BOOL RS232_GetStatus(void);
-//extern DWORD FAR PASCAL RS232_ThreadFunc(LPSTR lpData);
+extern int RS232_ThreadFunc(void *pData);
+
+
+#endif  /* ifndef HATARI_RS232_H */

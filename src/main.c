@@ -6,11 +6,9 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.49 2003-12-25 14:19:38 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.50 2004-01-12 12:21:44 thothy Exp $";
 
 #include <time.h>
-#include <signal.h>
-#include <sys/time.h>
 #include <unistd.h>
 
 #include <SDL.h>
@@ -53,7 +51,6 @@ char Main_rcsid[] = "Hatari $Id: main.c,v 1.49 2003-12-25 14:19:38 thothy Exp $"
 BOOL bQuitProgram=FALSE;                  /* Flag to quit program cleanly */
 BOOL bUseFullscreen=FALSE;
 BOOL bEmulationActive=TRUE;               /* Run emulation when started */
-BOOL bAppActive = FALSE;
 BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
 char szBootDiscImage[FILENAME_MAX];
 char szWorkingDir[FILENAME_MAX];          /* Working directory */
@@ -215,6 +212,7 @@ void Main_ReadParameters(int argc, char *argv[])
                "  --nosound             Disable sound (faster!).\n"
                "  --printer             Enable printer support (experimental).\n"
                "  --midi <filename>     Enable midi support and write midi data to <filename>.\n"
+               /*"  --rs232 <filename>    Use <filename> as the serial port device.\n"*/
                "  --frameskip           Skip every second frame (speeds up emulation!).\n"
                "  --debug or -D         Allow debug interface.\n"
                "  --harddrive <dir>     Emulate an ST harddrive\n"
@@ -275,6 +273,21 @@ void Main_ReadParameters(int argc, char *argv[])
             strcpy(ConfigureParams.Midi.szMidiOutFileName, argv[i+1]);
           }
           else fprintf(stderr, "Midi file name too long!\n");
+          i += 1;
+        }
+      }
+      else if (!strcmp(argv[i], "--rs232"))
+      {
+        if(i+1 >= argc)
+          fprintf(stderr, "Missing argument for --rs232\n");
+        else
+        {
+          if (strlen(argv[i+1]) <= sizeof(ConfigureParams.RS232.szDeviceFileName))
+          {
+            ConfigureParams.RS232.bEnableRS232 = TRUE;
+            strcpy(ConfigureParams.RS232.szDeviceFileName, argv[i+1]);
+          }
+          else fprintf(stderr, "RS232 file name too long!\n");
           i += 1;
         }
       }

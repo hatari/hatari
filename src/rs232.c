@@ -1,113 +1,132 @@
 /*
-  Hatari
+  Hatari - rs232.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   RS-232 Communications
 
-  This is similar to the Printing functions, we open a direct file to the COM port and send bytes over it.
-  Using such method mimicks the ST exactly, and even allows us to connect to an actual ST! To wait for
-  incoming data, we create a thread which copies the bytes into an input buffer. This method fits in with
-  the internet code which also reads data into a buffer.
+  This is similar to the Printing functions, we open a direct file
+  (e.g. /dev/ttyS0) and send bytes over it.
+  Using such method mimicks the ST exactly, and even allows us to connect
+  to an actual ST! To wait for incoming data, we create a thread which copies
+  the bytes into an input buffer. This method fits in with the internet code
+  which also reads data into a buffer.
 */
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.4 2004-01-12 12:21:44 thothy Exp $";
 
-/* FIXME: The functions here do not yet work with Hatari */
-
+#include <SDL.h>
+#include <SDL_thread.h>
 
 #include "main.h"
+#include "configuration.h"
 #include "debug.h"
-#include "dialog.h"
 #include "rs232.h"
 
 
-BOOL bConnectedRS232=FALSE;          // Connection to RS232?
-//HANDLE hCom=NULL;                  // Handle to file
-//HANDLE RS232Thread=NULL;           // Thread handle for reading incoming data
-long RS232ThreadID;
-//DCB dcb;                           // Control block
-unsigned char TempRS232InputBuffer[MAX_TEMP_RS232INPUT_BUFFER];
-unsigned char InputBuffer_RS232[MAX_RS232INPUT_BUFFER];
-int InputBuffer_Head=0,InputBuffer_Tail=0;
+#define RS232_DEBUG 1
 
-//-----------------------------------------------------------------------
+#if RS232_DEBUG
+#define Dprintf(a) printf a
+#else
+#define Dprintf(a)
+#endif
+
+
+BOOL bConnectedRS232 = FALSE;       /* Connection to RS232? */
+static FILE *hCom = NULL;           /* Handle to file */
+SDL_Thread *RS232Thread = NULL;     /* Thread handle for reading incoming data */
+//DCB dcb;                           // Control block
+unsigned char InputBuffer_RS232[MAX_RS232INPUT_BUFFER];
+int InputBuffer_Head=0, InputBuffer_Tail=0;
+
+
+/*-----------------------------------------------------------------------*/
 /*
-  Initialize RS-232, start thread to wait for incoming data (we will open a connection when first bytes are sent)
+  Initialize RS-232, start thread to wait for incoming data
+  (we will open a connection when first bytes are sent).
 */
 void RS232_Init(void)
 {
-  // Create thread to wait for incoming bytes over RS-232
-//FIXME   RS232Thread = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)RS232_ThreadFunc,0,NULL,&RS232ThreadID);
+#if 0   /* RS232 is untested yet, so it's still disabled at the moment */
+	/* Create thread to wait for incoming bytes over RS-232 */
+	RS232Thread = SDL_CreateThread(RS232_ThreadFunc, NULL);
+	Dprintf(("RS232 thread has been created.\n"));
+#endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
-  Close RS-232 connection and stop checking for incoming data
+  Close RS-232 connection and stop checking for incoming data.
 */
 void RS232_UnInit(void)
 {
-  // Close, kill thread and free resource
-/* FIXME */
-/*
-  if (RS232Thread) {
-    TerminateThread(RS232Thread,FALSE);
-    CloseHandle(RS232Thread);
-  }
-  RS232_CloseCOMPort();
-*/
+	/* Close, kill thread and free resource */
+	if (RS232Thread)
+	{
+		/* Instead of killing the thread directly, we should probably better
+		   inform it via IPC so that it can terminate gracefully... */
+		SDL_KillThread(RS232Thread);
+		RS232Thread = NULL;
+	}
+	RS232_CloseCOMPort();
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Open file on COM port
 */
 BOOL RS232_OpenCOMPort(void)
 {
-/* FIXME */
+	/* Create our COM file for input/output */
+	bConnectedRS232 = FALSE;
+	hCom = fopen(ConfigureParams.RS232.szDeviceFileName, "w+b"); 
+	if (hCom != NULL)
+	{
 /*
-  char szString[32];
-
-  // Generate correct filename for COM port
-  sprintf(szString,"COM%d",ConfigureParams.RS232.nCOMPort+1);  // 1,2...
-
-  // Create our COM file for input/output
-  bConnectedRS232 = FALSE;
-  hCom = CreateFile(szString,GENERIC_READ | GENERIC_WRITE,0,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL ); 
-  if (hCom!=INVALID_HANDLE_VALUE) {
-    // Get any early notifications, for thread
-    SetCommMask(hCom,EV_RXCHAR);
-    // Create input/output buffers
-    SetupComm(hCom,4096,4096);
-    // Purge buffers
-    PurgeComm(hCom,PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR);
-
-    // Set defaults
-    RS232_SetConfig(9600,0,UCR_1STOPBIT|UCR_PARITY|UCR_ODDPARITY);
-
-    // Set all OK
-    bConnectedRS232 = TRUE;
-  }
+		// Get any early notifications, for thread
+		SetCommMask(hCom,EV_RXCHAR);
+		// Create input/output buffers
+		SetupComm(hCom,4096,4096);
+		// Purge buffers
+		PurgeComm(hCom,PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR);
 */
-  return(bConnectedRS232);
+		/* Set defaults */
+		RS232_SetConfig(9600,0,UCR_1STOPBIT|UCR_PARITY|UCR_ODDPARITY);
+
+		/* Set all OK */
+		bConnectedRS232 = TRUE;
+
+		Dprintf(("Opened RS232 file: %s\n", ConfigureParams.RS232.szDeviceFileName));
+	}
+
+	return(bConnectedRS232);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Close file on COM port
 */
 void RS232_CloseCOMPort(void)
 {
-/* FIXME */
-/*
-  // Do have file open?
-  if (bConnectedRS232) {
-    // Close
-    CloseHandle(hCom);
-    hCom=NULL;
+	/* Do have file open? */
+	if (bConnectedRS232)
+	{
+		/* Close */
+		fclose(hCom);
+		hCom=NULL;
 
-    bConnectedRS232 = FALSE;
-  }
-*/
+		bConnectedRS232 = FALSE;
+
+		Dprintf(("Closed RS232 file.\n"));
+	}
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Set hardware configuration of RS-232
 
@@ -132,6 +151,7 @@ void RS232_CloseCOMPort(void)
 */
 void RS232_SetConfig(int Baud,short int Ctrl,short int Ucr)
 {
+	Dprintf(("RS232_SetConfig(%i,%i,%i)\n",Baud,(int)Ctrl,(int)Ucr));
 /* FIXME */
 /*  
   // Get current config
@@ -176,143 +196,137 @@ void RS232_SetConfig(int Baud,short int Ctrl,short int Ucr)
 */
 }
 
-//-----------------------------------------------------------------------
+
+/*----------------------------------------------------------------------- */
 /*
   Pass bytes from emulator to RS-232
 */
 BOOL RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
 {
-/* FIXME */
-/*
-  DWORD BytesWritten;
+	/* Do need to open a connection to RS232? */
+	if (!bConnectedRS232)
+	{
+		/* Do have RS-232 enabled? */
+		if (ConfigureParams.RS232.bEnableRS232)
+			bConnectedRS232 = RS232_OpenCOMPort();
+	}
 
-  // Do need to open a connection to RS232?
-  if (!bConnectedRS232) {
-    // Do have RS-232 enabled?
-    if (ConfigureParams.RS232.bEnableRS232)
-      bConnectedRS232 = RS232_OpenCOMPort();
-  }
+	/* Have we connected to the RS232? */
+	if (bConnectedRS232)
+	{
+		/* Send bytes directly to the COM file */
+		if (fwrite(pBytes, 1, nBytes, hCom))
+		{
+			fflush(hCom);
+		}
 
-  // Have we connected to the RS232?
-  if (bConnectedRS232) {
-    // Send bytes directly to COM port
-    if (WriteFile(hCom,pBytes,nBytes,&BytesWritten,NULL)) {
-      FlushFileBuffers(hCom);
-    }
+		/* Show icon on status bar */
+		/*StatusBar_SetIcon(STATUS_ICON_RS232,ICONSTATE_UPDATE);*/
 
-    // Show icon on status bar
-    StatusBar_SetIcon(STATUS_ICON_RS232,ICONSTATE_UPDATE);
-
-    return(TRUE);  //OK
-  }
-  else
-*/    return(FALSE);  //Failed
-
+		return(TRUE);   /* OK */
+	}
+	else
+		return(FALSE);  /* Failed */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Read characters from our internal input buffer(bytes from other machine)
 */
 BOOL RS232_ReadBytes(unsigned char *pBytes, int nBytes)
 {
-/* FIXME */
-/*
-  int i;
+	int i;
 
-  // Connected?
-  if (bConnectedRS232) {
-    // Read bytes out of input buffer
-    for(i=0; i<nBytes; i++) {
-      *pBytes++ = InputBuffer_RS232[InputBuffer_Head];
-      InputBuffer_Head = (InputBuffer_Head+1)&MAX_RS232INPUT_BUFFER_MASK;
-    }
-    return(TRUE);
-  }
-*/
-  return(FALSE);
+	/* Connected? */
+	if (bConnectedRS232)
+	{
+		/* Read bytes out of input buffer */
+		for (i=0; i<nBytes; i++)
+		{
+			*pBytes++ = InputBuffer_RS232[InputBuffer_Head];
+			InputBuffer_Head = (InputBuffer_Head+1) % MAX_RS232INPUT_BUFFER;
+		}
+		return(TRUE);
+	}
 
+	return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Return TRUE if bytes waiting!
 */
 BOOL RS232_GetStatus(void)
 {
-/* FIXME */
-/*
-  // Connected?
-  if (bConnectedRS232) {
-    // Do we have bytes in the input buffer?
-    if (InputBuffer_Head!=InputBuffer_Tail)
-      return(TRUE);
-  }
-*/
-  // No, none
-  return(FALSE);
+	/* Connected? */
+	if (bConnectedRS232)
+	{
+		/* Do we have bytes in the input buffer? */
+		if (InputBuffer_Head != InputBuffer_Tail)
+			return(TRUE);
+	}
+
+	/* No, none */
+	return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Add incoming bytes from other machine into our input buffer
 */
 void RS232_AddBytesToInputBuffer(unsigned char *pBytes, int nBytes)
 {
-  int i;
+	int i;
 
-  // Copy bytes into input buffer
-  for(i=0; i<nBytes; i++) {
-    InputBuffer_RS232[InputBuffer_Tail] = *pBytes++;
-    InputBuffer_Tail = (InputBuffer_Tail+1)&MAX_RS232INPUT_BUFFER_MASK;
-  }
+	/* Copy bytes into input buffer */
+	for (i=0; i<nBytes; i++)
+	{
+		InputBuffer_RS232[InputBuffer_Tail] = *pBytes++;
+		InputBuffer_Tail = (InputBuffer_Tail+1) % MAX_RS232INPUT_BUFFER;
+	}
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Thread to read incoming RS-232 data, and pass to emulator input buffer
 */
-/* FIXME */
-/*
-DWORD FAR PASCAL RS232_ThreadFunc(LPSTR lpData)
+int RS232_ThreadFunc(void *pData)
 {
-  COMSTAT ComStat;
-  DWORD dwErrorFlags;
-  DWORD dwEvtMask;
-  DWORD dwLength;
+	int iInChar;
+	char cInChar;
 
-  SetCommMask(hCom,EV_RXCHAR);
+	/* Check for any RS-232 incoming data */
+	while (TRUE)
+	{
+		if (hCom)
+		{
+			/* Read the bytes in, if we have any */
+			iInChar = fgetc(hCom);
+			if (iInChar != EOF)
+			{
+				/* Copy into our internal queue */
+				cInChar = iInChar;
+				RS232_AddBytesToInputBuffer(&cInChar, 1);
+				Dprintf(("RS232: Read character $%x\n", cInChar));
+			}
+			else
+			{
+				Dprintf(("RS232: Reached end of file!"));
+			}
 
-  // Check for any RS-232 incoming data
-  while(TRUE) {
-    if (hCom) {
-      // Halt here until we find some data coming through the RS-232
-      dwEvtMask = 0;
-      WaitCommEvent(hCom,&dwEvtMask,NULL);
+			/* Sleep for a while */
+			SDL_Delay(2);
+		}
+		else
+		{
+			/* No RS-232 connection, sleep for 20ms */
+			SDL_Delay(20);
+		}
+	}
 
-      // Chars awaiting? Read them in
-      if ((dwEvtMask&EV_RXCHAR)==EV_RXCHAR) {
-        // Only try to read number of bytes in queue - don't read more than our buffer allows
-        ClearCommError(hCom, &dwErrorFlags, &ComStat );
-        dwLength = min(MAX_TEMP_RS232INPUT_BUFFER, ComStat.cbInQue);
-        // Read the bytes in, if we have any
-        if (dwLength!=0) {
-          // Read into temporary buffer
-          ReadFile(hCom,TempRS232InputBuffer,dwLength,&dwLength,NULL);
-          // And copy into our internal queue
-          RS232_AddBytesToInputBuffer(TempRS232InputBuffer,dwLength);
-        }
-      }
-
-      // Sleep or a while
-      Sleep(2);
-    }
-    else {
-      // No RS-232 connection, sleep for 20ms
-      Sleep(20);
-    }
-  }
-
-  return(TRUE);
+	return(TRUE);
 }
-*/
