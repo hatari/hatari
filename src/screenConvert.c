@@ -324,7 +324,7 @@ void Convert_StartFrame(void)
 #define PLOT_LOW_320_8BIT(offset) \
 { \
   ecx += BASECOLOUR_LONG; \
-  esi[offset] = ecx; \
+  esi[offset] = SDL_SwapLE32(ecx); \
 }
 
 /* Plot Low Resolution (640xH) 16-Bit pixels */

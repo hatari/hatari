@@ -600,13 +600,23 @@ int Screen_ComparePaletteMask(void)
 */
 void Screen_CreatePalette(void)
 {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+  static const int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
+#endif
   SDL_Color Colours[16];
-  int i;
+  int i, j;
 
-  for(i=0; i<16; i++) {
-    Colours[i].r = ((HBLPalettes[i]>>8)&0x7)<<5;
-    Colours[i].g = ((HBLPalettes[i]>>4)&0x7)<<5;
-    Colours[i].b = (HBLPalettes[i]&0x7)<<5;
+  for(i=0; i<16; i++)
+  {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+    j = endiantable[i];
+#else
+    j = i;
+#endif
+
+    Colours[j].r = ((HBLPalettes[i]>>8)&0x7)<<5;
+    Colours[j].g = ((HBLPalettes[i]>>4)&0x7)<<5;
+    Colours[j].b = (HBLPalettes[i]&0x7)<<5;
   }
 
   SDL_SetColors(sdlscrn, Colours, 10, 16);
