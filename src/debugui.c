@@ -11,6 +11,7 @@
 
 #include "main.h"
 #include "configuration.h"
+#include "dialog.h"
 #include "decode.h"
 #include "gemdos.h"
 #include "intercept.h"
@@ -40,6 +41,7 @@ unsigned long disasm_addr;  /* disasm address */
 
 FILE *debugLogFile;
 FILE *debug_stdout;
+extern BOOL bEnableDebug;   
 
 /* convert string to lowercase */
 void string_tolower(char *str)
@@ -505,7 +507,8 @@ void DebugUI_Help()
 	         " f [filename] - open log file, no argument closes the log file\n"
 	         "   Output of reg & mem dumps and disassembly will be written to the log\n"
                  " l filename address - load a file into memory starting at address. \n"  
-                 " s filename address length - dump length bytes from memory to a file. \n\n"  
+                 " s filename address length - dump length bytes from memory to a file. \n"  
+	         " o - disable debug mode\n\n"
                  " q - return to emulation\n\n"
 	         " Adresses may be given as a range e.g. fc0000-fc0100\nAll values in hexadecimal.\n"
                  "-----------------------------\n"  
@@ -541,6 +544,12 @@ int DebugUI_Getcommand()
   case 'h':
   case '?':
     DebugUI_Help(); /* get help */
+    return(DEBUG_CMD);
+    break;
+
+  case 'o':
+    bEnableDebug = FALSE;
+    fprintf(stderr, "  Debug mode disabled.\n");
     return(DEBUG_CMD);
     break;
 
@@ -625,6 +634,8 @@ void DebugUI()
 
   bMemDump = FALSE;
   disasm_addr = 0;
+
+
   fprintf(stderr,"\nYou have entered debug mode. Type q to quit, h for help. \n------------------------------\n");
   while(DebugUI_Getcommand() != DEBUG_QUIT);
   if(debugLogFile != NULL) fclose(debugLogFile);

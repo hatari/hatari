@@ -64,8 +64,8 @@ void Reset_ST(BOOL bCold)
   MFP_Reset();                  /* Setup MFP chip */
   Video_Reset();                /* Reset video */
   if (bCold) {
+    GemDOS_Reset();               /* Reset GEMDOS emulation */
     FDC_Reset();                /* Reset FDC */
-    GemDOS_Reset();             /* Reset GEM */
   }
   PSG_Reset();                  /* Reset PSG */
   Sound_Reset();                /* Reset Sound */

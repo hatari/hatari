@@ -22,6 +22,8 @@
 #include "errlog.h"
 #include "file.h"
 #include "floppy.h"
+#include "gemdos.h"
+#include "hdc.h"
 #include "m68000.h"
 #include "memAlloc.h"
 #include "memorySnapShot.h"
@@ -38,13 +40,15 @@ static MEMORY_INFO MemoryInfo[] = {
   0x400000,0x1010,0x00400000     /* MEMORYSIZE_4MB */
 };
 
-/* Bit masks of connected drives(we support upto C,D,E,F) */
+/* Bit masks of connected drives(we support up to C,D,E,F,G,H) */
 unsigned int ConnectedDriveMaskList[] = {
   0x03,  /* DRIVELIST_NONE  A,B         */
   0x07,  /* DRIVELIST_C    A,B,C       */
   0x0F,  /* DRIVELIST_CD    A,B,C,D     */
   0x1F,  /* DRIVELIST_CDE  A,B,C,D,E   */
   0x3F,  /* DRIVELIST_CDEF  A,B,C,D,E,F */
+  0x7F,  /* DRIVELIST_CDEFG  A,B,C,D,E,F,G */
+  0xFF,  /* DRIVELIST_CDEFGH  A,B,C,D,E,F,G,H */
 };
 
 unsigned short int TOSVersion;          /* eg, 0x0100, 0x0102 */
@@ -177,14 +181,30 @@ void TOS_FixRom(void)
       STMemory_WriteWord(0xFC1384+4,NOP_OPCODE);  /* NOP */
 
       /* FC03d6  JSR $FC04A8  Boot from DMA bus */
-      if (bUseVDIRes) {
-        STMemory_WriteWord(0xFC03D6,0xa000);      /* Init Line-A */
-        STMemory_WriteWord(0xFC03D6+2,0xa0ff);    /* Trap Line-A (to get structure) */
-      }
-      else {
-        STMemory_WriteWord(0xFC03D6,NOP_OPCODE);    /* NOP */
-        STMemory_WriteWord(0xFC03D6+2,NOP_OPCODE);  /* NOP */
-      }
+      /* This doesn't need to be patched - but we do
+	 need to force set condrv ($4c2), because the
+	 ACSI driver (if any) will reset it, this is 
+	 done after the DMA bus boot (when the driver loads), 
+	 replacing the RTS with our own
+	 routine which sets condrv and then RTSes. */
+      if(ACSI_EMU_ON || GEMDOS_EMU_ON) 
+	STMemory_WriteWord(0xFC04d4, CONDRV_OPCODE);
+      else 
+	{
+	  /* FC02E6  CLR.L $4C2(A5)  Set connected drives */
+	  STMemory_WriteWord(0xFC02E6,NOP_OPCODE);
+	  STMemory_WriteWord(0xFC02E6+2,NOP_OPCODE);    /* NOP */
+
+	  if (bUseVDIRes) { 
+	    STMemory_WriteWord(0xFC03D6,0xa000);      /* Init Line-A */ 
+	    STMemory_WriteWord(0xFC03D6+2,0xa0ff);    /* Trap Line-A (to get structure) */ 
+	  } 
+	  else { 
+	    
+	    STMemory_WriteWord(0xFC03D6,NOP_OPCODE);    /* NOP */
+	    STMemory_WriteWord(0xFC03D6+2,NOP_OPCODE);  /* NOP */ 
+	  } 
+	}
 
       /* Timer D(MFP init 0xFC21B4), set value before call Set Timer routine */
       STMemory_WriteWord(0xFC21F6,TIMERD_OPCODE);
@@ -202,29 +222,35 @@ void TOS_FixRom(void)
         STMemory_WriteWord(0xFC0F44, RTS_OPCODE);     /* RTS */
 
       /* FC1568  JSR $FC0C2E  hdv_boot, load boot sector */
+      /* see comments above -Sven */
       if( STMemory_ReadLong(0xFC1568)==0x4eb900fcL ) {
-        STMemory_WriteWord(0xFC1568, NOP_OPCODE);     /* NOP */
+	STMemory_WriteWord(0xFC1568, NOP_OPCODE);     /* NOP */
         STMemory_WriteWord(0xFC1568+2, NOP_OPCODE);   /* NOP */
         STMemory_WriteWord(0xFC1568+4, NOP_OPCODE);   /* NOP */
       }
 
       /* FC0472  BSR.W $FC0558  Boot from DMA bus */
-      if( STMemory_ReadLong(0xFC0472)==0x610000e4L )
-       if (bUseVDIRes) {
-         STMemory_WriteWord(0xFC0472, 0xa000);        /* Init Line-A */
-         STMemory_WriteWord(0xFC0472+2, 0xa0ff);      /* Trap Line-A (to get structure) */
-       }
-       else {
-         STMemory_WriteWord(0xFC0472, NOP_OPCODE);    /* NOP */
-         STMemory_WriteWord(0xFC0472+2, NOP_OPCODE);  /* NOP */
-       }
-
-      /* FC0302  CLR.L $4C2  Set connected drives */
-      if( STMemory_ReadLong(0xFC0302)==0x42b90000L ) {
-        STMemory_WriteWord(0xFC0302, CONDRV_OPCODE);
-        STMemory_WriteWord(0xFC0302+2, NOP_OPCODE);   /* NOP */
-        STMemory_WriteWord(0xFC0302+4, NOP_OPCODE);   /* NOP */
-      }
+      if(ACSI_EMU_ON || GEMDOS_EMU_ON) 
+	STMemory_WriteWord(0xFC0584, CONDRV_OPCODE);
+      else 
+	{
+	  /* FC0302  CLR.L $4C2  Set connected drives */
+	  if( STMemory_ReadLong(0xFC0302)==0x42b90000L ) {
+	    STMemory_WriteWord(0xFC0302, NOP_OPCODE);
+	    STMemory_WriteWord(0xFC0302+2, NOP_OPCODE);   /* NOP */
+	    STMemory_WriteWord(0xFC0302+4, NOP_OPCODE);   /* NOP */
+	  }
+	  
+	  if( STMemory_ReadLong(0xFC0472)==0x610000e4L )
+	    if (bUseVDIRes) {
+	      STMemory_WriteWord(0xFC0472, 0xa000);        /* Init Line-A */
+	      STMemory_WriteWord(0xFC0472+2, 0xa0ff);      /* Trap Line-A */
+	    }
+	    else {
+	      STMemory_WriteWord(0xFC0472, NOP_OPCODE);     /* NOP */
+	      STMemory_WriteWord(0xFC0472+2, NOP_OPCODE);   /* NOP */
+	    }
+	}
 
       /* Timer D (MFP init 0xFC2408) */
       if( STMemory_ReadLong(0xFC2450)==0x74026100 )
@@ -247,18 +273,25 @@ void TOS_FixRom(void)
       STMemory_WriteWord(0xFC1CCE + 4,NOP_OPCODE);  /* NOP */
 
       /* FC0466  BSR.W $FC054C  Boot from DMA bus */
-      if (bUseVDIRes) {
-        STMemory_WriteWord(0xFC0466,0xa000);        /* Init Line-A */
-        STMemory_WriteWord(0xFC0466+2,0xa0ff);      /* Trap Line-A (to get structure) */
-      }
-      else {
-        STMemory_WriteWord(0xFC0466,NOP_OPCODE);    /* NOP */
-        STMemory_WriteWord(0xFC0466+2,NOP_OPCODE);  /* NOP */
-      }
-
-      /* FC02E6  CLR.L $4C2(A5)  Set connected drives */
-      STMemory_WriteWord(0xFC02E6,CONDRV_OPCODE);
-      STMemory_WriteWord(0xFC02E6+2,NOP_OPCODE);    /* NOP */
+      /* see comment above -Sven */
+      if(ACSI_EMU_ON || GEMDOS_EMU_ON) 
+	STMemory_WriteWord(0xFC0576, CONDRV_OPCODE);
+      else 
+	{
+	  /* FC02E6  CLR.L $4C2(A5)  Set connected drives */
+	  STMemory_WriteWord(0xFC02E6,NOP_OPCODE);
+	  STMemory_WriteWord(0xFC02E6+2,NOP_OPCODE);    /* NOP */
+	  
+	  if (bUseVDIRes) { 
+	    STMemory_WriteWord(0xFC0466,0xa000);      /* Init Line-A */ 
+	    STMemory_WriteWord(0xFC0466+2,0xa0ff);    /* Trap Line-A (to get structure) */ 
+	  } 
+	  else { 
+	    
+	    STMemory_WriteWord(0xFC0466,NOP_OPCODE);    /* NOP */
+	    STMemory_WriteWord(0xFC0466+2,NOP_OPCODE);  /* NOP */ 
+	  } 
+	}
 
       /* Timer D(MFP init 0xFC34FC) */
       STMemory_WriteWord(0xFC3544,TIMERD_OPCODE);
@@ -341,24 +374,34 @@ void TOS_FixRom(void)
       STMemory_WriteWord(0xE0468C,RTS_OPCODE);    /* RTS */
 
       /* E04CA0  JSR $E00E8E      hdv_boot, load boot sector */
-      STMemory_WriteWord(0xE04CA0,NOP_OPCODE);    /* NOP */
-      STMemory_WriteWord(0xE04CA0+2,NOP_OPCODE);  /* NOP */
-      STMemory_WriteWord(0xE04CA0+4,NOP_OPCODE);  /* NOP */
+      //      STMemory_WriteWord(0xE04CA0,NOP_OPCODE);    /* NOP */
+      //STMemory_WriteWord(0xE04CA0+2,NOP_OPCODE);  /* NOP */
+      //STMemory_WriteWord(0xE04CA0+4,NOP_OPCODE);  /* NOP */
 
       /* E006AE  BSR.W $E00794    Boot from DMA bus */
-      if (bUseVDIRes) {
-        STMemory_WriteWord(0xE006AE,0xa000);      /* Init Line-A */
-        STMemory_WriteWord(0xE006AE + 2,0xa0ff);  /* Trap Line-A (to get structure) */
-      }
-      else {
-        STMemory_WriteWord(0xE006AE,NOP_OPCODE);      /* NOP */
-        STMemory_WriteWord(0xE006AE + 2,NOP_OPCODE);  /* NOP */
-      }
-
-      /* E002FC  CLR.L $4C2      Set connected drives */
-      STMemory_WriteWord(0xE002FC,CONDRV_OPCODE);
-      STMemory_WriteWord(0xE002FC+2,NOP_OPCODE);  /* NOP */
-
+      /* The 2.0x DMA bus boot routine uses two RTSes - patch both */
+      if(ACSI_EMU_ON || GEMDOS_EMU_ON) 
+	{
+	  /* no bootable DMA devices */
+	  STMemory_WriteWord(0xE0081A, CONDRV_OPCODE);
+	  /* used if we have DMA devices */
+	  STMemory_WriteWord(0xE00842, CONDRV_OPCODE);
+	} else {
+	  /* E002FC  CLR.L $4C2      Set connected drives */
+	  STMemory_WriteWord(0xE002FC,CONDRV_OPCODE);
+	  STMemory_WriteWord(0xE002FC+2,NOP_OPCODE);  /* NOP */
+	
+	  /* E006AE  BSR.W $E00794    Boot from DMA bus */
+	  if (bUseVDIRes) {
+	    STMemory_WriteWord(0xE006AE,0xa000);      /* Init Line-A */
+	    STMemory_WriteWord(0xE006AE + 2,0xa0ff);  /* Trap Line-A (to get structure) */
+	  }
+	  else {
+	    STMemory_WriteWord(0xE006AE,NOP_OPCODE);      /* NOP */
+	    STMemory_WriteWord(0xE006AE + 2,NOP_OPCODE);  /* NOP */
+	  }
+	  
+	}
       /* Timer D(MFP init 0xE01928) */
       STMemory_WriteWord(0xE01972,TIMERD_OPCODE);
 
@@ -379,25 +422,34 @@ void TOS_FixRom(void)
       STMemory_WriteWord(0xE05944+4,NOP_OPCODE);  /* NOP */
 
       /* E00898  BSR.W  $E0097A    Boot from DMA bus */
-      if (bUseVDIRes) {
-        STMemory_WriteWord(0xE00898,0xa000);      /* Init Line-A */
-        STMemory_WriteWord(0xE00898+2,0xa0ff);    /* Trap Line-A (to get structure) */
-      }
-      else {
-        STMemory_WriteWord(0xE00898,NOP_OPCODE);    /* NOP */
-        STMemory_WriteWord(0xE00898+2,NOP_OPCODE);  /* NOP */
-      }
+      if(ACSI_EMU_ON || GEMDOS_EMU_ON) 
+	{
+	  /* no bootable DMA devices */
+	  STMemory_WriteWord(0xE00B3E, CONDRV_OPCODE);
+	  /* used if we have DMA devices */
+	  STMemory_WriteWord(0xE00B66, CONDRV_OPCODE);
+	
+	} else {
+	  /* E00362  CLR.L  $4C2    Set connected drives */
+	  STMemory_WriteWord(0xE00362,NOP_OPCODE);
+	  STMemory_WriteWord(0xE00362+2,NOP_OPCODE);  /* NOP */
 
-      /* E00362  CLR.L  $4C2    Set connected drives */
-      STMemory_WriteWord(0xE00362,CONDRV_OPCODE);
-      STMemory_WriteWord(0xE00362+2,NOP_OPCODE);  /* NOP */
-
+	  /* E00898  BSR.W  $E0097A    Boot from DMA bus */
+	  if (bUseVDIRes) {
+	    STMemory_WriteWord(0xE00898,0xa000);      /* Init Line-A */
+	    STMemory_WriteWord(0xE00898+2,0xa0ff);    /* Trap Line-A (to get structure) */
+	  }
+	  else {
+	    STMemory_WriteWord(0xE00898,NOP_OPCODE);    /* NOP */
+	    STMemory_WriteWord(0xE00898+2,NOP_OPCODE);  /* NOP */
+	  }
+	}
       /* E007FA  MOVE.L  #$1FFFE,D7  Run checksums on 2xROMs(skip) */
       /* Checksum is total of TOS rom image, but get incorrect results as we've */
       /* changed bytes in the ROM! So, just skip anyway! */
       STMemory_WriteWord(0xE007FA,BRAW_OPCODE);   /* BRA.W  $E00894 */
       STMemory_WriteWord(0xE007FA+2,0x98);
-
+      
       /* Timer D(MFP init 0xE02206) */
       STMemory_WriteWord(0xE02250,TIMERD_OPCODE);
 
@@ -443,7 +495,9 @@ void TOS_SetDefaultMemoryConfig(void)
   /* Set TOS floppies */
   STMemory_WriteWord(0x446,nBootDrive);           /* Boot up on A(0) or C(2) */
   STMemory_WriteWord(0x4a6,0x2);                  /* Connected floppies A,B (0 or 2) */
+
   ConnectedDriveMask = ConnectedDriveMaskList[ConfigureParams.HardDisc.nDriveList];
+
   STMemory_WriteLong(0x4c2,ConnectedDriveMask);   /* Drives A,B and C - NOTE some TOS images overwrite value, see 'TOS_ConnectedDrive_OpCode' */
 
   /* Mirror ROM boot vectors */

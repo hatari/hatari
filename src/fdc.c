@@ -15,6 +15,7 @@
 #include "decode.h"
 #include "dialog.h"
 #include "fdc.h"
+#include "hdc.h"
 #include "floppy.h"
 #include "ikbd.h"
 #include "m68000.h"
@@ -23,6 +24,7 @@
 #include "misc.h"
 #include "psg.h"
 #include "stMemory.h"
+
 
 /*
   Floppy Disc Controller
@@ -259,6 +261,10 @@ void FDC_ResetDMAStatus(void)
 
   FDCSectorCountRegister = 0;
   FDC_SetDMAStatus(FALSE);          /* Set no error */
+
+  HDCSectorCount = 0;
+  HDCCommand.byteCount = 0;         /* Reset HDC command status */
+  HDCCommand.returnCode = 0xFF;
 }
 
 
@@ -282,8 +288,12 @@ void FDC_SetDMAStatus(BOOL bError)
     DMAStatus_ff8606rd |= 0x1;
 
   /* Set zero sector count */
-  if (FDCSectorCountRegister!=0)
-    DMAStatus_ff8606rd |= 0x2;
+
+  if (DMAModeControl_ff8606wr&0x08)         /* Get which sector count? */ 
+    DMAStatus_ff8606rd |= (HDCSectorCount)?0:0x2;         /* HDC */
+  else
+    DMAStatus_ff8606rd |= (FDCSectorCountRegister)?0x2:0; /* FDC */
+  /* Perhaps the DRQ should be set here */
 }
 
 
@@ -1061,6 +1071,8 @@ void FDC_WriteDataRegister(void)
 */
 void FDC_WriteDiscControllerByte(void)
 {
+  HDC_WriteCommandPacket();           /*  Handle HDC functions */ 
+
   /* Are we trying to set the SectorCount? */
   if (DMAModeControl_ff8606wr&0x10)         /* Bit 4 */
     FDC_WriteSectorCountRegister();
@@ -1090,6 +1102,13 @@ void FDC_WriteDiscControllerByte(void)
 */
 void FDC_ReadDiscControllerStatusByte(void)
 {
+  /* return the HDC status reg */
+  if(DMAModeControl_ff8606wr == 0x08A) {       /* HDC status reg selected */
+    DiscControllerByte = HDCCommand.returnCode;
+    return;
+  }
+
+  /* old FDC code */
   switch(DMAModeControl_ff8606wr&0x6) {     /* Bits 1,2 (A1,A0) */
     case 0x0:                               /* 0 0 - Status register */
       DiscControllerByte = DiscControllerStatus_ff8604rd;

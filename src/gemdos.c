@@ -20,6 +20,7 @@
 #include "dialog.h"
 #include "file.h"
 #include "floppy.h"
+#include "hdc.h"
 #include "gemdos.h"
 #include "m68000.h"
 #include "memAlloc.h"
@@ -35,6 +36,7 @@
 #include <time.h>
 #include <dirent.h>
 
+/* #define GEMDOS_VERBOSE */
 #define ENABLE_SAVING             /* Turn on saving stuff */
 
 #define INVALID_HANDLE_VALUE -1
@@ -49,8 +51,8 @@ EMULATEDDRIVE **emudrives = NULL;
 
 typedef struct 
 {
- BOOL bUsed;
- FILE *FileHandle;
+  BOOL bUsed;
+  FILE *FileHandle;
   char szActualName[MAX_PATH];   /* used by F_DATIME (0x57) */
 } FILE_HANDLE;
 
@@ -316,6 +318,7 @@ void fsfirst_dirname(char *string, char *new){
   while(string[i] != '\0'){new[i] = string[i]; i++;} /* find end of string */
   while(new[i] != '/') i--; /* find last slash */
   new[i] = '\0';
+
 }
 
 /*-----------------------------------------------------------------------*/
@@ -349,18 +352,32 @@ void GemDOS_Init(void)
     InternalDTAs[i].found = NULL;
   }
   DTAIndex = 0;
+
+  /* intialize data for harddrive emulation */
+  if(GEMDOS_EMU_ON){
+    /* remove trailing slash, if any in the directory name */
+    i=0;while(emudrives[0]->hd_emulation_dir[i]) i++;
+    if(emudrives[0]->hd_emulation_dir[i-1] == '/')
+      emudrives[0]->hd_emulation_dir[i-1] = '\0';
+    
+    /* set drive to 2 + number of ACSI partitions */
+    emudrives[0]->hd_letter = 2 + nPartitions;
+    fprintf(stderr, "Hard drive emulation, %c: <-> %s\n",
+	    emudrives[0]->hd_letter + 'A', 
+	    emudrives[0]->hd_emulation_dir);
+  }
 }
 
 /*-----------------------------------------------------------------------*/
 /*
   Reset GemDOS file system
 */
-void GemDOS_Reset(void)
+void GemDOS_Reset()
 {
   int i;
 
-  if(emudrives != NULL){
-    strcpy(emudrives[0]->fs_currpath,"");
+  if(GEMDOS_EMU_ON){
+    strcpy(emudrives[0]->fs_currpath,"/");
   }
   
   /* Init file handles table */
@@ -456,6 +473,7 @@ BOOL GemDOS_IsInvalidFileHandle(int Handle)
 /*-----------------------------------------------------------------------*/
 /*
   Find drive letter from a filename, eg C,D... and return as drive ID(C:2, D:3...)
+  returns the current drive number if none is specified.
 */
 int GemDOS_FindDriveNumber(char *pszFileName)
 {
@@ -478,13 +496,18 @@ int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 {
   int DriveLetter;
 
-  /* temporary hack, as Configureparams isn't set up yet. */
-  DriveLetter = GemDOS_FindDriveNumber(pszFileName);
-  if( DriveLetter >= 2 )
-    return(DriveLetter);
-  else
-    return(-1);
-  
+  /* Do we even have a hard-drive? */
+  if(GEMDOS_EMU_ON)
+    {
+      DriveLetter = GemDOS_FindDriveNumber(pszFileName);
+      /* add support for multiple drives here.. */
+      if( DriveLetter == emudrives[0]->hd_letter )
+	return(DriveLetter);
+    }
+  /* Not a high-level redirected drive */
+  return(-1);
+
+  /* this code is depreciated */
   /* Do we even have a hard-drive? */
   if (ConfigureParams.HardDisc.nDriveList!=DRIVELIST_NONE) {
     /* Find drive letter(as number) */
@@ -504,20 +527,20 @@ int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 */
 void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestName)
 {
-  int DirIndex = Misc_LimitInt(Drive-2, 0,ConfigureParams.HardDisc.nDriveList-1);
+  /*  int DirIndex = Misc_LimitInt(Drive-2, 0,ConfigureParams.HardDisc.nDriveList-1); */
   int i;
 
-  /* another temporary hack */
-  if(pszFileName[0] == '\0')return; /* check for valid string */
+  if(pszFileName[0] == '\0') return; /* check for valid string */
+
   /* case full filename "C:\foo\bar" */
   if(pszFileName[1] == ':') {
     sprintf(pszDestName, "%s%s", emudrives[0]->hd_emulation_dir, File_RemoveFileNameDrive(pszFileName)); 
-  } 
-  /* Referenced from root:  "\foo\bar" */
+  }   
+  /* case referenced from root:  "\foo\bar" */
   else if(pszFileName[0] == '\\'){  
     sprintf(pszDestName, "%s%s", emudrives[0]->hd_emulation_dir, pszFileName); 
   }
-  /* referenced from current directory */
+  /* case referenced from current directory */
   else {
     sprintf(pszDestName, "%s%s%s", emudrives[0]->hd_emulation_dir, emudrives[0]->fs_currpath, pszFileName);
   }
@@ -528,19 +551,6 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
     if(pszDestName[i] == '\\') pszDestName[i] = '/';
     i++;
   }
-  return;
-
-  /* Combine names */
-  if (File_IsRootFileName(pszFileName))
-    sprintf(pszDestName,"%s%s",ConfigureParams.HardDisc.szHardDiscDirectories[DirIndex],File_RemoveFileNameDrive(pszFileName));
-  else {
-    if (File_DoesFileNameEndWithSlash(szCurrentDir))
-      sprintf(pszDestName,"%s%s%s",ConfigureParams.HardDisc.szHardDiscDirectories[DirIndex],File_RemoveFileNameDrive(szCurrentDir),File_RemoveFileNameDrive(pszFileName));
-    else
-      sprintf(pszDestName,"%s%s/%s",ConfigureParams.HardDisc.szHardDiscDirectories[DirIndex],File_RemoveFileNameDrive(szCurrentDir),File_RemoveFileNameDrive(pszFileName));
-  }
-  /* Remove any trailing slashes at end of filenames */
-  File_RemoveFileNameTrailingSlashes(pszDestName);
 
 }
 
@@ -788,13 +798,24 @@ BOOL GemDOS_ChDir(unsigned long Params)
   pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
 
   Drive = GemDOS_IsFileNameAHardDrive(pDirName);
-  if (ISHARDDRIVE(Drive)) {
-    /* FIXME: Check path exists, else error (GEMDOS_EPTHNF) */
-    /*        GemDOS_CreateHardDriveFileName(Drive,"",szDirPath); */
-    sprintf(szDirPath, "%s%s", emudrives[0]->hd_emulation_dir, pDirName);
 
+  if (ISHARDDRIVE(Drive)) {
+
+    if(pDirName[1] == ':') pDirName += 2;
+
+    /* FIXME: Klugdy code, check path exists, else error (GEMDOS_EPTHNF) */
+
+    sprintf(szDirPath, "%s/", pDirName);
+
+    /* front-slashify */
     for(n=0;n<MAX_PATH;n++) if(szDirPath[n] == '\\')szDirPath[n] = '/';
-    strcpy(emudrives[0]->fs_currpath, pDirName); 
+    
+    /* remove any trailing slashes */
+    if (szDirPath[strlen(szDirPath)-1]=='/' && szDirPath[strlen(szDirPath)-2]=='/')
+      szDirPath[strlen(szDirPath)-1] = '\0';     /* then remove it! */
+
+    
+    strcpy(emudrives[0]->fs_currpath, szDirPath); 
     Regs[REG_D0] = GEMDOS_EOK;
     return(TRUE);
   }
@@ -939,7 +960,8 @@ BOOL GemDOS_Close(unsigned long Params)
 BOOL GemDOS_Read(unsigned long Params)
 {
   char *pBuffer;
-  unsigned long nBytesRead,Size,CurrentPos,FileSize,nBytesLeft;
+  unsigned long nBytesRead,Size,CurrentPos,FileSize;
+  long nBytesLeft;
   int Handle;
 
   /* Read details from stack */
@@ -963,10 +985,9 @@ BOOL GemDOS_Read(unsigned long Params)
     nBytesLeft = FileSize-CurrentPos;
 
     /* Check for End Of File */
-    // if (nBytesLeft<0) {
-    if(0){ 
-      Regs[REG_D0] = GEMDOS_ERROR;
-
+    if (nBytesLeft == 0) {
+      /* FIXME: should we return zero (bytes read) or an error? */ 
+       Regs[REG_D0] = 0;
       return(TRUE);
     }
     else {
@@ -1111,11 +1132,13 @@ int GemDOS_GetDir(unsigned long Params){
 */
 int GemDOS_Pexec_LoadAndGo(unsigned long Params)
 {
-  /* FIXME: will generate problems with ramdiscs/ lowlevel emulated HDs */
+  /* add multiple disk support here too */
   /* Hard-drive? */
-  if (CurrentDrive>=2){                /* If not using A: or B:, use my own routines to load */
-     return(CALL_PEXEC_ROUTINE); 
-  }
+  if( CurrentDrive == emudrives[0]->hd_letter )
+    {
+      /* If not using A: or B:, use my own routines to load */
+      return(CALL_PEXEC_ROUTINE); 
+    }
   else return(FALSE);
 }
 
@@ -1126,9 +1149,10 @@ int GemDOS_Pexec_LoadAndGo(unsigned long Params)
 int GemDOS_Pexec_LoadDontGo(unsigned long Params)
 {
   /* Hard-drive? */
-  if (CurrentDrive>=2){
-     return(CALL_PEXEC_ROUTINE); 
-  } else return(FALSE);
+  if( CurrentDrive == emudrives[0]->hd_letter )
+    {
+      return(CALL_PEXEC_ROUTINE); 
+    } else return(FALSE);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1208,7 +1232,6 @@ BOOL GemDOS_SFirst(unsigned long Params)
     
     /* open directory */
     fsfirst_dirname(szActualFileName, InternalDTAs[DTAIndex].path);
-
     fsdir = opendir(InternalDTAs[DTAIndex].path);
     
     if( fsdir == NULL ){
@@ -1228,8 +1251,8 @@ BOOL GemDOS_SFirst(unsigned long Params)
     fsfirst_dirmask(szActualFileName, tempstr); /* get directory mask */
 
     /* Create and populate a list of matching files. */
-    j = 0;                     /* count number of entries matching mask */
 
+    j = 0;                     /* count number of entries matching mask */
     for(i=0;i<InternalDTAs[DTAIndex].nentries;i++)
       if(match(tempstr, files[i]->d_name)) j++;
     
@@ -1242,6 +1265,7 @@ BOOL GemDOS_SFirst(unsigned long Params)
 	InternalDTAs[DTAIndex].found[k] = files[i];
 	k++;
       }
+    
     InternalDTAs[DTAIndex].nentries = j; /* set number of legal entries */
 
     if(InternalDTAs[DTAIndex].nentries == 0){
@@ -1406,6 +1430,10 @@ void GemDOS_OpCode(void)
 #ifdef GEMDOS_VERBOSE
   if(GemDOSCall <= 0x57)
     fprintf(stderr, "GemDOS 0x%X (%s)\n",GemDOSCall,pszGemDOSNames[GemDOSCall]); 
+  if(!GemDOSCall){
+    fprintf(stderr, "Warning!!\n");
+    DebugUI();
+  }
 #endif
 
   /* Intercept call */
@@ -1527,15 +1555,21 @@ void GemDOS_OpCode(void)
 /*-----------------------------------------------------------------------*/
 /*
   GemDOS_Boot - routine called on the first occurence of the gemdos opcode.
-  used to set up our gemdos handler.
+  (this should be in the cartridge bootrom)
+  Sets up our gemdos handler (or, if we don't need one, just turn off keyclicks)
  */
 
 void GemDOS_Boot()
 {
-  bInitGemDOS = TRUE;
+  int i;
 
+  bInitGemDOS = TRUE;
+#ifdef GEMDOS_VERBOSE
+  fprintf(stderr, "Gemdos_Boot()\n");
+#endif
   /* install our gemdos handler, if -e or --harddrive option used */
-  if(emudrives != NULL){
+  if(GEMDOS_EMU_ON){
+
     /* Patch pexec code - coded value is 4, but must be 6 for TOS > 1.00 */
     if(TOSVersion > 0x0100) 
       STMemory_WriteByte(CART_PEXEC_TOS, 0x06);

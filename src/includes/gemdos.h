@@ -92,17 +92,19 @@ typedef struct {
 typedef struct {
   char hd_emulation_dir[MAX_PATH];         /* hd emulation directory */
   char fs_currpath[MAX_PATH];              /* current path */
+  int hd_letter;                           /* drive letter */
 } EMULATEDDRIVE;
 
 extern EMULATEDDRIVE **emudrives;
 
 #define  ISHARDDRIVE(Drive)  (Drive!=-1)
+#define  GEMDOS_EMU_ON  (emudrives != NULL)
 
 extern BOOL bInitGemDOS;
 extern unsigned short int CurrentDrive;
 
 extern void GemDOS_Init(void);
-extern void GemDOS_Reset(void);
+extern void GemDOS_Reset();
 extern void GemDOS_MemorySnapShot_Capture(BOOL bSave);
 extern void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestName);
 extern BOOL GemDOS(void);

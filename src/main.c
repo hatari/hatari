@@ -20,6 +20,7 @@
 #include "file.h"
 #include "floppy.h"
 #include "gemdos.h"
+#include "hdc.h"
 #include "ikbd.h"
 #include "intercept.h"
 #include "reset.h"
@@ -248,69 +249,84 @@ void Main_RemoveSoundTimer(void)
 */
 void Main_ReadParameters(int argc, char *argv[])
 {
- int i;
+  int i;
 
- /* Scan for any which we can use */
- for(i=1; i<argc; i++)
+  /* Scan for any which we can use */
+  for(i=1; i<argc; i++)
   {
-   if (strlen(argv[i])>0)
+    if (strlen(argv[i])>0)
     {
-     if (!strcmp(argv[i],"--help") || !strcmp(argv[i],"-h"))
+      if (!strcmp(argv[i],"--help") || !strcmp(argv[i],"-h"))
       {
-       printf("Usage:\n hatari [options] [disk image name]\n"
-              "Where options are:\n"
-              "  --help or -h          Print this help text and exit.\n"
-              "  --version or -v       Print version number and exit.\n"
-              "  --mono or -m          Start in monochrome mode instead of color.\n"
-              "  --fullscreen or -f    Try to use fullscreen mode.\n"
-              "  --joystick or -j      Emulate a ST joystick with the cursor keys.\n"
-              "  --nosound             Disable sound (faster!).\n"
-              "  --frameskip           Skip every second frame (speeds up emulation!).\n"
-              "  --debug or -d         Allow debug interface.\n"
-              "  --harddrive <dir>     Emulate an ST harddrive\n"
-              "     or -e <dir>         (<dir> = root directory).\n"
-              "  --tos <file>          Use TOS image <file>.\n"
-              "  --cpulevel x          Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
-              "  --compatible          Use a more compatible (but slower) 68000 CPU mode.\n"
-             );
-       exit(0);
+        printf("Usage:\n hatari [options] [disk image name]\n"
+               "Where options are:\n"
+               "  --help or -h          Print this help text and exit.\n"
+               "  --version or -v       Print version number and exit.\n"
+               "  --mono or -m          Start in monochrome mode instead of color.\n"
+               "  --fullscreen or -f    Try to use fullscreen mode.\n"
+               "  --joystick or -j      Emulate a ST joystick with the cursor keys.\n"
+               "  --nosound             Disable sound (faster!).\n"
+               "  --frameskip           Skip every second frame (speeds up emulation!).\n"
+               "  --debug or -D         Allow debug interface.\n"
+               "  --harddrive <dir>     Emulate an ST harddrive\n"
+               "     or -d <dir>         (<dir> = root directory).\n"
+               "  --hdimage <imagename> Emulate an ST harddrive with an image.\n"
+               "  --tos <file>          Use TOS image <file>.\n"
+               "  --cpulevel x          Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
+               "  --compatible          Use a more compatible (but slower) 68000 CPU mode.\n"
+              );
+        exit(0);
       }
       else if (!strcmp(argv[i],"--version") || !strcmp(argv[i],"-v"))
       {
-       printf("This is %s.\n", PROG_NAME);
-       printf("This program is free software licensed under the GNU GPL.\n");
-       exit(0);
+        printf("This is %s.\n", PROG_NAME);
+        printf("This program is free software licensed under the GNU GPL.\n");
+        exit(0);
       }
       else if (!strcmp(argv[i],"--mono") || !strcmp(argv[i],"-m"))
       {
-       bUseHighRes=TRUE;
-       ConfigureParams.Screen.bUseHighRes=TRUE;
-       STRes=PrevSTRes=ST_HIGH_RES;
+        bUseHighRes=TRUE;
+        ConfigureParams.Screen.bUseHighRes=TRUE;
+        STRes=PrevSTRes=ST_HIGH_RES;
       }
       else if (!strcmp(argv[i],"--fullscreen") || !strcmp(argv[i],"-f"))
       {
-       bUseFullscreen=TRUE;
+        bUseFullscreen=TRUE;
       }
       else if (!strcmp(argv[i],"--joystick") || !strcmp(argv[i],"-j"))
       {
-       ConfigureParams.Joysticks.Joy[1].bCursorEmulation=TRUE;
+        ConfigureParams.Joysticks.Joy[1].bCursorEmulation=TRUE;
       }
       else if ( !strcmp(argv[i],"--nosound") )
       {
-       bDisableSound=TRUE;
-       ConfigureParams.Sound.bEnableSound = FALSE;
+        bDisableSound=TRUE;
+        ConfigureParams.Sound.bEnableSound = FALSE;
       }
       else if ( !strcmp(argv[i],"--frameskip") )
       {
-       ConfigureParams.Screen.Advanced.bFrameSkip = TRUE;
+        ConfigureParams.Screen.Advanced.bFrameSkip = TRUE;
       }
-      else if (!strcmp(argv[i],"--debug") || !strcmp(argv[i],"-d"))
+      else if (!strcmp(argv[i],"--debug") || !strcmp(argv[i],"-D"))
       {
-       bEnableDebug=TRUE;
+        bEnableDebug=TRUE;
       }
-      else if (!strcmp(argv[i],"--harddrive") || !strcmp(argv[i],"-e"))
+      else if (!strcmp(argv[i],"--hdimage"))
       {
-        if(i + 1 < argc && strlen(argv[i+1])<=MAX_PATH) { /* both parameters exist */
+	if( argc > i+1 ) 
+          if( HDC_Init(argv[i+1]) == TRUE)
+          {
+            printf("Hard drive image %s mounted.\n", argv[i+1]);
+            i++;
+          }
+          else
+          {
+            printf("Couldn't open file: %s, or no partitions\n");
+          } 
+      }
+      else if (!strcmp(argv[i],"--harddrive") || !strcmp(argv[i],"-d"))
+      {
+        if(i + 1 < argc && strlen(argv[i+1])<=MAX_PATH)  /* both parameters exist */
+        {
           /* only 1 emulated drive allowed, as of yet.  */
           emudrives = malloc( sizeof(EMULATEDDRIVE *) );
           emudrives[0] = malloc( sizeof(EMULATEDDRIVE) );
@@ -320,16 +336,17 @@ void Main_ReadParameters(int argc, char *argv[])
           else
             sprintf( emudrives[0]->hd_emulation_dir, "%s", argv[i+1]);
           strcpy(ConfigureParams.HardDisc.szHardDiscDirectories[0], emudrives[0]->hd_emulation_dir);
-          ConfigureParams.HardDisc.nDriveList = DRIVELIST_C;
-          i ++;
+
+          ConfigureParams.HardDisc.nDriveList += 1;
+          i += 1;
         }
       }
       else if (!strcmp(argv[i],"--tos"))
       {
-       if(i+1>=argc)
-         fprintf(stderr,"Missing argument for --tos.\n");
+        if(i+1>=argc)
+          fprintf(stderr,"Missing argument for --tos.\n");
         else
-         strncpy(ConfigureParams.TOSGEM.szTOSImageFileName, argv[++i], MAX_FILENAME_LENGTH);
+          strncpy(ConfigureParams.TOSGEM.szTOSImageFileName, argv[++i], MAX_FILENAME_LENGTH);
       }
       else if (!strcmp(argv[i],"--cpulevel"))
       {
@@ -348,11 +365,11 @@ void Main_ReadParameters(int argc, char *argv[])
       }
       else
       {
-       /* Possible passed disc image filename, ie starts with character other than '-' */
-       if (argv[i][0]!='-')
-         strcpy(szBootDiscImage,argv[i]);
+        /* Possible passed disc image filename, ie starts with character other than '-' */
+        if (argv[i][0]!='-')
+          strcpy(szBootDiscImage,argv[i]);
         else
-         fprintf(stderr,"Illegal parameter: %s\n",argv[i]);
+          fprintf(stderr,"Illegal parameter: %s\n",argv[i]);
       }
     }
   }
@@ -405,6 +422,7 @@ void Main_UnInit(void)
   Main_RemoveSoundTimer();
   Floppy_EjectBothDrives();
   Floppy_UnInit();
+  HDC_UnInit();
   RS232_UnInit();
   Printer_UnInit();
   Intercept_UnInit();
