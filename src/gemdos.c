@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-static char rcsid[] = "Hatari $Id: gemdos.c,v 1.19 2003-04-04 16:28:29 thothy Exp $";
+static char rcsid[] = "Hatari $Id: gemdos.c,v 1.20 2003-06-02 16:17:06 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -1759,8 +1759,8 @@ void GemDOS_Boot()
   /* install our gemdos handler, if -e or --harddrive option used */
   if(GEMDOS_EMU_ON){
 
-    /* Patch pexec code - coded value is 4, but must be 6 for TOS > 1.00 */
-    if(TosVersion > 0x0100)
+    /* Patch pexec code - coded value is 4, but should be 6 for TOS >= 1.04 */
+    if(TosVersion >= 0x0104)
       STMemory_WriteByte(CART_PEXEC_TOS, 0x06);
 
     /* Save old GEMDOS handler adress */
@@ -1769,10 +1769,4 @@ void GemDOS_Boot()
     STMemory_WriteLong(0x0084, CART_GEMDOS);
   }
 }
-
-/*
-  GemDOS_RunOldOpCode()
-  Has been relocated to a routine in hatari-glue.c
-*/
-
 
