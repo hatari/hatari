@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-static char rcsid[] = "Hatari $Id: sound.c,v 1.8 2003-03-10 18:46:07 thothy Exp $";
+static char rcsid[] = "Hatari $Id: sound.c,v 1.9 2003-03-12 14:15:44 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -127,12 +127,16 @@ void Sound_Reset(void)
 
   /* Clear cycle counts, buffer index and register '13' flags */
   SoundCycles = 0;
-  CompleteSndBufIdx = 0;
-  ActiveSndBufIdx =  (SoundBufferSize + SAMPLES_PER_FRAME) % MIXBUFFER_SIZE;
-  nGeneratedSamples = 0;
   bEnvelopeFreqFlag = FALSE;
   bWriteEnvelopeFreq = FALSE;
   bWriteChannelAAmp = bWriteChannelBAmp = bWriteChannelCAmp = FALSE;
+
+  /* Lock audio system before accessing variables that are also use by the callback function! */
+  Audio_Lock();
+  CompleteSndBufIdx = 0;
+  ActiveSndBufIdx =  (SoundBufferSize + SAMPLES_PER_FRAME) % MIXBUFFER_SIZE;
+  nGeneratedSamples = 0;
+  Audio_Unlock();
 
   /* Clear frequency counter */
   for(i=0; i<3; i++)
