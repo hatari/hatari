@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.7 2005-02-12 23:11:28 thothy Exp $";
+char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.8 2005-02-24 20:26:30 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -230,6 +230,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 	BOOL browsingzip = FALSE;           /* Are we browsing an archive? */
 	zip_dir *zipfiles = NULL;
 	SDL_Event sdlEvent;
+	struct stat filestat;
 
 	ypos = 0;
 	refreshentries = TRUE;
@@ -257,7 +258,14 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 	}
 
 	/* Prepare the path and filename variables */
+	if (stat(path_and_name, &filestat) == 0 && S_ISDIR(filestat.st_mode))
+	{
+		/* assure that a directory name ends with a '/' */
+		File_AddSlashToEndFileName(path_and_name);
+	}
 	File_splitpath(path_and_name, path, fname, NULL);
+	File_MakeAbsoluteName(path);
+	File_MakeValidPathName(path);
 	File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
 	File_ShrinkName(dlgfname, fname, DLGFNAME_SIZE);
 
@@ -327,7 +335,6 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 		if( retbut>=SGFSDLG_ENTRY1 && retbut<=SGFSDLG_ENTRY16 && retbut-SGFSDLG_ENTRY1+ypos<entries)
 		{
 			char *tempstr;
-			struct stat filestat;
 
 			tempstr = malloc(FILENAME_MAX);
 			if (!tempstr)

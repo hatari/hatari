@@ -43,5 +43,6 @@ extern void File_splitpath(char *pSrcFileName, char *pDir, char *pName, char *Ex
 extern void File_makepath(char *pDestFileName, char *pDir, char *pName, char *pExt);
 extern void File_ShrinkName(char *pDestFileName, char *pSrcFileName, int maxlen);
 extern void File_MakeAbsoluteName(char *pszFileName);
+extern void File_MakeValidPathName(char *pPathName);
 
 #endif /* HATARI_FILE_H */

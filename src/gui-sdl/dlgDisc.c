@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.9 2005-02-13 16:18:52 thothy Exp $";
+char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.10 2005-02-24 20:26:30 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -221,6 +221,7 @@ void Dialog_DiscDlg(void)
           ptr = strrchr(tmpname, '/');
           if( ptr!=NULL )  ptr[1]=0;        /* Remove file name from path */
           strcpy(DialogParams.HardDisc.szHardDiscDirectories[0], tmpname);
+          File_CleanFileName(DialogParams.HardDisc.szHardDiscDirectories[0]);
           File_ShrinkName(dlgnamegdos, DialogParams.HardDisc.szHardDiscDirectories[0], discdlg[DISCDLG_DISCGDOS].w);
         }
         break;

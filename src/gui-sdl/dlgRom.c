@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.3 2005-02-12 23:11:28 thothy Exp $";
+char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.4 2005-02-24 20:26:30 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -72,7 +72,6 @@ void DlgRom_Main(void)
 		{
 		 case DLGROM_TOSBROWSE:
 			strcpy(tmpname, DialogParams.Rom.szTosImageFileName);
-			File_MakeAbsoluteName(tmpname);
 			if (SDLGui_FileSelect(tmpname, NULL, FALSE))   /* Show and process the file selection dlg */
 			{
 				strcpy(DialogParams.Rom.szTosImageFileName, tmpname);

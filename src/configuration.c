@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.37 2005-02-13 16:18:47 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.38 2005-02-24 20:26:29 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -303,8 +303,15 @@ void Configuration_WorkOnDetails(BOOL bReset)
     nCpuFreqShift = 1;
   }
 
-  /* Remove slashes, etc.. from names */
-  File_CleanFileName(ConfigureParams.Rom.szTosImageFileName);
+  /* Clean file and directory names */
+  File_MakeAbsoluteName(ConfigureParams.Rom.szTosImageFileName);
+  File_MakeAbsoluteName(ConfigureParams.Rom.szCartridgeImageFileName);
+  File_MakeAbsoluteName(ConfigureParams.HardDisc.szHardDiscImage);
+  File_CleanFileName(ConfigureParams.HardDisc.szHardDiscDirectories[0]);
+  File_MakeAbsoluteName(ConfigureParams.HardDisc.szHardDiscDirectories[0]);
+  File_MakeAbsoluteName(ConfigureParams.Midi.szMidiOutFileName);
+  File_MakeAbsoluteName(ConfigureParams.RS232.szOutFileName);
+  File_MakeAbsoluteName(ConfigureParams.RS232.szInFileName);
 }
 
 

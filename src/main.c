@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.69 2005-02-13 16:18:49 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.70 2005-02-24 20:26:29 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -442,6 +442,8 @@ static void Main_ReadParameters(int argc, char *argv[])
       }
     }
   }
+
+  Configuration_WorkOnDetails(FALSE);
 }
 
 

@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.17 2005-02-13 16:18:48 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.18 2005-02-24 20:26:29 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -589,7 +589,7 @@ void File_MakeAbsoluteName(char *pFileName)
   pTempName = malloc(FILENAME_MAX);
   if (!pTempName)
   {
-    perror("File_MakeAbsoluteName");
+    perror("File_MakeAbsoluteName - malloc");
 	return;
   }
 
@@ -600,7 +600,12 @@ void File_MakeAbsoluteName(char *pFileName)
   }
   else
   {
-    getcwd(pTempName, FILENAME_MAX);
+    if (!getcwd(pTempName, FILENAME_MAX))
+    {
+      perror("File_MakeAbsoluteName - getcwd");
+      free(pTempName);
+	  return;
+    }
     File_AddSlashToEndFileName(pTempName);
     outpos = strlen(pTempName);
   }
@@ -646,4 +651,39 @@ void File_MakeAbsoluteName(char *pFileName)
 
   strcpy(pFileName, pTempName);          /* Copy back */
   free(pTempName);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Create a valid path name from a possibly invalid name by erasing invalid
+  path parts at the end of the string.
+  pPathName needs to point to a buffer of at least FILENAME_MAX bytes.
+*/
+void File_MakeValidPathName(char *pPathName)
+{
+  struct stat dirstat;
+  char *pLastSlash;
+
+  do
+  {
+    /* Check for a valid path */
+    if (stat(pPathName, &dirstat) == 0 && S_ISDIR(dirstat.st_mode))
+    {
+      break;
+    }
+
+    pLastSlash = strrchr(pPathName, '/');
+    if (pLastSlash)
+    {
+      /* Erase the (probably invalid) part after the last slash */
+      *pLastSlash = 0;
+    }
+    else
+    {
+      /* Path name seems to be completely invalid -> set to root directory */
+      strcpy(pPathName, "/");
+    }
+  }
+  while (pLastSlash);
 }
