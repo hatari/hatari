@@ -259,14 +259,15 @@ void Main_ReadParameters(int argc, char *argv[])
       {
        printf("Usage:\n hatari [options] [disk image name]\n"
               "Where options are:\n"
-              "  --help or -h        Print this help text and exit.\n"
-              "  --version or -v     Print version number and exit.\n"
-              "  --mono or -m        Start in monochrome mode instead of color.\n"
-              "  --fullscreen or -f  Try to use fullscreen mode.\n"
-              "  --joystick or -j    Emulate a ST joystick with the cursor keys\n"
-              "  --sound or -s       Enable sound (does not yet work right!)\n"
-              "  --frameskip         Skip every second frame (speeds up emulation!)\n"
-              "  --debug or -d       Allow debug interface.\n"
+              "  --help or -h                    Print this help text and exit.\n"
+              "  --version or -v                 Print version number and exit.\n"
+              "  --mono or -m                    Start in monochrome mode instead of color.\n"
+              "  --fullscreen or -f              Try to use fullscreen mode.\n"
+              "  --joystick or -j                Emulate a ST joystick with the cursor keys\n"
+              "  --sound or -s                   Enable sound (does not yet work right!)\n"
+              "  --frameskip                     Skip every second frame (speeds up emulation!)\n"
+              "  --debug or -d                   Allow debug interface.\n"
+              "  --harddrive <dir> or -e <dir>   Emulate an ST harddrive <dir> = root directory\n"
              );
        exit(0);
       }
@@ -301,6 +302,25 @@ void Main_ReadParameters(int argc, char *argv[])
       else if (!strcmp(argv[i],"--debug") || !strcmp(argv[i],"-d"))
       {
        bEnableDebug=TRUE;
+      }
+      else if (!strcmp(argv[i],"--harddrive") || !strcmp(argv[i],"-e"))
+      {
+	if(i + 1 < argc){ /* both parameters exist */
+	  /* only 1 emulated drive allowed, as of yet.  */
+	  emudrives = malloc( sizeof(EMULATEDDRIVE *) );
+	  emudrives[0] = malloc( sizeof(EMULATEDDRIVE) );
+	  ConnectedDriveMask = 0x7; /* set the connected drive mask */
+	  
+	  /* set emulation directory string */
+	  if( argv[i+1][0] != '.' && argv[i+1][0] != '/' )
+	    sprintf( emudrives[0]->hd_emulation_dir, "./%s", argv[i+1]);
+	  else
+	    sprintf( emudrives[0]->hd_emulation_dir, "%s", argv[i+1]);
+	  
+	  fprintf(stderr, "Hard drive emulation, C: <-> %s\n", emudrives[0]->hd_emulation_dir);
+	  i ++;
+	  if(i + 1 >= argc) return; /* end of parameters? */
+	}
       }
       else
       {
@@ -440,3 +460,7 @@ int main(int argc, char *argv[])
 
   return(0);
 }
+
+
+
+
