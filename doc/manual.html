@@ -47,7 +47,7 @@
  vlink="#cc0000">
 <h1 align="center">Hatari User's Manual</h1>
 <p align="center">
-Version 0.60
+Version 0.63
 </p>
 <p align="center">
 <strong>project initiator and main developer of Hatari: Thomas Huth &lt;<a
@@ -108,6 +108,7 @@ connected PC joystick</li>
   <li>FDC emulation using floppy disk images in standard formats (*.ST,
 *.MSA
 and *.DIM)</li>
+  <li>optional writeprotection for disk images</li>
   <li>support for zipped disk images (both PkZip and Gzip)</li>
   <li>partial ACSI emulation for harddisk support</li>
   <li>GEMDOS interface driver to mount a directory as a harddrive</li>
@@ -365,9 +366,10 @@ return to the host OS.</p>
 <p>Click <span class="button">Cancel</span> to abandon any changes
 made.</p>
 <h4>The System Dialog</h4>
-<p>Check the CPU type to use here, enable prefetch mode and if the
-Blitter should be active.</p>
-<p>For best Atari ST compatibility choose plain 68000 here.</p>
+<p>Check the CPU type to use here. For best Atari ST compatibility choose plain 68000 here.</p>
+<p>Select whether you want to emulate an STFM or an STE. <em>Note:</em> STE emulation is very incomplete. In may not work at all.</p>
+<p>Select the CPU clock you want to use. 8Mhz is ST standard and the most compatible, 16MHz is for Mega STE emulation.</p>
+<p>Toggle Blitter and RTC emulation. Both have to be off for plain STFM emulation.</p>
 <p>The Timer-D patch changes the Timer-D initialization from TOS. TOS
 uses Timer-D as a baudrate generator for RS232.
 The TOS default slows the emulation down so the patch gives you a
@@ -375,6 +377,7 @@ faster emulation.
 </p>
 <p>You can disable the Timer-D patch if games or demos require the
 original TOS setting.</p>
+<p>Select if you want to use slow FDC emulation. Slow is more compatible esp. with games and demos that use custom loaders.</p>
 <p><em>NOTE:</em> These parameters are very sensitive to the emulated
 ST and it is strongly recommended to
 reset the emulated ST after changing these options.</p>
@@ -418,6 +421,8 @@ with .st or .msa.
 </p>
 <p>Hatari can currently create plain .ST and .MSA disk images
 exclusively.</p>
+<p>You can choose if you want Hatari to writeprotect your disks. Atari ST virii can spread on disk images too so it is ok to
+enable the write protection option. However you can't save highscores or games to your disk images then.</p>
 <p>Use the lower dialog to change the harddisk settings.</p>
 <p>You can select a harddrive image for harddrive emulation via image
 file here or you may select
@@ -447,8 +452,9 @@ cannot load your old memory snapshots back.</p>
 <p>Here you can select the TOS image to use. Click on <span
  class="button">Browse</span> to select it via the fileselector.</p>
 You can also select an optional cartridge image to use. Click on <span
- class="button">Browse</span> to select one via the fileselector. Keep
-in mind that any custom cartridge image will not work together with
+ class="button">Browse</span> to select one via the fileselector. Click on <span
+ class="button">Eject</span> to disconnect the custom cartridge image.</p>
+<p>Keep in mind that any custom cartridge image will not work together with
 GEMDOS harddisc emulation or the VDI extended resolution emulation
 since some additional driver code will be used in the cartridge memory
 space for these emulations.<br>
@@ -1097,7 +1103,7 @@ Hatari. It is by no means finished.</p>
     <tr>
       <td>Turbo Assembler</td>
       <td>yes</td>
-      <td>&nbsp;</td>
+      <td>Due to a bug you need to have a proper disk image inserted into drive A. Works otherwise!</td>
     </tr>
     <tr>
       <td>GFABASIC 3.6TT</td>
@@ -1180,7 +1186,7 @@ with disk images</td>
  border="0" height="31" width="88"></a></td>
       <td align="right">
       <address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a>
-December 18 2004</address>
+February 28 2005</address>
       </td>
     </tr>
   </tbody>
