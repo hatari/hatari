@@ -5,23 +5,28 @@
 */
 
 #include <SDL.h>
+#include <dirent.h>
 
 #include "main.h"
 #include "screen.h"
 #include "sdlgui.h"
+#include "file.h"
+
 
 #define SGRADIOBUTTON_NORMAL    12
 #define SGRADIOBUTTON_SELECTED  13
 #define SGCHECKBOX_NORMAL    14
 #define SGCHECKBOX_SELECTED  15
+#define SGARROWUP    1
+#define SGARROWDOWN  2
 
 
 extern int quit_program;        /* Declared in newcpu.c */
 
 
-SDL_Surface *stdfontgfx;
-SDL_Surface *fontgfx=NULL;      /* The actual font graphics */
-int fontwidth, fontheight;      /* Height and width of the actual font */
+static SDL_Surface *stdfontgfx;
+static SDL_Surface *fontgfx=NULL;   /* The actual font graphics */
+static int fontwidth, fontheight;   /* Height and width of the actual font */
 
 
 
@@ -51,7 +56,8 @@ int SDLGui_Init()
 */
 int SDLGui_UnInit()
 {
-  SDL_FreeSurface(stdfontgfx);
+  if(stdfontgfx)
+    SDL_FreeSurface(stdfontgfx);
   if(fontgfx)
     SDL_FreeSurface(fontgfx);
 }
@@ -111,7 +117,7 @@ int SDLGui_DrawText(int cx, int cy, SGOBJ *tdlg)
   int x, y;
   x = (cx+tdlg->x)*fontwidth;
   y = (cy+tdlg->y)*fontheight;
-  if(tdlg->type==SGBUTTON && tdlg->state)
+  if(tdlg->type==SGBUTTON && (tdlg->state&SG_SELECTED))
   {
     x+=1;
     y+=1;
@@ -136,7 +142,7 @@ int SDLGui_DrawBox(int cx, int cy, SGOBJ *bdlg)
   w = bdlg->w*fontwidth;
   h = bdlg->h*fontheight;
 
-  if(bdlg->state)
+  if( bdlg->state&SG_SELECTED )
   {
     upleftc = SDL_MapRGB(sdlscrn->format,128,128,128);
     downrightc = SDL_MapRGB(sdlscrn->format,255,255,255);
@@ -187,10 +193,10 @@ int SDLGui_DrawButton(int cx, int cy, SGOBJ *bdlg)
 int SDLGui_DrawRadioButton(int cx, int cy, SGOBJ *rdlg)
 {
   char str[80];
-  if(rdlg->state==0)
-    str[0]=SGRADIOBUTTON_NORMAL;
-   else
+  if( rdlg->state&SG_SELECTED )
     str[0]=SGRADIOBUTTON_SELECTED;
+   else
+    str[0]=SGRADIOBUTTON_NORMAL;
   str[1]=' ';
   strcpy(&str[2], rdlg->txt);
   SDLGui_Text( (cx+rdlg->x)*fontwidth, (cy+rdlg->y)*fontheight, str);
@@ -204,10 +210,10 @@ int SDLGui_DrawRadioButton(int cx, int cy, SGOBJ *rdlg)
 int SDLGui_DrawCheckBox(int cx, int cy, SGOBJ *cdlg)
 {
   char str[80];
-  if(cdlg->state==0)
-    str[0]=SGCHECKBOX_NORMAL;
-   else
+  if( cdlg->state&SG_SELECTED )
     str[0]=SGCHECKBOX_SELECTED;
+   else
+    str[0]=SGCHECKBOX_NORMAL;
   str[1]=' ';
   strcpy(&str[2], cdlg->txt);
   SDLGui_Text( (cx+cdlg->x)*fontwidth, (cy+cdlg->y)*fontheight, str);
@@ -320,7 +326,6 @@ int SDLGui_DoDialog(SGOBJ *dlg)
           break;
         case SDL_QUIT:
           quit_program = bQuitProgram = TRUE;
-          retbutton=-1;
           break;
         case SDL_MOUSEBUTTONDOWN:
           obj = SDLGui_FindObj(dlg, cx, cy, evnt.button.x, evnt.button.y);
@@ -328,11 +333,16 @@ int SDLGui_DoDialog(SGOBJ *dlg)
           {
             if(dlg[obj].type==SGBUTTON)
             {
-              dlg[obj].state=1;
+              dlg[obj].state |= SG_SELECTED;
               SDLGui_DrawButton(cx, cy, &dlg[obj]);
               SDL_UpdateRect(sdlscrn, (cx+dlg[obj].x)*fontwidth-2, (cy+dlg[obj].y)*fontheight-2,
                              dlg[obj].w*fontwidth+4, dlg[obj].h*fontheight+4);
               oldbutton=obj;
+            }
+            if( dlg[obj].flags&SG_TOUCHEXIT )
+            {
+              dlg[obj].state |= SG_SELECTED;
+              retbutton = obj;
             }
           }
           break;
@@ -349,7 +359,7 @@ int SDLGui_DoDialog(SGOBJ *dlg)
               case SGRADIOBUT:
                 for(i=obj-1; i>0 && dlg[i].type==SGRADIOBUT; i--)
                 {
-                  dlg[i].state=0;  /* Deselect all radio buttons in this group */
+                  dlg[i].state &= ~SG_SELECTED;  /* Deselect all radio buttons in this group */
                   rct.x = (cx+dlg[i].x)*fontwidth;
                   rct.y = (cy+dlg[i].y)*fontheight;
                   rct.w = fontwidth;  rct.h = fontheight;
@@ -359,7 +369,7 @@ int SDLGui_DoDialog(SGOBJ *dlg)
                 }
                 for(i=obj+1; dlg[i].type==SGRADIOBUT; i++)
                 {
-                  dlg[i].state=0;  /* Deselect all radio buttons in this group */
+                  dlg[i].state &= ~SG_SELECTED;  /* Deselect all radio buttons in this group */
                   rct.x = (cx+dlg[i].x)*fontwidth;
                   rct.y = (cy+dlg[i].y)*fontheight;
                   rct.w = fontwidth;  rct.h = fontheight;
@@ -367,7 +377,7 @@ int SDLGui_DoDialog(SGOBJ *dlg)
                   SDLGui_DrawRadioButton(cx, cy, &dlg[i]);
                   SDL_UpdateRects(sdlscrn, 1, &rct);
                 }
-                dlg[obj].state=1;  /* Select this radio button */
+                dlg[obj].state |= SG_SELECTED;  /* Select this radio button */
                 rct.x = (cx+dlg[obj].x)*fontwidth;
                 rct.y = (cy+dlg[obj].y)*fontheight;
                 rct.w = fontwidth;  rct.h = fontheight;
@@ -376,7 +386,7 @@ int SDLGui_DoDialog(SGOBJ *dlg)
                 SDL_UpdateRects(sdlscrn, 1, &rct);
                 break;
               case SGCHECKBOX:
-                dlg[obj].state^=1;
+                dlg[obj].state ^= SG_SELECTED;
                 rct.x = (cx+dlg[obj].x)*fontwidth;
                 rct.y = (cy+dlg[obj].y)*fontheight;
                 rct.w = fontwidth;  rct.h = fontheight;
@@ -385,7 +395,7 @@ int SDLGui_DoDialog(SGOBJ *dlg)
                 SDL_UpdateRects(sdlscrn, 1, &rct);
                 break;
               case SGPOPUP:
-                dlg[obj].state=1;
+                dlg[obj].state |= SG_SELECTED;
                 /*SDLGui_DrawPopupButton(cx, cy, &dlg[obj]);*/
                 retbutton=obj;
                 break;
@@ -393,16 +403,152 @@ int SDLGui_DoDialog(SGOBJ *dlg)
           }
           if(oldbutton>0)
           {
-            dlg[oldbutton].state=0;
+            dlg[oldbutton].state &= ~SG_SELECTED;
             SDLGui_DrawButton(cx, cy, &dlg[oldbutton]);
-            SDL_UpdateRect(sdlscrn, (cx+dlg[obj].x)*fontwidth-2, (cy+dlg[obj].y)*fontheight-2,
-                           dlg[obj].w*fontwidth+4, dlg[obj].h*fontheight+4);
+            SDL_UpdateRect(sdlscrn, (cx+dlg[oldbutton].x)*fontwidth-2, (cy+dlg[oldbutton].y)*fontheight-2,
+                           dlg[oldbutton].w*fontwidth+4, dlg[oldbutton].h*fontheight+4);
+            oldbutton = 0;
+          }
+          if( dlg[obj].flags&SG_EXIT )
+          {
+            retbutton = obj;
           }
           break;
       }
   }
-  while(retbutton==0);
+  while(retbutton==0 && !bQuitProgram);
+
+  if(bQuitProgram) 
+    retbutton=-1;
 
   return retbutton;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Show and process a file select dialog.
+  Returns TRUE if the use selected "okay", FALSE if "cancel".
+*/
+#define SGFSDLG_UP      24
+#define SGFSDLG_DOWN    25
+#define SGFSDLG_OKAY    26
+#define SGFSDLG_CANCEL  27
+int SDLGui_FileSelect(char *path_and_name)
+{
+  int i;
+  int entries;
+  char dlgfilenames[16][36];
+  struct dirent **files;
+  char path[MAX_FILENAME_LENGTH], f_name[128], f_ext[32];
+  BOOL reloaddir = TRUE, refreshentries;
+  int retbut;
+  int oldcursorstate;
+
+  SGOBJ fsdlg[] =
+  {
+    { SGBOX, 0, 0, 0,0, 40,25, NULL },
+    { SGTEXT, 0, 0, 13,1, 13,1, "Choose a file" },
+    { SGTEXT, 0, 0, 1,2, 7,1, "Folder:" },
+    { SGTEXT, 0, 0, 1,3, 38,1, "/Sorry/this/dialog/does/not/work/yet" },
+    { SGTEXT, 0, 0, 1,4, 6,1, "File:" },
+    { SGTEXT, 0, 0, 8,4, 13,1, "test" },
+    { SGBOX, 0, 0, 1,6, 38,16, NULL },
+    { SGBOX, 0, 0, 38,7, 1,14, NULL },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,6, 35,1, dlgfilenames[0] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,7, 35,1, dlgfilenames[1] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,8, 35,1, dlgfilenames[2] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,9, 35,1, dlgfilenames[3] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,10, 35,1, dlgfilenames[4] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,11, 35,1, dlgfilenames[5] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,12, 35,1, dlgfilenames[6] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,13, 35,1, dlgfilenames[7] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,14, 35,1, dlgfilenames[8] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,15, 35,1, dlgfilenames[9] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,16, 35,1, dlgfilenames[10] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,17, 35,1, dlgfilenames[11] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,18, 35,1, dlgfilenames[12] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,19, 35,1, dlgfilenames[13] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,20, 35,1, dlgfilenames[14] },
+    { SGTEXT, SG_TOUCHEXIT, 0, 2,21, 35,1, dlgfilenames[15] },
+    { SGBUTTON, SG_TOUCHEXIT, 0, 38,6, 1,1, "\x01" },          /* Arrow up */
+    { SGBUTTON, SG_TOUCHEXIT, 0, 38,21, 1,1, "\x02" },         /* Arrow down */
+    { SGBUTTON, 0, 0, 10,23, 8,1, "Okay" },
+    { SGBUTTON, 0, 0, 22,23, 8,1, "Cancel" },
+    { -1, 0, 0, 0,0, 0,0, NULL }
+  };
+
+  for(i=0; i<16; i++)
+    dlgfilenames[i][0] = 0;  /* Clear all entries */
+
+  /* Prepare the path variable */
+  File_splitpath(path_and_name, path, f_name, f_ext);
+
+  /* Save old mouse cursor state and enable cursor anyway */
+  oldcursorstate = SDL_ShowCursor(SDL_QUERY);
+  if( oldcursorstate==SDL_DISABLE )
+    SDL_ShowCursor(SDL_ENABLE);
+
+  do
+  {
+    if( reloaddir )
+    {
+      if( strlen(path)>=MAX_FILENAME_LENGTH )
+      {
+        fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
+        return FALSE;
+      }
+
+      /* Load directory entries: */
+      /* FIXME: Old reserved memory from scandir is not freed */
+      entries = scandir(path, &files, 0, alphasort);
+      if(entries<0)
+      {
+        fprintf(stderr, "SDLGui_FileSelect: Path not found.\n");
+        return FALSE;
+      }
+      reloaddir = FALSE;
+      refreshentries = TRUE;
+    }
+
+    if( refreshentries )
+    {
+      /* Copy entries to dialog: */
+      for(i=0; i<16 && i<entries; i++)
+      {
+        if( strlen(files[i]->d_name)<33 )
+        {
+          strcpy(dlgfilenames[i], "  ");
+          strcat(dlgfilenames[i], files[i]->d_name);
+        }
+        else
+        {
+          strcpy(dlgfilenames[i], "  ");
+          strncat(dlgfilenames[i], files[i]->d_name, 30);
+          dlgfilenames[i][32] = 0;
+          strcat(dlgfilenames[i], "...");
+        }
+      }
+    }
+
+    /* Show dialog: */
+    retbut = SDLGui_DoDialog(fsdlg);
+    switch(retbut)
+    {
+      case SGFSDLG_UP:
+        fprintf(stderr,"Up\n");
+        break;
+      case SGFSDLG_DOWN:
+        fprintf(stderr,"Down\n");
+        break;
+    }
+
+  }
+  while(retbut!=SGFSDLG_OKAY && retbut!=SGFSDLG_CANCEL && !bQuitProgram);
+
+  if( oldcursorstate==SDL_DISABLE )
+    SDL_ShowCursor(SDL_DISABLE);
+
+  return FALSE;
 }
 

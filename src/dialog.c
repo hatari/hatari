@@ -45,173 +45,225 @@
 #define MAINDLG_CANCEL   13
 SGOBJ maindlg[] =
 {
-  { SGBOX, 0, 0,0, 36,18, NULL },
-  { SGTEXT, 0, 10,1, 16,1, "Hatari main menu" },
-  { SGBUTTON, 0, 4,4, 12,1, "About" },
-  { SGBUTTON, 0, 4,6, 12,1, "Discs" },
-  { SGBUTTON, 0, 4,8, 12,1, "TOS/GEM" },
-  { SGBUTTON, 0, 4,10, 12,1, "Screen" },
-  { SGBUTTON, 0, 4,12, 12,1, "Sound" },
-  { SGBUTTON, 0, 20,4, 12,1, "CPU" },
-  { SGBUTTON, 0, 20,6, 12,1, "Memory" },
-  { SGBUTTON, 0, 20,8, 12,1, "Joysticks" },
-  { SGBUTTON, 0, 20,10, 12,1, "Keyboard" },
-  { SGBUTTON, 0, 20,12, 12,1, "Devices" },
-  { SGBUTTON, 0, 7,16, 8,1, "Okay" },
-  { SGBUTTON, 0, 21,16, 8,1, "Cancel" },
-  { -1, 0, 0,0, 0,0, NULL }
+  { SGBOX, 0, 0, 0,0, 36,18, NULL },
+  { SGTEXT, 0, 0, 10,1, 16,1, "Hatari main menu" },
+  { SGBUTTON, 0, 0, 4,4, 12,1, "About" },
+  { SGBUTTON, 0, 0, 4,6, 12,1, "Discs" },
+  { SGBUTTON, 0, 0, 4,8, 12,1, "TOS/GEM" },
+  { SGBUTTON, 0, 0, 4,10, 12,1, "Screen" },
+  { SGBUTTON, 0, 0, 4,12, 12,1, "Sound" },
+  { SGBUTTON, 0, 0, 20,4, 12,1, "CPU" },
+  { SGBUTTON, 0, 0, 20,6, 12,1, "Memory" },
+  { SGBUTTON, 0, 0, 20,8, 12,1, "Joysticks" },
+  { SGBUTTON, 0, 0, 20,10, 12,1, "Keyboard" },
+  { SGBUTTON, 0, 0, 20,12, 12,1, "Devices" },
+  { SGBUTTON, 0, 0, 7,16, 8,1, "Okay" },
+  { SGBUTTON, 0, 0, 21,16, 8,1, "Cancel" },
+  { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
 /* The "About"-dialog: */
 SGOBJ aboutdlg[] =
 {
-  { SGBOX, 0, 0,0, 40,25, NULL },
-  { SGTEXT, 0, 14,1, 12,1, PROG_NAME },
-  { SGTEXT, 0, 1,3, 38,1, "Hatari has been written by:  T. Huth," },
-  { SGTEXT, 0, 1,4, 38,1, "S. Marothy, S. Berndtsson, P. Bates," },
-  { SGTEXT, 0, 1,5, 38,1, "B. Schmidt and many others." },
-  { SGTEXT, 0, 1,6, 38,1, "Please see the docs for more info." },
-  { SGTEXT, 0, 1,8, 38,1, "This program is free software; you can" },
-  { SGTEXT, 0, 1,9, 38,1, "redistribute it and/or modify it under" },
-  { SGTEXT, 0, 1,10, 38,1, "the terms of the GNU General Public" },
-  { SGTEXT, 0, 1,11, 38,1, "License as published by the Free Soft-" },
-  { SGTEXT, 0, 1,12, 38,1, "ware Foundation; either version 2 of" },
-  { SGTEXT, 0, 1,13, 38,1, "the License, or (at your option) any" },
-  { SGTEXT, 0, 1,14, 38,1, "later version." },
-  { SGTEXT, 0, 1,16, 38,1, "This program is distributed in the" },
-  { SGTEXT, 0, 1,17, 38,1, "hope that it will be useful, but" },
-  { SGTEXT, 0, 1,18, 38,1, "WITHOUT ANY WARRANTY. See the GNU Ge-" },
-  { SGTEXT, 0, 1,19, 38,1, "neral Public License for more details." },
-  { SGBUTTON, 0, 16,23, 8,1, "Okay" },
-  { -1, 0, 0,0, 0,0, NULL }
+  { SGBOX, 0, 0, 0,0, 40,25, NULL },
+  { SGTEXT, 0, 0, 14,1, 12,1, PROG_NAME },
+  { SGTEXT, 0, 0, 14,2, 12,1, "============" },
+  { SGTEXT, 0, 0, 1,4, 38,1, "Hatari has been written by:  T. Huth," },
+  { SGTEXT, 0, 0, 1,5, 38,1, "S. Marothy, S. Berndtsson, P. Bates," },
+  { SGTEXT, 0, 0, 1,6, 38,1, "B. Schmidt and many others." },
+  { SGTEXT, 0, 0, 1,7, 38,1, "Please see the docs for more info." },
+  { SGTEXT, 0, 0, 1,9, 38,1, "This program is free software; you can" },
+  { SGTEXT, 0, 0, 1,10, 38,1, "redistribute it and/or modify it under" },
+  { SGTEXT, 0, 0, 1,11, 38,1, "the terms of the GNU General Public" },
+  { SGTEXT, 0, 0, 1,12, 38,1, "License as published by the Free Soft-" },
+  { SGTEXT, 0, 0, 1,13, 38,1, "ware Foundation; either version 2 of" },
+  { SGTEXT, 0, 0, 1,14, 38,1, "the License, or (at your option) any" },
+  { SGTEXT, 0, 0, 1,15, 38,1, "later version." },
+  { SGTEXT, 0, 0, 1,17, 38,1, "This program is distributed in the" },
+  { SGTEXT, 0, 0, 1,18, 38,1, "hope that it will be useful, but" },
+  { SGTEXT, 0, 0, 1,19, 38,1, "WITHOUT ANY WARRANTY. See the GNU Ge-" },
+  { SGTEXT, 0, 0, 1,20, 38,1, "neral Public License for more details." },
+  { SGBUTTON, 0, 0, 16,23, 8,1, "Okay" },
+  { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
 /* The discs dialog: */
+#define DISCDLG_DISCA       4
+#define DISCDLG_BROWSEA     5
+#define DISCDLG_DISCB       7
+#define DISCDLG_BROWSEB     8
+#define DISCDLG_IMGDIR      10
+#define DISCDLG_BROWSEIMG   11
+#define DISCDLG_AUTOB       12
+#define DISCDLG_CREATEIMG   13
+#define DISCDLG_BOOTHD      16
+#define DISCDLG_DISCC       18
+#define DISCDLG_BROWSEC     19
+#define DISCDLG_EXIT        20
 SGOBJ discdlg[] =
 {
-  { SGBOX, 0, 0,0, 40,25, NULL },
-  { SGBOX, 0, 1,1, 38,11, NULL },
-  { SGTEXT, 0, 14,1, 12,1, "Floppy discs" },
-  { SGTEXT, 0, 2,3, 2,1, "A:" },
-  { SGTEXT, 0, 5,3, 24,1, "/path/to/image_a.st" },
-  { SGBUTTON, 0, 32,3, 6,1, "Browse" },
-  { SGTEXT, 0, 2,5, 2,1, "B:" },
-  { SGTEXT, 0, 5,5, 24,1, "/path/to/image_B.st" },
-  { SGBUTTON, 0, 32,5, 6,1, "Browse" },
-  { SGTEXT, 0, 2,7, 30,1, "Default disk images directory:" },
-  { SGTEXT, 0, 2,8, 26,1, "/path/to/image/directory" },
-  { SGBUTTON, 0, 32,8, 6,1, "Browse" },
-  { SGCHECKBOX, 0, 2,10, 18,1, "Auto insert B" },
-  { SGBUTTON, 0, 20,10, 18,1, "Create blank image" },
-  { SGBOX, 0, 1,13, 38,9, NULL },
-  { SGTEXT, 0, 14,13, 13,1, "Hard discs" },
-  { SGCHECKBOX, 0, 2,15, 14,1, "Boot from HD" },
-  { SGTEXT, 0, 2,17, 2,1, "C:" },
-  { SGTEXT, 0, 5,17, 24,1, "/path/to/c" },
-  { SGBUTTON, 0, 32,17, 6,1, "Browse" },
-  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
-  { -1, 0, 0,0, 0,0, NULL }
+  { SGBOX, 0, 0, 0,0, 40,25, NULL },
+  { SGBOX, 0, 0, 1,1, 38,11, NULL },
+  { SGTEXT, 0, 0, 14,1, 12,1, "Floppy discs" },
+  { SGTEXT, 0, 0, 2,3, 2,1, "A:" },
+  { SGTEXT, 0, 0, 5,3, 24,1, "/path/to/image_a.st" },
+  { SGBUTTON, 0, 0, 32,3, 6,1, "Browse" },
+  { SGTEXT, 0, 0, 2,5, 2,1, "B:" },
+  { SGTEXT, 0, 0, 5,5, 24,1, "/path/to/image_B.st" },
+  { SGBUTTON, 0, 0, 32,5, 6,1, "Browse" },
+  { SGTEXT, 0, 0, 2,7, 30,1, "Default disk images directory:" },
+  { SGTEXT, 0, 0, 2,8, 26,1, "/path/to/image/directory" },
+  { SGBUTTON, 0, 0, 32,8, 6,1, "Browse" },
+  { SGCHECKBOX, 0, 0, 2,10, 18,1, "Auto insert B" },
+  { SGBUTTON, 0, 0, 20,10, 18,1, "Create blank image" },
+  { SGBOX, 0, 0, 1,13, 38,9, NULL },
+  { SGTEXT, 0, 0, 14,13, 13,1, "Hard discs" },
+  { SGCHECKBOX, 0, 0, 2,15, 14,1, "Boot from HD" },
+  { SGTEXT, 0, 0, 2,17, 2,1, "C:" },
+  { SGTEXT, 0, 0, 5,17, 24,1, "/path/to/c" },
+  { SGBUTTON, 0, 0, 32,17, 6,1, "Browse" },
+  { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
+  { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
 /* The TOS/GEM dialog: */
 SGOBJ tosgemdlg[] =
 {
-  { SGBOX, 0, 0,0, 40,19, NULL },
-  { SGTEXT, 0, 14,1, 13,1, "TOS/GEM setup" },
-  { SGTEXT, 0, 2,4, 10,1, "ROM image:" },
-  { SGTEXT, 0, 2,6, 34,1, "/path/to/tos.img" },
-  { SGBUTTON, 0, 30,4, 8,1, "Browse" },
-  { SGTEXT, 0, 2,10, 4,1, "GEM:" },
-  { SGCHECKBOX, 0, 2,12, 25,1, "Use extended resolution" },
-  { SGTEXT, 0, 2,14, 11,1, "Resolution:" },
-  { SGPOPUP, 0, 14,14, 10,1, "800x600" },
-  { SGBUTTON, 0, 10,17, 20,1, "Back to main menu" },
-  { -1, 0, 0,0, 0,0, NULL }
+  { SGBOX, 0, 0, 0,0, 40,19, NULL },
+  { SGTEXT, 0, 0, 14,1, 13,1, "TOS/GEM setup" },
+  { SGTEXT, 0, 0, 2,4, 10,1, "ROM image:" },
+  { SGTEXT, 0, 0, 2,6, 34,1, "/path/to/tos.img" },
+  { SGBUTTON, 0, 0, 30,4, 8,1, "Browse" },
+  { SGTEXT, 0, 0, 2,10, 4,1, "GEM:" },
+  { SGCHECKBOX, 0, 0, 2,12, 25,1, "Use extended resolution" },
+  { SGTEXT, 0, 0, 2,14, 11,1, "Resolution:" },
+  { SGPOPUP, 0, 0, 14,14, 10,1, "800x600" },
+  { SGBUTTON, 0, 0, 10,17, 20,1, "Back to main menu" },
+  { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
 /* The screen dialog: */
 SGOBJ screendlg[] =
 {
-  { SGBOX, 0, 0,0, 40,25, NULL },
-  { SGBOX, 0, 1,1, 38,11, NULL },
-  { SGTEXT, 0, 13,2, 14,1, "Screen options" },
-  { SGTEXT, 0, 5,4, 13,1, "Display mode:" },
-  { SGPOPUP, 0, 20,4, 18,1, "Hi-Color, Lo-Res" },
-  { SGCHECKBOX, 0, 5,6, 12,1, "Fullscreen" },
-  { SGCHECKBOX, 0, 5,7, 23,1, "Interlaced mode (in fullscreen)" },
-  { SGCHECKBOX, 0, 5,8, 10,1, "Frame skip" },
-  /*{ SGCHECKBOX, 0, 22,8, 13,1, "Use borders" },*/
-  /*{ SGCHECKBOX, 1, 5,9, 13,1, "Sync to retrace (in fullscreen)" },*/
-  { SGTEXT, 0, 5,10, 8,1, "Monitor:" },
-  { SGRADIOBUT, 1, 16,10, 7,1, "Color" },
-  { SGRADIOBUT, 0, 24,10, 6,1, "Mono" },
-  { SGBOX, 0, 1,13, 38,9, NULL },
-  { SGTEXT, 0, 13,14, 14,1, "Screen capture" },
-  { SGCHECKBOX, 0, 5,16, 12,1, "Only when display changes" },
-  { SGTEXT, 0, 5,18, 18,1, "Frames per second:" },
-  { SGPOPUP, 0, 24,18, 3,1, "1" },
-  { SGBUTTON, 0, 3,20, 16,1, "Capture screen" },
-  { SGBUTTON, 0, 20,20, 18,1, "Record animation" },
-  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
-  { -1, 0, 0,0, 0,0, NULL }
+  { SGBOX, 0, 0, 0,0, 40,25, NULL },
+  { SGBOX, 0, 0, 1,1, 38,11, NULL },
+  { SGTEXT, 0, 0, 13,2, 14,1, "Screen options" },
+  { SGTEXT, 0, 0, 5,4, 13,1, "Display mode:" },
+  { SGPOPUP, 0, 0, 20,4, 18,1, "Hi-Color, Lo-Res" },
+  { SGCHECKBOX, 0, 0, 5,6, 12,1, "Fullscreen" },
+  { SGCHECKBOX, 0, 0, 5,7, 23,1, "Interlaced mode (in fullscreen)" },
+  { SGCHECKBOX, 0, 0, 5,8, 10,1, "Frame skip" },
+  /*{ SGCHECKBOX, 0, 0, 22,8, 13,1, "Use borders" },*/
+  /*{ SGCHECKBOX, 0, 0, 5,9, 13,1, "Sync to retrace (in fullscreen)" },*/
+  { SGTEXT, 0, 0, 5,10, 8,1, "Monitor:" },
+  { SGRADIOBUT, 0, 0, 16,10, 7,1, "Color" },
+  { SGRADIOBUT, 0, 0, 24,10, 6,1, "Mono" },
+  { SGBOX, 0, 0, 1,13, 38,9, NULL },
+  { SGTEXT, 0, 0, 13,14, 14,1, "Screen capture" },
+  { SGCHECKBOX, 0, 0, 5,16, 12,1, "Only when display changes" },
+  { SGTEXT, 0, 0, 5,18, 18,1, "Frames per second:" },
+  { SGPOPUP, 0, 0, 24,18, 3,1, "1" },
+  { SGBUTTON, 0, 0, 3,20, 16,1, "Capture screen" },
+  { SGBUTTON, 0, 0, 20,20, 18,1, "Record animation" },
+  { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
+  { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
 /* The sound dialog: */
 SGOBJ sounddlg[] =
 {
-  { SGBOX, 0, 0,0, 40,25, NULL },
-  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
-  { -1, 0, 0,0, 0,0, NULL }
+  { SGBOX, 0, 0, 0,0, 38,24, NULL },
+  { SGBOX, 0, 0, 1,1, 36,11, NULL },
+  { SGTEXT, 0, 0, 13,2, 13,1, "Sound options" },
+  { SGCHECKBOX, 0, 1, 12,4, 14,1, "Enable sound" },
+  { SGTEXT, 0, 0, 11,6, 14,1, "Playback quality:" },
+  { SGRADIOBUT, 0, 0, 12,8, 15,1, "Low (11kHz)" },
+  { SGRADIOBUT, 0, 0, 12,9, 19,1, "Medium (22kHz)" },
+  { SGRADIOBUT, 0, 0, 12,10, 14,1, "High (44kHz)" },
+  { SGBOX, 0, 0, 1,13, 36,7, NULL },
+  { SGTEXT, 0, 0, 13,14, 14,1, "Capture YM/WAV" },
+  { SGBUTTON, 0, 0, 9,18, 8,1, "Record" },
+  { SGBUTTON, 0, 0, 23,18, 8,1, "Stop" },
+  { SGBUTTON, 0, 0, 10,22, 20,1, "Back to main menu" },
+  { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
 /* The cpu dialog: */
 SGOBJ cpudlg[] =
 {
-  { SGBOX, 0, 0,0, 40,25, NULL },
-  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
-  { -1, 0, 0,0, 0,0, NULL }
+  { SGBOX, 0, 0, 0,0, 40,25, NULL },
+  { SGTEXT, 0, 0, 14,2, 11,1, "CPU options" },
+  { SGTEXT, 0, 0, 8,12, 13,1, "Sorry, not yet supported." },
+  { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
+  { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
 /* The memory dialog: */
 SGOBJ memorydlg[] =
 {
-  { SGBOX, 0, 0,0, 40,25, NULL },
-  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
-  { -1, 0, 0,0, 0,0, NULL }
+  { SGBOX, 0, 0, 0,0, 40,19, NULL },
+  { SGBOX, 0, 0, 1,1, 38,7, NULL },
+  { SGTEXT, 0, 0, 15,2, 12,1, "Memory setup" },
+  { SGTEXT, 0, 0, 4,4, 12,1, "ST-RAM size:" },
+  { SGRADIOBUT, 0, 0, 19,4, 8,1, "512 kB" },
+  { SGRADIOBUT, 0, 0, 30,4, 6,1, "1 MB" },
+  { SGRADIOBUT, 0, 0, 19,6, 6,1, "2 MB" },
+  { SGRADIOBUT, 0, 0, 30,6, 6,1, "4 MB" },
+  { SGBOX, 0, 0, 1,9, 38,7, NULL },
+  { SGTEXT, 0, 0, 12,10, 17,1, "Memory state save" },
+  { SGTEXT, 0, 0, 2,12, 28,1, "/path/to/image" },
+  { SGBUTTON, 0, 0, 32,12, 6,1, "Browse" },
+  { SGBUTTON, 0, 0, 8,14, 10,1, "Save" },
+  { SGBUTTON, 0, 0, 22,14, 10,1, "Restore" },
+  { SGBUTTON, 0, 0, 10,17, 20,1, "Back to main menu" },
+  { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
 /* The joysticks dialog: */
 SGOBJ joystickdlg[] =
 {
-  { SGBOX, 0, 0,0, 40,25, NULL },
-  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
-  { -1, 0, 0,0, 0,0, NULL }
+  { SGBOX, 0, 0, 0,0, 30,19, NULL },
+  { SGTEXT, 0, 0, 7,1, 15,1, "Joysticks setup" },
+  { SGBOX, 0, 0, 1,3, 28,6, NULL },
+  { SGTEXT, 0, 0, 2,4, 11,1, "Joystick 1:" },
+  { SGCHECKBOX, 0, 0, 5,6, 22,1, "Use cursor emulation" },
+  { SGCHECKBOX, 0, 0, 5,7, 17,1, "Enable autofire" },
+  { SGBOX, 0, 0, 1,10, 28,6, NULL },
+  { SGTEXT, 0, 0, 2,11, 11,1, "Joystick 0:" },
+  { SGCHECKBOX, 0, 0, 5,13, 22,1, "Use cursor emulation" },
+  { SGCHECKBOX, 0, 0, 5,14, 17,1, "Enable autofire" },
+  { SGBUTTON, 0, 0, 5,17, 20,1, "Back to main menu" },
+  { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
 /* The keyboard dialog: */
 SGOBJ keyboarddlg[] =
 {
-  { SGBOX, 0, 0,0, 40,25, NULL },
-  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
-  { -1, 0, 0,0, 0,0, NULL }
+  { SGBOX, 0, 0, 0,0, 40,25, NULL },
+  { SGTEXT, 0, 0, 13,2, 14,1, "Keyboard setup" },
+  { SGTEXT, 0, 0, 8,12, 13,1, "Sorry, not yet supported." },
+  { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
+  { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
 /* The devices dialog: */
 SGOBJ devicedlg[] =
 {
-  { SGBOX, 0, 0,0, 40,25, NULL },
-  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
-  { -1, 0, 0,0, 0,0, NULL }
+  { SGBOX, 0, 0, 0,0, 40,25, NULL },
+  { SGTEXT, 0, 0, 13,2, 13,1, "Devices setup" },
+  { SGTEXT, 0, 0, 8,12, 13,1, "Sorry, not yet supported." },
+  { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
+  { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
@@ -360,7 +412,7 @@ BOOL Dialog_DoProperty(BOOL bForceReset)
   bSaveMemoryState = FALSE;
   bRestoreMemoryState = FALSE;
 
-  bOKDialog = Dialog_MainDialog();
+  bOKDialog = Dialog_MainDlg();
 
   /* Copy details to configuration, and ask user if wishes to reset */
   if (bOKDialog)
@@ -379,9 +431,44 @@ BOOL Dialog_DoProperty(BOOL bForceReset)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Show and process the disc image dialog.
+*/
+int Dialog_DiscDlg(void)
+{
+  int but;
+
+  /* Set up dialog to actual values */
+  if( DialogParams.DiscImage.bAutoInsertDiscB )
+    discdlg[DISCDLG_AUTOB].state |= SG_SELECTED;
+   else
+    discdlg[DISCDLG_AUTOB].state &= ~SG_SELECTED;
+
+  /* Draw and process the dialog */
+  do
+  {
+    but = SDLGui_DoDialog(discdlg);
+    switch(but)
+    {
+      case DISCDLG_BROWSEA:
+        SDLGui_FileSelect(EmulationDrives[0].szFileName);
+        break;
+      case DISCDLG_BROWSEB:
+        SDLGui_FileSelect(EmulationDrives[1].szFileName);
+        break;
+    }
+  }
+  while(but!=DISCDLG_EXIT && !bQuitProgram);
+
+  /* Read values from dialog */
+  DialogParams.DiscImage.bAutoInsertDiscB = (discdlg[DISCDLG_AUTOB].state & SG_SELECTED);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   This functions sets up the actual font and then display the main dialog.
 */
-int Dialog_MainDialog()
+int Dialog_MainDlg(void)
 {
   int retbut;
 
@@ -395,11 +482,10 @@ int Dialog_MainDialog()
     switch(retbut)
     {
       case MAINDLG_ABOUT:
-        if( SDLGui_DoDialog(aboutdlg)<0 )
-          retbut=-1;
+        SDLGui_DoDialog(aboutdlg);
         break;
       case MAINDLG_DISCS:
-        SDLGui_DoDialog(discdlg);
+        Dialog_DiscDlg();
         break;
       case MAINDLG_TOSGEM:
         SDLGui_DoDialog(tosgemdlg);
@@ -429,7 +515,7 @@ int Dialog_MainDialog()
     Screen_SetFullUpdate();
     Screen_Draw();
   }
-  while(retbut>0 && retbut!=MAINDLG_OK && retbut!=MAINDLG_CANCEL);
+  while(retbut!=MAINDLG_OK && retbut!=MAINDLG_CANCEL && !bQuitProgram);
 
   SDL_ShowCursor(SDL_DISABLE);
 

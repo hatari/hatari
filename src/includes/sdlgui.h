@@ -17,10 +17,19 @@ enum
 };
 
 
+/* Object flags: */
+#define SG_TOUCHEXIT  1
+#define SG_EXIT       2  /* Not yet tested */
+
+/* Object states: */
+#define SG_SELECTED   1
+
+
 typedef struct
 {
   int type;             /* What type of object */
-  int state;		/* 0=not selected, 1=selected */
+  int flags;            /* Object flags */
+  int state;		/* Object state */
   int x, y;             /* The offset to the upper left corner */
   int w, h;             /* Width and height */
   char *txt;            /* Text string */
@@ -31,3 +40,4 @@ int SDLGui_Init(void);
 int SDLGui_UnInit(void);
 int SDLGui_DoDialog(SGOBJ *dlg);
 int SDLGui_PrepareFont(void);
+int SDLGui_FileSelect(char *path_and_name);
