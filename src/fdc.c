@@ -12,7 +12,7 @@
   to perform the transfer of data from our disc image into the ST RAM area by simulating the
   DMA.
 */
-static char rcsid[] = "Hatari $Id: fdc.c,v 1.9 2004-02-05 15:06:16 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.10 2004-04-02 19:57:39 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -229,11 +229,11 @@ void FDC_TurnMotorOn(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Turn floppy motor off(this sets a count as it takes a set amount of time for the motor to slow to a halt)
+  Turn floppy motor off (this sets a count as it takes a set amount of time for the motor to slow to a halt)
 */
 void FDC_TurnMotorOff(void)
 {
-  MotorSlowingCount = 10;           /* Set timer so takes 'x' HBLs before turn off... */
+  MotorSlowingCount = 160;          /* Set timer so takes 'x' HBLs before turn off... */
 }
 
 
