@@ -56,7 +56,7 @@ void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Create object for Direct Sound. Return TRUE if all OK
+  Create object for sound. Return TRUE if all OK
   We use direct access to the primary buffer, set to an unsigned 8-bit mono stream
 */
 void Audio_Init(void)
@@ -64,7 +64,7 @@ void Audio_Init(void)
 
   /* Is enabled? */
   if (bDisableSound) {
-    /* Stop any Direct Sound access */
+    /* Stop any sound access */
     ErrLog_File("Sound: Disabled\n");
     bSoundWorking = FALSE;
     return;
@@ -82,8 +82,14 @@ void Audio_Init(void)
   desiredAudioSpec->samples = SoundBufferSize;    /* Buffer size */
   desiredAudioSpec->callback = Audio_CallBack;
   desiredAudioSpec->userdata = NULL;
-  SDL_OpenAudio(desiredAudioSpec, NULL);          /* Open audio device */
-   
+  if( SDL_OpenAudio(desiredAudioSpec, NULL) )     /* Open audio device */
+  {
+    fprintf(stderr, "Can't use audio!\n");
+    bSoundWorking = FALSE;
+    free(desiredAudioSpec);  desiredAudioSpec = NULL;
+    return;
+  }
+
   /* Create sound buffer, return if error */
   Audio_CreateSoundBuffer();
   SDL_PauseAudio(0);
