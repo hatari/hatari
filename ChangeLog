@@ -1,3 +1,7 @@
+2003-02-28 (THH):
+  * Rewrote TOS patching routine. It is more flexible now.
+  * Removed 0xa0ff opcode for VDI resolutions; using GEMDOS_OPCODE now instead.
+
 2003-02-02 (THH):
   * Fixed MMU RAM size configuration bug.
   * Rewrote some screen conversion functions in C (low320x8.c, low640x8.c,
