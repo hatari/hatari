@@ -107,7 +107,6 @@ extern unsigned char *pPCScreenDest;
 extern int STScreenStartHorizLine,STScreenEndHorizLine;
 extern int PCScreenBytesPerLine,STScreenWidthBytes,STScreenLeftSkipBytes;
 extern BOOL bInFullScreen;
-extern BOOL bFullScreenHold;
 extern BOOL bScreenContentsChanged;
 extern int STRes,PrevSTRes;
 extern int STScreenLineOffset[NUM_VISIBLE_LINES];

@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.30 2004-07-05 20:06:20 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.31 2004-09-24 12:55:07 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -38,7 +38,6 @@ struct Config_Tag configs_Screen[] =
   { "bDoubleSizeWindow", Bool_Tag, &ConfigureParams.Screen.bDoubleSizeWindow },
   { "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
   { "bInterlacedScreen", Bool_Tag, &ConfigureParams.Screen.bInterlacedScreen },
-  /*{ "bSyncToRetrace", Bool_Tag, &ConfigureParams.Screen.bSyncToRetrace },*/
   { "bFrameSkip", Bool_Tag, &ConfigureParams.Screen.bFrameSkip },
   { "ChosenDisplayMode", Int_Tag, &ConfigureParams.Screen.ChosenDisplayMode },
   { "bCaptureChange", Bool_Tag, &ConfigureParams.Screen.bCaptureChange },
@@ -224,7 +223,6 @@ void Configuration_SetDefault(void)
   ConfigureParams.Screen.bDoubleSizeWindow = FALSE;
   ConfigureParams.Screen.bAllowOverscan = TRUE;
   ConfigureParams.Screen.bInterlacedScreen = FALSE;
-  ConfigureParams.Screen.bSyncToRetrace = FALSE;
   ConfigureParams.Screen.bFrameSkip = FALSE;
   ConfigureParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
   ConfigureParams.Screen.bCaptureChange = FALSE;
@@ -256,6 +254,31 @@ void Configuration_SetDefault(void)
     sprintf(sConfigFileName, "%s/.hatari.cfg", homeDir);
   else
     strcpy(sConfigFileName, "hatari.cfg");
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Copy details from configuration structure into global variables for system,
+  clean file names, etc...
+*/
+void Configuration_WorkOnDetails(BOOL bReset)
+{
+  /* Set resolution change */
+  if (bReset)
+  {
+    bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions;
+    bUseHighRes = (!bUseVDIRes && ConfigureParams.Screen.bUseHighRes)
+                   || (bUseVDIRes && ConfigureParams.TOSGEM.nGEMColours==GEMCOLOUR_2);
+    VDI_SetResolution(ConfigureParams.TOSGEM.nGEMResolution, ConfigureParams.TOSGEM.nGEMColours);
+  }
+
+  /* Set playback frequency */
+  if (ConfigureParams.Sound.bEnableSound)
+    Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackQuality);
+
+  /* Remove slashes, etc.. from names */
+  File_CleanFileName(ConfigureParams.TOSGEM.szTOSImageFileName);
 }
 
 
@@ -312,10 +335,7 @@ void Configuration_Load(void)
   cpu_level = ConfigureParams.System.nCpuLevel;
   cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 
-  bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions;
-  bUseHighRes = ConfigureParams.Screen.bUseHighRes || (bUseVDIRes && (ConfigureParams.TOSGEM.nGEMColours==GEMCOLOUR_2));
-
-  Dialog_CopyDetailsFromConfiguration(TRUE);
+  Configuration_WorkOnDetails(TRUE);
 }
 
 

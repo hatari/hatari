@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.40 2004-07-05 20:06:20 thothy Exp $";
+char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.41 2004-09-24 12:55:07 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -145,7 +145,7 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   ConfigureParams = DialogParams;
 
   /* Copy details to global, if we reset copy them all */
-  Dialog_CopyDetailsFromConfiguration(NeedReset);
+  Configuration_WorkOnDetails(NeedReset);
 
   /* Set keyboard remap file */
   if(ConfigureParams.Keyboard.nKeymapType == KEYMAP_LOADED)
@@ -193,30 +193,6 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
     Screen_EnterFullScreen();
   else if ( bInFullScreen && (!DialogParams.Screen.bFullScreen) )
     Screen_ReturnFromFullScreen();
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Copy details from configuration structure into global variables for system
-*/
-void Dialog_CopyDetailsFromConfiguration(BOOL bReset)
-{
-  /* Set resolution change */
-  if (bReset)
-  {
-    bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions;
-    bUseHighRes = (!bUseVDIRes && ConfigureParams.Screen.bUseHighRes)
-                   || (bUseVDIRes && ConfigureParams.TOSGEM.nGEMColours==GEMCOLOUR_2);
-    VDI_SetResolution(ConfigureParams.TOSGEM.nGEMResolution, ConfigureParams.TOSGEM.nGEMColours);
-  }
-
-  /* Set playback frequency */
-  if (ConfigureParams.Sound.bEnableSound)
-    Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackQuality);
-
-  /* Remove slashes, etc.. from names */
-  File_CleanFileName(ConfigureParams.TOSGEM.szTOSImageFileName);
 }
 
 

@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.30 2004-07-13 16:33:29 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.31 2004-09-24 12:55:07 thothy Exp $";
 
 #include <SDL.h>
 
@@ -55,10 +55,8 @@ unsigned char *pPCScreenDest;                     /* Destination PC buffer */
 int STScreenStartHorizLine,STScreenEndHorizLine;  /* Start/End lines to be converted */
 int PCScreenBytesPerLine, STScreenWidthBytes, STScreenLeftSkipBytes;
 BOOL bInFullScreen=FALSE;                         /* TRUE if in full screen */
-BOOL bFullScreenHold = FALSE;                     /* TRUE if hold display while full screen */
 BOOL bScreenContentsChanged;                      /* TRUE if buffer changed and requires blitting */
 int STRes=ST_LOW_RES, PrevSTRes=ST_LOW_RES;       /* Current and previous ST resolutions */
-int nDroppedFrames=0;                             /* Number of dropped frames during emulation run */
 
 int STScreenLineOffset[NUM_VISIBLE_LINES];        /* Offsets for ST screen lines eg, 0,160,320... */
 unsigned long STRGBPalette[16];                   /* Palette buffer used in assembler conversion routines */
@@ -1025,46 +1023,15 @@ void Screen_DrawFrame(BOOL bForceFlip)
   }
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
   Draw ST screen to window/full-screen
 */
 void Screen_Draw(void)
 {
-  /* Are we holding screen? Ie let user choose options while in full-screen mode using GDI */
-  if (bInFullScreen && bFullScreenHold)
-  {
-    /* Just update status bar */
-    /*StatusBar_UpdateIcons();*/ /* No statusbar in Hatari */
-    return;
-  }
-
   if (!bQuitProgram)
   {
-#if 0
-    /* Wait for next display(at 50fps), is ignored if running max speed */
-    if ( !(ConfigureParams.Screen.bSyncToRetrace && bInFullScreen) )
-    {
-      /* If in Max speed mode, just get on with it, or else wait for VBL timer */
-      if (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MAX)
-      {
-        /* Has VBL already occured? Means we can't keep 50fps to warn user */
-        if (Main_AlreadyWaitingVBLEvent())
-        {
-          /* Increase counter for number of consecutive dropped frames */
-          nDroppedFrames++;
-          /* If emulation has gone slow for 1/2 second or more, inform user */
-          /*if (nDroppedFrames>=25)
-            StatusBar_SetIcon(STATUS_ICON_FRAMERATE,ICONSTATE_UPDATE);*/ /* No statusbar in Hatari yet */
-        }
-        else
-          nDroppedFrames = 0;
-        /* Wait for VBL event */
-        Main_WaitVBLEvent();
-      }
-    }
-#endif
-
     if(VideoBase)
     {
       /* And draw(if screen contents changed) */
@@ -1077,5 +1044,4 @@ void Screen_Draw(void)
     /* Check printer status */
     Printer_CheckIdleStatus();
   }
-
 }

@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.60 2004-07-05 20:06:20 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.61 2004-09-24 12:55:07 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -49,7 +49,6 @@ char Main_rcsid[] = "Hatari $Id: main.c,v 1.60 2004-07-05 20:06:20 thothy Exp $"
 
 
 BOOL bQuitProgram=FALSE;                  /* Flag to quit program cleanly */
-BOOL bUseFullscreen=FALSE;
 BOOL bEmulationActive=TRUE;               /* Run emulation when started */
 BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
 char szBootDiscImage[FILENAME_MAX];
@@ -130,7 +129,6 @@ void Main_UnPauseEmulation(void)
   if( !bEmulationActive )
   {
     Audio_EnableAudio(ConfigureParams.Sound.bEnableSound);
-    bFullScreenHold = FALSE;      /* Release hold  */
     Screen_SetFullUpdate();       /* Cause full screen update(to clear all) */
 
     bEmulationActive = TRUE;
@@ -197,7 +195,8 @@ static void Main_ShowOptions(void)
          "  --help or -h          Print this help text and exit.\n"
          "  --version or -v       Print version number and exit.\n"
          "  --mono or -m          Start in monochrome mode instead of color.\n"
-         "  --fullscreen or -f    Try to use fullscreen mode.\n"
+         "  --fullscreen or -f    Start emulator in fullscreen mode.\n"
+         "  --window or -w        Start emulator in window mode.\n"
          "  --joystick or -j      Emulate a ST joystick with the cursor keys.\n"
          "  --nosound             Disable sound (faster!).\n"
          "  --printer             Enable printer support (experimental).\n"
@@ -253,7 +252,11 @@ static void Main_ReadParameters(int argc, char *argv[])
       }
       else if (!strcmp(argv[i],"--fullscreen") || !strcmp(argv[i],"-f"))
       {
-        bUseFullscreen=TRUE;
+        ConfigureParams.Screen.bFullScreen = TRUE;
+      }
+      else if (!strcmp(argv[i],"--window") || !strcmp(argv[i],"-w"))
+      {
+        ConfigureParams.Screen.bFullScreen = FALSE;
       }
       else if (!strcmp(argv[i],"--joystick") || !strcmp(argv[i],"-j"))
       {
@@ -546,7 +549,7 @@ int main(int argc, char *argv[])
   Main_Init();
 
   /* Switch immediately to fullscreen if user wants to */
-  if( bUseFullscreen )
+  if (ConfigureParams.Screen.bFullScreen)
     Screen_EnterFullScreen();
 
   /* Run emulation */

@@ -12,8 +12,6 @@
 
 extern CNF_PARAMS  DialogParams;
 
-extern void Dialog_DefaultConfigurationDetails(void);
-extern void Dialog_CopyDetailsFromConfiguration(BOOL bReset);
 extern BOOL Dialog_DoProperty(void);
 
 #endif
