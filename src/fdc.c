@@ -1075,7 +1075,7 @@ void FDC_WriteDiscControllerByte(void)
 
   /* filter hdc commands */
   if ((DMAModeControl_ff8606wr & 0x0018) == 8 &&
-      HDCCommand.returnCode == HD_STATUS_NODRIVE) return;
+      nPartitions == 0) return;
 
   /* Are we trying to set the SectorCount? */
   if (DMAModeControl_ff8606wr&0x10)         /* Bit 4 */
