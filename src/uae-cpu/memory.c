@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: memory.c,v 1.8 2003-04-01 20:59:55 thothy Exp $";
+static char rcsid[] = "Hatari $Id: memory.c,v 1.9 2003-04-02 20:53:37 emanne Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -219,6 +219,7 @@ uae_u8 REGPARAM2 *BusErrMem_xlate (uaecptr addr)
 {
     write_log("Your Atari program just did something terribly stupid:"
               " BusErrMem_xlate($%x)\n", addr);
+    DebugUI();
 
     /*BusAddressLocation = addr;
     Exception(2,0);*/
@@ -304,7 +305,7 @@ uae_u8 REGPARAM2 *STmem_xlate (uaecptr addr)
  * We need a separate mem bank for this region since the first 0x800 bytes on
  * the ST can only be accessed in supervisor mode. Note that the very first
  * 8 bytes of the ST memory are also a mirror of the TOS ROM, so they are write
- * protected! 
+ * protected!
  */
 uae_u32 REGPARAM2 SysMem_lget(uaecptr addr)
 {
@@ -358,11 +359,26 @@ void REGPARAM2 SysMem_lput(uaecptr addr, uae_u32 l)
 {
     uae_u32 *m;
 
-    if(addr < 0x8 || (addr < 0x800 && !regs.s))
-    {
-      BusAddressLocation = addr;
-      Exception(2,0);
-      return;
+    if  (addr < 0x800) {
+      if(addr < 0x8)
+	{
+	  BusAddressLocation = addr;
+	  Exception(2,0);
+	  return;
+	}
+      if (!regs.s) {
+	BusAddressLocation = addr;
+	Exception(2,0);
+	return;
+      }
+
+      /* Change low memory registers. I don't want the tos to choose the
+	 connectdrivemask... */
+
+      if (addr == 0x4c2) {
+	STMemory_WriteLong(0x4c2, ConnectedDriveMask);
+	return;
+      }
     }
 
     addr -= STmem_start & STmem_mask;

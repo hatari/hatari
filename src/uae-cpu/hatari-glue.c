@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.16 2003-04-01 16:11:41 thothy Exp $";
+static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.17 2003-04-02 20:53:37 emanne Exp $";
 
 
 #include <stdio.h>
@@ -92,27 +92,6 @@ void check_prefs_changed_cpu(int new_level, int new_compatible)
     if (table68k)
       build_cpufunctbl ();
   }
-}
-
-
-
-/* ----------------------------------------------------------------------- */
-/*
-  We use an illegal opcode to set ConnectedDrives, as TOS (or an HD driver)
-  alters this value we cannot set it on init.
-  This opcode replaces the RTS at the end of the DMA bus boot routine
-*/
-unsigned long OpCode_ConnectedDrive(uae_u32 opcode)
-{
-  fprintf(stderr, "OpCode_ConnectedDrive handled (%x)\n",ConnectedDriveMask );
-  /* Set connected drives */
-  STMemory_WriteLong(0x4c2, ConnectedDriveMask);
-  /* do an RTS (the opcode we replaced) */
-  m68k_setpc(longget(m68k_areg(regs, 7)));
-  m68k_areg(regs, 7) += 4;
-
-  fill_prefetch_0();
-  return 4;
 }
 
 

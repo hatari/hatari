@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-static char rcsid[] = "Hatari $Id: tos.c,v 1.16 2003-04-01 21:02:29 thothy Exp $";
+static char rcsid[] = "Hatari $Id: tos.c,v 1.17 2003-04-02 20:53:35 emanne Exp $";
 
 #include <SDL_types.h>
 
@@ -101,7 +101,6 @@ static char pszHdvBoot[] = "hdv_boot - load boot sector";
 static char pszDmaBoot[] = "boot from DMA bus";
 static char pszSetConDrv[] = "set connected drives mask";
 static char pszClrConDrv[] = "clear connected drives mask";
-static char pszTimerD[] = "timer-D init";  /* sets value before calling the set-timer-routine */
 static char pszMouse[] = "working mouse in big screen resolutions";
 static char pszRomCheck[] = "ROM checksum";
 static char pszNoSteHw[] = "disable STE hardware access";
@@ -110,8 +109,6 @@ static Uint8 pRtsOpcode[] = { 0x4E, 0x75 };  /* 0x4E75 = RTS */
 static Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
         0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
         0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71 };  /* 0x4E71 = NOP */
-static Uint8 pConDrvOpcode[] = { 0x00, 0x0A };  /* 0x000A = Hatari's CONDRV_OPCODE */
-static Uint8 pTimerDOpcode[] = { 0x00, 0x0B };  /* 0x000B = Hatari's TIMERD_OPCODE */
 static Uint8 pMouseOpcode[] = { 0xD3, 0xC1 };  /* "ADDA.L D1,A1" (instead of "ADDA.W D1,A1") */
 static Uint8 pRomCheckOpcode[] = { 0x60, 0x00, 0x00, 0x98 };  /* BRA $e00894 */
 static Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
@@ -121,17 +118,12 @@ static TOS_PATCH TosPatches[] =
 {
   { 0x100, -1, pszHdvInit, TP_ALWAYS, 0xFC0D60, 0x4E56FFF0, 2, pRtsOpcode },
   { 0x100, -1, pszHdvBoot, TP_ALWAYS, 0xFC1384, 0x4EB900FC, 6, pNopOpcodes }, /* JSR $FC0AF8 */
-  { 0x100, -1, pszSetConDrv, TP_HD_ON, 0xFC04d4, 0x4E754DF9, 2, pConDrvOpcode },
   { 0x100, -1, pszDmaBoot, TP_HD_OFF, 0xFC03D6, 0x610000D0, 4, pNopOpcodes }, /* BSR $FC04A8 */
-  { 0x100, -1, pszTimerD, TP_ALWAYS, 0xFC21F6, 0x74026100, 2, pTimerDOpcode }, /* (MFP init 0xFC21B4) */
 
   { 0x102, -1, pszHdvInit, TP_ALWAYS, 0xFC0F44, 0x4E56FFF0, 2, pRtsOpcode },
   { 0x102, -1, pszHdvBoot, TP_ALWAYS, 0xFC1568, 0x4EB900FC, 6, pNopOpcodes }, /* JSR $FC0C2E */
-  { 0x102, -1, pszSetConDrv, TP_HD_ON, 0xFC0584, 0x4E754DF9, 2, pConDrvOpcode },
-  { 0x102, -1, pszClrConDrv, TP_HD_OFF, 0xFC0302, 0x42B90000, 6, pNopOpcodes }, /* CLR.L $4C2 */
+  //{ 0x102, -1, pszClrConDrv, TP_HD_OFF, 0xFC0302, 0x42B90000, 6, pNopOpcodes }, /* CLR.L $4C2 */
   { 0x102, -1, pszDmaBoot, TP_HD_OFF, 0xFC0472, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $FC0558 */
-  /* FIXME: Timer D patch seems to be language dependent for Swedish and Swiss TOS! */
-  { 0x102, -1, pszTimerD, TP_ALWAYS, 0xFC2450, 0x74026100, 2, pTimerDOpcode }, /* (MFP init 0xFC2408) */
   { 0x102, 0, pszMouse, TP_ALWAYS, 0xFD0030, 0xD2C147F9, 2, pMouseOpcode },
   { 0x102, 1, pszMouse, TP_ALWAYS, 0xFD008A, 0xD2C147F9, 2, pMouseOpcode },
   { 0x102, 2, pszMouse, TP_ALWAYS, 0xFD00A8, 0xD2C147F9, 2, pMouseOpcode },
@@ -141,16 +133,11 @@ static TOS_PATCH TosPatches[] =
 
   { 0x104, -1, pszHdvInit, TP_ALWAYS, 0xFC16BA, 0x4E56FFF0, 2, pRtsOpcode },
   { 0x104, -1, pszHdvBoot, TP_ALWAYS, 0xFC1CCE, 0x4EB900FC, 6, pNopOpcodes }, /* JSR $FC0BD8 */
-  { 0x104, -1, pszSetConDrv, TP_HD_ON, 0xFC0576, 0x4E757A01, 2, pConDrvOpcode },
-  { 0x104, -1, pszClrConDrv, TP_HD_OFF, 0xFC02E6, 0x42AD04C2, 4, pNopOpcodes }, /* CLR.L $4C2(A5) */
+  //{ 0x104, -1, pszClrConDrv, TP_HD_OFF, 0xFC02E6, 0x42AD04C2, 4, pNopOpcodes }, /* CLR.L $4C2(A5) */
   { 0x104, -1, pszDmaBoot, TP_HD_OFF, 0xFC0466, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $FC054C */
-  { 0x104, -1, pszTimerD, TP_ALWAYS, 0xFC3544, 0x74026100, 2, pTimerDOpcode }, /* (MFP init 0xFC34FC) */
 
-  { 0x205, -1, pszSetConDrv, TP_HD_ON, 0xE0081A, 0x4E752078, 2, pConDrvOpcode }, /* when no bootable DMA devices */
-  { 0x205, -1, pszSetConDrv, TP_HD_ON, 0xE00842, 0x4E7541f9, 2, pConDrvOpcode }, /* used if we have DMA devices */
-  { 0x205, -1, pszClrConDrv, TP_HD_OFF, 0xE002FC, 0x42B804C2, 4, pNopOpcodes }, /* CLR.L $4C2 */
+  //{ 0x205, -1, pszClrConDrv, TP_HD_OFF, 0xE002FC, 0x42B804C2, 4, pNopOpcodes }, /* CLR.L $4C2 */
   { 0x205, -1, pszDmaBoot, TP_HD_OFF, 0xE006AE, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $E00794 */
-  { 0x205, -1, pszTimerD, TP_ALWAYS, 0xE01972, 0x74026100, 2, pTimerDOpcode }, /* (MFP init 0xE01928) */
   { 0x205, 0, pszHdvInit, TP_ALWAYS, 0xE0468C, 0x4E56FFF0, 2, pRtsOpcode },
   { 0x205, 1, pszHdvInit, TP_ALWAYS, 0xE046E6, 0x4E56FFF0, 2, pRtsOpcode },
   { 0x205, 2, pszHdvInit, TP_ALWAYS, 0xE04704, 0x4E56FFF0, 2, pRtsOpcode },
@@ -185,11 +172,8 @@ static TOS_PATCH TosPatches[] =
   /* Checksum is total of TOS ROM image, but get incorrect results */
   /* as we've changed bytes in the ROM! So, just skip anyway! */
   { 0x206, -1, pszRomCheck, TP_ALWAYS, 0xE007FA, 0x2E3C0001, 4, pRomCheckOpcode },
-  { 0x206, -1, pszSetConDrv, TP_HD_ON, 0xE00B3E, 0x4E752078, 2, pConDrvOpcode }, /* when no bootable DMA devices */
-  { 0x206, -1, pszSetConDrv, TP_HD_ON, 0xE00B66, 0x4E7541f9, 2, pConDrvOpcode }, /* used if we have DMA devices */
-  { 0x206, -1, pszClrConDrv, TP_HD_OFF, 0xE00362, 0x42B804C2, 4, pNopOpcodes }, /* CLR.L $4C2 */
+  // { 0x206, -1, pszClrConDrv, TP_HD_OFF, 0xE00362, 0x42B804C2, 4, pNopOpcodes }, /* CLR.L $4C2 */
   { 0x206, -1, pszDmaBoot, TP_HD_OFF, 0xE00898, 0x610000E0, 4, pNopOpcodes }, /* BSR.W $E0097A */
-  { 0x206, -1, pszTimerD, TP_ALWAYS, 0xE02250, 0x74026100, 2, pTimerDOpcode }, /* (MFP init 0xE02206) */
   { 0x206, 0, pszHdvInit, TP_ALWAYS, 0xE0518E, 0x4E56FFF0, 2, pRtsOpcode },
   { 0x206, 1, pszHdvInit, TP_ALWAYS, 0xE051E8, 0x4E56FFF0, 2, pRtsOpcode },
   { 0x206, 2, pszHdvInit, TP_ALWAYS, 0xE05206, 0x4E56FFF0, 2, pRtsOpcode },

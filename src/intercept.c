@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-static char rcsid[] = "Hatari $Id: intercept.c,v 1.12 2003-04-01 16:11:32 thothy Exp $";
+static char rcsid[] = "Hatari $Id: intercept.c,v 1.13 2003-04-02 20:53:35 emanne Exp $";
 
 #include <SDL_types.h>
 
@@ -46,7 +46,7 @@ static char rcsid[] = "Hatari $Id: intercept.c,v 1.12 2003-04-01 16:11:32 thothy
 #include "video.h"
 #include "blitter.h"
 #include "uae-cpu/sysdeps.h"
-
+#include "tos.h"
 
 /*#define CHECK_FOR_NO_MANS_LAND*/            /* Check for read/write from unknown hardware addresses */
 
@@ -733,11 +733,18 @@ void Intercept_TimerCData_ReadByte(void)
  STRam[0xfffa23] = MFP_TC_MAINCOUNTER;
 }
 
+static int timerd_tos_value;
+
 /* INTERCEPT_TIMERD_DATA(0xfffa25 byte) */
 void Intercept_TimerDData_ReadByte(void)
 {
- MFP_ReadTimerD();        /* Stores result in 'MFP_TD_MAINCOUNTER' */
- STRam[0xfffa25] = MFP_TD_MAINCOUNTER;
+ int pc = m68k_getpc();
+ if (pc >= TosAddress && pc <= TosAddress + TosSize) {
+   STRam[0xfffa25] = timerd_tos_value; // trick the tos to believe it was changed
+ } else {
+   MFP_ReadTimerD();        /* Stores result in 'MFP_TD_MAINCOUNTER' */
+   STRam[0xfffa25] = MFP_TD_MAINCOUNTER;
+ }
 }
 
 /* INTERCEPT_KEYBOARDCONTROL(0xfffc00 byte) */
@@ -843,13 +850,14 @@ void Intercept_VideoLow_WriteByte(void)
 void Intercept_VideoSync_WriteByte(void)
 {
  VideoSyncByte = STRam[0xff820a] & 3;      /* We're only interested in lower 2 bits(50/60Hz) */
- if (nHBL >= OVERSCAN_TOP && nHBL <= 35 && nStartHBL > FIRST_VISIBLE_HBL) {
+ if (nHBL >= OVERSCAN_TOP && nHBL <= 39 && nStartHBL > FIRST_VISIBLE_HBL) {
    Video_SyncHandler_SetTopBorder();
    pHBLPaletteMasks -= OVERSCAN_TOP;
    pHBLPalettes -= OVERSCAN_TOP;
  } else if (nHBL >= SCREEN_START_HBL+SCREEN_HEIGHT_HBL) {
    Video_SyncHandler_SetBottomBorder();
- }
+ } else if (nStartHBL > FIRST_VISIBLE_HBL)
+   fprintf(stderr,"hbl %d (%d - %d)\n",nHBL,OVERSCAN_TOP,37);
  Video_WriteToSync();
 }
 
@@ -1137,12 +1145,18 @@ void Intercept_TimerBCtrl_WriteByte(void)
 void Intercept_TimerCDCtrl_WriteByte(void)
 {
  unsigned short old_tcdcr;
+ int pc = m68k_getpc();
+
  old_tcdcr = MFP_TCDCR;             /* Remember old control state */
  MFP_TCDCR = STRam[0xfffa1d];       /* Store new one */
  if( (MFP_TCDCR^old_tcdcr)&0x70 )   /* Check if Timer C control changed */
    MFP_StartTimerC();               /* Reset timers if need to */
- if( (MFP_TCDCR^old_tcdcr)&0x07 )   /* Check if Timer D control changed */
+ if( (MFP_TCDCR^old_tcdcr)&0x07 ){   /* Check if Timer D control changed */
+   if (pc >= TosAddress && pc <= TosAddress + TosSize) {
+     MFP_TCDCR = STRam[0xfffa1d] = (STRam[0xfffa1d] & 0xf0) | 7; // slow down timer d if set from tos
+   }
    MFP_StartTimerD();               /* Reset timers if need to */
+ }
 }
 
 /* INTERCEPT_TIMERA_DATA(0xfffa1f byte) */
@@ -1180,6 +1194,12 @@ void Intercept_TimerCData_WriteByte(void)
 /* INTERCEPT_TIMERD_DATA(0xfffa25 byte) */
 void Intercept_TimerDData_WriteByte(void)
 {
+ int pc = m68k_getpc();
+ if (pc >= TosAddress && pc <= TosAddress + TosSize) {
+   timerd_tos_value = STRam[0xfffa25];
+   STRam[0xfffa25] = 0x64; // slow down the useless interrupt from the bios for timer d
+ }
+
  MFP_TDDR = STRam[0xfffa25];        /* Store into data register */
  if( (MFP_TCDCR&0x07)==0 )          /* Now check if timer is running - if so do not set */
   {

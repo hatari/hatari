@@ -25,7 +25,6 @@ void customreset(void);
 int intlev (void);
 void check_prefs_changed_cpu(int new_level, int new_compatible);
 
-unsigned long OpCode_ConnectedDrive(uae_u32 opcode);
 unsigned long OpCode_TimerD(uae_u32 opcode);
 unsigned long OpCode_GemDos(uae_u32 opcode);
 unsigned long OpCode_OldGemDos(uae_u32 opcode);

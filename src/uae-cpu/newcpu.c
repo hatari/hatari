@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.16 2003-03-28 16:20:39 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.17 2003-04-02 20:53:37 emanne Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -156,7 +156,6 @@ void build_cpufunctbl(void)
     /* Hatari's illegal opcodes: */
     cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;
     cpufunctbl[RUNOLDGEMDOS_OPCODE] = OpCode_OldGemDos;
-    cpufunctbl[CONDRV_OPCODE] = OpCode_ConnectedDrive;
     cpufunctbl[TIMERD_OPCODE] = OpCode_TimerD;
     cpufunctbl[VDI_OPCODE] = OpCode_VDI;
 }
@@ -225,7 +224,7 @@ void init_m68k (void)
     if (cpu_compatible)
         write_log (" (compatible mode)");
     write_log ("\n");
-    
+
     read_table68k ();
     do_merges ();
 
@@ -806,7 +805,7 @@ int m68k_move2c (int regno, uae_u32 *regp)
 	case 5: itt1 = *regp & 0xffffe364; break;
 	case 6: dtt0 = *regp & 0xffffe364; break;
 	case 7: dtt1 = *regp & 0xffffe364; break;
-	  
+
 	case 0x800: regs.usp = *regp; break;
 	case 0x801: regs.vbr = *regp; break;
 	case 0x802: caar = *regp & 0xfc; break;
