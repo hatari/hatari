@@ -89,9 +89,18 @@ typedef struct
 
 
 /* Discimage configuration */
+
+typedef enum
+{
+  WRITEPROT_OFF,
+  WRITEPROT_ON,
+  WRITEPROT_AUTO
+} WRITEPROTECTION;
+
 typedef struct
 {
   BOOL bAutoInsertDiscB;
+  WRITEPROTECTION nWriteProtection;
   char szDiscImageDirectory[FILENAME_MAX];
 } CNF_DISCIMAGE;
 

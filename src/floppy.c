@@ -21,7 +21,9 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.20 2005-01-04 16:12:47 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.21 2005-02-25 13:28:45 thothy Exp $";
+
+#include <sys/stat.h>
 
 #include <SDL_endian.h>
 
@@ -127,11 +129,39 @@ void Floppy_GetBootDrive(void)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Test disc image if it is write protected. Write protection can be configured
+  in the GUI. When set to "automatic", we check the file permissions of the
+  floppy disk image to decide.
+*/
+BOOL Floppy_IsWriteProtected(int Drive)
+{
+  if (ConfigureParams.DiscImage.nWriteProtection == WRITEPROT_OFF)
+  {
+    return FALSE;
+  }
+  else if (ConfigureParams.DiscImage.nWriteProtection == WRITEPROT_ON)
+  {
+    return TRUE;
+  }
+  else
+  {
+    struct stat FloppyStat;
+    /* Check whether disk is writable */
+    if (stat(EmulationDrives[Drive].szFileName, &FloppyStat) == 0 && (FloppyStat.st_mode & S_IWUSR))
+      return FALSE;
+    else
+      return TRUE;
+  }
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Test disc image for valid boot-sector
 
-  It has been noticed that some discs, eg blank images made by the (current)
-  MakeDisk utility fill in the boot-sector with incorrect information. Such
-  images cannot be read correctly using a real ST, and also Hatari.
+  It has been noticed that some discs, eg blank images made by the MakeDisk
+  utility or PaCifiST emulator fill in the boot-sector with incorrect information.
+  Such images cannot be read correctly using a real ST, and also Hatari.
   To try and prevent data loss, we check for this error and flag the drive so
   the image will not be saved back to the file.
 */
@@ -153,7 +183,7 @@ static BOOL Floppy_IsBootSectorOK(int Drive)
     }
     else
     {
-      sprintf(szString, "Disc in drive %c seems to suffer from the Pacifist/Makedisk bug.\n"
+      sprintf(szString, "Disc in drive %c maybe suffers from the Pacifist/Makedisk bug.\n"
                         "If it does not work, please repair the disk first!\n", 'A' + Drive);
       Main_Message(szString, "Warning");
     }
@@ -272,8 +302,8 @@ void Floppy_EjectDiscFromDrive(int Drive, BOOL bInformUser)
     /* OK, has contents changed? If so, need to save */
     if (EmulationDrives[Drive].bContentsChanged)
     {
-      /* Is OK to save image(if boot-sector is bad, don't allow a save) */
-      if (EmulationDrives[Drive].bOKToSave)
+      /* Is OK to save image (if boot-sector is bad, don't allow a save) */
+      if (EmulationDrives[Drive].bOKToSave && !Floppy_IsWriteProtected(Drive))
       {
         /* Save as .MSA or .ST image? */
         if (MSA_FileNameIsMSA(EmulationDrives[Drive].szFileName, TRUE))
@@ -291,7 +321,7 @@ void Floppy_EjectDiscFromDrive(int Drive, BOOL bInformUser)
     if (bInformUser)
     {
       sprintf(szString,"Disc has been removed from Drive '%c'.",'A'+Drive);
-      Main_Message(szString, PROG_NAME /*,MB_OK | MB_ICONINFORMATION*/);
+      Main_Message(szString, PROG_NAME);
     }
   }
 
@@ -449,10 +479,10 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
     }
 
     /* Check if sector number is in range */
-    if (Sector > nSectorsPerTrack)
+    if (Sector <= 0 || Sector > nSectorsPerTrack)
     {
       fprintf(stderr, "Warning: Program tries to read from sector %i of a disk "
-                      "image with only %i sectors per track!\n", Sector, nSectorsPerTrack);
+                      "image with %i sectors per track!\n", Sector, nSectorsPerTrack);
       return FALSE;
     }
 
@@ -461,11 +491,6 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
     Offset = nBytesPerTrack*Side;                 /* First seek to side */
     Offset += (nBytesPerTrack*nSides)*Track;      /* Then seek to track */
     Offset += (NUMBYTESPERSECTOR*(Sector-1));     /* And finally to sector */
-    if (Offset < 0)
-    {
-      fprintf(stderr,"Floppy_ReadSectors: Offset is negative (%li)!\n", Offset);
-      return FALSE;
-    }
 
     /* Read sectors (usually 512 bytes per sector) */
     memcpy(pBuffer,pDiscBuffer+Offset,(int)Count*NUMBYTESPERSECTOR);
@@ -489,8 +514,8 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
   long Offset;
   int nImageTracks;
 
-  /* Do we have a disc in our drive? */
-  if (EmulationDrives[Drive].bDiscInserted)
+  /* Do we have a writable disc in our drive? */
+  if (EmulationDrives[Drive].bDiscInserted && !Floppy_IsWriteProtected(Drive))
   {
     /* Looks good */
     pDiscBuffer = EmulationDrives[Drive].pBuffer;
@@ -529,10 +554,10 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
     }
 
     /* Check if sector number is in range */
-    if (Sector > nSectorsPerTrack)
+    if (Sector <= 0 || Sector > nSectorsPerTrack)
     {
       fprintf(stderr, "Warning: Program tries to write to sector %i of a disk "
-                      "image with only %i sectors per track!\n", Sector, nSectorsPerTrack);
+                      "image with %i sectors per track!\n", Sector, nSectorsPerTrack);
       return FALSE;
     }
 
@@ -541,6 +566,7 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
     Offset = nBytesPerTrack*Side;               /* First seek to side */
     Offset += (nBytesPerTrack*nSides)*Track;    /* Then seek to track */
     Offset += (NUMBYTESPERSECTOR*(Sector-1));   /* And finally to sector */
+
     /* Write sectors (usually 512 bytes per sector) */
     memcpy(pDiscBuffer+Offset,pBuffer,(int)Count*NUMBYTESPERSECTOR);
     /* And set 'changed' flag */

@@ -31,6 +31,7 @@ extern void Floppy_Init(void);
 extern void Floppy_UnInit(void);
 extern void Floppy_MemorySnapShot_Capture(BOOL bSave);
 extern void Floppy_GetBootDrive(void);
+extern BOOL Floppy_IsWriteProtected(int Drive);
 extern BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName);
 extern BOOL Floppy_ZipInsertDiscIntoDrive(int Drive, char *pszFileName, char *pszZipPath);
 extern void Floppy_EjectDiscFromDrive(int Drive,BOOL bInformUser);

@@ -12,7 +12,7 @@
   to perform the transfer of data from our disc image into the ST RAM area by simulating the
   DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.16 2005-02-02 21:53:50 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.17 2005-02-25 13:28:44 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -1157,13 +1157,16 @@ void FDC_DiscControllerStatus_ReadWord(void)
         if (bMotorOn)
           DiscControllerByte |= 0x80;
 
+        if (Floppy_IsWriteProtected(nReadWriteDev))
+          DiscControllerByte |= 0x40;
+
         if (EmulationDrives[nReadWriteDev].bMediaChanged)
         {
           /* Some games apparently poll the write-protection signal to check
            * for disk image changes (the signal seems to change when you
            * exchange disks on a real ST). We now also simulate this behaviour
            * here, so that these games can continue with the other disk. */
-          DiscControllerByte |= 0x40;
+          DiscControllerByte ^= 0x40;
           EmulationDrives[nReadWriteDev].bMediaChanged = FALSE;
         }
 

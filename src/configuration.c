@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.38 2005-02-24 20:26:29 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.39 2005-02-25 13:28:44 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -94,6 +94,7 @@ struct Config_Tag configs_Memory[] =
 struct Config_Tag configs_Floppy[] =
 {
   { "bAutoInsertDiscB", Bool_Tag, &ConfigureParams.DiscImage.bAutoInsertDiscB },
+  { "nWriteProtection", Int_Tag, &ConfigureParams.DiscImage.nWriteProtection },
   { "szDiscImageDirectory", String_Tag, ConfigureParams.DiscImage.szDiscImageDirectory },
   { NULL , Error_Tag, NULL }
 };
@@ -175,8 +176,9 @@ void Configuration_SetDefault(void)
   /* Clear parameters */
   memset(&ConfigureParams, 0, sizeof(CNF_PARAMS));
 
-  /* Set defaults for Disc Image */
+  /* Set defaults for (floppy) Disc Image */
   ConfigureParams.DiscImage.bAutoInsertDiscB = TRUE;
+  ConfigureParams.DiscImage.nWriteProtection = WRITEPROT_OFF;
   strcpy(ConfigureParams.DiscImage.szDiscImageDirectory, szWorkingDir);
   File_AddSlashToEndFileName(ConfigureParams.DiscImage.szDiscImageDirectory);
 

@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.10 2005-02-24 20:26:30 thothy Exp $";
+char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.11 2005-02-25 13:28:47 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -26,21 +26,25 @@ char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.10 2005-02-24 20:26:30 thothy 
 #define DISCDLG_BROWSEIMG   13
 #define DISCDLG_AUTOB       14
 #define DISCDLG_CREATEIMG   15
-#define DISCDLG_EJECTHDIMG  19
-#define DISCDLG_BROWSEHDIMG 20
-#define DISCDLG_DISCHDIMG   21
-#define DISCDLG_UNMOUNTGDOS 23
-#define DISCDLG_BROWSEGDOS  24
-#define DISCDLG_DISCGDOS    25
-#define DISCDLG_BOOTHD      26
-#define DISCDLG_EXIT        27
+#define DISCDLG_PROTOFF     17
+#define DISCDLG_PROTON      18
+#define DISCDLG_PROTAUTO    19
+#define DISCDLG_EJECTHDIMG  23
+#define DISCDLG_BROWSEHDIMG 24
+#define DISCDLG_DISCHDIMG   25
+#define DISCDLG_UNMOUNTGDOS 27
+#define DISCDLG_BROWSEGDOS  28
+#define DISCDLG_DISCGDOS    29
+#define DISCDLG_BOOTHD      30
+#define DISCDLG_EXIT        31
 
 
 /* The discs dialog: */
 static SGOBJ discdlg[] =
 {
   { SGBOX, 0, 0, 0,0, 64,25, NULL },
-  { SGBOX, 0, 0, 1,1, 62,11, NULL },
+
+  { SGBOX, 0, 0, 1,1, 62,12, NULL },
   { SGTEXT, 0, 0, 25,1, 12,1, "Floppy discs" },
   { SGTEXT, 0, 0, 2,2, 8,1, "Drive A:" },
   { SGBUTTON, 0, 0, 46,2, 7,1, "Eject" },
@@ -50,22 +54,28 @@ static SGOBJ discdlg[] =
   { SGBUTTON, 0, 0, 46,4, 7,1, "Eject" },
   { SGBUTTON, 0, 0, 54,4, 8,1, "Browse" },
   { SGTEXT, 0, 0, 3,5, 58,1, NULL },
-  { SGTEXT, 0, 0, 2,7, 30,1, "Default disk images directory:" },
+  { SGTEXT, 0, 0, 2,7, 32,1, "Default floppy images directory:" },
   { SGTEXT, 0, 0, 3,8, 58,1, NULL },
   { SGBUTTON, 0, 0, 54,7, 8,1, "Browse" },
   { SGCHECKBOX, 0, 0, 2,10, 16,1, "Auto insert B" },
   { SGBUTTON, 0, 0, 42,10, 20,1, "Create blank image" },
-  { SGBOX, 0, 0, 1,13, 62,9, NULL },
-  { SGTEXT, 0, 0, 27,13, 10,1, "Hard discs" },
-  { SGTEXT, 0, 0, 2,14, 9,1, "HD image:" },
-  { SGBUTTON, 0, 0, 46,14, 7,1, "Eject" },
-  { SGBUTTON, 0, 0, 54,14, 8,1, "Browse" },
-  { SGTEXT, 0, 0, 3,15, 58,1, NULL },
+  { SGTEXT, 0, 0, 2,12, 17,1, "Write protection:" },
+  { SGRADIOBUT, 0, 0, 21,12, 5,1, "Off" },
+  { SGRADIOBUT, 0, 0, 28,12, 5,1, "On" },
+  { SGRADIOBUT, 0, 0, 34,12, 6,1, "Auto" },
+
+  { SGBOX, 0, 0, 1,14, 62,8, NULL },
+  { SGTEXT, 0, 0, 27,14, 10,1, "Hard discs" },
+  { SGTEXT, 0, 0, 2,15, 9,1, "HD image:" },
+  { SGBUTTON, 0, 0, 46,15, 7,1, "Eject" },
+  { SGBUTTON, 0, 0, 54,15, 8,1, "Browse" },
+  { SGTEXT, 0, 0, 3,16, 58,1, NULL },
   { SGTEXT, 0, 0, 2,17, 13,1, "GEMDOS drive:" },
   { SGBUTTON, 0, 0, 46,17, 7,1, "Eject" },
   { SGBUTTON, 0, 0, 54,17, 8,1, "Browse" },
   { SGTEXT, 0, 0, 3,18, 58,1, NULL },
   { SGCHECKBOX, 0, 0, 2,20, 14,1, "Boot from HD" },
+
   { SGBUTTON, 0, 0, 22,23, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
@@ -77,7 +87,7 @@ static SGOBJ discdlg[] =
 */
 void Dialog_DiscDlg(void)
 {
-  int but;
+  int but, i;
   char dlgnamea[64], dlgnameb[64], dlgdiscdir[64];
   char dlgnamegdos[64], dlgnamehdimg[64];
   char *tmpname;
@@ -116,10 +126,17 @@ void Dialog_DiscDlg(void)
   discdlg[DISCDLG_IMGDIR].txt = dlgdiscdir;
 
   /* Auto insert disc B: */
-  if( DialogParams.DiscImage.bAutoInsertDiscB )
+  if (DialogParams.DiscImage.bAutoInsertDiscB)
     discdlg[DISCDLG_AUTOB].state |= SG_SELECTED;
-   else
+  else
     discdlg[DISCDLG_AUTOB].state &= ~SG_SELECTED;
+
+  /* Write protection */
+  for (i = DISCDLG_PROTOFF; i <= DISCDLG_PROTAUTO; i++)
+  {
+    discdlg[i].state &= ~SG_SELECTED;
+  }
+  discdlg[DISCDLG_PROTOFF+DialogParams.DiscImage.nWriteProtection].state |= SG_SELECTED;
 
   /* Boot from harddisk? */
   if( DialogParams.HardDisc.bBootFromHardDisc )
@@ -250,7 +267,17 @@ void Dialog_DiscDlg(void)
   }
   while (but!=DISCDLG_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
 
-  /* Read values from dialog */
+  /* Read values from dialog: */
+
+  for (i = DISCDLG_PROTOFF; i <= DISCDLG_PROTAUTO; i++)
+  {
+    if (discdlg[i].state & SG_SELECTED)
+    {
+      DialogParams.DiscImage.nWriteProtection = i-DISCDLG_PROTOFF;
+      break;
+    }
+  }
+
   DialogParams.DiscImage.bAutoInsertDiscB = (discdlg[DISCDLG_AUTOB].state & SG_SELECTED);
   DialogParams.HardDisc.bBootFromHardDisc = (discdlg[DISCDLG_BOOTHD].state & SG_SELECTED);
 
