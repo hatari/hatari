@@ -24,7 +24,7 @@
     - corrected stupid string bug that altered the environment var HOME
 
 */
-static char rcsid[] = "Hatari $Id: printer.c,v 1.10 2003-08-12 14:44:34 thothy Exp $";
+static char rcsid[] = "Hatari $Id: printer.c,v 1.11 2003-10-18 07:38:46 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -112,7 +112,6 @@ void Printer_CloseAllConnections(void)
 
 /*-----------------------------------------------------------------------
   Open file on disc, to which all printer output will be sent
-  FIXME: filename needs to be made configurable
  -----------------------------------------------------------------------*/
 BOOL Printer_OpenDiscFile(void)
 {
