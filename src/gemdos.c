@@ -1,16 +1,20 @@
 /*
   Hatari
 
-  GEMDos intercept routines. These are used mainly for Hard Drive redirection of high level
-  file routines.
-*/
+  GEMDos intercept routines. These are used mainly for Hard Drive redirection of high level file routines.
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+  Bugs/things to fix:
+  * RS232/Printing
+  * Figure out how to handle long file names and case conflicts, 
+    (eg. FOO.BAR and foo.bar is the same file in TOS but not UNIX)
+  * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
+  * Fix bugs, there are probably a few lurking around in here..
+
+*/
 
 #include "main.h"
 #include "cart.h"
+#include "tos.h"
 #include "debug.h"
 #include "decode.h"
 #include "dialog.h"
@@ -27,6 +31,14 @@
 #include "stMemory.h"
 #include "view.h"
 
+#include <sys/stat.h>
+#include <time.h>
+
+#ifdef dirent                     /* kludge: dirent previously defined in sysdeps.h... */
+#undef dirent                     
+#endif
+#include <dirent.h>               /* ..this conflicts with dirent.h definition */
+
 #define ENABLE_SAVING             /* Turn on saving stuff */
 
 #define INVALID_HANDLE_VALUE -1
@@ -35,135 +47,305 @@
 #define MAX_PATH 256
 #endif
 
+/* structure with all the drive-specific data for our emulated drives */
+EMULATEDDRIVE **emudrives = NULL;
+
 typedef struct 
 {
  BOOL bUsed;
- int FileHandle;
+ FILE *FileHandle;
+  char szActualName[MAX_PATH];   /* used by F_DATIME (0x57) */
 } FILE_HANDLE;
 
+typedef struct 
+{
+  BOOL bUsed;
+  int  nentries;                   /* number of entries in fs directory */
+  int  centry;                     /* current entry # */
+  struct dirent **found;           /* legal files */
+  char path[MAX_PATH];             /* sfirst path */
+} INTERNAL_DTA;
+
 FILE_HANDLE  FileHandles[MAX_FILE_HANDLES];
-//INTERNAL_DTA InternalDTAs[MAX_DTAS_FILES];
+INTERNAL_DTA InternalDTAs[MAX_DTAS_FILES];
 int DTAIndex;                                 /* Circular index into above */
 BOOL bInitGemDOS;                             /* Have we re-directed GemDOS vector to our own routines yet? */
 DTA *pDTA;                                    /* Our GEMDOS hard drive Disc Transfer Address structure */
 unsigned short int CurrentDrive;              /* Current drive (0=A,1=B,2=C etc...) */
 
-#ifdef DEBUG_TO_FILE
 /* List of GEMDos functions... */
 char *pszGemDOSNames[] = {
-  "Term",                 //0x00
-  "Conin",                //0x01
-  "ConOut",               //0x02
-  "Auxiliary Input",      //0x03
-  "Auxiliary Output",     //0x04
-  "Printer Output",       //0x05
-  "RawConIO",             //0x06
-  "Direct Conin no echo", //0x07
-  "Conin no echo",        //0x08
-  "Print line",           //0x09
-  "ReadLine",             //0x0a
-  "ConStat",              //0x0b
-  "",                     //0x0c
-  "",                     //0x0d
-  "SetDrv",               //0x0e
-  "",                     //0x0f
-  "Conout Stat",          //0x10
-  "PrtOut Stat",          //0x11
-  "Auxin Stat",           //0x12
-  "AuxOut Stat",          //0x13
-  "",                     //0x14
-  "",                     //0x15
-  "",                     //0x16
-  "",                     //0x17
-  "",                     //0x18
-  "Current Disk",         //0x19
-  "Set DTA",              //0x1a
-  "",        //0x1b
-  "",        //0x1c
-  "",        //0x1d
-  "",        //0x1e
-  "",        //0x1f
-  "Super",   //0x20
-  "",        //0x21
-  "",        //0x22
-  "",        //0x23
-  "",        //0x24
-  "",        //0x25
-  "",        //0x26
-  "",        //0x27
-  "",        //0x28
-  "",        //0x29
-  "Get Date",      //0x2a
-  "Set Date",      //0x2b
-  "Get Time",      //0x2c
-  "Set Time",      //0x2d
-  "",              //0x2e
-  "Get DTA",       //0x2f
-  "Get Version Number",   //0x30
-  "Keep Process",         //0x31
-  "",        //0x32
-  "",        //0x33
-  "",        //0x34
-  "",        //0x35
-  "Get Disk Free Space",  //0x36
-  "",           //0x37
-  "",           //0x38
-  "MkDir",      //0x39
-  "RmDir",      //0x3a
-  "ChDir",      //0x3b
-  "Create",     //0x3c
-  "Open",       //0x3d
-  "Close",      //0x3e
-  "Read",       //0x3f
-  "Write",      //0x40
-  "UnLink",     //0x41
-  "LSeek",      //0x42
-  "ChMod",      //0x43
-  "",           //0x44
-  "Dup",        //0x45
-  "Force",      //0x46
-  "GetDir",     //0x47
-  "Malloc",     //0x48
-  "MFree",      //0x49
-  "SetBlock",   //0x4a
-  "Exec",       //0x4b
-  "Term",       //0x4c
-  "",           //0x4d
-  "SFirst",     //0x4e
-  "SNext",      //0x4f
-  "",           //0x50
-  "",           //0x51
-  "",           //0x52
-  "",           //0x53
-  "",           //0x54
-  "",           //0x55
-  "Rename",     //0x56
-  "GSDTof"      //0x57
+  "Term",                 /*0x00*/
+  "Conin",                /*0x01*/
+  "ConOut",               /*0x02*/
+  "Auxiliary Input",      /*0x03*/
+  "Auxiliary Output",     /*0x04*/
+  "Printer Output",       /*0x05*/
+  "RawConIO",             /*0x06*/
+  "Direct Conin no echo", /*0x07*/
+  "Conin no echo",        /*0x08*/
+  "Print line",           /*0x09*/
+  "ReadLine",             /*0x0a*/
+  "ConStat",              /*0x0b*/
+  "",                     /*0x0c*/
+  "",                     /*0x0d*/
+  "SetDrv",               /*0x0e*/
+  "",                     /*0x0f*/
+  "Conout Stat",          /*0x10*/
+  "PrtOut Stat",          /*0x11*/
+  "Auxin Stat",           /*0x12*/
+  "AuxOut Stat",          /*0x13*/
+  "",                     /*0x14*/
+  "",                     /*0x15*/
+  "",                     /*0x16*/
+  "",                     /*0x17*/
+  "",                     /*0x18*/
+  "Current Disk",         /*0x19*/
+  "Set DTA",              /*0x1a*/
+  "",        /*0x1b*/
+  "",        /*0x1c*/
+  "",        /*0x1d*/
+  "",        /*0x1e*/
+  "",        /*0x1f*/
+  "Super",   /*0x20*/
+  "",        /*0x21*/
+  "",        /*0x22*/
+  "",        /*0x23*/
+  "",        /*0x24*/
+  "",        /*0x25*/
+  "",        /*0x26*/
+  "",        /*0x27*/
+  "",        /*0x28*/
+  "",        /*0x29*/
+  "Get Date",      /*0x2a*/
+  "Set Date",      /*0x2b*/
+  "Get Time",      /*0x2c*/
+  "Set Time",      /*0x2d*/
+  "",              /*0x2e*/
+  "Get DTA",       /*0x2f*/
+  "Get Version Number",   /*0x30*/
+  "Keep Process",         /*0x31*/
+  "",        /*0x32*/
+  "",        /*0x33*/
+  "",        /*0x34*/
+  "",        /*0x35*/
+  "Get Disk Free Space",  /*0x36*/
+  "",           /*0x37*/
+  "",           /*0x38*/
+  "MkDir",      /*0x39*/
+  "RmDir",      /*0x3a*/
+  "ChDir",      /*0x3b*/
+  "Create",     /*0x3c*/
+  "Open",       /*0x3d*/
+  "Close",      /*0x3e*/
+  "Read",       /*0x3f*/
+  "Write",      /*0x40*/
+  "UnLink",     /*0x41*/
+  "LSeek",      /*0x42*/
+  "ChMod",      /*0x43*/
+  "",           /*0x44*/
+  "Dup",        /*0x45*/
+  "Force",      /*0x46*/
+  "GetDir",     /*0x47*/
+  "Malloc",     /*0x48*/
+  "MFree",      /*0x49*/
+  "SetBlock",   /*0x4a*/
+  "Exec",       /*0x4b*/
+  "Term",       /*0x4c*/
+  "",           /*0x4d*/
+  "SFirst",     /*0x4e*/
+  "SNext",      /*0x4f*/
+  "",           /*0x50*/
+  "",           /*0x51*/
+  "",           /*0x52*/
+  "",           /*0x53*/
+  "",           /*0x54*/
+  "",           /*0x55*/
+  "Rename",     /*0x56*/
+  "GSDTof"      /*0x57*/
 };
-#endif
 
+unsigned char GemDOS_ConvertAttribute(mode_t mode);
 
-
-/* Convert a string to uppercase */
-void strupr(char *string)
+/*-------------------------------------------------------*/
+/*
+  Routines to convert time and date to MSDOS format. 
+  Originally from the STonX emulator. (cheers!)
+*/
+unsigned short time2dos (time_t t)
 {
- int i;
- for(i=0; i<strlen(string); i++)
-   string[i] = toupper(string[i]);
+	struct tm *x;
+	x = localtime (&t);
+	return (x->tm_sec>>1)|(x->tm_min<<5)|(x->tm_hour<<11);
 }
 
+unsigned short date2dos (time_t t)
+{
+	struct tm *x;
+	x = localtime (&t);
+	return x->tm_mday | ((x->tm_mon+1)<<5) | ( ((x->tm_year-80>0)?x->tm_year-80:0) << 9);
+}
 
-//-----------------------------------------------------------------------
+/* 
+   Convert a string to uppercase 
+*/
+void strupr(char *string)
+{
+ while(*string){ *string = toupper(*string); string++; }
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Populate a DATETIME structure with file info 
+*/
+BOOL GetFileInformation(char *name, DATETIME *DateTime)
+{
+  struct stat filestat;
+  int n;
+  struct tm *x;
+
+  n = stat(name, &filestat);
+  if( n != 0 ) return(FALSE);
+  x = localtime( &filestat.st_mtime );
+
+  DateTime->word1 = 0;
+  DateTime->word2 = 0;
+
+  DateTime->word1 |= (x->tm_mday & 0x1F);         /* 5 bits */
+  DateTime->word1 |= (x->tm_mon & 0x0F)<<5;       /* 4 bits */
+  DateTime->word1 |= (((x->tm_year-80>0)?x->tm_year-80:0) & 0x7F)<<9;      /* 7 bits*/
+
+  DateTime->word2 |= (x->tm_sec & 0x1F);          /* 5 bits */
+  DateTime->word2 |= (x->tm_min & 0x3F)<<5;       /* 6 bits */
+  DateTime->word2 |= (x->tm_hour & 0x1F)<<11;     /* 5 bits */
+
+  return(TRUE);
+}
+/*-----------------------------------------------------------------------*/
+/*
+  Populate the DTA buffer with file info 
+*/
+int PopulateDTA(char *path, struct dirent *file)
+{
+  char tempstr[MAX_PATH];
+  struct stat filestat;
+  int n;
+
+  sprintf(tempstr, "%s/%s", path, file->d_name);
+  n = stat(tempstr, &filestat);
+  if(n != 0) return(FALSE); /* return on error */
+
+  if(!pDTA) return(FALSE); /* no DTA pointer set */
+  strupr(file->d_name);    /* convert to atari-style uppercase */
+  strncpy(pDTA->dta_name,file->d_name,TOS_NAMELEN); /* FIXME: better handling of long file names */
+  STMemory_WriteLong_PCSpace(pDTA->dta_size, (long)filestat.st_size);
+  STMemory_WriteWord_PCSpace(pDTA->dta_time, time2dos(filestat.st_mtime));
+  STMemory_WriteWord_PCSpace(pDTA->dta_date, date2dos(filestat.st_mtime));
+  pDTA->dta_attrib = GemDOS_ConvertAttribute(filestat.st_mode);
+
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Clear a used DTA structure.
+*/
+void ClearInternalDTA(){
+  int i;
+
+  /* clear the old DTA structure */
+  if(InternalDTAs[DTAIndex].found != NULL){
+    for(i=0; i <InternalDTAs[DTAIndex].nentries; i++)
+      free(InternalDTAs[DTAIndex].found[i]);
+    free(InternalDTAs[DTAIndex].found); 
+  }
+  InternalDTAs[DTAIndex].bUsed = FALSE;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Match a file to a dir mask.
+*/
+static int match (char *pat, char *name)
+{
+  /* make uppercase copies */
+  char p0[MAX_PATH], n0[MAX_PATH];
+  strcpy(p0, pat);
+  strcpy(n0, name);
+  strupr(p0); strupr(n0);
+  
+  if(name[0] == '.') return(FALSE);                   /* no .* files */
+  if (strcmp(pat,"*.*")==0) return(TRUE);
+  else if (strcasecmp(pat,name)==0) return(TRUE);
+  else
+    {
+      char *p=p0,*n=n0;
+      for(;*n;)
+	{
+	  if (*p=='*') {while (*n && *n != '.') n++;p++;}
+	  else if (*p=='?' && *n) {n++;p++;}
+	  else if (*p++ != *n++) return(FALSE);
+	}
+      if (*p==0)
+	{
+	  return(TRUE);
+	}
+    }
+  return(FALSE);
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Parse directory from sfirst mask - e.g.: input:  "hdemudir/auto/*.*" outputs: "hdemudir/auto" 
+*/
+void fsfirst_dirname(char *string, char *new){
+  int i=0;
+  
+  sprintf(new, string); 
+  /* convert to front slashes. */
+  i=0;
+  while(new[i] != '\0'){
+    if(new[i] == '\\') new[i] = '/';
+    i++;
+  }
+  while(string[i] != '\0'){new[i] = string[i]; i++;} /* find end of string */
+  while(new[i] != '/') i--; /* find last slash */
+  new[i] = '\0';
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Parse directory mask, e.g. "*.*" 
+*/
+void fsfirst_dirmask(char *string, char *new){
+  int i=0, j=0;
+  while(string[i] != '\0')i++;   /* go to end of string */
+  while(string[i] != '/') i--;   /* find last slash */
+  i++;
+  while(string[i] != '\0')new[j++] = string[i++]; /* go to end of string */
+  new[j++] = '\0';
+}
+
+/*-----------------------------------------------------------------------*/
 /*
   Initialize GemDOS/PC file system
 */
 void GemDOS_Init(void)
 {
-  // Clear handles structure
+  int i;
+  bInitGemDOS = FALSE;
+
+  /* Clear handles structure */
   Memory_Clear(FileHandles,sizeof(FILE_HANDLE)*MAX_FILE_HANDLES);
+  /* Clear DTAs */
+  for(i=0; i<MAX_DTAS_FILES; i++) {
+    InternalDTAs[i].bUsed = FALSE;
+    InternalDTAs[i].nentries = 0;
+    InternalDTAs[i].found = NULL;
+  }
+  DTAIndex = 0;
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Reset GemDOS file system
 */
@@ -171,24 +353,34 @@ void GemDOS_Reset(void)
 {
   int i;
 
-  // Init file handles table
+  if(emudrives != NULL){
+    strcpy(emudrives[0]->fs_currpath,"");
+  }
+  
+  /* Init file handles table */
   for(i=0; i<MAX_FILE_HANDLES; i++) {
-    // Was file open? If so close it
+    /* Was file open? If so close it */
     if (FileHandles[i].bUsed)
-      close(FileHandles[i].FileHandle);
+      fclose(FileHandles[i].FileHandle);
 
-    FileHandles[i].FileHandle = INVALID_HANDLE_VALUE;
+    FileHandles[i].FileHandle = NULL;
     FileHandles[i].bUsed = FALSE;
   }
 
-  // Reset
+  for(i=0; i<MAX_DTAS_FILES; i++) {
+    InternalDTAs[i].bUsed = FALSE;
+    InternalDTAs[i].nentries = 0;
+    InternalDTAs[i].found = NULL;
+  }
+
+  /* Reset */
   bInitGemDOS = FALSE;
   CurrentDrive = nBootDrive;
   pDTA = NULL;
   DTAIndex = 0;
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
 */
@@ -197,7 +389,7 @@ void GemDOS_MemorySnapShot_Capture(BOOL bSave)
   unsigned int Addr;
   int i;
 
-  // Save/Restore details
+  /* Save/Restore details */
   MemorySnapShot_Store(&DTAIndex,sizeof(DTAIndex));
   MemorySnapShot_Store(&bInitGemDOS,sizeof(bInitGemDOS));
   if (bSave) {
@@ -209,25 +401,18 @@ void GemDOS_MemorySnapShot_Capture(BOOL bSave)
     pDTA = (DTA *)((unsigned int)STRam+(unsigned int)Addr);
   }
   MemorySnapShot_Store(&CurrentDrive,sizeof(CurrentDrive));
-  // Don't save file handles as files may have changed which makes
-  // it impossible to get a valid handle back
+  /* Don't save file handles as files may have changed which makes
+     it impossible to get a valid handle back */
   if (!bSave) {
-    // Clear file handles
+    /* Clear file handles  */
     for(i=0; i<MAX_FILE_HANDLES; i++) {
-      FileHandles[i].FileHandle = INVALID_HANDLE_VALUE;
+      FileHandles[i].FileHandle = NULL;
       FileHandles[i].bUsed = FALSE;
     }
-    // And DTAs
-/*FIXME*/
-/*    for(i=0; i<MAX_DTAS_FILES; i++) {
-      InternalDTAs[i].FileHandle = INVALID_HANDLE_VALUE;
-      memset(&InternalDTAs[i].FindFileData,0x0,sizeof(WIN32_FIND_DATA));
-    }
-*/
   }
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Return free PC file handle table index, or -1 if error
 */
@@ -245,7 +430,7 @@ int GemDOS_FindFreeFileHandle(void)
   return(-1);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Check ST handle is within our table range, return TRUE if not
 */
@@ -262,7 +447,7 @@ BOOL GemDOS_IsInvalidFileHandle(int Handle)
   return(bInvalidHandle);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Find drive letter from a filename, eg C,D... and return as drive ID(C:2, D:3...)
 */
@@ -279,7 +464,7 @@ int GemDOS_FindDriveNumber(char *pszFileName)
   return(CurrentDrive);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Return drive ID(C:2, D:3 etc...) or -1 if not one of our emulation hard-drives
 */
@@ -287,27 +472,58 @@ int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 {
   int DriveLetter;
 
+  /* temporary hack, as Configureparams isn't set up yet. */
+  DriveLetter = GemDOS_FindDriveNumber(pszFileName);
+  if( DriveLetter >= 2 )
+    return(DriveLetter);
+  else
+    return(-1);
+  
   /* Do we even have a hard-drive? */
   if (ConfigureParams.HardDisc.nDriveList!=DRIVELIST_NONE) {
-    // Find drive letter(as number)
+    /* Find drive letter(as number) */
     DriveLetter = GemDOS_FindDriveNumber(pszFileName);
-    // Does match one of our drives?
+    /* Does match one of our drives? */
     if ( (DriveLetter>=2) && (DriveLetter<=DRIVELIST_TO_DRIVE_INDEX(ConfigureParams.HardDisc.nDriveList)) )
       return(DriveLetter);
   }
 
-  // No, let TOS handle it
+  /* No, let TOS handle it */
   return(-1);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Use hard-drive directory, current ST directory and filename to create full path
 */
 void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestName)
 {
   int DirIndex = Misc_LimitInt(Drive-2, 0,ConfigureParams.HardDisc.nDriveList-1);
-//  debug << "::" << pszFileName << endl;
+  int i;
+
+  /* another temporary hack */
+  if(pszFileName[0] == '\0')return; /* check for valid string */
+  /* case full filename "C:\foo\bar" */
+  if(pszFileName[1] == ':') {
+    sprintf(pszDestName, "%s%s", emudrives[0]->hd_emulation_dir, File_RemoveFileNameDrive(pszFileName)); 
+  } 
+  /* Referenced from root:  "\foo\bar" */
+  else if(pszFileName[0] == '\\'){  
+    sprintf(pszDestName, "%s%s", emudrives[0]->hd_emulation_dir, pszFileName); 
+  }
+  /* referenced from current directory */
+  else {
+    sprintf(pszDestName, "%s%s%s", emudrives[0]->hd_emulation_dir, emudrives[0]->fs_currpath, pszFileName);
+  }
+
+  /* convert to front slashes. */
+  i=0;
+  while(pszDestName[i] != '\0'){
+    if(pszDestName[i] == '\\') pszDestName[i] = '/';
+    i++;
+  }
+  return;
+
   /* Combine names */
   if (File_IsRootFileName(pszFileName))
     sprintf(pszDestName,"%s%s",ConfigureParams.HardDisc.szHardDiscDirectories[DirIndex],File_RemoveFileNameDrive(pszFileName));
@@ -317,21 +533,22 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
     else
       sprintf(pszDestName,"%s%s/%s",ConfigureParams.HardDisc.szHardDiscDirectories[DirIndex],File_RemoveFileNameDrive(szCurrentDir),File_RemoveFileNameDrive(pszFileName));
   }
-  // Remove any '/'s at end of filenames
+  /* Remove any trailing slashes at end of filenames */
   File_RemoveFileNameTrailingSlashes(pszDestName);
 
-  // And make all upper case, as original ST
-  strupr(pszDestName);
-//  debug << "\t" << pszDestName << endl;
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Covert from FindFirstFile/FindNextFile attribute to GemDOS format
 */
-char GemDOS_ConvertAttribute(int dwFileAttributes)
+unsigned char GemDOS_ConvertAttribute(mode_t mode)
 {
-  char Attrib=0;
+  unsigned char Attrib=0;
+
+  /* FIXME: More attributes */
+  if(S_ISDIR(mode)) Attrib |= GEMDOS_FILE_ATTRIB_SUBDIRECTORY;
+
 /* FIXME */
 /*
   // Look up attributes
@@ -345,7 +562,7 @@ char GemDOS_ConvertAttribute(int dwFileAttributes)
   return(Attrib);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Cauxin
   Call 0x3
@@ -354,17 +571,17 @@ BOOL GemDOS_Cauxin(unsigned long Params)
 {
   unsigned char Char;
 
-  // Wait here until a character is ready
+  /* Wait here until a character is ready */
   while(!RS232_GetStatus());
 
-  // And read character
+  /* And read character */
   RS232_ReadBytes(&Char,1);
   Regs[REG_D0] = Char;
 
   return(TRUE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Cauxout
   Call 0x4
@@ -373,14 +590,14 @@ BOOL GemDOS_Cauxout(unsigned long Params)
 {
   unsigned char Char;
 
-  // Send character to RS232
+  /* Send character to RS232 */
   Char = STMemory_ReadWord(Params+SIZE_WORD);
   RS232_TransferBytesTo(&Char,1);
 
   return(TRUE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Cprnout
   Call 0x5
@@ -389,88 +606,107 @@ BOOL GemDOS_Cprnout(unsigned long Params)
 {
   unsigned char Char;
 
-  // Send character to printer(or file)
+  /* Send character to printer(or file) */
   Char = STMemory_ReadWord(Params+SIZE_WORD);
   Printer_TransferByteTo(Char);
-  Regs[REG_D0] = -1;                // Printer OK
+  Regs[REG_D0] = -1;                /* Printer OK */
 
   return(TRUE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Set drive (0=A,1=B,2=C etc...)
   Call 0xE
 */
 BOOL GemDOS_SetDrv(unsigned long Params)
 {
-  // Read details from stack for our own use
+  /* Read details from stack for our own use */
   CurrentDrive = STMemory_ReadWord(Params+SIZE_WORD);
-//  debug << "CurrentDrive: " << CurrentDrive << endl;
 
-  // Still re-direct to TOS
+  /* Still re-direct to TOS */
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Cprnos
   Call 0x11
 */
 BOOL GemDOS_Cprnos(unsigned long Params)
 {
-  Regs[REG_D0] = -1;                // Printer OK
+  Regs[REG_D0] = -1;                /* Printer OK */
 
   return(TRUE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Cauxis
   Call 0x12
 */
 BOOL GemDOS_Cauxis(unsigned long Params)
 {
-  // Read our RS232 state
+  /* Read our RS232 state */
   if (RS232_GetStatus())
-    Regs[REG_D0] = -1;              // Chars waiting
+    Regs[REG_D0] = -1;              /* Chars waiting */
   else
     Regs[REG_D0] = 0;
 
   return(TRUE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Cauxos
   Call 0x13
 */
 BOOL GemDOS_Cauxos(unsigned long Params)
 {
-  Regs[REG_D0] = -1;                // Device ready
+  Regs[REG_D0] = -1;                /* Device ready */
 
   return(TRUE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Set Disc Transfer Address (DTA)
   Call 0x1A
 */
 BOOL GemDOS_SetDTA(unsigned long Params)
 {
-  // Look up on stack to find where DTA is! Store as PC pointer
+  /* Look up on stack to find where DTA is! Store as PC pointer */
   pDTA = (DTA *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
-  
-//  char szString[256];
-//  sprintf(szString,"0x%X",STMemory_ReadLong(Params+SIZE_WORD));
-//  debug << " to " << szString << endl;
 
-  // Still re-direct to TOS
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
+/*
+  GEMDOS Dfree Free disc space.
+  Call 0x39
+*/
+BOOL GemDOS_DFree(unsigned long Params)
+{
+  int Drive;
+  unsigned long Address;
+
+  Address = (unsigned long)STMemory_ReadLong(Params+SIZE_WORD);
+  Drive = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
+  /* is it our drive? */
+  if((Drive == 0 && CurrentDrive >= 2) || Drive >= 3){
+    /* FIXME: Report actual free drive space */
+    
+    STMemory_WriteLong(Address,  10*2048);           /* free clusters (mock 10 Mb) */
+    STMemory_WriteLong(Address+SIZE_LONG, 50*2048 ); /* total clusters (mock 50 Mb) */
+
+    STMemory_WriteLong(Address+SIZE_LONG*2, 512 );   /* bytes per sector */
+    STMemory_WriteLong(Address+SIZE_LONG*3, 1 );     /* sectors per cluster */
+    return (TRUE); 
+  } else return(FALSE); /* redirect to TOS */
+}
+
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS MkDir
   Call 0x39
@@ -481,27 +717,27 @@ BOOL GemDOS_MkDir(unsigned long Params)
   char *pDirName;
   int Drive;
 
-  // Find directory to make
+  /* Find directory to make */
   pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
-//  debug << pDirName << endl;
+
   Drive = GemDOS_IsFileNameAHardDrive(pDirName);
-//  debug << Drive << endl;
+
   if (ISHARDDRIVE(Drive)) {
-    // Copy old directory, as if calls fails keep this one
+    /* Copy old directory, as if calls fails keep this one */
     GemDOS_CreateHardDriveFileName(Drive,pDirName,szDirPath);
 
-    // Attempt to make directory
+    /* Attempt to make directory */
     if ( mkdir(szDirPath, 0755)==0 )
       Regs[REG_D0] = GEMDOS_EOK;
     else
-      Regs[REG_D0] = GEMDOS_EACCDN;        // Access denied
+      Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
 
     return(TRUE);
   }
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS RmDir
   Call 0x3A
@@ -512,25 +748,25 @@ BOOL GemDOS_RmDir(unsigned long Params)
   char *pDirName;
   int Drive;
 
-  // Find directory to make
+  /* Find directory to make */
   pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
   Drive = GemDOS_IsFileNameAHardDrive(pDirName);
   if (ISHARDDRIVE(Drive)) {
-    // Copy old directory, as if calls fails keep this one
+    /* Copy old directory, as if calls fails keep this one */
     GemDOS_CreateHardDriveFileName(Drive,pDirName,szDirPath);
 
-    // Attempt to make directory
+    /* Attempt to make directory */
     if ( rmdir(szDirPath)==0 )
       Regs[REG_D0] = GEMDOS_EOK;
     else
-      Regs[REG_D0] = GEMDOS_EACCDN;        // Access denied
+      Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
 
     return(TRUE);
   }
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS ChDir
   Call 0x3B
@@ -540,29 +776,27 @@ BOOL GemDOS_ChDir(unsigned long Params)
   char szDirPath[MAX_PATH];
   char *pDirName;
   int Drive;
+  int n;
 
-  // Find new directory
+  /* Find new directory */
   pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
-//  debug << pDirName << endl;
+
   Drive = GemDOS_IsFileNameAHardDrive(pDirName);
   if (ISHARDDRIVE(Drive)) {
-    // Check path exists, else error
-    GemDOS_CreateHardDriveFileName(Drive,"",szDirPath);
+    /* FIXME: Check path exists, else error (GEMDOS_EPTHNF) */
+    /*        GemDOS_CreateHardDriveFileName(Drive,"",szDirPath); */
+    sprintf(szDirPath, "%s%s", emudrives[0]->hd_emulation_dir, pDirName);
 
-    if ( chdir(szDirPath)==0 ) {
-      strcpy(szCurrentDir,pDirName);
-      Regs[REG_D0] = GEMDOS_EOK;
-    }
-    else
-      Regs[REG_D0] = GEMDOS_EPTHNF;        // Path not found
-
+    for(n=0;n<MAX_PATH;n++) if(szDirPath[n] == '\\')szDirPath[n] = '/';
+    strcpy(emudrives[0]->fs_currpath, pDirName); 
+    Regs[REG_D0] = GEMDOS_EOK;
     return(TRUE);
   }
-
+    
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Create file
   Call 0x3C
@@ -571,50 +805,44 @@ BOOL GemDOS_Create(unsigned long Params)
 {
   char szActualFileName[MAX_PATH];
   char *pszFileName;
+  char *rwflags[] = { "w+", /* read / write (truncate if exists) */
+		      "wb"  /* write only */
+  }; 
   unsigned int Access;
   int Drive,Index,Mode;
 
-  // Find filename
+  /* Find filename */
   pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
   Mode = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
   Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
   if (ISHARDDRIVE(Drive)) {
-    // And convert to hard drive filename
+    /* And convert to hard drive filename */
     GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
 
-    // Find slot to store file handle, as need to return WORD handle for ST (NOTE PC's Window handles are all LONGS)
+    /* Find slot to store file handle, as need to return WORD handle for ST */
     Index = GemDOS_FindFreeFileHandle();
     if (Index==-1) {
-      // No free handles, return error code
-      Regs[REG_D0] = GEMDOS_ENHNDL;       // No more handles
+      /* No free handles, return error code */
+      Regs[REG_D0] = GEMDOS_ENHNDL;       /* No more handles */
       return(TRUE);
     }
     else {
 #ifdef ENABLE_SAVING
-      // Select mode
-      switch(Mode&0x01) {                 // Top bits used in some TOSes
-        case 0:                           // Read/Write
-//FIXME          Access = GENERIC_READ|GENERIC_WRITE;
-          break;
-        case 1:                           // Write only
-//FIXME          Access = GENERIC_WRITE;
-          break;
-      }
 
-//FIXME      FileHandles[Index].FileHandle = CreateFile(szActualFileName,Access,0,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL);
-      if (FileHandles[Index].FileHandle!=INVALID_HANDLE_VALUE) {
+      FileHandles[Index].FileHandle = fopen(szActualFileName, rwflags[Mode&0x01]);
+
+      if (FileHandles[Index].FileHandle != NULL) {
         /* Tag handle table entry as used and return handle */
         FileHandles[Index].bUsed = TRUE;
-        Regs[REG_D0] = Index+BASE_FILEHANDLE;  // Return valid ST file handle from range 6 to 45! (ours start from 0)
-
+        Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
         return(TRUE);
       }
       else {
-        Regs[REG_D0] = GEMDOS_EFILNF;     // File not found
+        Regs[REG_D0] = GEMDOS_EFILNF;     /* File not found */
         return(TRUE);
       }
 #else
-      Regs[REG_D0] = GEMDOS_EFILNF;       // File not found
+      Regs[REG_D0] = GEMDOS_EFILNF;       /* File not found */
       return(TRUE);
 #endif
     }
@@ -623,7 +851,7 @@ BOOL GemDOS_Create(unsigned long Params)
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Open file
   Call 0x3D
@@ -633,58 +861,44 @@ BOOL GemDOS_Open(unsigned long Params)
   char szActualFileName[MAX_PATH];
   char *pszFileName;
   unsigned int Access;
+  char *open_modes[] = { "rb", "wb", "r+" };  /* convert atari modes to stdio modes */
   int Drive,Index,Mode;
 
-  // Find filename
+  /* Find filename */
   pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
   Mode = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
   Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
-//  Debug_File("Open %s\n",pszFileName);
+  
   if (ISHARDDRIVE(Drive)) {
-    // And convert to hard drive filename
+    /* And convert to hard drive filename */
     GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
-
-    // Find slot to store file handle, as need to return WORD handle for ST (NOTE PC's Window handles are all LONGS)
+    /* Find slot to store file handle, as need to return WORD handle for ST  */
     Index = GemDOS_FindFreeFileHandle();
-    if (Index==-1) {
-      // No free handles, return error code
-      Regs[REG_D0] = GEMDOS_ENHNDL;       // No more handles
+    if (Index == -1) {
+      /* No free handles, return error code */
+      Regs[REG_D0] = GEMDOS_ENHNDL;       /* No more handles */
       return(TRUE);
     }
-    else {
-      // Select mode
-      switch(Mode&0x03) {                 // Top bits used in some TOSes
-        case 0:                           // Read only
-//FIXME          Access = GENERIC_READ;
-          break;
-        case 1:                           // Write only
-//FIXME          Access = GENERIC_WRITE;
-          break;
-        case 2:                           // Read/Write
-//FIXME          Access = GENERIC_READ|GENERIC_WRITE;
-          break;
-      }
 
-      // Open file
-//FIXME      FileHandles[Index].FileHandle = CreateFile(szActualFileName,Access,0,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
-      if (FileHandles[Index].FileHandle!=INVALID_HANDLE_VALUE) {
-        // Tag handle table entry as used and return handle
-        FileHandles[Index].bUsed = TRUE;
-        Regs[REG_D0] = Index+BASE_FILEHANDLE;  // Return valid ST file handle from range 6 to 45! (ours start from 0)
+    /* Open file */
+    FileHandles[Index].FileHandle =  fopen(szActualFileName, open_modes[Mode&0x03]);
 
-        return(TRUE);
-      }
-      else {
-        Regs[REG_D0] = GEMDOS_EFILNF;     // File not found
-        return(TRUE);
-      }
+    sprintf(FileHandles[Index].szActualName,"%s",szActualFileName);    
+
+    if (FileHandles[Index].FileHandle != NULL) {
+      /* Tag handle table entry as used and return handle */
+      FileHandles[Index].bUsed = TRUE;
+      Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
+      return(TRUE);
     }
+    Regs[REG_D0] = GEMDOS_EFILNF;     /* File not found/ error opening */
+    return(TRUE);
   }
-
+    
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Close file
   Call 0x3E  
@@ -693,25 +907,25 @@ BOOL GemDOS_Close(unsigned long Params)
 {
   int Handle;
 
-  // Find our handle - may belong to TOS
+  /* Find our handle - may belong to TOS */
   Handle = STMemory_ReadWord(Params+SIZE_WORD)-BASE_FILEHANDLE;
 
-  // Check handle was valid
+  /* Check handle was valid */
   if (GemDOS_IsInvalidFileHandle(Handle)) {
-    // No assume was TOS
+    /* No assume was TOS */
     return(FALSE);
   }
   else {
-    // Close file and free up handle table
-    close(FileHandles[Handle].FileHandle);
+    /* Close file and free up handle table */
+    fclose(FileHandles[Handle].FileHandle);
     FileHandles[Handle].bUsed = FALSE;
-    // Return no error
+    /* Return no error */
     Regs[REG_D0] = GEMDOS_EOK;
     return(TRUE);
   }
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Read file
   Call 0x3F
@@ -722,41 +936,41 @@ BOOL GemDOS_Read(unsigned long Params)
   unsigned long nBytesRead,Size,CurrentPos,FileSize,nBytesLeft;
   int Handle;
 
-  // Read details from stack
+  /* Read details from stack */
   Handle = STMemory_ReadWord(Params+SIZE_WORD)-BASE_FILEHANDLE;
   Size = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
   pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG));
 
-  // Check handle was valid
+  /* Check handle was valid */
   if (GemDOS_IsInvalidFileHandle(Handle)) {
-    // No assume was TOS
+    /* No -  assume was TOS */
     return(FALSE);
   }
   else {
-    StatusBar_SetIcon(STATUS_ICON_HARDDRIVE,ICONSTATE_UPDATE);
 
-    // To quick check to see where our file pointer is and how large the file is
-    CurrentPos = lseek(FileHandles[Handle].FileHandle, 0, SEEK_CUR);
-    FileSize = lseek(FileHandles[Handle].FileHandle, 0, SEEK_END);
-    lseek(FileHandles[Handle].FileHandle, CurrentPos, SEEK_SET);
+    /* To quick check to see where our file pointer is and how large the file is */
+    CurrentPos = ftell(FileHandles[Handle].FileHandle);
+    fseek(FileHandles[Handle].FileHandle, 0, SEEK_END);
+    FileSize = ftell(FileHandles[Handle].FileHandle);
+    fseek(FileHandles[Handle].FileHandle, CurrentPos, SEEK_SET);
 
     nBytesLeft = FileSize-CurrentPos;
 
-    // Check for End Of File
-    if (nBytesLeft<0) {
+    /* Check for End Of File */
+    // if (nBytesLeft<0) {
+    if(0){ 
       Regs[REG_D0] = GEMDOS_ERROR;
 
       return(TRUE);
     }
     else {
-      // Limit to size of file to prevent windows error
+      /* Limit to size of file to prevent windows error */
       if (Size>FileSize)
         Size = FileSize;
-      // And read data in
-      nBytesRead = read(FileHandles[Handle].FileHandle, pBuffer, Size);
-//???      FlushFileBuffers(FileHandles[Handle].FileHandle);
+      /* And read data in */
+      nBytesRead = fread(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
 
-      // Return number of bytes read
+      /* Return number of bytes read */
       Regs[REG_D0] = nBytesRead;
 
       return(TRUE);
@@ -764,7 +978,7 @@ BOOL GemDOS_Read(unsigned long Params)
   }
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Write file
   Call 0x40
@@ -776,27 +990,25 @@ BOOL GemDOS_Write(unsigned long Params)
   int Handle;
 
 #ifdef ENABLE_SAVING
-  // Read details from stack
+  /* Read details from stack */
   Handle = STMemory_ReadWord(Params+SIZE_WORD)-BASE_FILEHANDLE;
   Size = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
   pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG));
 
-  // Check handle was valid
+  /* Check handle was valid */
   if (GemDOS_IsInvalidFileHandle(Handle)) {
-    // No assume was TOS
+    /* No assume was TOS */
     return(FALSE);
   }
   else {
-    StatusBar_SetIcon(STATUS_ICON_HARDDRIVE,ICONSTATE_UPDATE);
 
-    nBytesWritten = write(FileHandles[Handle].FileHandle, pBuffer, Size);
+    nBytesWritten = fwrite(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
     if (nBytesWritten>=0) {
-//???      FlushFileBuffers(FileHandles[Handle].FileHandle);
 
-      Regs[REG_D0] = nBytesWritten;      // OK
+      Regs[REG_D0] = nBytesWritten;      /* OK */
     }
     else
-      Regs[REG_D0] = GEMDOS_EACCDN;      // Access denied(ie read-only)
+      Regs[REG_D0] = GEMDOS_EACCDN;      /* Access denied(ie read-only) */
 
     return(TRUE);
   }
@@ -805,7 +1017,7 @@ BOOL GemDOS_Write(unsigned long Params)
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS UnLink(Delete) file
   Call 0x41
@@ -817,18 +1029,18 @@ BOOL GemDOS_UnLink(unsigned long Params)
   char *pszFileName;
   int Drive;
 
-  // Find filename
+  /* Find filename */
   pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
   Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
   if (ISHARDDRIVE(Drive)) {
-    // And convert to hard drive filename
+    /* And convert to hard drive filename */
     GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
 
-    // Now delete file??
+    /* Now delete file?? */
     if ( unlink(szActualFileName)==0 )
-      Regs[REG_D0] = GEMDOS_EOK;          // OK
+      Regs[REG_D0] = GEMDOS_EOK;          /* OK */
     else
-      Regs[REG_D0] = GEMDOS_EFILNF;       // File not found
+      Regs[REG_D0] = GEMDOS_EFILNF;       /* File not found */
 
     return(TRUE);
   }
@@ -837,7 +1049,7 @@ BOOL GemDOS_UnLink(unsigned long Params)
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS File seek
   Call 0x42
@@ -847,84 +1059,106 @@ BOOL GemDOS_LSeek(unsigned long Params)
   long Offset;
   int Handle,Mode;
 
-  // Read details from stack
+  /* Read details from stack */
   Offset = (long)STMemory_ReadLong(Params+SIZE_WORD);
   Handle = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG)-BASE_FILEHANDLE;
   Mode = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 
-  // Check handle was valid
+  /* Check handle was valid */
   if (GemDOS_IsInvalidFileHandle(Handle)) {
-    // No assume was TOS
+    /* No assume was TOS */
     return(FALSE);
   }
   else {
-    // Return offset from start of file
-    Regs[REG_D0] = lseek(FileHandles[Handle].FileHandle, Offset, Mode);
+    /* Return offset from start of file */
+    fseek(FileHandles[Handle].FileHandle, Offset, Mode);
+    Regs[REG_D0] = ftell(FileHandles[Handle].FileHandle);
     return(TRUE);
   }
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
+/*
+  GEMDOS Get Directory
+  Call 0x47
+*/
+int GemDOS_GetDir(unsigned long Params){
+  unsigned long Address;
+  unsigned short Drive;
+  int i;
+
+  Address = (long)STMemory_ReadLong(Params+SIZE_WORD);
+  Drive = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
+  /* is it our drive? */
+  if((Drive == 0 && CurrentDrive >= 2) || Drive >= 3){
+    STMemory_WriteByte(Address, '\0' );
+    Regs[REG_D0] = GEMDOS_EOK;          /* OK */    
+    return(TRUE);
+  } else return(FALSE);
+}
+
+/*-----------------------------------------------------------------------*/
 /*
   PExec Load And Go - Redirect to cart' routine at address 0xFA1000
 
   If loading from hard-drive(ie drive ID 2 or more) set condition codes to run own GEMDos routines
 */
-void GemDOS_Pexec_LoadAndGo(unsigned long Params)
+int GemDOS_Pexec_LoadAndGo(unsigned long Params)
 {
-  // Hard-drive?
-  if (CurrentDrive>=2)                // If not using A: or B:, use my own routines to load
-    SR = (SR&0xff00) | SR_OVERFLOW;
+  /* FIXME: will generate problems with ramdiscs/ lowlevel emulated HDs */
+  /* Hard-drive? */
+  if (CurrentDrive>=2){                /* If not using A: or B:, use my own routines to load */
+     return(CALL_PEXEC_ROUTINE); 
+  }
+  else return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   PExec Load But Don't Go - Redirect to cart' routine at address 0xFA1000
 */
-void GemDOS_Pexec_LoadDontGo(unsigned long Params)
+int GemDOS_Pexec_LoadDontGo(unsigned long Params)
 {
-  // Hard-drive?
-  if (CurrentDrive>=2)
-    SR = (SR&0xff00) | SR_OVERFLOW;
+  /* Hard-drive? */
+  if (CurrentDrive>=2){
+     return(CALL_PEXEC_ROUTINE); 
+  } else return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS PExec handler
   Call 0x4B
 */
-BOOL GemDOS_Pexec(unsigned long Params)
+int GemDOS_Pexec(unsigned long Params)
 {
   unsigned short int Mode;
 
-  // Find PExec mode
+  /* Find PExec mode */
   Mode = STMemory_ReadWord(Params+SIZE_WORD);
-//  Debug_File("Pexec %d (Drv:%d)\n",Mode,CurrentDrive);
 
-  // Re-direct as needed
+  /* Re-direct as needed */
   switch(Mode) {
-    case 0:      // Load and go
-      GemDOS_Pexec_LoadAndGo(Params);
-      return(FALSE);
-    case 3:      // Load, don't go
-      GemDOS_Pexec_LoadDontGo(Params);
-      return(FALSE);
-    case 4:      // Just go
-      return(FALSE);
-    case 5:      // Create basepage
-      return(FALSE);
-    case 6:
-      return(FALSE);
+  case 0:      /* Load and go */
+    return(GemDOS_Pexec_LoadAndGo(Params));
+  case 3:      /* Load, don't go */
+    return(GemDOS_Pexec_LoadDontGo(Params));
+  case 4:      /* Just go */
+    return(FALSE);
+  case 5:      /* Create basepage */
+    return(FALSE);
+  case 6:
+    return(FALSE);
 
-    default:
-      return(FALSE);
+  default:
+    return(FALSE);
   }
 
-  // Still re-direct to TOS
+  /* Still re-direct to TOS */
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Find first file
   Call 0x4E
@@ -933,83 +1167,95 @@ BOOL GemDOS_SFirst(unsigned long Params)
 {
   int FatDate, FatTime;
   char szActualFileName[MAX_PATH];
+  char tempstr[MAX_PATH];
   char *pszFileName;
+  struct dirent **files;
   unsigned short int Attr;
   int Drive;
+  DIR *fsdir;
+  int i,j,k;
 
-  // Find filename to search for
+  /* Find filename to search for */
   pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
   Attr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
-//  debug << "SFirst: " << pszFileName << endl;
-//  M68000_OutputHistory();
 
   Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
   if (ISHARDDRIVE(Drive)) {
-    StatusBar_SetIcon(STATUS_ICON_HARDDRIVE,ICONSTATE_UPDATE);
 
-    // And convert to hard drive filename
+    /* And convert to hard drive filename */
     GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
-
-    // Populate DTA, set index for our use
+        
+    /* Populate DTA, set index for our use */
     STMemory_WriteWord_PCSpace(pDTA->index,DTAIndex);
-    STMemory_WriteLong_PCSpace(pDTA->magic,DTA_MAGIC_NUMBER);
-    strcpy(pDTA->dta_pat,"");
-    pDTA->dta_sattrib = 0;
-    pDTA->dta_attrib = 0;
+    STMemory_WriteLong_PCSpace(pDTA->magic,DTA_MAGIC_NUMBER); /* set our dta magic num */
 
-    // Were we looking for the volume label? Read directly from drive
+    if(InternalDTAs[DTAIndex].bUsed == TRUE) ClearInternalDTA();    
+    InternalDTAs[DTAIndex].bUsed = TRUE;
+
+    /* Were we looking for the volume label? */
     if (Attr&GEMDOS_FILE_ATTRIB_VOLUME_LABEL) {
-      // Default and find drive from filename
-      strcpy(pDTA->dta_name,"");
-      File_GetFileNameDrive(pszFileName);
-//FIXME      if (GetVolumeInformation(pszFileName,pDTA->dta_name,TOS_NAMELEN,NULL,NULL,NULL,NULL,0))
-//        strupr(pDTA->dta_name);
-      Regs[REG_D0] = GEMDOS_EOK;          // Got volume
+      /* Volume name */
+      strcpy(pDTA->dta_name,"EMULATED.001");
+      Regs[REG_D0] = GEMDOS_EOK;          /* Got volume */
       return(TRUE);
     }
+    
+    /* open directory */
+    fsfirst_dirname(szActualFileName, InternalDTAs[DTAIndex].path);
 
-    // Scan for first file
-/* FIXME */
-/*
-    InternalDTAs[DTAIndex].FileHandle = FindFirstFile(szActualFileName,&InternalDTAs[DTAIndex].FindFileData);
-    if (InternalDTAs[DTAIndex].FileHandle==INVALID_HANDLE_VALUE) {
-      // No files of that match, return error code
-      Regs[REG_D0] = GEMDOS_EFILNF;        // File not found
+    fsdir = opendir(InternalDTAs[DTAIndex].path);
+    
+    if( fsdir == NULL ){
+      Regs[REG_D0] = GEMDOS_EPTHNF;        /* Path not found */
       return(TRUE);
     }
-    else {
-      // Repeat find until have useable filename! The PC returns '.' and '..' - ignore '.'!
-      while( !stricmp(InternalDTAs[DTAIndex].FindFileData.cFileName,".") ) {
-        if (FindNextFile(InternalDTAs[DTAIndex].FileHandle,&InternalDTAs[DTAIndex].FindFileData)==0) {
-          // If this is all there is, then error
-          Regs[REG_D0] = GEMDOS_ENMFIL;    // No more files
-          return(TRUE);
-        }
+    /* close directory */
+    closedir( fsdir );
+    
+    InternalDTAs[DTAIndex].nentries = scandir(InternalDTAs[DTAIndex].path, &files, 0, alphasort); 
+    if( InternalDTAs[DTAIndex].nentries < 0 ){
+      Regs[REG_D0] = GEMDOS_EFILNF;        /* File (directory actually) not found */
+      return(TRUE);
+    }
+    
+    InternalDTAs[DTAIndex].centry = 0;        /* current entry is 0 */
+    fsfirst_dirmask(szActualFileName, tempstr); /* get directory mask */
+
+    /* Create and populate a list of matching files. */
+    j = 0;                     /* count number of entries matching mask */
+
+    for(i=0;i<InternalDTAs[DTAIndex].nentries;i++)
+      if(match(tempstr, files[i]->d_name)) j++;
+    
+    InternalDTAs[DTAIndex].found = (struct dirent **)malloc(sizeof(struct dirent *) * j);
+    
+    /* copy the dirent pointers for files matching the mask to our list */
+    k = 0;
+    for(i=0;i<InternalDTAs[DTAIndex].nentries;i++)
+      if(match(tempstr, files[i]->d_name)){
+	InternalDTAs[DTAIndex].found[k] = files[i];
+	k++;
       }
+    InternalDTAs[DTAIndex].nentries = j; /* set number of legal entries */
 
-      // And make all upper case, as original ST
-      strupr(InternalDTAs[DTAIndex].FindFileData.cFileName);
-      strcpy(pDTA->dta_name,InternalDTAs[DTAIndex].FindFileData.cFileName);
-
-      // Fill remaining details, as PC
-//FIXME      STMemory_WriteLong_PCSpace(pDTA->dta_size,InternalDTAs[DTAIndex].FindFileData.nFileSizeLow);
-//FIXME      Misc_TimeDataToDos(&InternalDTAs[DTAIndex].FindFileData.ftLastWriteTime,&FatDate,&FatTime);
-      STMemory_WriteWord_PCSpace(pDTA->dta_time,FatTime);
-      STMemory_WriteWord_PCSpace(pDTA->dta_date,FatDate);
-//FIXME      pDTA->dta_attrib = GemDOS_ConvertAttribute(InternalDTAs[DTAIndex].FindFileData.dwFileAttributes);
-
-      Regs[REG_D0] = GEMDOS_EOK;
-
-      DTAIndex++;
-      DTAIndex&=(MAX_DTAS_FILES-1);
+    if(InternalDTAs[DTAIndex].nentries == 0){
+      /* No files of that match, return error code */
+      Regs[REG_D0] = GEMDOS_EFILNF;        /* File not found */
+      return(TRUE);
     }
+
+    /* Scan for first file (SNext uses no parameters) */
+    GemDOS_SNext(NULL);
+    /* increment DTA index */
+    DTAIndex++;
+    DTAIndex&=(MAX_DTAS_FILES-1);
+
     return(TRUE);
-*/
   }
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Search Next
   Call 0x4F
@@ -1017,41 +1263,34 @@ BOOL GemDOS_SFirst(unsigned long Params)
 BOOL GemDOS_SNext(unsigned long Params)
 {
   int FatDate, FatTime;
-  int DTAIndex;
+  struct dirent **temp;
+  int Index;
 
-  // Was DTA ours or TOS?
+  /* Was DTA ours or TOS? */
   if (STMemory_ReadLong_PCSpace(pDTA->magic)==DTA_MAGIC_NUMBER) {
-    StatusBar_SetIcon(STATUS_ICON_HARDDRIVE,ICONSTATE_UPDATE);
 
-    // Find index into our list of structures
-    DTAIndex = STMemory_ReadWord_PCSpace(pDTA->index)&(MAX_DTAS_FILES-1);
-/*FIXME
-    if (FindNextFile(InternalDTAs[DTAIndex].FileHandle,&InternalDTAs[DTAIndex].FindFileData)==0) {
-      Regs[REG_D0] = GEMDOS_ENMFIL;        // No more files
+    /* Find index into our list of structures */
+    Index = STMemory_ReadWord_PCSpace(pDTA->index)&(MAX_DTAS_FILES-1);
+
+    if(InternalDTAs[Index].centry >= InternalDTAs[Index].nentries){ 
+      Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
       return(TRUE);
     }
-    // Find next file on hard drive
-    else {
-      // And make all upper case, as original ST
-      strupr(InternalDTAs[DTAIndex].FindFileData.cFileName);
-      strcpy(pDTA->dta_name,InternalDTAs[DTAIndex].FindFileData.cFileName);
-      // Fill remaining details, as PC
-      STMemory_WriteLong_PCSpace(pDTA->dta_size,InternalDTAs[DTAIndex].FindFileData.nFileSizeLow);
-      Misc_TimeDataToDos(&InternalDTAs[DTAIndex].FindFileData.ftLastWriteTime,&FatDate,&FatTime);
-      STMemory_WriteWord_PCSpace(pDTA->dta_time,FatTime);
-      STMemory_WriteWord_PCSpace(pDTA->dta_date,FatDate);
-      pDTA->dta_attrib = GemDOS_ConvertAttribute(InternalDTAs[DTAIndex].FindFileData.dwFileAttributes);
-  
-      Regs[REG_D0] = GEMDOS_EOK;
+
+    temp = InternalDTAs[Index].found;
+    if(PopulateDTA(InternalDTAs[Index].path, temp[InternalDTAs[Index].centry++]) == FALSE){
+      fprintf(stderr,"\tError setting DTA.\n");
       return(TRUE);
     }
-*/
+    
+    Regs[REG_D0] = GEMDOS_EOK;
+    return(TRUE);
   }
 
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS Rename
   Call 0x56
@@ -1062,104 +1301,65 @@ BOOL GemDOS_Rename(unsigned long Params)
   char szNewActualFileName[MAX_PATH],szOldActualFileName[MAX_PATH];
   int NewDrive, OldDrive;
 
-  // Read details from stack
+  /* Read details from stack */
   pszOldFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD));
   pszNewFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG));
 
   NewDrive = GemDOS_IsFileNameAHardDrive(pszNewFileName);
   OldDrive = GemDOS_IsFileNameAHardDrive(pszOldFileName);
   if (ISHARDDRIVE(NewDrive) && ISHARDDRIVE(OldDrive)) {
-    // And convert to hard drive filenames
+    /* And convert to hard drive filenames */
     GemDOS_CreateHardDriveFileName(NewDrive,pszNewFileName,szNewActualFileName);
     GemDOS_CreateHardDriveFileName(OldDrive,pszOldFileName,szOldActualFileName);
 
-    // Rename files
+    /* Rename files */
     if ( rename(szOldActualFileName,szNewActualFileName)==0 )
       Regs[REG_D0] = GEMDOS_EOK;
     else
-      Regs[REG_D0] = GEMDOS_EACCDN;        // Access denied
+      Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
     return(TRUE);
   }
 
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   GEMDOS GSDToF
   Call 0x57
 */
 BOOL GemDOS_GSDToF(unsigned long Params)
 {
-/*FIXME*/
-/*
-  BY_HANDLE_FILE_INFORMATION FileInfo;
-  WORD FatDate,FatTime;
   DATETIME DateTime;
-  char *pBuffer;
+  unsigned long pBuffer;
   int Handle,Flag;
 
-  // Read details from stack
-  pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
+  /* Read details from stack */
+  pBuffer = STMemory_ReadLong(Params+SIZE_WORD);
   Handle = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG)-BASE_FILEHANDLE;
   Flag = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG);
 
-  // Check handle was valid
+  /* Check handle was valid */
   if (GemDOS_IsInvalidFileHandle(Handle)) {
-    // No assume was TOS
+    /* No assume was TOS */
     return(FALSE);
   }
-  else {
-    Regs[REG_D0] = GEMDOS_ERROR;  // Invalid parameter
 
-    if (Flag==0) {    // Read time
-      if (GetFileInformationByHandle(FileHandles[Handle].FileHandle,&FileInfo)) {
-        if (FileTimeToDosDateTime(&FileInfo.ftCreationTime,&FatDate,&FatTime)) {
-          DateTime.hour = FatTime>>11;
-          DateTime.minute = FatTime>>5;
-          DateTime.second = FatTime;
-          DateTime.year = FatDate>>9;
-          DateTime.month = FatDate>>5;
-          DateTime.day = FatDate;
-
-          Regs[REG_D0] = GEMDOS_EOK;
-        }
-      }
-    }
-    else if (Flag==1) {
-      Regs[REG_D0] = GEMDOS_EOK;
-    }
-    
-     return(TRUE);
+  /* Set time/date stamp? Do nothing. */
+  if( Flag == 1 ){
+    Regs[REG_D0] = GEMDOS_EOK;
+    return (TRUE);
   }
-*/
-  return(FALSE);
-}
+  
+  Regs[REG_D0] = GEMDOS_ERROR;  /* Invalid parameter */
 
-//-----------------------------------------------------------------------
-/*
-  This is called when we get a GemDOS exception. We then re-direct vector to our
-  own routine. This forces execution through TOS which sets up the stack etc... and
-  then calls our own routine in the cart' space which has the illegal instruction
-  'GEMDOS_OPCODE'.
-*/
-BOOL GemDOS(void)
-{
-  unsigned long OldGemDOSVector;
-
-  // Init Gemdos if not already
-  if (!bInitGemDOS) {
-    OldGemDOSVector = STMemory_ReadLong(0x84);
-    STMemory_WriteLong(CART_OLDGEMDOS,OldGemDOSVector);  // Store original gemdos handler
-    STMemory_WriteLong(0x84,CART_GEMDOS);                // And redirect to new one (see cart.s)
-
-    bInitGemDOS = TRUE;
+  if (GetFileInformation(FileHandles[Handle].szActualName, &DateTime) == TRUE){
+    STMemory_WriteWord(pBuffer, DateTime.word1);
+    STMemory_WriteWord(pBuffer+2, DateTime.word2);
+    Regs[REG_D0] = GEMDOS_EOK;  
   }
-
-  // Now execute as normal, we may intercept it again later (see cart.s)
-  return(FALSE);
+  return (TRUE);
 }
-
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -1174,141 +1374,173 @@ void GemDOS_OpCode(void)
 {
   unsigned short int GemDOSCall,CallingSReg;
   unsigned long Params;
+  short RunOld;
 
-  /* Read SReg from stack to see if parameters are on User or Super stack (We enter here ALWAYS in super mode) */
+
+  /* Read SReg from stack to see if parameters are on User or Super stack  */
+  MakeSR();  /* update value of SR */
   CallingSReg = STMemory_ReadWord(Regs[REG_A7]);
   if ((CallingSReg&SR_SUPERMODE)==0)      /* Calling from user mode */
-    Params = Regs[REG_A8];
-  else              /* Calling from super mode */
-    Params = Regs[REG_A7]+SIZE_WORD+SIZE_LONG;
+    Params = regs.usp;
+  else
+    Params = Regs[REG_A7]+SIZE_WORD+SIZE_LONG;  /* super stack */
 
   /* Default to run TOS GemDos (SR_NEG run Gemdos, SR_ZERO already done, SR_OVERFLOW run own 'Pexec' */
+  RunOld = TRUE;
   SR &= SR_CLEAR_OVERFLOW;
   SR &= SR_CLEAR_ZERO;
   SR |= SR_NEG;
 
   /* Find pointer to call parameters */
   GemDOSCall = STMemory_ReadWord(Params);
-#ifdef DEBUG_TO_FILE
-  Debug_File("GemDOS 0x%X (%s)\n",GemDOSCall,pszGemDOSNames[GemDOSCall]);
+
+#ifdef GEMDOS_VERBOSE
+  if(GemDOSCall <= 0x57)
+    fprintf(stderr, "GemDOS 0x%X (%s)\n",GemDOSCall,pszGemDOSNames[GemDOSCall]); 
 #endif
 
   /* Intercept call */
   switch(GemDOSCall) {
-    case 0x3:
-      if (GemDOS_Cauxin(Params))
-        SR |= SR_ZERO;
-      break;
-    case 0x4:
-      if (GemDOS_Cauxout(Params))
-        SR |= SR_ZERO;
-      break;
-    case 0x5:
-      if (GemDOS_Cprnout(Params))
-        SR |= SR_ZERO;
-      break;
-    case 0xe:
-      if (GemDOS_SetDrv(Params))
-        SR |= SR_ZERO;
-      break;      
-    case 0x11:
-      if (GemDOS_Cprnos(Params))
-        SR |= SR_ZERO;
-      break;
-    case 0x12:
-      if (GemDOS_Cauxis(Params))
-        SR |= SR_ZERO;
-      break;
-    case 0x13:
-      if (GemDOS_Cauxos(Params))
-        SR |= SR_ZERO;
-      break;
+/*    case 0x3: */
+/*      if (GemDOS_Cauxin(Params)) */
+/*        RunOld = FALSE; */
+/*      break; */
+/*    case 0x4: */
+/*      if (GemDOS_Cauxout(Params)) */
+/*        RunOld = FALSE; */
+/*      break; */
+/*    case 0x5: */
+/*      if (GemDOS_Cprnout(Params)) */
+/*        RunOld = FALSE; */
+/*      break; */
+  case 0xe:
+    if (GemDOS_SetDrv(Params))
+      RunOld = FALSE;
+    break;      
+/*    case 0x11: */
+/*        if (GemDOS_Cprnos(Params)) */
+/*          RunOld = FALSE; */
+/*        break; */
+/*      case 0x12: */
+/*        if (GemDOS_Cauxis(Params)) */
+/*          RunOld = FALSE; */
+/*        break; */
+/*      case 0x13: */
+/*        if (GemDOS_Cauxos(Params)) */
+/*          RunOld = FALSE; */
+/*        break; */
     case 0x1a:
       if (GemDOS_SetDTA(Params))
-        SR |= SR_ZERO;
+       RunOld = FALSE;
+      break;
+    case 0x36:
+      if (GemDOS_DFree(Params))
+        RunOld = FALSE;
       break;
     case 0x39:
       if (GemDOS_MkDir(Params))
-        SR |= SR_ZERO;
+        RunOld = FALSE;
       break;
     case 0x3a:
       if (GemDOS_RmDir(Params))
-        SR |= SR_ZERO;
+        RunOld = FALSE;
       break;
     case 0x3b:
       if (GemDOS_ChDir(Params))
-        SR |= SR_ZERO;
+        RunOld = FALSE;
       break;
     case 0x3c:
       if (GemDOS_Create(Params))
-        SR |= SR_ZERO;
+        RunOld = FALSE;
       break;
     case 0x3d:
       if (GemDOS_Open(Params))
-        SR |= SR_ZERO;
+        RunOld = FALSE;
       break;
     case 0x3e:
       if (GemDOS_Close(Params))
-        SR |= SR_ZERO;
+        RunOld = FALSE;
       break;
     case 0x3f:
       if (GemDOS_Read(Params))
-        SR |= SR_ZERO;
+        RunOld = FALSE;
       break;
     case 0x40:
       if (GemDOS_Write(Params))
-        SR |= SR_ZERO;
+        RunOld = FALSE;
       break;
     case 0x41:
       if (GemDOS_UnLink(Params))
-        SR |= SR_ZERO;
+        RunOld = FALSE;
       break;
     case 0x42:
       if (GemDOS_LSeek(Params))
-        SR |= SR_ZERO;
+        RunOld = FALSE;
+      break;
+    case 0x47:
+      if (GemDOS_GetDir(Params))
+        RunOld = FALSE;
       break;
     case 0x4b:
-      if (GemDOS_Pexec(Params))
-        SR |= SR_ZERO;
+      if(GemDOS_Pexec(Params) == CALL_PEXEC_ROUTINE);
+      RunOld = CALL_PEXEC_ROUTINE;
       break;
     case 0x4e:
       if (GemDOS_SFirst(Params))
-        SR |= SR_ZERO;
+	RunOld = FALSE;
       break;
     case 0x4f:
       if (GemDOS_SNext(Params))
-        SR |= SR_ZERO;
+        RunOld = FALSE;
       break;
-    case 0x56:
-      if (GemDOS_Rename(Params))
-        SR |= SR_ZERO;
-      break;
-    case 0x57:
-      if (GemDOS_GSDToF(Params))
-        SR |= SR_ZERO;
-      break;
+    case 0x56: 
+      if (GemDOS_Rename(Params)) 
+        RunOld = FALSE; 
+      break; 
+    case 0x57: 
+      if (GemDOS_GSDToF(Params)) 
+        RunOld = FALSE;
+      break; 
   }
 
-  /* Write back to emulation condition codes, used for code re-direction */
-  EmuCCode = SR<<4;
+  switch(RunOld){
+  case FALSE:       /* skip over branch to pexec to RTE */
+    SR |= SR_ZERO;
+    break;
+  case CALL_PEXEC_ROUTINE:   /* branch to pexec, then redirect to old gemdos. */
+    SR |= SR_OVERFLOW;
+    break;
+  }
+
+  MakeFromSR();  /* update the flags from the SR register */
 }
 
-
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
-  Re-direct execution to old GEM calls, used in 'cart.s'
-*/
-void GemDOS_RunOldOpCode(void)
+  GemDOS_Boot - routine called on the first occurence of the gemdos opcode.
+  used to set up our gemdos handler.
+ */
+
+void GemDOS_Boot()
 {
-  /* Set 'PC' to that of old GemDOS routines (see 'old_gemdos' in cart.s) */
-  m68k_setpc( STMemory_ReadLong(0xfa1004) );    /* Address of 'old_gemdos' in cart.s */
-/*  __asm {
-    mov    ecx,[STRAM_OFFSET+0xfa1004]    // Address of 'old_gemdos' in cart.s
-    bswap  ecx
-    and    ecx,0x00ffffff
-    mov    esi,ecx
-    add    esi,STRAM_OFFSET      // New PC
-    RET
+  bInitGemDOS = TRUE;
+
+  /* install our gemdos handler, if -e or --harddrive option used */
+  if(emudrives != NULL){
+    /* Patch pexec code - coded value is 4, but must be 6 for TOS > 1.00 */
+    if(TOSVersion > 0x0100) 
+      STMemory_WriteByte(CART_PEXEC_TOS, 0x06);
+  
+    /* Save old GEMDOS handler adress */
+    STMemory_WriteLong(CART_OLDGEMDOS, STMemory_ReadLong(0x0084));
+    /* Setup new GEMDOS handler, see cartimg.c */ 
+    STMemory_WriteLong(0x0084, CART_GEMDOS);
   }
-*/
 }
+
+/*
+  GemDOS_RunOldOpCode()
+  Has been relocated to a routine in hatari-glue.c
+*/
+
+

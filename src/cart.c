@@ -19,11 +19,12 @@
 
 #include "main.h"
 #include "cart.h"
+#include "tos.h"
 #include "decode.h"
 #include "m68000.h"
 #include "misc.h"
 #include "stMemory.h"
-
+#include "gemdos.h"
 #include "cartimg.c"                   /* Cartridge program used as inferface to PC system */
 
 
@@ -34,8 +35,12 @@
 */
 void Cart_LoadImage(void)
 {
+  /* Copy cartrige header into ST's cartridge memory */
+  memcpy((char *)STRam+0xFA0000,cart_hdr,sizeof(cart_hdr));
+
   /* Copy 'cart.img' file into ST's cartridge memory */
   memcpy((char *)STRam+0xFA1000,cart_img,sizeof(cart_img));
+
 }
 
 
@@ -49,6 +54,6 @@ void Cart_LoadImage(void)
 */
 void Cart_WriteHdvAddress(unsigned short int HdvAddress)
 {
-  STMemory_WriteWord(CART_HDV_ADDR_1,HdvAddress);
-  STMemory_WriteWord(CART_HDV_ADDR_2,HdvAddress);
+   STMemory_WriteWord(CART_HDV_ADDR_1,HdvAddress);
+   STMemory_WriteWord(CART_HDV_ADDR_2,HdvAddress);
 }

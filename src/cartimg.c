@@ -1,5 +1,23 @@
 /* cart.img */
 
+/* Cartridge - with our gemdos handler */
+/* C-Init flag has bit 3 set = before disk boot, but after GEMDOS init */
+unsigned char cart_hdr[] = {
+  0xAB,0xCD,0xEF,0x42,        /* C-FLAG */
+  0x00,0x00,0x00,0x00,        /* C-NEXT */
+  0x08,0xFA,0x00,0x24,        /* C-INIT */   
+  0x00,0x00,0x00,0x00,        /* C-RUN */
+  0x00,0x00,                  /* C-TIME */
+  0x00,0x00,                  /* C-DATE */
+  0x00,0x00,0x00,0x00,        /* C-BSIZ, offset: $14*/
+  'H','A','T','A','R','I','.','I','M','G',0x00,0x00, /* C-NAME */
+
+  /* Code ($FA0024) - Set up GEMDOS  handler */
+  0x00,0x08,                  /* GEMDOS opcode */
+  0x4E,0x75                   /* RTS */
+}; 
+ 
+
 /* NOTE! Remove first 0x1c(PRG_HEADER_SIZE) bytes from image */
 
 unsigned char cart_img[604-PRG_HEADER_SIZE] = {
