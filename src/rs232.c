@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.9 2004-07-06 20:14:23 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.10 2004-07-15 20:33:56 thothy Exp $";
 
 #ifndef HAVE_TERMIOS_H
 #define HAVE_TERMIOS_H 1
@@ -51,6 +51,7 @@ static FILE *hComOut = NULL;        /* Handle to file for writing */
 SDL_Thread *RS232Thread = NULL;     /* Thread handle for reading incoming data */
 unsigned char InputBuffer_RS232[MAX_RS232INPUT_BUFFER];
 int InputBuffer_Head=0, InputBuffer_Tail=0;
+SDL_sem* pSemFreeBuf;               /* Semaphore to sync free space in InputBuffer_RS232 */
 
 
 /*-----------------------------------------------------------------------*/
@@ -62,6 +63,15 @@ void RS232_Init(void)
 {
 	if (ConfigureParams.RS232.bEnableRS232)
 	{
+		/* Create semaphore */
+		if (pSemFreeBuf == NULL)
+			pSemFreeBuf = SDL_CreateSemaphore(MAX_RS232INPUT_BUFFER);
+		if (pSemFreeBuf == NULL)
+		{
+			fprintf(stderr, "RS232_Init: Can't create semaphore!\n");
+			return;
+		}
+
 		if (!bConnectedRS232)
 			RS232_OpenCOMPort();
 
@@ -91,6 +101,12 @@ void RS232_UnInit(void)
 		RS232Thread = NULL;
 	}
 	RS232_CloseCOMPort();
+	
+	if (pSemFreeBuf)
+	{
+		SDL_DestroySemaphore(pSemFreeBuf);
+		pSemFreeBuf = NULL;
+	}
 }
 
 
@@ -462,6 +478,7 @@ BOOL RS232_ReadBytes(unsigned char *pBytes, int nBytes)
 		{
 			*pBytes++ = InputBuffer_RS232[InputBuffer_Head];
 			InputBuffer_Head = (InputBuffer_Head+1) % MAX_RS232INPUT_BUFFER;
+			SDL_SemPost(pSemFreeBuf);    /* Signal free space */
 		}
 		return(TRUE);
 	}
@@ -500,6 +517,7 @@ static void RS232_AddBytesToInputBuffer(unsigned char *pBytes, int nBytes)
 	/* Copy bytes into input buffer */
 	for (i=0; i<nBytes; i++)
 	{
+		SDL_SemWait(pSemFreeBuf);    /* Wait for free space in buffer */
 		InputBuffer_RS232[InputBuffer_Tail] = *pBytes++;
 		InputBuffer_Tail = (InputBuffer_Tail+1) % MAX_RS232INPUT_BUFFER;
 	}
