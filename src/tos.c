@@ -9,7 +9,7 @@
   NOTE: TOS versions 1.06 and 1.62 were not designed for use on a real STfm. These were for the
   STe machine ONLY. They access the DMA/Microwire addresses on boot-up which(correctly) cause a
   bus-error on Hatari as they would in a real STfm. If a user tries to select any of these images
-  we bring up an error and default back to the built-in TOS 1.00
+  we bring up an error.
 */
 
 #include <SDL_types.h>
@@ -413,6 +413,20 @@ void TOS_FixRom(void)
       TOS 2.06 settings
     */
     case 0x0206:
+      /* E007FA  MOVE.L  #$1FFFE,D7  Run checksums on 2xROMs (skip) */
+      /* Checksum is total of TOS ROM image, but get incorrect results */
+      /* as we've changed bytes in the ROM! So, just skip anyway! */
+      if( STMemory_ReadLong(0xE007FA)==0x2E3C0001L )  /* Test if we can patch it */
+      {
+        STMemory_WriteWord(0xE007FA, BRAW_OPCODE);    /* BRA.W  $E00894 */
+        STMemory_WriteWord(0xE007FA+2, 0x98);
+      }
+      else
+      {
+        fprintf(stderr, "TOS ROM won't be patched!\n");
+        break;    /* Can't patch checksum (is it EmuTOS?) -> skip patches */
+      }
+
       /* hdv_init, initialize drives */
       STMemory_WriteWord(0xE0518E,RTS_OPCODE);    /* RTS */
 
@@ -444,11 +458,6 @@ void TOS_FixRom(void)
 	    STMemory_WriteWord(0xE00898+2,NOP_OPCODE);  /* NOP */
 	  }
 	}
-      /* E007FA  MOVE.L  #$1FFFE,D7  Run checksums on 2xROMs(skip) */
-      /* Checksum is total of TOS rom image, but get incorrect results as we've */
-      /* changed bytes in the ROM! So, just skip anyway! */
-      STMemory_WriteWord(0xE007FA,BRAW_OPCODE);   /* BRA.W  $E00894 */
-      STMemory_WriteWord(0xE007FA+2,0x98);
       
       /* Timer D(MFP init 0xE02206) */
       STMemory_WriteWord(0xE02250,TIMERD_OPCODE);
