@@ -6,9 +6,11 @@
 
   A tiny graphical user interface for Hatari.
 */
-static char rcsid[] = "Hatari $Id: sdlgui.c,v 1.1 2003-08-05 16:33:06 thothy Exp $";
+static char rcsid[] = "Hatari $Id: sdlgui.c,v 1.2 2003-08-11 19:37:36 thothy Exp $";
 
 #include <SDL.h>
+#include <ctype.h>
+#include <string.h>
 
 #include "main.h"
 #include "memAlloc.h"
@@ -146,6 +148,25 @@ void SDLGui_DrawText(SGOBJ *tdlg, int objnum)
   x = (tdlg[0].x+tdlg[objnum].x)*fontwidth;
   y = (tdlg[0].y+tdlg[objnum].y)*fontheight;
   SDLGui_Text(x, y, tdlg[objnum].txt);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Draw a edit field object.
+*/
+void SDLGui_DrawEditField(SGOBJ *edlg, int objnum)
+{
+  int x, y;
+  SDL_Rect rect;
+
+  x = (edlg[0].x+edlg[objnum].x)*fontwidth;
+  y = (edlg[0].y+edlg[objnum].y)*fontheight;
+  SDLGui_Text(x, y, edlg[objnum].txt);
+
+  rect.x = x;    rect.y = y + edlg[objnum].h * fontwidth;
+  rect.w = edlg[objnum].w * fontwidth;    rect.h = 1;
+  SDL_FillRect(sdlscrn, &rect, SDL_MapRGB(sdlscrn->format,160,160,160));
 }
 
 
@@ -294,6 +315,126 @@ void SDLGui_DrawPopupButton(SGOBJ *pdlg, int objnum)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Let the user insert text into an edit field object.
+  NOTE: The dlg[objnum].txt must point to an an array that is big enough
+  for dlg[objnum].w characters!
+*/
+void SDLGui_EditField(SGOBJ *dlg, int objnum)
+{
+  int cursorPos;                        /* Position of the cursor in the edit field */
+  int blinkState = 0;                   /* Used for cursor blinking */
+  BOOL bStopEditing = FALSE;            /* TRUE if user wants to exit the edit field */
+  char *txt;                            /* Shortcut for dlg[objnum].txt */
+  SDL_Rect rect;
+  Uint32 grey, cursorCol;
+  SDL_Event event;
+
+  grey = SDL_MapRGB(sdlscrn->format,192,192,192);
+  cursorCol = SDL_MapRGB(sdlscrn->format,128,128,128);
+
+  rect.x = (dlg[0].x + dlg[objnum].x) * fontwidth;
+  rect.y = (dlg[0].y + dlg[objnum].y) * fontheight;
+  rect.w = (dlg[objnum].w + 1) * fontwidth - 1;
+  rect.h = dlg[objnum].h * fontheight;
+
+  txt = dlg[objnum].txt;
+  cursorPos = strlen(txt);
+
+  do
+  {
+    /* Look for events */
+    if(SDL_PollEvent(&event) == 0)
+    {
+      /* No event: Wait some time for cursor blinking */
+      SDL_Delay(250);
+      blinkState ^= 1;
+    }
+    else
+    {
+      int keysym;
+
+      /* Handle events */
+      do
+      {
+        switch(event.type)
+        {
+          case SDL_QUIT:                        /* User wants to quit */
+            bQuitProgram = TRUE;
+            bStopEditing = TRUE;
+            break;
+          case SDL_MOUSEBUTTONDOWN:             /* Mouse pressed -> stop editing */
+            bStopEditing = TRUE;
+            break;
+          case SDL_KEYDOWN:                     /* Key pressed */
+            keysym = event.key.keysym.sym;
+            switch(keysym)
+            {
+              case SDLK_RETURN:
+              case SDLK_KP_ENTER:
+                bStopEditing = TRUE;
+                break;
+              case SDLK_LEFT:
+                if(cursorPos > 0)
+                  cursorPos -= 1;
+                break;
+              case SDLK_RIGHT:
+                if(cursorPos < strlen(txt))
+                  cursorPos += 1;
+                break;
+              case SDLK_BACKSPACE:
+                if(cursorPos > 0)
+                {
+                  memmove(&txt[cursorPos-1], &txt[cursorPos], strlen(&txt[cursorPos])+1);
+                  cursorPos -= 1;
+                }
+                break;
+              case SDLK_DELETE:
+                if(cursorPos < strlen(txt))
+                  memmove(&txt[cursorPos], &txt[cursorPos+1], strlen(&txt[cursorPos+1])+1);
+                break;
+              default:
+                /* If it is a "good" key then insert it into the text field */
+                if(keysym >= 32 && keysym < 256)
+                {
+                  if(strlen(txt) < dlg[objnum].w)
+                  {
+                    memmove(&txt[cursorPos+1], &txt[cursorPos], strlen(&txt[cursorPos])+1);
+                    if(event.key.keysym.mod & (KMOD_LSHIFT|KMOD_RSHIFT))
+                      txt[cursorPos] = toupper(keysym);
+                    else
+                      txt[cursorPos] = keysym;
+                    cursorPos += 1;
+                  }
+                }
+                break;
+            }
+            break;
+        }
+      }
+      while(SDL_PollEvent(&event));
+
+      blinkState = 1;
+    }
+
+    /* Redraw the text field: */
+    SDL_FillRect(sdlscrn, &rect, grey);  /* Draw background */
+    /* Draw the cursor: */
+    if(blinkState && !bStopEditing)
+    {
+      SDL_Rect cursorrect;
+      cursorrect.x = rect.x + cursorPos * fontwidth;  cursorrect.y = rect.y;
+      cursorrect.w = fontwidth;  cursorrect.h = rect.h;
+      SDL_FillRect(sdlscrn, &cursorrect, cursorCol);
+    }
+    SDLGui_Text(rect.x, rect.y, dlg[objnum].txt);  /* Draw text */
+    SDL_UpdateRects(sdlscrn, 1, &rect);
+  }
+  while(!bStopEditing);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Draw a whole dialog.
 */
 void SDLGui_DrawDialog(SGOBJ *dlg)
@@ -308,6 +449,9 @@ void SDLGui_DrawDialog(SGOBJ *dlg)
         break;
       case SGTEXT:
         SDLGui_DrawText(dlg, i);
+        break;
+      case SGEDITFIELD:
+        SDLGui_DrawEditField(dlg, i);
         break;
       case SGBUTTON:
         SDLGui_DrawButton(dlg, i);
@@ -429,6 +573,9 @@ int SDLGui_DoDialog(SGOBJ *dlg)
               case SGBUTTON:
                 if(oldbutton==obj)
                   retbutton=obj;
+                break;
+              case SGEDITFIELD:
+                SDLGui_EditField(dlg, obj);
                 break;
               case SGRADIOBUT:
                 for(i=obj-1; i>0 && dlg[i].type==SGRADIOBUT; i--)

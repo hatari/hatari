@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-static char rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.1 2003-08-04 19:37:31 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.2 2003-08-11 19:37:36 thothy Exp $";
 
 #include <unistd.h>
 
@@ -76,7 +76,7 @@ void Dialog_KeyboardDlg(void)
         getcwd(tmpname, MAX_FILENAME_LENGTH);
         File_AddSlashToEndFileName(tmpname);
       }
-      if( SDLGui_FileSelect(tmpname, NULL) )
+      if( SDLGui_FileSelect(tmpname, NULL, FALSE) )
       {
         strcpy(DialogParams.Keyboard.szMappingFileName, tmpname);
         if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )

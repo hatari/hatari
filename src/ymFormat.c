@@ -1,8 +1,12 @@
 /*
-  Hatari
+  Hatari - ymFormat.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   YM File output, for use with STSound etc...
 */
+static char rcsid[] = "Hatari $Id: ymFormat.c,v 1.7 2003-08-11 19:37:34 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -37,7 +41,7 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
   /* Make sure we have a filename to use, ask user if not */
   if (strlen(pszYMFileName)<=0) {
     /* Ask user for filename */
-    if( SDLGui_FileSelect(pszYMFileName, NULL) )
+    if( SDLGui_FileSelect(pszYMFileName, NULL, TRUE) )
       bSaveYM = TRUE;
   }
   else

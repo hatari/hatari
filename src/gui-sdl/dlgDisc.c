@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-static char rcsid[] = "Hatari $Id: dlgDisc.c,v 1.1 2003-08-04 19:37:31 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dlgDisc.c,v 1.2 2003-08-11 19:37:36 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -142,7 +142,7 @@ void Dialog_DiscDlg(void)
           strcpy(tmpname, EmulationDrives[0].szFileName);
          else
           strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
-        if( SDLGui_FileSelect(tmpname, zip_path) )
+        if( SDLGui_FileSelect(tmpname, zip_path, FALSE) )
         {
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
@@ -161,7 +161,7 @@ void Dialog_DiscDlg(void)
           strcpy(tmpname, EmulationDrives[1].szFileName);
          else
           strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
-        if( SDLGui_FileSelect(tmpname, zip_path) )
+        if( SDLGui_FileSelect(tmpname, zip_path, FALSE) )
         {
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
@@ -177,7 +177,7 @@ void Dialog_DiscDlg(void)
         break;
       case DISCDLG_BROWSEIMG:
         strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
-        if( SDLGui_FileSelect(tmpname, NULL) )
+        if( SDLGui_FileSelect(tmpname, NULL, FALSE) )
         {
           char *ptr;
           ptr = strrchr(tmpname, '/');
@@ -196,7 +196,7 @@ void Dialog_DiscDlg(void)
         break;
       case DISCDLG_BROWSEGDOS:
         strcpy(tmpname, DialogParams.HardDisc.szHardDiscDirectories[0]);
-        if( SDLGui_FileSelect(tmpname, NULL) )
+        if( SDLGui_FileSelect(tmpname, NULL, FALSE) )
         {
           char *ptr;
           ptr = strrchr(tmpname, '/');
@@ -207,7 +207,7 @@ void Dialog_DiscDlg(void)
         break;
       case DISCDLG_BROWSEHDIMG:
         strcpy(tmpname, DialogParams.HardDisc.szHardDiscImage);
-        if( SDLGui_FileSelect(tmpname, NULL) )
+        if( SDLGui_FileSelect(tmpname, NULL, FALSE) )
         {
           strcpy(DialogParams.HardDisc.szHardDiscImage, tmpname);
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )

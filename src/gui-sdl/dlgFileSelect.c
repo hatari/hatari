@@ -6,7 +6,7 @@
 
   A file selection dialog for the graphical user interface for Hatari.
 */
-static char rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.1 2003-08-05 16:33:06 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.2 2003-08-11 19:37:36 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -21,6 +21,7 @@ static char rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.1 2003-08-05 16:33:06 tho
 #include "zip.h"
 
 
+#define SGFSDLG_FILENAME  5
 #define SGFSDLG_UPDIR     6
 #define SGFSDLG_ROOTDIR   7
 #define SGFSDLG_ENTRY1    10
@@ -77,8 +78,9 @@ static SGOBJ fsdlg[] =
   Returns TRUE if the use selected "okay", FALSE if "cancel".
   input: zip_path = pointer to buffer to contain file path within a selected
   zip file, or NULL if browsing zip files is disallowed.
+  bAllowNew: TRUE if the user is allowed to insert new file names.
 */
-int SDLGui_FileSelect(char *path_and_name, char *zip_path)
+int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 {
   int i,n;
   int entries = 0;                             /* How many files are in the actual directory? */
@@ -97,6 +99,16 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
 
   zipfilename[0] = 0;
   SDLGui_CenterDlg(fsdlg);
+  if(bAllowNew)
+  {
+    fsdlg[SGFSDLG_FILENAME].type = SGEDITFIELD;
+    fsdlg[SGFSDLG_FILENAME].flags |= SG_EXIT;
+  }
+  else
+  {
+    fsdlg[SGFSDLG_FILENAME].type = SGTEXT;
+    fsdlg[SGFSDLG_FILENAME].flags &= ~SG_EXIT;
+  }
 
   /* Prepare the path and filename variables */
   File_splitpath(path_and_name, path, fname, NULL);
@@ -313,7 +325,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
       else    /* Has the user clicked on another button? */
         {
           switch(retbut)
-            {
+          {
             case SGFSDLG_UPDIR:                 /* Change path to parent directory */
 
               if( browsingzip )
@@ -405,7 +417,10 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
                 }
               SDL_Delay(20);
               break;
-            } /* switch */
+            case SGFSDLG_FILENAME:              /* User entered new filename */
+              strcpy(fname, dlgfname);
+              break;
+          } /* switch */
         } /* other button code */
 
 

@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-static char rcsid[] = "Hatari $Id: configuration.c,v 1.22 2003-07-04 12:38:37 thothy Exp $";
+static char rcsid[] = "Hatari $Id: configuration.c,v 1.23 2003-08-11 19:37:34 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -197,8 +197,8 @@ void Configuration_SetDefault(void)
 
   /* Set defaults for Printer */
   ConfigureParams.Printer.bEnablePrinting = FALSE;
-  ConfigureParams.Printer.bPrintToFile = FALSE;
-  strcpy(ConfigureParams.Printer.szPrintToFileName,"");
+  ConfigureParams.Printer.bPrintToFile = TRUE;
+  sprintf(ConfigureParams.Printer.szPrintToFileName, "%s/hatari.prn", szWorkingDir);
 
   /* Set defaults for RS232 */
   ConfigureParams.RS232.bEnableRS232 = FALSE;
@@ -219,7 +219,7 @@ void Configuration_SetDefault(void)
   /* Set defaults for Sound */
   ConfigureParams.Sound.bEnableSound = TRUE;
   ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
-  strcpy(ConfigureParams.Sound.szYMCaptureFileName, "");
+  sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s/hatari.wav", szWorkingDir);
 
   /* Set defaults for TOSGEM */
   sprintf(ConfigureParams.TOSGEM.szTOSImageFileName, "%s/tos.img", DATADIR);

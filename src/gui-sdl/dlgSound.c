@@ -4,23 +4,28 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-static char rcsid[] = "Hatari $Id: dlgSound.c,v 1.1 2003-08-04 19:37:31 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dlgSound.c,v 1.2 2003-08-11 19:37:36 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
+#include "memAlloc.h"
 #include "sdlgui.h"
+#include "file.h"
 #include "sound.h"
 
 
-#define DLGSOUND_ENABLE  3
-#define DLGSOUND_LOW     5
-#define DLGSOUND_MEDIUM  6
-#define DLGSOUND_HIGH    7
-#define DLGSOUND_YM      10
-#define DLGSOUND_WAV     11
-#define DLGSOUND_RECORD  12
-#define DLGSOUND_EXIT    13
+#define DLGSOUND_ENABLE     3
+#define DLGSOUND_LOW        5
+#define DLGSOUND_MEDIUM     6
+#define DLGSOUND_HIGH       7
+#define DLGSOUND_RECNAME    11
+#define DLGSOUND_RECBROWSE  12
+#define DLGSOUND_RECORD     13
+#define DLGSOUND_EXIT       14
+
+
+static char dlgRecordName[35];
 
 
 /* The sound dialog: */
@@ -34,11 +39,12 @@ SGOBJ sounddlg[] =
   { SGRADIOBUT, 0, 0, 12,8, 15,1, "Low (11kHz)" },
   { SGRADIOBUT, 0, 0, 12,9, 19,1, "Medium (22kHz)" },
   { SGRADIOBUT, 0, 0, 12,10, 14,1, "High (44kHz)" },
-  { SGBOX, 0, 0, 1,13, 36,7, NULL },
+  { SGBOX, 0, 0, 1,13, 36,8, NULL },
   { SGTEXT, 0, 0, 13,14, 14,1, "Capture YM/WAV" },
-  { SGRADIOBUT, 0, SG_SELECTED, 7,16, 11,1, "hatari.ym" },
-  { SGRADIOBUT, 0, 0, 20,16, 12,1, "hatari.wav" },
-  { SGBUTTON, 0, 0, 12,18, 16,1, NULL },
+  { SGTEXT, 0, 0, 2,16, 26,1, "File name (*.wav or *.ym):" },
+  { SGTEXT, 0, 0, 2,17, 34,1, dlgRecordName },
+  { SGBUTTON, 0, 0, 30,16, 6,1, "Browse" },
+  { SGBUTTON, 0, 0, 12,19, 16,1, NULL },
   { SGBUTTON, 0, 0, 10,22, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
@@ -51,6 +57,10 @@ SGOBJ sounddlg[] =
 void Dialog_SoundDlg(void)
 {
   int but;
+  char *tmpname;
+
+  /* Allocate memory for tmpname: */
+  tmpname = Memory_Alloc(MAX_FILENAME_LENGTH);
 
   SDLGui_CenterDlg(sounddlg);
 
@@ -71,6 +81,8 @@ void Dialog_SoundDlg(void)
   else
     sounddlg[DLGSOUND_HIGH].state |= SG_SELECTED;
 
+  File_ShrinkName(dlgRecordName, DialogParams.Sound.szYMCaptureFileName, sounddlg[DLGSOUND_RECNAME].w);
+
   if( Sound_AreWeRecording() )
     sounddlg[DLGSOUND_RECORD].txt = "Stop recording";
   else
@@ -80,26 +92,36 @@ void Dialog_SoundDlg(void)
   do
   {
     but = SDLGui_DoDialog(sounddlg);
-    if(but == DLGSOUND_RECORD)
+    switch(but)
     {
-      if(Sound_AreWeRecording())
-      {
-        sounddlg[DLGSOUND_RECORD].txt = "Record sound";
-        Sound_EndRecording();
-      }
-      else
-      {
-        sounddlg[DLGSOUND_RECORD].txt = "Stop recording";
-        if(sounddlg[DLGSOUND_YM].state & SG_SELECTED)
+      case DLGSOUND_RECBROWSE:                    /* Choose a new record file */
+        strcpy(tmpname, DialogParams.Sound.szYMCaptureFileName);
+        if( SDLGui_FileSelect(tmpname, NULL, TRUE) )
         {
-          strcpy(DialogParams.Sound.szYMCaptureFileName, "hatari.ym");
-          Sound_BeginRecording("hatari.ym");
+          if( !File_DoesFileNameEndWithSlash(tmpname) )
+          {
+            strcpy(DialogParams.Sound.szYMCaptureFileName, tmpname);
+            File_ShrinkName(dlgRecordName, tmpname, sounddlg[DLGSOUND_RECNAME].w);
+          }
+        }
+        break;
+      case  DLGSOUND_RECORD:
+        if(Sound_AreWeRecording())
+        {
+          sounddlg[DLGSOUND_RECORD].txt = "Record sound";
+          Sound_EndRecording();
         }
         else
         {
-          Sound_BeginRecording("hatari.wav");
+          /* make sure that we have a valid file name... */
+          if(strlen(DialogParams.Sound.szYMCaptureFileName) < 4)
+          {
+            strcpy(DialogParams.Sound.szYMCaptureFileName, "./hatari.wav");
+          }
+          sounddlg[DLGSOUND_RECORD].txt = "Stop recording";
+          Sound_BeginRecording(DialogParams.Sound.szYMCaptureFileName);
         }
-      }
+        break;
     }
   }
   while( but!=DLGSOUND_EXIT && !bQuitProgram );
@@ -113,4 +135,5 @@ void Dialog_SoundDlg(void)
   else
     DialogParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
 
+  Memory_Free(tmpname);
 }

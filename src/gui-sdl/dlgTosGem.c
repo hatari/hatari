@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-static char rcsid[] = "Hatari $Id: dlgTosGem.c,v 1.1 2003-08-04 19:37:31 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dlgTosGem.c,v 1.2 2003-08-11 19:37:36 thothy Exp $";
 
 #include <unistd.h>
 
@@ -95,7 +95,7 @@ void Dialog_TosGemDlg(void)
           File_AddSlashToEndFileName(tmpname);
           strcat(tmpname, &DialogParams.TOSGEM.szTOSImageFileName[2]);
         }
-        if( SDLGui_FileSelect(tmpname, NULL) )        /* Show and process the file selection dlg */
+        if( SDLGui_FileSelect(tmpname, NULL, FALSE) )   /* Show and process the file selection dlg */
         {
           strcpy(DialogParams.TOSGEM.szTOSImageFileName, tmpname);
           File_ShrinkName(dlgromname, DialogParams.TOSGEM.szTOSImageFileName, 34);
