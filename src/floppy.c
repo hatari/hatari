@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-static char rcsid[] = "Hatari $Id: floppy.c,v 1.8 2003-03-27 15:55:02 emanne Exp $";
+static char rcsid[] = "Hatari $Id: floppy.c,v 1.9 2003-03-30 13:35:38 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -36,7 +36,7 @@ static char rcsid[] = "Hatari $Id: floppy.c,v 1.8 2003-03-27 15:55:02 emanne Exp
 #include "misc.h"
 #include "msa.h"
 #include "st.h"
-
+#include "zip.h"
 
 EMULATION_DRIVE EmulationDrives[NUM_EMULATION_DRIVES];  /* Emulation drive details, eg FileName, Inserted, Changed etc... */
 int nBootDrive=0;               /* Drive A, default */
@@ -197,6 +197,11 @@ BOOL Floppy_CreateDiscBFileName(char *pSrcFileName, char *pDestFileName)
 */
 BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName)
 {
+  return(Floppy_ZipInsertDiscIntoDrive(Drive, pszFileName, NULL));
+}
+
+BOOL Floppy_ZipInsertDiscIntoDrive(int Drive, char *pszFileName, char *pszZipPath)
+{
   char szDiscBFileName[MAX_FILENAME_LENGTH];
   int nImageBytes=0;
 
@@ -212,6 +217,11 @@ BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName)
     nImageBytes = MSA_ReadDisc(pszFileName,EmulationDrives[Drive].pBuffer);
   else if (File_FileNameIsST(pszFileName))
     nImageBytes = ST_ReadDisc(pszFileName,EmulationDrives[Drive].pBuffer);
+  else if (File_FileNameIsZIP(pszFileName))
+    nImageBytes = ZIP_ReadDisc(pszFileName,pszZipPath,EmulationDrives[Drive].pBuffer);
+  else if (File_FileNameIsMSAGZ(pszFileName) || File_FileNameIsSTGZ(pszFileName))
+    nImageBytes = GZIP_ReadDisc(pszFileName,EmulationDrives[Drive].pBuffer);
+
   /* Did load OK? */
   if (nImageBytes!=0)
   {
@@ -268,6 +278,12 @@ void Floppy_EjectDiscFromDrive(int Drive, BOOL bInformUser)
           MSA_WriteDisc(EmulationDrives[Drive].szFileName,EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes);
         else if (File_FileNameIsST(EmulationDrives[Drive].szFileName))
           ST_WriteDisc(EmulationDrives[Drive].szFileName,EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes);
+        else if (File_FileNameIsZIP(EmulationDrives[Drive].szFileName))
+          ZIP_WriteDisc(EmulationDrives[Drive].szFileName,EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes);
+        else if (File_FileNameIsMSAGZ(EmulationDrives[Drive].szFileName) || 
+		 File_FileNameIsSTGZ(EmulationDrives[Drive].szFileName))
+          GZIP_WriteDisc(EmulationDrives[Drive].szFileName,EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes);
+
       }
     }
 

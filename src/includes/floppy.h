@@ -2,7 +2,7 @@
   Hatari
 */
 
-// Structure for each drive connected as emulation
+/* Structure for each drive connected as emulation */
 typedef struct {
   unsigned char *pBuffer;
   char szFileName[MAX_FILENAME_LENGTH];
@@ -13,9 +13,9 @@ typedef struct {
   BOOL bOKToSave;
 } EMULATION_DRIVE;
 
-#define NUM_EMULATION_DRIVES  2            // A:, B:
-#define DRIVE_BUFFER_BYTES    (1536*1024)  // 1.5Mb area for each drive
-#define NUMBYTESPERSECTOR    512           // All discs are 512 bytes per sector
+#define NUM_EMULATION_DRIVES  2            /* A:, B: */
+#define DRIVE_BUFFER_BYTES    (1536*1024)  /* 1.5Mb area for each drive */
+#define NUMBYTESPERSECTOR    512           /* All discs are 512 bytes per sector */
 
 extern EMULATION_DRIVE EmulationDrives[NUM_EMULATION_DRIVES];
 extern int nBootDrive;
@@ -26,6 +26,7 @@ extern void Floppy_UnInit(void);
 extern void Floppy_MemorySnapShot_Capture(BOOL bSave);
 extern void Floppy_GetBootDrive(void);
 extern BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName);
+extern BOOL Floppy_ZipInsertDiscIntoDrive(int Drive, char *pszFileName, char *pszZipPath);
 extern void Floppy_EjectDiscFromDrive(int Drive,BOOL bInformUser);
 extern void Floppy_EjectBothDrives(void);
 extern void Floppy_FindDiscDetails(unsigned char *pBuffer,int nImageBytes,unsigned short int *pnSectorsPerTrack,unsigned short int *pnSides);

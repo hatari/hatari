@@ -19,6 +19,8 @@ SDLFLAGS = $(shell sdl-config --cflags)
 # Additional include directories:
 INCFLAGS = -I./includes -I./uae-cpu
 
+# Additional libaries:
+LIBFLAGS = -lz
 
 CFLAGS = $(CMPLRFLAGS) $(INCFLAGS) $(SDLFLAGS)
 
@@ -35,13 +37,13 @@ SRCS = audio.c bios.c blitter.c cart.c configuration.c createBlankImage.c \
   main.c midi.c memAlloc.c memorySnapShot.c mfp.c misc.c msa.c psg.c \
   printer.c rs232.c reset.c rtc.c st.c stMemory.c screen.c screenConvert.c \
   screenSnapShot.c sdlgui.c shortcut.c sound.c spec512.c \
-  tos.c vdi.c video.c wavFormat.c xbios.c ymFormat.c
+  tos.c unzip.c vdi.c video.c wavFormat.c xbios.c ymFormat.c zip.c
 
 OBJS = $(SRCS:.c=.o)
 
 
 hatari: $(OBJS) cpu
-	$(CC) $(OBJS) $(CPUOBJS) $(SDLLIB) -o hatari
+	$(CC) $(OBJS) $(CPUOBJS) $(SDLLIB) $(LIBFLAGS) -o hatari
 #	strip hatari
 
 cpu:

@@ -41,4 +41,4 @@ int SDLGui_UnInit(void);
 int SDLGui_DoDialog(SGOBJ *dlg);
 int SDLGui_PrepareFont(void);
 void SDLGui_CenterDlg(SGOBJ *dlg);
-int SDLGui_FileSelect(char *path_and_name);
+int SDLGui_FileSelect(char *path_and_name, char *zip_path);

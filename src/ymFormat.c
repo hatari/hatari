@@ -37,7 +37,7 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
   /* Make sure we have a filename to use, ask user if not */
   if (strlen(pszYMFileName)<=0) {
     /* Ask user for filename */
-    if( SDLGui_FileSelect(pszYMFileName) )
+    if( SDLGui_FileSelect(pszYMFileName, NULL) )
       bSaveYM = TRUE;
   }
   else

@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.25 2003-03-30 11:32:48 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.26 2003-03-30 13:35:38 thothy Exp $";
 
 #include <unistd.h>
 
@@ -564,6 +564,7 @@ void Dialog_DiscDlg(void)
   char tmpname[MAX_FILENAME_LENGTH];
   char dlgnamea[40], dlgnameb[40], dlgdiscdir[40];
   char dlgnamegdos[40], dlgnamehdimg[40];
+  char *zip_path = Memory_Alloc(MAX_FILENAME_LENGTH);
 
   SDLGui_CenterDlg(discdlg);
 
@@ -625,12 +626,13 @@ void Dialog_DiscDlg(void)
           strcpy(tmpname, EmulationDrives[0].szFileName);
          else
           strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
-        if( SDLGui_FileSelect(tmpname) )
+        if( SDLGui_FileSelect(tmpname, zip_path) )
         {
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
-            Floppy_InsertDiscIntoDrive(0, tmpname); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+            Floppy_ZipInsertDiscIntoDrive(0, tmpname, zip_path); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
             File_ShrinkName(dlgnamea, tmpname, discdlg[DISCDLG_DISCA].w);
+            Memory_Free(zip_path);
           }
           else
           {
@@ -644,12 +646,13 @@ void Dialog_DiscDlg(void)
           strcpy(tmpname, EmulationDrives[1].szFileName);
          else
           strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
-        if( SDLGui_FileSelect(tmpname) )
+        if( SDLGui_FileSelect(tmpname, zip_path) )
         {
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
-            Floppy_InsertDiscIntoDrive(1, tmpname); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+            Floppy_ZipInsertDiscIntoDrive(1, tmpname, zip_path); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
             File_ShrinkName(dlgnameb, tmpname, discdlg[DISCDLG_DISCB].w);
+            Memory_Free(zip_path);
           }
           else
           {
@@ -660,7 +663,7 @@ void Dialog_DiscDlg(void)
         break;
       case DISCDLG_BROWSEIMG:
         strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
-        if( SDLGui_FileSelect(tmpname) )
+        if( SDLGui_FileSelect(tmpname, NULL) )
         {
           char *ptr;
           ptr = strrchr(tmpname, '/');
@@ -679,7 +682,7 @@ void Dialog_DiscDlg(void)
         break;
       case DISCDLG_BROWSEGDOS:
         strcpy(tmpname, DialogParams.HardDisc.szHardDiscDirectories[0]);
-        if( SDLGui_FileSelect(tmpname) )
+        if( SDLGui_FileSelect(tmpname, NULL) )
         {
           char *ptr;
           ptr = strrchr(tmpname, '/');
@@ -690,7 +693,7 @@ void Dialog_DiscDlg(void)
         break;
       case DISCDLG_BROWSEHDIMG:
         strcpy(tmpname, DialogParams.HardDisc.szHardDiscImage);
-        if( SDLGui_FileSelect(tmpname) )
+        if( SDLGui_FileSelect(tmpname, NULL) )
         {
           strcpy(DialogParams.HardDisc.szHardDiscImage, tmpname);
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
@@ -754,7 +757,7 @@ void Dialog_TosGemDlg(void)
           File_AddSlashToEndFileName(tmpname);
           strcat(tmpname, &DialogParams.TOSGEM.szTOSImageFileName[2]);
         }
-        if( SDLGui_FileSelect(tmpname) )        /* Show and process the file selection dlg */
+        if( SDLGui_FileSelect(tmpname, NULL) )        /* Show and process the file selection dlg */
         {
           strcpy(DialogParams.TOSGEM.szTOSImageFileName, tmpname);
           File_ShrinkName(dlgromname, DialogParams.TOSGEM.szTOSImageFileName, 34);

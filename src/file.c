@@ -248,6 +248,36 @@ void File_RemoveFileNameTrailingSlashes(char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Does filename end with a .ST.GZ extension? If so, return TRUE
+*/
+BOOL File_FileNameIsSTGZ(char *pszFileName)
+{
+  return(File_DoesFileExtensionMatch(pszFileName,".st.gz"));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Does filename end with a .MSA.GZ extension? If so, return TRUE
+*/
+BOOL File_FileNameIsMSAGZ(char *pszFileName)
+{
+  return(File_DoesFileExtensionMatch(pszFileName,".msa.gz"));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Does filename end with a .ZIP extension? If so, return TRUE
+*/
+BOOL File_FileNameIsZIP(char *pszFileName)
+{
+  return(File_DoesFileExtensionMatch(pszFileName,".zip"));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Does filename end with a .MSA extension? If so, return TRUE
 */
 BOOL File_FileNameIsMSA(char *pszFileName)
