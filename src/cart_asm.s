@@ -7,6 +7,9 @@ GEMDOS_OPCODE		equ	8
 SYSINIT_OPCODE		equ 10
 VDI_OPCODE			equ	12
 
+; System variables:
+_longframe		equ $059E
+
 
 	org	$fa0000
 
@@ -36,17 +39,21 @@ new_gemdos:
 
 ; Branch to old GemDOS
 go_oldgemdos:
-	move.l	old_gemdos(pc),-(sp)	;Set PC to 'old_gemdos' and continue execution, WITHOUT corrupting registers!
+	move.l	old_gemdos(pc),-(sp)	; Set PC to 'old_gemdos' and continue execution, WITHOUT corrupting registers!
 	rts
 
 ; Progam Execute
 pexec:
-	lea		8(sp),a0
-	btst	#5,(sp)
-	bne.s	s_ok
-	move.l	usp,a0
-	addq	#2,a0
-s_ok:
+
+	move	usp,a0		; Parameters on user stack pointer?
+	btst	#5,(sp)		; Check if program was in user or supervisor mode
+	beq.s	p_ok
+	lea 	6(sp),a0	; Parameters are on SSP
+	tst.w	_longframe.w	; Do we use a CPU > 68000?
+	beq.s	p_ok		; No: A0 is OK
+	addq	#2,a0		; Skip 2 additional stack frame bytes on CPUs >= 68010
+p_ok:
+	addq	#2,a0		; Skip GEMDOS function number
 	tst		(a0)		; Test pexec mode
 	bne.s	no_0
 
@@ -278,7 +285,7 @@ infoprgstart:
 
 
 infotext:
-	dc.b	13,10
+	dc.b	27,'E',13,10
 	dc.b	'        =========================',13,10
 	dc.b	'        Hatari keyboard shortcuts',13,10
 	dc.b	'        =========================',13,10
