@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.14 2004-07-23 08:41:42 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.15 2004-10-01 08:49:23 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,9 +36,9 @@ char File_rcsid[] = "Hatari $Id: file.c,v 1.14 2004-07-23 08:41:42 thothy Exp $"
 		(((dp)->d_reclen + 1 + 3) &~ 3))
 
 #if defined(__sun) && defined(__SVR4)
-# define DIR_FD(d) ((d)->dd_fd)
-#else
-# define DIR_FD(d) ((d)->fd)
+# define dirfd(d) ((d)->dd_fd)
+#elif defined(__BEOS__)
+# define dirfd(d) ((d)->fd)
 #endif
 
 
@@ -56,7 +56,7 @@ int alphasort(const void *d1, const void *d2)
 /*
   Scan a directory for all its entries
 */
-int scandir(const char *dirname,struct dirent ***namelist, int(*select) __P((struct dirent *)), int (*dcomp) __P((const void *, const void *)))
+int scandir(const char *dirname, struct dirent ***namelist, int (*select)(struct dirent *), int (*dcomp)(const void *, const void *))
 {
   register struct dirent *d, *p, **names;
   register size_t nitems;
@@ -67,7 +67,7 @@ int scandir(const char *dirname,struct dirent ***namelist, int(*select) __P((str
   if ((dirp = opendir(dirname)) == NULL)
     return(-1);
 
-  if (fstat(DIR_FD(dirp), &stb) < 0)
+  if (fstat(dirfd(dirp), &stb) < 0)
     return(-1);
 
   /*
@@ -98,7 +98,7 @@ int scandir(const char *dirname,struct dirent ***namelist, int(*select) __P((str
      p->d_ino = d->d_ino;
      p->d_reclen = d->d_reclen;
      /*p->d_namlen = d->d_namlen;*/
-     bcopy(d->d_name, p->d_name, p->d_reclen + 1);
+     memcpy(p->d_name, d->d_name, p->d_reclen + 1);
 
      /*
       * Check to make sure the array has space left and
@@ -107,7 +107,7 @@ int scandir(const char *dirname,struct dirent ***namelist, int(*select) __P((str
 
      if (++nitems >= arraysz) {
 
-       if (fstat(DIR_FD(dirp), &stb) < 0)
+       if (fstat(dirfd(dirp), &stb) < 0)
          return(-1);     /* just might have grown */
 
        arraysz = stb.st_size / 12;
