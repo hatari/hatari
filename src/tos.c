@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-static char rcsid[] = "Hatari $Id: tos.c,v 1.11 2003-02-28 15:31:36 thothy Exp $";
+static char rcsid[] = "Hatari $Id: tos.c,v 1.12 2003-03-03 14:23:21 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -116,6 +116,7 @@ static Uint16 pTimerDOpcode[] = { TIMERD_OPCODE };
 static Uint16 pMouseOpcode[] = { 0xD3C1 };  /* Is a "adda.l  D1,A1" (instead of "adda.w  D1,A1") */
 static Uint16 pRomCheckOpcode[] = { BRAW_OPCODE, 0x98 };
 static Uint16 pBra1e[] = { 0x601e };
+static Uint16 pBra02[] = { 0x6002 };
 
 /* The patches for the TOS: */
 static TOS_PATCH TosPatches[] =
@@ -164,9 +165,7 @@ static TOS_PATCH TosPatches[] =
   { 0x205, 4, pszHdvBoot, TP_ALWAYS, 0xE04D26, 0x4EB900E0, 6, pNopOpcodes },
   { 0x205, 5, pszHdvBoot, TP_ALWAYS, 0xE04D08, 0x4EB900E0, 6, pNopOpcodes },
   { 0x205, 6, pszHdvBoot, TP_ALWAYS, 0xE04D18, 0x4EB900E0, 6, pNopOpcodes },
-  /* A normal TOS 2.05 only works on STEs, so apply some anti-STE patches... */
-  /* however, they seem to be incomplete :-( */
-#if 0
+  /* An unpatched TOS 2.05 only works on STEs, so apply some anti-STE patches... */
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00096, 0x42788900, 4, pNopOpcodes }, /* CLR.W $FFFF8900 */
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE0009E, 0x31D88924, 4, pNopOpcodes }, /* MOVE.W (A0)+,$FFFF8924 */
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE000A6, 0x09D10AA9, 28, pNopOpcodes },
@@ -176,13 +175,13 @@ static TOS_PATCH TosPatches[] =
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE007A0, 0x631E2F3C, 2, pBra1e },
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00928, 0x10388901, 4, pNopOpcodes }, /* MOVE.B $FFFF8901,D0 */
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00944, 0xB0388901, 4, pNopOpcodes }, /* CMP.B $FFFF8901,D0 */
+  { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00950, 0x67024601, 2, pBra02 },
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00968, 0x61000722, 4, pNopOpcodes },
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00CF2, 0x1038820D, 4, pNopOpcodes }, /* MOVE.B $FFFF820D,D0 */
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00E00, 0x1038820D, 4, pNopOpcodes }, /* MOVE.B $FFFF820D,D0 */
   { 0x205, 0, pszNoSteHw, TP_ALWAYS, 0xE03038, 0x31C0860E, 4, pNopOpcodes },
   { 0x205, 0, pszNoSteHw, TP_ALWAYS, 0xE034A8, 0x31C0860E, 4, pNopOpcodes },
   { 0x205, 0, pszNoSteHw, TP_ALWAYS, 0xE034F6, 0x31E90002, 6, pNopOpcodes },
-#endif
 
   /* E007FA  MOVE.L  #$1FFFE,D7  Run checksums on 2xROMs (skip) */
   /* Checksum is total of TOS ROM image, but get incorrect results */
