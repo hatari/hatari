@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.19 2004-07-01 20:54:10 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.20 2005-01-04 16:12:47 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -448,6 +448,14 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
       return FALSE;
     }
 
+    /* Check if sector number is in range */
+    if (Sector > nSectorsPerTrack)
+    {
+      fprintf(stderr, "Warning: Program tries to read from sector %i of a disk "
+                      "image with only %i sectors per track!\n", Sector, nSectorsPerTrack);
+      return FALSE;
+    }
+
     /* Seek to sector */
     nBytesPerTrack = NUMBYTESPERSECTOR*nSectorsPerTrack;
     Offset = nBytesPerTrack*Side;                 /* First seek to side */
@@ -517,6 +525,14 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
     {
       fprintf(stderr, "Warning: Program tries to write to track %i of a disk "
                       "image with only %i tracks!\n", Track, nImageTracks);
+      return FALSE;
+    }
+
+    /* Check if sector number is in range */
+    if (Sector > nSectorsPerTrack)
+    {
+      fprintf(stderr, "Warning: Program tries to write to sector %i of a disk "
+                      "image with only %i sectors per track!\n", Sector, nSectorsPerTrack);
       return FALSE;
     }
 
