@@ -19,7 +19,10 @@
  *
  * Adaptation to Hatari and better cpu timings by Thomas Huth
  *
+ * This file is distributed under the GNU Public License, version 2 or at
+ * your option any later version. Read the file gpl.txt for details.
  */
+static char rcsid[] = "Hatari $Id: gencpu.c,v 1.6 2003-03-03 18:40:33 thothy Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -221,7 +224,8 @@ static void sync_m68k_pc (void)
 }
 
 /* getv == 1: fetch data; getv != 0: check for odd address. If movem != 0,
- * the calling routine handles Apdi and Aipi modes. */
+ * the calling routine handles Apdi and Aipi modes.
+ * gb-- movem == 2 means the same thing but for a MOVE16 instruction */
 static void genamode (amodes mode, char *reg, wordsizes size, char *name, int getv, int movem)
 {
     start_brace ();
@@ -988,25 +992,23 @@ static void gen_opcode (unsigned long int opcode)
          }
 	break;
     case i_SBCD:
-	/* Let's hope this works... */
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
 	genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0);
 	start_brace ();
 	printf ("\tuae_u16 newv_lo = (dst & 0xF) - (src & 0xF) - (GET_XFLG ? 1 : 0);\n");
 	printf ("\tuae_u16 newv_hi = (dst & 0xF0) - (src & 0xF0);\n");
-	printf ("\tuae_u16 newv;\n");
-	printf ("\tint cflg;\n");
-	printf ("\tif (newv_lo > 9) { newv_lo-=6; newv_hi-=0x10; }\n");
-	printf ("\tnewv = newv_hi + (newv_lo & 0xF);");
-	printf ("\tcflg = (newv_hi & 0x1F0) > 0x90;\n");
-	printf ("\tSET_CFLG (cflg);\n");
+	printf ("\tuae_u16 newv, tmp_newv;\n");
+	printf ("\tint bcd = 0;\n");
+	printf ("\tnewv = tmp_newv = newv_hi + newv_lo;\n");
+	printf ("\tif (newv_lo & 0xF0) { newv -= 6; bcd = 6; };\n");
+	printf ("\tif ((((dst & 0xFF) - (src & 0xFF) - (GET_XFLG ? 1 : 0)) & 0x100) > 0xFF) { newv -= 0x60; }\n");
+	printf ("\tSET_CFLG ((((dst & 0xFF) - (src & 0xFF) - bcd - (GET_XFLG ? 1 : 0)) & 0x300) > 0xFF);\n");
 	duplicate_carry ();
-	printf ("\tif (cflg) newv -= 0x60;\n");
 	genflags (flag_zn, curi->size, "newv", "", "");
-	genflags (flag_sv, curi->size, "newv", "src", "dst");
+	printf ("\tSET_VFLG ((tmp_newv & 0x80) != 0 && (newv & 0x80) == 0);\n");
 	genastore ("newv", curi->dmode, "dstreg", curi->size, "dst");
-        if(curi->smode==Dreg)  insn_n_cycles=6;
-        if(curi->smode==Apdi)  insn_n_cycles=18;
+	if(curi->smode==Dreg)  insn_n_cycles=6;
+	if(curi->smode==Apdi)  insn_n_cycles=18;
 	break;
     case i_ADD:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
@@ -1056,19 +1058,19 @@ static void gen_opcode (unsigned long int opcode)
 	start_brace ();
 	printf ("\tuae_u16 newv_lo = (src & 0xF) + (dst & 0xF) + (GET_XFLG ? 1 : 0);\n");
 	printf ("\tuae_u16 newv_hi = (src & 0xF0) + (dst & 0xF0);\n");
-	printf ("\tuae_u16 newv;\n");
+	printf ("\tuae_u16 newv, tmp_newv;\n");
 	printf ("\tint cflg;\n");
-	printf ("\tif (newv_lo > 9) { newv_lo +=6; }\n");
-	printf ("\tnewv = newv_hi + newv_lo;");
-	printf ("\tcflg = (newv & 0x1F0) > 0x90;\n");
+	printf ("\tnewv = tmp_newv = newv_hi + newv_lo;");
+	printf ("\tif (newv_lo > 9) { newv += 6; }\n");
+	printf ("\tcflg = (newv & 0x3F0) > 0x90;\n");
+	printf ("\tif (cflg) newv += 0x60;\n");
 	printf ("\tSET_CFLG (cflg);\n");
 	duplicate_carry ();
-	printf ("\tif (cflg) newv += 0x60;\n");
 	genflags (flag_zn, curi->size, "newv", "", "");
-	genflags (flag_sv, curi->size, "newv", "src", "dst");
+	printf ("\tSET_VFLG ((tmp_newv & 0x80) == 0 && (newv & 0x80) != 0);\n");
 	genastore ("newv", curi->dmode, "dstreg", curi->size, "dst");
-        if(curi->smode==Dreg)  insn_n_cycles=6;
-        if(curi->smode==Apdi)  insn_n_cycles=18;
+	if(curi->smode==Dreg)  insn_n_cycles=6;
+	if(curi->smode==Apdi)  insn_n_cycles=18;
 	break;
     case i_NEG:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
@@ -1093,15 +1095,15 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\tuae_u16 newv_hi = - (src & 0xF0);\n");
 	printf ("\tuae_u16 newv;\n");
 	printf ("\tint cflg;\n");
-	printf ("\tif (newv_lo > 9) { newv_lo-=6; newv_hi-=0x10; }\n");
-	printf ("\tnewv = newv_hi + (newv_lo & 0xF);");
-	printf ("\tcflg = (newv_hi & 0x1F0) > 0x90;\n");
+	printf ("\tif (newv_lo > 9) { newv_lo -= 6; }\n");
+	printf ("\tnewv = newv_hi + newv_lo;");
+	printf ("\tcflg = (newv & 0x1F0) > 0x90;\n");
+	printf ("\tif (cflg) newv -= 0x60;\n");
 	printf ("\tSET_CFLG (cflg);\n");
 	duplicate_carry();
-	printf ("\tif (cflg) newv -= 0x60;\n");
 	genflags (flag_zn, curi->size, "newv", "", "");
 	genastore ("newv", curi->smode, "srcreg", curi->size, "src");
-        if(curi->smode==Dreg)  insn_n_cycles += 2;
+	if(curi->smode==Dreg)  insn_n_cycles += 2;
 	break;
     case i_CLR:
 	genamode (curi->smode, "srcreg", curi->size, "src", 2, 0);
@@ -2235,6 +2237,8 @@ static void gen_opcode (unsigned long int opcode)
 	    break;
 	case i_BFINS:
 	    printf ("\ttmp = m68k_dreg(regs, (extra >> 12) & 7);\n");
+	    printf ("\tSET_NFLG (tmp & (1 << (width - 1)) ? 1 : 0);\n");
+	    printf ("\tSET_ZFLG (tmp == 0);\n");
 	    break;
 	default:
 	    break;
@@ -2351,15 +2355,33 @@ static void gen_opcode (unsigned long int opcode)
      case i_CPUSHA:
 	break;
      case i_MOVE16:
-	printf ("\tuaecptr mems = m68k_areg(regs, srcreg) & ~15, memd;\n");
-	printf ("\tdstreg = (%s >> 12) & 7;\n", gen_nextiword());
-	printf ("\tmemd = m68k_areg(regs, dstreg) & ~15;\n");
-	printf ("\tput_long(memd, get_long(mems));\n");
-	printf ("\tput_long(memd+4, get_long(mems+4));\n");
-	printf ("\tput_long(memd+8, get_long(mems+8));\n");
-	printf ("\tput_long(memd+12, get_long(mems+12));\n");
-	printf ("\tm68k_areg(regs, srcreg) += 16;\n");
-	printf ("\tm68k_areg(regs, dstreg) += 16;\n");
+	if ((opcode & 0xfff8) == 0xf620) {
+	    /* MOVE16 (Ax)+,(Ay)+ */
+	    printf ("\tuaecptr mems = m68k_areg(regs, srcreg) & ~15, memd;\n");
+	    printf ("\tdstreg = (%s >> 12) & 7;\n", gen_nextiword());
+	    printf ("\tmemd = m68k_areg(regs, dstreg) & ~15;\n");
+	    printf ("\tput_long(memd, get_long(mems));\n");
+	    printf ("\tput_long(memd+4, get_long(mems+4));\n");
+	    printf ("\tput_long(memd+8, get_long(mems+8));\n");
+	    printf ("\tput_long(memd+12, get_long(mems+12));\n");
+	    printf ("\tif (srcreg != dstreg)\n");
+	    printf ("\tm68k_areg(regs, srcreg) += 16;\n");
+	    printf ("\tm68k_areg(regs, dstreg) += 16;\n");
+	} else {
+	    /* Other variants */
+	    genamode (curi->smode, "srcreg", curi->size, "mems", 0, 2);
+	    genamode (curi->dmode, "dstreg", curi->size, "memd", 0, 2);
+	    printf ("\tmemsa &= ~15;\n");
+	    printf ("\tmemda &= ~15;\n");
+	    printf ("\tput_long(memda, get_long(memsa));\n");
+	    printf ("\tput_long(memda+4, get_long(memsa+4));\n");
+	    printf ("\tput_long(memda+8, get_long(memsa+8));\n");
+	    printf ("\tput_long(memda+12, get_long(memsa+12));\n");
+	    if ((opcode & 0xfff8) == 0xf600)
+		printf ("\tm68k_areg(regs, srcreg) += 16;\n");
+	    else if ((opcode & 0xfff8) == 0xf608)
+		printf ("\tm68k_areg(regs, dstreg) += 16;\n");
+	}
 	break;
 
     case i_MMUOP:
@@ -2429,6 +2451,7 @@ static void generate_one_opcode (int rp)
      case 3: smsk = 7; break;
      case 4: smsk = 7; break;
      case 5: smsk = 63; break;
+     case 7: smsk = 3; break;
      default: abort ();
     }
     dmsk = 7;

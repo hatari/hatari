@@ -13,6 +13,8 @@
   *
   * Adaptation to Hatari by Thomas Huth
   *
+  * This file is distributed under the GNU Public License, version 2 or at
+  * your option any later version. Read the file gpl.txt for details.
   */
 
 #ifndef UAE_SYSDEPS_H
@@ -99,21 +101,16 @@ typedef uae_u32 uaecptr;
 #undef uae_s64
 #undef uae_u64
 
-#if SIZEOF_LONG_LONG == 8
-#define uae_s64 long long
-#define uae_u64 long long
-#define VAL64(a) (a ## LL)
-#define UVAL64(a) (a ## uLL)
-#elif SIZEOF___INT64 == 8
-#define uae_s64 __int64
-#define uae_u64 unsigned __int64
-#define VAL64(a) (a)
-#define UVAL64(a) (a)
-#elif SIZEOF_LONG == 8
-#define uae_s64 long;
-#define uae_u64 unsigned long;
-#define VAL64(a) (a ## l)
-#define UVAL64(a) (a ## ul)
+#if defined(SDL_HAS_64BIT_TYPE)
+# define uae_s64 Sint64
+# define uae_u64 Uint64
+# if defined(__GNUC__) || defined(__MWERKS__) || defined(__SUNPRO_C)
+#  define VAL64(a) (a ## LL)
+#  define UVAL64(a) (a ## ULL)
+# else
+#  define VAL64(a) (a ## L)
+#  define UVAL64(a) (a ## UL)
+# endif
 #endif
 
 
@@ -127,6 +124,15 @@ typedef uae_u32 uaecptr;
 #define ENUMNAME(name) ; typedef int name
 #endif
 
+/* When using GNU C, make abort more useful.  */
+#ifdef __GNUC__
+#define abort() \
+  do { \
+    fprintf(stderr, "Internal error; file %s, line %d\n", __FILE__, __LINE__); \
+    (abort) (); \
+} while (0)
+#endif
+
 
 #if defined USE_COMPILER
 #undef NO_PREFETCH_BUFFER
@@ -134,8 +140,6 @@ typedef uae_u32 uaecptr;
 #define NO_EXCEPTION_3
 #define NO_PREFETCH_BUFFER
 #endif
-
-/*#include "target.h"*/
 
 #ifndef O_BINARY
 #define O_BINARY 0

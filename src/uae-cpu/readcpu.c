@@ -1,15 +1,20 @@
 /*
- * UAE - The Un*x Amiga Emulator
+ * UAE - The Un*x Amiga Emulator - CPU core
  *
  * Read 68000 CPU specs from file "table68k"
  *
  * Copyright 1995,1996 Bernd Schmidt
+ *
+ * Adaptation to Hatari by Thomas Huth
+ *
+ * This file is distributed under the GNU Public License, version 2 or at
+ * your option any later version. Read the file gpl.txt for details.
  */
+static char rcsid[] = "Hatari $Id: readcpu.c,v 1.3 2003-03-03 18:40:34 thothy Exp $";
 
 #include <ctype.h>
 #include <string.h>
 
-#include "sysdeps.h"
 #include "readcpu.h"
 
 int nr_cpuop_funcs;
@@ -191,6 +196,7 @@ static void build_insn (int insn)
 {
     int find = -1;
     int variants;
+    int isjmp = 0;
     struct instr_def id;
     const char *opcstr;
     int i;
@@ -199,29 +205,35 @@ static void build_insn (int insn)
 
     id = defs68k[insn];
 
+    /* Note: We treat anything with unknown flags as a jump. That
+       is overkill, but "the programmer" was lazy quite often, and
+       *this* programmer can't be bothered to work out what can and
+       can't trap. Usually, this will be overwritten with the gencomp
+       based information, anyway. */
+
     for (i = 0; i < 5; i++) {
 	switch (id.flaginfo[i].flagset){
 	 case fa_unset: break;
-	 case fa_isjmp: break;
+	 case fa_isjmp: isjmp = 1; break;
+	 case fa_isbranch: isjmp = 1; break;
 	 case fa_zero: flagdead |= 1 << i; break;
 	 case fa_one: flagdead |= 1 << i; break;
 	 case fa_dontcare: flagdead |= 1 << i; break;
-	 case fa_unknown: flagdead = -1; goto out1;
+	 case fa_unknown: isjmp = 1; flagdead = -1; goto out1;
 	 case fa_set: flagdead |= 1 << i; break;
 	}
     }
 
-    out1:
+  out1:
     for (i = 0; i < 5; i++) {
 	switch (id.flaginfo[i].flaguse) {
 	 case fu_unused: break;
-	 case fu_isjmp: flaglive |= 1 << i; break;
-	 case fu_maybecc: flaglive |= 1 << i; break;
-	 case fu_unknown: flaglive = -1; goto out2;
+	 case fu_isjmp: isjmp = 1; flaglive |= 1 << i; break;
+	 case fu_maybecc: isjmp = 1; flaglive |= 1 << i; break;
+	 case fu_unknown: isjmp = 1; flaglive |= 1 << i; break;
 	 case fu_used: flaglive |= 1 << i; break;
 	}
     }
-    out2:
 
     opcstr = id.opcstr;
     for (variants = 0; variants < (1 << id.n_variable); variants++) {
@@ -346,6 +358,9 @@ static void build_insn (int insn)
 	     case 'P': srcmode = Aipi; pos++; break;
 	    }
 	    break;
+	 case 'L':
+	    srcmode = absl;
+	    break;
 	 case '#':
 	    switch (opcstr[pos++]) {
 	     case 'z': srcmode = imm; break;
@@ -389,6 +404,14 @@ static void build_insn (int insn)
 		    srcgather = 1;
 		    srctype = 5;
 		    srcpos = bitpos[bitK];
+		}
+		break;
+	     case 'p': srcmode = immi; srcreg = bitval[bitK];
+		if (CPU_EMU_SIZE < 5) {
+		    /* 0..3 */
+		    srcgather = 1;
+		    srctype = 7;
+		    srcpos = bitpos[bitp];
 		}
 		break;
 	     default: abort();
@@ -515,18 +538,26 @@ static void build_insn (int insn)
 	     case 'R': destreg = bitval[bitR]; dstgather = 1; dstpos = bitpos[bitR]; break;
 	     default: abort();
 	    }
+            if (dstpos < 0 || dstpos >= 32)
+		abort ();
 	    break;
 	 case 'A':
 	    destmode = Areg;
 	    switch (opcstr[pos++]) {
 	     case 'r': destreg = bitval[bitr]; dstgather = 1; dstpos = bitpos[bitr]; break;
 	     case 'R': destreg = bitval[bitR]; dstgather = 1; dstpos = bitpos[bitR]; break;
+	     case 'x': destreg = 0; dstgather = 0; dstpos = 0; break;
 	     default: abort();
 	    }
+            if (dstpos < 0 || dstpos >= 32)
+		abort ();
 	    switch (opcstr[pos]) {
 	     case 'p': destmode = Apdi; pos++; break;
 	     case 'P': destmode = Aipi; pos++; break;
 	    }
+	    break;
+	 case 'L':
+	    destmode = absl;
 	    break;
 	 case '#':
 	    switch (opcstr[pos++]) {
@@ -700,7 +731,8 @@ static void build_insn (int insn)
 #endif
 	table68k[opc].flagdead = flagdead;
 	table68k[opc].flaglive = flaglive;
-	nomatch:
+	table68k[opc].isjmp = isjmp;
+      nomatch:
 	/* FOO! */;
     }
 }
@@ -745,6 +777,8 @@ static void handle_merges (long int opcode)
 	    smsk = 7; sbitdst = 8; break;
 	 case 5:
 	    smsk = 63; sbitdst = 64; break;
+	 case 7:
+	    smsk = 3; sbitdst = 4; break;
 	 default:
 	    smsk = 0; sbitdst = 0;
 	    abort();

@@ -10,8 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.13 2003-02-27 10:47:23 thothy Exp $";
-
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.14 2003-03-03 18:40:34 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -25,7 +24,6 @@ static char rcsid[] = "Hatari $Id: newcpu.c,v 1.13 2003-02-27 10:47:23 thothy Ex
 #include "../includes/vdi.h"
 #include "../includes/cart.h"
 #include "../includes/debugui.h"
-
 
 
 struct flag_struct regflags;
@@ -109,20 +107,11 @@ void dump_counts (void)
 
 int broken_in;
 
-static __inline__ unsigned int cft_map (unsigned int f)
-{
-#ifndef HAVE_GET_WORD_UNSWAPPED
-    return f;
-#else
-    return ((f >> 8) & 255) | ((f & 255) << 8);
-#endif
-}
-
 static unsigned long op_illg_1 (uae_u32 opcode) REGPARAM;
 
 static unsigned long REGPARAM2 op_illg_1 (uae_u32 opcode)
 {
-    op_illg (cft_map (opcode));
+    op_illg (opcode);
     return 4;
 }
 
@@ -142,10 +131,10 @@ void build_cpufunctbl(void)
 	       cpu_level, cpu_compatible, address_space_24);
 
     for (opcode = 0; opcode < 65536; opcode++)
-	cpufunctbl[cft_map(opcode)] = op_illg_1;
+	cpufunctbl[opcode] = op_illg_1;
     for (i = 0; tbl[i].handler != NULL; i++) {
 	if (! tbl[i].specific)
-	    cpufunctbl[cft_map (tbl[i].opcode)] = tbl[i].handler;
+	    cpufunctbl[tbl[i].opcode] = tbl[i].handler;
     }
     for (opcode = 0; opcode < 65536; opcode++) {
 	cpuop_func *f;
@@ -154,23 +143,23 @@ void build_cpufunctbl(void)
 	    continue;
 
 	if (table68k[opcode].handler != -1) {
-	    f = cpufunctbl[cft_map (table68k[opcode].handler)];
+	    f = cpufunctbl[table68k[opcode].handler];
 	    if (f == op_illg_1)
 		abort();
-	    cpufunctbl[cft_map(opcode)] = f;
+	    cpufunctbl[opcode] = f;
 	}
     }
     for (i = 0; tbl[i].handler != NULL; i++) {
 	if (tbl[i].specific)
-	    cpufunctbl[cft_map(tbl[i].opcode)] = tbl[i].handler;
+	    cpufunctbl[tbl[i].opcode] = tbl[i].handler;
     }
 
-    /* Hataris illegal opcodes: */
-    cpufunctbl[cft_map(GEMDOS_OPCODE)] = OpCode_GemDos;
-    cpufunctbl[cft_map(RUNOLDGEMDOS_OPCODE)] = OpCode_OldGemDos;
-    cpufunctbl[cft_map(CONDRV_OPCODE)] = OpCode_ConnectedDrive;
-    cpufunctbl[cft_map(TIMERD_OPCODE)] = OpCode_TimerD;
-    cpufunctbl[cft_map(VDI_OPCODE)] = OpCode_VDI;
+    /* Hatari's illegal opcodes: */
+    cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;
+    cpufunctbl[RUNOLDGEMDOS_OPCODE] = OpCode_OldGemDos;
+    cpufunctbl[CONDRV_OPCODE] = OpCode_ConnectedDrive;
+    cpufunctbl[TIMERD_OPCODE] = OpCode_TimerD;
+    cpufunctbl[VDI_OPCODE] = OpCode_VDI;
 }
 
 
@@ -676,7 +665,9 @@ void MakeFromSR (void)
     if (regs.t1 || regs.t0)
 	set_special (SPCFLAG_TRACE);
     else
-	unset_special (SPCFLAG_TRACE | SPCFLAG_DOTRACE);
+	/* Keep SPCFLAG_DOTRACE, we still want a trace exception for
+	   SR-modifying instructions (including STOP).  */
+	unset_special (SPCFLAG_TRACE);
 }
 
 
@@ -796,7 +787,7 @@ static void Interrupt(int nr)
     set_special (SPCFLAG_INT);
 }
 
-static uae_u32 caar, cacr, itt0, itt1, dtt0, dtt1, tc, mmusr;
+static uae_u32 caar, cacr, itt0, itt1, dtt0, dtt1, tc, mmusr, urp, srp;
 
 int m68k_move2c (int regno, uae_u32 *regp)
 {
@@ -823,6 +814,9 @@ int m68k_move2c (int regno, uae_u32 *regp)
 	case 0x802: caar = *regp & 0xfc; break;
 	case 0x803: regs.msp = *regp; if (regs.m == 1) m68k_areg(regs, 7) = regs.msp; break;
 	case 0x804: regs.isp = *regp; if (regs.m == 0) m68k_areg(regs, 7) = regs.isp; break;
+	case 0x805: mmusr = *regp; break;
+	case 0x806: urp = *regp; break;
+	case 0x807: srp = *regp; break;
 	default:
 	    op_illg (0x4E7B);
 	    return 0;
@@ -855,6 +849,8 @@ int m68k_movec2 (int regno, uae_u32 *regp)
 	case 0x803: *regp = regs.m == 1 ? m68k_areg(regs, 7) : regs.msp; break;
 	case 0x804: *regp = regs.m == 0 ? m68k_areg(regs, 7) : regs.isp; break;
 	case 0x805: *regp = mmusr; break;
+	case 0x806: *regp = urp; break;
+	case 0x807: *regp = srp; break;
 	default:
 	    op_illg (0x4E7A);
 	    return 0;
@@ -1122,7 +1118,7 @@ void m68k_reset (void)
 {
     m68k_areg(regs, 7) = get_long(0);
     m68k_setpc(get_long(4));
-    fill_prefetch_0 ();
+    refill_prefetch (m68k_getpc (), 0);
     regs.s = 1;
     regs.m = 0;
     regs.stopped = 0;
@@ -1142,66 +1138,26 @@ void m68k_reset (void)
 unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 {
     uaecptr pc = m68k_getpc ();
-/*    
-    if (cloanto_rom && (opcode & 0xF100) == 0x7100) {
-	m68k_dreg (regs, (opcode >> 9) & 7) = (uae_s8)(opcode & 0xFF);
-	m68k_incpc (2);
-	fill_prefetch_0 ();
-	return 4;
-    }
-*/
+
     compiler_flush_jsr_stack ();
-    if (opcode == 0x4E7B && get_long (0x10) == 0 )
-     {
+    if (opcode == 0x4E7B && get_long (0x10) == 0 ) {
 	write_log ("This program requires a 68020 CPU!\n");
 	broken_in = 1;
 	set_special (SPCFLAG_BRK);
 	bQuitProgram = 1;
-     }
-/*
-    if (opcode == 0xFF0D) {
-	if ((pc & 0xF80000) == 0xF80000) {
-	    // This is from the dummy Kickstart replacement
-	    uae_u16 arg = get_iword (2);
-	    m68k_incpc (4);
-	    ersatz_perform (arg);
-	    fill_prefetch_0 ();
-	    return 4;
-	} else if ((pc & 0xF80000) == 0xF00000) {
-	    // User-mode STOP replacement
-	    m68k_setstopped (1);
-	    return 4;
-	}
     }
-*/
-/*
-    if ((opcode & 0xF000) == 0xA000 && (pc & 0xF80000) == 0xF00000) {
-	// Calltrap.
-	m68k_incpc(2);
-	call_calltrap (opcode & 0xFFF);
-	fill_prefetch_0 ();
-	return 4;
-    }
-*/
-    if ((opcode & 0xF000) == 0xF000)
-     {
+
+    if ((opcode & 0xF000) == 0xF000) {
 	Exception(0xB,0);
 	return 4;
-     }
-    if ((opcode & 0xF000) == 0xA000)
-     {
-/*
-	if ((pc & 0xF80000) == 0xF00000) {
-	    // Calltrap.
-	    call_calltrap (opcode & 0xFFF);
-	}
-*/
+    }
+    if ((opcode & 0xF000) == 0xA000) {
 	Exception(0xA,0);
 	return 4;
-     }
+    }
 
-#if 0
-    write_log ("Illegal instruction: %04x at %08lx\n", opcode, pc);
+#if 1
+    write_log ("Illegal instruction: %04x at %08lx\n", opcode, (long)pc);
 #endif
     Exception (4,0);
     return 4;
@@ -1338,7 +1294,7 @@ static void m68k_run_1 (void)
 	instrcount[opcode]++;
 #endif
 
-	cycles = (*cpufunctbl[cft_map(opcode)])(opcode);
+	cycles = (*cpufunctbl[opcode])(opcode);
 
 	/* Unfortunately needed at the moment: */
 	/* Check if we had an bus/address error and correct the PC then... */
@@ -1389,7 +1345,7 @@ static void m68k_run_2 (void)
 	instrcount[opcode]++;
 #endif
 
-	cycles = (*cpufunctbl[cft_map(opcode)])(opcode);
+	cycles = (*cpufunctbl[opcode])(opcode);
 
 	/* Unfortunately needed at the moment: */
 	/* Check if we had an bus/address error and correct the PC then... */
@@ -1437,7 +1393,7 @@ static void m68k_verify (uaecptr addr, uaecptr *nextpc)
     last_op_for_exception_3 = opcode;
     m68kpc_offset = 2;
 
-    if (cpufunctbl[cft_map(opcode)] == op_illg_1) {
+    if (cpufunctbl[opcode] == op_illg_1) {
 	opcode = 0x4AFC;
     }
     dp = table68k + opcode;
@@ -1472,7 +1428,7 @@ void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	}
 	opcode = get_iword_1 (m68kpc_offset);
 	m68kpc_offset += 2;
-	if (cpufunctbl[cft_map(opcode)] == op_illg_1) {
+	if (cpufunctbl[opcode] == op_illg_1) {
 	    opcode = 0x4AFC;
 	}
 	dp = table68k + opcode;

@@ -7,6 +7,8 @@
   *
   * Adaptation to Hatari by Thomas Huth
   *
+  * This file is distributed under the GNU Public License, version 2 or at
+  * your option any later version. Read the file gpl.txt for details.
   */
 
 #ifndef UAE_NEWCPU_H
@@ -79,6 +81,17 @@ extern unsigned long op_illg (uae_u32) REGPARAM;
 
 typedef char flagtype;
 
+/* You can set this to long double to be more accurate. However, the
+   resulting alignment issues will cost a lot of performance in some
+   apps */
+#define USE_LONG_DOUBLE 0
+
+#if USE_LONG_DOUBLE
+typedef long double fptype;
+#else
+typedef double fptype;
+#endif
+
 extern struct regstruct
 {
     uae_u32 regs[16];
@@ -98,16 +111,15 @@ extern struct regstruct
 
     uae_u32 vbr,sfc,dfc;
 
-    double fp[8];
+    fptype fp[8];
+    fptype fp_result;
+
     uae_u32 fpcr,fpsr,fpiar;
+    uae_u32 fpsr_highbyte;
 
     uae_u32 spcflags;
 
-    /* Fellow sources say this is 4 longwords. That's impossible. It needs
-     * to be at least a longword. The HRM has some cryptic comment about two
-     * instructions being on the same longword boundary.
-     * The way this is implemented now seems like a good compromise.
-     */
+    uae_u32 prefetch_pc;
     uae_u32 prefetch;
 } regs, lastint_regs;
 
@@ -124,58 +136,94 @@ STATIC_INLINE void unset_special (uae_u32 x)
 #define m68k_dreg(r,num) ((r).regs[(num)])
 #define m68k_areg(r,num) (((r).regs + 8)[(num)])
 
+#if !defined USE_COMPILER
+STATIC_INLINE void m68k_setpc (uaecptr newpc)
+{
+    regs.pc_p = regs.pc_oldp = get_real_address (newpc);
+    regs.pc = newpc;
+}
+#else
+extern void m68k_setpc (uaecptr newpc);
+#endif
+
+STATIC_INLINE uaecptr m68k_getpc (void)
+{
+    return regs.pc + ((char *)regs.pc_p - (char *)regs.pc_oldp);
+}
+
+STATIC_INLINE uaecptr m68k_getpc_p (uae_u8 *p)
+{
+    return regs.pc + ((char *)p - (char *)regs.pc_oldp);
+}
+
 #define get_ibyte(o) do_get_mem_byte((uae_u8 *)(regs.pc_p + (o) + 1))
 #define get_iword(o) do_get_mem_word((uae_u16 *)(regs.pc_p + (o)))
 #define get_ilong(o) do_get_mem_long((uae_u32 *)(regs.pc_p + (o)))
 
+STATIC_INLINE void refill_prefetch (uae_u32 currpc, uae_u32 offs)
+{
+    uae_u32 t = (currpc + offs) & ~3;
+    uae_s32 pc_p_offs = t - currpc;
+    uae_u8 *ptr = regs.pc_p + pc_p_offs;
+    uae_u32 r;
+#ifdef UNALIGNED_PROFITABLE
+    r = *(uae_u32 *)ptr;
+    regs.prefetch = r;
+#else
+    r = do_get_mem_long ((uae_u32 *)ptr);
+    do_put_mem_long (&regs.prefetch, r);
+#endif
+    /* printf ("PC %lx T %lx PCPOFFS %d R %lx\n", currpc, t, pc_p_offs, r); */
+    regs.prefetch_pc = t;
+}
+
 STATIC_INLINE uae_u32 get_ibyte_prefetch (uae_s32 o)
 {
-    if (o > 3 || o < 0)
-	return do_get_mem_byte((uae_u8 *)(regs.pc_p + o + 1));
-
-    return do_get_mem_byte((uae_u8 *)(((uae_u8 *)&regs.prefetch) + o + 1));
+    uae_u32 currpc = m68k_getpc ();
+    uae_u32 addr = currpc + o + 1;
+    uae_u32 offs = addr - regs.prefetch_pc;
+    uae_u32 v;
+    if (offs > 3) {
+	refill_prefetch (currpc, o + 1);
+	offs = addr - regs.prefetch_pc;
+    }
+    v = do_get_mem_byte (((uae_u8 *)&regs.prefetch) + offs);
+    if (offs >= 2)
+	refill_prefetch (currpc, 4);
+    /* printf ("get_ibyte PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v); */
+    return v;
 }
 STATIC_INLINE uae_u32 get_iword_prefetch (uae_s32 o)
 {
-    if (o > 3 || o < 0)
-	return do_get_mem_word((uae_u16 *)(regs.pc_p + o));
-
-    return do_get_mem_word((uae_u16 *)(((uae_u8 *)&regs.prefetch) + o));
+    uae_u32 currpc = m68k_getpc ();
+    uae_u32 addr = currpc + o;
+    uae_u32 offs = addr - regs.prefetch_pc;
+    uae_u32 v;
+    if (offs > 3) {
+	refill_prefetch (currpc, o);
+	offs = addr - regs.prefetch_pc;
+    }
+    v = do_get_mem_word ((uae_u16 *)(((uae_u8 *)&regs.prefetch) + offs));
+    if (offs >= 2)
+	refill_prefetch (currpc, 4);
+    /* printf ("get_iword PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v); */
+    return v;
 }
 STATIC_INLINE uae_u32 get_ilong_prefetch (uae_s32 o)
 {
-    if (o > 3 || o < 0)
-	return do_get_mem_long((uae_u32 *)(regs.pc_p + o));
-    if (o == 0)
-	return do_get_mem_long(&regs.prefetch);
-    return (do_get_mem_word (((uae_u16 *)&regs.prefetch) + 1) << 16) | do_get_mem_word ((uae_u16 *)(regs.pc_p + 4));
+    uae_u32 v = get_iword_prefetch (o);
+    v <<= 16;
+    v |= get_iword_prefetch (o + 2);
+    return v;
 }
 
 #define m68k_incpc(o) (regs.pc_p += (o))
 
 STATIC_INLINE void fill_prefetch_0 (void)
 {
-    uae_u32 r;
-#ifdef UNALIGNED_PROFITABLE
-    r = *(uae_u32 *)regs.pc_p;
-    regs.prefetch = r;
-#else
-    r = do_get_mem_long ((uae_u32 *)regs.pc_p);
-    do_put_mem_long (&regs.prefetch, r);
-#endif
 }
 
-#if 0
-STATIC_INLINE void fill_prefetch_2 (void)
-{
-    uae_u32 r = do_get_mem_long (&regs.prefetch) << 16;
-    uae_u32 r2 = do_get_mem_word (((uae_u16 *)regs.pc_p) + 1);
-    r |= r2;
-    do_put_mem_long (&regs.prefetch, r);
-}
-#else
 #define fill_prefetch_2 fill_prefetch_0
-#endif
 
 /* These are only used by the 68020/68881 code, and therefore don't
  * need to handle prefetch.  */
@@ -200,26 +248,6 @@ STATIC_INLINE uae_u32 next_ilong (void)
     return r;
 }
 
-#if !defined USE_COMPILER
-STATIC_INLINE void m68k_setpc (uaecptr newpc)
-{
-    regs.pc_p = regs.pc_oldp = (uae_u8 *)get_real_address(newpc);
-    regs.pc = newpc;
-}
-#else
-extern void m68k_setpc (uaecptr newpc);
-#endif
-
-STATIC_INLINE uaecptr m68k_getpc (void)
-{
-    return regs.pc + ((char *)regs.pc_p - (char *)regs.pc_oldp);
-}
-
-STATIC_INLINE uaecptr m68k_getpc_p (uae_u8 *p)
-{
-    return regs.pc + ((char *)p - (char *)regs.pc_oldp);
-}
-
 #ifdef USE_COMPILER
 extern void m68k_setpc_fast (uaecptr newpc);
 extern void m68k_setpc_bcc (uaecptr newpc);
@@ -233,7 +261,9 @@ extern void m68k_setpc_rte (uaecptr newpc);
 STATIC_INLINE void m68k_setstopped (int stop)
 {
     regs.stopped = stop;
-    if (stop)
+    /* A traced STOP instruction drops through immediately without
+       actually stopping.  */
+    if (stop && (regs.spcflags & SPCFLAG_DOTRACE) == 0)
 	regs.spcflags |= SPCFLAG_STOP;
 }
 

@@ -1,3 +1,11 @@
+2003-03-03 (THH):
+  * Resynced Hatari's UAE CPU core with UAE 0.8.22 - this fixes some bugs in
+    68k instructions like ABCD and SBCD.
+  * Now only reinitializing the sound subsystem if really needed, this should
+    fix a problem with Linux ALSA sound driver.
+  * Added another patch for TOS 2.05 so that this TOS version should now work
+    with Hatari, too.
+
 2003-02-28 (THH):
   * Rewrote TOS patching routine. It is more flexible now.
   * Removed 0xa0ff opcode for VDI resolutions; using GEMDOS_OPCODE now instead.

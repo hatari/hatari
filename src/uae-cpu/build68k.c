@@ -1,21 +1,20 @@
 /*
- * UAE - The Un*x Amiga Emulator
+ * UAE - The Un*x Amiga Emulator - CPU core
  *
  * Read 68000 CPU specs from file "table68k" and build table68k.c
  *
  * Copyright 1995,1996 Bernd Schmidt
+ *
+ * Adaptation to Hatari by Thomas Huth
+ *
+ * This file is distributed under the GNU Public License, version 2 or at
+ * your option any later version. Read the file gpl.txt for details.
  */
-
+static char rcsid[] = "Hatari $Id: build68k.c,v 1.2 2003-03-03 18:40:33 thothy Exp $";
 
 #include <assert.h>
 #include <ctype.h>
 
-/*
-#include "config.h"
-#include "options.h"
-#include "sysconfig.h"
-*/
-#include "sysdeps.h"
 #include "readcpu.h"
 
 static FILE *tablef;
@@ -60,11 +59,7 @@ int main(int argc, char **argv)
 {
     int no_insns = 0;
 
-/*
-    printf ("#include \"sysconfig.h\"\n");
-    printf ("#include \"config.h\"\n");
-    printf ("#include \"options.h\"\n");
-*/
+    /*printf ("#include \"sysconfig.h\"\n");*/
     printf ("#include \"sysdeps.h\"\n");
     printf ("#include \"readcpu.h\"\n");
     printf ("struct instr_def defs68k[] = {\n");
@@ -117,6 +112,7 @@ int main(int argc, char **argv)
 	     case 'r': currbit = bitr; break;
 	     case 'R': currbit = bitR; break;
 	     case 'z': currbit = bitz; break;
+	     case 'p': currbit = bitp; break;
 	     default: abort();
 	    }
 	    if (!(bitmask & 1)) {
@@ -165,6 +161,7 @@ int main(int argc, char **argv)
 	    switch(nextch){
 	     case '-': flagset[i] = fa_unset; break;
 	     case '/': flagset[i] = fa_isjmp; break;
+	     case '+': flagset[i] = fa_isbranch; break;
 	     case '0': flagset[i] = fa_zero; break;
 	     case '1': flagset[i] = fa_one; break;
 	     case 'x': flagset[i] = fa_dontcare; break;
