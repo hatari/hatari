@@ -1,3 +1,11 @@
+2003-03-08 (THH):
+  * Some parts of the code accessed the SR directly to read the IPL - however
+    the UAE CPU core only updates the SR when doing a MakeSR() first. So this
+    is done in the affected code parts now, too.
+  * The IPL wasn't raised when a MFP interrupt occured - fixed now.
+  * Full screen resolution for ST-Low can now be selected from the screen
+    setup dialog.
+
 2003-03-04 (THH):
   * The IKBD emulation does not longer duplicate joystick fire buttons when
     a game (like Babarian) tries to use both, joystick and mouse => Games like

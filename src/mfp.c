@@ -1,13 +1,20 @@
 /*
-  Hatari
+  Hatari - mfp.c
 
-  MFP - Multi Functional Peripheral. In emulation terms it's the 'chip from hell' - most differences between
-  a real machine and an emulator are down to this chip. It seems very simple at first but the implementation
-  is very difficult. The following code is the most accurate in an ST emulator to date as it is able to
-  perform Spectrum 512 raster effects as well as simulate the quirks found in the chip.
-  The easiest way to 'see' the MFP chip is to look at the diagram - this shows the main details of the chip's
-  behaviour with regard to interrupts and pending/service bits.
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  MFP - Multi Functional Peripheral. In emulation terms it's the 'chip from
+  hell' - most differences between a real machine and an emulator are down to
+  this chip. It seems very simple at first but the implementation is very
+  difficult.
+  The following code is the very accurate for an ST emulator as it is able to
+  perform Spectrum 512 raster effects as well as simulate the quirks found in
+  the chip. The easiest way to 'see' the MFP chip is to look at the diagram.
+  It shows the main details of the chip's behaviour with regard to interrupts
+  and pending/service bits.
 */
+static char rcsid[] = "Hatari $Id: mfp.c,v 1.5 2003-03-08 11:29:53 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -176,16 +183,23 @@ void MFP_Exception(int Interrupt)
 BOOL InterruptRequest(int Exception,unsigned char Bit,unsigned long EnableAddr,unsigned char *pPendingReg,unsigned char MaskRegister,unsigned char PriorityMaskLow,unsigned char PriorityMaskHigh,unsigned char *pInServiceReg)
 {
   /* Are any higher priority interupts in service? */
-  if ( ((MFP_ISRA&PriorityMaskLow)==0) && ((MFP_ISRB&PriorityMaskHigh)==0) ) {
+  if ( ((MFP_ISRA&PriorityMaskLow)==0) && ((MFP_ISRB&PriorityMaskHigh)==0) )
+  {
+    MakeSR();
     /* Is masked? */
-    if (MaskRegister&Bit) {
-//u      if (7>FIND_IPL) {
-//u        *pPendingReg &= ~Bit;        /* Clear pending bit */
-//u        MFP_UpdateFlags();
-//u      }
+    if (MaskRegister&Bit)
+    {
+#if 0
+      if (7>FIND_IPL)
+      {
+        *pPendingReg &= ~Bit;        /* Clear pending bit */
+        MFP_UpdateFlags();
+      }
+#endif
 
       /* CPU allows interrupt of an MFP level? */
-      if (6>FIND_IPL) {
+      if (6>FIND_IPL)
+      {
         *pPendingReg &= ~Bit;           /* Clear pending bit */
         MFP_UpdateFlags();
 

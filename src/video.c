@@ -8,7 +8,7 @@
   VBLs, HBLs, copying the ST screen to a buffer to simulate the TV raster trace, border
   removal, palette changes per HBL, the 'video address pointer' etc...
 */
-static char rcsid[] = "Hatari $Id: video.c,v 1.9 2003-03-04 19:27:21 thothy Exp $";
+static char rcsid[] = "Hatari $Id: video.c,v 1.10 2003-03-08 11:29:53 thothy Exp $";
 
 #include <SDL.h>
 
@@ -226,6 +226,7 @@ void Video_InterruptHandler_VBL(void)
   /* Generate 1/50th second of sound sample data, to be played by sound thread */
   Sound_Update_VBL();
 
+  MakeSR();
   if (4>FIND_IPL)              /* Vertical blank, level 4! */
   {
     ADD_CYCLES(44+4,5,3);      /* Interrupt */
@@ -258,8 +259,10 @@ void Video_InterruptHandler_VBL_Pending(void)
   /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
 
+  MakeSR();
   /* Check if can execute VBL */
-  if (4>FIND_IPL) {            /* Vertical blank, level 4! */
+  if (4>FIND_IPL)              /* Vertical blank, level 4! */
+  {
     ADD_CYCLES(44+4,5,3);      /* Interrupt */
     ExceptionVector = EXCEPTION_VBLANK;
     M68000_Exception();        /* VBL interrupt */
@@ -324,7 +327,9 @@ void Video_InterruptHandler_HBL(void)
   if (nHBL<(SCANLINES_PER_FRAME-1))
     Int_AddAbsoluteInterrupt(CYCLES_PER_LINE,INTERRUPT_VIDEO_HBL);
 
-  if (2>FIND_IPL) {                /* Horizontal blank, level 2! */
+  MakeSR();
+  if (2>FIND_IPL)                  /* Horizontal blank, level 2! */
+  {
     ADD_CYCLES(44+4,5,3);          /* Interrupt */
     ExceptionVector = EXCEPTION_HBLANK;
     M68000_Exception();            /* HBL interrupt */

@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-static char rcsid[] = "Hatari $Id: m68000.c,v 1.14 2003-03-07 17:10:41 thothy Exp $";
+static char rcsid[] = "Hatari $Id: m68000.c,v 1.15 2003-03-08 11:29:53 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -172,6 +172,24 @@ void M68000_Exception(void)
 
     /* 68k exceptions are handled by Exception() of the UAE CPU core */
     Exception(exceptionNr, m68k_getpc());
+
+    MakeSR();
+    /* Set Status Register so interrupt can ONLY be stopped by another interrupt
+     * of higher priority! */
+#if 0  /* VBL and HBL are handled in the UAE CPU core (see above). */
+    if (ExceptionVector==EXCEPTION_VBLANK)
+      SR = (SR&SR_CLEAR_IPL)|0x0400;  /* VBL, level 4 */
+    else if (ExceptionVector==EXCEPTION_HBLANK)
+      SR = (SR&SR_CLEAR_IPL)|0x0200;  /* HBL, level 2 */
+    else
+#endif
+    {
+      unsigned long MFPBaseVector = (unsigned int)(MFP_VR&0xf0)<<2;
+      if ( (ExceptionVector>=MFPBaseVector) && (ExceptionVector<=(MFPBaseVector+0x34)) )
+        SR = (SR&SR_CLEAR_IPL)|0x0600; /* MFP, level 6 */
+    }
+    MakeFromSR();
+
   }
 }
 
