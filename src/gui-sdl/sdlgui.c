@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.6 2004-06-18 18:07:16 thothy Exp $";
+char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.7 2005-02-12 16:15:32 thothy Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -719,7 +719,7 @@ int SDLGui_DoDialog(SGOBJ *dlg)
                            dlg[oldbutton].w*fontwidth+4, dlg[oldbutton].h*fontheight+4);
             oldbutton = 0;
           }
-          if( dlg[obj].flags&SG_EXIT )
+          if (obj >= 0 && (dlg[obj].flags&SG_EXIT))
           {
             retbutton = obj;
           }
