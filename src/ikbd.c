@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.20 2004-11-14 02:34:31 thothy Exp $";
+char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.21 2005-01-18 23:33:17 thothy Exp $";
 
 #include <time.h>
 
@@ -23,15 +23,15 @@ char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.20 2004-11-14 02:34:31 thothy Exp $"
 #include "gemdos.h"
 #include "ikbd.h"
 #include "int.h"
+#include "ioMem.h"
 #include "joy.h"
 #include "m68000.h"
-#include "memAlloc.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "misc.h"
 #include "screen.h"
 #include "video.h"
-#include "vdi.h"
+
 
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */
 #define ACIA_CYCLES    7200         /* Cycles (Multiple of 4) between sent to ACIA from keyboard along serial line - 500Hz/64, (approx' 6920-7200cycles from test program) */
@@ -229,7 +229,7 @@ void IKBD_Reset(BOOL bCold)
   /* And our keyboard states and clear key state table */
   Keyboard.BufferHead = Keyboard.BufferTail = 0;
   Keyboard.nBytesInInputBuffer = 0;
-  Memory_Clear(Keyboard.KeyStates,sizeof(Keyboard.KeyStates));
+  memset(Keyboard.KeyStates, 0, sizeof(Keyboard.KeyStates));
   Keyboard.bLButtonDown = BUTTON_NULL;
   Keyboard.bRButtonDown = BUTTON_NULL;
   Keyboard.bOldLButtonDown = Keyboard.bOldRButtonDown = BUTTON_NULL;
@@ -1486,4 +1486,43 @@ void IKBD_PressSTKey(unsigned char ScanCode,BOOL bPress)
   if (!bPress)
     ScanCode |= 0x80;    /* Set top bit if released key */
   IKBD_AddKeyToKeyboardBuffer(ScanCode);  /* And send to keyboard processor */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from keyboard control ACIA register (0xfffc00)
+*/
+void IKBD_KeyboardControl_ReadByte(void)
+{
+	/* For our emulation send is immediate so acknowledge buffer is empty */
+	IoMem[0xfffc00] = ACIAStatusRegister | ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from keyboard data ACIA register (0xfffc02)
+*/
+void IKBD_KeyboardData_ReadByte(void)
+{
+	IoMem[0xfffc02] = IKBD_GetByteFromACIA();  /* Return our byte from keyboard processor */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to keyboard control ACIA register (0xfffc00)
+*/
+void IKBD_KeyboardControl_WriteByte(void)
+{
+	/* Nothing... */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to keyboard data ACIA register (0xfffc02)
+*/
+void IKBD_KeyboardData_WriteByte(void)
+{
+	IKBD_SendByteToKeyboardProcessor(IoMem[0xfffc02]);  /* Pass our byte to the keyboard processor */
 }

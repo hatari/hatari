@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.24 2004-06-11 10:04:46 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.25 2005-01-18 23:33:24 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -20,6 +20,7 @@ char Video_rcsid[] = "Hatari $Id: video.c,v 1.24 2004-06-11 10:04:46 thothy Exp 
 #include "fdc.h"
 #include "int.h"
 #include "ikbd.h"
+#include "ioMem.h"
 #include "keymap.h"
 #include "m68000.h"
 #include "memAlloc.h"
@@ -35,7 +36,6 @@ char Video_rcsid[] = "Hatari $Id: video.c,v 1.24 2004-06-11 10:04:46 thothy Exp 
 #include "ymFormat.h"
 
 
-long VideoAddress;                              /* Address of video display in ST screen space */
 unsigned char VideoShifterByte;                 /* VideoShifter (0xff8260) value store in video chip */
 BOOL bUseHighRes = FALSE;                       /* Use hi-res (ie Mono monitor) */
 int nVBLs, nHBL;                                /* VBL Counter, HBL line */
@@ -84,7 +84,6 @@ void Video_Reset(void)
 void Video_MemorySnapShot_Capture(BOOL bSave)
 {
   /* Save/Restore details */
-  MemorySnapShot_Store(&VideoAddress,sizeof(VideoAddress));
   MemorySnapShot_Store(&VideoShifterByte,sizeof(VideoShifterByte));
   MemorySnapShot_Store(&bUseHighRes,sizeof(bUseHighRes));
   MemorySnapShot_Store(&nVBLs,sizeof(nVBLs));
@@ -120,21 +119,26 @@ void Video_ClearOnVBL(void)
   Spec512_StartVBL();
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
-  Calculate Video address pointer and store in 'VideoAddress'
+  Calculate and return video address pointer.
 */
-void Video_CalculateAddress(void)
+static Uint32 Video_CalculateAddress(void)
 {
   int X,Y,FrameCycles,nPixelsIn;
+  Uint32 VideoAddress;                          /* Address of video display in ST screen space */
 
   /* Find number of cycles passed during frame */
   FrameCycles = Int_FindFrameCycles();
 
   /* Top of screen is usually 64 lines from VBL(64x512=32768 cycles) */
   if (FrameCycles<(nStartHBL*CYCLES_PER_LINE))
+  {
     VideoAddress = 0;
-  else {
+  }
+  else
+  {
     /* Now find which pixel we are on(ignore left/right borders) */
     /* 96 + 320 + 96 = 512 pixels per scan line(each pixel is one cycle) */
     nPixelsIn = FrameCycles-(nStartHBL*CYCLES_PER_LINE);
@@ -156,16 +160,8 @@ void Video_CalculateAddress(void)
 
   /* Offset from start of screen(MUST use address loading into video display) */
   VideoAddress += VideoBase;
-}
 
-/*-----------------------------------------------------------------------*/
-/*
-  Read Video address pointer(from current cycle count), and return 24-bit address in 'ebx'
-*/
-unsigned long Video_ReadAddress(void)
-{
-  Video_CalculateAddress();  /* Find address from current cycle count into display frame */
-  return( VideoAddress );
+  return VideoAddress;
 }
 
 
@@ -197,7 +193,7 @@ void Video_InterruptHandler_VBL(void)
 #if 0
   if(bUseHighRes)
     nScreenRefreshRate = 70;
-  else if(STRam[0xff820a] & 2)               /* Is it 50Hz or is it 60Hz? */
+  else if(IoMem[0xff820a] & 2)               /* Is it 50Hz or is it 60Hz? */
     nScreenRefreshRate = 50;
   else
     nScreenRefreshRate = 60;
@@ -358,11 +354,14 @@ void Video_WriteToShifter(Uint8 Byte)
 /*
   Write to VideoSync (0xff820a), Hz setting
 */
-void Video_WriteToSync(Uint8 Byte)
+void Video_Sync_WriteByte(void)
 {
   static int nLastHBL = -1, LastByte, nLastCycles;
   int nFrameCycles, nLineCycles;
-  
+  Uint8 Byte;
+
+  Byte = IoMem[0xff820a] & 3;           /* Note: We're only interested in lower 2 bits (50/60Hz) */
+
   nFrameCycles = Int_FindFrameCycles();
 
   /* We only care for cycle position in the actual screen line */
@@ -422,14 +421,14 @@ void Video_StartHBL(void)
 */
 static void Video_StoreFirstLinePalette(void)
 {
-  unsigned short int *pp2;
+  Uint16 *pp2;
   int i;
 
-  pp2 = (unsigned short int *)((unsigned long)STRam+0xff8240);
+  pp2 = (Uint16 *)&IoMem[0xff8240];
   for(i=0; i<16; i++)
     HBLPalettes[i] = SDL_SwapBE16(*pp2++);
   /* And set mask flag with palette and resolution */
-  HBLPaletteMasks[0] = (PALETTEMASK_RESOLUTION|PALETTEMASK_PALETTE) | (((unsigned long)STMemory_ReadByte(0xff8260)&0x3)<<16);
+  HBLPaletteMasks[0] = (PALETTEMASK_RESOLUTION|PALETTEMASK_PALETTE) | (((unsigned long)IoMem_ReadByte(0xff8260)&0x3)<<16);
 }
 
 
@@ -440,9 +439,10 @@ static void Video_StoreFirstLinePalette(void)
 static void Video_StoreResolution(int y)
 {
   /* Clear resolution, and set with current value */
-  if (!(bUseHighRes || bUseVDIRes) ) {
+  if (!(bUseHighRes || bUseVDIRes))
+  {
     HBLPaletteMasks[y] &= ~(0x3<<16);
-    HBLPaletteMasks[y] |= ((unsigned long)STMemory_ReadByte(0xff8260)&0x3)<<16;
+    HBLPaletteMasks[y] |= ((unsigned long)IoMem_ReadByte(0xff8260)&0x3)<<16;
   }
 }
 
@@ -583,4 +583,192 @@ void Video_SetHBLPaletteMaskPointers(void)
   /* Store pointers */
   pHBLPaletteMasks = &HBLPaletteMasks[Line];  /* Next mask entry */
   pHBLPalettes = &HBLPalettes[16*Line];       /* Next colour raster list x16 colours */
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read video address counter high byte (0xff8205)
+*/
+void Video_ScreenCounterHigh_ReadByte(void)
+{
+  IoMem[0xff8205] = Video_CalculateAddress() >> 16;   /* Get video address counter high byte */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read video address counter med byte (0xff8207)
+*/
+void Video_ScreenCounterMed_ReadByte(void)
+{
+  IoMem[0xff8207] = Video_CalculateAddress() >> 8;    /* Get video address counter med byte */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read video address counter low byte (0xff8209)
+*/
+void Video_ScreenCounterLow_ReadByte(void)
+{
+  IoMem[0xff8209] = Video_CalculateAddress();         /* Get video address counter low byte */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read video sync register (0xff820a)
+*/
+void Video_Sync_ReadByte(void)
+{
+  /* Nothing... */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read video base address low byte (0xff820d)
+*/
+void Video_BaseLow_ReadByte(void)
+{
+  IoMem[0xff820d] = 0;        /* ST can only store screen address to 256 bytes (i.e. no lower byte) */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read video line width register (0xff820f)
+*/
+void Video_LineWidth_ReadByte(void)
+{
+  IoMem[0xff820f] = 0;        /* On ST this is always 0 */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read video shifter mode register (0xff8260)
+*/
+void Video_ShifterMode_ReadByte(void)
+{
+  if (bUseHighRes)
+    IoMem[0xff8260] = 2;                  /* If mono monitor, force to high resolution */
+  else
+    IoMem[0xff8260] = VideoShifterByte;   /* Read shifter register */
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write to video shifter palette registers (0xff8240-0xff825e)
+*/
+static void Video_ColorReg_WriteWord(Uint32 addr)
+{
+  if (!bUseHighRes)                                 /* Don't store if hi-res */
+  {
+    unsigned short col;
+    Video_SetHBLPaletteMaskPointers();              /* Set 'pHBLPalettes' etc.. according cycles into frame */
+    col = IoMem_ReadWord(addr);
+    col &= 0x777;                                   /* Mask off to 512 palette */
+    IoMem_WriteWord(addr, col);                     /* (some games write 0xFFFF and read back to see if STe) */
+    Spec512_StoreCyclePalette(col, addr);           /* Store colour into CyclePalettes[] */
+    pHBLPalettes[(addr-0xff8240)/2] = col;          /* Set colour x */
+    *pHBLPaletteMasks |= 1 << ((addr-0xff8240)/2);  /* And mask */
+  }
+}
+
+void Video_Color0_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff8240);
+}
+
+void Video_Color1_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff8242);
+}
+
+void Video_Color2_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff8244);
+}
+
+void Video_Color3_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff8246);
+}
+
+void Video_Color4_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff8248);
+}
+
+void Video_Color5_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff824a);
+}
+
+void Video_Color6_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff824c);
+}
+
+void Video_Color7_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff824e);
+}
+
+void Video_Color8_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff8250);
+}
+
+void Video_Color9_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff8252);
+}
+
+void Video_Color10_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff8254);
+}
+
+void Video_Color11_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff8256);
+}
+
+void Video_Color12_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff8258);
+}
+
+void Video_Color13_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff825a);
+}
+
+void Video_Color14_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff825c);
+}
+
+void Video_Color15_WriteWord(void)
+{
+  Video_ColorReg_WriteWord(0xff825e);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write video shifter mode register (0xff860)
+*/
+void Video_ShifterMode_WriteByte(void)
+{
+  if (!bUseHighRes && !bUseVDIRes)                    /* Don't store if hi-res and don't store if VDI resolution */
+  {
+    VideoShifterByte = IoMem[0xff8260] & 3;           /* We only care for lower 2-bits */
+    Video_WriteToShifter(VideoShifterByte);
+    Video_SetHBLPaletteMaskPointers();
+    *pHBLPaletteMasks &= 0xff00ffff;
+    /* Store resolution after palette mask and set resolution write bit: */
+    *pHBLPaletteMasks |= (((unsigned long)VideoShifterByte|0x04)<<16);
+  }
 }

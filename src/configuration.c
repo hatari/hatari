@@ -9,12 +9,13 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.33 2004-12-05 23:30:17 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.34 2005-01-18 23:32:58 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "audio.h"
 #include "dialog.h"
+#include "ioMem.h"
 #include "video.h"
 #include "vdi.h"
 #include "screen.h"
@@ -22,7 +23,6 @@ char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.33 2004-12-05 23:3
 #include "memAlloc.h"
 #include "file.h"
 #include "uae-cpu/hatari-glue.h"
-#include "intercept.h"
 #include "gemdos.h"
 #include "cfgopts.h"
 

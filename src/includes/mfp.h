@@ -53,7 +53,6 @@ extern unsigned char MFP_TA_MAINCOUNTER;
 extern unsigned char MFP_TB_MAINCOUNTER;
 extern unsigned char MFP_TC_MAINCOUNTER;
 extern unsigned char MFP_TD_MAINCOUNTER;
-extern BOOL bAppliedTimerDPatch;
 
 extern void MFP_Reset(void);
 extern void MFP_MemorySnapShot_Capture(BOOL bSave);
@@ -74,5 +73,45 @@ extern void MFP_InterruptHandler_TimerA(void);
 extern void MFP_InterruptHandler_TimerB(void);
 extern void MFP_InterruptHandler_TimerC(void);
 extern void MFP_InterruptHandler_TimerD(void);
+
+extern void MFP_GPIP_ReadByte(void);
+extern void MFP_ActiveEdge_ReadByte(void);
+extern void MFP_DataDirection_ReadByte(void);
+extern void MFP_EnableA_ReadByte(void);
+extern void MFP_EnableB_ReadByte(void);
+extern void MFP_PendingA_ReadByte(void);
+extern void MFP_PendingB_ReadByte(void);
+extern void MFP_InServiceA_ReadByte(void);
+extern void MFP_InServiceB_ReadByte(void);
+extern void MFP_MaskA_ReadByte(void);
+extern void MFP_MaskB_ReadByte(void);
+extern void MFP_VectorReg_ReadByte(void);
+extern void MFP_TimerACtrl_ReadByte(void);
+extern void MFP_TimerBCtrl_ReadByte(void);
+extern void MFP_TimerCDCtrl_ReadByte(void);
+extern void MFP_TimerAData_ReadByte(void);
+extern void MFP_TimerBData_ReadByte(void);
+extern void MFP_TimerCData_ReadByte(void);
+extern void MFP_TimerDData_ReadByte(void);
+
+extern void MFP_GPIP_WriteByte(void);
+extern void MFP_ActiveEdge_WriteByte(void);
+extern void MFP_DataDirection_WriteByte(void);
+extern void MFP_EnableA_WriteByte(void);
+extern void MFP_EnableB_WriteByte(void);
+extern void MFP_PendingA_WriteByte(void);
+extern void MFP_PendingB_WriteByte(void);
+extern void MFP_InServiceA_WriteByte(void);
+extern void MFP_InServiceB_WriteByte(void);
+extern void MFP_MaskA_WriteByte(void);
+extern void MFP_MaskB_WriteByte(void);
+extern void MFP_VectorReg_WriteByte(void);
+extern void MFP_TimerACtrl_WriteByte(void);
+extern void MFP_TimerBCtrl_WriteByte(void);
+extern void MFP_TimerCDCtrl_WriteByte(void);
+extern void MFP_TimerAData_WriteByte(void);
+extern void MFP_TimerBData_WriteByte(void);
+extern void MFP_TimerCData_WriteByte(void);
+extern void MFP_TimerDData_WriteByte(void);
 
 #endif

@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.28 2004-06-11 10:04:46 thothy Exp $";
+char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.29 2005-01-18 23:33:20 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -159,18 +159,6 @@ void M68000_BusError(unsigned long addr, BOOL bReadWrite)
   BusAddressLocation = addr;        /* Store for exception frame */
   bBusErrorReadWrite = bReadWrite;
   set_special(SPCFLAG_BUSERROR);    /* The exception will be done in newcpu.c */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  ADDRESSERROR - Access incorrect memory boundary, eg byte offset for a word access
-*/
-void M68000_AddressError(unsigned long addr)
-{
-  fprintf(stderr, "M68000_AddressError at address $%lx\n", (long)addr);
-  BusAddressLocation = addr;                /* Store for exception frame */
-  M68000_Exception(EXCEPTION_ADDRERROR);    /* Cause trap */
 }
 
 

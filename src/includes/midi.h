@@ -10,9 +10,9 @@
 
 void Midi_Init(void);
 void Midi_UnInit(void);
-Uint8 Midi_ReadControl(void);
-Uint8 Midi_ReadData(void);
-void Midi_WriteControl(Uint8 controlByte);
-void Midi_WriteData(Uint8 dataByte);
+void Midi_Control_ReadByte(void);
+void Midi_Data_ReadByte(void);
+void Midi_Control_WriteByte(void);
+void Midi_Data_WriteByte(void);
 
 #endif

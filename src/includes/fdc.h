@@ -72,15 +72,15 @@ enum {
 
 
 extern short int FDCSectorCountRegister;
-extern unsigned short int DiscControllerWord_ff8604wr;
-extern unsigned short int DMAModeControl_ff8606wr;
+extern Uint16 DiscControllerWord_ff8604wr;
+extern Uint16 DMAModeControl_ff8606wr;
 
 
 extern void FDC_Reset(void);
 extern void FDC_MemorySnapShot_Capture(BOOL bSave);
 extern void FDC_ResetDMAStatus(void);
 extern void FDC_SetDMAStatus(BOOL bError);
-extern long FDC_ReadDMAStatus(void);
+extern void FDC_DmaStatus_ReadWord(void);
 extern int FDC_FindFloppyDrive(void);
 extern void FDC_AcknowledgeInterrupt(void);
 extern void FDC_UpdateHBL(void);
@@ -96,9 +96,9 @@ extern void FDC_WriteDMAAddress(unsigned long Address);
 extern BOOL FDC_ReadSectorFromFloppy(void);
 extern BOOL FDC_WriteSectorFromFloppy(void);
 extern void FDC_DMADataFromFloppy(void);
-extern void FDC_WriteDiscController(unsigned short v);
-extern short FDC_ReadDiscControllerStatus(void);
-extern void FDC_WriteDMAModeControl(unsigned short v);
+extern void FDC_DiscController_WriteWord(void);
+extern void FDC_DiscControllerStatus_ReadWord(void);
+extern void FDC_DmaModeControl_WriteWord(void);
 
 
 #endif /* ifndef HATARI_FDC_H */

@@ -12,7 +12,7 @@
   to perform the transfer of data from our disc image into the ST RAM area by simulating the
   DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.13 2004-07-01 20:56:38 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.14 2005-01-18 23:33:14 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -21,6 +21,7 @@ char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.13 2004-07-01 20:56:38 thothy Exp $";
 #include "hdc.h"
 #include "floppy.h"
 #include "ikbd.h"
+#include "ioMem.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
@@ -128,19 +129,17 @@ ACSI DMA and Floppy Disc Controller(FDC)
 
 short int FDCSectorCountRegister;
 
-unsigned short int DiscControllerWord_ff8604wr;                 /* 0xff8604 (write) */
-static unsigned short int DiscControllerStatus_ff8604rd;        /* 0xff8604 (read) */
+Uint16 DiscControllerWord_ff8604wr;                             /* 0xff8604 (write) */
+static Uint16 DiscControllerStatus_ff8604rd;                    /* 0xff8604 (read) */
 
-unsigned short int DMAModeControl_ff8606wr;                     /* 0xff8606 (write) */
-static unsigned short int DMAModeControl_ff8606wr_prev;         /* 0xff8606 (stored previous for 'toggle' checks) */
-static unsigned short int DMAStatus_ff8606rd;                   /* 0xff8606 (read) */
+Uint16 DMAModeControl_ff8606wr;                                 /* 0xff8606 (write) */
+static Uint16 DMAStatus_ff8606rd;                               /* 0xff8606 (read) */
 
 static unsigned short int FDCCommandRegister;
 static short int FDCTrackRegister,FDCSectorRegister,FDCDataRegister;
 static int FDCEmulationCommand;                                 /* FDC emulation command currently being exceuted */
 static int FDCEmulationRunning;                                 /* Running command under above */
 static int FDCStepDirection;                                    /* +Track on 'Step' command */
-static short int DiscControllerByte;                            /* Used to pass parameter back to assembler */
 static BOOL bDMAWaiting;                                        /* Is DMA waiting to copy? */
 static int bMotorOn;                                            /* Is motor on? */
 static int MotorSlowingCount;                                   /* Counter used to slow motor before stopping */
@@ -165,7 +164,7 @@ void FDC_Reset(void)
   DiscControllerStatus_ff8604rd = 0;
   DiscControllerWord_ff8604wr = 0;
   DMAStatus_ff8606rd = 0x01;
-  DMAModeControl_ff8606wr = DMAModeControl_ff8606wr_prev = 0;
+  DMAModeControl_ff8606wr = 0;
   FDC_ResetDMAStatus();
   FDCCommandRegister = 0;
   FDCTrackRegister = 0;
@@ -194,7 +193,6 @@ void FDC_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&DiscControllerWord_ff8604wr,sizeof(DiscControllerWord_ff8604wr));
   MemorySnapShot_Store(&DMAStatus_ff8606rd,sizeof(DMAStatus_ff8606rd));
   MemorySnapShot_Store(&DMAModeControl_ff8606wr,sizeof(DMAModeControl_ff8606wr));
-  MemorySnapShot_Store(&DMAModeControl_ff8606wr_prev,sizeof(DMAModeControl_ff8606wr_prev));
   MemorySnapShot_Store(&FDCCommandRegister,sizeof(FDCCommandRegister));
   MemorySnapShot_Store(&FDCTrackRegister,sizeof(FDCTrackRegister));
   MemorySnapShot_Store(&FDCSectorRegister,sizeof(FDCSectorRegister));
@@ -203,7 +201,6 @@ void FDC_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&FDCEmulationCommand,sizeof(FDCEmulationCommand));
   MemorySnapShot_Store(&FDCEmulationRunning,sizeof(FDCEmulationRunning));
   MemorySnapShot_Store(&FDCStepDirection,sizeof(FDCStepDirection));
-  MemorySnapShot_Store(&DiscControllerByte,sizeof(DiscControllerByte));
   MemorySnapShot_Store(&bDMAWaiting,sizeof(bDMAWaiting));
   MemorySnapShot_Store(&bMotorOn,sizeof(bMotorOn));
   MemorySnapShot_Store(&MotorSlowingCount,sizeof(MotorSlowingCount));
@@ -306,9 +303,9 @@ void FDC_SetDMAStatus(BOOL bError)
 /*
   Read DMA Status (RD 0xff8606)
 */
-long FDC_ReadDMAStatus(void)
+void FDC_DmaStatus_ReadWord(void)
 {
-  return (0xffff0000|DMAStatus_ff8606rd);
+  IoMem_WriteWord(0xff8606, (0xffff0000|DMAStatus_ff8606rd));
 }
 
 
@@ -322,18 +319,6 @@ static void FDC_UpdateDiscDrive(void)
 
   if (EmulationDrives[nReadWriteDev].bDiscInserted)
     Floppy_FindDiscDetails(EmulationDrives[nReadWriteDev].pBuffer,EmulationDrives[nReadWriteDev].nImageBytes,&nReadWriteSectorsPerTrack,NULL);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  When write to 0xff8606 (DMA Mode Control) check bit '8' toggle. This causes DMA status reset
-*/
-static void FDC_CheckForDMAStatusReset(void)
-{
-  /* Test for 'toggle' of _read/_write bit '8' */
-  if ((DMAModeControl_ff8606wr_prev ^ DMAModeControl_ff8606wr)&0x0100)
-    FDC_ResetDMAStatus();
 }
 
 
@@ -1095,9 +1080,9 @@ static void FDC_WriteDataRegister(void)
 /*
   Store byte in FDC registers, when write to 0xff8604
 */
-void FDC_WriteDiscController(unsigned short dcw)
+void FDC_DiscController_WriteWord(void)
 {
-  DiscControllerWord_ff8604wr = dcw;
+  DiscControllerWord_ff8604wr = IoMem_ReadWord(0xff8604);
 
   HDC_WriteCommandPacket();           /*  Handle HDC functions */
 
@@ -1132,48 +1117,51 @@ void FDC_WriteDiscController(unsigned short dcw)
   Read Status/FDC registers, when read from 0xff8604
   Return 'DiscControllerByte'
 */
-short FDC_ReadDiscControllerStatus(void)
+void FDC_DiscControllerStatus_ReadWord(void)
 {
-  /* return the HDC status reg */
-  if (DMAModeControl_ff8606wr == 0x08A)     /* HDC status reg selected */
+  Sint16 DiscControllerByte = 0;            /* Used to pass parameter back to assembler */
+
+  if (DMAModeControl_ff8606wr == 0x08A)     /* HDC status reg selected? */
   {
+    /* return the HDC status reg */
     DiscControllerByte = HDCCommand.returnCode;
-    return DiscControllerByte;
   }
-
-  /* old FDC code */
-  switch (DMAModeControl_ff8606wr&0x6)      /* Bits 1,2 (A1,A0) */
+  else
   {
-    case 0x0:                               /* 0 0 - Status register */
-      DiscControllerByte = DiscControllerStatus_ff8604rd;
-      if (bMotorOn)
-        DiscControllerByte |= 0x80;
+    /* old FDC code */
+    switch (DMAModeControl_ff8606wr&0x6)      /* Bits 1,2 (A1,A0) */
+    {
+      case 0x0:                               /* 0 0 - Status register */
+        DiscControllerByte = DiscControllerStatus_ff8604rd;
+        if (bMotorOn)
+          DiscControllerByte |= 0x80;
 
-      if (EmulationDrives[nReadWriteDev].bMediaChanged)
-      {
-        /* Some games apparently poll the write-protection signal to check
-         * for disk image changes (the signal seems to change when you
-         * exchange disks on a real ST). We now also simulate this behaviour
-         * here, so that these games can continue with the other disk. */
-        DiscControllerByte |= 0x40;
-        EmulationDrives[nReadWriteDev].bMediaChanged = FALSE;
-      }
+        if (EmulationDrives[nReadWriteDev].bMediaChanged)
+        {
+          /* Some games apparently poll the write-protection signal to check
+           * for disk image changes (the signal seems to change when you
+           * exchange disks on a real ST). We now also simulate this behaviour
+           * here, so that these games can continue with the other disk. */
+          DiscControllerByte |= 0x40;
+          EmulationDrives[nReadWriteDev].bMediaChanged = FALSE;
+        }
 
-      /* Reset FDC GPIP */
-      MFP_GPIP |= 0x20;
-      break;
-    case 0x2:                               /* 0 1 - Track register */
-      DiscControllerByte = FDCTrackRegister;
-      break;
-    case 0x4:                               /* 1 0 - Sector register */
-      DiscControllerByte = FDCSectorRegister;
-      break;
-    case 0x6:                               /* 1 1 - Data register */
-      DiscControllerByte = FDCDataRegister;
-      break;
+        /* Reset FDC GPIP */
+        MFP_GPIP |= 0x20;
+        break;
+      case 0x2:                               /* 0 1 - Track register */
+        DiscControllerByte = FDCTrackRegister;
+        break;
+      case 0x4:                               /* 1 0 - Sector register */
+        DiscControllerByte = FDCSectorRegister;
+        break;
+      case 0x6:                               /* 1 1 - Data register */
+        DiscControllerByte = FDCDataRegister;
+        break;
+    }
   }
 
-  return DiscControllerByte;
+  IoMem_WriteWord(0xff8604, DiscControllerByte);
 }
 
 
@@ -1282,10 +1270,14 @@ void FDC_DMADataFromFloppy(void)
   NOTE - OR above values with $100 is transfer from memory to floppy
   Also if bit 4 is set, write to sector count register
 */
-void FDC_WriteDMAModeControl(unsigned short v)
+void FDC_DmaModeControl_WriteWord(void)
 {
-  DMAModeControl_ff8606wr_prev = DMAModeControl_ff8606wr;  /* Store previous to check for _read/_write toggle (DMA reset) */
-  DMAModeControl_ff8606wr = v;          /* Store to DMA Mode control */
-  FDC_CheckForDMAStatusReset();
-}
+  Uint16 DMAModeControl_ff8606wr_prev;                     /* stores previous write to 0xff8606 for 'toggle' checks */
 
+  DMAModeControl_ff8606wr_prev = DMAModeControl_ff8606wr;  /* Store previous to check for _read/_write toggle (DMA reset) */
+  DMAModeControl_ff8606wr = IoMem_ReadWord(0xff8606);      /* Store to DMA Mode control */
+
+  /* When write to 0xff8606, check bit '8' toggle. This causes DMA status reset */
+  if ((DMAModeControl_ff8606wr_prev ^ DMAModeControl_ff8606wr) & 0x0100)
+    FDC_ResetDMAStatus();
+}

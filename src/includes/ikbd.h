@@ -1,6 +1,12 @@
 /*
-  Hatari
+  Hatari - ikbd.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 */
+
+#ifndef HATARI_IKBD_H
+#define HATARI_IKBD_H
 
 #include <SDL_keysym.h>           /* Needed for SDLK_LAST */
 
@@ -125,3 +131,10 @@ extern void IKBD_InterruptHandler_ACIA(void);
 extern void IKBD_SendByteToACIA(void);
 extern void IKBD_AddKeyToKeyboardBuffer(unsigned char Data);
 extern void IKBD_PressSTKey(unsigned char ScanCode,BOOL bPress);
+
+extern void IKBD_KeyboardControl_ReadByte(void);
+extern void IKBD_KeyboardData_ReadByte(void);
+extern void IKBD_KeyboardControl_WriteByte(void);
+extern void IKBD_KeyboardData_WriteByte(void);
+
+#endif  /* HATARI_IKBD_H */

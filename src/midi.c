@@ -20,12 +20,13 @@
      the data register, but probably it should rather be done when reading the
      status register?).
 */
-char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.4 2004-04-19 08:53:34 thothy Exp $";
+char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.5 2005-01-18 23:33:24 thothy Exp $";
 
 #include <SDL_types.h>
 
 #include "main.h"
 #include "configuration.h"
+#include "ioMem.h"
 #include "mfp.h"
 #include "midi.h"
 
@@ -91,11 +92,11 @@ void Midi_UnInit(void)
 /*
   Read MIDI status register ($FFFC04).
 */
-Uint8 Midi_ReadControl(void)
+void Midi_Control_ReadByte(void)
 {
 	/* Dprintf(("Midi_ReadControl : $%x.\n", MidiStatusRegister)); */
 
-	return MidiStatusRegister;
+	IoMem[0xfffc04] = MidiStatusRegister;
 }
 
 
@@ -103,13 +104,13 @@ Uint8 Midi_ReadControl(void)
 /*
   Read MIDI data register ($FFFC06).
 */
-Uint8 Midi_ReadData(void)
+void Midi_Data_ReadByte(void)
 {
 	Dprintf(("Midi_ReadData : $%x.\n", 1));
 
 	MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
 
-	return 1;        /* Should be this? */
+	IoMem[0xfffc06] = 1;        /* Should be this? */
 }
 
 
@@ -117,11 +118,11 @@ Uint8 Midi_ReadData(void)
 /*
   Write to MIDI control register ($FFFC04).
 */
-void Midi_WriteControl(Uint8 controlByte)
+void Midi_Control_WriteByte(void)
 {
-	Dprintf(("Midi_WriteControl($%x)\n", controlByte));
+	MidiControlRegister = IoMem[0xfffc04];
 
-	MidiControlRegister = controlByte;
+	Dprintf(("Midi_WriteControl($%x)\n", MidiControlRegister));
 
 	/* Do we need to generate a transfer interrupt? */
 	if ((MidiControlRegister & 0xA0) == 0xA0)
@@ -140,8 +141,10 @@ void Midi_WriteControl(Uint8 controlByte)
 /*
   Write to MIDI data register ($FFFC06).
 */
-void Midi_WriteData(Uint8 dataByte)
+void Midi_Data_WriteByte(void)
 {
+	Uint8 dataByte = IoMem[0xfffc06];
+
 	Dprintf(("Midi_WriteData($%x)\n", dataByte));
 
 	MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
@@ -178,4 +181,3 @@ void Midi_WriteData(Uint8 dataByte)
 		MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
 	}
 }
-

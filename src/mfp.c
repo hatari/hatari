@@ -14,24 +14,22 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.15 2004-06-11 10:04:46 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.16 2005-01-18 23:33:23 thothy Exp $";
 
 #include "main.h"
+#include "configuration.h"
 #include "debug.h"
 #include "fdc.h"
 #include "ikbd.h"
 #include "int.h"
+#include "ioMem.h"
 #include "m68000.h"
-#include "memAlloc.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
-#include "misc.h"
 #include "psg.h"
-#include "screen.h"
-#include "shortcut.h"
+#include "rs232.h"
 #include "sound.h"
-#include "stMemory.h"
-#include "ymFormat.h"
+#include "tos.h"
 #include "video.h"
 
 
@@ -81,6 +79,8 @@ static int TimerCClockCycles=0;
 static int TimerDClockCycles=0;
 
 BOOL bAppliedTimerDPatch;             /* TRUE if the Timer-D patch has been applied */
+static int nTimerDFakeValue;          /* Faked Timer-D data register for the Timer-D patch */
+
 
 /*
  Number of CPU cycles for Timer C+D
@@ -599,3 +599,471 @@ void MFP_InterruptHandler_TimerD(void)
   TimerDClockCycles = MFP_StartTimer_CD(MFP_TCDCR,MFP_TDDR,INTERRUPT_MFP_TIMERD,FALSE);
 }
 
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from monochrome monitor/GPIP pins register (0xfffa01).
+*/
+void MFP_GPIP_ReadByte(void)
+{
+	Uint8 v;
+	v = MFP_GPIP & 0x7f;    /* Lower 7-bits are GPIP (Top bit is monitor type) */
+	if (!bUseHighRes)
+		v |= 0x80;          /* Color monitor -> set top bit */
+
+	IoMem[0xfffa01] = v;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from active edge register (0xfffa03).
+*/
+void MFP_ActiveEdge_ReadByte(void)
+{
+	IoMem[0xfffa03] = MFP_AER;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from data direction register (0xfffa05).
+*/
+void MFP_DataDirection_ReadByte(void)
+{
+	IoMem[0xfffa05] = MFP_DDR;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from interupt enable register A (0xfffa07).
+*/
+void MFP_EnableA_ReadByte(void)
+{
+	IoMem[0xfffa07] = MFP_IERA;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from interupt enable register B (0xfffa09).
+*/
+void MFP_EnableB_ReadByte(void)
+{
+	IoMem[0xfffa09] = MFP_IERB;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from interupt pending register A (0xfffa0b).
+*/
+void MFP_PendingA_ReadByte(void)
+{
+	IoMem[0xfffa0b] = MFP_IPRA;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from interupt pending register A (0xfffa0d).
+*/
+void MFP_PendingB_ReadByte(void)
+{
+	IoMem[0xfffa0d] = MFP_IPRB;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from interupt in service register A (0xfffa0f).
+*/
+void MFP_InServiceA_ReadByte(void)
+{
+	IoMem[0xfffa0f] = MFP_ISRA;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from interupt in service register B (0xfffa11).
+*/
+void MFP_InServiceB_ReadByte(void)
+{
+	IoMem[0xfffa11] = MFP_ISRB;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from interupt mask register A (0xfffa13).
+*/
+void MFP_MaskA_ReadByte(void)
+{
+	IoMem[0xfffa13] = MFP_IMRA;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from interupt mask register B (0xfffa15).
+*/
+void MFP_MaskB_ReadByte(void)
+{
+	IoMem[0xfffa15] = MFP_IMRB;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from MFP vector register (0xfffa17).
+*/
+void MFP_VectorReg_ReadByte(void)
+{
+	IoMem[0xfffa17] = MFP_VR;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from timer A control register (0xfffa19).
+*/
+void MFP_TimerACtrl_ReadByte(void)
+{
+	IoMem[0xfffa19] = MFP_TACR;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from timer B control register (0xfffa1b).
+*/
+void MFP_TimerBCtrl_ReadByte(void)
+{
+	IoMem[0xfffa1b] = MFP_TBCR;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from timer C/D control register (0xfffa1d).
+*/
+void MFP_TimerCDCtrl_ReadByte(void)
+{
+	IoMem[0xfffa1d] = MFP_TCDCR;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from timer A data register (0xfffa1f).
+*/
+void MFP_TimerAData_ReadByte(void)
+{
+	if (MFP_TACR != 8)          /* Is event count? Need to re-calculate counter */
+		MFP_ReadTimerA();       /* Stores result in 'MFP_TA_MAINCOUNTER' */
+
+	IoMem[0xfffa1f] = MFP_TA_MAINCOUNTER;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from timer B data register (0xfffa21).
+*/
+void MFP_TimerBData_ReadByte(void)
+{
+	if (MFP_TBCR != 8)          /* Is event count? Need to re-calculate counter */
+		MFP_ReadTimerB();       /* Stores result in 'MFP_TB_MAINCOUNTER' */
+
+	IoMem[0xfffa21] = MFP_TB_MAINCOUNTER;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from timer C data register (0xfffa23).
+*/
+void MFP_TimerCData_ReadByte(void)
+{
+	MFP_ReadTimerC();        /* Stores result in 'MFP_TC_MAINCOUNTER' */
+
+	IoMem[0xfffa23] = MFP_TC_MAINCOUNTER;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle read from timer D data register (0xfffa25).
+*/
+void MFP_TimerDData_ReadByte(void)
+{
+	Uint32 pc = m68k_getpc();
+
+	if (ConfigureParams.System.bPatchTimerD && pc >= TosAddress && pc <= TosAddress + TosSize)
+	{
+		/* Trick the tos to believe it was changed: */
+		IoMem[0xfffa25] = nTimerDFakeValue;
+	}
+	else
+	{
+		MFP_ReadTimerD();        /* Stores result in 'MFP_TD_MAINCOUNTER' */
+		IoMem[0xfffa25] = MFP_TD_MAINCOUNTER;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to GPIP register (0xfffa01).
+*/
+void MFP_GPIP_WriteByte(void)
+{
+	/* Nothing... */
+	/*fprintf(stderr, "Write to GPIP: %x\n", (int)IoMem[0xfffa01]);*/
+	/*MFP_GPIP = IoMem[0xfffa01];*/   /* TODO: What are the GPIP pins good for? */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to AER (0xfffa03).
+*/
+void MFP_ActiveEdge_WriteByte(void)
+{
+	MFP_AER = IoMem[0xfffa03];
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to data direction register (0xfffa05).
+*/
+void MFP_DataDirection_WriteByte(void)
+{
+	MFP_DDR = IoMem[0xfffa05];
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to interrupt enable register A (0xfffa07).
+*/
+void MFP_EnableA_WriteByte(void)
+{
+	MFP_IERA = IoMem[0xfffa07];
+	MFP_IPRA &= MFP_IERA;
+	MFP_UpdateFlags();
+	/* We may have enabled Timer A or B, check */
+	MFP_StartTimerA();
+	MFP_StartTimerB();
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to interrupt enable register B (0xfffa09).
+*/
+void MFP_EnableB_WriteByte(void)
+{
+	MFP_IERB = IoMem[0xfffa09];
+	MFP_IPRB &= MFP_IERB;
+	MFP_UpdateFlags();
+	/* We may have enabled Timer C or D, check */
+	MFP_StartTimerC();
+	MFP_StartTimerD();
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to interrupt pending register A (0xfffa0b).
+*/
+void MFP_PendingA_WriteByte(void)
+{
+	MFP_IPRA &= IoMem[0xfffa0b];        /* Cannot set pending bits - only clear via software */
+	MFP_UpdateFlags();                  /* Check if any interrupts pending */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to interrupt pending register B (0xfffa0d).
+*/
+void MFP_PendingB_WriteByte(void)
+{
+	MFP_IPRB &= IoMem[0xfffa0d];
+	MFP_UpdateFlags();                  /* Check if any interrupts pending */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to interrupt in service register A (0xfffa0f).
+*/
+void MFP_InServiceA_WriteByte(void)
+{
+	MFP_ISRA &= IoMem[0xfffa0f];        /* Cannot set in-service bits - only clear via software */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to interrupt in service register B (0xfffa11).
+*/
+void MFP_InServiceB_WriteByte(void)
+{
+	MFP_ISRB &= IoMem[0xfffa11];        /* Cannot set in-service bits - only clear via software */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to interrupt mask register A (0xfffa13).
+*/
+void MFP_MaskA_WriteByte(void)
+{
+	MFP_IMRA = IoMem[0xfffa13];
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to interrupt mask register B (0xfffa15).
+*/
+void MFP_MaskB_WriteByte(void)
+{
+	MFP_IMRB = IoMem[0xfffa15];
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to MFP vector register (0xfffa17).
+*/
+void MFP_VectorReg_WriteByte(void)
+{
+	Uint8 old_vr;
+	old_vr = MFP_VR;                    /* Copy for checking if set mode */
+	MFP_VR = IoMem[0xfffa17];
+	if ((MFP_VR^old_vr) & 0x08)         /* Test change in end-of-interrupt mode */
+	{
+		if (MFP_VR & 0x08)              /* Mode did change but was it to automatic mode? (ie bit is a zero) */
+		{                               /* We are now in automatic mode, so clear all in-service bits! */
+			MFP_ISRA = 0;
+			MFP_ISRB = 0;
+		}
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to timer A control register (0xfffa19).
+*/
+void MFP_TimerACtrl_WriteByte(void)
+{
+	Uint8 old_tacr;
+	old_tacr = MFP_TACR;                /* Remember old control state */
+	MFP_TACR = IoMem[0xfffa19] & 0x0f;  /* Mask, Fish (auto160) writes into top nibble! */
+	if ((MFP_TACR^old_tacr) & 0x0f)     /* Check if Timer A control changed */
+		MFP_StartTimerA();              /* Reset timers if need to */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to timer B control register (0xfffa1b).
+*/
+void MFP_TimerBCtrl_WriteByte(void)
+{
+	Uint8 old_tbcr;
+	old_tbcr = MFP_TBCR;                /* Remember old control state */
+	MFP_TBCR = IoMem[0xfffa1b] & 0x0f;  /* Mask, Fish (auto160) writes into top nibble! */
+	if ((MFP_TBCR^old_tbcr) & 0x0f)     /* Check if Timer B control changed */
+		MFP_StartTimerB();              /* Reset timers if need to */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to timer C/D control register (0xfffa1d).
+*/
+void MFP_TimerCDCtrl_WriteByte(void)
+{
+	Uint8 old_tcdcr;
+
+	old_tcdcr = MFP_TCDCR;              /* Remember old control state */
+	MFP_TCDCR = IoMem[0xfffa1d];        /* Store new one */
+
+	if ((MFP_TCDCR^old_tcdcr) & 0x70)   /* Check if Timer C control changed */
+		MFP_StartTimerC();              /* Reset timers if need to */
+
+	if ((MFP_TCDCR^old_tcdcr) & 0x07)   /* Check if Timer D control changed */
+	{
+		Uint32 pc = m68k_getpc();
+
+		/* Need to change baud rate of RS232 emulation? */
+		if (ConfigureParams.RS232.bEnableRS232)
+		{
+			RS232_SetBaudRateFromTimerD();
+		}
+
+		if (ConfigureParams.System.bPatchTimerD && !bAppliedTimerDPatch
+		    && pc >= TosAddress && pc <= TosAddress + TosSize)
+		{
+			/* Slow down Timer-D if set from TOS for the first time to gain more
+			 * desktop performance.
+			 * Obviously, we need to emulate all timers correctly but TOS sets up
+			 * Timer-D at a very high rate (every couple of instructions). The
+			 * interrupt isn't enabled but the emulator still needs to process the
+			 * interrupt table and this HALVES our frame rate!!!
+			 * Some games actually reference this timer but don't set it up
+			 * (eg Paradroid, Speedball I) so we simply intercept the Timer-D setup
+			 * code in TOS and fix the numbers with more 'laid-back' values.
+			 * This still keeps 100% compatibility */
+			MFP_TCDCR = IoMem[0xfffa1d] = (IoMem[0xfffa1d] & 0xf0) | 7;
+			bAppliedTimerDPatch = TRUE;
+		}
+		MFP_StartTimerD();              /* Reset timers if need to */
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to timer A data register (0xfffa1f).
+*/
+void MFP_TimerAData_WriteByte(void)
+{
+	MFP_TADR = IoMem[0xfffa1f];         /* Store into data register */
+	if (MFP_TACR == 0)                  /* Now check if timer is running - if so do not set */
+	{
+		MFP_TA_MAINCOUNTER = MFP_TADR;  /* Timer is off, store to main counter */
+		MFP_StartTimerA();              /* Add our interrupt */
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to timer B data register (0xfffa21).
+*/
+void MFP_TimerBData_WriteByte(void)
+{
+	MFP_TBDR = IoMem[0xfffa21];         /* Store into data register */
+	if (MFP_TBCR == 0)                  /* Now check if timer is running - if so do not set */
+	{
+		MFP_TB_MAINCOUNTER = MFP_TBDR;  /* Timer is off, store to main counter */
+		MFP_StartTimerB();              /* Add our interrupt */
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to timer C data register (0xfffa23).
+*/
+void MFP_TimerCData_WriteByte(void)
+{
+	MFP_TCDR = IoMem[0xfffa23];         /* Store into data register */
+	if ((MFP_TCDCR&0x70) == 0)          /* Now check if timer is running - if so do not set */
+	{
+		MFP_StartTimerC();              /* Add our interrupt */
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle write to timer D data register (0xfffa25).
+*/
+void MFP_TimerDData_WriteByte(void)
+{
+	Uint32 pc = m68k_getpc();
+
+	/* Need to change baud rate of RS232 emulation? */
+	if (ConfigureParams.RS232.bEnableRS232 && (IoMem[0xfffa1d] & 0x07))
+	{
+		RS232_SetBaudRateFromTimerD();
+	}
+
+	/* Patch Timer-D for better performance? */
+	if (ConfigureParams.System.bPatchTimerD && pc >= TosAddress && pc <= TosAddress + TosSize)
+	{
+		nTimerDFakeValue = IoMem[0xfffa25];
+		IoMem[0xfffa25] = 0x64;         /* Slow down the useless Timer-D setup from the bios */
+	}
+
+	MFP_TDDR = IoMem[0xfffa25];         /* Store into data register */
+	if ((MFP_TCDCR&0x07) == 0)          /* Now check if timer is running - if so do not set */
+	{
+		MFP_StartTimerD();              /* Add our interrupt */
+	}
+}

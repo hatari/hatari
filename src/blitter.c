@@ -1,10 +1,11 @@
 /*
- * Hatari - Blitter emulation.
+ * Hatari - blitter.c
  *
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  *
- * This file has been taken from STonX.
+ * Blitter emulation.
+ * This file has originally been taken from STonX.
  *
  * Original information text follows:
  *
@@ -20,11 +21,9 @@
  *  Here lies the Atari Blitter Emulator - The 'Blitter' chip is found in  
  *  the STE/MegaSTE and provides a very fast BitBlit in hardware.
  *
- *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c,
- *  There seems to be a mirror for $ff8a30 used in TOS 1.02 at $ff7f30.
- *  
+ *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.4 2004-04-19 08:53:32 thothy Exp $";
+char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.5 2005-01-18 23:32:56 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -33,6 +32,7 @@ char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.4 2004-04-19 08:53:32 thothy E
 #include "main.h"
 #include "blitter.h"
 #include "hatari-glue.h"
+#include "ioMem.h"
 #include "memorySnapShot.h"
 #include "stMemory.h"
 
@@ -333,120 +333,204 @@ static void (*do_hop_op_P[4][16])(void) =
 
 
 
-Uint16 LOAD_W_ff8a28(void)
+/*-----------------------------------------------------------------------*/
+/*
+  Read blitter endmask 1.
+*/
+void Blitter_Endmask1_ReadWord(void)
 {
-  return end_mask_1;
+	IoMem_WriteWord(0xff8a28, end_mask_1);
 }
 
-Uint16 LOAD_W_ff8a2a(void)
+/*-----------------------------------------------------------------------*/
+/*
+  Read blitter endmask 2.
+*/
+void Blitter_Endmask2_ReadWord(void)
 {
-  return end_mask_2;
+	IoMem_WriteWord(0xff8a2a, end_mask_2);
 }
 
-Uint16 LOAD_W_ff8a2c(void)
+/*-----------------------------------------------------------------------*/
+/*
+  Read blitter endmask 3.
+*/
+void Blitter_Endmask3_ReadWord(void)
 {
-  return end_mask_3;
+	IoMem_WriteWord(0xff8a2c, end_mask_3);
 }
 
-Uint32 LOAD_L_ff8a32(void)
+/*-----------------------------------------------------------------------*/
+/*
+  Read blitter destination address.
+*/
+void Blitter_DestAddr_ReadLong(void)
 {
-  return dest_addr_reg;
+	IoMem_WriteLong(0xff8a32, dest_addr_reg);
 }
 
-Uint16 LOAD_W_ff8a36(void)
+/*-----------------------------------------------------------------------*/
+/*
+  Read blitter words-per-line register.
+*/
+void Blitter_WordsPerLine_ReadWord(void)
 {
-  return x_count;
+	IoMem_WriteWord(0xff8a36, x_count);
 }
 
-Uint16 LOAD_W_ff8a38(void)
+/*-----------------------------------------------------------------------*/
+/*
+  Read blitter lines-per-bitblock register.
+*/
+void Blitter_LinesPerBitblock_ReadWord(void)
 {
-  return y_count;
+	IoMem_WriteWord(0xff8a38, y_count);
 }
 
-Uint8 LOAD_B_ff8a3a(void)
+/*-----------------------------------------------------------------------*/
+/*
+  Read blitter halttone operation register.
+*/
+void Blitter_HalftoneOp_ReadByte(void)
 {
-  return (Uint8)hop;
+	IoMem_WriteByte(0xff8a3a, hop);
 }
 
-Uint8 LOAD_B_ff8a3b(void)
+/*-----------------------------------------------------------------------*/
+/*
+  Read blitter logical operation register.
+*/
+void Blitter_LogOp_ReadByte(void)
 {
-  return (Uint8)op;
+	IoMem_WriteByte(0xff8a3b, op);
 }
 
-Uint8 LOAD_B_ff8a3c(void)
+/*-----------------------------------------------------------------------*/
+/*
+  Read blitter line number register.
+*/
+void Blitter_LineNum_ReadByte(void)
 {
-  if (blit_flag)
-  {
-    Do_Blit();
-    blit_flag = FALSE;
-  }
+	if (blit_flag)		/* FIXME: This is quite an ugly hack... */
+	{
+		Do_Blit();
+		blit_flag = FALSE;
+	}
 
-  return (Uint8)(line_num & 0x3f);
+	IoMem_WriteByte(0xff8a3c, (line_num & 0x3f));
 }
 
-Uint8 LOAD_B_ff8a3d(void)
+/*-----------------------------------------------------------------------*/
+/*
+  Read blitter skew register.
+*/
+void Blitter_Skew_ReadByte(void)
 {
-  return (Uint8)skewreg;
+	IoMem_WriteByte(0xff8a3d, skewreg);
 }
 
 
-void STORE_W_ff8a28(Uint16 v)
+/*-----------------------------------------------------------------------*/
+/*
+  Write to blitter endmask 1.
+*/
+void Blitter_Endmask1_WriteWord(void)
 {
-  end_mask_1 = v;
+	end_mask_1 = IoMem_ReadWord(0xff8a28);
 }
 
-void STORE_W_ff8a2a(Uint16 v)
+/*-----------------------------------------------------------------------*/
+/*
+  Write to blitter endmask 2.
+*/
+void Blitter_Endmask2_WriteWord(void)
 {
-  end_mask_2 = v;
+	end_mask_2 = IoMem_ReadWord(0xff8a2a);
 }
 
-void STORE_W_ff8a2c(Uint16 v)
+/*-----------------------------------------------------------------------*/
+/*
+  Write to blitter endmask 3.
+*/
+void Blitter_Endmask3_WriteWord(void)
 {
-  end_mask_3 = v;
+	end_mask_3 = IoMem_ReadWord(0xff8a2c);
 }
 
-
-void STORE_L_ff8a32(Uint32 v)
-{ 
-  dest_addr_reg = (v & 0x0fffffe);
-}
-
-
-void STORE_W_ff8a36(Uint16 v)
+/*-----------------------------------------------------------------------*/
+/*
+  Write to blitter destination address register.
+*/
+void Blitter_DestAddr_WriteLong(void)
 {
-  x_count = v;
+	dest_addr_reg = IoMem_ReadLong(0xff8a32) & 0x0fffffe;
 }
 
-void STORE_W_ff8a38(Uint16 v)
+/*-----------------------------------------------------------------------*/
+/*
+  Write to blitter words-per-line register.
+*/
+void Blitter_WordsPerLine_WriteWord(void)
 {
-  y_count = v;
+	x_count = IoMem_ReadWord(0xff8a36);
 }
 
-void STORE_B_ff8a3a(Uint8 v)
+/*-----------------------------------------------------------------------*/
+/*
+  Write to blitter words-per-bitblock register.
+*/
+void Blitter_LinesPerBitblock_WriteWord(void)
 {
-  hop = v & 3;                  /* h/ware reg masks out the top 6 bits! */
+	y_count = IoMem_ReadWord(0xff8a38);
 }
 
-void STORE_B_ff8a3b(Uint8 v)
+/*-----------------------------------------------------------------------*/
+/*
+  Write to blitter halftone operation register.
+*/
+void Blitter_HalftoneOp_WriteByte(void)
 {
-  op = v & 15;                  /* h/ware reg masks out the top 4 bits! */  
+	hop = IoMem_ReadByte(0xff8a3a) & 3;         /* h/ware reg masks out the top 6 bits! */
 }
 
-void STORE_B_ff8a3c(Uint8 v)
-{ 
-  if((y_count !=0) && (v & 0x80))   /* Busy bit set and lines to blit? */
-    blit_flag = TRUE; 
-  line_num   = (UB) v;  
+/*-----------------------------------------------------------------------*/
+/*
+  Write to blitter logical operation register.
+*/
+void Blitter_LogOp_WriteByte(void)
+{
+	op = IoMem_ReadByte(0xff8a3b) & 15;         /* h/ware reg masks out the top 4 bits! */  
 }
 
-void STORE_B_ff8a3d(Uint8 v)
-{ 
-  NFSR = (v & 0x40) != 0;         
-  FXSR = (v & 0x80) != 0;         
-  skewreg = (unsigned char) v & 0xcf;   /* h/ware reg mask %11001111 !*/  
+/*-----------------------------------------------------------------------*/
+/*
+  Write to blitter line number register.
+*/
+void Blitter_LineNum_WriteByte(void)
+{
+	line_num = IoMem_ReadByte(0xff8a3c);  
+
+	if((y_count !=0) && (line_num & 0x80))      /* Busy bit set and lines to blit? */
+		blit_flag = TRUE; 
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write to blitter skew register.
+*/
+void Blitter_Skew_WriteByte(void)
+{
+	Uint8 v = IoMem_ReadByte(0xff8a3d);
+	NFSR = (v & 0x40) != 0;         
+	FXSR = (v & 0x80) != 0;         
+	skewreg = v & 0xcf;                         /* h/ware reg mask %11001111 !*/  
 }
 
 
+/*-----------------------------------------------------------------------*/
+/*
+  Do the blit.
+*/
 void Do_Blit(void)
 {   
   if (LM_W(MEM(0xff8a20)) < 0)          /* source_x_inc < 0 */
@@ -483,3 +567,4 @@ void Blitter_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&dest_y_inc, sizeof(dest_y_inc));
   MemorySnapShot_Store(&blit_flag, sizeof(blit_flag));
 }
+

@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.15 2004-04-23 15:34:00 thothy Exp $";
+char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.16 2005-01-18 23:33:39 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -18,7 +18,7 @@ char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.15 2004-04-23 15:34:00 thothy Ex
 #include "memory.h"
 #include "../includes/main.h"
 #include "../includes/tos.h"
-#include "../includes/intercept.h"
+#include "../includes/ioMem.h"
 #include "../includes/reset.h"
 #include "../includes/stMemory.h"
 #include "../includes/m68000.h"
@@ -644,8 +644,8 @@ static addrbank ROMmem_bank =
 
 static addrbank IOmem_bank =
 {
-    Intercept_ReadLong, Intercept_ReadWord, Intercept_ReadByte,
-    Intercept_WriteLong, Intercept_WriteWord, Intercept_WriteByte,
+    IoMem_lget, IoMem_wget, IoMem_bget,
+    IoMem_lput, IoMem_wput, IoMem_bput,
     IOmem_xlate, IOmem_check
 };
 

@@ -9,7 +9,7 @@
   box) for debugging tasks like memory and register dumps
 
 */
-char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.9 2004-04-23 15:33:58 thothy Exp $";
+char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.10 2005-01-18 23:32:59 thothy Exp $";
 
 #include <ctype.h>
 
@@ -17,7 +17,6 @@ char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.9 2004-04-23 15:33:58 thothy E
 #include "configuration.h"
 #include "dialog.h"
 #include "gemdos.h"
-#include "intercept.h"
 #include "reset.h"
 #include "m68000.h"
 #include "stMemory.h"

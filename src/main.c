@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.66 2004-12-09 21:06:37 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.67 2005-01-18 23:33:20 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -25,7 +25,7 @@ char Main_rcsid[] = "Hatari $Id: main.c,v 1.66 2004-12-09 21:06:37 thothy Exp $"
 #include "gemdos.h"
 #include "hdc.h"
 #include "ikbd.h"
-#include "intercept.h"
+#include "ioMem.h"
 #include "keymap.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
@@ -509,7 +509,7 @@ static void Main_Init(void)
     exit(-2);
   }
 
-  Intercept_Init();
+  IoMem_Init();
   Joy_Init();
   Sound_Init();
 
@@ -533,7 +533,7 @@ static void Main_UnInit(void)
   Midi_UnInit();
   RS232_UnInit();
   Printer_UnInit();
-  Intercept_UnInit();
+  IoMem_UnInit();
   GemDOS_UnInitDrives();
   if(Sound_AreWeRecording())
     Sound_EndRecording();

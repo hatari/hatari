@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.42 2004-12-05 23:30:17 thothy Exp $";
+char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.43 2005-01-18 23:33:01 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -19,6 +19,7 @@ char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.42 2004-12-05 23:30:17 thothy Ex
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
+#include "ioMem.h"
 #include "joy.h"
 #include "keymap.h"
 #include "m68000.h"
@@ -35,7 +36,6 @@ char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.42 2004-12-05 23:30:17 thothy Ex
 #include "video.h"
 #include "sdlgui.h"
 #include "uae-cpu/hatari-glue.h"
-#include "intercept.h"
 
 
 CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can also choose 'Cancel') */
