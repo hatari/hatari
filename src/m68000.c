@@ -258,8 +258,13 @@ void M68000_Exception(void)
   unsigned long Vector,MFPBaseVector;
   BOOL bRet=FALSE;
 
+  /* Was the CPU stopped, i.e. by a STOP instruction? */
+  regs.stopped = 0;
+  unset_special (SPCFLAG_STOP);   /* All is go,go,go! */
+
   /* At the moment, this functions ist just a wrapper to Exception() of the UAE CPU - Thothy */
   Exception(ExceptionVector/4, m68k_getpc());
+
   return;
 
 #if 0

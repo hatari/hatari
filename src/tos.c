@@ -152,13 +152,6 @@ void TOS_LoadImage(void)
     bTOSImageLoaded = FALSE;
   }
 
-  /* We currently only can handle TOS 1.00-1.04, TOS 2.0x does not work, don't know why... */
-        if(TOSVersion>0x0104)
-         {
-          fprintf(stderr, "Hatari only support TOS 1.00, 1.02 and 1.04 at the moment. Sorry.\n");
-          /*bTOSImageLoaded=FALSE;*/
-         }
-
   /* Did we load a TOS image correctly? */
   if (!bTOSImageLoaded) {
     fprintf(stderr, "Error: No tos.img loaded!\n");

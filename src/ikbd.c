@@ -31,7 +31,7 @@
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */
 #define ACIA_CYCLES    7200         /* Cycles(Multiple of 4) between sent to ACIA from keyboard along serial line - 500Hz/64, (approx' 6920-7200cycles from test program) */
 
-#define IKBD_RESET_CYCLES  800000   /* Cycles after RESET before complete */
+#define IKBD_RESET_CYCLES  800000   /* Cycles after RESET before complete */ /* Increased from 400000 to 800000 - Thothy */
 
 #define ABS_X_ONRESET    0          /* Initial XY for absolute mouse position after RESET command */
 #define ABS_Y_ONRESET    0
@@ -280,8 +280,10 @@ void IKBD_UpdateInternalMousePosition(void)
   KeyboardProcessor.Mouse.DeltaX = KeyboardProcessor.Rel.X-KeyboardProcessor.Rel.PrevX;
   KeyboardProcessor.Mouse.DeltaY = KeyboardProcessor.Rel.Y-KeyboardProcessor.Rel.PrevY;
 #endif
-        /* Accellerating mouse in ST-Low - is this a good idea? */
-        if(!bUseHighRes) {  KeyboardProcessor.Mouse.DeltaX*=2; KeyboardProcessor.Mouse.DeltaY*=2;  }
+
+  /* Accellerating mouse in ST-Low - is this a good idea? */
+  if(!bUseHighRes)
+   {  KeyboardProcessor.Mouse.DeltaX*=2; KeyboardProcessor.Mouse.DeltaY*=2;  }
 
   /* Retain fraction for next time around!?? */
   if (bHalveX)
