@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.31 2003-03-04 19:27:20 thothy Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.32 2003-03-23 23:07:28 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -389,7 +389,6 @@ void Main_Init(void)
   }
 
   Misc_SeedRandom(1043618);
-  Configuration_Init();
   SDLGui_Init();
   Printer_Init();
   RS232_Init();
@@ -479,6 +478,9 @@ int main(int argc, char *argv[])
 
   /* Set default configuration values: */
   Configuration_SetDefault();
+
+  /* Now try to load the configuration file */
+  Configuration_Init();
 
   /* Check for any passed parameters */
   Main_ReadParameters(argc, argv);
