@@ -14,5 +14,4 @@ extern void M68000_Exception(void);
 extern void M68000_Line_A_OpCode(void);
 extern void M68000_Line_A_Trap(void);
 extern void M68000_Line_F_OpCode(void);
-extern int M68000_FindLastInstructionCycles(void);
 extern void M68000_OutputHistory();
