@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.39 2003-04-08 11:37:05 emanne Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.40 2003-04-12 16:26:26 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -52,8 +52,6 @@ static char rcsid[] = "Hatari $Id: main.c,v 1.39 2003-04-08 11:37:05 emanne Exp 
 
 #define FORCE_WORKING_DIR                 /* Set default directory to cwd */
 
-
-SDL_TimerID hSystemTimer;                 /* Handle for system timer */
 
 BOOL bQuitProgram=FALSE;                  /* Flag to quit program cleanly */
 BOOL bUseFullscreen=FALSE;
@@ -200,41 +198,6 @@ void Main_EventHandler()
 
 /*-----------------------------------------------------------------------*/
 /*
-  This routine runs at 50fps.
-  It increases the VBL counter to govern emulation speed.
-*/
-static Uint32 Main_SystemTimerFunc(Uint32 interval, void *param)
-{
-  /* Advance frame counter, used to draw screen to window at 50fps */
-  VBLCounter++;
-  return(interval);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Create system timer to handle speed.
-*/
-static void Main_CreateSystemTimer(void)
-{
-  /* Create thread to run every 20ms (50fps) */
-  hSystemTimer = SDL_AddTimer(20, Main_SystemTimerFunc, NULL);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Delete system timer
-*/
-static void Main_RemoveSystemTimer(void)
-{
-  SDL_RemoveTimer(hSystemTimer);
-}
-
-
-
-/*-----------------------------------------------------------------------*/
-/*
   Check for any passed parameters
 */
 void Main_ReadParameters(int argc, char *argv[])
@@ -377,15 +340,16 @@ void Main_ReadParameters(int argc, char *argv[])
 */
 void Main_Init(void)
 {
-  /* Init SDL's video and timer subsystem. Note: Audio and joystick subsystems
+  /* Init SDL's video subsystem. Note: Audio and joystick subsystems
      will be initialized later (failures there are not fatal). */
-  if( SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) < 0 )
+  if(SDL_Init(SDL_INIT_VIDEO) < 0)
   {
     fprintf(stderr, "Could not initialize the SDL library:\n %s\n", SDL_GetError() );
     exit(-1);
   }
 
   Misc_SeedRandom(1043618);
+  SDLGui_Init();
   Printer_Init();
   RS232_Init();
   Screen_Init();
@@ -411,14 +375,12 @@ void Main_Init(void)
   Intercept_Init();
   Joy_Init();
   Sound_Init();
-  Main_CreateSystemTimer();
 
   /* Check passed disc image parameter, boot directly into emulator */
   if(strlen(szBootDiscImage) > 0)
   {
     Floppy_InsertDiscIntoDrive(0,szBootDiscImage);
   }
-  SDLGui_Init();
 }
 
 
@@ -429,7 +391,6 @@ void Main_Init(void)
 void Main_UnInit(void)
 {
   Screen_ReturnFromFullScreen();
-  Main_RemoveSystemTimer();
   Floppy_EjectBothDrives();
   Floppy_UnInit();
   HDC_UnInit();

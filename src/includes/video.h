@@ -34,8 +34,8 @@ extern unsigned short int *pHBLPalettes;
 extern unsigned long *pHBLPaletteMasks;
 extern unsigned long VideoBase;
 extern unsigned long VideoRaster;
-extern volatile int VBLCounter;
-extern volatile int OldVBLCounter;
+extern int VBLCounter;
+extern int nScreenRefreshRate;
 
 extern void Video_Reset(void);
 extern void Video_MemorySnapShot_Capture(BOOL bSave);

@@ -8,7 +8,7 @@
   VBLs, HBLs, copying the ST screen to a buffer to simulate the TV raster trace, border
   removal, palette changes per HBL, the 'video address pointer' etc...
 */
-static char rcsid[] = "Hatari $Id: video.c,v 1.13 2003-04-05 22:25:02 thothy Exp $";
+static char rcsid[] = "Hatari $Id: video.c,v 1.14 2003-04-12 16:26:26 thothy Exp $";
 
 #include <SDL.h>
 
@@ -50,8 +50,8 @@ unsigned long VideoBase;                        /* Base address in ST Ram for sc
 unsigned long VideoRaster;                      /* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 int SyncHandler_Value;                          /* Value to pass to 'Video_SyncHandler_xxxx' functions */
 int LeftRightBorder;                            /* BORDERMASK_xxxx used to simulate left/right border removal */
-volatile int VBLCounter=0;                      /* VBL counters (volatile as used in interrupts) */
-volatile int OldVBLCounter=0;
+int VBLCounter;                                 /* VBL counter */
+int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 70 Hz in mono */
 
 
 /*-----------------------------------------------------------------------*/
@@ -177,13 +177,16 @@ unsigned long Video_ReadAddress(void)
 void Video_InterruptHandler_VBL(void)
 {
   int PendingCyclesOver;
+  int nNewMilliTicks;
+  static int nOldMilliTicks = 0;
+  signed int nDelay;
 
   /* Store cycles we went over for this frame(this is our inital count) */
   PendingCyclesOver = -PendingInterruptCount;    /* +ve */
 
   /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
-  /* Start HBL interrupts(313 per frame) - MUST do before add in cycles */
+  /* Start HBL interrupts - MUST do before add in cycles */
   Int_AddAbsoluteInterrupt(CYCLES_ENDLINE,INTERRUPT_VIDEO_ENDLINE);
   Int_AddAbsoluteInterrupt(CYCLES_HBL,INTERRUPT_VIDEO_HBL);
   Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME,INTERRUPT_VIDEO_VBL);
@@ -191,12 +194,15 @@ void Video_InterruptHandler_VBL(void)
   /* Set frame cycles, used for Video Address */
   nFrameCyclesOver = PendingCyclesOver;      /* Number of cycles into frame */
 
-  /* Wait for the next 50Hz counter event, so we stay in sync with the sound */
-  while(VBLCounter == OldVBLCounter)
-  {
-    SDL_Delay(1);
-  }
-  OldVBLCounter = VBLCounter;  /* Store counter so only enter here 50 times a second MAXIMUM */
+  /* Set the screen refresh rate */
+  if(bUseHighRes)
+    nScreenRefreshRate = 70;
+  else if(STRam[0xff820a] & 2)               /* Is it 50Hz or is it 60Hz? */
+    nScreenRefreshRate = 50;
+  else
+    nScreenRefreshRate = 60;
+
+  VBLCounter += 1;
 
   /* Clear any key presses which are due to be de-bounced (held for one ST frame) */
   Keymap_DebounceAllKeys();
@@ -243,6 +249,20 @@ void Video_InterruptHandler_VBL(void)
   Main_EventHandler();         /* Process messages, set 'bQuitProgram' if user tries to quit */
   if(bQuitProgram)
     Int_AddAbsoluteInterrupt(4, 0L);  /* Pass NULL interrupt function to quit cleanly */
+
+  /* Wait, so we stay in sync with the sound */
+  do
+  {
+    nNewMilliTicks = SDL_GetTicks();
+    nDelay = 1000/nScreenRefreshRate - (nNewMilliTicks-nOldMilliTicks);
+    if(nDelay > 2)
+    {
+      /* SDL_Delay seems to be quite inaccurate, so we don't wait the whole time */
+      SDL_Delay(nDelay - 1);
+    }
+  }
+  while(nDelay > 0);
+  nOldMilliTicks = nNewMilliTicks;
 }
 
 
@@ -305,7 +325,7 @@ void Video_InterruptHandler_EndLine(void)
   Video_EndHBL();              /* Increase HBL count, copy line to display buffer and do any video trickery */
 
   /* If we don't often pump data into the event queue, the SDL misses events... grr... */
-  if( !(nHBL&63) )
+  if( !(nHBL&127) )
   {
     Main_EventHandler();
   }
