@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                                 Version 0.30
+                                 Version 0.40
 
                         http://hatari.sourceforge.net/
 
@@ -30,37 +30,43 @@ this program; if not, write to the
  2) What is this?
  ----------------
 
-Hatari is an Atari ST emulator for Linux, FreeBSD, BeOS and other Systems
-which are supported by the SDL library.
-
-Hatari is based on two main sources:
-- The WinSTon sourcecode written by Paul Bates. You can get it from:
-  http://www.sourceforge.net/projects/winston/
-- The UAE's CPU core, you can download UAE at:
-  http://www.freiburg.linux.de/~uae/
+Hatari is an Atari ST emulator for Linux, FreeBSD, NetBSD, BeOS, Mac-OSX and
+other Systems which are supported by the SDL library.
+Unlike most other open source ST emulators which try to give you a good
+environment for running GEM applications, Hatari tries to emulate the hardware
+of a ST as close as possible so that it is able to run most of the old ST games
+and demos.
 
 Hatari started as an adaption of the free WinSTon source code to Linux.
-(WinSTon is a ST emulator for Windows). But since WinSTon's CPU core was
-written in i86 assembler, I was not able to use it for Hatari, too.
-So I used the UAE's CPU core for Hatari instead, because this CPU core has
-been written in portable C and also has some nice features like 68040 and FPU
-support.
+(WinSTon is a ST emulator for Windows). But since WinSTon's CPU core is
+written in i86 assembler, it was not possible to use it for Hatari as Hatari
+is intended to be platform independent. So the UAE's CPU core is now being used
+in Hatari instead, because this CPU core has been written in portable C and
+also has some nice features like 68040 and FPU support.
 
 
  3) Compiling and running
  ------------------------
 
-First, you need the SDL library, you can get it at:
- http://www.libsdl.org
-Of course, you need GNU-C and (GNU) Make, too!
+For using Hatari, you need to have installed the following libraries:
 
-Change to the src/ directory and adapt the Makefile to suite your mood
-(and system of course). Then compile it by typing "make".
+- The SDL library (http://www.libsdl.org)
+- The zlib compression library (http://www.gzip.org/zlib/)
+
+Don't forget to also install the header files of these libraries for compiling
+Hatari (some Linux distributions use separate development packages for these
+header files)!
+
+For compiling Hatari, you currently need GNU-C and GNU-Make. Please note that
+GNU-Make is often called "gmake" instead of "make" on non-Linux systems.
+Now change to the src/ directory and adapt the Makefile to suite your mood (and
+system of course). Then you can compile Hatari by typing "make" (or "gmake").
 If all works fine, you'll get the executable "hatari".
 
-Then you'll have to copy a TOS ROM to the data directory (that can be
-specified in the Makefile) and rename it to "tos.img", or use the
-"--tos" command line option to tell Hatari where to find a TOS ROM.
+Before you can use the emulator, you'll have to copy a TOS ROM to the data
+directory (that can be specified in the Makefile before compiling) and rename
+it to "tos.img", or use the "--tos" command line option to tell Hatari where
+to find a TOS ROM.
 Hatari needs a TOS ROM image because this contains the operating system
 of the emulated Atari. Sorry, it is not possible to ship an image with
 the Hatari package since these images are still copyrighted. But you can
@@ -127,10 +133,6 @@ you can easily transform the DIM images into ST images by stripping the
 header from the files.
 For example try something like:  dd if=input.dim of=output.st bs=32 skip=1
 
-Also note that Hatari doesn't yet support ZIP compressed images like some
-other emulators do. This feature will probably be included in a later release
-of Hatari.
-
 If you've got a disk image that has been created with the old ST emulator
 PaCifiST (for DOS) or with early versions of the program Makedisk, and
 the disk image does not work with Hatari, then the disk probably suffers
@@ -142,6 +144,13 @@ the byte at offset $D (13) from 0 to 1 (don't forget to backup your disk image
 first, since you can also easily destroy your disk image when changing a wrong
 byte there). If the disk contains a bootsector program, you probably have to
 adjust the boot sector check sum, too (it can be found at offset $1FE + $1FF).
+
+Hatari also supports disk images that are compressed with (Pk-)ZIP (file suffix
+must be ".zip") or GZip (file suffix must be ".st.gz" or ".msa.gz"). You can
+even browse the contents of a ZIP file with Hatari's file selection dialog.
+But please note that Hatari can not yet save disk image which are compressed
+with ZIP. Changes to ZIPped disk images will be lost as soon as you eject the
+disk or as soon as you quit the emulator.
 
 
  6) Hard disk support
@@ -177,11 +186,12 @@ Atari since it is not possible to switch the hard disk while the emulator is
 running.
 
 
+ 7) Contact
+ ----------
 
+If you want to contact the authors of Hatari, please have a look at the file
+authors.txt for the e-mail addresses or use the Hatari mailing list.
 
-That's all for the moment. If you want to help me working on Hatari,
-e-mail to:
-  thothy@users.sourceforge.net
+Visit the project pages of Hatari on SourceForge.net for more details:
 
-
-May the fun without the price to be with you ;-) !
+ http://sourceforge.net/projects/hatari/
