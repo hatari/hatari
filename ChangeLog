@@ -1,3 +1,7 @@
+2002/08/11 (THH):
+  * Fixed bug in the blitter function, so the letters in the menu bar of the
+    desktop are now correct.
+
 2002-07-08 (THH):
   * Some more endianess patches for spec512 screens - looks much better now!
   * Fixed the bug that caused Hatari to crash when it was not able to load

@@ -32,9 +32,8 @@
 
 
 /* The following typedefs are needed for STonX's code */
-typedef Uint16  UW;
-typedef Uint8 UB;
-typedef char  B;
+typedef Uint16 UW;
+typedef Uint8  UB;
 
 /* The following functions are needed for STonX's code: */
 #define MEM(a) (a)
@@ -119,8 +118,8 @@ static void _fn_name (void)  \
   register int dest_addr = dest_addr_reg;  \
   register unsigned int skew = (unsigned int) skewreg & 15;  \
   register unsigned int source_buffer=0;  \
-  if(address_space_24)  \
-    { source_addr&=0x0ffffff; dest_addr&=0x0ffffff; }  \
+  /*if(address_space_24)*/  \
+    { source_addr&=0x0fffffe; dest_addr&=0x0fffffe; }  \
   source_x_inc = (int) LM_W(MEM(0xff8a20));  \
   source_y_inc = (int) LM_W(MEM(0xff8a22));  \
   dest_x_inc = (int) LM_W(MEM(0xff8a2e));  \
@@ -358,17 +357,17 @@ Uint16 LOAD_W_ff8a38(void)
   return y_count;
 }
 
-Sint8 LOAD_B_ff8a3a(void)
+Uint8 LOAD_B_ff8a3a(void)
 {
   return (Uint8)hop;
 }
 
-Sint8 LOAD_B_ff8a3b(void)
+Uint8 LOAD_B_ff8a3b(void)
 {
   return (Uint8)op;
 }
 
-Sint8 LOAD_B_ff8a3c(void)
+Uint8 LOAD_B_ff8a3c(void)
 {
   if (blit_flag)
   {
@@ -379,7 +378,7 @@ Sint8 LOAD_B_ff8a3c(void)
   return (Uint8)(line_num & 0x3f);
 }
 
-Sint8 LOAD_B_ff8a3d(void)
+Uint8 LOAD_B_ff8a3d(void)
 {
   return (Uint8)skewreg;
 }
@@ -417,29 +416,30 @@ void STORE_W_ff8a38(Uint16 v)
   y_count = v;
 }
 
-void STORE_B_ff8a3a(Sint8 v)
+void STORE_B_ff8a3a(Uint8 v)
 {
   hop = v & 3;                  /* h/ware reg masks out the top 6 bits! */
 }
 
-void STORE_B_ff8a3b(Sint8 v)
+void STORE_B_ff8a3b(Uint8 v)
 {
   op = v & 15;                  /* h/ware reg masks out the top 4 bits! */  
 }
 
-void STORE_B_ff8a3c(Sint8 v)
+void STORE_B_ff8a3c(Uint8 v)
 { 
   if((y_count !=0) && (v & 0x80))   /* Busy bit set and lines to blit? */
     blit_flag = TRUE; 
   line_num   = (UB) v;  
 }
 
-void STORE_B_ff8a3d(Sint8 v)
+void STORE_B_ff8a3d(Uint8 v)
 { 
   NFSR = (v & 0x40) != 0;         
   FXSR = (v & 0x80) != 0;         
   skewreg = (unsigned char) v & 0xcf;   /* h/ware reg mask %11001111 !*/  
 }
+
 
 void Do_Blit(void)
 {   
