@@ -1,3 +1,13 @@
+2003-03-23 (THH):
+  * Fixed problem that slowed down the emulator in monochrome mode when running
+    TOS 2.06.
+  * Monochrome mode can now be inverted, too (some games like Maniac Mansion
+    use this).
+  * Added patches from Emmanuel Anne (Thanks!):
+    - Added Mega-ST realtime clock emulation.
+    - GEMDOS hard disk emulation now works much better.
+    - Enabled the old WinSTon configuration file saving and loading functions.
+
 2003-03-17 (THH):
   * Changed memory access functions so that Hatari now also should work on
     SunOS/Sparc machines.
