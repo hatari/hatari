@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.25 2005-02-13 16:18:50 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.26 2005-02-24 17:16:32 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -174,18 +174,8 @@ void TOS_MemorySnapShot_Capture(BOOL bSave)
   Patch TOS to skip some TOS setup code which we don't support/need.
 
   So, how do we find these addresses when we have no commented source code?
-  - Hdv_init: Scan start of TOS for table of move.l <addr>,$46A(a5), around 0x224 bytes in
-    and look at the first entry - that's the hdv_init address.
-  - Hdv_boot: Scan start of TOS for table of move.l <addr>,$47A(a5), and look for 5th entry,
-    that's the hdv_boot address. The function starts with link,movem,jsr.
-  - Boot from DMA bus: again scan at start of rom for tst.w $482, boot call will be just above it.
-  - Clear connected drives: search for 'clr.w' and '$4c2' to find, may use (a5) in which case op-code
-    is only 4 bytes and also note this is only do on TOS > 1.00
-
-  If we use hard disk emulation, we also need to force set condrv ($4c2),
-  because the ACSI driver (if any) will reset it. This is done after the DMA
-  bus boot (when the driver loads), replacing the RTS with our own routine which
-  sets condrv and then RTSes.
+  - For the "Boot from DMA bus" patch:
+    Scan at start of rom for tst.w $482, boot call will be just above it.
 */
 static void TOS_FixRom(void)
 {
@@ -310,7 +300,7 @@ static void TOS_SetDefaultMemoryConfig(void)
 */
 int TOS_LoadImage(void)
 {
-  void *pTosFile = NULL;
+  Uint8 *pTosFile = NULL;
 
   bTosImageLoaded = FALSE;
 
@@ -337,8 +327,8 @@ int TOS_LoadImage(void)
     }
 
     /* Now, look at start of image to find Version number and address */
-    TosVersion = SDL_SwapBE16(*(Uint16 *)((Uint32)pTosFile+2));
-    TosAddress = SDL_SwapBE32(*(Uint32 *)((Uint32)pTosFile+8));
+    TosVersion = SDL_SwapBE16(*(Uint16 *)&pTosFile[2]);
+    TosAddress = SDL_SwapBE32(*(Uint32 *)&pTosFile[8]);
 
     /* Check for reasonable TOS version: */
     if(TosVersion<0x100 || TosVersion>0x500 || TosSize>1024*1024L
@@ -362,7 +352,7 @@ int TOS_LoadImage(void)
     }
 
     /* Copy loaded image into ST memory */
-    memcpy((void *)((unsigned long)STRam+TosAddress), pTosFile, TosSize);
+    memcpy(STRam+TosAddress, pTosFile, TosSize);
   }
   else
   {

@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.16 2005-02-13 16:18:49 thothy Exp $";
+char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.17 2005-02-24 17:16:33 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -38,9 +38,9 @@ char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.16 2005-02-13 16:18:49 thothy Exp 
 
 #define LONGLONG Uint64
 
-#define ENVELOPE_PERIOD(Fine,Coarse)  (((unsigned long)Coarse)<<8) + (unsigned long)Fine
-#define NOISE_PERIOD(Freq)            ((((unsigned long)Freq)&0x1f)<<11)
-#define TONE_PERIOD(Fine,Coarse)      ((((unsigned long)Coarse)&0x0f)<<8) + (unsigned long)Fine
+#define ENVELOPE_PERIOD(Fine,Coarse)  ((((Uint32)Coarse)<<8) + (Uint32)Fine)
+#define NOISE_PERIOD(Freq)            (((((Uint32)Freq)&0x1f)<<11))
+#define TONE_PERIOD(Fine,Coarse)      (((((Uint32)Coarse)&0x0f)<<8) + (Uint32)Fine)
 #define MIXTABLE_SIZE    (256*8)        /* Large table, so don't overflow */
 #define TONEFREQ_SHIFT   28             /* 4.28 fixed point */
 #define NOISEFREQ_SHIFT  28             /* 4.28 fixed point */
@@ -57,7 +57,7 @@ char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.16 2005-02-13 16:18:49 thothy Exp 
 /* Original wave samples */
 static int EnvelopeShapeValues[16*1024];                        /* Shape x Length(repeat 3rd/4th entries) */
 /* Frequency and time period samples */
-static unsigned long ChannelFreq[3], EnvelopeFreq, NoiseFreq;   /* Current frequency of each channel A,B,C,Envelope and Noise */
+static Uint32 ChannelFreq[3], EnvelopeFreq, NoiseFreq;          /* Current frequency of each channel A,B,C,Envelope and Noise */
 static int ChannelAmpDecayTime[3];                              /* Store counter to show if amplitude is changed to generate 'samples' */
 static int Envelope[SAMPLES_BUFFER_SIZE],Noise[SAMPLES_BUFFER_SIZE];   /* Current sample for this time period */
 /* Output channel data */
@@ -334,14 +334,14 @@ static void Sound_SetSamplesPassed(void)
 static void Sound_GenerateEnvelope(unsigned char EnvShape, unsigned char Fine, unsigned char Coarse)
 {
   int *pEnvelopeValues;
-  unsigned long EnvelopePeriod,EnvelopeFreqDelta;
+  Uint32 EnvelopePeriod, EnvelopeFreqDelta;
   int i;
 
   /* Find envelope details */
   if (bWriteEnvelopeFreq)
     EnvelopeFreq = 0;
   pEnvelopeValues = &EnvelopeShapeValues[ (EnvShape&0x0f)*1024 ];          /* Envelope shape values */
-  EnvelopePeriod = ENVELOPE_PERIOD((unsigned long)Fine,(unsigned long)Coarse);
+  EnvelopePeriod = ENVELOPE_PERIOD((Uint32)Fine, (Uint32)Coarse);
 
   if (EnvelopePeriod==0)                                                   /* Handle div by zero */
     EnvelopeFreqDelta = 0;
@@ -366,10 +366,10 @@ static void Sound_GenerateEnvelope(unsigned char EnvShape, unsigned char Fine, u
 static void Sound_GenerateNoise(unsigned char MixerControl, unsigned char NoiseGen)
 {
   int NoiseValue;
-  unsigned long NoisePeriod,NoiseFreqDelta;
+  Uint32 NoisePeriod, NoiseFreqDelta;
   int i;
 
-  NoisePeriod = NOISE_PERIOD((unsigned long)NoiseGen);
+  NoisePeriod = NOISE_PERIOD((Uint32)NoiseGen);
 
   if (NoisePeriod==0)                                            /* Handle div by zero */
     NoiseFreqDelta = 0;
@@ -393,16 +393,16 @@ static void Sound_GenerateNoise(unsigned char MixerControl, unsigned char NoiseG
 /*
   Generate channel of samples for this time-frame
 */
-static void Sound_GenerateChannel(int *pBuffer, unsigned char ToneFine, unsigned char ToneCoarse,unsigned char Amplitude,unsigned char MixerControl,unsigned long *pChannelFreq,int MixMask)
+static void Sound_GenerateChannel(int *pBuffer, unsigned char ToneFine, unsigned char ToneCoarse, unsigned char Amplitude, unsigned char MixerControl, Uint32 *pChannelFreq, int MixMask)
 {   
   int *pNoise = Noise, *pEnvelope = Envelope;
-  unsigned long ToneFreq=*pChannelFreq;
-  unsigned long TonePeriod;
-  unsigned long ToneFreqDelta;
+  Uint32 ToneFreq = *pChannelFreq;
+  Uint32 TonePeriod;
+  Uint32 ToneFreqDelta;
   int i,Amp,Mix;
   int ToneOutput,NoiseOutput,MixerOutput,EnvelopeOutput,AmplitudeOutput;
 
-  TonePeriod = TONE_PERIOD((unsigned long)ToneFine,(unsigned long)ToneCoarse);
+  TonePeriod = TONE_PERIOD((Uint32)ToneFine, (Uint32)ToneCoarse);
   /* Find frequency of channel */
   if (TonePeriod==0)
     ToneFreqDelta = 0;                                  /* Handle div by zero */

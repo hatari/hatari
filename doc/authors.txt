@@ -36,14 +36,17 @@ please remind me!):
 
 - Patrice Mandin : Some improvements of the autoconf build system files.
 
-- Eero Tamminen : Many speed improvements and code cleanup.
+- Eero Tamminen : Many speed improvements, code cleanup and other patches.
 
 - Steve Kemp : Found some possible buffer overflows.
 
-- Marco Herrn : Wrote the initial version of the "man" page of Hatari.
+- Marco Herrn : Wrote the initial version of the "man" page of Hatari and
+  maintains the Hatari Debian packages.
 
 - Matthias Alles : He initiated the port of Hatari to MiNT and helped me with
   a lot of technical questions about the ST.
+
+- "Jo" : Patches for compiling Hatari on a 64-bit Alpha machine.
 
 
  Code from other projects

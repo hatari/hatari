@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.30 2005-02-13 16:18:48 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.31 2005-02-24 17:16:32 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -491,12 +491,12 @@ void GemDOS_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&DTAIndex,sizeof(DTAIndex));
   MemorySnapShot_Store(&bInitGemDOS,sizeof(bInitGemDOS));
   if (bSave) {
-    Addr = (unsigned int)pDTA-(unsigned int)STRam;
+    Addr = (unsigned int)((Uint8 *)pDTA - STRam);
     MemorySnapShot_Store(&Addr,sizeof(Addr));
   }
   else {
     MemorySnapShot_Store(&Addr,sizeof(Addr));
-    pDTA = (DTA *)((unsigned int)STRam+(unsigned int)Addr);
+    pDTA = (DTA *)(STRam + Addr);
   }
   MemorySnapShot_Store(&CurrentDrive,sizeof(CurrentDrive));
   /* Don't save file handles as files may have changed which makes
@@ -509,6 +509,7 @@ void GemDOS_MemorySnapShot_Capture(BOOL bSave)
     }
   }
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
