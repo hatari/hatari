@@ -15,7 +15,8 @@ void customreset(void);
 
 unsigned long OpCode_ConnectedDrive(uae_u32 opcode);
 unsigned long OpCode_TimerD(uae_u32 opcode);
-
+unsigned long OpCode_GemDos(uae_u32 opcode);
+unsigned long OpCode_OldGemDos(uae_u32 opcode);
 
 
 #define write_log printf
