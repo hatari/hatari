@@ -116,7 +116,7 @@ file from the CVS repository.
   * Separated SDL_INIT_JOYSTICK and SDL_INIT_AUDIO from Main_Init(), since
     failures during joystick/audio initialization shouldn't be fatal.
   * Short-Cuts now also work with the "apple" key on Mac OS X.
-  * Some endianess patches for the spec512 convertion routine (but it is
+  * Some endianess patches for the spec512 conversion routine (but it is
     still not yet working right).
 
 2002-02-21 (THH):
@@ -207,7 +207,7 @@ file from the CVS repository.
 2001-05-27 (Thomas Huth):  *** Version 0.04a ***
   * Added Stefan Berndtsson's patch for big-endian machines.
     Hatari now runs also with non-x86 Linux machines! Thanks Stefan!
-  * Rewrote the ST-LOW resolution conversation routines in C
+  * Rewrote the ST-LOW resolution conversion routines in C
     => ST-LOW now works!
   * Added some of the WinSTon patches Paul Bates recently published
     at the WinSTon BBS (Thanks to Ladislav Adamec for the hint).
