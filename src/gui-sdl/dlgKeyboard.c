@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.3 2003-12-25 14:19:39 thothy Exp $";
+char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.4 2004-06-11 12:48:49 thothy Exp $";
 
 #include <unistd.h>
 
@@ -87,8 +87,6 @@ void Dialog_KeyboardDlg(void)
         else
           dlgmapfile[0] = 0;
       }
-      Screen_SetFullUpdate();
-      Screen_Draw();
     }
 
   }

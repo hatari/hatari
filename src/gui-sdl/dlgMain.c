@@ -6,7 +6,7 @@
 
   The main dialog.
 */
-char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.2 2004-04-19 08:53:48 thothy Exp $";
+char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.3 2004-06-11 12:48:49 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -150,8 +150,8 @@ int Dialog_MainDlg(BOOL *bReset)
         bQuitProgram = TRUE;
         break;
     }
-    Screen_SetFullUpdate();
-    Screen_Draw();
+
+    SDL_UpdateRect(sdlscrn, 0,0,0,0);
   }
   while(retbut!=MAINDLG_OK && retbut!=MAINDLG_CANCEL && !bQuitProgram);
 

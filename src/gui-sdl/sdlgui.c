@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.4 2004-04-19 08:53:48 thothy Exp $";
+char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.5 2004-06-11 12:48:49 thothy Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -573,9 +573,33 @@ int SDLGui_DoDialog(SGOBJ *dlg)
   SDL_Event evnt;
   SDL_Rect rct;
   Uint32 grey;
-
+  SDL_Surface *pBgSurface;
+  SDL_Rect dlgrect, bgrect;
+  
   grey = SDL_MapRGB(sdlscrn->format,192,192,192);
 
+  dlgrect.x = dlg[0].x * fontwidth;
+  dlgrect.y = dlg[0].y * fontheight;
+  dlgrect.w = dlg[0].w * fontwidth;
+  dlgrect.h = dlg[0].h * fontheight;
+
+  bgrect.x = bgrect.y = 0;
+  bgrect.w = dlgrect.w;
+  bgrect.h = dlgrect.h;
+
+  /* Save background */
+  pBgSurface = SDL_CreateRGBSurface(SDL_SWSURFACE, dlgrect.w, dlgrect.h, sdlscrn->format->BitsPerPixel,
+                   sdlscrn->format->Rmask, sdlscrn->format->Gmask, sdlscrn->format->Bmask, sdlscrn->format->Amask);
+  if (pBgSurface != NULL)
+  {
+    SDL_BlitSurface(sdlscrn,  &dlgrect, pBgSurface, &bgrect);
+  }
+  else
+  {
+    fprintf(stderr, "SDLGUI_DoDialog: CreateRGBSurface failed: %s\n", SDL_GetError());
+  }
+
+  /* (Re-)draw the dialog */
   SDLGui_DrawDialog(dlg);
 
   /* Is the left mouse button still pressed? Yes -> Handle TOUCHEXIT objects here */
@@ -588,12 +612,12 @@ int SDLGui_DoDialog(SGOBJ *dlg)
     if( b&SDL_BUTTON(1) )
     {
       dlg[obj].state |= SG_SELECTED;
-      return obj;
+      retbutton = obj;
     }
   }
 
   /* The main loop */
-  do
+  while(retbutton==0 && !bQuitProgram)
   {
     if( SDL_WaitEvent(&evnt)==1 )  /* Wait for events */
       switch(evnt.type)
@@ -697,7 +721,13 @@ int SDLGui_DoDialog(SGOBJ *dlg)
           break;
       }
   }
-  while(retbutton==0 && !bQuitProgram);
+
+  /* Restore background */
+  if (pBgSurface)
+  {
+    SDL_BlitSurface(pBgSurface, &bgrect, sdlscrn,  &dlgrect);
+    SDL_FreeSurface(pBgSurface);
+  }
 
   if(bQuitProgram)
     retbutton = -1;

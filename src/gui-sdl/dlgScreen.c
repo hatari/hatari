@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.2 2004-04-19 08:53:48 thothy Exp $";
+char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.3 2004-06-11 12:48:49 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -140,8 +140,7 @@ void Dialog_ScreenDlg(void)
         fprintf(stderr,"Sorry, popup menus don't work yet\n");
         break;
       case DLGSCRN_CAPTURE:
-        Screen_SetFullUpdate();
-        Screen_Draw();
+        SDL_UpdateRect(sdlscrn, 0,0,0,0);
         ScreenSnapShot_SaveScreen();
         break;
       case DLGSCRN_RECANIM:

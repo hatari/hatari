@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.4 2003-12-25 14:19:39 thothy Exp $";
+char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.5 2004-06-11 12:48:49 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -99,8 +99,6 @@ void Dialog_MemDlg(void)
             MemorySnapShot_Capture(DialogParams.Memory.szMemoryCaptureFileName);
           }
         }
-        Screen_SetFullUpdate();
-        Screen_Draw();
         break;
      case DLGMEM_RESTORE:               /* Load memory snap-shot */
         strcpy(tmpname, DialogParams.Memory.szMemoryCaptureFileName);
@@ -113,8 +111,6 @@ void Dialog_MemDlg(void)
             MemorySnapShot_Restore(DialogParams.Memory.szMemoryCaptureFileName);
           }
         }
-        Screen_SetFullUpdate();
-        Screen_Draw();
         break;
     }
   }

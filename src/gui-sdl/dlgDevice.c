@@ -6,7 +6,7 @@
 
   Device (Printer etc.) setup dialog
 */
-char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.3 2003-12-25 14:19:39 thothy Exp $";
+char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.4 2004-06-11 12:48:49 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -82,8 +82,6 @@ void Dialog_DeviceDlg(void)
 					File_ShrinkName(dlgPrinterName, tmpname, devicedlg[DEVDLG_PRNFILENAME].w);
 				}
 			}
-			Screen_SetFullUpdate();
-			Screen_Draw();
 			break;
 		}
 	}

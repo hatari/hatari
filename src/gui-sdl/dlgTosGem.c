@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgTosGem_rcsid[] = "Hatari $Id: dlgTosGem.c,v 1.4 2003-12-25 18:45:22 thothy Exp $";
+char DlgTosGem_rcsid[] = "Hatari $Id: dlgTosGem.c,v 1.5 2004-06-11 12:48:49 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -96,8 +96,6 @@ void Dialog_TosGemDlg(void)
           strcpy(DialogParams.TOSGEM.szTOSImageFileName, tmpname);
           File_ShrinkName(dlgromname, DialogParams.TOSGEM.szTOSImageFileName, 34);
         }
-        Screen_SetFullUpdate();
-        Screen_Draw();
         break;
     }
   }
