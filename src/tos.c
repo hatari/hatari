@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-static char rcsid[] = "Hatari $Id: tos.c,v 1.12 2003-03-03 14:23:21 thothy Exp $";
+static char rcsid[] = "Hatari $Id: tos.c,v 1.13 2003-03-09 15:37:10 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -107,16 +107,15 @@ static char pszMouse[] = "working mouse in big screen resolutions";
 static char pszRomCheck[] = "ROM checksum";
 static char pszNoSteHw[] = "disable STE hardware access";
 
-static Uint16 pRtsOpcode[] = { RTS_OPCODE };
-static Uint16 pNopOpcodes[] = { NOP_OPCODE, NOP_OPCODE, NOP_OPCODE, NOP_OPCODE,
-        NOP_OPCODE, NOP_OPCODE, NOP_OPCODE, NOP_OPCODE, NOP_OPCODE, NOP_OPCODE,
-        NOP_OPCODE, NOP_OPCODE, NOP_OPCODE, NOP_OPCODE };
-static Uint16 pConDrvOpcode[] = { CONDRV_OPCODE };
-static Uint16 pTimerDOpcode[] = { TIMERD_OPCODE };
-static Uint16 pMouseOpcode[] = { 0xD3C1 };  /* Is a "adda.l  D1,A1" (instead of "adda.w  D1,A1") */
-static Uint16 pRomCheckOpcode[] = { BRAW_OPCODE, 0x98 };
-static Uint16 pBra1e[] = { 0x601e };
-static Uint16 pBra02[] = { 0x6002 };
+static Uint8 pRtsOpcode[] = { 0x4E, 0x75 };  /* 0x4E75 = RTS */
+static Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
+        0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
+        0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71 };  /* 0x4E71 = NOP */
+static Uint8 pConDrvOpcode[] = { 0x00, 0x0A };  /* 0x000A = Hatari's CONDRV_OPCODE */
+static Uint8 pTimerDOpcode[] = { 0x00, 0x0B };  /* 0x000B = Hatari's TIMERD_OPCODE */
+static Uint8 pMouseOpcode[] = { 0xD3, 0xC1 };  /* "ADDA.L D1,A1" (instead of "ADDA.W D1,A1") */
+static Uint8 pRomCheckOpcode[] = { 0x60, 0x00, 0x00, 0x98 };  /* BRA $e00894 */
+static Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
 
 /* The patches for the TOS: */
 static TOS_PATCH TosPatches[] =
@@ -172,10 +171,10 @@ static TOS_PATCH TosPatches[] =
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE003A0, 0x30389200, 4, pNopOpcodes }, /* MOVE.W $ffff9200,D0 */
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE004EA, 0x61000CBC, 4, pNopOpcodes },
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00508, 0x61000C9E, 4, pNopOpcodes },
-  { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE007A0, 0x631E2F3C, 2, pBra1e },
+  { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE007A0, 0x631E2F3C, 1, pBraOpcode },
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00928, 0x10388901, 4, pNopOpcodes }, /* MOVE.B $FFFF8901,D0 */
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00944, 0xB0388901, 4, pNopOpcodes }, /* CMP.B $FFFF8901,D0 */
-  { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00950, 0x67024601, 2, pBra02 },
+  { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00950, 0x67024601, 1, pBraOpcode },
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00968, 0x61000722, 4, pNopOpcodes },
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00CF2, 0x1038820D, 4, pNopOpcodes }, /* MOVE.B $FFFF820D,D0 */
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00E00, 0x1038820D, 4, pNopOpcodes }, /* MOVE.B $FFFF820D,D0 */
