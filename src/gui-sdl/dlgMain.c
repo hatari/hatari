@@ -6,7 +6,7 @@
 
   The main dialog.
 */
-char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.5 2004-12-05 23:30:19 thothy Exp $";
+char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.6 2005-02-12 23:11:28 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -70,7 +70,7 @@ int Dialog_MainDlg(BOOL *bReset)
   BOOL bOldMouseVisibility;
   int nOldMouseX, nOldMouseY;
 
-  if(SDLGui_PrepareFont())
+  if(SDLGui_SetScreen(sdlscrn))
     return FALSE;
 
   SDL_GetMouseState(&nOldMouseX, &nOldMouseY);
@@ -84,7 +84,7 @@ int Dialog_MainDlg(BOOL *bReset)
 
   do
   {
-    retbut = SDLGui_DoDialog(maindlg);
+    retbut = SDLGui_DoDialog(maindlg, NULL);
     switch(retbut)
     {
       case MAINDLG_ABOUT:
@@ -144,7 +144,7 @@ int Dialog_MainDlg(BOOL *bReset)
         break;
     }
   }
-  while(retbut!=MAINDLG_OK && retbut!=MAINDLG_CANCEL && !bQuitProgram);
+  while (retbut!=MAINDLG_OK && retbut!=MAINDLG_CANCEL && retbut!=SDLGUI_QUIT && !bQuitProgram);
 
 
   if( maindlg[MAINDLG_RESET].state & SG_SELECTED )

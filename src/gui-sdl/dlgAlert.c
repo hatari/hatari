@@ -20,12 +20,13 @@
  * along with ARAnyM; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.1 2004-10-31 17:32:50 thothy Exp $";
+char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.2 2005-02-12 23:11:28 thothy Exp $";
 
 #include <string.h>
 
 #include "main.h"
 #include "dialog.h"
+#include "screen.h"
 #include "sdlgui.h"
 
 
@@ -136,13 +137,14 @@ static int DlgAlert_ShowDlg(const char *text)
 
 	free(orig_t);
 
-	SDLGui_PrepareFont();
+	if (SDLGui_SetScreen(sdlscrn))
+		return FALSE;
 	SDLGui_CenterDlg(alertdlg);
 
 	bOldMouseVisibility = SDL_ShowCursor(SDL_QUERY);
 	SDL_ShowCursor(SDL_ENABLE);
 
-	i = SDLGui_DoDialog(alertdlg);
+	i = SDLGui_DoDialog(alertdlg, NULL);
 
 	SDL_ShowCursor(bOldMouseVisibility);
 

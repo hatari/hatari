@@ -40,6 +40,11 @@ enum
 #define SGARROWDOWN  2
 #define SGFOLDER     5
 
+/* Return codes: */
+#define SDLGUI_ERROR         -1
+#define SDLGUI_QUIT          -2
+#define SDLGUI_UNKNOWNEVENT  -3
+
 
 typedef struct
 {
@@ -54,8 +59,8 @@ typedef struct
 
 extern int SDLGui_Init(void);
 extern int SDLGui_UnInit(void);
-extern int SDLGui_PrepareFont(void);
-extern int SDLGui_DoDialog(SGOBJ *dlg);
+extern int SDLGui_SetScreen(SDL_Surface *pScrn);
+extern int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut);
 extern void SDLGui_CenterDlg(SGOBJ *dlg);
 extern int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew);
 

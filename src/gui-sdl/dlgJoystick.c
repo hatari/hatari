@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.2 2004-04-19 08:53:48 thothy Exp $";
+char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.3 2005-02-12 23:11:28 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -71,9 +71,9 @@ void Dialog_JoyDlg(void)
 
   do
   {
-    but = SDLGui_DoDialog(joystickdlg);
+    but = SDLGui_DoDialog(joystickdlg, NULL);
   }
-  while( but!=DLGJOY_EXIT && !bQuitProgram );
+  while (but != DLGJOY_EXIT && but != SDLGUI_QUIT && !bQuitProgram );
 
   /* Read values from dialog */
   DialogParams.Joysticks.Joy[1].bCursorEmulation = (joystickdlg[DLGJOY_J1CURSOR].state & SG_SELECTED);

@@ -6,7 +6,7 @@
 
   Show information about the program and its license.
 */
-char DlgAbout_rcsid[] = "Hatari $Id: dlgAbout.c,v 1.4 2004-10-31 17:32:50 thothy Exp $";
+char DlgAbout_rcsid[] = "Hatari $Id: dlgAbout.c,v 1.5 2005-02-12 23:11:28 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -45,5 +45,5 @@ static SGOBJ aboutdlg[] =
 void Dialog_AboutDlg(void)
 {
 	SDLGui_CenterDlg(aboutdlg);
-	SDLGui_DoDialog(aboutdlg);
+	SDLGui_DoDialog(aboutdlg, NULL);
 }

@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.6 2004-04-28 09:04:59 thothy Exp $";
+char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.7 2005-02-12 23:11:28 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -14,10 +14,12 @@ char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.6 2004-04-28 09:04
 #include <dirent.h>
 
 #include "main.h"
-#include "screen.h"
 #include "sdlgui.h"
 #include "file.h"
 #include "zip.h"
+
+
+#define SGFS_NUMENTRIES   16            /* How many entries are displayed at once */
 
 
 #define SGFSDLG_FILENAME  5
@@ -38,7 +40,7 @@ static char dlgpath[DLGPATH_SIZE+1];    /* Path name in the dialog */
 static char dlgfname[DLGFNAME_SIZE+1];  /* Name of the selected file in the dialog */
 
 #define DLGFILENAMES_SIZE 59
-static char dlgfilenames[16][DLGFILENAMES_SIZE+1];  /* Visible file names in the dialog */
+static char dlgfilenames[SGFS_NUMENTRIES][DLGFILENAMES_SIZE+1];  /* Visible file names in the dialog */
 
 /* The dialog data: */
 static SGOBJ fsdlg[] =
@@ -77,6 +79,10 @@ static SGOBJ fsdlg[] =
 };
 
 
+static int ypos;                        /* First entry number to be displayed */
+static BOOL refreshentries;             /* Do we have to update the file names in the dialog? */
+static int entries;                     /* How many files are in the actual directory? */
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -84,7 +90,7 @@ static SGOBJ fsdlg[] =
   Returns FALSE if it failed, TRUE on success.
 */
 static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path,
-                                        BOOL browsingzip, int entries, int ypos)
+                                        BOOL browsingzip, int entries)
 {
 	int i;
 	char *tempstr = malloc(FILENAME_MAX);
@@ -96,7 +102,7 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path,
 	}
 
 	/* Copy entries to dialog: */
-	for(i=0; i<16; i++)
+	for(i=0; i<SGFS_NUMENTRIES; i++)
 	{
 		if( i+ypos < entries )
 		{
@@ -133,6 +139,76 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path,
 
 /*-----------------------------------------------------------------------*/
 /*
+  Prepare to scroll up one entry.
+*/
+static void DlgFileSelect_ScrollUp(void)
+{
+	if (ypos > 0)
+	{
+		--ypos;
+		refreshentries = TRUE;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Prepare to scroll down one entry.
+*/
+static void DlgFileSelect_ScrollDown(void)
+{
+	if (ypos+SGFS_NUMENTRIES < entries)
+	{
+		++ypos;
+		refreshentries = TRUE;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Handle SDL events.
+*/
+static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
+{
+	switch (pEvent->type)
+	{
+	 case SDL_MOUSEBUTTONDOWN:
+		if (pEvent->button.button == SDL_BUTTON_WHEELUP)
+			DlgFileSelect_ScrollUp();
+		else if (pEvent->button.button == SDL_BUTTON_WHEELDOWN)
+			DlgFileSelect_ScrollDown();
+		break;
+	 case SDL_KEYDOWN:
+		switch (pEvent->key.keysym.sym)
+		{
+		 case SDLK_UP:  	DlgFileSelect_ScrollUp(); break;
+		 case SDLK_DOWN:	DlgFileSelect_ScrollDown(); break;
+		 case SDLK_HOME:	ypos = 0; refreshentries = TRUE; break;
+		 case SDLK_END: 	ypos = entries-SGFS_NUMENTRIES; refreshentries = TRUE; break;
+		 case SDLK_PAGEUP:
+			if (ypos > SGFS_NUMENTRIES)
+				ypos -= SGFS_NUMENTRIES;
+			else
+				ypos = 0;
+			refreshentries = TRUE;
+			break;
+		 case SDLK_PAGEDOWN:
+			if (ypos+2*SGFS_NUMENTRIES < entries)
+				ypos += SGFS_NUMENTRIES;
+			else
+				ypos = entries-SGFS_NUMENTRIES;
+			refreshentries = TRUE;
+			break;
+		 default: break;
+		}
+		break;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Show and process a file selection dialog.
   Returns TRUE if the use selected "okay", FALSE if "cancel".
   input: zip_path = pointer to buffer to contain file path within a selected
@@ -142,13 +218,10 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path,
 int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 {
 	int i,n;
-	int entries = 0;                    /* How many files are in the actual directory? */
-	int ypos = 0;
 	struct dirent **files = NULL;
 	char *pStringMem;
 	char *path, *fname;                 /* The actual file and path names */
 	BOOL reloaddir = TRUE;              /* Do we have to reload the directory file list? */
-	BOOL refreshentries = TRUE;         /* Do we have to update the file names in the dialog? */
 	int retbut;
 	int oldcursorstate;
 	int selection = -1;                 /* The actual selection, -1 if none selected */
@@ -156,6 +229,11 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 	char *zipdir;
 	BOOL browsingzip = FALSE;           /* Are we browsing an archive? */
 	zip_dir *zipfiles = NULL;
+	SDL_Event sdlEvent;
+
+	ypos = 0;
+	refreshentries = TRUE;
+	entries = 0;
 
 	/* Allocate memory for the file and path name strings: */
 	pStringMem = malloc(4 * FILENAME_MAX);
@@ -234,7 +312,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 		/* Update the file name strings in the dialog? */
 		if (refreshentries)
 		{
-			if (!DlgFileSelect_RefreshEntries(files, path, browsingzip, entries, ypos))
+			if (!DlgFileSelect_RefreshEntries(files, path, browsingzip, entries))
 			{
 				free(pStringMem);
 				return FALSE;
@@ -243,7 +321,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 		}
 
 		/* Show dialog: */
-		retbut = SDLGui_DoDialog(fsdlg);
+		retbut = SDLGui_DoDialog(fsdlg, &sdlEvent);
 
 		/* Has the user clicked on a file or folder? */
 		if( retbut>=SGFSDLG_ENTRY1 && retbut<=SGFSDLG_ENTRY16 && retbut-SGFSDLG_ENTRY1+ypos<entries)
@@ -459,32 +537,25 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 				ypos = 0;
 				break;
 			case SGFSDLG_UP:                    /* Scroll up */
-				if( ypos>0 )
-				{
-					--ypos;
-					refreshentries = TRUE;
-				}
-				SDL_Delay(20);
+				DlgFileSelect_ScrollUp();
+				SDL_Delay(10);
 				break;
 			case SGFSDLG_DOWN:                  /* Scroll down */
-				if( ypos+17<=entries )
-				{
-					++ypos;
-					refreshentries = TRUE;
-				}
-				SDL_Delay(20);
+				DlgFileSelect_ScrollDown();
+				SDL_Delay(10);
 				break;
 			case SGFSDLG_FILENAME:              /* User entered new filename */
 				strcpy(fname, dlgfname);
+				break;
+			case SDLGUI_UNKNOWNEVENT:
+				DlgFileSelect_HandleSdlEvents(&sdlEvent);
 				break;
 			} /* switch */
 		} /* other button code */
 
 
 	} /* do */
-
-
-	while (retbut!=SGFSDLG_OKAY && retbut!=SGFSDLG_CANCEL && !bQuitProgram);
+	while (retbut!=SGFSDLG_OKAY && retbut!=SGFSDLG_CANCEL && retbut!=SDLGUI_QUIT && !bQuitProgram);
 
 	if (oldcursorstate == SDL_DISABLE)
 		SDL_ShowCursor(SDL_DISABLE);

@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.2 2004-12-09 21:06:40 thothy Exp $";
+char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.3 2005-02-12 23:11:28 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -67,7 +67,7 @@ void DlgRom_Main(void)
 
 	do
 	{
-		but = SDLGui_DoDialog(romdlg);
+		but = SDLGui_DoDialog(romdlg, NULL);
 		switch (but)
 		{
 		 case DLGROM_TOSBROWSE:
@@ -96,7 +96,7 @@ void DlgRom_Main(void)
 			break;
 		}
 	}
-	while (but!=DLGROM_EXIT && !bQuitProgram);
+	while (but != DLGROM_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
 
 	free(tmpname);
 }

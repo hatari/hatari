@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.4 2004-12-05 23:30:19 thothy Exp $";
+char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.5 2005-02-12 23:11:28 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -164,7 +164,7 @@ void Dialog_ScreenDlg(void)
   /* The screen dialog main loop */
   do
   {
-    but = SDLGui_DoDialog(screendlg);
+    but = SDLGui_DoDialog(screendlg, NULL);
     switch( but )
     {
       case DLGSCRN_FPSPOPUP:
@@ -189,7 +189,7 @@ void Dialog_ScreenDlg(void)
         break;
     }
   }
-  while(but!=DLGSCRN_EXIT && !bQuitProgram);
+  while (but != DLGSCRN_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
 
   /* Read new values from dialog: */
 

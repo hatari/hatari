@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgNewDisc_rcsid[] = "Hatari $Id: dlgNewDisc.c,v 1.1 2003-12-29 20:10:04 thothy Exp $";
+char DlgNewDisc_rcsid[] = "Hatari $Id: dlgNewDisc.c,v 1.2 2005-02-12 23:11:28 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -73,7 +73,7 @@ void DlgNewDisc_Main(void)
 	/* Draw and process the dialog */
 	do
 	{
-		but = SDLGui_DoDialog(newdiscdlg);
+		but = SDLGui_DoDialog(newdiscdlg, NULL);
 		switch(but)
 		{
 		 case DLGNEWDISC_DECTRACK:
@@ -113,7 +113,7 @@ void DlgNewDisc_Main(void)
 			break;
 		}
 	}
-	while (but != DLGNEWDISC_EXIT && !bQuitProgram);
+	while (but != DLGNEWDISC_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
 
 	Memory_Free(szNewDiscName);
 }

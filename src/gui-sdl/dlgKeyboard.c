@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.4 2004-06-11 12:48:49 thothy Exp $";
+char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.5 2005-02-12 23:11:28 thothy Exp $";
 
 #include <unistd.h>
 
@@ -69,7 +69,7 @@ void Dialog_KeyboardDlg(void)
   /* Show the dialog: */
   do
   {
-    but = SDLGui_DoDialog(keyboarddlg);
+    but = SDLGui_DoDialog(keyboarddlg, NULL);
 
     if(but == DLGKEY_MAPBROWSE)
     {
@@ -90,7 +90,7 @@ void Dialog_KeyboardDlg(void)
     }
 
   }
-  while(but != DLGKEY_EXIT && !bQuitProgram);
+  while (but != DLGKEY_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
 
   /* Read values from dialog: */
   if(keyboarddlg[DLGKEY_SYMBOLIC].state & SG_SELECTED)

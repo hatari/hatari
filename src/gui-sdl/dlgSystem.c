@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.4 2005-02-12 17:04:52 thothy Exp $";
+char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.5 2005-02-12 23:11:28 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -125,7 +125,7 @@ void Dialog_SystemDlg(void)
 		systemdlg[DLGSYS_SLOWFDC].state &= ~SG_SELECTED;
 
 	/* Show the dialog: */
-	SDLGui_DoDialog(systemdlg);
+	SDLGui_DoDialog(systemdlg, NULL);
 
 	/* Read values from dialog: */
 

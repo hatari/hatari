@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.3 2003-12-25 14:19:39 thothy Exp $";
+char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.4 2005-02-12 23:11:28 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -91,7 +91,7 @@ void Dialog_SoundDlg(void)
   /* The sound dialog main loop */
   do
   {
-    but = SDLGui_DoDialog(sounddlg);
+    but = SDLGui_DoDialog(sounddlg, NULL);
     switch(but)
     {
       case DLGSOUND_RECBROWSE:                    /* Choose a new record file */
@@ -124,7 +124,7 @@ void Dialog_SoundDlg(void)
         break;
     }
   }
-  while( but!=DLGSOUND_EXIT && !bQuitProgram );
+  while (but != DLGSOUND_EXIT && but != SDLGUI_QUIT && !bQuitProgram );
 
   /* Read values from dialog */
   DialogParams.Sound.bEnableSound = (sounddlg[DLGSOUND_ENABLE].state & SG_SELECTED);

@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.7 2004-07-05 15:38:36 thothy Exp $";
+char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.8 2005-02-12 23:11:28 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -141,7 +141,7 @@ void Dialog_DiscDlg(void)
   /* Draw and process the dialog */
   do
   {
-    but = SDLGui_DoDialog(discdlg);
+    but = SDLGui_DoDialog(discdlg, NULL);
     switch(but)
     {
       case DISCDLG_EJECTA:                        /* Eject disc in drive A: */
@@ -243,7 +243,7 @@ void Dialog_DiscDlg(void)
         break;
     }
   }
-  while(but!=DISCDLG_EXIT && !bQuitProgram);
+  while (but!=DISCDLG_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
 
   /* Read values from dialog */
   DialogParams.DiscImage.bAutoInsertDiscB = (discdlg[DISCDLG_AUTOB].state & SG_SELECTED);

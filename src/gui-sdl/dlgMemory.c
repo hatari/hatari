@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.5 2004-06-11 12:48:49 thothy Exp $";
+char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.6 2005-02-12 23:11:28 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -84,7 +84,7 @@ void Dialog_MemDlg(void)
 
   do
   {
-    but = SDLGui_DoDialog(memorydlg);
+    but = SDLGui_DoDialog(memorydlg, NULL);
 
     switch(but)
     {
@@ -114,7 +114,7 @@ void Dialog_MemDlg(void)
         break;
     }
   }
-  while( but!=DLGMEM_EXIT && !bQuitProgram );
+  while (but != DLGMEM_EXIT && but != SDLGUI_QUIT && !bQuitProgram );
 
   if( memorydlg[DLGMEM_512KB].state & SG_SELECTED )
     DialogParams.Memory.nMemorySize = MEMORY_SIZE_512Kb;
