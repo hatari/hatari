@@ -31,7 +31,7 @@
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */
 #define ACIA_CYCLES    7200         /* Cycles(Multiple of 4) between sent to ACIA from keyboard along serial line - 500Hz/64, (approx' 6920-7200cycles from test program) */
 
-#define IKBD_RESET_CYCLES  800000   /* Cycles after RESET before complete */ /* Increased from 400000 to 800000 - Thothy */
+#define IKBD_RESET_CYCLES  400000   /* Cycles after RESET before complete */
 
 #define ABS_X_ONRESET    0          /* Initial XY for absolute mouse position after RESET command */
 #define ABS_Y_ONRESET    0
