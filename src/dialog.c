@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.33 2003-06-01 20:04:26 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.34 2003-06-15 19:14:25 thothy Exp $";
 
 #include <unistd.h>
 
@@ -199,9 +199,9 @@ SGOBJ tosgemdlg[] =
 #define DLGSCRN_INTERLACE  4
 #define DLGSCRN_FRAMESKIP  5
 #define DLGSCRN_OVERSCAN   6
-#define DLGSCRN_COLOR      8
-#define DLGSCRN_MONO       9
-#define DLGSCRN_8BPP       11
+#define DLGSCRN_8BPP       7
+#define DLGSCRN_COLOR      9
+#define DLGSCRN_MONO       10
 #define DLGSCRN_LOW320     12
 #define DLGSCRN_LOW640     13
 // #define DLGSCRN_LOW800     14
@@ -224,13 +224,13 @@ SGOBJ screendlg[] =
   { SGCHECKBOX, 0, 0, 4,5, 23,1, "Interlaced mode" },
   { SGCHECKBOX, 0, 0, 4,6, 10,1, "Frame skip" },
   { SGCHECKBOX, 0, 0, 4,7, 13,1, "Use borders" },
-  { SGTEXT, 0, 0, 4,8, 8,1, "Monitor:" },
-  { SGRADIOBUT, 0, 0, 15,8, 7,1, "Color" },
-  { SGRADIOBUT, 0, 0, 25,8, 6,1, "Mono" },
-  { SGTEXT, 0, 0, 4,10, 23,1, "ST-Low mode:" },
-  { SGCHECKBOX, 0, 0, 30,10, 7,1, "8 bpp" },
-  { SGRADIOBUT, 0, 0, 5,12, 9,1, "320x240" },
-  { SGRADIOBUT, 0, 0, 16,12, 9,1, "640x480" },
+  { SGCHECKBOX, 0, 0, 4,8, 13,1, "Force 8 bpp" },
+  { SGTEXT, 0, 0, 4,10, 8,1, "Monitor:" },
+  { SGRADIOBUT, 0, 0, 18,10, 7,1, "Color" },
+  { SGRADIOBUT, 0, 0, 28,10, 6,1, "Mono" },
+  { SGTEXT, 0, 0, 4,12, 12,1, "ST-Low mode:" },
+  { SGRADIOBUT, 0, 0, 18,12, 8,1, "Normal" },
+  { SGRADIOBUT, 0, 0, 28,12, 8,1, "Zoomed" },
 /*   { SGRADIOBUT, 0, 0, 27,12, 9,1, "800x600" }, */
   { SGBOX, 0, 0, 1,15, 38,7, NULL },
   { SGTEXT, 0, 0, 13,16, 14,1, "Screen capture" },
