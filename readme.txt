@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                                 Version 0.20
+                                 Version 0.25
 
                         http://hatari.sourceforge.net/
 
@@ -30,18 +30,21 @@ this program; if not, write to the
  2) What is this?
  ----------------
 
-Hatari is a "new" Atari ST emulator for Linux. It is based on two main 
-sources:
-- The WinSTon sourcecode written by Paul Bates. You can get it at:
+Hatari is an Atari ST emulator for Linux, FreeBSD, BeOS and other Systems
+which are supported by the SDL library.
+
+Hatari is based on two main sources:
+- The WinSTon sourcecode written by Paul Bates. You can get it from:
   http://www.sourceforge.net/projects/winston/
 - The UAE's CPU core, you can download UAE at:
   http://www.freiburg.linux.de/~uae/
 
-Hatari is mainly an adaption of the free WinSTon source code to Linux.
-(WinSTon is a ST emulator for Windows). But since WinSTon's CPU core is
+Hatari started as an adaption of the free WinSTon source code to Linux.
+(WinSTon is a ST emulator for Windows). But since WinSTon's CPU core was
 written in i86 assembler, I was not able to use it for Hatari, too.
-Instead I adapted UAE's CPU core for Hatari.
-The UAE CPU core has some nice features like 68040 and FPU support.
+So I used the UAE's CPU core for Hatari instead, because this CPU core has
+been written in portable C and also has some nice features like 68040 and FPU
+support.
 
 
  3) Compiling and running
@@ -138,9 +141,9 @@ hard disk emulation and a GEMDOS based drive emulation.
 
 To use the ACSI hard disk emulation, you need a hard disk image file with a
 pre-installed HD driver in it. So either try to image your old ST hard disk
-or grab one from the internet (if you can find one).
-Perhaps we'll provide a tool for creating HD images soon, too, or put an
-image on the Hatari website.
+or grab one from the internet. There is a HD image on the Hatari web page
+for download.
+Perhaps we'll also provide a tool for creating HD images one day.
 
 With the GEMDOS based drive emulation, you can easily "mount" a folder from
 the host file system to a drive of the emulated Atari.

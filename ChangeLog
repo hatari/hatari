@@ -1,3 +1,7 @@
+2002-12-30 (THH):  *** Version 0.25 ***
+  * Added some more bus error entries in intercept.c (just like on a real ST).
+  * Updated the readme.txt.
+
 2002-12-23 (THH):
   * Moved Hatari's line-a opcodes (0xa000 and 0xa0ff) from tos.c to cartimg.c
     so that the extended VDI resolutions should now also work with hard disk
