@@ -1,10 +1,14 @@
 /*
-  Hatari
+  Hatari - dialog.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   This is normal 'C' code to handle our options dialog. We keep all our configuration details
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.21 2003-03-06 17:41:27 thothy Exp $";
 
 #include <unistd.h>
 
@@ -186,36 +190,42 @@ SGOBJ tosgemdlg[] =
 
 
 /* The screen dialog: */
-#define DLGSCRN_MODE       4
-#define DLGSCRN_FULLSCRN   5
-#define DLGSCRN_INTERLACE  6
-#define DLGSCRN_FRAMESKIP  7
-#define DLGSCRN_COLOR      9
-#define DLGSCRN_MONO       10
-#define DLGSCRN_ONCHANGE   13
-#define DLGSCRN_FPSPOPUP   15
-#define DLGSCRN_CAPTURE    16
-#define DLGSCRN_RECANIM    17
-#define DLGSCRN_EXIT       18
+#define DLGSCRN_FULLSCRN   3
+#define DLGSCRN_INTERLACE  4
+#define DLGSCRN_FRAMESKIP  5
+#define DLGSCRN_COLOR      7
+#define DLGSCRN_MONO       8
+#define DLGSCRN_8BPP       10
+#define DLGSCRN_LOW320     11
+#define DLGSCRN_LOW640     12
+#define DLGSCRN_LOW800     13
+#define DLGSCRN_ONCHANGE   16
+#define DLGSCRN_FPSPOPUP   18
+#define DLGSCRN_CAPTURE    19
+#define DLGSCRN_RECANIM    20
+#define DLGSCRN_EXIT       21
 SGOBJ screendlg[] =
 {
   { SGBOX, 0, 0, 0,0, 40,25, NULL },
-  { SGBOX, 0, 0, 1,1, 38,11, NULL },
+  { SGBOX, 0, 0, 1,1, 38,13, NULL },
   { SGTEXT, 0, 0, 13,2, 14,1, "Screen options" },
-  { SGTEXT, 0, 0, 5,4, 13,1, ""/*"Display mode:"*/ },
-  { SGTEXT/*SGPOPUP*/, 0, 0, 20,4, 18,1, ""/*"Hi-Color, Lo-Res"*/ },
-  { SGCHECKBOX, 0, 0, 5,6, 12,1, "Fullscreen" },
-  { SGCHECKBOX, 0, 0, 5,7, 23,1, "Interlaced mode (in fullscreen)" },
-  { SGCHECKBOX, 0, 0, 5,8, 10,1, "Frame skip" },
-  /*{ SGCHECKBOX, 0, 0, 22,8, 13,1, "Use borders" },*/
-  { SGTEXT, 0, 0, 5,10, 8,1, "Monitor:" },
-  { SGRADIOBUT, 0, 0, 16,10, 7,1, "Color" },
-  { SGRADIOBUT, 0, 0, 26,10, 6,1, "Mono" },
-  { SGBOX, 0, 0, 1,13, 38,9, NULL },
-  { SGTEXT, 0, 0, 13,14, 14,1, "Screen capture" },
-  { SGCHECKBOX, 0, 0, 5,16, 27,1, "Only when display changes" },
-  { SGTEXT, 0, 0, 5,18, 18,1, "Frames per second:" },
-  { SGTEXT/*SGPOPUP*/, 0, 0, 24,18, 3,1, "25" },
+  { SGCHECKBOX, 0, 0, 4,4, 12,1, "Fullscreen" },
+  { SGCHECKBOX, 0, 0, 4,5, 23,1, "Interlaced mode (in fullscreen)" },
+  { SGCHECKBOX, 0, 0, 4,6, 10,1, "Frame skip" },
+  /*{ SGCHECKBOX, 0, 0, 4,7, 13,1, "Use borders" },*/
+  { SGTEXT, 0, 0, 4,8, 8,1, "Monitor:" },
+  { SGRADIOBUT, 0, 0, 15,8, 7,1, "Color" },
+  { SGRADIOBUT, 0, 0, 25,8, 6,1, "Mono" },
+  { SGTEXT, 0, 0, 4,10, 23,1, "ST-Low fullscreen mode:" },
+  { SGCHECKBOX, 0, 0, 30,10, 7,1, "8 bpp" },
+  { SGRADIOBUT, 0, 0, 5,12, 9,1, "320x240" },
+  { SGRADIOBUT, 0, 0, 16,12, 9,1, "640x480" },
+  { SGRADIOBUT, 0, 0, 27,12, 9,1, "800x600" },
+  { SGBOX, 0, 0, 1,15, 38,7, NULL },
+  { SGTEXT, 0, 0, 13,16, 14,1, "Screen capture" },
+  { SGCHECKBOX, 0, 0, 3,18, 27,1, "Only when display changes" },
+  { SGTEXT, 0, 0, 31,18, 4,1, ""/*"FPS:"*/ },
+  { SGTEXT/*SGPOPUP*/, 0, 0, 36,18, 3,1, ""/*"25"*/ },
   { SGBUTTON, 0, 0, 3,20, 16,1, "Capture screen" },
   { SGBUTTON, 0, 0, 20,20, 18,1, NULL },
   { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
@@ -762,7 +772,7 @@ void Dialog_TosGemDlg(void)
 */
 void Dialog_ScreenDlg(void)
 {
-  int but;
+  int but, i;
 
   SDLGui_CenterDlg(screendlg);
 
@@ -794,6 +804,21 @@ void Dialog_ScreenDlg(void)
     screendlg[DLGSCRN_MONO].state &= ~SG_SELECTED;
   }
 
+  for(i=0; i<3; i++)
+    screendlg[DLGSCRN_LOW320 + i].state &= ~SG_SELECTED;
+
+  if(DialogParams.Screen.ChosenDisplayMode <= DISPLAYMODE_16COL_FULL)
+  {
+    screendlg[DLGSCRN_8BPP].state |= SG_SELECTED;
+    screendlg[DLGSCRN_LOW320 + DialogParams.Screen.ChosenDisplayMode].state |= SG_SELECTED;
+  }
+  else
+  {
+    screendlg[DLGSCRN_8BPP].state &= ~SG_SELECTED;
+    screendlg[DLGSCRN_LOW320 + DialogParams.Screen.ChosenDisplayMode 
+              - DISPLAYMODE_HICOL_LOWRES].state |= SG_SELECTED;
+  }
+
   if( DialogParams.Screen.bCaptureChange )
     screendlg[DLGSCRN_ONCHANGE].state |= SG_SELECTED;
   else
@@ -810,9 +835,6 @@ void Dialog_ScreenDlg(void)
     but = SDLGui_DoDialog(screendlg);
     switch( but )
     {
-      case DLGSCRN_MODE:
-        fprintf(stderr,"Sorry, popup menus don't work yet\n");
-        break;
       case DLGSCRN_FPSPOPUP:
         fprintf(stderr,"Sorry, popup menus don't work yet\n");
         break;
@@ -844,6 +866,17 @@ void Dialog_ScreenDlg(void)
   DialogParams.Screen.Advanced.bFrameSkip = (screendlg[DLGSCRN_FRAMESKIP].state & SG_SELECTED);
   DialogParams.Screen.bUseHighRes = (screendlg[DLGSCRN_MONO].state & SG_SELECTED);
   DialogParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
+
+  for(i=0; i<3; i++)
+  {
+    if(screendlg[DLGSCRN_LOW320 + i].state & SG_SELECTED)
+    {
+      DialogParams.Screen.ChosenDisplayMode = DISPLAYMODE_16COL_LOWRES + i
+        + ((screendlg[DLGSCRN_8BPP].state&SG_SELECTED) ? 0 : DISPLAYMODE_HICOL_LOWRES);
+      break;
+    }
+  }
+
 }
 
 
