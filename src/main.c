@@ -360,6 +360,7 @@ void Main_ReadParameters(int argc, char *argv[])
       else if (!strcmp(argv[i],"--blitter"))
       {
         bEnableBlitter = TRUE;
+        ConfigureParams.Memory.bBlitter = TRUE;
       }
       else
       {

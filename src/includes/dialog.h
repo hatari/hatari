@@ -76,6 +76,7 @@ enum {
 typedef struct {
   int nMemorySize;
   char szMemoryCaptureFileName[MAX_FILENAME_LENGTH];
+  BOOL bBlitter;                /* TRUE if blitter is enabled */
 } DLG_MEMORY;
 
 enum {

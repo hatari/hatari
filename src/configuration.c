@@ -73,6 +73,7 @@ void Configuration_SetDefault(void)
   /* Set defaults for Memory */
   ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_1Mb;
   strcpy(ConfigureParams.Memory.szMemoryCaptureFileName, "");
+  ConfigureParams.Memory.bBlitter = FALSE;
 
   /* Set defaults for Printer */
   ConfigureParams.Printer.bEnablePrinting = FALSE;

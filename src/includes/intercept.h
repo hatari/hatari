@@ -235,5 +235,6 @@ extern void Intercept_BlitterSkew_WriteByte(void);
 extern void Intercept_Init(void);
 extern void Intercept_UnInit(void);
 extern void Intercept_CreateTable(unsigned long *pInterceptTable[],int Span,int ReadWrite);
+extern void Intercept_EnableBlitter(BOOL enableFlag);
 extern void Intercept_ModifyTablesForBusErrors(void);
 extern void Intercept_ModifyTablesForNoMansLand(void);

@@ -261,30 +261,32 @@ SGOBJ cpudlg[] =
 
 
 /* The memory dialog: */
-#define DLGMEM_512KB  4
-#define DLGMEM_1MB    5
-#define DLGMEM_2MB    6
-#define DLGMEM_4MB    7
-#define DLGMEM_EXIT   8
+#define DLGMEM_512KB   4
+#define DLGMEM_1MB     5
+#define DLGMEM_2MB     6
+#define DLGMEM_4MB     7
+#define DLGMEM_BLITTER 8
+#define DLGMEM_EXIT    9/*15*/
 SGOBJ memorydlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 40,11/*19*/, NULL },
-  { SGBOX, 0, 0, 1,1, 38,7, NULL },
+  { SGBOX, 0, 0, 0,0, 40,13/*21*/, NULL },
+  { SGBOX, 0, 0, 1,1, 38,9, NULL },
   { SGTEXT, 0, 0, 15,2, 12,1, "Memory setup" },
   { SGTEXT, 0, 0, 4,4, 12,1, "ST-RAM size:" },
   { SGRADIOBUT, 0, 0, 19,4, 8,1, "512 kB" },
   { SGRADIOBUT, 0, 0, 30,4, 6,1, "1 MB" },
   { SGRADIOBUT, 0, 0, 19,6, 6,1, "2 MB" },
   { SGRADIOBUT, 0, 0, 30,6, 6,1, "4 MB" },
+  { SGCHECKBOX, 0, 0, 4,8, 20,1, "Blitter emulation" },
 /*
-  { SGBOX, 0, 0, 1,9, 38,7, NULL },
-  { SGTEXT, 0, 0, 12,10, 17,1, "Memory state save" },
-  { SGTEXT, 0, 0, 2,12, 28,1, "/Sorry/Not/yet/supported" },
-  { SGBUTTON, 0, 0, 32,12, 6,1, "Browse" },
-  { SGBUTTON, 0, 0, 8,14, 10,1, "Save" },
-  { SGBUTTON, 0, 0, 22,14, 10,1, "Restore" },
+  { SGBOX, 0, 0, 1,11, 38,7, NULL },
+  { SGTEXT, 0, 0, 12,12, 17,1, "Memory state save" },
+  { SGTEXT, 0, 0, 2,14, 28,1, "/Sorry/Not/yet/supported" },
+  { SGBUTTON, 0, 0, 32,14, 6,1, "Browse" },
+  { SGBUTTON, 0, 0, 8,16, 10,1, "Save" },
+  { SGBUTTON, 0, 0, 22,16, 10,1, "Restore" },
 */
-  { SGBUTTON, 0, 0, 10,9/*17*/, 20,1, "Back to main menu" },
+  { SGBUTTON, 0, 0, 10,11/*19*/, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -436,6 +438,7 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
     HDC_UnInit();
   }
 
+
   /* Copy details to configuration, so can be saved out or set on reset */
   ConfigureParams = DialogParams;
   /* And write to configuration now, so don't loose */
@@ -466,6 +469,9 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   {
     GemDOS_InitDrives();
   }
+
+  /* Did change blitter status? */
+  Intercept_EnableBlitter(ConfigureParams.Memory.bBlitter);
 
   /* Do we need to perform reset? */
   if (NeedReset)
@@ -872,6 +878,11 @@ void Dialog_MemDlg(void)
   else
     memorydlg[DLGMEM_4MB].state |= SG_SELECTED;
 
+  if( DialogParams.Memory.bBlitter )
+    memorydlg[DLGMEM_BLITTER].state |= SG_SELECTED;
+  else
+    memorydlg[DLGMEM_BLITTER].state &= ~SG_SELECTED;
+
   do
   {
     but = SDLGui_DoDialog(memorydlg);
@@ -886,6 +897,8 @@ void Dialog_MemDlg(void)
     DialogParams.Memory.nMemorySize = MEMORY_SIZE_2Mb;
   else
     DialogParams.Memory.nMemorySize = MEMORY_SIZE_4Mb;
+
+  DialogParams.Memory.bBlitter = ( memorydlg[DLGMEM_BLITTER].state & SG_SELECTED );
 }
 
 

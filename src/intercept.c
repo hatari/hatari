@@ -154,6 +154,7 @@ void Intercept_Init(void)
   Intercept_ModifyTablesForBusErrors();
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
   Free 'intercept' hardware lists
@@ -162,6 +163,7 @@ void Intercept_UnInit(void)
 {
   Memory_Free(pInterceptWorkspace);
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -207,6 +209,23 @@ void Intercept_CreateTable(unsigned long *pInterceptTable[],int Span,int ReadWri
 
 /*-----------------------------------------------------------------------*/
 /*
+  Enable/disable blitter emulation
+*/
+void Intercept_EnableBlitter(BOOL enableFlag)
+{
+  if(bEnableBlitter!=enableFlag)
+  {
+    bEnableBlitter = enableFlag;
+    /* Ugly hack: Enable/disable the blitter emulation by
+       re-init the interception tables... */
+    Intercept_UnInit();
+    Intercept_Init();
+  }
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Check list of handlers to see if address needs to be intercepted and call
    routines.
 */
@@ -224,17 +243,12 @@ void Intercept_ScanHandlers(unsigned long *the_func)
 /*-----------------------------------------------------------------------*/
 /*
   Check if need to change our address as maybe a mirror register.
-  Currently we only have a PSG mirror area and a mirrored blitter register.
+  Currently we only have a PSG mirror area.
 */
 static unsigned long Intercept_CheckMirrorAddresses(unsigned long addr)
 {
   if( addr>=0xff8800 && addr<0xff8900 )   /* Is a PSG mirror registers? */
     addr = ( addr & 3) + 0xff8800;        /* Bring into 0xff8800-0xff8804 range */
-
-#if 0 /* Blitter mirror not supported since its address is below ff8000 */
-  if( (addr&0xfffffe)==0xff7f30 )         /* Mirrored blitter register? */
-    addr -= (0xff8a30-0xff7f30);
-#endif
 
   return addr;
 }
@@ -1221,7 +1235,7 @@ INTERCEPT_ADDRESSRANGE InterceptBusErrors[] = {
   { 0xff8280,0xff82c4 },        /* Falcon VIDEL (EmuTOS depends on this) */
   { 0xff8400,0xff85fe },        /* TT Palette (again for EmuTOS) */
   { 0xff8900,0xff8960 },        /* DMA Sound/MicroWire */
-  { 0xff8a00,0xff8a3e },        /* Blitter (now supported!) */
+  { 0xff8a00,0xff8a3e },        /* Blitter (now supported, but disabled by default) */
 
   { 0,0 }  /* term */
 };
