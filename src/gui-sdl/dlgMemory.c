@@ -4,24 +4,36 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-static char rcsid[] = "Hatari $Id: dlgMemory.c,v 1.1 2003-08-04 19:37:31 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dlgMemory.c,v 1.2 2003-09-28 19:57:36 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
 #include "sdlgui.h"
+#include "memAlloc.h"
+#include "memorySnapShot.h"
+#include "file.h"
+#include "screen.h"
 
 
-#define DLGMEM_512KB   4
-#define DLGMEM_1MB     5
-#define DLGMEM_2MB     6
-#define DLGMEM_4MB     7
-#define DLGMEM_EXIT    8/*14*/
+#define DLGMEM_512KB    4
+#define DLGMEM_1MB      5
+#define DLGMEM_2MB      6
+#define DLGMEM_4MB      7
+#define DLGMEM_FILENAME 11
+#define DLGMEM_BROWSE   12
+#define DLGMEM_SAVE     13
+#define DLGMEM_RESTORE  14
+#define DLGMEM_EXIT     15
+
+
+static char dlgSnapShotName[34+1];
 
 
 /* The memory dialog: */
 static SGOBJ memorydlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 40,11/*21*/, NULL },
+  { SGBOX, 0, 0, 0,0, 40,21, NULL },
+
   { SGBOX, 0, 0, 1,1, 38,7, NULL },
   { SGTEXT, 0, 0, 15,2, 12,1, "Memory setup" },
   { SGTEXT, 0, 0, 4,4, 12,1, "ST-RAM size:" },
@@ -29,15 +41,16 @@ static SGOBJ memorydlg[] =
   { SGRADIOBUT, 0, 0, 30,4, 6,1, "1 MB" },
   { SGRADIOBUT, 0, 0, 19,6, 6,1, "2 MB" },
   { SGRADIOBUT, 0, 0, 30,6, 6,1, "4 MB" },
-/*
-  { SGBOX, 0, 0, 1,11, 38,7, NULL },
-  { SGTEXT, 0, 0, 12,12, 17,1, "Memory state save" },
-  { SGTEXT, 0, 0, 2,14, 28,1, "/Sorry/Not/yet/supported" },
-  { SGBUTTON, 0, 0, 32,14, 6,1, "Browse" },
-  { SGBUTTON, 0, 0, 8,16, 10,1, "Save" },
-  { SGBUTTON, 0, 0, 22,16, 10,1, "Restore" },
-*/
-  { SGBUTTON, 0, 0, 10,9/*19*/, 20,1, "Back to main menu" },
+
+  { SGBOX, 0, 0, 1,9, 38,8, NULL },
+  { SGTEXT, 0, 0, 12,10, 17,1, "Memory state save" },
+  { SGTEXT, 0, 0, 2,12, 20,1, "Snap-shot file name:" },
+  { SGTEXT, 0, 0, 2,13, 34,1, dlgSnapShotName },
+  { SGBUTTON, 0, 0, 32,12, 6,1, "Browse" },
+  { SGBUTTON, 0, 0, 8,15, 10,1, "Save" },
+  { SGBUTTON, 0, 0, 22,15, 10,1, "Restore" },
+
+  { SGBUTTON, 0, 0, 10,19, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -49,6 +62,10 @@ static SGOBJ memorydlg[] =
 void Dialog_MemDlg(void)
 {
   int but;
+  char *tmpname;
+
+  /* Allocate memory for tmpname: */
+  tmpname = Memory_Alloc(MAX_FILENAME_LENGTH);
 
   SDLGui_CenterDlg(memorydlg);
 
@@ -65,9 +82,34 @@ void Dialog_MemDlg(void)
   else
     memorydlg[DLGMEM_4MB].state |= SG_SELECTED;
 
+  File_ShrinkName(dlgSnapShotName, DialogParams.Memory.szMemoryCaptureFileName, memorydlg[DLGMEM_FILENAME].w);
+
   do
   {
     but = SDLGui_DoDialog(memorydlg);
+
+    switch(but)
+    {
+     case DLGMEM_BROWSE:             /* Choose a new snap shot file */
+        strcpy(tmpname, DialogParams.Memory.szMemoryCaptureFileName);
+        if( SDLGui_FileSelect(tmpname, NULL, TRUE) )
+        {
+          if( !File_DoesFileNameEndWithSlash(tmpname) )
+          {
+            strcpy(DialogParams.Memory.szMemoryCaptureFileName, tmpname);
+            File_ShrinkName(dlgSnapShotName, tmpname, memorydlg[DLGMEM_FILENAME].w);
+          }
+        }
+        Screen_SetFullUpdate();
+        Screen_Draw();
+        break;
+     case DLGMEM_SAVE:                  /* Save memory snap-shot */
+        MemorySnapShot_Capture(DialogParams.Memory.szMemoryCaptureFileName);
+        break;
+     case DLGMEM_RESTORE:               /* Load memory snap-shot */
+        MemorySnapShot_Restore(DialogParams.Memory.szMemoryCaptureFileName);
+        break;
+    }
   }
   while( but!=DLGMEM_EXIT && !bQuitProgram );
 
@@ -79,4 +121,6 @@ void Dialog_MemDlg(void)
     DialogParams.Memory.nMemorySize = MEMORY_SIZE_2Mb;
   else
     DialogParams.Memory.nMemorySize = MEMORY_SIZE_4Mb;
+
+  Memory_Free(tmpname);
 }

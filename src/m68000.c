@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-static char rcsid[] = "Hatari $Id: m68000.c,v 1.22 2003-07-29 12:01:55 thothy Exp $";
+static char rcsid[] = "Hatari $Id: m68000.c,v 1.23 2003-09-28 19:57:36 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -58,28 +58,16 @@ void M68000_Reset(BOOL bCold)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+  Save/Restore snapshot of CPU variables ('MemorySnapShot_Store' handles type)
 */
 void M68000_MemorySnapShot_Capture(BOOL bSave)
 {
-  /* Save/Restore details */
-  /*MemorySnapShot_Store(&bDoTraceException,sizeof(bDoTraceException));*/
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
-  This is for 'decode.asm' variables - as cannot use 'decode.c' as will overwrite assembler .obj file!
-*/
-void M68000_Decode_MemorySnapShot_Capture(BOOL bSave)
-{
   int ID;
+  Uint32 savepc;
 
   /* Save/Restore details */
   MemorySnapShot_Store(Regs,sizeof(Regs));
   MemorySnapShot_Store(&STRamEnd,sizeof(STRamEnd));
-  /*MemorySnapShot_Store(&STRamEnd_BusErr,sizeof(STRamEnd_BusErr));*/
   MemorySnapShot_Store(&PendingInterruptCount,sizeof(PendingInterruptCount));
   MemorySnapShot_Store(&PendingInterruptFlag,sizeof(PendingInterruptFlag));
   if (bSave)
@@ -94,12 +82,67 @@ void M68000_Decode_MemorySnapShot_Capture(BOOL bSave)
     MemorySnapShot_Store(&ID,sizeof(int));
     PendingInterruptFunction = Int_IDToHandlerFunction(ID);
   }
-  /*MemorySnapShot_Store(&PC,sizeof(PC));*/
-  /*MemorySnapShot_Store(&SR,sizeof(SR));*/
-  /*MemorySnapShot_Store(&bInSuperMode,sizeof(bInSuperMode));*/
-  /*MemorySnapShot_Store(&Reg_SuperSP,sizeof(Reg_SuperSP));*//*FIXME*/
-  /*MemorySnapShot_Store(&Reg_UserSP,sizeof(Reg_UserSP));*/
-  /*MemorySnapShot_Store(&EmuCCode,sizeof(EmuCCode));*/
+
+  /* For the UAE CPU core: */
+  MemorySnapShot_Store(&cpu_level, sizeof(cpu_level));          /* MODEL */
+  MemorySnapShot_Store(&address_space_24, sizeof(address_space_24));
+  MemorySnapShot_Store(&regs.regs[0], sizeof(regs.regs));       /* D0-D7 A0-A6 */
+  if (bSave)
+  {
+    savepc = m68k_getpc();
+    MemorySnapShot_Store(&savepc, sizeof(savepc));              /* PC */
+  }
+  else
+  {
+    MemorySnapShot_Store(&savepc, sizeof(savepc));              /* PC */
+    regs.pc = savepc;
+    regs.prefetch_pc = regs.pc + 128;
+  }
+  MemorySnapShot_Store(&regs.prefetch, sizeof(regs.prefetch));  /* prefetch */
+  if (bSave)
+  {
+    MakeSR ();
+    if (regs.s)
+    {
+      MemorySnapShot_Store(&regs.usp, sizeof(regs.usp));        /* USP */
+      MemorySnapShot_Store(&regs.regs[15], sizeof(regs.regs[15]));  /* ISP */
+    }
+    else
+    {
+      MemorySnapShot_Store(&regs.regs[15], sizeof(regs.regs[15]));  /* USP */
+      MemorySnapShot_Store(&regs.isp, sizeof(regs.isp));        /* ISP */
+    }
+    MemorySnapShot_Store(&regs.sr, sizeof(regs.sr));            /* SR/CCR */
+  }
+  else
+  {
+    MemorySnapShot_Store(&regs.usp, sizeof(regs.usp));
+    MemorySnapShot_Store(&regs.isp, sizeof(regs.isp));
+    MemorySnapShot_Store(&regs.sr, sizeof(regs.sr));
+  }
+  MemorySnapShot_Store(&regs.stopped, sizeof(regs.stopped));
+  MemorySnapShot_Store(&regs.dfc, sizeof(regs.dfc));            /* DFC */
+  MemorySnapShot_Store(&regs.sfc, sizeof(regs.sfc));            /* SFC */
+  MemorySnapShot_Store(&regs.vbr, sizeof(regs.vbr));            /* VBR */
+#if 0  /* FIXME */
+  MemorySnapShot_Store(&caar, sizeof(caar));                    /* CAAR */
+  MemorySnapShot_Store(&cacr, sizeof(cacr));                    /* CACR */
+#endif
+  MemorySnapShot_Store(&regs.msp, sizeof(regs.msp));            /* MSP */
+
+  if (!bSave)
+  {
+    m68k_setpc (regs.pc);
+    /* MakeFromSR() must not swap stack pointer */
+    regs.s = (regs.sr >> 13) & 1;
+    MakeFromSR();
+    /* set stack pointer */
+    if (regs.s)
+      m68k_areg(regs, 7) = regs.isp;
+    else
+      m68k_areg(regs, 7) = regs.usp;
+  }
+
 }
 
 

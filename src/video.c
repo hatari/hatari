@@ -8,7 +8,7 @@
   VBLs, HBLs, copying the ST screen to a buffer to simulate the TV raster trace, border
   removal, palette changes per HBL, the 'video address pointer' etc...
 */
-static char rcsid[] = "Hatari $Id: video.c,v 1.17 2003-07-29 12:01:55 thothy Exp $";
+static char rcsid[] = "Hatari $Id: video.c,v 1.18 2003-09-28 19:57:36 thothy Exp $";
 
 #include <SDL.h>
 
@@ -208,10 +208,9 @@ void Video_InterruptHandler_VBL(void)
 
   /* Clear any key presses which are due to be de-bounced (held for one ST frame) */
   Keymap_DebounceAllKeys();
-  /* Check 'Function' keys, so if press F12 we update screen correctly to Window! */
+  /* Check shortcut keys */
   ShortCut_CheckKeys();
-  /* See if need to save/restore emulation state during this 'safe-zone' */
-  MemorySnapShot_CheckSaveRestore();
+
   /* Use extended VDI resolution? If so, just copy whole screen on VBL rather than per HBL */
   if (bUseVDIRes)
     Video_CopyVDIScreen();

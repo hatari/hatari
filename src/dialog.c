@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.35 2003-08-05 16:33:05 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.36 2003-09-28 19:57:36 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -113,7 +113,7 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 
   /* Did set new RS232 parameters? */
   if( (DialogParams.RS232.bEnableRS232!=ConfigureParams.RS232.bEnableRS232)
-     || (DialogParams.RS232.nCOMPort!=ConfigureParams.RS232.nCOMPort) )
+     || (strcmp(DialogParams.RS232.szDeviceFileName, ConfigureParams.RS232.szDeviceFileName)) )
     RS232_CloseCOMPort();
 
   /* Did stop sound? Or change playback Hz. If so, also stop sound recording */
@@ -228,8 +228,6 @@ BOOL Dialog_DoProperty(void)
   ConfigureParams.Screen.bFullScreen = bInFullScreen;
   DialogParams = ConfigureParams;
 
-  bSaveMemoryState = FALSE;
-  bRestoreMemoryState = FALSE;
   bForceReset = FALSE;
 
   bOKDialog = Dialog_MainDlg(&bForceReset);
@@ -237,11 +235,6 @@ BOOL Dialog_DoProperty(void)
   /* Copy details to configuration, and ask user if wishes to reset */
   if (bOKDialog)
     Dialog_CopyDialogParamsToConfiguration(bForceReset);
-  /* Did want to save/restore memory save? If did, need to re-enter emulation mode so can save in 'safe-zone' */
-  if (bSaveMemoryState || bRestoreMemoryState) {
-    /* Back into emulation mode, when next VBL occurs state will be safed - otherwise registers are unknown */
-    /*FM  View_ToggleWindowsMouse(MOUSE_ST);*/
-  }
 
   Main_UnPauseEmulation();
 
