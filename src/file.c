@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.13 2004-04-28 09:04:58 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.14 2004-07-23 08:41:42 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -24,9 +24,9 @@ char File_rcsid[] = "Hatari $Id: file.c,v 1.13 2004-04-28 09:04:58 thothy Exp $"
 
 
 
-#ifdef __BEOS__
-/* The scandir() and alphasort() functions aren't available on BeOS, */
-/* so let's declare them here... */
+#if defined(__BEOS__) || (defined(__sun) && defined(__SVR4))
+/* The scandir() and alphasort() functions aren't available on
+ * BeOS and Solaris, so let's declare them here... */
 #include <dirent.h>
 
 #undef DIRSIZ
@@ -34,6 +34,12 @@ char File_rcsid[] = "Hatari $Id: file.c,v 1.13 2004-04-28 09:04:58 thothy Exp $"
 #define DIRSIZ(dp)                                          \
         ((sizeof(struct dirent) - sizeof(dp)->d_name) +     \
 		(((dp)->d_reclen + 1 + 3) &~ 3))
+
+#if defined(__sun) && defined(__SVR4)
+# define DIR_FD(d) ((d)->dd_fd)
+#else
+# define DIR_FD(d) ((d)->fd)
+#endif
 
 
 /*-----------------------------------------------------------------------*/
@@ -61,7 +67,7 @@ int scandir(const char *dirname,struct dirent ***namelist, int(*select) __P((str
   if ((dirp = opendir(dirname)) == NULL)
     return(-1);
 
-  if (fstat(dirp->fd, &stb) < 0)
+  if (fstat(DIR_FD(dirp), &stb) < 0)
     return(-1);
 
   /*
@@ -101,7 +107,7 @@ int scandir(const char *dirname,struct dirent ***namelist, int(*select) __P((str
 
      if (++nitems >= arraysz) {
 
-       if (fstat(dirp->fd, &stb) < 0)
+       if (fstat(DIR_FD(dirp), &stb) < 0)
          return(-1);     /* just might have grown */
 
        arraysz = stb.st_size / 12;

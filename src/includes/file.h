@@ -19,7 +19,7 @@ enum
   FILEFILTER_MEMORYFILE,
 };
 
-#ifdef __BEOS__
+#if defined(__BEOS__) || (defined(__sun) && defined(__SVR4))
 #include <dirent.h>
 extern int alphasort(const void *d1, const void *d2);
 extern int scandir(const char *dirname,struct dirent ***namelist, int(*select) __P((struct dirent *)), int (*dcomp) __P((const void *, const void *)));
