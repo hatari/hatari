@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.8 2005-02-12 23:11:28 thothy Exp $";
+char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.9 2005-03-07 23:15:50 thothy Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -191,7 +191,7 @@ static void SDLGui_Text(int x, int y, const char *txt)
 /*
   Draw a dialog text object.
 */
-static void SDLGui_DrawText(SGOBJ *tdlg, int objnum)
+static void SDLGui_DrawText(const SGOBJ *tdlg, int objnum)
 {
   int x, y;
   x = (tdlg[0].x+tdlg[objnum].x)*fontwidth;
@@ -204,7 +204,7 @@ static void SDLGui_DrawText(SGOBJ *tdlg, int objnum)
 /*
   Draw a edit field object.
 */
-static void SDLGui_DrawEditField(SGOBJ *edlg, int objnum)
+static void SDLGui_DrawEditField(const SGOBJ *edlg, int objnum)
 {
   int x, y;
   SDL_Rect rect;
@@ -223,7 +223,7 @@ static void SDLGui_DrawEditField(SGOBJ *edlg, int objnum)
 /*
   Draw a dialog box object.
 */
-static void SDLGui_DrawBox(SGOBJ *bdlg, int objnum)
+static void SDLGui_DrawBox(const SGOBJ *bdlg, int objnum)
 {
   SDL_Rect rect;
   int x, y, w, h, offset;
@@ -288,7 +288,7 @@ static void SDLGui_DrawBox(SGOBJ *bdlg, int objnum)
 /*
   Draw a normal button.
 */
-static void SDLGui_DrawButton(SGOBJ *bdlg, int objnum)
+static void SDLGui_DrawButton(const SGOBJ *bdlg, int objnum)
 {
   int x,y;
 
@@ -310,7 +310,7 @@ static void SDLGui_DrawButton(SGOBJ *bdlg, int objnum)
 /*
   Draw a dialog radio button object.
 */
-static void SDLGui_DrawRadioButton(SGOBJ *rdlg, int objnum)
+static void SDLGui_DrawRadioButton(const SGOBJ *rdlg, int objnum)
 {
   char str[80];
   int x, y;
@@ -333,7 +333,7 @@ static void SDLGui_DrawRadioButton(SGOBJ *rdlg, int objnum)
 /*
   Draw a dialog check box object.
 */
-static void SDLGui_DrawCheckBox(SGOBJ *cdlg, int objnum)
+static void SDLGui_DrawCheckBox(const SGOBJ *cdlg, int objnum)
 {
   char str[80];
   int x, y;
@@ -356,7 +356,7 @@ static void SDLGui_DrawCheckBox(SGOBJ *cdlg, int objnum)
 /*
   Draw a dialog popup button object.
 */
-static void SDLGui_DrawPopupButton(SGOBJ *pdlg, int objnum)
+static void SDLGui_DrawPopupButton(const SGOBJ *pdlg, int objnum)
 {
   int x, y, w, h;
   const char *downstr = "\x02";
@@ -381,7 +381,7 @@ static void SDLGui_DrawPopupButton(SGOBJ *pdlg, int objnum)
 */
 static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 {
-  int cursorPos;                        /* Position of the cursor in the edit field */
+  size_t cursorPos;                     /* Position of the cursor in the edit field */
   int blinkState = 0;                   /* Used for cursor blinking */
   int bStopEditing = FALSE;             /* TRUE if user wants to exit the edit field */
   char *txt;                            /* Shortcut for dlg[objnum].txt */
@@ -456,7 +456,7 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
                 /* If it is a "good" key then insert it into the text field */
                 if(keysym >= 32 && keysym < 256)
                 {
-                  if(strlen(txt) < dlg[objnum].w)
+                  if(strlen(txt) < (size_t)dlg[objnum].w)
                   {
                     memmove(&txt[cursorPos+1], &txt[cursorPos], strlen(&txt[cursorPos])+1);
                     if(event.key.keysym.mod & (KMOD_LSHIFT|KMOD_RSHIFT))
@@ -497,7 +497,7 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 /*
   Draw a whole dialog.
 */
-static void SDLGui_DrawDialog(SGOBJ *dlg)
+static void SDLGui_DrawDialog(const SGOBJ *dlg)
 {
   int i;
   for(i=0; dlg[i].type!=-1; i++ )
@@ -535,7 +535,7 @@ static void SDLGui_DrawDialog(SGOBJ *dlg)
 /*
   Search an object at a certain position.
 */
-static int SDLGui_FindObj(SGOBJ *dlg, int fx, int fy)
+static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 {
   int len, i;
   int ob = -1;

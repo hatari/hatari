@@ -21,12 +21,12 @@ typedef enum
 
 struct Config_Tag
 {
-  char       *code;                /* Option switch        */
+  const char *code;                /* Option switch        */
   TAG_TYPE   type;                 /* Type of option       */
   void       *buf;                 /* Storage location     */
 };
 
-int input_config(const char *, struct Config_Tag *, char *);
-int update_config(const char *, struct Config_Tag *, char *);
+int input_config(const char *, struct Config_Tag *, const char *);
+int update_config(const char *, struct Config_Tag *, const char *);
 
 #endif

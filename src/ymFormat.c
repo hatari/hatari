@@ -6,7 +6,7 @@
 
   YM File output, for use with STSound etc...
 */
-char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.9 2005-02-13 16:18:50 thothy Exp $";
+char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.10 2005-03-07 23:15:50 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -72,7 +72,7 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
 /*
   End recording YM registers and save as '.YM' file
 */
-void YMFormat_EndRecording()
+void YMFormat_EndRecording(void)
 {
   /* Turn off icon */
   /*StatusBar_SetIcon(STATUS_ICON_SOUND,ICONSTATE_OFF);*/ /* Sorry - no statusbar */
@@ -134,7 +134,7 @@ void YMFormat_UpdateRecording(void)
     nYMVBLS++;
     /* If run out of workspace, just save */
     if (nYMVBLS>=YM_MAX_VBLS)
-      YMFormat_EndRecording(NULL);
+      YMFormat_EndRecording();
   }
 }
 
@@ -154,31 +154,31 @@ void YMFormat_UpdateRecording(void)
 BOOL YMFormat_ConvertToStreams(void)
 {
   unsigned char *pNewYMWorkspace;
-  unsigned char *pYMData, *pNewYMData;
-  unsigned char *pYMStream, *pNewYMStream;
+  unsigned char *pTmpYMData, *pNewYMData;
+  unsigned char *pTmpYMStream, *pNewYMStream;
   int Reg, Count;
 
   /* Allocate new workspace to convert data to */
   pNewYMWorkspace = (unsigned char *)malloc(YM_RECORDSIZE);
   if (pNewYMWorkspace) {
     /* Convert data, first copy over header */
-    pYMData = pYMWorkspace;
+    pTmpYMData = pYMWorkspace;
     pNewYMData = pNewYMWorkspace;
-    *pNewYMData++ = *pYMData++;
-    *pNewYMData++ = *pYMData++;
-    *pNewYMData++ = *pYMData++;
-    *pNewYMData++ = *pYMData++;
+    *pNewYMData++ = *pTmpYMData++;
+    *pNewYMData++ = *pTmpYMData++;
+    *pNewYMData++ = *pTmpYMData++;
+    *pNewYMData++ = *pTmpYMData++;
 
     /* Now copy over each stream */
     for(Reg=0; Reg<NUM_PSG_SOUND_REGISTERS; Reg++) {
       /* Get pointer to source / destination */
-      pYMStream = pYMData + Reg;
+      pTmpYMStream = pTmpYMData + Reg;
       pNewYMStream = pNewYMData + (Reg*nYMVBLS);
 
       /* Copy recording VBLs worth */
       for(Count=0; Count<nYMVBLS; Count++) {
-        *pNewYMStream++ = *pYMStream;
-        pYMStream += NUM_PSG_SOUND_REGISTERS;
+        *pNewYMStream++ = *pTmpYMStream;
+        pTmpYMStream += NUM_PSG_SOUND_REGISTERS;
       }
     }
 

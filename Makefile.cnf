@@ -4,8 +4,13 @@
 # Set the C compiler (e.g. gcc)
 CC = gcc
 
+# What warnings to use
+WARNFLAGS = -Wmissing-prototypes -Wstrict-prototypes -Wsign-compare \
+  -Wbad-function-cast -Wcast-qual  -Wpointer-arith \
+  -Wshadow -Wall #-Wwrite-strings -Wcast-align -Werror
+
 # Set flags passed to the compiler (e.g. optimization flags)
-CFLAGS = -g -O2 -Wall -Wmissing-declarations
+CFLAGS := -g -O2 $(WARNFLAGS)
 
 # Set flags passed to the preprocessor (e.g. -I<include dir>)
 CPPFLAGS =

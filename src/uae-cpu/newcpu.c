@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.37 2005-02-02 21:53:52 thothy Exp $";
+char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.38 2005-03-07 23:15:50 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -932,12 +932,12 @@ int m68k_movec2 (int regno, uae_u32 *regp)
 }
 
 STATIC_INLINE int
-div_unsigned(uae_u32 src_hi, uae_u32 src_lo, uae_u32 div, uae_u32 *quot, uae_u32 *rem)
+div_unsigned(uae_u32 src_hi, uae_u32 src_lo, uae_u32 ndiv, uae_u32 *quot, uae_u32 *rem)
 {
 	uae_u32 q = 0, cbit = 0;
 	int i;
 
-	if (div <= src_hi) {
+	if (ndiv <= src_hi) {
 	    return 1;
 	}
 	for (i = 0 ; i < 32 ; i++) {
@@ -946,9 +946,9 @@ div_unsigned(uae_u32 src_hi, uae_u32 src_lo, uae_u32 div, uae_u32 *quot, uae_u32
 		if (src_lo & 0x80000000ul) src_hi++;
 		src_lo <<= 1;
 		q = q << 1;
-		if (cbit || div <= src_hi) {
+		if (cbit || ndiv <= src_hi) {
 			q |= 1;
-			src_hi -= div;
+			src_hi -= ndiv;
 		}
 	}
 	*quot = q;

@@ -28,7 +28,7 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.5 2005-02-10 00:11:40 thothy Exp $";
+char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.6 2005-03-07 23:15:49 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -493,7 +493,7 @@ void IoMem_BusErrorOddWriteAccess(void)
 */
 void IoMem_VoidRead(void)
 {
-	int a;
+	Uint32 a;
 
 	/* handler is probably called only once, so we have to take care of the neighbour "void IO registers" */
 	for (a = IoAccessBaseAddress; a < IoAccessBaseAddress + nIoMemAccessSize; a++)

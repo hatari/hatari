@@ -10,8 +10,8 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.63" /* Name, version for window title */
-#define PROG_VERSION   "v0.63"
+#define PROG_NAME      "Hatari v0.64" /* Name, version for window title */
+#define PROG_VERSION   "v0.64"
 
 /*#define DEBUG_TO_FILE*/             /* Use debug.txt files */
 
@@ -172,7 +172,7 @@ extern char szWorkingDir[FILENAME_MAX];
 
 
 extern void Main_MemorySnapShot_Capture(BOOL bSave);
-extern int Main_Message(char *pText, char *pCaption);
+extern int Main_Message(const char *pText, const char *pCaption);
 extern void Main_PauseEmulation(void);
 extern void Main_UnPauseEmulation(void);
 extern void Main_WarpMouse(int x, int y);

@@ -10,7 +10,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-char ReadCpu_rcsid[] = "Hatari $Id: readcpu.c,v 1.4 2004-04-19 08:53:49 thothy Exp $";
+char ReadCpu_rcsid[] = "Hatari $Id: readcpu.c,v 1.5 2005-03-07 23:15:50 thothy Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -199,7 +199,7 @@ static void build_insn (int insn)
     int isjmp = 0;
     struct instr_def id;
     const char *opcstr;
-    int i;
+    int j;
 
     int flaglive = 0, flagdead = 0;
 
@@ -211,27 +211,27 @@ static void build_insn (int insn)
        can't trap. Usually, this will be overwritten with the gencomp
        based information, anyway. */
 
-    for (i = 0; i < 5; i++) {
-	switch (id.flaginfo[i].flagset){
+    for (j = 0; j < 5; j++) {
+	switch (id.flaginfo[j].flagset){
 	 case fa_unset: break;
 	 case fa_isjmp: isjmp = 1; break;
 	 case fa_isbranch: isjmp = 1; break;
-	 case fa_zero: flagdead |= 1 << i; break;
-	 case fa_one: flagdead |= 1 << i; break;
-	 case fa_dontcare: flagdead |= 1 << i; break;
+	 case fa_zero: flagdead |= 1 << j; break;
+	 case fa_one: flagdead |= 1 << j; break;
+	 case fa_dontcare: flagdead |= 1 << j; break;
 	 case fa_unknown: isjmp = 1; flagdead = -1; goto out1;
-	 case fa_set: flagdead |= 1 << i; break;
+	 case fa_set: flagdead |= 1 << j; break;
 	}
     }
 
   out1:
-    for (i = 0; i < 5; i++) {
-	switch (id.flaginfo[i].flaguse) {
+    for (j = 0; j < 5; j++) {
+	switch (id.flaginfo[j].flaguse) {
 	 case fu_unused: break;
-	 case fu_isjmp: isjmp = 1; flaglive |= 1 << i; break;
-	 case fu_maybecc: isjmp = 1; flaglive |= 1 << i; break;
-	 case fu_unknown: isjmp = 1; flaglive |= 1 << i; break;
-	 case fu_used: flaglive |= 1 << i; break;
+	 case fu_isjmp: isjmp = 1; flaglive |= 1 << j; break;
+	 case fu_maybecc: isjmp = 1; flaglive |= 1 << j; break;
+	 case fu_unknown: isjmp = 1; flaglive |= 1 << j; break;
+	 case fu_used: flaglive |= 1 << j; break;
 	}
     }
 

@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.18 2005-02-24 20:26:29 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.19 2005-03-07 23:15:48 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -173,7 +173,7 @@ void File_AddSlashToEndFileName(char *pszFileName)
 /*
   Does filename extension match? If so, return TRUE
 */
-BOOL File_DoesFileExtensionMatch(char *pszFileName, char *pszExtension)
+BOOL File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension)
 {
   if ( strlen(pszFileName) < strlen(pszExtension) )
     return(FALSE);
@@ -208,7 +208,7 @@ BOOL File_IsRootFileName(char *pszFileName)
 /*
   Return string, to remove 'C:' part of filename
 */
-char *File_RemoveFileNameDrive(char *pszFileName)
+const char *File_RemoveFileNameDrive(const char *pszFileName)
 {
   if ( (pszFileName[0]!='\0') && (pszFileName[1]==':') )
     return(&pszFileName[2]);
@@ -260,7 +260,7 @@ void File_RemoveFileNameTrailingSlashes(char *pszFileName)
   Read file from disc into memory, allocate memory for it if need to (pass
   Address as NULL).
 */
-void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, char *ppszExts[])
+void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *ppszExts[])
 {
   void *pFile = NULL;
   long FileSize = 0;
@@ -358,7 +358,7 @@ BOOL File_Save(char *pszFileName, void *pAddress, size_t Size, BOOL bQueryOverwr
     if (hGzFile != NULL)
     {
       /* Write data, set success flag */
-      if (gzwrite(hGzFile, pAddress, Size) == Size)
+      if (gzwrite(hGzFile, pAddress, Size) == (int)Size)
         bRet = TRUE;
 
       gzclose(hGzFile);
@@ -459,7 +459,7 @@ BOOL File_QueryOverwrite(char *pszFileName)
 /*
   Try filename with various extensions and check if file exists - if so return correct name
 */
-BOOL File_FindPossibleExtFileName(char *pszFileName, char *ppszExts[])
+BOOL File_FindPossibleExtFileName(char *pszFileName, const char *ppszExts[])
 {
   char szSrcDir[256], szSrcName[128], szSrcExt[32];
   char szTempFileName[FILENAME_MAX];
@@ -493,7 +493,7 @@ BOOL File_FindPossibleExtFileName(char *pszFileName, char *ppszExts[])
   Split a complete filename into path, filename and extension.
   If pExt is NULL, don't split the extension from the file name!
 */
-void File_splitpath(char *pSrcFileName, char *pDir, char *pName, char *pExt)
+void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *pExt)
 {
   char *ptr1, *ptr2;
 
@@ -532,7 +532,7 @@ void File_splitpath(char *pSrcFileName, char *pDir, char *pName, char *pExt)
   Build a complete filename from path, filename and extension.
   pExt can also be NULL.
 */
-void File_makepath(char *pDestFileName, char *pDir, char *pName, char *pExt)
+void File_makepath(char *pDestFileName, const char *pDir, const char *pName, const char *pExt)
 {
   strcpy(pDestFileName, pDir);
   if( strlen(pDestFileName)==0 )

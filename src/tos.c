@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.26 2005-02-24 17:16:32 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.27 2005-03-07 23:15:49 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -35,8 +35,15 @@ char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.26 2005-02-24 17:16:32 thothy Exp $";
 #include "vdi.h"
 
 
-/* Settings for differnt memory sizes */
-static MEMORY_INFO MemoryInfo[] =
+Uint16 TosVersion;                      /* eg, 0x0100, 0x0102 */
+Uint32 TosAddress, TosSize;             /* Address in ST memory and size of TOS image */
+BOOL bTosImageLoaded = FALSE;           /* Successfully loaded a TOS image? */
+BOOL bRamTosImage;                      /* TRUE if we loaded a RAM TOS image */
+unsigned int ConnectedDriveMask = 0x03; /* Bit mask of connected drives, eg 0x7 is A,B,C */
+
+
+/* Settings for different memory sizes */
+static const MEMORY_INFO MemoryInfo[] =
 {
   { 0x80000,  0x01, 0x00080000 },    /* MEMORYSIZE_512 */
   { 0x100000, 0x05, 0x00100000 },    /* MEMORYSIZE_1024 */
@@ -45,7 +52,7 @@ static MEMORY_INFO MemoryInfo[] =
 };
 
 /* Bit masks of connected drives(we support up to C,D,E,F,G,H) */
-unsigned int ConnectedDriveMaskList[] =
+static const unsigned int ConnectedDriveMaskList[] =
 {
   0x03,  /* DRIVELIST_NONE  A,B         */
   0x07,  /* DRIVELIST_C    A,B,C       */
@@ -56,14 +63,8 @@ unsigned int ConnectedDriveMaskList[] =
   0xFF,  /* DRIVELIST_CDEFGH  A,B,C,D,E,F,G,H */
 };
 
-unsigned short int TosVersion;          /* eg, 0x0100, 0x0102 */
-unsigned long TosAddress, TosSize;      /* Address in ST memory and size of TOS image */
-BOOL bTosImageLoaded = FALSE;           /* Successfully loaded a TOS image? */
-BOOL bRamTosImage;                      /* TRUE if we loaded a RAM TOS image */
-unsigned int ConnectedDriveMask=0x03;   /* Bit mask of connected drives, eg 0x7 is A,B,C */
-
 /* Possible TOS file extensions to scan for */
-char *pszTosNameExts[] =
+static const char *pszTosNameExts[] =
 {
   ".img",
   ".rom",
@@ -85,29 +86,29 @@ typedef struct
 {
   Uint16 Version;       /* TOS version number */
   Sint16 Country;       /* TOS country code: -1 if it does not matter, 0=US, 1=Germany, 2=France, etc. */
-  char *pszName;        /* Name of the patch */
+  const char *pszName;  /* Name of the patch */
   int Flags;            /* When should the patch be applied? (see enum above) */
   Uint32 Address;       /* Where the patch should be applied */
   Uint32 OldData;       /* Expected first 4 old bytes */
   Uint32 Size;          /* Length of the patch */
-  void *pNewData;       /* Pointer to the new bytes */
+  const void *pNewData; /* Pointer to the new bytes */
 } TOS_PATCH;
 
-static char pszDmaBoot[] = "boot from DMA bus";
-static char pszMouse[] = "working mouse in big screen resolutions";
-static char pszRomCheck[] = "ROM checksum";
-static char pszNoSteHw[] = "disable STE hardware access";
+static const char pszDmaBoot[] = "boot from DMA bus";
+static const char pszMouse[] = "working mouse in big screen resolutions";
+static const char pszRomCheck[] = "ROM checksum";
+static const char pszNoSteHw[] = "disable STE hardware access";
 
 //static Uint8 pRtsOpcode[] = { 0x4E, 0x75 };  /* 0x4E75 = RTS */
-static Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
+static const Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
         0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
         0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71 };  /* 0x4E71 = NOP */
-static Uint8 pMouseOpcode[] = { 0xD3, 0xC1 };  /* "ADDA.L D1,A1" (instead of "ADDA.W D1,A1") */
-static Uint8 pRomCheckOpcode[] = { 0x60, 0x00, 0x00, 0x98 };  /* BRA $e00894 */
-static Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
+static const Uint8 pMouseOpcode[] = { 0xD3, 0xC1 };  /* "ADDA.L D1,A1" (instead of "ADDA.W D1,A1") */
+static const Uint8 pRomCheckOpcode[] = { 0x60, 0x00, 0x00, 0x98 };  /* BRA $e00894 */
+static const Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
 
 /* The patches for the TOS: */
-static TOS_PATCH TosPatches[] =
+static const TOS_PATCH TosPatches[] =
 {
   { 0x100, -1, pszDmaBoot, TP_HD_OFF, 0xFC03D6, 0x610000D0, 4, pNopOpcodes }, /* BSR $FC04A8 */
 
@@ -182,7 +183,7 @@ static void TOS_FixRom(void)
   int nGoodPatches, nBadPatches;
   short TosCountry;
   BOOL bHdIsOn;
-  TOS_PATCH *pPatch;
+  const TOS_PATCH *pPatch;
 
   /* Check for EmuTOS first since we can not patch it */
   if(STMemory_ReadLong(TosAddress+0x2c) == 0x45544F53)      /* 0x45544F53 = 'ETOS' */
@@ -335,7 +336,7 @@ int TOS_LoadImage(void)
        || (!bRamTosImage && TosAddress!=0xe00000 && TosAddress!=0xfc0000))
     {
       Main_Message("Your TOS seems not to be a valid TOS ROM file!\n", PROG_NAME);
-      fprintf(stderr,"(TOS version %x, address %lx)\n", TosVersion, TosAddress);
+      fprintf(stderr,"(TOS version %x, address %x)\n", TosVersion, TosAddress);
       return -2;
     }
 
@@ -364,7 +365,7 @@ int TOS_LoadImage(void)
     return -1;
   }
 
-  fprintf(stderr, "Loaded TOS version %i.%c%c, starting at $%lx, "
+  fprintf(stderr, "Loaded TOS version %i.%c%c, starting at $%x, "
           "country code = %i, %s\n", TosVersion>>8, '0'+((TosVersion>>4)&0x0f),
           '0'+(TosVersion&0x0f), TosAddress, STMemory_ReadWord(TosAddress+28)>>1,
           (STMemory_ReadWord(TosAddress+28)&1)?"PAL":"NTSC");

@@ -85,16 +85,12 @@ typedef struct {
 #define ACIA_STATUS_REGISTER__OVERRUN_ERROR    0x40
 #define ACIA_STATUS_REGISTER__INTERRUPT_REQUEST  0x80
 
-extern unsigned char ACIAControlRegister;
-extern unsigned char ACIAStatusRegister;
-extern unsigned char ACIAByte;
-
 extern KEYBOARD_PROCESSOR KeyboardProcessor;
 extern KEYBOARD Keyboard;
 
 extern void IKBD_Reset(BOOL bCold);
 extern void IKBD_MemorySnapShot_Capture(BOOL bSave);
-extern void IKBD_SendAutoKeyboardCommands();
+extern void IKBD_SendAutoKeyboardCommands(void);
 extern void IKBD_InterruptHandler_ResetTimer(void);
 
 extern void IKBD_Cmd_NullFunction(void);

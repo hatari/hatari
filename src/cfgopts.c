@@ -54,7 +54,7 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.4 2004-07-05 16:53:17 thothy Exp $";
+char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.5 2005-03-07 23:15:48 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -114,7 +114,7 @@ static char *trim(char *buffer)
 /     struct Config_Tag configs[]; Configuration structure
 /     char *header            ; INI header name (i.e. "[TEST]")
 /-------------------------------------------------------------------<<*/
-int input_config(const char *filename, struct Config_Tag configs[], char *header)
+int input_config(const char *filename, struct Config_Tag configs[], const char *header)
 {
    struct Config_Tag *ptr;
    int count=0, lineno=0;
@@ -275,7 +275,7 @@ static int write_token(FILE *outfile, struct Config_Tag *ptr)
 /     struct Config_Tag configs[]; Configuration structure
 /     char *header            ; INI header name (i.e. "[TEST]")
 /-------------------------------------------------------------------<<*/
-int update_config(const char *filename, struct Config_Tag configs[], char *header)
+int update_config(const char *filename, struct Config_Tag configs[], const char *header)
 {
    struct Config_Tag *ptr;
    int count=0, lineno=0;

@@ -26,11 +26,10 @@ typedef struct
 } MEMORY_INFO;
 
 
-extern unsigned short int TosVersion;
-extern unsigned long TosAddress, TosSize;
+extern Uint16 TosVersion;
+extern Uint32 TosAddress, TosSize;
 extern BOOL bTosImageLoaded;
 extern unsigned int ConnectedDriveMask;
-extern char *pszTosNameExts[];
 
 extern void TOS_MemorySnapShot_Capture(BOOL bSave);
 extern int TOS_LoadImage(void);

@@ -16,7 +16,6 @@
 #define BORDERMASK_LEFT    0x0004
 #define BORDERMASK_RIGHT   0x0008
 
-extern long VideoAddress;
 extern unsigned char VideoSyncByte,VideoShifterByte;
 extern BOOL bUseHighRes;
 extern int nVBLs,nHBL;

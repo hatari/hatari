@@ -9,7 +9,7 @@
 
   Now case is handled by using glob. See the function
   GemDOS_CreateHardDriveFileName for that. It also knows about symlinks.
-  A filename is recognized on its eight first characters, do don't try to
+  A filename is recognized on its eight first characters, do not try to
   push this too far, or you'll get weirdness ! (But I can even run programs
   directly from a mounted cd in lower cases, so I guess it's working well !).
 
@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.31 2005-02-24 17:16:32 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.32 2005-03-07 23:15:48 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -95,8 +95,10 @@ unsigned short int CurrentDrive;              /* Current drive (0=A,1=B,2=C etc.
 Uint32 act_pd;                                /* Used to get a pointer to the current basepage */
 
 
+#ifdef GEMDOS_VERBOSE
 /* List of GEMDos functions... */
-char *pszGemDOSNames[] = {
+static const char *pszGemDOSNames[] =
+{
   "Term",                 /*0x00*/
   "Conin",                /*0x01*/
   "ConOut",               /*0x02*/
@@ -186,6 +188,7 @@ char *pszGemDOSNames[] = {
   "Rename",     /*0x56*/
   "GSDTof"      /*0x57*/
 };
+#endif
 
 unsigned char GemDOS_ConvertAttribute(mode_t mode);
 
@@ -614,9 +617,8 @@ static int baselen(char *s)
 /*
   Use hard-drive directory, current ST directory and filename to create full path
 */
-void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestName)
+void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *pszDestName)
 {
-  /*  int DirIndex = Misc_LimitInt(Drive-2, 0,ConfigureParams.HardDisc.nDriveList-1); */
   char *s,*start;
 
   if(pszFileName[0] == '\0') return; /* check for valid string */
@@ -1036,8 +1038,9 @@ static BOOL GemDOS_Create(unsigned long Params)
 {
   char szActualFileName[MAX_PATH];
   char *pszFileName;
-  char *rwflags[] = { "w+", /* read / write (truncate if exists) */
-		      "wb"  /* write only */
+  const char *rwflags[] = {
+    "w+", /* read / write (truncate if exists) */
+    "wb"  /* write only */
   };
   int Drive,Index,Mode;
 
@@ -1090,7 +1093,7 @@ static BOOL GemDOS_Open(unsigned long Params)
 {
   char szActualFileName[MAX_PATH];
   char *pszFileName;
-  char *open_modes[] = { "rb", "wb", "r+" };  /* convert atari modes to stdio modes */
+  const char *open_modes[] = { "rb", "wb", "r+", "rb" };  /* convert atari modes to stdio modes */
   int Drive,Index,Mode;
 
   /* Find filename */

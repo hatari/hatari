@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.38 2005-02-13 16:18:49 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.39 2005-03-07 23:15:49 thothy Exp $";
 
 #include <SDL.h>
 
@@ -225,7 +225,7 @@ static void Screen_SetDrawFunctions(void)
 /*
   Initialize SDL screen surface / set resolution.
 */
-static void Screen_SetResolution()
+static void Screen_SetResolution(void)
 {
   int Width, Height, BitCount;
   unsigned int sdlVideoFlags;
@@ -757,7 +757,7 @@ void Screen_Blit(BOOL bSwapScreen)
     { 0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1) },
   };
 
-  unsigned char *pSTScreen;
+  unsigned char *pTmpScreen;
   SDL_Rect *SrcRect;
 
   /* Blit to full screen or window? */
@@ -790,9 +790,9 @@ void Screen_Blit(BOOL bSwapScreen)
   }
 
   /* Swap copy/raster buffers in screen. */
-  pSTScreen = pFrameBuffer->pSTScreenCopy;
+  pTmpScreen = pFrameBuffer->pSTScreenCopy;
   pFrameBuffer->pSTScreenCopy = pFrameBuffer->pSTScreen;
-  pFrameBuffer->pSTScreen = pSTScreen;
+  pFrameBuffer->pSTScreen = pTmpScreen;
 }
 
 

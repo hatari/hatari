@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.70 2005-02-24 20:26:29 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.71 2005-03-07 23:15:49 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -86,7 +86,7 @@ void Main_MemorySnapShot_Capture(BOOL bSave)
 /*
   Bring up a message dialog.
 */
-int Main_Message(char *pText, char *pCaption)
+int Main_Message(const char *pText, const char *pCaption)
 {
   /* Show message: */
   fprintf(stderr,"%s: %s\n", pCaption, pText);

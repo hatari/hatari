@@ -9,7 +9,7 @@
   When Hatari runs, it outputs text to the error log file to show if the system
   initialised correctly and such like.
 */
-char ErrLog_rcsid[] = "Hatari $Id: errlog.c,v 1.5 2004-04-19 08:53:33 thothy Exp $";
+char ErrLog_rcsid[] = "Hatari $Id: errlog.c,v 1.6 2005-03-07 23:15:48 thothy Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -58,7 +58,7 @@ void ErrLog_CloseFile(void)
 /*
   Output string to error log file
 */
-void ErrLog_File(char *format, ...)
+void ErrLog_File(const char *format, ...)
 {
 #ifdef USEERRLOG
   char szBuffer[1024];

@@ -18,7 +18,7 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.7 2005-02-25 13:56:59 thothy Exp $";
+char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.8 2005-03-07 23:15:49 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -83,8 +83,8 @@ void Spec512_StartVBL(void)
 */
 void Spec512_StoreCyclePalette(unsigned short col, unsigned long addr)
 {
-  CYCLEPALETTE *pCyclePalette;
-  int FrameCycles,ScanLine;
+  CYCLEPALETTE *pTmpCyclePalette;
+  int FrameCycles, ScanLine;
 
   CycleColour = col;
   CycleColourIndex = (addr-0xff8240)>>1;
@@ -94,18 +94,18 @@ void Spec512_StoreCyclePalette(unsigned short col, unsigned long addr)
 
   /* Find scan line we are currently on and get index into cycle-palette table */
   ScanLine = (FrameCycles/CYCLES_PER_LINE);
-  pCyclePalette = &CyclePalettes[ (ScanLine*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[ScanLine] ];
+  pTmpCyclePalette = &CyclePalettes[ (ScanLine*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[ScanLine] ];
   /* Do we have a previous entry at the same cycles? If so, 68000 have used a 'move.l' instruction so stagger writes */
   if (nCyclePalettes[ScanLine]>0)
   {
-    if ((pCyclePalette-1)->LineCycles == (FrameCycles % CYCLES_PER_LINE))
+    if ((pTmpCyclePalette-1)->LineCycles == (FrameCycles % CYCLES_PER_LINE))
       FrameCycles += 4;              /* Colors are staggered by [4,20] when writing a long word! */
   }
 
   /* Store palette access */
-  pCyclePalette->LineCycles = FrameCycles % CYCLES_PER_LINE;  /* Cycles into scanline */
-  pCyclePalette->Colour = CycleColour & 0x777;                /* Store ST colour RGB */
-  pCyclePalette->Index = CycleColourIndex;                    /* And Index (0...15) */
+  pTmpCyclePalette->LineCycles = FrameCycles % CYCLES_PER_LINE;  /* Cycles into scanline */
+  pTmpCyclePalette->Colour = CycleColour & 0x777;                /* Store ST colour RGB */
+  pTmpCyclePalette->Index = CycleColourIndex;                    /* And Index (0...15) */
   /* Increment count(this can never overflow as you cannot write to the palette more than 'MAX_CYCLEPALETTES_PERLINE' times per scanline) */
   nCyclePalettes[ScanLine]++;
 

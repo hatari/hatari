@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.10 2005-01-18 23:33:21 thothy Exp $";
+char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.11 2005-03-07 23:15:49 thothy Exp $";
 
 #include <SDL_types.h>
 #include <errno.h>
@@ -67,7 +67,7 @@ static BOOL bCaptureSave, bCaptureError;
 /*
   Open file.
 */
-static MSS_File MemorySnapShot_fopen(char *pszFileName, char *pszMode)
+static MSS_File MemorySnapShot_fopen(const char *pszFileName, const char *pszMode)
 {
 #ifdef COMPRESS_MEMORYSNAPSHOT
 	return gzopen(pszFileName, pszMode);
@@ -109,7 +109,7 @@ static int MemorySnapShot_fread(MSS_File fhndl, char *buf, int len)
 /*
   Write data to file.
 */
-static int MemorySnapShot_fwrite(MSS_File fhndl, char *buf, int len)
+static int MemorySnapShot_fwrite(MSS_File fhndl, const char *buf, int len)
 {
 #ifdef COMPRESS_MEMORYSNAPSHOT
 	return gzwrite(fhndl, buf, len);
@@ -168,7 +168,7 @@ static BOOL MemorySnapShot_OpenFile(char *pszFileName, BOOL bSave)
 			/* No, inform user and error */
 			sprintf(szString,"Unable to Restore Memory State.\n"
 			        "File is only compatible with Hatari v%s", VersionString);
-			Main_Message(szString, PROG_NAME /*, MB_OK | MB_ICONSTOP*/);
+			Main_Message(szString, PROG_NAME);
 			bCaptureError = TRUE;
 			return(FALSE);
 		}

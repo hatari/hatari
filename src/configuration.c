@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.39 2005-02-25 13:28:44 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.40 2005-03-07 23:15:48 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -321,7 +321,7 @@ void Configuration_WorkOnDetails(BOOL bReset)
 /*
   Load a settings section from the configuration file.
 */
-static int Configuration_LoadSection(const char *pFilename, struct Config_Tag configs[], char *pSection)
+static int Configuration_LoadSection(const char *pFilename, struct Config_Tag configs[], const char *pSection)
 {
   int ret;
 
@@ -377,7 +377,7 @@ void Configuration_Load(void)
 /*
   Save a settings section to configuration file
 */
-static int Configuration_SaveSection(const char *pFilename, struct Config_Tag configs[], char *pSection)
+static int Configuration_SaveSection(const char *pFilename, struct Config_Tag configs[], const char *pSection)
 {
   int ret;
 

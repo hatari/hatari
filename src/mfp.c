@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.16 2005-01-18 23:33:23 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.17 2005-03-07 23:15:49 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -195,7 +195,7 @@ static void MFP_Exception(int Interrupt)
 /*
   Test interrupt request to see if can cause exception,return TRUE if pass vector
 */
-static BOOL MFP_InterruptRequest(int Exception, unsigned char Bit, unsigned char *pPendingReg, unsigned char MaskRegister,
+static BOOL MFP_InterruptRequest(int nMfpException, unsigned char Bit, unsigned char *pPendingReg, unsigned char MaskRegister,
                                  unsigned char PriorityMaskLow, unsigned char PriorityMaskHigh, unsigned char *pInServiceReg)
 {
   /* Are any higher priority interupts in service? */
@@ -218,7 +218,7 @@ static BOOL MFP_InterruptRequest(int Exception, unsigned char Bit, unsigned char
           *pInServiceReg &= ~Bit;       /* Clear interrupt in service register */
 
         /* Call interrupt, adds in base (default 0x100) */
-        MFP_Exception(Exception);
+        MFP_Exception(nMfpException);
         return(TRUE);
       }
     }

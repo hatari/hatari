@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.21 2005-01-18 23:33:17 thothy Exp $";
+char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.22 2005-03-07 23:15:49 thothy Exp $";
 
 #include <time.h>
 
@@ -44,7 +44,7 @@ char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.21 2005-01-18 23:33:17 thothy Exp $"
 #define ABS_MAX_X_ONRESET  320      /* Initial absolute mouse limits after RESET command */
 #define ABS_MAY_Y_ONRESET  200      /* These values are never actually used as user MUST call 'IKBD_Cmd_AbsMouseMode' before ever using them */
 
-#define ABS_PREVBUTTONS    (0x02|0x8)  /* Don't report any buttons up on first call to 'IKBD_Cmd_ReadAbsMousePos' */
+#define ABS_PREVBUTTONS  (0x02|0x8) /* Don't report any buttons up on first call to 'IKBD_Cmd_ReadAbsMousePos' */
 
 
 /* Keyboard state */
@@ -60,10 +60,10 @@ BOOL bMouseDisabled, bJoystickDisabled;
 BOOL bDuringResetCriticalTime, bBothMouseAndJoy;
 
 /* ACIA */
-unsigned char ACIAControlRegister = 0;
-unsigned char ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;  /* Pass when read 0xfffc00 */
-unsigned char ACIAByte;                 /* When a byte has arrived at the ACIA(from the keyboard) it is stored here */
-BOOL bByteInTransitToACIA = FALSE;      /* Is a byte being sent to the ACIA from the keyboard? */
+static Uint8 ACIAControlRegister = 0;
+static Uint8 ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;  /* Pass when read 0xfffc00 */
+static Uint8 ACIAByte;                      /* When a byte has arrived at the ACIA (from the keyboard) it is stored here */
+static BOOL bByteInTransitToACIA = FALSE;   /* Is a byte being sent to the ACIA from the keyboard? */
 
 /*
   6850 ACIA (Asynchronous Communications Inferface Apdater)
@@ -147,7 +147,7 @@ BOOL bByteInTransitToACIA = FALSE;      /* Is a byte being sent to the ACIA from
 */
 
 /* List of possible keyboard commands, others are seen as NOPs by keyboard processor */
-IKBD_COMMAND_PARAMS KeyboardCommands[] = {
+static IKBD_COMMAND_PARAMS KeyboardCommands[] = {
   /* Known messages, counts include command byte */
   { 0x80,2,  IKBD_Cmd_Reset },
   { 0x07,2,  IKBD_Cmd_MouseAction },
@@ -1343,12 +1343,12 @@ void IKBD_Cmd_Execute(void)
   For our emulation we bypass the ACIA (I've yet to see anything check for this)
   and add the byte directly into the keyboard input buffer.
 */
-static void IKBD_RunKeyboardCommand(unsigned short ACIAByte)
+static void IKBD_RunKeyboardCommand(unsigned short aciabyte)
 {
   int i=0;
 
   /* Write into our keyboard input buffer */
-  Keyboard.InputBuffer[Keyboard.nBytesInInputBuffer++] = ACIAByte;
+  Keyboard.InputBuffer[Keyboard.nBytesInInputBuffer++] = aciabyte;
 
   /* Now check bytes to see if we have a valid/in-valid command string set */
   while(KeyboardCommands[i].Command!=0xff) {

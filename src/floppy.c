@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.21 2005-02-25 13:28:45 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.22 2005-03-07 23:15:48 thothy Exp $";
 
 #include <sys/stat.h>
 
@@ -44,7 +44,7 @@ EMULATION_DRIVE EmulationDrives[NUM_EMULATION_DRIVES];  /* Emulation drive detai
 int nBootDrive=0;               /* Drive A, default */
 
 /* Possible disc image file extensions to scan for */
-char *pszDiscImageNameExts[] =
+static const char *pszDiscImageNameExts[] =
 {
   ".msa",
   ".st",

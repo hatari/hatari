@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.8 2005-02-24 20:26:30 thothy Exp $";
+char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.9 2005-03-07 23:15:50 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -89,8 +89,7 @@ static int entries;                     /* How many files are in the actual dire
   Update the file name strings in the dialog.
   Returns FALSE if it failed, TRUE on success.
 */
-static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path,
-                                        BOOL browsingzip, int entries)
+static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, BOOL browsingzip)
 {
 	int i;
 	char *tempstr = malloc(FILENAME_MAX);
@@ -320,7 +319,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 		/* Update the file name strings in the dialog? */
 		if (refreshentries)
 		{
-			if (!DlgFileSelect_RefreshEntries(files, path, browsingzip, entries))
+			if (!DlgFileSelect_RefreshEntries(files, path, browsingzip))
 			{
 				free(pStringMem);
 				return FALSE;
