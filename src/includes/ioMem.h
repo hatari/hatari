@@ -32,7 +32,7 @@ extern int nIoMemAccessSize;
 static inline Uint32 IoMem_ReadLong(Uint32 Address)
 {
 	Address &= 0x0ffffff;
-	return do_get_mem_long((uae_u32 *)&IoMem[Address]);
+	return do_get_mem_long(&IoMem[Address]);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -43,7 +43,7 @@ static inline Uint32 IoMem_ReadLong(Uint32 Address)
 static inline Uint16 IoMem_ReadWord(Uint32 Address)
 {
 	Address &= 0x0ffffff;
-	return do_get_mem_word((uae_u16 *)&IoMem[Address]);
+	return do_get_mem_word(&IoMem[Address]);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -65,7 +65,7 @@ static inline Uint8 IoMem_ReadByte(Uint32 Address)
 static inline void IoMem_WriteLong(Uint32 Address, Uint32 Var)
 {
 	Address &= 0x0ffffff;
-	do_put_mem_long((uae_u32 *)&IoMem[Address], Var);
+	do_put_mem_long(&IoMem[Address], Var);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -76,7 +76,7 @@ static inline void IoMem_WriteLong(Uint32 Address, Uint32 Var)
 static inline void IoMem_WriteWord(Uint32 Address, Uint16 Var)
 {
 	Address &= 0xffffff;
-	do_put_mem_word((uae_u16 *)&IoMem[Address], Var);
+	do_put_mem_word(&IoMem[Address], Var);
 }
 
 /*-----------------------------------------------------------------------*/

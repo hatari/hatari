@@ -6,7 +6,7 @@
 
   MSA Disc support
 */
-char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.7 2005-02-13 16:18:49 thothy Exp $";
+char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.8 2005-03-11 10:10:37 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -153,7 +153,7 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
     for(Track=pMSAHeader->StartingTrack; Track <= pMSAHeader->EndingTrack; Track++) {
       for(Side=0; Side<(pMSAHeader->Sides+1); Side++) {
         /* Uncompress MSA Track, first check if is not compressed */
-        DataLength = do_get_mem_word((uae_u16 *)pMSAImageBuffer);
+        DataLength = do_get_mem_word(pMSAImageBuffer);
         pMSAImageBuffer += sizeof(short int);
         if (DataLength==(NUMBYTESPERSECTOR*pMSAHeader->SectorsPerTrack)) {
           /* No compression on track, simply copy and continue */
@@ -172,7 +172,7 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
             }
             else {
               Data = *pMSAImageBuffer++;                /* Byte to copy */
-              RunLength = do_get_mem_word((uae_u16 *)pMSAImageBuffer);  /* For length */
+              RunLength = do_get_mem_word(pMSAImageBuffer);  /* For length */
               /* Limit length to size of track, incorrect images may overflow */
               if ( (RunLength+NumBytesUnCompressed)>(NUMBYTESPERSECTOR*pMSAHeader->SectorsPerTrack) )
               {
@@ -330,7 +330,7 @@ BOOL MSA_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
           /* Store run! */
           *pMSABuffer++ = 0xE5;               /* Marker */
           *pMSABuffer++ = *pImageBuffer;      /* Byte, and follow with 16-bit length */
-          do_put_mem_word((uae_u16 *)pMSABuffer, nBytesRun);
+          do_put_mem_word(pMSABuffer, nBytesRun);
           pMSABuffer += sizeof(short int);
           pImageBuffer += nBytesRun;
           nCompressedBytes += 4;

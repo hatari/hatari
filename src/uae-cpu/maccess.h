@@ -31,39 +31,39 @@
 #include <SDL_endian.h>
 
 
-static inline uae_u32 do_get_mem_long(uae_u32 *a)
+static inline uae_u32 do_get_mem_long(void *a)
 {
-	return SDL_SwapBE32(*a);
+	return SDL_SwapBE32(*(uae_u32 *)a);
 }
 
-static inline uae_u16 do_get_mem_word(uae_u16 *a)
+static inline uae_u16 do_get_mem_word(void *a)
 {
-	return SDL_SwapBE16(*a);
+	return SDL_SwapBE16(*(uae_u16 *)a);
 }
 
 
-static inline void do_put_mem_long(uae_u32 *a, uae_u32 v)
+static inline void do_put_mem_long(void *a, uae_u32 v)
 {
-	*a = SDL_SwapBE32(v);
+	*(uae_u32 *)a = SDL_SwapBE32(v);
 }
 
-static inline void do_put_mem_word(uae_u16 *a, uae_u16 v)
+static inline void do_put_mem_word(void *a, uae_u16 v)
 {
-	*a = SDL_SwapBE16(v);
+	*(uae_u16 *)a = SDL_SwapBE16(v);
 }
 
 
 #else  /* Cpu can not access unaligned memory: */
 
 
-static inline uae_u32 do_get_mem_long(uae_u32 *a)
+static inline uae_u32 do_get_mem_long(void *a)
 {
 	uae_u8 *b = (uae_u8 *)a;
 
 	return (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
 }
 
-static inline uae_u16 do_get_mem_word(uae_u16 *a)
+static inline uae_u16 do_get_mem_word(void *a)
 {
 	uae_u8 *b = (uae_u8 *)a;
 
@@ -71,7 +71,7 @@ static inline uae_u16 do_get_mem_word(uae_u16 *a)
 }
 
 
-static inline void do_put_mem_long(uae_u32 *a, uae_u32 v)
+static inline void do_put_mem_long(void *a, uae_u32 v)
 {
 	uae_u8 *b = (uae_u8 *)a;
 
@@ -81,7 +81,7 @@ static inline void do_put_mem_long(uae_u32 *a, uae_u32 v)
 	b[3] = v;
 }
 
-static inline void do_put_mem_word(uae_u16 *a, uae_u16 v)
+static inline void do_put_mem_word(void *a, uae_u16 v)
 {
 	uae_u8 *b = (uae_u8 *)a;
 

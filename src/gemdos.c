@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.32 2005-03-07 23:15:48 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.33 2005-03-11 10:10:37 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -261,9 +261,9 @@ static BOOL PopulateDTA(char *path, struct dirent *file)
   if(!pDTA) return(FALSE); /* no DTA pointer set */
   Misc_strupr(file->d_name);    /* convert to atari-style uppercase */
   strncpy(pDTA->dta_name,file->d_name,TOS_NAMELEN); /* FIXME: better handling of long file names */
-  do_put_mem_long((uae_u32 *)(pDTA->dta_size), filestat.st_size);
-  do_put_mem_word((uae_u16 *)(pDTA->dta_time), time2dos(filestat.st_mtime));
-  do_put_mem_word((uae_u16 *)(pDTA->dta_date), date2dos(filestat.st_mtime));
+  do_put_mem_long(pDTA->dta_size, filestat.st_size);
+  do_put_mem_word(pDTA->dta_time, time2dos(filestat.st_mtime));
+  do_put_mem_word(pDTA->dta_date, date2dos(filestat.st_mtime));
   pDTA->dta_attrib = GemDOS_ConvertAttribute(filestat.st_mode);
 
   return(TRUE);
@@ -1420,10 +1420,10 @@ static BOOL GemDOS_SNext(unsigned long Params)
   pDTA = (DTA *)STRAM_ADDR(STMemory_ReadLong(STMemory_ReadLong(act_pd)+32));
 
   /* Was DTA ours or TOS? */
-  if (do_get_mem_long((uae_u32 *)(pDTA->magic)) == DTA_MAGIC_NUMBER) {
+  if (do_get_mem_long(pDTA->magic) == DTA_MAGIC_NUMBER) {
 
     /* Find index into our list of structures */
-    Index = do_get_mem_word((uae_u16 *)(pDTA->index))&(MAX_DTAS_FILES-1);
+    Index = do_get_mem_word(pDTA->index) & (MAX_DTAS_FILES-1);
 
     if(InternalDTAs[Index].centry >= InternalDTAs[Index].nentries){
       Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
@@ -1474,9 +1474,9 @@ static BOOL GemDOS_SFirst(unsigned long Params)
     GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
 
     /* Populate DTA, set index for our use */
-    do_put_mem_word((uae_u16 *)(pDTA->index), DTAIndex);
+    do_put_mem_word(pDTA->index, DTAIndex);
     /* set our dta magic num */
-    do_put_mem_long((uae_u32 *)(pDTA->magic), DTA_MAGIC_NUMBER);
+    do_put_mem_long(pDTA->magic, DTA_MAGIC_NUMBER);
 
     if(InternalDTAs[DTAIndex].bUsed == TRUE) ClearInternalDTA();
     InternalDTAs[DTAIndex].bUsed = TRUE;

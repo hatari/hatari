@@ -152,9 +152,9 @@ STATIC_INLINE uaecptr m68k_getpc_p (uae_u8 *p)
     return regs.pc + ((char *)p - (char *)regs.pc_oldp);
 }
 
-#define get_ibyte(o) do_get_mem_byte((uae_u8 *)(regs.pc_p + (o) + 1))
-#define get_iword(o) do_get_mem_word((uae_u16 *)(regs.pc_p + (o)))
-#define get_ilong(o) do_get_mem_long((uae_u32 *)(regs.pc_p + (o)))
+#define get_ibyte(o) do_get_mem_byte(regs.pc_p + (o) + 1)
+#define get_iword(o) do_get_mem_word(regs.pc_p + (o))
+#define get_ilong(o) do_get_mem_long(regs.pc_p + (o))
 
 STATIC_INLINE void refill_prefetch (uae_u32 currpc, uae_u32 offs)
 {
@@ -166,7 +166,7 @@ STATIC_INLINE void refill_prefetch (uae_u32 currpc, uae_u32 offs)
     r = *(uae_u32 *)ptr;
     regs.prefetch = r;
 #else
-    r = do_get_mem_long ((uae_u32 *)ptr);
+    r = do_get_mem_long (ptr);
     do_put_mem_long (&regs.prefetch, r);
 #endif
     /* printf ("PC %lx T %lx PCPOFFS %d R %lx\n", currpc, t, pc_p_offs, r); */
@@ -199,7 +199,7 @@ STATIC_INLINE uae_u32 get_iword_prefetch (uae_s32 o)
 	refill_prefetch (currpc, o);
 	offs = addr - regs.prefetch_pc;
     }
-    v = do_get_mem_word ((uae_u16 *)(((uae_u8 *)&regs.prefetch) + offs));
+    v = do_get_mem_word (((uae_u8 *)&regs.prefetch) + offs);
     if (offs >= 2)
 	refill_prefetch (currpc, 2);
     /* printf ("get_iword PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v); */

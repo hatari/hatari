@@ -29,7 +29,7 @@ extern Uint32 STRamEnd;
 static inline void STMemory_WriteLong(Uint32 Address, Uint32 Var)
 {
 	Address &= 0xffffff;
-	do_put_mem_long((uae_u32 *)&STRam[Address], Var);
+	do_put_mem_long(&STRam[Address], Var);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -40,7 +40,7 @@ static inline void STMemory_WriteLong(Uint32 Address, Uint32 Var)
 static inline void STMemory_WriteWord(Uint32 Address, Uint16 Var)
 {
 	Address &= 0xffffff;
-	do_put_mem_word((uae_u16 *)&STRam[Address], Var);
+	do_put_mem_word(&STRam[Address], Var);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -62,7 +62,7 @@ static inline void STMemory_WriteByte(Uint32 Address, Uint8 Var)
 static inline Uint32 STMemory_ReadLong(Uint32 Address)
 {
 	Address &= 0xffffff;
-	return do_get_mem_long((uae_u32 *)&STRam[Address]);
+	return do_get_mem_long(&STRam[Address]);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -73,7 +73,7 @@ static inline Uint32 STMemory_ReadLong(Uint32 Address)
 static inline Uint16 STMemory_ReadWord(Uint32 Address)
 {
 	Address &= 0xffffff;
-	return do_get_mem_word((uae_u16 *)&STRam[Address]);
+	return do_get_mem_word(&STRam[Address]);
 }
 
 /*-----------------------------------------------------------------------*/

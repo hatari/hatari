@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.16 2005-01-18 23:33:39 thothy Exp $";
+char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.17 2005-03-11 10:10:38 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -218,22 +218,16 @@ static uae_u8 *STmemory;
 
 static uae_u32 STmem_lget(uaecptr addr)
 {
-    uae_u32 *m;
-
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
-    m = (uae_u32 *)(STmemory + addr);
-    return do_get_mem_long (m);
+    return do_get_mem_long(STmemory + addr);
 }
 
 static uae_u32 STmem_wget(uaecptr addr)
 {
-    uae_u16 *m;
-
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
-    m = (uae_u16 *)(STmemory + addr);
-    return do_get_mem_word (m);
+    return do_get_mem_word(STmemory + addr);
 }
 
 static uae_u32 STmem_bget(uaecptr addr)
@@ -245,22 +239,16 @@ static uae_u32 STmem_bget(uaecptr addr)
 
 static void STmem_lput(uaecptr addr, uae_u32 l)
 {
-    uae_u32 *m;
-
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
-    m = (uae_u32 *)(STmemory + addr);
-    do_put_mem_long (m, l);
+    do_put_mem_long(STmemory + addr, l);
 }
 
 static void STmem_wput(uaecptr addr, uae_u32 w)
 {
-    uae_u16 *m;
-
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
-    m = (uae_u16 *)(STmemory + addr);
-    do_put_mem_word (m, w);
+    do_put_mem_word(STmemory + addr, w);
 }
 
 static void STmem_bput(uaecptr addr, uae_u32 b)
@@ -294,8 +282,6 @@ static uae_u8 *STmem_xlate(uaecptr addr)
  */
 static uae_u32 SysMem_lget(uaecptr addr)
 {
-    uae_u32 *m;
-
     if(addr < 0x800 && !regs.s)
     {
       M68000_BusError(addr, 1);
@@ -304,14 +290,12 @@ static uae_u32 SysMem_lget(uaecptr addr)
 
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
-    m = (uae_u32 *)(STmemory + addr);
-    return do_get_mem_long (m);
+
+    return do_get_mem_long(STmemory + addr);
 }
 
 static uae_u32 SysMem_wget(uaecptr addr)
 {
-    uae_u16 *m;
-
     if(addr < 0x800 && !regs.s)
     {
       M68000_BusError(addr, 1);
@@ -320,8 +304,8 @@ static uae_u32 SysMem_wget(uaecptr addr)
 
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
-    m = (uae_u16 *)(STmemory + addr);
-    return do_get_mem_word (m);
+
+    return do_get_mem_word(STmemory + addr);
 }
 
 static uae_u32 SysMem_bget(uaecptr addr)
@@ -339,8 +323,6 @@ static uae_u32 SysMem_bget(uaecptr addr)
 
 static void SysMem_lput(uaecptr addr, uae_u32 l)
 {
-    uae_u32 *m;
-
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
       M68000_BusError(addr, 0);
@@ -349,14 +331,12 @@ static void SysMem_lput(uaecptr addr, uae_u32 l)
 
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
-    m = (uae_u32 *)(STmemory + addr);
-    do_put_mem_long (m, l);
+
+    do_put_mem_long(STmemory + addr, l);
 }
 
 static void SysMem_wput(uaecptr addr, uae_u32 w)
 {
-    uae_u16 *m;
-
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
       M68000_BusError(addr, 0);
@@ -365,8 +345,8 @@ static void SysMem_wput(uaecptr addr, uae_u32 w)
 
     addr -= STmem_start & STmem_mask;
     addr &= STmem_mask;
-    m = (uae_u16 *)(STmemory + addr);
-    do_put_mem_word (m, w);
+
+    do_put_mem_word(STmemory + addr, w);
 }
 
 static void SysMem_bput(uaecptr addr, uae_u32 b)
@@ -439,20 +419,16 @@ static uae_u8 *TTmemory;
 
 static uae_u32 TTmem_lget(uaecptr addr)
 {
-    uae_u32 *m;
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
-    m = (uae_u32 *)(TTmemory + addr);
-    return do_get_mem_long (m);
+    return do_get_mem_long(TTmemory + addr);
 }
 
 static uae_u32 TTmem_wget(uaecptr addr)
 {
-    uae_u16 *m;
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
-    m = (uae_u16 *)(TTmemory + addr);
-    return do_get_mem_word (m);
+    return do_get_mem_word(TTmemory + addr);
 }
 
 static uae_u32 TTmem_bget(uaecptr addr)
@@ -464,20 +440,16 @@ static uae_u32 TTmem_bget(uaecptr addr)
 
 static void TTmem_lput(uaecptr addr, uae_u32 l)
 {
-    uae_u32 *m;
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
-    m = (uae_u32 *)(TTmemory + addr);
-    do_put_mem_long (m, l);
+    do_put_mem_long(TTmemory + addr, l);
 }
 
 static void TTmem_wput(uaecptr addr, uae_u32 w)
 {
-    uae_u16 *m;
     addr -= TTmem_start & TTmem_mask;
     addr &= TTmem_mask;
-    m = (uae_u16 *)(TTmemory + addr);
-    do_put_mem_word (m, w);
+    do_put_mem_word(TTmemory + addr, w);
 }
 
 static void TTmem_bput(uaecptr addr, uae_u32 b)
@@ -508,20 +480,16 @@ static uae_u8 *ROMmemory;
 
 static uae_u32 ROMmem_lget(uaecptr addr)
 {
-    uae_u32 *m;
     addr -= ROMmem_start & ROMmem_mask;
     addr &= ROMmem_mask;
-    m = (uae_u32 *)(ROMmemory + addr);
-    return do_get_mem_long (m);
+    return do_get_mem_long(ROMmemory + addr);
 }
 
 static uae_u32 ROMmem_wget(uaecptr addr)
 {
-    uae_u16 *m;
     addr -= ROMmem_start & ROMmem_mask;
     addr &= ROMmem_mask;
-    m = (uae_u16 *)(ROMmemory + addr);
-    return do_get_mem_word (m);
+    return do_get_mem_word(ROMmemory + addr);
 }
 
 static uae_u32 ROMmem_bget(uaecptr addr)
