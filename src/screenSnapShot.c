@@ -16,9 +16,6 @@
 #include "video.h"
 #include "vdi.h"
 
-//#define ALLOW_SCREEN_GRABS  /* FIXME */
-
-extern SDL_Surface *sdlscrn;
 
 int nScreenShots=0;                  /* Number of screen shots saved */
 BOOL bRecordingAnimation=FALSE;      /* Recording animation? */
@@ -61,22 +58,6 @@ void ScreenSnapShot_GetNum(void){
   } 
 }
 
-
-/*-----------------------------------------------------------------------*/
-/* REDUNDANT.
-  Check if we have pressed PrintScreen
-*/
-void ScreenSnapShot_CheckPrintKey(void)
-{
-#ifdef ALLOW_SCREEN_GRABS
-  /* Did press Print Screen key? */
-  if (GetAsyncKeyState(VK_SNAPSHOT)&0x0001) {  /* Print Key pressed(not held) */
-    /* Save our screen */
-    ScreenSnapShot_SaveScreen();
-  }
-#endif  /*ALLOW_SCREEN_GRABS*/
-}
-
 /*-----------------------------------------------------------------------*/
 /*
   Save screen shot out .BMP file with filename 'grab0000.bmp','grab0001.bmp'....
@@ -86,16 +67,13 @@ void ScreenSnapShot_SaveScreen(void)
   char szFileName[MAX_FILENAME_LENGTH];
   
   ScreenSnapShot_GetNum();
-  /* Only do when NOT in full screen and NOT VDI resolution */
-  if (!bInFullScreen && !bUseVDIRes) {
-    /* Create our filename */
-    nScreenShots++;
-    sprintf(szFileName,"%s/grab%4.4d.bmp",szWorkingDir,nScreenShots);
-    if(SDL_SaveBMP(sdlscrn, szFileName))
-      fprintf(stderr, "Screen dump failed!\n");
-    else 
-      fprintf(stderr, "Screen dump saved to: %s\n", szFileName);    
-  }
+  /* Create our filename */
+  nScreenShots++;
+  sprintf(szFileName,"%s/grab%4.4d.bmp",szWorkingDir,nScreenShots);
+  if(SDL_SaveBMP(sdlscrn, szFileName))
+    fprintf(stderr, "Screen dump failed!\n");
+  else 
+    fprintf(stderr, "Screen dump saved to: %s\n", szFileName);    
 }
 
 /*-----------------------------------------------------------------------*/
@@ -149,8 +127,8 @@ void ScreenSnapShot_EndRecording()
 */
 void ScreenSnapShot_RecordFrame(BOOL bFrameChanged)
 {
-  /* As we recording? And running in a Window */
-  if (bRecordingAnimation && !bInFullScreen) {
+  /* As we recording? */
+  if (bRecordingAnimation) {
     /* Yes, but on a change basis or a timer? */
     if (bGrabWhenChange) {
       /* On change, so did change this frame? */

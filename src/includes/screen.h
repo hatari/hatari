@@ -2,6 +2,11 @@
   Hatari
 */
 
+#ifndef SCREEN_H
+#define SCREEN_H
+
+#include <SDL_video.h>    /* for SDL_Surface */
+
 
 /* Frame buffer, used to store details in screen conversion */
 typedef struct {
@@ -96,6 +101,7 @@ extern int STRes,PrevSTRes;
 extern int STScreenLineOffset[NUM_VISIBLE_LINES];
 extern unsigned long STRGBPalette[16];
 extern unsigned long ST2RGB[2048];
+extern SDL_Surface *sdlscrn;
 
 extern void Screen_Init(void);
 extern void Screen_UnInit(void);
@@ -112,3 +118,5 @@ extern void Screen_Blit(BOOL bSwapScreen);
 extern FRAMEBUFFER *Screen_GetOtherFrameBuffer(void);
 extern void Screen_DrawFrame(BOOL bForceFlip);
 extern void Screen_Draw(void);
+
+#endif  /* ifndef SCREEN_H */

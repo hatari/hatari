@@ -58,7 +58,7 @@ unsigned long STRGBPalette[16];                   /* Palette buffer used in asse
 unsigned long ST2RGB[2048];                       /* Table to convert ST Palette 0x777 to PC format RGB551(2 pixels each entry) */
 unsigned short int HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
 
-SDL_Surface *sdlscrn;
+SDL_Surface *sdlscrn;                             /* The SDL screen surface */
 
 
 /*-----------------------------------------------------------------------*/
@@ -1013,13 +1013,9 @@ void Screen_DrawFrame(BOOL bForceFlip)
       Screen_Blit(TRUE);
     }
 
-    /* Check for screen grabs and animation */
-    if (!bInFullScreen) {
-      /* Grab screen shots */
-      ScreenSnapShot_CheckPrintKey();
-      /* Grab any animation */
+    /* Grab any animation */
+    if(bRecordingAnimation)
       ScreenSnapShot_RecordFrame(bScreenContentsChanged);
-    }
   }
 }
 
