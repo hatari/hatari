@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.12 2004-07-26 11:39:28 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.13 2004-07-26 12:12:37 thothy Exp $";
 
 #ifndef HAVE_TERMIOS_H
 #define HAVE_TERMIOS_H 1
@@ -344,7 +344,7 @@ void RS232_HandleUCR(short int ucr)
 		if (!RS232_SetBitsConfig(fileno(hComIn), nCharSize, nStopBits, ucr&4, ucr&2))
 			fprintf(stderr, "Failed to set bits configuration for hComIn!\n");
 	}
-#endif HAVE_TERMIOS_H
+#endif /* HAVE_TERMIOS_H */
 }
 
 
