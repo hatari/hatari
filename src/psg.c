@@ -10,7 +10,7 @@
 	- added flag to decide if last write did go to IOB
 
   10 Aug 2003
-    - corrected bug in printer dispatcher: STROBE is Bit5 counted from 0 (32 insetad of 16)
+    - corrected bug in printer dispatcher: STROBE is Bit5 counted from 0 (32 instead of 16)
 */
 
 #include "main.h"
@@ -20,13 +20,13 @@
 #include "sound.h"
 #include "psg.h"
 
-/* printer.h  because Printer I/O goes thorugh PSG Register 15 */
+/* printer.h  because Printer I/O goes through PSG Register 15 */
 #include "printer.h"
 
 unsigned char PSGRegisterSelect = 0;                  /* 0xff8800 (read/write) */
 unsigned char PSGRegisters[16] = { 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0 };  /* Register in PSG, see PSG_REG_xxxx */
 
-/* boolean flag: did the last PSG write go to IOB? */
+/* boolean flag: did the last write to the PSG go to IOB? */
 BOOL bPSG_LastWriteToIOB;
 
 /*-----------------------------------------------------------------------*/
@@ -92,9 +92,9 @@ void PSG_WriteDataRegister(unsigned short bl)
   * FIXME: This is only a prelimary dirty hack!
   * Port B (Printer port) - writing here needs to be dispatched to the printer
   * STROBE (Port A bit5) does a short LOW and back to HIGH when the char is valid
-  * for printing you need to write your data and you need to toggle STROBE
-  * (like EmuTOS does)....therefor we print when STROBE gets low and last PSG write
-  * was to Port B
+  * To print you need to write the character byte to IOB and you need to toggle STROBE
+  * (like EmuTOS does)....therefor we print when STROBE gets low and last write access to
+  * the PSG was to IOB
   */
  if(ConfigureParams.Printer.bEnablePrinting) /* Printer dispatching only when printing is activated */
   {
