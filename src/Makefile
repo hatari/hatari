@@ -12,7 +12,8 @@ CMPLRFLAGS = -g -O2 -Wall -Wno-unused
 # a system-wide installation, use something like /usr/share/hatari
 DATADIR = .
 
-# SDL-Library configuration:
+# SDL-Library configuration - you don't have to change this if you have
+# correctly installed the SDL library and if you are using GNU make!
 SDLLIB = $(shell sdl-config --libs)
 SDLFLAGS = $(shell sdl-config --cflags)
 
@@ -60,7 +61,12 @@ configuration.o: configuration.c
 sdlgui.o: sdlgui.c
 	$(CC) $(CFLAGS) -c -DDATADIR=\"$(DATADIR)\" sdlgui.c -o sdlgui.o
 
-screenConvert.o: convert/high640x1.c convert/low640x16.c convert/spec320x16.c \
-    convert/vdi4.c convert/high640x8.c convert/low640x8.c convert/spec640x16.c \
-    convert/low320x16.c convert/med640x16.c convert/vdi16.c \
-    convert/low320x8.c  convert/med640x8.c  convert/vdi2.c
+
+# Use "make depend" to generate file dependencies:
+depend: $(SRCS)
+	$(CC) -MM $(CFLAGS) $(SRCS) > Makefile.dep
+
+ifneq (,$(wildcard Makefile.dep))
+include Makefile.dep
+endif
+
