@@ -11,7 +11,7 @@
 
    Read unzip.h for more info
 */
-char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.3 2004-07-13 17:29:58 thothy Exp $";
+char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.4 2005-03-07 23:44:23 thothy Exp $";
 
 
 #include <stdio.h>
@@ -142,9 +142,7 @@ typedef struct
 */
 
 
-local int unzlocal_getByte(fin,pi)
-	FILE *fin;
-	int *pi;
+local int unzlocal_getByte(FILE *fin, int *pi)
 {
     unsigned char c;
 	int err = fread(&c, 1, 1, fin);
@@ -166,9 +164,7 @@ local int unzlocal_getByte(fin,pi)
 /* ===========================================================================
    Reads a long in LSB order from the given gz_stream. Sets 
 */
-local int unzlocal_getShort (fin,pX)
-	FILE* fin;
-    uLong *pX;
+local int unzlocal_getShort (FILE* fin, uLong *pX)
 {
     uLong x ;
     int i;
@@ -188,9 +184,7 @@ local int unzlocal_getShort (fin,pX)
     return err;
 }
 
-local int unzlocal_getLong (fin,pX)
-	FILE* fin;
-    uLong *pX;
+local int unzlocal_getLong (FILE* fin, uLong *pX)
 {
     uLong x ;
     int i;
@@ -219,39 +213,10 @@ local int unzlocal_getLong (fin,pX)
 }
 
 
-/* My own strcmpi / strcasecmp */
-local int strcmpcasenosensitive_internal (fileName1,fileName2)
-	const char* fileName1;
-	const char* fileName2;
-{
-	for (;;)
-	{
-		char c1=*(fileName1++);
-		char c2=*(fileName2++);
-		if ((c1>='a') && (c1<='z'))
-			c1 -= 0x20;
-		if ((c2>='a') && (c2<='z'))
-			c2 -= 0x20;
-		if (c1=='\0')
-			return ((c2=='\0') ? 0 : -1);
-		if (c2=='\0')
-			return 1;
-		if (c1<c2)
-			return -1;
-		if (c1>c2)
-			return 1;
-	}
-}
-
-
 #ifdef  CASESENSITIVITYDEFAULT_NO
 #define CASESENSITIVITYDEFAULTVALUE 2
 #else
 #define CASESENSITIVITYDEFAULTVALUE 1
-#endif
-
-#ifndef STRCMPCASENOSENTIVEFUNCTION
-#define STRCMPCASENOSENTIVEFUNCTION strcmpcasenosensitive_internal
 #endif
 
 /* 
@@ -272,10 +237,11 @@ int ZEXPORT unzStringFileNameCompare (fileName1,fileName2,iCaseSensitivity)
 		iCaseSensitivity=CASESENSITIVITYDEFAULTVALUE;
 
 	if (iCaseSensitivity==1)
-		return strcmp(fileName1,fileName2);
+		return strcmp(fileName1, fileName2);
 
-	return STRCMPCASENOSENTIVEFUNCTION(fileName1,fileName2);
+	return strcasecmp(fileName1, fileName2);
 } 
+
 
 #define BUFREADCOMMENT (0x400)
 
@@ -283,8 +249,7 @@ int ZEXPORT unzStringFileNameCompare (fileName1,fileName2,iCaseSensitivity)
   Locate the Central directory of a zipfile (at the end, just before
     the global comment)
 */
-local uLong unzlocal_SearchCentralDir(fin)
-	FILE *fin;
+local uLong unzlocal_SearchCentralDir(FILE *fin)
 {
 	unsigned char* buf;
 	uLong uSizeFile;
@@ -484,9 +449,7 @@ int ZEXPORT unzGetGlobalInfo (file,pglobal_info)
 /*
    Translate date/time from Dos format to tm_unz (readable more easilty)
 */
-local void unzlocal_DosDateToTmuDate (ulDosDate, ptm)
-    uLong ulDosDate;
-    tm_unz* ptm;
+local void unzlocal_DosDateToTmuDate (uLong ulDosDate, tm_unz* ptm)
 {
     uLong uDate;
     uDate = (uLong)(ulDosDate>>16);
@@ -823,13 +786,9 @@ int ZEXPORT unzLocateFile (file, szFileName, iCaseSensitivity)
   store in *piSizeVar the size of extra info in local header
         (filename and size of extra field data)
 */
-local int unzlocal_CheckCurrentFileCoherencyHeader (s,piSizeVar,
-													poffset_local_extrafield,
-													psize_local_extrafield)
-	unz_s* s;
-	uInt* piSizeVar;
-	uLong *poffset_local_extrafield;
-	uInt  *psize_local_extrafield;
+local int unzlocal_CheckCurrentFileCoherencyHeader (unz_s* s, uInt* piSizeVar,
+													uLong *poffset_local_extrafield,
+													uInt  *psize_local_extrafield)
 {
 	uLong uMagic,uData,uFlags;
 	uLong size_filename;
