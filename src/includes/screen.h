@@ -127,7 +127,6 @@ extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);
 extern void Screen_ClearScreen(void);
 extern void Screen_SetDrawModes(void);
-extern void Screen_SetWindowRes(int Width,int Height,int BitCount);
 extern void Screen_Handle8BitPalettes(void);
 extern void Screen_Blit(BOOL bSwapScreen);
 extern void Screen_DrawFrame(BOOL bForceFlip);

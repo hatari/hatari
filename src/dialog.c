@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.23 2003-03-27 11:15:59 emanne Exp $";
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.24 2003-03-27 11:24:46 emanne Exp $";
 
 #include <unistd.h>
 
@@ -40,6 +40,7 @@ static char rcsid[] = "Hatari $Id: dialog.c,v 1.23 2003-03-27 11:15:59 emanne Ex
 #include "uae-cpu/hatari-glue.h"
 #include "intercept.h"
 
+extern void Screen_DidResolutionChange(void);
 
 
 /* The main dialog: */

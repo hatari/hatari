@@ -1,5 +1,7 @@
 /*
   Hatari
+  The 800x600 modes are not used anymore. They should probably be removed from this
+  file, but it implies rewriting the tests with ChosenDisplayMode, and it's a big mess.
 */
 
 /*-----------------------------------------------------------------------*/

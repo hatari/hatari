@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-static char rcsid[] = "Hatari $Id: screen.c,v 1.22 2003-03-25 07:53:29 emanne Exp $";
+static char rcsid[] = "Hatari $Id: screen.c,v 1.23 2003-03-27 11:24:45 emanne Exp $";
 
 #include <SDL.h>
 
@@ -70,6 +70,80 @@ BOOL bGrabMouse = FALSE;                          /* Grab the mouse cursor in th
 
 /*-----------------------------------------------------------------------*/
 /*
+  Set window size
+*/
+static void Screen_SetWindowRes()
+{
+  int Width, Height,BitCount;
+  if (bUseVDIRes) {
+    Width = VDIWidth;
+    Height = VDIHeight;
+    BitCount = 8;
+  } else
+    switch(STRes)
+      {
+      case ST_LOW_RES:
+	if (ConfigureParams.Screen.ChosenDisplayMode == 0 ||
+	    ConfigureParams.Screen.ChosenDisplayMode == 3) {
+	  Width = 320;
+	  Height = 200;
+	  BitCount = 16;
+	  break;
+	}
+	// else use 640x400
+      default:
+	Width = 640;
+	Height = 400;
+	if (STRes == ST_HIGH_RES)
+	  BitCount = 8;
+	else
+	  BitCount = 16;
+	break;
+      }
+
+  /* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
+
+  if ( !(bUseVDIRes || bUseHighRes) &&
+       ConfigureParams.Screen.Advanced.bAllowOverscan)
+  {
+    /* If using 640 pixel wide screen, double overscan */
+    if (Width==640)
+    {
+      Width += OVERSCAN_LEFT+OVERSCAN_RIGHT;
+      Height += OVERSCAN_TOP+OVERSCAN_BOTTOM;
+    }
+    /* Add in overscan borders(if 640x200 bitmap is double on Y) */
+    Width += OVERSCAN_LEFT+OVERSCAN_RIGHT;
+    Height += OVERSCAN_TOP+OVERSCAN_BOTTOM;
+  }
+
+  sdlscrn=SDL_SetVideoMode(Width, Height, BitCount, SDL_SWSURFACE|SDL_HWPALETTE);
+  if( sdlscrn==NULL )
+  {
+    fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
+    SDL_Quit();
+    exit(-2);
+  }
+  pScreenBitmap=sdlscrn->pixels;
+
+  if(BitCount==8)
+  {
+    Screen_Handle8BitPalettes();
+  }
+  else
+  {
+    Screen_SetupRGBTable();
+  }
+
+  if(!bGrabMouse)
+  {
+    SDL_WM_GrabInput(SDL_GRAB_OFF);  /* Un-grab mouse pointer in windowed mode */
+  }
+  Screen_SetDrawModes();        /* Set draw modes(store which modes to use!) */
+}
+
+/*-----------------------------------------------------------------------*/
+/*
   Init Screen bitmap and buffers/tables needed for ST to PC screen conversion
 */
 void Screen_Init(void)
@@ -87,15 +161,7 @@ void Screen_Init(void)
   }
   pFrameBuffer = &FrameBuffers[0];
 
-  if (bUseVDIRes)
-    Screen_SetWindowRes(VDIWidth, VDIHeight, 8);  /* Allocate windows bitmap, for VDI */
-  else
-  {
-    if(bUseHighRes)
-      Screen_SetWindowRes(640,400,8);             /* Allocate windows bitmap */
-     else
-      Screen_SetWindowRes(320,200,16);            /* Allocate windows bitmap, 320x200x16bit (with overscan) */
-  }
+  Screen_SetWindowRes();
 
   Video_SetScreenRasters();                       /* Set rasters ready for first screen */
 
@@ -292,24 +358,7 @@ void Screen_ReturnFromFullScreen(void)
 
     bInFullScreen = FALSE;
 
-    if (bUseVDIRes)
-      Screen_SetWindowRes(VDIWidth, VDIHeight, 8);  /* Allocate windows bitmap, for VDI */
-    else
-     {
-      switch(STRes)
-       {
-        case ST_LOW_RES:
-          Screen_SetWindowRes(320,200,16);
-          break;
-        case ST_MEDIUM_RES:
-        case ST_LOWMEDIUM_MIX_RES:
-          Screen_SetWindowRes(640,400,16);
-          break;
-        case ST_HIGH_RES:
-          Screen_SetWindowRes(640,400,8);
-          break;
-       }
-     }
+    Screen_SetWindowRes();
 
     Screen_SetupRGBTable();           /* Set window RGB */
     Screen_SetFullUpdate();           /* Cause full update of screen */
@@ -399,53 +448,6 @@ void Screen_SetDrawModes(void)
   }
 }
 
-
-/*-----------------------------------------------------------------------*/
-/*
-  Set window size
-*/
-void Screen_SetWindowRes(int Width, int Height, int BitCount)
-{
-
-  /* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
-  if ( !(bUseVDIRes || bUseHighRes) &&
-       ConfigureParams.Screen.Advanced.bAllowOverscan)
-  {
-    /* If using 640 pixel wide screen, double overscan */
-    if (Width==640)
-    {
-      Width += OVERSCAN_LEFT+OVERSCAN_RIGHT;
-      Height += OVERSCAN_TOP+OVERSCAN_BOTTOM;
-    }
-    /* Add in overscan borders(if 640x200 bitmap is double on Y) */
-    Width += OVERSCAN_LEFT+OVERSCAN_RIGHT;
-    Height += OVERSCAN_TOP+OVERSCAN_BOTTOM;
-  }
-
-  sdlscrn=SDL_SetVideoMode(Width, Height, BitCount, SDL_SWSURFACE|SDL_HWPALETTE);
-  if( sdlscrn==NULL )
-  {
-    fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
-    SDL_Quit();
-    exit(-2);
-  }
-  pScreenBitmap=sdlscrn->pixels;
-
-  if(BitCount==8)
-  {
-    Screen_Handle8BitPalettes();
-  }
-  else
-  {
-    Screen_SetupRGBTable();
-  }
-
-  if(!bGrabMouse)
-  {
-    SDL_WM_GrabInput(SDL_GRAB_OFF);  /* Un-grab mouse pointer in windowed mode */
-  }
-}
-
 /*-----------------------------------------------------------------------*/
 /*
   Have we changes beteen low/medium/high res?
@@ -479,29 +481,7 @@ void Screen_DidResolutionChange(void)
 
     if( !bInFullScreen )
     {
-      /* VDI or standard ST resolution? */
-      if (bUseVDIRes)
-      {
-        /* Allocate to set VDI resolution */
-        Screen_SetWindowRes(VDIWidth, VDIHeight, 8);
-      }
-      else
-      {
-        /* Allocate accordingly to STRes (may be mix of low/medium) */
-        switch(STRes)
-        {
-          case ST_LOW_RES:
-            Screen_SetWindowRes(320,200,16);
-              break;
-          case ST_MEDIUM_RES:
-          case ST_LOWMEDIUM_MIX_RES:
-            Screen_SetWindowRes(640,400,16);
-            break;
-          case ST_HIGH_RES:
-            Screen_SetWindowRes(640,400,8);
-            break;
-        }
-      }
+      Screen_SetWindowRes();
     }
 
     PrevSTRes = STRes;
@@ -938,7 +918,8 @@ void Screen_Blit(BOOL bSwapScreen)
         SrcRect = &SrcWindowBitmapSizes[STRes];
       }
       /* Blit image */
-      SDL_UpdateRects(sdlscrn, 1, SrcRect);
+      SDL_UpdateRect(sdlscrn, 0,0,0,0);
+      //SDL_UpdateRects(sdlscrn, 1, SrcRect);
     }
   }
 
@@ -974,6 +955,7 @@ void Screen_SwapSTBuffers(void)
 void Screen_DrawFrame(BOOL bForceFlip)
 {
   void *pDrawFunction;
+  static void *last;
 
   /* Scan palette/resolution masks for each line and build up palette/difference tables */
   STRes = Screen_ComparePaletteMask();
@@ -988,55 +970,33 @@ void Screen_DrawFrame(BOOL bForceFlip)
   /* Lock screen ready for drawing */
   if (Screen_Lock()) {
     bScreenContentsChanged = FALSE;      /* Did change(ie needs blit?) */
-    if (bInFullScreen) {
-      /* Set details */
-      if (ConfigureParams.Screen.Advanced.bAllowOverscan) {
-	Screen_SetWindowConvertDetails();
-	pPCScreenDest = (unsigned char *)sdlscrn->pixels;  /* Destination PC screen */
-      } else
-	Screen_SetFullScreenConvertDetails();
-      /* Clear screen on full update to clear out borders and also interlaced lines */
-      if (pFrameBuffer->bFullUpdate)
-        Screen_ClearScreen();
-      /* Call drawing for full-screen */
-      if (bUseVDIRes)  {
-        pDrawFunction = ScreenDrawVDIFullScreen[VDIRes].pDrawFunction;
-      }
-      else {
-        pDrawFunction = ScreenDrawFullScreen[STRes].pDrawFunction;
-        /* Check if is Spec512 image */
-        if (Spec512_IsImage()) {
-          /* What mode were we in? Keep to 320xH or 640xH */
-          if (pDrawFunction==ConvertLowRes_320x16Bit)
-            pDrawFunction = ConvertSpec512_320x16Bit;
-          else if (pDrawFunction==ConvertLowRes_640x16Bit)
-            pDrawFunction = ConvertSpec512_640x16Bit;
-        }
-      }
-
-      if (pDrawFunction)
-        CALL_VAR(pDrawFunction)
+    /* Set details */
+    if (ConfigureParams.Screen.Advanced.bAllowOverscan) {
+      Screen_SetWindowConvertDetails();
+      pPCScreenDest = (unsigned char *)sdlscrn->pixels;  /* Destination PC screen */
+    } else
+      Screen_SetFullScreenConvertDetails();
+    /* Clear screen on full update to clear out borders and also interlaced lines */
+    if (pFrameBuffer->bFullUpdate)
+      Screen_ClearScreen();
+    /* Call drawing for full-screen */
+    if (bUseVDIRes)  {
+      pDrawFunction = ScreenDrawVDIFullScreen[VDIRes].pDrawFunction;
     }
-    else { /* windowed mode */
-      /* Set details */
-      if (ConfigureParams.Screen.Advanced.bAllowOverscan) {
-	Screen_SetWindowConvertDetails();
-      } else
-	Screen_SetFullScreenConvertDetails();
-      /* Call drawing for Window, ST or VDI */
-      if (bUseVDIRes) {
-        pDrawFunction = ScreenDrawVDIWindow[VDIRes].pDrawFunction;
+    else {
+      pDrawFunction = ScreenDrawFullScreen[STRes].pDrawFunction;
+      /* Check if is Spec512 image */
+      if (Spec512_IsImage()) {
+	/* What mode were we in? Keep to 320xH or 640xH */
+	if (pDrawFunction==ConvertLowRes_320x16Bit)
+	  pDrawFunction = ConvertSpec512_320x16Bit;
+	else if (pDrawFunction==ConvertLowRes_640x16Bit)
+	  pDrawFunction = ConvertSpec512_640x16Bit;
       }
-      else {
-        pDrawFunction = ScreenDrawWindow[STRes].pDrawFunction;
-        /* Check if is Spec512 image */
-        if (Spec512_IsImage())
-          pDrawFunction = ConvertSpec512_320x16Bit;
-      }
-
-      if (pDrawFunction)
-        CALL_VAR(pDrawFunction)
     }
+
+    if (pDrawFunction)
+      CALL_VAR(pDrawFunction)
 
     /* Unlock screen */
     Screen_UnLock();
