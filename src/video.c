@@ -43,6 +43,8 @@ unsigned long VideoBase;                        /* Base address in ST Ram for sc
 unsigned long VideoRaster;                      /* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 int SyncHandler_Value;                          /* Value to pass to 'Video_SyncHandler_xxxx' functions */
 int LeftRightBorder;                            /* BORDERMASK_xxxx used to simulate left/right border removal */
+volatile int VBLCounter=0;                      /* VBL counters (volatile as used in interrupts) */
+volatile int OldVBLCounter=0;
 
 
 /*-----------------------------------------------------------------------*/
@@ -180,13 +182,13 @@ void Video_InterruptHandler_VBL(void)
   /* Set frame cycles, used for Video Address */
   nFrameCyclesOver = PendingCyclesOver;      /* Number of cycles into frame */
 
-  /* Handle sound (must be done before Screen_Draw!) */
-  if( VBLCounter!=OldVBLCounter && (ConfigureParams.Sound.bEnableSound) /*&& bAppActive )*/ )
-   {
-    int i;
-    for(i=0; i<VBLCounter-OldVBLCounter; i++)
-      Sound_PassYMSamplesToAudio();
-   }
+  /* Wait for the next 50Hz counter event, so we stay in sync with the sound */
+  while( VBLCounter==OldVBLCounter )
+    SDL_Delay(1);
+  /* Handle sound */
+  if( ConfigureParams.Sound.bEnableSound /*&& bAppActive )*/ )
+    Sound_PassYMSamplesToAudio();
+  OldVBLCounter = VBLCounter;  /* Store counter so only enter here 50 times a second MAXIMUM */
 
   /* Clear any key presses which are due to be de-bounced(held for one ST frame) */
 //FIXME   View_DebounceAllKeys();

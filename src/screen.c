@@ -55,8 +55,6 @@ BOOL bFullScreenHold = FALSE;                     /* TRUE if hold display while 
 BOOL bScreenContentsChanged;                      /* TRUE if buffer changed and requires blitting */
 //int STRes=ST_HIGH_RES,PrevSTRes=ST_HIGH_RES;    /* Current and previous ST resolutions */
 int STRes=ST_LOW_RES,PrevSTRes=ST_LOW_RES;        /* Current and previous ST resolutions */
-volatile int VBLCounter=0;                        /* VBL counters (volatile as used in interrupts) */
-volatile int OldVBLCounter=0;
 int nDroppedFrames=0;                             /* Number of dropped frames during emulation run */
 
 int STScreenLineOffset[NUM_VISIBLE_LINES];        /* Offsets for ST screen lines eg, 0,160,320... */
@@ -1135,10 +1133,9 @@ void Screen_Draw(void)
     else
 #endif
     {
-      if ( ((VBLCounter-OldVBLCounter)>0) &&  VideoBase )
+      if ( VideoBase )
         bDrawFrame = TRUE;
     }
-    OldVBLCounter = VBLCounter;  /* Store counter so only enter here 50 times a second MAXIMUM */
 
     /* Need to hold display for a while? Allows VDI resolutions to bypass start-up screens which don't use VDI */
     if (bHoldScreenDisplay && bUseVDIRes)

@@ -66,16 +66,15 @@ enum {
 
 /* Overscan values */
 enum {
-  OVERSCANMODE_NONE,     // 0x00
-  OVERSCANMODE_TOP,      // 0x01
-  OVERSCANMODE_BOTTOM    // 0x02 (Top+Bottom) 0x03
+  OVERSCANMODE_NONE,     /* 0x00 */
+  OVERSCANMODE_TOP,      /* 0x01 */
+  OVERSCANMODE_BOTTOM    /* 0x02 (Top+Bottom) 0x03 */
 };
 
 /* For palette we don't go from colour '0' as the whole background would change, so go from this value */
 #define  BASECOLOUR       0x0A
 #define  BASECOLOUR_LONG  0x0A0A0A0A
 
-/*extern BMP ScreenBMP;*/
 extern SCREENDRAW ScreenDrawWindow[4];
 extern SCREENDRAW ScreenDrawFullScreen[4];
 extern FRAMEBUFFER *pFrameBuffer;
@@ -88,8 +87,6 @@ extern BOOL bInFullScreen;
 extern BOOL bFullScreenHold;
 extern BOOL bScreenContentsChanged;
 extern int STRes,PrevSTRes;
-extern volatile int VBLCounter;
-extern volatile int OldVBLCounter;
 extern int STScreenLineOffset[NUM_VISIBLE_LINES];
 extern unsigned long STRGBPalette[16];
 extern unsigned long ST2RGB[2048];
