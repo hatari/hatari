@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.24 2003-06-20 13:13:22 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.25 2003-07-04 12:40:13 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -791,10 +791,12 @@ void Exception(int nr, uaecptr oldpc)
       case 10: ADD_CYCLES(34, 4, 3); break;   /* Line-A - probably wrong */
       case 11: ADD_CYCLES(34, 4, 3); break;   /* Line-F - probably wrong */
       default:
+#if 0   /* Hatari currently seems to run more instable when adding MFP cycles */
         if(nr < 64)
           ADD_CYCLES(0, 0, 0);       /* Coprocessor and unassigned exceptions (???) */
         else
           ADD_CYCLES(44+4, 5, 3);    /* Must be a MFP interrupt */
+#endif
         break;
     }
 }
