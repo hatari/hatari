@@ -234,7 +234,7 @@ char *ZIP_FirstFile(char *filename)
   name[0] = '\0';
   for(i=files->nfiles-1;i>=0;i--)
     if(File_FileNameIsMSA(files->names[i]) || 
-       File_FileNameIsMSA(files->names[i]))
+       File_FileNameIsST(files->names[i]))
       strncpy(name, files->names[i], ZIP_PATH_MAX);
     
   /* free the files */
