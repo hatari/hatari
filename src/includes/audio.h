@@ -27,16 +27,16 @@ enum {
 
 extern int SoundPlayBackFrequencies[];
 extern int SoundPlayBackFreqFrameLengths[][2];
-extern BOOL bDisableDirectSound;
-extern BOOL bDirectSoundWorking;
+extern BOOL bDisableSound;
+extern BOOL bSoundWorking;
 extern int OutputAudioFreqIndex;
 
-extern void DAudio_Init(void);
-extern void DAudio_UnInit(void);
-extern BOOL DAudio_CreateSoundBuffer(void);
-extern void DAudio_FreeSoundBuffer(void);
-extern void DAudio_ReCreateDirectSoundBuffer(void);
-extern void DAudio_SetOutputAudioFreq(int Frequency);
-extern void DAudio_ResetBuffer(void);
-extern void DAudio_StopBuffer(void);
-extern void DAudio_WriteSamplesIntoBuffer(char *pSamples,int Index,int Length,int RampSetting);
+extern void Audio_Init(void);
+extern void Audio_UnInit(void);
+extern BOOL Audio_CreateSoundBuffer(void);
+extern void Audio_FreeSoundBuffer(void);
+extern void Audio_ReCreateSoundBuffer(void);
+extern void Audio_SetOutputAudioFreq(int Frequency);
+extern void Audio_ResetBuffer(void);
+extern void Audio_StopBuffer(void);
+extern void Audio_WriteSamplesIntoBuffer(char *pSamples,int Index,int Length,int RampSetting);

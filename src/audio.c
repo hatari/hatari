@@ -2,6 +2,8 @@
   Hatari
 */
 
+#include <SDL.h>
+
 #include "main.h"
 #include "audio.h"
 #include "debug.h"
@@ -28,44 +30,54 @@ int SoundPlayBackFreqFrameLengths[][2] = {
   882,882,  /* 882 */
 };
 
-BOOL bDisableDirectSound=FALSE;
+BOOL bDisableSound=TRUE;
 //LPDIRECTSOUND lpDS = NULL;
 //LPDIRECTSOUNDBUFFER  lpDSBPrimBuffer = NULL;
-BOOL bDirectSoundWorking=FALSE;                             /* Is sound OK */
-volatile BOOL bPlayingBuffer = FALSE;                       /* Is playing buffer? Start when start processing ST */
-int WriteOffset=0;                                          /* Write offset into buffer */
-int OutputAudioFreqIndex=FREQ_44Khz;                        /* Playback rate(11Khz,22Khz or 44Khz) */
+BOOL bSoundWorking=TRUE;                          /* Is sound OK */
+volatile BOOL bPlayingBuffer = FALSE;             /* Is playing buffer? Start when start processing ST */
+int WriteOffset=0;                                /* Write offset into buffer */
+int OutputAudioFreqIndex=FREQ_22Khz;              /* Playback rate(11Khz,22Khz or 44Khz) */
 float PlayVolume=0.0f;
 BOOL bAquireWritePosition=FALSE;
-int PrimaryBufferSize;                                      /* Size of primary buffer */
+unsigned char *PrimaryBuffer;
+int PrimaryBufferSize=1024;                       /* Size of primary buffer */
+
+SDL_AudioSpec *desiredAudioSpec=NULL;             /* We fill in the desired SDL audio options there */
 
 
-/* FIXME: Rewrite those functions: */
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
+/*
+  SDL audio callback function
+*/
+void Audio_CallBack(void *userdata, Uint8 *stream, int len)
+{
+ memcpy(stream, PrimaryBuffer, len);
+}
+
+
+/*-----------------------------------------------------------------------*/
 /*
   Create object for Direct Sound. Return TRUE if all OK
   We use direct access to the primary buffer, set to an unsigned 8-bit mono stream
 */
-void DAudio_Init(void)
+void Audio_Init(void)
 {
-#if 0
-  DSCAPS dscaps;
-  HRESULT dsRetVal;
 
-  // Is enabled?
-  if (bDisableDirectSound) {
-    // Stop any Direct Sound access
-    ErrLog_File("DirectSound: Disabled\n");
-    bDirectSoundWorking = FALSE;
+  /* Is enabled? */
+  if (bDisableSound) {
+    /* Stop any Direct Sound access */
+    ErrLog_File("Sound: Disabled\n");
+    bSoundWorking = FALSE;
     return;
   }
 
-  // Create the main DirectSound object, using default driver
+#if 0
+  /* Create the main DirectSound object, using default driver */
   dsRetVal = DirectSoundCreate(NULL, &lpDS, NULL);
   if(dsRetVal!=DS_OK) {
     ErrLog_File("ERROR DirectSound: Unable to 'DirectSoundCreate', error code %d\n",dsRetVal);
-    bDirectSoundWorking = FALSE;
+    bSoundWorking = FALSE;
     return;
   }
   ErrLog_File("DirectSound: 'DirectSoundCreate' - OK\n");
@@ -91,36 +103,55 @@ void DAudio_Init(void)
     if ( !((dscaps.dwFlags&DSCAPS_PRIMARY8BIT) && (dscaps.dwFlags&DSCAPS_PRIMARYMONO)) ) {
       // No, MUST have 8-Bit/Mono
       ErrLog_File("ERROR DirectSound: Your sound card does not support the playback mode required(8-Bit/Mono)\n");
-      bDirectSoundWorking = FALSE;
+      bSoundWorking = FALSE;
       return;
     }
   }
-
-  // Create sound buffer, return if error
-  DAudio_CreateSoundBuffer();
 #endif
+
+  /* Init SDL audio: */
+  desiredAudioSpec = (SDL_AudioSpec *)malloc(sizeof(SDL_AudioSpec));
+  if( desiredAudioSpec==NULL ) {
+    bSoundWorking = FALSE;
+    return;
+  }
+  desiredAudioSpec->freq = SoundPlayBackFrequencies[OutputAudioFreqIndex];
+  desiredAudioSpec->format = AUDIO_U8;            /* 8 Bit unsigned */
+  desiredAudioSpec->channels = 1;                 /* Mono */
+  desiredAudioSpec->samples = PrimaryBufferSize;  /* Buffer size */
+  desiredAudioSpec->callback = Audio_CallBack;
+  desiredAudioSpec->userdata = NULL;
+  SDL_OpenAudio(desiredAudioSpec, NULL);          /* Open audio device */
+   
+  /* Create sound buffer, return if error */
+  Audio_CreateSoundBuffer();
+  SDL_PauseAudio(0);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Free object created for Direct Sound
 */
-void DAudio_UnInit(void)
+void Audio_UnInit(void)
 {
+
+  /* Free sound buffer */
+  Audio_FreeSoundBuffer();
 #if 0
-  // Free Direct Sound
-  DAudio_FreeSoundBuffer();
   if( lpDS ) {
     lpDS->Release();  lpDS = NULL;
   }
 #endif
+
+  SDL_CloseAudio();
+  if( desiredAudioSpec )  free(desiredAudioSpec);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Create sound buffer to write samples into
 */
-BOOL DAudio_CreateSoundBuffer(void)
+BOOL Audio_CreateSoundBuffer(void)
 {
 #if 0
   WAVEFORMATEX pwfx;
@@ -128,7 +159,7 @@ BOOL DAudio_CreateSoundBuffer(void)
   DSBCAPS dsbcaps;
     HRESULT dsRetVal;
 
-    // Set up wave format structure
+    /* Set up wave format structure */
     memset(&pwfx, 0, sizeof(WAVEFORMATEX));
   pwfx.wFormatTag = WAVE_FORMAT_PCM;
   pwfx.nChannels = 1;                  // Mono
@@ -151,7 +182,7 @@ BOOL DAudio_CreateSoundBuffer(void)
   if(dsRetVal!=DS_OK) {
     ErrLog_File("ERROR DirectSound: Unable to 'SetCooperativeLevel', error code %d\n",dsRetVal);
     lpDS->Release();  lpDS = NULL;
-    bDirectSoundWorking = FALSE;
+    bSoundWorking = FALSE;
     return(FALSE);
   }
 
@@ -160,7 +191,7 @@ BOOL DAudio_CreateSoundBuffer(void)
   if(dsRetVal!=DS_OK) {
     ErrLog_File("ERROR DirectSound: Unable to 'CreateSoundBuffer', error code %d\n",dsRetVal);
     lpDS->Release();  lpDS = NULL;
-    bDirectSoundWorking = FALSE;
+    bSoundWorking = FALSE;
     return(FALSE);
   }
   
@@ -170,7 +201,7 @@ BOOL DAudio_CreateSoundBuffer(void)
     ErrLog_File("ERROR DirectSound: Unable to 'SetFormat', error code %d\n",dsRetVal);
     lpDS->Release();  lpDS = NULL;
     lpDSBPrimBuffer->Release();  lpDSBPrimBuffer = NULL;
-    bDirectSoundWorking = FALSE;
+    bSoundWorking = FALSE;
     return(FALSE);
   }
 
@@ -178,116 +209,116 @@ BOOL DAudio_CreateSoundBuffer(void)
   dsbcaps.dwSize = sizeof(DSBCAPS); 
   lpDSBPrimBuffer->GetCaps(&dsbcaps); 
   PrimaryBufferSize = dsbcaps.dwBufferBytes; 
+#endif
 
-  // All OK
-  bDirectSoundWorking = TRUE;
-  // And begin
-  DAudio_ResetBuffer();
+  PrimaryBuffer = malloc( PrimaryBufferSize );
+  if( !PrimaryBuffer ) {
+    bSoundWorking = FALSE;
+    return(FALSE);
+  }
+
+  /* All OK */
+  bSoundWorking = TRUE;
+  /* And begin */
+  Audio_ResetBuffer();
 
   return(TRUE);
-#endif
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Free sound buffer
 */
-void DAudio_FreeSoundBuffer(void)
+void Audio_FreeSoundBuffer(void)
 {
-#if 0
-  if (lpDSBPrimBuffer) {
-    // Stop
-    DAudio_StopBuffer();
-    // And free
-    lpDSBPrimBuffer->Release();  lpDSBPrimBuffer = NULL;
-  }
-#endif
+  /* Stop */
+  Audio_StopBuffer();
+  /* And free */
+  if( PrimaryBuffer )  free(PrimaryBuffer);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Re-Create sound buffer to write samples into, will stop existing and restart with new frequency
 */
-void DAudio_ReCreateDirectSoundBuffer(void)
+void Audio_ReCreateDirectSoundBuffer(void)
 {
 #if 0
   if (lpDS) {
-    // Stop and delete old buffer
-    DAudio_FreeSoundBuffer();
+    /* Stop and delete old buffer */
+    Audio_FreeSoundBuffer();
 
-    // Clear sample buffer, so plays silence
+    /* Clear sample buffer, so plays silence */
     Sound_ClearMixBuffer();
 
-    // And create new one(will use new 'OutputAudioFreq' value)
-    DAudio_CreateSoundBuffer();
+    /* And create new one(will use new 'OutputAudioFreq' value) */
+    Audio_CreateSoundBuffer();
   }
 #endif
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Set DirectSound playback frequency variable, pass as PLAYBACK_xxxx
 */
-void DAudio_SetOutputAudioFreq(int Frequency)
+void Audio_SetOutputAudioFreq(int Frequency)
 {
-  // Set new frequency, index into SoundPlayBackFrequencies[]
+  /* Set new frequency, index into SoundPlayBackFrequencies[] */
   OutputAudioFreqIndex = Frequency;
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Reset sound buffer, so plays from correct position
 */
-void DAudio_ResetBuffer(void)
+void Audio_ResetBuffer(void)
 {
-  // Get new 'write' position on next frame
+  /* Get new 'write' position on next frame */
   bAquireWritePosition = TRUE;
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Stop sound buffer
 */
-void DAudio_StopBuffer(void)
+void Audio_StopBuffer(void)
 {
-#if 0
-  // Stop from playing
-  if (lpDSBPrimBuffer)
-    lpDSBPrimBuffer->Stop();
+  /* Stop from playing */
+  SDL_PauseAudio(1);
   bPlayingBuffer = FALSE;
-#endif
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Scale sample value(-128...127) according to 'PlayVolume' setting
 */
-char DAudio_ModifyVolume(char Sample)
+char Audio_ModifyVolume(char Sample)
 {
-  // If full volume, just use current value
+  /* If full volume, just use current value */
   if (PlayVolume==1.0f)
     return(Sample);
 
-  // Else, scale volume
+  /* Else, scale volume */
   Sample = (char)((float)Sample*PlayVolume);
 
   return(Sample);
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
-  Write samples into Direct Sound buffer at 'Offset', taking care to wrap around. Pass NULL to write zero's
+  Write samples into Direct Sound buffer at 'Offset',
+  taking care to wrap around. Pass NULL to write zero's.
 */
-void DAudio_WriteSamplesIntoBuffer(char *pSamples,int Index,int Length,int RampSetting)
+void Audio_WriteSamplesIntoBuffer(char *pSamples,int Index,int Length,int RampSetting)
 {
-#if 0
-    void *lpWrite1, *lpWrite2;
+  void *lpWrite;
   unsigned char *pBuffer;
-    DWORD dwLenBytes1, dwLenBytes2;
-    HRESULT dsRetVal;
-  int i,WriteCursor,CursorDiff;
+  short dwLenBytes;
+  int dsRetVal;
+  int i;
+//  int WriteCursor,CursorDiff;
 
-  // Modify ramp volume - ramp down if sound not enabled or not in windows mouse mode
+  /* Modify ramp volume - ramp down if sound not enabled or not in windows mouse mode */
   if ( (((RampSetting==RAMP_DOWN) || (!ConfigureParams.Sound.bEnableSound)) && (PlayVolume>0.0f)) || bWindowsMouseMode ) {
     PlayVolume -= RAMP_DOWN_VOLUME_LEVEL;
     if (PlayVolume<=0.0f)
@@ -299,82 +330,73 @@ void DAudio_WriteSamplesIntoBuffer(char *pSamples,int Index,int Length,int RampS
       PlayVolume = 1.0f;
   }
 
-  if (lpDSBPrimBuffer) {
-    // Do need to reset 'write' position?
+  if (PrimaryBuffer/*lpDSBPrimBuffer*/) {
+
+    /* Do need to reset 'write' position? */
     if (bAquireWritePosition) {
-      // Get current write position
-      lpDSBPrimBuffer->GetCurrentPosition(NULL,(DWORD *)&WriteCursor);
-      WriteOffset = WriteCursor+WRITE_INIT_POS;    // + little gap
+    //  /* Get current write position */
+    //  lpDSBPrimBuffer->GetCurrentPosition(NULL,(DWORD *)&WriteCursor);
+    //  WriteOffset = WriteCursor+WRITE_INIT_POS;    /* + little gap */
+      WriteOffset = 0;
       bAquireWritePosition = FALSE;
     }
 
-    // Lock sound buffer to get pointers
-    lpWrite1 = lpWrite2 = NULL;
-    dwLenBytes1 = dwLenBytes2 = 0;
-    dsRetVal = lpDSBPrimBuffer->Lock( WriteOffset, Length, &lpWrite1, &dwLenBytes1, &lpWrite2, &dwLenBytes2, 0 );
-    if (dsRetVal==DSERR_BUFFERLOST) {
-      // Lost focus of buffer, restore and try to lock again
-      lpDSBPrimBuffer->Restore();
-      dsRetVal = lpDSBPrimBuffer->Lock( WriteOffset, Length, &lpWrite1, &dwLenBytes1, &lpWrite2, &dwLenBytes2, 0 );
+    /* Lock sound buffer to get pointers */
+    SDL_LockAudio();
+    lpWrite = PrimaryBuffer + WriteOffset;
+    dwLenBytes = Length;
+    if( WriteOffset+Length>PrimaryBufferSize )  Length=PrimaryBufferSize-WriteOffset;  /* Fixme! */
+    //dsRetVal = lpDSBPrimBuffer->Lock( WriteOffset, Length, &lpWrite1, &dwLenBytes1, &lpWrite2, &dwLenBytes2, 0 );
+    //if (dsRetVal==DSERR_BUFFERLOST) {
+    //  /* Lost focus of buffer, restore and try to lock again */
+    //  lpDSBPrimBuffer->Restore();
+    //  dsRetVal = lpDSBPrimBuffer->Lock( WriteOffset, Length, &lpWrite1, &dwLenBytes1, &lpWrite2, &dwLenBytes2, 0 );
+    //}
+
+    /* Write section, convert to 'unsigned' and write '128'(unsigned) if passed NULL */
+    if ( (dwLenBytes>0) && (lpWrite) ) {
+      if (pSamples) {
+        pBuffer = (unsigned char *)lpWrite;
+        for(i=0; i<(int)dwLenBytes; i++) {
+          *pBuffer++ = Audio_ModifyVolume(pSamples[Index])+128;
+          Index = (Index+1)&4095;
+        }
+      }
+      else
+        memset(lpWrite,128,dwLenBytes);
     }
 
-    // All OK?
-    if (dsRetVal==DS_OK) {
-      // Write first section, convert to 'unsigned' and write '128'(unsigned) if passed NULL
-      if ( (dwLenBytes1>0) && (lpWrite1) ) {
-        if (pSamples) {
-          pBuffer = (unsigned char *)lpWrite1;
-          for(i=0; i<(int)dwLenBytes1; i++) {
-            *pBuffer++ = DAudio_ModifyVolume(pSamples[Index])+128;
-            Index = (Index+1)&4095;
-          }
-        }
-        else
-          memset(lpWrite1,128,dwLenBytes1);
-      }
-      // And second, if needed
-      if ( (dwLenBytes2>0) && (lpWrite2) ) {
-        if (pSamples) {
-          pBuffer = (unsigned char *)lpWrite2;
-          for(i=0; i<(int)dwLenBytes2; i++) {
-            *pBuffer++ = DAudio_ModifyVolume(pSamples[Index])+128;
-            Index = (Index+1)&4095;
-          }
-        }
-        else
-          memset(lpWrite2,128,dwLenBytes2);
-      }
+    /* Now unlock the buffer. */
+    //dsRetVal = lpDSBPrimBuffer->Unlock( (LPVOID)lpWrite1, dwLenBytes1,(LPVOID)lpWrite2, dwLenBytes2 );
+    SDL_UnlockAudio();
 
-      // Now unlock the buffer.
-      dsRetVal = lpDSBPrimBuffer->Unlock( (LPVOID)lpWrite1, dwLenBytes1,(LPVOID)lpWrite2, dwLenBytes2 );
-    }
-
-    // Update write buffer
+    /* Update write buffer */
     if (pSamples) {
       WriteOffset += Length;
       if (WriteOffset>=PrimaryBufferSize)
         WriteOffset -= PrimaryBufferSize;
     }
 
-    // Are we playing?
+    /* Are we playing? */
     if (!bPlayingBuffer) {
-      lpDSBPrimBuffer->Play( 0, 0, DSBPLAY_LOOPING );
-      DAudio_ResetBuffer();
+      SDL_PauseAudio(0);
+      //lpDSBPrimBuffer->Play( 0, 0, DSBPLAY_LOOPING );
+      Audio_ResetBuffer();
 
       bPlayingBuffer = TRUE;
     }
     else {
-      // Check here for play/write pointers getting away from each other and set 'bAquireWritePosition' to reset
-      lpDSBPrimBuffer->GetCurrentPosition(NULL,(DWORD *)&WriteCursor);
-      // If the writecursor is too-far away from where we think it should be cause a reset
-      CursorDiff = WriteOffset-WriteCursor;
-      // Check for overlap
-      if (CursorDiff<0)
-        CursorDiff = (WriteOffset+PrimaryBufferSize)-WriteCursor;
-      // So, does need reset?
-      if (abs(CursorDiff)>(WRITE_INIT_POS*2))
-        DAudio_ResetBuffer();
+      /* Check here for play/write pointers getting away from each other and set 'bAquireWritePosition' to reset */
+      //lpDSBPrimBuffer->GetCurrentPosition(NULL,(DWORD *)&WriteCursor);
+      /* If the writecursor is too-far away from where we think it should be cause a reset */
+      //CursorDiff = WriteOffset-WriteCursor;
+      /* Check for overlap */
+      //if (CursorDiff<0)
+      //  CursorDiff = (WriteOffset+PrimaryBufferSize)-WriteCursor;
+      /* So, does need reset? */
+      //if (abs(CursorDiff)>(WRITE_INIT_POS*2))
+      //  Audio_ResetBuffer();
     }
   }
-#endif
+
 }

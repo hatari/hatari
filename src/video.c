@@ -180,6 +180,14 @@ void Video_InterruptHandler_VBL(void)
   /* Set frame cycles, used for Video Address */
   nFrameCyclesOver = PendingCyclesOver;      /* Number of cycles into frame */
 
+  /* Handle sound (must be done before Screen_Draw!) */
+  if( VBLCounter!=OldVBLCounter && (ConfigureParams.Sound.bEnableSound) /*&& bAppActive )*/ )
+   {
+    int i;
+    for(i=0; i<VBLCounter-OldVBLCounter; i++)
+      Sound_PassYMSamplesToAudio();
+   }
+
   /* Clear any key presses which are due to be de-bounced(held for one ST frame) */
 //FIXME   View_DebounceAllKeys();
   /* Check 'Function' keys, so if press F12 we update screen correctly to Window! */

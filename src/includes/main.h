@@ -251,7 +251,7 @@ extern void Main_UnPauseEmulation(void);
 extern void Main_EventHandler();
 extern void Main_WaitVBLEvent(void);
 extern BOOL Main_AlreadyWaitingVBLEvent(void);
-/*extern void CALLBACK Main_SoundThreadFunc( UINT wTimerID, UINT msg, DWORD dwUsers, DWORD dw1, DWORD dw2 );*/
+/*extern void Main_SoundTimerFunc(void);*/
 extern void Main_SetSpeedThreadTimer(int nMinMaxSpeed);
 
 #endif /* ifndef MAIN_H */

@@ -3,6 +3,8 @@
 */
 
 #include <time.h>
+#include <signal.h>
+#include <sys/time.h>
 
 #include <SDL.h>
 
@@ -40,6 +42,7 @@
 
 extern int quit_program;                  /* Declared in newcpu.c */
 
+SDL_TimerID hSoundTimer;                  /* Handle to sound playback */
 
 BOOL bQuitProgram=FALSE;                  /* Flag to quit program cleanly */
 BOOL bUseFullscreen=FALSE;
@@ -98,8 +101,9 @@ void Main_MemorySnapShot_Capture(BOOL bSave)
 */
 void Main_SysError(char *Error,char *Title)
 {
-//FIXME   MessageBox(hWnd,Error,Title,MB_OK | MB_ICONSTOP);
+  fprintf(stderr,"%s : %s\n",Title,Error);
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -128,18 +132,18 @@ void Main_PauseEmulation(void)
   bEmulationActive = EMULATION_INACTIVE;
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Start emulation
 */
 void Main_UnPauseEmulation(void)
 {
-//  SetMenu(hWnd,NULL);         // Remove any menu's!
-  bFullScreenHold = FALSE;      // Release hold  
-  Screen_SetFullUpdate();       // Cause full screen update(to clear all)
+//  SetMenu(hWnd,NULL);         /* Remove any menu's! */
+  bFullScreenHold = FALSE;      /* Release hold  */
+  Screen_SetFullUpdate();       /* Cause full screen update(to clear all) */
 
   bEmulationActive = EMULATION_ACTIVE;
-  DAudio_ResetBuffer();
+  Audio_ResetBuffer();
 }
 
 /* ----------------------------------------------------------------------- */
@@ -196,163 +200,49 @@ void Main_EventHandler()
 }
 
 
+
 /*-----------------------------------------------------------------------*/
-/*
-  Create an event which is times our VBL(50fps) to govern the speed of the emulator
-  This changes to vary emulation speed according to user settings
-*/
-/* FIXME */
-/*
-void Main_CreateVBLEvent(void)
-{
-  hVBLHandle = CreateEvent(NULL,  // pointer to security attributes
-        FALSE,  // flag for manual-reset event
-        FALSE,  // flag for initial state
-        NULL);  // pointer to event-object name
-}
-*/
-
-//-----------------------------------------------------------------------
-/*
-  Delete VBL timer
-*/
-/* FIXME */
-/*
-void Main_DeleteVBLEvent(void)
-{
-  if (hVBLHandle) {
-    CloseHandle(hVBLHandle);
-    hVBLHandle = NULL;
-  }
-}
-*/
-
-//-----------------------------------------------------------------------
-/*
-  Signal VBL timer event - used in 'Main_WaitVBLEvent'
-*/
-/* FIXME */
-/*
-void Main_SetVBLEvent(void)
-{
-  if (hVBLHandle)
-    SetEvent(hVBLHandle);
-}
-*/
-
-//-----------------------------------------------------------------------
-/*
-  Wait for VBL counter to latch to next frame(called by sound callback @ 20ms, 50fps)
-*/
-/* FIXME */
-/*
-void Main_WaitVBLEvent(void)
-{
-  // Wait until event signalled by Sound VBL, this need to be more Windows friendly
-  if (hVBLHandle) {
-    if (WaitForSingleObject(hVBLHandle,50)==WAIT_TIMEOUT) {    // Suspend thread until VBL count increases
-      // Something went wrong, reset, try again
-      Main_SetSpeedThreadTimer(ConfigureParams.Configure.nMinMaxSpeed);
-    }
-  }
-}
-*/
-
-//-----------------------------------------------------------------------
-/*
-  Check VBL event to see if already set, and return TRUE
-*/
-/* FIXME */
-/*
-BOOL Main_AlreadyWaitingVBLEvent(void)
-{
-  // Test event to see if already set
-  if (WaitForSingleObject(hVBLHandle,0)==WAIT_TIMEOUT)
-    return(FALSE);
-
-  return(TRUE);
-}
-*/
-
-//-----------------------------------------------------------------------
-/*
-  Create sound thread to handle passing of sound on to DirectSound
-*/
-/* FIXME */
-/*
-void Main_CreateSoundThread(void)
-{
-  // Create thread to run every 20ms(50fps) to send emulation samples to DirectSound
-  hSoundTimer = timeSetEvent(20,1,Main_SoundThreadFunc,0,TIME_PERIODIC);
-}
-*/
-
-//-----------------------------------------------------------------------
 /*
   This thread runs at 50fps and passes sound samples to direct sound and also also
   set the counter/events to govern emulation speed to match the two together.
   When running at a speed other than standard ST speed the VBL event is set by 'Main_SpeedThreadFunc'
   which occurs at differing speeds.
 */
-/* FIXME */
-/*
-void CALLBACK Main_SoundThreadFunc( UINT wTimerID, UINT msg, DWORD dwUsers, DWORD dw1, DWORD dw2 )
+void /*Uint32*/ Main_SoundTimerFunc(int v/*Uint32 interval, void *param*/)
 {
-  // Advance frame counter, used to draw screen to window at 50fps
+  struct itimerval mytimerval;
+  /* Advance frame counter, used to draw screen to window at 50fps */
   VBLCounter++;
-
-  // Set event so waiting screen draw routine will continue
-  if (ConfigureParams.Configure.nMinMaxSpeed==MINMAXSPEED_MIN) {
-    // Do wish to skip frames?
-    if (ConfigureParams.Screen.Advanced.bFrameSkip) {
-      if (VBLCounter&1)
-        Main_SetVBLEvent();          // 25fps, with frame-skip
-    }
-    else
-      Main_SetVBLEvent();            // 50fps
-  }
-
-  // And play sound through DirectSound, if enabled
-  if ( (ConfigureParams.Sound.bEnableSound) && bAppActive )
-    Sound_PassYMSamplesToDirectSound();
 }
-*/
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
-  When running in non-standard ST speed this sets the VBL event to increase the
-  running speed of the emulator
+  Create sound timer to handle sound
 */
-/* FIXME */
-/*
-void CALLBACK Main_SpeedThreadFunc( UINT wTimerID, UINT msg, DWORD dwUsers, DWORD dw1, DWORD dw2 )
+void Main_CreateSoundTimer(void)
 {
-  // Advance screen update counter - ONLY if in max speed mode
-  if (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MIN)
-    Main_SetVBLEvent();
-}
-*/
+  struct itimerval mytimerval;
+  /* Create thread to run every 20ms(50fps) to handle emulation samples */
+  //hSoundTimer = SDL_AddTimer(10,Main_SoundTimerFunc,NULL);
 
-//-----------------------------------------------------------------------
+  signal(SIGALRM, Main_SoundTimerFunc);
+  mytimerval.it_interval.tv_sec=0;  mytimerval.it_interval.tv_usec=20000;
+  mytimerval.it_value.tv_sec=0;     mytimerval.it_value.tv_usec=20000;
+  setitimer(ITIMER_REAL, &mytimerval, NULL);
+}
+
+/*-----------------------------------------------------------------------*/
 /*
-  Set timer for 'Main_SpeedThreadFunc' to govern fast than ST emulation speed
-  When running in min/max speed this thread is ignored
+  Delete sound timer
 */
-/* FIXME */
-/*
-void Main_SetSpeedThreadTimer(int nMinMaxSpeed)
+void Main_RemoveSoundTimer(void)
 {
-  // Do we have an old timer? If so kill it
-  if (hSpeedTimer) {
-    timeKillEvent(hSpeedTimer);
-    hSpeedTimer = NULL;
-  }
-
-  // Set new timer, according to MINMAXSPEED_xxxx
-  if ( ( (nMinMaxSpeed!=MINMAXSPEED_MIN) && nMinMaxSpeed!=MINMAXSPEED_MAX) && (!bQuitProgram) )
-    hSpeedTimer = timeSetEvent(STSpeedMilliSeconds[nMinMaxSpeed],1,Main_SpeedThreadFunc,0,TIME_PERIODIC);
+  /*SDL_RemoveTimer(hSoundTimer);*/
+  signal(SIGALRM,SIG_IGN);
 }
-*/
+
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -377,6 +267,7 @@ void Main_ReadParameters(int argc, char *argv[])
               "  --color or -c       Start in color mode instead of mono.\n"
               "  --fullscreen or -f  Try to use fullscreen mode.\n"
               "  --joystick or -j    Emulate a ST joystick with the cursor keys\n"
+              "  --sound or -s       Enable sound (does not yet work right!)\n"
              );
        exit(0);
       }
@@ -399,6 +290,11 @@ void Main_ReadParameters(int argc, char *argv[])
        fprintf(stderr,"Joystate: %i\n",(int)ConfigureParams.Joysticks.Joy[1].bCursorEmulation);
        ConfigureParams.Joysticks.Joy[1].bCursorEmulation=TRUE;
       }
+      else if (!strcmp(argv[i],"--sound") || !strcmp(argv[i],"-s"))
+      {
+       bDisableSound=FALSE;
+       ConfigureParams.Sound.bEnableSound = TRUE;
+      }
       else
       {
        /* Possible passed disc image filename, ie starts with character other than '-' */
@@ -409,12 +305,19 @@ void Main_ReadParameters(int argc, char *argv[])
   }
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Initialise emulation
 */
 void Main_Init(void)
 {
+  /* SDL init: */
+  if( SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO/*|SDL_INIT_TIMER*/) < 0 )
+   {
+    fprintf(stderr, "Could not initialize the SDL library:\n %s\n", SDL_GetError() );
+    exit(-1);
+   }
+
   Misc_SeedRandom(1043618);
   Printer_Init();
   RS232_Init();
@@ -427,35 +330,32 @@ void Main_Init(void)
   GemDOS_Init();
   Intercept_Init();
   Joy_Init();
-  DAudio_Init();
+  Audio_Init();
   Sound_Init();
-//FM  Main_CreateVBLEvent();
-//FM  Main_CreateSoundThread();
+  Main_CreateSoundTimer();
 
-  // Check passed disc image parameter, boot directly into emulator
+  /* Check passed disc image parameter, boot directly into emulator */
   if (strlen(szBootDiscImage)>0) {
     Floppy_InsertDiscIntoDrive(0,szBootDiscImage);
 //FM    View_ToggleWindowsMouse(MOUSE_ST);
   }
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Un-Initialise emulation
 */
 void Main_UnInit(void)
 {
   Screen_ReturnFromFullScreen();
-//FM  Main_SetSpeedThreadTimer(-1);
-//FM  Main_DeleteVBLEvent();
-//FM  timeKillEvent(hSoundTimer);
+  Main_RemoveSoundTimer();
   Floppy_EjectBothDrives();
   Floppy_UnInit();
   RS232_UnInit();
   Printer_UnInit();
 //  DJoy_UnInit();
   Intercept_UnInit();
-  DAudio_UnInit();
+  Audio_UnInit();
 //  DSurface_UnInit();
   YMFormat_FreeRecording();
 //FM  View_LimitCursorToScreen();
@@ -465,9 +365,12 @@ void Main_UnInit(void)
   FreeDebugDialog();
 #endif
   Configuration_UnInit();
+
+  /* SDL uninit: */
+  SDL_Quit();
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Main
 */
@@ -487,8 +390,11 @@ int main(int argc, char *argv[])
   Debug_OpenFiles();
   ErrLog_OpenFile();
 
+  /* Set default configuration values: */
+  Configuration_SetDefault();
+
   /* Check for any passed parameters */
-   Main_ReadParameters(argc, argv);
+  Main_ReadParameters(argc, argv);
 
   /* Init emulator system */
   Main_Init();

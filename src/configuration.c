@@ -23,9 +23,22 @@ BOOL bFirstTimeInstall=FALSE;              /* Has been run before? Used to set d
 
 /*-----------------------------------------------------------------------*/
 /*
+  Set default configuration values
+  This is new in Hatari - Winston always loaded its values from a config
+  file. But since Hatari does not yet use a config file, we need this!
+*/
+void Configuration_SetDefault(void)
+{
+  ConfigureParams.Sound.bEnableSound = FALSE;
+  ConfigureParams.Screen.Advanced.bFrameSkip = FALSE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Load program setting from configuration file
 */
-void Configuration_Init(void) /* FIXME: Rewrite this! */
+void Configuration_Init(void)
 {
 /*
   char sVersionString[VERSION_STRING_SIZE];

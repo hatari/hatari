@@ -228,7 +228,7 @@ void ShortCut_RecordSound(void)
 /* FIXME */
 /*
   // Is working?
-  if (bDirectSoundWorking) {
+  if (bSoundWorking) {
     // Are we currently recording? If so stop
     if (Sound_AreWeRecording()) {
       // Stop, and save

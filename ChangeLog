@@ -1,4 +1,8 @@
 
+2001-06-10 (Thomas Huth):
+  * Added sound support. Does not yet work perfect, but at least there
+    are some noises now :-) (Use option --sound to enable it).
+
 2001-06-01 (Thomas Huth):  *** Version 0.05a ***
   * Added joystick emulation.
   * Added Stefan's patch for ST-LOW res on big-endian machines,

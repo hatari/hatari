@@ -4,6 +4,7 @@
 
 extern BOOL bFirstTimeInstall;
 
+extern void Configuration_SetDefault(void);
 extern void Configuration_Init(void);
 extern void Configuration_UnInit(void);
 extern BOOL Configuration_OpenFileToWrite(void);

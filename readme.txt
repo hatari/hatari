@@ -48,7 +48,7 @@ so I'll perhaps will adapt another core one day...
 
 Important: Hatari isn't yet very usable - it does not run very stable and
 a lot of WinSTon original features are still missing in this version, e.g.
-the ST-MED resolution emulation, configuration dialogs or sound.
+the ST-MED resolution emulation or the configuration dialogs.
 But you can already use a floppy disk image (must be given as an argument on
 the command line) and try out some programs... :-)
 Try starting Hatari with the option "--help" to find out more about its
