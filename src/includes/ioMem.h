@@ -20,6 +20,7 @@
 
 
 extern BOOL bEnableBlitter;
+extern int nIoMemAccessSize;
 
 
 /*-----------------------------------------------------------------------*/
@@ -110,6 +111,5 @@ void IoMem_ReadWithoutInterception(void);
 
 /* deprecated: */
 extern void Intercept_EnableBlitter(BOOL enableFlag);
-extern void Intercept_ModifyTablesForBusErrors(void);
 
 #endif

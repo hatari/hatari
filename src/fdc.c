@@ -12,7 +12,7 @@
   to perform the transfer of data from our disc image into the ST RAM area by simulating the
   DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.14 2005-01-18 23:33:14 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.15 2005-01-31 22:15:47 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -305,7 +305,14 @@ void FDC_SetDMAStatus(BOOL bError)
 */
 void FDC_DmaStatus_ReadWord(void)
 {
-  IoMem_WriteWord(0xff8606, (0xffff0000|DMAStatus_ff8606rd));
+  if (nIoMemAccessSize == SIZE_BYTE)
+  {
+    /* This register does not like to be accessed in byte mode on a normal ST */
+	M68000_BusError(BusAddressLocation, 1);
+	return;
+  }
+
+  IoMem_WriteWord(0xff8606, DMAStatus_ff8606rd);
 }
 
 
@@ -1082,6 +1089,13 @@ static void FDC_WriteDataRegister(void)
 */
 void FDC_DiscController_WriteWord(void)
 {
+  if (nIoMemAccessSize == SIZE_BYTE)
+  {
+    /* This register does not like to be accessed in byte mode on a normal ST */
+	M68000_BusError(BusAddressLocation, 0);
+	return;
+  }
+
   DiscControllerWord_ff8604wr = IoMem_ReadWord(0xff8604);
 
   HDC_WriteCommandPacket();           /*  Handle HDC functions */
@@ -1120,6 +1134,13 @@ void FDC_DiscController_WriteWord(void)
 void FDC_DiscControllerStatus_ReadWord(void)
 {
   Sint16 DiscControllerByte = 0;            /* Used to pass parameter back to assembler */
+
+  if (nIoMemAccessSize == SIZE_BYTE)
+  {
+    /* This register does not like to be accessed in byte mode on a normal ST */
+	M68000_BusError(BusAddressLocation, 1);
+	return;
+  }
 
   if (DMAModeControl_ff8606wr == 0x08A)     /* HDC status reg selected? */
   {
@@ -1273,6 +1294,13 @@ void FDC_DMADataFromFloppy(void)
 void FDC_DmaModeControl_WriteWord(void)
 {
   Uint16 DMAModeControl_ff8606wr_prev;                     /* stores previous write to 0xff8606 for 'toggle' checks */
+
+  if (nIoMemAccessSize == SIZE_BYTE)
+  {
+    /* This register does not like to be accessed in byte mode on a normal ST */
+	M68000_BusError(BusAddressLocation, 0);
+	return;
+  }
 
   DMAModeControl_ff8606wr_prev = DMAModeControl_ff8606wr;  /* Store previous to check for _read/_write toggle (DMA reset) */
   DMAModeControl_ff8606wr = IoMem_ReadWord(0xff8606);      /* Store to DMA Mode control */
