@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.11 2004-07-25 13:50:30 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.12 2004-07-26 11:39:28 thothy Exp $";
 
 #ifndef HAVE_TERMIOS_H
 #define HAVE_TERMIOS_H 1
@@ -45,6 +45,15 @@ char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.11 2004-07-25 13:50:30 thothy Exp 
 #endif
 
 
+#ifndef HAVE_CFMAKERAW
+# if defined(__sun) && defined(__SVR4)
+#  define HAVE_CFMAKERAW 0
+# else
+#  define HAVE_CFMAKERAW 1
+# endif
+#endif
+
+
 BOOL bConnectedRS232 = FALSE;       /* Connection to RS232? */
 static FILE *hComIn = NULL;         /* Handle to file for reading */
 static FILE *hComOut = NULL;        /* Handle to file for writing */
@@ -52,6 +61,18 @@ SDL_Thread *RS232Thread = NULL;     /* Thread handle for reading incoming data *
 unsigned char InputBuffer_RS232[MAX_RS232INPUT_BUFFER];
 int InputBuffer_Head=0, InputBuffer_Tail=0;
 SDL_sem* pSemFreeBuf;               /* Semaphore to sync free space in InputBuffer_RS232 */
+
+
+#if HAVE_TERMIOS_H && !HAVE_CFMAKERAW
+static inline void cfmakeraw(struct termios *termios_p)
+{
+	termios_p->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
+	termios_p->c_oflag &= ~OPOST;
+	termios_p->c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
+	termios_p->c_cflag &= ~(CSIZE|PARENB);
+	termios_p->c_cflag |= CS8;
+}
+#endif
 
 
 /*-----------------------------------------------------------------------*/
