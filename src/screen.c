@@ -440,10 +440,10 @@ void Screen_AllocateScreenBitmap(int Width,int Height,int BitCount)
   /*hBitmap = CreateDIBSection(MainDC,(BITMAPINFO *)&ScreenBMP.InfoHeader,DIB_RGB_COLORS,(void **)&pScreenBitmap,0,0);*/
 
   fprintf(stderr, "Video mode: Width=%i  Height=%i  bpp=%i\n", Width, Height, BitCount);
-        if(bUseFullscreen)
-          sdlscrn=SDL_SetVideoMode(Width, Height, BitCount, SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN);
-         else
-          sdlscrn=SDL_SetVideoMode(Width, Height, BitCount, SDL_SWSURFACE|SDL_HWPALETTE);
+  if(bUseFullscreen)
+    sdlscrn=SDL_SetVideoMode(Width, Height, BitCount, SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN);
+   else
+    sdlscrn=SDL_SetVideoMode(Width, Height, BitCount, SDL_SWSURFACE|SDL_HWPALETTE);
   if( sdlscrn==NULL )
    {
     fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
@@ -454,6 +454,12 @@ void Screen_AllocateScreenBitmap(int Width,int Height,int BitCount)
   cols[0].r=0; cols[0].g=0; cols[0].b=0;
   cols[1].r=255; cols[1].g=255; cols[1].b=255;
   SDL_SetColors(sdlscrn, cols, 0, 2);   /* Quick and dirty hack - remove it later */
+
+  /* Well, here comes a little hack to sync the ST and the host mouse pointer - hope it is okay - Thothy */
+  KeyboardProcessor.Mouse.DeltaX = 0;
+  KeyboardProcessor.Rel.X = KeyboardProcessor.Rel.PrevX = Width/2;
+  KeyboardProcessor.Mouse.DeltaY = 0;
+  KeyboardProcessor.Rel.Y = KeyboardProcessor.Rel.PrevY = Height/2;
 }
 
 

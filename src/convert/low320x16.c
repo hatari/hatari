@@ -2,9 +2,9 @@
 
 void ConvertLowRes_320x16Bit(void)
 {
- unsigned long *edi, *ebp;
- unsigned short *esi;
- register unsigned long eax, ebx, ecx, edx;
+ Uint32 *edi, *ebp;
+ Uint16 *esi;
+ register Uint32 eax, ebx, ecx, edx;
 
  edx=0;
 
@@ -14,9 +14,9 @@ void ConvertLowRes_320x16Bit(void)
  do      /* y-loop */
   {
    eax = STScreenLineOffset[ScrY] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
-   edi = (unsigned long *)((char *)pSTScreen + eax);        /* ST format screen 4-plane 16 colours */
-   ebp = (unsigned long *)((char *)pSTScreenCopy + eax);    /* Previous ST format screen */
-   esi = (unsigned short *)pPCScreenDest;                   /* PC format screen */
+   edi = (Uint32 *)((Uint8 *)pSTScreen + eax);        /* ST format screen 4-plane 16 colours */
+   ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
+   esi = (Uint16 *)pPCScreenDest;                   /* PC format screen */
 
    AdjustLinePaletteRemap();
  
@@ -70,7 +70,7 @@ copy_word:
     mov    [bScreenContentsChanged],TRUE
 */
 
-#if __BYTE_ORDER == 4321
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
        /* Plot pixels */
        LOW_BUILD_PIXELS_0 ;      /* Generate 'ecx' as pixels [4,5,6,7] */
        PLOT_LOW_320_16BIT(12) ;
