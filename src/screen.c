@@ -80,7 +80,7 @@ void Screen_Init(void)
   pFrameBuffer = &FrameBuffers[0];
 
   if (bUseVDIRes)
-    Screen_SetWindowRes(VDIWidth,VDIHeight,bUseHighRes ? 8:16);  /* Allocate windows bitmap, for VDI */
+    Screen_SetWindowRes(VDIWidth, VDIHeight, 8);  /* Allocate windows bitmap, for VDI */
   else
    {
     if(bUseHighRes)
@@ -113,10 +113,7 @@ void Screen_UnInit(void)
 {
   int i;
 
-  /* Free memory used for ST screen bitmap */
-  /*DeleteObject(hBitmap);*/
-
-  /* And for copies */
+  /* Free memory used for copies */
   for(i=0; i<NUM_FRAMEBUFFERS; i++) {
     Memory_Free(FrameBuffers[i].pSTScreen);
     Memory_Free(FrameBuffers[i].pSTScreenCopy);
@@ -235,6 +232,14 @@ void Screen_EnterFullScreen(void)
       Screen_ClearScreen();         /* Black out Window's bitmap as will be invalid when return */
      }
     Main_UnPauseEmulation();        /* And off we go... */
+
+    if(bUseVDIRes || bUseHighRes) {
+      SDL_Color cols[2];
+      cols[0].r = cols[0].g = cols[0].b = 255;
+      cols[1].r = cols[1].g = cols[1].b = 0;
+      SDL_SetColors(sdlscrn, cols, 0, 2);   /* Colors for monochrome emulation */
+      SDL_SetColors(sdlscrn, cols, 10, 2);
+    }
   }
 }
 
@@ -252,7 +257,7 @@ void Screen_ReturnFromFullScreen(void)
     bInFullScreen = FALSE;
 
     if (bUseVDIRes)
-      Screen_SetWindowRes(VDIWidth,VDIHeight,bUseHighRes ? 8:16);  /* Allocate windows bitmap, for VDI */
+      Screen_SetWindowRes(VDIWidth, VDIHeight, 8);  /* Allocate windows bitmap, for VDI */
     else
      {
       switch(STRes)
@@ -311,10 +316,7 @@ void Screen_SetDrawModes(void)
 
   ScreenDrawWindow[ST_MEDIUM_RES].pDrawFunction = ConvertMediumRes_640x16Bit;
   ScreenDrawWindow[ST_MEDIUM_RES].Width = 640;  ScreenDrawWindow[ST_MEDIUM_RES].Height = 200;  ScreenDrawWindow[ST_MEDIUM_RES].BitDepth = 16;
-/*  
-  ScreenDrawWindow[ST_HIGH_RES].pDrawFunction = ConvertHighRes_640x1Bit;
-  ScreenDrawWindow[ST_HIGH_RES].Width = 640;  ScreenDrawWindow[ST_HIGH_RES].Height = 400;  ScreenDrawWindow[ST_HIGH_RES].BitDepth = 1;
-*/
+
   ScreenDrawWindow[ST_HIGH_RES].pDrawFunction = ConvertHighRes_640x8Bit;
   ScreenDrawWindow[ST_HIGH_RES].Width = 640;    ScreenDrawWindow[ST_HIGH_RES].Height = 400;    ScreenDrawWindow[ST_HIGH_RES].BitDepth = 8;
 
@@ -369,7 +371,6 @@ void Screen_SetDrawModes(void)
 */
 void Screen_SetWindowRes(int Width,int Height,int BitCount)
 {
-  SDL_Color cols[2];
 
   /* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
   if ( !(bUseVDIRes || bUseHighRes) ) {
@@ -391,10 +392,14 @@ void Screen_SetWindowRes(int Width,int Height,int BitCount)
     exit(-2);
    }
   pScreenBitmap=sdlscrn->pixels;
-  
-  cols[0].r=0; cols[0].g=0; cols[0].b=0;
-  cols[1].r=255; cols[1].g=255; cols[1].b=255;
-  SDL_SetColors(sdlscrn, cols, 0, 2);   /* Quick and dirty hack - remove it later */
+
+  if(bUseVDIRes || bUseHighRes) {
+    SDL_Color cols[2];
+    cols[0].r = cols[0].g = cols[0].b = 255;
+    cols[1].r = cols[1].g = cols[1].b = 0;
+    SDL_SetColors(sdlscrn, cols, 0, 2);   /* Colors for monochrome emulation */
+    SDL_SetColors(sdlscrn, cols, 10, 2);
+  }
 
   /* Well, here comes a little hack to sync the ST and the host mouse pointer - hope it is okay - Thothy */
   KeyboardProcessor.Mouse.DeltaX = 0;
@@ -421,10 +426,10 @@ void Screen_DidResolutionChange(void)
       SDL_Surface *newsdlscrn;
       if (bUseVDIRes)
         newsdlscrn = SDL_SetVideoMode(ScreenDrawVDIFullScreen[STRes].Width, ScreenDrawVDIFullScreen[STRes].Height,
-                               ScreenDrawVDIFullScreen[STRes].BitDepth, SDL_SWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE);
+                               ScreenDrawVDIFullScreen[STRes].BitDepth, SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE);
        else
         newsdlscrn = SDL_SetVideoMode(ScreenDrawFullScreen[STRes].Width, ScreenDrawFullScreen[STRes].Height,
-                               ScreenDrawFullScreen[STRes].BitDepth, SDL_SWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE);
+                               ScreenDrawFullScreen[STRes].BitDepth, SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE);
       if( newsdlscrn )
         sdlscrn = newsdlscrn;
        else
@@ -435,7 +440,7 @@ void Screen_DidResolutionChange(void)
       /* VDI or standard ST resolution? */
       if (bUseVDIRes) {
         /* Allocate to set VDI resolution */
-        Screen_SetWindowRes(VDIWidth,VDIHeight,bUseHighRes ? 1:8);
+        Screen_SetWindowRes(VDIWidth, VDIHeight, 8);
       }
       else {
         /* Allocate accordingly to STRes (may be mix of low/medium) */
@@ -593,16 +598,16 @@ int Screen_ComparePaletteMask(void)
   return(STRes);
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
   Create 8-Bit palette for display if needed
 */
 void Screen_CreatePalette(void)
 {
-/* FIXME */
-/*
+  SDL_Color Colours[16];
   int i;
-  
+/*
   // Full screen, or Window?
   if (bInFullScreen) {
     DSurface_SetPalette();
@@ -616,6 +621,12 @@ void Screen_CreatePalette(void)
     }
   }
 */
+    for(i=0; i<16; i++) {
+      Colours[i].r = ((HBLPalettes[i]>>8)&0x7)<<5;
+      Colours[i].g = ((HBLPalettes[i]>>4)&0x7)<<5;
+      Colours[i].b = (HBLPalettes[i]&0x7)<<5;
+    }
+    SDL_SetColors(sdlscrn, Colours, 10, 16);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -686,10 +697,14 @@ void Screen_SetWindowConvertDetails(void)
 {
   /* Reset Double Y, used for Window medium res' and in full screen */
   bScrDoubleY = FALSE;
+
+  pSTScreen = pFrameBuffer->pSTScreen;          /* Source in ST memory */
+  pSTScreenCopy = pFrameBuffer->pSTScreenCopy;  /* Previous ST screen */
+  pPCScreenDest = pScreenBitmap;                /* Destination PC screen */
+
   if (ConfigureParams.Screen.bUseHighRes) {
-    pSTScreen = pFrameBuffer->pSTScreen;        /* Source in ST memory */
-    pPCScreenDest = pScreenBitmap;
     pFrameBuffer->OverscanModeCopy = OverscanMode = OVERSCANMODE_NONE;
+    STScreenEndHorizLine = 400;
   }
   else
   {
@@ -700,8 +715,6 @@ void Screen_SetWindowConvertDetails(void)
     STScreenStartHorizLine = 0;                 /* Full height */
     STScreenEndHorizLine = NUM_VISIBLE_LINES;
 
-    pSTScreen = pFrameBuffer->pSTScreen;        /* Source in ST memory */
-    pSTScreenCopy = pFrameBuffer->pSTScreenCopy;  /* Previous ST screen */
     if (bUseVDIRes)
       PCScreenBytesPerLine = VDIWidth;
     else {
@@ -709,7 +722,6 @@ void Screen_SetWindowConvertDetails(void)
       if (STRes!=ST_LOW_RES)                    /* Bytes per line in PC screen are DOUBLE when in medium/mix */
         PCScreenBytesPerLine <<= 1;
     }
-    pPCScreenDest = pScreenBitmap;              /* Destination PC screen */
     pHBLPalettes = pFrameBuffer->HBLPalettes;
   }
 

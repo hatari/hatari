@@ -23,15 +23,15 @@
 #include "vdi.h"
 #include "video.h"
 
-//#define  TEST_SCREEN_UPDATE    /* Enable to see partial screen update */
+/*#define  TEST_SCREEN_UPDATE*/  /* Enable to see partial screen update */
 
 int ScrX,ScrY;                   /* Locals */
 int ScrUpdateFlag;               /* Bit mask of how to update screen */
 BOOL bScrDoubleY;                /* TRUE if double on Y */
-unsigned long PixelWorkspace[4];  /* Workspace to store pixels to so can print in right order for Spec512 */
+Uint32 PixelWorkspace[4];        /* Workspace to store pixels to so can print in right order for Spec512 */
 
 /* Remap tables to convert from plane format to byte-per-pixel (Upper is for 4-Planes so if shifted by 2) */
-unsigned long Remap_2_Planes[256] = {
+Uint32 Remap_2_Planes[256] = {
   0x00000000,  0x01000000,  0x00010000,  0x01010000,  0x00000100,  0x01000100,  0x00010100,  0x01010100,
   0x00000001,  0x01000001,  0x00010001,  0x01010001,  0x00000101,  0x01000101,  0x00010101,  0x01010101,
   0x02000000,  0x03000000,  0x02010000,  0x03010000,  0x02000100,  0x03000100,  0x02010100,  0x03010100,
@@ -65,7 +65,8 @@ unsigned long Remap_2_Planes[256] = {
   0x02020202,  0x03020202,  0x02030202,  0x03030202,  0x02020302,  0x03020302,  0x02030302,  0x03030302,
   0x02020203,  0x03020203,  0x02030203,  0x03030203,  0x02020303,  0x03020303,  0x02030303,  0x03030303,
 };
-unsigned long Remap_2_Planes_Upper[256] = {
+
+Uint32 Remap_2_Planes_Upper[256] = {
   0x00000000,  0x04000000,  0x00040000,  0x04040000,  0x00000400,  0x04000400,  0x00040400,  0x04040400,
   0x00000004,  0x04000004,  0x00040004,  0x04040004,  0x00000404,  0x04000404,  0x00040404,  0x04040404,
   0x08000000,  0x0C000000,  0x08040000,  0x0C040000,  0x08000400,  0x0C000400,  0x08040400,  0x0C040400,
@@ -99,7 +100,8 @@ unsigned long Remap_2_Planes_Upper[256] = {
   0x08080808,  0x0C080808,  0x080C0808,  0x0C0C0808,  0x08080C08,  0x0C080C08,  0x080C0C08,  0x0C0C0C08,
   0x0808080C,  0x0C08080C,  0x080C080C,  0x0C0C080C,  0x08080C0C,  0x0C080C0C,  0x080C0C0C,  0x0C0C0C0C,
 };
-unsigned long Remap_1_Plane[16] = {
+
+Uint32 Remap_1_Plane[16] = {
   0x00000000+BASECOLOUR_LONG,  0x01000000+BASECOLOUR_LONG,  0x00010000+BASECOLOUR_LONG,  0x01010000+BASECOLOUR_LONG,  0x00000100+BASECOLOUR_LONG,  0x01000100+BASECOLOUR_LONG,  0x00010100+BASECOLOUR_LONG,  0x01010100+BASECOLOUR_LONG,
   0x00000001+BASECOLOUR_LONG,  0x01000001+BASECOLOUR_LONG,  0x00010001+BASECOLOUR_LONG,  0x01010001+BASECOLOUR_LONG,  0x00000101+BASECOLOUR_LONG,  0x01000101+BASECOLOUR_LONG,  0x00010101+BASECOLOUR_LONG,  0x01010101+BASECOLOUR_LONG,
 };
@@ -262,7 +264,55 @@ void Convert_StartFrame(void)
 }
 
 
-/* Plot Low Resolution(320xH) 16-Bit pixels */
+/* Routines to create 'ecx' pixels - MUST be called in this order */
+#define HIGH_BUILD_PIXELS_0 \
+{ \
+ eax = ebx; \
+ eax &= 0x0000000f; \
+}
+/*
+	__asm	mov		eax,ebx \
+	__asm	and		eax,0x0000000f
+*/
+
+#define HIGH_BUILD_PIXELS_1 \
+{ \
+ eax = ebx; \
+ eax >>= 4; \
+ eax &= 0x0000000f;\
+}
+/*
+	__asm	mov		eax,ebx \
+	__asm	shr		eax,4 \
+	__asm	and		eax,0x0000000f
+*/
+
+#define HIGH_BUILD_PIXELS_2 \
+{ \
+ eax = ebx; \
+ eax >>= 8; \
+ eax &= 0x0000000f;\
+}
+/*
+	__asm	mov		eax,ebx \
+	__asm	shr		eax,8 \
+	__asm	and		eax,0x0000000f
+*/
+
+#define HIGH_BUILD_PIXELS_3 \
+{ \
+ eax = ebx; \
+ eax >>= 12; \
+ eax &= 0x0000000f;\
+}
+/*
+	__asm	mov		eax,ebx \
+	__asm	shr		eax,12 \
+	__asm	and		eax,0x0000000f
+*/
+
+
+/* Plot Low Resolution (320xH) 16-Bit pixels */
 #define PLOT_LOW_320_16BIT(offset)  \
 { \
  ebx = ecx; \
@@ -309,27 +359,6 @@ void Convert_StartFrame(void)
  ebx = STRGBPalette[ebx]; \
  esi[offset+3] = ebx; \
 } 
-/*
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	shr		ecx,8 \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi],ebx \
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	shr		ecx,8 \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+4],ebx \
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	shr		ecx,8 \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+8],ebx \
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+12],ebx
-*/
 
 /* Plot Low Resolution (640xH) 16-Bit pixels (Double on Y) */
 #define PLOT_LOW_640_16BIT_DOUBLE_Y(offset) \
@@ -358,31 +387,6 @@ void Convert_StartFrame(void)
  esi[offset+3] = ebx; \
  esi[offset+3+PCScreenBytesPerLine/4] = ebx; \
 }
-/*
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	shr		ecx,8 \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi],ebx \
-	__asm	mov		offset[esi+ebp],ebx \
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	shr		ecx,8 \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+4],ebx \
-	__asm	mov		offset[esi+4+ebp],ebx \
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	shr		ecx,8 \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+8],ebx \
-	__asm	mov		offset[esi+8+ebp],ebx \
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+12],ebx \
-	__asm	mov		offset[esi+12+ebp],ebx
-*/
 
 
 /* Plot Medium Resolution(640xH) 16-Bit pixels */
@@ -435,6 +439,13 @@ void Convert_StartFrame(void)
  ebx = STRGBPalette[ebx]; \
  esi[offset+3] = (Uint16)ebx; \
  esi[offset+3+PCScreenBytesPerLine/2] = (Uint16)ebx; \
+}
+
+
+/* Plot High Resolution (640xH) 8-Bit pixels */
+#define PLOT_HIGH_640_8BIT(offset) \
+{ \
+ esi[offset] = Remap_1_Plane[eax]; \
 }
 
 
