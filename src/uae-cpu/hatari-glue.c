@@ -13,6 +13,7 @@
 #ifndef UAEMEMORY
 #include "memory.h"
 #endif
+#include "maccess.h"
 #include "newcpu.h"
 
 #ifndef FALSE
@@ -94,7 +95,8 @@ unsigned long OpCode_ConnectedDrive(uae_u32 opcode)
  /* Set connected drives */
  STMemory_WriteWord(0x4c2, ConnectedDriveMask); 
  m68k_incpc(2);
- return 2;
+ fill_prefetch_0();
+ return 4;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -124,7 +126,8 @@ unsigned long OpCode_GemDos(uae_u32 opcode)
     GemDOS_OpCode();    /* handler code in gemdos.c */
 
  m68k_incpc(2);
- return 2;
+ fill_prefetch_0();
+ return 4;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -145,5 +148,6 @@ unsigned long OpCode_TimerD(uae_u32 opcode)
  m68k_dreg(regs,1)=7;	/* 1 = /4 for 9600 baud(used /200) */
  m68k_dreg(regs,2)=100;	/* 2 = 9600 baud(100) */
  m68k_incpc(2);
- return 2;
+ fill_prefetch_0();
+ return 4;
 }

@@ -797,8 +797,8 @@ void Screen_Blit(BOOL bSwapScreen)
 {
   /* Rectangle areas to Blit according to if overscan is enabled or not (source always includes all borders) */
   static SDL_Rect SrcWindowBitmapSizes[] = {
-    OVERSCAN_LEFT,OVERSCAN_BOTTOM, 320,200,             /* ST_LOW_RES */
-    (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400,   /* ST_MEDIUM_RES */
+    OVERSCAN_LEFT,OVERSCAN_TOP, 320,200,                /* ST_LOW_RES */
+    (OVERSCAN_LEFT<<1),(OVERSCAN_TOP<<1), 640,400,      /* ST_MEDIUM_RES */
     0,0, 640,400,                                       /* ST_HIGH_RES */
     (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400,   /* ST_LOWMEDIUM_MIX_RES */
   };
@@ -901,7 +901,6 @@ void Screen_DrawFrame(BOOL bForceFlip)
       }
       else {
         pDrawFunction = ScreenDrawFullScreen[STRes].pDrawFunction;
-/*fprintf(stderr, "Screen_DrawFrame STRes=%i\n",(int)STRes);*/
         /* Check if is Spec512 image */
         if (Spec512_IsImage()) {
           /* What mode were we in? Keep to 320xH or 640xH */
@@ -958,8 +957,6 @@ void Screen_DrawFrame(BOOL bForceFlip)
 */
 void Screen_Draw(void)
 {
-//  RECT Rect;
-//  HBRUSH WhiteBrush;
   BOOL bDrawFrame = FALSE;
 
   /* Are we holding screen? Ie let user choose options while in full-screen mode using GDI */
@@ -1022,18 +1019,14 @@ void Screen_Draw(void)
     else {
       /* Blank Window with ST-white(0x777) rectangle if holding display */
       if (!bInFullScreen && bHoldScreenDisplay && bUseVDIRes) {
-/*FIXME*/      /*GetClientRect(hWnd,&Rect);
-        Rect.left = SCREEN_AREA_STARTX;
-        Rect.top = SCREEN_AREA_STARTY;
-        Rect.right -= BORDER_WIDTH;
-        Rect.bottom -= BORDER_HEIGHT-SCREEN_AREA_STARTY;
-        // Mono or colour? Choose ST 0x777 or full white
+        SDL_Rect Rect;
+        Uint32 WhiteBrush;
+        /* Mono or colour? Choose ST 0x777 or full white */
         if (VDIRes==2)
-          WhiteBrush = CreateSolidBrush(RGB(255,255,255));
+          WhiteBrush = SDL_MapRGB(sdlscrn->format, 255,255,255);
         else
-          WhiteBrush = CreateSolidBrush(RGB(0x7<<5,0x7<<5,0x7<<5));
-        FillRect(MainDC,&Rect,WhiteBrush);
-        DeleteObject(WhiteBrush);*/
+          WhiteBrush = SDL_MapRGB(sdlscrn->format, 0x7<<5,0x7<<5,0x7<<5);
+        SDL_FillRect(sdlscrn,NULL, WhiteBrush );
       }
     }
 
