@@ -99,6 +99,15 @@ extern void IoMem_bput(uaecptr addr, uae_u32 val);
 extern void IoMem_wput(uaecptr addr, uae_u32 val);
 extern void IoMem_lput(uaecptr addr, uae_u32 val);
 
+
+void IoMem_BusErrorEvenReadAccess(void);
+void IoMem_BusErrorOddReadAccess(void);
+void IoMem_BusErrorEvenWriteAccess(void);
+void IoMem_BusErrorOddWriteAccess(void);
+void IoMem_WriteWithoutInterception(void);
+void IoMem_ReadWithoutInterception(void);
+
+
 /* deprecated: */
 extern void Intercept_EnableBlitter(BOOL enableFlag);
 extern void Intercept_ModifyTablesForBusErrors(void);
