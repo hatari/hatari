@@ -8,7 +8,7 @@
   VBLs, HBLs, copying the ST screen to a buffer to simulate the TV raster trace, border
   removal, palette changes per HBL, the 'video address pointer' etc...
 */
-static char rcsid[] = "Hatari $Id: video.c,v 1.15 2003-04-16 12:49:09 thothy Exp $";
+static char rcsid[] = "Hatari $Id: video.c,v 1.16 2003-06-28 14:32:36 thothy Exp $";
 
 #include <SDL.h>
 
@@ -327,7 +327,7 @@ void Video_InterruptHandler_EndLine(void)
   Video_EndHBL();              /* Increase HBL count, copy line to display buffer and do any video trickery */
 
   /* If we don't often pump data into the event queue, the SDL misses events... grr... */
-  if( !(nHBL&127) )
+  if( !(nHBL&63) )
   {
     Main_EventHandler();
   }
