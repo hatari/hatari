@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-static char rcsid[] = "Hatari $Id: floppy.c,v 1.12 2003-06-23 18:49:46 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.13 2003-10-11 20:14:33 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -433,6 +433,16 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
       ErrLog_File("ERROR Floppy_ReadSectors reading over single track\n");
     }
 
+    /* Check that the side number (0 or 1) does not exceed the amount of sides (1 or 2).
+     * (E.g. some games like Drakkhen or Bolo can load additional data from the
+     * second disc side, but they also work with single side floppy drives) */
+    if (Side >= nSides)
+    {
+      fprintf(stderr, "Warning: Program tries to read from side %i of a disk "
+                      "image with %i sides!\n", Side+1, nSides);
+      return FALSE;
+    }
+
     /* Seek to sector */
     nBytesPerTrack = NUMBYTESPERSECTOR*nSectorsPerTrack;
     Offset = nBytesPerTrack*Side;                 /* First seek to side */
@@ -486,6 +496,14 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
     if (Count>nSectorsPerTrack)
     {
       ErrLog_File("ERROR Floppy_WriteSectors reading over single track\n");
+    }
+
+    /* Check that the side number (0 or 1) does not exceed the amount of sides (1 or 2). */
+    if (Side >= nSides)
+    {
+      fprintf(stderr, "Warning: Program tries to write to side %i of a disk "
+                      "image with %i sides!\n", Side+1, nSides);
+      return FALSE;
     }
 
     /* Seek to sector */
