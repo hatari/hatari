@@ -41,11 +41,6 @@ static inline uae_u16 do_get_mem_word(uae_u16 *a)
 	return SDL_SwapBE16(*a);
 }
 
-static inline uae_u8 do_get_mem_byte(uae_u8 *a)
-{
-	return *a;
-}
-
 
 static inline void do_put_mem_long(uae_u32 *a, uae_u32 v)
 {
@@ -55,11 +50,6 @@ static inline void do_put_mem_long(uae_u32 *a, uae_u32 v)
 static inline void do_put_mem_word(uae_u16 *a, uae_u16 v)
 {
 	*a = SDL_SwapBE16(v);
-}
-
-static inline void do_put_mem_byte(uae_u8 *a, uae_u8 v)
-{
-	*a = v;
 }
 
 
@@ -78,11 +68,6 @@ static inline uae_u16 do_get_mem_word(uae_u16 *a)
 	uae_u8 *b = (uae_u8 *)a;
 
 	return (b[0] << 8) | b[1];
-}
-
-static inline uae_u8 do_get_mem_byte(uae_u8 *a)
-{
-	return *a;
 }
 
 
@@ -104,13 +89,21 @@ static inline void do_put_mem_word(uae_u16 *a, uae_u16 v)
 	b[1] = v;
 }
 
+
+#endif  /* CPU_CAN_ACCESS_UNALIGNED */
+
+
+/* These are same for all architectures: */
+
+static inline uae_u8 do_get_mem_byte(uae_u8 *a)
+{
+	return *a;
+}
+
 static inline void do_put_mem_byte(uae_u8 *a, uae_u8 v)
 {
 	*a = v;
 }
-
-
-#endif  /* CPU_CAN_ACCESS_UNALIGNED */
 
 
 #endif /* UAE_MACCESS_H */
