@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-static char rcsid[] = "Hatari $Id: keymap.c,v 1.12 2003-06-02 16:18:25 thothy Exp $";
+static char rcsid[] = "Hatari $Id: keymap.c,v 1.13 2003-06-28 14:29:58 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -329,8 +329,6 @@ static char DebounceExtendedKeys[] =
   0      /* term */
 };
 
-BOOL bRemapKeyLoaded = FALSE;           /* Did we successfully load a remap file? */
-
 
 
 /*-----------------------------------------------------------------------*/
@@ -581,7 +579,7 @@ char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
   }
 
   /* Use default or loaded? */
-  if (bRemapKeyLoaded)
+  if(ConfigureParams.Keyboard.nKeymapType == KEYMAP_LOADED)
     return LoadedKeyToSTScanCode[pKeySym->sym];
   else
     return SymbolicKeyToSTScanCode[pKeySym->sym];
@@ -598,8 +596,7 @@ void Keymap_LoadRemapFile(char *pszFileName)
   unsigned int STScanCode, PCKeyCode;
   FILE *in;
 
-  /* Default to not loaded */
-  bRemapKeyLoaded = FALSE;
+  /* Initialize table with default values */
   memcpy(LoadedKeyToSTScanCode, SymbolicKeyToSTScanCode, sizeof(LoadedKeyToSTScanCode));
 
   /* Attempt to load file */
@@ -612,7 +609,7 @@ void Keymap_LoadRemapFile(char *pszFileName)
       while(!feof(in))
       {
         /* Read line from file */
-        fgets(szString, 1024, in);
+        fgets(szString, sizeof(szString), in);
         /* Remove white-space from start of line */
         Misc_RemoveWhiteSpace(szString,sizeof(szString));
         if (strlen(szString)>0)
@@ -627,8 +624,6 @@ void Keymap_LoadRemapFile(char *pszFileName)
             LoadedKeyToSTScanCode[PCKeyCode] = STScanCode;
         }
       }
-      /* Loaded OK */
-      bRemapKeyLoaded = TRUE;
 
       fclose(in);
     }
