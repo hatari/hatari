@@ -13,7 +13,16 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.8 2004-07-05 20:06:20 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.9 2004-07-06 20:14:23 thothy Exp $";
+
+#ifndef HAVE_TERMIOS_H
+#define HAVE_TERMIOS_H 1
+#endif
+
+#if HAVE_TERMIOS_H
+# include <termios.h>
+# include <unistd.h>
+#endif
 
 #include <SDL.h>
 #include <SDL_thread.h>
@@ -53,6 +62,9 @@ void RS232_Init(void)
 {
 	if (ConfigureParams.RS232.bEnableRS232)
 	{
+		if (!bConnectedRS232)
+			RS232_OpenCOMPort();
+
 		/* Create thread to wait for incoming bytes over RS-232 */
 		if (!RS232Thread)
 		{
@@ -74,11 +86,43 @@ void RS232_UnInit(void)
 	{
 		/* Instead of killing the thread directly, we should probably better
 		   inform it via IPC so that it can terminate gracefully... */
+		Dprintf(("Killing RS232 thread...\n"));
 		SDL_KillThread(RS232Thread);
 		RS232Thread = NULL;
 	}
 	RS232_CloseCOMPort();
 }
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Set serial line parameters to "raw" mode.
+*/
+#if HAVE_TERMIOS_H
+static BOOL RS232_SetRawMode(FILE *fhndl)
+{
+	struct termios termmode;
+	int fd;
+
+	memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
+	fd = fileno(fhndl);                         /* Get file descriptor */
+
+	if (isatty(fd))
+	{
+		if (tcgetattr(fd, &termmode) != 0)
+			return FALSE;
+
+		/* Set "raw" mode: */
+		termmode.c_cc[VMIN] = 1;
+		termmode.c_cc[VTIME] = 0;
+		cfmakeraw(&termmode);
+		if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+#endif /* HAVE_TERMIOS_H */
 
 
 /*-----------------------------------------------------------------------*/
@@ -110,13 +154,26 @@ BOOL RS232_OpenCOMPort(void)
 	}
 	setvbuf(hComIn, NULL, _IONBF, 0);
 
-	/* Set defaults */
-	RS232_SetConfig(9600,0,UCR_1STOPBIT|UCR_PARITY|UCR_ODDPARITY);
+#if HAVE_TERMIOS_H
+	/* First set the output parameters to "raw" mode */
+	if (!RS232_SetRawMode(hComOut))
+	{
+		fprintf(stderr, "Can't set raw mode for %s\n",
+		        ConfigureParams.RS232.szOutFileName);
+	}
+
+	/* Now set the input parameters to "raw" mode */
+	if (!RS232_SetRawMode(hComIn))
+	{
+		fprintf(stderr, "Can't set raw mode for %s\n",
+		        ConfigureParams.RS232.szInFileName);
+	}
+#endif
 
 	/* Set all OK */
 	bConnectedRS232 = TRUE;
 
-	Dprintf(("Opened RS232 file: %s\n", ConfigureParams.RS232.szDeviceFileName));
+	Dprintf(("Successfully opened RS232 files.\n"));
 
 	return TRUE;
 }
@@ -147,74 +204,214 @@ void RS232_CloseCOMPort(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Set hardware configuration of RS-232
+  Set hardware configuration of RS-232:
+  - Bits per character
+  - Parity
+  - Start/stop bits
+*/
+#if HAVE_TERMIOS_H
+static BOOL RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, BOOL bUseParity, BOOL bEvenParity)
+{
+	struct termios termmode;
 
-  Ctrl:Communications parameters, (default 0)No handshake
-    Bit 0: XOn/XOff
-    Bit 1: RTS/CTS
+	memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
 
-  Ucr: USART Control Register
-    Bit 1:0-Odd Parity, 1-Even Parity
-    Bit 2:0-No Parity, 1-Parity
+	if (isatty(fd))
+	{
+		if (tcgetattr(fd, &termmode) != 0)
+		{
+			Dprintf(("RS232_SetBitsConfig: tcgetattr failed.\n"));
+			return FALSE;
+		}
+
+		/* Set the character size: */
+		termmode.c_cflag &= ~CSIZE;
+		switch (nCharSize)
+		{
+		 case 8: termmode.c_cflag |= CS8; break;
+		 case 7: termmode.c_cflag |= CS7; break;
+		 case 6: termmode.c_cflag |= CS6; break;
+		 case 5: termmode.c_cflag |= CS5; break;
+		}
+
+		/* Set stop bits: */
+		if (nStopBits >= 2)
+			termmode.c_oflag |= CSTOPB;
+		else
+			termmode.c_oflag &= ~CSTOPB;
+
+		/* Parity bit: */
+		if (bUseParity)
+			termmode.c_cflag |= PARENB;
+		else
+			termmode.c_cflag &= ~PARENB;
+
+		if (bEvenParity)
+			termmode.c_cflag &= ~PARODD;
+		else
+			termmode.c_cflag |= PARODD;
+		
+		/* Now store the configuration: */
+		if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
+		{
+			Dprintf(("RS232_SetBitsConfig: tcsetattr failed.\n"));
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+#endif /* HAVE_TERMIOS_H */
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Set hardware configuration of RS-232 according to the USART control register.
+
+  ucr: USART Control Register
+    Bit 0: unused
+    Bit 1: 0-Odd Parity, 1-Even Parity
+    Bit 2: 0-No Parity, 1-Parity
     Bits 3,4: Start/Stop bits
-      0 0 0-Start, 0-Stop    Synchronous
-      0 1 0-Start, 1-Stop    Asynchronous
-      1 0 1-Start, 1.5-Stop  Asynchronous
-      1 1 1-Start, 2-Stop    Asynchronous
+      0 0 : 0-Start, 0-Stop    Synchronous
+      0 1 : 0-Start, 1-Stop    Asynchronous
+      1 0 : 1-Start, 1.5-Stop  Asynchronous
+      1 1 : 1-Start, 2-Stop    Asynchronous
     Bits 5,6: 'WordLength'
-      0 0 ,8 Bits
-      0 1 ,7 Bits
-      1 0 ,6 Bits
-      1 1 ,5 Bits
+      0 0 : 8 Bits
+      0 1 : 7 Bits
+      1 0 : 6 Bits
+      1 1 : 5 Bits
     Bit 7: Frequency from TC and RC
 */
-void RS232_SetConfig(int Baud,short int Ctrl,short int Ucr)
+void RS232_HandleUCR(short int ucr)
 {
-	Dprintf(("RS232_SetConfig(%i,%i,%i)\n",Baud,(int)Ctrl,(int)Ucr));
-/* FIXME */
-/*  
-  DCB dcb;                           // Control block
+#if HAVE_TERMIOS_H
+	int nCharSize;                   /* Bits per character: 5, 6, 7 or 8 */
+	int nStopBits;                   /* Stop bits: 0=0 bits, 1=1 bit, 2=1.5 bits, 3=2 bits */
 
-  // Get current config
-  memset(&dcb,0x0,sizeof(DCB));
-  GetCommState(hCom, &dcb);
-  // Set defaults
-  BuildCommDCB("baud=9600 parity=N data=8 stop=1",&dcb);
-  
-  // Need XOn/XOff?
-  if (Ctrl&CTRL_XON_XOFF) {
-    dcb.fOutX = TRUE;
-    dcb.fInX = TRUE;
-  }
-  // And RTS/CTS?
-  if (Ctrl&CTRL_RTS_CTS)
-    dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
+	nCharSize = 8 - ((ucr >> 5) & 3);
+	nStopBits = (ucr >> 3) & 3;
 
-  // Type of parity(if enabled)
-  if (Ucr&UCR_EVENPARITY)
-    dcb.Parity = EVENPARITY;
-  else
-    dcb.Parity = ODDPARITY;
-  // Need parity?
-  if (Ucr&UCR_PARITY)
-    dcb.fParity = TRUE;
-  // Number of stop bits
-  switch(Ucr&UCR_STARTSTOP) {
-    case UCR_0STOPBIT:        // PC doesn't appear to have no stop bits? Eh?
-    case UCR_1STOPBIT:
-      dcb.StopBits = ONESTOPBIT;
-      break;
-    case UCR_15STOPBIT:
-      dcb.StopBits = ONE5STOPBITS;
-      break;
-    case UCR_2STOPBIT:
-      dcb.StopBits = TWOSTOPBITS;
-      break;
-  }
+	Dprintf(("RS232_HandleUCR(%i) : character size=%i , stop bits=%i\n",
+	         ucr, nCharSize, nStopBits));
 
-  // And set
-  SetCommState(hCom, &dcb);
+	if (hComOut != NULL)
+	{
+		if (!RS232_SetBitsConfig(fileno(hComOut), nCharSize, nStopBits, ucr&4, ucr&2))
+			fprintf(stderr, "Failed to set bits configuration for hComOut!\n");
+	}
+
+	if (hComIn != NULL)
+	{
+		if (!RS232_SetBitsConfig(fileno(hComIn), nCharSize, nStopBits, ucr&4, ucr&2))
+			fprintf(stderr, "Failed to set bits configuration for hComIn!\n");
+	}
+#endif HAVE_TERMIOS_H
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Set baud rate configuration of RS-232.
 */
+BOOL RS232_SetBaudRate(int nBaud)
+{
+#if HAVE_TERMIOS_H
+	int i;
+	int fd;
+	speed_t baudtype;
+	struct termios termmode;
+	static int baudtable[][2] =
+	{
+		{ 50, B50 },
+		{ 75, B75 },
+		{ 110, B110 },
+		{ 134, B134 },
+		{ 150, B150 },
+		{ 200, B200 },
+		{ 300, B300 },
+		{ 600, B600 },
+		{ 1200, B1200 },
+		{ 1800, B1800 },
+		{ 2400, B2400 },
+		{ 4800, B4800 },
+		{ 9600, B9600 },
+		{ 19200, B19200 },
+		{ 38400, B38400 },
+		{ 57600, B57600 },
+		{ 115200, B115200 },
+		{ 230400, B230400 },
+		{ -1, -1 }
+	};
+
+	Dprintf(("RS232_SetBaudRate(%i)\n", nBaud));
+
+	/* Convert baud number to baud termios constant: */
+	baudtype = -1;
+	for (i = 0; baudtable[i][0] != -1; i++)
+	{
+		if (baudtable[i][0] == nBaud)
+		{
+			baudtype = baudtable[i][1];
+			break;
+		}
+	}
+
+	if (baudtype == -1)
+	{
+		fprintf(stderr, "Unsupported baud rate %i\n", nBaud);
+		return FALSE;
+	}
+
+	/* Set ouput speed: */
+	if (hComOut != NULL)
+	{
+		memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
+		fd = fileno(hComOut);
+		if (isatty(fd))
+		{
+			if (tcgetattr(fd, &termmode) != 0)
+				return FALSE;
+
+			cfsetospeed(&termmode, baudtype);
+
+			if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
+				return FALSE;
+		}
+	}
+
+	/* Set input speed: */
+	if (hComIn != NULL)
+	{
+		memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
+		fd = fileno(hComIn);
+		if (isatty(fd))
+		{
+			if (tcgetattr(fd, &termmode) != 0)
+				return FALSE;
+
+			cfsetispeed(&termmode, baudtype);
+
+			if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
+				return FALSE;
+		}
+	}
+#endif /* HAVE_TERMIOS_H */
+
+	return TRUE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Set flow control configuration of RS-232.
+*/
+void RS232_SetFlowControl(int ctrl)
+{
+	Dprintf(("RS232_SetFlowControl(%i)\n", ctrl));
+
+	/* Not yet written */
 }
 
 
@@ -239,7 +436,6 @@ BOOL RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
 		if (fwrite(pBytes, 1, nBytes, hComOut))
 		{
 			Dprintf(("RS232: Sent %i bytes ($%x ...)\n", nBytes, *pBytes));
-			/*fflush(hComOut);*/
 			MFP_InputOnChannel(MFP_TRNBUFEMPTY_BIT, MFP_IERA, &MFP_IPRA);
 
 			return(TRUE);   /* OK */
@@ -259,7 +455,7 @@ BOOL RS232_ReadBytes(unsigned char *pBytes, int nBytes)
 	int i;
 
 	/* Connected? */
-	if (bConnectedRS232)
+	if (bConnectedRS232 && InputBuffer_Head != InputBuffer_Tail)
 	{
 		/* Read bytes out of input buffer */
 		for (i=0; i<nBytes; i++)
@@ -390,6 +586,9 @@ void RS232_UCR_ReadByte(void)
 void RS232_UCR_WriteByte(void)
 {
 	Dprintf(("RS232: Write to UCR: $%x\n", (int)STRam[0xfffa29]));
+
+	if (bConnectedRS232)
+		RS232_HandleUCR(STRam[0xfffa29]);
 }
 
 
@@ -452,6 +651,12 @@ void RS232_UDR_ReadByte(void)
 	RS232_ReadBytes(&InByte, 1);
 	STRam[0xfffa2f] = InByte;
 	Dprintf(("RS232: Read from UDR: $%x\n", (int)STRam[0xfffa2f]));
+
+	if (RS232_GetStatus())              /* More data waiting? */
+	{
+		/* Yes, generate another interrupt. */
+		MFP_InputOnChannel(MFP_RCVBUFFULL_BIT, MFP_IERA, &MFP_IPRA);
+	}
 }
 
 /*-----------------------------------------------------------------------*/

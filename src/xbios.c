@@ -9,7 +9,7 @@
   We intercept and direct some XBios calls to handle the RS-232 etc. and help
   with floppy debugging.
 */
-char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.5 2004-04-23 15:33:59 thothy Exp $";
+char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.6 2004-07-06 20:14:23 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -118,8 +118,10 @@ static BOOL XBios_Rsconf(unsigned long Params)
   {
     /* Convert ST baud rate index to value */
     BaudRate = BaudRates[Baud];
-    /* Set RS-232, pass Communication Control and USART Control register */
-    RS232_SetConfig(BaudRate,Ctrl,Ucr);
+    /* Set RS-232 configuration */
+    RS232_HandleUCR(Ucr);
+    RS232_SetBaudRate(BaudRate);
+    RS232_SetFlowControl(Ctrl);
 
     return(TRUE);
   }
