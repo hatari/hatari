@@ -31,6 +31,7 @@ unsigned short int CycleColour;
 int CycleColourIndex;
 int nScanLine, ScanLineCycleCount;
 BOOL bIsSpec512Display;
+int nb_spc512lines,last_spc512line;
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 static const int STRGBPalEndianTable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
@@ -61,9 +62,11 @@ void Spec512_StartVBL(void)
   /* Clear number of cycle palettes on each frame */
   memset(nCyclePalettes,0x0,(SCANLINES_PER_FRAME+1)*sizeof(int));
   /* Clear number of times accessed on entry in palette (used to check if is true Spectrum 512 image) */
-  memset(nPalettesAccess,0x0,(SCANLINES_PER_FRAME+1)*sizeof(int));  
+  memset(nPalettesAccess,0x0,(SCANLINES_PER_FRAME+1)*sizeof(int));
   /* Set as not Spectrum 512 displayed image */
   bIsSpec512Display = FALSE;
+  last_spc512line = -1;
+  nb_spc512lines = 0;
 }
 
 
@@ -102,14 +105,26 @@ void Spec512_StoreCyclePalette(unsigned short col, unsigned long addr)
   /* Check if program wrote to certain palette entry multiple times on a single scan-line  */
   /* If we did then we must be using a Spectrum512 image or some kind of colour cycling... */
   nPalettesAccess[ScanLine]++;
-  if (nPalettesAccess[ScanLine]>=32)
-    bIsSpec512Display = TRUE;
+  if (nPalettesAccess[ScanLine]>=32) {
+    /* This code has obviously something wrong. It detects the grav44 disk
+       demo as a spc512 image because the scroller at the bottom of the screen
+       uses more than 1 palette... But doing so, it ruins the colours of the
+       rest of the screen. I should review all this code, but later.
+       For now, I just make sure it chosses this mode only when most of the
+       screen is a spc512 screen (at least 150 lines ! */
+    if (last_spc512line != ScanLine) {
+      last_spc512line = ScanLine;
+      nb_spc512lines++;
+      if (nb_spc512lines >= 150)
+	bIsSpec512Display = TRUE;
+    }
+  }
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Begin palette calculation for Spectrum 512 style images, 
+  Begin palette calculation for Spectrum 512 style images,
 */
 void Spec512_StartFrame(void)
 {
@@ -129,14 +144,16 @@ void Spec512_StartFrame(void)
   for(i=0; i<16; i++)
   {
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-    STRGBPalette[STRGBPalEndianTable[i]] = ST2RGB[HBLPalettes[i]&0x777];
+    STRGBPalette[STRGBPalEndianTable[i]] = ST2RGB[pHBLPalettes[i]&0x777];
 #else
-    STRGBPalette[i] = ST2RGB[HBLPalettes[i]&0x777];
+    STRGBPalette[i] = ST2RGB[pHBLPalettes[i]&0x777];
 #endif
   }
 
   /* Ready for first call to 'Spec512_ScanLine' */
   nScanLine = 0;
+  if (OverscanMode & OVERSCANMODE_TOP)
+    nScanLine += OVERSCAN_TOP;
 
   /* Skip to first line(where start to draw screen from) */
   for (i=0; i<(STScreenStartHorizLine+(nStartHBL-OVERSCAN_TOP)); i++)
