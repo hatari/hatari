@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.19 2005-03-07 23:15:48 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.20 2005-03-10 09:41:38 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -461,30 +461,45 @@ BOOL File_QueryOverwrite(char *pszFileName)
 */
 BOOL File_FindPossibleExtFileName(char *pszFileName, const char *ppszExts[])
 {
-  char szSrcDir[256], szSrcName[128], szSrcExt[32];
-  char szTempFileName[FILENAME_MAX];
-  int i=0;
+  char *szSrcDir, *szSrcName, *szSrcExt;
+  char *szTempFileName;
+  int i = 0;
+  BOOL bFileExists = FALSE;
+
+  /* Allocate temporary memory for strings: */
+  szTempFileName = malloc(4 * FILENAME_MAX);
+  if (!szTempFileName)
+  {
+    perror("File_FindPossibleExtFileName");
+    return FALSE;
+  }
+  szSrcDir = szTempFileName + FILENAME_MAX;
+  szSrcName = szSrcDir + FILENAME_MAX;
+  szSrcExt = szSrcName + FILENAME_MAX;
 
   /* Split filename into parts */
   File_splitpath(pszFileName, szSrcDir, szSrcName, szSrcExt);
 
   /* Scan possible extensions */
-  while(ppszExts[i]) {
+  while(ppszExts[i] && !bFileNameFound)
+  {
     /* Re-build with new file extension */
     File_makepath(szTempFileName, szSrcDir, szSrcName, ppszExts[i]);
     /* Does this file exist? */
-    if (File_Exists(szTempFileName)) {
+    if (File_Exists(szTempFileName))
+    {
       /* Copy name for return */
-      strcpy(pszFileName,szTempFileName);
-      return(TRUE);
+      strcpy(pszFileName, szTempFileName);
+      bFileExists = TRUE;
     }
 
     /* Next one */
     i++;
   }
 
-  /* No, none of the files exist */
-  return(FALSE);
+  free(szTempFileName);
+
+  return bFileExists;
 }
 
 

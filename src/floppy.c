@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.22 2005-03-07 23:15:48 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.23 2005-03-10 09:41:38 thothy Exp $";
 
 #include <sys/stat.h>
 
@@ -200,27 +200,40 @@ static BOOL Floppy_IsBootSectorOK(int Drive)
 */
 static BOOL Floppy_CreateDiscBFileName(char *pSrcFileName, char *pDestFileName)
 {
-  char szDir[256], szName[128], szExt[32];
+  char *szDir, *szName, *szExt;
+  BOOL bFileExists = FALSE;
 
+  /* Allocate temporary memory for strings: */
+  szDir = malloc(3 * FILENAME_MAX);
+  if (!szDir)
+  {
+    perror("Floppy_CreateDiscBFileName");
+    return FALSE;
+  }
+  szName = szDir + FILENAME_MAX;
+  szExt = szName + FILENAME_MAX;
+ 
   /* So, first split name into parts */
   File_splitpath(pSrcFileName, szDir, szName, szExt);
+
   /* All OK? */
-  if (strlen(szName)>0)
+  if (strlen(szName) > 0)
   {
     /* Now, did filename end with an 'A' or 'a'? */
-    if ( (szName[strlen(szName)-1]=='A') || (szName[strlen(szName)-1]=='a') )
+    if ((szName[strlen(szName)-1]=='A') || (szName[strlen(szName)-1]=='a'))
     {
       /* Change 'A' to a 'B' */
       szName[strlen(szName)-1] += 1;
       /* And re-build name into destination */
-      File_makepath(pDestFileName,szDir,szName,szExt);
+      File_makepath(pDestFileName, szDir, szName, szExt);
       /* Does file exist? */
-      if (File_Exists(pDestFileName))
-        return(TRUE);  /* Try this */
+      bFileExists = File_Exists(pDestFileName);
     }
   }
 
-  return(FALSE);  /* No, doesn't have disc B */
+  free(szDir);
+
+  return bFileExists;
 }
 
 
