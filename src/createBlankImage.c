@@ -1,18 +1,17 @@
 /*
   Hatari - createBlankImage.c
-
+ 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
-
+ 
   Create Blank .ST/.MSA Disc Images
 */
-char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.6 2003-12-25 14:19:38 thothy Exp $";
+char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.7 2004-04-06 16:16:49 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "file.h"
 #include "floppy.h"
-#include "memAlloc.h"
 #include "misc.h"
 #include "msa.h"
 #include "st.h"
@@ -30,7 +29,7 @@ char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.6 2003-12-25
 16      FAT     2             2             2             2
 17-18   DIR     64           112           112           112
 19-20   SEC    360           720           720          1440
-21      MEDIA  252           253           248           249 (isn't used by ST-BIOS)
+21      MEDIA  $FC           $FD           $F8           $F9  (isn't used by ST-BIOS)
 22-23   SPF     2             2             5             5
 24-25   SPT     9             9             9             9
 26-27   SIDE    1             2             1             2
@@ -45,8 +44,8 @@ char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.6 2003-12-25
 */
 int CreateBlankImage_GetDiscImageCapacity(int nTracks, int nSectors, int nSides)
 {
-  /* Find size of disc image */
-  return nTracks*nSectors*nSides*NUMBYTESPERSECTOR;
+	/* Find size of disc image */
+	return nTracks*nSectors*nSides*NUMBYTESPERSECTOR;
 }
 
 
@@ -57,10 +56,10 @@ int CreateBlankImage_GetDiscImageCapacity(int nTracks, int nSectors, int nSides)
 */
 static inline void WriteShortLE(void *addr, Uint16 val)
 {
-  Uint8 *p = (Uint8 *)addr;
+	Uint8 *p = (Uint8 *)addr;
 
-  p[0] = (Uint8)val;
-  p[1] = (Uint8)(val >> 8);
+	p[0] = (Uint8)val;
+	p[1] = (Uint8)(val >> 8);
 }
 
 
@@ -70,84 +69,96 @@ static inline void WriteShortLE(void *addr, Uint16 val)
 */
 void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, int nSides)
 {
-  Uint8 *pDiscFile;
-  unsigned long DiscSize;
-  unsigned short int SPC,DIR,MEDIA,SPF;
-  BOOL bRet=FALSE;
+	Uint8 *pDiscFile;
+	unsigned long DiscSize;
+	unsigned short int SPC, DIR, MediaByte, SPF;
+	BOOL bRet=FALSE;
 
-  /* Calculate size of disc image */
-  DiscSize = CreateBlankImage_GetDiscImageCapacity(nTracks, nSectors, nSides);
+	/* Calculate size of disc image */
+	DiscSize = CreateBlankImage_GetDiscImageCapacity(nTracks, nSectors, nSides);
 
-  /* Allocate space for our 'file', and blank */
-  pDiscFile = (Uint8 *)Memory_Alloc(DiscSize);
-  Memory_Clear(pDiscFile,DiscSize);
+	/* Allocate space for our 'file', and blank */
+	pDiscFile = malloc(DiscSize);
+	if (pDiscFile == NULL)
+	{
+		perror("Error while creating blank disc image");
+		return;
+	}
+	memset(pDiscFile, 0, DiscSize);                       /* Clear buffer */
 
-  /* Fill in boot-sector, this would better as a structure but 'C' pads the variables out */
-  Memory_Set(pDiscFile+2,0x4e,6);                           /* 2-7 'Loader' */
-  WriteShortLE(pDiscFile+8, rand());                        /* 8-10 24-bit serial number */
-  *(Uint8 *)(pDiscFile+10) = rand();
-  WriteShortLE(pDiscFile+11, NUMBYTESPERSECTOR);            /* 11-12 BPS */
+	/* Fill in boot-sector */
+	pDiscFile[0] = 0xE9;                                  /* Needed for MS-DOS compatibility */
+	memset(pDiscFile+2, 0x4e, 6);                         /* 2-7 'Loader' */
 
-  if ( (nTracks==40) && (nSides==1) )
-    SPC = 1;
-  else
-    SPC = 2;
-  *(Uint8 *)(pDiscFile+13) = SPC;                           /* 13 SPC */
+	WriteShortLE(pDiscFile+8, rand());                    /* 8-10 24-bit serial number */
+	pDiscFile[10] = rand();
 
-  WriteShortLE(pDiscFile+14, 1);                            /* 14-15 RES */
-  *(Uint8 *)(pDiscFile+16) = 2;                             /* 16 FAT */
+	WriteShortLE(pDiscFile+11, NUMBYTESPERSECTOR);        /* 11-12 BPS */
 
-  if (SPC==1)
-    DIR = 64;
-  else
-    DIR = 112;
-  WriteShortLE(pDiscFile+17, DIR);                          /* 17-18 DIR */
+	if ((nTracks == 40) && (nSides == 1))
+		SPC = 1;
+	else
+		SPC = 2;
+	pDiscFile[13] = SPC;                                  /* 13 SPC */
 
-  WriteShortLE(pDiscFile+19, nTracks*nSectors*nSides);      /* 19-20 SEC */
+	WriteShortLE(pDiscFile+14, 1);                        /* 14-15 RES */
+	pDiscFile[16] = 2;                                    /* 16 FAT */
 
-  if (nTracks==40)
-    MEDIA = 252;
-  else
-    MEDIA = 248;
-  if (nSides==2)
-    MEDIA++;
-  *(Uint8 *)(pDiscFile+21) = MEDIA;                         /* 21 MEDIA */
+	if (SPC==1)
+		DIR = 64;
+	else
+		DIR = 112;
+	WriteShortLE(pDiscFile+17, DIR);                      /* 17-18 DIR */
 
-  if (nTracks>=80)
-    SPF = 5;
-  else
-    SPF = 2;
-  WriteShortLE(pDiscFile+22, SPF);                          /* 22-23 SPF */
+	WriteShortLE(pDiscFile+19, nTracks*nSectors*nSides);  /* 19-20 SEC */
 
-  WriteShortLE(pDiscFile+24, nSectors);                     /* 24-25 SPT */
-  WriteShortLE(pDiscFile+26, nSides);                       /* 26-27 SIDE */
-  WriteShortLE(pDiscFile+28, 0);                            /* 28-29 HID */
+	if (nTracks <= 42)
+		MediaByte = 0xFC;
+	else
+		MediaByte = 0xF8;
+	if (nSides == 2)
+		MediaByte |= 0x01;
+	pDiscFile[21] = MediaByte;                            /* 21 MEDIA */
 
-  /* Ask if OK to overwrite, if exists? */
-  if (File_QueryOverwrite(pszFileName))
-  {
-    /* Save image to file, as .ST or compressed .MSA */
-    if (File_FileNameIsMSA(pszFileName))
-      bRet = MSA_WriteDisc(pszFileName,pDiscFile,DiscSize);
-    else if (File_FileNameIsST(pszFileName))
-      bRet = ST_WriteDisc(pszFileName,pDiscFile,DiscSize);
+	if (nTracks >= 80)
+		SPF = 5;
+	else
+		SPF = 2;
+	WriteShortLE(pDiscFile+22, SPF);                      /* 22-23 SPF */
 
-    /* Did create successfully? */
-    if (bRet)
-    {
-      /* Say OK, */
-      Main_Message("Disc image created successfully.", PROG_NAME /*,MB_OK | MB_ICONINFORMATION*/);
-    }
-    else
-    {
-      char *szString = Memory_Alloc(FILENAME_MAX + 32);
-      /* Warn user we were unable to create image */
-      sprintf(szString, "Unable to create disc image '%s'.", pszFileName);
-      Main_Message(szString, PROG_NAME /*,MB_OK | MB_ICONSTOP*/);
-      Memory_Free(szString);
-    }
-  }
+	WriteShortLE(pDiscFile+24, nSectors);                 /* 24-25 SPT */
+	WriteShortLE(pDiscFile+26, nSides);                   /* 26-27 SIDE */
+	WriteShortLE(pDiscFile+28, 0);                        /* 28-29 HID */
 
-  /* Free image */
-  Memory_Free(pDiscFile);
+	/* Set correct media bytes in the 1st FAT: */
+	pDiscFile[512] = MediaByte;
+	pDiscFile[513] = pDiscFile[514] = 0xFF;
+	/* Set correct media bytes in the 2nd FAT: */
+	pDiscFile[512 + SPF * 512] = MediaByte;
+	pDiscFile[513 + SPF * 512] = pDiscFile[514 + SPF * 512] = 0xFF;
+
+	/* Ask if OK to overwrite, if exists? */
+	if (File_QueryOverwrite(pszFileName))
+	{
+		/* Save image to file, as .ST or compressed .MSA */
+		if (File_FileNameIsMSA(pszFileName))
+			bRet = MSA_WriteDisc(pszFileName,pDiscFile,DiscSize);
+		else if (File_FileNameIsST(pszFileName))
+			bRet = ST_WriteDisc(pszFileName,pDiscFile,DiscSize);
+
+		/* Did create successfully? */
+		if (bRet)
+		{
+			/* Say OK, */
+			Main_Message("Disc image created successfully.", PROG_NAME /*,MB_OK | MB_ICONINFORMATION*/);
+		}
+		else
+		{
+			/* Warn user we were unable to create image */
+			Main_Message("Unable to create disc image!", PROG_NAME /*,MB_OK | MB_ICONSTOP*/);
+		}
+	}
+
+	/* Free image */
+	free(pDiscFile);
 }
