@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.38 2004-06-11 10:04:45 thothy Exp $";
+char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.39 2004-06-24 14:52:57 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -115,11 +115,11 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
     RS232_CloseCOMPort();
 
   /* Did stop sound? Or change playback Hz. If so, also stop sound recording */
-  if( (!DialogParams.Sound.bEnableSound)
-     || (DialogParams.Sound.nPlaybackQuality!=ConfigureParams.Sound.nPlaybackQuality) )
+  if (!DialogParams.Sound.bEnableSound || DialogParams.Sound.nPlaybackQuality != ConfigureParams.Sound.nPlaybackQuality)
   {
-    if(Sound_AreWeRecording())
+    if (Sound_AreWeRecording())
       Sound_EndRecording();
+    Audio_UnInit();
   }
 
   /* Did change GEMDOS drive? */
@@ -169,11 +169,16 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   /* Did change blitter status? */
   Intercept_EnableBlitter(ConfigureParams.System.bBlitter);
 
+  /* Restart audio sub system if necessary: */
+  if (ConfigureParams.Sound.bEnableSound && !bSoundWorking)
+  {
+    Audio_Init();
+  }
+
   /* Do we need to perform reset? */
   if (NeedReset)
   {
     Reset_Cold();
-    /*FM  View_ToggleWindowsMouse(MOUSE_ST);*/
   }
 
   /* Go into/return from full screen if flagged */
@@ -190,8 +195,6 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 */
 void Dialog_CopyDetailsFromConfiguration(BOOL bReset)
 {
-  /* Set new timer thread */
-/*FM  Main_SetSpeedThreadTimer(ConfigureParams.Configure.nMinMaxSpeed);*/
   /* Set resolution change */
   if (bReset)
   {
@@ -202,7 +205,7 @@ void Dialog_CopyDetailsFromConfiguration(BOOL bReset)
   }
 
   /* Set playback frequency */
-  if( ConfigureParams.Sound.bEnableSound )
+  if (ConfigureParams.Sound.bEnableSound)
     Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackQuality);
 
   /* Remove slashes, etc.. from names */

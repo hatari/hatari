@@ -6,7 +6,7 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.18 2004-04-19 08:53:28 thothy Exp $";
+char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.19 2004-06-24 14:52:57 thothy Exp $";
 
 #include <SDL.h>
 
@@ -29,7 +29,6 @@ int SoundPlayBackFrequencies[] =
 };
 
 
-BOOL bDisableSound = FALSE;
 BOOL bSoundWorking = TRUE;                /* Is sound OK */
 volatile BOOL bPlayingBuffer = FALSE;     /* Is playing buffer? */
 int OutputAudioFreqIndex = FREQ_22Khz;    /* Playback rate (11Khz,22Khz or 44Khz) */
@@ -89,7 +88,7 @@ void Audio_Init(void)
   SDL_AudioSpec desiredAudioSpec;    /* We fill in the desired SDL audio options here */
 
   /* Is enabled? */
-  if(bDisableSound)
+  if (!ConfigureParams.Sound.bEnableSound)
   {
     /* Stop any sound access */
     ErrLog_File("Sound: Disabled\n");
@@ -121,6 +120,7 @@ void Audio_Init(void)
     fprintf(stderr, "Can't use audio: %s\n", SDL_GetError());
     bSoundWorking = FALSE;
     ConfigureParams.Sound.bEnableSound = FALSE;
+    SDL_QuitSubSystem(SDL_INIT_AUDIO);
     return;
   }
 
@@ -143,10 +143,15 @@ void Audio_Init(void)
 */
 void Audio_UnInit(void)
 {
-  /* Stop */
-  Audio_EnableAudio(FALSE);
+  if (bSoundWorking)
+  {
+    /* Stop */
+    Audio_EnableAudio(FALSE);
 
-  SDL_CloseAudio();
+    SDL_CloseAudio();
+
+    bSoundWorking = FALSE;
+  }
 }
 
 
@@ -182,9 +187,12 @@ void Audio_SetOutputAudioFreq(int Frequency)
     /* Set new frequency, index into SoundPlayBackFrequencies[] */
     OutputAudioFreqIndex = Frequency;
 
-    /* Re-open SDL audio interface... */
-    Audio_UnInit();
-    Audio_Init();
+    /* Re-open SDL audio interface if necessary: */
+    if (bSoundWorking)
+    {
+      Audio_UnInit();
+      Audio_Init();
+    }
   }
 }
 
@@ -204,7 +212,7 @@ void Audio_EnableAudio(BOOL bEnable)
   else if(!bEnable && bPlayingBuffer)
   {
     /* Stop from playing */
-    SDL_PauseAudio(!bEnable);
-    bPlayingBuffer = bEnable;
+    SDL_PauseAudio(TRUE);
+    bPlayingBuffer = FALSE;
   }
 }

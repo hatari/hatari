@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.57 2004-06-11 10:04:46 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.58 2004-06-24 14:52:56 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -260,7 +260,6 @@ static void Main_ReadParameters(int argc, char *argv[])
       }
       else if ( !strcmp(argv[i],"--nosound") )
       {
-        bDisableSound=TRUE;
         ConfigureParams.Sound.bEnableSound = FALSE;
       }
       else if ( !strcmp(argv[i],"--frameskip") )

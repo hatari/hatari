@@ -8,8 +8,6 @@
 #ifndef HATARI_AUDIO_H
 #define HATARI_AUDIO_H
 
-#include <SDL_types.h>
-
 /* Frequency index */
 enum
 {
@@ -18,9 +16,7 @@ enum
   FREQ_44Khz
 };
 
-
 extern int SoundPlayBackFrequencies[];
-extern BOOL bDisableSound;
 extern BOOL bSoundWorking;
 extern int OutputAudioFreqIndex;
 extern int SoundBufferSize;
