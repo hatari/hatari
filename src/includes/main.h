@@ -10,8 +10,8 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.62" /* Name, version for window title */
-#define PROG_VERSION   "v0.62"
+#define PROG_NAME      "Hatari v0.63" /* Name, version for window title */
+#define PROG_VERSION   "v0.63"
 
 /*#define DEBUG_TO_FILE*/             /* Use debug.txt files */
 
@@ -24,8 +24,6 @@ typedef int BOOL;
 
 #include <SDL_types.h>
 
-
-#define MAX_STRING_LENGTH  512
 
 #ifndef FALSE
 #define FALSE 0
@@ -61,26 +59,26 @@ enum {
 };
 
 /* 68000 Condition code's */
-#define SR_AUX      0x0010
-#define SR_NEG      0x0008
-#define SR_ZERO      0x0004
-#define SR_OVERFLOW    0x0002
-#define SR_CARRY    0x0001
+#define SR_AUX              0x0010
+#define SR_NEG              0x0008
+#define SR_ZERO             0x0004
+#define SR_OVERFLOW         0x0002
+#define SR_CARRY            0x0001
 
-#define SR_CLEAR_AUX    0xffef
-#define SR_CLEAR_NEG    0xfff7
-#define SR_CLEAR_ZERO    0xfffb
-#define SR_CLEAR_OVERFLOW  0xfffd
-#define SR_CLEAR_CARRY    0xfffe
+#define SR_CLEAR_AUX        0xffef
+#define SR_CLEAR_NEG        0xfff7
+#define SR_CLEAR_ZERO       0xfffb
+#define SR_CLEAR_OVERFLOW   0xfffd
+#define SR_CLEAR_CARRY      0xfffe
 
-#define SR_CCODE_MASK    (SR_AUX|SR_NEG|SR_ZERO|SR_OVERFLOW|SR_CARRY)
-#define SR_MASK      0xFFE0
+#define SR_CCODE_MASK       (SR_AUX|SR_NEG|SR_ZERO|SR_OVERFLOW|SR_CARRY)
+#define SR_MASK             0xFFE0
 
-#define SR_TRACEMODE    0x8000
-#define SR_SUPERMODE    0x2000
-#define SR_IPL      0x0700
+#define SR_TRACEMODE        0x8000
+#define SR_SUPERMODE        0x2000
+#define SR_IPL              0x0700
 
-#define SR_CLEAR_IPL    0xf8ff
+#define SR_CLEAR_IPL        0xf8ff
 #define SR_CLEAR_TRACEMODE  0x7fff
 #define SR_CLEAR_SUPERMODE  0xdfff
 

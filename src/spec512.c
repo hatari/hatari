@@ -1,21 +1,28 @@
 /*
-  Hatari
+  Hatari - spec512.c
 
-  Handle storing of writes to ST palette using clock-cycle counts. We can use this to accurately any form
-  of Spectrum512 style images - even down to the way the screen colours change on decompression routines in menus!
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
-  As the 68000 has a 4-clock cycle increment we can only change palette every 4 cycles. This means that on one
-  scanline(512 cycles) we have just 512/4=128 places where palette writes can take place. We keep track of
-  this in a table(storing on each scanline and colour writes and the cycles on the scanline where they happen).
-  When we draw the screen we simply keep a cycle-count on the line and check this with our table and update
-  the 16-colour palette with each change. As the table is already ordered this makes things very simple. Speed
-  is a problem, though, as the palette can change once every 4 pixels - that's a lot of processing.
+  Handle storing of writes to ST palette using clock-cycle counts. We can use
+  this to accurately any form of Spectrum512 style images - even down to the
+  way the screen colours change on decompression routines in menus!
+
+  As the 68000 has a 4-clock cycle increment we can only change palette every
+  4 cycles. This means that on one scanline (512 cycles in 50Hz) we have just
+  512/4=128 places where palette writes can take place. We keep track of this
+  in a table (storing on each scanline and color writes and the cycles on the
+  scanline where they happen). When we draw the screen we simply keep a
+  cycle-count on the line and check this with our table and update the 16-color
+  palette with each change. As the table is already ordered this makes things
+  very simple. Speed is a problem, though, as the palette can change once every
+  4 pixels - that's a lot of processing.
 */
+char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.7 2005-02-25 13:56:59 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
 #include "main.h"
-#include "debug.h"
 #include "int.h"
 #include "screen.h"
 #include "spec512.h"
@@ -89,33 +96,36 @@ void Spec512_StoreCyclePalette(unsigned short col, unsigned long addr)
   ScanLine = (FrameCycles/CYCLES_PER_LINE);
   pCyclePalette = &CyclePalettes[ (ScanLine*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[ScanLine] ];
   /* Do we have a previous entry at the same cycles? If so, 68000 have used a 'move.l' instruction so stagger writes */
-  if (nCyclePalettes[ScanLine]>0) {
-    if ((pCyclePalette-1)->LineCycles==(FrameCycles&511))
-      FrameCycles += 4;              /* Colours are staggered by [4,20] when writing a long word! */
+  if (nCyclePalettes[ScanLine]>0)
+  {
+    if ((pCyclePalette-1)->LineCycles == (FrameCycles % CYCLES_PER_LINE))
+      FrameCycles += 4;              /* Colors are staggered by [4,20] when writing a long word! */
   }
 
   /* Store palette access */
-  pCyclePalette->LineCycles = FrameCycles&511;    /* Cycles into scanline */
-  pCyclePalette->Colour = CycleColour&0x777;      /* Store ST colour RGB */
-  pCyclePalette->Index = CycleColourIndex;        /* And Index (0...15) */
+  pCyclePalette->LineCycles = FrameCycles % CYCLES_PER_LINE;  /* Cycles into scanline */
+  pCyclePalette->Colour = CycleColour & 0x777;                /* Store ST colour RGB */
+  pCyclePalette->Index = CycleColourIndex;                    /* And Index (0...15) */
   /* Increment count(this can never overflow as you cannot write to the palette more than 'MAX_CYCLEPALETTES_PERLINE' times per scanline) */
   nCyclePalettes[ScanLine]++;
 
   /* Check if program wrote to certain palette entry multiple times on a single scan-line  */
   /* If we did then we must be using a Spectrum512 image or some kind of colour cycling... */
   nPalettesAccess[ScanLine]++;
-  if (nPalettesAccess[ScanLine]>=32) {
+  if (nPalettesAccess[ScanLine]>=32)
+  {
     /* This code has obviously something wrong. It detects the grav44 disk
-       demo as a spc512 image because the scroller at the bottom of the screen
+       demo as a spec512 image because the scroller at the bottom of the screen
        uses more than 1 palette... But doing so, it ruins the colours of the
        rest of the screen. I should review all this code, but later.
-       For now, I just make sure it chosses this mode only when most of the
-       screen is a spc512 screen (at least 150 lines ! */
-    if (last_spc512line != ScanLine) {
+       For now, I just make sure it chooses this mode only when most of the
+       screen is a spec512 screen (at least 80 lines) ! */
+    if (last_spc512line != ScanLine)
+    {
       last_spc512line = ScanLine;
       nb_spc512lines++;
-      if (nb_spc512lines >= 150)
-	bIsSpec512Display = TRUE;
+      if (nb_spc512lines >= 80)
+        bIsSpec512Display = TRUE;
     }
   }
 }
