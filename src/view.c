@@ -681,13 +681,13 @@ void View_KeyDown( unsigned int sdlkey, unsigned int sdlmod )
 
   /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
   if ( (ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
-            && !(SDL_GetModState()&(KMOD_LSHIFT|KMOD_RSHIFT)) )
+            && !(sdlmod&(KMOD_LSHIFT|KMOD_RSHIFT)) )
    {
     if( Key==SDLK_UP )         { cursorJoyEmu |= 1; return; }
-                else if( Key==SDLK_DOWN )  { cursorJoyEmu |= 2; return; }
-                else if( Key==SDLK_LEFT )  { cursorJoyEmu |= 4; return; }
-                else if( Key==SDLK_RIGHT ) { cursorJoyEmu |= 8; return; }
-                else if( Key==SDLK_RCTRL || Key==SDLK_KP0 )  { cursorJoyEmu |= 128; return; }
+    else if( Key==SDLK_DOWN )  { cursorJoyEmu |= 2; return; }
+    else if( Key==SDLK_LEFT )  { cursorJoyEmu |= 4; return; }
+    else if( Key==SDLK_RIGHT ) { cursorJoyEmu |= 8; return; }
+    else if( Key==SDLK_RCTRL || Key==SDLK_KP0 )  { cursorJoyEmu |= 128; return; }
    }
 
   /* Bring up help on F1 */
@@ -699,15 +699,13 @@ void View_KeyDown( unsigned int sdlkey, unsigned int sdlmod )
   Keyboard.KeyStates[Key] = TRUE;
 
   /* If pressed F11 or F12, retain short-cut keypress until safe to execute(start of VBL) */
-/*FIXME
-  if ( (Key==KEY_F11) || (Key==KEY_F12) )
+  if ( (sdlkey==SDLK_F11) || (sdlkey==SDLK_F12) )
    {
-    ShortCutKey.Key = Key;
-    ShortCutKey.bCtrlPressed = (GetAsyncKeyState(VK_CONTROL)&0x8000);
-    ShortCutKey.bShiftPressed = (GetAsyncKeyState(VK_SHIFT)&0x8000);
+    ShortCutKey.Key = sdlkey;
+    if( sdlmod&(KMOD_LCTRL|KMOD_RCTRL) )  ShortCutKey.bCtrlPressed = TRUE;
+    if( sdlmod&(KMOD_LSHIFT|KMOD_RSHIFT) )  ShortCutKey.bShiftPressed = TRUE;
    }
   else
-*/
    {
     STScanCode = Keymap_RemapKeyToSTScanCode(Key);
 /*fprintf(stderr,"Key=%i, Scancode=%x\n",Key,STScanCode);*/
@@ -718,7 +716,7 @@ void View_KeyDown( unsigned int sdlkey, unsigned int sdlmod )
      }
    }
 
-  // If not running emulator check keys here and not on VBL
+  /* If not running emulator check keys here and not on VBL */
   if (bWindowsMouseMode)
     ShortCut_CheckKeys();
 }
@@ -738,13 +736,13 @@ void View_KeyUp(unsigned int sdlkey, unsigned int sdlmod)
 
   /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
   if ( (ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
-            && !(SDL_GetModState()&(KMOD_LSHIFT|KMOD_RSHIFT)) )
-         {
+            && !(sdlmod&(KMOD_LSHIFT|KMOD_RSHIFT)) )
+   {
     if( Key==SDLK_UP )         { cursorJoyEmu &= ~1; return; }
-                else if( Key==SDLK_DOWN )  { cursorJoyEmu &= ~2; return; }
-                else if( Key==SDLK_LEFT )  { cursorJoyEmu &= ~4; return; }
-                else if( Key==SDLK_RIGHT ) { cursorJoyEmu &= ~8; return; }
-                else if( Key==SDLK_RCTRL || Key==SDLK_KP0 )  { cursorJoyEmu &= ~128; return; }
+    else if( Key==SDLK_DOWN )  { cursorJoyEmu &= ~2; return; }
+    else if( Key==SDLK_LEFT )  { cursorJoyEmu &= ~4; return; }
+    else if( Key==SDLK_RIGHT ) { cursorJoyEmu &= ~8; return; }
+    else if( Key==SDLK_RCTRL || Key==SDLK_KP0 )  { cursorJoyEmu &= ~128; return; }
    }
 
   /* Release key (only if was pressed) */

@@ -22,7 +22,7 @@ CPUOBJS = ./uae-cpu/hatari-glue.o ./uae-cpu/memory.o ./uae-cpu/newcpu.o \
 SRCS = audio.c bios.c cart.c configuration.c createBlankImage.c \
   createDiscImage.c debug.c dialog.c disass.c errlog.c fdc.c file.c \
   floppy.c gemdos.c ikbd.c int.c intercept.c joy.c keymap.c m68000.c \
-  main.c midi.c memAlloc.c memorySnapShot.c mfp.c misc.c msa.c pcx.c psg.c \
+  main.c midi.c memAlloc.c memorySnapShot.c mfp.c misc.c msa.c psg.c \
   printer.c rs232.c reset.c st.c stMemory.c screen.c screenConvert.c \
   screenSnapShot.c shortcut.c sound.c spec512.c statusBar.c timer.c \
   tos.c vdi.c video.c view.c wavFormat.c xbios.c ymFormat.c

@@ -189,12 +189,7 @@ void Main_EventHandler()
        View_KeyDown( event.key.keysym.sym, event.key.keysym.mod );
        break;
      case SDL_KEYUP:
-       if(event.key.keysym.sym == SDLK_F12) {
-        quit_program=1;
-        bQuitProgram=1;
-       } else {
-        View_KeyUp( event.key.keysym.sym, event.key.keysym.mod );
-       }
+       View_KeyUp( event.key.keysym.sym, event.key.keysym.mod );
        break;
    }
 }

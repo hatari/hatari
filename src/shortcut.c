@@ -4,10 +4,11 @@
   Shortcut keys
 */
 
+#include <SDL.h>
+
 #include "main.h"
 #include "dialog.h"
 #include "audio.h"
-/*#include "dsurface.h"*/
 #include "joy.h"
 #include "memAlloc.h"
 #include "memorySnapShot.h"
@@ -16,10 +17,13 @@
 #include "screenSnapShot.h"
 #include "shortcut.h"
 #include "sound.h"
-/*#include "toolbar.h"*/
-/*#include "view.h"*/
+#include "view.h"
 
-// List of possible short-cuts(MUST match SHORTCUT_xxxx)
+
+extern int quit_program;                  /* Declared in newcpu.c */
+
+
+/* List of possible short-cuts(MUST match SHORTCUT_xxxx) */
 char *pszShortCutTextStrings[NUM_SHORTCUTS+1] = {
   "(not assigned)",
   "Full Screen",
@@ -61,33 +65,44 @@ ShortCutFunction_t pShortCutFunctions[NUM_SHORTCUTS] = {
 
 SHORTCUT_KEY ShortCutKey;
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Clear shortkey structure
 */
 void ShortCut_ClearKeys(void)
 {
-  // Clear short-cut key structure
+  /* Clear short-cut key structure */
   Memory_Clear(&ShortCutKey,sizeof(SHORTCUT_KEY));
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Check to see if pressed ayn shortcut keys, and call handling function
 */
 void ShortCut_CheckKeys(void)
 {
-/* FIXME */
-/*
   ShortCutFunction_t pShortCutFunction;
   int PressedKey=SHORT_CUT_NONE;
 
-  // Check for F11 or F12
-  if (ShortCutKey.Key==KEY_F11)
+  /* Check for F11 or F12 */
+  if (ShortCutKey.Key==SDLK_F11)
     PressedKey = SHORT_CUT_F11;
-  else if (ShortCutKey.Key==KEY_F12)
+  else if (ShortCutKey.Key==SDLK_F12)
     PressedKey = SHORT_CUT_F12;
 
+  /* Well, at the moment we only handle two keys: */
+  switch(ShortCutKey.Key) {
+     case SDLK_F12:
+       quit_program=1;
+       bQuitProgram=1;
+       break;
+     case SDLK_F11:
+       ScreenSnapShot_SaveScreen();
+       break;
+  }
+
+/* FIXME */
+/*
   // Did press key?
   if (PressedKey!=SHORT_CUT_NONE) {
     // Find which short-cut to do, eg do have Ctrl or Shift held down?
@@ -105,14 +120,14 @@ void ShortCut_CheckKeys(void)
     // And call short-cut, if have one
     if (pShortCutFunction)
       pShortCutFunction();
-
-    // And clear
-    ShortCut_ClearKeys();
-  }
 */
+    /* And clear */
+    ShortCut_ClearKeys();
+  /*}*/
+
 }
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Shortcut to toggle full-screen
 */

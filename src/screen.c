@@ -23,7 +23,6 @@
 #include "m68000.h"
 #include "memAlloc.h"
 #include "misc.h"
-#include "pcx.h"
 #include "printer.h"
 #include "screen.h"
 #include "screenConvert.h"

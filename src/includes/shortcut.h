@@ -21,7 +21,7 @@ enum {
 };
 
 typedef struct {
-  unsigned char Key;  // KEY_F11, or KEY_F12
+  unsigned short Key;
   BOOL bShiftPressed;
   BOOL bCtrlPressed;
 } SHORTCUT_KEY;
