@@ -1,10 +1,10 @@
 
 
-                            Hatari
+                                    Hatari
 
-                         Version 0.19b
+                                 Version 0.20
 
-                http://hatari.sourceforge.net/
+                        http://hatari.sourceforge.net/
 
 
 
@@ -93,13 +93,74 @@ Beside those keys, there are some more usefull shortcuts:
  5) Floppy disk images
  ---------------------
 
-Not yet written...
+Hatari does not use floppy disks directly but disk images due to differences
+between the floppy disk controllers of the ST and the PC.
+Two types of disk images are currently supported: The raw "ST" type and the
+"MSA" (Magic-Shadow-Archiver) type.
+
+The raw type (file suffix should be "*.st") is simply a sector by sector
+image of a real floppy disk. You can easily create such an image with the
+"dd" program which should normally be pre-installad on every Unix-like system.
+Simply type something like "dd if=/dev/fd0 of=myimage.st" to create a disk
+image. Of course you need access to /dev/fd0, and depending on your system
+and the type of floppy disk you might have to use another device name here
+(for example I use /dev/fd0u720 for 720kB disks). However, if the disk is
+copy-protected or doesn't use a MSDOS compatible file system, this might
+fail. So be very carefull if you're not sure about the disk format.
+
+The other possibility is to image the disk on a real Atari ST. There are
+programs like the Magic Shadow Archiver for this task. Hatari supports this
+slightly compressed MSA disk images, too. Note that Hatari only supports
+the "old" MSA format, there are some Magic Shadow Archiver clones (like
+Jay-MSA) that create better compressed but Hatari-incompatible disk images.
+
+While *.ST and *.MSA are more or less the "standard" types of Atari disk
+images, you might sometimes also find DIM or ADF images on the internet.
+These currently do not work with Hatari. But since DIM images are nearly
+the same as the raw ST images (they only have an additional 32 byte header)
+you can easily transform the DIM images into ST images by stripping the
+header from the files.
+For example try something like:  dd if=input.dim of=output.st bs=32 skip=1
+
+Also note that Hatari doesn't yet support ZIP compressed images like some
+other emulators do. If you need compressed disk images, just tell me and
+I'll try to include gzip support then (I think gzip is a better solution for
+disk images than using the normal (PK-)Zip).
 
 
  6) Hard disk support
  --------------------
 
-Not yet written...
+Hatari supports two ways of emulating a ST hard drive: The low-level ACSI
+hard disk emulation and a GEMDOS based drive emulation.
+
+To use the ACSI hard disk emulation, you need a hard disk image file with a
+pre-installed HD driver in it. So either try to image your old ST hard disk
+or grab one from the internet, for example:
+ http://www.k.kth.se/k98_sdy/hdimage.zip
+Perhaps we'll provide a tool for creating HD images soon, too.
+
+With the GEMDOS based drive emulation, you can easily "mount" a folder from
+the host file system to a drive of the emulated Atari.
+To use the GEMDOS based drive emulation, you should use a folder on your
+hard disk that only contains files and folders with valid TOS filenames.
+That means that all files/folders should be written in capital letters
+and their length mustn't exceed the 8+3 file name length limit. If you don't
+want to rename all files to get capital letters, it is also possible to store
+that folder on a FAT filesystem since those filesystems are case-insensitive.
+
+GEMDOS drive emulation is an easy way to share files between the host system
+and the emulated Atari, but it is known to be incomplete and a little bit
+unstable, especially if you use it together with the ACSI hard disk emulation.
+So if your programs complain that they could not find/read/write files on
+the GEMDOS HD drive, you should try to copy them to a floppy disk image or
+a real hard disk image!
+
+Note that changing the HD-image or the GEMDOS HD-folder will reset the emulated
+Atari since it is not possible to switch the hard disk while the emulator is
+running.
+
+
 
 
 That's all for the moment. If you want to help me working on Hatari,

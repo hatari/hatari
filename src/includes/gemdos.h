@@ -105,6 +105,8 @@ extern unsigned short int CurrentDrive;
 
 extern void GemDOS_Init(void);
 extern void GemDOS_Reset();
+extern void GemDOS_InitDrives();
+extern void GemDOS_UnInitDrives();
 extern void GemDOS_MemorySnapShot_Capture(BOOL bSave);
 extern void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestName);
 extern BOOL GemDOS(void);

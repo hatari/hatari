@@ -80,6 +80,7 @@ void Audio_Init(void)
   {
     fprintf(stderr, "Can't use audio!\n");
     bSoundWorking = FALSE;
+    ConfigureParams.Sound.bEnableSound = FALSE;
     return;
   }
 

@@ -129,12 +129,20 @@ int scandir(const char *dirname,struct dirent ***namelist, int(*select) __P((str
 */
 void File_CleanFileName(char *pszFileName)
 {
-  char szString[MAX_FILENAME_LENGTH];
-  int i=0,j=0;
+  int len;
+
+  len = strlen(pszFileName);
+
+  /* Security length check: */
+  if( len>MAX_FILENAME_LENGTH )
+  {
+    pszFileName[MAX_FILENAME_LENGTH-1] = 0;
+    len = MAX_FILENAME_LENGTH;
+  }
 
   /* Remove end slash from filename! But / remains! Doh! */
-  if( strlen(pszFileName)>2 && pszFileName[strlen(pszFileName)-1]=='/' )
-    pszFileName[strlen(pszFileName)-1]=0;
+  if( len>2 && pszFileName[len-1]=='/' )
+    pszFileName[len-1] = 0;
 }
 
 

@@ -7,9 +7,9 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.19" /* Name, version for window title */
-#define PROG_VERSION        "v0.19"
-#define VERSION_STRING      "0.19 "   /* Always 6 bytes(inc' NULL) */
+#define PROG_NAME      "Hatari v0.20" /* Name, version for window title */
+#define PROG_VERSION        "v0.20"
+#define VERSION_STRING      "0.20 "   /* Always 6 bytes(inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above(inc' NULL) */
 
 //#define TOTALLY_FINAL_VERSION       /* Web release version... */
@@ -31,9 +31,6 @@ typedef int BOOL;
 #define MAX_FILENAME_LENGTH  256
 #define MAX_STRING_LENGTH  512
 
-#define  DIRECTINPUT_VERSION  0x0500
-
-#define MAX_PASSED_PARAMETERS  4      /* Number of passed parameters from command line */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -86,7 +83,6 @@ enum {
   REG_A5,
   REG_A6,
   REG_A7,    /* ..A7(also SP) */
-  /*REG_A8=17*/  /* User/Super Stack Pointer */ /* FIXME: Nasty remap to regs.isp in decode.h */
 };
 
 /* PC Condition code's */

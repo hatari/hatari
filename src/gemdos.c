@@ -344,28 +344,15 @@ void GemDOS_Init(void)
   bInitGemDOS = FALSE;
 
   /* Clear handles structure */
-  Memory_Clear(FileHandles,sizeof(FILE_HANDLE)*MAX_FILE_HANDLES);
+  Memory_Clear(FileHandles, sizeof(FILE_HANDLE)*MAX_FILE_HANDLES);
   /* Clear DTAs */
-  for(i=0; i<MAX_DTAS_FILES; i++) {
+  for(i=0; i<MAX_DTAS_FILES; i++)
+  {
     InternalDTAs[i].bUsed = FALSE;
     InternalDTAs[i].nentries = 0;
     InternalDTAs[i].found = NULL;
   }
   DTAIndex = 0;
-
-  /* intialize data for harddrive emulation */
-  if(GEMDOS_EMU_ON){
-    /* remove trailing slash, if any in the directory name */
-    i=0;while(emudrives[0]->hd_emulation_dir[i]) i++;
-    if(emudrives[0]->hd_emulation_dir[i-1] == '/')
-      emudrives[0]->hd_emulation_dir[i-1] = '\0';
-    
-    /* set drive to 2 + number of ACSI partitions */
-    emudrives[0]->hd_letter = 2 + nPartitions;
-    fprintf(stderr, "Hard drive emulation, %c: <-> %s\n",
-	    emudrives[0]->hd_letter + 'A', 
-	    emudrives[0]->hd_emulation_dir);
-  }
 }
 
 /*-----------------------------------------------------------------------*/
@@ -376,12 +363,9 @@ void GemDOS_Reset()
 {
   int i;
 
-  if(GEMDOS_EMU_ON){
-    strcpy(emudrives[0]->fs_currpath,"/");
-  }
-  
   /* Init file handles table */
-  for(i=0; i<MAX_FILE_HANDLES; i++) {
+  for(i=0; i<MAX_FILE_HANDLES; i++)
+  {
     /* Was file open? If so close it */
     if (FileHandles[i].bUsed)
       fclose(FileHandles[i].FileHandle);
@@ -390,7 +374,8 @@ void GemDOS_Reset()
     FileHandles[i].bUsed = FALSE;
   }
 
-  for(i=0; i<MAX_DTAS_FILES; i++) {
+  for(i=0; i<MAX_DTAS_FILES; i++)
+  {
     InternalDTAs[i].bUsed = FALSE;
     InternalDTAs[i].nentries = 0;
     InternalDTAs[i].found = NULL;
@@ -402,6 +387,66 @@ void GemDOS_Reset()
   pDTA = NULL;
   DTAIndex = 0;
 }
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Initialize a GEMDOS drive.
+  Only 1 emulated drive allowed, as of yet.
+*/
+void GemDOS_InitDrives()
+{
+  int i;
+
+  /* intialize data for harddrive emulation: */
+  if(!GEMDOS_EMU_ON)
+  {
+    emudrives = malloc( MAX_HARDDRIVES*sizeof(EMULATEDDRIVE *) );
+    for(i=0; i<MAX_HARDDRIVES; i++)
+      emudrives[0] = malloc( sizeof(EMULATEDDRIVE) );
+  }
+
+  for(i=0; i<MAX_HARDDRIVES; i++)
+  {
+    /* set emulation directory string */
+    strcpy(emudrives[i]->hd_emulation_dir, ConfigureParams.HardDisc.szHardDiscDirectories[i]);
+
+    /* remove trailing slash, if any in the directory name */
+    File_CleanFileName(emudrives[i]->hd_emulation_dir);
+
+    /* set drive to 2 + number of ACSI partitions */
+    emudrives[i]->hd_letter = 2 + nPartitions + i;
+
+    ConfigureParams.HardDisc.nDriveList += 1;
+
+    fprintf(stderr, "Hard drive emulation, %c: <-> %s\n",
+            emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
+  }
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Un-init the GEMDOS drive
+*/
+void GemDOS_UnInitDrives()
+{
+  int i;
+
+  GemDOS_Reset();        /* Close all open files on emulated drive*/
+
+  if(GEMDOS_EMU_ON)
+  {
+    for(i=0; i<MAX_HARDDRIVES; i++)
+    {
+      free(emudrives[i]);    /* Release memory */
+      ConfigureParams.HardDisc.nDriveList -= 1;
+    }
+
+    free(emudrives);
+    emudrives = NULL;
+  }
+}
+
 
 /*-----------------------------------------------------------------------*/
 /*

@@ -116,10 +116,6 @@ int Main_Message(char *lpText, char *lpCaption/*,unsigned int uType*/)
 {
   int Ret=0;
 
-  /* Are we in full-screen? */
-  if (bInFullScreen)
-    Screen_ReturnFromFullScreen();
-
   /* Show message */
   fprintf(stderr,"Message from %s: %s\n", lpCaption, lpText);
 
@@ -312,7 +308,8 @@ void Main_ReadParameters(int argc, char *argv[])
       }
       else if (!strcmp(argv[i],"--hdimage"))
       {
-	if( argc > i+1 ) 
+	if( argc>i+1 && strlen(argv[i+1])<=MAX_FILENAME_LENGTH )
+        {
           if( HDC_Init(argv[i+1]) == TRUE)
           {
             strcpy(ConfigureParams.HardDisc.szHardDiscImage, argv[i+1]);
@@ -322,23 +319,15 @@ void Main_ReadParameters(int argc, char *argv[])
           else
           {
             printf("Couldn't open file: %s, or no partitions\n");
-          } 
+          }
+        }
       }
       else if (!strcmp(argv[i],"--harddrive") || !strcmp(argv[i],"-d"))
       {
-        if(i + 1 < argc && strlen(argv[i+1])<=MAX_PATH)  /* both parameters exist */
+        if( i+1<argc && strlen(argv[i+1])<=MAX_PATH )  /* both parameters exist */
         {
-          /* only 1 emulated drive allowed, as of yet.  */
-          emudrives = malloc( MAX_HARDDRIVES*sizeof(EMULATEDDRIVE *) );
-          emudrives[0] = malloc( sizeof(EMULATEDDRIVE) );
-          /* set emulation directory string */
-          if( argv[i+1][0] != '.' && argv[i+1][0] != '/' )
-            sprintf( emudrives[0]->hd_emulation_dir, "./%s", argv[i+1]);
-          else
-            sprintf( emudrives[0]->hd_emulation_dir, "%s", argv[i+1]);
-          strcpy(ConfigureParams.HardDisc.szHardDiscDirectories[0], emudrives[0]->hd_emulation_dir);
-
-          ConfigureParams.HardDisc.nDriveList += 1;
+          strcpy(ConfigureParams.HardDisc.szHardDiscDirectories[0], argv[i+1]);
+          GemDOS_InitDrives();
           i += 1;
         }
       }
@@ -427,6 +416,7 @@ void Main_UnInit(void)
   RS232_UnInit();
   Printer_UnInit();
   Intercept_UnInit();
+  GemDOS_UnInitDrives();
   Audio_UnInit();
   YMFormat_FreeRecording();
   SDLGui_UnInit();

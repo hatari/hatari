@@ -629,7 +629,9 @@ int SDLGui_FileSelect(char *path_and_name)
 
     /* Show dialog: */
     retbut = SDLGui_DoDialog(fsdlg);
-    if( retbut>=SGFSDLG_ENTRY1 && retbut<=SGFSDLG_ENTRY16 )
+
+    /* Has the user clicked on a file or folder? */
+    if( retbut>=SGFSDLG_ENTRY1 && retbut<=SGFSDLG_ENTRY16 && retbut-SGFSDLG_ENTRY1+ypos<entries)
     {
       char tempstr[MAX_FILENAME_LENGTH];
       struct stat filestat;
@@ -675,11 +677,11 @@ int SDLGui_FileSelect(char *path_and_name)
         File_ShrinkName(dlgfname, fname, 32);
       }
     }
-    else
+    else    /* Has the user clicked on another button? */
     {
       switch(retbut)
       {
-        case SGFSDLG_UPDIR:             /* Change path to parent directory */
+        case SGFSDLG_UPDIR:                 /* Change path to parent directory */
           if( strlen(path)>2 )
           {
             char *ptr;

@@ -108,10 +108,11 @@ SGOBJ aboutdlg[] =
 #define DISCDLG_CREATEIMG   13
 #define DISCDLG_BROWSEHDIMG 17
 #define DISCDLG_DISCHDIMG   18
-#define DISCDLG_BROWSEGDOS  20
-#define DISCDLG_DISCGDOS    21
-#define DISCDLG_BOOTHD      22
-#define DISCDLG_EXIT        23
+#define DISCDLG_UNMOUNTGDOS 20
+#define DISCDLG_BROWSEGDOS  21
+#define DISCDLG_DISCGDOS    22
+#define DISCDLG_BOOTHD      23
+#define DISCDLG_EXIT        24
 SGOBJ discdlg[] =
 {
   { SGBOX, 0, 0, 0,0, 40,25, NULL },
@@ -132,10 +133,11 @@ SGOBJ discdlg[] =
   { SGTEXT, 0, 0, 15,13, 10,1, "Hard discs" },
   { SGTEXT, 0, 0, 2,14, 9,1, "HD image:" },
   { SGBUTTON, 0, 0, 32,14, 6,1, "Browse" },
-  { SGTEXT, 0, 0, 2,15, 34,1, NULL },
+  { SGTEXT, 0, 0, 2,15, 36,1, NULL },
   { SGTEXT, 0, 0, 2,17, 13,1, "GEMDOS drive:" },
+  { SGBUTTON, 0, 0, 30,17, 1,1, "\x01" },         /* Up-arrow button for unmounting */
   { SGBUTTON, 0, 0, 32,17, 6,1, "Browse" },
-  { SGTEXT, 0, 0, 2,18, 34,1, NULL },
+  { SGTEXT, 0, 0, 2,18, 36,1, NULL },
   { SGCHECKBOX, 0, 0, 2,20, 14,1, "Boot from HD" },
   { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
@@ -355,6 +357,9 @@ BOOL Dialog_DoNeedReset(void)
   /* Did change HD image? */
   if (strcmp(DialogParams.HardDisc.szHardDiscImage, ConfigureParams.HardDisc.szHardDiscImage))
     return(TRUE);
+  /* Did change GEMDOS drive? */
+  if (strcmp(DialogParams.HardDisc.szHardDiscDirectories[0], ConfigureParams.HardDisc.szHardDiscDirectories[0]))
+    return(TRUE);
 
   return(FALSE);
 }
@@ -367,6 +372,7 @@ BOOL Dialog_DoNeedReset(void)
 void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 {
   BOOL NeedReset;
+  BOOL newGemdosDrive;
 
   /* Do we need to warn user of that changes will only take effect after reset? */
   if (bForceReset)
@@ -400,15 +406,27 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
     RS232_CloseCOMPort();
 
   /* Did stop sound? Or change playback Hz. If so, also stop sound recording */
-  if( (!DialogParams.Sound.bEnableSound) || (DialogParams.Sound.nPlaybackQuality!=ConfigureParams.Sound.nPlaybackQuality) )
+  if( (!DialogParams.Sound.bEnableSound)
+     || (DialogParams.Sound.nPlaybackQuality!=ConfigureParams.Sound.nPlaybackQuality) )
   {
     if(Sound_AreWeRecording())
       Sound_EndRecording(NULL);
   }
 
+  /* Did change GEMDOS drive? */
+  if( strcmp(DialogParams.HardDisc.szHardDiscDirectories[0], ConfigureParams.HardDisc.szHardDiscDirectories[0])!=0 )
+  {
+    GemDOS_UnInitDrives();
+    newGemdosDrive = TRUE;
+  }
+  else
+  {
+    newGemdosDrive = FALSE;
+  }
+
   /* Did change HD image? */
   if( strcmp(DialogParams.HardDisc.szHardDiscImage, ConfigureParams.HardDisc.szHardDiscImage)!=0
-      && ACSI_EMU_ON )
+     && ACSI_EMU_ON )
   {
     HDC_UnInit();
   }
@@ -436,6 +454,12 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
       && File_Exists(ConfigureParams.HardDisc.szHardDiscImage) )
   {
     HDC_Init(ConfigureParams.HardDisc.szHardDiscImage);
+  }
+
+  /* Mount a new GEMDOS drive? */
+  if( newGemdosDrive )
+  {
+    GemDOS_InitDrives();
   }
 
   /* Do we need to perform reset? */
@@ -468,8 +492,10 @@ void Dialog_CopyDetailsFromConfiguration(BOOL bReset)
     bUseHighRes = ConfigureParams.Screen.bUseHighRes || (bUseVDIRes && (ConfigureParams.TOSGEM.nGEMColours==GEMCOLOUR_2));
 /*FM    VDI_SetResolution(VDIModeOptions[ConfigureParams.TOSGEM.nGEMResolution],ConfigureParams.TOSGEM.nGEMColours);*/
   }
+
   /* Set playback frequency */
-  Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackQuality);
+  if( ConfigureParams.Sound.bEnableSound )
+    Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackQuality);
 
   /* Remove back-slashes, etc.. from names */
   File_CleanFileName(ConfigureParams.TOSGEM.szTOSImageFileName);
@@ -485,8 +511,8 @@ void Dialog_DiscDlg(void)
 {
   int but;
   char tmpname[MAX_FILENAME_LENGTH];
-  char dlgnamea[27], dlgnameb[27], dlgdiscdir[29];
-  char dlgnamegdos[35], dlgnamehdimg[35];
+  char dlgnamea[40], dlgnameb[40], dlgdiscdir[40];
+  char dlgnamegdos[40], dlgnamehdimg[40];
 
   SDLGui_CenterDlg(discdlg);
 
@@ -494,38 +520,45 @@ void Dialog_DiscDlg(void)
 
   /* Disc name A: */
   if( EmulationDrives[0].bDiscInserted )
-    File_ShrinkName(dlgnamea, EmulationDrives[0].szFileName, 26);
+    File_ShrinkName(dlgnamea, EmulationDrives[0].szFileName, discdlg[DISCDLG_DISCA].w);
   else
     dlgnamea[0] = 0;
   discdlg[DISCDLG_DISCA].txt = dlgnamea;
+
   /* Disc name B: */
   if( EmulationDrives[1].bDiscInserted )
-    File_ShrinkName(dlgnameb, EmulationDrives[1].szFileName, 26);
+    File_ShrinkName(dlgnameb, EmulationDrives[1].szFileName, discdlg[DISCDLG_DISCB].w);
   else
     dlgnameb[0] = 0;
   discdlg[DISCDLG_DISCB].txt = dlgnameb;
+
   /* Default image directory: */
-  File_ShrinkName(dlgdiscdir, DialogParams.DiscImage.szDiscImageDirectory, 28);
+  File_ShrinkName(dlgdiscdir, DialogParams.DiscImage.szDiscImageDirectory, discdlg[DISCDLG_IMGDIR].w);
   discdlg[DISCDLG_IMGDIR].txt = dlgdiscdir;
+
   /* Auto insert disc B: */
   if( DialogParams.DiscImage.bAutoInsertDiscB )
     discdlg[DISCDLG_AUTOB].state |= SG_SELECTED;
    else
     discdlg[DISCDLG_AUTOB].state &= ~SG_SELECTED;
+
   /* Boot from harddisk? */
   if( DialogParams.HardDisc.bBootFromHardDisc )
     discdlg[DISCDLG_BOOTHD].state |= SG_SELECTED;
    else
     discdlg[DISCDLG_BOOTHD].state &= ~SG_SELECTED;
+
   /* GEMDOS Hard disc directory: */
-  if( GEMDOS_EMU_ON )
-    File_ShrinkName(dlgnamegdos, DialogParams.HardDisc.szHardDiscDirectories[0], 34);
+  if( strcmp(DialogParams.HardDisc.szHardDiscDirectories[0], ConfigureParams.HardDisc.szHardDiscDirectories[0])!=0
+      || GEMDOS_EMU_ON )
+    File_ShrinkName(dlgnamegdos, DialogParams.HardDisc.szHardDiscDirectories[0], discdlg[DISCDLG_DISCGDOS].w);
   else
     dlgnamegdos[0] = 0;
   discdlg[DISCDLG_DISCGDOS].txt = dlgnamegdos;
+
   /* Hard disc image: */
   if( ACSI_EMU_ON )
-    File_ShrinkName(dlgnamehdimg, DialogParams.HardDisc.szHardDiscImage, 34);
+    File_ShrinkName(dlgnamehdimg, DialogParams.HardDisc.szHardDiscImage, discdlg[DISCDLG_DISCHDIMG].w);
   else
     dlgnamehdimg[0] = 0;
   discdlg[DISCDLG_DISCHDIMG].txt = dlgnamehdimg;
@@ -546,7 +579,7 @@ void Dialog_DiscDlg(void)
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
             Floppy_InsertDiscIntoDrive(0, tmpname); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
-            File_ShrinkName(dlgnamea, tmpname, 26);
+            File_ShrinkName(dlgnamea, tmpname, discdlg[DISCDLG_DISCA].w);
           }
           else
           {
@@ -565,7 +598,7 @@ void Dialog_DiscDlg(void)
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
             Floppy_InsertDiscIntoDrive(1, tmpname); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
-            File_ShrinkName(dlgnameb, tmpname, 26);
+            File_ShrinkName(dlgnameb, tmpname, discdlg[DISCDLG_DISCB].w);
           }
           else
           {
@@ -582,11 +615,16 @@ void Dialog_DiscDlg(void)
           ptr = strrchr(tmpname, '/');
           if( ptr!=NULL )  ptr[1]=0;
           strcpy(DialogParams.DiscImage.szDiscImageDirectory, tmpname);
-          File_ShrinkName(dlgdiscdir, DialogParams.DiscImage.szDiscImageDirectory, 28);
+          File_ShrinkName(dlgdiscdir, DialogParams.DiscImage.szDiscImageDirectory, discdlg[DISCDLG_IMGDIR].w);
         }
         break;
       case DISCDLG_CREATEIMG:
         fprintf(stderr,"Sorry, creating disc images not yet supported\n");
+        break;
+      case DISCDLG_UNMOUNTGDOS:
+        GemDOS_UnInitDrives();   /* FIXME: This shouldn't be done here but it's the only quick solution I could think of */
+        strcpy(DialogParams.HardDisc.szHardDiscDirectories[0], ConfigureParams.HardDisc.szHardDiscDirectories[0]);
+        dlgnamegdos[0] = 0;
         break;
       case DISCDLG_BROWSEGDOS:
         strcpy(tmpname, DialogParams.HardDisc.szHardDiscDirectories[0]);
@@ -594,15 +632,9 @@ void Dialog_DiscDlg(void)
         {
           char *ptr;
           ptr = strrchr(tmpname, '/');
-          if( ptr!=NULL )  ptr[1]=0;
+          if( ptr!=NULL )  ptr[1]=0;        /* Remove file name from path */
           strcpy(DialogParams.HardDisc.szHardDiscDirectories[0], tmpname);
-          File_ShrinkName(dlgnamegdos, DialogParams.HardDisc.szHardDiscDirectories[0], 34);
-          /*DialogParams.HardDisc.nDriveList = DRIVELIST_C;*/
-        }
-        else
-        {
-          dlgnamegdos[0] = 0;
-          /*DialogParams.HardDisc.nDriveList = DRIVELIST_NONE;*/
+          File_ShrinkName(dlgnamegdos, DialogParams.HardDisc.szHardDiscDirectories[0], discdlg[DISCDLG_DISCGDOS].w);
         }
         break;
       case DISCDLG_BROWSEHDIMG:
@@ -612,7 +644,7 @@ void Dialog_DiscDlg(void)
           strcpy(DialogParams.HardDisc.szHardDiscImage, tmpname);
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
-            File_ShrinkName(dlgnamehdimg, tmpname, 34);
+            File_ShrinkName(dlgnamehdimg, tmpname, discdlg[DISCDLG_DISCHDIMG].w);
           }
           else
           {
