@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.14 2004-07-26 21:32:01 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.15 2004-08-03 21:18:37 thothy Exp $";
 
 #ifndef HAVE_TERMIOS_H
 #define HAVE_TERMIOS_H 1
@@ -46,7 +46,7 @@ char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.14 2004-07-26 21:32:01 thothy Exp 
 
 
 #ifndef HAVE_CFMAKERAW
-# if defined(__sun) && defined(__SVR4)
+# if defined(__BEOS__) || (defined(__sun) && defined(__SVR4))
 #  define HAVE_CFMAKERAW 0
 # else
 #  define HAVE_CFMAKERAW 1
