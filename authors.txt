@@ -13,3 +13,4 @@ Other people who are not directly involved in this project:
 
 Paul Bates (wrote the original emulator WinSTon).
 Bernd Schmidt (wrote the UAE CPU core).
+Martin Griffiths (wrote the STonX blitter emulator).
