@@ -1,5 +1,8 @@
 /*
-  Hatari
+  Hatari - memorySnapShot.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   Memory Snapshot
 
@@ -11,9 +14,11 @@
   that are local to it. We use one function to reduce redundancy and the function 'MemorySnapShot_Store'
   decides if it should save or restore the data.
 */
+static char rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.4 2003-04-05 22:25:02 thothy Exp $";
+
+#include <SDL_types.h>
 
 #include "main.h"
-/*#include "compress.h"*/
 #include "debug.h"
 #include "dialog.h"
 #include "fdc.h"

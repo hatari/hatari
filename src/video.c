@@ -8,7 +8,7 @@
   VBLs, HBLs, copying the ST screen to a buffer to simulate the TV raster trace, border
   removal, palette changes per HBL, the 'video address pointer' etc...
 */
-static char rcsid[] = "Hatari $Id: video.c,v 1.12 2003-04-04 16:28:35 thothy Exp $";
+static char rcsid[] = "Hatari $Id: video.c,v 1.13 2003-04-05 22:25:02 thothy Exp $";
 
 #include <SDL.h>
 
@@ -229,7 +229,6 @@ void Video_InterruptHandler_VBL(void)
   MakeSR();
   if (4>FIND_IPL)              /* Vertical blank, level 4! */
   {
-    ADD_CYCLES(44+4,5,3);      /* Interrupt */
     ExceptionVector = EXCEPTION_VBLANK;
     M68000_Exception();        /* VBL interrupt */
   }
@@ -263,7 +262,6 @@ void Video_InterruptHandler_VBL_Pending(void)
   /* Check if can execute VBL */
   if (4>FIND_IPL)              /* Vertical blank, level 4! */
   {
-    ADD_CYCLES(44+4,5,3);      /* Interrupt */
     ExceptionVector = EXCEPTION_VBLANK;
     M68000_Exception();        /* VBL interrupt */
   }
@@ -331,7 +329,6 @@ void Video_InterruptHandler_HBL(void)
   MakeSR();
   if (2>FIND_IPL)                  /* Horizontal blank, level 2! */
   {
-    ADD_CYCLES(44+4,5,3);          /* Interrupt */
     ExceptionVector = EXCEPTION_HBLANK;
     M68000_Exception();            /* HBL interrupt */
   }

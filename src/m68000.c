@@ -8,25 +8,18 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-static char rcsid[] = "Hatari $Id: m68000.c,v 1.17 2003-04-04 12:48:43 emanne Exp $";
+static char rcsid[] = "Hatari $Id: m68000.c,v 1.18 2003-04-05 22:25:02 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
-#include "cart.h"
 #include "debug.h"
 #include "decode.h"
-#include "fdc.h"
 #include "gemdos.h"
 #include "hatari-glue.h"
-#include "ikbd.h"
 #include "int.h"
 #include "m68000.h"
-#include "memAlloc.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
-#include "misc.h"
-#include "psg.h"
-#include "screen.h"
 #include "stMemory.h"
 #include "tos.h"
 #include "vdi.h"
@@ -37,8 +30,9 @@ unsigned long ExceptionVector;
 short int PendingInterruptFlag;
 void *PendingInterruptFunction;
 short int PendingInterruptCount;
-unsigned long BusAddressLocation;
-
+Uint32 BusAddressLocation;       /* Stores the offending address for bus-/address errors */
+Uint32 BusErrorPC;               /* Value of the PC when bus error occurs */
+Uint16 BusErrorOpcode;           /* Opcode of faulting instruction */
 
 
 /*-----------------------------------------------------------------------*/
@@ -49,15 +43,13 @@ void M68000_Reset(BOOL bCold)
 {
   int i;
 
-  /* Clear registers, set PC, SR and stack pointers */
+  /* Clear registers */
   if (bCold)
   {
     for(i=0; i<(16+1); i++)
       Regs[i] = 0;
   }
-  PC = TosAddress;              /* Start of TOS image, 0xfc0000 or 0xe00000 */
-  SR = 0x2700;                  /* Starting status register */
-  MakeFromSR();
+
   PendingInterruptFlag = 0;     /* Clear pending flag */
 
   /* Now directly reset the UAE CPU core: */
@@ -103,8 +95,8 @@ void M68000_Decode_MemorySnapShot_Capture(BOOL bSave)
     MemorySnapShot_Store(&ID,sizeof(int));
     PendingInterruptFunction = Int_IDToHandlerFunction(ID);
   }
-  MemorySnapShot_Store(&PC,sizeof(PC));
-  MemorySnapShot_Store(&SR,sizeof(SR));
+  /*MemorySnapShot_Store(&PC,sizeof(PC));*/
+  /*MemorySnapShot_Store(&SR,sizeof(SR));*/
   /*MemorySnapShot_Store(&bInSuperMode,sizeof(bInSuperMode));*/
   /*MemorySnapShot_Store(&Reg_SuperSP,sizeof(Reg_SuperSP));*//*FIXME*/
   /*MemorySnapShot_Store(&Reg_UserSP,sizeof(Reg_UserSP));*/
@@ -119,16 +111,18 @@ void M68000_Decode_MemorySnapShot_Capture(BOOL bSave)
 */
 void M68000_BusError(unsigned long addr)
 {
-  if(BusAddressLocation!=0xff8a00 && BusAddressLocation!=0xff8900)
+  /* FIXME: In prefetch mode, m68k_getpc() seems already to point to the next instruction */
+  BusErrorPC = m68k_getpc();
+
+  if(BusErrorPC < TosAddress || BusErrorPC > TosAddress + TosSize)
   {
-    /* Print bus errors (except TOS' tests for blitter and DMA sound) */
+    /* Print bus errors (except for TOS' hardware tests) */
     fprintf(stderr, "M68000_BusError at address $%lx\n", (long)addr);
   }
 
-  BusAddressLocation=addr;               /* Store for exception frame */
-/*   ExceptionVector = EXCEPTION_BUSERROR;  /\* Handler *\/ */
-/*   M68000_Exception();                    /\* Cause trap *\/ */
-    set_special(SPCFLAG_BUSERROR);
+  BusAddressLocation = addr;        /* Store for exception frame */
+  BusErrorOpcode = get_word(BusErrorPC);
+  set_special(SPCFLAG_BUSERROR);    /* The exception will be done in newcpu.c */
 }
 
 

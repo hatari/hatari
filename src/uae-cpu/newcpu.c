@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.19 2003-04-04 12:48:43 emanne Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.20 2003-04-05 22:25:04 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -19,6 +19,7 @@ static char rcsid[] = "Hatari $Id: newcpu.c,v 1.19 2003-04-04 12:48:43 emanne Ex
 #include "newcpu.h"
 #include "events.h"
 #include "../includes/main.h"
+#include "../includes/m68000.h"
 #include "../includes/tos.h"
 #include "../includes/vdi.h"
 #include "../includes/cart.h"
@@ -48,8 +49,6 @@ int fpp_movem_index2[256];
 int fpp_movem_next[256];
 
 cpuop_func *cpufunctbl[65536];
-
-static uae_u32 busAddressErrPC;  /* Needed to store the right PC when bus-/address error occurs */
 
 
 #define COUNT_INSTRS 0
@@ -744,7 +743,7 @@ void Exception(int nr, uaecptr oldpc)
     if (cpu_level==0 && (nr==2 || nr==3)) {
 	m68k_areg(regs, 7) -= 8;
 	if (nr == 3) {    /* Address error */
-            put_word (m68k_areg(regs, 7), regs.sr);  /*?*/
+            put_word (m68k_areg(regs, 7), 0);  /* FIXME: Add real function code value */
 	    put_long (m68k_areg(regs, 7)+2, last_fault_for_exception_3);
 	    put_word (m68k_areg(regs, 7)+6, last_op_for_exception_3);
 	    put_long (m68k_areg(regs, 7)+10, last_addr_for_exception_3);
@@ -754,11 +753,11 @@ void Exception(int nr, uaecptr oldpc)
             }
 	}
         else {    /* Bus error */
-            put_word (m68k_areg(regs, 7), regs.sr);  /*?*/
+            put_word (m68k_areg(regs, 7), 0);  /* FIXME: Add real function code value */
 	    put_long (m68k_areg(regs, 7)+2, BusAddressLocation);
-	    put_word (m68k_areg(regs, 7)+6, get_word(currpc));
+	    put_word (m68k_areg(regs, 7)+6, BusErrorOpcode);
             if( bEnableDebug && BusAddressLocation!=0xff8a00) {
-              fprintf(stderr,"Bus Error at address $%lx, PC=$%lx\n",BusAddressLocation,(long)currpc);
+              fprintf(stderr,"Bus Error at address $%x, PC=$%lx\n",BusAddressLocation,(long)currpc);
               DebugUI();
             }
         }
@@ -769,12 +768,31 @@ void Exception(int nr, uaecptr oldpc)
     regs.t1 = regs.t0 = regs.m = 0;
     unset_special (SPCFLAG_TRACE | SPCFLAG_DOTRACE);
 
-    /* Store a backup of the PC after bus-/address error: */
-/*     if(nr==2 || nr==3) { */
-/*         busAddressErrPC = regs.pc; */
-/*         set_special(SPCFLAG_BUSERROR); */
-/*     } */
+    /* Handle exception cycles: */
+    if(nr >= 24 && nr <= 31)
+    {
+      ADD_CYCLES(44+4, 5, 3);                 /* Interrupt */
+    }
+    else if(nr >= 32 && nr <= 47)
+    {
+      ADD_CYCLES(34, 5, 3);                   /* Trap */
+    }
+    else switch(nr)
+    {
+      case 2: ADD_CYCLES(50, 4, 7); break;    /* Bus error */
+      case 3: ADD_CYCLES(50, 4, 7); break;    /* Address error */
+      case 4: ADD_CYCLES(34, 4, 3); break;    /* Illegal instruction */
+      case 5: ADD_CYCLES(38, 4, 3); break;    /* Div by zero */
+      case 6: ADD_CYCLES(40, 4, 3); break;    /* CHK */
+      case 7: ADD_CYCLES(34, 5, 3); break;    /* TRAPV */
+      case 8: ADD_CYCLES(34, 4, 3); break;    /* Privilege violation */
+      case 9: ADD_CYCLES(34, 4, 3); break;    /* Trace */
+      case 10: ADD_CYCLES(34, 4, 3); break;   /* Line-A - probably wrong */
+      case 11: ADD_CYCLES(34, 4, 3); break;   /* Line-F - probably wrong */
+      default: ADD_CYCLES(44, 5, 3); break;   /* Don't know about the other exceptions */
+    }
 }
+
 
 static void Interrupt(int nr)
 {
@@ -787,7 +805,9 @@ static void Interrupt(int nr)
     set_special (SPCFLAG_INT);
 }
 
+
 static uae_u32 caar, cacr, itt0, itt1, dtt0, dtt1, tc, mmusr, urp, srp;
+
 
 int m68k_move2c (int regno, uae_u32 *regp)
 {
@@ -1117,9 +1137,6 @@ static char* ccnames[] =
 
 void m68k_reset (void)
 {
-    m68k_areg(regs, 7) = get_long(0);
-    m68k_setpc(get_long(4));
-    refill_prefetch (m68k_getpc (), 0);
     regs.s = 1;
     regs.m = 0;
     regs.stopped = 0;
@@ -1134,6 +1151,10 @@ void m68k_reset (void)
     regs.intmask = 7;
     regs.vbr = regs.sfc = regs.dfc = 0;
     regs.fpcr = regs.fpsr = regs.fpiar = 0;
+
+    m68k_areg(regs, 7) = get_long(0);
+    m68k_setpc(get_long(4));
+    refill_prefetch (m68k_getpc(), 0);
 }
 
 unsigned long REGPARAM2 op_illg (uae_u32 opcode)
@@ -1218,12 +1239,10 @@ static void do_trace (void)
 static int do_specialties (void)
 {
     if(regs.spcflags & SPCFLAG_BUSERROR) {
-	/* We have to correct the PC after a bus error occured since the
-	 * UAE CPU core is not prepared for Exception() while accessing an
-	 * illegal ST memory address */
+	/* We can not execute bus errors directly in the memory handler
+	 * functions since the PC should point to the address of the next
+	 * instruction, so we're executing the bus errors here: */
         unset_special(SPCFLAG_BUSERROR);
-	// m68k_setpc(busAddressErrPC);
-	// busAddressErrPC = 0;
 	Exception(2,0);
     }
 

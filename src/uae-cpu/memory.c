@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: memory.c,v 1.11 2003-04-04 12:48:45 emanne Exp $";
+static char rcsid[] = "Hatari $Id: memory.c,v 1.12 2003-04-05 22:25:03 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -21,6 +21,7 @@ static char rcsid[] = "Hatari $Id: memory.c,v 1.11 2003-04-04 12:48:45 emanne Ex
 #include "../includes/intercept.h"
 #include "../includes/reset.h"
 #include "../includes/decode.h"
+#include "../includes/m68000.h"
 #include "newcpu.h"
 
 
@@ -155,8 +156,7 @@ uae_u32 REGPARAM2 BusErrMem_lget(uaecptr addr)
     if (illegal_mem)
 	write_log ("Bus error lget at %08lx\n", (long)addr);
 
-    BusAddressLocation = addr;
-    set_special(SPCFLAG_BUSERROR);
+    M68000_BusError(addr);
     return 0;
 }
 
@@ -165,8 +165,7 @@ uae_u32 REGPARAM2 BusErrMem_wget(uaecptr addr)
     if (illegal_mem)
 	write_log ("Bus error wget at %08lx\n", (long)addr);
 
-    BusAddressLocation = addr;
-    set_special(SPCFLAG_BUSERROR);
+    M68000_BusError(addr);
     return 0;
 }
 
@@ -175,8 +174,7 @@ uae_u32 REGPARAM2 BusErrMem_bget(uaecptr addr)
     if (illegal_mem)
 	write_log ("Bus error bget at %08lx\n", (long)addr);
 
-    BusAddressLocation = addr;
-    set_special(SPCFLAG_BUSERROR);
+    M68000_BusError(addr);
     return 0;
 }
 
@@ -185,8 +183,7 @@ void REGPARAM2 BusErrMem_lput(uaecptr addr, uae_u32 l)
     if (illegal_mem)
 	write_log ("Bus error lput at %08lx\n", (long)addr);
 
-    BusAddressLocation = addr;
-    set_special(SPCFLAG_BUSERROR);
+    M68000_BusError(addr);
 }
 
 void REGPARAM2 BusErrMem_wput(uaecptr addr, uae_u32 w)
@@ -194,8 +191,7 @@ void REGPARAM2 BusErrMem_wput(uaecptr addr, uae_u32 w)
     if (illegal_mem)
 	write_log ("Bus error wput at %08lx\n", (long)addr);
 
-    BusAddressLocation = addr;
-    set_special(SPCFLAG_BUSERROR);
+    M68000_BusError(addr);
 }
 
 void REGPARAM2 BusErrMem_bput(uaecptr addr, uae_u32 b)
@@ -203,8 +199,7 @@ void REGPARAM2 BusErrMem_bput(uaecptr addr, uae_u32 b)
     if (illegal_mem)
 	write_log ("Bus error bput at %08lx\n", (long)addr);
 
-    BusAddressLocation = addr;
-    set_special(SPCFLAG_BUSERROR);
+    M68000_BusError(addr);
 }
 
 int REGPARAM2 BusErrMem_check(uaecptr addr, uae_u32 size)
@@ -220,8 +215,7 @@ uae_u8 REGPARAM2 *BusErrMem_xlate (uaecptr addr)
     write_log("Your Atari program just did something terribly stupid:"
               " BusErrMem_xlate($%x)\n", addr);
 
-    /*BusAddressLocation = addr;
-    set_special(SPCFLAG_BUSERROR);*/
+    /*M68000_BusError(addr);*/
     return STmem_xlate(addr);  /* So we don't crash. */
 }
 
@@ -312,8 +306,7 @@ uae_u32 REGPARAM2 SysMem_lget(uaecptr addr)
 
     if(addr < 0x800 && !regs.s)
     {
-      BusAddressLocation = addr;
-      set_special(SPCFLAG_BUSERROR);
+      M68000_BusError(addr);
       return 0;
     }
 
@@ -329,8 +322,7 @@ uae_u32 REGPARAM2 SysMem_wget(uaecptr addr)
 
     if(addr < 0x800 && !regs.s)
     {
-      BusAddressLocation = addr;
-      set_special(SPCFLAG_BUSERROR);
+      M68000_BusError(addr);
       return 0;
     }
 
@@ -344,8 +336,7 @@ uae_u32 REGPARAM2 SysMem_bget(uaecptr addr)
 {
     if(addr < 0x800 && !regs.s)
     {
-      BusAddressLocation = addr;
-      set_special(SPCFLAG_BUSERROR);
+      M68000_BusError(addr);
       return 0;
     }
 
@@ -360,8 +351,7 @@ void REGPARAM2 SysMem_lput(uaecptr addr, uae_u32 l)
 
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      BusAddressLocation = addr;
-      set_special(SPCFLAG_BUSERROR);
+      M68000_BusError(addr);
       return;
     }
 
@@ -377,8 +367,7 @@ void REGPARAM2 SysMem_wput(uaecptr addr, uae_u32 w)
 
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      BusAddressLocation = addr;
-      set_special(SPCFLAG_BUSERROR);
+      M68000_BusError(addr);
       return;
     }
 
@@ -392,8 +381,7 @@ void REGPARAM2 SysMem_bput(uaecptr addr, uae_u32 b)
 {
     if(addr < 0x8 || (addr < 0x800 && !regs.s))
     {
-      BusAddressLocation = addr;
-      set_special(SPCFLAG_BUSERROR);
+      M68000_BusError(addr);
       return;
     }
 
@@ -574,8 +562,7 @@ void REGPARAM2 ROMmem_lput (uaecptr addr, uae_u32 b)
     if (illegal_mem)
 	write_log ("Illegal ROMmem lput at %08lx\n", (long)addr);
 
-    BusAddressLocation = addr;
-    set_special(SPCFLAG_BUSERROR);
+    M68000_BusError(addr);
 }
 
 void REGPARAM2 ROMmem_wput (uaecptr addr, uae_u32 b)
@@ -583,8 +570,7 @@ void REGPARAM2 ROMmem_wput (uaecptr addr, uae_u32 b)
     if (illegal_mem)
 	write_log ("Illegal ROMmem wput at %08lx\n", (long)addr);
 
-    BusAddressLocation = addr;
-    set_special(SPCFLAG_BUSERROR);
+    M68000_BusError(addr);
 }
 
 void REGPARAM2 ROMmem_bput (uaecptr addr, uae_u32 b)
@@ -592,8 +578,7 @@ void REGPARAM2 ROMmem_bput (uaecptr addr, uae_u32 b)
     if (illegal_mem)
 	write_log ("Illegal ROMmem bput at %08lx\n", (long)addr);
 
-    BusAddressLocation = addr;
-    set_special(SPCFLAG_BUSERROR);
+    M68000_BusError(addr);
 }
 
 int REGPARAM2 ROMmem_check (uaecptr addr, uae_u32 size)

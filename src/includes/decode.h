@@ -1,5 +1,8 @@
 /*
-  Hatari
+  Hatari - decode.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 */
 
 #ifndef HATARI_DECODE_H
@@ -13,8 +16,8 @@
 #include "newcpu.h"
 
 #define Regs regs.regs       /* Ouah - uggly hack - FIXME! */
-#define SR regs.sr
-#define PC regs.pc
+#define SR regs.sr           /* Don't forget to call MakeFromSR() and MakeSR() */
+/*#define PC regs.pc*/       /* PC should be read with m68k_getpc() */
 
 
 #define PENDING_INTERRUPT_FLAG_MFP      0x0001    /* 'PendingInterruptFlag' masks */
@@ -28,8 +31,6 @@ extern  short int PendingInterruptFlag;
 extern  void *PendingInterruptFunction;
 extern  short int PendingInterruptCount;
 extern  unsigned long STRamEnd;
-extern  unsigned long ExceptionVector;
-extern  unsigned long BusAddressLocation;
 
 
 /*-----------------------------------------------------------------------*/

@@ -6,7 +6,7 @@
 
   Misc functions
 */
-static char rcsid[] = "Hatari $Id: misc.c,v 1.6 2003-03-29 13:09:39 thothy Exp $";
+static char rcsid[] = "Hatari $Id: misc.c,v 1.7 2003-04-05 22:25:02 thothy Exp $";
 
 #include <ctype.h>
 
@@ -14,7 +14,6 @@ static char rcsid[] = "Hatari $Id: misc.c,v 1.6 2003-03-29 13:09:39 thothy Exp $
 #include "debug.h"
 #include "errlog.h"
 #include "file.h"
-#include "m68000.h"
 #include "memAlloc.h"
 #include "misc.h"
 
