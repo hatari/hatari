@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.38 2003-04-04 16:28:31 thothy Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.39 2003-04-08 11:37:05 emanne Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -386,7 +386,6 @@ void Main_Init(void)
   }
 
   Misc_SeedRandom(1043618);
-  SDLGui_Init();
   Printer_Init();
   RS232_Init();
   Screen_Init();
@@ -419,6 +418,7 @@ void Main_Init(void)
   {
     Floppy_InsertDiscIntoDrive(0,szBootDiscImage);
   }
+  SDLGui_Init();
 }
 
 

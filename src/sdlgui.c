@@ -49,6 +49,9 @@ int SDLGui_Init()
     return -1;
   }
 
+  if( SDLGui_PrepareFont() )
+    return -1;;
+
   return 0;
 }
 
@@ -80,7 +83,7 @@ int SDLGui_UnInit()
 */
 int SDLGui_PrepareFont()
 {
-/* FIXME: Freeing the old font gfx does sometimes crash with a SEGFAULT 
+/* FIXME: Freeing the old font gfx does sometimes crash with a SEGFAULT
   if(fontgfx)
   {
     SDL_FreeSurface(fontgfx);
@@ -133,7 +136,7 @@ void SDLGui_Text(int x, int y, const char *txt)
   int i;
   char c;
   SDL_Rect sr, dr;
-  
+
   for(i=0; txt[i]!=0; i++)
   {
     c = txt[i];
@@ -141,6 +144,25 @@ void SDLGui_Text(int x, int y, const char *txt)
     sr.w=fontwidth;         sr.h=fontheight;
     dr.x=x+i*fontwidth;     dr.y=y;
     dr.w=fontwidth;         dr.h=fontheight;
+    SDL_BlitSurface(fontgfx, &sr, sdlscrn, &dr);
+  }
+}
+
+void SDLGui_OverlayText(int x, int y, const char *txt)
+{
+  int i;
+  char c;
+  Uint32 grey = SDL_MapRGB(sdlscrn->format,192,192,192);
+  SDL_Rect sr, dr;
+
+  for(i=0; txt[i]!=0; i++)
+  {
+    c = txt[i];
+    sr.x=fontwidth*(c%16);  sr.y=fontheight*(c/16);
+    sr.w=fontwidth;         sr.h=fontheight;
+    dr.x=x+i*fontwidth;     dr.y=y;
+    dr.w=fontwidth;         dr.h=fontheight;
+    SDL_FillRect(sdlscrn, &dr, grey);
     SDL_BlitSurface(fontgfx, &sr, sdlscrn, &dr);
   }
 }
@@ -346,7 +368,7 @@ int SDLGui_FindObj(SGOBJ *dlg, int fx, int fy)
   int len, i;
   int ob = -1;
   int xpos, ypos;
-  
+
   len = 0;
   while( dlg[len].type!=-1)   len++;
 
@@ -504,7 +526,7 @@ int SDLGui_DoDialog(SGOBJ *dlg)
   }
   while(retbutton==0 && !bQuitProgram);
 
-  if(bQuitProgram) 
+  if(bQuitProgram)
     retbutton=-1;
 
   return retbutton;
@@ -614,26 +636,26 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
 	    }
 
 	  if( browsingzip )
-	    {	
+	    {
 	      files = ZIP_GetFilesDir(zipfiles, zipdir, &entries);
-	    } 
-	  else 
+	    }
+	  else
 	    {
 	      /* Load directory entries: */
 	      entries = scandir(path, &files, 0, alphasort);
 	    }
-	  
+
 	  if(entries<0)
 	    {
 	      fprintf(stderr, "SDLGui_FileSelect: Path not found.\n");
 	      return FALSE;
 	    }
-	
+
 	  reloaddir = FALSE;
 	  refreshentries = TRUE;
 	}/* reloaddir */
 
-    
+
       if( refreshentries )
 	{
 	  /* Copy entries to dialog: */
@@ -656,7 +678,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
 		      if( tempstr[strlen(tempstr)-1] == '/'  )
 			dlgfilenames[i][0] = SGFOLDER;    /* Mark folders */
 		    }
-		  else 
+		  else
 		    {
 		      if( stat(tempstr, &filestat)==0 && S_ISDIR(filestat.st_mode) )
 			dlgfilenames[i][0] = SGFOLDER;    /* Mark folders */
@@ -682,7 +704,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
 	  if( browsingzip == TRUE )
 	    {
 	      strcpy(tempstr, zipdir);
-	      strcat(tempstr, files[retbut-SGFSDLG_ENTRY1+ypos]->d_name);      
+	      strcat(tempstr, files[retbut-SGFSDLG_ENTRY1+ypos]->d_name);
 	      if(tempstr[strlen(tempstr)-1] == '/')
 		{
 		  /* handle the ../ directory */
@@ -713,7 +735,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
 			  strcpy(zipdir, tempstr);
 			  File_ShrinkName(dlgpath, zipdir, 38);
 			}
-		    } 
+		    }
 		  else /* not the "../" directory */
 		    {
 		      strcpy(zipdir, tempstr);
@@ -732,12 +754,12 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
 		  strcpy(zipfilename, files[selection]->d_name);
 		  File_ShrinkName(dlgfname, zipfilename, 32);
 		}
-	      
+
 	    } /* if browsingzip */
 	  else
 	    {
 	      strcpy(tempstr, path);
-	      strcat(tempstr, files[retbut-SGFSDLG_ENTRY1+ypos]->d_name);      
+	      strcat(tempstr, files[retbut-SGFSDLG_ENTRY1+ypos]->d_name);
 	      if( stat(tempstr, &filestat)==0 && S_ISDIR(filestat.st_mode) )
 		{
 		  /* Set the new directory */
@@ -780,7 +802,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
 		  browsingzip=TRUE;
 		  strcpy(zipdir, "");
 		  File_ShrinkName(dlgpath, zipdir, 38);
-		  reloaddir = refreshentries = TRUE;		  
+		  reloaddir = refreshentries = TRUE;
 		}
 
 	    } else {
@@ -827,7 +849,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
 		  while(i > 0 && n < 2) if( zipdir[i--] == '/' )n++;
 		  if(zipdir[i+1] == '/') zipdir[i+2] = '\0';
 		  else zipdir[0] = '\0';
-		  
+
 		  File_ShrinkName(dlgpath, zipdir, 38);
 		  reloaddir = TRUE;
 		  selection = -1;                 /* Remove old selection */
@@ -870,7 +892,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
 	      selection = -1;                   /* Remove old selection */
 	      fname[0] = 0;
 	      dlgfname[0] = 0;
-	      ypos = 0; 
+	      ypos = 0;
 	      break;
 	    case SGFSDLG_UP:                    /* Scroll up */
 	      if( ypos>0 )
@@ -890,10 +912,10 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
 	      break;
 	    } /* switch */
 	} /* other button code */
-    
+
 
     } /* do */
-  
+
 
   while(retbut!=SGFSDLG_OKAY && retbut!=SGFSDLG_CANCEL && !bQuitProgram);
 
@@ -912,7 +934,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
     free(files);
     files = NULL;
   }
-  
+
   if( browsingzip )
     {
       /* free zip file entries */
@@ -924,14 +946,14 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
       Memory_Free(zipfiles);
     }
 
-  if( zip_path != NULL ) 
+  if( zip_path != NULL )
     {
       if( browsingzip )
 	{
 	  strcpy(zip_path, zipdir);
 	  strcat(zip_path, zipfilename);
 	} else zip_path[0] = '\0';
-    }  
+    }
   return( retbut==SGFSDLG_OKAY );
 }
 
