@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-static char rcsid[] = "Hatari $Id: tos.c,v 1.13 2003-03-09 15:37:10 thothy Exp $";
+static char rcsid[] = "Hatari $Id: tos.c,v 1.14 2003-04-01 11:18:38 emanne Exp $";
 
 #include <SDL_types.h>
 
@@ -85,16 +85,16 @@ enum
 };
 
 /* This structure is used for patching the TOS ROMs */
-typedef struct 
+typedef struct
 {
   Uint16 Version;       /* TOS version number */
   Sint16 Country;       /* TOS country code: -1 if it does not matter, 0=US, 1=Germany, 2=France, etc. */
   char *pszName;        /* Name of the patch */
-  int Flags;            /* When should the patch be applied? (see enum above) */ 
+  int Flags;            /* When should the patch be applied? (see enum above) */
   Uint32 Address;       /* Where the patch should be applied */
   Uint32 OldData;       /* Expected first 4 old bytes */
   Uint32 Size;          /* Length of the patch */
-  void *pNewData;       /* Pointer to the new bytes */ 
+  void *pNewData;       /* Pointer to the new bytes */
 } TOS_PATCH;
 
 static char pszHdvInit[] = "hdv_init - initialize drives";
@@ -263,12 +263,16 @@ static void TOS_FixRom(void)
   /* Apply TOS patches: */
   while(pPatch->Version)
   {
-    /* Only apply patches that suit to the actual TOS  version: */ 
+    /* Only apply patches that suit to the actual TOS  version: */
     if(pPatch->Version == TosVersion
        && (pPatch->Country == TosCountry || pPatch->Country == -1))
     {
       /* Make sure that we really patch the right place by comparing data: */
-      if(STMemory_ReadLong(pPatch->Address) == pPatch->OldData)
+      int Address = (TosAddress < 0xe00000 ? // tos in ram ?
+		     pPatch->Address - (TosVersion < 0x200 ? 0xfc0000 :
+					0xe00000)  + TosAddress :
+		     pPatch->Address);
+      if(STMemory_ReadLong(Address) == pPatch->OldData)
       {
         /* Only apply the patch if it is really needed: */
         if(pPatch->Flags == TP_ALWAYS || (pPatch->Flags == TP_HD_ON && bHdIsOn)
@@ -276,7 +280,7 @@ static void TOS_FixRom(void)
         {
           /* Now we can really apply the patch! */
           /*fprintf(stderr, "Applying TOS patch '%s'.\n", pPatch->pszName);*/
-          memcpy(&STRam[pPatch->Address], pPatch->pNewData, pPatch->Size);
+          memcpy(&STRam[Address], pPatch->pNewData, pPatch->Size);
         }
         else
         {
@@ -286,7 +290,7 @@ static void TOS_FixRom(void)
       }
       else
       {
-        fprintf(stderr, "Failed to apply TOS patch '%s'.\n", pPatch->pszName);
+        fprintf(stderr, "Failed to apply TOS patch '%s' at %x (expected %x found %x).\n", pPatch->pszName,Address,pPatch->OldData,STMemory_ReadLong(Address));
         nBadPatches += 1;
       }
     }
@@ -382,11 +386,19 @@ int TOS_LoadImage(void)
     TosVersion = STMemory_Swap68000Int(*(Uint16 *)((Uint32)pTosFile+2));
     TosAddress = STMemory_Swap68000Long(*(Uint32 *)((Uint32)pTosFile+8));
 
+    if(TosVersion<0x100 || TosVersion>0x500) {
+      TosSize-=0x100;
+      memmove(pTosFile,pTosFile+0x100,TosSize);
+      TosVersion = STMemory_Swap68000Int(*(Uint16 *)((Uint32)pTosFile+2));
+      TosAddress = STMemory_Swap68000Long(*(Uint32 *)((Uint32)pTosFile+8));
+    }
+
     /* Check for reasonable TOS version: */
     if(TosVersion<0x100 || TosVersion>0x500 || TosSize>1024*1024L
-       || (TosAddress!=0xe00000 && TosAddress!=0xfc0000))
+       || (TosAddress!=0xe00000 && TosAddress!=0xfc0000 && TosAddress!=0xad00))
     {
       Main_Message("Your TOS seems not to be a valid TOS ROM file!\n", PROG_NAME);
+      fprintf(stderr,"(Version %x Adress %x)\n",TosVersion,TosAddress);
       return -2;
     }
 
