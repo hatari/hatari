@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.5 2004-06-11 12:48:49 thothy Exp $";
+char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.6 2004-06-18 18:07:16 thothy Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -590,6 +590,11 @@ int SDLGui_DoDialog(SGOBJ *dlg)
   /* Save background */
   pBgSurface = SDL_CreateRGBSurface(SDL_SWSURFACE, dlgrect.w, dlgrect.h, sdlscrn->format->BitsPerPixel,
                    sdlscrn->format->Rmask, sdlscrn->format->Gmask, sdlscrn->format->Bmask, sdlscrn->format->Amask);
+  if (sdlscrn->format->palette != NULL)
+  {
+    SDL_SetColors(pBgSurface, sdlscrn->format->palette->colors, 0, sdlscrn->format->palette->ncolors-1);
+  }
+
   if (pBgSurface != NULL)
   {
     SDL_BlitSurface(sdlscrn,  &dlgrect, pBgSurface, &bgrect);
