@@ -14,11 +14,12 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to a byte
   array and stored in 'cart_img[]'.
 */
-char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.5 2004-12-09 21:06:36 thothy Exp $";
+char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.6 2004-12-19 13:46:33 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
 #include "configuration.h"
+#include "file.h"
 #include "stMemory.h"
 #include "vdi.h"
 

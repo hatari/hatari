@@ -5,6 +5,18 @@
 
 
 
+ Version 0.60 (2004-12-19):
+ --------------------------
+
+- Again some code cleanup and bug fixes.
+- Window/fullscreen mode is now correctly initialized from the configuration
+  file.
+- Added --window command line option to force a start in window mode.
+- Added alert boxes to show warnings, errors and information messages.
+- PC mouse pointer is now better in sync with the ST mouse pointer.
+- It's now possible to load an alternative cartridge image file.
+
+
  Version 0.50 (2004-07-26):
  --------------------------
 

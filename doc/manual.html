@@ -30,8 +30,8 @@
 
 	a:link { color:#000099; background-color:#ffffff; text-decoration:none; }
  	a:visited { color:#cc0000; background-color:#ffffff; text-decoration:none;}
- 	a:hover { color:#000099; background-color:#ffffff; text-decoration:none; font-weight:bold; }
- 	a:active { color:#993399; background-color:#ffffff; text-decoration:none; font-weight:bold; }
+ 	a:hover { color:#0000ff; background-color:#ffffff; text-decoration:none; }
+ 	a:active { color:#993399; background-color:#ffffff; text-decoration:none; }
 
 	*.commandline { font-family:Fixed,Courier,monospace; font-size:10pt; }
 	*.file { color: #000088;}
@@ -47,7 +47,7 @@
  vlink="#cc0000">
 <h1 align="center">Hatari User's Manual</h1>
 <p align="center">
-Hatari Version 0.53 CVS
+Version 0.60
 </p>
 <p align="center">
 <strong>project initiator and main developer of Hatari: Thomas Huth &lt;<a
@@ -60,30 +60,29 @@ Hatari Version 0.53 CVS
  target="_blank">http://hatari.sourceforge.net/</a> </strong>
 </p>
 <br>
+
 <h2>Introduction</h2>
+
 <h3>General description</h3>
-<p>Hatari is an Atari ST emulator for Linux, FreeBSD, BeOS and other
-Systems which are supported by the SDL library. See Appendix B
-for details on emulation in general.</p>
-<p>Hatari is based on two main sources: </p>
-<ul>
-  <li>The WinSTon sourcecode written by Paul Bates. You can get it
-from: <a href="http://www.sourceforge.net/projects/winston/">http://www.sourceforge.net/projects/winston/</a>
-  </li>
-  <li>The UAE's CPU core, you can download UAE
-at: <a href="http://www.freiburg.linux.de/%7Euae/">http://www.freiburg.linux.de/~uae/</a>
-  </li>
-</ul>
 <p>
-Hatari started as an adaption of the free WinSTon source code to Linux.
-(WinSTon is a ST emulator for Windows). But since WinSTon's CPU core
-was
-written in i86 assembler, it was not possible to use it for Hatari as
-Hatari is intended to be platform independent. So the UAE's CPU core
-was
-used for Hatari instead, because this CPU core has been written in
+Hatari is an Atari ST emulator for Linux, FreeBSD, BeOS and other
+Systems which are supported by the SDL library.
+See Appendix B for details on emulation in general.
+The Atari ST was a 16/32 bit computer system which was first released by Atari
+in 1985. Using the Motorola 68000 CPU, it was quite a popular computer having
+quite a lot of CPU power at that time.
+</p>
+<p>
+Hatari started as an adaption of the free
+<a href="http://www.sourceforge.net/projects/winston/">WinSTon source code</a>
+to Linux (WinSTon is a ST emulator for Windows).
+But since WinSTon's CPU core was written in i86 assembler, it was not possible
+to use it for Hatari as Hatari is intended to be platform independent.
+So the <a href="http://www.freiburg.linux.de/%7Euae/">CPU core of UAE</a>
+was used for Hatari instead, because this CPU core has been written in
 portable C and also has some nice features like 68040 and FPU support.
 </p>
+
 <h3>Features</h3>
 <ul>
   <li>complete m68k emulation via UAE's CPU core</li>
@@ -170,8 +169,15 @@ Of course, you need the GNU C compiler and (GNU) Make, too!
 <p> Change to the hatari/ directory and adapt the configuration file
 <span class="file">Makefile.cnf</span> to suite your system.
 Alternatively, you can use the supplied configure script to auto-detect
-all parameters (type "./configure --help" to see the options of the
-script).
+all parameters (type " <span class="commandline">./configure --help</span>"
+to see the options of the script).
+Don't forget to use some good CFLAGS for the compiler optimizations, e.g.
+run <span class="commandline">configure</span> in the following way:
+</p>
+<p>
+ <kbd> CFLAGS="-O3 -fomit-frame-pointer" ./configure</kbd>
+</p>
+<p>
 Then compile Hatari by typing <span class="commandline">make</span>.
 If all
 works fine, you'll get the executable <span class="commandline">hatari</span>
@@ -436,14 +442,16 @@ restored.</p>
 <p><em>NOTE:</em> Memory snapshots are not interchangeable between
 different versions of Hatari. E.q. if you compile a newer Hatari, you
 cannot load your old memory snapshots back.</p>
+
 <h4>The ROM Dialog</h4>
 <p>Here you can select the TOS image to use. Click on <span
  class="button">Browse</span> to select it via the fileselector.</p>
 You can also select an optional cartridge image to use. Click on <span
  class="button">Browse</span> to select one via the fileselector. Keep
 in mind that any custom cartridge image will not work together with
-GEMDOS harddisc emulation as the GEMDOS harddisc emulation puts some
-driver code into its own cartridge.<br>
+GEMDOS harddisc emulation or the VDI extended resolution emulation
+since some additional driver code will be used in the cartridge memory
+space for these emulations.<br>
 <p><em>Note:</em> These options are critical and you are strongly
 advised to reset the emulated ST
 when changing one of these option.</p>
@@ -457,6 +465,7 @@ emulates a joystick plugged into the ST mouse port allowing you to play
 <p>If no joystick is checked here, joystick emulation is done via a
 connected PC joystick.</p>
 <p>See the chapter "Emulated Joystick" for details.</p>
+
 <h4>The Screen Dialog</h4>
 <p>Here you control the video output of the emulated ST.</p>
 <p>Check "Fullscreen" to run Hatari fullscreen, default is windowed.</p>
@@ -891,9 +900,11 @@ But in most cases the CPU emulation is the simplest part. Correct
 emulation of the various custom chips and hardware
 parts of the emulated system is much trickier.
 </p>
+
 <h3>Software compatibility list</h3>
 <p>This is a little compilation of what Atari software does work in
 Hatari. It is by no means finished.</p>
+
 <table border="1" cellpadding="3">
   <caption align="bottom">tested games</caption> <tbody>
     <tr class="backdropped">
@@ -1010,8 +1021,23 @@ Hatari. It is by no means finished.</p>
       <td>&nbsp;</td>
       <td>&nbsp;</td>
     </tr>
+    <tr>
+      <td>Alien World</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>Only works with "--slowfdc"</td>
+    </tr>
+    <tr>
+      <td>Skweek</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>Does not work with cartridge / HD emulation</td>
+    </tr>
   </tbody>
 </table>
+
+<br>
+
 <table border="1" cellpadding="3">
   <caption align="bottom">tested demos</caption> <tbody>
     <tr class="backdropped">
@@ -1021,19 +1047,20 @@ Hatari. It is by no means finished.</p>
       <td align="center">Comment</td>
     </tr>
     <tr>
-      <td>Alien World</td>
+      <td>Fantasia (by Dune)</td>
       <td>yes</td>
       <td>&nbsp;</td>
       <td>Only works with "--slowfdc"</td>
     </tr>
     <tr>
-      <td>Fantasia (Demo by Dune)</td>
+      <td>Oddstuff (by Dune/SectorOne)</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>Only works with "--slowfdc"</td>
+      <td>Only works with "--slowfdc".
+          Enable "frameskip" to avoid the flicker.</td>
     </tr>
     <tr>
-      <td>If pigs could fly (Demo by Syndicate)</td>
+      <td>If pigs could fly (by Syndicate)</td>
       <td>yes</td>
       <td>&nbsp;</td>
       <td>Only works with "--slowfdc"</td>
@@ -1044,8 +1071,17 @@ Hatari. It is by no means finished.</p>
       <td>&nbsp;</td>
       <td>Only works with "--slowfdc"</td>
     </tr>
+    <tr>
+      <td>Overdose (by Aggression)</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>Does not work with cartridge / HD emulation</td>
+    </tr>
   </tbody>
 </table>
+
+<br>
+
 <table border="1" cellpadding="3">
   <caption align="bottom">tested applications</caption> <tbody>
     <tr class="backdropped">
@@ -1132,6 +1168,9 @@ with disk images</td>
     </tr>
   </tbody>
 </table>
+
+<br>
+
 <hr style="width: 100%; height: 2px;">
 <table border="0" width="100%">
   <tbody>

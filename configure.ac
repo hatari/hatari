@@ -4,7 +4,7 @@
 # Process this file with autoconf to produce a configure script.
 # Don't forget to run aclocal first!
 
-AC_INIT(hatari, 0.50)
+AC_INIT(hatari, 0.60)
 AC_CONFIG_SRCDIR([src/main.c])
 AC_PREREQ(2.50)
 
@@ -14,11 +14,6 @@ AC_CANONICAL_TARGET
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
-
-# Use the following lines for a release versions:
-#if test x"${GCC}" = xyes; then
-#  CFLAGS="-O3 -fomit-frame-pointer"
-#fi
 
 # extra command line options
 

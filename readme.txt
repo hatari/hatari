@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                                 Version 0.50
+                                 Version 0.60
 
                         http://hatari.sourceforge.net/
 
@@ -54,7 +54,12 @@ For compiling Hatari, you currently need GNU-C and GNU-Make. Please note that
 GNU-Make is often called "gmake" instead of "make" on non-Linux systems.
 To configure the build process, you currently have two options: You can either
 use the supplied configure script (type "./configure --help" to see the
-options) or you can edit the file Makefile.cnf manually.
+options) or you can edit the file Makefile.cnf manually. Don't forget to use
+some good CFLAGS for the compiler optimizations, e.g. run "configure" in the
+following way:
+
+ CFLAGS="-O3 -fomit-frame-pointer" ./configure
+
 Then you can compile Hatari by typing "make" (or "gmake"). If all works fine,
 you'll get the executable "hatari" in the src/ subdirectory.
 
