@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.22 2003-03-25 07:53:28 emanne Exp $";
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.23 2003-03-27 11:15:59 emanne Exp $";
 
 #include <unistd.h>
 
@@ -199,29 +199,34 @@ SGOBJ tosgemdlg[] =
 #define DLGSCRN_8BPP       11
 #define DLGSCRN_LOW320     12
 #define DLGSCRN_LOW640     13
-#define DLGSCRN_LOW800     14
-#define DLGSCRN_ONCHANGE   17
-#define DLGSCRN_FPSPOPUP   19
-#define DLGSCRN_CAPTURE    20
-#define DLGSCRN_RECANIM    21
-#define DLGSCRN_EXIT       22
+// #define DLGSCRN_LOW800     14
+#define DLGSCRN_ONCHANGE   16
+#define DLGSCRN_FPSPOPUP   18
+#define DLGSCRN_CAPTURE    19
+#define DLGSCRN_RECANIM    20
+#define DLGSCRN_EXIT       21
+
+/* This emulator is not supposed to display lowres in more than 640x480, so just remove
+   800x600, which was here only for poor windows users who wanted a resolution with enough
+   room to draw borders... */
+
 SGOBJ screendlg[] =
 {
   { SGBOX, 0, 0, 0,0, 40,25, NULL },
   { SGBOX, 0, 0, 1,1, 38,13, NULL },
   { SGTEXT, 0, 0, 13,2, 14,1, "Screen options" },
   { SGCHECKBOX, 0, 0, 4,4, 12,1, "Fullscreen" },
-  { SGCHECKBOX, 0, 0, 4,5, 23,1, "Interlaced mode (in fullscreen)" },
+  { SGCHECKBOX, 0, 0, 4,5, 23,1, "Interlaced mode" },
   { SGCHECKBOX, 0, 0, 4,6, 10,1, "Frame skip" },
   { SGCHECKBOX, 0, 0, 4,7, 13,1, "Use borders" },
   { SGTEXT, 0, 0, 4,8, 8,1, "Monitor:" },
   { SGRADIOBUT, 0, 0, 15,8, 7,1, "Color" },
   { SGRADIOBUT, 0, 0, 25,8, 6,1, "Mono" },
-  { SGTEXT, 0, 0, 4,10, 23,1, "ST-Low fullscreen mode:" },
+  { SGTEXT, 0, 0, 4,10, 23,1, "ST-Low mode:" },
   { SGCHECKBOX, 0, 0, 30,10, 7,1, "8 bpp" },
   { SGRADIOBUT, 0, 0, 5,12, 9,1, "320x240" },
   { SGRADIOBUT, 0, 0, 16,12, 9,1, "640x480" },
-  { SGRADIOBUT, 0, 0, 27,12, 9,1, "800x600" },
+/*   { SGRADIOBUT, 0, 0, 27,12, 9,1, "800x600" }, */
   { SGBOX, 0, 0, 1,15, 38,7, NULL },
   { SGTEXT, 0, 0, 13,16, 14,1, "Screen capture" },
   { SGCHECKBOX, 0, 0, 3,18, 27,1, "Only when display changes" },
@@ -812,7 +817,7 @@ void Dialog_ScreenDlg(void)
     screendlg[DLGSCRN_MONO].state &= ~SG_SELECTED;
   }
 
-  for(i=0; i<3; i++)
+  for(i=0; i<2; i++)
     screendlg[DLGSCRN_LOW320 + i].state &= ~SG_SELECTED;
 
   if(DialogParams.Screen.ChosenDisplayMode <= DISPLAYMODE_16COL_FULL)
@@ -876,7 +881,7 @@ void Dialog_ScreenDlg(void)
   DialogParams.Screen.bUseHighRes = (screendlg[DLGSCRN_MONO].state & SG_SELECTED);
   DialogParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
 
-  for(i=0; i<3; i++)
+  for(i=0; i<2; i++)
   {
     if(screendlg[DLGSCRN_LOW320 + i].state & SG_SELECTED)
     {
