@@ -19,7 +19,7 @@
 #ifndef CPU_CAN_ACCESS_UNALIGNED
 # if defined(__i386__) || defined(powerpc) || defined(__mc68020__)
 #  define CPU_CAN_ACCESS_UNALIGNED 1
-# elif 
+# else
 #  define CPU_CAN_ACCESS_UNALIGNED 0
 # endif
 #endif
