@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.33 2004-04-19 08:53:49 thothy Exp $";
+char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.34 2004-04-23 15:34:01 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -786,7 +786,7 @@ void Exception(int nr, uaecptr oldpc)
 	      specialstatus |= 0x10;
 	    put_word (m68k_areg(regs, 7), specialstatus);
 	    put_long (m68k_areg(regs, 7)+2, BusAddressLocation);
-	    put_word (m68k_areg(regs, 7)+6, BusErrorOpcode);
+	    put_word (m68k_areg(regs, 7)+6, get_word(BusErrorPC));  /* Opcode */
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {
 	      fprintf(stderr, "Detected double bus error at address $%x, PC=$%lx => CPU halted!\n",

@@ -6,11 +6,10 @@
 
   Reset emulation state.
 */
-char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.6 2004-04-19 08:53:34 thothy Exp $";
+char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.7 2004-04-23 15:33:59 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
-#include "decode.h"
 #include "fdc.h"
 #include "floppy.h"
 #include "gemdos.h"

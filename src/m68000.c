@@ -8,12 +8,11 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.26 2004-02-19 15:22:12 thothy Exp $";
+char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.27 2004-04-23 15:33:59 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
 #include "debug.h"
-#include "decode.h"
 #include "gemdos.h"
 #include "hatari-glue.h"
 #include "int.h"
@@ -29,9 +28,9 @@ char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.26 2004-02-19 15:22:12 thothy Ex
 short int PendingInterruptFlag;
 void *PendingInterruptFunction;
 short int PendingInterruptCount;
+
 Uint32 BusAddressLocation;       /* Stores the offending address for bus-/address errors */
 Uint32 BusErrorPC;               /* Value of the PC when bus error occurs */
-Uint16 BusErrorOpcode;           /* Opcode of faulting instruction */
 BOOL bBusErrorReadWrite;         /* 0 for write error, 1 for read error */
 
 
@@ -162,7 +161,6 @@ void M68000_BusError(unsigned long addr, BOOL bReadWrite)
   }
 
   BusAddressLocation = addr;        /* Store for exception frame */
-  BusErrorOpcode = get_word(BusErrorPC);
   bBusErrorReadWrite = bReadWrite;
   set_special(SPCFLAG_BUSERROR);    /* The exception will be done in newcpu.c */
 }

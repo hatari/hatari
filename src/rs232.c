@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.6 2004-02-21 19:51:47 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.7 2004-04-23 15:33:59 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_thread.h>
@@ -22,8 +22,8 @@ char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.6 2004-02-21 19:51:47 thothy Exp $
 #include "main.h"
 #include "configuration.h"
 #include "debug.h"
-#include "decode.h"
 #include "mfp.h"
+#include "stMemory.h"
 #include "rs232.h"
 
 

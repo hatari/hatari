@@ -16,7 +16,6 @@
 
 #include "main.h"
 #include "debug.h"
-#include "decode.h"
 #include "int.h"
 #include "screen.h"
 #include "spec512.h"

@@ -13,7 +13,7 @@
 #define UAE_EVENTS_H
 
 #include "../includes/main.h"
-#include "../includes/decode.h"
+#include "../includes/m68000.h"
 #include "../includes/mfp.h"
 
 

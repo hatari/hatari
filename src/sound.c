@@ -19,12 +19,11 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.14 2004-04-19 08:53:47 thothy Exp $";
+char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.15 2004-04-23 15:33:59 thothy Exp $";
 
 #include <SDL_types.h>
 
 #include "main.h"
-#include "decode.h"
 #include "audio.h"
 #include "debug.h"
 #include "dialog.h"

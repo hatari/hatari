@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.14 2004-04-14 22:36:59 thothy Exp $";
+char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.15 2004-04-23 15:34:00 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -20,7 +20,7 @@ char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.14 2004-04-14 22:36:59 thothy Ex
 #include "../includes/tos.h"
 #include "../includes/intercept.h"
 #include "../includes/reset.h"
-#include "../includes/decode.h"
+#include "../includes/stMemory.h"
 #include "../includes/m68000.h"
 #include "newcpu.h"
 

@@ -22,13 +22,12 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.22 2004-04-19 08:53:33 thothy Exp $";
+char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.23 2004-04-23 15:33:58 thothy Exp $";
 
 #include <SDL_types.h>
 
 #include "main.h"
 #include "debug.h"
-#include "decode.h"
 #include "dialog.h"
 #include "fdc.h"
 #include "int.h"

@@ -9,14 +9,13 @@
   box) for debugging tasks like memory and register dumps
 
 */
-char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.8 2004-04-19 08:53:33 thothy Exp $";
+char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.9 2004-04-23 15:33:58 thothy Exp $";
 
 #include <ctype.h>
 
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
-#include "decode.h"
 #include "gemdos.h"
 #include "intercept.h"
 #include "reset.h"

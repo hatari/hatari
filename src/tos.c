@@ -15,14 +15,13 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.19 2004-04-19 08:53:47 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.20 2004-04-23 15:33:59 thothy Exp $";
 
 #include <SDL_endian.h>
 
 #include "main.h"
 #include "cart.h"
 #include "debug.h"
-#include "decode.h"
 #include "dialog.h"
 #include "errlog.h"
 #include "file.h"
@@ -63,7 +62,6 @@ unsigned long TosAddress, TosSize;      /* Address in ST memory and size of TOS 
 BOOL bTosImageLoaded = FALSE;           /* Successfully loaded a TOS image? */
 BOOL bRamTosImage;                      /* TRUE if we loaded a RAM TOS image */
 unsigned int ConnectedDriveMask=0x03;   /* Bit mask of connected drives, eg 0x7 is A,B,C */
-unsigned long STRamEnd;                 /* End of ST Ram, above this address is no-mans-land and hardware vectors */
 
 /* Possible TOS file extensions to scan for */
 char *pszTosNameExts[] =

@@ -11,10 +11,9 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.10 2004-04-19 08:53:48 thothy Exp $";
+char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.11 2004-04-23 15:33:59 thothy Exp $";
 
 #include "main.h"
-#include "decode.h"
 #include "file.h"
 #include "gemdos.h"
 #include "m68000.h"

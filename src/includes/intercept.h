@@ -8,6 +8,8 @@
 #ifndef HATARI_INTERCEPT_H
 #define HATARI_INTERCEPT_H
 
+#include "sysdeps.h"
+
 
 #define INTERCEPT_WORKSPACE_SIZE  (10*1024)  /* 10k, size of intercept lists */
 

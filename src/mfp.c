@@ -14,11 +14,10 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.13 2004-04-19 08:53:34 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.14 2004-04-23 15:33:59 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
-#include "decode.h"
 #include "fdc.h"
 #include "ikbd.h"
 #include "int.h"
@@ -52,6 +51,11 @@ Input -----/             |         ------------------------              |      
                          |                  |  |                                     |
                          --------------------  --------------------------------------o--- PassVector
 */
+
+
+/*-----------------------------------------------------------------------*/
+/* Set clock times for each instruction, see '68000 timing' pages for details */
+#define  ROUND_CYCLES_TO4(var)  (((int)(var)+3)&0xfffffffc)
 
 
 /* MFP Registers */

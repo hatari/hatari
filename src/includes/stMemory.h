@@ -13,6 +13,14 @@
 #include "main.h"
 
 
+extern Uint8 STRam[16*1024*1024];
+extern Uint32 STRamEnd;
+
+
+/* Offset ST address to PC pointer: */
+#define STRAM_ADDR(Var)  ((unsigned long)STRam+((Uint32)(Var) & 0x00ffffff))
+
+
 /*-----------------------------------------------------------------------*/
 /*
   Write 32-bit word into ST memory space.

@@ -20,7 +20,6 @@
 #include "main.h"
 #include "cart.h"
 #include "tos.h"
-#include "decode.h"
 #include "m68000.h"
 #include "misc.h"
 #include "stMemory.h"

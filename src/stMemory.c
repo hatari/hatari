@@ -4,11 +4,15 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  ST Memory access functions - take care of endian swaps.
+  ST Memory access functions.
 */
-char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.5 2004-04-19 08:53:47 thothy Exp $";
+char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.6 2004-04-23 15:33:59 thothy Exp $";
 
 #include "stMemory.h"
+
+
+Uint8 STRam[16*1024*1024];      /* This is our ST Ram, includes all TOS/hardware areas for ease */
+Uint32 STRamEnd;                /* End of ST Ram, above this address is no-mans-land and hardware vectors */
 
 
 /*-----------------------------------------------------------------------*/

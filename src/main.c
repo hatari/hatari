@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.54 2004-04-19 08:53:33 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.55 2004-04-23 15:33:59 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -15,7 +15,6 @@ char Main_rcsid[] = "Hatari $Id: main.c,v 1.54 2004-04-19 08:53:33 thothy Exp $"
 
 #include "main.h"
 #include "configuration.h"
-#include "decode.h"
 #include "dialog.h"
 #include "audio.h"
 #include "debug.h"
@@ -27,18 +26,19 @@ char Main_rcsid[] = "Hatari $Id: main.c,v 1.54 2004-04-19 08:53:33 thothy Exp $"
 #include "hdc.h"
 #include "ikbd.h"
 #include "intercept.h"
-#include "reset.h"
 #include "keymap.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "misc.h"
 #include "midi.h"
 #include "printer.h"
+#include "reset.h"
 #include "rs232.h"
 #include "screen.h"
 #include "sdlgui.h"
 #include "shortcut.h"
 #include "sound.h"
+#include "stMemory.h"
 #include "tos.h"
 #include "vdi.h"
 #include "video.h"
@@ -54,8 +54,6 @@ BOOL bEmulationActive=TRUE;               /* Run emulation when started */
 BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
 char szBootDiscImage[FILENAME_MAX];
 char szWorkingDir[FILENAME_MAX];          /* Working directory */
-
-Uint8 STRam[16*1024*1024];                /* This is our ST Ram, includes all TOS/hardware areas for ease */
 
 
 

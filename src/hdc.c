@@ -6,11 +6,10 @@
 
   Low-level hard drive emulation
 */
-char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.5 2004-04-19 08:53:33 thothy Exp $";
+char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.6 2004-04-23 15:33:58 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
-#include "decode.h"
 #include "configuration.h"
 #include "fdc.h"
 #include "hdc.h"

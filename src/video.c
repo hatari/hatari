@@ -9,14 +9,13 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.22 2004-04-19 08:53:48 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.23 2004-04-23 15:33:59 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
 
 #include "main.h"
 #include "debug.h"
-#include "decode.h"
 #include "configuration.h"
 #include "fdc.h"
 #include "int.h"
