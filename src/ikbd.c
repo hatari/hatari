@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.19 2004-04-23 15:33:58 thothy Exp $";
+char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.20 2004-11-14 02:34:31 thothy Exp $";
 
 #include <time.h>
 
@@ -34,9 +34,10 @@ char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.19 2004-04-23 15:33:58 thothy Exp $"
 #include "vdi.h"
 
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */
-#define ACIA_CYCLES    7200         /* Cycles(Multiple of 4) between sent to ACIA from keyboard along serial line - 500Hz/64, (approx' 6920-7200cycles from test program) */
+#define ACIA_CYCLES    7200         /* Cycles (Multiple of 4) between sent to ACIA from keyboard along serial line - 500Hz/64, (approx' 6920-7200cycles from test program) */
 
 #define IKBD_RESET_CYCLES  400000   /* Cycles after RESET before complete */
+#define IKBD_INIT_RESET_CYCLES 3000000  /* Cycles after a cold reset before IKBD starts */
 
 #define ABS_X_ONRESET    0          /* Initial XY for absolute mouse position after RESET command */
 #define ABS_Y_ONRESET    0
@@ -200,7 +201,12 @@ void IKBD_Reset(BOOL bCold)
 {
   /* Reset internal keyboard processor details */
   if (bCold)
+  {
     KeyboardProcessor.bReset = FALSE;
+    if (Int_InterruptActive(INTERRUPT_IKBD_RESETTIMER))
+      Int_RemovePendingInterrupt(INTERRUPT_IKBD_RESETTIMER);
+  }
+
   KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
   KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
 
@@ -286,7 +292,7 @@ static void IKBD_UpdateInternalMousePosition(void)
 /*-----------------------------------------------------------------------*/
 /*
   When running in maximum speed the emulation will not see 'double-clicks' of the mouse
-  as it is running so fast. In this case, we check for a Windows double-click and pass
+  as it is running so fast. In this case, we check for a double-click and pass
   the 'up'/'down' messages in emulation time to simulate the double-click effect!
 */
 static void IKBD_CheckForDoubleClicks(void)
@@ -566,8 +572,9 @@ static void IKBD_SendCursorMousePacket(void)
   int i=0;
 
   /* Run each 'Delta' as cursor presses */
-  /* Limit to '10' loops as Windows cursor is a VERY poor quality. Eg, a single mouse movement */
-  /* on and ST gives delta's of '1', mostly, but Windows goes as high as 20+! */
+  /* Limit to '10' loops as host mouse cursor might have a VERY poor quality. */
+  /* Eg, a single mouse movement on and ST gives delta's of '1', mostly, */
+  /* but host mouse might go as high as 20+! */
   while ( (i<10) && ((KeyboardProcessor.Mouse.DeltaX!=0) || (KeyboardProcessor.Mouse.DeltaY!=0)
    || (!IKBD_ButtonsEqual(Keyboard.bOldLButtonDown,Keyboard.bLButtonDown)) || (!IKBD_ButtonsEqual(Keyboard.bOldRButtonDown,Keyboard.bRButtonDown))) ) {
     /* Left? */
@@ -621,10 +628,6 @@ static void IKBD_SendCursorMousePacket(void)
 */
 void IKBD_SendAutoKeyboardCommands(void)
 {
-  /* Ignore anything until we've redirected our GEM handlers */
-  if (!bInitGemDOS)
-    return;
-
   /* Don't do anything until processor is first reset */
   if (!KeyboardProcessor.bReset)
     return;
@@ -717,6 +720,9 @@ void IKBD_InterruptHandler_ResetTimer(void)
   /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
 
+  /* Turn processor on; can now process commands */
+  KeyboardProcessor.bReset = TRUE;
+
   /* Critical timer is over */
   bDuringResetCriticalTime = FALSE;
 }
@@ -755,11 +761,11 @@ void IKBD_Cmd_NullFunction(void)
 void IKBD_Cmd_Reset(void)
 {
   /* Check for error series of bytes, eg 0x80,0x01 */
-  if (Keyboard.InputBuffer[1]==0x01) {
+  if (Keyboard.InputBuffer[1] == 0x01)
+  {
 #ifdef DEBUG_OUTPUT_IKBD
     Debug_IKBD("KEYBOARD ON\n");
 #endif
-    KeyboardProcessor.bReset = TRUE;      /* Turn processor on; can now process commands */
 
     /* Set defaults */
     KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
@@ -770,11 +776,15 @@ void IKBD_Cmd_Reset(void)
 
     IKBD_AddKeyToKeyboardBuffer(0xF0);    /* Assume OK, return correct code */
 
-    /* Start timer - some commands are send during this time they may be ignored(see real ST!) */
-    Int_AddRelativeInterrupt(IKBD_RESET_CYCLES,INTERRUPT_IKBD_RESETTIMER);
+    /* Start timer - some commands are send during this time they may be ignored (see real ST!) */
+    if (!KeyboardProcessor.bReset)
+      Int_AddRelativeInterrupt(IKBD_INIT_RESET_CYCLES, INTERRUPT_IKBD_RESETTIMER);
+    else
+      Int_AddRelativeInterrupt(IKBD_RESET_CYCLES, INTERRUPT_IKBD_RESETTIMER);
+
     /* Set this 'critical' flag, gets reset when timer expires */
-    bMouseDisabled = bJoystickDisabled = FALSE;
     bDuringResetCriticalTime = TRUE;
+    bMouseDisabled = bJoystickDisabled = FALSE;
     bBothMouseAndJoy = FALSE;
   }
   /* else if not 0x80,0x01 just ignore */
@@ -1469,13 +1479,10 @@ void IKBD_AddKeyToKeyboardBuffer(unsigned char Data)
 
 /*-----------------------------------------------------------------------*/
 /*
-  When press/release key under Windows, execute this function
+  When press/release key under host OS, execute this function.
 */
 void IKBD_PressSTKey(unsigned char ScanCode,BOOL bPress)
 {
-  /* Ignore anything until we've redirected our GEM handlers */
-  if (!bInitGemDOS)
-    return;
   if (!bPress)
     ScanCode |= 0x80;    /* Set top bit if released key */
   IKBD_AddKeyToKeyboardBuffer(ScanCode);  /* And send to keyboard processor */

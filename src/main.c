@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.62 2004-10-31 17:32:50 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.63 2004-11-14 02:34:31 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -53,7 +53,7 @@ BOOL bEmulationActive=TRUE;               /* Run emulation when started */
 BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
 char szBootDiscImage[FILENAME_MAX];
 char szWorkingDir[FILENAME_MAX];          /* Working directory */
-
+BOOL bIgnoreNextMouseMotion = FALSE;      /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
 
 
 /*-----------------------------------------------------------------------*/
@@ -147,14 +147,24 @@ void Main_EventHandler(void)
   if( SDL_PollEvent(&event) )
    switch( event.type )
    {
+
     case SDL_QUIT:
        bQuitProgram = TRUE;
        set_special(SPCFLAG_BRK);        /* Assure that CPU core shuts down */
        break;
+
     case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */
-       KeyboardProcessor.Mouse.dx += event.motion.xrel;
-       KeyboardProcessor.Mouse.dy += event.motion.yrel;
+       if (!bIgnoreNextMouseMotion)
+       {
+         bIgnoreNextMouseMotion = FALSE;
+       }
+       else
+       {
+         KeyboardProcessor.Mouse.dx += event.motion.xrel;
+         KeyboardProcessor.Mouse.dy += event.motion.yrel;
+       }
        break;
+
     case SDL_MOUSEBUTTONDOWN:
        if( event.button.button==SDL_BUTTON_LEFT )
        {
@@ -166,15 +176,18 @@ void Main_EventHandler(void)
        else if( event.button.button==SDL_BUTTON_MIDDLE )
          Keyboard.LButtonDblClk = 1;    /* Start double-click sequence in emulation time */
        break;
+
     case SDL_MOUSEBUTTONUP:
        if( event.button.button==SDL_BUTTON_LEFT )
          Keyboard.bLButtonDown &= ~BUTTON_MOUSE;
        else if( event.button.button==SDL_BUTTON_RIGHT )
          Keyboard.bRButtonDown &= ~BUTTON_MOUSE;;
        break;
+
     case SDL_KEYDOWN:
        Keymap_KeyDown(&event.key.keysym);
        break;
+
     case SDL_KEYUP:
        Keymap_KeyUp(&event.key.keysym);
        break;

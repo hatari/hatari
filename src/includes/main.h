@@ -170,6 +170,7 @@ enum {
 extern BOOL bQuitProgram;
 extern BOOL bEnableDebug;
 extern BOOL bEmulationActive;
+extern BOOL bIgnoreNextMouseMotion;
 extern char szBootDiscImage[FILENAME_MAX];
 extern char szWorkingDir[FILENAME_MAX];
 
