@@ -173,12 +173,20 @@ typedef enum
   MINMAXSPEED_MAX
 } MINMAXSPEED_TYPE;
 
+typedef enum
+{
+  MACHINE_ST,
+  MACHINE_STE
+} MACHINETYPE;
+
 typedef struct
 {
   int nCpuLevel;
   BOOL bCompatibleCpu;
-  BOOL bAddressSpace24;
+  /*BOOL bAddressSpace24;*/
+  MACHINETYPE nMachineType;
   BOOL bBlitter;                  /* TRUE if blitter is enabled */
+  BOOL bRealTimeClock;
   BOOL bPatchTimerD;
   BOOL bSlowFDC;                  /* TRUE to slow down FDC emulation */
   MINMAXSPEED_TYPE nMinMaxSpeed;

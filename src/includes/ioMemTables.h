@@ -18,6 +18,6 @@ typedef struct
 } INTERCEPT_ACCESS_FUNC;
 
 extern INTERCEPT_ACCESS_FUNC IoMemTable_ST[];
-extern INTERCEPT_ACCESS_FUNC IoMemTable_MegaST[];
+extern INTERCEPT_ACCESS_FUNC IoMemTable_STE[];
 
 #endif

@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.23 2004-12-09 21:06:37 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.24 2005-02-10 00:11:41 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -27,6 +27,7 @@ char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.23 2004-12-09 21:06:37 thothy Exp $";
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
+#include "ioMem.h"
 #include "m68000.h"
 #include "memAlloc.h"
 #include "memorySnapShot.h"
@@ -93,11 +94,7 @@ typedef struct
   void *pNewData;       /* Pointer to the new bytes */
 } TOS_PATCH;
 
-//static char pszHdvInit[] = "hdv_init - initialize drives";  // obsolete - will be removed soon
-//static char pszHdvBoot[] = "hdv_boot - load boot sector";   // obsolete - will be removed soon
 static char pszDmaBoot[] = "boot from DMA bus";
-//static char pszSetConDrv[] = "set connected drives mask";   // obsolete - will be removed soon
-//static char pszClrConDrv[] = "clear connected drives mask"; // obsolete - will be removed soon
 static char pszMouse[] = "working mouse in big screen resolutions";
 static char pszRomCheck[] = "ROM checksum";
 static char pszNoSteHw[] = "disable STE hardware access";
@@ -113,13 +110,8 @@ static Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
 /* The patches for the TOS: */
 static TOS_PATCH TosPatches[] =
 {
-  //{ 0x100, -1, pszHdvInit, TP_ALWAYS, 0xFC0D60, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x100, -1, pszHdvBoot, TP_ALWAYS, 0xFC1384, 0x4EB900FC, 6, pNopOpcodes }, /* JSR $FC0AF8 */
   { 0x100, -1, pszDmaBoot, TP_HD_OFF, 0xFC03D6, 0x610000D0, 4, pNopOpcodes }, /* BSR $FC04A8 */
 
-  //{ 0x102, -1, pszHdvInit, TP_ALWAYS, 0xFC0F44, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x102, -1, pszHdvBoot, TP_ALWAYS, 0xFC1568, 0x4EB900FC, 6, pNopOpcodes }, /* JSR $FC0C2E */
-  //{ 0x102, -1, pszClrConDrv, TP_HD_OFF, 0xFC0302, 0x42B90000, 6, pNopOpcodes }, /* CLR.L $4C2 */
   { 0x102, -1, pszDmaBoot, TP_HD_OFF, 0xFC0472, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $FC0558 */
   { 0x102, 0, pszMouse, TP_ALWAYS, 0xFD0030, 0xD2C147F9, 2, pMouseOpcode },
   { 0x102, 1, pszMouse, TP_ALWAYS, 0xFD008A, 0xD2C147F9, 2, pMouseOpcode },
@@ -128,25 +120,13 @@ static TOS_PATCH TosPatches[] =
   { 0x102, 6, pszMouse, TP_ALWAYS, 0xFCFEF0, 0xD2C147F9, 2, pMouseOpcode },
   { 0x102, 8, pszMouse, TP_ALWAYS, 0xFCFEFE, 0xD2C147F9, 2, pMouseOpcode },
 
-  //{ 0x104, -1, pszHdvInit, TP_ALWAYS, 0xFC16BA, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x104, -1, pszHdvBoot, TP_ALWAYS, 0xFC1CCE, 0x4EB900FC, 6, pNopOpcodes }, /* JSR $FC0BD8 */
-  //{ 0x104, -1, pszClrConDrv, TP_HD_OFF, 0xFC02E6, 0x42AD04C2, 4, pNopOpcodes }, /* CLR.L $4C2(A5) */
   { 0x104, -1, pszDmaBoot, TP_HD_OFF, 0xFC0466, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $FC054C */
 
-  //{ 0x205, -1, pszClrConDrv, TP_HD_OFF, 0xE002FC, 0x42B804C2, 4, pNopOpcodes }, /* CLR.L $4C2 */
+  { 0x106, -1, pszDmaBoot, TP_HD_OFF, 0xE00576, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $E0065C */
+
+  { 0x162, -1, pszDmaBoot, TP_HD_OFF, 0xE00576, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $E0065C */
+
   { 0x205, -1, pszDmaBoot, TP_HD_OFF, 0xE006AE, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $E00794 */
-  //{ 0x205, 0, pszHdvInit, TP_ALWAYS, 0xE0468C, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x205, 1, pszHdvInit, TP_ALWAYS, 0xE046E6, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x205, 2, pszHdvInit, TP_ALWAYS, 0xE04704, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x205, 4, pszHdvInit, TP_ALWAYS, 0xE04712, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x205, 5, pszHdvInit, TP_ALWAYS, 0xE046F4, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x205, 6, pszHdvInit, TP_ALWAYS, 0xE04704, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x205, 0, pszHdvBoot, TP_ALWAYS, 0xE04CA0, 0x4EB900E0, 6, pNopOpcodes }, /* JSR $E00E8E */
-  //{ 0x205, 1, pszHdvBoot, TP_ALWAYS, 0xE04CFA, 0x4EB900E0, 6, pNopOpcodes },
-  //{ 0x205, 2, pszHdvBoot, TP_ALWAYS, 0xE04D18, 0x4EB900E0, 6, pNopOpcodes },
-  //{ 0x205, 4, pszHdvBoot, TP_ALWAYS, 0xE04D26, 0x4EB900E0, 6, pNopOpcodes },
-  //{ 0x205, 5, pszHdvBoot, TP_ALWAYS, 0xE04D08, 0x4EB900E0, 6, pNopOpcodes },
-  //{ 0x205, 6, pszHdvBoot, TP_ALWAYS, 0xE04D18, 0x4EB900E0, 6, pNopOpcodes },
   /* An unpatched TOS 2.05 only works on STEs, so apply some anti-STE patches... */
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00096, 0x42788900, 4, pNopOpcodes }, /* CLR.W $FFFF8900 */
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE0009E, 0x31D88924, 4, pNopOpcodes }, /* MOVE.W (A0)+,$FFFF8924 */
@@ -169,20 +149,7 @@ static TOS_PATCH TosPatches[] =
   /* Checksum is total of TOS ROM image, but get incorrect results */
   /* as we've changed bytes in the ROM! So, just skip anyway! */
   { 0x206, -1, pszRomCheck, TP_ALWAYS, 0xE007FA, 0x2E3C0001, 4, pRomCheckOpcode },
-  //{ 0x206, -1, pszClrConDrv, TP_HD_OFF, 0xE00362, 0x42B804C2, 4, pNopOpcodes }, /* CLR.L $4C2 */
   { 0x206, -1, pszDmaBoot, TP_HD_OFF, 0xE00898, 0x610000E0, 4, pNopOpcodes }, /* BSR.W $E0097A */
-  //{ 0x206, 0, pszHdvInit, TP_ALWAYS, 0xE0518E, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x206, 1, pszHdvInit, TP_ALWAYS, 0xE051E8, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x206, 2, pszHdvInit, TP_ALWAYS, 0xE05206, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x206, 3, pszHdvInit, TP_ALWAYS, 0xE0518E, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x206, 6, pszHdvInit, TP_ALWAYS, 0xE05206, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x206, 8, pszHdvInit, TP_ALWAYS, 0xE05214, 0x4E56FFF0, 2, pRtsOpcode },
-  //{ 0x206, 0, pszHdvBoot, TP_ALWAYS, 0xE05944, 0x4EB900E0, 6, pNopOpcodes }, /* JSR  $E011DC */
-  //{ 0x206, 1, pszHdvBoot, TP_ALWAYS, 0xE0599E, 0x4EB900E0, 6, pNopOpcodes },
-  //{ 0x206, 2, pszHdvBoot, TP_ALWAYS, 0xE059BC, 0x4EB900E0, 6, pNopOpcodes },
-  //{ 0x206, 3, pszHdvBoot, TP_ALWAYS, 0xE05944, 0x4EB900E0, 6, pNopOpcodes },
-  //{ 0x206, 6, pszHdvBoot, TP_ALWAYS, 0xE059BC, 0x4EB900E0, 6, pNopOpcodes },
-  //{ 0x206, 8, pszHdvBoot, TP_ALWAYS, 0xE059CA, 0x4EB900E0, 6, pNopOpcodes },
 
   { 0, 0, NULL, 0, 0, 0, 0, NULL }
 };
@@ -383,14 +350,16 @@ int TOS_LoadImage(void)
       return -2;
     }
 
-    /* TOSes 1.06 and 1.62 are for the STe ONLY and so don't run on a real STfm. */
+    /* TOSes 1.06 and 1.62 are for the STE ONLY and so don't run on a real ST. */
     /* They access illegal memory addresses which don't exist on a real machine and cause the OS */
-    /* to lock up. So, if user selects one of these, show an error */
-    if(TosVersion==0x0106 || TosVersion==0x0162)
+    /* to lock up. So, if user selects one of these, switch to STE mode. */
+    if ((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
     {
-      Main_Message("TOS versions 1.06 and 1.62 are NOT valid STfm images.\n\n"
-                   "These were only designed for use on the STe range of machines.\n", PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
-      return -3;
+      fprintf(stderr, "TOS versions 1.06 and 1.62 are NOT valid ST ROM images.\n"
+                      " => Switching to STE mode.\n");
+      IoMem_UnInit();
+      ConfigureParams.System.nMachineType = MACHINE_STE;
+      IoMem_Init();
     }
 
     /* Copy loaded image into ST memory */

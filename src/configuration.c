@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.34 2005-01-18 23:32:58 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.35 2005-02-10 00:11:39 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -153,8 +153,11 @@ struct Config_Tag configs_System[] =
   { "nMinMaxSpeed", Int_Tag, &ConfigureParams.System.nMinMaxSpeed },
   { "nCpuLevel", Int_Tag, &ConfigureParams.System.nCpuLevel },
   { "bCompatibleCpu", Bool_Tag, &ConfigureParams.System.bCompatibleCpu },
+  { "nMachineType", Int_Tag, &ConfigureParams.System.nMachineType },
   { "bBlitter", Bool_Tag, &ConfigureParams.System.bBlitter },
+  { "bRealTimeClock", Bool_Tag, &ConfigureParams.System.bRealTimeClock },
   { "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
+  { "bSlowFDC", Bool_Tag, &ConfigureParams.System.bSlowFDC },
   { NULL , Error_Tag, NULL }
 };
 
@@ -244,10 +247,13 @@ void Configuration_SetDefault(void)
   /* Set defaults for System */
   ConfigureParams.System.nCpuLevel = 0;
   ConfigureParams.System.bCompatibleCpu = FALSE;
-  ConfigureParams.System.bAddressSpace24 = TRUE;
+  /*ConfigureParams.System.bAddressSpace24 = TRUE;*/
+  ConfigureParams.System.nMachineType = MACHINE_ST;
   ConfigureParams.System.bBlitter = FALSE;
   ConfigureParams.System.bPatchTimerD = TRUE;
+  ConfigureParams.System.bRealTimeClock = TRUE;
   ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;
+  ConfigureParams.System.bSlowFDC = FALSE;
 
   /* Initialize the configuration file name */
   homeDir = getenv("HOME");
@@ -332,7 +338,6 @@ void Configuration_Load(void)
   Configuration_LoadSection(sConfigFileName, configs_System, "[System]");
 
   /* Copy details to global variables */
-  bEnableBlitter = ConfigureParams.System.bBlitter;
   cpu_level = ConfigureParams.System.nCpuLevel;
   cpu_compatible = ConfigureParams.System.bCompatibleCpu;
 

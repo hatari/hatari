@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.67 2005-01-18 23:33:20 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.68 2005-02-10 00:11:40 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -396,7 +396,6 @@ static void Main_ReadParameters(int argc, char *argv[])
       }
       else if (!strcmp(argv[i],"--blitter"))
       {
-        bEnableBlitter = TRUE;
         ConfigureParams.System.bBlitter = TRUE;
       }
       else if (!strcmp(argv[i], "--vdi"))

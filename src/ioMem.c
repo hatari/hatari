@@ -28,9 +28,10 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.4 2005-02-02 21:53:50 thothy Exp $";
+char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.5 2005-02-10 00:11:40 thothy Exp $";
 
 #include "main.h"
+#include "configuration.h"
 #include "debug.h"
 #include "ioMem.h"
 #include "ioMemTables.h"
@@ -51,12 +52,34 @@ char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.4 2005-02-02 21:53:50 thothy Exp $
 static void (*pInterceptReadTable[0x8000])(void);     /* Table with read access handlers */
 static void (*pInterceptWriteTable[0x8000])(void);    /* Table with write access handlers */
 
-BOOL bEnableBlitter = FALSE;                          /* TRUE if blitter is enabled */
-
 int nIoMemAccessSize;                                 /* Set to 1, 2 or 4 according to byte, word or long word access */
 Uint32 IoAccessBaseAddress;                           /* Stores the base address of the IO mem access */
 Uint32 IoAccessCurrentAddress;                        /* Current byte address while handling WORD and LONG accesses */
 static int nBusErrorAccesses;                         /* Needed to count bus error accesses */
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Fill a region with bus error handlers.
+*/
+static void IoMem_SetBusErrorRegion(Uint32 startaddr, Uint32 endaddr)
+{
+	Uint32 a;
+
+	for (a = startaddr; a <= endaddr; a++)
+	{
+		if (a & 1)
+		{
+			pInterceptReadTable[a - 0xff8000] = IoMem_BusErrorOddReadAccess;     /* For 'read' */
+			pInterceptWriteTable[a - 0xff8000] = IoMem_BusErrorOddWriteAccess;   /* and 'write' */
+		}
+		else
+		{
+			pInterceptReadTable[a - 0xff8000] = IoMem_BusErrorEvenReadAccess;    /* For 'read' */
+			pInterceptWriteTable[a - 0xff8000] = IoMem_BusErrorEvenWriteAccess;  /* and 'write' */
+		}
+	}
+}
 
 
 /*-----------------------------------------------------------------------*/
@@ -69,28 +92,16 @@ void IoMem_Init(void)
 {
 	Uint32 addr;
 	int i;
-	INTERCEPT_ACCESS_FUNC *pInterceptAccessFuncs;
+	INTERCEPT_ACCESS_FUNC *pInterceptAccessFuncs = NULL;
 
 	/* Set default IO access handler (-> bus error) */
-	for (addr = 0xff8000; addr <= 0xffffff; addr++)
-	{
-		if (addr & 1)
-		{
-			pInterceptReadTable[addr - 0xff8000] = IoMem_BusErrorOddReadAccess;     /* For 'read' */
-			pInterceptWriteTable[addr - 0xff8000] = IoMem_BusErrorOddWriteAccess;   /* and 'write' */
-		}
-		else
-		{
-			pInterceptReadTable[addr - 0xff8000] = IoMem_BusErrorEvenReadAccess;    /* For 'read' */
-			pInterceptWriteTable[addr - 0xff8000] = IoMem_BusErrorEvenWriteAccess;  /* and 'write' */
-		}
-	}
+	IoMem_SetBusErrorRegion(0xff8000, 0xffffff);
 
-	/* Handle blitter */
-	if (bEnableBlitter)
-		pInterceptAccessFuncs = IoMemTable_MegaST;
-	else
-		pInterceptAccessFuncs = IoMemTable_ST;
+	switch (ConfigureParams.System.nMachineType)
+	{
+		case MACHINE_ST:  pInterceptAccessFuncs = IoMemTable_ST; break;
+		case MACHINE_STE: pInterceptAccessFuncs = IoMemTable_STE; break;
+	}
 
 	/* Now set the correct handlers */
 	for (addr=0xff8000; addr <= 0xffffff; addr++)
@@ -114,6 +125,22 @@ void IoMem_Init(void)
 		}
 	}
 
+	/* Disable blitter? */
+	if (!ConfigureParams.System.bBlitter && ConfigureParams.System.nMachineType == MACHINE_ST)
+	{
+		IoMem_SetBusErrorRegion(0xff8a00, 0xff8a3f);
+	}
+
+	/* Disable real time clock? */
+	if (!ConfigureParams.System.bRealTimeClock)
+	{
+		for (addr = 0xfffc21; addr  <= 0xfffc3f; addr++)
+		{
+			pInterceptReadTable[addr - 0xff8000] = IoMem_VoidRead;     /* For 'read' */
+			pInterceptWriteTable[addr - 0xff8000] = IoMem_VoidWrite;   /* and 'write' */
+		}
+	
+	}
 }
 
 
@@ -123,23 +150,6 @@ void IoMem_Init(void)
 */
 void IoMem_UnInit(void)
 {
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Enable/disable blitter emulation
-*/
-void Intercept_EnableBlitter(BOOL enableFlag)
-{
-	if(bEnableBlitter != enableFlag)
-	{
-		bEnableBlitter = enableFlag;
-		/* Ugly hack: Enable/disable the blitter emulation by
-		   re-init the interception tables... */
-		IoMem_UnInit();
-		IoMem_Init();
-	}
 }
 
 

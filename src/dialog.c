@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.43 2005-01-18 23:33:01 thothy Exp $";
+char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.44 2005-02-10 00:11:40 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -81,6 +81,7 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 {
   BOOL NeedReset;
   BOOL newGemdosDrive;
+  BOOL bReInitIoMem = FALSE;
 
   /* Do we need to warn user of that changes will only take effect after reset? */
   if (bForceReset)
@@ -141,6 +142,15 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
     HDC_UnInit();
   }
 
+  /* Did change blitter, rtc or system type? */
+  if (DialogParams.System.bBlitter != ConfigureParams.System.bBlitter
+      || DialogParams.System.bRealTimeClock != ConfigureParams.System.bRealTimeClock
+      || DialogParams.System.nMachineType != ConfigureParams.System.nMachineType)
+  {
+    IoMem_UnInit();
+    bReInitIoMem = TRUE;
+  }
+
   /* Copy details to configuration, so can be saved out or set on reset */
   ConfigureParams = DialogParams;
 
@@ -167,9 +177,6 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
     GemDOS_InitDrives();
   }
 
-  /* Did change blitter status? */
-  Intercept_EnableBlitter(ConfigureParams.System.bBlitter);
-
   /* Restart audio sub system if necessary: */
   if (ConfigureParams.Sound.bEnableSound && !bSoundWorking)
   {
@@ -180,6 +187,12 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   if (ConfigureParams.RS232.bEnableRS232 && !bConnectedRS232)
   {
     RS232_Init();
+  }
+
+  /* Re-init IO memory map? */
+  if (bReInitIoMem)
+  {
+    IoMem_Init();
   }
 
   /* Do we need to perform reset? */

@@ -19,7 +19,6 @@
 #endif
 
 
-extern BOOL bEnableBlitter;
 extern Uint32 IoAccessBaseAddress;
 extern Uint32 IoAccessCurrentAddress;
 extern int nIoMemAccessSize;
@@ -110,9 +109,5 @@ extern void IoMem_VoidRead(void);
 extern void IoMem_VoidWrite(void);
 extern void IoMem_WriteWithoutInterception(void);
 extern void IoMem_ReadWithoutInterception(void);
-
-
-/* deprecated: */
-extern void Intercept_EnableBlitter(BOOL enableFlag);
 
 #endif
