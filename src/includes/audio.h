@@ -35,7 +35,6 @@ extern void Audio_Init(void);
 extern void Audio_UnInit(void);
 extern BOOL Audio_CreateSoundBuffer(void);
 extern void Audio_FreeSoundBuffer(void);
-extern void Audio_ReCreateSoundBuffer(void);
 extern void Audio_SetOutputAudioFreq(int Frequency);
 extern void Audio_ResetBuffer(void);
 extern void Audio_StopBuffer(void);

@@ -208,7 +208,7 @@ void SDLGui_DrawButton(SGOBJ *bdlg, int objnum)
   SDLGui_DrawBox(bdlg, objnum);
 
   x = (bdlg[0].x+bdlg[objnum].x+(bdlg[objnum].w-strlen(bdlg[objnum].txt))/2)*fontwidth;
-  y = (bdlg[0].y+bdlg[objnum].y)*fontheight;
+  y = (bdlg[0].y+bdlg[objnum].y+(bdlg[objnum].h-1)/2)*fontheight;
 
   if( bdlg[objnum].state&SG_SELECTED )
   {

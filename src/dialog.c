@@ -41,12 +41,14 @@
 #define MAINDLG_JOY      9
 #define MAINDLG_KEYBD    10
 #define MAINDLG_DEVICES  11
-#define MAINDLG_OK       12
-#define MAINDLG_CANCEL   13
-#define MAINDLG_QUIT     14
+#define MAINDLG_NORESET  12
+#define MAINDLG_RESET    13
+#define MAINDLG_OK       14
+#define MAINDLG_CANCEL   15
+#define MAINDLG_QUIT     16
 SGOBJ maindlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 36,18, NULL },
+  { SGBOX, 0, 0, 0,0, 36,20, NULL },
   { SGTEXT, 0, 0, 10,1, 16,1, "Hatari main menu" },
   { SGBUTTON, 0, 0, 4,4, 12,1, "About" },
   { SGBUTTON, 0, 0, 4,6, 12,1, "Discs" },
@@ -58,8 +60,10 @@ SGOBJ maindlg[] =
   { SGBUTTON, 0, 0, 20,8, 12,1, "Joysticks" },
   { SGBUTTON, 0, 0, 20,10, 12,1, "Keyboard" },
   { SGBUTTON, 0, 0, 20,12, 12,1, "Devices" },
-  { SGBUTTON, 0, 0, 3,16, 8,1, "Okay" },
-  { SGBUTTON, 0, 0, 14,16, 8,1, "Cancel" },
+  { SGRADIOBUT, 0, 0, 2,16, 10,1, "No Reset" },
+  { SGRADIOBUT, 0, 0, 2,18, 10,1, "Reset ST" },
+  { SGBUTTON, 0, 0, 14,16, 8,3, "Okay" },
+  { SGBUTTON, 0, 0, 25,18, 8,1, "Cancel" },
   { SGBUTTON, 0, 0, 25,16, 8,1, "Quit" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
@@ -119,7 +123,7 @@ SGOBJ discdlg[] =
   { SGTEXT, 0, 0, 2,8, 28,1, NULL },
   { SGBUTTON, 0, 0, 32,8, 6,1, "Browse" },
   { SGCHECKBOX, 0, 0, 2,10, 18,1, "Auto insert B" },
-  { SGBUTTON, 0, 0, 20,10, 18,1, "Create blank image" },
+  { SGTEXT/*SGBUTTON*/, 0, 0, 20,10, 18,1, ""/*"Create blank image"*/ }, /* Not yet supported */
   { SGBOX, 0, 0, 1,13, 38,9, NULL },
   { SGTEXT, 0, 0, 14,13, 13,1, "Hard discs" },
   { SGCHECKBOX, 0, 0, 2,15, 14,1, "Boot from HD" },
@@ -135,19 +139,21 @@ SGOBJ discdlg[] =
 #define DLGTOSGEM_ROMNAME    3
 #define DLGTOSGEM_ROMBROWSE  4
 #define DLGTOSGEM_RESPOPUP   8
-#define DLGTOSGEM_EXIT       9
+#define DLGTOSGEM_EXIT       5/*9*/
 SGOBJ tosgemdlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 40,19, NULL },
+  { SGBOX, 0, 0, 0,0, 40,10/*19*/, NULL },
   { SGTEXT, 0, 0, 14,1, 13,1, "TOS/GEM setup" },
-  { SGTEXT, 0, 0, 2,4, 10,1, "ROM image:" },
+  { SGTEXT, 0, 0, 2,4, 25,1, "ROM image (needs reset!):" },
   { SGTEXT, 0, 0, 2,6, 34,1, NULL },
   { SGBUTTON, 0, 0, 30,4, 8,1, "Browse" },
+/*
   { SGTEXT, 0, 0, 2,10, 4,1, "GEM: (sorry, does not work yet)" },
   { SGCHECKBOX, 0, 0, 2,12, 25,1, "Use extended resolution" },
   { SGTEXT, 0, 0, 2,14, 11,1, "Resolution:" },
   { SGPOPUP, 0, 0, 14,14, 10,1, "800x600" },
-  { SGBUTTON, 0, 0, 10,17, 20,1, "Back to main menu" },
+*/
+  { SGBUTTON, 0, 0, 10,8/*17*/, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -169,8 +175,8 @@ SGOBJ screendlg[] =
   { SGBOX, 0, 0, 0,0, 40,25, NULL },
   { SGBOX, 0, 0, 1,1, 38,11, NULL },
   { SGTEXT, 0, 0, 13,2, 14,1, "Screen options" },
-  { SGTEXT, 0, 0, 5,4, 13,1, "Display mode:" },
-  { SGPOPUP, 0, 0, 20,4, 18,1, "Hi-Color, Lo-Res" },
+  { SGTEXT, 0, 0, 5,4, 13,1, ""/*"Display mode:"*/ },
+  { SGTEXT/*SGPOPUP*/, 0, 0, 20,4, 18,1, ""/*"Hi-Color, Lo-Res"*/ },
   { SGCHECKBOX, 0, 0, 5,6, 12,1, "Fullscreen" },
   { SGCHECKBOX, 0, 0, 5,7, 23,1, "Interlaced mode (in fullscreen)" },
   { SGCHECKBOX, 0, 0, 5,8, 10,1, "Frame skip" },
@@ -180,11 +186,11 @@ SGOBJ screendlg[] =
   { SGRADIOBUT, 0, 0, 26,10, 6,1, "Mono" },
   { SGBOX, 0, 0, 1,13, 38,9, NULL },
   { SGTEXT, 0, 0, 13,14, 14,1, "Screen capture" },
-  { SGCHECKBOX, 0, 0, 5,16, 12,1, "Only when display changes" },
+  { SGCHECKBOX, 0, 0, 5,16, 27,1, "Only when display changes" },
   { SGTEXT, 0, 0, 5,18, 18,1, "Frames per second:" },
-  { SGPOPUP, 0, 0, 24,18, 3,1, "1" },
+  { SGTEXT/*SGPOPUP*/, 0, 0, 24,18, 3,1, "25" },
   { SGBUTTON, 0, 0, 3,20, 16,1, "Capture screen" },
-  { SGBUTTON, 0, 0, 20,20, 18,1, "Record animation" },
+  { SGBUTTON, 0, 0, 20,20, 18,1, NULL },
   { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
@@ -220,10 +226,10 @@ SGOBJ sounddlg[] =
 /* The cpu dialog: */
 SGOBJ cpudlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 40,25, NULL },
-  { SGTEXT, 0, 0, 14,2, 11,1, "CPU options" },
-  { SGTEXT, 0, 0, 8,12, 13,1, "Sorry, not yet supported." },
-  { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
+  { SGBOX, 0, 0, 0,0, 30,8, NULL },
+  { SGTEXT, 0, 0, 10,2, 11,1, "CPU options" },
+  { SGTEXT, 0, 0, 2,4, 25,1, "Sorry, not yet supported." },
+  { SGBUTTON, 0, 0, 5,6, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -283,10 +289,10 @@ SGOBJ joystickdlg[] =
 /* The keyboard dialog: */
 SGOBJ keyboarddlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 40,25, NULL },
-  { SGTEXT, 0, 0, 13,2, 14,1, "Keyboard setup" },
-  { SGTEXT, 0, 0, 8,12, 13,1, "Sorry, not yet supported." },
-  { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
+  { SGBOX, 0, 0, 0,0, 30,8, NULL },
+  { SGTEXT, 0, 0, 8,2, 14,1, "Keyboard setup" },
+  { SGTEXT, 0, 0, 2,4, 25,1, "Sorry, not yet supported." },
+  { SGBUTTON, 0, 0, 5,6, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -294,10 +300,10 @@ SGOBJ keyboarddlg[] =
 /* The devices dialog: */
 SGOBJ devicedlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 40,25, NULL },
-  { SGTEXT, 0, 0, 13,2, 13,1, "Devices setup" },
-  { SGTEXT, 0, 0, 8,12, 13,1, "Sorry, not yet supported." },
-  { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
+  { SGBOX, 0, 0, 0,0, 30,8, NULL },
+  { SGTEXT, 0, 0, 8,2, 13,1, "Devices setup" },
+  { SGTEXT, 0, 0, 2,4, 25,1, "Sorry, not yet supported." },
+  { SGBUTTON, 0, 0, 5,6, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -382,10 +388,10 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 
   /* Copy details to global, if we reset copy them all */
   Dialog_CopyDetailsFromConfiguration(NeedReset);
+
   /* Set keyboard remap file */
-  Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);
-  /* Set new sound playback rate */
-  Audio_ReCreateSoundBuffer();
+  /*Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);*/
+
   /* Resize window if need */
   /*if(!ConfigureParams.TOSGEM.bUseExtGEMResolutions)
     View_ResizeWindowToFull();*/
@@ -394,7 +400,6 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   if (NeedReset)
   {
     Reset_Cold();
-    Main_UnPauseEmulation();
     /*FM  View_ToggleWindowsMouse(MOUSE_ST);*/
   }
 
@@ -428,40 +433,6 @@ void Dialog_CopyDetailsFromConfiguration(BOOL bReset)
   File_CleanFileName(ConfigureParams.TOSGEM.szTOSImageFileName);
 }
 
-
-/*-----------------------------------------------------------------------*/
-/*
-  Open Property sheet Options dialog
-  Return TRUE if user choses OK, or FALSE if cancel!
-*/
-BOOL Dialog_DoProperty(BOOL bForceReset)
-{
-  BOOL bOKDialog;  /* Did user 'OK' dialog? */
-
-  Main_PauseEmulation();
-
-  /* Copy details to DialogParams (this is so can restore if 'Cancel' dialog) */
-  ConfigureParams.Screen.bFullScreen = bInFullScreen;
-  DialogParams = ConfigureParams;
-
-  bSaveMemoryState = FALSE;
-  bRestoreMemoryState = FALSE;
-
-  bOKDialog = Dialog_MainDlg();
-
-  /* Copy details to configuration, and ask user if wishes to reset */
-  if (bOKDialog)
-    Dialog_CopyDialogParamsToConfiguration(bForceReset);
-  /* Did want to save/restore memory save? If did, need to re-enter emulation mode so can save in 'safe-zone' */
-  if (bSaveMemoryState || bRestoreMemoryState) {
-    /* Back into emulation mode, when next VBL occurs state will be safed - otherwise registers are unknown */
-    /*FM  View_ToggleWindowsMouse(MOUSE_ST);*/
-  }
-
-  Main_UnPauseEmulation();
-
-  return(bOKDialog);
-}
 
 
 /*-----------------------------------------------------------------------*/
@@ -677,6 +648,11 @@ void Dialog_ScreenDlg(void)
   else
     screendlg[DLGSCRN_ONCHANGE].state &= ~SG_SELECTED;
 
+  if( ScreenSnapShot_AreWeRecording() )
+    screendlg[DLGSCRN_RECANIM].txt = "Stop recording";
+  else
+    screendlg[DLGSCRN_RECANIM].txt = "Record animation";
+
   /* The screen dialog main loop */
   do
   {
@@ -695,7 +671,17 @@ void Dialog_ScreenDlg(void)
         ScreenSnapShot_SaveScreen();
         break;
       case DLGSCRN_RECANIM:
-        fprintf(stderr,"Sorry, recording animation doesn't work yet\n");
+        if( ScreenSnapShot_AreWeRecording() )
+        {
+          screendlg[DLGSCRN_RECANIM].txt = "Record animation";
+          ScreenSnapShot_EndRecording();
+        }
+        else
+        {
+          screendlg[DLGSCRN_RECANIM].txt = "Stop recording";
+          DialogParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
+          ScreenSnapShot_BeginRecording(DialogParams.Screen.bCaptureChange, 25);
+        }
         break;
     }
   }
@@ -846,13 +832,16 @@ void Dialog_JoyDlg(void)
 /*
   This functions sets up the actual font and then displays the main dialog.
 */
-int Dialog_MainDlg(void)
+int Dialog_MainDlg(BOOL *bReset)
 {
   int retbut;
 
   SDLGui_PrepareFont();
   SDLGui_CenterDlg(maindlg);
   SDL_ShowCursor(SDL_ENABLE);
+
+  maindlg[MAINDLG_NORESET].state |= SG_SELECTED;
+  maindlg[MAINDLG_RESET].state &= ~SG_SELECTED;
 
   do
   {
@@ -904,5 +893,48 @@ int Dialog_MainDlg(void)
 
   SDL_ShowCursor(SDL_DISABLE);
 
+  if( maindlg[MAINDLG_RESET].state & SG_SELECTED )
+    *bReset = TRUE;
+  else
+    *bReset = FALSE;
+
   return(retbut==MAINDLG_OK);
 }
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Open Property sheet Options dialog
+  Return TRUE if user choses OK, or FALSE if cancel!
+*/
+BOOL Dialog_DoProperty(void)
+{
+  BOOL bOKDialog;  /* Did user 'OK' dialog? */
+  BOOL bForceReset;
+
+  Main_PauseEmulation();
+
+  /* Copy details to DialogParams (this is so can restore if 'Cancel' dialog) */
+  ConfigureParams.Screen.bFullScreen = bInFullScreen;
+  DialogParams = ConfigureParams;
+
+  bSaveMemoryState = FALSE;
+  bRestoreMemoryState = FALSE;
+  bForceReset = FALSE;
+
+  bOKDialog = Dialog_MainDlg(&bForceReset);
+
+  /* Copy details to configuration, and ask user if wishes to reset */
+  if (bOKDialog)
+    Dialog_CopyDialogParamsToConfiguration(bForceReset);
+  /* Did want to save/restore memory save? If did, need to re-enter emulation mode so can save in 'safe-zone' */
+  if (bSaveMemoryState || bRestoreMemoryState) {
+    /* Back into emulation mode, when next VBL occurs state will be safed - otherwise registers are unknown */
+    /*FM  View_ToggleWindowsMouse(MOUSE_ST);*/
+  }
+
+  Main_UnPauseEmulation();
+
+  return(bOKDialog);
+}
+

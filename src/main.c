@@ -47,7 +47,7 @@ SDL_TimerID hSoundTimer;                  /* Handle to sound playback */
 
 BOOL bQuitProgram=FALSE;                  /* Flag to quit program cleanly */
 BOOL bUseFullscreen=FALSE;
-BOOL bEmulationActive=EMULATION_ACTIVE;   /* Run emulation when started (we'll be in window mouse mode!) */
+BOOL bEmulationActive=TRUE;               /* Run emulation when started */
 BOOL bAppActive = FALSE;
 BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
 unsigned int TimerID;                     /* Timer ID for main window */
@@ -120,7 +120,7 @@ int Main_Message(char *lpText, char *lpCaption/*,unsigned int uType*/)
     Screen_ReturnFromFullScreen();
 
   /* Show message */
-  fprintf(stderr,"Message (%s):\n %s\n", lpCaption, lpText);
+  fprintf(stderr,"Message from %s: %s\n", lpCaption, lpText);
 
   return(Ret);
 }
@@ -131,8 +131,11 @@ int Main_Message(char *lpText, char *lpCaption/*,unsigned int uType*/)
 */
 void Main_PauseEmulation(void)
 {
-  SDL_PauseAudio(1);
-  bEmulationActive = EMULATION_INACTIVE;
+  if( bEmulationActive )
+  {
+    SDL_PauseAudio(TRUE);
+    bEmulationActive = FALSE;
+  }
 }
 
 /*-----------------------------------------------------------------------*/
@@ -141,12 +144,15 @@ void Main_PauseEmulation(void)
 */
 void Main_UnPauseEmulation(void)
 {
-  SDL_PauseAudio(0);
-  bFullScreenHold = FALSE;      /* Release hold  */
-  Screen_SetFullUpdate();       /* Cause full screen update(to clear all) */
+  if( !bEmulationActive )
+  {
+    SDL_PauseAudio(FALSE);
+    bFullScreenHold = FALSE;      /* Release hold  */
+    Screen_SetFullUpdate();       /* Cause full screen update(to clear all) */
 
-  bEmulationActive = EMULATION_ACTIVE;
-  Audio_ResetBuffer();
+    bEmulationActive = TRUE;
+    Audio_ResetBuffer();
+  }
 }
 
 /* ----------------------------------------------------------------------- */

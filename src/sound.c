@@ -231,21 +231,21 @@ void Sound_CreateSoundMixClipTable(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Copy emulation sound buffer to SDLSound
-  This routine is called from Windows thread every 1/50th of a second
+  Copy emulation sound buffer to audio system
+  This routine is called every 1/50th of a second
 */
 void Sound_PassYMSamplesToAudio(void)
 {
   /* Copy data to DirectSound */
   if (bSoundWorking) {
     /* Is emulator running? */
-    if (bEmulationActive!=EMULATION_ACTIVE) {
-      /* Now pass completed buffer to DirectSound, toggle odd/even frame(for 11Khz timing) */
+    if ( !bEmulationActive ) {
+      /* Now pass completed buffer to audio system, toggle odd/even frame(for 11Khz timing) */
       Audio_WriteSamplesIntoBuffer(MixBuffer,CompleteSoundBuffer,SoundPlayBackFreqFrameLengths[OutputAudioFreqIndex][OddEvenSoundFrame],RAMP_DOWN);
       OddEvenSoundFrame ^= TRUE;
     }
     else {
-      /* Now pass completed buffer to DirectSound, toggle odd/even frame(for 11Khz timing) */
+      /* Now pass completed buffer to audio system, toggle odd/even frame(for 11Khz timing) */
       Audio_WriteSamplesIntoBuffer(MixBuffer,CompleteSoundBuffer,SoundPlayBackFreqFrameLengths[OutputAudioFreqIndex][OddEvenSoundFrame],RAMP_UP);
       OddEvenSoundFrame ^= TRUE;
     }

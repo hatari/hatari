@@ -33,13 +33,13 @@ BOOL bDisableSound=FALSE;
 BOOL bSoundWorking=TRUE;                          /* Is sound OK */
 volatile BOOL bPlayingBuffer = FALSE;             /* Is playing buffer? Start when start processing ST */
 int WriteOffset=0;                                /* Write offset into buffer */
-int OutputAudioFreqIndex=FREQ_22Khz;              /* Playback rate(11Khz,22Khz or 44Khz) */
+int OutputAudioFreqIndex=FREQ_22Khz;              /* Playback rate (11Khz,22Khz or 44Khz) */
 float PlayVolume=0.0f;
 BOOL bAquireWritePosition=FALSE;
 unsigned char *SoundBuffer1, *SoundBuffer2;
 int SoundBufferSize=1024;                         /* Size of sound buffer */
 
-SDL_AudioSpec *desiredAudioSpec=NULL;             /* We fill in the desired SDL audio options there */
+SDL_AudioSpec desiredAudioSpec;                   /* We fill in the desired SDL audio options here */
 
 
 
@@ -49,7 +49,7 @@ SDL_AudioSpec *desiredAudioSpec=NULL;             /* We fill in the desired SDL 
 */
 void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 {
- memcpy(stream, SoundBuffer2, len);
+  memcpy(stream, SoundBuffer2, len);
 }
 
 
@@ -70,28 +70,22 @@ void Audio_Init(void)
   }
 
   /* Init SDL audio: */
-  desiredAudioSpec = (SDL_AudioSpec *)malloc(sizeof(SDL_AudioSpec));
-  if( desiredAudioSpec==NULL ) {
-    bSoundWorking = FALSE;
-    return;
-  }
-  desiredAudioSpec->freq = SoundPlayBackFrequencies[OutputAudioFreqIndex];
-  desiredAudioSpec->format = AUDIO_U8;            /* 8 Bit unsigned */
-  desiredAudioSpec->channels = 1;                 /* Mono */
-  desiredAudioSpec->samples = SoundBufferSize;    /* Buffer size */
-  desiredAudioSpec->callback = Audio_CallBack;
-  desiredAudioSpec->userdata = NULL;
-  if( SDL_OpenAudio(desiredAudioSpec, NULL) )     /* Open audio device */
+  desiredAudioSpec.freq = SoundPlayBackFrequencies[OutputAudioFreqIndex];
+  desiredAudioSpec.format = AUDIO_U8;            /* 8 Bit unsigned */
+  desiredAudioSpec.channels = 1;                 /* Mono */
+  desiredAudioSpec.samples = SoundBufferSize;    /* Buffer size */
+  desiredAudioSpec.callback = Audio_CallBack;
+  desiredAudioSpec.userdata = NULL;
+  if( SDL_OpenAudio(&desiredAudioSpec, NULL) )   /* Open audio device */
   {
     fprintf(stderr, "Can't use audio!\n");
     bSoundWorking = FALSE;
-    free(desiredAudioSpec);  desiredAudioSpec = NULL;
     return;
   }
 
   /* Create sound buffer, return if error */
   Audio_CreateSoundBuffer();
-  SDL_PauseAudio(0);
+  SDL_PauseAudio(FALSE);
 }
 
 
@@ -101,12 +95,12 @@ void Audio_Init(void)
 */
 void Audio_UnInit(void)
 {
+  SDL_PauseAudio(TRUE);
 
   /* Free sound buffer */
   Audio_FreeSoundBuffer();
 
   SDL_CloseAudio();
-  if( desiredAudioSpec )  free(desiredAudioSpec);
 }
 
 
@@ -155,40 +149,24 @@ void Audio_FreeSoundBuffer(void)
   Audio_StopBuffer();
   /* And free */
   if( SoundBuffer1 )
-   {
     free(SoundBuffer1);
+  if( SoundBuffer2 )
     free(SoundBuffer2);
-   }
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Re-Create sound buffer to write samples into, will stop existing and restart with new frequency
-*/
-void Audio_ReCreateSoundBuffer(void)
-{
-  if (SoundBuffer1) {
-    /* Stop and delete old buffer */
-    Audio_FreeSoundBuffer();
-
-    /* Clear sample buffer, so plays silence */
-    Sound_ClearMixBuffer();
-
-    /* And create new one(will use new 'OutputAudioFreq' value) */
-    Audio_CreateSoundBuffer();
-  }
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Set DirectSound playback frequency variable, pass as PLAYBACK_xxxx
+  Set audio playback frequency variable, pass as PLAYBACK_xxxx
 */
 void Audio_SetOutputAudioFreq(int Frequency)
 {
   /* Set new frequency, index into SoundPlayBackFrequencies[] */
   OutputAudioFreqIndex = Frequency;
+
+  /* Re-open SDL audio interface... */
+  Audio_UnInit();
+  Audio_Init();
 }
 
 
@@ -210,7 +188,7 @@ void Audio_ResetBuffer(void)
 void Audio_StopBuffer(void)
 {
   /* Stop from playing */
-  SDL_PauseAudio(1);
+  SDL_PauseAudio(TRUE);
   bPlayingBuffer = FALSE;
 }
 
@@ -298,7 +276,7 @@ void Audio_WriteSamplesIntoBuffer(char *pSamples,int Index,int Length,int RampSe
 
     /* Are we playing? */
     if (!bPlayingBuffer) {
-      SDL_PauseAudio(0);
+      SDL_PauseAudio(FALSE);
       Audio_ResetBuffer();
       bPlayingBuffer = TRUE;
     }

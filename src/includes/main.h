@@ -7,9 +7,9 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.11" /* Name, version for window title */
-#define PROG_VERSION        "v0.11"
-#define VERSION_STRING      "0.11 "   /* Always 6 bytes(inc' NULL) */
+#define PROG_NAME      "Hatari v0.19" /* Name, version for window title */
+#define PROG_VERSION        "v0.19"
+#define VERSION_STRING      "0.19 "   /* Always 6 bytes(inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above(inc' NULL) */
 
 //#define TOTALLY_FINAL_VERSION       /* Web release version... */
@@ -50,7 +50,7 @@ typedef int BOOL;
 
 #define CALL_VAR(func)  { ((void(*)(void))func)(); }
 
-// Binary conversion macro's
+/* Binary conversion macro's */
 #define BIN2(a,b) ((a<<1)+(b))
 #define BIN3(a,b,c) ((a<<2)+(b<<1)+(c))
 #define BIN4(a,b,c,d) ((a<<3)+(b<<2)+(c<<1)+(d))
@@ -63,7 +63,7 @@ typedef int BOOL;
 #define BIN14(a,b,c,d,e,f,g,h,i,j,k,l,m,n) ((a<<13)+(b<<12)+(c<<11)+(d<<10)+(e<<9)+(f<<8)+(g<<7)+(h<<6)+(i<<5)+(j<<4)+(k<<3)+(l<<2)+(m<<1)+(n))
 #define BIN16(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) ((a<<15)+(b<<14)+(c<<13)+(d<<12)+(e<<11)+(f<<10)+(g<<9)+(h<<8)+(i<<7)+(j<<6)+(k<<5)+(l<<4)+(m<<3)+(n<<2)+(o<<1)+(p))
 
-// 68000 operand sizes
+/* 68000 operand sizes */
 #define SIZE_BYTE  1
 #define SIZE_WORD  2
 #define SIZE_LONG  4
@@ -90,11 +90,11 @@ enum {
 };
 
 /* PC Condition code's */
-#define PC_CARRY    0x0001  // Bit 0
-#define PC_AUX      0x0010  // Bit 4
-#define PC_ZERO      0x0040  // Bit 6
-#define PC_NEG      0x0080  // Bit 7
-#define PC_OVERFLOW    0x0800  // Bit 11
+#define PC_CARRY    0x0001  /* Bit 0 */
+#define PC_AUX      0x0010  /* Bit 4 */
+#define PC_ZERO     0x0040  /* Bit 6 */
+#define PC_NEG      0x0080  /* Bit 7 */
+#define PC_OVERFLOW 0x0800  /* Bit 11 */
 
 /* 68000 Condition code's */
 #define SR_AUX      0x0010
@@ -226,11 +226,6 @@ enum {
 
 #define PRG_HEADER_SIZE    0x1c  /* Size of header at start of ST .prg files */
 
-/* Emulation states */
-enum {
-  EMULATION_INACTIVE,
-  EMULATION_ACTIVE
-};
 
 extern BOOL bQuitProgram;
 extern BOOL bEnableDebug;

@@ -92,7 +92,7 @@ void ShortCut_CheckKeys(void)
   /* Check for supported keys: */
   switch(ShortCutKey.Key) {
      case SDLK_F12:                  /* Show options dialog */
-       Dialog_DoProperty(FALSE);
+       Dialog_DoProperty();
        break;
      case SDLK_F11:                  /* Switch between fullscreen/windowed mode */
        if( !bInFullScreen )
