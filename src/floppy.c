@@ -100,14 +100,11 @@ void Floppy_MemorySnapShot_Capture(BOOL bSave)
 */
 void Floppy_GetBootDrive(void)
 {
-/* FIXME */
-/*
-  // If we've inserted a disc or not enabled boot from hard-drive, boot from the floppy drive
+  /* If we've inserted a disc or not enabled boot from hard-drive, boot from the floppy drive */
   if ( (!ConfigureParams.HardDisc.bBootFromHardDisc) || (EmulationDrives[0].bDiscInserted) )
-    nBootDrive = 0;  //Drive A
+    nBootDrive = 0;  /* Drive A */
   else
-    nBootDrive = 2;  //Drive C
-*/
+    nBootDrive = 2;  /* Drive C */
 }
 
 
@@ -143,26 +140,24 @@ BOOL Floppy_IsBootSectorOK(int Drive)
 */
 BOOL Floppy_CreateDiscBFileName(char *pSrcFileName, char *pDestFileName)
 {
-/* FIXME */
-/*
-  char szDrive[_MAX_DRIVE],szDir[_MAX_DIR],szName[_MAX_FNAME],szExt[_MAX_EXT];
+  char szDir[256], szName[128], szExt[32];
 
-  // So, first split name into parts
-  _splitpath(pSrcFileName,szDrive,szDir,szName,szExt);
-  // All OK?
+  /* So, first split name into parts */
+  File_splitpath(pSrcFileName, szDir, szName, szExt);
+  /* All OK? */
   if (strlen(szName)>0) {
-    // Now, did filename end with an 'A' or 'a'?
+    /* Now, did filename end with an 'A' or 'a'? */
     if ( (szName[strlen(szName)-1]=='A') || (szName[strlen(szName)-1]=='a') ) {
-      // Change 'A' to a 'B'
-      szName[strlen(szName)-1] = 'b';
-      // And re-build name into destination
-      _makepath(pDestFileName,szDrive,szDir,szName,szExt);
-      // Does file exist?
+      /* Change 'A' to a 'B' */
+      szName[strlen(szName)-1] += 1;
+      /* And re-build name into destination */
+      File_makepath(pDestFileName,szDir,szName,szExt);
+      /* Does file exist? */
       if (File_Exists(pDestFileName))
-        return(TRUE);  // Try this
+        return(TRUE);  /* Try this */
     }
   }
-*/
+
   return(FALSE);  /* No, doesn't have disc B */
 }
 
@@ -181,7 +176,8 @@ BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName)
   Floppy_EjectDiscFromDrive(Drive,FALSE);
 
   /* See if file exists, and if not get correct extension */
-  File_FindPossibleExtFileName(pszFileName,pszDiscImageNameExts);
+  if( !File_Exists(pszFileName) )
+    File_FindPossibleExtFileName(pszFileName,pszDiscImageNameExts);
 
   /* Is .MSA or .ST image? */
   if (File_FileNameIsMSA(pszFileName))
@@ -201,18 +197,16 @@ BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName)
   }
 
   /* If we insert a disc into Drive A, should be try to put disc 2 into drive B? */
-/* FIXME */
-/*
   if ( (Drive==0) && (ConfigureParams.DiscImage.bAutoInsertDiscB) ) {
     strcpy(EmulationDrives[1].szFileName,"");
-    // Attempt to make up second filename, eg was 'auto_100a' to 'auto_100b'
+    /* Attempt to make up second filename, eg was 'auto_100a' to 'auto_100b' */
     if (Floppy_CreateDiscBFileName(pszFileName,szDiscBFileName)) {
-      // Put image into Drive B, clear out if fails
+      /* Put image into Drive B, clear out if fails */
       if (!Floppy_InsertDiscIntoDrive(1,szDiscBFileName))
         strcpy(EmulationDrives[1].szFileName,"");
     }
   }
-*/
+
   /* Return TRUE if loaded OK */
   if (nImageBytes)
     return(TRUE);

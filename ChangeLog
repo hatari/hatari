@@ -1,3 +1,9 @@
+2001-12-25 (Thomas Huth):
+  * Cleaned up: Fixed many "FIXME"s, rewrote the splitpath and makepath
+    functions, and moved the scandir and alphasort functions to file.c.
+  * Improved the SDL-GUI.
+  * Designed some dialogs and started working on a file selection dialog.
+
 2001-12-21 (Thomas Huth):
   * Hatari now uses the SDL's relative mouse mode instead of absolut mode.
   * Removed the files view.c and statusbar.c (not really needed).

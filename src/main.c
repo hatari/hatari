@@ -40,6 +40,9 @@
 #include "uae-cpu/hatari-glue.h"
 
 
+#define FORCE_WORKING_DIR                 /* Set default directory to cwd */
+
+
 extern int quit_program;                  /* Declared in newcpu.c */
 
 SDL_TimerID hSoundTimer;                  /* Handle to sound playback */
@@ -371,7 +374,6 @@ void Main_Init(void)
   Printer_Init();
   RS232_Init();
   Timer_Init();
-  File_Init();
   Screen_Init();
   Floppy_Init();
   Reset_Cold();
@@ -426,7 +428,7 @@ int main(int argc, char *argv[])
   srand( time(NULL) );
 
   /* Get working directory, if in MSDev force */
-  Misc_FindWorkingDirectory();
+  Misc_FindWorkingDirectory(argv[0]);
 #ifdef FORCE_WORKING_DIR
   getcwd(szWorkingDir, MAX_FILENAME_LENGTH);
 #endif

@@ -67,23 +67,22 @@ void Misc_RemoveWhiteSpace(char *pszString,int Length)
 /*-----------------------------------------------------------------------*/
 /*
   Find working directory, and store to 'szWorkingDir'
+  Note: I'm not sure if this function is still usefull in Hatari - Thothy
 */
-void Misc_FindWorkingDirectory(void)
+void Misc_FindWorkingDirectory(char *prgname)
 {
-/* FIXME!!!!*/
-/*
-  char szSrcDrive[_MAX_DRIVE],szSrcDir[_MAX_DIR],szSrcName[_MAX_FNAME],szSrcExt[_MAX_EXT];
+  char szSrcDir[256], szSrcName[128], szSrcExt[32];
 
-  // Find name of '.exe'
-  GetModuleFileName(NULL,szWorkingDir,MAX_FILENAME_LENGTH);
-  _splitpath(szWorkingDir,szSrcDrive,szSrcDir,szSrcName,szSrcExt);
-  _makepath(szWorkingDir,szSrcDrive,szSrcDir,"","");
-  // And remove trailing backslash
+  /* Find name of program */
+  strncpy(szWorkingDir, prgname, MAX_FILENAME_LENGTH);
+  File_splitpath(szWorkingDir, szSrcDir, szSrcName, szSrcExt);
+  File_makepath(szWorkingDir, szSrcDir, "", "");
+  /* And remove trailing backslash */
   if (strlen(szWorkingDir)>0) {
     if (szWorkingDir[strlen(szWorkingDir)-1]=='/')
       szWorkingDir[strlen(szWorkingDir)-1]='\0';
   }
-*/
+
 }
 
 

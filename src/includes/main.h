@@ -23,10 +23,6 @@ typedef int BOOL;
   #define DEBUG_TO_FILE               /* Use debug.txt files */
 #endif
 
-#ifndef TOTALLY_FINAL_VERSION
-  #define FORCE_WORKING_DIR           /* Set default directory when running in MsDev */
-#endif
-
 #ifdef TOTALLY_FINAL_VERSION
   #undef DEBUG_TO_FILE                /* Don't use debug files for final release */
   #undef FIND_PERFORMANCE

@@ -13,6 +13,7 @@
 #include "screen.h"
 #include "sound.h"
 #include "ymFormat.h"
+#include "sdlgui.h"
 
 #define YM_MAX_VBLS    (50*60*8)            /* 50=1 second, 50*60=1 minute, 50*60*8=8 minutes, or 24000 */
 #define YM_RECORDSIZE  (4+(YM_MAX_VBLS*NUM_PSG_SOUND_REGISTERS))  /* ~330k for 8 minutes */
@@ -35,16 +36,9 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
 
   /* Make sure we have a filename to use, ask user if not */
   if (strlen(pszYMFileName)<=0) {
-    /* No, back to Windows so can show dialog */
-    Screen_ReturnFromFullScreen();
-    /* Back to Windows mouse */
-//FIXME    bWasInWindowsMouse = View_ToggleWindowsMouse(MOUSE_WINDOWS);
     /* Ask user for filename */
-    if (File_OpenSelectDlg(/*hWnd,*/pszYMFileName,FILEFILTER_YMFILE,FALSE,TRUE))
+    if( SDLGui_FileSelect(pszYMFileName) )
       bSaveYM = TRUE;
-    /* If we were in ST mouse mode, revert back */
-//    if (!bWasInWindowsMouse)
-//FIXME      View_ToggleWindowsMouse(MOUSE_ST);
   }
   else
     bSaveYM = TRUE;
@@ -93,8 +87,8 @@ void YMFormat_EndRecording()
     /* Convert YM to correct format(list of register 1, then register 2...) */
     if (YMFormat_ConvertToStreams()) {
       /* Save YM File */
-      if (0 /*FIXME:*//*strlen(ConfigureParams.Sound.szYMCaptureFileName)>0*/ ) {
-//FIXME        File_Save(/*hWnd,*/ConfigureParams.Sound.szYMCaptureFileName,pYMWorkspace,(long)(nYMVBLS*NUM_PSG_SOUND_REGISTERS)+4,FALSE);
+      if ( strlen(ConfigureParams.Sound.szYMCaptureFileName)>0 ) {
+        File_Save(ConfigureParams.Sound.szYMCaptureFileName, pYMWorkspace,(long)(nYMVBLS*NUM_PSG_SOUND_REGISTERS)+4, FALSE);
         /* And inform user(this only happens from dialog) */
         Main_Message("YM Sound data recording stopped.",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
       }
