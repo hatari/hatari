@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.19 2003-10-07 20:57:43 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.20 2003-10-18 07:46:55 thothy Exp $";
 
 #include <SDL.h>
 
@@ -168,6 +168,7 @@ unsigned long Video_ReadAddress(void)
   return( VideoAddress );
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
   VBL interrupt, draw screen and reset counters
@@ -238,19 +239,22 @@ void Video_InterruptHandler_VBL(void)
   if(bQuitProgram)
     Int_AddAbsoluteInterrupt(4, 0L);  /* Pass NULL interrupt function to quit cleanly */
 
-  /* Wait, so we stay in sync with the sound */
-  do
+  if (ConfigureParams.System.nMinMaxSpeed != MINMAXSPEED_MAX)
   {
-    nNewMilliTicks = SDL_GetTicks();
-    nDelay = 1000/nScreenRefreshRate - (nNewMilliTicks-nOldMilliTicks);
-    if(nDelay > 2)
+    /* Wait, so we stay in sync with the sound */
+    do
     {
-      /* SDL_Delay seems to be quite inaccurate, so we don't wait the whole time */
-      SDL_Delay(nDelay - 1);
+      nNewMilliTicks = SDL_GetTicks();
+      nDelay = 1000/nScreenRefreshRate - (nNewMilliTicks-nOldMilliTicks);
+      if(nDelay > 2)
+      {
+        /* SDL_Delay seems to be quite inaccurate, so we don't wait the whole time */
+        SDL_Delay(nDelay - 1);
+      }
     }
+    while(nDelay > 0);
+    nOldMilliTicks = nNewMilliTicks;
   }
-  while(nDelay > 0);
-  nOldMilliTicks = nNewMilliTicks;
 }
 
 

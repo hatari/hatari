@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-static char rcsid[] = "Hatari $Id: configuration.c,v 1.24 2003-09-28 19:50:26 thothy Exp $";
+static char rcsid[] = "Hatari $Id: configuration.c,v 1.25 2003-10-18 07:46:55 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -225,7 +225,7 @@ void Configuration_SetDefault(void)
   ConfigureParams.Screen.bFrameSkip = FALSE;
   ConfigureParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
   ConfigureParams.Screen.bCaptureChange = FALSE;
-  ConfigureParams.Screen.nFramesPerSecond = 1;
+  ConfigureParams.Screen.nFramesPerSecond = 25;
   ConfigureParams.Screen.bUseHighRes = FALSE;
 
   /* Set defaults for Sound */

@@ -6,7 +6,7 @@
 
   YM File output, for use with STSound etc...
 */
-static char rcsid[] = "Hatari $Id: ymFormat.c,v 1.7 2003-08-11 19:37:34 thothy Exp $";
+char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.8 2003-10-18 07:46:55 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -33,47 +33,39 @@ unsigned char *pYMWorkspace = NULL, *pYMData;
 */
 BOOL YMFormat_BeginRecording(char *pszYMFileName)
 {
-  BOOL bSaveYM=FALSE;
-
   /* Free any previous data, don't save */
   YMFormat_FreeRecording();
 
-  /* Make sure we have a filename to use, ask user if not */
-  if (strlen(pszYMFileName)<=0) {
-    /* Ask user for filename */
-    if( SDLGui_FileSelect(pszYMFileName, NULL, TRUE) )
-      bSaveYM = TRUE;
-  }
-  else
-    bSaveYM = TRUE;
-
-  /* OK to save? */
-  if (bSaveYM) {
-    /* Create YM workspace */
-    pYMWorkspace = (unsigned char *)Memory_Alloc(YM_RECORDSIZE);
-    if (pYMWorkspace) {
-      /* Get workspace pointer and store 4 byte header */
-      pYMData = pYMWorkspace;
-      *pYMData++ = 'Y';
-      *pYMData++ = 'M';
-      *pYMData++ = '3';
-      *pYMData++ = '!';
-
-      bRecordingYM = TRUE;        /* Ready to record */
-      nYMVBLS = 0;          /* Number of VBLs of information */
-
-      /* Set status bar */
-      /*StatusBar_SetIcon(STATUS_ICON_SOUND,ICONSTATE_ON);*/ /* Sorry - no statusbar yet */
-      /* And inform user */
-      Main_Message("YM Sound data recording started.",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
-    }
-    else {
-      /* Failed to allocate memory, cannot record */
-      bRecordingYM = FALSE;
-    }
+  /* Make sure we have a proper filename to use */
+  if (!pszYMFileName || strlen(pszYMFileName)<=0)
+  {
+    return FALSE;
   }
 
-  return(bSaveYM);
+  /* Create YM workspace */
+  pYMWorkspace = (unsigned char *)Memory_Alloc(YM_RECORDSIZE);
+
+  if (!pYMWorkspace)
+  {
+    /* Failed to allocate memory, cannot record */
+    bRecordingYM = FALSE;
+    return FALSE;
+  }
+
+  /* Get workspace pointer and store 4 byte header */
+  pYMData = pYMWorkspace;
+  *pYMData++ = 'Y';
+  *pYMData++ = 'M';
+  *pYMData++ = '3';
+  *pYMData++ = '!';
+
+  bRecordingYM = TRUE;          /* Ready to record */
+  nYMVBLS = 0;                  /* Number of VBLs of information */
+
+  /* And inform user */
+  Main_Message("YM Sound data recording started.",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
+
+  return TRUE;
 }
 
 
