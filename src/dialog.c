@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.30 2003-04-25 21:11:59 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.31 2003-04-28 17:48:55 thothy Exp $";
 
 #include <unistd.h>
 
@@ -277,24 +277,18 @@ SGOBJ sounddlg[] =
 #define DLGSYS_68040 7
 #define DLGSYS_PREFETCH 8
 #define DLGSYS_BLITTER 9
-#define DLGSYS_SPEED 10
-
 SGOBJ systemdlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 38,17, NULL },
+  { SGBOX, 0, 0, 0,0, 30,17, NULL },
   { SGTEXT, 0, 0, 8,1, 14,1, "System options" },
-  { SGTEXT, 0, 0, 2,4, 8,1, "CPU Type:" },
-  { SGRADIOBUT, 0, 0, 12,4, 7,1, "68000" },
-  { SGRADIOBUT, 0, 0, 12,5, 7,1, "68010" },
-  { SGRADIOBUT, 0, 0, 12,6, 7,1, "68020" },
-  { SGRADIOBUT, 0, 0, 12,7, 11,1, "68020+FPU" },
-  { SGRADIOBUT, 0, 0, 12,8, 7,1, "68040" },
+  { SGTEXT, 0, 0, 3,4, 8,1, "CPU Type:" },
+  { SGRADIOBUT, 0, 0, 16,4, 7,1, "68000" },
+  { SGRADIOBUT, 0, 0, 16,5, 7,1, "68010" },
+  { SGRADIOBUT, 0, 0, 16,6, 7,1, "68020" },
+  { SGRADIOBUT, 0, 0, 16,7, 11,1, "68020+FPU" },
+  { SGRADIOBUT, 0, 0, 16,8, 7,1, "68040" },
   { SGCHECKBOX, 0, 0, 3,10, 24,1, "Use CPU prefetch mode" },
   { SGCHECKBOX, 0, 0, 3,12, 20,1, "Blitter emulation" },
-  { SGRADIOBUT, 0, 0, 24,4, 7,1, "8Mhz (ST)" },
-  { SGRADIOBUT, 0, 0, 24,5, 7,1, "12Mhz" },
-  { SGRADIOBUT, 0, 0, 24,6, 7,1, "16Mhz (STe)" },
-  { SGRADIOBUT, 0, 0, 24,7, 7,1, "20Mhz" },
   { SGBUTTON, 0, 0, 5,15, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
@@ -480,12 +474,6 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
      && ACSI_EMU_ON )
   {
     HDC_UnInit();
-  }
-
-  if (ConfigureParams.System.nMinMaxSpeed != DialogParams.System.nMinMaxSpeed) {
-    ConfigureParams.System.nMinMaxSpeed = DialogParams.System.nMinMaxSpeed;
-    CYCLES_PER_SEC = (313*512*50)*(1+ConfigureParams.System.nMinMaxSpeed/2.0);
-    adjust_mfp_table();
   }
 
   /* Copy details to configuration, so can be saved out or set on reset */
@@ -1089,13 +1077,7 @@ void Dialog_SystemDlg(void)
     systemdlg[i].state &= ~SG_SELECTED;
   }
 
-  for(i=DLGSYS_SPEED; i<=DLGSYS_SPEED+3; i++)
-  {
-    systemdlg[i].state &= ~SG_SELECTED;
-  }
-
   systemdlg[DLGSYS_68000+DialogParams.System.nCpuLevel].state |= SG_SELECTED;
-  systemdlg[DLGSYS_SPEED+DialogParams.System.nMinMaxSpeed].state |= SG_SELECTED;
 
   if( DialogParams.System.bCompatibleCpu )
     systemdlg[DLGSYS_PREFETCH].state |= SG_SELECTED;
@@ -1117,15 +1099,6 @@ void Dialog_SystemDlg(void)
     if( systemdlg[i].state&SG_SELECTED )
     {
       DialogParams.System.nCpuLevel = i-DLGSYS_68000;
-      break;
-    }
-  }
-
-  for(i=DLGSYS_SPEED; i<=DLGSYS_SPEED+3; i++)
-  {
-    if( systemdlg[i].state&SG_SELECTED )
-    {
-      DialogParams.System.nMinMaxSpeed = i-DLGSYS_SPEED;
       break;
     }
   }

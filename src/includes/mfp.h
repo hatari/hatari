@@ -1,9 +1,15 @@
 /*
-  Hatari
+  Hatari - mfp.h
+
+  This file is distributed under the GNU Public License, version 2 or at your
+  option any later version. Read the file gpl.txt for details.
 */
 
-// List of MFP interrupts (GPIP is General Purpose I/O Interrupt Port)
-#define  MFP_EXCEPT_GPIP7           15  // Highest Priority
+#ifndef HATARI_MFP_H
+#define HATARI_MFP_H
+
+/* List of MFP interrupts (GPIP is General Purpose I/O Interrupt Port) */
+#define  MFP_EXCEPT_GPIP7           15  /* Highest Priority */
 #define  MFP_EXCEPT_GPIP6           14
 #define  MFP_EXCEPT_TIMERA          13
 #define  MFP_EXCEPT_RECBUFFULL      12
@@ -19,9 +25,9 @@
 #define  MFP_EXCEPT_GPIP3      3
 #define  MFP_EXCEPT_GPIP2      2
 #define  MFP_EXCEPT_GPIP1      1
-#define  MFP_EXCEPT_GPIP0      0  // Lowest Priority
+#define  MFP_EXCEPT_GPIP0      0  /* Lowest Priority */
 
-// MFP register defines
+/* MFP register defines */
 #define  MFP_TIMER_GPIP7_BIT  0x80
 #define  MFP_TIMER_A_BIT      0x20
 #define  MFP_TIMER_B_BIT      0x01
@@ -30,7 +36,7 @@
 #define MFP_TIMER_C_BIT       0x20
 #define MFP_TIMER_D_BIT       0x10
 
-// MFP Registers
+/* MFP Registers */
 extern unsigned char MFP_GPIP;
 extern unsigned char MFP_AER,MFP_DDR;
 extern unsigned char MFP_IERA,MFP_IERB;
@@ -65,4 +71,5 @@ extern void MFP_InterruptHandler_TimerA(void);
 extern void MFP_InterruptHandler_TimerB(void);
 extern void MFP_InterruptHandler_TimerC(void);
 extern void MFP_InterruptHandler_TimerD(void);
-extern void adjust_mfp_table();
+
+#endif

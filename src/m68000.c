@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-static char rcsid[] = "Hatari $Id: m68000.c,v 1.20 2003-04-12 16:23:57 thothy Exp $";
+static char rcsid[] = "Hatari $Id: m68000.c,v 1.21 2003-04-28 17:48:56 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -25,7 +25,7 @@ static char rcsid[] = "Hatari $Id: m68000.c,v 1.20 2003-04-12 16:23:57 thothy Ex
 #include "vdi.h"
 #include "xbios.h"
 
-int CYCLES_PER_SEC = 313*512*50;
+
 unsigned long ExceptionVector;
 short int PendingInterruptFlag;
 void *PendingInterruptFunction;
@@ -42,8 +42,6 @@ Uint16 BusErrorOpcode;           /* Opcode of faulting instruction */
 void M68000_Reset(BOOL bCold)
 {
   int i;
-
-  adjust_mfp_table();
 
   /* Clear registers */
   if (bCold)

@@ -198,28 +198,11 @@ enum {
 
 #define SCREEN_START_CYCLE  96          /* Cycle first normal pixel appears on */
 #define SCANLINES_PER_FRAME 313         /* Number of scan lines per frame */
-
-#if 0
 #define CYCLES_PER_LINE     512         /* Cycles per horiztonal line scan */
+#define CYCLES_VBL_IN       (SCREEN_START_HBL*CYCLES_PER_LINE)     /* ((28+64)*CYCLES_PER_LINE) */
 #define CYCLES_PER_FRAME    (SCANLINES_PER_FRAME*CYCLES_PER_LINE)  /* Cycles per VBL @ 50fps = 160256 */
 #define CYCLES_PER_SEC      (CYCLES_PER_FRAME*50) /* Cycles per second */
 #define CYCLES_ENDLINE      (64+320+88+40)        /* DE(Display Enable) */
-
-#else
-/* Changing fps also changes the number of displayed scanlines !
-   I don't know the precise number of scanlines in 60Hz. It must be around
-   262 instead of 313 in 50Hz, but I don't have any precise number. */
-#define fps 50
-extern int CYCLES_PER_SEC;  /* (313*512*50) in m68000.c */
-// CYCLES_PER_LINE can't be kept independant of CYCLES_PER_SECOND because
-// it produces synchronization problems to remove top/bottom borders...
-#define CYCLES_PER_FRAME    (CYCLES_PER_SEC/fps)
-// #define CYCLES_PER_LINE     512         /* Cycles per horiztonal line scan */
-#define CYCLES_PER_LINE     (CYCLES_PER_FRAME/(SCANLINES_PER_FRAME))
-#define CYCLES_ENDLINE      CYCLES_PER_LINE        /* DE(Display Enable) */
-#endif
-
-#define CYCLES_VBL_IN       (SCREEN_START_HBL*CYCLES_PER_LINE)  /*((28+64)*CYCLES_PER_LINE) */
 #define CYCLES_HBL          (CYCLES_PER_LINE+96)  /* Cycles for first HBL - very inaccurate on ST */
 #define CYCLES_DEBUGGER     3000        /* Check debugger every 'x' cycles */
 
