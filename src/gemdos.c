@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-static char rcsid[] = "Hatari $Id: gemdos.c,v 1.21 2003-06-08 13:49:48 thothy Exp $";
+static char rcsid[] = "Hatari $Id: gemdos.c,v 1.22 2003-06-17 19:37:35 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -93,6 +93,8 @@ int DTAIndex;                                 /* Circular index into above */
 BOOL bInitGemDOS;                             /* Have we re-directed GemDOS vector to our own routines yet? */
 DTA *pDTA;                                    /* Our GEMDOS hard drive Disc Transfer Address structure */
 unsigned short int CurrentDrive;              /* Current drive (0=A,1=B,2=C etc...) */
+Uint32 act_pd;                                /* Used to get a pointer to the current basepage */
+
 
 /* List of GEMDos functions... */
 char *pszGemDOSNames[] = {
@@ -1386,6 +1388,9 @@ BOOL GemDOS_SNext(unsigned long Params)
   struct dirent **temp;
   int Index;
 
+  /* Refresh pDTA pointer (from the current basepage) */
+  pDTA = (DTA *)STRAM_ADDR(STMemory_ReadLong(STMemory_ReadLong(act_pd)+32));
+
   /* Was DTA ours or TOS? */
   if (STMemory_ReadLong_PCSpace(pDTA->magic)==DTA_MAGIC_NUMBER) {
 
@@ -1430,6 +1435,9 @@ BOOL GemDOS_SFirst(unsigned long Params)
   /* Find filename to search for */
   pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
   Attr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
+
+  /* Refresh pDTA pointer (from the current basepage) */
+  pDTA = (DTA *)STRAM_ADDR(STMemory_ReadLong(STMemory_ReadLong(act_pd)+32));
 
   Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
   if (ISHARDDRIVE(Drive)) {
@@ -1767,6 +1775,20 @@ void GemDOS_Boot()
     /* Patch pexec code - coded value is 4, but should be 6 for TOS >= 1.04 */
     if(TosVersion >= 0x0104)
       STMemory_WriteByte(CART_PEXEC_TOS, 0x06);
+
+    /* Get the address of the p_run variable that points to the actual basepage */
+    if(TosVersion == 0x100)
+    {
+      /* We have to use fix addresses on TOS 1.00 :-( */
+      if((STMemory_ReadWord(TosAddress+28)>>1) == 4)
+        act_pd = 0x873c;    /* Spanish TOS is different from others! */
+      else 
+        act_pd = 0x602c;
+    }
+    else
+    {
+      act_pd = STMemory_ReadLong(TosAddress + 0x28);
+    }
 
     /* Save old GEMDOS handler adress */
     STMemory_WriteLong(CART_OLDGEMDOS, STMemory_ReadLong(0x0084));
