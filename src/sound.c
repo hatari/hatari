@@ -505,9 +505,9 @@ BOOL Sound_BeginRecording(char *pszCaptureFileName)
 
   /* Did specify .YM or .WAV? If neither report error */
   if (File_DoesFileExtensionMatch(pszCaptureFileName,".ym") || (strlen(pszCaptureFileName)<=0) )
-    bRet = YMFormat_BeginRecording(/*hWnd,*/pszCaptureFileName);
+    bRet = YMFormat_BeginRecording(pszCaptureFileName);
   else if (File_DoesFileExtensionMatch(pszCaptureFileName,".wav"))
-    bRet = WAVFormat_OpenFile(/*hWnd,*/pszCaptureFileName);
+    bRet = WAVFormat_OpenFile(pszCaptureFileName);
   else {
     Main_Message("Unknown Sound Recording format\n\n.Please specify a .YM or .WAV output file.",PROG_NAME /*,MB_OK|MB_ICONSTOP*/);
     bRet = FALSE;
@@ -520,13 +520,13 @@ BOOL Sound_BeginRecording(char *pszCaptureFileName)
 /*
   End sound recording
 */
-void Sound_EndRecording(/*HWND hWnd*/)
+void Sound_EndRecording()
 {
   /* Stop sound recording and close files */
   if (bRecordingYM)
-    YMFormat_EndRecording(/*hWnd*/);
+    YMFormat_EndRecording();
   if (bRecordingWav)
-    WAVFormat_CloseFile(/*hWnd*/);
+    WAVFormat_CloseFile();
 }
 
 /*-----------------------------------------------------------------------*/

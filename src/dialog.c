@@ -17,7 +17,6 @@
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
-#include "reset.h"
 #include "joy.h"
 #include "keymap.h"
 #include "m68000.h"
@@ -25,6 +24,7 @@
 #include "memorySnapShot.h"
 #include "misc.h"
 #include "printer.h"
+#include "reset.h"
 #include "rs232.h"
 #include "screen.h"
 #include "screenSnapShot.h"
@@ -34,6 +34,7 @@
 #include "video.h"
 #include "sdlgui.h"
 #include "uae-cpu/hatari-glue.h"
+#include "intercept.h"
 
 
 
@@ -62,7 +63,7 @@ SGOBJ maindlg[] =
   { SGBUTTON, 0, 0, 4,8, 12,1, "TOS/GEM" },
   { SGBUTTON, 0, 0, 4,10, 12,1, "Screen" },
   { SGBUTTON, 0, 0, 4,12, 12,1, "Sound" },
-  { SGBUTTON, 0, 0, 20,4, 12,1, "CPU" },
+  { SGBUTTON, 0, 0, 20,4, 12,1, "System" },
   { SGBUTTON, 0, 0, 20,6, 12,1, "Memory" },
   { SGBUTTON, 0, 0, 20,8, 12,1, "Joysticks" },
   { SGBUTTON, 0, 0, 20,10, 12,1, "Keyboard" },
@@ -215,10 +216,13 @@ SGOBJ screendlg[] =
 #define DLGSOUND_LOW     5
 #define DLGSOUND_MEDIUM  6
 #define DLGSOUND_HIGH    7
-#define DLGSOUND_EXIT    8
+#define DLGSOUND_YM      10
+#define DLGSOUND_WAV     11
+#define DLGSOUND_RECORD  12
+#define DLGSOUND_EXIT    13
 SGOBJ sounddlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 38,/*24*/15, NULL },
+  { SGBOX, 0, 0, 0,0, 38,24, NULL },
   { SGBOX, 0, 0, 1,1, 36,11, NULL },
   { SGTEXT, 0, 0, 13,2, 13,1, "Sound options" },
   { SGCHECKBOX, 0, 0, 12,4, 14,1, "Enable sound" },
@@ -226,36 +230,37 @@ SGOBJ sounddlg[] =
   { SGRADIOBUT, 0, 0, 12,8, 15,1, "Low (11kHz)" },
   { SGRADIOBUT, 0, 0, 12,9, 19,1, "Medium (22kHz)" },
   { SGRADIOBUT, 0, 0, 12,10, 14,1, "High (44kHz)" },
-/*
   { SGBOX, 0, 0, 1,13, 36,7, NULL },
   { SGTEXT, 0, 0, 13,14, 14,1, "Capture YM/WAV" },
-  { SGBUTTON, 0, 0, 9,18, 8,1, "Record" },
-  { SGBUTTON, 0, 0, 23,18, 8,1, "Stop" },
-*/
-  { SGBUTTON, 0, 0, 10,/*22*/13, 20,1, "Back to main menu" },
+  { SGRADIOBUT, 0, SG_SELECTED, 7,16, 11,1, "hatari.ym" },
+  { SGRADIOBUT, 0, 0, 20,16, 12,1, "hatari.wav" },
+  { SGBUTTON, 0, 0, 12,18, 16,1, NULL },
+  { SGBUTTON, 0, 0, 10,22, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
-/* The cpu dialog: */
-#define DLGCPU_68000 3
-#define DLGCPU_68010 4
-#define DLGCPU_68020 5
-#define DLGCPU_68030 6
-#define DLGCPU_68040 7
-#define DLGCPU_PREFETCH 8
-SGOBJ cpudlg[] =
+/* The "System" dialog: */
+#define DLGSYS_68000 3
+#define DLGSYS_68010 4
+#define DLGSYS_68020 5
+#define DLGSYS_68030 6
+#define DLGSYS_68040 7
+#define DLGSYS_PREFETCH 8
+#define DLGSYS_BLITTER 9
+SGOBJ systemdlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 30,15, NULL },
-  { SGTEXT, 0, 0, 10,1, 11,1, "CPU options" },
+  { SGBOX, 0, 0, 0,0, 30,17, NULL },
+  { SGTEXT, 0, 0, 8,1, 14,1, "System options" },
   { SGTEXT, 0, 0, 3,4, 8,1, "CPU Type:" },
   { SGRADIOBUT, 0, 0, 16,4, 7,1, "68000" },
   { SGRADIOBUT, 0, 0, 16,5, 7,1, "68010" },
   { SGRADIOBUT, 0, 0, 16,6, 7,1, "68020" },
   { SGRADIOBUT, 0, 0, 16,7, 11,1, "68020+FPU" },
   { SGRADIOBUT, 0, 0, 16,8, 7,1, "68040" },
-  { SGCHECKBOX, 0, 0, 3,10, 20,1, "Use prefetch mode" },
-  { SGBUTTON, 0, 0, 5,13, 20,1, "Back to main menu" },
+  { SGCHECKBOX, 0, 0, 3,10, 24,1, "Use CPU prefetch mode" },
+  { SGCHECKBOX, 0, 0, 3,12, 20,1, "Blitter emulation" },
+  { SGBUTTON, 0, 0, 5,15, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -265,19 +270,17 @@ SGOBJ cpudlg[] =
 #define DLGMEM_1MB     5
 #define DLGMEM_2MB     6
 #define DLGMEM_4MB     7
-#define DLGMEM_BLITTER 8
-#define DLGMEM_EXIT    9/*15*/
+#define DLGMEM_EXIT    8/*14*/
 SGOBJ memorydlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 40,13/*21*/, NULL },
-  { SGBOX, 0, 0, 1,1, 38,9, NULL },
+  { SGBOX, 0, 0, 0,0, 40,11/*21*/, NULL },
+  { SGBOX, 0, 0, 1,1, 38,7, NULL },
   { SGTEXT, 0, 0, 15,2, 12,1, "Memory setup" },
   { SGTEXT, 0, 0, 4,4, 12,1, "ST-RAM size:" },
   { SGRADIOBUT, 0, 0, 19,4, 8,1, "512 kB" },
   { SGRADIOBUT, 0, 0, 30,4, 6,1, "1 MB" },
   { SGRADIOBUT, 0, 0, 19,6, 6,1, "2 MB" },
   { SGRADIOBUT, 0, 0, 30,6, 6,1, "4 MB" },
-  { SGCHECKBOX, 0, 0, 4,8, 20,1, "Blitter emulation" },
 /*
   { SGBOX, 0, 0, 1,11, 38,7, NULL },
   { SGTEXT, 0, 0, 12,12, 17,1, "Memory state save" },
@@ -286,7 +289,7 @@ SGOBJ memorydlg[] =
   { SGBUTTON, 0, 0, 8,16, 10,1, "Save" },
   { SGBUTTON, 0, 0, 22,16, 10,1, "Restore" },
 */
-  { SGBUTTON, 0, 0, 10,11/*19*/, 20,1, "Back to main menu" },
+  { SGBUTTON, 0, 0, 10,9/*19*/, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -455,7 +458,7 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
     View_ResizeWindowToFull();*/
 
   /* Did the user changed the CPU mode? */
-  check_prefs_changed_cpu(DialogParams.Cpu.level, DialogParams.Cpu.compatible);
+  check_prefs_changed_cpu(DialogParams.System.nCpuLevel, DialogParams.System.bCompatibleCpu);
 
   /* Mount a new HD image: */
   if( !ACSI_EMU_ON && !File_DoesFileNameEndWithSlash(ConfigureParams.HardDisc.szHardDiscImage)
@@ -471,7 +474,7 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   }
 
   /* Did change blitter status? */
-  Intercept_EnableBlitter(ConfigureParams.Memory.bBlitter);
+  Intercept_EnableBlitter(ConfigureParams.System.bBlitter);
 
   /* Do we need to perform reset? */
   if (NeedReset)
@@ -836,10 +839,36 @@ void Dialog_SoundDlg(void)
   else
     sounddlg[DLGSOUND_HIGH].state |= SG_SELECTED;
 
+  if( Sound_AreWeRecording() )
+    sounddlg[DLGSOUND_RECORD].txt = "Stop recording";
+  else
+    sounddlg[DLGSOUND_RECORD].txt = "Record sound";
+
   /* The sound dialog main loop */
   do
   {
     but = SDLGui_DoDialog(sounddlg);
+    if(but == DLGSOUND_RECORD)
+    {
+      if(Sound_AreWeRecording())
+      {
+        sounddlg[DLGSOUND_RECORD].txt = "Record sound";
+        Sound_EndRecording();
+      }
+      else
+      {
+        sounddlg[DLGSOUND_RECORD].txt = "Stop recording";
+        if(sounddlg[DLGSOUND_YM].state & SG_SELECTED)
+        {
+          strcpy(DialogParams.Sound.szYMCaptureFileName, "hatari.ym");
+          Sound_BeginRecording("hatari.ym");
+        }
+        else
+        {
+          Sound_BeginRecording("hatari.wav");
+        }
+      }
+    }
   }
   while( but!=DLGSOUND_EXIT && !bQuitProgram );
 
@@ -878,11 +907,6 @@ void Dialog_MemDlg(void)
   else
     memorydlg[DLGMEM_4MB].state |= SG_SELECTED;
 
-  if( DialogParams.Memory.bBlitter )
-    memorydlg[DLGMEM_BLITTER].state |= SG_SELECTED;
-  else
-    memorydlg[DLGMEM_BLITTER].state &= ~SG_SELECTED;
-
   do
   {
     but = SDLGui_DoDialog(memorydlg);
@@ -898,7 +922,6 @@ void Dialog_MemDlg(void)
   else
     DialogParams.Memory.nMemorySize = MEMORY_SIZE_4Mb;
 
-  DialogParams.Memory.bBlitter = ( memorydlg[DLGMEM_BLITTER].state & SG_SELECTED );
 }
 
 
@@ -950,43 +973,49 @@ void Dialog_JoyDlg(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Show and process the CPU dialog.
+  Show and process the "System" dialog.
 */
-void Dialog_CpuDlg(void)
+void Dialog_SystemDlg(void)
 {
   int i;
 
-  SDLGui_CenterDlg(cpudlg);
+  SDLGui_CenterDlg(systemdlg);
 
   /* Set up dialog from actual values: */
 
-  for(i=DLGCPU_68000; i<=DLGCPU_68040; i++)
+  for(i=DLGSYS_68000; i<=DLGSYS_68040; i++)
   {
-    cpudlg[i].state &= ~SG_SELECTED;
+    systemdlg[i].state &= ~SG_SELECTED;
   }
 
-  cpudlg[DLGCPU_68000+DialogParams.Cpu.level].state |= SG_SELECTED;
+  systemdlg[DLGSYS_68000+DialogParams.System.nCpuLevel].state |= SG_SELECTED;
 
-  if( DialogParams.Cpu.compatible )
-    cpudlg[DLGCPU_PREFETCH].state |= SG_SELECTED;
+  if( DialogParams.System.bCompatibleCpu )
+    systemdlg[DLGSYS_PREFETCH].state |= SG_SELECTED;
   else
-    cpudlg[DLGCPU_PREFETCH].state &= ~SG_SELECTED;
+    systemdlg[DLGSYS_PREFETCH].state &= ~SG_SELECTED;
+
+  if( DialogParams.System.bBlitter )
+    systemdlg[DLGSYS_BLITTER].state |= SG_SELECTED;
+  else
+    systemdlg[DLGSYS_BLITTER].state &= ~SG_SELECTED;
 
   /* Show the dialog: */
-  SDLGui_DoDialog(cpudlg);
+  SDLGui_DoDialog(systemdlg);
 
   /* Read values from dialog: */
 
-  for(i=DLGCPU_68000; i<=DLGCPU_68040; i++)
+  for(i=DLGSYS_68000; i<=DLGSYS_68040; i++)
   {
-    if( cpudlg[i].state&SG_SELECTED )
+    if( systemdlg[i].state&SG_SELECTED )
     {
-      DialogParams.Cpu.level = i-DLGCPU_68000;
+      DialogParams.System.nCpuLevel = i-DLGSYS_68000;
       break;
     }
   }
 
-  DialogParams.Cpu.compatible = (cpudlg[DLGCPU_PREFETCH].state & SG_SELECTED);
+  DialogParams.System.bCompatibleCpu = (systemdlg[DLGSYS_PREFETCH].state & SG_SELECTED);
+  DialogParams.System.bBlitter = ( systemdlg[DLGSYS_BLITTER].state & SG_SELECTED );
 }
 
 
@@ -1029,7 +1058,7 @@ int Dialog_MainDlg(BOOL *bReset)
         Dialog_SoundDlg();
         break;
       case MAINDLG_CPU:
-        Dialog_CpuDlg();
+        Dialog_SystemDlg();
         break;
       case MAINDLG_MEMORY:
         Dialog_MemDlg();
