@@ -54,6 +54,7 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
+char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.4 2004-07-05 16:53:17 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -337,6 +338,20 @@ int update_config(const char *filename, struct Config_Tag configs[], char *heade
    }
    else
    {
+      char *savedtokenflags;            /* Array to log the saved tokens */
+      int numtokens;                    /* Total number of tokens to save */
+
+      /* Find total number of tokens: */
+      numtokens = 0;
+      for (ptr=configs; ptr->buf; ++ptr)
+      {
+         numtokens += 1;
+      }
+
+      savedtokenflags = malloc(numtokens * sizeof(char));
+      if (savedtokenflags)
+        memset(savedtokenflags, 0, numtokens * sizeof(char));
+
       for(;;)
       {
          fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
@@ -355,18 +370,42 @@ int update_config(const char *filename, struct Config_Tag configs[], char *heade
          tok = trim(strtok(line, "=\n\r"));           /* get first token */
          if (tok != NULL)
          {
+            int i = 0;
             next = strtok(line, "=\n\r");             /* get actual config information */
-            for (ptr = configs; ptr->buf; ++ptr)      /* scan for token */
+            for (ptr = configs; ptr->buf; ++ptr, i++) /* scan for token */
             {
                if (!strcmp(tok, ptr->code))           /* got a match? */
                {
-                 if(write_token(tempfile, ptr) == 0)
-                   ++count;
+                 if (write_token(tempfile, ptr) == 0)
+                 {
+                   if (savedtokenflags)
+                     savedtokenflags[i] = TRUE;
+                   count += 1;
+                 }
                }
-
             }
          }
       }
+
+      /* Write remaining (new?) tokens that were not in the configuration file, yet */
+      if (count != numtokens && savedtokenflags != NULL)
+      {
+        int i;
+        for (ptr = configs, i = 0; ptr->buf; ++ptr, i++)
+        {
+          if (!savedtokenflags[i])
+          {
+            if (write_token(tempfile, ptr) == 0)
+            {
+              count += 1;
+              fprintf(stderr, "Wrote new token %s -> %s \n", header, ptr->code);
+            }
+          }
+        }
+      }
+
+      if (savedtokenflags)  free(savedtokenflags);
+      savedtokenflags = NULL;
 
       if (!feof(cfgfile) && fptr != NULL)
         fprintf(tempfile, "\n%s", line);
