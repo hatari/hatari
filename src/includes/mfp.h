@@ -65,3 +65,4 @@ extern void MFP_InterruptHandler_TimerA(void);
 extern void MFP_InterruptHandler_TimerB(void);
 extern void MFP_InterruptHandler_TimerC(void);
 extern void MFP_InterruptHandler_TimerD(void);
+extern void adjust_mfp_table();

@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-static char rcsid[] = "Hatari $Id: configuration.c,v 1.17 2003-04-04 16:28:24 thothy Exp $";
+static char rcsid[] = "Hatari $Id: configuration.c,v 1.18 2003-04-08 11:38:01 emanne Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -202,7 +202,7 @@ void Configuration_SetDefault(void)
   ConfigureParams.Screen.bAllowOverscan = TRUE;
   ConfigureParams.Screen.bInterlacedScreen = FALSE;
   ConfigureParams.Screen.bSyncToRetrace = FALSE;
-  ConfigureParams.Screen.bFrameSkip = FALSE;	
+  ConfigureParams.Screen.bFrameSkip = FALSE;
   ConfigureParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
   ConfigureParams.Screen.bCaptureChange = FALSE;
   ConfigureParams.Screen.nFramesPerSecond = 1;
@@ -277,6 +277,7 @@ void Configuration_Load(void)
   bEnableBlitter = ConfigureParams.System.bBlitter;
   cpu_level = ConfigureParams.System.nCpuLevel;
   cpu_compatible = ConfigureParams.System.bCompatibleCpu;
+  CYCLES_PER_SEC = (313*512*50)*(1+ConfigureParams.System.nMinMaxSpeed/2.0);
 
   bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions;
   bUseHighRes = ConfigureParams.Screen.bUseHighRes || (bUseVDIRes && (ConfigureParams.TOSGEM.nGEMColours==GEMCOLOUR_2));

@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-static char rcsid[] = "Hatari $Id: mfp.c,v 1.5 2003-03-08 11:29:53 thothy Exp $";
+static char rcsid[] = "Hatari $Id: mfp.c,v 1.6 2003-04-08 11:38:01 emanne Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -94,6 +94,17 @@ float MFPTimerToCPUCycleTable[] = {
   652.08333333f   /* Div by 200 */
 };
 
+void adjust_mfp_table() {
+  double factor = CYCLES_PER_SEC*1.0 / (313*512*50);
+  fprintf(stderr,"factor %g\n",factor);
+  MFPTimerToCPUCycleTable[1] = 13.04166667f * factor;
+  MFPTimerToCPUCycleTable[2] = 32.60416667f * factor;
+  MFPTimerToCPUCycleTable[3] = 52.16666667f * factor;
+  MFPTimerToCPUCycleTable[4] = 163.02083333f * factor;
+  MFPTimerToCPUCycleTable[5] = 208.66666667f * factor;
+  MFPTimerToCPUCycleTable[6] = 326.04166667f * factor;
+  MFPTimerToCPUCycleTable[7] = 652.08333333f * factor;
+}
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -426,7 +437,7 @@ unsigned char MFP_ReadTimer_AB(unsigned char TimerControl, unsigned char MainCou
     TimerCyclesPassed = TimerCycles-Int_FindCyclesPassed(Handler);
     MainCounter = TimerCyclesPassed/(MFPTimerToCPUCycleTable[TimerControl&0x7]);
   }
-  
+
   return(MainCounter);
 }
 
