@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.39 2004-06-24 14:52:57 thothy Exp $";
+char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.40 2004-07-05 20:06:20 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -111,8 +111,9 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 
   /* Did set new RS232 parameters? */
   if( (DialogParams.RS232.bEnableRS232!=ConfigureParams.RS232.bEnableRS232)
-     || (strcmp(DialogParams.RS232.szDeviceFileName, ConfigureParams.RS232.szDeviceFileName)) )
-    RS232_CloseCOMPort();
+     || (strcmp(DialogParams.RS232.szOutFileName, ConfigureParams.RS232.szOutFileName))
+     || (strcmp(DialogParams.RS232.szInFileName, ConfigureParams.RS232.szInFileName)) )
+    RS232_UnInit();
 
   /* Did stop sound? Or change playback Hz. If so, also stop sound recording */
   if (!DialogParams.Sound.bEnableSound || DialogParams.Sound.nPlaybackQuality != ConfigureParams.Sound.nPlaybackQuality)
@@ -173,6 +174,12 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   if (ConfigureParams.Sound.bEnableSound && !bSoundWorking)
   {
     Audio_Init();
+  }
+
+  /* Re-initialize the RS232 emulation: */
+  if (ConfigureParams.RS232.bEnableRS232 && !bConnectedRS232)
+  {
+    RS232_Init();
   }
 
   /* Do we need to perform reset? */

@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.29 2004-04-19 08:53:33 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.30 2004-07-05 20:06:20 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -125,7 +125,8 @@ struct Config_Tag configs_TosGem[] =
 struct Config_Tag configs_Rs232[] =
 {
   { "bEnableRS232", Bool_Tag, &ConfigureParams.RS232.bEnableRS232 },
-  { "szDeviceFileName", String_Tag, ConfigureParams.RS232.szDeviceFileName },
+  { "szOutFileName", String_Tag, ConfigureParams.RS232.szOutFileName },
+  { "szInFileName", String_Tag, ConfigureParams.RS232.szInFileName },
   { NULL , Error_Tag, NULL }
 };
 
@@ -211,7 +212,8 @@ void Configuration_SetDefault(void)
 
   /* Set defaults for RS232 */
   ConfigureParams.RS232.bEnableRS232 = FALSE;
-  sprintf(ConfigureParams.RS232.szDeviceFileName, "%s/hatari.ser", szWorkingDir);
+  strcpy(ConfigureParams.RS232.szOutFileName, "/dev/modem");
+  strcpy(ConfigureParams.RS232.szInFileName, "/dev/modem");
 
   /* Set defaults for MIDI */
   ConfigureParams.Midi.bEnableMidi = FALSE;

@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.59 2004-07-01 20:56:38 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.60 2004-07-05 20:06:20 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -293,10 +293,11 @@ static void Main_ReadParameters(int argc, char *argv[])
           fprintf(stderr, "Missing argument for --rs232\n");
         else
         {
-          if (strlen(argv[i+1]) <= sizeof(ConfigureParams.RS232.szDeviceFileName))
+          if (strlen(argv[i+1]) <= sizeof(ConfigureParams.RS232.szOutFileName))
           {
             ConfigureParams.RS232.bEnableRS232 = TRUE;
-            strcpy(ConfigureParams.RS232.szDeviceFileName, argv[i+1]);
+            strcpy(ConfigureParams.RS232.szOutFileName, argv[i+1]);
+            strcpy(ConfigureParams.RS232.szInFileName, argv[i+1]);
           }
           else fprintf(stderr, "RS232 file name too long!\n");
           i += 1;

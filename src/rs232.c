@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.7 2004-04-23 15:33:59 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.8 2004-07-05 20:06:20 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_thread.h>
@@ -54,8 +54,11 @@ void RS232_Init(void)
 	if (ConfigureParams.RS232.bEnableRS232)
 	{
 		/* Create thread to wait for incoming bytes over RS-232 */
-		RS232Thread = SDL_CreateThread(RS232_ThreadFunc, NULL);
-		Dprintf(("RS232 thread has been created.\n"));
+		if (!RS232Thread)
+		{
+			RS232Thread = SDL_CreateThread(RS232_ThreadFunc, NULL);
+			Dprintf(("RS232 thread has been created.\n"));
+		}
 	}
 }
 
@@ -87,21 +90,21 @@ BOOL RS232_OpenCOMPort(void)
 	bConnectedRS232 = FALSE;
 
 	/* Create our COM file for output */
-	hComOut = fopen(ConfigureParams.RS232.szDeviceFileName, "wb"); 
+	hComOut = fopen(ConfigureParams.RS232.szOutFileName, "wb"); 
 	if (hComOut == NULL)
 	{
 		Dprintf(("RS232: Failed to open output file %s\n",
-		         ConfigureParams.RS232.szDeviceFileName));
+		         ConfigureParams.RS232.szOutFileName));
 		return FALSE;
 	}
 	setvbuf(hComOut, NULL, _IONBF, 0);
 
 	/* Create our COM file for input */
-	hComIn = fopen(ConfigureParams.RS232.szDeviceFileName, "rb"); 
+	hComIn = fopen(ConfigureParams.RS232.szInFileName, "rb"); 
 	if (hComIn == NULL)
 	{
 		Dprintf(("RS232: Failed to open input file %s\n",
-		         ConfigureParams.RS232.szDeviceFileName));
+		         ConfigureParams.RS232.szInFileName));
 		fclose(hComOut); hComOut = NULL;
 		return FALSE;
 	}

@@ -24,6 +24,7 @@
 
 #define  MAX_RS232INPUT_BUFFER    2048  /* Must be ^2 */
 
+extern BOOL bConnectedRS232;
 extern unsigned char InputBuffer_RS232[MAX_RS232INPUT_BUFFER];
 extern int InputBuffer_Head,InputBuffer_Tail;
 

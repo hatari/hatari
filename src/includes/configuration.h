@@ -40,7 +40,8 @@ typedef struct
 typedef struct
 {
   BOOL bEnableRS232;
-  char szDeviceFileName[FILENAME_MAX];
+  char szOutFileName[FILENAME_MAX];
+  char szInFileName[FILENAME_MAX];
 } CNF_RS232;
 
 
