@@ -5,8 +5,8 @@
   * slowdown.
   */
 
-#include "../includes/decode.h"
 #include "../includes/main.h"
+#include "../includes/decode.h"
 
 STATIC_INLINE void do_cycles(unsigned long cycles_to_add)
 {

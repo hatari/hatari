@@ -1,4 +1,8 @@
-2002-02-18 (Thomas):
+2002-02-21 (Thomas):
+  * Fixed bug in tos.c - TOS 1.00 has been wrongly patched and did not work
+    any more...
+
+2002-02-18 (Thomas):  *** Version 0.20 ***
   * Setting the HD drives is now also included in the GUI.
   * Updated the readme.txt.
 

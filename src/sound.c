@@ -62,6 +62,8 @@ int nSamplesToGenerate;                                         /* How many samp
 /* Buffer to store circular samples */
 char MixBuffer[MIXBUFFER_SIZE];
 int CompleteSoundBuffer,ActiveSoundBuffer;                      /* Index of complete and current into above mix buffer */
+int SoundCycles;
+
 
 /*-----------------------------------------------------------------------*/
 /* Envelope shapes */

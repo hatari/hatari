@@ -2,6 +2,10 @@
   Hatari
 */
 
+#ifndef HATARI_SOUND_H
+#define HATARI_SOUND_H
+
+
 /* Envelope shape table */
 typedef struct {
   int WaveStart[4],WaveDelta[4];
@@ -15,8 +19,11 @@ typedef struct {
 #define SAMPLES_FREQ   (SAMPLES_PER_FRAME*50)      /* Frequency of generated samples */
 #define YM_FREQ        (2000000/SAMPLES_FREQ)      /* YM Frequency 2Mhz */
 
+
 extern BOOL bWriteEnvelopeFreq,bWriteChannelAAmp,bWriteChannelBAmp,bWriteChannelCAmp;
 extern BOOL bEnvelopeFreqFlag;
+extern int SoundCycles;
+
 
 extern void Sound_Init(void);
 extern void Sound_Reset(void);
@@ -33,3 +40,5 @@ extern void Sound_Update_VBL(void);
 extern BOOL Sound_BeginRecording(char *pszCaptureFileName);
 extern void Sound_EndRecording();
 extern BOOL Sound_AreWeRecording(void);
+
+#endif  /* HATARI_SOUND_H */
