@@ -5,6 +5,7 @@
 #include <time.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 #include <SDL.h>
 
@@ -24,12 +25,14 @@
 #include "ikbd.h"
 #include "intercept.h"
 #include "reset.h"
+#include "keymap.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "misc.h"
 #include "printer.h"
 #include "rs232.h"
 #include "screen.h"
+#include "sdlgui.h"
 #include "shortcut.h"
 #include "sound.h"
 #include "timer.h"
@@ -318,7 +321,7 @@ void Main_ReadParameters(int argc, char *argv[])
           }
           else
           {
-            printf("Couldn't open file: %s, or no partitions\n");
+            printf("Couldn't open file: %s, or no partitions\n", argv[i+1]);
           }
         }
       }

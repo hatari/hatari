@@ -34,10 +34,10 @@
 
 /* Settings for differnt memory sizes */
 static MEMORY_INFO MemoryInfo[] = {
-  0x80000,0x0000,0x00080000,     /* MEMORYSIZE_512 */
-  0x100000,0x0101,0x00100000,    /* MEMORYSIZE_1024 */
-  0x200000,0x0001,0x00200000,    /* MEMORYSIZE_2MB */
-  0x400000,0x1010,0x00400000     /* MEMORYSIZE_4MB */
+  { 0x80000,0x0000,0x00080000 },     /* MEMORYSIZE_512 */
+  { 0x100000,0x0101,0x00100000 },    /* MEMORYSIZE_1024 */
+  { 0x200000,0x0001,0x00200000 },    /* MEMORYSIZE_2MB */
+  { 0x400000,0x1010,0x00400000 }     /* MEMORYSIZE_4MB */
 };
 
 /* Bit masks of connected drives(we support up to C,D,E,F,G,H) */
@@ -240,6 +240,7 @@ void TOS_FixRom(void)
 	  }
 	  
 	  if( STMemory_ReadLong(0xFC0472)==0x610000e4L )
+          {
 	    if (bUseVDIRes) {
 	      STMemory_WriteWord(0xFC0472, 0xa000);        /* Init Line-A */
 	      STMemory_WriteWord(0xFC0472+2, 0xa0ff);      /* Trap Line-A */
@@ -248,6 +249,7 @@ void TOS_FixRom(void)
 	      STMemory_WriteWord(0xFC0472, NOP_OPCODE);     /* NOP */
 	      STMemory_WriteWord(0xFC0472+2, NOP_OPCODE);   /* NOP */
 	    }
+          }
 	}
 
       /* Timer D (MFP init 0xFC2408) */

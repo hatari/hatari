@@ -12,6 +12,12 @@
 
 */
 
+#include <sys/stat.h>
+#include <time.h>
+#include <dirent.h>
+#include <ctype.h>
+#include <unistd.h>
+
 #include "main.h"
 #include "cart.h"
 #include "tos.h"
@@ -32,9 +38,6 @@
 
 #include "uae-cpu/hatari-glue.h"
 
-#include <sys/stat.h>
-#include <time.h>
-#include <dirent.h>
 
 /* #define GEMDOS_VERBOSE */
 #define ENABLE_SAVING             /* Turn on saving stuff */
@@ -194,7 +197,11 @@ unsigned short date2dos (time_t t)
 */
 void strupr(char *string)
 {
- while(*string){ *string = toupper(*string); string++; }
+  while(*string)
+  {
+    *string = toupper(*string);
+    string++;
+  }
 }
 
 
@@ -249,6 +256,7 @@ int PopulateDTA(char *path, struct dirent *file)
   STMemory_WriteWord_PCSpace(pDTA->dta_date, date2dos(filestat.st_mtime));
   pDTA->dta_attrib = GemDOS_ConvertAttribute(filestat.st_mode);
 
+  return(TRUE);
 }
 
 
@@ -303,7 +311,8 @@ static int match (char *pat, char *name)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Parse directory from sfirst mask - e.g.: input:  "hdemudir/auto/*.*" outputs: "hdemudir/auto" 
+  Parse directory from sfirst mask
+  - e.g.: input:  "hdemudir/auto/mask*.*" outputs: "hdemudir/auto" 
 */
 void fsfirst_dirname(char *string, char *new){
   int i=0;
@@ -880,7 +889,6 @@ BOOL GemDOS_Create(unsigned long Params)
   char *rwflags[] = { "w+", /* read / write (truncate if exists) */
 		      "wb"  /* write only */
   }; 
-  unsigned int Access;
   int Drive,Index,Mode;
 
   /* Find filename */
@@ -932,7 +940,6 @@ BOOL GemDOS_Open(unsigned long Params)
 {
   char szActualFileName[MAX_PATH];
   char *pszFileName;
-  unsigned int Access;
   char *open_modes[] = { "rb", "wb", "r+" };  /* convert atari modes to stdio modes */
   int Drive,Index,Mode;
 
@@ -1157,7 +1164,6 @@ BOOL GemDOS_LSeek(unsigned long Params)
 int GemDOS_GetDir(unsigned long Params){
   unsigned long Address;
   unsigned short Drive;
-  int i;
 
   Address = (long)STMemory_ReadLong(Params+SIZE_WORD);
   Drive = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
@@ -1233,6 +1239,42 @@ int GemDOS_Pexec(unsigned long Params)
   return(FALSE);
 }
 
+
+/*-----------------------------------------------------------------------*/
+/*
+  GEMDOS Search Next
+  Call 0x4F
+*/
+BOOL GemDOS_SNext(unsigned long Params)
+{
+  struct dirent **temp;
+  int Index;
+
+  /* Was DTA ours or TOS? */
+  if (STMemory_ReadLong_PCSpace(pDTA->magic)==DTA_MAGIC_NUMBER) {
+
+    /* Find index into our list of structures */
+    Index = STMemory_ReadWord_PCSpace(pDTA->index)&(MAX_DTAS_FILES-1);
+
+    if(InternalDTAs[Index].centry >= InternalDTAs[Index].nentries){ 
+      Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
+      return(TRUE);
+    }
+
+    temp = InternalDTAs[Index].found;
+    if(PopulateDTA(InternalDTAs[Index].path, temp[InternalDTAs[Index].centry++]) == FALSE){
+      fprintf(stderr,"\tError setting DTA.\n");
+      return(TRUE);
+    }
+    
+    Regs[REG_D0] = GEMDOS_EOK;
+    return(TRUE);
+  }
+
+  return(FALSE);
+}
+
+
 /*-----------------------------------------------------------------------*/
 /*
   GEMDOS Find first file
@@ -1240,7 +1282,6 @@ int GemDOS_Pexec(unsigned long Params)
 */
 BOOL GemDOS_SFirst(unsigned long Params)
 {
-  int FatDate, FatTime;
   char szActualFileName[MAX_PATH];
   char tempstr[MAX_PATH];
   char *pszFileName;
@@ -1320,7 +1361,7 @@ BOOL GemDOS_SFirst(unsigned long Params)
     }
 
     /* Scan for first file (SNext uses no parameters) */
-    GemDOS_SNext(NULL);
+    GemDOS_SNext(0);
     /* increment DTA index */
     DTAIndex++;
     DTAIndex&=(MAX_DTAS_FILES-1);
@@ -1330,40 +1371,6 @@ BOOL GemDOS_SFirst(unsigned long Params)
   return(FALSE);
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Search Next
-  Call 0x4F
-*/
-BOOL GemDOS_SNext(unsigned long Params)
-{
-  int FatDate, FatTime;
-  struct dirent **temp;
-  int Index;
-
-  /* Was DTA ours or TOS? */
-  if (STMemory_ReadLong_PCSpace(pDTA->magic)==DTA_MAGIC_NUMBER) {
-
-    /* Find index into our list of structures */
-    Index = STMemory_ReadWord_PCSpace(pDTA->index)&(MAX_DTAS_FILES-1);
-
-    if(InternalDTAs[Index].centry >= InternalDTAs[Index].nentries){ 
-      Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
-      return(TRUE);
-    }
-
-    temp = InternalDTAs[Index].found;
-    if(PopulateDTA(InternalDTAs[Index].path, temp[InternalDTAs[Index].centry++]) == FALSE){
-      fprintf(stderr,"\tError setting DTA.\n");
-      return(TRUE);
-    }
-    
-    Regs[REG_D0] = GEMDOS_EOK;
-    return(TRUE);
-  }
-
-  return(FALSE);
-}
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -1606,7 +1613,6 @@ void GemDOS_OpCode(void)
 
 void GemDOS_Boot()
 {
-  int i;
 
   bInitGemDOS = TRUE;
 #ifdef GEMDOS_VERBOSE

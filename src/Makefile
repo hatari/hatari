@@ -17,7 +17,7 @@ SDLLIB=$(shell sdl-config --libs)
 SDLFLAGS=$(shell sdl-config --cflags)
 
 
-CFLAGS = -I./includes -I./uae-cpu $(CMPLRFLAGS) $(SDLFLAGS)
+CFLAGS = -Wall -I./includes -I./uae-cpu $(CMPLRFLAGS) $(SDLFLAGS)
 
 
 CPUOBJS = ./uae-cpu/hatari-glue.o ./uae-cpu/memory.o ./uae-cpu/newcpu.o \

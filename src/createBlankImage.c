@@ -14,6 +14,9 @@
 #include "st.h"
 
 
+/* FIXME: This file needs a nearly complete rewrite for Hatari... */
+
+
 /*-----------------------------------------------------------------------*/
 /*
            40 track SS   40 track DS   80 track SS   80 track DS
@@ -40,25 +43,32 @@ typedef struct {
 
 #define DEFAULT_STANDARDDISC  1
 #define MAX_STANDARDDISCSIZES  2
+
 static STANDARDDISCSIZES StandardDiscSizes[MAX_STANDARDDISCSIZES] = {
-  80,9,1,  /* 80 tracks, single sided (360k) */
-  80,9,2   /* 80 tracks, double sided (720k) */
+  { 80,9,1 },  /* 80 tracks, single sided (360k) */
+  { 80,9,2 }   /* 80 tracks, double sided (720k) */
 };
+
+#if 0
 static char *pszStandardDiscNames[] = {
   "80 tracks, single sided (360k)",
   "80 tracks, double sided (720k)",
   NULL  /* term */
 };
+#endif
 
 #define NUM_TRACKSTEXTS    3
 #define NUM_SECTORSTEXTS  3
 #define NUM_SIDESTEXTS    2
+
 static char *pszTracksText[] = {
   "80","81","82",NULL
 };
+
 static char *pszSectorsText[] = {
   "9","10","11",NULL
 };
+
 static char *pszSidesText[] = {
   "1","2",NULL
 };
@@ -80,8 +90,10 @@ static int Custom_DialogItems[] = {
 */
 
 static int CustomTracks=0,CustomSectors=0,CustomSides=1;    /* Default settings, 80 tracks, 9 sectors, 2 sides */
+#if 0
 static BOOL bInsertIntoDrive=FALSE;                         /* Insert disc image into drive when complete? */
 static BOOL bCustomDiscImage=FALSE;                         /* Is custom or standard disc size? */
+#endif
 static int ChosenDiscType;                                  /* Index into StandardDiscSizes[] of chosen image type */
 static int ChosenDiscDrive;                                 /* Drive we are making disc image in, eg 0=A:, 1=B: */
 static char CreateBlankImageFileName[MAX_FILENAME_LENGTH];
@@ -320,8 +332,8 @@ BOOL CreateBlankImage_DiscImageDialog(/*HWND hDlg, UINT Message, WPARAM wParam, 
       break;
   }
 
-  return(FALSE);
 #endif
+  return(FALSE);
 }
 
 

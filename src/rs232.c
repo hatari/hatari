@@ -9,6 +9,9 @@
   the internet code which also reads data into a buffer.
 */
 
+/* FIXME: The functions here do not yet work with Hatari */
+
+
 #include "main.h"
 #include "debug.h"
 #include "dialog.h"
@@ -57,9 +60,10 @@ void RS232_UnInit(void)
 */
 BOOL RS232_OpenCOMPort(void)
 {
-  char szString[32];
 /* FIXME */
 /*
+  char szString[32];
+
   // Generate correct filename for COM port
   sprintf(szString,"COM%d",ConfigureParams.RS232.nCOMPort+1);  // 1,2...
 

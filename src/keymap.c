@@ -17,6 +17,7 @@
 #include "joy.h"
 #include "shortcut.h"
 #include "screen.h"
+#include "debugui.h"
 
 
 /*-----------------------------------------------------------------------*/

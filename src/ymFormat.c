@@ -29,7 +29,7 @@ unsigned char *pYMWorkspace = NULL, *pYMData;
 */
 BOOL YMFormat_BeginRecording(char *pszYMFileName)
 {
-  BOOL bSaveYM=FALSE, bWasInWindowsMouse;
+  BOOL bSaveYM=FALSE;
 
   /* Free any previous data, don't save */
   YMFormat_FreeRecording();

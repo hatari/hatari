@@ -13,6 +13,7 @@
 #include "fdc.h"
 #include "int.h"
 #include "ikbd.h"
+#include "keymap.h"
 #include "m68000.h"
 #include "memAlloc.h"
 #include "memorySnapShot.h"
@@ -25,7 +26,9 @@
 #include "vdi.h"
 #include "video.h"
 #include "ymFormat.h"
+
 #include "syncTables.h"                         /* Clock-cycle tables */
+
 
 long VideoAddress;                              /* Address of video display in ST screen space */
 unsigned char VideoSyncByte,VideoShifterByte;   /* VideoSync (0xff820a) and VideoShifter(0xff8260) values store in video chip */
@@ -210,7 +213,7 @@ void Video_InterruptHandler_VBL(void)
   Video_ClearOnVBL();
   /* Store off PSG registers for YM file, is enabled */
   YMFormat_UpdateRecording();
-  /* Generate 1/50th second of sound sample data, to be played by DirectSound thread */
+  /* Generate 1/50th second of sound sample data, to be played by sound thread */
   Sound_Update_VBL();
 
   if (4>FIND_IPL) {            /* Vertical blank, level 4! */

@@ -275,8 +275,10 @@ void HDC_GetInfo()
 {
   long offset;
   unsigned char hdinfo[64];
-  unsigned long size;
   int i;
+#ifdef HDC_VERBOSE
+  unsigned long size;
+#endif
 
   nPartitions = 0;
   if(hd_image_file == NULL) return;

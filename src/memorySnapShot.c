@@ -135,10 +135,11 @@ void MemorySnapShot_UnCompressEnd(void)
 */
 BOOL MemorySnapShot_OpenFile(char *pszFileName,BOOL bSave)
 {
-  char szString[256];
-  char VersionString[VERSION_STRING_SIZE];
 /* FIXME */
 /*
+  char szString[256];
+  char VersionString[VERSION_STRING_SIZE];
+
   // Set error
   bCaptureError = FALSE;
 
@@ -195,9 +196,10 @@ void MemorySnapShot_CloseFile(void)
 */
 void MemorySnapShot_Store(void *pData, int Size)
 {
-  long nBytes;
 /*FIXME*/
 /*
+  long nBytes;
+
   // Check no file errors
   if (CaptureFile!=HFILE_ERROR) {
     // Saving or Restoring?
@@ -221,9 +223,10 @@ void MemorySnapShot_Store(void *pData, int Size)
 */
 void MemorySnapShot_Capture(char *pszFileName)
 {
-  char *pszSnapShotFileName;
 /*FIXME*/
 /*
+  char *pszSnapShotFileName;
+
   // Wait...
   SetCursor(Cursors[CURSOR_HOURGLASS]);
 
@@ -271,9 +274,10 @@ void MemorySnapShot_Capture(char *pszFileName)
 */
 void MemorySnapShot_Restore(char *pszFileName)
 {
-  char *pszSnapShotFileName;
 /*FIXME*/
 /*
+  char *pszSnapShotFileName;
+
   // Wait...
   SetCursor(Cursors[CURSOR_HOURGLASS]);
 

@@ -11,6 +11,7 @@
 #include "sysdeps.h"
 #endif
 #ifndef UAEMEMORY
+#include "maccess.h"
 #include "memory.h"
 #endif
 #ifndef UAENEWCPU

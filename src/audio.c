@@ -24,9 +24,9 @@ int SoundPlayBackFrequencies[] = {
 
 /* Bytes to download on each odd/even frame - as 11Khz does not divide by 50 exactly */
 int SoundPlayBackFreqFrameLengths[][2] = {
-  221,220,  /* 220.5 */
-  441,441,  /* 441 */
-  882,882,  /* 882 */
+  { 221,220 },  /* 220.5 */
+  { 441,441 },  /* 441 */
+  { 882,882 },  /* 882 */
 };
 
 BOOL bDisableSound=FALSE;
@@ -221,7 +221,6 @@ void Audio_WriteSamplesIntoBuffer(char *pSamples,int Index,int Length,int RampSe
   void *lpWrite;
   unsigned char *pBuffer;
   short dwLenBytes;
-  int dsRetVal;
   int i;
 
   /* Modify ramp volume - ramp down if sound not enabled or not in windows mouse mode */

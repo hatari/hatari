@@ -34,6 +34,7 @@
 #include "psg.h"
 #include "screen.h"
 #include "spec512.h"
+#include "stMemory.h"
 #include "vdi.h"
 #include "video.h"
 #include "uae-cpu/sysdeps.h"
@@ -43,58 +44,58 @@
 /*-----------------------------------------------------------------------*/
 /* List of functions to handle read/write hardware intercepts. MUST match INTERCEPT_xxx enum */
 INTERCEPT_ACCESS_FUNC InterceptAccessFuncs[INTERCEPT_COUNT] = {
-  0x0,SIZE_BYTE,NULL,NULL,
-  0xff8205,SIZE_BYTE,Intercept_VideoHigh_ReadByte,Intercept_VideoHigh_WriteByte,      /* INTERCEPT_VIDEOHIGH */
-  0xff8207,SIZE_BYTE,Intercept_VideoMed_ReadByte,Intercept_VideoMed_WriteByte,        /* INTERCEPT_VIDEOMED */
-  0xff8209,SIZE_BYTE,Intercept_VideoLow_ReadByte,Intercept_VideoLow_WriteByte,        /* INTERCEPT_VIDEOLOW */
-  0xff820a,SIZE_BYTE,Intercept_VideoSync_ReadByte,Intercept_VideoSync_WriteByte,      /* INTERCEPT_VIDEOSYNC */
-  0xff820d,SIZE_BYTE,Intercept_VideoBaseLow_ReadByte,Intercept_VideoBaseLow_WriteByte,   /* INTERCEPT_VIDEOBASELOW */
-  0xff820f,SIZE_BYTE,Intercept_LineWidth_ReadByte,Intercept_LineWidth_WriteByte,      /* INTERCEPT_LINEWIDTH */
-  0xff8240,SIZE_WORD,Intercept_Colour0_ReadWord,Intercept_Colour0_WriteWord,          /* INTERCEPT_COLOUR0 */
-  0xff8242,SIZE_WORD,Intercept_Colour1_ReadWord,Intercept_Colour1_WriteWord,          /* INTERCEPT_COLOUR1 */
-  0xff8244,SIZE_WORD,Intercept_Colour2_ReadWord,Intercept_Colour2_WriteWord,          /* INTERCEPT_COLOUR2 */
-  0xff8246,SIZE_WORD,Intercept_Colour3_ReadWord,Intercept_Colour3_WriteWord,          /* INTERCEPT_COLOUR3 */
-  0xff8248,SIZE_WORD,Intercept_Colour4_ReadWord,Intercept_Colour4_WriteWord,          /* INTERCEPT_COLOUR4 */
-  0xff824a,SIZE_WORD,Intercept_Colour5_ReadWord,Intercept_Colour5_WriteWord,          /* INTERCEPT_COLOUR5 */
-  0xff824c,SIZE_WORD,Intercept_Colour6_ReadWord,Intercept_Colour6_WriteWord,          /* INTERCEPT_COLOUR6 */
-  0xff824e,SIZE_WORD,Intercept_Colour7_ReadWord,Intercept_Colour7_WriteWord,          /* INTERCEPT_COLOUR7 */
-  0xff8250,SIZE_WORD,Intercept_Colour8_ReadWord,Intercept_Colour8_WriteWord,          /* INTERCEPT_COLOUR8 */
-  0xff8252,SIZE_WORD,Intercept_Colour9_ReadWord,Intercept_Colour9_WriteWord,          /* INTERCEPT_COLOUR9 */
-  0xff8254,SIZE_WORD,Intercept_Colour10_ReadWord,Intercept_Colour10_WriteWord,        /* INTERCEPT_COLOUR10 */
-  0xff8256,SIZE_WORD,Intercept_Colour11_ReadWord,Intercept_Colour11_WriteWord,        /* INTERCEPT_COLOUR11 */
-  0xff8258,SIZE_WORD,Intercept_Colour12_ReadWord,Intercept_Colour12_WriteWord,        /* INTERCEPT_COLOUR12 */
-  0xff825a,SIZE_WORD,Intercept_Colour13_ReadWord,Intercept_Colour13_WriteWord,        /* INTERCEPT_COLOUR13 */
-  0xff825c,SIZE_WORD,Intercept_Colour14_ReadWord,Intercept_Colour14_WriteWord,        /* INTERCEPT_COLOUR14 */
-  0xff825e,SIZE_WORD,Intercept_Colour15_ReadWord,Intercept_Colour15_WriteWord,        /* INTERCEPT_COLOUR15 */
-  0xff8260,SIZE_BYTE,Intercept_ShifterMode_ReadByte,Intercept_ShifterMode_WriteByte,  /* INTERCEPT_SHIFTERMODE */
-  0xff8604,SIZE_WORD,Intercept_DiskControl_ReadWord,Intercept_DiskControl_WriteWord,  /* INTERCEPT_DISKCONTROL */
-  0xff8606,SIZE_WORD,Intercept_DmaStatus_ReadWord,Intercept_DmaStatus_WriteWord,      /* INTERCEPT_DMASTATUS */
-  0xff8800,SIZE_BYTE,Intercept_PSGRegister_ReadByte,Intercept_PSGRegister_WriteByte,  /* INTERCEPT_PSG_REGISTER */
-  0xff8802,SIZE_BYTE,Intercept_PSGData_ReadByte,Intercept_PSGData_WriteByte,          /* INTERCEPT_PSG_DATA */
-  0xff8922,SIZE_WORD,Intercept_MicrowireData_ReadWord,Intercept_MicrowireData_WriteWord, /* INTERCEPT_MICROWIREDATA */
-  0xfffa01,SIZE_BYTE,Intercept_Monitor_ReadByte,Intercept_Monitor_WriteByte,          /* INTERCEPT_MONITOR */
-  0xfffa03,SIZE_BYTE,Intercept_ActiveEdge_ReadByte,Intercept_ActiveEdge_WriteByte,    /* INTERCEPT_ACTIVE_EDGE */
-  0xfffa05,SIZE_BYTE,Intercept_DataDirection_ReadByte,Intercept_DataDirection_WriteByte, /* INTERCEPT_DATA_DIRECTION */
-  0xfffa07,SIZE_BYTE,Intercept_EnableA_ReadByte,Intercept_EnableA_WriteByte,          /* INTERCEPT_ENABLE_A */
-  0xfffa09,SIZE_BYTE,Intercept_EnableB_ReadByte,Intercept_EnableB_WriteByte,          /* INTERCEPT_ENABLE_B */
-  0xfffa0b,SIZE_BYTE,Intercept_PendingA_ReadByte,Intercept_PendingA_WriteByte,        /* INTERCEPT_PENDING_A */
-  0xfffa0d,SIZE_BYTE,Intercept_PendingB_ReadByte,Intercept_PendingB_WriteByte,        /* INTERCEPT_PENDING_B */
-  0xfffa0f,SIZE_BYTE,Intercept_InServiceA_ReadByte,Intercept_InServiceA_WriteByte,    /* INTERCEPT_INSERVICE_A */
-  0xfffa11,SIZE_BYTE,Intercept_InServiceB_ReadByte,Intercept_InServiceB_WriteByte,    /* INTERCEPT_INSERVICE_B */
-  0xfffa13,SIZE_BYTE,Intercept_MaskA_ReadByte,Intercept_MaskA_WriteByte,              /* INTERCEPT_MASK_A */
-  0xfffa15,SIZE_BYTE,Intercept_MaskB_ReadByte,Intercept_MaskB_WriteByte,              /* INTERCEPT_MASK_B */
-  0xfffa17,SIZE_BYTE,Intercept_VectorReg_ReadByte,Intercept_VectorReg_WriteByte,      /* INTERCEPT_VECTOR_REG */
-  0xfffa19,SIZE_BYTE,Intercept_TimerACtrl_ReadByte,Intercept_TimerACtrl_WriteByte,    /* INTERCEPT_TIMERA_CTRL */
-  0xfffa1b,SIZE_BYTE,Intercept_TimerBCtrl_ReadByte,Intercept_TimerBCtrl_WriteByte,    /* INTERCEPT_TIMERB_CTRL */
-  0xfffa1d,SIZE_BYTE,Intercept_TimerCDCtrl_ReadByte,Intercept_TimerCDCtrl_WriteByte,  /* INTERCEPT_TIMERCD_CTRL */
-  0xfffa1f,SIZE_BYTE,Intercept_TimerAData_ReadByte,Intercept_TimerAData_WriteByte,    /* INTERCEPT_TIMERA_DATA */
-  0xfffa21,SIZE_BYTE,Intercept_TimerBData_ReadByte,Intercept_TimerBData_WriteByte,    /* INTERCEPT_TIMERB_DATA */
-  0xfffa23,SIZE_BYTE,Intercept_TimerCData_ReadByte,Intercept_TimerCData_WriteByte,    /* INTERCEPT_TIMERC_DATA */
-  0xfffa25,SIZE_BYTE,Intercept_TimerDData_ReadByte,Intercept_TimerDData_WriteByte,    /* INTERCEPT_TIMERD_DATA */
-  0xfffc00,SIZE_BYTE,Intercept_KeyboardControl_ReadByte,Intercept_KeyboardControl_WriteByte, /* INTERCEPT_KEYBOARDCONTROL */
-  0xfffc02,SIZE_BYTE,Intercept_KeyboardData_ReadByte,Intercept_KeyboardData_WriteByte,   /* INTERCEPT_KEYBOARDDATA */
-  0xfffc04,SIZE_BYTE,Intercept_MidiControl_ReadByte,Intercept_MidiControl_WriteByte,  /* INTERCEPT_MIDICONTROL */
-  0xfffc06,SIZE_BYTE,Intercept_MidiData_ReadByte,Intercept_MidiData_WriteByte,        /* INTERCEPT_MIDIDATA */
+  { 0x0,SIZE_BYTE,NULL,NULL },
+  { 0xff8205,SIZE_BYTE,Intercept_VideoHigh_ReadByte,Intercept_VideoHigh_WriteByte },      /* INTERCEPT_VIDEOHIGH */
+  { 0xff8207,SIZE_BYTE,Intercept_VideoMed_ReadByte,Intercept_VideoMed_WriteByte },        /* INTERCEPT_VIDEOMED */
+  { 0xff8209,SIZE_BYTE,Intercept_VideoLow_ReadByte,Intercept_VideoLow_WriteByte },        /* INTERCEPT_VIDEOLOW */
+  { 0xff820a,SIZE_BYTE,Intercept_VideoSync_ReadByte,Intercept_VideoSync_WriteByte },      /* INTERCEPT_VIDEOSYNC */
+  { 0xff820d,SIZE_BYTE,Intercept_VideoBaseLow_ReadByte,Intercept_VideoBaseLow_WriteByte },   /* INTERCEPT_VIDEOBASELOW */
+  { 0xff820f,SIZE_BYTE,Intercept_LineWidth_ReadByte,Intercept_LineWidth_WriteByte },      /* INTERCEPT_LINEWIDTH */
+  { 0xff8240,SIZE_WORD,Intercept_Colour0_ReadWord,Intercept_Colour0_WriteWord },          /* INTERCEPT_COLOUR0 */
+  { 0xff8242,SIZE_WORD,Intercept_Colour1_ReadWord,Intercept_Colour1_WriteWord },          /* INTERCEPT_COLOUR1 */
+  { 0xff8244,SIZE_WORD,Intercept_Colour2_ReadWord,Intercept_Colour2_WriteWord },          /* INTERCEPT_COLOUR2 */
+  { 0xff8246,SIZE_WORD,Intercept_Colour3_ReadWord,Intercept_Colour3_WriteWord },          /* INTERCEPT_COLOUR3 */
+  { 0xff8248,SIZE_WORD,Intercept_Colour4_ReadWord,Intercept_Colour4_WriteWord },          /* INTERCEPT_COLOUR4 */
+  { 0xff824a,SIZE_WORD,Intercept_Colour5_ReadWord,Intercept_Colour5_WriteWord },          /* INTERCEPT_COLOUR5 */
+  { 0xff824c,SIZE_WORD,Intercept_Colour6_ReadWord,Intercept_Colour6_WriteWord },          /* INTERCEPT_COLOUR6 */
+  { 0xff824e,SIZE_WORD,Intercept_Colour7_ReadWord,Intercept_Colour7_WriteWord },          /* INTERCEPT_COLOUR7 */
+  { 0xff8250,SIZE_WORD,Intercept_Colour8_ReadWord,Intercept_Colour8_WriteWord },          /* INTERCEPT_COLOUR8 */
+  { 0xff8252,SIZE_WORD,Intercept_Colour9_ReadWord,Intercept_Colour9_WriteWord },          /* INTERCEPT_COLOUR9 */
+  { 0xff8254,SIZE_WORD,Intercept_Colour10_ReadWord,Intercept_Colour10_WriteWord },        /* INTERCEPT_COLOUR10 */
+  { 0xff8256,SIZE_WORD,Intercept_Colour11_ReadWord,Intercept_Colour11_WriteWord },        /* INTERCEPT_COLOUR11 */
+  { 0xff8258,SIZE_WORD,Intercept_Colour12_ReadWord,Intercept_Colour12_WriteWord },        /* INTERCEPT_COLOUR12 */
+  { 0xff825a,SIZE_WORD,Intercept_Colour13_ReadWord,Intercept_Colour13_WriteWord },        /* INTERCEPT_COLOUR13 */
+  { 0xff825c,SIZE_WORD,Intercept_Colour14_ReadWord,Intercept_Colour14_WriteWord },        /* INTERCEPT_COLOUR14 */
+  { 0xff825e,SIZE_WORD,Intercept_Colour15_ReadWord,Intercept_Colour15_WriteWord },        /* INTERCEPT_COLOUR15 */
+  { 0xff8260,SIZE_BYTE,Intercept_ShifterMode_ReadByte,Intercept_ShifterMode_WriteByte },  /* INTERCEPT_SHIFTERMODE */
+  { 0xff8604,SIZE_WORD,Intercept_DiskControl_ReadWord,Intercept_DiskControl_WriteWord },  /* INTERCEPT_DISKCONTROL */
+  { 0xff8606,SIZE_WORD,Intercept_DmaStatus_ReadWord,Intercept_DmaStatus_WriteWord },      /* INTERCEPT_DMASTATUS */
+  { 0xff8800,SIZE_BYTE,Intercept_PSGRegister_ReadByte,Intercept_PSGRegister_WriteByte },  /* INTERCEPT_PSG_REGISTER */
+  { 0xff8802,SIZE_BYTE,Intercept_PSGData_ReadByte,Intercept_PSGData_WriteByte },          /* INTERCEPT_PSG_DATA */
+  { 0xff8922,SIZE_WORD,Intercept_MicrowireData_ReadWord,Intercept_MicrowireData_WriteWord }, /* INTERCEPT_MICROWIREDATA */
+  { 0xfffa01,SIZE_BYTE,Intercept_Monitor_ReadByte,Intercept_Monitor_WriteByte },          /* INTERCEPT_MONITOR */
+  { 0xfffa03,SIZE_BYTE,Intercept_ActiveEdge_ReadByte,Intercept_ActiveEdge_WriteByte },    /* INTERCEPT_ACTIVE_EDGE */
+  { 0xfffa05,SIZE_BYTE,Intercept_DataDirection_ReadByte,Intercept_DataDirection_WriteByte }, /* INTERCEPT_DATA_DIRECTION */
+  { 0xfffa07,SIZE_BYTE,Intercept_EnableA_ReadByte,Intercept_EnableA_WriteByte },          /* INTERCEPT_ENABLE_A */
+  { 0xfffa09,SIZE_BYTE,Intercept_EnableB_ReadByte,Intercept_EnableB_WriteByte },          /* INTERCEPT_ENABLE_B */
+  { 0xfffa0b,SIZE_BYTE,Intercept_PendingA_ReadByte,Intercept_PendingA_WriteByte },        /* INTERCEPT_PENDING_A */
+  { 0xfffa0d,SIZE_BYTE,Intercept_PendingB_ReadByte,Intercept_PendingB_WriteByte },        /* INTERCEPT_PENDING_B */
+  { 0xfffa0f,SIZE_BYTE,Intercept_InServiceA_ReadByte,Intercept_InServiceA_WriteByte },    /* INTERCEPT_INSERVICE_A */
+  { 0xfffa11,SIZE_BYTE,Intercept_InServiceB_ReadByte,Intercept_InServiceB_WriteByte },    /* INTERCEPT_INSERVICE_B */
+  { 0xfffa13,SIZE_BYTE,Intercept_MaskA_ReadByte,Intercept_MaskA_WriteByte },              /* INTERCEPT_MASK_A */
+  { 0xfffa15,SIZE_BYTE,Intercept_MaskB_ReadByte,Intercept_MaskB_WriteByte },              /* INTERCEPT_MASK_B */
+  { 0xfffa17,SIZE_BYTE,Intercept_VectorReg_ReadByte,Intercept_VectorReg_WriteByte },      /* INTERCEPT_VECTOR_REG */
+  { 0xfffa19,SIZE_BYTE,Intercept_TimerACtrl_ReadByte,Intercept_TimerACtrl_WriteByte },    /* INTERCEPT_TIMERA_CTRL */
+  { 0xfffa1b,SIZE_BYTE,Intercept_TimerBCtrl_ReadByte,Intercept_TimerBCtrl_WriteByte },    /* INTERCEPT_TIMERB_CTRL */
+  { 0xfffa1d,SIZE_BYTE,Intercept_TimerCDCtrl_ReadByte,Intercept_TimerCDCtrl_WriteByte },  /* INTERCEPT_TIMERCD_CTRL */
+  { 0xfffa1f,SIZE_BYTE,Intercept_TimerAData_ReadByte,Intercept_TimerAData_WriteByte },    /* INTERCEPT_TIMERA_DATA */
+  { 0xfffa21,SIZE_BYTE,Intercept_TimerBData_ReadByte,Intercept_TimerBData_WriteByte },    /* INTERCEPT_TIMERB_DATA */
+  { 0xfffa23,SIZE_BYTE,Intercept_TimerCData_ReadByte,Intercept_TimerCData_WriteByte },    /* INTERCEPT_TIMERC_DATA */
+  { 0xfffa25,SIZE_BYTE,Intercept_TimerDData_ReadByte,Intercept_TimerDData_WriteByte },    /* INTERCEPT_TIMERD_DATA */
+  { 0xfffc00,SIZE_BYTE,Intercept_KeyboardControl_ReadByte,Intercept_KeyboardControl_WriteByte }, /* INTERCEPT_KEYBOARDCONTROL */
+  { 0xfffc02,SIZE_BYTE,Intercept_KeyboardData_ReadByte,Intercept_KeyboardData_WriteByte },   /* INTERCEPT_KEYBOARDDATA */
+  { 0xfffc04,SIZE_BYTE,Intercept_MidiControl_ReadByte,Intercept_MidiControl_WriteByte },  /* INTERCEPT_MIDICONTROL */
+  { 0xfffc06,SIZE_BYTE,Intercept_MidiData_ReadByte,Intercept_MidiData_WriteByte },        /* INTERCEPT_MIDIDATA */
 };
 
 unsigned long *pInterceptWorkspace;           /* Memory used to store all read/write NULL terminated function call tables */
@@ -177,7 +178,10 @@ void Intercept_CreateTable(unsigned long *pInterceptTable[],int Span,int ReadWri
       /* This location needs to be intercepted, so add entry to list */
       if (pInterceptTable[Address-0xff8000]==NULL)
         pInterceptTable[Address-0xff8000] = pCurrentInterceptWorkspace;
-      *pCurrentInterceptWorkspace++ = (unsigned long)InterceptAccessFuncs[i].ReadWriteFunc[ReadWrite];
+      if(ReadWrite==0)
+        *pCurrentInterceptWorkspace++ = (unsigned long)InterceptAccessFuncs[i].ReadFunc;
+      else
+        *pCurrentInterceptWorkspace++ = (unsigned long)InterceptAccessFuncs[i].WriteFunc;
     }
     /* Terminate table? */
     if (pInterceptTable[Address-0xff8000])
@@ -1052,12 +1056,12 @@ void Intercept_MidiData_WriteByte(void)
 
 /* Address space for Bus Error in hardware mapping */
 INTERCEPT_ADDRESSRANGE InterceptBusErrors[] = {
-  0xff8a00,0xff8a3e,        /* Blitter */
-  0xff8900,0xff8960,        /* DMA Sound/MicroWire */
-  0xff8400,0xff85fe,        /* TT Palette (EmuTOS depends on this) */
-  0xff8280,0xff82c4,        /* Falcon VIDEL (again for EmuTOS) */
+  { 0xff8a00,0xff8a3e },        /* Blitter */
+  { 0xff8900,0xff8960 },        /* DMA Sound/MicroWire */
+  { 0xff8400,0xff85fe },        /* TT Palette (EmuTOS depends on this) */
+  { 0xff8280,0xff82c4 },        /* Falcon VIDEL (again for EmuTOS) */
 
-  0,0  /* term */
+  { 0,0 }  /* term */
 };
 
 

@@ -1,12 +1,20 @@
 
+#ifndef HATARI_GLUE_H
+#define HATARI_GLUE_H
+
+
+#ifndef UAESYSDEPS
+#include "sysdeps.h"
+#endif
+
 
 extern int illegal_mem;
 extern int address_space_24;
 extern int cpu_level;
 extern int cpu_compatible;
 
-long STmem_size;
-long TTmem_size;
+extern long STmem_size;
+extern long TTmem_size;
 
 int Init680x0(void);
 void Exit680x0(void);
@@ -21,3 +29,6 @@ unsigned long OpCode_OldGemDos(uae_u32 opcode);
 
 
 #define write_log printf
+
+
+#endif /* HATARI_GLUE_H */

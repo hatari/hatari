@@ -55,6 +55,8 @@ extern HDCOMMAND HDCCommand;
 extern short int HDCSectorCount;
 extern int nPartitions;
 
+extern BOOL HDC_Init(char *filename);
+extern void HDC_UnInit();
 extern void HDC_WriteCommandPacket();
 extern void HDC_DebugCommandPacket();
 extern void HDC_EmulateCommandPacket();

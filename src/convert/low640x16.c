@@ -5,7 +5,7 @@ void ConvertLowRes_640x16Bit(void)
 {
  Uint32 *edi, *ebp;
  Uint32 *esi;
- Uint32 eax, ebx, ecx;
+ Uint32 eax;
 
  Convert_StartFrame();            /* Start frame, track palettes */
  ScrY = STScreenStartHorizLine;   /* Starting line in ST screen */
@@ -22,9 +22,9 @@ void ConvertLowRes_640x16Bit(void)
 
 
    if( (AdjustLinePaletteRemap()&0x00030000)==0 )     /* Change palette table */
-     Line_ConvertLowRes_640x16Bit(edi, ebp, esi, eax, ebx, ecx);
+     Line_ConvertLowRes_640x16Bit(edi, ebp, esi, eax);
     else
-     Line_ConvertMediumRes_640x16Bit(edi, ebp, (Uint16 *)esi, eax, ebx, ecx);
+     Line_ConvertMediumRes_640x16Bit(edi, ebp, (Uint16 *)esi, eax);
 
    pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine*2);  /* Offset to next line */
    ScrY += 1;
@@ -34,9 +34,10 @@ void ConvertLowRes_640x16Bit(void)
 }
 
 
-void Line_ConvertLowRes_640x16Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax, Uint32 ebx, Uint32 ecx)
+void Line_ConvertLowRes_640x16Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax)
 {
  Uint32 edx;
+ register Uint32 ebx, ecx;
 
  ScrX=STScreenWidthBytes>>3;                /* Amount to draw across in 16-pixels(8 bytes) */
 

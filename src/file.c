@@ -366,12 +366,12 @@ int File_Length(char *pszFileName)
 */
 BOOL File_Exists(char *pszFileName)
 {
-  int DiscFile;
+  FILE *DiscFile;
 
   /* Attempt to open file */
-  DiscFile = open(pszFileName, O_RDONLY);
-  if (DiscFile!=-1) {
-    close(DiscFile);
+  DiscFile = fopen(pszFileName, "rb");
+  if (DiscFile!=NULL) {
+    fclose(DiscFile);
     return(TRUE);
   }
   return(FALSE);

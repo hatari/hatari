@@ -409,8 +409,6 @@ void Screen_SetWindowRes(int Width,int Height,int BitCount)
 */
 void Screen_DidResolutionChange(void)
 {
-  BOOL bRet;
-
   /* Did change res? */
   if (STRes!=PrevSTRes) {
     /* Set new fullscreen display mode, if differs from current */
@@ -468,7 +466,6 @@ void Screen_DidResolutionChange(void)
 */
 void Screen_CompareResolution(int y, int *pUpdateLine, BOOL *pbLowMedMix)
 {
-  BOOL bResChanged=FALSE;
   int Resolution;
 
   /* Check if wrote to resolution register */
@@ -599,26 +596,14 @@ void Screen_CreatePalette(void)
 {
   SDL_Color Colours[16];
   int i;
-/*
-  // Full screen, or Window?
-  if (bInFullScreen) {
-    DSurface_SetPalette();
+
+  for(i=0; i<16; i++) {
+    Colours[i].r = ((HBLPalettes[i]>>8)&0x7)<<5;
+    Colours[i].g = ((HBLPalettes[i]>>4)&0x7)<<5;
+    Colours[i].b = (HBLPalettes[i]&0x7)<<5;
   }
-  else {
-    for(i=0; i<16; i++) {
-      ScreenBMP.Colours[i+10].rgbRed = ((HBLPalettes[i]>>8)&0x7)<<5;
-      ScreenBMP.Colours[i+10].rgbGreen = ((HBLPalettes[i]>>4)&0x7)<<5;
-      ScreenBMP.Colours[i+10].rgbBlue = (HBLPalettes[i]&0x7)<<5;
-      ScreenBMP.Colours[i+10].rgbReserved = 0;
-    }
-  }
-*/
-    for(i=0; i<16; i++) {
-      Colours[i].r = ((HBLPalettes[i]>>8)&0x7)<<5;
-      Colours[i].g = ((HBLPalettes[i]>>4)&0x7)<<5;
-      Colours[i].b = (HBLPalettes[i]&0x7)<<5;
-    }
-    SDL_SetColors(sdlscrn, Colours, 10, 16);
+
+  SDL_SetColors(sdlscrn, Colours, 10, 16);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -801,16 +786,16 @@ void Screen_Blit(BOOL bSwapScreen)
 {
   /* Rectangle areas to Blit according to if overscan is enabled or not (source always includes all borders) */
   static SDL_Rect SrcWindowBitmapSizes[] = {
-    OVERSCAN_LEFT,OVERSCAN_TOP, 320,200,                /* ST_LOW_RES */
-    (OVERSCAN_LEFT<<1),(OVERSCAN_TOP<<1), 640,400,      /* ST_MEDIUM_RES */
-    0,0, 640,400,                                       /* ST_HIGH_RES */
-    (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400,   /* ST_LOWMEDIUM_MIX_RES */
+    { OVERSCAN_LEFT,OVERSCAN_TOP, 320,200 },                /* ST_LOW_RES */
+    { (OVERSCAN_LEFT<<1),(OVERSCAN_TOP<<1), 640,400 },      /* ST_MEDIUM_RES */
+    { 0,0, 640,400 },                                       /* ST_HIGH_RES */
+    { (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400 },   /* ST_LOWMEDIUM_MIX_RES */
   };
   static SDL_Rect SrcWindowOverscanBitmapSizes[] = {
-    0,0, OVERSCAN_LEFT+320+OVERSCAN_RIGHT,OVERSCAN_TOP+200+OVERSCAN_BOTTOM,
-    0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1),
-    0,0, 640,400,
-    0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1),
+    { 0,0, OVERSCAN_LEFT+320+OVERSCAN_RIGHT,OVERSCAN_TOP+200+OVERSCAN_BOTTOM },
+    { 0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1) },
+    { 0,0, 640,400 },
+    { 0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1) },
   };
 
   unsigned char *pSTScreen;
@@ -1019,7 +1004,6 @@ void Screen_Draw(void)
     else {
       /* Blank Window with ST-white(0x777) rectangle if holding display */
       if (!bInFullScreen && bHoldScreenDisplay && bUseVDIRes) {
-        SDL_Rect Rect;
         Uint32 WhiteBrush;
         /* Mono or colour? Choose ST 0x777 or full white */
         if (VDIRes==2)

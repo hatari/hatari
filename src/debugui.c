@@ -17,7 +17,7 @@
 #include "intercept.h"
 #include "reset.h"
 #include "m68000.h"
-#include "memorySnapShot.h"
+#include "stMemory.h"
 #include "screen.h"
 #include "sound.h"
 #include "timer.h"
@@ -170,7 +170,7 @@ void DebugUI_SaveBin(char *args){
     i++;
   }
   fclose(fp);
-  fprintf(stderr, "  Wrote 0x%x bytes.\n", bytes); 
+  fprintf(stderr, "  Wrote 0x%lx bytes.\n", bytes); 
 }
 
 /*-----------------------------------------------------------------------*/
@@ -179,7 +179,6 @@ void DebugUI_SaveBin(char *args){
 */
 void DebugUI_RegDump()
 {
-  int i;
   uaecptr nextpc;
   /* use the UAE function instead */
   m68k_dumpstate(debug_stdout, &nextpc);
@@ -399,7 +398,7 @@ void DebugUI_MemDump(char *arg, BOOL cont)
   if(isRange != TRUE)
     {
       for(j=0;j<MEMDUMP_ROWS;j++){
-	fprintf(debug_stdout, "%6.6X: ", memdump_addr); /* print address */
+	fprintf(debug_stdout, "%6.6lX: ", memdump_addr); /* print address */
 	for(i=0;i<MEMDUMP_COLS;i++)               /* print hex data */
 	  fprintf(debug_stdout, "%2.2x ",STMemory_ReadByte(memdump_addr++));
 	fprintf(debug_stdout, "  ");                    /* print ASCII data */
@@ -408,14 +407,14 @@ void DebugUI_MemDump(char *arg, BOOL cont)
 	  if(!isprint(c)) c = NON_PRINT_CHAR;             /* non-printable as dots */
 	  fprintf(debug_stdout,"%c", c);
 	}
-	fprintf(debug_stdout, "\n", memdump_addr);   /* newline */
+	fprintf(debug_stdout, "\n");   /* newline */
       }
       return;
     } /* not a range */
 
   while(memdump_addr < memdump_upper)
     {
-      fprintf(debug_stdout, "%6.6X: ", memdump_addr); /* print address */
+      fprintf(debug_stdout, "%6.6lX: ", memdump_addr); /* print address */
       for(i=0;i<MEMDUMP_COLS;i++)               /* print hex data */
 	fprintf(debug_stdout, "%2.2x ",STMemory_ReadByte(memdump_addr++));
       fprintf(debug_stdout, "  ");                    /* print ASCII data */
@@ -424,7 +423,7 @@ void DebugUI_MemDump(char *arg, BOOL cont)
 	if(!isprint(c)) c = NON_PRINT_CHAR;             /* non-printable as dots */
 	fprintf(debug_stdout,"%c", c);
       }
-      fprintf(debug_stdout, "\n", memdump_addr);   /* newline */
+      fprintf(debug_stdout, "\n");   /* newline */
     } /* while */
 } /* end of memdump */
 
@@ -452,7 +451,7 @@ void DebugUI_MemWrite(char *addr_str, char *arg)
   while(isxdigit(arg[i]) && j < 14) /* get address */
     temp[j++] = arg[i++];
   temp[j] = '\0';
-  j = sscanf(temp, "%x", &write_addr);
+  j = sscanf(temp, "%lx", &write_addr);
   
   /* if next char is not valid, or it's not a valid address */
   if((arg[i] != '\0' && arg[i] != ' ') || (j == 0)){

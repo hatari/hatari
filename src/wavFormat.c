@@ -45,11 +45,14 @@
 BOOL bRecordingWav=FALSE;                // Is a WAV file open and recording?
 int nWavOutputBytes;                     // Number of samples bytes saved
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
 */
 BOOL WAVFormat_OpenFile(/*HWND hWnd,*/ char *pszWavFileName)
 {
+/* FIXME */
+/*
   static char szRiff[] = { "RIFF" };
   static char szWave[] = { "WAVE" };
   static char szFmt[] = { "fmt " };
@@ -59,8 +62,7 @@ BOOL WAVFormat_OpenFile(/*HWND hWnd,*/ char *pszWavFileName)
   static unsigned short int SOne=0x01;
   static unsigned int SampleLength;
   static unsigned int BitsPerSample=8;
-/* FIXME */
-/*
+
   // Set frequency
   SampleLength = SoundPlayBackFrequencies[ConfigureParams.Sound.nPlaybackQuality];  // 11Khz, 22Khz or 44Khz
 
@@ -97,20 +99,22 @@ BOOL WAVFormat_OpenFile(/*HWND hWnd,*/ char *pszWavFileName)
   }
   else
     bRecordingWav = FALSE;
-
-  // Ok, or failed?
-  return(bRecordingWav);
 */
+
+  /* Ok, or failed? */
+  return(bRecordingWav);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
 */
 void WAVFormat_CloseFile(/*HWND hWnd*/)
 {
-  int nWavFileBytes;
 /* FIXME */
 /*
+  int nWavFileBytes;
+
   // Turn off icon
   StatusBar_SetIcon(STATUS_ICON_SOUND,ICONSTATE_OFF);
 
@@ -134,15 +138,17 @@ void WAVFormat_CloseFile(/*HWND hWnd*/)
 */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
 */
 void WAVFormat_Update(char *pSamples,int Index)
 {
-  char Char;
-  int i;
 /* FIXME */
 /*
+  char Char;
+  int i;
+
   if (bRecordingWav) {
     // Output, better if did in two section if wrap
     for(i=0; i<SAMPLES_PER_FRAME; i++) {

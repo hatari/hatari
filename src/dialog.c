@@ -6,6 +6,8 @@
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
 
+#include <unistd.h>
+
 #include "main.h"
 #include "configuration.h"
 #include "audio.h"
@@ -25,11 +27,14 @@
 #include "printer.h"
 #include "rs232.h"
 #include "screen.h"
+#include "screenSnapShot.h"
 #include "sound.h"
 #include "tos.h"
 #include "vdi.h"
 #include "video.h"
 #include "sdlgui.h"
+#include "uae-cpu/hatari-glue.h"
+
 
 
 /* The main dialog: */
@@ -936,7 +941,6 @@ void Dialog_JoyDlg(void)
 */
 void Dialog_CpuDlg(void)
 {
-  int but;
   int i;
 
   SDLGui_CenterDlg(cpudlg);

@@ -78,8 +78,8 @@ void ShortCut_ClearKeys(void)
 */
 void ShortCut_CheckKeys(void)
 {
-  ShortCutFunction_t pShortCutFunction;
-  int PressedKey=SHORT_CUT_NONE;
+  /*ShortCutFunction_t pShortCutFunction;
+  int PressedKey=SHORT_CUT_NONE;*/
 
   /* Check for F11 or F12 */
   /*

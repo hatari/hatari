@@ -15,6 +15,9 @@
 #include "vdi.h"
 #include "screen.h"
 #include "shortcut.h"
+#include "memAlloc.h"
+#include "file.h"
+
 
 static FILE *ConfigFile;
 BOOL bFirstTimeInstall=FALSE;    /* Has been run before? Used to set default joysticks etc... */

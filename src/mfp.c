@@ -336,7 +336,7 @@ void MFP_TimerB_EventCount_Interrupt(void)
 */
 int MFP_StartTimer_AB(unsigned char TimerControl, unsigned int TimerData, int Handler, BOOL bFirstTimer)
 {
-  int TimerClockCycles;
+  int TimerClockCycles = 0;
 
   /* If we are in event-count mode ignore this(done on HBL) */
   if (TimerControl!=0x08) {
@@ -370,7 +370,7 @@ int MFP_StartTimer_AB(unsigned char TimerControl, unsigned int TimerData, int Ha
 */
 int MFP_StartTimer_CD(unsigned char TimerControl, unsigned int TimerData, int Handler, BOOL bFirstTimer)
 {
-  int TimerClockCycles;
+  int TimerClockCycles = 0;
 
   /* Is timer on? */
   if ((TimerControl&0x7)!=0) {

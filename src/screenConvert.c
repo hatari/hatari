@@ -115,10 +115,13 @@ Uint32 Remap_1_Plane[16] = {
 */
 int AdjustLinePaletteRemap(void)
 {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+  static const int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
+#endif
   unsigned short *actHBLPal;
-  static int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
   int i;
   int v;
+
   /* Copy palette and convert to RGB in display format */
   actHBLPal = pHBLPalettes + (ScrY<<4);    /* offset in palette */
   for(i=0; i<16; i++)

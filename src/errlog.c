@@ -14,9 +14,13 @@
 #include "main.h"
 #include "debug.h"
 
-/*#define USEERRLOG*/
 
+#undef USEERRLOG
+
+
+#ifdef USEERRLOG
 static FILE *errlog;
+#endif
 
 
 /*-----------------------------------------------------------------------*/

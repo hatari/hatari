@@ -4,32 +4,42 @@
   Create Disc Image functions
 */
 
+
+/* FIXME: This file needs a nearly complete rewrite to be used in Hatari */
+
 #include <stdio.h>
 
 #include "main.h"
 #include "debug.h"
 
+
 /*-----------------------------------------------------------------------*/
 /*
   Lock disc volume
 */
+/*
 BOOL CreateDiscImage_LockVolume(FILE *hDisk)
 {
-//  DWORD ReturnedByteCount;
+  DWORD ReturnedByteCount;
 
-//  return(DeviceIoControl(hDisk,FSCTL_LOCK_VOLUME,NULL,0,NULL,0,&ReturnedByteCount,NULL));
+  return(DeviceIoControl(hDisk,FSCTL_LOCK_VOLUME,NULL,0,NULL,0,&ReturnedByteCount,NULL));
 }
+*/
+
 
 /*-----------------------------------------------------------------------*/
 /*
   UnLock disc volume
 */
+/*
 BOOL CreateDiscImage_UnLockVolume(FILE *hDisk)
 {
-//  DWORD ReturnedByteCount;
+  DWORD ReturnedByteCount;
 
-//  return(DeviceIoControl(hDisk,FSCTL_UNLOCK_VOLUME,NULL,0,NULL,0,&ReturnedByteCount,NULL));
+  return(DeviceIoControl(hDisk,FSCTL_UNLOCK_VOLUME,NULL,0,NULL,0,&ReturnedByteCount,NULL));
 }
+*/
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -37,6 +47,7 @@ BOOL CreateDiscImage_UnLockVolume(FILE *hDisk)
 */
 void CreateDiscImage_ReadImage(char *pszDriveName)
 {
+#if 0
  char szDrive[MAX_FILENAME_LENGTH];
  FILE *hDrive;
 
@@ -65,5 +76,6 @@ void CreateDiscImage_ReadImage(char *pszDriveName)
     Debug_File("MFMT: Open %s %s failed %d\n", szDrive,pszDriveName, GetLastError());
 #endif
    }
+#endif
 }
 

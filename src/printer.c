@@ -14,6 +14,9 @@
   correctly using that.
 */
 
+/* FIXME: This file needs a nearly complete rewrite to be used with Hatari */
+
+
 #include "main.h"
 #include "debug.h"
 #include "dialog.h"
@@ -35,9 +38,9 @@ static BOOL bConnectedPrinter=FALSE;
 static BOOL bPrinterDiscFile=FALSE,bPrinterWindows=FALSE;
 //static PRINTDLG pd;                                      // Printer Dlg
 static BOOL bStartedPage;                                  /* Have set up new page? */
-static BOOL bAlreadyOpenedPrintingFile=FALSE;              /* TRUE if already opened file, so can add to end */
+//static BOOL bAlreadyOpenedPrintingFile=FALSE;              /* TRUE if already opened file, so can add to end */
 static int PrinterX,PrinterY;                              /* X,Y to print to on page */
-static int nPrinterWidthPels,nPrinterHeightPels;           /* Width/Height of page */
+//static int nPrinterWidthPels,nPrinterHeightPels;           /* Width/Height of page */
 static int nIdleCount=0;                                   /* Frames printer has been idle */
 
 
@@ -480,8 +483,8 @@ BOOL Printer_TransferByteTo(unsigned char Byte)
     return(TRUE);  //OK
   }
   else
-    return(FALSE);  //Failed
 */
+    return(FALSE);  /* Failed */
 }
 
 
