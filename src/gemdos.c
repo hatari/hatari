@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-static char rcsid[] = "Hatari $Id: gemdos.c,v 1.17 2003-03-29 13:09:38 thothy Exp $";
+static char rcsid[] = "Hatari $Id: gemdos.c,v 1.18 2003-04-02 20:54:38 emanne Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -47,7 +47,10 @@ static char rcsid[] = "Hatari $Id: gemdos.c,v 1.17 2003-03-29 13:09:38 thothy Ex
 
 #include "uae-cpu/hatari-glue.h"
 
-/* #define GEMDOS_VERBOSE */
+// #define GEMDOS_VERBOSE
+// uncomment the following line to debug filename lookups on hd
+// #define FILE_DEBUG 1
+
 #define ENABLE_SAVING             /* Turn on saving stuff */
 
 #define INVALID_HANDLE_VALUE -1
@@ -702,7 +705,7 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
 	  found = 1;
 	}
       }
-#if GEMDOS_VERBOSE
+#if FILE_DEBUG
       if (!found) {
 	/* It's often normal, the gem uses this to test for existence */
 	/* of desktop.inf or newdesk.inf for example. */
@@ -713,7 +716,7 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
     }
   }
 
-#if GEMDOS_VERBOSE
+#if FILE_DEBUG
  fprintf(stderr,"conv %s -> %s\n",pszFileName,pszDestName);
 #endif
 }
@@ -806,7 +809,7 @@ BOOL GemDOS_SetDrv(unsigned long Params)
   CurrentDrive = STMemory_ReadWord(Params+SIZE_WORD);
 
   /* Still re-direct to TOS */
-  return(FALSE);
+  return( FALSE);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -961,7 +964,7 @@ BOOL GemDOS_ChDir(unsigned long Params)
 
   /* Find new directory */
   pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
-#if GEMDOS_VERBOSE
+#if FILE_DEBUG
   fprintf(stderr,"chdir %s\n",pDirName);
 #endif
 
@@ -1296,8 +1299,8 @@ int GemDOS_GetDir(unsigned long Params){
       c = path[i];
       STMemory_WriteByte(Address+i, (c=='/' ? '\\' : c) );
     }
-#if GEMDOS_VERBOSE
-    fprintf(stderr,"curdir -> %s\n",path);
+#if FILE_DEBUG
+    fprintf(stderr,"curdir %d -> %s\n",Drive,path);
 #endif
     return(TRUE);
   } else return(FALSE);
@@ -1614,6 +1617,9 @@ void GemDOS_OpCode(void)
 #ifdef GEMDOS_VERBOSE
   if(GemDOSCall <= 0x57)
     fprintf(stderr, "GemDOS 0x%X (%s)\n",GemDOSCall,pszGemDOSNames[GemDOSCall]);
+  else
+    fprintf(stderr, "GemDOS 0x%X\n",GemDOSCall);
+
   if(!GemDOSCall){
     fprintf(stderr, "Warning!!\n");
     DebugUI();
@@ -1650,7 +1656,7 @@ void GemDOS_OpCode(void)
 /*        if (GemDOS_Cauxos(Params)) */
 /*          RunOld = FALSE; */
 /*        break; */
-    case 0x1a:
+  case 0x1a:
       if (GemDOS_SetDTA(Params))
        RunOld = FALSE;
       break;
@@ -1703,8 +1709,8 @@ void GemDOS_OpCode(void)
         RunOld = FALSE;
       break;
     case 0x4b:
-      if(GemDOS_Pexec(Params) == CALL_PEXEC_ROUTINE);
-      RunOld = CALL_PEXEC_ROUTINE;
+      if(GemDOS_Pexec(Params) == CALL_PEXEC_ROUTINE)
+	RunOld = CALL_PEXEC_ROUTINE;
       break;
     case 0x4e:
       if (GemDOS_SFirst(Params))
