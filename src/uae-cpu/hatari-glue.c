@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.18 2003-04-03 21:16:11 thothy Exp $";
+static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.19 2003-06-20 13:13:22 thothy Exp $";
 
 
 #include <stdio.h>
@@ -97,6 +97,37 @@ void check_prefs_changed_cpu(int new_level, int new_compatible)
 
 /* ----------------------------------------------------------------------- */
 /*
+  This function will be called at system init by the cartridge routine
+  (after gemdos init, before booting floppies).
+  
+  The GEMDOS vector (#$84) is setup and we also initialize the connected
+  drive mask and Line-A  variables (for an extended VDI resolution) from here.
+*/
+unsigned long OpCode_SysInit(uae_u32 opcode)
+{
+  /* Initialize the connected drive mask */
+  STMemory_WriteLong(0x4c2, ConnectedDriveMask);
+
+  if(!bInitGemDOS)
+  {
+    /* Init on boot - see cartimg.c */
+    GemDOS_Boot();
+
+    /* We use this to get pointer to Line-A structure details
+     * (to fix for extended VDI res) */
+    LineABase = regs.regs[0];  /* D0 */
+    FontBase = regs.regs[9];   /* A1 */
+    VDI_LineA();
+  }
+
+  m68k_incpc(2);
+  fill_prefetch_0();
+  return 4;
+}
+
+
+/* ----------------------------------------------------------------------- */
+/*
   Re-direct execution to old GEMDOS calls, used in 'cart.s'
 */
 unsigned long OpCode_OldGemDos(uae_u32 opcode)
@@ -109,36 +140,13 @@ unsigned long OpCode_OldGemDos(uae_u32 opcode)
 
 /* ----------------------------------------------------------------------- */
 /*
-  Intercept GEMDOS calls (setup vector $84)
-  The vector is setup when the gemdos-opcode is run the first time, by
-  the cartridge routine. (after gemdos init, before booting floppies)
+  Intercept GEMDOS calls
 
-  After this, our vector will be used, and handled by the GemDOS_OpCode
-  routine in gemdos.c.
-
-  At initialization, we also set up the connected drive mask and Line-A
-  variables (for an extended VDI resolution) from here.
+  Used for GEMDOS HD emulation (see gemdos.c).
 */
 unsigned long OpCode_GemDos(uae_u32 opcode)
 {
-  if(!bInitGemDOS)
-  {
-    /* Initialize the connected drive mask */
-    STMemory_WriteLong(0x4c2, ConnectedDriveMask);
-
-    /* Init on boot - see cartimg.c */
-    GemDOS_Boot();
-
-    /* We use this to get pointer to Line-A structure details
-     * (to fix for extended VDI res) */
-    LineABase = regs.regs[0];  /* D0 */
-    FontBase = regs.regs[9];   /* A1 */
-    VDI_LineA();
-  }
-  else
-  {
-    GemDOS_OpCode();    /* handler code in gemdos.c */
-  }
+  GemDOS_OpCode();    /* handler code in gemdos.c */
 
   m68k_incpc(2);
   fill_prefetch_0();

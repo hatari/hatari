@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.23 2003-06-17 18:03:22 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.24 2003-06-20 13:13:22 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -155,6 +155,7 @@ void build_cpufunctbl(void)
     /* Hatari's illegal opcodes: */
     cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;
     cpufunctbl[RUNOLDGEMDOS_OPCODE] = OpCode_OldGemDos;
+    cpufunctbl[SYSINIT_OPCODE] = OpCode_SysInit;
     cpufunctbl[VDI_OPCODE] = OpCode_VDI;
 }
 

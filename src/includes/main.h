@@ -197,10 +197,9 @@ enum {
 /* Illegal Opcode used to help emulation. eg. free entries are 8 to 15 inc' */
 #define  GEMDOS_OPCODE        8  /* Free op-code to intercept GemDOS trap */
 #define  RUNOLDGEMDOS_OPCODE  9  /* Free op-code to set PC to old GemDOS vector(if doesn't need to intercept) */
-#define  CONDRV_OPCODE       10  /* Free op-code to intercept set up connected drives */
+#define  SYSINIT_OPCODE      10  /* Free op-code to initialize system (connected drives etc.) */
 #define  TIMERD_OPCODE       11  /* Free op-code to prevent Timer D starting in GemDOS */
 #define  VDI_OPCODE          12  /* Free op-code to call VDI handlers AFTER Trap#2 */
-#define  LINEA_OPCODE        13  /* Free op-code to call handlers AFTER Line-A */
 
 
 #define PRG_HEADER_SIZE    0x1c  /* Size of header at start of ST .prg files */

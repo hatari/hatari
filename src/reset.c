@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-static char rcsid[] = "Hatari $Id: reset.c,v 1.4 2003-02-28 15:31:36 thothy Exp $";
+static char rcsid[] = "Hatari $Id: reset.c,v 1.5 2003-06-20 13:13:21 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -76,9 +76,9 @@ int Reset_ST(BOOL bCold)
   MFP_Reset();                  /* Setup MFP chip */
   Video_Reset();                /* Reset video */
 
+  GemDOS_Reset();               /* Reset GEMDOS emulation */
   if (bCold)
   {
-    GemDOS_Reset();             /* Reset GEMDOS emulation */
     FDC_Reset();                /* Reset FDC */
   }
 
