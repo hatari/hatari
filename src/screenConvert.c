@@ -15,6 +15,7 @@
 */
 
 #include <SDL.h>
+#include <SDL_endian.h>
 
 #include "main.h"
 #include "screen.h"
@@ -105,15 +106,6 @@ Uint32 Remap_1_Plane[16] = {
   0x00000000+BASECOLOUR_LONG,  0x01000000+BASECOLOUR_LONG,  0x00010000+BASECOLOUR_LONG,  0x01010000+BASECOLOUR_LONG,  0x00000100+BASECOLOUR_LONG,  0x01000100+BASECOLOUR_LONG,  0x00010100+BASECOLOUR_LONG,  0x01010100+BASECOLOUR_LONG,
   0x00000001+BASECOLOUR_LONG,  0x01000001+BASECOLOUR_LONG,  0x00010001+BASECOLOUR_LONG,  0x01010001+BASECOLOUR_LONG,  0x00000101+BASECOLOUR_LONG,  0x01000101+BASECOLOUR_LONG,  0x00010101+BASECOLOUR_LONG,  0x01010101+BASECOLOUR_LONG,
 };
-
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-#define LSWAP(x) (((x&0x000000ff)<<24)| \
-                 ((x&0x0000ff00)<<8)|  \
-                 ((x&0x00ff0000)>>8)|  \
-                 ((x&0xff000000)>>24))
-#else
-#define LSWAP(x) (x)
-#endif
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -453,7 +445,7 @@ void Convert_StartFrame(void)
 /* Plot High Resolution (640xH) 8-Bit pixels */
 #define PLOT_HIGH_640_8BIT(offset) \
 { \
- esi[offset] = LSWAP(Remap_1_Plane[eax]); \
+ esi[offset] = SDL_SwapLE32(Remap_1_Plane[eax]); \
 }
 
 
