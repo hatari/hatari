@@ -1,8 +1,12 @@
 /*
-  Hatari
+  Hatari - misc.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   Misc functions
 */
+static char rcsid[] = "Hatari $Id: misc.c,v 1.4 2003-03-23 19:22:24 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -107,7 +111,7 @@ int Misc_LimitInt(int Value, int MinRange, int MaxRange)
 */
 unsigned char Misc_ConvertToBCD(unsigned short int Value)
 {
-  return( ((Value&0xf0)>>4)*10 + (Value&0x0f) );
+  return (((Value/10)%10)<<4) | (Value%10);
 }
 
 
@@ -155,19 +159,3 @@ long Misc_GetRandom(void)
   return(RandomNum);
 }
 
-
-/*-----------------------------------------------------------------------*/
-/*
-  Convert Time/Date to DOS format
-*/
-/*
-void Misc_TimeDataToDos(FILETIME *pFileTime, WORD *pFatDate, WORD *pFatTime)
-{
-  // Convert FILETIME to DOS format(same as GemDOS format)
-  if (FileTimeToDosDateTime(pFileTime,pFatDate,pFatTime))
-    return;
-
-  // Ooops, date/time outside range so just NULL
-  *pFatDate = *pFatTime = 0;
-}
-*/
