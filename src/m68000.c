@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-static char rcsid[] = "Hatari $Id: m68000.c,v 1.21 2003-04-28 17:48:56 thothy Exp $";
+static char rcsid[] = "Hatari $Id: m68000.c,v 1.22 2003-07-29 12:01:55 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -26,7 +26,6 @@ static char rcsid[] = "Hatari $Id: m68000.c,v 1.21 2003-04-28 17:48:56 thothy Ex
 #include "xbios.h"
 
 
-unsigned long ExceptionVector;
 short int PendingInterruptFlag;
 void *PendingInterruptFunction;
 short int PendingInterruptCount;
@@ -101,7 +100,6 @@ void M68000_Decode_MemorySnapShot_Capture(BOOL bSave)
   /*MemorySnapShot_Store(&Reg_SuperSP,sizeof(Reg_SuperSP));*//*FIXME*/
   /*MemorySnapShot_Store(&Reg_UserSP,sizeof(Reg_UserSP));*/
   /*MemorySnapShot_Store(&EmuCCode,sizeof(EmuCCode));*/
-  MemorySnapShot_Store(&ExceptionVector,sizeof(ExceptionVector));
 }
 
 
@@ -133,9 +131,8 @@ void M68000_BusError(unsigned long addr)
 void M68000_AddressError(unsigned long addr)
 {
   fprintf(stderr, "M68000_AddressError at address $%lx\n", (long)addr);
-  BusAddressLocation=addr;              /* Store for exception frame */
-  ExceptionVector=EXCEPTION_ADDRERROR;  /* Handler */
-  M68000_Exception();                   /* Cause trap */
+  BusAddressLocation = addr;                /* Store for exception frame */
+  M68000_Exception(EXCEPTION_ADDRERROR);    /* Cause trap */
 }
 
 
@@ -143,7 +140,7 @@ void M68000_AddressError(unsigned long addr)
 /*
   Exception handler
 */
-void M68000_Exception(void)
+void M68000_Exception(Uint32 ExceptionVector)
 {
   int exceptionNr = ExceptionVector/4;
 
@@ -151,19 +148,18 @@ void M68000_Exception(void)
   {
     /* Handle autovector interrupts the UAE's way
      * (see intlev() and do_specialties() in UAE CPU core) */
-#if 1
-    if(requestedInterrupt != -1)
-      fprintf(stderr,"Warning: Overriding interrupt %d with %d\n",
-              requestedInterrupt, exceptionNr-24);
-#endif
-    requestedInterrupt = exceptionNr - 24;
+    int intnr = exceptionNr - 24;
+    pendingInterrupts |= (1 << intnr);
     set_special(SPCFLAG_INT);
   }
   else
   {
     /* Was the CPU stopped, i.e. by a STOP instruction? */
-    regs.stopped = 0;
-    unset_special(SPCFLAG_STOP);        /* All is go,go,go! */
+    if(regs.spcflags & SPCFLAG_STOP)
+    {
+      regs.stopped = 0;
+      unset_special(SPCFLAG_STOP);      /* All is go,go,go! */
+    }
 
     /* 68k exceptions are handled by Exception() of the UAE CPU core */
     Exception(exceptionNr, m68k_getpc());

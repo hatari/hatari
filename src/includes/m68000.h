@@ -8,7 +8,6 @@
 #ifndef HATARI_M68000_H
 #define HATARI_M68000_H
 
-extern unsigned long ExceptionVector;
 extern Uint32 BusAddressLocation;
 extern Uint32 BusErrorPC;
 extern Uint16 BusErrorOpcode;
@@ -18,6 +17,6 @@ extern void M68000_MemorySnapShot_Capture(BOOL bSave);
 extern void M68000_Decode_MemorySnapShot_Capture(BOOL bSave);
 extern void M68000_BusError(unsigned long addr);
 extern void M68000_AddressError(unsigned long addr);
-extern void M68000_Exception(void);
+extern void M68000_Exception(Uint32 ExceptionVector);
 
 #endif

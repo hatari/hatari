@@ -1,18 +1,24 @@
 /*
-  Hatari
+  Hatari - int.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 */
 
-// Interrupt handlers in system
-enum {
+#ifndef HATARI_INT_H
+#define HATARI_INT_H
+
+/* Interrupt handlers in system */
+enum
+{
   INTERRUPT_NULL,
 
 #ifdef USE_DEBUGGER
   INTERRUPT_DEBUGGER,
   INTERRUPT_SINGLESTEP,
-#endif  //USE_DEBUGGER
+#endif  /*USE_DEBUGGER*/
 
   INTERRUPT_VIDEO_VBL,
-  INTERRUPT_VIDEO_VBL_PENDING,
   INTERRUPT_VIDEO_HBL,
   INTERRUPT_VIDEO_ENDLINE,
   INTERRUPT_MFP_TIMERA,
@@ -25,9 +31,10 @@ enum {
   MAX_INTERRUPTS
 };
 
-// Event timer structure - keeps next timer to occur in structure so don't need to check all entries
-typedef struct {
-  BOOL bUsed;                      // Is interrupt active?
+/* Event timer structure - keeps next timer to occur in structure so don't need to check all entries */
+typedef struct
+{
+  BOOL bUsed;                   /* Is interrupt active? */
   int Cycles;
   void *pFunction;
 } INTERRUPTHANDLER;
@@ -48,3 +55,5 @@ extern void Int_AddRelativeInterrupt(int CycleTime, int Handler);
 extern void Int_RemovePendingInterrupt(int Handler);
 extern BOOL Int_InterruptActive(int Handler);
 extern int Int_FindCyclesPassed(int Handler);
+
+#endif /* ifndef HATARI_INT_H */

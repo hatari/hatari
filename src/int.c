@@ -1,5 +1,8 @@
 /*
-  Hatari
+  Hatari - int.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   This code handles our interrupt table. So we do not need to test for every possible
   interrupt we add any pending interrupts into a table. We then scan the list if used
@@ -13,6 +16,7 @@
   the current instruction takes 20 cycles we will be 16 cycles late - this is handled in
   the adjust functions.
 */
+static char rcsid[] = "Hatari $Id: int.c,v 1.3 2003-07-29 12:01:55 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -27,8 +31,10 @@
 #include "sound.h"
 #include "video.h"
 
+
 /* List of possible interrupt handlers to be store in 'PendingInterruptTable', used for 'MemorySnapShot' */
-void *pIntHandlerFunctions[] = {
+void *pIntHandlerFunctions[] =
+{
   NULL,
 
 #ifdef USE_DEBUGGER
@@ -36,7 +42,6 @@ void *pIntHandlerFunctions[] = {
   InterruptHandler_SingleStep,
 #endif  /* USE_DEBUGGER */
   Video_InterruptHandler_VBL,
-  Video_InterruptHandler_VBL_Pending,
   Video_InterruptHandler_HBL,
   Video_InterruptHandler_EndLine,
   MFP_InterruptHandler_TimerA,

@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.25 2003-07-04 12:40:13 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.26 2003-07-29 12:01:55 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -591,6 +591,8 @@ uae_u32 get_disp_ea_000 (uae_u32 base, uae_u32 dp)
 #endif
 }
 
+
+/* Create the Status Register from the flags */
 void MakeSR (void)
 {
 #if 0
@@ -610,6 +612,8 @@ void MakeSR (void)
 	       | GET_CFLG);
 }
 
+
+/* Set up the flags from Status Register */
 void MakeFromSR (void)
 {
     int oldm = regs.m;
@@ -658,7 +662,8 @@ void MakeFromSR (void)
 	}
     }
 
-    set_special (SPCFLAG_INT);
+    /* Pending interrupts can occur again after a write to the SR: */
+    set_special (SPCFLAG_DOINT);
     if (regs.t1 || regs.t0)
 	set_special (SPCFLAG_TRACE);
     else
@@ -791,7 +796,7 @@ void Exception(int nr, uaecptr oldpc)
       case 10: ADD_CYCLES(34, 4, 3); break;   /* Line-A - probably wrong */
       case 11: ADD_CYCLES(34, 4, 3); break;   /* Line-F - probably wrong */
       default:
-#if 0   /* Hatari currently seems to run more instable when adding MFP cycles */
+#if 1   /* FIXME: Add right cycles value for MFP interrupts... */
         if(nr < 64)
           ADD_CYCLES(0, 0, 0);       /* Coprocessor and unassigned exceptions (???) */
         else
@@ -1279,6 +1284,7 @@ static int do_specialties (void)
 
     if (regs.spcflags & SPCFLAG_DOINT) {
 	int intr = intlev ();
+	/* SPCFLAG_DOINT will be enabled again in MakeFromSR to handle pending interrupts! */
 	unset_special (SPCFLAG_DOINT);
 	if (intr != -1 && intr > regs.intmask) {
 	    Interrupt (intr);

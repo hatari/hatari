@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-static char rcsid[] = "Hatari $Id: mfp.c,v 1.7 2003-04-28 17:48:57 thothy Exp $";
+static char rcsid[] = "Hatari $Id: mfp.c,v 1.8 2003-07-29 12:01:55 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -171,8 +171,7 @@ void MFP_Exception(int Interrupt)
 
   Vec = (unsigned int)(MFP_VR&0xf0)<<2;
   Vec += Interrupt<<2;
-  ExceptionVector = Vec;
-  M68000_Exception();
+  M68000_Exception(Vec);
 }
 
 

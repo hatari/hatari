@@ -8,7 +8,7 @@
   VBLs, HBLs, copying the ST screen to a buffer to simulate the TV raster trace, border
   removal, palette changes per HBL, the 'video address pointer' etc...
 */
-static char rcsid[] = "Hatari $Id: video.c,v 1.16 2003-06-28 14:32:36 thothy Exp $";
+static char rcsid[] = "Hatari $Id: video.c,v 1.17 2003-07-29 12:01:55 thothy Exp $";
 
 #include <SDL.h>
 
@@ -234,18 +234,7 @@ void Video_InterruptHandler_VBL(void)
   /* Generate 1/50th second of sound sample data, to be played by sound thread */
   Sound_Update_VBL();
 
-  MakeSR();
-  if (4>FIND_IPL)              /* Vertical blank, level 4! */
-  {
-    ExceptionVector = EXCEPTION_VBLANK;
-    M68000_Exception();        /* VBL interrupt */
-  }
-  else
-  {
-    /* Higher priority interrupt is currently being executed(eg MFP). Set VBL to occur later */
-    if (!Int_InterruptActive(INTERRUPT_VIDEO_VBL_PENDING))
-      Int_AddAbsoluteInterrupt(100,INTERRUPT_VIDEO_VBL_PENDING);
-  }
+  M68000_Exception(EXCEPTION_VBLANK);   /* Vertical blank interrupt, level 4! */
 
   /* And handle any messages, check for quit message */
   Main_EventHandler();         /* Process messages, set 'bQuitProgram' if user tries to quit */
@@ -267,29 +256,6 @@ void Video_InterruptHandler_VBL(void)
   nOldMilliTicks = nNewMilliTicks;
 }
 
-
-/*-----------------------------------------------------------------------*/
-/*
-  This doesn't make sense... I always thought if a 68000 interrupt, eg the VBL, occurs while a
-  higher priority interrupt was in service the interrupt was ignored. This does not seem to be
-  the case. This really needs checking on a real ST, but I have noticed some menu discs run
-  sound routines from the MFP timers which overlap the VBL, yet the VBL still occurs...
-*/
-void Video_InterruptHandler_VBL_Pending(void)
-{
-  /* Remove this interrupt from list and re-order */
-  Int_AcknowledgeInterrupt();
-
-  MakeSR();
-  /* Check if can execute VBL */
-  if (4>FIND_IPL)              /* Vertical blank, level 4! */
-  {
-    ExceptionVector = EXCEPTION_VBLANK;
-    M68000_Exception();        /* VBL interrupt */
-  }
-  else
-    Int_AddAbsoluteInterrupt(100,INTERRUPT_VIDEO_VBL_PENDING);
-}
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -343,17 +309,12 @@ void Video_InterruptHandler_HBL(void)
 {
   /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
-  /* Generate new Timer AB, if need to - there are 313 HBLs per frame */
-  if (nHBL<(SCANLINES_PER_FRAME-1)) {
-    Int_AddAbsoluteInterrupt(CYCLES_PER_LINE,INTERRUPT_VIDEO_HBL);
-  }
 
-  MakeSR();
-  if (2>FIND_IPL)                  /* Horizontal blank, level 2! */
-  {
-    ExceptionVector = EXCEPTION_HBLANK;
-    M68000_Exception();            /* HBL interrupt */
-  }
+  /* Generate new Timer AB, if need to - there are 313 HBLs per frame */
+  if(nHBL < (SCANLINES_PER_FRAME-1))
+    Int_AddAbsoluteInterrupt(CYCLES_PER_LINE,INTERRUPT_VIDEO_HBL);
+
+  M68000_Exception(EXCEPTION_HBLANK);   /* Horizontal blank interrupt, level 2! */
 }
 
 

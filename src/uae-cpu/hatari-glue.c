@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.19 2003-06-20 13:13:22 thothy Exp $";
+static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.20 2003-07-29 12:01:55 thothy Exp $";
 
 
 #include <stdio.h>
@@ -36,23 +36,38 @@ int address_space_24 = TRUE;
 int cpu_level = 0;              /* 68000 (default) */
 int cpu_compatible = FALSE;
 
-int requestedInterrupt = -1;
+int pendingInterrupts = 0;
 
 
 /* Reset custom chips */
 void customreset(void)
 {
-  requestedInterrupt = -1;
+  pendingInterrupts = 0;
 }
 
 
-/* Return interrupt number (1 - 7), -1 means no interrupt. */
+/* Return interrupt number (1 - 7), -1 means no interrupt.
+ * Note that the interrupt stays pending if it can't be executed yet
+ * due to the interrupt level field in the SR. */
 int intlev(void)
 {
-  int ret = requestedInterrupt;
-  requestedInterrupt = -1;
+  /* There are only VBL and HBL autovector interrupts in the ST... */
+  assert((pendingInterrupts & ~((1<<4)|(1<<2))) == 0);
 
-  return ret;
+  if(pendingInterrupts & (1 << 4))          /* VBL interrupt? */
+  {
+    if(regs.intmask < 4)
+      pendingInterrupts &= ~(1 << 4);
+    return 4;
+  }
+  else if(pendingInterrupts & (1 << 2))     /* HBL interrupt? */
+  {
+    if(regs.intmask < 2)
+      pendingInterrupts &= ~(1 << 2);
+    return 2;
+  }
+
+  return -1;
 }
 
 
