@@ -111,7 +111,7 @@ Two types of disk images are currently supported: The raw "ST" type and the
 
 The raw type (file suffix should be "*.st") is simply a sector by sector
 image of a real floppy disk. You can easily create such an image with the
-"dd" program which should normally be pre-installad on every Unix-like system.
+"dd" program which should normally be pre-installed on every Unix-like system.
 Simply type something like "dd if=/dev/fd0 of=myimage.st" to create a disk
 image. Of course you need access to /dev/fd0, and depending on your system
 and the type of floppy disk you might have to use another device name here
@@ -124,6 +124,9 @@ programs like the Magic Shadow Archiver for this task. Hatari supports this
 slightly compressed MSA disk images, too. Note that Hatari only supports
 the "old" MSA format, there are some Magic Shadow Archiver clones (like
 Jay-MSA) that create better compressed but Hatari-incompatible disk images.
+However, if you have got such a MSA disk and want to use it with Hatari, you
+can still run the corresponding MSA program within Hatari to extract the
+incompatible disk image to a normal floppy disk image.
 
 While *.ST and *.MSA are more or less the "standard" types of Atari disk
 images, you might sometimes also find DIM or ADF images on the internet.
