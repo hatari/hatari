@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-static char rcsid[] = "Hatari $Id: floppy.c,v 1.10 2003-04-04 16:28:29 thothy Exp $";
+static char rcsid[] = "Hatari $Id: floppy.c,v 1.11 2003-06-07 13:43:30 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -403,8 +403,8 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
 
   if(Track > 85)
   {
-    fprintf(stderr,"Strange floppy track=%i!\n",Track);
-    Track = 85;
+    fprintf(stderr,"Floppy_ReadSectors: Strange floppy track (%i)!\n", Track);
+    return FALSE;
   }
 
   /* Do we have a disc in our drive? */
@@ -435,7 +435,12 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
     Offset = nBytesPerTrack*Side;                 /* First seek to side */
     Offset += (nBytesPerTrack*nSides)*Track;      /* Then seek to track */
     Offset += (NUMBYTESPERSECTOR*(Sector-1));     /* And finally to sector */
-    if (Offset < 0) return -1; // Sector is 0 sometimes ?!!!
+    if (Offset < 0)
+    {
+      fprintf(stderr,"Floppy_ReadSectors: Offset is negative (%li)!\n", Offset);
+      return FALSE;
+    }
+
     /* Read sectors (usually 512 bytes per sector) */
     memcpy(pBuffer,pDiscBuffer+Offset,(int)Count*NUMBYTESPERSECTOR);
 
