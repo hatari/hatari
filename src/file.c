@@ -17,299 +17,110 @@
 #include "misc.h"
 
 
-//OPENFILENAME ofn;
-char szSTFilter[256],szROMFilter[256],szAllFilesFilter[256],szMapFileFilter[256],szYMFileFilter[256],szMemoryFileFilter[256];
-char szCreateDiscFileName[MAX_FILENAME_LENGTH];
-BOOL bEjectDisc,bCreateBlankDisc;
+
+#ifdef __BEOS__
+/* The scandir() and alphasort() functions aren't available on BeOS, */
+/* so let's declare them here... */
+#include <dirent.h>
+
+#undef DIRSIZ
+
+#define DIRSIZ(dp)                                          \
+        ((sizeof(struct dirent) - sizeof(dp)->d_name) +     \
+		(((dp)->d_reclen + 1 + 3) &~ 3))
+
 
 /*-----------------------------------------------------------------------*/
 /*
-  Initialize Windows 'Open File' dialogs
+  Alphabetic order comparison routine for those who want it.
 */
-void File_Init(void)
+int alphasort(const void *d1, const void *d2)
 {
-/* FIXME */
-/*
-  char chReplace;    // string separator for szFilter
-  int i,cbString;
-
-  // Load '*.ST' filter
-  cbString = LoadString(hInst,IDS_STRING1,szSTFilter,sizeof(szSTFilter));
-  chReplace = szSTFilter[cbString - 1]; // retrieve wildcard
-
-  for(i=0; szSTFilter[i]!='\0'; i++) {
-    if (szSTFilter[i]==chReplace)
-       szSTFilter[i]='\0';
-  }
-  // Load '*.IMG' filter
-  cbString = LoadString(hInst,IDS_STRING2,szROMFilter,sizeof(szROMFilter));
-  chReplace = szROMFilter[cbString - 1]; // retrieve wildcard
-
-  for(i=0; szROMFilter[i]!='\0'; i++) {
-    if (szROMFilter[i]==chReplace)
-       szROMFilter[i]='\0';
-  }
-
-  // Load '*.*' filter
-  cbString = LoadString(hInst,IDS_STRING3,szAllFilesFilter,sizeof(szAllFilesFilter));
-  chReplace = szAllFilesFilter[cbString - 1]; // retrieve wildcard
-
-  for(i=0; szAllFilesFilter[i]!='\0'; i++) {
-    if (szAllFilesFilter[i]==chReplace)
-       szAllFilesFilter[i]='\0';
-  }
-
-  // Load '*.map' filter
-  cbString = LoadString(hInst,IDS_STRING4,szMapFileFilter,sizeof(szMapFileFilter));
-  chReplace = szMapFileFilter[cbString - 1]; // retrieve wildcard
-
-  for(i=0; szMapFileFilter[i]!='\0'; i++) {
-    if (szMapFileFilter[i]==chReplace)
-       szMapFileFilter[i]='\0';
-  }
-
-  // Load '*.ym' filter
-  cbString = LoadString(hInst,IDS_STRING5,szYMFileFilter,sizeof(szYMFileFilter));
-  chReplace = szYMFileFilter[cbString - 1]; // retrieve wildcard
-
-  for(i=0; szYMFileFilter[i]!='\0'; i++) {
-    if (szYMFileFilter[i]==chReplace)
-       szYMFileFilter[i]='\0';
-  }
-
-  // Load '*.mem' filter
-  cbString = LoadString(hInst,IDS_STRING6,szMemoryFileFilter,sizeof(szMemoryFileFilter));
-  chReplace = szMemoryFileFilter[cbString - 1]; // retrieve wildcard
-
-  for(i=0; szMemoryFileFilter[i]!='\0'; i++) {
-    if (szMemoryFileFilter[i]==chReplace)
-       szMemoryFileFilter[i]='\0';
-  }
-
-  Memory_Clear(&ofn,sizeof(OPENFILENAME));
-  ofn.lStructSize = sizeof(OPENFILENAME);
-  ofn.hInstance = hInst;
-  ofn.nMaxFile = _MAX_PATH;
-  ofn.nMaxFileTitle = _MAX_FNAME + _MAX_EXT;
-*/
+  return(strcmp((*(struct dirent **)d1)->d_name, (*(struct dirent **)d2)->d_name));
 }
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
-  Create 'Open File' dialog, and ask user for valid filename
+  Scan a directory for all its entries
 */
-BOOL File_OpenDlg(/*HWND hWnd,*/ char *pFullFileName,int Drive)
+int scandir(const char *dirname,struct dirent ***namelist, int(*select) __P((struct dirent *)), int (*dcomp) __P((const void *, const void *)))
 {
-/* FIXME */
-/*
-  char szSrcDrive[_MAX_DRIVE],szSrcDir[_MAX_DIR],szSrcName[_MAX_FNAME],szSrcExt[_MAX_EXT];
-  char szTempFileName[MAX_FILENAME_LENGTH];
-  char szTempDir[MAX_FILENAME_LENGTH],szTitleString[64];
-  BOOL bRet;
+  register struct dirent *d, *p, **names;
+  register size_t nitems;
+  struct stat stb;
+  long arraysz;
+  DIR *dirp;
 
-  ofn.hwndOwner = hWnd;
-  ofn.lpstrFilter = szSTFilter;
-  ofn.lpstrFileTitle = NULL;
-  // Copy filename as dialog will change this(may not be valid if cancel)
-  strcpy(szTempFileName,pFullFileName);
-  // Create filename and directory of previous file
-  _splitpath(szTempFileName,szSrcDrive,szSrcDir,szSrcName,szSrcExt);
-  
-  // Filename only, save FULL path and file back here when quit
-  _makepath(szTempFileName,"","",szSrcName,szSrcExt);
-  ofn.lpstrFile = szTempFileName;
-  // Directory only
-  _makepath(szTempDir,szSrcDrive,szSrcDir,"","");
-  if (strlen(szTempDir)>0)
-    ofn.lpstrInitialDir = szTempDir;
-  else {
-    File_AddSlashToEndFileName(ConfigureParams.DiscImage.szDiscImageDirectory);
-    ofn.lpstrInitialDir = ConfigureParams.DiscImage.szDiscImageDirectory;
-  }
-  sprintf(szTitleString,"Select Disc Image for Drive '%c'",Drive+'A');
-  ofn.lpstrTitle = szTitleString;
-  ofn.Flags = OFN_HIDEREADONLY | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR | OFN_NOVALIDATE
-   | OFN_ENABLETEMPLATE | OFN_EXPLORER | OFN_ENABLEHOOK;// | OFN_SHOWHELP;
-  ofn.lpTemplateName = MAKEINTRESOURCE(IDD_DIALOGBAR);
-  ofn.hInstance = hInst;
-  ofn.lpfnHook = File_OpenDlg_OFNHookProc;
+  if ((dirp = opendir(dirname)) == NULL)
+    return(-1);
 
-  // Set globals for dialog intercept
-  bEjectDisc = bCreateBlankDisc = FALSE;
-  // Bring up dialog
-  bRet = GetOpenFileName(&ofn);
-  if (bRet)
-    strcpy(pFullFileName,szTempFileName);
+  if (fstat(dirp->fd, &stb) < 0)
+    return(-1);
 
-  // Did we eject the disc?
-  if (bEjectDisc) {
-    // Did we have a disc inserted?
-    _splitpath(pFullFileName,szSrcDrive,szSrcDir,szSrcName,szSrcExt);
-    if ( (strlen(szSrcName)>0) || (strlen(szSrcExt)>0) ) {
-      Floppy_EjectDiscFromDrive(Drive,TRUE);
-    }
-    else {
-      MessageBox(hWnd,"There is no disc image selected for that drive - Drive is empty.",PROG_NAME,MB_OK | MB_ICONINFORMATION);
-      Floppy_EjectDiscFromDrive(Drive,FALSE);
-    }
-    // Blank disc filename, and return disc change
-    strcpy(pFullFileName,"");
-    bRet = TRUE;
-  }
-  if (bCreateBlankDisc) {
-    // Do dialog for disc create, filename is in 'szCreateDiscFileName'
-    if (CreateBlankImage_DoDialog(hWnd,Drive,szCreateDiscFileName)) {
-      // Copy filename, so auto-inserts into drive
-      strcpy(pFullFileName,szCreateDiscFileName);
-    }
-  }
+  /*
+   * estimate the array size by taking the size of the directory file
+   * and dividing it by a multiple of the minimum size entry.
+   */
+  arraysz = (stb.st_size / 24);
 
-  return(bRet);
-*/
-return TRUE;
+  names = (struct dirent **)malloc(arraysz * sizeof(struct dirent *));
+  if (names == NULL)
+    return(-1);
+
+  nitems = 0;
+
+  while ((d = readdir(dirp)) != NULL) {
+
+     if (select != NULL && !(*select)(d))
+       continue;       /* just selected names */
+
+     /*
+      * Make a minimum size copy of the data
+      */
+
+     p = (struct dirent *)malloc(DIRSIZ(d));
+     if (p == NULL)
+       return(-1);
+
+     p->d_ino = d->d_ino;
+     p->d_reclen = d->d_reclen;
+     /*p->d_namlen = d->d_namlen;*/
+     bcopy(d->d_name, p->d_name, p->d_reclen + 1);
+
+     /*
+      * Check to make sure the array has space left and
+      * realloc the maximum size.
+      */
+
+     if (++nitems >= arraysz) {
+
+       if (fstat(dirp->fd, &stb) < 0)
+         return(-1);     /* just might have grown */
+
+       arraysz = stb.st_size / 12;
+
+       names = (struct dirent **)realloc((char *)names, arraysz * sizeof(struct dirent *));
+       if (names == NULL)
+         return(-1);
+     }
+
+     names[nitems-1] = p;
+   }
+
+   closedir(dirp);
+
+   if (nitems && dcomp != NULL)
+     qsort(names, nitems, sizeof(struct dirent *), dcomp);
+
+   *namelist = names;
+
+   return(nitems);
 }
 
-//-----------------------------------------------------------------------
-/*
-  Create 'Open File' dialog, don't have extra buttons via hook
-*/
-/*
-BOOL File_OpenDlg_NoExtraButtons(HWND hWnd, char *pFullFileName)
-{
-  char szSrcDrive[_MAX_DRIVE],szSrcDir[_MAX_DIR],szSrcName[_MAX_FNAME],szSrcExt[_MAX_EXT];
-  char szTempFileName[MAX_FILENAME_LENGTH];
-  char szTempDir[MAX_FILENAME_LENGTH],szTitleString[64];
-  BOOL bRet;
 
-  ofn.hwndOwner = hWnd;
-  ofn.lpstrFilter = szSTFilter;
-  ofn.lpstrFileTitle = NULL;
-  // Copy filename as dialog will change this(may not be valid if cancel)
-  strcpy(szTempFileName,pFullFileName);
-  // Create filename and directory of previous file
-  _splitpath(szTempFileName,szSrcDrive,szSrcDir,szSrcName,szSrcExt);
-  
-  // Filename only, save FULL path and file back here when quit
-  _makepath(szTempFileName,"","",szSrcName,szSrcExt);
-  ofn.lpstrFile = szTempFileName;
-  // Directory only
-  _makepath(szTempDir,szSrcDrive,szSrcDir,"","");
-  if (strlen(szTempDir)>0)
-    ofn.lpstrInitialDir = szTempDir;
-  else {
-    File_AddSlashToEndFileName(ConfigureParams.DiscImage.szDiscImageDirectory);
-    ofn.lpstrInitialDir = ConfigureParams.DiscImage.szDiscImageDirectory;
-  }
-  sprintf(szTitleString,"Select Disc Image");
-  ofn.lpstrTitle = szTitleString;
-  ofn.Flags = OFN_HIDEREADONLY | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR | OFN_NOVALIDATE | OFN_EXPLORER;
-  ofn.lpTemplateName = NULL;
-  ofn.hInstance = hInst;
-  ofn.lpfnHook = File_OpenDlg_OFNHookProc;
+#endif /* __BEOS__ */
 
-  // Bring up dialog
-  bRet = GetOpenFileName(&ofn);
-  if (bRet)
-    strcpy(pFullFileName,szTempFileName);
-
-  return(bRet);
-}
-*/
-
-//-----------------------------------------------------------------------
-/*
-  Create 'Browse' dialog, and ask user for valid directory
-*/
-/*
-BOOL File_OpenBrowseDlg(HWND hWnd, char *pFullFileName,BOOL bTosROM,BOOL bFileMustExist)
-{
-  char szChosenPath[MAX_PATH];
-  BROWSEINFO bInfo;
-  LPITEMIDLIST idList;
-
-  bInfo.hwndOwner = hWnd;
-  bInfo.pidlRoot = NULL;
-  bInfo.pszDisplayName = szChosenPath;
-  bInfo.lpszTitle = "Select a directory:";
-  bInfo.lpfn = NULL;
-  bInfo.ulFlags = 0;
-  bInfo.lParam = 0;
-  bInfo.iImage = 0;
-
-  idList = SHBrowseForFolder(&bInfo);
-  if (idList != NULL) {
-    if (SHGetPathFromIDList(idList, szChosenPath)) {
-      strcpy(pFullFileName,szChosenPath);
-      return(TRUE);
-    }
-  }
-
-  return(FALSE);
-}
-*/
-
-//-----------------------------------------------------------------------
-/*
-  Create 'Open File' dialog, and ask user for TOS image filename
-*/
-BOOL File_OpenSelectDlg(/*HWND hWnd,*/ char *pFullFileName,int FileFilter,BOOL bFileMustExist,BOOL bSaving)
-{
-/* FIXME */
-/*
-  char szSrcDrive[_MAX_DRIVE],szSrcDir[_MAX_DIR],szSrcName[_MAX_FNAME],szSrcExt[_MAX_EXT];
-  char szTempDir[MAX_FILENAME_LENGTH];
-
-  ofn.hwndOwner = hWnd;
-  switch (FileFilter) {
-    case FILEFILTER_DISCFILES:
-      ofn.lpstrFilter = szSTFilter;
-      ofn.lpstrTitle = "Select Disc Image";
-      break;
-    case FILEFILTER_TOSROM:
-      ofn.lpstrFilter = szROMFilter;
-      ofn.lpstrTitle = "Select TOS Image";
-      break;
-    case FILEFILTER_MAPFILE:
-      ofn.lpstrFilter = szMapFileFilter;
-      ofn.lpstrTitle = "Select Keyboard Map file";
-      break;
-    case FILEFILTER_YMFILE:
-      ofn.lpstrFilter = szYMFileFilter;
-      ofn.lpstrTitle = "Select YM or WAV file";
-      break;
-    case FILEFILTER_MEMORYFILE:
-      ofn.lpstrFilter = szMemoryFileFilter;
-      ofn.lpstrTitle = "Select Memory Capture file";
-      break;
-
-    default:
-      ofn.lpstrFilter = szAllFilesFilter;
-      ofn.lpstrTitle = NULL;
-      break;
-  }
-  ofn.lpstrFileTitle = NULL;
-  // Create filename and directory of previous file
-  _splitpath(pFullFileName,szSrcDrive,szSrcDir,szSrcName,szSrcExt);
-  
-  // Filename only, save FULL path and file back here when quit
-  _makepath(pFullFileName,"","",szSrcName,szSrcExt);
-  ofn.lpstrFile = pFullFileName;
-  // Directory only
-  _makepath(szTempDir,szSrcDrive,szSrcDir,"","");
-  ofn.lpstrInitialDir = szTempDir;
-  if (bFileMustExist)
-    ofn.Flags = OFN_HIDEREADONLY | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-  else
-    ofn.Flags = OFN_HIDEREADONLY | OFN_PATHMUSTEXIST;
-  ofn.lpTemplateName = MAKEINTRESOURCE(1536);
-
-  if (bSaving)
-    return GetSaveFileName(&ofn);
-  else
-    return GetOpenFileName(&ofn);
-*/
-}
 
 
 /*-----------------------------------------------------------------------*/
@@ -339,6 +150,7 @@ void File_AddSlashToEndFileName(char *pszFileName)
       strcat(pszFileName,"/");  /* Must use end slash */
   }
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -399,7 +211,7 @@ BOOL File_DoesFileNameEndWithSlash(char *pszFileName)
   if (pszFileName[0]=='\0')    /* If NULL string return! */
     return(FALSE);
 
-  /* Does string end in a '\'? */
+  /* Does string end in a '/'? */
   if (pszFileName[strlen(pszFileName)-1]=='/')
     return(TRUE);
 
@@ -597,32 +409,87 @@ BOOL File_QueryOverwrite(char *pszFileName)
 /*
   Try filename with various extensions and check if file exists - if so return correct name
 */
-BOOL File_FindPossibleExtFileName(char *pszFileName,char *ppszExts[])
+BOOL File_FindPossibleExtFileName(char *pszFileName, char *ppszExts[])
 {
-/* FIXME */
-/*
-  char szSrcDrive[_MAX_DRIVE],szSrcDir[_MAX_DIR],szSrcName[_MAX_FNAME],szSrcExt[_MAX_EXT];
+  char szSrcDir[256], szSrcName[128], szSrcExt[32];
   char szTempFileName[MAX_FILENAME_LENGTH];
   int i=0;
 
-  // Split filename into parts
-  _splitpath(pszFileName,szSrcDrive,szSrcDir,szSrcName,szSrcExt);
+  /* Split filename into parts */
+  File_splitpath(pszFileName, szSrcDir, szSrcName, szSrcExt);
 
-  // Scan possible extensions
+  /* Scan possible extensions */
   while(ppszExts[i]) {
-    // Re-build with new file extension
-    _makepath(szTempFileName,szSrcDrive,szSrcDir,szSrcName,ppszExts[i]);
-    // Does this file exist?
+    /* Re-build with new file extension */
+    File_makepath(szTempFileName, szSrcDir, szSrcName, ppszExts[i]);
+    /* Does this file exist? */
     if (File_Exists(szTempFileName)) {
-      // Copy name for return
+      /* Copy name for return */
       strcpy(pszFileName,szTempFileName);
       return(TRUE);
     }
 
-    // Next one
+    /* Next one */
     i++;
   }
-*/
+
   /* No, none of the files exist */
   return(FALSE);
 }
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Split a complete filename into path, filename and extension
+*/
+void File_splitpath(char *pSrcFileName, char *pDir, char *pName, char *pExt)
+{
+  char *ptr1, *ptr2;
+
+  /* Build pathname: */
+  ptr1 = strrchr(pSrcFileName, '/');
+  if( ptr1 )
+  {
+    strcpy(pDir, pSrcFileName);
+    pDir[ptr1-pSrcFileName] = 0;
+  }
+  else
+  {
+    pDir[0] = 0;
+  }
+
+  /* Build the raw filename: */
+  if(ptr1)
+    strcpy(pName, ptr1+1);
+  else
+    strcpy(pName, pSrcFileName);
+  ptr2 = strrchr(pName+1, '.');
+
+  if( ptr2 )
+  {
+    pName[ptr2-pName] = 0;
+    /* Copy the file extension: */
+    strcpy(pExt, ptr2+1);
+  }
+  else
+    pExt[0] = 0;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Build a complete filename from path, filename and extension
+*/
+void File_makepath(char *pDestFileName, char *pDir, char *pName, char *pExt)
+{
+  strcpy(pDestFileName, pDir);
+  if( strlen(pDestFileName)==0 )
+    strcpy(pDestFileName, "./");
+  if( pDestFileName[strlen(pDestFileName)-1]!='/' )
+    strcat(pDestFileName, "/");
+  strcat(pDestFileName, pName);
+  if( strlen(pExt)>0 && pExt[0]!='.' )
+    strcat(pDestFileName, ".");
+  strcat(pDestFileName, pExt);
+}
+
