@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.12 2003-03-07 17:10:42 thothy Exp $";
+static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.13 2003-03-24 10:59:30 emanne Exp $";
 
 
 #include <stdio.h>
@@ -93,7 +93,8 @@ void check_prefs_changed_cpu(int new_level, int new_compatible)
   {
     cpu_level = new_level;
     cpu_compatible = new_compatible;
-    build_cpufunctbl ();
+    if (table68k)
+      build_cpufunctbl ();
   }
 }
 
@@ -109,7 +110,7 @@ unsigned long OpCode_ConnectedDrive(uae_u32 opcode)
 {
   fprintf(stderr, "OpCode_ConnectedDrive handled (%x)\n",ConnectedDriveMask );
   /* Set connected drives */
-  STMemory_WriteLong(0x4c2, ConnectedDriveMask); 
+  STMemory_WriteLong(0x4c2, ConnectedDriveMask);
   /* do an RTS (the opcode we replaced) */
   m68k_setpc(longget(m68k_areg(regs, 7)));
   m68k_areg(regs, 7) += 4;
@@ -125,7 +126,7 @@ unsigned long OpCode_ConnectedDrive(uae_u32 opcode)
 */
 unsigned long OpCode_OldGemDos(uae_u32 opcode)
 {
-  m68k_setpc( STMemory_ReadLong(CART_OLDGEMDOS) );    
+  m68k_setpc( STMemory_ReadLong(CART_OLDGEMDOS) );
   fill_prefetch_0();
   return 4;
 }
@@ -137,7 +138,7 @@ unsigned long OpCode_OldGemDos(uae_u32 opcode)
   The vector is setup when the gemdos-opcode is run the first time, by
   the cartridge routine. (after gemdos init, before booting floppies)
 
-  After this, our vector will be used, and handled by the GemDOS_OpCode 
+  After this, our vector will be used, and handled by the GemDOS_OpCode
   routine in gemdos.c
 */
 unsigned long OpCode_GemDos(uae_u32 opcode)
