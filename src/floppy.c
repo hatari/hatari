@@ -348,6 +348,11 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
   unsigned short int nSectorsPerTrack,nSides,nBytesPerTrack;
   long Offset;
 
+  if(Track>85) {
+    fprintf(stderr,"Strange floppy track=%i!\n",Track);
+    Track=85;
+  }
+
   /* Do we have a disc in our drive? */
   if (EmulationDrives[Drive].bDiscInserted) {
     /* Looks good */

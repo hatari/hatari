@@ -15,27 +15,96 @@
 #include "view.h"
 #include "vdi.h"
 #include "screen.h"
+#include "shortcut.h"
 
 static FILE *ConfigFile;
-/*static OFSTRUCT ConfigFileInfo;*/
-BOOL bFirstTimeInstall=FALSE;              /* Has been run before? Used to set default joysticks etc... */
+BOOL bFirstTimeInstall=FALSE;    /* Has been run before? Used to set default joysticks etc... */
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Set default configuration values
-  This is new in Hatari - Winston always loaded its values from a config
-  file. But since Hatari does not yet use a config file, we need this!
+  Set default configuration values.
 */
 void Configuration_SetDefault(void)
 {
-  ConfigureParams.Sound.bEnableSound = FALSE;
-  ConfigureParams.Screen.Advanced.bFrameSkip = FALSE;
-  ConfigureParams.Screen.Advanced.bAllowOverscan = TRUE;
-  ConfigureParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
-  strcpy(ConfigureParams.TOSGEM.szTOSImageFileName, "./tos.img");
-  ConfigureParams.Memory.nMemorySize = 1;  /* 0=512k, 1=1MB, 2=2MB, 3=4MB */
+  int i;
+
+  /* Clear parameters */
+  Memory_Clear(&ConfigureParams, sizeof(DLG_PARAMS));
+
+  /* Set defaults for CPU dialog */
+  ConfigureParams.Configure.nMinMaxSpeed = ConfigureParams.Configure.nPrevMinMaxSpeed = MINMAXSPEED_MIN;
+
+  /* Set defaults for Disc Image */
+  ConfigureParams.DiscImage.bAutoInsertDiscB = TRUE;
+  sprintf(ConfigureParams.DiscImage.szDiscImageDirectory,"%s/discs",szWorkingDir);
+  File_AddSlashToEndFileName(ConfigureParams.DiscImage.szDiscImageDirectory);
+
+  /* Set defaults for Hard Disc */
   ConfigureParams.HardDisc.nDriveList = DRIVELIST_NONE;
+  ConfigureParams.HardDisc.bBootFromHardDisc = FALSE;
+  ConfigureParams.HardDisc.nHardDiscDir = DRIVE_C;
+  for(i=0; i<MAX_HARDDRIVES; i++)
+  {
+    sprintf(ConfigureParams.HardDisc.szHardDiscDirectories[i],"%s/harddisc",szWorkingDir);
+    File_CleanFileName(ConfigureParams.HardDisc.szHardDiscDirectories[i]);
+  }
+
+  /* Set defaults for Joysticks */
+  for(i=0; i<2; i++)
+  {
+    ConfigureParams.Joysticks.Joy[i].bCursorEmulation = FALSE;
+    ConfigureParams.Joysticks.Joy[i].bEnableAutoFire = FALSE;
+  }
+
+  /* Set defaults for Keyboard */
+  ConfigureParams.Keyboard.bDisableKeyRepeat = TRUE;
+  ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_KEY] = SHORTCUT_FULLSCREEN;
+  ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_SHIFT] = SHORTCUT_NOTASSIGNED;
+  ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_CTRL] = SHORTCUT_NOTASSIGNED;
+  ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F12][SHORT_CUT_KEY] = SHORTCUT_NOTASSIGNED;
+  ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F12][SHORT_CUT_SHIFT] = SHORTCUT_NOTASSIGNED;
+  ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F12][SHORT_CUT_CTRL] = SHORTCUT_NOTASSIGNED;
+  strcpy(ConfigureParams.Keyboard.szMappingFileName, "");
+
+  /* Set defaults for Memory */
+  ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_1Mb;
+  strcpy(ConfigureParams.Memory.szMemoryCaptureFileName, "");
+
+  /* Set defaults for Printer */
+  ConfigureParams.Printer.bEnablePrinting = FALSE;
+  ConfigureParams.Printer.bPrintToFile = FALSE;
+  strcpy(ConfigureParams.Printer.szPrintToFileName,"");
+
+  /* Set defaults for RS232 */
+  ConfigureParams.RS232.bEnableRS232 = FALSE;
+  ConfigureParams.RS232.nCOMPort = COM_PORT_1;
+
+  /* Set defaults for Screen */
+  ConfigureParams.Screen.bFullScreen = FALSE;
+  ConfigureParams.Screen.Advanced.bDoubleSizeWindow = FALSE;
+  ConfigureParams.Screen.Advanced.bAllowOverscan = TRUE;
+  ConfigureParams.Screen.Advanced.bInterlacedFullScreen = TRUE;
+  ConfigureParams.Screen.Advanced.bSyncToRetrace = FALSE;
+  ConfigureParams.Screen.Advanced.bFrameSkip = FALSE;	
+  ConfigureParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
+  ConfigureParams.Screen.bCaptureChange = FALSE;
+  ConfigureParams.Screen.nFramesPerSecond = 1;
+  ConfigureParams.Screen.bUseHighRes = FALSE;
+
+  /* Set defaults for Sound */
+  ConfigureParams.Sound.bEnableSound = TRUE;
+  ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
+  strcpy(ConfigureParams.Sound.szYMCaptureFileName, "");
+
+  /* Set defaults for TOSGEM */
+  strcpy(ConfigureParams.TOSGEM.szTOSImageFileName, TOSIMG);
+  ConfigureParams.TOSGEM.bUseTimeDate = FALSE;
+  ConfigureParams.TOSGEM.bAccGEMGraphics = FALSE;
+  ConfigureParams.TOSGEM.bUseExtGEMResolutions = FALSE;
+  ConfigureParams.TOSGEM.nGEMResolution = GEMRES_640x480;
+  ConfigureParams.TOSGEM.nGEMColours = GEMCOLOUR_16;
+
 }
 
 

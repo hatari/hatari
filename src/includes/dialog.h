@@ -93,7 +93,6 @@ typedef struct {
 } JOYSTICK;
 
 typedef struct {
-  BOOL bUseDirectInput;
   JOYSTICK Joy[2];
 } DLG_JOYSTICKS;
 

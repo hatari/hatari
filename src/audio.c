@@ -30,9 +30,7 @@ int SoundPlayBackFreqFrameLengths[][2] = {
   882,882,  /* 882 */
 };
 
-BOOL bDisableSound=TRUE;
-//LPDIRECTSOUND lpDS = NULL;
-//LPDIRECTSOUNDBUFFER  lpDSBPrimBuffer = NULL;
+BOOL bDisableSound=FALSE;
 BOOL bSoundWorking=TRUE;                          /* Is sound OK */
 volatile BOOL bPlayingBuffer = FALSE;             /* Is playing buffer? Start when start processing ST */
 int WriteOffset=0;                                /* Write offset into buffer */
@@ -241,7 +239,6 @@ void Audio_WriteSamplesIntoBuffer(char *pSamples,int Index,int Length,int RampSe
   short dwLenBytes;
   int dsRetVal;
   int i;
-//  int WriteCursor,CursorDiff;
 
   /* Modify ramp volume - ramp down if sound not enabled or not in windows mouse mode */
   if ( (((RampSetting==RAMP_DOWN) || (!ConfigureParams.Sound.bEnableSound)) && (PlayVolume>0.0f)) || bWindowsMouseMode ) {
@@ -259,9 +256,6 @@ void Audio_WriteSamplesIntoBuffer(char *pSamples,int Index,int Length,int RampSe
 
     /* Do need to reset 'write' position? */
     if (bAquireWritePosition) {
-    //  /* Get current write position */
-    //  lpDSBPrimBuffer->GetCurrentPosition(NULL,(DWORD *)&WriteCursor);
-    //  WriteOffset = WriteCursor+WRITE_INIT_POS;    /* + little gap */
       WriteOffset = 0;
       bAquireWritePosition = FALSE;
     }

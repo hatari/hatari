@@ -6,9 +6,15 @@ CMPLRFLAGS = -g -O2
 # Set the C compiler (e.g. gcc)
 CC = gcc
 
+# Here you can define the default TOS-ROM image, for example you can use
+# a image in the local directory with ./tos.img or if you want to do
+# a system-wide installation, use something like /usr/share/hatari/tos.img
+TOSIMG = ./tos.img
 
+# SDL-Library configuration:
 SDLLIB=$(shell sdl-config --libs)
 SDLFLAGS=$(shell sdl-config --cflags)
+
 
 CFLAGS = -I./includes -I./uae-cpu $(CMPLRFLAGS) $(SDLFLAGS)
 
@@ -40,6 +46,8 @@ clean:
 	rm -f *.o hatari
 	$(MAKE) -C uae-cpu/ clean
 
+configuration.o: configuration.c
+	$(CC) $(CFLAGS) -c -DTOSIMG=\"$(TOSIMG)\" configuration.c -o configuration.o
 
 screenConvert.o: convert/high640x1.c convert/low640x16.c convert/spec320x16.c \
     convert/vdi4.c convert/high640x8.c convert/low640x8.c convert/spec640x16.c \

@@ -255,7 +255,7 @@ void Main_ReadParameters(int argc, char *argv[])
               "  --mono or -m          Start in monochrome mode instead of color.\n"
               "  --fullscreen or -f    Try to use fullscreen mode.\n"
               "  --joystick or -j      Emulate a ST joystick with the cursor keys.\n"
-              "  --sound or -s         Enable sound.\n"
+              "  --nosound             Disable sound (faster!).\n"
               "  --frameskip           Skip every second frame (speeds up emulation!).\n"
               "  --debug or -d         Allow debug interface.\n"
               "  --harddrive <dir>     Emulate an ST harddrive\n"
@@ -286,10 +286,10 @@ void Main_ReadParameters(int argc, char *argv[])
       {
        ConfigureParams.Joysticks.Joy[1].bCursorEmulation=TRUE;
       }
-      else if (!strcmp(argv[i],"--sound") || !strcmp(argv[i],"-s"))
+      else if ( !strcmp(argv[i],"--nosound") )
       {
-       bDisableSound=FALSE;
-       ConfigureParams.Sound.bEnableSound = TRUE;
+       bDisableSound=TRUE;
+       ConfigureParams.Sound.bEnableSound = FALSE;
       }
       else if ( !strcmp(argv[i],"--frameskip") )
       {
