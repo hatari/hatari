@@ -36,19 +36,11 @@ typedef struct
 
 
 
-/* RS232 configuration - not yet used */
-/*
-enum {
-  COM_PORT_1,
-  COM_PORT_2,
-  COM_PORT_3,
-  COM_PORT_4
-};
-*/
+/* RS232 configuration */
 typedef struct
 {
   BOOL bEnableRS232;
-  int nCOMPort;
+  char szDeviceFileName[MAX_FILENAME_LENGTH];
 } CNF_RS232;
 
 

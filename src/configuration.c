@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-static char rcsid[] = "Hatari $Id: configuration.c,v 1.23 2003-08-11 19:37:34 thothy Exp $";
+static char rcsid[] = "Hatari $Id: configuration.c,v 1.24 2003-09-28 19:50:26 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -125,7 +125,7 @@ struct Config_Tag configs_TosGem[] =
 struct Config_Tag configs_Rs232[] =
 {
   { "bEnableRS232", Bool_Tag, &ConfigureParams.RS232.bEnableRS232 },
-  { "nCOMPort", Int_Tag, &ConfigureParams.RS232.nCOMPort },
+  { "szDeviceFileName", String_Tag, ConfigureParams.RS232.szDeviceFileName },
   { NULL , Error_Tag, NULL }
 };
 
@@ -135,6 +135,14 @@ struct Config_Tag configs_Printer[] =
   { "bEnablePrinting", Bool_Tag, &ConfigureParams.Printer.bEnablePrinting },
   { "bPrintToFile", Bool_Tag, &ConfigureParams.Printer.bPrintToFile },
   { "szPrintToFileName", String_Tag, ConfigureParams.Printer.szPrintToFileName },
+  { NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save MIDI options */
+struct Config_Tag configs_Midi[] =
+{
+  { "bEnableMidi", Bool_Tag, &ConfigureParams.Midi.bEnableMidi },
+  { "szMidiOutFileName", String_Tag, ConfigureParams.Midi.szMidiOutFileName },
   { NULL , Error_Tag, NULL }
 };
 
@@ -193,7 +201,7 @@ void Configuration_SetDefault(void)
 
   /* Set defaults for Memory */
   ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_1Mb;
-  strcpy(ConfigureParams.Memory.szMemoryCaptureFileName, "");
+  sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s/hatari.sav", szWorkingDir);
 
   /* Set defaults for Printer */
   ConfigureParams.Printer.bEnablePrinting = FALSE;
@@ -202,7 +210,11 @@ void Configuration_SetDefault(void)
 
   /* Set defaults for RS232 */
   ConfigureParams.RS232.bEnableRS232 = FALSE;
-  /*ConfigureParams.RS232.nCOMPort = COM_PORT_1;*/
+  sprintf(ConfigureParams.RS232.szDeviceFileName, "%s/hatari.ser", szWorkingDir);
+
+  /* Set defaults for MIDI */
+  ConfigureParams.Midi.bEnableMidi = FALSE;
+  strcpy(ConfigureParams.Midi.szMidiOutFileName, "/dev/midi00");
 
   /* Set defaults for Screen */
   ConfigureParams.Screen.bFullScreen = FALSE;
@@ -284,8 +296,9 @@ void Configuration_Load(void)
   Configuration_LoadSection(cfgName, configs_Floppy, "[Floppy]");
   Configuration_LoadSection(cfgName, configs_HardDisc, "[HardDisc]");
   Configuration_LoadSection(cfgName, configs_TosGem, "[TOS-GEM]");
-  /*Configuration_LoadSection(cfgName, configs_Rs232, "[RS232]");*/
-  /*Configuration_LoadSection(cfgName, configs_Printer, "[Printer]");*/
+  Configuration_LoadSection(cfgName, configs_Rs232, "[RS232]");
+  Configuration_LoadSection(cfgName, configs_Printer, "[Printer]");
+  Configuration_LoadSection(cfgName, configs_Midi, "[Midi]");
   Configuration_LoadSection(cfgName, configs_System, "[System]");
 
   /* Copy details to global variables */
@@ -338,8 +351,9 @@ void Configuration_Save(void)
   Configuration_SaveSection(cfgName, configs_Floppy, "[Floppy]");
   Configuration_SaveSection(cfgName, configs_HardDisc, "[HardDisc]");
   Configuration_SaveSection(cfgName, configs_TosGem, "[TOS-GEM]");
-  /*Configuration_SaveSection(cfgName, configs_Rs232, "[RS232]");*/
-  /*Configuration_SaveSection(cfgName, configs_Printer, "[Printer]");*/
+  Configuration_SaveSection(cfgName, configs_Rs232, "[RS232]");
+  Configuration_SaveSection(cfgName, configs_Printer, "[Printer]");
+  Configuration_SaveSection(cfgName, configs_Midi, "[Midi]");
   Configuration_SaveSection(cfgName, configs_System, "[System]");
 }
 
