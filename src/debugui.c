@@ -4,10 +4,7 @@
   debugui.c - this is the code for the mini-debugger, when the pause button is pressed,
   the emulator is (hopefully) halted and this little CLI can be used (in the terminal
   box) for debugging tasks like memory and register dumps
-  
-  (Personal note: Writing this reminded me how much I dislike writing syntax parsers,
-  especially with languages with weak string-handling, like C. Also,
-  please have oversight with any ugly code: This was written at 4 a.m. /Sven )
+
 */
 
 #include <ctype.h>
@@ -34,11 +31,15 @@
 
 #define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
 #define MEMDUMP_ROWS   4       /* memdump, number of rows */
+#define NON_PRINT_CHAR '.'     /* character to display for non-printables */
 #define DISASM_INSTS   5       /* disasm - number of instructions */
 
 BOOL bMemDump;         /* has memdump been called? */
 unsigned long memdump_addr; /* memdump address */
 unsigned long disasm_addr;  /* disasm address */
+
+FILE *debugLogFile;
+FILE *debug_stdout;
 
 /* convert string to lowercase */
 void string_tolower(char *str)
@@ -68,6 +69,44 @@ BOOL isHex(char *str)
     i++;
   }
   return(TRUE);
+}
+
+/* 
+   Get a hex adress range, eg. "fa0000-fa0100" 
+   returns -1 if not a range,
+   -2 if a range, but not a valid one.
+   0 if OK.
+*/
+BOOL getRange(char *str, unsigned long *lower, unsigned long *upper){
+  BOOL fDash = FALSE;
+  int i=0;
+
+  while(str[i] != '\0') 
+    {
+      if(str[i] == '-') 
+	{
+	  str[i] = ' ';
+	  fDash = TRUE;
+	}
+      i++;
+    }
+  if(fDash == FALSE) return(-1);  
+
+  i = sscanf(str, "%lx%lx", lower, upper);
+  if(i != 2)  return (-2);
+  if(*lower > *upper) return(-3); 
+  return(0);
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Open a log file.
+*/
+void DebugUI_OpenLog(char *arg){
+  debugLogFile = fopen(arg, "w");
+  if(debugLogFile == NULL)
+    fprintf(stderr, "Can't open file: %s\n", arg);
+  debug_stdout = debugLogFile;  
 }
 
 /*-----------------------------------------------------------------------*/
@@ -139,21 +178,9 @@ void DebugUI_SaveBin(char *args){
 void DebugUI_RegDump()
 {
   int i;
-
-  fprintf(stderr, "D0 = $%8.8lx\tA0 = $%8.8lx\n", Regs[REG_D0], Regs[REG_A0]);
-  fprintf(stderr, "D1 = $%8.8lx\tA1 = $%8.8lx\n", Regs[REG_D1], Regs[REG_A1]);
-  fprintf(stderr, "D2 = $%8.8lx\tA2 = $%8.8lx\n", Regs[REG_D2], Regs[REG_A2]);
-  fprintf(stderr, "D3 = $%8.8lx\tA3 = $%8.8lx\n", Regs[REG_D3], Regs[REG_A3]);
-  fprintf(stderr, "D4 = $%8.8lx\tA4 = $%8.8lx\n", Regs[REG_D4], Regs[REG_A4]);
-  fprintf(stderr, "D5 = $%8.8lx\tA5 = $%8.8lx\n", Regs[REG_D5], Regs[REG_A5]);
-  fprintf(stderr, "D6 = $%8.8lx\tA6 = $%8.8lx\n", Regs[REG_D6], Regs[REG_A6]);
-  fprintf(stderr, "D7 = $%8.8lx\tA7 = $%8.8lx\n", Regs[REG_D7], Regs[REG_A7]);
-  fprintf(stderr, "PC = $%8.8lx\tSR = %%", m68k_getpc());
-  /* Rather obfuscated way of printing SR in binary */
-  for(i=0;i<8;i++)fprintf(stderr, "%i", (SR & (1 << (15-i)))?1:0);
-  fprintf(stderr," "); /* space between bytes */
-  for(i=8;i<16;i++)fprintf(stderr, "%i", (SR & (1 << (15-i)))?1:0);
-  fprintf(stderr,"\n");
+  uaecptr nextpc;
+  /* use the UAE function instead */
+  m68k_dumpstate(debug_stdout, &nextpc);
 }
 
 
@@ -163,27 +190,166 @@ void DebugUI_RegDump()
 */
 void DebugUI_DisAsm(char *arg, BOOL cont)
 { 
-  int i;
+  int i,j;
+  unsigned long disasm_upper;
   uaecptr nextpc;
+  BOOL isRange = FALSE;
   
-  if(cont != TRUE){    
-    if(!isHex(arg)) {
-      fprintf(stderr,"Invalid address!\n");
+  if(cont != TRUE){        
+    j = getRange(arg, &disasm_addr, &disasm_upper);
+
+    if( j == -1 ){ /* single address, not a range */
+      if(!isHex(arg)) {
+	fprintf(stderr,"Invalid address!\n");
+	return;
+      }
+      i = sscanf(arg, "%lx", &disasm_addr);
+      
+      if(i == 0){
+	fprintf(stderr,"Invalid address!\n");
+	return;
+      }
+    } /* single address */
+    else if(j == -2 || j == -3){
+      fprintf(stderr,"Invalid range!\n");
       return;
     }
-    i = sscanf(arg, "%lx", &disasm_addr);
-    
-    if(i == 0){
-      fprintf(stderr,"Invalid address!\n");
-      return;
+    else { /* range */
+      isRange = TRUE;
+      disasm_upper &= 0x00FFFFFF;
     }
-  } else 
+
+  } else /* continue*/
     if(!disasm_addr) disasm_addr = m68k_getpc();
 
   disasm_addr &= 0x00FFFFFF;
+  
+  /* output a single block. */
+  if( isRange == FALSE)
+    {
+      m68k_disasm(debug_stdout, (uaecptr)disasm_addr, &nextpc, DISASM_INSTS);
+      disasm_addr = nextpc;
+      return;
+   }
 
-  m68k_disasm(stderr, (uaecptr)disasm_addr, &nextpc, 5);
-  disasm_addr = nextpc;
+  /* output a range */
+  while(disasm_addr < disasm_upper)
+    {
+      m68k_disasm(debug_stdout, (uaecptr)disasm_addr, &nextpc, 1);
+      disasm_addr = nextpc;
+    }
+  return;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Set a register: 
+*/
+void DebugUI_RegSet(char *arg){
+  int i;
+  BOOL s = FALSE;
+  char reg[4];
+  long value;
+
+  for(i=0;i<4;i++) reg[i] = 0;
+  i=0;
+  while(arg[i] != '\0'){
+    if(arg[i] == '=')
+      { 
+      arg[i] = ' ';
+      s = TRUE;
+      }
+    i++;
+  }
+
+  if( s == FALSE ){
+    fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR and yyyy is a hex value.\n");
+    return;
+  }
+
+  if(sscanf(arg, "%s%lx", reg, &value) == 2) s = TRUE; else s = FALSE;
+  if( s == FALSE ){
+    fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR and yyyy is a hex value.\n");
+    return;
+  }
+
+  for(i=0;i<4;i++) reg[i] = toupper(reg[i]);
+
+  /* FIXME: update conditional flags for the UAE core. 
+     set SR
+  if(reg[0] == 'S' && reg[1] == 'R')
+    SR = value;
+*/
+  /* set PC */
+  if(reg[0] == 'P' && reg[1] == 'C')
+    m68k_setpc( value );
+
+  /* Data regs */
+  else if(reg[0] == 'D') switch( reg[1] ){
+  case '0':
+    Regs[REG_D0] = value;
+    break;
+  case '1':
+    Regs[REG_D1] = value;
+    break;
+  case '2':
+    Regs[REG_D2] = value;
+    break;
+  case '3':
+    Regs[REG_D3] = value;
+    break;
+  case '4':
+    Regs[REG_D4] = value;
+    break;
+  case '5':
+    Regs[REG_D5] = value;
+    break;
+  case '6':
+    Regs[REG_D6] = value;
+    break;
+  case '7':
+    Regs[REG_D7] = value;
+    break;
+
+  default:
+    fprintf(stderr,"\tBad data register, valid values are 0-7\n");
+    break;
+  }
+
+  /* Address regs */
+  else if(reg[0] == 'A') switch( reg[1] ){
+  case '0':
+    Regs[REG_A0] = value;
+    break;
+  case '1':
+    Regs[REG_A1] = value;
+    break;
+  case '2':
+    Regs[REG_A2] = value;
+    break;
+  case '3':
+    Regs[REG_A3] = value;
+    break;
+  case '4':
+    Regs[REG_A4] = value;
+    break;
+  case '5':
+    Regs[REG_A5] = value;
+    break;
+  case '6':
+    Regs[REG_A6] = value;
+    break;
+  case '7':
+    Regs[REG_A7] = value;
+    break;
+
+  default:
+    fprintf(stderr,"\tBad address register, valid values are 0-7\n");
+    break;
+  }
+
+  else fprintf(stderr, "\t Bad register!\n");
+  
 }
 
 /*-----------------------------------------------------------------------*/
@@ -193,35 +359,72 @@ void DebugUI_DisAsm(char *arg, BOOL cont)
 void DebugUI_MemDump(char *arg, BOOL cont)
 { 
   int i,j;
+  char c;
+  BOOL isRange = FALSE;
+  unsigned long memdump_upper;
+
   
-  if(cont != TRUE){    
-    if(!isHex(arg)) {
-      bMemDump = FALSE;
-      fprintf(stderr,"Invalid address!\n");
+
+  if(cont != TRUE){        
+    j = getRange(arg, &memdump_addr, &memdump_upper);
+
+    if( j == -1 ){ /* single address, not a range */
+      if(!isHex(arg)) {
+	bMemDump = FALSE;
+	fprintf(stderr,"Invalid address!\n");
+	return;
+      }
+      i = sscanf(arg, "%lx", &memdump_addr);
+      
+      if(i == 0){
+	bMemDump = FALSE;
+	fprintf(stderr,"Invalid address!\n");
+	return;
+      }
+    } /* single address */
+    else if(j == -2 || j == -3){
+      fprintf(stderr,"Invalid range!\n");
       return;
     }
-    i = sscanf(arg, "%lx", &memdump_addr);
-    
-    if(i == 0){
-      bMemDump = FALSE;
-      fprintf(stderr,"Invalid address!\n");
-      return;
+    else { /* range */
+      isRange = TRUE;
+      memdump_upper &= 0x00FFFFFF;
     }
-  }
+  } /* continue */
 
   memdump_addr &= 0x00FFFFFF;
   bMemDump = TRUE;
+  if(isRange != TRUE)
+    {
+      for(j=0;j<MEMDUMP_ROWS;j++){
+	fprintf(debug_stdout, "%6.6X: ", memdump_addr); /* print address */
+	for(i=0;i<MEMDUMP_COLS;i++)               /* print hex data */
+	  fprintf(debug_stdout, "%2.2x ",STMemory_ReadByte(memdump_addr++));
+	fprintf(debug_stdout, "  ");                    /* print ASCII data */
+	for(i=0;i<MEMDUMP_COLS;i++){
+	  c = STMemory_ReadByte(memdump_addr-MEMDUMP_COLS+i);
+	  if(!isprint(c)) c = NON_PRINT_CHAR;             /* non-printable as dots */
+	  fprintf(debug_stdout,"%c", c);
+	}
+	fprintf(debug_stdout, "\n", memdump_addr);   /* newline */
+      }
+      return;
+    } /* not a range */
 
-  fprintf(stderr, "%6.6X: ", memdump_addr);
-  for(j=0;j<MEMDUMP_ROWS-1;j++){
-    for(i=0;i<MEMDUMP_COLS;i++)
-      fprintf(stderr, "%2.2x ",STMemory_ReadByte(memdump_addr++));
-  fprintf(stderr, "\n%6.6X: ", memdump_addr);
-  }
-  for(i=0;i<MEMDUMP_COLS;i++)
-    fprintf(stderr, "%2.2x ",STMemory_ReadByte(memdump_addr++));
-  fprintf(stderr,"\n"); 
-}
+  while(memdump_addr < memdump_upper)
+    {
+      fprintf(debug_stdout, "%6.6X: ", memdump_addr); /* print address */
+      for(i=0;i<MEMDUMP_COLS;i++)               /* print hex data */
+	fprintf(debug_stdout, "%2.2x ",STMemory_ReadByte(memdump_addr++));
+      fprintf(debug_stdout, "  ");                    /* print ASCII data */
+      for(i=0;i<MEMDUMP_COLS;i++){
+	c = STMemory_ReadByte(memdump_addr-MEMDUMP_COLS+i);
+	if(!isprint(c)) c = NON_PRINT_CHAR;             /* non-printable as dots */
+	fprintf(debug_stdout,"%c", c);
+      }
+      fprintf(debug_stdout, "\n", memdump_addr);   /* newline */
+    } /* while */
+} /* end of memdump */
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -294,16 +497,19 @@ void DebugUI_MemWrite(char *addr_str, char *arg)
 */
 void DebugUI_Help()
 {
-  fprintf(stderr,"---- debug mode commands ----\n");
-  fprintf(stderr," d [address]- disassemble from PC, or given address. \n");
-  fprintf(stderr," r - dump register values \n");
-  fprintf(stderr," m [address] - dump memory at address, \n\tm alone continues from previous address.\n");
-  fprintf(stderr," w address bytes - write bytes to a memory address, bytes are space separated. \n");
-  fprintf(stderr," l filename address - load a file into memory starting at address. \n");
-  fprintf(stderr," s filename address length - dump length bytes from memory to a file. \n");
-  fprintf(stderr," q - return to emulation\n");
-  fprintf(stderr,"-----------------------------\n");
-  fprintf(stderr,"\n");
+  fprintf(stderr,"---- debug mode commands ----\n"
+                 " d [address]- disassemble from PC, or given address. \n"
+                 " r [REG=value] - dump register values/ set register to value \n"
+                 " m [address] - dump memory at address, \n\tm alone continues from previous address.\n"
+                 " w address bytes - write bytes to a memory address, bytes are space separated. \n"  
+	         " f [filename] - open log file, no argument closes the log file\n"
+	         "   Output of reg & mem dumps and disassembly will be written to the log\n"
+                 " l filename address - load a file into memory starting at address. \n"  
+                 " s filename address length - dump length bytes from memory to a file. \n\n"  
+                 " q - return to emulation\n\n"
+	         " Adresses may be given as a range e.g. fc0000-fc0100\nAll values in hexadecimal.\n"
+                 "-----------------------------\n"  
+                 "\n");
 }
 
 /*-----------------------------------------------------------------------*/
@@ -354,6 +560,19 @@ int DebugUI_Getcommand()
     } else DebugUI_MemDump(arg, FALSE); /* new memdump */
     break;
 
+  case 'f':
+    if(i < 2){  /* no arg? */
+      if(debugLogFile == NULL)
+	fprintf(stderr, "No log file open.\n");
+      else {
+	fclose(debugLogFile);
+	debug_stdout = stderr;  
+	fprintf(stderr, "Log closed.\n");
+      } 
+    }
+    else DebugUI_OpenLog(arg);
+    break;
+
   case 'w':
     if(i < 2){  /* no arg? */
       fprintf(stderr,"  Usage: w address bytes\n");
@@ -363,7 +582,11 @@ int DebugUI_Getcommand()
     break;
 
   case 'r':
-    DebugUI_RegDump();
+    if(i < 2){  /* no arg - dump regs */
+      DebugUI_RegDump();
+      return(DEBUG_CMD);
+    }
+    DebugUI_RegSet(arg);
     break;
 
   case 'l':
@@ -397,10 +620,14 @@ int DebugUI_Getcommand()
 */
 void DebugUI()
 {
+  debugLogFile = NULL;
+  debug_stdout = stderr;  /* output to screen, until log file opened */
+
   bMemDump = FALSE;
   disasm_addr = 0;
   fprintf(stderr,"\nYou have entered debug mode. Type q to quit, h for help. \n------------------------------\n");
   while(DebugUI_Getcommand() != DEBUG_QUIT);
+  if(debugLogFile != NULL) fclose(debugLogFile);
   fprintf(stderr,"Returning to emulation...\n------------------------------\n\n");
 }
 
