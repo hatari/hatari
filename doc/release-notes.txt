@@ -5,6 +5,23 @@
 
 
 
+ Version 0.50 (2004-07-20):
+ --------------------------
+
+- A lot of internal code cleanup and bug fixes.
+- Added a dialog for creating new blank floppy disk images.
+- The source code has been optimized for better emulation speed.
+- Added RS232 emulation (still experimental and not very well tested!).
+- Some bugs in the 68000 emulation have been fixed.
+- The emulator now checks for double bus errors and stops the emulation if
+  necessary (instead of crashing the emulator).
+- Timer-D is now patched correctly again.
+- The old font has been replaced by two new fonts so that the GUI now looks
+  better in high resolutions.
+- The fonts are now linked into the executable.
+- Added support for DIM floppy disk images.
+
+
  Version 0.45 (2003-10-30):
  --------------------------
 

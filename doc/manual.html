@@ -65,7 +65,7 @@ for details on emulation in general.</p>
   <li>The WinSTon sourcecode written by Paul Bates. You can get it
 from: <a href="http://www.sourceforge.net/projects/winston/">http://www.sourceforge.net/projects/winston/</a> </li>
   <li>The UAE's CPU core, you can download UAE
-at: <a href="http://www.freiburg.linux.de/uae/">http://www.freiburg.linux.de/uae/</a> </li>
+at: <a href="http://www.freiburg.linux.de/~uae/">http://www.freiburg.linux.de/~uae/</a> </li>
 </ul>
 <p>
 Hatari started as an adaption of the free WinSTon source code to Linux.
@@ -127,12 +127,14 @@ Hatari has been succesfully tested on the following machines:
   <li>Linux/i86 with Kernel 2.6.6, AMD Athlon 600MHz</li>
   <li>Linux/i86 with Kernel 2.4.x, AMD Athlon 600MHz </li>
   <li>Linux/i86 with Kernel 2.2.18, Pentium MMX 200MHz </li>
-  <li>Linux/PPC with Kernel 2.4.x BeOS/i86 </li>
-  <li>Linux/Sparc</li>
+  <li>Linux/PPC with Kernel 2.4.x </li>
+  <li>BeOS/i86 </li>
   <li>Apple PowerMac with Mac OS X </li>
   <li>NetBSD 1.6 </li>
-  <li>FreeBSD 4.1 on a 33MHz i486 computer (very slow, but it worked!) </li>
-  <li>FreeBSD 4.8 on a Pentium 4</li>
+  <li>FreeBSD 4.1 on an i486 computer, FreeBSD 4.8 on a Pentium 4 and FreeBSD 5.1 </li>
+  <li>OpenBSD 3.5 </li>
+  <li>Since version 0.40, Hatari now also works on machines with a Sparc CPU </li>
+  <li>Zaurus SL-C760 PDA </li>
 </ul>
 
 <h2>Compiling and running</h2>
@@ -151,8 +153,11 @@ for it installed as well.
 Of course, you need the GNU C compiler and (GNU) Make, too!
 </p>
 
-<p> Change to the hatari/ directory and adapt the configuration file <span class="file">Makefile.cnf</span> to suite your
-mood (and system of course). Then compile Hatari by typing <span class="commandline">make</span>. If all
+<p> Change to the hatari/ directory and adapt the configuration file
+<span class="file">Makefile.cnf</span> to suite your system.
+Alternatively, you can use the supplied configure script to auto-detect
+all parameters (type "./configure --help" to see the options of the script).
+Then compile Hatari by typing <span class="commandline">make</span>. If all
 works fine, you'll get the executable <span class="commandline">hatari</span> in the src/ subdirectory.
 </p>
 
@@ -338,9 +343,9 @@ disk dialog.
 </p>
 <p>
 After clicking <span class="button">create</span>, a fileselector appears. You can browse the filesystem now. Select the target directory, click beside File:
-and typein a name for the new disk image. The name should terminate with .st.
+and type in a name for the new disk image. The name should terminate with .st or .msa.
 </p>
-<p>Hatari can currently create plain .ST disk images exclusively.</p>
+<p>Hatari can currently create plain .ST and .MSA disk images exclusively.</p>
 
 <p>Use the lower dialog to change the harddisk settings.</p>
 <p>You can select a harddrive image for harddrive emulation via image file here or you may select
@@ -414,9 +419,13 @@ disable printing while using games and demos.
 <p>Select a suitable device file for input and output. Click on <span class="button">Browse</span> to select.
 A good choice is /dev/ttyS0 or /dev/ttyS1.
 </p>
-<p>You can enable MIDI as well. This currently work for outputting MIDI data only.</p>
+<p>You can enable MIDI as well. This currently work for outputting MIDI data only. A good choice is /dev/midi00.</p>
 <p>Click on <span class="button">Browse</span> to select a suitable MIDI device file for output.</p>
 <p>Your sound driver must support MIDI to make this work.</p>
+
+<p><em>NOTE:</em> RS232 and MIDI emulation are very experimental, too.
+Don't enable them unless you really need them!
+</p>
 
 <h3>Keyboard shortcuts</h3>
 <p> While the emulator is running, you can activate or toggle various
@@ -612,13 +621,17 @@ disk and want to use it with Hatari, you can still run the corresponding
 MSA program within Hatari to extract the incompatible disk image to a
 normal floppy disk image. </p>
 <p> While *.ST and *.MSA are more or less the "standard" types of Atari
-disk images, you might sometimes also find DIM or ADF images on the
-internet. These currently do not work with Hatari. But since DIM images
-are nearly the same as the raw ST images (they only have an additional
-32 byte header) you can easily transform the DIM images into ST images
-by stripping the header from the files. For example try something like:
-<span class="commandline">dd if=input.dim of=output.st bs=32 skip=1</span> </p>
-<p>Hatari now can utilize *.DIM images just as *.ST ones and you should not detect any problems.</p>
+disk images, you might sometimes also find STT or ADF images on the
+internet. These currently do not work with Hatari.  </p>
+
+<p>Hatari can now also utilize *.DIM images just as *.ST ones without any problems.
+Note that DIM images are nearly the same as the raw ST images
+(they only have an additional 32 bytes header), so you can easily transform
+the DIM images into ST images by stripping the header from the files.
+For example try something like:
+<span class="commandline">dd if=input.dim of=output.st bs=32 skip=1</span>
+</p>
+
 <p> If you've got a disk image that has been created with the old ST
 emulator PaCifiST (for DOS) or with early versions of the program
 Makedisk, and the disk image does not work with Hatari, then the disk
@@ -828,6 +841,24 @@ parts of the emulated system is much trickier.
 	  <td>yes</td>
 	  <td>&nbsp;</td>
 	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>Alien World</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	  <td>Only works with &quot;--slowfdc&quot;</td>
+	</tr>
+	<tr>
+	  <td>Fantasia (Demo by Dune)</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	  <td>Only works with &quot;--slowfdc&quot;</td>
+	</tr>
+	<tr>
+	  <td>If pigs could fly (Demo by Syndicate)</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	  <td>Only works with &quot;--slowfdc&quot;</td>
 	</tr>
 
   </tbody>
