@@ -5,13 +5,14 @@
 
 
 
- Version 0.50 (2004-07-20):
+ Version 0.50 (2004-07-26):
  --------------------------
 
 - A lot of internal code cleanup and bug fixes.
 - Added a dialog for creating new blank floppy disk images.
 - The source code has been optimized for better emulation speed.
-- Added RS232 emulation (still experimental and not very well tested!).
+- Added RS232 emulation (still very experimental and not very well tested! It
+  seems not to work reliable yet. Help for debugging is very appreciated!).
 - Some bugs in the 68000 emulation have been fixed.
 - The emulator now checks for double bus errors and stops the emulation if
   necessary (instead of crashing the emulator).
