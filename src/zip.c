@@ -328,7 +328,7 @@ int ZIP_ReadDisc(char *pszFileName, char *pszZipPath, unsigned char *pBuffer)
       return(0);
     }
   
-  if (pszZipPath == NULL)
+  if (pszZipPath == NULL || pszZipPath[0] == 0)
     {
       if((pszZipPath = ZIP_FirstFile(pszFileName)) == NULL)
 	{

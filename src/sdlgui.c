@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-static char rcsid[] = "Hatari $Id: sdlgui.c,v 1.13 2003-05-05 17:53:30 thothy Exp $";
+static char rcsid[] = "Hatari $Id: sdlgui.c,v 1.14 2003-06-12 20:41:20 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -584,6 +584,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path)
     { -1, 0, 0, 0,0, 0,0, NULL }
   };
 
+  zipfilename[0] = 0;
   SDLGui_CenterDlg(fsdlg);
 
   /* Prepare the path and filename variables */
