@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.43 2003-06-22 20:20:35 thothy Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.44 2003-08-10 08:09:06 simonsunnyboy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -219,6 +219,7 @@ void Main_ReadParameters(int argc, char *argv[])
                "  --fullscreen or -f    Try to use fullscreen mode.\n"
                "  --joystick or -j      Emulate a ST joystick with the cursor keys.\n"
                "  --nosound             Disable sound (faster!).\n"
+			   "  --printer             Enable printer support (experimental)\n"
                "  --frameskip           Skip every second frame (speeds up emulation!).\n"
                "  --debug or -D         Allow debug interface.\n"
                "  --harddrive <dir>     Emulate an ST harddrive\n"
@@ -258,9 +259,10 @@ void Main_ReadParameters(int argc, char *argv[])
         bDisableSound=TRUE;
         ConfigureParams.Sound.bEnableSound = FALSE;
       }
-      else if ( !strcmp(argv[i],"--frameskip") )
+	  else if ( !strcmp(argv[i],"--printer") )
       {
-        ConfigureParams.Screen.bFrameSkip = TRUE;
+	    /* FIXME: add more commandline configuration for printing */
+        ConfigureParams.Printer.bEnablePrinting = TRUE;
       }
       else if (!strcmp(argv[i],"--debug") || !strcmp(argv[i],"-D"))
       {

@@ -1,0 +1,738 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <title>Hatari User's Manual</title>
+  <meta name="description" content="User's manual for the Atari ST emulator Hatari">
+  <meta name="author" content="Matthias Arndt <marndt@asmsoftware.de>">
+  <meta name="keywords" content="hatari, documentation, manual, linux">
+  <meta name="resource-type" content="document">
+  <meta name="distribution" content="global">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
+  <meta name="Generator" content="Quanta Plus 3.1.2 Debian GNU/Linux 3.0 Woody">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <style type="text/css">
+  <!--
+	body { background-color:#FFFFFF;
+		   color:#000000;
+           margin-left:10px;
+		   margin-right:10px;
+		   font-family:Verdana,Arial,Helvetica,sans-serif; font-size:12pt;
+		 }
+
+	h1 { font-size:28pt; }
+	h2 { font-size:22pt; border-bottom:solid thin black;}
+	h3 { font-size:16pt; }
+	h4 { font-size:13pt; }
+
+	td { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:12pt; }
+
+	a:link { color:#000099; background-color:#ffffff; text-decoration:none; }
+ 	a:visited { color:#cc0000; background-color:#ffffff; text-decoration:none;}
+ 	a:hover { color:#000099; background-color:#ffffff; text-decoration:none; font-weight:bold; }
+ 	a:active { color:#993399; background-color:#ffffff; text-decoration:none; font-weight:bold; }
+
+	*.commandline { font-family:Fixed,Courier,monospace; font-size:10pt; }
+	*.key { color:#550000; font-family:Fixed,Courier,monospace; font-size:10pt; }
+	*.backdropped { background-color:#ffffee; }
+	*.image {border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:justify; }
+
+  -->
+  </style>
+
+</head>
+<body bgcolor="#ffffff" text="#000000" link="#000099" vlink="#cc0000" alink="#993399">
+<h1 align="center">Hatari User's Manual</h1>
+<p align="center"><strong>manual by Matthias Arndt &lt;<a href="mailto:marndt@asmsoftware.de">marndt@asmsoftware.de</a>&gt;</strong></p>
+<br>
+
+<h2>Introduction</h2>
+
+<h3>General description</h3>
+<p>Hatari is an Atari ST emulator for Linux, FreeBSD, BeOS and other
+Systems which are supported by the SDL library. See Appendix B
+for details on emulation in general. </p>
+<p>Hatari is based on two main sources: </p>
+
+<ul>
+  <li>The WinSTon sourcecode written by Paul Bates. You can get it
+from: <a href="http://www.sourceforge.net/projects/winston/">http://www.sourceforge.net/projects/winston/</a> </li>
+  <li>The UAE's CPU core, you can download UAE
+at: <a href="http://www.freiburg.linux.de/uae/">http://www.freiburg.linux.de/uae/</a> </li>
+</ul>
+<p>
+Hatari started as an adaption of the free WinSTon source code to Linux.
+(WinSTon is a ST emulator for Windows). But since WinSTon's CPU core was
+written in i86 assembler, it was not possible to use it for Hatari as
+Hatari is intended to be platform independent. So the UAE's CPU core was
+used for Hatari instead, because this CPU core has been written in
+portable C and also has some nice features like 68040 and FPU support.
+</p>
+
+<h3>Features</h3>
+<ul>
+  <li>complete m68k emulation via UAE's CPU core </li>
+  <li>support for EmuTOS, TOS 1.00, 1.02, 1.04, 2.05 and 2.06 </li>
+  <li>ST RAM size variable (512k, 1MB, 2MB and 4MB possible) </li>
+  <li>most of the ST specific hardware </li>
+  <li>ST Shifter with ST-High, ST-Medium and ST-Low resolutions,
+overscan effects for lower border and partially in the upper border too</li>
+  <li>512 colour ST palette </li>
+  <li>Blitter chip emulation </li>
+  <li>AY-3-8910 emulation (soundchip)</li>
+  <li>Mega ST real time clock</li>
+  <li>many (but not all) raster effects </li>
+  <li>IKBD emulation (keyboard, mouse and joystick) with custom keyboard mapping</li>
+  <li>joystick emulation via cursor keys and joystick emulation via a
+connected PC joystick </li>
+  <li>FDC emulation using floppy disk images in standard formats (*.ST
+and *.MSA) </li>
+  <li>support for zipped disk images</li>
+  <li>partial ACSI emulation for harddisk support </li>
+  <li>GEMDOS interface driver to mount a directory as a harddrive </li>
+  <li>driver for extended VDI resolutions </li>
+  <li>recording of sound as .WAV and .YM files </li>
+  <li>screenshots in .BMP format </li>
+  <li>animation capturing </li>
+  <li>interlaced rendering of ST-Low and ST-Medium resolutions </li>
+  <li>scaling of ST-Low and ST-Medium to 800x600 resolution </li>
+</ul>
+<p>
+At the time of this writing there is neither a complete MMU emulation
+nor support for STE specific features.
+</p>
+
+<h3>System requirements</h3>
+<p> Hatari currently has the following system requirements: </p>
+<ul>
+  <li>a fast PC (&gt;200MHz) </li>
+  <li>some sort of Unix (preferable <a href="http://www.linux.org/">GNU/Linux</a>) </li>
+  <li>the SDL library (<a href="http://www.libsdl.org/">http://www.libsdl.org/</a>)</li>
+  <li>the zLib (<a href="http://www.gzip.org/zlib/">http://www.gzip.org/zlib/</a>) for support of gzipped disk images</li>
+</ul>
+Hatari has been succesfully tested on the following machines:
+<p> </p>
+<ul>
+  <li>Linux/i86 with Kernel 2.4.20, AMD Athlon 600MHz </li>
+  <li>Linux/i86 with Kernel 2.2.18, Pentium MMX 200MHz </li>
+  <li>Linux/PPC with Kernel 2.4.x BeOS/i86 </li>
+  <li>Apple PowerMac with Mac OS X </li>
+  <li>NetBSD 1.6 </li>
+  <li>FreeBSD 4.1 on a 33MHz i486 computer (very slow, but it worked!) </li>
+  <li>FreeBSD 4.8 on a Pentium 4</li>
+</ul>
+<p>
+It has also been tested on Linux/Sparc and it should work by now with the latest CVS version.
+</p>
+
+<h2>Compiling and running</h2>
+
+<h3>Compiling Hatari</h3>
+<p> First, you need the SDL library, you can get it at:
+<a href="http://www.libsdl.org/">http://www.libsdl.org/</a>. Most distributions already ship a suitable version.
+Make sure to install the appropriate header files as well often called "libsdl-dev" or the like.
+</p>
+<p> Second, you need the zLib compression library. You can get it from <a href="http://www.gzip.org/zlib/">http://www.gzip.org/zlib/</a>
+but the version shipped with your distribution will be sufficient in most cases. Make sure to have the header files
+for it installed as well.
+</p>
+
+<p>
+Of course, you need the GNU C compiler and (GNU) Make, too!
+</p>
+
+<p> Change to the src/ directory and adapt the Makefile to suite your
+mood (and system of course). Then compile it by typing <span class="commandline">make</span>. If all
+works fine, you'll get the executable <span class="commandline">hatari</span>. </p>
+
+<h3>Installation of a TOS ROM</h3>
+<p> Then you'll have to copy a TOS ROM to the data directory (the data directory is specified
+in the Makefile) and rename it to <span class="commandline">tos.img</span>, or use the
+<span class="commandline">--tos</span> command line option to tell Hatari where to find a TOS ROM.
+Hatari needs a TOS ROM image because this contains the operating system
+of the emulated Atari. Sorry, it is not possible to ship an image with
+the Hatari package since these images are still copyrighted. But you can
+easily create an image with a real ST and one of those various
+ROM-image programs for the ST. Or search the internet, but don't ask the Hatari team
+where to find one.
+</p>
+<p> Another solution is EmuTOS, which is an open-source
+TOS clone. You can find EmuTOS at: <a href="http://emutos.sourceforge.net/">http://emutos.sourceforge.net/</a>. It's
+not the best solution for playing games or running other old software
+due to compatibility issues, but it's free! </p>
+<p>If you do not specify a TOS image on the commandline nor can Hatari
+find a suitable TOS image in the default dir, you'll get the chance to
+select a TOS image file from the GUI. </p>
+
+<h3>Installation of the binary</h3>
+<p> Simply copy the hatari binary somewhere in your path where you can
+access it easily by typing <span class="commandline">hatari</span> in your shell. </p>
+<p> When you finally have got a TOS image, try starting Hatari with the
+option <span class="commandline">--help</span> to find out more about its command line parameters. </p>
+
+<h3>Running Hatari for the first time</h3>
+<p> Now type <span class="commandline">hatari</span> to run the emulator for the first time. If all goes
+well, you should now be presented with a window showing you the familiar
+little green desktop of the Atari ST. Press <span class="key">F12</span> to turn on the GUI to
+configure Hatari to suit your needs, press <span class="key">F11</span> to toggle windowed and fullscreen mode. </p>
+
+<h2>Command line options</h2>
+<p> Hatari ofcourse understands several command line options. </p>
+<p> Type <span class="commandline">hatari --help</span> to list them all. </p>
+<p> The command line options in detail are as follows (in brackets the
+long version): </p>
+
+<table cellpadding="3" border="1">
+  <tbody>
+    <tr class="backdropped">
+      <td align="center">Option</td>
+      <td align="center">Purpose</td>
+    </tr>
+    <tr>
+      <td align="center">-h (--help)</td>
+      <td align="center">prints command line options and terminates</td>
+    </tr>
+    <tr>
+      <td align="center">-v (--version)</td>
+      <td align="center">prints version information and terminates</td>
+    </tr>
+    <tr>
+      <td align="center">-m (--mono)</td>
+      <td align="center">starts the emulated Atari ST in monochrome
+resolution</td>
+    </tr>
+    <tr>
+      <td align="center">-f (--fullscreen)</td>
+      <td align="center">tries to use a fullscreen mode</td>
+    </tr>
+    <tr>
+      <td align="center">-j (--joystick)</td>
+      <td align="center">activates joystick emulation via cursor keys</td>
+    </tr>
+    <tr>
+      <td align="center">--nosound</td>
+      <td align="center">disables sound (makes emulation faster)</td>
+    </tr>
+    <tr>
+      <td align="center">--frameskip</td>
+      <td align="center">drops every second frame (accelerates
+emulation)</td>
+    </tr>
+    <tr>
+      <td align="center">-D (--debug)</td>
+      <td align="center">activates the simple builtin debugger</td>
+    </tr>
+    <tr>
+      <td align="center">-d &lt;dir&gt; (--harddrive &lt;dir&gt;)</td>
+      <td align="center">emulates &lt;dir&gt; as a hard disk</td>
+    </tr>
+    <tr>
+      <td align="center">--hdimage &lt;imagefile&gt;</td>
+      <td align="center">emulate hard disk with an image file</td>
+    </tr>
+    <tr>
+      <td align="center">--tos &lt;imagefile&gt;</td>
+      <td align="center">specify TOS ROM image to use</td>
+    </tr>
+	<tr>
+      <td align="center">--memsize  x</td>
+      <td align="center">set amount of emulated RAM<br>
+	   x=0 for 512K, x=1,x=2 or x=4 for 1,2 or 4 MB</td>
+    </tr>
+    <tr>
+      <td align="center">--cpulevel x</td>
+      <td align="center">specify CPU (680x0) to use (TOS 2.06 only!!)</td>
+    </tr>
+    <tr>
+      <td align="center">--compatible</td>
+      <td align="center">use a more compatible but slower 68000 CPU mode</td>
+    </tr>
+    <tr>
+      <td align="center">--blitter</td>
+      <td align="center">enable blitter emulation</td>
+    </tr>
+    <tr>
+      <td align="center">--vdi</td>
+      <td align="center">use extended VDI resolution</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Using the emulated system</h2>
+<p> Once you've started Hatari succesfully, you can use the emulator as
+an allmost complete Atari ST computer system. </p>
+
+<h3>The GUI</h3>
+
+<h4>General usage</h4>
+<p>Press <span class="key">F12</span> to enter the GUI. Navigate it with the mouse.
+The GUI is rather self explanatory.</p>
+<p>Click "Okay" to go back to the emulated ST. All checked options will be applied.</p>
+<p>Check the "Reset ST" option if you want the emulated ST to perform a soft reset.</p>
+<p>Click "Quit" to terminate Hatari and return to the host OS.</p>
+<p>Click "Cancel" to abandon any changes made.</p>
+
+<h4>The System Dialog</h4>
+<p>Check the CPU type to use here, enable prefetch mode and if the Blitter should be active.</p>
+<p>For best Atari ST compatibility choose plain 68000 here.</p>
+<p><em>NOTE:</em> These parameters are sensitive to the emulated ST and it is strongly recommended to
+reset the emulated ST after changing these options.</p>
+
+<h4>The Floppy Disk Dialog</h4>
+<p>Use this dialog to choose which disks should be emulated in the disk drives.</p>
+<p>You can use most standard Atari ST disk image files. See the chapter "Floppy disk images"
+for details.</p>
+<p>Click on the button "Browse" next to the A: and B: option to go to the fileselector.</p>
+<p>You can specify a default directory where Hatari will start to browse the filesystem.</p>
+<p>Check the "Auto insert B" option if you want Hatari to be smart and insert the second disk
+of a two disk game automatically. This option will insert the second disk in drive B and some
+games may not be able to find the disks there. In that rare case you will need to insert the
+second disk manually when prompted.</p>
+<p>You can select a harddrive image for harddrive emulation via image file here or you may select
+a directory of your local filesystem to be emulated as the ST's harddrive.</p>
+<p>Check "Boot from HD" if you want Hatari to execute the AUTO folder on the harddrive.
+This option is checked by default if you specify a harddrive image or a directory via the command line.</p>
+
+<h4>The Memory Dialog</h4>
+<p>You can select the amount of RAM for the emulated ST here.</p>
+<p><em>Note:</em> This option is critical and you are strongly advised to reset the emulated ST
+when changing this option.</p>
+
+<h4>The TOS/GEM Dialog</h4>
+<p>Here you can select the TOS image to use. Click on "Browse" to select it via the fileselector.</p>
+<p>In the GEM setup you can select a larger resolution for GEM conformant apps. Select resolution
+and colour depth. Almost all games and demos will not work in one of these resolutions.</p>
+<p><em>Note:</em> These options are critical and you are strongly advised to reset the emulated ST
+when changing one of these option.</p>
+
+<h4>The Joystick Dialog</h4>
+<p>Here you can select which joystick you want to emulate via the cursor keys.</p>
+<p>Joystick 1 is the normal ST joystick port and 99.9% of all ST games use this port, Joystick 0
+emulates a joystick plugged into the ST mouse port allowing you to play 2 player games.</p>
+<p>If no joystick is checked here, joystick emulation is done via a connected PC joystick.</p>
+<p>See the chapter "Emulated Joystick" for details.</p>
+
+<h4>The Screen Dialog</h4>
+<p>Here you control the video output of the emulated ST.</p>
+<p>Check "Fullscreen" to run Hatari fullscreen, default is windowed.</p>
+<p>Check "Interlace" if you wish to have that old TV feeling in Hatari. Every second line will be black.
+This will only work in ST-MEDIUM or ST-LOW in scaled up resolutions.</p>
+<p>Check "Frame Skip" to speed Hatari up if emulation is too slow. This will only draw every second ST frame
+instead of the default of drawing every ST frame. Uncheck if you have a fast PC.</p>
+<p>Check "Use Borders" if you wish to have the borders around the ST screen.</p>
+<p>"Force 8Bpp" will force SDL to use an 8bit video mode. You don't need this for modern video cards.</p>
+<p>You can select which sort of monitor to use. Check "Color" for games and demos. If you check "Mono" here,
+Hatari will emulate the good old SM124 and will not allow you to switch to color modes from the running ST.
+This toggle acts like a monitor switch with a color and monochrome monitor connected.</p>
+<p>"ST-Low mode" will control if Hatari renders ST-LOW to a 320x200 or 640x400 PC display (with borders turned off) or 384x267 or 768x534.
+Basically select this to toggle between a small or a large window.</p>
+<p>Click "Capture Screen" to create a screenshot in .BMP format to the current working directory or click "Record Animation"
+to record a little movie.
+</p>
+
+<h4>The Keyboard Dialog</h4>
+<p>Here you can select the keyboard mapping to use.</p>
+<p>Two different mappings called "Symbolic" and "Scancode" are predefined.</p>
+<p>You can also load a custom keymapping file here if you wish. Please note that selecting to use a custom keyboard mapping will
+use the "symbolic" mapping for all keys not defined by your map file. See the supplied example mapfile on how to build your
+own keyboard mapping.</p>
+
+<h4>The Sound Dialog</h4>
+<p>Here you control the sound subsystem.</p>
+<p>Check if you want emulated sound at all. Emulation is faster if sound emulation is turned off.</p>
+<p>3 frequencies from low to high quality are available. Experiment a little bit to find out which fits best for your setup.
+Medium quality will work ok in most cases.</p>
+<p>You can select to record a piece of sound here. Check which format to use and click the button. It is a toggle button so
+you will need to return to the GUI to switch sound recording off again.</p>
+
+
+<h3>Keyboard shortcuts</h3>
+<p> While the emulator is running, you can activate or toggle various
+features via the following keyboard shortcuts. </p>
+
+<table cellpadding="3" border="1">
+  <tbody>
+    <tr class="backdropped">
+      <td align="center">Shortcut</td>
+      <td align="center">Purpose</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">ALTGR+g</span></td>
+      <td align="center">grabs a screenshot</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">ALTGR+j</span></td>
+      <td align="center">activates joystick emulation via cursor keys</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">ALTGR+m</span></td>
+      <td align="center">(un-)locks the mouse into the window</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">ALTGR+r</span></td>
+      <td align="center">reset the ST</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">ALTGR+c</span></td>
+      <td align="center">coldreset the ST (same as the original power switch)</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">ALTGR+q</span></td>
+      <td align="center">quit the emulator</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">F11</span></td>
+      <td align="center">toggles fullscreen and windowed mode</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">F12</span></td>
+      <td align="center">activate the GUI</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">PAUSE</span></td>
+      <td align="center">will go to the debugger if it was activated at compile time</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Emulated Atari ST keyboard</h3>
+<p> All other keys on the keyboard act as the normal Atari ST keys so
+pressing SPACE on your PC will result in an emulated press of the SPACE
+key on the ST. The following keys have special meanings: </p>
+
+<table cellpadding="3" border="1">
+  <tbody>
+    <tr class="backdropped">
+      <td align="center">Key</td>
+      <td align="center">Meaning</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">Alt</span></td>
+      <td align="center">will act as the ST's ALTERNATE key</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">left CTRL</span></td>
+      <td align="center">will act as the ST's CONTROL key</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">Page Up</span></td>
+      <td align="center">will emulate the ST's HELP key</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">Page Down</span></td>
+      <td align="center">will emulate the ST's UNDO key</td>
+    </tr>
+  </tbody>
+</table>
+
+<p> <span class="key">ALTGR</span> will act as ALTERNATE as well as long as you do not press it
+together with a Hatari hotkey combination. </p>
+<p> The <span class="key">right CTRL</span> key is used as the fire button of the emulated
+joystick when you turn on joystick emulation via keyboard. </p>
+<p> The cursor keys will act as the cursor keys on the Atari ST as long as joystick emulation
+via keyboard has been turned off.</p>
+
+<h3>Emulated mouse</h3>
+<p>For obvious reasons your PC mouse will act as the emulated Atari ST
+mouse. In fullscreen mode it will act as expected, directly controlling
+the ST mouse pointer. </p>
+<p>However it is a little bit different in windowed mode. To make the
+mouse work there as expected you need to grab it first or lock it into
+the Hatari window. Do this by pressing the <span class="key">ALTGR+m</span> hotkey combination.
+Press it again to go back to normal mouse behaviour which allows you to
+work in other X11 windows while Hatari is up and running. </p>
+
+<h3>Emulated joystick</h3>
+<p>The Atari ST joysticks are emulated ofcourse allowing you to play
+your favourite games with Hatari. </p>
+<p>The default mode is to use a connected PC joystick. You can use any
+joystick that is supported by your kernel. If your joystick works with
+other applications, it will likely work with Hatari as well. Make sure
+it is calibrated and then off you go. Move the stick to point into the
+desired direction. Please note that Hatari will not detect analogue
+movement as the Atari ST only had digital joysticks. The first
+firebutton will act as the normal firebutton on the Atari ST while the second
+firebutton will emulate a keypress of the <span class="key">SPACE</span> key on the ST as many ST
+games utilitze the SPACE bar for secondary game functions. (Xenon for example)</p>
+<p>If you do not have a PC joystick or joypad, then you do not need to
+desperate. You can emulate one of the two Atari ST joysticks via the
+cursor keys. Just activate it in the GUI. Then the cursor keys will act
+as the joystick directions, the right CTRL key will act as the
+firebutton. You can still use the cursor keys as the ST's
+cursorkeys in this mode as long as you press <span class="key">SHIFT</span> along with the cursorkeys. </p>
+
+<h2>Floppy disk images</h2>
+<p>Hatari does not use floppy disks directly but disk images due to
+differences between the floppy disk controllers of the ST and the PC.
+Two types of disk images are currently supported: The raw "ST" type and
+the "MSA" (Magic-Shadow-Archiver) type. </p>
+<p> The raw type (file suffix should be "*.st") is simply a sector by
+sector image of a real floppy disk. You can easily create such an image
+with the <span class="commandline">dd</span> program which should normally be pre-installed on every
+Unix-like system. Simply type something like <span class="commandline">dd if=/dev/fd0 of=myimage.st</span> to create a disk image. Of course you need access to
+/dev/fd0, and depending on your system and the type of floppy disk you
+might have to use another device name here (for example I use
+/dev/fd0u720 for 720kB disks). However, if the disk is copy-protected or
+doesn't use a MSDOS compatible file system, this might fail. So be very
+careful if you're not sure about the disk format. </p>
+<p> The other possibility is to image the disk on a real Atari ST. There
+are programs like the Magic Shadow Archiver for this task. Hatari
+supports this slightly compressed MSA disk images, too. Note that Hatari
+only supports the "old" MSA format, there are some Magic Shadow Archiver
+clones (like Jay-MSA) that create better compressed but
+Hatari-incompatible disk images. </p>
+<p> While *.ST and *.MSA are more or less the "standard" types of Atari
+disk images, you might sometimes also find DIM or ADF images on the
+internet. These currently do not work with Hatari. But since DIM images
+are nearly the same as the raw ST images (they only have an additional
+32 byte header) you can easily transform the DIM images into ST images
+by stripping the header from the files. For example try something like:
+<span class="commandline">dd if=input.dim of=output.st bs=32 skip=1</span> </p>
+<p> If you've got a disk image that has been created with the old ST
+emulator PaCifiST (for DOS) or with early versions of the program
+Makedisk, and the disk image does not work with Hatari, then the disk
+probably suffers from the "PaCifiST bootsector bug" (Hatari will print a
+warning message then). In this case, the bootsector of the disk
+contains some illegal data, so that the disk even does not work on a
+real ST any more. However, if it is a .ST and not a .MSA disk, you can
+easily fix it by using a hex-editor to change the byte at offset $D (13)
+from 0 to 1 (don't forget to backup your disk image first, since you
+can also easily destroy your disk image when changing a wrong byte
+there). If the disk contains a bootsector program, you probably have to
+adjust the boot sector check sum, too (it can be found at offset $1FE +
+$1FF). </p>
+<p>Hatari supports zipped disk images so you can archive your disk images into zip archives.
+You can also directly run the zip archives you may download from the net as long as the archive contains a
+disk image in .ST or .MSA format.</p>
+<p><em>Note:</em> Hatari does not save disk images back to zipfiles so your highscores and savegames are lost if you
+loaded the game from a zipped disk image.</p>
+
+<h2>Hard disk support</h2>
+<p>Hatari supports two ways of emulating a ST hard drive: The low-level
+ACSI hard disk emulation and a GEMDOS based drive emulation. </p>
+<p>To use the ACSI hard disk emulation, you need a hard disk image file
+with a pre-installed HD driver in it. So either try to image your old ST
+hard disk or grab one from the internet. There is a HD image on the
+Hatari web page for download. Perhaps we'll also provide a tool for
+creating HD images one day. </p>
+<p>With the GEMDOS based drive emulation, you can easily "mount" a
+folder from the host file system to a drive of the emulated Atari. To
+use the GEMDOS based drive emulation, you should use a folder on your
+hard disk that only contains files and folders with valid TOS filenames.
+That means that all files/folders should be written in capital letters
+and their length mustn't exceed the 8+3 file name length limit. If you
+don't want to rename all files to get capital letters, it is also
+possible to store that folder on a FAT filesystem since those
+filesystems are case-insensitive. </p>
+<p>GEMDOS drive emulation is an easy way to share files between the
+host system and the emulated Atari, but it is known to be incomplete and
+a little bit unstable, especially if you use it together with the ACSI
+hard disk emulation. So if your programs complain that they could not
+find/read/write files on the GEMDOS HD drive, you should try to copy
+them to a floppy disk image or a real hard disk image! </p>
+<p> Note that changing the HD-image or the GEMDOS HD-folder will reset
+the emulated Atari since it is not possible to switch the hard disk
+while the emulator is running. </p>
+<p> May the fun without the price to be with you ;-) ! </p>
+
+<h2>Appendix</h2>
+
+<h3>Copying</h3>
+<div class="backdropped">
+<p>This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 2 of the License, or (at your
+option) any later version. </p>
+<p>This program is distributed in the hope that it will be useful, but <em>WITHOUT
+ANY WARRANTY</em>; without even the implied warranty of <em>MERCHANTABILITY</em>
+or <em>FITNESS FOR A PARTICULAR PURPOSE</em>. See the GNU General Public
+License for more details. </p>
+<p>You should have received a copy of the GNU General Public License
+along with this program; if not, write to Free Software Foundation,
+Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA </p>
+</div>
+
+<p><a href="http://www.gnu.org/">The GNU Project and the Free Software Foundation</a> | <a href="http://www.fsf.org/licenses/gpl.html">The GNU General Public License</a></p>
+
+<h3>Introduction to Emulation</h3>
+<p>Emulation via software is an art and Hatari is an example of this.</p>
+<p>Emulation is to make a computer behave like a (probably) completely different machine on the lowest possible niveau.
+This includes CPU and custom chip emulation allowing software written for the emulated machine to be run without notice.
+A good emulator will run most of the software intended for the emulated platform without trouble.
+</p>
+<p>
+The key to emulation is to simply do those things with a software program, the emulator, that normally chips would perform.
+So you have an CPU emulator that basically consists of a large loop that does exactly what the real thing would do:
+</p>
+<ul>
+<li>fetch an instruction from virtual memory</li>
+<li>interpret this instruction</li>
+<li>fetch operands from the emulated registers and memory</li>
+<li>perform the operation like addition or changing the program counter on a jump instruction</li>
+<li>writes results back into the intended registers or memory locations</li>
+<li>increment of the program counter and loop</li>
+</ul>
+<p>
+The typical von-Neumann CPU can be emulated very fast, stable and error-free using such a simple loop system.
+</p>
+<p>
+But in most cases the CPU emulation is the simplest part. Correct emulation of the various cutom chips and hardware
+parts of the emulated system is much trickier.
+</p>
+
+
+<h3>Software compatibility list</h3>
+<p>This is a little compilation of what software does work in Hatari. It is by no means finished.</p>
+
+<table cellpadding="3" border="1">
+  <caption align="bottom">tested games</caption>
+  <tbody>
+    <tr class="backdropped">
+      <td align="center">Game</td>
+      <td align="center">Working</td>
+	  <td align="center">Sound</td>
+	  <td align="center">Comment</td>
+    </tr>
+	<tr>
+	  <td>Eliminator</td>
+	  <td>yes</td>
+	  <td>perfect</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>Speedball</td>
+	  <td>yes</td>
+	  <td>perfect</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>Xenon</td>
+	  <td>yes</td>
+	  <td>music ok - fx dodgy</td>
+	  <td>bullets and explosions sound weired</td>
+	</tr>
+	<tr>
+	  <td>F15 Strike Eagle 2</td>
+	  <td>yes</td>
+	  <td>ok</td>
+	  <td>keyboard emulation seems to be dodgy</td>
+	</tr>
+	<tr>
+	  <td>Rick Dangerous</td>
+	  <td>yes</td>
+	  <td>perfect</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>Slayer</td>
+	  <td>yes</td>
+	  <td>ok</td>
+	  <td>raster fx at highscore entry dodgy</td>
+	</tr>
+	<tr>
+	  <td>Lethal Xcess</td>
+	  <td>no</td>
+	  <td>&nbsp;</td>
+	  <td>crashes while loading</td>
+	</tr>
+	<tr>
+	  <td>Star Goose</td>
+	  <td>yes</td>
+	  <td>music ok - bullet sound dodgy</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>Xenon 2 - Megablast</td>
+	  <td>yes</td>
+	  <td>perfect (including sampled intro)</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>Metal Mutant</td>
+	  <td>yes</td>
+	  <td>seems ok</td>
+	  <td>some color effects in the lower screen seem buggy</td>
+	</tr>
+	<tr>
+	  <td>Defenders Of The Earth</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>Nebulus</td>
+	  <td>yes</td>
+	  <td>music ok; snowball, balls and trapdoors dodgy</td>
+	  <td>otherwise working to a playable extend</td>
+	</tr>
+  </tbody>
+</table>
+
+<table cellpadding="3" border="1">
+  <caption align="bottom">tested applications</caption>
+  <tbody>
+    <tr class="backdropped">
+      <td align="center">Application</td>
+      <td align="center">Working</td>
+	  <td align="center">Comment</td>
+    </tr>
+	<tr>
+	  <td>DevPac 2.2</td>
+	  <td>yes</td>
+	  <td>MonST crashy</td>
+	</tr>
+	<tr>
+	  <td>Turbo Assembler</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>GFABASIC 3.6TT</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>ST Basic</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>Neochrome</td>
+	  <td>yes</td>
+	  <td>rasters sometimes unstable</td>
+	</tr>
+	<tr>
+	  <td>Tempus</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	</tr>
+    <tr>
+	  <td>Sagrotan</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>MusicMon 2</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
+	  <td>Protracker</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	</tr>
+  </tbody>
+</table>
+
+<hr style="width: 100%; height: 2px;">
+
+<table border="0" width="100%">
+	<tbody>
+    <tr>
+      <td align="left"><a href="http://validator.w3.org/check/referer"><img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a></td>
+      <td align="right"><address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a> July 08 2003</address></td>
+    </tr>
+	</tbody>
+</table>
+
+</body>
+</html>

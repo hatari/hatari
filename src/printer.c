@@ -1,7 +1,7 @@
 /*
   Hatari
 
-  Printer communication. When bytes are sent to the ST they are sent on to these functions
+  Printer communication. When bytes are sent fromo the ST they are sent on to these functions
   via 'Printer_TransferByteTo()'. This will then open a file or Windows printer and direct
   the output to this. These bytes are buffered up(to improve speed) and this also allow us
   to detect when the stream goes into idle - at which point we close the file/printer(Windows
@@ -53,10 +53,6 @@ void Printer_Init(void)
   fprintf(stderr,"Printer_Init()\n");
 #endif
   /* FIXME: enable and disable printing via the GUI */
-  /* cheating: for testing we activate printing here by hand... */
-  ConfigureParams.Printer.bEnablePrinting=TRUE;
-  if(ConfigureParams.Printer.bEnablePrinting)
-	fprintf(stderr,"Printer_Init(): printing activated...\n");
 
   /* construct filename for printing.... */
   fname=getenv("HOME");
@@ -111,12 +107,11 @@ BOOL Printer_OpenDiscFile(void)
 
   bPrinterDiscFile = TRUE;
 
-  /* FIXME - allow setting of filename via GUI... */
+  /* FIXME: allow setting of filename via GUI and sue that set filename here... */
   /* open printer file... */
   PrinterFileHandle=fopen(fname,"a+");
   if(!PrinterFileHandle)
   	bPrinterDiscFile=FALSE;
-
 
   return(bPrinterDiscFile);
 }
@@ -146,7 +141,7 @@ void Printer_EmptyDiscFile(void)
     /* Write bytes out */
     if(fwrite((unsigned char *)PrinterBuffer,sizeof(unsigned char),nPrinterBufferChars,PrinterFileHandle)<nPrinterBufferChars)
 	 {
-		/* we worte less then chars in the buffer..error */
+		/* we wrote less then all chars in the buffer --> ERROR */
 		fprintf(stderr,"Printer_EmptyDiscFile(): ERROR not all chars were written\n");
 	 }
     /* Reset */

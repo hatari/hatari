@@ -7,10 +7,14 @@
 
   9 Aug 2003  Matthias Arndt <marndt@asmsoftware.de>
 	- added hook for printer dispatcher to PSG Port B (Reg 15)
-	- added flag t odecide if last write did go to IOB
+	- added flag to decide if last write did go to IOB
+
+  10 Aug 2003
+    - corrected bug in printer dispatcher: STROBE is Bit5 counted from 0 (32 insetad of 16)
 */
 
 #include "main.h"
+#include "configuration.h"
 #include "memAlloc.h"
 #include "memorySnapShot.h"
 #include "sound.h"
@@ -85,30 +89,33 @@ void PSG_WriteDataRegister(unsigned short bl)
   }
 
  /* Matthias Arndt <marndt@asmsoftware.de>    9 Aug 2003
+  * FIXME: This is only a prelimary dirty hack!
   * Port B (Printer port) - writing here needs to be dispatched to the printer
   * STROBE (Port A bit5) does a short LOW and back to HIGH when the char is valid
   * for printing you need to write your data and you need to toggle STROBE
   * (like EmuTOS does)....therefor we print when STROBE gets low and last PSG write
   * was to Port B
   */
-
- if( PSGRegisterSelect==PSG_REG_IO_PORTA )
+ if(ConfigureParams.Printer.bEnablePrinting) /* Printer dispatching only when printing is activated */
   {
-    /* is STROBE  LOW?  */
-    if((PSGRegisters[PSG_REG_IO_PORTA]&16)==0)
-	  /* did the last write go to IOB? then we want to print something... */
-	  if(bPSG_LastWriteToIOB==TRUE)
-		Printer_TransferByteTo(((unsigned char) PSGRegisters[PSG_REG_IO_PORTB] & 0xff));
+  	if( PSGRegisterSelect==PSG_REG_IO_PORTA )
+  	 {
+     	/* is STROBE LOW?  */
+    	if((PSGRegisters[PSG_REG_IO_PORTA]&32)==0)
+	  	  /* did the last write go to IOB? then we want to print something... */
+	      if(bPSG_LastWriteToIOB==TRUE)
+			Printer_TransferByteTo(((unsigned char) PSGRegisters[PSG_REG_IO_PORTB] & 0xff));
 
-	bPSG_LastWriteToIOB=FALSE;
+		bPSG_LastWriteToIOB=FALSE;
+  	 }
+ 	else
+  		if( PSGRegisterSelect==PSG_REG_IO_PORTB )
+   	   	  {
+     		bPSG_LastWriteToIOB=TRUE;
+   		  }
+      	else
+     	  bPSG_LastWriteToIOB=FALSE;
   }
- else
-  if( PSGRegisterSelect==PSG_REG_IO_PORTB )
-   {
-     bPSG_LastWriteToIOB=TRUE;
-   }
-  else
-     bPSG_LastWriteToIOB=FALSE;
 
  /* Check registers 8,9 and 10 which are 'amplitude' for each channel and store if wrote to(to check for sample playback) */
  if( PSGRegisterSelect==8 )

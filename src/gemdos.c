@@ -14,11 +14,11 @@
   directly from a mounted cd in lower cases, so I guess it's working well !).
 
   Bugs/things to fix:
-  * RS232/Printing
+  * RS232
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-static char rcsid[] = "Hatari $Id: gemdos.c,v 1.23 2003-07-20 22:52:32 thothy Exp $";
+static char rcsid[] = "Hatari $Id: gemdos.c,v 1.24 2003-08-10 08:09:06 simonsunnyboy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -830,7 +830,11 @@ BOOL GemDOS_SetDrv(unsigned long Params)
 */
 BOOL GemDOS_Cprnos(unsigned long Params)
 {
-  Regs[REG_D0] = -1;                /* Printer OK */
+  /* pritner status depends if printing is enabled or not... */
+  if(ConfigureParams.Printer.bEnablePrinting)
+	Regs[REG_D0] = -1;                /* Printer OK */
+  else
+    Regs[REG_D0] = 0;				  /* printer not ready if printing disabled */
 
   return(TRUE);
 }
@@ -1653,18 +1657,20 @@ void GemDOS_OpCode(void)
 /*      if (GemDOS_Cauxout(Params)) */
 /*        RunOld = FALSE; */
 /*      break; */
-/*    case 0x5: */
-/*      if (GemDOS_Cprnout(Params)) */
-/*        RunOld = FALSE; */
-/*      break; */
+  /* direct printing via GEMDOS reactivated by Matthias Arndt <marndt@asmsoftware.de  10 Aug 2003 */
+  case 0x5:
+    if (GemDOS_Cprnout(Params))
+	  RunOld = FALSE;
+    break;
   case 0xe:
     if (GemDOS_SetDrv(Params))
       RunOld = FALSE;
     break;
-/*    case 0x11: */
-/*        if (GemDOS_Cprnos(Params)) */
-/*          RunOld = FALSE; */
-/*        break; */
+  case 0x11:
+   	/* Printer status reactivated by Matthias Arndt <marndt@asmsoftware.de>  10 Aug 2003 */
+	if (GemDOS_Cprnos(Params))
+      RunOld = FALSE;
+    break;
 /*      case 0x12: */
 /*        if (GemDOS_Cauxis(Params)) */
 /*          RunOld = FALSE; */
@@ -1786,7 +1792,7 @@ void GemDOS_Boot()
       /* We have to use fix addresses on TOS 1.00 :-( */
       if((STMemory_ReadWord(TosAddress+28)>>1) == 4)
         act_pd = 0x873c;    /* Spanish TOS is different from others! */
-      else 
+      else
         act_pd = 0x602c;
     }
     else
