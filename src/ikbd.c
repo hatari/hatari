@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-static char rcsid[] = "Hatari $Id: ikbd.c,v 1.15 2003-04-03 20:04:19 emanne Exp $";
+static char rcsid[] = "Hatari $Id: ikbd.c,v 1.16 2003-05-24 22:12:35 thothy Exp $";
 
 #include <time.h>
 
@@ -57,7 +57,7 @@ BOOL DoubleClickPattern[] = {           /* Pattern of mouse button up/down in ST
  0,0,0,0,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE };
 
 BOOL bMouseDisabled, bJoystickDisabled;
-BOOL bDuringResetCriticalTime, bDontDuplicateFire;
+BOOL bDuringResetCriticalTime, bBothMouseAndJoy;
 
 /* ACIA */
 unsigned char ACIAControlRegister = 0;
@@ -235,7 +235,7 @@ void IKBD_Reset(BOOL bCold)
   bMouseDisabled = bJoystickDisabled = FALSE;
   /* do emulate hardware 'quirk' where if disable both with 'x' time of a RESET
    * command they are ignored! */
-  bDuringResetCriticalTime = bDontDuplicateFire = FALSE;
+  bDuringResetCriticalTime = bBothMouseAndJoy = FALSE;
 }
 
 
@@ -389,7 +389,7 @@ BOOL IKBD_ButtonsEqual(int Button1,int Button2)
 void IKBD_DuplicateMouseFireButtons(void)
 {
   /* Don't duplicate fire button when program tries to use both! */
-  if(bDontDuplicateFire)  return;
+  if(bBothMouseAndJoy)  return;
 
   /* If mouse is off then joystick fire button goes to joystick */
   if (KeyboardProcessor.MouseMode==AUTOMODE_OFF)
@@ -631,9 +631,13 @@ void IKBD_SendAutoKeyboardCommands(void)
     return;
 
   /* Read joysticks for this frame */
-  /* If mouse is on, joystick 0 is not connected */
-  KeyboardProcessor.Joy.JoyData[0] = (KeyboardProcessor.MouseMode==AUTOMODE_OFF) ? Joy_GetStickData(0):0x00;
   KeyboardProcessor.Joy.JoyData[1] = Joy_GetStickData(1);
+  /* If mouse is on, joystick 0 is not connected */
+  if (KeyboardProcessor.MouseMode==AUTOMODE_OFF
+      || (bBothMouseAndJoy && KeyboardProcessor.MouseMode==AUTOMODE_MOUSEREL))
+    KeyboardProcessor.Joy.JoyData[0] = Joy_GetStickData(0);
+  else
+    KeyboardProcessor.Joy.JoyData[0] = 0x00;
 
   /* Check for double-clicks in maximum speed mode */
   IKBD_CheckForDoubleClicks();
@@ -693,7 +697,7 @@ void IKBD_CheckResetDisableBug(void)
       /* Emulate relative mouse and joystick reports being turned back on */
       KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
       KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
-      bDontDuplicateFire = TRUE;
+      bBothMouseAndJoy = TRUE;
 
 #ifdef DEBUG_OUTPUT_IKBD
       Debug_IKBD("IKBD Mouse+Joystick disabled during RESET. Revert.\n");
@@ -772,7 +776,7 @@ void IKBD_Cmd_Reset(void)
     /* Set this 'critical' flag, gets reset when timer expires */
     bMouseDisabled = bJoystickDisabled = FALSE;
     bDuringResetCriticalTime = TRUE;
-    bDontDuplicateFire = FALSE;
+    bBothMouseAndJoy = FALSE;
   }
   /* else if not 0x80,0x01 just ignore */
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1072,7 +1076,7 @@ void IKBD_Cmd_ReturnJoystickAuto(void)
   if (bDuringResetCriticalTime)
   {
     KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
-    bDontDuplicateFire = TRUE;
+    bBothMouseAndJoy = TRUE;
   }
 
 #ifdef DEBUG_OUTPUT_IKBD
