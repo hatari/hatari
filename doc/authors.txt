@@ -2,9 +2,9 @@
  Developers and contributors
  ---------------------------
 
-Following people contributed patches to this projects and/or helped to find
-bugs in Hatari (listed in random order - and if someone is missing here, please
-remind me!):
+Following people contributed code or patches to this projects and/or helped to
+find bugs in Hatari (listed in random order - and if someone is missing here,
+please remind me!):
 
 - Thomas Huth <thothy@users.sourceforge.net> : Project initiator and main
   developer.
@@ -41,6 +41,9 @@ remind me!):
 - Steve Kemp : Found some possible buffer overflows.
 
 - Marco Herrn : Wrote the initial version of the "man" page of Hatari.
+
+- Matthias Alles : He initiated the port of Hatari to MiNT and helped me with
+  a lot of technical questions about the ST.
 
 
  Code from other projects

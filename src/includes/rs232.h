@@ -21,6 +21,7 @@ extern BOOL RS232_OpenCOMPort(void);
 extern void RS232_CloseCOMPort(void);
 extern void RS232_HandleUCR(short int ucr);
 extern BOOL RS232_SetBaudRate(int nBaud);
+extern void RS232_SetBaudRateFromTimerD(void);
 extern void RS232_SetFlowControl(int ctrl);
 extern BOOL RS232_TransferBytesTo(unsigned char *pBytes, int nBytes);
 extern BOOL RS232_ReadBytes(unsigned char *pBytes, int nBytes);

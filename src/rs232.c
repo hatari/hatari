@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.10 2004-07-15 20:33:56 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.11 2004-07-25 13:50:30 thothy Exp $";
 
 #ifndef HAVE_TERMIOS_H
 #define HAVE_TERMIOS_H 1
@@ -266,7 +266,7 @@ static BOOL RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, BOOL bUseP
 			termmode.c_cflag &= ~PARODD;
 		else
 			termmode.c_cflag |= PARODD;
-		
+
 		/* Now store the configuration: */
 		if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
 		{
@@ -376,7 +376,7 @@ BOOL RS232_SetBaudRate(int nBaud)
 
 	if (baudtype == -1)
 	{
-		fprintf(stderr, "Unsupported baud rate %i\n", nBaud);
+		Dprintf(("RS232_SetBaudRate: Unsupported baud rate %i.\n", nBaud));
 		return FALSE;
 	}
 
@@ -416,6 +416,52 @@ BOOL RS232_SetBaudRate(int nBaud)
 #endif /* HAVE_TERMIOS_H */
 
 	return TRUE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Set baud rate configuration of RS-232 according to the Timer-D hardware
+  registers.
+*/
+void RS232_SetBaudRateFromTimerD(void)
+{
+	int nTimerD_CR, nTimerD_DR, nBaudRate;
+
+	nTimerD_CR = STRam[0xfffa1d] & 0x07;
+	nTimerD_DR = STRam[0xfffa25];
+
+	if (!nTimerD_CR)
+		return;
+
+	/* Calculate baud rate: (MFP/Timer-D is supplied with 2.4576 MHz) */
+	nBaudRate = 2457600 / nTimerD_DR / 2;
+	if (STRam[0xfffa29] & 0x80)
+	{
+		nBaudRate /= 16;
+	}
+	switch (nTimerD_CR)
+	{
+		case 1:  nBaudRate /= 4;  break;
+		case 2:  nBaudRate /= 10;  break;
+		case 3:  nBaudRate /= 16;  break;
+		case 4:  nBaudRate /= 50;  break;
+		case 5:  nBaudRate /= 64;  break;
+		case 6:  nBaudRate /= 100;  break;
+		case 7:  nBaudRate /= 200;  break;
+	}
+
+	/* Adjust some ugly baud rates from TOS to more reasonable values: */
+	switch (nBaudRate)
+	{
+		case 80:  nBaudRate = 75;  break;
+		case 109:  nBaudRate = 110;  break;
+		case 120:  nBaudRate = 110;  break;
+		case 1745:  nBaudRate = 1800;  break;
+		case 1920:  nBaudRate = 1800;  break;
+	}
+
+	RS232_SetBaudRate(nBaudRate);
 }
 
 

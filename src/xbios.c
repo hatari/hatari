@@ -9,7 +9,7 @@
   We intercept and direct some XBios calls to handle the RS-232 etc. and help
   with floppy debugging.
 */
-char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.6 2004-07-06 20:14:23 thothy Exp $";
+char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.7 2004-07-25 13:50:30 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -104,7 +104,6 @@ static BOOL XBios_Flopwr(unsigned long Params)
 static BOOL XBios_Rsconf(unsigned long Params)
 {
   short int Baud,Ctrl,Ucr,Rsr,Tsr,Scr;
-  int BaudRate=-1;
 
   Baud = STMemory_ReadWord(Params+SIZE_WORD);
   Ctrl = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
@@ -113,15 +112,26 @@ static BOOL XBios_Rsconf(unsigned long Params)
   Tsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
   Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-  /* Set baud, if passed valid setting */
-  if (ConfigureParams.RS232.bEnableRS232 && Baud>=0 && Baud<=15)
+  /* Set baud rate and other configuration, if RS232 emaulation is enabled */
+  if (ConfigureParams.RS232.bEnableRS232)
   {
-    /* Convert ST baud rate index to value */
-    BaudRate = BaudRates[Baud];
-    /* Set RS-232 configuration */
-    RS232_HandleUCR(Ucr);
-    RS232_SetBaudRate(BaudRate);
-    RS232_SetFlowControl(Ctrl);
+    if (Baud>=0 && Baud<=15)
+    {
+      /* Convert ST baud rate index to value */
+      int BaudRate = BaudRates[Baud];
+      /* And set new baud rate: */
+      RS232_SetBaudRate(BaudRate);
+    }
+
+    if (Ucr != -1)
+    {
+      RS232_HandleUCR(Ucr);
+    }
+
+    if (Ctrl != -1)
+    {    
+      RS232_SetFlowControl(Ctrl);
+    }
 
     return(TRUE);
   }

@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.23 2004-04-23 15:33:58 thothy Exp $";
+char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.24 2004-07-25 13:50:30 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -165,6 +165,8 @@ unsigned long noMansLandWorkspace[2] = { (unsigned long)Intercept_NoMansLand_Rea
 #else
 unsigned long noMansLandWorkspace[1] = { 0L };
 #endif
+
+static int nTimerDFakeValue;                  /* Faked Timer-D data register for the Timer-D patch */
 
 
 /*-----------------------------------------------------------------------*/
@@ -742,18 +744,21 @@ void Intercept_TimerCData_ReadByte(void)
  STRam[0xfffa23] = MFP_TC_MAINCOUNTER;
 }
 
-static int timerd_tos_value;
-
 /* INTERCEPT_TIMERD_DATA(0xfffa25 byte) */
 void Intercept_TimerDData_ReadByte(void)
 {
- Uint32 pc = m68k_getpc();
- if (pc >= TosAddress && pc <= TosAddress + TosSize) {
-   STRam[0xfffa25] = timerd_tos_value; // trick the tos to believe it was changed
- } else {
-   MFP_ReadTimerD();        /* Stores result in 'MFP_TD_MAINCOUNTER' */
-   STRam[0xfffa25] = MFP_TD_MAINCOUNTER;
- }
+  Uint32 pc = m68k_getpc();
+
+  if (ConfigureParams.System.bPatchTimerD && pc >= TosAddress && pc <= TosAddress + TosSize)
+  {
+    /* Trick the tos to believe it was changed: */
+    STRam[0xfffa25] = nTimerDFakeValue;
+  }
+  else
+  {
+    MFP_ReadTimerD();        /* Stores result in 'MFP_TD_MAINCOUNTER' */
+    STRam[0xfffa25] = MFP_TD_MAINCOUNTER;
+  }
 }
 
 /* INTERCEPT_KEYBOARDCONTROL(0xfffc00 byte) */
@@ -1158,6 +1163,13 @@ void Intercept_TimerCDCtrl_WriteByte(void)
   if ((MFP_TCDCR^old_tcdcr) & 0x07) /* Check if Timer D control changed */
   {
     Uint32 pc = m68k_getpc();
+
+    /* Need to change baud rate of RS232 emulation? */
+    if (ConfigureParams.RS232.bEnableRS232)
+    {
+      RS232_SetBaudRateFromTimerD();
+    }
+
     if (ConfigureParams.System.bPatchTimerD && !bAppliedTimerDPatch
         && pc >= TosAddress && pc <= TosAddress + TosSize)
     {
@@ -1213,16 +1225,25 @@ void Intercept_TimerCData_WriteByte(void)
 /* INTERCEPT_TIMERD_DATA(0xfffa25 byte) */
 void Intercept_TimerDData_WriteByte(void)
 {
- Uint32 pc = m68k_getpc();
- if (pc >= TosAddress && pc <= TosAddress + TosSize) {
-   timerd_tos_value = STRam[0xfffa25];
-   STRam[0xfffa25] = 0x64; // slow down the useless interrupt from the bios for timer d
- }
+  Uint32 pc = m68k_getpc();
 
- MFP_TDDR = STRam[0xfffa25];        /* Store into data register */
- if( (MFP_TCDCR&0x07)==0 )          /* Now check if timer is running - if so do not set */
+  /* Need to change baud rate of RS232 emulation? */
+  if (ConfigureParams.RS232.bEnableRS232 && (STRam[0xfffa1d] & 0x07))
   {
-   MFP_StartTimerD();               /* Add our interrupt */
+    RS232_SetBaudRateFromTimerD();
+  }
+
+  /* Patch Timer-D for better performance? */
+  if (ConfigureParams.System.bPatchTimerD && pc >= TosAddress && pc <= TosAddress + TosSize)
+  {
+    nTimerDFakeValue = STRam[0xfffa25];
+    STRam[0xfffa25] = 0x64;         /* Slow down the useless Timer-D setup from the bios */
+  }
+
+  MFP_TDDR = STRam[0xfffa25];       /* Store into data register */
+  if ((MFP_TCDCR&0x07) == 0)        /* Now check if timer is running - if so do not set */
+  {
+    MFP_StartTimerD();              /* Add our interrupt */
   }
 }
 
