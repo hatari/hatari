@@ -19,7 +19,7 @@
 #define  MFP_EXCEPT_TIMERB          8
 
 #define  MFP_EXCEPT_GPIP5      7
-#define  MFP_EXCEPT_KEYBOARD   6
+#define  MFP_EXCEPT_ACIA       6
 #define  MFP_EXCEPT_TIMERC     5
 #define  MFP_EXCEPT_TIMERD     4
 #define  MFP_EXCEPT_GPIP3      3
@@ -34,7 +34,7 @@
 #define  MFP_TRNBUFEMPTY_BIT  0x04
 #define  MFP_TIMER_B_BIT      0x01
 #define  MFP_FDCHDC_BIT       0x80
-#define  MFP_KEYBOARD_BIT     0x40
+#define  MFP_ACIA_BIT         0x40
 #define  MFP_TIMER_C_BIT      0x20
 #define  MFP_TIMER_D_BIT      0x10
 

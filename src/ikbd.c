@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-static char rcsid[] = "Hatari $Id: ikbd.c,v 1.16 2003-05-24 22:12:35 thothy Exp $";
+static char rcsid[] = "Hatari $Id: ikbd.c,v 1.17 2004-02-22 09:35:07 thothy Exp $";
 
 #include <time.h>
 
@@ -1416,7 +1416,7 @@ void IKBD_InterruptHandler_ACIA(void)
   MFP_GPIP &= ~0x10;
 
   /* Acknowledge in MFP circuit, pass bit,enable,pending */
-  MFP_InputOnChannel(MFP_KEYBOARD_BIT,MFP_IERB,&MFP_IPRB);
+  MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
 
   /* Clear flag so can allow another byte to be sent along serial line */
   bByteInTransitToACIA = FALSE;

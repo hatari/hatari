@@ -20,7 +20,7 @@
      the data register, but probably it should rather be done when reading the
      status register?).
 */
-static char rcsid[] = "Hatari $Id: midi.c,v 1.2 2003-08-15 16:09:50 thothy Exp $";
+static char rcsid[] = "Hatari $Id: midi.c,v 1.3 2004-02-22 09:35:07 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -128,7 +128,7 @@ void Midi_WriteControl(Uint8 controlByte)
 		Dprintf(("WriteControl: Transfer interrupt!\n"));
 
 		/* Acknowledge in MFP circuit, pass bit,enable,pending */
-		MFP_InputOnChannel(MFP_KEYBOARD_BIT, MFP_IERB, &MFP_IPRB);
+		MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
 
 		MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
 	}
@@ -172,7 +172,7 @@ void Midi_WriteData(Uint8 dataByte)
 		Dprintf(("WriteData: Transfer interrupt!\n"));
 
 		/* Acknowledge in MFP circuit, pass bit,enable,pending */
-		MFP_InputOnChannel(MFP_KEYBOARD_BIT, MFP_IERB, &MFP_IPRB);
+		MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
 
 		MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
 	}
