@@ -6,7 +6,7 @@
 
   Zipped disc support, uses zlib
 */
-char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.8 2004-04-28 09:04:58 thothy Exp $";
+char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.9 2004-05-03 15:34:50 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,7 +71,7 @@ static int Zip_FileNameHasSlash(char *fn)
 zip_dir *ZIP_GetFiles(char *pszFileName)
 {
   int nfiles;
-  int i;
+  unsigned int i;
   unz_global_info gi;
   int err;
   unzFile uf;
