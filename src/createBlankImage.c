@@ -6,10 +6,11 @@
  
   Create Blank .ST/.MSA Disc Images
 */
-char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.9 2004-04-28 09:04:57 thothy Exp $";
+char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.10 2004-04-30 19:23:45 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
+#include "dim.h"
 #include "file.h"
 #include "floppy.h"
 #include "misc.h"
