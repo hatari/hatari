@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.12 2004-02-10 11:49:46 thothy Exp $";
+char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.13 2004-02-11 11:08:45 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -58,30 +58,38 @@ char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.12 2004-02-10 11:49:46 thothy Exp 
 
 
 /* Original wave samples */
-int EnvelopeShapeValues[16*1024];                               /* Shape x Length(repeat 3rd/4th entries) */
+static int EnvelopeShapeValues[16*1024];                        /* Shape x Length(repeat 3rd/4th entries) */
 /* Frequency and time period samples */
-unsigned long ChannelFreq[3], EnvelopeFreq, NoiseFreq;          /* Current frequency of each channel A,B,C,Envelope and Noise */
-int ChannelAmpDecayTime[3];                                     /* Store counter to show if amplitude is changed to generate 'samples' */
-int Envelope[SAMPLES_BUFFER_SIZE],Noise[SAMPLES_BUFFER_SIZE];   /* Current sample for this time period */
+static unsigned long ChannelFreq[3], EnvelopeFreq, NoiseFreq;   /* Current frequency of each channel A,B,C,Envelope and Noise */
+static int ChannelAmpDecayTime[3];                              /* Store counter to show if amplitude is changed to generate 'samples' */
+static int Envelope[SAMPLES_BUFFER_SIZE],Noise[SAMPLES_BUFFER_SIZE];   /* Current sample for this time period */
 /* Output channel data */
-int Channel_A_Buffer[SAMPLES_BUFFER_SIZE],Channel_B_Buffer[SAMPLES_BUFFER_SIZE],Channel_C_Buffer[SAMPLES_BUFFER_SIZE];
+static int Channel_A_Buffer[SAMPLES_BUFFER_SIZE],Channel_B_Buffer[SAMPLES_BUFFER_SIZE],Channel_C_Buffer[SAMPLES_BUFFER_SIZE];
 /* Use table to convert from (A+B+C) to clipped 'unsigned char' for sound buffer */
-char MixTable[MIXTABLE_SIZE];                                   /* -ve and +ve range */
-char *pMixTable = &MixTable[MIXTABLE_SIZE/2];                   /* Signed index into above */
+static char MixTable[MIXTABLE_SIZE];                            /* -ve and +ve range */
+static char *pMixTable = &MixTable[MIXTABLE_SIZE/2];            /* Signed index into above */
+static int ActiveSndBufIdx;                                     /* Current working index into above mix buffer */
+static int nSamplesToGenerate;                                  /* How many samples are needed for this time-frame */
+
+/* global values */
 BOOL bWriteEnvelopeFreq;                                        /* Did write to register '13' - causes frequency reset */
 BOOL bWriteChannelAAmp, bWriteChannelBAmp, bWriteChannelCAmp;   /* Did write to amplitude registers? */
 BOOL bEnvelopeFreqFlag;                                         /* As above, but cleared each frame for YM saving */
-int nSamplesToGenerate;                                         /* How many samples are needed for this time-frame */
 /* Buffer to store circular samples */
 char MixBuffer[MIXBUFFER_SIZE];
-int ActiveSndBufIdx;                                            /* Current working index into above mix buffer */
-int SoundCycles;
 int nGeneratedSamples;                                          /* Generated samples since audio buffer update */
+int SoundCycles;
 
 
 /*-----------------------------------------------------------------------*/
+/* Envelope shape table */
+typedef struct
+{
+  int WaveStart[4], WaveDelta[4];
+} ENVSHAPE;
+
 /* Envelope shapes */
-ENVSHAPE EnvShapes[16] =
+static ENVSHAPE EnvShapes[16] =
 {
  { {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  00xx  */
  { {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  00xx  */
@@ -102,11 +110,96 @@ ENVSHAPE EnvShapes[16] =
 };
 
 /* Square wave look up table */
-int SquareWave[16] = { 127,127,127,127,127,127,127,127, -128,-128,-128,-128,-128,-128,-128,-128 };
+static int SquareWave[16] = { 127,127,127,127,127,127,127,127, -128,-128,-128,-128,-128,-128,-128,-128 };
 /* LogTable */
-int LogTable[256];
-int LogTable16[16];
-int *pEnvelopeLogTable = &LogTable[128];
+static int LogTable[256];
+static int LogTable16[16];
+static int *pEnvelopeLogTable = &LogTable[128];
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Create Log tables
+*/
+static void Sound_CreateLogTables(void)
+{
+  float a;
+  int i;
+
+  /* Generate 'log' table for envelope output. It isn't quite a 'log' but it mimicks the ST */
+  /* output very well */
+  a = 1.0f;
+  for(i=0; i<256; i++)
+  {
+    LogTable[255-i] = (int)(255*a);
+    a /= 1.02f;
+  }
+  LogTable[0] = 0;
+
+  /* And a 16 entry version(thanks to Nick for the '/= 1.5' bit) */
+  /* This is VERY important for clear sample playback */
+  a = 1.0f;
+  for(i=0; i<15; i++)
+  {
+    LogTable16[15-i] = (int)(255*a);
+    a /= 1.5f;
+  }
+  LogTable16[0] = 0;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Create envelope shape, store to table
+  ( Wave is stored as 4 cycles, where cycles 1,2 are start and 3,4 are looped )
+*/
+static void Sound_CreateEnvelopeShape(ENVSHAPE *pEnvShape,int *pEnvelopeValues)
+{
+  int i,j,Value;
+
+  /* Create shape */
+  for(i=0; i<4; i++)
+  {
+    Value = pEnvShape->WaveStart[i];        /* Set starting value for gradient */
+    for(j=0; j<256; j++,Value+=pEnvShape->WaveDelta[i])
+      *pEnvelopeValues++ = Misc_LimitInt(Value,-128,127);
+  }
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Create YM2149 envelope shapes(x16)
+*/
+static void Sound_CreateEnvelopeShapes(void)
+{
+  int i;
+
+  /* Create 'envelopes' for YM table */
+  for(i=0; i<16; i++)
+    Sound_CreateEnvelopeShape(&EnvShapes[i],&EnvelopeShapeValues[i*1024]);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Create table to clip samples top 8-bit range
+  This keeps then 'signed', although many sound cards want 'unsigned' values,
+  but we keep them signed so we can vary the volume easily.
+*/
+static void Sound_CreateSoundMixClipTable(void)
+{
+  int i,v;
+
+  /* Create table to 'clip' values to -128...127 */
+  for(i=0; i<MIXTABLE_SIZE; i++)
+  {
+    v = (float)(i-(MIXTABLE_SIZE/2)) * 0.3f;    /* Scale, to prevent clipping */
+    if (v<-128)  v = -128;                      /* Limit -128..128 */
+    if (v>127)  v = 127;
+    MixTable[i] = v;
+  }
+}
 
 
 /*-----------------------------------------------------------------------*/
@@ -185,91 +278,6 @@ void Sound_MemorySnapShot_Capture(BOOL bSave)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Create Log tables
-*/
-void Sound_CreateLogTables(void)
-{
-  float a;
-  int i;
-
-  /* Generate 'log' table for envelope output. It isn't quite a 'log' but it mimicks the ST */
-  /* output very well */
-  a = 1.0f;
-  for(i=0; i<256; i++)
-  {
-    LogTable[255-i] = (int)(255*a);
-    a /= 1.02f;
-  }
-  LogTable[0] = 0;
-
-  /* And a 16 entry version(thanks to Nick for the '/= 1.5' bit) */
-  /* This is VERY important for clear sample playback */
-  a = 1.0f;
-  for(i=0; i<15; i++)
-  {
-    LogTable16[15-i] = (int)(255*a);
-    a /= 1.5f;
-  }
-  LogTable16[0] = 0;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Create envelope shape, store to table
-  ( Wave is stored as 4 cycles, where cycles 1,2 are start and 3,4 are looped )
-*/
-void Sound_CreateEnvelopeShape(ENVSHAPE *pEnvShape,int *pEnvelopeValues)
-{
-  int i,j,Value;
-
-  /* Create shape */
-  for(i=0; i<4; i++)
-  {
-    Value = pEnvShape->WaveStart[i];        /* Set starting value for gradient */
-    for(j=0; j<256; j++,Value+=pEnvShape->WaveDelta[i])
-      *pEnvelopeValues++ = Misc_LimitInt(Value,-128,127);
-  }
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Create YM2149 envelope shapes(x16)
-*/
-void Sound_CreateEnvelopeShapes(void)
-{
-  int i;
-
-  /* Create 'envelopes' for YM table */
-  for(i=0; i<16; i++)
-    Sound_CreateEnvelopeShape(&EnvShapes[i],&EnvelopeShapeValues[i*1024]);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Create table to clip samples top 8-bit range
-  This keeps then 'signed', although many sound carts want 'unsigned' values,
-  but we keep them signed so we can vary the volume easily.
-*/
-void Sound_CreateSoundMixClipTable(void)
-{
-  int i,v;
-
-  /* Create table to 'clip' values to -128...127 */
-  for(i=0; i<MIXTABLE_SIZE; i++)
-  {
-    v = (float)(i-(MIXTABLE_SIZE/2)) * 0.3f;    /* Scale, to prevent clipping */
-    if (v<-128)  v = -128;                      /* Limit -128..128 */
-    if (v>127)  v = 127;
-    MixTable[i] = v;
-  }
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
   Find how many samples to generate and store in 'nSamplesToGenerate'
   Also update 'SoundCycles' to store how many we actually did so generates set amount each frame
 */
@@ -326,7 +334,7 @@ void Sound_SetSamplesPassed(void)
 /*
   Generate envelope wave for this time-frame
 */
-void Sound_GenerateEnvelope(unsigned char EnvShape, unsigned char Fine, unsigned char Coarse)
+static void Sound_GenerateEnvelope(unsigned char EnvShape, unsigned char Fine, unsigned char Coarse)
 {
   int *pEnvelopeValues;
   unsigned long EnvelopePeriod,EnvelopeFreqDelta;
@@ -358,7 +366,7 @@ void Sound_GenerateEnvelope(unsigned char EnvShape, unsigned char Fine, unsigned
 /*
   Generate nosie for this time-frame
 */
-void Sound_GenerateNoise(unsigned char MixerControl, unsigned char NoiseGen)
+static void Sound_GenerateNoise(unsigned char MixerControl, unsigned char NoiseGen)
 {
   int NoiseValue;
   unsigned long NoisePeriod,NoiseFreqDelta;
@@ -388,7 +396,7 @@ void Sound_GenerateNoise(unsigned char MixerControl, unsigned char NoiseGen)
 /*
   Generate channel of samples for this time-frame
 */
-void Sound_GenerateChannel(int *pBuffer, unsigned char ToneFine, unsigned char ToneCoarse,unsigned char Amplitude,unsigned char MixerControl,unsigned long *pChannelFreq,int MixMask)
+static void Sound_GenerateChannel(int *pBuffer, unsigned char ToneFine, unsigned char ToneCoarse,unsigned char Amplitude,unsigned char MixerControl,unsigned long *pChannelFreq,int MixMask)
 {   
   int *pNoise = Noise, *pEnvelope = Envelope;
   unsigned long ToneFreq=*pChannelFreq;

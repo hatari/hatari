@@ -9,12 +9,6 @@
 #define HATARI_SOUND_H
 
 
-/* Envelope shape table */
-typedef struct
-{
-  int WaveStart[4], WaveDelta[4];
-} ENVSHAPE;
-
 #define MIXBUFFER_SIZE    8192          /* Size of circular buffer to store sample to (44Khz) */
 
 
@@ -28,9 +22,6 @@ extern void Sound_Init(void);
 extern void Sound_Reset(void);
 extern void Sound_ClearMixBuffer(void);
 extern void Sound_MemorySnapShot_Capture(BOOL bSave);
-extern void Sound_CreateLogTables(void);
-extern void Sound_CreateEnvelopeShapes(void);
-extern void Sound_CreateSoundMixClipTable(void);
 extern void Sound_Update(void);
 extern void Sound_Update_VBL(void);
 extern void Sound_UpdateFromAudioCallBack(void);
