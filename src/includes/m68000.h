@@ -17,5 +17,6 @@ extern void M68000_MemorySnapShot_Capture(BOOL bSave);
 extern void M68000_BusError(unsigned long addr);
 extern void M68000_AddressError(unsigned long addr);
 extern void M68000_Exception(Uint32 ExceptionVector);
+extern void M68000_WaitState(void);
 
 #endif

@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.29 2003-10-25 12:26:39 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.30 2003-12-28 22:32:40 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -1157,9 +1157,6 @@ void m68k_mull (uae_u32 opcode, uae_u32 src, uae_u16 extra)
 #endif
 }
 
-static char* ccnames[] =
-{ "T ","F ","HI","LS","CC","CS","NE","EQ",
-  "VC","VS","PL","MI","GE","LT","GT","LE" };
 
 void m68k_reset (void)
 {
@@ -1262,14 +1259,23 @@ static void do_trace (void)
 }
 
 
+/*
+ * Handle special flags
+ */
 static int do_specialties (void)
 {
     if(regs.spcflags & SPCFLAG_BUSERROR) {
 	/* We can not execute bus errors directly in the memory handler
 	 * functions since the PC should point to the address of the next
 	 * instruction, so we're executing the bus errors here: */
-        unset_special(SPCFLAG_BUSERROR);
+	unset_special(SPCFLAG_BUSERROR);
 	Exception(2,0);
+    }
+
+    if(regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+	/* Add some extra cycles to simulate a wait state */
+	unset_special(SPCFLAG_EXTRA_CYCLES);
+	ADD_CYCLES(4,0,0);
     }
 
     if (regs.spcflags & SPCFLAG_DOTRACE) {
@@ -1417,6 +1423,7 @@ void m68k_go (int may_quit)
     in_m68k_go--;
 }
 
+
 static void m68k_verify (uaecptr addr, uaecptr *nextpc)
 {
     uae_u32 opcode, val;
@@ -1445,8 +1452,13 @@ static void m68k_verify (uaecptr addr, uaecptr *nextpc)
     }
 }
 
+
 void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
+    static const char* ccnames[] =
+        { "T ","F ","HI","LS","CC","CS","NE","EQ",
+          "VC","VS","PL","MI","GE","LT","GT","LE" };
+
     uaecptr newpc = 0;
     m68kpc_offset = addr - m68k_getpc ();
     while (cnt-- > 0) {

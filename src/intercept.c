@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.16 2003-10-07 20:57:43 thothy Exp $";
+char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.17 2003-12-28 22:32:40 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -604,13 +604,15 @@ void Intercept_DmaStatus_ReadWord(void)
 /* INTERCEPT_PSG_REGISTER(0xff8800 byte) */
 void Intercept_PSGRegister_ReadByte(void)
 {
- STRam[0xff8800] = PSG_ReadSelectRegister();
+  STRam[0xff8800] = PSG_ReadSelectRegister();
+  M68000_WaitState();
 }
 
 /* INTERCEPT_PSG_DATA(0xff8802 byte) */
 void Intercept_PSGData_ReadByte(void)
 {
- STRam[0xff8802] = PSG_ReadDataRegister();
+  STRam[0xff8802] = PSG_ReadDataRegister();
+  M68000_WaitState();
 }
 
 /* INTERCEPT_MICROWIREDATA(0xff8922 word) */
@@ -1007,13 +1009,15 @@ void Intercept_DmaStatus_WriteWord(void)
 /* INTERCEPT_PSG_REGISTER(0xff8800 byte) */
 void Intercept_PSGRegister_WriteByte(void)
 {
- PSG_WriteSelectRegister( STRam[0xff8800] );
+  PSG_WriteSelectRegister( STRam[0xff8800] );
+  M68000_WaitState();
 }
 
 /* INTERCEPT_PSG_DATA(0xff8802 byte) */
 void Intercept_PSGData_WriteByte(void)
 {
- PSG_WriteDataRegister( STRam[0xff8802] );
+  PSG_WriteDataRegister( STRam[0xff8802] );
+  M68000_WaitState();
 }
 
 /* INTERCEPT_MICROWIREDATA(0xff8922 word) */

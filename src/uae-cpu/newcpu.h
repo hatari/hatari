@@ -18,7 +18,7 @@
 #include "m68k.h"
 
 
-/* custom chip support */
+/* Special flags */
 #define SPCFLAG_STOP 2
 #define SPCFLAG_BUSERROR 4
 #define SPCFLAG_INT 8
@@ -27,9 +27,9 @@
 #define SPCFLAG_TRACE 0x40
 #define SPCFLAG_DOTRACE 0x80
 #define SPCFLAG_DOINT 0x100
-/*#define SPCFLAG_BLTNASTY 0x200 */
 #define SPCFLAG_EXEC 0x400
 #define SPCFLAG_MODE_CHANGE 0x800
+
 
 #ifndef SET_CFLG
 

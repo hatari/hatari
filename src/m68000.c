@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.24 2003-10-25 12:26:39 thothy Exp $";
+char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.25 2003-12-28 22:32:40 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -224,3 +224,13 @@ void M68000_Exception(Uint32 ExceptionVector)
   }
 }
 
+
+/*-----------------------------------------------------------------------*/
+/*
+  There seem to be wait states when a program accesses certain hardware
+  registers on the ST. Use this function to simulate these wait states.
+*/
+void M68000_WaitState(void)
+{
+  set_special(SPCFLAG_EXTRA_CYCLES);
+}
