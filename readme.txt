@@ -85,6 +85,8 @@ the debugger by pressing PAUSE.
 Beside those keys, there are some more usefull shortcuts:
 
  ALTGR-g  :  Grab a screenshot.
+ ALTGR-j  :  Toggle cursor-joystick emulation.
+ ALTGR-m  :  (Un-)grab mouse.
  ALTGR-r  :  Reset the ST (warm).
  ALTGR-c  :  Reset the ST (cold).
  ALTGR-q  :  Quit the emulator.
@@ -136,9 +138,9 @@ hard disk emulation and a GEMDOS based drive emulation.
 
 To use the ACSI hard disk emulation, you need a hard disk image file with a
 pre-installed HD driver in it. So either try to image your old ST hard disk
-or grab one from the internet, for example:
- http://www.k.kth.se/k98_sdy/hdimage.zip
-Perhaps we'll provide a tool for creating HD images soon, too.
+or grab one from the internet (if you can find one).
+Perhaps we'll provide a tool for creating HD images soon, too, or put an
+image on the Hatari website.
 
 With the GEMDOS based drive emulation, you can easily "mount" a folder from
 the host file system to a drive of the emulated Atari.

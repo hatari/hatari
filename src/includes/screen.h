@@ -102,6 +102,7 @@ extern int STScreenLineOffset[NUM_VISIBLE_LINES];
 extern unsigned long STRGBPalette[16];
 extern unsigned long ST2RGB[2048];
 extern SDL_Surface *sdlscrn;
+extern BOOL bGrabMouse;
 
 extern void Screen_Init(void);
 extern void Screen_UnInit(void);

@@ -95,22 +95,25 @@ void ShortCut_CheckKeys(void)
        Dialog_DoProperty();
        break;
      case SDLK_F11:                  /* Switch between fullscreen/windowed mode */
-       if( !bInFullScreen )
-         Screen_EnterFullScreen();
-        else
-         Screen_ReturnFromFullScreen();
-       break;
-     case SDLK_q:                    /* Quit program */
-       bQuitProgram = TRUE;
+       ShortCut_FullScreen();
        break;
      case SDLK_g:                    /* Grab screenshot */
        ScreenSnapShot_SaveScreen();
+       break;
+     case SDLK_j:                    /* Toggle cursor-joystick emulation */
+       ShortCut_JoystickCursorEmulation();
+       break;
+     case SDLK_m:                    /* Toggle mouse mode */
+       ShortCut_MouseMode();
        break;
      case SDLK_r:                    /* Warm reset */
        ShortCut_WarmReset();
        break;
      case SDLK_c:                    /* Cold reset */
        ShortCut_ColdReset();
+       break;
+     case SDLK_q:                    /* Quit program */
+       bQuitProgram = TRUE;
        break;
   }
 
@@ -140,112 +143,46 @@ void ShortCut_CheckKeys(void)
 
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
   Shortcut to toggle full-screen
 */
 void ShortCut_FullScreen(void)
 {
-/* FIXME */
-/*
-  // Is working?
-  if (bDirectDrawWorking) {
-    // Toggle full screen
-    if (bInFullScreen) {
-      // Did hold down SHIFT? Bring up insert floppy dialog
-      if (ShortCutKey.bShiftPressed) {
-        // Flip to Windows full-screen GDI surface(or back to Windows if fails)
-        DSurface_FlipToGDI();
-
-        // Open dialog(ignore SHIFT key)
-        PostMessage(hWnd,WM_COMMAND,ID_FLOPPYA_INSERTDISC,0);
-
-        // Back if sent user to Windows
-        if (!bFullScreenHold) {
-          // Return back to full-screen
-          Screen_EnterFullScreen();
-        }
-      }
-      else
-        Screen_ReturnFromFullScreen();
-    }
-    else {
-      // Did hold down SHIFT? Bring up insert floppy dialog
-      if (ShortCutKey.bShiftPressed) {
-        // Back to Windows mouse
-        View_ToggleWindowsMouse(MOUSE_WINDOWS);
-        // Open dialog(ignore SHIFT key)
-        ToolBar_Activate_FloppyA(TRUE);
-      }
-      else {
-        // Just pressed F11, so go to full-screen
-        Screen_EnterFullScreen();
-      }
-    }
+  if(!bInFullScreen)
+  {
+    Screen_EnterFullScreen();
   }
-*/
+  else
+  {
+    Screen_ReturnFromFullScreen();
+  }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Shortcut to toggle mouse mode
 */
 void ShortCut_MouseMode(void)
 {
-/* FIXME */
-/*
-  if (bInFullScreen) {
-    // Were we in our full-screen menu/Windows mouse mode?
-    if (bFullScreenHold && bWindowsMouseMode) {
-      SetMenu(hWnd,NULL);
-      bFullScreenHold = FALSE;            // Release screen hold
-      
-      View_ToggleWindowsMouse(MOUSE_ST);
+  bGrabMouse = !bGrabMouse;        /* Toggle flag */
 
-      return;
-    }
-    else {
-      // Flip to Windows full-screen GDI surface(or back to Windows if fails)
-      if (DSurface_FlipToGDI()) {
-        // Did hold down SHIFT? Bring up insert floppy dialog
-        if (ShortCutKey.bShiftPressed) {
-          // Open dialog(ignore SHIFT key)
-          PostMessage(hWnd,WM_COMMAND,ID_FLOPPYB_INSERTDISC_NORESET,0);
-        }
-      }
-    }
-    
-    // Do need to return to Windows to handle F12? Ie, low resolution, or GDI flip failed?
-    if (!bFullScreenHold) {
-      Screen_ReturnFromFullScreen();
-
-      // Did hold down SHIFT? Bring up insert floppy dialog
-      if (ShortCutKey.bShiftPressed) {
-        // Back to Windows mouse
-        View_ToggleWindowsMouse(MOUSE_WINDOWS);
-        // Open dialog(ignore SHIFT key)
-        ToolBar_Activate_FloppyB(TRUE);
-        // Return back to full-screen
-        Screen_EnterFullScreen();
-      }
-      else {
-        View_ToggleWindowsMouse(MOUSE_TOGGLE);
-      }
-    }
-  }
-  else {
-    // Did hold down SHIFT? Bring up insert floppy dialog
-    if (ShortCutKey.bShiftPressed) {
-      // Back to Windows mouse
-      View_ToggleWindowsMouse(MOUSE_WINDOWS);
-      // Open dialog(ignore SHIFT key)
-      ToolBar_Activate_FloppyB(TRUE);
+  /* If we are in windowed mode, toggle the mouse cursor mode now: */
+  if(!bInFullScreen)
+  {
+    if(bGrabMouse)
+    {
+      SDL_WM_GrabInput(SDL_GRAB_ON);
     }
     else
-      View_ToggleWindowsMouse(MOUSE_TOGGLE);
+    {
+      SDL_WM_GrabInput(SDL_GRAB_OFF);
+    }
   }
-*/
 }
+
 
 //-----------------------------------------------------------------------
 /*
@@ -293,15 +230,17 @@ void ShortCut_RecordAnimation(void)
 */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Shortcut to toggle joystick cursor emulation
 */
 void ShortCut_JoystickCursorEmulation(void)
 {
-  // Toggle it on/off
+  /* Toggle it on/off */
   Joy_ToggleCursorEmulation();
 }
+
 
 //-----------------------------------------------------------------------
 /*
@@ -366,7 +305,8 @@ void ShortCut_BossKey(void)
 */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Shortcut to 'Cold' reset
 */
@@ -375,7 +315,8 @@ void ShortCut_ColdReset(void)
   Reset_Cold();                 /* Reset emulator with 'cold' (clear all) */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Shortcut to 'Warm' reset
 */

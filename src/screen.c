@@ -57,6 +57,7 @@ unsigned long ST2RGB[2048];                       /* Table to convert ST Palette
 unsigned short int HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
 
 SDL_Surface *sdlscrn;                             /* The SDL screen surface */
+BOOL bGrabMouse = FALSE;                          /* Grab the mouse cursor in the window */
 
 
 /*-----------------------------------------------------------------------*/
@@ -395,7 +396,10 @@ void Screen_SetWindowRes(int Width,int Height,int BitCount)
     SDL_SetColors(sdlscrn, cols, 10, 2);
   }
 
-  SDL_WM_GrabInput(SDL_GRAB_OFF);  /* Un-grab mouse pointer in windowed mode */
+  if(!bGrabMouse)
+  {
+    SDL_WM_GrabInput(SDL_GRAB_OFF);  /* Un-grab mouse pointer in windowed mode */
+  }
 }
 
 
