@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-static char rcsid[] = "Hatari $Id: configuration.c,v 1.19 2003-04-28 17:48:54 thothy Exp $";
+static char rcsid[] = "Hatari $Id: configuration.c,v 1.20 2003-04-29 16:17:08 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -26,8 +26,9 @@ static char rcsid[] = "Hatari $Id: configuration.c,v 1.19 2003-04-28 17:48:54 th
 #include "cfgopts.h"
 
 
-BOOL bFirstTimeInstall = FALSE;  /* Has been run before? Used to set default joysticks etc... */
-CNF_PARAMS ConfigureParams;      /* List of configuration for the emulator */
+BOOL bFirstTimeInstall = FALSE;             /* Has been run before? Used to set default joysticks etc... */
+CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
+static char cfgName[MAX_FILENAME_LENGTH];   /* Stores the name of the configuration file */
 
 
 /* Used to load/save screen options */
@@ -151,6 +152,7 @@ struct Config_Tag configs_System[] =
 void Configuration_SetDefault(void)
 {
   int i;
+  char *homeDir;
 
   /* Clear parameters */
   Memory_Clear(&ConfigureParams, sizeof(CNF_PARAMS));
@@ -225,6 +227,13 @@ void Configuration_SetDefault(void)
   ConfigureParams.System.bAddressSpace24 = TRUE;
   ConfigureParams.System.bBlitter = FALSE;
   ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;
+
+  /* Initialize the configuration file name */
+  homeDir = getenv("HOME");
+  if(homeDir != NULL && homeDir[0] != 0 && strlen(homeDir) < sizeof(cfgName)-13)
+    sprintf(cfgName, "%s/.hatari.cfg", homeDir);
+  else
+    strcpy(cfgName, "hatari.cfg");
 }
 
 
@@ -239,7 +248,8 @@ static int Configuration_LoadSection(const char *pFilename, struct Config_Tag co
   ret = input_config(pFilename, configs, pSection);
 
    if(ret < 0)
-     fprintf(stderr, "Error while loading configuration file, section %s\n", pSection);
+     fprintf(stderr, "Can not load configuration file %s (section %s).\n",
+             cfgName, pSection);
 
   return ret;
 }
@@ -253,7 +263,6 @@ void Configuration_Load(void)
 {
   char sVersionString[VERSION_STRING_SIZE];
   int i,j;
-  char *cfgName = "hatari.cfg";
 
   if(Configuration_LoadSection(cfgName, configs_Screen, "[Screen]") < 0)
   {
@@ -309,7 +318,6 @@ static int Configuration_SaveSection(const char *pFilename, struct Config_Tag co
 void Configuration_Save(void)
 {
   int i,j;
-  char *cfgName = "hatari.cfg";
 
   if(Configuration_SaveSection(cfgName, configs_Screen, "[Screen]") < 0)
   {

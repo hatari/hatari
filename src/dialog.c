@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.31 2003-04-28 17:48:55 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.32 2003-04-29 16:17:07 thothy Exp $";
 
 #include <unistd.h>
 
@@ -54,14 +54,16 @@ extern void Screen_DidResolutionChange(void);
 #define MAINDLG_JOY      9
 #define MAINDLG_KEYBD    10
 #define MAINDLG_DEVICES  11
-#define MAINDLG_NORESET  12
-#define MAINDLG_RESET    13
-#define MAINDLG_OK       14
-#define MAINDLG_CANCEL   15
-#define MAINDLG_QUIT     16
+#define MAINDLG_LOADCFG  12
+#define MAINDLG_SAVECFG  13
+#define MAINDLG_NORESET  14
+#define MAINDLG_RESET    15
+#define MAINDLG_OK       16
+#define MAINDLG_CANCEL   17
+#define MAINDLG_QUIT     18
 SGOBJ maindlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 36,20, NULL },
+  { SGBOX, 0, 0, 0,0, 36,22, NULL },
   { SGTEXT, 0, 0, 10,1, 16,1, "Hatari main menu" },
   { SGBUTTON, 0, 0, 4,4, 12,1, "About" },
   { SGBUTTON, 0, 0, 4,6, 12,1, "Discs" },
@@ -73,11 +75,13 @@ SGOBJ maindlg[] =
   { SGBUTTON, 0, 0, 20,8, 12,1, "Joysticks" },
   { SGBUTTON, 0, 0, 20,10, 12,1, "Keyboard" },
   { SGBUTTON, 0, 0, 20,12, 12,1, "Devices" },
-  { SGRADIOBUT, 0, 0, 2,16, 10,1, "No Reset" },
-  { SGRADIOBUT, 0, 0, 2,18, 10,1, "Reset ST" },
-  { SGBUTTON, 0, 0, 14,16, 8,3, "Okay" },
-  { SGBUTTON, 0, 0, 25,18, 8,1, "Cancel" },
-  { SGBUTTON, 0, 0, 25,16, 8,1, "Quit" },
+  { SGBUTTON, 0, 0, 3,15, 14,1, "Load config." },
+  { SGBUTTON, 0, 0, 19,15, 14,1, "Save config." },
+  { SGRADIOBUT, 0, 0, 2,18, 10,1, "No Reset" },
+  { SGRADIOBUT, 0, 0, 2,20, 10,1, "Reset ST" },
+  { SGBUTTON, 0, 0, 14,18, 8,3, "Okay" },
+  { SGBUTTON, 0, 0, 25,20, 8,1, "Cancel" },
+  { SGBUTTON, 0, 0, 25,18, 8,1, "Quit" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -478,18 +482,12 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 
   /* Copy details to configuration, so can be saved out or set on reset */
   ConfigureParams = DialogParams;
-  /* And write to configuration now, so don't loose */
-  Configuration_Save();
 
   /* Copy details to global, if we reset copy them all */
   Dialog_CopyDetailsFromConfiguration(NeedReset);
 
   /* Set keyboard remap file */
   /*Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);*/
-
-  /* Resize window if need */
-  /*if(!ConfigureParams.TOSGEM.bUseExtGEMResolutions)
-    View_ResizeWindowToFull();*/
 
   /* Did the user changed the CPU mode? */
   check_prefs_changed_cpu(DialogParams.System.nCpuLevel, DialogParams.System.bCompatibleCpu);
@@ -1196,6 +1194,28 @@ int Dialog_MainDlg(BOOL *bReset)
       case MAINDLG_DEVICES:
         SDLGui_CenterDlg(devicedlg);
         SDLGui_DoDialog(devicedlg);
+        break;
+      case MAINDLG_LOADCFG:
+        {
+          CNF_PARAMS tmpParams;
+          /* Configuration_Load uses the variables from ConfigureParams.
+           * That's why we have to temporarily back it up here */
+          tmpParams = ConfigureParams;
+          Configuration_Load();
+          DialogParams = ConfigureParams;
+          ConfigureParams = tmpParams;
+        }
+        break;
+      case MAINDLG_SAVECFG:
+        {
+          CNF_PARAMS tmpParams;
+          /* Configuration_Save uses the variables from ConfigureParams.
+           * That's why we have to temporarily back it up here */
+          tmpParams = ConfigureParams;
+          ConfigureParams = DialogParams;
+          Configuration_Save();
+          ConfigureParams = tmpParams;
+        }
         break;
       case MAINDLG_QUIT:
         bQuitProgram = TRUE;
