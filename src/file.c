@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.20 2005-03-10 09:41:38 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.21 2005-03-10 09:45:21 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -162,7 +162,8 @@ void File_CleanFileName(char *pszFileName)
 void File_AddSlashToEndFileName(char *pszFileName)
 {
   /* Check dir/filenames */
-  if (strlen(pszFileName)!=0) {
+  if (strlen(pszFileName)!=0)
+  {
     if (pszFileName[strlen(pszFileName)-1]!='/')
       strcat(pszFileName,"/");  /* Must use end slash */
   }
@@ -246,8 +247,10 @@ void File_RemoveFileNameTrailingSlashes(char *pszFileName)
 
   /* Do have slash at end of filename? */
   Length = strlen(pszFileName);
-  if (Length>=3) {
-    if (pszFileName[Length-1]=='/') {     /* Yes, have one previous? */
+  if (Length>=3)
+  {
+    if (pszFileName[Length-1]=='/')       /* Yes, have one previous? */
+    {
       if (pszFileName[Length-2]=='/')
         pszFileName[Length-1] = '\0';     /* then remove it! */
     }
@@ -392,7 +395,8 @@ int File_Length(char *pszFileName)
   FILE *DiscFile;
   int FileSize;
   DiscFile = fopen(pszFileName, "rb");
-  if (DiscFile!=NULL) {
+  if (DiscFile!=NULL)
+  {
     fseek(DiscFile, 0, SEEK_END);
     FileSize = ftell(DiscFile);
     fseek(DiscFile, 0, SEEK_SET);
@@ -414,7 +418,8 @@ BOOL File_Exists(char *pszFileName)
 
   /* Attempt to open file */
   DiscFile = fopen(pszFileName, "rb");
-  if (DiscFile!=NULL) {
+  if (DiscFile!=NULL)
+  {
     fclose(DiscFile);
     return(TRUE);
   }
@@ -481,7 +486,7 @@ BOOL File_FindPossibleExtFileName(char *pszFileName, const char *ppszExts[])
   File_splitpath(pszFileName, szSrcDir, szSrcName, szSrcExt);
 
   /* Scan possible extensions */
-  while(ppszExts[i] && !bFileNameFound)
+  while(ppszExts[i] && !bFileExists)
   {
     /* Re-build with new file extension */
     File_makepath(szTempFileName, szSrcDir, szSrcName, ppszExts[i]);
