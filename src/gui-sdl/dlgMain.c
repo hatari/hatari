@@ -6,7 +6,7 @@
 
   The main dialog.
 */
-char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.6 2005-02-12 23:11:28 thothy Exp $";
+char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.7 2005-04-05 14:20:58 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -123,7 +123,7 @@ int Dialog_MainDlg(BOOL *bReset)
           /* Configuration_Load uses the variables from ConfigureParams.
            * That's why we have to temporarily back it up here */
           tmpParams = ConfigureParams;
-          Configuration_Load();
+          Configuration_Load(NULL);
           DialogParams = ConfigureParams;
           ConfigureParams = tmpParams;
         }
