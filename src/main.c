@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.41 2003-04-29 16:17:08 thothy Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.42 2003-06-08 13:54:28 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -225,10 +225,11 @@ void Main_ReadParameters(int argc, char *argv[])
                "     or -d <dir>         (<dir> = root directory).\n"
                "  --hdimage <imagename> Emulate an ST harddrive with an image.\n"
                "  --tos <file>          Use TOS image <file>.\n"
-               "  --cpulevel x          Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
+               "  --cpulevel <x>        Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
                "  --compatible          Use a more compatible (but slower) 68000 CPU mode.\n"
                "  --blitter             Enable blitter emulation (unstable!)\n"
                "  --vdi                 Use extended VDI resolution\n"
+               "  --memsize <x>         Memory size in MB (x = 0, 1, 2 or 4; 0 for 512kB)\n"
               );
         exit(0);
       }
@@ -267,26 +268,31 @@ void Main_ReadParameters(int argc, char *argv[])
       }
       else if (!strcmp(argv[i],"--hdimage"))
       {
-	if( argc>i+1 && strlen(argv[i+1])<=MAX_FILENAME_LENGTH )
+	if(i+1 >= argc)
+          fprintf(stderr, "Missing argument for --hdimage\n");
+        else
         {
-          if( HDC_Init(argv[i+1]) == TRUE)
+          if(strlen(argv[i+1]) <= MAX_FILENAME_LENGTH)
           {
+            ConfigureParams.HardDisc.bUseHardDiscImage = TRUE;
             strcpy(ConfigureParams.HardDisc.szHardDiscImage, argv[i+1]);
-            printf("Hard drive image %s mounted.\n", argv[i+1]);
-            i++;
           }
-          else
-          {
-            printf("Couldn't open file: %s, or no partitions\n", argv[i+1]);
-          }
+          else fprintf(stderr, "HD image file name too long!\n");
+          i += 1;
         }
       }
       else if (!strcmp(argv[i],"--harddrive") || !strcmp(argv[i],"-d"))
       {
-        if( i+1<argc && strlen(argv[i+1])<=MAX_PATH )  /* both parameters exist */
+	if(i+1 >= argc)
+          fprintf(stderr, "Missing argument for --harddrive\n");
+        else
         {
-          strcpy(ConfigureParams.HardDisc.szHardDiscDirectories[0], argv[i+1]);
-          GemDOS_InitDrives();
+          if(strlen(argv[i+1]) <= MAX_PATH )
+          {
+            ConfigureParams.HardDisc.bUseHardDiscDirectories = TRUE;
+            strcpy(ConfigureParams.HardDisc.szHardDiscDirectories[0], argv[i+1]);
+          }
+          else fprintf(stderr, "HD directory name too long!\n");
           i += 1;
         }
       }
@@ -317,9 +323,25 @@ void Main_ReadParameters(int argc, char *argv[])
         bEnableBlitter = TRUE;
         ConfigureParams.System.bBlitter = TRUE;
       }
-      else if(!strcmp(argv[i], "--vdi"))
+      else if (!strcmp(argv[i], "--vdi"))
       {
         bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions = TRUE;
+      }
+      else if (!strcmp(argv[i], "--memsize"))
+      {
+        int memorysize = MEMORY_SIZE_1Mb;
+        if(i+1 >= argc)
+          fprintf(stderr,"Missing argument for --memsize.\n");
+        else
+          memorysize = atoi(argv[++i]);
+        if(memorysize == 0)
+          ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_512Kb;
+        else if(memorysize == 2)
+          ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_2Mb;
+        else if(memorysize == 4)
+          ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_4Mb;
+        else  /* Use 1MB as default */
+          ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_1Mb;
       }
       else
       {
@@ -358,6 +380,21 @@ void Main_Init(void)
   Audio_Init();
   Keymap_Init();
 
+  /* Init HD emulation */
+  if(ConfigureParams.HardDisc.bUseHardDiscImage)
+  {
+    char *szHardDiscImage = ConfigureParams.HardDisc.szHardDiscImage;
+    if( HDC_Init(szHardDiscImage) )
+      printf("Hard drive image %s mounted.\n", szHardDiscImage);
+    else
+      printf("Couldn't open HD file: %s, or no partitions\n", szHardDiscImage);
+  }
+  GemDOS_Init();
+  if(ConfigureParams.HardDisc.bUseHardDiscDirectories)
+  {
+    GemDOS_InitDrives();
+  }
+
   if(Reset_Cold())              /* Reset all systems, load TOS image */
   {
     /* If loading of the TOS failed, we bring up the GUI to let the
@@ -371,7 +408,6 @@ void Main_Init(void)
     exit(-2);
   }
 
-  GemDOS_Init();
   Intercept_Init();
   Joy_Init();
   Sound_Init();
