@@ -6,7 +6,7 @@
 
   Misc functions
 */
-static char rcsid[] = "Hatari $Id: misc.c,v 1.4 2003-03-23 19:22:24 thothy Exp $";
+static char rcsid[] = "Hatari $Id: misc.c,v 1.5 2003-03-24 10:31:47 emanne Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -111,7 +111,7 @@ int Misc_LimitInt(int Value, int MinRange, int MaxRange)
 */
 unsigned char Misc_ConvertToBCD(unsigned short int Value)
 {
-  return (((Value/10)%10)<<4) | (Value%10);
+  return (((Value/10))<<4) | (Value%10);
 }
 
 

@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-static char rcsid[] = "Hatari $Id: ikbd.c,v 1.13 2003-03-09 15:39:07 thothy Exp $";
+static char rcsid[] = "Hatari $Id: ikbd.c,v 1.14 2003-03-24 10:31:48 emanne Exp $";
 
 #include <time.h>
 
@@ -138,7 +138,7 @@ BOOL bByteInTransitToACIA = FALSE;      /* Is a byte being sent to the ACIA from
     Bit 7 - This signals the state of the IRQ pins; this bit make it possible to switch several
       IRQ lines on one interrupt input. In cases where an interrupt is program-generated, bit 7
       can tell which IC cut off the interrupt.
-        
+
   ST ACIA:-
     Note CTS,DCD and RTS are not connected! Phew!
     The keyboard ACIA are address 0xfffc000 and 0xfffc02.
@@ -308,11 +308,11 @@ void IKBD_CheckForDoubleClicks(void)
         Keyboard.LButtonDblClk = 1;
       else {
         Keyboard.LButtonDblClk = 4;           /* Otherwise, check where to begin to give 1111000011110000 pattern */
-        if ((Keyboard.LButtonHistory&0x7)==0) 
+        if ((Keyboard.LButtonHistory&0x7)==0)
           Keyboard.LButtonDblClk = 8;
-        else if ((Keyboard.LButtonHistory&0x3)==0) 
+        else if ((Keyboard.LButtonHistory&0x3)==0)
           Keyboard.LButtonDblClk = 7;
-        else if ((Keyboard.LButtonHistory&0x1)==0) 
+        else if ((Keyboard.LButtonHistory&0x1)==0)
           Keyboard.LButtonDblClk = 6;
       }
     }
@@ -330,11 +330,11 @@ void IKBD_CheckForDoubleClicks(void)
         Keyboard.RButtonDblClk = 1;
       else {
         Keyboard.RButtonDblClk = 4;           /* Otherwise, check where to begin to give 1111000011110000 pattern */
-        if ((Keyboard.RButtonHistory&0x7)==0) 
+        if ((Keyboard.RButtonHistory&0x7)==0)
           Keyboard.RButtonDblClk = 8;
-        else if ((Keyboard.RButtonHistory&0x3)==0) 
+        else if ((Keyboard.RButtonHistory&0x3)==0)
           Keyboard.RButtonDblClk = 7;
-        else if ((Keyboard.RButtonHistory&0x1)==0) 
+        else if ((Keyboard.RButtonHistory&0x1)==0)
           Keyboard.RButtonDblClk = 6;
       }
     }
@@ -640,7 +640,7 @@ void IKBD_SendAutoKeyboardCommands(void)
 
   /* Handle Joystick/Mouse fire buttons */
   IKBD_DuplicateMouseFireButtons();
-  
+
   /* Send any packets which are to be reported by mouse action */
   IKBD_SendOnMouseAction();
 
@@ -793,7 +793,7 @@ void IKBD_Cmd_Reset(void)
         ;  position report
         ;  where y=1, mouse key press causes absolute report
         ;  and x=1, mouse key release causes absolute report
-        ; mss=100, mouse buttons act like keys 
+        ; mss=100, mouse buttons act like keys
 */
 void IKBD_Cmd_MouseAction(void)
 {
@@ -857,7 +857,7 @@ void IKBD_Cmd_MouseCursorKeycodes(void)
 {
   KeyboardProcessor.MouseMode = AUTOMODE_MOUSECURSOR;
   KeyboardProcessor.Mouse.KeyCodeDeltaX = Keyboard.InputBuffer[1];
-  KeyboardProcessor.Mouse.KeyCodeDeltaY = Keyboard.InputBuffer[2];  
+  KeyboardProcessor.Mouse.KeyCodeDeltaY = Keyboard.InputBuffer[2];
 #ifdef DEBUG_OUTPUT_IKBD
   Debug_IKBD("IKBD_Cmd_MouseCursorKeycodes %d,%d\n",(int)KeyboardProcessor.Mouse.KeyCodeDeltaX,(int)KeyboardProcessor.Mouse.KeyCodeDeltaY);
   Debugger_TabIKBD_AddListViewItem("MouseCursorKeycodes %d,%d",(int)KeyboardProcessor.Mouse.KeyCodeDeltaX,(int)KeyboardProcessor.Mouse.KeyCodeDeltaY);
@@ -965,7 +965,7 @@ void IKBD_Cmd_ReadAbsMousePos(void)
   YLSB
 */
 void IKBD_Cmd_SetInternalMousePos(void)
-{  
+{
   /* Setting these do not clip internal position(this happens on next update) */
   KeyboardProcessor.Abs.X = (((unsigned int)Keyboard.InputBuffer[2])<<8) | (unsigned int)Keyboard.InputBuffer[3];
   KeyboardProcessor.Abs.Y = (((unsigned int)Keyboard.InputBuffer[4])<<8) | (unsigned int)Keyboard.InputBuffer[5];
@@ -1230,6 +1230,12 @@ void IKBD_Cmd_SetClock(void)
     Returns:
       0xFC  ; time-of-day event header
       YY    ; year (2 least significant digits)
+      There seems to be a problem with the bcd conversion of the year
+      when year/10 >= 10. So the bcd conversion keeps the part > 10.
+      If you put year%100 here (as says the doc), and put a real bcd
+      conversion function in misc.c, then you end up with year 2031
+      instead of 2003...
+
       MM    ; month
       DD    ; day
       hh    ; hour
@@ -1248,13 +1254,12 @@ void IKBD_Cmd_ReadClock(void)
   /* Return packet */
   IKBD_AddKeyToKeyboardBuffer(0xFC);
   /* Return time-of-day clock as yy-mm-dd-hh-mm-ss as BCD */
-  IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_year%100)); /* yy - year (2 least significant digits) */
+  IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_year)); /* yy - year (2 least significant digits) */
   IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_mon+1));    /* mm - Month */
   IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_mday));     /* dd - Day */
   IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_hour));     /* hh - Hour */
   IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_min));      /* mm - Minute */
   IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_sec));      /* ss - Second */
-
 #ifdef DEBUG_OUTPUT_IKBD
   Debug_IKBD("IKBD_Cmd_ReadClock\n");
   Debugger_TabIKBD_AddListViewItem("ReadClock");
@@ -1344,7 +1349,7 @@ void IKBD_RunKeyboardCommand(void)
 
       return;
     }
-    
+
     i++;
   }
 
@@ -1372,9 +1377,7 @@ void IKBD_SendByteToKeyboardProcessor(unsigned short bl)
 unsigned short IKBD_GetByteFromACIA(void)
 {
   /* ACIA is now reset */
-  ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__RX_BUFFER_FULL;
-  ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__INTERRUPT_REQUEST;
-  ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__OVERRUN_ERROR;
+  ACIAStatusRegister &= ~(ACIA_STATUS_REGISTER__RX_BUFFER_FULL | ACIA_STATUS_REGISTER__INTERRUPT_REQUEST | ACIA_STATUS_REGISTER__OVERRUN_ERROR);
 
   /* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
   MFP_GPIP |= 0x10;
@@ -1396,7 +1399,7 @@ void IKBD_InterruptHandler_ACIA(void)
   /* Copy keyboard byte, ready for read from $fffc02 */
   ACIAByte = Keyboard.Buffer[Keyboard.BufferHead++];
   Keyboard.BufferHead &= KEYBOARD_BUFFER_MASK;
-  
+
   /* Did we get an over-run? Ie byte has arrived from keyboard processor BEFORE CPU has read previous one from ACIA */
   if (ACIAStatusRegister&ACIA_STATUS_REGISTER__RX_BUFFER_FULL)
     ACIAStatusRegister |= ACIA_STATUS_REGISTER__OVERRUN_ERROR;  /* Set over-run */
@@ -1455,7 +1458,7 @@ void IKBD_AddKeyToKeyboardBuffer(unsigned char Data)
     /* Add byte to our buffer */
     Keyboard.Buffer[Keyboard.BufferTail++] = Data;
     Keyboard.BufferTail &= KEYBOARD_BUFFER_MASK;
-    
+
     /* We have character ready to transmit from the ACIA - see if can send it now */
     IKBD_SendByteToACIA();
   }
