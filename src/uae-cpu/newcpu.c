@@ -1356,6 +1356,15 @@ static void m68k_run_1 (void)
 
 	cycles = (*cpufunctbl[cft_map(opcode)])(opcode);
 
+	/* Unfortunately needed at the moment: */
+	/* Check if we had an bus/address error and correct the PC then... */
+	if(busAddressErrPC) {
+	    /*write_log("Fixed PC to $%x instead of $%x after bus-/address error!\n",
+	              busAddressErrPC, m68k_getpc());*/
+	    m68k_setpc(busAddressErrPC);
+	    busAddressErrPC = 0;
+	}
+
 #ifdef DEBUG_PREFETCH
 	if (memcmp (saved_bytes, oldpcp, 20) != 0) {
 	    fprintf (stderr, "Self-modifying code detected.\n");
