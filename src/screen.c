@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.29 2004-04-19 08:53:34 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.30 2004-07-13 16:33:29 thothy Exp $";
 
 #include <SDL.h>
 
@@ -40,7 +40,9 @@ char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.29 2004-04-19 08:53:34 thothy Ex
 #include "video.h"
 
 /* SDL Video attributes for fullscreen */
-static const unsigned int sdlvmode = SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE;
+static const unsigned int sdlvmode = SDL_HWSURFACE|/*SDL_DOUBLEBUF|*/SDL_FULLSCREEN|SDL_HWPALETTE;
+/* SDL_DOUBLEBUF is a good idea, but the GUI doesn't work with double buffered
+ * screens yet, so double buffering is currently disabled. */
 
 SCREENDRAW ScreenDrawWindow[4];                   /* Set up with details of drawing functions for ST_xxx_RES */
 SCREENDRAW ScreenDrawFullScreen[4];               /* And for full-screen */
