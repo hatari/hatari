@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.29 2003-04-12 16:31:01 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.30 2003-04-25 21:11:59 thothy Exp $";
 
 #include <unistd.h>
 
@@ -551,7 +551,7 @@ void Dialog_CopyDetailsFromConfiguration(BOOL bReset)
   {
     bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions;
     bUseHighRes = (!bUseVDIRes && ConfigureParams.Screen.bUseHighRes)
-	              || (bUseVDIRes && ConfigureParams.TOSGEM.nGEMColours==GEMCOLOUR_2);
+                   || (bUseVDIRes && ConfigureParams.TOSGEM.nGEMColours==GEMCOLOUR_2);
     VDI_SetResolution(ConfigureParams.TOSGEM.nGEMResolution, ConfigureParams.TOSGEM.nGEMColours);
   }
 
@@ -643,7 +643,6 @@ void Dialog_DiscDlg(void)
           {
             Floppy_ZipInsertDiscIntoDrive(0, tmpname, zip_path); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
             File_ShrinkName(dlgnamea, tmpname, discdlg[DISCDLG_DISCA].w);
-            Memory_Free(zip_path);
           }
           else
           {
@@ -663,7 +662,6 @@ void Dialog_DiscDlg(void)
           {
             Floppy_ZipInsertDiscIntoDrive(1, tmpname, zip_path); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
             File_ShrinkName(dlgnameb, tmpname, discdlg[DISCDLG_DISCB].w);
-            Memory_Free(zip_path);
           }
           else
           {
@@ -724,6 +722,8 @@ void Dialog_DiscDlg(void)
   /* Read values from dialog */
   DialogParams.DiscImage.bAutoInsertDiscB = (discdlg[DISCDLG_AUTOB].state & SG_SELECTED);
   DialogParams.HardDisc.bBootFromHardDisc = (discdlg[DISCDLG_BOOTHD].state & SG_SELECTED);
+
+  Memory_Free(zip_path);
 }
 
 
@@ -784,9 +784,9 @@ void Dialog_TosGemDlg(void)
   for(i=0; i<3; i++)
   {
     if(tosgemdlg[DLGTOSGEM_RES640 + i].state & SG_SELECTED)
-	  DialogParams.TOSGEM.nGEMResolution = GEMRES_640x480 + i;
+      DialogParams.TOSGEM.nGEMResolution = GEMRES_640x480 + i;
     if(tosgemdlg[DLGTOSGEM_BPP1 + i].state & SG_SELECTED)
-	  DialogParams.TOSGEM.nGEMColours = GEMCOLOUR_2 + i;
+      DialogParams.TOSGEM.nGEMColours = GEMCOLOUR_2 + i;
   }
 
 }
