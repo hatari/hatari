@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: memory.c,v 1.7 2003-04-01 16:11:39 thothy Exp $";
+static char rcsid[] = "Hatari $Id: memory.c,v 1.8 2003-04-01 20:59:55 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -748,7 +748,7 @@ void memory_init(uae_u32 f_STMemSize, uae_u32 f_TTMemSize, uae_u32 f_RomMemStart
         map_banks(&ROMmem_bank, 0xFC0000 >> 16, 0x3);
         map_banks(&BusErrMem_bank, 0xE00000 >> 16, 0x10);
     }
-    else if(ROMmem_start == 0xE00000)
+    else if(f_RomMemStart == 0xE00000)
     {
         map_banks(&ROMmem_bank, 0xE00000 >> 16, 0x10);
         map_banks(&BusErrMem_bank, 0xFC0000 >> 16, 0x3);
