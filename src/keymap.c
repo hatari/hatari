@@ -6,12 +6,11 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.16 2004-04-19 08:53:33 thothy Exp $";
+char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.17 2005-02-13 16:18:49 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
 #include "keymap.h"
-#include "memAlloc.h"
 #include "misc.h"
 #include "configuration.h"
 #include "ikbd.h"
@@ -341,7 +340,7 @@ static char DebounceExtendedKeys[] =
 */
 void Keymap_Init(void)
 {
-  Memory_Clear(SdlSymToSdlScan, sizeof(SdlSymToSdlScan));
+  memset(SdlSymToSdlScan, 0, sizeof(SdlSymToSdlScan));      /* Clear array */
   Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);
 }
 

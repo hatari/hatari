@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.25 2005-01-18 23:33:24 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.26 2005-02-13 16:18:50 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -23,7 +23,6 @@ char Video_rcsid[] = "Hatari $Id: video.c,v 1.25 2005-01-18 23:33:24 thothy Exp 
 #include "ioMem.h"
 #include "keymap.h"
 #include "m68000.h"
-#include "memAlloc.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "screen.h"
@@ -550,7 +549,7 @@ void Video_SetScreenRasters(void)
 {
   pHBLPaletteMasks = HBLPaletteMasks;
   pHBLPalettes = HBLPalettes;
-  Memory_Clear(pHBLPaletteMasks,sizeof(unsigned long)*NUM_VISIBLE_LINES);
+  memset(pHBLPaletteMasks, 0, sizeof(unsigned long)*NUM_VISIBLE_LINES);  /* Clear array */
 }
 
 

@@ -4,13 +4,12 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.8 2005-02-12 23:11:28 thothy Exp $";
+char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.9 2005-02-13 16:18:52 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
 #include "sdlgui.h"
-#include "memAlloc.h"
 #include "file.h"
 #include "floppy.h"
 #include "gemdos.h"
@@ -85,7 +84,12 @@ void Dialog_DiscDlg(void)
   char *zip_path;
 
   /* Allocate memory for tmpname and zip_path: */
-  tmpname = Memory_Alloc(2 * FILENAME_MAX);
+  tmpname = malloc(2 * FILENAME_MAX);
+  if (!tmpname)
+  {
+    perror("Dialog_DiscDlg");
+    return;
+  }
   zip_path = tmpname + FILENAME_MAX;
   zip_path[0] = 0;
 
@@ -249,5 +253,5 @@ void Dialog_DiscDlg(void)
   DialogParams.DiscImage.bAutoInsertDiscB = (discdlg[DISCDLG_AUTOB].state & SG_SELECTED);
   DialogParams.HardDisc.bBootFromHardDisc = (discdlg[DISCDLG_BOOTHD].state & SG_SELECTED);
 
-  Memory_Free(tmpname);
+  free(tmpname);
 }

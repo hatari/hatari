@@ -6,14 +6,13 @@
 
   DIM Disc support.
 */
-char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.2 2004-06-15 21:49:53 thothy Exp $";
+char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.3 2005-02-13 16:18:48 thothy Exp $";
 
 #include <zlib.h>
 
 #include "main.h"
 #include "file.h"
 #include "floppy.h"
-#include "memAlloc.h"
 #include "dim.h"
 
 #undef SAVE_TO_DIM_IMAGES

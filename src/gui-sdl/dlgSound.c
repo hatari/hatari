@@ -4,12 +4,11 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.4 2005-02-12 23:11:28 thothy Exp $";
+char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.5 2005-02-13 16:18:52 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
-#include "memAlloc.h"
 #include "sdlgui.h"
 #include "file.h"
 #include "sound.h"
@@ -60,7 +59,12 @@ void Dialog_SoundDlg(void)
   char *tmpname;
 
   /* Allocate memory for tmpname: */
-  tmpname = Memory_Alloc(FILENAME_MAX);
+  tmpname = malloc(FILENAME_MAX);
+  if (!tmpname)
+  {
+    perror("Dialog_SoundDlg");
+    return;
+  }
 
   SDLGui_CenterDlg(sounddlg);
 
@@ -135,5 +139,5 @@ void Dialog_SoundDlg(void)
   else
     DialogParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
 
-  Memory_Free(tmpname);
+  free(tmpname);
 }

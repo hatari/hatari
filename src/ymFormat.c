@@ -6,12 +6,11 @@
 
   YM File output, for use with STSound etc...
 */
-char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.8 2003-10-18 07:46:55 thothy Exp $";
+char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.9 2005-02-13 16:18:50 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
 #include "file.h"
-#include "memAlloc.h"
 #include "misc.h"
 #include "psg.h"
 #include "screen.h"
@@ -43,7 +42,7 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
   }
 
   /* Create YM workspace */
-  pYMWorkspace = (unsigned char *)Memory_Alloc(YM_RECORDSIZE);
+  pYMWorkspace = (unsigned char *)malloc(YM_RECORDSIZE);
 
   if (!pYMWorkspace)
   {
@@ -104,7 +103,7 @@ void YMFormat_FreeRecording(void)
 {
   /* Free workspace */
   if (pYMWorkspace)
-    Memory_Free(pYMWorkspace);
+    free(pYMWorkspace);
   pYMWorkspace = NULL;
 
   /* Stop recording */
@@ -160,7 +159,7 @@ BOOL YMFormat_ConvertToStreams(void)
   int Reg, Count;
 
   /* Allocate new workspace to convert data to */
-  pNewYMWorkspace = (unsigned char *)Memory_Alloc(YM_RECORDSIZE);
+  pNewYMWorkspace = (unsigned char *)malloc(YM_RECORDSIZE);
   if (pNewYMWorkspace) {
     /* Convert data, first copy over header */
     pYMData = pYMWorkspace;
@@ -184,7 +183,7 @@ BOOL YMFormat_ConvertToStreams(void)
     }
 
     /* Delete old workspace and assign new */
-    Memory_Free(pYMWorkspace);
+    free(pYMWorkspace);
     pYMWorkspace = pNewYMWorkspace;
 
     return(TRUE);

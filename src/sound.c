@@ -19,17 +19,15 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.15 2004-04-23 15:33:59 thothy Exp $";
+char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.16 2005-02-13 16:18:49 thothy Exp $";
 
 #include <SDL_types.h>
 
 #include "main.h"
 #include "audio.h"
 #include "debug.h"
-#include "dialog.h"
 #include "file.h"
 #include "int.h"
-#include "memAlloc.h"
 #include "memorySnapShot.h"
 #include "misc.h"
 #include "psg.h"
@@ -256,7 +254,7 @@ void Sound_ClearMixBuffer(void)
 {
   Audio_Lock();
 
-  Memory_Clear(MixBuffer, MIXBUFFER_SIZE);      /* Clear buffer */
+  memset(MixBuffer, 0, MIXBUFFER_SIZE);      /* Clear buffer */
 
   Audio_Unlock();
 }

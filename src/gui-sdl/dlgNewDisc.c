@@ -4,14 +4,13 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgNewDisc_rcsid[] = "Hatari $Id: dlgNewDisc.c,v 1.2 2005-02-12 23:11:28 thothy Exp $";
+char DlgNewDisc_rcsid[] = "Hatari $Id: dlgNewDisc.c,v 1.3 2005-02-13 16:18:52 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "createBlankImage.h"
 #include "dialog.h"
 #include "sdlgui.h"
-#include "memAlloc.h"
 #include "file.h"
 
 
@@ -65,7 +64,12 @@ void DlgNewDisc_Main(void)
  	SDLGui_CenterDlg(newdiscdlg);
 
 	/* Initialize disc image name: */
-	szNewDiscName = Memory_Alloc(FILENAME_MAX);
+	szNewDiscName = malloc(FILENAME_MAX);
+	if (!szNewDiscName)
+	{
+		perror("DlgNewDisc_Main");
+		return;
+	}
 	strcpy(szNewDiscName, DialogParams.DiscImage.szDiscImageDirectory);
 	if (strlen(szNewDiscName) < FILENAME_MAX-12)
 		strcat(szNewDiscName, "new_disc.st");
@@ -115,5 +119,5 @@ void DlgNewDisc_Main(void)
 	}
 	while (but != DLGNEWDISC_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
 
-	Memory_Free(szNewDiscName);
+	free(szNewDiscName);
 }

@@ -6,55 +6,15 @@
 
   Misc functions
 */
-char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.9 2004-04-19 08:53:34 thothy Exp $";
+char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.10 2005-02-13 16:18:49 thothy Exp $";
 
 #include <ctype.h>
 
 #include "main.h"
-#include "debug.h"
-#include "errlog.h"
-#include "file.h"
-#include "memAlloc.h"
 #include "misc.h"
 
 
 static long RandomNum;
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Fill end of string out with spaces
-*/
-void Misc_PadStringWithSpaces(char *pszString,int nChars)
-{
-  int i;
-
-  for(i=nChars; i>=(int)strlen(pszString); i--) {
-    pszString[i] = ' ';
-  }
-  pszString[nChars] = '\0';
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Remove any spaces from string
-*/
-void Misc_RemoveSpacesFromString(char *pszSrcString, char *pszDestString)
-{
-  int i=0,j=0;
-
-  /* Copy string */
-  while(pszSrcString[i]!='\0') {
-    if (pszSrcString[i]!=' ') {  /* Copy character if not a white-space */
-      pszDestString[j] = pszSrcString[i];
-      j++;
-    }
-    i++;
-  }
-
-  pszDestString[j] = '\0';      /* Term */
-}
 
 
 /*-----------------------------------------------------------------------*/

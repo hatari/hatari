@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.16 2004-10-31 17:32:50 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.17 2005-02-13 16:18:48 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -18,11 +18,7 @@ char File_rcsid[] = "Hatari $Id: file.c,v 1.16 2004-10-31 17:32:50 thothy Exp $"
 #include "main.h"
 #include "dialog.h"
 #include "file.h"
-#include "floppy.h"
 #include "createBlankImage.h"
-#include "memAlloc.h"
-#include "misc.h"
-
 
 
 #if defined(__BEOS__) || (defined(__sun) && defined(__SVR4))
@@ -586,10 +582,16 @@ void File_ShrinkName(char *pDestFileName, char *pSrcFileName, int maxlen)
 */
 void File_MakeAbsoluteName(char *pFileName)
 {
-  char *pTempName = Memory_Alloc(FILENAME_MAX);
+  char *pTempName;
   int inpos, outpos;
 
   inpos = 0;
+  pTempName = malloc(FILENAME_MAX);
+  if (!pTempName)
+  {
+    perror("File_MakeAbsoluteName");
+	return;
+  }
 
   /* Is it already an absolute name? */
   if(pFileName[0] == '/')
@@ -643,5 +645,5 @@ void File_MakeAbsoluteName(char *pFileName)
   pTempName[outpos] = 0;
 
   strcpy(pFileName, pTempName);          /* Copy back */
-  Memory_Free(pTempName);
+  free(pTempName);
 }

@@ -6,7 +6,7 @@
 
   Zipped disc support, uses zlib
 */
-char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.9 2004-05-03 15:34:50 thothy Exp $";
+char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.10 2005-02-13 16:18:50 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +21,6 @@ char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.9 2004-05-03 15:34:50 thothy Exp $";
 #include "errlog.h"
 #include "file.h"
 #include "floppy.h"
-#include "memAlloc.h"
 #include "msa.h"
 #include "st.h"
 #include "unzip.h"
@@ -84,49 +83,70 @@ zip_dir *ZIP_GetFiles(char *pszFileName)
   if (uf==NULL)
     {
       printf("Cannot open %s\n", pszFileName);
-      return(0);
+      return NULL;
     }
 
   err = unzGetGlobalInfo (uf,&gi);
   if (err!=UNZ_OK){
     printf("error %d with zipfile in unzGetGlobalInfo \n",err);
-    return(NULL);
+    return NULL;
   }
   
   /* allocate a file list */
-  filelist = (char **)Memory_Alloc(gi.number_entry*sizeof(char *));
+  filelist = (char **)malloc(gi.number_entry*sizeof(char *));
+  if (!filelist)
+  {
+    perror("ZIP_GetFiles");
+    return NULL;
+  }
+
   nfiles = gi.number_entry;  /* set the number of files */
   
   for(i=0;i<gi.number_entry;i++)
     {
       err = unzGetCurrentFileInfo(uf,&file_info,filename_inzip, ZIP_PATH_MAX,NULL,0,NULL,0);
       if (err!=UNZ_OK)
-	{
-	  Memory_Free(filelist);
-	  return(NULL);
-	}
-      filelist[i] = (char *)Memory_Alloc(strlen(filename_inzip) + 1);
+      {
+        free(filelist);
+        return NULL;
+      }
+
+      filelist[i] = (char *)malloc(strlen(filename_inzip) + 1);
+      if (!filelist[i])
+      {
+        perror("ZIP_GetFiles");
+        free(filelist);
+        return NULL;
+      }
+
       strcpy(filelist[i], filename_inzip);
       if ((i+1)<gi.number_entry)
-	{
-	  err = unzGoToNextFile(uf);
-	  if (err!=UNZ_OK)
-	    {
-	      ErrLog_File("ERROR ZIP_GetFiles with zipfile\n");
-	      /* deallocate memory */
-	      for(;i>0;i--)Memory_Free(filelist[i]);
-	      Memory_Free(filelist);
-	      return(NULL);
-	    }
-	}
+      {
+        err = unzGoToNextFile(uf);
+        if (err!=UNZ_OK)
+        {
+          ErrLog_File("ERROR ZIP_GetFiles with zipfile\n");
+          /* deallocate memory */
+          for(;i>0;i--)  free(filelist[i]);
+          free(filelist);
+          return NULL;
+        }
+      }
     }
 
   unzClose(uf);
 
-  zd = (zip_dir *)Memory_Alloc(sizeof(zip_dir));
+  zd = (zip_dir *)malloc(sizeof(zip_dir));
+  if (!zd)
+  {
+    perror("ZIP_GetFiles");
+    free(filelist);
+    return NULL;
+  }
   zd->names = filelist;
   zd->nfiles = nfiles;
-  return( zd );
+
+  return zd;
 }
 
 
@@ -139,12 +159,12 @@ void ZIP_FreeZipDir(zip_dir *f_zd)
   while (f_zd->nfiles > 0)
   {
     f_zd->nfiles--;
-    Memory_Free(f_zd->names[f_zd->nfiles]);
+    free(f_zd->names[f_zd->nfiles]);
     f_zd->names[f_zd->nfiles] = NULL;
   }
-  Memory_Free(f_zd->names);
+  free(f_zd->names);
   f_zd->names = NULL;
-  Memory_Free(f_zd);
+  free(f_zd);
 }
 
 
@@ -163,12 +183,26 @@ struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
   int slash;
   struct dirent **fentries;
 
-  files = (zip_dir *)Memory_Alloc(sizeof(zip_dir));
-  files->names = (char **)Memory_Alloc((zip->nfiles + 1) * sizeof(char *));
+  files = (zip_dir *)malloc(sizeof(zip_dir));
+  if (!files)
+  {
+    perror("ZIP_GetFilesDir");
+    return NULL;
+  }
+
+  files->names = (char **)malloc((zip->nfiles + 1) * sizeof(char *));
+  if (!files->names)
+  {
+    perror("ZIP_GetFilesDir");
+    free(files);
+    return NULL;
+  }
 
   /* add ".." directory */
   files->nfiles = 1;
-  temp = (char *)Memory_Alloc(4);
+  temp = (char *)malloc(4);
+  if (!temp)
+    return NULL;
   temp[0] = temp[1] = '.'; 
   temp[2] = '/'; temp[3] = '\0';
   files->names[0] = temp;
@@ -192,7 +226,12 @@ struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
 			    flag=TRUE;
 		      if( flag == FALSE )
 			{
-			  files->names[files->nfiles] = (char *)Memory_Alloc(slash+1);
+			  files->names[files->nfiles] = (char *)malloc(slash+1);
+			  if (!files->names[files->nfiles])
+			  {
+			    perror("ZIP_GetFilesDir");
+			    return NULL;
+			  }
 			  strncpy(files->names[files->nfiles], temp, slash+1);
 			  ((char *)files->names[files->nfiles])[slash+1] = '\0';
 			  files->nfiles++;
@@ -201,7 +240,12 @@ struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
 		  else 
 		    {
 		      /* add a filename */
-		      files->names[files->nfiles] = (char *)Memory_Alloc(strlen(temp)+1);
+		      files->names[files->nfiles] = (char *)malloc(strlen(temp)+1);
+		      if (!files->names[files->nfiles])
+		      {
+		        perror("ZIP_GetFilesDir");
+		        return NULL;
+		      }
 		      strncpy(files->names[files->nfiles], temp, strlen(temp));
 		      ((char *)files->names[files->nfiles])[strlen(temp)] = '\0';
 		      files->nfiles++;
@@ -213,15 +257,29 @@ struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
 
   /* copy to a dirent structure */
   *entries = files->nfiles;
-  fentries = (struct dirent **)Memory_Alloc(sizeof(struct dirent *)*files->nfiles);
+  fentries = (struct dirent **)malloc(sizeof(struct dirent *)*files->nfiles);
+  if (!fentries)
+  {
+    perror("ZIP_GetFilesDir");
+    ZIP_FreeZipDir(files);
+    return NULL;
+  }
   for(i=0; i<files->nfiles; i++)
     {
-      fentries[i] = (struct dirent *)Memory_Alloc(sizeof(struct dirent));
+      fentries[i] = (struct dirent *)malloc(sizeof(struct dirent));
+      if (!fentries[i])
+      {
+        perror("ZIP_GetFilesDir");
+        return NULL;
+      }
       strcpy(fentries[i]->d_name, files->names[i]);
     }
+
   ZIP_FreeZipDir(files);
+
   return(fentries);
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -276,8 +334,15 @@ static char *ZIP_FirstFile(char *filename)
   int i;
   char *name;
 
-  if((files = ZIP_GetFiles(filename)) == NULL) return(NULL);
-  name = Memory_Alloc(ZIP_PATH_MAX);
+  if ((files = ZIP_GetFiles(filename)) == NULL)
+    return(NULL);
+
+  name = malloc(ZIP_PATH_MAX);
+  if (!name)
+  {
+    perror("ZIP_FirstFile");
+    return NULL;
+  }
 
   name[0] = '\0';
   for(i=files->nfiles-1;i>=0;i--)
@@ -329,8 +394,13 @@ static char *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
     }
   
   size_buf = size;
-  buf = Memory_Alloc(size_buf);
-  
+  buf = malloc(size_buf);
+  if (!buf)
+  {
+    perror("ZIP_ExtractFile");
+    return NULL;
+  }
+
   err = unzOpenCurrentFile(uf);
   if (err!=UNZ_OK)
     {
@@ -425,9 +495,9 @@ Uint8 *ZIP_ReadDisc(char *pszFileName, char *pszZipPath, long *pImageSize)
 
   /* Free the buffers */
   if (pDiscBuffer != buf)
-    Memory_Free(buf);
+    free(buf);
   if(pathAllocated == TRUE)
-    Memory_Free(pszZipPath);
+    free(pszZipPath);
 
   if (pDiscBuffer != NULL)
     *pImageSize = ImageSize;

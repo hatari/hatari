@@ -16,16 +16,14 @@
   the current instruction takes 20 cycles we will be 16 cycles late - this is handled in
   the adjust functions.
 */
-char Int_rcsid[] = "Hatari $Id: int.c,v 1.6 2004-10-31 17:32:50 thothy Exp $";
+char Int_rcsid[] = "Hatari $Id: int.c,v 1.7 2005-02-13 16:18:49 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
 #include "ikbd.h"
 #include "int.h"
 #include "m68000.h"
-#include "memAlloc.h"
 #include "memorySnapShot.h"
-#include "misc.h"
 #include "mfp.h"
 #include "sound.h"
 #include "video.h"

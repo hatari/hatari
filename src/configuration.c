@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.36 2005-02-12 17:04:50 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.37 2005-02-13 16:18:47 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -21,7 +21,6 @@ char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.36 2005-02-12 17:0
 #include "screen.h"
 #include "shortcut.h"
 #include "m68000.h"
-#include "memAlloc.h"
 #include "file.h"
 #include "uae-cpu/hatari-glue.h"
 #include "gemdos.h"
@@ -174,7 +173,7 @@ void Configuration_SetDefault(void)
   char *homeDir;
 
   /* Clear parameters */
-  Memory_Clear(&ConfigureParams, sizeof(CNF_PARAMS));
+  memset(&ConfigureParams, 0, sizeof(CNF_PARAMS));
 
   /* Set defaults for Disc Image */
   ConfigureParams.DiscImage.bAutoInsertDiscB = TRUE;

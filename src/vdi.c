@@ -11,13 +11,12 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.12 2004-12-27 00:03:17 thothy Exp $";
+char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.13 2005-02-13 16:18:50 thothy Exp $";
 
 #include "main.h"
 #include "file.h"
 #include "gemdos.h"
 #include "m68000.h"
-#include "memAlloc.h"
 #include "screen.h"
 #include "stMemory.h"
 #include "vdi.h"
@@ -273,7 +272,7 @@ done_modify:;
     /* And save */
     File_Save(pszFileName, pInfData, InfSize, FALSE);
     /* Free */
-    Memory_Free(pInfData);
+    free(pInfData);
   }
 }
 
@@ -293,7 +292,12 @@ void VDI_FixDesktopInf(void)
     return;
   }
 
-  szDesktopFileName = Memory_Alloc(2 * FILENAME_MAX);
+  szDesktopFileName = malloc(2 * FILENAME_MAX);
+  if (!szDesktopFileName)
+  {
+    perror("VDI_FixDesktopInf");
+    return;
+  }
   szNewDeskFileName = szDesktopFileName + FILENAME_MAX;
 
   /* Create filenames for hard-drive */
@@ -309,5 +313,5 @@ void VDI_FixDesktopInf(void)
     VDI_SaveDesktopInf(szNewDeskFileName,NewDeskScript,sizeof(NewDeskScript));
   VDI_ModifyDesktopInf(szNewDeskFileName);
 
-  Memory_Free(szDesktopFileName);
+  free(szDesktopFileName);
 }

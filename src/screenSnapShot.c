@@ -6,25 +6,24 @@
 
   Screen Snapshots.
 */
-char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.7 2004-04-19 08:53:47 thothy Exp $";
+char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.8 2005-02-13 16:18:49 thothy Exp $";
 
 #include <SDL.h>
 #include <dirent.h>
 #include <string.h>
 
 #include "main.h"
-#include "memAlloc.h"
 #include "misc.h"
 #include "screen.h"
 #include "screenSnapShot.h"
 #include "video.h"
-#include "vdi.h"
 
 
-int nScreenShots=0;                  /* Number of screen shots saved */
-BOOL bRecordingAnimation=FALSE;      /* Recording animation? */
-BOOL bGrabWhenChange;
-int GrabFrameCounter,GrabFrameLatch;
+BOOL bRecordingAnimation = FALSE;           /* Recording animation? */
+static int nScreenShots = 0;                /* Number of screen shots saved */
+static BOOL bGrabWhenChange;
+static int GrabFrameCounter,GrabFrameLatch;
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -64,7 +63,9 @@ static void ScreenSnapShot_GetNum(void)
 */
 void ScreenSnapShot_SaveScreen(void)
 {
-  char *szFileName = Memory_Alloc(FILENAME_MAX);
+  char *szFileName = malloc(FILENAME_MAX);
+
+  if (!szFileName)  return;
 
   ScreenSnapShot_GetNum();
   /* Create our filename */
@@ -75,7 +76,7 @@ void ScreenSnapShot_SaveScreen(void)
   else 
     fprintf(stderr, "Screen dump saved to: %s\n", szFileName);    
 
-  Memory_Free(szFileName);
+  free(szFileName);
 }
 
 /*-----------------------------------------------------------------------*/

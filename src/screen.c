@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.37 2004-12-27 00:03:17 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.38 2005-02-13 16:18:49 thothy Exp $";
 
 #include <SDL.h>
 
@@ -27,7 +27,6 @@ char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.37 2004-12-27 00:03:17 thothy Ex
 #include "configuration.h"
 #include "ikbd.h"
 #include "m68000.h"
-#include "memAlloc.h"
 #include "misc.h"
 #include "printer.h"
 #include "screen.h"
@@ -317,13 +316,18 @@ void Screen_Init(void)
   int i;
 
   /* Clear frame buffer structures and set current pointer */
-  Memory_Clear(FrameBuffers, NUM_FRAMEBUFFERS * sizeof(FRAMEBUFFER));
+  memset(FrameBuffers, 0, NUM_FRAMEBUFFERS * sizeof(FRAMEBUFFER));
 
   /* Allocate previous screen check workspace. We are going to double-buffer a double-buffered screen. Oh. */
   for(i=0; i<NUM_FRAMEBUFFERS; i++)
   {
-    FrameBuffers[i].pSTScreen = (unsigned char *)Memory_Alloc(((MAX_VDI_WIDTH*MAX_VDI_PLANES)/8)*MAX_VDI_HEIGHT);
-    FrameBuffers[i].pSTScreenCopy = (unsigned char *)Memory_Alloc(((MAX_VDI_WIDTH*MAX_VDI_PLANES)/8)*MAX_VDI_HEIGHT);
+    FrameBuffers[i].pSTScreen = (unsigned char *)malloc(((MAX_VDI_WIDTH*MAX_VDI_PLANES)/8)*MAX_VDI_HEIGHT);
+    FrameBuffers[i].pSTScreenCopy = (unsigned char *)malloc(((MAX_VDI_WIDTH*MAX_VDI_PLANES)/8)*MAX_VDI_HEIGHT);
+    if (!FrameBuffers[i].pSTScreen || !FrameBuffers[i].pSTScreenCopy)
+    {
+      fprintf(stderr, "Failed to allocate frame buffer memory.\n");
+      exit(-1);
+    }
   }
   pFrameBuffer = &FrameBuffers[0];
 
@@ -353,8 +357,8 @@ void Screen_UnInit(void)
   /* Free memory used for copies */
   for(i=0; i<NUM_FRAMEBUFFERS; i++)
   {
-    Memory_Free(FrameBuffers[i].pSTScreen);
-    Memory_Free(FrameBuffers[i].pSTScreenCopy);
+    free(FrameBuffers[i].pSTScreen);
+    free(FrameBuffers[i].pSTScreenCopy);
   }
 }
 

@@ -6,14 +6,13 @@
 
   MSA Disc support
 */
-char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.6 2004-04-28 09:04:58 thothy Exp $";
+char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.7 2005-02-13 16:18:49 thothy Exp $";
 
 #include <SDL_endian.h>
 
 #include "main.h"
 #include "file.h"
 #include "floppy.h"
-#include "memAlloc.h"
 #include "misc.h"
 #include "msa.h"
 
@@ -287,7 +286,12 @@ BOOL MSA_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
   int Track,Side;
 
   /* Allocate workspace for compressed image */
-  pMSAImageBuffer = (unsigned char *)Memory_Alloc(MSA_WORKSPACE_SIZE);
+  pMSAImageBuffer = (unsigned char *)malloc(MSA_WORKSPACE_SIZE);
+  if (!pMSAImageBuffer)
+  {
+    perror("MSA_WriteDisc");
+    return FALSE;
+  }
 
   /* Store header */
   pMSAHeader = (MSAHEADERSTRUCT *)pMSAImageBuffer;
@@ -354,7 +358,7 @@ BOOL MSA_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
   nRet = File_Save(pszFileName,pMSAImageBuffer,pMSABuffer-pMSAImageBuffer,FALSE);
 
   /* Free workspace */
-  Memory_Free(pMSAImageBuffer);
+  free(pMSAImageBuffer);
 
   return(nRet);
 

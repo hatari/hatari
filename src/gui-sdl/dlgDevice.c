@@ -6,13 +6,12 @@
 
   Device (Printer etc.) setup dialog
 */
-char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.6 2005-02-12 23:11:28 thothy Exp $";
+char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.7 2005-02-13 16:18:52 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
 #include "sdlgui.h"
-#include "memAlloc.h"
 #include "file.h"
 #include "screen.h"
 
@@ -79,7 +78,12 @@ void Dialog_DeviceDlg(void)
 	char *tmpname;
 
 	/* Allocate memory for tmpname: */
-	tmpname = Memory_Alloc(FILENAME_MAX);
+	tmpname = malloc(FILENAME_MAX);
+	if (!tmpname)
+	{
+		perror("Dialog_DeviceDlg");
+		return;
+	}
 
 	SDLGui_CenterDlg(devicedlg);
 
@@ -164,5 +168,5 @@ void Dialog_DeviceDlg(void)
 	DialogParams.RS232.bEnableRS232 = (devicedlg[DEVDLG_RS232ENABLE].state & SG_SELECTED);
 	DialogParams.Midi.bEnableMidi = (devicedlg[DEVDLG_MIDIENABLE].state & SG_SELECTED);
 
-	Memory_Free(tmpname);
+	free(tmpname);
 }

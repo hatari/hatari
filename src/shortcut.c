@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.18 2004-06-24 14:52:57 thothy Exp $";
+char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.19 2005-02-13 16:18:49 thothy Exp $";
 
 #include <SDL.h>
 
@@ -15,7 +15,6 @@ char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.18 2004-06-24 14:52:57 thoth
 #include "audio.h"
 #include "joy.h"
 #include "m68000.h"
-#include "memAlloc.h"
 #include "memorySnapShot.h"
 #include "reset.h"
 #include "screen.h"
@@ -214,7 +213,7 @@ static void ShortCut_WarmReset(void)
 static void ShortCut_ClearKeys(void)
 {
   /* Clear short-cut key structure */
-  Memory_Clear(&ShortCutKey,sizeof(SHORTCUT_KEY));
+  memset(&ShortCutKey, 0, sizeof(SHORTCUT_KEY));
 }
 
 

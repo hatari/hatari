@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.29 2005-02-10 23:01:12 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.30 2005-02-13 16:18:48 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -37,7 +37,6 @@ char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.29 2005-02-10 23:01:12 thothy Ex
 #include "hdc.h"
 #include "gemdos.h"
 #include "m68000.h"
-#include "memAlloc.h"
 #include "memorySnapShot.h"
 #include "misc.h"
 #include "printer.h"
@@ -366,7 +365,7 @@ void GemDOS_Init(void)
   bInitGemDOS = FALSE;
 
   /* Clear handles structure */
-  Memory_Clear(FileHandles, sizeof(FILE_HANDLE)*MAX_FILE_HANDLES);
+  memset(FileHandles, 0, sizeof(FILE_HANDLE)*MAX_FILE_HANDLES);
   /* Clear DTAs */
   for(i=0; i<MAX_DTAS_FILES; i++)
   {

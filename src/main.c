@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.68 2005-02-10 00:11:40 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.69 2005-02-13 16:18:49 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -79,16 +79,6 @@ void Main_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&STRam[0xE00000],0x200000);
   MemorySnapShot_Store(szBootDiscImage,sizeof(szBootDiscImage));
   MemorySnapShot_Store(szWorkingDir,sizeof(szWorkingDir));
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Error handler
-*/
-void Main_SysError(char *Error,char *Title)
-{
-  fprintf(stderr,"%s : %s\n",Title,Error);
 }
 
 
