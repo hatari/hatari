@@ -11,12 +11,13 @@
 
    Read unzip.h for more info
 */
+char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.3 2004-07-13 17:29:58 thothy Exp $";
 
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "zlib.h"
+#include <zlib.h>
 #include "unzip.h"
 
 #ifdef STDC
