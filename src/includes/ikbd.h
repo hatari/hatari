@@ -2,37 +2,40 @@
   Hatari
 */
 
-// Keyboard Command
+#include <SDL_keysym.h>           /* Needed for SDLK_LAST */
+
+
+/* Keyboard Command */
 typedef struct {
   unsigned char Command;
   unsigned char NumParameters;
   void *pCallFunction;
 } IKBD_COMMAND_PARAMS;
 
-// Keyboard processor details
+/* Keyboard processor details */
 typedef struct {
-  int X,Y;                      // Relative position of mouse
-  int PrevX,PrevY;              // Previous position
+  int X,Y;                        /* Relative position of mouse */
+  int PrevX,PrevY;                /* Previous position */
 } REL_MOUSE;
 
 typedef struct {
-  int X,Y;                      // Position of mouse
-  int MaxX,MaxY;                // Max limits of mouse
-  unsigned char PrevReadAbsMouseButtons;    // Previous button mask for 'IKBD_Cmd_ReadAbsMousePos'
+  int X,Y;                        /* Position of mouse */
+  int MaxX,MaxY;                  /* Max limits of mouse */
+  unsigned char PrevReadAbsMouseButtons;    /* Previous button mask for 'IKBD_Cmd_ReadAbsMousePos' */
 } ABS_MOUSE;
 
 typedef struct {
-  int DeltaX,DeltaY;              // XY mouse position delta after scale according to resoution
-  int XScale,YScale;              // Scale of mouse
-  int XThreshold,YThreshold;      // Threshold
-  unsigned char KeyCodeDeltaX,KeyCodeDeltaY;  // Delta X,Y for mouse keycode mode
-  int YAxis;                      // Y-Axis direction
-  unsigned char Action;           // Bit 0-Report abs position of press, Bit 1-Report abs on release
+  int DeltaX,DeltaY;              /* XY mouse position delta after scale according to resoution */
+  int XScale,YScale;              /* Scale of mouse */
+  int XThreshold,YThreshold;      /* Threshold */
+  unsigned char KeyCodeDeltaX,KeyCodeDeltaY;    /* Delta X,Y for mouse keycode mode */
+  int YAxis;                      /* Y-Axis direction */
+  unsigned char Action;           /* Bit 0-Report abs position of press, Bit 1-Report abs on release */
 } MOUSE;
 
 typedef struct {
-  unsigned char JoyData[2];       // Joystick details
-  unsigned char PrevJoyData[2];   // Previous joystick details, used to check for 'IKBD_SelAutoJoysticks'
+  unsigned char JoyData[2];       /* Joystick details */
+  unsigned char PrevJoyData[2];   /* Previous joystick details, used to check for 'IKBD_SelAutoJoysticks' */
 } JOY;
 
 typedef struct {
@@ -40,41 +43,41 @@ typedef struct {
   ABS_MOUSE  Abs;
   MOUSE    Mouse;
   JOY      Joy;
-  int MouseMode;                  // AUTOMODE_xxxx
-  int JoystickMode;               // AUTOMODE_xxxx
-  BOOL bReset;                    // Set to TRUE is keyboard 'RESET' and now active
+  int MouseMode;                  /* AUTOMODE_xxxx */
+  int JoystickMode;               /* AUTOMODE_xxxx */
+  BOOL bReset;                    /* Set to TRUE is keyboard 'RESET' and now active */
 } KEYBOARD_PROCESSOR;
 
-// Keyboard state
-#define SIZE_KEYBOARD_BUFFER    1024            // Allow this many bytes to be stored in buffer(waiting to send to ACIA)
-#define KEYBOARD_BUFFER_MASK    (SIZE_KEYBOARD_BUFFER-1)
-#define SIZE_KEYBOARDINPUT_BUFFER  8
+/* Keyboard state */
+#define SIZE_KEYBOARD_BUFFER      1024    /* Allow this many bytes to be stored in buffer (waiting to send to ACIA) */
+#define KEYBOARD_BUFFER_MASK      (SIZE_KEYBOARD_BUFFER-1)
+#define SIZE_KEYBOARDINPUT_BUFFER 8
 typedef struct {
-  unsigned char KeyStates[256];                 // State of PC's keys, TRUE is down
-  unsigned char Buffer[SIZE_KEYBOARD_BUFFER];   // Keyboard buffer
-  int BufferHead,BufferTail;                    // Pointers into above buffer
-  unsigned char InputBuffer[SIZE_KEYBOARDINPUT_BUFFER];  // Buffer for data send from CPU to keyboard processor(commands)
-  int nBytesInInputBuffer;                      // Number of command bytes in above buffer
+  unsigned char KeyStates[SDLK_LAST];           /* State of PC's keys, TRUE is down */
+  unsigned char Buffer[SIZE_KEYBOARD_BUFFER];   /* Keyboard buffer */
+  int BufferHead,BufferTail;                    /* Pointers into above buffer */
+  unsigned char InputBuffer[SIZE_KEYBOARDINPUT_BUFFER];  /* Buffer for data send from CPU to keyboard processor (commands) */
+  int nBytesInInputBuffer;                      /* Number of command bytes in above buffer */
 
-  int bLButtonDown,bRButtonDown;                // Mouse states in emulation system, BUTTON_xxxx
+  int bLButtonDown,bRButtonDown;                /* Mouse states in emulation system, BUTTON_xxxx */
   int bOldLButtonDown,bOldRButtonDown;
   int LButtonDblClk,RButtonDblClk;
   int LButtonHistory,RButtonHistory;
 } KEYBOARD;
 
-// Button states, a bit mask so can mimick joystick/right mouse button duplication
-#define BUTTON_NULL      0x00    // Button states, so can OR together mouse/joystick buttons
-#define BUTTON_MOUSE    0x01
-#define BUTTON_JOYSTICK    0x02
+/* Button states, a bit mask so can mimick joystick/right mouse button duplication */
+#define BUTTON_NULL      0x00     /* Button states, so can OR together mouse/joystick buttons */
+#define BUTTON_MOUSE     0x01
+#define BUTTON_JOYSTICK  0x02
 
-// Mouse/Joystick modes
-#define AUTOMODE_OFF      0
+/* Mouse/Joystick modes */
+#define AUTOMODE_OFF         0
 #define AUTOMODE_MOUSEREL    1
 #define AUTOMODE_MOUSEABS    2
-#define AUTOMODE_MOUSECURSOR  3
+#define AUTOMODE_MOUSECURSOR 3
 #define AUTOMODE_JOYSTICK    4
 
-// 0xfffc00(read status from ACIA)
+/* 0xfffc00 (read status from ACIA) */
 #define ACIA_STATUS_REGISTER__RX_BUFFER_FULL  0x01
 #define ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY  0x02
 #define ACIA_STATUS_REGISTER__OVERRUN_ERROR    0x40
