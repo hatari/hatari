@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-static char rcsid[] = "Hatari $Id: intercept.c,v 1.10 2003-03-24 11:00:34 emanne Exp $";
+static char rcsid[] = "Hatari $Id: intercept.c,v 1.11 2003-03-27 11:23:53 emanne Exp $";
 
 #include <SDL_types.h>
 
@@ -874,6 +874,13 @@ void Intercept_VideoLow_WriteByte(void)
 void Intercept_VideoSync_WriteByte(void)
 {
  VideoSyncByte = STRam[0xff820a] & 3;      /* We're only interested in lower 2 bits(50/60Hz) */
+ if (nHBL >= OVERSCAN_TOP && nHBL <= 35 && nStartHBL > FIRST_VISIBLE_HBL) {
+   Video_SyncHandler_SetTopBorder();
+   pHBLPaletteMasks -= OVERSCAN_TOP;
+   pHBLPalettes -= OVERSCAN_TOP;
+ } else if (nHBL >= SCREEN_START_HBL+SCREEN_HEIGHT_HBL) {
+   Video_SyncHandler_SetBottomBorder();
+ }
  Video_WriteToSync();
 }
 
