@@ -299,8 +299,13 @@ int SDLGui_DoDialog(SGOBJ *dlg)
   int obj=0;
   int oldbutton=0;
   int retbutton=0;
-  SDL_Event evnt;
+  int i;
   int cx, cy;
+  SDL_Event evnt;
+  SDL_Rect rct;
+  Uint32 grey;
+
+  grey = SDL_MapRGB(sdlscrn->format,192,192,192);
 
   cx = (sdlscrn->w/fontwidth-dlg[0].w)/2;
   cy = (sdlscrn->h/fontheight-dlg[0].h)/2;
@@ -340,6 +345,49 @@ int SDLGui_DoDialog(SGOBJ *dlg)
               case SGBUTTON:
                 if(oldbutton==obj)
                   retbutton=obj;
+                break;
+              case SGRADIOBUT:
+                for(i=obj-1; i>0 && dlg[i].type==SGRADIOBUT; i--)
+                {
+                  dlg[i].state=0;  /* Deselect all radio buttons in this group */
+                  rct.x = (cx+dlg[i].x)*fontwidth;
+                  rct.y = (cy+dlg[i].y)*fontheight;
+                  rct.w = fontwidth;  rct.h = fontheight;
+                  SDL_FillRect(sdlscrn, &rct, grey); /* Clear old */
+                  SDLGui_DrawRadioButton(cx, cy, &dlg[i]);
+                  SDL_UpdateRects(sdlscrn, 1, &rct);
+                }
+                for(i=obj+1; dlg[i].type==SGRADIOBUT; i++)
+                {
+                  dlg[i].state=0;  /* Deselect all radio buttons in this group */
+                  rct.x = (cx+dlg[i].x)*fontwidth;
+                  rct.y = (cy+dlg[i].y)*fontheight;
+                  rct.w = fontwidth;  rct.h = fontheight;
+                  SDL_FillRect(sdlscrn, &rct, grey); /* Clear old */
+                  SDLGui_DrawRadioButton(cx, cy, &dlg[i]);
+                  SDL_UpdateRects(sdlscrn, 1, &rct);
+                }
+                dlg[obj].state=1;  /* Select this radio button */
+                rct.x = (cx+dlg[obj].x)*fontwidth;
+                rct.y = (cy+dlg[obj].y)*fontheight;
+                rct.w = fontwidth;  rct.h = fontheight;
+                SDL_FillRect(sdlscrn, &rct, grey); /* Clear old */
+                SDLGui_DrawRadioButton(cx, cy, &dlg[obj]);
+                SDL_UpdateRects(sdlscrn, 1, &rct);
+                break;
+              case SGCHECKBOX:
+                dlg[obj].state^=1;
+                rct.x = (cx+dlg[obj].x)*fontwidth;
+                rct.y = (cy+dlg[obj].y)*fontheight;
+                rct.w = fontwidth;  rct.h = fontheight;
+                SDL_FillRect(sdlscrn, &rct, grey); /* Clear old */
+                SDLGui_DrawCheckBox(cx, cy, &dlg[obj]);
+                SDL_UpdateRects(sdlscrn, 1, &rct);
+                break;
+              case SGPOPUP:
+                dlg[obj].state=1;
+                /*SDLGui_DrawPopupButton(cx, cy, &dlg[obj]);*/
+                retbutton=obj;
                 break;
             }
           }

@@ -89,18 +89,129 @@ SGOBJ aboutdlg[] =
 };
 
 
+/* The discs dialog: */
+SGOBJ discdlg[] =
+{
+  { SGBOX, 0, 0,0, 40,25, NULL },
+  { SGBOX, 0, 1,1, 38,11, NULL },
+  { SGTEXT, 0, 14,1, 12,1, "Floppy discs" },
+  { SGTEXT, 0, 2,3, 2,1, "A:" },
+  { SGTEXT, 0, 5,3, 24,1, "/path/to/image_a.st" },
+  { SGBUTTON, 0, 32,3, 6,1, "Browse" },
+  { SGTEXT, 0, 2,5, 2,1, "B:" },
+  { SGTEXT, 0, 5,5, 24,1, "/path/to/image_B.st" },
+  { SGBUTTON, 0, 32,5, 6,1, "Browse" },
+  { SGTEXT, 0, 2,7, 30,1, "Default disk images directory:" },
+  { SGTEXT, 0, 2,8, 26,1, "/path/to/image/directory" },
+  { SGBUTTON, 0, 32,8, 6,1, "Browse" },
+  { SGCHECKBOX, 0, 2,10, 18,1, "Auto insert B" },
+  { SGBUTTON, 0, 20,10, 18,1, "Create blank image" },
+  { SGBOX, 0, 1,13, 38,9, NULL },
+  { SGTEXT, 0, 14,13, 13,1, "Hard discs" },
+  { SGCHECKBOX, 0, 2,15, 14,1, "Boot from HD" },
+  { SGTEXT, 0, 2,17, 2,1, "C:" },
+  { SGTEXT, 0, 5,17, 24,1, "/path/to/c" },
+  { SGBUTTON, 0, 32,17, 6,1, "Browse" },
+  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
+  { -1, 0, 0,0, 0,0, NULL }
+};
+
+
+/* The TOS/GEM dialog: */
+SGOBJ tosgemdlg[] =
+{
+  { SGBOX, 0, 0,0, 40,19, NULL },
+  { SGTEXT, 0, 14,1, 13,1, "TOS/GEM setup" },
+  { SGTEXT, 0, 2,4, 10,1, "ROM image:" },
+  { SGTEXT, 0, 2,6, 34,1, "/path/to/tos.img" },
+  { SGBUTTON, 0, 30,4, 8,1, "Browse" },
+  { SGTEXT, 0, 2,10, 4,1, "GEM:" },
+  { SGCHECKBOX, 0, 2,12, 25,1, "Use extended resolution" },
+  { SGTEXT, 0, 2,14, 11,1, "Resolution:" },
+  { SGPOPUP, 0, 14,14, 10,1, "800x600" },
+  { SGBUTTON, 0, 10,17, 20,1, "Back to main menu" },
+  { -1, 0, 0,0, 0,0, NULL }
+};
+
+
 /* The screen dialog: */
 SGOBJ screendlg[] =
 {
-  { SGBOX, 0, 0,0, 36,18, NULL },
-  { SGTEXT, 0, 11,1, 14,1, "Screen options" },
-  { SGTEXT, 0, 4,4, 25,1, "Sorry, does not work yet." },
-  { SGCHECKBOX, 0, 4,6, 12,1, "Fullscreen" },
-  { SGCHECKBOX, 1, 4,7, 13,1, "Use borders" },
-  { SGTEXT, 0, 4,14, 8,1, "Monitor:" },
-  { SGRADIOBUT, 1, 14,14, 7,1, "Color" },
-  { SGRADIOBUT, 0, 22,14, 6,1, "Mono" },
-  { SGBUTTON, 0, 8,16, 20,1, "Back to main menu" },
+  { SGBOX, 0, 0,0, 40,25, NULL },
+  { SGBOX, 0, 1,1, 38,11, NULL },
+  { SGTEXT, 0, 13,2, 14,1, "Screen options" },
+  { SGTEXT, 0, 5,4, 13,1, "Display mode:" },
+  { SGPOPUP, 0, 20,4, 18,1, "Hi-Color, Lo-Res" },
+  { SGCHECKBOX, 0, 5,6, 12,1, "Fullscreen" },
+  { SGCHECKBOX, 0, 5,7, 23,1, "Interlaced mode (in fullscreen)" },
+  { SGCHECKBOX, 0, 5,8, 10,1, "Frame skip" },
+  /*{ SGCHECKBOX, 0, 22,8, 13,1, "Use borders" },*/
+  /*{ SGCHECKBOX, 1, 5,9, 13,1, "Sync to retrace (in fullscreen)" },*/
+  { SGTEXT, 0, 5,10, 8,1, "Monitor:" },
+  { SGRADIOBUT, 1, 16,10, 7,1, "Color" },
+  { SGRADIOBUT, 0, 24,10, 6,1, "Mono" },
+  { SGBOX, 0, 1,13, 38,9, NULL },
+  { SGTEXT, 0, 13,14, 14,1, "Screen capture" },
+  { SGCHECKBOX, 0, 5,16, 12,1, "Only when display changes" },
+  { SGTEXT, 0, 5,18, 18,1, "Frames per second:" },
+  { SGPOPUP, 0, 24,18, 3,1, "1" },
+  { SGBUTTON, 0, 3,20, 16,1, "Capture screen" },
+  { SGBUTTON, 0, 20,20, 18,1, "Record animation" },
+  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
+  { -1, 0, 0,0, 0,0, NULL }
+};
+
+
+/* The sound dialog: */
+SGOBJ sounddlg[] =
+{
+  { SGBOX, 0, 0,0, 40,25, NULL },
+  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
+  { -1, 0, 0,0, 0,0, NULL }
+};
+
+
+/* The cpu dialog: */
+SGOBJ cpudlg[] =
+{
+  { SGBOX, 0, 0,0, 40,25, NULL },
+  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
+  { -1, 0, 0,0, 0,0, NULL }
+};
+
+
+/* The memory dialog: */
+SGOBJ memorydlg[] =
+{
+  { SGBOX, 0, 0,0, 40,25, NULL },
+  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
+  { -1, 0, 0,0, 0,0, NULL }
+};
+
+
+/* The joysticks dialog: */
+SGOBJ joystickdlg[] =
+{
+  { SGBOX, 0, 0,0, 40,25, NULL },
+  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
+  { -1, 0, 0,0, 0,0, NULL }
+};
+
+
+/* The keyboard dialog: */
+SGOBJ keyboarddlg[] =
+{
+  { SGBOX, 0, 0,0, 40,25, NULL },
+  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
+  { -1, 0, 0,0, 0,0, NULL }
+};
+
+
+/* The devices dialog: */
+SGOBJ devicedlg[] =
+{
+  { SGBOX, 0, 0,0, 40,25, NULL },
+  { SGBUTTON, 0, 10,23, 20,1, "Back to main menu" },
   { -1, 0, 0,0, 0,0, NULL }
 };
 
@@ -285,23 +396,31 @@ int Dialog_MainDialog()
           retbut=-1;
         break;
       case MAINDLG_DISCS:
+        SDLGui_DoDialog(discdlg);
         break;
       case MAINDLG_TOSGEM:
+        SDLGui_DoDialog(tosgemdlg);
         break;
       case MAINDLG_SCREEN:
         SDLGui_DoDialog(screendlg);
         break;
       case MAINDLG_SOUND:
+        SDLGui_DoDialog(sounddlg);
         break;
       case MAINDLG_CPU:
+        SDLGui_DoDialog(cpudlg);
         break;
       case MAINDLG_MEMORY:
+        SDLGui_DoDialog(memorydlg);
         break;
       case MAINDLG_JOY:
+        SDLGui_DoDialog(joystickdlg);
         break;
       case MAINDLG_KEYBD:
+        SDLGui_DoDialog(keyboarddlg);
         break;
       case MAINDLG_DEVICES:
+        SDLGui_DoDialog(devicedlg);
         break;
     }
     Screen_SetFullUpdate();
