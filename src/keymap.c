@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-static char rcsid[] = "Hatari $Id: keymap.c,v 1.11 2003-06-01 20:04:26 thothy Exp $";
+static char rcsid[] = "Hatari $Id: keymap.c,v 1.12 2003-06-02 16:18:25 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -191,10 +191,10 @@ static const char SymbolicKeyToSTScanCode[SDLK_LAST] =
   -1,    /* 88 */
   -1,    /* 89 */
   -1,    /* 90 */
-  -1,    /* SDLK_LEFTBRACKET = 91 */
+  0x63,  /* SDLK_LEFTBRACKET = 91 */
   -1,    /* SDLK_BACKSLASH = 92 */
-  -1,    /* SDLK_RIGHTBRACKET = 93 */
-  -1,    /* SDLK_CARET = 94 */
+  0x64,  /* SDLK_RIGHTBRACKET = 93 */
+  0x2B,  /* SDLK_CARET = 94 */
   -1,    /* SDLK_UNDERSCORE = 95 */
   -1,    /* SDLK_BACKQUOTE = 96 */
   0x1E,  /* SDLK_a = 97 */
