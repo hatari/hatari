@@ -1,3 +1,10 @@
+/*
+ * Hatari - cfgopts.c
+ *
+ * The functions in this file are used to load and save the ASCII
+ * configuration file.
+ * Original information text follows:
+ */
 /*<<---------------[         cfgopts.c        ]------------------------/
 /                                                                      /
 /  Functional                                                          /
@@ -15,15 +22,6 @@
 /                                                                      /
 /                                                                      /
 /---------------------------------------------------------------------*/
-#define       Assigned_Revision 950802
-/*-------------------------[ Revision History ]------------------------/
-/ Revision 1.0.0  :  Original Code by Jeffry J. Brickley               /
-/          1.1.0  : added header capability, JJB, 950802               /
-/          1.1.1  : Adaption to Hatari, THH                            /
-/                   (see now CVS ChangLog now for more info)           /
-/------------------------------------------------------------------->>*/
-/*  Please keep revision number current.                              */
-#define       REVISION_NO "1.1.1"
 
 /*---------------------------------------------------------------------/
 /
@@ -65,71 +63,43 @@
 #include "cfgopts.h"
 
 
-/*
- * FCOPY.C - copy one file to another.  Returns the (positive)
- *           number of bytes copied, or -1 if an error occurred.
- * by: Bob Jarvis
- */
 
-#define BUFFER_SIZE 1024
-
-/*---------------------------------------------------------------------/
-/   copy one file to another.
-/---------------------------------------------------------------------*/
-/*>>------[       fcopy()      ]-------------[ 08-02-95 14:02PM ]------/
-/ return value:
-/     long                    ; Number of bytes copied or -1 on error
-/ parameters:
-/     char *dest              ; Destination file name
-/     char *source            ; Source file name
-/-------------------------------------------------------------------<<*/
-long fcopy(const char *dest, const char *source)
+/* --- Remove spaces from beginning and end of a string --- */
+static char *trim(char *buffer)
 {
-   FILE *d, *s;
-   char *buffer;
-   size_t incount;
-   long totcount = 0L;
+  const char SPACE = ' ';
+  const char TABULA = '\t';
 
-   s = fopen(source, "rb");
-   if(s == NULL)
-      return -1L;
+  if (buffer != NULL)
+  {
+    int i, linelen;
+    
+    linelen = strlen(buffer);
 
-   d = fopen(dest, "wb");
-   if(d == NULL)
-   {
-      fclose(s);
-      return -1L;
-   }
+    for (i = 0; i < linelen; i++)
+    {
+      if (buffer[i] != SPACE && buffer[i] != TABULA)
+        break;
+    }
 
-   buffer = (char *)malloc(BUFFER_SIZE);
-   if(buffer == NULL)
-   {
-      fclose(s);
-      fclose(d);
-      return -1L;
-   }
+    if (i > 0 && i < linelen)
+    {
+      linelen -= i;
+      memmove(buffer, buffer + i, linelen);
+    }
 
-   incount = fread(buffer, sizeof(char), BUFFER_SIZE, s);
+    for (i = linelen; i > 0; i--)
+    {
+      int j = i - 1;
+      if (buffer[j] != SPACE && buffer[j] != TABULA)
+        break;
+    }
 
-   while(!feof(s))
-   {
-      totcount += (long)incount;
-      fwrite(buffer, sizeof(char), incount, d);
-      incount = fread(buffer, sizeof(char), BUFFER_SIZE, s);
-   }
+    buffer[i] = '\0';
+  }
 
-   totcount += (long)incount;
-   fwrite(buffer, sizeof(char), incount, d);
-
-   free(buffer);
-   fclose(s);
-   fclose(d);
-
-   return totcount;
+  return buffer;
 }
-
-
-static char line[1024];
 
 
 /*---------------------------------------------------------------------/
@@ -149,15 +119,16 @@ int input_config(const char *filename, struct Config_Tag configs[], char *header
    int count=0, lineno=0;
    FILE *file;
    char *fptr,*tok,*next;
+   char line[1024];
 
    file = fopen(filename,"r");
-   if (file == NULL) return -1;   // return error designation.
+   if (file == NULL) return -1;                 /* return error designation. */
 
    if (header != NULL)
    {
      do
      {
-       fptr=fgets(line, sizeof(line), file);  // get input line
+       fptr = trim(fgets(line, sizeof(line), file));  /* get input line */
      }
      while ( memcmp(line,header,strlen(header)) && !feof(file));
    }
@@ -165,20 +136,20 @@ int input_config(const char *filename, struct Config_Tag configs[], char *header
    if ( !feof(file) )
     do
     {
-      fptr=fgets(line, sizeof(line), file);  // get input line
+      fptr = trim(fgets(line, sizeof(line), file));   /* get input line */
       if ( fptr==NULL ) continue;
       lineno++;
-      if ( line[0]=='#' ) continue;    // skip comments
-      if ( line[0]=='[' ) continue;    // skip next header
-      tok=strtok(line,"=\n\r");   // get first token
-      if ( tok!=NULL )
+      if (line[0] == '#')  continue;            /* skip comments */
+      if (line[0] == '[')  continue;            /* skip next header */
+      tok = trim(strtok(line, "=\n\r"));        /* get first token */
+      if (tok != NULL)
       {
-         next=strtok(NULL,"=\n\r"); // get actual config information
-         for ( ptr=configs;ptr->buf;++ptr )   // scan for token
+         next = trim(strtok(NULL, "=\n\r"));    /* get actual config information */
+         for (ptr = configs; ptr->buf; ++ptr)   /* scan for token */
          {
-            if (!strcmp(tok, ptr->code))  // got a match?
+            if (!strcmp(tok, ptr->code))        /* got a match? */
             {
-               switch ( ptr->type )     // check type
+               switch (ptr->type)               /* check type */
                {
                case Bool_Tag:
                   if (!strcasecmp(next,"FALSE"))
@@ -246,9 +217,9 @@ int input_config(const char *filename, struct Config_Tag configs[], char *header
 /* Write out an settings line */
 int write_token(FILE *outfile, struct Config_Tag *ptr)
 {
-  fprintf(outfile,"%s=",ptr->code);
+  fprintf(outfile,"%s = ",ptr->code);
 
-  switch ( ptr->type )  // check type
+  switch (ptr->type)    /* check type */
   {
     case Bool_Tag:
       fprintf(outfile,"%s\n", *((BOOL *)(ptr->buf)) ? "TRUE" : "FALSE");
@@ -307,159 +278,140 @@ int update_config(const char *filename, struct Config_Tag configs[], char *heade
 {
    struct Config_Tag *ptr;
    int count=0, lineno=0;
-   FILE *infile,*outfile;
+   FILE *cfgfile, *tempfile;
    char *fptr, *tok, *next;
+   char line[1024];
 
-   infile=fopen(filename,"r");
+   cfgfile = fopen(filename, "r");
 
-   if (infile == NULL)
+   /* If the cfg file does not yet exists, we can create it directly: */
+   if (cfgfile == NULL)
    {
-      outfile = fopen(filename, "w");
-      if (outfile == NULL)
-         return -1;       // return error designation.
+      cfgfile = fopen(filename, "w");
+      if (cfgfile == NULL)
+         return -1;                             /* return error designation. */
       if (header != NULL)
       {
-         fprintf(outfile,"%s\n",header);
+         fprintf(cfgfile,"%s\n",header);
       }
-      for (ptr=configs; ptr->buf; ++ptr)    // scan for token
+      for (ptr=configs; ptr->buf; ++ptr)        /* scan for token */
       {
-         if(write_token(outfile, ptr) == 0)
+         if(write_token(cfgfile, ptr) == 0)
            ++count;
       }
 
-      fclose(outfile);
+      fclose(cfgfile);
       return count;
    }
 
-   outfile=fopen("temp.$$$","w");
-   if (outfile == NULL)
+   tempfile = tmpfile();                        /* Open a temporary file for output */
+   if (tempfile == NULL)
    {
-      fclose(infile);
-      return -1;          // return error designation.
+      fclose(cfgfile);
+      return -1;                                /* return error designation. */
    }
 
    if (header != NULL)
    {
       do
       {
-         fptr=fgets(line, sizeof(line), infile);    // get input line
-         if (feof(infile))
+         fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
+         if (feof(cfgfile))
            break;
-         fprintf(outfile, "%s", line);
+         fprintf(tempfile, "%s", line);
       }
       while(memcmp(line, header, strlen(header)));
    }
 
-   if ( feof(infile) )
+   if (feof(cfgfile))
    {
       if (header != NULL)
       {
-         fprintf(outfile,"\n%s\n",header);
+         fprintf(tempfile, "\n%s\n", header);
       }
-      for (ptr=configs; ptr->buf; ++ptr)    // scan for token
+      for (ptr = configs; ptr->buf; ++ptr)                /* scan for token */
       {
-         if(write_token(outfile, ptr) == 0)
+         if(write_token(tempfile, ptr) == 0)
            ++count;
       }
    }
    else
    {
-      do
+      for(;;)
       {
-         fptr=fgets(line, sizeof(line), infile);    // get input line
-         if (fptr == NULL) continue;
+         fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
+         if (fptr == NULL)  break;
          lineno++;
          if (line[0] == '#')
          {
-            fprintf(outfile,"%s",line);
-            continue;  // skip comments
+            fprintf(tempfile, "%s", line);
+            continue;                                 /* skip comments */
          }
-         tok=strtok(line,"=\n\r");  // get first token
+         if (line[0] == '[' || feof(cfgfile))
+         {
+           break;
+         }
+
+         tok = trim(strtok(line, "=\n\r"));           /* get first token */
          if (tok != NULL)
          {
-            next=strtok(line,"=\n\r");     // get actual config information
-            for ( ptr=configs;ptr->buf;++ptr )  // scan for token
+            next = strtok(line, "=\n\r");             /* get actual config information */
+            for (ptr = configs; ptr->buf; ++ptr)      /* scan for token */
             {
-               if (!strcmp(tok, ptr->code)) // got a match?
+               if (!strcmp(tok, ptr->code))           /* got a match? */
                {
-                 if(write_token(outfile, ptr) == 0)
+                 if(write_token(tempfile, ptr) == 0)
                    ++count;
                }
 
             }
          }
       }
-      while ( fptr!=NULL );
+
+      if (!feof(cfgfile) && fptr != NULL)
+        fprintf(tempfile, "\n%s", line);
+
+      for(;;)
+      {
+        fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
+        if (feof(cfgfile))
+          break;
+        fprintf(tempfile, "%s", line);
+      }
    }
 
-   fclose(infile);
-   fclose(outfile);
-   fcopy(filename,"temp.$$$");
-   remove("temp.$$$");
+
+   /* Re-open the config file for writing: */
+   fclose(cfgfile);
+   cfgfile = fopen(filename, "wb");
+   if (cfgfile == NULL)
+   {
+     fclose(tempfile);
+     return -1;
+   }
+
+   if(fseek(tempfile, 0, SEEK_SET) != 0)
+   {
+     fclose(cfgfile);
+     fclose(tempfile);
+     return -1;
+   }
+
+   /* Now copy the temporary file to the configuration file: */
+   while(!feof(tempfile))
+   {
+     int copycount;
+     copycount = fread(line, sizeof(char), sizeof(line), tempfile);
+     if(fwrite(line, sizeof(char), copycount, cfgfile) != copycount)
+     {
+       fclose(cfgfile);
+       fclose(tempfile);
+       return -1;
+     }
+   }
+
+   fclose(cfgfile);
+   fclose(tempfile);
    return count;
 }
-
-
-#ifdef TEST
-
-#include <stdlib.h>
-
-BOOL test1 = TRUE, test2 = FALSE;
-int test3 = -37;
-long test4 = 100000L;
-char test5[80] = "Default string";
-
-struct Config_Tag configs[] = {
-   { "test1", Bool_Tag, &test1  },  /* Valid options        */
-   { "test2", Bool_Tag, &test2  },
-   { "test3", Word_Tag, &test3     },
-   { "test4", DWord_Tag, &test4    },
-   { "test5", String_Tag, test5    },
-   { NULL , Error_Tag, NULL        }   /* Terminating record   */
-
-};
-#define TFprint(v) ((v) ? "TRUE" : "FALSE")
-
-/*---------------------------------------------------------------------/
-/   test main routine, read/write to a sample INI file.
-/---------------------------------------------------------------------*/
-/*>>------[       main()       ]-------------[ 08-02-95 14:02PM ]------/
-/ return value:
-/     int                     ; MS-DOS error level
-/ parameters:
-/     int argc                ; number of arguments
-/     char *argv[]            ; command line arguments
-/-------------------------------------------------------------------<<*/
-int main(int argc, char *argv[])
-{
-   int i;
-
-   printf("Defaults:\ntest1 = %s\ntest2 = %s\ntest3 = %d\ntest4 = %ld\n"
-   "test5 = \"%s\"\n\n", TFprint(test1), TFprint(test2), test3,
-   test4, test5);
-
-   printf("input_config() returned %d\n",
-   input_config("test.cfg",configs, "[TEST1]"));
-
-   printf("Options are now:\ntest1 = %s\ntest2 = %s\ntest3 = %d\n"
-   "test4 = %ld\ntest5 = \"%s\"\n\n", TFprint(test1),
-   TFprint(test2), test3, test4, test5);
-
-   test1=TRUE;
-   test2=FALSE;
-   test3=-37;
-   test4=100000L;
-   strcpy(test5,"Default value");
-
-   printf("update_config() returned %d\n",
-   update_config("test.cfg",configs, "[TEST2]"));
-
-   printf("Options are now:\ntest1 = %s\ntest2 = %s\ntest3 = %d\n"
-   "test4 = %ld\ntest5 = \"%s\"\n\n", TFprint(test1),
-   TFprint(test2), test3, test4, test5);
-
-   return 0;
-}
-
-#endif
 
