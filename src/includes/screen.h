@@ -85,12 +85,12 @@ enum
 #define NUM_DISPLAYMODEOPTIONS	6
 enum
 {
-  DISPLAYMODE_16COL_LOWRES,     /* (fastest) */
-  DISPLAYMODE_16COL_HIGHRES,
-  DISPLAYMODE_16COL_FULL,
-  DISPLAYMODE_HICOL_LOWRES,
-  DISPLAYMODE_HICOL_HIGHRES,
-  DISPLAYMODE_HICOL_FULL        /* (slowest) */
+  DISPLAYMODE_LOWCOL_LOWRES,     /* low color, low resolution (fastest) */
+  DISPLAYMODE_LOWCOL_HIGHRES,    /* low color, zoomed resolution */
+  DISPLAYMODE_LOWCOL_DUMMY,      /* unused */
+  DISPLAYMODE_HICOL_LOWRES,      /* high color, low resolution */
+  DISPLAYMODE_HICOL_HIGHRES,     /* high color, zoomed resolution (slowest) */
+  DISPLAYMODE_HICOL_DUMMY        /* unused */
 };
 
 

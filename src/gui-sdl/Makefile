@@ -12,8 +12,8 @@ CFLAGS += -DDATADIR=\"$(DATADIR)\" $(INCFLAGS) $(SDL_CFLAGS)
 
 
 DLGSRCS = dlgAbout.c dlgAlert.c dlgDevice.c dlgDisc.c dlgJoystick.c \
-  dlgKeyboard.c dlgMain.c dlgMemory.c dlgNewDisc.c dlgScreen.c dlgSound.c \
-  dlgSystem.c dlgTosGem.c dlgFileSelect.c sdlgui.c
+  dlgKeyboard.c dlgMain.c dlgMemory.c dlgNewDisc.c dlgRom.c \
+  dlgScreen.c dlgSound.c dlgSystem.c dlgFileSelect.c sdlgui.c
 
 
 DLGOBJS = $(DLGSRCS:.c=.o)

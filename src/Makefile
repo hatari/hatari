@@ -19,8 +19,8 @@ CPUOBJS = ./uae-cpu/hatari-glue.o ./uae-cpu/memory.o ./uae-cpu/newcpu.o \
 GUIOBJS = ./gui-sdl/dlgAbout.o ./gui-sdl/dlgAlert.o ./gui-sdl/dlgDevice.o \
   ./gui-sdl/dlgDisc.o ./gui-sdl/dlgJoystick.o ./gui-sdl/dlgKeyboard.o \
   ./gui-sdl/dlgMain.o ./gui-sdl/dlgMemory.o ./gui-sdl/dlgNewDisc.o \
-  ./gui-sdl/dlgScreen.o ./gui-sdl/dlgSound.o ./gui-sdl/dlgSystem.o \
-  ./gui-sdl/dlgTosGem.o ./gui-sdl/dlgFileSelect.o ./gui-sdl/sdlgui.o
+  ./gui-sdl/dlgRom.o ./gui-sdl/dlgScreen.o ./gui-sdl/dlgSound.o  \
+  ./gui-sdl/dlgSystem.o ./gui-sdl/dlgFileSelect.o ./gui-sdl/sdlgui.o
 
 
 SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c \

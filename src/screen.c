@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.34 2004-12-03 20:42:45 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.35 2004-12-05 23:30:17 thothy Exp $";
 
 #include <SDL.h>
 
@@ -83,7 +83,7 @@ static void Screen_SetWindowRes()
     switch(STRes)
     {
       case ST_LOW_RES:
-        if (ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_16COL_LOWRES
+        if (ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_LOWCOL_LOWRES
             || ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_HICOL_LOWRES)
         {
           Width = 320;
@@ -115,8 +115,8 @@ static void Screen_SetWindowRes()
   }
 
   /* Bits per pixel */
-  if (ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_16COL_LOWRES
-      || ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_16COL_HIGHRES
+  if (ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_LOWCOL_LOWRES
+      || ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_LOWCOL_HIGHRES
       || STRes == ST_HIGH_RES || bUseVDIRes)
   {
     BitCount = 8;
@@ -759,7 +759,7 @@ static void Screen_SetWindowConvertDetails(void)
     pHBLPalettes = pFrameBuffer->HBLPalettes;
   }
 
-  if (!ConfigureParams.Screen.bInterlacedScreen)
+  if (!ConfigureParams.Screen.bInterleavedScreen)
   {
     bScrDoubleY = TRUE;
   }
@@ -800,8 +800,8 @@ static void Screen_SetFullScreenConvertDetails(void)
   pPCScreenDest += pScreenDraw->Overscan[OverscanMode].PCStartXOffset;
   pHBLPalettes = pFrameBuffer->HBLPalettes;
 
-  /* Is non-interlaced? May need to double up on Y */
-  if (!ConfigureParams.Screen.bInterlacedScreen)
+  /* Is non-interleaved? May need to double up on Y */
+  if (!ConfigureParams.Screen.bInterleavedScreen)
   {
     bScrDoubleY = TRUE;
   }
@@ -955,7 +955,7 @@ void Screen_DrawFrame(BOOL bForceFlip)
     {
       Screen_SetFullScreenConvertDetails();
     }
-    /* Clear screen on full update to clear out borders and also interlaced lines */
+    /* Clear screen on full update to clear out borders and also interleaved lines */
     if (pFrameBuffer->bFullUpdate && !bUseVDIRes)
       Screen_ClearScreen();
     /* Call drawing for full-screen */

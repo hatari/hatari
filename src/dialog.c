@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.41 2004-09-24 12:55:07 thothy Exp $";
+char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.42 2004-12-05 23:30:17 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -52,15 +52,15 @@ static BOOL Dialog_DoNeedReset(void)
   if (ConfigureParams.Screen.bUseHighRes!=DialogParams.Screen.bUseHighRes)
     return(TRUE);
   /* Did change to GEM VDI display? */
-  if (ConfigureParams.TOSGEM.bUseExtGEMResolutions!=DialogParams.TOSGEM.bUseExtGEMResolutions)
+  if (ConfigureParams.Screen.bUseExtVdiResolutions != DialogParams.Screen.bUseExtVdiResolutions)
     return(TRUE);
   /* Did change GEM resolution or colour depth? */
-  if ( DialogParams.TOSGEM.bUseExtGEMResolutions &&
-      ((ConfigureParams.TOSGEM.nGEMResolution!=DialogParams.TOSGEM.nGEMResolution)
-       || (ConfigureParams.TOSGEM.nGEMColours!=DialogParams.TOSGEM.nGEMColours)) )
+  if ( DialogParams.Screen.bUseExtVdiResolutions &&
+      ((ConfigureParams.Screen.nVdiResolution != DialogParams.Screen.nVdiResolution)
+       || (ConfigureParams.Screen.nVdiColors != DialogParams.Screen.nVdiColors)) )
     return(TRUE);
   /* Did change TOS ROM image? */
-  if (strcmp(DialogParams.TOSGEM.szTOSImageFileName, ConfigureParams.TOSGEM.szTOSImageFileName))
+  if (strcmp(DialogParams.Rom.szTosImageFileName, ConfigureParams.Rom.szTosImageFileName))
     return(TRUE);
   /* Did change HD image? */
   if (strcmp(DialogParams.HardDisc.szHardDiscImage, ConfigureParams.HardDisc.szHardDiscImage))

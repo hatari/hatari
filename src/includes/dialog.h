@@ -28,6 +28,6 @@ extern void DlgNewDisc_Main(void);
 extern void Dialog_ScreenDlg(void);
 extern void Dialog_SoundDlg(void);
 extern void Dialog_SystemDlg(void);
-extern void Dialog_TosGemDlg(void);
+extern void DlgRom_Main(void);
 
 #endif

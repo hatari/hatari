@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.32 2004-09-24 16:06:24 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.33 2004-12-05 23:30:17 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -36,14 +36,16 @@ char sConfigFileName[FILENAME_MAX];         /* Stores the name of the configurat
 struct Config_Tag configs_Screen[] =
 {
   { "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
-  { "bDoubleSizeWindow", Bool_Tag, &ConfigureParams.Screen.bDoubleSizeWindow },
-  { "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
-  { "bInterlacedScreen", Bool_Tag, &ConfigureParams.Screen.bInterlacedScreen },
   { "bFrameSkip", Bool_Tag, &ConfigureParams.Screen.bFrameSkip },
+  { "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
+  { "bInterleavedScreen", Bool_Tag, &ConfigureParams.Screen.bInterleavedScreen },
   { "ChosenDisplayMode", Int_Tag, &ConfigureParams.Screen.ChosenDisplayMode },
+  { "bUseHighRes", Bool_Tag, &ConfigureParams.Screen.bUseHighRes },
+  { "bUseExtVdiResolutions", Bool_Tag, &ConfigureParams.Screen.bUseExtVdiResolutions },
+  { "nVdiResolution", Int_Tag, &ConfigureParams.Screen.nVdiResolution },
+  { "nVdiColors", Int_Tag, &ConfigureParams.Screen.nVdiColors },
   { "bCaptureChange", Bool_Tag, &ConfigureParams.Screen.bCaptureChange },
   { "nFramesPerSecond", Int_Tag, &ConfigureParams.Screen.nFramesPerSecond },
-  { "bUseHighRes", Bool_Tag, &ConfigureParams.Screen.bUseHighRes },
   { NULL , Error_Tag, NULL }
 };
 
@@ -111,13 +113,11 @@ struct Config_Tag configs_HardDisc[] =
   { NULL , Error_Tag, NULL }
 };
 
-/* Used to load/save TOS/GEM options */
-struct Config_Tag configs_TosGem[] =
+/* Used to load/save ROM options */
+struct Config_Tag configs_Rom[] =
 {
-  { "szTOSImageFileName", String_Tag, ConfigureParams.TOSGEM.szTOSImageFileName },
-  { "bUseExtGEMResolutions", Bool_Tag, &ConfigureParams.TOSGEM.bUseExtGEMResolutions },
-  { "nGEMResolution", Int_Tag, &ConfigureParams.TOSGEM.nGEMResolution },
-  { "nGEMColours", Int_Tag, &ConfigureParams.TOSGEM.nGEMColours },
+  { "szTosImageFileName", String_Tag, ConfigureParams.Rom.szTosImageFileName },
+  { "szCartridgeImageFileName", String_Tag, ConfigureParams.Rom.szCartridgeImageFileName },
   { NULL , Error_Tag, NULL }
 };
 
@@ -221,25 +221,25 @@ void Configuration_SetDefault(void)
 
   /* Set defaults for Screen */
   ConfigureParams.Screen.bFullScreen = FALSE;
-  ConfigureParams.Screen.bDoubleSizeWindow = FALSE;
-  ConfigureParams.Screen.bAllowOverscan = TRUE;
-  ConfigureParams.Screen.bInterlacedScreen = FALSE;
   ConfigureParams.Screen.bFrameSkip = FALSE;
+  ConfigureParams.Screen.bAllowOverscan = TRUE;
+  ConfigureParams.Screen.bInterleavedScreen = FALSE;
   ConfigureParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
+  ConfigureParams.Screen.bUseHighRes = FALSE;
+  ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
+  ConfigureParams.Screen.nVdiResolution = GEMRES_640x480;
+  ConfigureParams.Screen.nVdiColors = GEMCOLOUR_16;
   ConfigureParams.Screen.bCaptureChange = FALSE;
   ConfigureParams.Screen.nFramesPerSecond = 25;
-  ConfigureParams.Screen.bUseHighRes = FALSE;
 
   /* Set defaults for Sound */
   ConfigureParams.Sound.bEnableSound = TRUE;
   ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
   sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s/hatari.wav", szWorkingDir);
 
-  /* Set defaults for TOSGEM */
-  sprintf(ConfigureParams.TOSGEM.szTOSImageFileName, "%s/tos.img", DATADIR);
-  ConfigureParams.TOSGEM.bUseExtGEMResolutions = FALSE;
-  ConfigureParams.TOSGEM.nGEMResolution = GEMRES_640x480;
-  ConfigureParams.TOSGEM.nGEMColours = GEMCOLOUR_16;
+  /* Set defaults for Rom */
+  sprintf(ConfigureParams.Rom.szTosImageFileName, "%s/tos.img", DATADIR);
+  strcpy(ConfigureParams.Rom.szCartridgeImageFileName, "");
 
   /* Set defaults for System */
   ConfigureParams.System.nCpuLevel = 0;
@@ -268,10 +268,10 @@ void Configuration_WorkOnDetails(BOOL bReset)
   /* Set resolution change */
   if (bReset)
   {
-    bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions;
+    bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions;
     bUseHighRes = (!bUseVDIRes && ConfigureParams.Screen.bUseHighRes)
-                   || (bUseVDIRes && ConfigureParams.TOSGEM.nGEMColours==GEMCOLOUR_2);
-    VDI_SetResolution(ConfigureParams.TOSGEM.nGEMResolution, ConfigureParams.TOSGEM.nGEMColours);
+                   || (bUseVDIRes && ConfigureParams.Screen.nVdiColors==GEMCOLOUR_2);
+    VDI_SetResolution(ConfigureParams.Screen.nVdiResolution, ConfigureParams.Screen.nVdiColors);
   }
 
   /* Set playback frequency */
@@ -279,7 +279,7 @@ void Configuration_WorkOnDetails(BOOL bReset)
     Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackQuality);
 
   /* Remove slashes, etc.. from names */
-  File_CleanFileName(ConfigureParams.TOSGEM.szTOSImageFileName);
+  File_CleanFileName(ConfigureParams.Rom.szTosImageFileName);
 }
 
 
@@ -325,7 +325,7 @@ void Configuration_Load(void)
   Configuration_LoadSection(sConfigFileName, configs_Memory, "[Memory]");
   Configuration_LoadSection(sConfigFileName, configs_Floppy, "[Floppy]");
   Configuration_LoadSection(sConfigFileName, configs_HardDisc, "[HardDisc]");
-  Configuration_LoadSection(sConfigFileName, configs_TosGem, "[TOS-GEM]");
+  Configuration_LoadSection(sConfigFileName, configs_Rom, "[ROM]");
   Configuration_LoadSection(sConfigFileName, configs_Rs232, "[RS232]");
   Configuration_LoadSection(sConfigFileName, configs_Printer, "[Printer]");
   Configuration_LoadSection(sConfigFileName, configs_Midi, "[Midi]");
@@ -375,7 +375,7 @@ void Configuration_Save(void)
   Configuration_SaveSection(sConfigFileName, configs_Memory, "[Memory]");
   Configuration_SaveSection(sConfigFileName, configs_Floppy, "[Floppy]");
   Configuration_SaveSection(sConfigFileName, configs_HardDisc, "[HardDisc]");
-  Configuration_SaveSection(sConfigFileName, configs_TosGem, "[TOS-GEM]");
+  Configuration_SaveSection(sConfigFileName, configs_Rom, "[ROM]");
   Configuration_SaveSection(sConfigFileName, configs_Rs232, "[RS232]");
   Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");
   Configuration_SaveSection(sConfigFileName, configs_Midi, "[Midi]");

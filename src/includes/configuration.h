@@ -9,14 +9,12 @@
 #define HATARI_CONFIGURATION_H
 
 
-/* TOS/GEM configuration */
+/* ROM (TOS + cartridge) configuration */
 typedef struct
 {
-  char szTOSImageFileName[FILENAME_MAX];
-  BOOL bUseExtGEMResolutions;
-  int nGEMResolution;
-  int nGEMColours;
-} CNF_TOSGEM;
+  char szTosImageFileName[FILENAME_MAX];
+  char szCartridgeImageFileName[FILENAME_MAX];
+} CNF_ROM;
 
 
 /* Sound configuration */
@@ -135,14 +133,16 @@ typedef struct
 typedef struct
 {
   BOOL bFullScreen;
-  BOOL bDoubleSizeWindow;
-  BOOL bAllowOverscan;
-  BOOL bInterlacedScreen;
   BOOL bFrameSkip;
+  BOOL bAllowOverscan;
+  BOOL bInterleavedScreen;
   int ChosenDisplayMode;
+  BOOL bUseHighRes;
+  BOOL bUseExtVdiResolutions;
+  int nVdiResolution;
+  int nVdiColors;
   BOOL bCaptureChange;
   int nFramesPerSecond;
-  BOOL bUseHighRes;
 } CNF_SCREEN;
 
 
@@ -197,7 +197,7 @@ typedef struct
   CNF_MEMORY Memory;
   CNF_DISCIMAGE DiscImage;
   CNF_HARDDISC HardDisc;
-  CNF_TOSGEM TOSGEM;
+  CNF_ROM Rom;
   CNF_RS232 RS232;
   CNF_PRINTER Printer;
   CNF_MIDI Midi;

@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.20 2004-04-23 15:33:59 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.21 2004-12-05 23:30:17 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -362,8 +362,8 @@ int TOS_LoadImage(void)
 
   /* Load TOS image into memory so we can check it's vesion */
   TosVersion = 0;
-  pTosFile = File_Read(ConfigureParams.TOSGEM.szTOSImageFileName, NULL, NULL, pszTosNameExts);
-  TosSize = File_Length(ConfigureParams.TOSGEM.szTOSImageFileName);
+  pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, NULL, NULL, pszTosNameExts);
+  TosSize = File_Length(ConfigureParams.Rom.szTosImageFileName);
 
   if(pTosFile && TosSize>0)
   {
@@ -412,7 +412,7 @@ int TOS_LoadImage(void)
   {
     char err_txt[256];
     strcpy(err_txt, "Can not load TOS file:\n ");
-    strncat(err_txt, ConfigureParams.TOSGEM.szTOSImageFileName, 256-32);
+    strncat(err_txt, ConfigureParams.Rom.szTosImageFileName, 256-32);
     strcat(err_txt, "\n");
     Main_Message(err_txt, PROG_NAME);
     return -1;
@@ -430,7 +430,7 @@ int TOS_LoadImage(void)
     Main_Message("To use GEM extended resolutions, you must select a TOS >= 1.02.",
                  PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
     /* And select non VDI */
-    bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions = FALSE;
+    bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
   }
 
   /* Fix TOS image, modify code for emulation */

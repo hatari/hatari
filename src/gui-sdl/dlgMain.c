@@ -6,7 +6,7 @@
 
   The main dialog.
 */
-char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.4 2004-12-03 20:42:46 thothy Exp $";
+char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.5 2004-12-05 23:30:19 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -14,22 +14,10 @@ char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.4 2004-12-03 20:42:46 thothy E
 #include "sdlgui.h"
 #include "screen.h"
 
-/* Prototypes of the dialog functions: */
-void Dialog_AboutDlg(void);
-void Dialog_DiscDlg(void);
-void Dialog_TosGemDlg(void);
-void Dialog_ScreenDlg(void);
-void Dialog_SoundDlg(void);
-void Dialog_SystemDlg(void);
-void Dialog_MemDlg(void);
-void Dialog_JoyDlg(void);
-void Dialog_KeyboardDlg(void);
-void Dialog_DeviceDlg(void);
-
 
 #define MAINDLG_ABOUT    2
 #define MAINDLG_DISCS    3
-#define MAINDLG_TOSGEM   4
+#define MAINDLG_ROM      4
 #define MAINDLG_SCREEN   5
 #define MAINDLG_SOUND    6
 #define MAINDLG_CPU      7
@@ -53,7 +41,7 @@ static SGOBJ maindlg[] =
   { SGTEXT, 0, 0, 10,1, 16,1, "Hatari main menu" },
   { SGBUTTON, 0, 0, 4,4, 12,1, "About" },
   { SGBUTTON, 0, 0, 4,6, 12,1, "Discs" },
-  { SGBUTTON, 0, 0, 4,8, 12,1, "TOS/GEM" },
+  { SGBUTTON, 0, 0, 4,8, 12,1, "ROM" },
   { SGBUTTON, 0, 0, 4,10, 12,1, "Screen" },
   { SGBUTTON, 0, 0, 4,12, 12,1, "Sound" },
   { SGBUTTON, 0, 0, 20,4, 12,1, "System" },
@@ -105,8 +93,8 @@ int Dialog_MainDlg(BOOL *bReset)
       case MAINDLG_DISCS:
         Dialog_DiscDlg();
         break;
-      case MAINDLG_TOSGEM:
-        Dialog_TosGemDlg();
+      case MAINDLG_ROM:
+        DlgRom_Main();
         break;
       case MAINDLG_SCREEN:
         Dialog_ScreenDlg();
@@ -155,8 +143,6 @@ int Dialog_MainDlg(BOOL *bReset)
         bQuitProgram = TRUE;
         break;
     }
-
-    SDL_UpdateRect(sdlscrn, 0,0,0,0);
   }
   while(retbut!=MAINDLG_OK && retbut!=MAINDLG_CANCEL && !bQuitProgram);
 
