@@ -70,29 +70,32 @@ portable C and also has some nice features like 68040 and FPU support.
 
 <h3>Features</h3>
 <ul>
-  <li>complete m68k emulation via UAE's CPU core </li>
-  <li>support for EmuTOS, TOS 1.00, 1.02, 1.04, 2.05 and 2.06 </li>
-  <li>ST RAM size variable (512k, 1MB, 2MB and 4MB possible) </li>
-  <li>most of the ST specific hardware </li>
+  <li>complete m68k emulation via UAE's CPU core</li>
+  <li>support for EmuTOS, TOS 1.00, 1.02, 1.04, 2.05 and 2.06</li>
+  <li>ST RAM size variable (512k, 1MB, 2MB and 4MB possible)</li>
+  <li>most of the ST specific hardware</li>
   <li>ST Shifter with ST-High, ST-Medium and ST-Low resolutions,
 overscan effects for lower border and partially in the upper border too</li>
-  <li>512 colour ST palette </li>
-  <li>Blitter chip emulation </li>
-  <li>AY-3-8910 emulation (soundchip)</li>
+  <li>512 colour ST palette</li>
+  <li>Blitter chip emulation</li>
+  <li>PSG YM2149 emulation (soundchip)</li>
+  <li>Printer emulation on GEMDOS and Hardware level (print to file)</li>
+  <li>extremely experimental MIDI support</li>
   <li>Mega ST real time clock</li>
   <li>many (but not all) raster effects </li>
   <li>IKBD emulation (keyboard, mouse and joystick) with custom keyboard mapping</li>
   <li>joystick emulation via cursor keys and joystick emulation via a
-connected PC joystick </li>
+connected PC joystick</li>
   <li>FDC emulation using floppy disk images in standard formats (*.ST
-and *.MSA) </li>
+and *.MSA)</li>
   <li>support for zipped disk images</li>
-  <li>partial ACSI emulation for harddisk support </li>
-  <li>GEMDOS interface driver to mount a directory as a harddrive </li>
-  <li>driver for extended VDI resolutions </li>
-  <li>recording of sound as .WAV and .YM files </li>
-  <li>screenshots in .BMP format </li>
-  <li>animation capturing </li>
+  <li>partial ACSI emulation for harddisk support</li>
+  <li>GEMDOS interface driver to mount a directory as a harddrive</li>
+  <li>experimental support for memory snapshots</li>
+  <li>driver for extended VDI resolutions</li>
+  <li>recording of sound as .WAV and .YM files</li>
+  <li>screenshots in .BMP format</li>
+  <li>animation capturing</li>
   <li>interlaced rendering of ST-Low and ST-Medium resolutions </li>
   <li>scaling of ST-Low and ST-Medium to 800x600 resolution </li>
 </ul>
@@ -115,14 +118,12 @@ Hatari has been succesfully tested on the following machines:
   <li>Linux/i86 with Kernel 2.4.20, AMD Athlon 600MHz </li>
   <li>Linux/i86 with Kernel 2.2.18, Pentium MMX 200MHz </li>
   <li>Linux/PPC with Kernel 2.4.x BeOS/i86 </li>
+  <li>Linux/Sparc</li>
   <li>Apple PowerMac with Mac OS X </li>
   <li>NetBSD 1.6 </li>
   <li>FreeBSD 4.1 on a 33MHz i486 computer (very slow, but it worked!) </li>
   <li>FreeBSD 4.8 on a Pentium 4</li>
 </ul>
-<p>
-It has also been tested on Linux/Sparc and it should work by now with the latest CVS version.
-</p>
 
 <h2>Compiling and running</h2>
 
@@ -254,6 +255,14 @@ emulation)</td>
       <td align="center">--vdi</td>
       <td align="center">use extended VDI resolution</td>
     </tr>
+	<tr>
+      <td align="center">--printer</td>
+      <td align="center">enable experimental printer support</td>
+    </tr>
+	<tr>
+      <td align="center">--midi &lt;filename&gt;</td>
+      <td align="center">enable experimental MIDI output to the mentioned file</td>
+    </tr>
   </tbody>
 </table>
 
@@ -274,19 +283,24 @@ The GUI is rather self explanatory.</p>
 <h4>The System Dialog</h4>
 <p>Check the CPU type to use here, enable prefetch mode and if the Blitter should be active.</p>
 <p>For best Atari ST compatibility choose plain 68000 here.</p>
-<p><em>NOTE:</em> These parameters are sensitive to the emulated ST and it is strongly recommended to
+<p><em>NOTE:</em> These parameters are very sensitive to the emulated ST and it is strongly recommended to
 reset the emulated ST after changing these options.</p>
 
-<h4>The Floppy Disk Dialog</h4>
-<p>Use this dialog to choose which disks should be emulated in the disk drives.</p>
+<h4>The Discs Dialog</h4>
+<p>Use the upper dialog to choose which floppy disks should be emulated in the disk drives.</p>
 <p>You can use most standard Atari ST disk image files. See the chapter "Floppy disk images"
 for details.</p>
-<p>Click on the button "Browse" next to the A: and B: option to go to the fileselector.</p>
+<p>Click on the button "Browse" next to the A: and B: option to go to the fileselector.
+You may select and browse zipped disk images as well.</p>
 <p>You can specify a default directory where Hatari will start to browse the filesystem.</p>
 <p>Check the "Auto insert B" option if you want Hatari to be smart and insert the second disk
 of a two disk game automatically. This option will insert the second disk in drive B and some
 games may not be able to find the disks there. In that rare case you will need to insert the
 second disk manually when prompted.</p>
+<p>
+<em>NOTE:</em> This option does not always work properly.
+</p>
+<p>Use the lower dialog to change the harddisk settings.</p>
 <p>You can select a harddrive image for harddrive emulation via image file here or you may select
 a directory of your local filesystem to be emulated as the ST's harddrive.</p>
 <p>Check "Boot from HD" if you want Hatari to execute the AUTO folder on the harddrive.
@@ -296,6 +310,11 @@ This option is checked by default if you specify a harddrive image or a director
 <p>You can select the amount of RAM for the emulated ST here.</p>
 <p><em>Note:</em> This option is critical and you are strongly advised to reset the emulated ST
 when changing this option.</p>
+<p>Here you will find the options to save memory snapshots as well.</p>
+<p>Click on "Browse" to select a memory snapshot file to used. You can type a new filename as well.</p>
+<p>Click on "Save" to save a memory snapshot to the selected file.</p>
+<p>Click on "Restore" to restore a memory snapshot.</p>
+<p><em>NOTE:</em> Memory snapshots should be considered <span style="color:red;">EXPERIMENTAL</span> and the Hatari team strongly advises you not to rely on them yet!</p>
 
 <h4>The TOS/GEM Dialog</h4>
 <p>Here you can select the TOS image to use. Click on "Browse" to select it via the fileselector.</p>
@@ -326,7 +345,7 @@ This toggle acts like a monitor switch with a color and monochrome monitor conne
 <p>"ST-Low mode" will control if Hatari renders ST-LOW to a 320x200 or 640x400 PC display (with borders turned off) or 384x267 or 768x534.
 Basically select this to toggle between a small or a large window.</p>
 <p>Click "Capture Screen" to create a screenshot in .BMP format to the current working directory or click "Record Animation"
-to record a little movie.
+to record a sequence of single screenshots.
 </p>
 
 <h4>The Keyboard Dialog</h4>
@@ -344,6 +363,14 @@ Medium quality will work ok in most cases.</p>
 <p>You can select to record a piece of sound here. Check which format to use and click the button. It is a toggle button so
 you will need to return to the GUI to switch sound recording off again.</p>
 
+<h4>The Devices Dialog</h4>
+<p>Check here if you want to enable experimental printer support. See the chapter "Emulated printer" for details.</p>
+<p>As Hatari currently only supports printing to file, click on "Browse" to select the file to print to. You can enter a new
+filename as well.</p>
+<p><em>NOTE:</em> As the printer emulation is not perfect yet, activated printer support may interfere with the emulated sound.
+This is due to the fact that the Atari ST uses some general I/O ports of the soundchip for the printer port. The Hatari team suggest to
+disable printing while using games and demos.
+</p>
 
 <h3>Keyboard shortcuts</h3>
 <p> While the emulator is running, you can activate or toggle various
@@ -385,7 +412,7 @@ features via the following keyboard shortcuts. </p>
     </tr>
     <tr>
       <td align="center"><span class="key">F12</span></td>
-      <td align="center">activate the GUI</td>
+      <td align="center"><p>activate the GUI</p><p>You may need to hold <span class="key">SHIFT</span> down while in windowed mode.</p></td>
     </tr>
     <tr>
       <td align="center"><span class="key">PAUSE</span></td>
@@ -459,6 +486,15 @@ cursor keys. Just activate it in the GUI. Then the cursor keys will act
 as the joystick directions, the right CTRL key will act as the
 firebutton. You can still use the cursor keys as the ST's
 cursorkeys in this mode as long as you press <span class="key">SHIFT</span> along with the cursorkeys. </p>
+
+<h3>Emulated printer</h3>
+<p>Due to the fact that printer handling is very different between Unix style machines and the Atari ST, emulation
+of the printer is achieved by writing all printer output to a file.</p>
+<p>The file will contain a sequence of data the same that would appear on the data pins of the Atari ST printer port.
+That would include control characters and commands for graphic printing. Clicking "Print desktop"on the GEM desktop would result
+in a messy data dump in the printer output.</p>
+<p>Printer emulation works best for plain text files or programs that do not format the output for a specific printer.
+The file contents can be used with your favourite text editor for further processing and printing to a real printer.</p>
 
 <h2>Floppy disk images</h2>
 <p>Hatari does not use floppy disks directly but disk images due to
@@ -729,7 +765,7 @@ parts of the emulated system is much trickier.
 	<tbody>
     <tr>
       <td align="left"><a href="http://validator.w3.org/check/referer"><img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a></td>
-      <td align="right"><address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a> July 08 2003</address></td>
+      <td align="right"><address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a> October 07 2003</address></td>
     </tr>
 	</tbody>
 </table>
