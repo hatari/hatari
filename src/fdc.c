@@ -55,7 +55,7 @@ Programmable Sound Generator (YM-2149)
     1111    I/O Port B Select
 
   0xfff8802(even byte)  - Bits according to 0xff8800 Register select
-    
+
   1110(Register 14) - I/O Port A
     Bit 0 - Floppy side 0/1
     Bit 1 - Floppy drive 0 select
@@ -271,7 +271,7 @@ void FDC_ResetDMAStatus(void)
 /*-----------------------------------------------------------------------*/
 /*
   Set DMA Status (RD 0xff8606)
-  
+
   NOTE FDC Doc's are incorrect - Bit 0 is '0' on error (See TOS floprd, Ninja III etc...)
   Look like Atari(yet again) connected the hardware up differently to the spec'
 
@@ -289,7 +289,7 @@ void FDC_SetDMAStatus(BOOL bError)
 
   /* Set zero sector count */
 
-  if (DMAModeControl_ff8606wr&0x08)         /* Get which sector count? */ 
+  if (DMAModeControl_ff8606wr&0x08)         /* Get which sector count? */
     DMAStatus_ff8606rd |= (HDCSectorCount)?0:0x2;         /* HDC */
   else
     DMAStatus_ff8606rd |= (FDCSectorCountRegister)?0x2:0; /* FDC */
@@ -1071,7 +1071,10 @@ void FDC_WriteDataRegister(void)
 */
 void FDC_WriteDiscControllerByte(void)
 {
-  HDC_WriteCommandPacket();           /*  Handle HDC functions */ 
+  HDC_WriteCommandPacket();           /*  Handle HDC functions */
+
+  // filter hdc commands
+  if ((DMAModeControl_ff8606wr & 0x0018) == 8) return;
 
   /* Are we trying to set the SectorCount? */
   if (DMAModeControl_ff8606wr&0x10)         /* Bit 4 */
