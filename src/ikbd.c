@@ -647,11 +647,6 @@ void IKBD_SendAutoKeyboardCommands(void)
   if (!bInitGemDOS)
     return;
 
-  /* Do not send auto commands directly after a reset command. */
-  /* I hope that it is okay that I added this here - Thothy */
-//  if( bDuringResetCriticalTime )
-//    return;
-
   /* Don't do anything until processor is first reset */
   if (!KeyboardProcessor.bReset)
     return;
@@ -1485,8 +1480,8 @@ void IKBD_AddKeyToKeyboardBuffer(unsigned char Data)
 void IKBD_PressSTKey(unsigned char ScanCode,BOOL bPress)
 {
   /* Ignore anything until we've redirected our GEM handlers */
-//FM  if (!bInitGemDOS)
-//FIXME    return;
+  if (!bInitGemDOS)
+    return;
   if (!bPress)
     ScanCode |= 0x80;    /* Set top bit if released key */
   IKBD_AddKeyToKeyboardBuffer(ScanCode);  /* And send to keyboard processor */
