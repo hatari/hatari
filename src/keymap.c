@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-static char rcsid[] = "Hatari $Id: keymap.c,v 1.14 2003-08-09 13:58:42 simonsunnyboy Exp $";
+static char rcsid[] = "Hatari $Id: keymap.c,v 1.15 2004-02-21 13:24:51 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -94,6 +94,10 @@ Ins   Del
 
 
 */
+
+
+/* Mask of valid shortcut key modifiers */
+#define KEYMAP_SHORTCUTMODS  (KMOD_RALT|KMOD_LMETA|KMOD_RMETA|KMOD_MODE)
 
 
 /* SDL symbolic key to ST scan code mapping table */
@@ -720,7 +724,7 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 
   /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
   if((ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
-     && !(modkey&(KMOD_LSHIFT|KMOD_RSHIFT)))
+     && !(modkey & KMOD_SHIFT))
   {
     if(symkey == SDLK_UP)
       { cursorJoyEmu |= 1; return; }
@@ -735,7 +739,8 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
   }
 
   /* Handle special keys */
-  if(symkey == SDLK_MODE || symkey == SDLK_LMETA || symkey == SDLK_NUMLOCK)
+  if (symkey == SDLK_RALT || symkey == SDLK_LMETA || symkey == SDLK_RMETA
+      || symkey == SDLK_MODE || symkey == SDLK_NUMLOCK)
   {
     /* Ignore modifier keys that aren't passed to the ST */
     return;
@@ -758,11 +763,11 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
   Keyboard.KeyStates[symkey] = TRUE;
 
   /* If pressed short-cut key, retain keypress until safe to execute (start of VBL) */
-  if((modkey&KMOD_MODE) || (modkey&KMOD_LMETA))
+  if (modkey & KEYMAP_SHORTCUTMODS)
   {
     ShortCutKey.Key = symkey;
-    if( modkey&(KMOD_LCTRL|KMOD_RCTRL) )  ShortCutKey.bCtrlPressed = TRUE;
-    if( modkey&(KMOD_LSHIFT|KMOD_RSHIFT) )  ShortCutKey.bShiftPressed = TRUE;
+    if (modkey & KMOD_CTRL)  ShortCutKey.bCtrlPressed = TRUE;
+    if (modkey & KMOD_SHIFT)  ShortCutKey.bShiftPressed = TRUE;
   }
   else
   {
@@ -791,7 +796,7 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
 
   /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
   if((ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
-     && !(modkey&(KMOD_LSHIFT|KMOD_RSHIFT)))
+     && !(modkey & KMOD_SHIFT))
   {
     if(symkey == SDLK_UP)
       { cursorJoyEmu &= ~1; return; }
@@ -806,7 +811,8 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
   }
 
   /* Handle special keys */
-  if(symkey == SDLK_MODE || symkey == SDLK_LMETA || symkey == SDLK_NUMLOCK)
+  if (symkey == SDLK_RALT || symkey == SDLK_LMETA || symkey == SDLK_RMETA
+      || symkey == SDLK_MODE || symkey == SDLK_NUMLOCK)
   {
     /* Ignore modifier keys that aren't passed to the ST */
     return;
