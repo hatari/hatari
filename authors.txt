@@ -1,7 +1,7 @@
 
 Hatari developers:
 
-Thomas Huth <thothy@gmx.net> (thothy)
+Thomas Huth <thothy@users.sourceforge.net>
 Stefan Berndtsson <stefan@nocrew.org>
 Sven de Marothy <k98_sdy@k.kth.se>
 
