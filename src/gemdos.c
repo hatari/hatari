@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.33 2005-03-11 10:10:37 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.34 2005-03-14 13:08:09 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -280,10 +280,12 @@ static void ClearInternalDTA(void)
 
   /* clear the old DTA structure */
   if(InternalDTAs[DTAIndex].found != NULL){
-    for(i=0; i <InternalDTAs[DTAIndex].nentries; i++)
+    for(i=0; i < InternalDTAs[DTAIndex].nentries; i++)
       free(InternalDTAs[DTAIndex].found[i]);
     free(InternalDTAs[DTAIndex].found);
+    InternalDTAs[DTAIndex].found = NULL;
   }
+  InternalDTAs[DTAIndex].nentries = 0;
   InternalDTAs[DTAIndex].bUsed = FALSE;
 }
 
@@ -294,32 +296,33 @@ static void ClearInternalDTA(void)
 */
 static int match (char *pat, char *name)
 {
-  /* make uppercase copies */
-  char p0[MAX_PATH], n0[MAX_PATH];
-  strcpy(p0, pat);
-  strcpy(n0, name);
-  Misc_strupr(p0);
-  Misc_strupr(n0);
+  char *p=pat, *n=name;
 
-  if(name[0] == '.') return(FALSE);                   /* no .* files */
-  if (strcmp(pat,"*.*")==0) return(TRUE);
-  else if (strcasecmp(pat,name)==0) return(TRUE);
-  else
+  if(name[0] == '.')
+    return FALSE;                   /* no .* files */
+  if (strcmp(pat,"*.*")==0)
+    return TRUE;
+  if (strcasecmp(pat,name)==0)
+    return TRUE;
+
+  for(;*n;)
     {
-      char *p=p0,*n=n0;
-      for(;*n;)
-	{
-	  if (*p=='*') {while (*n && *n != '.') n++;p++;}
-	  else if (*p=='?' && *n) {n++;p++;}
-	  else if (*p++ != *n++) return(FALSE);
-	}
-      if (*p==0)
-	{
-	  return(TRUE);
-	}
+      if (*p=='*')
+        {
+          while (*n && *n != '.')
+            n++; p++;
+        }
+      else
+        if (*p=='?' && *n)
+          { n++; p++; }
+        else
+          if (toupper(*p++) != toupper(*n++))
+             return FALSE;
     }
-  return(FALSE);
+
+  return (*p == 0);     /* The name matches the pattern if it ends here, too */
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -379,6 +382,7 @@ void GemDOS_Init(void)
   DTAIndex = 0;
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
   Reset GemDOS file system
@@ -398,18 +402,16 @@ void GemDOS_Reset(void)
     FileHandles[i].bUsed = FALSE;
   }
 
-  for(i=0; i<MAX_DTAS_FILES; i++)
+  for (DTAIndex = 0; DTAIndex < MAX_DTAS_FILES; DTAIndex++)
   {
-    InternalDTAs[i].bUsed = FALSE;
-    InternalDTAs[i].nentries = 0;
-    InternalDTAs[i].found = NULL;
+    ClearInternalDTA();
   }
+  DTAIndex = 0;
 
   /* Reset */
   bInitGemDOS = FALSE;
   CurrentDrive = nBootDrive;
   pDTA = NULL;
-  DTAIndex = 0;
 }
 
 
@@ -1458,7 +1460,7 @@ static BOOL GemDOS_SFirst(unsigned long Params)
   unsigned short int Attr;
   int Drive;
   DIR *fsdir;
-  int i,j,k;
+  int i,j,count;
 
   /* Find filename to search for */
   pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
@@ -1500,39 +1502,32 @@ static BOOL GemDOS_SFirst(unsigned long Params)
     /* close directory */
     closedir( fsdir );
 
-    InternalDTAs[DTAIndex].nentries = scandir(InternalDTAs[DTAIndex].path, &files, 0, alphasort);
-    if( InternalDTAs[DTAIndex].nentries < 0 ){
-      Regs[REG_D0] = GEMDOS_EFILNF;        /* File (directory actually) not found */
+    count = scandir(InternalDTAs[DTAIndex].path, &files, 0, alphasort);
+    /* File (directory actually) not found */
+    if( count < 0 ){
+      Regs[REG_D0] = GEMDOS_EFILNF;
       return(TRUE);
     }
 
-    InternalDTAs[DTAIndex].centry = 0;        /* current entry is 0 */
+    InternalDTAs[DTAIndex].centry = 0;          /* current entry is 0 */
     fsfirst_dirmask(szActualFileName, tempstr); /* get directory mask */
+    InternalDTAs[DTAIndex].found = files;       /* get files */
 
-    /* Create and populate a list of matching files. */
-
-    j = 0;                     /* count number of entries matching mask */
-    for(i=0;i<InternalDTAs[DTAIndex].nentries;i++)
-      if(match(tempstr, files[i]->d_name)) j++;
-
-    if (j==0) {
-      return FALSE;
-    }
-
-    InternalDTAs[DTAIndex].found = (struct dirent **)malloc(sizeof(struct dirent *) * j);
-
-    /* copy the dirent pointers for files matching the mask to our list */
-    k = 0;
-    for(i=0;i<InternalDTAs[DTAIndex].nentries;i++)
+    /* count & copy the entries that match our mask and discard the rest */
+    j = 0;
+    for(i=0; i < count; i++)
       if(match(tempstr, files[i]->d_name)){
-	InternalDTAs[DTAIndex].found[k] = files[i];
-	k++;
+        InternalDTAs[DTAIndex].found[j] = files[i];
+        j++;
+      } else {
+        free(files[i]);
       }
-
     InternalDTAs[DTAIndex].nentries = j; /* set number of legal entries */
 
-    if(InternalDTAs[DTAIndex].nentries == 0){
-      /* No files of that match, return error code */
+    /* No files of that match, return error code */
+    if (j==0) {
+      free(files);
+      InternalDTAs[DTAIndex].found = NULL;
       Regs[REG_D0] = GEMDOS_EFILNF;        /* File not found */
       return(TRUE);
     }
