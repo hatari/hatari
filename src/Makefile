@@ -6,9 +6,6 @@ include ../Makefile.cnf
 # Additional include directories:
 INCFLAGS = -I./includes -I./uae-cpu
 
-# Additional libaries:
-LIBFLAGS = -lz
-
 
 CFLAGS += -DDATADIR=\"$(DATADIR)\" $(INCFLAGS) $(SDL_CFLAGS)
 
@@ -43,7 +40,7 @@ ALLOBJS = $(OBJS) $(GUIOBJS) $(CPUOBJS)
 all: hatari
 
 hatari: $(ALLOBJS)
-	$(CC) $(ALLOBJS) $(SDL_LIBS) $(LIBFLAGS) -o hatari
+	$(CC) $(LDFLAGS) $(ALLOBJS) $(SDL_LIBS) $(LIBS) -o hatari
 
 clean:
 	rm -f *.o hatari

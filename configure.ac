@@ -103,8 +103,21 @@ if test x"${GCC}" = xyes; then
   if test x"${ENABLE_WERROR}" != xno; then
     CFLAGS="${CFLAGS} -Werror"
   fi
-  CFLAGS="${CFLAGS} -Wall -Wmissing-declarations -Wcast-align"
+  CFLAGS="${CFLAGS} -Wall"
 
+fi
+
+
+# Cross-compiling ?
+
+HOSTCFLAGS="-O"
+HOSTLDFLAGS=""
+if test "${build}" != "${target}" -a "${HOSTCC}" == "${CC}"; then
+  AC_MSG_WARN([Cross compiling... I will now use cc as host compiler!])
+  HOSTCC=cc
+else
+  HOSTCFLAGS="${CFLAGS}"
+  HOSTLDFLAGS="${LDFLAGS}"
 fi
 
 
@@ -126,6 +139,8 @@ if test "${datadir}" = '${prefix}/share'; then
 fi
 
 AC_SUBST(HOSTCC)
+AC_SUBST(HOSTCFLAGS)
+AC_SUBST(HOSTLDFLAGS)
 
 AC_OUTPUT(Makefile.cnf)
 
@@ -137,5 +152,11 @@ AC_MSG_NOTICE([| Note that you have to use GNU-Make to build it.     |])
 AC_MSG_NOTICE([|                                                     |])
 AC_MSG_NOTICE([| - If you are using Linux then type:  make           |])
 AC_MSG_NOTICE([| - If you are using *BSD then try :   gmake          |])
+AC_MSG_NOTICE([|                                                     |])
+AC_MSG_NOTICE([| After compiling, you can install the program by     |])
+AC_MSG_NOTICE([| typing:  make install  (or: gmake install)          |])
+AC_MSG_NOTICE([|                                                     |])
+AC_MSG_NOTICE([| For information about the configuration variables,  |])
+AC_MSG_NOTICE([| please have a look at Makefile.cnf.                 |])
 AC_MSG_NOTICE([|                                                     |])
 AC_MSG_NOTICE([+-----------------------------------------------------+])

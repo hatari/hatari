@@ -7,6 +7,8 @@ include ../../Makefile.cnf
 CFLAGS += -I. $(SDL_CFLAGS)
 QUIETCFLAGS = $(CFLAGS) -Wno-unused
 
+HOSTCFLAGS += $(SDL_CFLAGS)
+
 
 CPUCSRCS = hatari-glue.c memory.c newcpu.c readcpu.c fpp.c cpustbl.c cpudefs.c
 
@@ -24,22 +26,22 @@ clean:
 
 
 build68k: build68k.c
-	$(HOSTCC) $(SDL_CFLAGS) -o $@ $<
+	$(HOSTCC) $(HOSTCFLAGS) -o $@ $<
 
 cpudefs.c: ./build68k ./table68k
 	./build68k <./table68k >cpudefs.c
 
 cpudefs-host.o: cpudefs.c
-	$(HOSTCC) $(SDL_CFLAGS) -c -o $@ $<
+	$(HOSTCC) $(HOSTCFLAGS) -c -o $@ $<
 
 readcpu-host.o: readcpu.c
-	$(HOSTCC) $(SDL_CFLAGS) -c -o $@ $<
+	$(HOSTCC) $(HOSTCFLAGS) -c -o $@ $<
 
 gencpu.o: gencpu.c
-	$(HOSTCC) $(SDL_CFLAGS) -c -o $@ $<
+	$(HOSTCC) $(HOSTCFLAGS) -c -o $@ $<
 
 gencpu: gencpu.o readcpu-host.o cpudefs-host.o
-	$(HOSTCC) $(LDFLAGS) -o $@ $^
+	$(HOSTCC) $(HOSTLDFLAGS) -o $@ $^
 
 cpuemu.c: gencpu
 	./gencpu

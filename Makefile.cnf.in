@@ -1,17 +1,30 @@
 # Makefile configuration for Hatari.
 
+
 # Set the C compiler (e.g. gcc)
 CC = @CC@
-
-# The native C compiler.
-# This is normaly the same as $(CC) unless you are using a cross compiler.
-HOSTCC = @HOSTCC@
 
 # Set flags passed to the compiler (e.g. optimization flags)
 CFLAGS = @CFLAGS@
 
 # Set flags passed to the preprocessor (e.g. -I<include dir>)
 CPPFLAGS = @CPPFLAGS@
+
+# Additional libraries and linker flags:
+LIBS = @LIBS@
+LDFLAGS = @LDFLAGS@
+
+
+# The native C compiler.
+# This is normaly the same as $(CC) unless you are using a cross compiler.
+HOSTCC = @HOSTCC@
+
+# Native C compiler flags:
+HOSTCFLAGS = @HOSTCFLAGS@
+
+# Native linker flags:
+HOSTLDFLAGS = @HOSTLDFLAGS@
+
 
 # SDL-Library configuration (compiler flags and linker options)
 SDL_CFLAGS = @SDL_CFLAGS@
