@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-static char rcsid[] = "Hatari $Id: gemdos.c,v 1.16 2003-03-28 16:10:27 emanne Exp $";
+static char rcsid[] = "Hatari $Id: gemdos.c,v 1.17 2003-03-29 13:09:38 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -54,6 +54,14 @@ static char rcsid[] = "Hatari $Id: gemdos.c,v 1.16 2003-03-28 16:10:27 emanne Ex
 
 #ifndef MAX_PATH
 #define MAX_PATH 256
+#endif
+
+/* GLOB_ONLYDIR is a GNU extension for the glob() function and not defined
+ * on some systems. We should probably use something different for this
+ * case, but at the moment it we simply define it as 0... */
+#ifndef GLOB_ONLYDIR
+#warning GLOB_ONLYDIR was not defined.
+#define GLOB_ONLYDIR 0
 #endif
 
 
@@ -200,19 +208,6 @@ unsigned short date2dos (time_t t)
 }
 
 
-/*
-   Convert a string to uppercase
-*/
-void strupr(char *string)
-{
-  while(*string)
-  {
-    *string = toupper(*string);
-    string++;
-  }
-}
-
-
 /*-----------------------------------------------------------------------*/
 /*
   Populate a DATETIME structure with file info
@@ -257,7 +252,7 @@ int PopulateDTA(char *path, struct dirent *file)
   if(n != 0) return(FALSE); /* return on error */
 
   if(!pDTA) return(FALSE); /* no DTA pointer set */
-  strupr(file->d_name);    /* convert to atari-style uppercase */
+  Misc_strupr(file->d_name);    /* convert to atari-style uppercase */
   strncpy(pDTA->dta_name,file->d_name,TOS_NAMELEN); /* FIXME: better handling of long file names */
   STMemory_WriteLong_PCSpace(pDTA->dta_size, (long)filestat.st_size);
   STMemory_WriteWord_PCSpace(pDTA->dta_time, time2dos(filestat.st_mtime));
@@ -295,7 +290,8 @@ static int match (char *pat, char *name)
   char p0[MAX_PATH], n0[MAX_PATH];
   strcpy(p0, pat);
   strcpy(n0, name);
-  strupr(p0); strupr(n0);
+  Misc_strupr(p0);
+  Misc_strupr(n0);
 
   if(name[0] == '.') return(FALSE);                   /* no .* files */
   if (strcmp(pat,"*.*")==0) return(TRUE);
