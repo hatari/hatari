@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-static char rcsid[] = "Hatari $Id: dlgDisc.c,v 1.2 2003-08-11 19:37:36 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dlgDisc.c,v 1.3 2003-09-02 21:54:35 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -81,6 +81,7 @@ void Dialog_DiscDlg(void)
   /* Allocate memory for tmpname and zip_path: */
   tmpname = Memory_Alloc(2 * MAX_FILENAME_LENGTH);
   zip_path = tmpname + MAX_FILENAME_LENGTH;
+  zip_path[0] = 0;
 
   SDLGui_CenterDlg(discdlg);
 

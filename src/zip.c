@@ -121,7 +121,7 @@ struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
   struct dirent **fentries;
 
   files = (zip_dir *)Memory_Alloc(sizeof(zip_dir));
-  files->names = (char **)Memory_Alloc(zip->nfiles * sizeof(char *));
+  files->names = (char **)Memory_Alloc((zip->nfiles + 1) * sizeof(char *));
 
   /* add ".." directory */
   files->nfiles = 1;
