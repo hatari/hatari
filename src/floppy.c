@@ -1,21 +1,27 @@
 /*
-  Hatari
+  Hatari - floppy.c
 
-  This where we read/write sectors to/from the disc image buffers. NOTE these buffers are in
-  memory so we only need to write routines for the .ST format. When the buffer is to be
-  saved(ie eject disc) we save it back to the original file in the correct format(.ST or .MSA)
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
-  There are some important notes about image accessing - as we use TOS and the FDC to access
-  the disc the boot-sector MUST be valid. Sometimes this is NOT the case! In these
-  situations we must guess at the disc format. Eg, some disc images have a a boot sector which
-  states single-sided, but the images have been created as double-sided. As sides are interleaved
-  we need to read the image as if it was double-sided. Also note that 'NumBytesPerSector' is
-  ALWAYS 512 bytes, even if the boot-sector states otherwise.
+  This where we read/write sectors to/from the disc image buffers. NOTE these
+  buffers are in memory so we only need to write routines for the .ST format.
+  When the buffer is to be saved (ie eject disc) we save it back to the original
+  file in the correct format (.ST or .MSA).
+
+  There are some important notes about image accessing - as we use TOS and the
+  FDC to access the disc the boot-sector MUST be valid. Sometimes this is NOT
+  the case! In these situations we must guess at the disc format. Eg, some disc
+  images have a a boot sector which states single-sided, but the images have
+  been created as double-sided. As sides are interleaved we need to read the
+  image as if it was double-sided. Also note that 'NumBytesPerSector' is ALWAYS
+  512 bytes, even if the boot-sector states otherwise.
   Also note that old versions of the MAKEDISK utility do not set the correct
   boot sector structure for a real ST (and also Hatari) to read it correctly.
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
+static char rcsid[] = "Hatari $Id: floppy.c,v 1.7 2003-03-07 17:08:36 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -36,7 +42,8 @@ EMULATION_DRIVE EmulationDrives[NUM_EMULATION_DRIVES];  /* Emulation drive detai
 int nBootDrive=0;               /* Drive A, default */
 
 /* Possible disc image file extensions to scan for */
-char *pszDiscImageNameExts[] = {
+char *pszDiscImageNameExts[] =
+{
   ".msa",
   ".st",
   NULL
@@ -52,7 +59,8 @@ void Floppy_Init(void)
   int i;
 
   /* Clear drive structures */
-  for(i=0; i<NUM_EMULATION_DRIVES; i++) {
+  for(i=0; i<NUM_EMULATION_DRIVES; i++)
+  {
     /* Clear */
     Memory_Clear(&EmulationDrives[i],sizeof(EMULATION_DRIVE));
     /* And allocate buffer */
@@ -70,7 +78,8 @@ void Floppy_UnInit(void)
   int i;
 
   /* Free buffers used for emulation drives */
-  for(i=0; i<NUM_EMULATION_DRIVES; i++) {
+  for(i=0; i<NUM_EMULATION_DRIVES; i++)
+  {
     Memory_Free(EmulationDrives[i].pBuffer);
   }
 }
@@ -85,7 +94,8 @@ void Floppy_MemorySnapShot_Capture(BOOL bSave)
   int i;
 
   /* Save/Restore details */
-  for(i=0; i<NUM_EMULATION_DRIVES; i++) {
+  for(i=0; i<NUM_EMULATION_DRIVES; i++)
+  {
     MemorySnapShot_Store(EmulationDrives[i].pBuffer,DRIVE_BUFFER_BYTES);
     MemorySnapShot_Store(EmulationDrives[i].szFileName,sizeof(EmulationDrives[i].szFileName));
     MemorySnapShot_Store(&EmulationDrives[i].nImageBytes,sizeof(EmulationDrives[i].nImageBytes));
@@ -115,21 +125,34 @@ void Floppy_GetBootDrive(void)
 /*
   Test disc image for valid boot-sector
 
-  It has been noticed that some discs, eg blank images made by the (current)MakeDisk utility
-  fill in the boot-sector with incorrect information. Such images cannot be read correctly using
-  a real ST, and also Hatari. To try and prevent data loss, we check for this error and flag
-  the drive so the image will not be saved back to the file.
+  It has been noticed that some discs, eg blank images made by the (current)
+  MakeDisk utility fill in the boot-sector with incorrect information. Such
+  images cannot be read correctly using a real ST, and also Hatari.
+  To try and prevent data loss, we check for this error and flag the drive so
+  the image will not be saved back to the file.
 */
 BOOL Floppy_IsBootSectorOK(int Drive)
 {
+  char szString[256];
   unsigned char *pDiscBuffer;
 
   /* Does our drive have a disc in? */
-  if (EmulationDrives[Drive].bDiscInserted) {
+  if (EmulationDrives[Drive].bDiscInserted)
+  {
     pDiscBuffer = EmulationDrives[Drive].pBuffer;
-    /* Check SPC(byte 13) for !=0 value. If is '0', invalid image and Hatari won't be-able to read(nor will a real ST)! */
+
+    /* Check SPC (byte 13) for !=0 value. If is '0', invalid image and Hatari
+     * won't be-able to read (nor will a real ST)! */
     if (pDiscBuffer[13]!=0)
+    {
       return(TRUE);     /* Disc sector is OK! */
+    }
+    else
+    {
+      sprintf(szString, "Disc in drive %c seems to suffer from the Pacifist/Makedisk bug.\n"
+                        "If it does not work, please repair the disk first!\n", 'A' + Drive);
+      Main_Message(szString, "Warning");
+    }
   }
 
   return(FALSE);        /* Bad sector */
@@ -148,9 +171,11 @@ BOOL Floppy_CreateDiscBFileName(char *pSrcFileName, char *pDestFileName)
   /* So, first split name into parts */
   File_splitpath(pSrcFileName, szDir, szName, szExt);
   /* All OK? */
-  if (strlen(szName)>0) {
+  if (strlen(szName)>0)
+  {
     /* Now, did filename end with an 'A' or 'a'? */
-    if ( (szName[strlen(szName)-1]=='A') || (szName[strlen(szName)-1]=='a') ) {
+    if ( (szName[strlen(szName)-1]=='A') || (szName[strlen(szName)-1]=='a') )
+    {
       /* Change 'A' to a 'B' */
       szName[strlen(szName)-1] += 1;
       /* And re-build name into destination */
@@ -188,7 +213,8 @@ BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName)
   else if (File_FileNameIsST(pszFileName))
     nImageBytes = ST_ReadDisc(pszFileName,EmulationDrives[Drive].pBuffer);
   /* Did load OK? */
-  if (nImageBytes!=0) {
+  if (nImageBytes!=0)
+  {
     /* Store filename and size */
     strcpy(EmulationDrives[Drive].szFileName,pszFileName);
     EmulationDrives[Drive].nImageBytes = nImageBytes;
@@ -200,10 +226,12 @@ BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName)
   }
 
   /* If we insert a disc into Drive A, should be try to put disc 2 into drive B? */
-  if ( (Drive==0) && (ConfigureParams.DiscImage.bAutoInsertDiscB) ) {
+  if ( (Drive==0) && (ConfigureParams.DiscImage.bAutoInsertDiscB) )
+  {
     strcpy(EmulationDrives[1].szFileName,"");
     /* Attempt to make up second filename, eg was 'auto_100a' to 'auto_100b' */
-    if (Floppy_CreateDiscBFileName(pszFileName,szDiscBFileName)) {
+    if (Floppy_CreateDiscBFileName(pszFileName,szDiscBFileName))
+    {
       /* Put image into Drive B, clear out if fails */
       if (!Floppy_InsertDiscIntoDrive(1,szDiscBFileName))
         strcpy(EmulationDrives[1].szFileName,"");
@@ -220,18 +248,21 @@ BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Eject disc from floppy drive, save contents back to PCs hard-drive is has changed
+  Eject disc from floppy drive, save contents back to PCs hard-drive if has changed
 */
-void Floppy_EjectDiscFromDrive(int Drive,BOOL bInformUser)
+void Floppy_EjectDiscFromDrive(int Drive, BOOL bInformUser)
 {
   char szString[256];
 
   /* Does our drive have a disc in? */
-  if (EmulationDrives[Drive].bDiscInserted) {
+  if (EmulationDrives[Drive].bDiscInserted)
+  {
     /* OK, has contents changed? If so, need to save */
-    if (EmulationDrives[Drive].bContentsChanged) {
+    if (EmulationDrives[Drive].bContentsChanged)
+    {
       /* Is OK to save image(if boot-sector is bad, don't allow a save) */
-      if (EmulationDrives[Drive].bOKToSave) {
+      if (EmulationDrives[Drive].bOKToSave)
+      {
         /* Save as .MSA or .ST image? */
         if (File_FileNameIsMSA(EmulationDrives[Drive].szFileName))
           MSA_WriteDisc(EmulationDrives[Drive].szFileName,EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes);
@@ -241,9 +272,10 @@ void Floppy_EjectDiscFromDrive(int Drive,BOOL bInformUser)
     }
 
     /* Inform user that disc has been ejected! */
-    if (bInformUser) {
+    if (bInformUser)
+    {
       sprintf(szString,"Disc has been removed from Drive '%c'.",'A'+Drive);
-/* FIXME */ //    MessageBox(hWnd,szString,PROG_NAME,MB_OK | MB_ICONINFORMATION);
+      Main_Message(szString, PROG_NAME /*,MB_OK | MB_ICONINFORMATION*/);
     }
   }
 
@@ -349,13 +381,15 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
   unsigned short int nSectorsPerTrack,nSides,nBytesPerTrack;
   long Offset;
 
-  if(Track>85) {
+  if(Track > 85)
+  {
     fprintf(stderr,"Strange floppy track=%i!\n",Track);
-    Track=85;
+    Track = 85;
   }
 
   /* Do we have a disc in our drive? */
-  if (EmulationDrives[Drive].bDiscInserted) {
+  if (EmulationDrives[Drive].bDiscInserted)
+  {
     /* Looks good */
     /*StatusBar_SetIcon(STATUS_ICON_FLOPPY,ICONSTATE_UPDATE);*/ /* Sorry - no statusbar in Hatari */
     pDiscBuffer = EmulationDrives[Drive].pBuffer;
@@ -371,7 +405,8 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
       *pnSectorsPerTrack = nSectorsPerTrack;
 
     /* Debug check as if we read over the end of a track we read into side 2! */
-    if (Count>nSectorsPerTrack) {
+    if (Count>nSectorsPerTrack)
+    {
       ErrLog_File("ERROR Floppy_ReadSectors reading over single track\n");
     }
 
@@ -402,7 +437,8 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
   long Offset;
 
   /* Do we have a disc in our drive? */
-  if (EmulationDrives[Drive].bDiscInserted) {
+  if (EmulationDrives[Drive].bDiscInserted)
+  {
     /* Looks good */
     /*StatusBar_SetIcon(STATUS_ICON_FLOPPY,ICONSTATE_UPDATE);*/ /* Sorry - no statusbar in Hatari yet */
     pDiscBuffer = EmulationDrives[Drive].pBuffer;
@@ -418,7 +454,8 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
       *pnSectorsPerTrack = nSectorsPerTrack;
 
     /* Debug check as if we write over the end of a track we write into side 2! */
-    if (Count>nSectorsPerTrack) {
+    if (Count>nSectorsPerTrack)
+    {
       ErrLog_File("ERROR Floppy_WriteSectors reading over single track\n");
     }
 
