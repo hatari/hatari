@@ -1,3 +1,8 @@
+2002-07-08 (THH):
+  * Some more endianess patches for spec512 screens - looks much better now!
+  * Fixed the bug that caused Hatari to crash when it was not able to load
+    the font image.
+
 2002-07-04 (THH):
   * Added experimental blitter emulation (taken from STonX).
     "Wings Of Death" started working now - wow!

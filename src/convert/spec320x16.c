@@ -31,17 +31,9 @@ void ConvertSpec512_320x16Bit(void)
      ebx = *edi;                /* Do 16 pixels at one time */
      ecx = *(edi+1);
 
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN
+
      /* Convert planes to byte indices - as works in wrong order store to workspace so can read back in order! */
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-     LOW_BUILD_PIXELS_0 ;
-     PixelWorkspace[3] = ecx;
-     LOW_BUILD_PIXELS_1 ;
-     PixelWorkspace[1] = ecx;
-     LOW_BUILD_PIXELS_2 ;
-     PixelWorkspace[2] = ecx;
-     LOW_BUILD_PIXELS_3 ;
-     PixelWorkspace[0] = ecx;
-#else
      LOW_BUILD_PIXELS_0 ;               /* Generate 'ecx' as pixels [4,5,6,7] */
      PixelWorkspace[1] = ecx;
      LOW_BUILD_PIXELS_1 ;               /* Generate 'ecx' as pixels [12,13,14,15] */
@@ -50,7 +42,6 @@ void ConvertSpec512_320x16Bit(void)
      PixelWorkspace[0] = ecx;
      LOW_BUILD_PIXELS_3 ;               /* Generate 'ecx' as pixels [8,9,10,11] */
      PixelWorkspace[2] = ecx;
-#endif
 
      /* And plot, the Spec512 is offset by 1 pixel and works on 'chunks' of 4 pixels */
      /* So, we plot 1_4_4_3 to give 16 pixels, changing palette between */
@@ -59,7 +50,6 @@ void ConvertSpec512_320x16Bit(void)
      PLOT_SPEC512_LEFT_LOW_320_16BIT(0) ;
      Spec512_UpdatePaletteSpan();
 
-     /* FIXME: This does not yet work right on non-i86 machines  - Thothy */
      ecx = *(Uint32 *)( ((Uint8 *)PixelWorkspace)+1 );
      PLOT_SPEC512_MID_320_16BIT(1) ;
      Spec512_UpdatePaletteSpan();
@@ -74,6 +64,37 @@ void ConvertSpec512_320x16Bit(void)
 
      ecx = *(Uint32 *)( ((Uint8 *)PixelWorkspace)+13 );
      PLOT_SPEC512_END_LOW_320_16BIT(13) ;
+
+#else
+     /* Well, I didn't get the code above working on big-endian  machines, too,
+        But I hope the following lines are good enough to also do the job... - THH */
+
+     LOW_BUILD_PIXELS_0 ;
+     PixelWorkspace[3] = ecx;
+     LOW_BUILD_PIXELS_1 ;
+     PixelWorkspace[1] = ecx;
+     LOW_BUILD_PIXELS_2 ;
+     PixelWorkspace[2] = ecx;
+     LOW_BUILD_PIXELS_3 ;
+     PixelWorkspace[0] = ecx;
+
+     ecx = PixelWorkspace[0];
+     PLOT_SPEC512_MID_320_16BIT(0) ;
+     Spec512_UpdatePaletteSpan();
+
+     ecx = PixelWorkspace[1];
+     PLOT_SPEC512_MID_320_16BIT(4) ;
+     Spec512_UpdatePaletteSpan();
+
+     ecx = PixelWorkspace[2];
+     PLOT_SPEC512_MID_320_16BIT(8) ;
+     Spec512_UpdatePaletteSpan();
+
+     ecx = PixelWorkspace[3];
+     PLOT_SPEC512_MID_320_16BIT(12) ;
+     Spec512_UpdatePaletteSpan();
+
+#endif
 
      esi += 16;                             /* Next PC pixels */
      edi += 2;                              /* Next ST pixels */
