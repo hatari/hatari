@@ -53,6 +53,9 @@ extern char *address_space, *good_address_map;
 #define IOmem_start 0x00FF8000
 #define IOmem_size  32768
 
+#define IDEmem_start 0xf00000
+#define IDEmem_size  64
+
 typedef struct {
     /* These ones should be self-explanatory... */
     mem_get_func lget, wget, bget;

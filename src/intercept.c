@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-static char rcsid[] = "Hatari $Id: intercept.c,v 1.9 2003-03-23 21:13:16 thothy Exp $";
+static char rcsid[] = "Hatari $Id: intercept.c,v 1.10 2003-03-24 11:00:34 emanne Exp $";
 
 #include <SDL_types.h>
 
@@ -47,16 +47,41 @@ static char rcsid[] = "Hatari $Id: intercept.c,v 1.9 2003-03-23 21:13:16 thothy 
 #include "blitter.h"
 #include "uae-cpu/sysdeps.h"
 
+/* IDE Controler */
+
+uae_u32 Intercept_IDEReadByte(uaecptr addr) {
+  /* This value is waited for by the tos 2.06 boot process... */
+  /* Since we emulate the hd indirectly, we just give what it wants... */
+  addr &= 0xffffff;
+  // STRam[0xf00039] = 0x50;
+  if (addr == 0xf00039) return 0x50;
+  return 0xff;
+}
+/* For now the IDE controler is not really emulated. All I want is a fast boot. */
+
+uae_u32 Intercept_IDEReadWord(uaecptr addr) { return 0x0; }
+uae_u32 Intercept_IDEReadLong(uaecptr addr) { return 0xffffffff; }
+
+void Intercept_IDEWriteByte(uaecptr addr, uae_u32 val) {
+  addr &= 0xffffff;
+  if (addr == 0xf0001d) { // && (val & 0xff)==0xec) {
+    // This tricks the tos to believe that its command really triggered an interrupt.
+    // I would not try to use a real ide driver with this though !!!
+    MFP_GPIP &= ~0x20;
+  }
+}
+
+void Intercept_IDEWriteWord(uaecptr addr, uae_u32 val) {}
+void Intercept_IDEWriteLong(uaecptr addr, uae_u32 val) {}
+
 
 /*#define CHECK_FOR_NO_MANS_LAND*/            /* Check for read/write from unknown hardware addresses */
-
 
 /* A dummy function that does nothing at all... */
 void Intercept_WriteNothing(void)
 {
   /* Nothing... */
 }
-
 
 /*-----------------------------------------------------------------------*/
 /* List of functions to handle read/write hardware intercepts. */

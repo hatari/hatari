@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: memory.c,v 1.4 2003-03-12 17:25:57 thothy Exp $";
+static char rcsid[] = "Hatari $Id: memory.c,v 1.5 2003-03-24 11:00:38 emanne Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -35,7 +35,7 @@ int special_mem;
 uae_u32 allocated_STmem;
 uae_u32 allocated_TTmem;
 
-uae_u32 STmem_mask, ROMmem_mask, IOmem_mask, TTmem_mask;
+uae_u32 STmem_mask, ROMmem_mask, IOmem_mask, TTmem_mask, IDEmem_mask;
 
 
 #ifdef SAVE_MEMORY_BANKS
@@ -371,19 +371,33 @@ static uae_u8 *IOmem_xlate (uaecptr addr) REGPARAM;
 
 int REGPARAM2 IOmem_check (uaecptr addr, uae_u32 size)
 {
-    addr -= IOmem_start & IOmem_mask;
+    addr -= IOmem_start;
     addr &= IOmem_mask;
     return (addr + size) <= IOmem_size;
 }
 
 uae_u8 REGPARAM2 *IOmem_xlate (uaecptr addr)
 {
-    addr -= IOmem_start & IOmem_mask;
+    addr -= IOmem_start;
     addr &= IOmem_mask;
     return IOmemory + addr;
 }
 
+uae_u8 *IDEmemory;
 
+int REGPARAM2 IDEmem_check (uaecptr addr, uae_u32 size)
+{
+    addr -= IDEmem_start;
+    addr &= IDEmem_mask;
+    return (addr + size) <= IDEmem_size;
+}
+
+uae_u8 REGPARAM2 *IDEmem_xlate (uaecptr addr)
+{
+    addr -= IDEmem_start;
+    addr &= IDEmem_mask;
+    return IDEmemory + addr;
+}
 
 /* Default memory access functions */
 
@@ -432,6 +446,11 @@ addrbank IOmem_bank = {
     IOmem_xlate, IOmem_check
 };
 
+addrbank IDEmem_bank = {
+    Intercept_IDEReadLong, Intercept_IDEReadWord, Intercept_IDEReadByte,
+    Intercept_IDEWriteLong, Intercept_IDEWriteWord, Intercept_IDEWriteByte,
+    IDEmem_xlate, IDEmem_check
+};
 
 char *address_space, *good_address_map;
 int good_address_fd;
@@ -492,6 +511,7 @@ void memory_init (void)
 #else
     ROMmemory = STRam+ROMmem_start;  /*(uae_u8 *)malloc (ROMmem_size)*/;
     STmemory = STRam; /*(uae_u8 *)malloc (allocated_STmem);*/
+    IOmemory = STRam + IOmem_start;
 /*
     while (! STmemory && allocated_STmem > 512*1024) {
 	allocated_STmem >>= 1;
@@ -522,11 +542,13 @@ void memory_init (void)
 /*    map_banks(&ROMmem_bank, 0xFFFC, 4);*/
 
     map_banks(&IOmem_bank, IOmem_start>>16, 1);
+    map_banks(&IDEmem_bank, IDEmem_start>>16, 1);
 
     STmem_mask = 0x00ffffff;
     ROMmem_mask = 0x00ffffff;
     TTmem_mask = allocated_TTmem - 1;
     IOmem_mask = IOmem_size - 1;
+    IDEmem_mask = IDEmem_size - 1;
 }
 
 void map_banks (addrbank *bank, int start, int size)

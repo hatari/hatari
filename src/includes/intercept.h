@@ -13,7 +13,6 @@
 
 #define INTERCEPT_WORKSPACE_SIZE  (8*1024)  /* 8k, size of intercept lists */
 
-
 /* Hardware address details */
 typedef struct
 {
@@ -42,7 +41,13 @@ void Intercept_WriteByte(uaecptr addr, uae_u32 val);
 void Intercept_WriteWord(uaecptr addr, uae_u32 val);
 void Intercept_WriteLong(uaecptr addr, uae_u32 val);
 
+uae_u32 Intercept_IDEReadByte(uaecptr addr);
+uae_u32 Intercept_IDEReadWord(uaecptr addr);
+uae_u32 Intercept_IDEReadLong(uaecptr addr);
 
+void Intercept_IDEWriteByte(uaecptr addr, uae_u32 val);
+void Intercept_IDEWriteWord(uaecptr addr, uae_u32 val);
+void Intercept_IDEWriteLong(uaecptr addr, uae_u32 val);
 
 /* Read intercept functions */
 extern void Intercept_VideoHigh_ReadByte(void);
