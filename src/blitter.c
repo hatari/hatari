@@ -23,7 +23,7 @@
  *
  *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.5 2005-01-18 23:32:56 thothy Exp $";
+char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.6 2005-02-11 19:57:03 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -33,6 +33,7 @@ char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.5 2005-01-18 23:32:56 thothy E
 #include "blitter.h"
 #include "hatari-glue.h"
 #include "ioMem.h"
+#include "m68000.h"
 #include "memorySnapShot.h"
 #include "stMemory.h"
 
@@ -84,7 +85,6 @@ static UB hop,op,line_num,skewreg;
 static unsigned int dest_addr_reg=0;
 static int halftone_curroffset,halftone_direction;
 static int source_x_inc, source_y_inc, dest_x_inc, dest_y_inc;
-static int blit_flag = FALSE;
 
 
 static void load_halftone_ram(void)
@@ -411,12 +411,6 @@ void Blitter_LogOp_ReadByte(void)
 */
 void Blitter_LineNum_ReadByte(void)
 {
-	if (blit_flag)		/* FIXME: This is quite an ugly hack... */
-	{
-		Do_Blit();
-		blit_flag = FALSE;
-	}
-
 	IoMem_WriteByte(0xff8a3c, (line_num & 0x3f));
 }
 
@@ -511,7 +505,15 @@ void Blitter_LineNum_WriteByte(void)
 	line_num = IoMem_ReadByte(0xff8a3c);  
 
 	if((y_count !=0) && (line_num & 0x80))      /* Busy bit set and lines to blit? */
-		blit_flag = TRUE; 
+	{
+		Blitter_Skew_WriteByte();				/* Needed if a program executes a move.W #xxxx,$ff8a3c for example */
+
+		/* TODO: Emulate the shared bus mode when HOG flag is cleared 
+		 * and add proper blitter timings, too */
+		M68000_AddCycles(y_count);
+
+		Do_Blit();
+	}
 }
 
 /*-----------------------------------------------------------------------*/
@@ -565,6 +567,5 @@ void Blitter_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&source_y_inc, sizeof(source_y_inc));
   MemorySnapShot_Store(&dest_x_inc, sizeof(dest_x_inc));
   MemorySnapShot_Store(&dest_y_inc, sizeof(dest_y_inc));
-  MemorySnapShot_Store(&blit_flag, sizeof(blit_flag));
 }
 
