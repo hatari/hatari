@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.17 2003-04-02 20:53:37 emanne Exp $";
+static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.18 2003-04-03 21:16:11 thothy Exp $";
 
 
 #include <stdio.h>
@@ -114,12 +114,18 @@ unsigned long OpCode_OldGemDos(uae_u32 opcode)
   the cartridge routine. (after gemdos init, before booting floppies)
 
   After this, our vector will be used, and handled by the GemDOS_OpCode
-  routine in gemdos.c
+  routine in gemdos.c.
+
+  At initialization, we also set up the connected drive mask and Line-A
+  variables (for an extended VDI resolution) from here.
 */
 unsigned long OpCode_GemDos(uae_u32 opcode)
 {
   if(!bInitGemDOS)
   {
+    /* Initialize the connected drive mask */
+    STMemory_WriteLong(0x4c2, ConnectedDriveMask);
+
     /* Init on boot - see cartimg.c */
     GemDOS_Boot();
 
@@ -151,6 +157,7 @@ unsigned long OpCode_GemDos(uae_u32 opcode)
   Speedball I) so we simply intercept the Timer D setup code in GemDOS and fix the numbers
   with more 'laid-back' values. This still keeps 100% compatibility
 */
+#if 0 /* This is now done by intercepting the Timer-D hardware registers */
 unsigned long OpCode_TimerD(uae_u32 opcode)
 {
   /*fprintf(stderr, "OpCode_TimerD handled\n");*/
@@ -161,6 +168,7 @@ unsigned long OpCode_TimerD(uae_u32 opcode)
   fill_prefetch_0();
   return 4;
 }
+#endif
 
 
 /*-----------------------------------------------------------------------*/
