@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.18 2004-06-24 19:29:08 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.19 2004-07-01 20:54:10 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -405,22 +405,17 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
   unsigned char *pDiscBuffer;
   unsigned short int nSectorsPerTrack,nSides,nBytesPerTrack;
   long Offset;
-
-  if(Track > 85)
-  {
-    fprintf(stderr,"Floppy_ReadSectors: Strange floppy track (%i)!\n", Track);
-    return FALSE;
-  }
+  int nImageTracks;
 
   /* Do we have a disc in our drive? */
   if (EmulationDrives[Drive].bDiscInserted)
   {
     /* Looks good */
-    /*StatusBar_SetIcon(STATUS_ICON_FLOPPY,ICONSTATE_UPDATE);*/ /* Sorry - no statusbar in Hatari */
     pDiscBuffer = EmulationDrives[Drive].pBuffer;
 
     /* Find #sides and #sectors per track */
     Floppy_FindDiscDetails(EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes,&nSectorsPerTrack,&nSides);
+    nImageTracks = ((EmulationDrives[Drive].nImageBytes / NUMBYTESPERSECTOR) / nSectorsPerTrack) / nSides;
 
     /* Need to read whole track? */
     if (Count<0)
@@ -442,6 +437,14 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
     {
       fprintf(stderr, "Warning: Program tries to read from side %i of a disk "
                       "image with %i sides!\n", Side+1, nSides);
+      return FALSE;
+    }
+
+    /* Check if track number is in range */
+    if (Track >= nImageTracks)
+    {
+      fprintf(stderr, "Warning: Program tries to read from track %i of a disk "
+                      "image with only %i tracks!\n", Track, nImageTracks);
       return FALSE;
     }
 
@@ -476,16 +479,17 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
   unsigned char *pDiscBuffer;
   unsigned short int nSectorsPerTrack,nSides,nBytesPerTrack;
   long Offset;
+  int nImageTracks;
 
   /* Do we have a disc in our drive? */
   if (EmulationDrives[Drive].bDiscInserted)
   {
     /* Looks good */
-    /*StatusBar_SetIcon(STATUS_ICON_FLOPPY,ICONSTATE_UPDATE);*/ /* Sorry - no statusbar in Hatari yet */
     pDiscBuffer = EmulationDrives[Drive].pBuffer;
 
     /* Find #sides and #sectors per track */
     Floppy_FindDiscDetails(EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes,&nSectorsPerTrack,&nSides);
+    nImageTracks = ((EmulationDrives[Drive].nImageBytes / NUMBYTESPERSECTOR) / nSectorsPerTrack) / nSides;
 
     /* Need to write whole track? */
     if (Count<0)
@@ -505,6 +509,14 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
     {
       fprintf(stderr, "Warning: Program tries to write to side %i of a disk "
                       "image with %i sides!\n", Side+1, nSides);
+      return FALSE;
+    }
+
+    /* Check if track number is in range */
+    if (Track >= nImageTracks)
+    {
+      fprintf(stderr, "Warning: Program tries to write to track %i of a disk "
+                      "image with only %i tracks!\n", Track, nImageTracks);
       return FALSE;
     }
 
