@@ -16,6 +16,9 @@
 
 #include "maccess.h"
 
+#define call_mem_get_func(func, addr) ((*func)(addr))
+#define call_mem_put_func(func, addr, v) ((*func)(addr, v))
+
 
 /* Enabling this adds one additional native memory reference per 68k memory
  * access, but saves one shift (on the x86). Enabling this is probably
