@@ -1,0 +1,138 @@
+
+                                    Hatari
+                                   --------
+                                Release Notes
+
+
+
+ Version 0.40 (2003-07-11):
+ --------------------------
+
+- Support for ZIP and GZIP compressed disk images!
+- Configuration file support for loading and saving the emulator settings.
+- Hatari now works on machines with Sparc CPUs, too.
+- Fixed a problem that slowed down the emulator in monochrome mode when using
+  TOS 2.06.
+- Inverted monochrome mode is now supported, too (some games like Maniac
+  Mansion use this).
+- Added Mega-ST compatible real time clock (RTC) emulation.
+- The GEMDOS HD emulation has been improved (it now also works with lower-case
+  file names) and many bugs have been fixed there.
+- Improved keyboard mapping (added mapping via PC keyboard scancode and via
+  reloadable mapping files).
+- The screen rendering routines have been generalized (less differences between
+  windowed and fullscreen mode).
+- Hatari can now be cross-compiled, too. You can even compile it for MiNT now.
+  However, it does not run very well there yet.
+- Support for RAM TOS images.
+- Improved memory mapping (the different memory regions should now behave much
+  more like on a real ST).
+- Improved M68k exceptions (bus errors and exception cycle timings).
+- Fixed some bugs in the extended VDI resolution mode (now it is working with
+  EmuTOS, too).
+- Some games that poll the write-protection signal of the FDC to check for
+  disk changes should now be working, too.
+
+
+ Version 0.30 (2003-03-12):
+ --------------------------
+
+- Some parts of the code accessed the SR directly to read the IPL -
+  however the UAE CPU core only updates the SR when doing a MakeSR() first.
+  So this is done in the affected code parts now, too.
+- The IPL wasn't raised when a MFP interrupt occured - fixed now.
+- Full screen resolution for ST-Low can now be selected from the screen setup
+  dialog.
+- The IKBD emulation does not longer duplicate joystick fire buttons when
+  a game tries to use both, joystick and mouse 
+- Improved audio timer function - the code should now be a little bit faster.
+- Resynced Hatari's UAE CPU core with UAE 0.8.22 - this fixes some bugs in 68k
+  instructions like ABCD and SBCD.
+- Added patches for TOS 2.05 so that this TOS version should now work, too.
+- Rewrote TOS patching routine. It is much more flexible now.
+- Removed 0xa0ff opcode for VDI resolutions; using GEMDOS_OPCODE now instead.
+- Fixed MMU RAM size configuration bug.
+- Rewrote some more screen conversion functions in C.
+- When a bus or address error occurred, the PC was often not set to the
+  right exception handler routine. This has been fixed now.
+
+
+ Version 0.25 (2002-12-30):
+ --------------------------
+
+- Patches for big endian systems (Spectrum 512 pictures are now working there).
+- Hatari now also compiles and runs under Mac OS X.
+- Blitter emulation has been added.
+- There is now the possibility to save YM or WAV sounds.
+- Big VDI resolutions (e.g. 800x600) are now supported, too.
+
+
+ Version 0.20 (2002-02-18):
+ --------------------------
+
+- Added graphical user interface for configuration of the emulator settings.
+- Real joysticks can now also be used to simulate the ST joysticks.
+- Yet another bugfix for BeOS (lseek again...)
+- Support for hard disk images.
+
+
+ Version 0.11 (2001-10-10):
+ --------------------------
+
+- High level (GEMDOS) harddisk emulation.
+- ST-Med/ST-Low mixed mode now works.
+
+
+ Version 0.10 (2001-08-16):
+ --------------------------
+
+- Improved CPU cycles emulation.
+- Added Spec512 support.
+- Some keyboard shortcuts.
+- Added the possibility to switch between fullscreen and window mode.
+- ST Medium resolution conversion routine.
+- Built-in debugger.
+- Added possibility to grab screenshots.
+- Sound support (not working very well yet).
+
+
+ Version 0.05 (2001-06-01):
+ --------------------------
+
+- Joystick emulation via cursor keys.
+- ST-LOW resolution conversion routine is now working on big-endian machines.
+
+
+ Version 0.04 (2001-05-27):
+ --------------------------
+
+- Added Stefan Berndtsson's patch for big-endian machines.
+  Hatari now runs also with non-x86 Linux machines! Thanks Stefan!
+- Rewrote the ST-LOW resolution conversion routines in C ==> ST-LOW now works!
+- Added some of the WinSTon patches Paul Bates recently published
+  at the WinSTon BBS (Thanks to Ladislav Adamec for the hint).
+- Cleaned up the source tree a little bit.
+
+
+ Version 0.03 (2001-04-03):
+ --------------------------
+
+- Rewrote some more assembler functions. FDC emulation now works!
+- SDL Keyboard code finished and included a SDL-Key -> ST-Scancode table.
+- Added mouse support.
+
+
+ Version 0.02 (2001-03-28):
+ --------------------------
+
+- Added very simple SDL support.
+- Rewrote a lot of assembler functions in C (e.g. intercept.c).
+- Adapted the UAE CPU. Now Hatari is able to boot a TOS 1.0x ROM, the
+  Desktop shows up, but no mouse and keyboard interaction yet.
+
+
+ Version 0.01 (2001-03-21):
+ --------------------------
+- Made the WinSTon source code compilable with GNU-C.
+- Added the UAE CPU sources.
+
