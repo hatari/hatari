@@ -368,9 +368,11 @@ void Screen_SetWindowRes(int Width,int Height,int BitCount)
 {
 
   /* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
-  if ( !(bUseVDIRes || bUseHighRes) ) {
+  if ( !(bUseVDIRes || bUseHighRes) )
+  {
     /* If using 640 pixel wide screen, double overscan */
-    if (Width==640) {
+    if (Width==640)
+    {
       Width += OVERSCAN_LEFT+OVERSCAN_RIGHT;
       Height += OVERSCAN_TOP+OVERSCAN_BOTTOM;
     }
@@ -381,14 +383,18 @@ void Screen_SetWindowRes(int Width,int Height,int BitCount)
 
   sdlscrn=SDL_SetVideoMode(Width, Height, BitCount, SDL_SWSURFACE|SDL_HWPALETTE);
   if( sdlscrn==NULL )
-   {
+  {
     fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
     SDL_Quit();
     exit(-2);
-   }
+  }
   pScreenBitmap=sdlscrn->pixels;
 
-  if(bUseVDIRes || bUseHighRes) {
+  if(bUseVDIRes)
+    Screen_Handle8BitPalettes();
+
+  if(bUseHighRes)
+  {
     SDL_Color cols[2];
     cols[0].r = cols[0].g = cols[0].b = 255;
     cols[1].r = cols[1].g = cols[1].b = 0;

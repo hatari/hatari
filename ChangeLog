@@ -1,3 +1,7 @@
+2002/10/13 (THH):
+  * Rewrote ConvertVDIRes_16Colour() in C and added Line-A/VDI patches
+    so that Hatari now also features a VDI big resolution mode.
+
 2002/09/21 (THH):
   * Added YM and WAV sound recording (to hatari.ym or hatari.wav since the
     GUI does not support editing strings yet).

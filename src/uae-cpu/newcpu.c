@@ -17,7 +17,8 @@
 #include "compiler.h"
 #include "events.h"
 #include "../includes/tos.h"
-
+#include "../includes/vdi.h"
+#include "../includes/cart.h"
 
 extern int bQuitProgram;     /* Declared in main.c */
 
@@ -161,6 +162,7 @@ void build_cpufunctbl(void)
     cpufunctbl[cft_map(RUNOLDGEMDOS_OPCODE)] = OpCode_OldGemDos;
     cpufunctbl[cft_map(CONDRV_OPCODE)] = OpCode_ConnectedDrive;
     cpufunctbl[cft_map(TIMERD_OPCODE)] = OpCode_TimerD;
+    cpufunctbl[cft_map(VDI_OPCODE)] = OpCode_VDI;
 }
 
 
@@ -671,11 +673,45 @@ void MakeFromSR (void)
 	unset_special (SPCFLAG_TRACE | SPCFLAG_DOTRACE);
 }
 
+
 void Exception(int nr, uaecptr oldpc)
 {
     uae_u32 currpc = m68k_getpc ();
 
     /*if( nr>=2 && nr<10 )  fprintf(stderr,"Exception (-> %i bombs)!\n",nr);*/
+
+    /* Intercept exceptions... - FIXME: Find a better way to do this! */
+    if(bUseVDIRes)
+    {
+      if(nr == 0x22)            /* Trap 2 - intercept VDI call */
+      {
+        if( !VDI() )
+        {
+          /* Set 'PC' as address of 'VDI_OPCODE' illegal instruction
+           * This will call OpCode_VDI after completion of Trap call!
+           * Use to modify return structure from VDI */
+           /*if (bUseVDIRes)*/
+           {
+             VDI_OldPC = currpc;
+             currpc = CART_VDI_OPCODE_ADDR;
+           }
+        }
+      }
+      else if(nr == 0x0a)       /* Line A */
+      {
+        if((get_word(currpc)&0x0fff) == 0x0ff)  /* 0xA0FF opcode? */
+        {
+          /* we use this to get pointer to Line-A structure details
+           * (to fix for extended VDI res) */
+          LineABase = regs.regs[0];  /* D0 */
+          FontBase = regs.regs[9];   /* A1 */
+          VDI_LineA();
+          m68k_setpc(currpc + 2);
+          fill_prefetch_0();
+          return;
+        }
+      }
+    }
 
     compiler_flush_jsr_stack();
     MakeSR();

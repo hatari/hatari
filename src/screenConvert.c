@@ -273,10 +273,6 @@ void Convert_StartFrame(void)
  eax = ebx; \
  eax &= 0x0000000f; \
 }
-/*
-	__asm	mov		eax,ebx \
-	__asm	and		eax,0x0000000f
-*/
 
 #define HIGH_BUILD_PIXELS_1 \
 { \
@@ -284,11 +280,6 @@ void Convert_StartFrame(void)
  eax >>= 4; \
  eax &= 0x0000000f;\
 }
-/*
-	__asm	mov		eax,ebx \
-	__asm	shr		eax,4 \
-	__asm	and		eax,0x0000000f
-*/
 
 #define HIGH_BUILD_PIXELS_2 \
 { \
@@ -296,11 +287,6 @@ void Convert_StartFrame(void)
  eax >>= 8; \
  eax &= 0x0000000f;\
 }
-/*
-	__asm	mov		eax,ebx \
-	__asm	shr		eax,8 \
-	__asm	and		eax,0x0000000f
-*/
 
 #define HIGH_BUILD_PIXELS_3 \
 { \
@@ -308,11 +294,6 @@ void Convert_StartFrame(void)
  eax >>= 12; \
  eax &= 0x0000000f;\
 }
-/*
-	__asm	mov		eax,ebx \
-	__asm	shr		eax,12 \
-	__asm	and		eax,0x0000000f
-*/
 
 
 /* Plot Low Resolution (320xH) 16-Bit pixels */
@@ -337,6 +318,13 @@ void Convert_StartFrame(void)
  ebx &= 0x00ff; \
  ebx = STRGBPalette[ebx]; \
  esi[offset+3] = (unsigned short) ebx; \
+}
+
+/* Plot Low Resolution (320xH) 8-Bit pixels */
+#define PLOT_LOW_320_8BIT(offset) \
+{ \
+  ecx += BASECOLOUR_LONG; \
+  esi[offset] = ecx; \
 }
 
 /* Plot Low Resolution (640xH) 16-Bit pixels */

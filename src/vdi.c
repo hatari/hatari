@@ -13,7 +13,6 @@
 
 #include "main.h"
 #include "decode.h"
-/*#include "dialog.h"*/
 #include "file.h"
 #include "gemdos.h"
 #include "m68000.h"
@@ -22,19 +21,7 @@
 #include "stMemory.h"
 #include "vdi.h"
 #include "video.h"
-
-
-enum {  /* Taken from dialogtosgem.h - Thothy */
-        GEMRES_640x480,
-        GEMRES_800x600,
-        GEMRES_1024x768
-};
-
-enum {
-        GEMCOLOUR_2,
-        GEMCOLOUR_4,
-        GEMCOLOUR_16
-};
+#include "uae-cpu/newcpu.h"
 
 
 BOOL bUseVDIRes=FALSE;             /* Set to TRUE (if want VDI), or FALSE (ie for games) */
@@ -236,20 +223,6 @@ void VDI_Complete(void)
     /* Show screen (used to hide boot-up sequence in TOS >2.06) */
     bHoldScreenDisplay = FALSE;
   }
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  This is called after completion of each VDI call
-*/
-void VDI_OpCode(void)
-{
-  VDI_Complete();
-
-  /* Set PC back to where originated from to continue instruction decoding */
-//FIXME   PC = VDI_OldPC;
-
 }
 
 

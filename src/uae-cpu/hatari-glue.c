@@ -6,6 +6,7 @@
 #include "../includes/tos.h"
 #include "../includes/gemdos.h"
 #include "../includes/cart.h"
+#include "../includes/vdi.h"
 
 #ifndef UAESYSDEPS
 #include "sysdeps.h"
@@ -111,9 +112,10 @@ unsigned long OpCode_ConnectedDrive(uae_u32 opcode)
   return 4;
 }
 
+
 /* ----------------------------------------------------------------------- */
 /*
-  Re-direct execution to old GEM calls, used in 'cart.s'
+  Re-direct execution to old GEMDOS calls, used in 'cart.s'
 */
 unsigned long OpCode_OldGemDos(uae_u32 opcode)
 {
@@ -121,6 +123,7 @@ unsigned long OpCode_OldGemDos(uae_u32 opcode)
   fill_prefetch_0();
   return 4;
 }
+
 
 /* ----------------------------------------------------------------------- */
 /*
@@ -139,10 +142,11 @@ unsigned long OpCode_GemDos(uae_u32 opcode)
   else 
     GemDOS_OpCode();    /* handler code in gemdos.c */
 
- m68k_incpc(2);
- fill_prefetch_0();
- return 4;
+  m68k_incpc(2);
+  fill_prefetch_0();
+  return 4;
 }
+
 
 /* ----------------------------------------------------------------------- */
 /*
@@ -157,11 +161,27 @@ unsigned long OpCode_GemDos(uae_u32 opcode)
 */
 unsigned long OpCode_TimerD(uae_u32 opcode)
 {
- /*fprintf(stderr, "OpCode_TimerD handled\n");*/
- m68k_dreg(regs,0)=3;	/* 3 = Select Timer D */
- m68k_dreg(regs,1)=7;	/* 1 = /4 for 9600 baud(used /200) */
- m68k_dreg(regs,2)=100;	/* 2 = 9600 baud(100) */
- m68k_incpc(2);
- fill_prefetch_0();
- return 4;
+  /*fprintf(stderr, "OpCode_TimerD handled\n");*/
+  m68k_dreg(regs,0)=3;	/* 3 = Select Timer D */
+  m68k_dreg(regs,1)=7;	/* 1 = /4 for 9600 baud(used /200) */
+  m68k_dreg(regs,2)=100;	/* 2 = 9600 baud(100) */
+  m68k_incpc(2);
+  fill_prefetch_0();
+  return 4;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  This is called after completion of each VDI call
+*/
+unsigned long OpCode_VDI(uae_u32 opcode)
+{
+  VDI_Complete();
+
+  /* Set PC back to where originated from to continue instruction decoding */
+  m68k_setpc(VDI_OldPC);
+
+  fill_prefetch_0();
+  return 4;
 }

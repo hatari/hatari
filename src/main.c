@@ -36,6 +36,7 @@
 #include "shortcut.h"
 #include "sound.h"
 #include "tos.h"
+#include "vdi.h"
 #include "video.h"
 #include "ymFormat.h"
 #include "debugui.h"
@@ -54,7 +55,6 @@ BOOL bEmulationActive=TRUE;               /* Run emulation when started */
 BOOL bAppActive = FALSE;
 BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
 unsigned int TimerID;                     /* Timer ID for main window */
-char szName[] = { "Hatari" };
 char szBootDiscImage[MAX_FILENAME_LENGTH] = { "" };
 
 char szWorkingDir[MAX_FILENAME_LENGTH] = { "" };
@@ -273,6 +273,7 @@ void Main_ReadParameters(int argc, char *argv[])
                "  --cpulevel x          Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
                "  --compatible          Use a more compatible (but slower) 68000 CPU mode.\n"
                "  --blitter             Enable blitter emulation (unstable!)\n"
+               "  --vdi                 Use extended VDI resolution\n"
               );
         exit(0);
       }
@@ -360,6 +361,10 @@ void Main_ReadParameters(int argc, char *argv[])
       {
         bEnableBlitter = TRUE;
         ConfigureParams.System.bBlitter = TRUE;
+      }
+      else if(!strcmp(argv[i], "--vdi"))
+      {
+        bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions = TRUE;
       }
       else
       {

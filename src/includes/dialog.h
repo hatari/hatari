@@ -11,18 +11,6 @@ typedef struct {
   int nGEMColours;
 } DLG_TOSGEM;
 
-enum {
-  GEMRES_640x480,
-  GEMRES_800x600,
-  GEMRES_1024x768
-};
-
-enum {
-  GEMCOLOUR_2,
-  GEMCOLOUR_4,
-  GEMCOLOUR_16
-};
-
 
 /* Dialog Sound */
 typedef struct {
