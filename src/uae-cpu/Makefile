@@ -24,22 +24,22 @@ clean:
 
 
 build68k: build68k.c
-	$(HOSTCC) $(CFLAGS) -o $@ $<
+	$(HOSTCC) $(SDL_CFLAGS) -o $@ $<
 
 cpudefs.c: ./build68k ./table68k
 	./build68k <./table68k >cpudefs.c
 
 cpudefs-host.o: cpudefs.c
-	$(HOSTCC) $(CFLAGS) -c -o $@ $<
+	$(HOSTCC) $(SDL_CFLAGS) -c -o $@ $<
 
 readcpu-host.o: readcpu.c
-	$(HOSTCC) $(CFLAGS) -c -o $@ $<
+	$(HOSTCC) $(SDL_CFLAGS) -c -o $@ $<
 
 gencpu.o: gencpu.c
-	$(HOSTCC) $(CFLAGS) -c -o $@ $<
+	$(HOSTCC) $(SDL_CFLAGS) -c -o $@ $<
 
 gencpu: gencpu.o readcpu-host.o cpudefs-host.o
-	$(HOSTCC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(HOSTCC) $(LDFLAGS) -o $@ $^
 
 cpuemu.c: gencpu
 	./gencpu
