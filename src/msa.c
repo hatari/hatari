@@ -143,7 +143,10 @@ int MSA_UnCompress(unsigned char *pMSAFile,unsigned char *pBuffer)
               RunLength = STMemory_Swap68000Int(*(short int *)pMSAImageBuffer);  /* For length */
               /* Limit length to size of track, incorrect images may overflow */
               if ( (RunLength+NumBytesUnCompressed)>(NUMBYTESPERSECTOR*pMSAHeader->SectorsPerTrack) )
+              {
+                fprintf(stderr, "MSA_UnCompress: Illegal run length -> corrupted disc image?\n");
                 RunLength = (NUMBYTESPERSECTOR*pMSAHeader->SectorsPerTrack)-NumBytesUnCompressed;
+              }
               pMSAImageBuffer += sizeof(short int);
               for(i=0; i<RunLength; i++)
                 *pImageBuffer++ = Data;                 /* Copy byte */
@@ -190,33 +193,41 @@ int MSA_ReadDisc(char *pszFileName,unsigned char *pBuffer)
 /*-----------------------------------------------------------------------*/
 /*
   Return number of bytes of the same byte in the passed buffer
-  If we return '0' this means no run(or end of buffer)
+  If we return '0' this means no run (or end of buffer)
 */
-int MSA_FindRunOfBytes(unsigned char *pBuffer,int nBytesInBuffer)
+int MSA_FindRunOfBytes(unsigned char *pBuffer, int nBytesInBuffer)
 {
   unsigned char ScannedByte;
   int nTotalRun;
+  BOOL bMarker;
   int i;
+
+  /* Is this the marker? If so, this is at least a run of one. */
+  bMarker = (*pBuffer == 0xE5);
 
   /* Do we enough for a run? */
   if (nBytesInBuffer<2)
-    return(0);
+  {
+    if (nBytesInBuffer==1 && bMarker)
+      return 1;
+    else
+      return 0;
+  }
 
   /* OK, scan for run */
   nTotalRun = 1;
   ScannedByte = *pBuffer++;
-  /* Is this the marker? If so, this is a run of one */
-  if (ScannedByte!=0xE5) {
-    for(i=1; i<nBytesInBuffer; i++) {
-      if (*pBuffer++==ScannedByte)
-        nTotalRun++;
-      else
-        break;
-    }
-    /* Was this enough of a run to make a difference? */
-    if (nTotalRun<4)
-      nTotalRun = 0;    /* Just store a bytes */
+
+  for(i=1; i<nBytesInBuffer; i++)
+  {
+    if (*pBuffer++==ScannedByte)
+      nTotalRun++;
+    else
+      break;
   }
+
+  /* Was this enough of a run to make a difference? */
+  if (nTotalRun<4 && !bMarker)  nTotalRun = 0;    /* Just store uncompressed */
 
   return(nTotalRun);
 }
