@@ -30,6 +30,15 @@ enum
 /* Object states: */
 #define SG_SELECTED   1
 
+/* Special characters: */
+#define SGRADIOBUTTON_NORMAL    12
+#define SGRADIOBUTTON_SELECTED  13
+#define SGCHECKBOX_NORMAL    14
+#define SGCHECKBOX_SELECTED  15
+#define SGARROWUP    1
+#define SGARROWDOWN  2
+#define SGFOLDER     5
+
 
 typedef struct
 {
