@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.50 2004-01-12 12:21:44 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.51 2004-02-12 15:56:02 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -376,8 +376,8 @@ void Main_ReadParameters(int argc, char *argv[])
       else
       {
         /* Possible passed disc image filename, ie starts with character other than '-' */
-        if (argv[i][0]!='-')
-          strcpy(szBootDiscImage,argv[i]);
+        if (argv[i][0] != '-' && strlen(argv[i]) < sizeof(szBootDiscImage))
+          strcpy(szBootDiscImage, argv[i]);
         else
           fprintf(stderr,"Illegal parameter: %s\n",argv[i]);
       }

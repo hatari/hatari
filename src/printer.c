@@ -23,7 +23,7 @@
     - corrected stupid string bug that altered the environment var HOME
 
 */
-static char rcsid[] = "Hatari $Id: printer.c,v 1.12 2003-10-23 14:30:45 simonsunnyboy Exp $";
+static char rcsid[] = "Hatari $Id: printer.c,v 1.13 2004-02-12 15:56:02 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -65,7 +65,8 @@ void Printer_Init(void)
 	if(strlen(ConfigureParams.Printer.szPrintToFileName) <= 1)
 	{
 		/* construct filename for printing.... */
-		if(getenv("HOME")!=NULL)
+		if (getenv("HOME") != NULL
+		    && strlen(getenv("HOME"))+strlen(PRINTER_FILENAME) < sizeof(ConfigureParams.Printer.szPrintToFileName))
 			sprintf(ConfigureParams.Printer.szPrintToFileName, "%s%s", getenv("HOME"), PRINTER_FILENAME);
 		else
 			sprintf(ConfigureParams.Printer.szPrintToFileName, ".%s",PRINTER_FILENAME);
