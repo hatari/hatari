@@ -167,7 +167,8 @@ void TOS_LoadImage(void)
 */
 void TOS_FixRom(void)
 {
-  switch(TOSVersion) {
+  switch(TOSVersion)
+  {
     /*
       TOS 1.00 settings
     */
@@ -182,29 +183,26 @@ void TOS_FixRom(void)
 
       /* FC03d6  JSR $FC04A8  Boot from DMA bus */
       /* This doesn't need to be patched - but we do
-	 need to force set condrv ($4c2), because the
-	 ACSI driver (if any) will reset it, this is 
-	 done after the DMA bus boot (when the driver loads), 
-	 replacing the RTS with our own
-	 routine which sets condrv and then RTSes. */
+         need to force set condrv ($4c2), because the
+         ACSI driver (if any) will reset it, this is 
+         done after the DMA bus boot (when the driver loads), 
+         replacing the RTS with our own
+         routine which sets condrv and then RTSes. */
       if(ACSI_EMU_ON || GEMDOS_EMU_ON) 
-	STMemory_WriteWord(0xFC04d4, CONDRV_OPCODE);
+        STMemory_WriteWord(0xFC04d4, CONDRV_OPCODE);
       else 
-	{
-	  /* FC02E6  CLR.L $4C2(A5)  Set connected drives */
-	  STMemory_WriteWord(0xFC02E6,NOP_OPCODE);
-	  STMemory_WriteWord(0xFC02E6+2,NOP_OPCODE);    /* NOP */
-
-	  if (bUseVDIRes) { 
-	    STMemory_WriteWord(0xFC03D6,0xa000);      /* Init Line-A */ 
-	    STMemory_WriteWord(0xFC03D6+2,0xa0ff);    /* Trap Line-A (to get structure) */ 
-	  } 
-	  else { 
-	    
-	    STMemory_WriteWord(0xFC03D6,NOP_OPCODE);    /* NOP */
-	    STMemory_WriteWord(0xFC03D6+2,NOP_OPCODE);  /* NOP */ 
-	  } 
-	}
+      {
+        if (bUseVDIRes)
+        { 
+          STMemory_WriteWord(0xFC03D6,0xa000);      /* Init Line-A */ 
+          STMemory_WriteWord(0xFC03D6+2,0xa0ff);    /* Trap Line-A (to get structure) */ 
+        } 
+        else
+        { 
+          STMemory_WriteWord(0xFC03D6,NOP_OPCODE);    /* NOP */
+          STMemory_WriteWord(0xFC03D6+2,NOP_OPCODE);  /* NOP */ 
+        } 
+      }
 
       /* Timer D(MFP init 0xFC21B4), set value before call Set Timer routine */
       STMemory_WriteWord(0xFC21F6,TIMERD_OPCODE);
