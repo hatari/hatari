@@ -50,13 +50,13 @@ char *fname;
 void Printer_Init(void)
 {
 #ifdef PRINTER_DEBUG
-	fprintf(stderr,"Printer_Init()\n");
+  fprintf(stderr,"Printer_Init()\n");
 #endif
-	/* FIXME: enable and disable printing via the GUI */
-	/* cheating: for testing we activate printing here by hand... */
-	ConfigureParams.Printer.bEnablePrinting=TRUE;
-	if(ConfigureParams.Printer.bEnablePrinting)
-		fprintf(stderr,"Printer_Init(): printing activated...\n");
+  /* FIXME: enable and disable printing via the GUI */
+  /* cheating: for testing we activate printing here by hand... */
+  ConfigureParams.Printer.bEnablePrinting=TRUE;
+  if(ConfigureParams.Printer.bEnablePrinting)
+	fprintf(stderr,"Printer_Init(): printing activated...\n");
 
   /* construct filename for printing.... */
   fname=getenv("HOME");
