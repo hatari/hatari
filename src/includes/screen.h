@@ -22,8 +22,8 @@ typedef struct
   BOOL bFullUpdate;                  /* Set TRUE to cause full update on next draw */
 } FRAMEBUFFER;
 
-/* WinSTon used NUM_FRAMEBUFFERS=2, but =1 seems to be working better in Hatari... */
-#define NUM_FRAMEBUFFERS  1
+/* Number of frame buffers (1 or 2) - should be 2 for supporting screen flipping */
+#define NUM_FRAMEBUFFERS  2
 
 /* Details for each display screen - both Window and FullScreen */
 typedef struct
@@ -102,7 +102,6 @@ enum
 extern SCREENDRAW ScreenDrawWindow[4];
 extern SCREENDRAW ScreenDrawFullScreen[4];
 extern FRAMEBUFFER *pFrameBuffer;
-extern unsigned char *pScreenBitmap;
 extern unsigned char *pSTScreen,*pSTScreenCopy;
 extern unsigned char *pPCScreenDest;
 extern int STScreenStartHorizLine,STScreenEndHorizLine;

@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-static char rcsid[] = "Hatari $Id: screen.c,v 1.27 2003-06-17 18:03:22 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.28 2004-04-07 10:24:21 thothy Exp $";
 
 #include <SDL.h>
 
@@ -48,7 +48,6 @@ SCREENDRAW ScreenDrawVDIWindow[4];
 SCREENDRAW ScreenDrawVDIFullScreen[4];            /* And for full-screen */
 FRAMEBUFFER FrameBuffers[NUM_FRAMEBUFFERS];       /* Store frame buffer details to tell how to update */
 FRAMEBUFFER *pFrameBuffer;                        /* Pointer into current 'FrameBuffer' */
-unsigned char *pScreenBitmap=NULL;                /* Screen pixels in PC RGB format, allocated with 'CreateDIBSection' */
 unsigned char *pSTScreen,*pSTScreenCopy;          /* Keep track of current and previous ST screen data */
 unsigned char *pPCScreenDest;                     /* Destination PC buffer */
 int STScreenStartHorizLine,STScreenEndHorizLine;  /* Start/End lines to be converted */
@@ -130,7 +129,6 @@ static void Screen_SetWindowRes()
     SDL_Quit();
     exit(-2);
   }
-  pScreenBitmap=sdlscrn->pixels;
 
   if(BitCount==8)
   {
@@ -147,6 +145,7 @@ static void Screen_SetWindowRes()
   }
   Screen_SetDrawModes();        /* Set draw modes(store which modes to use!) */
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -182,6 +181,7 @@ void Screen_Init(void)
   SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_ENABLE);
   SDL_EventState(SDL_MOUSEBUTTONUP, SDL_ENABLE);
   SDL_ShowCursor(SDL_DISABLE);
+  SDL_WarpMouse(sdlscrn->w/2, sdlscrn->h/2);      /* Set mouse pointer to the middle of the screen */
 }
 
 
@@ -333,7 +333,6 @@ void Screen_EnterFullScreen(void)
     else
     {
       sdlscrn = newsdlscrn;
-      pScreenBitmap = newsdlscrn->pixels;
       bInFullScreen = TRUE;
 
       Screen_SetFullUpdate();           /* Cause full update of screen */
@@ -755,7 +754,7 @@ void Screen_SetWindowConvertDetails(void)
 
   pSTScreen = pFrameBuffer->pSTScreen;          /* Source in ST memory */
   pSTScreenCopy = pFrameBuffer->pSTScreenCopy;  /* Previous ST screen */
-  pPCScreenDest = pScreenBitmap;                /* Destination PC screen */
+  pPCScreenDest = sdlscrn->pixels;              /* Destination PC screen */
 
   STScreenStartHorizLine = 0;                   /* Full height */
 
@@ -939,10 +938,10 @@ void Screen_Blit(BOOL bSwapScreen)
 /*
   Swap ST Buffers, used for full-screen where have double-buffering
 */
-void Screen_SwapSTBuffers(void)
+static void Screen_SwapSTBuffers(void)
 {
 #if NUM_FRAMEBUFFERS > 1
-  if (bInFullScreen)
+  if (sdlscrn->flags & SDL_DOUBLEBUF)
   {
     if (pFrameBuffer==&FrameBuffers[0])
       pFrameBuffer = &FrameBuffers[1];
@@ -979,7 +978,6 @@ void Screen_DrawFrame(BOOL bForceFlip)
     if (ConfigureParams.Screen.bAllowOverscan)
     {
       Screen_SetWindowConvertDetails();
-      pPCScreenDest = (unsigned char *)sdlscrn->pixels;  /* Destination PC screen */
     }
     else
     {
