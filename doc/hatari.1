@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2004-07-20" "Hatari" ""
+.TH "HATARI" "1" "2004-12-14" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
@@ -14,40 +14,43 @@ hatari \- Atari ST emulator
 .SH "DESCRIPTION"
 Hatari is an Atari ST emulator for Linux, FreeBSD, BeOS and other Systems which are supported by the SDL library.
 .PP
-With hatari one can run games, demos or applications written for Atari ST. It supports the commonly used .st and .msa disk images and hard disk emulation.
+With hatari one can run games, demos or applications written for Atari ST. It supports the commonly used *.st and *.msa disk images and hard disk emulation.
 .PP
 To run the emulator a TOS ROM image is needed. EmuTOS, a free implementation of TOS is shipped with hatari. Since it is not yet fully compatible with the original TOS some programs won't run correctly with this. Because of this it is recommended to use a TOS ROM from a real Atari.
 .SH "OPTIONS"
 .TP 
 .B \-h, \-\-help
-prints command line options and terminates
+print command line options and terminate
 .TP 
 .B \-v, \-\-version
-prints version information and terminates
+print version information and terminate
 .TP 
 .B \-m, \-\-mono
-starts the emulated Atari ST in monochrome resolution
+start the emulated Atari ST in monochrome resolution
 .TP 
 .B \-f, \-\-fullscreen
-tries to use a fullscreen mode
+start the emulator in fullscreen mode
+.TP 
+.B \-w, \-\-window
+start the emulator in window mode
 .TP 
 .B \-j, \-\-joystick
-activates joystick emulation via cursor keys
+activate joystick emulation via cursor keys
 .TP 
 .B \-\-nosound
-disables sound (makes emulation faster)
+disable sound (makes emulation faster)
 .TP 
 .B \-\-frameskip
-drops every second frame (accelerates emulation)
+drop every second frame (accelerates emulation)
 .TP 
 .B \-D, \-\-debug
-activates the simple builtin debugger
+activate the simple builtin debugger
 .TP 
 .B \-\-slowfdc
-slows down FDC emulation (needed to make some games and demos work)
+slow down FDC emulation (needed to make some games and demos work)
 .TP 
 .B \-d, \-\-harddrive <dir>
-emulates <dir> as a hard disk
+use <dir> as an emulated hard disk
 .TP 
 .B \-\-hdimage <imagefile>
 emulate hard disk with an image file
@@ -55,12 +58,15 @@ emulate hard disk with an image file
 .B \-\-tos <imagefile>
 specify TOS ROM image to use
 .TP 
+.B \-\-cartridge <imagefile>
+use ROM cartridge image <file> (only works if GEMDOS HD emulation and extended VDI resolution are disabled)
+.TP 
 .B \-\-memsize x
 set amount of emulated RAM
 .br 
 x=0 for 512K,
 .br 
-x=1,x=2 or x=4 for 1,2 or 4 MB
+x=1, x=2 or x=4 for 1, 2 or 4 MB
 .TP 
 .B 
 \-\-cpulevel x
@@ -91,7 +97,7 @@ enable experimental MIDI output to the mentioned file
 enable experimental RS232 emulation via the mentioned file/device
 .TP 
 .B \-c, \-\-configfile <filename>
-Use the mentioned file as configuration file instead of ~/.hatari.cfg
+use the mentioned file as configuration file instead of ~/.hatari.cfg
 
 .SH "COMMANDS"
 .TP
@@ -137,7 +143,7 @@ activate the hatari command GUI
 You may need to hold SHIFT down while in windowed mode.
 .TP
 .B Pause
-will go to the debugger if it was activated at compile time
+will go to the debugger if it was activated with the -\-debug option
 
 .SH Emulated Atari ST keyboard
 All other keys on the keyboard act as the normal Atari ST keys so pressing SPACE on your PC will result in an emulated press of the SPACE key on the ST. The following keys have special meanings:
