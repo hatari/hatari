@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.21 2003-06-01 16:23:21 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.22 2003-06-02 16:20:23 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -1152,7 +1152,7 @@ void m68k_reset (void)
     SET_CFLG (0);
     SET_VFLG (0);
     SET_NFLG (0);
-    regs.spcflags = 0;
+    regs.spcflags &= SPCFLAG_MODE_CHANGE;   /* Clear specialflags except mode-change */
     regs.intmask = 7;
     regs.vbr = regs.sfc = regs.dfc = 0;
     regs.fpcr = regs.fpsr = regs.fpiar = 0;
