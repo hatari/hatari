@@ -1231,11 +1231,17 @@ void Intercept_BlitterSkew_WriteByte(void)
 
 
 /* Address space for Bus Error in hardware mapping */
-INTERCEPT_ADDRESSRANGE InterceptBusErrors[] = {
-  { 0xff8280,0xff82c4 },        /* Falcon VIDEL (EmuTOS depends on this) */
-  { 0xff8400,0xff85fe },        /* TT Palette (again for EmuTOS) */
-  { 0xff8900,0xff8960 },        /* DMA Sound/MicroWire */
+INTERCEPT_ADDRESSRANGE InterceptBusErrors[] =
+{
+  { 0xff8002,0xff8200 },
+  { 0xff8210,0xff823e },
+  { 0xff8280,0xff8600 },        /* Falcon VIDEL, TT Palette */
+  { 0xff8900,0xff89fe },        /* DMA Sound/MicroWire */
   { 0xff8a00,0xff8a3e },        /* Blitter (now supported, but disabled by default) */
+  { 0xff8a40,0xff8e00 },
+  { 0xff8e10,0xfff9fe },
+  { 0xfffa40,0xfffbfe },        /* Mega-STE FPU and 2nd (TT) MFP */
+  { 0xfffe00,0xfffff0 },
 
   { 0,0 }  /* term */
 };
