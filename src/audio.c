@@ -6,7 +6,7 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-static char rcsid[] = "Hatari $Id: audio.c,v 1.13 2003-03-10 18:46:06 thothy Exp $";
+static char rcsid[] = "Hatari $Id: audio.c,v 1.14 2003-03-12 14:13:23 thothy Exp $";
 
 #include <SDL.h>
 
@@ -19,7 +19,6 @@ static char rcsid[] = "Hatari $Id: audio.c,v 1.13 2003-03-10 18:46:06 thothy Exp
 #include "misc.h"
 #include "sound.h"
 
-#define WRITE_INIT_POS  ((SoundPlayBackFrequencies[OutputAudioFreqIndex]/50)*2)  /* Write 2/50th ahead of write position */
 
 /* 11Khz, 22Khz, 44Khz playback */
 int SoundPlayBackFrequencies[] =
@@ -69,8 +68,8 @@ void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Initialize the audio subsystem. Return TRUE if all OK
-  We use direct access to the sound buffer, set to a signed 8-bit mono stream
+  Initialize the audio subsystem. Return TRUE if all OK.
+  We use direct access to the sound buffer, set to a unsigned 8-bit mono stream.
 */
 void Audio_Init(void)
 {
@@ -98,7 +97,7 @@ void Audio_Init(void)
 
   /* Set up SDL audio: */
   desiredAudioSpec.freq = SoundPlayBackFrequencies[OutputAudioFreqIndex];
-  desiredAudioSpec.format = AUDIO_S8;           /* 8 Bit signed */
+  desiredAudioSpec.format = AUDIO_U8;           /* 8 Bit unsigned */
   desiredAudioSpec.channels = 1;                /* Mono */
   desiredAudioSpec.samples = 1024;              /* Buffer size */
   desiredAudioSpec.callback = Audio_CallBack;
@@ -239,7 +238,7 @@ void Audio_WriteSamplesIntoBuffer(Sint8 *pSamples, int Index, int Length,
       PlayVolume = 1.0f;
   }
 
-  /* Write section, convert to 'unsigned' and write '0's if passed NULL */
+  /* Write section, convert to 'unsigned' and write '128's if passed NULL */
   if(Length > 0)
   {
     if(pSamples)
@@ -247,13 +246,13 @@ void Audio_WriteSamplesIntoBuffer(Sint8 *pSamples, int Index, int Length,
       pBuffer = pDestBuffer;
       for(i = 0; i < Length; i++)
       {
-        *pBuffer++ = Audio_ModifyVolume(pSamples[Index]);
+        *pBuffer++ = Audio_ModifyVolume(pSamples[Index]) ^ 128;
         Index = (Index + 1) % MIXBUFFER_SIZE;
       }
     }
     else
     {
-      memset(pDestBuffer, 0, Length);
+      memset(pDestBuffer, 128, Length);
     }
   }
 }
