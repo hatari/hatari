@@ -35,23 +35,18 @@ long TTmem_size = 0;
 void customreset(void)
 {
  /* Taken from Reset_ST in reset.c: */
- Int_Reset();					// Reset interrupts
- MFP_Reset();					// Setup MFP chip
- Video_Reset();					// Reset video
- PSG_Reset();					// Reset PSG
- Sound_Reset();					// Reset Sound
- IKBD_Reset(FALSE);				// Keyboard	
- Screen_Reset();				// Reset screen
+ Int_Reset();                           /* Reset interrupts */
+ MFP_Reset();                           /* Setup MFP chip */
+ Video_Reset();                         /* Reset video */
+ PSG_Reset();                           /* Reset PSG */
+ Sound_Reset();                         /* Reset Sound */
+ IKBD_Reset(FALSE);                     /* Keyboard */
+ Screen_Reset();                        /* Reset screen */
 
- // And VBL interrupt, MUST always be one interrupt ready to trigger
+ /* And VBL interrupt, MUST always be one interrupt ready to trigger */
  Int_AddAbsoluteInterrupt(CYCLES_ENDLINE,INTERRUPT_VIDEO_ENDLINE);
  Int_AddAbsoluteInterrupt(CYCLES_HBL,INTERRUPT_VIDEO_HBL);
  Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME,INTERRUPT_VIDEO_VBL);
-}
-
-int intlev (void) /* ??? */
-{
-  return -1;
 }
 
 
@@ -91,7 +86,7 @@ void Start680x0(void)
 */
 unsigned long OpCode_ConnectedDrive(uae_u32 opcode)
 {
- fprintf(stderr, "OpCode_ConnectedDrive handled\n");
+ /*fprintf(stderr, "OpCode_ConnectedDrive handled\n");*/
  /* Set connected drives */
  STMemory_WriteWord(0x4c2, ConnectedDriveMask); 
  m68k_incpc(2);
@@ -106,6 +101,8 @@ unsigned long OpCode_ConnectedDrive(uae_u32 opcode)
 unsigned long OpCode_OldGemDos(uae_u32 opcode)
 {
   m68k_setpc( STMemory_ReadLong(CART_OLDGEMDOS) );    
+  fill_prefetch_0();
+  return 4;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -143,7 +140,7 @@ unsigned long OpCode_GemDos(uae_u32 opcode)
 */
 unsigned long OpCode_TimerD(uae_u32 opcode)
 {
- fprintf(stderr, "OpCode_TimerD handled\n");
+ /*fprintf(stderr, "OpCode_TimerD handled\n");*/
  m68k_dreg(regs,0)=3;	/* 3 = Select Timer D */
  m68k_dreg(regs,1)=7;	/* 1 = /4 for 9600 baud(used /200) */
  m68k_dreg(regs,2)=100;	/* 2 = 9600 baud(100) */

@@ -18,7 +18,6 @@
 #include "events.h"
 #include "../includes/tos.h"
 
-/*int crashtrace=0;*/
 
 int quit_program = 0;
 int debugging = 0;
@@ -734,26 +733,39 @@ void Exception(int nr, uaecptr oldpc)
 	    m68k_areg(regs, 7) -= 2;
 	    put_word (m68k_areg(regs, 7), nr * 4);
 	}
-    } else {
-	if (nr == 2 || nr == 3) {
-	    /*crashtrace=4;*/
-	    /*sleep(1);*/
-	    m68k_areg(regs, 7) -= 12;
-	    /* ??????? */
-	    if (nr == 3) {
-		put_long (m68k_areg(regs, 7), last_fault_for_exception_3);
-		put_word (m68k_areg(regs, 7)+4, last_op_for_exception_3);
-		put_long (m68k_areg(regs, 7)+8, last_addr_for_exception_3);
-	    }
-	    /*write_log ("UAE CPU Exception.\n");*/
-	    goto kludge_me_do;
-	}
     }
+
+    /* Push PC on stack: */
     m68k_areg(regs, 7) -= 4;
     put_long (m68k_areg(regs, 7), currpc);
-kludge_me_do:
+    /* Push SR on stack: */
     m68k_areg(regs, 7) -= 2;
     put_word (m68k_areg(regs, 7), regs.sr);
+
+    /* 68000 bus/address errors: */
+    if (cpu_level==0 && (nr==2 || nr==3)) {
+	m68k_areg(regs, 7) -= 8;
+	if (nr == 3) {    /* Address error */
+            put_word (m68k_areg(regs, 7), regs.sr);  /*?*/
+	    put_long (m68k_areg(regs, 7)+2, last_fault_for_exception_3);
+	    put_word (m68k_areg(regs, 7)+6, last_op_for_exception_3);
+	    put_long (m68k_areg(regs, 7)+10, last_addr_for_exception_3);
+            if( bEnableDebug ) {
+              fprintf(stderr,"Address Error at address $%x, PC=$%x\n",last_fault_for_exception_3,currpc);
+              DebugUI();
+            }
+	}
+        else {    /* Bus error */
+            put_word (m68k_areg(regs, 7), regs.sr);  /*?*/
+	    put_long (m68k_areg(regs, 7)+2, BusAddressLocation);
+	    put_word (m68k_areg(regs, 7)+6, get_word(currpc));
+            if( bEnableDebug && BusAddressLocation!=0xff8a00) {
+              fprintf(stderr,"Bus Error at address $%x, PC=$%x\n",BusAddressLocation,currpc);
+              DebugUI();
+            }
+        }
+    }
+
     m68k_setpc (get_long (regs.vbr + 4*nr));
     fill_prefetch_0 ();
     regs.t1 = regs.t0 = regs.m = 0;
@@ -1175,7 +1187,7 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 	return 4;
      }
 
-#if 1
+#if 0
     write_log ("Illegal instruction: %04x at %08lx\n", opcode, pc);
 #endif
     Exception (4,0);
@@ -1242,28 +1254,26 @@ static int do_specialties (void)
     }
     while (regs.spcflags & SPCFLAG_STOP) {
 	do_cycles (4);
-	/*if (regs.spcflags & SPCFLAG_COPPER)
-	    do_copper ();*/
 	if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)){
-	    int intr = intlev ();
+	    /*int intr = intlev ();*/
 	    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-	    if (intr != -1 && intr > regs.intmask) {
+	    /*if (intr != -1 && intr > regs.intmask) {
 		Interrupt (intr);
 		regs.stopped = 0;
 		unset_special (SPCFLAG_STOP);
-	    }
+	    }*/
 	}
     }
     if (regs.spcflags & SPCFLAG_TRACE)
 	do_trace ();
 
     if (regs.spcflags & SPCFLAG_DOINT) {
-	int intr = intlev ();
+	/*int intr = intlev ();*/
 	unset_special (SPCFLAG_DOINT);
-	if (intr != -1 && intr > regs.intmask) {
+	/*if (intr != -1 && intr > regs.intmask) {
 	    Interrupt (intr);
 	    regs.stopped = 0;
-	}
+	}*/
     }
     if (regs.spcflags & SPCFLAG_INT) {
 	unset_special (SPCFLAG_INT);
@@ -1275,6 +1285,7 @@ static int do_specialties (void)
     }
     return 0;
 }
+
 
 /* It's really sad to have two almost identical functions for this, but we
    do it all for performance... :( */
@@ -1298,8 +1309,7 @@ static void m68k_run_1 (void)
 #endif
 
 	/*m68k_dumpstate(stderr, NULL);*/
-	m68k_disasm(stderr, m68k_getpc (), NULL, 1);
-	/*if( opcode == 0 ) sleep(1);*/
+	/*m68k_disasm(stderr, m68k_getpc (), NULL, 1);*/
 
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
 /*	regs_backup[backup_pointer = (backup_pointer + 1) % 16] = regs;*/
@@ -1342,9 +1352,7 @@ static void m68k_run_2 (void)
 #endif
 
 	/*m68k_dumpstate(stderr, NULL);*/
-	/*if(crashtrace)
-         { --crashtrace ; m68k_disasm(stderr, m68k_getpc (), NULL, 1); }*/
-	/*if( opcode == 0 ) sleep(1); */
+	/*m68k_disasm(stderr, m68k_getpc (), NULL, 1);*/
 
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
 /*	regs_backup[backup_pointer = (backup_pointer + 1) % 16] = regs;*/
@@ -1377,16 +1385,6 @@ void m68k_go (int may_quit)
 
     in_m68k_go++;
     while(!quit_program) {
-/*
-	if (quit_program > 0) {
-	    if (quit_program == 1)
-		break;
-	    quit_program = 0;
-	    m68k_reset ();
-	    //reset_all_systems ();
-	    customreset ();
-	}
-*/
 /*
 	if (debugging)
 	    debug ();

@@ -262,6 +262,7 @@ void Main_ReadParameters(int argc, char *argv[])
               "     or -e <dir>         (<dir> = root directory).\n"
               "  --tos <file>          Use TOS image <file>.\n"
               "  --cpulevel x          Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
+              "  --compatible          Use a more compatible (but slower) 68000 CPU mode.\n"
              );
        exit(0);
       }
@@ -330,6 +331,10 @@ void Main_ReadParameters(int argc, char *argv[])
          cpu_level = atoi(argv[++i]);
        if(cpu_level<0 || cpu_level>4)
          cpu_level = 0;
+      }
+      else if (!strcmp(argv[i],"--compatible") || !strcmp(argv[i],"-d"))
+      {
+       cpu_compatible = TRUE;
       }
       else
       {
