@@ -156,6 +156,8 @@ static void build_cpufunctbl (void)
     }
 
     /* Hataris illegal opcodes: */
+    cpufunctbl[cft_map(GEMDOS_OPCODE)] = OpCode_GemDos;
+    cpufunctbl[cft_map(RUNOLDGEMDOS_OPCODE)] = OpCode_OldGemDos;
     cpufunctbl[cft_map(CONDRV_OPCODE)] = OpCode_ConnectedDrive;
     cpufunctbl[cft_map(TIMERD_OPCODE)] = OpCode_TimerD;
 }
