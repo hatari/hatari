@@ -1,14 +1,17 @@
 /*
-  Hatari
+  Hatari - hdc.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   Low-level hard drive emulation
-
 */
+static char rcsid[] = "Hatari $Id: hdc.c,v 1.3 2003-04-04 16:28:30 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
 #include "decode.h"
-#include "dialog.h"
+#include "configuration.h"
 #include "fdc.h"
 #include "hdc.h"
 #include "floppy.h"

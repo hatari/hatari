@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.26 2003-03-30 13:35:38 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.27 2003-04-04 16:28:24 thothy Exp $";
 
 #include <unistd.h>
 
@@ -373,7 +373,7 @@ SGOBJ devicedlg[] =
 
 
 
-DLG_PARAMS ConfigureParams, DialogParams;   /* List of configuration for system and dialog (so can choose 'Cancel') */
+CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can also choose 'Cancel') */
 
 
 
@@ -427,10 +427,10 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   /* Do need to change resolution? Need if change display/overscan settings */
   /*(if switch between Colour/Mono cause reset later) */
   if( (DialogParams.Screen.ChosenDisplayMode!=ConfigureParams.Screen.ChosenDisplayMode)
-      || (DialogParams.Screen.Advanced.bAllowOverscan!=ConfigureParams.Screen.Advanced.bAllowOverscan) ) {
+      || (DialogParams.Screen.bAllowOverscan!=ConfigureParams.Screen.bAllowOverscan) ) {
     if(bInFullScreen) Screen_ReturnFromFullScreen();
     ConfigureParams.Screen.ChosenDisplayMode = DialogParams.Screen.ChosenDisplayMode;
-    ConfigureParams.Screen.Advanced.bAllowOverscan = DialogParams.Screen.Advanced.bAllowOverscan;
+    ConfigureParams.Screen.bAllowOverscan = DialogParams.Screen.bAllowOverscan;
     if(bInFullScreen)
       Screen_EnterFullScreen();
     else {
@@ -480,7 +480,7 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   /* Copy details to configuration, so can be saved out or set on reset */
   ConfigureParams = DialogParams;
   /* And write to configuration now, so don't loose */
-  Configuration_UnInit();
+  Configuration_Save();
 
   /* Copy details to global, if we reset copy them all */
   Dialog_CopyDetailsFromConfiguration(NeedReset);
@@ -798,17 +798,17 @@ void Dialog_ScreenDlg(void)
   else
     screendlg[DLGSCRN_FULLSCRN].state &= ~SG_SELECTED;
 
-  if( DialogParams.Screen.Advanced.bInterlacedScreen )
+  if( DialogParams.Screen.bInterlacedScreen )
     screendlg[DLGSCRN_INTERLACE].state |= SG_SELECTED;
   else
     screendlg[DLGSCRN_INTERLACE].state &= ~SG_SELECTED;
 
-  if( DialogParams.Screen.Advanced.bFrameSkip )
+  if( DialogParams.Screen.bFrameSkip )
     screendlg[DLGSCRN_FRAMESKIP].state |= SG_SELECTED;
   else
     screendlg[DLGSCRN_FRAMESKIP].state &= ~SG_SELECTED;
 
-  if( DialogParams.Screen.Advanced.bAllowOverscan )
+  if( DialogParams.Screen.bAllowOverscan )
     screendlg[DLGSCRN_OVERSCAN].state |= SG_SELECTED;
   else
     screendlg[DLGSCRN_OVERSCAN].state &= ~SG_SELECTED;
@@ -883,9 +883,9 @@ void Dialog_ScreenDlg(void)
 
   /* Read values from dialog */
   DialogParams.Screen.bFullScreen = (screendlg[DLGSCRN_FULLSCRN].state & SG_SELECTED);
-  DialogParams.Screen.Advanced.bInterlacedScreen = (screendlg[DLGSCRN_INTERLACE].state & SG_SELECTED);
-  DialogParams.Screen.Advanced.bFrameSkip = (screendlg[DLGSCRN_FRAMESKIP].state & SG_SELECTED);
-  DialogParams.Screen.Advanced.bAllowOverscan = (screendlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
+  DialogParams.Screen.bInterlacedScreen = (screendlg[DLGSCRN_INTERLACE].state & SG_SELECTED);
+  DialogParams.Screen.bFrameSkip = (screendlg[DLGSCRN_FRAMESKIP].state & SG_SELECTED);
+  DialogParams.Screen.bAllowOverscan = (screendlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
   DialogParams.Screen.bUseHighRes = (screendlg[DLGSCRN_MONO].state & SG_SELECTED);
   DialogParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
 

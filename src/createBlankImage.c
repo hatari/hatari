@@ -1,11 +1,15 @@
 /*
-  Hatari
+  Hatari - createBlankImage.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   Create Blank .ST/.MSA Disc Images
 */
+static char rcsid[] = "Hatari $Id: createBlankImage.c,v 1.4 2003-04-04 16:28:24 thothy Exp $";
 
 #include "main.h"
-#include "dialog.h"
+#include "configuration.h"
 #include "file.h"
 #include "floppy.h"
 #include "memAlloc.h"

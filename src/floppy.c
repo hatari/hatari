@@ -21,13 +21,13 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-static char rcsid[] = "Hatari $Id: floppy.c,v 1.9 2003-03-30 13:35:38 thothy Exp $";
+static char rcsid[] = "Hatari $Id: floppy.c,v 1.10 2003-04-04 16:28:29 thothy Exp $";
 
 #include <SDL_endian.h>
 
 #include "main.h"
 #include "debug.h"
-#include "dialog.h"
+#include "configuration.h"
 #include "errlog.h"
 #include "file.h"
 #include "floppy.h"

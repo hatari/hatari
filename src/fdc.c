@@ -1,5 +1,8 @@
 /*
-  Hatari
+  Hatari - fdc.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   Floppy Disc Controller(FDC) emulation. We need to simulate the movement of the head of the
   floppy disc drive to accurately perform the FDC commands, such as 'Step'. The is important
@@ -9,11 +12,12 @@
   to perform the transfer of data from our disc image into the ST RAM area by simulating the
   DMA.
 */
+static char rcsid[] = "Hatari $Id: fdc.c,v 1.7 2003-04-04 16:28:26 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
 #include "decode.h"
-#include "dialog.h"
+#include "configuration.h"
 #include "fdc.h"
 #include "hdc.h"
 #include "floppy.h"

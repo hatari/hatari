@@ -6,11 +6,10 @@
 
   Configuration File
 
-  The configuration file is stored in a binary format to prevent tampering.
-  We also store the version number in the file to prevent people from
-  copying old .cfg files between versions.
+  The configuration file is now stored in an ASCII format to allow the user
+  to edit the file manually.
 */
-static char rcsid[] = "Hatari $Id: configuration.c,v 1.16 2003-03-30 11:32:48 thothy Exp $";
+static char rcsid[] = "Hatari $Id: configuration.c,v 1.17 2003-04-04 16:28:24 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -24,10 +23,125 @@ static char rcsid[] = "Hatari $Id: configuration.c,v 1.16 2003-03-30 11:32:48 th
 #include "uae-cpu/hatari-glue.h"
 #include "intercept.h"
 #include "gemdos.h"
+#include "cfgopts.h"
 
 
-static FILE *ConfigFile;
-BOOL bFirstTimeInstall=FALSE;    /* Has been run before? Used to set default joysticks etc... */
+BOOL bFirstTimeInstall = FALSE;  /* Has been run before? Used to set default joysticks etc... */
+CNF_PARAMS ConfigureParams;      /* List of configuration for the emulator */
+
+
+/* Used to load/save screen options */
+struct Config_Tag configs_Screen[] =
+{
+  { "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
+  { "bDoubleSizeWindow", Bool_Tag, &ConfigureParams.Screen.bDoubleSizeWindow },
+  { "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
+  { "bInterlacedScreen", Bool_Tag, &ConfigureParams.Screen.bInterlacedScreen },
+  { "bSyncToRetrace", Bool_Tag, &ConfigureParams.Screen.bSyncToRetrace },
+  { "ChosenDisplayMode", Int_Tag, &ConfigureParams.Screen.ChosenDisplayMode },
+  { "bCaptureChange", Bool_Tag, &ConfigureParams.Screen.bCaptureChange },
+  { "nFramesPerSecond", Int_Tag, &ConfigureParams.Screen.nFramesPerSecond },
+  { "bUseHighRes", Bool_Tag, &ConfigureParams.Screen.bUseHighRes },
+  { NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save joystick options */
+struct Config_Tag configs_Joystick0[] =
+{
+  { "bCursorEmulation", Bool_Tag, &ConfigureParams.Joysticks.Joy[0].bCursorEmulation },
+  { "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[0].bEnableAutoFire },
+  { NULL , Error_Tag, NULL }
+};
+struct Config_Tag configs_Joystick1[] =
+{
+  { "bCursorEmulation", Bool_Tag, &ConfigureParams.Joysticks.Joy[1].bCursorEmulation },
+  { "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[1].bEnableAutoFire },
+  { NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save keyboard options */
+struct Config_Tag configs_Keyboard[] =
+{
+  { "bDisableKeyRepeat", Bool_Tag, &ConfigureParams.Keyboard.bDisableKeyRepeat },
+  { "nKeymapType", Int_Tag, &ConfigureParams.Keyboard.nKeymapType },
+  { "szMappingFileName", String_Tag, ConfigureParams.Keyboard.szMappingFileName },
+  { NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save sound options */
+struct Config_Tag configs_Sound[] =
+{
+  { "bEnableSound", Bool_Tag, &ConfigureParams.Sound.bEnableSound },
+  { "nPlaybackQuality", Int_Tag, &ConfigureParams.Sound.nPlaybackQuality },
+  { "szYMCaptureFileName", String_Tag, ConfigureParams.Sound.szYMCaptureFileName },
+  { NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save memory options */
+struct Config_Tag configs_Memory[] =
+{
+  { "nMemorySize", Int_Tag, &ConfigureParams.Memory.nMemorySize },
+  { "szMemoryCaptureFileName", String_Tag, ConfigureParams.Memory.szMemoryCaptureFileName },
+  { NULL , Error_Tag, NULL }
+};
+
+
+/* Used to load/save floppy options */
+struct Config_Tag configs_Floppy[] =
+{
+  { "bAutoInsertDiscB", Bool_Tag, &ConfigureParams.DiscImage.bAutoInsertDiscB },
+  { "szDiscImageDirectory", String_Tag, ConfigureParams.DiscImage.szDiscImageDirectory },
+  { NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save HD options */
+struct Config_Tag configs_HardDisc[] =
+{
+  { "nDriveList", Int_Tag, &ConfigureParams.HardDisc.nDriveList },
+  { "bBootFromHardDisc", Bool_Tag, &ConfigureParams.HardDisc.bBootFromHardDisc },
+  { "szHardDiscDirC", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C] },
+  /*{ "szHardDiscDirD", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_D] },*/
+  /*{ "szHardDiscDirE", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_E] },*/
+  /*{ "szHardDiscDirF", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_F] },*/
+  { NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save TOS/GEM options */
+struct Config_Tag configs_TosGem[] =
+{
+  { "szTOSImageFileName", String_Tag, ConfigureParams.TOSGEM.szTOSImageFileName },
+  { "bUseExtGEMResolutions", Bool_Tag, &ConfigureParams.TOSGEM.bUseExtGEMResolutions },
+  { "nGEMResolution", Int_Tag, &ConfigureParams.TOSGEM.nGEMResolution },
+  { "nGEMColours", Int_Tag, &ConfigureParams.TOSGEM.nGEMColours },
+  { NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save RS232 options */
+struct Config_Tag configs_Rs232[] =
+{
+  { "bEnableRS232", Bool_Tag, &ConfigureParams.RS232.bEnableRS232 },
+  { "nCOMPort", Int_Tag, &ConfigureParams.RS232.nCOMPort },
+  { NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save printer options */
+struct Config_Tag configs_Printer[] =
+{
+  { "bEnablePrinting", Bool_Tag, &ConfigureParams.Printer.bEnablePrinting },
+  { "bPrintToFile", Bool_Tag, &ConfigureParams.Printer.bPrintToFile },
+  { "szPrintToFileName", String_Tag, ConfigureParams.Printer.szPrintToFileName },
+  { NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save system options */
+struct Config_Tag configs_System[] =
+{
+  { "nMinMaxSpeed", Int_Tag, &ConfigureParams.System.nMinMaxSpeed },
+  { "nCpuLevel", Int_Tag, &ConfigureParams.System.nCpuLevel },
+  { "bCompatibleCpu", Bool_Tag, &ConfigureParams.System.bCompatibleCpu },
+  { "bBlitter", Bool_Tag, &ConfigureParams.System.bBlitter },
+  { NULL , Error_Tag, NULL }
+};
 
 
 /*-----------------------------------------------------------------------*/
@@ -39,10 +153,7 @@ void Configuration_SetDefault(void)
   int i;
 
   /* Clear parameters */
-  Memory_Clear(&ConfigureParams, sizeof(DLG_PARAMS));
-
-  /* Set defaults for CPU dialog */
-  ConfigureParams.Configure.nMinMaxSpeed = ConfigureParams.Configure.nPrevMinMaxSpeed = MINMAXSPEED_MIN;
+  Memory_Clear(&ConfigureParams, sizeof(CNF_PARAMS));
 
   /* Set defaults for Disc Image */
   ConfigureParams.DiscImage.bAutoInsertDiscB = TRUE;
@@ -70,12 +181,6 @@ void Configuration_SetDefault(void)
   /* Set defaults for Keyboard */
   ConfigureParams.Keyboard.bDisableKeyRepeat = TRUE;
   ConfigureParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
-  ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_KEY] = SHORTCUT_FULLSCREEN;
-  ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_SHIFT] = SHORTCUT_NOTASSIGNED;
-  ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_CTRL] = SHORTCUT_NOTASSIGNED;
-  ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F12][SHORT_CUT_KEY] = SHORTCUT_NOTASSIGNED;
-  ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F12][SHORT_CUT_SHIFT] = SHORTCUT_NOTASSIGNED;
-  ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F12][SHORT_CUT_CTRL] = SHORTCUT_NOTASSIGNED;
   strcpy(ConfigureParams.Keyboard.szMappingFileName, "");
 
   /* Set defaults for Memory */
@@ -89,15 +194,15 @@ void Configuration_SetDefault(void)
 
   /* Set defaults for RS232 */
   ConfigureParams.RS232.bEnableRS232 = FALSE;
-  ConfigureParams.RS232.nCOMPort = COM_PORT_1;
+  /*ConfigureParams.RS232.nCOMPort = COM_PORT_1;*/
 
   /* Set defaults for Screen */
   ConfigureParams.Screen.bFullScreen = FALSE;
-  ConfigureParams.Screen.Advanced.bDoubleSizeWindow = FALSE;
-  ConfigureParams.Screen.Advanced.bAllowOverscan = TRUE;
-  ConfigureParams.Screen.Advanced.bInterlacedScreen = FALSE;
-  ConfigureParams.Screen.Advanced.bSyncToRetrace = FALSE;
-  ConfigureParams.Screen.Advanced.bFrameSkip = FALSE;	
+  ConfigureParams.Screen.bDoubleSizeWindow = FALSE;
+  ConfigureParams.Screen.bAllowOverscan = TRUE;
+  ConfigureParams.Screen.bInterlacedScreen = FALSE;
+  ConfigureParams.Screen.bSyncToRetrace = FALSE;
+  ConfigureParams.Screen.bFrameSkip = FALSE;	
   ConfigureParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
   ConfigureParams.Screen.bCaptureChange = FALSE;
   ConfigureParams.Screen.nFramesPerSecond = 1;
@@ -110,8 +215,6 @@ void Configuration_SetDefault(void)
 
   /* Set defaults for TOSGEM */
   sprintf(ConfigureParams.TOSGEM.szTOSImageFileName, "%s/tos.img", DATADIR);
-  ConfigureParams.TOSGEM.bUseTimeDate = FALSE;
-  ConfigureParams.TOSGEM.bAccGEMGraphics = FALSE;
   ConfigureParams.TOSGEM.bUseExtGEMResolutions = FALSE;
   ConfigureParams.TOSGEM.nGEMResolution = GEMRES_640x480;
   ConfigureParams.TOSGEM.nGEMColours = GEMCOLOUR_16;
@@ -121,6 +224,24 @@ void Configuration_SetDefault(void)
   ConfigureParams.System.bCompatibleCpu = FALSE;
   ConfigureParams.System.bAddressSpace24 = TRUE;
   ConfigureParams.System.bBlitter = FALSE;
+  ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Load a settings section from the configuration file.
+*/
+static int Configuration_LoadSection(const char *pFilename, struct Config_Tag configs[], char *pSection)
+{
+  int ret;
+
+  ret = input_config(pFilename, configs, pSection);
+
+   if(ret < 0)
+     fprintf(stderr, "Error while loading configuration file, section %s\n", pSection);
+
+  return ret;
 }
 
 
@@ -128,104 +249,56 @@ void Configuration_SetDefault(void)
 /*
   Load program setting from configuration file
 */
-void Configuration_Init(void)
+void Configuration_Load(void)
 {
-
   char sVersionString[VERSION_STRING_SIZE];
   int i,j;
+  char *cfgName = "hatari.cfg";
 
-  /* Open configuration file */
-  if (Configuration_OpenFileToRead()) {
-    /* Version, check matches */
-    Configuration_ReadFromFile(sVersionString,VERSION_STRING_SIZE);
-    if (memcmp(sVersionString,VERSION_STRING,VERSION_STRING_SIZE)==0) {
-      /* Configure */
-      Configuration_ReadFromFile(&ConfigureParams.Configure.nMinMaxSpeed,4);
-      /* Screen */
-      Configuration_ReadFromFile(&ConfigureParams.Screen.bFullScreen,4);
-      Configuration_ReadFromFile(&ConfigureParams.Screen.Advanced.bDoubleSizeWindow,4);
-      Configuration_ReadFromFile(&ConfigureParams.Screen.Advanced.bAllowOverscan,4);
-      Configuration_ReadFromFile(&ConfigureParams.Screen.Advanced.bInterlacedScreen,4);
-      Configuration_ReadFromFile(&ConfigureParams.Screen.Advanced.bSyncToRetrace,4);
-      Configuration_ReadFromFile(&ConfigureParams.Screen.ChosenDisplayMode,4);
-      Configuration_ReadFromFile(&ConfigureParams.Screen.bCaptureChange,4);
-      Configuration_ReadFromFile(&ConfigureParams.Screen.nFramesPerSecond,4);
-      Configuration_ReadFromFile(&ConfigureParams.Screen.bUseHighRes,4);
-      /* Joysticks */
-      Configuration_ReadFromFile(&ConfigureParams.Joysticks.Joy[0].bCursorEmulation,4);
-      Configuration_ReadFromFile(&ConfigureParams.Joysticks.Joy[0].bEnableAutoFire,4);
-      Configuration_ReadFromFile(&ConfigureParams.Joysticks.Joy[1].bCursorEmulation,4);
-      Configuration_ReadFromFile(&ConfigureParams.Joysticks.Joy[1].bEnableAutoFire,4);
-      /* Keyboard */
-      Configuration_ReadFromFile(&ConfigureParams.Keyboard.bDisableKeyRepeat,4);
-      Configuration_ReadFromFile(&ConfigureParams.Keyboard.nKeymapType, 4);
-      Configuration_ReadFromFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_SHIFT],4);
-      Configuration_ReadFromFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_CTRL],4);
-      Configuration_ReadFromFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F12][SHORT_CUT_SHIFT],4);
-      Configuration_ReadFromFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F12][SHORT_CUT_CTRL],4);
-      Configuration_ReadFromFile(ConfigureParams.Keyboard.szMappingFileName,sizeof(ConfigureParams.Keyboard.szMappingFileName));
-      /* Sound */
-      Configuration_ReadFromFile(&ConfigureParams.Sound.bEnableSound,4);
-      Configuration_ReadFromFile(&ConfigureParams.Sound.nPlaybackQuality,4);
-      Configuration_ReadFromFile(ConfigureParams.Sound.szYMCaptureFileName,sizeof(ConfigureParams.Sound.szYMCaptureFileName));
-      /* Memory */
-      Configuration_ReadFromFile(&ConfigureParams.Memory.nMemorySize,4);
-      Configuration_ReadFromFile(ConfigureParams.Memory.szMemoryCaptureFileName,sizeof(ConfigureParams.Memory.szMemoryCaptureFileName));
-      /* DiscImage */
-      Configuration_ReadFromFile(&ConfigureParams.DiscImage.bAutoInsertDiscB,4);
-      Configuration_ReadFromFile(ConfigureParams.DiscImage.szDiscImageDirectory,sizeof(ConfigureParams.DiscImage.szDiscImageDirectory));
-      /* HardDisc */
-      //Configuration_ReadFromFile(&ConfigureParams.HardDisc.nDriveList,4);
-      Configuration_ReadFromFile(&ConfigureParams.HardDisc.bBootFromHardDisc,4);
-    /* The hard disk configuration is not saved, because it seems to crash
-       some games which boot from a floppy, and because having a mounted hard
-       disk makes the boot much slower for now (in tos 2.x) */
-
-      // fprintf(stderr,"drive C before %s size %d\n",ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C], sizeof(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C]));
-/*       Configuration_ReadFromFile(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C],sizeof(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C])); */
-/*       Configuration_ReadFromFile(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_D],sizeof(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_D])); */
-/*       Configuration_ReadFromFile(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_E],sizeof(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_E])); */
-/*       Configuration_ReadFromFile(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_F],sizeof(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_F])); */
-/*       fprintf(stderr,"drive C after %s\n",ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C]); */
-      // GemDOS_InitDrives();
-
-      /* TOSGEM */
-      Configuration_ReadFromFile(ConfigureParams.TOSGEM.szTOSImageFileName,sizeof(ConfigureParams.TOSGEM.szTOSImageFileName));
-      Configuration_ReadFromFile(&ConfigureParams.TOSGEM.bUseTimeDate,4);
-      Configuration_ReadFromFile(&ConfigureParams.TOSGEM.bAccGEMGraphics,4);
-      Configuration_ReadFromFile(&ConfigureParams.TOSGEM.bUseExtGEMResolutions,4);
-      Configuration_ReadFromFile(&ConfigureParams.TOSGEM.nGEMResolution,4);
-      Configuration_ReadFromFile(&ConfigureParams.TOSGEM.nGEMColours,4);
-      /* RS232 */
-      Configuration_ReadFromFile(&ConfigureParams.RS232.bEnableRS232,4);
-      Configuration_ReadFromFile(&ConfigureParams.RS232.nCOMPort,4);
-      /* Printer */
-      Configuration_ReadFromFile(&ConfigureParams.Printer.bEnablePrinting,4);
-      Configuration_ReadFromFile(&ConfigureParams.Printer.bPrintToFile,4);
-      Configuration_ReadFromFile(ConfigureParams.Printer.szPrintToFileName,sizeof(ConfigureParams.Printer.szPrintToFileName));
-      /* System */
-      Configuration_ReadFromFile(&ConfigureParams.System.nCpuLevel,4);
-      Configuration_ReadFromFile(&ConfigureParams.System.bCompatibleCpu,4);
-      Configuration_ReadFromFile(&ConfigureParams.System.bBlitter,4);
-
-      bEnableBlitter = ConfigureParams.System.bBlitter;
-      cpu_level = ConfigureParams.System.nCpuLevel;
-      cpu_compatible = ConfigureParams.System.bCompatibleCpu;
-
-      bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions;
-      bUseHighRes = ConfigureParams.Screen.bUseHighRes || (bUseVDIRes && (ConfigureParams.TOSGEM.nGEMColours==GEMCOLOUR_2));
-    }
-
-    /* And close up */
-    Configuration_CloseFile();
-  }
-  else {
+  if(Configuration_LoadSection(cfgName, configs_Screen, "[Screen]") < 0)
+  {
     /* No configuration file, assume first-time install */
     bFirstTimeInstall = TRUE;
+    return;
   }
+  Configuration_LoadSection(cfgName, configs_Joystick0, "[Joystick0]");
+  Configuration_LoadSection(cfgName, configs_Joystick1, "[Joystick1]");
+  Configuration_LoadSection(cfgName, configs_Keyboard, "[Keyboard]");
+  Configuration_LoadSection(cfgName, configs_Sound, "[Sound]");
+  Configuration_LoadSection(cfgName, configs_Memory, "[Memory]");
+  Configuration_LoadSection(cfgName, configs_Floppy, "[Floppy]");
+  /*Configuration_LoadSection(cfgName, configs_HardDisc, "[HardDisc]");*/
+  Configuration_LoadSection(cfgName, configs_TosGem, "[TOS-GEM]");
+  /*Configuration_LoadSection(cfgName, configs_Rs232, "[RS232]");*/
+  /*Configuration_LoadSection(cfgName, configs_Printer, "[Printer]");*/
+  Configuration_LoadSection(cfgName, configs_System, "[System]");
 
-  /* Copy details to globals, TRUE */
+  /* Copy details to global variables */
+  bEnableBlitter = ConfigureParams.System.bBlitter;
+  cpu_level = ConfigureParams.System.nCpuLevel;
+  cpu_compatible = ConfigureParams.System.bCompatibleCpu;
+
+  bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions;
+  bUseHighRes = ConfigureParams.Screen.bUseHighRes || (bUseVDIRes && (ConfigureParams.TOSGEM.nGEMColours==GEMCOLOUR_2));
+
   Dialog_CopyDetailsFromConfiguration(TRUE);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Save a settings section to configuration file
+*/
+static int Configuration_SaveSection(const char *pFilename, struct Config_Tag configs[], char *pSection)
+{
+  int ret;
+
+  ret = update_config(pFilename, configs, pSection);
+
+   if(ret < 0)
+     fprintf(stderr, "Error while updating section %s\n", pSection);
+
+  return ret;
 }
 
 
@@ -233,145 +306,26 @@ void Configuration_Init(void)
 /*
   Save program setting to configuration file
 */
-void Configuration_UnInit(void)
+void Configuration_Save(void)
 {
   int i,j;
+  char *cfgName = "hatari.cfg";
 
-  /* Open configuration file */
-  if (Configuration_OpenFileToWrite()) {
-    /* Version */
-    Configuration_WriteToFile(VERSION_STRING,VERSION_STRING_SIZE);
-    /* Configure */
-    Configuration_WriteToFile(&ConfigureParams.Configure.nMinMaxSpeed,4);
-    ConfigureParams.Configure.nPrevMinMaxSpeed = ConfigureParams.Configure.nMinMaxSpeed;
-    /* Screen */
-    Configuration_WriteToFile(&ConfigureParams.Screen.bFullScreen,4);
-    Configuration_WriteToFile(&ConfigureParams.Screen.Advanced.bDoubleSizeWindow,4);
-    Configuration_WriteToFile(&ConfigureParams.Screen.Advanced.bAllowOverscan,4);
-    Configuration_WriteToFile(&ConfigureParams.Screen.Advanced.bInterlacedScreen,4);
-    Configuration_WriteToFile(&ConfigureParams.Screen.Advanced.bSyncToRetrace,4);
-    Configuration_WriteToFile(&ConfigureParams.Screen.ChosenDisplayMode,4);
-    Configuration_WriteToFile(&ConfigureParams.Screen.bCaptureChange,4);
-    Configuration_WriteToFile(&ConfigureParams.Screen.nFramesPerSecond,4);
-    Configuration_WriteToFile(&ConfigureParams.Screen.bUseHighRes,4);
-    /* Joysticks */
-    Configuration_WriteToFile(&ConfigureParams.Joysticks.Joy[0].bCursorEmulation,4);
-    Configuration_WriteToFile(&ConfigureParams.Joysticks.Joy[0].bEnableAutoFire,4);
-    Configuration_WriteToFile(&ConfigureParams.Joysticks.Joy[1].bCursorEmulation,4);
-    Configuration_WriteToFile(&ConfigureParams.Joysticks.Joy[1].bEnableAutoFire,4);
-    /* Keyboard */
-    Configuration_WriteToFile(&ConfigureParams.Keyboard.bDisableKeyRepeat,4);
-    Configuration_WriteToFile(&ConfigureParams.Keyboard.nKeymapType, 4);
-    Configuration_WriteToFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_SHIFT],4);
-    Configuration_WriteToFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_CTRL],4);
-    Configuration_WriteToFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F12][SHORT_CUT_SHIFT],4);
-    Configuration_WriteToFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F12][SHORT_CUT_CTRL],4);
-    Configuration_WriteToFile(ConfigureParams.Keyboard.szMappingFileName,sizeof(ConfigureParams.Keyboard.szMappingFileName));
-    /* Sound */
-    Configuration_WriteToFile(&ConfigureParams.Sound.bEnableSound,4);
-    Configuration_WriteToFile(&ConfigureParams.Sound.nPlaybackQuality,4);
-    Configuration_WriteToFile(ConfigureParams.Sound.szYMCaptureFileName,sizeof(ConfigureParams.Sound.szYMCaptureFileName));
-    /* Memory */
-    Configuration_WriteToFile(&ConfigureParams.Memory.nMemorySize,4);
-    Configuration_WriteToFile(ConfigureParams.Memory.szMemoryCaptureFileName,sizeof(ConfigureParams.Memory.szMemoryCaptureFileName));
-    /* DiscImage */
-    Configuration_WriteToFile(&ConfigureParams.DiscImage.bAutoInsertDiscB,4);
-    Configuration_WriteToFile(ConfigureParams.DiscImage.szDiscImageDirectory,sizeof(ConfigureParams.DiscImage.szDiscImageDirectory));
-    /* HardDisc */
-    //Configuration_WriteToFile(&ConfigureParams.HardDisc.nDriveList,4);
-    Configuration_WriteToFile(&ConfigureParams.HardDisc.bBootFromHardDisc,4);
-/*     Configuration_WriteToFile(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C],sizeof(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C])); */
-/*     Configuration_WriteToFile(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_D],sizeof(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_D])); */
-/*     Configuration_WriteToFile(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_E],sizeof(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_E])); */
-/*     Configuration_WriteToFile(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_F],sizeof(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_F])); */
-    /* TOSGEM */
-    Configuration_WriteToFile(ConfigureParams.TOSGEM.szTOSImageFileName,sizeof(ConfigureParams.TOSGEM.szTOSImageFileName));
-    Configuration_WriteToFile(&ConfigureParams.TOSGEM.bUseTimeDate,4);
-    Configuration_WriteToFile(&ConfigureParams.TOSGEM.bAccGEMGraphics,4);
-    Configuration_WriteToFile(&ConfigureParams.TOSGEM.bUseExtGEMResolutions,4);
-    Configuration_WriteToFile(&ConfigureParams.TOSGEM.nGEMResolution,4);
-    Configuration_WriteToFile(&ConfigureParams.TOSGEM.nGEMColours,4);
-    /* RS232 */
-    Configuration_WriteToFile(&ConfigureParams.RS232.bEnableRS232,4);
-    Configuration_WriteToFile(&ConfigureParams.RS232.nCOMPort,4);
-    /* Printer */
-    Configuration_WriteToFile(&ConfigureParams.Printer.bEnablePrinting,4);
-    Configuration_WriteToFile(&ConfigureParams.Printer.bPrintToFile,4);
-    Configuration_WriteToFile(ConfigureParams.Printer.szPrintToFileName,sizeof(ConfigureParams.Printer.szPrintToFileName));
-    /* System */
-    Configuration_WriteToFile(&ConfigureParams.System.nCpuLevel,4);
-    Configuration_WriteToFile(&ConfigureParams.System.bCompatibleCpu,4);
-    Configuration_WriteToFile(&ConfigureParams.System.bBlitter,4);
-
-    /* And close up */
-    Configuration_CloseFile();
+  if(Configuration_SaveSection(cfgName, configs_Screen, "[Screen]") < 0)
+  {
+    fprintf(stderr, "Error saving config file.\n");
+    return;
   }
+  Configuration_SaveSection(cfgName, configs_Joystick0, "[Joystick0]");
+  Configuration_SaveSection(cfgName, configs_Joystick1, "[Joystick1]");
+  Configuration_SaveSection(cfgName, configs_Keyboard, "[Keyboard]");
+  Configuration_SaveSection(cfgName, configs_Sound, "[Sound]");
+  Configuration_SaveSection(cfgName, configs_Memory, "[Memory]");
+  Configuration_SaveSection(cfgName, configs_Floppy, "[Floppy]");
+  Configuration_SaveSection(cfgName, configs_HardDisc, "[HardDisc]");
+  Configuration_SaveSection(cfgName, configs_TosGem, "[TOS-GEM]");
+  /*Configuration_SaveSection(cfgName, configs_Rs232, "[RS232]");*/
+  /*Configuration_SaveSection(cfgName, configs_Printer, "[Printer]");*/
+  Configuration_SaveSection(cfgName, configs_System, "[System]");
 }
 
-
-/*-----------------------------------------------------------------------*/
-/*
-  Open configuration file to write to
-*/
-BOOL Configuration_OpenFileToWrite(void)
-{
-  char szString[MAX_FILENAME_LENGTH];
-
-  /* Create file */
-  sprintf(szString,"%s/hatari.cfg",szWorkingDir);
-  ConfigFile = fopen(szString, "wb");
-  if (ConfigFile!=NULL)
-    return(TRUE);
-
-  /* Whoops, error */
-  return(FALSE);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Open configuration file for reading
-*/
-BOOL Configuration_OpenFileToRead(void)
-{
-  char szString[MAX_FILENAME_LENGTH];
-
-  /* Create file */
-  sprintf(szString,"%s/hatari.cfg",szWorkingDir);
-  ConfigFile = fopen(szString, "rb");
-  if (ConfigFile!=NULL)
-    return(TRUE);
-
-  /* Whoops, error */
-  return(FALSE);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Close configuration
-*/
-void Configuration_CloseFile(void)
-{
-  fclose(ConfigFile);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Write entry to configuration file
-*/
-void Configuration_WriteToFile(void *pData,int nBytes)
-{
-  fwrite(pData, 1, nBytes, ConfigFile);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Read entry from configuration file
-*/
-void Configuration_ReadFromFile(void *pData,int nBytes)
-{
-  fread(pData, 1, nBytes, ConfigFile);
-}

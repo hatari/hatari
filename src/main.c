@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.37 2003-04-01 16:11:34 thothy Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.38 2003-04-04 16:28:31 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -296,7 +296,7 @@ void Main_ReadParameters(int argc, char *argv[])
       }
       else if ( !strcmp(argv[i],"--frameskip") )
       {
-        ConfigureParams.Screen.Advanced.bFrameSkip = TRUE;
+        ConfigureParams.Screen.bFrameSkip = TRUE;
       }
       else if (!strcmp(argv[i],"--debug") || !strcmp(argv[i],"-D"))
       {
@@ -447,7 +447,7 @@ void Main_UnInit(void)
 #ifdef USE_DEBUGGER
   FreeDebugDialog();
 #endif
-  Configuration_UnInit();
+  Configuration_Save();
 
   /* SDL uninit: */
   SDL_Quit();
@@ -477,7 +477,8 @@ int main(int argc, char *argv[])
   /* Set default configuration values: */
   Configuration_SetDefault();
 
-  Configuration_Init();
+  /* Now load the values from the configuration file */
+  Configuration_Load();
 
   /* Check for any passed parameters */
   Main_ReadParameters(argc, argv);

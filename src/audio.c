@@ -6,14 +6,14 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-static char rcsid[] = "Hatari $Id: audio.c,v 1.14 2003-03-12 14:13:23 thothy Exp $";
+static char rcsid[] = "Hatari $Id: audio.c,v 1.15 2003-04-04 16:28:20 thothy Exp $";
 
 #include <SDL.h>
 
 #include "main.h"
 #include "audio.h"
+#include "configuration.h"
 #include "debug.h"
-#include "dialog.h"
 #include "errlog.h"
 #include "memAlloc.h"
 #include "misc.h"

@@ -19,12 +19,12 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-static char rcsid[] = "Hatari $Id: screen.c,v 1.24 2003-03-30 11:32:48 thothy Exp $";
+static char rcsid[] = "Hatari $Id: screen.c,v 1.25 2003-04-04 16:28:33 thothy Exp $";
 
 #include <SDL.h>
 
 #include "main.h"
-#include "dialog.h"
+#include "configuration.h"
 #include "ikbd.h"
 #include "m68000.h"
 #include "memAlloc.h"
@@ -104,7 +104,7 @@ static void Screen_SetWindowRes()
   /* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
 
   if ( !(bUseVDIRes || bUseHighRes) &&
-       ConfigureParams.Screen.Advanced.bAllowOverscan)
+       ConfigureParams.Screen.bAllowOverscan)
   {
     /* If using 640 pixel wide screen, double overscan */
     if (Width==640)
@@ -289,7 +289,7 @@ static SDL_Surface *set_new_sdl_fsmode() {
   } else {
     int Width = ScreenDrawFullScreen[STRes].Width,
       Height = ScreenDrawFullScreen[STRes].Height;
-    if ( !bUseHighRes && ConfigureParams.Screen.Advanced.bAllowOverscan ) {
+    if ( !bUseHighRes && ConfigureParams.Screen.bAllowOverscan ) {
       /* If using 640 pixel wide screen, double overscan */
       if (Width==640)
 	{
@@ -415,7 +415,7 @@ void Screen_SetDrawModes(void)
   ScreenDrawVDIWindow[ST_HIGH_RES].Width = VDIWidth;  ScreenDrawVDIWindow[ST_HIGH_RES].Height = VDIHeight;  ScreenDrawVDIWindow[ST_HIGH_RES].BitDepth = 8;
 
   /* And full-screen, select from Overscan/Non-Overscan */
-  if (ConfigureParams.Screen.Advanced.bAllowOverscan) {
+  if (ConfigureParams.Screen.bAllowOverscan) {
     pScreenDisplay = &ScreenDisplayOptions[ConfigureParams.Screen.ChosenDisplayMode];
   } else {
     pScreenDisplay = &ScreenDisplayOptions_NoOverscan[ConfigureParams.Screen.ChosenDisplayMode];
@@ -782,9 +782,8 @@ void Screen_SetWindowConvertDetails(void)
     pHBLPalettes = pFrameBuffer->HBLPalettes;
   }
 
-  /* Are we in a Window and medium/mix res? Need to Double Y */
-  // if ( (!bInFullScreen) && ((STRes==ST_MEDIUM_RES) || (STRes==ST_LOWMEDIUM_MIX_RES)) ) {
-  if (!ConfigureParams.Screen.Advanced.bInterlacedScreen) {
+  if (!ConfigureParams.Screen.bInterlacedScreen)
+  {
     bScrDoubleY = TRUE;
   }
 }
@@ -825,7 +824,8 @@ void Screen_SetFullScreenConvertDetails(void)
   pHBLPalettes = pFrameBuffer->HBLPalettes;
 
   /* Is non-interlaced? May need to double up on Y */
-  if (!ConfigureParams.Screen.Advanced.bInterlacedScreen) {
+  if (!ConfigureParams.Screen.bInterlacedScreen)
+  {
     bScrDoubleY = TRUE;
   }
 }
@@ -912,11 +912,11 @@ void Screen_Blit(BOOL bSwapScreen)
     else
     {
       /* Find rectangle to draw from... */
-      if (ConfigureParams.Screen.Advanced.bAllowOverscan)
+      if (ConfigureParams.Screen.bAllowOverscan)
         SrcRect = &SrcWindowOverscanBitmapSizes[STRes];
-      else {
+      else
         SrcRect = &SrcWindowBitmapSizes[STRes];
-      }
+
       /* Blit image */
       SDL_UpdateRect(sdlscrn, 0,0,0,0);
       //SDL_UpdateRects(sdlscrn, 1, SrcRect);
@@ -971,11 +971,15 @@ void Screen_DrawFrame(BOOL bForceFlip)
   if (Screen_Lock()) {
     bScreenContentsChanged = FALSE;      /* Did change(ie needs blit?) */
     /* Set details */
-    if (ConfigureParams.Screen.Advanced.bAllowOverscan) {
+    if (ConfigureParams.Screen.bAllowOverscan)
+    {
       Screen_SetWindowConvertDetails();
       pPCScreenDest = (unsigned char *)sdlscrn->pixels;  /* Destination PC screen */
-    } else
+    }
+    else
+    {
       Screen_SetFullScreenConvertDetails();
+    }
     /* Clear screen on full update to clear out borders and also interlaced lines */
     if (pFrameBuffer->bFullUpdate)
       Screen_ClearScreen();
@@ -1035,7 +1039,7 @@ void Screen_Draw(void)
   {
 #if 0
     /* Wait for next display(at 50fps), is ignored if running max speed */
-    if ( !(ConfigureParams.Screen.Advanced.bSyncToRetrace && bInFullScreen) )
+    if ( !(ConfigureParams.Screen.bSyncToRetrace && bInFullScreen) )
     {
       /* If in Max speed mode, just get on with it, or else wait for VBL timer */
       if (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MAX)

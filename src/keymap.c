@@ -6,14 +6,14 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-static char rcsid[] = "Hatari $Id: keymap.c,v 1.9 2003-04-03 20:05:38 emanne Exp $";
+static char rcsid[] = "Hatari $Id: keymap.c,v 1.10 2003-04-04 16:28:31 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
 #include "keymap.h"
 #include "memAlloc.h"
 #include "misc.h"
-#include "dialog.h"
+#include "configuration.h"
 #include "ikbd.h"
 #include "joy.h"
 #include "shortcut.h"
@@ -645,7 +645,7 @@ BOOL Keymap_DebounceSTKey(char STScanCode)
   int i=0;
 
   /* Are we in maximum speed, and have disabled key repeat? */
-  if ( (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MIN) && (ConfigureParams.Keyboard.bDisableKeyRepeat) )
+  if((ConfigureParams.System.nMinMaxSpeed!=MINMAXSPEED_MIN) && (ConfigureParams.Keyboard.bDisableKeyRepeat))
   {
     /* We should de-bounce all non extended keys, eg leave ALT,SHIFT,CTRL etc... held */
     while (DebounceExtendedKeys[i])
@@ -677,7 +677,7 @@ void Keymap_DebounceAllKeys(void)
   SDL_keysym tmpKeySym;
 
   /* Return if we aren't in maximum speed or have not disabled key repeat */
-  if((ConfigureParams.Configure.nMinMaxSpeed == MINMAXSPEED_MIN)
+  if((ConfigureParams.System.nMinMaxSpeed == MINMAXSPEED_MIN)
      || (!ConfigureParams.Keyboard.bDisableKeyRepeat))
   {
      return;

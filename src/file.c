@@ -1,15 +1,18 @@
 /*
   Hatari
 
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
   common file access
 */
+static char rcsid[] = "Hatari $Id: file.c,v 1.9 2003-04-04 16:28:28 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
 #include "main.h"
-#include "dialog.h"
 #include "file.h"
 #include "floppy.h"
 #include "createBlankImage.h"

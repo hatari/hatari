@@ -8,14 +8,14 @@
   VBLs, HBLs, copying the ST screen to a buffer to simulate the TV raster trace, border
   removal, palette changes per HBL, the 'video address pointer' etc...
 */
-static char rcsid[] = "Hatari $Id: video.c,v 1.11 2003-03-27 11:21:08 emanne Exp $";
+static char rcsid[] = "Hatari $Id: video.c,v 1.12 2003-04-04 16:28:35 thothy Exp $";
 
 #include <SDL.h>
 
 #include "main.h"
 #include "debug.h"
 #include "decode.h"
-#include "dialog.h"
+#include "configuration.h"
 #include "fdc.h"
 #include "int.h"
 #include "ikbd.h"
@@ -209,7 +209,7 @@ void Video_InterruptHandler_VBL(void)
     Video_CopyVDIScreen();
 
   /* Draw screen, skip frame if need to */
-  if (ConfigureParams.Screen.Advanced.bFrameSkip)
+  if (ConfigureParams.Screen.bFrameSkip)
   {
     if (nVBLs&1)
       Screen_Draw();
