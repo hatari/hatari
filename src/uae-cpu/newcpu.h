@@ -1,6 +1,6 @@
  /*
   * UAE - The Un*x Amiga Emulator - CPU core
-  * 
+  *
   * MC68000 emulation
   *
   * Copyright 1995 Bernd Schmidt
@@ -22,15 +22,14 @@
 #define SPCFLAG_STOP 2
 /*#define SPCFLAG_COPPER 4*/
 #define SPCFLAG_INT 8
-#define SPCFLAG_BRK 16
-#define SPCFLAG_EXTRA_CYCLES 32
-#define SPCFLAG_TRACE 64
-#define SPCFLAG_DOTRACE 128
-#define SPCFLAG_DOINT 256
-/*#define SPCFLAG_BLTNASTY 512*/
-#define SPCFLAG_EXEC 1024
-#define SPCFLAG_MODE_CHANGE 8192
-
+#define SPCFLAG_BRK 0x10
+#define SPCFLAG_EXTRA_CYCLES 0x20
+#define SPCFLAG_TRACE 0x40
+#define SPCFLAG_DOTRACE 0x80
+#define SPCFLAG_DOINT 0x100
+/*#define SPCFLAG_BLTNASTY 0x200 */
+#define SPCFLAG_EXEC 0x400
+#define SPCFLAG_MODE_CHANGE 0x800
 
 #ifndef SET_CFLG
 
@@ -159,7 +158,7 @@ STATIC_INLINE uaecptr m68k_getpc_p (uae_u8 *p)
 
 STATIC_INLINE void refill_prefetch (uae_u32 currpc, uae_u32 offs)
 {
-    uae_u32 t = (currpc + offs) & ~3;
+    uae_u32 t = (currpc + offs) & ~1;
     uae_s32 pc_p_offs = t - currpc;
     uae_u8 *ptr = regs.pc_p + pc_p_offs;
     uae_u32 r;
@@ -186,7 +185,7 @@ STATIC_INLINE uae_u32 get_ibyte_prefetch (uae_s32 o)
     }
     v = do_get_mem_byte (((uae_u8 *)&regs.prefetch) + offs);
     if (offs >= 2)
-	refill_prefetch (currpc, 4);
+	refill_prefetch (currpc, 2);
     /* printf ("get_ibyte PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v); */
     return v;
 }
@@ -202,7 +201,7 @@ STATIC_INLINE uae_u32 get_iword_prefetch (uae_s32 o)
     }
     v = do_get_mem_word ((uae_u16 *)(((uae_u8 *)&regs.prefetch) + offs));
     if (offs >= 2)
-	refill_prefetch (currpc, 4);
+	refill_prefetch (currpc, 2);
     /* printf ("get_iword PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v); */
     return v;
 }
