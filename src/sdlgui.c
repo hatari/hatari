@@ -25,9 +25,9 @@
 
 
 
-static SDL_Surface *stdfontgfx;
-static SDL_Surface *fontgfx=NULL;   /* The actual font graphics */
-static int fontwidth, fontheight;   /* Height and width of the actual font */
+static SDL_Surface *stdfontgfx = NULL;  /* The 'standard' font graphics */
+static SDL_Surface *fontgfx = NULL;     /* The actual font graphics */
+static int fontwidth, fontheight;       /* Height and width of the actual font */
 
 
 
@@ -44,7 +44,7 @@ int SDLGui_Init()
   stdfontgfx = SDL_LoadBMP(fontname);
   if( stdfontgfx==NULL )
   {
-    fprintf(stderr, "Could not load image %s:\n %s\n", fontname, SDL_GetError() );
+    fprintf(stderr, "Error: Can't load image %s: %s\n", fontname, SDL_GetError() );
     return -1;
   }
 
@@ -59,9 +59,15 @@ int SDLGui_Init()
 int SDLGui_UnInit()
 {
   if(stdfontgfx)
+  {
     SDL_FreeSurface(stdfontgfx);
+    stdfontgfx = NULL;
+  }
   if(fontgfx)
+  {
     SDL_FreeSurface(fontgfx);
+    fontgfx = NULL;
+  }
 
   return 0;
 }
@@ -73,10 +79,19 @@ int SDLGui_UnInit()
 */
 int SDLGui_PrepareFont()
 {
-/* FIXME: Freeing the old font gfx does sometimes crash with a SEGFAULT
+/* FIXME: Freeing the old font gfx does sometimes crash with a SEGFAULT 
   if(fontgfx)
+  {
     SDL_FreeSurface(fontgfx);
+    fontgfx = NULL;
+  }
 */
+
+  if( stdfontgfx==NULL )
+  {
+    fprintf(stderr, "Error: The font has not been loaded!\n");
+    return -1;
+  }
 
   /* Convert the font graphics to the actual screen format */
   fontgfx = SDL_DisplayFormat(stdfontgfx);

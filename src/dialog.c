@@ -985,7 +985,9 @@ int Dialog_MainDlg(BOOL *bReset)
 {
   int retbut;
 
-  SDLGui_PrepareFont();
+  if( SDLGui_PrepareFont() )
+    return FALSE;
+
   SDLGui_CenterDlg(maindlg);
   SDL_ShowCursor(SDL_ENABLE);
 
