@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.28 2004-12-08 10:27:53 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.29 2005-02-10 23:01:12 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -1479,7 +1479,7 @@ static BOOL GemDOS_SFirst(unsigned long Params)
     InternalDTAs[DTAIndex].bUsed = TRUE;
 
     /* Were we looking for the volume label? */
-    if (Attr&GEMDOS_FILE_ATTRIB_VOLUME_LABEL) {
+    if (Attr == GEMDOS_FILE_ATTRIB_VOLUME_LABEL) {
       /* Volume name */
       strcpy(pDTA->dta_name,"EMULATED.001");
       Regs[REG_D0] = GEMDOS_EOK;          /* Got volume */
