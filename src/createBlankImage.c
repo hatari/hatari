@@ -6,7 +6,7 @@
  
   Create Blank .ST/.MSA Disc Images
 */
-char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.8 2004-04-19 08:53:33 thothy Exp $";
+char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.9 2004-04-28 09:04:57 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -140,11 +140,13 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
 	/* Ask if OK to overwrite, if exists? */
 	if (File_QueryOverwrite(pszFileName))
 	{
-		/* Save image to file, as .ST or compressed .MSA */
-		if (File_FileNameIsMSA(pszFileName))
-			bRet = MSA_WriteDisc(pszFileName,pDiscFile,DiscSize);
-		else if (File_FileNameIsST(pszFileName))
-			bRet = ST_WriteDisc(pszFileName,pDiscFile,DiscSize);
+		/* Save image to file */
+		if (MSA_FileNameIsMSA(pszFileName, TRUE))
+			bRet = MSA_WriteDisc(pszFileName, pDiscFile, DiscSize);
+		else if (ST_FileNameIsST(pszFileName, TRUE))
+			bRet = ST_WriteDisc(pszFileName, pDiscFile, DiscSize);
+		else if (DIM_FileNameIsDIM(pszFileName, TRUE))
+			bRet = DIM_WriteDisc(pszFileName, pDiscFile, DiscSize);
 
 		/* Did create successfully? */
 		if (bRet)

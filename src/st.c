@@ -6,7 +6,7 @@
 
   ST Disc support.
 */
-char ST_rcsid[] = "Hatari $Id: st.c,v 1.3 2004-04-19 08:53:47 thothy Exp $";
+char ST_rcsid[] = "Hatari $Id: st.c,v 1.4 2004-04-28 09:04:58 thothy Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -36,19 +36,32 @@ char ST_rcsid[] = "Hatari $Id: st.c,v 1.3 2004-04-19 08:53:47 thothy Exp $";
 
 /*-----------------------------------------------------------------------*/
 /*
-  Load .ST file into memory, return number of bytes loaded
+  Does filename end with a .ST extension? If so, return TRUE
 */
-int ST_ReadDisc(char *pszFileName,unsigned char *pBuffer)
+BOOL ST_FileNameIsST(char *pszFileName, BOOL bAllowGZ)
 {
-  void *pSTFile;
-  long ImageSize=0;
+	return(File_DoesFileExtensionMatch(pszFileName,".st")
+	       || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".st.gz")));
+}
 
-  /* Just load directly into buffer, and set ImageSize accordingly (no need to free memory) */
-  pSTFile = File_Read(pszFileName,pBuffer,&ImageSize,NULL);
-  if (!pSTFile)
-    ImageSize = 0;
 
-  return(ImageSize);
+/*-----------------------------------------------------------------------*/
+/*
+  Load .ST file into memory, set number of bytes loaded and return a pointer
+  to the buffer.
+*/
+Uint8 *ST_ReadDisc(char *pszFileName, long *pImageSize)
+{
+	void *pStFile;
+
+	*pImageSize = 0;
+
+	/* Just load directly a buffer, and set ImageSize accordingly */
+	pStFile = File_Read(pszFileName, NULL, pImageSize, NULL);
+	if (!pStFile)
+		*pImageSize = 0;
+
+	return(pStFile);
 }
 
 
@@ -56,17 +69,17 @@ int ST_ReadDisc(char *pszFileName,unsigned char *pBuffer)
 /*
   Save .ST file from memory buffer. Returns TRUE is all OK
 */
-BOOL ST_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
+BOOL ST_WriteDisc(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_ST_IMAGES
 
-  /* Just save buffer directly to file */
-  return( File_Save(pszFileName, pBuffer, ImageSize, FALSE) );
+	/* Just save buffer directly to file */
+	return( File_Save(pszFileName, pBuffer, ImageSize, FALSE) );
 
 #else   /*SAVE_TO_ST_IMAGES*/
 
-  /* Oops, cannot save */
-  return(FALSE);
+	/* Oops, cannot save */
+	return(FALSE);
 
 #endif  /*SAVE_TO_ST_IMAGES*/
 }

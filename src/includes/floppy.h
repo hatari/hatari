@@ -11,7 +11,7 @@
 /* Structure for each drive connected as emulation */
 typedef struct
 {
-  unsigned char *pBuffer;
+  Uint8 *pBuffer;
   char szFileName[FILENAME_MAX];
   int nImageBytes;
   BOOL bDiscInserted;
@@ -21,7 +21,6 @@ typedef struct
 } EMULATION_DRIVE;
 
 #define NUM_EMULATION_DRIVES  2            /* A:, B: */
-#define DRIVE_BUFFER_BYTES    (1536*1024)  /* 1.5Mb area for each drive */
 #define NUMBYTESPERSECTOR    512           /* All discs are 512 bytes per sector */
 
 extern EMULATION_DRIVE EmulationDrives[NUM_EMULATION_DRIVES];

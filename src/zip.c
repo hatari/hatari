@@ -6,7 +6,7 @@
 
   Zipped disc support, uses zlib
 */
-char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.7 2004-04-19 08:53:48 thothy Exp $";
+char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.8 2004-04-28 09:04:58 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,25 +14,42 @@ char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.7 2004-04-19 08:53:48 thothy Exp $";
 #include <unistd.h>
 #include <dirent.h>
 
-#include "zlib.h"
+#include <zlib.h>
+
 #include "main.h"
-#include "msa.h"
-#include "floppy.h"
-#include "file.h"
+#include "dim.h"
 #include "errlog.h"
+#include "file.h"
+#include "floppy.h"
+#include "memAlloc.h"
+#include "msa.h"
+#include "st.h"
 #include "unzip.h"
 #include "zip.h"
-#include "memAlloc.h"
 
-#define SAVE_TO_GZIP_IMAGES
 /* #define SAVE_TO_ZIP_IMAGES */
 
 #define ZIP_PATH_MAX  256
 
 #define ZIP_FILE_ST   1
 #define ZIP_FILE_MSA  2
+#define ZIP_FILE_DIM  3
 
 
+/*-----------------------------------------------------------------------*/
+/*
+  Does filename end with a .ZIP extension? If so, return TRUE
+*/
+BOOL ZIP_FileNameIsZIP(char *pszFileName)
+{
+  return(File_DoesFileExtensionMatch(pszFileName,".zip"));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Check if a file name contains a slash or backslash and return its position.
+*/
 static int Zip_FileNameHasSlash(char *fn)
 {
   int i=0;
@@ -210,7 +227,7 @@ struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
 /*
   Check an image file in the archive, return the uncompressed length
 */
-static long ZIP_CheckImageFile(unzFile uf, char *filename, int *ST_or_MSA)
+static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiscType)
 {
   unz_file_info file_info;
 
@@ -227,25 +244,31 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int *ST_or_MSA)
     }
   
   /* check for a .msa or .st extention */
-  if(File_FileNameIsMSA(filename))
+  if(MSA_FileNameIsMSA(filename, FALSE))
     {
-      *ST_or_MSA = ZIP_FILE_MSA;
+      *pDiscType = ZIP_FILE_MSA;
       return( file_info.uncompressed_size );
     }
 
-  if(File_FileNameIsST(filename))
+  if(ST_FileNameIsST(filename, FALSE))
     {
-      *ST_or_MSA = ZIP_FILE_ST;
+      *pDiscType = ZIP_FILE_ST;
       return( file_info.uncompressed_size );
     }
   
-  fprintf(stderr, "Not an .ST or .MSA file.\n");
+  if (DIM_FileNameIsDIM(filename, FALSE))
+    {
+      *pDiscType = ZIP_FILE_DIM;
+      return( file_info.uncompressed_size );
+    }
+
+  fprintf(stderr, "Not an .ST, .MSA or .DIM file.\n");
   return(0);
 }
 
 /*-----------------------------------------------------------------------*/
 /*
-  Return the first .zip or .msa file in a zip, or NULL on failure
+  Return the first .st, .msa or .dim file in a zip, or NULL on failure
 */
 static char *ZIP_FirstFile(char *filename)
 {
@@ -258,10 +281,13 @@ static char *ZIP_FirstFile(char *filename)
 
   name[0] = '\0';
   for(i=files->nfiles-1;i>=0;i--)
-    if(File_FileNameIsMSA(files->names[i]) || 
-       File_FileNameIsST(files->names[i]))
+  {
+    if (MSA_FileNameIsMSA(files->names[i], FALSE)
+        || ST_FileNameIsST(files->names[i], FALSE)
+        || DIM_FileNameIsDIM(files->names[i], FALSE))
       strncpy(name, files->names[i], ZIP_PATH_MAX);
-    
+  }
+ 
   /* free the files */
   ZIP_FreeZipDir(files);
 
@@ -332,19 +358,22 @@ static char *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
   Load .ZIP file into memory, return number of bytes loaded
 
 */
-int ZIP_ReadDisc(char *pszFileName, char *pszZipPath, unsigned char *pBuffer)
+Uint8 *ZIP_ReadDisc(char *pszFileName, char *pszZipPath, long *pImageSize)
 {
   uLong ImageSize=0;
   unzFile uf=NULL;
-  char *buf;
-  int ST_or_MSA;
+  Uint8 *buf;
+  int nDiscType;
   BOOL pathAllocated=FALSE;
+  Uint8 *pDiscBuffer = NULL;
+
+  *pImageSize = 0;
 
   uf = unzOpen(pszFileName);
   if (uf==NULL)
     {
       printf("Cannot open %s\n", pszFileName);
-      return(0);
+      return NULL;
     }
   
   if (pszZipPath == NULL || pszZipPath[0] == 0)
@@ -353,22 +382,15 @@ int ZIP_ReadDisc(char *pszFileName, char *pszZipPath, unsigned char *pBuffer)
 	{
 	  printf("Cannot open %s\n", pszFileName);
 	  unzClose(uf);
-	  return(0);
+	  return NULL;
 	}
       pathAllocated=TRUE;
     }
 
-  if((ImageSize = ZIP_CheckImageFile(uf, pszZipPath, &ST_or_MSA)) <= 0)
+  if((ImageSize = ZIP_CheckImageFile(uf, pszZipPath, &nDiscType)) <= 0)
     {
       unzClose(uf);
-      return(0);
-    }
-
-  if(ImageSize > DRIVE_BUFFER_BYTES)
-    {
-      ErrLog_File("ERROR ZIP_ReadDisc uncompressed .msa or .st file is larger than buffer\n");
-      unzClose(uf);
-      return(0);
+      return NULL;
     }
 
   /* extract to buf */
@@ -377,24 +399,40 @@ int ZIP_ReadDisc(char *pszFileName, char *pszZipPath, unsigned char *pBuffer)
   unzClose(uf);
   if(buf == NULL)
     {
-      return(0);  /* failed extraction, return error */
+      return NULL;  /* failed extraction, return error */
     }
 
-  if(ST_or_MSA == ZIP_FILE_ST)
+  if (nDiscType == ZIP_FILE_ST)
     {
-      /* copy the ST image */
-      memcpy(pBuffer, buf, (size_t)ImageSize);
-    } else {
+      /* ST image => return buffer directly */
+      pDiscBuffer = buf;
+    }
+  else if (nDiscType == ZIP_FILE_MSA)
+    {
       /* uncompress the MSA file */
-      ImageSize = MSA_UnCompress(buf, pBuffer);      
+      pDiscBuffer = MSA_UnCompress(buf, &ImageSize);
+    }
+  else if (nDiscType == ZIP_FILE_DIM)
+    {
+      /* Skip DIM header */
+      ImageSize -= 32;
+      pDiscBuffer = malloc(ImageSize);
+      if (pDiscBuffer)
+        memcpy(pDiscBuffer, buf+32, ImageSize);
+      else
+        perror("ZIP_ReadDisc");
     }
 
-  /* Free the buffer */
-  Memory_Free(buf);
+  /* Free the buffers */
+  if (pDiscBuffer != buf)
+    Memory_Free(buf);
   if(pathAllocated == TRUE)
     Memory_Free(pszZipPath);
 
-  return(ImageSize);
+  if (pDiscBuffer != NULL)
+    *pImageSize = ImageSize;
+
+  return(pDiscBuffer);
 }
 
 
@@ -407,89 +445,5 @@ int ZIP_ReadDisc(char *pszFileName, char *pszZipPath, unsigned char *pBuffer)
 BOOL ZIP_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
 {
   return(FALSE);
-}
-
-/*-----------------------------------------------------------------------*/
-/*
-  Load .GZ file into memory, return number of bytes loaded
-
-*/
-int GZIP_ReadDisc(char *pszFileName,unsigned char *pBuffer)
-{
-  /* allocate buffer to store uncompressed bytes */
-  long ImageSize=0;
-  char *buf;
-  gzFile in;
-  int err=0;
-  
-  if((in = gzopen(pszFileName, "rb")) == NULL)
-    {
-      fprintf(stderr, "Error: could not open %s\n", pszFileName);
-      return(0);
-    }
-  
-  buf = (char *)Memory_Alloc(DRIVE_BUFFER_BYTES);
-  do {
-    ImageSize += err;
-    err = gzread(in, (char *)(buf + ImageSize), 256);
-  } while(err > 0 && ImageSize < DRIVE_BUFFER_BYTES);
-  
-  if(err < 0 || ImageSize >= DRIVE_BUFFER_BYTES)
-    {
-      fprintf(stderr, "Error: could not decompress %s\n", pszFileName);
-      return(0);
-    }
-
-  gzclose(in);
-
-  /* is it a gzipped .ST or .MSA file? */
-  if(File_FileNameIsSTGZ(pszFileName))
-    {
-      /* copy the ST image */
-      memcpy(pBuffer, buf, (size_t)ImageSize);
-    } else {
-      /* uncompress the MSA file */
-      ImageSize = MSA_UnCompress(buf, pBuffer);      
-    }
-
-  Memory_Free(buf);
-  return(ImageSize);
-}
-
-/*-----------------------------------------------------------------------*/
-/*
-  Save .GZ file from memory buffer. Returns TRUE is all OK
-  
-  Not yet implemented.
-*/
-BOOL GZIP_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
-{
-#ifdef SAVE_TO_GZIP_IMAGES
-  gzFile out;
-
-  /* is it a gzipped .ST or .MSA file? */
-  if(File_FileNameIsSTGZ(pszFileName))
-    {
-      if((out = gzopen(pszFileName, "wb6 ")) == NULL)
-	{
-	  fprintf(stderr, "Could not write to %s\n", pszFileName);
-	  return(FALSE);
-	}
-
-      if(gzwrite(out, pBuffer, ImageSize) != ImageSize)
-	{
-	  fprintf(stderr, "Could not write to %s\n", pszFileName);
-	  return(FALSE);
-	}
-      fprintf(stderr,"wrote %s\n", pszFileName);
-      gzclose(out);
-    } else {
-    }
-
-  return(TRUE);
-
-#else
-  return(FALSE);
-#endif
 }
 

@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.55 2004-04-23 15:33:59 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.56 2004-04-28 09:04:58 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -488,7 +488,6 @@ static void Main_Init(void)
 static void Main_UnInit(void)
 {
   Screen_ReturnFromFullScreen();
-  Floppy_EjectBothDrives();
   Floppy_UnInit();
   HDC_UnInit();
   Midi_UnInit();

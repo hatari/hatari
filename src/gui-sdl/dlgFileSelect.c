@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.5 2004-04-06 10:38:07 thothy Exp $";
+char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.6 2004-04-28 09:04:59 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -118,7 +118,7 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path,
 			{
 				if( stat(tempstr, &filestat)==0 && S_ISDIR(filestat.st_mode) )
 					dlgfilenames[i][0] = SGFOLDER;    /* Mark folders */
-				if( File_FileNameIsZIP(tempstr) && browsingzip == FALSE)
+				if (ZIP_FileNameIsZIP(tempstr) && browsingzip == FALSE)
 					dlgfilenames[i][0] = SGFOLDER;    /* Mark .ZIP archives as folders */
 			}
 		}
@@ -352,7 +352,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 					dlgfname[0] = 0;
 					ypos = 0;
 				}
-				else if ( File_FileNameIsZIP(tempstr) && zip_path != NULL )
+				else if (ZIP_FileNameIsZIP(tempstr) && zip_path != NULL)
 				{
 					/* open a zip file */
 					zipfiles = ZIP_GetFiles(tempstr);

@@ -6,12 +6,14 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.12 2004-04-19 08:53:33 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.13 2004-04-28 09:04:58 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+
+#include <zlib.h>
 
 #include "main.h"
 #include "file.h"
@@ -252,89 +254,74 @@ void File_RemoveFileNameTrailingSlashes(char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Does filename end with a .ST.GZ extension? If so, return TRUE
-*/
-BOOL File_FileNameIsSTGZ(char *pszFileName)
-{
-  return(File_DoesFileExtensionMatch(pszFileName,".st.gz"));
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Does filename end with a .MSA.GZ extension? If so, return TRUE
-*/
-BOOL File_FileNameIsMSAGZ(char *pszFileName)
-{
-  return(File_DoesFileExtensionMatch(pszFileName,".msa.gz"));
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Does filename end with a .ZIP extension? If so, return TRUE
-*/
-BOOL File_FileNameIsZIP(char *pszFileName)
-{
-  return(File_DoesFileExtensionMatch(pszFileName,".zip"));
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Does filename end with a .MSA extension? If so, return TRUE
-*/
-BOOL File_FileNameIsMSA(char *pszFileName)
-{
-  return(File_DoesFileExtensionMatch(pszFileName,".msa"));
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Does filename end with a .ST extension? If so, return TRUE
-*/
-BOOL File_FileNameIsST(char *pszFileName)
-{
-  return(File_DoesFileExtensionMatch(pszFileName,".st"));
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Read file from PC into memory, allocate memory for it if need to (pass Address as NULL)
-  Also may pass 'unsigned long' if want to find size of file read (may pass as NULL)
+  Read file from disc into memory, allocate memory for it if need to (pass
+  Address as NULL).
 */
 void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, char *ppszExts[])
 {
-  FILE *DiscFile;
-  void *pFile=NULL;
-  long FileSize=0;
+  void *pFile = NULL;
+  long FileSize = 0;
 
   /* Does the file exist? If not, see if can scan for other extensions and try these */
-  if (!File_Exists(pszFileName) && ppszExts) {
+  if (!File_Exists(pszFileName) && ppszExts)
+  {
     /* Try other extensions, if suceeds correct filename is now in 'pszFileName' */
-    File_FindPossibleExtFileName(pszFileName,ppszExts);
+    File_FindPossibleExtFileName(pszFileName, ppszExts);
   }
 
-  /* Open our file */
-  DiscFile = fopen(pszFileName, "rb");
-  if (DiscFile!=NULL) {
-    /* Find size of TOS image - 192k or 256k */
-    fseek(DiscFile, 0, SEEK_END);
-    FileSize = ftell(DiscFile);
-    fseek(DiscFile, 0, SEEK_SET);
-    /* Find pointer to where to load, allocate memory if pass NULL */
-    if (pAddress)
-      pFile = pAddress;
-    else
-      pFile = Memory_Alloc(FileSize);
-    /* Read in... */
-    if (pFile)
-      fread((char *)pFile, 1, FileSize, DiscFile);
+  /* Normal file or gzipped file? */
+  if (File_DoesFileExtensionMatch(pszFileName, ".gz"))
+  {
+    gzFile hGzFile;
+    /* Open and read gzipped file */
+    hGzFile = gzopen(pszFileName, "rb");
+    if (hGzFile != NULL)
+    {
+      /* Find size of file: */
+      do
+      {
+        /* Seek through the file until we hit the end... */
+        gzseek(hGzFile, 1024, SEEK_CUR);
+      }
+      while (!gzeof(hGzFile));
+      FileSize = gztell(hGzFile);
+      gzrewind(hGzFile);
+      /* Find pointer to where to load, allocate memory if pass NULL */
+      if (pAddress)
+        pFile = pAddress;
+      else
+        pFile = malloc(FileSize);
+      /* Read in... */
+      if (pFile)
+        gzread(hGzFile, pFile, FileSize);
 
-    fclose(DiscFile);
+      gzclose(hGzFile);
+    }
   }
+  else
+  {
+    FILE *hDiscFile;
+    /* Open and read normal file */
+    hDiscFile = fopen(pszFileName, "rb");
+    if (hDiscFile != NULL)
+    {
+      /* Find size of file: */
+      fseek(hDiscFile, 0, SEEK_END);
+      FileSize = ftell(hDiscFile);
+      fseek(hDiscFile, 0, SEEK_SET);
+      /* Find pointer to where to load, allocate memory if pass NULL */
+      if (pAddress)
+        pFile = pAddress;
+      else
+        pFile = malloc(FileSize);
+      /* Read in... */
+      if (pFile)
+        fread(pFile, 1, FileSize, hDiscFile);
+
+      fclose(hDiscFile);
+    }
+  }
+
   /* Store size of file we read in (or 0 if failed) */
   if (pFileSize)
     *pFileSize = FileSize;
@@ -345,28 +332,48 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, char *ppszEx
 
 /*-----------------------------------------------------------------------*/
 /*
-  Save file to PC, return FALSE if errors
+  Save file to disc, return FALSE if errors
 */
 BOOL File_Save(char *pszFileName, void *pAddress, size_t Size, BOOL bQueryOverwrite)
 {
-  FILE *DiscFile;
-  BOOL bRet=FALSE;
+  BOOL bRet = FALSE;
 
   /* Check if need to ask user if to overwrite */
-  if (bQueryOverwrite) {
+  if (bQueryOverwrite)
+  {
     /* If file exists, ask if OK to overwrite */
     if (!File_QueryOverwrite(pszFileName))
       return(FALSE);
   }
 
-  /* Create our file */
-  DiscFile = fopen(pszFileName, "wb");
-  if (DiscFile!=NULL) {
-    /* Write data, set success flag */
-    if (fwrite(pAddress, 1, Size, DiscFile) == Size)
-      bRet = TRUE;
+  /* Normal file or gzipped file? */
+  if (File_DoesFileExtensionMatch(pszFileName, ".gz"))
+  {
+    gzFile *hGzFile;
+    /* Create a gzipped file: */
+    hGzFile = gzopen(pszFileName, "wb");
+    if (hGzFile != NULL)
+    {
+      /* Write data, set success flag */
+      if (gzwrite(hGzFile, pAddress, Size) == Size)
+        bRet = TRUE;
 
-    fclose(DiscFile);
+      gzclose(hGzFile);
+    }
+  }
+  else
+  {
+    FILE *hDiscFile;
+    /* Create a normal file: */
+    hDiscFile = fopen(pszFileName, "wb");
+    if (hDiscFile != NULL)
+    {
+      /* Write data, set success flag */
+      if (fwrite(pAddress, 1, Size, hDiscFile) == Size)
+        bRet = TRUE;
+
+      fclose(hDiscFile);
+    }
   }
 
   return(bRet);

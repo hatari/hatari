@@ -6,7 +6,7 @@
 
   MSA Disc support
 */
-char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.5 2004-04-19 08:53:34 thothy Exp $";
+char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.6 2004-04-28 09:04:58 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -105,15 +105,28 @@ typedef struct {
 
 /*-----------------------------------------------------------------------*/
 /*
-  Uncompress .MSA data into buffer
+  Does filename end with a .MSA extension? If so, return TRUE
 */
-int MSA_UnCompress(unsigned char *pMSAFile,unsigned char *pBuffer)
+BOOL MSA_FileNameIsMSA(char *pszFileName, BOOL bAllowGZ)
+{
+  return(File_DoesFileExtensionMatch(pszFileName,".msa")
+         || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".msa.gz")));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Uncompress .MSA data into a new buffer.
+*/
+Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 {
   MSAHEADERSTRUCT *pMSAHeader;
   unsigned char *pMSAImageBuffer,*pImageBuffer;
   unsigned char Byte,Data;
-  int ImageSize = 0;
   int i,Track,Side,DataLength,NumBytesUnCompressed,RunLength;
+  Uint8 *pBuffer = NULL;
+
+  *pImageSize = 0;
 
   /* Is an '.msa' file?? Check header */
   pMSAHeader = (MSAHEADERSTRUCT *)pMSAFile;
@@ -124,12 +137,21 @@ int MSA_UnCompress(unsigned char *pMSAFile,unsigned char *pBuffer)
     pMSAHeader->StartingTrack = SDL_SwapBE16(pMSAHeader->StartingTrack);
     pMSAHeader->EndingTrack = SDL_SwapBE16(pMSAHeader->EndingTrack);
 
+    /* Create buffer */
+    pBuffer = malloc((pMSAHeader->EndingTrack - pMSAHeader->StartingTrack + 1) * pMSAHeader->SectorsPerTrack
+                     * (pMSAHeader->Sides + 1) * NUMBYTESPERSECTOR);
+    if (!pBuffer)
+    {
+      perror("MSA_UnCompress");
+      return NULL;
+    }
+
     /* Set pointers */
     pImageBuffer = (unsigned char *)pBuffer;
     pMSAImageBuffer = (unsigned char *)((unsigned long)pMSAFile+sizeof(MSAHEADERSTRUCT));
 
     /* Uncompress to memory as '.ST' disc image - NOTE: assumes 512 bytes per sector (use NUMBYTESPERSECTOR define)!!! */
-    for(Track=pMSAHeader->StartingTrack; Track<(pMSAHeader->EndingTrack+1); Track++) {
+    for(Track=pMSAHeader->StartingTrack; Track <= pMSAHeader->EndingTrack; Track++) {
       for(Side=0; Side<(pMSAHeader->Sides+1); Side++) {
         /* Uncompress MSA Track, first check if is not compressed */
         DataLength = do_get_mem_word((uae_u16 *)pMSAImageBuffer);
@@ -169,35 +191,39 @@ int MSA_UnCompress(unsigned char *pMSAFile,unsigned char *pBuffer)
     }
 
     /* Set size of loaded image */
-    ImageSize = (unsigned long)pImageBuffer-(unsigned long)pBuffer;
+    *pImageSize = (unsigned long)pImageBuffer-(unsigned long)pBuffer;
   }
 
-  /* Return number of bytes loaded, '0' if failed */
-  return(ImageSize);
+  /* Return pointer to buffer, NULL if failed */
+  return(pBuffer);
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Uncompress .MSA file into memory, return number of bytes loaded
+  Uncompress .MSA file into memory, set number bytes of the disc image and
+  return a pointer to the buffer.
 */
-int MSA_ReadDisc(char *pszFileName,unsigned char *pBuffer)
+Uint8 *MSA_ReadDisc(char *pszFileName, long *pImageSize)
 {
-  unsigned char *pMSAFile;
-  int ImageSize = 0;
+  Uint8 *pMsaFile;
+  Uint8 *pDiscBuffer = NULL;
+
+  *pImageSize = 0;
 
   /* Read in file */
-  pMSAFile = (unsigned char *)File_Read(pszFileName,NULL,NULL,NULL);
-  if (pMSAFile) {
+  pMsaFile = File_Read(pszFileName, NULL, NULL, NULL);
+  if (pMsaFile)
+  {
     /* Uncompress into disc buffer */
-    ImageSize = MSA_UnCompress(pMSAFile,pBuffer);
+    pDiscBuffer = MSA_UnCompress(pMsaFile, pImageSize);
 
     /* Free MSA file we loaded */
-    Memory_Free(pMSAFile);
+    free(pMsaFile);
   }
 
-  /* Return number of bytes loaded, '0' if failed */
-  return(ImageSize);
+  /* Return pointer to buffer, NULL if failed */
+  return(pDiscBuffer);
 }
 
 

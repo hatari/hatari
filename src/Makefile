@@ -27,7 +27,7 @@ GUIOBJS = ./gui-sdl/dlgAbout.o ./gui-sdl/dlgDevice.o ./gui-sdl/dlgDisc.o \
 
 
 SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c \
-  createBlankImage.c debug.c debugui.c dialog.c errlog.c \
+  createBlankImage.c debug.c debugui.c dialog.c dim.c errlog.c \
   fdc.c file.c floppy.c gemdos.c hdc.c ikbd.c int.c intercept.c joy.c keymap.c \
   m68000.c main.c midi.c memAlloc.c memorySnapShot.c mfp.c misc.c msa.c psg.c \
   printer.c rs232.c reset.c rtc.c st.c stMemory.c screen.c screenConvert.c \

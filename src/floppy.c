@@ -21,17 +21,17 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.16 2004-04-19 08:53:33 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.17 2004-04-28 09:04:58 thothy Exp $";
 
 #include <SDL_endian.h>
 
 #include "main.h"
 #include "debug.h"
 #include "configuration.h"
+#include "dim.h"
 #include "errlog.h"
 #include "file.h"
 #include "floppy.h"
-#include "memAlloc.h"
 #include "memorySnapShot.h"
 #include "misc.h"
 #include "msa.h"
@@ -46,6 +46,7 @@ char *pszDiscImageNameExts[] =
 {
   ".msa",
   ".st",
+  ".dim",
   NULL
 };
 
@@ -62,9 +63,7 @@ void Floppy_Init(void)
   for(i=0; i<NUM_EMULATION_DRIVES; i++)
   {
     /* Clear */
-    Memory_Clear(&EmulationDrives[i],sizeof(EMULATION_DRIVE));
-    /* And allocate buffer */
-    EmulationDrives[i].pBuffer = (unsigned char *)Memory_Alloc(DRIVE_BUFFER_BYTES);
+    memset(&EmulationDrives[i], 0, sizeof(EMULATION_DRIVE));
   }
 }
 
@@ -75,13 +74,7 @@ void Floppy_Init(void)
 */
 void Floppy_UnInit(void)
 {
-  int i;
-
-  /* Free buffers used for emulation drives */
-  for(i=0; i<NUM_EMULATION_DRIVES; i++)
-  {
-    Memory_Free(EmulationDrives[i].pBuffer);
-  }
+  Floppy_EjectBothDrives();
 }
 
 
@@ -93,13 +86,24 @@ void Floppy_MemorySnapShot_Capture(BOOL bSave)
 {
   int i;
 
+  /* If restoring then eject old drives first! */
+  if (!bSave)
+    Floppy_EjectBothDrives();
+
   /* Save/Restore details */
   for(i=0; i<NUM_EMULATION_DRIVES; i++)
   {
-    MemorySnapShot_Store(EmulationDrives[i].pBuffer,DRIVE_BUFFER_BYTES);
-    MemorySnapShot_Store(EmulationDrives[i].szFileName,sizeof(EmulationDrives[i].szFileName));
-    MemorySnapShot_Store(&EmulationDrives[i].nImageBytes,sizeof(EmulationDrives[i].nImageBytes));
     MemorySnapShot_Store(&EmulationDrives[i].bDiscInserted,sizeof(EmulationDrives[i].bDiscInserted));
+    MemorySnapShot_Store(&EmulationDrives[i].nImageBytes, sizeof(EmulationDrives[i].nImageBytes));
+    if (!bSave && EmulationDrives[i].bDiscInserted)
+    {
+      EmulationDrives[i].pBuffer = malloc(EmulationDrives[i].nImageBytes);
+      if (!EmulationDrives[i].pBuffer)
+        perror("Floppy_MemorySnapShot_Capture");
+    }
+    if (EmulationDrives[i].pBuffer)
+      MemorySnapShot_Store(EmulationDrives[i].pBuffer, EmulationDrives[i].nImageBytes);
+    MemorySnapShot_Store(EmulationDrives[i].szFileName, sizeof(EmulationDrives[i].szFileName));
     MemorySnapShot_Store(&EmulationDrives[i].bMediaChanged,sizeof(EmulationDrives[i].bMediaChanged));
     MemorySnapShot_Store(&EmulationDrives[i].bContentsChanged,sizeof(EmulationDrives[i].bContentsChanged));
     MemorySnapShot_Store(&EmulationDrives[i].bOKToSave,sizeof(EmulationDrives[i].bOKToSave));
@@ -202,8 +206,7 @@ BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName)
 
 BOOL Floppy_ZipInsertDiscIntoDrive(int Drive, char *pszFileName, char *pszZipPath)
 {
-  char *szDiscBFileName = Memory_Alloc(FILENAME_MAX);
-  int nImageBytes=0;
+  long nImageBytes = 0;
 
   /* Eject disc, if one is inserted(don't inform user) */
   Floppy_EjectDiscFromDrive(Drive,FALSE);
@@ -212,18 +215,18 @@ BOOL Floppy_ZipInsertDiscIntoDrive(int Drive, char *pszFileName, char *pszZipPat
   if( !File_Exists(pszFileName) )
     File_FindPossibleExtFileName(pszFileName,pszDiscImageNameExts);
 
-  /* Is .MSA or .ST image? */
-  if (File_FileNameIsMSA(pszFileName))
-    nImageBytes = MSA_ReadDisc(pszFileName,EmulationDrives[Drive].pBuffer);
-  else if (File_FileNameIsST(pszFileName))
-    nImageBytes = ST_ReadDisc(pszFileName,EmulationDrives[Drive].pBuffer);
-  else if (File_FileNameIsZIP(pszFileName))
-    nImageBytes = ZIP_ReadDisc(pszFileName,pszZipPath,EmulationDrives[Drive].pBuffer);
-  else if (File_FileNameIsMSAGZ(pszFileName) || File_FileNameIsSTGZ(pszFileName))
-    nImageBytes = GZIP_ReadDisc(pszFileName,EmulationDrives[Drive].pBuffer);
+  /* Check disc image type and read the file: */
+  if (MSA_FileNameIsMSA(pszFileName, TRUE))
+    EmulationDrives[Drive].pBuffer = MSA_ReadDisc(pszFileName, &nImageBytes);
+  else if (ST_FileNameIsST(pszFileName, TRUE))
+    EmulationDrives[Drive].pBuffer = ST_ReadDisc(pszFileName, &nImageBytes);
+  else if (DIM_FileNameIsDIM(pszFileName, TRUE))
+    EmulationDrives[Drive].pBuffer = DIM_ReadDisc(pszFileName, &nImageBytes);
+  else if (ZIP_FileNameIsZIP(pszFileName))
+    EmulationDrives[Drive].pBuffer = ZIP_ReadDisc(pszFileName, pszZipPath, &nImageBytes);
 
   /* Did load OK? */
-  if (nImageBytes!=0)
+  if (EmulationDrives[Drive].pBuffer != NULL)
   {
     /* Store filename and size */
     strcpy(EmulationDrives[Drive].szFileName,pszFileName);
@@ -238,20 +241,20 @@ BOOL Floppy_ZipInsertDiscIntoDrive(int Drive, char *pszFileName, char *pszZipPat
   /* If we insert a disc into Drive A, should be try to put disc 2 into drive B? */
   if ( (Drive==0) && (ConfigureParams.DiscImage.bAutoInsertDiscB) )
   {
-    strcpy(EmulationDrives[1].szFileName,"");
+    char *szDiscBFileName = malloc(FILENAME_MAX);
     /* Attempt to make up second filename, eg was 'auto_100a' to 'auto_100b' */
-    if (Floppy_CreateDiscBFileName(pszFileName,szDiscBFileName))
+    if (szDiscBFileName && Floppy_CreateDiscBFileName(pszFileName, szDiscBFileName))
     {
       /* Put image into Drive B, clear out if fails */
       if (!Floppy_InsertDiscIntoDrive(1,szDiscBFileName))
         strcpy(EmulationDrives[1].szFileName,"");
     }
+    free(szDiscBFileName);
   }
 
-  Memory_Free(szDiscBFileName);
 
   /* Return TRUE if loaded OK */
-  return (nImageBytes > 0);
+  return (EmulationDrives[Drive].pBuffer != NULL);
 }
 
 
@@ -273,16 +276,14 @@ void Floppy_EjectDiscFromDrive(int Drive, BOOL bInformUser)
       if (EmulationDrives[Drive].bOKToSave)
       {
         /* Save as .MSA or .ST image? */
-        if (File_FileNameIsMSA(EmulationDrives[Drive].szFileName))
-          MSA_WriteDisc(EmulationDrives[Drive].szFileName,EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes);
-        else if (File_FileNameIsST(EmulationDrives[Drive].szFileName))
-          ST_WriteDisc(EmulationDrives[Drive].szFileName,EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes);
-        else if (File_FileNameIsZIP(EmulationDrives[Drive].szFileName))
-          ZIP_WriteDisc(EmulationDrives[Drive].szFileName,EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes);
-        else if (File_FileNameIsMSAGZ(EmulationDrives[Drive].szFileName) || 
-		 File_FileNameIsSTGZ(EmulationDrives[Drive].szFileName))
-          GZIP_WriteDisc(EmulationDrives[Drive].szFileName,EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes);
-
+        if (MSA_FileNameIsMSA(EmulationDrives[Drive].szFileName, TRUE))
+          MSA_WriteDisc(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+        else if (ST_FileNameIsST(EmulationDrives[Drive].szFileName, TRUE))
+          ST_WriteDisc(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+        else if (DIM_FileNameIsDIM(EmulationDrives[Drive].szFileName, TRUE))
+          DIM_WriteDisc(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+        else if (ZIP_FileNameIsZIP(EmulationDrives[Drive].szFileName))
+          ZIP_WriteDisc(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
       }
     }
 
@@ -295,6 +296,11 @@ void Floppy_EjectDiscFromDrive(int Drive, BOOL bInformUser)
   }
 
   /* Drive is now empty */
+  if (EmulationDrives[Drive].pBuffer != NULL)
+  {
+    free(EmulationDrives[Drive].pBuffer);
+    EmulationDrives[Drive].pBuffer = NULL;
+  }
   strcpy(EmulationDrives[Drive].szFileName,"");
   EmulationDrives[Drive].nImageBytes = 0;
   EmulationDrives[Drive].bDiscInserted = FALSE;
