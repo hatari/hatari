@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.11 2004-04-23 15:33:59 thothy Exp $";
+char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.12 2004-12-27 00:03:17 thothy Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -139,9 +139,7 @@ void VDI_SetResolution(int GEMRes,int GEMColour)
       break;
   }
 
-  /* Force screen code to re-set bitmap/full-screen */
-  Screen_SetDrawModes();
-  /*Screen_SetupRGBTable();*/
+  /* Force screen code to re-set the screen */
   Screen_SetFullUpdate();
   PrevSTRes = -1;
 

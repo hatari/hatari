@@ -25,27 +25,6 @@ typedef struct
 /* Number of frame buffers (1 or 2) - should be 2 for supporting screen flipping */
 #define NUM_FRAMEBUFFERS  2
 
-/* Details for each display screen - both Window and FullScreen */
-typedef struct
-{
-  int STScreenLeftSkipBytes,STScreenWidthBytes;     /* Bytes to skip on left and number of bytes of screen to draw */
-  int STScreenStartHorizLine,STScreenEndHorizLine;  /* Start/End points in ST screen(28 is top of normal screen) */
-} SCREENDRAW_OVERSCAN;
-
-typedef struct
-{
-  void *pDrawFunction;              /* Draw function */
-  int Width,Height,BitDepth,VertPixelsPerLine;
-  SCREENDRAW_OVERSCAN Overscan[4];  /* Details for starting offset for each overscan mode(none,top,bottom,both) */
-} SCREENDRAW;
-
-typedef struct
-{
-  SCREENDRAW *pLowRes;
-  SCREENDRAW *pMediumRes;
-  SCREENDRAW *pHighRes;
-  SCREENDRAW *pLowMediumMixRes;
-} SCREENDRAW_DISPLAYOPTIONS;
 
 /* ST Resolution defines */
 enum
@@ -116,13 +95,10 @@ extern void Screen_UnInit(void);
 extern void Screen_Reset(void);
 extern void Screen_SetScreenLineOffsets(void);
 extern void Screen_SetFullUpdate(void);
-extern void Screen_SetupRGBTable(void);
 extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);
 extern void Screen_ClearScreen(void);
-extern void Screen_SetDrawModes(void);
 extern void Screen_DidResolutionChange(void);
-extern void Screen_Handle8BitPalettes(void);
 extern void Screen_Blit(BOOL bSwapScreen);
 extern void Screen_DrawFrame(BOOL bForceFlip);
 extern void Screen_Draw(void);
