@@ -1,3 +1,7 @@
+2001-09-09 (Sven de Marothy):
+  * Added hard-drive emulation, (option -e or --harddrive)
+  * Fixed annoying key clicks during boot.
+	
 2001-08-16 (Thomas Huth):  *** Version 0.10a ***
   * Improved CPU cycles emulation. Most instructions now return the
     right cycles, I hope.
