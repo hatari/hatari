@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.17 2003-04-02 20:53:37 emanne Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.18 2003-04-03 21:14:31 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -49,7 +49,7 @@ int fpp_movem_next[256];
 
 cpuop_func *cpufunctbl[65536];
 
-static uae_u32 busAddressErrPC = 0;  /* Needed to store the right PC when bus-/address error occurs */
+static uae_u32 busAddressErrPC;  /* Needed to store the right PC when bus-/address error occurs */
 
 
 #define COUNT_INSTRS 0
@@ -156,7 +156,6 @@ void build_cpufunctbl(void)
     /* Hatari's illegal opcodes: */
     cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;
     cpufunctbl[RUNOLDGEMDOS_OPCODE] = OpCode_OldGemDos;
-    cpufunctbl[TIMERD_OPCODE] = OpCode_TimerD;
     cpufunctbl[VDI_OPCODE] = OpCode_VDI;
 }
 
@@ -770,6 +769,7 @@ void Exception(int nr, uaecptr oldpc)
     /* Store a backup of the PC after bus-/address error: */
     if(nr==2 || nr==3) {
         busAddressErrPC = regs.pc;
+        set_special(SPCFLAG_BUSERROR);
     }
 }
 
@@ -1214,6 +1214,15 @@ static void do_trace (void)
 
 static int do_specialties (void)
 {
+    if(regs.spcflags & SPCFLAG_BUSERROR) {
+	/* We have to correct the PC after a bus error occured since the
+	 * UAE CPU core is not prepared for Exception() while accessing an
+	 * illegal ST memory address */
+        unset_special(SPCFLAG_BUSERROR);
+	m68k_setpc(busAddressErrPC);
+	busAddressErrPC = 0;
+    }
+
     if (regs.spcflags & SPCFLAG_DOTRACE) {
 	Exception (9,last_trace_ad);
     }
@@ -1292,15 +1301,6 @@ static void m68k_run_1 (void)
 
 	cycles = (*cpufunctbl[opcode])(opcode);
 
-	/* Unfortunately needed at the moment: */
-	/* Check if we had an bus/address error and correct the PC then... */
-	if(busAddressErrPC) {
-	    /*write_log("Fixed PC to $%x instead of $%x after bus-/address error!\n",
-	              busAddressErrPC, m68k_getpc());*/
-	    m68k_setpc(busAddressErrPC);
-	    busAddressErrPC = 0;
-	}
-
 #ifdef DEBUG_PREFETCH
 	if (memcmp (saved_bytes, oldpcp, 20) != 0) {
 	    fprintf (stderr, "Self-modifying code detected.\n");
@@ -1338,15 +1338,6 @@ static void m68k_run_2 (void)
 #endif
 
 	cycles = (*cpufunctbl[opcode])(opcode);
-
-	/* Unfortunately needed at the moment: */
-	/* Check if we had an bus/address error and correct the PC then... */
-	if(busAddressErrPC) {
-	    /*write_log("Fixed PC to $%x instead of $%x after bus-/address error!\n",
-	              busAddressErrPC, m68k_getpc());*/
-	    m68k_setpc(busAddressErrPC);
-	    busAddressErrPC = 0;
-	}
 
 	do_cycles (cycles);
 	if (regs.spcflags) {

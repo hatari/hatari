@@ -20,7 +20,7 @@
 
 /* custom chip support */
 #define SPCFLAG_STOP 2
-/*#define SPCFLAG_COPPER 4*/
+#define SPCFLAG_BUSERROR 4
 #define SPCFLAG_INT 8
 #define SPCFLAG_BRK 0x10
 #define SPCFLAG_EXTRA_CYCLES 0x20
