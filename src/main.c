@@ -35,7 +35,6 @@
 #include "sdlgui.h"
 #include "shortcut.h"
 #include "sound.h"
-#include "timer.h"
 #include "tos.h"
 #include "video.h"
 #include "ymFormat.h"
@@ -394,7 +393,6 @@ void Main_Init(void)
   SDLGui_Init();
   Printer_Init();
   RS232_Init();
-  Timer_Init();
   Screen_Init();
   Floppy_Init();
   Init680x0();         /* Init CPU emulation */

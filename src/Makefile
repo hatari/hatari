@@ -31,7 +31,7 @@ SRCS = audio.c bios.c blitter.c cart.c configuration.c createBlankImage.c \
   floppy.c gemdos.c hdc.c ikbd.c int.c intercept.c joy.c keymap.c m68000.c \
   main.c midi.c memAlloc.c memorySnapShot.c mfp.c misc.c msa.c psg.c \
   printer.c rs232.c reset.c st.c stMemory.c screen.c screenConvert.c \
-  screenSnapShot.c sdlgui.c shortcut.c sound.c spec512.c timer.c \
+  screenSnapShot.c sdlgui.c shortcut.c sound.c spec512.c \
   tos.c vdi.c video.c wavFormat.c xbios.c ymFormat.c
 
 OBJS = $(SRCS:.c=.o)

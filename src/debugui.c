@@ -20,7 +20,6 @@
 #include "stMemory.h"
 #include "screen.h"
 #include "sound.h"
-#include "timer.h"
 #include "tos.h"
 #include "video.h"
 
