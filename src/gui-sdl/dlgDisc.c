@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.4 2003-12-25 14:19:39 thothy Exp $";
+char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.5 2003-12-29 20:10:04 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -15,6 +15,8 @@ char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.4 2003-12-25 14:19:39 thothy E
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
+
+extern void DlgNewDisc_Main(void);    /* Prototype from dlgNewDisc.c */
 
 
 #define DISCDLG_DISCA       4
@@ -49,8 +51,8 @@ static SGOBJ discdlg[] =
   { SGTEXT, 0, 0, 2,7, 30,1, "Default disk images directory:" },
   { SGTEXT, 0, 0, 2,8, 28,1, NULL },
   { SGBUTTON, 0, 0, 32,8, 6,1, "Browse" },
-  { SGCHECKBOX, 0, 0, 2,10, 18,1, "Auto insert B" },
-  { SGTEXT/*SGBUTTON*/, 0, 0, 20,10, 18,1, ""/*"Create blank image"*/ }, /* Not yet supported */
+  { SGCHECKBOX, 0, 0, 2,10, 16,1, "Auto insert B" },
+  { SGBUTTON, 0, 0, 20,10, 18,1, "Create blank image" },
   { SGBOX, 0, 0, 1,13, 38,9, NULL },
   { SGTEXT, 0, 0, 15,13, 10,1, "Hard discs" },
   { SGTEXT, 0, 0, 2,14, 9,1, "HD image:" },
@@ -188,7 +190,7 @@ void Dialog_DiscDlg(void)
         }
         break;
       case DISCDLG_CREATEIMG:
-        fprintf(stderr,"Sorry, creating disc images not yet supported\n");
+        DlgNewDisc_Main();
         break;
       case DISCDLG_UNMOUNTGDOS:
         GemDOS_UnInitDrives();   /* FIXME: This shouldn't be done here but it's the only quick solution I could think of */
