@@ -1,0 +1,36 @@
+
+2001-06-01 (Thomas Huth):  *** Version 0.05a ***
+  * Added joystick emulation.
+  * Added Stefan's patch for ST-LOW res on big-endian machines,
+    his patch for also leaving Hatari by pressing F12, and
+    his fullscreen patch.
+  * Changed all tabulator characters in the source to spaces.
+
+2001-05-27 (Thomas Huth):  *** Version 0.04a ***
+  * Added Stefan Berndtsson's patch for big-endian machines.
+    Hatari now runs also with non-x86 Linux machines! Thanks Stefan!
+  * Rewrote the ST-LOW resolution conversation routines in C
+    => ST-LOW now works!
+  * Added some of the WinSTon patches Paul Bates recently published
+    at the WinSTon BBS (Thanks to Ladislav Adamec for the hint).
+  * Cleaned up the source tree a little bit.
+
+2001-04-03 (Thomas Huth):  *** Version 0.03a ***
+  * Rewrote some more assembler functions. FDC emulation now works!
+
+2001-04-02 (Thomas Huth):
+  * SDL Keyboard code finished and included a SDL-Key -> ST-Scancode table.
+
+2001-03-29 (Thomas Huth):
+  * Added mouse support.
+
+2001-03-28 (Thomas Huth):  *** Version 0.02a ***
+  * Added very simple SDL support.
+  * Rewrote a lot of assembler functions in C (e.g. intercept.c).
+  * Adapted the UAE CPU. Now Hatari is able to boot a TOS 1.0x ROM, the
+    Desktop shows up, but no mouse and keyboard interaction yet.
+
+
+2001-03-21 (Thomas Huth):  *** Version 0.01a ***
+  * Made the WinSTon source code compilable.
+  * Added the UAE CPU sources.
