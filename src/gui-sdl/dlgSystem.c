@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.5 2005-02-12 23:11:28 thothy Exp $";
+char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.6 2005-02-25 09:17:54 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -43,7 +43,7 @@ static SGOBJ systemdlg[] =
 	{ SGRADIOBUT, 0, 0, 6,9, 11,1, "68020+FPU" },
 	{ SGRADIOBUT, 0, 0, 6,10, 7,1, "68040" },
 
-	{ SGBOX, 0, 0, 19,3, 15,6, NULL },
+	{ SGBOX, 0, 0, 19,3, 15,9, NULL },
 	{ SGTEXT, 0, 0, 20,4, 13,1, "Machine type:" },
 	{ SGRADIOBUT, 0, 0, 23,6, 7,1, "ST" },
 	{ SGRADIOBUT, 0, 0, 23,7, 7,1, "STE" },
@@ -58,6 +58,9 @@ static SGOBJ systemdlg[] =
 	{ SGCHECKBOX, 0, 0, 2,17, 27,1, "Real time clock emulation" },
 	{ SGCHECKBOX, 0, 0, 2,18, 15,1, "Patch Timer-D" },
 	{ SGCHECKBOX, 0, 0, 2,19, 25,1, "Slow down FDC emulation" },
+
+	{ SGTEXT, 0, 0, 20, 9, 13,1, "(STE mode is" },
+	{ SGTEXT, 0, 0, 20,10, 13,1, " incomplete!)" },
 
 	{ SGBUTTON, 0, 0, 8,21, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
