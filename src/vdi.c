@@ -273,11 +273,19 @@ done_modify:;
 
 /*-----------------------------------------------------------------------*/
 /*
-  Modify(or create) ST desktop configuration files so VDI boots up in correct colour depth
+  Modify (or create) ST desktop configuration files so VDI boots up in
+  correct color depth
 */
 void VDI_FixDesktopInf(void)
 {
   char szDesktopFileName[MAX_FILENAME_LENGTH],szNewDeskFileName[MAX_FILENAME_LENGTH];
+
+  if(!GEMDOS_EMU_ON)
+  {
+    fprintf(stderr,"Can't modify DESKTOP.INF since you don't use GEMDOS hard disk emulation.\n");
+    fprintf(stderr,"=> Changing the color depth is not possible.\n");
+    return;
+  }
 
   /* Create filenames for hard-drive */
   GemDOS_CreateHardDriveFileName(2,"/desktop.inf",szDesktopFileName);
