@@ -104,6 +104,10 @@ void Configuration_SetDefault(void)
   ConfigureParams.TOSGEM.nGEMResolution = GEMRES_640x480;
   ConfigureParams.TOSGEM.nGEMColours = GEMCOLOUR_16;
 
+  /* Set defaults for Cpu */
+  ConfigureParams.Cpu.level = 0;
+  ConfigureParams.Cpu.compatible = FALSE;
+  ConfigureParams.Cpu.address_space_24 = TRUE;
 }
 
 

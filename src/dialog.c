@@ -224,12 +224,24 @@ SGOBJ sounddlg[] =
 
 
 /* The cpu dialog: */
+#define DLGCPU_68000 3
+#define DLGCPU_68010 4
+#define DLGCPU_68020 5
+#define DLGCPU_68030 6
+#define DLGCPU_68040 7
+#define DLGCPU_PREFETCH 8
 SGOBJ cpudlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 30,8, NULL },
-  { SGTEXT, 0, 0, 10,2, 11,1, "CPU options" },
-  { SGTEXT, 0, 0, 2,4, 25,1, "Sorry, not yet supported." },
-  { SGBUTTON, 0, 0, 5,6, 20,1, "Back to main menu" },
+  { SGBOX, 0, 0, 0,0, 30,15, NULL },
+  { SGTEXT, 0, 0, 10,1, 11,1, "CPU options" },
+  { SGTEXT, 0, 0, 3,4, 8,1, "CPU Type:" },
+  { SGRADIOBUT, 0, 0, 16,4, 7,1, "68000" },
+  { SGRADIOBUT, 0, 0, 16,5, 7,1, "68010" },
+  { SGRADIOBUT, 0, 0, 16,6, 7,1, "68020" },
+  { SGRADIOBUT, 0, 0, 16,7, 11,1, "68020+FPU" },
+  { SGRADIOBUT, 0, 0, 16,8, 7,1, "68040" },
+  { SGCHECKBOX, 0, 0, 3,10, 20,1, "Use prefetch mode" },
+  { SGBUTTON, 0, 0, 5,13, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -398,6 +410,9 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   /* Resize window if need */
   /*if(!ConfigureParams.TOSGEM.bUseExtGEMResolutions)
     View_ResizeWindowToFull();*/
+
+  /* Did the user changed the CPU mode? */
+  check_prefs_changed_cpu(DialogParams.Cpu.level, DialogParams.Cpu.compatible);
 
   /* Do we need to perform reset? */
   if (NeedReset)
@@ -839,6 +854,49 @@ void Dialog_JoyDlg(void)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Show and process the CPU dialog.
+*/
+void Dialog_CpuDlg(void)
+{
+  int but;
+  int i;
+
+  SDLGui_CenterDlg(cpudlg);
+
+  /* Set up dialog from actual values: */
+
+  for(i=DLGCPU_68000; i<=DLGCPU_68040; i++)
+  {
+    cpudlg[i].state &= ~SG_SELECTED;
+  }
+
+  cpudlg[DLGCPU_68000+DialogParams.Cpu.level].state |= SG_SELECTED;
+
+  if( DialogParams.Cpu.compatible )
+    cpudlg[DLGCPU_PREFETCH].state |= SG_SELECTED;
+  else
+    cpudlg[DLGCPU_PREFETCH].state &= ~SG_SELECTED;
+
+  /* Show the dialog: */
+  SDLGui_DoDialog(cpudlg);
+
+  /* Read values from dialog: */
+
+  for(i=DLGCPU_68000; i<=DLGCPU_68040; i++)
+  {
+    if( cpudlg[i].state&SG_SELECTED )
+    {
+      DialogParams.Cpu.level = i-DLGCPU_68000;
+      break;
+    }
+  }
+
+  DialogParams.Cpu.compatible = (cpudlg[DLGCPU_PREFETCH].state & SG_SELECTED);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   This functions sets up the actual font and then displays the main dialog.
 */
 int Dialog_MainDlg(BOOL *bReset)
@@ -874,8 +932,7 @@ int Dialog_MainDlg(BOOL *bReset)
         Dialog_SoundDlg();
         break;
       case MAINDLG_CPU:
-        SDLGui_CenterDlg(cpudlg);
-        SDLGui_DoDialog(cpudlg);
+        Dialog_CpuDlg();
         break;
       case MAINDLG_MEMORY:
         Dialog_MemDlg();

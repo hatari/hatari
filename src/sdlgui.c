@@ -514,7 +514,7 @@ int SDLGui_FileSelect(char *path_and_name)
   int entries = 0;                             /* How many files are in the actual directory? */
   int ypos = 0;
   char dlgfilenames[16][36];
-  struct dirent **files;
+  struct dirent **files = NULL;
   char path[MAX_FILENAME_LENGTH], fname[128];  /* The actual file and path names */
   char dlgpath[39], dlgfname[33];              /* File and path name in the dialog */
   BOOL reloaddir = TRUE;                       /* Do we have to reload the directory file list? */
@@ -580,8 +580,18 @@ int SDLGui_FileSelect(char *path_and_name)
         return FALSE;
       }
 
+      /* Free old allocated memory: */
+      if( files!=NULL )
+      {
+        for(i=0; i<entries; i++)
+        {
+          free(files[i]);
+        }
+        free(files);
+        files = NULL;
+      }
+
       /* Load directory entries: */
-      /* FIXME: Old reserved memory from scandir is not freed */
       entries = scandir(path, &files, 0, alphasort);
       if(entries<0)
       {
@@ -720,6 +730,17 @@ int SDLGui_FileSelect(char *path_and_name)
     SDL_ShowCursor(SDL_DISABLE);
 
   File_makepath(path_and_name, path, fname, NULL);
+
+  /* Free old allocated memory: */
+  if( files!=NULL )
+  {
+    for(i=0; i<entries; i++)
+    {
+      free(files[i]);
+    }
+    free(files);
+    files = NULL;
+  }
 
   return( retbut==SGFSDLG_OKAY );
 }

@@ -1054,6 +1054,8 @@ void Intercept_MidiData_WriteByte(void)
 INTERCEPT_ADDRESSRANGE InterceptBusErrors[] = {
   0xff8a00,0xff8a3e,        /* Blitter */
   0xff8900,0xff8960,        /* DMA Sound/MicroWire */
+  0xff8400,0xff85fe,        /* TT Palette (EmuTOS depends on this) */
+  0xff8280,0xff82c4,        /* Falcon VIDEL (again for EmuTOS) */
 
   0,0  /* term */
 };

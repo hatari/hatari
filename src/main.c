@@ -333,16 +333,18 @@ void Main_ReadParameters(int argc, char *argv[])
       }
       else if (!strcmp(argv[i],"--cpulevel"))
       {
-       if(i+1>=argc)
-         fprintf(stderr,"Missing argument for --cpulevel.\n");
-        else
-         cpu_level = atoi(argv[++i]);
-       if(cpu_level<0 || cpu_level>4)
-         cpu_level = 0;
+        if(i+1>=argc)
+          fprintf(stderr,"Missing argument for --cpulevel.\n");
+         else
+          cpu_level = atoi(argv[++i]);
+        if(cpu_level<0 || cpu_level>4)
+          cpu_level = 0;
+        ConfigureParams.Cpu.level = cpu_level;
       }
       else if (!strcmp(argv[i],"--compatible") || !strcmp(argv[i],"-d"))
       {
-       cpu_compatible = TRUE;
+        cpu_compatible = TRUE;
+        ConfigureParams.Cpu.compatible = TRUE;
       }
       else
       {

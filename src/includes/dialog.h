@@ -173,6 +173,14 @@ typedef struct {
 } DLG_PRINTER;
 
 
+/* Dialog CPU */
+typedef struct {
+  int level;
+  BOOL compatible;
+  BOOL address_space_24;
+} DLG_CPU;
+
+
 /* State of system is stored in this structure */
 /* On reset, variables are copied into system globals and used. */
 typedef struct {
@@ -188,21 +196,9 @@ typedef struct {
   DLG_TOSGEM TOSGEM;
   DLG_RS232 RS232;
   DLG_PRINTER Printer;
+  DLG_CPU Cpu;
 } DLG_PARAMS;
 
-enum {
-  DIALOG_PAGE_CONFIGURE,
-  DIALOG_PAGE_SCREEN,
-  DIALOG_PAGE_JOYSTICKS,
-  DIALOG_PAGE_KEYBOARD,
-  DIALOG_PAGE_SOUND,
-  DIALOG_PAGE_MEMORY,
-  DIALOG_PAGE_DISCIMAGE,
-  DIALOG_PAGE_HARDDISC,
-  DIALOG_PAGE_TOSGEM,
-  DIALOG_PAGE_RS232,
-  DIALOG_PAGE_PRINTER
-};
 
 extern DLG_PARAMS ConfigureParams, DialogParams;
 

@@ -23,9 +23,9 @@
 
 
 int illegal_mem = FALSE;
-int address_space_24 = 1;
+int address_space_24 = TRUE;
 int cpu_level = 0;              /* 68000 (default) */
-int cpu_compatible = 0;
+int cpu_compatible = FALSE;
 
 long STmem_size = 0x400000;     /* 4MB */
 long TTmem_size = 0;
@@ -34,19 +34,21 @@ long TTmem_size = 0;
 /* Reset custom chips */
 void customreset(void)
 {
- /* Taken from Reset_ST in reset.c: */
- Int_Reset();                           /* Reset interrupts */
- MFP_Reset();                           /* Setup MFP chip */
- Video_Reset();                         /* Reset video */
- PSG_Reset();                           /* Reset PSG */
- Sound_Reset();                         /* Reset Sound */
- IKBD_Reset(FALSE);                     /* Keyboard */
- Screen_Reset();                        /* Reset screen */
+#if 0    /* Disabled since WinSTon ignores the RESET instruction, too */
+  /* Taken from Reset_ST in reset.c: */
+  Int_Reset();                           /* Reset interrupts */
+  MFP_Reset();                           /* Setup MFP chip */
+  Video_Reset();                         /* Reset video */
+  PSG_Reset();                           /* Reset PSG */
+  Sound_Reset();                         /* Reset Sound */
+  IKBD_Reset(FALSE);                     /* Keyboard */
+  Screen_Reset();                        /* Reset screen */
 
- /* And VBL interrupt, MUST always be one interrupt ready to trigger */
- Int_AddAbsoluteInterrupt(CYCLES_ENDLINE,INTERRUPT_VIDEO_ENDLINE);
- Int_AddAbsoluteInterrupt(CYCLES_HBL,INTERRUPT_VIDEO_HBL);
- Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME,INTERRUPT_VIDEO_VBL);
+  /* And VBL interrupt, MUST always be one interrupt ready to trigger */
+  Int_AddAbsoluteInterrupt(CYCLES_ENDLINE,INTERRUPT_VIDEO_ENDLINE);
+  Int_AddAbsoluteInterrupt(CYCLES_HBL,INTERRUPT_VIDEO_HBL);
+  Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME,INTERRUPT_VIDEO_VBL);
+#endif
 }
 
 
@@ -75,6 +77,19 @@ void Start680x0(void)
   m68k_reset();
   m68k_go(TRUE);
 }
+
+
+/* Check if the CPU type has been changed */
+void check_prefs_changed_cpu(int new_level, int new_compatible)
+{
+  if(cpu_level!=new_level || cpu_compatible!=new_compatible)
+  {
+    cpu_level = new_level;
+    cpu_compatible = new_compatible;
+    build_cpufunctbl ();
+  }
+}
+
 
 
 /* ----------------------------------------------------------------------- */

@@ -22,7 +22,6 @@
 extern int bQuitProgram;     /* Declared in main.c */
 
 
-int debugging = 0;
 struct flag_struct regflags;
 
 int lastInstructionCycles;   /* how many cycles last instruction took to execute */
@@ -118,7 +117,8 @@ static unsigned long REGPARAM2 op_illg_1 (uae_u32 opcode)
     return 4;
 }
 
-static void build_cpufunctbl (void)
+
+void build_cpufunctbl(void)
 {
     int i;
     unsigned long opcode;
@@ -164,23 +164,6 @@ static void build_cpufunctbl (void)
 }
 
 
-
-/*
-void check_prefs_changed_cpu (void)
-{
-    if (currprefs.cpu_level != changed_prefs.cpu_level
-	|| currprefs.cpu_compatible != changed_prefs.cpu_compatible) {
-	currprefs.cpu_level = changed_prefs.cpu_level;
-	currprefs.cpu_compatible = changed_prefs.cpu_compatible;
-	build_cpufunctbl ();
-    }
-    if (currprefs.m68k_speed != changed_prefs.m68k_speed) {
-	currprefs.m68k_speed = changed_prefs.m68k_speed;
-	reset_frame_rate_hack ();
-	update_68k_cycles ();
-    }
-}
-*/
 
 void init_m68k (void)
 {
@@ -252,6 +235,7 @@ void init_m68k (void)
 
     build_cpufunctbl ();
 }
+
 
 struct regstruct regs, lastint_regs;
 static struct regstruct regs_backup[16];
@@ -1340,7 +1324,6 @@ static void m68k_run_1 (void)
     }
 }
 
-#define DEBUG_PREFETCH
 
 /* Same thing, but don't use prefetch to get opcode.  */
 static void m68k_run_2 (void)
@@ -1387,10 +1370,6 @@ void m68k_go (int may_quit)
 
     in_m68k_go++;
     while(!bQuitProgram) {
-/*
-	if (debugging)
-	    debug ();
-*/
         if(cpu_compatible)
           m68k_run_1();
          else
