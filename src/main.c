@@ -364,7 +364,7 @@ void Main_ReadParameters(int argc, char *argv[])
 void Main_Init(void)
 {
   /* SDL init: */
-  if( SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER) < 0 )
+  if( SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER|SDL_INIT_JOYSTICK) < 0 )
   {
     fprintf(stderr, "Could not initialize the SDL library:\n %s\n", SDL_GetError() );
     exit(-1);

@@ -1,3 +1,6 @@
+2002-01-14 (Thomas Huth):
+  * Added (real) joystick support.
+
 2002-01-02 (Thomas Huth):
   * Fixed some problems with the CPU reset.
   * Updated the GUI.
