@@ -10,7 +10,7 @@
   We also store the version number in the file to prevent people from
   copying old .cfg files between versions.
 */
-static char rcsid[] = "Hatari $Id: configuration.c,v 1.15 2003-03-24 13:30:53 thothy Exp $";
+static char rcsid[] = "Hatari $Id: configuration.c,v 1.16 2003-03-30 11:32:48 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -69,6 +69,7 @@ void Configuration_SetDefault(void)
 
   /* Set defaults for Keyboard */
   ConfigureParams.Keyboard.bDisableKeyRepeat = TRUE;
+  ConfigureParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
   ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_KEY] = SHORTCUT_FULLSCREEN;
   ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_SHIFT] = SHORTCUT_NOTASSIGNED;
   ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_CTRL] = SHORTCUT_NOTASSIGNED;
@@ -94,7 +95,7 @@ void Configuration_SetDefault(void)
   ConfigureParams.Screen.bFullScreen = FALSE;
   ConfigureParams.Screen.Advanced.bDoubleSizeWindow = FALSE;
   ConfigureParams.Screen.Advanced.bAllowOverscan = TRUE;
-  ConfigureParams.Screen.Advanced.bInterlacedFullScreen = TRUE;
+  ConfigureParams.Screen.Advanced.bInterlacedScreen = FALSE;
   ConfigureParams.Screen.Advanced.bSyncToRetrace = FALSE;
   ConfigureParams.Screen.Advanced.bFrameSkip = FALSE;	
   ConfigureParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
@@ -144,7 +145,7 @@ void Configuration_Init(void)
       Configuration_ReadFromFile(&ConfigureParams.Screen.bFullScreen,4);
       Configuration_ReadFromFile(&ConfigureParams.Screen.Advanced.bDoubleSizeWindow,4);
       Configuration_ReadFromFile(&ConfigureParams.Screen.Advanced.bAllowOverscan,4);
-      Configuration_ReadFromFile(&ConfigureParams.Screen.Advanced.bInterlacedFullScreen,4);
+      Configuration_ReadFromFile(&ConfigureParams.Screen.Advanced.bInterlacedScreen,4);
       Configuration_ReadFromFile(&ConfigureParams.Screen.Advanced.bSyncToRetrace,4);
       Configuration_ReadFromFile(&ConfigureParams.Screen.ChosenDisplayMode,4);
       Configuration_ReadFromFile(&ConfigureParams.Screen.bCaptureChange,4);
@@ -157,6 +158,7 @@ void Configuration_Init(void)
       Configuration_ReadFromFile(&ConfigureParams.Joysticks.Joy[1].bEnableAutoFire,4);
       /* Keyboard */
       Configuration_ReadFromFile(&ConfigureParams.Keyboard.bDisableKeyRepeat,4);
+      Configuration_ReadFromFile(&ConfigureParams.Keyboard.nKeymapType, 4);
       Configuration_ReadFromFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_SHIFT],4);
       Configuration_ReadFromFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_CTRL],4);
       Configuration_ReadFromFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F12][SHORT_CUT_SHIFT],4);
@@ -246,7 +248,7 @@ void Configuration_UnInit(void)
     Configuration_WriteToFile(&ConfigureParams.Screen.bFullScreen,4);
     Configuration_WriteToFile(&ConfigureParams.Screen.Advanced.bDoubleSizeWindow,4);
     Configuration_WriteToFile(&ConfigureParams.Screen.Advanced.bAllowOverscan,4);
-    Configuration_WriteToFile(&ConfigureParams.Screen.Advanced.bInterlacedFullScreen,4);
+    Configuration_WriteToFile(&ConfigureParams.Screen.Advanced.bInterlacedScreen,4);
     Configuration_WriteToFile(&ConfigureParams.Screen.Advanced.bSyncToRetrace,4);
     Configuration_WriteToFile(&ConfigureParams.Screen.ChosenDisplayMode,4);
     Configuration_WriteToFile(&ConfigureParams.Screen.bCaptureChange,4);
@@ -259,6 +261,7 @@ void Configuration_UnInit(void)
     Configuration_WriteToFile(&ConfigureParams.Joysticks.Joy[1].bEnableAutoFire,4);
     /* Keyboard */
     Configuration_WriteToFile(&ConfigureParams.Keyboard.bDisableKeyRepeat,4);
+    Configuration_WriteToFile(&ConfigureParams.Keyboard.nKeymapType, 4);
     Configuration_WriteToFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_SHIFT],4);
     Configuration_WriteToFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F11][SHORT_CUT_CTRL],4);
     Configuration_WriteToFile(&ConfigureParams.Keyboard.ShortCuts[SHORT_CUT_F12][SHORT_CUT_SHIFT],4);

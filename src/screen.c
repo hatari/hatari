@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-static char rcsid[] = "Hatari $Id: screen.c,v 1.23 2003-03-27 11:24:45 emanne Exp $";
+static char rcsid[] = "Hatari $Id: screen.c,v 1.24 2003-03-30 11:32:48 thothy Exp $";
 
 #include <SDL.h>
 
@@ -784,7 +784,7 @@ void Screen_SetWindowConvertDetails(void)
 
   /* Are we in a Window and medium/mix res? Need to Double Y */
   // if ( (!bInFullScreen) && ((STRes==ST_MEDIUM_RES) || (STRes==ST_LOWMEDIUM_MIX_RES)) ) {
-  if (!ConfigureParams.Screen.Advanced.bInterlacedFullScreen) {
+  if (!ConfigureParams.Screen.Advanced.bInterlacedScreen) {
     bScrDoubleY = TRUE;
   }
 }
@@ -825,7 +825,7 @@ void Screen_SetFullScreenConvertDetails(void)
   pHBLPalettes = pFrameBuffer->HBLPalettes;
 
   /* Is non-interlaced? May need to double up on Y */
-  if (!ConfigureParams.Screen.Advanced.bInterlacedFullScreen) {
+  if (!ConfigureParams.Screen.Advanced.bInterlacedScreen) {
     bScrDoubleY = TRUE;
   }
 }

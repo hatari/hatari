@@ -1,11 +1,12 @@
 /*
-  Hatari
+  Hatari - main.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   Here we process a key press and the remapping of the scancodes.
 */
-
-#include <stdio.h>
-#include <SDL_keysym.h>           /* Needed for SDLK_LAST */
+static char rcsid[] = "Hatari $Id: keymap.c,v 1.8 2003-03-30 11:32:48 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -22,7 +23,7 @@
 
 /*-----------------------------------------------------------------------*/
 /*
-  Remap table of Windows keys to ST Scan codes, -ve is invalid key(ie doesn't occur on ST)
+  Remap table of PC keys to ST scan codes, -ve is invalid key (ie doesn't occur on ST)
 
   PC Keyboard:-
 
@@ -95,11 +96,231 @@ Ins   Del
 */
 
 
-/* SDL Key to ST scan code map table */
-char Default_KeyToSTScanCode[SDLK_LAST];
+/* SDL symbolic key to ST scan code mapping table */
+static const char SymbolicKeyToSTScanCode[SDLK_LAST] =
+{
+/* ST Code,  PC Code */
+  -1,    /* 0 */
+  -1,    /* 1 */
+  -1,    /* 2 */
+  -1,    /* 3 */
+  -1,    /* 4 */
+  -1,    /* 5 */
+  -1,    /* 6 */
+  -1,    /* 7 */
+  0x0E,  /* SDLK_BACKSPACE=8 */
+  0x0F,  /* SDLK_TAB=9 */
+  -1,    /* 10 */
+  -1,    /* 11 */
+  0x47,  /* SDLK_CLEAR = 12 */
+  0x1C,  /* SDLK_RETURN = 13 */
+  -1,    /* 14 */
+  -1,    /* 15 */
+  -1,    /* 16 */
+  -1,    /* 17 */
+  -1,    /* 18 */
+  -1,    /* SDLK_PAUSE = 19 */
+  -1,    /* 20 */
+  -1,    /* 21 */
+  -1,    /* 22 */
+  -1,    /* 23 */
+  -1,    /* 24 */
+  -1,    /* 25 */
+  -1,    /* 26 */
+  0x01,  /* SDLK_ESCAPE = 27 */
+  -1,    /* 28 */
+  -1,    /* 29 */
+  -1,    /* 30 */
+  -1,    /* 31 */
+  0x39,  /* SDLK_SPACE = 32 */
+  -1,    /* SDLK_EXCLAIM = 33 */
+  -1,    /* SDLK_QUOTEDBL = 34 */
+  0x29,  /* SDLK_HASH = 35 */
+  -1,    /* SDLK_DOLLAR = 36 */
+  -1,    /* 37 */
+  -1,    /* SDLK_AMPERSAND = 38 */
+  -1,    /* SDLK_QUOTE = 39 */
+  0x63,  /* SDLK_LEFTPAREN = 40 */
+  0x64,  /* SDLK_RIGHTPAREN = 41 */
+  -1,    /* SDLK_ASTERISK = 42 */
+  0x1B,  /* SDLK_PLUS = 43 */
+  0x33,  /* SDLK_COMMA = 44 */
+  0x35,  /* SDLK_MINUS = 45 */
+  0x34,  /* SDLK_PERIOD = 46 */
+  -1,    /* SDLK_SLASH = 47 */
+  0x0B,  /* SDLK_0 = 48 */
+  0x02,  /* SDLK_1 = 49 */
+  0x03,  /* SDLK_2 = 50 */
+  0x04,  /* SDLK_3 = 51 */
+  0x05,  /* SDLK_4 = 52 */
+  0x06,  /* SDLK_5 = 53 */
+  0x07,  /* SDLK_6 = 54 */
+  0x08,  /* SDLK_7 = 55 */
+  0x09,  /* SDLK_8 = 56 */
+  0x0A,  /* SDLK_9 = 57 */
+  -1,    /* SDLK_COLON = 58 */
+  -1,    /* SDLK_SEMICOLON = 59 */
+  0x60,  /* SDLK_LESS = 60 */
+  -1,    /* SDLK_EQUALS = 61 */
+  -1,    /* SDLK_GREATER  = 62 */
+  -1,    /* SDLK_QUESTION = 63 */
+  -1,    /* SDLK_AT = 64 */
+  -1,    /* 65 */  /* Skip uppercase letters */
+  -1,    /* 66 */
+  -1,    /* 67 */
+  -1,    /* 68 */
+  -1,    /* 69 */
+  -1,    /* 70 */
+  -1,    /* 71 */
+  -1,    /* 72 */
+  -1,    /* 73 */
+  -1,    /* 74 */
+  -1,    /* 75 */
+  -1,    /* 76 */
+  -1,    /* 77 */
+  -1,    /* 78 */
+  -1,    /* 79 */
+  -1,    /* 80 */
+  -1,    /* 81 */
+  -1,    /* 82 */
+  -1,    /* 83 */
+  -1,    /* 84 */
+  -1,    /* 85 */
+  -1,    /* 86 */
+  -1,    /* 87 */
+  -1,    /* 88 */
+  -1,    /* 89 */
+  -1,    /* 90 */
+  -1,    /* SDLK_LEFTBRACKET = 91 */
+  -1,    /* SDLK_BACKSLASH = 92 */
+  -1,    /* SDLK_RIGHTBRACKET = 93 */
+  -1,    /* SDLK_CARET = 94 */
+  -1,    /* SDLK_UNDERSCORE = 95 */
+  -1,    /* SDLK_BACKQUOTE = 96 */
+  0x1E,  /* SDLK_a = 97 */
+  0x30,  /* SDLK_b = 98 */
+  0x2E,  /* SDLK_c = 99 */
+  0x20,  /* SDLK_d = 100 */
+  0x12,  /* SDLK_e = 101 */
+  0x21,  /* SDLK_f = 102 */
+  0x22,  /* SDLK_g = 103 */
+  0x23,  /* SDLK_h = 104 */
+  0x17,  /* SDLK_i = 105 */
+  0x24,  /* SDLK_j = 106 */
+  0x25,  /* SDLK_k = 107 */
+  0x26,  /* SDLK_l = 108 */
+  0x32,  /* SDLK_m = 109 */
+  0x31,  /* SDLK_n = 110 */
+  0x18,  /* SDLK_o = 111 */
+  0x19,  /* SDLK_p = 112 */
+  0x10,  /* SDLK_q = 113 */
+  0x13,  /* SDLK_r = 114 */
+  0x1F,  /* SDLK_s = 115 */
+  0x14,  /* SDLK_t = 116 */
+  0x16,  /* SDLK_u = 117 */
+  0x2F,  /* SDLK_v = 118 */
+  0x11,  /* SDLK_w = 119 */
+  0x2D,  /* SDLK_x = 120 */
+  0x15,  /* SDLK_y = 121 */
+  0x2C,  /* SDLK_z = 122 */
+  -1,    /* 123 */
+  -1,    /* 124 */
+  -1,    /* 125 */
+  -1,    /* 126 */
+  0x53,  /* SDLK_DELETE = 127 */
+  /* End of ASCII mapped keysyms */
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 128-143*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 144-159*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 160-175*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 176-191*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 192-207*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 208-223*/
+  -1, -1, -1, -1, 0x28, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 224-239*/
+  -1, -1, -1, -1, -1, -1, 0x27, -1, -1, -1, -1, -1, 0x1A, -1, -1, -1, /* 240-255*/
+  /* Numeric keypad: */
+  0x70,    /* SDLK_KP0 = 256 */
+  0x6D,    /* SDLK_KP1 = 257 */
+  0x6E,    /* SDLK_KP2 = 258 */
+  0x6F,    /* SDLK_KP3 = 259 */
+  0x6A,    /* SDLK_KP4 = 260 */
+  0x6B,    /* SDLK_KP5 = 261 */
+  0x6C,    /* SDLK_KP6 = 262 */
+  0x67,    /* SDLK_KP7 = 263 */
+  0x68,    /* SDLK_KP8 = 264 */
+  0x69,    /* SDLK_KP9 = 265 */
+  0x71,    /* SDLK_KP_PERIOD = 266 */
+  0x65,    /* SDLK_KP_DIVIDE = 267 */
+  0x66,    /* SDLK_KP_MULTIPLY = 268 */
+  0x4A,    /* SDLK_KP_MINUS = 269 */
+  0x4E,    /* SDLK_KP_PLUS = 270 */
+  0x72,    /* SDLK_KP_ENTER = 271 */
+  -1,      /* SDLK_KP_EQUALS = 272 */
+  /* Arrows + Home/End pad */
+  0x48,    /* SDLK_UP = 273 */
+  0x50,    /* SDLK_DOWN = 274 */
+  0x4D,    /* SDLK_RIGHT = 275 */
+  0x4B,    /* SDLK_LEFT = 276 */
+  0x52,    /* SDLK_INSERT = 277 */
+  0x47,    /* SDLK_HOME = 278 */
+  0x61,    /* SDLK_END = 279 */
+  0x63,    /* SDLK_PAGEUP = 280 */
+  0x64,    /* SDLK_PAGEDOWN = 281 */
+  /* Function keys */
+  0x3B,    /* SDLK_F1 = 282 */
+  0x3C,    /* SDLK_F2 = 283 */
+  0x3D,    /* SDLK_F3 = 284 */
+  0x3E,    /* SDLK_F4 = 285 */
+  0x3F,    /* SDLK_F5 = 286 */
+  0x40,    /* SDLK_F6 = 287 */
+  0x41,    /* SDLK_F7 = 288 */
+  0x42,    /* SDLK_F8 = 289 */
+  0x43,    /* SDLK_F9 = 290 */
+  0x44,    /* SDLK_F10 = 291 */
+  -1,      /* SDLK_F11 = 292 */
+  -1,      /* SDLK_F12 = 293 */
+  -1,      /* SDLK_F13 = 294 */
+  -1,      /* SDLK_F14 = 295 */
+  -1,      /* SDLK_F15 = 296 */
+  -1,      /* 297 */
+  -1,      /* 298 */
+  -1,      /* 299 */
+  /* Key state modifier keys */
+  -1,      /* SDLK_NUMLOCK = 300 */
+  0x3A,    /* SDLK_CAPSLOCK = 301 */
+  0x61,    /* SDLK_SCROLLOCK = 302 */
+  0x36,    /* SDLK_RSHIFT = 303 */
+  0x2A,    /* SDLK_LSHIFT = 304 */
+  0x1D,    /* SDLK_RCTRL = 305 */
+  0x1D,    /* SDLK_LCTRL = 306 */
+  0x38,    /* SDLK_RALT = 307 */
+  0x38,    /* SDLK_LALT = 308 */
+  -1,      /* SDLK_RMETA = 309 */
+  -1,      /* SDLK_LMETA = 310 */
+  -1,      /* SDLK_LSUPER = 311 */
+  -1,      /* SDLK_RSUPER = 312 */
+  -1,      /* SDLK_MODE = 313 */     /* "Alt Gr" key */
+  -1,      /* SDLK_COMPOSE = 314 */
+  /* Miscellaneous function keys */
+  0x62,    /* SDLK_HELP = 315 */
+  0x62,    /* SDLK_PRINT = 316 */
+  -1,      /* SDLK_SYSREQ = 317 */
+  -1,      /* SDLK_BREAK = 318 */
+  -1,      /* SDLK_MENU = 319 */
+  -1,      /* SDLK_POWER = 320 */
+  -1,      /* SDLK_EURO = 321 */
+  0x61     /* SDLK_UNDO = 322 */
+};
+
+/* Table for loaded keys: */
+static char LoadedKeyToSTScanCode[SDLK_LAST];
+
+/* This table is used to translate a symbolic keycode to the (SDL) scancode */
+static Uint8 SdlSymToSdlScan[SDLK_LAST];
+
 
 /* List of ST scan codes to NOT de-bounce when running in maximum speed */
-char DebounceExtendedKeys[] = {
+static char DebounceExtendedKeys[] =
+{
   0x1d,  /* CTRL */
   0x2a,  /* Left SHIFT */
   0x01,  /* ESC */
@@ -108,81 +329,262 @@ char DebounceExtendedKeys[] = {
   0      /* term */
 };
 
-char Loaded_KeyToSTScanCode[SDLK_LAST];
-BOOL bRemapKeyLoaded=FALSE;
+BOOL bRemapKeyLoaded = FALSE;           /* Did we successfully load a remap file? */
+
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Initialization.
+*/
+void Keymap_Init(void)
+{
+  Memory_Clear(SdlSymToSdlScan, sizeof(SdlSymToSdlScan));
+  memcpy(LoadedKeyToSTScanCode, SymbolicKeyToSTScanCode, SDLK_LAST);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Heuristic analysis to find out the obscure scancode offset.
+  This clever code has been taken from the emulator Aranym. (cheers!)
+*/
+static int Keymap_FindScanCodeOffset(SDL_keysym* keysym)
+{
+  int offset = -1;    /* uninitialized scancode offset */
+  int scanPC = keysym->scancode;
+
+  if(scanPC == 0)  return -1;  /* Ignore illegal scancode */
+
+  switch(keysym->sym)
+  {
+    case SDLK_ESCAPE:  offset = scanPC - 0x01; break;
+    case SDLK_1:  offset = scanPC - 0x02; break;
+    case SDLK_2:  offset = scanPC - 0x03; break;
+    case SDLK_3:  offset = scanPC - 0x04; break;
+    case SDLK_4:  offset = scanPC - 0x05; break;
+    case SDLK_5:  offset = scanPC - 0x06; break;
+    case SDLK_6:  offset = scanPC - 0x07; break;
+    case SDLK_7:  offset = scanPC - 0x08; break;
+    case SDLK_8:  offset = scanPC - 0x09; break;
+    case SDLK_9:  offset = scanPC - 0x0a; break;
+    case SDLK_0:  offset = scanPC - 0x0b; break;
+    case SDLK_BACKSPACE:  offset = scanPC - 0x0e; break;
+    case SDLK_TAB:  offset = scanPC - 0x0f; break;
+    case SDLK_RETURN:  offset = scanPC - 0x1c; break;
+    case SDLK_SPACE:  offset = scanPC - 0x39; break;
+    case SDLK_q:  offset = scanPC - 0x10; break;
+    case SDLK_w:  offset = scanPC - 0x11; break;
+    case SDLK_e:  offset = scanPC - 0x12; break;
+    case SDLK_r:  offset = scanPC - 0x13; break;
+    case SDLK_t:  offset = scanPC - 0x14; break;
+    case SDLK_y:  offset = scanPC - 0x15; break;
+    case SDLK_u:  offset = scanPC - 0x16; break;
+    case SDLK_i:  offset = scanPC - 0x17; break;
+    case SDLK_o:  offset = scanPC - 0x18; break;
+    case SDLK_p:  offset = scanPC - 0x19; break;
+    case SDLK_a:  offset = scanPC - 0x1e; break;
+    case SDLK_s:  offset = scanPC - 0x1f; break;
+    case SDLK_d:  offset = scanPC - 0x20; break;
+    case SDLK_f:  offset = scanPC - 0x21; break;
+    case SDLK_g:  offset = scanPC - 0x22; break;
+    case SDLK_h:  offset = scanPC - 0x23; break;
+    case SDLK_j:  offset = scanPC - 0x24; break;
+    case SDLK_k:  offset = scanPC - 0x25; break;
+    case SDLK_l:  offset = scanPC - 0x26; break;
+    case SDLK_z:  offset = scanPC - 0x2c; break;
+    case SDLK_x:  offset = scanPC - 0x2d; break;
+    case SDLK_c:  offset = scanPC - 0x2e; break;
+    case SDLK_v:  offset = scanPC - 0x2f; break;
+    case SDLK_b:  offset = scanPC - 0x30; break;
+    case SDLK_n:  offset = scanPC - 0x31; break;
+    case SDLK_m:  offset = scanPC - 0x32; break;
+    case SDLK_CAPSLOCK:  offset = scanPC - 0x3a; break;
+    case SDLK_LSHIFT:  offset = scanPC - 0x2a; break;
+    case SDLK_LCTRL:  offset = scanPC - 0x1d; break;
+    case SDLK_LALT:  offset = scanPC - 0x38; break;
+    case SDLK_F1:  offset = scanPC - 0x3b; break;
+    case SDLK_F2:  offset = scanPC - 0x3c; break;
+    case SDLK_F3:  offset = scanPC - 0x3d; break;
+    case SDLK_F4:  offset = scanPC - 0x3e; break;
+    case SDLK_F5:  offset = scanPC - 0x3f; break;
+    case SDLK_F6:  offset = scanPC - 0x40; break;
+    case SDLK_F7:  offset = scanPC - 0x41; break;
+    case SDLK_F8:  offset = scanPC - 0x42; break;
+    case SDLK_F9:  offset = scanPC - 0x43; break;
+    case SDLK_F10:  offset = scanPC - 0x44; break;
+    default:  break;
+  }
+
+  if (offset != -1)
+  {
+    fprintf(stderr, "Detected scancode offset = %d (key: '%s' with scancode $%02x)\n",
+            offset, SDL_GetKeyName(keysym->sym), scanPC);
+  }
+
+  return offset;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Map PC scancode to ST scancode.
+  This code was heavily inspired by the emulator Aranym. (cheers!)
+*/
+static char Keymap_PcToStScanCode(SDL_keysym* keysym)
+{
+  static int offset = -1;    /* uninitialized scancode offset */
+
+  switch(keysym->sym)
+  {
+    /* Numeric Pad */
+    /* note that the numbers are handled in Keymap_GetKeyPadScanCode()! */
+    case SDLK_KP_DIVIDE:   return 0x65;  /* Numpad / */
+    case SDLK_KP_MULTIPLY: return 0x66;  /* NumPad * */
+    case SDLK_KP_MINUS:    return 0x4a;  /* NumPad - */
+    case SDLK_KP_PLUS:     return 0x4e;  /* NumPad + */
+    case SDLK_KP_PERIOD:   return 0x71;  /* NumPad . */
+    case SDLK_KP_ENTER:    return 0x72;  /* NumPad Enter */
+
+    /* Special Keys */
+    /*case SDLK_F11:  return 0x62;*/  /* F11 => Help */
+    /*case SDLK_F12:  return 0x61;*/  /* F12 => Undo */
+    case SDLK_HOME:   return 0x47;  /* Home */
+    case SDLK_END:    return 0x60;  /* End => "<>" on German Atari kbd */
+    case SDLK_UP:     return 0x48;  /* Arrow Up */
+    case SDLK_LEFT:   return 0x4b;  /* Arrow Left */
+    case SDLK_RIGHT:  return 0x4d;  /* Arrow Right */
+    case SDLK_DOWN:   return 0x50;  /* Arrow Down */
+    case SDLK_INSERT: return 0x52;  /* Insert */
+    case SDLK_DELETE: return 0x53;  /* Delete */
+
+    /* Map Right Alt/Alt Gr/Control to the Atari keys */
+    case SDLK_RCTRL:  return 0x1d;  /* Control */
+    case SDLK_RALT:   return 0x38;  /* Alternate */
+
+    default:
+    {
+      /* Process remaining keys: assume that it's PC101 keyboard
+       * and that it is compatible with Atari ST keyboard (basically
+       * same scancodes but on different platforms with different
+       * base offset (framebuffer = 0, X11 = 8).
+       * Try to detect the offset using a little bit of black magic.
+       * If offset is known then simply pass the scancode. */
+      int scanPC = keysym->scancode;
+      if (offset == -1)
+      {
+        offset = Keymap_FindScanCodeOffset(keysym);
+      }
+
+      if (offset >= 0)
+      {
+        /* offset is defined so pass the scancode directly */
+        return (scanPC - offset);
+      }
+      else
+      {
+        fprintf(stderr, "Unknown key: scancode = %d ($%02x), keycode = '%s' ($%02x)\n",
+                scanPC, scanPC, SDL_GetKeyName(keysym->sym), keysym->sym);
+        return -1;  /* unknown scancode */
+      }
+    }
+  }
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Remap a keypad key to ST scan code. We use a separate function for this
+  so that we can easily toggle between number and cursor mode with the
+  numlock key.
+*/
+static char Keymap_GetKeyPadScanCode(SDL_keysym* pKeySym)
+{
+  if(SDL_GetModState() & KMOD_NUM)
+  {
+    switch(pKeySym->sym)
+    {
+      case SDLK_KP0:  return 0x70;  /* NumPad 0 */
+      case SDLK_KP1:  return 0x6d;  /* NumPad 1 */
+      case SDLK_KP2:  return 0x6e;  /* NumPad 2 */
+      case SDLK_KP3:  return 0x6f;  /* NumPad 3 */
+      case SDLK_KP4:  return 0x6a;  /* NumPad 4 */
+      case SDLK_KP5:  return 0x6b;  /* NumPad 5 */
+      case SDLK_KP6:  return 0x6c;  /* NumPad 6 */
+      case SDLK_KP7:  return 0x67;  /* NumPad 7 */
+      case SDLK_KP8:  return 0x68;  /* NumPad 8 */
+      case SDLK_KP9:  return 0x69;  /* NumPad 9 */
+      default:  break;
+    }
+  }
+  else
+  {
+    switch(pKeySym->sym)
+    {
+      case SDLK_KP0:  return 0x70;  /* NumPad 0 */
+      case SDLK_KP1:  return 0x6d;  /* NumPad 1 */
+      case SDLK_KP2:  return 0x50;  /* Cursor down */
+      case SDLK_KP3:  return 0x6f;  /* NumPad 3 */
+      case SDLK_KP4:  return 0x4b;  /* Cursor left */
+      case SDLK_KP5:  return 0x50;  /* Cursor down (again?) */
+      case SDLK_KP6:  return 0x4d;  /* Cursor right */
+      case SDLK_KP7:  return 0x52;  /* Insert - good for Dungeon Master */
+      case SDLK_KP8:  return 0x48;  /* Cursor up */
+      case SDLK_KP9:  return 0x47;  /* Home - again for Dungeon Master */
+      default:  break;
+    }
+  }
+
+  return -1;
+}
 
 
 /*-----------------------------------------------------------------------*/
 /*
   Remap SDL Key to ST Scan code
 */
-char Keymap_RemapKeyToSTScanCode(unsigned int Key)
+char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
 {
-  if( Key >= SDLK_LAST )  return -1;  /* Avoid illegal keys */
+  static BOOL bScanCodesInitialized = FALSE;
+
+  if(pKeySym->sym >= SDLK_LAST)  return -1;  /* Avoid illegal keys */
+
+  /* Check for keypad first so we can handle numlock */
+  if(ConfigureParams.Keyboard.nKeymapType != KEYMAP_LOADED)
+  {
+    if(pKeySym->sym >= SDLK_KP0 && pKeySym->sym <= SDLK_KP9)
+    {
+      return Keymap_GetKeyPadScanCode(pKeySym);
+    }
+  }
+
+  /* Remap from PC scancodes? */
+  if(ConfigureParams.Keyboard.nKeymapType == KEYMAP_SCANCODE)
+  {
+    /* We sometimes enter here with an illegal (=0) scancode, so we keep
+     * track of the right scancodes in a table and then use a value from there.
+     */
+    if(pKeySym->scancode != 0)
+    {
+      SdlSymToSdlScan[pKeySym->sym] = pKeySym->scancode;
+    }
+    else
+    {
+      pKeySym->scancode = SdlSymToSdlScan[pKeySym->sym];
+      if(pKeySym->scancode == 0)
+        fprintf(stderr, "Warning: Key scancode is 0!\n");
+    }
+
+    return Keymap_PcToStScanCode(pKeySym);
+  }
+
   /* Use default or loaded? */
   if (bRemapKeyLoaded)
-    return(Loaded_KeyToSTScanCode[Key]);
-  else {
-    char st_key = (Default_KeyToSTScanCode[Key]);
-    //char st_key = (Key >= 9 ? Key-8 : Key);
-    // fprintf(stderr,"returned pc=%d st=%d\n",Key,st_key);
-    return st_key;
-  }
+    return LoadedKeyToSTScanCode[pKeySym->sym];
+  else
+    return SymbolicKeyToSTScanCode[pKeySym->sym];
 }
 
-static void numlock(int set) {
-  int n;
-  if (set & 0x1000) {
-    for (n=79; n<=81; n++) // 7..9
-      Default_KeyToSTScanCode[n] = n+24;
-    for (n=83; n<=85; n++) // 4..6
-      Default_KeyToSTScanCode[n] = n+23;
-    for (n=87; n<=89; n++) // 1..3
-      Default_KeyToSTScanCode[n] = n+22;
-  } else {
-    // arrow keys
-    for (n=79; n<=81; n++) // 7..9
-      Default_KeyToSTScanCode[n] = n-8;
-    for (n=83; n<=85; n++) // 4..6
-      Default_KeyToSTScanCode[n] = n-8;
-    for (n=87; n<=89; n++) // 1..3
-      Default_KeyToSTScanCode[n] = n-8;
-
-    /* Dungeon master patch ! To be able to move with one hand
-       on the numeric pad, we need 7 to send insert and 9 to send clr/home */
-    Default_KeyToSTScanCode[79] = 82; // insert
-    Default_KeyToSTScanCode[81] = 71; // home
-  }
-}
-
-void Keymap_FromScancodes() {
-  int n;
-  // The st keyboard looks very much like the pc keyboard...
-  for (n=9; n<=SDLK_LAST; n++)
-    Default_KeyToSTScanCode[n] = n-8;
-
-  // keypad
-  numlock(SDL_GetModState());
-
-  Default_KeyToSTScanCode[94] = 96; // <>
-  Default_KeyToSTScanCode[100] = 75; // <-
-  Default_KeyToSTScanCode[104] = 80; // bas
-  Default_KeyToSTScanCode[102] = 77; // ->
-  Default_KeyToSTScanCode[98] = 72; // haut
-
-  Default_KeyToSTScanCode[63] = 102; // *
-  Default_KeyToSTScanCode[112] = 101; // /
-  Default_KeyToSTScanCode[108] = 0x72; // enter (28 is return it should be fixed later...)
-
-  Default_KeyToSTScanCode[111] = 0x62; // help key (print screen)
-  Default_KeyToSTScanCode[110] = 0x61; // undo key (pause)
-  Default_KeyToSTScanCode[106] = 82; // insert
-  Default_KeyToSTScanCode[107] = 83; // suppr
-  Default_KeyToSTScanCode[97] = 71; // home
-  Default_KeyToSTScanCode[103] = 79; // end (no end key on the st ?!!!)
-  Default_KeyToSTScanCode[99] = 73; // pg up (no equivalent)
-  Default_KeyToSTScanCode[105] = 81; // pg down
-}
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -196,19 +598,23 @@ void Keymap_LoadRemapFile(char *pszFileName)
 
   /* Default to not loaded */
   bRemapKeyLoaded = FALSE;
-  Memory_Set(Loaded_KeyToSTScanCode,-1,sizeof(Loaded_KeyToSTScanCode));
+  Memory_Set(LoadedKeyToSTScanCode, -1, sizeof(LoadedKeyToSTScanCode));
 
   /* Attempt to load file */
-  if (strlen(pszFileName)>0) {
+  if (strlen(pszFileName)>0)
+  {
     /* Open file */
     in = fopen(pszFileName, "r");
-    if (in) {
-      while(!feof(in)) {
+    if (in)
+    {
+      while(!feof(in))
+      {
         /* Read line from file */
         fgets(szString, 1024, in);
         /* Remove white-space from start of line */
         Misc_RemoveWhiteSpace(szString,sizeof(szString));
-        if (strlen(szString)>0) {
+        if (strlen(szString)>0)
+        {
           /* Is a comment? */
           if ( (szString[0]==';') || (szString[0]=='#') )
             continue;
@@ -216,7 +622,7 @@ void Keymap_LoadRemapFile(char *pszFileName)
           sscanf(szString,"%d,%d",&STScanCode,&PCScanCode);
           /* Store into remap table, check both value within range */
           if ( (PCScanCode>=0) && (PCScanCode<SDLK_LAST) && (STScanCode>=0) && (STScanCode<256) )
-            Loaded_KeyToSTScanCode[PCScanCode] = STScanCode;
+            LoadedKeyToSTScanCode[PCScanCode] = STScanCode;
         }
       }
       /* Loaded OK */
@@ -226,7 +632,6 @@ void Keymap_LoadRemapFile(char *pszFileName)
     }
   }
 }
-
 
 
 /*-----------------------------------------------------------------------*/
@@ -239,9 +644,11 @@ BOOL Keymap_DebounceSTKey(char STScanCode)
   int i=0;
 
   /* Are we in maximum speed, and have disabled key repeat? */
-  if ( (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MIN) && (ConfigureParams.Keyboard.bDisableKeyRepeat) ) {
+  if ( (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MIN) && (ConfigureParams.Keyboard.bDisableKeyRepeat) )
+  {
     /* We should de-bounce all non extended keys, eg leave ALT,SHIFT,CTRL etc... held */
-    while (DebounceExtendedKeys[i]) {
+    while (DebounceExtendedKeys[i])
+    {
       if (STScanCode==DebounceExtendedKeys[i])
         return(FALSE);
       i++;
@@ -255,20 +662,6 @@ BOOL Keymap_DebounceSTKey(char STScanCode)
   return(FALSE);
 }
 
-void Keymap_KeyUp_from_scancode(int scan)
-{
-  /* Release key (only if was pressed) */
-  // special version for debug
-  int STScanCode = Keymap_RemapKeyToSTScanCode(scan);
-  if (STScanCode != (char)-1)
-  {
-    if (Keyboard.KeyStates[scan]) {
-      IKBD_PressSTKey(STScanCode,FALSE);
-      Keyboard.KeyStates[scan] = FALSE;
-    }
-  }
-}
-
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -277,26 +670,36 @@ void Keymap_KeyUp_from_scancode(int scan)
 */
 void Keymap_DebounceAllKeys(void)
 {
-  unsigned int Key;
+  unsigned int key;
   char STScanCode;
+  BOOL bUseScanCodes;
+  SDL_keysym tmpKeySym;
 
-  /* Are we in maximum speed, and have disabled key repeat? */
-  if ( (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MIN) && (ConfigureParams.Keyboard.bDisableKeyRepeat) )
+  /* Return if we aren't in maximum speed or have not disabled key repeat */
+  if((ConfigureParams.Configure.nMinMaxSpeed == MINMAXSPEED_MIN)
+     || (!ConfigureParams.Keyboard.bDisableKeyRepeat))
   {
-    /* Now run through each PC key looking for ones held down */
-    for(Key=0; Key<SDLK_LAST; Key++)
+     return;
+  }
+
+  tmpKeySym.mod = 0;
+
+  /* Now run through each PC key looking for ones held down */
+  for(key = 0; key < SDLK_LAST; key++)
+  {
+    /* Is key held? */
+    if(Keyboard.KeyStates[key])
     {
-      /* Is key held? */
-      if (Keyboard.KeyStates[Key])
+      tmpKeySym.sym = key;
+      tmpKeySym.scancode = 0;
+
+      /* Get scan code */
+      STScanCode = Keymap_RemapKeyToSTScanCode(&tmpKeySym);
+      if(STScanCode != (char)-1)
       {
-        /* Get scan code */
-        STScanCode = Keymap_RemapKeyToSTScanCode(Key);
-        if (STScanCode != (char)-1)
-        {
-          /* Does this require de-bouncing? */
-          if (Keymap_DebounceSTKey(STScanCode))
-            Keymap_KeyUp_from_scancode(Key);
-        }
+        /* Does this require de-bouncing? */
+        if(Keymap_DebounceSTKey(STScanCode))
+          Keymap_KeyUp(&tmpKeySym);
       }
     }
   }
@@ -308,59 +711,69 @@ void Keymap_DebounceAllKeys(void)
 /*
   User press key down
 */
-void Keymap_KeyDown( SDL_keysym *sdlkey )
+void Keymap_KeyDown(SDL_keysym *sdlkey)
 {
   BOOL bPreviousKeyState;
   char STScanCode;
-  unsigned int Key;
-  int sdlmod = sdlkey->mod;
-  int scan = sdlkey->scancode;
+  int symkey = sdlkey->sym;
+  int scankey = sdlkey->scancode;
+  int modkey = sdlkey->mod;
 
-  Key = sdlkey->sym;
+  /*fprintf(stderr, "keydown: sym=%i scan=%i mod=$%x\n",symkey, scankey, modkey);*/
 
   /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
-  if ( (ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
-            && !(sdlmod&(KMOD_LSHIFT|KMOD_RSHIFT)) )
+  if((ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
+     && !(modkey&(KMOD_LSHIFT|KMOD_RSHIFT)))
   {
-    if( Key==SDLK_UP )         { cursorJoyEmu |= 1; return; }
-    else if( Key==SDLK_DOWN )  { cursorJoyEmu |= 2; return; }
-    else if( Key==SDLK_LEFT )  { cursorJoyEmu |= 4; return; }
-    else if( Key==SDLK_RIGHT ) { cursorJoyEmu |= 8; return; }
-    else if( Key==SDLK_RCTRL || Key==SDLK_KP0 )  { cursorJoyEmu |= 128; return; }
+    if(symkey == SDLK_UP)
+      { cursorJoyEmu |= 1; return; }
+    else if(symkey == SDLK_DOWN)
+      { cursorJoyEmu |= 2; return; }
+    else if(symkey == SDLK_LEFT)
+      { cursorJoyEmu |= 4; return; }
+    else if(symkey == SDLK_RIGHT)
+      { cursorJoyEmu |= 8; return; }
+    else if(symkey == SDLK_RCTRL || symkey == SDLK_KP0 || symkey == SDLK_LMETA)
+      { cursorJoyEmu |= 128; return; }
   }
-  if (scan == 77) { // numlock
-    numlock(sdlmod);
+
+  /* Handle special keys */
+  if(symkey == SDLK_MODE || symkey == SDLK_LMETA || symkey == SDLK_NUMLOCK)
+  {
+    /* Ignore modifier keys that aren't passed to the ST */
     return;
-  } else if (scan == 113) { // alt-gr
+  }
+  else if(symkey == SDLK_PAUSE && bEnableDebug)
+  {
+    /* Call the debugger */
+    if(bInFullScreen)  Screen_ReturnFromFullScreen();
+    DebugUI();
+    return;
+  }
+  else if(symkey == SDLK_F11 || symkey == SDLK_F12)
+  {
+    ShortCutKey.Key = symkey;
     return;
   }
 
   /* Set down */
-  bPreviousKeyState = Keyboard.KeyStates[scan];
-  Keyboard.KeyStates[scan] = TRUE;
-
-  /* Jump directly to the debugger? */
-  if( Key==SDLK_PAUSE && bEnableDebug)
-  {
-    if(bInFullScreen)  Screen_ReturnFromFullScreen();
-    DebugUI();
-  }
+  bPreviousKeyState = Keyboard.KeyStates[symkey];
+  Keyboard.KeyStates[symkey] = TRUE;
 
   /* If pressed short-cut key, retain keypress until safe to execute (start of VBL) */
-  if ( (sdlmod&KMOD_MODE) || (sdlmod==KMOD_LMETA)
-       ||(Key==SDLK_F11) || (Key==SDLK_F12) )
+  if((modkey&KMOD_MODE) || (modkey&KMOD_LMETA))
   {
-    ShortCutKey.Key = Key;
-    if( sdlmod&(KMOD_LCTRL|KMOD_RCTRL) )  ShortCutKey.bCtrlPressed = TRUE;
-    if( sdlmod&(KMOD_LSHIFT|KMOD_RSHIFT) )  ShortCutKey.bShiftPressed = TRUE;
+    ShortCutKey.Key = symkey;
+    if( modkey&(KMOD_LCTRL|KMOD_RCTRL) )  ShortCutKey.bCtrlPressed = TRUE;
+    if( modkey&(KMOD_LSHIFT|KMOD_RSHIFT) )  ShortCutKey.bShiftPressed = TRUE;
   }
   else
   {
-    STScanCode = Keymap_RemapKeyToSTScanCode(scan);
-    if (STScanCode > 0)
+    STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
+    if(STScanCode != (char)-1)
     {
-      if (!bPreviousKeyState || scan==66) // special case for caps lock
-        IKBD_PressSTKey(STScanCode,TRUE);
+      if(!bPreviousKeyState)
+        IKBD_PressSTKey(STScanCode, TRUE);
     }
   }
 }
@@ -373,38 +786,54 @@ void Keymap_KeyDown( SDL_keysym *sdlkey )
 void Keymap_KeyUp(SDL_keysym *sdlkey)
 {
   char STScanCode;
-  unsigned int Key;
-  int sdlmod = sdlkey->mod;
-  int scan = sdlkey->scancode;
-  Key = sdlkey->sym;
+  int symkey = sdlkey->sym;
+  int scankey = sdlkey->scancode;
+  int modkey = sdlkey->mod;
 
+  /*fprintf(stderr, "keyup: sym=%i scan=%i mod=$%x\n",symkey, scankey, modkey);*/
 
   /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
-  if ( (ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
-            && !(sdlmod&(KMOD_LSHIFT|KMOD_RSHIFT)) )
+  if((ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
+     && !(modkey&(KMOD_LSHIFT|KMOD_RSHIFT)))
   {
-    if( Key==SDLK_UP )         { cursorJoyEmu &= ~1; return; }
-    else if( Key==SDLK_DOWN )  { cursorJoyEmu &= ~2; return; }
-    else if( Key==SDLK_LEFT )  { cursorJoyEmu &= ~4; return; }
-    else if( Key==SDLK_RIGHT ) { cursorJoyEmu &= ~8; return; }
-    else if( Key==SDLK_RCTRL || Key==SDLK_KP0 )  { cursorJoyEmu &= ~128; return; }
+    if(symkey == SDLK_UP)
+      { cursorJoyEmu &= ~1; return; }
+    else if(symkey == SDLK_DOWN)
+      { cursorJoyEmu &= ~2; return; }
+    else if(symkey == SDLK_LEFT)
+      { cursorJoyEmu &= ~4; return; }
+    else if(symkey == SDLK_RIGHT)
+      { cursorJoyEmu &= ~8; return; }
+    else if(symkey == SDLK_RCTRL || symkey == SDLK_KP0 || symkey == SDLK_LMETA)
+      { cursorJoyEmu &= ~128; return; }
   }
-  if (scan == 77) { // numlock
-    numlock(sdlmod);
+
+  /* Handle special keys */
+  if(symkey == SDLK_MODE || symkey == SDLK_LMETA || symkey == SDLK_NUMLOCK)
+  {
+    /* Ignore modifier keys that aren't passed to the ST */
     return;
-  } else if (scan == 113) { // alt-gr
+  }
+  else if(symkey == SDLK_CAPSLOCK)
+  {
+    /* Simulate another capslock key press */
+    IKBD_PressSTKey(0x3A, TRUE);
+  }
+  else if(symkey == SDLK_F11 || symkey == SDLK_F12)
+  {
     return;
-  } else if (scan == 66) // caps lock
-    Keymap_KeyDown(sdlkey);
+  }
 
   /* Release key (only if was pressed) */
-  STScanCode = Keymap_RemapKeyToSTScanCode(scan);
-  if (STScanCode > 0)
+  if(Keyboard.KeyStates[symkey])
   {
-    if (Keyboard.KeyStates[scan]) {
+    STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
+    if(STScanCode != (char)-1)
+    {
       IKBD_PressSTKey(STScanCode,FALSE);
-      Keyboard.KeyStates[scan] = FALSE;
     }
   }
+
+  Keyboard.KeyStates[symkey] = FALSE;
 }
 

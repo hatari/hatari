@@ -41,8 +41,15 @@ enum {
 
 
 /* Dialog Keyboard */
+typedef enum {
+  KEYMAP_SYMBOLIC,  /* Use keymapping with symbolic (ASCII) key codes */
+  KEYMAP_SCANCODE,  /* Use keymapping with PC keyboard scancodes */
+  KEYMAP_LOADED     /* Use keymapping with a map configuration file */
+} KEYMAPTYPE;
+
 typedef struct {
   BOOL bDisableKeyRepeat;
+  KEYMAPTYPE nKeymapType;
   int ShortCuts[2][3];     /* F11+F12, NORMAL+SHIFT+CTRL */
   char szMappingFileName[MAX_FILENAME_LENGTH];
 } DLG_KEYBOARD;
@@ -138,7 +145,7 @@ enum {
 typedef struct {
   BOOL bDoubleSizeWindow;
   BOOL bAllowOverscan;
-  BOOL bInterlacedFullScreen;
+  BOOL bInterlacedScreen;
   BOOL bSyncToRetrace;
   BOOL bFrameSkip;
 } DLG_SCREEN_ADVANCED;

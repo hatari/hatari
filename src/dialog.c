@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.24 2003-03-27 11:24:46 emanne Exp $";
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.25 2003-03-30 11:32:48 thothy Exp $";
 
 #include <unistd.h>
 
@@ -347,12 +347,16 @@ SGOBJ joystickdlg[] =
 
 
 /* The keyboard dialog: */
+#define DLGKEY_SYMBOLIC 3
+#define DLGKEY_SCANCODE 4
 SGOBJ keyboarddlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 30,8, NULL },
-  { SGTEXT, 0, 0, 8,2, 14,1, "Keyboard setup" },
-  { SGTEXT, 0, 0, 2,4, 25,1, "Sorry, not yet supported." },
-  { SGBUTTON, 0, 0, 5,6, 20,1, "Back to main menu" },
+  { SGBOX, 0, 0, 0,0, 30,10, NULL },
+  { SGTEXT, 0, 0, 8,1, 14,1, "Keyboard setup" },
+  { SGTEXT, 0, 0, 2,3, 17,1, "Keyboard mapping:" },
+  { SGRADIOBUT, 0, 0, 4,5, 10,1, "Symbolic" },
+  { SGRADIOBUT, 0, 0, 18,5, 10,1, "Scancode" },
+  { SGBUTTON, 0, 0, 5,8, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -791,7 +795,7 @@ void Dialog_ScreenDlg(void)
   else
     screendlg[DLGSCRN_FULLSCRN].state &= ~SG_SELECTED;
 
-  if( DialogParams.Screen.Advanced.bInterlacedFullScreen )
+  if( DialogParams.Screen.Advanced.bInterlacedScreen )
     screendlg[DLGSCRN_INTERLACE].state |= SG_SELECTED;
   else
     screendlg[DLGSCRN_INTERLACE].state &= ~SG_SELECTED;
@@ -876,7 +880,7 @@ void Dialog_ScreenDlg(void)
 
   /* Read values from dialog */
   DialogParams.Screen.bFullScreen = (screendlg[DLGSCRN_FULLSCRN].state & SG_SELECTED);
-  DialogParams.Screen.Advanced.bInterlacedFullScreen = (screendlg[DLGSCRN_INTERLACE].state & SG_SELECTED);
+  DialogParams.Screen.Advanced.bInterlacedScreen = (screendlg[DLGSCRN_INTERLACE].state & SG_SELECTED);
   DialogParams.Screen.Advanced.bFrameSkip = (screendlg[DLGSCRN_FRAMESKIP].state & SG_SELECTED);
   DialogParams.Screen.Advanced.bAllowOverscan = (screendlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
   DialogParams.Screen.bUseHighRes = (screendlg[DLGSCRN_MONO].state & SG_SELECTED);
@@ -1104,6 +1108,40 @@ void Dialog_SystemDlg(void)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Show and process the "Keyboard" dialog.
+*/
+void Dialog_KeyboardDlg(void)
+{
+  int i;
+
+  SDLGui_CenterDlg(keyboarddlg);
+
+  /* Set up dialog from actual values: */
+  if(DialogParams.Keyboard.nKeymapType == KEYMAP_SYMBOLIC)
+  {
+    keyboarddlg[DLGKEY_SYMBOLIC].state |= SG_SELECTED;
+    keyboarddlg[DLGKEY_SCANCODE].state &= ~SG_SELECTED;
+  }
+  else
+  {
+    keyboarddlg[DLGKEY_SYMBOLIC].state &= ~SG_SELECTED;
+    keyboarddlg[DLGKEY_SCANCODE].state |= SG_SELECTED;
+  }
+
+  /* Show the dialog: */
+  SDLGui_DoDialog(keyboarddlg);
+
+  /* Read values from dialog: */
+  if(keyboarddlg[DLGKEY_SYMBOLIC].state & SG_SELECTED)
+    DialogParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
+  else
+    DialogParams.Keyboard.nKeymapType = KEYMAP_SCANCODE;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/*
   This functions sets up the actual font and then displays the main dialog.
 */
 int Dialog_MainDlg(BOOL *bReset)
@@ -1151,7 +1189,7 @@ int Dialog_MainDlg(BOOL *bReset)
         break;
       case MAINDLG_KEYBD:
         SDLGui_CenterDlg(keyboarddlg);
-        SDLGui_DoDialog(keyboarddlg);
+        Dialog_KeyboardDlg();
         break;
       case MAINDLG_DEVICES:
         SDLGui_CenterDlg(devicedlg);

@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.35 2003-03-28 07:14:10 emanne Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.36 2003-03-30 11:32:48 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -120,6 +120,7 @@ int Main_Message(char *lpText, char *lpCaption/*,unsigned int uType*/)
   return(Ret);
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
   Pause emulation, stop sound
@@ -149,21 +150,16 @@ void Main_UnPauseEmulation(void)
   }
 }
 
+
 /* ----------------------------------------------------------------------- */
 /*
-  Message handler  ( actually called from Video_InterruptHandler_VBL() )
+  Message handler
   Here we process the SDL events (keyboard, mouse, ...) and map it to
   Atari IKBD events.
 */
-#ifndef SDL_BUTTON_LEFT       /* Seems not to be defined in old SDL versions */
-#define SDL_BUTTON_LEFT    1
-#define SDL_BUTTON_MIDDLE  2
-#define SDL_BUTTON_RIGHT  3
-#endif
 void Main_EventHandler()
 {
   SDL_Event event;
-  static int last_scan;
 
   if( SDL_PollEvent(&event) )
    switch( event.type )
@@ -192,19 +188,11 @@ void Main_EventHandler()
        else if( event.button.button==SDL_BUTTON_RIGHT )
          Keyboard.bRButtonDown &= ~BUTTON_MOUSE;;
        break;
-     case SDL_KEYDOWN:
-       Keymap_KeyDown( &event.key.keysym );
-       last_scan = event.key.keysym.scancode;
+    case SDL_KEYDOWN:
+       Keymap_KeyDown(&event.key.keysym);
        break;
-     case SDL_KEYUP:
-       if (!event.key.keysym.scancode) {
-	 // fprintf(stderr,"null scan from event\n");
-	 event.key.keysym.scancode = last_scan;
-	 /* There seems to be a bug here. Sometimes you receive 0 as the scan
-	    code of the key up, but the sym field is correctly filled. It seems
-	    to always be the last pressed key, but I am not totally sure. */
-       }
-       Keymap_KeyUp( &event.key.keysym );
+    case SDL_KEYUP:
+       Keymap_KeyUp(&event.key.keysym);
        break;
    }
 }
@@ -405,7 +393,7 @@ void Main_Init(void)
   Floppy_Init();
   Init680x0();                  /* Init CPU emulation */
   Audio_Init();
-  Keymap_FromScancodes();
+  Keymap_Init();
 
   if(Reset_Cold())              /* Reset all systems, load TOS image */
   {
@@ -514,7 +502,5 @@ int main(int argc, char *argv[])
 
   return(0);
 }
-
-
 
 
