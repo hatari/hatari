@@ -11,10 +11,13 @@
   states single-sided, but the images have been created as double-sided. As sides are interleaved
   we need to read the image as if it was double-sided. Also note that 'NumBytesPerSector' is
   ALWAYS 512 bytes, even if the boot-sector states otherwise.
-  Also note that the (current)MAKEDISK utility does not set the correct boot sector structure
-  for a real ST(and also Hatari) to read it correctly. (PaCifiST will, however, read/write to
-  these images as it does not perform FDC access as on a real ST)
+  Also note that old versions of the MAKEDISK utility do not set the correct
+  boot sector structure for a real ST (and also Hatari) to read it correctly.
+  (PaCifiST will, however, read/write to these images as it does not perform
+  FDC access as on a real ST)
 */
+
+#include <SDL_endian.h>
 
 #include "main.h"
 #include "debug.h"
@@ -267,11 +270,13 @@ void Floppy_EjectBothDrives(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Double-check information read from boot-sector as this is sometimes found to be incorrect
-  The .ST image file should be divisible by the sector size & sectors per track
-  NOTE - Pass information from boot-sector to this function(if we can't decide we leave it alone)
+  Double-check information read from boot-sector as this is sometimes found to
+  be incorrect. The .ST image file should be divisible by the sector size and
+  sectors per track.
+  NOTE - Pass information from boot-sector to this function (if we can't
+  decide we leave it alone).
 */
-void Floppy_DoubleCheckFormat(long DiscSize,unsigned short int *pnSides,unsigned short int *pnSectorsPerTrack)
+static void Floppy_DoubleCheckFormat(long DiscSize, Uint16 *pnSides, Uint16 *pnSectorsPerTrack)
 {
   int nSectorsPerTrack;
   long TotalSectors;
@@ -288,7 +293,8 @@ void Floppy_DoubleCheckFormat(long DiscSize,unsigned short int *pnSides,unsigned
   nSectorsPerTrack = *pnSectorsPerTrack;
   if (nSectorsPerTrack==0)                      /* Check valid, default to 9 */
     nSectorsPerTrack = 9;
-  if ((TotalSectors%nSectorsPerTrack)!=0) {
+  if ((TotalSectors%nSectorsPerTrack)!=0)
+  {
     /* No, we have an invalid boot-sector - re-calculate from disc size */
     if ((TotalSectors%9)==0)                    /* Work in this order.... */
       *pnSectorsPerTrack = 9;
@@ -309,17 +315,20 @@ void Floppy_DoubleCheckFormat(long DiscSize,unsigned short int *pnSides,unsigned
   is not actually correct with the image - some demos/game discs have incorrect bytes in the
   boot sector and this attempts to find the correct values.
 */
-void Floppy_FindDiscDetails(unsigned char *pBuffer,int nImageBytes,unsigned short int *pnSectorsPerTrack,unsigned short int *pnSides)
+void Floppy_FindDiscDetails(unsigned char *pBuffer, int nImageBytes,
+                            unsigned short int *pnSectorsPerTrack, unsigned short int *pnSides)
 {
   unsigned char *pDiscBuffer;
-  unsigned short int nSectorsPerTrack=9,nSides=2;
+  Uint16 nSectorsPerTrack, nSides;
 
   pDiscBuffer = pBuffer;
   /* First do check to find number of sectors and bytes per sector */
-  nSectorsPerTrack = *(unsigned short int *)(pDiscBuffer+24);         /* SPT */
-  nSides = *(unsigned short int *)(pDiscBuffer+26);                   /* SIDE */
-  /* Now double-check info as boot-sector may contain incorrect information, eg 'Eat.st' demo, or single/double sides */
-  Floppy_DoubleCheckFormat(nImageBytes,&nSides,&nSectorsPerTrack);
+  nSectorsPerTrack = SDL_SwapLE16(*(Uint16 *)(pDiscBuffer+24));     /* SPT */
+  nSides = SDL_SwapLE16(*(Uint16 *)(pDiscBuffer+26));               /* SIDE */
+
+  /* Now double-check info as boot-sector may contain incorrect information,
+     eg 'Eat.st' demo, or single/double sides */
+  Floppy_DoubleCheckFormat(nImageBytes, &nSides, &nSectorsPerTrack);
 
   /* And set values */
   if (pnSectorsPerTrack)

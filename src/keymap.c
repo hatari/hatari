@@ -420,14 +420,18 @@ void Keymap_DebounceAllKeys(void)
   char STScanCode;
 
   /* Are we in maximum speed, and have disabled key repeat? */
-  if ( (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MIN) && (ConfigureParams.Keyboard.bDisableKeyRepeat) ) {
+  if ( (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MIN) && (ConfigureParams.Keyboard.bDisableKeyRepeat) )
+  {
     /* Now run through each PC key looking for ones held down */
-    for(Key=0; Key<SDLK_LAST; Key++) {
+    for(Key=0; Key<SDLK_LAST; Key++)
+    {
       /* Is key held? */
-      if (Keyboard.KeyStates[Key]) {
+      if (Keyboard.KeyStates[Key])
+      {
         /* Get scan code */
         STScanCode = Keymap_RemapKeyToSTScanCode(Key);
-        if (STScanCode!=-1) {
+        if (STScanCode != (char)-1)
+        {
           /* Does this require de-bouncing? */
           if (Keymap_DebounceSTKey(STScanCode))
             Keymap_KeyUp(Key, 0);
@@ -484,7 +488,7 @@ void Keymap_KeyDown( unsigned int sdlkey, unsigned int sdlmod )
   else
   {
     STScanCode = Keymap_RemapKeyToSTScanCode(Key);
-    if (STScanCode!=-1)
+    if (STScanCode != (char)-1)
     {
       if (!bPreviousKeyState)
         IKBD_PressSTKey(STScanCode,TRUE);
@@ -519,7 +523,7 @@ void Keymap_KeyUp(unsigned int sdlkey, unsigned int sdlmod)
 
   /* Release key (only if was pressed) */
   STScanCode = Keymap_RemapKeyToSTScanCode(Key);
-  if (STScanCode!=-1)
+  if (STScanCode != (char)-1)
   {
     if (Keyboard.KeyStates[Key])
       IKBD_PressSTKey(STScanCode,FALSE);
