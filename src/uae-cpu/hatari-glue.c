@@ -1,3 +1,14 @@
+/*
+  Hatari - hatari-glue.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  This file contains some code to glue the UAE CPU core to the rest of the
+  emulator and Hatari's "illegal" opcodes.
+*/
+static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.11 2003-02-27 10:47:23 thothy Exp $";
+
 
 #include <stdio.h>
 
@@ -133,11 +144,21 @@ unsigned long OpCode_OldGemDos(uae_u32 opcode)
 */
 unsigned long OpCode_GemDos(uae_u32 opcode)
 {
+  if(!bInitGemDOS)
+  {
+    /* Init on boot - see cartimg.c */
+    GemDOS_Boot();
 
-  if(!bInitGemDOS)     
-    GemDOS_Boot();      /* Init on boot - see cartimg.c */    
-  else 
+    /* We use this to get pointer to Line-A structure details
+     * (to fix for extended VDI res) */
+    LineABase = regs.regs[0];  /* D0 */
+    FontBase = regs.regs[9];   /* A1 */
+    VDI_LineA();
+  }
+  else
+  {
     GemDOS_OpCode();    /* handler code in gemdos.c */
+  }
 
   m68k_incpc(2);
   fill_prefetch_0();

@@ -7,7 +7,11 @@
   *
   * Adaptation to Hatari by Thomas Huth
   *
+  * This file is distributed under the GNU Public License, version 2 or at
+  * your option any later version. Read the file gpl.txt for details.
   */
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.13 2003-02-27 10:47:23 thothy Exp $";
+
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -683,35 +687,15 @@ void Exception(int nr, uaecptr oldpc)
     /*if( nr>=2 && nr<10 )  fprintf(stderr,"Exception (-> %i bombs)!\n",nr);*/
 
     /* Intercept exceptions... - FIXME: Find a better way to do this! */
-    if(bUseVDIRes)
+    if(bUseVDIRes && nr == 0x22)       /* Trap 2 - intercept VDI call */
     {
-      if(nr == 0x22)            /* Trap 2 - intercept VDI call */
+      if(!VDI())
       {
-        if( !VDI() )
-        {
-          /* Set 'PC' as address of 'VDI_OPCODE' illegal instruction
-           * This will call OpCode_VDI after completion of Trap call!
-           * Use to modify return structure from VDI */
-           /*if (bUseVDIRes)*/
-           {
-             VDI_OldPC = currpc;
-             currpc = CART_VDI_OPCODE_ADDR;
-           }
-        }
-      }
-      else if(nr == 0x0a)       /* Line A */
-      {
-        if((get_word(currpc)&0x0fff) == 0x0ff)  /* 0xA0FF opcode? */
-        {
-          /* we use this to get pointer to Line-A structure details
-           * (to fix for extended VDI res) */
-          LineABase = regs.regs[0];  /* D0 */
-          FontBase = regs.regs[9];   /* A1 */
-          VDI_LineA();
-          m68k_setpc(currpc + 2);
-          fill_prefetch_0();
-          return;
-        }
+        /* Set 'PC' as address of 'VDI_OPCODE' illegal instruction
+         * This will call OpCode_VDI after completion of Trap call!
+         * Use to modify return structure from VDI */
+        VDI_OldPC = currpc;
+        currpc = CART_VDI_OPCODE_ADDR;
       }
     }
 
