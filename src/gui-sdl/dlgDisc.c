@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.6 2004-04-19 08:53:48 thothy Exp $";
+char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.7 2004-07-05 15:38:36 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -17,51 +17,57 @@ char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.6 2004-04-19 08:53:48 thothy E
 #include "hdc.h"
 
 
-#define DISCDLG_DISCA       4
+#define DISCDLG_EJECTA      4
 #define DISCDLG_BROWSEA     5
-#define DISCDLG_DISCB       7
-#define DISCDLG_BROWSEB     8
-#define DISCDLG_IMGDIR      10
-#define DISCDLG_BROWSEIMG   11
-#define DISCDLG_AUTOB       12
-#define DISCDLG_CREATEIMG   13
-#define DISCDLG_BROWSEHDIMG 17
-#define DISCDLG_DISCHDIMG   18
-#define DISCDLG_UNMOUNTGDOS 20
-#define DISCDLG_BROWSEGDOS  21
-#define DISCDLG_DISCGDOS    22
-#define DISCDLG_BOOTHD      23
-#define DISCDLG_EXIT        24
+#define DISCDLG_DISCA       6
+#define DISCDLG_EJECTB      8
+#define DISCDLG_BROWSEB     9
+#define DISCDLG_DISCB       10
+#define DISCDLG_IMGDIR      12
+#define DISCDLG_BROWSEIMG   13
+#define DISCDLG_AUTOB       14
+#define DISCDLG_CREATEIMG   15
+#define DISCDLG_EJECTHDIMG  19
+#define DISCDLG_BROWSEHDIMG 20
+#define DISCDLG_DISCHDIMG   21
+#define DISCDLG_UNMOUNTGDOS 23
+#define DISCDLG_BROWSEGDOS  24
+#define DISCDLG_DISCGDOS    25
+#define DISCDLG_BOOTHD      26
+#define DISCDLG_EXIT        27
 
 
 /* The discs dialog: */
 static SGOBJ discdlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 40,25, NULL },
-  { SGBOX, 0, 0, 1,1, 38,11, NULL },
-  { SGTEXT, 0, 0, 14,1, 12,1, "Floppy discs" },
-  { SGTEXT, 0, 0, 2,3, 2,1, "A:" },
-  { SGTEXT, 0, 0, 5,3, 26,1, NULL },
-  { SGBUTTON, 0, 0, 32,3, 6,1, "Browse" },
-  { SGTEXT, 0, 0, 2,5, 2,1, "B:" },
-  { SGTEXT, 0, 0, 5,5, 26,1, NULL },
-  { SGBUTTON, 0, 0, 32,5, 6,1, "Browse" },
+  { SGBOX, 0, 0, 0,0, 64,25, NULL },
+  { SGBOX, 0, 0, 1,1, 62,11, NULL },
+  { SGTEXT, 0, 0, 25,1, 12,1, "Floppy discs" },
+  { SGTEXT, 0, 0, 2,2, 8,1, "Drive A:" },
+  { SGBUTTON, 0, 0, 46,2, 7,1, "Eject" },
+  { SGBUTTON, 0, 0, 54,2, 8,1, "Browse" },
+  { SGTEXT, 0, 0, 3,3, 58,1, NULL },
+  { SGTEXT, 0, 0, 2,4, 8,1, "Drive B:" },
+  { SGBUTTON, 0, 0, 46,4, 7,1, "Eject" },
+  { SGBUTTON, 0, 0, 54,4, 8,1, "Browse" },
+  { SGTEXT, 0, 0, 3,5, 58,1, NULL },
   { SGTEXT, 0, 0, 2,7, 30,1, "Default disk images directory:" },
-  { SGTEXT, 0, 0, 2,8, 28,1, NULL },
-  { SGBUTTON, 0, 0, 32,8, 6,1, "Browse" },
+  { SGTEXT, 0, 0, 3,8, 58,1, NULL },
+  { SGBUTTON, 0, 0, 54,7, 8,1, "Browse" },
   { SGCHECKBOX, 0, 0, 2,10, 16,1, "Auto insert B" },
-  { SGBUTTON, 0, 0, 20,10, 18,1, "Create blank image" },
-  { SGBOX, 0, 0, 1,13, 38,9, NULL },
-  { SGTEXT, 0, 0, 15,13, 10,1, "Hard discs" },
+  { SGBUTTON, 0, 0, 42,10, 20,1, "Create blank image" },
+  { SGBOX, 0, 0, 1,13, 62,9, NULL },
+  { SGTEXT, 0, 0, 27,13, 10,1, "Hard discs" },
   { SGTEXT, 0, 0, 2,14, 9,1, "HD image:" },
-  { SGBUTTON, 0, 0, 32,14, 6,1, "Browse" },
-  { SGTEXT, 0, 0, 2,15, 36,1, NULL },
+  { SGBUTTON, 0, 0, 46,14, 7,1, "Eject" },
+  { SGBUTTON, 0, 0, 54,14, 8,1, "Browse" },
+  { SGTEXT, 0, 0, 3,15, 58,1, NULL },
   { SGTEXT, 0, 0, 2,17, 13,1, "GEMDOS drive:" },
-  { SGBUTTON, 0, 0, 30,17, 1,1, "\x01" },         /* Up-arrow button for unmounting */
-  { SGBUTTON, 0, 0, 32,17, 6,1, "Browse" },
-  { SGTEXT, 0, 0, 2,18, 36,1, NULL },
+  { SGBUTTON, 0, 0, 46,17, 7,1, "Eject" },
+  { SGBUTTON, 0, 0, 54,17, 8,1, "Browse" },
+  { SGTEXT, 0, 0, 3,18, 58,1, NULL },
   { SGCHECKBOX, 0, 0, 2,20, 14,1, "Boot from HD" },
-  { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
+  { SGBUTTON, 0, 0, 22,23, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -73,8 +79,8 @@ static SGOBJ discdlg[] =
 void Dialog_DiscDlg(void)
 {
   int but;
-  char dlgnamea[40], dlgnameb[40], dlgdiscdir[40];
-  char dlgnamegdos[40], dlgnamehdimg[40];
+  char dlgnamea[64], dlgnameb[64], dlgdiscdir[64];
+  char dlgnamegdos[64], dlgnamehdimg[64];
   char *tmpname;
   char *zip_path;
 
@@ -138,6 +144,10 @@ void Dialog_DiscDlg(void)
     but = SDLGui_DoDialog(discdlg);
     switch(but)
     {
+      case DISCDLG_EJECTA:                        /* Eject disc in drive A: */
+        Floppy_EjectDiscFromDrive(0, FALSE);
+        dlgnamea[0] = 0;
+        break;
       case DISCDLG_BROWSEA:                       /* Choose a new disc A: */
         if( EmulationDrives[0].bDiscInserted )
           strcpy(tmpname, EmulationDrives[0].szFileName);
@@ -156,6 +166,10 @@ void Dialog_DiscDlg(void)
             dlgnamea[0] = 0;
           }
         }
+        break;
+      case DISCDLG_EJECTB:                        /* Eject disc in drive B: */
+        Floppy_EjectDiscFromDrive(1, FALSE);
+        dlgnameb[0] = 0;
         break;
       case DISCDLG_BROWSEB:                       /* Choose a new disc B: */
         if( EmulationDrives[1].bDiscInserted )
@@ -206,6 +220,11 @@ void Dialog_DiscDlg(void)
           File_ShrinkName(dlgnamegdos, DialogParams.HardDisc.szHardDiscDirectories[0], discdlg[DISCDLG_DISCGDOS].w);
         }
         break;
+      case DISCDLG_EJECTHDIMG:
+        DialogParams.HardDisc.szHardDiscImage[0] = 0;
+        DialogParams.HardDisc.bUseHardDiscImage = FALSE;
+        dlgnamehdimg[0] = 0;
+        break;
       case DISCDLG_BROWSEHDIMG:
         strcpy(tmpname, DialogParams.HardDisc.szHardDiscImage);
         if( SDLGui_FileSelect(tmpname, NULL, FALSE) )
@@ -214,6 +233,7 @@ void Dialog_DiscDlg(void)
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
             File_ShrinkName(dlgnamehdimg, tmpname, discdlg[DISCDLG_DISCHDIMG].w);
+            DialogParams.HardDisc.bUseHardDiscImage = TRUE;
           }
           else
           {
