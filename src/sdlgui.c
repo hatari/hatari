@@ -1,8 +1,12 @@
 /*
-  Hatari
+  Hatari - sdlgui.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   A tiny graphical user interface for Hatari.
 */
+static char rcsid[] = "Hatari $Id: sdlgui.c,v 1.12 2003-04-12 16:31:01 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -48,9 +52,6 @@ int SDLGui_Init()
     fprintf(stderr, "Error: Can't load image %s: %s\n", fontname, SDL_GetError() );
     return -1;
   }
-
-  if( SDLGui_PrepareFont() )
-    return -1;;
 
   return 0;
 }
@@ -144,25 +145,6 @@ void SDLGui_Text(int x, int y, const char *txt)
     sr.w=fontwidth;         sr.h=fontheight;
     dr.x=x+i*fontwidth;     dr.y=y;
     dr.w=fontwidth;         dr.h=fontheight;
-    SDL_BlitSurface(fontgfx, &sr, sdlscrn, &dr);
-  }
-}
-
-void SDLGui_OverlayText(int x, int y, const char *txt)
-{
-  int i;
-  char c;
-  Uint32 grey = SDL_MapRGB(sdlscrn->format,192,192,192);
-  SDL_Rect sr, dr;
-
-  for(i=0; txt[i]!=0; i++)
-  {
-    c = txt[i];
-    sr.x=fontwidth*(c%16);  sr.y=fontheight*(c/16);
-    sr.w=fontwidth;         sr.h=fontheight;
-    dr.x=x+i*fontwidth;     dr.y=y;
-    dr.w=fontwidth;         dr.h=fontheight;
-    SDL_FillRect(sdlscrn, &dr, grey);
     SDL_BlitSurface(fontgfx, &sr, sdlscrn, &dr);
   }
 }

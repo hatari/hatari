@@ -1,8 +1,14 @@
 /*
-  Hatari
+  Hatari - sdlgui.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   Header for the tiny graphical user interface for Hatari.
 */
+
+#ifndef HATARI_SDLGUI_H
+#define HATARI_SDLGUI_H
 
 #include <SDL.h>
 
@@ -42,4 +48,5 @@ int SDLGui_DoDialog(SGOBJ *dlg);
 int SDLGui_PrepareFont(void);
 void SDLGui_CenterDlg(SGOBJ *dlg);
 int SDLGui_FileSelect(char *path_and_name, char *zip_path);
-void SDLGui_OverlayText(int x, int y, const char *txt);
+
+#endif

@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.28 2003-04-08 11:38:01 emanne Exp $";
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.29 2003-04-12 16:31:01 thothy Exp $";
 
 #include <unistd.h>
 
@@ -1176,6 +1176,9 @@ void Dialog_KeyboardDlg(void)
 int Dialog_MainDlg(BOOL *bReset)
 {
   int retbut;
+
+  if(SDLGui_PrepareFont())
+    return FALSE;
 
   SDLGui_CenterDlg(maindlg);
   SDL_ShowCursor(SDL_ENABLE);
