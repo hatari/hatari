@@ -10,7 +10,7 @@
   We also store the version number in the file to prevent people from
   copying old .cfg files between versions.
 */
-static char rcsid[] = "Hatari $Id: configuration.c,v 1.14 2003-03-23 23:07:28 thothy Exp $";
+static char rcsid[] = "Hatari $Id: configuration.c,v 1.15 2003-03-24 13:30:53 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -173,7 +173,7 @@ void Configuration_Init(void)
       Configuration_ReadFromFile(&ConfigureParams.DiscImage.bAutoInsertDiscB,4);
       Configuration_ReadFromFile(ConfigureParams.DiscImage.szDiscImageDirectory,sizeof(ConfigureParams.DiscImage.szDiscImageDirectory));
       /* HardDisc */
-      Configuration_ReadFromFile(&ConfigureParams.HardDisc.nDriveList,4);
+      //Configuration_ReadFromFile(&ConfigureParams.HardDisc.nDriveList,4);
       Configuration_ReadFromFile(&ConfigureParams.HardDisc.bBootFromHardDisc,4);
     /* The hard disk configuration is not saved, because it seems to crash
        some games which boot from a floppy, and because having a mounted hard
@@ -275,7 +275,7 @@ void Configuration_UnInit(void)
     Configuration_WriteToFile(&ConfigureParams.DiscImage.bAutoInsertDiscB,4);
     Configuration_WriteToFile(ConfigureParams.DiscImage.szDiscImageDirectory,sizeof(ConfigureParams.DiscImage.szDiscImageDirectory));
     /* HardDisc */
-    Configuration_WriteToFile(&ConfigureParams.HardDisc.nDriveList,4);
+    //Configuration_WriteToFile(&ConfigureParams.HardDisc.nDriveList,4);
     Configuration_WriteToFile(&ConfigureParams.HardDisc.bBootFromHardDisc,4);
 /*     Configuration_WriteToFile(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C],sizeof(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C])); */
 /*     Configuration_WriteToFile(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_D],sizeof(ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_D])); */
