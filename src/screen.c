@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.35 2004-12-05 23:30:17 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.36 2004-12-26 19:22:34 thothy Exp $";
 
 #include <SDL.h>
 
@@ -718,93 +718,53 @@ static void Screen_SetFullUpdateMask(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Set details for ST screen conversion(Window version)
+  Set details for ST screen conversion.
 */
-static void Screen_SetWindowConvertDetails(void)
+static void Screen_SetConvertDetails(void)
 {
-  /* Reset Double Y, used for Window medium res' and in full screen */
-  bScrDoubleY = FALSE;
-
   pSTScreen = pFrameBuffer->pSTScreen;          /* Source in ST memory */
   pSTScreenCopy = pFrameBuffer->pSTScreenCopy;  /* Previous ST screen */
   pPCScreenDest = sdlscrn->pixels;              /* Destination PC screen */
 
-  STScreenStartHorizLine = 0;                   /* Full height */
+  PCScreenBytesPerLine = sdlscrn->pitch;        /* Bytes per line */
+  pHBLPalettes = pFrameBuffer->HBLPalettes;     /* HBL palettes pointer */
+  bScrDoubleY = !ConfigureParams.Screen.bInterleavedScreen; /* non-interleaved? => double up on Y */
 
-  if (ConfigureParams.Screen.bUseHighRes && !bUseVDIRes)
+  if (ConfigureParams.Screen.bAllowOverscan)    /* Use borders? */
   {
-    pFrameBuffer->OverscanModeCopy = OverscanMode = OVERSCANMODE_NONE;
-    STScreenEndHorizLine = 400;
-  }
-  else
-  {
-    /* Always draw to WHOLE screen including ALL borders */
-    STScreenLeftSkipBytes = 0;                  /* Number of bytes to skip on ST screen for left(border) */
-    STScreenWidthBytes = SCREENBYTES_LINE;      /* Number of horizontal bytes in our ST screen */
+    STScreenStartHorizLine = 0;                 /* Full height */
 
-    STScreenEndHorizLine = NUM_VISIBLE_LINES;
-
-    if (bUseVDIRes)
+    if (ConfigureParams.Screen.bUseHighRes && !bUseVDIRes)
     {
-      PCScreenBytesPerLine = VDIWidth;
+      pFrameBuffer->OverscanModeCopy = OverscanMode = OVERSCANMODE_NONE;
+      STScreenEndHorizLine = 400;
     }
     else
     {
-      PCScreenBytesPerLine = sdlscrn->pitch;
-/*       PCScreenBytesPerLine = (SCREENBYTES_LINE*2)*sizeof(short int); */
-/*       if (STRes!=ST_LOW_RES)                    /\* Bytes per line in PC screen are DOUBLE when in medium/mix *\/ */
-/*         PCScreenBytesPerLine <<= 1; */
+      /* Always draw to WHOLE screen including ALL borders */
+      STScreenLeftSkipBytes = 0;                /* Number of bytes to skip on ST screen for left(border) */
+      STScreenWidthBytes = SCREENBYTES_LINE;    /* Number of horizontal bytes in our ST screen */
+
+      STScreenEndHorizLine = NUM_VISIBLE_LINES;
     }
-
-    pHBLPalettes = pFrameBuffer->HBLPalettes;
   }
-
-  if (!ConfigureParams.Screen.bInterleavedScreen)
-  {
-    bScrDoubleY = TRUE;
-  }
-}
-
-/*-----------------------------------------------------------------------*/
-/*
-  Set details for ST screen conversion (Full-Screen version)
-*/
-static void Screen_SetFullScreenConvertDetails(void)
-{
-  SCREENDRAW *pScreenDraw;
-
-  /* Reset Double Y, used for window medium res' and in full screen */
-  bScrDoubleY = FALSE;
-
-  /* Select screen draw for standard or VDI display */
-  if (bUseVDIRes)
-    pScreenDraw = &ScreenDrawVDIFullScreen[VDIRes];
   else
-    pScreenDraw = &ScreenDrawFullScreen[STRes];
-
-  /* Only draw what can fit into full-screen and centre on Y */
-  STScreenLeftSkipBytes = pScreenDraw->Overscan[OverscanMode].STScreenLeftSkipBytes;
-  STScreenWidthBytes = pScreenDraw->Overscan[OverscanMode].STScreenWidthBytes;
-
-  STScreenStartHorizLine = pScreenDraw->Overscan[OverscanMode].STScreenStartHorizLine;
-  STScreenEndHorizLine = pScreenDraw->Overscan[OverscanMode].STScreenEndHorizLine;
-
-  pSTScreen = pFrameBuffer->pSTScreen;          /* Source in ST memory */
-  pSTScreenCopy = pFrameBuffer->pSTScreenCopy;  /* Previous ST screen */
-  PCScreenBytesPerLine = sdlscrn->pitch;
-  pPCScreenDest = (unsigned char *)sdlscrn->pixels;  /* Destination PC screen */
-  /* Get start of line on screen according to overscan (scale if double line mode) */
-  pPCScreenDest += pScreenDraw->Overscan[OverscanMode].PCStartHorizLine
-      * pScreenDraw->VertPixelsPerLine*PCScreenBytesPerLine;
-  /* And offset on X */
-  pPCScreenDest += pScreenDraw->Overscan[OverscanMode].PCStartXOffset;
-  pHBLPalettes = pFrameBuffer->HBLPalettes;
-
-  /* Is non-interleaved? May need to double up on Y */
-  if (!ConfigureParams.Screen.bInterleavedScreen)
   {
-    bScrDoubleY = TRUE;
-  }
+    SCREENDRAW *pScreenDraw;
+
+    /* Select screen draw for standard or VDI display */
+    if (bUseVDIRes)
+      pScreenDraw = &ScreenDrawVDIFullScreen[VDIRes];
+    else
+      pScreenDraw = &ScreenDrawFullScreen[STRes];
+
+    /* Only draw what can fit into full-screen and centre on Y */
+    STScreenLeftSkipBytes = pScreenDraw->Overscan[OverscanMode].STScreenLeftSkipBytes;
+    STScreenWidthBytes = pScreenDraw->Overscan[OverscanMode].STScreenWidthBytes;
+
+    STScreenStartHorizLine = pScreenDraw->Overscan[OverscanMode].STScreenStartHorizLine;
+    STScreenEndHorizLine = pScreenDraw->Overscan[OverscanMode].STScreenEndHorizLine;
+ }
 }
 
 
@@ -945,16 +905,9 @@ void Screen_DrawFrame(BOOL bForceFlip)
 
   /* Lock screen ready for drawing */
   if (Screen_Lock()) {
-    bScreenContentsChanged = FALSE;      /* Did change(ie needs blit?) */
+    bScreenContentsChanged = FALSE;      /* Did change (ie needs blit?) */
     /* Set details */
-    if (ConfigureParams.Screen.bAllowOverscan)
-    {
-      Screen_SetWindowConvertDetails();
-    }
-    else
-    {
-      Screen_SetFullScreenConvertDetails();
-    }
+    Screen_SetConvertDetails();
     /* Clear screen on full update to clear out borders and also interleaved lines */
     if (pFrameBuffer->bFullUpdate && !bUseVDIRes)
       Screen_ClearScreen();

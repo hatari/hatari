@@ -30,7 +30,6 @@ typedef struct
 {
   int STScreenLeftSkipBytes,STScreenWidthBytes;     /* Bytes to skip on left and number of bytes of screen to draw */
   int STScreenStartHorizLine,STScreenEndHorizLine;  /* Start/End points in ST screen(28 is top of normal screen) */
-  int PCStartHorizLine,PCStartXOffset;              /* Source ST lines/bytes to skip, Destination screen lines/bytes to skip */
 } SCREENDRAW_OVERSCAN;
 
 typedef struct
