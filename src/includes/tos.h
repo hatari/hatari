@@ -8,10 +8,6 @@
 #ifndef HATARI_TOS_H
 #define HATARI_TOS_H
 
-#ifndef MAIN_H
-#include "main.h"
-#endif
-
 /* Standard available ST memory configurations */
 enum
 {

@@ -1,18 +1,22 @@
  /*
-  * UAE - The Un*x Amiga Emulator
+  * UAE - The Un*x Amiga Emulator - CPU core
   *
   * Memory management
   *
   * (c) 1995 Bernd Schmidt
   *
   * Adaptation to Hatari by Thomas Huth
+  *
+  * This file is distributed under the GNU Public License, version 2 or at
+  * your option any later version. Read the file gpl.txt for details.
   */
+static char rcsid[] = "Hatari $Id: memory.c,v 1.4 2003-03-12 17:25:57 thothy Exp $";
 
-/*#include "sysconfig.h"*/
 #include "sysdeps.h"
 #include "hatari-glue.h"
 #include "maccess.h"
 #include "memory.h"
+#include "../includes/main.h"
 #include "../includes/tos.h"
 #include "../includes/intercept.h"
 #include "../includes/reset.h"

@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                                 Version 0.25
+                                 Version 0.30
 
                         http://hatari.sourceforge.net/
 
@@ -59,7 +59,7 @@ Change to the src/ directory and adapt the Makefile to suite your mood
 If all works fine, you'll get the executable "hatari".
 
 Then you'll have to copy a TOS ROM to the data directory (that can be
-specified in the Makefile) and rename to "tos.img", or use the
+specified in the Makefile) and rename it to "tos.img", or use the
 "--tos" command line option to tell Hatari where to find a TOS ROM.
 Hatari needs a TOS ROM image because this contains the operating system
 of the emulated Atari. Sorry, it is not possible to ship an image with
@@ -128,9 +128,20 @@ header from the files.
 For example try something like:  dd if=input.dim of=output.st bs=32 skip=1
 
 Also note that Hatari doesn't yet support ZIP compressed images like some
-other emulators do. If you need compressed disk images, just tell me and
-I'll try to include gzip support then (I think gzip is a better solution for
-disk images than using the normal (PK-)Zip).
+other emulators do. This feature will probably be included in a later release
+of Hatari.
+
+If you've got a disk image that has been created with the old ST emulator
+PaCifiST (for DOS) or with early versions of the program Makedisk, and
+the disk image does not work with Hatari, then the disk probably suffers
+from the "PaCifiST bootsector bug" (Hatari will print a warning message then).
+In this case, the bootsector of the disc contains some illegal data, so that
+the disc even does not work on a real ST any more. However, if it is a .ST
+and not a .MSA disk, you can easily fix it by using a hex-editor to change
+the byte at offset $D (13) from 0 to 1 (don't forget to backup your disk image
+first, since you can also easily destroy your disk image when changing a wrong
+byte there). If the disk contains a bootsector program, you probably have to
+adjust the boot sector check sum, too (it can be found at offset $1FE + $1FF).
 
 
  6) Hard disk support

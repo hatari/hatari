@@ -5,14 +5,14 @@
   your option any later version. Read the file gpl.txt for details.
 */
 
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef HATARI_MAIN_H
+#define HATARI_MAIN_H
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.25" /* Name, version for window title */
-#define PROG_VERSION        "v0.25"
-#define VERSION_STRING      "0.25 "   /* Always 6 bytes(inc' NULL) */
+#define PROG_NAME      "Hatari v0.30" /* Name, version for window title */
+#define PROG_VERSION        "v0.30"
+#define VERSION_STRING      "0.30 "   /* Always 6 bytes(inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above(inc' NULL) */
 
 //#define TOTALLY_FINAL_VERSION       /* Web release version... */
@@ -133,24 +133,24 @@ enum {
 #define  EMU_CLEAR_C  0xffef
 
 /* Exception vectors */
-#define  EXCEPTION_BUSERROR  0x00000008
+#define  EXCEPTION_BUSERROR   0x00000008
 #define  EXCEPTION_ADDRERROR  0x0000000c
-#define EXCEPTION_ILLEGALINS  0x00000010
-#define  EXCEPTION_DIVZERO  0x00000014
-#define EXCEPTION_CHK    0x00000018
-#define EXCEPTION_TRAPV    0x0000001c
-#define EXCEPTION_TRACE    0x00000024
-#define  EXCEPTION_LINE_A  0x00000028
-#define  EXCEPTION_LINE_F  0x0000002c
-#define  EXCEPTION_HBLANK  0x00000068
-#define  EXCEPTION_VBLANK  0x00000070
-#define EXCEPTION_TRAP0    0x00000080
-#define EXCEPTION_TRAP1    0x00000084
-#define EXCEPTION_TRAP2    0x00000088
-#define EXCEPTION_TRAP13  0x000000B4
-#define EXCEPTION_TRAP14  0x000000B8
+#define  EXCEPTION_ILLEGALINS 0x00000010
+#define  EXCEPTION_DIVZERO    0x00000014
+#define  EXCEPTION_CHK        0x00000018
+#define  EXCEPTION_TRAPV      0x0000001c
+#define  EXCEPTION_TRACE      0x00000024
+#define  EXCEPTION_LINE_A     0x00000028
+#define  EXCEPTION_LINE_F     0x0000002c
+#define  EXCEPTION_HBLANK     0x00000068
+#define  EXCEPTION_VBLANK     0x00000070
+#define  EXCEPTION_TRAP0      0x00000080
+#define  EXCEPTION_TRAP1      0x00000084
+#define  EXCEPTION_TRAP2      0x00000088
+#define  EXCEPTION_TRAP13     0x000000B4
+#define  EXCEPTION_TRAP14     0x000000B8
 
-/* Find IPL */
+/* Find IPL - don't forget to call MakeSR() before you use it! */
 #define FIND_IPL    ((SR>>8)&0x7)
 
 /* Size of 68000 instructions */
@@ -178,33 +178,33 @@ enum {
   Pixels per NOP (med res)          : 8
   Pixels per NOP (high res)         : 16
 */
-#define SCREEN_START_HBL  64            /* This is usually the first line of the displayed screen */
+#define SCREEN_START_HBL   64           /* This is usually the first line of the displayed screen */
 #define SCREEN_HEIGHT_HBL  200          /* This is usually the height of the screen */
 #define FIRST_VISIBLE_HBL  (SCREEN_START_HBL-OVERSCAN_TOP)    /* Normal screen starts 64 lines in, top border is 28 lines */
-#define  NUM_VISIBLE_LINES  (OVERSCAN_TOP+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM)  /* Number of visible screen lines including top/bottom borders */
+#define NUM_VISIBLE_LINES  (OVERSCAN_TOP+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM)  /* Number of visible screen lines including top/bottom borders */
 
 /* Assumes 32 pixels left+right */
 #define SCREENBYTES_LEFT    16          /* Bytes for left border in ST screen */
-#define SCREENBYTES_MIDDLE    160       /* Middle(320 pixels) */
-#define SCREENBYTES_RIGHT    16         /* right border */
+#define SCREENBYTES_MIDDLE  160         /* Middle(320 pixels) */
+#define SCREENBYTES_RIGHT   16          /* right border */
 #define SCREENBYTES_LINE    (SCREENBYTES_LEFT+SCREENBYTES_MIDDLE+SCREENBYTES_RIGHT)
 
 /* Overscan values */
-#define OVERSCAN_LEFT      (SCREENBYTES_LEFT*2)    /* Number of pixels in each border */
+#define OVERSCAN_LEFT       (SCREENBYTES_LEFT*2)    /* Number of pixels in each border */
 #define OVERSCAN_RIGHT      (SCREENBYTES_RIGHT*2)
-#define OVERSCAN_TOP      29
-#define OVERSCAN_BOTTOM      38
-#define OVERSCAN_MIDDLE      320        /* Number of pixels across screen(low res) */
+#define OVERSCAN_TOP        29
+#define OVERSCAN_BOTTOM     38
+#define OVERSCAN_MIDDLE     320         /* Number of pixels across screen(low res) */
 
-#define SCREEN_START_CYCLE    96        /* Cycle first normal pixel appears on */
-#define SCANLINES_PER_FRAME    313      /* Number of scan lines per frame */
-#define CYCLES_PER_LINE      512        /* Cycles per horiztonal line scan */
+#define SCREEN_START_CYCLE  96          /* Cycle first normal pixel appears on */
+#define SCANLINES_PER_FRAME 313         /* Number of scan lines per frame */
+#define CYCLES_PER_LINE     512         /* Cycles per horiztonal line scan */
 #define CYCLES_PER_FRAME    (SCANLINES_PER_FRAME*CYCLES_PER_LINE)  /* Cycles per VBL @ 50fps = 160256 */
-#define CYCLES_VBL_IN      (SCREEN_START_HBL*CYCLES_PER_LINE)  /*((28+64)*CYCLES_PER_LINE) */
-#define CYCLES_PER_SEC      (CYCLES_PER_FRAME*50)    /* Cycles per second */
-#define CYCLES_ENDLINE      (64+320+88+40)      /* DE(Display Enable) */
-#define CYCLES_HBL      (CYCLES_PER_LINE+96)    /* Cycles for first HBL - very inaccurate on ST */
-#define CYCLES_DEBUGGER      3000       /* Check debugger every 'x' cycles */
+#define CYCLES_VBL_IN       (SCREEN_START_HBL*CYCLES_PER_LINE)  /*((28+64)*CYCLES_PER_LINE) */
+#define CYCLES_PER_SEC      (CYCLES_PER_FRAME*50) /* Cycles per second */
+#define CYCLES_ENDLINE      (64+320+88+40)        /* DE(Display Enable) */
+#define CYCLES_HBL          (CYCLES_PER_LINE+96)  /* Cycles for first HBL - very inaccurate on ST */
+#define CYCLES_DEBUGGER     3000        /* Check debugger every 'x' cycles */
 
 /* Illegal Opcode used to help emulation. eg. free entries are 8 to 15 inc' */
 #define  GEMDOS_OPCODE        8  /* Free op-code to intercept GemDOS trap */
@@ -213,15 +213,7 @@ enum {
 #define  TIMERD_OPCODE       11  /* Free op-code to prevent Timer D starting in GemDOS */
 #define  VDI_OPCODE          12  /* Free op-code to call VDI handlers AFTER Trap#2 */
 #define  LINEA_OPCODE        13  /* Free op-code to call handlers AFTER Line-A */
-/* Other Opcodes */
-#define RTS_OPCODE  BIN16(0,1,0,0,1,1,1,0,0,1,1,1,0,1,0,1)
-#define NOP_OPCODE  BIN16(0,1,0,0,1,1,1,0,0,1,1,1,0,0,0,1)
-#define BRAW_OPCODE  BIN16(0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0)
 
-/* Handy invalid address for flags(24-bit address can never be this) */
-#define BRK_DISABLED      0xffffffff
-#define BRK_SINGLE_INSTRUCTION    0xfffffffe
-#define  BRK_STOP      0xfffffffd
 
 #define PRG_HEADER_SIZE    0x1c  /* Size of header at start of ST .prg files */
 
@@ -241,4 +233,4 @@ extern void Main_PauseEmulation(void);
 extern void Main_UnPauseEmulation(void);
 extern void Main_EventHandler();
 
-#endif /* ifndef MAIN_H */
+#endif /* ifndef HATARI_MAIN_H */
