@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.44 2003-08-10 08:09:06 simonsunnyboy Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.45 2003-08-15 16:09:50 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -35,6 +35,7 @@ static char rcsid[] = "Hatari $Id: main.c,v 1.44 2003-08-10 08:09:06 simonsunnyb
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "misc.h"
+#include "midi.h"
 #include "printer.h"
 #include "rs232.h"
 #include "screen.h"
@@ -219,7 +220,8 @@ void Main_ReadParameters(int argc, char *argv[])
                "  --fullscreen or -f    Try to use fullscreen mode.\n"
                "  --joystick or -j      Emulate a ST joystick with the cursor keys.\n"
                "  --nosound             Disable sound (faster!).\n"
-			   "  --printer             Enable printer support (experimental)\n"
+               "  --printer             Enable printer support (experimental).\n"
+               "  --midi <filename>     Enable midi support and write midi data to <filename>.\n"
                "  --frameskip           Skip every second frame (speeds up emulation!).\n"
                "  --debug or -D         Allow debug interface.\n"
                "  --harddrive <dir>     Emulate an ST harddrive\n"
@@ -259,10 +261,25 @@ void Main_ReadParameters(int argc, char *argv[])
         bDisableSound=TRUE;
         ConfigureParams.Sound.bEnableSound = FALSE;
       }
-	  else if ( !strcmp(argv[i],"--printer") )
+      else if ( !strcmp(argv[i],"--printer") )
       {
-	    /* FIXME: add more commandline configuration for printing */
+        /* FIXME: add more commandline configuration for printing */
         ConfigureParams.Printer.bEnablePrinting = TRUE;
+      }
+      else if (!strcmp(argv[i], "--midi"))
+      {
+        if(i+1 >= argc)
+          fprintf(stderr, "Missing argument for --midi\n");
+        else
+        {
+          if(strlen(argv[i+1]) <= MAX_FILENAME_LENGTH)
+          {
+            ConfigureParams.Midi.bEnableMidi = TRUE;
+            strcpy(ConfigureParams.Midi.szMidiOutFileName, argv[i+1]);
+          }
+          else fprintf(stderr, "Midi file name too long!\n");
+          i += 1;
+        }
       }
       else if (!strcmp(argv[i],"--debug") || !strcmp(argv[i],"-D"))
       {
@@ -270,7 +287,7 @@ void Main_ReadParameters(int argc, char *argv[])
       }
       else if (!strcmp(argv[i],"--hdimage"))
       {
-	if(i+1 >= argc)
+        if(i+1 >= argc)
           fprintf(stderr, "Missing argument for --hdimage\n");
         else
         {
@@ -285,7 +302,7 @@ void Main_ReadParameters(int argc, char *argv[])
       }
       else if (!strcmp(argv[i],"--harddrive") || !strcmp(argv[i],"-d"))
       {
-	if(i+1 >= argc)
+        if(i+1 >= argc)
           fprintf(stderr, "Missing argument for --harddrive\n");
         else
         {
@@ -377,6 +394,7 @@ void Main_Init(void)
   SDLGui_Init();
   Printer_Init();
   RS232_Init();
+  Midi_Init();
   Screen_Init();
   Floppy_Init();
   Init680x0();                  /* Init CPU emulation */
@@ -433,6 +451,7 @@ void Main_UnInit(void)
   Floppy_EjectBothDrives();
   Floppy_UnInit();
   HDC_UnInit();
+  Midi_UnInit();
   RS232_UnInit();
   Printer_UnInit();
   Intercept_UnInit();

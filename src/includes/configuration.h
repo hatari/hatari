@@ -163,6 +163,14 @@ typedef struct
 } CNF_PRINTER;
 
 
+/* Midi configuration */
+typedef struct
+{
+  BOOL bEnableMidi;
+  char szMidiOutFileName[MAX_FILENAME_LENGTH];
+} CNF_MIDI;
+
+
 /* Dialog System */
 typedef enum
 {
@@ -198,6 +206,7 @@ typedef struct
   CNF_TOSGEM TOSGEM;
   CNF_RS232 RS232;
   CNF_PRINTER Printer;
+  CNF_MIDI Midi;
   CNF_SYSTEM System;
 } CNF_PARAMS;
 

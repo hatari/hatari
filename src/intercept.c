@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-static char rcsid[] = "Hatari $Id: intercept.c,v 1.14 2003-06-08 17:12:21 thothy Exp $";
+static char rcsid[] = "Hatari $Id: intercept.c,v 1.15 2003-08-15 16:09:49 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -37,6 +37,7 @@ static char rcsid[] = "Hatari $Id: intercept.c,v 1.14 2003-06-08 17:12:21 thothy
 #include "m68000.h"
 #include "memAlloc.h"
 #include "mfp.h"
+#include "midi.h"
 #include "psg.h"
 #include "rtc.h"
 #include "screen.h"
@@ -764,13 +765,13 @@ void Intercept_KeyboardData_ReadByte(void)
 /* INTERCEPT_MIDICONTROL(0xfffc04 byte) */
 void Intercept_MidiControl_ReadByte(void)
 {
- STRam[0xfffc04] = 2;        /* Should be this? */
+ STRam[0xfffc04] = Midi_ReadControl();
 }
 
 /* INTERCEPT_MIDIDATA(0xfffc06 byte) */
 void Intercept_MidiData_ReadByte(void)
 {
- STRam[0xfffc06] = 1;        /* Should be this? */
+ STRam[0xfffc06] = Midi_ReadData();
 }
 
 
@@ -1232,13 +1233,13 @@ void Intercept_KeyboardData_WriteByte(void)
 /* INTERCEPT_MIDICONTROL(0xfffc04 byte) */
 void Intercept_MidiControl_WriteByte(void)
 {
-  /* Nothing... */
+  Midi_WriteControl(STRam[0xfffc04]);
 }
 
 /* INTERCEPT_MIDIDATA(0xfffc06 byte) */
 void Intercept_MidiData_WriteByte(void)
 {
-  /* Nothing... */
+  Midi_WriteData(STRam[0xfffc06]);
 }
 
 
