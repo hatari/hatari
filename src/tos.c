@@ -12,6 +12,8 @@
   we bring up an error and default back to the built-in TOS 1.00
 */
 
+#include <SDL_types.h>
+
 #include "main.h"
 #include "cart.h"
 #include "debug.h"
@@ -46,7 +48,7 @@ unsigned int ConnectedDriveMaskList[] = {
 };
 
 unsigned short int TOSVersion;          /* eg, 0x0100, 0x0102 */
-unsigned long TOSAddress,TOSSize;       /* Address in ST memory and size of TOS image */
+unsigned long TOSAddress, TOSSize;      /* Address in ST memory and size of TOS image */
 unsigned int ConnectedDriveMask=0x03;   /* Bit mask of connected drives, eg 0x7 is A,B,C */
 
 /* Possible TOS file extensions to scan for */
@@ -88,45 +90,28 @@ void TOS_MemorySnapShot_Capture(BOOL bSave)
 void TOS_LoadImage(void)
 {
   void *pTOSFile = NULL;
-  unsigned short int *pVersionPtr, *pTerritoryPtr;
   BOOL bTOSImageLoaded = FALSE;
 
   /* Load TOS image into memory so we can check it's vesion */
   TOSVersion = 0;
-  if (pTOSFile==NULL)
-    pTOSFile = File_Read(ConfigureParams.TOSGEM.szTOSImageFileName,NULL,NULL,pszTOSNameExts);
+  pTOSFile = File_Read(ConfigureParams.TOSGEM.szTOSImageFileName,NULL,NULL,pszTOSNameExts);
 
   if (pTOSFile) {
-    /* Now, look at start of image to find Version number and Territory */
-    pVersionPtr = (unsigned short int *)((unsigned long)pTOSFile+0x2);
-    pTerritoryPtr = (unsigned short int *)((unsigned long)pTOSFile+0x1c);
-    TOSVersion = STMemory_Swap68000Int(*pVersionPtr);
+    bTOSImageLoaded = TRUE;
+    /* Now, look at start of image to find Version number and address */
+    TOSVersion = STMemory_Swap68000Int( *(Uint16 *)((Uint32)pTOSFile+2) );
+    TOSAddress = STMemory_Swap68000Long( *(Uint32 *)((Uint32)pTOSFile+8) );
 
-    /* Now see where to copy image */
-    switch(TOSVersion) {
-      case 0x0100:               /* TOS 1.00 */
-      case 0x0102:               /* TOS 1.02 */
-      case 0x0104:               /* TOS 1.04 */
-        TOSAddress = 0xFC0000;
-        TOSSize = 192*1024;      /* 192k */
-        bTOSImageLoaded = TRUE;
-        break;
+    TOSSize = File_Length(ConfigureParams.TOSGEM.szTOSImageFileName);
+    if( TOSSize<=0 )  bTOSImageLoaded = FALSE;
 
-      /* TOSes 1.06 and 1.62 are for the STe ONLY and so don't run on a real STfm. */
-      /* They access illegal memory addresses which don't exist on a real machine and cause the OS */
-      /* to lock up. So, if user selects one of these, show error and default to original TOS */
-      case 0x0106:          /* TOS 1.06 */
-      case 0x0162:          /* TOS 1.62 */
-        Main_Message("TOS versions 1.06 and 1.62 are NOT valid STfm images.\n\nThese were only designed for use on the STe range of machines.\n",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
-        bTOSImageLoaded = FALSE;
-        break;
-
-      case 0x0205:          /* TOS 2.05 */
-      case 0x0206:          /* TOS 2.06 */
-        TOSAddress = 0xE00000;
-        TOSSize = 256*1024;      /* 256k */
-        bTOSImageLoaded = TRUE;
-        break;
+    /* TOSes 1.06 and 1.62 are for the STe ONLY and so don't run on a real STfm. */
+    /* They access illegal memory addresses which don't exist on a real machine and cause the OS */
+    /* to lock up. So, if user selects one of these, show an error */
+    if( TOSVersion==0x0106 || TOSVersion==0x0162 ) {
+      Main_Message("TOS versions 1.06 and 1.62 are NOT valid STfm images.\n\n"
+                   "These were only designed for use on the STe range of machines.\n", PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
+      bTOSImageLoaded = FALSE;
     }
 
     /* Copy loaded image into ST memory, if found valid one*/
@@ -139,7 +124,7 @@ void TOS_LoadImage(void)
     /* Warn user (exit if need to) */
     Main_Message("To use GEM Extended resolutions, you must select TOS 1.04 or higher.",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
     /* And select non VDI */
-    bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions = FALSE; /*FIXME*/
+    bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions = FALSE;
     /* Default TOS 1.00 */
     bTOSImageLoaded = FALSE;
   }
@@ -163,8 +148,7 @@ void TOS_LoadImage(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Modify TOS Rom image to set default memory configuration, connected floppies and memory size
-  and skip some TOS setup code which we don't support/need.
+  Patch TOS to skip some TOS setup code which we don't support/need.
   As TOS Roms need to be modified we can only run images which are entered here.
 
   So, how do we find these addresses when we have no commented source code?
@@ -214,30 +198,37 @@ void TOS_FixRom(void)
     */
     case 0x0102:
       /* hdv_init, initialize drives */
-      STMemory_WriteWord(0xFC0F44,RTS_OPCODE);    /* RTS */
+      if( STMemory_ReadLong(0xFC0F44)==0x4e56fff0L )  /* Check if we can patch this TOS */
+        STMemory_WriteWord(0xFC0F44, RTS_OPCODE);     /* RTS */
 
       /* FC1568  JSR $FC0C2E  hdv_boot, load boot sector */
-      STMemory_WriteWord(0xFC1568,NOP_OPCODE);    /* NOP */
-      STMemory_WriteWord(0xFC1568+2,NOP_OPCODE);  /* NOP */
-      STMemory_WriteWord(0xFC1568+4,NOP_OPCODE);  /* NOP */
+      if( STMemory_ReadLong(0xFC1568)==0x4eb900fcL ) {
+        STMemory_WriteWord(0xFC1568, NOP_OPCODE);     /* NOP */
+        STMemory_WriteWord(0xFC1568+2, NOP_OPCODE);   /* NOP */
+        STMemory_WriteWord(0xFC1568+4, NOP_OPCODE);   /* NOP */
+      }
 
       /* FC0472  BSR.W $FC0558  Boot from DMA bus */
-      if (bUseVDIRes) {
-        STMemory_WriteWord(0xFC0472,0xa000);      /* Init Line-A */
-        STMemory_WriteWord(0xFC0472+2,0xa0ff);    /* Trap Line-A (to get structure) */
-      }
-      else {
-        STMemory_WriteWord(0xFC0472,NOP_OPCODE);    /* NOP */
-        STMemory_WriteWord(0xFC0472+2,NOP_OPCODE);  /* NOP */
-      }
+      if( STMemory_ReadLong(0xFC0472)==0x610000e4L )
+       if (bUseVDIRes) {
+         STMemory_WriteWord(0xFC0472, 0xa000);        /* Init Line-A */
+         STMemory_WriteWord(0xFC0472+2, 0xa0ff);      /* Trap Line-A (to get structure) */
+       }
+       else {
+         STMemory_WriteWord(0xFC0472, NOP_OPCODE);    /* NOP */
+         STMemory_WriteWord(0xFC0472+2, NOP_OPCODE);  /* NOP */
+       }
 
       /* FC0302  CLR.L $4C2  Set connected drives */
-      STMemory_WriteWord(0xFC0302,CONDRV_OPCODE);
-      STMemory_WriteWord(0xFC0302+2,NOP_OPCODE);  /* NOP */
-      STMemory_WriteWord(0xFC0302+4,NOP_OPCODE);  /* NOP */
+      if( STMemory_ReadLong(0xFC0302)==0x42b90000L ) {
+        STMemory_WriteWord(0xFC0302, CONDRV_OPCODE);
+        STMemory_WriteWord(0xFC0302+2, NOP_OPCODE);   /* NOP */
+        STMemory_WriteWord(0xFC0302+4, NOP_OPCODE);   /* NOP */
+      }
 
       /* Timer D (MFP init 0xFC2408) */
-      STMemory_WriteWord(0xFC2450,TIMERD_OPCODE);
+      if( STMemory_ReadLong(0xFC2450)==0x74026100 )
+        STMemory_WriteWord(0xFC2450, TIMERD_OPCODE);
 
       /* Modify assembler loaded into cartridge area */
       Cart_WriteHdvAddress(0x16DA);
