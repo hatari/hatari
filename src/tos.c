@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-static char rcsid[] = "Hatari $Id: tos.c,v 1.15 2003-04-01 16:11:36 thothy Exp $";
+static char rcsid[] = "Hatari $Id: tos.c,v 1.16 2003-04-01 21:02:29 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -61,7 +61,9 @@ unsigned int ConnectedDriveMaskList[] =
 unsigned short int TosVersion;          /* eg, 0x0100, 0x0102 */
 unsigned long TosAddress, TosSize;      /* Address in ST memory and size of TOS image */
 BOOL bTosImageLoaded = FALSE;           /* Successfully loaded a TOS image? */
+BOOL bRamTosImage;                      /* TRUE if we loaded a RAM TOS image */
 unsigned int ConnectedDriveMask=0x03;   /* Bit mask of connected drives, eg 0x7 is A,B,C */
+unsigned long STRamEnd;                 /* End of ST Ram, above this address is no-mans-land and hardware vectors */
 
 /* Possible TOS file extensions to scan for */
 char *pszTosNameExts[] =
@@ -71,9 +73,6 @@ char *pszTosNameExts[] =
   ".tos",
   NULL
 };
-
-unsigned long STRamEnd;                 /* End of ST Ram, above this address is no-mans-land and hardware vectors */
-unsigned long STRamEnd_BusErr;          /* as above, but start of BUS error exception */
 
 
 /* Flags that define if a TOS patch should be applied */
@@ -255,6 +254,13 @@ static void TOS_FixRom(void)
     return;
   }
 
+  /* We also can't patch RAM TOS images (yet) */
+  if(bRamTosImage)
+  {
+    fprintf(stderr, "RAM TOS image --> skipping TOS patches.\n");
+    return;
+  }
+
   nGoodPatches = nBadPatches = 0;
   TosCountry = STMemory_ReadWord(TosAddress+28)>>1;   /* TOS country code */
   bHdIsOn = (ACSI_EMU_ON || GEMDOS_EMU_ON);
@@ -268,11 +274,7 @@ static void TOS_FixRom(void)
        && (pPatch->Country == TosCountry || pPatch->Country == -1))
     {
       /* Make sure that we really patch the right place by comparing data: */
-      int Address = (TosAddress < 0xe00000 ? // tos in ram ?
-		     pPatch->Address - (TosVersion < 0x200 ? 0xfc0000 :
-					0xe00000)  + TosAddress :
-		     pPatch->Address);
-      if(STMemory_ReadLong(Address) == pPatch->OldData)
+      if(STMemory_ReadLong(pPatch->Address) == pPatch->OldData)
       {
         /* Only apply the patch if it is really needed: */
         if(pPatch->Flags == TP_ALWAYS || (pPatch->Flags == TP_HD_ON && bHdIsOn)
@@ -280,7 +282,7 @@ static void TOS_FixRom(void)
         {
           /* Now we can really apply the patch! */
           /*fprintf(stderr, "Applying TOS patch '%s'.\n", pPatch->pszName);*/
-          memcpy(&STRam[Address], pPatch->pNewData, pPatch->Size);
+          memcpy(&STRam[pPatch->Address], pPatch->pNewData, pPatch->Size);
         }
         else
         {
@@ -290,7 +292,8 @@ static void TOS_FixRom(void)
       }
       else
       {
-        fprintf(stderr, "Failed to apply TOS patch '%s' at %x (expected %x found %x).\n", pPatch->pszName,Address,pPatch->OldData,STMemory_ReadLong(Address));
+        fprintf(stderr, "Failed to apply TOS patch '%s' at %x (expected %x, found %lx).\n",
+                pPatch->pszName, pPatch->Address, pPatch->OldData, STMemory_ReadLong(pPatch->Address));
         nBadPatches += 1;
       }
     }
@@ -368,9 +371,6 @@ static void TOS_SetDefaultMemoryConfig(void)
 /*
   Load TOS Rom image file into ST memory space and fix image so can emulate correctly
   Pre TOS 1.06 are loaded at 0xFC0000 with later ones at 0xE00000
-  If we cannot find the TOS image, or we detect an error we default to the built-in
-  TOS 1.00 image. This works great for new users who do not understand the idea of a TOS
-  Rom and are confused when presented with a 'select TOS image' dialog.
 */
 int TOS_LoadImage(void)
 {
@@ -385,23 +385,31 @@ int TOS_LoadImage(void)
 
   if(pTosFile && TosSize>0)
   {
+    /* Check for RAM TOS images first: */
+    if(STMemory_Swap68000Long(*(Uint32 *)pTosFile) == 0x46FC2700)
+    {
+      fprintf(stderr, "Warning: Detected a RAM TOS - this will probably not work very well!\n");
+      /* RAM TOS images have a 256 bytes loader function before the real image
+       * starts, so we simply skip the first 256 bytes here: */
+      TosSize -= 0x100;
+      memmove(pTosFile, pTosFile + 0x100, TosSize);
+      bRamTosImage = TRUE;
+    }
+    else
+    {
+      bRamTosImage = FALSE;
+    }
+
     /* Now, look at start of image to find Version number and address */
     TosVersion = STMemory_Swap68000Int(*(Uint16 *)((Uint32)pTosFile+2));
     TosAddress = STMemory_Swap68000Long(*(Uint32 *)((Uint32)pTosFile+8));
 
-    if(TosVersion<0x100 || TosVersion>0x500) {
-      TosSize-=0x100;
-      memmove(pTosFile,pTosFile+0x100,TosSize);
-      TosVersion = STMemory_Swap68000Int(*(Uint16 *)((Uint32)pTosFile+2));
-      TosAddress = STMemory_Swap68000Long(*(Uint32 *)((Uint32)pTosFile+8));
-    }
-
     /* Check for reasonable TOS version: */
     if(TosVersion<0x100 || TosVersion>0x500 || TosSize>1024*1024L
-       || (TosAddress!=0xe00000 && TosAddress!=0xfc0000 && TosAddress!=0xad00))
+       || (!bRamTosImage && TosAddress!=0xe00000 && TosAddress!=0xfc0000))
     {
       Main_Message("Your TOS seems not to be a valid TOS ROM file!\n", PROG_NAME);
-      fprintf(stderr,"(Version %x Adress %x)\n",TosVersion,TosAddress);
+      fprintf(stderr,"(TOS version %x, address %lx)\n", TosVersion, TosAddress);
       return -2;
     }
 
