@@ -709,7 +709,8 @@ void Intercept_Colour_WriteWord(unsigned long addr)
    unsigned short col;
    Video_SetHBLPaletteMaskPointers();               /* Set 'pHBLPalettes' etc.. according cycles into frame */
    col = STMemory_ReadWord( addr );
-   col &= 0x777;                                    /* Mask off to 512 palette(some games write 0xFFFF and read back to see if STe) */
+   col &= 0x777;                                    /* Mask off to 512 palette */
+   STMemory_WriteWord(addr, col);                   /* (some games write 0xFFFF and read back to see if STe) */
    Spec512_StoreCyclePalette( col, addr );          /* Store colour into CyclePalettes[] */
    pHBLPalettes[(addr-0xff8240)/2]=col;             /* Set colour x */
    *pHBLPaletteMasks |= 1 << ((addr-0xff8240)/2);   /* And mask */
@@ -820,16 +821,10 @@ void Intercept_ShifterMode_WriteByte(void)
    VideoShifterByte = STRam[0xff8260] & 3;            /* We only care for lower 2-bits */
    Video_WriteToShifter();
    Video_SetHBLPaletteMaskPointers();
-   *pHBLPaletteMasks &= 0xffff00ff;
-   *pHBLPaletteMasks |= (VideoShifterByte|0x04)<<8;   /* Store resolution after palette mask and set resolution write bit */
+   *pHBLPaletteMasks &= 0xff00ffff;
+   /* Store resolution after palette mask and set resolution write bit: */
+   *pHBLPaletteMasks |= (((unsigned long)VideoShifterByte|0x04)<<16);
   }
-/* FIXME: Is the pHBLPaletteMasks stuff okay? In the original source, it was: */
-/*
-    mov    ebp,[pHBLPaletteMasks]    // Store resolution
-    mov    bl,[VideoShifterByte]
-    mov    BYTE PTR [ebp+2],bl       // after palette mask
-    or    BYTE PTR [ebp+2],0x04      // and set resolution write bit
-*/
 }
 
 /* INTERCEPT_DISKCONTROL(0xff8604 word) */

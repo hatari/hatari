@@ -1,3 +1,8 @@
+2001-09-20 (Thomas Huth):
+  * Added screen flipping in fullscreen mode (-> more speed!).
+  * ST-Med/ST-Low mixed mode now works (e.g. in the Magnetic
+    Scrolls adventures).
+
 2001-09-09 (Sven de Marothy):
   * Added hard-drive emulation, (option -e or --harddrive)
   * Fixed annoying key clicks during boot.

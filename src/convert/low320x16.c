@@ -4,9 +4,8 @@ void ConvertLowRes_320x16Bit(void)
 {
  Uint32 *edi, *ebp;
  Uint16 *esi;
- register Uint32 eax, ebx, ecx, edx;
-
- edx=0;
+ Uint32 eax, edx;
+ register Uint32 ebx, ecx;
 
  Convert_StartFrame();            /* Start frame, track palettes */
  ScrY = STScreenStartHorizLine;   /* Starting line in ST screen */
@@ -16,60 +15,23 @@ void ConvertLowRes_320x16Bit(void)
    eax = STScreenLineOffset[ScrY] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
    edi = (Uint32 *)((Uint8 *)pSTScreen + eax);        /* ST format screen 4-plane 16 colours */
    ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
-   esi = (Uint16 *)pPCScreenDest;                   /* PC format screen */
+   esi = (Uint16 *)pPCScreenDest;                     /* PC format screen */
 
    AdjustLinePaletteRemap();
  
-/*
-    call  AdjustLinePaletteRemap        // Change palette table, DO NOT corrupt edx,edi,esi or ebp!
-    jmp    Line_ConvertLowRes_320x16Bit    // 0 palette same, can do check tests
-}
-*/
-
-/*
-NAKED void Line_ConvertLowRes_320x16Bit(void)
-{
-*/
-
-   ScrX=STScreenWidthBytes>>3;                /* Amount to draw across in 16-pixels(8 bytes) */
-/*
-  __asm {
-    mov    eax,[STScreenWidthBytes]    // Amount to draw across
-    shr    eax,3          // in 16-pixels(8 bytes)
-    mov    [ScrX],eax
-*/
+   ScrX=STScreenWidthBytes>>3;                        /* Amount to draw across in 16-pixels(8 bytes) */
 
    do    /* x-loop */
     {
      /* Do 16 pixels at one time */
      ebx=*edi;
      ecx=*(edi+1);
-     /* ScrUpdateFlag seems not to be set correctly?! - Thothy */
-     if( 1||(ScrUpdateFlag&0xe0000000) || ebx!=*ebp || ecx!=*(ebp+1) )     /* Does differ? */
-      { /* copy word */
-/*
-x_loop:
 
-    // Do 16 pixels at one time
-    mov    ebx,[edi]
-    mov    ecx,4[edi]
-    // Full update? or just test changes?
-    test  [ScrUpdateFlag],0xe0000000
-    jne    copy_word        // Force
-    // Does differ?
-    cmp    ebx,[ebp]
-    jne    copy_word
-    cmp    ecx,4[ebp]
-    je    next_word        // Pixels are same as last frame, so ignore
-*/
+     if( (ScrUpdateFlag&0xe0000000) || ebx!=*ebp || ecx!=*(ebp+1) )     /* Does differ? */
+      { /* copy word */
 
        bScreenContentsChanged=TRUE;
    
-/*
-copy_word:
-    mov    [bScreenContentsChanged],TRUE
-*/
-
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
        /* Plot pixels */
        LOW_BUILD_PIXELS_0 ;      /* Generate 'ecx' as pixels [4,5,6,7] */
@@ -98,37 +60,11 @@ copy_word:
      ebp += 2;                              /* Next ST copy pixels */
     }
    while( --ScrX );                         /* Loop on X */
-/*
-next_word:
-    add    esi,16*2        // Next PC pixels
-    add    edi,8          // Next ST pixels
-    add    ebp,8          // Next ST copy pixels
 
-    dec    [ScrX]
-    jne    x_loop          // Loop on X
-*/
-
-   pPCScreenDest = (void *)(((unsigned char *)pPCScreenDest)+PCScreenBytesPerLine);  /* Offset to next line */
+   pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine);  /* Offset to next line */
    ScrY += 1;
   }
  while( ScrY < STScreenEndHorizLine );      /* Loop on Y */
-/*
-    mov    eax,[pPCScreenDest]
-    add    eax,[PCScreenBytesPerLine]    // Offset to next line
-    mov    [pPCScreenDest],eax
-    
-    inc    [ScrY]
-    mov    eax,[STScreenEndHorizLine]
-    cmp    [ScrY],eax
-    jne    ConvertLowRes_320x16Bit_YLoop    // And on Y
 
-    pop    ebx
-    pop    esi
-    pop    edi
-    pop    ebp
-
-    ret
-  }
-*/
 }
 

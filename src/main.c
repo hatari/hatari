@@ -274,6 +274,7 @@ void Main_ReadParameters(int argc, char *argv[])
       else if (!strcmp(argv[i],"--mono") || !strcmp(argv[i],"-m"))
       {
        bUseHighRes=TRUE;
+       ConfigureParams.Screen.bUseHighRes=TRUE;
        STRes=PrevSTRes=ST_HIGH_RES;
       }
       else if (!strcmp(argv[i],"--fullscreen") || !strcmp(argv[i],"-f"))

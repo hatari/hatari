@@ -114,7 +114,7 @@ void Screen_UnInit(void)
   int i;
 
   /* Free memory used for ST screen bitmap */
-//FIXME   DeleteObject(hBitmap);
+  /*DeleteObject(hBitmap);*/
 
   /* And for copies */
   for(i=0; i<NUM_FRAMEBUFFERS; i++) {
@@ -203,7 +203,7 @@ void Screen_SetupRGBTable(BOOL bFullScreen)
 void Screen_EnterFullScreen(void)
 {
   SDL_Surface *newsdlscrn;
-  const unsigned int sdlvmode = SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN;
+  const unsigned int sdlvmode = SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE;
 
   if (!bInFullScreen) {
     Main_PauseEmulation();        /* Hold things... */
@@ -421,10 +421,10 @@ void Screen_DidResolutionChange(void)
       SDL_Surface *newsdlscrn;
       if (bUseVDIRes)
         newsdlscrn = SDL_SetVideoMode(ScreenDrawVDIFullScreen[STRes].Width, ScreenDrawVDIFullScreen[STRes].Height,
-                               ScreenDrawVDIFullScreen[STRes].BitDepth, SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN);
+                               ScreenDrawVDIFullScreen[STRes].BitDepth, SDL_SWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE);
        else
         newsdlscrn = SDL_SetVideoMode(ScreenDrawFullScreen[STRes].Width, ScreenDrawFullScreen[STRes].Height,
-                               ScreenDrawFullScreen[STRes].BitDepth, SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN);
+                               ScreenDrawFullScreen[STRes].BitDepth, SDL_SWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE);
       if( newsdlscrn )
         sdlscrn = newsdlscrn;
        else
@@ -686,7 +686,7 @@ void Screen_SetWindowConvertDetails(void)
 {
   /* Reset Double Y, used for Window medium res' and in full screen */
   bScrDoubleY = FALSE;
-  if (/*ConfigureParams.Screen.*/bUseHighRes) {
+  if (ConfigureParams.Screen.bUseHighRes) {
     pSTScreen = pFrameBuffer->pSTScreen;        /* Source in ST memory */
     pPCScreenDest = pScreenBitmap;
     pFrameBuffer->OverscanModeCopy = OverscanMode = OVERSCANMODE_NONE;
@@ -784,130 +784,63 @@ BOOL Screen_Lock(void)
 void Screen_UnLock(void)
 {
   if( SDL_MUSTLOCK(sdlscrn) )
-    SDL_LockSurface(sdlscrn);
+    SDL_UnlockSurface(sdlscrn);
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
   Blit our converted ST screen to window/full-screen
-  Note that our Window source image includes all borders so if have them disabled simply blit a smaller source rectangle!
+  Note that our source image includes all borders so if have them disabled simply blit a smaller source rectangle!
 */
 void Screen_Blit(BOOL bSwapScreen)
 {
-  SDL_Rect rct;
-  rct.x=0; rct.y=0;  rct.w=sdlscrn->w; rct.h=sdlscrn->h;
-  SDL_UpdateRects(sdlscrn, 1, &rct);
-
-
-/* FIXME */
-/*
-  // Window RECT areas to Blit according to if overscan is enabled or not(source always includes all borders)
-  static RECT SrcWindowBitmapSizes[] = {
-    OVERSCAN_LEFT,OVERSCAN_BOTTOM, 320,200,        // ST_LOW_RES
-    (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400,  // ST_MEDIUM_RES
-    0,0, 640,400,                    // ST_HIGH_RES
-    (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400,  // ST_LOWMEDIUM_MIX_RES
+  /* Rectangle areas to Blit according to if overscan is enabled or not (source always includes all borders) */
+  static SDL_Rect SrcWindowBitmapSizes[] = {
+    OVERSCAN_LEFT,OVERSCAN_BOTTOM, 320,200,             /* ST_LOW_RES */
+    (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400,   /* ST_MEDIUM_RES */
+    0,0, 640,400,                                       /* ST_HIGH_RES */
+    (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400,   /* ST_LOWMEDIUM_MIX_RES */
   };
-  static RECT SrcWindowOverscanBitmapSizes[] = {
+  static SDL_Rect SrcWindowOverscanBitmapSizes[] = {
     0,0, OVERSCAN_LEFT+320+OVERSCAN_RIGHT,OVERSCAN_TOP+200+OVERSCAN_BOTTOM,
     0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1),
     0,0, 640,400,
     0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1),
   };
-  // And 1:1 scale
-  static RECT SrcWindowBitmapSizes_1to1[] = {
-    OVERSCAN_LEFT, OVERSCAN_TOP,      320, 200,
-    (OVERSCAN_LEFT<<1), (OVERSCAN_TOP<<1),  640, 400,
-    0, 0,                  640, 400,
-    (OVERSCAN_LEFT<<1), (OVERSCAN_TOP<<1),  640, 400,
-  };
-  static RECT SrcWindowOverscanBitmapSizes_1to1[] = {
-    0, 0,  OVERSCAN_LEFT+320+OVERSCAN_RIGHT, OVERSCAN_TOP+200+OVERSCAN_BOTTOM,
-    0, 0,  (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1), (OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1),
-    0, 0,  640, 400,
-    0, 0,  (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1), (OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1),
-  };
-  unsigned char *pSTScreen;
-  RECT Rect, ViewRect, *SrcRect;
 
-  // Blit to full screen or window?
+  unsigned char *pSTScreen;
+  SDL_Rect *SrcRect;
+
+  /* Blit to full screen or window? */
   if (bInFullScreen) {
-    // Swap screen, MUST use DDFLIP_WAIT(wait for complete) otherwise screen will corrupt during copy on some graphics cards...
+    /* Swap screen */
     if (bSwapScreen)
-      pPrimarySurface->Flip(NULL, DDFLIP_WAIT);
+      SDL_Flip(sdlscrn);
   }
   else {
-    // Get area of client to draw to
-    GetClientRect(hWnd,&Rect);
-
-    // Find rectangle to draw to...
-    if (ConfigureParams.Screen.Advanced.bAllowOverscan)
-      ViewRect = SrcWindowOverscanBitmapSizes_1to1[STRes];
-    else
-      ViewRect = SrcWindowBitmapSizes_1to1[STRes];
-    // Find what wanted client rectangle would be for this resolution
-    ViewRect.right += BORDER_WIDTH;
-    ViewRect.bottom += BORDER_HEIGHT;
-
-    // VDI resolution?
-    if (bUseVDIRes) {
-      // Show VDI resolution, no overscan
-      StretchDIBits(MainDC,SCREEN_AREA_STARTX,SCREEN_AREA_STARTY,Rect.right-BORDER_WIDTH,Rect.bottom-BORDER_HEIGHT,0,0,ScreenBMP.InfoHeader.biWidth,-ScreenBMP.InfoHeader.biHeight,pScreenBitmap,(BITMAPINFO *)&ScreenBMP.InfoHeader,DIB_RGB_COLORS,SRCCOPY);
-    }
-    else if (ConfigureParams.Screen.bUseHighRes) {
-      // Do as colour/mono
-      StretchDIBits(MainDC,SCREEN_AREA_STARTX,SCREEN_AREA_STARTY,Rect.right-BORDER_WIDTH,Rect.bottom-BORDER_HEIGHT,0,0,640,400,pScreenBitmap,(BITMAPINFO *)&ScreenBMP.InfoHeader,DIB_RGB_COLORS,SRCCOPY);
+    /* VDI resolution? */
+    if (bUseVDIRes || ConfigureParams.Screen.bUseHighRes) {
+      /* Show VDI or mono resolution, no overscan */
+      SDL_UpdateRect(sdlscrn, 0,0,0,0);
     }
     else {
-      // Does this match the client area? If so, we have a 1:1
-      // Handle this differently as some graphics cards don't optimise for this case with 'SetDIBitsToDevice()'
-      if ( (ViewRect.right==Rect.right) && (ViewRect.bottom==Rect.bottom) ) {
-        HRGN ClippingRegion=NULL;
-
-        // Find rectangle to draw to...
-        if (ConfigureParams.Screen.Advanced.bAllowOverscan)
-          SrcRect = &SrcWindowOverscanBitmapSizes_1to1[STRes];
-        else {
-          SrcRect = &SrcWindowBitmapSizes_1to1[STRes];
-
-          // Generate clipping region(SetDIBitsToDevice cannot skip all edges of a bitmap)
-          Rect.left = SCREEN_AREA_STARTX;
-          Rect.top = SCREEN_AREA_STARTY;
-          Rect.right = SCREEN_AREA_STARTX+SrcRect->right;
-          Rect.bottom = SCREEN_AREA_STARTY+SrcRect->bottom;
-          ClippingRegion = CreateRectRgnIndirect(&Rect);
-          SelectClipRgn(MainDC,ClippingRegion);
-        }
-
-        // Blit image
-        StretchDIBits(MainDC,SCREEN_AREA_STARTX-SrcRect->left,SCREEN_AREA_STARTY-SrcRect->top,ScreenBMP.InfoHeader.biWidth,-ScreenBMP.InfoHeader.biHeight,0,0,ScreenBMP.InfoHeader.biWidth,-ScreenBMP.InfoHeader.biHeight,pScreenBitmap,(BITMAPINFO *)&ScreenBMP.InfoHeader,DIB_RGB_COLORS,SRCCOPY);
-
-        // And clean up
-        if (ClippingRegion) {
-          SelectClipRgn(MainDC,NULL);
-          DeleteObject(ClippingRegion);
-        }
-      }
-      else {
-        // Find rectangle to draw from...
+        /* Find rectangle to draw from... */
         if (ConfigureParams.Screen.Advanced.bAllowOverscan)
           SrcRect = &SrcWindowOverscanBitmapSizes[STRes];
         else
           SrcRect = &SrcWindowBitmapSizes[STRes];
-
-        // Blit(Stretch) image
-        StretchDIBits(MainDC,SCREEN_AREA_STARTX,SCREEN_AREA_STARTY,Rect.right-BORDER_WIDTH,Rect.bottom-BORDER_HEIGHT,SrcRect->left,SrcRect->top,SrcRect->right,SrcRect->bottom,pScreenBitmap,(BITMAPINFO *)&ScreenBMP.InfoHeader,DIB_RGB_COLORS,SRCCOPY);
-      }
+        /* Blit image */
+        SDL_UpdateRects(sdlscrn, 1, SrcRect);
     }
   }
 
-  // Swap copy/raster buffers in screen.
+  /* Swap copy/raster buffers in screen. */
   pSTScreen = pFrameBuffer->pSTScreenCopy;
   pFrameBuffer->pSTScreenCopy = pFrameBuffer->pSTScreen;
   pFrameBuffer->pSTScreen = pSTScreen;
-*/
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*

@@ -8,9 +8,9 @@ extern BOOL bScrDoubleY;
 
 extern void ConvertLowRes_320x16Bit(void);
 extern void ConvertLowRes_640x16Bit(void);
-extern void Line_ConvertLowRes_640x16Bit(void);
+extern void Line_ConvertLowRes_640x16Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax, Uint32 ebx, Uint32 ecx);
 extern void ConvertMediumRes_640x16Bit(void);
-extern void Line_ConvertMediumRes_640x16Bit(void);
+extern void Line_ConvertMediumRes_640x16Bit(Uint32 *edi, Uint32 *ebp, Uint16 *esi, Uint32 eax, Uint32 ebx, Uint32 ecx);
 extern void ConvertLowRes_320x8Bit(void);
 extern void ConvertLowRes_640x8Bit(void);
 extern void Line_ConvertLowRes_640x8Bit(void);
