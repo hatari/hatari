@@ -1,21 +1,7 @@
-# Makefile for Hatari
+# Main Makefile for Hatari.
 
-# Set the C compiler (e.g. gcc)
-CC = gcc
-
-# Set flags passed to the compiler (e.g. optimization flags)
-CMPLRFLAGS = -g -O2 -Wall -Wno-unused
-
-# Here you can define the default data directory for Hatari where it
-# looks for the default TOS image etc.
-# For example you can use the local directory with . or if you want to do
-# a system-wide installation, use something like /usr/share/hatari
-DATADIR = .
-
-# SDL-Library configuration - you don't have to change this if you have
-# correctly installed the SDL library and if you are using GNU make!
-SDLLIB = $(shell sdl-config --libs)
-SDLFLAGS = $(shell sdl-config --cflags)
+# Include settings
+include ../Makefile.cnf
 
 # Additional include directories:
 INCFLAGS = -I./includes -I./uae-cpu
@@ -23,7 +9,8 @@ INCFLAGS = -I./includes -I./uae-cpu
 # Additional libaries:
 LIBFLAGS = -lz
 
-CFLAGS = $(CMPLRFLAGS) $(INCFLAGS) $(SDLFLAGS)
+
+CFLAGS += -DDATADIR=\"$(DATADIR)\" $(INCFLAGS) $(SDL_CFLAGS)
 
 
 CPUOBJS = ./uae-cpu/hatari-glue.o ./uae-cpu/memory.o ./uae-cpu/newcpu.o \
@@ -32,39 +19,56 @@ CPUOBJS = ./uae-cpu/hatari-glue.o ./uae-cpu/memory.o ./uae-cpu/newcpu.o \
   ./uae-cpu/cpuemu4.o ./uae-cpu/cpuemu5.o ./uae-cpu/cpuemu6.o \
   ./uae-cpu/cpuemu7.o ./uae-cpu/cpuemu8.o
 
+GUIOBJS = ./gui-sdl/dlgAbout.o ./gui-sdl/dlgDevice.o ./gui-sdl/dlgDisc.o \
+  ./gui-sdl/dlgJoystick.o ./gui-sdl/dlgKeyboard.o ./gui-sdl/dlgMain.o \
+  ./gui-sdl/dlgMemory.o ./gui-sdl/dlgScreen.o ./gui-sdl/dlgSound.o \
+  ./gui-sdl/dlgSystem.o ./gui-sdl/dlgTosGem.o \
+  ./gui-sdl/dlgFileSelect.o ./gui-sdl/sdlgui.o
+
+
 SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c \
   createBlankImage.c createDiscImage.c debug.c debugui.c dialog.c errlog.c \
   fdc.c file.c floppy.c gemdos.c hdc.c ikbd.c int.c intercept.c joy.c keymap.c \
   m68000.c main.c midi.c memAlloc.c memorySnapShot.c mfp.c misc.c msa.c psg.c \
   printer.c rs232.c reset.c rtc.c st.c stMemory.c screen.c screenConvert.c \
-  screenSnapShot.c sdlgui.c shortcut.c sound.c spec512.c \
-  tos.c unzip.c vdi.c video.c wavFormat.c xbios.c ymFormat.c zip.c
+  screenSnapShot.c shortcut.c sound.c spec512.c tos.c unzip.c vdi.c video.c \
+  wavFormat.c xbios.c ymFormat.c zip.c
 
 OBJS = $(SRCS:.c=.o)
 
 
-hatari: $(OBJS) cpu
-	$(CC) $(OBJS) $(CPUOBJS) $(SDLLIB) $(LIBFLAGS) -o hatari
-#	strip hatari
+ALLOBJS = $(OBJS) $(GUIOBJS) $(CPUOBJS)
 
-cpu:
-	$(MAKE) -C uae-cpu/ CC="$(CC)" CMPLRFLAGS="$(CMPLRFLAGS)" SDLFLAGS="$(SDLFLAGS)" all
+
+all: hatari
+
+hatari: $(ALLOBJS)
+	$(CC) $(ALLOBJS) $(SDL_LIBS) $(LIBFLAGS) -o hatari
 
 clean:
 	rm -f *.o hatari
+	$(MAKE) -C gui-sdl/ clean
 	$(MAKE) -C uae-cpu/ clean
 
 
-configuration.o: configuration.c
-	$(CC) $(CFLAGS) -c -DDATADIR=\"$(DATADIR)\" configuration.c -o configuration.o
+# Sub-folder dependencies:
+uae-cpu/%.o: uae-cpu/%.c
+	$(MAKE) -C uae-cpu/ all
+uae-cpu/cpuemu%.o: uae-cpu/cpuemu.c
+	$(MAKE) -C uae-cpu/ all
+uae-cpu/cpuemu.c: uae-cpu/gencpu.o uae-cpu/readcpu.c uae-cpu/cpudefs.c
+	$(MAKE) -C uae-cpu/ cpuemu.c
+uae-cpu/cpudefs.c: uae-cpu/build68k.c uae-cpu/table68k
+	$(MAKE) -C uae-cpu/ cpudefs.c
 
-sdlgui.o: sdlgui.c
-	$(CC) $(CFLAGS) -c -DDATADIR=\"$(DATADIR)\" sdlgui.c -o sdlgui.o
+gui-sdl/%.o: gui-sdl/%.c
+	$(MAKE) -C gui-sdl/ all
 
 
 # Use "make depend" to generate file dependencies:
 depend: $(SRCS)
 	$(CC) -MM $(CFLAGS) $(SRCS) > Makefile.dep
+	$(MAKE) -C gui-sdl/ depend
 
 ifneq (,$(wildcard Makefile.dep))
 include Makefile.dep

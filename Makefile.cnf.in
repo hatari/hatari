@@ -1,0 +1,38 @@
+# Makefile configuration for Hatari.
+
+# Set the C compiler (e.g. gcc)
+CC = @CC@
+
+# The native C compiler.
+# This is normaly the same as $(CC) unless you are using a cross compiler.
+HOSTCC = @HOSTCC@
+
+# Set flags passed to the compiler (e.g. optimization flags)
+CFLAGS = @CFLAGS@
+
+# Set flags passed to the preprocessor (e.g. -I<include dir>)
+CPPFLAGS = @CPPFLAGS@
+
+# SDL-Library configuration (compiler flags and linker options)
+SDL_CFLAGS = @SDL_CFLAGS@
+SDL_LIBS = @SDL_LIBS@
+
+
+# Paths and directories
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+# Here you can define the default data directory for Hatari.
+# The emulator looks there for the default TOS image, its font etc.
+# For example you can use the local directory with "." or if you want
+# a system-wide installation, use something like "/usr/share/hatari".
+DATADIR = @datadir@
+
+# The executable will be installed in BINDIR
+BINDIR = @bindir@
+
+
+# Program used for "make install"
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@ -s
+INSTALL_DATA = @INSTALL_DATA@
