@@ -32,6 +32,16 @@ void ConvertSpec512_320x16Bit(void)
      ecx = *(edi+1);
 
      /* Convert planes to byte indices - as works in wrong order store to workspace so can read back in order! */
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+     LOW_BUILD_PIXELS_0 ;
+     PixelWorkspace[3] = ecx;
+     LOW_BUILD_PIXELS_1 ;
+     PixelWorkspace[1] = ecx;
+     LOW_BUILD_PIXELS_2 ;
+     PixelWorkspace[2] = ecx;
+     LOW_BUILD_PIXELS_3 ;
+     PixelWorkspace[0] = ecx;
+#else
      LOW_BUILD_PIXELS_0 ;               /* Generate 'ecx' as pixels [4,5,6,7] */
      PixelWorkspace[1] = ecx;
      LOW_BUILD_PIXELS_1 ;               /* Generate 'ecx' as pixels [12,13,14,15] */
@@ -40,6 +50,7 @@ void ConvertSpec512_320x16Bit(void)
      PixelWorkspace[0] = ecx;
      LOW_BUILD_PIXELS_3 ;               /* Generate 'ecx' as pixels [8,9,10,11] */
      PixelWorkspace[2] = ecx;
+#endif
 
      /* And plot, the Spec512 is offset by 1 pixel and works on 'chunks' of 4 pixels */
      /* So, we plot 1_4_4_3 to give 16 pixels, changing palette between */
@@ -48,7 +59,8 @@ void ConvertSpec512_320x16Bit(void)
      PLOT_SPEC512_LEFT_LOW_320_16BIT(0) ;
      Spec512_UpdatePaletteSpan();
 
-     ecx = *(Uint32 *)( ((Uint8 *)PixelWorkspace)+1 );  /* FIXME: I guess this will not work on some non-Intel architectures - Thothy */
+     /* FIXME: This does not yet work right on non-i86 machines  - Thothy */
+     ecx = *(Uint32 *)( ((Uint8 *)PixelWorkspace)+1 );
      PLOT_SPEC512_MID_320_16BIT(1) ;
      Spec512_UpdatePaletteSpan();
 

@@ -12,6 +12,8 @@
   is a problem, though, as the palette can change once every 4 pixels - that's a lot of processing.
 */
 
+#include <SDL_byteorder.h>
+
 #include "main.h"
 #include "debug.h"
 #include "decode.h"
@@ -29,6 +31,10 @@ unsigned short int CycleColour;
 int CycleColourIndex;
 int nScanLine, ScanLineCycleCount;
 BOOL bIsSpec512Display;
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+static const int STRGBPalEndianTable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
+#endif
 
 
 /*-----------------------------------------------------------------------*/
@@ -63,13 +69,16 @@ void Spec512_StartVBL(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Store 'bx' colour into 'CyclePalettes[]' according to cycles into frame
-  Address is passed in 'ecx', eg 0xff8240
+  Store color into table 'CyclePalettes[]' for screen conversion according
+  to cycles into frame.
 */
-void Spec512_StoreCyclePalette_Execute(void)
+void Spec512_StoreCyclePalette(unsigned short col, unsigned long addr)
 {
   CYCLEPALETTE *pCyclePalette;
   int FrameCycles,ScanLine;
+
+  CycleColour = col;
+  CycleColourIndex = (addr-0xff8240)>>1;
 
   /* Find number of cycles into frame */
   FrameCycles = Int_FindFrameCycles();
@@ -97,13 +106,6 @@ void Spec512_StoreCyclePalette_Execute(void)
     bIsSpec512Display = TRUE;
 }
 
-void Spec512_StoreCyclePalette(unsigned short col, unsigned long addr)
-{
-  CycleColour = col;
-  CycleColourIndex = (addr-0xff8240)>>1;
-  Spec512_StoreCyclePalette_Execute();    /* Store it in table for screen conversion */
-}
-
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -117,14 +119,21 @@ void Spec512_StartFrame(void)
   Screen_SetFullUpdate();
 
   /* Set terminators on each line, so when scan during conversion we know when to stop */
-  for(i=0; i<(SCANLINES_PER_FRAME+1); i++) {
+  for(i=0; i<(SCANLINES_PER_FRAME+1); i++)
+  {
     pCyclePalette = &CyclePalettes[ (i*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[i] ];
     pCyclePalette->LineCycles = -1;          /* Term */
   }
 
   /* Copy first line palette, kept in 'HBLPalettes' and store to 'STRGBPalette' */
   for(i=0; i<16; i++)
+  {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+    STRGBPalette[STRGBPalEndianTable[i]] = ST2RGB[HBLPalettes[i]&0x777];
+#else
     STRGBPalette[i] = ST2RGB[HBLPalettes[i]&0x777];
+#endif
+  }
 
   /* Ready for first call to 'Spec512_ScanLine' */
   nScanLine = 0;
@@ -197,7 +206,11 @@ void Spec512_UpdatePaletteSpan(void)
   if( pCyclePalette->LineCycles == ScanLineCycleCount )
    {
     /* Need to update palette with new entry */
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+    STRGBPalette[STRGBPalEndianTable[pCyclePalette->Index]] = ST2RGB[pCyclePalette->Colour&0x777];
+#else
     STRGBPalette[pCyclePalette->Index] = ST2RGB[pCyclePalette->Colour&0x777];
+#endif
     pCyclePalette += 1;
    }
   ScanLineCycleCount += 4;      /* Next 4 cycles */
