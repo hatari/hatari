@@ -95,4 +95,4 @@ cpufast8.s: cpuemu.c cpuopti
 	rm cputmp8.s
 
 
-newcpu.o: sysdeps.h hatari-glue.h maccess.h memory.h newcpu.h compiler.h events.h
+newcpu.o: sysdeps.h hatari-glue.h maccess.h memory.h newcpu.h events.h

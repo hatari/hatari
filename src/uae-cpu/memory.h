@@ -34,15 +34,7 @@ typedef int (*check_func)(uaecptr, uae_u32) REGPARAM;
 extern char *address_space, *good_address_map;
 
 #undef DIRECT_MEMFUNCS_SUCCESSFUL
-/*#include "machdep/maccess.h"*/
 
-#ifndef CAN_MAP_MEMORY
-#undef USE_COMPILER
-#endif
-
-#if defined(USE_COMPILER) && !defined(USE_MAPPED_MEMORY)
-#define USE_MAPPED_MEMORY
-#endif
 
 #define ROMmem_start 0x00E00000
 #define ROMmem_size  (0x00FF0000-0x00E00000)

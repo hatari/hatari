@@ -134,13 +134,6 @@ typedef uae_u32 uaecptr;
 #endif
 
 
-#if defined USE_COMPILER
-#undef NO_PREFETCH_BUFFER
-#undef NO_EXCEPTION_3
-#define NO_EXCEPTION_3
-#define NO_PREFETCH_BUFFER
-#endif
-
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif

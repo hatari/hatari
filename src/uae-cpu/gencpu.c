@@ -22,7 +22,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-static char rcsid[] = "Hatari $Id: gencpu.c,v 1.6 2003-03-03 18:40:33 thothy Exp $";
+static char rcsid[] = "Hatari $Id: gencpu.c,v 1.7 2003-03-28 16:20:37 thothy Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -1351,7 +1351,6 @@ static void gen_opcode (unsigned long int opcode)
         insn_n_cycles = 20;
 	break;
     case i_RTD:
-	printf ("\tcompiler_flush_jsr_stack();\n");
 	genamode (Aipi, "7", sz_long, "pc", 1, 0);
 	genamode (curi->smode, "srcreg", curi->size, "offs", 1, 0);
 	printf ("\tm68k_areg(regs, 7) += offs;\n");
@@ -1386,7 +1385,6 @@ static void gen_opcode (unsigned long int opcode)
 	need_endlabel = 1;
 	break;
     case i_RTR:
-	printf ("\tcompiler_flush_jsr_stack();\n");
 	printf ("\tMakeSR();\n");
 	genamode (Aipi, "7", sz_word, "sr", 1, 0);
 	genamode (Aipi, "7", sz_long, "pc", 1, 0);
@@ -1469,11 +1467,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\t}\n");
 	    need_endlabel = 1;
 	}
-#ifdef USE_COMPILER
-	printf ("\tm68k_setpc_bcc(m68k_getpc() + 2 + (uae_s32)src);\n");
-#else
 	printf ("\tm68k_incpc ((uae_s32)src + 2);\n");
-#endif
 	fill_prefetch_0 ();
 	printf ("\treturn 10;\n");
 	printf ("didnt_jump:;\n");
@@ -1518,11 +1512,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\t\t}\n");
 	    need_endlabel = 1;
 	}
-#ifdef USE_COMPILER
-	printf ("\t\t\tm68k_setpc_bcc(m68k_getpc() + (uae_s32)offs + 2);\n");
-#else
 	printf ("\t\t\tm68k_incpc((uae_s32)offs + 2);\n");
-#endif
 	fill_prefetch_0 ();
 	printf ("\t\t\treturn 10;\n");
 	printf ("\t\t} else {\n\t\t\t");
@@ -2404,7 +2394,6 @@ static void generate_includes (FILE * f)
     fprintf (f, "#include \"maccess.h\"\n");
     fprintf (f, "#include \"memory.h\"\n");
     fprintf (f, "#include \"newcpu.h\"\n");
-    fprintf (f, "#include \"compiler.h\"\n");
     fprintf (f, "#include \"cputbl.h\"\n");
     fprintf (f, "#define CPUFUNC(x) x##_ff\n"
 	     "#ifdef NOFLAGS\n"

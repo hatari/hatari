@@ -10,14 +10,13 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.15 2003-03-07 17:10:43 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.16 2003-03-28 16:20:39 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
 #include "maccess.h"
 #include "memory.h"
 #include "newcpu.h"
-#include "compiler.h"
 #include "events.h"
 #include "../includes/main.h"
 #include "../includes/tos.h"
@@ -690,7 +689,6 @@ void Exception(int nr, uaecptr oldpc)
       }
     }
 
-    compiler_flush_jsr_stack();
     MakeSR();
 
     if (!regs.s) {
@@ -1140,7 +1138,6 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 {
     uaecptr pc = m68k_getpc ();
 
-    compiler_flush_jsr_stack ();
     if (opcode == 0x4E7B && get_long (0x10) == 0 ) {
 	write_log ("This program requires a 68020 CPU!\n");
 	broken_in = 1;
@@ -1218,7 +1215,6 @@ static void do_trace (void)
 
 static int do_specialties (void)
 {
-    run_compiled_code();
     if (regs.spcflags & SPCFLAG_DOTRACE) {
 	Exception (9,last_trace_ad);
     }

@@ -136,15 +136,12 @@ STATIC_INLINE void unset_special (uae_u32 x)
 #define m68k_dreg(r,num) ((r).regs[(num)])
 #define m68k_areg(r,num) (((r).regs + 8)[(num)])
 
-#if !defined USE_COMPILER
+
 STATIC_INLINE void m68k_setpc (uaecptr newpc)
 {
     regs.pc_p = regs.pc_oldp = get_real_address (newpc);
     regs.pc = newpc;
 }
-#else
-extern void m68k_setpc (uaecptr newpc);
-#endif
 
 STATIC_INLINE uaecptr m68k_getpc (void)
 {
@@ -248,15 +245,8 @@ STATIC_INLINE uae_u32 next_ilong (void)
     return r;
 }
 
-#ifdef USE_COMPILER
-extern void m68k_setpc_fast (uaecptr newpc);
-extern void m68k_setpc_bcc (uaecptr newpc);
-extern void m68k_setpc_rte (uaecptr newpc);
-#else
-#define m68k_setpc_fast m68k_setpc
 #define m68k_setpc_bcc  m68k_setpc
 #define m68k_setpc_rte  m68k_setpc
-#endif
 
 STATIC_INLINE void m68k_setstopped (int stop)
 {
@@ -266,6 +256,30 @@ STATIC_INLINE void m68k_setstopped (int stop)
     if (stop && (regs.spcflags & SPCFLAG_DOTRACE) == 0)
 	regs.spcflags |= SPCFLAG_STOP;
 }
+
+/* m68k_do_rts, m68k_do_bsr and m68k_do_jsr were originally defined in
+ * compiler.h, but since that header file has been removed from Hatari,
+ * they are now defined here: */
+STATIC_INLINE void m68k_do_rts(void)
+{
+    m68k_setpc(get_long(m68k_areg(regs, 7)));
+    m68k_areg(regs, 7) += 4;
+}
+
+STATIC_INLINE void m68k_do_bsr(uaecptr oldpc, uae_s32 offset)
+{
+    m68k_areg(regs, 7) -= 4;
+    put_long(m68k_areg(regs, 7), oldpc);
+    m68k_incpc(offset);
+}
+
+STATIC_INLINE void m68k_do_jsr(uaecptr oldpc, uaecptr dest)
+{
+    m68k_areg(regs, 7) -= 4;
+    put_long(m68k_areg(regs, 7), oldpc);
+    m68k_setpc(dest);
+}
+
 
 extern uae_u32 get_disp_ea_020 (uae_u32 base, uae_u32 dp);
 extern uae_u32 get_disp_ea_000 (uae_u32 base, uae_u32 dp);
