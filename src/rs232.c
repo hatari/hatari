@@ -6,17 +6,18 @@
 
   RS-232 Communications
 
-  This is similar to the Printing functions, we open a direct file
+  This is similar to the printing functions, we open a direct file
   (e.g. /dev/ttyS0) and send bytes over it.
   Using such method mimicks the ST exactly, and even allows us to connect
   to an actual ST! To wait for incoming data, we create a thread which copies
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.4 2004-01-12 12:21:44 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.5 2004-02-21 10:01:00 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_thread.h>
+#include <errno.h>
 
 #include "main.h"
 #include "configuration.h"
@@ -34,9 +35,9 @@ char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.4 2004-01-12 12:21:44 thothy Exp $
 
 
 BOOL bConnectedRS232 = FALSE;       /* Connection to RS232? */
-static FILE *hCom = NULL;           /* Handle to file */
+static FILE *hComIn = NULL;         /* Handle to file for reading */
+static FILE *hComOut = NULL;        /* Handle to file for writing */
 SDL_Thread *RS232Thread = NULL;     /* Thread handle for reading incoming data */
-//DCB dcb;                           // Control block
 unsigned char InputBuffer_RS232[MAX_RS232INPUT_BUFFER];
 int InputBuffer_Head=0, InputBuffer_Tail=0;
 
@@ -48,11 +49,12 @@ int InputBuffer_Head=0, InputBuffer_Tail=0;
 */
 void RS232_Init(void)
 {
-#if 0   /* RS232 is untested yet, so it's still disabled at the moment */
-	/* Create thread to wait for incoming bytes over RS-232 */
-	RS232Thread = SDL_CreateThread(RS232_ThreadFunc, NULL);
-	Dprintf(("RS232 thread has been created.\n"));
-#endif
+	if (ConfigureParams.RS232.bEnableRS232)
+	{
+		/* Create thread to wait for incoming bytes over RS-232 */
+		RS232Thread = SDL_CreateThread(RS232_ThreadFunc, NULL);
+		Dprintf(("RS232 thread has been created.\n"));
+	}
 }
 
 
@@ -76,33 +78,42 @@ void RS232_UnInit(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Open file on COM port
+  Open file on COM port.
 */
 BOOL RS232_OpenCOMPort(void)
 {
-	/* Create our COM file for input/output */
 	bConnectedRS232 = FALSE;
-	hCom = fopen(ConfigureParams.RS232.szDeviceFileName, "w+b"); 
-	if (hCom != NULL)
+
+	/* Create our COM file for output */
+	hComOut = fopen(ConfigureParams.RS232.szDeviceFileName, "wb"); 
+	if (hComOut == NULL)
 	{
-/*
-		// Get any early notifications, for thread
-		SetCommMask(hCom,EV_RXCHAR);
-		// Create input/output buffers
-		SetupComm(hCom,4096,4096);
-		// Purge buffers
-		PurgeComm(hCom,PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR);
-*/
-		/* Set defaults */
-		RS232_SetConfig(9600,0,UCR_1STOPBIT|UCR_PARITY|UCR_ODDPARITY);
-
-		/* Set all OK */
-		bConnectedRS232 = TRUE;
-
-		Dprintf(("Opened RS232 file: %s\n", ConfigureParams.RS232.szDeviceFileName));
+		Dprintf(("RS232: Failed to open output file %s\n",
+		         ConfigureParams.RS232.szDeviceFileName));
+		return FALSE;
 	}
+	setvbuf(hComOut, NULL, _IONBF, 0);
 
-	return(bConnectedRS232);
+	/* Create our COM file for input */
+	hComIn = fopen(ConfigureParams.RS232.szDeviceFileName, "rb"); 
+	if (hComIn == NULL)
+	{
+		Dprintf(("RS232: Failed to open input file %s\n",
+		         ConfigureParams.RS232.szDeviceFileName));
+		fclose(hComOut); hComOut = NULL;
+		return FALSE;
+	}
+	setvbuf(hComIn, NULL, _IONBF, 0);
+
+	/* Set defaults */
+	RS232_SetConfig(9600,0,UCR_1STOPBIT|UCR_PARITY|UCR_ODDPARITY);
+
+	/* Set all OK */
+	bConnectedRS232 = TRUE;
+
+	Dprintf(("Opened RS232 file: %s\n", ConfigureParams.RS232.szDeviceFileName));
+
+	return TRUE;
 }
 
 
@@ -115,13 +126,16 @@ void RS232_CloseCOMPort(void)
 	/* Do have file open? */
 	if (bConnectedRS232)
 	{
-		/* Close */
-		fclose(hCom);
-		hCom=NULL;
-
 		bConnectedRS232 = FALSE;
 
-		Dprintf(("Closed RS232 file.\n"));
+		/* Close */
+		fclose(hComIn);
+		hComIn = NULL;
+
+		fclose(hComOut);
+		hComOut = NULL;
+
+		Dprintf(("Closed RS232 files.\n"));
 	}
 }
 
@@ -154,6 +168,8 @@ void RS232_SetConfig(int Baud,short int Ctrl,short int Ucr)
 	Dprintf(("RS232_SetConfig(%i,%i,%i)\n",Baud,(int)Ctrl,(int)Ucr));
 /* FIXME */
 /*  
+  DCB dcb;                           // Control block
+
   // Get current config
   memset(&dcb,0x0,sizeof(DCB));
   GetCommState(hCom, &dcb);
@@ -215,9 +231,10 @@ BOOL RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
 	if (bConnectedRS232)
 	{
 		/* Send bytes directly to the COM file */
-		if (fwrite(pBytes, 1, nBytes, hCom))
+		if (fwrite(pBytes, 1, nBytes, hComOut))
 		{
-			fflush(hCom);
+			Dprintf(("RS232: Sent %i bytes ($%x ...)\n", nBytes, *pBytes));
+			/*fflush(hComOut);*/
 		}
 
 		/* Show icon on status bar */
@@ -232,7 +249,7 @@ BOOL RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Read characters from our internal input buffer(bytes from other machine)
+  Read characters from our internal input buffer (bytes from other machine)
 */
 BOOL RS232_ReadBytes(unsigned char *pBytes, int nBytes)
 {
@@ -277,7 +294,7 @@ BOOL RS232_GetStatus(void)
 /*
   Add incoming bytes from other machine into our input buffer
 */
-void RS232_AddBytesToInputBuffer(unsigned char *pBytes, int nBytes)
+static void RS232_AddBytesToInputBuffer(unsigned char *pBytes, int nBytes)
 {
 	int i;
 
@@ -302,20 +319,22 @@ int RS232_ThreadFunc(void *pData)
 	/* Check for any RS-232 incoming data */
 	while (TRUE)
 	{
-		if (hCom)
+		if (hComIn)
 		{
 			/* Read the bytes in, if we have any */
-			iInChar = fgetc(hCom);
+			iInChar = fgetc(hComIn);
 			if (iInChar != EOF)
 			{
 				/* Copy into our internal queue */
 				cInChar = iInChar;
 				RS232_AddBytesToInputBuffer(&cInChar, 1);
-				Dprintf(("RS232: Read character $%x\n", cInChar));
+				Dprintf(("RS232: Read character $%x\n", iInChar));
 			}
 			else
 			{
-				Dprintf(("RS232: Reached end of file!"));
+				/*Dprintf(("RS232: Reached end of input file!\n"));*/
+				clearerr(hComIn);
+				SDL_Delay(20);
 			}
 
 			/* Sleep for a while */
