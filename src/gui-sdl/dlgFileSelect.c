@@ -6,7 +6,7 @@
 
   A file selection dialog for the graphical user interface for Hatari.
 */
-char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.3 2003-12-25 14:19:39 thothy Exp $";
+char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.4 2004-01-13 11:07:19 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -223,12 +223,8 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
                         {
                           reloaddir = refreshentries = TRUE;
                           /* free zip file entries */
-                          while(zipfiles->nfiles > 0)
-                            {
-                              Memory_Free(zipfiles->names[zipfiles->nfiles-1]);
-                              zipfiles->nfiles--;
-                            }
-                          Memory_Free(zipfiles);
+                          ZIP_FreeZipDir(zipfiles);
+                          zipfiles = NULL;
                           /* Copy the path name to the dialog */
                           File_ShrinkName(dlgpath, path, 38);
                           browsingzip = FALSE;
@@ -338,12 +334,8 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
                 {
                   reloaddir = refreshentries = TRUE;
                   /* free zip file entries */
-                  while(zipfiles->nfiles > 0)
-                    {
-                      Memory_Free(zipfiles->names[zipfiles->nfiles-1]);
-                      zipfiles->nfiles--;
-                    }
-                  Memory_Free(zipfiles);
+                  ZIP_FreeZipDir(zipfiles);
+                  zipfiles = NULL;
                   /* Copy the path name to the dialog */
                   File_ShrinkName(dlgpath, path, 38);
                   browsingzip = FALSE;
@@ -387,12 +379,8 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
               if( browsingzip )
                 {
                   /* free zip file entries */
-                  while(zipfiles->nfiles > 0)
-                    {
-                      Memory_Free(zipfiles->names[zipfiles->nfiles-1]);
-                      zipfiles->nfiles--;
-                    }
-                  Memory_Free(zipfiles);
+                  ZIP_FreeZipDir(zipfiles);
+                  zipfiles = NULL;
                   browsingzip = FALSE;
                 }
 
@@ -451,12 +439,8 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
   if( browsingzip )
     {
       /* free zip file entries */
-      while(zipfiles->nfiles > 0)
-        {
-          Memory_Free(zipfiles->names[zipfiles->nfiles-1]);
-          zipfiles->nfiles--;
-        }
-      Memory_Free(zipfiles);
+      ZIP_FreeZipDir(zipfiles);
+      zipfiles = NULL;
     }
 
   if( zip_path != NULL )

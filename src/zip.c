@@ -1,8 +1,12 @@
 /*
-  Hatari
+  Hatari - zip.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   Zipped disc support, uses zlib
 */
+char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.6 2004-01-13 11:07:19 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,6 +43,7 @@ int Zip_FileNameHasSlash(char *fn)
     }  
   return( -1 );
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -99,11 +104,32 @@ zip_dir *ZIP_GetFiles(char *pszFileName)
 	}
     }
 
+  unzClose(uf);
+
   zd = (zip_dir *)Memory_Alloc(sizeof(zip_dir));
   zd->names = filelist;
   zd->nfiles = nfiles;
   return( zd );
 }
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Free the memory that has been allocated for a zip_dir.
+*/
+void ZIP_FreeZipDir(zip_dir *f_zd)
+{
+  while (f_zd->nfiles > 0)
+  {
+    f_zd->nfiles--;
+    Memory_Free(f_zd->names[f_zd->nfiles]);
+    f_zd->names[f_zd->nfiles] = NULL;
+  }
+  Memory_Free(f_zd->names);
+  f_zd->names = NULL;
+  Memory_Free(f_zd);
+}
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -175,9 +201,8 @@ struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
     {
       fentries[i] = (struct dirent *)Memory_Alloc(sizeof(struct dirent));
       strcpy(fentries[i]->d_name, files->names[i]);
-      Memory_Free(files->names[i]);
     }
-  Memory_Free(files);
+  ZIP_FreeZipDir(files);
   return(fentries);
 }
 
@@ -238,9 +263,7 @@ char *ZIP_FirstFile(char *filename)
       strncpy(name, files->names[i], ZIP_PATH_MAX);
     
   /* free the files */
-  for(i=0;i<files->nfiles;i++)
-    Memory_Free(files->names[i]);
-  Memory_Free(files);
+  ZIP_FreeZipDir(files);
 
   if(name[0] == '\0')
     return(NULL);
@@ -333,6 +356,7 @@ int ZIP_ReadDisc(char *pszFileName, char *pszZipPath, unsigned char *pBuffer)
       if((pszZipPath = ZIP_FirstFile(pszFileName)) == NULL)
 	{
 	  printf("Cannot open %s\n", pszFileName);
+	  unzClose(uf);
 	  return(0);
 	}
       pathAllocated=TRUE;
@@ -340,18 +364,21 @@ int ZIP_ReadDisc(char *pszFileName, char *pszZipPath, unsigned char *pBuffer)
 
   if((ImageSize = ZIP_CheckImageFile(uf, pszZipPath, &ST_or_MSA)) <= 0)
     {
+      unzClose(uf);
       return(0);
     }
 
   if(ImageSize > DRIVE_BUFFER_BYTES)
     {
-      ErrLog_File("ERROR ZIP_ReadDisc uncompressed .msa or .st file is larger than buffer\n");      
+      ErrLog_File("ERROR ZIP_ReadDisc uncompressed .msa or .st file is larger than buffer\n");
+      unzClose(uf);
       return(0);
     }
 
   /* extract to buf */
   buf=ZIP_ExtractFile(uf, pszZipPath, ImageSize);
   unzCloseCurrentFile(uf);
+  unzClose(uf);
   if(buf == NULL)
     {
       return(0);  /* failed extraction, return error */
