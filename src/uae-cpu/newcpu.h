@@ -266,6 +266,9 @@ extern void fbcc_opp (uae_u32, uaecptr, uae_u32);
 extern void fsave_opp (uae_u32);
 extern void frestore_opp (uae_u32);
 
+extern int quit_program;
+extern int lastInstructionCycles;
+
 /* Opcode of faulting instruction */
 extern uae_u16 last_op_for_exception_3;
 /* PC at fault time */

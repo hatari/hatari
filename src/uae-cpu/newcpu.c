@@ -24,6 +24,8 @@ int quit_program = 0;
 int debugging = 0;
 struct flag_struct regflags;
 
+int lastInstructionCycles;   /* how many cycles last instruction took to execute */
+
 /* Opcode of faulting instruction */
 uae_u16 last_op_for_exception_3;
 /* PC at fault time */
@@ -686,8 +688,7 @@ void Exception(int nr, uaecptr oldpc)
 {
     uae_u32 currpc = m68k_getpc ();
 
-    if( nr>=2 && nr<10 )
-      fprintf(stderr,"Exception (-> %i bombs)!\n",nr);
+    /*if( nr>=2 && nr<10 )  fprintf(stderr,"Exception (-> %i bombs)!\n",nr);*/
 
     compiler_flush_jsr_stack();
     MakeSR();

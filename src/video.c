@@ -6,8 +6,6 @@
   removal, palette changes per HBL, the 'video address pointer' etc...
 */
 
-//#include <SDL.h>
-
 #include "main.h"
 #include "debug.h"
 #include "decode.h"
@@ -276,14 +274,14 @@ void Video_InterruptHandler_EndLine(void)
   if ( (nHBL>=nStartHBL) && (nHBL<nEndHBL) )
    {
     /* Handle Timers A and B when using Event Count mode(timer taken from HBL) */
-    if (MFP_TACR==0x08)        // Is timer in Event Count mode?
+    if (MFP_TACR==0x08)        /* Is timer in Event Count mode? */
       MFP_TimerA_EventCount_Interrupt();
-    if (MFP_TBCR==0x08)        // Is timer in Event Count mode?
+    if (MFP_TBCR==0x08)        /* Is timer in Event Count mode? */
       MFP_TimerB_EventCount_Interrupt();
    }
 
-  FDC_UpdateHBL();             // Update FDC motion
-  Video_EndHBL();              // Increase HBL count, copy line to display buffer and do any video trickery
+  FDC_UpdateHBL();             /* Update FDC motion */
+  Video_EndHBL();              /* Increase HBL count, copy line to display buffer and do any video trickery */
 
   /* If we don't often pump data into the event queue, the SDL misses events... grr... */
   if( !(nHBL&63) )
@@ -294,74 +292,77 @@ void Video_InterruptHandler_EndLine(void)
 }
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   HBL interrupt - this is very inaccurate on ST and appears to occur around 1/3rd way into
   the display!
 */
 void Video_InterruptHandler_HBL(void)
 {
-  // Remove this interrupt from list and re-order
+  /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
-  // Generate new Timer AB, if need to - there are 313 HBLs per frame
+  /* Generate new Timer AB, if need to - there are 313 HBLs per frame */
   if (nHBL<(SCANLINES_PER_FRAME-1))
     Int_AddAbsoluteInterrupt(CYCLES_PER_LINE,INTERRUPT_VIDEO_HBL);
 
-  if (2>FIND_IPL) {                // Horizontal blank, level 2!
-    ADD_CYCLES(44+4,5,3);          // Interrupt
+  if (2>FIND_IPL) {                /* Horizontal blank, level 2! */
+    ADD_CYCLES(44+4,5,3);          /* Interrupt */
     ExceptionVector = EXCEPTION_HBLANK;
-    M68000_Exception();            // HBL interrupt
+    M68000_Exception();            /* HBL interrupt */
   }
 }
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Sync Table handlers
 */
 void Video_SyncHandler_SetLeftRightBorder(void)
 {
-  LeftRightBorder |= SyncHandler_Value;     // Turn on left/right borders
+  LeftRightBorder |= SyncHandler_Value;   /* Turn on left/right borders */
 }
 
 void Video_SyncHandler_SetSyncScrollOffset(void)
 {
-  VideoRaster += SyncHandler_Value;        // Add offset to video address(sync-scroll)
+  VideoRaster += SyncHandler_Value;       /* Add offset to video address(sync-scroll) */
 }
 
 void Video_SyncHandler_SetTopBorder(void)
 {
-  OverscanMode |= OVERSCANMODE_TOP;        // Set overscan bit
-  nStartHBL = FIRST_VISIBLE_HBL;           // New start screen line
+  OverscanMode |= OVERSCANMODE_TOP;       /* Set overscan bit */
+  nStartHBL = FIRST_VISIBLE_HBL;          /* New start screen line */
 }
 
 void Video_SyncHandler_SetBottomBorder(void)
 {
-  OverscanMode |= OVERSCANMODE_BOTTOM;     // Set overscan bit
-  nEndHBL = SCREEN_START_HBL+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM;  // New end screen line
+  OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
+  nEndHBL = SCREEN_START_HBL+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM;  /* New end screen line */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Write to VideoShifter(0xff8260), resolution bits
 */
 void Video_WriteToShifter(void)
 {
-  // Store into table so can test at end of HBL
+  /* Store into table so can test at end of HBL */
   Video_StoreSyncShifterAccess(0xff8260,VideoShifterByte);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Write to VideoSync(0xff820a), Hz setting
 */
 void Video_WriteToSync(void)
 {
-  // Store into table so can test at end of HBL
+  /* Store into table so can test at end of HBL */
   Video_StoreSyncShifterAccess(0xff820a,VideoSyncByte);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Check access Video(0xff8260 or 0xff820a) to see if opened top/bottom/left/right borders or
   even tried for a SyncScroll
@@ -372,28 +373,28 @@ BOOL Video_CheckSyncShifterTable(unsigned int Address, unsigned char Byte, int F
   BOOL bFoundMatch=FALSE;
   int i=0;
 
-  // Scan each shifter entry to see if this new values matches - if not rest
+  /* Scan each shifter entry to see if this new values matches - if not rest */
   while(pAccessTable[i].nChecks) {
-    // Get table of entries, index at 'counter'
+    /* Get table of entries, index at 'counter' */
     pSyncShifter = &pAccessTable[i].pSyncShifterAccess[pAccessTable[i].nCount];
-    // Does next value match table?
+    /* Does next value match table? */
     if ( (pSyncShifter->Address==Address) && (pSyncShifter->Byte==Byte) && (pSyncShifter->FrameCycles==FrameCycles) ) {
-      // Set flag(used for debugging)
+      /* Set flag (used for debugging) */
       bFoundMatch = TRUE;
 
-      // Got match increase count
+      /* Got match increase count */
       pAccessTable[i].nCount++;
-      // Is table complete?
+      /* Is table complete? */
       if (pAccessTable[i].nCount==pAccessTable[i].nChecks) {
-        // Reset count, ready for next time
+        /* Reset count, ready for next time */
         pAccessTable[i].nCount = 0;
-        // Yes, call handler function with passed variable
+        /* Yes, call handler function with passed variable */
         SyncHandler_Value = pAccessTable[i].Value;
         CALL_VAR(pAccessTable[i].pFunc);
       }
     }
     else {
-      // No match, reset table count
+      /* No match, reset table count */
       pAccessTable[i].nCount = 0;
     }
 
@@ -403,7 +404,8 @@ BOOL Video_CheckSyncShifterTable(unsigned int Address, unsigned char Byte, int F
   return(bFoundMatch);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Store Sync/Shifter write into table so can check at end of HBL for border/sync-scroll hardware tricks
 */
@@ -411,8 +413,8 @@ void Video_StoreSyncShifterAccess(unsigned int Address,unsigned char Byte)
 {
   int FrameCycles = Int_FindFrameCycles();
 
-  // Get back to where instruction started for timing
-  FrameCycles -= M68000_FindLastInstructionCycles();
+  /* Get back to where instruction started for timing */
+  //FrameCycles -= lastInstructionCycles;
 
 //  char szString[256];
 //  sprintf(szString,"0x%X=0x%2.2X %d(%d) @ %d",Address,Byte,FrameCycles,FrameCycles&511,nHBL);
@@ -424,7 +426,8 @@ void Video_StoreSyncShifterAccess(unsigned int Address,unsigned char Byte)
 //  Video_CheckSyncShifterTable(Address,Byte,FrameCycles&511, pSyncScrollerAccessTable);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Reset Sync/Shifter table at start of each HBL
 */
@@ -433,7 +436,8 @@ void Video_StartHBL(void)
   LeftRightBorder = 0;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Store whole palette on first line so have reference to work from
 */
@@ -445,49 +449,51 @@ void Video_StoreFirstLinePalette(void)
   pp2 = (unsigned short int *)((unsigned long)STRam+0xff8240);
   for(i=0; i<16; i++)
     HBLPalettes[i] = STMemory_Swap68000Int(*pp2++);
-  // And set mask flag with palette and resolution
+  /* And set mask flag with palette and resolution */
   HBLPaletteMasks[0] = (PALETTEMASK_RESOLUTION|PALETTEMASK_PALETTE) | (((unsigned long)STMemory_ReadByte(0xff8260)&0x3)<<16);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Store resolution on each line(used to test if mixed low/medium resolutions)
 */
 void Video_StoreResolution(int y)
 {
-  // Clear resolution, and set with current value
+  /* Clear resolution, and set with current value */
   if (!(bUseHighRes || bUseVDIRes) ) {
     HBLPaletteMasks[y] &= ~(0x3<<16);
     HBLPaletteMasks[y] |= ((unsigned long)STMemory_ReadByte(0xff8260)&0x3)<<16;
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Copy line of screen into buffer for conversion later.
   Possible lines may be top/bottom border, and/or left/right borders
 */
 void Video_CopyScreenLine(int BorderMask)
 {
-  // Only copy screen line if not doing high VDI resolution
+  /* Only copy screen line if not doing high VDI resolution */
   if (!bUseVDIRes) {
     BorderMask |= LeftRightBorder;
 
     if (bUseHighRes) {
-      // Copy for hi-res(no overscan)
+      /* Copy for hi-res (no overscan) */
       memcpy(pSTScreen,(char *)VideoRaster,SCREENBYTES_MIDDLE);
       VideoRaster += SCREENBYTES_MIDDLE;
-      // Each screen line copied to buffer is always same length
+      /* Each screen line copied to buffer is always same length */
       pSTScreen += SCREENBYTES_MIDDLE;
     }
     else {
-      // Is total blank line? Ie top/bottom border?
+      /* Is total blank line? Ie top/bottom border? */
       if (BorderMask&(BORDERMASK_TOP|BORDERMASK_BOTTOM)) {
-        // Clear line to colour '0'
+        /* Clear line to colour '0' */
         memset(pSTScreen,0,SCREENBYTES_LINE);
       }
       else {
-        // Does have left border? If not, clear to colour '0'
+        /* Does have left border? If not, clear to colour '0' */
         if (BorderMask&BORDERMASK_LEFT) {
           VideoRaster += 24-SCREENBYTES_LEFT;
           memcpy(pSTScreen,(char *)VideoRaster,SCREENBYTES_LEFT);
@@ -495,10 +501,10 @@ void Video_CopyScreenLine(int BorderMask)
         }
         else
           memset(pSTScreen,0,SCREENBYTES_LEFT);
-        // Copy middle - always present
+        /* Copy middle - always present */
         memcpy(pSTScreen+SCREENBYTES_LEFT,(char *)VideoRaster,SCREENBYTES_MIDDLE);
         VideoRaster += SCREENBYTES_MIDDLE;
-        // Does have right border? If not, clear to colour '0'
+        /* Does have right border? If not, clear to colour '0' */
         if (BorderMask&BORDERMASK_RIGHT) {
           memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,(char *)VideoRaster,SCREENBYTES_RIGHT);
           VideoRaster += 46-SCREENBYTES_RIGHT;
@@ -508,56 +514,59 @@ void Video_CopyScreenLine(int BorderMask)
           memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,0,SCREENBYTES_RIGHT);
       }
     
-      // Each screen line copied to buffer is always same length
+      /* Each screen line copied to buffer is always same length */
       pSTScreen += SCREENBYTES_LINE;
     }
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Copy extended GEM resolution screen
 */
 void Video_CopyVDIScreen(void)
 {
-  // Copy whole screen, don't care about being exact as for GEM only
-  memcpy(pSTScreen,(char *)VideoRaster,((VDIWidth*VDIPlanes)/8)*VDIHeight);  // 640x400x16colour
+  /* Copy whole screen, don't care about being exact as for GEM only */
+  memcpy(pSTScreen,(char *)VideoRaster,((VDIWidth*VDIPlanes)/8)*VDIHeight);  /* 640x400x16colour */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Check at end of each HBL to see if any Sync/Shifter hardware tricks have been attempted
 */
 void Video_EndHBL(void)
 {
-  // Are we in possible visible display(including borders)?
+  /* Are we in possible visible display (including borders)? */
   if ( (nHBL>=FIRST_VISIBLE_HBL) && (nHBL<(FIRST_VISIBLE_HBL+NUM_VISIBLE_LINES)) ) {
-    // Copy line of screen to buffer to simulate TV raster trace - required for mouse cursor display/game updates
-    // Eg, Lemmings and The Killing Game Show are good examples
+    /* Copy line of screen to buffer to simulate TV raster trace - required for mouse cursor display/game updates */
+    /* Eg, Lemmings and The Killing Game Show are good examples */
 
-    if (nHBL<nStartHBL)                // Are we in top border blank(ie no top overscan enabled)
+    if (nHBL<nStartHBL)                /* Are we in top border blank (ie no top overscan enabled) */
       Video_CopyScreenLine(BORDERMASK_TOP);
-    else if (nHBL>=nEndHBL)            // Are we in bottom border blank
+    else if (nHBL>=nEndHBL)            /* Are we in bottom border blank */
       Video_CopyScreenLine(BORDERMASK_BOTTOM);
-    else                               // Must be in visible screen(including overscan), ignore left/right borders for now
+    else                               /* Must be in visible screen(including overscan), ignore left/right borders for now */
       Video_CopyScreenLine(BORDERMASK_NONE);
 
-    if (nHBL==FIRST_VISIBLE_HBL) {    // Very first line on screen - HBLPalettes[0]
-      // Store ALL palette for this line into raster table for datum
+    if (nHBL==FIRST_VISIBLE_HBL) {    /* Very first line on screen - HBLPalettes[0] */
+      /* Store ALL palette for this line into raster table for datum */
       Video_StoreFirstLinePalette();
     }
-    // Store resolution for every line so can check for mix low/medium screens
+    /* Store resolution for every line so can check for mix low/medium screens */
     Video_StoreResolution(nHBL-FIRST_VISIBLE_HBL);
   }
 
-  // Finally increase HBL count
+  /* Finally increase HBL count */
   nHBL++;
 
-  Video_StartHBL();                  // Setup next one
+  Video_StartHBL();                  /* Setup next one */
 }
 
-// Clear raster line table to store changes in palette/resolution on a line basic
-// Call once on VBL interrupt
+
+/* Clear raster line table to store changes in palette/resolution on a line basic */
+/* Call once on VBL interrupt */
 void Video_SetScreenRasters(void)
 {
   pHBLPaletteMasks = HBLPaletteMasks;
@@ -565,7 +574,8 @@ void Video_SetScreenRasters(void)
   Memory_Clear(pHBLPaletteMasks,sizeof(unsigned long)*NUM_VISIBLE_LINES);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Set pointers to HBLPalette tables to store correct colours/resolutions
 */
@@ -591,7 +601,7 @@ void Video_SetHBLPaletteMaskPointers(void)
   if (Line>=NUM_VISIBLE_LINES)
     Line = NUM_VISIBLE_LINES-1;
 
-  // Store pointers
+  /* Store pointers */
   pHBLPaletteMasks = &HBLPaletteMasks[Line];  /* Next mask entry */
   pHBLPalettes = &HBLPalettes[16*Line];       /* Next colour raster list x16 colours */
 }

@@ -494,18 +494,6 @@ void M68000_Line_F_OpCode(void)
 }
 */
 
-//-----------------------------------------------------------------------
-/*
-  Use 'InsPC' to find how many cycles last instruction took to execute
-*/
-int M68000_FindLastInstructionCycles(void)
-{
-  unsigned short int OpCode;
-
-//FIXME   OpCode = *(unsigned short int *)InsPC;      // Read 'opcode'
-//FIXME   return( DecodeTable[(OpCode*SIZEOF_DECODE)+(DECODE_CYCLES/sizeof(long))] );
-  return 4; /* Ouargs ... this is an uggly hack */
-}
 
 //-----------------------------------------------------------------------
 /*
