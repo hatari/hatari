@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-static char rcsid[] = "Hatari $Id: gemdos.c,v 1.13 2003-03-24 17:24:18 emanne Exp $";
+static char rcsid[] = "Hatari $Id: gemdos.c,v 1.14 2003-03-25 21:03:49 emanne Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -583,6 +583,13 @@ int GemDOS_IsFileNameAHardDrive(char *pszFileName)
   return(-1);
 }
 
+int baselen(char *s) {
+  /* Returns the length of the basename of the file passed in parameter
+     (ie the file without extension) */
+  char *ext = strchr(s,'.');
+  if (ext) return ext-s;
+  return strlen(s);
+}
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -591,12 +598,13 @@ int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestName)
 {
   /*  int DirIndex = Misc_LimitInt(Drive-2, 0,ConfigureParams.HardDisc.nDriveList-1); */
-  int i;
   char *s,*start;
 
   if(pszFileName[0] == '\0') return; /* check for valid string */
 
   /* case full filename "C:\foo\bar" */
+  s=pszDestName; start=NULL;
+
   if(pszFileName[1] == ':') {
     sprintf(pszDestName, "%s%s", emudrives[0]->hd_emulation_dir, File_RemoveFileNameDrive(pszFileName));
   }
@@ -607,10 +615,10 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
   /* case referenced from current directory */
   else {
     sprintf(pszDestName, "%s%s",  emudrives[0]->fs_currpath, pszFileName);
+    start = pszDestName + strlen(emudrives[0]->fs_currpath)-1;
   }
 
   /* convert to front slashes. */
-  i=0; s=pszDestName; start=NULL;
   while((s = strchr(s+1,'\\'))) {
     if (!start) {
       start = s;
@@ -619,7 +627,7 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
     {
       glob_t globbuf;
       char old1,old2,dest[256];
-      int len,j,found;
+      int len,j,found,base_len;
 
       *start++ = '/';
       old1 = *start; *start++ = '*';
@@ -628,9 +636,14 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
       *start-- = old2; *start = old1;
       *s = 0;
       len = strlen(pszDestName);
+      base_len = baselen(start);
       found = 0;
       for (j=0; j<globbuf.gl_pathc; j++) {
-	if (!strncasecmp(globbuf.gl_pathv[j],pszDestName,len)) {
+	/* If we search for a file of at least 8 characters, then it might
+	   be a longer filename since the ST can access only the first 8
+	   characters. If not, then it's a precise match (with case). */
+	if (!(base_len < 8 ? strcasecmp(globbuf.gl_pathv[j],pszDestName) :
+	      strncasecmp(globbuf.gl_pathv[j],pszDestName,len))) {
 	  /* we found a matching name... */
 	  sprintf(dest,"%s%c%s",globbuf.gl_pathv[j],'/',s+1);
 	  strcpy(pszDestName,dest);
@@ -672,27 +685,34 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
       /* We have a complete name after the path, not a wildcard */
       glob_t globbuf;
       char old1,old2,dest[256];
-      int len,j,found;
+      int len,j,found,base_len;
 
       old1 = *start; *start++ = '*';
       old2 = *start; *start = 0;
       glob(pszDestName,0,NULL,&globbuf);
       *start-- = old2; *start = old1;
       len = strlen(pszDestName);
+      base_len = baselen(start);
       found = 0;
       for (j=0; j<globbuf.gl_pathc; j++) {
-	if (!strncasecmp(globbuf.gl_pathv[j],pszDestName,len)) {
+	/* If we search for a file of at least 8 characters, then it might
+	   be a longer filename since the ST can access only the first 8
+	   characters. If not, then it's a precise match (with case). */
+	if (!(base_len < 8 ? strcasecmp(globbuf.gl_pathv[j],pszDestName) :
+	      strncasecmp(globbuf.gl_pathv[j],pszDestName,len))) {
 	  /* we found a matching name... */
 	  strcpy(pszDestName,globbuf.gl_pathv[j]);
 	  j = globbuf.gl_pathc;
 	  found = 1;
 	}
       }
+#if 1
       if (!found) {
 	/* It's often normal, the gem uses this to test for existence */
 	/* of desktop.inf or newdesk.inf for example. */
-	//fprintf(stderr,"didn't find filename %s\n",pszDestName);
+	fprintf(stderr,"didn't find filename %s\n",pszDestName);
       }
+#endif
       globfree(&globbuf);
     }
   }
