@@ -36,6 +36,7 @@
 #include "video.h"
 #include "view.h"
 #include "ymFormat.h"
+#include "debugui.h"
 
 #include "uae-cpu/hatari-glue.h"
 
@@ -48,6 +49,7 @@ BOOL bQuitProgram=FALSE;                  /* Flag to quit program cleanly */
 BOOL bUseFullscreen=FALSE;
 BOOL bEmulationActive=EMULATION_ACTIVE;   /* Run emulation when started (we'll be in window mouse mode!) */
 BOOL bAppActive = FALSE;
+BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
 unsigned int TimerID;                     /* Timer ID for main window */
 char szName[] = { "Hatari" };
 char szBootDiscImage[MAX_FILENAME_LENGTH] = { "" };
@@ -242,7 +244,6 @@ void Main_RemoveSoundTimer(void)
 /*-----------------------------------------------------------------------*/
 /*
   Check for any passed parameters
-  Used to disable DirectDraw, DirectSound and DirectInput for machines with problems
 */
 void Main_ReadParameters(int argc, char *argv[])
 {
@@ -259,10 +260,12 @@ void Main_ReadParameters(int argc, char *argv[])
               "Where options are:\n"
               "  --help or -h        Print this help text and exit.\n"
               "  --version or -v     Print version number and exit.\n"
-              "  --color or -c       Start in color mode instead of mono.\n"
+              "  --mono or -m        Start in monochrome mode instead of color.\n"
               "  --fullscreen or -f  Try to use fullscreen mode.\n"
               "  --joystick or -j    Emulate a ST joystick with the cursor keys\n"
               "  --sound or -s       Enable sound (does not yet work right!)\n"
+              "  --frameskip         Skip every second frame (speeds up emulation!)\n"
+              "  --debug or -d       Allow debug interface.\n"
              );
        exit(0);
       }
@@ -272,9 +275,10 @@ void Main_ReadParameters(int argc, char *argv[])
        printf("This program is free software licensed under the GNU GPL.\n");
        exit(0);
       }
-      else if (!strcmp(argv[i],"--color") || !strcmp(argv[i],"-c"))
+      else if (!strcmp(argv[i],"--mono") || !strcmp(argv[i],"-m"))
       {
-       bUseHighRes=FALSE;
+       bUseHighRes=TRUE;
+       STRes=PrevSTRes=ST_HIGH_RES;
       }
       else if (!strcmp(argv[i],"--fullscreen") || !strcmp(argv[i],"-f"))
       {
@@ -282,13 +286,20 @@ void Main_ReadParameters(int argc, char *argv[])
       }
       else if (!strcmp(argv[i],"--joystick") || !strcmp(argv[i],"-j"))
       {
-       fprintf(stderr,"Joystate: %i\n",(int)ConfigureParams.Joysticks.Joy[1].bCursorEmulation);
        ConfigureParams.Joysticks.Joy[1].bCursorEmulation=TRUE;
       }
       else if (!strcmp(argv[i],"--sound") || !strcmp(argv[i],"-s"))
       {
        bDisableSound=FALSE;
        ConfigureParams.Sound.bEnableSound = TRUE;
+      }
+      else if ( !strcmp(argv[i],"--frameskip") )
+      {
+       ConfigureParams.Screen.Advanced.bFrameSkip = TRUE;
+      }
+      else if (!strcmp(argv[i],"--debug") || !strcmp(argv[i],"-d"))
+      {
+       bEnableDebug=TRUE;
       }
       else
       {
@@ -299,6 +310,7 @@ void Main_ReadParameters(int argc, char *argv[])
     }
   }
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*

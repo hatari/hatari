@@ -237,6 +237,7 @@ enum {
 };
 
 extern BOOL bQuitProgram;
+extern BOOL bEnableDebug;
 extern BOOL bEmulationActive;
 extern char szName[];
 extern char szBootDiscImage[MAX_FILENAME_LENGTH];

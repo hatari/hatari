@@ -1,4 +1,11 @@
 
+2001-07-10:
+  * Added Sven's debugger patch.
+
+2001-06-26:
+  * Added Sven de Marothy's screenshot patch. It allows taking screenshots
+    by pressing F11.
+
 2001-06-10 (Thomas Huth):
   * Added sound support. Does not yet work perfect, but at least there
     are some noises now :-) (Use option --sound to enable it).

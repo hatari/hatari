@@ -31,7 +31,7 @@
 
 long VideoAddress;                              /* Address of video display in ST screen space */
 unsigned char VideoSyncByte,VideoShifterByte;   /* VideoSync (0xff820a) and VideoShifter(0xff8260) values store in video chip */
-BOOL bUseHighRes = TRUE;                        /* Use hi-res (ie Mono monitor) */
+BOOL bUseHighRes = FALSE;                       /* Use hi-res (ie Mono monitor) */
 int nVBLs, nHBL;                                /* VBL Counter, HBL line */
 int nStartHBL,nEndHBL;                          /* Start/End HBL for visible screen(64 lines in Top border) */
 int OverscanMode;                               /* OVERSCANMODE_xxxx for current display frame */

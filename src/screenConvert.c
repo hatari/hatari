@@ -14,6 +14,9 @@
   to copy to the screen.
 */
 
+#include <endian.h>
+/*#include <machine/endian.h>*/
+
 #include "main.h"
 #include "screen.h"
 #include "screenConvert.h"
@@ -102,85 +105,38 @@ unsigned long Remap_1_Plane[16] = {
   0x00000001+BASECOLOUR_LONG,  0x01000001+BASECOLOUR_LONG,  0x00010001+BASECOLOUR_LONG,  0x01010001+BASECOLOUR_LONG,  0x00000101+BASECOLOUR_LONG,  0x01000101+BASECOLOUR_LONG,  0x00010101+BASECOLOUR_LONG,  0x01010101+BASECOLOUR_LONG,
 };
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Update the STRGBPalette[] array with current colours for this raster line.
-  Corrupt any registers, except edx,edi,esi,ebp
 
-  Return 'ScrUpdateFlag' in 'eax', 0x80000000=Full update, 0x40000000=Update as palette changed
+  Return 'ScrUpdateFlag', 0x80000000=Full update, 0x40000000=Update as palette changed
 */
-int AdjustLinePaletteRemapBIGENDIAN(void)
-{
- unsigned short *actHBLPal;
- int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
- int i;
- int v;
- /* Copy palette and convert to RGB in display format */
- actHBLPal = pHBLPalettes + (ScrY<<4);    /* offset in palette */
- for(i=0; i<16; i++)
-  {
-   v=*actHBLPal;
-   actHBLPal+=1;
-   v=v&0x777;
-   STRGBPalette[endiantable[i]] = ST2RGB[v];
-  }
- ScrUpdateFlag = *(short *)&HBLPaletteMasks[ScrY];
- return ScrUpdateFlag;
-}
-
 int AdjustLinePaletteRemap(void)
 {
- unsigned short *actHBLPal;
- int i;
- int v;
- /* Copy palette and convert to RGB in display format */
- actHBLPal = pHBLPalettes + (ScrY<<4);    /* offset in palette */
- for(i=0; i<16; i++)
-  {
-   v=*actHBLPal;
-   actHBLPal+=1;
-   v=v&0x777;
-   STRGBPalette[i] = ST2RGB[v];
-  }
- ScrUpdateFlag = *(short *)&HBLPaletteMasks[ScrY];
- return ScrUpdateFlag;
-/*
-  __asm {
-    push  ebx
-    push  ecx
-    push  edx
-
-    // Copy palette and convert to RGB in display format
-    mov    eax,[ScrY]        // Y
-    shl    eax,5          // 16 x short int's to get offset into palette
-    mov    ebx,[pHBLPalettes]
-    add    ebx,eax
-    mov    edx,OFFSET [STRGBPalette]    // Copy for use in conversion(as no registers free, need copy)
-    mov    ecx,16
-palette_loop:
-    mov    ax,[ebx]
-    add    ebx,2
-    and    eax,0x777        // Colour&0x777
-    mov    eax,ST2RGB[eax*4]      // Convert to PC's RGB
-    mov    [edx],eax        // Store as long's for speed
-    add    edx,4
-    dec    ecx
-    jne    palette_loop
-
-    // Get mask, if top bit is set we need to update
-    mov    eax,[ScrY]
-    mov    eax,DWORD PTR HBLPaletteMasks[eax*4]  // Current mask
-    mov    [ScrUpdateFlag],eax      // Store for pixel conversion
-
-    pop    edx
-    pop    ecx
-    pop    ebx
-    ret
-  }
-*/
+  unsigned short *actHBLPal;
+  static int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
+  int i;
+  int v;
+  /* Copy palette and convert to RGB in display format */
+  actHBLPal = pHBLPalettes + (ScrY<<4);    /* offset in palette */
+  for(i=0; i<16; i++)
+   {
+    v=*actHBLPal;
+    actHBLPal+=1;
+    v=v&0x777;
+#if __BYTE_ORDER == 4321
+    STRGBPalette[endiantable[i]] = ST2RGB[v];
+#else
+    STRGBPalette[i] = ST2RGB[v];
+#endif
+   }
+  ScrUpdateFlag = *(short *)&HBLPaletteMasks[ScrY];
+  return ScrUpdateFlag;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Run updates to palette(STRGBPalette[]) until get to screen line we are to convert from
 */
@@ -218,23 +174,6 @@ void Convert_StartFrame(void)
  ebx &= 0x00ff; \
  ecx += Remap_2_Planes[ebx]; \
 }
-/*
-  __asm  and    ebx,0x0f0f0f0f \
-  __asm  and    ecx,0x0f0f0f0f \
-  __asm  mov    eax,ebx \
-  __asm  shr    eax,12 \
-  __asm  or    eax,ebx \
-  __asm  mov    edx,ecx \
-  __asm  shr    edx,12 \
-  __asm  or    edx,ecx \
-  __asm  mov    ebx,edx \
-  __asm  and    ebx,0x000000ff \
-  __asm  mov    ecx,Remap_2_Planes_Upper[ebx*4] \
-  __asm  mov    ebx,eax \
-  __asm  and    ebx,0x000000ff \
-  __asm  add    ecx,Remap_2_Planes[ebx*4]
-*/
-
 
 #define LOW_BUILD_PIXELS_1 \
 { \
@@ -247,17 +186,6 @@ void Convert_StartFrame(void)
  ebx &= 0x00ff; \
  ecx += Remap_2_Planes[ebx]; \
 }
-/*
-  __asm  mov    ebx,edx \
-  __asm  shr    ebx,8 \
-  __asm  and    ebx,0x000000ff \
-  __asm  mov    ecx,Remap_2_Planes_Upper[ebx*4] \
-  __asm  mov    ebx,eax \
-  __asm  shr    ebx,8 \
-  __asm  and    ebx,0x000000ff \
-  __asm  add    ecx,Remap_2_Planes[ebx*4]
-*/
-
 
 #define LOW_BUILD_PIXELS_2 \
 { \
@@ -280,27 +208,6 @@ void Convert_StartFrame(void)
  ebx &= 0x00ff; \
  ecx += Remap_2_Planes[ebx]; \
 }
-/*
-  __asm  mov    ebx,[edi] \
-  __asm  mov    ecx,4[edi] \
-  __asm  and    ebx,0xf0f0f0f0 \
-  __asm  and    ecx,0xf0f0f0f0 \
-  __asm  shr    ebx,4 \
-  __asm  mov    eax,ebx \
-  __asm  shr    ebx,12 \
-  __asm  or    eax,ebx \
-  __asm  shr    ecx,4 \
-  __asm  mov    edx,ecx \
-  __asm  shr    ecx,12 \
-  __asm  or    edx,ecx \
-  __asm  mov    ebx,edx \
-  __asm  and    ebx,0x000000ff \
-  __asm  mov    ecx,Remap_2_Planes_Upper[ebx*4] \
-  __asm  mov    ebx,eax \
-  __asm  and    ebx,0x000000ff \
-  __asm  add    ecx,Remap_2_Planes[ebx*4]
-*/
-
 
 #define LOW_BUILD_PIXELS_3 \
 { \
@@ -313,17 +220,6 @@ void Convert_StartFrame(void)
  ebx &= 0x00ff; \
  ecx += Remap_2_Planes[ebx]; \
 }
-/*
-  __asm  mov    ebx,edx \
-  __asm  shr    ebx,8 \
-  __asm  and    ebx,0x000000ff \
-  __asm  mov    ecx,Remap_2_Planes_Upper[ebx*4] \
-  __asm  mov    ebx,eax \
-  __asm  shr    ebx,8 \
-  __asm  and    ebx,0x000000ff \
-  __asm  add    ecx,Remap_2_Planes[ebx*4]
-*/
-
 
 /* Plot Low Resolution(320xH) 16-Bit pixels */
 #define PLOT_LOW_320_16BIT(offset)  \
@@ -348,26 +244,80 @@ void Convert_StartFrame(void)
  ebx = STRGBPalette[ebx]; \
  esi[offset+3] = (unsigned short) ebx; \
 }
+
+
+#define MED_BUILD_PIXELS_0 \
+{ \
+}
 /*
-  __asm  mov    ebx,ecx \
-  __asm  and    ebx,0x000000ff \
-  __asm  shr    ecx,8 \
-  __asm  mov    ebx,DWORD PTR STRGBPalette[ebx*4] \
-  __asm  mov    offset[esi],bx \
-  __asm  mov    ebx,ecx \
-  __asm  and    ebx,0x000000ff \
-  __asm  shr    ecx,8 \
-  __asm  mov    ebx,DWORD PTR STRGBPalette[ebx*4] \
-  __asm  mov    offset[esi+2],bx \
-  __asm  mov    ebx,ecx \
-  __asm  and    ebx,0x000000ff \
-  __asm  shr    ecx,8 \
-  __asm  mov    ebx,DWORD PTR STRGBPalette[ebx*4] \
-  __asm  mov    offset[esi+4],bx \
-  __asm  mov    ebx,ecx \
-  __asm  and    ebx,0x000000ff \
-  __asm  mov    ebx,DWORD PTR STRGBPalette[ebx*4] \
-  __asm  mov    offset[esi+6],bx
+	__asm	and		ebx,0x0f0f0f0f \
+	__asm	mov		eax,ebx \
+	__asm	shr		eax,12 \
+	__asm	or		eax,ebx \
+	__asm	mov		ebx,eax \
+	__asm	and		ebx,0x000000ff \
+	__asm	mov		ecx,Remap_2_Planes[ebx*4]
+*/
+
+#define MED_BUILD_PIXELS_1 \
+{\
+}
+/*
+	__asm	mov		ebx,eax \
+	__asm	shr		ebx,8 \
+	__asm	and		ebx,0x000000ff \
+	__asm	mov		ecx,Remap_2_Planes[ebx*4]
+*/
+
+#define MED_BUILD_PIXELS_2 \
+{ \
+}
+/*
+	__asm	mov		ebx,[edi] \
+	__asm	and		ebx,0xf0f0f0f0 \
+	__asm	shr		ebx,4 \
+	__asm	mov		eax,ebx \
+	__asm	shr		ebx,12 \
+	__asm	or		eax,ebx \
+	__asm	mov		ebx,eax \
+	__asm	and		ebx,0x000000ff \
+	__asm	mov		ecx,Remap_2_Planes[ebx*4]
+*/
+
+#define MED_BUILD_PIXELS_3 \
+{ \
+}
+/*
+	__asm	mov		ebx,eax \
+	__asm	shr		ebx,8 \
+	__asm	and		ebx,0x000000ff \
+	__asm	mov		ecx,Remap_2_Planes[ebx*4]
+*/
+
+/* Plot Medium Resolution(640xH) 16-Bit pixels */
+#define PLOT_MED_640_16BIT(offset) \
+{ \
+}
+/*
+	__asm	mov		ebx,ecx \
+	__asm	and		ebx,0x000000ff \
+	__asm	shr		ecx,8 \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
+	__asm	mov		offset[esi],bx \
+	__asm	mov		ebx,ecx \
+	__asm	and		ebx,0x000000ff \
+	__asm	shr		ecx,8 \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
+	__asm	mov		offset[esi+2],bx \
+	__asm	mov		ebx,ecx \
+	__asm	and		ebx,0x000000ff \
+	__asm	shr		ecx,8 \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
+	__asm	mov		offset[esi+4],bx \
+	__asm	mov		ebx,ecx \
+	__asm	and		ebx,0x000000ff \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
+	__asm	mov		offset[esi+6],bx
 */
 
 

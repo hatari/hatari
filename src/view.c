@@ -11,7 +11,6 @@
 #include "main.h"
 #include "debug.h"
 #include "dialog.h"
-/*#include "dsurface.h"*/
 #include "floppy.h"
 #include "ikbd.h"
 #include "keymap.h"
@@ -19,7 +18,6 @@
 #include "screen.h"
 #include "shortcut.h"
 #include "statusBar.h"
-/*#include "toolbar.h"*/
 #include "vdi.h"
 #include "joy.h"
 #include "view.h"
@@ -698,8 +696,8 @@ void View_KeyDown( unsigned int sdlkey, unsigned int sdlmod )
   bPreviousKeyState = Keyboard.KeyStates[Key];
   Keyboard.KeyStates[Key] = TRUE;
 
-  /* If pressed F11 or F12, retain short-cut keypress until safe to execute(start of VBL) */
-  if ( (sdlkey==SDLK_F11) || (sdlkey==SDLK_F12) )
+  /* If pressed F11 or F12 or PAUSE, retain short-cut keypress until safe to execute(start of VBL) */
+  if ( (sdlkey==SDLK_F11) || (sdlkey==SDLK_F12) || (sdlkey==SDLK_PAUSE) )
    {
     ShortCutKey.Key = sdlkey;
     if( sdlmod&(KMOD_LCTRL|KMOD_RCTRL) )  ShortCutKey.bCtrlPressed = TRUE;

@@ -1,32 +1,28 @@
-// Screen Conversion, Medium Res to 640x16Bit
-
-void ConvertMediumRes_640x16Bit_YLoop(void);
-void Line_ConvertMediumRes_640x16Bit(void);
+/* Screen Conversion, Medium Res to 640x16Bit */
 
 void ConvertMediumRes_640x16Bit(void)
 {
-fprintf(stderr,"FIXME: Screen Conversion, Medium Res to 640x16Bit\n");
-/* FIXME */
-/*
-  __asm {
-    push  ebp
-    push  edi
-    push  esi
-    push  ebx
+ unsigned long *edi, *ebp;
+ unsigned short *esi;
+ register unsigned long eax, ebx, ecx, edx;
 
-    xor    edx,edx                  // Clear index for loop
+ edx=0;
 
-    call  Convert_StartFrame            // Start frame, track palettes
-    mov    eax,[STScreenStartHorizLine]
-    mov    [ScrY],eax                // Starting line in ST screen
-    jmp    ConvertMediumRes_640x16Bit_YLoop
-  }
-*/
-}
+ Convert_StartFrame();            /* Start frame, track palettes */
+ ScrY = STScreenStartHorizLine;   /* Starting line in ST screen */
+
+// do      /* y-loop */
+//  {
 /*
 NAKED void ConvertMediumRes_640x16Bit_YLoop(void)
 {
-  __asm {
+*/
+
+   eax = STScreenLineOffset[ScrY] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
+   edi = (unsigned long *)((char *)pSTScreen + eax);        /* ST format screen 4-plane 16 colours */
+   ebp = (unsigned long *)((char *)pSTScreenCopy + eax);    /* Previous ST format screen */
+   esi = (unsigned short *)pPCScreenDest;                   /* PC format screen */
+/*
     // Get screen addresses, 'edi'-ST screen, 'ebp'-Previous ST screen, 'esi'-PC screen
     mov    eax,[ScrY]
     mov    eax,STScreenLineOffset[eax*4]      // Offset for this line
@@ -36,7 +32,11 @@ NAKED void ConvertMediumRes_640x16Bit_YLoop(void)
     mov    ebp,[pSTScreenCopy]            // Previous ST format screen
     add    ebp,eax
     mov    esi,[pPCScreenDest]            // PC format screen, byte per pixel 256 colours
+*/
 
+   if( AdjustLinePaletteRemap() & 0x00030000 )  /* Change palette table */
+     /*???goto Line_ConvertLowRes_640x16Bit*/;
+/*
     call  AdjustLinePaletteRemap          // Change palette table, DO NOT corrupt edx,edi,esi or ebp!
     test  eax,0x00030000
     je    Line_ConvertLowRes_640x16Bit      // resolution change(MUST be first)
@@ -127,5 +127,6 @@ next_word:
 
     ret
   }
-}
 */
+}
+

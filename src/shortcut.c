@@ -99,6 +99,9 @@ void ShortCut_CheckKeys(void)
      case SDLK_F11:
        ScreenSnapShot_SaveScreen();
        break;
+     case SDLK_PAUSE:
+       if(bEnableDebug == TRUE)DebugUI();
+       break;
   }
 
 /* FIXME */

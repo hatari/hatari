@@ -31,7 +31,7 @@
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */
 #define ACIA_CYCLES    7200         /* Cycles(Multiple of 4) between sent to ACIA from keyboard along serial line - 500Hz/64, (approx' 6920-7200cycles from test program) */
 
-#define IKBD_RESET_CYCLES  400000   /* Cycles after RESET before complete */
+#define IKBD_RESET_CYCLES  800000   /* Cycles after RESET before complete */
 
 #define ABS_X_ONRESET    0          /* Initial XY for absolute mouse position after RESET command */
 #define ABS_Y_ONRESET    0
@@ -47,9 +47,10 @@ KEYBOARD Keyboard;
 
 /* Keyboard processor */
 KEYBOARD_PROCESSOR KeyboardProcessor;   /* Keyboard processor details */
-BOOL DoubleClickPattern[] = {           /* Pattern of mouse button up/down in ST frames(run off a Windows double-click message) */
- BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,0,0,0,0,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE };
-BOOL bMouseDisabled,bJoystickDisabled,bDuringResetCriticalTime;
+BOOL DoubleClickPattern[] = {           /* Pattern of mouse button up/down in ST frames (run off a double-click message) */
+ BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,
+ 0,0,0,0,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE };
+BOOL bMouseDisabled, bJoystickDisabled, bDuringResetCriticalTime;
 
 /* ACIA */
 unsigned char ACIAControlRegister = 0;
@@ -138,9 +139,9 @@ BOOL bByteInTransitToACIA = FALSE;      /* Is a byte being sent to the ACIA from
     Default MIDI parameters are are above but :- 31250 baud; 500KHz/16 (MIDI clock div)
 */
 
-// List of possible keyboard commands, others are seen as NOPs by keyboard processor
+/* List of possible keyboard commands, others are seen as NOPs by keyboard processor */
 IKBD_COMMAND_PARAMS KeyboardCommands[] = {
-  // Known messages, counts include command byte
+  /* Known messages, counts include command byte */
   0x80,2,  IKBD_Cmd_Reset,
   0x07,2,  IKBD_Cmd_MouseAction,
   0x08,1,  IKBD_Cmd_RelMouseMode,
@@ -168,7 +169,7 @@ IKBD_COMMAND_PARAMS KeyboardCommands[] = {
   0x21,3,  IKBD_Cmd_ReadMemory,
   0x22,3,  IKBD_Cmd_Execute,
 
-  // Report message (top bit set) - ignore for now...
+  /* Report message (top bit set) - ignore for now... */
   0x88,1,  IKBD_Cmd_NullFunction,
   0x89,1,  IKBD_Cmd_NullFunction,
   0x8A,1,  IKBD_Cmd_NullFunction,
@@ -181,16 +182,17 @@ IKBD_COMMAND_PARAMS KeyboardCommands[] = {
   0x95,1,  IKBD_Cmd_NullFunction,
   0x99,1,  IKBD_Cmd_NullFunction,
 
-  0xFF  // Term
+  0xFF  /* Term */
 };
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Reset the IKBD processor
 */
 void IKBD_Reset(BOOL bCold)
 {
-  // Reset internal keyboard processor details
+  /* Reset internal keyboard processor details */
   if (bCold)
     KeyboardProcessor.bReset = FALSE;
   KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
@@ -205,16 +207,16 @@ void IKBD_Reset(BOOL bCold)
   KeyboardProcessor.Mouse.DeltaX = KeyboardProcessor.Mouse.DeltaY = 0;
   KeyboardProcessor.Mouse.XScale = KeyboardProcessor.Mouse.YScale = 0;
   KeyboardProcessor.Mouse.XThreshold = KeyboardProcessor.Mouse.YThreshold = 1;
-  KeyboardProcessor.Mouse.YAxis = 1;          // Y origin at top
+  KeyboardProcessor.Mouse.YAxis = 1;          /* Y origin at top */
   KeyboardProcessor.Mouse.Action = 0;
 
   KeyboardProcessor.Joy.PrevJoyData[0] = KeyboardProcessor.Joy.PrevJoyData[1] = 0;
 
-  // Reset our ACIA status
+  /* Reset our ACIA status */
   bByteInTransitToACIA = FALSE;
   ACIAControlRegister = 0;
   ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
-  // And our keyboard states and clear key state table
+  /* And our keyboard states and clear key state table */
   Keyboard.BufferHead = Keyboard.BufferTail = 0;
   Keyboard.nBytesInInputBuffer = 0;
   Memory_Clear(Keyboard.KeyStates,sizeof(Keyboard.KeyStates));
@@ -224,18 +226,19 @@ void IKBD_Reset(BOOL bCold)
   Keyboard.LButtonDblClk = Keyboard.RButtonDblClk = 0;
   Keyboard.LButtonHistory = Keyboard.RButtonHistory = 0;
 
-  // Store BOOL for when disable mouse or joystick - do emulate hardware 'quirk' where
-  // if disable both with 'x' time of a RESET command they are ignored!
+  /* Store BOOL for when disable mouse or joystick - do emulate hardware 'quirk' where */
+  /* if disable both with 'x' time of a RESET command they are ignored! */
   bMouseDisabled = bJoystickDisabled = bDuringResetCriticalTime = FALSE;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
 */
 void IKBD_MemorySnapShot_Capture(BOOL bSave)
 {
-  // Save/Restore details
+  /* Save/Restore details */
   MemorySnapShot_Store(&Keyboard,sizeof(Keyboard));
   MemorySnapShot_Store(&KeyboardProcessor,sizeof(KeyboardProcessor));
   MemorySnapShot_Store(&ACIAControlRegister,sizeof(ACIAControlRegister));
@@ -244,7 +247,8 @@ void IKBD_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&bByteInTransitToACIA,sizeof(bByteInTransitToACIA));
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Calculate out 'delta' that mouse has moved by each frame, and add this to our internal keyboard position
 */
@@ -253,8 +257,8 @@ void IKBD_UpdateInternalMousePosition(void)
   BOOL bHalveX=FALSE,bHalveY=FALSE;
 
 #ifdef SCALE_MOUSE_INPUT
-  // According to chosen resolution, halve XY axis to give smoother mouse movement!
-  // When using VDI or mono leave mouse as is
+  /* According to chosen resolution, halve XY axis to give smoother mouse movement! */
+  /* When using VDI or mono leave mouse as is */
   if (!bUseVDIRes) {
     if (STRes==ST_LOW_RES) {
       bHalveX = bHalveY = TRUE;
@@ -289,21 +293,22 @@ void IKBD_UpdateInternalMousePosition(void)
   else
     KeyboardProcessor.Rel.PrevY = KeyboardProcessor.Rel.Y;
 
-  // Update internal mouse coords - Y axis moves according to YAxis setting(up/down)
-  // Limit to Max X/Y(inclusive)
+  /* Update internal mouse coords - Y axis moves according to YAxis setting(up/down) */
+  /* Limit to Max X/Y(inclusive) */
   KeyboardProcessor.Abs.X += KeyboardProcessor.Mouse.DeltaX;
   if (KeyboardProcessor.Abs.X<0)
     KeyboardProcessor.Abs.X = 0;
   if (KeyboardProcessor.Abs.X>KeyboardProcessor.Abs.MaxX)
     KeyboardProcessor.Abs.X = KeyboardProcessor.Abs.MaxX;
-  KeyboardProcessor.Abs.Y += KeyboardProcessor.Mouse.DeltaY*KeyboardProcessor.Mouse.YAxis;  // Needed '+' for Falcon...
+  KeyboardProcessor.Abs.Y += KeyboardProcessor.Mouse.DeltaY*KeyboardProcessor.Mouse.YAxis;  /* Needed '+' for Falcon... */
   if (KeyboardProcessor.Abs.Y<0)
     KeyboardProcessor.Abs.Y = 0;
   if (KeyboardProcessor.Abs.Y>KeyboardProcessor.Abs.MaxY)
     KeyboardProcessor.Abs.Y = KeyboardProcessor.Abs.MaxY;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   When running in maximum speed the emulation will not see 'double-clicks' of the mouse
   as it is running so fast. In this case, we check for a Windows double-click and pass
@@ -321,7 +326,7 @@ void IKBD_CheckForDoubleClicks(void)
   // in ST time. To get this correct(and not send three clicks) we look in a history buffer
   // and start at an index which gives the correct number of clicks! Phew!
 
-  // Handle double clicks!!!
+  /* Handle double clicks!!! */
   if (Keyboard.LButtonDblClk) {
     if (Keyboard.LButtonDblClk==1) {          /* First pressed! */
       if ((Keyboard.LButtonHistory&0x3f)==0)  /* If not pressed button in long time do full dbl-click pattern */
@@ -367,7 +372,7 @@ void IKBD_CheckForDoubleClicks(void)
     }
   }
 
-  // Store presses into history
+  /* Store presses into history */
   Keyboard.LButtonHistory = (Keyboard.LButtonHistory<<1);
   if (Keyboard.bLButtonDown)
     Keyboard.LButtonHistory |= 0x1;
@@ -376,57 +381,61 @@ void IKBD_CheckForDoubleClicks(void)
     Keyboard.RButtonHistory |= 0x1;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Convert button to BOOL value
 */
 BOOL IKBD_ButtonBool(int Button)
 {
-  // Button pressed?
+  /* Button pressed? */
   if (Button)
     return(TRUE);
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Return TRUE if buttons match, use this as buttons are a mask and not BOOLean
 */
 BOOL IKBD_ButtonsEqual(int Button1,int Button2)
 {
-  // Return BOOL compare
+  /* Return BOOL compare */
   return(IKBD_ButtonBool(Button1)==IKBD_ButtonBool(Button2));
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   According to if the mouse if enabled or not the joystick 1 fire button/right mouse button
   will become the same button, ie pressing one will also press the other and vise-versa
 */
 void IKBD_DuplicateMouseFireButtons(void)
 {
-  // If mouse is off then joystick fire button goes to joystick
+  /* If mouse is off then joystick fire button goes to joystick */
   if (KeyboardProcessor.MouseMode==AUTOMODE_OFF) {
-    // If pressed right mouse button, should go to joystick 1
+    /* If pressed right mouse button, should go to joystick 1 */
     if (Keyboard.bRButtonDown&BUTTON_MOUSE)
       KeyboardProcessor.Joy.JoyData[1] |= 0x80;
-    // And left mouse button, should go to joystick 0
+    /* And left mouse button, should go to joystick 0 */
     if (Keyboard.bLButtonDown&BUTTON_MOUSE)
       KeyboardProcessor.Joy.JoyData[0] |= 0x80;
   }
-  // If mouse if on, joystick 1 fire button goes to mouse not to the joystick
+  /* If mouse if on, joystick 1 fire button goes to mouse not to the joystick */
   else {
-    // Is fire button pressed?
+    /* Is fire button pressed? */
     if (KeyboardProcessor.Joy.JoyData[1]&0x80) {
-      KeyboardProcessor.Joy.JoyData[1] &= 0x7f;  // Clear fire button bit
-      Keyboard.bRButtonDown |= BUTTON_JOYSTICK;  // Mimick on mouse right button
+      KeyboardProcessor.Joy.JoyData[1] &= 0x7f;  /* Clear fire button bit */
+      Keyboard.bRButtonDown |= BUTTON_JOYSTICK;  /* Mimick on mouse right button */
     }
     else
       Keyboard.bRButtonDown &= ~BUTTON_JOYSTICK;
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Send 'relative' mouse position
 */
@@ -437,7 +446,7 @@ void IKBD_SendRelMousePacket(void)
 
   if ( (KeyboardProcessor.Mouse.DeltaX!=0) || (KeyboardProcessor.Mouse.DeltaY!=0)
    || (!IKBD_ButtonsEqual(Keyboard.bOldLButtonDown,Keyboard.bLButtonDown)) || (!IKBD_ButtonsEqual(Keyboard.bOldRButtonDown,Keyboard.bRButtonDown)) ) {
-    // Send packet to keyboard process
+    /* Send packet to keyboard process */
     while(TRUE) {
       ByteRelX = KeyboardProcessor.Mouse.DeltaX;
       if (ByteRelX>127)  ByteRelX = 127;
@@ -461,14 +470,15 @@ void IKBD_SendRelMousePacket(void)
       if ( (KeyboardProcessor.Mouse.DeltaX==0) && (KeyboardProcessor.Mouse.DeltaY==0) )
         break;
 
-      // Store buttons for next time around
+      /* Store buttons for next time around */
       Keyboard.bOldLButtonDown = Keyboard.bLButtonDown;
       Keyboard.bOldRButtonDown = Keyboard.bRButtonDown;
     }
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Send 'joysticks' bit masks
 */
@@ -476,19 +486,19 @@ void IKBD_SelAutoJoysticks(void)
 {
   unsigned char JoyData;
 
-  // Did joystick 0/mouse change?
+  /* Did joystick 0/mouse change? */
   JoyData = KeyboardProcessor.Joy.JoyData[0];
   if (JoyData!=KeyboardProcessor.Joy.PrevJoyData[0]) {
-    IKBD_AddKeyToKeyboardBuffer(0xFE);    // Joystick 0/Mouse
+    IKBD_AddKeyToKeyboardBuffer(0xFE);    /* Joystick 0/Mouse */
     IKBD_AddKeyToKeyboardBuffer(JoyData);
 
     KeyboardProcessor.Joy.PrevJoyData[0] = JoyData;
   }
 
-  // Did joystick 1(default) change?
+  /* Did joystick 1(default) change? */
   JoyData = KeyboardProcessor.Joy.JoyData[1];
   if (JoyData!=KeyboardProcessor.Joy.PrevJoyData[1]) {
-    IKBD_AddKeyToKeyboardBuffer(0xFF);    // Joystick 1
+    IKBD_AddKeyToKeyboardBuffer(0xFF);    /* Joystick 1 */
     IKBD_AddKeyToKeyboardBuffer(JoyData);
 
     KeyboardProcessor.Joy.PrevJoyData[1] = JoyData;
@@ -566,7 +576,8 @@ void IKBD_SendOnMouseAction(void)
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Send mouse movements as cursor keys
 */
@@ -574,56 +585,57 @@ void IKBD_SendCursorMousePacket(void)
 {
   int i=0;
 
-  // Run each 'Delta' as cursor presses
-  // Limit to '10' loops as Windows cursor is a VERY poor quality. Eg, a single mouse movement
-  // on and ST gives delta's of '1', mostly, but Windows goes as high as 20+!
+  /* Run each 'Delta' as cursor presses */
+  /* Limit to '10' loops as Windows cursor is a VERY poor quality. Eg, a single mouse movement */
+  /* on and ST gives delta's of '1', mostly, but Windows goes as high as 20+! */
   while ( (i<10) && ((KeyboardProcessor.Mouse.DeltaX!=0) || (KeyboardProcessor.Mouse.DeltaY!=0)
    || (!IKBD_ButtonsEqual(Keyboard.bOldLButtonDown,Keyboard.bLButtonDown)) || (!IKBD_ButtonsEqual(Keyboard.bOldRButtonDown,Keyboard.bRButtonDown))) ) {
-    // Left?
+    /* Left? */
     if (KeyboardProcessor.Mouse.DeltaX<0) {
-      IKBD_AddKeyToKeyboardBuffer(75);    // Left cursor
+      IKBD_AddKeyToKeyboardBuffer(75);    /* Left cursor */
       IKBD_AddKeyToKeyboardBuffer(75|0x80);
       KeyboardProcessor.Mouse.DeltaX++;
     }
-    // Right?
+    /* Right? */
     if (KeyboardProcessor.Mouse.DeltaX>0) {
-      IKBD_AddKeyToKeyboardBuffer(77);    // Right cursor
+      IKBD_AddKeyToKeyboardBuffer(77);    /* Right cursor */
       IKBD_AddKeyToKeyboardBuffer(77|0x80);
       KeyboardProcessor.Mouse.DeltaX--;
     }
-    // Up?
+    /* Up? */
     if (KeyboardProcessor.Mouse.DeltaY<0) {
-      IKBD_AddKeyToKeyboardBuffer(72);    // Up cursor
+      IKBD_AddKeyToKeyboardBuffer(72);    /* Up cursor */
       IKBD_AddKeyToKeyboardBuffer(72|0x80);
       KeyboardProcessor.Mouse.DeltaY++;
     }
-    // Down?
+    /* Down? */
     if (KeyboardProcessor.Mouse.DeltaY>0) {
-      IKBD_AddKeyToKeyboardBuffer(80);    // Down cursor
+      IKBD_AddKeyToKeyboardBuffer(80);    /* Down cursor */
       IKBD_AddKeyToKeyboardBuffer(80|0x80);
       KeyboardProcessor.Mouse.DeltaY--;
     }
 
-    // Left button?
+    /* Left button? */
     if ( (IKBD_ButtonBool(Keyboard.bLButtonDown) && (!IKBD_ButtonBool(Keyboard.bOldLButtonDown))) )
-      IKBD_AddKeyToKeyboardBuffer(0x74);    // Left
+      IKBD_AddKeyToKeyboardBuffer(0x74);    /* Left */
     else if ( (IKBD_ButtonBool(Keyboard.bOldLButtonDown) && (!IKBD_ButtonBool(Keyboard.bLButtonDown))) )
       IKBD_AddKeyToKeyboardBuffer(0x74|0x80);
-    // Right button?
+    /* Right button? */
     if ( (IKBD_ButtonBool(Keyboard.bRButtonDown) && (!IKBD_ButtonBool(Keyboard.bOldRButtonDown))) )
-      IKBD_AddKeyToKeyboardBuffer(0x75);    // Right
+      IKBD_AddKeyToKeyboardBuffer(0x75);    /* Right */
     else if ( (IKBD_ButtonBool(Keyboard.bOldRButtonDown) && (!IKBD_ButtonBool(Keyboard.bRButtonDown))) )
       IKBD_AddKeyToKeyboardBuffer(0x75|0x80);
 
     Keyboard.bOldLButtonDown = Keyboard.bLButtonDown;
     Keyboard.bOldRButtonDown = Keyboard.bRButtonDown;
 
-    // Count, so exit if try too many times!
+    /* Count, so exit if try too many times! */
     i++;
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Return packets from keyboard for auto, rel mouse, joystick etc...
 */
@@ -632,6 +644,11 @@ void IKBD_SendAutoKeyboardCommands(void)
   /* Ignore anything until we've redirected our GEM handlers */
 //FM  if (!bInitGemDOS)
 //FIXME    return;
+
+  /* Do not send auto commands directly after a reset command. */
+  /* I hope that it is okay that I added this here - Thothy */
+  if( bDuringResetCriticalTime )
+    return;
 
   /* Don't do anything until processor is first reset */
   if (!KeyboardProcessor.bReset)
@@ -672,17 +689,18 @@ void IKBD_SendAutoKeyboardCommands(void)
   if (JoystickSpaceBar) {
     /* As we simulating space bar? */
     if (JoystickSpaceBar==JOYSTICK_SPACE_DOWN) {
-      IKBD_PressSTKey(57,TRUE);         // Press
+      IKBD_PressSTKey(57,TRUE);         /* Press */
       JoystickSpaceBar = JOYSTICK_SPACE_UP;
     }
     else { //if (JoystickSpaceBar==JOYSTICK_SPACE_UP) {
-      IKBD_PressSTKey(57,FALSE);        // Release
-      JoystickSpaceBar = FALSE;         // Complete
+      IKBD_PressSTKey(57,FALSE);        /* Release */
+      JoystickSpaceBar = FALSE;         /* Complete */
     }
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   On ST if disable Mouse AND Joystick with a set time of a RESET command they are
   actually turned back on! (A number of games do this so can get mouse and joystick
@@ -705,29 +723,30 @@ void IKBD_CheckResetDisableBug(void)
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Start timer after keyboard RESET command to emulate 'quirk'
   If some IKBD commands are sent during time after a RESET they may be ignored
 */
 void IKBD_InterruptHandler_ResetTimer(void)
 {
-  // Remove this interrupt from list and re-order
+  /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
 
-  // Critical timer is over
+  /* Critical timer is over */
   bDuringResetCriticalTime = FALSE;
 }
 
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   List of keyboard commands
 */
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Blank function for some keyboard commands - this can be used to find errors
 */
@@ -739,7 +758,8 @@ void IKBD_Cmd_NullFunction(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   RESET
 
@@ -780,7 +800,8 @@ void IKBD_Cmd_Reset(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET MOUSE BUTTON ACTION
 
@@ -803,7 +824,8 @@ void IKBD_Cmd_MouseAction(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET RELATIVE MOUSE POSITION REPORTING
 
@@ -818,7 +840,8 @@ void IKBD_Cmd_RelMouseMode(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET ABSOLUTE MOUSE POSITIONING
 
@@ -840,7 +863,8 @@ void IKBD_Cmd_AbsMouseMode(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET MOUSE KEYCODE MODE
 
@@ -859,7 +883,8 @@ void IKBD_Cmd_MouseCursorKeycodes(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET MOUSE THRESHOLD
 
@@ -877,7 +902,8 @@ void IKBD_Cmd_SetMouseThreshold(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET MOUSE SCALE
 
@@ -968,7 +994,8 @@ void IKBD_Cmd_SetInternalMousePos(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET Y=0 AT BOTTOM
 
@@ -983,7 +1010,8 @@ void IKBD_Cmd_SetYAxisDown(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET Y=0 AT TOP
 
@@ -998,7 +1026,8 @@ void IKBD_Cmd_SetYAxisUp(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   RESUME
 
@@ -1012,7 +1041,8 @@ void IKBD_Cmd_StartKeyboardTransfer(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   DISABLE MOUSE
 
@@ -1030,7 +1060,8 @@ void IKBD_Cmd_TurnMouseOff(void)
   IKBD_CheckResetDisableBug();
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   PAUSE OUTPUT
 
@@ -1044,7 +1075,8 @@ void IKBD_Cmd_StopKeyboardTransfer(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET JOYSTICK EVENT REPORTING
 
@@ -1062,7 +1094,8 @@ void IKBD_Cmd_ReturnJoystickAuto(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET JOYSTICK INTERROGATION MODE
 
@@ -1074,7 +1107,8 @@ void IKBD_Cmd_StopJoystick(void)
 //  Debug_IKBD("IKBD_Cmd_StopJoystick\n");
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   JOYSTICK INTERROGATE
 
@@ -1091,7 +1125,8 @@ void IKBD_Cmd_ReturnJoystick(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET JOYSTICK MONITORING
 
@@ -1111,7 +1146,8 @@ void IKBD_Cmd_SetJoystickDuration(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET FIRE BUTTON MONITORING
 
@@ -1128,7 +1164,8 @@ void IKBD_Cmd_SetJoystickFireDuration(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   SET JOYSTICK KEYCODE MODE
 
@@ -1158,7 +1195,8 @@ void IKBD_Cmd_SetCursorForJoystick(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   DISABLE JOYSTICKS
 
@@ -1176,7 +1214,8 @@ void IKBD_Cmd_DisableJoysticks(void)
   IKBD_CheckResetDisableBug();
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   TIME-OF-DAY CLOCK SET
 
@@ -1196,7 +1235,8 @@ void IKBD_Cmd_SetClock(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   INTERROGATE TIME-OF-DAT CLOCK
 
@@ -1235,7 +1275,8 @@ void IKBD_Cmd_ReadClock(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   MEMORY LOAD
 
@@ -1253,7 +1294,8 @@ void IKBD_Cmd_LoadMemory(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   MEMORY READ
 
@@ -1273,7 +1315,8 @@ void IKBD_Cmd_ReadMemory(void)
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   CONTROLLER EXECUTE
 
@@ -1290,7 +1333,7 @@ void IKBD_Cmd_Execute(void)
 }
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Send data to keyboard processor via ACIA by writing to address 0xfffc02.
   For our emulation we bypass the ACIA (I've yet to see anything check for this)
@@ -1300,14 +1343,14 @@ void IKBD_RunKeyboardCommand(void)
 {
   int i=0;
 
-  // Write into our keyboard input buffer
+  /* Write into our keyboard input buffer */
   Keyboard.InputBuffer[Keyboard.nBytesInInputBuffer++] = ACIAByte;
 
-  // Now check bytes to see if we have a valid/in-valid command string set
+  /* Now check bytes to see if we have a valid/in-valid command string set */
   while(KeyboardCommands[i].Command!=0xff) {
-    // Found command?
+    /* Found command? */
     if (KeyboardCommands[i].Command==Keyboard.InputBuffer[0]) {
-      // Is string complete, then can execute?
+      /* Is string complete, then can execute? */
       if (KeyboardCommands[i].NumParameters==Keyboard.nBytesInInputBuffer) {
         CALL_VAR(KeyboardCommands[i].pCallFunction);
         Keyboard.nBytesInInputBuffer = 0;
@@ -1319,38 +1362,41 @@ void IKBD_RunKeyboardCommand(void)
     i++;
   }
 
-  // Command not known, reset buffer(IKBD assumes a NOP)
+  /* Command not known, reset buffer(IKBD assumes a NOP) */
   Keyboard.nBytesInInputBuffer = 0;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Send byte to our keyboard processor, and execute
 */
 void IKBD_SendByteToKeyboardProcessor(unsigned short bl)
 {
- ACIAByte = bl;      /* Store byte to pass */
- IKBD_RunKeyboardCommand();  /* And send */
+  ACIAByte = bl;              /* Store byte to pass */
+  IKBD_RunKeyboardCommand();  /* And send */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   The byte stored in the ACIA 'ACIAByte' has been read by the CPU by reading from
   address $fffc02. We clear the status flag and set the GPIP register to signal read.
 */
 unsigned short IKBD_GetByteFromACIA(void)
 {
-  // ACIA is now reset
+  /* ACIA is now reset */
   ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__RX_BUFFER_FULL;
   ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__INTERRUPT_REQUEST;
   ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__OVERRUN_ERROR;
 
-  // GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt
+  /* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
   MFP_GPIP |= 0x10;
   return ACIAByte;  /* Return byte from keyboard */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Byte received in the ACIA from the keyboard processor. Store byte for read from $fffc02
   and clear the GPIP I4 register. This register will be remain low until byte has been
@@ -1358,37 +1404,37 @@ unsigned short IKBD_GetByteFromACIA(void)
 */
 void IKBD_InterruptHandler_ACIA(void)
 {
-  // Remove this interrupt from list and re-order
+  /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
 
-  // Copy keyboard byte, ready for read from $fffc02
+  /* Copy keyboard byte, ready for read from $fffc02 */
   ACIAByte = Keyboard.Buffer[Keyboard.BufferHead++];
   Keyboard.BufferHead &= KEYBOARD_BUFFER_MASK;
   
-  // Did we get an over-run? Ie byte has arrived from keyboard processor BEFORE CPU has read previous one from ACIA
+  /* Did we get an over-run? Ie byte has arrived from keyboard processor BEFORE CPU has read previous one from ACIA */
   if (ACIAStatusRegister&ACIA_STATUS_REGISTER__RX_BUFFER_FULL)
-    ACIAStatusRegister |= ACIA_STATUS_REGISTER__OVERRUN_ERROR;  // Set over-run
+    ACIAStatusRegister |= ACIA_STATUS_REGISTER__OVERRUN_ERROR;  /* Set over-run */
 
-  // ACIA buffer is now full
+  /* ACIA buffer is now full */
   ACIAStatusRegister |= ACIA_STATUS_REGISTER__RX_BUFFER_FULL;
-  // Signal interrupt pending
+  /* Signal interrupt pending */
   ACIAStatusRegister |= ACIA_STATUS_REGISTER__INTERRUPT_REQUEST;
-  // GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt
-  // NOTE: GPIP will remain low(0) until keyboard data is read from $fffc02.
+  /* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
+  /* NOTE: GPIP will remain low(0) until keyboard data is read from $fffc02. */
   MFP_GPIP &= ~0x10;
 
-  // Acknowledge in MFP circuit, pass bit,enable,pending
+  /* Acknowledge in MFP circuit, pass bit,enable,pending */
   MFP_InputOnChannel(MFP_KEYBOARD_BIT,MFP_IERB,&MFP_IPRB);
 
-  // Clear flag so can allow another byte to be sent along serial line
+  /* Clear flag so can allow another byte to be sent along serial line */
   bByteInTransitToACIA = FALSE;
-  // If another key is waiting, start sending from keyboard processor now
+  /* If another key is waiting, start sending from keyboard processor now */
   if (Keyboard.BufferHead!=Keyboard.BufferTail)
     IKBD_SendByteToACIA();
 }
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Send a byte from the keyboard buffer to the ACIA. On a real ST this takes some time to send
   so we must be as accurate in the timing as possible - bytes do not appear to the 68000 instantly!
@@ -1396,16 +1442,17 @@ void IKBD_InterruptHandler_ACIA(void)
 */
 void IKBD_SendByteToACIA(void)
 {
-  // Transmit byte from keyboard processor to ACIA. This takes approx ACIA_CYCLES CPU clock cycles to complete
+  /* Transmit byte from keyboard processor to ACIA. This takes approx ACIA_CYCLES CPU clock cycles to complete */
   if (!bByteInTransitToACIA) {
-    // Send byte to ACIA
+    /* Send byte to ACIA */
     Int_AddRelativeInterrupt(ACIA_CYCLES,INTERRUPT_IKBD_ACIA);
-    // Set flag so only transmit one byte at a time
+    /* Set flag so only transmit one byte at a time */
     bByteInTransitToACIA = TRUE;
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Add characer our internal keyboard buffer. These bytes are then sent one at a time to the ACIA.
   This is done via a delay to mimick the STs internal workings, as this is needed for games such
@@ -1413,28 +1460,29 @@ void IKBD_SendByteToACIA(void)
 */
 void IKBD_AddKeyToKeyboardBuffer(unsigned char Data)
 {
-  // Is keyboard initialised yet? Ignore any bytes until it is
+  /* Is keyboard initialised yet? Ignore any bytes until it is */
   if (!KeyboardProcessor.bReset)
     return;
 
-  // Check we have space to add byte
+  /* Check we have space to add byte */
   if (Keyboard.BufferHead!=((Keyboard.BufferTail+1)&KEYBOARD_BUFFER_MASK)) {
-    // Add byte to our buffer
+    /* Add byte to our buffer */
     Keyboard.Buffer[Keyboard.BufferTail++] = Data;
     Keyboard.BufferTail &= KEYBOARD_BUFFER_MASK;
     
-    // We have character ready to transmit from the ACIA - see if can send it now
+    /* We have character ready to transmit from the ACIA - see if can send it now */
     IKBD_SendByteToACIA();
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   When press/release key under Windows, execute this function
 */
 void IKBD_PressSTKey(unsigned char ScanCode,BOOL bPress)
 {
-  // Ignore anything until we've redirected our GEM handlers
+  /* Ignore anything until we've redirected our GEM handlers */
 //FM  if (!bInitGemDOS)
 //FIXME    return;
   if (!bPress)

@@ -52,8 +52,7 @@ int PCScreenBytesPerLine,STScreenWidthBytes,STScreenLeftSkipBytes;
 BOOL bInFullScreen=FALSE;                         /* TRUE if in full screen */
 BOOL bFullScreenHold = FALSE;                     /* TRUE if hold display while full screen */
 BOOL bScreenContentsChanged;                      /* TRUE if buffer changed and requires blitting */
-//int STRes=ST_HIGH_RES,PrevSTRes=ST_HIGH_RES;    /* Current and previous ST resolutions */
-int STRes=ST_LOW_RES,PrevSTRes=ST_LOW_RES;        /* Current and previous ST resolutions */
+int STRes=ST_LOW_RES, PrevSTRes=ST_LOW_RES;       /* Current and previous ST resolutions */
 int nDroppedFrames=0;                             /* Number of dropped frames during emulation run */
 
 int STScreenLineOffset[NUM_VISIBLE_LINES];        /* Offsets for ST screen lines eg, 0,160,320... */
@@ -105,6 +104,7 @@ void Screen_Init(void)
   SDL_EventState(SDL_MOUSEMOTION, SDL_ENABLE);
   SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_ENABLE);
   SDL_EventState(SDL_MOUSEBUTTONUP, SDL_ENABLE);
+  SDL_ShowCursor(0);
 }
 
 

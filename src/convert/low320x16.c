@@ -1,9 +1,4 @@
-// Screen Conversion, Low Res to 320x16Bit
-
-#include <endian.h>
-
-void ConvertLowRes_320x16Bit_YLoop(void);
-void Line_ConvertLowRes_320x16Bit(void);
+/* Screen Conversion, Low Res to 320x16Bit */
 
 void ConvertLowRes_320x16Bit(void)
 {
@@ -13,37 +8,21 @@ void ConvertLowRes_320x16Bit(void)
 
  edx=0;
 
- Convert_StartFrame();      /* Start frame, track palettes */
- ScrY = STScreenStartHorizLine;    /* Starting line in ST screen */
+ Convert_StartFrame();            /* Start frame, track palettes */
+ ScrY = STScreenStartHorizLine;   /* Starting line in ST screen */
 
  do      /* y-loop */
   {
    eax = STScreenLineOffset[ScrY] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
    edi = (unsigned long *)((char *)pSTScreen + eax);        /* ST format screen 4-plane 16 colours */
    ebp = (unsigned long *)((char *)pSTScreenCopy + eax);    /* Previous ST format screen */
-   esi = (unsigned short *)pPCScreenDest;
+   esi = (unsigned short *)pPCScreenDest;                   /* PC format screen */
 
-#if __BYTE_ORDER == 4321
-   AdjustLinePaletteRemapBIGENDIAN();
-#else
    AdjustLinePaletteRemap();
-#endif
  
 /*
-  __asm {
-    // Get screen addresses, 'edi'-ST screen, 'ebp'-Previous ST screen, 'esi'-PC screen
-    mov    eax,[ScrY]
-    mov    eax,STScreenLineOffset[eax*4]    // Offset for this line
-    add    eax,[STScreenLeftSkipBytes]    // Amount to skip on left hand side
-    mov    edi,[pSTScreen]        // ST format screen 4-plane 16 colours
-    add    edi,eax
-    mov    ebp,[pSTScreenCopy]      // Previous ST format screen
-    add    ebp,eax
-    mov    esi,[pPCScreenDest]      // PC format screen, byte per pixel 256 colours
-
     call  AdjustLinePaletteRemap        // Change palette table, DO NOT corrupt edx,edi,esi or ebp!
     jmp    Line_ConvertLowRes_320x16Bit    // 0 palette same, can do check tests
-  }
 }
 */
 

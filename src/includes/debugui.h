@@ -1,0 +1,6 @@
+/*
+    Hatari
+*/
+
+
+extern void DebugUI();
