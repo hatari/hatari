@@ -8,7 +8,7 @@ CC = gcc
 HOSTCC = $(CC)
 
 # Set flags passed to the compiler (e.g. optimization flags)
-CFLAGS = -g -O2 -Wall -Wimplicit -Wmissing-declarations -Wcast-align
+CFLAGS = -g -O2 -Wall -Wmissing-declarations -Wcast-align
 
 # Set flags passed to the preprocessor (e.g. -I<include dir>)
 CPPFLAGS =

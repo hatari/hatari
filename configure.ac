@@ -4,7 +4,7 @@
 # Process this file with autoconf to produce a configure script.
 # Don't forget to run aclocal first!
 
-AC_INIT(hatari, 0.46)
+AC_INIT(hatari, 0.50)
 AC_CONFIG_SRCDIR([src/main.c])
 AC_PREREQ(2.50)
 
@@ -103,7 +103,7 @@ if test x"${GCC}" = xyes; then
   if test x"${ENABLE_WERROR}" != xno; then
     CFLAGS="${CFLAGS} -Werror"
   fi
-  CFLAGS="${CFLAGS} -Wall -Wno-unused"
+  CFLAGS="${CFLAGS} -Wall -Wmissing-declarations -Wcast-align"
 
 fi
 
