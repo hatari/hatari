@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-static char rcsid[] = "Hatari $Id: screen.c,v 1.21 2003-03-23 19:20:30 thothy Exp $";
+static char rcsid[] = "Hatari $Id: screen.c,v 1.22 2003-03-25 07:53:29 emanne Exp $";
 
 #include <SDL.h>
 
@@ -39,6 +39,8 @@ static char rcsid[] = "Hatari $Id: screen.c,v 1.21 2003-03-23 19:20:30 thothy Ex
 #include "vdi.h"
 #include "video.h"
 
+/* SDL Video attributes for fullscreen */
+const unsigned int sdlvmode = SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE;
 
 SCREENDRAW ScreenDrawWindow[4];                   /* Set up with details of drawing functions for ST_xxx_RES */
 SCREENDRAW ScreenDrawFullScreen[4];               /* And for full-screen */
@@ -212,10 +214,36 @@ void Screen_SetupRGBTable(void)
 /*
   Enter Full screen mode
 */
+
+static SDL_Surface *set_new_sdl_fsmode() {
+  SDL_Surface *newsdlscrn;
+  if (bUseVDIRes) {
+    newsdlscrn = SDL_SetVideoMode(ScreenDrawVDIFullScreen[STRes].Width, ScreenDrawVDIFullScreen[STRes].Height,
+                                 ScreenDrawVDIFullScreen[STRes].BitDepth, sdlvmode);
+  } else {
+    int Width = ScreenDrawFullScreen[STRes].Width,
+      Height = ScreenDrawFullScreen[STRes].Height;
+    if ( !bUseHighRes && ConfigureParams.Screen.Advanced.bAllowOverscan ) {
+      /* If using 640 pixel wide screen, double overscan */
+      if (Width==640)
+	{
+	  Width += OVERSCAN_LEFT+OVERSCAN_RIGHT;
+	  Height += OVERSCAN_TOP+OVERSCAN_BOTTOM;
+	}
+      /* Add in overscan borders(if 640x200 bitmap is double on Y) */
+      Width += OVERSCAN_LEFT+OVERSCAN_RIGHT;
+      Height += OVERSCAN_TOP+OVERSCAN_BOTTOM;
+    }
+
+    newsdlscrn = SDL_SetVideoMode(Width, Height,
+				  ScreenDrawFullScreen[STRes].BitDepth, sdlvmode);
+  }
+  return newsdlscrn;
+}
+
 void Screen_EnterFullScreen(void)
 {
   SDL_Surface *newsdlscrn;
-  const unsigned int sdlvmode = SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE;
 
   if (!bInFullScreen)
   {
@@ -224,16 +252,7 @@ void Screen_EnterFullScreen(void)
 
     Screen_SetDrawModes();        /* Set draw modes(store which modes to use!) */
 
-    if (bUseVDIRes)
-    {
-      newsdlscrn = SDL_SetVideoMode(ScreenDrawVDIFullScreen[STRes].Width, ScreenDrawVDIFullScreen[STRes].Height,
-                                 ScreenDrawVDIFullScreen[STRes].BitDepth, sdlvmode);
-    }
-    else
-    {
-      newsdlscrn = SDL_SetVideoMode(ScreenDrawFullScreen[STRes].Width, ScreenDrawFullScreen[STRes].Height,
-                                 ScreenDrawFullScreen[STRes].BitDepth, sdlvmode);
-    }
+    newsdlscrn = set_new_sdl_fsmode();
 
     if( newsdlscrn==NULL )
     {
@@ -347,10 +366,11 @@ void Screen_SetDrawModes(void)
   ScreenDrawVDIWindow[ST_HIGH_RES].Width = VDIWidth;  ScreenDrawVDIWindow[ST_HIGH_RES].Height = VDIHeight;  ScreenDrawVDIWindow[ST_HIGH_RES].BitDepth = 8;
 
   /* And full-screen, select from Overscan/Non-Overscan */
-  if (ConfigureParams.Screen.Advanced.bAllowOverscan)
+  if (ConfigureParams.Screen.Advanced.bAllowOverscan) {
     pScreenDisplay = &ScreenDisplayOptions[ConfigureParams.Screen.ChosenDisplayMode];
-  else
+  } else {
     pScreenDisplay = &ScreenDisplayOptions_NoOverscan[ConfigureParams.Screen.ChosenDisplayMode];
+  }
 
   /* Assign full-screen draw modes from chosen option under dialog */
   ScreenDrawFullScreen[ST_LOW_RES] = *pScreenDisplay->pLowRes;
@@ -388,7 +408,8 @@ void Screen_SetWindowRes(int Width, int Height, int BitCount)
 {
 
   /* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
-  if ( !(bUseVDIRes || bUseHighRes) )
+  if ( !(bUseVDIRes || bUseHighRes) &&
+       ConfigureParams.Screen.Advanced.bAllowOverscan)
   {
     /* If using 640 pixel wide screen, double overscan */
     if (Width==640)
@@ -425,7 +446,6 @@ void Screen_SetWindowRes(int Width, int Height, int BitCount)
   }
 }
 
-
 /*-----------------------------------------------------------------------*/
 /*
   Have we changes beteen low/medium/high res?
@@ -439,16 +459,8 @@ void Screen_DidResolutionChange(void)
     if (bInFullScreen)
     {
       SDL_Surface *newsdlscrn;
-      if (bUseVDIRes)
-      {
-        newsdlscrn = SDL_SetVideoMode(ScreenDrawVDIFullScreen[STRes].Width, ScreenDrawVDIFullScreen[STRes].Height,
-                               ScreenDrawVDIFullScreen[STRes].BitDepth, SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE);
-      }
-      else
-      {
-        newsdlscrn = SDL_SetVideoMode(ScreenDrawFullScreen[STRes].Width, ScreenDrawFullScreen[STRes].Height,
-                               ScreenDrawFullScreen[STRes].BitDepth, SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE);
-      }
+
+      newsdlscrn = set_new_sdl_fsmode();
 
       if( newsdlscrn )
       {
@@ -657,7 +669,7 @@ void Screen_CreatePalette(void)
   SDL_Color sdlColors[16];
   int i, j;
 
-fprintf(stderr,"Creating palette %x\n",HBLPalettes[0]);
+  fprintf(stderr,"Creating palette %x\n",HBLPalettes[0]);
   if(bUseHighRes)
   {
     /* Colors for monochrome screen mode emulation */
@@ -781,16 +793,20 @@ void Screen_SetWindowConvertDetails(void)
     }
     else
     {
-      PCScreenBytesPerLine = (SCREENBYTES_LINE*2)*sizeof(short int);
-      if (STRes!=ST_LOW_RES)                    /* Bytes per line in PC screen are DOUBLE when in medium/mix */
-        PCScreenBytesPerLine <<= 1;
+      PCScreenBytesPerLine = sdlscrn->pitch;
+/*       PCScreenBytesPerLine = (SCREENBYTES_LINE*2)*sizeof(short int); */
+/*       if (STRes!=ST_LOW_RES)                    /\* Bytes per line in PC screen are DOUBLE when in medium/mix *\/ */
+/*         PCScreenBytesPerLine <<= 1; */
     }
+
     pHBLPalettes = pFrameBuffer->HBLPalettes;
   }
 
   /* Are we in a Window and medium/mix res? Need to Double Y */
-  if ( (!bInFullScreen) && ((STRes==ST_MEDIUM_RES) || (STRes==ST_LOWMEDIUM_MIX_RES)) )
+  // if ( (!bInFullScreen) && ((STRes==ST_MEDIUM_RES) || (STRes==ST_LOWMEDIUM_MIX_RES)) ) {
+  if (!ConfigureParams.Screen.Advanced.bInterlacedFullScreen) {
     bScrDoubleY = TRUE;
+  }
 }
 
 /*-----------------------------------------------------------------------*/
@@ -829,8 +845,9 @@ void Screen_SetFullScreenConvertDetails(void)
   pHBLPalettes = pFrameBuffer->HBLPalettes;
 
   /* Is non-interlaced? May need to double up on Y */
-  if (!ConfigureParams.Screen.Advanced.bInterlacedFullScreen)
+  if (!ConfigureParams.Screen.Advanced.bInterlacedFullScreen) {
     bScrDoubleY = TRUE;
+  }
 }
 
 
@@ -871,13 +888,21 @@ void Screen_UnLock(void)
 void Screen_Blit(BOOL bSwapScreen)
 {
   /* Rectangle areas to Blit according to if overscan is enabled or not (source always includes all borders) */
+/*   static SDL_Rect SrcWindowBitmapSizes[] = */
+/*   { */
+/*     { OVERSCAN_LEFT,OVERSCAN_TOP, 320,200 },                /\* ST_LOW_RES *\/ */
+/*     { (OVERSCAN_LEFT<<1),(OVERSCAN_TOP<<1), 640,400 },      /\* ST_MEDIUM_RES *\/ */
+/*     { 0,0, 640,400 },                                       /\* ST_HIGH_RES *\/ */
+/*     { (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400 },   /\* ST_LOWMEDIUM_MIX_RES *\/ */
+/*   }; */
   static SDL_Rect SrcWindowBitmapSizes[] =
   {
-    { OVERSCAN_LEFT,OVERSCAN_TOP, 320,200 },                /* ST_LOW_RES */
-    { (OVERSCAN_LEFT<<1),(OVERSCAN_TOP<<1), 640,400 },      /* ST_MEDIUM_RES */
+    { 0,0, 320,200 },                /* ST_LOW_RES */
+    { 0,0, 640,400 },      /* ST_MEDIUM_RES */
     { 0,0, 640,400 },                                       /* ST_HIGH_RES */
-    { (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400 },   /* ST_LOWMEDIUM_MIX_RES */
+    { 0,0, 640,400 },   /* ST_LOWMEDIUM_MIX_RES */
   };
+
   static SDL_Rect SrcWindowOverscanBitmapSizes[] =
   {
     { 0,0, OVERSCAN_LEFT+320+OVERSCAN_RIGHT,OVERSCAN_TOP+200+OVERSCAN_BOTTOM },
@@ -909,8 +934,9 @@ void Screen_Blit(BOOL bSwapScreen)
       /* Find rectangle to draw from... */
       if (ConfigureParams.Screen.Advanced.bAllowOverscan)
         SrcRect = &SrcWindowOverscanBitmapSizes[STRes];
-      else
+      else {
         SrcRect = &SrcWindowBitmapSizes[STRes];
+      }
       /* Blit image */
       SDL_UpdateRects(sdlscrn, 1, SrcRect);
     }
@@ -964,7 +990,11 @@ void Screen_DrawFrame(BOOL bForceFlip)
     bScreenContentsChanged = FALSE;      /* Did change(ie needs blit?) */
     if (bInFullScreen) {
       /* Set details */
-      Screen_SetFullScreenConvertDetails();
+      if (ConfigureParams.Screen.Advanced.bAllowOverscan) {
+	Screen_SetWindowConvertDetails();
+	pPCScreenDest = (unsigned char *)sdlscrn->pixels;  /* Destination PC screen */
+      } else
+	Screen_SetFullScreenConvertDetails();
       /* Clear screen on full update to clear out borders and also interlaced lines */
       if (pFrameBuffer->bFullUpdate)
         Screen_ClearScreen();
@@ -987,9 +1017,12 @@ void Screen_DrawFrame(BOOL bForceFlip)
       if (pDrawFunction)
         CALL_VAR(pDrawFunction)
     }
-    else {
+    else { /* windowed mode */
       /* Set details */
-      Screen_SetWindowConvertDetails();
+      if (ConfigureParams.Screen.Advanced.bAllowOverscan) {
+	Screen_SetWindowConvertDetails();
+      } else
+	Screen_SetFullScreenConvertDetails();
       /* Call drawing for Window, ST or VDI */
       if (bUseVDIRes) {
         pDrawFunction = ScreenDrawVDIWindow[VDIRes].pDrawFunction;

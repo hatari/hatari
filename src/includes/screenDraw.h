@@ -286,29 +286,13 @@ SCREENDRAW ScreenDraw_High_640x480x256_NoOverscan = {
 
 //-----------------------------------------------------------------------
 ///// OVERSCAN
-SCREENDRAW ScreenDraw_Low_320x200x256 = {
-  ConvertLowRes_320x8Bit,
-  /*MODE_320x200x256,*/
-  320,200,8,1,
-  {
-    { SCREENBYTES_LEFT,SCREENBYTES_MIDDLE, OVERSCAN_TOP,OVERSCAN_TOP+200,  0,0 },
-    { SCREENBYTES_LEFT,SCREENBYTES_MIDDLE, OVERSCAN_TOP,OVERSCAN_TOP+200,  0,0 },
-    { SCREENBYTES_LEFT,SCREENBYTES_MIDDLE, OVERSCAN_TOP,OVERSCAN_TOP+200,  0,0 },
-    { SCREENBYTES_LEFT,SCREENBYTES_MIDDLE, OVERSCAN_TOP,OVERSCAN_TOP+200,  0,0 }
-  }
-};
-
-SCREENDRAW ScreenDraw_Low_320x200x16Bit = {
-  ConvertLowRes_320x16Bit,
-  /*MODE_320x200x16BIT,*/
-  320,200,16,1,
-  {
-    { SCREENBYTES_LEFT,SCREENBYTES_MIDDLE, OVERSCAN_TOP,OVERSCAN_TOP+200,  0,0 },
-    { SCREENBYTES_LEFT,SCREENBYTES_MIDDLE, OVERSCAN_TOP,OVERSCAN_TOP+200,  0,0 },
-    { SCREENBYTES_LEFT,SCREENBYTES_MIDDLE, OVERSCAN_TOP,OVERSCAN_TOP+200,  0,0 },
-    { SCREENBYTES_LEFT,SCREENBYTES_MIDDLE, OVERSCAN_TOP,OVERSCAN_TOP+200,  0,0 }
-  }
-};
+#define ScreenDraw_Low_320x200x256 ScreenDraw_Low_320x200x256_NoOverscan
+#define ScreenDraw_Medium_640x400x256 ScreenDraw_Medium_640x400x256_NoOverscan
+#define ScreenDraw_High_640x400x256 ScreenDraw_High_640x400x256_NoOverscan
+#define ScreenDraw_Medium_640x400x16Bit ScreenDraw_Medium_640x400x16Bit_NoOverscan
+#define ScreenDraw_Low_640x400x256 ScreenDraw_Low_640x400x256_NoOverscan
+#define ScreenDraw_Low_640x400x16Bit ScreenDraw_Low_640x400x16Bit_NoOverscan
+#define ScreenDraw_Low_320x200x16Bit ScreenDraw_Low_320x200x16Bit_NoOverscan
 
 SCREENDRAW ScreenDraw_Low_320x240x256 = {
   ConvertLowRes_320x8Bit,
@@ -494,44 +478,44 @@ SCREENDRAW_DISPLAYOPTIONS ScreenDisplayOptions_NoOverscan[] = {
 SCREENDRAW_DISPLAYOPTIONS ScreenDisplayOptions[] = {
   // Low-Colour, Low Res
   {
-    &ScreenDraw_Low_320x240x256,&ScreenDraw_Low_320x200x256_NoOverscan,
-    &ScreenDraw_Medium_640x480x256,&ScreenDraw_Medium_640x400x256_NoOverscan,
-    &ScreenDraw_High_640x480x256,&ScreenDraw_High_640x400x256_NoOverscan,
-    &ScreenDraw_Medium_640x480x256,&ScreenDraw_Medium_640x400x256_NoOverscan,
+    &ScreenDraw_Low_320x200x256,&ScreenDraw_Low_320x200x256_NoOverscan,
+    &ScreenDraw_Medium_640x400x256,&ScreenDraw_Medium_640x400x256_NoOverscan,
+    &ScreenDraw_High_640x400x256,&ScreenDraw_High_640x400x256_NoOverscan,
+    &ScreenDraw_Medium_640x400x256,&ScreenDraw_Medium_640x400x256_NoOverscan,
   },
   // Low-Colour, High Res
   {
-    &ScreenDraw_Low_640x480x256,&ScreenDraw_Low_640x400x256_NoOverscan,
-    &ScreenDraw_Medium_640x480x256,&ScreenDraw_Medium_640x400x256_NoOverscan,
-    &ScreenDraw_High_640x480x256,&ScreenDraw_High_640x400x256_NoOverscan,
-    &ScreenDraw_Medium_640x480x256,&ScreenDraw_Medium_640x400x256_NoOverscan,
+    &ScreenDraw_Low_640x400x256,&ScreenDraw_Low_640x400x256_NoOverscan,
+    &ScreenDraw_Medium_640x400x256,&ScreenDraw_Medium_640x400x256_NoOverscan,
+    &ScreenDraw_High_640x400x256,&ScreenDraw_High_640x400x256_NoOverscan,
+    &ScreenDraw_Medium_640x400x256,&ScreenDraw_Medium_640x400x256_NoOverscan,
   },
   // Low-Colour, Full View
   {
     &ScreenDraw_Low_800x600x256,&ScreenDraw_Low_800x600x256,
     &ScreenDraw_Medium_800x600x256,&ScreenDraw_Medium_800x600x256,
-    &ScreenDraw_High_640x480x256,&ScreenDraw_High_640x400x256_NoOverscan,
+    &ScreenDraw_High_640x400x256,&ScreenDraw_High_640x400x256_NoOverscan,
     &ScreenDraw_Medium_800x600x256,&ScreenDraw_Medium_800x600x256,
   },
   // Hi-Colour, Low Res
   {
-    &ScreenDraw_Low_320x240x16Bit,&ScreenDraw_Low_320x200x16Bit_NoOverscan,
-    &ScreenDraw_Medium_640x480x16Bit,&ScreenDraw_Medium_640x400x16Bit_NoOverscan,
-    &ScreenDraw_High_640x480x256,&ScreenDraw_High_640x400x256_NoOverscan,
-    &ScreenDraw_Medium_640x480x16Bit,&ScreenDraw_Medium_640x400x16Bit_NoOverscan,
+    &ScreenDraw_Low_320x200x16Bit,&ScreenDraw_Low_320x200x16Bit_NoOverscan,
+    &ScreenDraw_Medium_640x400x16Bit,&ScreenDraw_Medium_640x400x16Bit_NoOverscan,
+    &ScreenDraw_High_640x400x256,&ScreenDraw_High_640x400x256_NoOverscan,
+    &ScreenDraw_Medium_640x400x16Bit,&ScreenDraw_Medium_640x400x16Bit_NoOverscan,
   },
   // Hi-Colour, High Res
   {
-    &ScreenDraw_Low_640x480x16Bit,&ScreenDraw_Low_640x400x16Bit_NoOverscan,
-    &ScreenDraw_Medium_640x480x16Bit,&ScreenDraw_Medium_640x400x16Bit_NoOverscan,
-    &ScreenDraw_High_640x480x256,&ScreenDraw_High_640x400x256_NoOverscan,
-    &ScreenDraw_Medium_640x480x16Bit,&ScreenDraw_Medium_640x400x16Bit_NoOverscan,
+    &ScreenDraw_Low_640x400x16Bit,&ScreenDraw_Low_640x400x16Bit_NoOverscan,
+    &ScreenDraw_Medium_640x400x16Bit,&ScreenDraw_Medium_640x400x16Bit_NoOverscan,
+    &ScreenDraw_High_640x400x256,&ScreenDraw_High_640x400x256_NoOverscan,
+    &ScreenDraw_Medium_640x400x16Bit,&ScreenDraw_Medium_640x400x16Bit_NoOverscan,
   },
   // Hi-Colour, Full View
   {
     &ScreenDraw_Low_800x600x16Bit,&ScreenDraw_Low_800x600x16Bit,
     &ScreenDraw_Medium_800x600x16Bit,&ScreenDraw_Medium_800x600x16Bit,
-    &ScreenDraw_High_640x480x256,&ScreenDraw_High_640x400x256_NoOverscan,
+    &ScreenDraw_High_640x400x256,&ScreenDraw_High_640x400x256_NoOverscan,
     &ScreenDraw_Medium_800x600x16Bit,&ScreenDraw_Medium_800x600x16Bit,
   }
 };
