@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.21 2005-03-10 09:45:21 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.22 2005-04-04 15:27:41 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -390,7 +390,7 @@ BOOL File_Save(char *pszFileName, void *pAddress, size_t Size, BOOL bQueryOverwr
 /*
   Return size of file, -1 if error
 */
-int File_Length(char *pszFileName)
+int File_Length(const char *pszFileName)
 {
   FILE *DiscFile;
   int FileSize;
@@ -412,7 +412,7 @@ int File_Length(char *pszFileName)
 /*
   Return TRUE if file exists
 */
-BOOL File_Exists(char *pszFileName)
+BOOL File_Exists(const char *pszFileName)
 {
   FILE *DiscFile;
 
@@ -429,22 +429,10 @@ BOOL File_Exists(char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Delete file, return TRUE if OK
-*/
-BOOL File_Delete(char *pszFileName)
-{
-  /* Delete the file (must be closed first) */
-  return( remove(pszFileName) );
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
   Find if file exists, and if so ask user if OK to overwrite
 */
-BOOL File_QueryOverwrite(char *pszFileName)
+BOOL File_QueryOverwrite(const char *pszFileName)
 {
-
   char szString[FILENAME_MAX + 26];
 
   /* Try and find if file exists */
