@@ -275,13 +275,14 @@ void DebugUI_RegSet(char *arg){
 
   for(i=0;i<4;i++) reg[i] = toupper(reg[i]);
 
-  /* FIXME: update conditional flags for the UAE core. 
-     set SR
-  if(reg[0] == 'S' && reg[1] == 'R')
+  /* set SR and update conditional flags for the UAE CPU core. */
+  if(reg[0] == 'S' && reg[1] == 'R') {
     SR = value;
-*/
+    MakeFromSR();
+  }
+
   /* set PC */
-  if(reg[0] == 'P' && reg[1] == 'C')
+  else if(reg[0] == 'P' && reg[1] == 'C')
     m68k_setpc( value );
 
   /* Data regs */
