@@ -54,8 +54,8 @@ typedef struct
 
 int SDLGui_Init(void);
 int SDLGui_UnInit(void);
-int SDLGui_DoDialog(SGOBJ *dlg);
 int SDLGui_PrepareFont(void);
+int SDLGui_DoDialog(SGOBJ *dlg);
 void SDLGui_CenterDlg(SGOBJ *dlg);
 int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew);
 

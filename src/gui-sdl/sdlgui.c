@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-static char rcsid[] = "Hatari $Id: sdlgui.c,v 1.2 2003-08-11 19:37:36 thothy Exp $";
+static char rcsid[] = "Hatari $Id: sdlgui.c,v 1.3 2004-04-05 18:49:53 thothy Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -17,11 +17,56 @@ static char rcsid[] = "Hatari $Id: sdlgui.c,v 1.2 2003-08-11 19:37:36 thothy Exp
 #include "screen.h"
 #include "sdlgui.h"
 
+#include "font5x8.h"
+#include "font10x16.h"
 
-static SDL_Surface *stdfontgfx = NULL;  /* The 'standard' font graphics */
-static SDL_Surface *fontgfx = NULL;     /* The actual font graphics */
-static int fontwidth, fontheight;       /* Height and width of the actual font */
 
+static SDL_Surface *pSmallFontGfx = NULL;   /* The small font graphics */
+static SDL_Surface *pBigFontGfx = NULL;     /* The big font graphics */
+static SDL_Surface *fontgfx = NULL;         /* The actual font graphics */
+static int fontwidth, fontheight;           /* Width & height of the actual font */
+
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Load an 1 plane XBM into a 8 planes SDL_Surface.
+*/
+static SDL_Surface *SDLGui_LoadXBM(int w, int h, Uint8 *srcbits)
+{
+  SDL_Surface *bitmap;
+  Uint8 *dstbits;
+  int x, y, srcpitch;
+  int mask;
+
+  /* Allocate the bitmap */
+  bitmap = SDL_CreateRGBSurface(SDL_SWSURFACE, w, h, 8, 0, 0, 0, 0);
+  if (bitmap == NULL)
+  {
+    fprintf(stderr, "Couldn't allocate bitmap: %s", SDL_GetError());
+    return(NULL);
+  }
+
+  srcpitch = ((w + 7) / 8);
+  dstbits = (Uint8 *)bitmap->pixels;
+  mask = 1;
+
+  /* Copy the pixels */
+  for (y = 0 ; y < h ; y++)
+  {
+    for (x = 0 ; x < w ; x++)
+    {
+      dstbits[x] = (srcbits[x / 8] & mask) ? 1 : 0;
+      mask <<= 1;
+      mask |= (mask >> 8);
+      mask &= 0xFF;
+    }
+    dstbits += bitmap->pitch;
+    srcbits += srcpitch;
+  }
+
+  return(bitmap);
+}
 
 
 /*-----------------------------------------------------------------------*/
@@ -30,16 +75,24 @@ static int fontwidth, fontheight;       /* Height and width of the actual font *
 */
 int SDLGui_Init()
 {
-  char fontname[256];
-  sprintf(fontname, "%s/font8.bmp", DATADIR);
+  SDL_Color blackWhiteColors[2] = {{255, 255, 255, 0}, {0, 0, 0, 0}};
 
-  /* Load the font graphics: */
-  stdfontgfx = SDL_LoadBMP(fontname);
-  if( stdfontgfx == NULL )
+  /* Initialize the font graphics: */
+  pSmallFontGfx = SDLGui_LoadXBM(font5x8_width, font5x8_height, font5x8_bits);
+  pBigFontGfx = SDLGui_LoadXBM(font10x16_width, font10x16_height, font10x16_bits);
+  if (pSmallFontGfx == NULL || pBigFontGfx == NULL)
   {
-    fprintf(stderr, "Error: Can't load image %s: %s\n", fontname, SDL_GetError() );
+    fprintf(stderr, "Error: Can not init font graphics!\n");
     return -1;
   }
+
+  /* Set color palette of the font graphics: */
+  SDL_SetColors(pSmallFontGfx, blackWhiteColors, 0, 2);
+  SDL_SetColors(pBigFontGfx, blackWhiteColors, 0, 2);
+
+  /* Set font color 0 as transparent: */
+  SDL_SetColorKey(pSmallFontGfx, (SDL_SRCCOLORKEY|SDL_RLEACCEL), 0);
+  SDL_SetColorKey(pBigFontGfx, (SDL_SRCCOLORKEY|SDL_RLEACCEL), 0);
 
   return 0;
 }
@@ -51,15 +104,16 @@ int SDLGui_Init()
 */
 int SDLGui_UnInit()
 {
-  if(stdfontgfx)
+  if (pSmallFontGfx)
   {
-    SDL_FreeSurface(stdfontgfx);
-    stdfontgfx = NULL;
+    SDL_FreeSurface(pSmallFontGfx);
+    pSmallFontGfx = NULL;
   }
-  if(fontgfx)
+
+  if (pBigFontGfx)
   {
-    SDL_FreeSurface(fontgfx);
-    fontgfx = NULL;
+    SDL_FreeSurface(pBigFontGfx);
+    pBigFontGfx = NULL;
   }
 
   return 0;
@@ -72,29 +126,22 @@ int SDLGui_UnInit()
 */
 int SDLGui_PrepareFont()
 {
-/* FIXME: Freeing the old font gfx does sometimes crash with a SEGFAULT
-  if(fontgfx)
+  /* Decide which font to use - small or big one: */
+  if (sdlscrn->w >= 640 && sdlscrn->h >= 400 && pBigFontGfx != NULL)
   {
-    SDL_FreeSurface(fontgfx);
-    fontgfx = NULL;
+    fontgfx = pBigFontGfx;
   }
-*/
-
-  if( stdfontgfx == NULL )
+  else
   {
-    fprintf(stderr, "Error: The font has not been loaded!\n");
+    fontgfx = pSmallFontGfx;
+  }
+
+  if (fontgfx == NULL)
+  {
+    fprintf(stderr, "Error: A problem with the font occured!\n");
     return -1;
   }
 
-  /* Convert the font graphics to the actual screen format */
-  fontgfx = SDL_DisplayFormat(stdfontgfx);
-  if( fontgfx == NULL )
-  {
-    fprintf(stderr, "Could not convert font:\n %s\n", SDL_GetError() );
-    return -1;
-  }
-  /* Set transparent pixel */
-  SDL_SetColorKey(fontgfx, (SDL_SRCCOLORKEY|SDL_RLEACCEL), SDL_MapRGB(fontgfx->format,255,255,255));
   /* Get the font width and height: */
   fontwidth = fontgfx->w/16;
   fontheight = fontgfx->h/16;
@@ -164,7 +211,7 @@ void SDLGui_DrawEditField(SGOBJ *edlg, int objnum)
   y = (edlg[0].y+edlg[objnum].y)*fontheight;
   SDLGui_Text(x, y, edlg[objnum].txt);
 
-  rect.x = x;    rect.y = y + edlg[objnum].h * fontwidth;
+  rect.x = x;    rect.y = y + edlg[objnum].h * fontheight;
   rect.w = edlg[objnum].w * fontwidth;    rect.h = 1;
   SDL_FillRect(sdlscrn, &rect, SDL_MapRGB(sdlscrn->format,160,160,160));
 }
@@ -177,7 +224,7 @@ void SDLGui_DrawEditField(SGOBJ *edlg, int objnum)
 void SDLGui_DrawBox(SGOBJ *bdlg, int objnum)
 {
   SDL_Rect rect;
-  int x, y, w, h;
+  int x, y, w, h, offset;
   Uint32 grey = SDL_MapRGB(sdlscrn->format,192,192,192);
   Uint32 upleftc, downrightc;
 
@@ -202,23 +249,34 @@ void SDLGui_DrawBox(SGOBJ *bdlg, int objnum)
     downrightc = SDL_MapRGB(sdlscrn->format,128,128,128);
   }
 
+  /* The root box should be bigger than the screen, so we disable the offset there: */
+  if (objnum != 0)
+    offset = 1;
+  else
+    offset = 0;
+
+  /* Draw background: */
   rect.x = x;  rect.y = y;
   rect.w = w;  rect.h = h;
   SDL_FillRect(sdlscrn, &rect, grey);
 
-  rect.x = x;  rect.y = y-1;
+  /* Draw upper border: */
+  rect.x = x;  rect.y = y - offset;
   rect.w = w;  rect.h = 1;
   SDL_FillRect(sdlscrn, &rect, upleftc);
 
-  rect.x = x-1;  rect.y = y;
+  /* Draw left border: */
+  rect.x = x - offset;  rect.y = y;
   rect.w = 1;  rect.h = h;
   SDL_FillRect(sdlscrn, &rect, upleftc);
 
-  rect.x = x;  rect.y = y+h;
+  /* Draw bottom border: */
+  rect.x = x;  rect.y = y + h - 1 + offset;
   rect.w = w;  rect.h = 1;
   SDL_FillRect(sdlscrn, &rect, downrightc);
 
-  rect.x = x+w;  rect.y = y;
+  /* Draw right border: */
+  rect.x = x + w - 1 + offset;  rect.y = y;
   rect.w = 1;  rect.h = h;
   SDL_FillRect(sdlscrn, &rect, downrightc);
 }

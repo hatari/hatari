@@ -24,6 +24,12 @@ all: $(DLGOBJS)
 clean:
 	rm -f *.o
 
+font5x8.h: font5x8.bmp
+	convert font5x8.bmp xbm:font5x8.h
+
+font10x16.h: font10x16.bmp
+	convert font10x16.bmp xbm:font10x16.h
+
 # Use "make depend" to generate file dependencies:
 depend: $(DLGSRCS)
 	$(CC) -MM $(CFLAGS) $(DLGSRCS) > Makefile.dep
