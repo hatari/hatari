@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.6 2003-10-25 12:26:39 thothy Exp $";
+char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.7 2003-12-25 14:19:38 thothy Exp $";
 
 #include <SDL_types.h>
 #include <errno.h>
@@ -57,7 +57,6 @@ typedef FILE* MSS_File;
 
 MSS_File CaptureFile;
 BOOL bCaptureSave, bCaptureError;
-char szSnapShotFileName[MAX_FILENAME_LENGTH];
 
 
 /*-----------------------------------------------------------------------*/

@@ -1,15 +1,17 @@
 /*
-  Hatari
+  Hatari - vdi.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   VDI (Virtual Device Interface) (Trap #2)
 
-  To get higher resolutions on the Desktop, we intercept the VDI/Line-A calls and set elements
-  in their structures to the higher width/height/cel/planes. We need to intercept the initial Line-A
-  call(which we force into the TOS on boot-up) and also the init calls to the VDI.
-  As we intercept the VDI calls, this is a good point to pass them on to the accelerated native
-  PC functions if we need to - this improves drawing speed far greater than any ST software
-  accelerator.
+  To get higher resolutions on the Desktop, we intercept the VDI/Line-A calls
+  and set elements in their structures to the higher width/height/cel/planes.
+  We need to intercept the initial Line-A call (which we force into the TOS on
+  boot-up) and also the init calls to the VDI.
 */
+char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.9 2003-12-25 14:19:38 thothy Exp $";
 
 #include "main.h"
 #include "decode.h"
@@ -286,13 +288,16 @@ done_modify:;
 */
 void VDI_FixDesktopInf(void)
 {
-  char szDesktopFileName[MAX_FILENAME_LENGTH],szNewDeskFileName[MAX_FILENAME_LENGTH];
+  char *szDesktopFileName, *szNewDeskFileName;
 
   if(!GEMDOS_EMU_ON)
   {
     /* Can't modify DESKTOP.INF when not using GEMDOS hard disk emulation */
     return;
   }
+
+  szDesktopFileName = Memory_Alloc(2 * FILENAME_MAX);
+  szNewDeskFileName = szDesktopFileName + FILENAME_MAX;
 
   /* Create filenames for hard-drive */
   GemDOS_CreateHardDriveFileName(2, "\\DESKTOP.INF", szDesktopFileName);
@@ -306,4 +311,6 @@ void VDI_FixDesktopInf(void)
   if (!File_Exists(szNewDeskFileName))
     VDI_SaveDesktopInf(szNewDeskFileName,NewDeskScript,sizeof(NewDeskScript));
   VDI_ModifyDesktopInf(szNewDeskFileName);
+
+  Memory_Free(szDesktopFileName);
 }

@@ -4,11 +4,12 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-static char rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.2 2003-08-11 19:37:36 thothy Exp $";
+char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.3 2003-12-25 14:19:39 thothy Exp $";
 
 #include <unistd.h>
 
 #include "main.h"
+#include "memAlloc.h"
 #include "configuration.h"
 #include "dialog.h"
 #include "sdlgui.h"
@@ -49,7 +50,9 @@ void Dialog_KeyboardDlg(void)
 {
   int i, but;
   char dlgmapfile[40];
-  char tmpname[MAX_FILENAME_LENGTH];
+  char *tmpname;
+
+  tmpname = Memory_Alloc(FILENAME_MAX);
 
   SDLGui_CenterDlg(keyboarddlg);
 
@@ -73,7 +76,7 @@ void Dialog_KeyboardDlg(void)
       strcpy(tmpname, DialogParams.Keyboard.szMappingFileName);
       if(!tmpname[0])
       {
-        getcwd(tmpname, MAX_FILENAME_LENGTH);
+        getcwd(tmpname, FILENAME_MAX);
         File_AddSlashToEndFileName(tmpname);
       }
       if( SDLGui_FileSelect(tmpname, NULL, FALSE) )
@@ -98,4 +101,6 @@ void Dialog_KeyboardDlg(void)
     DialogParams.Keyboard.nKeymapType = KEYMAP_SCANCODE;
   else
     DialogParams.Keyboard.nKeymapType = KEYMAP_LOADED;
+
+  Memory_Free(tmpname);
 }

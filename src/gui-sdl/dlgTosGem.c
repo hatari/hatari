@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-static char rcsid[] = "Hatari $Id: dlgTosGem.c,v 1.2 2003-08-11 19:37:36 thothy Exp $";
+char DlgTosGem_rcsid[] = "Hatari $Id: dlgTosGem.c,v 1.3 2003-12-25 14:19:39 thothy Exp $";
 
 #include <unistd.h>
 
@@ -13,6 +13,7 @@ static char rcsid[] = "Hatari $Id: dlgTosGem.c,v 1.2 2003-08-11 19:37:36 thothy 
 #include "dialog.h"
 #include "sdlgui.h"
 #include "file.h"
+#include "memAlloc.h"
 #include "screen.h"
 #include "vdi.h"
 
@@ -60,10 +61,12 @@ static SGOBJ tosgemdlg[] =
 */
 void Dialog_TosGemDlg(void)
 {
-  char tmpname[MAX_FILENAME_LENGTH];
+  char *tmpname;
   char dlgromname[35];
   int but;
   int i;
+
+  tmpname = Memory_Alloc(FILENAME_MAX);
 
   SDLGui_CenterDlg(tosgemdlg);
   File_ShrinkName(dlgromname, DialogParams.TOSGEM.szTOSImageFileName, 34);
@@ -91,7 +94,7 @@ void Dialog_TosGemDlg(void)
         strcpy(tmpname, DialogParams.TOSGEM.szTOSImageFileName);
         if(tmpname[0]=='.' && tmpname[1]=='/')  /* Is it in the actual working directory? */
         {
-          getcwd(tmpname, MAX_FILENAME_LENGTH);
+          getcwd(tmpname, FILENAME_MAX);
           File_AddSlashToEndFileName(tmpname);
           strcat(tmpname, &DialogParams.TOSGEM.szTOSImageFileName[2]);
         }
@@ -116,4 +119,5 @@ void Dialog_TosGemDlg(void)
       DialogParams.TOSGEM.nGEMColours = GEMCOLOUR_2 + i;
   }
 
+  Memory_Free(tmpname);
 }

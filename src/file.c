@@ -1,12 +1,12 @@
 /*
-  Hatari
+  Hatari - file.c
 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  common file access
+  Common file access functions.
 */
-static char rcsid[] = "Hatari $Id: file.c,v 1.9 2003-04-04 16:28:28 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.10 2003-12-25 14:19:38 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -137,10 +137,10 @@ void File_CleanFileName(char *pszFileName)
   len = strlen(pszFileName);
 
   /* Security length check: */
-  if( len>MAX_FILENAME_LENGTH )
+  if (len > FILENAME_MAX)
   {
-    pszFileName[MAX_FILENAME_LENGTH-1] = 0;
-    len = MAX_FILENAME_LENGTH;
+    pszFileName[FILENAME_MAX-1] = 0;
+    len = FILENAME_MAX;
   }
 
   /* Remove end slash from filename! But / remains! Doh! */
@@ -429,15 +429,20 @@ BOOL File_Delete(char *pszFileName)
 BOOL File_QueryOverwrite(char *pszFileName)
 {
 
-  char szString[MAX_FILENAME_LENGTH];
+  char szString[FILENAME_MAX];
 
   /* Try and find if file exists */
-  if (File_Exists(pszFileName)) {
+  if (File_Exists(pszFileName))
+  {
     /* File does exist, are we OK to overwrite? */
     sprintf(szString,"File '%s' exists, overwrite?",pszFileName);
 /* FIXME: */
-//    if (MessageBox(hWnd,szString,PROG_NAME,MB_YESNO | MB_DEFBUTTON2 | MB_ICONSTOP)==IDNO)
-//      return(FALSE);
+#if 0
+    if (MessageBox(hWnd,szString,PROG_NAME,MB_YESNO | MB_DEFBUTTON2 | MB_ICONSTOP)==IDNO)
+      return(FALSE);
+#else
+    fprintf(stderr, "Overwriting file '%s'!\n", pszFileName);
+#endif
   }
 
   return(TRUE);
@@ -451,7 +456,7 @@ BOOL File_QueryOverwrite(char *pszFileName)
 BOOL File_FindPossibleExtFileName(char *pszFileName, char *ppszExts[])
 {
   char szSrcDir[256], szSrcName[128], szSrcExt[32];
-  char szTempFileName[MAX_FILENAME_LENGTH];
+  char szTempFileName[FILENAME_MAX];
   int i=0;
 
   /* Split filename into parts */

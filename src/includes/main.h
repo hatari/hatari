@@ -10,9 +10,9 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.45" /* Name, version for window title */
-#define PROG_VERSION        "v0.45"
-#define VERSION_STRING      "0.45 "   /* Always 6 bytes (inc' NULL) */
+#define PROG_NAME      "Hatari v0.46" /* Name, version for window title */
+#define PROG_VERSION        "v0.46"
+#define VERSION_STRING      "0.46 "   /* Always 6 bytes (inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 //#define TOTALLY_FINAL_VERSION       /* Web release version... */
@@ -29,9 +29,6 @@ typedef int BOOL;
   #undef DEBUG_TO_FILE                /* Don't use debug files for final release */
 #endif
 
-#define MAX_FILENAME_LENGTH  256
-#define MAX_STRING_LENGTH  512
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +38,8 @@ typedef int BOOL;
 
 #include <SDL_types.h>
 
+
+#define MAX_STRING_LENGTH  512
 
 #ifndef FALSE
 #define FALSE 0
@@ -187,8 +186,8 @@ enum {
 extern BOOL bQuitProgram;
 extern BOOL bEnableDebug;
 extern BOOL bEmulationActive;
-extern char szBootDiscImage[MAX_FILENAME_LENGTH];
-extern char szWorkingDir[MAX_FILENAME_LENGTH];
+extern char szBootDiscImage[FILENAME_MAX];
+extern char szWorkingDir[FILENAME_MAX];
 
 extern void Main_MemorySnapShot_Capture(BOOL bSave);
 extern void Main_SysError(char *Error,char *Title);

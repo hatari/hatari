@@ -6,7 +6,7 @@
 
   Create Blank .ST/.MSA Disc Images
 */
-char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.5 2003-10-18 07:41:20 thothy Exp $";
+char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.6 2003-12-25 14:19:38 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -73,7 +73,6 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
   Uint8 *pDiscFile;
   unsigned long DiscSize;
   unsigned short int SPC,DIR,MEDIA,SPF;
-  char szString[MAX_FILENAME_LENGTH];
   BOOL bRet=FALSE;
 
   /* Calculate size of disc image */
@@ -141,9 +140,11 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
     }
     else
     {
+      char *szString = Memory_Alloc(FILENAME_MAX + 32);
       /* Warn user we were unable to create image */
       sprintf(szString, "Unable to create disc image '%s'.", pszFileName);
       Main_Message(szString, PROG_NAME /*,MB_OK | MB_ICONSTOP*/);
+      Memory_Free(szString);
     }
   }
 

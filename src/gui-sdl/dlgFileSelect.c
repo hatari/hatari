@@ -6,7 +6,7 @@
 
   A file selection dialog for the graphical user interface for Hatari.
 */
-static char rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.2 2003-08-11 19:37:36 thothy Exp $";
+char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.3 2003-12-25 14:19:39 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -86,14 +86,14 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
   int entries = 0;                             /* How many files are in the actual directory? */
   int ypos = 0;
   struct dirent **files = NULL;
-  char path[MAX_FILENAME_LENGTH], fname[128];  /* The actual file and path names */
+  char path[FILENAME_MAX], fname[128];         /* The actual file and path names */
   BOOL reloaddir = TRUE;                       /* Do we have to reload the directory file list? */
   BOOL refreshentries = TRUE;                  /* Do we have to update the file names in the dialog? */
   int retbut;
   int oldcursorstate;
   int selection = -1;                          /* The actual selection, -1 if none selected */
-  char zipfilename[MAX_FILENAME_LENGTH];       /* Filename in zip file */
-  char zipdir[MAX_FILENAME_LENGTH];
+  char zipfilename[FILENAME_MAX];              /* Filename in zip file */
+  char zipdir[FILENAME_MAX];
   BOOL browsingzip = FALSE;                    /* Are we browsing an archive? */
   zip_dir *zipfiles = NULL;
 
@@ -124,7 +124,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
     {
       if( reloaddir )
         {
-          if( strlen(path) >= MAX_FILENAME_LENGTH )
+          if (strlen(path) >= FILENAME_MAX)
             {
               fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
               return FALSE;
@@ -164,12 +164,13 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 
       if( refreshentries )
         {
+          char *tempstr = Memory_Alloc(FILENAME_MAX);
+
           /* Copy entries to dialog: */
           for(i=0; i<16; i++)
             {
               if( i+ypos < entries )
                 {
-                   char tempstr[MAX_FILENAME_LENGTH];
                   struct stat filestat;
                   /* Prepare entries: */
                   strcpy(tempstr, "  ");
@@ -196,6 +197,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
                 dlgfilenames[i][0] = 0;  /* Clear entry */
             }
           refreshentries = FALSE;
+          Memory_Free(tempstr);
         }/* refreshentries */
 
       /* Show dialog: */
@@ -204,7 +206,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
       /* Has the user clicked on a file or folder? */
       if( retbut>=SGFSDLG_ENTRY1 && retbut<=SGFSDLG_ENTRY16 && retbut-SGFSDLG_ENTRY1+ypos<entries)
         {
-          char tempstr[MAX_FILENAME_LENGTH];
+          char *tempstr = Memory_Alloc(FILENAME_MAX);
           struct stat filestat;
 
           if( browsingzip == TRUE )
@@ -321,6 +323,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 
             } /* not browsingzip */
 
+          Memory_Free(tempstr);
         }
       else    /* Has the user clicked on another button? */
         {

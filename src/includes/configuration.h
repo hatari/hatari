@@ -12,7 +12,7 @@
 /* TOS/GEM configuration */
 typedef struct
 {
-  char szTOSImageFileName[MAX_FILENAME_LENGTH];
+  char szTOSImageFileName[FILENAME_MAX];
   BOOL bUseExtGEMResolutions;
   int nGEMResolution;
   int nGEMColours;
@@ -31,7 +31,7 @@ typedef struct
 {
   BOOL bEnableSound;
   SOUND_QUALITIY nPlaybackQuality;
-  char szYMCaptureFileName[MAX_FILENAME_LENGTH];
+  char szYMCaptureFileName[FILENAME_MAX];
 } CNF_SOUND;
 
 
@@ -40,7 +40,7 @@ typedef struct
 typedef struct
 {
   BOOL bEnableRS232;
-  char szDeviceFileName[MAX_FILENAME_LENGTH];
+  char szDeviceFileName[FILENAME_MAX];
 } CNF_RS232;
 
 
@@ -56,7 +56,7 @@ typedef struct
 {
   BOOL bDisableKeyRepeat;
   KEYMAPTYPE nKeymapType;
-  char szMappingFileName[MAX_FILENAME_LENGTH];
+  char szMappingFileName[FILENAME_MAX];
 } CNF_KEYBOARD;
 
 
@@ -72,7 +72,7 @@ typedef enum
 typedef struct
 {
   MEMORY_SIZE nMemorySize;
-  char szMemoryCaptureFileName[MAX_FILENAME_LENGTH];
+  char szMemoryCaptureFileName[FILENAME_MAX];
 } CNF_MEMORY;
 
 
@@ -93,7 +93,7 @@ typedef struct
 typedef struct
 {
   BOOL bAutoInsertDiscB;
-  char szDiscImageDirectory[MAX_FILENAME_LENGTH];
+  char szDiscImageDirectory[FILENAME_MAX];
 } CNF_DISCIMAGE;
 
 
@@ -125,8 +125,8 @@ typedef struct
   int nHardDiscDir;
   BOOL bUseHardDiscDirectories;
   BOOL bUseHardDiscImage;
-  char szHardDiscDirectories[MAX_HARDDRIVES][MAX_FILENAME_LENGTH];
-  char szHardDiscImage[MAX_FILENAME_LENGTH];
+  char szHardDiscDirectories[MAX_HARDDRIVES][FILENAME_MAX];
+  char szHardDiscImage[FILENAME_MAX];
 } CNF_HARDDISC;
 
 
@@ -151,7 +151,7 @@ typedef struct
 {
   BOOL bEnablePrinting;
   BOOL bPrintToFile;
-  char szPrintToFileName[MAX_FILENAME_LENGTH];
+  char szPrintToFileName[FILENAME_MAX];
 } CNF_PRINTER;
 
 
@@ -159,7 +159,7 @@ typedef struct
 typedef struct
 {
   BOOL bEnableMidi;
-  char szMidiOutFileName[MAX_FILENAME_LENGTH];
+  char szMidiOutFileName[FILENAME_MAX];
 } CNF_MIDI;
 
 

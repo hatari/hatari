@@ -1,12 +1,15 @@
 /*
-  Hatari
+  Hatari - errlog.c
 
-  Error Log file
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
-  When Hatari runs, it outputs text to the error log file to show if the system initialised
-  correctly. Using this file output we can also list which video modes are present under
-  DirectDraw and such like.
+  Error Log file.
+
+  When Hatari runs, it outputs text to the error log file to show if the system
+  initialised correctly and such like.
 */
+char ErrLog_rcsid[] = "Hatari $Id: errlog.c,v 1.4 2003-12-25 14:19:38 thothy Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -30,7 +33,7 @@ static FILE *errlog;
 void ErrLog_OpenFile(void)
 {
 #ifdef USEERRLOG
-  char szString[MAX_FILENAME_LENGTH];
+  char szString[FILENAME_MAX];
 
   sprintf(szString,"%s/errlog.txt",szWorkingDir);
   errlog = fopen(szString, "w");

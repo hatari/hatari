@@ -1,11 +1,18 @@
 /*
-  Hatari
+  Hatari - floppy.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 */
 
+#ifndef HATARI_FLOPPY_H
+#define HATARI_FLOPPY_H
+
 /* Structure for each drive connected as emulation */
-typedef struct {
+typedef struct
+{
   unsigned char *pBuffer;
-  char szFileName[MAX_FILENAME_LENGTH];
+  char szFileName[FILENAME_MAX];
   int nImageBytes;
   BOOL bDiscInserted;
   BOOL bMediaChanged;
@@ -35,3 +42,5 @@ extern BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector
 extern BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsigned short int Track,unsigned short int Side, short int Count, int *pnSectorsPerTrack);
 extern int Floppy_GetPhysicalSectorsPerTrack(int Drive);
 extern BOOL Floppy_ReadPhysicalSector(int Drive,char *pBuffer,unsigned short int Sector,unsigned short int Track,unsigned short int Side,unsigned short int Count);
+
+#endif

@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-static char rcsid[] = "Hatari $Id: configuration.c,v 1.25 2003-10-18 07:46:55 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.26 2003-12-25 14:19:38 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -28,7 +28,7 @@ static char rcsid[] = "Hatari $Id: configuration.c,v 1.25 2003-10-18 07:46:55 th
 
 BOOL bFirstTimeInstall = FALSE;             /* Has been run before? Used to set default joysticks etc... */
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
-static char cfgName[MAX_FILENAME_LENGTH];   /* Stores the name of the configuration file */
+static char cfgName[FILENAME_MAX];          /* Stores the name of the configuration file */
 
 
 /* Used to load/save screen options */

@@ -6,7 +6,7 @@
 
   Device (Printer etc.) setup dialog
 */
-static char rcsid[] = "Hatari $Id: dlgDevice.c,v 1.2 2003-08-12 14:44:34 thothy Exp $";
+char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.3 2003-12-25 14:19:39 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -52,7 +52,7 @@ void Dialog_DeviceDlg(void)
 	char *tmpname;
 
 	/* Allocate memory for tmpname: */
-	tmpname = Memory_Alloc(MAX_FILENAME_LENGTH);
+	tmpname = Memory_Alloc(FILENAME_MAX);
 
 	SDLGui_CenterDlg(devicedlg);
 

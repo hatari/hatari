@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.48 2003-11-05 18:20:18 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.49 2003-12-25 14:19:38 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -55,8 +55,8 @@ BOOL bUseFullscreen=FALSE;
 BOOL bEmulationActive=TRUE;               /* Run emulation when started */
 BOOL bAppActive = FALSE;
 BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
-char szBootDiscImage[MAX_FILENAME_LENGTH] = { "" };
-char szWorkingDir[MAX_FILENAME_LENGTH];   /* Working directory */
+char szBootDiscImage[FILENAME_MAX];
+char szWorkingDir[FILENAME_MAX];          /* Working directory */
 
 unsigned char STRam[16*1024*1024];        /* This is our ST Ram, includes all TOS/hardware areas for ease */
 
@@ -269,7 +269,7 @@ void Main_ReadParameters(int argc, char *argv[])
           fprintf(stderr, "Missing argument for --midi\n");
         else
         {
-          if(strlen(argv[i+1]) <= MAX_FILENAME_LENGTH)
+          if (strlen(argv[i+1]) <= sizeof(ConfigureParams.Midi.szMidiOutFileName))
           {
             ConfigureParams.Midi.bEnableMidi = TRUE;
             strcpy(ConfigureParams.Midi.szMidiOutFileName, argv[i+1]);
@@ -288,7 +288,7 @@ void Main_ReadParameters(int argc, char *argv[])
           fprintf(stderr, "Missing argument for --hdimage\n");
         else
         {
-          if(strlen(argv[i+1]) <= MAX_FILENAME_LENGTH)
+          if (strlen(argv[i+1]) <= sizeof(ConfigureParams.HardDisc.szHardDiscImage))
           {
             ConfigureParams.HardDisc.bUseHardDiscImage = TRUE;
             strcpy(ConfigureParams.HardDisc.szHardDiscImage, argv[i+1]);
@@ -318,7 +318,7 @@ void Main_ReadParameters(int argc, char *argv[])
         if(i+1>=argc)
           fprintf(stderr,"Missing argument for --tos.\n");
         else
-          strncpy(ConfigureParams.TOSGEM.szTOSImageFileName, argv[++i], MAX_FILENAME_LENGTH);
+          strncpy(ConfigureParams.TOSGEM.szTOSImageFileName, argv[++i], sizeof(ConfigureParams.TOSGEM.szTOSImageFileName));
       }
       else if (!strcmp(argv[i],"--cpulevel"))
       {
@@ -477,7 +477,9 @@ int main(int argc, char *argv[])
   srand( time(NULL) );
 
   /* Get working directory */
-  getcwd(szWorkingDir, MAX_FILENAME_LENGTH);
+  getcwd(szWorkingDir, FILENAME_MAX);
+
+  szBootDiscImage[0] = 0;
 
   /* Create debug files */
   Debug_OpenFiles();

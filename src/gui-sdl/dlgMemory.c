@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-static char rcsid[] = "Hatari $Id: dlgMemory.c,v 1.3 2003-10-25 12:26:39 thothy Exp $";
+char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.4 2003-12-25 14:19:39 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -63,7 +63,7 @@ void Dialog_MemDlg(void)
   char *tmpname;
 
   /* Allocate memory for tmpname: */
-  tmpname = Memory_Alloc(MAX_FILENAME_LENGTH);
+  tmpname = Memory_Alloc(FILENAME_MAX);
 
   SDLGui_CenterDlg(memorydlg);
 
