@@ -1,8 +1,12 @@
 /*
-  Hatari
+  Hatari - stMemory.c
 
-  ST Memory functions - takes care of endian swaps
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  ST Memory access functions - take care of endian swaps.
 */
+static char rcsid[] = "Hatari $Id: stMemory.c,v 1.3 2003-03-17 13:19:18 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -10,11 +14,12 @@
 #include "decode.h"
 #include "m68000.h"
 #include "memAlloc.h"
+#include "uae-cpu/maccess.h"
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Clear section of ST's memory space
+  Clear section of ST's memory space.
 */
 void STMemory_Clear(unsigned long StartAddress, unsigned long EndAddress)
 {
@@ -24,20 +29,20 @@ void STMemory_Clear(unsigned long StartAddress, unsigned long EndAddress)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Swap 16-bit integer to/from 68000/PC format
+  Swap 16-bit integer to/from 68000/PC format.
 */
-unsigned short int STMemory_Swap68000Int(unsigned short int var)
+unsigned short STMemory_Swap68000Int(unsigned short var)
 {
- return SDL_SwapBE16(var);
+  return SDL_SwapBE16(var);
 }
 
 /*-----------------------------------------------------------------------*/
 /*
-  Swap 32-bit integer to/from 68000/PC format
+  Swap 32-bit integer to/from 68000/PC format.
 */
 unsigned long STMemory_Swap68000Long(unsigned long var)
 {
- return SDL_SwapBE32(var);
+  return SDL_SwapBE32(var);
 }
 
 
@@ -45,33 +50,34 @@ unsigned long STMemory_Swap68000Long(unsigned long var)
 /*
   Write 32-bit word into ST memory space, NOTE - value will be convert to 68000 endian
 */
-void STMemory_WriteLong(unsigned long Address,unsigned long Var)
+void STMemory_WriteLong(unsigned long Address, unsigned long Var)
 {
-  unsigned long *pLongWord;
+  uae_u32 *pLongWord;
 
   Address &= 0xffffff;
-  pLongWord = (unsigned long *)((unsigned long)STRam+Address);
-  *pLongWord = STMemory_Swap68000Long(Var);
+  pLongWord = (uae_u32 *)((unsigned long)STRam+Address);
+  do_put_mem_long(pLongWord, Var);
 }
 
 /*-----------------------------------------------------------------------*/
 /*
-  Write 16-bit word into ST memory space, NOTE - value will be convert to 68000 endian
+  Write 16-bit word into ST memory space.
+  NOTE - value will be convert to 68000 endian.
 */
-void STMemory_WriteWord(unsigned long Address,unsigned short int Var)
+void STMemory_WriteWord(unsigned long Address, unsigned short Var)
 {
-  unsigned short int *pShortWord;
+  uae_u16 *pShortWord;
 
   Address &= 0xffffff;
-  pShortWord = (unsigned short int *)((unsigned long)STRam+Address);
-  *pShortWord = STMemory_Swap68000Int(Var);
+  pShortWord = (uae_u16 *)((unsigned long)STRam+Address);
+  do_put_mem_word(pShortWord, Var);
 }
 
 /*-----------------------------------------------------------------------*/
 /*
-  Write 8-bit byte into ST memory space
+  Write 8-bit byte into ST memory space.
 */
-void STMemory_WriteByte(unsigned long Address,unsigned char Var)
+void STMemory_WriteByte(unsigned long Address, unsigned char Var)
 {
   unsigned char *pChar;
 
@@ -83,28 +89,30 @@ void STMemory_WriteByte(unsigned long Address,unsigned char Var)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Read 32-bit word from ST memory space, NOTE - value will be converted to PC endian
+  Read 32-bit word from ST memory space.
+  NOTE - value will be converted to PC endian.
 */
 unsigned long STMemory_ReadLong(unsigned long Address)
 {
-  unsigned long *pLongWord;
+  uae_u32 *pLongWord;
 
   Address &= 0xffffff;
-  pLongWord = (unsigned long *)((unsigned long)STRam+Address);
-  return( STMemory_Swap68000Long(*pLongWord) );
+  pLongWord = (uae_u32 *)((unsigned long)STRam+Address);
+  return(do_get_mem_long(pLongWord));
 }
 
 /*-----------------------------------------------------------------------*/
 /*
-  Read 16-bit word from ST memory space, NOTE - value will be converted to PC endian
+  Read 16-bit word from ST memory space.
+  NOTE - value will be converted to PC endian.
 */
-unsigned short int STMemory_ReadWord(unsigned long Address)
+unsigned short STMemory_ReadWord(unsigned long Address)
 {
-  unsigned short int *pShortWord;
+  uae_u16 *pShortWord;
 
   Address &= 0xffffff;
-  pShortWord = (unsigned short int *)((unsigned long)STRam+Address);
-  return( STMemory_Swap68000Int(*pShortWord) );
+  pShortWord = (uae_u16 *)((unsigned long)STRam+Address);
+  return(do_get_mem_word(pShortWord));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -123,45 +131,41 @@ unsigned char STMemory_ReadByte(unsigned long Address)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Write 32-bit word into PC memory space, NOTE - value will be convert to 68000 endian
+  Write 32-bit word into PC memory space.
+  NOTE - value will be convert to 68000 endian.
 */
-void STMemory_WriteLong_PCSpace(void *pAddress,unsigned long Var)
+void STMemory_WriteLong_PCSpace(void *pAddress, unsigned long Var)
 {
-  unsigned long *pLongWord=(unsigned long *)pAddress;
-
-  *pLongWord = STMemory_Swap68000Long(Var);
+  do_put_mem_long(pAddress, Var);
 }
 
 /*-----------------------------------------------------------------------*/
 /*
-  Write 16-bit word into PC memory space, NOTE - value will be convert to 68000 endian
+  Write 16-bit word into PC memory space.
+  NOTE - value will be convert to 68000 endian.
 */
-void STMemory_WriteWord_PCSpace(void *pAddress,unsigned short int Var)
+void STMemory_WriteWord_PCSpace(void *pAddress, unsigned short Var)
 {
-  unsigned short int *pShortWord=(unsigned short int *)pAddress;
-
-  *pShortWord = STMemory_Swap68000Int(Var);
+  do_put_mem_word(pAddress, Var);
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Read 32-bit word from PC memory space, NOTE - value will be convert to 68000 endian
+  Read 32-bit word from PC memory space.
+  NOTE - value will be convert to PC endian.
 */
 unsigned long STMemory_ReadLong_PCSpace(void *pAddress)
 {
-  unsigned long *pLongWord=(unsigned long *)pAddress;
-
-  return( STMemory_Swap68000Long(*pLongWord) );
+  return(do_get_mem_long(pAddress));
 }
 
 /*-----------------------------------------------------------------------*/
 /*
-  Read 16-bit word from PC memory space, NOTE - value will be convert to 68000 endian
+  Read 16-bit word from PC memory space.
+  NOTE - value will be convert to PC endian.
 */
 unsigned short int STMemory_ReadWord_PCSpace(void *pAddress)
 {
-  unsigned short int *pShortWord=(unsigned short int *)pAddress;
-
-  return( STMemory_Swap68000Int(*pShortWord) );
+  return(do_get_mem_word(pAddress));
 }

@@ -1,3 +1,7 @@
+2003-03-17 (THH):
+  * Changed memory access functions so that Hatari now also should work on
+    SunOS/Sparc machines.
+
 2003-03-12 (THH):  *** Version 0.30 ***
   * Updated readme.txt and version number to 0.30
   * Changed output audio sample format back to unsigned again (seems to  work
