@@ -104,33 +104,33 @@ char *pszGemDOSNames[] = {
   "",                     /*0x18*/
   "Current Disk",         /*0x19*/
   "Set DTA",              /*0x1a*/
-  "",        /*0x1b*/
-  "",        /*0x1c*/
-  "",        /*0x1d*/
-  "",        /*0x1e*/
-  "",        /*0x1f*/
-  "Super",   /*0x20*/
-  "",        /*0x21*/
-  "",        /*0x22*/
-  "",        /*0x23*/
-  "",        /*0x24*/
-  "",        /*0x25*/
-  "",        /*0x26*/
-  "",        /*0x27*/
-  "",        /*0x28*/
-  "",        /*0x29*/
-  "Get Date",      /*0x2a*/
-  "Set Date",      /*0x2b*/
-  "Get Time",      /*0x2c*/
-  "Set Time",      /*0x2d*/
-  "",              /*0x2e*/
-  "Get DTA",       /*0x2f*/
+  "",                     /*0x1b*/
+  "",                     /*0x1c*/
+  "",                     /*0x1d*/
+  "",                     /*0x1e*/
+  "",                     /*0x1f*/
+  "Super",                /*0x20*/
+  "",                     /*0x21*/
+  "",                     /*0x22*/
+  "",                     /*0x23*/
+  "",                     /*0x24*/
+  "",                     /*0x25*/
+  "",                     /*0x26*/
+  "",                     /*0x27*/
+  "",                     /*0x28*/
+  "",                     /*0x29*/
+  "Get Date",             /*0x2a*/
+  "Set Date",             /*0x2b*/
+  "Get Time",             /*0x2c*/
+  "Set Time",             /*0x2d*/
+  "",                     /*0x2e*/
+  "Get DTA",              /*0x2f*/
   "Get Version Number",   /*0x30*/
   "Keep Process",         /*0x31*/
-  "",        /*0x32*/
-  "",        /*0x33*/
-  "",        /*0x34*/
-  "",        /*0x35*/
+  "",                     /*0x32*/
+  "",                     /*0x33*/
+  "",                     /*0x34*/
+  "",                     /*0x35*/
   "Get Disk Free Space",  /*0x36*/
   "",           /*0x37*/
   "",           /*0x38*/
@@ -169,6 +169,111 @@ char *pszGemDOSNames[] = {
 
 unsigned char GemDOS_ConvertAttribute(mode_t mode);
 
+
+
+#ifdef __BEOS__
+/* The scandir() and alphasort() functions aren't available on BeOS, */
+/* so let's declare them here... */
+
+#undef DIRSIZ
+
+#define DIRSIZ(dp)                                          \
+        ((sizeof(struct dirent) - sizeof(dp)->d_name) +     \
+		(((dp)->d_reclen + 1 + 3) &~ 3))
+
+
+/* ** scandir ** */
+
+int scandir(const char *dirname,struct dirent ***namelist, int(*select) __P((struct dirent *)), int (*dcomp) __P((const void *, const void *)))
+{
+  register struct dirent *d, *p, **names;
+  register size_t nitems;
+  struct stat stb;
+  long arraysz;
+  DIR *dirp;
+
+  if ((dirp = opendir(dirname)) == NULL)
+    return(-1);
+
+  if (fstat(dirp->fd, &stb) < 0)
+    return(-1);
+
+  /*
+   * estimate the array size by taking the size of the directory file
+   * and dividing it by a multiple of the minimum size entry.
+   */
+  arraysz = (stb.st_size / 24);
+
+  names = (struct dirent **)malloc(arraysz * sizeof(struct dirent *));
+  if (names == NULL)
+    return(-1);
+
+  nitems = 0;
+
+  while ((d = readdir(dirp)) != NULL) {
+
+     if (select != NULL && !(*select)(d))
+       continue;       /* just selected names */
+
+     /*
+      * Make a minimum size copy of the data
+      */
+
+     p = (struct dirent *)malloc(DIRSIZ(d));
+     if (p == NULL)
+       return(-1);
+
+     p->d_ino = d->d_ino;
+     p->d_reclen = d->d_reclen;
+     //p->d_namlen = d->d_namlen;
+     bcopy(d->d_name, p->d_name, p->d_reclen + 1);
+
+     /*
+      * Check to make sure the array has space left and
+      * realloc the maximum size.
+      */
+
+     if (++nitems >= arraysz) {
+
+       if (fstat(dirp->fd, &stb) < 0)
+         return(-1);     /* just might have grown */
+
+       arraysz = stb.st_size / 12;
+
+       names = (struct dirent **)realloc((char *)names, arraysz * sizeof(struct dirent *));
+       if (names == NULL)
+         return(-1);
+     }
+
+     names[nitems-1] = p;
+   }
+
+   closedir(dirp);
+
+   if (nitems && dcomp != NULL)
+     qsort(names, nitems, sizeof(struct dirent *), dcomp);
+
+   *namelist = names;
+
+   return(nitems);
+}
+
+
+/*
+ * Alphabetic order comparison routine for those who want it.
+ */
+
+/* ** alphasort ** */
+
+int alphasort(const void *d1, const void *d2)
+{
+  return(strcmp((*(struct dirent **)d1)->d_name, (*(struct dirent **)d2)->d_name));
+}
+
+#endif /* __BEOS__ */
+
+
+
 /*-------------------------------------------------------*/
 /*
   Routines to convert time and date to MSDOS format. 
@@ -188,6 +293,7 @@ unsigned short date2dos (time_t t)
 	return x->tm_mday | ((x->tm_mon+1)<<5) | ( ((x->tm_year-80>0)?x->tm_year-80:0) << 9);
 }
 
+
 /* 
    Convert a string to uppercase 
 */
@@ -195,6 +301,7 @@ void strupr(char *string)
 {
  while(*string){ *string = toupper(*string); string++; }
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -223,6 +330,8 @@ BOOL GetFileInformation(char *name, DATETIME *DateTime)
 
   return(TRUE);
 }
+
+
 /*-----------------------------------------------------------------------*/
 /*
   Populate the DTA buffer with file info 
@@ -247,6 +356,7 @@ int PopulateDTA(char *path, struct dirent *file)
 
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
   Clear a used DTA structure.
@@ -262,6 +372,7 @@ void ClearInternalDTA(){
   }
   InternalDTAs[DTAIndex].bUsed = FALSE;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
