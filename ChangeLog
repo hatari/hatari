@@ -1,3 +1,7 @@
+2002-12-22 (THH):
+  * VDI resolutions with 4 colors are now working, too.
+  * Fixed some bugs in screen.c
+
 2002-11-30 (THH):
   * Added the possibility to select the GEM resolution to the TOS/GEM dialog.
   * Rewrote ConvertVDIRes_2Colour() in C for big monochrome VDI resolutions.

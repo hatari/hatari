@@ -6,6 +6,8 @@
   removal, palette changes per HBL, the 'video address pointer' etc...
 */
 
+#include <SDL.h>
+
 #include "main.h"
 #include "debug.h"
 #include "decode.h"
@@ -61,6 +63,8 @@ void Video_Reset(void)
     VideoShifterByte = ST_HIGH_RES;    /* Boot up for mono monitor */
   else
     VideoShifterByte = ST_LOW_RES;
+  if(bUseVDIRes)
+    VideoShifterByte = VDIRes;
 
   /* Reset VBL counter */
   nVBLs = 0;
@@ -185,7 +189,10 @@ void Video_InterruptHandler_VBL(void)
 
   /* Wait for the next 50Hz counter event, so we stay in sync with the sound */
   while( VBLCounter==OldVBLCounter )
+  {
     SDL_Delay(1);
+  }
+
   /* Handle sound */
   if( ConfigureParams.Sound.bEnableSound /*&& bAppActive )*/ )
     Sound_PassYMSamplesToAudio();

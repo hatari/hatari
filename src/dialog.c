@@ -514,9 +514,11 @@ void Dialog_CopyDetailsFromConfiguration(BOOL bReset)
   /* Set new timer thread */
 /*FM  Main_SetSpeedThreadTimer(ConfigureParams.Configure.nMinMaxSpeed);*/
   /* Set resolution change */
-  if (bReset) {
+  if (bReset)
+  {
     bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions;
-    bUseHighRes = ConfigureParams.Screen.bUseHighRes || (bUseVDIRes && (ConfigureParams.TOSGEM.nGEMColours==GEMCOLOUR_2));
+    bUseHighRes = (!bUseVDIRes && ConfigureParams.Screen.bUseHighRes)
+	              || (bUseVDIRes && ConfigureParams.TOSGEM.nGEMColours==GEMCOLOUR_2);
     VDI_SetResolution(ConfigureParams.TOSGEM.nGEMResolution, ConfigureParams.TOSGEM.nGEMColours);
   }
 
@@ -524,7 +526,7 @@ void Dialog_CopyDetailsFromConfiguration(BOOL bReset)
   if( ConfigureParams.Sound.bEnableSound )
     Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackQuality);
 
-  /* Remove back-slashes, etc.. from names */
+  /* Remove slashes, etc.. from names */
   File_CleanFileName(ConfigureParams.TOSGEM.szTOSImageFileName);
 }
 

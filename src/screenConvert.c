@@ -380,6 +380,13 @@ void Convert_StartFrame(void)
 }
 
 
+/* Plot Medium Resolution (640xH) 8-Bit pixels */
+#define PLOT_MED_640_8BIT(offset) \
+{ \
+  ecx += BASECOLOUR_LONG; \
+  esi[offset] = SDL_SwapLE32(ecx); \
+}
+
 /* Plot Medium Resolution(640xH) 16-Bit pixels */
 #define PLOT_MED_640_16BIT(offset) \
 { \

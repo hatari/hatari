@@ -287,8 +287,8 @@ void VDI_FixDesktopInf(void)
   }
 
   /* Create filenames for hard-drive */
-  GemDOS_CreateHardDriveFileName(2,"/desktop.inf",szDesktopFileName);
-  GemDOS_CreateHardDriveFileName(2,"/newdesk.inf",szNewDeskFileName);
+  GemDOS_CreateHardDriveFileName(2,"/DESKTOP.INF",szDesktopFileName);
+  GemDOS_CreateHardDriveFileName(2,"/NEWDESK.INF",szNewDeskFileName);
 
   /* First, check if files exist(ie modify or replace) */
   if (!File_Exists(szDesktopFileName))
