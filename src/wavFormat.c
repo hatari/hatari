@@ -32,6 +32,8 @@
     8 - end  Data (Samples)
 */
 
+#include <SDL_endian.h>
+
 #include "main.h"
 #include "audio.h"
 #include "dialog.h"
@@ -50,42 +52,38 @@ BOOL bRecordingWav = FALSE;             /* Is a WAV file open and recording? */
 */
 BOOL WAVFormat_OpenFile(char *pszWavFileName)
 {
-  static char szRiff[] = { "RIFF" };
-  static char szWave[] = { "WAVE" };
-  static char szFmt[] = { "fmt " };
-  static char szData[] = { "data" };
-  static unsigned int Blank = 0;
-  static unsigned int FmtLength = 0x10;
-  static unsigned short int SOne = 0x01;
-  static unsigned int SampleLength;
-  static unsigned int BitsPerSample = 8;
+  const Uint32 Blank = 0;
+  const Uint32 FmtLength = SDL_SwapLE32(0x10);
+  const Uint16 SOne = SDL_SwapLE16(0x01);
+  const Uint32 BitsPerSample = SDL_SwapLE32(8);
+  Uint32 SampleLength;
 
-  /* Set frequency */
-  SampleLength = SoundPlayBackFrequencies[ConfigureParams.Sound.nPlaybackQuality];  /* 11Khz, 22Khz or 44Khz */
+  /* Set frequency (11Khz, 22Khz or 44Khz) */
+  SampleLength = SDL_SwapLE32(SoundPlayBackFrequencies[ConfigureParams.Sound.nPlaybackQuality]);
 
   /* Create our file */
   WavFileHndl = fopen(pszWavFileName, "wb");
-// FIXME: The following code might not work on big-endian machines...
+
   if (WavFileHndl!=NULL)
   {
     /* Create 'RIFF' chunk */
-    fwrite(szRiff,1,4,WavFileHndl);             /* "RIFF" (ASCII Characters) */
-    fwrite(&Blank,sizeof(int),1,WavFileHndl);   /* Total Length Of Package To Follow (Binary, little endian) */
-    fwrite(szWave,1,4,WavFileHndl);             /* "WAVE" (ASCII Characters) */
+    fwrite("RIFF", 1, 4, WavFileHndl);               /* "RIFF" (ASCII Characters) */
+    fwrite(&Blank, sizeof(Uint32), 1, WavFileHndl);  /* Total Length Of Package To Follow (Binary, little endian) */
+    fwrite("WAVE", 1, 4, WavFileHndl);               /* "WAVE" (ASCII Characters) */
 
     /* Create 'FORMAT' chunk */
-    fwrite(szFmt,1,4,WavFileHndl);                   /* "fmt_" (ASCII Characters) */
-    fwrite(&FmtLength,sizeof(int),1,WavFileHndl);    /* Length Of FORMAT Chunk (Binary, always 0x10) */
-    fwrite(&SOne,sizeof(short int),1,WavFileHndl);   /* Always 0x01 */
-    fwrite(&SOne,sizeof(short int),1,WavFileHndl);   /* Channel Numbers (Always 0x01=Mono, 0x02=Stereo) */
-    fwrite(&SampleLength,sizeof(int),1,WavFileHndl); /* Sample Rate (Binary, in Hz) */
-    fwrite(&SampleLength,sizeof(int),1,WavFileHndl); /* Bytes Per Second */
-    fwrite(&SOne,sizeof(short int),1,WavFileHndl);   /* Bytes Per Sample: 1=8 bit Mono, 2=8 bit Stereo or 16 bit Mono, 4=16 bit Stereo */
-    fwrite(&BitsPerSample,sizeof(short int),1,WavFileHndl);  /* Bits Per Sample */
+    fwrite("fmt ", 1, 4, WavFileHndl);                     /* "fmt_" (ASCII Characters) */
+    fwrite(&FmtLength, sizeof(Uint32), 1, WavFileHndl);    /* Length Of FORMAT Chunk (Binary, always 0x10) */
+    fwrite(&SOne, sizeof(Uint16), 1, WavFileHndl);         /* Always 0x01 */
+    fwrite(&SOne, sizeof(Uint16), 1, WavFileHndl);         /* Channel Numbers (Always 0x01=Mono, 0x02=Stereo) */
+    fwrite(&SampleLength, sizeof(Uint32), 1, WavFileHndl); /* Sample Rate (Binary, in Hz) */
+    fwrite(&SampleLength, sizeof(Uint32), 1, WavFileHndl); /* Bytes Per Second */
+    fwrite(&SOne, sizeof(Uint16), 1, WavFileHndl);         /* Bytes Per Sample: 1=8 bit Mono, 2=8 bit Stereo or 16 bit Mono, 4=16 bit Stereo */
+    fwrite(&BitsPerSample, sizeof(Uint16), 1, WavFileHndl); /* Bits Per Sample */
 
     /* Create 'DATA' chunk */
-    fwrite(szData,1,4,WavFileHndl);             /* "data" (ASCII Characters) */
-    fwrite(&Blank,sizeof(int),1,WavFileHndl);   /* Length Of Data To Follow */
+    fwrite("data", 1, 4, WavFileHndl);               /* "data" (ASCII Characters) */
+    fwrite(&Blank, sizeof(Uint32), 1, WavFileHndl);  /* Length Of Data To Follow */
 
     nWavOutputBytes = 0;
     bRecordingWav = TRUE;
@@ -108,20 +106,22 @@ BOOL WAVFormat_OpenFile(char *pszWavFileName)
 */
 void WAVFormat_CloseFile()
 {
-  int nWavFileBytes;
-
   /* Turn off icon */
   /*StatusBar_SetIcon(STATUS_ICON_SOUND,ICONSTATE_OFF);*/
 
   if (bRecordingWav)
   {
-    /* Update headers with sizes */
-    nWavFileBytes = (12+24+8+nWavOutputBytes)-8;  /* File length, less 8 bytes for 'RIFF' and length */
-    fseek(WavFileHndl, 4, SEEK_SET);              /* 'Total Length Of Package' element */
-    fwrite(&nWavFileBytes,sizeof(int),1,WavFileHndl); /* Total Length Of Package in 'RIFF' chunk */
+    Uint32 nWavFileBytes;
+    Uint32 nWavLEOutBytes;
 
-    fseek(WavFileHndl, 12+24+4, SEEK_SET);       /* 'Length' element */
-    fwrite(&nWavOutputBytes,sizeof(int),1,WavFileHndl); /* Length Of Data in 'DATA' chunk */
+    /* Update headers with sizes */
+    nWavFileBytes = SDL_SwapLE32((12+24+8+nWavOutputBytes)-8);  /* File length, less 8 bytes for 'RIFF' and length */
+    fseek(WavFileHndl, 4, SEEK_SET);                            /* 'Total Length Of Package' element */
+    fwrite(&nWavFileBytes, sizeof(Uint32), 1, WavFileHndl);     /* Total Length Of Package in 'RIFF' chunk */
+
+    fseek(WavFileHndl, 12+24+4, SEEK_SET);                      /* 'Length' element */
+    nWavLEOutBytes = SDL_SwapLE32(nWavOutputBytes);
+    fwrite(&nWavLEOutBytes, sizeof(Uint32), 1, WavFileHndl);    /* Length Of Data in 'DATA' chunk */
 
     /* Close file */
     fclose(WavFileHndl);
@@ -139,7 +139,7 @@ void WAVFormat_CloseFile()
 */
 void WAVFormat_Update(char *pSamples,int Index)
 {
-  char Char;
+  Sint8 sample;
   int i;
 
   if (bRecordingWav)
@@ -148,10 +148,9 @@ void WAVFormat_Update(char *pSamples,int Index)
     for(i=0; i<SAMPLES_PER_FRAME; i++)
     {
       /* Convert sample to 'signed' byte */
-      Char = pSamples[(Index+i)&MIXBUFFER_LENGTH];
-      Char -= 127;
+      sample = pSamples[(Index+i)&MIXBUFFER_LENGTH] - 127;
       /* And store */
-      fwrite(&Char,sizeof(unsigned char),1,WavFileHndl);
+      fwrite(&sample, sizeof(Sint8), 1, WavFileHndl);
     }
 
     /* Add samples to wav file */
