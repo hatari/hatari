@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.27 2003-09-26 18:08:36 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.28 2003-10-10 16:41:38 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -29,8 +29,6 @@ static char rcsid[] = "Hatari $Id: newcpu.c,v 1.27 2003-09-26 18:08:36 thothy Ex
 
 
 struct flag_struct regflags;
-
-int lastInstructionCycles;   /* how many cycles last instruction took to execute */
 
 /* Opcode of faulting instruction */
 uae_u16 last_op_for_exception_3;
@@ -105,7 +103,6 @@ void dump_counts (void)
 }
 #endif
 
-int broken_in;
 
 static unsigned long op_illg_1 (uae_u32 opcode) REGPARAM;
 
@@ -812,12 +809,11 @@ void Exception(int nr, uaecptr oldpc)
       case 10: ADD_CYCLES(34, 4, 3); break;   /* Line-A - probably wrong */
       case 11: ADD_CYCLES(34, 4, 3); break;   /* Line-F - probably wrong */
       default:
-#if 1   /* FIXME: Add right cycles value for MFP interrupts... */
+        /* FIXME: Add right cycles value for MFP interrupts and copro exceptions ... */
         if(nr < 64)
           ADD_CYCLES(0, 0, 0);       /* Coprocessor and unassigned exceptions (???) */
         else
-          ADD_CYCLES(44+4, 5, 3);    /* Must be a MFP interrupt */
-#endif
+          ADD_CYCLES(24, 0, 0);      /* Must be a MFP interrupt */
         break;
     }
 }
@@ -1186,16 +1182,10 @@ void m68k_reset (void)
     refill_prefetch (m68k_getpc(), 0);
 }
 
+
 unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 {
     uaecptr pc = m68k_getpc ();
-
-    if (opcode == 0x4E7B && get_long (0x10) == 0 ) {
-	write_log ("This program requires a 68020 CPU!\n");
-	broken_in = 1;
-	set_special (SPCFLAG_BRK);
-	bQuitProgram = 1;
-    }
 
     if ((opcode & 0xF000) == 0xF000) {
 	Exception(0xB,0);
@@ -1204,6 +1194,12 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
     if ((opcode & 0xF000) == 0xA000) {
 	Exception(0xA,0);
 	return 4;
+    }
+
+    if (get_long (0x10) == 0) {
+	write_log("Illegal instruction handler failure!\n");
+	set_special(SPCFLAG_BRK);
+	bQuitProgram = 1;
     }
 
 #if 0

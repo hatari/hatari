@@ -66,7 +66,6 @@ extern int fpp_movem_index1[256];
 extern int fpp_movem_index2[256];
 extern int fpp_movem_next[256];
 
-extern int broken_in;
 
 typedef unsigned long cpuop_func (uae_u32) REGPARAM;
 
@@ -310,7 +309,6 @@ extern void fbcc_opp (uae_u32, uaecptr, uae_u32);
 extern void fsave_opp (uae_u32);
 extern void frestore_opp (uae_u32);
 
-extern int lastInstructionCycles;
 
 /* Opcode of faulting instruction */
 extern uae_u16 last_op_for_exception_3;
