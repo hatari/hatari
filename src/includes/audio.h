@@ -1,22 +1,26 @@
 /*
-  Hatari
+  Hatari - audio.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 */
 
-// Frequency index
-enum {
+#ifndef HATARI_AUDIO_H
+#define HATARI_AUDIO_H
+
+#include <SDL_types.h>
+
+/* Frequency index */
+enum
+{
   FREQ_11Khz,
   FREQ_22Khz,
   FREQ_44Khz
 };
 
-// Odd/Even frame count
-enum {
-  FRAME_ODD,
-  FRAME_EVEN
-};
-
-// Ramp settings to fade sound in/out
-enum {
+/* Ramp settings to fade sound in/out */
+enum
+{
   RAMP_HOLD,
   RAMP_UP,
   RAMP_DOWN
@@ -26,7 +30,6 @@ enum {
 
 
 extern int SoundPlayBackFrequencies[];
-extern int SoundPlayBackFreqFrameLengths[][2];
 extern BOOL bDisableSound;
 extern BOOL bSoundWorking;
 extern int OutputAudioFreqIndex;
@@ -36,6 +39,7 @@ extern void Audio_UnInit(void);
 extern BOOL Audio_CreateSoundBuffer(void);
 extern void Audio_FreeSoundBuffer(void);
 extern void Audio_SetOutputAudioFreq(int Frequency);
-extern void Audio_ResetBuffer(void);
-extern void Audio_StopBuffer(void);
-extern void Audio_WriteSamplesIntoBuffer(char *pSamples,int Index,int Length,int RampSetting);
+void Audio_EnableAudio(BOOL bEnable);
+extern void Audio_WriteSamplesIntoBuffer(Sint8 *pSamples,int Index, int Length, int RampSetting, Sint8 *pDestBuffer);
+
+#endif  /* HATARI_AUDIO_H */

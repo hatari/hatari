@@ -1,5 +1,8 @@
 /*
-  Hatari
+  Hatari - wavFormat.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   WAV File output
 
@@ -31,6 +34,7 @@
     4 - 7  Length Of Data To Follow
     8 - end  Data (Samples)
 */
+static char rcsid[] = "Hatari $Id: wavFormat.c,v 1.6 2003-03-04 19:27:23 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -148,7 +152,7 @@ void WAVFormat_Update(char *pSamples,int Index)
     for(i=0; i<SAMPLES_PER_FRAME; i++)
     {
       /* Convert sample to 'signed' byte */
-      sample = pSamples[(Index+i)&MIXBUFFER_LENGTH] - 127;
+      sample = pSamples[(Index+i)%MIXBUFFER_SIZE] - 127;
       /* And store */
       fwrite(&sample, sizeof(Sint8), 1, WavFileHndl);
     }

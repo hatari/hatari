@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.30 2003-02-28 15:31:36 thothy Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.31 2003-03-04 19:27:20 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -53,14 +53,13 @@ static char rcsid[] = "Hatari $Id: main.c,v 1.30 2003-02-28 15:31:36 thothy Exp 
 #define FORCE_WORKING_DIR                 /* Set default directory to cwd */
 
 
-SDL_TimerID hSoundTimer;                  /* Handle to sound playback */
+SDL_TimerID hSystemTimer;                 /* Handle for system timer */
 
 BOOL bQuitProgram=FALSE;                  /* Flag to quit program cleanly */
 BOOL bUseFullscreen=FALSE;
 BOOL bEmulationActive=TRUE;               /* Run emulation when started */
 BOOL bAppActive = FALSE;
 BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
-unsigned int TimerID;                     /* Timer ID for main window */
 char szBootDiscImage[MAX_FILENAME_LENGTH] = { "" };
 
 char szWorkingDir[MAX_FILENAME_LENGTH] = { "" };
@@ -129,7 +128,7 @@ void Main_PauseEmulation(void)
 {
   if( bEmulationActive )
   {
-    SDL_PauseAudio(TRUE);
+    Audio_EnableAudio(FALSE);
     bEmulationActive = FALSE;
   }
 }
@@ -142,12 +141,11 @@ void Main_UnPauseEmulation(void)
 {
   if( !bEmulationActive )
   {
-    SDL_PauseAudio(FALSE);
+    Audio_EnableAudio(ConfigureParams.Sound.bEnableSound);
     bFullScreenHold = FALSE;      /* Release hold  */
     Screen_SetFullUpdate();       /* Cause full screen update(to clear all) */
 
     bEmulationActive = TRUE;
-    Audio_ResetBuffer();
   }
 }
 
@@ -203,13 +201,12 @@ void Main_EventHandler()
 }
 
 
-
 /*-----------------------------------------------------------------------*/
 /*
-  This thread runs at 50fps and passes sound samples to the sound interface and also
-  set the counter/events to govern emulation speed to match the two together.
+  This routine runs at 50fps.
+  It increases the VBL counter to govern emulation speed.
 */
-Uint32 Main_SoundTimerFunc(Uint32 interval, void *param)
+static Uint32 Main_SystemTimerFunc(Uint32 interval, void *param)
 {
   /* Advance frame counter, used to draw screen to window at 50fps */
   VBLCounter++;
@@ -219,21 +216,22 @@ Uint32 Main_SoundTimerFunc(Uint32 interval, void *param)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Create sound timer to handle sound
+  Create system timer to handle speed.
 */
-void Main_CreateSoundTimer(void)
+static void Main_CreateSystemTimer(void)
 {
-  /* Create thread to run every 20ms (50fps) to handle emulation samples */
-  hSoundTimer = SDL_AddTimer(20, Main_SoundTimerFunc, NULL);
+  /* Create thread to run every 20ms (50fps) */
+  hSystemTimer = SDL_AddTimer(20, Main_SystemTimerFunc, NULL);
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
-  Delete sound timer
+  Delete system timer
 */
-void Main_RemoveSoundTimer(void)
+static void Main_RemoveSystemTimer(void)
 {
-  SDL_RemoveTimer(hSoundTimer);
+  SDL_RemoveTimer(hSystemTimer);
 }
 
 
@@ -417,7 +415,7 @@ void Main_Init(void)
   Intercept_Init();
   Joy_Init();
   Sound_Init();
-  Main_CreateSoundTimer();
+  Main_CreateSystemTimer();
 
   /* Check passed disc image parameter, boot directly into emulator */
   if(strlen(szBootDiscImage) > 0)
@@ -434,7 +432,7 @@ void Main_Init(void)
 void Main_UnInit(void)
 {
   Screen_ReturnFromFullScreen();
-  Main_RemoveSoundTimer();
+  Main_RemoveSystemTimer();
   Floppy_EjectBothDrives();
   Floppy_UnInit();
   HDC_UnInit();
@@ -457,6 +455,7 @@ void Main_UnInit(void)
   /* SDL uninit: */
   SDL_Quit();
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -491,16 +490,11 @@ int main(int argc, char *argv[])
   if( bUseFullscreen )
     Screen_EnterFullScreen();
 
-  /* Set timing threads to govern timing and debug display */
-//FM  Main_SetSpeedThreadTimer(ConfigureParams.Configure.nMinMaxSpeed);
-//FM  TimerID = SetTimer(hWnd,1,1000,NULL);
-
   /* Run emulation */
   Main_UnPauseEmulation();
   Start680x0();                 /* Start emulation */
 
   /* Un-init emulation system */
-//FM  KillTimer(hWnd,TimerID);
   Main_UnInit();  
 
   /* Close debug files */

@@ -1,5 +1,8 @@
 /*
-  Hatari
+  Hatari - main.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 */
 
 #ifndef MAIN_H
@@ -237,9 +240,5 @@ extern int Main_Message(char *lpText, char *lpCaption /*, unsigned int uType*/);
 extern void Main_PauseEmulation(void);
 extern void Main_UnPauseEmulation(void);
 extern void Main_EventHandler();
-extern void Main_WaitVBLEvent(void);
-extern BOOL Main_AlreadyWaitingVBLEvent(void);
-/*extern void Main_SoundTimerFunc(void);*/
-extern void Main_SetSpeedThreadTimer(int nMinMaxSpeed);
 
 #endif /* ifndef MAIN_H */

@@ -1,10 +1,14 @@
 /*
-  Hatari
+  Hatari - video.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   Video hardware handling. This code handling all to do with the video chip. So, we handle
   VBLs, HBLs, copying the ST screen to a buffer to simulate the TV raster trace, border
   removal, palette changes per HBL, the 'video address pointer' etc...
 */
+static char rcsid[] = "Hatari $Id: video.c,v 1.9 2003-03-04 19:27:21 thothy Exp $";
 
 #include <SDL.h>
 
@@ -188,14 +192,10 @@ void Video_InterruptHandler_VBL(void)
   nFrameCyclesOver = PendingCyclesOver;      /* Number of cycles into frame */
 
   /* Wait for the next 50Hz counter event, so we stay in sync with the sound */
-  while( VBLCounter==OldVBLCounter )
+  while(VBLCounter == OldVBLCounter)
   {
     SDL_Delay(1);
   }
-
-  /* Handle sound */
-  if( ConfigureParams.Sound.bEnableSound /*&& bAppActive )*/ )
-    Sound_PassYMSamplesToAudio();
   OldVBLCounter = VBLCounter;  /* Store counter so only enter here 50 times a second MAXIMUM */
 
   /* Clear any key presses which are due to be de-bounced (held for one ST frame) */
@@ -207,13 +207,16 @@ void Video_InterruptHandler_VBL(void)
   /* Use extended VDI resolution? If so, just copy whole screen on VBL rather than per HBL */
   if (bUseVDIRes)
     Video_CopyVDIScreen();
+
   /* Draw screen, skip frame if need to */
-  if (ConfigureParams.Screen.Advanced.bFrameSkip) {
+  if (ConfigureParams.Screen.Advanced.bFrameSkip)
+  {
     if (nVBLs&1)
       Screen_Draw();
   }
   else
     Screen_Draw();
+
   /* Update counter for number of screen refreshes per second(for debugging) */
   nVBLs++;
   /* Set video registers for frame */
@@ -223,24 +226,23 @@ void Video_InterruptHandler_VBL(void)
   /* Generate 1/50th second of sound sample data, to be played by sound thread */
   Sound_Update_VBL();
 
-  if (4>FIND_IPL) {            /* Vertical blank, level 4! */
+  if (4>FIND_IPL)              /* Vertical blank, level 4! */
+  {
     ADD_CYCLES(44+4,5,3);      /* Interrupt */
     ExceptionVector = EXCEPTION_VBLANK;
     M68000_Exception();        /* VBL interrupt */
   }
-  else {
+  else
+  {
     /* Higher priority interrupt is currently being executed(eg MFP). Set VBL to occur later */
     if (!Int_InterruptActive(INTERRUPT_VIDEO_VBL_PENDING))
       Int_AddAbsoluteInterrupt(100,INTERRUPT_VIDEO_VBL_PENDING);
   }
 
-  /* Is this a good place to send the keyboard packets? Done once per frame */
-  /* And handle any windows messages, check for quit message */
+  /* And handle any messages, check for quit message */
   Main_EventHandler();         /* Process messages, set 'bQuitProgram' if user tries to quit */
-  IKBD_SendAutoKeyboardCommands();    /* On each VBL send automatic keyboard packets for mouse, joysticks etc... */
   if(bQuitProgram)
     Int_AddAbsoluteInterrupt(4, 0L);  /* Pass NULL interrupt function to quit cleanly */
-
 }
 
 
@@ -270,7 +272,8 @@ void Video_InterruptHandler_VBL_Pending(void)
 /*-----------------------------------------------------------------------*/
 /*
   End Of Line interrupt
-  As this occurs at the end of a line we cannot get timing for START of first line(as in Spectrum 512)
+  As this occurs at the end of a line we cannot get timing for START of first
+  line (as in Spectrum 512)
 */
 void Video_InterruptHandler_EndLine(void)
 {
@@ -279,6 +282,13 @@ void Video_InterruptHandler_EndLine(void)
   /* Generate new HBL, if need to - there are 313 HBLs per frame */
   if (nHBL<(SCANLINES_PER_FRAME-1))
     Int_AddAbsoluteInterrupt(CYCLES_PER_LINE,INTERRUPT_VIDEO_ENDLINE);
+
+  /* Is this a good place to send the keyboard packets? Done once per frame */
+  if(nHBL == nStartHBL)
+  {
+    /* On each VBL send automatic keyboard packets for mouse, joysticks etc... */
+    IKBD_SendAutoKeyboardCommands();
+  }
 
   /* Timer A/B occur at END of first visible screen line in Event Count mode */
   if ( (nHBL>=nStartHBL) && (nHBL<nEndHBL) )
@@ -295,10 +305,9 @@ void Video_InterruptHandler_EndLine(void)
 
   /* If we don't often pump data into the event queue, the SDL misses events... grr... */
   if( !(nHBL&63) )
-   {
+  {
     Main_EventHandler();
-    /*IKBD_SendAutoKeyboardCommands();*/
-   }
+  }
 }
 
 
