@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-static char rcsid[] = "Hatari $Id: screen.c,v 1.25 2003-04-04 16:28:33 thothy Exp $";
+static char rcsid[] = "Hatari $Id: screen.c,v 1.26 2003-06-09 16:11:13 thothy Exp $";
 
 #include <SDL.h>
 
@@ -74,11 +74,11 @@ BOOL bGrabMouse = FALSE;                          /* Grab the mouse cursor in th
 */
 static void Screen_SetWindowRes()
 {
-  int Width, Height,BitCount;
+  int Width, Height, BitCount;
+
   if (bUseVDIRes) {
     Width = VDIWidth;
     Height = VDIHeight;
-    BitCount = 8;
   } else
     switch(STRes)
       {
@@ -87,17 +87,12 @@ static void Screen_SetWindowRes()
 	    ConfigureParams.Screen.ChosenDisplayMode == 3) {
 	  Width = 320;
 	  Height = 200;
-	  BitCount = 16;
 	  break;
 	}
 	// else use 640x400
       default:
 	Width = 640;
 	Height = 400;
-	if (STRes == ST_HIGH_RES)
-	  BitCount = 8;
-	else
-	  BitCount = 16;
 	break;
       }
 
@@ -115,6 +110,17 @@ static void Screen_SetWindowRes()
     /* Add in overscan borders(if 640x200 bitmap is double on Y) */
     Width += OVERSCAN_LEFT+OVERSCAN_RIGHT;
     Height += OVERSCAN_TOP+OVERSCAN_BOTTOM;
+  }
+
+  /* Bits per pixel */
+  if(ConfigureParams.Screen.ChosenDisplayMode <= DISPLAYMODE_16COL_FULL
+     || STRes == ST_HIGH_RES || bUseVDIRes)
+  {
+    BitCount = 8;
+  }
+  else
+  {
+    BitCount = 16;
   }
 
   sdlscrn=SDL_SetVideoMode(Width, Height, BitCount, SDL_SWSURFACE|SDL_HWPALETTE);
@@ -649,7 +655,6 @@ void Screen_CreatePalette(void)
   SDL_Color sdlColors[16];
   int i, j;
 
-  fprintf(stderr,"Creating palette %x\n",HBLPalettes[0]);
   if(bUseHighRes)
   {
     /* Colors for monochrome screen mode emulation */
