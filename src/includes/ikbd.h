@@ -21,7 +21,8 @@ typedef struct {
 } ABS_MOUSE;
 
 typedef struct {
-  int DeltaX,DeltaY;              /* XY mouse position delta after scale according to resoution */
+  int dx, dy;                     /* Mouse delta to be added */
+  int DeltaX,DeltaY;              /* Final XY mouse position delta */
   int XScale,YScale;              /* Scale of mouse */
   int XThreshold,YThreshold;      /* Threshold */
   unsigned char KeyCodeDeltaX,KeyCodeDeltaY;    /* Delta X,Y for mouse keycode mode */

@@ -252,6 +252,11 @@ void IKBD_MemorySnapShot_Capture(BOOL bSave)
 void IKBD_UpdateInternalMousePosition(void)
 {
 
+  KeyboardProcessor.Mouse.DeltaX = KeyboardProcessor.Mouse.dx;
+  KeyboardProcessor.Mouse.DeltaY = KeyboardProcessor.Mouse.dy;
+  KeyboardProcessor.Mouse.dx = 0;
+  KeyboardProcessor.Mouse.dy = 0;
+
   /* Update internal mouse coords - Y axis moves according to YAxis setting(up/down) */
   /* Limit to Max X/Y(inclusive) */
   KeyboardProcessor.Abs.X += KeyboardProcessor.Mouse.DeltaX;
@@ -259,11 +264,13 @@ void IKBD_UpdateInternalMousePosition(void)
     KeyboardProcessor.Abs.X = 0;
   if (KeyboardProcessor.Abs.X>KeyboardProcessor.Abs.MaxX)
     KeyboardProcessor.Abs.X = KeyboardProcessor.Abs.MaxX;
+
   KeyboardProcessor.Abs.Y += KeyboardProcessor.Mouse.DeltaY*KeyboardProcessor.Mouse.YAxis;  /* Needed '+' for Falcon... */
   if (KeyboardProcessor.Abs.Y<0)
     KeyboardProcessor.Abs.Y = 0;
   if (KeyboardProcessor.Abs.Y>KeyboardProcessor.Abs.MaxY)
     KeyboardProcessor.Abs.Y = KeyboardProcessor.Abs.MaxY;
+
 }
 
 

@@ -171,8 +171,8 @@ void Main_EventHandler()
        bQuitProgram=1;
        break;
     case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */
-       KeyboardProcessor.Mouse.DeltaX += event.motion.xrel;
-       KeyboardProcessor.Mouse.DeltaY += event.motion.yrel;
+       KeyboardProcessor.Mouse.dx += event.motion.xrel;
+       KeyboardProcessor.Mouse.dy += event.motion.yrel;
        break;
     case SDL_MOUSEBUTTONDOWN:
        if( event.button.button==SDL_BUTTON_LEFT )
