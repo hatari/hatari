@@ -8,7 +8,7 @@
   VBLs, HBLs, copying the ST screen to a buffer to simulate the TV raster trace, border
   removal, palette changes per HBL, the 'video address pointer' etc...
 */
-static char rcsid[] = "Hatari $Id: video.c,v 1.14 2003-04-12 16:26:26 thothy Exp $";
+static char rcsid[] = "Hatari $Id: video.c,v 1.15 2003-04-16 12:49:09 thothy Exp $";
 
 #include <SDL.h>
 
@@ -195,12 +195,14 @@ void Video_InterruptHandler_VBL(void)
   nFrameCyclesOver = PendingCyclesOver;      /* Number of cycles into frame */
 
   /* Set the screen refresh rate */
+#if 0
   if(bUseHighRes)
     nScreenRefreshRate = 70;
   else if(STRam[0xff820a] & 2)               /* Is it 50Hz or is it 60Hz? */
     nScreenRefreshRate = 50;
   else
     nScreenRefreshRate = 60;
+#endif
 
   VBLCounter += 1;
 
