@@ -1095,7 +1095,7 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\tint cflg;\n");
 	printf ("\tif (newv_lo > 9) { newv_lo-=6; newv_hi-=0x10; }\n");
 	printf ("\tnewv = newv_hi + (newv_lo & 0xF);");
-	printf ("\tcflg = cflg = (newv_hi & 0x1F0) > 0x90;\n");
+	printf ("\tcflg = (newv_hi & 0x1F0) > 0x90;\n");
 	printf ("\tSET_CFLG (cflg);\n");
 	duplicate_carry();
 	printf ("\tif (cflg) newv -= 0x60;\n");
