@@ -35,3 +35,4 @@ extern BOOL File_QueryOverwrite(char *pszFileName);
 extern BOOL File_FindPossibleExtFileName(char *pszFileName,char *ppszExts[]);
 extern void File_splitpath(char *pSrcFileName, char *pDir, char *pName, char *Ext);
 extern void File_makepath(char *pDestFileName, char *pDir, char *pName, char *pExt);
+extern void File_ShrinkName(char *pDestFileName, char *pSrcFileName, int maxlen);

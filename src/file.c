@@ -440,7 +440,8 @@ BOOL File_FindPossibleExtFileName(char *pszFileName, char *ppszExts[])
 
 /*-----------------------------------------------------------------------*/
 /*
-  Split a complete filename into path, filename and extension
+  Split a complete filename into path, filename and extension.
+  If pExt is NULL, don't split the extension from the file name!
 */
 void File_splitpath(char *pSrcFileName, char *pDir, char *pName, char *pExt)
 {
@@ -451,34 +452,35 @@ void File_splitpath(char *pSrcFileName, char *pDir, char *pName, char *pExt)
   if( ptr1 )
   {
     strcpy(pDir, pSrcFileName);
-    pDir[ptr1-pSrcFileName] = 0;
+    strcpy(pName, ptr1+1);
+    pDir[ptr1-pSrcFileName+1] = 0;
   }
   else
   {
-    pDir[0] = 0;
+    strcpy(pDir, "./");
+    strcpy(pName, pSrcFileName);
   }
 
   /* Build the raw filename: */
-  if(ptr1)
-    strcpy(pName, ptr1+1);
-  else
-    strcpy(pName, pSrcFileName);
-  ptr2 = strrchr(pName+1, '.');
-
-  if( ptr2 )
+  if( pExt!=NULL )
   {
-    pName[ptr2-pName] = 0;
-    /* Copy the file extension: */
-    strcpy(pExt, ptr2+1);
-  }
-  else
-    pExt[0] = 0;
+    ptr2 = strrchr(pName+1, '.');
+    if( ptr2 )
+    {
+      pName[ptr2-pName] = 0;
+      /* Copy the file extension: */
+      strcpy(pExt, ptr2+1);
+    }
+    else
+      pExt[0] = 0;
+   }
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Build a complete filename from path, filename and extension
+  Build a complete filename from path, filename and extension.
+  pExt can also be NULL.
 */
 void File_makepath(char *pDestFileName, char *pDir, char *pName, char *pExt)
 {
@@ -487,9 +489,37 @@ void File_makepath(char *pDestFileName, char *pDir, char *pName, char *pExt)
     strcpy(pDestFileName, "./");
   if( pDestFileName[strlen(pDestFileName)-1]!='/' )
     strcat(pDestFileName, "/");
+
   strcat(pDestFileName, pName);
-  if( strlen(pExt)>0 && pExt[0]!='.' )
-    strcat(pDestFileName, ".");
-  strcat(pDestFileName, pExt);
+
+  if( pExt!=NULL )
+  {
+    if( strlen(pExt)>0 && pExt[0]!='.' )
+      strcat(pDestFileName, ".");
+    strcat(pDestFileName, pExt);
+  }
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Shrink a file name to a certain length and insert some dots if we cut
+  something away (usefull for showing file names in a dialog).
+*/
+void File_ShrinkName(char *pDestFileName, char *pSrcFileName, int maxlen)
+{
+  int srclen = strlen(pSrcFileName);
+  if( srclen<maxlen )
+    strcpy(pDestFileName, pSrcFileName);  /* It fits! */
+  else
+  {
+    strncpy(pDestFileName, pSrcFileName, maxlen/2);
+    if(maxlen&1)  /* even or uneven? */
+      pDestFileName[maxlen/2-1] = 0;
+    else
+      pDestFileName[maxlen/2-2] = 0;
+    strcat(pDestFileName, "...");
+    strcat(pDestFileName, &pSrcFileName[strlen(pSrcFileName)-maxlen/2+1]);
+  }
 }
 

@@ -108,13 +108,13 @@ SGOBJ discdlg[] =
   { SGBOX, 0, 0, 1,1, 38,11, NULL },
   { SGTEXT, 0, 0, 14,1, 12,1, "Floppy discs" },
   { SGTEXT, 0, 0, 2,3, 2,1, "A:" },
-  { SGTEXT, 0, 0, 5,3, 24,1, "/path/to/image_a.st" },
+  { SGTEXT, 0, 0, 5,3, 26,1, NULL },
   { SGBUTTON, 0, 0, 32,3, 6,1, "Browse" },
   { SGTEXT, 0, 0, 2,5, 2,1, "B:" },
-  { SGTEXT, 0, 0, 5,5, 24,1, "/path/to/image_B.st" },
+  { SGTEXT, 0, 0, 5,5, 26,1, NULL },
   { SGBUTTON, 0, 0, 32,5, 6,1, "Browse" },
   { SGTEXT, 0, 0, 2,7, 30,1, "Default disk images directory:" },
-  { SGTEXT, 0, 0, 2,8, 26,1, "/path/to/image/directory" },
+  { SGTEXT, 0, 0, 2,8, 28,1, NULL },
   { SGBUTTON, 0, 0, 32,8, 6,1, "Browse" },
   { SGCHECKBOX, 0, 0, 2,10, 18,1, "Auto insert B" },
   { SGBUTTON, 0, 0, 20,10, 18,1, "Create blank image" },
@@ -122,7 +122,7 @@ SGOBJ discdlg[] =
   { SGTEXT, 0, 0, 14,13, 13,1, "Hard discs" },
   { SGCHECKBOX, 0, 0, 2,15, 14,1, "Boot from HD" },
   { SGTEXT, 0, 0, 2,17, 2,1, "C:" },
-  { SGTEXT, 0, 0, 5,17, 24,1, "/path/to/c" },
+  { SGTEXT, 0, 0, 5,17, 24,1, NULL },
   { SGBUTTON, 0, 0, 32,17, 6,1, "Browse" },
   { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
@@ -433,15 +433,47 @@ BOOL Dialog_DoProperty(BOOL bForceReset)
 /*
   Show and process the disc image dialog.
 */
-int Dialog_DiscDlg(void)
+void Dialog_DiscDlg(void)
 {
   int but;
+  char tmpdiscname[MAX_FILENAME_LENGTH];
+  char dlgnamea[27], dlgnameb[27], dlgdiscdir[29], dlgnamec[27];
 
-  /* Set up dialog to actual values */
+  SDLGui_CenterDlg(discdlg);
+
+  /* Set up dialog to actual values: */
+
+  /* Disc name A: */
+  if( EmulationDrives[0].bDiscInserted )
+    File_ShrinkName(dlgnamea, EmulationDrives[0].szFileName, 26);
+  else
+    dlgnamea[0] = 0;
+  discdlg[DISCDLG_DISCA].txt = dlgnamea;
+  /* Disc name B: */
+  if( EmulationDrives[1].bDiscInserted )
+    File_ShrinkName(dlgnameb, EmulationDrives[1].szFileName, 26);
+  else
+    dlgnameb[0] = 0;
+  discdlg[DISCDLG_DISCB].txt = dlgnameb;
+  /* Default image directory: */
+  File_ShrinkName(dlgdiscdir, DialogParams.DiscImage.szDiscImageDirectory, 28);
+  discdlg[DISCDLG_IMGDIR].txt = dlgdiscdir;
+  /* Auto insert disc B: */
   if( DialogParams.DiscImage.bAutoInsertDiscB )
     discdlg[DISCDLG_AUTOB].state |= SG_SELECTED;
    else
     discdlg[DISCDLG_AUTOB].state &= ~SG_SELECTED;
+  /* Boot from harddisk? */
+  if( DialogParams.HardDisc.bBootFromHardDisc )
+    discdlg[DISCDLG_BOOTHD].state |= SG_SELECTED;
+   else
+    discdlg[DISCDLG_BOOTHD].state &= ~SG_SELECTED;
+  /* Hard disc directory: */
+  if( DialogParams.HardDisc.nDriveList!=DRIVELIST_NONE )
+    File_ShrinkName(dlgnamec, DialogParams.HardDisc.szHardDiscDirectories[0], 24);
+  else
+    dlgnamec[0] = 0;
+  discdlg[DISCDLG_DISCC].txt = dlgnamec;
 
   /* Draw and process the dialog */
   do
@@ -449,11 +481,52 @@ int Dialog_DiscDlg(void)
     but = SDLGui_DoDialog(discdlg);
     switch(but)
     {
-      case DISCDLG_BROWSEA:
-        SDLGui_FileSelect(EmulationDrives[0].szFileName);
+      case DISCDLG_BROWSEA:                       /* Choose a new disc A: */
+        if( EmulationDrives[0].bDiscInserted )
+          strcpy(tmpdiscname, EmulationDrives[0].szFileName);
+         else
+          strcpy(tmpdiscname, DialogParams.DiscImage.szDiscImageDirectory);
+        if( SDLGui_FileSelect(tmpdiscname) )
+        {
+          if( File_Exists(tmpdiscname) )
+          {
+            Floppy_InsertDiscIntoDrive(0, tmpdiscname); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+            File_ShrinkName(dlgnamea, tmpdiscname, 26);
+          }
+          else
+          {
+            Floppy_EjectDiscFromDrive(0, FALSE); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+            dlgnamea[0] = 0;
+          }
+        }
         break;
-      case DISCDLG_BROWSEB:
-        SDLGui_FileSelect(EmulationDrives[1].szFileName);
+      case DISCDLG_BROWSEB:                       /* Choose a new disc B: */
+        if( EmulationDrives[1].bDiscInserted )
+          strcpy(tmpdiscname, EmulationDrives[1].szFileName);
+         else
+          strcpy(tmpdiscname, DialogParams.DiscImage.szDiscImageDirectory);
+        if( SDLGui_FileSelect(tmpdiscname) )
+        {
+          if( File_Exists(tmpdiscname) )
+          {
+            Floppy_InsertDiscIntoDrive(1, tmpdiscname); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+            File_ShrinkName(dlgnameb, tmpdiscname, 26);
+          }
+          else
+          {
+            Floppy_EjectDiscFromDrive(1, FALSE); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+            dlgnameb[0] = 0;
+          }
+        }
+        break;
+      case DISCDLG_IMGDIR:
+        fprintf(stderr,"Sorry, chosing default disc directory not yet supported\n");
+        break;
+      case DISCDLG_CREATEIMG:
+        fprintf(stderr,"Sorry, creating disc images not yet supported\n");
+        break;
+      case DISCDLG_BROWSEC:
+        fprintf(stderr,"Sorry, chosing a hard disc is not yet supported\n");
         break;
     }
   }
@@ -461,19 +534,20 @@ int Dialog_DiscDlg(void)
 
   /* Read values from dialog */
   DialogParams.DiscImage.bAutoInsertDiscB = (discdlg[DISCDLG_AUTOB].state & SG_SELECTED);
+  DialogParams.HardDisc.bBootFromHardDisc = (discdlg[DISCDLG_BOOTHD].state & SG_SELECTED);
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  This functions sets up the actual font and then display the main dialog.
+  This functions sets up the actual font and then displays the main dialog.
 */
 int Dialog_MainDlg(void)
 {
   int retbut;
 
   SDLGui_PrepareFont();
-
+  SDLGui_CenterDlg(maindlg);
   SDL_ShowCursor(SDL_ENABLE);
 
   do
@@ -482,33 +556,42 @@ int Dialog_MainDlg(void)
     switch(retbut)
     {
       case MAINDLG_ABOUT:
+        SDLGui_CenterDlg(aboutdlg);
         SDLGui_DoDialog(aboutdlg);
         break;
       case MAINDLG_DISCS:
         Dialog_DiscDlg();
         break;
       case MAINDLG_TOSGEM:
+        SDLGui_CenterDlg(tosgemdlg);
         SDLGui_DoDialog(tosgemdlg);
         break;
       case MAINDLG_SCREEN:
+        SDLGui_CenterDlg(screendlg);
         SDLGui_DoDialog(screendlg);
         break;
       case MAINDLG_SOUND:
+        SDLGui_CenterDlg(sounddlg);
         SDLGui_DoDialog(sounddlg);
         break;
       case MAINDLG_CPU:
+        SDLGui_CenterDlg(cpudlg);
         SDLGui_DoDialog(cpudlg);
         break;
       case MAINDLG_MEMORY:
+        SDLGui_CenterDlg(memorydlg);
         SDLGui_DoDialog(memorydlg);
         break;
       case MAINDLG_JOY:
+        SDLGui_CenterDlg(joystickdlg);
         SDLGui_DoDialog(joystickdlg);
         break;
       case MAINDLG_KEYBD:
+        SDLGui_CenterDlg(keyboarddlg);
         SDLGui_DoDialog(keyboarddlg);
         break;
       case MAINDLG_DEVICES:
+        SDLGui_CenterDlg(devicedlg);
         SDLGui_DoDialog(devicedlg);
         break;
     }

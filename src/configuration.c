@@ -36,7 +36,7 @@ void Configuration_SetDefault(void)
 
   /* Set defaults for Disc Image */
   ConfigureParams.DiscImage.bAutoInsertDiscB = TRUE;
-  sprintf(ConfigureParams.DiscImage.szDiscImageDirectory,"%s/discs",szWorkingDir);
+  strcpy(ConfigureParams.DiscImage.szDiscImageDirectory, szWorkingDir);
   File_AddSlashToEndFileName(ConfigureParams.DiscImage.szDiscImageDirectory);
 
   /* Set defaults for Hard Disc */
@@ -45,7 +45,7 @@ void Configuration_SetDefault(void)
   ConfigureParams.HardDisc.nHardDiscDir = DRIVE_C;
   for(i=0; i<MAX_HARDDRIVES; i++)
   {
-    sprintf(ConfigureParams.HardDisc.szHardDiscDirectories[i],"%s/harddisc",szWorkingDir);
+    strcpy(ConfigureParams.HardDisc.szHardDiscDirectories[i], szWorkingDir);
     File_CleanFileName(ConfigureParams.HardDisc.szHardDiscDirectories[i]);
   }
 
