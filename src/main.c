@@ -273,6 +273,7 @@ void Main_ReadParameters(int argc, char *argv[])
                "  --tos <file>          Use TOS image <file>.\n"
                "  --cpulevel x          Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
                "  --compatible          Use a more compatible (but slower) 68000 CPU mode.\n"
+               "  --blitter             Enable blitter emulation (unstable!)\n"
               );
         exit(0);
       }
@@ -355,6 +356,10 @@ void Main_ReadParameters(int argc, char *argv[])
       {
         cpu_compatible = TRUE;
         ConfigureParams.Cpu.compatible = TRUE;
+      }
+      else if (!strcmp(argv[i],"--blitter"))
+      {
+        bEnableBlitter = TRUE;
       }
       else
       {

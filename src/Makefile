@@ -26,7 +26,7 @@ CPUOBJS = ./uae-cpu/hatari-glue.o ./uae-cpu/memory.o ./uae-cpu/newcpu.o \
   ./uae-cpu/cpuemu4.o ./uae-cpu/cpuemu5.o ./uae-cpu/cpuemu6.o \
   ./uae-cpu/cpuemu7.o ./uae-cpu/cpuemu8.o
 
-SRCS = audio.c bios.c cart.c configuration.c createBlankImage.c \
+SRCS = audio.c bios.c blitter.c cart.c configuration.c createBlankImage.c \
   createDiscImage.c debug.c debugui.c dialog.c errlog.c fdc.c file.c \
   floppy.c gemdos.c hdc.c ikbd.c int.c intercept.c joy.c keymap.c m68000.c \
   main.c midi.c memAlloc.c memorySnapShot.c mfp.c misc.c msa.c psg.c \

@@ -7,6 +7,7 @@
 #define INTERCEPT_WORKSPACE_SIZE  (8*1024)  /* 8k, size of intercept lists */
 
 /* List of hardware addresses to be intercepted */
+/* ... do we really need this?  - THH */
 enum {
   INTERCEPT_NULL,
   INTERCEPT_VIDEOHIGH,       /* 0xff8205 byte */
@@ -37,6 +38,16 @@ enum {
   INTERCEPT_PSG_REGISTER,    /* 0xff8800 byte */
   INTERCEPT_PSG_DATA,        /* 0xff8802 byte */
   INTERCEPT_MICROWIREDATA,   /* 0xff8922 word */
+  INTERCEPT_BLITTERENDMASK1, /* 0xff8a28 word */
+  INTERCEPT_BLITTERENDMASK2, /* 0xff8a2a word */
+  INTERCEPT_BLITTERENDMASK3, /* 0xff8a2c word */
+  INTERCEPT_BLITTERDST,      /* 0xff8a32 long */
+  INTERCEPT_BLITTERWPL,      /* 0xff8a36 word */
+  INTERCEPT_BLITTERLPB,      /* 0xff8a38 word */
+  INTERCEPT_BLITTERHT,       /* 0xff8a3a byte */
+  INTERCEPT_BLITTERLGO,      /* 0xff8a3b byte */
+  INTERCEPT_BLITTERLNM,      /* 0xff8a3c byte */
+  INTERCEPT_BLITTERSKEW,     /* 0xff8a3d byte */
   INTERCEPT_MONITOR,         /* 0xfffa01 byte */
   INTERCEPT_ACTIVE_EDGE,     /* 0xfffa03 byte */
   INTERCEPT_DATA_DIRECTION,  /* 0xfffa05 byte */
@@ -64,6 +75,7 @@ enum {
   INTERCEPT_COUNT
 };
 
+
 /* Hardware address details */
 typedef struct {
   unsigned int Address;        /* ST hardware address */
@@ -78,6 +90,8 @@ typedef struct {
   unsigned int End_Address;
 } INTERCEPT_ADDRESSRANGE;
 
+
+extern BOOL bEnableBlitter;
 
 
 uae_u32 Intercept_ReadByte(uaecptr addr);
@@ -142,6 +156,17 @@ extern void Intercept_KeyboardControl_ReadByte(void);
 extern void Intercept_KeyboardData_ReadByte(void);
 extern void Intercept_MidiControl_ReadByte(void);
 extern void Intercept_MidiData_ReadByte(void);
+extern void Intercept_BlitterEndmask1_ReadWord(void);
+extern void Intercept_BlitterEndmask2_ReadWord(void);
+extern void Intercept_BlitterEndmask3_ReadWord(void);
+extern void Intercept_BlitterDst_ReadLong(void);
+extern void Intercept_BlitterWPL_ReadWord(void);
+extern void Intercept_BlitterLPB_ReadWord(void);
+extern void Intercept_BlitterHalftoneOp_ReadByte(void);
+extern void Intercept_BlitterLogOp_ReadByte(void);
+extern void Intercept_BlitterLineNum_ReadByte(void);
+extern void Intercept_BlitterSkew_ReadByte(void);
+
 
 /* Write intercept functions */
 extern void Intercept_VideoHigh_WriteByte(void);
@@ -195,6 +220,17 @@ extern void Intercept_KeyboardControl_WriteByte(void);
 extern void Intercept_KeyboardData_WriteByte(void);
 extern void Intercept_MidiControl_WriteByte(void);
 extern void Intercept_MidiData_WriteByte(void);
+extern void Intercept_BlitterEndmask1_WriteWord(void);
+extern void Intercept_BlitterEndmask2_WriteWord(void);
+extern void Intercept_BlitterEndmask3_WriteWord(void);
+extern void Intercept_BlitterDst_WriteLong(void);
+extern void Intercept_BlitterWPL_WriteWord(void);
+extern void Intercept_BlitterLPB_WriteWord(void);
+extern void Intercept_BlitterHalftoneOp_WriteByte(void);
+extern void Intercept_BlitterLogOp_WriteByte(void);
+extern void Intercept_BlitterLineNum_WriteByte(void);
+extern void Intercept_BlitterSkew_WriteByte(void);
+
 
 extern void Intercept_Init(void);
 extern void Intercept_UnInit(void);

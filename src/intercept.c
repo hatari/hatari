@@ -20,6 +20,8 @@
   standard STfm.
 */
 
+#include <SDL_types.h>
+
 #include "main.h"
 #include "debug.h"
 #include "decode.h"
@@ -37,7 +39,9 @@
 #include "stMemory.h"
 #include "vdi.h"
 #include "video.h"
+#include "blitter.h"
 #include "uae-cpu/sysdeps.h"
+
 
 /*#define CHECK_FOR_NO_MANS_LAND*/            /* Check for read/write from unknown hardware addresses */
 
@@ -73,6 +77,16 @@ INTERCEPT_ACCESS_FUNC InterceptAccessFuncs[INTERCEPT_COUNT] = {
   { 0xff8800,SIZE_BYTE,Intercept_PSGRegister_ReadByte,Intercept_PSGRegister_WriteByte },  /* INTERCEPT_PSG_REGISTER */
   { 0xff8802,SIZE_BYTE,Intercept_PSGData_ReadByte,Intercept_PSGData_WriteByte },          /* INTERCEPT_PSG_DATA */
   { 0xff8922,SIZE_WORD,Intercept_MicrowireData_ReadWord,Intercept_MicrowireData_WriteWord }, /* INTERCEPT_MICROWIREDATA */
+  { 0xff8a28,SIZE_WORD,Intercept_BlitterEndmask1_ReadWord,Intercept_BlitterEndmask1_WriteWord },
+  { 0xff8a2a,SIZE_WORD,Intercept_BlitterEndmask2_ReadWord,Intercept_BlitterEndmask2_WriteWord },
+  { 0xff8a2c,SIZE_WORD,Intercept_BlitterEndmask3_ReadWord,Intercept_BlitterEndmask3_WriteWord },
+  { 0xff8a32,SIZE_LONG,Intercept_BlitterDst_ReadLong,Intercept_BlitterDst_WriteLong },
+  { 0xff8a36,SIZE_WORD,Intercept_BlitterWPL_ReadWord,Intercept_BlitterWPL_WriteWord },
+  { 0xff8a38,SIZE_WORD,Intercept_BlitterLPB_ReadWord,Intercept_BlitterLPB_WriteWord },
+  { 0xff8a3a,SIZE_BYTE,Intercept_BlitterHalftoneOp_ReadByte,Intercept_BlitterHalftoneOp_WriteByte },
+  { 0xff8a3b,SIZE_BYTE,Intercept_BlitterLogOp_ReadByte,Intercept_BlitterLogOp_WriteByte },
+  { 0xff8a3c,SIZE_BYTE,Intercept_BlitterLineNum_ReadByte,Intercept_BlitterLineNum_WriteByte },
+  { 0xff8a3d,SIZE_BYTE,Intercept_BlitterSkew_ReadByte,Intercept_BlitterSkew_WriteByte },
   { 0xfffa01,SIZE_BYTE,Intercept_Monitor_ReadByte,Intercept_Monitor_WriteByte },          /* INTERCEPT_MONITOR */
   { 0xfffa03,SIZE_BYTE,Intercept_ActiveEdge_ReadByte,Intercept_ActiveEdge_WriteByte },    /* INTERCEPT_ACTIVE_EDGE */
   { 0xfffa05,SIZE_BYTE,Intercept_DataDirection_ReadByte,Intercept_DataDirection_WriteByte }, /* INTERCEPT_DATA_DIRECTION */
@@ -102,6 +116,7 @@ unsigned long *pInterceptWorkspace;           /* Memory used to store all read/w
 unsigned long *pCurrentInterceptWorkspace;    /* Index into above */
 unsigned long *pInterceptReadByteTable[0x8000],*pInterceptReadWordTable[0x8000],*pInterceptReadLongTable[0x8000];
 unsigned long *pInterceptWriteByteTable[0x8000],*pInterceptWriteWordTable[0x8000],*pInterceptWriteLongTable[0x8000];
+BOOL bEnableBlitter = FALSE;                  /* TRUE if blitter is enabled */
 
 
 /*-----------------------------------------------------------------------*/
@@ -189,10 +204,11 @@ void Intercept_CreateTable(unsigned long *pInterceptTable[],int Span,int ReadWri
   }
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
-  Check list of handlers to see if address needs to be intercepted and call routines
-  'ecx' is pointer to function list (or NULL)
+  Check list of handlers to see if address needs to be intercepted and call
+   routines.
 */
 void Intercept_ScanHandlers(unsigned long *the_func)
 {
@@ -204,140 +220,184 @@ void Intercept_ScanHandlers(unsigned long *the_func)
    }
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
-  Check if need to change our address 'ebp' as maybe a mirror register
-  Currently we only have a PSG mirror area
+  Check if need to change our address as maybe a mirror register.
+  Currently we only have a PSG mirror area and a mirrored blitter register.
 */
-unsigned long Intercept_CheckMirrorAddresses(unsigned long addr)
+static unsigned long Intercept_CheckMirrorAddresses(unsigned long addr)
 {
   if( addr>=0xff8800 && addr<0xff8900 )   /* Is a PSG mirror registers? */
     addr = ( addr & 3) + 0xff8800;        /* Bring into 0xff8800-0xff8804 range */
+
+#if 0 /* Blitter mirror not supported since its address is below ff8000 */
+  if( (addr&0xfffffe)==0xff7f30 )         /* Mirrored blitter register? */
+    addr -= (0xff8a30-0xff7f30);
+#endif
+
   return addr;
 }
 
+
 /*-----------------------------------------------------------------------*/
+
+
 uae_u32 Intercept_ReadByte(uaecptr addr)
 {
-//fprintf(stderr,"byte hardware read access: $%lx\n", addr);
- addr &= 0x00ffffff;              /* Use a 24 bit address */
- if(addr >= 0x00ff8000)                                                 /* Is hardware address? */
-   {
-    BusAddressLocation=addr;                                            /* Store for exception frame, just in case */
+  addr &= 0x00ffffff;                             /* Use a 24 bit address */
+  if(addr >= 0x00ff8000)                          /* Is hardware address? */
+  {
+    BusAddressLocation=addr;                      /* Store for exception frame, just in case */
     addr = Intercept_CheckMirrorAddresses(addr);
     Intercept_ScanHandlers( pInterceptReadByteTable[ addr-0x00ff8000 ] );
-   }
+  }
   else
-   {
-    if(addr < STRamEnd_BusErr)  return 0;                               /* Blank area between RAM and bus error */
-    if(addr < BUS_ERROR_ADDR)  { M68000_BusError(addr); return 0; }     /* Is a bus error? (invalid memory addressing) */
-   }
- return( STRam[addr] );
+  {
+    if(addr < STRamEnd_BusErr)  return 0;         /* Blank area between RAM and bus error */
+    if(addr < BUS_ERROR_ADDR)
+    {
+      M68000_BusError(addr);                      /* Is a bus error? (invalid memory addressing) */
+      return 0;
+    }
+  }
+  return( STRam[addr] );
 }
 
 
 uae_u32 Intercept_ReadWord(uaecptr addr)
 {
-//fprintf(stderr,"Word hardware read access: $%lx\n", addr);
- addr &= 0x00ffffff;                                                    /* Use a 24 bit address */
- if( addr&1 )
-  {  M68000_AddressError(addr);  return 0;  }                           /* Is address error? (not correct alignment) */
- if(addr >= 0x00ff8000)                                                 /* Is hardware address? */
-   {
-    BusAddressLocation=addr;                                            /* Store for exception frame, just in case */
+  addr &= 0x00ffffff;                             /* Use a 24 bit address */
+  if( addr&1 )
+  {
+    M68000_AddressError(addr);                    /* Is address error? (not correct alignment) */
+    return 0;
+  }
+  if(addr >= 0x00ff8000)                          /* Is hardware address? */
+  {
+    BusAddressLocation=addr;                      /* Store for exception frame, just in case */
     addr = Intercept_CheckMirrorAddresses(addr);
     Intercept_ScanHandlers( pInterceptReadWordTable[ addr-0x00ff8000 ] );
-   }
+  }
   else
-   {
-    if(addr < STRamEnd_BusErr)  return 0;                               /* Blank area between RAM and bus error */
-    if(addr < BUS_ERROR_ADDR)  { M68000_BusError(addr); return 0; }     /* Is a bus error? (invalid memory addressing) */
-   }
- return STMemory_ReadWord( addr );
+  {
+    if(addr < STRamEnd_BusErr)  return 0;         /* Blank area between RAM and bus error */
+    if(addr < BUS_ERROR_ADDR)
+    {
+      M68000_BusError(addr);                      /* Is a bus error? (invalid memory addressing) */
+      return 0;
+    }
+  }
+  return STMemory_ReadWord( addr );
 }
 
 
 uae_u32 Intercept_ReadLong(uaecptr addr)
 {
-//fprintf(stderr,"Long hardware read access: $%lx\n", addr);
- addr &= 0x00ffffff;              /* Use a 24 bit address */
- if( addr&1 )
-  {  M68000_AddressError(addr);  return 0;  }                           /* Is address error? (not correct alignment) */
- if(addr >= 0x00ff8000)                                                 /* Is hardware address? */
-   {
-    BusAddressLocation=addr;                                            /* Store for exception frame, just in case */
+  addr &= 0x00ffffff;                             /* Use a 24 bit address */
+  if( addr&1 )
+  {
+    M68000_AddressError(addr);                    /* Is address error? (not correct alignment) */
+    return 0;
+  }
+  if(addr >= 0x00ff8000)                          /* Is hardware address? */
+  {
+    BusAddressLocation=addr;                      /* Store for exception frame, just in case */
     addr = Intercept_CheckMirrorAddresses(addr);
     Intercept_ScanHandlers( pInterceptReadLongTable[ addr-0x00ff8000 ] );
-   }
+  }
   else
-   {
-    if(addr < STRamEnd_BusErr)  return 0;                               /* Blank area between RAM and bus error */
-    if(addr < BUS_ERROR_ADDR)  { M68000_BusError(addr); return 0; }     /* Is a bus error? (invalid memory addressing) */
-   }
- return STMemory_ReadLong( addr );
+  {
+    if(addr < STRamEnd_BusErr)  return 0;         /* Blank area between RAM and bus error */
+    if(addr < BUS_ERROR_ADDR)
+    {
+      M68000_BusError(addr);                      /* Is a bus error? (invalid memory addressing) */
+      return 0;
+    }
+  }
+  return STMemory_ReadLong( addr );
 }
 
 
 /*-----------------------------------------------------------------------*/
+
+
 void Intercept_WriteByte(uaecptr addr, uae_u32 val)
 {
-//fprintf(stderr,"Byte hardware write access: $%lx\n", addr);
- addr &= 0x00ffffff;                                                    /* Use a 24 bit address */
- if( addr>=0x00ff8000 )                                                 /* Is hardware address? */
-   {
-    BusAddressLocation=addr;                                            /* Store for exception frame, just in case */
+  addr &= 0x00ffffff;                             /* Use a 24 bit address */
+  if( addr>=0x00ff8000 )                          /* Is hardware address? */
+  {
+    BusAddressLocation=addr;                      /* Store for exception frame, just in case */
     addr = Intercept_CheckMirrorAddresses(addr);
     STRam[addr]=val;
     Intercept_ScanHandlers( pInterceptWriteByteTable[ addr-0x00ff8000 ] );
-   }
+  }
   else
-   {
-    if( addr < STRamEnd_BusErr )  return;                               /* Allow writes to no-mans-land(just return) */
-    if( addr < BUS_ERROR_ADDR ) { M68000_BusError(addr); return; }      /* Is a bus error? (invalid memory addressing) */
+  {
+    if( addr < STRamEnd_BusErr )  return;         /* Allow writes to no-mans-land(just return) */
+    if( addr < BUS_ERROR_ADDR )
+    {
+      M68000_BusError(addr);                      /* Is a bus error? (invalid memory addressing) */
+      return;
+    }
     STRam[addr]=val;
-   }
+  }
 }
+
 
 void Intercept_WriteWord(uaecptr addr, uae_u32 val)
 {
-//fprintf(stderr,"Word hardware write access: $%lx\n", addr);
- addr &= 0x00ffffff;                                                    /* Use a 24 bit address */
- if( addr&1 )
-  {  M68000_AddressError(addr);  return;  }                             /* Is address error? (not correct alignment) */
- if( addr>=0x00ff8000 )                                                 /* Is hardware address? */
-   {
-    BusAddressLocation=addr;                                            /* Store for exception frame, just in case */
+  addr &= 0x00ffffff;                             /* Use a 24 bit address */
+  if( addr&1 )
+  {
+    M68000_AddressError(addr);                    /* Is address error? (not correct alignment) */
+    return;
+  }
+  if( addr>=0x00ff8000 )                          /* Is hardware address? */
+  {
+    BusAddressLocation=addr;                      /* Store for exception frame, just in case */
     addr = Intercept_CheckMirrorAddresses(addr);
     STMemory_WriteWord( addr, val);
     Intercept_ScanHandlers( pInterceptWriteWordTable[ addr-0x00ff8000 ] );
-   }
+  }
   else
-   {
-    if( addr < STRamEnd_BusErr )  return;                               /* Allow writes to no-mans-land(just return) */
-    if( addr < BUS_ERROR_ADDR ) { M68000_BusError(addr); return; }      /* Is a bus error? (invalid memory addressing) */
+  {
+    if( addr < STRamEnd_BusErr )  return;         /* Allow writes to no-mans-land(just return) */
+    if( addr < BUS_ERROR_ADDR )
+    {
+      M68000_BusError(addr);                      /* Is a bus error? (invalid memory addressing) */
+      return;
+    }
     STMemory_WriteWord( addr, val);
-   }
+  }
 }
+
 
 void Intercept_WriteLong(uaecptr addr, uae_u32 val)
 {
-//fprintf(stderr,"Long hardware write access: $%lx\n", addr);
- addr &= 0x00ffffff;                                                    /* Use a 24 bit address */
- if( addr&1 )
-  {  M68000_AddressError(addr); return;  }                              /* Is address error? (not correct alignment) */
- if( addr>=0x00ff8000 )                                                 /* Is hardware address? */
-   {
-    BusAddressLocation=addr;                                            /* Store for exception frame, just in case */
+  addr &= 0x00ffffff;                             /* Use a 24 bit address */
+  if( addr&1 )
+  {
+    M68000_AddressError(addr);                    /* Is address error? (not correct alignment) */
+    return;
+  }
+  if( addr>=0x00ff8000 )                          /* Is hardware address? */
+  {
+    BusAddressLocation=addr;                      /* Store for exception frame, just in case */
     addr = Intercept_CheckMirrorAddresses(addr);
     STMemory_WriteLong( addr, val);
     Intercept_ScanHandlers( pInterceptWriteLongTable[ addr-0x00ff8000 ] );
-   }
+  }
   else
-   {
-    if( addr < STRamEnd_BusErr )  return;                               /* Allow writes to no-mans-land(just return) */
-    if( addr < BUS_ERROR_ADDR ) { M68000_BusError(addr); return; }      /* Is a bus error? (invalid memory addressing) */
+  {
+    if( addr < STRamEnd_BusErr )  return;         /* Allow writes to no-mans-land(just return) */
+    if( addr < BUS_ERROR_ADDR )
+    {
+      M68000_BusError(addr);                      /* Is a bus error? (invalid memory addressing) */
+      return;
+    }
     STMemory_WriteLong( addr, val);
-   }
+  }
 }
 
 
@@ -663,6 +723,56 @@ void Intercept_MidiData_ReadByte(void)
  STRam[0xfffc06] = 1;        /* Should be this? */
 }
 
+
+void Intercept_BlitterEndmask1_ReadWord(void)
+{
+  STMemory_WriteWord( 0xff8a28, LOAD_W_ff8a28() );
+}
+
+void Intercept_BlitterEndmask2_ReadWord(void)
+{
+  STMemory_WriteWord( 0xff8a2a, LOAD_W_ff8a2a() );
+}
+
+void Intercept_BlitterEndmask3_ReadWord(void)
+{
+  STMemory_WriteWord( 0xff8a2c, LOAD_W_ff8a2c() );
+}
+
+void Intercept_BlitterDst_ReadLong(void)
+{
+  STMemory_WriteLong( 0xff8a32, LOAD_L_ff8a32() );
+}
+
+void Intercept_BlitterWPL_ReadWord(void)
+{
+  STMemory_WriteWord( 0xff8a36, LOAD_W_ff8a36() );
+}
+
+void Intercept_BlitterLPB_ReadWord(void)
+{
+  STMemory_WriteWord( 0xff8a38, LOAD_W_ff8a38() );
+}
+
+void Intercept_BlitterHalftoneOp_ReadByte(void)
+{
+  STMemory_WriteByte( 0xff8a3a, LOAD_B_ff8a3a() );
+}
+
+void Intercept_BlitterLogOp_ReadByte(void)
+{
+  STMemory_WriteByte( 0xff8a3b, LOAD_B_ff8a3b() );
+}
+
+void Intercept_BlitterLineNum_ReadByte(void)
+{
+  STMemory_WriteByte( 0xff8a3c, LOAD_B_ff8a3c() );
+}
+
+void Intercept_BlitterSkew_ReadByte(void)
+{
+  STMemory_WriteByte( 0xff8a3d, LOAD_B_ff8a3d() );
+}
 
 
 
@@ -1053,13 +1163,65 @@ void Intercept_MidiData_WriteByte(void)
 }
 
 
+void Intercept_BlitterEndmask1_WriteWord(void)
+{
+  STORE_W_ff8a28( STMemory_ReadWord(0xff8a28) );
+}
+
+void Intercept_BlitterEndmask2_WriteWord(void)
+{
+  STORE_W_ff8a2a( STMemory_ReadWord(0xff8a2a) );
+}
+
+void Intercept_BlitterEndmask3_WriteWord(void)
+{
+  STORE_W_ff8a2c( STMemory_ReadWord(0xff8a2c) );
+}
+
+void Intercept_BlitterDst_WriteLong(void)
+{
+  STORE_L_ff8a32( STMemory_ReadLong(0xff8a32) );
+}
+
+void Intercept_BlitterWPL_WriteWord(void)
+{
+  STORE_W_ff8a36( STMemory_ReadWord(0xff8a36) );
+}
+
+void Intercept_BlitterLPB_WriteWord(void)
+{
+  STORE_W_ff8a38( STMemory_ReadWord(0xff8a38) );
+}
+
+void Intercept_BlitterHalftoneOp_WriteByte(void)
+{
+  STORE_B_ff8a3a( STMemory_ReadByte(0xff8a3a) );
+}
+
+void Intercept_BlitterLogOp_WriteByte(void)
+{
+  STORE_B_ff8a3b( STMemory_ReadByte(0xff8a3b) );
+}
+
+void Intercept_BlitterLineNum_WriteByte(void)
+{
+  STORE_B_ff8a3c( STMemory_ReadByte(0xff8a3c) );
+}
+
+void Intercept_BlitterSkew_WriteByte(void)
+{
+  STORE_B_ff8a3d( STMemory_ReadByte(0xff8a3d) );
+}
+
+
+
 
 /* Address space for Bus Error in hardware mapping */
 INTERCEPT_ADDRESSRANGE InterceptBusErrors[] = {
-  { 0xff8a00,0xff8a3e },        /* Blitter */
+  { 0xff8280,0xff82c4 },        /* Falcon VIDEL (EmuTOS depends on this) */
+  { 0xff8400,0xff85fe },        /* TT Palette (again for EmuTOS) */
   { 0xff8900,0xff8960 },        /* DMA Sound/MicroWire */
-  { 0xff8400,0xff85fe },        /* TT Palette (EmuTOS depends on this) */
-  { 0xff8280,0xff82c4 },        /* Falcon VIDEL (again for EmuTOS) */
+  { 0xff8a00,0xff8a3e },        /* Blitter (now supported!) */
 
   { 0,0 }  /* term */
 };
@@ -1085,17 +1247,21 @@ void Intercept_ModifyTablesForBusErrors(void)
 {
   unsigned long *pInterceptList;
   unsigned int Address;
-  int i=0;
+  int i;
 
   /* Set routine list */
   pInterceptList = pCurrentInterceptWorkspace;
   *pCurrentInterceptWorkspace++ = (unsigned long)Intercept_BusError;
   *pCurrentInterceptWorkspace++ = 0L;
 
-  /* Set all 'no-mans-land' entries */
-  while(InterceptBusErrors[i].Start_Address!=0) {
-    /* Set 'no-mans-land' table */
-    for(Address=InterceptBusErrors[i].Start_Address; Address<InterceptBusErrors[i].End_Address; Address++) {
+  /* Set all bus-error entries */
+  for(i=0; InterceptBusErrors[i].Start_Address!=0; i++)
+  {
+    if(bEnableBlitter && InterceptBusErrors[i].Start_Address==0xff8a00)
+      continue;    /* Ignore blitter area if blitter is enabled */
+    /* Set bus-error table */
+    for(Address=InterceptBusErrors[i].Start_Address; Address<InterceptBusErrors[i].End_Address; Address++)
+    {
       /* For 'read' */
       pInterceptReadByteTable[Address-0xff8000] = pInterceptList;
       pInterceptReadWordTable[Address-0xff8000] = pInterceptList;
@@ -1106,7 +1272,6 @@ void Intercept_ModifyTablesForBusErrors(void)
       pInterceptWriteLongTable[Address-0xff8000] = pInterceptList;
     }
 
-    i++;
   }
 }
 
@@ -1139,7 +1304,7 @@ void Intercept_NoMansLand_ReadWrite(void)
           BusAddressLocation, PC);
 }
 
-/*----------------------------------------------------------------------- */
+/*-----------------------------------------------------------------------*/
 /*
   Modify 'intercept' tables to check for access into 'no-mans-land', ie unknown hardware locations
 */

@@ -1,3 +1,7 @@
+2002-07-04 (THH):
+  * Added experimental blitter emulation (taken from STonX).
+    "Wings Of Death" started working now - wow!
+
 2002-07-03 (THH):
   * Separated SDL_INIT_JOYSTICK and SDL_INIT_AUDIO from Main_Init(), since
     failures during joystick/audio initialization shouldn't be fatal.
