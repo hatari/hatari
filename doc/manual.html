@@ -383,8 +383,16 @@ features via the following keyboard shortcuts. </p>
       <td align="center">Purpose</td>
     </tr>
     <tr>
+      <td align="center"><span class="key">ALTGR+a</span></td>
+      <td align="center">record animation</td>
+    </tr>
+    <tr>
       <td align="center"><span class="key">ALTGR+g</span></td>
       <td align="center">grabs a screenshot</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">ALTGR+i</span></td>
+      <td align="center">boss key: leave full screen mode and iconify window</td>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+j</span></td>
@@ -396,15 +404,27 @@ features via the following keyboard shortcuts. </p>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+r</span></td>
-      <td align="center">reset the ST</td>
+      <td align="center">(warm) reset the ST</td>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+c</span></td>
       <td align="center">coldreset the ST (same as the original power switch)</td>
     </tr>
     <tr>
+      <td align="center"><span class="key">ALTGR+s</span></td>
+      <td align="center">enable/disable sound</td>
+    </tr>
+    <tr>
       <td align="center"><span class="key">ALTGR+q</span></td>
       <td align="center">quit the emulator</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">ALTGR+x</span></td>
+      <td align="center">toggle normal/max speed</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">ALTGR+y</span></td>
+      <td align="center">enable/disable sound recording</td>
     </tr>
     <tr>
       <td align="center"><span class="key">F11</span></td>
@@ -515,7 +535,10 @@ are programs like the Magic Shadow Archiver for this task. Hatari
 supports this slightly compressed MSA disk images, too. Note that Hatari
 only supports the "old" MSA format, there are some Magic Shadow Archiver
 clones (like Jay-MSA) that create better compressed but
-Hatari-incompatible disk images. </p>
+Hatari-incompatible disk images. However, if you have got such a MSA
+disk and want to use it with Hatari, you can still run the corresponding
+MSA program within Hatari to extract the incompatible disk image to a
+normal floppy disk image. </p>
 <p> While *.ST and *.MSA are more or less the "standard" types of Atari
 disk images, you might sometimes also find DIM or ADF images on the
 internet. These currently do not work with Hatari. But since DIM images
@@ -536,11 +559,14 @@ can also easily destroy your disk image when changing a wrong byte
 there). If the disk contains a bootsector program, you probably have to
 adjust the boot sector check sum, too (it can be found at offset $1FE +
 $1FF). </p>
-<p>Hatari supports zipped disk images so you can archive your disk images into zip archives.
-You can also directly run the zip archives you may download from the net as long as the archive contains a
-disk image in .ST or .MSA format.</p>
-<p><em>Note:</em> Hatari does not save disk images back to zipfiles so your highscores and savegames are lost if you
-loaded the game from a zipped disk image.</p>
+<p>Hatari supports disk images that are compressed with (Pk-)ZIP
+(file suffix must be ".zip") or GZip (file suffix must be ".st.gz" or
+".msa.gz"),  so you can archive your disk images into zip archives.
+You can also directly run the zip archives you may download from the
+net as long as the archive contains a disk image in .ST or .MSA format.</p>
+<p><em>Note:</em> Hatari does not save disk images back to *.ZIP files so
+your highscores and savegames are lost if you loaded the game from such
+a zipped disk image.</p>
 
 <h2>Hard disk support</h2>
 <p>Hatari supports two ways of emulating a ST hard drive: The low-level
