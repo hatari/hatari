@@ -8,7 +8,7 @@
   VBLs, HBLs, copying the ST screen to a buffer to simulate the TV raster trace, border
   removal, palette changes per HBL, the 'video address pointer' etc...
 */
-static char rcsid[] = "Hatari $Id: video.c,v 1.10 2003-03-08 11:29:53 thothy Exp $";
+static char rcsid[] = "Hatari $Id: video.c,v 1.11 2003-03-27 11:21:08 emanne Exp $";
 
 #include <SDL.h>
 
@@ -149,7 +149,7 @@ void Video_CalculateAddress(void)
       X = (512-SCREEN_START_CYCLE);
     /* X is now from 96 to 416(320 pixels), subtract 96 to give X pixel across screen! */
     X = ((X-SCREEN_START_CYCLE)>>1)&(~1);
-    
+
     if (Y<(nEndHBL-nStartHBL))      /* Limit to end of screen */
       VideoAddress = (Y*160) + X;
     else
@@ -271,7 +271,6 @@ void Video_InterruptHandler_VBL_Pending(void)
     Int_AddAbsoluteInterrupt(100,INTERRUPT_VIDEO_VBL_PENDING);
 }
 
-
 /*-----------------------------------------------------------------------*/
 /*
   End Of Line interrupt
@@ -294,6 +293,7 @@ void Video_InterruptHandler_EndLine(void)
   }
 
   /* Timer A/B occur at END of first visible screen line in Event Count mode */
+  //  if ( (nHBL>=FIRST_VISIBLE_HBL) && (nHBL<FIRST_VISIBLE_HBL+NUM_VISIBLE_LINES) )
   if ( (nHBL>=nStartHBL) && (nHBL<nEndHBL) )
    {
     /* Handle Timers A and B when using Event Count mode(timer taken from HBL) */
@@ -324,8 +324,9 @@ void Video_InterruptHandler_HBL(void)
   /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
   /* Generate new Timer AB, if need to - there are 313 HBLs per frame */
-  if (nHBL<(SCANLINES_PER_FRAME-1))
+  if (nHBL<(SCANLINES_PER_FRAME-1)) {
     Int_AddAbsoluteInterrupt(CYCLES_PER_LINE,INTERRUPT_VIDEO_HBL);
+  }
 
   MakeSR();
   if (2>FIND_IPL)                  /* Horizontal blank, level 2! */
@@ -444,8 +445,6 @@ void Video_StoreSyncShifterAccess(unsigned int Address,unsigned char Byte)
 //  sprintf(szString,"0x%X=0x%2.2X %d(%d) @ %d",Address,Byte,FrameCycles,FrameCycles&511,nHBL);
 //  debug << szString << endl;
 
-  Video_CheckSyncShifterTable(Address,Byte,FrameCycles, pTopBorderAccessTable);
-  Video_CheckSyncShifterTable(Address,Byte,FrameCycles, pBottomBorderAccessTable);
   Video_CheckSyncShifterTable(Address,Byte,FrameCycles&511, pLeftRightBorderAccessTable);
 //  Video_CheckSyncShifterTable(Address,Byte,FrameCycles&511, pSyncScrollerAccessTable);
 }
@@ -537,7 +536,7 @@ void Video_CopyScreenLine(int BorderMask)
         else
           memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,0,SCREENBYTES_RIGHT);
       }
-    
+
       /* Each screen line copied to buffer is always same length */
       pSTScreen += SCREENBYTES_LINE;
     }
