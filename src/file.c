@@ -337,16 +337,14 @@ BOOL File_Save(char *pszFileName, void *pAddress,long Size,BOOL bQueryOverwrite)
 */
 int File_Length(char *pszFileName)
 {
-  int DiscFile;
+  FILE *DiscFile;
   int FileSize;
-
-  /* Attempt to open file(with OF_EXIST) */
-  DiscFile = open(pszFileName, O_RDONLY);
-  if (DiscFile>=0) {
-    /* Find length */
-    FileSize = lseek(DiscFile,0,SEEK_END);
-    close(DiscFile);
-
+  DiscFile = fopen(pszFileName, "rb");
+  if (DiscFile!=NULL) {
+    fseek(DiscFile, 0, SEEK_END);
+    FileSize = ftell(DiscFile);
+    fseek(DiscFile, 0, SEEK_SET);
+    fclose(DiscFile);
     return(FileSize);
   }
 
