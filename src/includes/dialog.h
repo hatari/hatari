@@ -55,7 +55,7 @@ enum {
 /* Dialog Keyboard */
 typedef struct {
   BOOL bDisableKeyRepeat;
-  int ShortCuts[2][3];                // F11+F12, NORMAL+SHIFT+CTRL
+  int ShortCuts[2][3];     /* F11+F12, NORMAL+SHIFT+CTRL */
   char szMappingFileName[MAX_FILENAME_LENGTH];
 } DLG_KEYBOARD;
 
@@ -176,7 +176,7 @@ typedef struct {
 /* State of system is stored in this structure */
 /* On reset, variables are copied into system globals and used. */
 typedef struct {
-  // Configure
+  /* Configure */
   DLG_CONFIGURE Configure;
   DLG_SCREEN Screen;
   DLG_JOYSTICKS Joysticks;
@@ -204,32 +204,8 @@ enum {
   DIALOG_PAGE_PRINTER
 };
 
-extern DLG_PARAMS ConfigureParams,DialogParams;
-extern BOOL bOKDialog;
-extern int nLastOpenPage;
+extern DLG_PARAMS ConfigureParams, DialogParams;
 
 extern void Dialog_DefaultConfigurationDetails(void);
 extern void Dialog_CopyDetailsFromConfiguration(BOOL bReset);
-extern BOOL Dialog_DoProperty(int StartingPage,BOOL bForceReset);
-//extern void Dialog_SetButton(HWND hDlg,int ButtonID,int Flag);
-//extern BOOL Dialog_ReadButton(HWND hDlg,int ButtonID);
-//extern void Dialog_EnableItem(HWND hDlg,int ButtonID,int State);
-//extern void Dialog_EnableItems(HWND hDlg,int *pButtonIDs,int State);
-//extern void Dialog_ShowItemRange(HWND hDlg,int LowButtonID,int HighButtonID,int Show);
-//extern void Dialog_SetText(HWND hDlg,int ButtonID,char *szString);
-#if 0
-extern void Dialog_ReadText(HWND hDlg,int ButtonID,char *szString);
-extern void Dialog_SetTrackBar(HWND hDlg, int nTrackBarID, int nMin, int nMax, int nSelected);
-extern int Dialog_GetTrackBar(HWND hDlg, int nTrackBarID);
-extern void Dialog_SetComboBoxItems(HWND hDlg, int ComboBoxID, char *pComboBoxStrings[], int nSelectedItem);
-extern void Dialog_ComboBoxSelectString(HWND hDlg, int ComboBoxID, char *pszSelectedString);
-extern int Dialog_GetSelectedComboBoxItem(HWND hDlg, int ComboBoxID);
-extern void Dialog_SetListBoxItems(HWND hDlg, int ListBoxID, char *pListBoxStrings[], int nSelectedItem);
-extern int Dialog_GetSelectedListBoxItem(HWND hDlg, int ListBoxID);
-extern int Dialog_SetSpinList(HWND hDlg, int nEditBoxID, int nSpinID, char *pSpinStrings[], int nItems, int nSelectedItem);
-extern int Dialog_GetSpinList(HWND hDlg, int nSpinID);
-extern int Dialog_UpdateSpinList(HWND hDlg, int nEditBoxID, char *pSpinStrings[], int nNumSpinItems, int nNewSelectedItem);
-extern void Dialog_SetRadioButtons(HWND hDlg,int StartButtonID,int EndButtonID,int nSelectedItem);
-extern int Dialog_ReadRadioButtons(HWND hDlg,int StartButtonID,int EndButtonID);
-extern void Dialog_AddListViewColumn(HWND hDlg, int ListViewID, int Order, char *pString, int Width);
-#endif
+extern BOOL Dialog_DoProperty(BOOL bForceReset);
