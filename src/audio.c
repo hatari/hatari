@@ -1,6 +1,12 @@
 /*
-  Hatari
+  Hatari - audio.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  This file contains the routines which pass the audio data to the SDL library.
 */
+static char rcsid[] = "Hatari $Id: audio.c,v 1.11 2003-03-02 15:14:05 thothy Exp $";
 
 #include <SDL.h>
 
@@ -173,12 +179,16 @@ void Audio_FreeSoundBuffer(void)
 */
 void Audio_SetOutputAudioFreq(int Frequency)
 {
-  /* Set new frequency, index into SoundPlayBackFrequencies[] */
-  OutputAudioFreqIndex = Frequency;
+  /* Do not reset sound system if nothing has changed! */
+  if(Frequency != OutputAudioFreqIndex)
+  {
+    /* Set new frequency, index into SoundPlayBackFrequencies[] */
+    OutputAudioFreqIndex = Frequency;
 
-  /* Re-open SDL audio interface... */
-  Audio_UnInit();
-  Audio_Init();
+    /* Re-open SDL audio interface... */
+    Audio_UnInit();
+    Audio_Init();
+  }
 }
 
 
