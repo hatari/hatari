@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.34 2003-03-27 15:54:25 emanne Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.35 2003-03-28 07:14:10 emanne Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -272,7 +272,6 @@ void Main_ReadParameters(int argc, char *argv[])
                "  --debug or -D         Allow debug interface.\n"
                "  --harddrive <dir>     Emulate an ST harddrive\n"
                "     or -d <dir>         (<dir> = root directory).\n"
-               "  --fd <imagename>      insert floppy image <imagename> in drive A.\n"
                "  --hdimage <imagename> Emulate an ST harddrive with an image.\n"
                "  --tos <file>          Use TOS image <file>.\n"
                "  --cpulevel x          Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
@@ -340,10 +339,7 @@ void Main_ReadParameters(int argc, char *argv[])
           i += 1;
         }
       }
-      else if (!strcmp(argv[i],"--fd")) {
-        if( i+1<argc && strlen(argv[i+1])<=MAX_PATH )  /* both parameters exist */
-	  Floppy_InsertDiscIntoDrive(0, argv[++i]);
-      } else if (!strcmp(argv[i],"--tos"))
+      else if (!strcmp(argv[i],"--tos"))
       {
         if(i+1>=argc)
           fprintf(stderr,"Missing argument for --tos.\n");
@@ -406,6 +402,7 @@ void Main_Init(void)
   Printer_Init();
   RS232_Init();
   Screen_Init();
+  Floppy_Init();
   Init680x0();                  /* Init CPU emulation */
   Audio_Init();
   Keymap_FromScancodes();
@@ -495,7 +492,6 @@ int main(int argc, char *argv[])
   Configuration_Init();
 
   /* Check for any passed parameters */
-  Floppy_Init(); // needed to mount a floppy on the command line
   Main_ReadParameters(argc, argv);
 
   /* Init emulator system */
