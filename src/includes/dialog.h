@@ -119,14 +119,15 @@ enum {
 };
 
 
-/* Dialog hard disc image */
-#define MAX_HARDDRIVES  4
+/* Dialog hard discs */
+#define MAX_HARDDRIVES  1
 #define DRIVELIST_TO_DRIVE_INDEX(DriveList)  (DriveList+1)
 typedef struct {
   int nDriveList;
   BOOL bBootFromHardDisc;
   int nHardDiscDir;
   char szHardDiscDirectories[MAX_HARDDRIVES][MAX_FILENAME_LENGTH];
+  char szHardDiscImage[MAX_FILENAME_LENGTH];
 } DLG_HARDDISC;
 
 enum {

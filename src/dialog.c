@@ -13,6 +13,8 @@
 #include "dialog.h"
 #include "file.h"
 #include "floppy.h"
+#include "gemdos.h"
+#include "hdc.h"
 #include "reset.h"
 #include "joy.h"
 #include "keymap.h"
@@ -104,10 +106,12 @@ SGOBJ aboutdlg[] =
 #define DISCDLG_BROWSEIMG   11
 #define DISCDLG_AUTOB       12
 #define DISCDLG_CREATEIMG   13
-#define DISCDLG_BOOTHD      16
-#define DISCDLG_DISCC       18
-#define DISCDLG_BROWSEC     19
-#define DISCDLG_EXIT        20
+#define DISCDLG_BROWSEHDIMG 17
+#define DISCDLG_DISCHDIMG   18
+#define DISCDLG_BROWSEGDOS  20
+#define DISCDLG_DISCGDOS    21
+#define DISCDLG_BOOTHD      22
+#define DISCDLG_EXIT        23
 SGOBJ discdlg[] =
 {
   { SGBOX, 0, 0, 0,0, 40,25, NULL },
@@ -125,11 +129,14 @@ SGOBJ discdlg[] =
   { SGCHECKBOX, 0, 0, 2,10, 18,1, "Auto insert B" },
   { SGTEXT/*SGBUTTON*/, 0, 0, 20,10, 18,1, ""/*"Create blank image"*/ }, /* Not yet supported */
   { SGBOX, 0, 0, 1,13, 38,9, NULL },
-  { SGTEXT, 0, 0, 14,13, 13,1, "Hard discs" },
-  { SGCHECKBOX, 0, 0, 2,15, 14,1, "Boot from HD" },
-  { SGTEXT, 0, 0, 2,17, 2,1, "C:" },
-  { SGTEXT, 0, 0, 5,17, 24,1, NULL },
+  { SGTEXT, 0, 0, 15,13, 10,1, "Hard discs" },
+  { SGTEXT, 0, 0, 2,14, 9,1, "HD image:" },
+  { SGBUTTON, 0, 0, 32,14, 6,1, "Browse" },
+  { SGTEXT, 0, 0, 2,15, 34,1, NULL },
+  { SGTEXT, 0, 0, 2,17, 13,1, "GEMDOS drive:" },
   { SGBUTTON, 0, 0, 32,17, 6,1, "Browse" },
+  { SGTEXT, 0, 0, 2,18, 34,1, NULL },
+  { SGCHECKBOX, 0, 0, 2,20, 14,1, "Boot from HD" },
   { SGBUTTON, 0, 0, 10,23, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
@@ -345,6 +352,9 @@ BOOL Dialog_DoNeedReset(void)
   /* Did change TOS ROM image? */
   if (strcmp(DialogParams.TOSGEM.szTOSImageFileName, ConfigureParams.TOSGEM.szTOSImageFileName))
     return(TRUE);
+  /* Did change HD image? */
+  if (strcmp(DialogParams.HardDisc.szHardDiscImage, ConfigureParams.HardDisc.szHardDiscImage))
+    return(TRUE);
 
   return(FALSE);
 }
@@ -396,6 +406,13 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
       Sound_EndRecording(NULL);
   }
 
+  /* Did change HD image? */
+  if( strcmp(DialogParams.HardDisc.szHardDiscImage, ConfigureParams.HardDisc.szHardDiscImage)!=0
+      && ACSI_EMU_ON )
+  {
+    HDC_UnInit();
+  }
+
   /* Copy details to configuration, so can be saved out or set on reset */
   ConfigureParams = DialogParams;
   /* And write to configuration now, so don't loose */
@@ -413,6 +430,13 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 
   /* Did the user changed the CPU mode? */
   check_prefs_changed_cpu(DialogParams.Cpu.level, DialogParams.Cpu.compatible);
+
+  /* Mount a new HD image: */
+  if( !ACSI_EMU_ON && !File_DoesFileNameEndWithSlash(ConfigureParams.HardDisc.szHardDiscImage)
+      && File_Exists(ConfigureParams.HardDisc.szHardDiscImage) )
+  {
+    HDC_Init(ConfigureParams.HardDisc.szHardDiscImage);
+  }
 
   /* Do we need to perform reset? */
   if (NeedReset)
@@ -461,7 +485,8 @@ void Dialog_DiscDlg(void)
 {
   int but;
   char tmpname[MAX_FILENAME_LENGTH];
-  char dlgnamea[27], dlgnameb[27], dlgdiscdir[29], dlgnamec[27];
+  char dlgnamea[27], dlgnameb[27], dlgdiscdir[29];
+  char dlgnamegdos[35], dlgnamehdimg[35];
 
   SDLGui_CenterDlg(discdlg);
 
@@ -492,12 +517,18 @@ void Dialog_DiscDlg(void)
     discdlg[DISCDLG_BOOTHD].state |= SG_SELECTED;
    else
     discdlg[DISCDLG_BOOTHD].state &= ~SG_SELECTED;
-  /* Hard disc directory: */
-  if( DialogParams.HardDisc.nDriveList!=DRIVELIST_NONE )
-    File_ShrinkName(dlgnamec, DialogParams.HardDisc.szHardDiscDirectories[0], 26);
+  /* GEMDOS Hard disc directory: */
+  if( GEMDOS_EMU_ON )
+    File_ShrinkName(dlgnamegdos, DialogParams.HardDisc.szHardDiscDirectories[0], 34);
   else
-    dlgnamec[0] = 0;
-  discdlg[DISCDLG_DISCC].txt = dlgnamec;
+    dlgnamegdos[0] = 0;
+  discdlg[DISCDLG_DISCGDOS].txt = dlgnamegdos;
+  /* Hard disc image: */
+  if( ACSI_EMU_ON )
+    File_ShrinkName(dlgnamehdimg, DialogParams.HardDisc.szHardDiscImage, 34);
+  else
+    dlgnamehdimg[0] = 0;
+  discdlg[DISCDLG_DISCHDIMG].txt = dlgnamehdimg;
 
   /* Draw and process the dialog */
   do
@@ -512,7 +543,7 @@ void Dialog_DiscDlg(void)
           strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
         if( SDLGui_FileSelect(tmpname) )
         {
-          if( File_Exists(tmpname) )
+          if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
             Floppy_InsertDiscIntoDrive(0, tmpname); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
             File_ShrinkName(dlgnamea, tmpname, 26);
@@ -531,7 +562,7 @@ void Dialog_DiscDlg(void)
           strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
         if( SDLGui_FileSelect(tmpname) )
         {
-          if( File_Exists(tmpname) )
+          if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
             Floppy_InsertDiscIntoDrive(1, tmpname); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
             File_ShrinkName(dlgnameb, tmpname, 26);
@@ -557,7 +588,7 @@ void Dialog_DiscDlg(void)
       case DISCDLG_CREATEIMG:
         fprintf(stderr,"Sorry, creating disc images not yet supported\n");
         break;
-      case DISCDLG_BROWSEC:
+      case DISCDLG_BROWSEGDOS:
         strcpy(tmpname, DialogParams.HardDisc.szHardDiscDirectories[0]);
         if( SDLGui_FileSelect(tmpname) )
         {
@@ -565,13 +596,28 @@ void Dialog_DiscDlg(void)
           ptr = strrchr(tmpname, '/');
           if( ptr!=NULL )  ptr[1]=0;
           strcpy(DialogParams.HardDisc.szHardDiscDirectories[0], tmpname);
-          File_ShrinkName(dlgnamec, DialogParams.HardDisc.szHardDiscDirectories[0], 26);
-          DialogParams.HardDisc.nDriveList = DRIVELIST_C;
+          File_ShrinkName(dlgnamegdos, DialogParams.HardDisc.szHardDiscDirectories[0], 34);
+          /*DialogParams.HardDisc.nDriveList = DRIVELIST_C;*/
         }
         else
         {
-          dlgnamec[0] = 0;
-          DialogParams.HardDisc.nDriveList = DRIVELIST_NONE;
+          dlgnamegdos[0] = 0;
+          /*DialogParams.HardDisc.nDriveList = DRIVELIST_NONE;*/
+        }
+        break;
+      case DISCDLG_BROWSEHDIMG:
+        strcpy(tmpname, DialogParams.HardDisc.szHardDiscImage);
+        if( SDLGui_FileSelect(tmpname) )
+        {
+          strcpy(DialogParams.HardDisc.szHardDiscImage, tmpname);
+          if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
+          {
+            File_ShrinkName(dlgnamehdimg, tmpname, 34);
+          }
+          else
+          {
+            dlgnamehdimg[0] = 0;
+          }
         }
         break;
     }

@@ -48,6 +48,7 @@ void Configuration_SetDefault(void)
     strcpy(ConfigureParams.HardDisc.szHardDiscDirectories[i], szWorkingDir);
     File_CleanFileName(ConfigureParams.HardDisc.szHardDiscDirectories[i]);
   }
+  strcpy(ConfigureParams.HardDisc.szHardDiscImage, szWorkingDir);
 
   /* Set defaults for Joysticks */
   for(i=0; i<2; i++)

@@ -315,6 +315,7 @@ void Main_ReadParameters(int argc, char *argv[])
 	if( argc > i+1 ) 
           if( HDC_Init(argv[i+1]) == TRUE)
           {
+            strcpy(ConfigureParams.HardDisc.szHardDiscImage, argv[i+1]);
             printf("Hard drive image %s mounted.\n", argv[i+1]);
             i++;
           }
@@ -328,7 +329,7 @@ void Main_ReadParameters(int argc, char *argv[])
         if(i + 1 < argc && strlen(argv[i+1])<=MAX_PATH)  /* both parameters exist */
         {
           /* only 1 emulated drive allowed, as of yet.  */
-          emudrives = malloc( sizeof(EMULATEDDRIVE *) );
+          emudrives = malloc( MAX_HARDDRIVES*sizeof(EMULATEDDRIVE *) );
           emudrives[0] = malloc( sizeof(EMULATEDDRIVE) );
           /* set emulation directory string */
           if( argv[i+1][0] != '.' && argv[i+1][0] != '/' )
