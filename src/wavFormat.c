@@ -34,7 +34,7 @@
     4 - 7  Length Of Data To Follow
     8 - end  Data (Samples)
 */
-static char rcsid[] = "Hatari $Id: wavFormat.c,v 1.6 2003-03-04 19:27:23 thothy Exp $";
+static char rcsid[] = "Hatari $Id: wavFormat.c,v 1.7 2003-03-10 18:46:07 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -141,7 +141,7 @@ void WAVFormat_CloseFile()
 /*-----------------------------------------------------------------------*/
 /*
 */
-void WAVFormat_Update(char *pSamples,int Index)
+void WAVFormat_Update(char *pSamples, int Index, int Length)
 {
   Sint8 sample;
   int i;
@@ -149,16 +149,16 @@ void WAVFormat_Update(char *pSamples,int Index)
   if (bRecordingWav)
   {
     /* Output, better if did in two section if wrap */
-    for(i=0; i<SAMPLES_PER_FRAME; i++)
+    for(i = 0; i < Length; i++)
     {
       /* Convert sample to 'signed' byte */
-      sample = pSamples[(Index+i)%MIXBUFFER_SIZE] - 127;
+      sample = pSamples[(Index+i)%MIXBUFFER_SIZE] ^ 128;
       /* And store */
       fwrite(&sample, sizeof(Sint8), 1, WavFileHndl);
     }
 
     /* Add samples to wav file */
-    nWavOutputBytes += SAMPLES_PER_FRAME;
+    nWavOutputBytes += Length;
   }
 }
 

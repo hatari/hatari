@@ -33,13 +33,16 @@ extern int SoundPlayBackFrequencies[];
 extern BOOL bDisableSound;
 extern BOOL bSoundWorking;
 extern int OutputAudioFreqIndex;
+extern int SoundBufferSize;
+extern int CompleteSndBufIdx;
 
 extern void Audio_Init(void);
 extern void Audio_UnInit(void);
-extern BOOL Audio_CreateSoundBuffer(void);
+extern void Audio_Lock(void);
+extern void Audio_Unlock(void);
 extern void Audio_FreeSoundBuffer(void);
 extern void Audio_SetOutputAudioFreq(int Frequency);
-void Audio_EnableAudio(BOOL bEnable);
+extern void Audio_EnableAudio(BOOL bEnable);
 extern void Audio_WriteSamplesIntoBuffer(Sint8 *pSamples,int Index, int Length, int RampSetting, Sint8 *pDestBuffer);
 
 #endif  /* HATARI_AUDIO_H */

@@ -12,10 +12,10 @@
 /* Envelope shape table */
 typedef struct
 {
-  int WaveStart[4],WaveDelta[4];
+  int WaveStart[4], WaveDelta[4];
 } ENVSHAPE;
 
-#define MIXBUFFER_SIZE    4096                 /* Size of circular buffer to store sample to (44Khz) */
+#define MIXBUFFER_SIZE    8192          /* Size of circular buffer to store sample to (44Khz) */
 
 #define SAMPLES_BUFFER_SIZE  1024
 /* Number of generated samples per frame (eg. 44Khz=882) : */
@@ -28,9 +28,8 @@ typedef struct
 extern BOOL bWriteEnvelopeFreq,bWriteChannelAAmp,bWriteChannelBAmp,bWriteChannelCAmp;
 extern BOOL bEnvelopeFreqFlag;
 extern char MixBuffer[MIXBUFFER_SIZE];
-extern int CompleteSoundBuffer;
 extern int SoundCycles;
-
+extern int nGeneratedSamples;
 
 extern void Sound_Init(void);
 extern void Sound_Reset(void);

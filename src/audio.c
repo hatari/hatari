@@ -6,7 +6,7 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-static char rcsid[] = "Hatari $Id: audio.c,v 1.12 2003-03-04 19:27:19 thothy Exp $";
+static char rcsid[] = "Hatari $Id: audio.c,v 1.13 2003-03-10 18:46:06 thothy Exp $";
 
 #include <SDL.h>
 
@@ -31,12 +31,12 @@ int SoundPlayBackFrequencies[] =
 
 
 BOOL bDisableSound = FALSE;
-BOOL bSoundWorking = TRUE;                        /* Is sound OK */
-volatile BOOL bPlayingBuffer = FALSE;             /* Is playing buffer? */
-int OutputAudioFreqIndex = FREQ_22Khz;            /* Playback rate (11Khz,22Khz or 44Khz) */
+BOOL bSoundWorking = TRUE;                /* Is sound OK */
+volatile BOOL bPlayingBuffer = FALSE;     /* Is playing buffer? */
+int OutputAudioFreqIndex = FREQ_22Khz;    /* Playback rate (11Khz,22Khz or 44Khz) */
 float PlayVolume = 0.0f;
-const int SoundBufferSize = 1024;                 /* Size of sound buffer */
-SDL_AudioSpec desiredAudioSpec;                   /* We fill in the desired SDL audio options here */
+int SoundBufferSize = 1024;               /* Size of sound buffer */
+int CompleteSndBufIdx;                    /* Replay-index into MixBuffer */
 
 
 
@@ -47,8 +47,23 @@ SDL_AudioSpec desiredAudioSpec;                   /* We fill in the desired SDL 
 void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 {
   /* Pass completed buffer to audio system: */
-  Audio_WriteSamplesIntoBuffer(MixBuffer, CompleteSoundBuffer, SoundBufferSize,
+  Audio_WriteSamplesIntoBuffer(MixBuffer, CompleteSndBufIdx, len,
                                (bEmulationActive)?RAMP_UP:RAMP_DOWN, stream);
+
+  /* We should now have generated a complete frame of samples.
+   * However, for slow systems we have to check how many generated samples
+   * we may advance... */
+  if(nGeneratedSamples >= len)
+  {
+    CompleteSndBufIdx += len;
+    nGeneratedSamples -= len;
+  }
+  else
+  {
+    CompleteSndBufIdx += nGeneratedSamples;
+    nGeneratedSamples = 0;
+  }
+  CompleteSndBufIdx = CompleteSndBufIdx % MIXBUFFER_SIZE;
 }
 
 
@@ -59,6 +74,8 @@ void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 */
 void Audio_Init(void)
 {
+  SDL_AudioSpec desiredAudioSpec;    /* We fill in the desired SDL audio options here */
+
   /* Is enabled? */
   if(bDisableSound)
   {
@@ -81,17 +98,24 @@ void Audio_Init(void)
 
   /* Set up SDL audio: */
   desiredAudioSpec.freq = SoundPlayBackFrequencies[OutputAudioFreqIndex];
-  desiredAudioSpec.format = AUDIO_S8;            /* 8 Bit unsigned */
-  desiredAudioSpec.channels = 1;                 /* Mono */
-  desiredAudioSpec.samples = SoundBufferSize;    /* Buffer size */
+  desiredAudioSpec.format = AUDIO_S8;           /* 8 Bit signed */
+  desiredAudioSpec.channels = 1;                /* Mono */
+  desiredAudioSpec.samples = 1024;              /* Buffer size */
   desiredAudioSpec.callback = Audio_CallBack;
   desiredAudioSpec.userdata = NULL;
-  if( SDL_OpenAudio(&desiredAudioSpec, NULL) )   /* Open audio device */
+
+  if( SDL_OpenAudio(&desiredAudioSpec, NULL) )  /* Open audio device */
   {
     fprintf(stderr, "Can't use audio: %s\n", SDL_GetError());
     bSoundWorking = FALSE;
     ConfigureParams.Sound.bEnableSound = FALSE;
     return;
+  }
+
+  SoundBufferSize = desiredAudioSpec.size;      /* May be different than the requested one! */
+  if(SoundBufferSize > MIXBUFFER_SIZE/2)
+  {
+    fprintf(stderr, "Warning: Soundbuffer size is too big!\n");
   }
 
   /* All OK */
@@ -111,6 +135,26 @@ void Audio_UnInit(void)
   Audio_EnableAudio(FALSE);
 
   SDL_CloseAudio();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Lock the audio sub system so that the callback function will not be called.
+*/
+void Audio_Lock(void)
+{
+  SDL_LockAudio();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Unlock the audio sub system so that the callback function will be called again.
+*/
+void Audio_Unlock(void)
+{
+  SDL_UnlockAudio();
 }
 
 

@@ -19,7 +19,9 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-static char rcsid[] = "Hatari $Id: sound.c,v 1.7 2003-03-04 19:27:20 thothy Exp $";
+static char rcsid[] = "Hatari $Id: sound.c,v 1.8 2003-03-10 18:46:07 thothy Exp $";
+
+#include <SDL_types.h>
 
 #include "main.h"
 #include "decode.h"
@@ -37,7 +39,7 @@ static char rcsid[] = "Hatari $Id: sound.c,v 1.7 2003-03-04 19:27:20 thothy Exp 
 #include "wavFormat.h"
 #include "ymFormat.h"
 
-#define LONGLONG long long  /* ??? */
+#define LONGLONG Uint64
 
 #define ENVELOPE_PERIOD(Fine,Coarse)  (((unsigned long)Coarse)<<8) + (unsigned long)Fine
 #define NOISE_PERIOD(Freq)            ((((unsigned long)Freq)&0x1f)<<11)
@@ -59,13 +61,14 @@ int Channel_A_Buffer[SAMPLES_BUFFER_SIZE],Channel_B_Buffer[SAMPLES_BUFFER_SIZE],
 char MixTable[MIXTABLE_SIZE];                                   /* -ve and +ve range */
 char *pMixTable = &MixTable[MIXTABLE_SIZE/2];                   /* Signed index into above */
 BOOL bWriteEnvelopeFreq;                                        /* Did write to register '13' - causes frequency reset */
-BOOL bWriteChannelAAmp,bWriteChannelBAmp,bWriteChannelCAmp;     /* Did write to amplitude registers? */
+BOOL bWriteChannelAAmp, bWriteChannelBAmp, bWriteChannelCAmp;   /* Did write to amplitude registers? */
 BOOL bEnvelopeFreqFlag;                                         /* As above, but cleared each frame for YM saving */
 int nSamplesToGenerate;                                         /* How many samples are needed for this time-frame */
 /* Buffer to store circular samples */
 char MixBuffer[MIXBUFFER_SIZE];
-int CompleteSoundBuffer,ActiveSoundBuffer;                      /* Index of complete and current into above mix buffer */
+int ActiveSndBufIdx;                                            /* Current working index into above mix buffer */
 int SoundCycles;
+int nGeneratedSamples;                                          /* Generated samples since audio buffer update */
 
 
 /*-----------------------------------------------------------------------*/
@@ -124,7 +127,9 @@ void Sound_Reset(void)
 
   /* Clear cycle counts, buffer index and register '13' flags */
   SoundCycles = 0;
-  CompleteSoundBuffer = ActiveSoundBuffer = 0;
+  CompleteSndBufIdx = 0;
+  ActiveSndBufIdx =  (SoundBufferSize + SAMPLES_PER_FRAME) % MIXBUFFER_SIZE;
+  nGeneratedSamples = 0;
   bEnvelopeFreqFlag = FALSE;
   bWriteEnvelopeFreq = FALSE;
   bWriteChannelAAmp = bWriteChannelBAmp = bWriteChannelCAmp = FALSE;
@@ -145,7 +150,11 @@ void Sound_Reset(void)
 */
 void Sound_ClearMixBuffer(void)
 {
+  Audio_Lock();
+
   Memory_Clear(MixBuffer, MIXBUFFER_SIZE);      /* Clear buffer */
+
+  Audio_Unlock();
 }
 
 
@@ -229,8 +238,8 @@ void Sound_CreateEnvelopeShapes(void)
 /*-----------------------------------------------------------------------*/
 /*
   Create table to clip samples top 8-bit range
-  This keeps then 'signed', although DirectSound wants 'unsigned' values but
-  we keep them signed so we can vary the volume easily
+  This keeps then 'signed', although many sound carts want 'unsigned' values,
+  but we keep them signed so we can vary the volume easily.
 */
 void Sound_CreateSoundMixClipTable(void)
 {
@@ -437,7 +446,7 @@ void Sound_GenerateChannel(int *pBuffer, unsigned char ToneFine, unsigned char T
 /*
   Generate samples for all channels during this time-frame
 */
-void Sound_GenerateSamples(void)
+static void Sound_GenerateSamples(void)
 {
   int *pChannelA=Channel_A_Buffer, *pChannelB=Channel_B_Buffer, *pChannelC=Channel_C_Buffer;
   int i;
@@ -454,10 +463,18 @@ void Sound_GenerateSamples(void)
     Sound_GenerateChannel(pChannelB,PSGRegisters[PSG_REG_CHANNEL_B_FINE],PSGRegisters[PSG_REG_CHANNEL_B_COARSE],PSGRegisters[PSG_REG_CHANNEL_B_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[1],1);
     Sound_GenerateChannel(pChannelC,PSGRegisters[PSG_REG_CHANNEL_C_FINE],PSGRegisters[PSG_REG_CHANNEL_C_COARSE],PSGRegisters[PSG_REG_CHANNEL_C_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[2],2);
 
+    /* Make sure that we don't interfere with the audio callback function */
+    Audio_Lock();
+
     /* Mix channels together, using table to clip and also convert to 'unsigned char' */
     for(i=0; i<nSamplesToGenerate; i++)
-      MixBuffer[(i+ActiveSoundBuffer)%MIXBUFFER_SIZE] = pMixTable[(*pChannelA++) + (*pChannelB++) + (*pChannelC++)];
-    ActiveSoundBuffer = (ActiveSoundBuffer+nSamplesToGenerate)%MIXBUFFER_SIZE;
+      MixBuffer[(i+ActiveSndBufIdx)%MIXBUFFER_SIZE] = pMixTable[(*pChannelA++) + (*pChannelB++) + (*pChannelC++)];
+
+    ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
+    nGeneratedSamples += nSamplesToGenerate;
+
+    /* Allow audio callback function to occur again */
+    Audio_Unlock();
 
     /* Reset the write to register '13' flag */
     bWriteEnvelopeFreq = FALSE;
@@ -469,37 +486,32 @@ void Sound_GenerateSamples(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  On each VBL(50fps) complete samples so DirectSound has something to copy
+  This is called to built samples up until this clock cycle
 */
-void Sound_Update_VBL(void)
+void Sound_Update(void)
 {
-  /* Find how many to generate(enough to fill VBL) */
+  int OldSndBufIdx = ActiveSndBufIdx;
+
+  /* Find how many to generate */
   Sound_SetSamplesPassed();
   /* And generate */
   Sound_GenerateSamples();
 
-  /* We should now have generated a frame of samples, give or take a few */
-  /* So, reset pointers(to keep exact time) and ready for next completed buffer */
-  ActiveSoundBuffer = CompleteSoundBuffer;
-  CompleteSoundBuffer = (CompleteSoundBuffer+SAMPLES_PER_FRAME)%MIXBUFFER_SIZE;
   /* Save to WAV file, if open */
-  WAVFormat_Update(MixBuffer,CompleteSoundBuffer);
-
-  /* Clear write to register '13', used for YM file saving */
-  bEnvelopeFreqFlag = FALSE;
+  WAVFormat_Update(MixBuffer, OldSndBufIdx, nSamplesToGenerate);
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  This is called to built samples up until this clock cycle
+  On each VBL (50fps) complete samples.
 */
-void Sound_Update(void)
+void Sound_Update_VBL(void)
 {
-  /* Find how many to generate */
-  Sound_SetSamplesPassed();
-  /* And generate */
-  Sound_GenerateSamples();
+  Sound_Update();
+
+  /* Clear write to register '13', used for YM file saving */
+  bEnvelopeFreqFlag = FALSE;
 }
 
 
