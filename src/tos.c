@@ -15,14 +15,13 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.22 2004-12-08 10:27:53 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.23 2004-12-09 21:06:37 thothy Exp $";
 
 #include <SDL_endian.h>
 
 #include "main.h"
-#include "cart.h"
+#include "configuration.h"
 #include "debug.h"
-#include "dialog.h"
 #include "errlog.h"
 #include "file.h"
 #include "floppy.h"
@@ -94,16 +93,16 @@ typedef struct
   void *pNewData;       /* Pointer to the new bytes */
 } TOS_PATCH;
 
-static char pszHdvInit[] = "hdv_init - initialize drives";
-static char pszHdvBoot[] = "hdv_boot - load boot sector";
+//static char pszHdvInit[] = "hdv_init - initialize drives";  // obsolete - will be removed soon
+//static char pszHdvBoot[] = "hdv_boot - load boot sector";   // obsolete - will be removed soon
 static char pszDmaBoot[] = "boot from DMA bus";
-//static char pszSetConDrv[] = "set connected drives mask";
-//static char pszClrConDrv[] = "clear connected drives mask";
+//static char pszSetConDrv[] = "set connected drives mask";   // obsolete - will be removed soon
+//static char pszClrConDrv[] = "clear connected drives mask"; // obsolete - will be removed soon
 static char pszMouse[] = "working mouse in big screen resolutions";
 static char pszRomCheck[] = "ROM checksum";
 static char pszNoSteHw[] = "disable STE hardware access";
 
-static Uint8 pRtsOpcode[] = { 0x4E, 0x75 };  /* 0x4E75 = RTS */
+//static Uint8 pRtsOpcode[] = { 0x4E, 0x75 };  /* 0x4E75 = RTS */
 static Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
         0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
         0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71 };  /* 0x4E71 = NOP */
@@ -114,12 +113,12 @@ static Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
 /* The patches for the TOS: */
 static TOS_PATCH TosPatches[] =
 {
-  { 0x100, -1, pszHdvInit, TP_ALWAYS, 0xFC0D60, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x100, -1, pszHdvBoot, TP_ALWAYS, 0xFC1384, 0x4EB900FC, 6, pNopOpcodes }, /* JSR $FC0AF8 */
+  //{ 0x100, -1, pszHdvInit, TP_ALWAYS, 0xFC0D60, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x100, -1, pszHdvBoot, TP_ALWAYS, 0xFC1384, 0x4EB900FC, 6, pNopOpcodes }, /* JSR $FC0AF8 */
   { 0x100, -1, pszDmaBoot, TP_HD_OFF, 0xFC03D6, 0x610000D0, 4, pNopOpcodes }, /* BSR $FC04A8 */
 
-  { 0x102, -1, pszHdvInit, TP_ALWAYS, 0xFC0F44, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x102, -1, pszHdvBoot, TP_ALWAYS, 0xFC1568, 0x4EB900FC, 6, pNopOpcodes }, /* JSR $FC0C2E */
+  //{ 0x102, -1, pszHdvInit, TP_ALWAYS, 0xFC0F44, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x102, -1, pszHdvBoot, TP_ALWAYS, 0xFC1568, 0x4EB900FC, 6, pNopOpcodes }, /* JSR $FC0C2E */
   //{ 0x102, -1, pszClrConDrv, TP_HD_OFF, 0xFC0302, 0x42B90000, 6, pNopOpcodes }, /* CLR.L $4C2 */
   { 0x102, -1, pszDmaBoot, TP_HD_OFF, 0xFC0472, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $FC0558 */
   { 0x102, 0, pszMouse, TP_ALWAYS, 0xFD0030, 0xD2C147F9, 2, pMouseOpcode },
@@ -129,25 +128,25 @@ static TOS_PATCH TosPatches[] =
   { 0x102, 6, pszMouse, TP_ALWAYS, 0xFCFEF0, 0xD2C147F9, 2, pMouseOpcode },
   { 0x102, 8, pszMouse, TP_ALWAYS, 0xFCFEFE, 0xD2C147F9, 2, pMouseOpcode },
 
-  { 0x104, -1, pszHdvInit, TP_ALWAYS, 0xFC16BA, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x104, -1, pszHdvBoot, TP_ALWAYS, 0xFC1CCE, 0x4EB900FC, 6, pNopOpcodes }, /* JSR $FC0BD8 */
+  //{ 0x104, -1, pszHdvInit, TP_ALWAYS, 0xFC16BA, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x104, -1, pszHdvBoot, TP_ALWAYS, 0xFC1CCE, 0x4EB900FC, 6, pNopOpcodes }, /* JSR $FC0BD8 */
   //{ 0x104, -1, pszClrConDrv, TP_HD_OFF, 0xFC02E6, 0x42AD04C2, 4, pNopOpcodes }, /* CLR.L $4C2(A5) */
   { 0x104, -1, pszDmaBoot, TP_HD_OFF, 0xFC0466, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $FC054C */
 
   //{ 0x205, -1, pszClrConDrv, TP_HD_OFF, 0xE002FC, 0x42B804C2, 4, pNopOpcodes }, /* CLR.L $4C2 */
   { 0x205, -1, pszDmaBoot, TP_HD_OFF, 0xE006AE, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $E00794 */
-  { 0x205, 0, pszHdvInit, TP_ALWAYS, 0xE0468C, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x205, 1, pszHdvInit, TP_ALWAYS, 0xE046E6, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x205, 2, pszHdvInit, TP_ALWAYS, 0xE04704, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x205, 4, pszHdvInit, TP_ALWAYS, 0xE04712, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x205, 5, pszHdvInit, TP_ALWAYS, 0xE046F4, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x205, 6, pszHdvInit, TP_ALWAYS, 0xE04704, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x205, 0, pszHdvBoot, TP_ALWAYS, 0xE04CA0, 0x4EB900E0, 6, pNopOpcodes }, /* JSR $E00E8E */
-  { 0x205, 1, pszHdvBoot, TP_ALWAYS, 0xE04CFA, 0x4EB900E0, 6, pNopOpcodes },
-  { 0x205, 2, pszHdvBoot, TP_ALWAYS, 0xE04D18, 0x4EB900E0, 6, pNopOpcodes },
-  { 0x205, 4, pszHdvBoot, TP_ALWAYS, 0xE04D26, 0x4EB900E0, 6, pNopOpcodes },
-  { 0x205, 5, pszHdvBoot, TP_ALWAYS, 0xE04D08, 0x4EB900E0, 6, pNopOpcodes },
-  { 0x205, 6, pszHdvBoot, TP_ALWAYS, 0xE04D18, 0x4EB900E0, 6, pNopOpcodes },
+  //{ 0x205, 0, pszHdvInit, TP_ALWAYS, 0xE0468C, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x205, 1, pszHdvInit, TP_ALWAYS, 0xE046E6, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x205, 2, pszHdvInit, TP_ALWAYS, 0xE04704, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x205, 4, pszHdvInit, TP_ALWAYS, 0xE04712, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x205, 5, pszHdvInit, TP_ALWAYS, 0xE046F4, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x205, 6, pszHdvInit, TP_ALWAYS, 0xE04704, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x205, 0, pszHdvBoot, TP_ALWAYS, 0xE04CA0, 0x4EB900E0, 6, pNopOpcodes }, /* JSR $E00E8E */
+  //{ 0x205, 1, pszHdvBoot, TP_ALWAYS, 0xE04CFA, 0x4EB900E0, 6, pNopOpcodes },
+  //{ 0x205, 2, pszHdvBoot, TP_ALWAYS, 0xE04D18, 0x4EB900E0, 6, pNopOpcodes },
+  //{ 0x205, 4, pszHdvBoot, TP_ALWAYS, 0xE04D26, 0x4EB900E0, 6, pNopOpcodes },
+  //{ 0x205, 5, pszHdvBoot, TP_ALWAYS, 0xE04D08, 0x4EB900E0, 6, pNopOpcodes },
+  //{ 0x205, 6, pszHdvBoot, TP_ALWAYS, 0xE04D18, 0x4EB900E0, 6, pNopOpcodes },
   /* An unpatched TOS 2.05 only works on STEs, so apply some anti-STE patches... */
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE00096, 0x42788900, 4, pNopOpcodes }, /* CLR.W $FFFF8900 */
   { 0x205, -1, pszNoSteHw, TP_ALWAYS, 0xE0009E, 0x31D88924, 4, pNopOpcodes }, /* MOVE.W (A0)+,$FFFF8924 */
@@ -170,20 +169,20 @@ static TOS_PATCH TosPatches[] =
   /* Checksum is total of TOS ROM image, but get incorrect results */
   /* as we've changed bytes in the ROM! So, just skip anyway! */
   { 0x206, -1, pszRomCheck, TP_ALWAYS, 0xE007FA, 0x2E3C0001, 4, pRomCheckOpcode },
-  // { 0x206, -1, pszClrConDrv, TP_HD_OFF, 0xE00362, 0x42B804C2, 4, pNopOpcodes }, /* CLR.L $4C2 */
+  //{ 0x206, -1, pszClrConDrv, TP_HD_OFF, 0xE00362, 0x42B804C2, 4, pNopOpcodes }, /* CLR.L $4C2 */
   { 0x206, -1, pszDmaBoot, TP_HD_OFF, 0xE00898, 0x610000E0, 4, pNopOpcodes }, /* BSR.W $E0097A */
-  { 0x206, 0, pszHdvInit, TP_ALWAYS, 0xE0518E, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x206, 1, pszHdvInit, TP_ALWAYS, 0xE051E8, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x206, 2, pszHdvInit, TP_ALWAYS, 0xE05206, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x206, 3, pszHdvInit, TP_ALWAYS, 0xE0518E, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x206, 6, pszHdvInit, TP_ALWAYS, 0xE05206, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x206, 8, pszHdvInit, TP_ALWAYS, 0xE05214, 0x4E56FFF0, 2, pRtsOpcode },
-  { 0x206, 0, pszHdvBoot, TP_ALWAYS, 0xE05944, 0x4EB900E0, 6, pNopOpcodes }, /* JSR  $E011DC */
-  { 0x206, 1, pszHdvBoot, TP_ALWAYS, 0xE0599E, 0x4EB900E0, 6, pNopOpcodes },
-  { 0x206, 2, pszHdvBoot, TP_ALWAYS, 0xE059BC, 0x4EB900E0, 6, pNopOpcodes },
-  { 0x206, 3, pszHdvBoot, TP_ALWAYS, 0xE05944, 0x4EB900E0, 6, pNopOpcodes },
-  { 0x206, 6, pszHdvBoot, TP_ALWAYS, 0xE059BC, 0x4EB900E0, 6, pNopOpcodes },
-  { 0x206, 8, pszHdvBoot, TP_ALWAYS, 0xE059CA, 0x4EB900E0, 6, pNopOpcodes },
+  //{ 0x206, 0, pszHdvInit, TP_ALWAYS, 0xE0518E, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x206, 1, pszHdvInit, TP_ALWAYS, 0xE051E8, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x206, 2, pszHdvInit, TP_ALWAYS, 0xE05206, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x206, 3, pszHdvInit, TP_ALWAYS, 0xE0518E, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x206, 6, pszHdvInit, TP_ALWAYS, 0xE05206, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x206, 8, pszHdvInit, TP_ALWAYS, 0xE05214, 0x4E56FFF0, 2, pRtsOpcode },
+  //{ 0x206, 0, pszHdvBoot, TP_ALWAYS, 0xE05944, 0x4EB900E0, 6, pNopOpcodes }, /* JSR  $E011DC */
+  //{ 0x206, 1, pszHdvBoot, TP_ALWAYS, 0xE0599E, 0x4EB900E0, 6, pNopOpcodes },
+  //{ 0x206, 2, pszHdvBoot, TP_ALWAYS, 0xE059BC, 0x4EB900E0, 6, pNopOpcodes },
+  //{ 0x206, 3, pszHdvBoot, TP_ALWAYS, 0xE05944, 0x4EB900E0, 6, pNopOpcodes },
+  //{ 0x206, 6, pszHdvBoot, TP_ALWAYS, 0xE059BC, 0x4EB900E0, 6, pNopOpcodes },
+  //{ 0x206, 8, pszHdvBoot, TP_ALWAYS, 0xE059CA, 0x4EB900E0, 6, pNopOpcodes },
 
   { 0, 0, NULL, 0, 0, 0, 0, NULL }
 };
@@ -311,7 +310,7 @@ static void TOS_SetDefaultMemoryConfig(void)
   }
   else
   {
-    STMemory_WriteLong(0x436, MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop-0x8000);   /* mem top - upper end of user memory(before 32k screen) */
+    STMemory_WriteLong(0x436, MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop-0x8000);   /* mem top - upper end of user memory (before 32k screen) */
     STMemory_WriteLong(0x42e, MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop);          /* phys top */
   }
   STMemory_WriteByte(0x424, MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryConfig);
@@ -322,7 +321,7 @@ static void TOS_SetDefaultMemoryConfig(void)
 
   /* Set TOS floppies */
   STMemory_WriteWord(0x446, nBootDrive);          /* Boot up on A(0) or C(2) */
-  STMemory_WriteWord(0x4a6, 0x2);                 /* Connected floppies A,B (0 or 2) */
+  //STMemory_WriteWord(0x4a6, 0x2);                 /* Connected floppies A,B (0 or 2) */
 
   ConnectedDriveMask = ConnectedDriveMaskList[ConfigureParams.HardDisc.nDriveList];
 

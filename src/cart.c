@@ -14,11 +14,13 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to a byte
   array and stored in 'cart_img[]'.
 */
-char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.4 2004-12-08 10:27:53 thothy Exp $";
+char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.5 2004-12-09 21:06:36 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
+#include "configuration.h"
 #include "stMemory.h"
+#include "vdi.h"
 
 
 /* Cartridge header with system initialization code */
@@ -87,9 +89,34 @@ unsigned char cart_img[] =
 */
 void Cart_LoadImage(void)
 {
-	/* Copy cartrige header into ST's cartridge memory */
-	memcpy((char *)STRam+0xFA0000, cart_hdr, sizeof(cart_hdr));
+	char *pCartFileName = ConfigureParams.Rom.szCartridgeImageFileName;
 
-	/* Copy 'cart.img' file into ST's cartridge memory */
-	memcpy((char *)STRam+0xFA1000, cart_img, sizeof(cart_img));
+	/* "Clear" cartridge ROM space */
+	memset(&STRam[0xfa0000], 0xff, 0x20000);
+
+	if (bUseVDIRes || ConfigureParams.HardDisc.bUseHardDiscDirectories)
+	{
+		/* Copy cartrige header into ST's cartridge memory */
+		memcpy(&STRam[0xfa0000], cart_hdr, sizeof(cart_hdr));
+
+		/* Copy 'cart.img' file into ST's cartridge memory */
+		memcpy(&STRam[0xfa1000], cart_img, sizeof(cart_img));
+	}
+	else if (strlen(pCartFileName) > 0)
+	{
+		/* Check if we can load an external cartridge file: */
+		if (bUseVDIRes)
+			fprintf(stderr, "Warning: Cartridge can't be used together with extended VDI resolution!\n");
+		else if (ConfigureParams.HardDisc.bUseHardDiscDirectories)
+			fprintf(stderr, "Warning: Cartridge can't be used together with GEMDOS harddisc emulation!\n");
+		else if (!File_Exists(pCartFileName))
+			fprintf(stderr, "Cartridge file not found: %s\n", pCartFileName);
+		else if (File_Length(pCartFileName) > 0x20000)
+			fprintf(stderr, "Cartridge file %s is too big.\n", pCartFileName);
+		else
+		{
+			/* Now we can load it: */
+			File_Read(pCartFileName, &STRam[0xfa0000], NULL, NULL);
+		}
+	}
 }

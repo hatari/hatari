@@ -4,35 +4,40 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.1 2004-12-05 23:30:19 thothy Exp $";
+char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.2 2004-12-09 21:06:40 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "dialog.h"
 #include "sdlgui.h"
 #include "file.h"
-#include "memAlloc.h"
-#include "screen.h"
 
 
-#define DLGROM_TOSNAME    4
-#define DLGROM_TOSBROWSE  5
-#define DLGROM_EXIT       9
+#define DLGROM_TOSBROWSE  4
+#define DLGROM_TOSNAME    5
+#define DLGROM_CARTEJECT  9
+#define DLGROM_CARTBROWSE 10
+#define DLGROM_CARTNAME   11
+#define DLGROM_EXIT       13
 
 
 /* The ROM dialog: */
 static SGOBJ romdlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 40,20, NULL },
-	{ SGBOX, 0, 0, 1,1, 38,8, NULL },
-	{ SGTEXT, 0, 0, 16,2, 9,1, "TOS setup" },
-	{ SGTEXT, 0, 0, 2,5, 25,1, "TOS image (needs reset!):" },
-	{ SGTEXT, 0, 0, 2,7, 34,1, NULL },
-	{ SGBUTTON, 0, 0, 30,5, 8,1, "Browse" },
-	{ SGBOX, 0, 0, 1,10, 38,7, NULL },
-	{ SGTEXT, 0, 0, 12,11, 15,1, "Cartridge setup" },
-	{ SGTEXT, 0, 0, 10,14, 25,1, "... coming soon ..." },
-	{ SGBUTTON, 0, 0, 10,18, 20,1, "Back to main menu" },
+	{ SGBOX, 0, 0, 0,0, 52,23, NULL },
+	{ SGBOX, 0, 0, 1,1, 50,8, NULL },
+	{ SGTEXT, 0, 0, 22,2, 9,1, "TOS setup" },
+	{ SGTEXT, 0, 0, 2,5, 25,1, "TOS image:" },
+	{ SGBUTTON, 0, 0, 42,5, 8,1, "Browse" },
+	{ SGTEXT, 0, 0, 2,7, 46,1, NULL },
+	{ SGBOX, 0, 0, 1,10, 50,8, NULL },
+	{ SGTEXT, 0, 0, 18,11, 15,1, "Cartridge setup" },
+	{ SGTEXT, 0, 0, 2,14, 25,1, "Cartridge image:" },
+	{ SGBUTTON, 0, 0, 32,14, 8,1, "Eject" },
+	{ SGBUTTON, 0, 0, 42,14, 8,1, "Browse" },
+	{ SGTEXT, 0, 0, 2,16, 46,1, NULL },
+	{ SGTEXT, 0, 0, 2,19, 25,1, "A reset is needed after changing these options." },
+	{ SGBUTTON, 0, 0, 16,21, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -44,14 +49,21 @@ static SGOBJ romdlg[] =
 void DlgRom_Main(void)
 {
 	char *tmpname;
-	char dlgromname[35];
+	char szDlgTosName[47];
+	char szDlgCartName[47];
 	int but;
 
-	tmpname = Memory_Alloc(FILENAME_MAX);
+	tmpname = malloc(FILENAME_MAX);
+	if (tmpname == NULL)
+		return;
 
 	SDLGui_CenterDlg(romdlg);
-	File_ShrinkName(dlgromname, DialogParams.Rom.szTosImageFileName, 34);
-	romdlg[DLGROM_TOSNAME].txt = dlgromname;
+
+	File_ShrinkName(szDlgTosName, DialogParams.Rom.szTosImageFileName, sizeof(szDlgTosName)-1);
+	romdlg[DLGROM_TOSNAME].txt = szDlgTosName;
+
+	File_ShrinkName(szDlgCartName, DialogParams.Rom.szCartridgeImageFileName, sizeof(szDlgCartName)-1);
+	romdlg[DLGROM_CARTNAME].txt = szDlgCartName;
 
 	do
 	{
@@ -64,12 +76,27 @@ void DlgRom_Main(void)
 			if (SDLGui_FileSelect(tmpname, NULL, FALSE))   /* Show and process the file selection dlg */
 			{
 				strcpy(DialogParams.Rom.szTosImageFileName, tmpname);
-				File_ShrinkName(dlgromname, DialogParams.Rom.szTosImageFileName, sizeof(dlgromname)-1);
+				File_ShrinkName(szDlgTosName, DialogParams.Rom.szTosImageFileName, sizeof(szDlgTosName)-1);
+			}
+			break;
+
+		 case DLGROM_CARTEJECT:
+			szDlgCartName[0] = 0;
+			DialogParams.Rom.szCartridgeImageFileName[0] = 0;
+			break;
+
+		 case DLGROM_CARTBROWSE:
+			strcpy(tmpname, DialogParams.Rom.szCartridgeImageFileName);
+			File_MakeAbsoluteName(tmpname);
+			if (SDLGui_FileSelect(tmpname, NULL, FALSE))   /* Show and process the file selection dlg */
+			{
+				strcpy(DialogParams.Rom.szCartridgeImageFileName, tmpname);
+				File_ShrinkName(szDlgCartName, DialogParams.Rom.szCartridgeImageFileName, sizeof(szDlgCartName)-1);
 			}
 			break;
 		}
 	}
 	while (but!=DLGROM_EXIT && !bQuitProgram);
 
-	Memory_Free(tmpname);
+	free(tmpname);
 }

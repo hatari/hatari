@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.65 2004-12-05 23:30:17 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.66 2004-12-09 21:06:37 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -231,6 +231,7 @@ static void Main_ShowOptions(void)
          "     or -d <dir>         (<dir> = root directory).\n"
          "  --hdimage <imagename> Emulate an ST harddrive with an image.\n"
          "  --tos <file>          Use TOS image <file>.\n"
+         "  --cartridge <file>    Use ROM cartridge image <file>.\n"
          "  --cpulevel <x>        Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
          "  --compatible          Use a more compatible (but slower) 68000 CPU mode.\n"
          "  --blitter             Enable blitter emulation (unstable!)\n"
@@ -370,6 +371,13 @@ static void Main_ReadParameters(int argc, char *argv[])
           fprintf(stderr,"Missing argument for --tos.\n");
         else
           strncpy(ConfigureParams.Rom.szTosImageFileName, argv[++i], sizeof(ConfigureParams.Rom.szTosImageFileName));
+      }
+      else if (!strcmp(argv[i],"--cartridge"))
+      {
+        if(i+1>=argc)
+          fprintf(stderr,"Missing argument for --cartridge.\n");
+        else
+          strncpy(ConfigureParams.Rom.szCartridgeImageFileName, argv[++i], sizeof(ConfigureParams.Rom.szCartridgeImageFileName));
       }
       else if (!strcmp(argv[i],"--cpulevel"))
       {
