@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-static char rcsid[] = "Hatari $Id: ikbd.c,v 1.14 2003-03-24 10:31:48 emanne Exp $";
+static char rcsid[] = "Hatari $Id: ikbd.c,v 1.15 2003-04-03 20:04:19 emanne Exp $";
 
 #include <time.h>
 
@@ -1330,7 +1330,7 @@ void IKBD_Cmd_Execute(void)
   For our emulation we bypass the ACIA (I've yet to see anything check for this)
   and add the byte directly into the keyboard input buffer.
 */
-void IKBD_RunKeyboardCommand(void)
+static void IKBD_RunKeyboardCommand(unsigned short ACIAByte)
 {
   int i=0;
 
@@ -1364,8 +1364,7 @@ void IKBD_RunKeyboardCommand(void)
 */
 void IKBD_SendByteToKeyboardProcessor(unsigned short bl)
 {
-  ACIAByte = bl;              /* Store byte to pass */
-  IKBD_RunKeyboardCommand();  /* And send */
+  IKBD_RunKeyboardCommand(bl);  /* And send */
 }
 
 
