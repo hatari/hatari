@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-static char rcsid[] = "Hatari $Id: gemdos.c,v 1.22 2003-06-17 19:37:35 thothy Exp $";
+static char rcsid[] = "Hatari $Id: gemdos.c,v 1.23 2003-07-20 22:52:32 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -431,6 +431,10 @@ void GemDOS_InitDrives()
 
     /* remove trailing slash, if any in the directory name */
     File_CleanFileName(emudrives[i]->hd_emulation_dir);
+
+    /* initialize current directory string, too (initially the same as hd_emulation_dir) */
+    strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
+    strcat(emudrives[i]->fs_currpath, "/");    /* Needs trailing slash! */
 
     /* set drive to 2 + number of ACSI partitions */
     emudrives[i]->hd_letter = 2 + nPartitions + i;
