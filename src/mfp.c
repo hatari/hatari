@@ -14,11 +14,10 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.17 2005-03-07 23:15:49 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.18 2005-04-05 14:41:30 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
-#include "debug.h"
 #include "fdc.h"
 #include "ikbd.h"
 #include "int.h"

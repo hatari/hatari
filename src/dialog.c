@@ -8,12 +8,11 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.44 2005-02-10 00:11:40 thothy Exp $";
+char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.45 2005-04-05 14:41:21 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "audio.h"
-#include "debug.h"
 #include "dialog.h"
 #include "file.h"
 #include "floppy.h"

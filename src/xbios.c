@@ -9,18 +9,21 @@
   We intercept and direct some XBios calls to handle the RS-232 etc. and help
   with floppy debugging.
 */
-char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.7 2004-07-25 13:50:30 thothy Exp $";
+char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.8 2005-04-05 14:41:32 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
-#include "debug.h"
 #include "floppy.h"
+#include "log.h"
 #include "m68000.h"
 #include "misc.h"
 #include "rs232.h"
 #include "screenSnapShot.h"
 #include "stMemory.h"
 #include "xbios.h"
+
+
+#define XBIOS_DEBUG 0
 
 
 /* List of Atari ST RS-232 baud rates */
@@ -51,7 +54,7 @@ static int BaudRates[] = {
 */
 static BOOL XBios_Floprd(unsigned long Params)
 {
-#ifdef DEBUG_TO_FILE
+#if XBIOS_DEBUG
   char *pBuffer;
   unsigned short int Dev,Sector,Side,Track,Count;
 
@@ -63,7 +66,8 @@ static BOOL XBios_Floprd(unsigned long Params)
   Side = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
   Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-  Debug_FDC("FLOPRD %s,%d,%d,%d,%d at addr 0x%X\n",EmulationDrives[Dev].szFileName,Side,Track,Sector,Count,PC);
+  Log_Printf(LOG_DEBUG, "FLOPRD %s,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].szFileName,
+             Side, Track, Sector, Count, m68k_getpc());
 #endif
 
   return(FALSE);
@@ -77,7 +81,7 @@ static BOOL XBios_Floprd(unsigned long Params)
 */
 static BOOL XBios_Flopwr(unsigned long Params)
 {
-#ifdef DEBUG_TO_FILE
+#if XBIOS_DEBUG
   char *pBuffer;
   unsigned short int Dev,Sector,Side,Track,Count;
 
@@ -89,7 +93,8 @@ static BOOL XBios_Flopwr(unsigned long Params)
   Side = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
   Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-  Debug_FDC("FLOPWR %s,%d,%d,%d,%d at addr 0x%X\n",EmulationDrives[Dev].szFileName,Side,Track,Sector,Count,PC);
+  Log_Printf(LOG_DEBUG, "FLOPWR %s,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].szFileName,
+             Side, Track, Sector, Count, m68k_getpc());
 #endif
 
   return(FALSE);
@@ -187,7 +192,7 @@ BOOL XBios(void)
   Params = Regs[REG_A7];
   XBiosCall = STMemory_ReadWord(Params);
 
-  /*Debug_File("XBIOS %d\n",XBiosCall);*/
+  /*Log_Printf(LOG_DEBUG, "XBIOS %d\n",XBiosCall);*/
 
   switch(XBiosCall)
   {

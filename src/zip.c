@@ -6,7 +6,7 @@
 
   Zipped disc support, uses zlib
 */
-char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.10 2005-02-13 16:18:50 thothy Exp $";
+char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.11 2005-04-05 14:41:32 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,9 +18,9 @@ char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.10 2005-02-13 16:18:50 thothy Exp $";
 
 #include "main.h"
 #include "dim.h"
-#include "errlog.h"
 #include "file.h"
 #include "floppy.h"
+#include "log.h"
 #include "msa.h"
 #include "st.h"
 #include "unzip.h"
@@ -125,7 +125,7 @@ zip_dir *ZIP_GetFiles(char *pszFileName)
         err = unzGoToNextFile(uf);
         if (err!=UNZ_OK)
         {
-          ErrLog_File("ERROR ZIP_GetFiles with zipfile\n");
+          Log_Printf(LOG_ERROR, "ZIP_GetFiles: Error in ZIP-file\n");
           /* deallocate memory */
           for(;i>0;i--)  free(filelist[i]);
           free(filelist);
@@ -379,8 +379,7 @@ static char *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
 
   if (unzLocateFile(uf,filename, 0)!=UNZ_OK)
     {
-      fprintf(stderr, "ERROR ZIP_ExtractFile could not find file in archive\n");
-      ErrLog_File("ERROR ZIP_ExtractFile could not find file in archive\n");
+      Log_Printf(LOG_ERROR, "ZIP_ExtractFile: could not find file in archive\n");
       return NULL;
     }
   
@@ -388,8 +387,7 @@ static char *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
   
   if (err!=UNZ_OK)
     {
-      fprintf(stderr, "ERROR ZIP_ExtractFile could not find file in archive\n");
-      ErrLog_File("ERROR ZIP_ExtractFile could not get file info\n");
+      Log_Printf(LOG_ERROR, "ZIP_ExtractFile: could not get file info\n");
       return NULL;
     }
   
@@ -404,8 +402,7 @@ static char *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
   err = unzOpenCurrentFile(uf);
   if (err!=UNZ_OK)
     {
-      fprintf(stderr, "ERROR ZIP_ExtractFile could not find file in archive\n");
-      ErrLog_File("ERROR ZIP_ExtractFile could not open file\n");
+      Log_Printf(LOG_ERROR, "ZIP_ExtractFile: could not open file\n");
       return(NULL);
     }
   
@@ -414,8 +411,7 @@ static char *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
       err = unzReadCurrentFile(uf,buf,size_buf);
       if (err<0)	
 	{
-	  fprintf(stderr, "ERROR ZIP_ExtractFile could not find file in archive\n");
-	  ErrLog_File("ERROR ZIP_ExtractFile could not read file\n");
+	  Log_Printf(LOG_ERROR, "ZIP_ExtractFile: could not read file\n");
 	  return(NULL);
 	}
     } while (err>0);

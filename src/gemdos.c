@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.36 2005-04-04 11:38:53 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.37 2005-04-05 14:41:24 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -30,7 +30,6 @@ char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.36 2005-04-04 11:38:53 thothy Ex
 #include "main.h"
 #include "cart.h"
 #include "tos.h"
-#include "debug.h"
 #include "configuration.h"
 #include "file.h"
 #include "floppy.h"

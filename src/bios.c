@@ -9,18 +9,21 @@
   We intercept and direct some Bios calls to handle input/output to RS-232
   or the printer etc...
 */
-char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.6 2005-04-01 11:14:45 thothy Exp $";
+char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.7 2005-04-05 14:41:20 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
-#include "debug.h"
 #include "floppy.h"
+#include "log.h"
 #include "m68000.h"
 #include "misc.h"
 #include "printer.h"
 #include "rs232.h"
 #include "stMemory.h"
 #include "bios.h"
+
+
+#define BIOS_DEBUG 0
 
 
 /*-----------------------------------------------------------------------*/
@@ -160,18 +163,18 @@ static BOOL Bios_Bconout(Uint32 Params)
 */
 static BOOL Bios_RWabs(Uint32 Params)
 {
-#ifdef DEBUG_TO_FILE
-	char *pBuffer;
+#if BIOS_DEBUG
+	Uint32 pBuffer;
 	Uint16 RWFlag, Number, RecNo, Dev;
 
 	/* Read details from stack */
 	RWFlag = STMemory_ReadWord(Params+SIZE_WORD);
-	pBuffer = (char *)STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
+	pBuffer = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
 	Number = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG);
 	RecNo = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 
-	Debug_FDC("RWABS %s,%d,0x%X,%d,%d\n",EmulationDrives[Dev].szFileName,RWFlag,(char *)STRAM_ADDR(pBuffer),RecNo,Number);
+	Log_Printf(LOG_DEBUG, "RWABS %s,%d,0x%X,%d,%d\n", EmulationDrives[Dev].szFileName,RWFlag, (char *)STRAM_ADDR(pBuffer), RecNo, Number);
 #endif
 
 	return FALSE;

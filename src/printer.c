@@ -23,10 +23,9 @@
     - corrected stupid string bug that altered the environment var HOME
 
 */
-char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.14 2004-04-19 08:53:34 thothy Exp $";
+char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.15 2005-04-05 14:41:30 thothy Exp $";
 
 #include "main.h"
-#include "debug.h"
 #include "dialog.h"
 #include "file.h"
 #include "printer.h"

@@ -8,11 +8,10 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.31 2005-02-12 17:04:50 thothy Exp $";
+char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.32 2005-04-05 14:41:28 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
-#include "debug.h"
 #include "gemdos.h"
 #include "hatari-glue.h"
 #include "int.h"

@@ -16,14 +16,13 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.11 2005-03-07 23:15:49 thothy Exp $";
+char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.12 2005-04-05 14:41:29 thothy Exp $";
 
 #include <SDL_types.h>
 #include <errno.h>
 
 #include "main.h"
 #include "blitter.h"
-#include "debug.h"
 #include "dialog.h"
 #include "fdc.h"
 #include "file.h"

@@ -14,12 +14,11 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.22 2005-03-07 23:15:49 thothy Exp $";
+char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.23 2005-04-05 14:41:26 thothy Exp $";
 
 #include <time.h>
 
 #include "main.h"
-#include "debug.h"
 #include "gemdos.h"
 #include "ikbd.h"
 #include "int.h"

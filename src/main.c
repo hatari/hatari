@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.72 2005-04-04 15:26:12 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.73 2005-04-05 14:41:29 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -17,9 +17,7 @@ char Main_rcsid[] = "Hatari $Id: main.c,v 1.72 2005-04-04 15:26:12 thothy Exp $"
 #include "configuration.h"
 #include "dialog.h"
 #include "audio.h"
-#include "debug.h"
 #include "joy.h"
-#include "errlog.h"
 #include "file.h"
 #include "floppy.h"
 #include "gemdos.h"
@@ -27,6 +25,7 @@ char Main_rcsid[] = "Hatari $Id: main.c,v 1.72 2005-04-04 15:26:12 thothy Exp $"
 #include "ikbd.h"
 #include "ioMem.h"
 #include "keymap.h"
+#include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "misc.h"
@@ -554,9 +553,8 @@ int main(int argc, char *argv[])
 
   szBootDiscImage[0] = 0;
 
-  /* Create debug files */
-  Debug_OpenFiles();
-  ErrLog_OpenFile();
+  /* Open debug log file */
+  Log_Init();
 
   /* Set default configuration values: */
   Configuration_SetDefault();
@@ -582,9 +580,8 @@ int main(int argc, char *argv[])
   /* Un-init emulation system */
   Main_UnInit();
 
-  /* Close debug files */
-  ErrLog_CloseFile();
-  Debug_CloseFiles();
+  /* Close debug log file */
+  Log_UnInit();
 
   return(0);
 }

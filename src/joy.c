@@ -9,16 +9,15 @@
   NOTE Also the ST uses the joystick port 1 as the default controller
          - so we allocate our joysticks  with index 1 and then 0 so these match.
 */
-char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.4 2004-04-19 08:53:33 thothy Exp $";
+char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.5 2005-04-05 14:41:27 thothy Exp $";
 
 #include <SDL.h>
 
 #include "main.h"
 #include "configuration.h"
-#include "debug.h"
 #include "dialog.h"
-#include "errlog.h"
 #include "joy.h"
+#include "log.h"
 #include "video.h"
 
 #define JOY_BUTTON1  1
@@ -56,7 +55,7 @@ void Joy_Init(void)
     if(sdlJoystick[JoyID]!=NULL)
     {
       /* Set as working (NOTE we assign ST joysticks 1 first), and store ID */
-      ErrLog_File("Joystick: %d found\n", JoyID);
+      Log_Printf(LOG_DEBUG, "Joystick: %d found\n", JoyID);
       bJoystickWorking[JoyID] = TRUE;
       JoyID--;
     }

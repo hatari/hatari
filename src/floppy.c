@@ -21,19 +21,18 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.23 2005-03-10 09:41:38 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.24 2005-04-05 14:41:23 thothy Exp $";
 
 #include <sys/stat.h>
 
 #include <SDL_endian.h>
 
 #include "main.h"
-#include "debug.h"
 #include "configuration.h"
 #include "dim.h"
-#include "errlog.h"
 #include "file.h"
 #include "floppy.h"
+#include "log.h"
 #include "memorySnapShot.h"
 #include "misc.h"
 #include "msa.h"
@@ -468,9 +467,9 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
       *pnSectorsPerTrack = nSectorsPerTrack;
 
     /* Debug check as if we read over the end of a track we read into side 2! */
-    if (Count>nSectorsPerTrack)
+    if (Count > nSectorsPerTrack)
     {
-      ErrLog_File("ERROR Floppy_ReadSectors reading over single track\n");
+      Log_Printf(LOG_DEBUG, "Floppy_ReadSectors: reading over single track\n");
     }
 
     /* Check that the side number (0 or 1) does not exceed the amount of sides (1 or 2).
@@ -478,24 +477,24 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
      * second disc side, but they also work with single side floppy drives) */
     if (Side >= nSides)
     {
-      fprintf(stderr, "Warning: Program tries to read from side %i of a disk "
-                      "image with %i sides!\n", Side+1, nSides);
+      Log_Printf(LOG_DEBUG, "Floppy_ReadSectors: Program tries to read from side %i "
+                 "of a disk image with %i sides!\n", Side+1, nSides);
       return FALSE;
     }
 
     /* Check if track number is in range */
     if (Track >= nImageTracks)
     {
-      fprintf(stderr, "Warning: Program tries to read from track %i of a disk "
-                      "image with only %i tracks!\n", Track, nImageTracks);
+      Log_Printf(LOG_DEBUG, "Floppy_ReadSectors: Program tries to read from track %i "
+                 "of a disk image with only %i tracks!\n", Track, nImageTracks);
       return FALSE;
     }
 
     /* Check if sector number is in range */
     if (Sector <= 0 || Sector > nSectorsPerTrack)
     {
-      fprintf(stderr, "Warning: Program tries to read from sector %i of a disk "
-                      "image with %i sectors per track!\n", Sector, nSectorsPerTrack);
+      Log_Printf(LOG_DEBUG, "Floppy_ReadSectors: Program tries to read from sector %i "
+                 "of a disk image with %i sectors per track!\n", Sector, nSectorsPerTrack);
       return FALSE;
     }
 
@@ -545,32 +544,32 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
       *pnSectorsPerTrack = nSectorsPerTrack;
 
     /* Debug check as if we write over the end of a track we write into side 2! */
-    if (Count>nSectorsPerTrack)
+    if (Count > nSectorsPerTrack)
     {
-      ErrLog_File("ERROR Floppy_WriteSectors reading over single track\n");
+      Log_Printf(LOG_DEBUG, "Floppy_WriteSectors: writing over single track\n");
     }
 
     /* Check that the side number (0 or 1) does not exceed the amount of sides (1 or 2). */
     if (Side >= nSides)
     {
-      fprintf(stderr, "Warning: Program tries to write to side %i of a disk "
-                      "image with %i sides!\n", Side+1, nSides);
+      Log_Printf(LOG_DEBUG, "Floppy_WriteSectors: Program tries to write to side %i "
+                 "of a disk image with %i sides!\n", Side+1, nSides);
       return FALSE;
     }
 
     /* Check if track number is in range */
     if (Track >= nImageTracks)
     {
-      fprintf(stderr, "Warning: Program tries to write to track %i of a disk "
-                      "image with only %i tracks!\n", Track, nImageTracks);
+      Log_Printf(LOG_DEBUG, "Floppy_WriteSectors: Program tries to write to track %i "
+                 "of a disk image with only %i tracks!\n", Track, nImageTracks);
       return FALSE;
     }
 
     /* Check if sector number is in range */
     if (Sector <= 0 || Sector > nSectorsPerTrack)
     {
-      fprintf(stderr, "Warning: Program tries to write to sector %i of a disk "
-                      "image with %i sectors per track!\n", Sector, nSectorsPerTrack);
+      Log_Printf(LOG_DEBUG, "Floppy_WriteSectors: Program tries to write to sector %i "
+                 "of a disk image with %i sectors per track!\n", Sector, nSectorsPerTrack);
       return FALSE;
     }
 

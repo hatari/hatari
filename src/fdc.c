@@ -12,10 +12,9 @@
   to perform the transfer of data from our disc image into the ST RAM area by simulating the
   DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.17 2005-02-25 13:28:44 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.18 2005-04-05 14:41:22 thothy Exp $";
 
 #include "main.h"
-#include "debug.h"
 #include "configuration.h"
 #include "fdc.h"
 #include "hdc.h"

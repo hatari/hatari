@@ -6,15 +6,14 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.22 2005-04-01 11:14:45 thothy Exp $";
+char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.23 2005-04-05 14:41:19 thothy Exp $";
 
 #include <SDL.h>
 
 #include "main.h"
 #include "audio.h"
 #include "configuration.h"
-#include "debug.h"
-#include "errlog.h"
+#include "log.h"
 #include "sound.h"
 
 
@@ -89,7 +88,7 @@ void Audio_Init(void)
 	if (!ConfigureParams.Sound.bEnableSound)
 	{
 		/* Stop any sound access */
-		ErrLog_File("Sound: Disabled\n");
+		Log_Printf(LOG_DEBUG, "Sound: Disabled\n");
 		bSoundWorking = FALSE;
 		return;
 	}
