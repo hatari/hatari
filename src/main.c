@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.42 2003-06-08 13:54:28 thothy Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.43 2003-06-22 20:20:35 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -290,6 +290,7 @@ void Main_ReadParameters(int argc, char *argv[])
           if(strlen(argv[i+1]) <= MAX_PATH )
           {
             ConfigureParams.HardDisc.bUseHardDiscDirectories = TRUE;
+            ConfigureParams.HardDisc.bBootFromHardDisc = TRUE;
             strcpy(ConfigureParams.HardDisc.szHardDiscDirectories[0], argv[i+1]);
           }
           else fprintf(stderr, "HD directory name too long!\n");
