@@ -1,3 +1,8 @@
+2003-03-09 (THH):
+  * Fixed TOS patching routine - it was only working on big endian machines
+    (Thanks to Tony Smolar for the hint!).
+  * IKBD_Cmd_ReadClock() should now work.
+
 2003-03-08 (THH):
   * Some parts of the code accessed the SR directly to read the IPL - however
     the UAE CPU core only updates the SR when doing a MakeSR() first. So this
@@ -16,7 +21,8 @@
   * Resynced Hatari's UAE CPU core with UAE 0.8.22 - this fixes some bugs in
     68k instructions like ABCD and SBCD.
   * Now only reinitializing the sound subsystem if really needed, this should
-    fix a problem with Linux ALSA sound driver.
+    fix a problem with Linux ALSA sound driver (Thanks to Tony Smolar for
+    discovering this problem!).
   * Added another patch for TOS 2.05 so that this TOS version should now work
     with Hatari, too.
 
