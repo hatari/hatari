@@ -1,5 +1,8 @@
 /*
-  Hatari
+  Hatari - printer.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   Printer communication. When bytes are sent fromo the ST they are sent on to these functions
   via 'Printer_TransferByteTo()'. This will then open a file or Windows printer and direct
@@ -21,6 +24,7 @@
     - corrected stupid string bug that altered the environment var HOME
 
 */
+static char rcsid[] = "Hatari $Id: printer.c,v 1.10 2003-08-12 14:44:34 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -46,29 +50,31 @@ static int nIdleCount;
 
 static FILE *PrinterFileHandle;
 
-char fname[MAX_FILENAME_LENGTH];
+
 /*-----------------------------------------------------------------------
   Initialise Printer
  -----------------------------------------------------------------------*/
 void Printer_Init(void)
 {
 #ifdef PRINTER_DEBUG
-  fprintf(stderr,"Printer_Init()\n");
+	fprintf(stderr,"Printer_Init()\n");
 #endif
-  /* FIXME: enable and disable printing via the GUI */
 
-  /* construct filename for printing.... */
-  if(getenv("HOME")!=NULL)
-  	sprintf(fname,"%s%s",getenv("HOME"),PRINTER_FILENAME);
-  else
-  	sprintf(fname,".%s",PRINTER_FILENAME);
+	/* A valid file name for printing is already set up in configuration.c.
+	 * But we check it again since the user might have entered an invalid
+	 * file name in the ~/.hatari.cfg file... */
+	if(strlen(ConfigureParams.Printer.szPrintToFileName) <= 1)
+	{
+		/* construct filename for printing.... */
+		if(getenv("HOME")!=NULL)
+			sprintf(ConfigureParams.Printer.szPrintToFileName, "%s%s", getenv("HOME"), PRINTER_FILENAME);
+		else
+			sprintf(ConfigureParams.Printer.szPrintToFileName, ".%s",PRINTER_FILENAME);
+	}
 
 #ifdef PRINTER_DEBUG
-  fprintf(stderr,"Filename for printing: %s \n",fname);
-  /* fprintf(stderr,"HOME: %s \n",getenv("HOME")); */
+	fprintf(stderr,"Filename for printing: %s \n", ConfigureParams.Printer.szPrintToFileName);
 #endif
-
-
 }
 
 
@@ -113,9 +119,8 @@ BOOL Printer_OpenDiscFile(void)
 
   bPrinterDiscFile = TRUE;
 
-  /* FIXME: allow setting of filename via GUI and sue that set filename here... */
   /* open printer file... */
-  PrinterFileHandle=fopen(fname,"a+");
+  PrinterFileHandle = fopen(ConfigureParams.Printer.szPrintToFileName, "a+");
   if(!PrinterFileHandle)
   	bPrinterDiscFile=FALSE;
 
