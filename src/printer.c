@@ -17,6 +17,9 @@
 	- removed MS Windows specific parts
 	- made printing to $HOME/hatari.prn possible
 
+  10 Aug 2003   Matthias Arndt
+    - corrected stupid string bug that altered the environment var HOME
+
 */
 
 #include "main.h"
@@ -43,7 +46,7 @@ static int nIdleCount;
 
 static FILE *PrinterFileHandle;
 
-char *fname;
+char fname[MAX_FILENAME_LENGTH];
 /*-----------------------------------------------------------------------
   Initialise Printer
  -----------------------------------------------------------------------*/
@@ -55,11 +58,14 @@ void Printer_Init(void)
   /* FIXME: enable and disable printing via the GUI */
 
   /* construct filename for printing.... */
-  fname=getenv("HOME");
-  strcat(fname,PRINTER_FILENAME);
+  if(getenv("HOME")!=NULL)
+  	sprintf(fname,"%s%s",getenv("HOME"),PRINTER_FILENAME);
+  else
+  	sprintf(fname,".%s",PRINTER_FILENAME);
 
 #ifdef PRINTER_DEBUG
   fprintf(stderr,"Filename for printing: %s \n",fname);
+  /* fprintf(stderr,"HOME: %s \n",getenv("HOME")); */
 #endif
 
 
