@@ -28,7 +28,7 @@
 
 /* #define PRINTER_DEBUG */
 
-#define PRINTERFILENAME "/hatari.prn"
+#define PRINTER_FILENAME "/hatari.prn"
 
 #define PRINTER_TAB_SETTING  8          /* A 'Tab' on the ST is 8 spaces */
 #define  PRINTER_IDLE_CLOSE  (4*50)     /* After 4 seconds, close printer */
