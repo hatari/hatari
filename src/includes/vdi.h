@@ -33,5 +33,6 @@ extern void VDI_SetResolution(int GEMRes, int GEMColour);
 extern BOOL VDI(void);
 extern void VDI_FixDesktopInf(void);
 extern void VDI_LineA(void);
+extern void VDI_Complete(void);
 
 #endif  /* VDI_H */

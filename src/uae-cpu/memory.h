@@ -8,8 +8,10 @@
   * Adaptation to Hatari by Thomas Huth
   */
 
-#ifndef UAEMEMORY
-#define UAEMEMORY
+#ifndef UAE_MEMORY_H
+#define UAE_MEMORY_H
+
+#include "maccess.h"
 
 
 /* Enabling this adds one additional native memory reference per 68k memory
@@ -181,4 +183,4 @@ extern void chipmem_wput (uaecptr, uae_u32) REGPARAM;
 extern void chipmem_bput (uaecptr, uae_u32) REGPARAM;
 
 
-#endif /* UAEMEMORY */
+#endif /* UAE_MEMORY_H */

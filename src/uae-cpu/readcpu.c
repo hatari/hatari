@@ -7,11 +7,8 @@
  */
 
 #include <ctype.h>
-/*
-#include "sysconfig.h"
-#include "config.h"
-#include "options.h"
-*/
+#include <string.h>
+
 #include "sysdeps.h"
 #include "readcpu.h"
 

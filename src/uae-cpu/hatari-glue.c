@@ -7,14 +7,11 @@
 #include "../includes/gemdos.h"
 #include "../includes/cart.h"
 #include "../includes/vdi.h"
+#include "../includes/stMemory.h"
 
-#ifndef UAESYSDEPS
 #include "sysdeps.h"
-#endif
-#ifndef UAEMEMORY
-#include "memory.h"
-#endif
 #include "maccess.h"
+#include "memory.h"
 #include "newcpu.h"
 
 #ifndef FALSE

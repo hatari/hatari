@@ -3,9 +3,7 @@
 #define HATARI_GLUE_H
 
 
-#ifndef UAESYSDEPS
 #include "sysdeps.h"
-#endif
 
 
 extern int illegal_mem;

@@ -15,8 +15,8 @@
   *
   */
 
-#ifndef UAESYSDEPS
-#define UAESYSDEPS
+#ifndef UAE_SYSDEPS_H
+#define UAE_SYSDEPS_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -160,4 +160,4 @@ typedef uae_u32 uaecptr;
 # define REGPARAM2
 #endif
 
-#endif /* ifndef UAESYSDEPS */
+#endif /* ifndef UAE_SYSDEPS_H */

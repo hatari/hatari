@@ -1,10 +1,10 @@
 # Makefile for Hatari
 
-# Set flags passed to the compiler (e.g. optimization flags)
-CMPLRFLAGS = -g -O2
-
 # Set the C compiler (e.g. gcc)
 CC = gcc
+
+# Set flags passed to the compiler (e.g. optimization flags)
+CMPLRFLAGS = -g -O2 -Wall -Wno-unused
 
 # Here you can define the default data directory for Hatari where it
 # looks for the default TOS image etc.
@@ -13,11 +13,14 @@ CC = gcc
 DATADIR = .
 
 # SDL-Library configuration:
-SDLLIB=$(shell sdl-config --libs)
-SDLFLAGS=$(shell sdl-config --cflags)
+SDLLIB = $(shell sdl-config --libs)
+SDLFLAGS = $(shell sdl-config --cflags)
+
+# Additional include directories:
+INCFLAGS = -I./includes -I./uae-cpu
 
 
-CFLAGS = -Wall -I./includes -I./uae-cpu $(CMPLRFLAGS) $(SDLFLAGS)
+CFLAGS = $(CMPLRFLAGS) $(INCFLAGS) $(SDLFLAGS)
 
 
 CPUOBJS = ./uae-cpu/hatari-glue.o ./uae-cpu/memory.o ./uae-cpu/newcpu.o \
@@ -39,9 +42,10 @@ OBJS = $(SRCS:.c=.o)
 
 hatari: $(OBJS) cpu
 	$(CC) $(OBJS) $(CPUOBJS) $(SDLLIB) -o hatari
+#	strip hatari
 
 cpu:
-	$(MAKE) -C uae-cpu/ CFLAGS="$(CMPLRFLAGS) $(SDLFLAGS)" CC="$(CC)" all
+	$(MAKE) -C uae-cpu/ CC="$(CC)" CMPLRFLAGS="$(CMPLRFLAGS)" SDLFLAGS="$(SDLFLAGS)" all
 
 clean:
 	rm -f *.o hatari

@@ -22,6 +22,7 @@
  */
 
 #include <ctype.h>
+#include <string.h>
 
 #include "sysdeps.h"
 #include "readcpu.h"
@@ -505,9 +506,10 @@ static void genastore (char *from, amodes mode, char *reg, wordsizes size, char 
 static void genmovemel (uae_u16 opcode)
 {
     char getcode[100];
-    int size = table68k[opcode].size == sz_long ? 4 : 2;
+    int bMovemLong = (table68k[opcode].size == sz_long);
+    int size = bMovemLong ? 4 : 2;
 
-    if (table68k[opcode].size == sz_long) {
+    if (bMovemLong) {
 	strcpy (getcode, "get_long(srca)");
     } else {
 	strcpy (getcode, "(uae_s32)(uae_s16)get_word(srca)");
@@ -515,22 +517,22 @@ static void genmovemel (uae_u16 opcode)
 
     printf ("\tuae_u16 mask = %s;\n", gen_nextiword ());
     printf ("\tunsigned int dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
-    genamode (table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, 1);
     printf ("\tretcycles = 0;\n");
+    genamode (table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, 1);
     start_brace ();
     printf ("\twhile (dmask) { m68k_dreg(regs, movem_index1[dmask]) = %s;"
-            " srca += %d; dmask = movem_next[dmask]; retcycles+=1; }\n",
-	    getcode, size);
+            " srca += %d; dmask = movem_next[dmask]; retcycles+=%d; }\n",
+	    getcode, size, (bMovemLong ? 8 : 4));
     printf ("\twhile (amask) { m68k_areg(regs, movem_index1[amask]) = %s;"
-            " srca += %d; amask = movem_next[amask]; retcycles+=1; }\n",
-	    getcode, size);
+            " srca += %d; amask = movem_next[amask]; retcycles+=%d; }\n",
+	    getcode, size, (bMovemLong ? 8 : 4));
 
     if (table68k[opcode].dmode == Aipi)
 	printf ("\tm68k_areg(regs, dstreg) = srca;\n");
 
     /* Better cycles - experimental! (Thothy) */
     switch(table68k[opcode].dmode)
-     {
+    {
       case Aind:  insn_n_cycles=12; break;
       case Aipi:  insn_n_cycles=12; break;
       case Ad16:  insn_n_cycles=16; break;
@@ -539,69 +541,59 @@ static void genmovemel (uae_u16 opcode)
       case absl:  insn_n_cycles=20; break;
       case PC16:  insn_n_cycles=16; break;
       case PC8r:  insn_n_cycles=18; break;
-     }
-    /*I had some very stranges crashes when I included following code, so better leave it commented out* */
-#if 1
-    if(table68k[opcode].size==sz_long)
-       sprintf(exactCpuCycles," return (%i+retcycles*8);", insn_n_cycles);
-      else
-       sprintf(exactCpuCycles," return (%i+retcycles*4);", insn_n_cycles);
-#endif
+    }
+    sprintf(exactCpuCycles," return (%i+retcycles);", insn_n_cycles);
 }
 
 static void genmovemle (uae_u16 opcode)
 {
     char putcode[100];
-    int size = table68k[opcode].size == sz_long ? 4 : 2;
-    if (table68k[opcode].size == sz_long) {
+    int bMovemLong = (table68k[opcode].size == sz_long);
+    int size = bMovemLong ? 4 : 2;
+
+    if (bMovemLong) {
 	strcpy (putcode, "put_long(srca,");
     } else {
 	strcpy (putcode, "put_word(srca,");
     }
 
     printf ("\tuae_u16 mask = %s;\n", gen_nextiword ());
+    printf ("\tretcycles = 0;\n");
     genamode (table68k[opcode].dmode, "dstreg", table68k[opcode].size, "src", 2, 1);
     if (using_prefetch)
 	sync_m68k_pc ();
 
-    printf ("\tretcycles = 0;\n");
     start_brace ();
     if (table68k[opcode].dmode == Apdi) {
         printf ("\tuae_u16 amask = mask & 0xff, dmask = (mask >> 8) & 0xff;\n");
         printf ("\twhile (amask) { srca -= %d; %s m68k_areg(regs, movem_index2[amask]));"
-                " amask = movem_next[amask]; retcycles+=1; }\n",
-                size, putcode);
+                " amask = movem_next[amask]; retcycles+=%d; }\n",
+                size, putcode, (bMovemLong ? 8 : 4));
         printf ("\twhile (dmask) { srca -= %d; %s m68k_dreg(regs, movem_index2[dmask]));"
-                " dmask = movem_next[dmask]; retcycles+=1; }\n",
-                size, putcode);
+                " dmask = movem_next[dmask]; retcycles+=%d; }\n",
+                size, putcode, (bMovemLong ? 8 : 4));
         printf ("\tm68k_areg(regs, dstreg) = srca;\n");
     } else {
         printf ("\tuae_u16 dmask = mask & 0xff, amask = (mask >> 8) & 0xff;\n");
         printf ("\twhile (dmask) { %s m68k_dreg(regs, movem_index1[dmask])); srca += %d;"
-                " dmask = movem_next[dmask]; retcycles+=1; }\n",
-                putcode, size);
+                " dmask = movem_next[dmask]; retcycles+=%d; }\n",
+                putcode, size, (bMovemLong ? 8 : 4));
         printf ("\twhile (amask) { %s m68k_areg(regs, movem_index1[amask])); srca += %d;"
-                " amask = movem_next[amask]; retcycles+=1; }\n",
-                putcode, size);
+                " amask = movem_next[amask]; retcycles+=%d; }\n",
+                putcode, size, (bMovemLong ? 8 : 4));
     }
 
     /* Better cycles - experimental! (Thothy) */
     switch(table68k[opcode].dmode)
-     {
+    {
       case Aind:  insn_n_cycles=8; break;
       case Apdi:  insn_n_cycles=8; break;
       case Ad16:  insn_n_cycles=12; break;
       case Ad8r:  insn_n_cycles=14; break;
       case absw:  insn_n_cycles=12; break;
       case absl:  insn_n_cycles=16; break;
-     }
-    /*I had some very stranges crashes when I included following code, so better leave it commented out* */
-#if 1
-    if(table68k[opcode].size==sz_long)
-       sprintf(exactCpuCycles," return (%i+retcycles*8);", insn_n_cycles);
-      else
-       sprintf(exactCpuCycles," return (%i+retcycles*4);", insn_n_cycles);
-#endif
+    }
+    sprintf(exactCpuCycles," return (%i+retcycles);", insn_n_cycles);
 }
 
 
@@ -1116,10 +1108,12 @@ static void gen_opcode (unsigned long int opcode)
 	genflags (flag_logical, curi->size, "0", "", "");
 	genastore ("0", curi->smode, "srcreg", curi->size, "src");
         if(curi->size==sz_long)
+        {
           if(curi->smode==Dreg)
             insn_n_cycles += 2;
            else
             insn_n_cycles += 4;
+        }
         if(curi->smode!=Dreg)
           insn_n_cycles += 4;
 	break;

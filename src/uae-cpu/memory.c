@@ -14,16 +14,12 @@
 #include "maccess.h"
 #include "memory.h"
 #include "../includes/tos.h"
-/*
-#include "config.h"
-#include "options.h"
-#include "uae.h"
-*/
+#include "../includes/intercept.h"
+#include "../includes/reset.h"
+
 #ifdef USE_MAPPED_MEMORY
 #include <sys/mman.h>
 #endif
-
-#include "../includes/intercept.h"
 
 
 extern   unsigned char STRam[16*1024*1024];  /* See hatari.c */
@@ -86,7 +82,7 @@ uae_u32 REGPARAM2 dummy_lget (uaecptr addr)
 {
     special_mem |= S_READ;
     if (illegal_mem)
-	write_log ("Illegal lget at %08lx\n", addr);
+	write_log ("Illegal lget at %08lx\n", (long)addr);
 
     return 0;
 }
@@ -95,7 +91,7 @@ uae_u32 REGPARAM2 dummy_wget (uaecptr addr)
 {
     special_mem |= S_READ;
     if (illegal_mem)
-	write_log ("Illegal wget at %08lx\n", addr);
+	write_log ("Illegal wget at %08lx\n", (long)addr);
 
     return 0;
 }
@@ -104,7 +100,7 @@ uae_u32 REGPARAM2 dummy_bget (uaecptr addr)
 {
     special_mem |= S_READ;
     if (illegal_mem)
-	write_log ("Illegal bget at %08lx\n", addr);
+	write_log ("Illegal bget at %08lx\n", (long)addr);
 
     return 0;
 }
@@ -113,25 +109,25 @@ void REGPARAM2 dummy_lput (uaecptr addr, uae_u32 l)
 {
     special_mem |= S_WRITE;
     if (illegal_mem)
-	write_log ("Illegal lput at %08lx\n", addr);
+	write_log ("Illegal lput at %08lx\n", (long)addr);
 }
 void REGPARAM2 dummy_wput (uaecptr addr, uae_u32 w)
 {
     special_mem |= S_WRITE;
     if (illegal_mem)
-	write_log ("Illegal wput at %08lx\n", addr);
+	write_log ("Illegal wput at %08lx\n", (long)addr);
 }
 void REGPARAM2 dummy_bput (uaecptr addr, uae_u32 b)
 {
     special_mem |= S_WRITE;
     if (illegal_mem)
-	write_log ("Illegal bput at %08lx\n", addr);
+	write_log ("Illegal bput at %08lx\n", (long)addr);
 }
 
 int REGPARAM2 dummy_check (uaecptr addr, uae_u32 size)
 {
     if (illegal_mem)
-	write_log ("Illegal check at %08lx\n", addr);
+	write_log ("Illegal check at %08lx\n", (long)addr);
 
     return 0;
 }
@@ -331,19 +327,19 @@ uae_u32 REGPARAM2 ROMmem_bget (uaecptr addr)
 void REGPARAM2 ROMmem_lput (uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
-	write_log ("Illegal ROMmem lput at %08lx\n", addr);
+	write_log ("Illegal ROMmem lput at %08lx\n", (long)addr);
 }
 
 void REGPARAM2 ROMmem_wput (uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
-	write_log ("Illegal ROMmem wput at %08lx\n", addr);
+	write_log ("Illegal ROMmem wput at %08lx\n", (long)addr);
 }
 
 void REGPARAM2 ROMmem_bput (uaecptr addr, uae_u32 b)
 {
     if (illegal_mem)
-	write_log ("Illegal ROMmem lput at %08lx\n", addr);
+	write_log ("Illegal ROMmem lput at %08lx\n", (long)addr);
 }
 
 int REGPARAM2 ROMmem_check (uaecptr addr, uae_u32 size)
@@ -446,9 +442,11 @@ static void init_mem_banks (void)
 #define MAKE_USER_PROGRAMS_BEHAVE 1
 void memory_init (void)
 {
+/*
     char buffer[4096];
     char *nam;
     int i, fd;
+*/
 
     allocated_STmem = STmem_size;
     allocated_TTmem = TTmem_size;

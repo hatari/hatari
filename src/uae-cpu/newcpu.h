@@ -9,8 +9,8 @@
   *
   */
 
-#ifndef UAENEWCPU
-#define UAENEWCPU
+#ifndef UAE_NEWCPU_H
+#define UAE_NEWCPU_H
 
 #include "readcpu.h"
 #include "m68k.h"
@@ -250,6 +250,7 @@ extern int m68k_move2c (int, uae_u32 *);
 extern int m68k_movec2 (int, uae_u32 *);
 extern void m68k_divl (uae_u32, uae_u32, uae_u16, uaecptr);
 extern void m68k_mull (uae_u32, uae_u32, uae_u16);
+extern void build_cpufunctbl(void);
 extern void init_m68k (void);
 extern void m68k_go (int);
 extern void m68k_dumpstate (FILE *, uaecptr *);
@@ -292,4 +293,4 @@ extern struct cputbl op_smalltbl_5_ff[];
 
 extern cpuop_func *cpufunctbl[65536];
 
-#endif	/* ifndef UAENEWCPU */
+#endif	/* UAE_NEWCPU_H */

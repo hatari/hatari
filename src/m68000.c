@@ -114,10 +114,12 @@ void M68000_Decode_MemorySnapShot_Capture(BOOL bSave)
 */
 void M68000_BusError(unsigned long addr)
 {
-  /* Reset PC's stack to normal(as may have done many calls) so return to
-     correct level after exception.
-     Enter here with 'ebp' as address we tried to access */
-  fprintf(stderr, "M68000_BusError at address $%lx\n", (long)addr);
+  if(BusAddressLocation!=0xff8a00 && BusAddressLocation!=0xff8900)
+  {
+    /* Print bus errors (except TOS' tests for blitter and DMA sound) */
+    fprintf(stderr, "M68000_BusError at address $%lx\n", (long)addr);
+  }
+
   BusAddressLocation=addr;               /* Store for exception frame */
   ExceptionVector = EXCEPTION_BUSERROR;  /* Handler */
   M68000_Exception();                    /* Cause trap */

@@ -7,16 +7,11 @@
 
 #include "sound.h"
 
-#ifndef UAESYSDEPS
 #include "sysdeps.h"
-#endif
-#ifndef UAEMEMORY
 #include "maccess.h"
 #include "memory.h"
-#endif
-#ifndef UAENEWCPU
 #include "newcpu.h"
-#endif
+
 #define Regs regs.regs       /* Ouah - uggly hack - FIXME! */
 #define SR regs.sr
 #define PC regs.pc

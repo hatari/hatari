@@ -16,11 +16,12 @@
 #include "newcpu.h"
 #include "compiler.h"
 #include "events.h"
+#include "../includes/main.h"
 #include "../includes/tos.h"
 #include "../includes/vdi.h"
 #include "../includes/cart.h"
+#include "../includes/debugui.h"
 
-extern int bQuitProgram;     /* Declared in main.c */
 
 
 struct flag_struct regflags;
@@ -312,8 +313,7 @@ uae_s32 ShowEA (FILE *f, int reg, amodes mode, wordsizes size, char *buf)
 	    sprintf (buffer,"(%s%c%d.%c*%d+%ld)+%ld == $%08lx", name,
 		    dp & 0x8000 ? 'A' : 'D', (int)r, dp & 0x800 ? 'L' : 'W',
 		    1 << ((dp >> 9) & 3),
-		    disp,outer,
-		    (unsigned long)addr);
+		    (long)disp, (long)outer, (unsigned long)addr);
 	} else {
 	  addr = m68k_areg(regs,reg) + (uae_s32)((uae_s8)disp8) + dispreg;
 	  sprintf (buffer,"(A%d, %c%d.%c*%d, $%02x) == $%08lx", reg,
@@ -359,8 +359,7 @@ uae_s32 ShowEA (FILE *f, int reg, amodes mode, wordsizes size, char *buf)
 	    sprintf (buffer,"(%s%c%d.%c*%d+%ld)+%ld == $%08lx", name,
 		    dp & 0x8000 ? 'A' : 'D', (int)r, dp & 0x800 ? 'L' : 'W',
 		    1 << ((dp >> 9) & 3),
-		    disp,outer,
-		    (unsigned long)addr);
+		    (long)disp, (long)outer, (unsigned long)addr);
 	} else {
 	  addr += (uae_s32)((uae_s8)disp8) + dispreg;
 	  sprintf (buffer,"(PC, %c%d.%c*%d, $%02x) == $%08lx", dp & 0x8000 ? 'A' : 'D',
@@ -434,7 +433,7 @@ static int verify_ea (int reg, amodes mode, wordsizes size, uae_u32 *val)
     int r;
     uae_u32 dispreg;
     uaecptr addr;
-    uae_s32 offset = 0;
+    /*uae_s32 offset = 0;*/
 
     switch (mode){
      case Dreg:
@@ -782,7 +781,7 @@ void Exception(int nr, uaecptr oldpc)
 	    put_long (m68k_areg(regs, 7)+2, BusAddressLocation);
 	    put_word (m68k_areg(regs, 7)+6, get_word(currpc));
             if( bEnableDebug && BusAddressLocation!=0xff8a00) {
-              fprintf(stderr,"Bus Error at address $%x, PC=$%x\n",BusAddressLocation,currpc);
+              fprintf(stderr,"Bus Error at address $%lx, PC=$%lx\n",BusAddressLocation,(long)currpc);
               DebugUI();
             }
         }
@@ -1276,7 +1275,12 @@ static int do_specialties (void)
     }
     while (regs.spcflags & SPCFLAG_STOP) {
 	do_cycles (4);
-	if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)){
+	if (regs.intmask>5) {
+            /* We still have to care about events when IPL==7 ! */
+            Main_EventHandler();
+            if(bQuitProgram)  unset_special(SPCFLAG_STOP);
+        }
+	if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
 	    /*int intr = intlev ();*/
 	    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
 	    /*if (intr != -1 && intr > regs.intmask) {
@@ -1490,11 +1494,11 @@ void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	}
 	if (ccpt != 0) {
 	    if (cctrue(dp->cc))
-		fprintf (f, " == %08lx (TRUE)", newpc);
+		fprintf (f, " == %08lx (TRUE)", (long)newpc);
 	    else
-		fprintf (f, " == %08lx (FALSE)", newpc);
+		fprintf (f, " == %08lx (FALSE)", (long)newpc);
 	} else if ((opcode & 0xff00) == 0x6100) /* BSR */
-	    fprintf (f, " == %08lx", newpc);
+	    fprintf (f, " == %08lx", (long)newpc);
 	fprintf (f, "\n");
     }
     if (nextpc)
@@ -1505,18 +1509,18 @@ void m68k_dumpstate (FILE *f, uaecptr *nextpc)
 {
     int i;
     for (i = 0; i < 8; i++){
-	fprintf (f, "D%d: %08lx ", i, m68k_dreg(regs, i));
+	fprintf (f, "D%d: %08lx ", i, (long)m68k_dreg(regs, i));
 	if ((i & 3) == 3) fprintf (f, "\n");
     }
     for (i = 0; i < 8; i++){
-	fprintf (f, "A%d: %08lx ", i, m68k_areg(regs, i));
+	fprintf (f, "A%d: %08lx ", i, (long)m68k_areg(regs, i));
 	if ((i & 3) == 3) fprintf (f, "\n");
     }
     if (regs.s == 0) regs.usp = m68k_areg(regs, 7);
     if (regs.s && regs.m) regs.msp = m68k_areg(regs, 7);
     if (regs.s && regs.m == 0) regs.isp = m68k_areg(regs, 7);
     fprintf (f, "USP=%08lx ISP=%08lx MSP=%08lx VBR=%08lx\n",
-	     regs.usp,regs.isp,regs.msp,regs.vbr);
+	     (long)regs.usp,(long)regs.isp,(long)regs.msp,(long)regs.vbr);
     fprintf (f, "T=%d%d S=%d M=%d X=%d N=%d Z=%d V=%d C=%d IMASK=%d\n",
 	     regs.t1, regs.t0, regs.s, regs.m,
 	     GET_XFLG, GET_NFLG, GET_ZFLG, GET_VFLG, GET_CFLG, regs.intmask);
@@ -1534,5 +1538,5 @@ void m68k_dumpstate (FILE *f, uaecptr *nextpc)
 
     m68k_disasm (f, m68k_getpc (), nextpc, 1);
     if (nextpc)
-	fprintf (f, "next PC: %08lx\n", *nextpc);
+	fprintf (f, "next PC: %08lx\n", (long)*nextpc);
 }

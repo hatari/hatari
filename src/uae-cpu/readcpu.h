@@ -2,9 +2,8 @@
 #ifndef UAEREADCPU
 #define UAEREADCPU
 
-#ifndef UAESYSDEPS
 #include "sysdeps.h"
-#endif
+
 
 ENUMDECL {
   Dreg, Areg, Aind, Aipi, Apdi, Ad16, Ad8r,

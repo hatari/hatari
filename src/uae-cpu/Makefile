@@ -1,5 +1,17 @@
 
+# Set flags passed to the compiler (e.g. optimization flags)
+CMPLRFLAGS = -g -O2 -Wall -Wno-unused
+
+# SDL-Library configuration:
+SDLLIB = $(shell sdl-config --libs)
+SDLFLAGS = $(shell sdl-config --cflags)
+
+
+CFLAGS = -I. $(CMPLRFLAGS) $(SDLFLAGS)
+
+
 CPUCSRCS = hatari-glue.c memory.c newcpu.c readcpu.c fpp.c cpustbl.c cpudefs.c
+
 #CPUEMUSRCS = cpufast1.s cpufast2.s cpufast3.s cpufast4.s \
 #    cpufast5.s cpufast6.s cpufast7.s cpufast8.s
 CPUEMUSRCS = cpuemu1.c cpuemu2.c cpuemu3.c cpuemu4.c \
