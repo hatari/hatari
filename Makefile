@@ -15,9 +15,9 @@ depend:
 	$(MAKE) -C src/ depend
 
 install: all
-	$(INSTALL) -d $(BINDIR)
-	$(INSTALL) -d $(DATADIR)
-	$(INSTALL_PROGRAM) src/hatari $(BINDIR)/hatari
-	if test -f src/tos.img -a \! -f $(DATADIR)/tos.img ; then \
-	  $(INSTALL_DATA) src/tos.img $(DATADIR)/tos.img ; \
+	$(INSTALL) -d $(DESTDIR)$(BINDIR)
+	$(INSTALL) -d $(DESTDIR)$(DATADIR)
+	$(INSTALL_PROGRAM) src/hatari $(DESTDIR)$(BINDIR)/hatari
+	if test -f src/tos.img -a \! -f $(DESTDIR)$(DATADIR)/tos.img ; then \
+	  $(INSTALL_DATA) src/tos.img $(DESTDIR)$(DATADIR)/tos.img ; \
 	fi
