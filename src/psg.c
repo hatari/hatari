@@ -2,12 +2,20 @@
   Hatari
 
   Programmable Sound Generator (YM-2149) - PSG
+
+  ChangeLog:
+
+  9 Aug 2003  Matthias Arndt <marndt@asmsoftware.de>
+	- added hook for printer dispatcher to PSG Port B (Reg 15)
 */
 
 #include "main.h"
 #include "memAlloc.h"
 #include "memorySnapShot.h"
 #include "sound.h"
+
+/* printer.h  because Printer I/O goes thorugh PSG Register 15 */
+#include "printer.h"
 
 unsigned char PSGRegisterSelect = 0;                  /* 0xff8800 (read/write) */
 unsigned char PSGRegisters[16] = { 0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0 };  /* Register in PSG, see PSG_REG_xxxx */
@@ -70,6 +78,12 @@ void PSG_WriteDataRegister(unsigned short bl)
    bEnvelopeFreqFlag = TRUE;
    bWriteEnvelopeFreq = TRUE;
   }
+
+ /* Matthias Arndt <marndt@asmsoftware.de>    9 Aug 2003 */
+ /* Port B (Printer port) - writing here needs to be dispatched to the printer */
+ if( PSGRegisterSelect==15 )
+	Printer_TransferByteTo(((unsigned char) bl & 0xff));
+
  /* Check registers 8,9 and 10 which are 'amplitude' for each channel and store if wrote to(to check for sample playback) */
  if( PSGRegisterSelect==8 )
    bWriteChannelAAmp=TRUE;

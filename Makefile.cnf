@@ -23,7 +23,7 @@ SDL_LIBS = $(shell sdl-config --libs)
 # The emulator looks there for the default TOS image, its font etc.
 # For example you can use the local directory with "." or if you want
 # a system-wide installation, use something like "/usr/share/hatari".
-DATADIR = .
+DATADIR = /usr/local/share/hatari/
 
 # The executable will be installed in BINDIR
 BINDIR = /usr/local/bin

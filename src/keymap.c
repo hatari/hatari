@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-static char rcsid[] = "Hatari $Id: keymap.c,v 1.13 2003-06-28 14:29:58 thothy Exp $";
+static char rcsid[] = "Hatari $Id: keymap.c,v 1.14 2003-08-09 13:58:42 simonsunnyboy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -445,8 +445,8 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
     case SDLK_KP_ENTER:    return 0x72;  /* NumPad Enter */
 
     /* Special Keys */
-    /*case SDLK_F11:  return 0x62;*/  /* F11 => Help */
-    /*case SDLK_F12:  return 0x61;*/  /* F12 => Undo */
+    case SDLK_PAGEUP:  return 0x62;  /* F11 => Help */
+    case SDLK_PAGEDOWN:  return 0x61;  /* F12 => Undo */
     case SDLK_HOME:   return 0x47;  /* Home */
     case SDLK_END:    return 0x60;  /* End => "<>" on German Atari kbd */
     case SDLK_UP:     return 0x48;  /* Arrow Up */

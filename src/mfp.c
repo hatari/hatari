@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-static char rcsid[] = "Hatari $Id: mfp.c,v 1.8 2003-07-29 12:01:55 thothy Exp $";
+static char rcsid[] = "Hatari $Id: mfp.c,v 1.9 2003-08-09 13:58:42 simonsunnyboy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -102,7 +102,16 @@ float MFPTimerToCPUCycleTable[] = {
 void MFP_Reset(void)
 {
   /* Reset MFP internal variables */
-  MFP_GPIP = 0xff;          /* Set GPIP register (all 1's = no interrupts) */
+
+  /* NOTE  Matthias Arndt <marndt@asmsoftware.de>  9 Aug 2003
+   * according to the Atari ST Profibuch, Bit0 of GPIP Data Register
+   * is the BUSY signal of the printer port
+   * it is SET if no printer is connected or on BUSY
+   * therefor we should assume it to be 0 in Hatari as printer bsuy is
+   * all handled in the Printer submodule
+   */
+
+  MFP_GPIP = 0xfe;          /* Set GPIP register (all 1's except bit0 = no interrupts) */
   MFP_AER = MFP_DDR = 0;
   MFP_IERA = MFP_IERB = 0;
   MFP_IPRA = MFP_IPRB = 0;
