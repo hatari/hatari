@@ -1,3 +1,8 @@
+# Makefile for Hatari's UAE CPU.
+
+# The native C compiler - normaly the same as $(CC) unless you use a cross
+# compiler.
+HOSTCC = $(CC)
 
 # Set flags passed to the compiler (e.g. optimization flags)
 CMPLRFLAGS = -g -O2 -Wall -Wno-unused
@@ -19,17 +24,24 @@ CPUEMUSRCS = cpuemu1.c cpuemu2.c cpuemu3.c cpuemu4.c \
 
 CPU_OBS = $(CPUCSRCS:.c=.o) $(CPUEMUSRCS:.c=.o)
 
+
 all: cpudefs.c cpuemu.c $(CPU_OBS)
 
 
 clean:
 	rm -f *.o gencpu build68k cpuopti cpudefs.c cpustbl.c cputbl.h cpuemu.c
 
+build68k: build68k.c
+	$(HOSTCC) $(CFLAGS) -o build68k build68k.c
+
 cpudefs.c: ./build68k ./table68k
 	./build68k <./table68k >cpudefs.c
 
-gencpu: gencpu.o readcpu.o cpudefs.o
-	$(CC) $(LDFLAGS) -o gencpu gencpu.o readcpu.o cpudefs.o
+gencpu.o: gencpu.c
+	$(HOSTCC) $(CFLAGS) -c -o gencpu.o gencpu.c
+
+gencpu: gencpu.o readcpu.c cpudefs.c
+	$(HOSTCC) $(CFLAGS) $(LDFLAGS) -o gencpu gencpu.o readcpu.c cpudefs.c
 
 cpuemu.c: gencpu
 	./gencpu
@@ -37,12 +49,11 @@ cpuemu.c: gencpu
 cpustbl.c: cpuemu.c
 cputbl.h: cpuemu.c
 
+#cpuopti: cpuopti.o
+#	$(HOSTCC) $(LDFLAGS) -o cpuopti cpuopti.o
 
-cpuopti: cpuopti.o
-	$(CC) $(LDFLAGS) -o cpuopti cpuopti.o
 
-
-# sam: this is for people with low memory. (is there a way do do this with a single rule ?)
+# this is for people with low memory (is there a way do do this with a single rule ?)
 cpuemu1.o: cpuemu.c
 	$(CC) -DPART_1 $(INCLUDES) -c $(INCDIRS) $(CFLAGS) $(X_CFLAGS) $(DEBUGFLAGS) $< -o $@
 cpuemu2.o: cpuemu.c
