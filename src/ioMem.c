@@ -28,7 +28,7 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.6 2005-03-07 23:15:49 thothy Exp $";
+char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.7 2005-03-15 10:23:24 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -178,11 +178,11 @@ uae_u32 IoMem_bget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0x00ff8000)
+	if (addr < 0xff8000)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 1);
-		return 0xff;
+		return -1;
 	}
 
 	IoAccessBaseAddress = addr;                   /* Store access location */
@@ -197,7 +197,7 @@ uae_u32 IoMem_bget(uaecptr addr)
 	if (nBusErrorAccesses == 1)
 	{
 		M68000_BusError(addr, 1);
-		return 0xff;
+		return -1;
 	}
 
 	return IoMem[addr];
@@ -216,11 +216,16 @@ uae_u32 IoMem_wget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0x00ff8000)
+	if (addr < 0xff8000)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 1);
-		return 0xff;
+		return -1;
+	}
+	if (addr > 0xfffffe)
+	{
+		fprintf(stderr, "Illegal IO memory access: IoMem_wget($%x)\n", addr);
+		return -1;
 	}
 
 	IoAccessBaseAddress = addr;                   /* Store for exception frame */
@@ -242,7 +247,7 @@ uae_u32 IoMem_wget(uaecptr addr)
 	if (nBusErrorAccesses == 2)
 	{
 		M68000_BusError(addr, 1);
-		return 0xff;
+		return -1;
 	}
 
 	return IoMem_ReadWord(addr);
@@ -261,11 +266,16 @@ uae_u32 IoMem_lget(uaecptr addr)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0x00ff8000)
+	if (addr < 0xff8000)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 1);
-		return 0;
+		return -1;
+	}
+	if (addr > 0xfffffc)
+	{
+		fprintf(stderr, "Illegal IO memory access: IoMem_lget($%x)\n", addr);
+		return -1;
 	}
 
 	IoAccessBaseAddress = addr;                   /* Store for exception frame */
@@ -299,7 +309,7 @@ uae_u32 IoMem_lget(uaecptr addr)
 	if (nBusErrorAccesses == 4)
 	{
 		M68000_BusError(addr, 1);
-		return 0xff;
+		return -1;
 	}
 
 	return IoMem_ReadLong(addr);
@@ -316,7 +326,7 @@ void IoMem_bput(uaecptr addr, uae_u32 val)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0x00ff8000)
+	if (addr < 0xff8000)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 0);
@@ -359,6 +369,11 @@ void IoMem_wput(uaecptr addr, uae_u32 val)
 		M68000_BusError(addr, 0);
 		return;
 	}
+	if (addr > 0xfffffe)
+	{
+		fprintf(stderr, "Illegal IO memory access: IoMem_wput($%x)\n", addr);
+		return;
+	}
 
 	IoAccessBaseAddress = addr;                   /* Store for exception frame, just in case */
 	nIoMemAccessSize = SIZE_WORD;
@@ -397,10 +412,15 @@ void IoMem_lput(uaecptr addr, uae_u32 val)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0x00ff8000)
+	if (addr < 0xff8000)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 0);
+		return;
+	}
+	if (addr > 0xfffffc)
+	{
+		fprintf(stderr, "Illegal IO memory access: IoMem_lput($%x)\n", addr);
 		return;
 	}
 
