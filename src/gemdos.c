@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-static char rcsid[] = "Hatari $Id: gemdos.c,v 1.15 2003-03-27 10:55:05 emanne Exp $";
+static char rcsid[] = "Hatari $Id: gemdos.c,v 1.16 2003-03-28 16:10:27 emanne Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -706,7 +706,7 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
 	  found = 1;
 	}
       }
-#if 0
+#if GEMDOS_VERBOSE
       if (!found) {
 	/* It's often normal, the gem uses this to test for existence */
 	/* of desktop.inf or newdesk.inf for example. */
@@ -717,7 +717,9 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
     }
   }
 
-  // fprintf(stderr,"conv %s -> %s\n",pszFileName,pszDestName);
+#if GEMDOS_VERBOSE
+ fprintf(stderr,"conv %s -> %s\n",pszFileName,pszDestName);
+#endif
 }
 
 
@@ -963,6 +965,9 @@ BOOL GemDOS_ChDir(unsigned long Params)
 
   /* Find new directory */
   pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
+#if GEMDOS_VERBOSE
+  fprintf(stderr,"chdir %s\n",pDirName);
+#endif
 
   Drive = GemDOS_IsFileNameAHardDrive(pDirName);
 
@@ -1283,8 +1288,21 @@ int GemDOS_GetDir(unsigned long Params){
   Drive = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
   /* is it our drive? */
   if((Drive == 0 && CurrentDrive >= 2) || Drive >= 3){
-    STMemory_WriteByte(Address, '\0' );
+    char path[MAX_PATH];
+    int i,len,c;
+
     Regs[REG_D0] = GEMDOS_EOK;          /* OK */
+    strcpy(path,&emudrives[0]->fs_currpath[strlen(emudrives[0]->hd_emulation_dir)]);
+    // convertit en path st (dos)
+    len = strlen(path)-1;
+    path[len] = 0;
+    for (i=0; i<=len; i++) {
+      c = path[i];
+      STMemory_WriteByte(Address+i, (c=='/' ? '\\' : c) );
+    }
+#if GEMDOS_VERBOSE
+    fprintf(stderr,"curdir -> %s\n",path);
+#endif
     return(TRUE);
   } else return(FALSE);
 }
