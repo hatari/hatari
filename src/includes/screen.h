@@ -36,17 +36,16 @@ typedef struct
 typedef struct
 {
   void *pDrawFunction;              /* Draw function */
-  /*int DirectDrawMode;*/           /* Mode required for DirectDraw. eg MODE_320x200x256 */
   int Width,Height,BitDepth,VertPixelsPerLine;
   SCREENDRAW_OVERSCAN Overscan[4];  /* Details for starting offset for each overscan mode(none,top,bottom,both) */
 } SCREENDRAW;
 
 typedef struct
 {
-  SCREENDRAW *pLowRes, *pAltLowRes;
-  SCREENDRAW *pMediumRes, *pAltMediumRes;
-  SCREENDRAW *pHighRes, *pAltHighRes;
-  SCREENDRAW *pLowMediumMixRes, *pAltLowMediumMixRes;
+  SCREENDRAW *pLowRes;
+  SCREENDRAW *pMediumRes;
+  SCREENDRAW *pHighRes;
+  SCREENDRAW *pLowMediumMixRes;
 } SCREENDRAW_DISPLAYOPTIONS;
 
 /* ST Resolution defines */
@@ -99,8 +98,6 @@ enum
 #define  BASECOLOUR       0x0A
 #define  BASECOLOUR_LONG  0x0A0A0A0A
 
-extern SCREENDRAW ScreenDrawWindow[4];
-extern SCREENDRAW ScreenDrawFullScreen[4];
 extern FRAMEBUFFER *pFrameBuffer;
 extern unsigned char *pSTScreen,*pSTScreenCopy;
 extern unsigned char *pPCScreenDest;

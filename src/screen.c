@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.32 2004-11-14 02:34:31 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.33 2004-11-30 23:05:53 thothy Exp $";
 
 #include <SDL.h>
 
@@ -44,9 +44,7 @@ static const unsigned int sdlvmode = SDL_HWSURFACE|/*SDL_DOUBLEBUF|*/SDL_FULLSCR
 /* SDL_DOUBLEBUF is a good idea, but the GUI doesn't work with double buffered
  * screens yet, so double buffering is currently disabled. */
 
-SCREENDRAW ScreenDrawWindow[4];                   /* Set up with details of drawing functions for ST_xxx_RES */
 SCREENDRAW ScreenDrawFullScreen[4];               /* And for full-screen */
-SCREENDRAW ScreenDrawVDIWindow[4];
 SCREENDRAW ScreenDrawVDIFullScreen[4];            /* And for full-screen */
 FRAMEBUFFER FrameBuffers[NUM_FRAMEBUFFERS];       /* Store frame buffer details to tell how to update */
 FRAMEBUFFER *pFrameBuffer;                        /* Pointer into current 'FrameBuffer' */
@@ -75,25 +73,30 @@ static void Screen_SetWindowRes()
 {
   int Width, Height, BitCount;
 
-  if (bUseVDIRes) {
+  if (bUseVDIRes)
+  {
     Width = VDIWidth;
     Height = VDIHeight;
-  } else
+  }
+  else
+  {
     switch(STRes)
-      {
+    {
       case ST_LOW_RES:
-	if (ConfigureParams.Screen.ChosenDisplayMode == 0 ||
-	    ConfigureParams.Screen.ChosenDisplayMode == 3) {
-	  Width = 320;
-	  Height = 200;
-	  break;
-	}
-	// else use 640x400
+        if (ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_16COL_LOWRES
+            || ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_HICOL_LOWRES)
+        {
+          Width = 320;
+          Height = 200;
+          break;
+        }
+        /* else use 640x400 */
       default:
-	Width = 640;
-	Height = 400;
-	break;
-      }
+        Width = 640;
+        Height = 400;
+        break;
+    }
+  }
 
   /* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
 
@@ -112,8 +115,9 @@ static void Screen_SetWindowRes()
   }
 
   /* Bits per pixel */
-  if(ConfigureParams.Screen.ChosenDisplayMode <= DISPLAYMODE_16COL_FULL
-     || STRes == ST_HIGH_RES || bUseVDIRes)
+  if (ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_16COL_LOWRES
+      || ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_16COL_HIGHRES
+      || STRes == ST_HIGH_RES || bUseVDIRes)
   {
     BitCount = 8;
   }
@@ -393,41 +397,11 @@ void Screen_SetDrawModes(void)
   SCREENDRAW_DISPLAYOPTIONS *pScreenDisplay;
 
   /* Clear out */
-  Memory_Clear(ScreenDrawWindow,sizeof(SCREENDRAW)*4);
   Memory_Clear(ScreenDrawFullScreen,sizeof(SCREENDRAW)*4);
-  Memory_Clear(ScreenDrawVDIWindow,sizeof(SCREENDRAW)*4);
   Memory_Clear(ScreenDrawVDIFullScreen,sizeof(SCREENDRAW)*4);
 
-  /* First, store Window details(set for 16-bit Windows desktop) */
-  ScreenDrawWindow[ST_LOW_RES].pDrawFunction = ConvertLowRes_320x16Bit;
-  ScreenDrawWindow[ST_LOW_RES].Width = 320;     ScreenDrawWindow[ST_LOW_RES].Height = 200;     ScreenDrawWindow[ST_LOW_RES].BitDepth = 16;
-
-  ScreenDrawWindow[ST_MEDIUM_RES].pDrawFunction = ConvertMediumRes_640x16Bit;
-  ScreenDrawWindow[ST_MEDIUM_RES].Width = 640;  ScreenDrawWindow[ST_MEDIUM_RES].Height = 200;  ScreenDrawWindow[ST_MEDIUM_RES].BitDepth = 16;
-
-  ScreenDrawWindow[ST_HIGH_RES].pDrawFunction = ConvertHighRes_640x8Bit;
-  ScreenDrawWindow[ST_HIGH_RES].Width = 640;    ScreenDrawWindow[ST_HIGH_RES].Height = 400;    ScreenDrawWindow[ST_HIGH_RES].BitDepth = 8;
-
-  /* (NOTE this is irrelevant as is directed to low/medium when starts) */
-  ScreenDrawWindow[ST_LOWMEDIUM_MIX_RES].pDrawFunction = ConvertLowRes_640x16Bit;
-  ScreenDrawWindow[ST_LOWMEDIUM_MIX_RES].Width = 640;  ScreenDrawWindow[ST_LOWMEDIUM_MIX_RES].Height = 200;  ScreenDrawWindow[ST_LOWMEDIUM_MIX_RES].BitDepth = 16;
-
-  /* And for VDI screens (set for 8-bit) */
-  ScreenDrawVDIWindow[ST_LOW_RES].pDrawFunction = ConvertVDIRes_16Colour;
-  ScreenDrawVDIWindow[ST_LOW_RES].Width = VDIWidth;  ScreenDrawVDIWindow[ST_LOW_RES].Height = VDIHeight;  ScreenDrawVDIWindow[ST_LOW_RES].BitDepth = 8;
-  ScreenDrawVDIWindow[ST_MEDIUM_RES].pDrawFunction = ConvertVDIRes_4Colour;
-  ScreenDrawVDIWindow[ST_MEDIUM_RES].Width = VDIWidth;  ScreenDrawVDIWindow[ST_MEDIUM_RES].Height = VDIHeight;  ScreenDrawVDIWindow[ST_MEDIUM_RES].BitDepth = 8;
-  ScreenDrawVDIWindow[ST_HIGH_RES].pDrawFunction = ConvertVDIRes_2Colour;
-  ScreenDrawVDIWindow[ST_HIGH_RES].Width = VDIWidth;  ScreenDrawVDIWindow[ST_HIGH_RES].Height = VDIHeight;  ScreenDrawVDIWindow[ST_HIGH_RES].BitDepth = 8;
-
-  /* And full-screen, select from Overscan/Non-Overscan */
-  if (ConfigureParams.Screen.bAllowOverscan) {
-    pScreenDisplay = &ScreenDisplayOptions[ConfigureParams.Screen.ChosenDisplayMode];
-  } else {
-    pScreenDisplay = &ScreenDisplayOptions_NoOverscan[ConfigureParams.Screen.ChosenDisplayMode];
-  }
-
   /* Assign full-screen draw modes from chosen option under dialog */
+  pScreenDisplay = &ScreenDisplayOptions[ConfigureParams.Screen.ChosenDisplayMode];
   ScreenDrawFullScreen[ST_LOW_RES] = *pScreenDisplay->pLowRes;
   ScreenDrawFullScreen[ST_MEDIUM_RES] = *pScreenDisplay->pMediumRes;
   ScreenDrawFullScreen[ST_HIGH_RES] = *pScreenDisplay->pHighRes;
