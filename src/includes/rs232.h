@@ -36,6 +36,16 @@ extern BOOL RS232_TransferBytesTo(unsigned char *pBytes, int nBytes);
 extern BOOL RS232_ReadBytes(unsigned char *pBytes, int nBytes);
 extern BOOL RS232_GetStatus(void);
 extern int RS232_ThreadFunc(void *pData);
+extern void RS232_SCR_ReadByte(void);
+extern void RS232_SCR_WriteByte(void);
+extern void RS232_UCR_ReadByte(void);
+extern void RS232_UCR_WriteByte(void);
+extern void RS232_RSR_ReadByte(void);
+extern void RS232_RSR_WriteByte(void);
+extern void RS232_TSR_ReadByte(void);
+extern void RS232_TSR_WriteByte(void);
+extern void RS232_UDR_ReadByte(void);
+extern void RS232_UDR_WriteByte(void);
 
 
 #endif  /* ifndef HATARI_RS232_H */

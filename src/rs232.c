@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.5 2004-02-21 10:01:00 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.6 2004-02-21 19:51:47 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_thread.h>
@@ -22,10 +22,12 @@ char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.5 2004-02-21 10:01:00 thothy Exp $
 #include "main.h"
 #include "configuration.h"
 #include "debug.h"
+#include "decode.h"
+#include "mfp.h"
 #include "rs232.h"
 
 
-#define RS232_DEBUG 1
+#define RS232_DEBUG 0
 
 #if RS232_DEBUG
 #define Dprintf(a) printf a
@@ -235,15 +237,13 @@ BOOL RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
 		{
 			Dprintf(("RS232: Sent %i bytes ($%x ...)\n", nBytes, *pBytes));
 			/*fflush(hComOut);*/
+			MFP_InputOnChannel(MFP_TRNBUFEMPTY_BIT, MFP_IERA, &MFP_IPRA);
+
+			return(TRUE);   /* OK */
 		}
-
-		/* Show icon on status bar */
-		/*StatusBar_SetIcon(STATUS_ICON_RS232,ICONSTATE_UPDATE);*/
-
-		return(TRUE);   /* OK */
 	}
-	else
-		return(FALSE);  /* Failed */
+
+	return(FALSE);  /* Failed */
 }
 
 
@@ -328,6 +328,8 @@ int RS232_ThreadFunc(void *pData)
 				/* Copy into our internal queue */
 				cInChar = iInChar;
 				RS232_AddBytesToInputBuffer(&cInChar, 1);
+				/* FIXME: Use semaphores to lock MFP variables? */
+				MFP_InputOnChannel(MFP_RCVBUFFULL_BIT, MFP_IERA, &MFP_IPRA);
 				Dprintf(("RS232: Read character $%x\n", iInChar));
 			}
 			else
@@ -348,4 +350,116 @@ int RS232_ThreadFunc(void *pData)
 	}
 
 	return(TRUE);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read from the Syncronous Character Register.
+*/
+void RS232_SCR_ReadByte(void)
+{
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write to the Syncronous Character Register.
+*/
+void RS232_SCR_WriteByte(void)
+{
+	/*Dprintf(("RS232: Write to SCR: $%x\n", (int)STRam[0xfffa27]));*/
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read from the USART Control Register.
+*/
+void RS232_UCR_ReadByte(void)
+{
+	Dprintf(("RS232: Read from UCR: $%x\n", (int)STRam[0xfffa29]));
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write to the USART Control Register.
+*/
+void RS232_UCR_WriteByte(void)
+{
+	Dprintf(("RS232: Write to UCR: $%x\n", (int)STRam[0xfffa29]));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read from the Receiver Status Register.
+*/
+void RS232_RSR_ReadByte(void)
+{
+	if (RS232_GetStatus())
+		STRam[0xfffa2b] |= 0x80;        /* Buffer full */
+	else
+		STRam[0xfffa2b] &= ~0x80;       /* Buffer not full */
+
+	Dprintf(("RS232: Read from RSR: $%x\n", (int)STRam[0xfffa2b]));
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write to the Receiver Status Register.
+*/
+void RS232_RSR_WriteByte(void)
+{
+	Dprintf(("RS232: Write to RSR: $%x\n", (int)STRam[0xfffa2b]));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read from the Transmitter Status Register.
+*/
+void RS232_TSR_ReadByte(void)
+{
+	if (ConfigureParams.RS232.bEnableRS232)
+		STRam[0xfffa2d] |= 0x80;        /* Buffer empty */
+	else
+		STRam[0xfffa2d] &= ~0x80;       /* Buffer not empty */
+
+	Dprintf(("RS232: Read from TSR: $%x\n", (int)STRam[0xfffa2d]));
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write to the Transmitter Status Register.
+*/
+void RS232_TSR_WriteByte(void)
+{
+	Dprintf(("RS232: Write to TSR: $%x\n", (int)STRam[0xfffa2d]));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read from the USART Data Register.
+*/
+void RS232_UDR_ReadByte(void)
+{
+	unsigned char InByte;
+
+	RS232_ReadBytes(&InByte, 1);
+	STRam[0xfffa2f] = InByte;
+	Dprintf(("RS232: Read from UDR: $%x\n", (int)STRam[0xfffa2f]));
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write to the USART Data Register.
+*/
+void RS232_UDR_WriteByte(void)
+{
+	unsigned char OutByte;
+
+	OutByte = STRam[0xfffa2f];
+	RS232_TransferBytesTo(&OutByte, 1);
+	Dprintf(("RS232: Write to UDR: $%x\n", (int)STRam[0xfffa2f]));
 }

@@ -30,11 +30,13 @@
 /* MFP register defines */
 #define  MFP_TIMER_GPIP7_BIT  0x80
 #define  MFP_TIMER_A_BIT      0x20
+#define  MFP_RCVBUFFULL_BIT   0x10
+#define  MFP_TRNBUFEMPTY_BIT  0x04
 #define  MFP_TIMER_B_BIT      0x01
 #define  MFP_FDCHDC_BIT       0x80
 #define  MFP_KEYBOARD_BIT     0x40
-#define MFP_TIMER_C_BIT       0x20
-#define MFP_TIMER_D_BIT       0x10
+#define  MFP_TIMER_C_BIT      0x20
+#define  MFP_TIMER_D_BIT      0x10
 
 /* MFP Registers */
 extern unsigned char MFP_GPIP;

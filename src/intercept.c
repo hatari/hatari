@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.18 2004-02-19 15:22:12 thothy Exp $";
+char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.19 2004-02-21 19:51:47 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -40,6 +40,7 @@ char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.18 2004-02-19 15:22:12 tho
 #include "midi.h"
 #include "psg.h"
 #include "rtc.h"
+#include "rs232.h"
 #include "screen.h"
 #include "spec512.h"
 #include "stMemory.h"
@@ -124,6 +125,12 @@ INTERCEPT_ACCESS_FUNC InterceptAccessFuncs[] =
   { 0xfffa21,SIZE_BYTE,Intercept_TimerBData_ReadByte,Intercept_TimerBData_WriteByte },    /* INTERCEPT_TIMERB_DATA */
   { 0xfffa23,SIZE_BYTE,Intercept_TimerCData_ReadByte,Intercept_TimerCData_WriteByte },    /* INTERCEPT_TIMERC_DATA */
   { 0xfffa25,SIZE_BYTE,Intercept_TimerDData_ReadByte,Intercept_TimerDData_WriteByte },    /* INTERCEPT_TIMERD_DATA */
+
+  { 0xfffa27,SIZE_BYTE,RS232_SCR_ReadByte,RS232_SCR_WriteByte },    /* Sync character register */
+  { 0xfffa29,SIZE_BYTE,RS232_UCR_ReadByte,RS232_UCR_WriteByte },    /* USART control register */
+  { 0xfffa2b,SIZE_BYTE,RS232_RSR_ReadByte,RS232_RSR_WriteByte },    /* Receiver status register */
+  { 0xfffa2d,SIZE_BYTE,RS232_TSR_ReadByte,RS232_TSR_WriteByte },    /* Transmitter status register */
+  { 0xfffa2f,SIZE_BYTE,RS232_UDR_ReadByte,RS232_UDR_WriteByte },    /* USART data register */
 
   { 0xfffc00,SIZE_BYTE,Intercept_KeyboardControl_ReadByte,Intercept_KeyboardControl_WriteByte }, /* INTERCEPT_KEYBOARDCONTROL */
   { 0xfffc02,SIZE_BYTE,Intercept_KeyboardData_ReadByte,Intercept_KeyboardData_WriteByte },   /* INTERCEPT_KEYBOARDDATA */
