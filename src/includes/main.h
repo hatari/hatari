@@ -10,8 +10,8 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.52" /* Name, version for window title */
-#define PROG_VERSION        "v0.52"
+#define PROG_NAME      "Hatari v0.53" /* Name, version for window title */
+#define PROG_VERSION   "v0.53"
 
 /*#define DEBUG_TO_FILE*/             /* Use debug.txt files */
 
@@ -159,7 +159,6 @@ enum {
 
 /* Illegal Opcode used to help emulation. eg. free entries are 8 to 15 inc' */
 #define  GEMDOS_OPCODE        8  /* Free op-code to intercept GemDOS trap */
-#define  RUNOLDGEMDOS_OPCODE  9  /* Free op-code to set PC to old GemDOS vector(if doesn't need to intercept) */
 #define  SYSINIT_OPCODE      10  /* Free op-code to initialize system (connected drives etc.) */
 #define  VDI_OPCODE          12  /* Free op-code to call VDI handlers AFTER Trap#2 */
 

@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.27 2004-04-23 15:33:58 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.28 2004-12-08 10:27:53 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -1620,8 +1620,8 @@ static BOOL GemDOS_GSDToF(unsigned long Params)
 /*-----------------------------------------------------------------------*/
 /*
   Run GEMDos call, and re-direct if need to. Used to handle hard-disc emulation etc...
-  This sets the condition codes(in SR), which are used in the 'cart.s' program to decide if we
-  need to run old GEM vector, or PExec or nothing.
+  This sets the condition codes (in SR), which are used in the 'cart_asm.s' program to
+  decide if we need to run old GEM vector, or PExec or nothing.
 
   This method keeps the stack and other states consistant with the original ST which is very important
   for the PExec call and maximum compatibility through-out
@@ -1798,12 +1798,8 @@ void GemDOS_Boot(void)
   fprintf(stderr, "Gemdos_Boot()\n");
 #endif
   /* install our gemdos handler, if -e or --harddrive option used */
-  if(GEMDOS_EMU_ON){
-
-    /* Patch pexec code - coded value is 4, but should be 6 for TOS >= 1.04 */
-    if(TosVersion >= 0x0104)
-      STMemory_WriteByte(CART_PEXEC_TOS, 0x06);
-
+  if (GEMDOS_EMU_ON)
+  {
     /* Get the address of the p_run variable that points to the actual basepage */
     if(TosVersion == 0x100)
     {
@@ -1820,7 +1816,7 @@ void GemDOS_Boot(void)
 
     /* Save old GEMDOS handler adress */
     STMemory_WriteLong(CART_OLDGEMDOS, STMemory_ReadLong(0x0084));
-    /* Setup new GEMDOS handler, see cartimg.c */
+    /* Setup new GEMDOS handler, see "cart_asm.s" */
     STMemory_WriteLong(0x0084, CART_GEMDOS);
   }
 }

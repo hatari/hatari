@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.23 2004-04-19 08:53:49 thothy Exp $";
+char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.24 2004-12-08 10:27:53 thothy Exp $";
 
 
 #include <stdio.h>
@@ -129,7 +129,7 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
 
   if(!bInitGemDOS)
   {
-    /* Init on boot - see cartimg.c */
+    /* Init on boot - see cart.c */
     GemDOS_Boot();
 
     /* We use this to get pointer to Line-A structure details
@@ -140,18 +140,6 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
   }
 
   m68k_incpc(2);
-  fill_prefetch_0();
-  return 4;
-}
-
-
-/* ----------------------------------------------------------------------- */
-/*
-  Re-direct execution to old GEMDOS calls, used in 'cart.s'
-*/
-unsigned long OpCode_OldGemDos(uae_u32 opcode)
-{
-  m68k_setpc( STMemory_ReadLong(CART_OLDGEMDOS) );
   fill_prefetch_0();
   return 4;
 }

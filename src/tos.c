@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.21 2004-12-05 23:30:17 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.22 2004-12-08 10:27:53 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -284,17 +284,6 @@ static void TOS_FixRom(void)
 
   fprintf(stderr, "Applied %i TOS patches, %i patches failed.\n",
           nGoodPatches, nBadPatches);
-
-  /* Modify assembler loaded into cartridge area */
-  switch(TosVersion)
-  {
-    case 0x0100:  Cart_WriteHdvAddress(0x167A);  break;
-    case 0x0102:  Cart_WriteHdvAddress(0x16DA);  break;
-    case 0x0104:  Cart_WriteHdvAddress(0x181C);  break;
-    case 0x0205:  Cart_WriteHdvAddress(0x1410);  break;
-    case 0x0206:  Cart_WriteHdvAddress(0x1644);  break;
-  }
-
 }
 
 
