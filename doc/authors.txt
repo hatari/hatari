@@ -31,6 +31,17 @@ remind me!):
 
 - Philippe Gerin : Fixed a bug in the CPU core (a problem with bus errors).
 
+- Martin Doering : Code for compiling the font data into the executable and
+  some other ideas for cleaning up the source code.
+
+- Patrice Mandin : Some improvements of the autoconf build system files.
+
+- Eero Tamminen : Many speed improvements and code cleanup.
+
+- Steve Kemp : Found some possible buffer overflows.
+
+- Marco Herrn : Wrote the initial version of the "man" page of Hatari.
+
 
  Code from other projects
  ------------------------
