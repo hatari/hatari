@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.71 2005-03-07 23:15:49 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.72 2005-04-04 15:26:12 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -417,7 +417,7 @@ static void Main_ReadParameters(int argc, char *argv[])
           if (strlen(argv[i+1]) <= sizeof(sConfigFileName))
           {
             strcpy(sConfigFileName, argv[i+1]);
-            Configuration_Load();
+            Configuration_Load(NULL);
           }
           else
             fprintf(stderr, "Config file name too long!\n");
@@ -562,7 +562,8 @@ int main(int argc, char *argv[])
   Configuration_SetDefault();
 
   /* Now load the values from the configuration file */
-  Configuration_Load();
+  Configuration_Load(CONFDIR"/hatari.cfg");     /* Try the global configuration file first */
+  Configuration_Load(NULL);                     /* Now try the users configuration file */
 
   /* Check for any passed parameters */
   Main_ReadParameters(argc, argv);

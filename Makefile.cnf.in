@@ -41,6 +41,10 @@ exec_prefix = @exec_prefix@
 # a system-wide installation, use something like "/usr/share/hatari".
 DATADIR = @datadir@
 
+# In this folder, Hatari searches the global configuration file.
+# /etc or /usr/local/etc is a good place for this.
+CONFDIR = @sysconfdir@
+
 # The executable will be installed in BINDIR
 BINDIR = @bindir@
 

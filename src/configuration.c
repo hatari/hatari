@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.41 2005-04-01 11:14:46 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.42 2005-04-04 15:26:11 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -172,6 +172,9 @@ void Configuration_SetDefault(void)
 {
 	int i;
 	char *homeDir;
+
+	/* Assume first-time install */
+	bFirstTimeInstall = TRUE;
 
 	/* Clear parameters */
 	memset(&ConfigureParams, 0, sizeof(CNF_PARAMS));
@@ -337,33 +340,35 @@ static int Configuration_LoadSection(const char *pFilename, struct Config_Tag co
 
 /*-----------------------------------------------------------------------*/
 /*
-  Load program setting from configuration file
+  Load program setting from configuration file. If psFileName is NULL, use
+  the default (i.e. the users) configuration file.
 */
-void Configuration_Load(void)
+void Configuration_Load(const char *psFileName)
 {
-	if (!File_Exists(sConfigFileName))
+	if (psFileName == NULL)
+		psFileName = sConfigFileName;
+
+	if (!File_Exists(psFileName))
 	{
-		/* No configuration file, assume first-time install */
-		bFirstTimeInstall = TRUE;
-		fprintf(stderr, "Configuration file %s not found.\n", sConfigFileName);
+		fprintf(stderr, "Configuration file %s not found.\n", psFileName);
 		return;
 	}
 
 	bFirstTimeInstall = FALSE;
 
-	Configuration_LoadSection(sConfigFileName, configs_Screen, "[Screen]");
-	Configuration_LoadSection(sConfigFileName, configs_Joystick0, "[Joystick0]");
-	Configuration_LoadSection(sConfigFileName, configs_Joystick1, "[Joystick1]");
-	Configuration_LoadSection(sConfigFileName, configs_Keyboard, "[Keyboard]");
-	Configuration_LoadSection(sConfigFileName, configs_Sound, "[Sound]");
-	Configuration_LoadSection(sConfigFileName, configs_Memory, "[Memory]");
-	Configuration_LoadSection(sConfigFileName, configs_Floppy, "[Floppy]");
-	Configuration_LoadSection(sConfigFileName, configs_HardDisc, "[HardDisc]");
-	Configuration_LoadSection(sConfigFileName, configs_Rom, "[ROM]");
-	Configuration_LoadSection(sConfigFileName, configs_Rs232, "[RS232]");
-	Configuration_LoadSection(sConfigFileName, configs_Printer, "[Printer]");
-	Configuration_LoadSection(sConfigFileName, configs_Midi, "[Midi]");
-	Configuration_LoadSection(sConfigFileName, configs_System, "[System]");
+	Configuration_LoadSection(psFileName, configs_Screen, "[Screen]");
+	Configuration_LoadSection(psFileName, configs_Joystick0, "[Joystick0]");
+	Configuration_LoadSection(psFileName, configs_Joystick1, "[Joystick1]");
+	Configuration_LoadSection(psFileName, configs_Keyboard, "[Keyboard]");
+	Configuration_LoadSection(psFileName, configs_Sound, "[Sound]");
+	Configuration_LoadSection(psFileName, configs_Memory, "[Memory]");
+	Configuration_LoadSection(psFileName, configs_Floppy, "[Floppy]");
+	Configuration_LoadSection(psFileName, configs_HardDisc, "[HardDisc]");
+	Configuration_LoadSection(psFileName, configs_Rom, "[ROM]");
+	Configuration_LoadSection(psFileName, configs_Rs232, "[RS232]");
+	Configuration_LoadSection(psFileName, configs_Printer, "[Printer]");
+	Configuration_LoadSection(psFileName, configs_Midi, "[Midi]");
+	Configuration_LoadSection(psFileName, configs_System, "[System]");
 
 	/* Copy details to global variables */
 	cpu_level = ConfigureParams.System.nCpuLevel;

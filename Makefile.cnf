@@ -43,6 +43,10 @@ SDL_LIBS = $(shell sdl-config --libs)
 # a system-wide installation, use something like "/usr/share/hatari".
 DATADIR = .
 
+# In this folder, Hatari searches the global configuration file.
+# /etc or /usr/local/etc is a good place for this.
+CONFDIR = /etc
+
 # The executable will be installed in BINDIR
 BINDIR = /usr/local/bin
 

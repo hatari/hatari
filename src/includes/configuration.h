@@ -229,7 +229,7 @@ extern char sConfigFileName[FILENAME_MAX];
 
 extern void Configuration_SetDefault(void);
 extern void Configuration_WorkOnDetails(BOOL bReset);
-extern void Configuration_Load(void);
+extern void Configuration_Load(const char *psFileName);
 extern void Configuration_Save(void);
 
 #endif

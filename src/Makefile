@@ -7,7 +7,7 @@ include ../Makefile.cnf
 INCFLAGS = -I./includes -I./uae-cpu
 
 
-CFLAGS += -DDATADIR=\"$(DATADIR)\" $(INCFLAGS) $(SDL_CFLAGS)
+CFLAGS += -DDATADIR=\"$(DATADIR)\" -DCONFDIR=\"$(CONFDIR)\" $(INCFLAGS) $(SDL_CFLAGS)
 
 
 CPUOBJS = ./uae-cpu/hatari-glue.o ./uae-cpu/memory.o ./uae-cpu/newcpu.o \
