@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.20 2003-04-05 22:25:04 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.21 2003-06-01 16:23:21 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -789,7 +789,12 @@ void Exception(int nr, uaecptr oldpc)
       case 9: ADD_CYCLES(34, 4, 3); break;    /* Trace */
       case 10: ADD_CYCLES(34, 4, 3); break;   /* Line-A - probably wrong */
       case 11: ADD_CYCLES(34, 4, 3); break;   /* Line-F - probably wrong */
-      default: ADD_CYCLES(44, 5, 3); break;   /* Don't know about the other exceptions */
+      default:
+        if(nr < 64)
+          ADD_CYCLES(0, 0, 0);       /* Coprocessor and unassigned exceptions (???) */
+        else
+          ADD_CYCLES(44+4, 5, 3);    /* Must be a MFP interrupt */
+        break;
     }
 }
 
