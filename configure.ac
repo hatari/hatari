@@ -4,20 +4,21 @@
 # Process this file with autoconf to produce a configure script.
 # Don't forget to run aclocal first!
 
-AC_INIT(hatari, 0.40)
+AC_INIT(hatari, 0.46)
 AC_CONFIG_SRCDIR([src/main.c])
 AC_PREREQ(2.50)
 
 #AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 
-# Checks for programs.
+dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
 
-# Use the following line for a release versions:
-#CFLAGS="-O3 -fomit-frame-pointer"
-
+# Use the following lines for a release versions:
+#if test x"${GCC}" = xyes; then
+#  CFLAGS="-O3 -fomit-frame-pointer"
+#fi
 
 # extra command line options
 
@@ -50,7 +51,7 @@ AC_ARG_WITH([hostcc],
   [HOSTCC=$withval], [HOSTCC=$CC])
 
 
-# Checks for libraries.
+dnl Checks for libraries.
 
 dnl Check for zlib
 AC_CHECK_LIB(z, gzopen, ,
@@ -65,7 +66,7 @@ AM_PATH_SDL($SDL_VERSION, :,
 CPPFLAGS="${CPPFLAGS} ${INCL}"
 
 
-# Checks for header files.
+dnl Checks for header files.
 
 AC_HEADER_STDC
 AC_HEADER_DIRENT
@@ -74,20 +75,20 @@ AC_CHECK_HEADERS([unistd.h zlib.h], ,
   AC_MSG_ERROR([header file not found!]))
 
 
-# Checks for typedefs, structures, and compiler characteristics.
+dnl Checks for types.
+AC_TYPE_MODE_T
+AC_TYPE_SIZE_T
+
+dnl Checks for structures.
+AC_STRUCT_TM
+
+
+dnl Checks for compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
+AC_C_VOLATILE
 
-
-# Checks for library functions.
-AC_FUNC_MALLOC
-AC_CHECK_FUNCS([strcasecmp strncasecmp],,
-  [AC_MSG_ERROR([A necessary function could not be found.])])
-
-
-# Check for compiler characteristics
-
-# Do we have GNU C++ ?
+# Do we have GNU-C ?
 if test x"${GCC}" = xyes; then
 
   GCCVERSION=`${CC} -dumpversion`
@@ -107,7 +108,18 @@ if test x"${GCC}" = xyes; then
 fi
 
 
-# Output
+dnl Checks for library functions.
+AC_FUNC_MALLOC
+AC_FUNC_MEMCMP
+#AC_FUNC_REALLOC
+AC_FUNC_STAT
+AC_CHECK_FUNCS([getcwd memmove memset mkdir rmdir strcasecmp \
+  strchr strerror strncasecmp strrchr strstr],,
+  [AC_MSG_ERROR([A necessary function could not be found.])])
+
+
+
+dnl Output
 
 if test "${datadir}" = '${prefix}/share'; then
   datadir='${prefix}/share/hatari'
