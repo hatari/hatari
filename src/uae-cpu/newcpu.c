@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.22 2003-06-02 16:20:23 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.23 2003-06-17 18:03:22 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -673,8 +673,8 @@ void Exception(int nr, uaecptr oldpc)
 
     /*if( nr>=2 && nr<10 )  fprintf(stderr,"Exception (-> %i bombs)!\n",nr);*/
 
-    /* Intercept exceptions... - FIXME: Find a better way to do this! */
-    if(bUseVDIRes && nr == 0x22)       /* Trap 2 - intercept VDI call */
+    /* Intercept VDI exception (Trap #2 with D0 = 0x73) */
+    if(bUseVDIRes && nr == 0x22 && regs.regs[0] == 0x73)
     {
       if(!VDI())
       {

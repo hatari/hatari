@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-static char rcsid[] = "Hatari $Id: screen.c,v 1.26 2003-06-09 16:11:13 thothy Exp $";
+static char rcsid[] = "Hatari $Id: screen.c,v 1.27 2003-06-17 18:03:22 thothy Exp $";
 
 #include <SDL.h>
 
@@ -986,7 +986,7 @@ void Screen_DrawFrame(BOOL bForceFlip)
       Screen_SetFullScreenConvertDetails();
     }
     /* Clear screen on full update to clear out borders and also interlaced lines */
-    if (pFrameBuffer->bFullUpdate)
+    if (pFrameBuffer->bFullUpdate && !bUseVDIRes)
       Screen_ClearScreen();
     /* Call drawing for full-screen */
     if (bUseVDIRes)  {
