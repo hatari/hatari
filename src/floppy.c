@@ -42,7 +42,7 @@ char *pszDiscImageNameExts[] = {
 };
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Initialize emulation floppy drives
 */
@@ -59,7 +59,8 @@ void Floppy_Init(void)
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   UnInitialize drives
 */
@@ -67,13 +68,14 @@ void Floppy_UnInit(void)
 {
   int i;
 
-  // Free buffers used for emulation drives
+  /* Free buffers used for emulation drives */
   for(i=0; i<NUM_EMULATION_DRIVES; i++) {
     Memory_Free(EmulationDrives[i].pBuffer);
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
 */
@@ -81,7 +83,7 @@ void Floppy_MemorySnapShot_Capture(BOOL bSave)
 {
   int i;
 
-  // Save/Restore details
+  /* Save/Restore details */
   for(i=0; i<NUM_EMULATION_DRIVES; i++) {
     MemorySnapShot_Store(EmulationDrives[i].pBuffer,DRIVE_BUFFER_BYTES);
     MemorySnapShot_Store(EmulationDrives[i].szFileName,sizeof(EmulationDrives[i].szFileName));
@@ -93,7 +95,8 @@ void Floppy_MemorySnapShot_Capture(BOOL bSave)
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Find which device to boot from
 */
@@ -109,7 +112,8 @@ void Floppy_GetBootDrive(void)
 */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Test disc image for valid boot-sector
 
@@ -133,7 +137,8 @@ BOOL Floppy_IsBootSectorOK(int Drive)
   return(FALSE);        /* Bad sector */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Try to create disc B filename, eg 'auto_100a' becomes 'auto_100b'
   Return TRUE if think we should try!
@@ -160,10 +165,11 @@ BOOL Floppy_CreateDiscBFileName(char *pSrcFileName, char *pDestFileName)
     }
   }
 */
-  return(FALSE);  // No, doesn't have disc B
+  return(FALSE);  /* No, doesn't have disc B */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Insert disc into floppy drive
   The WHOLE image is copied into our drive buffers, and uncompressed if necessary
@@ -216,7 +222,8 @@ BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName)
     return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Eject disc from floppy drive, save contents back to PCs hard-drive is has changed
 */
@@ -253,7 +260,8 @@ void Floppy_EjectDiscFromDrive(int Drive,BOOL bInformUser)
   EmulationDrives[Drive].bOKToSave = FALSE;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Eject all disc image from floppy drives - call when quit
 */
@@ -264,7 +272,8 @@ void Floppy_EjectBothDrives(void)
   Floppy_EjectDiscFromDrive(1,FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Double-check information read from boot-sector as this is sometimes found to be incorrect
   The .ST image file should be divisible by the sector size & sectors per track
@@ -283,7 +292,7 @@ void Floppy_DoubleCheckFormat(long DiscSize,unsigned short int *pnSides,unsigned
 
   /* And Sectors Per Track(always 512 bytes per sector) */
   TotalSectors = DiscSize/512;                  /* # Sectors on disc image */
-  // Does this match up with what we've read from boot-sector?
+  /* Does this match up with what we've read from boot-sector? */
   nSectorsPerTrack = *pnSectorsPerTrack;
   if (nSectorsPerTrack==0)                      /* Check valid, default to 9 */
     nSectorsPerTrack = 9;
@@ -301,7 +310,8 @@ void Floppy_DoubleCheckFormat(long DiscSize,unsigned short int *pnSides,unsigned
   /* else unknown, assume boot-sector is correct!!! */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Find details of disc image. We need to do this via a function as sometimes the boot-block
   is not actually correct with the image - some demos/game discs have incorrect bytes in the
@@ -326,7 +336,8 @@ void Floppy_FindDiscDetails(unsigned char *pBuffer,int nImageBytes,unsigned shor
     *pnSides = nSides;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Read sectors from floppy disc image, return TRUE if all OK
   NOTE Pass -ve as Count to read whole track
@@ -337,33 +348,33 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
   unsigned short int nSectorsPerTrack,nSides,nBytesPerTrack;
   long Offset;
 
-  // Do we have a disc in our drive?
+  /* Do we have a disc in our drive? */
   if (EmulationDrives[Drive].bDiscInserted) {
-    // Looks good
+    /* Looks good */
     StatusBar_SetIcon(STATUS_ICON_FLOPPY,ICONSTATE_UPDATE);
     pDiscBuffer = EmulationDrives[Drive].pBuffer;
 
-    // Find #sides and #sectors per track
+    /* Find #sides and #sectors per track */
     Floppy_FindDiscDetails(EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes,&nSectorsPerTrack,&nSides);
 
-    // Need to read whole track?
+    /* Need to read whole track? */
     if (Count<0)
       Count = nSectorsPerTrack;
-    // Write back number of sector per track
+    /* Write back number of sector per track */
     if (pnSectorsPerTrack)
       *pnSectorsPerTrack = nSectorsPerTrack;
 
-    // Debug check as if we read over the end of a track we read into side 2!
+    /* Debug check as if we read over the end of a track we read into side 2! */
     if (Count>nSectorsPerTrack) {
       ErrLog_File("ERROR Floppy_ReadSectors reading over single track\n");
     }
 
-    // Seek to sector
+    /* Seek to sector */
     nBytesPerTrack = NUMBYTESPERSECTOR*nSectorsPerTrack;
-    Offset = nBytesPerTrack*Side;                 // First seek to side
-    Offset += (nBytesPerTrack*nSides)*Track;      // Then seek to track
-    Offset += (NUMBYTESPERSECTOR*(Sector-1));     // And finally to sector
-    // Read sectors (usually 512 bytes per sector)
+    Offset = nBytesPerTrack*Side;                 /* First seek to side */
+    Offset += (nBytesPerTrack*nSides)*Track;      /* Then seek to track */
+    Offset += (NUMBYTESPERSECTOR*(Sector-1));     /* And finally to sector */
+    /* Read sectors (usually 512 bytes per sector) */
     memcpy(pBuffer,pDiscBuffer+Offset,(int)Count*NUMBYTESPERSECTOR);
 
     return(TRUE);
@@ -372,7 +383,8 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Write sectors from floppy disc image, return TRUE if all OK
   NOTE Pass -ve as Count to write whole track
@@ -383,35 +395,35 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
   unsigned short int nSectorsPerTrack,nSides,nBytesPerTrack;
   long Offset;
 
-  // Do we have a disc in our drive?
+  /* Do we have a disc in our drive? */
   if (EmulationDrives[Drive].bDiscInserted) {
-    // Looks good
+    /* Looks good */
     StatusBar_SetIcon(STATUS_ICON_FLOPPY,ICONSTATE_UPDATE);
     pDiscBuffer = EmulationDrives[Drive].pBuffer;
 
-    // Find #sides and #sectors per track
+    /* Find #sides and #sectors per track */
     Floppy_FindDiscDetails(EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes,&nSectorsPerTrack,&nSides);
 
-    // Need to write whole track?
+    /* Need to write whole track? */
     if (Count<0)
       Count = nSectorsPerTrack;
-    // Write back number of sector per track
+    /* Write back number of sector per track */
     if (pnSectorsPerTrack)
       *pnSectorsPerTrack = nSectorsPerTrack;
 
-    // Debug check as if we write over the end of a track we write into side 2!
+    /* Debug check as if we write over the end of a track we write into side 2! */
     if (Count>nSectorsPerTrack) {
       ErrLog_File("ERROR Floppy_WriteSectors reading over single track\n");
     }
 
-    // Seek to sector
+    /* Seek to sector */
     nBytesPerTrack = NUMBYTESPERSECTOR*nSectorsPerTrack;
-    Offset = nBytesPerTrack*Side;          // First seek to side
-    Offset += (nBytesPerTrack*nSides)*Track;    // Then seek to track
-    Offset += (NUMBYTESPERSECTOR*(Sector-1));    // And finally to sector
-    // Write sectors (usually 512 bytes per sector)
+    Offset = nBytesPerTrack*Side;               /* First seek to side */
+    Offset += (nBytesPerTrack*nSides)*Track;    /* Then seek to track */
+    Offset += (NUMBYTESPERSECTOR*(Sector-1));   /* And finally to sector */
+    /* Write sectors (usually 512 bytes per sector) */
     memcpy(pDiscBuffer+Offset,pBuffer,(int)Count*NUMBYTESPERSECTOR);
-    // And set 'changed' flag
+    /* And set 'changed' flag */
     EmulationDrives[Drive].bContentsChanged = TRUE;
 
     return(TRUE);

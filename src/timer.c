@@ -15,29 +15,32 @@
 
 LARGE_INTEGER StartCount,EndCount,Frequency;
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Initialise debug timer
 */
 void Timer_Init(void)
 {
 #ifdef FIND_PERFORMANCE
-  // Find frequency to calculate 'milli-second' results
+  /* Find frequency to calculate 'milli-second' results */
   QueryPerformanceFrequency(&Frequency);
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Start timer
 */
 void Timer_Start()
 {
-  // Start timer
+  /* Start timer */
   QueryPerformanceCounter(&StartCount);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Stop timer, return as 'milli-second' count(float)
 */
@@ -45,10 +48,10 @@ float Timer_Stop()
 {
   LONGLONG a,b;
 
-  // End timer
+  /* End timer */
   QueryPerformanceCounter(&EndCount);
 
-  // Find time and frequency
+  /* Find time and frequency */
   a = EndCount /*.QuadPart*/ - StartCount /*.QuadPart*/;  /* FIXME */
   b = Frequency /*.QuadPart*/ ;
 

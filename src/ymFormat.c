@@ -16,14 +16,15 @@
 #include "view.h"
 #include "ymFormat.h"
 
-#define YM_MAX_VBLS    (50*60*8)            // 50=1 second, 50*60=1 minute, 50*60*8=8 minutes, or 24000
-#define YM_RECORDSIZE  (4+(YM_MAX_VBLS*NUM_PSG_SOUND_REGISTERS))  // ~330k for 8 minutes
+#define YM_MAX_VBLS    (50*60*8)            /* 50=1 second, 50*60=1 minute, 50*60*8=8 minutes, or 24000 */
+#define YM_RECORDSIZE  (4+(YM_MAX_VBLS*NUM_PSG_SOUND_REGISTERS))  /* ~330k for 8 minutes */
 
 BOOL bRecordingYM = FALSE;
 int nYMVBLS = 0;
 unsigned char *pYMWorkspace = NULL, *pYMData;
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Start recording YM registers to workspace
 */
@@ -31,19 +32,19 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
 {
   BOOL bSaveYM=FALSE, bWasInWindowsMouse;
 
-  // Free any previous data, don't save
+  /* Free any previous data, don't save */
   YMFormat_FreeRecording();
 
-  // Make sure we have a filename to use, ask user if not
+  /* Make sure we have a filename to use, ask user if not */
   if (strlen(pszYMFileName)<=0) {
-    // No, back to Windows so can show dialog
+    /* No, back to Windows so can show dialog */
     Screen_ReturnFromFullScreen();
-    // Back to Windows mouse
+    /* Back to Windows mouse */
 //FIXME    bWasInWindowsMouse = View_ToggleWindowsMouse(MOUSE_WINDOWS);
-    // Ask user for filename
+    /* Ask user for filename */
     if (File_OpenSelectDlg(/*hWnd,*/pszYMFileName,FILEFILTER_YMFILE,FALSE,TRUE))
       bSaveYM = TRUE;
-    // If we were in ST mouse mode, revert back
+    /* If we were in ST mouse mode, revert back */
 //    if (!bWasInWindowsMouse)
 //FIXME      View_ToggleWindowsMouse(MOUSE_ST);
   }
@@ -55,7 +56,7 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
     /* Create YM workspace */
     pYMWorkspace = (unsigned char *)Memory_Alloc(YM_RECORDSIZE);
     if (pYMWorkspace) {
-      // Get workspace pointer and store 4 byte header
+      /* Get workspace pointer and store 4 byte header */
       pYMData = pYMWorkspace;
       *pYMData++ = 'Y';
       *pYMData++ = 'M';
@@ -79,7 +80,8 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
   return(bSaveYM);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   End recording YM registers and save as '.YM' file
 */
@@ -105,22 +107,24 @@ void YMFormat_EndRecording()
   YMFormat_FreeRecording();
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Free up any resources used by YM recording
 */
 void YMFormat_FreeRecording(void)
 {
-  // Free workspace
+  /* Free workspace */
   if (pYMWorkspace)
     Memory_Free(pYMWorkspace);
   pYMWorkspace = NULL;
 
-  // Stop recording
+  /* Stop recording */
   bRecordingYM = FALSE;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Store a VBLs worth of YM registers to workspace - call each VBL
 */
@@ -128,26 +132,27 @@ void YMFormat_UpdateRecording(void)
 {
   int i;
 
-  // Can record this VBL information?
+  /* Can record this VBL information? */
   if (bRecordingYM) {
-    // Copy VBL registers to workspace
+    /* Copy VBL registers to workspace */
     for(i=0; i<(NUM_PSG_SOUND_REGISTERS-1); i++)
       *pYMData++ = PSGRegisters[i];
-    // Handle register '13'(PSG_REG_ENV_SHAPE) correctly - store 0xFF is did not write to this frame
+    /* Handle register '13'(PSG_REG_ENV_SHAPE) correctly - store 0xFF is did not write to this frame */
     if (bEnvelopeFreqFlag)
       *pYMData++ = PSGRegisters[PSG_REG_ENV_SHAPE];
     else
       *pYMData++ = 0xff;
 
-    // Increase VBL count
+    /* Increase VBL count */
     nYMVBLS++;
-    // If run out of workspace, just save
+    /* If run out of workspace, just save */
     if (nYMVBLS>=YM_MAX_VBLS)
       YMFormat_EndRecording(NULL);
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Convert YM data to stream for output
 
@@ -166,10 +171,10 @@ BOOL YMFormat_ConvertToStreams(void)
   unsigned char *pYMStream, *pNewYMStream;
   int Reg, Count;
 
-  // Allocate new workspace to convert data to
+  /* Allocate new workspace to convert data to */
   pNewYMWorkspace = (unsigned char *)Memory_Alloc(YM_RECORDSIZE);
   if (pNewYMWorkspace) {
-    // Convert data, first copy over header
+    /* Convert data, first copy over header */
     pYMData = pYMWorkspace;
     pNewYMData = pNewYMWorkspace;
     *pNewYMData++ = *pYMData++;
@@ -177,20 +182,20 @@ BOOL YMFormat_ConvertToStreams(void)
     *pNewYMData++ = *pYMData++;
     *pNewYMData++ = *pYMData++;
 
-    // Now copy over each stream
+    /* Now copy over each stream */
     for(Reg=0; Reg<NUM_PSG_SOUND_REGISTERS; Reg++) {
-      // Get pointer to source / destination
+      /* Get pointer to source / destination */
       pYMStream = pYMData + Reg;
       pNewYMStream = pNewYMData + (Reg*nYMVBLS);
 
-      // Copy recording VBLs worth
+      /* Copy recording VBLs worth */
       for(Count=0; Count<nYMVBLS; Count++) {
         *pNewYMStream++ = *pYMStream;
         pYMStream += NUM_PSG_SOUND_REGISTERS;
       }
     }
 
-    // Delete old workspace and assign new
+    /* Delete old workspace and assign new */
     Memory_Free(pYMWorkspace);
     pYMWorkspace = pNewYMWorkspace;
 

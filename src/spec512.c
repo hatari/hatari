@@ -200,25 +200,5 @@ void Spec512_UpdatePaletteSpan(void)
     STRGBPalette[pCyclePalette->Index] = ST2RGB[pCyclePalette->Colour&0x777];
     pCyclePalette += 1;
    }
-/*
-    mov    ebx,[pCyclePalette]
-    mov    eax,[ebx]        // pCyclePalette->LineCycles
-    cmp    eax,[ScanLineCycleCount]    // == ScanLineCycleCount?
-    jne    no_cycle_match
-
-    // Need to update palette with new entry
-    mov    eax,4[ebx]        // pCyclePalette->Colour
-    and    eax,0x777        // Colour&0x777
-    mov    eax,ST2RGB[eax*4]      // Convert to PC's RGB
-    movzx  ebx,WORD PTR 6[ebx]        // pCyclePalette->Index
-    shl    ebx,2          // as 'long' index
-    add    ebx,OFFSET [STRGBPalette]
-    mov    [ebx],eax        // Store as long's for speed
-
-    add    [pCyclePalette],8      // sizeof(CYCLEPALETTE)
-
-no_cycle_match:
-    add    [ScanLineCycleCount],4      // Next 4 cycles
-*/
   ScanLineCycleCount += 4;      /* Next 4 cycles */
 }

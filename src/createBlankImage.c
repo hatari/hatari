@@ -47,7 +47,7 @@ static STANDARDDISCSIZES StandardDiscSizes[MAX_STANDARDDISCSIZES] = {
 static char *pszStandardDiscNames[] = {
   "80 tracks, single sided (360k)",
   "80 tracks, double sided (720k)",
-  NULL  //term
+  NULL  /* term */
 };
 
 #define NUM_TRACKSTEXTS    3
@@ -158,20 +158,22 @@ void CreateBlankImage_CreateFile(/*HWND hDlg,*/char *pszFileName,int nTracks, in
   Memory_Free(pDiscFile);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Enable dialog items according to choice of standard or custom size
 */
 void CreateBlankImage_EnableDialog(/*HWND hDlg,*/BOOL bState)
 {
-  // Standard disc size
+  /* Standard disc size */
 //  Dialog_EnableItem(hDlg,IDC_IMAGECOMBO,bState);
 
-  // Custom disc size
+  /* Custom disc size */
 //  Dialog_EnableItems(hDlg,Custom_DialogItems,!bState);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Find number of Tracks,Sectors and Sides from chosen dialog settings
 */
@@ -189,7 +191,8 @@ void CreateBlankImage_FindTracksSectorsSides(int *nTracks, int *nSectors, int *n
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Show size of custom disc in dialog
 */
@@ -198,7 +201,7 @@ void CreateBlankImage_ShowDiscImageCapacity(/*HWND hDlg*/)
   char szString[256];
   int DiscSize,nTracks,nSectors,nSides;
 
-  // Find size of disc image
+  /* Find size of disc image */
   CreateBlankImage_FindTracksSectorsSides(&nTracks,&nSectors,&nSides,TRUE,ChosenDiscType);
   DiscSize = nTracks*nSectors*nSides*NUMBYTESPERSECTOR;
 
@@ -206,7 +209,8 @@ void CreateBlankImage_ShowDiscImageCapacity(/*HWND hDlg*/)
 //  Dialog_SetText(hDlg,IDC_STATICSIZE,szString);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Set dialog edit box details for Tracks,Sectors and Sides
 */
@@ -229,7 +233,8 @@ void CreateBlankImage_SetDiscImageSidesDetail(/*HWND hDlg,*/int NewCustomSides)
 //  CreateBlankImage_ShowDiscImageCapacity(hDlg);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Handle create disc dialog messages
 */
@@ -319,7 +324,8 @@ BOOL CreateBlankImage_DiscImageDialog(/*HWND hDlg, UINT Message, WPARAM wParam, 
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Create output disassembly dialog
 */

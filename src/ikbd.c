@@ -318,15 +318,14 @@ void IKBD_UpdateInternalMousePosition(void)
 */
 void IKBD_CheckForDoubleClicks(void)
 {
-  // OK, our Window responds to double-clicks but this sends the WM_xxxxx messages:-
-  // WM_LBUTTONDOWN,WM_LBUTTONUP,WM_LBUTTONDBLCLK,WM_LBUTTONUP. When running emulation
-  // in normal speed we simply interpret the WM_LBUTTONDBLCLK as a WM_LBUTTONDOWN and
-  // all runs well. Things get a little complicated when running max speed as a normal
-  // double-click is a load of 1's, followed by 0's, 1's and 0's - But the ST does
-  // not see this as a double click as the space in 'ST' time between changes is so great.
-  // Now, when we see a WM_LBUTTONDBLCLK in max speed we actually send the down/up/down/up
-  // in ST time. To get this correct(and not send three clicks) we look in a history buffer
-  // and start at an index which gives the correct number of clicks! Phew!
+  /*
+    Things get a little complicated when running max speed as a normal
+    double-click is a load of 1's, followed by 0's, 1's and 0's - But the ST does
+    not see this as a double click as the space in 'ST' time between changes is so great.
+    Now, when we see a real double-click in max speed we actually send the down/up/down/up
+    in ST time. To get this correct(and not send three clicks) we look in a history buffer
+    and start at an index which gives the correct number of clicks! Phew!
+  */
 
   /* Handle double clicks!!! */
   if (Keyboard.LButtonDblClk) {

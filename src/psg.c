@@ -23,18 +23,20 @@ void PSG_Reset(void)
   Memory_Clear(PSGRegisters,sizeof(unsigned char)*16);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
 */
 void PSG_MemorySnapShot_Capture(BOOL bSave)
 {
-  // Save/Restore details
+  /* Save/Restore details */
   MemorySnapShot_Store(&PSGRegisterSelect,sizeof(PSGRegisterSelect));
   MemorySnapShot_Store(PSGRegisters,sizeof(PSGRegisters));
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Write byte to 0xff88000, this is used as a selector for when we read/write to address 0xff8802
 */
@@ -43,17 +45,19 @@ void PSG_WriteSelectRegister(unsigned short v)
  PSGRegisterSelect = v & 0x0f;              /* Store register to select (value in bits 0-3) */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Read byte from 0xff8800, returns to PSG data
 */
 unsigned short PSG_ReadSelectRegister(void)
 {
- // Read data last selected by register
+ /* Read data last selected by register */
  return PSGRegisters[PSGRegisterSelect];    /* Return value from PSGRegisters[] */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Write byte to 0xff8802, stores according to PSG select register(write 0xff8800)
 */
@@ -75,7 +79,8 @@ void PSG_WriteDataRegister(unsigned short bl)
    bWriteChannelCAmp=TRUE;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Read byte from 0xff8802, returns 0xff
 */

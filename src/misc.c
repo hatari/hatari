@@ -14,7 +14,8 @@
 
 long RandomNum;
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Fill end of string out with spaces
 */
@@ -28,7 +29,8 @@ void Misc_PadStringWithSpaces(char *pszString,int nChars)
   pszString[nChars] = '\0';
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Remove any spaces from string
 */
@@ -36,31 +38,33 @@ void Misc_RemoveSpacesFromString(char *pszSrcString, char *pszDestString)
 {
   int i=0,j=0;
 
-  // Copy string
+  /* Copy string */
   while(pszSrcString[i]!='\0') {
-    if (pszSrcString[i]!=' ') {  // Copy character if not a white-space
+    if (pszSrcString[i]!=' ') {  /* Copy character if not a white-space */
       pszDestString[j] = pszSrcString[i];
       j++;
     }
     i++;
   }
 
-  pszDestString[j] = '\0';      // Term
+  pszDestString[j] = '\0';      /* Term */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Remove 'white-space' from beginning of text string
 */
 void Misc_RemoveWhiteSpace(char *pszString,int Length)
 {
   while( (*pszString==' ') || (*pszString=='\t') ) {
-    // Copy line left one character
+    /* Copy line left one character */
     memmove(pszString,pszString+1,Length-1);
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Find working directory, and store to 'szWorkingDir'
 */
@@ -82,7 +86,8 @@ void Misc_FindWorkingDirectory(void)
 */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Limit integer between min/max range
 */
@@ -96,7 +101,8 @@ int Misc_LimitInt(int Value, int MinRange, int MaxRange)
   return(Value);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Convert value to 2-digit BCD
 */
@@ -105,7 +111,8 @@ unsigned char Misc_ConvertToBCD(unsigned short int Value)
   return( ((Value&0xf0)>>4)*10 + (Value&0x0f) );
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   See own random number(must be !=0)
 */
@@ -114,7 +121,8 @@ void Misc_SeedRandom(unsigned long Seed)
   RandomNum = Seed;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Get mext random number
 */
@@ -137,7 +145,8 @@ long Misc_NextLongRand(long Seed)
   return((long)Lo);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Get own random number
 */
@@ -147,7 +156,8 @@ long Misc_GetRandom(void)
   return(RandomNum);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Convert Time/Date to DOS format
 */

@@ -37,15 +37,15 @@ enum {
 };
 
 
-BOOL bUseVDIRes=FALSE;             // Set to TRUE(if want VDI), or FALSE(ie for games)
-BOOL bHoldScreenDisplay=TRUE;      // Hold display until initialised VDI(prevents TOS >2.05 showing ATARI logo)
-int LineABase;                     // Line-A structure
-int FontBase;                      // Font base, used for 16-pixel high font
-unsigned int VDI_OldPC;            // When call Trap#2, store off PC
+BOOL bUseVDIRes=FALSE;             /* Set to TRUE (if want VDI), or FALSE (ie for games) */
+BOOL bHoldScreenDisplay=TRUE;      /* Hold display until initialised VDI (prevents TOS >2.05 showing ATARI logo) */
+int LineABase;                     /* Line-A structure */
+int FontBase;                      /* Font base, used for 16-pixel high font */
+unsigned int VDI_OldPC;            /* When call Trap#2, store off PC */
 
-int VDIWidth=640,VDIHeight=480;    // 640x480,800x600 or 1024x768
-int VDIRes=0;                      // 0,1 or 2(low, medium, high)
-int VDIPlanes=4,VDIColours=16,VDICharHeight=8;  // To match VDIRes
+int VDIWidth=640,VDIHeight=480;    /* 640x480,800x600 or 1024x768 */
+int VDIRes=0;                      /* 0,1 or 2(low, medium, high) */
+int VDIPlanes=4,VDIColours=16,VDICharHeight=8;  /* To match VDIRes */
 
 unsigned long Control;
 unsigned long Intin;
@@ -53,8 +53,9 @@ unsigned long Ptsin;
 unsigned long Intout;
 unsigned long Ptsout;
 
-//-----------------------------------------------------------------------
-// Desktop TOS 1.04 and TOS 2.06 desktop configuration files
+
+/*-----------------------------------------------------------------------*/
+/* Desktop TOS 1.04 and TOS 2.06 desktop configuration files */
 unsigned char DesktopScript[504] = {
 0x23,0x61,0x30,0x30,0x30,0x30,0x30,0x30,0x0D,0x0A,0x23,0x62,0x30,0x30,0x30,0x30,0x30,0x30,0x0D,0x0A,0x23,0x63,0x37,0x37,0x37,0x30,0x30,0x30,0x37,0x30,0x30,0x30,
 0x36,0x30,0x30,0x30,0x37,0x30,0x30,0x35,0x35,0x32,0x30,0x30,0x35,0x30,0x35,0x35,0x35,0x32,0x32,0x32,0x30,0x37,0x37,0x30,0x35,0x35,0x37,0x30,0x37,0x35,0x30,0x35,
@@ -102,13 +103,14 @@ unsigned char NewDeskScript[786] = {
 0x32,0x20,0x46,0x46,0x20,0x20,0x20,0x54,0x52,0x41,0x53,0x48,0x40,0x20,0x40,0x20,0x0D,0x0A,
 };
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Set Width/Height/BitDepth according to passed GEMRES_640x480, GEMRES_800x600 or GEMRES_1024x768
 */
 void VDI_SetResolution(int GEMRes,int GEMColour)
 {
-  // Resolution
+  /* Resolution */
   switch(GEMRes) {
     case GEMRES_640x480:
       VDIWidth = 640;
@@ -124,7 +126,7 @@ void VDI_SetResolution(int GEMRes,int GEMColour)
       break;
   }
 
-  // Colour depth
+  /* Colour depth */
   switch(GEMColour) {
     case GEMCOLOUR_2:
       VDIRes = 2;
@@ -146,17 +148,18 @@ void VDI_SetResolution(int GEMRes,int GEMColour)
       break;
   }
 
-  // Force screen code to re-set bitmap/full-screen
+  /* Force screen code to re-set bitmap/full-screen */
   Screen_SetDrawModes();
   Screen_SetupRGBTable(bInFullScreen);
   Screen_SetFullUpdate();
   PrevSTRes = -1;
 
-  // Write resolution to re-boot takes effect with correct bit-depth
+  /* Write resolution to re-boot takes effect with correct bit-depth */
   VDI_FixDesktopInf();
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Check VDI call and see if we need to re-direct to our own routines
   Return TRUE if we've handled the exception, else return FALSE
@@ -168,7 +171,7 @@ BOOL VDI(void)
   unsigned long TablePtr = Regs[REG_D1];
 //  unsigned short int OpCode;
 
-  // Read off table pointers
+  /* Read off table pointers */
   Control = STMemory_ReadLong(TablePtr);
   Intin = STMemory_ReadLong(TablePtr+4);
   Ptsin = STMemory_ReadLong(TablePtr+8);
@@ -182,32 +185,34 @@ BOOL VDI(void)
 //    return(TRUE);
 //  }
 
-  // Call as normal!
+  /* Call as normal! */
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Modify Line-A structure for our VDI resolutions
 */
 void VDI_LineA(void)
 {
   if (bUseVDIRes) {
-    STMemory_WriteWord(LineABase-6*2,VDIWidth);                      // v_rez_hz
-    STMemory_WriteWord(LineABase-2*2,VDIHeight);                     // v_rez_vt
-    STMemory_WriteWord(LineABase-1*2,(VDIWidth*VDIPlanes)/8);        // bytes_lin
-    STMemory_WriteWord(LineABase+1*2,(VDIWidth*VDIPlanes)/8);        // width
+    STMemory_WriteWord(LineABase-6*2,VDIWidth);                      /* v_rez_hz */
+    STMemory_WriteWord(LineABase-2*2,VDIHeight);                     /* v_rez_vt */
+    STMemory_WriteWord(LineABase-1*2,(VDIWidth*VDIPlanes)/8);        /* bytes_lin */
+    STMemory_WriteWord(LineABase+1*2,(VDIWidth*VDIPlanes)/8);        /* width */
 
-    STMemory_WriteWord(LineABase-23*2,VDICharHeight);                // char height
-    STMemory_WriteWord(LineABase-22*2,(VDIWidth/8)-1);               // v_cel_mx
-    STMemory_WriteWord(LineABase-21*2,(VDIHeight/VDICharHeight)-1);  // v_cel_my
-    STMemory_WriteWord(LineABase-20*2,VDICharHeight*((VDIWidth*VDIPlanes)/8));    // v_cel_wr
+    STMemory_WriteWord(LineABase-23*2,VDICharHeight);                /* char height */
+    STMemory_WriteWord(LineABase-22*2,(VDIWidth/8)-1);               /* v_cel_mx */
+    STMemory_WriteWord(LineABase-21*2,(VDIHeight/VDICharHeight)-1);  /* v_cel_my */
+    STMemory_WriteWord(LineABase-20*2,VDICharHeight*((VDIWidth*VDIPlanes)/8));  /* v_cel_wr */
 
-    STMemory_WriteWord(LineABase-0*2,VDIPlanes);                     // planes
+    STMemory_WriteWord(LineABase-0*2,VDIPlanes);                     /* planes */
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   This is called on completion of a VDI Trap, used to modify return structure for 
 */
@@ -216,24 +221,25 @@ void VDI_Complete(void)
   unsigned short int OpCode;
 
   OpCode = STMemory_ReadWord(Control);
-  // Is 'Open Workstation', or 'Open Virtual Screen Workstation'?
+  /* Is 'Open Workstation', or 'Open Virtual Screen Workstation'? */
   if ( (OpCode==1) || (OpCode==100) ) {
-    STMemory_WriteWord(Intout,VDIWidth-1);                         // IntOut[0] Width-1
-    STMemory_WriteWord(Intout+1*2,VDIHeight-1);                    // IntOut[1] Height-1
-    STMemory_WriteWord(Intout+13*2,VDIColours);                    // IntOut[13] #colours
-    STMemory_WriteWord(Intout+39*2,512);                           // IntOut[39] #available colours
+    STMemory_WriteWord(Intout,VDIWidth-1);                         /* IntOut[0] Width-1 */
+    STMemory_WriteWord(Intout+1*2,VDIHeight-1);                    /* IntOut[1] Height-1 */
+    STMemory_WriteWord(Intout+13*2,VDIColours);                    /* IntOut[13] #colours */
+    STMemory_WriteWord(Intout+39*2,512);                           /* IntOut[39] #available colours */
 
-    STMemory_WriteWord(LineABase-0x15a*2,VDIWidth-1);              // WKXRez
-    STMemory_WriteWord(LineABase-0x159*2,VDIHeight-1);             // WKYRez
+    STMemory_WriteWord(LineABase-0x15a*2,VDIWidth-1);              /* WKXRez */
+    STMemory_WriteWord(LineABase-0x159*2,VDIHeight-1);             /* WKYRez */
 
-    VDI_LineA();                                         // And modify Line-A structure accordingly
+    VDI_LineA();                  /* And modify Line-A structure accordingly */
 
-    // Show screen(used to hide boot-up sequence in TOS >2.06)
+    /* Show screen (used to hide boot-up sequence in TOS >2.06) */
     bHoldScreenDisplay = FALSE;
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   This is called after completion of each VDI call
 */
@@ -244,20 +250,21 @@ void VDI_OpCode(void)
   /* Set PC back to where originated from to continue instruction decoding */
 //FIXME   PC = VDI_OldPC;
 
-//  RET
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Save desktop configuration file for VDI, eg desktop.inf(TOS 1.04) or newdesk.inf(TOS 2.06)
 */
 void VDI_SaveDesktopInf(char *pszFileName,unsigned char *Script,long ScriptSize)
 {
-  // Just save file
-  File_Save(/*NULL,*/pszFileName,Script,ScriptSize,FALSE);
+  /* Just save file */
+  File_Save(pszFileName, Script, ScriptSize, FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Modify exisiting ST desktop configuration files to set resolution(keep user settings)
 */
@@ -267,14 +274,14 @@ void VDI_ModifyDesktopInf(char *pszFileName)
   unsigned char *pInfData;
   int i;
 
-  // Load our '.inf' file
+  /* Load our '.inf' file */
   pInfData = (unsigned char *)File_Read(pszFileName,NULL,&InfSize,NULL);
   if (pInfData) {
-    // Scan file for '#E'
+    /* Scan file for '#E' */
     i = 0;
     while(i<(InfSize-8)) {
       if ( (pInfData[i]=='#') && (pInfData[i+1]=='E') ) {
-        // Modify resolution
+        /* Modify resolution */
         pInfData[i+7] = '1'+VDIRes;
         goto done_modify;
       }
@@ -284,13 +291,14 @@ void VDI_ModifyDesktopInf(char *pszFileName)
 
 done_modify:;
     /* And save */
-    File_Save(/*NULL,*/pszFileName,pInfData,InfSize,FALSE);
+    File_Save(pszFileName, pInfData, InfSize, FALSE);
     /* Free */
     Memory_Free(pInfData);
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Modify(or create) ST desktop configuration files so VDI boots up in correct colour depth
 */

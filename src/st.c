@@ -29,7 +29,7 @@
 */
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Load .ST file into memory, return number of bytes loaded
 */
@@ -38,7 +38,7 @@ int ST_ReadDisc(char *pszFileName,unsigned char *pBuffer)
   void *pSTFile;
   long ImageSize=0;
 
-  // Just load directly into buffer, and set ImageSize accordingly(no need to free memory)
+  /* Just load directly into buffer, and set ImageSize accordingly (no need to free memory) */
   pSTFile = File_Read(pszFileName,pBuffer,&ImageSize,NULL);
   if (!pSTFile)
     ImageSize = 0;
@@ -46,7 +46,8 @@ int ST_ReadDisc(char *pszFileName,unsigned char *pBuffer)
   return(ImageSize);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Save .ST file from memory buffer. Returns TRUE is all OK
 */
@@ -54,13 +55,13 @@ BOOL ST_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
 {
 #ifdef SAVE_TO_ST_IMAGES
 
-  // Just save buffer directly to file
-  return( File_Save(/*hWnd,*/pszFileName,pBuffer,ImageSize,FALSE) );
+  /* Just save buffer directly to file */
+  return( File_Save(pszFileName, pBuffer, ImageSize, FALSE) );
 
-#else  //SAVE_TO_ST_IMAGES
+#else   /*SAVE_TO_ST_IMAGES*/
 
-  // Oops, cannot save
+  /* Oops, cannot save */
   return(FALSE);
 
-#endif  //SAVE_TO_ST_IMAGES
+#endif  /*SAVE_TO_ST_IMAGES*/
 }

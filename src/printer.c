@@ -30,18 +30,19 @@
 
 //static HFILE PrinterFile;
 //static OFSTRUCT PrinterFileInfo;
-static unsigned char PrinterBuffer[PRINTER_BUFFER_SIZE];   // Buffer to store character before output
-static int nPrinterBufferChars,nPrinterBufferCharsOnLine;  // # characters in above buffer
+static unsigned char PrinterBuffer[PRINTER_BUFFER_SIZE];   /* Buffer to store character before output */
+static int nPrinterBufferChars,nPrinterBufferCharsOnLine;  /* # characters in above buffer */
 static BOOL bConnectedPrinter=FALSE;
 static BOOL bPrinterDiscFile=FALSE,bPrinterWindows=FALSE;
 //static PRINTDLG pd;                                      // Printer Dlg
-static BOOL bStartedPage;                                  // Have set up new page?
-static BOOL bAlreadyOpenedPrintingFile=FALSE;              // TRUE if already opened file, so can add to end
-static int PrinterX,PrinterY;                              // X,Y to print to on page
-static int nPrinterWidthPels,nPrinterHeightPels;           // Width/Height of page
-static int nIdleCount=0;                                   // Frames printer has been idle
+static BOOL bStartedPage;                                  /* Have set up new page? */
+static BOOL bAlreadyOpenedPrintingFile=FALSE;              /* TRUE if already opened file, so can add to end */
+static int PrinterX,PrinterY;                              /* X,Y to print to on page */
+static int nPrinterWidthPels,nPrinterHeightPels;           /* Width/Height of page */
+static int nIdleCount=0;                                   /* Frames printer has been idle */
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Initialise Printer
 */
@@ -49,35 +50,38 @@ void Printer_Init(void)
 {
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Uninitialise Printer
 */
 void Printer_UnInit(void)
 {
-  // Close any open files
+  /* Close any open files */
   Printer_CloseAllConnections();
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Close all open files, on disc or Windows printers
 */
 void Printer_CloseAllConnections(void)
 {
-  // Empty buffer
+  /* Empty buffer */
   Printer_EmptyInternalBuffer();
 
-  // Close any open files
+  /* Close any open files */
   Printer_CloseDiscFile();
-  // And printers
+  /* And printers */
   Printer_CloseWindowsPrinter();
 
-  // Signal finished with printing
+  /* Signal finished with printing */
   bConnectedPrinter = FALSE;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Open file on disc, to which all printer output will be sent
 */
@@ -122,68 +126,72 @@ BOOL Printer_OpenDiscFile(void)
   return(bPrinterDiscFile);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Close file on disc, if we have one open
 */
 void Printer_CloseDiscFile(void)
 {
-  // Do have file open?
+  /* Do have file open? */
   if (bPrinterDiscFile) {
-    // Close
+    /* Close */
 //FIXME    _lclose(PrinterFile);
 
     bPrinterDiscFile = FALSE;
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Empty to disc file
 */
 void Printer_EmptyDiscFile(void)
 {
-  // Do have file open?
+  /* Do have file open? */
   if (bPrinterDiscFile) {
-    // Write bytes out
+    /* Write bytes out */
 //FIXME    _hwrite(PrinterFile,(char *)PrinterBuffer,nPrinterBufferChars);
-    // Reset
+    /* Reset */
     Printer_ResetInternalBuffer();
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Start new printer page
 */
 void Printer_StartNewPage(void)
 {
-  // Reset coords on printer(start printing 'top-left')
+  /* Reset coords on printer(start printing 'top-left') */
   PrinterX = PrinterY = 0;
-  // Set new page
+  /* Set new page */
 //FIXME  StartPage(pd.hDC); 
-  // Set flag
+  /* Set flag */
   bStartedPage = TRUE;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Send character to Windows printer, add to XY position
 */
 void Printer_PrintCharacter(char Char)
 {
 /*FIXME*/
-/*
+#if 0
   SIZE CharSize;
 
-  // Have started page? If not, begin new one
+  /* Have started page? If not, begin new one */
   if (!bStartedPage)
     Printer_StartNewPage();
 
-  // Find width/height of character
+  /* Find width/height of character */
   GetTextExtentPoint32(pd.hDC, &Char,1, &CharSize);
 
-  // Handle returns to new lines...
+  /* Handle returns to new lines... */
   if (Char==0xa) {
     PrinterY += CharSize.cy;
     return;
@@ -193,24 +201,25 @@ void Printer_PrintCharacter(char Char)
     return;
   }
  
-  // Will fit on page?
+  /* Will fit on page? */
   if ((PrinterX+CharSize.cx)>=nPrinterWidthPels) {
-    PrinterY += CharSize.cy;            // Off right of page, start new line
+    PrinterY += CharSize.cy;            /* Off right of page, start new line */
     PrinterX = 0;
   }
   if ((PrinterY+CharSize.cy)>=nPrinterHeightPels) {
     if (bStartedPage)
-      EndPage(pd.hDC);              // Off bottom of page, start new one
+      EndPage(pd.hDC);                  /* Off bottom of page, start new one */
     Printer_StartNewPage();
   }
 
-  // Print character
+  /* Print character */
   TextOut(pd.hDC, PrinterX,PrinterY, &Char, 1);
   PrinterX += CharSize.cx;
-*/
+#endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Open Windows printer - Always return TRUE as sucess so we can 'print' without constantly
   bringing up the Printer dialog if they happened to press 'Cancel'.
@@ -290,7 +299,8 @@ BOOL Printer_OpenWindowsPrinter(void)
   return(TRUE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Close Windows printer
 */
@@ -313,7 +323,8 @@ void Printer_CloseWindowsPrinter(void)
 */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Empty Windows printer
 */
@@ -321,17 +332,18 @@ void Printer_EmptyWindowsPrinter(void)
 {
   int i;
 
-  // Do have file open?
+  /* Do have file open? */
   if (bPrinterWindows) {
-    // Write bytes out
+    /* Write bytes out */
     for(i=0; i<nPrinterBufferChars; i++)
       Printer_PrintCharacter(PrinterBuffer[i]);
-    // Reset
+    /* Reset */
     Printer_ResetInternalBuffer();
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Reset Printer Buffer
 */
@@ -340,7 +352,8 @@ void Printer_ResetInternalBuffer(void)
   nPrinterBufferChars = 0;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Reset character line
 */
@@ -349,13 +362,14 @@ void Printer_ResetCharsOnLine(void)
   nPrinterBufferCharsOnLine = 0;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Empty Printer Buffer
 */
 BOOL Printer_EmptyInternalBuffer(void)
 {
-  // Write bytes to file
+  /* Write bytes to file */
   if (nPrinterBufferChars>0) {
     if (bPrinterDiscFile)
       Printer_EmptyDiscFile();
@@ -365,45 +379,48 @@ BOOL Printer_EmptyInternalBuffer(void)
     return(TRUE);
   }
 
-  // Nothing to do
+  /* Nothing to do */
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Return TRUE if byte is standard ASCII character which is OK to output
 */
 BOOL Printer_ValidByte(unsigned char Byte)
 {
-  // Return/New line?
+  /* Return/New line? */
   if ( (Byte==0x0d) || (Byte==0x0a) )
     return(TRUE);
-  // Normal character?
+  /* Normal character? */
   if ( (Byte>=32) && (Byte<127) )
     return(TRUE);
-  // Tab
+  /* Tab */
   if (Byte=='\t')
     return(TRUE);
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Add byte to our internal buffer, and when full write out - needed to speed
 */
 void Printer_AddByteToInternalBuffer(unsigned char Byte)
 {
-  // Is buffer full? If so empty
+  /* Is buffer full? If so empty */
   if (nPrinterBufferChars==PRINTER_BUFFER_SIZE)
     Printer_EmptyInternalBuffer();
-  // Add character
+  /* Add character */
   PrinterBuffer[nPrinterBufferChars++] = Byte;
-  // Add count of character on line
+  /* Add count of character on line */
   if ( !((Byte==0xd) || (Byte==0xa)) )
     nPrinterBufferCharsOnLine++;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Add 'Tab' to internal buffer
 */
@@ -411,10 +428,10 @@ void Printer_AddTabToInternalBuffer(void)
 {
   int i,NumSpaces;
 
-  // Is buffer full? If so empty
+  /* Is buffer full? If so empty */
   if (nPrinterBufferChars>=(PRINTER_BUFFER_SIZE-PRINTER_TAB_SETTING))
     Printer_EmptyInternalBuffer();
-  // Add tab - convert to 'PRINTER_TAB_SETTING' space
+  /* Add tab - convert to 'PRINTER_TAB_SETTING' space */
   NumSpaces = PRINTER_TAB_SETTING-(nPrinterBufferCharsOnLine%PRINTER_TAB_SETTING);
   for(i=0; i<NumSpaces; i++) {
     PrinterBuffer[nPrinterBufferChars++] = ' ';
@@ -422,7 +439,8 @@ void Printer_AddTabToInternalBuffer(void)
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Pass byte from emulator to printer
 */
@@ -467,21 +485,22 @@ BOOL Printer_TransferByteTo(unsigned char Byte)
 */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Empty printer buffer, and if remains idle for set time close connection(ie close file, stop printer)
 */
 void Printer_CheckIdleStatus(void)
 {
-  // Is anything waiting for printer?
+  /* Is anything waiting for printer? */
   if (Printer_EmptyInternalBuffer()) {
     nIdleCount = 0;
   }
   else {
     nIdleCount++;
-    // Has printer been idle?
+    /* Has printer been idle? */
     if (nIdleCount>=PRINTER_IDLE_CLOSE) {
-      // Close printer output
+      /* Close printer output */
       Printer_CloseAllConnections();
       nIdleCount = 0;
     }

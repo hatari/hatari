@@ -12,7 +12,6 @@
 #include "cart.h"
 #include "debug.h"
 #include "decode.h"
-#include "disass.h"
 #include "fdc.h"
 #include "gemdos.h"
 #include "ikbd.h"
@@ -54,7 +53,7 @@ unsigned long BusAddressLocation;
 BOOL bDoTraceException;          /* Do TRACE? */
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Reset CPU 68000 variables
 */
@@ -62,39 +61,42 @@ void M68000_Reset(BOOL bCold)
 {
   int i;
 
-  // Clear registers, set PC, SR and stack pointers
+  /* Clear registers, set PC, SR and stack pointers */
   if (bCold) {
     for(i=0; i<(16+1); i++)
       Regs[i] = 0;
   }
   PC = TOSAddress;                            /* Start of TOS image, 0xfc0000 or 0xe00000 */
   SR = 0x2700;                                /* Starting status register */
+  MakeFromSR();
   bDoTraceException = FALSE;                  /* No TRACE exceptions */
   bInSuperMode = TRUE;                        /* We begin in supervisor mode */
   Regs[REG_A7] = Regs[REG_A8] = 0x0000f000;   /* Stack default */
   PendingInterruptFlag = 0;                   /* Clear pending flag */
 
-  // Read Supervisor Stack/PC for warm reset
+  /* Read Supervisor Stack/PC for warm reset */
   if (!bCold) {
     Regs[REG_A8] = STMemory_ReadLong(0x00000000);
     PC = STMemory_ReadLong(0x00000004);
   }
 
-  // Hold display for extended VDI resolutions(under init our VDI)
+  /* Hold display for extended VDI resolutions(under init our VDI) */
   bHoldScreenDisplay = TRUE;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
 */
 void M68000_MemorySnapShot_Capture(BOOL bSave)
 {
-  // Save/Restore details
+  /* Save/Restore details */
   MemorySnapShot_Store(&bDoTraceException,sizeof(bDoTraceException));
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
   This is for 'decode.asm' variables - as cannot use 'decode.c' as will overwrite assembler .obj file!
@@ -103,19 +105,19 @@ void M68000_Decode_MemorySnapShot_Capture(BOOL bSave)
 {
   int ID;
 
-  // Save/Restore details
+  /* Save/Restore details */
   MemorySnapShot_Store(Regs,sizeof(Regs));
   MemorySnapShot_Store(&STRamEnd,sizeof(STRamEnd));
   MemorySnapShot_Store(&STRamEnd_BusErr,sizeof(STRamEnd_BusErr));
   MemorySnapShot_Store(&PendingInterruptCount,sizeof(PendingInterruptCount));
   MemorySnapShot_Store(&PendingInterruptFlag,sizeof(PendingInterruptFlag));
   if (bSave) {
-    // Convert function to ID
+    /* Convert function to ID */
     ID = Int_HandlerFunctionToID(PendingInterruptFunction);
     MemorySnapShot_Store(&ID,sizeof(int));
   }
   else {
-    // Convert ID to function
+    /* Convert ID to function */
     MemorySnapShot_Store(&ID,sizeof(int));
     PendingInterruptFunction = Int_IDToHandlerFunction(ID);
   }
@@ -129,92 +131,61 @@ void M68000_Decode_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&ExceptionVector,sizeof(ExceptionVector));  
 }
 
-//-----------------------------------------------------------------------
-/*
-  ILLEGAL - Unknown 68000 OpCode
-*/
-void M68000_IllegalInstruction(void)
-{
-fprintf(stderr, "M68000_IllegalInstruction\n");
-  ADD_CYCLES(34,4,3);
-  ExceptionVector = EXCEPTION_ILLEGALINS;  /* Illegal vector */
-  M68000_Exception();        /* Cause trap */
-//  RET;
-}
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   BUSERROR - Access outside valid memory range
 */
 void M68000_BusError(unsigned long addr)
 {
- /* Reset PC's stack to normal(as may have done many calls) so return to
-    correct level after exception.
-    Enter here with 'ebp' as address we tried to access */
-fprintf(stderr, "M68000_BusError at address $%lx\n", (long)addr);
- BusAddressLocation=addr;    /* Store for exception frame */
- ExceptionVector = EXCEPTION_BUSERROR;  /* Handler */
- M68000_Exception();      /* Cause trap */
-/*
- asm("  mov  [BusAddressLocation],ebp\n"      // Store for exception frame
-     "  mov  esp,[StackSave]\n"        // Restore stack
-     "  mov  [ExceptionVector],EXCEPTION_BUSERROR\n");  // Handler
- SAVE_ASSEM_REGS();            // Save assembly registers
- asm("   call  M68000_Exception\n");        // Cause trap
- RESTORE_ASSEM_REGS();            // Restore assembly registers
- RET;                // Start decoding
-*/
+  /* Reset PC's stack to normal(as may have done many calls) so return to
+     correct level after exception.
+     Enter here with 'ebp' as address we tried to access */
+  fprintf(stderr, "M68000_BusError at address $%lx\n", (long)addr);
+  BusAddressLocation=addr;               /* Store for exception frame */
+  ExceptionVector = EXCEPTION_BUSERROR;  /* Handler */
+  M68000_Exception();                    /* Cause trap */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   ADDRESSERROR - Access incorrect memory boundary, eg byte offset for a word access
 */
 void M68000_AddressError(unsigned long addr)
 {
-fprintf(stderr, "M68000_AddressError at address $%lx\n", (long)addr);
- BusAddressLocation=addr;    /* Store for exception frame */
- ExceptionVector=EXCEPTION_ADDRERROR;  /* Handler */
- M68000_Exception();      /* Cause trap */
-/*
- // Reset PC's stack to normal(as may have done many calls) so return to correct level after exception
- __asm {
-  // Enter here with 'ebp' as address we tried to access
-  mov    [BusAddressLocation],ebp    // Store for exception frame
-  mov    esp,[StackSave]        // Restore stack
-  mov    [ExceptionVector],EXCEPTION_ADDRERROR  // Handler
-  SAVE_ASSEM_REGS            // Save assembly registers
-  call  M68000_Exception        // Cause trap
-  RESTORE_ASSEM_REGS          // Restore assembly registers
-  }
-  RET                // Start decoding
-*/  
+  fprintf(stderr, "M68000_AddressError at address $%lx\n", (long)addr);
+  BusAddressLocation=addr;              /* Store for exception frame */
+  ExceptionVector=EXCEPTION_ADDRERROR;  /* Handler */
+  M68000_Exception();                   /* Cause trap */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   See if in user/super mode and if need to swap SP
 */
+#if 0  /* Not needed for Hatari at the moment */
 void M68000_CheckUserSuperToggle(void)
 {
   unsigned long *TempReg;
   unsigned long TempSP;
 
-  // Have we swapped mode?
+  /* Have we swapped mode? */
   if ( (SR_Before&SR_SUPERMODE)!=(SR&SR_SUPERMODE) ) {
-    // Yes, swap to ST's REG_A8!
+    /* Yes, swap to ST's REG_A8! */
     TempSP = Regs[REG_A7];
     Regs[REG_A7] = Regs[REG_A8];
     Regs[REG_A8] = TempSP;
 
-    // Swap super flag
+    /* Swap super flag */
     bInSuperMode^=TRUE;
   }
 
-  // Set/Clear trace mode
+  /* Set/Clear trace mode */
   if (SR&SR_TRACEMODE) {
-    // Have we set the TRACE bit for the FIRST time? Don't let exception occur until NEXT instruction
-    // NOTE Sometimes the TRACE bit can be set many times, so only skip exception on FIRST one
+    /* Have we set the TRACE bit for the FIRST time? Don't let exception occur until NEXT instruction */
+    /* NOTE Sometimes the TRACE bit can be set many times, so only skip exception on FIRST one */
     if ((PendingInterruptFlag&PENDING_INTERRUPT_FLAG_TRACE)==0) {
       PendingInterruptFlag |= PENDING_INTERRUPT_FLAG_TRACE;
       bDoTraceException = FALSE;
@@ -223,15 +194,16 @@ void M68000_CheckUserSuperToggle(void)
   else
     PendingInterruptFlag &= CLEAR_PENDING_INTERRUPT_FLAG_TRACE;
 }
+#endif
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Called when TRACE bit is set. This causes 'exception' after each instruction, BUT
   it does not execute after the FIRST 'move SR,xxxx' to set the bit
 */
 void M68000_TraceModeTriggered(void)
 {
-/* FIXME */
 /*
   __asm {
     cmp    [bDoTraceException],FALSE    // First time around? Skip exception
@@ -249,7 +221,8 @@ dont_need_expection:;
 */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Exception handler
 */
@@ -268,14 +241,12 @@ void M68000_Exception(void)
   return;
 
 #if 0
-  // Was the CPU stopped, ie by a STOP instruction?
-/* FIXME: */
-/*
+  /* Was the CPU stopped, ie by a STOP instruction? */
   if (CPUStopped) {
-    PC += 4;    // Skip after the STOP instruction as CPU is now to resume!
-    CPUStopped = FALSE;  // All is go,go,go!
+    PC += 4;             /* Skip after the STOP instruction as CPU is now to resume! */
+    CPUStopped = FALSE;  /* All is go,go,go! */
   }
-*/
+
   /* Find exception vector, keep 32-bit address as top byte is used by TOS */
   /* exception vectors as an ID! */
   Vector = STMemory_ReadLong(ExceptionVector);
@@ -292,9 +263,9 @@ void M68000_Exception(void)
     else if (ExceptionVector==EXCEPTION_TRAP2) {
       bRet = VDI();
       if (!bRet) {
-        // Set 'PC' as address of 'VDI_OPCODE' illegal instruction
-        // This will call VDI_OpCode after completion of Trap call!
-        // Use to modify return structure from VDI
+        /* Set 'PC' as address of 'VDI_OPCODE' illegal instruction */
+        /* This will call VDI_OpCode after completion of Trap call! */
+        /* Use to modify return structure from VDI */
         if (bUseVDIRes) {
           VDI_OldPC = PC;
           PC = CART_VDI_OPCODE_ADDR;
@@ -302,7 +273,7 @@ void M68000_Exception(void)
       }
     }
 
-  // Do handly bit of debugging to trap bus/address errors, before goes to TOS handler
+  /* Do handly bit of debugging to trap bus/address errors, before goes to TOS handler */
 #ifdef TRAP_BUSERROR_HISTORY
     if (ExceptionVector==EXCEPTION_BUSERROR) {
       MessageBox(NULL,"TRAP BUS ERROR",PROG_NAME,MB_OK | MB_ICONSTOP);
@@ -329,10 +300,9 @@ void M68000_Exception(void)
 #endif
   }
 
-  // Did we re-direct call? No, so let's call it!
+  /* Did we re-direct call? No, so let's call it! */
   if (!bRet) {
-    // Save PC and SR to supervisor stack
-/* FIXME */
+    /* Save PC and SR to supervisor stack */
 /*
     __asm {
       push  ebp
@@ -361,21 +331,18 @@ void M68000_Exception(void)
       pop    ebp
     }
 */
-    // Exception frame, total 14 bytes (6 already put on stack, ie PC and SR)
-    //       15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
-    // SSP->|                                |RW|IN|Func.cod|         Higher
-    // address
-    //      |High word access address                       |
-    //      |Low word access address                        |
-    //      |Instruction register                           |
-    //      |Status register                                |
-    //      |High word program counter                      |
-    //      |Low word program counter                       |         Lower address
-    // 
-    // RW: Write=0, Read=1
-    // IN: Instruction=0, Not=1
+    /* Exception frame, total 14 bytes (6 already put on stack, ie PC and SR) */
+    /*       15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00                  */
+    /* SSP->|                                |RW|IN|Func.cod|  Higher address */
+    /*      |High word access address                       |                 */
+    /*      |Low word access address                        |                 */
+    /*      |Instruction register                           |                 */
+    /*      |Status register                                |                 */
+    /*      |High word program counter                      |                 */
+    /*      |Low word program counter                       |  Lower address  */
+    /* RW: Write=0, Read=1      */
+    /* IN: Instruction=0, Not=1 */
     if ( (ExceptionVector==EXCEPTION_BUSERROR) || (ExceptionVector==EXCEPTION_ADDRERROR) ) {
-/* FIXME */
 /*
       __asm {
         push  ebp
@@ -407,51 +374,45 @@ void M68000_Exception(void)
     }
 
     SR_Before = SR;
-    SR &= SR_CLEAR_TRACEMODE;            // Clear trace mode (bit 15)
-    SR |= SR_SUPERMODE;                // Set super mode (bit 13)
-    M68000_CheckUserSuperToggle();          // Check if swapped mode
+    SR &= SR_CLEAR_TRACEMODE;           /* Clear trace mode (bit 15) */
+    SR |= SR_SUPERMODE;                 /* Set super mode (bit 13) */
+    M68000_CheckUserSuperToggle();      /* Check if swapped mode */
 
-    // Do call to vector
+    /* Do call to vector */
 //    char szString[256];
 //    sprintf(szString,"0x%X (0x%X)",Vector,ExceptionVector);
 //    debug << szString << endl;
     PC = Vector;
-    // Set Status Register so interrupt can ONLY be stopped by another interrupt of higher priority!
+    /* Set Status Register so interrupt can ONLY be stopped by another interrupt of higher priority! */
     if (ExceptionVector==EXCEPTION_VBLANK)
-      SR = (SR&SR_CLEAR_IPL)|0x0400;        // VBL, level 4
+      SR = (SR&SR_CLEAR_IPL)|0x0400;        /* VBL, level 4 */
     else if (ExceptionVector==EXCEPTION_HBLANK)
-      SR = (SR&SR_CLEAR_IPL)|0x0200;        // HBL, level 2    
+      SR = (SR&SR_CLEAR_IPL)|0x0200;        /* HBL, level 2 */
     else {
       MFPBaseVector = (unsigned int)(MFP_VR&0xf0)<<2;
       if ( (ExceptionVector>=MFPBaseVector) && (ExceptionVector<=(MFPBaseVector+0x34)) )
-        SR = (SR&SR_CLEAR_IPL)|0x0600;      // MFP, level 6
+        SR = (SR&SR_CLEAR_IPL)|0x0600;      /* MFP, level 6 */
     }
   }
 #endif
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Handle Line-A OpCode exception(Top 4-bit in opcode are 0xA)
 */
 /*
-void M68000_Line_A_OpCode_Execute(void)
+void M68000_Line_A_OpCode(void)
 {
   PC -= SIZE_WORD;    // PC needs to be at address of Line-A instruction
   ExceptionVector = EXCEPTION_LINE_A;
   M68000_Exception();
 }
-
-void M68000_Line_A_OpCode(void)
-{
-//FIXME   SAVE_ASSEM_REGS();        // Save assembly registers
-  M68000_Line_A_OpCode_Execute();
-//  RESTORE_ASSEM_REGS();        // Restore assembly registers
-//  RET;
-}
 */
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   During init do 0xA000, followed by 0xA0FF - we use this to get pointer to Line-A structure details(to fix for extended VDI res)
 */
@@ -473,29 +434,22 @@ void M68000_Line_A_Trap(void)
 */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Handle Line-F OpCode exception(Top 4-bit in opcode are 0xF)
 */
 /*
-void M68000_Line_F_OpCode_Execute(void)
+void M68000_Line_F_OpCode(void)
 {
   PC -= SIZE_WORD;    // PC needs to be at address of Line-F instruction
   ExceptionVector = EXCEPTION_LINE_F;
   M68000_Exception();
 }
-
-void M68000_Line_F_OpCode(void)
-{
-//FIXME   SAVE_ASSEM_REGS();    // Save assembly registers
-  M68000_Line_F_OpCode_Execute();
-//  RESTORE_ASSEM_REGS();      // Restore assembly registers
-//  RET;
-}
 */
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Output CPU instruction history(last 'x' instructions) for debugging
 */
@@ -513,7 +467,7 @@ void M68000_OutputHistory(void)
 
   for(i=0; i<(INSTRUCTION_HISTORY_SIZE-1); i++) {
     StartPC = DisPC = InstructionHistory[(InstructionHistoryIndex+i+1)&INSTRUCTION_HISTORY_MASK];
-    Disass_DiassembleLine();            // Disassemble instruction
+    Disass_DiassembleLine();            /* Disassemble instruction */
 
     Debug_File("%8.8X\t%s\n",StartPC,szOpString);
   }

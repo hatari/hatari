@@ -5,6 +5,7 @@
 */
 
 #include <stdio.h>
+#include <SDL_keysym.h>           /* Needed for SDLK_LAST */
 
 #include "main.h"
 #include "debug.h"
@@ -12,7 +13,8 @@
 #include "memAlloc.h"
 #include "misc.h"
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Remap table of Windows keys to ST Scan codes, -ve is invalid key(ie doesn't occur on ST)
 
@@ -88,8 +90,8 @@ Ins   Del
 
 
 /* SDL Key to ST scan code map table */
-char Default_KeyToSTScanCode[] = {
-// ST Code     PC Code
+char Default_KeyToSTScanCode[SDLK_LAST] = {
+/* ST Code,  PC Code */
   -1,    /* 0 */
   -1,    /* 1 */
   -1,    /* 2 */
@@ -299,17 +301,17 @@ char Default_KeyToSTScanCode[] = {
 };
 
 
-char Loaded_KeyToSTScanCode[256];
+char Loaded_KeyToSTScanCode[SDLK_LAST];
 BOOL bRemapKeyLoaded=FALSE;
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Remap SDL Key to ST Scan code
 */
 char Keymap_RemapKeyToSTScanCode(unsigned int Key)
 {
-  if( Key > sizeof(Default_KeyToSTScanCode) )  return -1;  /* Avoid illegal keys */
+  if( Key >= SDLK_LAST )  return -1;  /* Avoid illegal keys */
   /* Use default or loaded? */
   if (bRemapKeyLoaded)
     return(Loaded_KeyToSTScanCode[Key]);
@@ -317,7 +319,8 @@ char Keymap_RemapKeyToSTScanCode(unsigned int Key)
     return(Default_KeyToSTScanCode[Key]);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Load keyboard remap file
 */
@@ -327,32 +330,32 @@ void Keymap_LoadRemapFile(char *pszFileName)
   unsigned int STScanCode,PCScanCode;
   FILE *in;
 
-  // Default to not loaded
+  /* Default to not loaded */
   bRemapKeyLoaded = FALSE;
   Memory_Set(Loaded_KeyToSTScanCode,-1,sizeof(Loaded_KeyToSTScanCode));
 
-  // Attempt to load file
+  /* Attempt to load file */
   if (strlen(pszFileName)>0) {
-    // Open file
+    /* Open file */
     in = fopen(pszFileName, "r");
     if (in) {
       while(!feof(in)) {
-        // Read line from file
+        /* Read line from file */
         fgets(szString, 1024, in);
-        // Remove white-space from start of line
+        /* Remove white-space from start of line */
         Misc_RemoveWhiteSpace(szString,sizeof(szString));
         if (strlen(szString)>0) {
-          // Is a comment?
+          /* Is a comment? */
           if ( (szString[0]==';') || (szString[0]=='#') )
             continue;
-          // Read values
+          /* Read values */
           sscanf(szString,"%d,%d",&STScanCode,&PCScanCode);
-          // Store into remap table, check both value within range
-          if ( (PCScanCode>=0) && (PCScanCode<256) && (STScanCode>=0) && (STScanCode<256) )
+          /* Store into remap table, check both value within range */
+          if ( (PCScanCode>=0) && (PCScanCode<SDLK_LAST) && (STScanCode>=0) && (STScanCode<256) )
             Loaded_KeyToSTScanCode[PCScanCode] = STScanCode;
         }
       }
-      // Loaded OK
+      /* Loaded OK */
       bRemapKeyLoaded = TRUE;
 
       fclose(in);

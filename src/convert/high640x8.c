@@ -94,7 +94,7 @@ void ConvertHighRes_640x8Bit(void)
 
    ScrY += 1;
   }
- while( ScrY < STScreenEndHorizLine );      /* Loop on Y */
+ while( ScrY < 400/*STScreenEndHorizLine*/ );      /* Loop on Y */
 
 }
 
