@@ -76,7 +76,6 @@ enum {
 typedef struct {
   int nMemorySize;
   char szMemoryCaptureFileName[MAX_FILENAME_LENGTH];
-  BOOL bBlitter;                /* TRUE if blitter is enabled */
 } DLG_MEMORY;
 
 enum {
@@ -175,12 +174,13 @@ typedef struct {
 } DLG_PRINTER;
 
 
-/* Dialog CPU */
+/* Dialog System */
 typedef struct {
-  int level;
-  BOOL compatible;
-  BOOL address_space_24;
-} DLG_CPU;
+  int nCpuLevel;
+  BOOL bCompatibleCpu;
+  BOOL bAddressSpace24;
+  BOOL bBlitter;                /* TRUE if blitter is enabled */
+} DLG_SYSTEM;
 
 
 /* State of system is stored in this structure */
@@ -198,7 +198,7 @@ typedef struct {
   DLG_TOSGEM TOSGEM;
   DLG_RS232 RS232;
   DLG_PRINTER Printer;
-  DLG_CPU Cpu;
+  DLG_SYSTEM System;
 } DLG_PARAMS;
 
 

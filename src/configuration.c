@@ -73,7 +73,6 @@ void Configuration_SetDefault(void)
   /* Set defaults for Memory */
   ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_1Mb;
   strcpy(ConfigureParams.Memory.szMemoryCaptureFileName, "");
-  ConfigureParams.Memory.bBlitter = FALSE;
 
   /* Set defaults for Printer */
   ConfigureParams.Printer.bEnablePrinting = FALSE;
@@ -109,10 +108,11 @@ void Configuration_SetDefault(void)
   ConfigureParams.TOSGEM.nGEMResolution = GEMRES_640x480;
   ConfigureParams.TOSGEM.nGEMColours = GEMCOLOUR_16;
 
-  /* Set defaults for Cpu */
-  ConfigureParams.Cpu.level = 0;
-  ConfigureParams.Cpu.compatible = FALSE;
-  ConfigureParams.Cpu.address_space_24 = TRUE;
+  /* Set defaults for System */
+  ConfigureParams.System.nCpuLevel = 0;
+  ConfigureParams.System.bCompatibleCpu = FALSE;
+  ConfigureParams.System.bAddressSpace24 = TRUE;
+  ConfigureParams.System.bBlitter = FALSE;
 }
 
 

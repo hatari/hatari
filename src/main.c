@@ -120,7 +120,7 @@ int Main_Message(char *lpText, char *lpCaption/*,unsigned int uType*/)
   int Ret=0;
 
   /* Show message */
-  fprintf(stderr,"Message from %s: %s\n", lpCaption, lpText);
+  fprintf(stderr,"%s: %s\n", lpCaption, lpText);
 
   return(Ret);
 }
@@ -350,17 +350,17 @@ void Main_ReadParameters(int argc, char *argv[])
           cpu_level = atoi(argv[++i]);
         if(cpu_level<0 || cpu_level>4)
           cpu_level = 0;
-        ConfigureParams.Cpu.level = cpu_level;
+        ConfigureParams.System.nCpuLevel = cpu_level;
       }
       else if (!strcmp(argv[i],"--compatible") || !strcmp(argv[i],"-d"))
       {
         cpu_compatible = TRUE;
-        ConfigureParams.Cpu.compatible = TRUE;
+        ConfigureParams.System.bCompatibleCpu = TRUE;
       }
       else if (!strcmp(argv[i],"--blitter"))
       {
         bEnableBlitter = TRUE;
-        ConfigureParams.Memory.bBlitter = TRUE;
+        ConfigureParams.System.bBlitter = TRUE;
       }
       else
       {
@@ -427,6 +427,8 @@ void Main_UnInit(void)
   Printer_UnInit();
   Intercept_UnInit();
   GemDOS_UnInitDrives();
+  if(Sound_AreWeRecording())
+    Sound_EndRecording();
   Audio_UnInit();
   YMFormat_FreeRecording();
   SDLGui_UnInit();
