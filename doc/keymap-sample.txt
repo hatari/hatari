@@ -1,0 +1,15 @@
+# This is an example for a keyboard mapping file that can be used in Hatari
+# by loading it from the keyboard setup dialog.
+#
+# Lines starting with a '#' or with a ';' are comments.
+# All other lines should contain exactly two numbers separated by a comma.
+# The first number is the symbolic PC key code (see keymap.c in the Hatari
+# sources or the file SDL_keysym.h from the SDL library header files).
+# The corresponding key will be mapped to the ST key which is specified by
+# second number - the ST scan code of the key.
+#
+# Example: If you want to get the 'y' and 'z' keys right with a german TOS
+# ROM, you can use the following two lines to map the PC keys to the right
+# ST scan codes:
+121,44
+122,21
