@@ -33,16 +33,11 @@ void ScreenSnapShot_GetNum(void){
   struct dirent *file;
 
   nScreenShots = 0;
-  if(workingdir == NULL)return;
+  if(workingdir == NULL)  return;
 
   file = readdir(workingdir);
   while(file != NULL){
-    /* copy first 4 letters */
-    for(i=0;i<4;i++)
-      if(file->d_name[i])
-        dummy[i] = file->d_name[i]; 
-    dummy[i] = '\0'; /* null terminate */
-    if(strcmp("grab", dummy) == 0){
+    if( strncmp("grab", file->d_name, 4) == 0 ) {
       /* copy next 4 numbers */
       for(i=0;i<4;i++)
         if(file->d_name[4+i] >= '0' && file->d_name[4+i] <= '9')
@@ -50,11 +45,11 @@ void ScreenSnapShot_GetNum(void){
         else break;
 
       dummy[i] = '\0'; /* null terminate */
-      sscanf(dummy,"%i", &num);
-      if(num > nScreenShots)nScreenShots = num;
+      num = atoi(dummy);
+      if(num > nScreenShots)  nScreenShots = num;
     }
     /* next file.. */
-  file = readdir(workingdir);
+    file = readdir(workingdir);
   } 
 }
 
