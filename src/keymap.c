@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-static char rcsid[] = "Hatari $Id: keymap.c,v 1.8 2003-03-30 11:32:48 thothy Exp $";
+static char rcsid[] = "Hatari $Id: keymap.c,v 1.9 2003-04-03 20:05:38 emanne Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -485,7 +485,8 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
       {
         fprintf(stderr, "Unknown key: scancode = %d ($%02x), keycode = '%s' ($%02x)\n",
                 scanPC, scanPC, SDL_GetKeyName(keysym->sym), keysym->sym);
-        return -1;  /* unknown scancode */
+	fprintf(stderr,"trying offset 8 (the most likely !)\n");
+        return (scanPC - 8);
       }
     }
   }
