@@ -8,16 +8,16 @@
   <meta name="resource-type" content="document">
   <meta name="distribution" content="global">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
-  <meta name="Generator" content="Quanta Plus 3.1.2 Debian GNU/Linux 3.0 Woody">
+  <meta name="Generator" content="Quanta Plus 3.2 Debian GNU/Linux 3.0 Woody">
   <meta http-equiv="Content-Style-Type" content="text/css">
   <style type="text/css">
   <!--
-	body { background-color:#FFFFFF;
-		   color:#000000;
-           margin-left:10px;
-		   margin-right:10px;
-		   font-family:Verdana,Arial,Helvetica,sans-serif; font-size:12pt;
-		 }
+	body {  background-color:#FFFFFF;
+		color:#000000;
+           	margin-left:10px;
+		margin-right:10px;
+		font-family:Verdana,Arial,Helvetica,sans-serif; font-size:12pt;
+		}
 
 	h1 { font-size:28pt; }
 	h2 { font-size:22pt; border-bottom:solid thin black;}
@@ -143,7 +143,8 @@ Of course, you need the GNU C compiler and (GNU) Make, too!
 
 <p> Change to the hatari/ directory and adapt the configuration file Makefile.cnf to suite your
 mood (and system of course). Then compile Hatari by typing <span class="commandline">make</span>. If all
-works fine, you'll get the executable <span class="commandline">hatari</span> in the src/ subdirectory.</p>
+works fine, you'll get the executable <span class="commandline">hatari</span> in the src/ subdirectory.
+</p>
 
 <h3>Installation of a TOS ROM</h3>
 <p> Then you'll have to copy a TOS ROM to the data directory (the data directory is specified
@@ -278,13 +279,16 @@ an allmost complete Atari ST computer system. </p>
 <p>Press <span class="key">F12</span> to enter the GUI. Navigate it with the mouse.
 The GUI is rather self explanatory.</p>
 <p>Click "Okay" to go back to the emulated ST. All checked options will be applied.</p>
-<p>Check the "Reset ST" option if you want the emulated ST to perform a soft reset.</p>
+<p>Check the "Reset ST" option if you want the emulated ST to perform a soft reset. This should be equal to pressing
+the reset button on your ST.
+</p>
 <p>Click "Quit" to terminate Hatari and return to the host OS.</p>
 <p>Click "Cancel" to abandon any changes made.</p>
 
 <h4>The System Dialog</h4>
 <p>Check the CPU type to use here, enable prefetch mode and if the Blitter should be active.</p>
 <p>For best Atari ST compatibility choose plain 68000 here.</p>
+<p>You can disable a Timer-D patch here. Leave it checked for proper emulation.</p>
 <p><em>NOTE:</em> These parameters are very sensitive to the emulated ST and it is strongly recommended to
 reset the emulated ST after changing these options.</p>
 
@@ -302,6 +306,17 @@ second disk manually when prompted.</p>
 <p>
 <em>NOTE:</em> This option does not always work properly.
 </p>
+
+<p>If you need to create a new blank disk image, click on "Create disk image".
+Parameters for the new image can be set in the following dialog. Click on "create" to create the image or on "back" to get "back" to the
+disk dialog.
+</p>
+<p>
+After clicking "create", a fileselector appears. You can browse the filesystem now. Select the target directory, click beside File:
+and typein a name for the new disk image. The name should terminate with .st.
+</p>
+<p>Hatari can currently create plain .ST disk images exclusively.</p>
+
 <p>Use the lower dialog to change the harddisk settings.</p>
 <p>You can select a harddrive image for harddrive emulation via image file here or you may select
 a directory of your local filesystem to be emulated as the ST's harddrive.</p>
@@ -357,7 +372,7 @@ use the "symbolic" mapping for all keys not defined by your map file. See the su
 own keyboard mapping.</p>
 
 <h4>The Sound Dialog</h4>
-<p>Here you control the sound subsystem.</p>
+<p>Here you can control the sound subsystem.</p>
 <p>Check if you want emulated sound at all. Emulation is faster if sound emulation is turned off.</p>
 <p>3 frequencies from low to high quality are available. Experiment a little bit to find out which fits best for your setup.
 Medium quality will work ok in most cases.</p>
@@ -369,7 +384,7 @@ you will need to return to the GUI to switch sound recording off again.</p>
 <p>As Hatari currently only supports printing to file, click on "Browse" to select the file to print to. You can enter a new
 filename as well.</p>
 <p><em>NOTE:</em> As the printer emulation is not perfect yet, activated printer support may interfere with the emulated sound.
-This is due to the fact that the Atari ST uses some general I/O ports of the soundchip for the printer port. The Hatari team suggest to
+This is due to the fact that the Atari ST uses some general I/O ports of the soundchip for the printer port. The Hatari team suggests to
 disable printing while using games and demos.
 </p>
 
@@ -830,7 +845,7 @@ parts of the emulated system is much trickier.
 	<tbody>
     <tr>
       <td align="left"><a href="http://validator.w3.org/check/referer"><img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a></td>
-      <td align="right"><address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a> October 29 2003</address></td>
+      <td align="right"><address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a> March 25 2004</address></td>
     </tr>
 	</tbody>
 </table>
