@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.11 2003-10-18 07:46:55 thothy Exp $";
+char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.12 2004-02-10 11:49:46 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -276,6 +276,7 @@ void Sound_CreateSoundMixClipTable(void)
 void Sound_SetSamplesPassed(void)
 {
   int nSampleCycles;
+  int nSamplesPerFrame;
   int Dec=1;
 
   /* Check how many cycles have passed, as we use this to help find out if we are playing sample data */
@@ -302,12 +303,22 @@ void Sound_SetSamplesPassed(void)
 
   /* 160256 cycles per VBL, 44Khz = 882 samples per VBL */
   /* 882/160256 samples per clock cycle */
-  nSamplesToGenerate = (int)( (float)SoundCycles * ((float)SAMPLES_PER_FRAME/(float)CYCLES_PER_FRAME) );
-  if (nSamplesToGenerate>SAMPLES_PER_FRAME)
-    nSamplesToGenerate = SAMPLES_PER_FRAME;
+  nSamplesPerFrame = SAMPLES_PER_FRAME;
+#if 0  /* Use floats for calculation */
+  nSamplesToGenerate = (int)( (float)SoundCycles * ((float)nSamplesPerFrame/(float)CYCLES_PER_FRAME) );
+  if (nSamplesToGenerate > nSamplesPerFrame)
+    nSamplesToGenerate = nSamplesPerFrame;
 
-  nSampleCycles = (int)( (float)nSamplesToGenerate / ((float)SAMPLES_PER_FRAME/(float)CYCLES_PER_FRAME) );
+  nSampleCycles = (int)( (float)nSamplesToGenerate / ((float)nSamplesPerFrame/(float)CYCLES_PER_FRAME) );
   SoundCycles -= nSampleCycles;
+#else  /* Use integers for calculation - both of these calculations should fit into 32-bit int */
+  nSamplesToGenerate = SoundCycles * nSamplesPerFrame / CYCLES_PER_FRAME;
+  if (nSamplesToGenerate > nSamplesPerFrame)
+    nSamplesToGenerate = nSamplesPerFrame;
+
+  nSampleCycles = nSamplesToGenerate * CYCLES_PER_FRAME / nSamplesPerFrame;
+  SoundCycles -= nSampleCycles;
+#endif
 }
 
 

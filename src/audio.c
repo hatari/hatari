@@ -6,7 +6,7 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-static char rcsid[] = "Hatari $Id: audio.c,v 1.16 2003-04-12 16:28:06 thothy Exp $";
+static char rcsid[] = "Hatari $Id: audio.c,v 1.17 2004-02-10 11:49:46 thothy Exp $";
 
 #include <SDL.h>
 
@@ -33,7 +33,6 @@ BOOL bDisableSound = FALSE;
 BOOL bSoundWorking = TRUE;                /* Is sound OK */
 volatile BOOL bPlayingBuffer = FALSE;     /* Is playing buffer? */
 int OutputAudioFreqIndex = FREQ_22Khz;    /* Playback rate (11Khz,22Khz or 44Khz) */
-float PlayVolume = 0.0f;
 int SoundBufferSize = 1024;               /* Size of sound buffer */
 int CompleteSndBufIdx;                    /* Replay-index into MixBuffer */
 
@@ -45,6 +44,9 @@ int CompleteSndBufIdx;                    /* Replay-index into MixBuffer */
 */
 void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 {
+  Uint8 *pBuffer;
+  int i;
+
   /* If there are only some samples missing to have a complete buffer,
    * we generate them here (sounds much better then!). However, if a lot of
    * samples are missing, then the system is probably too slow, so we don't
@@ -52,9 +54,13 @@ void Audio_CallBack(void *userdata, Uint8 *stream, int len)
   if(nGeneratedSamples < len && len-nGeneratedSamples < 128)
     Sound_UpdateFromAudioCallBack();
 
-  /* Pass completed buffer to audio system: */
-  Audio_WriteSamplesIntoBuffer(MixBuffer, CompleteSndBufIdx, len,
-                               (bEmulationActive ? RAMP_UP : RAMP_DOWN), stream);
+  /* Pass completed buffer to audio system: Write samples into sound buffer
+   * and convert them from 'signed' to 'unsigned' */
+  pBuffer = stream;
+  for(i = 0; i < len; i++)
+  {
+    *pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE] ^ 128;
+  }
 
   /* We should now have generated a complete frame of samples.
    * However, for slow systems we have to check how many generated samples
@@ -202,65 +208,3 @@ void Audio_EnableAudio(BOOL bEnable)
     bPlayingBuffer = bEnable;
   }
 }
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Scale sample value (-128...127) according to 'PlayVolume' setting
-*/
-Sint8 Audio_ModifyVolume(Sint8 Sample)
-{
-  /* If full volume, just use current value */
-  if (PlayVolume==1.0f)
-    return(Sample);
-
-  /* Else, scale volume */
-  Sample = (Sint8)((float)Sample*PlayVolume);
-
-  return(Sample);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Write samples into sound buffer. Pass pSamples=NULL to write zero's.
-*/
-void Audio_WriteSamplesIntoBuffer(Sint8 *pSamples, int Index, int Length,
-                                  int RampSetting, Sint8 *pDestBuffer)
-{
-  Sint8 *pBuffer;
-  int i;
-
-  /* Modify ramp volume - ramp down if sound not enabled or not in windows mouse mode */
-  if( (((RampSetting==RAMP_DOWN) || (!ConfigureParams.Sound.bEnableSound)) && (PlayVolume>0.0f)) )
-  {
-    PlayVolume -= RAMP_DOWN_VOLUME_LEVEL;
-    if(PlayVolume <= 0.0f)
-      PlayVolume = 0.0f;
-  }
-  else if((RampSetting==RAMP_UP) && (PlayVolume<1.0f))
-  {
-    PlayVolume += RAMP_UP_VOLUME_LEVEL;
-    if(PlayVolume >= 1.0f)
-      PlayVolume = 1.0f;
-  }
-
-  /* Write section, convert to 'unsigned' and write '128's if passed NULL */
-  if(Length > 0)
-  {
-    if(pSamples)
-    {
-      pBuffer = pDestBuffer;
-      for(i = 0; i < Length; i++)
-      {
-        *pBuffer++ = Audio_ModifyVolume(pSamples[Index]) ^ 128;
-        Index = (Index + 1) % MIXBUFFER_SIZE;
-      }
-    }
-    else
-    {
-      memset(pDestBuffer, 128, Length);
-    }
-  }
-}
-

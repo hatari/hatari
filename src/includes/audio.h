@@ -18,16 +18,6 @@ enum
   FREQ_44Khz
 };
 
-/* Ramp settings to fade sound in/out */
-enum
-{
-  RAMP_HOLD,
-  RAMP_UP,
-  RAMP_DOWN
-};
-#define  RAMP_UP_VOLUME_LEVEL  0.20f    /* (1.0f/5.f) */
-#define  RAMP_DOWN_VOLUME_LEVEL  0.20f  /* (1.0f/5.f) */
-
 
 extern int SoundPlayBackFrequencies[];
 extern BOOL bDisableSound;
@@ -43,6 +33,5 @@ extern void Audio_Unlock(void);
 extern void Audio_FreeSoundBuffer(void);
 extern void Audio_SetOutputAudioFreq(int Frequency);
 extern void Audio_EnableAudio(BOOL bEnable);
-extern void Audio_WriteSamplesIntoBuffer(Sint8 *pSamples,int Index, int Length, int RampSetting, Sint8 *pDestBuffer);
 
 #endif  /* HATARI_AUDIO_H */
