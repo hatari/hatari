@@ -4,11 +4,10 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  Printer communication. When bytes are sent fromo the ST they are sent on to these functions
+  Printer communication. When bytes are sent from the ST they are sent to these functions
   via 'Printer_TransferByteTo()'. This will then open a file or Windows printer and direct
   the output to this. These bytes are buffered up(to improve speed) and this also allow us
-  to detect when the stream goes into idle - at which point we close the file/printer(Windows
-  printing will only occur when we close).
+  to detect when the stream goes into idle - at which point we close the file/printer.
   NOTE - Tab's are converted to spaces as the PC 'Tab' setting differs to that of the ST.
 
   Hack for simple printing by Matthias Arndt <marndt@asmsoftware.de>
@@ -24,7 +23,7 @@
     - corrected stupid string bug that altered the environment var HOME
 
 */
-static char rcsid[] = "Hatari $Id: printer.c,v 1.11 2003-10-18 07:38:46 thothy Exp $";
+static char rcsid[] = "Hatari $Id: printer.c,v 1.12 2003-10-23 14:30:45 simonsunnyboy Exp $";
 
 #include "main.h"
 #include "debug.h"
