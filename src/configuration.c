@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-static char rcsid[] = "Hatari $Id: configuration.c,v 1.21 2003-06-08 13:49:48 thothy Exp $";
+static char rcsid[] = "Hatari $Id: configuration.c,v 1.22 2003-07-04 12:38:37 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -38,7 +38,8 @@ struct Config_Tag configs_Screen[] =
   { "bDoubleSizeWindow", Bool_Tag, &ConfigureParams.Screen.bDoubleSizeWindow },
   { "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
   { "bInterlacedScreen", Bool_Tag, &ConfigureParams.Screen.bInterlacedScreen },
-  { "bSyncToRetrace", Bool_Tag, &ConfigureParams.Screen.bSyncToRetrace },
+  /*{ "bSyncToRetrace", Bool_Tag, &ConfigureParams.Screen.bSyncToRetrace },*/
+  { "bFrameSkip", Bool_Tag, &ConfigureParams.Screen.bFrameSkip },
   { "ChosenDisplayMode", Int_Tag, &ConfigureParams.Screen.ChosenDisplayMode },
   { "bCaptureChange", Bool_Tag, &ConfigureParams.Screen.bCaptureChange },
   { "nFramesPerSecond", Int_Tag, &ConfigureParams.Screen.nFramesPerSecond },
