@@ -10,9 +10,9 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.30" /* Name, version for window title */
-#define PROG_VERSION        "v0.30"
-#define VERSION_STRING      "0.30 "   /* Always 6 bytes(inc' NULL) */
+#define PROG_NAME      "Hatari v0.40" /* Name, version for window title */
+#define PROG_VERSION        "v0.40"
+#define VERSION_STRING      "0.40 "   /* Always 6 bytes(inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above(inc' NULL) */
 
 //#define TOTALLY_FINAL_VERSION       /* Web release version... */
@@ -50,18 +50,6 @@ typedef int BOOL;
 
 #define CALL_VAR(func)  { ((void(*)(void))func)(); }
 
-/* Binary conversion macro's */
-#define BIN2(a,b) ((a<<1)+(b))
-#define BIN3(a,b,c) ((a<<2)+(b<<1)+(c))
-#define BIN4(a,b,c,d) ((a<<3)+(b<<2)+(c<<1)+(d))
-#define BIN5(a,b,c,d,e) ((a<<4)+(b<<3)+(c<<2)+(d<<1)+(e))
-#define BIN6(a,b,c,d,e,f) ((a<<5)+(b<<4)+(c<<3)+(d<<2)+(e<<1)+(f))
-#define BIN7(a,b,c,d,e,f,g) ((a<<6)+(b<<5)+(c<<4)+(d<<3)+(e<<2)+(f<<1)+(g))
-#define BIN8(a,b,c,d,e,f,g,h) ((a<<7)+(b<<6)+(c<<5)+(d<<4)+(e<<3)+(f<<2)+(g<<1)+(h))
-#define BIN10(a,b,c,d,e,f,g,h,i,j) ((a<<9)+(b<<8)+(c<<7)+(d<<6)+(e<<5)+(f<<4)+(g<<3)+(h<<2)+(i<<1)+(j))
-#define BIN12(a,b,c,d,e,f,g,h,i,j,k,l) ((a<<11)+(b<<10)+(c<<9)+(d<<8)+(e<<7)+(f<<6)+(g<<5)+(h<<4)+(i<<3)+(j<<2)+(k<<1)+(l))
-#define BIN14(a,b,c,d,e,f,g,h,i,j,k,l,m,n) ((a<<13)+(b<<12)+(c<<11)+(d<<10)+(e<<9)+(f<<8)+(g<<7)+(h<<6)+(i<<5)+(j<<4)+(k<<3)+(l<<2)+(m<<1)+(n))
-#define BIN16(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) ((a<<15)+(b<<14)+(c<<13)+(d<<12)+(e<<11)+(f<<10)+(g<<9)+(h<<8)+(i<<7)+(j<<6)+(k<<5)+(l<<4)+(m<<3)+(n<<2)+(o<<1)+(p))
 
 /* 68000 operand sizes */
 #define SIZE_BYTE  1
