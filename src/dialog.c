@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.32 2003-04-29 16:17:07 thothy Exp $";
+static char rcsid[] = "Hatari $Id: dialog.c,v 1.33 2003-06-01 20:04:26 thothy Exp $";
 
 #include <unistd.h>
 
@@ -351,16 +351,24 @@ SGOBJ joystickdlg[] =
 
 
 /* The keyboard dialog: */
-#define DLGKEY_SYMBOLIC 3
-#define DLGKEY_SCANCODE 4
+#define DLGKEY_SYMBOLIC  3
+#define DLGKEY_SCANCODE  4
+#define DLGKEY_FROMFILE  5
+#define DLGKEY_MAPNAME   7
+#define DLGKEY_MAPBROWSE 8
+#define DLGKEY_EXIT      9
 SGOBJ keyboarddlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 30,10, NULL },
-  { SGTEXT, 0, 0, 8,1, 14,1, "Keyboard setup" },
+  { SGBOX, 0, 0, 0,0, 40,12, NULL },
+  { SGTEXT, 0, 0, 13,1, 14,1, "Keyboard setup" },
   { SGTEXT, 0, 0, 2,3, 17,1, "Keyboard mapping:" },
-  { SGRADIOBUT, 0, 0, 4,5, 10,1, "Symbolic" },
-  { SGRADIOBUT, 0, 0, 18,5, 10,1, "Scancode" },
-  { SGBUTTON, 0, 0, 5,8, 20,1, "Back to main menu" },
+  { SGRADIOBUT, 0, 0, 3,5, 10,1, "Symbolic" },
+  { SGRADIOBUT, 0, 0, 15,5, 10,1, "Scancode" },
+  { SGRADIOBUT, 0, 0, 27,5, 11,1, "From file" },
+  { SGTEXT, 0, 0, 2,7, 13,1, "Mapping file:" },
+  { SGTEXT, 0, 0, 2,8, 36,1, NULL },
+  { SGBUTTON, 0, 0, 32,7, 6,1, "Browse" },
+  { SGBUTTON, 0, 0, 10,10, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -487,7 +495,8 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   Dialog_CopyDetailsFromConfiguration(NeedReset);
 
   /* Set keyboard remap file */
-  /*Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);*/
+  if(ConfigureParams.Keyboard.nKeymapType == KEYMAP_LOADED)
+    Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);
 
   /* Did the user changed the CPU mode? */
   check_prefs_changed_cpu(DialogParams.System.nCpuLevel, DialogParams.System.bCompatibleCpu);
@@ -1112,30 +1121,57 @@ void Dialog_SystemDlg(void)
 */
 void Dialog_KeyboardDlg(void)
 {
-  int i;
+  int i, but;
+  char dlgmapfile[40];
+  char tmpname[MAX_FILENAME_LENGTH];
 
   SDLGui_CenterDlg(keyboarddlg);
 
   /* Set up dialog from actual values: */
-  if(DialogParams.Keyboard.nKeymapType == KEYMAP_SYMBOLIC)
+  for(i = DLGKEY_SYMBOLIC; i <= DLGKEY_FROMFILE; i++)
   {
-    keyboarddlg[DLGKEY_SYMBOLIC].state |= SG_SELECTED;
-    keyboarddlg[DLGKEY_SCANCODE].state &= ~SG_SELECTED;
+    keyboarddlg[i].state &= ~SG_SELECTED;
   }
-  else
-  {
-    keyboarddlg[DLGKEY_SYMBOLIC].state &= ~SG_SELECTED;
-    keyboarddlg[DLGKEY_SCANCODE].state |= SG_SELECTED;
-  }
+  keyboarddlg[DLGKEY_SYMBOLIC+DialogParams.Keyboard.nKeymapType].state |= SG_SELECTED;
+
+  File_ShrinkName(dlgmapfile, DialogParams.Keyboard.szMappingFileName, keyboarddlg[DLGKEY_MAPNAME].w);
+  keyboarddlg[DLGKEY_MAPNAME].txt = dlgmapfile;
 
   /* Show the dialog: */
-  SDLGui_DoDialog(keyboarddlg);
+  do
+  {
+    but = SDLGui_DoDialog(keyboarddlg);
+
+    if(but == DLGKEY_MAPBROWSE)
+    {
+      strcpy(tmpname, DialogParams.Keyboard.szMappingFileName);
+      if(!tmpname[0])
+      {
+        getcwd(tmpname, MAX_FILENAME_LENGTH);
+        File_AddSlashToEndFileName(tmpname);
+      }
+      if( SDLGui_FileSelect(tmpname, NULL) )
+      {
+        strcpy(DialogParams.Keyboard.szMappingFileName, tmpname);
+        if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
+          File_ShrinkName(dlgmapfile, tmpname, keyboarddlg[DLGKEY_MAPNAME].w);
+        else
+          dlgmapfile[0] = 0;
+      }
+      Screen_SetFullUpdate();
+      Screen_Draw();
+    }
+
+  }
+  while(but != DLGKEY_EXIT && !bQuitProgram);
 
   /* Read values from dialog: */
   if(keyboarddlg[DLGKEY_SYMBOLIC].state & SG_SELECTED)
     DialogParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
-  else
+  else if(keyboarddlg[DLGKEY_SCANCODE].state & SG_SELECTED)
     DialogParams.Keyboard.nKeymapType = KEYMAP_SCANCODE;
+  else
+    DialogParams.Keyboard.nKeymapType = KEYMAP_LOADED;
 }
 
 

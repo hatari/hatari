@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-static char rcsid[] = "Hatari $Id: keymap.c,v 1.10 2003-04-04 16:28:31 thothy Exp $";
+static char rcsid[] = "Hatari $Id: keymap.c,v 1.11 2003-06-01 20:04:26 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -232,7 +232,7 @@ static const char SymbolicKeyToSTScanCode[SDLK_LAST] =
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 128-143*/
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 144-159*/
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 160-175*/
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 176-191*/
+  -1, -1, -1, -1, 0x0d, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 176-191*/
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 192-207*/
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 208-223*/
   -1, -1, -1, -1, 0x28, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 224-239*/
@@ -340,7 +340,7 @@ BOOL bRemapKeyLoaded = FALSE;           /* Did we successfully load a remap file
 void Keymap_Init(void)
 {
   Memory_Clear(SdlSymToSdlScan, sizeof(SdlSymToSdlScan));
-  memcpy(LoadedKeyToSTScanCode, SymbolicKeyToSTScanCode, SDLK_LAST);
+  Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);
 }
 
 
@@ -457,6 +457,7 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
     case SDLK_DOWN:   return 0x50;  /* Arrow Down */
     case SDLK_INSERT: return 0x52;  /* Insert */
     case SDLK_DELETE: return 0x53;  /* Delete */
+    case SDLK_LESS:   return 0x60;  /* "<" */
 
     /* Map Right Alt/Alt Gr/Control to the Atari keys */
     case SDLK_RCTRL:  return 0x1d;  /* Control */
@@ -594,12 +595,12 @@ char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
 void Keymap_LoadRemapFile(char *pszFileName)
 {
   char szString[1024];
-  unsigned int STScanCode,PCScanCode;
+  unsigned int STScanCode, PCKeyCode;
   FILE *in;
 
   /* Default to not loaded */
   bRemapKeyLoaded = FALSE;
-  Memory_Set(LoadedKeyToSTScanCode, -1, sizeof(LoadedKeyToSTScanCode));
+  memcpy(LoadedKeyToSTScanCode, SymbolicKeyToSTScanCode, sizeof(LoadedKeyToSTScanCode));
 
   /* Attempt to load file */
   if (strlen(pszFileName)>0)
@@ -620,10 +621,10 @@ void Keymap_LoadRemapFile(char *pszFileName)
           if ( (szString[0]==';') || (szString[0]=='#') )
             continue;
           /* Read values */
-          sscanf(szString,"%d,%d",&STScanCode,&PCScanCode);
+          sscanf(szString, "%d,%d", &PCKeyCode, &STScanCode);
           /* Store into remap table, check both value within range */
-          if ( (PCScanCode>=0) && (PCScanCode<SDLK_LAST) && (STScanCode>=0) && (STScanCode<256) )
-            LoadedKeyToSTScanCode[PCScanCode] = STScanCode;
+          if ( (PCKeyCode>=0) && (PCKeyCode<SDLK_LAST) && (STScanCode>=0) && (STScanCode<256) )
+            LoadedKeyToSTScanCode[PCKeyCode] = STScanCode;
         }
       }
       /* Loaded OK */
