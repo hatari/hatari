@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.32 2003-03-23 23:07:28 thothy Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.33 2003-03-24 17:24:49 emanne Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -163,6 +163,7 @@ void Main_UnPauseEmulation(void)
 void Main_EventHandler()
 {
   SDL_Event event;
+  static int last_scan;
 
   if( SDL_PollEvent(&event) )
    switch( event.type )
@@ -192,10 +193,18 @@ void Main_EventHandler()
          Keyboard.bRButtonDown &= ~BUTTON_MOUSE;;
        break;
      case SDL_KEYDOWN:
-       Keymap_KeyDown( event.key.keysym.sym, event.key.keysym.mod );
+       Keymap_KeyDown( &event.key.keysym );
+       last_scan = event.key.keysym.scancode;
        break;
      case SDL_KEYUP:
-       Keymap_KeyUp( event.key.keysym.sym, event.key.keysym.mod );
+       if (!event.key.keysym.scancode) {
+	 // fprintf(stderr,"null scan from event\n");
+	 event.key.keysym.scancode = last_scan;
+	 /* There seems to be a bug here. Sometimes you receive 0 as the scan
+	    code of the key up, but the sym field is correctly filled. It seems
+	    to always be the last pressed key, but I am not totally sure. */
+       }
+       Keymap_KeyUp( &event.key.keysym );
        break;
    }
 }
@@ -396,6 +405,7 @@ void Main_Init(void)
   Floppy_Init();
   Init680x0();                  /* Init CPU emulation */
   Audio_Init();
+  Keymap_FromScancodes();
 
   if(Reset_Cold())              /* Reset all systems, load TOS image */
   {
@@ -479,7 +489,6 @@ int main(int argc, char *argv[])
   /* Set default configuration values: */
   Configuration_SetDefault();
 
-  /* Now try to load the configuration file */
   Configuration_Init();
 
   /* Check for any passed parameters */
@@ -497,7 +506,7 @@ int main(int argc, char *argv[])
   Start680x0();                 /* Start emulation */
 
   /* Un-init emulation system */
-  Main_UnInit();  
+  Main_UnInit();
 
   /* Close debug files */
   ErrLog_CloseFile();
