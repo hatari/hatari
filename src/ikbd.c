@@ -644,8 +644,8 @@ void IKBD_SendCursorMousePacket(void)
 void IKBD_SendAutoKeyboardCommands(void)
 {
   /* Ignore anything until we've redirected our GEM handlers */
-//FM  if (!bInitGemDOS)
-//FIXME    return;
+  if (!bInitGemDOS)
+    return;
 
   /* Do not send auto commands directly after a reset command. */
   /* I hope that it is okay that I added this here - Thothy */
