@@ -7,9 +7,9 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.05" /* Name, version for window title */
-#define PROG_VERSION      "v0.05"
-#define VERSION_STRING      "0.05 "   /* Always 6 bytes(inc' NULL) */
+#define PROG_NAME      "Hatari v0.10" /* Name, version for window title */
+#define PROG_VERSION      "v0.10"
+#define VERSION_STRING      "0.10 "   /* Always 6 bytes(inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above(inc' NULL) */
 
 //#define TOTALLY_FINAL_VERSION       /* Web release version... */

@@ -694,6 +694,13 @@ void View_KeyDown( unsigned int sdlkey, unsigned int sdlmod )
 
   /*fprintf(stderr,"sdlkey=%i, sdlmod=%x\n",sdlkey,sdlmod);*/
 
+  /* Jump directly to the debugger? */
+  if( sdlkey==SDLK_PAUSE && bEnableDebug)
+   {
+    if(bInFullScreen)  Screen_ReturnFromFullScreen();
+    DebugUI();
+   }
+
   /* If pressed short-cut key, retain keypress until safe to execute (start of VBL) */
   if ( (sdlmod&KMOD_MODE) || (sdlkey==SDLK_F11) || (sdlkey==SDLK_F12) || (sdlkey==SDLK_PAUSE) )
    {

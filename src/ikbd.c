@@ -649,8 +649,8 @@ void IKBD_SendAutoKeyboardCommands(void)
 
   /* Do not send auto commands directly after a reset command. */
   /* I hope that it is okay that I added this here - Thothy */
-  if( bDuringResetCriticalTime )
-    return;
+//  if( bDuringResetCriticalTime )
+//    return;
 
   /* Don't do anything until processor is first reset */
   if (!KeyboardProcessor.bReset)

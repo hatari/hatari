@@ -1,7 +1,7 @@
 
       *****************
       * Hatari        *
-      * Version 0.05a *
+      * Version 0.10a *
       *****************
 
 
@@ -43,12 +43,10 @@ CPU core is written in Microsoft-C assembler :-( I was not able to use it.
 Instead I adapted UAE's CPU core for Hatari.
 The UAE CPU core has some nice features as 68020, FPU and JIT support
 (but none of them is enabled in Hataris source at the moment).
-On the other side, this core has a very strange CPU cycle time emulation,
-so I'll perhaps will adapt another core one day...
 
 Important: Hatari isn't yet very usable - it does not run very stable and
 a lot of WinSTon original features are still missing in this version, e.g.
-the ST-MED resolution emulation or the configuration dialogs.
+the configuration dialogs and the possibility to change disk images.
 But you can already use a floppy disk image (must be given as an argument on
 the command line) and try out some programs... :-)
 Try starting Hatari with the option "--help" to find out more about its
@@ -64,12 +62,9 @@ Of course, you need GNU-C and (GNU) Make, too!
 
 Change to the src/ directory and adapt the Makefile to suite your mood
 (and system of course). Then compile it by typing "make".
-If all works fine, you'll get the executable "hatari". You can strip it
-to save some disk space, if you don't want to debug it.
+If all works fine, you'll get the executable "hatari".
 Then you'll have to copy a TOS ROM to the actual directory and rename it
 to "tos.img".
-**** Very important: Only TOS 1.00, 1.02 and 1.04 are supported ****
-**** at the moment, TOS 2.06 and other do _not_ work!           ****
 
 
  4) Keyboard shortcuts
@@ -82,7 +77,7 @@ the debugger by pressing PAUSE.
 Beside those keys, there are some more usefull shortcuts:
 
  ALTGR-g  :  Grab a screenshot.
- ALTGR-w  :  Reset the ST (warm).
+ ALTGR-r  :  Reset the ST (warm).
  ALTGR-c  :  Reset the ST (cold).
 
 

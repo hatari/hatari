@@ -104,12 +104,6 @@ void ShortCut_CheckKeys(void)
         else
          Screen_ReturnFromFullScreen();
        break;
-     case SDLK_PAUSE:
-       if(bEnableDebug == TRUE) {
-         if(bInFullScreen)  Screen_ReturnFromFullScreen();
-         DebugUI();
-       }
-       break;
      case SDLK_g:                    /* Grab screenshot */
        ScreenSnapShot_SaveScreen();
        break;
@@ -121,7 +115,7 @@ void ShortCut_CheckKeys(void)
        break;
   }
 
-/* Winston originally supported remaple shortcuts... perhaps we will do so, too, one day... */
+/* Winston originally supported remapable shortcuts... perhaps we will do so, too, one day... */
 /*
   // Did press key?
   if (PressedKey!=SHORT_CUT_NONE) {

@@ -1,7 +1,7 @@
 # Makefile for Hatari
 
 # Set flags passed to the compiler (e.g. optimization flags)
-CMPLRFLAGS = -g -O3 -fomit-frame-pointer
+CMPLRFLAGS = -g -O2
 
 # Set the C compiler (e.g. gcc)
 CC = gcc

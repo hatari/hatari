@@ -1,3 +1,8 @@
+2001-08-16 (Thomas Huth):  *** Version 0.10a ***
+  * Improved CPU cycles emulation. Most instructions now return the
+    right cycles, I hope.
+  * Added Spec512 support.
+
 2001-07-21 (Thomas Huth):
   * Added some shortcuts
   * Added the possibility to switch between fullscreen and window mode.
@@ -12,7 +17,7 @@
 
 2001-06-26:
   * Added Sven de Marothy's screenshot patch. It allows taking screenshots
-    by pressing F11.
+    by pressing ALTGR-G.
 
 2001-06-10 (Thomas Huth):
   * Added sound support. Does not yet work perfect, but at least there
@@ -48,7 +53,6 @@
   * Rewrote a lot of assembler functions in C (e.g. intercept.c).
   * Adapted the UAE CPU. Now Hatari is able to boot a TOS 1.0x ROM, the
     Desktop shows up, but no mouse and keyboard interaction yet.
-
 
 2001-03-21 (Thomas Huth):  *** Version 0.01a ***
   * Made the WinSTon source code compilable.
