@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-static char rcsid[] = "Hatari $Id: dlgSystem.c,v 1.1 2003-08-04 19:37:31 thothy Exp $";
+char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.2 2004-03-01 13:57:30 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -19,12 +19,13 @@ static char rcsid[] = "Hatari $Id: dlgSystem.c,v 1.1 2003-08-04 19:37:31 thothy 
 #define DLGSYS_68040 7
 #define DLGSYS_PREFETCH 8
 #define DLGSYS_BLITTER 9
+#define DLGSYS_TIMERD 10
 
 
 /* The "System" dialog: */
 static SGOBJ systemdlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 30,17, NULL },
+  { SGBOX, 0, 0, 0,0, 30,18, NULL },
   { SGTEXT, 0, 0, 8,1, 14,1, "System options" },
   { SGTEXT, 0, 0, 3,4, 8,1, "CPU Type:" },
   { SGRADIOBUT, 0, 0, 16,4, 7,1, "68000" },
@@ -34,7 +35,8 @@ static SGOBJ systemdlg[] =
   { SGRADIOBUT, 0, 0, 16,8, 7,1, "68040" },
   { SGCHECKBOX, 0, 0, 3,10, 24,1, "Use CPU prefetch mode" },
   { SGCHECKBOX, 0, 0, 3,12, 20,1, "Blitter emulation" },
-  { SGBUTTON, 0, 0, 5,15, 20,1, "Back to main menu" },
+  { SGCHECKBOX, 0, 0, 3,14, 15,1, "Patch Timer-D" },
+  { SGBUTTON, 0, 0, 5,16, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -68,6 +70,11 @@ void Dialog_SystemDlg(void)
   else
     systemdlg[DLGSYS_BLITTER].state &= ~SG_SELECTED;
 
+  if (DialogParams.System.bPatchTimerD)
+    systemdlg[DLGSYS_TIMERD].state |= SG_SELECTED;
+  else
+    systemdlg[DLGSYS_TIMERD].state &= ~SG_SELECTED;
+
   /* Show the dialog: */
   SDLGui_DoDialog(systemdlg);
 
@@ -84,4 +91,5 @@ void Dialog_SystemDlg(void)
 
   DialogParams.System.bCompatibleCpu = (systemdlg[DLGSYS_PREFETCH].state & SG_SELECTED);
   DialogParams.System.bBlitter = ( systemdlg[DLGSYS_BLITTER].state & SG_SELECTED );
+  DialogParams.System.bPatchTimerD = ( systemdlg[DLGSYS_TIMERD].state & SG_SELECTED );
 }

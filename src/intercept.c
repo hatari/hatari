@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.19 2004-02-21 19:51:47 thothy Exp $";
+char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.20 2004-03-01 13:57:29 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -1149,19 +1149,35 @@ void Intercept_TimerBCtrl_WriteByte(void)
 /* INTERCEPT_TIMERCD_CTRL(0xfffa1d byte) */
 void Intercept_TimerCDCtrl_WriteByte(void)
 {
- unsigned short old_tcdcr;
- int pc = m68k_getpc();
+  unsigned short old_tcdcr;
 
- old_tcdcr = MFP_TCDCR;             /* Remember old control state */
- MFP_TCDCR = STRam[0xfffa1d];       /* Store new one */
- if( (MFP_TCDCR^old_tcdcr)&0x70 )   /* Check if Timer C control changed */
-   MFP_StartTimerC();               /* Reset timers if need to */
- if( (MFP_TCDCR^old_tcdcr)&0x07 ){   /* Check if Timer D control changed */
-   if (pc >= TosAddress && pc <= TosAddress + TosSize) {
-     MFP_TCDCR = STRam[0xfffa1d] = (STRam[0xfffa1d] & 0xf0) | 7; // slow down timer d if set from tos
-   }
-   MFP_StartTimerD();               /* Reset timers if need to */
- }
+  old_tcdcr = MFP_TCDCR;            /* Remember old control state */
+  MFP_TCDCR = STRam[0xfffa1d];      /* Store new one */
+
+  if ((MFP_TCDCR^old_tcdcr) & 0x70) /* Check if Timer C control changed */
+    MFP_StartTimerC();              /* Reset timers if need to */
+
+  if ((MFP_TCDCR^old_tcdcr) & 0x07) /* Check if Timer D control changed */
+  {
+    Uint32 pc = m68k_getpc();
+    if (ConfigureParams.System.bPatchTimerD && !bAppliedTimerDPatch
+        && pc >= TosAddress && pc <= TosAddress + TosSize)
+    {
+      /* Slow down Timer-D if set from TOS for the first time to gain more
+       * desktop performance.
+       * Obviously, we need to emulate all timers correctly but TOS sets up
+       * Timer-D at a very high rate (every couple of instructions). The
+       * interrupt isn't enabled but the emulator still needs to process the
+       * interrupt table and this HALVES our frame rate!!!
+       * Some games actually reference this timer but don't set it up
+       * (eg Paradroid, Speedball I) so we simply intercept the Timer-D setup
+       * code in TOS and fix the numbers with more 'laid-back' values.
+       * This still keeps 100% compatibility */
+      MFP_TCDCR = STRam[0xfffa1d] = (STRam[0xfffa1d] & 0xf0) | 7;
+      bAppliedTimerDPatch = TRUE;
+    }
+    MFP_StartTimerD();              /* Reset timers if need to */
+  }
 }
 
 /* INTERCEPT_TIMERA_DATA(0xfffa1f byte) */

@@ -53,6 +53,7 @@ extern unsigned char MFP_TA_MAINCOUNTER;
 extern unsigned char MFP_TB_MAINCOUNTER;
 extern unsigned char MFP_TC_MAINCOUNTER;
 extern unsigned char MFP_TD_MAINCOUNTER;
+extern BOOL bAppliedTimerDPatch;
 
 extern void MFP_Reset(void);
 extern void MFP_MemorySnapShot_Capture(BOOL bSave);

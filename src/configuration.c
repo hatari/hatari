@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.26 2003-12-25 14:19:38 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.27 2004-03-01 13:57:29 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -153,6 +153,7 @@ struct Config_Tag configs_System[] =
   { "nCpuLevel", Int_Tag, &ConfigureParams.System.nCpuLevel },
   { "bCompatibleCpu", Bool_Tag, &ConfigureParams.System.bCompatibleCpu },
   { "bBlitter", Bool_Tag, &ConfigureParams.System.bBlitter },
+  { "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
   { NULL , Error_Tag, NULL }
 };
 
@@ -244,6 +245,7 @@ void Configuration_SetDefault(void)
   ConfigureParams.System.bCompatibleCpu = FALSE;
   ConfigureParams.System.bAddressSpace24 = TRUE;
   ConfigureParams.System.bBlitter = FALSE;
+  ConfigureParams.System.bPatchTimerD = TRUE;
   ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;
 
   /* Initialize the configuration file name */

@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-static char rcsid[] = "Hatari $Id: mfp.c,v 1.11 2004-02-22 09:35:07 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.12 2004-03-01 13:57:29 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -71,10 +71,12 @@ unsigned char MFP_TC_MAINCOUNTER;     /* Timer C Main Counter (these are temp's,
 unsigned char MFP_TD_MAINCOUNTER;     /* Timer D Main Counter (as done via interrupts) */
 
 /* CPU clock cycle counts for each timer */
-int TimerAClockCycles=0;
-int TimerBClockCycles=0;
-int TimerCClockCycles=0;
-int TimerDClockCycles=0;
+static int TimerAClockCycles=0;
+static int TimerBClockCycles=0;
+static int TimerCClockCycles=0;
+static int TimerDClockCycles=0;
+
+BOOL bAppliedTimerDPatch;             /* TRUE if the Timer-D patch has been applied */
 
 /*
  Number of CPU cycles for Timer C+D
@@ -102,11 +104,13 @@ void MFP_Reset(void)
 {
   /* Reset MFP internal variables */
 
+  bAppliedTimerDPatch = FALSE;
+
   /* NOTE  Matthias Arndt <marndt@asmsoftware.de>  9 Aug 2003
    * according to the Atari ST Profibuch, Bit0 of GPIP Data Register
    * is the BUSY signal of the printer port
    * it is SET if no printer is connected or on BUSY
-   * therefor we should assume it to be 0 in Hatari as printer bsuy is
+   * therefor we should assume it to be 0 in Hatari as printer busy is
    * all handled in the Printer submodule
    */
 

@@ -179,6 +179,7 @@ typedef struct
   BOOL bCompatibleCpu;
   BOOL bAddressSpace24;
   BOOL bBlitter;                  /* TRUE if blitter is enabled */
+  BOOL bPatchTimerD;
   MINMAXSPEED_TYPE nMinMaxSpeed;
 } CNF_SYSTEM;
 

@@ -10,9 +10,9 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.46" /* Name, version for window title */
-#define PROG_VERSION        "v0.46"
-#define VERSION_STRING      "0.46 "   /* Always 6 bytes (inc' NULL) */
+#define PROG_NAME      "Hatari v0.47" /* Name, version for window title */
+#define PROG_VERSION        "v0.47"
+#define VERSION_STRING      "0.47 "   /* Always 6 bytes (inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 //#define TOTALLY_FINAL_VERSION       /* Web release version... */
@@ -176,7 +176,6 @@ enum {
 #define  GEMDOS_OPCODE        8  /* Free op-code to intercept GemDOS trap */
 #define  RUNOLDGEMDOS_OPCODE  9  /* Free op-code to set PC to old GemDOS vector(if doesn't need to intercept) */
 #define  SYSINIT_OPCODE      10  /* Free op-code to initialize system (connected drives etc.) */
-#define  TIMERD_OPCODE       11  /* Free op-code to prevent Timer D starting in GemDOS */
 #define  VDI_OPCODE          12  /* Free op-code to call VDI handlers AFTER Trap#2 */
 
 

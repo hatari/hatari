@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.21 2003-09-02 21:56:33 thothy Exp $";
+char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.22 2004-03-01 13:57:31 thothy Exp $";
 
 
 #include <stdio.h>
@@ -170,31 +170,6 @@ unsigned long OpCode_GemDos(uae_u32 opcode)
   fill_prefetch_0();
   return 4;
 }
-
-
-/* ----------------------------------------------------------------------- */
-/*
-  Modify TimerD in GEMDos to gain more desktop performance
-
-  Obviously, we need to emulate all timers correctly but GemDOS set's up Timer D at a very
-  high rate(every couple of instructions). The interrupts isn't enabled but WinSTon still
-  needs to process the interrupt table and this HALVES our frame rate!!! (It causes a cache
-  reload each time). Some games actually reference this timer but don't set it up(eg Paradroid,
-  Speedball I) so we simply intercept the Timer D setup code in GemDOS and fix the numbers
-  with more 'laid-back' values. This still keeps 100% compatibility
-*/
-#if 0 /* This is now done by intercepting the Timer-D hardware registers */
-unsigned long OpCode_TimerD(uae_u32 opcode)
-{
-  /*fprintf(stderr, "OpCode_TimerD handled\n");*/
-  m68k_dreg(regs,0)=3;	/* 3 = Select Timer D */
-  m68k_dreg(regs,1)=7;	/* 1 = /4 for 9600 baud(used /200) */
-  m68k_dreg(regs,2)=100;	/* 2 = 9600 baud(100) */
-  m68k_incpc(2);
-  fill_prefetch_0();
-  return 4;
-}
-#endif
 
 
 /*-----------------------------------------------------------------------*/
