@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.17 2004-04-28 09:04:58 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.18 2004-06-24 19:29:08 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -371,20 +371,20 @@ static void Floppy_DoubleCheckFormat(long DiscSize, Uint16 *pnSides, Uint16 *pnS
 void Floppy_FindDiscDetails(unsigned char *pBuffer, int nImageBytes,
                             unsigned short int *pnSectorsPerTrack, unsigned short int *pnSides)
 {
-  unsigned char *pDiscBuffer;
-  Uint16 nSectorsPerTrack, nSides,nsectors;
+  Uint8 *pDiscBuffer;
+  Uint16 nSectorsPerTrack, nSides, nSectors;
 
   pDiscBuffer = pBuffer;
+
   /* First do check to find number of sectors and bytes per sector */
   nSectorsPerTrack = SDL_SwapLE16(*(Uint16 *)(pDiscBuffer+24));     /* SPT */
   nSides = SDL_SwapLE16(*(Uint16 *)(pDiscBuffer+26));               /* SIDE */
-  nsectors = SDL_SwapLE16(*(Uint16 *)(pDiscBuffer+19));             /* total sectors */
+  nSectors = pDiscBuffer[19] | (pDiscBuffer[20] << 8);              /* total sectors */
 
-  /* Now double-check info as boot-sector may contain incorrect information,
-     eg 'Eat.st' demo, or single/double sides */
-  if (nsectors != nImageBytes/512)
-    /* Don't be paranoid : if the number of sectors announced is correct, then chances
-       are high that the bootsector is correct */
+  /* If the number of sectors announced is incorrect, the boot-sector may
+   * contain incorrect information, eg the 'Eat.st' demo, or wrongly imaged
+   * single/double sided floppies... */
+  if (nSectors != nImageBytes/512)
     Floppy_DoubleCheckFormat(nImageBytes, &nSides, &nSectorsPerTrack);
 
   /* And set values */
