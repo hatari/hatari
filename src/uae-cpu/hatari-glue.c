@@ -1,13 +1,19 @@
 
 #include <stdio.h>
 
-#include "newcpu.h"
-
 #include "../includes/main.h"
 #include "../includes/int.h"
 #include "../includes/tos.h"
+#include "../includes/gemdos.h"
+#include "../includes/cart.h"
 
-
+#ifndef UAESYSDEPS
+#include "sysdeps.h"
+#endif
+#ifndef UAEMEMORY
+#include "memory.h"
+#endif
+#include "newcpu.h"
 
 #ifndef FALSE
 #define FALSE 0
@@ -86,7 +92,37 @@ unsigned long OpCode_ConnectedDrive(uae_u32 opcode)
 {
  fprintf(stderr, "OpCode_ConnectedDrive handled\n");
  /* Set connected drives */
- STMemory_WriteWord(0x4c2, ConnectedDriveMask);
+ STMemory_WriteWord(0x4c2, ConnectedDriveMask); 
+ m68k_incpc(2);
+ return 2;
+}
+
+/* ----------------------------------------------------------------------- */
+/*
+  Re-direct execution to old GEM calls, used in 'cart.s'
+*/
+unsigned long OpCode_OldGemDos(uae_u32 opcode)
+{
+  m68k_setpc( STMemory_ReadLong(CART_OLDGEMDOS) );    
+}
+
+/* ----------------------------------------------------------------------- */
+/*
+  Intercept GEMDOS calls (setup vector $84)
+  The vector is setup when the gemdos-opcode is run the first time, by
+  the cartridge routine. (after gemdos init, before booting floppies)
+
+  After this, our vector will be used, and handled by the GemDOS_OpCode 
+  routine in gemdos.c
+*/
+unsigned long OpCode_GemDos(uae_u32 opcode)
+{
+
+  if(!bInitGemDOS)     
+    GemDOS_Boot();      /* Init on boot - see cartimg.c */    
+  else 
+    GemDOS_OpCode();    /* handler code in gemdos.c */
+
  m68k_incpc(2);
  return 2;
 }
