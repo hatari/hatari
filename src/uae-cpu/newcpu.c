@@ -1109,8 +1109,8 @@ static char* ccnames[] =
 
 void m68k_reset (void)
 {
-    m68k_areg (regs, 7) = get_long (ROMmem_start);
-    m68k_setpc (get_long (ROMmem_start+4));
+    m68k_areg(regs, 7) = get_long(0);
+    m68k_setpc(get_long(4));
     fill_prefetch_0 ();
     regs.s = 1;
     regs.m = 0;

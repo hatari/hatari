@@ -373,7 +373,6 @@ void ShortCut_BossKey(void)
 void ShortCut_ColdReset(void)
 {
   Reset_Cold();                 /* Reset emulator with 'cold' (clear all) */
-  m68k_reset();
 }
 
 //-----------------------------------------------------------------------
@@ -383,5 +382,4 @@ void ShortCut_ColdReset(void)
 void ShortCut_WarmReset(void)
 {
   Reset_Warm();                 /* Emulator 'warm' reset */
-  m68k_reset();
 }

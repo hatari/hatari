@@ -4,6 +4,8 @@
   * Memory management
   *
   * (c) 1995 Bernd Schmidt
+  *
+  * Adaptation to Hatari by Thomas Huth
   */
 
 /*#include "sysconfig.h"*/
@@ -447,7 +449,6 @@ void memory_init (void)
     char buffer[4096];
     char *nam;
     int i, fd;
-    /*int custom_start;*/
 
     allocated_STmem = STmem_size;
     allocated_TTmem = TTmem_size;
@@ -471,7 +472,7 @@ void memory_init (void)
 	memset (address_space + 0xA00000, 0xFF, 0xF00000 - 0xA00000);
 #endif
     STmemory = mmap (address_space, 0x200000, PROT_READ|PROT_WRITE, MAP_PRIVATE | MAP_FIXED, fd, 0);
-    ROMmemory = mmap (address_space + TOSAddress, ROMmem_size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED, fd, 0);
+    ROMmemory = mmap (address_space + ROMmem_start, ROMmem_size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED, fd, 0);
 
     close(fd);
 
@@ -487,7 +488,7 @@ void memory_init (void)
 	mmap (good_address_map + i + 0x1000000 - ROMmem_size, 4096, PROT_READ,
 	      MAP_FIXED | MAP_PRIVATE, good_address_fd, 0);
 #else
-    ROMmemory = STRam+TOSAddress;  /*(uae_u8 *)malloc (ROMmem_size)*/;
+    ROMmemory = STRam+ROMmem_start;  /*(uae_u8 *)malloc (ROMmem_size)*/;
     STmemory = STRam; /*(uae_u8 *)malloc (allocated_STmem);*/
 /*
     while (! STmemory && allocated_STmem > 512*1024) {
@@ -503,27 +504,10 @@ void memory_init (void)
 */
 #endif
 
-    do_put_mem_long ((uae_u32 *)(STmemory), do_get_mem_long((uae_u32 *)ROMmemory));
-    do_put_mem_long ((uae_u32 *)(STmemory + 4), do_get_mem_long((uae_u32 *)(ROMmemory+4)));
     init_mem_banks ();
 
     /* Map the STmem into all of the lower 16MB */
     map_banks (&STmem_bank, 0x00, 256);
-/*
-    custom_start = 0xC0;
-    map_banks (&custom_bank, custom_start, 0xE0-custom_start);
-    map_banks (&cia_bank, 0xA0, 32);
-    map_banks (&clock_bank, 0xDC, 1);
-*/
-    /* @@@ Does anyone have a clue what should be in the 0x200000 - 0xA00000
-     * range on an Amiga without expansion memory?  */
-/*
-    custom_start = allocated_STmem >> 16;
-    if (custom_start < 0x20)
-	custom_start = 0x20;
-    map_banks (&dummy_bank, custom_start, 0xA0 - custom_start);
-*/
-    /*map_banks (&TTram_bank, 0xDE, 1);*/
 
     if (allocated_TTmem > 0)
 	TTmemory = (uae_u8 *)malloc (allocated_TTmem);
@@ -537,8 +521,8 @@ void memory_init (void)
 
     map_banks(&IOmem_bank, IOmem_start>>16, 1);
 
-    STmem_mask = 0x00ffffff /*allocated_STmem- 1*/;
-    ROMmem_mask = 0x00ffffff /*ROMmem_size - 1*/;
+    STmem_mask = 0x00ffffff;
+    ROMmem_mask = 0x00ffffff;
     TTmem_mask = allocated_TTmem - 1;
     IOmem_mask = IOmem_size - 1;
 }

@@ -330,6 +330,9 @@ BOOL Dialog_DoNeedReset(void)
   if ( (ConfigureParams.TOSGEM.nGEMResolution!=DialogParams.TOSGEM.nGEMResolution)
    || (ConfigureParams.TOSGEM.nGEMColours!=DialogParams.TOSGEM.nGEMColours) )
     return(TRUE);
+  /* Did change TOS ROM image? */
+  if (strcmp(DialogParams.TOSGEM.szTOSImageFileName, ConfigureParams.TOSGEM.szTOSImageFileName))
+    return(TRUE);
 
   return(FALSE);
 }
@@ -587,7 +590,13 @@ void Dialog_TosGemDlg(void)
     {
       case DLGTOSGEM_ROMBROWSE:
         strcpy(tmpname, DialogParams.TOSGEM.szTOSImageFileName);
-        if( SDLGui_FileSelect(tmpname) )
+        if(tmpname[0]=='.' && tmpname[1]=='/')  /* Is it in the actual working directory? */
+        {
+          getcwd(tmpname, MAX_FILENAME_LENGTH);
+          File_AddSlashToEndFileName(tmpname);
+          strcat(tmpname, &DialogParams.TOSGEM.szTOSImageFileName[2]);
+        }
+        if( SDLGui_FileSelect(tmpname) )        /* Show and process the file selection dlg */
         {
           strcpy(DialogParams.TOSGEM.szTOSImageFileName, tmpname);
           File_ShrinkName(dlgromname, DialogParams.TOSGEM.szTOSImageFileName, 34);

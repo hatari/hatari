@@ -37,8 +37,6 @@ short int PendingInterruptFlag;
 void *PendingInterruptFunction;
 short int PendingInterruptCount;
 int SoundCycles;
-BOOL bInSuperMode;
-unsigned long EmuCCode;
 unsigned long BusAddressLocation;
 
 
@@ -49,7 +47,6 @@ unsigned long BusAddressLocation;
 //  #define TRAP_ILLEGALINSTRUCTIONERROR_HISTORY  // Or Illegal Instruction
 #endif
 
-BOOL bDoTraceException;          /* Do TRACE? */
 
 
 /*-----------------------------------------------------------------------*/
@@ -68,19 +65,13 @@ void M68000_Reset(BOOL bCold)
   PC = TOSAddress;                            /* Start of TOS image, 0xfc0000 or 0xe00000 */
   SR = 0x2700;                                /* Starting status register */
   MakeFromSR();
-  bDoTraceException = FALSE;                  /* No TRACE exceptions */
-  bInSuperMode = TRUE;                        /* We begin in supervisor mode */
-  Regs[REG_A7] = Regs[REG_A8] = 0x0000f000;   /* Stack default */
   PendingInterruptFlag = 0;                   /* Clear pending flag */
-
-  /* Read Supervisor Stack/PC for warm reset */
-  if (!bCold) {
-    Regs[REG_A8] = STMemory_ReadLong(0x00000000);
-    PC = STMemory_ReadLong(0x00000004);
-  }
 
   /* Hold display for extended VDI resolutions(under init our VDI) */
   bHoldScreenDisplay = TRUE;
+
+  /* Now directly reset the UAE CPU core: */
+  m68k_reset();
 }
 
 
@@ -91,7 +82,7 @@ void M68000_Reset(BOOL bCold)
 void M68000_MemorySnapShot_Capture(BOOL bSave)
 {
   /* Save/Restore details */
-  MemorySnapShot_Store(&bDoTraceException,sizeof(bDoTraceException));
+  /*MemorySnapShot_Store(&bDoTraceException,sizeof(bDoTraceException));*/
 }
 
 
@@ -123,10 +114,10 @@ void M68000_Decode_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&PC,sizeof(PC));
   MemorySnapShot_Store(&SR,sizeof(SR));
   MemorySnapShot_Store(&SR_Before,sizeof(SR_Before));
-  MemorySnapShot_Store(&bInSuperMode,sizeof(bInSuperMode));
+  /*MemorySnapShot_Store(&bInSuperMode,sizeof(bInSuperMode));*/
   /*MemorySnapShot_Store(&Reg_SuperSP,sizeof(Reg_SuperSP));*//*FIXME*/
   /*MemorySnapShot_Store(&Reg_UserSP,sizeof(Reg_UserSP));*/
-  MemorySnapShot_Store(&EmuCCode,sizeof(EmuCCode));
+  /*MemorySnapShot_Store(&EmuCCode,sizeof(EmuCCode));*/
   MemorySnapShot_Store(&ExceptionVector,sizeof(ExceptionVector));  
 }
 
@@ -157,67 +148,6 @@ void M68000_AddressError(unsigned long addr)
   BusAddressLocation=addr;              /* Store for exception frame */
   ExceptionVector=EXCEPTION_ADDRERROR;  /* Handler */
   M68000_Exception();                   /* Cause trap */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  See if in user/super mode and if need to swap SP
-*/
-#if 0  /* Not needed for Hatari at the moment */
-void M68000_CheckUserSuperToggle(void)
-{
-  unsigned long *TempReg;
-  unsigned long TempSP;
-
-  /* Have we swapped mode? */
-  if ( (SR_Before&SR_SUPERMODE)!=(SR&SR_SUPERMODE) ) {
-    /* Yes, swap to ST's REG_A8! */
-    TempSP = Regs[REG_A7];
-    Regs[REG_A7] = Regs[REG_A8];
-    Regs[REG_A8] = TempSP;
-
-    /* Swap super flag */
-    bInSuperMode^=TRUE;
-  }
-
-  /* Set/Clear trace mode */
-  if (SR&SR_TRACEMODE) {
-    /* Have we set the TRACE bit for the FIRST time? Don't let exception occur until NEXT instruction */
-    /* NOTE Sometimes the TRACE bit can be set many times, so only skip exception on FIRST one */
-    if ((PendingInterruptFlag&PENDING_INTERRUPT_FLAG_TRACE)==0) {
-      PendingInterruptFlag |= PENDING_INTERRUPT_FLAG_TRACE;
-      bDoTraceException = FALSE;
-    }
-  }
-  else
-    PendingInterruptFlag &= CLEAR_PENDING_INTERRUPT_FLAG_TRACE;
-}
-#endif
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Called when TRACE bit is set. This causes 'exception' after each instruction, BUT
-  it does not execute after the FIRST 'move SR,xxxx' to set the bit
-*/
-void M68000_TraceModeTriggered(void)
-{
-/*
-  __asm {
-    cmp    [bDoTraceException],FALSE    // First time around? Skip exception
-    je    dont_need_expection
-
-    mov    [ExceptionVector],EXCEPTION_TRACE  // Handler
-    SAVE_ASSEM_REGS            // Save assembly registers
-    call  M68000_Exception        // Cause trap
-    RESTORE_ASSEM_REGS          // Restore assembly registers
-
-dont_need_expection:;
-    mov    [bDoTraceException],TRUE    // Do TRACE exception next time around
-    ret
-  }
-*/
 }
 
 

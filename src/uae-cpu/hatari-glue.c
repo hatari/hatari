@@ -27,7 +27,7 @@ int address_space_24 = 1;
 int cpu_level = 0;              /* 68000 (default) */
 int cpu_compatible = 0;
 
-long STmem_size = 0x100000;  /* 1MB */
+long STmem_size = 0x400000;     /* 4MB */
 long TTmem_size = 0;
 
 
@@ -53,15 +53,13 @@ void customreset(void)
 /* Initialize 680x0 emulation, CheckROM() must have been called first */
 int Init680x0(void)
 {
- memory_init();
-fprintf(stderr, "TOS version: %x.%x\n", STMemory_ReadByte(2), STMemory_ReadByte(3));
-fprintf(stderr, "PC start: $%lx\n", STMemory_ReadLong(4));
+  memory_init();
 
- init_m68k();
+  init_m68k();
 #ifdef USE_COMPILER
- compiler_init();
+  compiler_init();
 #endif
- return TRUE;
+  return TRUE;
 }
 
 
@@ -74,8 +72,8 @@ void Exit680x0(void)
 /* Reset and start 680x0 emulation */
 void Start680x0(void)
 {
- m68k_reset();
- m68k_go(TRUE);
+  m68k_reset();
+  m68k_go(TRUE);
 }
 
 
@@ -86,12 +84,11 @@ void Start680x0(void)
 */
 unsigned long OpCode_ConnectedDrive(uae_u32 opcode)
 {
- /*fprintf(stderr, "OpCode_ConnectedDrive handled\n");*/
- /* Set connected drives */
- STMemory_WriteWord(0x4c2, ConnectedDriveMask); 
- m68k_incpc(2);
- fill_prefetch_0();
- return 4;
+  /* Set connected drives */
+  STMemory_WriteWord(0x4c2, ConnectedDriveMask); 
+  m68k_incpc(2);
+  fill_prefetch_0();
+  return 4;
 }
 
 /* ----------------------------------------------------------------------- */

@@ -86,7 +86,7 @@ enum {
   REG_A5,
   REG_A6,
   REG_A7,    /* ..A7(also SP) */
-  REG_A8=17  /* User/Super Stack Pointer */ /* FIXME: Nasty remap to regs.isp in decode.h */
+  /*REG_A8=17*/  /* User/Super Stack Pointer */ /* FIXME: Nasty remap to regs.isp in decode.h */
 };
 
 /* PC Condition code's */

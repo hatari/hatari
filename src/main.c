@@ -378,7 +378,8 @@ void Main_Init(void)
   Timer_Init();
   Screen_Init();
   Floppy_Init();
-  Reset_Cold();
+  Init680x0();         /* Init CPU emulation */
+  Reset_Cold();        /* Reset all systems */
   GemDOS_Init();
   Intercept_Init();
   Joy_Init();
@@ -456,22 +457,9 @@ int main(int argc, char *argv[])
 //FM  Main_SetSpeedThreadTimer(ConfigureParams.Configure.nMinMaxSpeed);
 //FM  TimerID = SetTimer(hWnd,1,1000,NULL);
 
-#ifdef USE_DEBUGGER
-  /* Run our debugger */
-  Debugger_Init();
+  /* Run emulation */
   Main_UnPauseEmulation();
-  /* Run messages until quit */
-  for(;;) {
-    if (Main_ExecuteWindowsMessage())
-      break;
-  }
-#else
-  /* Run release emulation */
-  Main_UnPauseEmulation();
-  //RunIntructions();
-  Init680x0();         /* Init CPU emulation */
-  Start680x0();        /* Start emulation */
-#endif
+  Start680x0();                 /* Start emulation */
 
   /* Un-init emulation system */
 //FM  KillTimer(hWnd,TimerID);

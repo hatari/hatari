@@ -4,6 +4,8 @@
   * memory management
   *
   * Copyright 1995 Bernd Schmidt
+  *
+  * Adaptation to Hatari by Thomas Huth
   */
 
 #ifndef UAEMEMORY
@@ -28,14 +30,6 @@ typedef uae_u8 *(*xlate_func)(uaecptr) REGPARAM;
 typedef int (*check_func)(uaecptr, uae_u32) REGPARAM;
 
 extern char *address_space, *good_address_map;
-extern uae_u8 *chipmemory;
-
-extern uae_u32 allocated_chipmem;
-extern uae_u32 allocated_fastmem;
-extern uae_u32 allocated_bogomem;
-extern uae_u32 allocated_gfxmem;
-extern uae_u32 allocated_z3fastmem;
-extern uae_u32 allocated_a3000mem;
 
 #undef DIRECT_MEMFUNCS_SUCCESSFUL
 /*#include "machdep/maccess.h"*/
@@ -48,8 +42,8 @@ extern uae_u32 allocated_a3000mem;
 #define USE_MAPPED_MEMORY
 #endif
 
-#define ROMmem_size TOSSize
-#define ROMmem_start TOSAddress
+#define ROMmem_start 0x00E00000
+#define ROMmem_size  (0x00FF0000-0x00E00000)
 
 #define STmem_start 0x00000000
 #define TTmem_start 0x01000000

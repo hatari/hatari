@@ -16,8 +16,8 @@ STATIC_INLINE void do_cycles(unsigned long cycles_to_add)
  PendingInterruptCount -= (short)cycles_to_add;     /* Add cycle time including effective address time */
  if( PendingInterruptCount<=0 || PendingInterruptFlag)	/* Check for any interrupts or flag to service */
   {
-   if( PendingInterruptFlag&PENDING_INTERRUPT_FLAG_TRACE )
-     M68000_TraceModeTriggered();
+   /*if( PendingInterruptFlag&PENDING_INTERRUPT_FLAG_TRACE )
+     M68000_TraceModeTriggered();*/
    if( PendingInterruptFlag&PENDING_INTERRUPT_FLAG_MFP )
      MFP_CheckPendingInterrupts();
    if( PendingInterruptCount<=0 && PendingInterruptFunction )
