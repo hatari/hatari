@@ -141,13 +141,13 @@ for it installed as well.
 Of course, you need the GNU C compiler and (GNU) Make, too!
 </p>
 
-<p> Change to the src/ directory and adapt the Makefile to suite your
-mood (and system of course). Then compile it by typing <span class="commandline">make</span>. If all
-works fine, you'll get the executable <span class="commandline">hatari</span>. </p>
+<p> Change to the hatari/ directory and adapt the configuration file Makefile.cnf to suite your
+mood (and system of course). Then compile Hatari by typing <span class="commandline">make</span>. If all
+works fine, you'll get the executable <span class="commandline">hatari</span> in the src/ subdirectory.</p>
 
 <h3>Installation of a TOS ROM</h3>
 <p> Then you'll have to copy a TOS ROM to the data directory (the data directory is specified
-in the Makefile) and rename it to <span class="commandline">tos.img</span>, or use the
+in the configuration file Makefile.cnf) and rename it to <span class="commandline">tos.img</span>, or use the
 <span class="commandline">--tos</span> command line option to tell Hatari where to find a TOS ROM.
 Hatari needs a TOS ROM image because this contains the operating system
 of the emulated Atari. Sorry, it is not possible to ship an image with
@@ -159,14 +159,16 @@ where to find one.
 <p> Another solution is EmuTOS, which is an open-source
 TOS clone. You can find EmuTOS at: <a href="http://emutos.sourceforge.net/">http://emutos.sourceforge.net/</a>. It's
 not the best solution for playing games or running other old software
-due to compatibility issues, but it's free! </p>
+due to compatibility issues, but it's free and officially compatible with Hatari! </p>
 <p>If you do not specify a TOS image on the commandline nor can Hatari
 find a suitable TOS image in the default dir, you'll get the chance to
 select a TOS image file from the GUI. </p>
 
 <h3>Installation of the binary</h3>
-<p> Simply copy the hatari binary somewhere in your path where you can
-access it easily by typing <span class="commandline">hatari</span> in your shell. </p>
+<p> Type <span class="commandline">make install</span> as root to do a systemwide installation. In this case it is recommended
+to set the DATADIR variable in Makefile.cnf to a proper value. <tt>/usr/local/share/hatari</tt> is a good value in that case.</p>
+<p>The Hatari executable should now be in your PATH and accessible from anywhere.</p>
+
 <p> When you finally have got a TOS image, try starting Hatari with the
 option <span class="commandline">--help</span> to find out more about its command line parameters. </p>
 
@@ -738,7 +740,7 @@ parts of the emulated system is much trickier.
 	  <td>&nbsp;</td>
 	</tr>
 	<tr>
-	  <td>Klax</td>
+	  <td>Armalyte</td>
 	  <td>yes</td>
 	  <td>&nbsp;</td>
 	  <td>&nbsp;</td>
@@ -828,7 +830,7 @@ parts of the emulated system is much trickier.
 	<tbody>
     <tr>
       <td align="left"><a href="http://validator.w3.org/check/referer"><img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a></td>
-      <td align="right"><address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a> October 28 2003</address></td>
+      <td align="right"><address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a> October 29 2003</address></td>
     </tr>
 	</tbody>
 </table>
