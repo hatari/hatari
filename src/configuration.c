@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.35 2005-02-10 00:11:39 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.36 2005-02-12 17:04:50 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -20,6 +20,7 @@ char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.35 2005-02-10 00:1
 #include "vdi.h"
 #include "screen.h"
 #include "shortcut.h"
+#include "m68000.h"
 #include "memAlloc.h"
 #include "file.h"
 #include "uae-cpu/hatari-glue.h"
@@ -152,6 +153,7 @@ struct Config_Tag configs_System[] =
 {
   { "nMinMaxSpeed", Int_Tag, &ConfigureParams.System.nMinMaxSpeed },
   { "nCpuLevel", Int_Tag, &ConfigureParams.System.nCpuLevel },
+  { "nCpuFreq", Int_Tag, &ConfigureParams.System.nCpuFreq },
   { "bCompatibleCpu", Bool_Tag, &ConfigureParams.System.bCompatibleCpu },
   { "nMachineType", Int_Tag, &ConfigureParams.System.nMachineType },
   { "bBlitter", Bool_Tag, &ConfigureParams.System.bBlitter },
@@ -246,6 +248,7 @@ void Configuration_SetDefault(void)
 
   /* Set defaults for System */
   ConfigureParams.System.nCpuLevel = 0;
+  ConfigureParams.System.nCpuFreq = 8;
   ConfigureParams.System.bCompatibleCpu = FALSE;
   /*ConfigureParams.System.bAddressSpace24 = TRUE;*/
   ConfigureParams.System.nMachineType = MACHINE_ST;
@@ -283,6 +286,23 @@ void Configuration_WorkOnDetails(BOOL bReset)
   /* Set playback frequency */
   if (ConfigureParams.Sound.bEnableSound)
     Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackQuality);
+
+  /* CPU settings */
+  if (ConfigureParams.System.nCpuFreq < 12)
+  {
+    ConfigureParams.System.nCpuFreq = 8;
+    nCpuFreqShift = 0;
+  }
+  else if (ConfigureParams.System.nCpuFreq > 26)
+  {
+    ConfigureParams.System.nCpuFreq = 32;
+    nCpuFreqShift = 2;
+  }
+  else
+  {
+    ConfigureParams.System.nCpuFreq = 16;
+    nCpuFreqShift = 1;
+  }
 
   /* Remove slashes, etc.. from names */
   File_CleanFileName(ConfigureParams.Rom.szTosImageFileName);

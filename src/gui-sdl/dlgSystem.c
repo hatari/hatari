@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.3 2005-02-10 00:11:43 thothy Exp $";
+char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.4 2005-02-12 17:04:52 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -19,17 +19,20 @@ char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.3 2005-02-10 00:11:43 thot
 #define DLGSYS_68040    8
 #define DLGSYS_ST       11
 #define DLGSYS_STE      12
-#define DLGSYS_PREFETCH 13
-#define DLGSYS_BLITTER  14
-#define DLGSYS_RTC      15
-#define DLGSYS_TIMERD   16
-#define DLGSYS_SLOWFDC  17
+#define DLGSYS_8MHZ     14
+#define DLGSYS_16MHZ    15
+#define DLGSYS_32MHZ    16
+#define DLGSYS_PREFETCH 17
+#define DLGSYS_BLITTER  18
+#define DLGSYS_RTC      19
+#define DLGSYS_TIMERD   20
+#define DLGSYS_SLOWFDC  21
 
 
 /* The "System" dialog: */
 static SGOBJ systemdlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 36,21, NULL },
+	{ SGBOX, 0, 0, 0,0, 36,23, NULL },
 	{ SGTEXT, 0, 0, 11,1, 14,1, "System options" },
 
 	{ SGBOX, 0, 0, 2,3, 16,9, NULL },
@@ -45,13 +48,18 @@ static SGOBJ systemdlg[] =
 	{ SGRADIOBUT, 0, 0, 23,6, 7,1, "ST" },
 	{ SGRADIOBUT, 0, 0, 23,7, 7,1, "STE" },
 
-	{ SGCHECKBOX, 0, 0, 2,13, 32,1, "Slower but more compatible CPU" },
-	{ SGCHECKBOX, 0, 0, 2,14, 20,1, "Blitter emulation" },
-	{ SGCHECKBOX, 0, 0, 2,15, 27,1, "Real time clock emulation" },
-	{ SGCHECKBOX, 0, 0, 2,16, 15,1, "Patch Timer-D" },
-	{ SGCHECKBOX, 0, 0, 2,17, 25,1, "Slow down FDC emulation" },
+	{ SGTEXT, 0, 0, 2,13, 15,1, "CPU clock (MHz):" },
+	{ SGRADIOBUT, 0, 0, 19,13, 3,1, "8" },
+	{ SGRADIOBUT, 0, 0, 24,13, 4,1, "16" },
+	{ SGRADIOBUT, 0, 0, 30,13, 4,1, "32" },
 
-	{ SGBUTTON, 0, 0, 8,19, 20,1, "Back to main menu" },
+	{ SGCHECKBOX, 0, 0, 2,15, 32,1, "Slower but more compatible CPU" },
+	{ SGCHECKBOX, 0, 0, 2,16, 20,1, "Blitter emulation" },
+	{ SGCHECKBOX, 0, 0, 2,17, 27,1, "Real time clock emulation" },
+	{ SGCHECKBOX, 0, 0, 2,18, 15,1, "Patch Timer-D" },
+	{ SGCHECKBOX, 0, 0, 2,19, 25,1, "Slow down FDC emulation" },
+
+	{ SGBUTTON, 0, 0, 8,21, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -79,6 +87,17 @@ void Dialog_SystemDlg(void)
 		systemdlg[i].state &= ~SG_SELECTED;
 	}
 	systemdlg[DLGSYS_ST + DialogParams.System.nMachineType].state |= SG_SELECTED;
+
+	for (i = DLGSYS_8MHZ; i <= DLGSYS_16MHZ; i++)
+	{
+		systemdlg[i].state &= ~SG_SELECTED;
+	}
+	if (DialogParams.System.nCpuFreq == 32)
+	  systemdlg[DLGSYS_32MHZ].state |= SG_SELECTED;
+	else if (DialogParams.System.nCpuFreq == 16)
+	  systemdlg[DLGSYS_16MHZ].state |= SG_SELECTED;
+	else
+	  systemdlg[DLGSYS_8MHZ].state |= SG_SELECTED;
 
 	if (DialogParams.System.bCompatibleCpu)
 		systemdlg[DLGSYS_PREFETCH].state |= SG_SELECTED;
@@ -127,6 +146,13 @@ void Dialog_SystemDlg(void)
 			break;
 		}
 	}
+
+	if (systemdlg[DLGSYS_32MHZ].state & SG_SELECTED)
+		DialogParams.System.nCpuFreq = 32;
+	else if (systemdlg[DLGSYS_16MHZ].state & SG_SELECTED)
+		DialogParams.System.nCpuFreq = 16;
+	else
+		DialogParams.System.nCpuFreq = 8;
 
 	DialogParams.System.bCompatibleCpu = (systemdlg[DLGSYS_PREFETCH].state & SG_SELECTED);
 	DialogParams.System.bBlitter = (systemdlg[DLGSYS_BLITTER].state & SG_SELECTED);

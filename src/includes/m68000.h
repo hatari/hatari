@@ -23,6 +23,7 @@ extern short int PendingInterruptCount;
 extern Uint32 BusErrorAddress;
 extern Uint32 BusErrorPC;
 extern BOOL bBusErrorReadWrite;
+extern int nCpuFreqShift;
 
 
 /*-----------------------------------------------------------------------*/
@@ -32,9 +33,9 @@ extern BOOL bBusErrorReadWrite;
 */
 static inline void M68000_AddCycles(int cycles)
 {
-  cycles = (cycles + 3) & ~3;
-  PendingInterruptCount -= cycles;
-  SoundCycles += cycles;
+	cycles = ((cycles + 3) & ~3) >> nCpuFreqShift;
+	PendingInterruptCount -= cycles;
+	SoundCycles += cycles;
 }
 
 extern void M68000_Reset(BOOL bCold);

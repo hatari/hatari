@@ -182,6 +182,7 @@ typedef enum
 typedef struct
 {
   int nCpuLevel;
+  int nCpuFreq;
   BOOL bCompatibleCpu;
   /*BOOL bAddressSpace24;*/
   MACHINETYPE nMachineType;

@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.30 2005-02-02 21:53:50 thothy Exp $";
+char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.31 2005-02-12 17:04:50 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -31,6 +31,7 @@ short int PendingInterruptCount;
 Uint32 BusErrorAddress;          /* Stores the offending address for bus-/address errors */
 Uint32 BusErrorPC;               /* Value of the PC when bus error occurs */
 BOOL bBusErrorReadWrite;         /* 0 for write error, 1 for read error */
+int nCpuFreqShift;               /* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
 
 
 /*-----------------------------------------------------------------------*/
