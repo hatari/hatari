@@ -54,7 +54,7 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.5 2005-03-07 23:15:48 thothy Exp $";
+char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.6 2005-04-01 11:14:46 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,38 +68,38 @@ char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.5 2005-03-07 23:15:48 thothy E
 /* --- Remove spaces from beginning and end of a string --- */
 static char *trim(char *buffer)
 {
-  const char SPACE = ' ';
-  const char TABULA = '\t';
+	const char SPACE = ' ';
+	const char TABULA = '\t';
 
-  if (buffer != NULL)
-  {
-    int i, linelen;
-    
-    linelen = strlen(buffer);
+	if (buffer != NULL)
+	{
+		int i, linelen;
 
-    for (i = 0; i < linelen; i++)
-    {
-      if (buffer[i] != SPACE && buffer[i] != TABULA)
-        break;
-    }
+		linelen = strlen(buffer);
 
-    if (i > 0 && i < linelen)
-    {
-      linelen -= i;
-      memmove(buffer, buffer + i, linelen);
-    }
+		for (i = 0; i < linelen; i++)
+		{
+			if (buffer[i] != SPACE && buffer[i] != TABULA)
+				break;
+		}
 
-    for (i = linelen; i > 0; i--)
-    {
-      int j = i - 1;
-      if (buffer[j] != SPACE && buffer[j] != TABULA)
-        break;
-    }
+		if (i > 0 && i < linelen)
+		{
+			linelen -= i;
+			memmove(buffer, buffer + i, linelen);
+		}
 
-    buffer[i] = '\0';
-  }
+		for (i = linelen; i > 0; i--)
+		{
+			int j = i - 1;
+			if (buffer[j] != SPACE && buffer[j] != TABULA)
+				break;
+		}
 
-  return buffer;
+		buffer[i] = '\0';
+	}
+
+	return buffer;
 }
 
 
@@ -116,151 +116,155 @@ static char *trim(char *buffer)
 /-------------------------------------------------------------------<<*/
 int input_config(const char *filename, struct Config_Tag configs[], const char *header)
 {
-   struct Config_Tag *ptr;
-   int count=0, lineno=0;
-   FILE *file;
-   char *fptr,*tok,*next;
-   char line[1024];
+	struct Config_Tag *ptr;
+	int count=0, lineno=0;
+	FILE *file;
+	char *fptr,*tok,*next;
+	char line[1024];
 
-   file = fopen(filename,"r");
-   if (file == NULL) return -1;                 /* return error designation. */
+	file = fopen(filename,"r");
+	if (file == NULL)
+		return -1;                 /* return error designation. */
 
-   if (header != NULL)
-   {
-     do
-     {
-       fptr = trim(fgets(line, sizeof(line), file));  /* get input line */
-     }
-     while ( memcmp(line,header,strlen(header)) && !feof(file));
-   }
+	if (header != NULL)
+	{
+		do
+		{
+			fptr = trim(fgets(line, sizeof(line), file));  /* get input line */
+		}
+		while ( memcmp(line,header,strlen(header)) && !feof(file));
+	}
 
-   if ( !feof(file) )
-    do
-    {
-      fptr = trim(fgets(line, sizeof(line), file));   /* get input line */
-      if ( fptr==NULL ) continue;
-      lineno++;
-      if (line[0] == '#')  continue;            /* skip comments */
-      if (line[0] == '[')  continue;            /* skip next header */
-      tok = trim(strtok(line, "=\n\r"));        /* get first token */
-      if (tok != NULL)
-      {
-         next = trim(strtok(NULL, "=\n\r"));    /* get actual config information */
-         for (ptr = configs; ptr->buf; ++ptr)   /* scan for token */
-         {
-            if (!strcmp(tok, ptr->code))        /* got a match? */
-            {
-               switch (ptr->type)               /* check type */
-               {
-               case Bool_Tag:
-                  if (!strcasecmp(next,"FALSE"))
-                     *((BOOL *)(ptr->buf)) = FALSE;
-                  else if (!strcasecmp(next,"TRUE"))
-                     *((BOOL *)(ptr->buf)) = TRUE;
-                  ++count;
-                  break;
+	if ( !feof(file) )
+		do
+		{
+			fptr = trim(fgets(line, sizeof(line), file));   /* get input line */
+			if (fptr == NULL)
+				continue;
+			lineno++;
+			if (line[0] == '#')
+				continue;                               /* skip comments */
+			if (line[0] == '[')
+				continue;                               /* skip next header */
+			tok = trim(strtok(line, "=\n\r"));          /* get first token */
+			if (tok != NULL)
+			{
+				next = trim(strtok(NULL, "=\n\r"));     /* get actual config information */
+				for (ptr = configs; ptr->buf; ++ptr)    /* scan for token */
+				{
+					if (!strcmp(tok, ptr->code))        /* got a match? */
+					{
+						switch (ptr->type)              /* check type */
+						{
+						 case Bool_Tag:
+							if (!strcasecmp(next,"FALSE"))
+								*((BOOL *)(ptr->buf)) = FALSE;
+							else if (!strcasecmp(next,"TRUE"))
+								*((BOOL *)(ptr->buf)) = TRUE;
+							++count;
+							break;
 
-               case Char_Tag:
-                  sscanf(next, "%c", (char *)(ptr->buf));
-                  ++count;
-                  break;
+						 case Char_Tag:
+							sscanf(next, "%c", (char *)(ptr->buf));
+							++count;
+							break;
 
-               case Short_Tag:
-                  sscanf(next, "%hd", (short *)(ptr->buf));
-                  ++count;
-                  break;
+						 case Short_Tag:
+							sscanf(next, "%hd", (short *)(ptr->buf));
+							++count;
+							break;
 
-               case Int_Tag:
-                  sscanf(next, "%d", (int *)(ptr->buf));
-                  ++count;
-                  break;
+						 case Int_Tag:
+							sscanf(next, "%d", (int *)(ptr->buf));
+							++count;
+							break;
 
-               case Long_Tag:
-                  sscanf(next, "%ld", (long *)(ptr->buf));
-                  ++count;
-                  break;
+						 case Long_Tag:
+							sscanf(next, "%ld", (long *)(ptr->buf));
+							++count;
+							break;
 
-               case Float_Tag:
-                  sscanf(next, "%g", (float *)ptr->buf);
-                  ++count;
-                  break;
+						 case Float_Tag:
+							sscanf(next, "%g", (float *)ptr->buf);
+							++count;
+							break;
 
-               case Double_Tag:
-                  sscanf(next, "%lg", (double *)ptr->buf);
-                  ++count;
-                  break;
+						 case Double_Tag:
+							sscanf(next, "%lg", (double *)ptr->buf);
+							++count;
+							break;
 
-               case String_Tag:
-                  if(next)
-                    strcpy((char *)ptr->buf, next);
-                  else
-                    *(char *)ptr->buf = 0;
-                  ++count;
-                  break;
+						 case String_Tag:
+							if(next)
+								strcpy((char *)ptr->buf, next);
+							else
+								*(char *)ptr->buf = 0;
+							++count;
+							break;
 
-               case Error_Tag:
-               default:
-                  printf("Error in Config file %s on line %d\n", filename, lineno);
-                  break;
-               }
-            }
+						 case Error_Tag:
+						 default:
+							printf("Error in Config file %s on line %d\n", filename, lineno);
+							break;
+						}
+					}
 
-         }
-      }
-    }
-    while ( fptr!=NULL && line[0]!='[');
+				}
+			}
+		}
+		while ( fptr!=NULL && line[0]!='[');
 
-   fclose(file);
-   return count;
+	fclose(file);
+	return count;
 }
 
 
 /* Write out an settings line */
 static int write_token(FILE *outfile, struct Config_Tag *ptr)
 {
-  fprintf(outfile,"%s = ",ptr->code);
+	fprintf(outfile,"%s = ",ptr->code);
 
-  switch (ptr->type)    /* check type */
-  {
-    case Bool_Tag:
-      fprintf(outfile,"%s\n", *((BOOL *)(ptr->buf)) ? "TRUE" : "FALSE");
-      break;
+	switch (ptr->type)    /* check type */
+	{
+	 case Bool_Tag:
+		fprintf(outfile,"%s\n", *((BOOL *)(ptr->buf)) ? "TRUE" : "FALSE");
+		break;
 
-    case Char_Tag:
-      fprintf(outfile, "%c\n", *((char *)(ptr->buf)));
-      break;
+	 case Char_Tag:
+		fprintf(outfile, "%c\n", *((char *)(ptr->buf)));
+		break;
 
-    case Short_Tag:
-      fprintf(outfile, "%hd\n", *((short *)(ptr->buf)));
-      break;
+	 case Short_Tag:
+		fprintf(outfile, "%hd\n", *((short *)(ptr->buf)));
+		break;
 
-    case Int_Tag:
-      fprintf(outfile, "%d\n", *((int *)(ptr->buf)));
-      break;
+	 case Int_Tag:
+		fprintf(outfile, "%d\n", *((int *)(ptr->buf)));
+		break;
 
-    case Long_Tag:
-      fprintf(outfile, "%ld\n", *((long *)(ptr->buf)));
-      break;
+	 case Long_Tag:
+		fprintf(outfile, "%ld\n", *((long *)(ptr->buf)));
+		break;
 
-    case Float_Tag:
-      fprintf(outfile, "%g\n", *((float *)ptr->buf));
-      break;
+	 case Float_Tag:
+		fprintf(outfile, "%g\n", *((float *)ptr->buf));
+		break;
 
-    case Double_Tag:
-      fprintf(outfile, "%g\n", *((double *)ptr->buf));
-      break;
+	 case Double_Tag:
+		fprintf(outfile, "%g\n", *((double *)ptr->buf));
+		break;
 
-    case String_Tag:
-      fprintf(outfile, "%s\n",(char *)ptr->buf);
-      break;
+	 case String_Tag:
+		fprintf(outfile, "%s\n",(char *)ptr->buf);
+		break;
 
-    case Error_Tag:
-    default:
-      fprintf(stderr, "Error in Config structure (Contact author).\n");
-      return -1;
-  }
+	 case Error_Tag:
+	 default:
+		fprintf(stderr, "Error in Config structure (Contact author).\n");
+		return -1;
+	}
 
-  return 0;
+	return 0;
 }
 
 
@@ -277,180 +281,182 @@ static int write_token(FILE *outfile, struct Config_Tag *ptr)
 /-------------------------------------------------------------------<<*/
 int update_config(const char *filename, struct Config_Tag configs[], const char *header)
 {
-   struct Config_Tag *ptr;
-   int count=0, lineno=0;
-   FILE *cfgfile, *tempfile;
-   char *fptr, *tok, *next;
-   char line[1024];
+	struct Config_Tag *ptr;
+	int count=0, lineno=0;
+	FILE *cfgfile, *tempfile;
+	char *fptr, *tok, *next;
+	char line[1024];
 
-   cfgfile = fopen(filename, "r");
+	cfgfile = fopen(filename, "r");
 
-   /* If the cfg file does not yet exists, we can create it directly: */
-   if (cfgfile == NULL)
-   {
-      cfgfile = fopen(filename, "w");
-      if (cfgfile == NULL)
-         return -1;                             /* return error designation. */
-      if (header != NULL)
-      {
-         fprintf(cfgfile,"%s\n",header);
-      }
-      for (ptr=configs; ptr->buf; ++ptr)        /* scan for token */
-      {
-         if(write_token(cfgfile, ptr) == 0)
-           ++count;
-      }
+	/* If the cfg file does not yet exists, we can create it directly: */
+	if (cfgfile == NULL)
+	{
+		cfgfile = fopen(filename, "w");
+		if (cfgfile == NULL)
+			return -1;                             /* return error designation. */
+		if (header != NULL)
+		{
+			fprintf(cfgfile,"%s\n",header);
+		}
+		for (ptr=configs; ptr->buf; ++ptr)        /* scan for token */
+		{
+			if (write_token(cfgfile, ptr) == 0)
+				++count;
+		}
 
-      fclose(cfgfile);
-      return count;
-   }
+		fclose(cfgfile);
+		return count;
+	}
 
-   tempfile = tmpfile();                        /* Open a temporary file for output */
-   if (tempfile == NULL)
-   {
-      fclose(cfgfile);
-      return -1;                                /* return error designation. */
-   }
+	tempfile = tmpfile();                        /* Open a temporary file for output */
+	if (tempfile == NULL)
+	{
+		fclose(cfgfile);
+		return -1;                                /* return error designation. */
+	}
 
-   if (header != NULL)
-   {
-      do
-      {
-         fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
-         if (feof(cfgfile))
-           break;
-         fprintf(tempfile, "%s", line);
-      }
-      while(memcmp(line, header, strlen(header)));
-   }
+	if (header != NULL)
+	{
+		do
+		{
+			fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
+			if (feof(cfgfile))
+				break;
+			fprintf(tempfile, "%s", line);
+		}
+		while(memcmp(line, header, strlen(header)));
+	}
 
-   if (feof(cfgfile))
-   {
-      if (header != NULL)
-      {
-         fprintf(tempfile, "\n%s\n", header);
-      }
-      for (ptr = configs; ptr->buf; ++ptr)                /* scan for token */
-      {
-         if(write_token(tempfile, ptr) == 0)
-           ++count;
-      }
-   }
-   else
-   {
-      char *savedtokenflags;            /* Array to log the saved tokens */
-      int numtokens;                    /* Total number of tokens to save */
+	if (feof(cfgfile))
+	{
+		if (header != NULL)
+		{
+			fprintf(tempfile, "\n%s\n", header);
+		}
+		for (ptr = configs; ptr->buf; ++ptr)                /* scan for token */
+		{
+			if (write_token(tempfile, ptr) == 0)
+				++count;
+		}
+	}
+	else
+	{
+		char *savedtokenflags;            /* Array to log the saved tokens */
+		int numtokens;                    /* Total number of tokens to save */
 
-      /* Find total number of tokens: */
-      numtokens = 0;
-      for (ptr=configs; ptr->buf; ++ptr)
-      {
-         numtokens += 1;
-      }
+		/* Find total number of tokens: */
+		numtokens = 0;
+		for (ptr=configs; ptr->buf; ++ptr)
+		{
+			numtokens += 1;
+		}
 
-      savedtokenflags = malloc(numtokens * sizeof(char));
-      if (savedtokenflags)
-        memset(savedtokenflags, 0, numtokens * sizeof(char));
+		savedtokenflags = malloc(numtokens * sizeof(char));
+		if (savedtokenflags)
+			memset(savedtokenflags, 0, numtokens * sizeof(char));
 
-      for(;;)
-      {
-         fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
-         if (fptr == NULL)  break;
-         lineno++;
-         if (line[0] == '#')
-         {
-            fprintf(tempfile, "%s", line);
-            continue;                                 /* skip comments */
-         }
-         if (line[0] == '[' || feof(cfgfile))
-         {
-           break;
-         }
+		for(;;)
+		{
+			fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
+			if (fptr == NULL)
+				break;
+			lineno++;
+			if (line[0] == '#')
+			{
+				fprintf(tempfile, "%s", line);
+				continue;                                 /* skip comments */
+			}
+			if (line[0] == '[' || feof(cfgfile))
+			{
+				break;
+			}
 
-         tok = trim(strtok(line, "=\n\r"));           /* get first token */
-         if (tok != NULL)
-         {
-            int i = 0;
-            next = strtok(line, "=\n\r");             /* get actual config information */
-            for (ptr = configs; ptr->buf; ++ptr, i++) /* scan for token */
-            {
-               if (!strcmp(tok, ptr->code))           /* got a match? */
-               {
-                 if (write_token(tempfile, ptr) == 0)
-                 {
-                   if (savedtokenflags)
-                     savedtokenflags[i] = TRUE;
-                   count += 1;
-                 }
-               }
-            }
-         }
-      }
+			tok = trim(strtok(line, "=\n\r"));           /* get first token */
+			if (tok != NULL)
+			{
+				int i = 0;
+				next = strtok(line, "=\n\r");             /* get actual config information */
+				for (ptr = configs; ptr->buf; ++ptr, i++) /* scan for token */
+				{
+					if (!strcmp(tok, ptr->code))           /* got a match? */
+					{
+						if (write_token(tempfile, ptr) == 0)
+						{
+							if (savedtokenflags)
+								savedtokenflags[i] = TRUE;
+							count += 1;
+						}
+					}
+				}
+			}
+		}
 
-      /* Write remaining (new?) tokens that were not in the configuration file, yet */
-      if (count != numtokens && savedtokenflags != NULL)
-      {
-        int i;
-        for (ptr = configs, i = 0; ptr->buf; ++ptr, i++)
-        {
-          if (!savedtokenflags[i])
-          {
-            if (write_token(tempfile, ptr) == 0)
-            {
-              count += 1;
-              fprintf(stderr, "Wrote new token %s -> %s \n", header, ptr->code);
-            }
-          }
-        }
-      }
+		/* Write remaining (new?) tokens that were not in the configuration file, yet */
+		if (count != numtokens && savedtokenflags != NULL)
+		{
+			int i;
+			for (ptr = configs, i = 0; ptr->buf; ++ptr, i++)
+			{
+				if (!savedtokenflags[i])
+				{
+					if (write_token(tempfile, ptr) == 0)
+					{
+						count += 1;
+						fprintf(stderr, "Wrote new token %s -> %s \n", header, ptr->code);
+					}
+				}
+			}
+		}
 
-      if (savedtokenflags)  free(savedtokenflags);
-      savedtokenflags = NULL;
+		if (savedtokenflags)
+			free(savedtokenflags);
+		savedtokenflags = NULL;
 
-      if (!feof(cfgfile) && fptr != NULL)
-        fprintf(tempfile, "\n%s", line);
+		if (!feof(cfgfile) && fptr != NULL)
+			fprintf(tempfile, "\n%s", line);
 
-      for(;;)
-      {
-        fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
-        if (feof(cfgfile))
-          break;
-        fprintf(tempfile, "%s", line);
-      }
-   }
+		for(;;)
+		{
+			fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
+			if (feof(cfgfile))
+				break;
+			fprintf(tempfile, "%s", line);
+		}
+	}
 
 
-   /* Re-open the config file for writing: */
-   fclose(cfgfile);
-   cfgfile = fopen(filename, "wb");
-   if (cfgfile == NULL)
-   {
-     fclose(tempfile);
-     return -1;
-   }
+	/* Re-open the config file for writing: */
+	fclose(cfgfile);
+	cfgfile = fopen(filename, "wb");
+	if (cfgfile == NULL)
+	{
+		fclose(tempfile);
+		return -1;
+	}
 
-   if(fseek(tempfile, 0, SEEK_SET) != 0)
-   {
-     fclose(cfgfile);
-     fclose(tempfile);
-     return -1;
-   }
+	if (fseek(tempfile, 0, SEEK_SET) != 0)
+	{
+		fclose(cfgfile);
+		fclose(tempfile);
+		return -1;
+	}
 
-   /* Now copy the temporary file to the configuration file: */
-   while(!feof(tempfile))
-   {
-     size_t copycount;
-     copycount = fread(line, sizeof(char), sizeof(line), tempfile);
-     if(fwrite(line, sizeof(char), copycount, cfgfile) != copycount)
-     {
-       fclose(cfgfile);
-       fclose(tempfile);
-       return -1;
-     }
-   }
+	/* Now copy the temporary file to the configuration file: */
+	while(!feof(tempfile))
+	{
+		size_t copycount;
+		copycount = fread(line, sizeof(char), sizeof(line), tempfile);
+		if (fwrite(line, sizeof(char), copycount, cfgfile) != copycount)
+		{
+			fclose(cfgfile);
+			fclose(tempfile);
+			return -1;
+		}
+	}
 
-   fclose(cfgfile);
-   fclose(tempfile);
-   return count;
+	fclose(cfgfile);
+	fclose(tempfile);
+	return count;
 }
 

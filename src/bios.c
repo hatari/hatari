@@ -9,7 +9,7 @@
   We intercept and direct some Bios calls to handle input/output to RS-232
   or the printer etc...
 */
-char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.5 2004-04-23 15:33:58 thothy Exp $";
+char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.6 2005-04-01 11:14:45 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -28,42 +28,42 @@ char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.5 2004-04-23 15:33:58 thothy Exp $";
   BIOS Return input device status
   Call 1
 */
-static BOOL Bios_Bconstat(unsigned long Params)
+static BOOL Bios_Bconstat(Uint32 Params)
 {
-  unsigned short Dev;
+	Uint16 Dev;
 
-  Dev = STMemory_ReadWord(Params+SIZE_WORD);
+	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 
-  switch(Dev)
-  {
-    case 0:                             /* PRT: Centronics */
-      if (ConfigureParams.Printer.bEnablePrinting)
-      {
-        Regs[REG_D0] = 0;               /* No characters ready (cannot read from printer) */
-        return(TRUE);
-      }
-      else
-      {
-        return(FALSE);
-      }
-      break;
-    case 1:                             /* AUX: RS-232 */
-      if (ConfigureParams.RS232.bEnableRS232)
-      {
-        if (RS232_GetStatus())
-          Regs[REG_D0] = -1;            /* Chars waiting */
-        else
-          Regs[REG_D0] = 0;
-        return(TRUE);
-      }
-      else
-      {
-        return(FALSE);
-      }
-      break;
-  }
+	switch(Dev)
+	{
+	 case 0:                            /* PRT: Centronics */
+		if (ConfigureParams.Printer.bEnablePrinting)
+		{
+			Regs[REG_D0] = 0;               /* No characters ready (cannot read from printer) */
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+		break;
+	 case 1:                            /* AUX: RS-232 */
+		if (ConfigureParams.RS232.bEnableRS232)
+		{
+			if (RS232_GetStatus())
+				Regs[REG_D0] = -1;      /* Chars waiting */
+			else
+				Regs[REG_D0] = 0;
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+		break;
+	}
 
-  return(FALSE);
+	return FALSE;
 }
 
 
@@ -72,41 +72,41 @@ static BOOL Bios_Bconstat(unsigned long Params)
   BIOS Read character from device
   Call 2
 */
-static BOOL Bios_Bconin(unsigned long Params)
+static BOOL Bios_Bconin(Uint32 Params)
 {
-  unsigned short Dev;
-  unsigned char Char;
+	Uint16 Dev;
+	unsigned char Char;
 
-  Dev = STMemory_ReadWord(Params+SIZE_WORD);
+	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 
-  switch(Dev)
-  {
-    case 0:                             /* PRT: Centronics */
-      if (ConfigureParams.Printer.bEnablePrinting)
-      {
-        Regs[REG_D0] = 0;               /* Force NULL character (cannot read from printer) */
-        return(TRUE);
-      }
-      else
-      {
-        return(FALSE);
-      }
-      break;
-    case 1:                             /* AUX: RS-232 */
-      if (ConfigureParams.RS232.bEnableRS232)
-      {
-        RS232_ReadBytes(&Char, 1);
-        Regs[REG_D0] = Char;
-        return(TRUE);
-      }
-      else
-      {
-        return(FALSE);
-      }
-      break;
-  }
+	switch(Dev)
+	{
+	 case 0:                            /* PRT: Centronics */
+		if (ConfigureParams.Printer.bEnablePrinting)
+		{
+			Regs[REG_D0] = 0;           /* Force NULL character (cannot read from printer) */
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+		break;
+	 case 1:                            /* AUX: RS-232 */
+		if (ConfigureParams.RS232.bEnableRS232)
+		{
+			RS232_ReadBytes(&Char, 1);
+			Regs[REG_D0] = Char;
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+		break;
+	}
 
-  return(FALSE);
+	return FALSE;
 }
 
 
@@ -115,41 +115,41 @@ static BOOL Bios_Bconin(unsigned long Params)
   BIOS Write character to device
   Call 3
 */
-static BOOL Bios_Bconout(unsigned long Params)
+static BOOL Bios_Bconout(Uint32 Params)
 {
-  unsigned short Dev;
-  unsigned char Char;
+	Uint16 Dev;
+	unsigned char Char;
 
-  Dev = STMemory_ReadWord(Params+SIZE_WORD);
-  Char = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
+	Dev = STMemory_ReadWord(Params+SIZE_WORD);
+	Char = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
 
-  switch(Dev)
-  {
-    case 0:                                   /* PRT: Centronics */
-      if (ConfigureParams.Printer.bEnablePrinting)
-      {
-        Printer_TransferByteTo(Char);
-        return(TRUE);
-      }
-      else
-      {
-        return(FALSE);
-      }
-      break;
-    case 1:                                   /* AUX: RS-232 */
-      if (ConfigureParams.RS232.bEnableRS232)
-      {
-        RS232_TransferBytesTo(&Char, 1);
-        return(TRUE);
-      }
-      else
-      {
-        return(FALSE);
-      }
-      break;
-  }
+	switch(Dev)
+	{
+	 case 0:                            /* PRT: Centronics */
+		if (ConfigureParams.Printer.bEnablePrinting)
+		{
+			Printer_TransferByteTo(Char);
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+		break;
+	 case 1:                            /* AUX: RS-232 */
+		if (ConfigureParams.RS232.bEnableRS232)
+		{
+			RS232_TransferBytesTo(&Char, 1);
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+		break;
+	}
 
-  return(FALSE);
+	return FALSE;
 }
 
 
@@ -158,23 +158,23 @@ static BOOL Bios_Bconout(unsigned long Params)
   BIOS Read/Write disc sector
   Call 4
 */
-static BOOL Bios_RWabs(unsigned long Params)
+static BOOL Bios_RWabs(Uint32 Params)
 {
 #ifdef DEBUG_TO_FILE
-  char *pBuffer;
-  unsigned short int RWFlag,Number,RecNo,Dev;
+	char *pBuffer;
+	Uint16 RWFlag, Number, RecNo, Dev;
 
-  /* Read details from stack */
-  RWFlag = STMemory_ReadWord(Params+SIZE_WORD);
-  pBuffer = (char *)STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
-  Number = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG);
-  RecNo = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD);  
-  Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD+SIZE_WORD);
+	/* Read details from stack */
+	RWFlag = STMemory_ReadWord(Params+SIZE_WORD);
+	pBuffer = (char *)STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
+	Number = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG);
+	RecNo = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD);
+	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 
-  Debug_FDC("RWABS %s,%d,0x%X,%d,%d\n",EmulationDrives[Dev].szFileName,RWFlag,(char *)STRAM_ADDR(pBuffer),RecNo,Number);
+	Debug_FDC("RWABS %s,%d,0x%X,%d,%d\n",EmulationDrives[Dev].szFileName,RWFlag,(char *)STRAM_ADDR(pBuffer),RecNo,Number);
 #endif
 
-  return(FALSE);
+	return FALSE;
 }
 
 
@@ -183,39 +183,39 @@ static BOOL Bios_RWabs(unsigned long Params)
   BIOS Return output device status
   Call 8
 */
-static BOOL Bios_Bcostat(unsigned long Params)
+static BOOL Bios_Bcostat(Uint32 Params)
 {
-  unsigned short Dev;
+	Uint16 Dev;
 
-  Dev = STMemory_ReadWord(Params+SIZE_WORD);
+	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 
-  switch(Dev)
-  {
-    case 0:                                   /* PRT: Centronics */
-      if (ConfigureParams.Printer.bEnablePrinting)
-      {
-        Regs[REG_D0] = -1;                    /* Device ready */
-        return(TRUE);
-      }
-      else
-      {
-        return(FALSE);
-      }
-      break;
-    case 1:                                   /* AUX: RS-232 */
-      if (ConfigureParams.RS232.bEnableRS232)
-      {
-        Regs[REG_D0] = -1;                    /* Device ready */
-        return(TRUE);
-      }
-      else
-      {
-        return(FALSE);
-      }
-      break;
-  }
+	switch(Dev)
+	{
+	 case 0:                            /* PRT: Centronics */
+		if (ConfigureParams.Printer.bEnablePrinting)
+		{
+			Regs[REG_D0] = -1;          /* Device ready */
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+		break;
+	 case 1:                            /* AUX: RS-232 */
+		if (ConfigureParams.RS232.bEnableRS232)
+		{
+			Regs[REG_D0] = -1;          /* Device ready */
+			return TRUE;
+		}
+		else
+		{
+			return FALSE;
+		}
+		break;
+	}
 
-  return(FALSE);
+	return FALSE;
 }
 
 
@@ -226,29 +226,29 @@ static BOOL Bios_Bcostat(unsigned long Params)
 */
 BOOL Bios(void)
 {
-  unsigned long Params;
-  unsigned short int BiosCall;
+	Uint32 Params;
+	Uint16 BiosCall;
 
-  /* Get call */
-  Params = Regs[REG_A7];
-  BiosCall = STMemory_ReadWord(Params);
+	/* Get call */
+	Params = Regs[REG_A7];
+	BiosCall = STMemory_ReadWord(Params);
 
-  /* Debug_File("BIOS %d\n",BiosCall); */
+	/* Debug_File("BIOS %d\n",BiosCall); */
 
-  /* Intercept? */
-  switch(BiosCall)
-  {
-    case 0x1:
-      return(Bios_Bconstat(Params));
-    case 0x2:
-      return(Bios_Bconin(Params));
-    case 0x3:
-      return(Bios_Bconout(Params));
-    case 0x4:
-      return(Bios_RWabs(Params));
-    case 0x8:
-      return(Bios_Bcostat(Params));
-    default:  /* Call as normal! */
-      return(FALSE);
-  }
+	/* Intercept? */
+	switch(BiosCall)
+	{
+	 case 0x1:
+		return Bios_Bconstat(Params);
+	 case 0x2:
+		return Bios_Bconin(Params);
+	 case 0x3:
+		return Bios_Bconout(Params);
+	 case 0x4:
+		return Bios_RWabs(Params);
+	 case 0x8:
+		return Bios_Bcostat(Params);
+	 default:           /* Call as normal! */
+		return FALSE;
+	}
 }
