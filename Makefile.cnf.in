@@ -36,7 +36,7 @@ prefix = @prefix@
 exec_prefix = @exec_prefix@
 
 # Here you can define the default data directory for Hatari.
-# The emulator looks there for the default TOS image, its font etc.
+# The emulator looks there for the default TOS image etc.
 # For example you can use the local directory with "." or if you want
 # a system-wide installation, use something like "/usr/share/hatari".
 DATADIR = @datadir@

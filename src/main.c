@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.61 2004-09-24 12:55:07 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.62 2004-10-31 17:32:50 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -94,16 +94,14 @@ void Main_SysError(char *Error,char *Title)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Bring up message(handles full-screen as well as Window)
+  Bring up a message dialog.
 */
-int Main_Message(char *lpText, char *lpCaption/*,unsigned int uType*/)
+int Main_Message(char *pText, char *pCaption)
 {
-  int Ret=0;
+  /* Show message: */
+  fprintf(stderr,"%s: %s\n", pCaption, pText);
 
-  /* Show message */
-  fprintf(stderr,"%s: %s\n", lpCaption, lpText);
-
-  return(Ret);
+  return DlgAlert_Notice(pText);
 }
 
 

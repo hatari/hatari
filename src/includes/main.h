@@ -10,24 +10,10 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.50" /* Name, version for window title */
-#define PROG_VERSION        "v0.50"
-#define VERSION_STRING      "0.50 "   /* Always 6 bytes (inc' NULL) */
-#define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
+#define PROG_NAME      "Hatari v0.51" /* Name, version for window title */
+#define PROG_VERSION        "v0.51"
 
-//#define TOTALLY_FINAL_VERSION       /* Web release version... */
-
-#define FINAL_VERSION                 /* Full-speed non-debug version for release */
-//#define DEBUG_TO_FILE               /* Use debug.txt files */
-
-#ifndef FINAL_VERSION
-  #define USE_DEBUGGER                /* Debugger version(non-release) */
-  #define DEBUG_TO_FILE               /* Use debug.txt files */
-#endif
-
-#ifdef TOTALLY_FINAL_VERSION
-  #undef DEBUG_TO_FILE                /* Don't use debug files for final release */
-#endif
+/*#define DEBUG_TO_FILE*/             /* Use debug.txt files */
 
 
 #include <stdio.h>
@@ -170,7 +156,6 @@ enum {
 #define CYCLES_PER_SEC      (CYCLES_PER_FRAME*50) /* Cycles per second */
 #define CYCLES_ENDLINE      (64+320+88+40)        /* DE(Display Enable) */
 #define CYCLES_HBL          (CYCLES_PER_LINE+96)  /* Cycles for first HBL - very inaccurate on ST */
-#define CYCLES_DEBUGGER     3000        /* Check debugger every 'x' cycles */
 
 /* Illegal Opcode used to help emulation. eg. free entries are 8 to 15 inc' */
 #define  GEMDOS_OPCODE        8  /* Free op-code to intercept GemDOS trap */
@@ -191,7 +176,7 @@ extern char szWorkingDir[FILENAME_MAX];
 
 extern void Main_MemorySnapShot_Capture(BOOL bSave);
 extern void Main_SysError(char *Error,char *Title);
-extern int Main_Message(char *lpText, char *lpCaption /*, unsigned int uType*/);
+extern int Main_Message(char *pText, char *pCaption);
 extern void Main_PauseEmulation(void);
 extern void Main_UnPauseEmulation(void);
 extern void Main_EventHandler();

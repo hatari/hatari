@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.7 2004-04-23 15:33:59 thothy Exp $";
+char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.8 2004-10-31 17:32:50 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -91,10 +91,6 @@ int Reset_ST(BOOL bCold)
   Int_AddAbsoluteInterrupt(CYCLES_ENDLINE, INTERRUPT_VIDEO_ENDLINE);
   Int_AddAbsoluteInterrupt(CYCLES_HBL, INTERRUPT_VIDEO_HBL);
   Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME, INTERRUPT_VIDEO_VBL);
-  /* And keyboard check for debugger */
-#ifdef USE_DEBUGGER
-  Int_AddAbsoluteInterrupt(CYCLES_DEBUGGER, INTERRUPT_DEBUGGER);
-#endif
 
   return 0;
 }

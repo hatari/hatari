@@ -16,7 +16,7 @@
   the current instruction takes 20 cycles we will be 16 cycles late - this is handled in
   the adjust functions.
 */
-char Int_rcsid[] = "Hatari $Id: int.c,v 1.5 2004-04-23 15:33:58 thothy Exp $";
+char Int_rcsid[] = "Hatari $Id: int.c,v 1.6 2004-10-31 17:32:50 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -35,11 +35,6 @@ char Int_rcsid[] = "Hatari $Id: int.c,v 1.5 2004-04-23 15:33:58 thothy Exp $";
 void *pIntHandlerFunctions[] =
 {
   NULL,
-
-#ifdef USE_DEBUGGER
-  InterruptHandler_Debugger,
-  InterruptHandler_SingleStep,
-#endif  /* USE_DEBUGGER */
   Video_InterruptHandler_VBL,
   Video_InterruptHandler_HBL,
   Video_InterruptHandler_EndLine,

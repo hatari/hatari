@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.15 2004-10-01 08:49:23 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.16 2004-10-31 17:32:50 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -16,6 +16,7 @@ char File_rcsid[] = "Hatari $Id: file.c,v 1.15 2004-10-01 08:49:23 thothy Exp $"
 #include <zlib.h>
 
 #include "main.h"
+#include "dialog.h"
 #include "file.h"
 #include "floppy.h"
 #include "createBlankImage.h"
@@ -443,20 +444,15 @@ BOOL File_Delete(char *pszFileName)
 BOOL File_QueryOverwrite(char *pszFileName)
 {
 
-  char szString[FILENAME_MAX];
+  char szString[FILENAME_MAX + 26];
 
   /* Try and find if file exists */
   if (File_Exists(pszFileName))
   {
     /* File does exist, are we OK to overwrite? */
-    sprintf(szString,"File '%s' exists, overwrite?",pszFileName);
-/* FIXME: */
-#if 0
-    if (MessageBox(hWnd,szString,PROG_NAME,MB_YESNO | MB_DEFBUTTON2 | MB_ICONSTOP)==IDNO)
-      return(FALSE);
-#else
-    fprintf(stderr, "Overwriting file '%s'!\n", pszFileName);
-#endif
+    snprintf(szString, sizeof(szString), "File '%s' exists, overwrite?", pszFileName);
+	fprintf(stderr, "%s\n", szString);
+    return DlgAlert_Query(szString);
   }
 
   return(TRUE);
