@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-static char rcsid[] = "Hatari $Id: gemdos.c,v 1.14 2003-03-25 21:03:49 emanne Exp $";
+static char rcsid[] = "Hatari $Id: gemdos.c,v 1.15 2003-03-27 10:55:05 emanne Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -706,7 +706,7 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
 	  found = 1;
 	}
       }
-#if 1
+#if 0
       if (!found) {
 	/* It's often normal, the gem uses this to test for existence */
 	/* of desktop.inf or newdesk.inf for example. */
@@ -1455,6 +1455,10 @@ BOOL GemDOS_SFirst(unsigned long Params)
     j = 0;                     /* count number of entries matching mask */
     for(i=0;i<InternalDTAs[DTAIndex].nentries;i++)
       if(match(tempstr, files[i]->d_name)) j++;
+
+    if (j==0) {
+      return FALSE;
+    }
 
     InternalDTAs[DTAIndex].found = (struct dirent **)malloc(sizeof(struct dirent *) * j);
 
