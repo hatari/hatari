@@ -1,3 +1,9 @@
+
+This is the old ChangeLog file. It won't be updated anymore - if you want to
+have a recent ChangeLog file, use a tool like "cvs2cl" to create a ChangeLog
+file from the CVS repository.
+
+
 2003-03-23 (THH):
   * Fixed problem that slowed down the emulator in monochrome mode when running
     TOS 2.06.
