@@ -34,10 +34,10 @@
 
 /* Settings for differnt memory sizes */
 static MEMORY_INFO MemoryInfo[] = {
-  { 0x80000,0x0000,0x00080000 },     /* MEMORYSIZE_512 */
-  { 0x100000,0x0101,0x00100000 },    /* MEMORYSIZE_1024 */
-  { 0x200000,0x0001,0x00200000 },    /* MEMORYSIZE_2MB */
-  { 0x400000,0x1010,0x00400000 }     /* MEMORYSIZE_4MB */
+  { 0x80000,  0x01, 0x00080000 },    /* MEMORYSIZE_512 */
+  { 0x100000, 0x05, 0x00100000 },    /* MEMORYSIZE_1024 */
+  { 0x200000, 0x02, 0x00200000 },    /* MEMORYSIZE_2MB */
+  { 0x400000, 0x0A, 0x00400000 }     /* MEMORYSIZE_4MB */
 };
 
 /* Bit masks of connected drives(we support up to C,D,E,F,G,H) */
@@ -476,8 +476,8 @@ void TOS_SetDefaultMemoryConfig(void)
     STMemory_WriteLong(0x436,MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop-0x8000);   /* mem top - upper end of user memory(before 32k screen) */
     STMemory_WriteLong(0x42e,MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop);          /* phys top */
   }
-  STMemory_WriteLong(0x424,MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryConfig);       /* 512k configure 0x00=128k 0x01=512k 0x10=2Mb 11=reserved eg 0x1010 = 4Mb */
-  STMemory_WriteLong(0xff8000,MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryConfig);
+  STMemory_WriteByte(0x424, MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryConfig);
+  STMemory_WriteByte(0xff8001, MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryConfig);
 
   /* Set memory range, and start of BUS error */
   STRamEnd = MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryEnd;  /* Set end of RAM */

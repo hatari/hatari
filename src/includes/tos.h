@@ -16,9 +16,9 @@ enum {
 
 /* List of TOS settings for different memory size */
 typedef struct {
-  unsigned long PhysTop;       /* phys top */
-  unsigned long MemoryConfig;  /* 512k configure 0x00=128k 0x01=512k 0x10=2Mb 11=reserved eg 0x1010 = 4Mb */
-  unsigned long MemoryEnd;     /* Above this address causes a BusError */
+  unsigned long PhysTop;    /* phys top */
+  int MemoryConfig;         /* %00=128k %01=512k %10=2Mb %11=reserved. eg %1010 = 4Mb */
+  unsigned long MemoryEnd;  /* Above this address causes a BusError */
 } MEMORY_INFO;
 
 extern unsigned short int TOSVersion;
