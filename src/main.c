@@ -43,8 +43,6 @@
 #define FORCE_WORKING_DIR                 /* Set default directory to cwd */
 
 
-extern int quit_program;                  /* Declared in newcpu.c */
-
 SDL_TimerID hSoundTimer;                  /* Handle to sound playback */
 
 BOOL bQuitProgram=FALSE;                  /* Flag to quit program cleanly */
@@ -170,8 +168,7 @@ void Main_EventHandler()
    switch( event.type )
    {
     case SDL_QUIT:
-       quit_program=1;
-       bQuitProgram=1;
+       bQuitProgram = TRUE;
        break;
     case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */
        KeyboardProcessor.Mouse.dx += event.motion.xrel;
@@ -307,20 +304,19 @@ void Main_ReadParameters(int argc, char *argv[])
       }
       else if (!strcmp(argv[i],"--harddrive") || !strcmp(argv[i],"-e"))
       {
-	if(i + 1 < argc && strlen(argv[i+1])<=MAX_PATH) { /* both parameters exist */
-	  /* only 1 emulated drive allowed, as of yet.  */
-	  emudrives = malloc( sizeof(EMULATEDDRIVE *) );
-	  emudrives[0] = malloc( sizeof(EMULATEDDRIVE) );
+        if(i + 1 < argc && strlen(argv[i+1])<=MAX_PATH) { /* both parameters exist */
+          /* only 1 emulated drive allowed, as of yet.  */
+          emudrives = malloc( sizeof(EMULATEDDRIVE *) );
+          emudrives[0] = malloc( sizeof(EMULATEDDRIVE) );
+          /* set emulation directory string */
+          if( argv[i+1][0] != '.' && argv[i+1][0] != '/' )
+            sprintf( emudrives[0]->hd_emulation_dir, "./%s", argv[i+1]);
+          else
+            sprintf( emudrives[0]->hd_emulation_dir, "%s", argv[i+1]);
+          strcpy(ConfigureParams.HardDisc.szHardDiscDirectories[0], emudrives[0]->hd_emulation_dir);
           ConfigureParams.HardDisc.nDriveList = DRIVELIST_C;
-	  /* set emulation directory string */
-	  if( argv[i+1][0] != '.' && argv[i+1][0] != '/' )
-	    sprintf( emudrives[0]->hd_emulation_dir, "./%s", argv[i+1]);
-	  else
-	    sprintf( emudrives[0]->hd_emulation_dir, "%s", argv[i+1]);
-	  
-	  fprintf(stderr, "Hard drive emulation, C: <-> %s\n", emudrives[0]->hd_emulation_dir);
-	  i ++;
-	}
+          i ++;
+        }
       }
       else if (!strcmp(argv[i],"--tos"))
       {

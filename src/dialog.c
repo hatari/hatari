@@ -43,6 +43,7 @@
 #define MAINDLG_DEVICES  11
 #define MAINDLG_OK       12
 #define MAINDLG_CANCEL   13
+#define MAINDLG_QUIT     14
 SGOBJ maindlg[] =
 {
   { SGBOX, 0, 0, 0,0, 36,18, NULL },
@@ -57,8 +58,9 @@ SGOBJ maindlg[] =
   { SGBUTTON, 0, 0, 20,8, 12,1, "Joysticks" },
   { SGBUTTON, 0, 0, 20,10, 12,1, "Keyboard" },
   { SGBUTTON, 0, 0, 20,12, 12,1, "Devices" },
-  { SGBUTTON, 0, 0, 7,16, 8,1, "Okay" },
-  { SGBUTTON, 0, 0, 21,16, 8,1, "Cancel" },
+  { SGBUTTON, 0, 0, 3,16, 8,1, "Okay" },
+  { SGBUTTON, 0, 0, 14,16, 8,1, "Cancel" },
+  { SGBUTTON, 0, 0, 25,16, 8,1, "Quit" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -130,14 +132,18 @@ SGOBJ discdlg[] =
 
 
 /* The TOS/GEM dialog: */
+#define DLGTOSGEM_ROMNAME    3
+#define DLGTOSGEM_ROMBROWSE  4
+#define DLGTOSGEM_RESPOPUP   8
+#define DLGTOSGEM_EXIT       9
 SGOBJ tosgemdlg[] =
 {
   { SGBOX, 0, 0, 0,0, 40,19, NULL },
   { SGTEXT, 0, 0, 14,1, 13,1, "TOS/GEM setup" },
   { SGTEXT, 0, 0, 2,4, 10,1, "ROM image:" },
-  { SGTEXT, 0, 0, 2,6, 34,1, "/path/to/tos.img" },
+  { SGTEXT, 0, 0, 2,6, 34,1, NULL },
   { SGBUTTON, 0, 0, 30,4, 8,1, "Browse" },
-  { SGTEXT, 0, 0, 2,10, 4,1, "GEM:" },
+  { SGTEXT, 0, 0, 2,10, 4,1, "GEM: (sorry, does not work yet)" },
   { SGCHECKBOX, 0, 0, 2,12, 25,1, "Use extended resolution" },
   { SGTEXT, 0, 0, 2,14, 11,1, "Resolution:" },
   { SGPOPUP, 0, 0, 14,14, 10,1, "800x600" },
@@ -147,6 +153,17 @@ SGOBJ tosgemdlg[] =
 
 
 /* The screen dialog: */
+#define DLGSCRN_MODE       4
+#define DLGSCRN_FULLSCRN   5
+#define DLGSCRN_INTERLACE  6
+#define DLGSCRN_FRAMESKIP  7
+#define DLGSCRN_COLOR      9
+#define DLGSCRN_MONO       10
+#define DLGSCRN_ONCHANGE   13
+#define DLGSCRN_FPSPOPUP   15
+#define DLGSCRN_CAPTURE    16
+#define DLGSCRN_RECANIM    17
+#define DLGSCRN_EXIT       18
 SGOBJ screendlg[] =
 {
   { SGBOX, 0, 0, 0,0, 40,25, NULL },
@@ -158,10 +175,9 @@ SGOBJ screendlg[] =
   { SGCHECKBOX, 0, 0, 5,7, 23,1, "Interlaced mode (in fullscreen)" },
   { SGCHECKBOX, 0, 0, 5,8, 10,1, "Frame skip" },
   /*{ SGCHECKBOX, 0, 0, 22,8, 13,1, "Use borders" },*/
-  /*{ SGCHECKBOX, 0, 0, 5,9, 13,1, "Sync to retrace (in fullscreen)" },*/
   { SGTEXT, 0, 0, 5,10, 8,1, "Monitor:" },
   { SGRADIOBUT, 0, 0, 16,10, 7,1, "Color" },
-  { SGRADIOBUT, 0, 0, 24,10, 6,1, "Mono" },
+  { SGRADIOBUT, 0, 0, 26,10, 6,1, "Mono" },
   { SGBOX, 0, 0, 1,13, 38,9, NULL },
   { SGTEXT, 0, 0, 13,14, 14,1, "Screen capture" },
   { SGCHECKBOX, 0, 0, 5,16, 12,1, "Only when display changes" },
@@ -175,21 +191,28 @@ SGOBJ screendlg[] =
 
 
 /* The sound dialog: */
+#define DLGSOUND_ENABLE  3
+#define DLGSOUND_LOW     5
+#define DLGSOUND_MEDIUM  6
+#define DLGSOUND_HIGH    7
+#define DLGSOUND_EXIT    8
 SGOBJ sounddlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 38,24, NULL },
+  { SGBOX, 0, 0, 0,0, 38,/*24*/15, NULL },
   { SGBOX, 0, 0, 1,1, 36,11, NULL },
   { SGTEXT, 0, 0, 13,2, 13,1, "Sound options" },
-  { SGCHECKBOX, 0, 1, 12,4, 14,1, "Enable sound" },
+  { SGCHECKBOX, 0, 0, 12,4, 14,1, "Enable sound" },
   { SGTEXT, 0, 0, 11,6, 14,1, "Playback quality:" },
   { SGRADIOBUT, 0, 0, 12,8, 15,1, "Low (11kHz)" },
   { SGRADIOBUT, 0, 0, 12,9, 19,1, "Medium (22kHz)" },
   { SGRADIOBUT, 0, 0, 12,10, 14,1, "High (44kHz)" },
+/*
   { SGBOX, 0, 0, 1,13, 36,7, NULL },
   { SGTEXT, 0, 0, 13,14, 14,1, "Capture YM/WAV" },
   { SGBUTTON, 0, 0, 9,18, 8,1, "Record" },
   { SGBUTTON, 0, 0, 23,18, 8,1, "Stop" },
-  { SGBUTTON, 0, 0, 10,22, 20,1, "Back to main menu" },
+*/
+  { SGBUTTON, 0, 0, 10,/*22*/13, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -206,9 +229,14 @@ SGOBJ cpudlg[] =
 
 
 /* The memory dialog: */
+#define DLGMEM_512KB  4
+#define DLGMEM_1MB    5
+#define DLGMEM_2MB    6
+#define DLGMEM_4MB    7
+#define DLGMEM_EXIT   8
 SGOBJ memorydlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 40,19, NULL },
+  { SGBOX, 0, 0, 0,0, 40,11/*19*/, NULL },
   { SGBOX, 0, 0, 1,1, 38,7, NULL },
   { SGTEXT, 0, 0, 15,2, 12,1, "Memory setup" },
   { SGTEXT, 0, 0, 4,4, 12,1, "ST-RAM size:" },
@@ -216,18 +244,25 @@ SGOBJ memorydlg[] =
   { SGRADIOBUT, 0, 0, 30,4, 6,1, "1 MB" },
   { SGRADIOBUT, 0, 0, 19,6, 6,1, "2 MB" },
   { SGRADIOBUT, 0, 0, 30,6, 6,1, "4 MB" },
+/*
   { SGBOX, 0, 0, 1,9, 38,7, NULL },
   { SGTEXT, 0, 0, 12,10, 17,1, "Memory state save" },
-  { SGTEXT, 0, 0, 2,12, 28,1, "/path/to/image" },
+  { SGTEXT, 0, 0, 2,12, 28,1, "/Sorry/Not/yet/supported" },
   { SGBUTTON, 0, 0, 32,12, 6,1, "Browse" },
   { SGBUTTON, 0, 0, 8,14, 10,1, "Save" },
   { SGBUTTON, 0, 0, 22,14, 10,1, "Restore" },
-  { SGBUTTON, 0, 0, 10,17, 20,1, "Back to main menu" },
+*/
+  { SGBUTTON, 0, 0, 10,9/*17*/, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
 /* The joysticks dialog: */
+#define DLGJOY_J1CURSOR    4
+#define DLGJOY_J1AUTOFIRE  5
+#define DLGJOY_J0CURSOR    8
+#define DLGJOY_J0AUTOFIRE  9
+#define DLGJOY_EXIT        10
 SGOBJ joystickdlg[] =
 {
   { SGBOX, 0, 0, 0,0, 30,19, NULL },
@@ -436,7 +471,7 @@ BOOL Dialog_DoProperty(BOOL bForceReset)
 void Dialog_DiscDlg(void)
 {
   int but;
-  char tmpdiscname[MAX_FILENAME_LENGTH];
+  char tmpname[MAX_FILENAME_LENGTH];
   char dlgnamea[27], dlgnameb[27], dlgdiscdir[29], dlgnamec[27];
 
   SDLGui_CenterDlg(discdlg);
@@ -470,7 +505,7 @@ void Dialog_DiscDlg(void)
     discdlg[DISCDLG_BOOTHD].state &= ~SG_SELECTED;
   /* Hard disc directory: */
   if( DialogParams.HardDisc.nDriveList!=DRIVELIST_NONE )
-    File_ShrinkName(dlgnamec, DialogParams.HardDisc.szHardDiscDirectories[0], 24);
+    File_ShrinkName(dlgnamec, DialogParams.HardDisc.szHardDiscDirectories[0], 26);
   else
     dlgnamec[0] = 0;
   discdlg[DISCDLG_DISCC].txt = dlgnamec;
@@ -483,15 +518,15 @@ void Dialog_DiscDlg(void)
     {
       case DISCDLG_BROWSEA:                       /* Choose a new disc A: */
         if( EmulationDrives[0].bDiscInserted )
-          strcpy(tmpdiscname, EmulationDrives[0].szFileName);
+          strcpy(tmpname, EmulationDrives[0].szFileName);
          else
-          strcpy(tmpdiscname, DialogParams.DiscImage.szDiscImageDirectory);
-        if( SDLGui_FileSelect(tmpdiscname) )
+          strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
+        if( SDLGui_FileSelect(tmpname) )
         {
-          if( File_Exists(tmpdiscname) )
+          if( File_Exists(tmpname) )
           {
-            Floppy_InsertDiscIntoDrive(0, tmpdiscname); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
-            File_ShrinkName(dlgnamea, tmpdiscname, 26);
+            Floppy_InsertDiscIntoDrive(0, tmpname); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+            File_ShrinkName(dlgnamea, tmpname, 26);
           }
           else
           {
@@ -502,15 +537,15 @@ void Dialog_DiscDlg(void)
         break;
       case DISCDLG_BROWSEB:                       /* Choose a new disc B: */
         if( EmulationDrives[1].bDiscInserted )
-          strcpy(tmpdiscname, EmulationDrives[1].szFileName);
+          strcpy(tmpname, EmulationDrives[1].szFileName);
          else
-          strcpy(tmpdiscname, DialogParams.DiscImage.szDiscImageDirectory);
-        if( SDLGui_FileSelect(tmpdiscname) )
+          strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
+        if( SDLGui_FileSelect(tmpname) )
         {
-          if( File_Exists(tmpdiscname) )
+          if( File_Exists(tmpname) )
           {
-            Floppy_InsertDiscIntoDrive(1, tmpdiscname); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
-            File_ShrinkName(dlgnameb, tmpdiscname, 26);
+            Floppy_InsertDiscIntoDrive(1, tmpname); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+            File_ShrinkName(dlgnameb, tmpname, 26);
           }
           else
           {
@@ -519,14 +554,36 @@ void Dialog_DiscDlg(void)
           }
         }
         break;
-      case DISCDLG_IMGDIR:
-        fprintf(stderr,"Sorry, chosing default disc directory not yet supported\n");
+      case DISCDLG_BROWSEIMG:
+        strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
+        if( SDLGui_FileSelect(tmpname) )
+        {
+          char *ptr;
+          ptr = strrchr(tmpname, '/');
+          if( ptr!=NULL )  ptr[1]=0;
+          strcpy(DialogParams.DiscImage.szDiscImageDirectory, tmpname);
+          File_ShrinkName(dlgdiscdir, DialogParams.DiscImage.szDiscImageDirectory, 28);
+        }
         break;
       case DISCDLG_CREATEIMG:
         fprintf(stderr,"Sorry, creating disc images not yet supported\n");
         break;
       case DISCDLG_BROWSEC:
-        fprintf(stderr,"Sorry, chosing a hard disc is not yet supported\n");
+        strcpy(tmpname, DialogParams.HardDisc.szHardDiscDirectories[0]);
+        if( SDLGui_FileSelect(tmpname) )
+        {
+          char *ptr;
+          ptr = strrchr(tmpname, '/');
+          if( ptr!=NULL )  ptr[1]=0;
+          strcpy(DialogParams.HardDisc.szHardDiscDirectories[0], tmpname);
+          File_ShrinkName(dlgnamec, DialogParams.HardDisc.szHardDiscDirectories[0], 26);
+          DialogParams.HardDisc.nDriveList = DRIVELIST_C;
+        }
+        else
+        {
+          dlgnamec[0] = 0;
+          DialogParams.HardDisc.nDriveList = DRIVELIST_NONE;
+        }
         break;
     }
   }
@@ -535,6 +592,253 @@ void Dialog_DiscDlg(void)
   /* Read values from dialog */
   DialogParams.DiscImage.bAutoInsertDiscB = (discdlg[DISCDLG_AUTOB].state & SG_SELECTED);
   DialogParams.HardDisc.bBootFromHardDisc = (discdlg[DISCDLG_BOOTHD].state & SG_SELECTED);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Show and process the TOS/GEM dialog.
+*/
+void Dialog_TosGemDlg(void)
+{
+  char tmpname[MAX_FILENAME_LENGTH];
+  char dlgromname[35];
+  int but;
+
+  SDLGui_CenterDlg(tosgemdlg);
+  File_ShrinkName(dlgromname, DialogParams.TOSGEM.szTOSImageFileName, 34);
+  tosgemdlg[DLGTOSGEM_ROMNAME].txt = dlgromname;
+
+  do
+  {
+    but = SDLGui_DoDialog(tosgemdlg);
+    switch( but )
+    {
+      case DLGTOSGEM_ROMBROWSE:
+        strcpy(tmpname, DialogParams.TOSGEM.szTOSImageFileName);
+        if( SDLGui_FileSelect(tmpname) )
+        {
+          strcpy(DialogParams.TOSGEM.szTOSImageFileName, tmpname);
+          File_ShrinkName(dlgromname, DialogParams.TOSGEM.szTOSImageFileName, 34);
+        }
+        Screen_SetFullUpdate();
+        Screen_Draw();
+        break;
+      case DLGTOSGEM_RESPOPUP:
+        tosgemdlg[DLGTOSGEM_RESPOPUP].state &= ~SG_SELECTED;
+        break;
+    }
+  }
+  while(but!=DLGTOSGEM_EXIT && !bQuitProgram);
+
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Show and process the screen dialog.
+*/
+void Dialog_ScreenDlg(void)
+{
+  int but;
+
+  SDLGui_CenterDlg(screendlg);
+
+  /* Set up dialog from actual values: */
+
+  if( DialogParams.Screen.bFullScreen )
+    screendlg[DLGSCRN_FULLSCRN].state |= SG_SELECTED;
+  else
+    screendlg[DLGSCRN_FULLSCRN].state &= ~SG_SELECTED;
+
+  if( DialogParams.Screen.Advanced.bInterlacedFullScreen )
+    screendlg[DLGSCRN_INTERLACE].state |= SG_SELECTED;
+  else
+    screendlg[DLGSCRN_INTERLACE].state &= ~SG_SELECTED;
+
+  if( DialogParams.Screen.Advanced.bFrameSkip )
+    screendlg[DLGSCRN_FRAMESKIP].state |= SG_SELECTED;
+  else
+    screendlg[DLGSCRN_FRAMESKIP].state &= ~SG_SELECTED;
+
+  if( DialogParams.Screen.bUseHighRes )
+  {
+    screendlg[DLGSCRN_COLOR].state &= ~SG_SELECTED;
+    screendlg[DLGSCRN_MONO].state |= SG_SELECTED;
+  }
+  else
+  {
+    screendlg[DLGSCRN_COLOR].state |= SG_SELECTED;
+    screendlg[DLGSCRN_MONO].state &= ~SG_SELECTED;
+  }
+
+  if( DialogParams.Screen.bCaptureChange )
+    screendlg[DLGSCRN_ONCHANGE].state |= SG_SELECTED;
+  else
+    screendlg[DLGSCRN_ONCHANGE].state &= ~SG_SELECTED;
+
+  /* The screen dialog main loop */
+  do
+  {
+    but = SDLGui_DoDialog(screendlg);
+    switch( but )
+    {
+      case DLGSCRN_MODE:
+        fprintf(stderr,"Sorry, popup menus don't work yet\n");
+        break;
+      case DLGSCRN_FPSPOPUP:
+        fprintf(stderr,"Sorry, popup menus don't work yet\n");
+        break;
+      case DLGSCRN_CAPTURE:
+        Screen_SetFullUpdate();
+        Screen_Draw();
+        ScreenSnapShot_SaveScreen();
+        break;
+      case DLGSCRN_RECANIM:
+        fprintf(stderr,"Sorry, recording animation doesn't work yet\n");
+        break;
+    }
+  }
+  while( but!=DLGSCRN_EXIT && !bQuitProgram );
+
+  /* Read values from dialog */
+  DialogParams.Screen.bFullScreen = (screendlg[DLGSCRN_FULLSCRN].state & SG_SELECTED);
+  DialogParams.Screen.Advanced.bInterlacedFullScreen = (screendlg[DLGSCRN_INTERLACE].state & SG_SELECTED);
+  DialogParams.Screen.Advanced.bFrameSkip = (screendlg[DLGSCRN_FRAMESKIP].state & SG_SELECTED);
+  DialogParams.Screen.bUseHighRes = (screendlg[DLGSCRN_MONO].state & SG_SELECTED);
+  DialogParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Show and process the sound dialog.
+*/
+void Dialog_SoundDlg(void)
+{
+  int but;
+
+  SDLGui_CenterDlg(sounddlg);
+
+  /* Set up dialog from actual values: */
+
+  if( DialogParams.Sound.bEnableSound )
+    sounddlg[DLGSOUND_ENABLE].state |= SG_SELECTED;
+  else
+    sounddlg[DLGSOUND_ENABLE].state &= ~SG_SELECTED;
+
+  sounddlg[DLGSOUND_LOW].state &= ~SG_SELECTED;
+  sounddlg[DLGSOUND_MEDIUM].state &= ~SG_SELECTED;
+  sounddlg[DLGSOUND_HIGH].state &= ~SG_SELECTED;
+  if( DialogParams.Sound.nPlaybackQuality==PLAYBACK_LOW )
+    sounddlg[DLGSOUND_LOW].state |= SG_SELECTED;
+  else if( DialogParams.Sound.nPlaybackQuality==PLAYBACK_MEDIUM )
+    sounddlg[DLGSOUND_MEDIUM].state |= SG_SELECTED;
+  else
+    sounddlg[DLGSOUND_HIGH].state |= SG_SELECTED;
+
+  /* The sound dialog main loop */
+  do
+  {
+    but = SDLGui_DoDialog(sounddlg);
+  }
+  while( but!=DLGSOUND_EXIT && !bQuitProgram );
+
+  /* Read values from dialog */
+  DialogParams.Sound.bEnableSound = (sounddlg[DLGSOUND_ENABLE].state & SG_SELECTED);
+  if( sounddlg[DLGSOUND_LOW].state & SG_SELECTED )
+    DialogParams.Sound.nPlaybackQuality = PLAYBACK_LOW;
+  else if( sounddlg[DLGSOUND_MEDIUM].state & SG_SELECTED )
+    DialogParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
+  else
+    DialogParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
+
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Show and process the memory dialog.
+*/
+void Dialog_MemDlg(void)
+{
+  int but;
+
+  SDLGui_CenterDlg(memorydlg);
+
+  memorydlg[DLGMEM_512KB].state &= ~SG_SELECTED;
+  memorydlg[DLGMEM_1MB].state &= ~SG_SELECTED;
+  memorydlg[DLGMEM_2MB].state &= ~SG_SELECTED;
+  memorydlg[DLGMEM_4MB].state &= ~SG_SELECTED;
+  if( DialogParams.Memory.nMemorySize == MEMORY_SIZE_512Kb )
+    memorydlg[DLGMEM_512KB].state |= SG_SELECTED;
+  else if( DialogParams.Memory.nMemorySize == MEMORY_SIZE_1Mb )
+    memorydlg[DLGMEM_1MB].state |= SG_SELECTED;
+  else if( DialogParams.Memory.nMemorySize == MEMORY_SIZE_2Mb )
+    memorydlg[DLGMEM_2MB].state |= SG_SELECTED;
+  else
+    memorydlg[DLGMEM_4MB].state |= SG_SELECTED;
+
+  do
+  {
+    but = SDLGui_DoDialog(memorydlg);
+  }
+  while( but!=DLGMEM_EXIT && !bQuitProgram );
+
+  if( memorydlg[DLGMEM_512KB].state & SG_SELECTED )
+    DialogParams.Memory.nMemorySize = MEMORY_SIZE_512Kb;
+  else if( memorydlg[DLGMEM_1MB].state & SG_SELECTED )
+    DialogParams.Memory.nMemorySize = MEMORY_SIZE_1Mb;
+  else if( memorydlg[DLGMEM_2MB].state & SG_SELECTED )
+    DialogParams.Memory.nMemorySize = MEMORY_SIZE_2Mb;
+  else
+    DialogParams.Memory.nMemorySize = MEMORY_SIZE_4Mb;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Show and process the joystick dialog.
+*/
+void Dialog_JoyDlg(void)
+{
+  int but;
+
+  SDLGui_CenterDlg(joystickdlg);
+
+  /* Set up dialog from actual values: */
+
+  if( DialogParams.Joysticks.Joy[1].bCursorEmulation )
+    joystickdlg[DLGJOY_J1CURSOR].state |= SG_SELECTED;
+  else
+    joystickdlg[DLGJOY_J1CURSOR].state &= ~SG_SELECTED;
+
+  if( DialogParams.Joysticks.Joy[1].bEnableAutoFire )
+    joystickdlg[DLGJOY_J1AUTOFIRE].state |= SG_SELECTED;
+  else
+    joystickdlg[DLGJOY_J1AUTOFIRE].state &= ~SG_SELECTED;
+
+  if( DialogParams.Joysticks.Joy[0].bCursorEmulation )
+    joystickdlg[DLGJOY_J0CURSOR].state |= SG_SELECTED;
+  else
+    joystickdlg[DLGJOY_J0CURSOR].state &= ~SG_SELECTED;
+
+  if( DialogParams.Joysticks.Joy[0].bEnableAutoFire )
+    joystickdlg[DLGJOY_J0AUTOFIRE].state |= SG_SELECTED;
+  else
+    joystickdlg[DLGJOY_J0AUTOFIRE].state &= ~SG_SELECTED;
+
+  do
+  {
+    but = SDLGui_DoDialog(joystickdlg);
+  }
+  while( but!=DLGJOY_EXIT && !bQuitProgram );
+
+  /* Read values from dialog */
+  DialogParams.Joysticks.Joy[1].bCursorEmulation = (joystickdlg[DLGJOY_J1CURSOR].state & SG_SELECTED);
+  DialogParams.Joysticks.Joy[1].bEnableAutoFire = (joystickdlg[DLGJOY_J1AUTOFIRE].state & SG_SELECTED);
+  DialogParams.Joysticks.Joy[0].bCursorEmulation = (joystickdlg[DLGJOY_J0CURSOR].state & SG_SELECTED);
+  DialogParams.Joysticks.Joy[0].bEnableAutoFire = (joystickdlg[DLGJOY_J0AUTOFIRE].state & SG_SELECTED);
 }
 
 
@@ -563,28 +867,23 @@ int Dialog_MainDlg(void)
         Dialog_DiscDlg();
         break;
       case MAINDLG_TOSGEM:
-        SDLGui_CenterDlg(tosgemdlg);
-        SDLGui_DoDialog(tosgemdlg);
+        Dialog_TosGemDlg();
         break;
       case MAINDLG_SCREEN:
-        SDLGui_CenterDlg(screendlg);
-        SDLGui_DoDialog(screendlg);
+        Dialog_ScreenDlg();
         break;
       case MAINDLG_SOUND:
-        SDLGui_CenterDlg(sounddlg);
-        SDLGui_DoDialog(sounddlg);
+        Dialog_SoundDlg();
         break;
       case MAINDLG_CPU:
         SDLGui_CenterDlg(cpudlg);
         SDLGui_DoDialog(cpudlg);
         break;
       case MAINDLG_MEMORY:
-        SDLGui_CenterDlg(memorydlg);
-        SDLGui_DoDialog(memorydlg);
+        Dialog_MemDlg();
         break;
       case MAINDLG_JOY:
-        SDLGui_CenterDlg(joystickdlg);
-        SDLGui_DoDialog(joystickdlg);
+        Dialog_JoyDlg();
         break;
       case MAINDLG_KEYBD:
         SDLGui_CenterDlg(keyboarddlg);
@@ -593,6 +892,9 @@ int Dialog_MainDlg(void)
       case MAINDLG_DEVICES:
         SDLGui_CenterDlg(devicedlg);
         SDLGui_DoDialog(devicedlg);
+        break;
+      case MAINDLG_QUIT:
+        bQuitProgram = TRUE;
         break;
     }
     Screen_SetFullUpdate();

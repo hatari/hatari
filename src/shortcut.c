@@ -19,8 +19,6 @@
 #include "sound.h"
 
 
-extern int quit_program;                  /* Declared in newcpu.c */
-
 
 /* List of possible short-cuts(MUST match SHORTCUT_xxxx) */
 char *pszShortCutTextStrings[NUM_SHORTCUTS+1] = {
@@ -93,19 +91,17 @@ void ShortCut_CheckKeys(void)
 
   /* Check for supported keys: */
   switch(ShortCutKey.Key) {
-     case SDLK_F12:
-       quit_program=1;
-       bQuitProgram=1;
-       /*Dialog_DoProperty(nLastOpenPage, FALSE);*/
-       break;
-     case SDLK_m:
+     case SDLK_F12:                  /* Show options dialog */
        Dialog_DoProperty(FALSE);
        break;
-     case SDLK_F11:
+     case SDLK_F11:                  /* Switch between fullscreen/windowed mode */
        if( !bInFullScreen )
          Screen_EnterFullScreen();
         else
          Screen_ReturnFromFullScreen();
+       break;
+     case SDLK_q:                    /* Quit program */
+       bQuitProgram = TRUE;
        break;
      case SDLK_g:                    /* Grab screenshot */
        ScreenSnapShot_SaveScreen();

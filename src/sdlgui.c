@@ -24,8 +24,6 @@
 #define SGFOLDER     5
 
 
-extern int quit_program;        /* Declared in newcpu.c */
-
 
 static SDL_Surface *stdfontgfx;
 static SDL_Surface *fontgfx=NULL;   /* The actual font graphics */
@@ -75,16 +73,19 @@ int SDLGui_UnInit()
 */
 int SDLGui_PrepareFont()
 {
-  /* Convert the font graphics to the actual screen format */
+/* FIXME: Freeing the old font gfx does sometimes crash with a SEGFAULT
   if(fontgfx)
     SDL_FreeSurface(fontgfx);
+*/
+
+  /* Convert the font graphics to the actual screen format */
   fontgfx = SDL_DisplayFormat(stdfontgfx);
   if( fontgfx==NULL )
   {
     fprintf(stderr, "Could not convert font:\n %s\n", SDL_GetError() );
     return -1;
   }
-  /* Set transparent pixel as the pixel at (0,0) */
+  /* Set transparent pixel */
   SDL_SetColorKey(fontgfx, (SDL_SRCCOLORKEY|SDL_RLEACCEL), SDL_MapRGB(fontgfx->format,255,255,255));
   /* Get the font width and height: */
   fontwidth = fontgfx->w/16;
@@ -392,7 +393,7 @@ int SDLGui_DoDialog(SGOBJ *dlg)
         case SDL_KEYDOWN:
           break;
         case SDL_QUIT:
-          quit_program = bQuitProgram = TRUE;
+          bQuitProgram = TRUE;
           break;
         case SDL_MOUSEBUTTONDOWN:
           obj = SDLGui_FindObj(dlg, evnt.button.x, evnt.button.y);
@@ -463,7 +464,9 @@ int SDLGui_DoDialog(SGOBJ *dlg)
                 break;
               case SGPOPUP:
                 dlg[obj].state |= SG_SELECTED;
-                /*SDLGui_DrawPopupButton(dlg, obj);*/
+                SDLGui_DrawPopupButton(dlg, obj);
+                SDL_UpdateRect(sdlscrn, (dlg[0].x+dlg[obj].x)*fontwidth-2, (dlg[0].y+dlg[obj].y)*fontheight-2,
+                           dlg[obj].w*fontwidth+4, dlg[obj].h*fontheight+4);
                 retbutton=obj;
                 break;
             }

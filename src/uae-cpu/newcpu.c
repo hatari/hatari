@@ -19,7 +19,9 @@
 #include "../includes/tos.h"
 
 
-int quit_program = 0;
+extern int bQuitProgram;     /* Declared in main.c */
+
+
 int debugging = 0;
 struct flag_struct regflags;
 
@@ -1143,7 +1145,7 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 	write_log ("This program requires a 68020 CPU!\n");
 	broken_in = 1;
 	set_special (SPCFLAG_BRK);
-	quit_program = 1;
+	bQuitProgram = 1;
      }
 /*
     if (opcode == 0xFF0D) {
@@ -1295,7 +1297,7 @@ static void m68k_run_1 (void)
     uae_u8 saved_bytes[20];
     uae_u16 *oldpcp;
 #endif
-    while(!quit_program) {
+    while(!bQuitProgram) {
 	int cycles;
 	uae_u32 opcode = get_iword_prefetch (0);
 #ifdef DEBUG_PREFETCH
@@ -1343,7 +1345,7 @@ static void m68k_run_1 (void)
 /* Same thing, but don't use prefetch to get opcode.  */
 static void m68k_run_2 (void)
 {
-    while(!quit_program) {
+    while(!bQuitProgram) {
 	int cycles;
 #ifdef HAVE_GET_WORD_UNSWAPPED
 	uae_u32 opcode = do_get_mem_word_unswapped (regs.pc_p);
@@ -1384,7 +1386,7 @@ void m68k_go (int may_quit)
     }
 
     in_m68k_go++;
-    while(!quit_program) {
+    while(!bQuitProgram) {
 /*
 	if (debugging)
 	    debug ();
