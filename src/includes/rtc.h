@@ -13,7 +13,9 @@
 void Rtc_SecondsUnits_ReadByte(void);
 void Rtc_SecondsTens_ReadByte(void);
 void Rtc_MinutesUnits_ReadByte(void);
+void Rtc_MinutesUnits_WriteByte(void);
 void Rtc_MinutesTens_ReadByte(void);
+void Rtc_MinutesTens_WriteByte(void);
 void Rtc_HoursUnits_ReadByte(void);
 void Rtc_HoursTens_ReadByte(void);
 void Rtc_Weekday_ReadByte(void);
@@ -23,5 +25,7 @@ void Rtc_MonthUnits_ReadByte(void);
 void Rtc_MonthTens_ReadByte(void);
 void Rtc_YearUnits_ReadByte(void);
 void Rtc_YearTens_ReadByte(void);
+void Rtc_ClockMod_ReadByte(void);
+void Rtc_ClockMod_WriteByte(void);
 
 #endif

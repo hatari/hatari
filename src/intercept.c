@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-static char rcsid[] = "Hatari $Id: intercept.c,v 1.13 2003-04-02 20:53:35 emanne Exp $";
+static char rcsid[] = "Hatari $Id: intercept.c,v 1.14 2003-06-08 17:12:21 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -131,8 +131,8 @@ INTERCEPT_ACCESS_FUNC InterceptAccessFuncs[] =
 
   { 0xfffc21,SIZE_BYTE,Rtc_SecondsUnits_ReadByte,Intercept_WriteNothing },
   { 0xfffc23,SIZE_BYTE,Rtc_SecondsTens_ReadByte,Intercept_WriteNothing },
-  { 0xfffc25,SIZE_BYTE,Rtc_MinutesUnits_ReadByte,Intercept_WriteNothing },
-  { 0xfffc27,SIZE_BYTE,Rtc_MinutesTens_ReadByte,Intercept_WriteNothing },
+  { 0xfffc25,SIZE_BYTE,Rtc_MinutesUnits_ReadByte,Rtc_MinutesUnits_WriteByte },
+  { 0xfffc27,SIZE_BYTE,Rtc_MinutesTens_ReadByte,Rtc_MinutesTens_WriteByte },
   { 0xfffc29,SIZE_BYTE,Rtc_HoursUnits_ReadByte,Intercept_WriteNothing },
   { 0xfffc2b,SIZE_BYTE,Rtc_HoursTens_ReadByte,Intercept_WriteNothing },
   { 0xfffc2d,SIZE_BYTE,Rtc_Weekday_ReadByte,Intercept_WriteNothing },
@@ -142,6 +142,7 @@ INTERCEPT_ACCESS_FUNC InterceptAccessFuncs[] =
   { 0xfffc35,SIZE_BYTE,Rtc_MonthTens_ReadByte,Intercept_WriteNothing },
   { 0xfffc37,SIZE_BYTE,Rtc_YearUnits_ReadByte,Intercept_WriteNothing },
   { 0xfffc39,SIZE_BYTE,Rtc_YearTens_ReadByte,Intercept_WriteNothing },
+  { 0xfffc3b,SIZE_BYTE,Rtc_ClockMod_ReadByte,Rtc_ClockMod_WriteByte },
 };
 
 
@@ -850,14 +851,23 @@ void Intercept_VideoLow_WriteByte(void)
 void Intercept_VideoSync_WriteByte(void)
 {
  VideoSyncByte = STRam[0xff820a] & 3;      /* We're only interested in lower 2 bits(50/60Hz) */
- if (nHBL >= OVERSCAN_TOP && nHBL <= 39 && nStartHBL > FIRST_VISIBLE_HBL) {
+
+ if (nHBL >= OVERSCAN_TOP && nHBL <= 39 && nStartHBL > FIRST_VISIBLE_HBL)
+ {
    Video_SyncHandler_SetTopBorder();
    pHBLPaletteMasks -= OVERSCAN_TOP;
    pHBLPalettes -= OVERSCAN_TOP;
- } else if (nHBL >= SCREEN_START_HBL+SCREEN_HEIGHT_HBL) {
+ }
+ else if (nHBL >= SCREEN_START_HBL+SCREEN_HEIGHT_HBL)
+ {
    Video_SyncHandler_SetBottomBorder();
- } else if (nStartHBL > FIRST_VISIBLE_HBL)
+ }
+/*
+ else if (nStartHBL > FIRST_VISIBLE_HBL)
+ {
    fprintf(stderr,"hbl %d (%d - %d)\n",nHBL,OVERSCAN_TOP,37);
+ }
+*/
  Video_WriteToSync();
 }
 
@@ -1362,7 +1372,7 @@ void Intercept_ModifyTablesForBusErrors(void)
 void Intercept_NoMansLand_ReadWrite(void)
 {
   fprintf(stderr,"NoMansLand_ReadWrite at address $%lx , PC=$%lx\n",
-          BusAddressLocation, (long)PC);
+          (long)BusAddressLocation, (long)m68k_getpc());
 }
 
 /*-----------------------------------------------------------------------*/

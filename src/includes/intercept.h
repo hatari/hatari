@@ -9,7 +9,7 @@
 #define HATARI_INTERCEPT_H
 
 
-#define INTERCEPT_WORKSPACE_SIZE  (8*1024)  /* 8k, size of intercept lists */
+#define INTERCEPT_WORKSPACE_SIZE  (10*1024)  /* 10k, size of intercept lists */
 
 /* Hardware address details */
 typedef struct
