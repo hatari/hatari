@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.45 2003-08-15 16:09:50 thothy Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.46 2003-09-02 21:56:31 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -462,6 +462,7 @@ void Main_UnInit(void)
   YMFormat_FreeRecording();
   SDLGui_UnInit();
   Screen_UnInit();
+  Exit680x0();
 
   /* SDL uninit: */
   SDL_Quit();
