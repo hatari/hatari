@@ -115,7 +115,7 @@ nor support for STE specific features.
 Hatari has been succesfully tested on the following machines:
 <p> </p>
 <ul>
-  <li>Linux/i86 with Kernel 2.4.20, AMD Athlon 600MHz </li>
+  <li>Linux/i86 with Kernel 2.4.x, AMD Athlon 600MHz </li>
   <li>Linux/i86 with Kernel 2.2.18, Pentium MMX 200MHz </li>
   <li>Linux/PPC with Kernel 2.4.x BeOS/i86 </li>
   <li>Linux/Sparc</li>
@@ -288,7 +288,10 @@ the reset button on your ST.
 <h4>The System Dialog</h4>
 <p>Check the CPU type to use here, enable prefetch mode and if the Blitter should be active.</p>
 <p>For best Atari ST compatibility choose plain 68000 here.</p>
-<p>You can disable a Timer-D patch here. Leave it checked for proper emulation.</p>
+<p>The Timer-D patch changes the Timer-D initialization from TOS. TOS uses Timer-D as a baudrate generator for RS232.
+The TOS default slows the emulation down so the patch gives you a faster emulation.
+</p>
+<p>You can disable the Timer-D patch if games or demos require the original TOS setting.</p>
 <p><em>NOTE:</em> These parameters are very sensitive to the emulated ST and it is strongly recommended to
 reset the emulated ST after changing these options.</p>
 
@@ -845,7 +848,7 @@ parts of the emulated system is much trickier.
 	<tbody>
     <tr>
       <td align="left"><a href="http://validator.w3.org/check/referer"><img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a></td>
-      <td align="right"><address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a> March 25 2004</address></td>
+      <td align="right"><address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a> March 26 2004</address></td>
     </tr>
 	</tbody>
 </table>
