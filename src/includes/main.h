@@ -162,14 +162,14 @@ enum {
 
   Clock cycles per line (50Hz)      : 512
   NOPs per scan line (50Hz)         : 128
-  Scan lines per VBL (50Hz)         : 313(64 at top,200 screen,49 bottom)
+  Scan lines per VBL (50Hz)         : 313 (64 at top,200 screen,49 bottom)
 
   Clock cycles per line (60Hz)      : 508
   NOPs per scan line (60Hz)         : 127
-  Scan lines per VBL (60Hz)         : 315
+  Scan lines per VBL (60Hz)         : 263
 
-  Clock cycles per VBL              : 160256
-  NOPs per VBL                      : 40064
+  Clock cycles per VBL (50Hz)       : 160256
+  NOPs per VBL (50Hz)               : 40064
 
   Pixels per clock cycle (low res)  : 1
   Pixels per clock cycle (med res)  : 2
