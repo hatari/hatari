@@ -1,3 +1,8 @@
+2003-01-29 (THH):
+  * When a bus or address error occurred, the PC was often not set to the
+    right exception handler routine. This has been fixed now - thanks to
+    Philippe Gerin for finding the bug and the patch for solving it!
+
 2002-12-30 (THH):  *** Version 0.25 ***
   * Added some more bus error entries in intercept.c (just like on a real ST).
   * Updated the readme.txt.

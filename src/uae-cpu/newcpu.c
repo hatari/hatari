@@ -48,6 +48,9 @@ int fpp_movem_next[256];
 
 cpuop_func *cpufunctbl[65536];
 
+static uae_u32 busAddressErrPC = 0;  /* Needed to store the right PC when bus-/address error occurs */
+
+
 #define COUNT_INSTRS 0
 
 #if COUNT_INSTRS
@@ -791,6 +794,11 @@ void Exception(int nr, uaecptr oldpc)
     fill_prefetch_0 ();
     regs.t1 = regs.t0 = regs.m = 0;
     unset_special (SPCFLAG_TRACE | SPCFLAG_DOTRACE);
+
+    /* Store a backup of the PC after bus-/address error: */
+    if(nr==2 || nr==3) {
+        busAddressErrPC = regs.pc;
+    }
 }
 
 static void Interrupt(int nr)
@@ -1389,6 +1397,15 @@ static void m68k_run_2 (void)
 #endif
 
 	cycles = (*cpufunctbl[cft_map(opcode)])(opcode);
+
+	/* Unfortunately needed at the moment: */
+	/* Check if we had an bus/address error and correct the PC then... */
+	if(busAddressErrPC) {
+	    /*write_log("Fixed PC to $%x instead of $%x after bus-/address error!\n",
+	              busAddressErrPC, m68k_getpc());*/
+	    m68k_setpc(busAddressErrPC);
+	    busAddressErrPC = 0;
+	}
 
 	do_cycles (cycles);
 	if (regs.spcflags) {
