@@ -1,10 +1,14 @@
 /*
-  Hatari
+  Hatari - m68000.c
 
-  M68000 - CPU. This originally (in WinSTon) handled exceptions as well as some
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  These routines originally (in WinSTon) handled exceptions as well as some
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
+static char rcsid[] = "Hatari $Id: m68000.c,v 1.13 2003-02-28 15:31:35 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -50,10 +54,10 @@ void M68000_Reset(BOOL bCold)
     for(i=0; i<(16+1); i++)
       Regs[i] = 0;
   }
-  PC = TOSAddress;                            /* Start of TOS image, 0xfc0000 or 0xe00000 */
-  SR = 0x2700;                                /* Starting status register */
+  PC = TosAddress;              /* Start of TOS image, 0xfc0000 or 0xe00000 */
+  SR = 0x2700;                  /* Starting status register */
   MakeFromSR();
-  PendingInterruptFlag = 0;                   /* Clear pending flag */
+  PendingInterruptFlag = 0;     /* Clear pending flag */
 
   /* Now directly reset the UAE CPU core: */
   m68k_reset();

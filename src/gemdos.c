@@ -1,7 +1,11 @@
 /*
-  Hatari
+  Hatari - gemdos.c
 
-  GEMDos intercept routines. These are used mainly for Hard Drive redirection of high level file routines.
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  GEMDOS intercept routines.
+  These are used mainly for hard drive redirection of high level file routines.
 
   Bugs/things to fix:
   * RS232/Printing
@@ -9,8 +13,8 @@
     (eg. FOO.BAR and foo.bar is the same file in TOS but not UNIX)
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
-
 */
+static char rcsid[] = "Hatari $Id: gemdos.c,v 1.11 2003-02-28 15:31:35 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -1622,7 +1626,7 @@ void GemDOS_Boot()
   if(GEMDOS_EMU_ON){
 
     /* Patch pexec code - coded value is 4, but must be 6 for TOS > 1.00 */
-    if(TOSVersion > 0x0100) 
+    if(TosVersion > 0x0100) 
       STMemory_WriteByte(CART_PEXEC_TOS, 0x06);
   
     /* Save old GEMDOS handler adress */

@@ -1,6 +1,12 @@
 /*
-  Hatari
+  Hatari - main.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  Main initialization and event handling routines.
 */
+static char rcsid[] = "Hatari $Id: main.c,v 1.30 2003-02-28 15:31:36 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -61,15 +67,6 @@ char szWorkingDir[MAX_FILENAME_LENGTH] = { "" };
 char szCurrentDir[MAX_FILENAME_LENGTH] = { "" };
 
 unsigned char STRam[16*1024*1024];        /* This is our ST Ram, includes all TOS/hardware areas for ease */
-
-int STSpeedMilliSeconds[] = {             /* Convert option 'nMinMaxSpeed' into milliseconds */
-  1000/50,          /* MINMAXSPEED_MIN(20ms) */
-  1000/66,          /* MINMAXSPEED_1(15ms) */
-  1000/100,         /* MINMAXSPEED_2(10ms) */
-  1000/200,         /* MINMAXSPEED_3(5ms) */
-  1,                /* MINMAXSPEED_MAX(1ms) */
-};
-
 
 
 
@@ -400,20 +397,35 @@ void Main_Init(void)
   RS232_Init();
   Screen_Init();
   Floppy_Init();
-  Init680x0();         /* Init CPU emulation */
-  Reset_Cold();        /* Reset all systems */
+  Init680x0();                  /* Init CPU emulation */
+  Audio_Init();
+
+  if(Reset_Cold())              /* Reset all systems, load TOS image */
+  {
+    /* If loading of the TOS failed, we bring up the GUI to let the
+     * user choose another TOS ROM file. */
+    Dialog_DoProperty();
+  }
+  if(!bTosImageLoaded || bQuitProgram)
+  {
+    fprintf(stderr, "Failed to load TOS image!\n");
+    SDL_Quit();
+    exit(-2);
+  }
+
   GemDOS_Init();
   Intercept_Init();
   Joy_Init();
-  Audio_Init();
   Sound_Init();
   Main_CreateSoundTimer();
 
   /* Check passed disc image parameter, boot directly into emulator */
-  if (strlen(szBootDiscImage)>0) {
+  if(strlen(szBootDiscImage) > 0)
+  {
     Floppy_InsertDiscIntoDrive(0,szBootDiscImage);
   }
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*

@@ -1,8 +1,12 @@
 /*
   Hatari
 
-  Reset emulation state
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  Reset emulation state.
 */
+static char rcsid[] = "Hatari $Id: reset.c,v 1.4 2003-02-28 15:31:36 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -28,9 +32,9 @@
 /*
   Cold reset ST (reset memory, all registers and reboot)
 */
-void Reset_Cold(void)
+int Reset_Cold(void)
 {
-  Reset_ST(TRUE);
+  return Reset_ST(TRUE);
 }
 
 
@@ -38,9 +42,9 @@ void Reset_Cold(void)
 /*
   Warm reset ST (reset registers, leave in same state and reboot)
 */
-void Reset_Warm(void)
+int Reset_Warm(void)
 {
-  Reset_ST(FALSE);
+  return Reset_ST(FALSE);
 }
 
 
@@ -48,25 +52,36 @@ void Reset_Warm(void)
 /*
   Reset ST emulator states, chips, interrupts and registers
 */
-void Reset_ST(BOOL bCold)
+int Reset_ST(BOOL bCold)
 {
-  if (bCold) {
-    STMemory_Clear(0x00000000,0x00400000);  /* Clear First 4Mb */
-    STMemory_Clear(0x00e00000,0x00ffffff);  /* Clear Upper memory */
-    STMemory_WriteLong(4,0x00fc0020);       /* Set reset vector */
-    STMemory_WriteLong(0,0x0000f000);       /* And reset stack pointer */
+  if (bCold)
+  {
+    int ret;
+
+    STMemory_Clear(0x00000000, 0x00400000);   /* Clear First 4Mb */
+    STMemory_Clear(0x00e00000, 0x00ffffff);   /* Clear Upper memory */
+    STMemory_WriteLong(4, 0x00fc0000);        /* Set reset vector */
+    STMemory_WriteLong(0, 0x0000f000);        /* And reset stack pointer */
 
     Floppy_GetBootDrive();      /* Find which device to boot from(A: or C:) */
     Cart_LoadImage();           /* Load program into cartridge memory. Used for gemdos loading */
-    TOS_LoadImage();            /* Load TOS, writes into cartridge memory */
+
+    ret = TOS_LoadImage();      /* Load TOS, writes into cartridge memory */
+    if(ret)
+    {
+      return ret;               /* If we can not load a TOS image, return now! */
+    }
   }
   Int_Reset();                  /* Reset interrupts */
   MFP_Reset();                  /* Setup MFP chip */
   Video_Reset();                /* Reset video */
-  if (bCold) {
-    GemDOS_Reset();               /* Reset GEMDOS emulation */
+
+  if (bCold)
+  {
+    GemDOS_Reset();             /* Reset GEMDOS emulation */
     FDC_Reset();                /* Reset FDC */
   }
+
   PSG_Reset();                  /* Reset PSG */
   Sound_Reset();                /* Reset Sound */
   IKBD_Reset(bCold);            /* Keyboard */
@@ -74,11 +89,13 @@ void Reset_ST(BOOL bCold)
   M68000_Reset(bCold);          /* Reset CPU */
 
   /* And VBL interrupt, MUST always be one interrupt ready to trigger */
-  Int_AddAbsoluteInterrupt(CYCLES_ENDLINE,INTERRUPT_VIDEO_ENDLINE);
-  Int_AddAbsoluteInterrupt(CYCLES_HBL,INTERRUPT_VIDEO_HBL);
-  Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME,INTERRUPT_VIDEO_VBL);
+  Int_AddAbsoluteInterrupt(CYCLES_ENDLINE, INTERRUPT_VIDEO_ENDLINE);
+  Int_AddAbsoluteInterrupt(CYCLES_HBL, INTERRUPT_VIDEO_HBL);
+  Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME, INTERRUPT_VIDEO_VBL);
   /* And keyboard check for debugger */
 #ifdef USE_DEBUGGER
-  Int_AddAbsoluteInterrupt(CYCLES_DEBUGGER,INTERRUPT_DEBUGGER);
+  Int_AddAbsoluteInterrupt(CYCLES_DEBUGGER, INTERRUPT_DEBUGGER);
 #endif
+
+  return 0;
 }
