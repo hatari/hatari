@@ -1,5 +1,5 @@
 /*
- * UAE - The Un*x Amiga Emulator
+ * UAE - The Un*x Amiga Emulator - CPU core
  *
  * MC68000 emulation generator
  *
@@ -16,15 +16,13 @@
  * The source for the insn timings is Markt & Technik's Amiga Magazin 8/1992.
  *
  * Copyright 1995, 1996, 1997, 1998, 1999, 2000 Bernd Schmidt
+ *
+ * Adaptation to Hatari and better cpu timings by Thomas Huth
+ *
  */
 
 #include <ctype.h>
 
-/*
-#include "sysconfig.h"
-#include "config.h"
-#include "options.h"
-*/
 #include "sysdeps.h"
 #include "readcpu.h"
 
@@ -36,6 +34,9 @@ static FILE *stblfile;
 static int using_prefetch;
 static int using_exception_3;
 static int cpu_level;
+
+char exactCpuCycles[256];   /* Space to store return string for exact cpu cycles */
+
 
 /* For the current opcode, the next lower level that will have different code.
  * Initialized to -1 for each opcode. If it remains unchanged, indicates we
@@ -230,20 +231,10 @@ static void genamode (amodes mode, char *reg, wordsizes size, char *name, int ge
 	if (getv == 1)
 	    switch (size) {
 	    case sz_byte:
-#if defined(AMIGA) && !defined(WARPUP)
-		/* sam: I don't know why gcc.2.7.2.1 produces a code worse */
-		/* if it is not done like that: */
-		printf ("\tuae_s8 %s = ((uae_u8*)&m68k_dreg(regs, %s))[3];\n", name, reg);
-#else
 		printf ("\tuae_s8 %s = m68k_dreg(regs, %s);\n", name, reg);
-#endif
 		break;
 	    case sz_word:
-#if defined(AMIGA) && !defined(WARPUP)
-		printf ("\tuae_s16 %s = ((uae_s16*)&m68k_dreg(regs, %s))[1];\n", name, reg);
-#else
 		printf ("\tuae_s16 %s = m68k_dreg(regs, %s);\n", name, reg);
-#endif
 		break;
 	    case sz_long:
 		printf ("\tuae_s32 %s = m68k_dreg(regs, %s);\n", name, reg);
@@ -836,10 +827,8 @@ static void gen_opcode (unsigned long int opcode)
     insn_n_cycles = 4;
 
     start_brace ();
-#if 0
-    printf ("uae_u8 *m68k_pc = regs.pc_p;\n");
-#endif
     m68k_pc_offset = 2;
+
     switch (curi->plev) {
     case 0: /* not privileged */
 	break;
@@ -863,6 +852,7 @@ static void gen_opcode (unsigned long int opcode)
 	start_brace ();
 	break;
     }
+
     switch (curi->mnemo) {
     case i_OR:
     case i_AND:
@@ -1481,6 +1471,7 @@ static void gen_opcode (unsigned long int opcode)
 	}
 	printf ("\tuae_u32 sign = (%s & val) >> %d;\n", cmask (curi->size), bit_size (curi->size) - 1);
 	printf ("\tcnt &= 63;\n");
+        printf ("\tretcycles = cnt;\n");
 	printf ("\tCLEAR_CZNV;\n");
 	printf ("\tif (cnt >= %d) {\n", bit_size (curi->size));
 	printf ("\t\tval = %s & (uae_u32)-sign;\n", bit_mask (curi->size));
@@ -1501,6 +1492,10 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\t}\n");
 	genflags (flag_logical_noclobber, curi->size, "val", "", "");
 	genastore ("val", curi->dmode, "dstreg", curi->size, "data");
+        if(curi->size==sz_long)
+            strcpy(exactCpuCycles," return (8+retcycles*2);");
+          else
+            strcpy(exactCpuCycles," return (6+retcycles*2);");
 	break;
     case i_ASL:
 	genamode (curi->smode, "srcreg", curi->size, "cnt", 1, 0);
@@ -1513,6 +1508,7 @@ static void gen_opcode (unsigned long int opcode)
 	default: abort ();
 	}
 	printf ("\tcnt &= 63;\n");
+        printf ("\tretcycles = cnt;\n");
 	printf ("\tCLEAR_CZNV;\n");
 	printf ("\tif (cnt >= %d) {\n", bit_size (curi->size));
 	printf ("\t\tSET_VFLG (val != 0);\n");
@@ -1537,6 +1533,10 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\t}\n");
 	genflags (flag_logical_noclobber, curi->size, "val", "", "");
 	genastore ("val", curi->dmode, "dstreg", curi->size, "data");
+        if(curi->size==sz_long)
+            strcpy(exactCpuCycles," return (8+retcycles*2);");
+          else
+            strcpy(exactCpuCycles," return (6+retcycles*2);");
 	break;
     case i_LSR:
 	genamode (curi->smode, "srcreg", curi->size, "cnt", 1, 0);
@@ -1549,6 +1549,7 @@ static void gen_opcode (unsigned long int opcode)
 	default: abort ();
 	}
 	printf ("\tcnt &= 63;\n");
+        printf ("\tretcycles = cnt;\n");
 	printf ("\tCLEAR_CZNV;\n");
 	printf ("\tif (cnt >= %d) {\n", bit_size (curi->size));
 	printf ("\t\tSET_CFLG ((cnt == %d) & (val >> %d));\n",
@@ -1566,6 +1567,10 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\t}\n");
 	genflags (flag_logical_noclobber, curi->size, "val", "", "");
 	genastore ("val", curi->dmode, "dstreg", curi->size, "data");
+        if(curi->size==sz_long)
+            strcpy(exactCpuCycles," return (8+retcycles*2);");
+          else
+            strcpy(exactCpuCycles," return (6+retcycles*2);");
 	break;
     case i_LSL:
 	genamode (curi->smode, "srcreg", curi->size, "cnt", 1, 0);
@@ -1578,6 +1583,7 @@ static void gen_opcode (unsigned long int opcode)
 	default: abort ();
 	}
 	printf ("\tcnt &= 63;\n");
+        printf ("\tretcycles = cnt;\n");
 	printf ("\tCLEAR_CZNV;\n");
 	printf ("\tif (cnt >= %d) {\n", bit_size (curi->size));
 	printf ("\t\tSET_CFLG (cnt == %d ? val & 1 : 0);\n",
@@ -1596,6 +1602,10 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\t}\n");
 	genflags (flag_logical_noclobber, curi->size, "val", "", "");
 	genastore ("val", curi->dmode, "dstreg", curi->size, "data");
+        if(curi->size==sz_long)
+            strcpy(exactCpuCycles," return (8+retcycles*2);");
+          else
+            strcpy(exactCpuCycles," return (6+retcycles*2);");
 	break;
     case i_ROL:
 	genamode (curi->smode, "srcreg", curi->size, "cnt", 1, 0);
@@ -1608,6 +1618,7 @@ static void gen_opcode (unsigned long int opcode)
 	default: abort ();
 	}
 	printf ("\tcnt &= 63;\n");
+        printf ("\tretcycles = cnt;\n");
 	printf ("\tCLEAR_CZNV;\n");
 	if (source_is_imm1_8 (curi))
 	    printf ("{");
@@ -1623,6 +1634,10 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("}\n");
 	genflags (flag_logical_noclobber, curi->size, "val", "", "");
 	genastore ("val", curi->dmode, "dstreg", curi->size, "data");
+        if(curi->size==sz_long)
+            strcpy(exactCpuCycles," return (8+retcycles*2);");
+          else
+            strcpy(exactCpuCycles," return (6+retcycles*2);");
 	break;
     case i_ROR:
 	genamode (curi->smode, "srcreg", curi->size, "cnt", 1, 0);
@@ -1635,6 +1650,7 @@ static void gen_opcode (unsigned long int opcode)
 	default: abort ();
 	}
 	printf ("\tcnt &= 63;\n");
+        printf ("\tretcycles = cnt;\n");
 	printf ("\tCLEAR_CZNV;\n");
 	if (source_is_imm1_8 (curi))
 	    printf ("{");
@@ -1650,6 +1666,10 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\t}\n");
 	genflags (flag_logical_noclobber, curi->size, "val", "", "");
 	genastore ("val", curi->dmode, "dstreg", curi->size, "data");
+        if(curi->size==sz_long)
+            strcpy(exactCpuCycles," return (8+retcycles*2);");
+          else
+            strcpy(exactCpuCycles," return (6+retcycles*2);");
 	break;
     case i_ROXL:
 	genamode (curi->smode, "srcreg", curi->size, "cnt", 1, 0);
@@ -1662,6 +1682,7 @@ static void gen_opcode (unsigned long int opcode)
 	default: abort ();
 	}
 	printf ("\tcnt &= 63;\n");
+        printf ("\tretcycles = cnt;\n");
 	printf ("\tCLEAR_CZNV;\n");
 	if (source_is_imm1_8 (curi))
 	    printf ("{");
@@ -1680,6 +1701,10 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\tSET_CFLG (GET_XFLG);\n");
 	genflags (flag_logical_noclobber, curi->size, "val", "", "");
 	genastore ("val", curi->dmode, "dstreg", curi->size, "data");
+        if(curi->size==sz_long)
+            strcpy(exactCpuCycles," return (8+retcycles*2);");
+          else
+            strcpy(exactCpuCycles," return (6+retcycles*2);");
 	break;
     case i_ROXR:
 	genamode (curi->smode, "srcreg", curi->size, "cnt", 1, 0);
@@ -1692,6 +1717,7 @@ static void gen_opcode (unsigned long int opcode)
 	default: abort ();
 	}
 	printf ("\tcnt &= 63;\n");
+        printf ("\tretcycles = cnt;\n");
 	printf ("\tCLEAR_CZNV;\n");
 	if (source_is_imm1_8 (curi))
 	    printf ("{");
@@ -1713,6 +1739,10 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\tSET_CFLG (GET_XFLG);\n");
 	genflags (flag_logical_noclobber, curi->size, "val", "", "");
 	genastore ("val", curi->dmode, "dstreg", curi->size, "data");
+        if(curi->size==sz_long)
+            strcpy(exactCpuCycles," return (8+retcycles*2);");
+          else
+            strcpy(exactCpuCycles," return (6+retcycles*2);");
 	break;
     case i_ASRW:
 	genamode (curi->smode, "srcreg", curi->size, "data", 1, 0);
@@ -2177,12 +2207,6 @@ static void generate_includes (FILE * f)
     fprintf (f, "#include \"newcpu.h\"\n");
     fprintf (f, "#include \"compiler.h\"\n");
     fprintf (f, "#include \"cputbl.h\"\n");
-/*
-    fprintf (f, "#include \"sysconfig.h\"\n");
-    fprintf (f, "#include \"config.h\"\n");
-    fprintf (f, "#include \"options.h\"\n");
-    fprintf (f, "#include \"custom.h\"\n");
-*/
     fprintf (f, "#define CPUFUNC(x) x##_ff\n"
 	     "#ifdef NOFLAGS\n"
 	     "#include \"noflags.h\"\n"
@@ -2196,6 +2220,8 @@ static void generate_one_opcode (int rp)
     int i;
     uae_u16 smsk, dmsk;
     long int opcode = opcode_map[rp];
+
+    exactCpuCycles[0] = 0;  /* Default: not used */
 
     if (table68k[opcode].mnemo == i_ILLG
 	|| table68k[opcode].clev > cpu_level)
@@ -2287,10 +2313,16 @@ static void generate_one_opcode (int rp)
     need_endlabel = 0;
     endlabelno++;
     sprintf (endlabelstr, "endlabel%d", endlabelno);
+    if(table68k[opcode].mnemo==i_ASR || table68k[opcode].mnemo==i_ASL || table68k[opcode].mnemo==i_LSR || table68k[opcode].mnemo==i_LSL || 
+       table68k[opcode].mnemo==i_ROL || table68k[opcode].mnemo==i_ROR || table68k[opcode].mnemo==i_ROXL || table68k[opcode].mnemo==i_ROXR )
+      printf("\tunsigned int retcycles;\n");
     gen_opcode (opcode);
     if (need_endlabel)
 	printf ("%s: ;\n", endlabelstr);
-    printf ("return %d;\n", insn_n_cycles / 2);
+    if( strlen(exactCpuCycles) > 0 )
+      printf("%s\n",exactCpuCycles);
+     else
+      printf ("return %d;\n", insn_n_cycles);
     printf ("}\n");
     opcode_next_clev[rp] = next_cpu_level;
     opcode_last_postfix[rp] = postfix;

@@ -19,7 +19,6 @@ int illegal_mem = FALSE;
 int address_space_24 = 1;
 int cpu_level = 0;              /* 68000 (default) */
 int cpu_compatible = 0;
-int m68k_speed = 0;
 
 long STmem_size = 0x100000;  /* 1MB */
 long TTmem_size = 0;

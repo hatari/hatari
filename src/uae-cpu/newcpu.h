@@ -1,9 +1,12 @@
  /*
-  * UAE - The Un*x Amiga Emulator
-  *
+  * UAE - The Un*x Amiga Emulator - CPU core
+  * 
   * MC68000 emulation
   *
   * Copyright 1995 Bernd Schmidt
+  *
+  * Adaptation to Hatari by Thomas Huth
+  *
   */
 
 #ifndef UAENEWCPU
@@ -99,7 +102,6 @@ extern struct regstruct
     uae_u32 fpcr,fpsr,fpiar;
 
     uae_u32 spcflags;
-    uae_u32 kick_mask;
 
     /* Fellow sources say this is 4 longwords. That's impossible. It needs
      * to be at least a longword. The HRM has some cryptic comment about two
@@ -286,6 +288,6 @@ extern struct cputbl op_smalltbl_4_ff[];
 /* 68000 slow but compatible.  */
 extern struct cputbl op_smalltbl_5_ff[];
 
-extern cpuop_func *cpufunctbl[65536] ASM_SYM_FOR_FUNC ("cpufunctbl");
+extern cpuop_func *cpufunctbl[65536];
 
 #endif	/* ifndef UAENEWCPU */

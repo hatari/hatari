@@ -1,9 +1,12 @@
  /*
-  * UAE - The Un*x Amiga Emulator
+  * UAE - The Un*x Amiga Emulator - CPU core
   *
   * MC68000 emulation
   *
   * (c) 1995 Bernd Schmidt
+  *
+  * Adaptation to Hatari by Thomas Huth
+  *
   */
 
 #include "sysdeps.h"
@@ -14,14 +17,6 @@
 #include "compiler.h"
 #include "events.h"
 #include "../includes/tos.h"
-/*
-#include "sysconfig.h"
-#include "config.h"
-#include "options.h"
-#include "uae.h"
-#include "autoconf.h"
-#include "debug.h"
-*/
 
 /*int crashtrace=0;*/
 
@@ -163,17 +158,7 @@ static void build_cpufunctbl (void)
     cpufunctbl[cft_map(TIMERD_OPCODE)] = OpCode_TimerD;
 }
 
-unsigned long cycles_mask, cycles_val;
 
-static void update_68k_cycles (void)
-{
-    cycles_mask = 0;
-    cycles_val = m68k_speed;
-    if (m68k_speed < 1) {
-	cycles_mask = 0xFFFFFFFF;
-	cycles_val = 0;
-    }
-}
 
 /*
 void check_prefs_changed_cpu (void)
@@ -195,8 +180,6 @@ void check_prefs_changed_cpu (void)
 void init_m68k (void)
 {
     int i;
-
-    update_68k_cycles ();
 
     for (i = 0 ; i < 256 ; i++) {
 	int j;
@@ -1112,7 +1095,6 @@ void m68k_reset (void)
     m68k_areg (regs, 7) = get_long (ROMmem_start);
     m68k_setpc (get_long (ROMmem_start+4));
     fill_prefetch_0 ();
-    regs.kick_mask = 0xF80000;
     regs.s = 1;
     regs.m = 0;
     regs.stopped = 0;
@@ -1210,7 +1192,6 @@ void mmu_op(uae_u32 opcode, uae_u16 extra)
 	op_illg (opcode);
 }
 
-static int n_insns = 0, n_spcinsns = 0;
 
 static uaecptr last_trace_ad = 0;
 
@@ -1252,17 +1233,6 @@ static void do_trace (void)
 
 static int do_specialties (void)
 {
-/*
-    if (regs.spcflags & SPCFLAG_COPPER)
-	do_copper ();
-
-    //n_spcinsns++;
-    while (regs.spcflags & SPCFLAG_BLTNASTY) {
-	do_cycles (4);
-	if (regs.spcflags & SPCFLAG_COPPER)
-	    do_copper ();
-    }
-*/
     run_compiled_code();
     if (regs.spcflags & SPCFLAG_DOTRACE) {
 	Exception (9,last_trace_ad);
@@ -1336,14 +1306,9 @@ static void m68k_run_1 (void)
 #elif COUNT_INSTRS == 1
 	instrcount[opcode]++;
 #endif
-#if defined X86_ASSEMBLY
-	__asm__ __volatile__("\tcall *%%ebx"
-			     : "=&a" (cycles) : "b" (cpufunctbl[cft_map(opcode)]), "0" (opcode)
-			     : "%edx", "%ecx",
-			     "%esi", "%edi", "%ebp", "memory", "cc");
-#else
+
 	cycles = (*cpufunctbl[cft_map(opcode)])(opcode);
-#endif
+
 #ifdef DEBUG_PREFETCH
 	if (memcmp (saved_bytes, oldpcp, 20) != 0) {
 	    fprintf (stderr, "Self-modifying code detected.\n");
@@ -1351,9 +1316,7 @@ static void m68k_run_1 (void)
 	    debugging = 1;
 	}
 #endif
-	/*n_insns++;*/
-	/*cycles &= cycles_mask;
-	cycles |= cycles_val;*/
+
 	do_cycles (cycles);
 	if (regs.spcflags) {
 	    if (do_specialties ())
@@ -1388,18 +1351,9 @@ static void m68k_run_2 (void)
 #elif COUNT_INSTRS == 1
 	instrcount[opcode]++;
 #endif
-#if defined X86_ASSEMBLY
-	__asm__ __volatile__("\tcall *%%ebx"
-			     : "=&a" (cycles) : "b" (cpufunctbl[cft_map(opcode)]), "0" (opcode)
-			     : "%edx", "%ecx",
-			     "%esi", "%edi", "%ebp", "memory", "cc");
-#else
-	cycles = (*cpufunctbl[cft_map(opcode)])(opcode);
-#endif
 
-	/*n_insns++;*/
-	/*cycles &= cycles_mask;
-	cycles |= cycles_val;*/
+	cycles = (*cpufunctbl[cft_map(opcode)])(opcode);
+
 	do_cycles (cycles);
 	if (regs.spcflags) {
 	    if (do_specialties ())
@@ -1408,16 +1362,6 @@ static void m68k_run_2 (void)
     }
 }
 
-#ifdef X86_ASSEMBLY
-STATIC_INLINE void m68k_run1 (void (*func)(void))
-{
-    /* Work around compiler bug: GCC doesn't push %ebp in m68k_run_1. */
-    __asm__ __volatile__ ("pushl %%ebp\n\tcall *%0\n\tpopl %%ebp"
-			  : : "r" (func) : "%eax", "%edx", "%ecx", "memory", "cc");
-}
-#else
-#define m68k_run1(F) F()
-#endif
 
 int in_m68k_go = 0;
 
@@ -1427,9 +1371,6 @@ void m68k_go (int may_quit)
 	write_log ("Bug! m68k_go is not reentrant.\n");
 	abort ();
     }
-
-    /*reset_frame_rate_hack ();*/
-    update_68k_cycles ();
 
     in_m68k_go++;
     while(!quit_program) {
@@ -1447,7 +1388,10 @@ void m68k_go (int may_quit)
 	if (debugging)
 	    debug ();
 */
-	m68k_run1 (cpu_compatible ? m68k_run_1 : m68k_run_2);
+        if(cpu_compatible)
+          m68k_run_1();
+         else
+          m68k_run_2();
     }
     in_m68k_go--;
 }

@@ -1,5 +1,5 @@
  /*
-  * UAE - The Un*x Amiga Emulator
+  * UAE - The Un*x Amiga Emulator - CPU core
   *
   * Try to include the right system headers and get other system-specific
   * stuff right & other collected kludges.
@@ -10,6 +10,9 @@
   * it's actually needed by the .c file.
   *
   * Copyright 1996, 1997 Bernd Schmidt
+  *
+  * Adaptation to Hatari by Thomas Huth
+  *
   */
 
 #ifndef UAESYSDEPS
@@ -356,11 +359,6 @@ extern void mallocemu_free (void *ptr);
 
 #endif
 
-#ifdef X86_ASSEMBLY
-#define ASM_SYM_FOR_FUNC(a) __asm__(a)
-#else
-#define ASM_SYM_FOR_FUNC(a)
-#endif
 
 #if defined USE_COMPILER
 #undef NO_PREFETCH_BUFFER
