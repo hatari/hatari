@@ -1,3 +1,7 @@
+2001-12-21 (Thomas Huth):
+  * Hatari now uses the SDL's relative mouse mode instead of absolut mode.
+  * Removed the files view.c and statusbar.c (not really needed).
+
 2001-12-10 (Thomas Huth):
   * Wrote a first version of the graphical user interface.
   * The path where Hatari searches its data (TOS-image etc.)

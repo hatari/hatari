@@ -27,9 +27,7 @@
 #include "misc.h"
 #include "printer.h"
 #include "rs232.h"
-#include "statusBar.h"
 #include "stMemory.h"
-#include "view.h"
 
 #include "uae-cpu/hatari-glue.h"
 

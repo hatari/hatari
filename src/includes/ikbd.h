@@ -13,10 +13,6 @@ typedef struct {
 } IKBD_COMMAND_PARAMS;
 
 /* Keyboard processor details */
-typedef struct {
-  int X,Y;                        /* Relative position of mouse */
-  int PrevX,PrevY;                /* Previous position */
-} REL_MOUSE;
 
 typedef struct {
   int X,Y;                        /* Position of mouse */
@@ -39,7 +35,6 @@ typedef struct {
 } JOY;
 
 typedef struct {
-  REL_MOUSE  Rel;
   ABS_MOUSE  Abs;
   MOUSE    Mouse;
   JOY      Joy;

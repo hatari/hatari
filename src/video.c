@@ -188,8 +188,8 @@ void Video_InterruptHandler_VBL(void)
     Sound_PassYMSamplesToAudio();
   OldVBLCounter = VBLCounter;  /* Store counter so only enter here 50 times a second MAXIMUM */
 
-  /* Clear any key presses which are due to be de-bounced(held for one ST frame) */
-//FIXME   View_DebounceAllKeys();
+  /* Clear any key presses which are due to be de-bounced (held for one ST frame) */
+  Keymap_DebounceAllKeys();
   /* Check 'Function' keys, so if press F12 we update screen correctly to Window! */
   ShortCut_CheckKeys();
   /* See if need to save/restore emulation state during this 'safe-zone' */

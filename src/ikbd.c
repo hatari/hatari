@@ -40,7 +40,6 @@
 
 #define ABS_PREVBUTTONS    (0x02|0x8)  /* Don't report any buttons up on first call to 'IKBD_Cmd_ReadAbsMousePos' */
 
-#define SCALE_MOUSE_INPUT           /* Scale mouse so correct aspect ratio when in 320x200, 640x200, 640x400 */
 
 /* Keyboard state */
 KEYBOARD Keyboard;
@@ -198,8 +197,6 @@ void IKBD_Reset(BOOL bCold)
   KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
   KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
 
-  KeyboardProcessor.Rel.X =  KeyboardProcessor.Rel.Y = 0;
-  KeyboardProcessor.Rel.PrevX = KeyboardProcessor.Rel.PrevY = 0;
   KeyboardProcessor.Abs.X = ABS_X_ONRESET;  KeyboardProcessor.Abs.Y = ABS_Y_ONRESET;
   KeyboardProcessor.Abs.MaxX = ABS_MAX_X_ONRESET;  KeyboardProcessor.Abs.MaxY = ABS_MAY_Y_ONRESET;
   KeyboardProcessor.Abs.PrevReadAbsMouseButtons = ABS_PREVBUTTONS;
@@ -254,46 +251,6 @@ void IKBD_MemorySnapShot_Capture(BOOL bSave)
 */
 void IKBD_UpdateInternalMousePosition(void)
 {
-  BOOL bHalveX=FALSE,bHalveY=FALSE;
-
-#ifdef SCALE_MOUSE_INPUT
-  /* According to chosen resolution, halve XY axis to give smoother mouse movement! */
-  /* When using VDI or mono leave mouse as is */
-  if (!bUseVDIRes) {
-    if (STRes==ST_LOW_RES) {
-      bHalveX = bHalveY = TRUE;
-    }
-    if ( (STRes==ST_MEDIUM_RES) || (STRes==ST_LOWMEDIUM_MIX_RES) ) {
-      bHalveY = TRUE;
-    }
-  }
-
-  if (bHalveX)
-    KeyboardProcessor.Mouse.DeltaX = (KeyboardProcessor.Rel.X-KeyboardProcessor.Rel.PrevX)>>1;
-  else
-    KeyboardProcessor.Mouse.DeltaX = KeyboardProcessor.Rel.X-KeyboardProcessor.Rel.PrevX;
-  if (bHalveY)
-    KeyboardProcessor.Mouse.DeltaY = (KeyboardProcessor.Rel.Y-KeyboardProcessor.Rel.PrevY)>>1;
-  else
-    KeyboardProcessor.Mouse.DeltaY = KeyboardProcessor.Rel.Y-KeyboardProcessor.Rel.PrevY;
-#else
-  KeyboardProcessor.Mouse.DeltaX = KeyboardProcessor.Rel.X-KeyboardProcessor.Rel.PrevX;
-  KeyboardProcessor.Mouse.DeltaY = KeyboardProcessor.Rel.Y-KeyboardProcessor.Rel.PrevY;
-#endif
-
-  /* Accellerating mouse in ST-Low - is this a good idea? */
-  if(!bUseHighRes)
-   {  KeyboardProcessor.Mouse.DeltaX*=2; KeyboardProcessor.Mouse.DeltaY*=2;  }
-
-  /* Retain fraction for next time around!?? */
-  if (bHalveX)
-    KeyboardProcessor.Rel.PrevX = KeyboardProcessor.Rel.X&~0x1;
-  else
-    KeyboardProcessor.Rel.PrevX = KeyboardProcessor.Rel.X;
-  if (bHalveY)
-    KeyboardProcessor.Rel.PrevY = KeyboardProcessor.Rel.Y&~0x1;
-  else
-    KeyboardProcessor.Rel.PrevY = KeyboardProcessor.Rel.Y;
 
   /* Update internal mouse coords - Y axis moves according to YAxis setting(up/down) */
   /* Limit to Max X/Y(inclusive) */

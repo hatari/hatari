@@ -27,7 +27,7 @@
 #include "stMemory.h"
 #include "ymFormat.h"
 #include "video.h"
-#include "view.h"
+
 
 /*
   MFP interrupt channel circuit:-

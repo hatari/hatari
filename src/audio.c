@@ -12,7 +12,6 @@
 #include "memAlloc.h"
 #include "misc.h"
 #include "sound.h"
-#include "view.h"
 
 #define WRITE_INIT_POS  ((SoundPlayBackFrequencies[OutputAudioFreqIndex]/50)*2)  /* Write 2/50th ahead of write position */
 
@@ -247,7 +246,7 @@ void Audio_WriteSamplesIntoBuffer(char *pSamples,int Index,int Length,int RampSe
   int i;
 
   /* Modify ramp volume - ramp down if sound not enabled or not in windows mouse mode */
-  if ( (((RampSetting==RAMP_DOWN) || (!ConfigureParams.Sound.bEnableSound)) && (PlayVolume>0.0f)) || bWindowsMouseMode ) {
+  if ( (((RampSetting==RAMP_DOWN) || (!ConfigureParams.Sound.bEnableSound)) && (PlayVolume>0.0f)) ) {
     PlayVolume -= RAMP_DOWN_VOLUME_LEVEL;
     if (PlayVolume<=0.0f)
       PlayVolume = 0.0f;

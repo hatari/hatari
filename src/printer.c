@@ -20,8 +20,7 @@
 #include "file.h"
 #include "printer.h"
 #include "screen.h"
-#include "statusBar.h"
-#include "view.h"
+
 
 #define PRINTER_TAB_SETTING  8          /* A 'Tab' on the ST is 8 spaces */
 #define  PRINTER_IDLE_CLOSE  (4*50)     /* After 4 seconds, close printer */

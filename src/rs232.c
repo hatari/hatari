@@ -13,7 +13,7 @@
 #include "debug.h"
 #include "dialog.h"
 #include "rs232.h"
-#include "statusBar.h"
+
 
 BOOL bConnectedRS232=FALSE;          // Connection to RS232?
 //HANDLE hCom=NULL;                  // Handle to file

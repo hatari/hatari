@@ -26,7 +26,6 @@
 #include "stMemory.h"
 #include "tos.h"
 #include "vdi.h"
-#include "view.h"
 #include "xbios.h"
 
 

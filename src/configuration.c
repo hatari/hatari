@@ -12,7 +12,6 @@
 #include "configuration.h"
 #include "dialog.h"
 #include "video.h"
-#include "view.h"
 #include "vdi.h"
 #include "screen.h"
 #include "shortcut.h"

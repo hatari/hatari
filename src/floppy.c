@@ -27,8 +27,6 @@
 #include "misc.h"
 #include "msa.h"
 #include "st.h"
-#include "statusBar.h"
-#include "view.h"
 
 
 EMULATION_DRIVE EmulationDrives[NUM_EMULATION_DRIVES];  /* Emulation drive details, eg FileName, Inserted, Changed etc... */
@@ -356,7 +354,7 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
   /* Do we have a disc in our drive? */
   if (EmulationDrives[Drive].bDiscInserted) {
     /* Looks good */
-    StatusBar_SetIcon(STATUS_ICON_FLOPPY,ICONSTATE_UPDATE);
+    /*StatusBar_SetIcon(STATUS_ICON_FLOPPY,ICONSTATE_UPDATE);*/ /* Sorry - no statusbar in Hatari */
     pDiscBuffer = EmulationDrives[Drive].pBuffer;
 
     /* Find #sides and #sectors per track */
@@ -403,7 +401,7 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
   /* Do we have a disc in our drive? */
   if (EmulationDrives[Drive].bDiscInserted) {
     /* Looks good */
-    StatusBar_SetIcon(STATUS_ICON_FLOPPY,ICONSTATE_UPDATE);
+    /*StatusBar_SetIcon(STATUS_ICON_FLOPPY,ICONSTATE_UPDATE);*/ /* Sorry - no statusbar in Hatari yet */
     pDiscBuffer = EmulationDrives[Drive].pBuffer;
 
     /* Find #sides and #sectors per track */

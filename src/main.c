@@ -34,7 +34,6 @@
 #include "timer.h"
 #include "tos.h"
 #include "video.h"
-#include "view.h"
 #include "ymFormat.h"
 #include "debugui.h"
 
@@ -162,37 +161,41 @@ void Main_UnPauseEmulation(void)
 #endif
 void Main_EventHandler()
 {
- SDL_Event event;
+  SDL_Event event;
 
- if( SDL_PollEvent(&event) )
-  switch( event.type )
+  if( SDL_PollEvent(&event) )
+   switch( event.type )
    {
     case SDL_QUIT:
        quit_program=1;
        bQuitProgram=1;
        break;
-    case SDL_MOUSEMOTION:
-       View_UpdateSTMousePosition();    /* Read/Update internal mouse position */
+    case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */
+       KeyboardProcessor.Mouse.DeltaX += event.motion.xrel;
+       KeyboardProcessor.Mouse.DeltaY += event.motion.yrel;
        break;
     case SDL_MOUSEBUTTONDOWN:
        if( event.button.button==SDL_BUTTON_LEFT )
-         View_LeftMouseButtonDown();
+       {
+         if(Keyboard.LButtonDblClk==0)
+           Keyboard.bLButtonDown |= BUTTON_MOUSE;  /* Set button down flag */
+       }
        else if( event.button.button==SDL_BUTTON_RIGHT )
-         View_RightMouseButtonDown();
+         Keyboard.bRButtonDown |= BUTTON_MOUSE;
        else if( event.button.button==SDL_BUTTON_MIDDLE )
          Keyboard.LButtonDblClk = 1;    /* Start double-click sequence in emulation time */
        break;
     case SDL_MOUSEBUTTONUP:
        if( event.button.button==SDL_BUTTON_LEFT )
-         View_LeftMouseButtonUp();
+         Keyboard.bLButtonDown &= ~BUTTON_MOUSE;
        else if( event.button.button==SDL_BUTTON_RIGHT )
-         View_RightMouseButtonUp();
+         Keyboard.bRButtonDown &= ~BUTTON_MOUSE;;
        break;
      case SDL_KEYDOWN:
-       View_KeyDown( event.key.keysym.sym, event.key.keysym.mod );
+       Keymap_KeyDown( event.key.keysym.sym, event.key.keysym.mod );
        break;
      case SDL_KEYUP:
-       View_KeyUp( event.key.keysym.sym, event.key.keysym.mod );
+       Keymap_KeyUp( event.key.keysym.sym, event.key.keysym.mod );
        break;
    }
 }
@@ -382,7 +385,6 @@ void Main_Init(void)
   /* Check passed disc image parameter, boot directly into emulator */
   if (strlen(szBootDiscImage)>0) {
     Floppy_InsertDiscIntoDrive(0,szBootDiscImage);
-//FM    View_ToggleWindowsMouse(MOUSE_ST);
   }
 }
 
@@ -401,7 +403,6 @@ void Main_UnInit(void)
   Intercept_UnInit();
   Audio_UnInit();
   YMFormat_FreeRecording();
-//FM  View_LimitCursorToScreen();
   SDLGui_UnInit();
   Screen_UnInit();
 

@@ -30,7 +30,7 @@
 #include "sound.h"
 #include "tos.h"
 #include "video.h"
-#include "view.h"
+
 
 //#define COMPRESS_MEMORYSNAPSHOT      // Compress snapshots to reduce disc space used
 

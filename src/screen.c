@@ -30,10 +30,8 @@
 #include "screenSnapShot.h"
 #include "sound.h"
 #include "spec512.h"
-#include "statusBar.h"
 #include "vdi.h"
 #include "video.h"
-#include "view.h"
 
 
 SCREENDRAW ScreenDrawWindow[4];                   /* Set up with details of drawing functions for ST_xxx_RES */
@@ -101,7 +99,7 @@ void Screen_Init(void)
   SDL_EventState(SDL_MOUSEMOTION, SDL_ENABLE);
   SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_ENABLE);
   SDL_EventState(SDL_MOUSEBUTTONUP, SDL_ENABLE);
-  SDL_ShowCursor(0);
+  SDL_ShowCursor(SDL_DISABLE);
 }
 
 
@@ -225,8 +223,6 @@ void Screen_EnterFullScreen(void)
       pScreenBitmap = newsdlscrn->pixels;
       bInFullScreen = TRUE;
 
-      /*View_ToggleWindowsMouse(MOUSE_ST);*/  /* Put mouse into ST mode */
-      /*View_LimitCursorToScreen();*/    /* Free mouse from Window constraints */
       Screen_SetupRGBTable(TRUE);   /* Set full screen RGB */
       Screen_SetFullUpdate();       /* Cause full update of screen */
       Screen_ClearScreen();         /* Black out Window's bitmap as will be invalid when return */
@@ -240,6 +236,8 @@ void Screen_EnterFullScreen(void)
       SDL_SetColors(sdlscrn, cols, 0, 2);   /* Colors for monochrome emulation */
       SDL_SetColors(sdlscrn, cols, 10, 2);
     }
+    
+    SDL_WM_GrabInput(SDL_GRAB_ON);  /* Grab mouse pointer in fullscreen */
   }
 }
 
@@ -275,14 +273,10 @@ void Screen_ReturnFromFullScreen(void)
        }
      }
 
-    /*View_ResizeWindowToFull();*/    /* Resize window to ST screen size */
-    /*View_LimitCursorToClient();*/   /* And limit mouse in Window */
     Screen_SetupRGBTable(FALSE);      /* Set window RGB */
     Screen_SetFullUpdate();           /* Cause full update of screen */
 
-    /*View_ToggleWindowsMouse(MOUSE_ST);*/    /* Put mouse into ST mode */
     Main_UnPauseEmulation();          /* And off we go... */
-    /*View_Update();*/                /* And refresh screen */
   }
 }
 
@@ -401,11 +395,7 @@ void Screen_SetWindowRes(int Width,int Height,int BitCount)
     SDL_SetColors(sdlscrn, cols, 10, 2);
   }
 
-  /* Well, here comes a little hack to sync the ST and the host mouse pointer - hope it is okay - Thothy */
-  KeyboardProcessor.Mouse.DeltaX = 0;
-  KeyboardProcessor.Rel.X = KeyboardProcessor.Rel.PrevX = Width/2;
-  KeyboardProcessor.Mouse.DeltaY = 0;
-  KeyboardProcessor.Rel.Y = KeyboardProcessor.Rel.PrevY = Height/2;
+  SDL_WM_GrabInput(SDL_GRAB_OFF);  /* Un-grab mouse pointer in windowed mode */
 }
 
 
@@ -419,8 +409,6 @@ void Screen_DidResolutionChange(void)
 
   /* Did change res? */
   if (STRes!=PrevSTRes) {
-    /* We've changed, allocate new Windows bitmap */
-
     /* Set new fullscreen display mode, if differs from current */
     if (bInFullScreen) {
       SDL_Surface *newsdlscrn;
@@ -974,17 +962,13 @@ void Screen_Draw(void)
   /* Are we holding screen? Ie let user choose options while in full-screen mode using GDI */
   if (bInFullScreen && bFullScreenHold) {
     /* Just update status bar */
-    StatusBar_UpdateIcons();
+    /*StatusBar_UpdateIcons();*/ /* No statusbar in Hatari */
     return;
   }
 
-  /* Free any GDI stored surfaces, as not needed now */
-/*  DSurface_FreeGDIScreen();*/
-
   if (!bQuitProgram) {
-    /* Wait for next display(at 50fps), is ignored if running max speed */
-/* FIXME */
 #if 0
+    /* Wait for next display(at 50fps), is ignored if running max speed */
     if ( !(ConfigureParams.Screen.Advanced.bSyncToRetrace && bInFullScreen) ) {
       /* If in Max speed mode, just get on with it, or else wait for VBL timer */
       if (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MAX) {
@@ -993,8 +977,8 @@ void Screen_Draw(void)
           /* Increase counter for number of consecutive dropped frames */
           nDroppedFrames++;
           /* If emulation has gone slow for 1/2 second or more, inform user */
-          if (nDroppedFrames>=25)
-            StatusBar_SetIcon(STATUS_ICON_FRAMERATE,ICONSTATE_UPDATE);
+          /*if (nDroppedFrames>=25)
+            StatusBar_SetIcon(STATUS_ICON_FRAMERATE,ICONSTATE_UPDATE);*/ /* No statusbar in Hatari yet */
         }
         else
           nDroppedFrames = 0;
@@ -1002,6 +986,7 @@ void Screen_Draw(void)
         Main_WaitVBLEvent();
       }
     }
+#endif
 
     /* And create ST screen, AT LEAST 1/50th second must have passed otherwise don't draw */
     if (ConfigureParams.Screen.Advanced.bSyncToRetrace && bInFullScreen)
@@ -1010,7 +995,6 @@ void Screen_Draw(void)
         bDrawFrame = TRUE;
     }
     else
-#endif
     {
       if ( VideoBase )
         bDrawFrame = TRUE;
@@ -1026,7 +1010,7 @@ void Screen_Draw(void)
       Screen_DrawFrame(FALSE);
 
       /* And status bar */
-      StatusBar_UpdateIcons();
+      /*StatusBar_UpdateIcons();*/ /* Sorry - no statusbar in Hatari yet */
     }
     else {
       /* Blank Window with ST-white(0x777) rectangle if holding display */

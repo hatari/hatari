@@ -12,8 +12,6 @@
 #include "psg.h"
 #include "screen.h"
 #include "sound.h"
-#include "statusBar.h"
-#include "view.h"
 #include "ymFormat.h"
 
 #define YM_MAX_VBLS    (50*60*8)            /* 50=1 second, 50*60=1 minute, 50*60*8=8 minutes, or 24000 */
@@ -67,7 +65,7 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
       nYMVBLS = 0;          /* Number of VBLs of information */
 
       /* Set status bar */
-      StatusBar_SetIcon(STATUS_ICON_SOUND,ICONSTATE_ON);
+      /*StatusBar_SetIcon(STATUS_ICON_SOUND,ICONSTATE_ON);*/ /* Sorry - no statusbar yet */
       /* And inform user */
       Main_Message("YM Sound data recording started.",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
     }
@@ -88,7 +86,7 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
 void YMFormat_EndRecording()
 {
   /* Turn off icon */
-  StatusBar_SetIcon(STATUS_ICON_SOUND,ICONSTATE_OFF);
+  /*StatusBar_SetIcon(STATUS_ICON_SOUND,ICONSTATE_OFF);*/ /* Sorry - no statusbar */
 
   /* Have recorded information? */
   if (pYMWorkspace && nYMVBLS) {

@@ -1,7 +1,7 @@
 /*
   Hatari
 
-  Key remapping functions
+  Here we process a key press and the remapping of the scancodes.
 */
 
 #include <stdio.h>
@@ -12,6 +12,11 @@
 #include "keymap.h"
 #include "memAlloc.h"
 #include "misc.h"
+#include "dialog.h"
+#include "ikbd.h"
+#include "joy.h"
+#include "shortcut.h"
+#include "screen.h"
 
 
 /*-----------------------------------------------------------------------*/
@@ -301,6 +306,17 @@ char Default_KeyToSTScanCode[SDLK_LAST] = {
 };
 
 
+/* List of ST scan codes to NOT de-bounce when running in maximum speed */
+char DebounceExtendedKeys[] = {
+  0x1d,  /* CTRL */
+  0x2a,  /* Left SHIFT */
+  0x01,  /* ESC */
+  0x38,  /* ALT */
+  0x36,  /* Right SHIFT */
+  0      /* term */
+};
+
+
 char Loaded_KeyToSTScanCode[SDLK_LAST];
 BOOL bRemapKeyLoaded=FALSE;
 
@@ -362,3 +378,150 @@ void Keymap_LoadRemapFile(char *pszFileName)
     }
   }
 }
+
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Scan list of keys to NOT de-bounce when running in maximum speed, eg ALT,SHIFT,CTRL etc...
+  Return TRUE if key requires de-bouncing
+*/
+BOOL Keymap_DebounceSTKey(char STScanCode)
+{
+  int i=0;
+
+  /* Are we in maximum speed, and have disabled key repeat? */
+  if ( (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MIN) && (ConfigureParams.Keyboard.bDisableKeyRepeat) ) {
+    /* We should de-bounce all non extended keys, eg leave ALT,SHIFT,CTRL etc... held */
+    while (DebounceExtendedKeys[i]) {
+      if (STScanCode==DebounceExtendedKeys[i])
+        return(FALSE);
+      i++;
+    }
+
+    /* De-bounce key */
+    return(TRUE);
+  }
+
+  /* Do not de-bounce key */
+  return(FALSE);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Debounce any PC key held down if running with key repeat disabled
+  This is called each ST frame, so keys get held down for one VBL which is enough for 68000 code to scan
+*/
+void Keymap_DebounceAllKeys(void)
+{
+  unsigned int Key;
+  char STScanCode;
+
+  /* Are we in maximum speed, and have disabled key repeat? */
+  if ( (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MIN) && (ConfigureParams.Keyboard.bDisableKeyRepeat) ) {
+    /* Now run through each PC key looking for ones held down */
+    for(Key=0; Key<SDLK_LAST; Key++) {
+      /* Is key held? */
+      if (Keyboard.KeyStates[Key]) {
+        /* Get scan code */
+        STScanCode = Keymap_RemapKeyToSTScanCode(Key);
+        if (STScanCode!=-1) {
+          /* Does this require de-bouncing? */
+          if (Keymap_DebounceSTKey(STScanCode))
+            Keymap_KeyUp(Key, 0);
+        }
+      }
+    }
+  }
+
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  User press key down
+*/
+void Keymap_KeyDown( unsigned int sdlkey, unsigned int sdlmod )
+{
+  BOOL bPreviousKeyState;
+  char STScanCode;
+  unsigned int Key;
+
+  Key = sdlkey;
+
+  /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
+  if ( (ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
+            && !(sdlmod&(KMOD_LSHIFT|KMOD_RSHIFT)) )
+   {
+    if( Key==SDLK_UP )         { cursorJoyEmu |= 1; return; }
+    else if( Key==SDLK_DOWN )  { cursorJoyEmu |= 2; return; }
+    else if( Key==SDLK_LEFT )  { cursorJoyEmu |= 4; return; }
+    else if( Key==SDLK_RIGHT ) { cursorJoyEmu |= 8; return; }
+    else if( Key==SDLK_RCTRL || Key==SDLK_KP0 )  { cursorJoyEmu |= 128; return; }
+   }
+
+  /* Set down */
+  bPreviousKeyState = Keyboard.KeyStates[Key];
+  Keyboard.KeyStates[Key] = TRUE;
+
+  /* Jump directly to the debugger? */
+  if( sdlkey==SDLK_PAUSE && bEnableDebug)
+   {
+    if(bInFullScreen)  Screen_ReturnFromFullScreen();
+    DebugUI();
+   }
+
+  /* If pressed short-cut key, retain keypress until safe to execute (start of VBL) */
+  if ( (sdlmod&KMOD_MODE) || (sdlkey==SDLK_F11) || (sdlkey==SDLK_F12) || (sdlkey==SDLK_PAUSE) )
+   {
+    ShortCutKey.Key = sdlkey;
+    if( sdlmod&(KMOD_LCTRL|KMOD_RCTRL) )  ShortCutKey.bCtrlPressed = TRUE;
+    if( sdlmod&(KMOD_LSHIFT|KMOD_RSHIFT) )  ShortCutKey.bShiftPressed = TRUE;
+   }
+  else
+   {
+    STScanCode = Keymap_RemapKeyToSTScanCode(Key);
+    if (STScanCode!=-1)
+     {
+      if (!bPreviousKeyState)
+        IKBD_PressSTKey(STScanCode,TRUE);
+     }
+   }
+
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  User released key
+*/
+void Keymap_KeyUp(unsigned int sdlkey, unsigned int sdlmod)
+{
+  char STScanCode;
+  unsigned int Key;
+
+  Key = sdlkey;
+  
+
+  /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
+  if ( (ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
+            && !(sdlmod&(KMOD_LSHIFT|KMOD_RSHIFT)) )
+   {
+    if( Key==SDLK_UP )         { cursorJoyEmu &= ~1; return; }
+    else if( Key==SDLK_DOWN )  { cursorJoyEmu &= ~2; return; }
+    else if( Key==SDLK_LEFT )  { cursorJoyEmu &= ~4; return; }
+    else if( Key==SDLK_RIGHT ) { cursorJoyEmu &= ~8; return; }
+    else if( Key==SDLK_RCTRL || Key==SDLK_KP0 )  { cursorJoyEmu &= ~128; return; }
+   }
+
+  /* Release key (only if was pressed) */
+  STScanCode = Keymap_RemapKeyToSTScanCode(Key);
+  if (STScanCode!=-1) {
+    if (Keyboard.KeyStates[Key])
+      IKBD_PressSTKey(STScanCode,FALSE);
+  }
+
+  Keyboard.KeyStates[Key] = FALSE;
+}
+

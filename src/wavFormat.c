@@ -38,7 +38,7 @@
 #include "file.h"
 #include "misc.h"
 #include "sound.h"
-#include "statusBar.h"
+
 
 //HFILE WavFile;
 //OFSTRUCT WavFileInfo;

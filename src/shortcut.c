@@ -17,7 +17,6 @@
 #include "screenSnapShot.h"
 #include "shortcut.h"
 #include "sound.h"
-#include "view.h"
 
 
 extern int quit_program;                  /* Declared in newcpu.c */

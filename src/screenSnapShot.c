@@ -12,7 +12,6 @@
 #include "misc.h"
 #include "screen.h"
 #include "screenSnapShot.h"
-#include "statusBar.h"
 #include "video.h"
 #include "vdi.h"
 
@@ -94,7 +93,7 @@ void ScreenSnapShot_BeginRecording(BOOL bCaptureChange, int nFramesPerSecond)
   /* Start animation */
   bRecordingAnimation = TRUE;
   /* Set status bar */
-  StatusBar_SetIcon(STATUS_ICON_SCREEN,ICONSTATE_ON);
+  /*StatusBar_SetIcon(STATUS_ICON_SCREEN,ICONSTATE_ON);*/ /* Sorry - Hatari does not has a statusbar yet */
   /* And inform user */
   Main_Message("Screen-Shot recording started.",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
 }
@@ -110,7 +109,7 @@ void ScreenSnapShot_EndRecording()
     /* Stop animation */
     bRecordingAnimation = FALSE;
     /* Turn off icon */
-    StatusBar_SetIcon(STATUS_ICON_SCREEN,ICONSTATE_OFF);
+    /*StatusBar_SetIcon(STATUS_ICON_SCREEN,ICONSTATE_OFF);*/ /* Sorry - no statusbar support yet */
     /* And inform user */
     Main_Message("Screen-Shot recording stopped.",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
   }

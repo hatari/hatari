@@ -27,7 +27,6 @@
 #include "tos.h"
 #include "vdi.h"
 #include "video.h"
-#include "view.h"
 #include "sdlgui.h"
 
 
@@ -352,6 +351,8 @@ BOOL Dialog_DoProperty(BOOL bForceReset)
 {
   BOOL bOKDialog;  /* Did user 'OK' dialog? */
 
+  Main_PauseEmulation();
+
   /* Copy details to DialogParams (this is so can restore if 'Cancel' dialog) */
   ConfigureParams.Screen.bFullScreen = bInFullScreen;
   DialogParams = ConfigureParams;
@@ -369,6 +370,8 @@ BOOL Dialog_DoProperty(BOOL bForceReset)
     /* Back into emulation mode, when next VBL occurs state will be safed - otherwise registers are unknown */
     /*FM  View_ToggleWindowsMouse(MOUSE_ST);*/
   }
+
+  Main_UnPauseEmulation();
 
   return(bOKDialog);
 }
