@@ -12,7 +12,7 @@
   to perform the transfer of data from our disc image into the ST RAM area by simulating the
   DMA.
 */
-static char rcsid[] = "Hatari $Id: fdc.c,v 1.8 2003-06-23 18:49:46 thothy Exp $";
+static char rcsid[] = "Hatari $Id: fdc.c,v 1.9 2004-02-05 15:06:16 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -307,7 +307,7 @@ void FDC_SetDMAStatus(BOOL bError)
 */
 long FDC_ReadDMAStatus(void)
 {
- return (0xffff0000|DMAStatus_ff8606rd);
+  return (0xffff0000|DMAStatus_ff8606rd);
 }
 
 
@@ -1073,8 +1073,10 @@ void FDC_WriteDataRegister(void)
 /*
   Store byte in FDC registers, when write to 0xff8604
 */
-void FDC_WriteDiscControllerByte(void)
+void FDC_WriteDiscController(unsigned short dcw)
 {
+  DiscControllerWord_ff8604wr = dcw;
+
   HDC_WriteCommandPacket();           /*  Handle HDC functions */
 
   /* filter hdc commands */
@@ -1108,29 +1110,31 @@ void FDC_WriteDiscControllerByte(void)
   Read Status/FDC registers, when read from 0xff8604
   Return 'DiscControllerByte'
 */
-void FDC_ReadDiscControllerStatusByte(void)
+short FDC_ReadDiscControllerStatus(void)
 {
   /* return the HDC status reg */
-  if(DMAModeControl_ff8606wr == 0x08A) {       /* HDC status reg selected */
+  if (DMAModeControl_ff8606wr == 0x08A)     /* HDC status reg selected */
+  {
     DiscControllerByte = HDCCommand.returnCode;
-    return;
+    return DiscControllerByte;
   }
 
   /* old FDC code */
-  switch(DMAModeControl_ff8606wr&0x6) {     /* Bits 1,2 (A1,A0) */
+  switch (DMAModeControl_ff8606wr&0x6)      /* Bits 1,2 (A1,A0) */
+  {
     case 0x0:                               /* 0 0 - Status register */
       DiscControllerByte = DiscControllerStatus_ff8604rd;
       if (bMotorOn)
         DiscControllerByte |= 0x80;
 
-      if (bFloppyChanged)
+      if (EmulationDrives[nReadWriteDev].bMediaChanged)
       {
         /* Some games apparently poll the write-protection signal to check
          * for disk image changes (the signal seems to change when you
          * exchange disks on a real ST). We now also simulate this behaviour
          * here, so that these games can continue with the other disk. */
         DiscControllerByte |= 0x40;
-        bFloppyChanged = FALSE;
+        EmulationDrives[nReadWriteDev].bMediaChanged = FALSE;
       }
 
       /* Reset FDC GPIP */
@@ -1146,6 +1150,8 @@ void FDC_ReadDiscControllerStatusByte(void)
       DiscControllerByte = FDCDataRegister;
       break;
   }
+
+  return DiscControllerByte;
 }
 
 
@@ -1244,28 +1250,6 @@ void FDC_DMADataFromFloppy(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Write byte to 0xff8604
-*/
-void FDC_WriteDiscController(unsigned short v)
-{
- DiscControllerWord_ff8604wr = v;
- FDC_WriteDiscControllerByte();
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Read word from 0xff8604
-*/
-short FDC_ReadDiscControllerStatus(void)
-{
- FDC_ReadDiscControllerStatusByte();    /* Read Status/Track/Sector/Data according to 'DiscControllerWord_ff8604wr' */
- return DiscControllerByte;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
   Write word to 0xff8606 (DMA Mode Control)
 
   Eg.
@@ -1278,8 +1262,8 @@ short FDC_ReadDiscControllerStatus(void)
 */
 void FDC_WriteDMAModeControl(unsigned short v)
 {
- DMAModeControl_ff8606wr_prev = DMAModeControl_ff8606wr;  /* Store previous to check for _read/_write toggle(DMA reset) */
- DMAModeControl_ff8606wr = v;          /* Store to DMA Mode control */
- FDC_CheckForDMAStatusReset();
+  DMAModeControl_ff8606wr_prev = DMAModeControl_ff8606wr;  /* Store previous to check for _read/_write toggle (DMA reset) */
+  DMAModeControl_ff8606wr = v;          /* Store to DMA Mode control */
+  FDC_CheckForDMAStatusReset();
 }
 

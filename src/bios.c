@@ -9,7 +9,7 @@
   We intercept and direct some Bios calls to handle input/output to RS-232
   or the printer etc...
 */
-static char rcsid[] = "Hatari $Id: bios.c,v 1.2 2003-09-26 18:08:36 thothy Exp $";
+static char rcsid[] = "Hatari $Id: bios.c,v 1.3 2004-02-05 15:06:16 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -221,41 +221,6 @@ BOOL Bios_Bcostat(unsigned long Params)
 
 /*-----------------------------------------------------------------------*/
 /*
-  BIOS Media change
-  Call 9
-*/
-BOOL Bios_Mediach(unsigned long Params)
-{
-  unsigned short int Dev, ImageChanged;
-
-  /* Read details from stack */
-  Dev = STMemory_ReadWord(Params+SIZE_WORD);
-
-  /* Check we are trying to access a floppy drive? */
-  if (Dev<2)
-  {
-    /* Have we inserted a new disc image into this drive? */
-    if (EmulationDrives[Dev].bMediaChanged)
-    {
-      EmulationDrives[Dev].bMediaChanged = FALSE;
-      ImageChanged = 2;           /* We did change disc image */
-    }
-    else
-    {
-      ImageChanged = 0;
-    }
-
-    Regs[REG_D0] = ImageChanged;  /* Set 0 if was not changed or 2 if was */
-
-    return(TRUE);
-  }
-
-  return(FALSE);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
   Check Bios call and see if we need to re-direct to our own routines
   Return TRUE if we've handled the exception, else return FALSE to let TOS attempt it
 */
@@ -283,12 +248,6 @@ BOOL Bios(void)
       return(Bios_RWabs(Params));
     case 0x8:
       return(Bios_Bcostat(Params));
-/*
-    // I had some emulation problems when intercepting Mediach()
-    // -> so it is currently disabled.
-    case 0x9:
-      return(Bios_Mediach(Params));
-*/
     default:  /* Call as normal! */
       return(FALSE);
   }

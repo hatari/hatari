@@ -26,7 +26,6 @@ typedef struct
 
 extern EMULATION_DRIVE EmulationDrives[NUM_EMULATION_DRIVES];
 extern int nBootDrive;
-extern BOOL bFloppyChanged;
 extern char *pszDiscImageNameExts[];
 
 extern void Floppy_Init(void);

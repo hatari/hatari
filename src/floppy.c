@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.14 2003-12-25 14:19:38 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.15 2004-02-05 15:06:16 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -40,7 +40,6 @@ char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.14 2003-12-25 14:19:38 thothy Ex
 
 EMULATION_DRIVE EmulationDrives[NUM_EMULATION_DRIVES];  /* Emulation drive details, eg FileName, Inserted, Changed etc... */
 int nBootDrive=0;               /* Drive A, default */
-BOOL bFloppyChanged;            /* TRUE if a new floppy has been inserted */
 
 /* Possible disc image file extensions to scan for */
 char *pszDiscImageNameExts[] =
@@ -248,8 +247,6 @@ BOOL Floppy_ZipInsertDiscIntoDrive(int Drive, char *pszFileName, char *pszZipPat
         strcpy(EmulationDrives[1].szFileName,"");
     }
   }
-
-  bFloppyChanged = TRUE;
 
   Memory_Free(szDiscBFileName);
 
