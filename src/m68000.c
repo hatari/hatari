@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-static char rcsid[] = "Hatari $Id: m68000.c,v 1.13 2003-02-28 15:31:35 thothy Exp $";
+static char rcsid[] = "Hatari $Id: m68000.c,v 1.14 2003-03-07 17:10:41 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -17,6 +17,7 @@ static char rcsid[] = "Hatari $Id: m68000.c,v 1.13 2003-02-28 15:31:35 thothy Ex
 #include "decode.h"
 #include "fdc.h"
 #include "gemdos.h"
+#include "hatari-glue.h"
 #include "ikbd.h"
 #include "int.h"
 #include "m68000.h"
@@ -149,11 +150,28 @@ void M68000_AddressError(unsigned long addr)
 */
 void M68000_Exception(void)
 {
-  /* Was the CPU stopped, i.e. by a STOP instruction? */
-  regs.stopped = 0;
-  unset_special (SPCFLAG_STOP);   /* All is go,go,go! */
+  int exceptionNr = ExceptionVector/4;
 
-  /* At the moment, this functions ist just a wrapper to Exception() of the UAE CPU - Thothy */
-  Exception(ExceptionVector/4, m68k_getpc());
+  if(exceptionNr>24 && exceptionNr<32)  /* 68k autovector interrupt? */
+  {
+    /* Handle autovector interrupts the UAE's way
+     * (see intlev() and do_specialties() in UAE CPU core) */
+#if 1
+    if(requestedInterrupt != -1)
+      fprintf(stderr,"Warning: Overriding interrupt %d with %d\n",
+              requestedInterrupt, exceptionNr-24);
+#endif
+    requestedInterrupt = exceptionNr - 24;
+    set_special(SPCFLAG_INT);
+  }
+  else
+  {
+    /* Was the CPU stopped, i.e. by a STOP instruction? */
+    regs.stopped = 0;
+    unset_special(SPCFLAG_STOP);        /* All is go,go,go! */
+
+    /* 68k exceptions are handled by Exception() of the UAE CPU core */
+    Exception(exceptionNr, m68k_getpc());
+  }
 }
 

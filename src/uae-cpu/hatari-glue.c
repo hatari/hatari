@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.11 2003-02-27 10:47:23 thothy Exp $";
+static char rcsid[] = "Hatari $Id: hatari-glue.c,v 1.12 2003-03-07 17:10:42 thothy Exp $";
 
 
 #include <stdio.h>
@@ -36,6 +36,8 @@ int address_space_24 = TRUE;
 int cpu_level = 0;              /* 68000 (default) */
 int cpu_compatible = FALSE;
 
+int requestedInterrupt = -1;
+
 long STmem_size = 0x400000;     /* 4MB */
 long TTmem_size = 0;
 
@@ -43,21 +45,17 @@ long TTmem_size = 0;
 /* Reset custom chips */
 void customreset(void)
 {
-#if 0    /* Disabled since WinSTon ignores the RESET instruction, too */
-  /* Taken from Reset_ST in reset.c: */
-  Int_Reset();                           /* Reset interrupts */
-  MFP_Reset();                           /* Setup MFP chip */
-  Video_Reset();                         /* Reset video */
-  PSG_Reset();                           /* Reset PSG */
-  Sound_Reset();                         /* Reset Sound */
-  IKBD_Reset(FALSE);                     /* Keyboard */
-  Screen_Reset();                        /* Reset screen */
+  requestedInterrupt = -1;
+}
 
-  /* And VBL interrupt, MUST always be one interrupt ready to trigger */
-  Int_AddAbsoluteInterrupt(CYCLES_ENDLINE,INTERRUPT_VIDEO_ENDLINE);
-  Int_AddAbsoluteInterrupt(CYCLES_HBL,INTERRUPT_VIDEO_HBL);
-  Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME,INTERRUPT_VIDEO_VBL);
-#endif
+
+/* Return interrupt number (1 - 7), -1 means no interrupt. */
+int intlev(void)
+{
+  int ret = requestedInterrupt;
+  requestedInterrupt = -1;
+
+  return ret;
 }
 
 

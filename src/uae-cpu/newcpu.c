@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.14 2003-03-03 18:40:34 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.15 2003-03-07 17:10:43 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -1110,6 +1110,7 @@ void m68k_mull (uae_u32 opcode, uae_u32 src, uae_u16 extra)
     }
 #endif
 }
+
 static char* ccnames[] =
 { "T ","F ","HI","LS","CC","CS","NE","EQ",
   "VC","VS","PL","MI","GE","LT","GT","LE" };
@@ -1156,7 +1157,7 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 	return 4;
     }
 
-#if 1
+#if 0
     write_log ("Illegal instruction: %04x at %08lx\n", opcode, (long)pc);
 #endif
     Exception (4,0);
@@ -1222,32 +1223,32 @@ static int do_specialties (void)
 	Exception (9,last_trace_ad);
     }
     while (regs.spcflags & SPCFLAG_STOP) {
-	do_cycles (4);
+	do_cycles (8);
 	if (regs.intmask>5) {
             /* We still have to care about events when IPL==7 ! */
             Main_EventHandler();
             if(bQuitProgram)  unset_special(SPCFLAG_STOP);
         }
 	if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
-	    /*int intr = intlev ();*/
+	    int intr = intlev ();
 	    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-	    /*if (intr != -1 && intr > regs.intmask) {
+	    if (intr != -1 && intr > regs.intmask) {
 		Interrupt (intr);
 		regs.stopped = 0;
 		unset_special (SPCFLAG_STOP);
-	    }*/
+	    }
 	}
     }
     if (regs.spcflags & SPCFLAG_TRACE)
 	do_trace ();
 
     if (regs.spcflags & SPCFLAG_DOINT) {
-	/*int intr = intlev ();*/
+	int intr = intlev ();
 	unset_special (SPCFLAG_DOINT);
-	/*if (intr != -1 && intr > regs.intmask) {
+	if (intr != -1 && intr > regs.intmask) {
 	    Interrupt (intr);
 	    regs.stopped = 0;
-	}*/
+	}
     }
     if (regs.spcflags & SPCFLAG_INT) {
 	unset_special (SPCFLAG_INT);
@@ -1327,11 +1328,7 @@ static void m68k_run_2 (void)
 {
     while(!bQuitProgram) {
 	int cycles;
-#ifdef HAVE_GET_WORD_UNSWAPPED
-	uae_u32 opcode = do_get_mem_word_unswapped (regs.pc_p);
-#else
 	uae_u32 opcode = get_iword (0);
-#endif
 
 	/*m68k_dumpstate(stderr, NULL);*/
 	/*m68k_disasm(stderr, m68k_getpc (), NULL, 1);*/
