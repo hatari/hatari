@@ -1,83 +1,22 @@
 /*
-  Hatari
+  Hatari - intercept.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 */
+
+#ifndef HATARI_INTERCEPT_H
+#define HATARI_INTERCEPT_H
+
 
 #define  BUS_ERROR_ADDR  0xE00000           /* Address below here causes bus error exception */
 
 #define INTERCEPT_WORKSPACE_SIZE  (8*1024)  /* 8k, size of intercept lists */
 
-/* List of hardware addresses to be intercepted */
-/* ... do we really need this?  - THH */
-enum {
-  INTERCEPT_NULL,
-  INTERCEPT_VIDEOHIGH,       /* 0xff8205 byte */
-  INTERCEPT_VIDEOMED,        /* 0xff8207 byte */
-  INTERCEPT_VIDEOLOW,        /* 0xff8209 byte */
-  INTERCEPT_VIDEOSYNC,       /* 0xff820a byte */
-  INTERCEPT_VIDEOBASELOW,    /* 0xff820d byte */
-  INTERCEPT_LINEWIDTH,       /* 0xff820e byte */
-  INTERCEPT_COLOUR0,         /* 0xff8240 word */
-  INTERCEPT_COLOUR1,         /* 0xff8242 word */
-  INTERCEPT_COLOUR2,         /* 0xff8244 word */
-  INTERCEPT_COLOUR3,         /* 0xff8246 word */
-  INTERCEPT_COLOUR4,         /* 0xff8248 word */
-  INTERCEPT_COLOUR5,         /* 0xff824a word */
-  INTERCEPT_COLOUR6,         /* 0xff824c word */
-  INTERCEPT_COLOUR7,         /* 0xff824e word */
-  INTERCEPT_COLOUR8,         /* 0xff8250 word */
-  INTERCEPT_COLOUR9,         /* 0xff8252 word */
-  INTERCEPT_COLOUR10,        /* 0xff8254 word */
-  INTERCEPT_COLOUR11,        /* 0xff8256 word */
-  INTERCEPT_COLOUR12,        /* 0xff8258 word */
-  INTERCEPT_COLOUR13,        /* 0xff825a word */
-  INTERCEPT_COLOUR14,        /* 0xff825c word */
-  INTERCEPT_COLOUR15,        /* 0xff825e word */
-  INTERCEPT_SHIFTERMODE,     /* 0xff8260 byte */
-  INTERCEPT_DISKCONTROL,     /* 0xff8604 word */
-  INTERCEPT_DMASTATUS,       /* 0xff8606 word */
-  INTERCEPT_PSG_REGISTER,    /* 0xff8800 byte */
-  INTERCEPT_PSG_DATA,        /* 0xff8802 byte */
-  INTERCEPT_MICROWIREDATA,   /* 0xff8922 word */
-  INTERCEPT_BLITTERENDMASK1, /* 0xff8a28 word */
-  INTERCEPT_BLITTERENDMASK2, /* 0xff8a2a word */
-  INTERCEPT_BLITTERENDMASK3, /* 0xff8a2c word */
-  INTERCEPT_BLITTERDST,      /* 0xff8a32 long */
-  INTERCEPT_BLITTERWPL,      /* 0xff8a36 word */
-  INTERCEPT_BLITTERLPB,      /* 0xff8a38 word */
-  INTERCEPT_BLITTERHT,       /* 0xff8a3a byte */
-  INTERCEPT_BLITTERLGO,      /* 0xff8a3b byte */
-  INTERCEPT_BLITTERLNM,      /* 0xff8a3c byte */
-  INTERCEPT_BLITTERSKEW,     /* 0xff8a3d byte */
-  INTERCEPT_MONITOR,         /* 0xfffa01 byte */
-  INTERCEPT_ACTIVE_EDGE,     /* 0xfffa03 byte */
-  INTERCEPT_DATA_DIRECTION,  /* 0xfffa05 byte */
-  INTERCEPT_ENABLE_A,        /* 0xfffa07 byte */
-  INTERCEPT_ENABLE_B,        /* 0xfffa09 byte */
-  INTERCEPT_PENDING_A,       /* 0xfffa0b byte */
-  INTERCEPT_PENDING_B,       /* 0xfffa0d byte */
-  INTERCEPT_INSERVICE_A,     /* 0xfffa0f byte */
-  INTERCEPT_INSERVICE_B,     /* 0xfffa11 byte */
-  INTERCEPT_MASK_A,          /* 0xfffa13 byte */
-  INTERCEPT_MASK_B,          /* 0xfffa15 byte */
-  INTERCEPT_VECTOR_REG,      /* 0xfffa17 byte */
-  INTERCEPT_TIMERA_CTRL,     /* 0xfffa19 byte */
-  INTERCEPT_TIMERB_CTRL,     /* 0xfffa1b byte */
-  INTERCEPT_TIMERCD_CTRL,    /* 0xfffa1d byte */
-  INTERCEPT_TIMERA_DATA,     /* 0xfffa1f byte */
-  INTERCEPT_TIMERB_DATA,     /* 0xfffa21 byte */
-  INTERCEPT_TIMERC_DATA,     /* 0xfffa23 byte */
-  INTERCEPT_TIMERD_DATA,     /* 0xfffa25 byte */
-  INTERCEPT_KEYBOARDCONTROL, /* 0xfffc00 byte */
-  INTERCEPT_KEYBOARDDATA,    /* 0xfffc02 byte */
-  INTERCEPT_MIDICONTROL,     /* 0xfffc04 byte */
-  INTERCEPT_MIDIDATA,        /* 0xfffc06 byte */
-
-  INTERCEPT_COUNT
-};
-
 
 /* Hardware address details */
-typedef struct {
+typedef struct
+{
   unsigned int Address;        /* ST hardware address */
   int SpanInBytes;             /* SIZE_BYTE, SIZE_WORD or SIZE_LONG */
   void *ReadFunc;              /* Read function */
@@ -85,7 +24,8 @@ typedef struct {
 } INTERCEPT_ACCESS_FUNC;
 
 /* List of hardware address which are not documented, ie STe, TT, Falcon locations - should be unconnected on STfm */
-typedef struct {
+typedef struct
+{
   unsigned int Start_Address;
   unsigned int End_Address;
 } INTERCEPT_ADDRESSRANGE;
@@ -238,3 +178,5 @@ extern void Intercept_CreateTable(unsigned long *pInterceptTable[],int Span,int 
 extern void Intercept_EnableBlitter(BOOL enableFlag);
 extern void Intercept_ModifyTablesForBusErrors(void);
 extern void Intercept_ModifyTablesForNoMansLand(void);
+
+#endif

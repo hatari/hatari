@@ -1,5 +1,8 @@
 /*
-  Hatari
+  Hatari - intercept.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   This is where we intercept read/writes to/from the hardware. The ST's memory is nicely split into
   four main parts - the bottom area of RAM is for user programs. This is followed by a large area which
@@ -19,6 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
+static char rcsid[] = "Hatari $Id: intercept.c,v 1.9 2003-03-23 21:13:16 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -34,6 +38,7 @@
 #include "memAlloc.h"
 #include "mfp.h"
 #include "psg.h"
+#include "rtc.h"
 #include "screen.h"
 #include "spec512.h"
 #include "stMemory.h"
@@ -45,9 +50,18 @@
 
 /*#define CHECK_FOR_NO_MANS_LAND*/            /* Check for read/write from unknown hardware addresses */
 
+
+/* A dummy function that does nothing at all... */
+void Intercept_WriteNothing(void)
+{
+  /* Nothing... */
+}
+
+
 /*-----------------------------------------------------------------------*/
-/* List of functions to handle read/write hardware intercepts. MUST match INTERCEPT_xxx enum */
-INTERCEPT_ACCESS_FUNC InterceptAccessFuncs[INTERCEPT_COUNT] = {
+/* List of functions to handle read/write hardware intercepts. */
+INTERCEPT_ACCESS_FUNC InterceptAccessFuncs[] =
+{
   { 0x0,SIZE_BYTE,NULL,NULL },
   { 0xff8205,SIZE_BYTE,Intercept_VideoHigh_ReadByte,Intercept_VideoHigh_WriteByte },      /* INTERCEPT_VIDEOHIGH */
   { 0xff8207,SIZE_BYTE,Intercept_VideoMed_ReadByte,Intercept_VideoMed_WriteByte },        /* INTERCEPT_VIDEOMED */
@@ -72,11 +86,13 @@ INTERCEPT_ACCESS_FUNC InterceptAccessFuncs[INTERCEPT_COUNT] = {
   { 0xff825c,SIZE_WORD,Intercept_Colour14_ReadWord,Intercept_Colour14_WriteWord },        /* INTERCEPT_COLOUR14 */
   { 0xff825e,SIZE_WORD,Intercept_Colour15_ReadWord,Intercept_Colour15_WriteWord },        /* INTERCEPT_COLOUR15 */
   { 0xff8260,SIZE_BYTE,Intercept_ShifterMode_ReadByte,Intercept_ShifterMode_WriteByte },  /* INTERCEPT_SHIFTERMODE */
+
   { 0xff8604,SIZE_WORD,Intercept_DiskControl_ReadWord,Intercept_DiskControl_WriteWord },  /* INTERCEPT_DISKCONTROL */
   { 0xff8606,SIZE_WORD,Intercept_DmaStatus_ReadWord,Intercept_DmaStatus_WriteWord },      /* INTERCEPT_DMASTATUS */
   { 0xff8800,SIZE_BYTE,Intercept_PSGRegister_ReadByte,Intercept_PSGRegister_WriteByte },  /* INTERCEPT_PSG_REGISTER */
   { 0xff8802,SIZE_BYTE,Intercept_PSGData_ReadByte,Intercept_PSGData_WriteByte },          /* INTERCEPT_PSG_DATA */
   { 0xff8922,SIZE_WORD,Intercept_MicrowireData_ReadWord,Intercept_MicrowireData_WriteWord }, /* INTERCEPT_MICROWIREDATA */
+
   { 0xff8a28,SIZE_WORD,Intercept_BlitterEndmask1_ReadWord,Intercept_BlitterEndmask1_WriteWord },
   { 0xff8a2a,SIZE_WORD,Intercept_BlitterEndmask2_ReadWord,Intercept_BlitterEndmask2_WriteWord },
   { 0xff8a2c,SIZE_WORD,Intercept_BlitterEndmask3_ReadWord,Intercept_BlitterEndmask3_WriteWord },
@@ -87,6 +103,7 @@ INTERCEPT_ACCESS_FUNC InterceptAccessFuncs[INTERCEPT_COUNT] = {
   { 0xff8a3b,SIZE_BYTE,Intercept_BlitterLogOp_ReadByte,Intercept_BlitterLogOp_WriteByte },
   { 0xff8a3c,SIZE_BYTE,Intercept_BlitterLineNum_ReadByte,Intercept_BlitterLineNum_WriteByte },
   { 0xff8a3d,SIZE_BYTE,Intercept_BlitterSkew_ReadByte,Intercept_BlitterSkew_WriteByte },
+
   { 0xfffa01,SIZE_BYTE,Intercept_Monitor_ReadByte,Intercept_Monitor_WriteByte },          /* INTERCEPT_MONITOR */
   { 0xfffa03,SIZE_BYTE,Intercept_ActiveEdge_ReadByte,Intercept_ActiveEdge_WriteByte },    /* INTERCEPT_ACTIVE_EDGE */
   { 0xfffa05,SIZE_BYTE,Intercept_DataDirection_ReadByte,Intercept_DataDirection_WriteByte }, /* INTERCEPT_DATA_DIRECTION */
@@ -106,10 +123,25 @@ INTERCEPT_ACCESS_FUNC InterceptAccessFuncs[INTERCEPT_COUNT] = {
   { 0xfffa21,SIZE_BYTE,Intercept_TimerBData_ReadByte,Intercept_TimerBData_WriteByte },    /* INTERCEPT_TIMERB_DATA */
   { 0xfffa23,SIZE_BYTE,Intercept_TimerCData_ReadByte,Intercept_TimerCData_WriteByte },    /* INTERCEPT_TIMERC_DATA */
   { 0xfffa25,SIZE_BYTE,Intercept_TimerDData_ReadByte,Intercept_TimerDData_WriteByte },    /* INTERCEPT_TIMERD_DATA */
+
   { 0xfffc00,SIZE_BYTE,Intercept_KeyboardControl_ReadByte,Intercept_KeyboardControl_WriteByte }, /* INTERCEPT_KEYBOARDCONTROL */
   { 0xfffc02,SIZE_BYTE,Intercept_KeyboardData_ReadByte,Intercept_KeyboardData_WriteByte },   /* INTERCEPT_KEYBOARDDATA */
   { 0xfffc04,SIZE_BYTE,Intercept_MidiControl_ReadByte,Intercept_MidiControl_WriteByte },  /* INTERCEPT_MIDICONTROL */
   { 0xfffc06,SIZE_BYTE,Intercept_MidiData_ReadByte,Intercept_MidiData_WriteByte },        /* INTERCEPT_MIDIDATA */
+
+  { 0xfffc21,SIZE_BYTE,Rtc_SecondsUnits_ReadByte,Intercept_WriteNothing },
+  { 0xfffc23,SIZE_BYTE,Rtc_SecondsTens_ReadByte,Intercept_WriteNothing },
+  { 0xfffc25,SIZE_BYTE,Rtc_MinutesUnits_ReadByte,Intercept_WriteNothing },
+  { 0xfffc27,SIZE_BYTE,Rtc_MinutesTens_ReadByte,Intercept_WriteNothing },
+  { 0xfffc29,SIZE_BYTE,Rtc_HoursUnits_ReadByte,Intercept_WriteNothing },
+  { 0xfffc2b,SIZE_BYTE,Rtc_HoursTens_ReadByte,Intercept_WriteNothing },
+  { 0xfffc2d,SIZE_BYTE,Rtc_Weekday_ReadByte,Intercept_WriteNothing },
+  { 0xfffc2f,SIZE_BYTE,Rtc_DayUnits_ReadByte,Intercept_WriteNothing },
+  { 0xfffc31,SIZE_BYTE,Rtc_DayTens_ReadByte,Intercept_WriteNothing },
+  { 0xfffc33,SIZE_BYTE,Rtc_MonthUnits_ReadByte,Intercept_WriteNothing },
+  { 0xfffc35,SIZE_BYTE,Rtc_MonthTens_ReadByte,Intercept_WriteNothing },
+  { 0xfffc37,SIZE_BYTE,Rtc_YearUnits_ReadByte,Intercept_WriteNothing },
+  { 0xfffc39,SIZE_BYTE,Rtc_YearTens_ReadByte,Intercept_WriteNothing },
 };
 
 unsigned long *pInterceptWorkspace;           /* Memory used to store all read/write NULL terminated function call tables */
@@ -181,9 +213,11 @@ void Intercept_CreateTable(unsigned long *pInterceptTable[],int Span,int ReadWri
   int i;
 
   /* Scan each hardware address */
-  for(Address=0xff8000; Address<=0xffffff; Address++) {
+  for(Address=0xff8000; Address<=0xffffff; Address++)
+  {
     /* Does this hardware location/span appear in our list of possible intercepted functions? */
-    for (i=0; i<INTERCEPT_COUNT; i++) {
+    for (i=0; i<(sizeof(InterceptAccessFuncs)/sizeof(INTERCEPT_ACCESS_FUNC)); i++)
+    {
       LowAddress = InterceptAccessFuncs[i].Address;
       HiAddress = InterceptAccessFuncs[i].Address+InterceptAccessFuncs[i].SpanInBytes;
 
