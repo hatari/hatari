@@ -10,10 +10,10 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.40" /* Name, version for window title */
-#define PROG_VERSION        "v0.40"
-#define VERSION_STRING      "0.40 "   /* Always 6 bytes(inc' NULL) */
-#define VERSION_STRING_SIZE    6      /* Size of above(inc' NULL) */
+#define PROG_NAME      "Hatari v0.41" /* Name, version for window title */
+#define PROG_VERSION        "v0.41"
+#define VERSION_STRING      "0.41 "   /* Always 6 bytes (inc' NULL) */
+#define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 //#define TOTALLY_FINAL_VERSION       /* Web release version... */
 
@@ -208,10 +208,8 @@ enum {
 extern BOOL bQuitProgram;
 extern BOOL bEnableDebug;
 extern BOOL bEmulationActive;
-extern char szName[];
 extern char szBootDiscImage[MAX_FILENAME_LENGTH];
 extern char szWorkingDir[MAX_FILENAME_LENGTH];
-extern char szCurrentDir[MAX_FILENAME_LENGTH];
 
 extern void Main_MemorySnapShot_Capture(BOOL bSave);
 extern void Main_SysError(char *Error,char *Title);

@@ -6,7 +6,7 @@
 
   Misc functions
 */
-static char rcsid[] = "Hatari $Id: misc.c,v 1.7 2003-04-05 22:25:02 thothy Exp $";
+static char rcsid[] = "Hatari $Id: misc.c,v 1.8 2003-09-27 19:28:50 thothy Exp $";
 
 #include <ctype.h>
 
@@ -17,7 +17,8 @@ static char rcsid[] = "Hatari $Id: misc.c,v 1.7 2003-04-05 22:25:02 thothy Exp $
 #include "memAlloc.h"
 #include "misc.h"
 
-long RandomNum;
+
+static long RandomNum;
 
 
 /*-----------------------------------------------------------------------*/
@@ -80,28 +81,6 @@ void Misc_strupr(char *pString)
     *pString = toupper(*pString);
     pString++;
   }
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Find working directory, and store to 'szWorkingDir'
-  Note: I'm not sure if this function is still usefull in Hatari - Thothy
-*/
-void Misc_FindWorkingDirectory(char *prgname)
-{
-  char szSrcDir[256], szSrcName[128], szSrcExt[32];
-
-  /* Find name of program */
-  strncpy(szWorkingDir, prgname, MAX_FILENAME_LENGTH);
-  File_splitpath(szWorkingDir, szSrcDir, szSrcName, szSrcExt);
-  File_makepath(szWorkingDir, szSrcDir, "", "");
-  /* And remove trailing backslash */
-  if (strlen(szWorkingDir)>0) {
-    if (szWorkingDir[strlen(szWorkingDir)-1]=='/')
-      szWorkingDir[strlen(szWorkingDir)-1]='\0';
-  }
-
 }
 
 

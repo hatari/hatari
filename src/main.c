@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-static char rcsid[] = "Hatari $Id: main.c,v 1.46 2003-09-02 21:56:31 thothy Exp $";
+static char rcsid[] = "Hatari $Id: main.c,v 1.47 2003-09-27 19:28:50 thothy Exp $";
 
 #include <time.h>
 #include <signal.h>
@@ -19,7 +19,6 @@ static char rcsid[] = "Hatari $Id: main.c,v 1.46 2003-09-02 21:56:31 thothy Exp 
 #include "configuration.h"
 #include "decode.h"
 #include "dialog.h"
-#include "createDiscImage.h"
 #include "audio.h"
 #include "debug.h"
 #include "joy.h"
@@ -51,18 +50,13 @@ static char rcsid[] = "Hatari $Id: main.c,v 1.46 2003-09-02 21:56:31 thothy Exp 
 #include "uae-cpu/hatari-glue.h"
 
 
-#define FORCE_WORKING_DIR                 /* Set default directory to cwd */
-
-
 BOOL bQuitProgram=FALSE;                  /* Flag to quit program cleanly */
 BOOL bUseFullscreen=FALSE;
 BOOL bEmulationActive=TRUE;               /* Run emulation when started */
 BOOL bAppActive = FALSE;
 BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
 char szBootDiscImage[MAX_FILENAME_LENGTH] = { "" };
-
-char szWorkingDir[MAX_FILENAME_LENGTH] = { "" };
-char szCurrentDir[MAX_FILENAME_LENGTH] = { "" };
+char szWorkingDir[MAX_FILENAME_LENGTH];   /* Working directory */
 
 unsigned char STRam[16*1024*1024];        /* This is our ST Ram, includes all TOS/hardware areas for ease */
 
@@ -91,7 +85,6 @@ void Main_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&STRam[0xE00000],0x200000);
   MemorySnapShot_Store(szBootDiscImage,sizeof(szBootDiscImage));
   MemorySnapShot_Store(szWorkingDir,sizeof(szWorkingDir));
-  MemorySnapShot_Store(szCurrentDir,sizeof(szCurrentDir));
 }
 
 
@@ -479,11 +472,8 @@ int main(int argc, char *argv[])
   /* Generate random seed */
   srand( time(NULL) );
 
-  /* Get working directory, if in MSDev force */
-  Misc_FindWorkingDirectory(argv[0]);
-#ifdef FORCE_WORKING_DIR
+  /* Get working directory */
   getcwd(szWorkingDir, MAX_FILENAME_LENGTH);
-#endif
 
   /* Create debug files */
   Debug_OpenFiles();
