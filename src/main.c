@@ -201,16 +201,14 @@ void Main_EventHandler()
 
 /*-----------------------------------------------------------------------*/
 /*
-  This thread runs at 50fps and passes sound samples to direct sound and also also
+  This thread runs at 50fps and passes sound samples to the sound interface and also
   set the counter/events to govern emulation speed to match the two together.
-  When running at a speed other than standard ST speed the VBL event is set by 'Main_SpeedThreadFunc'
-  which occurs at differing speeds.
 */
-void /*Uint32*/ Main_SoundTimerFunc(int v/*Uint32 interval, void *param*/)
+Uint32 Main_SoundTimerFunc(Uint32 interval, void *param)
 {
-  struct itimerval mytimerval;
   /* Advance frame counter, used to draw screen to window at 50fps */
   VBLCounter++;
+  return(interval);
 }
 
 
@@ -220,14 +218,8 @@ void /*Uint32*/ Main_SoundTimerFunc(int v/*Uint32 interval, void *param*/)
 */
 void Main_CreateSoundTimer(void)
 {
-  struct itimerval mytimerval;
-  /* Create thread to run every 20ms(50fps) to handle emulation samples */
-  //hSoundTimer = SDL_AddTimer(10,Main_SoundTimerFunc,NULL);
-
-  signal(SIGALRM, Main_SoundTimerFunc);
-  mytimerval.it_interval.tv_sec=0;  mytimerval.it_interval.tv_usec=20000;
-  mytimerval.it_value.tv_sec=0;     mytimerval.it_value.tv_usec=20000;
-  setitimer(ITIMER_REAL, &mytimerval, NULL);
+  /* Create thread to run every 20ms (50fps) to handle emulation samples */
+  hSoundTimer = SDL_AddTimer(20, Main_SoundTimerFunc, NULL);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -236,8 +228,7 @@ void Main_CreateSoundTimer(void)
 */
 void Main_RemoveSoundTimer(void)
 {
-  /*SDL_RemoveTimer(hSoundTimer);*/
-  signal(SIGALRM,SIG_IGN);
+  SDL_RemoveTimer(hSoundTimer);
 }
 
 
@@ -259,15 +250,18 @@ void Main_ReadParameters(int argc, char *argv[])
       {
        printf("Usage:\n hatari [options] [disk image name]\n"
               "Where options are:\n"
-              "  --help or -h                    Print this help text and exit.\n"
-              "  --version or -v                 Print version number and exit.\n"
-              "  --mono or -m                    Start in monochrome mode instead of color.\n"
-              "  --fullscreen or -f              Try to use fullscreen mode.\n"
-              "  --joystick or -j                Emulate a ST joystick with the cursor keys\n"
-              "  --sound or -s                   Enable sound (does not yet work right!)\n"
-              "  --frameskip                     Skip every second frame (speeds up emulation!)\n"
-              "  --debug or -d                   Allow debug interface.\n"
-              "  --harddrive <dir> or -e <dir>   Emulate an ST harddrive <dir> = root directory\n"
+              "  --help or -h          Print this help text and exit.\n"
+              "  --version or -v       Print version number and exit.\n"
+              "  --mono or -m          Start in monochrome mode instead of color.\n"
+              "  --fullscreen or -f    Try to use fullscreen mode.\n"
+              "  --joystick or -j      Emulate a ST joystick with the cursor keys.\n"
+              "  --sound or -s         Enable sound.\n"
+              "  --frameskip           Skip every second frame (speeds up emulation!).\n"
+              "  --debug or -d         Allow debug interface.\n"
+              "  --harddrive <dir>     Emulate an ST harddrive\n"
+              "     or -e <dir>         (<dir> = root directory).\n"
+              "  --tos <file>          Use TOS image <file>.\n"
+              "  --cpulevel x          Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
              );
        exit(0);
       }
@@ -305,12 +299,11 @@ void Main_ReadParameters(int argc, char *argv[])
       }
       else if (!strcmp(argv[i],"--harddrive") || !strcmp(argv[i],"-e"))
       {
-	if(i + 1 < argc){ /* both parameters exist */
+	if(i + 1 < argc && strlen(argv[i+1])<=MAX_PATH) { /* both parameters exist */
 	  /* only 1 emulated drive allowed, as of yet.  */
 	  emudrives = malloc( sizeof(EMULATEDDRIVE *) );
 	  emudrives[0] = malloc( sizeof(EMULATEDDRIVE) );
-	  ConnectedDriveMask = 0x7; /* set the connected drive mask */
-	  
+          ConfigureParams.HardDisc.nDriveList = DRIVELIST_C;
 	  /* set emulation directory string */
 	  if( argv[i+1][0] != '.' && argv[i+1][0] != '/' )
 	    sprintf( emudrives[0]->hd_emulation_dir, "./%s", argv[i+1]);
@@ -319,14 +312,31 @@ void Main_ReadParameters(int argc, char *argv[])
 	  
 	  fprintf(stderr, "Hard drive emulation, C: <-> %s\n", emudrives[0]->hd_emulation_dir);
 	  i ++;
-	  if(i + 1 >= argc) return; /* end of parameters? */
 	}
+      }
+      else if (!strcmp(argv[i],"--tos"))
+      {
+       if(i+1>=argc)
+         fprintf(stderr,"Missing argument for --tos.\n");
+        else
+         strncpy(ConfigureParams.TOSGEM.szTOSImageFileName, argv[++i], MAX_FILENAME_LENGTH);
+      }
+      else if (!strcmp(argv[i],"--cpulevel"))
+      {
+       if(i+1>=argc)
+         fprintf(stderr,"Missing argument for --cpulevel.\n");
+        else
+         cpu_level = atoi(argv[++i]);
+       if(cpu_level<0 || cpu_level>4)
+         cpu_level = 0;
       }
       else
       {
        /* Possible passed disc image filename, ie starts with character other than '-' */
        if (argv[i][0]!='-')
          strcpy(szBootDiscImage,argv[i]);
+        else
+         fprintf(stderr,"Illegal parameter: %s\n",argv[i]);
       }
     }
   }
@@ -340,7 +350,7 @@ void Main_ReadParameters(int argc, char *argv[])
 void Main_Init(void)
 {
   /* SDL init: */
-  if( SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO/*|SDL_INIT_TIMER*/) < 0 )
+  if( SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER) < 0 )
    {
     fprintf(stderr, "Could not initialize the SDL library:\n %s\n", SDL_GetError() );
     exit(-1);

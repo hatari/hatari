@@ -27,8 +27,6 @@
 #include "tos.h"
 #include "vdi.h"
 
-#define szTOSImageFileName "tos.img"  /* FIXME: Make it more flexible */
-
 
 /* Settings for differnt memory sizes */
 static MEMORY_INFO MemoryInfo[] = {
@@ -37,8 +35,6 @@ static MEMORY_INFO MemoryInfo[] = {
   0x200000,0x0001,0x00200000,    /* MEMORYSIZE_2MB */
   0x400000,0x1010,0x00400000     /* MEMORYSIZE_4MB */
 };
-
-int nMemorySize=1; /* 0=512k, 1=1MB, 2=2MB, 3=4MB */
 
 /* Bit masks of connected drives(we support upto C,D,E,F) */
 unsigned int ConnectedDriveMaskList[] = {
@@ -52,8 +48,6 @@ unsigned int ConnectedDriveMaskList[] = {
 unsigned short int TOSVersion;          /* eg, 0x0100, 0x0102 */
 unsigned long TOSAddress,TOSSize;       /* Address in ST memory and size of TOS image */
 unsigned int ConnectedDriveMask=0x03;   /* Bit mask of connected drives, eg 0x7 is A,B,C */
-/*BOOL bOverrideTOSImage=FALSE;*/       /* Override TOS filename, used by Favourites(retains dialog TOS setting for saving) */
-/*char szTOSImageOverrideFileName[MAX_FILENAME_LENGTH];*/
 
 /* Possible TOS file extensions to scan for */
 char *pszTOSNameExts[] = {
@@ -69,20 +63,21 @@ unsigned long STRamEnd_BusErr;          /* as above, but start of BUS error exce
 
 
 
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
 */
 void TOS_MemorySnapShot_Capture(BOOL bSave)
 {
-  // Save/Restore details
+  /* Save/Restore details */
   MemorySnapShot_Store(&TOSVersion,sizeof(TOSVersion));
   MemorySnapShot_Store(&TOSAddress,sizeof(TOSAddress));
   MemorySnapShot_Store(&TOSSize,sizeof(TOSSize));
   MemorySnapShot_Store(&ConnectedDriveMask,sizeof(ConnectedDriveMask));
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Load TOS Rom image file into ST memory space and fix image so can emulate correctly
   Pre TOS 1.06 are loaded at 0xFC0000 with later ones at 0xE00000
@@ -98,11 +93,8 @@ void TOS_LoadImage(void)
 
   /* Load TOS image into memory so we can check it's vesion */
   TOSVersion = 0;
-/*  if (bOverrideTOSImage)
-    pTOSFile = File_Read(szTOSImageOverrideFileName,NULL,NULL,pszTOSNameExts);*/
-  /* If not override TOS, if it failed to load use detault */
   if (pTOSFile==NULL)
-    pTOSFile = File_Read(/*ConfigureParams.TOSGEM.*/szTOSImageFileName,NULL,NULL,pszTOSNameExts);
+    pTOSFile = File_Read(ConfigureParams.TOSGEM.szTOSImageFileName,NULL,NULL,pszTOSNameExts);
 
   if (pTOSFile) {
     /* Now, look at start of image to find Version number and Territory */
@@ -168,7 +160,8 @@ void TOS_LoadImage(void)
   Memory_Free(pTOSFile);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Modify TOS Rom image to set default memory configuration, connected floppies and memory size
   and skip some TOS setup code which we don't support/need.
@@ -192,21 +185,21 @@ void TOS_FixRom(void)
     */
     case 0x0100:
       /* hdv_init, initialize drives */
-      STMemory_WriteWord(0xFC0D60,RTS_OPCODE);    //RTS
+      STMemory_WriteWord(0xFC0D60,RTS_OPCODE);    /* RTS */
 
       /* FC1384  JSR $FC0AF8  hdv_boot, load boot sector */
-      STMemory_WriteWord(0xFC1384,NOP_OPCODE);    //NOP
-      STMemory_WriteWord(0xFC1384+2,NOP_OPCODE);  //NOP
-      STMemory_WriteWord(0xFC1384+4,NOP_OPCODE);  //NOP
+      STMemory_WriteWord(0xFC1384,NOP_OPCODE);    /* NOP */
+      STMemory_WriteWord(0xFC1384+2,NOP_OPCODE);  /* NOP */
+      STMemory_WriteWord(0xFC1384+4,NOP_OPCODE);  /* NOP */
 
       /* FC03d6  JSR $FC04A8  Boot from DMA bus */
       if (bUseVDIRes) {
-        STMemory_WriteWord(0xFC03D6,0xa000);      //Init Line-A
-        STMemory_WriteWord(0xFC03D6+2,0xa0ff);    //Trap Line-A(to get structure)
+        STMemory_WriteWord(0xFC03D6,0xa000);      /* Init Line-A */
+        STMemory_WriteWord(0xFC03D6+2,0xa0ff);    /* Trap Line-A (to get structure) */
       }
       else {
-        STMemory_WriteWord(0xFC03D6,NOP_OPCODE);  //NOP
-        STMemory_WriteWord(0xFC03D6+2,NOP_OPCODE);  //NOP
+        STMemory_WriteWord(0xFC03D6,NOP_OPCODE);    /* NOP */
+        STMemory_WriteWord(0xFC03D6+2,NOP_OPCODE);  /* NOP */
       }
 
       /* Timer D(MFP init 0xFC21B4), set value before call Set Timer routine */
@@ -221,32 +214,32 @@ void TOS_FixRom(void)
     */
     case 0x0102:
       /* hdv_init, initialize drives */
-      STMemory_WriteWord(0xFC0F44,RTS_OPCODE);    //RTS
+      STMemory_WriteWord(0xFC0F44,RTS_OPCODE);    /* RTS */
 
       /* FC1568  JSR $FC0C2E  hdv_boot, load boot sector */
-      STMemory_WriteWord(0xFC1568,NOP_OPCODE);    //NOP
-      STMemory_WriteWord(0xFC1568+2,NOP_OPCODE);  //NOP
-      STMemory_WriteWord(0xFC1568+4,NOP_OPCODE);  //NOP
+      STMemory_WriteWord(0xFC1568,NOP_OPCODE);    /* NOP */
+      STMemory_WriteWord(0xFC1568+2,NOP_OPCODE);  /* NOP */
+      STMemory_WriteWord(0xFC1568+4,NOP_OPCODE);  /* NOP */
 
       /* FC0472  BSR.W $FC0558  Boot from DMA bus */
       if (bUseVDIRes) {
-        STMemory_WriteWord(0xFC0472,0xa000);      //Init Line-A
-        STMemory_WriteWord(0xFC0472+2,0xa0ff);    //Trap Line-A(to get structure)
+        STMemory_WriteWord(0xFC0472,0xa000);      /* Init Line-A */
+        STMemory_WriteWord(0xFC0472+2,0xa0ff);    /* Trap Line-A (to get structure) */
       }
       else {
-        STMemory_WriteWord(0xFC0472,NOP_OPCODE);  //NOP
-        STMemory_WriteWord(0xFC0472+2,NOP_OPCODE);  //NOP
+        STMemory_WriteWord(0xFC0472,NOP_OPCODE);    /* NOP */
+        STMemory_WriteWord(0xFC0472+2,NOP_OPCODE);  /* NOP */
       }
 
       /* FC0302  CLR.L $4C2  Set connected drives */
       STMemory_WriteWord(0xFC0302,CONDRV_OPCODE);
-      STMemory_WriteWord(0xFC0302+2,NOP_OPCODE);  //NOP
-      STMemory_WriteWord(0xFC0302+4,NOP_OPCODE);  //NOP  
+      STMemory_WriteWord(0xFC0302+2,NOP_OPCODE);  /* NOP */
+      STMemory_WriteWord(0xFC0302+4,NOP_OPCODE);  /* NOP */
 
-      // Timer D(MFP init 0xFC2408)
+      /* Timer D (MFP init 0xFC2408) */
       STMemory_WriteWord(0xFC2450,TIMERD_OPCODE);
 
-      // Modify assembler loaded into cartridge area
+      /* Modify assembler loaded into cartridge area */
       Cart_WriteHdvAddress(0x16DA);
       break;
 
@@ -255,26 +248,26 @@ void TOS_FixRom(void)
     */
     case 0x0104:
       /* hdv_init, initialize drives */
-      STMemory_WriteWord(0xFC16BA,RTS_OPCODE);      //RTS
+      STMemory_WriteWord(0xFC16BA,RTS_OPCODE);      /* RTS */
 
       /* FC1CCE  JSR $FC0BD8  hdv_boot, load boot sector */
-      STMemory_WriteWord(0xFC1CCE,NOP_OPCODE);      //NOP
-      STMemory_WriteWord(0xFC1CCE + 2,NOP_OPCODE);  //NOP
-      STMemory_WriteWord(0xFC1CCE + 4,NOP_OPCODE);  //NOP
+      STMemory_WriteWord(0xFC1CCE,NOP_OPCODE);      /* NOP */
+      STMemory_WriteWord(0xFC1CCE + 2,NOP_OPCODE);  /* NOP */
+      STMemory_WriteWord(0xFC1CCE + 4,NOP_OPCODE);  /* NOP */
 
       /* FC0466  BSR.W $FC054C  Boot from DMA bus */
       if (bUseVDIRes) {
-        STMemory_WriteWord(0xFC0466,0xa000);        //Init Line-A
-        STMemory_WriteWord(0xFC0466+2,0xa0ff);      //Trap Line-A(to get structure)
+        STMemory_WriteWord(0xFC0466,0xa000);        /* Init Line-A */
+        STMemory_WriteWord(0xFC0466+2,0xa0ff);      /* Trap Line-A (to get structure) */
       }
       else {
-        STMemory_WriteWord(0xFC0466,NOP_OPCODE);    //NOP
-        STMemory_WriteWord(0xFC0466+2,NOP_OPCODE);  //NOP
+        STMemory_WriteWord(0xFC0466,NOP_OPCODE);    /* NOP */
+        STMemory_WriteWord(0xFC0466+2,NOP_OPCODE);  /* NOP */
       }
 
       /* FC02E6  CLR.L $4C2(A5)  Set connected drives */
       STMemory_WriteWord(0xFC02E6,CONDRV_OPCODE);
-      STMemory_WriteWord(0xFC02E6+2,NOP_OPCODE);    //NOP
+      STMemory_WriteWord(0xFC02E6+2,NOP_OPCODE);    /* NOP */
 
       /* Timer D(MFP init 0xFC34FC) */
       STMemory_WriteWord(0xFC3544,TIMERD_OPCODE);
@@ -353,32 +346,32 @@ void TOS_FixRom(void)
       TOS 2.05 settings
     */
     case 0x0205:
-      // hdv_init, initialize drives
-      STMemory_WriteWord(0xE0468C,RTS_OPCODE);    //RTS
+      /* hdv_init, initialize drives */
+      STMemory_WriteWord(0xE0468C,RTS_OPCODE);    /* RTS */
 
-      // E04CA0  JSR $E00E8E      hdv_boot, load boot sector
-      STMemory_WriteWord(0xE04CA0,NOP_OPCODE);    //NOP
-      STMemory_WriteWord(0xE04CA0+2,NOP_OPCODE);  //NOP
-      STMemory_WriteWord(0xE04CA0+4,NOP_OPCODE);  //NOP
+      /* E04CA0  JSR $E00E8E      hdv_boot, load boot sector */
+      STMemory_WriteWord(0xE04CA0,NOP_OPCODE);    /* NOP */
+      STMemory_WriteWord(0xE04CA0+2,NOP_OPCODE);  /* NOP */
+      STMemory_WriteWord(0xE04CA0+4,NOP_OPCODE);  /* NOP */
 
-      // E006AE  BSR.W $E00794    Boot from DMA bus
+      /* E006AE  BSR.W $E00794    Boot from DMA bus */
       if (bUseVDIRes) {
-        STMemory_WriteWord(0xE006AE,0xa000);      //Init Line-A
-        STMemory_WriteWord(0xE006AE + 2,0xa0ff);  //Trap Line-A(to get structure)
+        STMemory_WriteWord(0xE006AE,0xa000);      /* Init Line-A */
+        STMemory_WriteWord(0xE006AE + 2,0xa0ff);  /* Trap Line-A (to get structure) */
       }
       else {
-        STMemory_WriteWord(0xE006AE,NOP_OPCODE);  //NOP
-        STMemory_WriteWord(0xE006AE + 2,NOP_OPCODE);  //NOP
+        STMemory_WriteWord(0xE006AE,NOP_OPCODE);      /* NOP */
+        STMemory_WriteWord(0xE006AE + 2,NOP_OPCODE);  /* NOP */
       }
 
-      // E002FC  CLR.L $4C2      Set connected drives
+      /* E002FC  CLR.L $4C2      Set connected drives */
       STMemory_WriteWord(0xE002FC,CONDRV_OPCODE);
-      STMemory_WriteWord(0xE002FC+2,NOP_OPCODE);  //NOP
+      STMemory_WriteWord(0xE002FC+2,NOP_OPCODE);  /* NOP */
 
-      // Timer D(MFP init 0xE01928)
+      /* Timer D(MFP init 0xE01928) */
       STMemory_WriteWord(0xE01972,TIMERD_OPCODE);
 
-      // Modify assembler loaded into cartridge area
+      /* Modify assembler loaded into cartridge area */
       Cart_WriteHdvAddress(0x1410);
       break;
 
@@ -387,31 +380,31 @@ void TOS_FixRom(void)
     */
     case 0x0206:
       /* hdv_init, initialize drives */
-      STMemory_WriteWord(0xE0518E,RTS_OPCODE);    //RTS
+      STMemory_WriteWord(0xE0518E,RTS_OPCODE);    /* RTS */
 
       /* E05944  JSR  $E011DC    hdv_boot, load boot sector */
-      STMemory_WriteWord(0xE05944,NOP_OPCODE);    //NOP
-      STMemory_WriteWord(0xE05944+2,NOP_OPCODE);  //NOP
-      STMemory_WriteWord(0xE05944+4,NOP_OPCODE);  //NOP
+      STMemory_WriteWord(0xE05944,NOP_OPCODE);    /* NOP */
+      STMemory_WriteWord(0xE05944+2,NOP_OPCODE);  /* NOP */
+      STMemory_WriteWord(0xE05944+4,NOP_OPCODE);  /* NOP */
 
       /* E00898  BSR.W  $E0097A    Boot from DMA bus */
       if (bUseVDIRes) {
-        STMemory_WriteWord(0xE00898,0xa000);      //Init Line-A
-        STMemory_WriteWord(0xE00898+2,0xa0ff);    //Trap Line-A(to get structure)
+        STMemory_WriteWord(0xE00898,0xa000);      /* Init Line-A */
+        STMemory_WriteWord(0xE00898+2,0xa0ff);    /* Trap Line-A (to get structure) */
       }
       else {
-        STMemory_WriteWord(0xE00898,NOP_OPCODE);  //NOP
-        STMemory_WriteWord(0xE00898+2,NOP_OPCODE);  //NOP
+        STMemory_WriteWord(0xE00898,NOP_OPCODE);    /* NOP */
+        STMemory_WriteWord(0xE00898+2,NOP_OPCODE);  /* NOP */
       }
 
       /* E00362  CLR.L  $4C2    Set connected drives */
       STMemory_WriteWord(0xE00362,CONDRV_OPCODE);
-      STMemory_WriteWord(0xE00362+2,NOP_OPCODE);  //NOP
+      STMemory_WriteWord(0xE00362+2,NOP_OPCODE);  /* NOP */
 
       /* E007FA  MOVE.L  #$1FFFE,D7  Run checksums on 2xROMs(skip) */
       /* Checksum is total of TOS rom image, but get incorrect results as we've */
       /* changed bytes in the ROM! So, just skip anyway! */
-      STMemory_WriteWord(0xE007FA,BRAW_OPCODE);  //BRA.W  $E00894
+      STMemory_WriteWord(0xE007FA,BRAW_OPCODE);   /* BRA.W  $E00894 */
       STMemory_WriteWord(0xE007FA+2,0x98);
 
       /* Timer D(MFP init 0xE02206) */
@@ -423,44 +416,46 @@ void TOS_FixRom(void)
   }
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Set default memory configuration, connected floppies and memory size
 */
 void TOS_SetDefaultMemoryConfig(void)
 {
-  // As TOS checks hardware for memory size + connected devices on boot-up
-  // we set these values ourselves and fill in the magic numbers so TOS
-  // skips these tests which would crash the emulator as the reference the MMU
+  /* As TOS checks hardware for memory size + connected devices on boot-up */
+  /* we set these values ourselves and fill in the magic numbers so TOS */
+  /* skips these tests which would crash the emulator as the reference the MMU */
 
-  // Fill in magic numbers, so TOS does not try to reference MMU
-  STMemory_WriteLong(0x420,0x752019f3);        // memvalid - configuration is valid
-  STMemory_WriteLong(0x43a,0x237698aa);        // another magic #
-  STMemory_WriteLong(0x51a,0x5555aaaa);        // and another
+  /* Fill in magic numbers, so TOS does not try to reference MMU */
+  STMemory_WriteLong(0x420,0x752019f3);        /* memvalid - configuration is valid */
+  STMemory_WriteLong(0x43a,0x237698aa);        /* another magic # */
+  STMemory_WriteLong(0x51a,0x5555aaaa);        /* and another */
 
-  // Set memory size, adjust for extra VDI screens if needed
+  /* Set memory size, adjust for extra VDI screens if needed */
   if (bUseVDIRes) {
-    // This is enough for 1024x768x16colour(0x60000)
-    STMemory_WriteLong(0x436,MemoryInfo[/*ConfigureParams.Memory.*/nMemorySize].PhysTop-0x60000);  // mem top - upper end of user memory(before 32k screen)
-    STMemory_WriteLong(0x42e,MemoryInfo[/*ConfigureParams.Memory.*/nMemorySize].PhysTop-0x58000);  // phys top
+    /* This is enough for 1024x768x16colour (0x60000) */
+    STMemory_WriteLong(0x436,MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop-0x60000);  /* mem top - upper end of user memory (before 32k screen) */
+    STMemory_WriteLong(0x42e,MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop-0x58000);  /* phys top */
   }
   else {
-    STMemory_WriteLong(0x436,MemoryInfo[/*ConfigureParams.Memory.*/nMemorySize].PhysTop-0x8000);  // mem top - upper end of user memory(before 32k screen)
-    STMemory_WriteLong(0x42e,MemoryInfo[/*ConfigureParams.Memory.*/nMemorySize].PhysTop);         // phys top
+    STMemory_WriteLong(0x436,MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop-0x8000);   /* mem top - upper end of user memory(before 32k screen) */
+    STMemory_WriteLong(0x42e,MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop);          /* phys top */
   }
-  STMemory_WriteLong(0x424,MemoryInfo[/*ConfigureParams.Memory.*/nMemorySize].MemoryConfig);      // 512k configure 0x00=128k 0x01=512k 0x10=2Mb 11=reserved eg 0x1010 = 4Mb
+  STMemory_WriteLong(0x424,MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryConfig);       /* 512k configure 0x00=128k 0x01=512k 0x10=2Mb 11=reserved eg 0x1010 = 4Mb */
+  STMemory_WriteLong(0xff8000,MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryConfig);
 
-  // Set memory range, and start of BUS error
-  STRamEnd = MemoryInfo[/*ConfigureParams.Memory.*/nMemorySize].MemoryEnd;  // Set end of RAM
-  STRamEnd_BusErr = 0x00420000;    // 4Mb                        // Between RAM end and this is void space(0's), after is a BUS error
+  /* Set memory range, and start of BUS error */
+  STRamEnd = MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryEnd;  /* Set end of RAM */
+  STRamEnd_BusErr = 0x00420000;    /* 4Mb */      /* Between RAM end and this is void space (0's), after is a BUS error */
 
-  // Set TOS floppies
-  STMemory_WriteWord(0x446,nBootDrive);      // Boot up on A(0) or C(2)
-  STMemory_WriteWord(0x4a6,0x2);             // Connected floppies A,B (0 or 2)
-//FIXME   ConnectedDriveMask = ConnectedDriveMaskList[ConfigureParams.HardDisc.nDriveList];
-  STMemory_WriteLong(0x4c2,ConnectedDriveMask);    /* Drives A,B and C - NOTE some TOS images overwrite value, see 'TOS_ConnectedDrive_OpCode' */
+  /* Set TOS floppies */
+  STMemory_WriteWord(0x446,nBootDrive);           /* Boot up on A(0) or C(2) */
+  STMemory_WriteWord(0x4a6,0x2);                  /* Connected floppies A,B (0 or 2) */
+  ConnectedDriveMask = ConnectedDriveMaskList[ConfigureParams.HardDisc.nDriveList];
+  STMemory_WriteLong(0x4c2,ConnectedDriveMask);   /* Drives A,B and C - NOTE some TOS images overwrite value, see 'TOS_ConnectedDrive_OpCode' */
 
-  /* Added by Thothy: */
-  STMemory_WriteLong(0x00,STMemory_ReadLong(TOSAddress) );  /* Mirror ROM */
+  /* Mirror ROM boot vectors */
+  STMemory_WriteLong(0x00,STMemory_ReadLong(TOSAddress) );
   STMemory_WriteLong(0x04,STMemory_ReadLong(TOSAddress+4) );
 }

@@ -16,9 +16,6 @@
 
 #include <SDL.h>
 
-/*#include <endian.h>*/
-/*#include <machine/endian.h>*/
-
 #include "main.h"
 #include "screen.h"
 #include "screenConvert.h"
@@ -127,7 +124,7 @@ int AdjustLinePaletteRemap(void)
     v=*actHBLPal;
     actHBLPal+=1;
     v=v&0x777;
-#if __BYTE_ORDER == 4321
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
     STRGBPalette[endiantable[i]] = ST2RGB[v];
 #else
     STRGBPalette[i] = ST2RGB[v];
@@ -349,11 +346,6 @@ void Convert_StartFrame(void)
  ebx = STRGBPalette[ecx]; \
  esi[offset] = (Uint16)ebx; \
 }
-/*
-	__asm	and		ecx,0x000000ff \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ecx*4] \
-	__asm	mov		offset[esi],bx
-*/
 
 /* Plot Spectrum512 Resolution(320xH) 16-Bit pixels */
 #define PLOT_SPEC512_MID_320_16BIT(offset) \
@@ -378,27 +370,6 @@ void Convert_StartFrame(void)
  ebx = STRGBPalette[ebx]; \
  esi[offset+3] = (Uint16)ebx; \
 }
-/*
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	shr		ecx,8 \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi],bx \
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	shr		ecx,8 \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+2],bx \
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	shr		ecx,8 \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+4],bx \
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+6],bx
-*/
 
 /* Plot Spectrum512 Resolution(320xH) 16-Bit pixels */
 #define PLOT_SPEC512_END_LOW_320_16BIT(offset) \
@@ -419,23 +390,6 @@ void Convert_StartFrame(void)
  ebx = STRGBPalette[ebx]; \
  esi[offset+2] = (Uint16)ebx; \
 }
-/*
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	shr		ecx,8 \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi],bx \
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	shr		ecx,8 \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+2],bx \
-	__asm	mov		ebx,ecx \
-	__asm	and		ebx,0x000000ff \
-	__asm	shr		ecx,8 \
-	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
-	__asm	mov		offset[esi+4],bx
-*/
 
 
 

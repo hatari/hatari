@@ -6,6 +6,9 @@ Stefan Berndtsson <stefan@nocrew.org>
 Sven de Marothy <k98_sdy@k.kth.se>
 
 
+BeOS porter:  Claus Windeler <goodoldgames@beemulated.net>
+
+
 Other people who are not directly involved in this project:
 
 Paul Bates (wrote the original emulator WinSTon).

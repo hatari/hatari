@@ -588,7 +588,7 @@ void View_DebounceAllKeys(void)
   // Are we in maximum speed, and have disabled key repeat?
   if ( (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MIN) && (ConfigureParams.Keyboard.bDisableKeyRepeat) ) {
     // Now run through each PC key looking for ones held down
-    for(Key=0; Key<256; Key++) {
+    for(Key=0; Key<SDLK_LAST; Key++) {
       // Is key held?
       if (Keyboard.KeyStates[Key]) {
         // Get scan code

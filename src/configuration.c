@@ -3,9 +3,9 @@
 
   Configuration File
 
-  The configuration file istored in a binary format to prevent tampering.
-        We also store the version number in the file to prevent people from
-        copying old .cfg files between versions.
+  The configuration file is stored in a binary format to prevent tampering.
+  We also store the version number in the file to prevent people from
+  copying old .cfg files between versions.
 */
 
 #include "main.h"
@@ -33,6 +33,9 @@ void Configuration_SetDefault(void)
   ConfigureParams.Screen.Advanced.bFrameSkip = FALSE;
   ConfigureParams.Screen.Advanced.bAllowOverscan = TRUE;
   ConfigureParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
+  strcpy(ConfigureParams.TOSGEM.szTOSImageFileName, "./tos.img");
+  ConfigureParams.Memory.nMemorySize = 1;  /* 0=512k, 1=1MB, 2=2MB, 3=4MB */
+  ConfigureParams.HardDisc.nDriveList = DRIVELIST_NONE;
 }
 
 

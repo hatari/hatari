@@ -311,7 +311,8 @@ BOOL File_OpenSelectDlg(/*HWND hWnd,*/ char *pFullFileName,int FileFilter,BOOL b
 */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Remove any '/'s from end of filenames, but keeps / intact
 */
@@ -320,21 +321,22 @@ void File_CleanFileName(char *pszFileName)
   char szString[MAX_FILENAME_LENGTH];
   int i=0,j=0;
 
-  // Remove end slash from filename! But / remains! Doh!
+  /* Remove end slash from filename! But / remains! Doh! */
   if( strlen(pszFileName)>2 && pszFileName[strlen(pszFileName)-1]=='/' )
     pszFileName[strlen(pszFileName)-1]=0;
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Add '/' to end of filename
 */
 void File_AddSlashToEndFileName(char *pszFileName)
 {
-  // Check dir/filenames
+  /* Check dir/filenames */
   if (strlen(pszFileName)!=0) {
     if (pszFileName[strlen(pszFileName)-1]!='/')
-      strcat(pszFileName,"/");  // Must use end slash
+      strcat(pszFileName,"/");  /* Must use end slash */
   }
 }
 
@@ -354,7 +356,8 @@ BOOL File_DoesFileExtensionMatch(char *pszFileName, char *pszExtension)
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Check if filename is from root
   
@@ -371,7 +374,8 @@ BOOL File_IsRootFileName(char *pszFileName)
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Return string, to remove 'C:' part of filename
 */
@@ -383,21 +387,8 @@ char *File_RemoveFileNameDrive(char *pszFileName)
     return(pszFileName);
 }
 
-//-----------------------------------------------------------------------
-/*
-  Return string, which is just 'C:\' or '\'
-*/
-char *File_GetFileNameDrive(char *pszFileName)
-{
-/*  if ( (pszFileName[0]!='\0') && (pszFileName[1]==':') )
-    pszFileName[3] = '\0';*/
-  if (pszFileName[0]=='/')
-    pszFileName[1] = '\0';
 
-  return(pszFileName);
-}
-
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Check if filename end with a '/'
   
@@ -408,14 +399,15 @@ BOOL File_DoesFileNameEndWithSlash(char *pszFileName)
   if (pszFileName[0]=='\0')    /* If NULL string return! */
     return(FALSE);
 
-  // Does string end in a '\'
+  /* Does string end in a '\'? */
   if (pszFileName[strlen(pszFileName)-1]=='/')
     return(TRUE);
 
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Remove any double '/'s  from end of filenames. So just the one
 */
@@ -433,33 +425,8 @@ void File_RemoveFileNameTrailingSlashes(char *pszFileName)
   }
 }
 
-//-----------------------------------------------------------------------
-/*
-  Return directory string from full path filename, including trailing '/'
-*/
-void File_GetDirectoryString(char *pszFileName, char *pszDirName)
-{
-fprintf(stderr,"FIXME: File_GetDirectoryString(%s,%s)\n",pszFileName,pszDirName);
-/* FIXME */
-/*
-  char szDrive[_MAX_DRIVE],szDir[_MAX_DIR],szName[_MAX_FNAME],szExt[_MAX_EXT];
 
-  // So, first split name into parts
-  _splitpath(pszFileName,szDrive,szDir,szName,szExt);
-  if (strlen(szExt)>0) {
-    // Recombine, with out filename or extension
-    _makepath(pszDirName,szDrive,szDir,"","");
-  }
-  else {
-    // Was just a directory, so use as is
-    strcpy(pszDirName,pszFileName);
-  }
-  // Make sure ends with a '/'
-  File_AddSlashToEndFileName(pszDirName);
-*/
-}
-
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
   Does filename end with a .MSA extension? If so, return TRUE
 */
@@ -468,7 +435,8 @@ BOOL File_FileNameIsMSA(char *pszFileName)
   return(File_DoesFileExtensionMatch(pszFileName,".msa"));
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Does filename end with a .ST extension? If so, return TRUE
 */
@@ -478,15 +446,14 @@ BOOL File_FileNameIsST(char *pszFileName)
 }
 
 
-
-//-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
 /*
-  Read file from PC into memory, allocate memory for it if need to(pass Address as NULL)
-  Also may pass 'unsigned long' if want to find size of file read(may pass as NULL)
+  Read file from PC into memory, allocate memory for it if need to (pass Address as NULL)
+  Also may pass 'unsigned long' if want to find size of file read (may pass as NULL)
 */
 void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, char *ppszExts[])
 {
-  int DiscFile;
+  FILE *DiscFile;
   void *pFile=NULL;
   long FileSize=0;
 
@@ -497,11 +464,12 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, char *ppszEx
   }
 
   /* Open our file */
-  DiscFile = open(pszFileName, O_RDONLY);
-  if (DiscFile>=0) {
+  DiscFile = fopen(pszFileName, "rb");
+  if (DiscFile!=NULL) {
     /* Find size of TOS image - 192k or 256k */
-    FileSize = lseek(DiscFile, 0, SEEK_END);
-    lseek(DiscFile, 0, SEEK_SET);
+    fseek(DiscFile, 0, SEEK_END);
+    FileSize = ftell(DiscFile);
+    fseek(DiscFile, 0, SEEK_SET);
     /* Find pointer to where to load, allocate memory if pass NULL */
     if (pAddress)
       pFile = pAddress;
@@ -509,24 +477,25 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, char *ppszEx
       pFile = Memory_Alloc(FileSize);
     /* Read in... */
     if (pFile)
-      read(DiscFile,(char *)pFile,FileSize);
+      fread((char *)pFile, 1, FileSize, DiscFile);
 
-    close(DiscFile);
+    fclose(DiscFile);
   }
-  /* Store size of file we read in(or 0 if failed) */
+  /* Store size of file we read in (or 0 if failed) */
   if (pFileSize)
     *pFileSize = FileSize;
 
   return(pFile);        /* Return to where read in/allocated */
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Save file to PC, return FALSE if errors
 */
 BOOL File_Save(char *pszFileName, void *pAddress,long Size,BOOL bQueryOverwrite)
 {
-  int DiscFile;
+  FILE *DiscFile;
   BOOL bRet=FALSE;
 
   /* Check if need to ask user if to overwrite */
@@ -537,19 +506,20 @@ BOOL File_Save(char *pszFileName, void *pAddress,long Size,BOOL bQueryOverwrite)
   }
 
   /* Create our file */
-  DiscFile = open(pszFileName, O_CREAT | O_WRONLY);
-  if (DiscFile>=0) {
+  DiscFile = fopen(pszFileName, "wb");
+  if (DiscFile!=NULL) {
     /* Write data, set success flag */
-    if (write(DiscFile,(char *)pAddress,Size)==Size)
+    if ( fwrite(pAddress, 1, Size, DiscFile)==Size )
       bRet = TRUE;
 
-    close(DiscFile);
+    fclose(DiscFile);
   }
 
   return(bRet);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Return size of file, -1 if error
 */
@@ -571,7 +541,8 @@ int File_Length(char *pszFileName)
   return(-1);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Return TRUE if file exists
 */
@@ -579,35 +550,39 @@ BOOL File_Exists(char *pszFileName)
 {
   int DiscFile;
 
-  // Attempt to open file(with OF_EXIST)
+  /* Attempt to open file */
   DiscFile = open(pszFileName, O_RDONLY);
-  if (DiscFile!=-1)
+  if (DiscFile!=-1) {
+    close(DiscFile);
     return(TRUE);
+  }
   return(FALSE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Delete file, return TRUE if OK
 */
 BOOL File_Delete(char *pszFileName)
 {
-  // Delete the file(must be closed first)
+  /* Delete the file (must be closed first) */
   return( remove(pszFileName) );
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Find if file exists, and if so ask user if OK to overwrite
 */
-BOOL File_QueryOverwrite(/*HWND hWnd,*/char *pszFileName)
+BOOL File_QueryOverwrite(char *pszFileName)
 {
 
   char szString[MAX_FILENAME_LENGTH];
 
-  // Try and find if file exists
+  /* Try and find if file exists */
   if (File_Exists(pszFileName)) {
-    // File does exist, are we OK to overwrite?
+    /* File does exist, are we OK to overwrite? */
     sprintf(szString,"File '%s' exists, overwrite?",pszFileName);
 /* FIXME: */
 //    if (MessageBox(hWnd,szString,PROG_NAME,MB_YESNO | MB_DEFBUTTON2 | MB_ICONSTOP)==IDNO)
@@ -617,7 +592,8 @@ BOOL File_QueryOverwrite(/*HWND hWnd,*/char *pszFileName)
   return(TRUE);
 }
 
-//-----------------------------------------------------------------------
+
+/*-----------------------------------------------------------------------*/
 /*
   Try filename with various extensions and check if file exists - if so return correct name
 */
@@ -647,6 +623,6 @@ BOOL File_FindPossibleExtFileName(char *pszFileName,char *ppszExts[])
     i++;
   }
 */
-  // No, none of the files exist
+  /* No, none of the files exist */
   return(FALSE);
 }
