@@ -14,6 +14,8 @@ unsigned char cart_hdr[] = {
 
   /* Code ($FA0024) - Set up GEMDOS  handler */
   0x00,0x08,                  /* GEMDOS opcode */
+  0xa0,0x00,                  /* Line-A init (for VDI resolutions) */
+  0xa0,0xff,                  /* Hatari's Line-A opcode (for VDI resolutions) */
   0x4E,0x75                   /* RTS */
 }; 
  

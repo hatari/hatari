@@ -996,23 +996,26 @@ void Screen_DrawFrame(BOOL bForceFlip)
 */
 void Screen_Draw(void)
 {
-  BOOL bDrawFrame = FALSE;
-
   /* Are we holding screen? Ie let user choose options while in full-screen mode using GDI */
-  if (bInFullScreen && bFullScreenHold) {
+  if (bInFullScreen && bFullScreenHold)
+  {
     /* Just update status bar */
     /*StatusBar_UpdateIcons();*/ /* No statusbar in Hatari */
     return;
   }
 
-  if (!bQuitProgram) {
+  if (!bQuitProgram)
+  {
 #if 0
     /* Wait for next display(at 50fps), is ignored if running max speed */
-    if ( !(ConfigureParams.Screen.Advanced.bSyncToRetrace && bInFullScreen) ) {
+    if ( !(ConfigureParams.Screen.Advanced.bSyncToRetrace && bInFullScreen) )
+    {
       /* If in Max speed mode, just get on with it, or else wait for VBL timer */
-      if (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MAX) {
+      if (ConfigureParams.Configure.nMinMaxSpeed!=MINMAXSPEED_MAX)
+      {
         /* Has VBL already occured? Means we can't keep 50fps to warn user */
-        if (Main_AlreadyWaitingVBLEvent()) {
+        if (Main_AlreadyWaitingVBLEvent())
+        {
           /* Increase counter for number of consecutive dropped frames */
           nDroppedFrames++;
           /* If emulation has gone slow for 1/2 second or more, inform user */
@@ -1027,41 +1030,13 @@ void Screen_Draw(void)
     }
 #endif
 
-    /* And create ST screen, AT LEAST 1/50th second must have passed otherwise don't draw */
-    if (ConfigureParams.Screen.Advanced.bSyncToRetrace && bInFullScreen)
+    if(VideoBase)
     {
-      if (VideoBase)
-        bDrawFrame = TRUE;
-    }
-    else
-    {
-      if ( VideoBase )
-        bDrawFrame = TRUE;
-    }
-
-    /* Need to hold display for a while? Allows VDI resolutions to bypass start-up screens which don't use VDI */
-    if (bHoldScreenDisplay && bUseVDIRes)
-      bDrawFrame = FALSE;
-
-    if ( bDrawFrame ) {
-
       /* And draw(if screen contents changed) */
       Screen_DrawFrame(FALSE);
 
       /* And status bar */
       /*StatusBar_UpdateIcons();*/ /* Sorry - no statusbar in Hatari yet */
-    }
-    else {
-      /* Blank Window with ST-white(0x777) rectangle if holding display */
-      if (!bInFullScreen && bHoldScreenDisplay && bUseVDIRes) {
-        Uint32 WhiteBrush;
-        /* Mono or colour? Choose ST 0x777 or full white */
-        if (VDIRes==2)
-          WhiteBrush = SDL_MapRGB(sdlscrn->format, 255,255,255);
-        else
-          WhiteBrush = SDL_MapRGB(sdlscrn->format, 0x7<<5,0x7<<5,0x7<<5);
-        SDL_FillRect(sdlscrn,NULL, WhiteBrush );
-      }
     }
 
     /* Check printer status */

@@ -25,7 +25,6 @@
 
 
 BOOL bUseVDIRes=FALSE;             /* Set to TRUE (if want VDI), or FALSE (ie for games) */
-BOOL bHoldScreenDisplay=TRUE;      /* Hold display until initialised VDI (prevents TOS >2.05 showing ATARI logo) */
 int LineABase;                     /* Line-A structure */
 int FontBase;                      /* Font base, used for 16-pixel high font */
 unsigned int VDI_OldPC;            /* When call Trap#2, store off PC */
@@ -43,7 +42,8 @@ unsigned long Ptsout;
 
 /*-----------------------------------------------------------------------*/
 /* Desktop TOS 1.04 and TOS 2.06 desktop configuration files */
-unsigned char DesktopScript[504] = {
+unsigned char DesktopScript[504] =
+{
 0x23,0x61,0x30,0x30,0x30,0x30,0x30,0x30,0x0D,0x0A,0x23,0x62,0x30,0x30,0x30,0x30,0x30,0x30,0x0D,0x0A,0x23,0x63,0x37,0x37,0x37,0x30,0x30,0x30,0x37,0x30,0x30,0x30,
 0x36,0x30,0x30,0x30,0x37,0x30,0x30,0x35,0x35,0x32,0x30,0x30,0x35,0x30,0x35,0x35,0x35,0x32,0x32,0x32,0x30,0x37,0x37,0x30,0x35,0x35,0x37,0x30,0x37,0x35,0x30,0x35,
 0x35,0x35,0x30,0x37,0x37,0x30,0x33,0x31,0x31,0x31,0x31,0x30,0x33,0x0D,0x0A,0x23,0x64,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
@@ -62,7 +62,8 @@ unsigned char DesktopScript[504] = {
 0x0A,0x23,0x46,0x20,0x30,0x33,0x20,0x30,0x34,0x20,0x20,0x20,0x2A,0x2E,0x54,0x4F,0x53,0x40,0x20,0x40,0x20,0x0D,0x0A,0x1A,
 };
 
-unsigned char NewDeskScript[786] = {
+unsigned char NewDeskScript[786] =
+{
 0x23,0x61,0x30,0x30,0x30,0x30,0x30,0x30,0x0D,0x0A,0x23,0x62,0x30,0x30,0x30,0x30,0x30,0x30,0x0D,0x0A,0x23,0x63,0x37,0x37,0x37,0x30,0x30,0x30,0x37,0x30,0x30,0x30,
 0x36,0x30,0x30,0x30,0x37,0x30,0x30,0x35,0x35,0x32,0x30,0x30,0x35,0x30,0x35,0x35,0x35,0x32,0x32,0x32,0x30,0x37,0x37,0x30,0x35,0x35,0x37,0x30,0x37,0x35,0x30,0x35,
 0x35,0x35,0x30,0x37,0x37,0x30,0x33,0x31,0x31,0x31,0x31,0x30,0x33,0x0D,0x0A,0x23,0x64,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
@@ -98,7 +99,8 @@ unsigned char NewDeskScript[786] = {
 void VDI_SetResolution(int GEMRes,int GEMColour)
 {
   /* Resolution */
-  switch(GEMRes) {
+  switch(GEMRes)
+  {
     case GEMRES_640x480:
       VDIWidth = 640;
       VDIHeight = 480;
@@ -114,7 +116,8 @@ void VDI_SetResolution(int GEMRes,int GEMColour)
   }
 
   /* Colour depth */
-  switch(GEMColour) {
+  switch(GEMColour)
+  {
     case GEMCOLOUR_2:
       VDIRes = 2;
       VDIPlanes = 1;
@@ -137,7 +140,7 @@ void VDI_SetResolution(int GEMRes,int GEMColour)
 
   /* Force screen code to re-set bitmap/full-screen */
   Screen_SetDrawModes();
-  Screen_SetupRGBTable(bInFullScreen);
+  /*Screen_SetupRGBTable();*/
   Screen_SetFullUpdate();
   PrevSTRes = -1;
 
@@ -156,7 +159,7 @@ void VDI_SetResolution(int GEMRes,int GEMColour)
 BOOL VDI(void)
 {
   unsigned long TablePtr = Regs[REG_D1];
-//  unsigned short int OpCode;
+  /*unsigned short int OpCode;*/
 
   /* Read off table pointers */
   Control = STMemory_ReadLong(TablePtr);
@@ -165,12 +168,15 @@ BOOL VDI(void)
   Intout = STMemory_ReadLong(TablePtr+12);
   Ptsout = STMemory_ReadLong(TablePtr+16);
 
-//  OpCode = STMemory_ReadWord(Control);
+/*
+  OpCode = STMemory_ReadWord(Control);
   // Check OpCode
   // 8 - Text Font
-//  if (OpCode==9) {
-//    return(TRUE);
-//  }
+  if (OpCode==9)
+  {
+    return(TRUE);
+  }
+*/
 
   /* Call as normal! */
   return(FALSE);
@@ -183,7 +189,8 @@ BOOL VDI(void)
 */
 void VDI_LineA(void)
 {
-  if (bUseVDIRes) {
+  if (bUseVDIRes)
+  {
     STMemory_WriteWord(LineABase-6*2,VDIWidth);                      /* v_rez_hz */
     STMemory_WriteWord(LineABase-2*2,VDIHeight);                     /* v_rez_vt */
     STMemory_WriteWord(LineABase-1*2,(VDIWidth*VDIPlanes)/8);        /* bytes_lin */
@@ -209,7 +216,8 @@ void VDI_Complete(void)
 
   OpCode = STMemory_ReadWord(Control);
   /* Is 'Open Workstation', or 'Open Virtual Screen Workstation'? */
-  if ( (OpCode==1) || (OpCode==100) ) {
+  if ( (OpCode==1) || (OpCode==100) )
+  {
     STMemory_WriteWord(Intout,VDIWidth-1);                         /* IntOut[0] Width-1 */
     STMemory_WriteWord(Intout+1*2,VDIHeight-1);                    /* IntOut[1] Height-1 */
     STMemory_WriteWord(Intout+13*2,VDIColours);                    /* IntOut[13] #colours */
@@ -219,9 +227,6 @@ void VDI_Complete(void)
     STMemory_WriteWord(LineABase-0x159*2,VDIHeight-1);             /* WKYRez */
 
     VDI_LineA();                  /* And modify Line-A structure accordingly */
-
-    /* Show screen (used to hide boot-up sequence in TOS >2.06) */
-    bHoldScreenDisplay = FALSE;
   }
 }
 
@@ -249,11 +254,14 @@ void VDI_ModifyDesktopInf(char *pszFileName)
 
   /* Load our '.inf' file */
   pInfData = (unsigned char *)File_Read(pszFileName,NULL,&InfSize,NULL);
-  if (pInfData) {
+  if (pInfData)
+  {
     /* Scan file for '#E' */
     i = 0;
-    while(i<(InfSize-8)) {
-      if ( (pInfData[i]=='#') && (pInfData[i+1]=='E') ) {
+    while(i<(InfSize-8))
+    {
+      if ( (pInfData[i]=='#') && (pInfData[i+1]=='E') )
+      {
         /* Modify resolution */
         pInfData[i+7] = '1'+VDIRes;
         goto done_modify;

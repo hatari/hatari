@@ -1,7 +1,9 @@
 /*
   Hatari
 
-  M68000 - CPU. This handles exception handling as well as a few OpCode's such as Line-F and Line-A.
+  M68000 - CPU. This originally (in WinSTon) handled exceptions as well as some
+  few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
+  wrapper between the WinSTon sources and the UAE CPU code.
 */
 
 #include "main.h"
@@ -43,7 +45,8 @@ void M68000_Reset(BOOL bCold)
   int i;
 
   /* Clear registers, set PC, SR and stack pointers */
-  if (bCold) {
+  if (bCold)
+  {
     for(i=0; i<(16+1); i++)
       Regs[i] = 0;
   }
@@ -51,9 +54,6 @@ void M68000_Reset(BOOL bCold)
   SR = 0x2700;                                /* Starting status register */
   MakeFromSR();
   PendingInterruptFlag = 0;                   /* Clear pending flag */
-
-  /* Hold display for extended VDI resolutions(under init our VDI) */
-  bHoldScreenDisplay = TRUE;
 
   /* Now directly reset the UAE CPU core: */
   m68k_reset();
@@ -86,12 +86,14 @@ void M68000_Decode_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&STRamEnd_BusErr,sizeof(STRamEnd_BusErr));
   MemorySnapShot_Store(&PendingInterruptCount,sizeof(PendingInterruptCount));
   MemorySnapShot_Store(&PendingInterruptFlag,sizeof(PendingInterruptFlag));
-  if (bSave) {
+  if (bSave)
+  {
     /* Convert function to ID */
     ID = Int_HandlerFunctionToID(PendingInterruptFunction);
     MemorySnapShot_Store(&ID,sizeof(int));
   }
-  else {
+  else
+  {
     /* Convert ID to function */
     MemorySnapShot_Store(&ID,sizeof(int));
     PendingInterruptFunction = Int_IDToHandlerFunction(ID);

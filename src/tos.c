@@ -100,7 +100,8 @@ void TOS_LoadImage(void)
   TOSVersion = 0;
   pTOSFile = File_Read(ConfigureParams.TOSGEM.szTOSImageFileName,NULL,NULL,pszTOSNameExts);
 
-  if (pTOSFile) {
+  if (pTOSFile)
+  {
     bTOSImageLoaded = TRUE;
     /* Now, look at start of image to find Version number and address */
     TOSVersion = STMemory_Swap68000Int( *(Uint16 *)((Uint32)pTOSFile+2) );
@@ -112,7 +113,8 @@ void TOS_LoadImage(void)
     /* TOSes 1.06 and 1.62 are for the STe ONLY and so don't run on a real STfm. */
     /* They access illegal memory addresses which don't exist on a real machine and cause the OS */
     /* to lock up. So, if user selects one of these, show an error */
-    if( TOSVersion==0x0106 || TOSVersion==0x0162 ) {
+    if( TOSVersion==0x0106 || TOSVersion==0x0162 )
+    {
       Main_Message("TOS versions 1.06 and 1.62 are NOT valid STfm images.\n\n"
                    "These were only designed for use on the STe range of machines.\n", PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
       bTOSImageLoaded = FALSE;
@@ -124,17 +126,17 @@ void TOS_LoadImage(void)
   }
 
   /* Are we allowed VDI under this TOS? */
-  if ( (TOSVersion<0x0104) && (bUseVDIRes) ) {
+  if ( (TOSVersion<0x0104) && (bUseVDIRes) )
+  {
     /* Warn user (exit if need to) */
     Main_Message("To use GEM Extended resolutions, you must select TOS 1.04 or higher.",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
     /* And select non VDI */
     bUseVDIRes = ConfigureParams.TOSGEM.bUseExtGEMResolutions = FALSE;
-    /* Default TOS 1.00 */
-    bTOSImageLoaded = FALSE;
   }
 
   /* Did we load a TOS image correctly? */
-  if (!bTOSImageLoaded) {
+  if (!bTOSImageLoaded)
+  {
     fprintf(stderr, "Error: No tos.img loaded!\n");
     exit(-1);
   }
@@ -189,19 +191,13 @@ void TOS_FixRom(void)
          replacing the RTS with our own
          routine which sets condrv and then RTSes. */
       if(ACSI_EMU_ON || GEMDOS_EMU_ON) 
+      {
         STMemory_WriteWord(0xFC04d4, CONDRV_OPCODE);
+      }
       else 
       {
-        if (bUseVDIRes)
-        { 
-          STMemory_WriteWord(0xFC03D6,0xa000);      /* Init Line-A */ 
-          STMemory_WriteWord(0xFC03D6+2,0xa0ff);    /* Trap Line-A (to get structure) */ 
-        } 
-        else
-        { 
-          STMemory_WriteWord(0xFC03D6,NOP_OPCODE);    /* NOP */
-          STMemory_WriteWord(0xFC03D6+2,NOP_OPCODE);  /* NOP */ 
-        } 
+        STMemory_WriteWord(0xFC03D6,NOP_OPCODE);    /* NOP */
+        STMemory_WriteWord(0xFC03D6+2,NOP_OPCODE);  /* NOP */ 
       }
 
       /* Timer D(MFP init 0xFC21B4), set value before call Set Timer routine */
@@ -220,37 +216,35 @@ void TOS_FixRom(void)
         STMemory_WriteWord(0xFC0F44, RTS_OPCODE);     /* RTS */
 
       /* FC1568  JSR $FC0C2E  hdv_boot, load boot sector */
-      /* see comments above -Sven */
-      if( STMemory_ReadLong(0xFC1568)==0x4eb900fcL ) {
-	STMemory_WriteWord(0xFC1568, NOP_OPCODE);     /* NOP */
+      if( STMemory_ReadLong(0xFC1568)==0x4eb900fcL )
+      {
+        STMemory_WriteWord(0xFC1568, NOP_OPCODE);     /* NOP */
         STMemory_WriteWord(0xFC1568+2, NOP_OPCODE);   /* NOP */
         STMemory_WriteWord(0xFC1568+4, NOP_OPCODE);   /* NOP */
       }
 
-      /* FC0472  BSR.W $FC0558  Boot from DMA bus */
-      if(ACSI_EMU_ON || GEMDOS_EMU_ON) 
-	STMemory_WriteWord(0xFC0584, CONDRV_OPCODE);
+      /* see comments above -Sven */
+      if(ACSI_EMU_ON || GEMDOS_EMU_ON)
+      {
+        STMemory_WriteWord(0xFC0584, CONDRV_OPCODE);
+      }
       else 
-	{
-	  /* FC0302  CLR.L $4C2  Set connected drives */
-	  if( STMemory_ReadLong(0xFC0302)==0x42b90000L ) {
-	    STMemory_WriteWord(0xFC0302, NOP_OPCODE);
-	    STMemory_WriteWord(0xFC0302+2, NOP_OPCODE);   /* NOP */
-	    STMemory_WriteWord(0xFC0302+4, NOP_OPCODE);   /* NOP */
-	  }
+      {
+        /* FC0302  CLR.L $4C2  Set connected drives */
+        if( STMemory_ReadLong(0xFC0302)==0x42b90000L )
+        {
+          STMemory_WriteWord(0xFC0302, NOP_OPCODE);
+          STMemory_WriteWord(0xFC0302+2, NOP_OPCODE);   /* NOP */
+          STMemory_WriteWord(0xFC0302+4, NOP_OPCODE);   /* NOP */
+        }
 	  
-	  if( STMemory_ReadLong(0xFC0472)==0x610000e4L )
-          {
-	    if (bUseVDIRes) {
-	      STMemory_WriteWord(0xFC0472, 0xa000);        /* Init Line-A */
-	      STMemory_WriteWord(0xFC0472+2, 0xa0ff);      /* Trap Line-A */
-	    }
-	    else {
-	      STMemory_WriteWord(0xFC0472, NOP_OPCODE);     /* NOP */
-	      STMemory_WriteWord(0xFC0472+2, NOP_OPCODE);   /* NOP */
-	    }
-          }
-	}
+        /* FC0472  BSR.W $FC0558  Boot from DMA bus */
+        if( STMemory_ReadLong(0xFC0472)==0x610000e4L )
+        {
+          STMemory_WriteWord(0xFC0472, NOP_OPCODE);     /* NOP */
+          STMemory_WriteWord(0xFC0472+2, NOP_OPCODE);   /* NOP */
+        }
+      }
 
       /* Timer D (MFP init 0xFC2408) */
       if( STMemory_ReadLong(0xFC2450)==0x74026100 )
@@ -274,24 +268,19 @@ void TOS_FixRom(void)
 
       /* FC0466  BSR.W $FC054C  Boot from DMA bus */
       /* see comment above -Sven */
-      if(ACSI_EMU_ON || GEMDOS_EMU_ON) 
-	STMemory_WriteWord(0xFC0576, CONDRV_OPCODE);
+      if(ACSI_EMU_ON || GEMDOS_EMU_ON)
+      {
+        STMemory_WriteWord(0xFC0576, CONDRV_OPCODE);
+      }
       else 
-	{
-	  /* FC02E6  CLR.L $4C2(A5)  Set connected drives */
-	  STMemory_WriteWord(0xFC02E6,NOP_OPCODE);
-	  STMemory_WriteWord(0xFC02E6+2,NOP_OPCODE);    /* NOP */
+      {
+        /* FC02E6  CLR.L $4C2(A5)  Set connected drives */
+        STMemory_WriteWord(0xFC02E6,NOP_OPCODE);
+        STMemory_WriteWord(0xFC02E6+2,NOP_OPCODE);    /* NOP */
 	  
-	  if (bUseVDIRes) { 
-	    STMemory_WriteWord(0xFC0466,0xa000);      /* Init Line-A */ 
-	    STMemory_WriteWord(0xFC0466+2,0xa0ff);    /* Trap Line-A (to get structure) */ 
-	  } 
-	  else { 
-	    
-	    STMemory_WriteWord(0xFC0466,NOP_OPCODE);    /* NOP */
-	    STMemory_WriteWord(0xFC0466+2,NOP_OPCODE);  /* NOP */ 
-	  } 
-	}
+        STMemory_WriteWord(0xFC0466,NOP_OPCODE);    /* NOP */
+        STMemory_WriteWord(0xFC0466+2,NOP_OPCODE);  /* NOP */ 
+      }
 
       /* Timer D(MFP init 0xFC34FC) */
       STMemory_WriteWord(0xFC3544,TIMERD_OPCODE);
@@ -381,27 +370,23 @@ void TOS_FixRom(void)
       /* E006AE  BSR.W $E00794    Boot from DMA bus */
       /* The 2.0x DMA bus boot routine uses two RTSes - patch both */
       if(ACSI_EMU_ON || GEMDOS_EMU_ON) 
-	{
-	  /* no bootable DMA devices */
-	  STMemory_WriteWord(0xE0081A, CONDRV_OPCODE);
-	  /* used if we have DMA devices */
-	  STMemory_WriteWord(0xE00842, CONDRV_OPCODE);
-	} else {
-	  /* E002FC  CLR.L $4C2      Set connected drives */
-	  STMemory_WriteWord(0xE002FC,CONDRV_OPCODE);
-	  STMemory_WriteWord(0xE002FC+2,NOP_OPCODE);  /* NOP */
+      {
+        /* no bootable DMA devices */
+        STMemory_WriteWord(0xE0081A, CONDRV_OPCODE);
+        /* used if we have DMA devices */
+        STMemory_WriteWord(0xE00842, CONDRV_OPCODE);
+      }
+      else
+      {
+        /* E002FC  CLR.L $4C2      Set connected drives */
+        STMemory_WriteWord(0xE002FC,CONDRV_OPCODE);
+        STMemory_WriteWord(0xE002FC+2,NOP_OPCODE);  /* NOP */
 	
-	  /* E006AE  BSR.W $E00794    Boot from DMA bus */
-	  if (bUseVDIRes) {
-	    STMemory_WriteWord(0xE006AE,0xa000);      /* Init Line-A */
-	    STMemory_WriteWord(0xE006AE + 2,0xa0ff);  /* Trap Line-A (to get structure) */
-	  }
-	  else {
-	    STMemory_WriteWord(0xE006AE,NOP_OPCODE);      /* NOP */
-	    STMemory_WriteWord(0xE006AE + 2,NOP_OPCODE);  /* NOP */
-	  }
-	  
-	}
+        /* E006AE  BSR.W $E00794    Boot from DMA bus */
+        STMemory_WriteWord(0xE006AE,NOP_OPCODE);      /* NOP */
+        STMemory_WriteWord(0xE006AE + 2,NOP_OPCODE);  /* NOP */
+	    }
+
       /* Timer D(MFP init 0xE01928) */
       STMemory_WriteWord(0xE01972,TIMERD_OPCODE);
 
@@ -436,28 +421,23 @@ void TOS_FixRom(void)
       STMemory_WriteWord(0xE05944+4,NOP_OPCODE);  /* NOP */
 
       /* E00898  BSR.W  $E0097A    Boot from DMA bus */
-      if(ACSI_EMU_ON || GEMDOS_EMU_ON) 
-	{
-	  /* no bootable DMA devices */
-	  STMemory_WriteWord(0xE00B3E, CONDRV_OPCODE);
-	  /* used if we have DMA devices */
-	  STMemory_WriteWord(0xE00B66, CONDRV_OPCODE);
-	
-	} else {
-	  /* E00362  CLR.L  $4C2    Set connected drives */
-	  STMemory_WriteWord(0xE00362,NOP_OPCODE);
-	  STMemory_WriteWord(0xE00362+2,NOP_OPCODE);  /* NOP */
+      if(ACSI_EMU_ON || GEMDOS_EMU_ON)
+      {
+        /* no bootable DMA devices */
+        STMemory_WriteWord(0xE00B3E, CONDRV_OPCODE);
+        /* used if we have DMA devices */
+        STMemory_WriteWord(0xE00B66, CONDRV_OPCODE);
+      }
+      else
+      {
+        /* E00362  CLR.L  $4C2    Set connected drives */
+        STMemory_WriteWord(0xE00362,NOP_OPCODE);
+        STMemory_WriteWord(0xE00362+2,NOP_OPCODE);  /* NOP */
 
-	  /* E00898  BSR.W  $E0097A    Boot from DMA bus */
-	  if (bUseVDIRes) {
-	    STMemory_WriteWord(0xE00898,0xa000);      /* Init Line-A */
-	    STMemory_WriteWord(0xE00898+2,0xa0ff);    /* Trap Line-A (to get structure) */
-	  }
-	  else {
-	    STMemory_WriteWord(0xE00898,NOP_OPCODE);    /* NOP */
-	    STMemory_WriteWord(0xE00898+2,NOP_OPCODE);  /* NOP */
-	  }
-	}
+        /* E00898  BSR.W  $E0097A    Boot from DMA bus */
+        STMemory_WriteWord(0xE00898,NOP_OPCODE);    /* NOP */
+        STMemory_WriteWord(0xE00898+2,NOP_OPCODE);  /* NOP */
+      }
       
       /* Timer D(MFP init 0xE02206) */
       STMemory_WriteWord(0xE02250,TIMERD_OPCODE);
@@ -485,12 +465,14 @@ void TOS_SetDefaultMemoryConfig(void)
   STMemory_WriteLong(0x51a,0x5555aaaa);        /* and another */
 
   /* Set memory size, adjust for extra VDI screens if needed */
-  if (bUseVDIRes) {
+  if (bUseVDIRes)
+  {
     /* This is enough for 1024x768x16colour (0x60000) */
     STMemory_WriteLong(0x436,MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop-0x60000);  /* mem top - upper end of user memory (before 32k screen) */
     STMemory_WriteLong(0x42e,MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop-0x58000);  /* phys top */
   }
-  else {
+  else
+  {
     STMemory_WriteLong(0x436,MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop-0x8000);   /* mem top - upper end of user memory(before 32k screen) */
     STMemory_WriteLong(0x42e,MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop);          /* phys top */
   }

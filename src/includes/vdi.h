@@ -23,7 +23,6 @@ enum
   GEMCOLOUR_16
 };
 
-extern BOOL bHoldScreenDisplay;
 extern int LineABase,FontBase;
 extern unsigned int VDI_OldPC;
 extern BOOL bUseVDIRes;

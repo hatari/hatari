@@ -1,3 +1,12 @@
+2002-12-23 (THH):
+  * Moved Hatari's line-a opcodes (0xa000 and 0xa0ff) from tos.c to cartimg.c
+    so that the extended VDI resolutions should now also work with hard disk
+    emulation turned on.
+  * WinSTon turned off screen rendering while booting in a VDI resolution
+    mode. This has been enable again, so that the user can see what's going
+    on. However, booting in a VDI mode is now a little bit slower (especially
+    on TOS 2.06).
+
 2002-12-22 (THH):
   * VDI resolutions with 4 colors are now working, too.
   * Fixed some bugs in screen.c
