@@ -2,6 +2,9 @@
   Hatari
 */
 
+#ifndef HATARI_FILE_H
+#define HATARI_FILE_H
+
 /* File types */
 enum {
   FILEFILTER_DISCFILES,
@@ -13,6 +16,7 @@ enum {
 };
 
 #ifdef __BEOS__
+#include <dirent.h>
 extern int alphasort(const void *d1, const void *d2);
 extern int scandir(const char *dirname,struct dirent ***namelist, int(*select) __P((struct dirent *)), int (*dcomp) __P((const void *, const void *)));
 #endif  /* __BEOS__ */
@@ -36,3 +40,5 @@ extern BOOL File_FindPossibleExtFileName(char *pszFileName,char *ppszExts[]);
 extern void File_splitpath(char *pSrcFileName, char *pDir, char *pName, char *Ext);
 extern void File_makepath(char *pDestFileName, char *pDir, char *pName, char *pExt);
 extern void File_ShrinkName(char *pDestFileName, char *pSrcFileName, int maxlen);
+
+#endif /* HATARI_FILE_H */

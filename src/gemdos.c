@@ -33,11 +33,7 @@
 
 #include <sys/stat.h>
 #include <time.h>
-
-#ifdef dirent                     /* kludge: dirent previously defined in sysdeps.h... */
-#undef dirent                     
-#endif
-#include <dirent.h>               /* ..this conflicts with dirent.h definition */
+#include <dirent.h>
 
 #define ENABLE_SAVING             /* Turn on saving stuff */
 

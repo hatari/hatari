@@ -41,7 +41,7 @@ hatari: $(OBJS) cpu
 	$(CC) $(OBJS) $(CPUOBJS) $(SDLLIB) -o hatari
 
 cpu:
-	$(MAKE) -C uae-cpu/ CFLAGS="$(CMPLRFLAGS)" CC="$(CC)" all
+	$(MAKE) -C uae-cpu/ CFLAGS="$(CMPLRFLAGS) $(SDLFLAGS)" CC="$(CC)" all
 
 clean:
 	rm -f *.o hatari
