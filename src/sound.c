@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-static char rcsid[] = "Hatari $Id: sound.c,v 1.9 2003-03-12 14:15:44 thothy Exp $";
+static char rcsid[] = "Hatari $Id: sound.c,v 1.10 2003-04-12 16:28:06 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -48,6 +48,14 @@ static char rcsid[] = "Hatari $Id: sound.c,v 1.9 2003-03-12 14:15:44 thothy Exp 
 #define TONEFREQ_SHIFT   28             /* 4.28 fixed point */
 #define NOISEFREQ_SHIFT  28             /* 4.28 fixed point */
 #define ENVFREQ_SHIFT    16             /* 16.16 fixed */
+
+#define SAMPLES_BUFFER_SIZE  1024
+/* Number of generated samples per frame (eg. 44Khz=882) : */
+#define SAMPLES_PER_FRAME  ((SoundPlayBackFrequencies[OutputAudioFreqIndex]+35)/nScreenRefreshRate)
+/* Frequency of generated samples: */
+#define SAMPLES_FREQ   (SoundPlayBackFrequencies[OutputAudioFreqIndex])
+#define YM_FREQ        (2000000/SAMPLES_FREQ)      /* YM Frequency 2Mhz */
+
 
 /* Original wave samples */
 int EnvelopeShapeValues[16*1024];                               /* Shape x Length(repeat 3rd/4th entries) */
@@ -467,18 +475,12 @@ static void Sound_GenerateSamples(void)
     Sound_GenerateChannel(pChannelB,PSGRegisters[PSG_REG_CHANNEL_B_FINE],PSGRegisters[PSG_REG_CHANNEL_B_COARSE],PSGRegisters[PSG_REG_CHANNEL_B_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[1],1);
     Sound_GenerateChannel(pChannelC,PSGRegisters[PSG_REG_CHANNEL_C_FINE],PSGRegisters[PSG_REG_CHANNEL_C_COARSE],PSGRegisters[PSG_REG_CHANNEL_C_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[2],2);
 
-    /* Make sure that we don't interfere with the audio callback function */
-    Audio_Lock();
-
     /* Mix channels together, using table to clip and also convert to 'unsigned char' */
     for(i=0; i<nSamplesToGenerate; i++)
       MixBuffer[(i+ActiveSndBufIdx)%MIXBUFFER_SIZE] = pMixTable[(*pChannelA++) + (*pChannelB++) + (*pChannelC++)];
 
     ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
     nGeneratedSamples += nSamplesToGenerate;
-
-    /* Allow audio callback function to occur again */
-    Audio_Unlock();
 
     /* Reset the write to register '13' flag */
     bWriteEnvelopeFreq = FALSE;
@@ -496,10 +498,16 @@ void Sound_Update(void)
 {
   int OldSndBufIdx = ActiveSndBufIdx;
 
+  /* Make sure that we don't interfere with the audio callback function */
+  Audio_Lock();
+
   /* Find how many to generate */
   Sound_SetSamplesPassed();
   /* And generate */
   Sound_GenerateSamples();
+
+  /* Allow audio callback function to occur again */
+  Audio_Unlock();
 
   /* Save to WAV file, if open */
   WAVFormat_Update(MixBuffer, OldSndBufIdx, nSamplesToGenerate);
@@ -516,6 +524,24 @@ void Sound_Update_VBL(void)
 
   /* Clear write to register '13', used for YM file saving */
   bEnvelopeFreqFlag = FALSE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  This is called from the audio callback function to create enough samples
+  to fill the current sound buffer.
+*/
+void Sound_UpdateFromAudioCallBack(void)
+{
+  /* If there are already enough samples or if we are recording, we should
+   * not generate more samples here! */
+  if(nGeneratedSamples >= SoundBufferSize || Sound_AreWeRecording())
+    return;
+
+  nSamplesToGenerate = SoundBufferSize - nGeneratedSamples;
+
+  Sound_GenerateSamples();
 }
 
 
@@ -554,6 +580,7 @@ void Sound_EndRecording()
   if (bRecordingWav)
     WAVFormat_CloseFile();
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*

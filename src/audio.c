@@ -6,7 +6,7 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-static char rcsid[] = "Hatari $Id: audio.c,v 1.15 2003-04-04 16:28:20 thothy Exp $";
+static char rcsid[] = "Hatari $Id: audio.c,v 1.16 2003-04-12 16:28:06 thothy Exp $";
 
 #include <SDL.h>
 
@@ -45,9 +45,16 @@ int CompleteSndBufIdx;                    /* Replay-index into MixBuffer */
 */
 void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 {
+  /* If there are only some samples missing to have a complete buffer,
+   * we generate them here (sounds much better then!). However, if a lot of
+   * samples are missing, then the system is probably too slow, so we don't
+   * generate more samples to not make things worse... */
+  if(nGeneratedSamples < len && len-nGeneratedSamples < 128)
+    Sound_UpdateFromAudioCallBack();
+
   /* Pass completed buffer to audio system: */
   Audio_WriteSamplesIntoBuffer(MixBuffer, CompleteSndBufIdx, len,
-                               (bEmulationActive)?RAMP_UP:RAMP_DOWN, stream);
+                               (bEmulationActive ? RAMP_UP : RAMP_DOWN), stream);
 
   /* We should now have generated a complete frame of samples.
    * However, for slow systems we have to check how many generated samples
