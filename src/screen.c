@@ -1,19 +1,25 @@
 /*
-  Hatari
+  Hatari - screen.c
 
-  This code converts a 1/2/4 plane ST format screen to either 8 or 16-bit PC format. An awful
-  lost of processing is needed to do this conversion - we cannot simply change palettes on
-  interrupts under Windows as is possible with DOS.
-  The main code processes the palette/resolution mask tables to find exactly which lines
-  need to updating and the conversion routines themselves only update 16-pixel blocks
-  which differ from the previous frame - this gives a large performance increase.
-  Each conversion routine can convert any part of the source ST screen(which includes the
-  overscan border, usually set to colour zero) so they can be used for both Window and
-  full-screen.
-  Note that in Hi-Resolution we have no overscan and just two colours so we can optimise
-  things further. Also when running in maximum speed we make sure we only convert the screen
-  every 50 times a second - inbetween frames are not processed.
+  This file is distributed under the GNU Public License, version 2 or at your
+  option any later version. Read the file gpl.txt for details.
+
+  This code converts a 1/2/4 plane ST format screen to either 8 or 16-bit PC
+  format. An awful lost of processing is needed to do this conversion - we
+  cannot simply change palettes on  interrupts as it is possible with DOS.
+  The main code processes the palette/resolution mask tables to find exactly
+  which lines need to updating and the conversion routines themselves only
+  update 16-pixel blocks which differ from the previous frame - this gives a
+  large performance increase.
+  Each conversion routine can convert any part of the source ST screen (which
+  includes the overscan border, usually set to colour zero) so they can be used
+  for both window and full-screen mode.
+  Note that in Hi-Resolution we have no overscan and just two colors so we can
+  optimise things further. Also when running in maximum speed we make sure we
+  only convert the screen every 50 times a second - inbetween frames are not
+  processed.
 */
+static char rcsid[] = "Hatari $Id: screen.c,v 1.20 2003-02-02 22:41:34 thothy Exp $";
 
 #include <SDL.h>
 
@@ -670,7 +676,7 @@ void Screen_Handle8BitPalettes(void)
 
   /* Do need to check for 8-Bit palette change? Ie, update whole screen */
   /* VDI screens and monochrome modes are ALL 8-Bit at the moment! */
-  if(bUseVDIRes || bUseHighRes)
+  if(sdlscrn->format->BitsPerPixel == 8)
   {
     /* If using HiRes palette update with full update flag */
     if (!bUseHighRes)

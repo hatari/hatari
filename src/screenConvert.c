@@ -1,18 +1,23 @@
 /*
-  Hatari
+  Hatari - screenConvert.c
 
-  Screen conversion routines. We have a number of routines to convert ST screen to PC format.
-  We split these into Low,Medium and High each with 8/16-bit versions. To gain extra speed,
-  as almost half of the processing time can be spent in these routines, we check for any
-  changes from the previously displayed frame. AdjustLinePaletteRemap() sets a flag to
-  tell the routines if we need to totally update a line(ie full update, or palette/res change)
-  or if we just can do a difference check. To see how much of the screen updates each frame, simply
-  enable 'TEST_SCREEN_UPDATE'
-  We convert each screen 16 pixels at a time by use of a couple of look-up tables. These tables
-  convert from 2-plane format to bbp and then we can add two of these together to get 4-planes. This
-  keeps the tables small and thus improves speed. We then look these bbp values up as an RGB/Index value
-  to copy to the screen.
+  This file is distributed under the GNU Public License, version 2 or at your
+  option any later version. Read the file gpl.txt for details.
+
+  Screen conversion routines. We have a number of routines to convert ST screen
+  to PC format. We split these into Low, Medium and High each with 8/16-bit
+  versions. To gain extra speed, as almost half of the processing time can be
+  spent in these routines, we check for any changes from the previously
+  displayed frame. AdjustLinePaletteRemap() sets a flag to tell the routines if
+  we need to totally update a line (ie full update, or palette/res change) or if
+  we just can do a difference check.
+  We convert each screen 16 pixels at a time by use of a couple of look-up
+  tables. These tables convert from 2-plane format to bbp and then we can add
+  two of these together to get 4-planes. This keeps the tables small and thus
+  improves speed. We then look these bbp values up as an RGB/Index value to copy
+  to the screen.
 */
+static char rcsid[] = "Hatari $Id: screenConvert.c,v 1.14 2003-02-02 22:41:34 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -24,7 +29,6 @@
 #include "vdi.h"
 #include "video.h"
 
-/*#define  TEST_SCREEN_UPDATE*/  /* Enable to see partial screen update */
 
 int ScrX,ScrY;                   /* Locals */
 int ScrUpdateFlag;               /* Bit mask of how to update screen */
@@ -327,6 +331,58 @@ void Convert_StartFrame(void)
   esi[offset] = SDL_SwapLE32(ecx); \
 }
 
+/* Plot Low Resolution (640xH) 8-Bit pixels */
+#define PLOT_LOW_640_8BIT(offset) \
+{ \
+  ecx += BASECOLOUR_LONG; \
+  ebpp = ecx; \
+  ebx = ebpp; \
+  ecx &= 0x000000ff; \
+  ebx &= 0x0000ff00; \
+  ebx <<= 8; \
+  ecx |= ebx; \
+  ebx = ecx; \
+  ebx <<= 8; \
+  ecx |= ebx; \
+  esi[offset] = SDL_SwapLE32(ecx); \
+  ecx = ebpp; \
+  ebx = ebpp; \
+  ecx &= 0xff000000; \
+  ebx &= 0x00ff0000; \
+  ebx >>= 8; \
+  ecx |= ebx; \
+  ebx = ecx; \
+  ebx >>= 8; \
+  ecx |= ebx; \
+  esi[offset+1] = SDL_SwapLE32(ecx); \
+}
+
+/* Plot Low Resolution (640xH) 8-Bit pixels (double on Y) */
+#define PLOT_LOW_640_8BIT_DOUBLE_Y(offset)	\
+{ \
+  ecx += BASECOLOUR_LONG; \
+  ebpp = ecx; \
+  ebx = ebpp; \
+  ecx &= 0x000000ff; \
+  ebx &= 0x0000ff00; \
+  ebx <<= 8; \
+  ecx |= ebx; \
+  ebx = ecx; \
+  ebx <<= 8; \
+  ecx |= ebx; \
+  esi[offset] = esi[offset+PCScreenBytesPerLine/4] = SDL_SwapLE32(ecx); \
+  ecx = ebpp; \
+  ebx = ebpp; \
+  ecx &= 0xff000000; \
+  ebx &= 0x00ff0000; \
+  ebx >>= 8; \
+  ecx |= ebx; \
+  ebx = ecx; \
+  ebx >>= 8; \
+  ecx |= ebx; \
+  esi[offset+1] = esi[offset+1+PCScreenBytesPerLine/4] = SDL_SwapLE32(ecx); \
+}
+
 /* Plot Low Resolution (640xH) 16-Bit pixels */
 #define PLOT_LOW_640_16BIT(offset) \
 { \
@@ -385,6 +441,13 @@ void Convert_StartFrame(void)
 { \
   ecx += BASECOLOUR_LONG; \
   esi[offset] = SDL_SwapLE32(ecx); \
+}
+
+/* Plot Medium Resolution (640xH) 8-Bit pixels (Double on Y) */
+#define PLOT_MED_640_8BIT_DOUBLE_Y(offset) \
+{ \
+  ecx += BASECOLOUR_LONG; \
+  esi[offset] = esi[offset+PCScreenBytesPerLine/4] = SDL_SwapLE32(ecx); \
 }
 
 /* Plot Medium Resolution(640xH) 16-Bit pixels */
@@ -498,6 +561,167 @@ void Convert_StartFrame(void)
  ebx = STRGBPalette[ebx]; \
  esi[offset+2] = (Uint16)ebx; \
 }
+
+
+/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels */
+#define PLOT_SPEC512_LEFT_LOW_640_16BIT(offset)	\
+{ \
+  ecx &= 0x000000ff; \
+  ebx = STRGBPalette[ecx]; \
+  esi[offset] = ebx; \
+}
+/*
+	__asm	and		ecx,0x000000ff \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ecx*4] \
+	__asm	mov		offset[esi],ebx
+*/
+
+/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels */
+#define PLOT_SPEC512_MID_640_16BIT(offset)	\
+{ \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ecx >>= 8; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset] = ebx; \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ecx >>= 8; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset+1] = ebx; \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ecx >>= 8; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset+2] = ebx; \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset+3] = ebx; \
+}
+
+/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels */
+#define PLOT_SPEC512_END_LOW_640_16BIT(offset)	\
+{ \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ecx >>= 8; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset] = ebx; \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ecx >>= 8; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset+1] = ebx; \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ecx >>= 8; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset+2] = ebx; \
+}
+/*
+	__asm	mov		ebx,ecx \
+	__asm	and		ebx,0x000000ff \
+	__asm	shr		ecx,8 \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
+	__asm	mov		offset[esi],ebx \
+	__asm	mov		ebx,ecx \
+	__asm	and		ebx,0x000000ff \
+	__asm	shr		ecx,8 \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
+	__asm	mov		offset[esi+4],ebx \
+	__asm	mov		ebx,ecx \
+	__asm	and		ebx,0x000000ff \
+	__asm	shr		ecx,8 \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
+	__asm	mov		offset[esi+8],ebx
+*/
+
+/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels (Double on Y) */
+#define PLOT_SPEC512_LEFT_LOW_640_16BIT_DOUBLE_Y(offset)	\
+{ \
+  ecx &= 0x000000ff; \
+  ebx = STRGBPalette[ecx]; \
+  esi[offset] = ebx; \
+  esi[offset+PCScreenBytesPerLine/4] = ebx; \
+}
+/*
+	__asm	and		ecx,0x000000ff \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ecx*4] \
+	__asm	mov		offset[esi],ebx \
+	__asm	mov		offset[esi+ebp],ebx
+*/
+
+/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels (Double on Y) */
+#define PLOT_SPEC512_MID_640_16BIT_DOUBLE_Y(offset)	\
+{ \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ecx >>= 8; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset] = ebx; \
+  esi[offset+PCScreenBytesPerLine/4] = ebx; \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ecx >>= 8; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset+1] = ebx; \
+  esi[offset+1+PCScreenBytesPerLine/4] = ebx; \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ecx >>= 8; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset+2] = ebx; \
+  esi[offset+2+PCScreenBytesPerLine/4] = ebx; \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset+3] = ebx; \
+  esi[offset+3+PCScreenBytesPerLine/4] = ebx; \
+}
+
+/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels (Double on Y) */
+#define PLOT_SPEC512_END_LOW_640_16BIT_DOUBLE_Y(offset)	\
+{ \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ecx >>= 8; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset] = ebx; \
+  esi[offset+PCScreenBytesPerLine/4] = ebx; \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ecx >>= 8; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset+1] = ebx; \
+  esi[offset+1+PCScreenBytesPerLine/4] = ebx; \
+  ebx = ecx; \
+  ebx &= 0x000000ff; \
+  ecx >>= 8; \
+  ebx = STRGBPalette[ebx]; \
+  esi[offset+2] = ebx; \
+  esi[offset+2+PCScreenBytesPerLine/4] = ebx; \
+}
+/*
+	__asm	mov		ebx,ecx \
+	__asm	and		ebx,0x000000ff \
+	__asm	shr		ecx,8 \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
+	__asm	mov		offset[esi],ebx \
+	__asm	mov		offset[esi+ebp],ebx \
+	__asm	mov		ebx,ecx \
+	__asm	and		ebx,0x000000ff \
+	__asm	shr		ecx,8 \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
+	__asm	mov		offset[esi+4],ebx \
+	__asm	mov		offset[esi+4+ebp],ebx \
+	__asm	mov		ebx,ecx \
+	__asm	and		ebx,0x000000ff \
+	__asm	shr		ecx,8 \
+	__asm	mov		ebx,DWORD PTR STRGBPalette[ebx*4] \
+	__asm	mov		offset[esi+8],ebx \
+	__asm	mov		offset[esi+8+ebp],ebx
+*/
 
 
 

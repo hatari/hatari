@@ -1,5 +1,7 @@
 2003-02-02 (THH):
   * Fixed MMU RAM size configuration bug.
+  * Rewrote some screen conversion functions in C (low320x8.c, low640x8.c,
+    med640x8.c and spec640x16.c).
 
 2003-01-29 (THH):
   * When a bus or address error occurred, the PC was often not set to the
