@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-static char rcsid[] = "Hatari $Id: intercept.c,v 1.15 2003-08-15 16:09:49 thothy Exp $";
+char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.16 2003-10-07 20:57:43 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -851,25 +851,8 @@ void Intercept_VideoLow_WriteByte(void)
 /* INTERCEPT_VIDEOSYNC(0xff820a byte) */
 void Intercept_VideoSync_WriteByte(void)
 {
- VideoSyncByte = STRam[0xff820a] & 3;      /* We're only interested in lower 2 bits(50/60Hz) */
-
- if (nHBL >= OVERSCAN_TOP && nHBL <= 39 && nStartHBL > FIRST_VISIBLE_HBL)
- {
-   Video_SyncHandler_SetTopBorder();
-   pHBLPaletteMasks -= OVERSCAN_TOP;
-   pHBLPalettes -= OVERSCAN_TOP;
- }
- else if (nHBL >= SCREEN_START_HBL+SCREEN_HEIGHT_HBL)
- {
-   Video_SyncHandler_SetBottomBorder();
- }
-/*
- else if (nStartHBL > FIRST_VISIBLE_HBL)
- {
-   fprintf(stderr,"hbl %d (%d - %d)\n",nHBL,OVERSCAN_TOP,37);
- }
-*/
- Video_WriteToSync();
+  /* Note: We're only interested in lower 2 bits (50/60Hz) */
+  Video_WriteToSync(STRam[0xff820a] & 3);
 }
 
 /* INTERCEPT_VIDEOBASELOW(0xff820d byte) */
@@ -1001,7 +984,7 @@ void Intercept_ShifterMode_WriteByte(void)
  if( !bUseHighRes && !bUseVDIRes )                    /* Don't store if hi-res and don't store if VDI resolution */
   {
    VideoShifterByte = STRam[0xff8260] & 3;            /* We only care for lower 2-bits */
-   Video_WriteToShifter();
+   Video_WriteToShifter(VideoShifterByte);
    Video_SetHBLPaletteMaskPointers();
    *pHBLPaletteMasks &= 0xff00ffff;
    /* Store resolution after palette mask and set resolution write bit: */

@@ -4,11 +4,12 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  Video hardware handling. This code handling all to do with the video chip. So, we handle
-  VBLs, HBLs, copying the ST screen to a buffer to simulate the TV raster trace, border
-  removal, palette changes per HBL, the 'video address pointer' etc...
+  Video hardware handling. This code handling all to do with the video chip.
+  So, we handle VBLs, HBLs, copying the ST screen to a buffer to simulate the
+  TV raster trace, border removal, palette changes per HBL, the 'video address
+  pointer' etc...
 */
-static char rcsid[] = "Hatari $Id: video.c,v 1.18 2003-09-28 19:57:36 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.19 2003-10-07 20:57:43 thothy Exp $";
 
 #include <SDL.h>
 
@@ -33,11 +34,9 @@ static char rcsid[] = "Hatari $Id: video.c,v 1.18 2003-09-28 19:57:36 thothy Exp
 #include "video.h"
 #include "ymFormat.h"
 
-#include "syncTables.h"                         /* Clock-cycle tables */
-
 
 long VideoAddress;                              /* Address of video display in ST screen space */
-unsigned char VideoSyncByte,VideoShifterByte;   /* VideoSync (0xff820a) and VideoShifter(0xff8260) values store in video chip */
+unsigned char VideoShifterByte;                 /* VideoShifter (0xff8260) value store in video chip */
 BOOL bUseHighRes = FALSE;                       /* Use hi-res (ie Mono monitor) */
 int nVBLs, nHBL;                                /* VBL Counter, HBL line */
 int nStartHBL,nEndHBL;                          /* Start/End HBL for visible screen(64 lines in Top border) */
@@ -61,7 +60,7 @@ int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 70 Hz i
 void Video_Reset(void)
 {
   /* NOTE! Must reset all of these register type things here!!!! */
-  VideoSyncByte = 0;
+
   /* Are we in high-res? */
   if (bUseHighRes)
     VideoShifterByte = ST_HIGH_RES;    /* Boot up for mono monitor */
@@ -86,7 +85,6 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
 {
   /* Save/Restore details */
   MemorySnapShot_Store(&VideoAddress,sizeof(VideoAddress));
-  MemorySnapShot_Store(&VideoSyncByte,sizeof(VideoSyncByte));
   MemorySnapShot_Store(&VideoShifterByte,sizeof(VideoShifterByte));
   MemorySnapShot_Store(&bUseHighRes,sizeof(bUseHighRes));
   MemorySnapShot_Store(&nVBLs,sizeof(nVBLs));
@@ -278,7 +276,6 @@ void Video_InterruptHandler_EndLine(void)
   }
 
   /* Timer A/B occur at END of first visible screen line in Event Count mode */
-  //  if ( (nHBL>=FIRST_VISIBLE_HBL) && (nHBL<FIRST_VISIBLE_HBL+NUM_VISIBLE_LINES) )
   if ( (nHBL>=nStartHBL) && (nHBL<nEndHBL) )
    {
     /* Handle Timers A and B when using Event Count mode(timer taken from HBL) */
@@ -319,113 +316,86 @@ void Video_InterruptHandler_HBL(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Sync Table handlers
+  Write to VideoShifter (0xff8260), resolution bits
 */
-void Video_SyncHandler_SetLeftRightBorder(void)
+void Video_WriteToShifter(Uint8 Byte)
 {
-  LeftRightBorder |= SyncHandler_Value;   /* Turn on left/right borders */
-}
+  static int nLastHBL = -1, LastByte, nLastCycles;
+  int nFrameCycles, nLineCycles;
+  
+  nFrameCycles = Int_FindFrameCycles();
 
-void Video_SyncHandler_SetSyncScrollOffset(void)
-{
-  VideoRaster += SyncHandler_Value;       /* Add offset to video address(sync-scroll) */
-}
+  /* We only care for cycle position in the actual screen line */
+  nLineCycles = nFrameCycles % CYCLES_PER_LINE;
 
-void Video_SyncHandler_SetTopBorder(void)
-{
-  OverscanMode |= OVERSCANMODE_TOP;       /* Set overscan bit */
-  nStartHBL = FIRST_VISIBLE_HBL;          /* New start screen line */
-}
+  /*fprintf(stderr,"Shifter=0x%2.2X %d (%d) @ %d\n",
+          Byte, nFrameCycles, nLineCycles, nHBL);*/
 
-void Video_SyncHandler_SetBottomBorder(void)
-{
-  OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
-  nEndHBL = SCREEN_START_HBL+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM;  /* New end screen line */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Write to VideoShifter(0xff8260), resolution bits
-*/
-void Video_WriteToShifter(void)
-{
-  /* Store into table so can test at end of HBL */
-  Video_StoreSyncShifterAccess(0xff8260,VideoShifterByte);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Write to VideoSync(0xff820a), Hz setting
-*/
-void Video_WriteToSync(void)
-{
-  /* Store into table so can test at end of HBL */
-  Video_StoreSyncShifterAccess(0xff820a,VideoSyncByte);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Check access Video(0xff8260 or 0xff820a) to see if opened top/bottom/left/right borders or
-  even tried for a SyncScroll
-*/
-BOOL Video_CheckSyncShifterTable(unsigned int Address, unsigned char Byte, int FrameCycles, SYNCSHIFTER_ACCESS_TABLE *pAccessTable)
-{
-  SYNCSHIFTER_ACCESS *pSyncShifter;
-  BOOL bFoundMatch=FALSE;
-  int i=0;
-
-  /* Scan each shifter entry to see if this new values matches - if not rest */
-  while(pAccessTable[i].nChecks) {
-    /* Get table of entries, index at 'counter' */
-    pSyncShifter = &pAccessTable[i].pSyncShifterAccess[pAccessTable[i].nCount];
-    /* Does next value match table? */
-    if ( (pSyncShifter->Address==Address) && (pSyncShifter->Byte==Byte) && (pSyncShifter->FrameCycles==FrameCycles) ) {
-      /* Set flag (used for debugging) */
-      bFoundMatch = TRUE;
-
-      /* Got match increase count */
-      pAccessTable[i].nCount++;
-      /* Is table complete? */
-      if (pAccessTable[i].nCount==pAccessTable[i].nChecks) {
-        /* Reset count, ready for next time */
-        pAccessTable[i].nCount = 0;
-        /* Yes, call handler function with passed variable */
-        SyncHandler_Value = pAccessTable[i].Value;
-        CALL_VAR(pAccessTable[i].pFunc);
-      }
-    }
-    else {
-      /* No match, reset table count */
-      pAccessTable[i].nCount = 0;
-    }
-
-    i++;
+  /* Check if program tries to open left border.
+   * FIXME: This is a very inaccurate test that should be improved,
+   * but we probably need better CPU cycles emulation first. There's
+   * also no support for sync-scrolling yet :-( */
+  if (nHBL == nLastHBL && LastByte == 0x02 && Byte == 0x00
+      && nLineCycles <= 48 && nLineCycles-nLastCycles <= 16)
+  {
+    LeftRightBorder |= BORDERMASK_LEFT;
   }
 
-  return(bFoundMatch);
+  nLastHBL = nHBL;
+  LastByte = Byte;
+  nLastCycles = nLineCycles;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Store Sync/Shifter write into table so can check at end of HBL for border/sync-scroll hardware tricks
+  Write to VideoSync (0xff820a), Hz setting
 */
-void Video_StoreSyncShifterAccess(unsigned int Address,unsigned char Byte)
+void Video_WriteToSync(Uint8 Byte)
 {
-  int FrameCycles = Int_FindFrameCycles();
+  static int nLastHBL = -1, LastByte, nLastCycles;
+  int nFrameCycles, nLineCycles;
+  
+  nFrameCycles = Int_FindFrameCycles();
 
-  /* Get back to where instruction started for timing */
-  //FrameCycles -= lastInstructionCycles;
+  /* We only care for cycle position in the actual screen line */
+  nLineCycles = nFrameCycles % CYCLES_PER_LINE;
 
-//  char szString[256];
-//  sprintf(szString,"0x%X=0x%2.2X %d(%d) @ %d",Address,Byte,FrameCycles,FrameCycles&511,nHBL);
-//  debug << szString << endl;
+  /*fprintf(stderr,"Sync=0x%2.2X %d (%d) @ %d\n",
+          Byte, nFrameCycles, nLineCycles, nHBL);*/
 
-  Video_CheckSyncShifterTable(Address,Byte,FrameCycles&511, pLeftRightBorderAccessTable);
-//  Video_CheckSyncShifterTable(Address,Byte,FrameCycles&511, pSyncScrollerAccessTable);
+  /* Check if program tries to open a border.
+   * FIXME: These are very inaccurate tests that should be improved,
+   * but we probably need better CPU cycles emulation first. There's
+   * also no support for sync-scrolling yet :-( */
+  if (LastByte == 0x00 && Byte == 0x02)   /* switched from 50 Hz to 60 Hz and back to 50 Hz? */
+  {
+    if (nHBL >= OVERSCAN_TOP && nHBL <= 39 && nStartHBL > FIRST_VISIBLE_HBL)
+    {
+      /* Top border */
+      OverscanMode |= OVERSCANMODE_TOP;       /* Set overscan bit */
+      nStartHBL = FIRST_VISIBLE_HBL;          /* New start screen line */
+      pHBLPaletteMasks -= OVERSCAN_TOP;
+      pHBLPalettes -= OVERSCAN_TOP;
+    }
+    else if (nHBL == SCREEN_START_HBL+SCREEN_HEIGHT_HBL)
+    {
+      /* Bottom border */
+      OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
+      nEndHBL = SCREEN_START_HBL+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM;  /* New end screen line */
+    }
+
+    if (nHBL == nLastHBL && nLineCycles >= 400 && nLineCycles <= 480
+        && nLineCycles-nLastCycles <= 16)
+    {
+      /* Right border */
+      LeftRightBorder |= BORDERMASK_RIGHT;
+    }
+  }
+
+  nLastHBL = nHBL;
+  LastByte = Byte;
+  nLastCycles = nLineCycles;
 }
 
 
