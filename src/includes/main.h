@@ -40,7 +40,8 @@ typedef int BOOL;
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include <assert.h>
+
+#include <SDL_types.h>
 
 
 #ifndef FALSE
@@ -76,13 +77,6 @@ enum {
   REG_A7,    /* ..A7(also SP) */
 };
 
-/* PC Condition code's */
-#define PC_CARRY    0x0001  /* Bit 0 */
-#define PC_AUX      0x0010  /* Bit 4 */
-#define PC_ZERO     0x0040  /* Bit 6 */
-#define PC_NEG      0x0080  /* Bit 7 */
-#define PC_OVERFLOW 0x0800  /* Bit 11 */
-
 /* 68000 Condition code's */
 #define SR_AUX      0x0010
 #define SR_NEG      0x0008
@@ -106,19 +100,6 @@ enum {
 #define SR_CLEAR_IPL    0xf8ff
 #define SR_CLEAR_TRACEMODE  0x7fff
 #define SR_CLEAR_SUPERMODE  0xdfff
-
-/* Emuation condition codes, ordered so can do 'xor al,al' to set XNZVC -0000 */
-#define  EMU_X    0x0100
-#define  EMU_N    0x0080
-#define  EMU_Z    0x0040
-#define  EMU_V    0x0020
-#define  EMU_C    0x0010
-
-#define  EMU_CLEAR_X  0xfeff
-#define  EMU_CLEAR_N  0xff7f
-#define  EMU_CLEAR_Z  0xffbf
-#define  EMU_CLEAR_V  0xffdf
-#define  EMU_CLEAR_C  0xffef
 
 /* Exception vectors */
 #define  EXCEPTION_BUSERROR   0x00000008
