@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.5 2003-12-29 20:10:04 thothy Exp $";
+char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.6 2004-04-19 08:53:48 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -15,8 +15,6 @@ char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.5 2003-12-29 20:10:04 thothy E
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
-
-extern void DlgNewDisc_Main(void);    /* Prototype from dlgNewDisc.c */
 
 
 #define DISCDLG_DISCA       4

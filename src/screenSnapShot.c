@@ -6,7 +6,7 @@
 
   Screen Snapshots.
 */
-char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.6 2003-12-25 14:19:38 thothy Exp $";
+char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.7 2004-04-19 08:53:47 thothy Exp $";
 
 #include <SDL.h>
 #include <dirent.h>
@@ -30,7 +30,7 @@ int GrabFrameCounter,GrabFrameLatch;
 /*
   Scan working directory to get the screenshot number
 */
-void ScreenSnapShot_GetNum(void)
+static void ScreenSnapShot_GetNum(void)
 {
   char dummy[5];
   int i, num;

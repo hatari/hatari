@@ -6,7 +6,7 @@
 
   MSA Disc support
 */
-char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.4 2004-04-14 22:36:58 thothy Exp $";
+char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.5 2004-04-19 08:53:34 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -15,6 +15,7 @@ char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.4 2004-04-14 22:36:58 thothy Exp $";
 #include "floppy.h"
 #include "memAlloc.h"
 #include "misc.h"
+#include "msa.h"
 
 #include "uae-cpu/sysdeps.h"
 #include "uae-cpu/maccess.h"
@@ -205,7 +206,7 @@ int MSA_ReadDisc(char *pszFileName,unsigned char *pBuffer)
   Return number of bytes of the same byte in the passed buffer
   If we return '0' this means no run (or end of buffer)
 */
-int MSA_FindRunOfBytes(unsigned char *pBuffer, int nBytesInBuffer)
+static int MSA_FindRunOfBytes(unsigned char *pBuffer, int nBytesInBuffer)
 {
   unsigned char ScannedByte;
   int nTotalRun;

@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-static char rcsid[] = "Hatari $Id: hdc.c,v 1.4 2003-06-08 13:49:48 thothy Exp $";
+char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.5 2004-04-19 08:53:33 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -54,18 +54,15 @@ int nPartitions = 0;
 short int HDCSectorCount;
 
 /* 
-  FDC registers used 
+  FDC registers used:
+  - FDCSectorCountRegister
+  - DiscControllerStatus_ff8604rd
+  - DMAModeControl_ff8606wr
 */
-extern short int HDCSectorCount;
-extern short int FDCSectorCountRegister;
 
-extern unsigned short int DiscControllerStatus_ff8604rd;         /* 0xff8604 (read) */
-extern unsigned short int DiscControllerWord_ff8604wr;           /* 0xff8604 (write) */
-extern unsigned short int DMAStatus_ff8606rd;                    /* 0xff8606 (read) */
-extern unsigned short int DMAModeControl_ff8606wr,DMAModeControl_ff8606wr_prev;  /* 0xff8606 (write,store prev for 'toggle' checks) */
 
 /* Our dummy INQUIRY response data */
-unsigned char inquiry_bytes[] = 
+static unsigned char inquiry_bytes[] = 
 {
   0,                /* device type 0 = direct access device */
   0,                /* device type qualifier (nonremovable) */
@@ -84,7 +81,8 @@ unsigned char inquiry_bytes[] =
   Return the file offset of the sector specified in the current
   ACSI command block.
 */
-unsigned long HDC_GetOffset(){
+static unsigned long HDC_GetOffset(void)
+{
   unsigned long offset;
 
   /* construct the logical block adress */
@@ -100,7 +98,7 @@ unsigned long HDC_GetOffset(){
 /*
   Seek - move to a sector
 */
-void HDC_Seek()
+static void HDC_Seek(void)
 {
 
   fseek(hd_image_file, HDC_GetOffset(),0);
@@ -115,7 +113,7 @@ void HDC_Seek()
 /*
   Inquiry - return some disk information
 */
-void HDC_Inquiry()
+static void HDC_Inquiry(void)
 {
   inquiry_bytes[4] = HD_SECTORCOUNT(HDCCommand) - 8;
   memcpy( (char *)((unsigned long)STRam+FDC_ReadDMAAddress()), inquiry_bytes, 
@@ -131,7 +129,7 @@ void HDC_Inquiry()
 /*
   Write a sector off our disk - (seek implied)
 */
-void HDC_WriteSector()
+static void HDC_WriteSector(void)
 {
   /* seek to the position */
   fseek(hd_image_file, HDC_GetOffset(),0);
@@ -152,7 +150,7 @@ void HDC_WriteSector()
 /*
   Read a sector off our disk - (implied seek)
 */
-void HDC_ReadSector()
+static void HDC_ReadSector(void)
 {
   /* seek to the position */
   fseek(hd_image_file, HDC_GetOffset(),0);
@@ -274,7 +272,7 @@ void HDC_DebugCommandPacket(FILE *hdlogFile)
 /*
   Print data about the hard drive image
 */
-void HDC_GetInfo()
+static void HDC_GetInfo(void)
 {
   long offset;
   unsigned char hdinfo[64];
@@ -339,7 +337,7 @@ BOOL HDC_Init(char *filename)
   HDC_UnInit - close image file
 
  */
-void HDC_UnInit()
+void HDC_UnInit(void)
 {
   if(!(ACSI_EMU_ON)) return;
   fclose(hd_image_file);
@@ -353,7 +351,7 @@ void HDC_UnInit()
   Process HDC command packets, called when bytes are 
   written to $FFFF8606 and the HDC (not the FDC) is selected.
 */
-void HDC_WriteCommandPacket()
+void HDC_WriteCommandPacket(void)
 {
 
   /* check status byte */

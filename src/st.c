@@ -1,11 +1,16 @@
 /*
-  Hatari
+  Hatari - st.c
 
-  ST Disc support
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  ST Disc support.
 */
+char ST_rcsid[] = "Hatari $Id: st.c,v 1.3 2004-04-19 08:53:47 thothy Exp $";
 
 #include "main.h"
 #include "file.h"
+#include "st.h"
 
 #define SAVE_TO_ST_IMAGES
 

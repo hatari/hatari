@@ -9,7 +9,7 @@
   We intercept and direct some Bios calls to handle input/output to RS-232
   or the printer etc...
 */
-static char rcsid[] = "Hatari $Id: bios.c,v 1.3 2004-02-05 15:06:16 thothy Exp $";
+char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.4 2004-04-19 08:53:31 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -21,6 +21,7 @@ static char rcsid[] = "Hatari $Id: bios.c,v 1.3 2004-02-05 15:06:16 thothy Exp $
 #include "printer.h"
 #include "rs232.h"
 #include "stMemory.h"
+#include "bios.h"
 
 
 /*-----------------------------------------------------------------------*/
@@ -28,7 +29,7 @@ static char rcsid[] = "Hatari $Id: bios.c,v 1.3 2004-02-05 15:06:16 thothy Exp $
   BIOS Return input device status
   Call 1
 */
-BOOL Bios_Bconstat(unsigned long Params)
+static BOOL Bios_Bconstat(unsigned long Params)
 {
   unsigned short Dev;
 
@@ -72,7 +73,7 @@ BOOL Bios_Bconstat(unsigned long Params)
   BIOS Read character from device
   Call 2
 */
-BOOL Bios_Bconin(unsigned long Params)
+static BOOL Bios_Bconin(unsigned long Params)
 {
   unsigned short Dev;
   unsigned char Char;
@@ -115,7 +116,7 @@ BOOL Bios_Bconin(unsigned long Params)
   BIOS Write character to device
   Call 3
 */
-BOOL Bios_Bconout(unsigned long Params)
+static BOOL Bios_Bconout(unsigned long Params)
 {
   unsigned short Dev;
   unsigned char Char;
@@ -158,7 +159,7 @@ BOOL Bios_Bconout(unsigned long Params)
   BIOS Read/Write disc sector
   Call 4
 */
-BOOL Bios_RWabs(unsigned long Params)
+static BOOL Bios_RWabs(unsigned long Params)
 {
 #ifdef DEBUG_TO_FILE
   char *pBuffer;
@@ -183,7 +184,7 @@ BOOL Bios_RWabs(unsigned long Params)
   BIOS Return output device status
   Call 8
 */
-BOOL Bios_Bcostat(unsigned long Params)
+static BOOL Bios_Bcostat(unsigned long Params)
 {
   unsigned short Dev;
 

@@ -12,7 +12,7 @@
   to perform the transfer of data from our disc image into the ST RAM area by simulating the
   DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.10 2004-04-02 19:57:39 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.11 2004-04-19 08:53:33 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -126,32 +126,36 @@ ACSI DMA and Floppy Disc Controller(FDC)
   mean the GPIP? Or does it actually CANCEL the interrupt? Can this be done?
 */
 
-#define ENABLE_FLOPPY_SAVING                              /* Save to floppies */
+#define ENABLE_FLOPPY_SAVING                                    /* Save to floppies */
 
-unsigned short int DiscControllerStatus_ff8604rd;         /* 0xff8604 (read) */
-unsigned short int DiscControllerWord_ff8604wr;           /* 0xff8604 (write) */
-unsigned short int DMAStatus_ff8606rd;                    /* 0xff8606 (read) */
-unsigned short int DMAModeControl_ff8606wr,DMAModeControl_ff8606wr_prev;  /* 0xff8606 (write,store prev for 'toggle' checks) */
 
-unsigned short int FDCCommandRegister;
-short int FDCTrackRegister,FDCSectorRegister,FDCDataRegister;
 short int FDCSectorCountRegister;
-int FDCEmulationCommand;                                  /* FDC emulation command currently being exceuted */
-int FDCEmulationRunning;                                  /* Running command under above */
-int FDCStepDirection;                                     /* +Track on 'Step' command */
-short int DiscControllerByte;                             /* Used to pass parameter back to assembler */
-BOOL bDMAWaiting;                                         /* Is DMA waiting to copy? */
-int bMotorOn;                                             /* Is motor on? */
-int MotorSlowingCount;                                    /* Counter used to slow motor before stopping */
 
-short int nReadWriteTrack;                                /* Parameters used in sector read/writes */
-short int nReadWriteSector;
-short int nReadWriteSide;
-short int nReadWriteDev;
-unsigned short int nReadWriteSectorsPerTrack;
-short int nReadWriteSectors;
+unsigned short int DiscControllerWord_ff8604wr;                 /* 0xff8604 (write) */
+static unsigned short int DiscControllerStatus_ff8604rd;        /* 0xff8604 (read) */
 
-unsigned char DMASectorWorkSpace[NUMBYTESPERSECTOR];      /* Workspace used to copy to/from for floppy DMA */
+unsigned short int DMAModeControl_ff8606wr;                     /* 0xff8606 (write) */
+static unsigned short int DMAModeControl_ff8606wr_prev;         /* 0xff8606 (stored previous for 'toggle' checks) */
+static unsigned short int DMAStatus_ff8606rd;                   /* 0xff8606 (read) */
+
+static unsigned short int FDCCommandRegister;
+static short int FDCTrackRegister,FDCSectorRegister,FDCDataRegister;
+static int FDCEmulationCommand;                                 /* FDC emulation command currently being exceuted */
+static int FDCEmulationRunning;                                 /* Running command under above */
+static int FDCStepDirection;                                    /* +Track on 'Step' command */
+static short int DiscControllerByte;                            /* Used to pass parameter back to assembler */
+static BOOL bDMAWaiting;                                        /* Is DMA waiting to copy? */
+static int bMotorOn;                                            /* Is motor on? */
+static int MotorSlowingCount;                                   /* Counter used to slow motor before stopping */
+
+static short int nReadWriteTrack;                               /* Parameters used in sector read/writes */
+static short int nReadWriteSector;
+static short int nReadWriteSide;
+static short int nReadWriteDev;
+static unsigned short int nReadWriteSectorsPerTrack;
+static short int nReadWriteSectors;
+
+static unsigned char DMASectorWorkSpace[NUMBYTESPERSECTOR];     /* Workspace used to copy to/from for floppy DMA */
 
 
 /*-----------------------------------------------------------------------*/
@@ -220,7 +224,7 @@ void FDC_MemorySnapShot_Capture(BOOL bSave)
 /*
   Turn floppy motor on
 */
-void FDC_TurnMotorOn(void)
+static void FDC_TurnMotorOn(void)
 {
   bMotorOn = TRUE;                  /* Turn motor on */
   MotorSlowingCount = 0;
@@ -231,7 +235,7 @@ void FDC_TurnMotorOn(void)
 /*
   Turn floppy motor off (this sets a count as it takes a set amount of time for the motor to slow to a halt)
 */
-void FDC_TurnMotorOff(void)
+static void FDC_TurnMotorOff(void)
 {
   MotorSlowingCount = 160;          /* Set timer so takes 'x' HBLs before turn off... */
 }
@@ -241,7 +245,7 @@ void FDC_TurnMotorOff(void)
 /*
   Update floppy drive motor each HBL, to simulate slowing down and stopping for drive; needed for New Zealand Story(PP_001)
 */
-void FDC_UpdateMotor(void)
+static void FDC_UpdateMotor(void)
 {
   /* Is drive slowing down? Decrement counter */
   if (MotorSlowingCount>0) {
@@ -314,7 +318,7 @@ long FDC_ReadDMAStatus(void)
 /*-----------------------------------------------------------------------*/
 /*
 */
-void FDC_UpdateDiscDrive(void)
+static void FDC_UpdateDiscDrive(void)
 {
   /* Set details for current selecte drive */
   nReadWriteDev = FDC_FindFloppyDrive();
@@ -328,7 +332,7 @@ void FDC_UpdateDiscDrive(void)
 /*
   When write to 0xff8606 (DMA Mode Control) check bit '8' toggle. This causes DMA status reset
 */
-void FDC_CheckForDMAStatusReset(void)
+static void FDC_CheckForDMAStatusReset(void)
 {
   /* Test for 'toggle' of _read/_write bit '8' */
   if ((DMAModeControl_ff8606wr_prev ^ DMAModeControl_ff8606wr)&0x0100)
@@ -340,7 +344,7 @@ void FDC_CheckForDMAStatusReset(void)
 /*
   Set disc controller status (RD 0xff8604)
 */
-void FDC_SetDiscControllerStatus(void)
+static void FDC_SetDiscControllerStatus(void)
 {
   /* Update disc */
   FDC_UpdateDiscDrive();
@@ -394,7 +398,7 @@ void FDC_AcknowledgeInterrupt(void)
 /*
   Copy parameters for disc sector/s read/write
 */
-void FDC_SetReadWriteParameters(int nSectors)
+static void FDC_SetReadWriteParameters(int nSectors)
 {
   /* Copy read/write details so we can modify them */
   nReadWriteTrack = FDCTrackRegister;
@@ -715,7 +719,7 @@ void FDC_UpdateWriteSectorsCmd(void)
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeI_Restore(void)
+static void FDC_TypeI_Restore(void)
 {
   /* Set emulation to seek to track zero */
   FDCEmulationCommand = FDCEMU_CMD_RESTORE;
@@ -726,7 +730,7 @@ void FDC_TypeI_Restore(void)
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeI_Seek(void)
+static void FDC_TypeI_Seek(void)
 {
   /* Set emulation to seek to chosen track */
   FDCEmulationCommand = FDCEMU_CMD_SEEK;
@@ -737,7 +741,7 @@ void FDC_TypeI_Seek(void)
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeI_Step(void)
+static void FDC_TypeI_Step(void)
 {
   /* Set emulation to step(same direction as last seek executed, eg 'FDCStepDirection') */
   FDCEmulationCommand = FDCEMU_CMD_STEP;
@@ -748,7 +752,7 @@ void FDC_TypeI_Step(void)
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeI_StepIn(void)
+static void FDC_TypeI_StepIn(void)
 {
   /* Set emulation to step in(Set 'FDCStepDirection') */
   FDCEmulationCommand = FDCEMU_CMD_STEPIN;
@@ -760,7 +764,7 @@ void FDC_TypeI_StepIn(void)
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeI_StepOut(void)
+static void FDC_TypeI_StepOut(void)
 {
   /* Set emulation to step out(Set 'FDCStepDirection') */
   FDCEmulationCommand = FDCEMU_CMD_STEPOUT;
@@ -780,7 +784,7 @@ void FDC_TypeI_StepOut(void)
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeII_ReadSector(void)
+static void FDC_TypeII_ReadSector(void)
 {
   /* Set emulation to read a single sector */
   FDCEmulationCommand = FDCEMU_CMD_READSECTORS;
@@ -793,7 +797,7 @@ void FDC_TypeII_ReadSector(void)
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeII_ReadMultipleSectors(void)
+static void FDC_TypeII_ReadMultipleSectors(void)
 {
   /* Set emulation to read sectors */
   FDCEmulationCommand = FDCEMU_CMD_READMULTIPLESECTORS;
@@ -806,7 +810,7 @@ void FDC_TypeII_ReadMultipleSectors(void)
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeII_WriteSector(void)
+static void FDC_TypeII_WriteSector(void)
 {
   /* Set emulation to write a single sector */
   FDCEmulationCommand = FDCEMU_CMD_WRITESECTORS;
@@ -819,7 +823,7 @@ void FDC_TypeII_WriteSector(void)
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeII_WriteMultipleSectors(void)
+static void FDC_TypeII_WriteMultipleSectors(void)
 {
   /* Set emulation to write sectors */
   FDCEmulationCommand = FDCEMU_CMD_WRITEMULTIPLESECTORS;
@@ -840,13 +844,13 @@ void FDC_TypeII_WriteMultipleSectors(void)
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeIII_ReadAddress(void)
+static void FDC_TypeIII_ReadAddress(void)
 {
 }
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeIII_ReadTrack(void)
+static void FDC_TypeIII_ReadTrack(void)
 {
   /* Set emulation to read a single track */
   FDCEmulationCommand = FDCEMU_CMD_READSECTORS;
@@ -859,7 +863,7 @@ void FDC_TypeIII_ReadTrack(void)
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeIII_WriteTrack(void)
+static void FDC_TypeIII_WriteTrack(void)
 {
   /* Set emulation to write a single track */
   FDCEmulationCommand = FDCEMU_CMD_WRITESECTORS;
@@ -880,7 +884,7 @@ void FDC_TypeIII_WriteTrack(void)
 
 
 /*-----------------------------------------------------------------------*/
-void FDC_TypeIV_ForceInterrupt(BOOL bCauseCPUInterrupt)
+static void FDC_TypeIV_ForceInterrupt(BOOL bCauseCPUInterrupt)
 {
   /* Acknowledge interrupt, move along there's nothing more to see */
   if (bCauseCPUInterrupt)
@@ -896,7 +900,7 @@ void FDC_TypeIV_ForceInterrupt(BOOL bCauseCPUInterrupt)
 /*
   Execute Type I commands
 */
-void FDC_ExecuteTypeICommands(void)
+static void FDC_ExecuteTypeICommands(void)
 {
   MFP_GPIP |= 0x20;
 
@@ -931,7 +935,7 @@ void FDC_ExecuteTypeICommands(void)
 /*
   Execute Type II commands
 */
-void FDC_ExecuteTypeIICommands(void)
+static void FDC_ExecuteTypeIICommands(void)
 {
   MFP_GPIP |= 0x20;
 
@@ -960,7 +964,7 @@ void FDC_ExecuteTypeIICommands(void)
 /*
   Execute Type III commands
 */
-void FDC_ExecuteTypeIIICommands(void)
+static void FDC_ExecuteTypeIIICommands(void)
 {
   MFP_GPIP |= 0x20;
 
@@ -986,7 +990,7 @@ void FDC_ExecuteTypeIIICommands(void)
 /*
   Execute Type IV commands
 */
-void FDC_ExecuteTypeIVCommands(void)
+static void FDC_ExecuteTypeIVCommands(void)
 {
   if (FDCCommandRegister!=0xD8)         /* Is an 'immediate interrupt command'? don't reset interrupt */
     MFP_GPIP |= 0x20;
@@ -1003,7 +1007,7 @@ void FDC_ExecuteTypeIVCommands(void)
 /*
   Find FDC command type and execute
 */
-void FDC_ExecuteCommand(void)
+static void FDC_ExecuteCommand(void)
 {
   /* Check type of command and execute */
   if ((FDCCommandRegister&0x80)==0)           /* Type I - Restore,Seek,Step,Step-In,Step-Out */
@@ -1021,7 +1025,7 @@ void FDC_ExecuteCommand(void)
 /*
   Write to SectorCount register (WR 0xff8604)
 */
-void FDC_WriteSectorCountRegister(void)
+static void FDC_WriteSectorCountRegister(void)
 {
   FDCSectorCountRegister = DiscControllerWord_ff8604wr;
 }
@@ -1031,7 +1035,7 @@ void FDC_WriteSectorCountRegister(void)
 /*
   Write to Command register (WR 0xff8604)
 */
-void FDC_WriteCommandRegister(void)
+static void FDC_WriteCommandRegister(void)
 {
   FDCCommandRegister = DiscControllerWord_ff8604wr;
   /* And execute */
@@ -1043,7 +1047,7 @@ void FDC_WriteCommandRegister(void)
 /*
   Write to Track register (WR 0xff8604)
 */
-void FDC_WriteTrackRegister(void)
+static void FDC_WriteTrackRegister(void)
 {
   FDCTrackRegister = DiscControllerWord_ff8604wr;    /* 0...79 */
 }
@@ -1053,7 +1057,7 @@ void FDC_WriteTrackRegister(void)
 /*
   Write to Track register (WR 0xff8604)
 */
-void FDC_WriteSectorRegister(void)
+static void FDC_WriteSectorRegister(void)
 {
   FDCSectorRegister = DiscControllerWord_ff8604wr;  /* 1,2,3..... */
 }
@@ -1063,7 +1067,7 @@ void FDC_WriteSectorRegister(void)
 /*
   Write to Data register (WR 0xff8604)
 */
-void FDC_WriteDataRegister(void)
+static void FDC_WriteDataRegister(void)
 {
   FDCDataRegister = DiscControllerWord_ff8604wr;
 }

@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-static char rcsid[] = "Hatari $Id: ikbd.c,v 1.17 2004-02-22 09:35:07 thothy Exp $";
+char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.18 2004-04-19 08:53:33 thothy Exp $";
 
 #include <time.h>
 
@@ -259,7 +259,7 @@ void IKBD_MemorySnapShot_Capture(BOOL bSave)
 /*
   Calculate out 'delta' that mouse has moved by each frame, and add this to our internal keyboard position
 */
-void IKBD_UpdateInternalMousePosition(void)
+static void IKBD_UpdateInternalMousePosition(void)
 {
 
   KeyboardProcessor.Mouse.DeltaX = KeyboardProcessor.Mouse.dx;
@@ -290,7 +290,7 @@ void IKBD_UpdateInternalMousePosition(void)
   as it is running so fast. In this case, we check for a Windows double-click and pass
   the 'up'/'down' messages in emulation time to simulate the double-click effect!
 */
-void IKBD_CheckForDoubleClicks(void)
+static void IKBD_CheckForDoubleClicks(void)
 {
   /*
     Things get a little complicated when running max speed as a normal
@@ -361,7 +361,7 @@ void IKBD_CheckForDoubleClicks(void)
 /*
   Convert button to BOOL value
 */
-BOOL IKBD_ButtonBool(int Button)
+static BOOL IKBD_ButtonBool(int Button)
 {
   /* Button pressed? */
   if (Button)
@@ -374,7 +374,7 @@ BOOL IKBD_ButtonBool(int Button)
 /*
   Return TRUE if buttons match, use this as buttons are a mask and not BOOLean
 */
-BOOL IKBD_ButtonsEqual(int Button1,int Button2)
+static BOOL IKBD_ButtonsEqual(int Button1,int Button2)
 {
   /* Return BOOL compare */
   return(IKBD_ButtonBool(Button1)==IKBD_ButtonBool(Button2));
@@ -386,7 +386,7 @@ BOOL IKBD_ButtonsEqual(int Button1,int Button2)
   According to if the mouse if enabled or not the joystick 1 fire button/right mouse button
   will become the same button, ie pressing one will also press the other and vise-versa
 */
-void IKBD_DuplicateMouseFireButtons(void)
+static void IKBD_DuplicateMouseFireButtons(void)
 {
   /* Don't duplicate fire button when program tries to use both! */
   if(bBothMouseAndJoy)  return;
@@ -420,7 +420,7 @@ void IKBD_DuplicateMouseFireButtons(void)
 /*
   Send 'relative' mouse position
 */
-void IKBD_SendRelMousePacket(void)
+static void IKBD_SendRelMousePacket(void)
 {
   int ByteRelX,ByteRelY;
   unsigned char Header;
@@ -463,7 +463,7 @@ void IKBD_SendRelMousePacket(void)
 /*
   Send 'joysticks' bit masks
 */
-void IKBD_SelAutoJoysticks(void)
+static void IKBD_SelAutoJoysticks(void)
 {
   unsigned char JoyData;
 
@@ -491,7 +491,7 @@ void IKBD_SelAutoJoysticks(void)
   Send packets which are generated from the mouse action settings
   If relative mode is on, still generate these packets
 */
-void IKBD_SendOnMouseAction(void)
+static void IKBD_SendOnMouseAction(void)
 {
   BOOL bReportPosition = FALSE;
 
@@ -562,7 +562,7 @@ void IKBD_SendOnMouseAction(void)
 /*
   Send mouse movements as cursor keys
 */
-void IKBD_SendCursorMousePacket(void)
+static void IKBD_SendCursorMousePacket(void)
 {
   int i=0;
 
@@ -686,7 +686,7 @@ void IKBD_SendAutoKeyboardCommands(void)
   actually turned back on! (A number of games do this so can get mouse and joystick
   packets at the same time)
 */
-void IKBD_CheckResetDisableBug(void)
+static void IKBD_CheckResetDisableBug(void)
 {
   /* Have disabled BOTH mouse and joystick? */
   if (bMouseDisabled && bJoystickDisabled)

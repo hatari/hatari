@@ -16,7 +16,7 @@
   the current instruction takes 20 cycles we will be 16 cycles late - this is handled in
   the adjust functions.
 */
-static char rcsid[] = "Hatari $Id: int.c,v 1.3 2003-07-29 12:01:55 thothy Exp $";
+char Int_rcsid[] = "Hatari $Id: int.c,v 1.4 2004-04-19 08:53:33 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -183,7 +183,7 @@ void Int_SetNewInterrupt(void)
 /*
   Adjust all interrupt timings, MUST call Int_SetNewInterrupt after this
 */
-void Int_UpdateInterrupt(void)
+static void Int_UpdateInterrupt(void)
 {
   int CycleSubtract;
   int i;

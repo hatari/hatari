@@ -6,7 +6,7 @@
  
   Create Blank .ST/.MSA Disc Images
 */
-char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.7 2004-04-06 16:16:49 thothy Exp $";
+char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.8 2004-04-19 08:53:33 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -15,7 +15,7 @@ char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.7 2004-04-06
 #include "misc.h"
 #include "msa.h"
 #include "st.h"
-
+#include "createBlankImage.h"
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -42,7 +42,7 @@ char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.7 2004-04-06
 /*
   Calculate the size of a disc in dialog
 */
-int CreateBlankImage_GetDiscImageCapacity(int nTracks, int nSectors, int nSides)
+static int CreateBlankImage_GetDiscImageCapacity(int nTracks, int nSectors, int nSides)
 {
 	/* Find size of disc image */
 	return nTracks*nSectors*nSides*NUMBYTESPERSECTOR;

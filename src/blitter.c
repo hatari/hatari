@@ -24,7 +24,7 @@
  *  There seems to be a mirror for $ff8a30 used in TOS 1.02 at $ff7f30.
  *  
  */
-char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.3 2003-10-25 12:26:39 thothy Exp $";
+char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.4 2004-04-19 08:53:32 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -87,7 +87,7 @@ static int source_x_inc, source_y_inc, dest_x_inc, dest_y_inc;
 static int blit_flag = FALSE;
 
 
-void load_halftone_ram(void)
+static void load_halftone_ram(void)
 {
   halftone_ram[0] = LM_UW(MEM(0xff8a00)); 
   halftone_ram[1] = LM_UW(MEM(0xff8a02)); 

@@ -215,7 +215,7 @@ int input_config(const char *filename, struct Config_Tag configs[], char *header
 
 
 /* Write out an settings line */
-int write_token(FILE *outfile, struct Config_Tag *ptr)
+static int write_token(FILE *outfile, struct Config_Tag *ptr)
 {
   fprintf(outfile,"%s = ",ptr->code);
 
@@ -400,7 +400,7 @@ int update_config(const char *filename, struct Config_Tag configs[], char *heade
    /* Now copy the temporary file to the configuration file: */
    while(!feof(tempfile))
    {
-     int copycount;
+     size_t copycount;
      copycount = fread(line, sizeof(char), sizeof(line), tempfile);
      if(fwrite(line, sizeof(char), copycount, cfgfile) != copycount)
      {

@@ -6,7 +6,7 @@
 
   Zipped disc support, uses zlib
 */
-char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.6 2004-01-13 11:07:19 thothy Exp $";
+char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.7 2004-04-19 08:53:48 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +33,7 @@ char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.6 2004-01-13 11:07:19 thothy Exp $";
 #define ZIP_FILE_MSA  2
 
 
-int Zip_FileNameHasSlash(char *fn)
+static int Zip_FileNameHasSlash(char *fn)
 {
   int i=0;
   while( fn[i] != '\0' )
@@ -210,7 +210,7 @@ struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
 /*
   Check an image file in the archive, return the uncompressed length
 */
-long ZIP_CheckImageFile(unzFile uf, char *filename, int *ST_or_MSA)
+static long ZIP_CheckImageFile(unzFile uf, char *filename, int *ST_or_MSA)
 {
   unz_file_info file_info;
 
@@ -247,7 +247,7 @@ long ZIP_CheckImageFile(unzFile uf, char *filename, int *ST_or_MSA)
 /*
   Return the first .zip or .msa file in a zip, or NULL on failure
 */
-char *ZIP_FirstFile(char *filename)
+static char *ZIP_FirstFile(char *filename)
 {
   zip_dir *files;
   int i;
@@ -277,16 +277,13 @@ char *ZIP_FirstFile(char *filename)
   bytes to uncompress is size. Returns a pointer to a buffer containing
   the uncompressed data, or NULL.
 */
-char *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
+static char *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
 {
   int err = UNZ_OK;
   char filename_inzip[ZIP_PATH_MAX];
-  FILE *fout=NULL;
   void* buf;
   uInt size_buf;
-  
   unz_file_info file_info;
-  uLong ratio=0;
 
 
   if (unzLocateFile(uf,filename, 0)!=UNZ_OK)
@@ -338,7 +335,6 @@ char *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
 int ZIP_ReadDisc(char *pszFileName, char *pszZipPath, unsigned char *pBuffer)
 {
   uLong ImageSize=0;
-  char *temp;
   unzFile uf=NULL;
   char *buf;
   int ST_or_MSA;
@@ -470,7 +466,6 @@ BOOL GZIP_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
 {
 #ifdef SAVE_TO_GZIP_IMAGES
   gzFile out;
-  int size;
 
   /* is it a gzipped .ST or .MSA file? */
   if(File_FileNameIsSTGZ(pszFileName))

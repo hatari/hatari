@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-static char rcsid[] = "Hatari $Id: sdlgui.c,v 1.3 2004-04-05 18:49:53 thothy Exp $";
+char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.4 2004-04-19 08:53:48 thothy Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -73,7 +73,7 @@ static SDL_Surface *SDLGui_LoadXBM(int w, int h, Uint8 *srcbits)
 /*
   Initialize the GUI.
 */
-int SDLGui_Init()
+int SDLGui_Init(void)
 {
   SDL_Color blackWhiteColors[2] = {{255, 255, 255, 0}, {0, 0, 0, 0}};
 
@@ -102,7 +102,7 @@ int SDLGui_Init()
 /*
   Uninitialize the GUI.
 */
-int SDLGui_UnInit()
+int SDLGui_UnInit(void)
 {
   if (pSmallFontGfx)
   {
@@ -124,7 +124,7 @@ int SDLGui_UnInit()
 /*
   Prepare the font to suit the actual resolution.
 */
-int SDLGui_PrepareFont()
+int SDLGui_PrepareFont(void)
 {
   /* Decide which font to use - small or big one: */
   if (sdlscrn->w >= 640 && sdlscrn->h >= 400 && pBigFontGfx != NULL)
@@ -167,7 +167,7 @@ void SDLGui_CenterDlg(SGOBJ *dlg)
 /*
   Draw a text string.
 */
-void SDLGui_Text(int x, int y, const char *txt)
+static void SDLGui_Text(int x, int y, const char *txt)
 {
   int i;
   char c;
@@ -189,7 +189,7 @@ void SDLGui_Text(int x, int y, const char *txt)
 /*
   Draw a dialog text object.
 */
-void SDLGui_DrawText(SGOBJ *tdlg, int objnum)
+static void SDLGui_DrawText(SGOBJ *tdlg, int objnum)
 {
   int x, y;
   x = (tdlg[0].x+tdlg[objnum].x)*fontwidth;
@@ -202,7 +202,7 @@ void SDLGui_DrawText(SGOBJ *tdlg, int objnum)
 /*
   Draw a edit field object.
 */
-void SDLGui_DrawEditField(SGOBJ *edlg, int objnum)
+static void SDLGui_DrawEditField(SGOBJ *edlg, int objnum)
 {
   int x, y;
   SDL_Rect rect;
@@ -221,7 +221,7 @@ void SDLGui_DrawEditField(SGOBJ *edlg, int objnum)
 /*
   Draw a dialog box object.
 */
-void SDLGui_DrawBox(SGOBJ *bdlg, int objnum)
+static void SDLGui_DrawBox(SGOBJ *bdlg, int objnum)
 {
   SDL_Rect rect;
   int x, y, w, h, offset;
@@ -286,7 +286,7 @@ void SDLGui_DrawBox(SGOBJ *bdlg, int objnum)
 /*
   Draw a normal button.
 */
-void SDLGui_DrawButton(SGOBJ *bdlg, int objnum)
+static void SDLGui_DrawButton(SGOBJ *bdlg, int objnum)
 {
   int x,y;
 
@@ -308,7 +308,7 @@ void SDLGui_DrawButton(SGOBJ *bdlg, int objnum)
 /*
   Draw a dialog radio button object.
 */
-void SDLGui_DrawRadioButton(SGOBJ *rdlg, int objnum)
+static void SDLGui_DrawRadioButton(SGOBJ *rdlg, int objnum)
 {
   char str[80];
   int x, y;
@@ -331,7 +331,7 @@ void SDLGui_DrawRadioButton(SGOBJ *rdlg, int objnum)
 /*
   Draw a dialog check box object.
 */
-void SDLGui_DrawCheckBox(SGOBJ *cdlg, int objnum)
+static void SDLGui_DrawCheckBox(SGOBJ *cdlg, int objnum)
 {
   char str[80];
   int x, y;
@@ -354,7 +354,7 @@ void SDLGui_DrawCheckBox(SGOBJ *cdlg, int objnum)
 /*
   Draw a dialog popup button object.
 */
-void SDLGui_DrawPopupButton(SGOBJ *pdlg, int objnum)
+static void SDLGui_DrawPopupButton(SGOBJ *pdlg, int objnum)
 {
   int x, y, w, h;
   const char *downstr = "\x02";
@@ -377,7 +377,7 @@ void SDLGui_DrawPopupButton(SGOBJ *pdlg, int objnum)
   NOTE: The dlg[objnum].txt must point to an an array that is big enough
   for dlg[objnum].w characters!
 */
-void SDLGui_EditField(SGOBJ *dlg, int objnum)
+static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 {
   int cursorPos;                        /* Position of the cursor in the edit field */
   int blinkState = 0;                   /* Used for cursor blinking */
@@ -495,7 +495,7 @@ void SDLGui_EditField(SGOBJ *dlg, int objnum)
 /*
   Draw a whole dialog.
 */
-void SDLGui_DrawDialog(SGOBJ *dlg)
+static void SDLGui_DrawDialog(SGOBJ *dlg)
 {
   int i;
   for(i=0; dlg[i].type!=-1; i++ )
@@ -533,7 +533,7 @@ void SDLGui_DrawDialog(SGOBJ *dlg)
 /*
   Search an object at a certain position.
 */
-int SDLGui_FindObj(SGOBJ *dlg, int fx, int fy)
+static int SDLGui_FindObj(SGOBJ *dlg, int fx, int fy)
 {
   int len, i;
   int ob = -1;

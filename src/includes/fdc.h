@@ -1,18 +1,24 @@
 /*
-  Hatari
+  Hatari - fdc.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 */
+
+#ifndef HATARI_FDC_H
+#define HATARI_FDC_H
 
 /*-----------------------------------------------------------------------*/
 /* FDC Emulation commands */
 enum {
   FDCEMU_CMD_NULL=0,
-  // Type I
+  /* Type I */
   FDCEMU_CMD_RESTORE,
   FDCEMU_CMD_SEEK,
   FDCEMU_CMD_STEP,
   FDCEMU_CMD_STEPIN,
   FDCEMU_CMD_STEPOUT,
-  // Type II
+  /* Type II */
   FDCEMU_CMD_READSECTORS,
   FDCEMU_CMD_READMULTIPLESECTORS,
   FDCEMU_CMD_WRITESECTORS,
@@ -64,6 +70,12 @@ enum {
   FDCEMU_RUN_WRITESECTORS_COMPLETE
 };
 
+
+extern short int FDCSectorCountRegister;
+extern unsigned short int DiscControllerWord_ff8604wr;
+extern unsigned short int DMAModeControl_ff8606wr;
+
+
 extern void FDC_Reset(void);
 extern void FDC_MemorySnapShot_Capture(BOOL bSave);
 extern void FDC_ResetDMAStatus(void);
@@ -87,3 +99,6 @@ extern void FDC_DMADataFromFloppy(void);
 extern void FDC_WriteDiscController(unsigned short v);
 extern short FDC_ReadDiscControllerStatus(void);
 extern void FDC_WriteDMAModeControl(unsigned short v);
+
+
+#endif /* ifndef HATARI_FDC_H */

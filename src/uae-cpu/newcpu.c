@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.32 2004-02-29 19:01:26 thothy Exp $";
+char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.33 2004-04-19 08:53:49 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -233,8 +233,10 @@ void init_m68k (void)
 
 
 struct regstruct regs, lastint_regs;
+/* not used ATM:
 static struct regstruct regs_backup[16];
 static int backup_pointer = 0;
+*/
 static long int m68kpc_offset;
 int lastint_no;
 
@@ -414,9 +416,11 @@ uae_s32 ShowEA (FILE *f, int reg, amodes mode, wordsizes size, char *buf)
     return offset;
 }
 
+
 /* The plan is that this will take over the job of exception 3 handling -
  * the CPU emulation functions will just do a longjmp to m68k_go whenever
  * they hit an odd address. */
+#if 0
 static int verify_ea (int reg, amodes mode, wordsizes size, uae_u32 *val)
 {
     uae_u16 dp;
@@ -537,6 +541,8 @@ static int verify_ea (int reg, amodes mode, wordsizes size, uae_u32 *val)
     last_fault_for_exception_3 = addr;
     return 0;
 }
+#endif
+
 
 uae_u32 get_disp_ea_020 (uae_u32 base, uae_u32 dp)
 {
@@ -1204,8 +1210,9 @@ void m68k_reset (void)
 
 unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 {
+#if 0
     uaecptr pc = m68k_getpc ();
-
+#endif
     if ((opcode & 0xF000) == 0xF000) {
 	Exception(0xB,0);
 	return 4;
@@ -1214,7 +1221,6 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
 	Exception(0xA,0);
 	return 4;
     }
-
 #if 0
     write_log ("Illegal instruction: %04x at %08lx\n", opcode, (long)pc);
 #endif
@@ -1440,6 +1446,7 @@ void m68k_go (int may_quit)
 }
 
 
+/*
 static void m68k_verify (uaecptr addr, uaecptr *nextpc)
 {
     uae_u32 opcode, val;
@@ -1467,6 +1474,7 @@ static void m68k_verify (uaecptr addr, uaecptr *nextpc)
 	}
     }
 }
+*/
 
 
 void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)

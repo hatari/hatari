@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-static char rcsid[] = "Hatari $Id: dialog.c,v 1.36 2003-09-28 19:57:36 thothy Exp $";
+char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.37 2004-04-19 08:53:33 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -37,8 +37,6 @@ static char rcsid[] = "Hatari $Id: dialog.c,v 1.36 2003-09-28 19:57:36 thothy Ex
 #include "uae-cpu/hatari-glue.h"
 #include "intercept.h"
 
-int Dialog_MainDlg(BOOL *bReset);    /* Prototype from dlgMain.c */
-
 
 CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can also choose 'Cancel') */
 
@@ -48,7 +46,7 @@ CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can
   Check if need to warn user that changes will take place after reset
   Return TRUE if wants to reset
 */
-BOOL Dialog_DoNeedReset(void)
+static BOOL Dialog_DoNeedReset(void)
 {
   /* Did we change colour/mono monitor? If so, must reset */
   if (ConfigureParams.Screen.bUseHighRes!=DialogParams.Screen.bUseHighRes)
@@ -79,7 +77,7 @@ BOOL Dialog_DoNeedReset(void)
 /*
   Copy details back to configuration and perform reset
 */
-void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
+static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 {
   BOOL NeedReset;
   BOOL newGemdosDrive;
@@ -121,7 +119,7 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
      || (DialogParams.Sound.nPlaybackQuality!=ConfigureParams.Sound.nPlaybackQuality) )
   {
     if(Sound_AreWeRecording())
-      Sound_EndRecording(NULL);
+      Sound_EndRecording();
   }
 
   /* Did change GEMDOS drive? */

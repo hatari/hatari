@@ -38,7 +38,7 @@ extern BOOL File_FileNameIsZIP(char *pszFileName);
 extern BOOL File_FileNameIsMSA(char *pszFileName);
 extern BOOL File_FileNameIsST(char *pszFileName);
 extern void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, char *ppszExts[]);
-extern BOOL File_Save(char *pszFileName, void *pAddress,long Size,BOOL bQueryOverwrite);
+extern BOOL File_Save(char *pszFileName, void *pAddress, size_t Size, BOOL bQueryOverwrite);
 extern int File_Length(char *pszFileName);
 extern BOOL File_Exists(char *pszFileName);
 extern BOOL File_Delete(char *pszFileName);

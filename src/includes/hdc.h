@@ -1,10 +1,15 @@
 /*
-  Hatari
-  
-  This file contains definitios used for hardware-level
-  harddrive emulation
+  Hatari - hdc.h
 
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  This file contains definitios used for hardware-level
+  harddrive emulation.
 */
+
+#ifndef HATARI_HDC_H
+#define HATARI_HDC_H
 
 
 /* HD Command packet macros */
@@ -56,7 +61,9 @@ extern short int HDCSectorCount;
 extern int nPartitions;
 
 extern BOOL HDC_Init(char *filename);
-extern void HDC_UnInit();
-extern void HDC_WriteCommandPacket();
-extern void HDC_DebugCommandPacket();
-extern void HDC_EmulateCommandPacket();
+extern void HDC_UnInit(void);
+extern void HDC_WriteCommandPacket(void);
+extern void HDC_DebugCommandPacket(FILE *hdlogFile);
+extern void HDC_EmulateCommandPacket(void);
+
+#endif /* HATARI_HDC_H */

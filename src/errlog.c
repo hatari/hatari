@@ -9,13 +9,14 @@
   When Hatari runs, it outputs text to the error log file to show if the system
   initialised correctly and such like.
 */
-char ErrLog_rcsid[] = "Hatari $Id: errlog.c,v 1.4 2003-12-25 14:19:38 thothy Exp $";
+char ErrLog_rcsid[] = "Hatari $Id: errlog.c,v 1.5 2004-04-19 08:53:33 thothy Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
 
 #include "main.h"
 #include "debug.h"
+#include "errlog.h"
 
 
 #undef USEERRLOG

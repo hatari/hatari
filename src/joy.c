@@ -1,11 +1,15 @@
 /*
-  Hatari
+  Hatari - joy.c
 
-  Joystick routines
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  Joystick routines.
 
   NOTE Also the ST uses the joystick port 1 as the default controller
          - so we allocate our joysticks  with index 1 and then 0 so these match.
 */
+char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.4 2004-04-19 08:53:33 thothy Exp $";
 
 #include <SDL.h>
 
@@ -91,7 +95,7 @@ void Joy_PreventBothUsingCursorEmulation(void)
   Read details from joystick using SDL calls
   NOTE ID is that of ST (ie 1 is default)
 */
-BOOL Joy_ReadJoystick(int JoystickID, JOYREADING *pJoyReading)
+static BOOL Joy_ReadJoystick(int JoystickID, JOYREADING *pJoyReading)
 {
   /* Joystick is OK, read position */
   pJoyReading->XPos = SDL_JoystickGetAxis(sdlJoystick[JoystickID], 0);

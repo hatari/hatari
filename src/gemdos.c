@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.25 2004-04-14 22:36:57 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.26 2004-04-19 08:53:33 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -44,8 +44,9 @@ char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.25 2004-04-14 22:36:57 thothy Ex
 #include "printer.h"
 #include "rs232.h"
 #include "stMemory.h"
-
 #include "uae-cpu/hatari-glue.h"
+#include "uae-cpu/maccess.h"
+
 
 // #define GEMDOS_VERBOSE
 // uncomment the following line to debug filename lookups on hd
@@ -259,9 +260,9 @@ static BOOL PopulateDTA(char *path, struct dirent *file)
   if(!pDTA) return(FALSE); /* no DTA pointer set */
   Misc_strupr(file->d_name);    /* convert to atari-style uppercase */
   strncpy(pDTA->dta_name,file->d_name,TOS_NAMELEN); /* FIXME: better handling of long file names */
-  STMemory_WriteLong_PCSpace(pDTA->dta_size, (long)filestat.st_size);
-  STMemory_WriteWord_PCSpace(pDTA->dta_time, time2dos(filestat.st_mtime));
-  STMemory_WriteWord_PCSpace(pDTA->dta_date, date2dos(filestat.st_mtime));
+  do_put_mem_long((uae_u32 *)(pDTA->dta_size), filestat.st_size);
+  do_put_mem_word((uae_u16 *)(pDTA->dta_time), time2dos(filestat.st_mtime));
+  do_put_mem_word((uae_u16 *)(pDTA->dta_date), date2dos(filestat.st_mtime));
   pDTA->dta_attrib = GemDOS_ConvertAttribute(filestat.st_mode);
 
   return(TRUE);
@@ -272,7 +273,7 @@ static BOOL PopulateDTA(char *path, struct dirent *file)
 /*
   Clear a used DTA structure.
 */
-static void ClearInternalDTA()
+static void ClearInternalDTA(void)
 {
   int i;
 
@@ -381,7 +382,7 @@ void GemDOS_Init(void)
 /*
   Reset GemDOS file system
 */
-void GemDOS_Reset()
+void GemDOS_Reset(void)
 {
   int i;
 
@@ -416,7 +417,7 @@ void GemDOS_Reset()
   Initialize a GEMDOS drive.
   Only 1 emulated drive allowed, as of yet.
 */
-void GemDOS_InitDrives()
+void GemDOS_InitDrives(void)
 {
   int i;
 
@@ -457,7 +458,7 @@ void GemDOS_InitDrives()
 /*
   Un-init the GEMDOS drive
 */
-void GemDOS_UnInitDrives()
+void GemDOS_UnInitDrives(void)
 {
   int i;
 
@@ -515,7 +516,7 @@ void GemDOS_MemorySnapShot_Capture(BOOL bSave)
 /*
   Return free PC file handle table index, or -1 if error
 */
-int GemDOS_FindFreeFileHandle(void)
+static int GemDOS_FindFreeFileHandle(void)
 {
   int i;
 
@@ -533,7 +534,7 @@ int GemDOS_FindFreeFileHandle(void)
 /*
   Check ST handle is within our table range, return TRUE if not
 */
-BOOL GemDOS_IsInvalidFileHandle(int Handle)
+static BOOL GemDOS_IsInvalidFileHandle(int Handle)
 {
   BOOL bInvalidHandle=FALSE;
 
@@ -551,7 +552,7 @@ BOOL GemDOS_IsInvalidFileHandle(int Handle)
   Find drive letter from a filename, eg C,D... and return as drive ID(C:2, D:3...)
   returns the current drive number if none is specified.
 */
-int GemDOS_FindDriveNumber(char *pszFileName)
+static int GemDOS_FindDriveNumber(char *pszFileName)
 {
   /* Does have 'A:' or 'C:' etc.. at start of string? */
   if ( (pszFileName[0]!='\0') && (pszFileName[1]==':') ) {
@@ -568,7 +569,7 @@ int GemDOS_FindDriveNumber(char *pszFileName)
 /*
   Return drive ID(C:2, D:3 etc...) or -1 if not one of our emulation hard-drives
 */
-int GemDOS_IsFileNameAHardDrive(char *pszFileName)
+static int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 {
   int DriveLetter;
 
@@ -704,7 +705,7 @@ void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestNam
     if (*start && !strchr(start,'?') && !strchr(start,'*')) {
       /* We have a complete name after the path, not a wildcard */
       glob_t globbuf;
-      char old1,old2,dest[256];
+      char old1,old2;
       int len, found, base_len;
       unsigned int j;
 
@@ -773,7 +774,8 @@ unsigned char GemDOS_ConvertAttribute(mode_t mode)
   GEMDOS Cauxin
   Call 0x3
 */
-BOOL GemDOS_Cauxin(unsigned long Params)
+#if 0
+static BOOL GemDOS_Cauxin(unsigned long Params)
 {
   unsigned char Char;
 
@@ -786,13 +788,15 @@ BOOL GemDOS_Cauxin(unsigned long Params)
 
   return(TRUE);
 }
+#endif
 
 /*-----------------------------------------------------------------------*/
 /*
   GEMDOS Cauxout
   Call 0x4
 */
-BOOL GemDOS_Cauxout(unsigned long Params)
+#if 0
+static BOOL GemDOS_Cauxout(unsigned long Params)
 {
   unsigned char Char;
 
@@ -802,13 +806,14 @@ BOOL GemDOS_Cauxout(unsigned long Params)
 
   return(TRUE);
 }
+#endif
 
 /*-----------------------------------------------------------------------*/
 /*
   GEMDOS Cprnout
   Call 0x5
 */
-BOOL GemDOS_Cprnout(unsigned long Params)
+static BOOL GemDOS_Cprnout(unsigned long Params)
 {
   unsigned char Char;
 
@@ -825,7 +830,7 @@ BOOL GemDOS_Cprnout(unsigned long Params)
   GEMDOS Set drive (0=A,1=B,2=C etc...)
   Call 0xE
 */
-BOOL GemDOS_SetDrv(unsigned long Params)
+static BOOL GemDOS_SetDrv(unsigned long Params)
 {
   /* Read details from stack for our own use */
   CurrentDrive = STMemory_ReadWord(Params+SIZE_WORD);
@@ -839,7 +844,7 @@ BOOL GemDOS_SetDrv(unsigned long Params)
   GEMDOS Cprnos
   Call 0x11
 */
-BOOL GemDOS_Cprnos(unsigned long Params)
+static BOOL GemDOS_Cprnos(unsigned long Params)
 {
   /* pritner status depends if printing is enabled or not... */
   if(ConfigureParams.Printer.bEnablePrinting)
@@ -855,7 +860,8 @@ BOOL GemDOS_Cprnos(unsigned long Params)
   GEMDOS Cauxis
   Call 0x12
 */
-BOOL GemDOS_Cauxis(unsigned long Params)
+#if 0
+static BOOL GemDOS_Cauxis(unsigned long Params)
 {
   /* Read our RS232 state */
   if (RS232_GetStatus())
@@ -865,25 +871,28 @@ BOOL GemDOS_Cauxis(unsigned long Params)
 
   return(TRUE);
 }
+#endif
 
 /*-----------------------------------------------------------------------*/
 /*
   GEMDOS Cauxos
   Call 0x13
 */
-BOOL GemDOS_Cauxos(unsigned long Params)
+#if 0
+static BOOL GemDOS_Cauxos(unsigned long Params)
 {
   Regs[REG_D0] = -1;                /* Device ready */
 
   return(TRUE);
 }
+#endif
 
 /*-----------------------------------------------------------------------*/
 /*
   GEMDOS Set Disc Transfer Address (DTA)
   Call 0x1A
 */
-BOOL GemDOS_SetDTA(unsigned long Params)
+static BOOL GemDOS_SetDTA(unsigned long Params)
 {
   /* Look up on stack to find where DTA is! Store as PC pointer */
   pDTA = (DTA *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
@@ -896,7 +905,7 @@ BOOL GemDOS_SetDTA(unsigned long Params)
   GEMDOS Dfree Free disc space.
   Call 0x39
 */
-BOOL GemDOS_DFree(unsigned long Params)
+static BOOL GemDOS_DFree(unsigned long Params)
 {
   int Drive;
   unsigned long Address;
@@ -921,7 +930,7 @@ BOOL GemDOS_DFree(unsigned long Params)
   GEMDOS MkDir
   Call 0x39
 */
-BOOL GemDOS_MkDir(unsigned long Params)
+static BOOL GemDOS_MkDir(unsigned long Params)
 {
   char szDirPath[MAX_PATH];
   char *pDirName;
@@ -952,7 +961,7 @@ BOOL GemDOS_MkDir(unsigned long Params)
   GEMDOS RmDir
   Call 0x3A
 */
-BOOL GemDOS_RmDir(unsigned long Params)
+static BOOL GemDOS_RmDir(unsigned long Params)
 {
   char szDirPath[MAX_PATH];
   char *pDirName;
@@ -981,12 +990,11 @@ BOOL GemDOS_RmDir(unsigned long Params)
   GEMDOS ChDir
   Call 0x3B
 */
-BOOL GemDOS_ChDir(unsigned long Params)
+static BOOL GemDOS_ChDir(unsigned long Params)
 {
   char szDirPath[MAX_PATH];
   char *pDirName;
   int Drive;
-  int n;
 
   /* Find new directory */
   pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
@@ -998,7 +1006,6 @@ BOOL GemDOS_ChDir(unsigned long Params)
 
   if (ISHARDDRIVE(Drive)) {
 
-    char dest[256];
     struct stat buf;
 
     GemDOS_CreateHardDriveFileName(Drive,pDirName,szDirPath);
@@ -1026,7 +1033,7 @@ BOOL GemDOS_ChDir(unsigned long Params)
   GEMDOS Create file
   Call 0x3C
 */
-BOOL GemDOS_Create(unsigned long Params)
+static BOOL GemDOS_Create(unsigned long Params)
 {
   char szActualFileName[MAX_PATH];
   char *pszFileName;
@@ -1080,7 +1087,7 @@ BOOL GemDOS_Create(unsigned long Params)
   GEMDOS Open file
   Call 0x3D
 */
-BOOL GemDOS_Open(unsigned long Params)
+static BOOL GemDOS_Open(unsigned long Params)
 {
   char szActualFileName[MAX_PATH];
   char *pszFileName;
@@ -1126,7 +1133,7 @@ BOOL GemDOS_Open(unsigned long Params)
   GEMDOS Close file
   Call 0x3E
 */
-BOOL GemDOS_Close(unsigned long Params)
+static BOOL GemDOS_Close(unsigned long Params)
 {
   int Handle;
 
@@ -1153,7 +1160,7 @@ BOOL GemDOS_Close(unsigned long Params)
   GEMDOS Read file
   Call 0x3F
 */
-BOOL GemDOS_Read(unsigned long Params)
+static BOOL GemDOS_Read(unsigned long Params)
 {
   char *pBuffer;
   unsigned long nBytesRead,Size,CurrentPos,FileSize;
@@ -1206,7 +1213,7 @@ BOOL GemDOS_Read(unsigned long Params)
   GEMDOS Write file
   Call 0x40
 */
-BOOL GemDOS_Write(unsigned long Params)
+static BOOL GemDOS_Write(unsigned long Params)
 {
   char *pBuffer;
   unsigned long Size,nBytesWritten;
@@ -1245,7 +1252,7 @@ BOOL GemDOS_Write(unsigned long Params)
   GEMDOS UnLink(Delete) file
   Call 0x41
 */
-BOOL GemDOS_UnLink(unsigned long Params)
+static BOOL GemDOS_UnLink(unsigned long Params)
 {
 #ifdef ENABLE_SAVING
   char szActualFileName[MAX_PATH];
@@ -1277,7 +1284,7 @@ BOOL GemDOS_UnLink(unsigned long Params)
   GEMDOS File seek
   Call 0x42
 */
-BOOL GemDOS_LSeek(unsigned long Params)
+static BOOL GemDOS_LSeek(unsigned long Params)
 {
   long Offset;
   int Handle,Mode;
@@ -1305,7 +1312,7 @@ BOOL GemDOS_LSeek(unsigned long Params)
   GEMDOS Get Directory
   Call 0x47
 */
-int GemDOS_GetDir(unsigned long Params){
+static int GemDOS_GetDir(unsigned long Params){
   unsigned long Address;
   unsigned short Drive;
 
@@ -1338,7 +1345,7 @@ int GemDOS_GetDir(unsigned long Params){
 
   If loading from hard-drive(ie drive ID 2 or more) set condition codes to run own GEMDos routines
 */
-int GemDOS_Pexec_LoadAndGo(unsigned long Params)
+static int GemDOS_Pexec_LoadAndGo(unsigned long Params)
 {
   /* add multiple disk support here too */
   /* Hard-drive? */
@@ -1354,7 +1361,7 @@ int GemDOS_Pexec_LoadAndGo(unsigned long Params)
 /*
   PExec Load But Don't Go - Redirect to cart' routine at address 0xFA1000
 */
-int GemDOS_Pexec_LoadDontGo(unsigned long Params)
+static int GemDOS_Pexec_LoadDontGo(unsigned long Params)
 {
   /* Hard-drive? */
   if( CurrentDrive == emudrives[0]->hd_letter )
@@ -1368,7 +1375,7 @@ int GemDOS_Pexec_LoadDontGo(unsigned long Params)
   GEMDOS PExec handler
   Call 0x4B
 */
-int GemDOS_Pexec(unsigned long Params)
+static int GemDOS_Pexec(unsigned long Params)
 {
   unsigned short int Mode;
 
@@ -1402,7 +1409,7 @@ int GemDOS_Pexec(unsigned long Params)
   GEMDOS Search Next
   Call 0x4F
 */
-BOOL GemDOS_SNext(unsigned long Params)
+static BOOL GemDOS_SNext(unsigned long Params)
 {
   struct dirent **temp;
   int Index;
@@ -1411,10 +1418,10 @@ BOOL GemDOS_SNext(unsigned long Params)
   pDTA = (DTA *)STRAM_ADDR(STMemory_ReadLong(STMemory_ReadLong(act_pd)+32));
 
   /* Was DTA ours or TOS? */
-  if (STMemory_ReadLong_PCSpace(pDTA->magic)==DTA_MAGIC_NUMBER) {
+  if (do_get_mem_long((uae_u32 *)(pDTA->magic)) == DTA_MAGIC_NUMBER) {
 
     /* Find index into our list of structures */
-    Index = STMemory_ReadWord_PCSpace(pDTA->index)&(MAX_DTAS_FILES-1);
+    Index = do_get_mem_word((uae_u16 *)(pDTA->index))&(MAX_DTAS_FILES-1);
 
     if(InternalDTAs[Index].centry >= InternalDTAs[Index].nentries){
       Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
@@ -1440,7 +1447,7 @@ BOOL GemDOS_SNext(unsigned long Params)
   GEMDOS Find first file
   Call 0x4E
 */
-BOOL GemDOS_SFirst(unsigned long Params)
+static BOOL GemDOS_SFirst(unsigned long Params)
 {
   char szActualFileName[MAX_PATH];
   char tempstr[MAX_PATH];
@@ -1465,8 +1472,9 @@ BOOL GemDOS_SFirst(unsigned long Params)
     GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
 
     /* Populate DTA, set index for our use */
-    STMemory_WriteWord_PCSpace(pDTA->index,DTAIndex);
-    STMemory_WriteLong_PCSpace(pDTA->magic,DTA_MAGIC_NUMBER); /* set our dta magic num */
+    do_put_mem_word((uae_u16 *)(pDTA->index), DTAIndex);
+    /* set our dta magic num */
+    do_put_mem_long((uae_u32 *)(pDTA->magic), DTA_MAGIC_NUMBER);
 
     if(InternalDTAs[DTAIndex].bUsed == TRUE) ClearInternalDTA();
     InternalDTAs[DTAIndex].bUsed = TRUE;
@@ -1544,7 +1552,7 @@ BOOL GemDOS_SFirst(unsigned long Params)
   GEMDOS Rename
   Call 0x56
 */
-BOOL GemDOS_Rename(unsigned long Params)
+static BOOL GemDOS_Rename(unsigned long Params)
 {
   char *pszNewFileName,*pszOldFileName;
   char szNewActualFileName[MAX_PATH],szOldActualFileName[MAX_PATH];
@@ -1577,7 +1585,7 @@ BOOL GemDOS_Rename(unsigned long Params)
   GEMDOS GSDToF
   Call 0x57
 */
-BOOL GemDOS_GSDToF(unsigned long Params)
+static BOOL GemDOS_GSDToF(unsigned long Params)
 {
   DATETIME DateTime;
   unsigned long pBuffer;
@@ -1783,7 +1791,7 @@ void GemDOS_OpCode(void)
   Sets up our gemdos handler (or, if we don't need one, just turn off keyclicks)
  */
 
-void GemDOS_Boot()
+void GemDOS_Boot(void)
 {
 
   bInitGemDOS = TRUE;

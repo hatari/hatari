@@ -20,13 +20,14 @@
      the data register, but probably it should rather be done when reading the
      status register?).
 */
-static char rcsid[] = "Hatari $Id: midi.c,v 1.3 2004-02-22 09:35:07 thothy Exp $";
+char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.4 2004-04-19 08:53:34 thothy Exp $";
 
 #include <SDL_types.h>
 
 #include "main.h"
 #include "configuration.h"
 #include "mfp.h"
+#include "midi.h"
 
 
 #define ACIA_SR_INTERRUPT_REQUEST  0x80

@@ -52,11 +52,25 @@ typedef struct
 }  SGOBJ;
 
 
-int SDLGui_Init(void);
-int SDLGui_UnInit(void);
-int SDLGui_PrepareFont(void);
-int SDLGui_DoDialog(SGOBJ *dlg);
-void SDLGui_CenterDlg(SGOBJ *dlg);
-int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew);
+extern int SDLGui_Init(void);
+extern int SDLGui_UnInit(void);
+extern int SDLGui_PrepareFont(void);
+extern int SDLGui_DoDialog(SGOBJ *dlg);
+extern void SDLGui_CenterDlg(SGOBJ *dlg);
+
+/* prototypes for gui-sdl/dlg*.c functions */
+extern int Dialog_MainDlg(BOOL *bReset);
+extern int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew);
+extern void Dialog_AboutDlg(void);
+extern void Dialog_DeviceDlg(void);
+extern void Dialog_DiscDlg(void);
+extern void Dialog_JoyDlg(void);
+extern void Dialog_KeyboardDlg(void);
+extern void Dialog_MemDlg(void);
+extern void DlgNewDisc_Main(void);
+extern void Dialog_ScreenDlg(void);
+extern void Dialog_SoundDlg(void);
+extern void Dialog_SystemDlg(void);
+extern void Dialog_TosGemDlg(void);
 
 #endif

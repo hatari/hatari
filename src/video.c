@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.21 2004-04-14 22:36:58 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.22 2004-04-19 08:53:48 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -418,7 +418,7 @@ void Video_StartHBL(void)
 /*
   Store whole palette on first line so have reference to work from
 */
-void Video_StoreFirstLinePalette(void)
+static void Video_StoreFirstLinePalette(void)
 {
   unsigned short int *pp2;
   int i;
@@ -435,7 +435,7 @@ void Video_StoreFirstLinePalette(void)
 /*
   Store resolution on each line(used to test if mixed low/medium resolutions)
 */
-void Video_StoreResolution(int y)
+static void Video_StoreResolution(int y)
 {
   /* Clear resolution, and set with current value */
   if (!(bUseHighRes || bUseVDIRes) ) {
@@ -450,7 +450,7 @@ void Video_StoreResolution(int y)
   Copy line of screen into buffer for conversion later.
   Possible lines may be top/bottom border, and/or left/right borders
 */
-void Video_CopyScreenLine(int BorderMask)
+static void Video_CopyScreenLine(int BorderMask)
 {
   /* Only copy screen line if not doing high VDI resolution */
   if (!bUseVDIRes) {

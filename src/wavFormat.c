@@ -34,7 +34,7 @@
     4 - 7  Length Of Data To Follow
     8 - end  Data (Samples)
 */
-static char rcsid[] = "Hatari $Id: wavFormat.c,v 1.7 2003-03-10 18:46:07 thothy Exp $";
+char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.8 2004-04-19 08:53:48 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -44,6 +44,7 @@ static char rcsid[] = "Hatari $Id: wavFormat.c,v 1.7 2003-03-10 18:46:07 thothy 
 #include "file.h"
 #include "misc.h"
 #include "sound.h"
+#include "wavFormat.h"
 
 
 static FILE *WavFileHndl;

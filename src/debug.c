@@ -8,6 +8,7 @@
 */
 
 #include "main.h"
+#include "debug.h"
 
 #ifdef DEBUG_TO_FILE
 ofstream debug,debug2,debug3;

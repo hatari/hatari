@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.15 2004-02-05 15:06:16 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.16 2004-04-19 08:53:33 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -131,7 +131,7 @@ void Floppy_GetBootDrive(void)
   To try and prevent data loss, we check for this error and flag the drive so
   the image will not be saved back to the file.
 */
-BOOL Floppy_IsBootSectorOK(int Drive)
+static BOOL Floppy_IsBootSectorOK(int Drive)
 {
   char szString[256];
   unsigned char *pDiscBuffer;
@@ -164,7 +164,7 @@ BOOL Floppy_IsBootSectorOK(int Drive)
   Try to create disc B filename, eg 'auto_100a' becomes 'auto_100b'
   Return TRUE if think we should try!
 */
-BOOL Floppy_CreateDiscBFileName(char *pSrcFileName, char *pDestFileName)
+static BOOL Floppy_CreateDiscBFileName(char *pSrcFileName, char *pDestFileName)
 {
   char szDir[256], szName[128], szExt[32];
 

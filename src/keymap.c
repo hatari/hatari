@@ -1,12 +1,12 @@
 /*
-  Hatari - main.c
+  Hatari - keymap.c
 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
   Here we process a key press and the remapping of the scancodes.
 */
-static char rcsid[] = "Hatari $Id: keymap.c,v 1.15 2004-02-21 13:24:51 thothy Exp $";
+char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.16 2004-04-19 08:53:33 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -549,8 +549,6 @@ static char Keymap_GetKeyPadScanCode(SDL_keysym* pKeySym)
 */
 char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
 {
-  static BOOL bScanCodesInitialized = FALSE;
-
   if(pKeySym->sym >= SDLK_LAST)  return -1;  /* Avoid illegal keys */
 
   /* Check for keypad first so we can handle numlock */
@@ -640,7 +638,7 @@ void Keymap_LoadRemapFile(char *pszFileName)
   Scan list of keys to NOT de-bounce when running in maximum speed, eg ALT,SHIFT,CTRL etc...
   Return TRUE if key requires de-bouncing
 */
-BOOL Keymap_DebounceSTKey(char STScanCode)
+static BOOL Keymap_DebounceSTKey(char STScanCode)
 {
   int i=0;
 
@@ -673,7 +671,6 @@ void Keymap_DebounceAllKeys(void)
 {
   unsigned int key;
   char STScanCode;
-  BOOL bUseScanCodes;
   SDL_keysym tmpKeySym;
 
   /* Return if we aren't in maximum speed or have not disabled key repeat */
@@ -717,10 +714,9 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
   BOOL bPreviousKeyState;
   char STScanCode;
   int symkey = sdlkey->sym;
-  int scankey = sdlkey->scancode;
   int modkey = sdlkey->mod;
 
-  /*fprintf(stderr, "keydown: sym=%i scan=%i mod=$%x\n",symkey, scankey, modkey);*/
+  /*fprintf(stderr, "keydown: sym=%i scan=%i mod=$%x\n",symkey, sdlkey->scancode, modkey);*/
 
   /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
   if((ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
@@ -789,10 +785,9 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
 {
   char STScanCode;
   int symkey = sdlkey->sym;
-  int scankey = sdlkey->scancode;
   int modkey = sdlkey->mod;
 
-  /*fprintf(stderr, "keyup: sym=%i scan=%i mod=$%x\n",symkey, scankey, modkey);*/
+  /*fprintf(stderr, "keyup: sym=%i scan=%i mod=$%x\n",symkey, sdlkey->scancode, modkey);*/
 
   /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
   if((ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)

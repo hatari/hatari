@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.15 2003-10-18 07:46:55 thothy Exp $";
+char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.16 2004-04-19 08:53:47 thothy Exp $";
 
 #include <SDL.h>
 
@@ -79,7 +79,7 @@ static void ShortCut_RecordSound(void)
     if (Sound_AreWeRecording())
     {
       /* Stop, and save */
-      Sound_EndRecording(NULL);
+      Sound_EndRecording();
     }
     else
     {
@@ -100,7 +100,7 @@ static void ShortCut_RecordAnimation(void)
   if (ScreenSnapShot_AreWeRecording())
   {
     /* Stop */
-    ScreenSnapShot_EndRecording(NULL);
+    ScreenSnapShot_EndRecording();
   }
   else
   {
@@ -133,7 +133,7 @@ static void ShortCut_SoundOnOff(void)
   if (!ConfigureParams.Sound.bEnableSound)
   {
     if (Sound_AreWeRecording())
-      Sound_EndRecording(NULL);
+      Sound_EndRecording();
     Audio_UnInit();
   }
   else
@@ -167,7 +167,7 @@ static void ShortCut_MaximumSpeed(void)
 /*
   Shortcut to 'Boss' key, ie minmize Window and switch to another application
 */
-void ShortCut_BossKey(void)
+static void ShortCut_BossKey(void)
 {
   /* If we are in full-screen, then return to a window */
   Screen_ReturnFromFullScreen();
@@ -187,7 +187,7 @@ void ShortCut_BossKey(void)
 /*
   Shortcut to 'Cold' reset
 */
-void ShortCut_ColdReset(void)
+static void ShortCut_ColdReset(void)
 {
   Reset_Cold();                 /* Reset emulator with 'cold' (clear all) */
 }
@@ -197,7 +197,7 @@ void ShortCut_ColdReset(void)
 /*
   Shortcut to 'Warm' reset
 */
-void ShortCut_WarmReset(void)
+static void ShortCut_WarmReset(void)
 {
   Reset_Warm();                 /* Emulator 'warm' reset */
 }
@@ -207,7 +207,7 @@ void ShortCut_WarmReset(void)
 /*
   Clear shortkey structure
 */
-void ShortCut_ClearKeys(void)
+static void ShortCut_ClearKeys(void)
 {
   /* Clear short-cut key structure */
   Memory_Clear(&ShortCutKey,sizeof(SHORTCUT_KEY));

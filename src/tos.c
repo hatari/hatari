@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.18 2004-04-14 22:36:58 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.19 2004-04-19 08:53:47 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -99,8 +99,8 @@ typedef struct
 static char pszHdvInit[] = "hdv_init - initialize drives";
 static char pszHdvBoot[] = "hdv_boot - load boot sector";
 static char pszDmaBoot[] = "boot from DMA bus";
-static char pszSetConDrv[] = "set connected drives mask";
-static char pszClrConDrv[] = "clear connected drives mask";
+//static char pszSetConDrv[] = "set connected drives mask";
+//static char pszClrConDrv[] = "clear connected drives mask";
 static char pszMouse[] = "working mouse in big screen resolutions";
 static char pszRomCheck[] = "ROM checksum";
 static char pszNoSteHw[] = "disable STE hardware access";

@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.53 2004-04-14 22:36:58 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.54 2004-04-19 08:53:33 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -146,7 +146,7 @@ void Main_UnPauseEmulation(void)
   Here we process the SDL events (keyboard, mouse, ...) and map it to
   Atari IKBD events.
 */
-void Main_EventHandler()
+void Main_EventHandler(void)
 {
   SDL_Event event;
 
@@ -191,7 +191,7 @@ void Main_EventHandler()
 /*
   Show supported options.
 */
-void Main_ShowOptions()
+static void Main_ShowOptions(void)
 {
   printf("Usage:\n hatari [options] [disk image name]\n"
          "Where options are:\n"
@@ -225,7 +225,7 @@ void Main_ShowOptions()
 /*
   Check for any passed parameters
 */
-void Main_ReadParameters(int argc, char *argv[])
+static void Main_ReadParameters(int argc, char *argv[])
 {
   int i;
 
@@ -422,7 +422,7 @@ void Main_ReadParameters(int argc, char *argv[])
 /*
   Initialise emulation
 */
-void Main_Init(void)
+static void Main_Init(void)
 {
   /* Init SDL's video subsystem. Note: Audio and joystick subsystems
      will be initialized later (failures there are not fatal). */
@@ -487,7 +487,7 @@ void Main_Init(void)
 /*
   Un-Initialise emulation
 */
-void Main_UnInit(void)
+static void Main_UnInit(void)
 {
   Screen_ReturnFromFullScreen();
   Floppy_EjectBothDrives();

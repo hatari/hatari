@@ -6,7 +6,7 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-static char rcsid[] = "Hatari $Id: audio.c,v 1.17 2004-02-10 11:49:46 thothy Exp $";
+char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.18 2004-04-19 08:53:28 thothy Exp $";
 
 #include <SDL.h>
 
@@ -42,7 +42,7 @@ int CompleteSndBufIdx;                    /* Replay-index into MixBuffer */
 /*
   SDL audio callback function - copy emulation sound to audio system.
 */
-void Audio_CallBack(void *userdata, Uint8 *stream, int len)
+static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 {
   Uint8 *pBuffer;
   int i;

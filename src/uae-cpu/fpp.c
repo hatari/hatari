@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: fpp.c,v 1.2 2003-03-03 18:40:33 thothy Exp $";
+char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.3 2004-04-19 08:53:49 thothy Exp $";
 
 
 #define __USE_ISOC9X  /* We might be able to pick up a NaN */

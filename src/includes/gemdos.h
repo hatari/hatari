@@ -1,7 +1,11 @@
 /*
-  Hatari
-*/
+  Hatari - gemdos.h
 
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+*/
+#ifndef HATARI_GEMDOS_H
+#define HATARI_GEMDOS_H
 
 /*
   GEMDOS error codes, See 'The Atari Compendium' D.3
@@ -104,9 +108,9 @@ extern BOOL bInitGemDOS;
 extern unsigned short int CurrentDrive;
 
 extern void GemDOS_Init(void);
-extern void GemDOS_Reset();
-extern void GemDOS_InitDrives();
-extern void GemDOS_UnInitDrives();
+extern void GemDOS_Reset(void);
+extern void GemDOS_InitDrives(void);
+extern void GemDOS_UnInitDrives(void);
 extern void GemDOS_MemorySnapShot_Capture(BOOL bSave);
 extern void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *pszDestName);
 extern BOOL GemDOS(void);
@@ -114,8 +118,4 @@ extern void GemDOS_OpCode(void);
 extern void GemDOS_RunOldOpCode(void);
 extern void GemDOS_Boot(void);
 
-
-
-
-
-
+#endif /* HATARI_GEMDOS_H */

@@ -23,7 +23,7 @@
     - corrected stupid string bug that altered the environment var HOME
 
 */
-static char rcsid[] = "Hatari $Id: printer.c,v 1.13 2004-02-12 15:56:02 thothy Exp $";
+char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.14 2004-04-19 08:53:34 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -42,7 +42,8 @@ static char rcsid[] = "Hatari $Id: printer.c,v 1.13 2004-02-12 15:56:02 thothy E
 #define PRINTER_BUFFER_SIZE  2048       /* 2k buffer which when full will be written to printer/file */
 
 static unsigned char PrinterBuffer[PRINTER_BUFFER_SIZE];   /* Buffer to store character before output */
-static int nPrinterBufferChars,nPrinterBufferCharsOnLine;  /* # characters in above buffer */
+static size_t nPrinterBufferChars;  /* # characters in above buffer */
+static int nPrinterBufferCharsOnLine;
 static BOOL bConnectedPrinter=FALSE;
 static BOOL bPrinterDiscFile=FALSE;
 static int nIdleCount;
@@ -149,7 +150,7 @@ void Printer_EmptyDiscFile(void)
   /* Do have file open? */
   if (bPrinterDiscFile) {
     /* Write bytes out */
-    if(fwrite((unsigned char *)PrinterBuffer,sizeof(unsigned char),nPrinterBufferChars,PrinterFileHandle)<nPrinterBufferChars)
+    if(fwrite((unsigned char *)PrinterBuffer,sizeof(unsigned char),nPrinterBufferChars,PrinterFileHandle) < nPrinterBufferChars)
 	 {
 		/* we wrote less then all chars in the buffer --> ERROR */
 		fprintf(stderr,"Printer_EmptyDiscFile(): ERROR not all chars were written\n");

@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.12 2004-03-01 13:57:29 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.13 2004-04-19 08:53:34 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -84,7 +84,7 @@ BOOL bAppliedTimerDPatch;             /* TRUE if the Timer-D patch has been appl
  Now, Timer C set on a delay of 192($C0) and a preset DIV of 64 is 200Hz
  This makes the table entry 208.66666*192=40064(200Hz)
 */
-float MFPTimerToCPUCycleTable[] = {
+static float MFPTimerToCPUCycleTable[] = {
    0,             /* Timer Stop */
    13.04166667f,  /* Div by 4  */
    32.60416667f,  /* Div by 10 */
@@ -177,7 +177,7 @@ void MFP_MemorySnapShot_Capture(BOOL bSave)
   0xfffa17(0x40 is the default=0x100)
   Many thanks to Steve Bak for that one!
 */
-void MFP_Exception(int Interrupt)
+static void MFP_Exception(int Interrupt)
 {
   unsigned int Vec;
 
@@ -336,7 +336,7 @@ void MFP_TimerB_EventCount_Interrupt(void)
 /*
   Start Timer A or B - EventCount mode is done in HBL handler to time correctly
 */
-int MFP_StartTimer_AB(unsigned char TimerControl, unsigned int TimerData, int Handler, BOOL bFirstTimer)
+static int MFP_StartTimer_AB(unsigned char TimerControl, unsigned int TimerData, int Handler, BOOL bFirstTimer)
 {
   int TimerClockCycles = 0;
 
@@ -370,7 +370,7 @@ int MFP_StartTimer_AB(unsigned char TimerControl, unsigned int TimerData, int Ha
 /*
   Start Timer C or D
 */
-int MFP_StartTimer_CD(unsigned char TimerControl, unsigned int TimerData, int Handler, BOOL bFirstTimer)
+static int MFP_StartTimer_CD(unsigned char TimerControl, unsigned int TimerData, int Handler, BOOL bFirstTimer)
 {
   int TimerClockCycles = 0;
 
@@ -404,7 +404,7 @@ int MFP_StartTimer_CD(unsigned char TimerControl, unsigned int TimerData, int Ha
 /*
   Read Timer A or B - If in EventCount MainCounter already has correct value
 */
-unsigned char MFP_ReadTimer_AB(unsigned char TimerControl, unsigned char MainCounter, int TimerCycles, int Handler)
+static unsigned char MFP_ReadTimer_AB(unsigned char TimerControl, unsigned char MainCounter, int TimerCycles, int Handler)
 {
   int TimerCyclesPassed;
 
@@ -423,7 +423,7 @@ unsigned char MFP_ReadTimer_AB(unsigned char TimerControl, unsigned char MainCou
 /*
   Read Timer C or D
 */
-unsigned char MFP_ReadTimerCD(unsigned char TimerControl,unsigned char TimerData,  unsigned char MainCounter, int TimerCycles, int Handler)
+static unsigned char MFP_ReadTimerCD(unsigned char TimerControl,unsigned char TimerData,  unsigned char MainCounter, int TimerCycles, int Handler)
 {
   int TimerCyclesPassed;
 

@@ -1,5 +1,5 @@
 /*
- *  CFGOPTS.H
+ * Hatari - cfgopts.h
  */
 
 #ifndef HATARI_CFGOPTS_H

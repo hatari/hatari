@@ -9,7 +9,7 @@
   We intercept and direct some XBios calls to handle the RS-232 etc. and help
   with floppy debugging.
 */
-static char rcsid[] = "Hatari $Id: xbios.c,v 1.3 2003-09-26 18:08:36 thothy Exp $";
+char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.4 2004-04-19 08:53:48 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -21,6 +21,7 @@ static char rcsid[] = "Hatari $Id: xbios.c,v 1.3 2003-09-26 18:08:36 thothy Exp 
 #include "rs232.h"
 #include "screenSnapShot.h"
 #include "stMemory.h"
+#include "xbios.h"
 
 
 /* List of Atari ST RS-232 baud rates */
@@ -49,7 +50,7 @@ static int BaudRates[] = {
   XBIOS Floppy Read
   Call 8
 */
-BOOL XBios_Floprd(unsigned long Params)
+static BOOL XBios_Floprd(unsigned long Params)
 {
 #ifdef DEBUG_TO_FILE
   char *pBuffer;
@@ -75,7 +76,7 @@ BOOL XBios_Floprd(unsigned long Params)
   XBIOS Floppy Write
   Call 9
 */
-BOOL XBios_Flopwr(unsigned long Params)
+static BOOL XBios_Flopwr(unsigned long Params)
 {
 #ifdef DEBUG_TO_FILE
   char *pBuffer;
@@ -101,7 +102,7 @@ BOOL XBios_Flopwr(unsigned long Params)
   XBIOS RsConf
   Call 15
 */
-BOOL XBios_Rsconf(unsigned long Params)
+static BOOL XBios_Rsconf(unsigned long Params)
 {
   short int Baud,Ctrl,Ucr,Rsr,Tsr,Scr;
   int BaudRate=-1;
@@ -133,7 +134,7 @@ BOOL XBios_Rsconf(unsigned long Params)
   XBIOS Scrdmp
   Call 20
 */
-BOOL XBios_Scrdmp(unsigned long Params)
+static BOOL XBios_Scrdmp(unsigned long Params)
 {
   fprintf(stderr, "XBIOS screendump!\n");
 
@@ -151,7 +152,7 @@ BOOL XBios_Scrdmp(unsigned long Params)
   XBIOS Prtblk
   Call 36
 */
-BOOL XBios_Prtblk(unsigned long Params)
+static BOOL XBios_Prtblk(unsigned long Params)
 {
   fprintf(stderr, "Intercepted XBIOS Prtblk()\n");
 

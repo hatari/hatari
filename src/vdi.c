@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.9 2003-12-25 14:19:38 thothy Exp $";
+char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.10 2004-04-19 08:53:48 thothy Exp $";
 
 #include "main.h"
 #include "decode.h"
@@ -237,7 +237,7 @@ void VDI_Complete(void)
 /*
   Save desktop configuration file for VDI, eg desktop.inf(TOS 1.04) or newdesk.inf(TOS 2.06)
 */
-void VDI_SaveDesktopInf(char *pszFileName,unsigned char *Script,long ScriptSize)
+static void VDI_SaveDesktopInf(char *pszFileName,unsigned char *Script,long ScriptSize)
 {
   /* Just save file */
   File_Save(pszFileName, Script, ScriptSize, FALSE);
@@ -248,7 +248,7 @@ void VDI_SaveDesktopInf(char *pszFileName,unsigned char *Script,long ScriptSize)
 /*
   Modify exisiting ST desktop configuration files to set resolution(keep user settings)
 */
-void VDI_ModifyDesktopInf(char *pszFileName)
+static void VDI_ModifyDesktopInf(char *pszFileName)
 {
   long InfSize;
   unsigned char *pInfData;

@@ -22,7 +22,7 @@
   testing for addressing into 'no-mans-land' which are parts of the hardware map which are not valid on a
   standard STfm.
 */
-char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.21 2004-04-14 22:36:58 thothy Exp $";
+char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.22 2004-04-19 08:53:33 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -54,7 +54,7 @@ char Intercept_rcsid[] = "Hatari $Id: intercept.c,v 1.21 2004-04-14 22:36:58 tho
 
 
 /* A dummy function that does nothing at all... */
-void Intercept_WriteNothing(void)
+static void Intercept_WriteNothing(void)
 {
   /* Nothing... */
 }
@@ -284,7 +284,7 @@ void Intercept_EnableBlitter(BOOL enableFlag)
   Check list of handlers to see if address needs to be intercepted and call
    routines.
 */
-void Intercept_ScanHandlers(unsigned long *the_func)
+static void Intercept_ScanHandlers(unsigned long *the_func)
 {
  if( the_func )
   while( *the_func )      /* Do we have any routines to run for this address? */
@@ -1326,12 +1326,12 @@ INTERCEPT_ADDRESSRANGE InterceptBusErrors[] =
 /*
   Jump to the BusError handler with the correct bus address
 */
-void Intercept_BusErrorReadAccess(void)
+static void Intercept_BusErrorReadAccess(void)
 {
   M68000_BusError(BusAddressLocation, 1);
 }
 
-void Intercept_BusErrorWriteAccess(void)
+static void Intercept_BusErrorWriteAccess(void)
 {
   M68000_BusError(BusAddressLocation, 0);
 }

@@ -22,7 +22,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-static char rcsid[] = "Hatari $Id: gencpu.c,v 1.7 2003-03-28 16:20:37 thothy Exp $";
+char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.8 2004-04-19 08:53:49 thothy Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -46,16 +46,11 @@ char exactCpuCycles[256];   /* Space to store return string for exact cpu cycles
  * Initialized to -1 for each opcode. If it remains unchanged, indicates we
  * are done with that opcode.  */
 static int next_cpu_level;
-
-void write_log (const char *s, ...)
-{
-    fprintf (stderr, "%s", s);
-}
-
 static int *opcode_map;
 static int *opcode_next_clev;
 static int *opcode_last_postfix;
 static unsigned long *counts;
+
 
 static void read_counts (void)
 {

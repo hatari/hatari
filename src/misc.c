@@ -6,7 +6,7 @@
 
   Misc functions
 */
-static char rcsid[] = "Hatari $Id: misc.c,v 1.8 2003-09-27 19:28:50 thothy Exp $";
+char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.9 2004-04-19 08:53:34 thothy Exp $";
 
 #include <ctype.h>
 
@@ -123,7 +123,7 @@ void Misc_SeedRandom(unsigned long Seed)
 /*
   Get mext random number
 */
-long Misc_NextLongRand(long Seed)
+static long Misc_NextLongRand(long Seed)
 {
   unsigned long Lo, Hi;
 

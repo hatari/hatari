@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.28 2004-04-07 10:24:21 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.29 2004-04-19 08:53:34 thothy Exp $";
 
 #include <SDL.h>
 
@@ -40,7 +40,7 @@ char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.28 2004-04-07 10:24:21 thothy Ex
 #include "video.h"
 
 /* SDL Video attributes for fullscreen */
-const unsigned int sdlvmode = SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE;
+static const unsigned int sdlvmode = SDL_HWSURFACE|SDL_DOUBLEBUF|SDL_FULLSCREEN|SDL_HWPALETTE;
 
 SCREENDRAW ScreenDrawWindow[4];                   /* Set up with details of drawing functions for ST_xxx_RES */
 SCREENDRAW ScreenDrawFullScreen[4];               /* And for full-screen */
@@ -504,7 +504,7 @@ void Screen_DidResolutionChange(void)
   Compare current resolution on line with previous, and set 'UpdateLine' accordingly
   Also check if swap between low/medium resolution and return in 'bLowMedMix'
 */
-void Screen_CompareResolution(int y, int *pUpdateLine, BOOL *pbLowMedMix)
+static void Screen_CompareResolution(int y, int *pUpdateLine, BOOL *pbLowMedMix)
 {
   int Resolution;
 
@@ -528,7 +528,7 @@ void Screen_CompareResolution(int y, int *pUpdateLine, BOOL *pbLowMedMix)
 /*
   Check to see if palette changes cause screen update and keep 'HBLPalette[]' up-to-date
 */
-void Screen_ComparePalette(int y, int *pUpdateLine)
+static void Screen_ComparePalette(int y, int *pUpdateLine)
 {
   BOOL bPaletteChanged = FALSE;
   int i;
@@ -563,7 +563,7 @@ void Screen_ComparePalette(int y, int *pUpdateLine)
   (It is very important for these routines to check for colour changes with the previous
   screen so only the very minimum parts are updated)
 */
-int Screen_ComparePaletteMask(void)
+static int Screen_ComparePaletteMask(void)
 {
   BOOL bLowMedMix=FALSE;
   int LineUpdate = 0;
@@ -646,7 +646,7 @@ int Screen_ComparePaletteMask(void)
 /*
   Create 8-Bit palette for display if needed
 */
-void Screen_CreatePalette(void)
+static void Screen_CreatePalette(void)
 {
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
   static const int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
@@ -734,7 +734,7 @@ void Screen_Handle8BitPalettes(void)
   Update Palette Mask to show 'full-update' required. This is usually done after a resolution change
   or when going between a Window and full-screen display
 */
-void Screen_SetFullUpdateMask(void)
+static void Screen_SetFullUpdateMask(void)
 {
   int y;
 
@@ -747,7 +747,7 @@ void Screen_SetFullUpdateMask(void)
 /*
   Set details for ST screen conversion(Window version)
 */
-void Screen_SetWindowConvertDetails(void)
+static void Screen_SetWindowConvertDetails(void)
 {
   /* Reset Double Y, used for Window medium res' and in full screen */
   bScrDoubleY = FALSE;
@@ -796,7 +796,7 @@ void Screen_SetWindowConvertDetails(void)
 /*
   Set details for ST screen conversion (Full-Screen version)
 */
-void Screen_SetFullScreenConvertDetails(void)
+static void Screen_SetFullScreenConvertDetails(void)
 {
   SCREENDRAW *pScreenDraw;
 
@@ -839,7 +839,7 @@ void Screen_SetFullScreenConvertDetails(void)
 /*
   Lock full-screen for drawing
 */
-BOOL Screen_Lock(void)
+static BOOL Screen_Lock(void)
 {
   if(SDL_MUSTLOCK(sdlscrn))
   {
@@ -857,7 +857,7 @@ BOOL Screen_Lock(void)
 /*
   UnLock full-screen
 */
-void Screen_UnLock(void)
+static void Screen_UnLock(void)
 {
   if( SDL_MUSTLOCK(sdlscrn) )
     SDL_UnlockSurface(sdlscrn);
@@ -959,7 +959,6 @@ static void Screen_SwapSTBuffers(void)
 void Screen_DrawFrame(BOOL bForceFlip)
 {
   void *pDrawFunction;
-  static void *last;
 
   /* Scan palette/resolution masks for each line and build up palette/difference tables */
   STRes = Screen_ComparePaletteMask();

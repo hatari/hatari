@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.13 2004-02-11 11:08:45 thothy Exp $";
+char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.14 2004-04-19 08:53:47 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -281,7 +281,7 @@ void Sound_MemorySnapShot_Capture(BOOL bSave)
   Find how many samples to generate and store in 'nSamplesToGenerate'
   Also update 'SoundCycles' to store how many we actually did so generates set amount each frame
 */
-void Sound_SetSamplesPassed(void)
+static void Sound_SetSamplesPassed(void)
 {
   int nSampleCycles;
   int nSamplesPerFrame;
@@ -597,7 +597,7 @@ BOOL Sound_BeginRecording(char *pszCaptureFileName)
 /*
   End sound recording
 */
-void Sound_EndRecording()
+void Sound_EndRecording(void)
 {
   /* Stop sound recording and close files */
   if (bRecordingYM)

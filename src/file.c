@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.11 2003-12-25 18:45:22 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.12 2004-04-19 08:53:33 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -347,7 +347,7 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, char *ppszEx
 /*
   Save file to PC, return FALSE if errors
 */
-BOOL File_Save(char *pszFileName, void *pAddress,long Size,BOOL bQueryOverwrite)
+BOOL File_Save(char *pszFileName, void *pAddress, size_t Size, BOOL bQueryOverwrite)
 {
   FILE *DiscFile;
   BOOL bRet=FALSE;
@@ -363,7 +363,7 @@ BOOL File_Save(char *pszFileName, void *pAddress,long Size,BOOL bQueryOverwrite)
   DiscFile = fopen(pszFileName, "wb");
   if (DiscFile!=NULL) {
     /* Write data, set success flag */
-    if ( fwrite(pAddress, 1, Size, DiscFile)==Size )
+    if (fwrite(pAddress, 1, Size, DiscFile) == Size)
       bRet = TRUE;
 
     fclose(DiscFile);

@@ -5,6 +5,8 @@
   option any later version. Read the file gpl.txt for details.
 */
 
+#ifndef HATARI_SCREENCONVERT_H
+#define HATARI_SCREENCONVERT_H
 
 extern int ScrUpdateFlag;
 extern BOOL bScrDoubleY;
@@ -28,3 +30,5 @@ extern void ConvertVDIRes_16Colour(void);
 extern void ConvertVDIRes_4Colour(void);
 extern void ConvertVDIRes_2Colour_1Bit(void);
 extern void ConvertVDIRes_2Colour(void);
+
+#endif /* HATARI_SCREENCONVERT_H */

@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.7 2003-12-25 14:19:38 thothy Exp $";
+char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.8 2004-04-19 08:53:34 thothy Exp $";
 
 #include <SDL_types.h>
 #include <errno.h>
@@ -55,15 +55,15 @@ typedef FILE* MSS_File;
 #endif
 
 
-MSS_File CaptureFile;
-BOOL bCaptureSave, bCaptureError;
+static MSS_File CaptureFile;
+static BOOL bCaptureSave, bCaptureError;
 
 
 /*-----------------------------------------------------------------------*/
 /*
   Open file.
 */
-MSS_File MemorySnapShot_fopen(char *pszFileName, char *pszMode)
+static MSS_File MemorySnapShot_fopen(char *pszFileName, char *pszMode)
 {
 #ifdef COMPRESS_MEMORYSNAPSHOT
 	return gzopen(pszFileName, pszMode);
@@ -77,7 +77,7 @@ MSS_File MemorySnapShot_fopen(char *pszFileName, char *pszMode)
 /*
   Close file.
 */
-void MemorySnapShot_fclose(MSS_File fhndl)
+static void MemorySnapShot_fclose(MSS_File fhndl)
 {
 #ifdef COMPRESS_MEMORYSNAPSHOT
 	gzclose(fhndl);
@@ -91,7 +91,7 @@ void MemorySnapShot_fclose(MSS_File fhndl)
 /*
   Read from file.
 */
-int MemorySnapShot_fread(MSS_File fhndl, char *buf, int len)
+static int MemorySnapShot_fread(MSS_File fhndl, char *buf, int len)
 {
 #ifdef COMPRESS_MEMORYSNAPSHOT
 	return gzread(fhndl, buf, len);
@@ -105,7 +105,7 @@ int MemorySnapShot_fread(MSS_File fhndl, char *buf, int len)
 /*
   Write data to file.
 */
-int MemorySnapShot_fwrite(MSS_File fhndl, char *buf, int len)
+static int MemorySnapShot_fwrite(MSS_File fhndl, char *buf, int len)
 {
 #ifdef COMPRESS_MEMORYSNAPSHOT
 	return gzwrite(fhndl, buf, len);
@@ -120,7 +120,7 @@ int MemorySnapShot_fwrite(MSS_File fhndl, char *buf, int len)
   Open/Create snapshot file, and set flag so 'MemorySnapShot_Store' knows
   how to handle data.
 */
-BOOL MemorySnapShot_OpenFile(char *pszFileName, BOOL bSave)
+static BOOL MemorySnapShot_OpenFile(char *pszFileName, BOOL bSave)
 {
 	char szString[256];
 	char VersionString[VERSION_STRING_SIZE];
@@ -179,7 +179,7 @@ BOOL MemorySnapShot_OpenFile(char *pszFileName, BOOL bSave)
 /*
   Close snapshot file.
 */
-void MemorySnapShot_CloseFile(void)
+static void MemorySnapShot_CloseFile(void)
 {
 	MemorySnapShot_fclose(CaptureFile);
 }

@@ -1,11 +1,15 @@
 /*
   Hatari
 
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
   debugui.c - this is the code for the mini-debugger, when the pause button is pressed,
   the emulator is (hopefully) halted and this little CLI can be used (in the terminal
   box) for debugging tasks like memory and register dumps
 
 */
+char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.8 2004-04-19 08:53:33 thothy Exp $";
 
 #include <ctype.h>
 
@@ -22,6 +26,7 @@
 #include "sound.h"
 #include "tos.h"
 #include "video.h"
+#include "debugui.h"
 
 #include "uae-cpu/hatari-glue.h"
 
@@ -40,10 +45,14 @@ unsigned long disasm_addr;  /* disasm address */
 
 FILE *debugLogFile;
 FILE *debug_stdout;
-extern BOOL bEnableDebug;   
+
+/* from main.c:
+ - bEnableDebug
+ */
+
 
 /* convert string to lowercase */
-void string_tolower(char *str)
+static void string_tolower(char *str)
 {
   int i=0;
   while(str[i] != '\0'){
@@ -53,7 +62,7 @@ void string_tolower(char *str)
 }
 
 /* truncate string at first unprintable char (e.g. newline) */
-void string_trunc(char *str){
+static void string_trunc(char *str){
   int i=0;
   while(str[i] != '\0'){
     if(!isprint(str[i])) str[i] = '\0';
@@ -62,7 +71,7 @@ void string_trunc(char *str){
 }
 
 /* check if string is valid hex number. */
-BOOL isHex(char *str)
+static BOOL isHex(char *str)
 {
   int i=0;
   while(str[i] != '\0' && str[i] != ' '){
@@ -78,7 +87,7 @@ BOOL isHex(char *str)
    -2 if a range, but not a valid one.
    0 if OK.
 */
-BOOL getRange(char *str, unsigned long *lower, unsigned long *upper){
+static BOOL getRange(char *str, unsigned long *lower, unsigned long *upper){
   BOOL fDash = FALSE;
   int i=0;
 
@@ -103,7 +112,7 @@ BOOL getRange(char *str, unsigned long *lower, unsigned long *upper){
 /*
   Open a log file.
 */
-void DebugUI_OpenLog(char *arg){
+static void DebugUI_OpenLog(char *arg){
   debugLogFile = fopen(arg, "w");
   if(debugLogFile == NULL)
     fprintf(stderr, "Can't open file: %s\n", arg);
@@ -114,7 +123,7 @@ void DebugUI_OpenLog(char *arg){
 /*
   Load a binary file to a memory address.
 */
-void DebugUI_LoadBin(char *args){
+static void DebugUI_LoadBin(char *args){
   FILE *fp;
   unsigned char c;
   char dummy[100];
@@ -145,14 +154,13 @@ void DebugUI_LoadBin(char *args){
 /*
   Dump memory from an address to a binary file.
 */
-void DebugUI_SaveBin(char *args){
+static void DebugUI_SaveBin(char *args){
   FILE *fp;
   unsigned char c;
   char filename[200];
   char dummy[100];
   unsigned long address;
-  unsigned long bytes;
-  int i=0;
+  unsigned long bytes, i=0;
 
   if(sscanf(args, "%s%s%lx%lx", dummy, filename, &address, &bytes) != 4){
     fprintf(stderr, "  Invalid arguments!");
@@ -176,7 +184,7 @@ void DebugUI_SaveBin(char *args){
 /*
   Do a register dump.
 */
-void DebugUI_RegDump()
+static void DebugUI_RegDump(void)
 {
   uaecptr nextpc;
   /* use the UAE function instead */
@@ -188,7 +196,7 @@ void DebugUI_RegDump()
 /*
   Dissassemble - arg = starting address, or PC.
 */
-void DebugUI_DisAsm(char *arg, BOOL cont)
+static void DebugUI_DisAsm(char *arg, BOOL cont)
 { 
   int i,j;
   unsigned long disasm_upper;
@@ -245,7 +253,7 @@ void DebugUI_DisAsm(char *arg, BOOL cont)
 /*
   Set a register: 
 */
-void DebugUI_RegSet(char *arg){
+static void DebugUI_RegSet(char *arg){
   int i;
   BOOL s = FALSE;
   char reg[4];
@@ -357,7 +365,7 @@ void DebugUI_RegSet(char *arg){
 /*
   Do a memory dump, args = starting address.
 */
-void DebugUI_MemDump(char *arg, BOOL cont)
+static void DebugUI_MemDump(char *arg, BOOL cont)
 { 
   int i,j;
   char c;
@@ -431,7 +439,7 @@ void DebugUI_MemDump(char *arg, BOOL cont)
 /*
   Do a memory write, arg = starting address, followed by bytes.
 */
-void DebugUI_MemWrite(char *addr_str, char *arg)
+static void DebugUI_MemWrite(char *addr_str, char *arg)
 {
   int i, j, numBytes;
   long write_addr;
@@ -496,7 +504,7 @@ void DebugUI_MemWrite(char *addr_str, char *arg)
 /*
   Help!
 */
-void DebugUI_Help()
+static void DebugUI_Help(void)
 {
   fprintf(stderr,"---- debug mode commands ----\n"
                  " d [address]- disassemble from PC, or given address. \n"
@@ -518,7 +526,7 @@ void DebugUI_Help()
 /*
   Get a UI command, return it.
 */
-int DebugUI_Getcommand()
+static int DebugUI_Getcommand(void)
 {  
   char temp[255];
   char command[255], arg[255];
@@ -626,7 +634,7 @@ int DebugUI_Getcommand()
 /*
   Debug UI
 */
-void DebugUI()
+void DebugUI(void)
 {
   debugLogFile = NULL;
   debug_stdout = stderr;  /* output to screen, until log file opened */
@@ -640,11 +648,3 @@ void DebugUI()
   if(debugLogFile != NULL) fclose(debugLogFile);
   fprintf(stderr,"Returning to emulation...\n------------------------------\n\n");
 }
-
-
-
-
-
-
-
-

@@ -10,6 +10,7 @@
 
 #include "sysdeps.h"
 #include "maccess.h"
+#include "main.h"
 
 
 /*-----------------------------------------------------------------------*/
@@ -79,9 +80,5 @@ static inline Uint8 STMemory_ReadByte(Uint32 Address)
 
 
 extern void STMemory_Clear(unsigned long StartAddress, unsigned long EndAddress);
-extern void STMemory_WriteLong_PCSpace(void *pAddress, unsigned long Var);
-extern void STMemory_WriteWord_PCSpace(void *pAddress, unsigned short Var);
-extern unsigned long STMemory_ReadLong_PCSpace(void *pAddress);
-extern unsigned short STMemory_ReadWord_PCSpace(void *pAddress);
 
 #endif

@@ -6,7 +6,7 @@
 
   The main dialog.
 */
-static char rcsid[] = "Hatari $Id: dlgMain.c,v 1.1 2003-08-04 19:37:31 thothy Exp $";
+char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.2 2004-04-19 08:53:48 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"

@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.28 2004-04-06 16:20:15 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.29 2004-04-19 08:53:33 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -281,9 +281,6 @@ static int Configuration_LoadSection(const char *pFilename, struct Config_Tag co
 */
 void Configuration_Load(void)
 {
-  char sVersionString[VERSION_STRING_SIZE];
-  int i,j;
-
   if (!File_Exists(sConfigFileName))
   {
     /* No configuration file, assume first-time install */
@@ -343,8 +340,6 @@ static int Configuration_SaveSection(const char *pFilename, struct Config_Tag co
 */
 void Configuration_Save(void)
 {
-  int i,j;
-
   if(Configuration_SaveSection(sConfigFileName, configs_Screen, "[Screen]") < 0)
   {
     fprintf(stderr, "Error saving config file.\n");
