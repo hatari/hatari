@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-static char rcsid[] = "Hatari $Id: floppy.c,v 1.7 2003-03-07 17:08:36 thothy Exp $";
+static char rcsid[] = "Hatari $Id: floppy.c,v 1.8 2003-03-27 15:55:02 emanne Exp $";
 
 #include <SDL_endian.h>
 
@@ -351,16 +351,20 @@ void Floppy_FindDiscDetails(unsigned char *pBuffer, int nImageBytes,
                             unsigned short int *pnSectorsPerTrack, unsigned short int *pnSides)
 {
   unsigned char *pDiscBuffer;
-  Uint16 nSectorsPerTrack, nSides;
+  Uint16 nSectorsPerTrack, nSides,nsectors;
 
   pDiscBuffer = pBuffer;
   /* First do check to find number of sectors and bytes per sector */
   nSectorsPerTrack = SDL_SwapLE16(*(Uint16 *)(pDiscBuffer+24));     /* SPT */
   nSides = SDL_SwapLE16(*(Uint16 *)(pDiscBuffer+26));               /* SIDE */
+  nsectors = SDL_SwapLE16(*(Uint16 *)(pDiscBuffer+19));             /* total sectors */
 
   /* Now double-check info as boot-sector may contain incorrect information,
      eg 'Eat.st' demo, or single/double sides */
-  Floppy_DoubleCheckFormat(nImageBytes, &nSides, &nSectorsPerTrack);
+  if (nsectors != nImageBytes/512)
+    /* Don't be paranoid : if the number of sectors announced is correct, then chances
+       are high that the bootsector is correct */
+    Floppy_DoubleCheckFormat(nImageBytes, &nSides, &nSectorsPerTrack);
 
   /* And set values */
   if (pnSectorsPerTrack)
@@ -415,6 +419,7 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
     Offset = nBytesPerTrack*Side;                 /* First seek to side */
     Offset += (nBytesPerTrack*nSides)*Track;      /* Then seek to track */
     Offset += (NUMBYTESPERSECTOR*(Sector-1));     /* And finally to sector */
+    if (Offset < 0) return -1; // Sector is 0 sometimes ?!!!
     /* Read sectors (usually 512 bytes per sector) */
     memcpy(pBuffer,pDiscBuffer+Offset,(int)Count*NUMBYTESPERSECTOR);
 
