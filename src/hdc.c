@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-static char rcsid[] = "Hatari $Id: hdc.c,v 1.3 2003-04-04 16:28:30 thothy Exp $";
+static char rcsid[] = "Hatari $Id: hdc.c,v 1.4 2003-06-08 13:49:48 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -323,13 +323,17 @@ BOOL HDC_Init(char *filename)
     {
       fclose( hd_image_file );
       hd_image_file = NULL;
+      ConfigureParams.HardDisc.bUseHardDiscImage = FALSE;
       return( FALSE );
     }
   /* set number of partitions */
   ConfigureParams.HardDisc.nDriveList += nPartitions;
 
+  ConfigureParams.HardDisc.bUseHardDiscImage = TRUE;
+
   return( TRUE );
 }
+
 /*---------------------------------------------------------------------*/
 /*
   HDC_UnInit - close image file
@@ -341,6 +345,7 @@ void HDC_UnInit()
   fclose(hd_image_file);
   hd_image_file = NULL;
   nPartitions = 0;
+  ConfigureParams.HardDisc.bUseHardDiscImage = FALSE;
 }
 
 /*---------------------------------------------------------------------*/

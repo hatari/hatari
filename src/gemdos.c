@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-static char rcsid[] = "Hatari $Id: gemdos.c,v 1.20 2003-06-02 16:17:06 thothy Exp $";
+static char rcsid[] = "Hatari $Id: gemdos.c,v 1.21 2003-06-08 13:49:48 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -438,7 +438,10 @@ void GemDOS_InitDrives()
     fprintf(stderr, "Hard drive emulation, %c: <-> %s\n",
             emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
   }
+
+  ConfigureParams.HardDisc.bUseHardDiscDirectories = TRUE;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -461,6 +464,8 @@ void GemDOS_UnInitDrives()
     free(emudrives);
     emudrives = NULL;
   }
+
+  ConfigureParams.HardDisc.bUseHardDiscDirectories = FALSE;
 }
 
 

@@ -131,6 +131,8 @@ typedef struct
   int nDriveList;
   BOOL bBootFromHardDisc;
   int nHardDiscDir;
+  BOOL bUseHardDiscDirectories;
+  BOOL bUseHardDiscImage;
   char szHardDiscDirectories[MAX_HARDDRIVES][MAX_FILENAME_LENGTH];
   char szHardDiscImage[MAX_FILENAME_LENGTH];
 } CNF_HARDDISC;

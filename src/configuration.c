@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-static char rcsid[] = "Hatari $Id: configuration.c,v 1.20 2003-04-29 16:17:08 thothy Exp $";
+static char rcsid[] = "Hatari $Id: configuration.c,v 1.21 2003-06-08 13:49:48 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -98,12 +98,15 @@ struct Config_Tag configs_Floppy[] =
 /* Used to load/save HD options */
 struct Config_Tag configs_HardDisc[] =
 {
-  { "nDriveList", Int_Tag, &ConfigureParams.HardDisc.nDriveList },
+  /*{ "nDriveList", Int_Tag, &ConfigureParams.HardDisc.nDriveList },*/
   { "bBootFromHardDisc", Bool_Tag, &ConfigureParams.HardDisc.bBootFromHardDisc },
-  { "szHardDiscDirC", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C] },
+  { "bUseHardDiscDirectory", Bool_Tag, &ConfigureParams.HardDisc.bUseHardDiscDirectories },
+  { "szHardDiscDirectory", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C] },
   /*{ "szHardDiscDirD", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_D] },*/
   /*{ "szHardDiscDirE", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_E] },*/
   /*{ "szHardDiscDirF", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_F] },*/
+  { "bUseHardDiscImage", Bool_Tag, &ConfigureParams.HardDisc.bUseHardDiscImage },
+  { "szHardDiscImage", String_Tag, ConfigureParams.HardDisc.szHardDiscImage },
   { NULL , Error_Tag, NULL }
 };
 
@@ -166,11 +169,13 @@ void Configuration_SetDefault(void)
   ConfigureParams.HardDisc.nDriveList = DRIVELIST_NONE;
   ConfigureParams.HardDisc.bBootFromHardDisc = FALSE;
   ConfigureParams.HardDisc.nHardDiscDir = DRIVE_C;
+  ConfigureParams.HardDisc.bUseHardDiscDirectories = FALSE;
   for(i=0; i<MAX_HARDDRIVES; i++)
   {
     strcpy(ConfigureParams.HardDisc.szHardDiscDirectories[i], szWorkingDir);
     File_CleanFileName(ConfigureParams.HardDisc.szHardDiscDirectories[i]);
   }
+  ConfigureParams.HardDisc.bUseHardDiscImage = FALSE;
   strcpy(ConfigureParams.HardDisc.szHardDiscImage, szWorkingDir);
 
   /* Set defaults for Joysticks */
@@ -276,7 +281,7 @@ void Configuration_Load(void)
   Configuration_LoadSection(cfgName, configs_Sound, "[Sound]");
   Configuration_LoadSection(cfgName, configs_Memory, "[Memory]");
   Configuration_LoadSection(cfgName, configs_Floppy, "[Floppy]");
-  /*Configuration_LoadSection(cfgName, configs_HardDisc, "[HardDisc]");*/
+  Configuration_LoadSection(cfgName, configs_HardDisc, "[HardDisc]");
   Configuration_LoadSection(cfgName, configs_TosGem, "[TOS-GEM]");
   /*Configuration_LoadSection(cfgName, configs_Rs232, "[RS232]");*/
   /*Configuration_LoadSection(cfgName, configs_Printer, "[Printer]");*/
