@@ -1,3 +1,8 @@
+2001-12-10 (Thomas Huth):
+  * Wrote a first version of the graphical user interface.
+  * The path where Hatari searches its data (TOS-image etc.)
+    can now be specified in the Makefile.
+
 2001-10-10 (Thomas Huth):  *** Version 0.11 ***
   * Changed some C++ comments to C comments (for plain ANSI-C compilers).
   * Fixed a stack problem in gemdos.c

@@ -6,10 +6,11 @@ CMPLRFLAGS = -g -O2
 # Set the C compiler (e.g. gcc)
 CC = gcc
 
-# Here you can define the default TOS-ROM image, for example you can use
-# a image in the local directory with ./tos.img or if you want to do
-# a system-wide installation, use something like /usr/share/hatari/tos.img
-TOSIMG = ./tos.img
+# Here you can define the default data directory for Hatari where it
+# looks for the default TOS image etc.
+# For example you can use the local directory with . or if you want to do
+# a system-wide installation, use something like /usr/share/hatari
+DATADIR = .
 
 # SDL-Library configuration:
 SDLLIB=$(shell sdl-config --libs)
@@ -30,7 +31,7 @@ SRCS = audio.c bios.c cart.c configuration.c createBlankImage.c \
   floppy.c gemdos.c ikbd.c int.c intercept.c joy.c keymap.c m68000.c \
   main.c midi.c memAlloc.c memorySnapShot.c mfp.c misc.c msa.c psg.c \
   printer.c rs232.c reset.c st.c stMemory.c screen.c screenConvert.c \
-  screenSnapShot.c shortcut.c sound.c spec512.c statusBar.c timer.c \
+  screenSnapShot.c sdlgui.c shortcut.c sound.c spec512.c statusBar.c timer.c \
   tos.c vdi.c video.c view.c wavFormat.c xbios.c ymFormat.c
 
 OBJS = $(SRCS:.c=.o)
@@ -46,8 +47,12 @@ clean:
 	rm -f *.o hatari
 	$(MAKE) -C uae-cpu/ clean
 
+
 configuration.o: configuration.c
-	$(CC) $(CFLAGS) -c -DTOSIMG=\"$(TOSIMG)\" configuration.c -o configuration.o
+	$(CC) $(CFLAGS) -c -DDATADIR=\"$(DATADIR)\" configuration.c -o configuration.o
+
+sdlgui.o: sdlgui.c
+	$(CC) $(CFLAGS) -c -DDATADIR=\"$(DATADIR)\" sdlgui.c -o sdlgui.o
 
 screenConvert.o: convert/high640x1.c convert/low640x16.c convert/spec320x16.c \
     convert/vdi4.c convert/high640x8.c convert/low640x8.c convert/spec640x16.c \

@@ -98,7 +98,7 @@ void Configuration_SetDefault(void)
   strcpy(ConfigureParams.Sound.szYMCaptureFileName, "");
 
   /* Set defaults for TOSGEM */
-  strcpy(ConfigureParams.TOSGEM.szTOSImageFileName, TOSIMG);
+  sprintf(ConfigureParams.TOSGEM.szTOSImageFileName, "%s/tos.img", DATADIR);
   ConfigureParams.TOSGEM.bUseTimeDate = FALSE;
   ConfigureParams.TOSGEM.bAccGEMGraphics = FALSE;
   ConfigureParams.TOSGEM.bUseExtGEMResolutions = FALSE;

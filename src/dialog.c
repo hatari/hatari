@@ -28,12 +28,86 @@
 #include "vdi.h"
 #include "video.h"
 #include "view.h"
+#include "sdlgui.h"
+
+
+/* The main dialog: */
+#define MAINDLG_ABOUT    2
+#define MAINDLG_DISCS    3
+#define MAINDLG_TOSGEM   4
+#define MAINDLG_SCREEN   5
+#define MAINDLG_SOUND    6
+#define MAINDLG_CPU      7
+#define MAINDLG_MEMORY   8
+#define MAINDLG_JOY      9
+#define MAINDLG_KEYBD    10
+#define MAINDLG_DEVICES  11
+#define MAINDLG_OK       12
+#define MAINDLG_CANCEL   13
+SGOBJ maindlg[] =
+{
+  { SGBOX, 0, 0,0, 36,18, NULL },
+  { SGTEXT, 0, 10,1, 16,1, "Hatari main menu" },
+  { SGBUTTON, 0, 4,4, 12,1, "About" },
+  { SGBUTTON, 0, 4,6, 12,1, "Discs" },
+  { SGBUTTON, 0, 4,8, 12,1, "TOS/GEM" },
+  { SGBUTTON, 0, 4,10, 12,1, "Screen" },
+  { SGBUTTON, 0, 4,12, 12,1, "Sound" },
+  { SGBUTTON, 0, 20,4, 12,1, "CPU" },
+  { SGBUTTON, 0, 20,6, 12,1, "Memory" },
+  { SGBUTTON, 0, 20,8, 12,1, "Joysticks" },
+  { SGBUTTON, 0, 20,10, 12,1, "Keyboard" },
+  { SGBUTTON, 0, 20,12, 12,1, "Devices" },
+  { SGBUTTON, 0, 7,16, 8,1, "Okay" },
+  { SGBUTTON, 0, 21,16, 8,1, "Cancel" },
+  { -1, 0, 0,0, 0,0, NULL }
+};
+
+
+/* The "About"-dialog: */
+SGOBJ aboutdlg[] =
+{
+  { SGBOX, 0, 0,0, 40,25, NULL },
+  { SGTEXT, 0, 14,1, 12,1, PROG_NAME },
+  { SGTEXT, 0, 1,3, 38,1, "Hatari has been written by:  T. Huth," },
+  { SGTEXT, 0, 1,4, 38,1, "S. Marothy, S. Berndtsson, P. Bates," },
+  { SGTEXT, 0, 1,5, 38,1, "B. Schmidt and many others." },
+  { SGTEXT, 0, 1,6, 38,1, "Please see the docs for more info." },
+  { SGTEXT, 0, 1,8, 38,1, "This program is free software; you can" },
+  { SGTEXT, 0, 1,9, 38,1, "redistribute it and/or modify it under" },
+  { SGTEXT, 0, 1,10, 38,1, "the terms of the GNU General Public" },
+  { SGTEXT, 0, 1,11, 38,1, "License as published by the Free Soft-" },
+  { SGTEXT, 0, 1,12, 38,1, "ware Foundation; either version 2 of" },
+  { SGTEXT, 0, 1,13, 38,1, "the License, or (at your option) any" },
+  { SGTEXT, 0, 1,14, 38,1, "later version." },
+  { SGTEXT, 0, 1,16, 38,1, "This program is distributed in the" },
+  { SGTEXT, 0, 1,17, 38,1, "hope that it will be useful, but" },
+  { SGTEXT, 0, 1,18, 38,1, "WITHOUT ANY WARRANTY. See the GNU Ge-" },
+  { SGTEXT, 0, 1,19, 38,1, "neral Public License for more details." },
+  { SGBUTTON, 0, 16,23, 8,1, "Okay" },
+  { -1, 0, 0,0, 0,0, NULL }
+};
+
+
+/* The screen dialog: */
+SGOBJ screendlg[] =
+{
+  { SGBOX, 0, 0,0, 36,18, NULL },
+  { SGTEXT, 0, 11,1, 14,1, "Screen options" },
+  { SGTEXT, 0, 4,4, 25,1, "Sorry, does not work yet." },
+  { SGCHECKBOX, 0, 4,6, 12,1, "Fullscreen" },
+  { SGCHECKBOX, 1, 4,7, 13,1, "Use borders" },
+  { SGTEXT, 0, 4,14, 8,1, "Monitor:" },
+  { SGRADIOBUT, 1, 14,14, 7,1, "Color" },
+  { SGRADIOBUT, 0, 22,14, 6,1, "Mono" },
+  { SGBUTTON, 0, 8,16, 20,1, "Back to main menu" },
+  { -1, 0, 0,0, 0,0, NULL }
+};
 
 
 
-DLG_PARAMS ConfigureParams,DialogParams;    /* List of configuration for system and dialog (so can choose 'Cancel') */
-BOOL bOKDialog;                             /* Did user 'OK' dialog? */
-int nLastOpenPage = 0;                      /* Last property page opened (so can re-open on this next time) */
+DLG_PARAMS ConfigureParams, DialogParams;   /* List of configuration for system and dialog (so can choose 'Cancel') */
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -163,17 +237,18 @@ void Dialog_CopyDetailsFromConfiguration(BOOL bReset)
   Open Property sheet Options dialog
   Return TRUE if user choses OK, or FALSE if cancel!
 */
-BOOL Dialog_DoProperty(int StartingPage, BOOL bForceReset)
+BOOL Dialog_DoProperty(BOOL bForceReset)
 {
+  BOOL bOKDialog;  /* Did user 'OK' dialog? */
+
   /* Copy details to DialogParams (this is so can restore if 'Cancel' dialog) */
   ConfigureParams.Screen.bFullScreen = bInFullScreen;
   DialogParams = ConfigureParams;
 
-  bOKDialog = FALSE;                // Reset OK flag
   bSaveMemoryState = FALSE;
   bRestoreMemoryState = FALSE;
 
-  //SDLGui_DoDialog(SDLGUI_DLGMAIN);
+  bOKDialog = Dialog_MainDialog();
 
   /* Copy details to configuration, and ask user if wishes to reset */
   if (bOKDialog)
@@ -187,3 +262,54 @@ BOOL Dialog_DoProperty(int StartingPage, BOOL bForceReset)
   return(bOKDialog);
 }
 
+
+/*-----------------------------------------------------------------------*/
+/*
+  This functions sets up the actual font and then display the main dialog.
+*/
+int Dialog_MainDialog()
+{
+  int retbut;
+
+  SDLGui_PrepareFont();
+
+  SDL_ShowCursor(SDL_ENABLE);
+
+  do
+  {
+    retbut = SDLGui_DoDialog(maindlg);
+    switch(retbut)
+    {
+      case MAINDLG_ABOUT:
+        if( SDLGui_DoDialog(aboutdlg)<0 )
+          retbut=-1;
+        break;
+      case MAINDLG_DISCS:
+        break;
+      case MAINDLG_TOSGEM:
+        break;
+      case MAINDLG_SCREEN:
+        SDLGui_DoDialog(screendlg);
+        break;
+      case MAINDLG_SOUND:
+        break;
+      case MAINDLG_CPU:
+        break;
+      case MAINDLG_MEMORY:
+        break;
+      case MAINDLG_JOY:
+        break;
+      case MAINDLG_KEYBD:
+        break;
+      case MAINDLG_DEVICES:
+        break;
+    }
+    Screen_SetFullUpdate();
+    Screen_Draw();
+  }
+  while(retbut>0 && retbut!=MAINDLG_OK && retbut!=MAINDLG_CANCEL);
+
+  SDL_ShowCursor(SDL_DISABLE);
+
+  return(retbut==MAINDLG_OK);
+}

@@ -36,17 +36,17 @@ char *pszShortCutTextStrings[NUM_SHORTCUTS+1] = {
   "'Cold' Reset",
   "'Warm' Reset",
   "'Boss' Key",
-  NULL  //term
+  NULL  /*term*/
 };
 
 char *pszShortCutF11TextString[] = {
   "Full Screen",
-  NULL  //term
+  NULL  /*term*/
 };
 
 char *pszShortCutF12TextString[] = {
   "Mouse Mode",
-  NULL  //term
+  NULL  /*term*/
 };
 
 ShortCutFunction_t pShortCutFunctions[NUM_SHORTCUTS] = {
@@ -97,6 +97,10 @@ void ShortCut_CheckKeys(void)
      case SDLK_F12:
        quit_program=1;
        bQuitProgram=1;
+       /*Dialog_DoProperty(nLastOpenPage, FALSE);*/
+       break;
+     case SDLK_m:
+       Dialog_DoProperty(FALSE);
        break;
      case SDLK_F11:
        if( !bInFullScreen )

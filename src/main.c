@@ -357,15 +357,16 @@ void Main_Init(void)
 {
   /* SDL init: */
   if( SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER) < 0 )
-   {
+  {
     fprintf(stderr, "Could not initialize the SDL library:\n %s\n", SDL_GetError() );
     exit(-1);
-   }
+  }
 
   Misc_SeedRandom(1043618);
+  Configuration_Init();
+  SDLGui_Init();
   Printer_Init();
   RS232_Init();
-  Configuration_Init();
   Timer_Init();
   File_Init();
   Screen_Init();
@@ -401,6 +402,7 @@ void Main_UnInit(void)
   Audio_UnInit();
   YMFormat_FreeRecording();
 //FM  View_LimitCursorToScreen();
+  SDLGui_UnInit();
   Screen_UnInit();
 
 #ifdef USE_DEBUGGER
