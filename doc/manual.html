@@ -8,7 +8,7 @@
   <meta name="resource-type" content="document">
   <meta name="distribution" content="global">
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
-  <meta name="Generator" content="Quanta Plus 3.2 Debian GNU/Linux 3.0 Woody">
+  <meta name="Generator" content="Quanta Plus 3.2.1  SuSE Linux 9.1">
   <meta http-equiv="Content-Style-Type" content="text/css">
   <style type="text/css">
   <!--
@@ -46,7 +46,9 @@
 <h1 align="center">Hatari User's Manual</h1>
 <p align="center">
 <strong>project initiator and main developer of Hatari: Thomas Huth &lt;<a href="mailto:thothy@users.sourceforge.net">thothy@users.sourceforge.net</a>&gt;</strong><br>
-<strong>manual by Matthias Arndt &lt;<a href="mailto:marndt@asmsoftware.de">marndt@asmsoftware.de</a>&gt;</strong><br>
+<strong>manual by Matthias Arndt &lt;<a href="mailto:marndt@asmsoftware.de">marndt@asmsoftware.de</a>&gt;</strong>
+</p>
+<p align="center">
 <strong>Hatari on the WWW: <A href="http://hatari.sourceforge.net/" target="_blank">http://hatari.sourceforge.net/</A> </strong>
 </p>
 <br>
@@ -81,11 +83,12 @@ portable C and also has some nice features like 68040 and FPU support.
   <li>ST RAM size variable (512k, 1MB, 2MB and 4MB possible)</li>
   <li>most of the ST specific hardware</li>
   <li>ST Shifter with ST-High, ST-Medium and ST-Low resolutions,
-overscan effects for lower border and partially in the upper border too</li>
+overscan effects for lower border and partially in the upper, left and right border too</li>
   <li>512 colour ST palette</li>
   <li>Blitter chip emulation</li>
-  <li>PSG YM2149 emulation (soundchip)</li>
+  <li>PSG YM2149 emulation (soundchip) including STFM samples</li>
   <li>Printer emulation on GEMDOS and Hardware level (print to file)</li>
+  <li>experimental support for RS232</li>
   <li>extremely experimental MIDI support</li>
   <li>Mega ST real time clock</li>
   <li>many (but not all) raster effects </li>
@@ -94,7 +97,7 @@ overscan effects for lower border and partially in the upper border too</li>
 connected PC joystick</li>
   <li>FDC emulation using floppy disk images in standard formats (*.ST, *.MSA
 and *.DIM)</li>
-  <li>support for zipped disk images</li>
+  <li>support for zipped disk images (both PkZip and Gzip)</li>
   <li>partial ACSI emulation for harddisk support</li>
   <li>GEMDOS interface driver to mount a directory as a harddrive</li>
   <li>experimental support for memory snapshots</li>
@@ -121,6 +124,7 @@ nor support for STE specific features.
 Hatari has been succesfully tested on the following machines:
 <p> </p>
 <ul>
+  <li>Linux/i86 with Kernel 2.6.6, AMD Athlon 600MHz</li>
   <li>Linux/i86 with Kernel 2.4.x, AMD Athlon 600MHz </li>
   <li>Linux/i86 with Kernel 2.2.18, Pentium MMX 200MHz </li>
   <li>Linux/PPC with Kernel 2.4.x BeOS/i86 </li>
@@ -232,6 +236,10 @@ emulation)</td>
       <td align="center">activates the simple builtin debugger</td>
     </tr>
     <tr>
+    	<TD align="center">--slowfdc</TD>
+	<td align="center">slows down FDC emulation (needed to make some games and demos work)</td>
+    </tr>
+    <tr>
       <td align="center">-d &lt;dir&gt; (--harddrive &lt;dir&gt;)</td>
       <td align="center">emulates &lt;dir&gt; as a hard disk</td>
     </tr>
@@ -268,9 +276,17 @@ emulation)</td>
       <td align="center">--printer</td>
       <td align="center">enable experimental printer support</td>
     </tr>
-	<tr>
+    <tr>
       <td align="center">--midi &lt;filename&gt;</td>
       <td align="center">enable experimental MIDI output to the mentioned file</td>
+    </tr>
+    <tr>
+      <td align="center">--rs232 &lt;filename&gt;</td>
+      <td align="center">enable experimental RS232 communication via the mentioned file</td>
+    </tr>
+    <tr>
+      <td align="center">-c &lt;filename&gt; (--configfile)</td>
+      <td align="center">Use the mentioned file as configuration file instead of ~/.hatari.cfg</td>
     </tr>
   </tbody>
 </table>
@@ -393,6 +409,13 @@ you will need to return to the GUI to switch sound recording off again.</p>
 This is due to the fact that the Atari ST uses some general I/O ports of the soundchip for the printer port. The Hatari team suggests to
 disable printing while using games and demos.
 </p>
+<p>Check the second checkmark if you want to enable experimental RS232 support. The RS232 device is configured according to the settings of the emulated RS232 of the Atari ST. This means Hatari will automatically use baudrate and handshaking as configured for the emulated ST.</p>
+<p>Select a suitable device file for input and output. Click on <span class="button">Browse</span> to select.
+A good choice is /dev/ttyS0 or /dev/ttyS1.
+</p>
+<p>You can enable MIDI as well. This currently work for outputting MIDI data only.</p>
+<p>Click on <span class="button">Browse</span> to select a suitable MIDI device file for output.</p>
+<p>Your sound driver must support MIDI to make this work.</p>
 
 <h3>Keyboard shortcuts</h3>
 <p> While the emulator is running, you can activate or toggle various
@@ -495,7 +518,7 @@ key on the ST. The following keys have special meanings: </p>
       <td align="center">will emulate the ST's ( key in the keypad</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">Scroll Lock</span></td>
+      <td align="center"><span class="key">Page Down</span></td>
       <td align="center">will emulate the ST's ) in the keypad</td>
     </tr>
   </tbody>
@@ -537,6 +560,16 @@ as the joystick directions, the right CTRL key will act as the
 firebutton. You can still use the cursor keys as the ST's
 cursorkeys in this mode as long as you press <span class="key">SHIFT</span> along with the cursorkeys. </p>
 
+<h3>Emulated video</h3>
+<p>Hatari by default only handles ST modes, ST-LOW, ST-MED and ST-HIGH.</p>
+<p>Overscan effects and socalled "Border Removal" are possible too.</p>
+<p>Due to the fact that these effects are achieved by using quirks and glitches in the original chips to do things beyond their specification emulation is a bit tricky for these and not all ST applications utilizing these techniques will work properly in Hatari.
+Especially socalled "Sync Scrolling", a special technique to emulate the low byte of the video address, currently does not work properly in Hatari.
+</p>
+<p>Beside that you can setup extended VDI modes. These only work with GEM-compliant applications and they are equal to fitting a videocard into your Mega ST.</p>
+<p>Make sure to disable extended VDI modes for playing games as 99% of all ST games will not be able to make use of higher resolutions.</p>
+
+
 <h3>Emulated printer</h3>
 <p>Due to the fact that printer handling is very different between Unix style machines and the Atari ST, emulation
 of the printer is achieved by writing all printer output to a file.</p>
@@ -547,6 +580,12 @@ in a messy data dump in the printer output.</p>
 The file contents can be used with your favourite text editor for further processing and printing to a real printer.</p>
 <p>To get real direct printing out of Hatari on a PostScript printer, you may set up a GDOS printer with a PostScript driver on the emulated Atari and set your printer device file as Hatari's printer output.<br>
 <em>NOTE:</em> This has not been tested yet and the Hatari team cannot guarantee that it will work.</p>
+
+<h3>Emulated RS232</h3>
+<p>Serial communications in Hatari is designed to directly use a serial port on your PC.</p>
+<p>Communications parameters are set automatically upon the settings of the emulated ST. This means all you do is to set
+the communication parameters like baudrate from your ST communications software. Hatari will do the rest and handle
+the serial input and output for you.</p>
 
 <h2>Floppy disk images</h2>
 <p>Hatari does not use floppy disks directly but disk images due to
@@ -598,7 +637,7 @@ $1FF). </p>
 You can also directly run the zip archives you may download from the
 net as long as the archive contains a disk image in .ST or .MSA format.</p>
 <p><em>Note:</em> Hatari does not save disk images back to *.ZIP files so
-your highscores and savegames are lost if you loaded the game from such
+your highscores and savegames are lost if you load the game from such
 a zipped disk image.</p>
 
 <h2>Hard disk support</h2>
@@ -706,6 +745,12 @@ parts of the emulated system is much trickier.
 	  <td>bullets and explosions sound weired</td>
 	</tr>
 	<tr>
+	  <td>Bubble Bobble</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	</tr>
+	<tr>
 	  <td>F15 Strike Eagle 2</td>
 	  <td>yes</td>
 	  <td>ok</td>
@@ -727,7 +772,7 @@ parts of the emulated system is much trickier.
 	  <td>Lethal Xcess</td>
 	  <td>no</td>
 	  <td>&nbsp;</td>
-	  <td>crashes while loading</td>
+	  <td>crashes while loading, sync scrolling will not work properly</td>
 	</tr>
 	<tr>
 	  <td>Star Goose</td>
@@ -738,7 +783,7 @@ parts of the emulated system is much trickier.
 	<tr>
 	  <td>Xenon 2 - Megablast</td>
 	  <td>yes</td>
-	  <td>perfect (including sampled intro)</td>
+	  <td>nearly perfect (including sampled intro)</td>
 	  <td>&nbsp;</td>
 	</tr>
 	<tr>
@@ -777,6 +822,13 @@ parts of the emulated system is much trickier.
 	  <td>&nbsp;</td>
 	  <td>&nbsp;</td>
 	</tr>
+	<tr>
+	  <td>Wings Of Death</td>
+	  <td>yes</td>
+	  <td>&nbsp;</td>
+	  <td>&nbsp;</td>
+	</tr>
+
   </tbody>
 </table>
 
@@ -872,7 +924,7 @@ parts of the emulated system is much trickier.
 	<tbody>
     <tr>
       <td align="left"><a href="http://validator.w3.org/check/referer"><img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a></td>
-      <td align="right"><address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a>June 17 2004</address></td>
+      <td align="right"><address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a>July 08 2004</address></td>
     </tr>
 	</tbody>
 </table>
