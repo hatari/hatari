@@ -180,6 +180,7 @@ typedef struct
   BOOL bAddressSpace24;
   BOOL bBlitter;                  /* TRUE if blitter is enabled */
   BOOL bPatchTimerD;
+  BOOL bSlowFDC;                  /* TRUE to slow down FDC emulation */
   MINMAXSPEED_TYPE nMinMaxSpeed;
 } CNF_SYSTEM;
 

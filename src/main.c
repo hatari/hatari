@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.58 2004-06-24 14:52:56 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.59 2004-07-01 20:56:38 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -216,6 +216,7 @@ static void Main_ShowOptions(void)
          "  --memsize <x>         Memory size in MB (x = 0, 1, 2 or 4; 0 for 512kB)\n"
          "  --configfile <file>   Use <file> instead of ~/.hatari.cfg as configuration\n"
          "     or -c <file>        file.\n"
+         "  --slowfdc             Slow down FDC emulation (very experimental!).\n"
         );
 }
 
@@ -398,6 +399,10 @@ static void Main_ReadParameters(int argc, char *argv[])
             fprintf(stderr, "Config file name too long!\n");
           i += 1;
         }
+      }
+      else if (!strcmp(argv[i], "--slowfdc"))
+      {
+        ConfigureParams.System.bSlowFDC = TRUE;
       }
       else
       {

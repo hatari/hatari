@@ -12,7 +12,7 @@
   to perform the transfer of data from our disc image into the ST RAM area by simulating the
   DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.12 2004-04-23 15:33:58 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.13 2004-07-01 20:56:38 thothy Exp $";
 
 #include "main.h"
 #include "debug.h"
@@ -124,8 +124,6 @@ ACSI DMA and Floppy Disc Controller(FDC)
   in the MFP). INTRQ is reset by reading the status register OR by loading a new command. So, does this
   mean the GPIP? Or does it actually CANCEL the interrupt? Can this be done?
 */
-
-#define ENABLE_FLOPPY_SAVING                                    /* Save to floppies */
 
 
 short int FDCSectorCountRegister;
@@ -411,10 +409,22 @@ static void FDC_SetReadWriteParameters(int nSectors)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Update floppy drive on each HBL(approx' 512 cycles)
+  Update floppy drive on each HBL (approx' 512 cycles)
 */
 void FDC_UpdateHBL(void)
 {
+  /* Seems like some games/demos (e.g. Fantasia by Dune, Alien World, ...) don't
+   * work if the FDC is too fast... so here's a quick-n-dirty hack to get them
+   * working... Should be replaced with proper FDC timings one day! */
+  static int nDelayHBLs = 300;
+  if (ConfigureParams.System.bSlowFDC)
+  {
+    if (nDelayHBLs-- > 0)
+      return;
+    else
+      nDelayHBLs = 300;
+  }
+
   /* Do we have a DMA ready to copy? */
   if (bDMAWaiting) {
     /* Yes, copy it */
@@ -845,12 +855,17 @@ static void FDC_TypeII_WriteMultipleSectors(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIII_ReadAddress(void)
 {
+  fprintf(stderr, "Warning: FDC type III command 'read address' is not implemented yet!\n");
 }
 
 
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIII_ReadTrack(void)
 {
+  fprintf(stderr, "Warning: FDC type III command 'read track' does not work yet!\n");
+
+  /* FIXME: "Read track" should read more than only the sectors! (also sector headers, gaps, etc.) */
+
   /* Set emulation to read a single track */
   FDCEmulationCommand = FDCEMU_CMD_READSECTORS;
   FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
@@ -864,6 +879,10 @@ static void FDC_TypeIII_ReadTrack(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIII_WriteTrack(void)
 {
+  fprintf(stderr, "Warning: FDC type III command 'write track' does not work yet!\n");
+
+  /* FIXME: "Write track" not only writes the sectors! (also sector headers, gaps, etc.) */
+
   /* Set emulation to write a single track */
   FDCEmulationCommand = FDCEMU_CMD_WRITESECTORS;
   FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
