@@ -1,12 +1,18 @@
 /*
-  Hatari
+  Hatari - bios.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   Bios Handler (Trap #13)
 
-  We intercept and direct some Bios calls to handle input/output to RS-232 or the printer etc...
+  We intercept and direct some Bios calls to handle input/output to RS-232
+  or the printer etc...
 */
+static char rcsid[] = "Hatari $Id: bios.c,v 1.2 2003-09-26 18:08:36 thothy Exp $";
 
 #include "main.h"
+#include "configuration.h"
 #include "debug.h"
 #include "decode.h"
 #include "floppy.h"
@@ -27,20 +33,39 @@ BOOL Bios_Bconstat(unsigned long Params)
   unsigned short Dev;
 
   Dev = STMemory_ReadWord(Params+SIZE_WORD);
-  switch(Dev) {
-    case 0:                                   /* PRT: Centronics */
-      Regs[REG_D0] = 0;                       /* No characters ready(cannot read from printer) */
-      return(TRUE);
-    case 1:                                   /* AUX: RS-232 */
-      if (RS232_GetStatus())
-        Regs[REG_D0] = -1;                    /* Chars waiting */
+
+  switch(Dev)
+  {
+    case 0:                             /* PRT: Centronics */
+      if (ConfigureParams.Printer.bEnablePrinting)
+      {
+        Regs[REG_D0] = 0;               /* No characters ready (cannot read from printer) */
+        return(TRUE);
+      }
       else
-        Regs[REG_D0] = 0;
-      return(TRUE);
+      {
+        return(FALSE);
+      }
+      break;
+    case 1:                             /* AUX: RS-232 */
+      if (ConfigureParams.RS232.bEnableRS232)
+      {
+        if (RS232_GetStatus())
+          Regs[REG_D0] = -1;            /* Chars waiting */
+        else
+          Regs[REG_D0] = 0;
+        return(TRUE);
+      }
+      else
+      {
+        return(FALSE);
+      }
+      break;
   }
 
   return(FALSE);
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -53,18 +78,37 @@ BOOL Bios_Bconin(unsigned long Params)
   unsigned char Char;
 
   Dev = STMemory_ReadWord(Params+SIZE_WORD);
-  switch(Dev) {
-    case 0:                                   /* PRT: Centronics */
-      Regs[REG_D0] = 0;                       /* Force NULL character(cannot read from printer) */
-      return(TRUE);
-    case 1:                                   /* AUX: RS-232 */
-      RS232_ReadBytes(&Char,1);
-      Regs[REG_D0] = Char;
-      return(TRUE);
+
+  switch(Dev)
+  {
+    case 0:                             /* PRT: Centronics */
+      if (ConfigureParams.Printer.bEnablePrinting)
+      {
+        Regs[REG_D0] = 0;               /* Force NULL character (cannot read from printer) */
+        return(TRUE);
+      }
+      else
+      {
+        return(FALSE);
+      }
+      break;
+    case 1:                             /* AUX: RS-232 */
+      if (ConfigureParams.RS232.bEnableRS232)
+      {
+        RS232_ReadBytes(&Char, 1);
+        Regs[REG_D0] = Char;
+        return(TRUE);
+      }
+      else
+      {
+        return(FALSE);
+      }
+      break;
   }
 
   return(FALSE);
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -78,17 +122,36 @@ BOOL Bios_Bconout(unsigned long Params)
 
   Dev = STMemory_ReadWord(Params+SIZE_WORD);
   Char = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
-  switch(Dev) {
+
+  switch(Dev)
+  {
     case 0:                                   /* PRT: Centronics */
-      Printer_TransferByteTo(Char);
-      return(TRUE);
+      if (ConfigureParams.Printer.bEnablePrinting)
+      {
+        Printer_TransferByteTo(Char);
+        return(TRUE);
+      }
+      else
+      {
+        return(FALSE);
+      }
+      break;
     case 1:                                   /* AUX: RS-232 */
-      RS232_TransferBytesTo(&Char,1);
-      return(TRUE);
+      if (ConfigureParams.RS232.bEnableRS232)
+      {
+        RS232_TransferBytesTo(&Char, 1);
+        return(TRUE);
+      }
+      else
+      {
+        return(FALSE);
+      }
+      break;
   }
 
   return(FALSE);
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -114,6 +177,7 @@ BOOL Bios_RWabs(unsigned long Params)
   return(FALSE);
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
   BIOS Return output device status
@@ -124,17 +188,36 @@ BOOL Bios_Bcostat(unsigned long Params)
   unsigned short Dev;
 
   Dev = STMemory_ReadWord(Params+SIZE_WORD);
-  switch(Dev) {
+
+  switch(Dev)
+  {
     case 0:                                   /* PRT: Centronics */
-      Regs[REG_D0] = -1;                      /* Device ready */
-      return(TRUE);
+      if (ConfigureParams.Printer.bEnablePrinting)
+      {
+        Regs[REG_D0] = -1;                    /* Device ready */
+        return(TRUE);
+      }
+      else
+      {
+        return(FALSE);
+      }
+      break;
     case 1:                                   /* AUX: RS-232 */
-      Regs[REG_D0] = -1;                      /* Device ready */
-      return(TRUE);
+      if (ConfigureParams.RS232.bEnableRS232)
+      {
+        Regs[REG_D0] = -1;                    /* Device ready */
+        return(TRUE);
+      }
+      else
+      {
+        return(FALSE);
+      }
+      break;
   }
 
   return(FALSE);
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -143,25 +226,33 @@ BOOL Bios_Bcostat(unsigned long Params)
 */
 BOOL Bios_Mediach(unsigned long Params)
 {
-  unsigned short int Dev,ImageChanged=0;
+  unsigned short int Dev, ImageChanged;
 
   /* Read details from stack */
   Dev = STMemory_ReadWord(Params+SIZE_WORD);
 
   /* Check we are trying to access a floppy drive? */
-  if (Dev<2) {
+  if (Dev<2)
+  {
     /* Have we inserted a new disc image into this drive? */
-    if (EmulationDrives[Dev].bMediaChanged) {
+    if (EmulationDrives[Dev].bMediaChanged)
+    {
       EmulationDrives[Dev].bMediaChanged = FALSE;
-      ImageChanged = 2;      /* We did change disc image */
+      ImageChanged = 2;           /* We did change disc image */
     }
+    else
+    {
+      ImageChanged = 0;
+    }
+
+    Regs[REG_D0] = ImageChanged;  /* Set 0 if was not changed or 2 if was */
+
+    return(TRUE);
   }
 
-  /* Set 0 if was not changed or 2 if was */
-  Regs[REG_D0] = ImageChanged;
-
-  return(TRUE);
+  return(FALSE);
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -176,10 +267,12 @@ BOOL Bios(void)
   /* Get call */
   Params = Regs[REG_A7];
   BiosCall = STMemory_ReadWord(Params);
-//  Debug_File("BIOS %d\n",BiosCall);
+
+  /* Debug_File("BIOS %d\n",BiosCall); */
 
   /* Intercept? */
-  switch(BiosCall) {
+  switch(BiosCall)
+  {
     case 0x1:
       return(Bios_Bconstat(Params));
     case 0x2:
@@ -190,9 +283,12 @@ BOOL Bios(void)
       return(Bios_RWabs(Params));
     case 0x8:
       return(Bios_Bcostat(Params));
+/*
+    // I had some emulation problems when intercepting Mediach()
+    // -> so it is currently disabled.
     case 0x9:
       return(Bios_Mediach(Params));
-
+*/
     default:  /* Call as normal! */
       return(FALSE);
   }

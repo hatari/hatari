@@ -1,20 +1,27 @@
 /*
-  Hatari
+  Hatari - xbios.c
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
   XBios Handler (Trap #14)
 
-  We intercept and direct some XBios calls to handle the RS-232/Blitter and help with floppy
-  debugging
+  We intercept and direct some XBios calls to handle the RS-232 etc. and help
+  with floppy debugging.
 */
+static char rcsid[] = "Hatari $Id: xbios.c,v 1.3 2003-09-26 18:08:36 thothy Exp $";
 
 #include "main.h"
+#include "configuration.h"
 #include "debug.h"
 #include "decode.h"
 #include "floppy.h"
 #include "m68000.h"
 #include "misc.h"
 #include "rs232.h"
+#include "screenSnapShot.h"
 #include "stMemory.h"
+
 
 /* List of Atari ST RS-232 baud rates */
 static int BaudRates[] = {
@@ -107,7 +114,8 @@ BOOL XBios_Rsconf(unsigned long Params)
   Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
   /* Set baud, if passed valid setting */
-  if ( (Baud>=0) && (Baud<=15) ) {
+  if (ConfigureParams.RS232.bEnableRS232 && Baud>=0 && Baud<=15)
+  {
     /* Convert ST baud rate index to value */
     BaudRate = BaudRates[Baud];
     /* Set RS-232, pass Communication Control and USART Control register */
@@ -127,6 +135,10 @@ BOOL XBios_Rsconf(unsigned long Params)
 */
 BOOL XBios_Scrdmp(unsigned long Params)
 {
+  fprintf(stderr, "XBIOS screendump!\n");
+
+  ScreenSnapShot_SaveScreen();
+
   /* Correct return code? */
   Regs[REG_D0] = 0;
 
@@ -141,21 +153,9 @@ BOOL XBios_Scrdmp(unsigned long Params)
 */
 BOOL XBios_Prtblk(unsigned long Params)
 {
+  fprintf(stderr, "Intercepted XBIOS Prtblk()\n");
+
   /* Correct return code? */
-  Regs[REG_D0] = 0;
-
-  return(TRUE);
-}
-
-
-/*----------------------------------------------------------------------- */
-/*
-  XBIOS BlitMode
-  Call 64
-*/
-BOOL XBios_BlitMode(unsigned long Params)
-{
-  /* No blitter */
   Regs[REG_D0] = 0;
 
   return(TRUE);
@@ -174,9 +174,11 @@ BOOL XBios(void)
   /* Find call */
   Params = Regs[REG_A7];
   XBiosCall = STMemory_ReadWord(Params);
+
   /*Debug_File("XBIOS %d\n",XBiosCall);*/
 
-  switch(XBiosCall) {
+  switch(XBiosCall)
+  {
     case 8:
       return(XBios_Floprd(Params));
     case 9:
@@ -187,8 +189,6 @@ BOOL XBios(void)
       return(XBios_Scrdmp(Params));
     case 36:
       return(XBios_Prtblk(Params));
-    case 64:
-      return(XBios_BlitMode(Params));
 
     default:  /* Call as normal! */
       return(FALSE);

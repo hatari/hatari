@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-static char rcsid[] = "Hatari $Id: newcpu.c,v 1.26 2003-07-29 12:01:55 thothy Exp $";
+static char rcsid[] = "Hatari $Id: newcpu.c,v 1.27 2003-09-26 18:08:36 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -24,6 +24,8 @@ static char rcsid[] = "Hatari $Id: newcpu.c,v 1.26 2003-07-29 12:01:55 thothy Ex
 #include "../includes/vdi.h"
 #include "../includes/cart.h"
 #include "../includes/debugui.h"
+#include "../includes/bios.h"
+#include "../includes/xbios.h"
 
 
 struct flag_struct regflags;
@@ -691,6 +693,20 @@ void Exception(int nr, uaecptr oldpc)
         currpc = CART_VDI_OPCODE_ADDR;
       }
     }
+
+#if 0
+    /* Intercept BIOS or XBIOS trap (Trap #13 or #14) */
+    if (nr == 0x2d)
+    {
+      /* Intercept BIOS calls */
+      if (Bios())  return;
+    }
+    else if (nr == 0x2e)
+    {
+      /* Intercept XBIOS calls */
+      if (XBios())  return;
+    }
+#endif
 
     MakeSR();
 
