@@ -2,6 +2,7 @@
   Hatari
 */
 
+
 /*
   GEMDOS error codes, See 'The Atari Compendium' D.3
 */
@@ -55,11 +56,6 @@
 */
 #define TOS_NAMELEN  14
 
-//typedef struct {
-//  HANDLE FileHandle;
-//  WIN32_FIND_DATA FindFileData;
-//} INTERNAL_DTA;
-
 typedef struct {
   unsigned char index[2];
   unsigned char magic[4];
@@ -71,26 +67,34 @@ typedef struct {
   unsigned char dta_size[4];
   char dta_name[TOS_NAMELEN];
 } DTA;
+
 #define DTA_MAGIC_NUMBER  0x12983476
-#define MAX_DTAS_FILES    256      // Must be ^2
+#define MAX_DTAS_FILES    256      /* Must be ^2 */
+#define CALL_PEXEC_ROUTINE 3       /* Call our cartridge pexec routine */
 
-//typedef struct {
-//  HANDLE FileHandle;
-//  BOOL bUsed;
-//} FILE_HANDLE;
+#define  BASE_FILEHANDLE     64    /* Our emulation handles - MUST not be valid TOS ones, but MUST be <256 */
+#define  MAX_FILE_HANDLES    32    /* We can allow 32 files open at once */
 
-#define  BASE_FILEHANDLE      64    // Our emulation handles - MUST not be valid TOS ones, but MUST be <256
-#define  MAX_FILE_HANDLES    32     // We can allow 32 files open at once
-
-// DateTime
+/* 
+   DateTime structure used by TOS call $57 f_dattime 
+   Changed to fix potential problem with alignment.
+*/
 typedef struct {
-  unsigned hour:5;
-  unsigned minute:6;
-  unsigned second:5;
-  unsigned year:7;
-  unsigned month:4;
-  unsigned day:5;
+  unsigned short word1;
+  unsigned short word2;
 } DATETIME;
+
+
+#ifndef MAX_PATH
+#define MAX_PATH 256
+#endif
+
+typedef struct {
+  char hd_emulation_dir[MAX_PATH];         /* hd emulation directory */
+  char fs_currpath[MAX_PATH];              /* current path */
+} EMULATEDDRIVE;
+
+extern EMULATEDDRIVE **emudrives;
 
 #define  ISHARDDRIVE(Drive)  (Drive!=-1)
 
@@ -104,3 +108,10 @@ extern void GemDOS_CreateHardDriveFileName(int Drive,char *pszFileName,char *psz
 extern BOOL GemDOS(void);
 extern void GemDOS_OpCode(void);
 extern void GemDOS_RunOldOpCode(void);
+extern void GemDOS_Boot(void);
+
+
+
+
+
+
