@@ -714,7 +714,6 @@ void Dialog_TosGemDlg(void)
     tosgemdlg[DLGTOSGEM_RES640 + i].state &= ~SG_SELECTED;
     tosgemdlg[DLGTOSGEM_BPP1 + i].state &= ~SG_SELECTED;
   }
-printf("GEMRES_640x480 is %i\n",GEMRES_640x480);
   tosgemdlg[DLGTOSGEM_RES640+DialogParams.TOSGEM.nGEMResolution-GEMRES_640x480].state |= SG_SELECTED;
   tosgemdlg[DLGTOSGEM_BPP1+DialogParams.TOSGEM.nGEMColours-GEMCOLOUR_2].state |= SG_SELECTED;
 

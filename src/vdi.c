@@ -282,8 +282,7 @@ void VDI_FixDesktopInf(void)
 
   if(!GEMDOS_EMU_ON)
   {
-    fprintf(stderr,"Can't modify DESKTOP.INF since you don't use GEMDOS hard disk emulation.\n");
-    fprintf(stderr,"=> Changing the color depth is not possible.\n");
+    /* Can't modify DESKTOP.INF when not using GEMDOS hard disk emulation */
     return;
   }
 

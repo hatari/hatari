@@ -319,13 +319,13 @@ void Screen_SetDrawModes(void)
   ScreenDrawWindow[ST_LOWMEDIUM_MIX_RES].pDrawFunction = ConvertLowRes_640x16Bit;
   ScreenDrawWindow[ST_LOWMEDIUM_MIX_RES].Width = 640;  ScreenDrawWindow[ST_LOWMEDIUM_MIX_RES].Height = 200;  ScreenDrawWindow[ST_LOWMEDIUM_MIX_RES].BitDepth = 16;
 
-  /* And for VDI screens(set for 8-bit) */
+  /* And for VDI screens (set for 8-bit) */
   ScreenDrawVDIWindow[ST_LOW_RES].pDrawFunction = ConvertVDIRes_16Colour;
   ScreenDrawVDIWindow[ST_LOW_RES].Width = VDIWidth;  ScreenDrawVDIWindow[ST_LOW_RES].Height = VDIHeight;  ScreenDrawVDIWindow[ST_LOW_RES].BitDepth = 8;
   ScreenDrawVDIWindow[ST_MEDIUM_RES].pDrawFunction = ConvertVDIRes_4Colour;
   ScreenDrawVDIWindow[ST_MEDIUM_RES].Width = VDIWidth;  ScreenDrawVDIWindow[ST_MEDIUM_RES].Height = VDIHeight;  ScreenDrawVDIWindow[ST_MEDIUM_RES].BitDepth = 8;
-  ScreenDrawVDIWindow[ST_HIGH_RES].pDrawFunction = ConvertVDIRes_2Colour_1Bit;
-  ScreenDrawVDIWindow[ST_HIGH_RES].Width = VDIWidth;  ScreenDrawVDIWindow[ST_HIGH_RES].Height = VDIHeight;  ScreenDrawVDIWindow[ST_HIGH_RES].BitDepth = 1;
+  ScreenDrawVDIWindow[ST_HIGH_RES].pDrawFunction = ConvertVDIRes_2Colour;
+  ScreenDrawVDIWindow[ST_HIGH_RES].Width = VDIWidth;  ScreenDrawVDIWindow[ST_HIGH_RES].Height = VDIHeight;  ScreenDrawVDIWindow[ST_HIGH_RES].BitDepth = 8;
 
   /* And full-screen, select from Overscan/Non-Overscan */
   if (ConfigureParams.Screen.Advanced.bAllowOverscan)

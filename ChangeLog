@@ -1,14 +1,18 @@
-2002/10/13 (THH):
+2002-11-30 (THH):
+  * Added the possibility to select the GEM resolution to the TOS/GEM dialog.
+  * Rewrote ConvertVDIRes_2Colour() in C for big monochrome VDI resolutions.
+
+2002-10-13 (THH):
   * Rewrote ConvertVDIRes_16Colour() in C and added Line-A/VDI patches
     so that Hatari now also features a VDI big resolution mode.
 
-2002/09/21 (THH):
+2002-09-21 (THH):
   * Added YM and WAV sound recording (to hatari.ym or hatari.wav since the
     GUI does not support editing strings yet).
   * Introduced "System" setup dialog for configuring the ST hardware
     (currently CPU and blitter).
 
-2002/08/11 (THH):
+2002-08-11 (THH):
   * Fixed bug in the blitter function, so the letters in the menu bar of the
     desktop are now correct.
 
