@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.33 2004-11-30 23:05:53 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.34 2004-12-03 20:42:45 thothy Exp $";
 
 #include <SDL.h>
 
@@ -185,8 +185,6 @@ void Screen_Init(void)
   SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_ENABLE);
   SDL_EventState(SDL_MOUSEBUTTONUP, SDL_ENABLE);
   SDL_ShowCursor(SDL_DISABLE);
-  SDL_WarpMouse(sdlscrn->w/2, sdlscrn->h/2);      /* Set mouse pointer to the middle of the screen */
-  bIgnoreNextMouseMotion = TRUE;                  /* Ignore mouse motion event from SDL_WarpMouse */
 }
 
 

@@ -180,6 +180,7 @@ extern void Main_SysError(char *Error,char *Title);
 extern int Main_Message(char *pText, char *pCaption);
 extern void Main_PauseEmulation(void);
 extern void Main_UnPauseEmulation(void);
-extern void Main_EventHandler();
+extern void Main_WarpMouse(int x, int y);
+extern void Main_EventHandler(void);
 
 #endif /* ifndef HATARI_MAIN_H */

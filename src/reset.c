@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.8 2004-10-31 17:32:50 thothy Exp $";
+char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.9 2004-12-03 20:42:45 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -33,6 +33,8 @@ char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.8 2004-10-31 17:32:50 thothy Exp $
 */
 int Reset_Cold(void)
 {
+  Main_WarpMouse(sdlscrn->w/2, sdlscrn->h/2);  /* Set mouse pointer to the middle of the screen */
+
   return Reset_ST(TRUE);
 }
 
