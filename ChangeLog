@@ -1,3 +1,7 @@
+2001-10-10 (Thomas Huth):  *** Version 0.11 ***
+  * Changed some C++ comments to C comments (for plain ANSI-C compilers).
+  * Fixed a stack problem in gemdos.c
+
 2001-09-20 (Thomas Huth):
   * Added screen flipping in fullscreen mode (-> more speed!).
   * ST-Med/ST-Low mixed mode now works (e.g. in the Magnetic
@@ -6,7 +10,7 @@
 2001-09-09 (Sven de Marothy):
   * Added hard-drive emulation, (option -e or --harddrive)
   * Fixed annoying key clicks during boot.
-	
+
 2001-08-16 (Thomas Huth):  *** Version 0.10a ***
   * Improved CPU cycles emulation. Most instructions now return the
     right cycles, I hope.

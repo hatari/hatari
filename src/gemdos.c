@@ -31,6 +31,8 @@
 #include "stMemory.h"
 #include "view.h"
 
+#include "uae-cpu/hatari-glue.h"
+
 #include <sys/stat.h>
 #include <time.h>
 
@@ -1382,8 +1384,11 @@ void GemDOS_OpCode(void)
   CallingSReg = STMemory_ReadWord(Regs[REG_A7]);
   if ((CallingSReg&SR_SUPERMODE)==0)      /* Calling from user mode */
     Params = regs.usp;
-  else
+  else {
     Params = Regs[REG_A7]+SIZE_WORD+SIZE_LONG;  /* super stack */
+    if( cpu_level>0 )
+      Params += SIZE_WORD;   /* Skip extra word whe CPU is >=68010 */
+  }
 
   /* Default to run TOS GemDos (SR_NEG run Gemdos, SR_ZERO already done, SR_OVERFLOW run own 'Pexec' */
   RunOld = TRUE;

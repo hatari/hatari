@@ -1,8 +1,8 @@
 
-      *****************
-      * Hatari        *
-      * Version 0.10a *
-      *****************
+      ****************
+      * Hatari       *
+      * Version 0.11 *
+      ****************
 
 
  1) License
@@ -41,8 +41,7 @@ run any game with them.
 So I started adapting the WinSTon source code to Linux. And since WinSTon's
 CPU core is written in Microsoft-C assembler :-( I was not able to use it.
 Instead I adapted UAE's CPU core for Hatari.
-The UAE CPU core has some nice features as 68020, FPU and JIT support
-(but none of them is enabled in Hataris source at the moment).
+The UAE CPU core has some nice features as 68020, FPU and JIT support.
 
 Important: Hatari isn't yet very usable - it does not run very stable and
 a lot of WinSTon original features are still missing in this version, e.g.
