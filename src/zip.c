@@ -220,6 +220,36 @@ long ZIP_CheckImageFile(unzFile uf, char *filename, int *ST_or_MSA)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Return the first .zip or .msa file in a zip, or NULL on failure
+*/
+char *ZIP_FirstFile(char *filename)
+{
+  zip_dir *files;
+  int i;
+  char *name;
+
+  if((files = ZIP_GetFiles(filename)) == NULL) return(NULL);
+  name = Memory_Alloc(ZIP_PATH_MAX);
+
+  name[0] = '\0';
+  for(i=files->nfiles-1;i>=0;i--)
+    if(File_FileNameIsMSA(files->names[i]) || 
+       File_FileNameIsMSA(files->names[i]))
+      strncpy(name, files->names[i], ZIP_PATH_MAX);
+    
+  /* free the files */
+  for(i=0;i<files->nfiles;i++)
+    Memory_Free(files->names[i]);
+  Memory_Free(files);
+
+  if(name[0] == '\0')
+    return(NULL);
+  return(name);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Extract a file (filename) from a ZIP-file (uf), the number of 
   bytes to uncompress is size. Returns a pointer to a buffer containing
   the uncompressed data, or NULL.
@@ -289,12 +319,23 @@ int ZIP_ReadDisc(char *pszFileName, char *pszZipPath, unsigned char *pBuffer)
   unzFile uf=NULL;
   char *buf;
   int ST_or_MSA;
+  BOOL pathAllocated=FALSE;
 
   uf = unzOpen(pszFileName);
   if (uf==NULL)
     {
       printf("Cannot open %s\n", pszFileName);
       return(0);
+    }
+  
+  if (pszZipPath == NULL)
+    {
+      if((pszZipPath = ZIP_FirstFile(pszFileName)) == NULL)
+	{
+	  printf("Cannot open %s\n", pszFileName);
+	  return(0);
+	}
+      pathAllocated=TRUE;
     }
 
   if((ImageSize = ZIP_CheckImageFile(uf, pszZipPath, &ST_or_MSA)) <= 0)
@@ -327,6 +368,8 @@ int ZIP_ReadDisc(char *pszFileName, char *pszZipPath, unsigned char *pBuffer)
 
   /* Free the buffer */
   Memory_Free(buf);
+  if(pathAllocated == TRUE)
+    Memory_Free(pszZipPath);
 
   return(ImageSize);
 }
