@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.37 2005-04-05 14:41:24 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.38 2005-04-07 10:15:01 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -643,7 +643,7 @@ static int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 		/* Find drive letter(as number) */
 		DriveLetter = GemDOS_FindDriveNumber(pszFileName);
 		/* Does match one of our drives? */
-		if ( (DriveLetter>=2) && (DriveLetter<=DRIVELIST_TO_DRIVE_INDEX(ConfigureParams.HardDisc.nDriveList)) )
+		if ((DriveLetter >= 2) && (DriveLetter <= DRIVELIST_TO_DRIVE_INDEX(ConfigureParams.HardDisc.nDriveList)))
 			return DriveLetter;
 	}
 
@@ -1278,8 +1278,8 @@ static BOOL GemDOS_Read(unsigned long Params)
 		}
 		else
 		{
-			/* Limit to size of file to prevent windows error */
-			if (Size>FileSize)
+			/* Limit to size of file to prevent errors */
+			if (Size > FileSize)
 				Size = FileSize;
 			/* And read data in */
 			nBytesRead = fread(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
@@ -1319,7 +1319,7 @@ static BOOL GemDOS_Write(unsigned long Params)
 	{
 
 		nBytesWritten = fwrite(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
-		if (nBytesWritten>=0)
+		if (nBytesWritten >= 0)
 		{
 
 			Regs[REG_D0] = nBytesWritten;      /* OK */
@@ -1420,7 +1420,7 @@ static int GemDOS_GetDir(unsigned long Params)
 		// convertit en path st (dos)
 		len = strlen(path)-1;
 		path[len] = 0;
-		for (i=0; i<=len; i++)
+		for (i = 0; i <= len; i++)
 		{
 			c = path[i];
 			STMemory_WriteByte(Address+i, (c=='/' ? '\\' : c) );

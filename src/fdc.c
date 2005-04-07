@@ -4,15 +4,15 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  Floppy Disc Controller(FDC) emulation. We need to simulate the movement of the head of the
-  floppy disc drive to accurately perform the FDC commands, such as 'Step'. The is important
-  for ST demo disc images. We have to go into a lot of details - including the start up/stop
-  of the drive motor.
-  To help with this emulation, we keep our own internal commands which are checked each HBL
-  to perform the transfer of data from our disc image into the ST RAM area by simulating the
-  DMA.
+  Floppy Disc Controller(FDC) emulation. We need to simulate the movement of
+  the head of the floppy disc drive to accurately perform the FDC commands,
+  such as 'Step'. The is important for ST demo disc images. We have to go
+  into a lot of details - including the start up/stop of the drive motor.
+  To help with this emulation, we keep our own internal commands which are
+  checked each HBL to perform the transfer of data from our disc image into
+  the ST RAM area by simulating the DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.18 2005-04-05 14:41:22 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.19 2005-04-07 10:15:01 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -21,6 +21,7 @@ char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.18 2005-04-05 14:41:22 thothy Exp $";
 #include "floppy.h"
 #include "ikbd.h"
 #include "ioMem.h"
+#include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
@@ -112,17 +113,21 @@ ACSI DMA and Floppy Disc Controller(FDC)
     1  1    Data Register    Data Register
 
 
-  This handles any read/writes to the FDC and PSG. FDC commands are then sent through to read/write
-  disc sector code. We have full documents on 1772 FDC, but they use r0,r1,r2,r3 etc.. which are
-  not seen at first glance as Atari access them via the A0,A1 bits. Once this is understood it
-  is all relativly easy as a lot of information can be ignored as we are using disc images and
-  not actual discs. We do NOT support the reading of the PC's A: drive - newer PC's cannot read
-  an ST single sided disc, ST discs are very old and so are dirty which gets onto the PC drive heads
-  and ruins them and also support for disc sector access under Windows is... well not well documented!
+  This handles any read/writes to the FDC and PSG. FDC commands are then sent
+  through to read/write disc sector code. We have full documents on 1772 FDC,
+  but they use r0,r1,r2,r3 etc.. which are not seen at first glance as Atari
+  access them via the A0,A1 bits. Once this is understood it is all relativly
+  easy as a lot of information can be ignored as we are using disc images and
+  not actual discs. We do NOT support the reading of the PC's A: drive - newer
+  PC's cannot read an ST single sided disc, ST discs are very old and so are
+  dirty which gets onto the PC drive heads and ruins them and also support for
+  disc sector access under the various modern operating systems is not so easy
+  (if possible at all).
 
-  According to the documentation INTRQ is generated at the completion of each command(causes an interrupt
-  in the MFP). INTRQ is reset by reading the status register OR by loading a new command. So, does this
-  mean the GPIP? Or does it actually CANCEL the interrupt? Can this be done?
+  According to the documentation INTRQ is generated at the completion of each
+  command (causes an interrupt in the MFP). INTRQ is reset by reading the status
+  register OR by loading a new command. So, does this mean the GPIP? Or does it
+  actually CANCEL the interrupt? Can this be done?
 */
 
 
@@ -159,25 +164,25 @@ static unsigned char DMASectorWorkSpace[NUMBYTESPERSECTOR];     /* Workspace use
 */
 void FDC_Reset(void)
 {
-  /* Clear out FDC registers */
-  DiscControllerStatus_ff8604rd = 0;
-  DiscControllerWord_ff8604wr = 0;
-  DMAStatus_ff8606rd = 0x01;
-  DMAModeControl_ff8606wr = 0;
-  FDC_ResetDMAStatus();
-  FDCCommandRegister = 0;
-  FDCTrackRegister = 0;
-  FDCSectorRegister = 1;
-  FDCDataRegister = 0;
-  FDCSectorCountRegister = 0;
+	/* Clear out FDC registers */
+	DiscControllerStatus_ff8604rd = 0;
+	DiscControllerWord_ff8604wr = 0;
+	DMAStatus_ff8606rd = 0x01;
+	DMAModeControl_ff8606wr = 0;
+	FDC_ResetDMAStatus();
+	FDCCommandRegister = 0;
+	FDCTrackRegister = 0;
+	FDCSectorRegister = 1;
+	FDCDataRegister = 0;
+	FDCSectorCountRegister = 0;
 
-  FDCEmulationCommand = FDCEMU_CMD_NULL;        /* FDC emulation command currently being exceuted */
-  FDCEmulationRunning = FDCEMU_RUN_NULL;        /* Running command under above */
+	FDCEmulationCommand = FDCEMU_CMD_NULL;        /* FDC emulation command currently being exceuted */
+	FDCEmulationRunning = FDCEMU_RUN_NULL;        /* Running command under above */
 
-  FDCStepDirection = 1;                         /* +Track on 'Step' command */
-  bDMAWaiting = FALSE;                          /* No DMA waiting */
-  bMotorOn = FALSE;                             /* Motor off */
-  MotorSlowingCount = 0;                        /* Counter for motor slowing down before stopping */
+	FDCStepDirection = 1;                         /* +Track on 'Step' command */
+	bDMAWaiting = FALSE;                          /* No DMA waiting */
+	bMotorOn = FALSE;                             /* Motor off */
+	MotorSlowingCount = 0;                        /* Counter for motor slowing down before stopping */
 }
 
 
@@ -187,29 +192,29 @@ void FDC_Reset(void)
 */
 void FDC_MemorySnapShot_Capture(BOOL bSave)
 {
-  /* Save/Restore details */
-  MemorySnapShot_Store(&DiscControllerStatus_ff8604rd,sizeof(DiscControllerStatus_ff8604rd));
-  MemorySnapShot_Store(&DiscControllerWord_ff8604wr,sizeof(DiscControllerWord_ff8604wr));
-  MemorySnapShot_Store(&DMAStatus_ff8606rd,sizeof(DMAStatus_ff8606rd));
-  MemorySnapShot_Store(&DMAModeControl_ff8606wr,sizeof(DMAModeControl_ff8606wr));
-  MemorySnapShot_Store(&FDCCommandRegister,sizeof(FDCCommandRegister));
-  MemorySnapShot_Store(&FDCTrackRegister,sizeof(FDCTrackRegister));
-  MemorySnapShot_Store(&FDCSectorRegister,sizeof(FDCSectorRegister));
-  MemorySnapShot_Store(&FDCDataRegister,sizeof(FDCDataRegister));
-  MemorySnapShot_Store(&FDCSectorCountRegister,sizeof(FDCSectorCountRegister));
-  MemorySnapShot_Store(&FDCEmulationCommand,sizeof(FDCEmulationCommand));
-  MemorySnapShot_Store(&FDCEmulationRunning,sizeof(FDCEmulationRunning));
-  MemorySnapShot_Store(&FDCStepDirection,sizeof(FDCStepDirection));
-  MemorySnapShot_Store(&bDMAWaiting,sizeof(bDMAWaiting));
-  MemorySnapShot_Store(&bMotorOn,sizeof(bMotorOn));
-  MemorySnapShot_Store(&MotorSlowingCount,sizeof(MotorSlowingCount));
-  MemorySnapShot_Store(&nReadWriteTrack,sizeof(nReadWriteTrack));
-  MemorySnapShot_Store(&nReadWriteSector,sizeof(nReadWriteSector));
-  MemorySnapShot_Store(&nReadWriteSide,sizeof(nReadWriteSide));
-  MemorySnapShot_Store(&nReadWriteDev,sizeof(nReadWriteDev));
-  MemorySnapShot_Store(&nReadWriteSectorsPerTrack,sizeof(nReadWriteSectorsPerTrack));
-  MemorySnapShot_Store(&nReadWriteSectors,sizeof(nReadWriteSectors));
-  MemorySnapShot_Store(DMASectorWorkSpace,sizeof(DMASectorWorkSpace));
+	/* Save/Restore details */
+	MemorySnapShot_Store(&DiscControllerStatus_ff8604rd, sizeof(DiscControllerStatus_ff8604rd));
+	MemorySnapShot_Store(&DiscControllerWord_ff8604wr, sizeof(DiscControllerWord_ff8604wr));
+	MemorySnapShot_Store(&DMAStatus_ff8606rd, sizeof(DMAStatus_ff8606rd));
+	MemorySnapShot_Store(&DMAModeControl_ff8606wr, sizeof(DMAModeControl_ff8606wr));
+	MemorySnapShot_Store(&FDCCommandRegister, sizeof(FDCCommandRegister));
+	MemorySnapShot_Store(&FDCTrackRegister, sizeof(FDCTrackRegister));
+	MemorySnapShot_Store(&FDCSectorRegister, sizeof(FDCSectorRegister));
+	MemorySnapShot_Store(&FDCDataRegister, sizeof(FDCDataRegister));
+	MemorySnapShot_Store(&FDCSectorCountRegister, sizeof(FDCSectorCountRegister));
+	MemorySnapShot_Store(&FDCEmulationCommand, sizeof(FDCEmulationCommand));
+	MemorySnapShot_Store(&FDCEmulationRunning, sizeof(FDCEmulationRunning));
+	MemorySnapShot_Store(&FDCStepDirection, sizeof(FDCStepDirection));
+	MemorySnapShot_Store(&bDMAWaiting, sizeof(bDMAWaiting));
+	MemorySnapShot_Store(&bMotorOn, sizeof(bMotorOn));
+	MemorySnapShot_Store(&MotorSlowingCount, sizeof(MotorSlowingCount));
+	MemorySnapShot_Store(&nReadWriteTrack, sizeof(nReadWriteTrack));
+	MemorySnapShot_Store(&nReadWriteSector, sizeof(nReadWriteSector));
+	MemorySnapShot_Store(&nReadWriteSide, sizeof(nReadWriteSide));
+	MemorySnapShot_Store(&nReadWriteDev, sizeof(nReadWriteDev));
+	MemorySnapShot_Store(&nReadWriteSectorsPerTrack, sizeof(nReadWriteSectorsPerTrack));
+	MemorySnapShot_Store(&nReadWriteSectors, sizeof(nReadWriteSectors));
+	MemorySnapShot_Store(DMASectorWorkSpace, sizeof(DMASectorWorkSpace));
 }
 
 
@@ -219,8 +224,8 @@ void FDC_MemorySnapShot_Capture(BOOL bSave)
 */
 static void FDC_TurnMotorOn(void)
 {
-  bMotorOn = TRUE;                  /* Turn motor on */
-  MotorSlowingCount = 0;
+	bMotorOn = TRUE;                  /* Turn motor on */
+	MotorSlowingCount = 0;
 }
 
 
@@ -230,7 +235,7 @@ static void FDC_TurnMotorOn(void)
 */
 static void FDC_TurnMotorOff(void)
 {
-  MotorSlowingCount = 160;          /* Set timer so takes 'x' HBLs before turn off... */
+	MotorSlowingCount = 160;          /* Set timer so takes 'x' HBLs before turn off... */
 }
 
 
@@ -240,61 +245,62 @@ static void FDC_TurnMotorOff(void)
 */
 static void FDC_UpdateMotor(void)
 {
-  /* Is drive slowing down? Decrement counter */
-  if (MotorSlowingCount>0) {
-    MotorSlowingCount--;
+	/* Is drive slowing down? Decrement counter */
+	if (MotorSlowingCount>0)
+	{
+		MotorSlowingCount--;
 
-    if (MotorSlowingCount==0)
-      bMotorOn = FALSE;             /* Motor finally stopped */
-  }
+		if (MotorSlowingCount==0)
+			bMotorOn = FALSE;         /* Motor finally stopped */
+	}
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
   Reset DMA Status (RD 0xff8606)
-
+ 
   This is done by 'toggling' bit 8 of the DMA Mode Control register
 */
 void FDC_ResetDMAStatus(void)
 {
-  DMAStatus_ff8606rd = 0;           /* Clear out */
+	DMAStatus_ff8606rd = 0;           /* Clear out */
 
-  FDCSectorCountRegister = 0;
-  FDC_SetDMAStatus(FALSE);          /* Set no error */
+	FDCSectorCountRegister = 0;
+	FDC_SetDMAStatus(FALSE);          /* Set no error */
 
-  HDCSectorCount = 0;
-  HDCCommand.byteCount = 0;         /* Reset HDC command status */
-  HDCCommand.returnCode = 0xFF;
+	HDCSectorCount = 0;
+	HDCCommand.byteCount = 0;         /* Reset HDC command status */
+	HDCCommand.returnCode = 0xFF;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
   Set DMA Status (RD 0xff8606)
-
+ 
   NOTE FDC Doc's are incorrect - Bit 0 is '0' on error (See TOS floprd, Ninja III etc...)
   Look like Atari(yet again) connected the hardware up differently to the spec'
-
+ 
   Bit 0 - _Error Status (0=Error)
   Bit 1 - _Sector Count Zero Status (0=Sector Count Zero)
   Bit 2 - _Data Request Inactive Status
 */
 void FDC_SetDMAStatus(BOOL bError)
 {
-  DMAStatus_ff8606rd &= 0x1;        /* Clear(except for error) */
+	DMAStatus_ff8606rd &= 0x1;        /* Clear(except for error) */
 
-  /* Set error condition - NOTE this is incorrect in the FDC Doc's! */
-  if (!bError)
-    DMAStatus_ff8606rd |= 0x1;
+	/* Set error condition - NOTE this is incorrect in the FDC Doc's! */
+	if (!bError)
+		DMAStatus_ff8606rd |= 0x1;
 
-  /* Set zero sector count */
+	/* Set zero sector count */
 
-  if (DMAModeControl_ff8606wr&0x08)         /* Get which sector count? */
-    DMAStatus_ff8606rd |= (HDCSectorCount)?0:0x2;         /* HDC */
-  else
-    DMAStatus_ff8606rd |= (FDCSectorCountRegister)?0x2:0; /* FDC */
-  /* Perhaps the DRQ should be set here */
+	if (DMAModeControl_ff8606wr&0x08)         /* Get which sector count? */
+		DMAStatus_ff8606rd |= (HDCSectorCount)?0:0x2;         /* HDC */
+	else
+		DMAStatus_ff8606rd |= (FDCSectorCountRegister)?0x2:0; /* FDC */
+	/* Perhaps the DRQ should be set here */
 }
 
 
@@ -304,14 +310,14 @@ void FDC_SetDMAStatus(BOOL bError)
 */
 void FDC_DmaStatus_ReadWord(void)
 {
-  if (nIoMemAccessSize == SIZE_BYTE)
-  {
-    /* This register does not like to be accessed in byte mode on a normal ST */
-	M68000_BusError(IoAccessBaseAddress, 1);
-	return;
-  }
+	if (nIoMemAccessSize == SIZE_BYTE)
+	{
+		/* This register does not like to be accessed in byte mode on a normal ST */
+		M68000_BusError(IoAccessBaseAddress, 1);
+		return;
+	}
 
-  IoMem_WriteWord(0xff8606, DMAStatus_ff8606rd);
+	IoMem_WriteWord(0xff8606, DMAStatus_ff8606rd);
 }
 
 
@@ -320,11 +326,11 @@ void FDC_DmaStatus_ReadWord(void)
 */
 static void FDC_UpdateDiscDrive(void)
 {
-  /* Set details for current selecte drive */
-  nReadWriteDev = FDC_FindFloppyDrive();
+	/* Set details for current selecte drive */
+	nReadWriteDev = FDC_FindFloppyDrive();
 
-  if (EmulationDrives[nReadWriteDev].bDiscInserted)
-    Floppy_FindDiscDetails(EmulationDrives[nReadWriteDev].pBuffer,EmulationDrives[nReadWriteDev].nImageBytes,&nReadWriteSectorsPerTrack,NULL);
+	if (EmulationDrives[nReadWriteDev].bDiscInserted)
+		Floppy_FindDiscDetails(EmulationDrives[nReadWriteDev].pBuffer,EmulationDrives[nReadWriteDev].nImageBytes,&nReadWriteSectorsPerTrack,NULL);
 }
 
 
@@ -334,21 +340,23 @@ static void FDC_UpdateDiscDrive(void)
 */
 static void FDC_SetDiscControllerStatus(void)
 {
-  /* Update disc */
-  FDC_UpdateDiscDrive();
+	/* Update disc */
+	FDC_UpdateDiscDrive();
 
-  /* Clear out to default */
-  DiscControllerStatus_ff8604rd = 0;
+	/* Clear out to default */
+	DiscControllerStatus_ff8604rd = 0;
 
-  /* ONLY do this if we are running a Type I command */
-  if ((FDCCommandRegister&0x80)==0) {          /* Type I - Restore,Seek,Step,Step-In,Step-Out */
-    if (FDCTrackRegister==0)
-      DiscControllerStatus_ff8604rd |= 0x4;    /* Bit 2 - Track Zero, '0' if head is NOT at zero */
-  }
+	/* ONLY do this if we are running a Type I command */
+	if ((FDCCommandRegister&0x80)==0)
+	{
+		/* Type I - Restore, Seek, Step, Step-In, Step-Out */
+		if (FDCTrackRegister==0)
+			DiscControllerStatus_ff8604rd |= 0x4;    /* Bit 2 - Track Zero, '0' if head is NOT at zero */
+	}
 
-  /* If no disc inserted, tag as error */
-  if (!EmulationDrives[nReadWriteDev].bDiscInserted)
-    DiscControllerStatus_ff8604rd |= 0x10;     /* RNF - Record not found, ie no disc in drive */
+	/* If no disc inserted, tag as error */
+	if (!EmulationDrives[nReadWriteDev].bDiscInserted)
+		DiscControllerStatus_ff8604rd |= 0x10;     /* RNF - Record not found, ie no disc in drive */
 }
 
 
@@ -358,15 +366,15 @@ static void FDC_SetDiscControllerStatus(void)
 */
 int FDC_FindFloppyDrive(void)
 {
-  /* Check Drive A first */
-  if ((PSGRegisters[PSG_REG_IO_PORTA]&0x2)==0)
-    return(0);                    /* Device 0 (A:) */
-  /* If off, check Drive B */
-  if ((PSGRegisters[PSG_REG_IO_PORTA]&0x4)==0)
-    return(1);                    /* Device 1 (B:) */
+	/* Check Drive A first */
+	if ((PSGRegisters[PSG_REG_IO_PORTA]&0x2)==0)
+		return 0;                     /* Device 0 (A:) */
+	/* If off, check Drive B */
+	if ((PSGRegisters[PSG_REG_IO_PORTA]&0x4)==0)
+		return 1;                     /* Device 1 (B:) */
 
-  /* None appear to be selected so default to Drive A */
-  return(0);                      /* Device 0 (A:) */
+	/* None appear to be selected so default to Drive A */
+	return 0;                         /* Device 0 (A:) */
 }
 
 
@@ -376,9 +384,9 @@ int FDC_FindFloppyDrive(void)
 */
 void FDC_AcknowledgeInterrupt(void)
 {
-  /* Acknowledge in MFP circuit, pass bit, enable, pending */
-  MFP_InputOnChannel(MFP_FDCHDC_BIT,MFP_IERB,&MFP_IPRB);
-  MFP_GPIP &= ~0x20;
+	/* Acknowledge in MFP circuit, pass bit, enable, pending */
+	MFP_InputOnChannel(MFP_FDCHDC_BIT,MFP_IERB,&MFP_IPRB);
+	MFP_GPIP &= ~0x20;
 }
 
 
@@ -388,13 +396,13 @@ void FDC_AcknowledgeInterrupt(void)
 */
 static void FDC_SetReadWriteParameters(int nSectors)
 {
-  /* Copy read/write details so we can modify them */
-  nReadWriteTrack = FDCTrackRegister;
-  nReadWriteSector = FDCSectorRegister;
-  nReadWriteSide = (~PSGRegisters[PSG_REG_IO_PORTA]) & 0x01;
-  nReadWriteSectors = nSectors;
-  /* Update disc */
-  FDC_UpdateDiscDrive();
+	/* Copy read/write details so we can modify them */
+	nReadWriteTrack = FDCTrackRegister;
+	nReadWriteSector = FDCSectorRegister;
+	nReadWriteSide = (~PSGRegisters[PSG_REG_IO_PORTA]) & 0x01;
+	nReadWriteSectors = nSectors;
+	/* Update disc */
+	FDC_UpdateDiscDrive();
 }
 
 
@@ -404,62 +412,65 @@ static void FDC_SetReadWriteParameters(int nSectors)
 */
 void FDC_UpdateHBL(void)
 {
-  /* Seems like some games/demos (e.g. Fantasia by Dune, Alien World, ...) don't
-   * work if the FDC is too fast... so here's a quick-n-dirty hack to get them
-   * working... Should be replaced with proper FDC timings one day! */
-  static int nDelayHBLs = 300;
-  if (ConfigureParams.System.bSlowFDC)
-  {
-    if (nDelayHBLs-- > 0)
-      return;
-    else
-      nDelayHBLs = 300;
-  }
+	/* Seems like some games/demos (e.g. Fantasia by Dune, Alien World, ...) don't
+	 * work if the FDC is too fast... so here's a quick-n-dirty hack to get them
+	 * working... Should be replaced with proper FDC timings one day! */
+	static int nDelayHBLs = 300;
+	if (ConfigureParams.System.bSlowFDC)
+	{
+		if (nDelayHBLs-- > 0)
+			return;
+		else
+			nDelayHBLs = 300;
+	}
 
-  /* Do we have a DMA ready to copy? */
-  if (bDMAWaiting) {
-    /* Yes, copy it */
-    FDC_DMADataFromFloppy();
-    /* Signal done */
-    bDMAWaiting = FALSE;
-  }
+	/* Do we have a DMA ready to copy? */
+	if (bDMAWaiting)
+	{
+		/* Yes, copy it */
+		FDC_DMADataFromFloppy();
+		/* Signal done */
+		bDMAWaiting = FALSE;
+	}
 
-  /* Update drive motor */
-  FDC_UpdateMotor();
+	/* Update drive motor */
+	FDC_UpdateMotor();
 
-  /* Is FDC active? */
-  if (FDCEmulationCommand!=FDCEMU_CMD_NULL) {
-    /* Which command are we running? */
-    switch(FDCEmulationCommand) {
-      case FDCEMU_CMD_RESTORE:
-        FDC_UpdateRestoreCmd();
-        break;
-      case FDCEMU_CMD_SEEK:
-        FDC_UpdateSeekCmd();
-        break;
-      case FDCEMU_CMD_STEP:
-        FDC_UpdateStepCmd();
-        break;
-      case FDCEMU_CMD_STEPIN:
-        FDC_UpdateStepInCmd();
-        break;
-      case FDCEMU_CMD_STEPOUT:
-        FDC_UpdateStepOutCmd();
-        break;
+	/* Is FDC active? */
+	if (FDCEmulationCommand!=FDCEMU_CMD_NULL)
+	{
+		/* Which command are we running? */
+		switch(FDCEmulationCommand)
+		{
+		 case FDCEMU_CMD_RESTORE:
+			FDC_UpdateRestoreCmd();
+			break;
+		 case FDCEMU_CMD_SEEK:
+			FDC_UpdateSeekCmd();
+			break;
+		 case FDCEMU_CMD_STEP:
+			FDC_UpdateStepCmd();
+			break;
+		 case FDCEMU_CMD_STEPIN:
+			FDC_UpdateStepInCmd();
+			break;
+		 case FDCEMU_CMD_STEPOUT:
+			FDC_UpdateStepOutCmd();
+			break;
 
-      case FDCEMU_CMD_READSECTORS:
-      case FDCEMU_CMD_READMULTIPLESECTORS:
-        FDC_UpdateReadSectorsCmd();
-        break;
-      case FDCEMU_CMD_WRITESECTORS:
-      case FDCEMU_CMD_WRITEMULTIPLESECTORS:
-        FDC_UpdateWriteSectorsCmd();
-        break;
-    }
+		 case FDCEMU_CMD_READSECTORS:
+		 case FDCEMU_CMD_READMULTIPLESECTORS:
+			FDC_UpdateReadSectorsCmd();
+			break;
+		 case FDCEMU_CMD_WRITESECTORS:
+		 case FDCEMU_CMD_WRITEMULTIPLESECTORS:
+			FDC_UpdateWriteSectorsCmd();
+			break;
+		}
 
-    /* Set disc controller status (RD 0xff8604) */
-    FDC_SetDiscControllerStatus();
-  }
+		/* Set disc controller status (RD 0xff8604) */
+		FDC_SetDiscControllerStatus();
+	}
 }
 
 
@@ -469,28 +480,30 @@ void FDC_UpdateHBL(void)
 */
 void FDC_UpdateRestoreCmd(void)
 {
-  /* Which command is running? */
-  switch (FDCEmulationRunning) {
-    case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO:
-      /* Are we at track zero? */
-      if (FDCTrackRegister>0)
-        FDCTrackRegister--;             /* Move towards track zero */
-      else {
-        FDCTrackRegister = 0;           /* We're there */
-        FDCEmulationRunning = FDCEMU_RUN_RESTORE_COMPLETE;
-      }
-      break;
-    case FDCEMU_RUN_RESTORE_COMPLETE:
-      /* Acknowledge interrupt, move along there's nothing more to see */
-      FDC_AcknowledgeInterrupt();
-      /* Set error */
-      FDC_SetDMAStatus(FALSE);          /* No DMA error */
-      /* Done */
-      FDCEmulationCommand = FDCEMU_CMD_NULL;
-      /* Turn motor off */
-      FDC_TurnMotorOff();
-      break;
-  }
+	/* Which command is running? */
+	switch (FDCEmulationRunning)
+	{
+	 case FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO:
+		/* Are we at track zero? */
+		if (FDCTrackRegister>0)
+			FDCTrackRegister--;             /* Move towards track zero */
+		else
+		{
+			FDCTrackRegister = 0;           /* We're there */
+			FDCEmulationRunning = FDCEMU_RUN_RESTORE_COMPLETE;
+		}
+		break;
+	 case FDCEMU_RUN_RESTORE_COMPLETE:
+		/* Acknowledge interrupt, move along there's nothing more to see */
+		FDC_AcknowledgeInterrupt();
+		/* Set error */
+		FDC_SetDMAStatus(FALSE);          /* No DMA error */
+		/* Done */
+		FDCEmulationCommand = FDCEMU_CMD_NULL;
+		/* Turn motor off */
+		FDC_TurnMotorOff();
+		break;
+	}
 }
 
 
@@ -500,31 +513,33 @@ void FDC_UpdateRestoreCmd(void)
 */
 void FDC_UpdateSeekCmd(void)
 {
-  /* Which command is running? */
-  switch (FDCEmulationRunning) {
-    case FDCEMU_RUN_SEEK_TOTRACK:
-      /* Are we at the selected track? */
-      if (FDCTrackRegister==FDCDataRegister)
-        FDCEmulationRunning = FDCEMU_RUN_SEEK_COMPLETE;
-      else {
-        /* No, seek towards track */
-        if (FDCDataRegister<FDCTrackRegister)
-          FDCTrackRegister--;
-        else
-          FDCTrackRegister++;
-      }
-      break;
-    case FDCEMU_RUN_SEEK_COMPLETE:
-      /* Acknowledge interrupt, move along there's nothing more to see */
-      FDC_AcknowledgeInterrupt();
-      /* Set error */
-      FDC_SetDMAStatus(FALSE);          /* No DMA error */
-      /* Done */
-      FDCEmulationCommand = FDCEMU_CMD_NULL;
-      /* Turn motor off */
-      FDC_TurnMotorOff();
-      break;
-  }
+	/* Which command is running? */
+	switch (FDCEmulationRunning)
+	{
+	 case FDCEMU_RUN_SEEK_TOTRACK:
+		/* Are we at the selected track? */
+		if (FDCTrackRegister==FDCDataRegister)
+			FDCEmulationRunning = FDCEMU_RUN_SEEK_COMPLETE;
+		else
+		{
+			/* No, seek towards track */
+			if (FDCDataRegister<FDCTrackRegister)
+				FDCTrackRegister--;
+			else
+				FDCTrackRegister++;
+		}
+		break;
+	 case FDCEMU_RUN_SEEK_COMPLETE:
+		/* Acknowledge interrupt, move along there's nothing more to see */
+		FDC_AcknowledgeInterrupt();
+		/* Set error */
+		FDC_SetDMAStatus(FALSE);          /* No DMA error */
+		/* Done */
+		FDCEmulationCommand = FDCEMU_CMD_NULL;
+		/* Turn motor off */
+		FDC_TurnMotorOff();
+		break;
+	}
 }
 
 
@@ -534,27 +549,28 @@ void FDC_UpdateSeekCmd(void)
 */
 void FDC_UpdateStepCmd(void)
 {
-  /* Which command is running? */
-  switch (FDCEmulationRunning) {
-    case FDCEMU_RUN_STEP_ONCE:
-      /* Move head by one track in same direction as last step */
-      FDCTrackRegister += FDCStepDirection;
-      if (FDCTrackRegister<0)             /* Limit to stop */
-        FDCTrackRegister = 0;
+	/* Which command is running? */
+	switch (FDCEmulationRunning)
+	{
+	 case FDCEMU_RUN_STEP_ONCE:
+		/* Move head by one track in same direction as last step */
+		FDCTrackRegister += FDCStepDirection;
+		if (FDCTrackRegister<0)             /* Limit to stop */
+			FDCTrackRegister = 0;
 
-      FDCEmulationRunning = FDCEMU_RUN_STEP_COMPLETE;
-      break;
-    case FDCEMU_RUN_STEP_COMPLETE:
-      /* Acknowledge interrupt, move along there's nothing more to see */
-      FDC_AcknowledgeInterrupt();
-      /* Set error */
-      FDC_SetDMAStatus(FALSE);            /* No DMA error */
-      /* Done */
-      FDCEmulationCommand = FDCEMU_CMD_NULL;
-      /* Turn motor off */
-      FDC_TurnMotorOff();
-      break;
-  }
+		FDCEmulationRunning = FDCEMU_RUN_STEP_COMPLETE;
+		break;
+	 case FDCEMU_RUN_STEP_COMPLETE:
+		/* Acknowledge interrupt, move along there's nothing more to see */
+		FDC_AcknowledgeInterrupt();
+		/* Set error */
+		FDC_SetDMAStatus(FALSE);            /* No DMA error */
+		/* Done */
+		FDCEmulationCommand = FDCEMU_CMD_NULL;
+		/* Turn motor off */
+		FDC_TurnMotorOff();
+		break;
+	}
 }
 
 
@@ -564,24 +580,25 @@ void FDC_UpdateStepCmd(void)
 */
 void FDC_UpdateStepInCmd(void)
 {
-  /* Which command is running? */
-  switch (FDCEmulationRunning) {
-    case FDCEMU_RUN_STEPIN_ONCE:
-      FDCTrackRegister++;
+	/* Which command is running? */
+	switch (FDCEmulationRunning)
+	{
+	 case FDCEMU_RUN_STEPIN_ONCE:
+		FDCTrackRegister++;
 
-      FDCEmulationRunning = FDCEMU_RUN_STEPIN_COMPLETE;
-      break;
-    case FDCEMU_RUN_STEPIN_COMPLETE:
-      /* Acknowledge interrupt, move along there's nothing more to see */
-      FDC_AcknowledgeInterrupt();
-      /* Set error */
-      FDC_SetDMAStatus(FALSE);            /* No DMA error */
-      /* Done */
-      FDCEmulationCommand = FDCEMU_CMD_NULL;
-      /* Turn motor off */
-      FDC_TurnMotorOff();
-      break;
-  }
+		FDCEmulationRunning = FDCEMU_RUN_STEPIN_COMPLETE;
+		break;
+	 case FDCEMU_RUN_STEPIN_COMPLETE:
+		/* Acknowledge interrupt, move along there's nothing more to see */
+		FDC_AcknowledgeInterrupt();
+		/* Set error */
+		FDC_SetDMAStatus(FALSE);            /* No DMA error */
+		/* Done */
+		FDCEmulationCommand = FDCEMU_CMD_NULL;
+		/* Turn motor off */
+		FDC_TurnMotorOff();
+		break;
+	}
 }
 
 
@@ -591,26 +608,27 @@ void FDC_UpdateStepInCmd(void)
 */
 void FDC_UpdateStepOutCmd(void)
 {
-  /* Which command is running? */
-  switch (FDCEmulationRunning) {
-    case FDCEMU_RUN_STEPOUT_ONCE:
-      FDCTrackRegister--;
-      if (FDCTrackRegister<0)             /* Limit to stop */
-        FDCTrackRegister = 0;
+	/* Which command is running? */
+	switch (FDCEmulationRunning)
+	{
+	 case FDCEMU_RUN_STEPOUT_ONCE:
+		FDCTrackRegister--;
+		if (FDCTrackRegister < 0)           /* Limit to stop */
+			FDCTrackRegister = 0;
 
-      FDCEmulationRunning = FDCEMU_RUN_STEPOUT_COMPLETE;
-      break;
-    case FDCEMU_RUN_STEPOUT_COMPLETE:
-      /* Acknowledge interrupt, move along there's nothing more to see */
-      FDC_AcknowledgeInterrupt();
-      /* Set error */
-      FDC_SetDMAStatus(FALSE);            /* No DMA error */
-      /* Done */
-      FDCEmulationCommand = FDCEMU_CMD_NULL;
-      /* Turn motor off */
-      FDC_TurnMotorOff();
-      break;
-  }
+		FDCEmulationRunning = FDCEMU_RUN_STEPOUT_COMPLETE;
+		break;
+	 case FDCEMU_RUN_STEPOUT_COMPLETE:
+		/* Acknowledge interrupt, move along there's nothing more to see */
+		FDC_AcknowledgeInterrupt();
+		/* Set error */
+		FDC_SetDMAStatus(FALSE);            /* No DMA error */
+		/* Done */
+		FDCEmulationCommand = FDCEMU_CMD_NULL;
+		/* Turn motor off */
+		FDC_TurnMotorOff();
+		break;
+	}
 }
 
 
@@ -620,44 +638,47 @@ void FDC_UpdateStepOutCmd(void)
 */
 void FDC_UpdateReadSectorsCmd(void)
 {
-  /* Which command is running? */
-  switch (FDCEmulationRunning) {
-    case FDCEMU_RUN_READSECTORS_READDATA:
-      /* Read in a sector */
-      if (FDC_ReadSectorFromFloppy()) {     /* Read a single sector through DMA */
-        FDCSectorCountRegister--;           /* Decrement FDCSectorCount */
-        if (FDCSectorCountRegister<=0)
-          FDCSectorCountRegister = 0;
+	/* Which command is running? */
+	switch (FDCEmulationRunning)
+	{
+	 case FDCEMU_RUN_READSECTORS_READDATA:
+		/* Read in a sector */
+		if (FDC_ReadSectorFromFloppy())         /* Read a single sector through DMA */
+		{
+			FDCSectorCountRegister--;           /* Decrement FDCSectorCount */
+			if (FDCSectorCountRegister <= 0)
+				FDCSectorCountRegister = 0;
 
-        /* Have we finished? */
-        nReadWriteSectors--;
-        if (nReadWriteSectors<=0)
-          FDCEmulationRunning = FDCEMU_RUN_READSECTORS_COMPLETE;
+			/* Have we finished? */
+			nReadWriteSectors--;
+			if (nReadWriteSectors<=0)
+				FDCEmulationRunning = FDCEMU_RUN_READSECTORS_COMPLETE;
 
-        bDMAWaiting = TRUE;
-      }
-      else {
-        /* Acknowledge interrupt, move along there's nothing more to see */
-        FDC_AcknowledgeInterrupt();
-        /* Set error */
-        FDC_SetDMAStatus(TRUE);             /* DMA error */
-        /* Done */
-        FDCEmulationCommand = FDCEMU_CMD_NULL;
-        /* Turn motor off */
-        FDC_TurnMotorOff();
-      }
-      break;
-    case FDCEMU_RUN_READSECTORS_COMPLETE:
-      /* Acknowledge interrupt, move along there's nothing more to see */
-      FDC_AcknowledgeInterrupt();
-      /* Set error */
-      FDC_SetDMAStatus(FALSE);              /* No DMA error */
-      /* Done */
-      FDCEmulationCommand = FDCEMU_CMD_NULL;
-      /* Turn motor off */
-      FDC_TurnMotorOff();
-      break;
-  }
+			bDMAWaiting = TRUE;
+		}
+		else
+		{
+			/* Acknowledge interrupt, move along there's nothing more to see */
+			FDC_AcknowledgeInterrupt();
+			/* Set error */
+			FDC_SetDMAStatus(TRUE);             /* DMA error */
+			/* Done */
+			FDCEmulationCommand = FDCEMU_CMD_NULL;
+			/* Turn motor off */
+			FDC_TurnMotorOff();
+		}
+		break;
+	 case FDCEMU_RUN_READSECTORS_COMPLETE:
+		/* Acknowledge interrupt, move along there's nothing more to see */
+		FDC_AcknowledgeInterrupt();
+		/* Set error */
+		FDC_SetDMAStatus(FALSE);              /* No DMA error */
+		/* Done */
+		FDCEmulationCommand = FDCEMU_CMD_NULL;
+		/* Turn motor off */
+		FDC_TurnMotorOff();
+		break;
+	}
 }
 
 
@@ -667,53 +688,56 @@ void FDC_UpdateReadSectorsCmd(void)
 */
 void FDC_UpdateWriteSectorsCmd(void)
 {
-  /* Which command is running? */
-  switch (FDCEmulationRunning) {
-    case FDCEMU_RUN_WRITESECTORS_WRITEDATA:
-      /* Write out a sector */
-      if (FDC_WriteSectorFromFloppy()) {    /* Write a single sector through DMA */
-        /* Decrement FDCsector count */
-        FDCSectorCountRegister--;           /* Decrement FDCSectorCount */
-        if (FDCSectorCountRegister<=0)
-          FDCSectorCountRegister = 0;
+	/* Which command is running? */
+	switch (FDCEmulationRunning)
+	{
+	 case FDCEMU_RUN_WRITESECTORS_WRITEDATA:
+		/* Write out a sector */
+		if (FDC_WriteSectorFromFloppy())        /* Write a single sector through DMA */
+		{
+			/* Decrement FDCsector count */
+			FDCSectorCountRegister--;           /* Decrement FDCSectorCount */
+			if (FDCSectorCountRegister<=0)
+				FDCSectorCountRegister = 0;
 
-        /* Have we finished? */
-        nReadWriteSectors--;
-        if (nReadWriteSectors<=0)
-          FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_COMPLETE;
+			/* Have we finished? */
+			nReadWriteSectors--;
+			if (nReadWriteSectors<=0)
+				FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_COMPLETE;
 
-        /* Update DMA pointer */
-        FDC_WriteDMAAddress(FDC_ReadDMAAddress()+NUMBYTESPERSECTOR);
-      }
-      else {
-        /* Acknowledge interrupt, move along there's nothing more to see */
-        FDC_AcknowledgeInterrupt();
-        /* Set error */
-        FDC_SetDMAStatus(TRUE);             /* DMA error */
-        /* Done */
-        FDCEmulationCommand = FDCEMU_CMD_NULL;
-        /* Turn motor off */
-        FDC_TurnMotorOff();
-      }
-      break;
-    case FDCEMU_RUN_WRITESECTORS_COMPLETE:
-      /* Acknowledge interrupt, move along there's nothing more to see */
-      FDC_AcknowledgeInterrupt();
-      /* Set error */
-      FDC_SetDMAStatus(FALSE);              /* No DMA error */
-      /* Done */
-      FDCEmulationCommand = FDCEMU_CMD_NULL;
-      /* Turn motor off */
-      FDC_TurnMotorOff();
-      break;
-  }
+			/* Update DMA pointer */
+			FDC_WriteDMAAddress(FDC_ReadDMAAddress()+NUMBYTESPERSECTOR);
+		}
+		else
+		{
+			/* Acknowledge interrupt, move along there's nothing more to see */
+			FDC_AcknowledgeInterrupt();
+			/* Set error */
+			FDC_SetDMAStatus(TRUE);             /* DMA error */
+			/* Done */
+			FDCEmulationCommand = FDCEMU_CMD_NULL;
+			/* Turn motor off */
+			FDC_TurnMotorOff();
+		}
+		break;
+	 case FDCEMU_RUN_WRITESECTORS_COMPLETE:
+		/* Acknowledge interrupt, move along there's nothing more to see */
+		FDC_AcknowledgeInterrupt();
+		/* Set error */
+		FDC_SetDMAStatus(FALSE);              /* No DMA error */
+		/* Done */
+		FDCEmulationCommand = FDCEMU_CMD_NULL;
+		/* Turn motor off */
+		FDC_TurnMotorOff();
+		break;
+	}
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
   Type I Commands
-
+ 
   Restore, Seek, Step, Step-In and Step-Out
 */
 
@@ -721,64 +745,64 @@ void FDC_UpdateWriteSectorsCmd(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeI_Restore(void)
 {
-  /* Set emulation to seek to track zero */
-  FDCEmulationCommand = FDCEMU_CMD_RESTORE;
-  FDCEmulationRunning = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO;
+	/* Set emulation to seek to track zero */
+	FDCEmulationCommand = FDCEMU_CMD_RESTORE;
+	FDCEmulationRunning = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO;
 
-  FDC_SetDiscControllerStatus();
+	FDC_SetDiscControllerStatus();
 }
 
 
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeI_Seek(void)
 {
-  /* Set emulation to seek to chosen track */
-  FDCEmulationCommand = FDCEMU_CMD_SEEK;
-  FDCEmulationRunning = FDCEMU_RUN_SEEK_TOTRACK;
+	/* Set emulation to seek to chosen track */
+	FDCEmulationCommand = FDCEMU_CMD_SEEK;
+	FDCEmulationRunning = FDCEMU_RUN_SEEK_TOTRACK;
 
-  FDC_SetDiscControllerStatus();
+	FDC_SetDiscControllerStatus();
 }
 
 
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeI_Step(void)
 {
-  /* Set emulation to step(same direction as last seek executed, eg 'FDCStepDirection') */
-  FDCEmulationCommand = FDCEMU_CMD_STEP;
-  FDCEmulationRunning = FDCEMU_RUN_STEP_ONCE;
+	/* Set emulation to step(same direction as last seek executed, eg 'FDCStepDirection') */
+	FDCEmulationCommand = FDCEMU_CMD_STEP;
+	FDCEmulationRunning = FDCEMU_RUN_STEP_ONCE;
 
-  FDC_SetDiscControllerStatus();
+	FDC_SetDiscControllerStatus();
 }
 
 
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeI_StepIn(void)
 {
-  /* Set emulation to step in(Set 'FDCStepDirection') */
-  FDCEmulationCommand = FDCEMU_CMD_STEPIN;
-  FDCEmulationRunning = FDCEMU_RUN_STEPIN_ONCE;
-  FDCStepDirection = 1;                 /* Increment track*/
+	/* Set emulation to step in(Set 'FDCStepDirection') */
+	FDCEmulationCommand = FDCEMU_CMD_STEPIN;
+	FDCEmulationRunning = FDCEMU_RUN_STEPIN_ONCE;
+	FDCStepDirection = 1;                 /* Increment track*/
 
-  FDC_SetDiscControllerStatus();
+	FDC_SetDiscControllerStatus();
 }
 
 
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeI_StepOut(void)
 {
-  /* Set emulation to step out(Set 'FDCStepDirection') */
-  FDCEmulationCommand = FDCEMU_CMD_STEPOUT;
-  FDCEmulationRunning = FDCEMU_RUN_STEPOUT_ONCE;
-  FDCStepDirection = -1;                /* Decrement track */
+	/* Set emulation to step out(Set 'FDCStepDirection') */
+	FDCEmulationCommand = FDCEMU_CMD_STEPOUT;
+	FDCEmulationRunning = FDCEMU_RUN_STEPOUT_ONCE;
+	FDCStepDirection = -1;                /* Decrement track */
 
-  FDC_SetDiscControllerStatus();
+	FDC_SetDiscControllerStatus();
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
   Type II Commands
-
+ 
   Read Sector, Read Multiple Sectors, Write Sector, Write Multiple Sectors
 */
 
@@ -786,59 +810,59 @@ static void FDC_TypeI_StepOut(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeII_ReadSector(void)
 {
-  /* Set emulation to read a single sector */
-  FDCEmulationCommand = FDCEMU_CMD_READSECTORS;
-  FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
-  /* Set reading parameters */
-  FDC_SetReadWriteParameters(1);        /* Read in a single sector */
+	/* Set emulation to read a single sector */
+	FDCEmulationCommand = FDCEMU_CMD_READSECTORS;
+	FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
+	/* Set reading parameters */
+	FDC_SetReadWriteParameters(1);        /* Read in a single sector */
 
-  FDC_SetDiscControllerStatus();
+	FDC_SetDiscControllerStatus();
 }
 
 
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeII_ReadMultipleSectors(void)
 {
-  /* Set emulation to read sectors */
-  FDCEmulationCommand = FDCEMU_CMD_READMULTIPLESECTORS;
-  FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
-  /* Set reading parameters */
-  FDC_SetReadWriteParameters(FDCSectorCountRegister);   /* Read multiple sectors */
+	/* Set emulation to read sectors */
+	FDCEmulationCommand = FDCEMU_CMD_READMULTIPLESECTORS;
+	FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
+	/* Set reading parameters */
+	FDC_SetReadWriteParameters(FDCSectorCountRegister);   /* Read multiple sectors */
 
-  FDC_SetDiscControllerStatus();
+	FDC_SetDiscControllerStatus();
 }
 
 
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeII_WriteSector(void)
 {
-  /* Set emulation to write a single sector */
-  FDCEmulationCommand = FDCEMU_CMD_WRITESECTORS;
-  FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
-  /* Set writing parameters */
-  FDC_SetReadWriteParameters(1);                        /* Write out a single sector */
+	/* Set emulation to write a single sector */
+	FDCEmulationCommand = FDCEMU_CMD_WRITESECTORS;
+	FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
+	/* Set writing parameters */
+	FDC_SetReadWriteParameters(1);                        /* Write out a single sector */
 
-  FDC_SetDiscControllerStatus();
+	FDC_SetDiscControllerStatus();
 }
 
 
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeII_WriteMultipleSectors(void)
 {
-  /* Set emulation to write sectors */
-  FDCEmulationCommand = FDCEMU_CMD_WRITEMULTIPLESECTORS;
-  FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
-  /* Set witing parameters */
-  FDC_SetReadWriteParameters(FDCSectorCountRegister);   /* Write multiple sectors */
+	/* Set emulation to write sectors */
+	FDCEmulationCommand = FDCEMU_CMD_WRITEMULTIPLESECTORS;
+	FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
+	/* Set witing parameters */
+	FDC_SetReadWriteParameters(FDCSectorCountRegister);   /* Write multiple sectors */
 
-  FDC_SetDiscControllerStatus();
+	FDC_SetDiscControllerStatus();
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
   Type III Commands
-
+ 
   Read Address, Read Track, Write Track
 */
 
@@ -846,41 +870,41 @@ static void FDC_TypeII_WriteMultipleSectors(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIII_ReadAddress(void)
 {
-  fprintf(stderr, "Warning: FDC type III command 'read address' is not implemented yet!\n");
+	Log_Printf(LOG_DEBUG, "FDC type III command 'read address' is not implemented yet!\n");
 }
 
 
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIII_ReadTrack(void)
 {
-  fprintf(stderr, "Warning: FDC type III command 'read track' does not work yet!\n");
+	Log_Printf(LOG_DEBUG, "FDC type III command 'read track' does not work yet!\n");
 
-  /* FIXME: "Read track" should read more than only the sectors! (also sector headers, gaps, etc.) */
+	/* FIXME: "Read track" should read more than only the sectors! (also sector headers, gaps, etc.) */
 
-  /* Set emulation to read a single track */
-  FDCEmulationCommand = FDCEMU_CMD_READSECTORS;
-  FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
-  /* Set reading parameters */
-  FDC_SetReadWriteParameters(nReadWriteSectorsPerTrack);  /* Read whole track */
+	/* Set emulation to read a single track */
+	FDCEmulationCommand = FDCEMU_CMD_READSECTORS;
+	FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
+	/* Set reading parameters */
+	FDC_SetReadWriteParameters(nReadWriteSectorsPerTrack);  /* Read whole track */
 
-  FDC_SetDiscControllerStatus();
+	FDC_SetDiscControllerStatus();
 }
 
 
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIII_WriteTrack(void)
 {
-  fprintf(stderr, "Warning: FDC type III command 'write track' does not work yet!\n");
+	Log_Printf(LOG_DEBUG, "FDC type III command 'write track' does not work yet!\n");
 
-  /* FIXME: "Write track" not only writes the sectors! (also sector headers, gaps, etc.) */
+	/* FIXME: "Write track" not only writes the sectors! (also sector headers, gaps, etc.) */
 
-  /* Set emulation to write a single track */
-  FDCEmulationCommand = FDCEMU_CMD_WRITESECTORS;
-  FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
-  /* Set writing parameters */
-  FDC_SetReadWriteParameters(nReadWriteSectorsPerTrack);  /* Write whole track */
+	/* Set emulation to write a single track */
+	FDCEmulationCommand = FDCEMU_CMD_WRITESECTORS;
+	FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
+	/* Set writing parameters */
+	FDC_SetReadWriteParameters(nReadWriteSectorsPerTrack);  /* Write whole track */
 
-  FDC_SetDiscControllerStatus();
+	FDC_SetDiscControllerStatus();
 }
 
 
@@ -895,13 +919,13 @@ static void FDC_TypeIII_WriteTrack(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIV_ForceInterrupt(BOOL bCauseCPUInterrupt)
 {
-  /* Acknowledge interrupt, move along there's nothing more to see */
-  if (bCauseCPUInterrupt)
-    FDC_AcknowledgeInterrupt();
+	/* Acknowledge interrupt, move along there's nothing more to see */
+	if (bCauseCPUInterrupt)
+		FDC_AcknowledgeInterrupt();
 
-  /* Reset FDC */
-  FDCEmulationCommand = FDCEMU_CMD_NULL;
-  FDCEmulationRunning = FDCEMU_RUN_NULL;
+	/* Reset FDC */
+	FDCEmulationCommand = FDCEMU_CMD_NULL;
+	FDCEmulationRunning = FDCEMU_RUN_NULL;
 }
 
 
@@ -911,32 +935,33 @@ static void FDC_TypeIV_ForceInterrupt(BOOL bCauseCPUInterrupt)
 */
 static void FDC_ExecuteTypeICommands(void)
 {
-  MFP_GPIP |= 0x20;
+	MFP_GPIP |= 0x20;
 
-  /* Check Type I Command */
-  switch(FDCCommandRegister&0xf0) {
-    case 0x00:            /* Restore */
-      FDC_TypeI_Restore();
-      break;
-    case 0x10:            /* Seek */
-      FDC_TypeI_Seek();
-      break;
-    case 0x20:            /* Step */
-    case 0x30:
-      FDC_TypeI_Step();
-      break;
-    case 0x40:            /* Step-In */
-    case 0x50:
-      FDC_TypeI_StepIn();
-      break;
-    case 0x60:            /* Step-Out */
-    case 0x70:
-      FDC_TypeI_StepOut();
-      break;
-  }
+	/* Check Type I Command */
+	switch(FDCCommandRegister&0xf0)
+	{
+	 case 0x00:             /* Restore */
+		FDC_TypeI_Restore();
+		break;
+	 case 0x10:             /* Seek */
+		FDC_TypeI_Seek();
+		break;
+	 case 0x20:             /* Step */
+	 case 0x30:
+		FDC_TypeI_Step();
+		break;
+	 case 0x40:             /* Step-In */
+	 case 0x50:
+		FDC_TypeI_StepIn();
+		break;
+	 case 0x60:             /* Step-Out */
+	 case 0x70:
+		FDC_TypeI_StepOut();
+		break;
+	}
 
-  /* Signal motor on as we need to execute command */
-  FDC_TurnMotorOn();
+	/* Signal motor on as we need to execute command */
+	FDC_TurnMotorOn();
 }
 
 
@@ -946,26 +971,27 @@ static void FDC_ExecuteTypeICommands(void)
 */
 static void FDC_ExecuteTypeIICommands(void)
 {
-  MFP_GPIP |= 0x20;
+	MFP_GPIP |= 0x20;
 
-  /* Check Type II Command */
-  switch(FDCCommandRegister&0xf0) {
-    case 0x80:            /* Read Sector */
-      FDC_TypeII_ReadSector();
-      break;
-    case 0x90:            /* Read Sectors */
-      FDC_TypeII_ReadMultipleSectors();
-      break;
-    case 0xa0:            /* Write Sector */
-      FDC_TypeII_WriteSector();
-      break;
-    case 0xb0:            /* Write Sectors */
-      FDC_TypeII_WriteMultipleSectors();
-      break;
-  }
+	/* Check Type II Command */
+	switch(FDCCommandRegister&0xf0)
+	{
+	 case 0x80:             /* Read Sector */
+		FDC_TypeII_ReadSector();
+		break;
+	 case 0x90:             /* Read Sectors */
+		FDC_TypeII_ReadMultipleSectors();
+		break;
+	 case 0xa0:             /* Write Sector */
+		FDC_TypeII_WriteSector();
+		break;
+	 case 0xb0:             /* Write Sectors */
+		FDC_TypeII_WriteMultipleSectors();
+		break;
+	}
 
-  /* Signal motor on as we need to execute command */
-  FDC_TurnMotorOn();
+	/* Signal motor on as we need to execute command */
+	FDC_TurnMotorOn();
 }
 
 
@@ -975,23 +1001,24 @@ static void FDC_ExecuteTypeIICommands(void)
 */
 static void FDC_ExecuteTypeIIICommands(void)
 {
-  MFP_GPIP |= 0x20;
+	MFP_GPIP |= 0x20;
 
-  /* Check Type III Command */
-  switch(FDCCommandRegister&0xf0) {
-    case 0xc0:          /* Read Address */
-      FDC_TypeIII_ReadAddress();
-      break;
-    case 0xe0:          /* Read Track */
-      FDC_TypeIII_ReadTrack();
-      break;
-    case 0xf0:          /* Write Track */
-      FDC_TypeIII_WriteTrack();
-      break;
-  }
+	/* Check Type III Command */
+	switch(FDCCommandRegister&0xf0)
+	{
+	 case 0xc0:             /* Read Address */
+		FDC_TypeIII_ReadAddress();
+		break;
+	 case 0xe0:             /* Read Track */
+		FDC_TypeIII_ReadTrack();
+		break;
+	 case 0xf0:             /* Write Track */
+		FDC_TypeIII_WriteTrack();
+		break;
+	}
 
-  /* Signal motor on as we need to execute command */
-  FDC_TurnMotorOn();
+	/* Signal motor on as we need to execute command */
+	FDC_TurnMotorOn();
 }
 
 
@@ -1001,14 +1028,14 @@ static void FDC_ExecuteTypeIIICommands(void)
 */
 static void FDC_ExecuteTypeIVCommands(void)
 {
-  if (FDCCommandRegister!=0xD8)         /* Is an 'immediate interrupt command'? don't reset interrupt */
-    MFP_GPIP |= 0x20;
+	if (FDCCommandRegister!=0xD8)           /* Is an 'immediate interrupt command'? don't reset interrupt */
+		MFP_GPIP |= 0x20;
 
-  /* Check Type IV Command */
-  if ((FDCCommandRegister&0x0c)==0)     /* I3 and I2 are clear? If so we don't need a CPU interrupt */
-    FDC_TypeIV_ForceInterrupt(FALSE);   /* Force Interrupt - no interrupt */
-  else
-    FDC_TypeIV_ForceInterrupt(TRUE);    /* Force Interrupt */
+	/* Check Type IV Command */
+	if ((FDCCommandRegister&0x0c) == 0)     /* I3 and I2 are clear? If so we don't need a CPU interrupt */
+		FDC_TypeIV_ForceInterrupt(FALSE);   /* Force Interrupt - no interrupt */
+	else
+		FDC_TypeIV_ForceInterrupt(TRUE);    /* Force Interrupt */
 }
 
 
@@ -1018,15 +1045,15 @@ static void FDC_ExecuteTypeIVCommands(void)
 */
 static void FDC_ExecuteCommand(void)
 {
-  /* Check type of command and execute */
-  if ((FDCCommandRegister&0x80)==0)           /* Type I - Restore,Seek,Step,Step-In,Step-Out */
-    FDC_ExecuteTypeICommands();
-  else if ((FDCCommandRegister&0x40)==0)      /* Type II - Read Sector, Write Sector */
-    FDC_ExecuteTypeIICommands();
-  else if ((FDCCommandRegister&0xf0)!=0xd0)   /* Type III - Read Address, Read Track, Write Track */
-    FDC_ExecuteTypeIIICommands();
-  else                                        /* Type IV - Force Interrupt */
-    FDC_ExecuteTypeIVCommands();
+	/* Check type of command and execute */
+	if ((FDCCommandRegister&0x80) == 0)           /* Type I - Restore,Seek,Step,Step-In,Step-Out */
+		FDC_ExecuteTypeICommands();
+	else if ((FDCCommandRegister&0x40) == 0)      /* Type II - Read Sector, Write Sector */
+		FDC_ExecuteTypeIICommands();
+	else if ((FDCCommandRegister&0xf0) != 0xd0)   /* Type III - Read Address, Read Track, Write Track */
+		FDC_ExecuteTypeIIICommands();
+	else                                          /* Type IV - Force Interrupt */
+		FDC_ExecuteTypeIVCommands();
 }
 
 
@@ -1036,7 +1063,7 @@ static void FDC_ExecuteCommand(void)
 */
 static void FDC_WriteSectorCountRegister(void)
 {
-  FDCSectorCountRegister = DiscControllerWord_ff8604wr;
+	FDCSectorCountRegister = DiscControllerWord_ff8604wr;
 }
 
 
@@ -1046,9 +1073,9 @@ static void FDC_WriteSectorCountRegister(void)
 */
 static void FDC_WriteCommandRegister(void)
 {
-  FDCCommandRegister = DiscControllerWord_ff8604wr;
-  /* And execute */
-  FDC_ExecuteCommand();
+	FDCCommandRegister = DiscControllerWord_ff8604wr;
+	/* And execute */
+	FDC_ExecuteCommand();
 }
 
 
@@ -1058,7 +1085,7 @@ static void FDC_WriteCommandRegister(void)
 */
 static void FDC_WriteTrackRegister(void)
 {
-  FDCTrackRegister = DiscControllerWord_ff8604wr;    /* 0...79 */
+	FDCTrackRegister = DiscControllerWord_ff8604wr;    /* 0...79 */
 }
 
 
@@ -1068,7 +1095,7 @@ static void FDC_WriteTrackRegister(void)
 */
 static void FDC_WriteSectorRegister(void)
 {
-  FDCSectorRegister = DiscControllerWord_ff8604wr;  /* 1,2,3..... */
+	FDCSectorRegister = DiscControllerWord_ff8604wr;  /* 1,2,3..... */
 }
 
 
@@ -1078,7 +1105,7 @@ static void FDC_WriteSectorRegister(void)
 */
 static void FDC_WriteDataRegister(void)
 {
-  FDCDataRegister = DiscControllerWord_ff8604wr;
+	FDCDataRegister = DiscControllerWord_ff8604wr;
 }
 
 
@@ -1088,40 +1115,42 @@ static void FDC_WriteDataRegister(void)
 */
 void FDC_DiscController_WriteWord(void)
 {
-  if (nIoMemAccessSize == SIZE_BYTE)
-  {
-    /* This register does not like to be accessed in byte mode on a normal ST */
-	M68000_BusError(IoAccessBaseAddress, 0);
-	return;
-  }
+	if (nIoMemAccessSize == SIZE_BYTE)
+	{
+		/* This register does not like to be accessed in byte mode on a normal ST */
+		M68000_BusError(IoAccessBaseAddress, 0);
+		return;
+	}
 
-  DiscControllerWord_ff8604wr = IoMem_ReadWord(0xff8604);
+	DiscControllerWord_ff8604wr = IoMem_ReadWord(0xff8604);
 
-  HDC_WriteCommandPacket();           /*  Handle HDC functions */
+	HDC_WriteCommandPacket();                 /*  Handle HDC functions */
 
-  /* filter hdc commands */
-  if ((DMAModeControl_ff8606wr & 0x0018) == 8 &&
-      nPartitions == 0) return;
+	/* filter hdc commands */
+	if ((DMAModeControl_ff8606wr & 0x0018) == 8 && nPartitions == 0)
+		return;
 
-  /* Are we trying to set the SectorCount? */
-  if (DMAModeControl_ff8606wr&0x10)         /* Bit 4 */
-    FDC_WriteSectorCountRegister();
-  else {  /* Write to FDC registers */
-    switch(DMAModeControl_ff8606wr&0x6) {   /* Bits 1,2 (A1,A0) */
-      case 0x0:                             /* 0 0 - Command register */
-        FDC_WriteCommandRegister();
-        break;
-      case 0x2:                             /* 0 1 - Track register */
-        FDC_WriteTrackRegister();
-        break;
-      case 0x4:                             /* 1 0 - Sector register */
-        FDC_WriteSectorRegister();
-        break;
-      case 0x6:                             /* 1 1 - Data register */
-        FDC_WriteDataRegister();
-        break;
-    }
-  }
+	/* Are we trying to set the SectorCount? */
+	if (DMAModeControl_ff8606wr&0x10)         /* Bit 4 */
+		FDC_WriteSectorCountRegister();
+	else
+	{   /* Write to FDC registers */
+		switch(DMAModeControl_ff8606wr&0x6)
+		{   /* Bits 1,2 (A1,A0) */
+		 case 0x0:                            /* 0 0 - Command register */
+			FDC_WriteCommandRegister();
+			break;
+		 case 0x2:                            /* 0 1 - Track register */
+			FDC_WriteTrackRegister();
+			break;
+		 case 0x4:                            /* 1 0 - Sector register */
+			FDC_WriteSectorRegister();
+			break;
+		 case 0x6:                            /* 1 1 - Data register */
+			FDC_WriteDataRegister();
+			break;
+		}
+	}
 }
 
 
@@ -1132,74 +1161,74 @@ void FDC_DiscController_WriteWord(void)
 */
 void FDC_DiscControllerStatus_ReadWord(void)
 {
-  Sint16 DiscControllerByte = 0;            /* Used to pass parameter back to assembler */
+	Sint16 DiscControllerByte = 0;            /* Used to pass parameter back to assembler */
 
-  if (nIoMemAccessSize == SIZE_BYTE)
-  {
-    /* This register does not like to be accessed in byte mode on a normal ST */
-	M68000_BusError(IoAccessBaseAddress, 1);
-	return;
-  }
+	if (nIoMemAccessSize == SIZE_BYTE)
+	{
+		/* This register does not like to be accessed in byte mode on a normal ST */
+		M68000_BusError(IoAccessBaseAddress, 1);
+		return;
+	}
 
-  if (DMAModeControl_ff8606wr == 0x08A)     /* HDC status reg selected? */
-  {
-    /* return the HDC status reg */
-    DiscControllerByte = HDCCommand.returnCode;
-  }
-  else
-  {
-    /* old FDC code */
-    switch (DMAModeControl_ff8606wr&0x6)      /* Bits 1,2 (A1,A0) */
-    {
-      case 0x0:                               /* 0 0 - Status register */
-        DiscControllerByte = DiscControllerStatus_ff8604rd;
-        if (bMotorOn)
-          DiscControllerByte |= 0x80;
+	if (DMAModeControl_ff8606wr == 0x08A)     /* HDC status reg selected? */
+	{
+		/* return the HDC status reg */
+		DiscControllerByte = HDCCommand.returnCode;
+	}
+	else
+	{
+		/* old FDC code */
+		switch (DMAModeControl_ff8606wr&0x6)      /* Bits 1,2 (A1,A0) */
+		{
+		 case 0x0:                               /* 0 0 - Status register */
+			DiscControllerByte = DiscControllerStatus_ff8604rd;
+			if (bMotorOn)
+				DiscControllerByte |= 0x80;
 
-        if (Floppy_IsWriteProtected(nReadWriteDev))
-          DiscControllerByte |= 0x40;
+			if (Floppy_IsWriteProtected(nReadWriteDev))
+				DiscControllerByte |= 0x40;
 
-        if (EmulationDrives[nReadWriteDev].bMediaChanged)
-        {
-          /* Some games apparently poll the write-protection signal to check
-           * for disk image changes (the signal seems to change when you
-           * exchange disks on a real ST). We now also simulate this behaviour
-           * here, so that these games can continue with the other disk. */
-          DiscControllerByte ^= 0x40;
-          EmulationDrives[nReadWriteDev].bMediaChanged = FALSE;
-        }
+			if (EmulationDrives[nReadWriteDev].bMediaChanged)
+			{
+				/* Some games apparently poll the write-protection signal to check
+				 * for disk image changes (the signal seems to change when you
+				 * exchange disks on a real ST). We now also simulate this behaviour
+				 * here, so that these games can continue with the other disk. */
+				DiscControllerByte ^= 0x40;
+				EmulationDrives[nReadWriteDev].bMediaChanged = FALSE;
+			}
 
-        /* Reset FDC GPIP */
-        MFP_GPIP |= 0x20;
-        break;
-      case 0x2:                               /* 0 1 - Track register */
-        DiscControllerByte = FDCTrackRegister;
-        break;
-      case 0x4:                               /* 1 0 - Sector register */
-        DiscControllerByte = FDCSectorRegister;
-        break;
-      case 0x6:                               /* 1 1 - Data register */
-        DiscControllerByte = FDCDataRegister;
-        break;
-    }
-  }
+			/* Reset FDC GPIP */
+			MFP_GPIP |= 0x20;
+			break;
+		 case 0x2:                               /* 0 1 - Track register */
+			DiscControllerByte = FDCTrackRegister;
+			break;
+		 case 0x4:                               /* 1 0 - Sector register */
+			DiscControllerByte = FDCSectorRegister;
+			break;
+		 case 0x6:                               /* 1 1 - Data register */
+			DiscControllerByte = FDCDataRegister;
+			break;
+		}
+	}
 
-  IoMem_WriteWord(0xff8604, DiscControllerByte);
+	IoMem_WriteWord(0xff8604, DiscControllerByte);
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Read DMA address from ST's RAM(always up-to-date)
+  Read DMA address from ST's RAM (always up-to-date)
 */
-unsigned long FDC_ReadDMAAddress(void)
+Uint32 FDC_ReadDMAAddress(void)
 {
-  unsigned long Address;
+	Uint32 Address;
 
-  /* Build up 24-bit address from hardware registers */
-  Address = ((unsigned long)STMemory_ReadByte(0xff8609)<<16) | ((unsigned long)STMemory_ReadByte(0xff860b)<<8) | (unsigned long)STMemory_ReadByte(0xff860d);
+	/* Build up 24-bit address from hardware registers */
+	Address = ((Uint32)STMemory_ReadByte(0xff8609)<<16) | ((Uint32)STMemory_ReadByte(0xff860b)<<8) | (Uint32)STMemory_ReadByte(0xff860d);
 
-  return(Address);
+	return Address;
 }
 
 
@@ -1207,12 +1236,12 @@ unsigned long FDC_ReadDMAAddress(void)
 /*
   Write DMA address to ST's RAM(always keep up-to-date)
 */
-void FDC_WriteDMAAddress(unsigned long Address)
+void FDC_WriteDMAAddress(Uint32 Address)
 {
-  /* Store as 24-bit address */
-  STMemory_WriteByte(0xff8609,Address>>16);
-  STMemory_WriteByte(0xff860b,Address>>8);
-  STMemory_WriteByte(0xff860d,Address);
+	/* Store as 24-bit address */
+	STMemory_WriteByte(0xff8609, Address>>16);
+	STMemory_WriteByte(0xff860b, Address>>8);
+	STMemory_WriteByte(0xff860d, Address);
 }
 
 
@@ -1223,19 +1252,21 @@ void FDC_WriteDMAAddress(unsigned long Address)
 */
 BOOL FDC_ReadSectorFromFloppy(void)
 {
-  /* Copy in 1 sector to our workspace */
-  if (Floppy_ReadSectors(nReadWriteDev,(char *)DMASectorWorkSpace,nReadWriteSector,nReadWriteTrack,nReadWriteSide,1,NULL)) {
-    /* Update reading/writing parameters */
-    nReadWriteSector++;
-    if (nReadWriteSector>nReadWriteSectorsPerTrack) {  /* Advance into next track? */
-      nReadWriteSector = 1;
-      nReadWriteTrack++;
-    }
-    return(TRUE);
-  }
+	/* Copy in 1 sector to our workspace */
+	if (Floppy_ReadSectors(nReadWriteDev,(char *)DMASectorWorkSpace,nReadWriteSector,nReadWriteTrack,nReadWriteSide,1,NULL))
+	{
+		/* Update reading/writing parameters */
+		nReadWriteSector++;
+		if (nReadWriteSector > nReadWriteSectorsPerTrack)   /* Advance into next track? */
+		{
+			nReadWriteSector = 1;
+			nReadWriteTrack++;
+		}
+		return TRUE;
+	}
 
-  /* Failed */
-  return(FALSE);
+	/* Failed */
+	return FALSE;
 }
 
 
@@ -1246,24 +1277,26 @@ BOOL FDC_ReadSectorFromFloppy(void)
 */
 BOOL FDC_WriteSectorFromFloppy(void)
 {
-  unsigned long Address;
+	Uint32 Address;
 
-  /* Get DMA address */
-  Address = FDC_ReadDMAAddress();
+	/* Get DMA address */
+	Address = FDC_ReadDMAAddress();
 
-  /* Write out 1 sector from our workspace */
-  if (Floppy_WriteSectors(nReadWriteDev,(char *)((unsigned long)STRam+Address),nReadWriteSector,nReadWriteTrack,nReadWriteSide,1,NULL)) {
-    /* Update reading/writing parameters */
-    nReadWriteSector++;
-    if (nReadWriteSector>nReadWriteSectorsPerTrack) {  /* Advance to next track? */
-      nReadWriteSector = 1;
-      nReadWriteTrack++;
-    }
-    return(TRUE);
-  }
+	/* Write out 1 sector from our workspace */
+	if (Floppy_WriteSectors(nReadWriteDev, &STRam[Address], nReadWriteSector, nReadWriteTrack, nReadWriteSide, 1, NULL))
+	{
+		/* Update reading/writing parameters */
+		nReadWriteSector++;
+		if (nReadWriteSector > nReadWriteSectorsPerTrack)   /* Advance to next track? */
+		{
+			nReadWriteSector = 1;
+			nReadWriteTrack++;
+		}
+		return TRUE;
+	}
 
-  /* Failed */
-  return(FALSE);
+	/* Failed */
+	return FALSE;
 }
 
 
@@ -1273,18 +1306,18 @@ BOOL FDC_WriteSectorFromFloppy(void)
 */
 void FDC_DMADataFromFloppy(void)
 {
-  /* Copy data to DMA address */
-  memcpy( (char *)((unsigned long)STRam+FDC_ReadDMAAddress()), DMASectorWorkSpace, NUMBYTESPERSECTOR );
+	/* Copy data to DMA address */
+	memcpy(&STRam[FDC_ReadDMAAddress()], DMASectorWorkSpace, NUMBYTESPERSECTOR );
 
-  /* Update DMA pointer */
-  FDC_WriteDMAAddress(FDC_ReadDMAAddress()+NUMBYTESPERSECTOR);
+	/* Update DMA pointer */
+	FDC_WriteDMAAddress(FDC_ReadDMAAddress()+NUMBYTESPERSECTOR);
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
   Write word to 0xff8606 (DMA Mode Control)
-
+ 
   Eg.
   $80 - Selects command/status register
   $82 - Selects track register
@@ -1295,19 +1328,19 @@ void FDC_DMADataFromFloppy(void)
 */
 void FDC_DmaModeControl_WriteWord(void)
 {
-  Uint16 DMAModeControl_ff8606wr_prev;                     /* stores previous write to 0xff8606 for 'toggle' checks */
+	Uint16 DMAModeControl_ff8606wr_prev;                     /* stores previous write to 0xff8606 for 'toggle' checks */
 
-  if (nIoMemAccessSize == SIZE_BYTE)
-  {
-    /* This register does not like to be accessed in byte mode on a normal ST */
-	M68000_BusError(IoAccessBaseAddress, 0);
-	return;
-  }
+	if (nIoMemAccessSize == SIZE_BYTE)
+	{
+		/* This register does not like to be accessed in byte mode on a normal ST */
+		M68000_BusError(IoAccessBaseAddress, 0);
+		return;
+	}
 
-  DMAModeControl_ff8606wr_prev = DMAModeControl_ff8606wr;  /* Store previous to check for _read/_write toggle (DMA reset) */
-  DMAModeControl_ff8606wr = IoMem_ReadWord(0xff8606);      /* Store to DMA Mode control */
+	DMAModeControl_ff8606wr_prev = DMAModeControl_ff8606wr;  /* Store previous to check for _read/_write toggle (DMA reset) */
+	DMAModeControl_ff8606wr = IoMem_ReadWord(0xff8606);      /* Store to DMA Mode control */
 
-  /* When write to 0xff8606, check bit '8' toggle. This causes DMA status reset */
-  if ((DMAModeControl_ff8606wr_prev ^ DMAModeControl_ff8606wr) & 0x0100)
-    FDC_ResetDMAStatus();
+	/* When write to 0xff8606, check bit '8' toggle. This causes DMA status reset */
+	if ((DMAModeControl_ff8606wr_prev ^ DMAModeControl_ff8606wr) & 0x0100)
+		FDC_ResetDMAStatus();
 }
