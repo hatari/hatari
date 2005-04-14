@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.38 2005-04-07 10:15:01 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.39 2005-04-14 13:22:46 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -1763,17 +1763,10 @@ void GemDOS_OpCode(void)
 	GemDOSCall = STMemory_ReadWord(Params);
 
 #ifdef GEMDOS_VERBOSE
-
-	if (GemDOSCall <= 0x57)
+	if (GemDOSCall < (sizeof(pszGemDOSNames)/sizeof(pszGemDOSNames[0])))
 		fprintf(stderr, "GemDOS 0x%X (%s)\n",GemDOSCall,pszGemDOSNames[GemDOSCall]);
 	else
 		fprintf(stderr, "GemDOS 0x%X\n",GemDOSCall);
-
-	if (!GemDOSCall)
-	{
-		fprintf(stderr, "Warning!!\n");
-		DebugUI();
-	}
 #endif
 
 	/* Intercept call */
@@ -1911,12 +1904,12 @@ void GemDOS_OpCode(void)
  */
 void GemDOS_Boot(void)
 {
-
 	bInitGemDOS = TRUE;
-#ifdef GEMDOS_VERBOSE
 
+#ifdef GEMDOS_VERBOSE
 	fprintf(stderr, "Gemdos_Boot()\n");
 #endif
+
 	/* install our gemdos handler, if -e or --harddrive option used */
 	if (GEMDOS_EMU_ON)
 	{
