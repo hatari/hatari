@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.45 2005-04-05 14:41:21 thothy Exp $";
+char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.46 2005-05-11 08:09:05 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -90,17 +90,13 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 
   /* Do need to change resolution? Need if change display/overscan settings */
   /*(if switch between Colour/Mono cause reset later) */
-  if( (DialogParams.Screen.ChosenDisplayMode!=ConfigureParams.Screen.ChosenDisplayMode)
-      || (DialogParams.Screen.bAllowOverscan!=ConfigureParams.Screen.bAllowOverscan) ) {
-    if(bInFullScreen) Screen_ReturnFromFullScreen();
+  if (DialogParams.Screen.ChosenDisplayMode != ConfigureParams.Screen.ChosenDisplayMode
+      || DialogParams.Screen.bAllowOverscan != ConfigureParams.Screen.bAllowOverscan)
+  {
     ConfigureParams.Screen.ChosenDisplayMode = DialogParams.Screen.ChosenDisplayMode;
     ConfigureParams.Screen.bAllowOverscan = DialogParams.Screen.bAllowOverscan;
-    if(bInFullScreen)
-      Screen_EnterFullScreen();
-    else {
-      PrevSTRes = -1;
-      Screen_DidResolutionChange();
-    }
+    PrevSTRes = -1;
+    Screen_DidResolutionChange();
   }
 
   /* Did set new printer parameters? */
