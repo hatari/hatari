@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.22 2005-04-04 15:27:41 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.23 2005-06-01 13:44:39 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -45,7 +45,7 @@ char File_rcsid[] = "Hatari $Id: file.c,v 1.22 2005-04-04 15:27:41 thothy Exp $"
 */
 int alphasort(const void *d1, const void *d2)
 {
-  return(strcmp((*(struct dirent **)d1)->d_name, (*(struct dirent **)d2)->d_name));
+  return strcmp((*(struct dirent * const *)d1)->d_name, (*(struct dirent * const *)d2)->d_name);
 }
 
 
@@ -53,12 +53,12 @@ int alphasort(const void *d1, const void *d2)
 /*
   Scan a directory for all its entries
 */
-int scandir(const char *dirname, struct dirent ***namelist, int (*select)(struct dirent *), int (*dcomp)(const void *, const void *))
+int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(struct dirent *), int (*dcomp)(const void *, const void *))
 {
-  register struct dirent *d, *p, **names;
-  register size_t nitems;
+  struct dirent *d, *p, **names;
   struct stat stb;
-  long arraysz;
+  size_t nitems;
+  size_t arraysz;
   DIR *dirp;
 
   if ((dirp = opendir(dirname)) == NULL)
@@ -81,7 +81,7 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*select)(struct
 
   while ((d = readdir(dirp)) != NULL) {
 
-     if (select != NULL && !(*select)(d))
+     if (sdfilter != NULL && !(*sdfilter)(d))
        continue;       /* just selected names */
 
      /*
@@ -124,7 +124,7 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*select)(struct
 
    *namelist = names;
 
-   return(nitems);
+   return nitems;
 }
 
 

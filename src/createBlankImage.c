@@ -6,7 +6,7 @@
  
   Create Blank .ST/.MSA Disc Images
 */
-char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.10 2004-04-30 19:23:45 thothy Exp $";
+char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.11 2005-06-01 13:44:39 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -72,7 +72,7 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
 {
 	Uint8 *pDiscFile;
 	unsigned long DiscSize;
-	unsigned short int SPC, DIR, MediaByte, SPF;
+	unsigned short int SPC, nDir, MediaByte, SPF;
 	BOOL bRet=FALSE;
 
 	/* Calculate size of disc image */
@@ -106,10 +106,10 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
 	pDiscFile[16] = 2;                                    /* 16 FAT */
 
 	if (SPC==1)
-		DIR = 64;
+		nDir = 64;
 	else
-		DIR = 112;
-	WriteShortLE(pDiscFile+17, DIR);                      /* 17-18 DIR */
+		nDir = 112;
+	WriteShortLE(pDiscFile+17, nDir);                     /* 17-18 DIR */
 
 	WriteShortLE(pDiscFile+19, nTracks*nSectors*nSides);  /* 19-20 SEC */
 
