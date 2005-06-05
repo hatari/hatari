@@ -14,13 +14,9 @@
  * This file is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with ARAnyM; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * GNU General Public License (gpl.txt) for more details.
  */
-char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.2 2005-02-12 23:11:28 thothy Exp $";
+char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.3 2005-06-05 17:29:05 thothy Exp $";
 
 #include <string.h>
 
