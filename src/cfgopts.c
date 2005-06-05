@@ -54,7 +54,7 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.6 2005-04-01 11:14:46 thothy Exp $";
+char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.7 2005-06-05 14:19:39 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -114,9 +114,9 @@ static char *trim(char *buffer)
 /     struct Config_Tag configs[]; Configuration structure
 /     char *header            ; INI header name (i.e. "[TEST]")
 /-------------------------------------------------------------------<<*/
-int input_config(const char *filename, struct Config_Tag configs[], const char *header)
+int input_config(const char *filename, const struct Config_Tag configs[], const char *header)
 {
-	struct Config_Tag *ptr;
+	const struct Config_Tag *ptr;
 	int count=0, lineno=0;
 	FILE *file;
 	char *fptr,*tok,*next;
@@ -220,7 +220,7 @@ int input_config(const char *filename, struct Config_Tag configs[], const char *
 
 
 /* Write out an settings line */
-static int write_token(FILE *outfile, struct Config_Tag *ptr)
+static int write_token(FILE *outfile, const struct Config_Tag *ptr)
 {
 	fprintf(outfile,"%s = ",ptr->code);
 
@@ -279,9 +279,9 @@ static int write_token(FILE *outfile, struct Config_Tag *ptr)
 /     struct Config_Tag configs[]; Configuration structure
 /     char *header            ; INI header name (i.e. "[TEST]")
 /-------------------------------------------------------------------<<*/
-int update_config(const char *filename, struct Config_Tag configs[], const char *header)
+int update_config(const char *filename, const struct Config_Tag configs[], const char *header)
 {
-	struct Config_Tag *ptr;
+	const struct Config_Tag *ptr;
 	int count=0, lineno=0;
 	FILE *cfgfile, *tempfile;
 	char *fptr, *tok, *next;

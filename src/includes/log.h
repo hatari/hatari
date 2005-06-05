@@ -20,5 +20,6 @@ typedef enum
 extern void Log_Init(void);
 extern void Log_UnInit(void);
 extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...);
+extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...);
 
 #endif  /* HATARI_LOG_H */

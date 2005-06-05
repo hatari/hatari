@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.38 2005-03-07 23:15:50 thothy Exp $";
+char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.39 2005-06-05 14:19:40 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -18,6 +18,7 @@ char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.38 2005-03-07 23:15:50 thothy Ex
 #include "memory.h"
 #include "newcpu.h"
 #include "../includes/main.h"
+#include "../includes/log.h"
 #include "../includes/m68000.h"
 #include "../includes/mfp.h"
 #include "../includes/tos.h"
@@ -124,8 +125,8 @@ void build_cpufunctbl(void)
 			  : ! cpu_compatible ? op_smalltbl_4_ff
 			  : op_smalltbl_5_ff);
 
-    write_log ("Building CPU function table (%d %d %d).\n",
-	       cpu_level, cpu_compatible, address_space_24);
+    Log_Printf(LOG_DEBUG, "Building CPU function table (%d %d %d).\n",
+	           cpu_level, cpu_compatible, address_space_24);
 
     for (opcode = 0; opcode < 65536; opcode++)
 	cpufunctbl[opcode] = op_illg_1;
@@ -225,19 +226,21 @@ void init_m68k (void)
     read_table68k ();
     do_merges ();
 
-    write_log ("%d CPU functions\n", nr_cpuop_funcs);
+    Log_Printf(LOG_DEBUG, "%d CPU functions\n", nr_cpuop_funcs);
 
     build_cpufunctbl ();
 }
 
 
-struct regstruct regs, lastint_regs;
 /* not used ATM:
 static struct regstruct regs_backup[16];
 static int backup_pointer = 0;
-*/
-static long int m68kpc_offset;
+struct regstruct lastint_regs;
 int lastint_no;
+*/
+struct regstruct regs;
+static long int m68kpc_offset;
+
 
 #define get_ibyte_1(o) get_byte(regs.pc + (regs.pc_p - regs.pc_oldp) + (o) + 1)
 #define get_iword_1(o) get_word(regs.pc + (regs.pc_p - regs.pc_oldp) + (o))
@@ -848,8 +851,8 @@ void Exception(int nr, uaecptr oldpc)
 static void Interrupt(int nr)
 {
     assert(nr < 8 && nr >= 0);
-    lastint_regs = regs;
-    lastint_no = nr;
+    /*lastint_regs = regs;*/
+    /*lastint_no = nr;*/
     Exception(nr+24, 0);
 
     regs.intmask = nr;

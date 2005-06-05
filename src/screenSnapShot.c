@@ -6,14 +6,14 @@
 
   Screen Snapshots.
 */
-char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.8 2005-02-13 16:18:49 thothy Exp $";
+char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.9 2005-06-05 14:19:39 thothy Exp $";
 
 #include <SDL.h>
 #include <dirent.h>
 #include <string.h>
 
 #include "main.h"
-#include "misc.h"
+#include "log.h"
 #include "screen.h"
 #include "screenSnapShot.h"
 #include "video.h"
@@ -101,10 +101,9 @@ void ScreenSnapShot_BeginRecording(BOOL bCaptureChange, int nFramesPerSecond)
   GrabFrameLatch = (int)(50.0f/(float)nFramesPerSecond);
   /* Start animation */
   bRecordingAnimation = TRUE;
-  /* Set status bar */
-  /*StatusBar_SetIcon(STATUS_ICON_SCREEN,ICONSTATE_ON);*/ /* Sorry - Hatari does not has a statusbar yet */
+
   /* And inform user */
-  Main_Message("Screen-Shot recording started.",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
+  Log_AlertDlg(LOG_INFO, "Screenshot recording started.");
 }
 
 /*-----------------------------------------------------------------------*/
@@ -117,10 +116,9 @@ void ScreenSnapShot_EndRecording()
   if (bRecordingAnimation) {
     /* Stop animation */
     bRecordingAnimation = FALSE;
-    /* Turn off icon */
-    /*StatusBar_SetIcon(STATUS_ICON_SCREEN,ICONSTATE_OFF);*/ /* Sorry - no statusbar support yet */
+
     /* And inform user */
-    Main_Message("Screen-Shot recording stopped.",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
+    Log_AlertDlg(LOG_INFO, "Screenshot recording stopped.");
   }
 }
 

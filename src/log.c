@@ -9,16 +9,20 @@
   When Hatari runs, it can output information, debug, warning and error texts
   to the error log file and/or displays them in alert dialog boxes.
 */
-char Log_rcsid[] = "Hatari $Id: log.c,v 1.1 2005-04-05 14:41:28 thothy Exp $";
+char Log_rcsid[] = "Hatari $Id: log.c,v 1.2 2005-06-05 14:19:39 thothy Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #include "main.h"
+#include "configuration.h"
+#include "dialog.h"
 #include "log.h"
+#include "screen.h"
 
 
-static FILE *hLogFile;
+static FILE *hLogFile = NULL;
 
 
 /*-----------------------------------------------------------------------*/
@@ -27,16 +31,22 @@ static FILE *hLogFile;
 */
 void Log_Init(void)
 {
-	char szString[FILENAME_MAX];
-
-	if (TRUE)
+	/* First check for "stdout" and "stderr" which are special */
+	if (!strcmp(ConfigureParams.Log.sLogFileName, "stdout"))
+	{
+		hLogFile = stdout;
+	}
+	else if (!strcmp(ConfigureParams.Log.sLogFileName, "stderr"))
 	{
 		hLogFile = stderr;
 	}
 	else
 	{
-		sprintf(szString, "%s/errlog.txt", szWorkingDir);
-		hLogFile = fopen(szString, "w");
+		/* Open a normal log file */
+		hLogFile = fopen(ConfigureParams.Log.sLogFileName, "w");
+		if (!hLogFile)
+			fprintf(stderr, "Can't open log file %s: %s\n",
+			        ConfigureParams.Log.sLogFileName, strerror(errno));
 	}
 }
 
@@ -47,7 +57,7 @@ void Log_Init(void)
 */
 void Log_UnInit(void)
 {
-	if (hLogFile != stdout && hLogFile != stderr)
+	if (hLogFile && hLogFile != stdout && hLogFile != stderr)
 	{
 		fclose(hLogFile);
 	}
@@ -61,12 +71,50 @@ void Log_UnInit(void)
 */
 void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 {
-  char szBuffer[1024];
-  va_list argptr;
+	va_list argptr;
 
-  va_start(argptr, psFormat);
-  vsprintf(szBuffer, psFormat, argptr);
-  va_end(argptr);
+	if (hLogFile && (int)nType <= ConfigureParams.Log.nTextLogLevel)
+	{
+		va_start(argptr, psFormat);
+		vfprintf(hLogFile, psFormat, argptr);
+		va_end(argptr);
+	}
+}
 
-  fwrite(szBuffer, sizeof(char), strlen(szBuffer), hLogFile);
+
+/*-----------------------------------------------------------------------*/
+/*
+  Show logging alert dialog box and output string to log file
+*/
+void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
+{
+	va_list argptr;
+
+	/* Output to log file: */
+	if (hLogFile && (int)nType <= ConfigureParams.Log.nTextLogLevel)
+	{
+		va_start(argptr, psFormat);
+		vfprintf(hLogFile, psFormat, argptr);
+		va_end(argptr);
+		/* Add a new-line if necessary: */
+		if (psFormat[strlen(psFormat)-1] != '\n')
+			fputs("\n", hLogFile);
+	}
+
+	/* Show alert dialog box: */
+	if (sdlscrn && (int)nType <= ConfigureParams.Log.nAlertDlgLogLevel)
+	{
+		char *psTmpBuf;
+		psTmpBuf = malloc(2048);
+		if (!psTmpBuf)
+		{
+			perror("Log_AlertDlg");
+			return;
+		}
+		va_start(argptr, psFormat);
+		vsnprintf(psTmpBuf, 2048, psFormat, argptr);
+		va_end(argptr);
+		DlgAlert_Notice(psTmpBuf);
+		free(psTmpBuf);
+	}
 }

@@ -9,6 +9,15 @@
 #define HATARI_CONFIGURATION_H
 
 
+/* Logging */
+typedef struct
+{
+  char sLogFileName[FILENAME_MAX];
+  int nTextLogLevel;
+  int nAlertDlgLogLevel;
+} CNF_LOG;
+
+
 /* ROM (TOS + cartridge) configuration */
 typedef struct
 {
@@ -208,6 +217,7 @@ typedef struct
 typedef struct
 {
   /* Configure */
+  CNF_LOG Log;
   CNF_SCREEN Screen;
   CNF_JOYSTICKS Joysticks;
   CNF_KEYBOARD Keyboard;

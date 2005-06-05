@@ -9,22 +9,19 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.42 2005-04-04 15:26:11 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.43 2005-06-05 14:19:39 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
-#include "audio.h"
-#include "dialog.h"
-#include "ioMem.h"
-#include "video.h"
-#include "vdi.h"
-#include "screen.h"
-#include "shortcut.h"
-#include "m68000.h"
-#include "file.h"
-#include "uae-cpu/hatari-glue.h"
-#include "gemdos.h"
 #include "cfgopts.h"
+#include "audio.h"
+#include "file.h"
+#include "log.h"
+#include "m68000.h"
+#include "screen.h"
+#include "vdi.h"
+#include "video.h"
+#include "uae-cpu/hatari-glue.h"
 
 
 BOOL bFirstTimeInstall = FALSE;             /* Has been run before? Used to set default joysticks etc... */
@@ -32,8 +29,18 @@ CNF_PARAMS ConfigureParams;                 /* List of configuration for the emu
 char sConfigFileName[FILENAME_MAX];         /* Stores the name of the configuration file */
 
 
+/* Used to load/save logging options */
+static const struct Config_Tag configs_Log[] =
+{
+	{ "sLogFileName", String_Tag, ConfigureParams.Log.sLogFileName },
+	{ "nTextLogLevel", Int_Tag, &ConfigureParams.Log.nTextLogLevel },
+	{ "nAlertDlgLogLevel", Int_Tag, &ConfigureParams.Log.nAlertDlgLogLevel },
+	{ NULL , Error_Tag, NULL }
+};
+
+
 /* Used to load/save screen options */
-struct Config_Tag configs_Screen[] =
+static const struct Config_Tag configs_Screen[] =
 {
 	{ "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
 	{ "bFrameSkip", Bool_Tag, &ConfigureParams.Screen.bFrameSkip },
@@ -50,13 +57,13 @@ struct Config_Tag configs_Screen[] =
 };
 
 /* Used to load/save joystick options */
-struct Config_Tag configs_Joystick0[] =
+static const struct Config_Tag configs_Joystick0[] =
 {
 	{ "bCursorEmulation", Bool_Tag, &ConfigureParams.Joysticks.Joy[0].bCursorEmulation },
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[0].bEnableAutoFire },
 	{ NULL , Error_Tag, NULL }
 };
-struct Config_Tag configs_Joystick1[] =
+static const struct Config_Tag configs_Joystick1[] =
 {
 	{ "bCursorEmulation", Bool_Tag, &ConfigureParams.Joysticks.Joy[1].bCursorEmulation },
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[1].bEnableAutoFire },
@@ -64,7 +71,7 @@ struct Config_Tag configs_Joystick1[] =
 };
 
 /* Used to load/save keyboard options */
-struct Config_Tag configs_Keyboard[] =
+static const struct Config_Tag configs_Keyboard[] =
 {
 	{ "bDisableKeyRepeat", Bool_Tag, &ConfigureParams.Keyboard.bDisableKeyRepeat },
 	{ "nKeymapType", Int_Tag, &ConfigureParams.Keyboard.nKeymapType },
@@ -73,7 +80,7 @@ struct Config_Tag configs_Keyboard[] =
 };
 
 /* Used to load/save sound options */
-struct Config_Tag configs_Sound[] =
+static const struct Config_Tag configs_Sound[] =
 {
 	{ "bEnableSound", Bool_Tag, &ConfigureParams.Sound.bEnableSound },
 	{ "nPlaybackQuality", Int_Tag, &ConfigureParams.Sound.nPlaybackQuality },
@@ -82,7 +89,7 @@ struct Config_Tag configs_Sound[] =
 };
 
 /* Used to load/save memory options */
-struct Config_Tag configs_Memory[] =
+static const struct Config_Tag configs_Memory[] =
 {
 	{ "nMemorySize", Int_Tag, &ConfigureParams.Memory.nMemorySize },
 	{ "szMemoryCaptureFileName", String_Tag, ConfigureParams.Memory.szMemoryCaptureFileName },
@@ -91,7 +98,7 @@ struct Config_Tag configs_Memory[] =
 
 
 /* Used to load/save floppy options */
-struct Config_Tag configs_Floppy[] =
+static const struct Config_Tag configs_Floppy[] =
 {
 	{ "bAutoInsertDiscB", Bool_Tag, &ConfigureParams.DiscImage.bAutoInsertDiscB },
 	{ "nWriteProtection", Int_Tag, &ConfigureParams.DiscImage.nWriteProtection },
@@ -100,7 +107,7 @@ struct Config_Tag configs_Floppy[] =
 };
 
 /* Used to load/save HD options */
-struct Config_Tag configs_HardDisc[] =
+static const struct Config_Tag configs_HardDisc[] =
 {
 	/*{ "nDriveList", Int_Tag, &ConfigureParams.HardDisc.nDriveList },*/
 	{ "bBootFromHardDisc", Bool_Tag, &ConfigureParams.HardDisc.bBootFromHardDisc },
@@ -115,7 +122,7 @@ struct Config_Tag configs_HardDisc[] =
 };
 
 /* Used to load/save ROM options */
-struct Config_Tag configs_Rom[] =
+static const struct Config_Tag configs_Rom[] =
 {
 	{ "szTosImageFileName", String_Tag, ConfigureParams.Rom.szTosImageFileName },
 	{ "szCartridgeImageFileName", String_Tag, ConfigureParams.Rom.szCartridgeImageFileName },
@@ -123,7 +130,7 @@ struct Config_Tag configs_Rom[] =
 };
 
 /* Used to load/save RS232 options */
-struct Config_Tag configs_Rs232[] =
+static const struct Config_Tag configs_Rs232[] =
 {
 	{ "bEnableRS232", Bool_Tag, &ConfigureParams.RS232.bEnableRS232 },
 	{ "szOutFileName", String_Tag, ConfigureParams.RS232.szOutFileName },
@@ -132,7 +139,7 @@ struct Config_Tag configs_Rs232[] =
 };
 
 /* Used to load/save printer options */
-struct Config_Tag configs_Printer[] =
+static const struct Config_Tag configs_Printer[] =
 {
 	{ "bEnablePrinting", Bool_Tag, &ConfigureParams.Printer.bEnablePrinting },
 	{ "bPrintToFile", Bool_Tag, &ConfigureParams.Printer.bPrintToFile },
@@ -141,7 +148,7 @@ struct Config_Tag configs_Printer[] =
 };
 
 /* Used to load/save MIDI options */
-struct Config_Tag configs_Midi[] =
+static const struct Config_Tag configs_Midi[] =
 {
 	{ "bEnableMidi", Bool_Tag, &ConfigureParams.Midi.bEnableMidi },
 	{ "szMidiOutFileName", String_Tag, ConfigureParams.Midi.szMidiOutFileName },
@@ -149,7 +156,7 @@ struct Config_Tag configs_Midi[] =
 };
 
 /* Used to load/save system options */
-struct Config_Tag configs_System[] =
+static const struct Config_Tag configs_System[] =
 {
 	{ "nMinMaxSpeed", Int_Tag, &ConfigureParams.System.nMinMaxSpeed },
 	{ "nCpuLevel", Int_Tag, &ConfigureParams.System.nCpuLevel },
@@ -178,6 +185,11 @@ void Configuration_SetDefault(void)
 
 	/* Clear parameters */
 	memset(&ConfigureParams, 0, sizeof(CNF_PARAMS));
+
+	/* Set defaults for logging */
+	strcpy(ConfigureParams.Log.sLogFileName, "stderr");
+	ConfigureParams.Log.nTextLogLevel = LOG_INFO;
+	ConfigureParams.Log.nAlertDlgLogLevel = LOG_INFO;
 
 	/* Set defaults for (floppy) Disc Image */
 	ConfigureParams.DiscImage.bAutoInsertDiscB = TRUE;
@@ -324,7 +336,7 @@ void Configuration_WorkOnDetails(BOOL bReset)
 /*
   Load a settings section from the configuration file.
 */
-static int Configuration_LoadSection(const char *pFilename, struct Config_Tag configs[], const char *pSection)
+static int Configuration_LoadSection(const char *pFilename, const struct Config_Tag configs[], const char *pSection)
 {
 	int ret;
 
@@ -356,6 +368,7 @@ void Configuration_Load(const char *psFileName)
 
 	bFirstTimeInstall = FALSE;
 
+	Configuration_LoadSection(psFileName, configs_Log, "[Log]");
 	Configuration_LoadSection(psFileName, configs_Screen, "[Screen]");
 	Configuration_LoadSection(psFileName, configs_Joystick0, "[Joystick0]");
 	Configuration_LoadSection(psFileName, configs_Joystick1, "[Joystick1]");
@@ -382,7 +395,7 @@ void Configuration_Load(const char *psFileName)
 /*
   Save a settings section to configuration file
 */
-static int Configuration_SaveSection(const char *pFilename, struct Config_Tag configs[], const char *pSection)
+static int Configuration_SaveSection(const char *pFilename, const struct Config_Tag configs[], const char *pSection)
 {
 	int ret;
 
@@ -401,11 +414,12 @@ static int Configuration_SaveSection(const char *pFilename, struct Config_Tag co
 */
 void Configuration_Save(void)
 {
-	if (Configuration_SaveSection(sConfigFileName, configs_Screen, "[Screen]") < 0)
+	if (Configuration_SaveSection(sConfigFileName, configs_Log, "[Log]") < 0)
 	{
 		fprintf(stderr, "Error saving config file.\n");
 		return;
 	}
+	Configuration_SaveSection(sConfigFileName, configs_Screen, "[Screen]");
 	Configuration_SaveSection(sConfigFileName, configs_Joystick0, "[Joystick0]");
 	Configuration_SaveSection(sConfigFileName, configs_Joystick1, "[Joystick1]");
 	Configuration_SaveSection(sConfigFileName, configs_Keyboard, "[Keyboard]");

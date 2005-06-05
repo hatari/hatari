@@ -33,15 +33,15 @@
     4 - 7  Length Of Data To Follow
     8 - end  Data (Samples)
 */
-char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.9 2005-04-07 10:15:02 thothy Exp $";
+char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.10 2005-06-05 14:19:39 thothy Exp $";
 
 #include <SDL_endian.h>
 
 #include "main.h"
 #include "audio.h"
-#include "dialog.h"
+#include "configuration.h"
 #include "file.h"
-#include "misc.h"
+#include "log.h"
 #include "sound.h"
 #include "wavFormat.h"
 
@@ -92,10 +92,8 @@ BOOL WAVFormat_OpenFile(char *pszWavFileName)
 		nWavOutputBytes = 0;
 		bRecordingWav = TRUE;
 
-		/* Set status bar */
-		/*StatusBar_SetIcon(STATUS_ICON_SOUND,ICONSTATE_ON);*/
 		/* And inform user */
-		Main_Message("WAV Sound data recording started.", PROG_NAME);
+		Log_AlertDlg(LOG_INFO, "WAV sound data recording has been started.");
 	}
 	else
 		bRecordingWav = FALSE;
@@ -110,9 +108,6 @@ BOOL WAVFormat_OpenFile(char *pszWavFileName)
 */
 void WAVFormat_CloseFile()
 {
-	/* Turn off icon */
-	/*StatusBar_SetIcon(STATUS_ICON_SOUND,ICONSTATE_OFF);*/
-
 	if (bRecordingWav)
 	{
 		Uint32 nWavFileBytes;
@@ -133,7 +128,7 @@ void WAVFormat_CloseFile()
 		bRecordingWav = FALSE;
 
 		/* And inform user */
-		Main_Message("WAV Sound data recording stopped.", PROG_NAME);
+		Log_AlertDlg(LOG_INFO, "WAV Sound data recording has been stopped.");
 	}
 }
 

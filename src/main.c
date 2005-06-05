@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.73 2005-04-05 14:41:29 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.74 2005-06-05 14:19:39 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -78,19 +78,6 @@ void Main_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&STRam[0xE00000],0x200000);
   MemorySnapShot_Store(szBootDiscImage,sizeof(szBootDiscImage));
   MemorySnapShot_Store(szWorkingDir,sizeof(szWorkingDir));
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Bring up a message dialog.
-*/
-int Main_Message(const char *pText, const char *pCaption)
-{
-  /* Show message: */
-  fprintf(stderr,"%s: %s\n", pCaption, pText);
-
-  return DlgAlert_Notice(pText);
 }
 
 
@@ -452,6 +439,10 @@ static void Main_ReadParameters(int argc, char *argv[])
 */
 static void Main_Init(void)
 {
+  /* Open debug log file */
+  Log_Init();
+  Log_Printf(LOG_INFO, PROG_NAME ", compiled on:  " __DATE__ ", " __TIME__ "\n");
+
   /* Init SDL's video subsystem. Note: Audio and joystick subsystems
      will be initialized later (failures there are not fatal). */
   if(SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -535,6 +526,9 @@ static void Main_UnInit(void)
 
   /* SDL uninit: */
   SDL_Quit();
+
+  /* Close debug log file */
+  Log_UnInit();
 }
 
 
@@ -544,17 +538,13 @@ static void Main_UnInit(void)
 */
 int main(int argc, char *argv[])
 {
-
   /* Generate random seed */
-  srand( time(NULL) );
+  srand(time(NULL));
 
   /* Get working directory */
   getcwd(szWorkingDir, FILENAME_MAX);
 
   szBootDiscImage[0] = 0;
-
-  /* Open debug log file */
-  Log_Init();
 
   /* Set default configuration values: */
   Configuration_SetDefault();
@@ -580,10 +570,5 @@ int main(int argc, char *argv[])
   /* Un-init emulation system */
   Main_UnInit();
 
-  /* Close debug log file */
-  Log_UnInit();
-
-  return(0);
+  return 0;
 }
-
-

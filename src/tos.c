@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.28 2005-04-05 14:41:31 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.29 2005-06-05 14:19:39 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -26,6 +26,7 @@ char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.28 2005-04-05 14:41:31 thothy Exp $";
 #include "gemdos.h"
 #include "hdc.h"
 #include "ioMem.h"
+#include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "stMemory.h"
@@ -186,14 +187,14 @@ static void TOS_FixRom(void)
   /* Check for EmuTOS first since we can not patch it */
   if(STMemory_ReadLong(TosAddress+0x2c) == 0x45544F53)      /* 0x45544F53 = 'ETOS' */
   {
-    fprintf(stderr, "Detected EmuTOS, skipping TOS patches.\n");
+    Log_Printf(LOG_DEBUG, "Detected EmuTOS, skipping TOS patches.\n");
     return;
   }
 
   /* We also can't patch RAM TOS images (yet) */
   if(bRamTosImage)
   {
-    fprintf(stderr, "RAM TOS image --> skipping TOS patches.\n");
+    Log_Printf(LOG_DEBUG, "Detected RAM TOS image, skipping TOS patches.\n");
     return;
   }
 
@@ -228,16 +229,16 @@ static void TOS_FixRom(void)
       }
       else
       {
-        fprintf(stderr, "Failed to apply TOS patch '%s' at %x (expected %x, found %x).\n",
-                pPatch->pszName, pPatch->Address, pPatch->OldData, STMemory_ReadLong(pPatch->Address));
+        Log_Printf(LOG_DEBUG, "Failed to apply TOS patch '%s' at %x (expected %x, found %x).\n",
+                   pPatch->pszName, pPatch->Address, pPatch->OldData, STMemory_ReadLong(pPatch->Address));
         nBadPatches += 1;
       }
     }
     pPatch += 1;
   }
 
-  fprintf(stderr, "Applied %i TOS patches, %i patches failed.\n",
-          nGoodPatches, nBadPatches);
+  Log_Printf(LOG_DEBUG, "Applied %i TOS patches, %i patches failed.\n",
+             nGoodPatches, nBadPatches);
 }
 
 
@@ -313,7 +314,7 @@ int TOS_LoadImage(void)
     /* Check for RAM TOS images first: */
     if(SDL_SwapBE32(*(Uint32 *)pTosFile) == 0x46FC2700)
     {
-      fprintf(stderr, "Warning: Detected a RAM TOS - this will probably not work very well!\n");
+      Log_Printf(LOG_WARN, "Detected a RAM TOS - this will probably not work very well!\n");
       /* RAM TOS images have a 256 bytes loader function before the real image
        * starts, so we simply skip the first 256 bytes here: */
       TosSize -= 0x100;
@@ -333,8 +334,8 @@ int TOS_LoadImage(void)
     if(TosVersion<0x100 || TosVersion>0x500 || TosSize>1024*1024L
        || (!bRamTosImage && TosAddress!=0xe00000 && TosAddress!=0xfc0000))
     {
-      Main_Message("Your TOS seems not to be a valid TOS ROM file!\n", PROG_NAME);
-      fprintf(stderr,"(TOS version %x, address %x)\n", TosVersion, TosAddress);
+      Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
+                              "(TOS version %x, address $%x)", TosVersion, TosAddress);
       return -2;
     }
 
@@ -343,8 +344,8 @@ int TOS_LoadImage(void)
     /* to lock up. So, if user selects one of these, switch to STE mode. */
     if ((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
     {
-      fprintf(stderr, "TOS versions 1.06 and 1.62 are NOT valid ST ROM images.\n"
-                      " => Switching to STE mode.\n");
+      Log_AlertDlg(LOG_INFO, "TOS versions 1.06 and 1.62\nare NOT valid ST ROM images.\n"
+                             " => Switching to STE mode now.\n");
       IoMem_UnInit();
       ConfigureParams.System.nMachineType = MACHINE_STE;
       IoMem_Init();
@@ -355,25 +356,20 @@ int TOS_LoadImage(void)
   }
   else
   {
-    char err_txt[256];
-    strcpy(err_txt, "Can not load TOS file:\n ");
-    strncat(err_txt, ConfigureParams.Rom.szTosImageFileName, 256-32);
-    strcat(err_txt, "\n");
-    Main_Message(err_txt, PROG_NAME);
+    Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
     return -1;
   }
 
-  fprintf(stderr, "Loaded TOS version %i.%c%c, starting at $%x, "
+  Log_Printf(LOG_DEBUG, "Loaded TOS version %i.%c%c, starting at $%x, "
           "country code = %i, %s\n", TosVersion>>8, '0'+((TosVersion>>4)&0x0f),
           '0'+(TosVersion&0x0f), TosAddress, STMemory_ReadWord(TosAddress+28)>>1,
           (STMemory_ReadWord(TosAddress+28)&1)?"PAL":"NTSC");
 
   /* Are we allowed VDI under this TOS? */
-  if(TosVersion == 0x0100 && bUseVDIRes)
+  if (TosVersion == 0x0100 && bUseVDIRes)
   {
-    /* Warn user (exit if need to) */
-    Main_Message("To use GEM extended resolutions, you must select a TOS >= 1.02.",
-                 PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
+    /* Warn user */
+    Log_AlertDlg(LOG_WARN, "To use GEM extended resolutions, you must select a TOS >= 1.02.");
     /* And select non VDI */
     bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
   }

@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.12 2005-04-05 14:41:29 thothy Exp $";
+char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.13 2005-06-05 14:19:39 thothy Exp $";
 
 #include <SDL_types.h>
 #include <errno.h>
@@ -30,6 +30,7 @@ char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.12 2005-04-05 14
 #include "gemdos.h"
 #include "ikbd.h"
 #include "int.h"
+#include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
@@ -125,7 +126,6 @@ static int MemorySnapShot_fwrite(MSS_File fhndl, const char *buf, int len)
 */
 static BOOL MemorySnapShot_OpenFile(char *pszFileName, BOOL bSave)
 {
-	char szString[256];
 	char VersionString[VERSION_STRING_SIZE];
 
 	/* Set error */
@@ -165,9 +165,8 @@ static BOOL MemorySnapShot_OpenFile(char *pszFileName, BOOL bSave)
 		if (strcasecmp(VersionString, VERSION_STRING))
 		{
 			/* No, inform user and error */
-			sprintf(szString,"Unable to Restore Memory State.\n"
-			        "File is only compatible with Hatari v%s", VersionString);
-			Main_Message(szString, PROG_NAME);
+			Log_AlertDlg(LOG_WARN, "Unable to Restore Memory State.\nFile is"
+			                       "only compatible with Hatari v%s", VersionString);
 			bCaptureError = TRUE;
 			return(FALSE);
 		}
@@ -242,9 +241,9 @@ void MemorySnapShot_Capture(char *pszFileName)
 
 	/* Did error */
 	if (bCaptureError)
-		Main_Message("Unable to Save Memory State to file.", PROG_NAME /*, MB_OK | MB_ICONSTOP*/);
+		Log_AlertDlg(LOG_ERROR, "Unable to save memory state to file.");
 	else
-		Main_Message("Memory State file saved.", PROG_NAME /*, MB_OK | MB_ICONINFORMATION*/);
+		Log_AlertDlg(LOG_INFO, "Memory state file saved.");
 }
 
 
@@ -281,7 +280,7 @@ void MemorySnapShot_Restore(char *pszFileName)
 
 	/* Did error? */
 	if (bCaptureError)
-		Main_Message("Unable to Restore Memory State from file.", PROG_NAME /*,MB_OK | MB_ICONSTOP*/);
+		Log_AlertDlg(LOG_ERROR, "Unable to restore memory state from file.");
 	else
-		Main_Message("Memory State file restored.", PROG_NAME /*,MB_OK | MB_ICONINFORMATION*/);
+		Log_AlertDlg(LOG_INFO, "Memory state file restored.");
 }

@@ -26,7 +26,7 @@ struct Config_Tag
   void       *buf;                 /* Storage location     */
 };
 
-int input_config(const char *, struct Config_Tag *, const char *);
-int update_config(const char *, struct Config_Tag *, const char *);
+int input_config(const char *, const struct Config_Tag *, const char *);
+int update_config(const char *, const struct Config_Tag *, const char *);
 
 #endif

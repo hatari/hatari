@@ -6,14 +6,14 @@
  
   Create Blank .ST/.MSA Disc Images
 */
-char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.11 2005-06-01 13:44:39 thothy Exp $";
+char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.12 2005-06-05 14:19:39 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "dim.h"
 #include "file.h"
 #include "floppy.h"
-#include "misc.h"
+#include "log.h"
 #include "msa.h"
 #include "st.h"
 #include "createBlankImage.h"
@@ -153,12 +153,12 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
 		if (bRet)
 		{
 			/* Say OK, */
-			Main_Message("Disc image created successfully.", PROG_NAME /*,MB_OK | MB_ICONINFORMATION*/);
+			Log_AlertDlg(LOG_INFO, "Disk image has been created successfully.");
 		}
 		else
 		{
 			/* Warn user we were unable to create image */
-			Main_Message("Unable to create disc image!", PROG_NAME /*,MB_OK | MB_ICONSTOP*/);
+			Log_AlertDlg(LOG_ERROR, "Unable to create disk image!");
 		}
 	}
 

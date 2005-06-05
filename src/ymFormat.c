@@ -6,17 +6,16 @@
 
   YM File output, for use with STSound etc...
 */
-char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.10 2005-03-07 23:15:50 thothy Exp $";
+char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.11 2005-06-05 14:19:39 thothy Exp $";
 
 #include "main.h"
-#include "dialog.h"
+#include "configuration.h"
 #include "file.h"
-#include "misc.h"
+#include "log.h"
 #include "psg.h"
-#include "screen.h"
 #include "sound.h"
 #include "ymFormat.h"
-#include "sdlgui.h"
+
 
 #define YM_MAX_VBLS    (50*60*8)            /* 50=1 second, 50*60=1 minute, 50*60*8=8 minutes, or 24000 */
 #define YM_RECORDSIZE  (4+(YM_MAX_VBLS*NUM_PSG_SOUND_REGISTERS))  /* ~330k for 8 minutes */
@@ -62,7 +61,7 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
   nYMVBLS = 0;                  /* Number of VBLs of information */
 
   /* And inform user */
-  Main_Message("YM Sound data recording started.",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
+  Log_AlertDlg(LOG_INFO, "YM sound data recording has been started.");
 
   return TRUE;
 }
@@ -74,9 +73,6 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
 */
 void YMFormat_EndRecording(void)
 {
-  /* Turn off icon */
-  /*StatusBar_SetIcon(STATUS_ICON_SOUND,ICONSTATE_OFF);*/ /* Sorry - no statusbar */
-
   /* Have recorded information? */
   if (pYMWorkspace && nYMVBLS) {
     /* Convert YM to correct format(list of register 1, then register 2...) */
@@ -84,8 +80,8 @@ void YMFormat_EndRecording(void)
       /* Save YM File */
       if ( strlen(ConfigureParams.Sound.szYMCaptureFileName)>0 ) {
         File_Save(ConfigureParams.Sound.szYMCaptureFileName, pYMWorkspace,(long)(nYMVBLS*NUM_PSG_SOUND_REGISTERS)+4, FALSE);
-        /* And inform user(this only happens from dialog) */
-        Main_Message("YM Sound data recording stopped.",PROG_NAME /*,MB_OK|MB_ICONINFORMATION*/);
+        /* And inform user */
+        Log_AlertDlg(LOG_INFO, "YM sound data recording has been stopped.");
       }
     }
   }

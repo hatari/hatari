@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.18 2005-04-05 14:41:30 thothy Exp $";
+char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.19 2005-06-05 14:19:39 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -27,6 +27,7 @@ char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.18 2005-04-05 14:41:30 thothy Exp 
 #include "audio.h"
 #include "file.h"
 #include "int.h"
+#include "log.h"
 #include "memorySnapShot.h"
 #include "misc.h"
 #include "psg.h"
@@ -570,7 +571,7 @@ BOOL Sound_BeginRecording(char *pszCaptureFileName)
 
   if (!pszCaptureFileName || strlen(pszCaptureFileName) <= 3)
   {
-    fprintf(stderr, "Illegal sound recording file name!\n");
+    Log_Printf(LOG_ERROR, "Illegal sound recording file name!\n");
     return FALSE;
   }
 
@@ -581,11 +582,12 @@ BOOL Sound_BeginRecording(char *pszCaptureFileName)
     bRet = WAVFormat_OpenFile(pszCaptureFileName);
   else
   {
-    Main_Message("Unknown Sound Recording format\n\n.Please specify a .YM or .WAV output file.",PROG_NAME /*,MB_OK|MB_ICONSTOP*/);
+    Log_AlertDlg(LOG_ERROR, "Unknown Sound Recording format.\n"
+                            "Please specify a .YM or .WAV output file.");
     bRet = FALSE;
   }
 
-  return(bRet);
+  return bRet;
 }
 
 

@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.24 2005-04-05 14:41:23 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.25 2005-06-05 14:19:39 thothy Exp $";
 
 #include <sys/stat.h>
 
@@ -34,7 +34,6 @@ char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.24 2005-04-05 14:41:23 thothy Ex
 #include "floppy.h"
 #include "log.h"
 #include "memorySnapShot.h"
-#include "misc.h"
 #include "msa.h"
 #include "st.h"
 #include "zip.h"
@@ -166,7 +165,6 @@ BOOL Floppy_IsWriteProtected(int Drive)
 */
 static BOOL Floppy_IsBootSectorOK(int Drive)
 {
-  char szString[256];
   unsigned char *pDiscBuffer;
 
   /* Does our drive have a disc in? */
@@ -182,9 +180,8 @@ static BOOL Floppy_IsBootSectorOK(int Drive)
     }
     else
     {
-      sprintf(szString, "Disc in drive %c maybe suffers from the Pacifist/Makedisk bug.\n"
-                        "If it does not work, please repair the disk first!\n", 'A' + Drive);
-      Main_Message(szString, "Warning");
+      Log_AlertDlg(LOG_WARN, "Disk in drive %c: maybe suffers from the Pacifist/Makedisk bug.\n"
+                             "If it does not work, please repair the disk first!\n", 'A' + Drive);
     }
   }
 
@@ -306,8 +303,6 @@ BOOL Floppy_ZipInsertDiscIntoDrive(int Drive, char *pszFileName, char *pszZipPat
 */
 void Floppy_EjectDiscFromDrive(int Drive, BOOL bInformUser)
 {
-  char szString[256];
-
   /* Does our drive have a disc in? */
   if (EmulationDrives[Drive].bDiscInserted)
   {
@@ -329,11 +324,10 @@ void Floppy_EjectDiscFromDrive(int Drive, BOOL bInformUser)
       }
     }
 
-    /* Inform user that disc has been ejected! */
+    /* Inform user that disk has been ejected! */
     if (bInformUser)
     {
-      sprintf(szString,"Disc has been removed from Drive '%c'.",'A'+Drive);
-      Main_Message(szString, PROG_NAME);
+      Log_AlertDlg(LOG_INFO, "Disk has been removed from drive '%c:'.", 'A'+Drive);
     }
   }
 
