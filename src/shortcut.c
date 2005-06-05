@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.19 2005-02-13 16:18:49 thothy Exp $";
+char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.20 2005-06-05 14:56:39 thothy Exp $";
 
 #include <SDL.h>
 
@@ -226,9 +226,11 @@ void ShortCut_CheckKeys(void)
   /* Check for supported keys: */
   switch(ShortCutKey.Key)
   {
+   case SDLK_f:
    case SDLK_F11:                  /* Switch between fullscreen/windowed mode */
     ShortCut_FullScreen();
     break;
+   case SDLK_o:
    case SDLK_F12:                  /* Show options dialog */
     Dialog_DoProperty();
     break;
