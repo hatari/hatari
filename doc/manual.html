@@ -47,7 +47,7 @@
  vlink="#cc0000">
 <h1 align="center">Hatari User's Manual</h1>
 <p align="center">
-Version 0.63
+Version 0.70
 </p>
 <p align="center">
 <strong>project initiator and main developer of Hatari: Thomas Huth &lt;<a
@@ -67,26 +67,26 @@ Version 0.63
 <p>
 Hatari is an Atari ST emulator for Linux, FreeBSD, BeOS and other
 Systems which are supported by the SDL library.
-See Appendix B for details on emulation in general.
-The Atari ST was a 16/32 bit computer system which was first released by Atari
-in 1985. Using the Motorola 68000 CPU, it was quite a popular computer having
-quite a lot of CPU power at that time.
+The emulator is open source software and is distributed under the terms of the
+GNU General Public License (GPL).
 </p>
 <p>
-Hatari started as an adaption of the free
-<a href="http://www.sourceforge.net/projects/winston/">WinSTon source code</a>
-to Linux (WinSTon is a ST emulator for Windows).
-But since WinSTon's CPU core was written in i86 assembler, it was not possible
-to use it for Hatari as Hatari is intended to be platform independent.
-So the <a href="http://www.freiburg.linux.de/%7Euae/">CPU core of UAE</a>
-was used for Hatari instead, because this CPU core has been written in
-portable C and also has some nice features like 68040 and FPU support.
+The Atari ST was a 16/32 bit computer system which was first released by Atari
+in 1985. Using the Motorola 68000 CPU, it was a very popular computer having
+quite a lot of CPU power at that time. See Appendix B for details on emulation
+in general.
+</p>
+<p>
+Unlike many other Atari ST emulators which try to give you a good
+environment for running GEM applications, Hatari tries to emulate the hardware
+of a ST as close as possible so that it is able to run most of the old ST games
+and demos. Of course you can run normal GEM applications with Hatari, too.
 </p>
 
 <h3>Features</h3>
 <ul>
   <li>complete m68k emulation via UAE's CPU core</li>
-  <li>support for EmuTOS, TOS 1.00, 1.02, 1.04, 2.05 and 2.06</li>
+  <li>support for TOS 1.00, 1.02, 1.04, 1.06, 1.62, 2.05, 2.06 and EmuTOS</li>
   <li>ST RAM size variable (512k, 1MB, 2MB and 4MB possible)</li>
   <li>optional cartridge images for the ST ROM port</li>
   <li>most of the ST specific hardware</li>
@@ -143,11 +143,11 @@ Hatari has been succesfully tested on the following machines:
   <li>BeOS/i86 </li>
   <li>Apple PowerMac with Mac OS X </li>
   <li>NetBSD 1.6 </li>
+  <li>NetBSD on a Digital Alpha</li>
   <li>FreeBSD 4.1 on an i486 computer, FreeBSD 4.8 on a Pentium 4 and
 FreeBSD 5.1 </li>
   <li>OpenBSD 3.5 </li>
-  <li>Since version 0.40, Hatari now also works on machines with a
-Sparc CPU </li>
+  <li>Solaris 8 on a SUN UltraSparc 1</li>
   <li>Zaurus SL-C760 PDA </li>
 </ul>
 <h2>Compiling and running</h2>
@@ -852,7 +852,9 @@ GEMDOS drive emulation. </p>
 the emulated Atari since it is not possible to switch the hard disk
 while the emulator is running. </p>
 <p> May the fun without the price to be with you ;-) ! </p>
+
 <h2>Appendix</h2>
+
 <h3>Copying</h3>
 <div class="backdropped">
 <p>This program is free software; you can redistribute it and/or modify
@@ -872,6 +874,7 @@ Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA </p>
 <p><a href="http://www.gnu.org/">The GNU Project and the Free Software
 Foundation</a> | <a href="http://www.fsf.org/licenses/gpl.html">The
 GNU General Public License</a></p>
+
 <h3>Introduction to Emulation</h3>
 <p>Emulation via software is an art and Hatari is an example of this.</p>
 <p>Emulation is to make a computer behave like a (probably) completely

@@ -5,6 +5,22 @@
 
 
 
+ Version 0.70 (2005-06-05):
+ --------------------------
+
+- As always: Code cleanup and bug fixes.
+- No more crashes when a program tries to access illegal sector numbers.
+- Improved built-in ROM cartridge.
+- Rewrote the IO memory emulation code -> Better compatibility.
+- Support for TOS 1.06 and TOS 1.62
+- Emulated CPU can now also be run at 16 MHz or 32 MHz.
+- File selection dialog scrollable with mouse wheel or cursor keys, too.
+- Hatari now works on 64-bit host CPUs, too.
+- Floppy disk images can now be set writable/write-protected in the GUI.
+- Hatari can now also load a global configuration file (e.g. /etc/hatari.cfg).
+- Configurable logging functions.
+
+
  Version 0.60 (2004-12-19):
  --------------------------
 
