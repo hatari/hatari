@@ -4,14 +4,14 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  This where we read/write sectors to/from the disc image buffers. NOTE these
+  This where we read/write sectors to/from the disk image buffers. NOTE these
   buffers are in memory so we only need to write routines for the .ST format.
-  When the buffer is to be saved (ie eject disc) we save it back to the original
+  When the buffer is to be saved (ie eject disk) we save it back to the original
   file in the correct format (.ST or .MSA).
 
   There are some important notes about image accessing - as we use TOS and the
-  FDC to access the disc the boot-sector MUST be valid. Sometimes this is NOT
-  the case! In these situations we must guess at the disc format. Eg, some disc
+  FDC to access the disk the boot-sector MUST be valid. Sometimes this is NOT
+  the case! In these situations we must guess at the disk format. Eg, some disk
   images have a a boot sector which states single-sided, but the images have
   been created as double-sided. As sides are interleaved we need to read the
   image as if it was double-sided. Also note that 'NumBytesPerSector' is ALWAYS
@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.25 2005-06-05 14:19:39 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.26 2005-06-06 22:29:43 thothy Exp $";
 
 #include <sys/stat.h>
 
@@ -176,7 +176,7 @@ static BOOL Floppy_IsBootSectorOK(int Drive)
      * won't be-able to read (nor will a real ST)! */
     if (pDiscBuffer[13]!=0)
     {
-      return(TRUE);     /* Disc sector is OK! */
+      return TRUE;      /* Disc sector is OK! */
     }
     else
     {
@@ -185,7 +185,7 @@ static BOOL Floppy_IsBootSectorOK(int Drive)
     }
   }
 
-  return(FALSE);        /* Bad sector */
+  return FALSE;         /* Bad sector */
 }
 
 
@@ -194,7 +194,7 @@ static BOOL Floppy_IsBootSectorOK(int Drive)
   Try to create disc B filename, eg 'auto_100a' becomes 'auto_100b'
   Return TRUE if think we should try!
 */
-static BOOL Floppy_CreateDiscBFileName(char *pSrcFileName, char *pDestFileName)
+static BOOL Floppy_CreateDiscBFileName(const char *pSrcFileName, char *pDestFileName)
 {
   char *szDir, *szName, *szExt;
   BOOL bFileExists = FALSE;
@@ -240,7 +240,7 @@ static BOOL Floppy_CreateDiscBFileName(char *pSrcFileName, char *pDestFileName)
 */
 BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName)
 {
-  return(Floppy_ZipInsertDiscIntoDrive(Drive, pszFileName, NULL));
+  return Floppy_ZipInsertDiscIntoDrive(Drive, pszFileName, NULL);
 }
 
 BOOL Floppy_ZipInsertDiscIntoDrive(int Drive, char *pszFileName, char *pszZipPath)
@@ -404,18 +404,15 @@ static void Floppy_DoubleCheckFormat(long DiscSize, Uint16 *pnSides, Uint16 *pnS
   is not actually correct with the image - some demos/game discs have incorrect bytes in the
   boot sector and this attempts to find the correct values.
 */
-void Floppy_FindDiscDetails(unsigned char *pBuffer, int nImageBytes,
-                            unsigned short int *pnSectorsPerTrack, unsigned short int *pnSides)
+void Floppy_FindDiscDetails(const Uint8 *pBuffer, int nImageBytes,
+                            unsigned short *pnSectorsPerTrack, unsigned short *pnSides)
 {
-  Uint8 *pDiscBuffer;
   Uint16 nSectorsPerTrack, nSides, nSectors;
 
-  pDiscBuffer = pBuffer;
-
   /* First do check to find number of sectors and bytes per sector */
-  nSectorsPerTrack = SDL_SwapLE16(*(Uint16 *)(pDiscBuffer+24));     /* SPT */
-  nSides = SDL_SwapLE16(*(Uint16 *)(pDiscBuffer+26));               /* SIDE */
-  nSectors = pDiscBuffer[19] | (pDiscBuffer[20] << 8);              /* total sectors */
+  nSectorsPerTrack = SDL_SwapLE16(*(const Uint16 *)(pBuffer+24));   /* SPT */
+  nSides = SDL_SwapLE16(*(const Uint16 *)(pBuffer+26));             /* SIDE */
+  nSectors = pBuffer[19] | (pBuffer[20] << 8);                      /* total sectors */
 
   /* If the number of sectors announced is incorrect, the boot-sector may
    * contain incorrect information, eg the 'Eat.st' demo, or wrongly imaged
@@ -501,10 +498,10 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
     /* Read sectors (usually 512 bytes per sector) */
     memcpy(pBuffer,pDiscBuffer+Offset,(int)Count*NUMBYTESPERSECTOR);
 
-    return(TRUE);
+    return TRUE;
   }
 
-  return(FALSE);
+  return FALSE;
 }
 
 
@@ -578,8 +575,8 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
     /* And set 'changed' flag */
     EmulationDrives[Drive].bContentsChanged = TRUE;
 
-    return(TRUE);
+    return TRUE;
   }
 
-  return(FALSE);
+  return FALSE;
 }
