@@ -38,7 +38,7 @@
 	*.button { color: #468E64;}
 	*.key { color:#550000; font-family:Fixed,Courier,monospace; font-size:10pt; }
 	*.backdropped { background-color:#ffffee; }
-	*.image {border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:justify; }
+	*.image {margin-left: 5px; margin-right: 5px; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:justify; width: 800px;}
 
   -->
   </style>
@@ -355,6 +355,11 @@ an allmost complete Atari ST computer system. </p>
 <p>Press <span class="key">F12</span> to enter the GUI. Navigate it
 with the mouse.
 The GUI is rather self explanatory.</p>
+
+<div class="image" align="center">
+<img src="images/main.png" width="768" height="534" alt="Hatari's GUI - the main dialog">
+</div>
+
 <p>Click <span class="button">Okay</span> to go back to the emulated
 ST. All checked options will be applied.</p>
 <p>Check the <span class="button">Reset ST</span> option if you want
@@ -366,6 +371,11 @@ return to the host OS.</p>
 <p>Click <span class="button">Cancel</span> to abandon any changes
 made.</p>
 <h4>The System Dialog</h4>
+
+<div class="image" align="center">
+<img src="images/system.png" width="768" height="534" alt="Hatari's GUI - the system dialog">
+</div>
+
 <p>Check the CPU type to use here. For best Atari ST compatibility choose plain 68000 here.</p>
 <p>Select whether you want to emulate an STFM or an STE. <em>Note:</em> STE emulation is very incomplete. In may not work at all.</p>
 <p>Select the CPU clock you want to use. 8Mhz is ST standard and the most compatible, 16MHz is for Mega STE emulation.</p>
@@ -382,14 +392,29 @@ original TOS setting.</p>
 ST and it is strongly recommended to
 reset the emulated ST after changing these options.</p>
 <h4>The Discs Dialog</h4>
+
+<div class="image" align="center">
+<img src="images/discs.png" width="768" height="534" alt="Hatari's GUI - the discs dialog">
+</div>
+
 <p>Use the upper dialog to choose which floppy disks should be emulated
 in the disk drives.</p>
+
 <p>You can use most standard Atari ST disk image files. See the chapter
 "Floppy disk images"
 for details.</p>
 <p>Click on the button <span class="button">Browse</span> next to the
 A: and B: option to go to the fileselector.
 You may select and browse zipped disk images as well.</p>
+
+<p>
+The fileselector looks like this:
+</p>
+
+<div class="image" align="center">
+<img src="images/fileselector.png" width="768" height="534" alt="Hatari's GUI - the fileselector">
+</div>
+
 <p>Click on <span class="button">Eject</span> to eject a disk image
 from the emulated drive. The emulated ST will act as if had no floppy
 disk in its drive.</p>
@@ -433,6 +458,11 @@ on the harddrive.
 This option is checked by default if you specify a harddrive image or a
 directory via the command line.</p>
 <h4>The Memory Dialog</h4>
+
+<div class="image" align="center">
+<img src="images/memory.png" width="768" height="534" alt="Hatari's GUI - the memory dialog">
+</div>
+
 <p>You can select the amount of RAM for the emulated ST here. Only
 amounts that were valid on a real unmodified STFM can be selected.</p>
 <p><em>Note:</em> This option is critical and you are strongly advised
@@ -449,11 +479,17 @@ different versions of Hatari. E.q. if you compile a newer Hatari, you
 cannot load your old memory snapshots back.</p>
 
 <h4>The ROM Dialog</h4>
+
+<div class="image" align="center">
+<img src="images/tos.png" width="768" height="534" alt="Hatari's GUI - the ROM dialog">
+</div>
+
 <p>Here you can select the TOS image to use. Click on <span
- class="button">Browse</span> to select it via the fileselector.</p>
+ class="button">Browse</span> to select it via the fileselector.
 You can also select an optional cartridge image to use. Click on <span
  class="button">Browse</span> to select one via the fileselector. Click on <span
- class="button">Eject</span> to disconnect the custom cartridge image.</p>
+ class="button">Eject</span> to disconnect the custom cartridge image.
+</p>
 <p>Keep in mind that any custom cartridge image will not work together with
 GEMDOS harddisc emulation or the VDI extended resolution emulation
 since some additional driver code will be used in the cartridge memory
@@ -462,6 +498,11 @@ space for these emulations.<br>
 advised to reset the emulated ST
 when changing one of these option.</p>
 <h4>The Joystick Dialog</h4>
+
+<div class="image" align="center">
+<img src="images/joystick.png" width="768" height="534" alt="Hatari's GUI - the joystick dialog">
+</div>
+
 <p>Here you can select which joystick you want to emulate via the
 cursor keys.</p>
 <p>Joystick 1 is the normal ST joystick port and 99.9% of all ST games
@@ -473,6 +514,11 @@ connected PC joystick.</p>
 <p>See the chapter "Emulated Joystick" for details.</p>
 
 <h4>The Screen Dialog</h4>
+
+<div class="image" align="center">
+<img src="images/screen.png" width="768" height="534" alt="Hatari's GUI - the screen dialog">
+</div>
+
 <p>Here you control the video output of the emulated ST.</p>
 <p>Check "Fullscreen" to run Hatari fullscreen, default is windowed.</p>
 <p>Check "Interleaved mode" if you wish to have that old TV feeling in
@@ -511,6 +557,11 @@ screenshots. You can opt to only record new movie frames when the
 screen content really changed.
 </p>
 <h4>The Keyboard Dialog</h4>
+
+<div class="image" align="center">
+<img src="images/keyboard.png" width="768" height="534" alt="Hatari's GUI - the keyboard dialog">
+</div>
+
 <p>Here you can select the keyboard mapping to use.</p>
 <p>Two different mappings called "Symbolic" and "Scancode" are
 predefined.</p>
@@ -520,6 +571,11 @@ use the "symbolic" mapping for all keys not defined by your map file.
 See the supplied example mapfile on how to build your
 own keyboard mapping.</p>
 <h4>The Sound Dialog</h4>
+
+<div class="image" align="center">
+<img src="images/sound.png" width="768" height="534" alt="Hatari's GUI - the sound dialog">
+</div>
+
 <p>Here you can control the sound subsystem.</p>
 <p>Check if you want emulated sound at all. Emulation is faster if
 sound emulation is turned off.</p>
@@ -532,6 +588,11 @@ you will need to return to the GUI to switch sound recording off again.</p>
 <h4>The Devices Dialog</h4>
 <p>Check here if you want to enable experimental printer support. See
 the chapter "Emulated printer" for details.</p>
+
+<div class="image" align="center">
+<img src="images/devices.png" width="768" height="534" alt="Hatari's GUI - the device dialog">
+</div>
+
 <p>As Hatari currently only supports printing to file, click on <span
  class="button">Select</span> to select the file to print to. You can
 enter a new filename as well.</p>
@@ -1190,7 +1251,7 @@ with disk images</td>
  border="0" height="31" width="88"></a></td>
       <td align="right">
       <address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a>
-February 28 2005</address>
+June 07 2005</address>
       </td>
     </tr>
   </tbody>
