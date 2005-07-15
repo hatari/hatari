@@ -6,7 +6,7 @@
 
   ST Memory access functions.
 */
-char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.6 2004-04-23 15:33:59 thothy Exp $";
+char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.7 2005-07-15 19:30:32 thothy Exp $";
 
 #include "stMemory.h"
 
@@ -19,8 +19,8 @@ Uint32 STRamEnd;                /* End of ST Ram, above this address is no-mans-
 /*
   Clear section of ST's memory space.
 */
-void STMemory_Clear(unsigned long StartAddress, unsigned long EndAddress)
+void STMemory_Clear(Uint32 StartAddress, Uint32 EndAddress)
 {
-  memset((void *)((unsigned long)STRam+StartAddress), 0, EndAddress-StartAddress);
+	memset(&STRam[StartAddress], 0, EndAddress-StartAddress);
 }
 

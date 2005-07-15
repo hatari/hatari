@@ -12,7 +12,7 @@
   checked each HBL to perform the transfer of data from our disc image into
   the ST RAM area by simulating the DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.19 2005-04-07 10:15:01 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.20 2005-07-15 19:30:31 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -131,7 +131,7 @@ ACSI DMA and Floppy Disc Controller(FDC)
 */
 
 
-short int FDCSectorCountRegister;
+Sint16 FDCSectorCountRegister;
 
 Uint16 DiscControllerWord_ff8604wr;                             /* 0xff8604 (write) */
 static Uint16 DiscControllerStatus_ff8604rd;                    /* 0xff8604 (read) */
@@ -139,8 +139,8 @@ static Uint16 DiscControllerStatus_ff8604rd;                    /* 0xff8604 (rea
 Uint16 DMAModeControl_ff8606wr;                                 /* 0xff8606 (write) */
 static Uint16 DMAStatus_ff8606rd;                               /* 0xff8606 (read) */
 
-static unsigned short int FDCCommandRegister;
-static short int FDCTrackRegister,FDCSectorRegister,FDCDataRegister;
+static Uint16 FDCCommandRegister;
+static Sint16 FDCTrackRegister, FDCSectorRegister, FDCDataRegister;
 static int FDCEmulationCommand;                                 /* FDC emulation command currently being exceuted */
 static int FDCEmulationRunning;                                 /* Running command under above */
 static int FDCStepDirection;                                    /* +Track on 'Step' command */
@@ -1161,7 +1161,7 @@ void FDC_DiscController_WriteWord(void)
 */
 void FDC_DiscControllerStatus_ReadWord(void)
 {
-	Sint16 DiscControllerByte = 0;            /* Used to pass parameter back to assembler */
+	Sint16 DiscControllerByte = 0;            /* Used to pass back the parameter */
 
 	if (nIoMemAccessSize == SIZE_BYTE)
 	{

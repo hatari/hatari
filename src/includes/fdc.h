@@ -79,7 +79,7 @@ enum
 };
 
 
-extern short int FDCSectorCountRegister;
+extern Sint16 FDCSectorCountRegister;
 extern Uint16 DiscControllerWord_ff8604wr;
 extern Uint16 DMAModeControl_ff8606wr;
 

@@ -18,7 +18,7 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.8 2005-03-07 23:15:49 thothy Exp $";
+char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.9 2005-07-15 19:30:32 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -33,11 +33,11 @@ CYCLEPALETTE CyclePalettes[(SCANLINES_PER_FRAME+1)*MAX_CYCLEPALETTES_PERLINE];  
 CYCLEPALETTE *pCyclePalette;
 int nCyclePalettes[(SCANLINES_PER_FRAME+1)];                  /* Number of entries in above table for each scanline */
 int nPalettesAccess[(SCANLINES_PER_FRAME+1)];                 /* Number of times accessed palette register 'x' in this scan line */
-unsigned short int CycleColour;
-int CycleColourIndex;
-int nScanLine, ScanLineCycleCount;
-BOOL bIsSpec512Display;
-int nb_spc512lines,last_spc512line;
+static Uint16 CycleColour;
+static int CycleColourIndex;
+static int nScanLine, ScanLineCycleCount;
+static BOOL bIsSpec512Display;
+static int nb_spc512lines, last_spc512line;
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 static const int STRGBPalEndianTable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
@@ -81,7 +81,7 @@ void Spec512_StartVBL(void)
   Store color into table 'CyclePalettes[]' for screen conversion according
   to cycles into frame.
 */
-void Spec512_StoreCyclePalette(unsigned short col, unsigned long addr)
+void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 {
   CYCLEPALETTE *pTmpCyclePalette;
   int FrameCycles, ScanLine;

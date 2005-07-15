@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.13 2005-02-13 16:18:50 thothy Exp $";
+char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.14 2005-07-15 19:30:32 thothy Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -25,19 +25,19 @@ char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.13 2005-02-13 16:18:50 thothy Exp $";
 
 
 BOOL bUseVDIRes=FALSE;             /* Set to TRUE (if want VDI), or FALSE (ie for games) */
-int LineABase;                     /* Line-A structure */
-int FontBase;                      /* Font base, used for 16-pixel high font */
-unsigned int VDI_OldPC;            /* When call Trap#2, store off PC */
+Uint32 LineABase;                  /* Line-A structure */
+Uint32 FontBase;                   /* Font base, used for 16-pixel high font */
+Uint32 VDI_OldPC;                  /* When call Trap#2, store off PC */
 
 int VDIWidth=640,VDIHeight=480;    /* 640x480,800x600 or 1024x768 */
 int VDIRes=0;                      /* 0,1 or 2(low, medium, high) */
 int VDIPlanes=4,VDIColours=16,VDICharHeight=8;  /* To match VDIRes */
 
-unsigned long Control;
-unsigned long Intin;
-unsigned long Ptsin;
-unsigned long Intout;
-unsigned long Ptsout;
+Uint32 Control;
+Uint32 Intin;
+Uint32 Ptsin;
+Uint32 Intout;
+Uint32 Ptsout;
 
 
 /*-----------------------------------------------------------------------*/
@@ -156,7 +156,7 @@ void VDI_SetResolution(int GEMRes,int GEMColour)
 */
 BOOL VDI(void)
 {
-  unsigned long TablePtr = Regs[REG_D1];
+  Uint32 TablePtr = Regs[REG_D1];
   /*unsigned short int OpCode;*/
 
   /* Read off table pointers */

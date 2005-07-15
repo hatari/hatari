@@ -14,12 +14,12 @@
 /* Frame buffer, used to store details in screen conversion */
 typedef struct
 {
-  unsigned short int HBLPalettes[(NUM_VISIBLE_LINES+1)*16];  /* 1x16 colour palette per screen line, +1 line as may write after line 200 */
-  unsigned long HBLPaletteMasks[NUM_VISIBLE_LINES+1];        /* Bit mask of palette colours changes, top bit set is resolution change */
-  unsigned char *pSTScreen;          /* Copy of screen built up during frame(copy each line on HBL to simulate monitor raster) */
-  unsigned char *pSTScreenCopy;      /* Previous frames copy of above  */
-  int OverscanModeCopy;              /* Previous screen overscan mode */
-  BOOL bFullUpdate;                  /* Set TRUE to cause full update on next draw */
+  Uint16 HBLPalettes[(NUM_VISIBLE_LINES+1)*16];   /* 1x16 colour palette per screen line, +1 line as may write after line 200 */
+  Uint32 HBLPaletteMasks[NUM_VISIBLE_LINES+1];    /* Bit mask of palette colours changes, top bit set is resolution change */
+  Uint8 *pSTScreen;             /* Copy of screen built up during frame (copy each line on HBL to simulate monitor raster) */
+  Uint8 *pSTScreenCopy;         /* Previous frames copy of above  */
+  int OverscanModeCopy;         /* Previous screen overscan mode */
+  BOOL bFullUpdate;             /* Set TRUE to cause full update on next draw */
 } FRAMEBUFFER;
 
 /* Number of frame buffers (1 or 2) - should be 2 for supporting screen flipping */
@@ -77,16 +77,16 @@ enum
 #define  BASECOLOUR_LONG  0x0A0A0A0A
 
 extern FRAMEBUFFER *pFrameBuffer;
-extern unsigned char *pSTScreen,*pSTScreenCopy;
-extern unsigned char *pPCScreenDest;
+extern Uint8 *pSTScreen, *pSTScreenCopy;
+extern Uint8 *pPCScreenDest;
 extern int STScreenStartHorizLine,STScreenEndHorizLine;
 extern int PCScreenBytesPerLine,STScreenWidthBytes,STScreenLeftSkipBytes;
 extern BOOL bInFullScreen;
 extern BOOL bScreenContentsChanged;
 extern int STRes,PrevSTRes;
 extern int STScreenLineOffset[NUM_VISIBLE_LINES];
-extern unsigned long STRGBPalette[16];
-extern unsigned long ST2RGB[2048];
+extern Uint32 STRGBPalette[16];
+extern Uint32 ST2RGB[2048];
 extern SDL_Surface *sdlscrn;
 extern BOOL bGrabMouse;
 

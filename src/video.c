@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.28 2005-04-05 14:41:32 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.29 2005-07-15 19:30:32 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -40,8 +40,8 @@ int nStartHBL, nEndHBL;                         /* Start/End HBL for visible scr
 int OverscanMode;                               /* OVERSCANMODE_xxxx for current display frame */
 Uint16 HBLPalettes[(NUM_VISIBLE_LINES+1)*16];   /* 1x16 colour palette per screen line, +1 line just incase write after line 200 */
 Uint16 *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
-unsigned long HBLPaletteMasks[NUM_VISIBLE_LINES+1];  /* Bit mask of palette colours changes, top bit set is resolution change */
-unsigned long *pHBLPaletteMasks;
+Uint32 HBLPaletteMasks[NUM_VISIBLE_LINES+1];    /* Bit mask of palette colours changes, top bit set is resolution change */
+Uint32 *pHBLPaletteMasks;
 int VBLCounter;                                 /* VBL counter */
 int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 70 Hz in mono */
 Uint32 VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */

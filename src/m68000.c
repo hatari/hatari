@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.32 2005-04-05 14:41:28 thothy Exp $";
+char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.33 2005-07-15 19:30:32 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -145,7 +145,7 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
   BUSERROR - Access outside valid memory range.
   Use bReadWrite = 0 for write errors and bReadWrite = 1 for read errors!
 */
-void M68000_BusError(unsigned long addr, BOOL bReadWrite)
+void M68000_BusError(Uint32 addr, BOOL bReadWrite)
 {
   /* FIXME: In prefetch mode, m68k_getpc() seems already to point to the next instruction */
   BusErrorPC = m68k_getpc();
@@ -201,7 +201,7 @@ void M68000_Exception(Uint32 ExceptionVector)
     else
 #endif
     {
-      unsigned long MFPBaseVector = (unsigned int)(MFP_VR&0xf0)<<2;
+      Uint32 MFPBaseVector = (unsigned int)(MFP_VR&0xf0)<<2;
       if ( (ExceptionVector>=MFPBaseVector) && (ExceptionVector<=(MFPBaseVector+0x34)) )
         SR = (SR&SR_CLEAR_IPL)|0x0600; /* MFP, level 6 */
     }

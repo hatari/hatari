@@ -87,6 +87,6 @@ static inline Uint8 STMemory_ReadByte(Uint32 Address)
 }
 
 
-extern void STMemory_Clear(unsigned long StartAddress, unsigned long EndAddress);
+extern void STMemory_Clear(Uint32 StartAddress, Uint32 EndAddress);
 
 #endif

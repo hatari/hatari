@@ -6,7 +6,7 @@
 
   YM File output, for use with STSound etc...
 */
-char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.11 2005-06-05 14:19:39 thothy Exp $";
+char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.12 2005-07-15 19:30:32 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -79,7 +79,7 @@ void YMFormat_EndRecording(void)
     if (YMFormat_ConvertToStreams()) {
       /* Save YM File */
       if ( strlen(ConfigureParams.Sound.szYMCaptureFileName)>0 ) {
-        File_Save(ConfigureParams.Sound.szYMCaptureFileName, pYMWorkspace,(long)(nYMVBLS*NUM_PSG_SOUND_REGISTERS)+4, FALSE);
+        File_Save(ConfigureParams.Sound.szYMCaptureFileName, pYMWorkspace,(size_t)(nYMVBLS*NUM_PSG_SOUND_REGISTERS)+4, FALSE);
         /* And inform user */
         Log_AlertDlg(LOG_INFO, "YM sound data recording has been stopped.");
       }

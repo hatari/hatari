@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.39 2005-03-07 23:15:49 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.40 2005-07-15 19:30:32 thothy Exp $";
 
 #include <SDL.h>
 
@@ -40,8 +40,8 @@ char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.39 2005-03-07 23:15:49 thothy Ex
 
 FRAMEBUFFER FrameBuffers[NUM_FRAMEBUFFERS];       /* Store frame buffer details to tell how to update */
 FRAMEBUFFER *pFrameBuffer;                        /* Pointer into current 'FrameBuffer' */
-unsigned char *pSTScreen,*pSTScreenCopy;          /* Keep track of current and previous ST screen data */
-unsigned char *pPCScreenDest;                     /* Destination PC buffer */
+Uint8 *pSTScreen, *pSTScreenCopy;                 /* Keep track of current and previous ST screen data */
+Uint8 *pPCScreenDest;                             /* Destination PC buffer */
 int STScreenStartHorizLine,STScreenEndHorizLine;  /* Start/End lines to be converted */
 int PCScreenBytesPerLine, STScreenWidthBytes, STScreenLeftSkipBytes;
 BOOL bInFullScreen=FALSE;                         /* TRUE if in full screen */
@@ -49,9 +49,9 @@ BOOL bScreenContentsChanged;                      /* TRUE if buffer changed and 
 int STRes=ST_LOW_RES, PrevSTRes=ST_LOW_RES;       /* Current and previous ST resolutions */
 
 int STScreenLineOffset[NUM_VISIBLE_LINES];        /* Offsets for ST screen lines eg, 0,160,320... */
-unsigned long STRGBPalette[16];                   /* Palette buffer used in assembler conversion routines */
-unsigned long ST2RGB[2048];                       /* Table to convert ST Palette 0x777 to PC format RGB551(2 pixels each entry) */
-unsigned short int HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
+Uint32 STRGBPalette[16];                          /* Palette buffer used in conversion routines */
+Uint32 ST2RGB[2048];                              /* Table to convert ST Palette 0x777 to PC format RGB551 (2 pixels each entry) */
+Uint16 HBLPalette[16], PrevHBLPalette[16];        /* Current palette for line, also copy of first line */
 
 SDL_Surface *sdlscrn;                             /* The SDL screen surface */
 BOOL bGrabMouse = FALSE;                          /* Grab the mouse cursor in the window */

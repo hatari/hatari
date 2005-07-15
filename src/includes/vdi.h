@@ -2,8 +2,8 @@
   Hatari
 */
 
-#ifndef VDI_H
-#define VDI_H
+#ifndef HATARI_VDI_H
+#define HATARI_VDI_H
 
 #define MAX_VDI_WIDTH  1024
 #define MAX_VDI_HEIGHT  768
@@ -23,8 +23,8 @@ enum
   GEMCOLOUR_16
 };
 
-extern int LineABase,FontBase;
-extern unsigned int VDI_OldPC;
+extern Uint32 LineABase, FontBase;
+extern Uint32 VDI_OldPC;
 extern BOOL bUseVDIRes;
 extern int VDIWidth,VDIHeight,VDIRes;
 extern int VDIPlanes,VDIColours,VDICharHeight;

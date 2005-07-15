@@ -9,7 +9,7 @@
   We intercept and direct some XBios calls to handle the RS-232 etc. and help
   with floppy debugging.
 */
-char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.8 2005-04-05 14:41:32 thothy Exp $";
+char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.9 2005-07-15 19:30:32 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -52,11 +52,11 @@ static int BaudRates[] = {
   XBIOS Floppy Read
   Call 8
 */
-static BOOL XBios_Floprd(unsigned long Params)
+static BOOL XBios_Floprd(Uint32 Params)
 {
 #if XBIOS_DEBUG
   char *pBuffer;
-  unsigned short int Dev,Sector,Side,Track,Count;
+  Uint16 Dev,Sector,Side,Track,Count;
 
   /* Read details from stack */
   pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
@@ -79,11 +79,11 @@ static BOOL XBios_Floprd(unsigned long Params)
   XBIOS Floppy Write
   Call 9
 */
-static BOOL XBios_Flopwr(unsigned long Params)
+static BOOL XBios_Flopwr(Uint32 Params)
 {
 #if XBIOS_DEBUG
   char *pBuffer;
-  unsigned short int Dev,Sector,Side,Track,Count;
+  Uint16 Dev,Sector,Side,Track,Count;
 
   /* Read details from stack */
   pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
@@ -106,7 +106,7 @@ static BOOL XBios_Flopwr(unsigned long Params)
   XBIOS RsConf
   Call 15
 */
-static BOOL XBios_Rsconf(unsigned long Params)
+static BOOL XBios_Rsconf(Uint32 Params)
 {
   short int Baud,Ctrl,Ucr,Rsr,Tsr,Scr;
 
@@ -150,7 +150,7 @@ static BOOL XBios_Rsconf(unsigned long Params)
   XBIOS Scrdmp
   Call 20
 */
-static BOOL XBios_Scrdmp(unsigned long Params)
+static BOOL XBios_Scrdmp(Uint32 Params)
 {
   fprintf(stderr, "XBIOS screendump!\n");
 
@@ -168,7 +168,7 @@ static BOOL XBios_Scrdmp(unsigned long Params)
   XBIOS Prtblk
   Call 36
 */
-static BOOL XBios_Prtblk(unsigned long Params)
+static BOOL XBios_Prtblk(Uint32 Params)
 {
   fprintf(stderr, "Intercepted XBIOS Prtblk()\n");
 
@@ -185,8 +185,8 @@ static BOOL XBios_Prtblk(unsigned long Params)
 */
 BOOL XBios(void)
 {
-  unsigned long Params;
-  unsigned short int XBiosCall;
+  Uint32 Params;
+  Uint16 XBiosCall;
 
   /* Find call */
   Params = Regs[REG_A7];
