@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.40 2005-07-15 19:30:31 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.41 2005-07-20 09:30:00 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -165,7 +165,7 @@ static const char *pszGemDOSNames[] =
 	"Write",      /*0x40*/
 	"UnLink",     /*0x41*/
 	"LSeek",      /*0x42*/
-	"ChMod",      /*0x43*/
+	"Fattrib",    /*0x43*/
 	"",           /*0x44*/
 	"Dup",        /*0x45*/
 	"Force",      /*0x46*/
@@ -1397,6 +1397,61 @@ static BOOL GemDOS_LSeek(Uint32 Params)
 	}
 }
 
+
+/*-----------------------------------------------------------------------*/
+/*
+  GEMDOS Fattrib() - get or set file attributes
+  Call 0x43
+*/
+static BOOL GemDOS_Fattrib(Uint32 Params)
+{
+	char sActualFileName[MAX_PATH];
+	char *psFileName;
+	int nDrive;
+	int nRwFlag, nAttrib;
+
+	/* Find filename */
+	psFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
+	nDrive = GemDOS_IsFileNameAHardDrive(psFileName);
+
+	nRwFlag = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
+	nAttrib = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD);
+
+#ifdef GEMDOS_VERBOSE
+	fprintf(stderr,"Fattrib('%s', %d, 0x%x)\n",psFileName, nRwFlag, nAttrib);
+#endif
+
+	if (ISHARDDRIVE(nDrive))
+	{
+		struct stat FileStat;
+
+		/* Convert to hard drive filename */
+		GemDOS_CreateHardDriveFileName(nDrive, psFileName, sActualFileName);
+
+		if (stat(sActualFileName, &FileStat) != 0)
+		{
+			Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
+			return TRUE;
+		}
+
+		if (nRwFlag == 0)
+		{
+			/* Read attributes */
+			Regs[REG_D0] = GemDOS_ConvertAttribute(FileStat.st_mode);
+			return TRUE;
+		}
+		else
+		{
+			/* Write attributes */
+			Regs[REG_D0] = GEMDOS_EACCDN;         /* Acces denied */
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /*
   GEMDOS Get Directory
@@ -1854,6 +1909,10 @@ void GemDOS_OpCode(void)
 		break;
 	 case 0x42:
 		if (GemDOS_LSeek(Params))
+			RunOld = FALSE;
+		break;
+	 case 0x43:
+		if (GemDOS_Fattrib(Params))
 			RunOld = FALSE;
 		break;
 	 case 0x47:
