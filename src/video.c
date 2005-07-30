@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.31 2005-07-30 09:19:34 eerot Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.32 2005-07-30 09:26:14 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -622,6 +622,17 @@ void Video_SetHBLPaletteMaskPointers(void)
 }
 
 
+/*-----------------------------------------------------------------------*/
+/*
+  Write to video address counter (0xff8205, 0xff8207 and 0xff8209).
+  Called on STE only and like with base address, you cannot set lowest bit.
+*/
+void Video_ScreenCounter_WriteByte(void)
+{
+  Uint32 addr;
+  addr = (IoMem[0xff8205] << 16) | (IoMem[0xff8207] << 8) | IoMem[0xff8209];
+  pVideoRaster = &STRam[addr & ~1];
+}
 
 /*-----------------------------------------------------------------------*/
 /*

@@ -6,7 +6,7 @@
 
   Tables with hardware IO handlers.
 */
-char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.4 2005-07-26 08:41:48 thothy Exp $";
+char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.5 2005-07-30 09:26:14 eerot Exp $";
 
 #include "main.h"
 #include "fdc.h"
@@ -190,11 +190,11 @@ INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff8202, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8203, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Video base med byte */
 	{ 0xff8204, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8205, SIZE_BYTE, Video_ScreenCounterHigh_ReadByte, IoMem_WriteWithoutInterception },
+	{ 0xff8205, SIZE_BYTE, Video_ScreenCounterHigh_ReadByte, Video_ScreenCounter_WriteByte },
 	{ 0xff8206, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8207, SIZE_BYTE, Video_ScreenCounterMed_ReadByte, IoMem_WriteWithoutInterception },
+	{ 0xff8207, SIZE_BYTE, Video_ScreenCounterMed_ReadByte, Video_ScreenCounter_WriteByte },
 	{ 0xff8208, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8209, SIZE_BYTE, Video_ScreenCounterLow_ReadByte, IoMem_WriteWithoutInterception },
+	{ 0xff8209, SIZE_BYTE, Video_ScreenCounterLow_ReadByte, Video_ScreenCounter_WriteByte },
 	{ 0xff820a, SIZE_BYTE, Video_Sync_ReadByte, Video_Sync_WriteByte },
 	{ 0xff820b, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff820c, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
