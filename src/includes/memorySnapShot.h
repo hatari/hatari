@@ -7,5 +7,5 @@
 
 
 extern void MemorySnapShot_Store(void *pData, int Size);
-extern void MemorySnapShot_Capture(char *pszFileName);
-extern void MemorySnapShot_Restore(char *pszFileName);
+extern void MemorySnapShot_Capture(const char *pszFileName);
+extern void MemorySnapShot_Restore(const char *pszFileName);

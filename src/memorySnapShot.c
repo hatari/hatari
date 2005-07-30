@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.14 2005-06-05 17:01:39 thothy Exp $";
+char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.15 2005-07-30 08:44:03 eerot Exp $";
 
 #include <SDL_types.h>
 #include <errno.h>
@@ -124,7 +124,7 @@ static int MemorySnapShot_fwrite(MSS_File fhndl, const char *buf, int len)
   Open/Create snapshot file, and set flag so 'MemorySnapShot_Store' knows
   how to handle data.
 */
-static BOOL MemorySnapShot_OpenFile(char *pszFileName, BOOL bSave)
+static BOOL MemorySnapShot_OpenFile(const char *pszFileName, BOOL bSave)
 {
 	char VersionString[VERSION_STRING_SIZE];
 
@@ -215,7 +215,7 @@ void MemorySnapShot_Store(void *pData, int Size)
 /*
   Save 'snapshot' of memory/chips/emulation variables
 */
-void MemorySnapShot_Capture(char *pszFileName)
+void MemorySnapShot_Capture(const char *pszFileName)
 {
 	/* Set to 'saving' */
 	if (MemorySnapShot_OpenFile(pszFileName,TRUE))
@@ -251,7 +251,7 @@ void MemorySnapShot_Capture(char *pszFileName)
 /*
   Restore 'snapshot' of memory/chips/emulation variables
 */
-void MemorySnapShot_Restore(char *pszFileName)
+void MemorySnapShot_Restore(const char *pszFileName)
 {
 	/* Set to 'restore' */
 	if (MemorySnapShot_OpenFile(pszFileName,FALSE))
