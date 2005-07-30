@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.43 2005-07-30 12:27:23 eerot Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.44 2005-07-30 14:02:36 eerot Exp $";
 
 #include <SDL.h>
 
@@ -30,7 +30,7 @@ char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.43 2005-07-30 12:27:23 eerot Exp
 #include "misc.h"
 #include "printer.h"
 #include "screen.h"
-#include "screenConvert.h"
+#include "convert/routines.h"
 #include "screenSnapShot.h"
 #include "sound.h"
 #include "spec512.h"
@@ -38,31 +38,39 @@ char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.43 2005-07-30 12:27:23 eerot Exp
 #include "video.h"
 
 
-FRAMEBUFFER FrameBuffers[NUM_FRAMEBUFFERS];       /* Store frame buffer details to tell how to update */
-FRAMEBUFFER *pFrameBuffer;                        /* Pointer into current 'FrameBuffer' */
-Uint8 *pSTScreen, *pSTScreenCopy;                 /* Keep track of current and previous ST screen data */
-Uint8 *pPCScreenDest;                             /* Destination PC buffer */
-int STScreenStartHorizLine,STScreenEndHorizLine;  /* Start/End lines to be converted */
-int PCScreenBytesPerLine, STScreenWidthBytes, STScreenLeftSkipBytes;
-BOOL bInFullScreen=FALSE;                         /* TRUE if in full screen */
-BOOL bScreenContentsChanged;                      /* TRUE if buffer changed and requires blitting */
-int STRes=ST_LOW_RES, PrevSTRes=ST_LOW_RES;       /* Current and previous ST resolutions */
+BOOL bGrabMouse = FALSE;      /* Grab the mouse cursor in the window */
+BOOL bInFullScreen=FALSE;     /* TRUE if in full screen */
+int STScreenLeftSkipBytes;
+int STScreenStartHorizLine;   /* Start lines to be converted */
+int STRes=ST_LOW_RES;         /* current resolution */
+int PrevSTRes=ST_LOW_RES;     /* previous ST resolution */
+Uint32 STRGBPalette[16];      /* Palette buffer used in conversion routines */
+Uint32 ST2RGB[4096];          /* Table to convert ST 0x777 / STe 0xfff palette to PC format RGB551 (2 pixels each entry) */
+SDL_Surface *sdlscrn;         /* The SDL screen surface */
+Uint8 *pSTScreen;
+FRAMEBUFFER *pFrameBuffer;    /* Pointer into current 'FrameBuffer' */
 
-int STScreenLineOffset[NUM_VISIBLE_LINES];        /* Offsets for ST screen lines eg, 0,160,320... */
-Uint32 STRGBPalette[16];                          /* Palette buffer used in conversion routines */
-Uint32 ST2RGB[4096];                              /* Table to convert ST 0x777 / STe 0xfff palette to PC format RGB551 (2 pixels each entry) */
-Uint16 HBLPalette[16], PrevHBLPalette[16];        /* Current palette for line, also copy of first line */
+static FRAMEBUFFER FrameBuffers[NUM_FRAMEBUFFERS]; /* Store frame buffer details to tell how to update */
+static Uint8 *pSTScreenCopy;                       /* Keep track of current and previous ST screen data */
+static Uint8 *pPCScreenDest;                       /* Destination PC buffer */
+static int STScreenEndHorizLine;                   /* End lines to be converted */
+static int PCScreenBytesPerLine;
+static int STScreenWidthBytes;
 
-SDL_Surface *sdlscrn;                             /* The SDL screen surface */
-BOOL bGrabMouse = FALSE;                          /* Grab the mouse cursor in the window */
+static int STScreenLineOffset[NUM_VISIBLE_LINES];  /* Offsets for ST screen lines eg, 0,160,320... */
+static Uint16 HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
 
-void *ScreenDrawFunctionsNormal[4];               /* Screen draw functions */
-void *ScreenDrawFunctionsVDI[3] =
+static void *ScreenDrawFunctionsNormal[4];         /* Screen draw functions */
+static void *ScreenDrawFunctionsVDI[3] =
 {
   ConvertVDIRes_16Colour,
   ConvertVDIRes_4Colour,
   ConvertVDIRes_2Colour
 };
+
+static BOOL bScreenContentsChanged;     /* TRUE if buffer changed and requires blitting */
+static BOOL bScrDoubleY;                /* TRUE if double on Y */
+static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 
 
 /*-----------------------------------------------------------------------*/
@@ -72,8 +80,8 @@ void *ScreenDrawFunctionsVDI[3] =
 */
 static void Screen_SetupRGBTable(void)
 {
-  unsigned int STColour, RGBColour;
-  unsigned int r, g, b;
+  Uint16 STColour, RGBColour;
+  Uint16 r, g, b;
 
   if (ConfigureParams.System.nMachineType == MACHINE_ST)
   {
@@ -955,3 +963,81 @@ void Screen_Draw(void)
     Printer_CheckIdleStatus();
   }
 }
+
+
+/* -------------- screen conversion routines --------------------------------
+  Screen conversion routines. We have a number of routines to convert ST screen
+  to PC format. We split these into Low, Medium and High each with 8/16-bit
+  versions. To gain extra speed, as almost half of the processing time can be
+  spent in these routines, we check for any changes from the previously
+  displayed frame. AdjustLinePaletteRemap() sets a flag to tell the routines
+  if we need to totally update a line (ie full update, or palette/res change)
+  or if we just can do a difference check.
+  We convert each screen 16 pixels at a time by use of a couple of look-up
+  tables. These tables convert from 2-plane format to bbp and then we can add
+  two of these together to get 4-planes. This keeps the tables small and thus
+  improves speed. We then look these bbp values up as an RGB/Index value to
+  copy to the screen.
+*/
+
+
+/*-----------------------------------------------------------------------
+ * Update the STRGBPalette[] array with current colours for this raster line.
+ *
+ * Return 'ScrUpdateFlag', 0x80000000=Full update, 0x40000000=Update
+ * as palette changed
+ */
+static int AdjustLinePaletteRemap(int y)
+{
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+  static const int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
+#endif
+  Uint16 *actHBLPal;
+  int i;
+
+  /* Copy palette and convert to RGB in display format */
+  actHBLPal = pHBLPalettes + (y<<4);    /* offset in palette */
+  for(i=0; i<16; i++)
+   {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+    STRGBPalette[endiantable[i]] = ST2RGB[*actHBLPal++];
+#else
+    STRGBPalette[i] = ST2RGB[*actHBLPal++];
+#endif
+   }
+  ScrUpdateFlag = HBLPaletteMasks[y];
+  return ScrUpdateFlag;
+}
+
+
+/*-----------------------------------------------------------------------
+ * Run updates to palette(STRGBPalette[]) until get to screen line
+ * we are to convert from
+ */
+static void Convert_StartFrame(void)
+{
+  int y = 0;
+  /* Get #lines before conversion starts */
+  int lines = STScreenStartHorizLine;
+  while (lines--)
+    AdjustLinePaletteRemap(y++);     /* Update palette */
+}
+
+/* lookup tables and conversion macros */
+#include "convert/macros.h"
+
+/* Conversion routines */
+#include "convert/low320x16.c"    /* LowRes To 320xH x 16-bit colour */
+#include "convert/low640x16.c"    /* LowRes To 640xH x 16-bit colour */
+#include "convert/med640x16.c"    /* MediumRes To 640xH x 16-bit colour */
+#include "convert/low320x8.c"     /* LowRes To 320xH x 8-bit colour */
+#include "convert/low640x8.c"     /* LowRes To 640xH x 8-bit colour */
+#include "convert/med640x8.c"     /* MediumRes To 640xH x 8-bit colour */
+#include "convert/high640x8.c"    /* HighRes To 640xH x 8-bit colour */
+#include "convert/high640x1.c"    /* HighRes To 640xH x 1-bit colour */
+#include "convert/spec320x16.c"   /* Spectrum 512 To 320xH x 16-bit colour */
+#include "convert/spec640x16.c"   /* Spectrum 512 To 640xH x 16-bit colour */
+
+#include "convert/vdi16.c"        /* VDI x 16 colour */
+#include "convert/vdi4.c"         /* VDI x 4 colour */
+#include "convert/vdi2.c"         /* VDI x 2 colour */

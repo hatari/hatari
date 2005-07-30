@@ -1,7 +1,7 @@
 /* Screen Conversion, VDI Res to 2Colour (1-Bit and 8-Bit) */
 
 #if 0  /* Currently unused */
-void ConvertVDIRes_2Colour_1Bit(void)
+static void ConvertVDIRes_2Colour_1Bit(void)
 {
   /* Copy palette to bitmap (2 colours) */
 
@@ -22,22 +22,21 @@ void ConvertVDIRes_2Colour_1Bit(void)
 #endif
 
 
-void ConvertVDIRes_2Colour(void)
+static void ConvertVDIRes_2Colour(void)
 {
   Uint16 *edi, *ebp;
   Uint32 *esi;
-  register Uint16 eax, ebx;
-
-  ScrY = 0;                             /* Starting line in ST screen */
+  Uint16 eax, ebx;
+  int y, x;
 
   edi = (Uint16 *)pSTScreen;            /* ST format screen */
   ebp = (Uint16 *)pSTScreenCopy;        /* Previous ST format screen */
 
-  do      /* y-loop */
-  {
+  for (y = 0; y < VDIHeight; y++) {
+
     esi = (Uint32 *)pPCScreenDest;      /* PC format screen, byte per pixel 256 colours */
 
-    ScrX = VDIWidth >> 4;               /* Amount to draw across in 16-pixels (4 bytes) */
+    x = VDIWidth >> 4;               /* Amount to draw across in 16-pixels (4 bytes) */
 
     do          /* x-loop */
     {
@@ -75,13 +74,9 @@ void ConvertVDIRes_2Colour(void)
       edi += 1;                         /* Next ST pixels */
       ebp += 1;                         /* Next ST copy pixels */
     }
-    while( --ScrX );                    /* Loop on X */
+    while( --x );                    /* Loop on X */
 
-    pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine);  /* Offset to next line */
-
-    ScrY += 1;
+    /* Offset to next line */
+    pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine);
   }
-  while( ScrY < VDIHeight );            /* Loop on Y */
-
 }
-

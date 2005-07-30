@@ -1,11 +1,12 @@
 /* Screen Conversion, High Res to 640x8Bit */
 
 
-void ConvertHighRes_640x8Bit(void)
+static void ConvertHighRes_640x8Bit(void)
 {
   Uint16 *edi, *ebp;
   Uint32 *esi;
-  register Uint16 eax, ebx;
+  Uint16 eax, ebx;
+  int y, x;
 
 /*
   // This is the method that I first used in Hatari...
@@ -42,17 +43,11 @@ void ConvertHighRes_640x8Bit(void)
   ebp = (Uint16 *)pSTScreenCopy;    /* Previous ST format screen */
   esi = (Uint32 *)pPCScreenDest;    /* PC format screen */
 
-  ScrY = STScreenStartHorizLine;
-  
   /* NOTE 'ScrUpdateFlag' is already set (to full update or check, no palettes) */
   
-  do                                /* Y-loop */
-   {
+  for (y = STScreenStartHorizLine; y < STScreenEndHorizLine; y++) {
 
-    ScrX = 40;
-    
-    do                              /* X-loop */
-     {
+    for (x = 0; x < 40; x++) {
 
       /* Do 16 pixels at one time */
       ebx = *edi;
@@ -88,13 +83,8 @@ void ConvertHighRes_640x8Bit(void)
      edi += 1;                              /* Next ST pixels */
      ebp += 1;                              /* Next ST copy pixels */
     }
-   while( --ScrX );                         /* Loop on X */
 
 /*??  esi = esi -40*8 +PCScreenBytesPerLine/2;*/   /* Back to start of line + Offset to next line */
-
-   ScrY += 1;
   }
- while( ScrY < STScreenEndHorizLine );      /* Loop on Y */
-
 }
 

@@ -1,14 +1,14 @@
 /* Screen Conversion, VDI Res to 16Colour */
 
-void ConvertVDIRes_16Colour(void)
+static void ConvertVDIRes_16Colour(void)
 {
   Uint32 *edi, *ebp;
   Uint32 *esi;
   Uint32 eax, edx;
-  register Uint32 ebx, ecx;
+  Uint32 ebx, ecx;
+  int y, x;
 
   edx = eax = 0;
-  ScrY = 0;                             /* Starting line in ST screen */
 
   /* Get screen addresses, 'edi'-ST screen, 'ebp'-Previous ST screen,
    * 'esi'-PC screen */
@@ -16,11 +16,11 @@ void ConvertVDIRes_16Colour(void)
   edi = (Uint32 *)pSTScreen;        /* ST format screen 4-plane 16 colours */
   ebp = (Uint32 *)pSTScreenCopy;    /* Previous ST format screen */
 
-  do      /* y-loop */
-  {
+  for (y = 0; y < VDIHeight; y++) {
+
     esi = (Uint32 *)pPCScreenDest;   /* PC format screen, byte per pixel 256 colours */
 
-    ScrX = VDIWidth >> 4;           /* Amount to draw across - in 16-pixels (8 bytes) */
+    x = VDIWidth >> 4;           /* Amount to draw across - in 16-pixels (8 bytes) */
 
     do          /* x-loop */
     {
@@ -60,13 +60,10 @@ void ConvertVDIRes_16Colour(void)
       edi += 2;                         /* Next ST pixels */
       ebp += 2;                         /* Next ST copy pixels */
     }
-    while( --ScrX );                    /* Loop on X */
+    while( --x );                    /* Loop on X */
 
-    pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine);  /* Offset to next line */
-
-    ScrY += 1;
+    /* Offset to next line */
+    pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine);
   }
-  while( ScrY < VDIHeight );      /* Loop on Y */
-
 }
 

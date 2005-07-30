@@ -7,43 +7,13 @@
   Screen conversion function, Low Res to 640x8Bit
 */
 
-void ConvertLowRes_640x8Bit(void)
-{
-  Uint32 *edi, *ebp;
-  Uint32 *esi;
-  Uint32 eax;
-
-  Convert_StartFrame();           /* Start frame, track palettes */
-  ScrY = STScreenStartHorizLine;  /* Starting line in ST screen */
-
-  do      /* y-loop */
-  {
-    /* Get screen addresses */
-    eax = STScreenLineOffset[ScrY] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
-    edi = (Uint32 *)((Uint8 *)pSTScreen + eax);       /* ST format screen 4-plane 16 colours */
-    ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);   /* Previous ST format screen */
-    esi = (Uint32 *)pPCScreenDest;                    /* PC format screen */
-
-    AdjustLinePaletteRemap();
-
-    if((AdjustLinePaletteRemap()&0x00030000) == 0)    /* Change palette table */
-      Line_ConvertLowRes_640x8Bit(edi, ebp, esi, eax);
-    else
-      Line_ConvertMediumRes_640x8Bit(edi, ebp, esi, eax);
-
-    pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine*2);  /* Offset to next line */
-    ScrY += 1;
-  }
-  while(ScrY < STScreenEndHorizLine);                 /* Loop on Y */
-}
-
-
-void Line_ConvertLowRes_640x8Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax)
+static void Line_ConvertLowRes_640x8Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax)
 {
   Uint32 edx;
-  register Uint32 ebx, ecx, ebpp;
+  Uint32 ebx, ecx, ebpp;
+  int x;
 
-  ScrX = STScreenWidthBytes>>3;         /* Amount to draw across in 16-pixels (8 bytes) */
+  x = STScreenWidthBytes>>3;         /* Amount to draw across in 16-pixels (8 bytes) */
 
   do    /* x-loop */
   {
@@ -116,6 +86,35 @@ void Line_ConvertLowRes_640x8Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 e
     edi += 2;                           /* Next ST pixels */
     ebp += 2;                           /* Next ST copy pixels */
   }
-  while(--ScrX);                        /* Loop on X */
+  while(--x);                        /* Loop on X */
+}
+
+
+static void ConvertLowRes_640x8Bit(void)
+{
+  Uint32 *edi, *ebp;
+  Uint32 *esi;
+  Uint32 eax;
+  int y;
+
+  Convert_StartFrame();           /* Start frame, track palettes */
+
+ for (y = STScreenStartHorizLine; y < STScreenEndHorizLine; y++) {
+
+    /* Get screen addresses */
+    eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
+    edi = (Uint32 *)((Uint8 *)pSTScreen + eax);       /* ST format screen 4-plane 16 colours */
+    ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);   /* Previous ST format screen */
+    esi = (Uint32 *)pPCScreenDest;                    /* PC format screen */
+
+    AdjustLinePaletteRemap(y);
+
+    if((AdjustLinePaletteRemap(y) & 0x00030000) == 0)    /* Change palette table */
+      Line_ConvertLowRes_640x8Bit(edi, ebp, esi, eax);
+    else
+      Line_ConvertMediumRes_640x8Bit(edi, ebp, esi, eax);
+
+    pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine*2);  /* Offset to next line */
+  }
 }
 

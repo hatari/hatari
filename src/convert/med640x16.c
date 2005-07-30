@@ -1,40 +1,39 @@
 /* Screen Conversion, Medium Res to 640x16Bit */
 
 
-void ConvertMediumRes_640x16Bit(void)
+static void ConvertMediumRes_640x16Bit(void)
 {
  Uint32 *edi, *ebp;
  Uint16 *esi;
  Uint32 eax;
+ int y;
 
  Convert_StartFrame();            /* Start frame, track palettes */
- ScrY = STScreenStartHorizLine;   /* Starting line in ST screen */
 
- do      /* y-loop */
-  {
-   eax = STScreenLineOffset[ScrY] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
+ for (y = STScreenStartHorizLine; y < STScreenEndHorizLine; y++) {
+
+   eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
    edi = (Uint32 *)((Uint8 *)pSTScreen + eax);        /* ST format screen 4-plane 16 colours */
    ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
    esi = (Uint16 *)pPCScreenDest;                     /* PC format screen */
 
-   if( (AdjustLinePaletteRemap()&0x00030000)==0 )     /* Change palette table */
+   if( (AdjustLinePaletteRemap(y) & 0x00030000)==0 )     /* Change palette table */
      Line_ConvertLowRes_640x16Bit(edi, ebp, (Uint32 *)esi, eax);
     else
      Line_ConvertMediumRes_640x16Bit(edi, ebp, esi, eax);
 
-   pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine*2);  /* Offset to next line */
-   ScrY += 1;
+   /* Offset to next line */
+   pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine*2);
   }
- while( ScrY < STScreenEndHorizLine );                /* Loop on Y */
-
 }
 
 
-void Line_ConvertMediumRes_640x16Bit(Uint32 *edi, Uint32 *ebp, Uint16 *esi, Uint32 eax)
+static void Line_ConvertMediumRes_640x16Bit(Uint32 *edi, Uint32 *ebp, Uint16 *esi, Uint32 eax)
 {
-   register Uint32 ebx, ecx;
+   Uint32 ebx, ecx;
+   int x;
 
-   ScrX=STScreenWidthBytes>>2;   /* Amount to draw across in 16-pixels (4 bytes) */
+   x = STScreenWidthBytes>>2;   /* Amount to draw across in 16-pixels (4 bytes) */
 
    do    /* x-loop */
     {
@@ -102,6 +101,6 @@ void Line_ConvertMediumRes_640x16Bit(Uint32 *edi, Uint32 *ebp, Uint16 *esi, Uint
      edi += 1;                              /* Next ST pixels */
      ebp += 1;                              /* Next ST copy pixels */
     }
-   while( --ScrX );                         /* Loop on X */
+   while( --x );                         /* Loop on X */
 
 }

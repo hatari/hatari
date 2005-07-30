@@ -4,7 +4,7 @@
    1 bit per pixel screens */
 
 #if 0
-void ConvertHighRes_640x1Bit(void)
+static void ConvertHighRes_640x1Bit(void)
 {
   /* Copy palette to bitmap (2 colours) */
 /*  if (HBLPalettes[0]==0x777) {

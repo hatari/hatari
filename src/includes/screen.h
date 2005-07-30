@@ -72,23 +72,16 @@ enum
 };
 
 
-/* For palette we don't go from colour '0' as the whole background would change, so go from this value */
-#define  BASECOLOUR       0x0A
-#define  BASECOLOUR_LONG  0x0A0A0A0A
-
-extern FRAMEBUFFER *pFrameBuffer;
-extern Uint8 *pSTScreen, *pSTScreenCopy;
-extern Uint8 *pPCScreenDest;
-extern int STScreenStartHorizLine,STScreenEndHorizLine;
-extern int PCScreenBytesPerLine,STScreenWidthBytes,STScreenLeftSkipBytes;
+extern BOOL bGrabMouse;
 extern BOOL bInFullScreen;
-extern BOOL bScreenContentsChanged;
 extern int STRes,PrevSTRes;
-extern int STScreenLineOffset[NUM_VISIBLE_LINES];
+extern int STScreenStartHorizLine;
+extern int STScreenLeftSkipBytes;
+extern FRAMEBUFFER *pFrameBuffer;
+extern Uint8 *pSTScreen;
+extern SDL_Surface *sdlscrn;
 extern Uint32 STRGBPalette[16];
 extern Uint32 ST2RGB[4096];
-extern SDL_Surface *sdlscrn;
-extern BOOL bGrabMouse;
 
 extern void Screen_Init(void);
 extern void Screen_UnInit(void);

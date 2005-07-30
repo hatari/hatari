@@ -7,29 +7,29 @@
   Screen conversion function, Low Res to 320x8Bit
 */
 
-void ConvertLowRes_320x8Bit(void)
+static void ConvertLowRes_320x8Bit(void)
 {
   Uint32 *edi, *ebp;
   Uint32 *esi;
   Uint32 eax, edx;
-  register Uint32 ebx, ecx;
+  Uint32 ebx, ecx;
+  int y, x;
 
   edx = 0;
 
   Convert_StartFrame();             /* Start frame, track palettes */
-  ScrY = STScreenStartHorizLine;    /* Starting line in ST screen */
 
-  do      /* y-loop */
-  {
+ for (y = STScreenStartHorizLine; y < STScreenEndHorizLine; y++) {
+
     /* Get screen addresses, 'edi'-ST screen, 'ebp'-Previous ST screen, 'esi'-PC screen */
-    eax = STScreenLineOffset[ScrY] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
+    eax = STScreenLineOffset[y] + STScreenLeftSkipBytes;  /* Offset for this line + Amount to skip on left hand side */
     edi = (Uint32 *)((Uint8 *)pSTScreen + eax);       /* ST format screen 4-plane 16 colours */
     ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);   /* Previous ST format screen */
     esi = (Uint32 *)pPCScreenDest;                    /* PC format screen, byte per pixel 256 colors */
 
-    AdjustLinePaletteRemap();
+    AdjustLinePaletteRemap(y);
 
-    ScrX = STScreenWidthBytes>>3;   /* Amount to draw across in 16-pixels(8 bytes) */
+    x = STScreenWidthBytes>>3;   /* Amount to draw across in 16-pixels(8 bytes) */
 
     do    /* x-loop */
     {
@@ -69,10 +69,8 @@ void ConvertLowRes_320x8Bit(void)
       edi += 2;                 /* Next ST pixels */
       ebp += 2;                 /* Next ST copy pixels */
     }
-    while(--ScrX);              /* Loop on X */
+    while(--x);              /* Loop on X */
 
     pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine);  /* Offset to next line */
-    ScrY += 1;
   }
-  while(ScrY < STScreenEndHorizLine);   /* Loop on Y */
 }
