@@ -25,6 +25,7 @@ extern Uint16 *pHBLPalettes;
 extern Uint32 HBLPaletteMasks[NUM_VISIBLE_LINES+1];
 extern Uint32 *pHBLPaletteMasks;
 extern Uint32 VideoBase;
+extern Uint8 HWScrollCount;
 extern int VBLCounter;
 extern int nScreenRefreshRate;
 
