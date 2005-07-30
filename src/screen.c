@@ -5,7 +5,7 @@
   option any later version. Read the file gpl.txt for details.
 
   This code converts a 1/2/4 plane ST format screen to either 8 or 16-bit PC
-  format. An awful lost of processing is needed to do this conversion - we
+  format. An awful lot of processing is needed to do this conversion - we
   cannot simply change palettes on  interrupts as it is possible with DOS.
   The main code processes the palette/resolution mask tables to find exactly
   which lines need to updating and the conversion routines themselves only
@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.41 2005-07-30 09:07:18 eerot Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.42 2005-07-30 10:09:39 eerot Exp $";
 
 #include <SDL.h>
 
@@ -225,7 +225,7 @@ static void Screen_Handle8BitPalettes(void)
   }
 
   /* Copy old palette for 8-Bit compare as this routine writes over it */
-  memcpy(PrevHBLPalette,HBLPalettes, sizeof(short int)*16);
+  memcpy(PrevHBLPalette,HBLPalettes, sizeof(Uint16)*16);
 }
 
 
@@ -360,6 +360,19 @@ static void Screen_SetResolution(void)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Store Y offset for each horizontal line in our source ST screen for each reference in assembler(no multiply)
+*/
+static void Screen_SetScreenLineOffsets(void)
+{
+  int i;
+
+  for(i=0; i<NUM_VISIBLE_LINES; i++)
+    STScreenLineOffset[i] = i * SCREENBYTES_LINE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Init Screen bitmap and buffers/tables needed for ST to PC screen conversion
 */
 void Screen_Init(void)
@@ -437,18 +450,6 @@ void Screen_Reset(void)
   Screen_SetFullUpdate();
 }
 
-/*-----------------------------------------------------------------------*/
-/*
-  Store Y offset for each horizontal line in our source ST screen for each reference in assembler(no multiply)
-*/
-void Screen_SetScreenLineOffsets(void)
-{
-  int i;
-
-  for(i=0; i<NUM_VISIBLE_LINES; i++)
-    STScreenLineOffset[i] = i * SCREENBYTES_LINE;
-}
-
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -464,6 +465,15 @@ void Screen_SetFullUpdate(void)
     FrameBuffers[i].bFullUpdate = TRUE;
 }
 
+
+/*-----------------------------------------------------------------------*/
+/*
+  Clear Window display memory
+*/
+static void Screen_ClearScreen(void)
+{
+  SDL_FillRect(sdlscrn,NULL, SDL_MapRGB(sdlscrn->format, 0, 0, 0) );
+}
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -505,16 +515,6 @@ void Screen_ReturnFromFullScreen(void)
 
     Main_UnPauseEmulation();      /* And off we go... */
   }
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Clear Window display memory
-*/
-void Screen_ClearScreen(void)
-{
-  SDL_FillRect(sdlscrn,NULL, SDL_MapRGB(sdlscrn->format, 0, 0, 0) );
 }
 
 
@@ -597,10 +597,10 @@ static void Screen_ComparePalette(int y, int *pUpdateLine)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Check for differences in Palette and Resolution from Mask table and update and
-  store off which lines need updating and create full-screen palette.
-  (It is very important for these routines to check for colour changes with the previous
-  screen so only the very minimum parts are updated)
+  Check for differences in Palette and Resolution from Mask table and update
+  and store off which lines need updating and create full-screen palette.
+  (It is very important for these routines to check for colour changes with
+  the previous screen so only the very minimum parts are updated)
 */
 static int Screen_ComparePaletteMask(void)
 {
@@ -613,14 +613,16 @@ static int Screen_ComparePaletteMask(void)
   {
     OverscanMode = OVERSCANMODE_NONE;
 
-    /* Just copy mono colours */
-    if (HBLPalettes[0]&0x777)
+    /* Just copy mono colours, 0x777 checked also in convert/vdi2.c */
+    if (HBLPalettes[0] & 0x777)
     {
-      HBLPalettes[0] = 0x777;  HBLPalettes[1] = 0x000;
+      HBLPalettes[0] = 0x777;
+      HBLPalettes[1] = 0x000;
     }
     else
     {
-      HBLPalettes[0] = 0x000;  HBLPalettes[1] = 0x777;
+      HBLPalettes[0] = 0x000;
+      HBLPalettes[1] = 0x777;
     }
 
     /* Colors changed? */
@@ -779,10 +781,28 @@ static void Screen_UnLock(void)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Swap ST Buffers, used for full-screen where have double-buffering
+*/
+static void Screen_SwapSTBuffers(void)
+{
+#if NUM_FRAMEBUFFERS > 1
+  if (sdlscrn->flags & SDL_DOUBLEBUF)
+  {
+    if (pFrameBuffer==&FrameBuffers[0])
+      pFrameBuffer = &FrameBuffers[1];
+    else
+      pFrameBuffer = &FrameBuffers[0];
+  }
+#endif
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Blit our converted ST screen to window/full-screen
   Note that our source image includes all borders so if have them disabled simply blit a smaller source rectangle!
 */
-void Screen_Blit(BOOL bSwapScreen)
+static void Screen_Blit(BOOL bSwapScreen)
 {
   /* Rectangle areas to Blit according to if overscan is enabled or not (source always includes all borders) */
 /*   static SDL_Rect SrcWindowBitmapSizes[] = */
@@ -814,6 +834,7 @@ void Screen_Blit(BOOL bSwapScreen)
   /* Blit to full screen or window? */
   if (bInFullScreen)
   {
+    Screen_SwapSTBuffers();
     /* Swap screen */
     if (bSwapScreen)
       SDL_Flip(sdlscrn);
@@ -849,27 +870,9 @@ void Screen_Blit(BOOL bSwapScreen)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Swap ST Buffers, used for full-screen where have double-buffering
-*/
-static void Screen_SwapSTBuffers(void)
-{
-#if NUM_FRAMEBUFFERS > 1
-  if (sdlscrn->flags & SDL_DOUBLEBUF)
-  {
-    if (pFrameBuffer==&FrameBuffers[0])
-      pFrameBuffer = &FrameBuffers[1];
-    else
-      pFrameBuffer = &FrameBuffers[0];
-  }
-#endif
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
   Draw ST screen to window/full-screen framebuffer
 */
-void Screen_DrawFrame(BOOL bForceFlip)
+static void Screen_DrawFrame(BOOL bForceFlip)
 {
   void *pDrawFunction;
 
@@ -922,11 +925,7 @@ void Screen_DrawFrame(BOOL bForceFlip)
 
     /* And show to user */
     if (bScreenContentsChanged || bForceFlip)
-    {
-      if (bInFullScreen)
-        Screen_SwapSTBuffers();
       Screen_Blit(TRUE);
-    }
 
     /* Grab any animation */
     if(bRecordingAnimation)

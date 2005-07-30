@@ -93,14 +93,10 @@ extern BOOL bGrabMouse;
 extern void Screen_Init(void);
 extern void Screen_UnInit(void);
 extern void Screen_Reset(void);
-extern void Screen_SetScreenLineOffsets(void);
 extern void Screen_SetFullUpdate(void);
 extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);
-extern void Screen_ClearScreen(void);
 extern void Screen_DidResolutionChange(void);
-extern void Screen_Blit(BOOL bSwapScreen);
-extern void Screen_DrawFrame(BOOL bForceFlip);
 extern void Screen_Draw(void);
 
 #endif  /* ifndef HATARI_SCREEN_H */
