@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.42 2005-07-30 10:09:39 eerot Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.43 2005-07-30 12:27:23 eerot Exp $";
 
 #include <SDL.h>
 
@@ -175,9 +175,9 @@ static void Screen_CreatePalette(void)
         j = i;
 #endif
         /* normalize all to 0x1e0 */
-        r = (HBLPalettes[i] >> 3);
-        g =  HBLPalettes[i];
-        b = (HBLPalettes[i] << 5);
+        r = HBLPalettes[i] >> 3;
+        g = HBLPalettes[i] << 1;
+        b = HBLPalettes[i] << 5;
         /* move top bit of 0x1e0 to lowest in 0xf0 */
         sdlColors[j].r = (r & 0xe0) | ((r & 0x100) >> 4);
         sdlColors[j].g = (g & 0xe0) | ((g & 0x100) >> 4);
