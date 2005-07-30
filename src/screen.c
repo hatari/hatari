@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.40 2005-07-15 19:30:32 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.41 2005-07-30 09:07:18 eerot Exp $";
 
 #include <SDL.h>
 
@@ -50,7 +50,7 @@ int STRes=ST_LOW_RES, PrevSTRes=ST_LOW_RES;       /* Current and previous ST res
 
 int STScreenLineOffset[NUM_VISIBLE_LINES];        /* Offsets for ST screen lines eg, 0,160,320... */
 Uint32 STRGBPalette[16];                          /* Palette buffer used in conversion routines */
-Uint32 ST2RGB[2048];                              /* Table to convert ST Palette 0x777 to PC format RGB551 (2 pixels each entry) */
+Uint32 ST2RGB[4096];                              /* Table to convert ST 0x777 / STe 0xfff palette to PC format RGB551 (2 pixels each entry) */
 Uint16 HBLPalette[16], PrevHBLPalette[16];        /* Current palette for line, also copy of first line */
 
 SDL_Surface *sdlscrn;                             /* The SDL screen surface */
@@ -67,7 +67,7 @@ void *ScreenDrawFunctionsVDI[3] =
 
 /*-----------------------------------------------------------------------*/
 /*
-  Create ST 777 colour format to 16-bits per pixel.
+  Create ST 0x777 or STe 0xfff colour format to 16-bits per pixel.
   Called each time when changed resolution or to/from fullscreen mode.
 */
 static void Screen_SetupRGBTable(void)
@@ -75,21 +75,47 @@ static void Screen_SetupRGBTable(void)
   unsigned int STColour, RGBColour;
   unsigned int r, g, b;
 
-  /* Do Red,Green and Blue for all 512 ST colours */
-  for(r=0; r<8; r++)
+  if (ConfigureParams.System.nMachineType == MACHINE_ST)
   {
-    for(g=0; g<8; g++)
+    /* Do Red, Green and Blue for all 8*8*8 = 512 ST colours */
+    for(r=0; r < 8; r++)
     {
-      for(b=0; b<8; b++)
+      for(g=0; g < 8; g++)
       {
-        STColour = (r<<8) | (g<<4) | (b);      /* ST format 0x777 */
-        RGBColour = SDL_MapRGB(sdlscrn->format, (r<<5), (g<<5), (b<<5));
-        ST2RGB[STColour] = (RGBColour<<16) | RGBColour;  /* As longs, for speed (write two pixels at once) */
+        for(b=0; b < 8; b++)
+        {
+          /* ST 0x777 format */
+          STColour = (r<<8) | (g<<4) | (b);
+          RGBColour = SDL_MapRGB(sdlscrn->format, (r<<5), (g<<5), (b<<5));
+          /* As longs, for speed (write two pixels at once) */
+          ST2RGB[STColour] = (RGBColour<<16) | RGBColour;
+        }
+      }
+    }
+  }
+  else
+  {
+    int rr, gg, bb;
+    /* Do Red, Green and Blue for all 16*16*16 = 4096 STe colours */
+    for(r=0; r < 16; r++)
+    {
+      for(g=0; g < 16; g++)
+      {
+        for(b=0; b < 16; b++)
+        {
+          /* STe 0xfff format */
+          STColour = (r<<8) | (g<<4) | (b);
+          rr = ((r & 0x7) << 5) | ((r & 0x8) << 1);
+          gg = ((g & 0x7) << 5) | ((g & 0x8) << 1);
+          bb = ((b & 0x7) << 5) | ((b & 0x8) << 1);
+          RGBColour = SDL_MapRGB(sdlscrn->format, rr, gg, bb);
+          /* As longs, for speed (write two pixels at once) */
+          ST2RGB[STColour] = (RGBColour<<16) | RGBColour;
+        }
       }
     }
   }
 }
-
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -121,19 +147,44 @@ static void Screen_CreatePalette(void)
   }
   else
   {
-    /* Colors for color screen mode emulation */
-    for (i=0; i<16; i++)
+    if (ConfigureParams.System.nMachineType == MACHINE_ST)
     {
+      /* Colors for ST color screen mode emulation */
+      for (i=0; i<16; i++)
+      {
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-      j = endiantable[i];
+        j = endiantable[i];
 #else
-      j = i;
+        j = i;
 #endif
-      sdlColors[j].r = ((HBLPalettes[i]>>8)&0x7)<<5;
-      sdlColors[j].g = ((HBLPalettes[i]>>4)&0x7)<<5;
-      sdlColors[j].b = (HBLPalettes[i]&0x7)<<5;
+        sdlColors[j].r = ((HBLPalettes[i]>>8) & 0x7) << 5;
+        sdlColors[j].g = ((HBLPalettes[i]>>4) & 0x7) << 5;
+        sdlColors[j].b = ( HBLPalettes[i]     & 0x7) << 5;
+      }
+      SDL_SetColors(sdlscrn, sdlColors, 10, 16);
     }
-    SDL_SetColors(sdlscrn, sdlColors, 10, 16);
+    else
+    {
+      int r, g, b;
+      /* Colors for STe color screen mode emulation */
+      for (i=0; i<16; i++)
+      {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+        j = endiantable[i];
+#else
+        j = i;
+#endif
+        /* normalize all to 0x1e0 */
+        r = (HBLPalettes[i] >> 3);
+        g =  HBLPalettes[i];
+        b = (HBLPalettes[i] << 5);
+        /* move top bit of 0x1e0 to lowest in 0xf0 */
+        sdlColors[j].r = (r & 0xe0) | ((r & 0x100) >> 4);
+        sdlColors[j].g = (g & 0xe0) | ((g & 0x100) >> 4);
+        sdlColors[j].b = (b & 0xe0) | ((b & 0x100) >> 4);
+      }
+      SDL_SetColors(sdlscrn, sdlColors, 10, 16);
+    }
   }
 }
 

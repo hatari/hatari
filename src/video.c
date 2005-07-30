@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.29 2005-07-15 19:30:32 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.30 2005-07-30 09:07:18 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -664,16 +664,21 @@ void Video_ShifterMode_ReadByte(void)
 */
 static void Video_ColorReg_WriteWord(Uint32 addr)
 {
-  if (!bUseHighRes)                                 /* Don't store if hi-res */
+  if (!bUseHighRes)                        /* Don't store if hi-res */
   {
+    int idx;
     Uint16 col;
-    Video_SetHBLPaletteMaskPointers();              /* Set 'pHBLPalettes' etc.. according cycles into frame */
+    Video_SetHBLPaletteMaskPointers();     /* Set 'pHBLPalettes' etc.. according cycles into frame */
     col = IoMem_ReadWord(addr);
-    col &= 0x777;                                   /* Mask off to 512 palette */
-    IoMem_WriteWord(addr, col);                     /* (some games write 0xFFFF and read back to see if STe) */
-    Spec512_StoreCyclePalette(col, addr);           /* Store colour into CyclePalettes[] */
-    pHBLPalettes[(addr-0xff8240)/2] = col;          /* Set colour x */
-    *pHBLPaletteMasks |= 1 << ((addr-0xff8240)/2);  /* And mask */
+    if (ConfigureParams.System.nMachineType == MACHINE_ST)
+      col &= 0x777;                          /* Mask off to ST 512 palette */
+    else
+      col &= 0xfff;                          /* Mask off to STe 4096 palette */
+    IoMem_WriteWord(addr, col);            /* (some games write 0xFFFF and read back to see if STe) */
+    Spec512_StoreCyclePalette(col, addr);  /* Store colour into CyclePalettes[] */
+    idx = (addr-0xff8240)/2;               /* words */
+    pHBLPalettes[idx] = col;               /* Set colour x */
+    *pHBLPaletteMasks |= 1 << idx;         /* And mask */
   }
 }
 

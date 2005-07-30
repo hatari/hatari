@@ -86,7 +86,7 @@ extern BOOL bScreenContentsChanged;
 extern int STRes,PrevSTRes;
 extern int STScreenLineOffset[NUM_VISIBLE_LINES];
 extern Uint32 STRGBPalette[16];
-extern Uint32 ST2RGB[2048];
+extern Uint32 ST2RGB[4096];
 extern SDL_Surface *sdlscrn;
 extern BOOL bGrabMouse;
 

@@ -17,7 +17,7 @@
   improves speed. We then look these bbp values up as an RGB/Index value to copy
   to the screen.
 */
-char ScreenConvert_rcsid[] = "Hatari $Id: screenConvert.c,v 1.15 2004-04-19 08:53:34 thothy Exp $";
+char ScreenConvert_rcsid[] = "Hatari $Id: screenConvert.c,v 1.16 2005-07-30 09:07:18 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -123,21 +123,17 @@ static int AdjustLinePaletteRemap(void)
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
   static const int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
 #endif
-  unsigned short *actHBLPal;
+  Uint16 *actHBLPal;
   int i;
-  int v;
-
+	
   /* Copy palette and convert to RGB in display format */
   actHBLPal = pHBLPalettes + (ScrY<<4);    /* offset in palette */
   for(i=0; i<16; i++)
    {
-    v=*actHBLPal;
-    actHBLPal+=1;
-    v=v&0x777;
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-    STRGBPalette[endiantable[i]] = ST2RGB[v];
+    STRGBPalette[endiantable[i]] = ST2RGB[*actHBLPal++];
 #else
-    STRGBPalette[i] = ST2RGB[v];
+    STRGBPalette[i] = ST2RGB[*actHBLPal++];
 #endif
    }
   ScrUpdateFlag = HBLPaletteMasks[ScrY];

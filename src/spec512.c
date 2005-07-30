@@ -18,7 +18,7 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.9 2005-07-15 19:30:32 thothy Exp $";
+char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.10 2005-07-30 09:07:18 eerot Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -29,10 +29,11 @@ char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.9 2005-07-15 19:30:32 thothy E
 #include "video.h"
 
 
-CYCLEPALETTE CyclePalettes[(SCANLINES_PER_FRAME+1)*MAX_CYCLEPALETTES_PERLINE];  /* 314k; 1024-bytes per line */
+/* 314k; 1024-bytes per line */
+CYCLEPALETTE CyclePalettes[(SCANLINES_PER_FRAME+1)*MAX_CYCLEPALETTES_PERLINE];
 CYCLEPALETTE *pCyclePalette;
-int nCyclePalettes[(SCANLINES_PER_FRAME+1)];                  /* Number of entries in above table for each scanline */
-int nPalettesAccess[(SCANLINES_PER_FRAME+1)];                 /* Number of times accessed palette register 'x' in this scan line */
+int nCyclePalettes[(SCANLINES_PER_FRAME+1)];  /* Number of entries in above table for each scanline */
+int nPalettesAccess[(SCANLINES_PER_FRAME+1)]; /* Number of times accessed palette register 'x' in this scan line */
 static Uint16 CycleColour;
 static int CycleColourIndex;
 static int nScanLine, ScanLineCycleCount;
@@ -104,7 +105,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 
   /* Store palette access */
   pTmpCyclePalette->LineCycles = FrameCycles % CYCLES_PER_LINE;  /* Cycles into scanline */
-  pTmpCyclePalette->Colour = CycleColour & 0x777;                /* Store ST colour RGB */
+  pTmpCyclePalette->Colour = CycleColour;                        /* Store ST/STe colour RGB */
   pTmpCyclePalette->Index = CycleColourIndex;                    /* And Index (0...15) */
   /* Increment count(this can never overflow as you cannot write to the palette more than 'MAX_CYCLEPALETTES_PERLINE' times per scanline) */
   nCyclePalettes[ScanLine]++;
@@ -153,9 +154,9 @@ void Spec512_StartFrame(void)
   for(i=0; i<16; i++)
   {
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-    STRGBPalette[STRGBPalEndianTable[i]] = ST2RGB[pHBLPalettes[i]&0x777];
+    STRGBPalette[STRGBPalEndianTable[i]] = ST2RGB[pHBLPalettes[i]];
 #else
-    STRGBPalette[i] = ST2RGB[pHBLPalettes[i]&0x777];
+    STRGBPalette[i] = ST2RGB[pHBLPalettes[i]];
 #endif
   }
 
@@ -233,9 +234,9 @@ void Spec512_UpdatePaletteSpan(void)
    {
     /* Need to update palette with new entry */
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-    STRGBPalette[STRGBPalEndianTable[pCyclePalette->Index]] = ST2RGB[pCyclePalette->Colour&0x777];
+    STRGBPalette[STRGBPalEndianTable[pCyclePalette->Index]] = ST2RGB[pCyclePalette->Colour];
 #else
-    STRGBPalette[pCyclePalette->Index] = ST2RGB[pCyclePalette->Colour&0x777];
+    STRGBPalette[pCyclePalette->Index] = ST2RGB[pCyclePalette->Colour];
 #endif
     pCyclePalette += 1;
    }
