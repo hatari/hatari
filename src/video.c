@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.32 2005-07-30 09:26:14 eerot Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.33 2005-08-03 00:56:00 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -45,9 +45,9 @@ Uint32 *pHBLPaletteMasks;
 int VBLCounter;                                 /* VBL counter */
 int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 70 Hz in mono */
 Uint32 VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */
-Uint8 HWScrollCount;				/* HW scroll count, STe only (0...15) */
 
-static Uint8 ScanLineWidth;			/* Scan line width add, STe only (words, minus 1) */
+static Uint8 HWScrollCount;                     /* HW scroll count, STe only (0...15) */
+static Uint8 ScanLineWidth;                     /* Scan line width add, STe only (words, minus 1) */
 static Uint8 *pVideoRaster;                     /* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 static Uint8 VideoShifterByte;                  /* VideoShifter (0xff8260) value store in video chip */
 static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simulate left/right border removal */
@@ -421,10 +421,6 @@ void Video_Sync_WriteByte(void)
 */
 void Video_StartHBL(void)
 {
-  if (ConfigureParams.System.nMachineType != MACHINE_ST) {
-    ScanLineWidth = STMemory_ReadByte(0xff820f);
-    HWScrollCount = STMemory_ReadByte(0xff8265);
-  }
   LeftRightBorder = 0;
 }
 
@@ -508,11 +504,11 @@ static void Video_CopyScreenLine(int BorderMask)
         else
           memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,0,SCREENBYTES_RIGHT);
 
-	/* ScanLineWidth and HWScrollCount are zero on ST.
-         * on STe, Shifter skips the given amount of words
-         */
-        pVideoRaster += ScanLineWidth*2;
+        /* Handle STE fine scrolling (HWScrollCount is zero on ST). */
         if (HWScrollCount) {
+          Uint16 *pScrollAdj;
+          int nNegScrollCnt;
+
           /* HW scrolling advances Shifter video counter by one */
           switch(STRes) {
           case ST_HIGH_RES:
@@ -523,10 +519,27 @@ static void Video_CopyScreenLine(int BorderMask)
             break;
           case ST_LOW_RES:
           default:
+            pScrollAdj = (Uint16 *)(pSTScreen+SCREENBYTES_LEFT);
+            nNegScrollCnt = (16-HWScrollCount);
+            /* Shift the whole line by the given scroll count */
+            while ((Uint8*)pScrollAdj < pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE)
+            {
+              pScrollAdj[0] = (pScrollAdj[0] << HWScrollCount) | (pScrollAdj[4] >> nNegScrollCnt);
+              ++pScrollAdj;
+            }
+            /* Handle the last 16 pixels of the line */
+            *(pScrollAdj-4) |= (*(Uint16 *)pVideoRaster+0) >> nNegScrollCnt;
+            *(pScrollAdj-3) |= (*(Uint16 *)(pVideoRaster+2)) >> nNegScrollCnt;
+            *(pScrollAdj-2) |= (*(Uint16 *)(pVideoRaster+4)) >> nNegScrollCnt;
+            *(pScrollAdj-1) |= (*(Uint16 *)(pVideoRaster+6)) >> nNegScrollCnt;
             pVideoRaster += 4 * 2;
             break;
           }
         }
+
+        /* ScanLineWidth is zero on ST. */
+        /* On STE, the Shifter skips the given amount of words. */
+        pVideoRaster += ScanLineWidth*2;
       }
 
       /* Each screen line copied to buffer is always same length */
@@ -553,6 +566,11 @@ void Video_CopyVDIScreen(void)
 */
 void Video_EndHBL(void)
 {
+  if (ConfigureParams.System.nMachineType != MACHINE_ST) {
+    ScanLineWidth = STMemory_ReadByte(0xff820f);
+    HWScrollCount = STMemory_ReadByte(0xff8265) & 0x0f;
+  }
+
   /* Are we in possible visible display (including borders)? */
   if ( (nHBL>=FIRST_VISIBLE_HBL) && (nHBL<(FIRST_VISIBLE_HBL+NUM_VISIBLE_LINES)) ) {
     /* Copy line of screen to buffer to simulate TV raster trace - required for mouse cursor display/game updates */
