@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.33 2005-08-03 00:56:00 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.34 2005-08-03 12:36:24 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -470,12 +470,44 @@ static void Video_CopyScreenLine(int BorderMask)
 
     if (bUseHighRes) {
       /* Copy for hi-res (no overscan) */
-      memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MIDDLE);
-      pVideoRaster += SCREENBYTES_MIDDLE;
-      /* Each screen line copied to buffer is always same length */
-      pSTScreen += SCREENBYTES_MIDDLE;
+      int i;
+
+      /* Since Hatari does not emulate monochrome HBLs correctly yet
+       * (only 200 are raised, just like in low resolution), we have to
+       * copy two lines each HBL to finally copy all 400 lines. */
+      for (i = 0; i < 2; i++) {
+        /* Copy one line - 80 bytes in ST high resolution */
+        memcpy(pSTScreen, pVideoRaster, 80);
+        pVideoRaster += 80;
+        /* Handle STE fine scrolling (HWScrollCount is zero on ST). */
+        if (HWScrollCount) {
+          Uint16 *pScrollAdj;
+          int nNegScrollCnt;
+
+          pScrollAdj = (Uint16 *)pSTScreen;
+          nNegScrollCnt = (16-HWScrollCount);
+          /* Shift the whole line by the given scroll count */
+          while ((Uint8*)pScrollAdj < pSTScreen+78)
+          {
+            pScrollAdj[0] = (pScrollAdj[0] << HWScrollCount) | (pScrollAdj[1] >> nNegScrollCnt);
+            ++pScrollAdj;
+          }
+          /* Handle the last 16 pixels of the line */
+          pScrollAdj[0] = (pScrollAdj[0] << HWScrollCount) | ((*(Uint16 *)pVideoRaster) >> nNegScrollCnt);
+          /* HW scrolling advances Shifter video counter by one */
+          pVideoRaster += 1 * 2;
+        }
+
+        /* ScanLineWidth is zero on ST. */
+        /* On STE, the Shifter skips the given amount of words. */
+        pVideoRaster += ScanLineWidth*2;
+
+        /* Each screen line copied to buffer is always same length */
+        pSTScreen += 80;
+      }
     }
     else {
+      /* Copy for low and medium resolution: */
       /* Is total blank line? Ie top/bottom border? */
       if (BorderMask&(BORDERMASK_TOP|BORDERMASK_BOTTOM)) {
         /* Clear line to colour '0' */
@@ -509,16 +541,12 @@ static void Video_CopyScreenLine(int BorderMask)
           Uint16 *pScrollAdj;
           int nNegScrollCnt;
 
-          /* HW scrolling advances Shifter video counter by one */
-          switch(STRes) {
-          case ST_HIGH_RES:
-            pVideoRaster += 1 * 2;
-            break;
-          case ST_MEDIUM_RES:
+          if (STRes == ST_MEDIUM_RES) {
+            /* TODO: Implement fine scrolling for medium resolution, too */
+            /* HW scrolling advances Shifter video counter by one */
             pVideoRaster += 2 * 2;
-            break;
-          case ST_LOW_RES:
-          default:
+          }
+          else {
             pScrollAdj = (Uint16 *)(pSTScreen+SCREENBYTES_LEFT);
             nNegScrollCnt = (16-HWScrollCount);
             /* Shift the whole line by the given scroll count */
@@ -532,8 +560,8 @@ static void Video_CopyScreenLine(int BorderMask)
             *(pScrollAdj-3) |= (*(Uint16 *)(pVideoRaster+2)) >> nNegScrollCnt;
             *(pScrollAdj-2) |= (*(Uint16 *)(pVideoRaster+4)) >> nNegScrollCnt;
             *(pScrollAdj-1) |= (*(Uint16 *)(pVideoRaster+6)) >> nNegScrollCnt;
+            /* HW scrolling advances Shifter video counter by one */
             pVideoRaster += 4 * 2;
-            break;
           }
         }
 
