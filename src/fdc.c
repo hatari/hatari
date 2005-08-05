@@ -12,7 +12,7 @@
   checked each HBL to perform the transfer of data from our disc image into
   the ST RAM area by simulating the DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.20 2005-07-15 19:30:31 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.21 2005-08-05 19:45:04 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -421,7 +421,7 @@ void FDC_UpdateHBL(void)
 		if (nDelayHBLs-- > 0)
 			return;
 		else
-			nDelayHBLs = 300;
+			nDelayHBLs = 180;
 	}
 
 	/* Do we have a DMA ready to copy? */
