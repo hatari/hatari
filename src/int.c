@@ -16,9 +16,10 @@
   the current instruction takes 20 cycles we will be 16 cycles late - this is handled in
   the adjust functions.
 */
-char Int_rcsid[] = "Hatari $Id: int.c,v 1.8 2005-04-05 14:41:27 thothy Exp $";
+char Int_rcsid[] = "Hatari $Id: int.c,v 1.9 2005-08-06 12:32:09 thothy Exp $";
 
 #include "main.h"
+#include "dmaSnd.h"
 #include "ikbd.h"
 #include "int.h"
 #include "m68000.h"
@@ -41,6 +42,7 @@ void *pIntHandlerFunctions[] =
   MFP_InterruptHandler_TimerD,
   IKBD_InterruptHandler_ResetTimer,
   IKBD_InterruptHandler_ACIA,
+  DmaSnd_InterruptHandler,
   NULL
 };
 

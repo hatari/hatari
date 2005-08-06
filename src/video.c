@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.34 2005-08-03 12:36:24 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.35 2005-08-06 12:32:10 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -291,8 +291,9 @@ void Video_InterruptHandler_EndLine(void)
   if ( (nHBL>=nStartHBL) && (nHBL<nEndHBL) )
    {
     /* Handle Timers A and B when using Event Count mode(timer taken from HBL) */
-    if (MFP_TACR==0x08)        /* Is timer in Event Count mode? */
-      MFP_TimerA_EventCount_Interrupt();
+// FIXME: Really raise Timer A here?
+//    if (MFP_TACR==0x08)        /* Is timer in Event Count mode? */
+//      MFP_TimerA_EventCount_Interrupt();
     if (MFP_TBCR==0x08)        /* Is timer in Event Count mode? */
       MFP_TimerB_EventCount_Interrupt();
    }

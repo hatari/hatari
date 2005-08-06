@@ -14,10 +14,11 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.18 2005-04-05 14:41:30 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.19 2005-08-06 12:32:09 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
+#include "dmaSnd.h"
 #include "fdc.h"
 #include "ikbd.h"
 #include "int.h"
@@ -234,12 +235,15 @@ static BOOL MFP_InterruptRequest(int nMfpException, unsigned char Bit, unsigned 
 */
 void MFP_CheckPendingInterrupts(void)
 {
-  if ((MFP_IPRA & 0x35) == 0 && (MFP_IPRB & 0xf0) == 0)
+  if ((MFP_IPRA & 0xb5) == 0 && (MFP_IPRB & 0xf0) == 0)
   { 
     /* Should never get here, but if do just clear flag (see 'MFP_UpdateFlags') */
     unset_special(SPCFLAG_MFP);
     return;
   }
+
+  if (MFP_IPRA & MFP_TIMER_GPIP7_BIT)   /* Check MFP GPIP7 interrupt (bit 7) */
+    MFP_InterruptRequest(MFP_EXCEPT_GPIP7, MFP_TIMER_GPIP7_BIT, &MFP_IPRA, MFP_IMRA, 0x80, 0x00, &MFP_ISRA);
 
   if (MFP_IPRA & MFP_TIMER_A_BIT)       /* Check Timer A (bit 5) */
     MFP_InterruptRequest(MFP_EXCEPT_TIMERA, MFP_TIMER_A_BIT, &MFP_IPRA, MFP_IMRA, 0xe0, 0x00, &MFP_ISRA);
@@ -610,6 +614,8 @@ void MFP_GPIP_ReadByte(void)
 	v = MFP_GPIP & 0x7f;    /* Lower 7-bits are GPIP (Top bit is monitor type) */
 	if (!bUseHighRes)
 		v |= 0x80;          /* Color monitor -> set top bit */
+	if (nDmaSoundControl & DMASNDCTRL_PLAY)
+		v ^= 0x80;          /* Top bit is XORed with DMA sound control play bit */
 
 	IoMem[0xfffa01] = v;
 }

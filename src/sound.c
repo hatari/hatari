@@ -19,12 +19,13 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.19 2005-06-05 14:19:39 thothy Exp $";
+char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.20 2005-08-06 12:32:10 thothy Exp $";
 
 #include <SDL_types.h>
 
 #include "main.h"
 #include "audio.h"
+#include "dmaSnd.h"
 #include "file.h"
 #include "int.h"
 #include "log.h"
@@ -62,9 +63,9 @@ static int ChannelAmpDecayTime[3];                              /* Store counter
 static int Envelope[SAMPLES_BUFFER_SIZE],Noise[SAMPLES_BUFFER_SIZE];   /* Current sample for this time period */
 /* Output channel data */
 static int Channel_A_Buffer[SAMPLES_BUFFER_SIZE],Channel_B_Buffer[SAMPLES_BUFFER_SIZE],Channel_C_Buffer[SAMPLES_BUFFER_SIZE];
-/* Use table to convert from (A+B+C) to clipped 'unsigned char' for sound buffer */
-static char MixTable[MIXTABLE_SIZE];                            /* -ve and +ve range */
-static char *pMixTable = &MixTable[MIXTABLE_SIZE/2];            /* Signed index into above */
+/* Use table to convert from (A+B+C) to clipped 8-bit for sound buffer */
+static Sint8 MixTable[MIXTABLE_SIZE];                           /* -ve and +ve range */
+static Sint8 *pMixTable = &MixTable[MIXTABLE_SIZE/2];           /* Signed index into above */
 static int ActiveSndBufIdx;                                     /* Current working index into above mix buffer */
 static int nSamplesToGenerate;                                  /* How many samples are needed for this time-frame */
 
@@ -73,7 +74,7 @@ BOOL bWriteEnvelopeFreq;                                        /* Did write to 
 BOOL bWriteChannelAAmp, bWriteChannelBAmp, bWriteChannelCAmp;   /* Did write to amplitude registers? */
 BOOL bEnvelopeFreqFlag;                                         /* As above, but cleared each frame for YM saving */
 /* Buffer to store circular samples */
-char MixBuffer[MIXBUFFER_SIZE];
+Sint8 MixBuffer[MIXBUFFER_SIZE];
 int nGeneratedSamples;                                          /* Generated samples since audio buffer update */
 int SoundCycles;
 
@@ -276,7 +277,8 @@ void Sound_MemorySnapShot_Capture(BOOL bSave)
 /*-----------------------------------------------------------------------*/
 /*
   Find how many samples to generate and store in 'nSamplesToGenerate'
-  Also update 'SoundCycles' to store how many we actually did so generates set amount each frame
+  Also update 'SoundCycles' to store how many we actually did so generates set
+  amount each frame.
 */
 static void Sound_SetSamplesPassed(void)
 {
@@ -491,9 +493,11 @@ static void Sound_GenerateSamples(void)
     Sound_GenerateChannel(pChannelB,PSGRegisters[PSG_REG_CHANNEL_B_FINE],PSGRegisters[PSG_REG_CHANNEL_B_COARSE],PSGRegisters[PSG_REG_CHANNEL_B_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[1],1);
     Sound_GenerateChannel(pChannelC,PSGRegisters[PSG_REG_CHANNEL_C_FINE],PSGRegisters[PSG_REG_CHANNEL_C_COARSE],PSGRegisters[PSG_REG_CHANNEL_C_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[2],2);
 
-    /* Mix channels together, using table to clip and also convert to 'unsigned char' */
+    /* Mix channels together, using table to clip and convert to proper 8-bit type */
     for(i=0; i<nSamplesToGenerate; i++)
       MixBuffer[(i+ActiveSndBufIdx)%MIXBUFFER_SIZE] = pMixTable[(*pChannelA++) + (*pChannelB++) + (*pChannelC++)];
+
+    DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
 
     ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
     nGeneratedSamples += nSamplesToGenerate;

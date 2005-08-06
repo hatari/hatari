@@ -6,9 +6,10 @@
 
   Tables with hardware IO handlers.
 */
-char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.5 2005-07-30 09:26:14 eerot Exp $";
+char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.6 2005-08-06 12:32:09 thothy Exp $";
 
 #include "main.h"
+#include "dmaSnd.h"
 #include "fdc.h"
 #include "ikbd.h"
 #include "ioMem.h"
@@ -20,13 +21,6 @@ char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.5 2005-07-30 09:26:14 
 #include "rtc.h"
 #include "video.h"
 #include "blitter.h"
-
-
-/* Temporary hack to get TOS 1.06 and 1.62 working... */
-static void IoMem_MicrowireData_ReadWord(void)
-{
-	IoMem_WriteWord(0xff8922, 0);
-}
 
 
 /*-----------------------------------------------------------------------*/
@@ -236,7 +230,7 @@ INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff8802, SIZE_BYTE, PSG_DataRegister_ReadByte, PSG_DataRegister_WriteByte },
 	{ 0xff8803, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },
 
-	{ 0xff8900, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound control */
+	{ 0xff8900, SIZE_WORD, DmaSnd_SoundControl_ReadWord, DmaSnd_SoundControl_WriteWord },   /* DMA sound control */
 	{ 0xff8902, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8903, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame start high */
 	{ 0xff8904, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
@@ -244,11 +238,11 @@ INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff8906, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8907, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame start low */
 	{ 0xff8908, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8909, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame count high */
+	{ 0xff8909, SIZE_BYTE, DmaSnd_FrameCountHigh_ReadByte, IoMem_VoidWrite },               /* DMA sound frame count high */
 	{ 0xff890a, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff890b, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame count med */
+	{ 0xff890b, SIZE_BYTE, DmaSnd_FrameCountMed_ReadByte, IoMem_VoidWrite },                /* DMA sound frame count med */
 	{ 0xff890c, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff890d, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame count low */
+	{ 0xff890d, SIZE_BYTE, DmaSnd_FrameCountLow_ReadByte, IoMem_VoidWrite },                /* DMA sound frame count low */
 	{ 0xff890e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff890f, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame end high */
 	{ 0xff8910, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
@@ -256,8 +250,8 @@ INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff8912, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8913, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame end low */
 	{ 0xff8914, 12,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
-	{ 0xff8920, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound mode control */
-	{ 0xff8922, SIZE_WORD, IoMem_MicrowireData_ReadWord, IoMem_WriteWithoutInterception },  /* Microwire data */
+	{ 0xff8920, SIZE_WORD, DmaSnd_SoundMode_ReadWord, DmaSnd_SoundMode_WriteWord },         /* DMA sound mode control */
+	{ 0xff8922, SIZE_WORD, DmaSnd_MicrowireData_ReadWord, IoMem_WriteWithoutInterception }, /* Microwire data */
 	{ 0xff8924, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Microwire mask */
 	{ 0xff8925, 27,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 
