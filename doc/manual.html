@@ -33,33 +33,35 @@
  	a:hover { color:#0000ff; background-color:#ffffff; text-decoration:none; }
  	a:active { color:#993399; background-color:#ffffff; text-decoration:none; }
 
-	*.commandline { font-family:Fixed,Courier,monospace; font-size:10pt; }
+	*.commandline { font-family:Fixed,Courier,monospace; font-size:11pt; }
 	*.file { color: #000088;}
 	*.button { color: #468E64;}
-	*.key { color:#550000; font-family:Fixed,Courier,monospace; font-size:10pt; }
+	*.key { color:#550000; font-family:Fixed,Courier,monospace; font-size:11pt; }
 	*.backdropped { background-color:#ffffee; }
-	*.image {margin-left: 5px; margin-right: 5px; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:justify; width: 800px;}
+	*.image {margin-left: 5px; margin-right: 5px; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:center; }
+	*.floatimage { float:right; margin-left:0.5cm; border-width:2px; border-style:solid; border-color:#eeeeff; padding:0.5cm; }
 
   -->
   </style>
 </head>
-<body link="#000099" alink="#993399" bgcolor="#ffffff" text="#000000"
- vlink="#cc0000">
+
+<body>
+
 <h1 align="center">Hatari User's Manual</h1>
+
 <p align="center">
 Version 0.70
 </p>
 <p align="center">
-<strong>project initiator and main developer of Hatari: Thomas Huth &lt;<a
- href="mailto:thothy@users.sourceforge.net">thothy@users.sourceforge.net</a>&gt;</strong><br>
-<strong>manual by Matthias Arndt &lt;<a
- href="mailto:marndt@asmsoftware.de">marndt@asmsoftware.de</a>&gt;</strong>
+Project initiator and main developer of Hatari: <strong>Thomas Huth</strong>
+<br>
+Manual written by: <strong>Matthias Arndt</strong>
 </p>
 <p align="center">
-<strong>Hatari on the WWW: <a href="http://hatari.sourceforge.net/"
- target="_blank">http://hatari.sourceforge.net/</a> </strong>
+Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
+ target="_blank">http://hatari.sourceforge.net/</a></strong>
 </p>
-<br>
+
 
 <h2>Introduction</h2>
 
@@ -94,7 +96,7 @@ and demos. Of course you can run normal GEM applications with Hatari, too.
 overscan effects for lower border and partially in the upper, left and
 right border too</li>
   <li>512 colour ST palette</li>
-  <li>Blitter chip emulation</li>
+  <li>Blitter chip emulation (not very accurate)</li>
   <li>PSG YM2149 emulation (soundchip) including STFM samples</li>
   <li>Printer emulation on GEMDOS and Hardware level (print to file)</li>
   <li>experimental support for RS232</li>
@@ -120,21 +122,39 @@ and *.DIM)</li>
   <li>interlaced rendering of ST-Low and ST-Medium resolutions </li>
   <li>scaling of ST-Low and ST-Medium to 800x600 resolution </li>
 </ul>
+
+<h4>Experimental STE hardware emulation:</h4>
+STE emulation is still considered as instable, but if you dare to use it,
+there is support for most of the enhanced STE features:
+<ul>
+  <li>horizontal and vertical hardware fine scrolling</li>
+  <li>split screen techniques / in-screen video address manipulations</li>
+  <li>4096 colors STE palette</li>
+  <li>DMA sample sound</li>
+</ul>
+
 <p>
 At the time of this writing there is neither a complete MMU emulation
-nor support for STE specific features.
+nor support for TT or Falcon specific features.
 </p>
+
+
 <h3>System requirements</h3>
+
 <p> Hatari currently has the following system requirements: </p>
 <ul>
-  <li>a fast PC (&gt;200MHz) </li>
+  <li>a fast PC (&gt;300MHz) </li>
   <li>some sort of Unix (preferable <a href="http://www.linux.org/">GNU/Linux</a>)
   </li>
   <li>the SDL library (<a href="http://www.libsdl.org/">http://www.libsdl.org/</a>)</li>
   <li>the zLib (<a href="http://www.gzip.org/zlib/">http://www.gzip.org/zlib/</a>)
-for support of gzipped disk images</li>
+for support of zipped disk images</li>
 </ul>
-Hatari has been succesfully tested on the following machines:
+
+<p>
+Certain versions of Hatari have successfully been tested by various people on
+the following systems:
+</p>
 <ul>
   <li>Linux/i86 with Kernel 2.6.6, AMD Athlon 600MHz</li>
   <li>Linux/i86 with Kernel 2.4.x, AMD Athlon 600MHz </li>
@@ -370,27 +390,36 @@ pressing the reset button on your ST.
 return to the host OS.</p>
 <p>Click <span class="button">Cancel</span> to abandon any changes
 made.</p>
+
 <h4>The System Dialog</h4>
 
-<div class="image" align="center">
-<img src="images/system.png" width="768" height="534" alt="Hatari's GUI - the system dialog">
+<div class="floatimage">
+<img src="images/system.png" width="360" height="368" alt="Hatari's GUI - the system dialog">
 </div>
 
-<p>Check the CPU type to use here. For best Atari ST compatibility choose plain 68000 here.</p>
-<p>Select whether you want to emulate an STFM or an STE. <em>Note:</em> STE emulation is very incomplete. In may not work at all.</p>
-<p>Select the CPU clock you want to use. 8Mhz is ST standard and the most compatible, 16MHz is for Mega STE emulation.</p>
-<p>Toggle Blitter and RTC emulation. Both have to be off for plain STFM emulation.</p>
-<p>The Timer-D patch changes the Timer-D initialization from TOS. TOS
-uses Timer-D as a baudrate generator for RS232.
-The TOS default slows the emulation down so the patch gives you a
-faster emulation.
-</p>
-<p>You can disable the Timer-D patch if games or demos require the
-original TOS setting.</p>
-<p>Select if you want to use slow FDC emulation. Slow is more compatible esp. with games and demos that use custom loaders.</p>
+<p>Select the CPU type to use here. For best Atari ST compatibility choose a
+ plain 68000.</p>
+<p>Choose whether you want to emulate a normal ST or an STE.
+ <em>Note:</em> STE emulation is very incomplete. It may not work very well.</p>
+<p>Select the CPU clock you want to use. 8Mhz is ST standard and the most
+ compatible, 16MHz is for Mega STE emulation.</p>
+<p>With the &quot;Slower but more compatible CPU&quot; option, you can enable
+ the emulation of 68k address errors and the CPU prefetch buffer. This is needed
+ for best compatibility, but it slows down emulation a little bit so you can
+ disable it if you don't need it.</p>
+<p>You can also toggle Blitter and RTC emulation. Both have to be off for plain
+ ST emulation.</p>
+<p>The Timer-D patch changes the Timer-D initialization from TOS. TOS uses
+ the MFP timer D as a baudrate generator for RS232. However, the TOS default
+ value slows down the emulation. The patch gives you a better performance.
+ It is normally save to enable the patch, but if you encounter a program that
+ does not work, you can try to disable the patch to see if it works then.</p>
+<p>Select if you want to use slow FDC emulation. Slow is more compatible esp.
+ with games and demos that use custom loaders.</p>
 <p><em>NOTE:</em> These parameters are very sensitive to the emulated
 ST and it is strongly recommended to
 reset the emulated ST after changing these options.</p>
+
 <h4>The Discs Dialog</h4>
 
 <div class="image" align="center">
@@ -412,7 +441,7 @@ The fileselector looks like this:
 </p>
 
 <div class="image" align="center">
-<img src="images/fileselector.png" width="768" height="534" alt="Hatari's GUI - the fileselector">
+<img src="images/fileselector.png" width="640" height="400" alt="Hatari's GUI - the fileselector">
 </div>
 
 <p>Click on <span class="button">Eject</span> to eject a disk image
@@ -556,20 +585,31 @@ screenshot in .BMP format to the current working directory or click <span
 screenshots. You can opt to only record new movie frames when the
 screen content really changed.
 </p>
+
 <h4>The Keyboard Dialog</h4>
 
-<div class="image" align="center">
-<img src="images/keyboard.png" width="768" height="534" alt="Hatari's GUI - the keyboard dialog">
+<div class="floatimage">
+<img src="images/keyboard.png" width="400" height="192" alt="Hatari's GUI - the keyboard dialog">
 </div>
 
-<p>Here you can select the keyboard mapping to use.</p>
-<p>Two different mappings called "Symbolic" and "Scancode" are
-predefined.</p>
-<p>You can also load a custom keymapping file here if you wish. Please
-note that selecting to use a custom keyboard mapping will
-use the "symbolic" mapping for all keys not defined by your map file.
-See the supplied example mapfile on how to build your
-own keyboard mapping.</p>
+<p>Here you can select the keyboard mapping to use. Two different mappings
+ called &quot;Symbolic&quot; and &quot;Scancode&quot; are predefined.</p>
+<p>&quot;Symbolic&quot; tries to map the symbolic values of your PC keys
+ to the ST keys. It should be working pretty good on all systems as long
+ as your keyboard layout looks close to the standard english keyboard
+ layout. However, you might experience some problems with special keys like
+ brackets etc.</p>
+<p>&quot;Scancode&quot; uses the scancode values of your PC keys for keyboard
+ mapping. This only works on certain architectures like Linux where the
+ scancodes are similar to the ST scancodes (e.g. it does not work on Mac OS X).
+ If it works on your system, this often gives better results than the symbolic
+ mapping. Note that you also need a TOS version with the right language
+ (e.g. use a French TOS if you are using a French keyboard).</p>
+<p>You can also load a custom keyboard mapping file here if you wish. Please
+ note that the custom keyboard mapping will use the &quot;symbolic&quot; mapping
+ for all keys that are not defined by your map file. Have a look at the supplied
+ example mapfile to see how to create your own keyboard mapping.</p>
+
 <h4>The Sound Dialog</h4>
 
 <div class="image" align="center">
