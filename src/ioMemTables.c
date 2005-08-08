@@ -6,7 +6,7 @@
 
   Tables with hardware IO handlers.
 */
-char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.6 2005-08-06 12:32:09 thothy Exp $";
+char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.7 2005-08-08 14:10:33 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -180,9 +180,9 @@ INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff8002, 14,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 
 	{ 0xff8200, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8201, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Video base high byte */
+	{ 0xff8201, SIZE_BYTE, IoMem_ReadWithoutInterception, Video_ScreenBaseSTE_WriteByte },  /* Video base high byte */
 	{ 0xff8202, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8203, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Video base med byte */
+	{ 0xff8203, SIZE_BYTE, IoMem_ReadWithoutInterception, Video_ScreenBaseSTE_WriteByte },  /* Video base med byte */
 	{ 0xff8204, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8205, SIZE_BYTE, Video_ScreenCounterHigh_ReadByte, Video_ScreenCounter_WriteByte },
 	{ 0xff8206, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */

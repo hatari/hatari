@@ -49,6 +49,7 @@ extern void Video_BaseLow_ReadByte(void);
 extern void Video_LineWidth_ReadByte(void);
 extern void Video_ShifterMode_ReadByte(void);
 
+extern void Video_ScreenBaseSTE_WriteByte(void);
 extern void Video_ScreenCounter_WriteByte(void);
 extern void Video_Sync_WriteByte(void);
 extern void Video_Color0_WriteWord(void);

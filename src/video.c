@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.36 2005-08-08 12:08:15 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.37 2005-08-08 14:10:33 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -135,40 +135,34 @@ void Video_ClearOnVBL(void)
 */
 static Uint32 Video_CalculateAddress(void)
 {
-  int X,Y,FrameCycles,nPixelsIn;
+  int X, FrameCycles;
   Uint32 VideoAddress;      /* Address of video display in ST screen space */
 
   /* Find number of cycles passed during frame */
   FrameCycles = Int_FindFrameCycles();
 
-  /* Top of screen is usually 64 lines from VBL(64x512=32768 cycles) */
-  if (FrameCycles<(nStartHBL*CYCLES_PER_LINE))
+  /* Top of screen is usually 64 lines from VBL (64x512=32768 cycles) */
+  if (FrameCycles < nStartHBL*CYCLES_PER_LINE)
   {
-    VideoAddress = 0;
+    VideoAddress = VideoBase;
   }
   else
   {
-    /* Now find which pixel we are on(ignore left/right borders) */
-    /* 96 + 320 + 96 = 512 pixels per scan line(each pixel is one cycle) */
-    nPixelsIn = FrameCycles-(nStartHBL*CYCLES_PER_LINE);
-    /* Convert this to an X,Y pixel on screen */
-    Y = nPixelsIn/512;
-    X = nPixelsIn - (Y*512);
-    if (X<SCREEN_START_CYCLE)       /* Limit if in NULL area outside screen */
+    /* Now find which pixel we are on (ignore left/right borders) */
+    /* 96 + 320 + 96 = 512 pixels per scan line (each pixel is one cycle) */
+    X = FrameCycles % CYCLES_PER_LINE;
+    if (X < SCREEN_START_CYCLE)       /* Limit if in NULL area outside screen */
       X = SCREEN_START_CYCLE;
-    if (X>(512-SCREEN_START_CYCLE))
-      X = (512-SCREEN_START_CYCLE);
-    /* X is now from 96 to 416(320 pixels), subtract 96 to give X pixel across screen! */
+    if (X > (CYCLES_PER_LINE - SCREEN_START_CYCLE))
+      X = (CYCLES_PER_LINE - SCREEN_START_CYCLE);
+    /* X is now from 96 to 416 (320 pixels), subtract 96 to give X pixel across screen! */
     X = ((X-SCREEN_START_CYCLE)>>1)&(~1);
 
-    if (Y<(nEndHBL-nStartHBL))      /* Limit to end of screen */
-      VideoAddress = (Y*160) + X;
-    else
-      VideoAddress = ((nEndHBL-nStartHBL)*160);
+    VideoAddress = pVideoRaster - STRam;
+    /* Add line cycles if we have not reached end of screen yet: */
+    if (FrameCycles < nEndHBL*CYCLES_PER_LINE)
+      VideoAddress += X;
   }
-
-  /* Offset from start of screen(MUST use address loading into video display) */
-  VideoAddress += VideoBase;
 
   return VideoAddress;
 }
@@ -533,7 +527,7 @@ static void Video_CopyScreenLineColor(int BorderMask)
       pVideoRaster += SCREENBYTES_LEFT;
     }
     else
-      memset(pSTScreen,0,SCREENBYTES_LEFT);	      
+      memset(pSTScreen,0,SCREENBYTES_LEFT);
 
     /* Copy middle - always present */
     memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE);
@@ -703,7 +697,7 @@ void Video_SetScreenRasters(void)
 {
   pHBLPaletteMasks = HBLPaletteMasks;
   pHBLPalettes = HBLPalettes;
-  memset(pHBLPaletteMasks, 0, sizeof(unsigned long)*NUM_VISIBLE_LINES);  /* Clear array */
+  memset(pHBLPaletteMasks, 0, sizeof(Uint32)*NUM_VISIBLE_LINES);  /* Clear array */
 }
 
 
@@ -741,14 +735,13 @@ void Video_SetHBLPaletteMaskPointers(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Write to video address counter (0xff8205, 0xff8207 and 0xff8209).
-  Called on STE only and like with base address, you cannot set lowest bit.
+  Write to video address base high and med register (0xff8201 and 0xff8203).
+  When a program writes to these registers, some other video registers
+  are reset to zero.
 */
-void Video_ScreenCounter_WriteByte(void)
+void Video_ScreenBaseSTE_WriteByte(void)
 {
-  Uint32 addr;
-  addr = (IoMem[0xff8205] << 16) | (IoMem[0xff8207] << 8) | IoMem[0xff8209];
-  pVideoRaster = &STRam[addr & ~1];
+  IoMem[0xff820d] = 0;          /* Reset screen base low register */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -778,6 +771,17 @@ void Video_ScreenCounterLow_ReadByte(void)
   IoMem[0xff8209] = Video_CalculateAddress();         /* Get video address counter low byte */
 }
 
+/*-----------------------------------------------------------------------*/
+/*
+  Write to video address counter (0xff8205, 0xff8207 and 0xff8209).
+  Called on STE only and like with base address, you cannot set lowest bit.
+*/
+void Video_ScreenCounter_WriteByte(void)
+{
+  Uint32 addr;
+  addr = (IoMem[0xff8205] << 16) | (IoMem[0xff8207] << 8) | IoMem[0xff8209];
+  pVideoRaster = &STRam[addr & ~1];
+}
 
 /*-----------------------------------------------------------------------*/
 /*
