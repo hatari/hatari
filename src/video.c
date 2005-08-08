@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.35 2005-08-06 12:32:10 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.36 2005-08-08 12:08:15 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -460,119 +460,194 @@ static void Video_StoreResolution(int y)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Copy one line of monochrome screen into buffer for conversion later.
+*/
+static void Video_CopyScreenLineMono(void)
+{
+  int i;
+
+  /* Since Hatari does not emulate monochrome HBLs correctly yet
+   * (only 200 are raised, just like in low resolution), we have to
+   * copy two lines each HBL to finally copy all 400 lines. */
+  for (i = 0; i < 2; i++)
+  {
+    /* Copy one line - 80 bytes in ST high resolution */
+    memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MONOLINE);
+    pVideoRaster += SCREENBYTES_MONOLINE;
+
+    /* Handle STE fine scrolling (HWScrollCount is zero on ST). */
+    if (HWScrollCount)
+    {
+      Uint16 *pScrollAdj;
+      int nNegScrollCnt;
+
+      pScrollAdj = (Uint16 *)pSTScreen;
+      nNegScrollCnt = 16 - HWScrollCount;
+
+      /* Shift the whole line by the given scroll count */
+      while ((Uint8*)pScrollAdj < pSTScreen + SCREENBYTES_MONOLINE-2)
+      {
+        do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
+                        | (do_get_mem_word(pScrollAdj+1) >> nNegScrollCnt));
+        ++pScrollAdj;
+      }
+
+      /* Handle the last 16 pixels of the line */
+      do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
+                      | (do_get_mem_word(pVideoRaster) >> nNegScrollCnt));
+
+      /* HW scrolling advances Shifter video counter by one */
+      pVideoRaster += 1 * 2;
+    }
+
+    /* ScanLineWidth is zero on ST. */
+    /* On STE, the Shifter skips the given amount of words. */
+    pVideoRaster += ScanLineWidth*2;
+
+    /* Each screen line copied to buffer is always same length */
+    pSTScreen += SCREENBYTES_MONOLINE;
+  }
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Copy one line of color screen into buffer for conversion later.
+  Possible lines may be top/bottom border, and/or left/right borders.
+*/
+static void Video_CopyScreenLineColor(int BorderMask)
+{
+  /* Is total blank line? Ie top/bottom border? */
+  if (BorderMask&(BORDERMASK_TOP|BORDERMASK_BOTTOM))
+  {
+    /* Clear line to color '0' */
+    memset(pSTScreen, 0, SCREENBYTES_LINE);
+  }
+  else
+  {
+    /* Does have left border? If not, clear to color '0' */
+    if (BorderMask & BORDERMASK_LEFT)
+    {
+      pVideoRaster += 24-SCREENBYTES_LEFT;
+      memcpy(pSTScreen, pVideoRaster, SCREENBYTES_LEFT);
+      pVideoRaster += SCREENBYTES_LEFT;
+    }
+    else
+      memset(pSTScreen,0,SCREENBYTES_LEFT);	      
+
+    /* Copy middle - always present */
+    memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE);
+    pVideoRaster += SCREENBYTES_MIDDLE;
+
+    /* Does have right border? If not, clear to color '0' */
+    if (BorderMask & BORDERMASK_RIGHT)
+    {
+      memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT);
+      pVideoRaster += 46-SCREENBYTES_RIGHT;
+      pVideoRaster += SCREENBYTES_RIGHT;
+    }
+    else
+      memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,0,SCREENBYTES_RIGHT);
+
+    /* Handle STE fine scrolling (HWScrollCount is zero on ST). */
+    if (HWScrollCount)
+    {
+      Uint16 *pScrollAdj;       /* Pointer to actual position in line */
+      int nNegScrollCnt;
+      Uint16 *pScrollEndAddr;   /* Pointer to end of the line */
+
+      nNegScrollCnt = 16 - HWScrollCount;
+      if (BorderMask & BORDERMASK_LEFT)
+        pScrollAdj = (Uint16 *)pSTScreen;
+      else
+        pScrollAdj = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT);
+      if (BorderMask & BORDERMASK_RIGHT)
+        pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LINE - 8);
+      else
+        pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT + SCREENBYTES_MIDDLE - 8);
+
+      if (STRes == ST_MEDIUM_RES)
+      {
+        /* TODO: Implement fine scrolling for medium resolution, too */
+        /* HW scrolling advances Shifter video counter by one */
+        pVideoRaster += 2 * 2;
+      }
+      else
+      {
+        /* Shift the whole line by the given scroll count */
+        while (pScrollAdj < pScrollEndAddr)
+        {
+          do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
+                          | (do_get_mem_word(pScrollAdj+4) >> nNegScrollCnt));
+          ++pScrollAdj;
+        }
+        /* Handle the last 16 pixels of the line */
+        if (BorderMask & BORDERMASK_RIGHT)
+        {
+          /* When right border is open, we have to deal with this ugly offset
+           * of 46-SCREENBYTES_RIGHT=30 - The demo "Mind rewind" is a good example */
+          do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
+                          | (do_get_mem_word(pVideoRaster-30) >> nNegScrollCnt));
+          do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
+                          | (do_get_mem_word(pVideoRaster-28) >> nNegScrollCnt));
+          do_put_mem_word(pScrollAdj+2, (do_get_mem_word(pScrollAdj+2) << HWScrollCount)
+                          | (do_get_mem_word(pVideoRaster-26) >> nNegScrollCnt));
+          do_put_mem_word(pScrollAdj+3, (do_get_mem_word(pScrollAdj+3) << HWScrollCount)
+                          | (do_get_mem_word(pVideoRaster-24) >> nNegScrollCnt));
+        }
+        else
+        {
+          do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
+                          | (do_get_mem_word(pVideoRaster+0) >> nNegScrollCnt));
+          do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
+                          | (do_get_mem_word(pVideoRaster+2) >> nNegScrollCnt));
+          do_put_mem_word(pScrollAdj+2, (do_get_mem_word(pScrollAdj+2) << HWScrollCount)
+                          | (do_get_mem_word(pVideoRaster+4) >> nNegScrollCnt));
+          do_put_mem_word(pScrollAdj+3, (do_get_mem_word(pScrollAdj+3) << HWScrollCount)
+                          | (do_get_mem_word(pVideoRaster+6) >> nNegScrollCnt));
+        }
+        /* HW scrolling advances Shifter video counter by one */
+        pVideoRaster += 4 * 2;
+      }
+    }
+
+    /* ScanLineWidth is zero on ST. */
+    /* On STE, the Shifter skips the given amount of words. */
+    pVideoRaster += ScanLineWidth*2;
+  }
+
+  /* Each screen line copied to buffer is always same length */
+  pSTScreen += SCREENBYTES_LINE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Copy line of screen into buffer for conversion later.
-  Possible lines may be top/bottom border, and/or left/right borders
 */
 static void Video_CopyScreenLine(int BorderMask)
 {
+  /* Read STE fine scrolling registers */
+  if (ConfigureParams.System.nMachineType != MACHINE_ST)
+  {
+    ScanLineWidth = STMemory_ReadByte(0xff820f);
+    HWScrollCount = STMemory_ReadByte(0xff8265) & 0x0f;
+  }
+
   /* Only copy screen line if not doing high VDI resolution */
-  if (!bUseVDIRes) {
+  if (!bUseVDIRes)
+  {
     BorderMask |= LeftRightBorder;
 
-    if (bUseHighRes) {
+    if (bUseHighRes)
+    {
       /* Copy for hi-res (no overscan) */
-      int i;
-
-      /* Since Hatari does not emulate monochrome HBLs correctly yet
-       * (only 200 are raised, just like in low resolution), we have to
-       * copy two lines each HBL to finally copy all 400 lines. */
-      for (i = 0; i < 2; i++) {
-        /* Copy one line - 80 bytes in ST high resolution */
-        memcpy(pSTScreen, pVideoRaster, 80);
-        pVideoRaster += 80;
-        /* Handle STE fine scrolling (HWScrollCount is zero on ST). */
-        if (HWScrollCount) {
-          Uint16 *pScrollAdj;
-          int nNegScrollCnt;
-
-          pScrollAdj = (Uint16 *)pSTScreen;
-          nNegScrollCnt = (16-HWScrollCount);
-          /* Shift the whole line by the given scroll count */
-          while ((Uint8*)pScrollAdj < pSTScreen+78)
-          {
-            pScrollAdj[0] = (pScrollAdj[0] << HWScrollCount) | (pScrollAdj[1] >> nNegScrollCnt);
-            ++pScrollAdj;
-          }
-          /* Handle the last 16 pixels of the line */
-          pScrollAdj[0] = (pScrollAdj[0] << HWScrollCount) | ((*(Uint16 *)pVideoRaster) >> nNegScrollCnt);
-          /* HW scrolling advances Shifter video counter by one */
-          pVideoRaster += 1 * 2;
-        }
-
-        /* ScanLineWidth is zero on ST. */
-        /* On STE, the Shifter skips the given amount of words. */
-        pVideoRaster += ScanLineWidth*2;
-
-        /* Each screen line copied to buffer is always same length */
-        pSTScreen += 80;
-      }
+      Video_CopyScreenLineMono();
     }
-    else {
-      /* Copy for low and medium resolution: */
-      /* Is total blank line? Ie top/bottom border? */
-      if (BorderMask&(BORDERMASK_TOP|BORDERMASK_BOTTOM)) {
-        /* Clear line to colour '0' */
-        memset(pSTScreen,0,SCREENBYTES_LINE);
-      }
-      else {
-        /* Does have left border? If not, clear to colour '0' */
-        if (BorderMask&BORDERMASK_LEFT) {
-          pVideoRaster += 24-SCREENBYTES_LEFT;
-          memcpy(pSTScreen, pVideoRaster, SCREENBYTES_LEFT);
-          pVideoRaster += SCREENBYTES_LEFT;
-        }
-        else
-          memset(pSTScreen,0,SCREENBYTES_LEFT);	      
-        
-        /* Copy middle - always present */
-        memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE);
-        pVideoRaster += SCREENBYTES_MIDDLE;
-
-        /* Does have right border? If not, clear to colour '0' */
-        if (BorderMask&BORDERMASK_RIGHT) {
-          memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT);
-          pVideoRaster += 46-SCREENBYTES_RIGHT;
-          pVideoRaster += SCREENBYTES_RIGHT;
-        }
-        else
-          memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,0,SCREENBYTES_RIGHT);
-
-        /* Handle STE fine scrolling (HWScrollCount is zero on ST). */
-        if (HWScrollCount) {
-          Uint16 *pScrollAdj;
-          int nNegScrollCnt;
-
-          if (STRes == ST_MEDIUM_RES) {
-            /* TODO: Implement fine scrolling for medium resolution, too */
-            /* HW scrolling advances Shifter video counter by one */
-            pVideoRaster += 2 * 2;
-          }
-          else {
-            pScrollAdj = (Uint16 *)(pSTScreen+SCREENBYTES_LEFT);
-            nNegScrollCnt = (16-HWScrollCount);
-            /* Shift the whole line by the given scroll count */
-            while ((Uint8*)pScrollAdj < pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE)
-            {
-              pScrollAdj[0] = (pScrollAdj[0] << HWScrollCount) | (pScrollAdj[4] >> nNegScrollCnt);
-              ++pScrollAdj;
-            }
-            /* Handle the last 16 pixels of the line */
-            *(pScrollAdj-4) |= (*(Uint16 *)pVideoRaster+0) >> nNegScrollCnt;
-            *(pScrollAdj-3) |= (*(Uint16 *)(pVideoRaster+2)) >> nNegScrollCnt;
-            *(pScrollAdj-2) |= (*(Uint16 *)(pVideoRaster+4)) >> nNegScrollCnt;
-            *(pScrollAdj-1) |= (*(Uint16 *)(pVideoRaster+6)) >> nNegScrollCnt;
-            /* HW scrolling advances Shifter video counter by one */
-            pVideoRaster += 4 * 2;
-          }
-        }
-
-        /* ScanLineWidth is zero on ST. */
-        /* On STE, the Shifter skips the given amount of words. */
-        pVideoRaster += ScanLineWidth*2;
-      }
-
-      /* Each screen line copied to buffer is always same length */
-      pSTScreen += SCREENBYTES_LINE;
+    else
+    {
+      /* Copy for low and medium resolution */
+      Video_CopyScreenLineColor(BorderMask);
     }
   }
 }
@@ -595,11 +670,6 @@ void Video_CopyVDIScreen(void)
 */
 void Video_EndHBL(void)
 {
-  if (ConfigureParams.System.nMachineType != MACHINE_ST) {
-    ScanLineWidth = STMemory_ReadByte(0xff820f);
-    HWScrollCount = STMemory_ReadByte(0xff8265) & 0x0f;
-  }
-
   /* Are we in possible visible display (including borders)? */
   if ( (nHBL>=FIRST_VISIBLE_HBL) && (nHBL<(FIRST_VISIBLE_HBL+NUM_VISIBLE_LINES)) ) {
     /* Copy line of screen to buffer to simulate TV raster trace - required for mouse cursor display/game updates */

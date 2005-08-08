@@ -10,8 +10,8 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.70" /* Name, version for window title */
-#define PROG_VERSION   "v0.70"
+#define PROG_NAME      "Hatari v0.71" /* Name, version for window title */
+#define PROG_VERSION   "v0.71"
 
 
 #include <stdio.h>
@@ -133,9 +133,10 @@ enum {
 
 /* Assumes 32 pixels left+right */
 #define SCREENBYTES_LEFT    16          /* Bytes for left border in ST screen */
-#define SCREENBYTES_MIDDLE  160         /* Middle(320 pixels) */
+#define SCREENBYTES_MIDDLE  160         /* Middle (320 pixels) */
 #define SCREENBYTES_RIGHT   16          /* right border */
 #define SCREENBYTES_LINE    (SCREENBYTES_LEFT+SCREENBYTES_MIDDLE+SCREENBYTES_RIGHT)
+#define SCREENBYTES_MONOLINE 80         /* Byte per line in ST-high resolution */
 
 /* Overscan values */
 #define OVERSCAN_LEFT       (SCREENBYTES_LEFT*2)    /* Number of pixels in each border */
