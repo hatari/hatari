@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.74 2005-06-05 14:19:39 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.75 2005-08-13 08:59:30 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -216,6 +216,7 @@ static void Main_ShowOptions(void)
          "  --configfile <file>   Use <file> instead of ~/.hatari.cfg as configuration\n"
          "     or -c <file>        file.\n"
          "  --slowfdc             Slow down FDC emulation (very experimental!).\n"
+         "  --machine <x>         Select machine type (x = st or ste)\n"
         );
 }
 
@@ -413,6 +414,21 @@ static void Main_ReadParameters(int argc, char *argv[])
       else if (!strcmp(argv[i], "--slowfdc"))
       {
         ConfigureParams.System.bSlowFDC = TRUE;
+      }
+      else if (!strcmp(argv[i],"--machine"))
+      {
+        if (i+1 >= argc)
+          fprintf(stderr, "Missing argument for --machine\n");
+        else
+        {
+          if (strcasecmp(argv[i+1], "st") == 0)
+            ConfigureParams.System.nMachineType = MACHINE_ST;
+          else if (strcasecmp(argv[i+1], "ste") == 0)
+            ConfigureParams.System.nMachineType = MACHINE_STE;
+          else
+            fprintf(stderr, "Unknown machine type: %s\n", argv[i+1]);
+          i += 1;
+        }
       }
       else
       {
