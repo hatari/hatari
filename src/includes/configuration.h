@@ -68,18 +68,9 @@ typedef struct
 } CNF_KEYBOARD;
 
 
-/* Memory configuration */
-typedef enum
-{
-  MEMORY_SIZE_512Kb,
-  MEMORY_SIZE_1Mb,
-  MEMORY_SIZE_2Mb,
-  MEMORY_SIZE_4Mb
-} MEMORY_SIZE;
-
 typedef struct
 {
-  MEMORY_SIZE nMemorySize;
+  int nMemorySize;
   char szMemoryCaptureFileName[FILENAME_MAX];
 } CNF_MEMORY;
 

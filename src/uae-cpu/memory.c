@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.17 2005-03-11 10:10:38 thothy Exp $";
+char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.18 2005-08-13 11:21:44 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -630,13 +630,13 @@ static void init_mem_banks (void)
 /*
  * Initialize the memory banks
  */
-void memory_init(uae_u32 f_STMemSize, uae_u32 f_TTMemSize, uae_u32 f_RomMemStart)
+void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMemStart)
 {
-    STmem_size = (f_STMemSize + 65535) & 0xFFFF0000;
-    TTmem_size = (f_TTMemSize + 65535) & 0xFFFF0000;
+    STmem_size = (nNewSTMemSize + 65535) & 0xFFFF0000;
+    TTmem_size = (nNewTTMemSize + 65535) & 0xFFFF0000;
 
     /*write_log("memory_init: STmem_size=$%x, TTmem_size=$%x, ROM-Start=$%x,\n",
-              STmem_size, TTmem_size, f_RomMemStart);*/
+              STmem_size, TTmem_size, nNewRomMemStart);*/
 
     STmemory = STRam;
     ROMmemory = STRam + ROMmem_start;
@@ -656,9 +656,13 @@ void memory_init(uae_u32 f_STMemSize, uae_u32 f_TTMemSize, uae_u32 f_RomMemStart
 
     init_mem_banks();
 
-    /* Map the ST RAM: */
+    /* Map the ST sytem RAM: */
     map_banks(&SysMem_bank, 0x00, 1);
-    map_banks(&VoidMem_bank, 0x08, 0x38);  /* Between STRamEnd and 4MB barrier, there is void space! */
+    /* Between STRamEnd and 4MB barrier, there is void space: */
+    map_banks(&VoidMem_bank, 0x08, 0x38);
+    /* Space between 4MB barrier and TOS ROM causes a bus error: */
+    map_banks(&BusErrMem_bank, 0x400000 >> 16, 0xA0);
+    /* Now map main ST RAM, overwriting the void and bus error regions if necessary: */
     map_banks(&STmem_bank, 0x01, (STmem_size >> 16) - 1);
 
     /* TT memory isn't really supported yet */
@@ -672,12 +676,12 @@ void memory_init(uae_u32 f_STMemSize, uae_u32 f_TTMemSize, uae_u32 f_RomMemStart
 
     /* ROM memory: */
     /* Depending on which ROM version we are using, the other ROM region is illegal! */
-    if(f_RomMemStart == 0xFC0000)
+    if(nNewRomMemStart == 0xFC0000)
     {
         map_banks(&ROMmem_bank, 0xFC0000 >> 16, 0x3);
         map_banks(&BusErrMem_bank, 0xE00000 >> 16, 0x10);
     }
-    else if(f_RomMemStart == 0xE00000)
+    else if(nNewRomMemStart == 0xE00000)
     {
         map_banks(&ROMmem_bank, 0xE00000 >> 16, 0x10);
         map_banks(&BusErrMem_bank, 0xFC0000 >> 16, 0x3);
@@ -694,7 +698,6 @@ void memory_init(uae_u32 f_STMemSize, uae_u32 f_TTMemSize, uae_u32 f_RomMemStart
     map_banks(&IOmem_bank, IOmem_start>>16, 0x1);
 
     /* Illegal memory regions cause a bus error on the ST: */
-    map_banks(&BusErrMem_bank, 0x400000 >> 16, 0xA0); /* Space between 4MB barrier and TOS ROM */
     map_banks(&BusErrMem_bank, 0xF00000 >> 16, 0xA);  /* IDE controler on the Falcon */
 }
 

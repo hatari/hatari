@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.75 2005-08-13 08:59:30 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.76 2005-08-13 11:21:44 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -66,7 +66,7 @@ void Main_MemorySnapShot_Capture(BOOL bSave)
   /* Save/Restore details */
   /* Only save/restore area of memory machine ie set to, eg 1Mb */
   if (bSave) {
-    nBytes = STRamEnd;  /* was: STRamEnd_BusErr */
+    nBytes = STRamEnd;
     MemorySnapShot_Store(&nBytes,sizeof(nBytes));
     MemorySnapShot_Store(STRam,nBytes);
   }
@@ -212,7 +212,7 @@ static void Main_ShowOptions(void)
          "  --compatible          Use a more compatible (but slower) 68000 CPU mode.\n"
          "  --blitter             Enable blitter emulation (unstable!)\n"
          "  --vdi                 Use extended VDI resolution\n"
-         "  --memsize <x>         Memory size in MB (x = 0, 1, 2 or 4; 0 for 512kB)\n"
+         "  --memsize <x>         ST RAM size. x = size in MiB from 0 to 14; 0 for 512KiB\n"
          "  --configfile <file>   Use <file> instead of ~/.hatari.cfg as configuration\n"
          "     or -c <file>        file.\n"
          "  --slowfdc             Slow down FDC emulation (very experimental!).\n"
@@ -381,19 +381,15 @@ static void Main_ReadParameters(int argc, char *argv[])
       }
       else if (!strcmp(argv[i], "--memsize"))
       {
-        int memorysize = MEMORY_SIZE_1Mb;
         if(i+1 >= argc)
           fprintf(stderr,"Missing argument for --memsize.\n");
         else
-          memorysize = atoi(argv[++i]);
-        if(memorysize == 0)
-          ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_512Kb;
-        else if(memorysize == 2)
-          ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_2Mb;
-        else if(memorysize == 4)
-          ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_4Mb;
-        else  /* Use 1MB as default */
-          ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_1Mb;
+          ConfigureParams.Memory.nMemorySize = atoi(argv[++i]);
+        if (ConfigureParams.Memory.nMemorySize < 0 || ConfigureParams.Memory.nMemorySize > 14)
+        {
+          fprintf(stderr, "Memory size must be between 0 and 14 MB.\n");
+          ConfigureParams.Memory.nMemorySize = 1;
+        }
       }
       else if (!strcmp(argv[i],"--configfile") || !strcmp(argv[i],"-c"))
       {

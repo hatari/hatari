@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.29 2005-06-05 14:19:39 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.30 2005-08-13 11:21:44 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -40,15 +40,6 @@ BOOL bTosImageLoaded = FALSE;           /* Successfully loaded a TOS image? */
 BOOL bRamTosImage;                      /* TRUE if we loaded a RAM TOS image */
 unsigned int ConnectedDriveMask = 0x03; /* Bit mask of connected drives, eg 0x7 is A,B,C */
 
-
-/* Settings for different memory sizes */
-static const MEMORY_INFO MemoryInfo[] =
-{
-  { 0x80000,  0x01, 0x00080000 },    /* MEMORYSIZE_512 */
-  { 0x100000, 0x05, 0x00100000 },    /* MEMORYSIZE_1024 */
-  { 0x200000, 0x02, 0x00200000 },    /* MEMORYSIZE_2MB */
-  { 0x400000, 0x0A, 0x00400000 }     /* MEMORYSIZE_4MB */
-};
 
 /* Bit masks of connected drives(we support up to C,D,E,F,G,H) */
 static const unsigned int ConnectedDriveMaskList[] =
@@ -248,40 +239,59 @@ static void TOS_FixRom(void)
 */
 static void TOS_SetDefaultMemoryConfig(void)
 {
+  Uint8 nMemControllerByte;
+  static const int MemControllerTable[] =
+  {
+    0x01,   /* 512 KiB */
+    0x05,   /* 1 MiB */
+    0x02,   /* 2 MiB */
+    0x06,   /* 2.5 MiB */
+    0x0A    /* 4 MiB */
+  };
+
   /* As TOS checks hardware for memory size + connected devices on boot-up */
   /* we set these values ourselves and fill in the magic numbers so TOS */
   /* skips these tests which would crash the emulator as the reference the MMU */
 
   /* Fill in magic numbers, so TOS does not try to reference MMU */
-  STMemory_WriteLong(0x420, 0x752019f3);        /* memvalid - configuration is valid */
-  STMemory_WriteLong(0x43a, 0x237698aa);        /* another magic # */
-  STMemory_WriteLong(0x51a, 0x5555aaaa);        /* and another */
+  STMemory_WriteLong(0x420, 0x752019f3);          /* memvalid - configuration is valid */
+  STMemory_WriteLong(0x43a, 0x237698aa);          /* another magic # */
+  STMemory_WriteLong(0x51a, 0x5555aaaa);          /* and another */
+
+  /* Calculate end of RAM */
+  if (ConfigureParams.Memory.nMemorySize > 0 && ConfigureParams.Memory.nMemorySize <= 14)
+    STRamEnd = ConfigureParams.Memory.nMemorySize * 0x100000;
+  else
+    STRamEnd = 0x80000;   /* 512 KiB */
 
   /* Set memory size, adjust for extra VDI screens if needed */
   if (bUseVDIRes)
   {
-    /* This is enough for 1024x768x16colour (0x60000) */
-    STMemory_WriteLong(0x436, MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop-0x60000);  /* mem top - upper end of user memory (before 32k screen) */
-    STMemory_WriteLong(0x42e, MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop-0x58000);  /* phys top */
+    /* This is enough for 1024x768x16colors (0x60000) */
+    STMemory_WriteLong(0x436, STRamEnd-0x60000);  /* mem top - upper end of user memory (before 32k screen) */
+    STMemory_WriteLong(0x42e, STRamEnd-0x58000);  /* phys top */
   }
   else
   {
-    STMemory_WriteLong(0x436, MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop-0x8000);   /* mem top - upper end of user memory (before 32k screen) */
-    STMemory_WriteLong(0x42e, MemoryInfo[ConfigureParams.Memory.nMemorySize].PhysTop);          /* phys top */
+    STMemory_WriteLong(0x436, STRamEnd-0x8000);   /* mem top - upper end of user memory (before 32k screen) */
+    STMemory_WriteLong(0x42e, STRamEnd);          /* phys top */
   }
-  STMemory_WriteByte(0x424, MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryConfig);
-  STMemory_WriteByte(0xff8001, MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryConfig);
 
-  /* Set memory range */
-  STRamEnd = MemoryInfo[ConfigureParams.Memory.nMemorySize].MemoryEnd;  /* Set end of RAM */
+  /* Set memory controller byte according to different memory sizes */
+  /* Setting per bank: %00=128k %01=512k %10=2Mb %11=reserved. - e.g. %1010 means 4Mb */
+  if (ConfigureParams.Memory.nMemorySize <= 4)
+    nMemControllerByte = MemControllerTable[ConfigureParams.Memory.nMemorySize];
+  else
+    nMemControllerByte = 0x0f;
+  STMemory_WriteByte(0x424, nMemControllerByte);
+  STMemory_WriteByte(0xff8001, nMemControllerByte);
 
   /* Set TOS floppies */
   STMemory_WriteWord(0x446, nBootDrive);          /* Boot up on A(0) or C(2) */
   //STMemory_WriteWord(0x4a6, 0x2);                 /* Connected floppies A,B (0 or 2) */
 
   ConnectedDriveMask = ConnectedDriveMaskList[ConfigureParams.HardDisc.nDriveList];
-
-  STMemory_WriteLong(0x4c2, ConnectedDriveMask);  /* Drives A,B and C - NOTE some TOS images overwrite value, see 'TOS_ConnectedDrive_OpCode' */
+  STMemory_WriteLong(0x4c2, ConnectedDriveMask);  /* Drives A,B and C - NOTE: some TOS images overwrite value, see 'OpCode_SysInit' */
 
   /* Mirror ROM boot vectors */
   STMemory_WriteLong(0x00, STMemory_ReadLong(TosAddress));

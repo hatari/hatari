@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.43 2005-06-05 14:19:39 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.44 2005-08-13 11:21:44 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -223,7 +223,7 @@ void Configuration_SetDefault(void)
 	strcpy(ConfigureParams.Keyboard.szMappingFileName, "");
 
 	/* Set defaults for Memory */
-	ConfigureParams.Memory.nMemorySize = MEMORY_SIZE_1Mb;
+	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */
 	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s/hatari.sav", szWorkingDir);
 
 	/* Set defaults for Printer */

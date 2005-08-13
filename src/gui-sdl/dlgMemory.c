@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.7 2005-02-13 16:18:52 thothy Exp $";
+char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.8 2005-08-13 11:21:44 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -18,10 +18,12 @@ char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.7 2005-02-13 16:18:52 thot
 #define DLGMEM_1MB      5
 #define DLGMEM_2MB      6
 #define DLGMEM_4MB      7
-#define DLGMEM_FILENAME 11
-#define DLGMEM_SAVE     12
-#define DLGMEM_RESTORE  13
-#define DLGMEM_EXIT     14
+#define DLGMEM_8MB      8
+#define DLGMEM_14MB     9
+#define DLGMEM_FILENAME 13
+#define DLGMEM_SAVE     14
+#define DLGMEM_RESTORE  15
+#define DLGMEM_EXIT     16
 
 
 static char dlgSnapShotName[36+1];
@@ -35,10 +37,12 @@ static SGOBJ memorydlg[] =
   { SGBOX, 0, 0, 1,1, 38,7, NULL },
   { SGTEXT, 0, 0, 15,2, 12,1, "Memory setup" },
   { SGTEXT, 0, 0, 4,4, 12,1, "ST-RAM size:" },
-  { SGRADIOBUT, 0, 0, 19,4, 8,1, "512 kB" },
-  { SGRADIOBUT, 0, 0, 30,4, 6,1, "1 MB" },
-  { SGRADIOBUT, 0, 0, 19,6, 6,1, "2 MB" },
-  { SGRADIOBUT, 0, 0, 30,6, 6,1, "4 MB" },
+  { SGRADIOBUT, 0, 0, 18,4, 9,1, "512 KiB" },
+  { SGRADIOBUT, 0, 0, 18,5, 7,1, "1 MiB" },
+  { SGRADIOBUT, 0, 0, 18,6, 7,1, "2 MiB" },
+  { SGRADIOBUT, 0, 0, 29,4, 7,1, "4 MiB" },
+  { SGRADIOBUT, 0, 0, 29,5, 7,1, "8 MiB" },
+  { SGRADIOBUT, 0, 0, 29,6, 8,1, "14 MiB" },
 
   { SGBOX, 0, 0, 1,9, 38,8, NULL },
   { SGTEXT, 0, 0, 12,10, 17,1, "Memory state save" },
@@ -58,6 +62,7 @@ static SGOBJ memorydlg[] =
 */
 void Dialog_MemDlg(void)
 {
+  int i;
   int but;
   char *tmpname;
 
@@ -71,19 +76,21 @@ void Dialog_MemDlg(void)
 
   SDLGui_CenterDlg(memorydlg);
 
-  memorydlg[DLGMEM_512KB].state &= ~SG_SELECTED;
-  memorydlg[DLGMEM_1MB].state &= ~SG_SELECTED;
-  memorydlg[DLGMEM_2MB].state &= ~SG_SELECTED;
-  memorydlg[DLGMEM_4MB].state &= ~SG_SELECTED;
-  if( DialogParams.Memory.nMemorySize == MEMORY_SIZE_512Kb )
-    memorydlg[DLGMEM_512KB].state |= SG_SELECTED;
-  else if( DialogParams.Memory.nMemorySize == MEMORY_SIZE_1Mb )
-    memorydlg[DLGMEM_1MB].state |= SG_SELECTED;
-  else if( DialogParams.Memory.nMemorySize == MEMORY_SIZE_2Mb )
-    memorydlg[DLGMEM_2MB].state |= SG_SELECTED;
-  else
-    memorydlg[DLGMEM_4MB].state |= SG_SELECTED;
+  for (i = DLGMEM_512KB; i <= DLGMEM_14MB; i++)
+  {
+    memorydlg[i].state &= ~SG_SELECTED;
+  }
 
+  switch (DialogParams.Memory.nMemorySize)
+  {
+    case 0: memorydlg[DLGMEM_512KB].state |= SG_SELECTED; break;
+    case 1: memorydlg[DLGMEM_1MB].state |= SG_SELECTED; break;
+    case 2: memorydlg[DLGMEM_2MB].state |= SG_SELECTED; break;
+    case 4: memorydlg[DLGMEM_4MB].state |= SG_SELECTED; break;
+    case 8: memorydlg[DLGMEM_8MB].state |= SG_SELECTED; break;
+    default: memorydlg[DLGMEM_14MB].state |= SG_SELECTED; break;
+  }
+  
   File_ShrinkName(dlgSnapShotName, DialogParams.Memory.szMemoryCaptureFileName, memorydlg[DLGMEM_FILENAME].w);
 
   do
@@ -121,13 +128,17 @@ void Dialog_MemDlg(void)
   while (but != DLGMEM_EXIT && but != SDLGUI_QUIT && !bQuitProgram );
 
   if( memorydlg[DLGMEM_512KB].state & SG_SELECTED )
-    DialogParams.Memory.nMemorySize = MEMORY_SIZE_512Kb;
+    DialogParams.Memory.nMemorySize = 0;
   else if( memorydlg[DLGMEM_1MB].state & SG_SELECTED )
-    DialogParams.Memory.nMemorySize = MEMORY_SIZE_1Mb;
+    DialogParams.Memory.nMemorySize = 1;
   else if( memorydlg[DLGMEM_2MB].state & SG_SELECTED )
-    DialogParams.Memory.nMemorySize = MEMORY_SIZE_2Mb;
+    DialogParams.Memory.nMemorySize = 2;
+  else if( memorydlg[DLGMEM_4MB].state & SG_SELECTED )
+    DialogParams.Memory.nMemorySize = 4;
+  else if( memorydlg[DLGMEM_8MB].state & SG_SELECTED )
+    DialogParams.Memory.nMemorySize = 8;
   else
-    DialogParams.Memory.nMemorySize = MEMORY_SIZE_4Mb;
+    DialogParams.Memory.nMemorySize = 14;
 
   free(tmpname);
 }
