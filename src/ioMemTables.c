@@ -6,7 +6,7 @@
 
   Tables with hardware IO handlers.
 */
-char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.7 2005-08-08 14:10:33 thothy Exp $";
+char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.8 2005-08-14 22:41:28 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -212,7 +212,9 @@ INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff825c, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color14_WriteWord },        /* COLOR 14 */
 	{ 0xff825e, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color15_WriteWord },        /* COLOR 15 */
 	{ 0xff8260, SIZE_BYTE, Video_ShifterMode_ReadByte, Video_ShifterMode_WriteByte },
-	{ 0xff8261, 31,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
+	{ 0xff8261, 4,         IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
+	{ 0xff8265, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* STE horizontal fine scrolling */
+	{ 0xff8266, 26,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 
 	{ 0xff8604, SIZE_WORD, FDC_DiscControllerStatus_ReadWord, FDC_DiscController_WriteWord },
 	{ 0xff8606, SIZE_WORD, FDC_DmaStatus_ReadWord, FDC_DmaModeControl_WriteWord },
