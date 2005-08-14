@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.18 2005-08-13 11:21:44 thothy Exp $";
+char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.19 2005-08-14 18:29:37 eerot Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -656,7 +656,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 
     init_mem_banks();
 
-    /* Map the ST sytem RAM: */
+    /* Map the ST system RAM: */
     map_banks(&SysMem_bank, 0x00, 1);
     /* Between STRamEnd and 4MB barrier, there is void space: */
     map_banks(&VoidMem_bank, 0x08, 0x38);
@@ -698,7 +698,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     map_banks(&IOmem_bank, IOmem_start>>16, 0x1);
 
     /* Illegal memory regions cause a bus error on the ST: */
-    map_banks(&BusErrMem_bank, 0xF00000 >> 16, 0xA);  /* IDE controler on the Falcon */
+    map_banks(&BusErrMem_bank, 0xF00000 >> 16, 0xA);  /* IDE controller on the Falcon */
 }
 
 
