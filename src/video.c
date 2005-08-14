@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.37 2005-08-08 14:10:33 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.38 2005-08-14 19:51:41 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -46,8 +46,8 @@ int VBLCounter;                                 /* VBL counter */
 int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 70 Hz in mono */
 Uint32 VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */
 
-static Uint8 HWScrollCount;                     /* HW scroll count, STe only (0...15) */
-static Uint8 ScanLineWidth;                     /* Scan line width add, STe only (words, minus 1) */
+static Uint8 HWScrollCount;                     /* HW scroll pixel offset, STe only (0...15) */
+static Uint8 ScanLineSkip;                      /* Scan line width add, STe only (words, minus 1) */
 static Uint8 *pVideoRaster;                     /* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 static Uint8 VideoShifterByte;                  /* VideoShifter (0xff8260) value store in video chip */
 static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simulate left/right border removal */
@@ -74,7 +74,7 @@ void Video_Reset(void)
   /* Reset addresses */
   VideoBase = 0L;
   /* Reset STe screen variables */
-  ScanLineWidth = 0;
+  ScanLineSkip = 0;
   HWScrollCount = 0;
   /* Clear ready for new VBL */
   Video_ClearOnVBL();
@@ -97,7 +97,7 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(HBLPalettes,sizeof(HBLPalettes));
   MemorySnapShot_Store(HBLPaletteMasks,sizeof(HBLPaletteMasks));
   MemorySnapShot_Store(&VideoBase,sizeof(VideoBase));
-  MemorySnapShot_Store(&ScanLineWidth,sizeof(ScanLineWidth));
+  MemorySnapShot_Store(&ScanLineSkip,sizeof(ScanLineSkip));
   MemorySnapShot_Store(&HWScrollCount,sizeof(HWScrollCount));
   MemorySnapShot_Store(&pVideoRaster,sizeof(pVideoRaster));
 }
@@ -494,9 +494,9 @@ static void Video_CopyScreenLineMono(void)
       pVideoRaster += 1 * 2;
     }
 
-    /* ScanLineWidth is zero on ST. */
+    /* ScanLineSkip is zero on ST. */
     /* On STE, the Shifter skips the given amount of words. */
-    pVideoRaster += ScanLineWidth*2;
+    pVideoRaster += ScanLineSkip*2;
 
     /* Each screen line copied to buffer is always same length */
     pSTScreen += SCREENBYTES_MONOLINE;
@@ -605,9 +605,9 @@ static void Video_CopyScreenLineColor(int BorderMask)
       }
     }
 
-    /* ScanLineWidth is zero on ST. */
+    /* ScanLineSkip is zero on ST. */
     /* On STE, the Shifter skips the given amount of words. */
-    pVideoRaster += ScanLineWidth*2;
+    pVideoRaster += ScanLineSkip*2;
   }
 
   /* Each screen line copied to buffer is always same length */
@@ -624,7 +624,7 @@ static void Video_CopyScreenLine(int BorderMask)
   /* Read STE fine scrolling registers */
   if (ConfigureParams.System.nMachineType != MACHINE_ST)
   {
-    ScanLineWidth = STMemory_ReadByte(0xff820f);
+    ScanLineSkip = STMemory_ReadByte(0xff820f);
     HWScrollCount = STMemory_ReadByte(0xff8265) & 0x0f;
   }
 
