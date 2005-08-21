@@ -16,14 +16,15 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.15 2005-07-30 08:44:03 eerot Exp $";
+char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.16 2005-08-21 21:13:43 thothy Exp $";
 
 #include <SDL_types.h>
 #include <errno.h>
 
 #include "main.h"
 #include "blitter.h"
-#include "dialog.h"
+#include "configuration.h"
+#include "dmaSnd.h"
 #include "fdc.h"
 #include "file.h"
 #include "floppy.h"
@@ -41,7 +42,7 @@ char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.15 2005-07-30 08
 #include "video.h"
 
 
-#define VERSION_STRING      "0.70 "   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "0.71 "   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 
@@ -145,7 +146,8 @@ static BOOL MemorySnapShot_OpenFile(const char *pszFileName, BOOL bSave)
 		}
 		bCaptureSave = TRUE;
 		/* Store version string */
-		MemorySnapShot_Store(VERSION_STRING, VERSION_STRING_SIZE);
+		strcpy(VersionString, VERSION_STRING);
+		MemorySnapShot_Store(VersionString, VERSION_STRING_SIZE);
 	}
 	else
 	{
@@ -165,7 +167,7 @@ static BOOL MemorySnapShot_OpenFile(const char *pszFileName, BOOL bSave)
 		if (strcasecmp(VersionString, VERSION_STRING))
 		{
 			/* No, inform user and error */
-			Log_AlertDlg(LOG_WARN, "Unable to Restore Memory State.\nFile is"
+			Log_AlertDlg(LOG_WARN, "Unable to Restore Memory State.\nFile is "
 			                       "only compatible with Hatari v%s", VersionString);
 			bCaptureError = TRUE;
 			return(FALSE);
@@ -234,6 +236,7 @@ void MemorySnapShot_Capture(const char *pszFileName)
 		TOS_MemorySnapShot_Capture(TRUE);
 		Video_MemorySnapShot_Capture(TRUE);
 		Blitter_MemorySnapShot_Capture(TRUE);
+		DmaSnd_MemorySnapShot_Capture(TRUE);
 
 		/* And close */
 		MemorySnapShot_CloseFile();
@@ -273,6 +276,7 @@ void MemorySnapShot_Restore(const char *pszFileName)
 		TOS_MemorySnapShot_Capture(FALSE);
 		Video_MemorySnapShot_Capture(FALSE);
 		Blitter_MemorySnapShot_Capture(FALSE);
+		DmaSnd_MemorySnapShot_Capture(FALSE);
 
 		/* And close */
 		MemorySnapShot_CloseFile();

@@ -6,10 +6,11 @@
 
   Reset emulation state.
 */
-char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.9 2004-12-03 20:42:45 thothy Exp $";
+char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.10 2005-08-21 21:13:43 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
+#include "dmaSnd.h"
 #include "fdc.h"
 #include "floppy.h"
 #include "gemdos.h"
@@ -83,6 +84,7 @@ int Reset_ST(BOOL bCold)
     FDC_Reset();                /* Reset FDC */
   }
 
+  DmaSnd_Reset(bCold);          /* Reset DMA sound */
   PSG_Reset();                  /* Reset PSG */
   Sound_Reset();                /* Reset Sound */
   IKBD_Reset(bCold);            /* Keyboard */

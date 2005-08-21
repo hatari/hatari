@@ -15,15 +15,17 @@
 
 extern Uint16 nDmaSoundControl;
 
-void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate);
-void DmaSnd_InterruptHandler(void);
-void DmaSnd_SoundControl_ReadWord(void);
-void DmaSnd_SoundControl_WriteWord(void);
-void DmaSnd_FrameCountHigh_ReadByte(void);
-void DmaSnd_FrameCountMed_ReadByte(void);
-void DmaSnd_FrameCountLow_ReadByte(void);
-void DmaSnd_SoundMode_ReadWord(void);
-void DmaSnd_SoundMode_WriteWord(void);
-void DmaSnd_MicrowireData_ReadWord(void);
+extern void DmaSnd_Reset(BOOL bCold);
+extern void DmaSnd_MemorySnapShot_Capture(BOOL bSave);
+extern void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate);
+extern void DmaSnd_InterruptHandler(void);
+extern void DmaSnd_SoundControl_ReadWord(void);
+extern void DmaSnd_SoundControl_WriteWord(void);
+extern void DmaSnd_FrameCountHigh_ReadByte(void);
+extern void DmaSnd_FrameCountMed_ReadByte(void);
+extern void DmaSnd_FrameCountLow_ReadByte(void);
+extern void DmaSnd_SoundMode_ReadWord(void);
+extern void DmaSnd_SoundMode_WriteWord(void);
+extern void DmaSnd_MicrowireData_ReadWord(void);
 
 #endif /* HATARI_DMASND_H */
