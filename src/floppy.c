@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.26 2005-06-06 22:29:43 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.27 2005-08-21 22:20:32 thothy Exp $";
 
 #include <sys/stat.h>
 
@@ -32,6 +32,8 @@ char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.26 2005-06-06 22:29:43 thothy Ex
 #include "dim.h"
 #include "file.h"
 #include "floppy.h"
+#include "gemdos.h"
+#include "hdc.h"
 #include "log.h"
 #include "memorySnapShot.h"
 #include "msa.h"
@@ -113,15 +115,15 @@ void Floppy_MemorySnapShot_Capture(BOOL bSave)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Find which device to boot from
+  Find which device to boot from (hard drive or floppy).
 */
 void Floppy_GetBootDrive(void)
 {
-  /* If we've inserted a disc or not enabled boot from hard-drive, boot from the floppy drive */
-  if ( (!ConfigureParams.HardDisc.bBootFromHardDisc) || (EmulationDrives[0].bDiscInserted) )
-    nBootDrive = 0;  /* Drive A */
-  else
+  /* Boot from hard drive if user wants this and HD emulation is turned on */
+  if ((ACSI_EMU_ON || GEMDOS_EMU_ON) && ConfigureParams.HardDisc.bBootFromHardDisc)
     nBootDrive = 2;  /* Drive C */
+  else
+    nBootDrive = 0;  /* Drive A */
 }
 
 
