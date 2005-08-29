@@ -30,16 +30,10 @@ extern int nScreenRefreshRate;
 
 extern void Video_Reset(void);
 extern void Video_MemorySnapShot_Capture(BOOL bSave);
-extern void Video_ClearOnVBL(void);
 extern void Video_InterruptHandler_VBL(void);
 extern void Video_InterruptHandler_EndLine(void);
 extern void Video_InterruptHandler_HBL(void);
-extern void Video_WriteToShifter(Uint8 Byte);
-extern void Video_StartHBL(void);
-extern void Video_CopyVDIScreen(void);
-extern void Video_EndHBL(void);
 extern void Video_SetScreenRasters(void);
-extern void Video_SetHBLPaletteMaskPointers(void);
 
 extern void Video_ScreenCounterHigh_ReadByte(void);
 extern void Video_ScreenCounterMed_ReadByte(void);

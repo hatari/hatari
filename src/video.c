@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.38 2005-08-14 19:51:41 eerot Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.39 2005-08-29 19:29:07 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -55,33 +55,6 @@ static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simul
 
 /*-----------------------------------------------------------------------*/
 /*
-  Reset video chip
-*/
-void Video_Reset(void)
-{
-  /* NOTE! Must reset all of these register type things here!!!! */
-
-  /* Are we in high-res? */
-  if (bUseHighRes)
-    VideoShifterByte = ST_HIGH_RES;    /* Boot up for mono monitor */
-  else
-    VideoShifterByte = ST_LOW_RES;
-  if(bUseVDIRes)
-    VideoShifterByte = VDIRes;
-
-  /* Reset VBL counter */
-  nVBLs = 0;
-  /* Reset addresses */
-  VideoBase = 0L;
-  /* Reset STe screen variables */
-  ScanLineSkip = 0;
-  HWScrollCount = 0;
-  /* Clear ready for new VBL */
-  Video_ClearOnVBL();
-}
-
-/*-----------------------------------------------------------------------*/
-/*
   Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
 */
 void Video_MemorySnapShot_Capture(BOOL bSave)
@@ -100,32 +73,6 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&ScanLineSkip,sizeof(ScanLineSkip));
   MemorySnapShot_Store(&HWScrollCount,sizeof(HWScrollCount));
   MemorySnapShot_Store(&pVideoRaster,sizeof(pVideoRaster));
-}
-
-/*-----------------------------------------------------------------------*/
-/*
-  Called on VBL, set registers ready for frame
-*/
-void Video_ClearOnVBL(void)
-{
-  /* New screen, so first HBL */
-  nHBL = 0;
-  nStartHBL = SCREEN_START_HBL;
-  nEndHBL = SCREEN_START_HBL+SCREEN_HEIGHT_HBL;
-  OverscanMode = OVERSCANMODE_NONE;
-
-  /* Get screen address pointer, aligned to 256 bytes on ST (ie ignore lowest byte) */
-  VideoBase = (Uint32)STMemory_ReadByte(0xff8201)<<16 | (Uint32)STMemory_ReadByte(0xff8203)<<8;
-  if (ConfigureParams.System.nMachineType != MACHINE_ST) {
-    /* on STe 2 aligned, on Falcon 4 aligned, on TT 4 aligned. We do STe. */
-    VideoBase |= STMemory_ReadByte(0xff820d) & ~1;
-  }
-  pVideoRaster = &STRam[VideoBase];
-  pSTScreen = pFrameBuffer->pSTScreen;
-
-  Video_StartHBL();
-  Video_SetScreenRasters();
-  Spec512_StartVBL();
 }
 
 
@@ -170,141 +117,6 @@ static Uint32 Video_CalculateAddress(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  VBL interrupt, draw screen and reset counters
-*/
-void Video_InterruptHandler_VBL(void)
-{
-  int PendingCyclesOver;
-  int nNewMilliTicks;
-  static int nOldMilliTicks = 0;
-  signed int nDelay;
-
-  /* Store cycles we went over for this frame(this is our inital count) */
-  PendingCyclesOver = -PendingInterruptCount;    /* +ve */
-
-  /* Remove this interrupt from list and re-order */
-  Int_AcknowledgeInterrupt();
-  /* Start HBL interrupts - MUST do before add in cycles */
-  Int_AddAbsoluteInterrupt(CYCLES_ENDLINE,INTERRUPT_VIDEO_ENDLINE);
-  Int_AddAbsoluteInterrupt(CYCLES_HBL,INTERRUPT_VIDEO_HBL);
-  Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME,INTERRUPT_VIDEO_VBL);
-
-  /* Set frame cycles, used for Video Address */
-  nFrameCyclesOver = PendingCyclesOver;      /* Number of cycles into frame */
-
-  /* Set the screen refresh rate */
-#if 0
-  if(bUseHighRes)
-    nScreenRefreshRate = 70;
-  else if(IoMem[0xff820a] & 2)               /* Is it 50Hz or is it 60Hz? */
-    nScreenRefreshRate = 50;
-  else
-    nScreenRefreshRate = 60;
-#endif
-
-  VBLCounter += 1;
-
-  /* Clear any key presses which are due to be de-bounced (held for one ST frame) */
-  Keymap_DebounceAllKeys();
-  /* Check shortcut keys */
-  ShortCut_CheckKeys();
-
-  /* Use extended VDI resolution? If so, just copy whole screen on VBL rather than per HBL */
-  if (bUseVDIRes)
-    Video_CopyVDIScreen();
-
-  /* Draw screen, skip frame if need to */
-  if (ConfigureParams.Screen.bFrameSkip)
-  {
-    if (nVBLs&1)
-      Screen_Draw();
-  }
-  else
-    Screen_Draw();
-
-  /* Update counter for number of screen refreshes per second(for debugging) */
-  nVBLs++;
-  /* Set video registers for frame */
-  Video_ClearOnVBL();
-  /* Store off PSG registers for YM file, is enabled */
-  YMFormat_UpdateRecording();
-  /* Generate 1/50th second of sound sample data, to be played by sound thread */
-  Sound_Update_VBL();
-
-  M68000_Exception(EXCEPTION_VBLANK);   /* Vertical blank interrupt, level 4! */
-
-  /* And handle any messages, check for quit message */
-  Main_EventHandler();         /* Process messages, set 'bQuitProgram' if user tries to quit */
-  if (bQuitProgram)
-  {
-    Int_AddAbsoluteInterrupt(4, 0L);  /* Pass NULL interrupt function to quit cleanly */
-    set_special(SPCFLAG_BRK);         /* Assure that CPU core shuts down */
-  }
-
-  if (ConfigureParams.System.nMinMaxSpeed != MINMAXSPEED_MAX)
-  {
-    /* Wait, so we stay in sync with the sound */
-    do
-    {
-      nNewMilliTicks = SDL_GetTicks();
-      nDelay = 1000/nScreenRefreshRate - (nNewMilliTicks-nOldMilliTicks);
-      if(nDelay > 2)
-      {
-        /* SDL_Delay seems to be quite inaccurate, so we don't wait the whole time */
-        SDL_Delay(nDelay - 1);
-      }
-    }
-    while(nDelay > 0);
-    nOldMilliTicks = nNewMilliTicks;
-  }
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  End Of Line interrupt
-  As this occurs at the end of a line we cannot get timing for START of first
-  line (as in Spectrum 512)
-*/
-void Video_InterruptHandler_EndLine(void)
-{
-  /* Remove this interrupt from list and re-order */
-  Int_AcknowledgeInterrupt();
-  /* Generate new HBL, if need to - there are 313 HBLs per frame */
-  if (nHBL<(SCANLINES_PER_FRAME-1))
-    Int_AddAbsoluteInterrupt(CYCLES_PER_LINE,INTERRUPT_VIDEO_ENDLINE);
-
-  /* Is this a good place to send the keyboard packets? Done once per frame */
-  if(nHBL == nStartHBL)
-  {
-    /* On each VBL send automatic keyboard packets for mouse, joysticks etc... */
-    IKBD_SendAutoKeyboardCommands();
-  }
-
-  /* Timer A/B occur at END of first visible screen line in Event Count mode */
-  if ( (nHBL>=nStartHBL) && (nHBL<nEndHBL) )
-   {
-    /* Handle Timers A and B when using Event Count mode(timer taken from HBL) */
-// FIXME: Really raise Timer A here?
-//    if (MFP_TACR==0x08)        /* Is timer in Event Count mode? */
-//      MFP_TimerA_EventCount_Interrupt();
-    if (MFP_TBCR==0x08)        /* Is timer in Event Count mode? */
-      MFP_TimerB_EventCount_Interrupt();
-   }
-
-  FDC_UpdateHBL();             /* Update FDC motion */
-  Video_EndHBL();              /* Increase HBL count, copy line to display buffer and do any video trickery */
-
-  /* If we don't often pump data into the event queue, the SDL misses events... grr... */
-  if( !(nHBL&63) )
-  {
-    Main_EventHandler();
-  }
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
   HBL interrupt - this is very inaccurate on ST and appears to occur around 1/3rd way into
   the display!
 */
@@ -325,7 +137,7 @@ void Video_InterruptHandler_HBL(void)
 /*
   Write to VideoShifter (0xff8260), resolution bits
 */
-void Video_WriteToShifter(Uint8 Byte)
+static void Video_WriteToShifter(Uint8 Byte)
 {
   static int nLastHBL = -1, LastByte, nLastCycles;
   int nFrameCycles, nLineCycles;
@@ -414,7 +226,7 @@ void Video_Sync_WriteByte(void)
 /*
   Reset Sync/Shifter table at start of each HBL
 */
-void Video_StartHBL(void)
+static void Video_StartHBL(void)
 {
   LeftRightBorder = 0;
 }
@@ -651,7 +463,7 @@ static void Video_CopyScreenLine(int BorderMask)
 /*
   Copy extended GEM resolution screen
 */
-void Video_CopyVDIScreen(void)
+static void Video_CopyVDIScreen(void)
 {
   /* Copy whole screen, don't care about being exact as for GEM only */
   memcpy(pSTScreen, pVideoRaster, ((VDIWidth*VDIPlanes)/8)*VDIHeight);  /* 640x400x16colour */
@@ -662,7 +474,7 @@ void Video_CopyVDIScreen(void)
 /*
   Check at end of each HBL to see if any Sync/Shifter hardware tricks have been attempted
 */
-void Video_EndHBL(void)
+static void Video_EndHBL(void)
 {
   /* Are we in possible visible display (including borders)? */
   if ( (nHBL>=FIRST_VISIBLE_HBL) && (nHBL<(FIRST_VISIBLE_HBL+NUM_VISIBLE_LINES)) ) {
@@ -691,8 +503,54 @@ void Video_EndHBL(void)
 }
 
 
-/* Clear raster line table to store changes in palette/resolution on a line basic */
-/* Call once on VBL interrupt */
+/*-----------------------------------------------------------------------*/
+/*
+  End Of Line interrupt
+  As this occurs at the end of a line we cannot get timing for START of first
+  line (as in Spectrum 512)
+*/
+void Video_InterruptHandler_EndLine(void)
+{
+  /* Remove this interrupt from list and re-order */
+  Int_AcknowledgeInterrupt();
+  /* Generate new HBL, if need to - there are 313 HBLs per frame */
+  if (nHBL < SCANLINES_PER_FRAME-1)
+    Int_AddAbsoluteInterrupt(CYCLES_PER_LINE,INTERRUPT_VIDEO_ENDLINE);
+
+  /* Is this a good place to send the keyboard packets? Done once per frame */
+  if (nHBL == nStartHBL)
+  {
+    /* On each VBL send automatic keyboard packets for mouse, joysticks etc... */
+    IKBD_SendAutoKeyboardCommands();
+  }
+
+  /* Timer A/B occur at END of first visible screen line in Event Count mode */
+  if (nHBL >= nStartHBL && nHBL < nEndHBL)
+   {
+    /* Handle Timers A and B when using Event Count mode(timer taken from HBL) */
+// FIXME: Really raise Timer A here?
+//    if (MFP_TACR==0x08)        /* Is timer in Event Count mode? */
+//      MFP_TimerA_EventCount_Interrupt();
+    if (MFP_TBCR==0x08)        /* Is timer in Event Count mode? */
+      MFP_TimerB_EventCount_Interrupt();
+   }
+
+  FDC_UpdateHBL();             /* Update FDC motion */
+  Video_EndHBL();              /* Increase HBL count, copy line to display buffer and do any video trickery */
+
+  /* If we don't often pump data into the event queue, the SDL misses events... grr... */
+  if (!(nHBL & 63))
+  {
+    Main_EventHandler();
+  }
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Clear raster line table to store changes in palette/resolution on a line
+  basic. Called once on VBL interrupt.
+*/
 void Video_SetScreenRasters(void)
 {
   pHBLPaletteMasks = HBLPaletteMasks;
@@ -705,7 +563,7 @@ void Video_SetScreenRasters(void)
 /*
   Set pointers to HBLPalette tables to store correct colours/resolutions
 */
-void Video_SetHBLPaletteMaskPointers(void)
+static void Video_SetHBLPaletteMaskPointers(void)
 {
   int FrameCycles;
   int Line;
@@ -730,6 +588,154 @@ void Video_SetHBLPaletteMaskPointers(void)
   /* Store pointers */
   pHBLPaletteMasks = &HBLPaletteMasks[Line];  /* Next mask entry */
   pHBLPalettes = &HBLPalettes[16*Line];       /* Next colour raster list x16 colours */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Called on VBL, set registers ready for frame
+*/
+static void Video_ClearOnVBL(void)
+{
+  /* New screen, so first HBL */
+  nHBL = 0;
+  nStartHBL = SCREEN_START_HBL;
+  nEndHBL = SCREEN_START_HBL+SCREEN_HEIGHT_HBL;
+  OverscanMode = OVERSCANMODE_NONE;
+
+  /* Get screen address pointer, aligned to 256 bytes on ST (ie ignore lowest byte) */
+  VideoBase = (Uint32)STMemory_ReadByte(0xff8201)<<16 | (Uint32)STMemory_ReadByte(0xff8203)<<8;
+  if (ConfigureParams.System.nMachineType != MACHINE_ST)
+  {
+    /* on STe 2 aligned, on Falcon 4 aligned, on TT 4 aligned. We do STe. */
+    VideoBase |= STMemory_ReadByte(0xff820d) & ~1;
+  }
+  pVideoRaster = &STRam[VideoBase];
+  pSTScreen = pFrameBuffer->pSTScreen;
+
+  Video_StartHBL();
+  Video_SetScreenRasters();
+  Spec512_StartVBL();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  VBL interrupt, draw screen and reset counters
+*/
+void Video_InterruptHandler_VBL(void)
+{
+  int PendingCyclesOver;
+  int nNewMilliTicks;
+  static int nOldMilliTicks = 0;
+  signed int nDelay;
+
+  /* Store cycles we went over for this frame(this is our inital count) */
+  PendingCyclesOver = -PendingInterruptCount;    /* +ve */
+
+  /* Remove this interrupt from list and re-order */
+  Int_AcknowledgeInterrupt();
+  /* Start HBL interrupts - MUST do before add in cycles */
+  Int_AddAbsoluteInterrupt(CYCLES_ENDLINE,INTERRUPT_VIDEO_ENDLINE);
+  Int_AddAbsoluteInterrupt(CYCLES_HBL,INTERRUPT_VIDEO_HBL);
+  Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME,INTERRUPT_VIDEO_VBL);
+
+  /* Set frame cycles, used for Video Address */
+  nFrameCyclesOver = PendingCyclesOver;      /* Number of cycles into frame */
+
+  /* Set the screen refresh rate */
+#if 0
+  if(bUseHighRes)
+    nScreenRefreshRate = 70;
+  else if(IoMem[0xff820a] & 2)               /* Is it 50Hz or is it 60Hz? */
+    nScreenRefreshRate = 50;
+  else
+    nScreenRefreshRate = 60;
+#endif
+
+  VBLCounter += 1;
+
+  /* Clear any key presses which are due to be de-bounced (held for one ST frame) */
+  Keymap_DebounceAllKeys();
+  /* Check shortcut keys */
+  ShortCut_CheckKeys();
+
+  /* Use extended VDI resolution? If so, just copy whole screen on VBL rather than per HBL */
+  if (bUseVDIRes)
+    Video_CopyVDIScreen();
+
+  /* Draw screen, skip frame if need to */
+  if (ConfigureParams.Screen.bFrameSkip)
+  {
+    if (nVBLs&1)
+      Screen_Draw();
+  }
+  else
+    Screen_Draw();
+
+  /* Update counter for number of screen refreshes per second(for debugging) */
+  nVBLs++;
+  /* Set video registers for frame */
+  Video_ClearOnVBL();
+  /* Store off PSG registers for YM file, is enabled */
+  YMFormat_UpdateRecording();
+  /* Generate 1/50th second of sound sample data, to be played by sound thread */
+  Sound_Update_VBL();
+
+  M68000_Exception(EXCEPTION_VBLANK);   /* Vertical blank interrupt, level 4! */
+
+  /* And handle any messages, check for quit message */
+  Main_EventHandler();         /* Process messages, set 'bQuitProgram' if user tries to quit */
+  if (bQuitProgram)
+  {
+    Int_AddAbsoluteInterrupt(4, 0L);  /* Pass NULL interrupt function to quit cleanly */
+    set_special(SPCFLAG_BRK);         /* Assure that CPU core shuts down */
+  }
+
+  if (ConfigureParams.System.nMinMaxSpeed != MINMAXSPEED_MAX)
+  {
+    /* Wait, so we stay in sync with the sound */
+    do
+    {
+      nNewMilliTicks = SDL_GetTicks();
+      nDelay = 1000/nScreenRefreshRate - (nNewMilliTicks-nOldMilliTicks);
+      if(nDelay > 2)
+      {
+        /* SDL_Delay seems to be quite inaccurate, so we don't wait the whole time */
+        SDL_Delay(nDelay - 1);
+      }
+    }
+    while(nDelay > 0);
+    nOldMilliTicks = nNewMilliTicks;
+  }
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Reset video chip
+*/
+void Video_Reset(void)
+{
+  /* NOTE! Must reset all of these register type things here!!!! */
+
+  /* Are we in high-res? */
+  if (bUseHighRes)
+    VideoShifterByte = ST_HIGH_RES;    /* Boot up for mono monitor */
+  else
+    VideoShifterByte = ST_LOW_RES;
+  if(bUseVDIRes)
+    VideoShifterByte = VDIRes;
+
+  /* Reset VBL counter */
+  nVBLs = 0;
+  /* Reset addresses */
+  VideoBase = 0L;
+  /* Reset STe screen variables */
+  ScanLineSkip = 0;
+  HWScrollCount = 0;
+  /* Clear ready for new VBL */
+  Video_ClearOnVBL();
 }
 
 
