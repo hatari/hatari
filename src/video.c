@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.39 2005-08-29 19:29:07 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.40 2005-08-29 20:13:43 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -34,6 +34,11 @@ char Video_rcsid[] = "Hatari $Id: video.c,v 1.39 2005-08-29 19:29:07 thothy Exp 
 #include "ymFormat.h"
 
 
+#define BORDERMASK_NONE    0x00                 /* Borders masks */
+#define BORDERMASK_LEFT    0x01
+#define BORDERMASK_RIGHT   0x02
+
+
 BOOL bUseHighRes = FALSE;                       /* Use hi-res (ie Mono monitor) */
 int nVBLs, nHBL;                                /* VBL Counter, HBL line */
 int nStartHBL, nEndHBL;                         /* Start/End HBL for visible screen(64 lines in Top border) */
@@ -42,7 +47,6 @@ Uint16 HBLPalettes[(NUM_VISIBLE_LINES+1)*16];   /* 1x16 colour palette per scree
 Uint16 *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
 Uint32 HBLPaletteMasks[NUM_VISIBLE_LINES+1];    /* Bit mask of palette colours changes, top bit set is resolution change */
 Uint32 *pHBLPaletteMasks;
-int VBLCounter;                                 /* VBL counter */
 int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 70 Hz in mono */
 Uint32 VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */
 
@@ -228,7 +232,7 @@ void Video_Sync_WriteByte(void)
 */
 static void Video_StartHBL(void)
 {
-  LeftRightBorder = 0;
+  LeftRightBorder = BORDERMASK_NONE;
 }
 
 
@@ -321,10 +325,10 @@ static void Video_CopyScreenLineMono(void)
   Copy one line of color screen into buffer for conversion later.
   Possible lines may be top/bottom border, and/or left/right borders.
 */
-static void Video_CopyScreenLineColor(int BorderMask)
+static void Video_CopyScreenLineColor(void)
 {
-  /* Is total blank line? Ie top/bottom border? */
-  if (BorderMask&(BORDERMASK_TOP|BORDERMASK_BOTTOM))
+  /* Is total blank line? I.e. top/bottom border? */
+  if (nHBL < nStartHBL || nHBL >= nEndHBL)
   {
     /* Clear line to color '0' */
     memset(pSTScreen, 0, SCREENBYTES_LINE);
@@ -332,7 +336,7 @@ static void Video_CopyScreenLineColor(int BorderMask)
   else
   {
     /* Does have left border? If not, clear to color '0' */
-    if (BorderMask & BORDERMASK_LEFT)
+    if (LeftRightBorder & BORDERMASK_LEFT)
     {
       pVideoRaster += 24-SCREENBYTES_LEFT;
       memcpy(pSTScreen, pVideoRaster, SCREENBYTES_LEFT);
@@ -346,7 +350,7 @@ static void Video_CopyScreenLineColor(int BorderMask)
     pVideoRaster += SCREENBYTES_MIDDLE;
 
     /* Does have right border? If not, clear to color '0' */
-    if (BorderMask & BORDERMASK_RIGHT)
+    if (LeftRightBorder & BORDERMASK_RIGHT)
     {
       memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT);
       pVideoRaster += 46-SCREENBYTES_RIGHT;
@@ -363,11 +367,11 @@ static void Video_CopyScreenLineColor(int BorderMask)
       Uint16 *pScrollEndAddr;   /* Pointer to end of the line */
 
       nNegScrollCnt = 16 - HWScrollCount;
-      if (BorderMask & BORDERMASK_LEFT)
+      if (LeftRightBorder & BORDERMASK_LEFT)
         pScrollAdj = (Uint16 *)pSTScreen;
       else
         pScrollAdj = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT);
-      if (BorderMask & BORDERMASK_RIGHT)
+      if (LeftRightBorder & BORDERMASK_RIGHT)
         pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LINE - 8);
       else
         pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT + SCREENBYTES_MIDDLE - 8);
@@ -388,7 +392,7 @@ static void Video_CopyScreenLineColor(int BorderMask)
           ++pScrollAdj;
         }
         /* Handle the last 16 pixels of the line */
-        if (BorderMask & BORDERMASK_RIGHT)
+        if (LeftRightBorder & BORDERMASK_RIGHT)
         {
           /* When right border is open, we have to deal with this ugly offset
            * of 46-SCREENBYTES_RIGHT=30 - The demo "Mind rewind" is a good example */
@@ -431,7 +435,7 @@ static void Video_CopyScreenLineColor(int BorderMask)
 /*
   Copy line of screen into buffer for conversion later.
 */
-static void Video_CopyScreenLine(int BorderMask)
+static void Video_CopyScreenLine(void)
 {
   /* Read STE fine scrolling registers */
   if (ConfigureParams.System.nMachineType != MACHINE_ST)
@@ -443,8 +447,6 @@ static void Video_CopyScreenLine(int BorderMask)
   /* Only copy screen line if not doing high VDI resolution */
   if (!bUseVDIRes)
   {
-    BorderMask |= LeftRightBorder;
-
     if (bUseHighRes)
     {
       /* Copy for hi-res (no overscan) */
@@ -453,7 +455,7 @@ static void Video_CopyScreenLine(int BorderMask)
     else
     {
       /* Copy for low and medium resolution */
-      Video_CopyScreenLineColor(BorderMask);
+      Video_CopyScreenLineColor();
     }
   }
 }
@@ -477,18 +479,15 @@ static void Video_CopyVDIScreen(void)
 static void Video_EndHBL(void)
 {
   /* Are we in possible visible display (including borders)? */
-  if ( (nHBL>=FIRST_VISIBLE_HBL) && (nHBL<(FIRST_VISIBLE_HBL+NUM_VISIBLE_LINES)) ) {
-    /* Copy line of screen to buffer to simulate TV raster trace - required for mouse cursor display/game updates */
-    /* Eg, Lemmings and The Killing Game Show are good examples */
+  if (nHBL >= FIRST_VISIBLE_HBL && nHBL < FIRST_VISIBLE_HBL+NUM_VISIBLE_LINES)
+  {
+    /* Copy line of screen to buffer to simulate TV raster trace
+     * - required for mouse cursor display/game updates
+     * Eg, Lemmings and The Killing Game Show are good examples */
+    Video_CopyScreenLine();
 
-    if (nHBL<nStartHBL)                /* Are we in top border blank (ie no top overscan enabled) */
-      Video_CopyScreenLine(BORDERMASK_TOP);
-    else if (nHBL>=nEndHBL)            /* Are we in bottom border blank */
-      Video_CopyScreenLine(BORDERMASK_BOTTOM);
-    else                               /* Must be in visible screen(including overscan), ignore left/right borders for now */
-      Video_CopyScreenLine(BORDERMASK_NONE);
-
-    if (nHBL==FIRST_VISIBLE_HBL) {    /* Very first line on screen - HBLPalettes[0] */
+    if (nHBL == FIRST_VISIBLE_HBL)    /* Very first line on screen - HBLPalettes[0] */
+    {
       /* Store ALL palette for this line into raster table for datum */
       Video_StoreFirstLinePalette();
     }
@@ -653,25 +652,22 @@ void Video_InterruptHandler_VBL(void)
     nScreenRefreshRate = 60;
 #endif
 
-  VBLCounter += 1;
-
   /* Clear any key presses which are due to be de-bounced (held for one ST frame) */
   Keymap_DebounceAllKeys();
   /* Check shortcut keys */
   ShortCut_CheckKeys();
 
-  /* Use extended VDI resolution? If so, just copy whole screen on VBL rather than per HBL */
-  if (bUseVDIRes)
-    Video_CopyVDIScreen();
-
   /* Draw screen, skip frame if need to */
-  if (ConfigureParams.Screen.bFrameSkip)
+  if (!ConfigureParams.Screen.bFrameSkip || (nVBLs&1))
   {
-    if (nVBLs&1)
-      Screen_Draw();
-  }
-  else
+    /* Use extended VDI resolution?
+     * If so, just copy whole screen on VBL rather than per HBL */
+    if (bUseVDIRes)
+      Video_CopyVDIScreen();
+
+    /* Now draw the screen! */
     Screen_Draw();
+  }
 
   /* Update counter for number of screen refreshes per second(for debugging) */
   nVBLs++;

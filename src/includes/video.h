@@ -10,12 +10,6 @@
 
 #include <SDL_types.h>
 
-#define BORDERMASK_NONE    0x0000      /* Borders masks */
-#define BORDERMASK_TOP     0x0001
-#define BORDERMASK_BOTTOM  0x0002
-#define BORDERMASK_LEFT    0x0004
-#define BORDERMASK_RIGHT   0x0008
-
 extern BOOL bUseHighRes;
 extern int nVBLs,nHBL;
 extern int nStartHBL, nEndHBL;
@@ -25,7 +19,6 @@ extern Uint16 *pHBLPalettes;
 extern Uint32 HBLPaletteMasks[NUM_VISIBLE_LINES+1];
 extern Uint32 *pHBLPaletteMasks;
 extern Uint32 VideoBase;
-extern int VBLCounter;
 extern int nScreenRefreshRate;
 
 extern void Video_Reset(void);

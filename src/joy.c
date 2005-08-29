@@ -9,7 +9,7 @@
   NOTE Also the ST uses the joystick port 1 as the default controller
          - so we allocate our joysticks  with index 1 and then 0 so these match.
 */
-char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.5 2005-04-05 14:41:27 thothy Exp $";
+char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.6 2005-08-29 20:13:43 thothy Exp $";
 
 #include <SDL.h>
 
@@ -167,7 +167,7 @@ unsigned char Joy_GetStickData(unsigned int JoystickID)
 
   /* Ignore fire button every 8 frames if enabled autofire (for both cursor emulation and joystick) */
   if (ConfigureParams.Joysticks.Joy[JoystickID].bEnableAutoFire) {
-    if ((VBLCounter&0x7)<4)
+    if ((nVBLs&0x7)<4)
       Data &= 0x7f;          /* Remove top bit! */
   }
 
