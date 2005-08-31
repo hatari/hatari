@@ -48,7 +48,7 @@
 <h1 align="center">Hatari User's Manual</h1>
 
 <p align="center">
-Version 0.70
+Version 0.71
 </p>
 <p align="center">
 Project initiator and main developer of Hatari: <strong>Thomas Huth</strong>
@@ -420,6 +420,7 @@ made.</p>
  plain 68000.</p>
 <p>Choose whether you want to emulate a normal ST or an STE.
  <em>Note:</em> STE emulation is very incomplete. It may not work very well.</p>
+<p>For STE emulation a STE compatible TOS image, e.q. version 1.06, 1.62 or 2.x, is strongly recommended.</p>
 <p>Select the CPU clock you want to use. 8Mhz is ST standard and the most
  compatible, 16MHz is for Mega STE emulation.</p>
 <p>With the &quot;Slower but more compatible CPU&quot; option, you can enable
@@ -1173,7 +1174,7 @@ Hatari. It is by no means finished.</p>
       <td>Wings Of Death</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>&nbsp;</td>
+      <td>works in STE mode too</td>
     </tr>
     <tr>
       <td>Toki</td>
@@ -1329,6 +1330,283 @@ with disk images</td>
   </tbody>
 </table>
 
+<p>Now a list of STE only software that has been tested with the current STE hardware emulation.</p>
+<p>First some STE or STE enhanced games that do work with STE features in Hatari.</p>
+<table border="1" cellpadding="3">
+  <caption align="bottom">tested STE games</caption> <tbody>
+    <tr class="backdropped">
+      <td align="center">Title</td>
+      <td align="center">Working</td>
+      <td align="center">Sound</td>
+      <td align="center">Comment</td>
+    </tr>
+    <tr>
+      <td>Roger</td>
+      <td>partially</td>
+      <td>&nbsp;</td>
+      <td>Blitter timings inaccurate - game is too fast</td>
+    </tr>
+    <tr>
+      <td>Pacman on E</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Breakdance</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td><em>THE</em> ultimate scene game</td>
+    </tr>
+    <tr>
+      <td>Alien Blast</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Battletris+</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Blat!</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Bombaman</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>ChuChu Rocket</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>run from disk image</td>
+    </tr>
+    <tr>
+      <td>Dynabusters+</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Manga Puzzle</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Penta</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>Blitter, DMA audio and STE fadings do work properly</td>
+    </tr>
+    <tr>
+      <td>No Limit II</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Obsession</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>opens top &amp; bottom border, but part from the right is not visible on screen</td>
+    </tr>
+    <tr>
+      <td>Operation Garfield</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Skulls</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>part from the right border is not visible on screen</td>
+    </tr>
+    <tr>
+      <td>Stardust</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Substation</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>TomTar</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Wolfenstein 3D</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>STE DMA sound does work</td>
+    </tr>
+    <tr>
+      <td>Utopos</td>
+      <td>partially</td>
+      <td>&nbsp;</td>
+      <td>screen corrupted</td>
+    </tr>
+    <tr>
+      <td>Zool</td>
+      <td>partially</td>
+      <td>&nbsp;</td>
+      <td>screen corrupted, scrolling fails</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Some tested STE demos and intros</p>
+<table border="1" cellpadding="3">
+  <caption align="bottom">tested STE demos</caption> <tbody>
+    <tr class="backdropped">
+      <td align="center">Title</td>
+      <td align="center">Working</td>
+      <td align="center">Sound</td>
+      <td align="center">Comment</td>
+    </tr>
+    <tr>
+      <td>Aggression: Braindamage</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Armada: Armada is Dead</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>bottom border broken</td>
+    </tr>
+    <tr>
+      <td>DHS: Tyranny &amp; Massacre</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>GGN: Alive</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Ice: Extacy</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Imagina: 1992 X-mas demo</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>flickers without frameskip</td>
+    </tr>
+    <tr>
+      <td>MJJ-Prod: 1st Step</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>New Core: Beyond Deadline</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Omega: Grotesque</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Paradox: X-mas 1994 demo</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Reservoir Gods: Mind Rewind</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>opens all borders</td>
+    </tr>
+    <tr>
+      <td>Reservoir Gods: Grimey</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Syntax: Reanimation</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>MJJ-Prod: Tribute To Rainbow Tos</td>
+      <td>partially</td>
+      <td>&nbsp;</td>
+      <td>screen corrupted, Blittermania does not work but the code does not crash nor lockup</td>
+    </tr>
+    <tr>
+      <td>Armada: RGBRuler demo</td>
+      <td>partially</td>
+      <td>&nbsp;</td>
+      <td>doesn't look right</td>
+    </tr>
+    <tr>
+      <td>New Core: Core Flakes</td>
+      <td>partially</td>
+      <td>&nbsp;</td>
+      <td>doesn't look right</td>
+    </tr>
+    <tr>
+      <td>TSCC: VGA slideshow</td>
+      <td>partially</td>
+      <td>&nbsp;</td>
+      <td>doesn't look right</td>
+    </tr>    
+  </tbody>
+</table>
+
+<p>Finally some tested STE applications</p>
+<table border="1" cellpadding="3">
+  <caption align="bottom">tested STE application</caption> <tbody>
+    <tr class="backdropped">
+      <td align="center">Title</td>
+      <td align="center">Working</td>
+      <td align="center">Sound</td>
+      <td align="center">Comment</td>
+    </tr>
+    <tr>
+      <td>Octalyzer</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>part from the right is not visible on screen</td>
+    </tr>
+    <tr>
+      <td>Protracker STE</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>garbage at screen bottom, 50KHz replay duff</td>
+    </tr> 
+  </tbody>
+</table>
+
 <br>
 
 <hr style="width: 100%; height: 2px;">
@@ -1340,7 +1618,7 @@ with disk images</td>
  border="0" height="31" width="88"></a></td>
       <td align="right">
       <address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a>
-June 07 2005</address>
+August 31 2005</address>
       </td>
     </tr>
   </tbody>
