@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.40 2005-08-29 20:13:43 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.41 2005-09-01 19:20:49 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -606,7 +606,7 @@ static void Video_ClearOnVBL(void)
   VideoBase = (Uint32)STMemory_ReadByte(0xff8201)<<16 | (Uint32)STMemory_ReadByte(0xff8203)<<8;
   if (ConfigureParams.System.nMachineType != MACHINE_ST)
   {
-    /* on STe 2 aligned, on Falcon 4 aligned, on TT 4 aligned. We do STe. */
+    /* on STe 2 aligned, on Falcon 4 aligned, on TT 8 aligned. We do STe. */
     VideoBase |= STMemory_ReadByte(0xff820d) & ~1;
   }
   pVideoRaster = &STRam[VideoBase];
