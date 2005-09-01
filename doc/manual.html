@@ -60,10 +60,68 @@ Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
  target="_blank">http://hatari.sourceforge.net/</a></strong>
 </p>
 
+<h2>Index</h2>
+<ul>
+  <li><a href="#Introduction">Introduction</a>
+  <ul>
+    <li><a href="#General description">General description</a>
+    <li><a href="#Features">Features</a>
+    <li><a href="#Experimental STE hardware emulation:">Experimental STE hardware emulation</a>
+    <li><a href="#System requirements">System requirements</a>
+  </ul>
+  <li><a href="#Compiling and running">Compiling and running</a>
+  <ul>
+    <li><a href="#Compiling Hatari">Compiling Hatari</a>
+    <li><a href="#Installation of a TOS ROM">Installation of a TOS ROM</a>
+    <li><a href="#Installation of the binary">Installation of the binary</a>
+    <li><a href="#Running Hatari for the first time">Running Hatari for the first time</a>
+  </ul>
+  <li><a href="#Command line options">Command line options</a>
+  <li><a href="#Using the emulated system">Using the emulated system</a>
+  <ul>
+    <li><a href="#The GUI">The GUI</a>
+    <ul>
+      <li><a href="#General usage">General usage</a>
+      <li><a href="#The System Dialog">The System Dialog</a>
+      <li><a href="#The Discs Dialog">The Discs Dialog</a>
+      <li><a href="#The Memory Dialog">The Memory Dialog</a>
+      <li><a href="#The ROM Dialog">The ROM Dialog</a>
+      <li><a href="#The Joystick Dialog">The Joystick Dialog</a>
+      <li><a href="#The Screen Dialog">The Screen Dialog</a>
+      <li><a href="#The Keyboard Dialog">The Keyboard Dialog</a>
+      <li><a href="#The Sound Dialog">The Sound Dialog</a>
+      <li><a href="#The Devices Dialog">The Devices Dialog</a>
+    </ul>
+    <li><a href="#Keyboard shortcuts">Keyboard shortcuts</a>
+    <li><a href="#Emulated Atari ST keyboard">Emulated Atari ST keyboard</a>
+    <li><a href="#Emulated mouse">Emulated mouse</a>
+    <li><a href="#Emulated joystick">Emulated joystick</a>
+    <li><a href="#Emulated video">Emulated video</a>
+    <li><a href="#Emulated printer">Emulated printer</a>
+    <li><a href="#Emulated RS232">Emulated RS232</a>
+  </ul>
+  <li><a href="#Floppy disk images">Floppy disk images</a>
+  <li><a href="#Hard disk support">Hard disk support</a>
+  <li><a href="#Appendix">Appendix</a>
+  <ul>
+    <li><a href="#Copying">Copying</a>
+    <li><a href="#Introduction to Emulation">Introduction to Emulation</a>
+    <li><a href="#Software compatibility list">Software compatibility list</a>
+    <ul>
+      <li><a href="#ST games">ST games</a>
+      <li><a href="#ST demos">ST demos</a>
+      <li><a href="#ST applications">ST applications</a>
+      <li><a href="#STE games">STE games</a>
+      <li><a href="#STE demos">STE demos</a>
+      <li><a href="#STE applications">STE applications</a>
+    </ul>
+  </ul>
+</ul>
 
-<h2>Introduction</h2>
 
-<h3>General description</h3>
+<a name="Introduction"></a><h2>Introduction</h2>
+
+<a name="General description"></a><h3>General description</h3>
 <p>
 Hatari is an Atari ST emulator for Linux, FreeBSD, BeOS and other
 Systems which are supported by the SDL library.
@@ -83,7 +141,7 @@ of a ST as close as possible so that it is able to run most of the old ST games
 and demos. Of course you can run normal GEM applications with Hatari, too.
 </p>
 
-<h3>Features</h3>
+<a name="Features"></a><h3>Features</h3>
 <ul>
   <li>complete m68k emulation via UAE's CPU core</li>
   <li>support for TOS 1.00, 1.02, 1.04, 1.06, 1.62, 2.05, 2.06 and EmuTOS</li>
@@ -121,7 +179,7 @@ and *.DIM)</li>
   <li>scaling of ST-Low and ST-Medium to 800x600 resolution </li>
 </ul>
 
-<h4>Experimental STE hardware emulation:</h4>
+<a name="Experimental STE hardware emulation:"></a><h4>Experimental STE hardware emulation:</h4>
 STE emulation is still considered as instable, but if you dare to use it,
 there is support for most of the enhanced STE features:
 <ul>
@@ -137,7 +195,7 @@ nor support for TT or Falcon specific features.
 </p>
 
 
-<h3>System requirements</h3>
+<a name="System requirements"></a><h3>System requirements</h3>
 
 <p> Hatari currently has the following system requirements: </p>
 <ul>
@@ -169,9 +227,9 @@ FreeBSD 5.1 </li>
   <li>Zaurus SL-C760 PDA </li>
 </ul>
 
-<h2>Compiling and running</h2>
+<a name="Compiling and running"></a><h2>Compiling and running</h2>
 
-<h3>Compiling Hatari</h3>
+<a name="Compiling Hatari"></a><h3>Compiling Hatari</h3>
 
 <p> First, you need the SDL library, you can get it at:
 <a href="http://www.libsdl.org/">http://www.libsdl.org/</a>. Most
@@ -206,7 +264,7 @@ works fine, you'll get the executable <span class="commandline">hatari</span>
 in the src/ subdirectory.
 </p>
 
-<h3>Installation of a TOS ROM</h3>
+<a name="Installation of a TOS ROM"></a><h3>Installation of a TOS ROM</h3>
 
 <p> Then you'll have to copy a TOS ROM to the data directory (the data
 directory is specified
@@ -234,7 +292,7 @@ with Hatari! </p>
 find a suitable TOS image in the default dir, you'll get the chance to
 select a TOS image file from the GUI. </p>
 
-<h3>Installation of the binary</h3>
+<a name="Installation of the binary"></a><h3>Installation of the binary</h3>
 
 <p> Type <span class="commandline">make install</span> as root to do a
 systemwide installation. In this case it is recommended
@@ -246,7 +304,7 @@ anywhere.</p>
 option <span class="commandline">--help</span> to find out more about
 its command line parameters. </p>
 
-<h3>Running Hatari for the first time</h3>
+<a name="Running Hatari for the first time"></a><h3>Running Hatari for the first time</h3>
 
 <p> Now type <span class="commandline">hatari</span> to run the
 emulator for the first time. If all goes
@@ -257,7 +315,7 @@ to turn on the GUI to
 configure Hatari to suit your needs, press <span class="key">F11</span>
 to toggle windowed and fullscreen mode. </p>
 
-<h2>Command line options</h2>
+<a name="Command line options"></a><h2>Command line options</h2>
 
 <p> Hatari ofcourse understands several command line options. </p>
 <p> Type <span class="commandline">hatari --help</span> to list them
@@ -382,14 +440,14 @@ instead of ~/.hatari.cfg</td>
   </tbody>
 </table>
 
-<h2>Using the emulated system</h2>
+<a name="Using the emulated system"></a><h2>Using the emulated system</h2>
 
 <p> Once you've started Hatari succesfully, you can use the emulator as
 an allmost complete Atari ST computer system. </p>
 
-<h3>The GUI</h3>
+<a name="The GUI"></a><h3>The GUI</h3>
 
-<h4>General usage</h4>
+<a name="General usage"></a><h4>General usage</h4>
 
 <p>Press <span class="key">F12</span> to enter the GUI. Navigate it
 with the mouse.
@@ -410,7 +468,7 @@ return to the host OS.</p>
 <p>Click <span class="button">Cancel</span> to abandon any changes
 made.</p>
 
-<h4>The System Dialog</h4>
+<a name="The System Dialog"></a><h4>The System Dialog</h4>
 
 <div class="floatimage">
 <img src="images/system.png" width="360" height="368" alt="Hatari's GUI - the system dialog">
@@ -445,7 +503,7 @@ made.</p>
 ST and it is strongly recommended to
 reset the emulated ST after changing these options.</p>
 
-<h4>The Discs Dialog</h4>
+<a name="The Discs Dialog"></a><h4>The Discs Dialog</h4>
 
 <div class="image" align="center">
 <img src="images/discs.png" width="768" height="534" alt="Hatari's GUI - the discs dialog">
@@ -512,7 +570,7 @@ on the harddrive.
 This option is checked by default if you specify a harddrive image or a
 directory via the command line.</p>
 
-<h4>The Memory Dialog</h4>
+<a name="The Memory Dialog"></a><h4>The Memory Dialog</h4>
 
 <div class="image" align="center">
 <img src="images/memory.png" width="768" height="534" alt="Hatari's GUI - the memory dialog">
@@ -533,7 +591,7 @@ restored.</p>
 different versions of Hatari. E.q. if you compile a newer Hatari, you
 cannot load your old memory snapshots back.</p>
 
-<h4>The ROM Dialog</h4>
+<a name="The ROM Dialog"></a><h4>The ROM Dialog</h4>
 
 <div class="image" align="center">
 <img src="images/tos.png" width="768" height="534" alt="Hatari's GUI - the ROM dialog">
@@ -553,7 +611,7 @@ space for these emulations.<br>
 advised to reset the emulated ST
 when changing one of these option.</p>
 
-<h4>The Joystick Dialog</h4>
+<a name="The Joystick Dialog"></a><h4>The Joystick Dialog</h4>
 
 <div class="image" align="center">
 <img src="images/joystick.png" width="768" height="534" alt="Hatari's GUI - the joystick dialog">
@@ -569,7 +627,7 @@ emulates a joystick plugged into the ST mouse port allowing you to play
 connected PC joystick.</p>
 <p>See the chapter "Emulated Joystick" for details.</p>
 
-<h4>The Screen Dialog</h4>
+<a name="The Screen Dialog"></a><h4>The Screen Dialog</h4>
 
 <div class="image" align="center">
 <img src="images/screen.png" width="768" height="534" alt="Hatari's GUI - the screen dialog">
@@ -613,7 +671,7 @@ screenshots. You can opt to only record new movie frames when the
 screen content really changed.
 </p>
 
-<h4>The Keyboard Dialog</h4>
+<a name="The Keyboard Dialog"></a><h4>The Keyboard Dialog</h4>
 
 <div class="floatimage">
 <img src="images/keyboard.png" width="400" height="192" alt="Hatari's GUI - the keyboard dialog">
@@ -637,7 +695,7 @@ screen content really changed.
  for all keys that are not defined by your map file. Have a look at the supplied
  example mapfile to see how to create your own keyboard mapping.</p>
 
-<h4>The Sound Dialog</h4>
+<a name="The Sound Dialog"></a><h4>The Sound Dialog</h4>
 
 <div class="image" align="center">
 <img src="images/sound.png" width="768" height="534" alt="Hatari's GUI - the sound dialog">
@@ -653,7 +711,7 @@ Medium quality will work ok in most cases.</p>
 to use and click the button. It is a toggle button so
 you will need to return to the GUI to switch sound recording off again.</p>
 
-<h4>The Devices Dialog</h4>
+<a name="The Devices Dialog"></a><h4>The Devices Dialog</h4>
 
 <p>Check here if you want to enable experimental printer support. See
 the chapter "Emulated printer" for details.</p>
@@ -689,7 +747,7 @@ MIDI device file for output.</p>
 Don't enable them unless you really need them!
 </p>
 
-<h3>Keyboard shortcuts</h3>
+<a name="Keyboard shortcuts"></a><h3>Keyboard shortcuts</h3>
 
 <p> While the emulator is running, you can activate or toggle various
 features via the following keyboard shortcuts. </p>
@@ -765,7 +823,7 @@ compile time</td>
   </tbody>
 </table>
 
-<h3>Emulated Atari ST keyboard</h3>
+<a name="Emulated Atari ST keyboard"></a><h3>Emulated Atari ST keyboard</h3>
 
 <p> All other keys on the keyboard act as the normal Atari ST keys so
 pressing SPACE on your PC will result in an emulated press of the SPACE
@@ -812,7 +870,7 @@ joystick when you turn on joystick emulation via keyboard. </p>
 as joystick emulation
 via keyboard has been turned off.</p>
 
-<h3>Emulated mouse</h3>
+<a name="Emulated mouse"></a><h3>Emulated mouse</h3>
 
 <p>For obvious reasons your PC mouse will act as the emulated Atari ST
 mouse. In fullscreen mode it will act as expected, directly controlling
@@ -824,7 +882,7 @@ hotkey combination.
 Press it again to go back to normal mouse behaviour which allows you to
 work in other X11 windows while Hatari is up and running. </p>
 
-<h3>Emulated joystick</h3>
+<a name="Emulated joystick"></a><h3>Emulated joystick</h3>
 
 <p>The Atari ST joysticks are emulated ofcourse allowing you to play
 your favourite games with Hatari. </p>
@@ -848,7 +906,7 @@ firebutton. You can still use the cursor keys as the ST's
 cursorkeys in this mode as long as you press <span class="key">SHIFT</span>
 along with the cursorkeys. </p>
 
-<h3>Emulated video</h3>
+<a name="Emulated video"></a><h3>Emulated video</h3>
 
 <p>Hatari by default only handles ST modes, ST-LOW, ST-MED and ST-HIGH.</p>
 <p>Overscan effects and socalled "Border Removal" are possible too.</p>
@@ -866,7 +924,7 @@ into your Mega ST.</p>
 <p>Make sure to disable extended VDI modes for playing games as 99% of
 all ST games will not be able to make use of higher resolutions.</p>
 
-<h3>Emulated printer</h3>
+<a name="Emulated printer"></a><h3>Emulated printer</h3>
 
 <p>Due to the fact that printer handling is very different between Unix
 style machines and the Atari ST, emulation
@@ -886,7 +944,7 @@ Atari and set your printer device file as Hatari's printer output.<br>
 <em>NOTE:</em> This has not been tested yet and the Hatari team cannot
 guarantee that it will work.</p>
 
-<h3>Emulated RS232</h3>
+<a name="Emulated RS232"></a><h3>Emulated RS232</h3>
 
 <p>Serial communications in Hatari is designed to directly use a serial
 port on your PC.</p>
@@ -896,7 +954,7 @@ the communication parameters like baudrate from your ST communications
 software. Hatari will do the rest and handle
 the serial input and output for you.</p>
 
-<h2>Floppy disk images</h2>
+<a name="Floppy disk images"></a><h2>Floppy disk images</h2>
 
 <p>Hatari does not use floppy disks directly but disk images due to
 differences between the floppy disk controllers of the ST and the PC.
@@ -966,7 +1024,7 @@ so
 your highscores and savegames are lost if you load the game from such
 a zipped disk image.</p>
 
-<h2>Hard disk support</h2>
+<a name="Hard disk support"></a><h2>Hard disk support</h2>
 
 <p>Hatari supports two ways of emulating a ST hard drive: The low-level
 ACSI hard disk emulation and a GEMDOS based drive emulation. </p>
@@ -1001,9 +1059,9 @@ the emulated Atari since it is not possible to switch the hard disk
 while the emulator is running. </p>
 <p> May the fun without the price to be with you ;-) ! </p>
 
-<h2>Appendix</h2>
+<a name="Appendix"></a><h2>Appendix</h2>
 
-<h3>Copying</h3>
+<a name="Copying"></a><h3>Copying</h3>
 
 <div class="backdropped">
 <p>This program is free software; you can redistribute it and/or modify
@@ -1025,7 +1083,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 Foundation</a> | <a href="http://www.fsf.org/licenses/gpl.html">The
 GNU General Public License</a></p>
 
-<h3>Introduction to Emulation</h3>
+<a name="Introduction to Emulation"></a><h3>Introduction to Emulation</h3>
 
 <p>Emulation via software is an art and Hatari is an example of this.</p>
 <p>Emulation is to make a computer behave like a (probably) completely
@@ -1061,10 +1119,16 @@ emulation of the various custom chips and hardware
 parts of the emulated system is much trickier.
 </p>
 
-<h3>Software compatibility list</h3>
+<a name="Software compatibility list"></a><h3>Software compatibility list</h3>
 
 <p>This is a little compilation of what Atari software does work in
 Hatari. It is by no means finished.</p>
+
+<p>First is listed software (games, demos and applications) that work
+on normal STs, after them is listed STE only software that has been
+tested with the current STE hardware emulation.</p>
+
+<a name="ST games"></a><h4>ST games</h4>
 
 <table border="1" cellpadding="3">
   <caption align="bottom">tested games</caption> <tbody>
@@ -1197,7 +1261,7 @@ Hatari. It is by no means finished.</p>
   </tbody>
 </table>
 
-<br>
+<a name="ST demos"></a><h4>ST demos</h4>
 
 <table border="1" cellpadding="3">
   <caption align="bottom">tested demos</caption> <tbody>
@@ -1241,7 +1305,7 @@ Hatari. It is by no means finished.</p>
   </tbody>
 </table>
 
-<br>
+<a name="ST applications"></a><h4>ST applications</h4>
 
 <table border="1" cellpadding="3">
   <caption align="bottom">tested applications</caption> <tbody>
@@ -1330,7 +1394,8 @@ with disk images</td>
   </tbody>
 </table>
 
-<p>Now a list of STE only software that has been tested with the current STE hardware emulation.</p>
+<a name="STE games"></a><h4>STE games</h4>
+
 <p>First some STE or STE enhanced games that do work with STE features in Hatari.</p>
 <table border="1" cellpadding="3">
   <caption align="bottom">tested STE games</caption> <tbody>
@@ -1344,7 +1409,8 @@ with disk images</td>
       <td>Roger</td>
       <td>partially</td>
       <td>&nbsp;</td>
-      <td>Blitter timings inaccurate - game is too fast</td>
+      <td>Blitter timings inaccurate - game is too fast,
+          needs to be run from disk image</td>
     </tr>
     <tr>
       <td>Pacman on E</td>
@@ -1386,7 +1452,7 @@ with disk images</td>
       <td>ChuChu Rocket</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>run from disk image</td>
+      <td>needs to be run from disk image</td>
     </tr>
     <tr>
       <td>Dynabusters+</td>
@@ -1468,6 +1534,8 @@ with disk images</td>
     </tr>
   </tbody>
 </table>
+
+<a name="STE demos"></a><h4>STE demos</h4>
 
 <p>Some tested STE demos and intros</p>
 <table border="1" cellpadding="3">
@@ -1583,9 +1651,11 @@ with disk images</td>
   </tbody>
 </table>
 
+<a name="STE applications"></a><h4>STE applications</h4>
+
 <p>Finally some tested STE applications</p>
 <table border="1" cellpadding="3">
-  <caption align="bottom">tested STE application</caption> <tbody>
+  <caption align="bottom">tested STE applications</caption> <tbody>
     <tr class="backdropped">
       <td align="center">Title</td>
       <td align="center">Working</td>
