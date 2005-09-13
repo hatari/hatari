@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.46 2005-05-11 08:09:05 thothy Exp $";
+char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.47 2005-09-13 01:10:09 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -62,10 +62,10 @@ static BOOL Dialog_DoNeedReset(void)
   if (strcmp(DialogParams.Rom.szTosImageFileName, ConfigureParams.Rom.szTosImageFileName))
     return(TRUE);
   /* Did change HD image? */
-  if (strcmp(DialogParams.HardDisc.szHardDiscImage, ConfigureParams.HardDisc.szHardDiscImage))
+  if (strcmp(DialogParams.HardDisk.szHardDiskImage, ConfigureParams.HardDisk.szHardDiskImage))
     return(TRUE);
   /* Did change GEMDOS drive? */
-  if (strcmp(DialogParams.HardDisc.szHardDiscDirectories[0], ConfigureParams.HardDisc.szHardDiscDirectories[0]))
+  if (strcmp(DialogParams.HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0]))
     return(TRUE);
 
   return(FALSE);
@@ -120,7 +120,7 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   }
 
   /* Did change GEMDOS drive? */
-  if( strcmp(DialogParams.HardDisc.szHardDiscDirectories[0], ConfigureParams.HardDisc.szHardDiscDirectories[0])!=0 )
+  if( strcmp(DialogParams.HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0])!=0 )
   {
     GemDOS_UnInitDrives();
     newGemdosDrive = TRUE;
@@ -131,7 +131,7 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   }
 
   /* Did change HD image? */
-  if( strcmp(DialogParams.HardDisc.szHardDiscImage, ConfigureParams.HardDisc.szHardDiscImage)!=0
+  if( strcmp(DialogParams.HardDisk.szHardDiskImage, ConfigureParams.HardDisk.szHardDiskImage)!=0
      && ACSI_EMU_ON )
   {
     HDC_UnInit();
@@ -160,10 +160,10 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   check_prefs_changed_cpu(DialogParams.System.nCpuLevel, DialogParams.System.bCompatibleCpu);
 
   /* Mount a new HD image: */
-  if( !ACSI_EMU_ON && !File_DoesFileNameEndWithSlash(ConfigureParams.HardDisc.szHardDiscImage)
-      && File_Exists(ConfigureParams.HardDisc.szHardDiscImage) )
+  if( !ACSI_EMU_ON && !File_DoesFileNameEndWithSlash(ConfigureParams.HardDisk.szHardDiskImage)
+      && File_Exists(ConfigureParams.HardDisk.szHardDiskImage) )
   {
-    HDC_Init(ConfigureParams.HardDisc.szHardDiscImage);
+    HDC_Init(ConfigureParams.HardDisk.szHardDiskImage);
   }
 
   /* Mount a new GEMDOS drive? */

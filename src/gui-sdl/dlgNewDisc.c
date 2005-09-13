@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgNewDisc_rcsid[] = "Hatari $Id: dlgNewDisc.c,v 1.3 2005-02-13 16:18:52 thothy Exp $";
+char DlgNewDisk_rcsid[] = "Hatari $Id: dlgNewDisc.c,v 1.4 2005-09-13 01:10:09 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -14,22 +14,22 @@ char DlgNewDisc_rcsid[] = "Hatari $Id: dlgNewDisc.c,v 1.3 2005-02-13 16:18:52 th
 #include "file.h"
 
 
-#define DLGNEWDISC_DECTRACK   3
-#define DLGNEWDISC_TRACKSTR   4
-#define DLGNEWDISC_INCTRACK   5
-#define DLGNEWDISC_SECTORS9   7
-#define DLGNEWDISC_SECTORS10  8
-#define DLGNEWDISC_SECTORS11  9
-#define DLGNEWDISC_SIDES1     11
-#define DLGNEWDISC_SIDES2     12
-#define DLGNEWDISC_SAVE       13
-#define DLGNEWDISC_EXIT       14
+#define DLGNEWDISK_DECTRACK   3
+#define DLGNEWDISK_TRACKSTR   4
+#define DLGNEWDISK_INCTRACK   5
+#define DLGNEWDISK_SECTORS9   7
+#define DLGNEWDISK_SECTORS10  8
+#define DLGNEWDISK_SECTORS11  9
+#define DLGNEWDISK_SIDES1     11
+#define DLGNEWDISK_SIDES2     12
+#define DLGNEWDISK_SAVE       13
+#define DLGNEWDISK_EXIT       14
 
 static char szTracks[3];
 static int nTracks = 80;
 
-/* The new disc image dialog: */
-static SGOBJ newdiscdlg[] =
+/* The new disk image dialog: */
+static SGOBJ newdiskdlg[] =
 {
 	{ SGBOX, 0, 0, 0,0, 28,12, NULL },
 	{ SGTEXT, 0, 0, 6,1, 16,1, "New floppy image" },
@@ -52,72 +52,72 @@ static SGOBJ newdiscdlg[] =
 
 /*-----------------------------------------------------------------------*/
 /*
-  Show and process the "new blank disc image" dialog.
+  Show and process the "new blank disk image" dialog.
 */
-void DlgNewDisc_Main(void)
+void DlgNewDisk_Main(void)
 {
 	int but;
-	char *szNewDiscName;
+	char *szNewDiskName;
 
 	sprintf(szTracks, "%i", nTracks);
 
- 	SDLGui_CenterDlg(newdiscdlg);
+ 	SDLGui_CenterDlg(newdiskdlg);
 
-	/* Initialize disc image name: */
-	szNewDiscName = malloc(FILENAME_MAX);
-	if (!szNewDiscName)
+	/* Initialize disk image name: */
+	szNewDiskName = malloc(FILENAME_MAX);
+	if (!szNewDiskName)
 	{
-		perror("DlgNewDisc_Main");
+		perror("DlgNewDisk_Main");
 		return;
 	}
-	strcpy(szNewDiscName, DialogParams.DiscImage.szDiscImageDirectory);
-	if (strlen(szNewDiscName) < FILENAME_MAX-12)
-		strcat(szNewDiscName, "new_disc.st");
+	strcpy(szNewDiskName, DialogParams.DiskImage.szDiskImageDirectory);
+	if (strlen(szNewDiskName) < FILENAME_MAX-12)
+		strcat(szNewDiskName, "new_disk.st");
 
 	/* Draw and process the dialog */
 	do
 	{
-		but = SDLGui_DoDialog(newdiscdlg, NULL);
+		but = SDLGui_DoDialog(newdiskdlg, NULL);
 		switch(but)
 		{
-		 case DLGNEWDISC_DECTRACK:
+		 case DLGNEWDISK_DECTRACK:
 			if (nTracks > 40)
 				nTracks -= 1;
 			sprintf(szTracks, "%i", nTracks);
 			break;
-		 case DLGNEWDISC_INCTRACK:
+		 case DLGNEWDISK_INCTRACK:
 			if (nTracks < 85)
 				nTracks += 1;
 			sprintf(szTracks, "%i", nTracks);
 			break;
-		 case DLGNEWDISC_SAVE:
-			if (SDLGui_FileSelect(szNewDiscName, NULL, TRUE))
+		 case DLGNEWDISK_SAVE:
+			if (SDLGui_FileSelect(szNewDiskName, NULL, TRUE))
 			{
-				if (!File_DoesFileNameEndWithSlash(szNewDiscName))
+				if (!File_DoesFileNameEndWithSlash(szNewDiskName))
 				{
 					int nSectors, nSides;
 
 					/* Get number of sectors */
-					if (newdiscdlg[DLGNEWDISC_SECTORS11].state & SG_SELECTED)
+					if (newdiskdlg[DLGNEWDISK_SECTORS11].state & SG_SELECTED)
 						nSectors = 11;
-					else if (newdiscdlg[DLGNEWDISC_SECTORS10].state & SG_SELECTED)
+					else if (newdiskdlg[DLGNEWDISK_SECTORS10].state & SG_SELECTED)
 						nSectors = 10;
 					else
 						nSectors = 9;
 
 					/* Get number of sides */
-					if (newdiscdlg[DLGNEWDISC_SIDES1].state & SG_SELECTED)
+					if (newdiskdlg[DLGNEWDISK_SIDES1].state & SG_SELECTED)
 						nSides = 1;
 					else
 						nSides = 2;
 
-					CreateBlankImage_CreateFile(szNewDiscName, nTracks, nSectors, nSides);
+					CreateBlankImage_CreateFile(szNewDiskName, nTracks, nSectors, nSides);
 				}
 			}
 			break;
 		}
 	}
-	while (but != DLGNEWDISC_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
+	while (but != DLGNEWDISK_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
 
-	free(szNewDiscName);
+	free(szNewDiskName);
 }

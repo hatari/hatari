@@ -7,5 +7,5 @@
 
 extern BOOL MSA_FileNameIsMSA(char *pszFileName, BOOL bAllowGZ);
 extern Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize);
-extern Uint8 *MSA_ReadDisc(char *pszFileName, long *pImageSize);
-extern BOOL MSA_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize);
+extern Uint8 *MSA_ReadDisk(char *pszFileName, long *pImageSize);
+extern BOOL MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize);

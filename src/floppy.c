@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.27 2005-08-21 22:20:32 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.28 2005-09-13 01:10:09 thothy Exp $";
 
 #include <sys/stat.h>
 
@@ -43,8 +43,8 @@ char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.27 2005-08-21 22:20:32 thothy Ex
 EMULATION_DRIVE EmulationDrives[NUM_EMULATION_DRIVES];  /* Emulation drive details, eg FileName, Inserted, Changed etc... */
 int nBootDrive=0;               /* Drive A, default */
 
-/* Possible disc image file extensions to scan for */
-static const char *pszDiscImageNameExts[] =
+/* Possible disk image file extensions to scan for */
+static const char *pszDiskImageNameExts[] =
 {
   ".msa",
   ".st",
@@ -95,9 +95,9 @@ void Floppy_MemorySnapShot_Capture(BOOL bSave)
   /* Save/Restore details */
   for(i=0; i<NUM_EMULATION_DRIVES; i++)
   {
-    MemorySnapShot_Store(&EmulationDrives[i].bDiscInserted,sizeof(EmulationDrives[i].bDiscInserted));
+    MemorySnapShot_Store(&EmulationDrives[i].bDiskInserted, sizeof(EmulationDrives[i].bDiskInserted));
     MemorySnapShot_Store(&EmulationDrives[i].nImageBytes, sizeof(EmulationDrives[i].nImageBytes));
-    if (!bSave && EmulationDrives[i].bDiscInserted)
+    if (!bSave && EmulationDrives[i].bDiskInserted)
     {
       EmulationDrives[i].pBuffer = malloc(EmulationDrives[i].nImageBytes);
       if (!EmulationDrives[i].pBuffer)
@@ -120,7 +120,7 @@ void Floppy_MemorySnapShot_Capture(BOOL bSave)
 void Floppy_GetBootDrive(void)
 {
   /* Boot from hard drive if user wants this and HD emulation is turned on */
-  if ((ACSI_EMU_ON || GEMDOS_EMU_ON) && ConfigureParams.HardDisc.bBootFromHardDisc)
+  if ((ACSI_EMU_ON || GEMDOS_EMU_ON) && ConfigureParams.HardDisk.bBootFromHardDisk)
     nBootDrive = 2;  /* Drive C */
   else
     nBootDrive = 0;  /* Drive A */
@@ -129,17 +129,17 @@ void Floppy_GetBootDrive(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Test disc image if it is write protected. Write protection can be configured
+  Test if disk image is write protected. Write protection can be configured
   in the GUI. When set to "automatic", we check the file permissions of the
   floppy disk image to decide.
 */
 BOOL Floppy_IsWriteProtected(int Drive)
 {
-  if (ConfigureParams.DiscImage.nWriteProtection == WRITEPROT_OFF)
+  if (ConfigureParams.DiskImage.nWriteProtection == WRITEPROT_OFF)
   {
     return FALSE;
   }
-  else if (ConfigureParams.DiscImage.nWriteProtection == WRITEPROT_ON)
+  else if (ConfigureParams.DiskImage.nWriteProtection == WRITEPROT_ON)
   {
     return TRUE;
   }
@@ -157,9 +157,8 @@ BOOL Floppy_IsWriteProtected(int Drive)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Test disc image for valid boot-sector
-
-  It has been noticed that some discs, eg blank images made by the MakeDisk
+  Test disk image for valid boot-sector.
+  It has been noticed that some disks, eg blank images made by the MakeDisk
   utility or PaCifiST emulator fill in the boot-sector with incorrect information.
   Such images cannot be read correctly using a real ST, and also Hatari.
   To try and prevent data loss, we check for this error and flag the drive so
@@ -167,18 +166,18 @@ BOOL Floppy_IsWriteProtected(int Drive)
 */
 static BOOL Floppy_IsBootSectorOK(int Drive)
 {
-  unsigned char *pDiscBuffer;
+  Uint8 *pDiskBuffer;
 
-  /* Does our drive have a disc in? */
-  if (EmulationDrives[Drive].bDiscInserted)
+  /* Does our drive have a disk in? */
+  if (EmulationDrives[Drive].bDiskInserted)
   {
-    pDiscBuffer = EmulationDrives[Drive].pBuffer;
+    pDiskBuffer = EmulationDrives[Drive].pBuffer;
 
     /* Check SPC (byte 13) for !=0 value. If is '0', invalid image and Hatari
      * won't be-able to read (nor will a real ST)! */
-    if (pDiscBuffer[13]!=0)
+    if (pDiskBuffer[13] != 0)
     {
-      return TRUE;      /* Disc sector is OK! */
+      return TRUE;      /* Disk sector is OK! */
     }
     else
     {
@@ -193,10 +192,10 @@ static BOOL Floppy_IsBootSectorOK(int Drive)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Try to create disc B filename, eg 'auto_100a' becomes 'auto_100b'
+  Try to create disk B filename, eg 'auto_100a' becomes 'auto_100b'
   Return TRUE if think we should try!
 */
-static BOOL Floppy_CreateDiscBFileName(const char *pSrcFileName, char *pDestFileName)
+static BOOL Floppy_CreateDiskBFileName(const char *pSrcFileName, char *pDestFileName)
 {
   char *szDir, *szName, *szExt;
   BOOL bFileExists = FALSE;
@@ -205,7 +204,7 @@ static BOOL Floppy_CreateDiscBFileName(const char *pSrcFileName, char *pDestFile
   szDir = malloc(3 * FILENAME_MAX);
   if (!szDir)
   {
-    perror("Floppy_CreateDiscBFileName");
+    perror("Floppy_CreateDiskBFileName");
     return FALSE;
   }
   szName = szDir + FILENAME_MAX;
@@ -237,34 +236,34 @@ static BOOL Floppy_CreateDiscBFileName(const char *pSrcFileName, char *pDestFile
 
 /*-----------------------------------------------------------------------*/
 /*
-  Insert disc into floppy drive
+  Insert disk into floppy drive.
   The WHOLE image is copied into our drive buffers, and uncompressed if necessary
 */
-BOOL Floppy_InsertDiscIntoDrive(int Drive, char *pszFileName)
+BOOL Floppy_InsertDiskIntoDrive(int Drive, char *pszFileName)
 {
-  return Floppy_ZipInsertDiscIntoDrive(Drive, pszFileName, NULL);
+  return Floppy_ZipInsertDiskIntoDrive(Drive, pszFileName, NULL);
 }
 
-BOOL Floppy_ZipInsertDiscIntoDrive(int Drive, char *pszFileName, char *pszZipPath)
+BOOL Floppy_ZipInsertDiskIntoDrive(int Drive, char *pszFileName, char *pszZipPath)
 {
   long nImageBytes = 0;
 
-  /* Eject disc, if one is inserted(don't inform user) */
-  Floppy_EjectDiscFromDrive(Drive,FALSE);
+  /* Eject disk, if one is inserted(don't inform user) */
+  Floppy_EjectDiskFromDrive(Drive,FALSE);
 
   /* See if file exists, and if not get correct extension */
   if( !File_Exists(pszFileName) )
-    File_FindPossibleExtFileName(pszFileName,pszDiscImageNameExts);
+    File_FindPossibleExtFileName(pszFileName,pszDiskImageNameExts);
 
-  /* Check disc image type and read the file: */
+  /* Check disk image type and read the file: */
   if (MSA_FileNameIsMSA(pszFileName, TRUE))
-    EmulationDrives[Drive].pBuffer = MSA_ReadDisc(pszFileName, &nImageBytes);
+    EmulationDrives[Drive].pBuffer = MSA_ReadDisk(pszFileName, &nImageBytes);
   else if (ST_FileNameIsST(pszFileName, TRUE))
-    EmulationDrives[Drive].pBuffer = ST_ReadDisc(pszFileName, &nImageBytes);
+    EmulationDrives[Drive].pBuffer = ST_ReadDisk(pszFileName, &nImageBytes);
   else if (DIM_FileNameIsDIM(pszFileName, TRUE))
-    EmulationDrives[Drive].pBuffer = DIM_ReadDisc(pszFileName, &nImageBytes);
+    EmulationDrives[Drive].pBuffer = DIM_ReadDisk(pszFileName, &nImageBytes);
   else if (ZIP_FileNameIsZIP(pszFileName))
-    EmulationDrives[Drive].pBuffer = ZIP_ReadDisc(pszFileName, pszZipPath, &nImageBytes);
+    EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(pszFileName, pszZipPath, &nImageBytes);
 
   /* Did load OK? */
   if (EmulationDrives[Drive].pBuffer != NULL)
@@ -273,24 +272,24 @@ BOOL Floppy_ZipInsertDiscIntoDrive(int Drive, char *pszFileName, char *pszZipPat
     strcpy(EmulationDrives[Drive].szFileName,pszFileName);
     EmulationDrives[Drive].nImageBytes = nImageBytes;
     /* And set drive states */
-    EmulationDrives[Drive].bDiscInserted = TRUE;
+    EmulationDrives[Drive].bDiskInserted = TRUE;
     EmulationDrives[Drive].bContentsChanged = FALSE;
     EmulationDrives[Drive].bMediaChanged = TRUE;
     EmulationDrives[Drive].bOKToSave = Floppy_IsBootSectorOK(Drive);
   }
 
-  /* If we insert a disc into Drive A, should be try to put disc 2 into drive B? */
-  if ( (Drive==0) && (ConfigureParams.DiscImage.bAutoInsertDiscB) )
+  /* If we insert a disk into Drive A, should be try to put disk 2 into drive B? */
+  if (Drive == 0 && ConfigureParams.DiskImage.bAutoInsertDiskB)
   {
-    char *szDiscBFileName = malloc(FILENAME_MAX);
+    char *szDiskBFileName = malloc(FILENAME_MAX);
     /* Attempt to make up second filename, eg was 'auto_100a' to 'auto_100b' */
-    if (szDiscBFileName && Floppy_CreateDiscBFileName(pszFileName, szDiscBFileName))
+    if (szDiskBFileName && Floppy_CreateDiskBFileName(pszFileName, szDiskBFileName))
     {
       /* Put image into Drive B, clear out if fails */
-      if (!Floppy_InsertDiscIntoDrive(1,szDiscBFileName))
+      if (!Floppy_InsertDiskIntoDrive(1,szDiskBFileName))
         strcpy(EmulationDrives[1].szFileName,"");
     }
-    free(szDiscBFileName);
+    free(szDiskBFileName);
   }
 
 
@@ -301,12 +300,13 @@ BOOL Floppy_ZipInsertDiscIntoDrive(int Drive, char *pszFileName, char *pszZipPat
 
 /*-----------------------------------------------------------------------*/
 /*
-  Eject disc from floppy drive, save contents back to PCs hard-drive if has changed
+  Eject disk from floppy drive, save contents back to PCs hard-drive if
+  they have been changed.
 */
-void Floppy_EjectDiscFromDrive(int Drive, BOOL bInformUser)
+void Floppy_EjectDiskFromDrive(int Drive, BOOL bInformUser)
 {
-  /* Does our drive have a disc in? */
-  if (EmulationDrives[Drive].bDiscInserted)
+  /* Does our drive have a disk in? */
+  if (EmulationDrives[Drive].bDiskInserted)
   {
     /* OK, has contents changed? If so, need to save */
     if (EmulationDrives[Drive].bContentsChanged)
@@ -316,13 +316,13 @@ void Floppy_EjectDiscFromDrive(int Drive, BOOL bInformUser)
       {
         /* Save as .MSA or .ST image? */
         if (MSA_FileNameIsMSA(EmulationDrives[Drive].szFileName, TRUE))
-          MSA_WriteDisc(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+          MSA_WriteDisk(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
         else if (ST_FileNameIsST(EmulationDrives[Drive].szFileName, TRUE))
-          ST_WriteDisc(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+          ST_WriteDisk(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
         else if (DIM_FileNameIsDIM(EmulationDrives[Drive].szFileName, TRUE))
-          DIM_WriteDisc(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+          DIM_WriteDisk(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
         else if (ZIP_FileNameIsZIP(EmulationDrives[Drive].szFileName))
-          ZIP_WriteDisc(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+          ZIP_WriteDisk(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
       }
     }
 
@@ -341,7 +341,7 @@ void Floppy_EjectDiscFromDrive(int Drive, BOOL bInformUser)
   }
   strcpy(EmulationDrives[Drive].szFileName,"");
   EmulationDrives[Drive].nImageBytes = 0;
-  EmulationDrives[Drive].bDiscInserted = FALSE;
+  EmulationDrives[Drive].bDiskInserted = FALSE;
   EmulationDrives[Drive].bContentsChanged = FALSE;
   EmulationDrives[Drive].bOKToSave = FALSE;
 }
@@ -349,13 +349,13 @@ void Floppy_EjectDiscFromDrive(int Drive, BOOL bInformUser)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Eject all disc image from floppy drives - call when quit
+  Eject all disk image from floppy drives - call when quit.
 */
 void Floppy_EjectBothDrives(void)
 {
-  /* Eject disc images from drives 'A' and 'B' */
-  Floppy_EjectDiscFromDrive(0,FALSE);
-  Floppy_EjectDiscFromDrive(1,FALSE);
+  /* Eject disk images from drives 'A' and 'B' */
+  Floppy_EjectDiskFromDrive(0, FALSE);
+  Floppy_EjectDiskFromDrive(1, FALSE);
 }
 
 
@@ -367,26 +367,26 @@ void Floppy_EjectBothDrives(void)
   NOTE - Pass information from boot-sector to this function (if we can't
   decide we leave it alone).
 */
-static void Floppy_DoubleCheckFormat(long DiscSize, Uint16 *pnSides, Uint16 *pnSectorsPerTrack)
+static void Floppy_DoubleCheckFormat(long nDiskSize, Uint16 *pnSides, Uint16 *pnSectorsPerTrack)
 {
   int nSectorsPerTrack;
   long TotalSectors;
 
   /* Now guess at number of sides */
-  if (DiscSize<(500*1024))                      /* Is size is >500k assume 2 sides to disc! */
+  if (nDiskSize < (500*1024))                    /* Is size is >500k assume 2 sides to disk! */
     *pnSides = 1;
   else
     *pnSides = 2;
 
   /* And Sectors Per Track(always 512 bytes per sector) */
-  TotalSectors = DiscSize/512;                  /* # Sectors on disc image */
+  TotalSectors = nDiskSize/512;                 /* # Sectors on disk image */
   /* Does this match up with what we've read from boot-sector? */
   nSectorsPerTrack = *pnSectorsPerTrack;
   if (nSectorsPerTrack==0)                      /* Check valid, default to 9 */
     nSectorsPerTrack = 9;
   if ((TotalSectors%nSectorsPerTrack)!=0)
   {
-    /* No, we have an invalid boot-sector - re-calculate from disc size */
+    /* No, we have an invalid boot-sector - re-calculate from disk size */
     if ((TotalSectors%9)==0)                    /* Work in this order.... */
       *pnSectorsPerTrack = 9;
     else if ((TotalSectors%10)==0)
@@ -402,11 +402,11 @@ static void Floppy_DoubleCheckFormat(long DiscSize, Uint16 *pnSides, Uint16 *pnS
 
 /*-----------------------------------------------------------------------*/
 /*
-  Find details of disc image. We need to do this via a function as sometimes the boot-block
-  is not actually correct with the image - some demos/game discs have incorrect bytes in the
+  Find details of disk image. We need to do this via a function as sometimes the boot-block
+  is not actually correct with the image - some demos/game disks have incorrect bytes in the
   boot sector and this attempts to find the correct values.
 */
-void Floppy_FindDiscDetails(const Uint8 *pBuffer, int nImageBytes,
+void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
                             unsigned short *pnSectorsPerTrack, unsigned short *pnSides)
 {
   Uint16 nSectorsPerTrack, nSides, nSectors;
@@ -432,24 +432,24 @@ void Floppy_FindDiscDetails(const Uint8 *pBuffer, int nImageBytes,
 
 /*-----------------------------------------------------------------------*/
 /*
-  Read sectors from floppy disc image, return TRUE if all OK
+  Read sectors from floppy disk image, return TRUE if all OK
   NOTE Pass -ve as Count to read whole track
 */
 BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsigned short int Track,unsigned short int Side, short int Count, int *pnSectorsPerTrack)
 {
-  unsigned char *pDiscBuffer;
+  Uint8 *pDiskBuffer;
   unsigned short int nSectorsPerTrack,nSides,nBytesPerTrack;
   long Offset;
   int nImageTracks;
 
-  /* Do we have a disc in our drive? */
-  if (EmulationDrives[Drive].bDiscInserted)
+  /* Do we have a disk in our drive? */
+  if (EmulationDrives[Drive].bDiskInserted)
   {
     /* Looks good */
-    pDiscBuffer = EmulationDrives[Drive].pBuffer;
+    pDiskBuffer = EmulationDrives[Drive].pBuffer;
 
     /* Find #sides and #sectors per track */
-    Floppy_FindDiscDetails(EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes,&nSectorsPerTrack,&nSides);
+    Floppy_FindDiskDetails(EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes,&nSectorsPerTrack,&nSides);
     nImageTracks = ((EmulationDrives[Drive].nImageBytes / NUMBYTESPERSECTOR) / nSectorsPerTrack) / nSides;
 
     /* Need to read whole track? */
@@ -467,7 +467,7 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
 
     /* Check that the side number (0 or 1) does not exceed the amount of sides (1 or 2).
      * (E.g. some games like Drakkhen or Bolo can load additional data from the
-     * second disc side, but they also work with single side floppy drives) */
+     * second disk side, but they also work with single side floppy drives) */
     if (Side >= nSides)
     {
       Log_Printf(LOG_DEBUG, "Floppy_ReadSectors: Program tries to read from side %i "
@@ -498,7 +498,7 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
     Offset += (NUMBYTESPERSECTOR*(Sector-1));     /* And finally to sector */
 
     /* Read sectors (usually 512 bytes per sector) */
-    memcpy(pBuffer,pDiscBuffer+Offset,(int)Count*NUMBYTESPERSECTOR);
+    memcpy(pBuffer, pDiskBuffer+Offset, (int)Count*NUMBYTESPERSECTOR);
 
     return TRUE;
   }
@@ -509,24 +509,24 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
 
 /*-----------------------------------------------------------------------*/
 /*
-  Write sectors from floppy disc image, return TRUE if all OK
+  Write sectors from floppy disk image, return TRUE if all OK
   NOTE Pass -ve as Count to write whole track
 */
 BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsigned short int Track,unsigned short int Side, short int Count, int *pnSectorsPerTrack)
 {
-  unsigned char *pDiscBuffer;
+  Uint8 *pDiskBuffer;
   unsigned short int nSectorsPerTrack,nSides,nBytesPerTrack;
   long Offset;
   int nImageTracks;
 
-  /* Do we have a writable disc in our drive? */
-  if (EmulationDrives[Drive].bDiscInserted && !Floppy_IsWriteProtected(Drive))
+  /* Do we have a writable disk in our drive? */
+  if (EmulationDrives[Drive].bDiskInserted && !Floppy_IsWriteProtected(Drive))
   {
     /* Looks good */
-    pDiscBuffer = EmulationDrives[Drive].pBuffer;
+    pDiskBuffer = EmulationDrives[Drive].pBuffer;
 
     /* Find #sides and #sectors per track */
-    Floppy_FindDiscDetails(EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes,&nSectorsPerTrack,&nSides);
+    Floppy_FindDiskDetails(EmulationDrives[Drive].pBuffer,EmulationDrives[Drive].nImageBytes,&nSectorsPerTrack,&nSides);
     nImageTracks = ((EmulationDrives[Drive].nImageBytes / NUMBYTESPERSECTOR) / nSectorsPerTrack) / nSides;
 
     /* Need to write whole track? */
@@ -573,7 +573,7 @@ BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsig
     Offset += (NUMBYTESPERSECTOR*(Sector-1));   /* And finally to sector */
 
     /* Write sectors (usually 512 bytes per sector) */
-    memcpy(pDiscBuffer+Offset,pBuffer,(int)Count*NUMBYTESPERSECTOR);
+    memcpy(pDiskBuffer+Offset, pBuffer, (int)Count*NUMBYTESPERSECTOR);
     /* And set 'changed' flag */
     EmulationDrives[Drive].bContentsChanged = TRUE;
 

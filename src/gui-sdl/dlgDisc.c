@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.11 2005-02-25 13:28:47 thothy Exp $";
+char DlgDisk_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.12 2005-09-13 01:10:09 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -16,36 +16,36 @@ char DlgDisc_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.11 2005-02-25 13:28:47 thothy 
 #include "hdc.h"
 
 
-#define DISCDLG_EJECTA      4
-#define DISCDLG_BROWSEA     5
-#define DISCDLG_DISCA       6
-#define DISCDLG_EJECTB      8
-#define DISCDLG_BROWSEB     9
-#define DISCDLG_DISCB       10
-#define DISCDLG_IMGDIR      12
-#define DISCDLG_BROWSEIMG   13
-#define DISCDLG_AUTOB       14
-#define DISCDLG_CREATEIMG   15
-#define DISCDLG_PROTOFF     17
-#define DISCDLG_PROTON      18
-#define DISCDLG_PROTAUTO    19
-#define DISCDLG_EJECTHDIMG  23
-#define DISCDLG_BROWSEHDIMG 24
-#define DISCDLG_DISCHDIMG   25
-#define DISCDLG_UNMOUNTGDOS 27
-#define DISCDLG_BROWSEGDOS  28
-#define DISCDLG_DISCGDOS    29
-#define DISCDLG_BOOTHD      30
-#define DISCDLG_EXIT        31
+#define DISKDLG_EJECTA      4
+#define DISKDLG_BROWSEA     5
+#define DISKDLG_DISKA       6
+#define DISKDLG_EJECTB      8
+#define DISKDLG_BROWSEB     9
+#define DISKDLG_DISKB       10
+#define DISKDLG_IMGDIR      12
+#define DISKDLG_BROWSEIMG   13
+#define DISKDLG_AUTOB       14
+#define DISKDLG_CREATEIMG   15
+#define DISKDLG_PROTOFF     17
+#define DISKDLG_PROTON      18
+#define DISKDLG_PROTAUTO    19
+#define DISKDLG_EJECTHDIMG  23
+#define DISKDLG_BROWSEHDIMG 24
+#define DISKDLG_DISKHDIMG   25
+#define DISKDLG_UNMOUNTGDOS 27
+#define DISKDLG_BROWSEGDOS  28
+#define DISKDLG_DISKGDOS    29
+#define DISKDLG_BOOTHD      30
+#define DISKDLG_EXIT        31
 
 
-/* The discs dialog: */
-static SGOBJ discdlg[] =
+/* The disks dialog: */
+static SGOBJ diskdlg[] =
 {
   { SGBOX, 0, 0, 0,0, 64,25, NULL },
 
   { SGBOX, 0, 0, 1,1, 62,12, NULL },
-  { SGTEXT, 0, 0, 25,1, 12,1, "Floppy discs" },
+  { SGTEXT, 0, 0, 25,1, 12,1, "Floppy disks" },
   { SGTEXT, 0, 0, 2,2, 8,1, "Drive A:" },
   { SGBUTTON, 0, 0, 46,2, 7,1, "Eject" },
   { SGBUTTON, 0, 0, 54,2, 8,1, "Browse" },
@@ -65,7 +65,7 @@ static SGOBJ discdlg[] =
   { SGRADIOBUT, 0, 0, 34,12, 6,1, "Auto" },
 
   { SGBOX, 0, 0, 1,14, 62,8, NULL },
-  { SGTEXT, 0, 0, 27,14, 10,1, "Hard discs" },
+  { SGTEXT, 0, 0, 27,14, 10,1, "Hard disks" },
   { SGTEXT, 0, 0, 2,15, 9,1, "HD image:" },
   { SGBUTTON, 0, 0, 46,15, 7,1, "Eject" },
   { SGBUTTON, 0, 0, 54,15, 8,1, "Browse" },
@@ -83,12 +83,12 @@ static SGOBJ discdlg[] =
 
 /*-----------------------------------------------------------------------*/
 /*
-  Show and process the disc image dialog.
+  Show and process the disk image dialog.
 */
-void Dialog_DiscDlg(void)
+void Dialog_DiskDlg(void)
 {
   int but, i;
-  char dlgnamea[64], dlgnameb[64], dlgdiscdir[64];
+  char dlgnamea[64], dlgnameb[64], dlgdiskdir[64];
   char dlgnamegdos[64], dlgnamehdimg[64];
   char *tmpname;
   char *zip_path;
@@ -97,165 +97,165 @@ void Dialog_DiscDlg(void)
   tmpname = malloc(2 * FILENAME_MAX);
   if (!tmpname)
   {
-    perror("Dialog_DiscDlg");
+    perror("Dialog_DiskDlg");
     return;
   }
   zip_path = tmpname + FILENAME_MAX;
   zip_path[0] = 0;
 
-  SDLGui_CenterDlg(discdlg);
+  SDLGui_CenterDlg(diskdlg);
 
   /* Set up dialog to actual values: */
 
-  /* Disc name A: */
-  if( EmulationDrives[0].bDiscInserted )
-    File_ShrinkName(dlgnamea, EmulationDrives[0].szFileName, discdlg[DISCDLG_DISCA].w);
+  /* Disk name A: */
+  if (EmulationDrives[0].bDiskInserted)
+    File_ShrinkName(dlgnamea, EmulationDrives[0].szFileName, diskdlg[DISKDLG_DISKA].w);
   else
     dlgnamea[0] = 0;
-  discdlg[DISCDLG_DISCA].txt = dlgnamea;
+  diskdlg[DISKDLG_DISKA].txt = dlgnamea;
 
-  /* Disc name B: */
-  if( EmulationDrives[1].bDiscInserted )
-    File_ShrinkName(dlgnameb, EmulationDrives[1].szFileName, discdlg[DISCDLG_DISCB].w);
+  /* Disk name B: */
+  if (EmulationDrives[1].bDiskInserted)
+    File_ShrinkName(dlgnameb, EmulationDrives[1].szFileName, diskdlg[DISKDLG_DISKB].w);
   else
     dlgnameb[0] = 0;
-  discdlg[DISCDLG_DISCB].txt = dlgnameb;
+  diskdlg[DISKDLG_DISKB].txt = dlgnameb;
 
   /* Default image directory: */
-  File_ShrinkName(dlgdiscdir, DialogParams.DiscImage.szDiscImageDirectory, discdlg[DISCDLG_IMGDIR].w);
-  discdlg[DISCDLG_IMGDIR].txt = dlgdiscdir;
+  File_ShrinkName(dlgdiskdir, DialogParams.DiskImage.szDiskImageDirectory, diskdlg[DISKDLG_IMGDIR].w);
+  diskdlg[DISKDLG_IMGDIR].txt = dlgdiskdir;
 
-  /* Auto insert disc B: */
-  if (DialogParams.DiscImage.bAutoInsertDiscB)
-    discdlg[DISCDLG_AUTOB].state |= SG_SELECTED;
+  /* Auto insert disk B: */
+  if (DialogParams.DiskImage.bAutoInsertDiskB)
+    diskdlg[DISKDLG_AUTOB].state |= SG_SELECTED;
   else
-    discdlg[DISCDLG_AUTOB].state &= ~SG_SELECTED;
+    diskdlg[DISKDLG_AUTOB].state &= ~SG_SELECTED;
 
   /* Write protection */
-  for (i = DISCDLG_PROTOFF; i <= DISCDLG_PROTAUTO; i++)
+  for (i = DISKDLG_PROTOFF; i <= DISKDLG_PROTAUTO; i++)
   {
-    discdlg[i].state &= ~SG_SELECTED;
+    diskdlg[i].state &= ~SG_SELECTED;
   }
-  discdlg[DISCDLG_PROTOFF+DialogParams.DiscImage.nWriteProtection].state |= SG_SELECTED;
+  diskdlg[DISKDLG_PROTOFF+DialogParams.DiskImage.nWriteProtection].state |= SG_SELECTED;
 
   /* Boot from harddisk? */
-  if( DialogParams.HardDisc.bBootFromHardDisc )
-    discdlg[DISCDLG_BOOTHD].state |= SG_SELECTED;
+  if (DialogParams.HardDisk.bBootFromHardDisk)
+    diskdlg[DISKDLG_BOOTHD].state |= SG_SELECTED;
    else
-    discdlg[DISCDLG_BOOTHD].state &= ~SG_SELECTED;
+    diskdlg[DISKDLG_BOOTHD].state &= ~SG_SELECTED;
 
-  /* GEMDOS Hard disc directory: */
-  if( strcmp(DialogParams.HardDisc.szHardDiscDirectories[0], ConfigureParams.HardDisc.szHardDiscDirectories[0])!=0
+  /* GEMDOS Hard disk directory: */
+  if (strcmp(DialogParams.HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0])!=0
       || GEMDOS_EMU_ON )
-    File_ShrinkName(dlgnamegdos, DialogParams.HardDisc.szHardDiscDirectories[0], discdlg[DISCDLG_DISCGDOS].w);
+    File_ShrinkName(dlgnamegdos, DialogParams.HardDisk.szHardDiskDirectories[0], diskdlg[DISKDLG_DISKGDOS].w);
   else
     dlgnamegdos[0] = 0;
-  discdlg[DISCDLG_DISCGDOS].txt = dlgnamegdos;
+  diskdlg[DISKDLG_DISKGDOS].txt = dlgnamegdos;
 
-  /* Hard disc image: */
+  /* Hard disk image: */
   if( ACSI_EMU_ON )
-    File_ShrinkName(dlgnamehdimg, DialogParams.HardDisc.szHardDiscImage, discdlg[DISCDLG_DISCHDIMG].w);
+    File_ShrinkName(dlgnamehdimg, DialogParams.HardDisk.szHardDiskImage, diskdlg[DISKDLG_DISKHDIMG].w);
   else
     dlgnamehdimg[0] = 0;
-  discdlg[DISCDLG_DISCHDIMG].txt = dlgnamehdimg;
+  diskdlg[DISKDLG_DISKHDIMG].txt = dlgnamehdimg;
 
   /* Draw and process the dialog */
   do
   {
-    but = SDLGui_DoDialog(discdlg, NULL);
+    but = SDLGui_DoDialog(diskdlg, NULL);
     switch(but)
     {
-      case DISCDLG_EJECTA:                        /* Eject disc in drive A: */
-        Floppy_EjectDiscFromDrive(0, FALSE);
+      case DISKDLG_EJECTA:                        /* Eject disk in drive A: */
+        Floppy_EjectDiskFromDrive(0, FALSE);
         dlgnamea[0] = 0;
         break;
-      case DISCDLG_BROWSEA:                       /* Choose a new disc A: */
-        if( EmulationDrives[0].bDiscInserted )
+      case DISKDLG_BROWSEA:                       /* Choose a new disk A: */
+        if( EmulationDrives[0].bDiskInserted )
           strcpy(tmpname, EmulationDrives[0].szFileName);
          else
-          strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
+          strcpy(tmpname, DialogParams.DiskImage.szDiskImageDirectory);
         if( SDLGui_FileSelect(tmpname, zip_path, FALSE) )
         {
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
-            Floppy_ZipInsertDiscIntoDrive(0, tmpname, zip_path); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
-            File_ShrinkName(dlgnamea, tmpname, discdlg[DISCDLG_DISCA].w);
+            Floppy_ZipInsertDiskIntoDrive(0, tmpname, zip_path); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+            File_ShrinkName(dlgnamea, tmpname, diskdlg[DISKDLG_DISKA].w);
           }
           else
           {
-            Floppy_EjectDiscFromDrive(0, FALSE); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+            Floppy_EjectDiskFromDrive(0, FALSE); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
             dlgnamea[0] = 0;
           }
         }
         break;
-      case DISCDLG_EJECTB:                        /* Eject disc in drive B: */
-        Floppy_EjectDiscFromDrive(1, FALSE);
+      case DISKDLG_EJECTB:                        /* Eject disk in drive B: */
+        Floppy_EjectDiskFromDrive(1, FALSE);
         dlgnameb[0] = 0;
         break;
-      case DISCDLG_BROWSEB:                       /* Choose a new disc B: */
-        if( EmulationDrives[1].bDiscInserted )
+      case DISKDLG_BROWSEB:                       /* Choose a new disk B: */
+        if( EmulationDrives[1].bDiskInserted )
           strcpy(tmpname, EmulationDrives[1].szFileName);
          else
-          strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
+          strcpy(tmpname, DialogParams.DiskImage.szDiskImageDirectory);
         if( SDLGui_FileSelect(tmpname, zip_path, FALSE) )
         {
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
-            Floppy_ZipInsertDiscIntoDrive(1, tmpname, zip_path); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
-            File_ShrinkName(dlgnameb, tmpname, discdlg[DISCDLG_DISCB].w);
+            Floppy_ZipInsertDiskIntoDrive(1, tmpname, zip_path); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+            File_ShrinkName(dlgnameb, tmpname, diskdlg[DISKDLG_DISKB].w);
           }
           else
           {
-            Floppy_EjectDiscFromDrive(1, FALSE); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+            Floppy_EjectDiskFromDrive(1, FALSE); /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
             dlgnameb[0] = 0;
           }
         }
         break;
-      case DISCDLG_BROWSEIMG:
-        strcpy(tmpname, DialogParams.DiscImage.szDiscImageDirectory);
+      case DISKDLG_BROWSEIMG:
+        strcpy(tmpname, DialogParams.DiskImage.szDiskImageDirectory);
         if( SDLGui_FileSelect(tmpname, NULL, FALSE) )
         {
           char *ptr;
           ptr = strrchr(tmpname, '/');
           if( ptr!=NULL )  ptr[1]=0;
-          strcpy(DialogParams.DiscImage.szDiscImageDirectory, tmpname);
-          File_ShrinkName(dlgdiscdir, DialogParams.DiscImage.szDiscImageDirectory, discdlg[DISCDLG_IMGDIR].w);
+          strcpy(DialogParams.DiskImage.szDiskImageDirectory, tmpname);
+          File_ShrinkName(dlgdiskdir, DialogParams.DiskImage.szDiskImageDirectory, diskdlg[DISKDLG_IMGDIR].w);
         }
         break;
-      case DISCDLG_CREATEIMG:
-        DlgNewDisc_Main();
+      case DISKDLG_CREATEIMG:
+        DlgNewDisk_Main();
         break;
-      case DISCDLG_UNMOUNTGDOS:
+      case DISKDLG_UNMOUNTGDOS:
         GemDOS_UnInitDrives();   /* FIXME: This shouldn't be done here but it's the only quick solution I could think of */
-        strcpy(DialogParams.HardDisc.szHardDiscDirectories[0], ConfigureParams.HardDisc.szHardDiscDirectories[0]);
+        strcpy(DialogParams.HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0]);
         dlgnamegdos[0] = 0;
         break;
-      case DISCDLG_BROWSEGDOS:
-        strcpy(tmpname, DialogParams.HardDisc.szHardDiscDirectories[0]);
+      case DISKDLG_BROWSEGDOS:
+        strcpy(tmpname, DialogParams.HardDisk.szHardDiskDirectories[0]);
         if( SDLGui_FileSelect(tmpname, NULL, FALSE) )
         {
           char *ptr;
           ptr = strrchr(tmpname, '/');
           if( ptr!=NULL )  ptr[1]=0;        /* Remove file name from path */
-          strcpy(DialogParams.HardDisc.szHardDiscDirectories[0], tmpname);
-          File_CleanFileName(DialogParams.HardDisc.szHardDiscDirectories[0]);
-          File_ShrinkName(dlgnamegdos, DialogParams.HardDisc.szHardDiscDirectories[0], discdlg[DISCDLG_DISCGDOS].w);
+          strcpy(DialogParams.HardDisk.szHardDiskDirectories[0], tmpname);
+          File_CleanFileName(DialogParams.HardDisk.szHardDiskDirectories[0]);
+          File_ShrinkName(dlgnamegdos, DialogParams.HardDisk.szHardDiskDirectories[0], diskdlg[DISKDLG_DISKGDOS].w);
         }
         break;
-      case DISCDLG_EJECTHDIMG:
-        DialogParams.HardDisc.szHardDiscImage[0] = 0;
-        DialogParams.HardDisc.bUseHardDiscImage = FALSE;
+      case DISKDLG_EJECTHDIMG:
+        DialogParams.HardDisk.szHardDiskImage[0] = 0;
+        DialogParams.HardDisk.bUseHardDiskImage = FALSE;
         dlgnamehdimg[0] = 0;
         break;
-      case DISCDLG_BROWSEHDIMG:
-        strcpy(tmpname, DialogParams.HardDisc.szHardDiscImage);
+      case DISKDLG_BROWSEHDIMG:
+        strcpy(tmpname, DialogParams.HardDisk.szHardDiskImage);
         if( SDLGui_FileSelect(tmpname, NULL, FALSE) )
         {
-          strcpy(DialogParams.HardDisc.szHardDiscImage, tmpname);
+          strcpy(DialogParams.HardDisk.szHardDiskImage, tmpname);
           if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
           {
-            File_ShrinkName(dlgnamehdimg, tmpname, discdlg[DISCDLG_DISCHDIMG].w);
-            DialogParams.HardDisc.bUseHardDiscImage = TRUE;
+            File_ShrinkName(dlgnamehdimg, tmpname, diskdlg[DISKDLG_DISKHDIMG].w);
+            DialogParams.HardDisk.bUseHardDiskImage = TRUE;
           }
           else
           {
@@ -265,21 +265,21 @@ void Dialog_DiscDlg(void)
         break;
     }
   }
-  while (but!=DISCDLG_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
+  while (but!=DISKDLG_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
 
   /* Read values from dialog: */
 
-  for (i = DISCDLG_PROTOFF; i <= DISCDLG_PROTAUTO; i++)
+  for (i = DISKDLG_PROTOFF; i <= DISKDLG_PROTAUTO; i++)
   {
-    if (discdlg[i].state & SG_SELECTED)
+    if (diskdlg[i].state & SG_SELECTED)
     {
-      DialogParams.DiscImage.nWriteProtection = i-DISCDLG_PROTOFF;
+      DialogParams.DiskImage.nWriteProtection = i-DISKDLG_PROTOFF;
       break;
     }
   }
 
-  DialogParams.DiscImage.bAutoInsertDiscB = (discdlg[DISCDLG_AUTOB].state & SG_SELECTED);
-  DialogParams.HardDisc.bBootFromHardDisc = (discdlg[DISCDLG_BOOTHD].state & SG_SELECTED);
+  DialogParams.DiskImage.bAutoInsertDiskB = (diskdlg[DISKDLG_AUTOB].state & SG_SELECTED);
+  DialogParams.HardDisk.bBootFromHardDisk = (diskdlg[DISKDLG_BOOTHD].state & SG_SELECTED);
 
   free(tmpname);
 }

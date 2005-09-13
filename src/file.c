@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.23 2005-06-01 13:44:39 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.24 2005-09-13 01:10:09 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -260,7 +260,7 @@ void File_RemoveFileNameTrailingSlashes(char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Read file from disc into memory, allocate memory for it if need to (pass
+  Read file from disk into memory, allocate memory for it if need to (pass
   Address as NULL).
 */
 void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *ppszExts[])
@@ -306,15 +306,15 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
   }
   else
   {
-    FILE *hDiscFile;
+    FILE *hDiskFile;
     /* Open and read normal file */
-    hDiscFile = fopen(pszFileName, "rb");
-    if (hDiscFile != NULL)
+    hDiskFile = fopen(pszFileName, "rb");
+    if (hDiskFile != NULL)
     {
       /* Find size of file: */
-      fseek(hDiscFile, 0, SEEK_END);
-      FileSize = ftell(hDiscFile);
-      fseek(hDiscFile, 0, SEEK_SET);
+      fseek(hDiskFile, 0, SEEK_END);
+      FileSize = ftell(hDiskFile);
+      fseek(hDiskFile, 0, SEEK_SET);
       /* Find pointer to where to load, allocate memory if pass NULL */
       if (pAddress)
         pFile = pAddress;
@@ -322,9 +322,9 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
         pFile = malloc(FileSize);
       /* Read in... */
       if (pFile)
-        fread(pFile, 1, FileSize, hDiscFile);
+        fread(pFile, 1, FileSize, hDiskFile);
 
-      fclose(hDiscFile);
+      fclose(hDiskFile);
     }
   }
 
@@ -338,7 +338,7 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
 
 /*-----------------------------------------------------------------------*/
 /*
-  Save file to disc, return FALSE if errors
+  Save file to disk, return FALSE if errors
 */
 BOOL File_Save(char *pszFileName, void *pAddress, size_t Size, BOOL bQueryOverwrite)
 {
@@ -369,16 +369,16 @@ BOOL File_Save(char *pszFileName, void *pAddress, size_t Size, BOOL bQueryOverwr
   }
   else
   {
-    FILE *hDiscFile;
+    FILE *hDiskFile;
     /* Create a normal file: */
-    hDiscFile = fopen(pszFileName, "wb");
-    if (hDiscFile != NULL)
+    hDiskFile = fopen(pszFileName, "wb");
+    if (hDiskFile != NULL)
     {
       /* Write data, set success flag */
-      if (fwrite(pAddress, 1, Size, hDiscFile) == Size)
+      if (fwrite(pAddress, 1, Size, hDiskFile) == Size)
         bRet = TRUE;
 
-      fclose(hDiscFile);
+      fclose(hDiskFile);
     }
   }
 
@@ -392,15 +392,16 @@ BOOL File_Save(char *pszFileName, void *pAddress, size_t Size, BOOL bQueryOverwr
 */
 int File_Length(const char *pszFileName)
 {
-  FILE *DiscFile;
+  FILE *hDiskFile;
   int FileSize;
-  DiscFile = fopen(pszFileName, "rb");
-  if (DiscFile!=NULL)
+
+  hDiskFile = fopen(pszFileName, "rb");
+  if (hDiskFile!=NULL)
   {
-    fseek(DiscFile, 0, SEEK_END);
-    FileSize = ftell(DiscFile);
-    fseek(DiscFile, 0, SEEK_SET);
-    fclose(DiscFile);
+    fseek(hDiskFile, 0, SEEK_END);
+    FileSize = ftell(hDiskFile);
+    fseek(hDiskFile, 0, SEEK_SET);
+    fclose(hDiskFile);
     return(FileSize);
   }
 
@@ -414,13 +415,13 @@ int File_Length(const char *pszFileName)
 */
 BOOL File_Exists(const char *pszFileName)
 {
-  FILE *DiscFile;
+  FILE *hDiskFile;
 
   /* Attempt to open file */
-  DiscFile = fopen(pszFileName, "rb");
-  if (DiscFile!=NULL)
+  hDiskFile = fopen(pszFileName, "rb");
+  if (hDiskFile!=NULL)
   {
-    fclose(DiscFile);
+    fclose(hDiskFile);
     return(TRUE);
   }
   return(FALSE);

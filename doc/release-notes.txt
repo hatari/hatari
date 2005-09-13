@@ -57,7 +57,7 @@
 - This is just a minor release on the way to version 0.50. It is not very
   well tested, so be warned!
 - New build system (with a "configure" shell script).
-- A disc image destroying bug in the MSA compression function has been fixed.
+- A disk image destroying bug in the MSA compression function has been fixed.
 - It is now possible to redirect the printer output into a file.
 - Experimental MIDI output support.
 - Added the possibility to save memory snap shots.

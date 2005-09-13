@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.44 2005-08-13 11:21:44 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.45 2005-09-13 01:10:09 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -100,24 +100,43 @@ static const struct Config_Tag configs_Memory[] =
 /* Used to load/save floppy options */
 static const struct Config_Tag configs_Floppy[] =
 {
-	{ "bAutoInsertDiscB", Bool_Tag, &ConfigureParams.DiscImage.bAutoInsertDiscB },
-	{ "nWriteProtection", Int_Tag, &ConfigureParams.DiscImage.nWriteProtection },
-	{ "szDiscImageDirectory", String_Tag, ConfigureParams.DiscImage.szDiscImageDirectory },
+	{ "bAutoInsertDiskB", Bool_Tag, &ConfigureParams.DiskImage.bAutoInsertDiskB },
+	{ "nWriteProtection", Int_Tag, &ConfigureParams.DiskImage.nWriteProtection },
+	{ "szDiskImageDirectory", String_Tag, ConfigureParams.DiskImage.szDiskImageDirectory },
+	{ NULL , Error_Tag, NULL }
+};
+
+/* Obsolete - to be removed */
+static const struct Config_Tag configs_OldFloppy[] =
+{
+	{ "bAutoInsertDiscB", Bool_Tag, &ConfigureParams.DiskImage.bAutoInsertDiskB },
+	{ "szDiscImageDirectory", String_Tag, ConfigureParams.DiskImage.szDiskImageDirectory },
 	{ NULL , Error_Tag, NULL }
 };
 
 /* Used to load/save HD options */
-static const struct Config_Tag configs_HardDisc[] =
+static const struct Config_Tag configs_HardDisk[] =
 {
-	/*{ "nDriveList", Int_Tag, &ConfigureParams.HardDisc.nDriveList },*/
-	{ "bBootFromHardDisc", Bool_Tag, &ConfigureParams.HardDisc.bBootFromHardDisc },
-	{ "bUseHardDiscDirectory", Bool_Tag, &ConfigureParams.HardDisc.bUseHardDiscDirectories },
-	{ "szHardDiscDirectory", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_C] },
-	/*{ "szHardDiscDirD", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_D] },*/
-	/*{ "szHardDiscDirE", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_E] },*/
-	/*{ "szHardDiscDirF", String_Tag, ConfigureParams.HardDisc.szHardDiscDirectories[DRIVE_F] },*/
-	{ "bUseHardDiscImage", Bool_Tag, &ConfigureParams.HardDisc.bUseHardDiscImage },
-	{ "szHardDiscImage", String_Tag, ConfigureParams.HardDisc.szHardDiscImage },
+	/*{ "nDriveList", Int_Tag, &ConfigureParams.HardDisk.nDriveList },*/
+	{ "bBootFromHardDisk", Bool_Tag, &ConfigureParams.HardDisk.bBootFromHardDisk },
+	{ "bUseHardDiskDirectory", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskDirectories },
+	{ "szHardDiskDirectory", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C] },
+	/*{ "szHardDiskDirD", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_D] },*/
+	/*{ "szHardDiskDirE", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_E] },*/
+	/*{ "szHardDiskDirF", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_F] },*/
+	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskImage },
+	{ "szHardDiskImage", String_Tag, ConfigureParams.HardDisk.szHardDiskImage },
+	{ NULL , Error_Tag, NULL }
+};
+
+/* Obsolete - to be removed */
+static const struct Config_Tag configs_OldHardDisc[] =
+{
+	{ "bBootFromHardDisc", Bool_Tag, &ConfigureParams.HardDisk.bBootFromHardDisk },
+	{ "bUseHardDiscDirectory", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskDirectories },
+	{ "szHardDiscDirectory", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C] },
+	{ "bUseHardDiscImage", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskImage },
+	{ "szHardDiscImage", String_Tag, ConfigureParams.HardDisk.szHardDiskImage },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -191,24 +210,24 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Log.nTextLogLevel = LOG_INFO;
 	ConfigureParams.Log.nAlertDlgLogLevel = LOG_INFO;
 
-	/* Set defaults for (floppy) Disc Image */
-	ConfigureParams.DiscImage.bAutoInsertDiscB = TRUE;
-	ConfigureParams.DiscImage.nWriteProtection = WRITEPROT_OFF;
-	strcpy(ConfigureParams.DiscImage.szDiscImageDirectory, szWorkingDir);
-	File_AddSlashToEndFileName(ConfigureParams.DiscImage.szDiscImageDirectory);
+	/* Set defaults for floppy disk images */
+	ConfigureParams.DiskImage.bAutoInsertDiskB = TRUE;
+	ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_OFF;
+	strcpy(ConfigureParams.DiskImage.szDiskImageDirectory, szWorkingDir);
+	File_AddSlashToEndFileName(ConfigureParams.DiskImage.szDiskImageDirectory);
 
-	/* Set defaults for Hard Disc */
-	ConfigureParams.HardDisc.nDriveList = DRIVELIST_NONE;
-	ConfigureParams.HardDisc.bBootFromHardDisc = FALSE;
-	ConfigureParams.HardDisc.nHardDiscDir = DRIVE_C;
-	ConfigureParams.HardDisc.bUseHardDiscDirectories = FALSE;
+	/* Set defaults for hard disks */
+	ConfigureParams.HardDisk.nDriveList = DRIVELIST_NONE;
+	ConfigureParams.HardDisk.bBootFromHardDisk = FALSE;
+	ConfigureParams.HardDisk.nHardDiskDir = DRIVE_C;
+	ConfigureParams.HardDisk.bUseHardDiskDirectories = FALSE;
 	for (i=0; i<MAX_HARDDRIVES; i++)
 	{
-		strcpy(ConfigureParams.HardDisc.szHardDiscDirectories[i], szWorkingDir);
-		File_CleanFileName(ConfigureParams.HardDisc.szHardDiscDirectories[i]);
+		strcpy(ConfigureParams.HardDisk.szHardDiskDirectories[i], szWorkingDir);
+		File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[i]);
 	}
-	ConfigureParams.HardDisc.bUseHardDiscImage = FALSE;
-	strcpy(ConfigureParams.HardDisc.szHardDiscImage, szWorkingDir);
+	ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
+	strcpy(ConfigureParams.HardDisk.szHardDiskImage, szWorkingDir);
 
 	/* Set defaults for Joysticks */
 	for (i=0; i<2; i++)
@@ -323,9 +342,9 @@ void Configuration_WorkOnDetails(BOOL bReset)
 	/* Clean file and directory names */
 	File_MakeAbsoluteName(ConfigureParams.Rom.szTosImageFileName);
 	File_MakeAbsoluteName(ConfigureParams.Rom.szCartridgeImageFileName);
-	File_MakeAbsoluteName(ConfigureParams.HardDisc.szHardDiscImage);
-	File_CleanFileName(ConfigureParams.HardDisc.szHardDiscDirectories[0]);
-	File_MakeAbsoluteName(ConfigureParams.HardDisc.szHardDiscDirectories[0]);
+	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskImage);
+	File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
+	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	File_MakeAbsoluteName(ConfigureParams.Midi.szMidiOutFileName);
 	File_MakeAbsoluteName(ConfigureParams.RS232.szOutFileName);
 	File_MakeAbsoluteName(ConfigureParams.RS232.szInFileName);
@@ -375,8 +394,10 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Keyboard, "[Keyboard]");
 	Configuration_LoadSection(psFileName, configs_Sound, "[Sound]");
 	Configuration_LoadSection(psFileName, configs_Memory, "[Memory]");
+	Configuration_LoadSection(psFileName, configs_OldFloppy, "[Floppy]");  /* <- to be removed */
 	Configuration_LoadSection(psFileName, configs_Floppy, "[Floppy]");
-	Configuration_LoadSection(psFileName, configs_HardDisc, "[HardDisc]");
+	Configuration_LoadSection(psFileName, configs_OldHardDisc, "[HardDisc]");  /* <- to be removed */
+	Configuration_LoadSection(psFileName, configs_HardDisk, "[HardDisk]");
 	Configuration_LoadSection(psFileName, configs_Rom, "[ROM]");
 	Configuration_LoadSection(psFileName, configs_Rs232, "[RS232]");
 	Configuration_LoadSection(psFileName, configs_Printer, "[Printer]");
@@ -426,7 +447,7 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Sound, "[Sound]");
 	Configuration_SaveSection(sConfigFileName, configs_Memory, "[Memory]");
 	Configuration_SaveSection(sConfigFileName, configs_Floppy, "[Floppy]");
-	Configuration_SaveSection(sConfigFileName, configs_HardDisc, "[HardDisc]");
+	Configuration_SaveSection(sConfigFileName, configs_HardDisk, "[HardDisk]");
 	Configuration_SaveSection(sConfigFileName, configs_Rom, "[ROM]");
 	Configuration_SaveSection(sConfigFileName, configs_Rs232, "[RS232]");
 	Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");

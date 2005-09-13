@@ -4,9 +4,9 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  Zipped disc support, uses zlib
+  Zipped disk support, uses zlib
 */
-char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.11 2005-04-05 14:41:32 thothy Exp $";
+char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.12 2005-09-13 01:10:09 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -285,7 +285,7 @@ struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
 /*
   Check an image file in the archive, return the uncompressed length
 */
-static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiscType)
+static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiskType)
 {
   unz_file_info file_info;
 
@@ -304,19 +304,19 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiscType)
   /* check for a .msa or .st extention */
   if(MSA_FileNameIsMSA(filename, FALSE))
     {
-      *pDiscType = ZIP_FILE_MSA;
+      *pDiskType = ZIP_FILE_MSA;
       return( file_info.uncompressed_size );
     }
 
   if(ST_FileNameIsST(filename, FALSE))
     {
-      *pDiscType = ZIP_FILE_ST;
+      *pDiskType = ZIP_FILE_ST;
       return( file_info.uncompressed_size );
     }
   
   if (DIM_FileNameIsDIM(filename, FALSE))
     {
-      *pDiscType = ZIP_FILE_DIM;
+      *pDiskType = ZIP_FILE_DIM;
       return( file_info.uncompressed_size );
     }
 
@@ -424,14 +424,14 @@ static char *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
   Load .ZIP file into memory, return number of bytes loaded
 
 */
-Uint8 *ZIP_ReadDisc(char *pszFileName, char *pszZipPath, long *pImageSize)
+Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
 {
   uLong ImageSize=0;
   unzFile uf=NULL;
   Uint8 *buf;
-  int nDiscType;
+  int nDiskType;
   BOOL pathAllocated=FALSE;
-  Uint8 *pDiscBuffer = NULL;
+  Uint8 *pDiskBuffer = NULL;
 
   *pImageSize = 0;
 
@@ -453,7 +453,7 @@ Uint8 *ZIP_ReadDisc(char *pszFileName, char *pszZipPath, long *pImageSize)
       pathAllocated=TRUE;
     }
 
-  if((ImageSize = ZIP_CheckImageFile(uf, pszZipPath, &nDiscType)) <= 0)
+  if((ImageSize = ZIP_CheckImageFile(uf, pszZipPath, &nDiskType)) <= 0)
     {
       unzClose(uf);
       return NULL;
@@ -468,37 +468,37 @@ Uint8 *ZIP_ReadDisc(char *pszFileName, char *pszZipPath, long *pImageSize)
       return NULL;  /* failed extraction, return error */
     }
 
-  if (nDiscType == ZIP_FILE_ST)
+  if (nDiskType == ZIP_FILE_ST)
     {
       /* ST image => return buffer directly */
-      pDiscBuffer = buf;
+      pDiskBuffer = buf;
     }
-  else if (nDiscType == ZIP_FILE_MSA)
+  else if (nDiskType == ZIP_FILE_MSA)
     {
       /* uncompress the MSA file */
-      pDiscBuffer = MSA_UnCompress(buf, &ImageSize);
+      pDiskBuffer = MSA_UnCompress(buf, &ImageSize);
     }
-  else if (nDiscType == ZIP_FILE_DIM)
+  else if (nDiskType == ZIP_FILE_DIM)
     {
       /* Skip DIM header */
       ImageSize -= 32;
-      pDiscBuffer = malloc(ImageSize);
-      if (pDiscBuffer)
-        memcpy(pDiscBuffer, buf+32, ImageSize);
+      pDiskBuffer = malloc(ImageSize);
+      if (pDiskBuffer)
+        memcpy(pDiskBuffer, buf+32, ImageSize);
       else
-        perror("ZIP_ReadDisc");
+        perror("ZIP_ReadDisk");
     }
 
   /* Free the buffers */
-  if (pDiscBuffer != buf)
+  if (pDiskBuffer != buf)
     free(buf);
   if(pathAllocated == TRUE)
     free(pszZipPath);
 
-  if (pDiscBuffer != NULL)
+  if (pDiskBuffer != NULL)
     *pImageSize = ImageSize;
 
-  return(pDiscBuffer);
+  return pDiskBuffer;
 }
 
 
@@ -508,7 +508,7 @@ Uint8 *ZIP_ReadDisc(char *pszFileName, char *pszZipPath, long *pImageSize)
   
   Not yet implemented.
 */
-BOOL ZIP_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
+BOOL ZIP_WriteDisk(char *pszFileName,unsigned char *pBuffer,int ImageSize)
 {
   return(FALSE);
 }

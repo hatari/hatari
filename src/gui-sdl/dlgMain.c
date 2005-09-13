@@ -6,7 +6,7 @@
 
   The main dialog.
 */
-char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.7 2005-04-05 14:20:58 thothy Exp $";
+char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.8 2005-09-13 01:10:09 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -16,7 +16,7 @@ char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.7 2005-04-05 14:20:58 thothy E
 
 
 #define MAINDLG_ABOUT    2
-#define MAINDLG_DISCS    3
+#define MAINDLG_DISKS    3
 #define MAINDLG_ROM      4
 #define MAINDLG_SCREEN   5
 #define MAINDLG_SOUND    6
@@ -40,7 +40,7 @@ static SGOBJ maindlg[] =
   { SGBOX, 0, 0, 0,0, 36,22, NULL },
   { SGTEXT, 0, 0, 10,1, 16,1, "Hatari main menu" },
   { SGBUTTON, 0, 0, 4,4, 12,1, "About" },
-  { SGBUTTON, 0, 0, 4,6, 12,1, "Discs" },
+  { SGBUTTON, 0, 0, 4,6, 12,1, "Disks" },
   { SGBUTTON, 0, 0, 4,8, 12,1, "ROM" },
   { SGBUTTON, 0, 0, 4,10, 12,1, "Screen" },
   { SGBUTTON, 0, 0, 4,12, 12,1, "Sound" },
@@ -90,8 +90,8 @@ int Dialog_MainDlg(BOOL *bReset)
       case MAINDLG_ABOUT:
         Dialog_AboutDlg();
         break;
-      case MAINDLG_DISCS:
-        Dialog_DiscDlg();
+      case MAINDLG_DISKS:
+        Dialog_DiskDlg();
         break;
       case MAINDLG_ROM:
         DlgRom_Main();

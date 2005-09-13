@@ -4,9 +4,9 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  DIM Disc support.
+  DIM disk image support.
 */
-char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.3 2005-02-13 16:18:48 thothy Exp $";
+char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.4 2005-09-13 01:10:09 thothy Exp $";
 
 #include <zlib.h>
 
@@ -58,10 +58,10 @@ BOOL DIM_FileNameIsDIM(char *pszFileName, BOOL bAllowGZ)
   Load .DIM file into memory, set number of bytes loaded and return a pointer
   to the buffer.
 */
-Uint8 *DIM_ReadDisc(char *pszFileName, long *pImageSize)
+Uint8 *DIM_ReadDisk(char *pszFileName, long *pImageSize)
 {
 	Uint8 *pDimFile;
-	Uint8 *pDiscBuffer = NULL;
+	Uint8 *pDiskBuffer = NULL;
 
 	/* Load file into buffer */
 	pDimFile = File_Read(pszFileName, NULL, pImageSize, NULL);
@@ -76,24 +76,24 @@ Uint8 *DIM_ReadDisc(char *pszFileName, long *pImageSize)
 			return NULL;
 		}
 
-		/* Simply use disc contents without the DIM header: */
+		/* Simply use disk contents without the DIM header: */
 		*pImageSize -= 32;
-		pDiscBuffer = malloc(*pImageSize);
-		if (pDiscBuffer)
-			memcpy(pDiscBuffer, pDimFile+32, *pImageSize);
+		pDiskBuffer = malloc(*pImageSize);
+		if (pDiskBuffer)
+			memcpy(pDiskBuffer, pDimFile+32, *pImageSize);
 		else
-			perror("DIM_ReadDisc");
+			perror("DIM_ReadDisk");
 
 		/* Free DIM file we loaded */
 		free(pDimFile);
 	}
 
-	if (pDiscBuffer == NULL)
+	if (pDiskBuffer == NULL)
 	{
 		*pImageSize = 0;
 	}
 
-	return(pDiscBuffer);
+	return pDiskBuffer;
 }
 
 
@@ -101,7 +101,7 @@ Uint8 *DIM_ReadDisc(char *pszFileName, long *pImageSize)
 /*
   Save .DIM file from memory buffer. Returns TRUE is all OK
 */
-BOOL DIM_WriteDisc(char *pszFileName, unsigned char *pBuffer, int ImageSize)
+BOOL DIM_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_DIM_IMAGES
 
@@ -115,7 +115,7 @@ BOOL DIM_WriteDisc(char *pszFileName, unsigned char *pBuffer, int ImageSize)
 	pDimFile = malloc(ImageSize + 32);
 	if (!pDimFile)
 	{
-		perror("DIM_WriteDisc");
+		perror("DIM_WriteDisk");
 		return FALSE;
 	}
 
@@ -132,7 +132,7 @@ BOOL DIM_WriteDisc(char *pszFileName, unsigned char *pBuffer, int ImageSize)
 	}
 
 	/* Now fill in the new header information: */
-	Floppy_FindDiscDetails(pBuffer, ImageSize, &nSectorsPerTrack, &nSides);
+	Floppy_FindDiskDetails(pBuffer, ImageSize, &nSectorsPerTrack, &nSides);
 	nTracks = ((ImageSize / NUMBYTESPERSECTOR) / nSectorsPerTrack) / nSides;
 	pDimFile[0x00] = pDimFile[0x01] = 0x42;     /* ID */
 	pDimFile[0x03] = 0;                         /* Image contains all sectors */
@@ -142,7 +142,7 @@ BOOL DIM_WriteDisc(char *pszFileName, unsigned char *pBuffer, int ImageSize)
 	pDimFile[0x0C] = nTracks - 1;               /* Ending track */
 	pDimFile[0x0D] = (ImageSize > 1024*1024);   /* DD / HD flag */
 
-	/* Now copy the disc data: */
+	/* Now copy the disk data: */
 	memcpy(pDimFile + 32, pBuffer, ImageSize);
 	
 	/* And finally save it: */

@@ -10,8 +10,8 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.71" /* Name, version for window title */
-#define PROG_VERSION   "v0.71"
+#define PROG_NAME      "Hatari v0.72" /* Name, version for window title */
+#define PROG_VERSION   "v0.72"
 
 
 #include <stdio.h>
@@ -166,7 +166,6 @@ enum {
 extern BOOL bQuitProgram;
 extern BOOL bEnableDebug;
 extern BOOL bEmulationActive;
-extern char szBootDiscImage[FILENAME_MAX];
 extern char szWorkingDir[FILENAME_MAX];
 
 

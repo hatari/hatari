@@ -80,7 +80,7 @@ enum
 
 
 extern Sint16 FDCSectorCountRegister;
-extern Uint16 DiscControllerWord_ff8604wr;
+extern Uint16 DiskControllerWord_ff8604wr;
 extern Uint16 DMAModeControl_ff8606wr;
 
 
@@ -104,8 +104,8 @@ extern void FDC_WriteDMAAddress(Uint32 Address);
 extern BOOL FDC_ReadSectorFromFloppy(void);
 extern BOOL FDC_WriteSectorFromFloppy(void);
 extern void FDC_DMADataFromFloppy(void);
-extern void FDC_DiscController_WriteWord(void);
-extern void FDC_DiscControllerStatus_ReadWord(void);
+extern void FDC_DiskController_WriteWord(void);
+extern void FDC_DiskControllerStatus_ReadWord(void);
 extern void FDC_DmaModeControl_WriteWord(void);
 
 

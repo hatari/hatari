@@ -4,15 +4,15 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  Floppy Disc Controller(FDC) emulation. We need to simulate the movement of
-  the head of the floppy disc drive to accurately perform the FDC commands,
-  such as 'Step'. The is important for ST demo disc images. We have to go
+  Floppy Disk Controller(FDC) emulation. We need to simulate the movement of
+  the head of the floppy disk drive to accurately perform the FDC commands,
+  such as 'Step'. The is important for ST demo disk images. We have to go
   into a lot of details - including the start up/stop of the drive motor.
   To help with this emulation, we keep our own internal commands which are
-  checked each HBL to perform the transfer of data from our disc image into
+  checked each HBL to perform the transfer of data from our disk image into
   the ST RAM area by simulating the DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.21 2005-08-05 19:45:04 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.22 2005-09-13 01:10:09 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -31,7 +31,7 @@ char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.21 2005-08-05 19:45:04 thothy Exp $";
 
 
 /*
-  Floppy Disc Controller
+  Floppy Disk Controller
 
 Programmable Sound Generator (YM-2149)
 
@@ -70,7 +70,7 @@ Programmable Sound Generator (YM-2149)
     Bit 6 - General Purpose Output
     Bit 7 - Reserved
 
-ACSI DMA and Floppy Disc Controller(FDC)
+ACSI DMA and Floppy Disk Controller(FDC)
   0xff8604 - information from file '1772.info.txt, by David Gahris' (register r0)
   (write) - Disk controller
   (read) - Disk controller status
@@ -114,14 +114,14 @@ ACSI DMA and Floppy Disc Controller(FDC)
 
 
   This handles any read/writes to the FDC and PSG. FDC commands are then sent
-  through to read/write disc sector code. We have full documents on 1772 FDC,
+  through to read/write disk sector code. We have full documents on 1772 FDC,
   but they use r0,r1,r2,r3 etc.. which are not seen at first glance as Atari
   access them via the A0,A1 bits. Once this is understood it is all relativly
-  easy as a lot of information can be ignored as we are using disc images and
-  not actual discs. We do NOT support the reading of the PC's A: drive - newer
-  PC's cannot read an ST single sided disc, ST discs are very old and so are
+  easy as a lot of information can be ignored as we are using disk images and
+  not actual disks. We do NOT support the reading of the PC's A: drive - newer
+  PC's cannot read an ST single sided disk, ST disks are very old and so are
   dirty which gets onto the PC drive heads and ruins them and also support for
-  disc sector access under the various modern operating systems is not so easy
+  disk sector access under the various modern operating systems is not so easy
   (if possible at all).
 
   According to the documentation INTRQ is generated at the completion of each
@@ -133,8 +133,8 @@ ACSI DMA and Floppy Disc Controller(FDC)
 
 Sint16 FDCSectorCountRegister;
 
-Uint16 DiscControllerWord_ff8604wr;                             /* 0xff8604 (write) */
-static Uint16 DiscControllerStatus_ff8604rd;                    /* 0xff8604 (read) */
+Uint16 DiskControllerWord_ff8604wr;                             /* 0xff8604 (write) */
+static Uint16 DiskControllerStatus_ff8604rd;                    /* 0xff8604 (read) */
 
 Uint16 DMAModeControl_ff8606wr;                                 /* 0xff8606 (write) */
 static Uint16 DMAStatus_ff8606rd;                               /* 0xff8606 (read) */
@@ -165,8 +165,8 @@ static unsigned char DMASectorWorkSpace[NUMBYTESPERSECTOR];     /* Workspace use
 void FDC_Reset(void)
 {
 	/* Clear out FDC registers */
-	DiscControllerStatus_ff8604rd = 0;
-	DiscControllerWord_ff8604wr = 0;
+	DiskControllerStatus_ff8604rd = 0;
+	DiskControllerWord_ff8604wr = 0;
 	DMAStatus_ff8606rd = 0x01;
 	DMAModeControl_ff8606wr = 0;
 	FDC_ResetDMAStatus();
@@ -193,8 +193,8 @@ void FDC_Reset(void)
 void FDC_MemorySnapShot_Capture(BOOL bSave)
 {
 	/* Save/Restore details */
-	MemorySnapShot_Store(&DiscControllerStatus_ff8604rd, sizeof(DiscControllerStatus_ff8604rd));
-	MemorySnapShot_Store(&DiscControllerWord_ff8604wr, sizeof(DiscControllerWord_ff8604wr));
+	MemorySnapShot_Store(&DiskControllerStatus_ff8604rd, sizeof(DiskControllerStatus_ff8604rd));
+	MemorySnapShot_Store(&DiskControllerWord_ff8604wr, sizeof(DiskControllerWord_ff8604wr));
 	MemorySnapShot_Store(&DMAStatus_ff8606rd, sizeof(DMAStatus_ff8606rd));
 	MemorySnapShot_Store(&DMAModeControl_ff8606wr, sizeof(DMAModeControl_ff8606wr));
 	MemorySnapShot_Store(&FDCCommandRegister, sizeof(FDCCommandRegister));
@@ -324,39 +324,39 @@ void FDC_DmaStatus_ReadWord(void)
 /*-----------------------------------------------------------------------*/
 /*
 */
-static void FDC_UpdateDiscDrive(void)
+static void FDC_UpdateDiskDrive(void)
 {
 	/* Set details for current selecte drive */
 	nReadWriteDev = FDC_FindFloppyDrive();
 
-	if (EmulationDrives[nReadWriteDev].bDiscInserted)
-		Floppy_FindDiscDetails(EmulationDrives[nReadWriteDev].pBuffer,EmulationDrives[nReadWriteDev].nImageBytes,&nReadWriteSectorsPerTrack,NULL);
+	if (EmulationDrives[nReadWriteDev].bDiskInserted)
+		Floppy_FindDiskDetails(EmulationDrives[nReadWriteDev].pBuffer,EmulationDrives[nReadWriteDev].nImageBytes,&nReadWriteSectorsPerTrack,NULL);
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Set disc controller status (RD 0xff8604)
+  Set disk controller status (RD 0xff8604)
 */
-static void FDC_SetDiscControllerStatus(void)
+static void FDC_SetDiskControllerStatus(void)
 {
-	/* Update disc */
-	FDC_UpdateDiscDrive();
+	/* Update disk */
+	FDC_UpdateDiskDrive();
 
 	/* Clear out to default */
-	DiscControllerStatus_ff8604rd = 0;
+	DiskControllerStatus_ff8604rd = 0;
 
 	/* ONLY do this if we are running a Type I command */
 	if ((FDCCommandRegister&0x80)==0)
 	{
 		/* Type I - Restore, Seek, Step, Step-In, Step-Out */
 		if (FDCTrackRegister==0)
-			DiscControllerStatus_ff8604rd |= 0x4;    /* Bit 2 - Track Zero, '0' if head is NOT at zero */
+			DiskControllerStatus_ff8604rd |= 0x4;    /* Bit 2 - Track Zero, '0' if head is NOT at zero */
 	}
 
-	/* If no disc inserted, tag as error */
-	if (!EmulationDrives[nReadWriteDev].bDiscInserted)
-		DiscControllerStatus_ff8604rd |= 0x10;     /* RNF - Record not found, ie no disc in drive */
+	/* If no disk inserted, tag as error */
+	if (!EmulationDrives[nReadWriteDev].bDiskInserted)
+		DiskControllerStatus_ff8604rd |= 0x10;     /* RNF - Record not found, ie no disk in drive */
 }
 
 
@@ -392,7 +392,7 @@ void FDC_AcknowledgeInterrupt(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Copy parameters for disc sector/s read/write
+  Copy parameters for disk sector/s read/write
 */
 static void FDC_SetReadWriteParameters(int nSectors)
 {
@@ -401,8 +401,8 @@ static void FDC_SetReadWriteParameters(int nSectors)
 	nReadWriteSector = FDCSectorRegister;
 	nReadWriteSide = (~PSGRegisters[PSG_REG_IO_PORTA]) & 0x01;
 	nReadWriteSectors = nSectors;
-	/* Update disc */
-	FDC_UpdateDiscDrive();
+	/* Update disk */
+	FDC_UpdateDiskDrive();
 }
 
 
@@ -468,8 +468,8 @@ void FDC_UpdateHBL(void)
 			break;
 		}
 
-		/* Set disc controller status (RD 0xff8604) */
-		FDC_SetDiscControllerStatus();
+		/* Set disk controller status (RD 0xff8604) */
+		FDC_SetDiskControllerStatus();
 	}
 }
 
@@ -749,7 +749,7 @@ static void FDC_TypeI_Restore(void)
 	FDCEmulationCommand = FDCEMU_CMD_RESTORE;
 	FDCEmulationRunning = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO;
 
-	FDC_SetDiscControllerStatus();
+	FDC_SetDiskControllerStatus();
 }
 
 
@@ -760,7 +760,7 @@ static void FDC_TypeI_Seek(void)
 	FDCEmulationCommand = FDCEMU_CMD_SEEK;
 	FDCEmulationRunning = FDCEMU_RUN_SEEK_TOTRACK;
 
-	FDC_SetDiscControllerStatus();
+	FDC_SetDiskControllerStatus();
 }
 
 
@@ -771,7 +771,7 @@ static void FDC_TypeI_Step(void)
 	FDCEmulationCommand = FDCEMU_CMD_STEP;
 	FDCEmulationRunning = FDCEMU_RUN_STEP_ONCE;
 
-	FDC_SetDiscControllerStatus();
+	FDC_SetDiskControllerStatus();
 }
 
 
@@ -783,7 +783,7 @@ static void FDC_TypeI_StepIn(void)
 	FDCEmulationRunning = FDCEMU_RUN_STEPIN_ONCE;
 	FDCStepDirection = 1;                 /* Increment track*/
 
-	FDC_SetDiscControllerStatus();
+	FDC_SetDiskControllerStatus();
 }
 
 
@@ -795,7 +795,7 @@ static void FDC_TypeI_StepOut(void)
 	FDCEmulationRunning = FDCEMU_RUN_STEPOUT_ONCE;
 	FDCStepDirection = -1;                /* Decrement track */
 
-	FDC_SetDiscControllerStatus();
+	FDC_SetDiskControllerStatus();
 }
 
 
@@ -816,7 +816,7 @@ static void FDC_TypeII_ReadSector(void)
 	/* Set reading parameters */
 	FDC_SetReadWriteParameters(1);        /* Read in a single sector */
 
-	FDC_SetDiscControllerStatus();
+	FDC_SetDiskControllerStatus();
 }
 
 
@@ -829,7 +829,7 @@ static void FDC_TypeII_ReadMultipleSectors(void)
 	/* Set reading parameters */
 	FDC_SetReadWriteParameters(FDCSectorCountRegister);   /* Read multiple sectors */
 
-	FDC_SetDiscControllerStatus();
+	FDC_SetDiskControllerStatus();
 }
 
 
@@ -842,7 +842,7 @@ static void FDC_TypeII_WriteSector(void)
 	/* Set writing parameters */
 	FDC_SetReadWriteParameters(1);                        /* Write out a single sector */
 
-	FDC_SetDiscControllerStatus();
+	FDC_SetDiskControllerStatus();
 }
 
 
@@ -855,7 +855,7 @@ static void FDC_TypeII_WriteMultipleSectors(void)
 	/* Set witing parameters */
 	FDC_SetReadWriteParameters(FDCSectorCountRegister);   /* Write multiple sectors */
 
-	FDC_SetDiscControllerStatus();
+	FDC_SetDiskControllerStatus();
 }
 
 
@@ -887,7 +887,7 @@ static void FDC_TypeIII_ReadTrack(void)
 	/* Set reading parameters */
 	FDC_SetReadWriteParameters(nReadWriteSectorsPerTrack);  /* Read whole track */
 
-	FDC_SetDiscControllerStatus();
+	FDC_SetDiskControllerStatus();
 }
 
 
@@ -904,7 +904,7 @@ static void FDC_TypeIII_WriteTrack(void)
 	/* Set writing parameters */
 	FDC_SetReadWriteParameters(nReadWriteSectorsPerTrack);  /* Write whole track */
 
-	FDC_SetDiscControllerStatus();
+	FDC_SetDiskControllerStatus();
 }
 
 
@@ -1063,7 +1063,7 @@ static void FDC_ExecuteCommand(void)
 */
 static void FDC_WriteSectorCountRegister(void)
 {
-	FDCSectorCountRegister = DiscControllerWord_ff8604wr;
+	FDCSectorCountRegister = DiskControllerWord_ff8604wr;
 }
 
 
@@ -1073,7 +1073,7 @@ static void FDC_WriteSectorCountRegister(void)
 */
 static void FDC_WriteCommandRegister(void)
 {
-	FDCCommandRegister = DiscControllerWord_ff8604wr;
+	FDCCommandRegister = DiskControllerWord_ff8604wr;
 	/* And execute */
 	FDC_ExecuteCommand();
 }
@@ -1085,7 +1085,7 @@ static void FDC_WriteCommandRegister(void)
 */
 static void FDC_WriteTrackRegister(void)
 {
-	FDCTrackRegister = DiscControllerWord_ff8604wr;    /* 0...79 */
+	FDCTrackRegister = DiskControllerWord_ff8604wr;    /* 0...79 */
 }
 
 
@@ -1095,7 +1095,7 @@ static void FDC_WriteTrackRegister(void)
 */
 static void FDC_WriteSectorRegister(void)
 {
-	FDCSectorRegister = DiscControllerWord_ff8604wr;  /* 1,2,3..... */
+	FDCSectorRegister = DiskControllerWord_ff8604wr;  /* 1,2,3..... */
 }
 
 
@@ -1105,7 +1105,7 @@ static void FDC_WriteSectorRegister(void)
 */
 static void FDC_WriteDataRegister(void)
 {
-	FDCDataRegister = DiscControllerWord_ff8604wr;
+	FDCDataRegister = DiskControllerWord_ff8604wr;
 }
 
 
@@ -1113,7 +1113,7 @@ static void FDC_WriteDataRegister(void)
 /*
   Store byte in FDC registers, when write to 0xff8604
 */
-void FDC_DiscController_WriteWord(void)
+void FDC_DiskController_WriteWord(void)
 {
 	if (nIoMemAccessSize == SIZE_BYTE)
 	{
@@ -1122,7 +1122,7 @@ void FDC_DiscController_WriteWord(void)
 		return;
 	}
 
-	DiscControllerWord_ff8604wr = IoMem_ReadWord(0xff8604);
+	DiskControllerWord_ff8604wr = IoMem_ReadWord(0xff8604);
 
 	HDC_WriteCommandPacket();                 /*  Handle HDC functions */
 
@@ -1157,11 +1157,11 @@ void FDC_DiscController_WriteWord(void)
 /*-----------------------------------------------------------------------*/
 /*
   Read Status/FDC registers, when read from 0xff8604
-  Return 'DiscControllerByte'
+  Return 'DiskControllerByte'
 */
-void FDC_DiscControllerStatus_ReadWord(void)
+void FDC_DiskControllerStatus_ReadWord(void)
 {
-	Sint16 DiscControllerByte = 0;            /* Used to pass back the parameter */
+	Sint16 DiskControllerByte = 0;            /* Used to pass back the parameter */
 
 	if (nIoMemAccessSize == SIZE_BYTE)
 	{
@@ -1173,7 +1173,7 @@ void FDC_DiscControllerStatus_ReadWord(void)
 	if (DMAModeControl_ff8606wr == 0x08A)     /* HDC status reg selected? */
 	{
 		/* return the HDC status reg */
-		DiscControllerByte = HDCCommand.returnCode;
+		DiskControllerByte = HDCCommand.returnCode;
 	}
 	else
 	{
@@ -1181,12 +1181,12 @@ void FDC_DiscControllerStatus_ReadWord(void)
 		switch (DMAModeControl_ff8606wr&0x6)      /* Bits 1,2 (A1,A0) */
 		{
 		 case 0x0:                               /* 0 0 - Status register */
-			DiscControllerByte = DiscControllerStatus_ff8604rd;
+			DiskControllerByte = DiskControllerStatus_ff8604rd;
 			if (bMotorOn)
-				DiscControllerByte |= 0x80;
+				DiskControllerByte |= 0x80;
 
 			if (Floppy_IsWriteProtected(nReadWriteDev))
-				DiscControllerByte |= 0x40;
+				DiskControllerByte |= 0x40;
 
 			if (EmulationDrives[nReadWriteDev].bMediaChanged)
 			{
@@ -1194,7 +1194,7 @@ void FDC_DiscControllerStatus_ReadWord(void)
 				 * for disk image changes (the signal seems to change when you
 				 * exchange disks on a real ST). We now also simulate this behaviour
 				 * here, so that these games can continue with the other disk. */
-				DiscControllerByte ^= 0x40;
+				DiskControllerByte ^= 0x40;
 				EmulationDrives[nReadWriteDev].bMediaChanged = FALSE;
 			}
 
@@ -1202,18 +1202,18 @@ void FDC_DiscControllerStatus_ReadWord(void)
 			MFP_GPIP |= 0x20;
 			break;
 		 case 0x2:                               /* 0 1 - Track register */
-			DiscControllerByte = FDCTrackRegister;
+			DiskControllerByte = FDCTrackRegister;
 			break;
 		 case 0x4:                               /* 1 0 - Sector register */
-			DiscControllerByte = FDCSectorRegister;
+			DiskControllerByte = FDCSectorRegister;
 			break;
 		 case 0x6:                               /* 1 1 - Data register */
-			DiscControllerByte = FDCDataRegister;
+			DiskControllerByte = FDCDataRegister;
 			break;
 		}
 	}
 
-	IoMem_WriteWord(0xff8604, DiscControllerByte);
+	IoMem_WriteWord(0xff8604, DiskControllerByte);
 }
 
 

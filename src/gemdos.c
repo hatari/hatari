@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.41 2005-07-20 09:30:00 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.42 2005-09-13 01:10:09 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -89,7 +89,7 @@ FILE_HANDLE  FileHandles[MAX_FILE_HANDLES];
 INTERNAL_DTA InternalDTAs[MAX_DTAS_FILES];
 int DTAIndex;                               /* Circular index into above */
 BOOL bInitGemDOS;                           /* Have we re-directed GemDOS vector to our own routines yet? */
-DTA *pDTA;                                  /* Our GEMDOS hard drive Disc Transfer Address structure */
+DTA *pDTA;                                  /* Our GEMDOS hard drive Disk Transfer Address structure */
 unsigned short int CurrentDrive;            /* Current drive (0=A,1=B,2=C etc...) */
 Uint32 act_pd;                              /* Used to get a pointer to the current basepage */
 
@@ -477,7 +477,7 @@ void GemDOS_InitDrives(void)
 	for(i=0; i<MAX_HARDDRIVES; i++)
 	{
 		/* set emulation directory string */
-		strcpy(emudrives[i]->hd_emulation_dir, ConfigureParams.HardDisc.szHardDiscDirectories[i]);
+		strcpy(emudrives[i]->hd_emulation_dir, ConfigureParams.HardDisk.szHardDiskDirectories[i]);
 
 		/* remove trailing slash, if any in the directory name */
 		File_CleanFileName(emudrives[i]->hd_emulation_dir);
@@ -489,13 +489,13 @@ void GemDOS_InitDrives(void)
 		/* set drive to 2 + number of ACSI partitions */
 		emudrives[i]->hd_letter = 2 + nPartitions + i;
 
-		ConfigureParams.HardDisc.nDriveList += 1;
+		ConfigureParams.HardDisk.nDriveList += 1;
 
 		fprintf(stderr, "Hard drive emulation, %c: <-> %s\n",
 				emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
 	}
 
-	ConfigureParams.HardDisc.bUseHardDiscDirectories = TRUE;
+	ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
 }
 
 
@@ -514,14 +514,14 @@ void GemDOS_UnInitDrives(void)
 		for(i=0; i<MAX_HARDDRIVES; i++)
 		{
 			free(emudrives[i]);    /* Release memory */
-			ConfigureParams.HardDisc.nDriveList -= 1;
+			ConfigureParams.HardDisk.nDriveList -= 1;
 		}
 
 		free(emudrives);
 		emudrives = NULL;
 	}
 
-	ConfigureParams.HardDisc.bUseHardDiscDirectories = FALSE;
+	ConfigureParams.HardDisk.bUseHardDiskDirectories = FALSE;
 }
 
 
@@ -638,12 +638,12 @@ static int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 
 	/* this code is depreciated */
 	/* Do we even have a hard-drive? */
-	if (ConfigureParams.HardDisc.nDriveList!=DRIVELIST_NONE)
+	if (ConfigureParams.HardDisk.nDriveList != DRIVELIST_NONE)
 	{
 		/* Find drive letter(as number) */
 		DriveLetter = GemDOS_FindDriveNumber(pszFileName);
 		/* Does match one of our drives? */
-		if ((DriveLetter >= 2) && (DriveLetter <= DRIVELIST_TO_DRIVE_INDEX(ConfigureParams.HardDisc.nDriveList)))
+		if ((DriveLetter >= 2) && (DriveLetter <= DRIVELIST_TO_DRIVE_INDEX(ConfigureParams.HardDisk.nDriveList)))
 			return DriveLetter;
 	}
 
@@ -945,7 +945,7 @@ static BOOL GemDOS_Cauxos(Uint32 Params)
 
 /*-----------------------------------------------------------------------*/
 /*
-  GEMDOS Set Disc Transfer Address (DTA)
+  GEMDOS Set Disk Transfer Address (DTA)
   Call 0x1A
 */
 static BOOL GemDOS_SetDTA(Uint32 Params)
@@ -958,7 +958,7 @@ static BOOL GemDOS_SetDTA(Uint32 Params)
 
 /*-----------------------------------------------------------------------*/
 /*
-  GEMDOS Dfree Free disc space.
+  GEMDOS Dfree Free disk space.
   Call 0x39
 */
 static BOOL GemDOS_DFree(Uint32 Params)
@@ -1782,7 +1782,7 @@ static BOOL GemDOS_GSDToF(Uint32 Params)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Run GEMDos call, and re-direct if need to. Used to handle hard-disc emulation etc...
+  Run GEMDos call, and re-direct if need to. Used to handle hard disk emulation etc...
   This sets the condition codes (in SR), which are used in the 'cart_asm.s' program to
   decide if we need to run old GEM vector, or PExec or nothing.
  

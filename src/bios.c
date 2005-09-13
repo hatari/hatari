@@ -9,7 +9,7 @@
   We intercept and direct some Bios calls to handle input/output to RS-232
   or the printer etc...
 */
-char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.7 2005-04-05 14:41:20 thothy Exp $";
+char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.8 2005-09-13 01:10:09 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -158,7 +158,7 @@ static BOOL Bios_Bconout(Uint32 Params)
 
 /*-----------------------------------------------------------------------*/
 /*
-  BIOS Read/Write disc sector
+  BIOS Read/Write disk sector
   Call 4
 */
 static BOOL Bios_RWabs(Uint32 Params)

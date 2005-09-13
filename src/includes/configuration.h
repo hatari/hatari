@@ -88,7 +88,7 @@ typedef struct
 } CNF_JOYSTICKS;
 
 
-/* Discimage configuration */
+/* Disk image configuration */
 
 typedef enum
 {
@@ -99,13 +99,13 @@ typedef enum
 
 typedef struct
 {
-  BOOL bAutoInsertDiscB;
+  BOOL bAutoInsertDiskB;
   WRITEPROTECTION nWriteProtection;
-  char szDiscImageDirectory[FILENAME_MAX];
-} CNF_DISCIMAGE;
+  char szDiskImageDirectory[FILENAME_MAX];
+} CNF_DISKIMAGE;
 
 
-/* Hard discs configuration */
+/* Hard drives configuration */
 #define MAX_HARDDRIVES  1
 #define DRIVELIST_TO_DRIVE_INDEX(DriveList)  (DriveList+1)
 
@@ -129,13 +129,13 @@ typedef enum
 typedef struct
 {
   int nDriveList;
-  BOOL bBootFromHardDisc;
-  int nHardDiscDir;
-  BOOL bUseHardDiscDirectories;
-  BOOL bUseHardDiscImage;
-  char szHardDiscDirectories[MAX_HARDDRIVES][FILENAME_MAX];
-  char szHardDiscImage[FILENAME_MAX];
-} CNF_HARDDISC;
+  BOOL bBootFromHardDisk;
+  int nHardDiskDir;
+  BOOL bUseHardDiskDirectories;
+  BOOL bUseHardDiskImage;
+  char szHardDiskDirectories[MAX_HARDDRIVES][FILENAME_MAX];
+  char szHardDiskImage[FILENAME_MAX];
+} CNF_HARDDISK;
 
 
 /* Screen configuration */
@@ -214,8 +214,8 @@ typedef struct
   CNF_KEYBOARD Keyboard;
   CNF_SOUND Sound;
   CNF_MEMORY Memory;
-  CNF_DISCIMAGE DiscImage;
-  CNF_HARDDISC HardDisc;
+  CNF_DISKIMAGE DiskImage;
+  CNF_HARDDISK HardDisk;
   CNF_ROM Rom;
   CNF_RS232 RS232;
   CNF_PRINTER Printer;

@@ -12,7 +12,7 @@
   NOTE - Tab's are converted to spaces as the PC 'Tab' setting differs to that
   of the ST.
 */
-char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.16 2005-04-07 10:15:02 thothy Exp $";
+char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.17 2005-09-13 01:10:09 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -33,7 +33,7 @@ static unsigned char PrinterBuffer[PRINTER_BUFFER_SIZE];   /* Buffer to store ch
 static size_t nPrinterBufferChars;      /* # characters in above buffer */
 static int nPrinterBufferCharsOnLine;
 static BOOL bConnectedPrinter=FALSE;
-static BOOL bPrinterDiscFile=FALSE;
+static BOOL bPrinterFile = FALSE;
 static int nIdleCount;
 
 static FILE *PrinterFileHandle;
@@ -93,7 +93,7 @@ void Printer_CloseAllConnections(void)
 	Printer_EmptyInternalBuffer();
 
 	/* Close any open files */
-	Printer_CloseDiscFile();
+	Printer_CloseFile();
 
 	/* Signal finished with printing */
 	bConnectedPrinter = FALSE;
@@ -102,52 +102,52 @@ void Printer_CloseAllConnections(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Open file on disc, to which all printer output will be sent
+  Open file on disk, to which all printer output will be sent.
 */
-BOOL Printer_OpenDiscFile(void)
+BOOL Printer_OpenFile(void)
 {
 
-	bPrinterDiscFile = TRUE;
+	bPrinterFile = TRUE;
 
 	/* open printer file... */
 	PrinterFileHandle = fopen(ConfigureParams.Printer.szPrintToFileName, "a+");
 	if (!PrinterFileHandle)
-		bPrinterDiscFile=FALSE;
+		bPrinterFile = FALSE;
 
-	return bPrinterDiscFile;
+	return bPrinterFile;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Close file on disc, if we have one open
+  Close file on disk, if we have one open.
 */
-void Printer_CloseDiscFile(void)
+void Printer_CloseFile(void)
 {
 	/* Do have file open? */
-	if (bPrinterDiscFile)
+	if (bPrinterFile)
 	{
 		/* Close */
 		fclose(PrinterFileHandle);
-		bPrinterDiscFile = FALSE;
+		bPrinterFile = FALSE;
 	}
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Empty to disc file
+  Empty to file on disk.
 */
-void Printer_EmptyDiscFile(void)
+void Printer_EmptyFile(void)
 {
 	/* Do have file open? */
-	if (bPrinterDiscFile)
+	if (bPrinterFile)
 	{
 		/* Write bytes out */
 		if (fwrite((unsigned char *)PrinterBuffer,sizeof(unsigned char),nPrinterBufferChars,PrinterFileHandle) < nPrinterBufferChars)
 		{
 			/* we wrote less then all chars in the buffer --> ERROR */
-			fprintf(stderr,"Printer_EmptyDiscFile(): ERROR not all chars were written\n");
+			fprintf(stderr,"Printer_EmptyFile(): ERROR not all chars were written\n");
 		}
 		/* Reset */
 		Printer_ResetInternalBuffer();
@@ -184,8 +184,8 @@ BOOL Printer_EmptyInternalBuffer(void)
 	/* Write bytes to file */
 	if (nPrinterBufferChars>0)
 	{
-		if (bPrinterDiscFile)
-			Printer_EmptyDiscFile();
+		if (bPrinterFile)
+			Printer_EmptyFile();
 
 		return TRUE;
 	}
@@ -265,7 +265,7 @@ BOOL Printer_TransferByteTo(unsigned char Byte)
 	/* Have we made a connection to our printer/file? */
 	if (!bConnectedPrinter)
 	{
-		bConnectedPrinter = Printer_OpenDiscFile();
+		bConnectedPrinter = Printer_OpenFile();
 
 		/* Reset the printer */
 		Printer_ResetInternalBuffer();

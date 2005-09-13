@@ -8,17 +8,6 @@
 #ifndef HATARI_FILE_H
 #define HATARI_FILE_H
 
-/* File types */
-enum
-{
-  FILEFILTER_DISCFILES,
-  FILEFILTER_ALLFILES,
-  FILEFILTER_TOSROM,
-  FILEFILTER_MAPFILE,
-  FILEFILTER_YMFILE,
-  FILEFILTER_MEMORYFILE,
-};
-
 #if defined(__BEOS__) || (defined(__sun) && defined(__SVR4))
 #include <dirent.h>
 extern int alphasort(const void *d1, const void *d2);

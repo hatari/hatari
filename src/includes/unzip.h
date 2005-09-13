@@ -1,9 +1,9 @@
 /*
-  Hatari
+  Hatari - unzip.h
 
-  Zipped disc support, using zlib
+  Support for *.zip files, using zlib.
 
-  This file is originally from the minizip code by Gilles Vollant
+  This file is originally from the minizip code by Gilles Vollant.
 
 */
 /* unzip.h -- IO for uncompress .zip files using zlib 

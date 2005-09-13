@@ -6,5 +6,5 @@
 */
 
 extern BOOL ST_FileNameIsST(char *pszFileName, BOOL bAllowGZ);
-extern Uint8 *ST_ReadDisc(char *pszFileName, long *pImageSize);
-extern BOOL ST_WriteDisc(char *pszFileName, Uint8 *pBuffer, int ImageSize);
+extern Uint8 *ST_ReadDisk(char *pszFileName, long *pImageSize);
+extern BOOL ST_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize);

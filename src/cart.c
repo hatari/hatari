@@ -14,7 +14,7 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to a byte
   array and stored in 'Cart_data[]' (see cartdata.c).
 */
-char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.7 2005-01-09 09:55:02 thothy Exp $";
+char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.8 2005-09-13 01:10:09 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -38,7 +38,7 @@ void Cart_LoadImage(void)
 	/* "Clear" cartridge ROM space */
 	memset(&STRam[0xfa0000], 0xff, 0x20000);
 
-	if (bUseVDIRes || ConfigureParams.HardDisc.bUseHardDiscDirectories)
+	if (bUseVDIRes || ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
 		/* Copy cartrige data into ST's cartridge memory */
 		memcpy(&STRam[0xfa0000], Cart_data, sizeof(Cart_data));
@@ -48,8 +48,8 @@ void Cart_LoadImage(void)
 		/* Check if we can load an external cartridge file: */
 		if (bUseVDIRes)
 			fprintf(stderr, "Warning: Cartridge can't be used together with extended VDI resolution!\n");
-		else if (ConfigureParams.HardDisc.bUseHardDiscDirectories)
-			fprintf(stderr, "Warning: Cartridge can't be used together with GEMDOS harddisc emulation!\n");
+		else if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
+			fprintf(stderr, "Warning: Cartridge can't be used together with GEMDOS hard disk emulation!\n");
 		else if (!File_Exists(pCartFileName))
 			fprintf(stderr, "Cartridge file not found: %s\n", pCartFileName);
 		else if (File_Length(pCartFileName) > 0x20000)

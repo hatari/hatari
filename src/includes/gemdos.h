@@ -56,7 +56,7 @@
 #define GEMDOS_FILE_ATTRIB_WRITECLOSE    0x20
 
 /*
-  Disc Tranfer Address (DTA)
+  Disk Tranfer Address (DTA)
 */
 #define TOS_NAMELEN  14
 

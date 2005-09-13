@@ -4,9 +4,9 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  MSA Disc support
+  MSA Disk support
 */
-char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.8 2005-03-11 10:10:37 thothy Exp $";
+char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.9 2005-09-13 01:10:09 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -149,7 +149,7 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
     pImageBuffer = (unsigned char *)pBuffer;
     pMSAImageBuffer = (unsigned char *)((unsigned long)pMSAFile+sizeof(MSAHEADERSTRUCT));
 
-    /* Uncompress to memory as '.ST' disc image - NOTE: assumes 512 bytes per sector (use NUMBYTESPERSECTOR define)!!! */
+    /* Uncompress to memory as '.ST' disk image - NOTE: assumes 512 bytes per sector (use NUMBYTESPERSECTOR define)!!! */
     for(Track=pMSAHeader->StartingTrack; Track <= pMSAHeader->EndingTrack; Track++) {
       for(Side=0; Side<(pMSAHeader->Sides+1); Side++) {
         /* Uncompress MSA Track, first check if is not compressed */
@@ -176,7 +176,7 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
               /* Limit length to size of track, incorrect images may overflow */
               if ( (RunLength+NumBytesUnCompressed)>(NUMBYTESPERSECTOR*pMSAHeader->SectorsPerTrack) )
               {
-                fprintf(stderr, "MSA_UnCompress: Illegal run length -> corrupted disc image?\n");
+                fprintf(stderr, "MSA_UnCompress: Illegal run length -> corrupted disk image?\n");
                 RunLength = (NUMBYTESPERSECTOR*pMSAHeader->SectorsPerTrack)-NumBytesUnCompressed;
               }
               pMSAImageBuffer += sizeof(short int);
@@ -200,13 +200,13 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Uncompress .MSA file into memory, set number bytes of the disc image and
+  Uncompress .MSA file into memory, set number bytes of the disk image and
   return a pointer to the buffer.
 */
-Uint8 *MSA_ReadDisc(char *pszFileName, long *pImageSize)
+Uint8 *MSA_ReadDisk(char *pszFileName, long *pImageSize)
 {
   Uint8 *pMsaFile;
-  Uint8 *pDiscBuffer = NULL;
+  Uint8 *pDiskBuffer = NULL;
 
   *pImageSize = 0;
 
@@ -214,15 +214,15 @@ Uint8 *MSA_ReadDisc(char *pszFileName, long *pImageSize)
   pMsaFile = File_Read(pszFileName, NULL, NULL, NULL);
   if (pMsaFile)
   {
-    /* Uncompress into disc buffer */
-    pDiscBuffer = MSA_UnCompress(pMsaFile, pImageSize);
+    /* Uncompress into disk buffer */
+    pDiskBuffer = MSA_UnCompress(pMsaFile, pImageSize);
 
     /* Free MSA file we loaded */
     free(pMsaFile);
   }
 
   /* Return pointer to buffer, NULL if failed */
-  return(pDiscBuffer);
+  return pDiskBuffer;
 }
 
 
@@ -273,7 +273,7 @@ static int MSA_FindRunOfBytes(unsigned char *pBuffer, int nBytesInBuffer)
 /*
   Save compressed .MSA file from memory buffer. Returns TRUE is all OK
 */
-BOOL MSA_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
+BOOL MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_MSA_IMAGES
 
@@ -289,14 +289,14 @@ BOOL MSA_WriteDisc(char *pszFileName,unsigned char *pBuffer,int ImageSize)
   pMSAImageBuffer = (unsigned char *)malloc(MSA_WORKSPACE_SIZE);
   if (!pMSAImageBuffer)
   {
-    perror("MSA_WriteDisc");
+    perror("MSA_WriteDisk");
     return FALSE;
   }
 
   /* Store header */
   pMSAHeader = (MSAHEADERSTRUCT *)pMSAImageBuffer;
   pMSAHeader->ID = SDL_SwapBE16(0x0E0F);
-  Floppy_FindDiscDetails(pBuffer,ImageSize,&nSectorsPerTrack,&nSides);
+  Floppy_FindDiskDetails(pBuffer,ImageSize,&nSectorsPerTrack,&nSides);
   pMSAHeader->SectorsPerTrack = SDL_SwapBE16(nSectorsPerTrack);
   pMSAHeader->Sides = SDL_SwapBE16(nSides-1);
   pMSAHeader->StartingTrack = SDL_SwapBE16(0);

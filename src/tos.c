@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.30 2005-08-13 11:21:44 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.31 2005-09-13 01:10:09 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -290,7 +290,7 @@ static void TOS_SetDefaultMemoryConfig(void)
   STMemory_WriteWord(0x446, nBootDrive);          /* Boot up on A(0) or C(2) */
   //STMemory_WriteWord(0x4a6, 0x2);                 /* Connected floppies A,B (0 or 2) */
 
-  ConnectedDriveMask = ConnectedDriveMaskList[ConfigureParams.HardDisc.nDriveList];
+  ConnectedDriveMask = ConnectedDriveMaskList[ConfigureParams.HardDisk.nDriveList];
   STMemory_WriteLong(0x4c2, ConnectedDriveMask);  /* Drives A,B and C - NOTE: some TOS images overwrite value, see 'OpCode_SysInit' */
 
   /* Mirror ROM boot vectors */

@@ -4,9 +4,9 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  ST Disc support.
+  ST Disk support.
 */
-char ST_rcsid[] = "Hatari $Id: st.c,v 1.4 2004-04-28 09:04:58 thothy Exp $";
+char ST_rcsid[] = "Hatari $Id: st.c,v 1.5 2005-09-13 01:10:09 thothy Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -50,7 +50,7 @@ BOOL ST_FileNameIsST(char *pszFileName, BOOL bAllowGZ)
   Load .ST file into memory, set number of bytes loaded and return a pointer
   to the buffer.
 */
-Uint8 *ST_ReadDisc(char *pszFileName, long *pImageSize)
+Uint8 *ST_ReadDisk(char *pszFileName, long *pImageSize)
 {
 	void *pStFile;
 
@@ -69,7 +69,7 @@ Uint8 *ST_ReadDisc(char *pszFileName, long *pImageSize)
 /*
   Save .ST file from memory buffer. Returns TRUE is all OK
 */
-BOOL ST_WriteDisc(char *pszFileName, Uint8 *pBuffer, int ImageSize)
+BOOL ST_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_ST_IMAGES
 

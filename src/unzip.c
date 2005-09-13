@@ -1,9 +1,9 @@
 /*
-  Hatari
+  Hatari - unzip.c
 
-  Zipped disc support, uses zlib
+  Support for *.zip files, uses zlib.
 
-  This file is originally from the minizip code by Gilles Vollant
+  This file is originally from the minizip code by Gilles Vollant.
 
 */
 /* unzip.c -- IO on .zip files using zlib 
@@ -11,7 +11,7 @@
 
    Read unzip.h for more info
 */
-char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.4 2005-03-07 23:44:23 thothy Exp $";
+char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.5 2005-09-13 01:10:09 thothy Exp $";
 
 
 #include <stdio.h>

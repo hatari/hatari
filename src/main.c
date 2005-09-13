@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.76 2005-08-13 11:21:44 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.77 2005-09-13 01:10:09 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -50,7 +50,7 @@ char Main_rcsid[] = "Hatari $Id: main.c,v 1.76 2005-08-13 11:21:44 thothy Exp $"
 BOOL bQuitProgram=FALSE;                  /* Flag to quit program cleanly */
 BOOL bEmulationActive=TRUE;               /* Run emulation when started */
 BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
-char szBootDiscImage[FILENAME_MAX];
+static char szBootDiskImage[FILENAME_MAX];
 char szWorkingDir[FILENAME_MAX];          /* Working directory */
 BOOL bIgnoreNextMouseMotion = FALSE;      /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
 
@@ -76,7 +76,7 @@ void Main_MemorySnapShot_Capture(BOOL bSave)
   }
   /* And Cart/TOS/Hardware area */
   MemorySnapShot_Store(&STRam[0xE00000],0x200000);
-  MemorySnapShot_Store(szBootDiscImage,sizeof(szBootDiscImage));
+  MemorySnapShot_Store(szBootDiskImage, sizeof(szBootDiskImage));
   MemorySnapShot_Store(szWorkingDir,sizeof(szWorkingDir));
 }
 
@@ -317,10 +317,10 @@ static void Main_ReadParameters(int argc, char *argv[])
           fprintf(stderr, "Missing argument for --hdimage\n");
         else
         {
-          if (strlen(argv[i+1]) <= sizeof(ConfigureParams.HardDisc.szHardDiscImage))
+          if (strlen(argv[i+1]) <= sizeof(ConfigureParams.HardDisk.szHardDiskImage))
           {
-            ConfigureParams.HardDisc.bUseHardDiscImage = TRUE;
-            strcpy(ConfigureParams.HardDisc.szHardDiscImage, argv[i+1]);
+            ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
+            strcpy(ConfigureParams.HardDisk.szHardDiskImage, argv[i+1]);
           }
           else fprintf(stderr, "HD image file name too long!\n");
           i += 1;
@@ -334,9 +334,9 @@ static void Main_ReadParameters(int argc, char *argv[])
         {
           if(strlen(argv[i+1]) <= MAX_PATH )
           {
-            ConfigureParams.HardDisc.bUseHardDiscDirectories = TRUE;
-            ConfigureParams.HardDisc.bBootFromHardDisc = TRUE;
-            strcpy(ConfigureParams.HardDisc.szHardDiscDirectories[0], argv[i+1]);
+            ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
+            ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
+            strcpy(ConfigureParams.HardDisk.szHardDiskDirectories[0], argv[i+1]);
           }
           else fprintf(stderr, "HD directory name too long!\n");
           i += 1;
@@ -428,12 +428,12 @@ static void Main_ReadParameters(int argc, char *argv[])
       }
       else
       {
-        /* Possible passed disc image filename, ie starts with character other than '-' */
-        if (argv[i][0] != '-' && strlen(argv[i]) < sizeof(szBootDiscImage)
+        /* Possible passed disk image filename, ie starts with character other than '-' */
+        if (argv[i][0] != '-' && strlen(argv[i]) < sizeof(szBootDiskImage)
             && File_Exists(argv[i]))
         {
-          strcpy(szBootDiscImage, argv[i]);
-          File_MakeAbsoluteName(szBootDiscImage);
+          strcpy(szBootDiskImage, argv[i]);
+          File_MakeAbsoluteName(szBootDiskImage);
         }
         else
           fprintf(stderr,"Illegal parameter: %s\n", argv[i]);
@@ -475,16 +475,16 @@ static void Main_Init(void)
   Keymap_Init();
 
   /* Init HD emulation */
-  if(ConfigureParams.HardDisc.bUseHardDiscImage)
+  if (ConfigureParams.HardDisk.bUseHardDiskImage)
   {
-    char *szHardDiscImage = ConfigureParams.HardDisc.szHardDiscImage;
-    if( HDC_Init(szHardDiscImage) )
-      printf("Hard drive image %s mounted.\n", szHardDiscImage);
+    char *szHardDiskImage = ConfigureParams.HardDisk.szHardDiskImage;
+    if (HDC_Init(szHardDiskImage))
+      printf("Hard drive image %s mounted.\n", szHardDiskImage);
     else
-      printf("Couldn't open HD file: %s, or no partitions\n", szHardDiscImage);
+      printf("Couldn't open HD file: %s, or no partitions\n", szHardDiskImage);
   }
   GemDOS_Init();
-  if(ConfigureParams.HardDisc.bUseHardDiscDirectories)
+  if(ConfigureParams.HardDisk.bUseHardDiskDirectories)
   {
     GemDOS_InitDrives();
   }
@@ -506,10 +506,10 @@ static void Main_Init(void)
   Joy_Init();
   Sound_Init();
 
-  /* Check passed disc image parameter, boot directly into emulator */
-  if(strlen(szBootDiscImage) > 0)
+  /* Check passed disk image parameter, boot directly into emulator */
+  if (strlen(szBootDiskImage) > 0)
   {
-    Floppy_InsertDiscIntoDrive(0,szBootDiscImage);
+    Floppy_InsertDiskIntoDrive(0, szBootDiskImage);
   }
 }
 
@@ -556,7 +556,7 @@ int main(int argc, char *argv[])
   /* Get working directory */
   getcwd(szWorkingDir, FILENAME_MAX);
 
-  szBootDiscImage[0] = 0;
+  szBootDiskImage[0] = 0;
 
   /* Set default configuration values: */
   Configuration_SetDefault();

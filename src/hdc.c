@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.7 2005-04-05 14:41:26 thothy Exp $";
+char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.8 2005-09-13 01:10:09 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -54,7 +54,7 @@ short int HDCSectorCount;
 /* 
   FDC registers used:
   - FDCSectorCountRegister
-  - DiscControllerStatus_ff8604rd
+  - DiskControllerStatus_ff8604rd
   - DMAModeControl_ff8606wr
 */
 
@@ -319,13 +319,13 @@ BOOL HDC_Init(char *filename)
     {
       fclose( hd_image_file );
       hd_image_file = NULL;
-      ConfigureParams.HardDisc.bUseHardDiscImage = FALSE;
+      ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
       return( FALSE );
     }
   /* set number of partitions */
-  ConfigureParams.HardDisc.nDriveList += nPartitions;
+  ConfigureParams.HardDisk.nDriveList += nPartitions;
 
-  ConfigureParams.HardDisc.bUseHardDiscImage = TRUE;
+  ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
 
   return( TRUE );
 }
@@ -341,7 +341,7 @@ void HDC_UnInit(void)
   fclose(hd_image_file);
   hd_image_file = NULL;
   nPartitions = 0;
-  ConfigureParams.HardDisc.bUseHardDiscImage = FALSE;
+  ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
 }
 
 /*---------------------------------------------------------------------*/
@@ -359,7 +359,7 @@ void HDC_WriteCommandPacket(void)
   if(!(ACSI_EMU_ON)) return;
 
   /* command byte sent, store it. */
-  HDCCommand.command[HDCCommand.byteCount++] =  (DiscControllerWord_ff8604wr&0xFF);
+  HDCCommand.command[HDCCommand.byteCount++] =  (DiskControllerWord_ff8604wr&0xFF);
   
   /* have we recived a complete 6-byte packet yet? */
   if(HDCCommand.byteCount >= 6){
