@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.3 2005-08-21 21:15:40 thothy Exp $";
+char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.4 2005-09-15 00:11:27 thothy Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -46,6 +46,10 @@ char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.3 2005-08-21 21:15:40 thothy Exp
 
 Uint16 nDmaSoundControl;                /* Sound control register */
 Uint16 nDmaSoundMode;                   /* Sound mode register */
+
+static Uint16 nMicrowireData;           /* Microwire Data register */
+static Uint16 nMicrowireMask;           /* Microwire Mask register */
+static int nMwTransferSteps;
 
 static Uint32 nFrameStartAddr;          /* Sound frame start */
 static Uint32 nFrameEndAddr;            /* Sound frame end */
@@ -89,6 +93,9 @@ void DmaSnd_MemorySnapShot_Capture(BOOL bSave)
 	MemorySnapShot_Store(&nFrameEndAddr, sizeof(nFrameEndAddr));
 	MemorySnapShot_Store(&FrameCounter, sizeof(FrameCounter));
 	MemorySnapShot_Store(&nFrameLen, sizeof(nFrameLen));
+	MemorySnapShot_Store(&nMicrowireData, sizeof(nMicrowireData));
+	MemorySnapShot_Store(&nMicrowireMask, sizeof(nMicrowireMask));
+	MemorySnapShot_Store(&nMwTransferSteps, sizeof(nMwTransferSteps));
 }
 
 
@@ -206,6 +213,9 @@ void DmaSnd_InterruptHandler(void)
 
 	/* Update sound */
 	Sound_Update();
+
+	/* Make sure that emulated microwire isn't busy forever */
+	nMwTransferSteps = 0;
 }
 
 
@@ -319,6 +329,57 @@ void DmaSnd_SoundMode_WriteWord(void)
 */
 void DmaSnd_MicrowireData_ReadWord(void)
 {
-	/* Temporary hack to get TOS 1.06 and 1.62 working... */
-	IoMem_WriteWord(0xff8922, 0);
+	/* The Microwire shifts the data register bit by bit until it is zero
+	 * within 16 usec. We don't emulate the time, only the shift on read access,
+	 * so this is not very accurate yet. */
+	if (nMwTransferSteps > 0)
+	{
+		IoMem_WriteWord(0xff8922, IoMem_ReadWord(0xff8922)<<2);
+		nMwTransferSteps -= 2;
+	}
+	else
+	{
+		IoMem_WriteWord(0xff8922, 0);
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write word to microwire data register (0xff8922).
+*/
+void DmaSnd_MicrowireData_WriteWord(void)
+{
+	nMicrowireData = IoMem_ReadWord(0xff8922);
+	nMwTransferSteps = 16;      /* To simulate a microwire transfer */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Read word from microwire mask register (0xff8924).
+*/
+void DmaSnd_MicrowireMask_ReadWord(void)
+{
+	/* Same as with data register, but mask register is rotated, not  shifted. */
+	if (nMwTransferSteps > 0)
+	{
+		IoMem_WriteWord(0xff8924, (IoMem_ReadWord(0xff8924)<<2)|(IoMem_ReadWord(0xff8924)>>14));
+		nMwTransferSteps -= 2;
+	}
+	else
+	{
+		IoMem_WriteWord(0xff8924, nMicrowireMask);
+	}
+
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write word to microwire mask register (0xff8924).
+*/
+void DmaSnd_MicrowireMask_WriteWord(void)
+{
+	nMicrowireMask = IoMem_ReadWord(0xff8924);
 }

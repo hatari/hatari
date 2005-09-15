@@ -27,5 +27,8 @@ extern void DmaSnd_FrameCountLow_ReadByte(void);
 extern void DmaSnd_SoundMode_ReadWord(void);
 extern void DmaSnd_SoundMode_WriteWord(void);
 extern void DmaSnd_MicrowireData_ReadWord(void);
+extern void DmaSnd_MicrowireData_WriteWord(void);
+extern void DmaSnd_MicrowireMask_ReadWord(void);
+extern void DmaSnd_MicrowireMask_WriteWord(void);
 
 #endif /* HATARI_DMASND_H */
