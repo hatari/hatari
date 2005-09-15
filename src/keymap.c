@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.19 2005-08-11 07:55:31 thothy Exp $";
+char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.20 2005-09-15 09:42:59 thothy Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -347,7 +347,9 @@ void Keymap_Init(void)
 /*-----------------------------------------------------------------------*/
 /*
   Heuristic analysis to find out the obscure scancode offset.
-  This clever code has been taken from the emulator Aranym. (cheers!)
+  Some keys like 'z' can't be used for detection since they are on different
+  locations on "qwertz" and "azerty" keyboards.
+  This clever code has originally been taken from the emulator Aranym. (cheers!)
 */
 static int Keymap_FindScanCodeOffset(SDL_keysym* keysym)
 {
@@ -373,17 +375,17 @@ static int Keymap_FindScanCodeOffset(SDL_keysym* keysym)
     case SDLK_TAB:  offset = scanPC - 0x0f; break;
     case SDLK_RETURN:  offset = scanPC - 0x1c; break;
     case SDLK_SPACE:  offset = scanPC - 0x39; break;
-    case SDLK_q:  offset = scanPC - 0x10; break;
-    case SDLK_w:  offset = scanPC - 0x11; break;
+    /*case SDLK_q:  offset = scanPC - 0x10; break;*/  /* different on azerty */
+    /*case SDLK_w:  offset = scanPC - 0x11; break;*/  /* different on azerty */
     case SDLK_e:  offset = scanPC - 0x12; break;
     case SDLK_r:  offset = scanPC - 0x13; break;
     case SDLK_t:  offset = scanPC - 0x14; break;
-    case SDLK_y:  offset = scanPC - 0x15; break;
+    /*case SDLK_y:  offset = scanPC - 0x15; break;*/  /* different on qwertz */
     case SDLK_u:  offset = scanPC - 0x16; break;
     case SDLK_i:  offset = scanPC - 0x17; break;
     case SDLK_o:  offset = scanPC - 0x18; break;
     case SDLK_p:  offset = scanPC - 0x19; break;
-    case SDLK_a:  offset = scanPC - 0x1e; break;
+    /*case SDLK_a:  offset = scanPC - 0x1e; break;*/  /* different on azerty */
     case SDLK_s:  offset = scanPC - 0x1f; break;
     case SDLK_d:  offset = scanPC - 0x20; break;
     case SDLK_f:  offset = scanPC - 0x21; break;
@@ -392,13 +394,13 @@ static int Keymap_FindScanCodeOffset(SDL_keysym* keysym)
     case SDLK_j:  offset = scanPC - 0x24; break;
     case SDLK_k:  offset = scanPC - 0x25; break;
     case SDLK_l:  offset = scanPC - 0x26; break;
-    case SDLK_z:  offset = scanPC - 0x2c; break;
+    /*case SDLK_z:  offset = scanPC - 0x2c; break;*/  /* different on qwertz and azerty */
     case SDLK_x:  offset = scanPC - 0x2d; break;
     case SDLK_c:  offset = scanPC - 0x2e; break;
     case SDLK_v:  offset = scanPC - 0x2f; break;
     case SDLK_b:  offset = scanPC - 0x30; break;
     case SDLK_n:  offset = scanPC - 0x31; break;
-    case SDLK_m:  offset = scanPC - 0x32; break;
+    /*case SDLK_m:  offset = scanPC - 0x32; break;*/  /* different on azerty */
     case SDLK_CAPSLOCK:  offset = scanPC - 0x3a; break;
     case SDLK_LSHIFT:  offset = scanPC - 0x2a; break;
     case SDLK_LCTRL:  offset = scanPC - 0x1d; break;
@@ -471,7 +473,6 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
        * base offset (framebuffer = 0, X11 = 8).
        * Try to detect the offset using a little bit of black magic.
        * If offset is known then simply pass the scancode. */
-      int scanPC = keysym->scancode;
       if (offset == -1)
       {
         offset = Keymap_FindScanCodeOffset(keysym);
@@ -480,14 +481,15 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
       if (offset >= 0)
       {
         /* offset is defined so pass the scancode directly */
-        return (scanPC - offset);
+        return (keysym->scancode - offset);
       }
       else
       {
-        fprintf(stderr, "Unknown key: scancode = %d ($%02x), keycode = '%s' ($%02x)\n",
-                scanPC, scanPC, SDL_GetKeyName(keysym->sym), keysym->sym);
-	fprintf(stderr,"trying offset 8 (the most likely !)\n");
-        return (scanPC - 8);
+        /* Failed to detect offset, so use default value 8 */
+        fprintf(stderr, "Offset detection failed with "
+                "key '%s', scancode = 0x%02x, symcode =  0x%02x\n",
+                SDL_GetKeyName(keysym->sym), keysym->scancode, keysym->sym);
+        return (keysym->scancode - 8);
       }
     }
   }
