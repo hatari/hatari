@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.19 2005-08-06 12:32:09 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.20 2005-09-25 21:32:25 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -23,6 +23,7 @@ char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.19 2005-08-06 12:32:09 thothy Exp $";
 #include "ikbd.h"
 #include "int.h"
 #include "ioMem.h"
+#include "joy.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
@@ -110,15 +111,7 @@ void MFP_Reset(void)
 
   bAppliedTimerDPatch = FALSE;
 
-  /* NOTE  Matthias Arndt <marndt@asmsoftware.de>  9 Aug 2003
-   * according to the Atari ST Profibuch, Bit0 of GPIP Data Register
-   * is the BUSY signal of the printer port
-   * it is SET if no printer is connected or on BUSY
-   * therefor we should assume it to be 0 in Hatari as printer busy is
-   * all handled in the Printer submodule
-   */
-
-  MFP_GPIP = 0xfe;          /* Set GPIP register (all 1's except bit0 = no interrupts) */
+  MFP_GPIP = 0xff;
   MFP_AER = MFP_DDR = 0;
   MFP_IERA = MFP_IERB = 0;
   MFP_IPRA = MFP_IPRB = 0;
@@ -606,18 +599,42 @@ void MFP_InterruptHandler_TimerD(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Handle read from monochrome monitor/GPIP pins register (0xfffa01).
+  Handle read from GPIP pins register (0xfffa01).
+
+  - Bit 0 is the BUSY signal of the printer port, it is SET if no printer
+    is connected or on BUSY. Therefor we should assume it to be 0 in Hatari
+    when a printer is emulated.
+  - Bit 7 is monochrome monitor detection signal. On STE it is also XORed with
+    the DMA sound play bit.
 */
 void MFP_GPIP_ReadByte(void)
 {
-	Uint8 v;
-	v = MFP_GPIP & 0x7f;    /* Lower 7-bits are GPIP (Top bit is monitor type) */
 	if (!bUseHighRes)
-		v |= 0x80;          /* Color monitor -> set top bit */
+		MFP_GPIP |= 0x80;       /* Color monitor -> set top bit */
+	else
+		MFP_GPIP &= ~0x80;
 	if (nDmaSoundControl & DMASNDCTRL_PLAY)
-		v ^= 0x80;          /* Top bit is XORed with DMA sound control play bit */
+		MFP_GPIP ^= 0x80;       /* Top bit is XORed with DMA sound control play bit */
 
-	IoMem[0xfffa01] = v;
+	if (ConfigureParams.Printer.bEnablePrinting)
+	{
+		/* Signal that printer is not busy */
+		MFP_GPIP &= ~1;
+	}
+	else
+	{
+		MFP_GPIP |= 1;
+
+		/* Printer BUSY bit is also used by parallel port joystick adapters as fire button */
+		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT1].nJoystickMode != JOYSTICK_DISABLED)
+		{
+			/* Fire pressed? */
+			if (Joy_GetStickData(JOYID_PARPORT1) & 0x80)
+				MFP_GPIP &= ~1;
+		}
+	}
+
+	IoMem[0xfffa01] = MFP_GPIP;
 }
 
 /*-----------------------------------------------------------------------*/

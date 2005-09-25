@@ -76,15 +76,24 @@ typedef struct
 
 
 /* Joystick configuration */
+typedef enum
+{
+  JOYSTICK_DISABLED,
+  JOYSTICK_REALSTICK,
+  JOYSTICK_KEYBOARD
+} JOYSTICKMODE;
+
 typedef struct
 {
-  BOOL bCursorEmulation;
+  JOYSTICKMODE nJoystickMode;
   BOOL bEnableAutoFire;
+  int nJoyId;
+  int nKeyCodeUp, nKeyCodeDown, nKeyCodeLeft, nKeyCodeRight, nKeyCodeFire;
 } JOYSTICK;
 
 typedef struct
 {
-  JOYSTICK Joy[2];
+  JOYSTICK Joy[6];
 } CNF_JOYSTICKS;
 
 

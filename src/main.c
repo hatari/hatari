@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.77 2005-09-13 01:10:09 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.78 2005-09-25 21:32:25 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -261,7 +261,7 @@ static void Main_ReadParameters(int argc, char *argv[])
       }
       else if (!strcmp(argv[i],"--joystick") || !strcmp(argv[i],"-j"))
       {
-        ConfigureParams.Joysticks.Joy[1].bCursorEmulation=TRUE;
+        ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_KEYBOARD;
       }
       else if ( !strcmp(argv[i],"--nosound") )
       {

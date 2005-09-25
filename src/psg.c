@@ -8,11 +8,12 @@
 
   Also used for the printer (centronics) port emulation (PSG Port B, Register 15)
 */
-char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.7 2005-01-18 23:33:24 thothy Exp $";
+char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.8 2005-09-25 21:32:25 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
+#include "joy.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "sound.h"
@@ -66,10 +67,36 @@ void PSG_SelectRegister_WriteByte(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Read byte from 0xff8800, returns to PSG data
+  Read byte from 0xff8800, returns PSG data
 */
 void PSG_SelectRegister_ReadByte(void)
 {
+	if (PSGRegisterSelect == 14)
+	{
+		/* Second parallel port joystick uses centronics strobe bit as fire button: */
+		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT2].nJoystickMode != JOYSTICK_DISABLED)
+		{
+			if (Joy_GetStickData(JOYID_PARPORT2) & 0x80)
+				PSGRegisters[14] &= ~32;
+			else
+				PSGRegisters[14] |= 32;
+		}
+	}
+	else if (PSGRegisterSelect == 15)
+	{
+		/* PSG register 15 is parallel port data register - used by parallel port joysticks: */
+		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT1].nJoystickMode != JOYSTICK_DISABLED)
+		{
+			PSGRegisters[15] &= 0x0f;
+			PSGRegisters[15] |= ~Joy_GetStickData(JOYID_PARPORT1) << 4;
+		}
+		if (ConfigureParams.Joysticks.Joy[JOYID_PARPORT2].nJoystickMode != JOYSTICK_DISABLED)
+		{
+			PSGRegisters[15] &= 0xf0;
+			PSGRegisters[15] |= ~Joy_GetStickData(JOYID_PARPORT2) & 0x0f;
+		}
+	}
+
 	/* Read data last selected by register */
 	IoMem[0xff8800] = PSGRegisters[PSGRegisterSelect];
 

@@ -9,7 +9,9 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.45 2005-09-13 01:10:09 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.46 2005-09-25 21:32:25 thothy Exp $";
+
+#include <SDL_keysym.h>
 
 #include "main.h"
 #include "configuration.h"
@@ -56,17 +58,87 @@ static const struct Config_Tag configs_Screen[] =
 	{ NULL , Error_Tag, NULL }
 };
 
-/* Used to load/save joystick options */
+/* Used to load/save joystick 0 options */
 static const struct Config_Tag configs_Joystick0[] =
 {
-	{ "bCursorEmulation", Bool_Tag, &ConfigureParams.Joysticks.Joy[0].bCursorEmulation },
+	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nJoystickMode },
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[0].bEnableAutoFire },
+	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nJoyId },
+	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeUp },
+	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeDown },
+	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeLeft },
+	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeRight },
+	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeFire },
 	{ NULL , Error_Tag, NULL }
 };
+
+/* Used to load/save joystick 1 options */
 static const struct Config_Tag configs_Joystick1[] =
 {
-	{ "bCursorEmulation", Bool_Tag, &ConfigureParams.Joysticks.Joy[1].bCursorEmulation },
+	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nJoystickMode },
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[1].bEnableAutoFire },
+	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nJoyId },
+	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeUp },
+	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeDown },
+	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeLeft },
+	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeRight },
+	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeFire },
+	{ NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save joystick 2 options */
+static const struct Config_Tag configs_Joystick2[] =
+{
+	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nJoystickMode },
+	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[2].bEnableAutoFire },
+	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nJoyId },
+	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeUp },
+	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeDown },
+	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeLeft },
+	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeRight },
+	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeFire },
+	{ NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save joystick 3 options */
+static const struct Config_Tag configs_Joystick3[] =
+{
+	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nJoystickMode },
+	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[3].bEnableAutoFire },
+	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nJoyId },
+	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeUp },
+	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeDown },
+	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeLeft },
+	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeRight },
+	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeFire },
+	{ NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save joystick 4 options */
+static const struct Config_Tag configs_Joystick4[] =
+{
+	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nJoystickMode },
+	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[4].bEnableAutoFire },
+	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nJoyId },
+	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeUp },
+	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeDown },
+	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeLeft },
+	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeRight },
+	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeFire },
+	{ NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save joystick 5 options */
+static const struct Config_Tag configs_Joystick5[] =
+{
+	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nJoystickMode },
+	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[5].bEnableAutoFire },
+	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nJoyId },
+	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeUp },
+	{ "nKeyCodeDown", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeDown },
+	{ "nKeyCodeLeft", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeLeft },
+	{ "nKeyCodeRight", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeRight },
+	{ "nKeyCodeFire", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeFire },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -230,11 +302,19 @@ void Configuration_SetDefault(void)
 	strcpy(ConfigureParams.HardDisk.szHardDiskImage, szWorkingDir);
 
 	/* Set defaults for Joysticks */
-	for (i=0; i<2; i++)
+	for (i = 0; i < 6; i++)
 	{
-		ConfigureParams.Joysticks.Joy[i].bCursorEmulation = FALSE;
+		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
 		ConfigureParams.Joysticks.Joy[i].bEnableAutoFire = FALSE;
+		ConfigureParams.Joysticks.Joy[i].nJoyId = i;
+		ConfigureParams.Joysticks.Joy[i].nKeyCodeUp = SDLK_UP;
+		ConfigureParams.Joysticks.Joy[i].nKeyCodeDown = SDLK_DOWN;
+		ConfigureParams.Joysticks.Joy[i].nKeyCodeLeft = SDLK_LEFT;
+		ConfigureParams.Joysticks.Joy[i].nKeyCodeRight = SDLK_RIGHT;
+		ConfigureParams.Joysticks.Joy[i].nKeyCodeFire = SDLK_RCTRL;
 	}
+	ConfigureParams.Joysticks.Joy[1].nJoyId = 0;    /* ST Joystick #1 is default joystick */
+	ConfigureParams.Joysticks.Joy[0].nJoyId = 1;
 
 	/* Set defaults for Keyboard */
 	ConfigureParams.Keyboard.bDisableKeyRepeat = TRUE;
@@ -391,6 +471,10 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Screen, "[Screen]");
 	Configuration_LoadSection(psFileName, configs_Joystick0, "[Joystick0]");
 	Configuration_LoadSection(psFileName, configs_Joystick1, "[Joystick1]");
+	Configuration_LoadSection(psFileName, configs_Joystick2, "[Joystick2]");
+	Configuration_LoadSection(psFileName, configs_Joystick3, "[Joystick3]");
+	Configuration_LoadSection(psFileName, configs_Joystick4, "[Joystick4]");
+	Configuration_LoadSection(psFileName, configs_Joystick5, "[Joystick5]");
 	Configuration_LoadSection(psFileName, configs_Keyboard, "[Keyboard]");
 	Configuration_LoadSection(psFileName, configs_Sound, "[Sound]");
 	Configuration_LoadSection(psFileName, configs_Memory, "[Memory]");
@@ -443,6 +527,10 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Screen, "[Screen]");
 	Configuration_SaveSection(sConfigFileName, configs_Joystick0, "[Joystick0]");
 	Configuration_SaveSection(sConfigFileName, configs_Joystick1, "[Joystick1]");
+	Configuration_SaveSection(sConfigFileName, configs_Joystick2, "[Joystick2]");
+	Configuration_SaveSection(sConfigFileName, configs_Joystick3, "[Joystick3]");
+	Configuration_SaveSection(sConfigFileName, configs_Joystick4, "[Joystick4]");
+	Configuration_SaveSection(sConfigFileName, configs_Joystick5, "[Joystick5]");
 	Configuration_SaveSection(sConfigFileName, configs_Keyboard, "[Keyboard]");
 	Configuration_SaveSection(sConfigFileName, configs_Sound, "[Sound]");
 	Configuration_SaveSection(sConfigFileName, configs_Memory, "[Memory]");

@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.20 2005-09-15 09:42:59 thothy Exp $";
+char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.21 2005-09-25 21:32:25 thothy Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -718,21 +718,10 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 
   /*fprintf(stderr, "keydown: sym=%i scan=%i mod=$%x\n",symkey, sdlkey->scancode, modkey);*/
 
-  /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
-  if((ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
-     && !(modkey & KMOD_SHIFT))
-  {
-    if(symkey == SDLK_UP)
-      { cursorJoyEmu |= 1; return; }
-    else if(symkey == SDLK_DOWN)
-      { cursorJoyEmu |= 2; return; }
-    else if(symkey == SDLK_LEFT)
-      { cursorJoyEmu |= 4; return; }
-    else if(symkey == SDLK_RIGHT)
-      { cursorJoyEmu |= 8; return; }
-    else if(symkey == SDLK_RCTRL || symkey == SDLK_KP0 || symkey == SDLK_LMETA)
-      { cursorJoyEmu |= 128; return; }
-  }
+  /* If using joystick emulation via keyboard, DON'T send keys to keyboard processor!!!
+   * Some games use keyboard as pause! */
+  if (Joy_KeyDown(symkey, modkey))
+    return;
 
   /* Handle special keys */
   if (symkey == SDLK_RALT || symkey == SDLK_LMETA || symkey == SDLK_RMETA
@@ -789,21 +778,10 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
 
   /*fprintf(stderr, "keyup: sym=%i scan=%i mod=$%x\n",symkey, sdlkey->scancode, modkey);*/
 
-  /* If using cursor emulation, DON'T send keys to keyboard processor!!! Some games use keyboard as pause! */
-  if((ConfigureParams.Joysticks.Joy[0].bCursorEmulation || ConfigureParams.Joysticks.Joy[1].bCursorEmulation)
-     && !(modkey & KMOD_SHIFT))
-  {
-    if(symkey == SDLK_UP)
-      { cursorJoyEmu &= ~1; return; }
-    else if(symkey == SDLK_DOWN)
-      { cursorJoyEmu &= ~2; return; }
-    else if(symkey == SDLK_LEFT)
-      { cursorJoyEmu &= ~4; return; }
-    else if(symkey == SDLK_RIGHT)
-      { cursorJoyEmu &= ~8; return; }
-    else if(symkey == SDLK_RCTRL || symkey == SDLK_KP0 || symkey == SDLK_LMETA)
-      { cursorJoyEmu &= ~128; return; }
-  }
+  /* If using keyboard emulation, DON'T send keys to keyboard processor!!!
+   * Some games use keyboard as pause! */
+  if (Joy_KeyUp(symkey, modkey))
+    return;
 
   /* Handle special keys */
   if (symkey == SDLK_RALT || symkey == SDLK_LMETA || symkey == SDLK_RMETA
