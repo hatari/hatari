@@ -33,7 +33,7 @@
     4 - 7  Length Of Data To Follow
     8 - end  Data (Samples)
 */
-char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.10 2005-06-05 14:19:39 thothy Exp $";
+char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.11 2005-09-26 15:20:14 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -136,7 +136,7 @@ void WAVFormat_CloseFile()
 /*-----------------------------------------------------------------------*/
 /*
 */
-void WAVFormat_Update(char *pSamples, int Index, int Length)
+void WAVFormat_Update(Sint8 *pSamples, int Index, int Length)
 {
 	Sint8 sample;
 	int i;

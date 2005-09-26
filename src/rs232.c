@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.16 2005-04-05 14:41:30 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.17 2005-09-26 15:20:14 thothy Exp $";
 
 #ifndef HAVE_TERMIOS_H
 #define HAVE_TERMIOS_H 1
@@ -597,7 +597,7 @@ static void RS232_AddBytesToInputBuffer(unsigned char *pBytes, int nBytes)
 int RS232_ThreadFunc(void *pData)
 {
 	int iInChar;
-	char cInChar;
+	unsigned char cInChar;
 
 	/* Check for any RS-232 incoming data */
 	while (TRUE)

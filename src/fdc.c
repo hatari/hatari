@@ -12,7 +12,7 @@
   checked each HBL to perform the transfer of data from our disk image into
   the ST RAM area by simulating the DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.22 2005-09-13 01:10:09 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.23 2005-09-26 15:20:14 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -155,7 +155,7 @@ static short int nReadWriteDev;
 static unsigned short int nReadWriteSectorsPerTrack;
 static short int nReadWriteSectors;
 
-static unsigned char DMASectorWorkSpace[NUMBYTESPERSECTOR];     /* Workspace used to copy to/from for floppy DMA */
+static Uint8 DMASectorWorkSpace[NUMBYTESPERSECTOR];             /* Workspace used to copy to/from for floppy DMA */
 
 
 /*-----------------------------------------------------------------------*/
@@ -1253,7 +1253,7 @@ void FDC_WriteDMAAddress(Uint32 Address)
 BOOL FDC_ReadSectorFromFloppy(void)
 {
 	/* Copy in 1 sector to our workspace */
-	if (Floppy_ReadSectors(nReadWriteDev,(char *)DMASectorWorkSpace,nReadWriteSector,nReadWriteTrack,nReadWriteSide,1,NULL))
+	if (Floppy_ReadSectors(nReadWriteDev, DMASectorWorkSpace, nReadWriteSector, nReadWriteTrack, nReadWriteSide, 1, NULL))
 	{
 		/* Update reading/writing parameters */
 		nReadWriteSector++;

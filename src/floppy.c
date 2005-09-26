@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.28 2005-09-13 01:10:09 thothy Exp $";
+char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.29 2005-09-26 15:20:14 thothy Exp $";
 
 #include <sys/stat.h>
 
@@ -435,7 +435,9 @@ void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
   Read sectors from floppy disk image, return TRUE if all OK
   NOTE Pass -ve as Count to read whole track
 */
-BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsigned short int Track,unsigned short int Side, short int Count, int *pnSectorsPerTrack)
+BOOL Floppy_ReadSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
+                        unsigned short Track, unsigned short Side, short Count,
+                        int *pnSectorsPerTrack)
 {
   Uint8 *pDiskBuffer;
   unsigned short int nSectorsPerTrack,nSides,nBytesPerTrack;
@@ -512,7 +514,9 @@ BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsign
   Write sectors from floppy disk image, return TRUE if all OK
   NOTE Pass -ve as Count to write whole track
 */
-BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsigned short int Track,unsigned short int Side, short int Count, int *pnSectorsPerTrack)
+BOOL Floppy_WriteSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
+                         unsigned short Track, unsigned short Side, short Count,
+                         int *pnSectorsPerTrack)
 {
   Uint8 *pDiskBuffer;
   unsigned short int nSectorsPerTrack,nSides,nBytesPerTrack;

@@ -36,8 +36,8 @@ extern BOOL Floppy_ZipInsertDiskIntoDrive(int Drive, char *pszFileName, char *ps
 extern void Floppy_EjectDiskFromDrive(int Drive,BOOL bInformUser);
 extern void Floppy_EjectBothDrives(void);
 extern void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes, unsigned short *pnSectorsPerTrack, unsigned short *pnSides);
-extern BOOL Floppy_ReadSectors(int Drive,char *pBuffer,unsigned short int Sector,unsigned short int Track,unsigned short int Side, short int Count, int *pnSectorsPerTrack);
-extern BOOL Floppy_WriteSectors(int Drive,char *pBuffer,unsigned short int Sector,unsigned short int Track,unsigned short int Side, short int Count, int *pnSectorsPerTrack);
+extern BOOL Floppy_ReadSectors(int Drive, Uint8 *pBuffer, unsigned short Sector, unsigned short Track, unsigned short Side, short Count, int *pnSectorsPerTrack);
+extern BOOL Floppy_WriteSectors(int Drive, Uint8 *pBuffer, unsigned short Sector, unsigned short Track, unsigned short Side, short Count, int *pnSectorsPerTrack);
 extern int Floppy_GetPhysicalSectorsPerTrack(int Drive);
 extern BOOL Floppy_ReadPhysicalSector(int Drive,char *pBuffer,unsigned short int Sector,unsigned short int Track,unsigned short int Side,unsigned short int Count);
 

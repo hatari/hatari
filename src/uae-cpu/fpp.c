@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.3 2004-04-19 08:53:49 thothy Exp $";
+char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.4 2005-09-26 15:20:14 thothy Exp $";
 
 
 #define __USE_ISOC9X  /* We might be able to pick up a NaN */
@@ -616,7 +616,7 @@ void fdbcc_opp (uae_u32 opcode, uae_u16 extra)
 
 void fscc_opp (uae_u32 opcode, uae_u16 extra)
 {
-    uae_u32 ad;
+    uae_u32 ad = 0;
     int cc;
 
 #if DEBUG_FPP
@@ -676,7 +676,7 @@ void fbcc_opp (uae_u32 opcode, uaecptr pc, uae_u32 extra)
 
 void fsave_opp (uae_u32 opcode)
 {
-    uae_u32 ad;
+    uae_u32 ad = 0;
     int incr = (opcode & 0x38) == 0x20 ? -1 : 1;
     int i;
 
@@ -728,7 +728,7 @@ void fsave_opp (uae_u32 opcode)
 
 void frestore_opp (uae_u32 opcode)
 {
-    uae_u32 ad;
+    uae_u32 ad = 0;
     uae_u32 d;
     int incr = (opcode & 0x38) == 0x20 ? -1 : 1;
 
@@ -865,7 +865,7 @@ void fpp_opp (uae_u32 opcode, uae_u16 extra)
 	    }
 	} else if (extra & 0x2000) {
 	    /* FMOVEM FPP->memory */
-	    uae_u32 ad;
+	    uae_u32 ad = 0;
 	    int incr = 0;
 
 	    if (get_fp_ad (opcode, &ad) == 0) {
@@ -901,7 +901,7 @@ void fpp_opp (uae_u32 opcode, uae_u16 extra)
 		m68k_areg (regs, opcode & 7) = ad;
 	} else {
 	    /* FMOVEM memory->FPP */
-	    uae_u32 ad;
+	    uae_u32 ad = 0;
 
 	    if (get_fp_ad (opcode, &ad) == 0) {
 		m68k_setpc (m68k_getpc () - 4);
@@ -931,7 +931,8 @@ void fpp_opp (uae_u32 opcode, uae_u16 extra)
     case 6:
     case 7:
     {
-	uae_u32 ad, list = 0;
+	uae_u32 ad = 0;
+	uae_u32 list = 0;
 	int incr = 0;
 	if (extra & 0x2000) {
 	    /* FMOVEM FPP->memory */

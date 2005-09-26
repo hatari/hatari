@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.4 2005-09-15 00:11:27 thothy Exp $";
+char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.5 2005-09-26 15:20:14 thothy Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -168,7 +168,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	if (!(nDmaSoundControl & DMASNDCTRL_PLAY))
 		return;
 
-	pFrameStart = &STRam[nFrameStartAddr];
+	pFrameStart = (Sint8 *)&STRam[nFrameStartAddr];
 	FreqRatio = (double)DmaSndSampleRates[nDmaSoundMode & 3]
 	            / (double)SoundPlayBackFrequencies[OutputAudioFreqIndex];
 

@@ -6,7 +6,7 @@
 
   Zipped disk support, uses zlib
 */
-char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.12 2005-09-13 01:10:09 thothy Exp $";
+char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.13 2005-09-26 15:20:14 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -368,7 +368,7 @@ static char *ZIP_FirstFile(char *filename)
   bytes to uncompress is size. Returns a pointer to a buffer containing
   the uncompressed data, or NULL.
 */
-static char *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
+static void *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
 {
   int err = UNZ_OK;
   char filename_inzip[ZIP_PATH_MAX];
@@ -429,7 +429,7 @@ Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
   uLong ImageSize=0;
   unzFile uf=NULL;
   Uint8 *buf;
-  int nDiskType;
+  int nDiskType = -1;
   BOOL pathAllocated=FALSE;
   Uint8 *pDiskBuffer = NULL;
 
