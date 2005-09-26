@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.21 2005-09-25 21:32:25 thothy Exp $";
+char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.22 2005-09-26 18:24:09 thothy Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -718,6 +718,17 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 
   /*fprintf(stderr, "keydown: sym=%i scan=%i mod=$%x\n",symkey, sdlkey->scancode, modkey);*/
 
+  /* If pressed short-cut key, retain keypress until safe to execute (start of VBL) */
+  if ((modkey & KEYMAP_SHORTCUTMODS) || symkey == SDLK_F11 || symkey == SDLK_F12)
+  {
+    ShortCutKey.Key = symkey;
+    if (modkey & KMOD_CTRL)
+      ShortCutKey.bCtrlPressed = TRUE;
+    if (modkey & KMOD_SHIFT)
+      ShortCutKey.bShiftPressed = TRUE;
+    return;
+  }
+
   /* If using joystick emulation via keyboard, DON'T send keys to keyboard processor!!!
    * Some games use keyboard as pause! */
   if (Joy_KeyDown(symkey, modkey))
@@ -737,31 +748,16 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
     DebugUI();
     return;
   }
-  else if(symkey == SDLK_F11 || symkey == SDLK_F12)
-  {
-    ShortCutKey.Key = symkey;
-    return;
-  }
 
   /* Set down */
   bPreviousKeyState = Keyboard.KeyStates[symkey];
   Keyboard.KeyStates[symkey] = TRUE;
 
-  /* If pressed short-cut key, retain keypress until safe to execute (start of VBL) */
-  if (modkey & KEYMAP_SHORTCUTMODS)
+  STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
+  if (STScanCode != (char)-1)
   {
-    ShortCutKey.Key = symkey;
-    if (modkey & KMOD_CTRL)  ShortCutKey.bCtrlPressed = TRUE;
-    if (modkey & KMOD_SHIFT)  ShortCutKey.bShiftPressed = TRUE;
-  }
-  else
-  {
-    STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
-    if(STScanCode != (char)-1)
-    {
-      if(!bPreviousKeyState)
-        IKBD_PressSTKey(STScanCode, TRUE);
-    }
+    if (!bPreviousKeyState)
+      IKBD_PressSTKey(STScanCode, TRUE);
   }
 }
 
@@ -777,6 +773,12 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
   int modkey = sdlkey->mod;
 
   /*fprintf(stderr, "keyup: sym=%i scan=%i mod=$%x\n",symkey, sdlkey->scancode, modkey);*/
+
+  /* Ignore short-cut keys here */
+  if ((modkey & KEYMAP_SHORTCUTMODS) || symkey == SDLK_F11 || symkey == SDLK_F12)
+  {
+    return;
+  }
 
   /* If using keyboard emulation, DON'T send keys to keyboard processor!!!
    * Some games use keyboard as pause! */
@@ -794,10 +796,6 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
   {
     /* Simulate another capslock key press */
     IKBD_PressSTKey(0x3A, TRUE);
-  }
-  else if(symkey == SDLK_F11 || symkey == SDLK_F12)
-  {
-    return;
   }
 
   /* Release key (only if was pressed) */
