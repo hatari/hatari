@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.20 2005-08-06 12:32:10 thothy Exp $";
+char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.21 2005-09-27 08:53:50 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -222,7 +222,12 @@ void Sound_Reset(void)
 {
   int i;
 
-  Sound_ClearMixBuffer();       /* Clear buffer */
+  /* Lock audio system before accessing variables which are used by the
+   * callback function, too! */
+  Audio_Lock();
+
+  /* Clear sound mixing buffer: */
+  memset(MixBuffer, 0, MIXBUFFER_SIZE);
 
   /* Clear cycle counts, buffer index and register '13' flags */
   SoundCycles = 0;
@@ -230,12 +235,9 @@ void Sound_Reset(void)
   bWriteEnvelopeFreq = FALSE;
   bWriteChannelAAmp = bWriteChannelBAmp = bWriteChannelCAmp = FALSE;
 
-  /* Lock audio system before accessing variables that are also use by the callback function! */
-  Audio_Lock();
   CompleteSndBufIdx = 0;
   ActiveSndBufIdx =  (SoundBufferSize + SAMPLES_PER_FRAME) % MIXBUFFER_SIZE;
   nGeneratedSamples = 0;
-  Audio_Unlock();
 
   /* Clear frequency counter */
   for(i=0; i<3; i++)
@@ -244,19 +246,20 @@ void Sound_Reset(void)
     ChannelAmpDecayTime[i] = 0;
   }
   EnvelopeFreq = NoiseFreq = 0;
+
+  Audio_Unlock();
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Clear mixer buffer, where samples are stored ready to pass to sound player
+  Reset the sound buffer index variables.
 */
-void Sound_ClearMixBuffer(void)
+void Sound_ResetBufferIndex(void)
 {
   Audio_Lock();
-
-  memset(MixBuffer, 0, MIXBUFFER_SIZE);      /* Clear buffer */
-
+  ActiveSndBufIdx =  (CompleteSndBufIdx + SoundBufferSize + SAMPLES_PER_FRAME)
+                     % MIXBUFFER_SIZE;
   Audio_Unlock();
 }
 

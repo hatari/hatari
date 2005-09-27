@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.20 2005-06-05 14:56:39 thothy Exp $";
+char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.21 2005-09-27 08:53:50 thothy Exp $";
 
 #include <SDL.h>
 
@@ -156,7 +156,7 @@ static void ShortCut_MaximumSpeed(void)
     ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;
     
     /* Reset the sound emulation variables: */
-    Sound_Reset();
+    Sound_ResetBufferIndex();
   }
   else
   {
