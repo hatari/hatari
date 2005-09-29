@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.5 2005-09-28 21:44:09 thothy Exp $";
+char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.6 2005-09-29 08:36:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -26,9 +26,10 @@ char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.5 2005-09-28 21:44:09 
 #define DLGJOY_EXIT       16
 
 
+/* The joysticks dialog: */
+
 static char sSdlStickName[20];
 
-/* The joysticks dialog: */
 static SGOBJ joydlg[] =
 {
 	{ SGBOX, 0, 0, 0,0, 32,18, NULL },
@@ -57,6 +58,20 @@ static SGOBJ joydlg[] =
 };
 
 
+/* The joystick keys setup dialog: */
+
+static char sKeyInstruction[24];
+static char sKeyName[24];
+
+static SGOBJ joykeysdlg[] =
+{
+	{ SGBOX, 0, 0, 0,0, 28,5, NULL },
+	{ SGTEXT, 0, 0, 2,1, 24,1, sKeyInstruction },
+	{ SGTEXT, 0, 0, 2,3, 24,1, sKeyName },
+	{ -1, 0, 0, 0,0, 0,0, NULL }
+};
+
+
 static char *sJoystickNames[6] =
 {
 	"ST Joystick 0",
@@ -66,6 +81,57 @@ static char *sJoystickNames[6] =
 	"Parallel port stick 1",
 	"Parallel port stick 2"
 };
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Show dialogs for defining joystick keys and wait for a key press.
+*/
+static void DlgJoystick_DefineOneKey(char *pType, int *pKey)
+{
+	SDL_Event sdlEvent;
+
+	if (bQuitProgram)
+		return;
+
+	snprintf(sKeyInstruction, sizeof(sKeyInstruction), "Press key for '%s'...", pType);
+	snprintf(sKeyName, sizeof(sKeyName), "(was: '%s')", SDL_GetKeyName(*pKey));
+
+	SDLGui_DrawDialog(joykeysdlg);
+
+	do
+	{
+		SDL_WaitEvent(&sdlEvent);
+		if (sdlEvent.type == SDL_KEYDOWN)
+		{
+			*pKey = sdlEvent.key.keysym.sym;
+			snprintf(sKeyName, sizeof(sKeyName), "(now: '%s')", SDL_GetKeyName(*pKey));
+			SDLGui_DrawDialog(joykeysdlg);
+		}
+		else if (sdlEvent.type == SDL_QUIT)
+		{
+			bQuitProgram = TRUE;
+			return;
+		}
+	} while (sdlEvent.type != SDL_KEYUP);
+	SDL_Delay(200);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Let the user define joystick keys.
+*/
+static void DlgJoystick_DefineKeys(int nActJoy)
+{
+
+	SDLGui_CenterDlg(joykeysdlg);
+	DlgJoystick_DefineOneKey("up", &DialogParams.Joysticks.Joy[nActJoy].nKeyCodeUp);
+	DlgJoystick_DefineOneKey("down", &DialogParams.Joysticks.Joy[nActJoy].nKeyCodeDown);
+	DlgJoystick_DefineOneKey("left", &DialogParams.Joysticks.Joy[nActJoy].nKeyCodeLeft);
+	DlgJoystick_DefineOneKey("right", &DialogParams.Joysticks.Joy[nActJoy].nKeyCodeRight);
+	DlgJoystick_DefineOneKey("fire", &DialogParams.Joysticks.Joy[nActJoy].nKeyCodeFire);
+}
 
 
 /*-----------------------------------------------------------------------*/
@@ -152,7 +218,7 @@ void Dialog_JoyDlg(void)
     	but = SDLGui_DoDialog(joydlg, NULL);
 		switch (but)
 		{
-		 case DLGJOY_PREVSDLJOY:
+		 case DLGJOY_PREVSDLJOY:        // Select the previous SDL joystick
 			if (DialogParams.Joysticks.Joy[nActJoy].nJoyId > '0')
 			{
 				DialogParams.Joysticks.Joy[nActJoy].nJoyId -= 1;
@@ -160,7 +226,7 @@ void Dialog_JoyDlg(void)
 				         SDL_JoystickName(DialogParams.Joysticks.Joy[nActJoy].nJoyId));
 			}
 			break;
-		 case DLGJOY_NEXTSDLJOY:
+		 case DLGJOY_NEXTSDLJOY:        // Select the next SDL joystick
 			if (DialogParams.Joysticks.Joy[nActJoy].nJoyId < nMaxJoyId)
 			{
 				DialogParams.Joysticks.Joy[nActJoy].nJoyId += 1;
@@ -168,10 +234,10 @@ void Dialog_JoyDlg(void)
 				         SDL_JoystickName(DialogParams.Joysticks.Joy[nActJoy].nJoyId));
 			}
 			break;
-		 case DLGJOY_DEFINEKEYS:
-			DlgAlert_Notice("Defining keys is not yet implemeted.");
+		 case DLGJOY_DEFINEKEYS:        // Define new keys for keyboard emulation
+			DlgJoystick_DefineKeys(nActJoy);
 			break;
-		 case DLGJOY_PREVSTJOY:
+		 case DLGJOY_PREVSTJOY:         // Switch to the previous ST joystick setup tab
 			if (nActJoy > 0)
 			{
 				DlgJoystick_WriteValuesToConf(nActJoy);
@@ -180,7 +246,7 @@ void Dialog_JoyDlg(void)
 				joydlg[DLGJOY_STJOYNAME].txt = sJoystickNames[nActJoy];
 			}
 			break;
-		 case DLGJOY_NEXTSTJOY:
+		 case DLGJOY_NEXTSTJOY:         // Switch to the next ST joystick setup tab
 			if (nActJoy < 5)
 			{
 				DlgJoystick_WriteValuesToConf(nActJoy);

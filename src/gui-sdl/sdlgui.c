@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.10 2005-09-26 15:20:14 thothy Exp $";
+char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.11 2005-09-29 08:36:59 thothy Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -499,7 +499,7 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 /*
   Draw a whole dialog.
 */
-static void SDLGui_DrawDialog(const SGOBJ *dlg)
+void SDLGui_DrawDialog(const SGOBJ *dlg)
 {
   int i;
   for(i=0; dlg[i].type!=-1; i++ )

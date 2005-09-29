@@ -60,6 +60,7 @@ typedef struct
 extern int SDLGui_Init(void);
 extern int SDLGui_UnInit(void);
 extern int SDLGui_SetScreen(SDL_Surface *pScrn);
+extern void SDLGui_DrawDialog(const SGOBJ *dlg);
 extern int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut);
 extern void SDLGui_CenterDlg(SGOBJ *dlg);
 extern int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew);
