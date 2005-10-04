@@ -39,26 +39,26 @@
 #define  MFP_TIMER_D_BIT      0x10
 
 /* MFP Registers */
-extern unsigned char MFP_GPIP;
-extern unsigned char MFP_AER,MFP_DDR;
-extern unsigned char MFP_IERA,MFP_IERB;
-extern unsigned char MFP_IPRA,MFP_IPRB;
-extern unsigned char MFP_ISRA,MFP_ISRB;
-extern unsigned char MFP_IMRA,MFP_IMRB;
-extern unsigned char MFP_VR;
-extern unsigned char MFP_TACR,MFP_TBCR,MFP_TCDCR;
-extern unsigned char MFP_TADR,MFP_TBDR;
-extern unsigned char MFP_TCDR,MFP_TDDR;
-extern unsigned char MFP_TA_MAINCOUNTER;
-extern unsigned char MFP_TB_MAINCOUNTER;
-extern unsigned char MFP_TC_MAINCOUNTER;
-extern unsigned char MFP_TD_MAINCOUNTER;
+extern Uint8 MFP_GPIP;
+extern Uint8 MFP_AER,MFP_DDR;
+extern Uint8 MFP_IERA,MFP_IERB;
+extern Uint8 MFP_IPRA,MFP_IPRB;
+extern Uint8 MFP_ISRA,MFP_ISRB;
+extern Uint8 MFP_IMRA,MFP_IMRB;
+extern Uint8 MFP_VR;
+extern Uint8 MFP_TACR,MFP_TBCR,MFP_TCDCR;
+extern Uint8 MFP_TADR,MFP_TBDR;
+extern Uint8 MFP_TCDR,MFP_TDDR;
+extern Uint8 MFP_TA_MAINCOUNTER;
+extern Uint8 MFP_TB_MAINCOUNTER;
+extern Uint8 MFP_TC_MAINCOUNTER;
+extern Uint8 MFP_TD_MAINCOUNTER;
 
 extern void MFP_Reset(void);
 extern void MFP_MemorySnapShot_Capture(BOOL bSave);
 extern void MFP_CheckPendingInterrupts(void);
 extern void MFP_UpdateFlags(void);
-extern void MFP_InputOnChannel(unsigned char Bit,unsigned char EnableBit,unsigned char *pPendingReg);
+extern void MFP_InputOnChannel(Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg);
 extern void MFP_TimerA_EventCount_Interrupt(void);
 extern void MFP_TimerB_EventCount_Interrupt(void);
 extern void MFP_StartTimerA(void);

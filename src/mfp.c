@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.20 2005-09-25 21:32:25 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.21 2005-10-04 12:43:39 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -58,20 +58,20 @@ Input -----/             |         ------------------------              |      
 
 
 /* MFP Registers */
-unsigned char MFP_GPIP;               /* General Purpose Pins */
-unsigned char MFP_AER,MFP_DDR;        /* Active Edge Register, Data Direction Register */
-unsigned char MFP_IERA,MFP_IERB;      /* Interrupt Enable Registers A,B  0xfffa07,0xfffa09 */
-unsigned char MFP_IPRA,MFP_IPRB;      /* Interrupt Pending Registers A,B  0xfffa0b,0xfffa0d */
-unsigned char MFP_ISRA,MFP_ISRB;      /* Interrupt In-Service Registers A,B  0xfffa0f,0xfffa11 */
-unsigned char MFP_IMRA,MFP_IMRB;      /* Interrupt Mask Registers A,B  0xfffa13,0xfffa15 */
-unsigned char MFP_VR;                 /* Vector Register  0xfffa17 */
-unsigned char MFP_TACR,MFP_TBCR,MFP_TCDCR;  /* Timer A,B,C+D Control Registers */
-unsigned char MFP_TADR,MFP_TBDR;      /* Timer A,B Data Registers */
-unsigned char MFP_TCDR,MFP_TDDR;      /* Timer C,D Data Registers */
-unsigned char MFP_TA_MAINCOUNTER;     /* Timer A Main Counter (internal to MFP) */
-unsigned char MFP_TB_MAINCOUNTER;     /* Timer B Main Counter */
-unsigned char MFP_TC_MAINCOUNTER;     /* Timer C Main Counter (these are temp's, set when read as) */
-unsigned char MFP_TD_MAINCOUNTER;     /* Timer D Main Counter (as done via interrupts) */
+Uint8 MFP_GPIP;                     /* General Purpose Pins */
+Uint8 MFP_AER,MFP_DDR;              /* Active Edge Register, Data Direction Register */
+Uint8 MFP_IERA,MFP_IERB;            /* Interrupt Enable Registers A,B  0xfffa07,0xfffa09 */
+Uint8 MFP_IPRA,MFP_IPRB;            /* Interrupt Pending Registers A,B  0xfffa0b,0xfffa0d */
+Uint8 MFP_ISRA,MFP_ISRB;            /* Interrupt In-Service Registers A,B  0xfffa0f,0xfffa11 */
+Uint8 MFP_IMRA,MFP_IMRB;            /* Interrupt Mask Registers A,B  0xfffa13,0xfffa15 */
+Uint8 MFP_VR;                       /* Vector Register  0xfffa17 */
+Uint8 MFP_TACR,MFP_TBCR,MFP_TCDCR;  /* Timer A,B,C+D Control Registers */
+Uint8 MFP_TADR,MFP_TBDR;            /* Timer A,B Data Registers */
+Uint8 MFP_TCDR,MFP_TDDR;            /* Timer C,D Data Registers */
+Uint8 MFP_TA_MAINCOUNTER;           /* Timer A Main Counter (internal to MFP) */
+Uint8 MFP_TB_MAINCOUNTER;           /* Timer B Main Counter */
+Uint8 MFP_TC_MAINCOUNTER;           /* Timer C Main Counter (these are temp's, set when read as) */
+Uint8 MFP_TD_MAINCOUNTER;           /* Timer D Main Counter (as done via interrupts) */
 
 /* CPU clock cycle counts for each timer */
 static int TimerAClockCycles=0;
@@ -79,8 +79,8 @@ static int TimerBClockCycles=0;
 static int TimerCClockCycles=0;
 static int TimerDClockCycles=0;
 
-BOOL bAppliedTimerDPatch;             /* TRUE if the Timer-D patch has been applied */
-static int nTimerDFakeValue;          /* Faked Timer-D data register for the Timer-D patch */
+BOOL bAppliedTimerDPatch;           /* TRUE if the Timer-D patch has been applied */
+static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer-D patch */
 
 
 /*
@@ -188,8 +188,8 @@ static void MFP_Exception(int Interrupt)
 /*
   Test interrupt request to see if can cause exception,return TRUE if pass vector
 */
-static BOOL MFP_InterruptRequest(int nMfpException, unsigned char Bit, unsigned char *pPendingReg, unsigned char MaskRegister,
-                                 unsigned char PriorityMaskLow, unsigned char PriorityMaskHigh, unsigned char *pInServiceReg)
+static BOOL MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingReg, Uint8 MaskRegister,
+                                 Uint8 PriorityMaskLow, Uint8 PriorityMaskHigh, Uint8 *pInServiceReg)
 {
   /* Are any higher priority interupts in service? */
   if ( ((MFP_ISRA&PriorityMaskLow)==0) && ((MFP_ISRB&PriorityMaskHigh)==0) )
@@ -288,7 +288,7 @@ void MFP_UpdateFlags(void)
 /*
   Interrupt Channel is active, set pending bit so can be serviced
 */
-void MFP_InputOnChannel(unsigned char Bit,unsigned char EnableBit,unsigned char *pPendingReg)
+void MFP_InputOnChannel(Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg)
 {
   /* Input has occurred on MFP channel, set interrupt pending to request interrupt when able */
   if (EnableBit&Bit)
@@ -337,7 +337,7 @@ void MFP_TimerB_EventCount_Interrupt(void)
 /*
   Start Timer A or B - EventCount mode is done in HBL handler to time correctly
 */
-static int MFP_StartTimer_AB(unsigned char TimerControl, unsigned int TimerData, int Handler, BOOL bFirstTimer)
+static int MFP_StartTimer_AB(Uint8 TimerControl, unsigned int TimerData, int Handler, BOOL bFirstTimer)
 {
   int TimerClockCycles = 0;
 
@@ -371,7 +371,7 @@ static int MFP_StartTimer_AB(unsigned char TimerControl, unsigned int TimerData,
 /*
   Start Timer C or D
 */
-static int MFP_StartTimer_CD(unsigned char TimerControl, unsigned int TimerData, int Handler, BOOL bFirstTimer)
+static int MFP_StartTimer_CD(Uint8 TimerControl, unsigned int TimerData, int Handler, BOOL bFirstTimer)
 {
   int TimerClockCycles = 0;
 
@@ -405,7 +405,7 @@ static int MFP_StartTimer_CD(unsigned char TimerControl, unsigned int TimerData,
 /*
   Read Timer A or B - If in EventCount MainCounter already has correct value
 */
-static unsigned char MFP_ReadTimer_AB(unsigned char TimerControl, unsigned char MainCounter, int TimerCycles, int Handler)
+static Uint8 MFP_ReadTimer_AB(Uint8 TimerControl, Uint8 MainCounter, int TimerCycles, int Handler)
 {
   int TimerCyclesPassed;
 
@@ -424,7 +424,7 @@ static unsigned char MFP_ReadTimer_AB(unsigned char TimerControl, unsigned char 
 /*
   Read Timer C or D
 */
-static unsigned char MFP_ReadTimerCD(unsigned char TimerControl,unsigned char TimerData,  unsigned char MainCounter, int TimerCycles, int Handler)
+static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCounter, int TimerCycles, int Handler)
 {
   int TimerCyclesPassed;
 
@@ -604,6 +604,12 @@ void MFP_InterruptHandler_TimerD(void)
   - Bit 0 is the BUSY signal of the printer port, it is SET if no printer
     is connected or on BUSY. Therefor we should assume it to be 0 in Hatari
     when a printer is emulated.
+  - Bit 1 is used for RS232: DCD
+  - Bit 2 is used for RS232: CTS
+  - Bit 3 is used by the blitter for signalling when its done.
+  - Bit 4 is used by the ACIAs.
+  - Bit 5 is used by the floppy controller / ACSI DMA
+  - Bit 6 is used for RS232: RI
   - Bit 7 is monochrome monitor detection signal. On STE it is also XORed with
     the DMA sound play bit.
 */
