@@ -8,8 +8,6 @@
 #ifndef HATARI_VIDEO_H
 #define HATARI_VIDEO_H
 
-#include <SDL_types.h>
-
 extern BOOL bUseHighRes;
 extern int nVBLs,nHBL;
 extern int nStartHBL, nEndHBL;
