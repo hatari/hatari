@@ -12,6 +12,7 @@ extern Uint16 TosVersion;
 extern Uint32 TosAddress, TosSize;
 extern BOOL bTosImageLoaded;
 extern unsigned int ConnectedDriveMask;
+extern int nNumDrives;
 
 extern void TOS_MemorySnapShot_Capture(BOOL bSave);
 extern int TOS_LoadImage(void);

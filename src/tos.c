@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.32 2005-10-04 13:13:37 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.33 2005-10-04 15:31:52 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -39,19 +39,8 @@ Uint32 TosAddress, TosSize;             /* Address in ST memory and size of TOS 
 BOOL bTosImageLoaded = FALSE;           /* Successfully loaded a TOS image? */
 BOOL bRamTosImage;                      /* TRUE if we loaded a RAM TOS image */
 unsigned int ConnectedDriveMask = 0x03; /* Bit mask of connected drives, eg 0x7 is A,B,C */
+int nNumDrives = 2;                     /* Number of drives, default is 2 for A: and B: */
 
-
-/* Bit masks of connected drives(we support up to C,D,E,F,G,H) */
-static const unsigned int ConnectedDriveMaskList[] =
-{
-  0x03,  /* DRIVELIST_NONE  A,B         */
-  0x07,  /* DRIVELIST_C    A,B,C       */
-  0x0F,  /* DRIVELIST_CD    A,B,C,D     */
-  0x1F,  /* DRIVELIST_CDE  A,B,C,D,E   */
-  0x3F,  /* DRIVELIST_CDEF  A,B,C,D,E,F */
-  0x7F,  /* DRIVELIST_CDEFG  A,B,C,D,E,F,G */
-  0xFF,  /* DRIVELIST_CDEFGH  A,B,C,D,E,F,G,H */
-};
 
 /* Possible TOS file extensions to scan for */
 static const char *pszTosNameExts[] =
@@ -157,6 +146,7 @@ void TOS_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&TosAddress, sizeof(TosAddress));
   MemorySnapShot_Store(&TosSize, sizeof(TosSize));
   MemorySnapShot_Store(&ConnectedDriveMask, sizeof(ConnectedDriveMask));
+  MemorySnapShot_Store(&nNumDrives, sizeof(nNumDrives));
 }
 
 
@@ -237,6 +227,7 @@ static void TOS_FixRom(void)
 */
 static void TOS_SetDefaultMemoryConfig(void)
 {
+  int i;
   Uint8 nMemControllerByte;
   static const int MemControllerTable[] =
   {
@@ -288,8 +279,15 @@ static void TOS_SetDefaultMemoryConfig(void)
   STMemory_WriteWord(0x446, nBootDrive);          /* Boot up on A(0) or C(2) */
   //STMemory_WriteWord(0x4a6, 0x2);                 /* Connected floppies A,B (0 or 2) */
 
-  ConnectedDriveMask = ConnectedDriveMaskList[ConfigureParams.HardDisk.nDriveList];
-  STMemory_WriteLong(0x4c2, ConnectedDriveMask);  /* Drives A,B and C - NOTE: some TOS images overwrite value, see 'OpCode_SysInit' */
+  /* Create connected drives mask: */
+  ConnectedDriveMask = 0;
+  for (i = 0; i < nNumDrives; i++)
+  {
+    ConnectedDriveMask |= (1 << i);
+  }
+  /* Set connected drives system variable.
+   * NOTE: some TOS images overwrite this value, see 'OpCode_SysInit', too */
+  STMemory_WriteLong(0x4c2, ConnectedDriveMask);
 
   /* Mirror ROM boot vectors */
   STMemory_WriteLong(0x00, STMemory_ReadLong(TosAddress));

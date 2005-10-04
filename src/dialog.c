@@ -8,7 +8,7 @@
   in a variable 'ConfigureParams'. When we open our dialog we copy this and then when we 'OK'
   or 'Cancel' the dialog we can compare and makes the necessary changes.
 */
-char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.47 2005-09-13 01:10:09 thothy Exp $";
+char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.48 2005-10-04 15:31:52 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -62,10 +62,14 @@ static BOOL Dialog_DoNeedReset(void)
   if (strcmp(DialogParams.Rom.szTosImageFileName, ConfigureParams.Rom.szTosImageFileName))
     return(TRUE);
   /* Did change HD image? */
-  if (strcmp(DialogParams.HardDisk.szHardDiskImage, ConfigureParams.HardDisk.szHardDiskImage))
+  if (DialogParams.HardDisk.bUseHardDiskImage != ConfigureParams.HardDisk.bUseHardDiskImage
+      || (strcmp(DialogParams.HardDisk.szHardDiskImage, ConfigureParams.HardDisk.szHardDiskImage) != 0
+          && DialogParams.HardDisk.bUseHardDiskImage))
     return(TRUE);
   /* Did change GEMDOS drive? */
-  if (strcmp(DialogParams.HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0]))
+  if (DialogParams.HardDisk.bUseHardDiskDirectories != ConfigureParams.HardDisk.bUseHardDiskDirectories
+      || (strcmp(DialogParams.HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0]) != 0
+          && DialogParams.HardDisk.bUseHardDiskDirectories))
     return(TRUE);
 
   return(FALSE);
@@ -79,7 +83,7 @@ static BOOL Dialog_DoNeedReset(void)
 static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 {
   BOOL NeedReset;
-  BOOL newGemdosDrive;
+  BOOL bReInitGemdosDrive = FALSE, bReInitAcsiEmu = FALSE;
   BOOL bReInitIoMem = FALSE;
 
   /* Do we need to warn user of that changes will only take effect after reset? */
@@ -120,21 +124,21 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   }
 
   /* Did change GEMDOS drive? */
-  if( strcmp(DialogParams.HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0])!=0 )
+  if (DialogParams.HardDisk.bUseHardDiskDirectories != ConfigureParams.HardDisk.bUseHardDiskDirectories
+      || (strcmp(DialogParams.HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0]) != 0
+          && DialogParams.HardDisk.bUseHardDiskDirectories))
   {
     GemDOS_UnInitDrives();
-    newGemdosDrive = TRUE;
-  }
-  else
-  {
-    newGemdosDrive = FALSE;
+    bReInitGemdosDrive = TRUE;
   }
 
   /* Did change HD image? */
-  if( strcmp(DialogParams.HardDisk.szHardDiskImage, ConfigureParams.HardDisk.szHardDiskImage)!=0
-     && ACSI_EMU_ON )
+  if (DialogParams.HardDisk.bUseHardDiskImage != ConfigureParams.HardDisk.bUseHardDiskImage
+      || (strcmp(DialogParams.HardDisk.szHardDiskImage, ConfigureParams.HardDisk.szHardDiskImage) != 0
+          && DialogParams.HardDisk.bUseHardDiskImage))
   {
     HDC_UnInit();
+	bReInitAcsiEmu = TRUE;
   }
 
   /* Did change blitter, rtc or system type? */
@@ -160,14 +164,13 @@ static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
   check_prefs_changed_cpu(DialogParams.System.nCpuLevel, DialogParams.System.bCompatibleCpu);
 
   /* Mount a new HD image: */
-  if( !ACSI_EMU_ON && !File_DoesFileNameEndWithSlash(ConfigureParams.HardDisk.szHardDiskImage)
-      && File_Exists(ConfigureParams.HardDisk.szHardDiskImage) )
+  if (bReInitAcsiEmu && ConfigureParams.HardDisk.bUseHardDiskImage)
   {
     HDC_Init(ConfigureParams.HardDisk.szHardDiskImage);
   }
 
   /* Mount a new GEMDOS drive? */
-  if( newGemdosDrive )
+  if (bReInitGemdosDrive && ConfigureParams.HardDisk.bUseHardDiskDirectories)
   {
     GemDOS_InitDrives();
   }

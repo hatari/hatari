@@ -116,16 +116,6 @@ typedef struct
 
 /* Hard drives configuration */
 #define MAX_HARDDRIVES  1
-#define DRIVELIST_TO_DRIVE_INDEX(DriveList)  (DriveList+1)
-
-typedef enum
-{
-  DRIVELIST_NONE,
-  DRIVELIST_C,
-  DRIVELIST_CD,
-  DRIVELIST_CDE,
-  DRIVELIST_CDEF
-} DRIVELIST;
 
 typedef enum
 {
@@ -137,7 +127,6 @@ typedef enum
 
 typedef struct
 {
-  int nDriveList;
   BOOL bBootFromHardDisk;
   int nHardDiskDir;
   BOOL bUseHardDiskDirectories;

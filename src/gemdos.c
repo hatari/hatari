@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.42 2005-09-13 01:10:09 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.43 2005-10-04 15:31:52 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -489,13 +489,11 @@ void GemDOS_InitDrives(void)
 		/* set drive to 2 + number of ACSI partitions */
 		emudrives[i]->hd_letter = 2 + nPartitions + i;
 
-		ConfigureParams.HardDisk.nDriveList += 1;
+		nNumDrives += 1;
 
 		fprintf(stderr, "Hard drive emulation, %c: <-> %s\n",
 				emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
 	}
-
-	ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
 }
 
 
@@ -514,14 +512,12 @@ void GemDOS_UnInitDrives(void)
 		for(i=0; i<MAX_HARDDRIVES; i++)
 		{
 			free(emudrives[i]);    /* Release memory */
-			ConfigureParams.HardDisk.nDriveList -= 1;
+			nNumDrives -= 1;
 		}
 
 		free(emudrives);
 		emudrives = NULL;
 	}
-
-	ConfigureParams.HardDisk.bUseHardDiskDirectories = FALSE;
 }
 
 
@@ -628,26 +624,13 @@ static int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 	/* Do we even have a hard-drive? */
 	if (GEMDOS_EMU_ON)
 	{
+		/* Find drive letter (as number) */
 		DriveLetter = GemDOS_FindDriveNumber(pszFileName);
 		/* add support for multiple drives here.. */
 		if (DriveLetter == emudrives[0]->hd_letter)
 			return DriveLetter;
 	}
-	/* Not a high-level redirected drive */
-	return -1;
-
-	/* this code is depreciated */
-	/* Do we even have a hard-drive? */
-	if (ConfigureParams.HardDisk.nDriveList != DRIVELIST_NONE)
-	{
-		/* Find drive letter(as number) */
-		DriveLetter = GemDOS_FindDriveNumber(pszFileName);
-		/* Does match one of our drives? */
-		if ((DriveLetter >= 2) && (DriveLetter <= DRIVELIST_TO_DRIVE_INDEX(ConfigureParams.HardDisk.nDriveList)))
-			return DriveLetter;
-	}
-
-	/* No, let TOS handle it */
+	/* Not a high-level redirected drive, let TOS handle it */
 	return -1;
 }
 
@@ -1309,15 +1292,9 @@ static BOOL GemDOS_Write(Uint32 Params)
 	Size = STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD);
 	pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG));
 
-	/* Check handle was valid */
-	if (GemDOS_IsInvalidFileHandle(Handle))
+	/* Check if handle was not invalid */
+	if (!GemDOS_IsInvalidFileHandle(Handle))
 	{
-		/* No assume was TOS */
-		return FALSE;
-	}
-	else
-	{
-
 		nBytesWritten = fwrite(pBuffer, 1, Size, FileHandles[Handle].FileHandle);
 		if (nBytesWritten >= 0)
 		{
@@ -1546,12 +1523,9 @@ static int GemDOS_Pexec(Uint32 Params)
 		return FALSE;
 	 case 6:
 		return FALSE;
-
-	 default:
-		return FALSE;
 	}
 
-	/* Still re-direct to TOS */
+	/* Default: Still re-direct to TOS */
 	return FALSE;
 }
 

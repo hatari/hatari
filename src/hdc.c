@@ -6,21 +6,17 @@
 
   Low-level hard drive emulation
 */
-char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.8 2005-09-13 01:10:09 thothy Exp $";
+char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.9 2005-10-04 15:31:52 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
+#include "debugui.h"
 #include "fdc.h"
 #include "hdc.h"
-#include "floppy.h"
-#include "ikbd.h"
-#include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
-#include "misc.h"
-#include "psg.h"
 #include "stMemory.h"
-#include "debugui.h"
+#include "tos.h"
 
 /*
   ACSI emulation: 
@@ -312,7 +308,7 @@ static void HDC_GetInfo(void)
 BOOL HDC_Init(char *filename)
 {
   if( (hd_image_file = fopen(filename, "r+")) == NULL)
-    return( FALSE );
+    return FALSE;
 
   HDC_GetInfo();
   if(!nPartitions) 
@@ -320,14 +316,12 @@ BOOL HDC_Init(char *filename)
       fclose( hd_image_file );
       hd_image_file = NULL;
       ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
-      return( FALSE );
+      return FALSE;
     }
   /* set number of partitions */
-  ConfigureParams.HardDisk.nDriveList += nPartitions;
+  nNumDrives += nPartitions;
 
-  ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
-
-  return( TRUE );
+  return TRUE;
 }
 
 /*---------------------------------------------------------------------*/
@@ -340,8 +334,8 @@ void HDC_UnInit(void)
   if(!(ACSI_EMU_ON)) return;
   fclose(hd_image_file);
   hd_image_file = NULL;
+  nNumDrives -= nPartitions;
   nPartitions = 0;
-  ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
 }
 
 /*---------------------------------------------------------------------*/

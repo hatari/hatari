@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgDisk_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.12 2005-09-13 01:10:09 thothy Exp $";
+char DlgDisk_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.13 2005-10-04 15:31:52 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -12,8 +12,6 @@ char DlgDisk_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.12 2005-09-13 01:10:09 thothy 
 #include "sdlgui.h"
 #include "file.h"
 #include "floppy.h"
-#include "gemdos.h"
-#include "hdc.h"
 
 
 #define DISKDLG_EJECTA      4
@@ -144,16 +142,15 @@ void Dialog_DiskDlg(void)
    else
     diskdlg[DISKDLG_BOOTHD].state &= ~SG_SELECTED;
 
-  /* GEMDOS Hard disk directory: */
-  if (strcmp(DialogParams.HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0])!=0
-      || GEMDOS_EMU_ON )
+  /* GEMDOS hard disk directory: */
+  if (DialogParams.HardDisk.bUseHardDiskDirectories)
     File_ShrinkName(dlgnamegdos, DialogParams.HardDisk.szHardDiskDirectories[0], diskdlg[DISKDLG_DISKGDOS].w);
   else
     dlgnamegdos[0] = 0;
   diskdlg[DISKDLG_DISKGDOS].txt = dlgnamegdos;
 
   /* Hard disk image: */
-  if( ACSI_EMU_ON )
+  if (DialogParams.HardDisk.bUseHardDiskImage)
     File_ShrinkName(dlgnamehdimg, DialogParams.HardDisk.szHardDiskImage, diskdlg[DISKDLG_DISKHDIMG].w);
   else
     dlgnamehdimg[0] = 0;
@@ -226,8 +223,7 @@ void Dialog_DiskDlg(void)
         DlgNewDisk_Main();
         break;
       case DISKDLG_UNMOUNTGDOS:
-        GemDOS_UnInitDrives();   /* FIXME: This shouldn't be done here but it's the only quick solution I could think of */
-        strcpy(DialogParams.HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0]);
+        DialogParams.HardDisk.bUseHardDiskDirectories = FALSE;
         dlgnamegdos[0] = 0;
         break;
       case DISKDLG_BROWSEGDOS:
@@ -240,10 +236,10 @@ void Dialog_DiskDlg(void)
           strcpy(DialogParams.HardDisk.szHardDiskDirectories[0], tmpname);
           File_CleanFileName(DialogParams.HardDisk.szHardDiskDirectories[0]);
           File_ShrinkName(dlgnamegdos, DialogParams.HardDisk.szHardDiskDirectories[0], diskdlg[DISKDLG_DISKGDOS].w);
+          DialogParams.HardDisk.bUseHardDiskDirectories = TRUE;
         }
         break;
       case DISKDLG_EJECTHDIMG:
-        DialogParams.HardDisk.szHardDiskImage[0] = 0;
         DialogParams.HardDisk.bUseHardDiskImage = FALSE;
         dlgnamehdimg[0] = 0;
         break;

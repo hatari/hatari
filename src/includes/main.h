@@ -10,8 +10,8 @@
 
 typedef int BOOL;
 
-#define PROG_NAME      "Hatari v0.72" /* Name, version for window title */
-#define PROG_VERSION   "v0.72"
+#define PROG_NAME      "Hatari v0.73" /* Name, version for window title */
+#define PROG_VERSION   "v0.73"
 
 
 #include <stdio.h>

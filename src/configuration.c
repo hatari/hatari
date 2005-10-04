@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.46 2005-09-25 21:32:25 thothy Exp $";
+char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.47 2005-10-04 15:31:52 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -189,7 +189,6 @@ static const struct Config_Tag configs_OldFloppy[] =
 /* Used to load/save HD options */
 static const struct Config_Tag configs_HardDisk[] =
 {
-	/*{ "nDriveList", Int_Tag, &ConfigureParams.HardDisk.nDriveList },*/
 	{ "bBootFromHardDisk", Bool_Tag, &ConfigureParams.HardDisk.bBootFromHardDisk },
 	{ "bUseHardDiskDirectory", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskDirectories },
 	{ "szHardDiskDirectory", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C] },
@@ -289,7 +288,6 @@ void Configuration_SetDefault(void)
 	File_AddSlashToEndFileName(ConfigureParams.DiskImage.szDiskImageDirectory);
 
 	/* Set defaults for hard disks */
-	ConfigureParams.HardDisk.nDriveList = DRIVELIST_NONE;
 	ConfigureParams.HardDisk.bBootFromHardDisk = FALSE;
 	ConfigureParams.HardDisk.nHardDiskDir = DRIVE_C;
 	ConfigureParams.HardDisk.bUseHardDiskDirectories = FALSE;
