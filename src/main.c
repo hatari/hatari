@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.78 2005-09-25 21:32:25 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.79 2005-10-04 09:24:50 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -102,8 +102,9 @@ void Main_UnPauseEmulation(void)
 {
   if( !bEmulationActive )
   {
+    Sound_ResetBufferIndex();
     Audio_EnableAudio(ConfigureParams.Sound.bEnableSound);
-    Screen_SetFullUpdate();       /* Cause full screen update(to clear all) */
+    Screen_SetFullUpdate();       /* Cause full screen update (to clear all) */
 
     bEmulationActive = TRUE;
   }
