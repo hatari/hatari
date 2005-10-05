@@ -8,7 +8,7 @@
 
   NOTE: The ST uses the joystick port 1 as the default controller.
 */
-char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.7 2005-09-25 21:32:25 thothy Exp $";
+char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.8 2005-10-05 14:14:35 thothy Exp $";
 
 #include <SDL.h>
 
@@ -145,12 +145,12 @@ Uint8 Joy_GetStickData(int nStJoyId)
 		else if (JoyReading.XPos >= JOYRANGE_RIGHT_VALUE)
 			nData |= 0x08;
 
-		/* Buttons - I've made fire button 2 to simulate the pressing of the space bar (for Xenon II etc...) */
-#ifdef USE_FIREBUTTON_2_AS_SPACE
-		/* PC Joystick button 1 is set as ST joystick button and PC button 2 is the space bar */
-		if (JoyReading.Buttons&JOY_BUTTON1)
+		/* PC Joystick button 1 is set as ST joystick button */
+		if (JoyReading.Buttons & JOY_BUTTON1)
 			nData |= 0x80;
-		if (JoyReading.Buttons&JOY_BUTTON2)
+
+		/* Enable PC Joystick button 2 to mimick space bar (For XenonII, Flying Shark etc...) */
+		if (nStJoyId == JOYID_JOYSTICK1 && (JoyReading.Buttons & JOY_BUTTON2))
 		{
 			/* Only press 'space bar' if not in NULL state */
 			if (!JoystickSpaceBar)
@@ -159,11 +159,6 @@ Uint8 Joy_GetStickData(int nStJoyId)
 				JoystickSpaceBar = JOYSTICK_SPACE_DOWN;
 			}
 		}
-#else   /*USE_FIREBUTTON_2_AS_SPACE*/
-		/* PC Joystick buttons 1+2 are set as ST joystick button */
-		if ((JoyReading.Buttons&JOY_BUTTON1) || (JoyReading.Buttons&JOY_BUTTON2))
-			nData |= 0x80;
-#endif  /*USE_FIREBUTTON_2_AS_SPACE*/
 	}
 
 	/* Ignore fire button every 8 frames if enabled autofire (for both cursor emulation and joystick) */
@@ -174,6 +169,48 @@ Uint8 Joy_GetStickData(int nStJoyId)
 	}
 
 	return nData;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Get the fire button states.
+  Note: More than one fire buttons are only supported for real joystick,
+  not for keyboard emulation!
+*/
+static int Joy_GetFireButtons(int nStJoyId)
+{
+	int nButtons = 0;
+	int nSdlJoyId;
+	int i, nMaxButtons;
+
+	nSdlJoyId = ConfigureParams.Joysticks.Joy[nStJoyId].nJoyId;
+
+	/* Are we emulating the joystick via the keyboard? */
+	if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_KEYBOARD)
+	{
+		if (nJoyKeyEmu[nStJoyId] & 0x80)
+		{
+			nButtons |= 1;
+		}
+	}
+	else if (ConfigureParams.Joysticks.Joy[nStJoyId].nJoystickMode == JOYSTICK_REALSTICK
+	         && bJoystickWorking[nSdlJoyId])
+	{
+		nMaxButtons = SDL_JoystickNumButtons(sdlJoystick[nSdlJoyId]);
+		if (nMaxButtons > 17)
+			nMaxButtons = 17;
+		/* Now read all fire buttons and set a bit for each pressed button: */
+		for (i = 0; i < nMaxButtons; i++)
+		{
+			if (SDL_JoystickGetButton(sdlJoystick[nSdlJoyId], i))
+			{
+				nButtons |= (1 << i);
+			}
+		}
+	}
+
+	return nButtons;
 }
 
 
@@ -297,44 +334,56 @@ void Joy_StePadButtons_ReadWord(void)
 	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADA].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0x0f) != 0x0f)
 	{
+		int nButtons = Joy_GetFireButtons(JOYID_STEPADA);
 		if (!(nSteJoySelect & 0x1))
 		{
-			if (Joy_GetStickData(JOYID_STEPADA) & 0x80)  /* Fire button pressed? */
+			if (nButtons & 0x01)  /* Fire button A pressed? */
 				nData &= ~2;
+			if (nButtons & 0x10)  /* Fire button PAUSE pressed? */
+				nData &= ~1;
 		}
 		else if (!(nSteJoySelect & 0x2))
 		{
-			/* TODO */
+			if (nButtons & 0x02)  /* Fire button B pressed? */
+				nData &= ~2;
 		}
 		else if (!(nSteJoySelect & 0x4))
 		{
-			/* TODO */
+			if (nButtons & 0x04)  /* Fire button C pressed? */
+				nData &= ~2;
 		}
 		else if (!(nSteJoySelect & 0x8))
 		{
-			/* TODO */
+			if (nButtons & 0x01)  /* Fire button OPTION pressed? */
+				nData &= ~2;
 		}
 	}
 
 	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADB].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0xf0) != 0xf0)
 	{
+		int nButtons = Joy_GetFireButtons(JOYID_STEPADB);
 		if (!(nSteJoySelect & 0x10))
 		{
-			if (Joy_GetStickData(JOYID_STEPADB) & 0x80)  /* Fire button pressed? */
+			if (nButtons & 0x01)  /* Fire button A pressed? */
 				nData &= ~8;
+			if (nButtons & 0x10)  /* Fire button PAUSE pressed? */
+				nData &= ~4;
 		}
 		else if (!(nSteJoySelect & 0x20))
 		{
-			/* TODO */
+			if (nButtons & 0x02)  /* Fire button B pressed? */
+				nData &= ~8;
 		}
 		else if (!(nSteJoySelect & 0x40))
 		{
-			/* TODO */
+			if (nButtons & 0x04)  /* Fire button C pressed? */
+				nData &= ~8;
 		}
 		else if (!(nSteJoySelect & 0x80))
 		{
-			/* TODO */
+			if (nButtons & 0x08)  /* Fire button OPTION pressed? */
+				nData &= ~8;
 		}
 	}
 
@@ -353,44 +402,44 @@ void Joy_StePadMulti_ReadWord(void)
 	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADA].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0x0f) != 0x0f)
 	{
+		nData &= 0xf0;
 		if (!(nSteJoySelect & 0x1))
 		{
-			nData &= 0xf0;
 			nData |= ~Joy_GetStickData(JOYID_STEPADA) & 0x0f;
 		}
 		else if (!(nSteJoySelect & 0x2))
 		{
-			/* TODO */
+			nData |= ~(Joy_GetFireButtons(JOYID_STEPADA) >> 13) & 0x0f;
 		}
 		else if (!(nSteJoySelect & 0x4))
 		{
-			/* TODO */
+			nData |= ~(Joy_GetFireButtons(JOYID_STEPADA) >> 9) & 0x0f;
 		}
 		else if (!(nSteJoySelect & 0x8))
 		{
-			/* TODO */
+			nData |= ~(Joy_GetFireButtons(JOYID_STEPADA) >> 5) & 0x0f;
 		}
 	}
 
 	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADB].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0xf0) != 0xf0)
 	{
+		nData &= 0x0f;
 		if (!(nSteJoySelect & 0x10))
 		{
-			nData &= 0x0f;
 			nData |= ~Joy_GetStickData(JOYID_STEPADB) << 4;
 		}
 		else if (!(nSteJoySelect & 0x20))
 		{
-			/* TODO */
+			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> 13) & 0x0f;
 		}
 		else if (!(nSteJoySelect & 0x40))
 		{
-			/* TODO */
+			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> 9) & 0x0f;
 		}
 		else if (!(nSteJoySelect & 0x80))
 		{
-			/* TODO */
+			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> 5) & 0x0f;
 		}
 	}
 

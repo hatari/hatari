@@ -31,8 +31,6 @@ enum
 	JOYID_PARPORT2,
 };
 
-#define  USE_FIREBUTTON_2_AS_SPACE      /* Enable PC Joystick button 2 to mimick space bar (For XenonII, Flying Shark etc...) */
-
 #define JOYRANGE_UP_VALUE     -16384     /* Joystick ranges in XY */
 #define JOYRANGE_DOWN_VALUE    16383
 #define JOYRANGE_LEFT_VALUE   -16384
