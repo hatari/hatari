@@ -37,7 +37,7 @@
 	*.key { color:#550000; font-family:Fixed,Courier,monospace; font-size:11pt; }
 	*.backdropped { background-color:#ffffee; }
 	*.image {margin-left: 5px; margin-right: 5px; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:center; }
-	*.floatimage { float:right; margin-left:0.5cm; border-width:2px; border-style:solid; border-color:#eeeeff; padding:0.5cm; }
+	*.floatimage { clear:right; float:right; margin-left:0.5cm; border-width:2px; border-style:solid; border-color:#eeeeff; padding:0.5cm; }
 
   -->
   </style>
@@ -48,7 +48,7 @@
 <h1 align="center">Hatari User's Manual</h1>
 
 <p align="center">
-Version 0.71
+Version 0.73
 </p>
 <p align="center">
 Project initiator and main developer of Hatari: <strong>Thomas Huth</strong>
@@ -81,7 +81,7 @@ Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
   <ul>
     <li><a href="#The GUI">The GUI</a>
     <ul>
-      <li><a href="#General usage">General usage</a>
+      <li><a href="#The Main Menu">The Main Menu</a>
       <li><a href="#The System Dialog">The System Dialog</a>
       <li><a href="#The Disks Dialog">The Disks Dialog</a>
       <li><a href="#The Memory Dialog">The Memory Dialog</a>
@@ -447,26 +447,34 @@ an allmost complete Atari ST computer system. </p>
 
 <a name="The GUI"></a><h3>The GUI</h3>
 
-<a name="General usage"></a><h4>General usage</h4>
-
 <p>Press <span class="key">F12</span> to enter the GUI. Navigate it
 with the mouse.
 The GUI is rather self explanatory.</p>
 
-<div class="image" align="center">
-<img src="images/main.png" width="768" height="534" alt="Hatari's GUI - the main dialog">
+<a name="The Main Menu"></a><h4>The Main Menu</h4>
+
+<div class="floatimage">
+<img src="images/main.png" width="360" height="352" alt="Hatari's GUI - the main menu">
 </div>
 
+<p>From the main menu, you can reach the other setup dialogs by clicking on
+the appropriate buttons.</p>
+
+<p>You can load the current settings from a configuration file by clicking
+on the <span class="button">Load config</span> button and you can save the
+current settings to a configuration file with the <span class="button">Save
+config</span> button.</p>
+
 <p>Click <span class="button">Okay</span> to go back to the emulated
-ST. All checked options will be applied.</p>
+ST. All changed options will be applied.</p>
 <p>Check the <span class="button">Reset ST</span> option if you want
-the emulated ST to perform a soft reset. This should be equal to
-pressing the reset button on your ST.
+the emulated ST to perform a cold reset. This is equal to
+switching the power off and on again on a real ST.
 </p>
 <p>Click <span class="button">Quit</span> to terminate Hatari and
 return to the host OS.</p>
 <p>Click <span class="button">Cancel</span> to abandon any changes
-made.</p>
+that you have made.</p>
 
 <a name="The System Dialog"></a><h4>The System Dialog</h4>
 
@@ -613,19 +621,35 @@ when changing one of these option.</p>
 
 <a name="The Joystick Dialog"></a><h4>The Joystick Dialog</h4>
 
-<div class="image" align="center">
-<img src="images/joystick.png" width="768" height="534" alt="Hatari's GUI - the joystick dialog">
+<div class="floatimage">
+<img src="images/joystick.png" width="320" height="288" alt="Hatari's GUI - the joystick dialog">
 </div>
 
-<p>Here you can select which joystick you want to emulate via the
-cursor keys.</p>
+<p>In this dialog, you can configure the emulated joysticks.
+With the upper two arrows, you can choose the joystick which you want to
+configure.</p>
 <p>Joystick 1 is the normal ST joystick port and 99.9% of all ST games
-use this port, Joystick 0
-emulates a joystick plugged into the ST mouse port allowing you to play
-2 player games.</p>
-<p>If no joystick is checked here, joystick emulation is done via a
-connected PC joystick.</p>
-<p>See the chapter "Emulated Joystick" for details.</p>
+use this port.
+Joystick 0 emulates a joystick plugged into the ST mouse port
+and is often used in games for two players.</p>
+<p>With STE joypad A and B, you can enable the emulation of Jaguar joypads
+which are plugged in the enhanced joystick ports of the Atari STE.
+Only very few STE games support these joypads, so you often won't need this.</p>
+<p>Finally, Hatari also emulates joysticks which were plugged on the parallel
+port with a special adapter on a real ST. These were used in some few
+multi-player games like &quot;Gauntlet 2&quot;.</p>
+<p>For each ST joystick, choose whether you want to disable it,
+use the keyboard for emulation or use a real PC joystick.</p>
+<p>For keyboard emulation, you can select the keys by pressing the
+<span class="button">Define keys</span> button. You will be prompted to press
+the keys for up, down, left, right and fire.</p>
+<p>If you want to use a real PC joystick for the emulation, you should connect
+it to your PC before you start Hatari. Then you can choose the joystick with
+the two lower arrows.</p>
+<p>Check the &quot;Enable autofire&quot; option if you are too lazy to pound
+on the fire button in shoot'em-up games. However, this option only works with
+certain games. In some other games, it gets worse if you enable this option.</p>
+<p>See also the chapter "Emulated Joystick" for details.</p>
 
 <a name="The Screen Dialog"></a><h4>The Screen Dialog</h4>
 
