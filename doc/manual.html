@@ -48,7 +48,7 @@
 <h1 align="center">Hatari User's Manual</h1>
 
 <p align="center">
-Version 0.73
+Version 0.80
 </p>
 <p align="center">
 Project initiator and main developer of Hatari: <strong>Thomas Huth</strong>
@@ -273,21 +273,20 @@ rename it to <span class="commandline">tos.img</span>, or use the
 <span class="commandline">--tos</span> command line option to tell
 Hatari where to find a TOS ROM.
 Hatari needs a TOS ROM image because this contains the operating system
-of the emulated Atari. Sorry, it is not possible to ship an image with
-the Hatari package since these images are still copyrighted. But you
-can
-easily create an image with a real ST and one of those various
-ROM-image programs for the ST. Or search the internet, but don't ask
-the Hatari team
-where to find one.
-</p>
-<p> Another solution is EmuTOS, which is an open-source
-TOS clone. You can find EmuTOS at: <a
- href="http://emutos.sourceforge.net/">http://emutos.sourceforge.net/</a>.
-It's
-not the best solution for playing games or running other old software
-due to compatibility issues, but it's free and officially compatible
-with Hatari! </p>
+of the emulated Atari.</p>
+<p> Sorry, it is not possible to ship an original ROM
+image with the Hatari package since these images are still copyrighted.
+But you can easily create an image with a real ST and one of those various
+ROM-image programs for the ST (search for &quot;TOSDUMP&quot; with your
+favourite internet search engine). If your old ST does not work anymore, you
+can also try to search the internet directly for corresponding TOS ROM image,
+but don't ask the Hatari team where to get one. </p>
+<p> Another solution is EmuTOS, which is also shipped with the official
+release versions of Hatari. EmuTOS is an open-source TOS clone. You can find
+it at:
+<a href="http://emutos.sourceforge.net/">http://emutos.sourceforge.net/</a>.
+It is not the best solution for playing games or running other old software
+due to compatibility issues, but it's free and compatible with Hatari. </p>
 <p>If you do not specify a TOS image on the commandline nor can Hatari
 find a suitable TOS image in the default dir, you'll get the chance to
 select a TOS image file from the GUI. </p>
@@ -828,21 +827,17 @@ switch)</td>
       <td align="center">enable/disable sound recording</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">F11</span></td>
+      <td align="center"><span class="key">ALTGR+f or F11</span></td>
       <td align="center">toggles fullscreen and windowed mode</td>
     </tr>
     <tr>
-      <td align="center"><span class="key">F12</span></td>
-      <td align="center">
-      <p>activate the GUI</p>
-      <p>You may need to hold <span class="key">SHIFT</span> down
-while in windowed mode.</p>
-      </td>
+      <td align="center"><span class="key">ALTGR+o or F12</span></td>
+      <td align="center">activate the GUI</td>
     </tr>
     <tr>
       <td align="center"><span class="key">PAUSE</span></td>
-      <td align="center">will go to the debugger if it was activated at
-compile time</td>
+      <td align="center">will go to the debugger if Hatari was started with
+	    the -D option</td>
     </tr>
   </tbody>
 </table>
@@ -884,15 +879,14 @@ key on the ST. The following keys have special meanings: </p>
     </tr>
   </tbody>
 </table>
-<p> <span class="key">ALTGR</span> will act as ALTERNATE as well as
-long as you do not press it
-together with a Hatari hotkey combination. </p>
-<p> The <span class="key">right CTRL</span> key is used as the fire
-button of the emulated
-joystick when you turn on joystick emulation via keyboard. </p>
-<p> The cursor keys will act as the cursor keys on the Atari ST as long
-as joystick emulation
-via keyboard has been turned off.</p>
+
+<p> The <span class="key">right CTRL</span> key is used by default as the
+fire button of the emulated joystick when you turn on joystick emulation
+via keyboard. </p>
+<p> The cursor keys will be used by default as the emulated ST joystick,
+unless you are using joystick emulation via a real joystick or have disabled
+joystick emulation completely. Then the cursor keys will act as the cursor
+keys of the emulated Atari ST, of course.</p>
 
 <a name="Emulated mouse"></a><h3>Emulated mouse</h3>
 
