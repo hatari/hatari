@@ -11,8 +11,8 @@
 - Eero Tamminen <eerot@users.sourceforge.net> : Many speed improvements, code
   cleanup, parts of the STE emulation and other patches.
 
-- Marco Herrn : Wrote the initial version of the "man" page of Hatari and
-  maintains the Hatari Debian packages.
+- Marco Herrn <marco@mherrn.de> : Wrote the initial version of the "man" page
+  of Hatari and maintains the Hatari Debian packages.
 
 
  Contributors:

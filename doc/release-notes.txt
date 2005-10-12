@@ -4,6 +4,19 @@
                                 Release Notes
 
 
+ Version 0.80 (2005-10-12):
+ --------------------------
+
+- Support for STE hardware emulation: STE palette, STE shifter (horizontal fine
+  scrolling, split screen effects), DMA sound and STE joypads.
+  See the manual for a list of working STE applications/games/demos.
+- Hatari can now emulate up to 14 MiB ST RAM instead of only 4 MiB.
+- Support for parallel port joysticks.
+- Improved GEMDOS HD emulation (added Fattrib() call).
+- Adding and removing a GEMDOS or ACSI hard disk should now work correctly.
+- Re-factoring of the screen conversion functions.
+- Improved manual: Now with screenshots of the options dialogs.
+
 
  Version 0.70 (2005-06-05):
  --------------------------
