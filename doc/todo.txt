@@ -1,0 +1,38 @@
+
+                                    Hatari
+                                   --------
+                                  TO-DO list
+
+
+If you think that you can help with one of the TO-DO list items, please get in
+touch with us:
+
+- Improve FDC emulation (e.g. read-track and write-track commands do not work
+  right yet).
+
+- Improve support for .DIM disk images (support also disks that have been
+  imaged with the "Get sectors: used" option).
+
+- Add support for .STT disk images (created with the STEEM disk image program).
+
+- Add support for Pasti .STX disk images.
+
+- Improve or rewrite sound emulation.
+
+- Fix IKBD emulation (e.g. some games like "Big Run" have problems with the
+  joystick fire button).
+
+- Add proper emulation of IO registers wait-state cycles emulation.
+
+- Add accurate cycles emulation for DIVU and DIVS instructions
+  (see: http://pasti.fxatari.com/68kdocs/div68kCycleAccurate.c).
+
+- Upgrade the CPU core of Hatari to the latest WinUAE or E-UAE CPU core.
+
+- Fix MFP emulation (e.g. "Froggies over the fence" does not work yet).
+
+- Improve MIDI emulation (MIDI-Input, support for ALSA on Linux, ...).
+
+- Get the games/demos working that are marked as non-working in the manual.
+
+- Add TT and/or Falcon emulation ;-)
