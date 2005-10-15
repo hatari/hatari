@@ -23,7 +23,7 @@
  *
  *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.7 2005-04-01 11:14:45 thothy Exp $";
+char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.8 2005-10-15 23:02:00 eerot Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -121,10 +121,10 @@ static void load_halftone_ram(void)
 #define HOP_OPS(_fn_name,_op,_do_source_shift,_get_source_data,_shifted_hopd_data, _do_halftone_inc) \
 static void _fn_name (void)  \
 {  \
-	register int source_addr  = LM_UL(MEM(0xff8a24));   \
-	register int dest_addr = dest_addr_reg;  \
-	register unsigned int skew = (unsigned int) skewreg & 15;  \
-	register unsigned int source_buffer=0;  \
+	int source_addr  = LM_UL(MEM(0xff8a24));   \
+	int dest_addr = dest_addr_reg;  \
+	unsigned int skew = (unsigned int) skewreg & 15;  \
+	unsigned int source_buffer = 0;  \
 	/*if(address_space_24)*/  \
 	{ source_addr&=0x0fffffe; dest_addr&=0x0fffffe; }  \
 	source_x_inc = (int) LM_W(MEM(0xff8a20));  \
@@ -134,7 +134,7 @@ static void _fn_name (void)  \
 	if (hop & 1) load_halftone_ram();  \
 	do  \
 	{  \
-		register UW x,dst_data,opd_data;  \
+		UW x,dst_data,opd_data;  \
 		if (FXSR)  \
 		{  \
 			_do_source_shift;  \
@@ -336,6 +336,18 @@ static void (*do_hop_op_P[4][16])(void) =
 
 /*-----------------------------------------------------------------------*/
 /*
+  Do the blit.
+*/
+static void Do_Blit(void)
+{
+	if (LM_W(MEM(0xff8a20)) < 0)          /* source_x_inc < 0 */
+		do_hop_op_N[hop][op]();
+	else
+		do_hop_op_P[hop][op]();
+}
+
+/*-----------------------------------------------------------------------*/
+/*
   Read blitter endmask 1.
 */
 void Blitter_Endmask1_ReadWord(void)
@@ -527,19 +539,6 @@ void Blitter_Skew_WriteByte(void)
 	NFSR = (v & 0x40) != 0;
 	FXSR = (v & 0x80) != 0;
 	skewreg = v & 0xcf;                         /* h/ware reg mask %11001111 !*/
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Do the blit.
-*/
-void Do_Blit(void)
-{
-	if (LM_W(MEM(0xff8a20)) < 0)          /* source_x_inc < 0 */
-		do_hop_op_N[hop][op]();
-	else
-		do_hop_op_P[hop][op]();
 }
 
 

@@ -14,8 +14,6 @@
 #ifndef BLITTER_H
 #define BLITTER_H
 
-extern void Do_Blit(void);
-
 extern void Blitter_Endmask1_ReadWord(void);
 extern void Blitter_Endmask2_ReadWord(void);
 extern void Blitter_Endmask3_ReadWord(void);
