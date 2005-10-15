@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.6 2005-09-29 08:36:59 thothy Exp $";
+char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.7 2005-10-15 14:00:10 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -219,7 +219,7 @@ void Dialog_JoyDlg(void)
 		switch (but)
 		{
 		 case DLGJOY_PREVSDLJOY:        // Select the previous SDL joystick
-			if (DialogParams.Joysticks.Joy[nActJoy].nJoyId > '0')
+			if (DialogParams.Joysticks.Joy[nActJoy].nJoyId > 0)
 			{
 				DialogParams.Joysticks.Joy[nActJoy].nJoyId -= 1;
 				snprintf(sSdlStickName, 20, "%i: %s", DialogParams.Joysticks.Joy[nActJoy].nJoyId,
