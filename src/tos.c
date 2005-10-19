@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.33 2005-10-04 15:31:52 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.34 2005-10-19 08:16:25 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -77,11 +77,12 @@ static const char pszDmaBoot[] = "boot from DMA bus";
 static const char pszMouse[] = "working mouse in big screen resolutions";
 static const char pszRomCheck[] = "ROM checksum";
 static const char pszNoSteHw[] = "disable STE hardware access";
+static const char pszNoPmmu[] = "disable PMMU access";
 
 //static Uint8 pRtsOpcode[] = { 0x4E, 0x75 };  /* 0x4E75 = RTS */
 static const Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
         0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
-        0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71 };  /* 0x4E71 = NOP */
+        0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71 };  /* 0x4E71 = NOP */
 static const Uint8 pMouseOpcode[] = { 0xD3, 0xC1 };  /* "ADDA.L D1,A1" (instead of "ADDA.W D1,A1") */
 static const Uint8 pRomCheckOpcode[] = { 0x60, 0x00, 0x00, 0x98 };  /* BRA $e00894 */
 static const Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
@@ -129,6 +130,9 @@ static const TOS_PATCH TosPatches[] =
   /* as we've changed bytes in the ROM! So, just skip anyway! */
   { 0x206, -1, pszRomCheck, TP_ALWAYS, 0xE007FA, 0x2E3C0001, 4, pRomCheckOpcode },
   { 0x206, -1, pszDmaBoot, TP_ACSI_OFF, 0xE00898, 0x610000E0, 4, pNopOpcodes }, /* BSR.W $E0097A */
+
+  { 0x306, -1, pszNoPmmu, TP_ALWAYS, 0xE00068, 0xF0394000, 24, pNopOpcodes },
+  { 0x306, -1, pszNoPmmu, TP_ALWAYS, 0xE01702, 0xF0394C00, 32, pNopOpcodes },
 
   { 0, 0, NULL, 0, 0, 0, 0, NULL }
 };
