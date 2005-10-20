@@ -1379,6 +1379,9 @@ tested with the current STE hardware emulation.</p>
 
 <a name="ST applications"></a><h4>ST applications</h4>
 
+<p>Note that some applications can even crash at startup if their
+configuration or data files are not writable.
+
 <table border="1" cellpadding="3">
   <caption align="bottom">tested applications</caption> <tbody>
     <tr class="backdropped">
@@ -1411,12 +1414,28 @@ compiling.</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
+      <td>Gulam</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
       <td>Orcs Resource editor</td>
       <td>yes</td>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
       <td colspan="3" align="right"><i>Graphics</i></td>
+    </tr>
+    <tr>
+      <td>Crackart</td>
+      <td>yes</td>
+      <td>Harddisk access does not work with GEMDOS emulation - fine
+with disk images</td>
+    </tr>
+    <tr>
+      <td>ImCon</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Mgif</td>
@@ -1429,10 +1448,9 @@ compiling.</td>
       <td>rasters sometimes unstable</td>
     </tr>
     <tr>
-      <td>Crackart</td>
+      <td>OCR</td>
       <td>yes</td>
-      <td>Harddisk access does not work with GEMDOS emulation - fine
-with disk images</td>
+      <td>Didn't try scanning</td>
     </tr>
     <tr>
       <td>Speed Of Light</td>
@@ -1441,11 +1459,6 @@ with disk images</td>
     </tr>
     <tr class="backdropped">
       <td colspan="3" align="right"><i>Sound</i></td>
-    </tr>
-    <tr>
-      <td>SidSound Designer</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>MusicMon 2</td>
@@ -1458,7 +1471,22 @@ with disk images</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
+      <td>Quartet</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>SidSound Designer</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
       <td>Accompanist<br>(Henry Cosh Sequencer)</td>
+      <td>yes</td>
+      <td>Program works, but couldn't get Hatari midi output to work</td>
+    </tr>
+    <tr>
+      <td>Cubase Lite</td>
       <td>yes</td>
       <td>Program works, but couldn't get Hatari midi output to work</td>
     </tr>
@@ -1467,11 +1495,6 @@ with disk images</td>
       <td>yes</td>
       <td>Program and sample sounds work, but couldn't get Hatari midi
       output to work</td>
-    </tr>
-    <tr>
-      <td>Cubase Lite</td>
-      <td>yes</td>
-      <td>Program works, but couldn't get Hatari midi output to work</td>
     </tr>
     <tr class="backdropped">
       <td colspan="3" align="right"><i>Text Editors</i></td>
@@ -1504,11 +1527,21 @@ with disk images</td>
       <td>yes</td>
       <td>&nbsp;</td>
     </tr>
+    <tr>
+      <td>Sheet spreadsheet</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+    </tr>
     <tr class="backdropped">
       <td colspan="3" align="right"><i>Communications</i></td>
     </tr>
     <tr>
       <td>CAB browser</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Connect</td>
       <td>yes</td>
       <td>&nbsp;</td>
     </tr>
@@ -1531,10 +1564,53 @@ with disk images</td>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
-      <td colspan="3" align="right"><i>Others</i></td>
+      <td colspan="3" align="right"><i>Science</i></td>
+    </tr>
+    <tr>
+      <td>Euler</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Minidraft</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Molsys</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr class="backdropped">
+      <td colspan="3" align="right"><i>Utilities</i></td>
+    </tr>
+    <tr>
+      <td>Revenge Document Displayer</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>ST-Guide</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>ST-Zip</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>STCat</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Lharc Shell</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>TwoInOne</td>
       <td>yes</td>
       <td>&nbsp;</td>
     </tr>
@@ -1595,6 +1671,12 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>yes</td>
       <td>&nbsp;</td>
       <td><em>THE</em> ultimate scene game</td>
+    </tr>
+    <tr>
+      <td>Chronicles of Omega*</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>ChuChu Rocket</td>
@@ -1750,6 +1832,18 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>bottom border broken</td>
     </tr>
     <tr>
+      <td>T. Barker: Fantasia</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>For any other than TOS 1.6, you need to use fantfix.prg first</td>
+    </tr>
+    <tr>
+      <td>T. Barker: TT-Wars STE</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
       <td>DHS: Tyranny &amp; Massacre</td>
       <td>yes</td>
       <td>&nbsp;</td>
@@ -1781,6 +1875,12 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>New Core: Beyond Deadline</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>N.L.C: Techno Drugs</td>
       <td>yes</td>
       <td>&nbsp;</td>
       <td>&nbsp;</td>
@@ -1853,7 +1953,7 @@ are just STE enhanced.  These are marked with '*'.</p>
 
 <a name="STE applications"></a><h4>STE applications</h4>
 
-<p>Finally some tested STE applications</p>
+<p>Finally some STE only or STE enhanced applications</p>
 <table border="1" cellpadding="3">
   <caption align="bottom">tested STE applications</caption> <tbody>
     <tr class="backdropped">
@@ -1862,6 +1962,12 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td align="center">Sound</td>
       <td align="center">Comment</td>
     </tr>
+    <tr>
+      <td>MaxYMizer DMA</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr> 
     <tr>
       <td>Octalyzer</td>
       <td>yes</td>
