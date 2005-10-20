@@ -183,7 +183,8 @@ typedef enum
 typedef enum
 {
   MACHINE_ST,
-  MACHINE_STE
+  MACHINE_STE,
+  MACHINE_TT
 } MACHINETYPE;
 
 typedef struct

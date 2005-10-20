@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.79 2005-10-04 09:24:50 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.80 2005-10-20 07:52:19 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -419,11 +419,23 @@ static void Main_ReadParameters(int argc, char *argv[])
         else
         {
           if (strcasecmp(argv[i+1], "st") == 0)
+          {
             ConfigureParams.System.nMachineType = MACHINE_ST;
+          }
           else if (strcasecmp(argv[i+1], "ste") == 0)
+          {
             ConfigureParams.System.nMachineType = MACHINE_STE;
+          }
+          else if (strcasecmp(argv[i+1], "tt") == 0)
+          {
+            ConfigureParams.System.nMachineType = MACHINE_TT;
+            ConfigureParams.System.nCpuLevel = cpu_level = 3;
+            ConfigureParams.System.nCpuFreq = 32;
+          }
           else
+          {
             fprintf(stderr, "Unknown machine type: %s\n", argv[i+1]);
+          }
           i += 1;
         }
       }
