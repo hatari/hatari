@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.21 2005-10-04 12:43:39 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.22 2005-10-21 09:23:38 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -949,8 +949,10 @@ void MFP_VectorReg_WriteByte(void)
 	MFP_VR = IoMem[0xfffa17];
 	if ((MFP_VR^old_vr) & 0x08)         /* Test change in end-of-interrupt mode */
 	{
-		if (MFP_VR & 0x08)              /* Mode did change but was it to automatic mode? (ie bit is a zero) */
-		{                               /* We are now in automatic mode, so clear all in-service bits! */
+		/* Mode did change but was it to automatic mode? (ie bit is a zero) */
+		if (!(MFP_VR & 0x08))
+		{
+			/* We are now in automatic mode, so clear all in-service bits! */
 			MFP_ISRA = 0;
 			MFP_ISRB = 0;
 		}
