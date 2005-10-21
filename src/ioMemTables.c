@@ -6,7 +6,7 @@
 
   Tables with hardware IO handlers.
 */
-char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.12 2005-10-20 07:52:19 thothy Exp $";
+char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.13 2005-10-21 21:58:16 eerot Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -86,7 +86,7 @@ INTERCEPT_ACCESS_FUNC IoMemTable_ST[] =
 	{ 0xff8a38, SIZE_WORD, Blitter_LinesPerBitblock_ReadWord, Blitter_LinesPerBitblock_WriteWord },
 	{ 0xff8a3a, SIZE_BYTE, Blitter_HalftoneOp_ReadByte, Blitter_HalftoneOp_WriteByte },
 	{ 0xff8a3b, SIZE_BYTE, Blitter_LogOp_ReadByte, Blitter_LogOp_WriteByte },
-	{ 0xff8a3c, SIZE_BYTE, Blitter_LineNum_ReadByte, Blitter_LineNum_WriteByte },
+	{ 0xff8a3c, SIZE_BYTE, Blitter_Control_ReadByte, Blitter_Control_WriteByte },
 	{ 0xff8a3d, SIZE_BYTE, Blitter_Skew_ReadByte, Blitter_Skew_WriteByte },
 
 	{ 0xfffa01, SIZE_BYTE, MFP_GPIP_ReadByte, MFP_GPIP_WriteByte },
@@ -272,7 +272,7 @@ INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff8a38, SIZE_WORD, Blitter_LinesPerBitblock_ReadWord, Blitter_LinesPerBitblock_WriteWord },
 	{ 0xff8a3a, SIZE_BYTE, Blitter_HalftoneOp_ReadByte, Blitter_HalftoneOp_WriteByte },
 	{ 0xff8a3b, SIZE_BYTE, Blitter_LogOp_ReadByte, Blitter_LogOp_WriteByte },
-	{ 0xff8a3c, SIZE_BYTE, Blitter_LineNum_ReadByte, Blitter_LineNum_WriteByte },
+	{ 0xff8a3c, SIZE_BYTE, Blitter_Control_ReadByte, Blitter_Control_WriteByte },
 	{ 0xff8a3d, SIZE_BYTE, Blitter_Skew_ReadByte, Blitter_Skew_WriteByte },
 	{ 0xff8a3e, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 

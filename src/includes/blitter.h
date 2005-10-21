@@ -22,7 +22,7 @@ extern void Blitter_WordsPerLine_ReadWord(void);
 extern void Blitter_LinesPerBitblock_ReadWord(void);
 extern void Blitter_HalftoneOp_ReadByte(void);
 extern void Blitter_LogOp_ReadByte(void);
-extern void Blitter_LineNum_ReadByte(void);
+extern void Blitter_Control_ReadByte(void);
 extern void Blitter_Skew_ReadByte(void);
 
 extern void Blitter_Endmask1_WriteWord(void);
@@ -33,7 +33,7 @@ extern void Blitter_WordsPerLine_WriteWord(void);
 extern void Blitter_LinesPerBitblock_WriteWord(void);
 extern void Blitter_HalftoneOp_WriteByte(void);
 extern void Blitter_LogOp_WriteByte(void);
-extern void Blitter_LineNum_WriteByte(void);
+extern void Blitter_Control_WriteByte(void);
 extern void Blitter_Skew_WriteByte(void);
 
 extern void Blitter_MemorySnapShot_Capture(BOOL bSave);
