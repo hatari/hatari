@@ -30,7 +30,7 @@
  *
  *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.9 2005-10-21 21:58:16 eerot Exp $";
+char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.10 2005-10-21 22:00:34 eerot Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -44,7 +44,7 @@ char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.9 2005-10-21 21:58:16 eerot Ex
 #include "memorySnapShot.h"
 #include "stMemory.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 /* BLiTTER registers, counts and incs are signed, others unsigned */
 #define REG_HT_RAM	0xff8a00	/* - 0xff8a1e */
