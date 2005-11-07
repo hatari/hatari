@@ -15,9 +15,13 @@ touch with us:
 
 - Add support for .STT disk images (created with the STEEM disk image program).
 
-- Add support for Pasti .STX disk images.
+- Add support for Pasti .STX disk images. (See http://pasti.fxatari.com/)
 
-- Improve or rewrite sound emulation.
+- Improve PSG sound emulation (it sounds not very accurate with some games
+  and demos compared to a real ST).
+  Check if one of the other open-source PSG emulators could be used as a
+  good replacement (STSoundLibrary by Leonard, STonX, Castaway CE, SC68,
+  STsndplay or psgplay by NoCrew, ...).
 
 - Fix IKBD emulation (e.g. some games like "Big Run" have problems with the
   joystick fire button).
@@ -36,3 +40,10 @@ touch with us:
 - Get the games/demos working that are marked as non-working in the manual.
 
 - Add TT and/or Falcon emulation ;-)
+
+- Add proper Blitter timing emulation.
+
+- Check if Blitter can generate an interrupt and if so add its emulation.
+
+- Fix the problems with horizontal STE scrolling (Zool, Endscreen in Pacemaker
+  by Paradox, ...)
