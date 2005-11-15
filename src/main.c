@@ -6,10 +6,11 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.80 2005-10-20 07:52:19 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.81 2005-11-15 12:24:41 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
+#include <sched.h>      /* for sched_yield() */
 
 #include <SDL.h>
 
@@ -50,6 +51,7 @@ char Main_rcsid[] = "Hatari $Id: main.c,v 1.80 2005-10-20 07:52:19 thothy Exp $"
 BOOL bQuitProgram=FALSE;                  /* Flag to quit program cleanly */
 BOOL bEmulationActive=TRUE;               /* Run emulation when started */
 BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
+static BOOL bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
 static char szBootDiskImage[FILENAME_MAX];
 char szWorkingDir[FILENAME_MAX];          /* Working directory */
 BOOL bIgnoreNextMouseMotion = FALSE;      /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
@@ -108,6 +110,91 @@ void Main_UnPauseEmulation(void)
 
     bEmulationActive = TRUE;
   }
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  This function waits on each emulated VBL to synchronize the real time
+  with the emulated ST.
+  Unfortunately SDL_Delay and other sleep functions like usleep or nanosleep
+  are very inaccurate on some systems like Linux 2.4 or Mac OS X (they can only
+  wait for a multiple of 10ms due to the scheduler on these systems), so we have
+  to "busy wait" there to get an accurate timing.
+*/
+void Main_WaitOnVbl(void)
+{
+  int nCurrentMilliTicks, nDestMilliTicks;
+  static int nOldMilliTicks = 0;
+  signed int nDelay;
+
+  nCurrentMilliTicks = SDL_GetTicks();
+
+  /* Only wait in normal speed mode */
+  if (ConfigureParams.System.nMinMaxSpeed != MINMAXSPEED_MAX)
+  {
+    nDestMilliTicks = nOldMilliTicks + 1000/nScreenRefreshRate;
+    nDelay = nDestMilliTicks - nCurrentMilliTicks;
+
+    if (bAccurateDelays)
+    {
+      /* Accurate sleeping is possible -> use SDL_Delay to free the CPU */
+      if (nDelay > 1)
+      {
+        SDL_Delay(nDelay - 1);
+      }
+    }
+    else
+    {
+      /* No accurate SDL_Delay -> only wait if more than 10ms to go... */
+      if (nDelay >= 10)
+      {
+        SDL_Delay(9);
+      }
+    }
+
+    /* Now busy-wait for the right tick: */
+    do
+    {
+      nCurrentMilliTicks = SDL_GetTicks();
+      nDelay = nDestMilliTicks - nCurrentMilliTicks;
+
+      if (nDelay > 3)
+      {
+        /* Avoid getting a bad priority -> call sched_yield... */
+        sched_yield();
+      }
+    }
+    while (nDelay > 0);
+  }
+
+  nOldMilliTicks = nCurrentMilliTicks;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Since SDL_Delay and friends are very inaccurate on some systems, we have
+  to check if we can rely on this delay function.
+*/
+static void Main_CheckForAccurateDelays(void)
+{
+  int nStartTicks, nEndTicks;
+
+  /* Force a task switch now, so we have a longer timeslice afterwards */
+  SDL_Delay(10);
+
+  nStartTicks = SDL_GetTicks();
+  SDL_Delay(1);
+  nEndTicks = SDL_GetTicks();
+
+  /* If the delay took longer than 10ms, we are on an inaccurate system! */
+  bAccurateDelays = ((nEndTicks - nStartTicks) < 9);
+
+  if (bAccurateDelays)
+    Log_Printf(LOG_DEBUG, "Host system has accurate delays. (%d)\n", nEndTicks - nStartTicks);
+  else
+    Log_Printf(LOG_DEBUG, "Host system does not have accurate delays. (%d)\n", nEndTicks - nStartTicks);
 }
 
 
@@ -583,6 +670,9 @@ int main(int argc, char *argv[])
 
   /* Init emulator system */
   Main_Init();
+
+  /* Check if SDL_Delay is accurate */
+  Main_CheckForAccurateDelays();
 
   /* Switch immediately to fullscreen if user wants to */
   if (ConfigureParams.Screen.bFullScreen)

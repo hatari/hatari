@@ -9,9 +9,8 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.41 2005-09-01 19:20:49 eerot Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.42 2005-11-15 12:24:41 thothy Exp $";
 
-#include <SDL.h>
 #include <SDL_endian.h>
 
 #include "main.h"
@@ -625,9 +624,6 @@ static void Video_ClearOnVBL(void)
 void Video_InterruptHandler_VBL(void)
 {
   int PendingCyclesOver;
-  int nNewMilliTicks;
-  static int nOldMilliTicks = 0;
-  signed int nDelay;
 
   /* Store cycles we went over for this frame(this is our inital count) */
   PendingCyclesOver = -PendingInterruptCount;    /* +ve */
@@ -688,22 +684,7 @@ void Video_InterruptHandler_VBL(void)
     set_special(SPCFLAG_BRK);         /* Assure that CPU core shuts down */
   }
 
-  if (ConfigureParams.System.nMinMaxSpeed != MINMAXSPEED_MAX)
-  {
-    /* Wait, so we stay in sync with the sound */
-    do
-    {
-      nNewMilliTicks = SDL_GetTicks();
-      nDelay = 1000/nScreenRefreshRate - (nNewMilliTicks-nOldMilliTicks);
-      if(nDelay > 2)
-      {
-        /* SDL_Delay seems to be quite inaccurate, so we don't wait the whole time */
-        SDL_Delay(nDelay - 1);
-      }
-    }
-    while(nDelay > 0);
-    nOldMilliTicks = nNewMilliTicks;
-  }
+  Main_WaitOnVbl();
 }
 
 
