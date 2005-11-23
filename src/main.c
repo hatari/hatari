@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.81 2005-11-15 12:24:41 thothy Exp $";
+char Main_rcsid[] = "Hatari $Id: main.c,v 1.82 2005-11-23 19:08:27 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -242,22 +242,51 @@ void Main_EventHandler(void)
        break;
 
     case SDL_MOUSEBUTTONDOWN:
-       if( event.button.button==SDL_BUTTON_LEFT )
+       if (event.button.button == SDL_BUTTON_LEFT)
        {
-         if(Keyboard.LButtonDblClk==0)
+         if (Keyboard.LButtonDblClk == 0)
            Keyboard.bLButtonDown |= BUTTON_MOUSE;  /* Set button down flag */
        }
-       else if( event.button.button==SDL_BUTTON_RIGHT )
+       else if (event.button.button == SDL_BUTTON_RIGHT)
+       {
          Keyboard.bRButtonDown |= BUTTON_MOUSE;
-       else if( event.button.button==SDL_BUTTON_MIDDLE )
-         Keyboard.LButtonDblClk = 1;    /* Start double-click sequence in emulation time */
+       }
+       else if (event.button.button == SDL_BUTTON_MIDDLE)
+       {
+         /* Start double-click sequence in emulation time */
+         Keyboard.LButtonDblClk = 1;
+       }
+       else if (event.button.button == SDL_BUTTON_WHEELDOWN)
+       {
+         /* Simulate pressing the "cursor down" key */
+         IKBD_PressSTKey(0x50, TRUE);
+       }
+       else if (event.button.button == SDL_BUTTON_WHEELUP)
+       {
+         /* Simulate pressing the "cursor up" key */
+         IKBD_PressSTKey(0x48, TRUE);
+       }
        break;
 
     case SDL_MOUSEBUTTONUP:
-       if( event.button.button==SDL_BUTTON_LEFT )
+       if (event.button.button == SDL_BUTTON_LEFT)
+       {
          Keyboard.bLButtonDown &= ~BUTTON_MOUSE;
-       else if( event.button.button==SDL_BUTTON_RIGHT )
-         Keyboard.bRButtonDown &= ~BUTTON_MOUSE;;
+       }
+       else if (event.button.button == SDL_BUTTON_RIGHT)
+       {
+         Keyboard.bRButtonDown &= ~BUTTON_MOUSE;
+       }
+       else if (event.button.button == SDL_BUTTON_WHEELDOWN)
+       {
+         /* Simulate releasing the "cursor down" key */
+         IKBD_PressSTKey(0x50, FALSE);
+       }
+       else if (event.button.button == SDL_BUTTON_WHEELUP)
+       {
+         /* Simulate releasing the "cursor up" key */
+         IKBD_PressSTKey(0x48, FALSE);
+       }
        break;
 
     case SDL_KEYDOWN:
