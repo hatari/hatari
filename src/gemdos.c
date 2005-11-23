@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.43 2005-10-04 15:31:52 thothy Exp $";
+char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.44 2005-11-23 17:43:38 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -471,7 +471,7 @@ void GemDOS_InitDrives(void)
 	{
 		emudrives = malloc( MAX_HARDDRIVES*sizeof(EMULATEDDRIVE *) );
 		for(i=0; i<MAX_HARDDRIVES; i++)
-			emudrives[0] = malloc( sizeof(EMULATEDDRIVE) );
+			emudrives[i] = malloc( sizeof(EMULATEDDRIVE) );
 	}
 
 	for(i=0; i<MAX_HARDDRIVES; i++)
@@ -620,6 +620,7 @@ static int GemDOS_FindDriveNumber(char *pszFileName)
 static int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 {
 	int DriveLetter;
+	int n;
 
 	/* Do we even have a hard-drive? */
 	if (GEMDOS_EMU_ON)
@@ -627,8 +628,10 @@ static int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 		/* Find drive letter (as number) */
 		DriveLetter = GemDOS_FindDriveNumber(pszFileName);
 		/* add support for multiple drives here.. */
-		if (DriveLetter == emudrives[0]->hd_letter)
+		for (n=0; n<MAX_HARDDRIVES; n++) {
+  		  if (DriveLetter == emudrives[n]->hd_letter)
 			return DriveLetter;
+	}
 	}
 	/* Not a high-level redirected drive, let TOS handle it */
 	return -1;
@@ -1476,7 +1479,10 @@ static int GemDOS_Pexec_LoadAndGo(Uint32 Params)
 {
 	/* add multiple disk support here too */
 	/* Hard-drive? */
-	if (CurrentDrive == emudrives[0]->hd_letter)
+	char *pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+2*SIZE_WORD));
+	int Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
+
+	if (ISHARDDRIVE(Drive))
 	{
 		/* If not using A: or B:, use my own routines to load */
 		return CALL_PEXEC_ROUTINE;
@@ -1491,7 +1497,9 @@ static int GemDOS_Pexec_LoadAndGo(Uint32 Params)
 static int GemDOS_Pexec_LoadDontGo(Uint32 Params)
 {
 	/* Hard-drive? */
-	if (CurrentDrive == emudrives[0]->hd_letter)
+	char *pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+2*SIZE_WORD));
+	int Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
+	if (ISHARDDRIVE(Drive))
 	{
 		return CALL_PEXEC_ROUTINE;
 	}
@@ -1506,9 +1514,15 @@ static int GemDOS_Pexec_LoadDontGo(Uint32 Params)
 static int GemDOS_Pexec(Uint32 Params)
 {
 	Uint16 Mode;
+	/*char *psFileName, *psCmdLine;*/
 
 	/* Find PExec mode */
 	Mode = STMemory_ReadWord(Params+SIZE_WORD);
+
+	/*
+	psFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+2*SIZE_WORD));
+	psCmdLine = (char *)STRAM_ADDR(STMemory_ReadLong(Params+2*SIZE_WORD+SIZE_LONG));
+	*/
 
 	/* Re-direct as needed */
 	switch(Mode)
