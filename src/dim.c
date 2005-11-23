@@ -6,7 +6,7 @@
 
   DIM disk image support.
 */
-char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.4 2005-09-13 01:10:09 thothy Exp $";
+char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.5 2005-11-23 17:20:40 thothy Exp $";
 
 #include <zlib.h>
 
@@ -21,24 +21,26 @@ char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.4 2005-09-13 01:10:09 thothy Exp $";
     .DIM FILE FORMAT
   --===============-------------------------------------------------------------
 
-  The file format of the .DIM image files are quite the same as the .ST image
+  The file format of normal .DIM image files are quite the same as the .ST image
   files (see st.c) - the .DIM image files just have an additional header of
-  32 bytes.
-  
+  32 bytes. However, there are also "compressed" images which only contain the
+  used sectors of the disk. It is necessary to parse the FAT to "uncompress"
+  these images.
+
   The header contains following information:
 
-  Offset  Size  Description
-  ------  ----  -----------
-  0x0000  Word  ID Header (0x4242('BB'))
-  0x0003  Byte  Image contains all sectors (0) or only used sectors (1)
-  0x0006  Byte  Sides (0 or 1; add 1 to this to get correct number of sides)
-  0x0008  Byte  Sectors per track
-  0x000A  Byte  Starting Track (0 based)
-  0x000C  Byte  Ending Track (0 based)
-  0x000D  Byte  Double-Density(0) or High-Density (1)
-
-  All other header fields are unknown.
-  If you have information about them, please help!
+  Offset  Size      Description
+  ------  --------  -----------
+  0x0000  Word      ID Header (0x4242('BB'))
+  0x0002  Byte      1 = disk configuration has been detected automatically
+                    0 = the user specified the disk configuration
+  0x0003  Byte      Image contains all sectors (0) or only used sectors (1)
+  0x0006  Byte      Sides (0 or 1; add 1 to this to get correct number of sides)
+  0x0008  Byte      Sectors per track
+  0x000A  Byte      Starting Track (0 based)
+  0x000C  Byte      Ending Track (0 based)
+  0x000D  Byte      Double-Density(0) or High-Density (1)
+  0x000E  18 Bytes  A copy of the Bios Parameter Block (BPB) of this disk.
 */
 
 
