@@ -16,7 +16,7 @@
   the current instruction takes 20 cycles we will be 16 cycles late - this is handled in
   the adjust functions.
 */
-char Int_rcsid[] = "Hatari $Id: int.c,v 1.9 2005-08-06 12:32:09 thothy Exp $";
+char Int_rcsid[] = "Hatari $Id: int.c,v 1.10 2005-12-02 21:08:58 eerot Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -28,9 +28,11 @@ char Int_rcsid[] = "Hatari $Id: int.c,v 1.9 2005-08-06 12:32:09 thothy Exp $";
 #include "sound.h"
 #include "video.h"
 
+int nCyclesOver=0;
+int nFrameCyclesOver=0;
 
 /* List of possible interrupt handlers to be store in 'PendingInterruptTable', used for 'MemorySnapShot' */
-void *pIntHandlerFunctions[] =
+static void *pIntHandlerFunctions[] =
 {
   NULL,
   Video_InterruptHandler_VBL,
@@ -46,10 +48,16 @@ void *pIntHandlerFunctions[] =
   NULL
 };
 
-INTERRUPTHANDLER InterruptHandlers[MAX_INTERRUPTS];
-int nCyclesOver=0;
-int nFrameCyclesOver=0;
-int ActiveInterrupt=0;
+/* Event timer structure - keeps next timer to occur in structure so don't need to check all entries */
+typedef struct
+{
+  BOOL bUsed;                   /* Is interrupt active? */
+  int Cycles;
+  void *pFunction;
+} INTERRUPTHANDLER;
+
+static INTERRUPTHANDLER InterruptHandlers[MAX_INTERRUPTS];
+static int ActiveInterrupt=0;
 
 
 /*-----------------------------------------------------------------------*/
@@ -119,7 +127,7 @@ int Int_HandlerFunctionToID(void *pHandlerFunction)
   }
   
   /* Didn't find one! Oops */
-  return(0);
+  return 0;
 }
 
 
@@ -148,7 +156,7 @@ int Int_FindFrameCycles(void)
 /*
   Find next interrupt to occur, and store to global variables for decrement in instruction decode loop
 */
-void Int_SetNewInterrupt(void)
+static void Int_SetNewInterrupt(void)
 {
   int LowestCycleCount=999999,LowestInterrupt=0;
   int i;
