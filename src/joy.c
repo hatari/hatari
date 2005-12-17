@@ -8,7 +8,7 @@
 
   NOTE: The ST uses the joystick port 1 as the default controller.
 */
-char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.8 2005-10-05 14:14:35 thothy Exp $";
+char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.9 2005-12-17 10:22:52 thothy Exp $";
 
 #include <SDL.h>
 
@@ -24,18 +24,19 @@ char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.8 2005-10-05 14:14:35 thothy Exp $";
 #define JOY_BUTTON2  2
 
 
-SDL_Joystick *sdlJoystick[6] =          /* SDL's joystick structures */
+static SDL_Joystick *sdlJoystick[6] =   /* SDL's joystick structures */
 {
 	NULL, NULL, NULL, NULL, NULL, NULL
 };
-BOOL bJoystickWorking[6] =              /* Is joystick plugged in and working? */
+
+static BOOL bJoystickWorking[6] =       /* Is joystick plugged in and working? */
 {
 	FALSE, FALSE, FALSE, FALSE, FALSE, FALSE
 }; 
 
 int JoystickSpaceBar = FALSE;           /* State of space-bar on joystick button 2 */
 static Uint8 nJoyKeyEmu[6];
-Uint16 nSteJoySelect;
+static Uint16 nSteJoySelect;
 
 
 /*-----------------------------------------------------------------------*/
