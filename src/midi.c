@@ -20,13 +20,14 @@
      the data register, but probably it should rather be done when reading the
      status register?).
 */
-char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.5 2005-01-18 23:33:24 thothy Exp $";
+char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.6 2005-12-18 18:02:12 thothy Exp $";
 
 #include <SDL_types.h>
 
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
+#include "m68000.h"
 #include "mfp.h"
 #include "midi.h"
 
@@ -96,6 +97,9 @@ void Midi_Control_ReadByte(void)
 {
 	/* Dprintf(("Midi_ReadControl : $%x.\n", MidiStatusRegister)); */
 
+	/* ACIA registers need wait states - but the value seems to vary in certain cases */
+	M68000_WaitState(8);
+
 	IoMem[0xfffc04] = MidiStatusRegister;
 }
 
@@ -107,6 +111,9 @@ void Midi_Control_ReadByte(void)
 void Midi_Data_ReadByte(void)
 {
 	Dprintf(("Midi_ReadData : $%x.\n", 1));
+
+	/* ACIA registers need wait states - but the value seems to vary in certain cases */
+	M68000_WaitState(8);
 
 	MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
 
@@ -120,6 +127,9 @@ void Midi_Data_ReadByte(void)
 */
 void Midi_Control_WriteByte(void)
 {
+	/* ACIA registers need wait states - but the value seems to vary in certain cases */
+	M68000_WaitState(8);
+
 	MidiControlRegister = IoMem[0xfffc04];
 
 	Dprintf(("Midi_WriteControl($%x)\n", MidiControlRegister));
@@ -143,7 +153,12 @@ void Midi_Control_WriteByte(void)
 */
 void Midi_Data_WriteByte(void)
 {
-	Uint8 dataByte = IoMem[0xfffc06];
+	Uint8 dataByte;
+
+	/* ACIA registers need wait states - but the value seems to vary in certain cases */
+	M68000_WaitState(8);
+
+	dataByte = IoMem[0xfffc06];
 
 	Dprintf(("Midi_WriteData($%x)\n", dataByte));
 

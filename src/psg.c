@@ -8,7 +8,7 @@
 
   Also used for the printer (centronics) port emulation (PSG Port B, Register 15)
 */
-char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.8 2005-09-25 21:32:25 thothy Exp $";
+char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.9 2005-12-18 18:02:12 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -59,9 +59,9 @@ void PSG_MemorySnapShot_Capture(BOOL bSave)
 */
 void PSG_SelectRegister_WriteByte(void)
 {
-	PSGRegisterSelect = IoMem[0xff8800] & 0x0f;     /* Store register to select (value in bits 0-3) */
+	M68000_WaitState(4);
 
-	M68000_WaitState();
+	PSGRegisterSelect = IoMem[0xff8800] & 0x0f;     /* Store register to select (value in bits 0-3) */
 }
 
 
@@ -71,6 +71,8 @@ void PSG_SelectRegister_WriteByte(void)
 */
 void PSG_SelectRegister_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	if (PSGRegisterSelect == 14)
 	{
 		/* Second parallel port joystick uses centronics strobe bit as fire button: */
@@ -99,8 +101,6 @@ void PSG_SelectRegister_ReadByte(void)
 
 	/* Read data last selected by register */
 	IoMem[0xff8800] = PSGRegisters[PSGRegisterSelect];
-
-	M68000_WaitState();
 }
 
 
@@ -110,6 +110,8 @@ void PSG_SelectRegister_ReadByte(void)
 */
 void PSG_DataRegister_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	Sound_Update();                            /* Create samples up until this point with current values */
 	PSGRegisters[PSGRegisterSelect] = IoMem[0xff8802];        /* Write value to PSGRegisters[] */
 
@@ -157,8 +159,6 @@ void PSG_DataRegister_WriteByte(void)
 
 	/* Remember if we wrote to IO Port B */
 	bLastWriteToIOB = (PSGRegisterSelect == PSG_REG_IO_PORTB);
-
-	M68000_WaitState();
 }
 
 
@@ -168,7 +168,7 @@ void PSG_DataRegister_WriteByte(void)
 */
 void PSG_DataRegister_ReadByte(void)
 {
-	IoMem[0xff8802] = 0xff;
+	M68000_WaitState(4);
 
-	M68000_WaitState();
+	IoMem[0xff8802] = 0xff;
 }

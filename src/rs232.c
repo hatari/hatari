@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.17 2005-09-26 15:20:14 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.18 2005-12-18 18:02:12 thothy Exp $";
 
 #ifndef HAVE_TERMIOS_H
 #define HAVE_TERMIOS_H 1
@@ -30,6 +30,7 @@ char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.17 2005-09-26 15:20:14 thothy Exp 
 
 #include "main.h"
 #include "configuration.h"
+#include "m68000.h"
 #include "mfp.h"
 #include "stMemory.h"
 #include "rs232.h"
@@ -642,6 +643,9 @@ int RS232_ThreadFunc(void *pData)
 */
 void RS232_SCR_ReadByte(void)
 {
+	M68000_WaitState(4);
+
+	/* nothing */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -650,6 +654,8 @@ void RS232_SCR_ReadByte(void)
 */
 void RS232_SCR_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	/*Dprintf(("RS232: Write to SCR: $%x\n", (int)STRam[0xfffa27]));*/
 }
 
@@ -660,6 +666,8 @@ void RS232_SCR_WriteByte(void)
 */
 void RS232_UCR_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	Dprintf(("RS232: Read from UCR: $%x\n", (int)STRam[0xfffa29]));
 }
 
@@ -669,6 +677,8 @@ void RS232_UCR_ReadByte(void)
 */
 void RS232_UCR_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	Dprintf(("RS232: Write to UCR: $%x\n", (int)STRam[0xfffa29]));
 
 	if (bConnectedRS232)
@@ -682,6 +692,8 @@ void RS232_UCR_WriteByte(void)
 */
 void RS232_RSR_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	if (RS232_GetStatus())
 		STRam[0xfffa2b] |= 0x80;        /* Buffer full */
 	else
@@ -696,6 +708,8 @@ void RS232_RSR_ReadByte(void)
 */
 void RS232_RSR_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	Dprintf(("RS232: Write to RSR: $%x\n", (int)STRam[0xfffa2b]));
 }
 
@@ -706,6 +720,8 @@ void RS232_RSR_WriteByte(void)
 */
 void RS232_TSR_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	if (ConfigureParams.RS232.bEnableRS232)
 		STRam[0xfffa2d] |= 0x80;        /* Buffer empty */
 	else
@@ -720,6 +736,8 @@ void RS232_TSR_ReadByte(void)
 */
 void RS232_TSR_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	Dprintf(("RS232: Write to TSR: $%x\n", (int)STRam[0xfffa2d]));
 }
 
@@ -731,6 +749,8 @@ void RS232_TSR_WriteByte(void)
 void RS232_UDR_ReadByte(void)
 {
 	unsigned char InByte;
+
+	M68000_WaitState(4);
 
 	RS232_ReadBytes(&InByte, 1);
 	STRam[0xfffa2f] = InByte;
@@ -750,6 +770,8 @@ void RS232_UDR_ReadByte(void)
 void RS232_UDR_WriteByte(void)
 {
 	unsigned char OutByte;
+
+	M68000_WaitState(4);
 
 	OutByte = STRam[0xfffa2f];
 	RS232_TransferBytesTo(&OutByte, 1);

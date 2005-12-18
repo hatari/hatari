@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.39 2005-06-05 14:19:40 thothy Exp $";
+char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.40 2005-12-18 18:02:12 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -1299,7 +1299,7 @@ static int do_specialties (void)
     if(regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
 	/* Add some extra cycles to simulate a wait state */
 	unset_special(SPCFLAG_EXTRA_CYCLES);
-	M68000_AddCycles(4);
+	M68000_AddCycles(nWaitStateCycles);
     }
 
     if (regs.spcflags & SPCFLAG_DOTRACE) {

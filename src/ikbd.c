@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.23 2005-04-05 14:41:26 thothy Exp $";
+char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.24 2005-12-18 18:02:11 thothy Exp $";
 
 #include <time.h>
 
@@ -1494,6 +1494,9 @@ void IKBD_PressSTKey(unsigned char ScanCode,BOOL bPress)
 */
 void IKBD_KeyboardControl_ReadByte(void)
 {
+	/* ACIA registers need wait states - but the value seems to vary in certain cases */
+	M68000_WaitState(8);
+
 	/* For our emulation send is immediate so acknowledge buffer is empty */
 	IoMem[0xfffc00] = ACIAStatusRegister | ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
 }
@@ -1504,6 +1507,9 @@ void IKBD_KeyboardControl_ReadByte(void)
 */
 void IKBD_KeyboardData_ReadByte(void)
 {
+	/* ACIA registers need wait states - but the value seems to vary in certain cases */
+	M68000_WaitState(8);
+
 	IoMem[0xfffc02] = IKBD_GetByteFromACIA();  /* Return our byte from keyboard processor */
 }
 
@@ -1514,6 +1520,9 @@ void IKBD_KeyboardData_ReadByte(void)
 */
 void IKBD_KeyboardControl_WriteByte(void)
 {
+	/* ACIA registers need wait states - but the value seems to vary in certain cases */
+	M68000_WaitState(8);
+
 	/* Nothing... */
 }
 
@@ -1523,5 +1532,8 @@ void IKBD_KeyboardControl_WriteByte(void)
 */
 void IKBD_KeyboardData_WriteByte(void)
 {
+	/* ACIA registers need wait states - but the value seems to vary in certain cases */
+	M68000_WaitState(8);
+
 	IKBD_SendByteToKeyboardProcessor(IoMem[0xfffc02]);  /* Pass our byte to the keyboard processor */
 }

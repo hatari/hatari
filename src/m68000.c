@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.33 2005-07-15 19:30:32 thothy Exp $";
+char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.34 2005-12-18 18:02:11 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -31,6 +31,7 @@ Uint32 BusErrorAddress;          /* Stores the offending address for bus-/addres
 Uint32 BusErrorPC;               /* Value of the PC when bus error occurs */
 BOOL bBusErrorReadWrite;         /* 0 for write error, 1 for read error */
 int nCpuFreqShift;               /* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
+int nWaitStateCycles;            /* Used to emulate the wait state cycles of certion IO registers */
 
 
 /*-----------------------------------------------------------------------*/
@@ -215,7 +216,9 @@ void M68000_Exception(Uint32 ExceptionVector)
   There seem to be wait states when a program accesses certain hardware
   registers on the ST. Use this function to simulate these wait states.
 */
-void M68000_WaitState(void)
+void M68000_WaitState(int nCycles)
 {
   set_special(SPCFLAG_EXTRA_CYCLES);
+
+  nWaitStateCycles = nCycles;
 }

@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.22 2005-10-21 09:23:38 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.23 2005-12-18 18:02:11 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -615,6 +615,8 @@ void MFP_InterruptHandler_TimerD(void)
 */
 void MFP_GPIP_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	if (!bUseHighRes)
 		MFP_GPIP |= 0x80;       /* Color monitor -> set top bit */
 	else
@@ -649,6 +651,8 @@ void MFP_GPIP_ReadByte(void)
 */
 void MFP_ActiveEdge_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa03] = MFP_AER;
 }
 
@@ -658,6 +662,8 @@ void MFP_ActiveEdge_ReadByte(void)
 */
 void MFP_DataDirection_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa05] = MFP_DDR;
 }
 
@@ -667,6 +673,8 @@ void MFP_DataDirection_ReadByte(void)
 */
 void MFP_EnableA_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa07] = MFP_IERA;
 }
 
@@ -676,6 +684,8 @@ void MFP_EnableA_ReadByte(void)
 */
 void MFP_EnableB_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa09] = MFP_IERB;
 }
 
@@ -685,6 +695,8 @@ void MFP_EnableB_ReadByte(void)
 */
 void MFP_PendingA_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa0b] = MFP_IPRA;
 }
 
@@ -694,6 +706,8 @@ void MFP_PendingA_ReadByte(void)
 */
 void MFP_PendingB_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa0d] = MFP_IPRB;
 }
 
@@ -703,6 +717,8 @@ void MFP_PendingB_ReadByte(void)
 */
 void MFP_InServiceA_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa0f] = MFP_ISRA;
 }
 
@@ -712,6 +728,8 @@ void MFP_InServiceA_ReadByte(void)
 */
 void MFP_InServiceB_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa11] = MFP_ISRB;
 }
 
@@ -721,6 +739,8 @@ void MFP_InServiceB_ReadByte(void)
 */
 void MFP_MaskA_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa13] = MFP_IMRA;
 }
 
@@ -730,6 +750,8 @@ void MFP_MaskA_ReadByte(void)
 */
 void MFP_MaskB_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa15] = MFP_IMRB;
 }
 
@@ -739,6 +761,8 @@ void MFP_MaskB_ReadByte(void)
 */
 void MFP_VectorReg_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa17] = MFP_VR;
 }
 
@@ -748,6 +772,8 @@ void MFP_VectorReg_ReadByte(void)
 */
 void MFP_TimerACtrl_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa19] = MFP_TACR;
 }
 
@@ -757,6 +783,8 @@ void MFP_TimerACtrl_ReadByte(void)
 */
 void MFP_TimerBCtrl_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa1b] = MFP_TBCR;
 }
 
@@ -766,6 +794,8 @@ void MFP_TimerBCtrl_ReadByte(void)
 */
 void MFP_TimerCDCtrl_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	IoMem[0xfffa1d] = MFP_TCDCR;
 }
 
@@ -775,6 +805,8 @@ void MFP_TimerCDCtrl_ReadByte(void)
 */
 void MFP_TimerAData_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	if (MFP_TACR != 8)          /* Is event count? Need to re-calculate counter */
 		MFP_ReadTimerA();       /* Stores result in 'MFP_TA_MAINCOUNTER' */
 
@@ -787,6 +819,8 @@ void MFP_TimerAData_ReadByte(void)
 */
 void MFP_TimerBData_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	if (MFP_TBCR != 8)          /* Is event count? Need to re-calculate counter */
 		MFP_ReadTimerB();       /* Stores result in 'MFP_TB_MAINCOUNTER' */
 
@@ -799,6 +833,8 @@ void MFP_TimerBData_ReadByte(void)
 */
 void MFP_TimerCData_ReadByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_ReadTimerC();        /* Stores result in 'MFP_TC_MAINCOUNTER' */
 
 	IoMem[0xfffa23] = MFP_TC_MAINCOUNTER;
@@ -811,6 +847,8 @@ void MFP_TimerCData_ReadByte(void)
 void MFP_TimerDData_ReadByte(void)
 {
 	Uint32 pc = m68k_getpc();
+
+	M68000_WaitState(4);
 
 	if (ConfigureParams.System.bPatchTimerD && pc >= TosAddress && pc <= TosAddress + TosSize)
 	{
@@ -831,6 +869,8 @@ void MFP_TimerDData_ReadByte(void)
 */
 void MFP_GPIP_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	/* Nothing... */
 	/*fprintf(stderr, "Write to GPIP: %x\n", (int)IoMem[0xfffa01]);*/
 	/*MFP_GPIP = IoMem[0xfffa01];*/   /* TODO: What are the GPIP pins good for? */
@@ -842,6 +882,8 @@ void MFP_GPIP_WriteByte(void)
 */
 void MFP_ActiveEdge_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_AER = IoMem[0xfffa03];
 }
 
@@ -851,6 +893,8 @@ void MFP_ActiveEdge_WriteByte(void)
 */
 void MFP_DataDirection_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_DDR = IoMem[0xfffa05];
 }
 
@@ -860,6 +904,8 @@ void MFP_DataDirection_WriteByte(void)
 */
 void MFP_EnableA_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_IERA = IoMem[0xfffa07];
 	MFP_IPRA &= MFP_IERA;
 	MFP_UpdateFlags();
@@ -874,6 +920,8 @@ void MFP_EnableA_WriteByte(void)
 */
 void MFP_EnableB_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_IERB = IoMem[0xfffa09];
 	MFP_IPRB &= MFP_IERB;
 	MFP_UpdateFlags();
@@ -888,6 +936,8 @@ void MFP_EnableB_WriteByte(void)
 */
 void MFP_PendingA_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_IPRA &= IoMem[0xfffa0b];        /* Cannot set pending bits - only clear via software */
 	MFP_UpdateFlags();                  /* Check if any interrupts pending */
 }
@@ -898,6 +948,8 @@ void MFP_PendingA_WriteByte(void)
 */
 void MFP_PendingB_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_IPRB &= IoMem[0xfffa0d];
 	MFP_UpdateFlags();                  /* Check if any interrupts pending */
 }
@@ -908,6 +960,8 @@ void MFP_PendingB_WriteByte(void)
 */
 void MFP_InServiceA_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_ISRA &= IoMem[0xfffa0f];        /* Cannot set in-service bits - only clear via software */
 }
 
@@ -917,6 +971,8 @@ void MFP_InServiceA_WriteByte(void)
 */
 void MFP_InServiceB_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_ISRB &= IoMem[0xfffa11];        /* Cannot set in-service bits - only clear via software */
 }
 
@@ -926,6 +982,8 @@ void MFP_InServiceB_WriteByte(void)
 */
 void MFP_MaskA_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_IMRA = IoMem[0xfffa13];
 }
 
@@ -935,6 +993,8 @@ void MFP_MaskA_WriteByte(void)
 */
 void MFP_MaskB_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_IMRB = IoMem[0xfffa15];
 }
 
@@ -945,8 +1005,12 @@ void MFP_MaskB_WriteByte(void)
 void MFP_VectorReg_WriteByte(void)
 {
 	Uint8 old_vr;
+
+	M68000_WaitState(4);
+
 	old_vr = MFP_VR;                    /* Copy for checking if set mode */
 	MFP_VR = IoMem[0xfffa17];
+
 	if ((MFP_VR^old_vr) & 0x08)         /* Test change in end-of-interrupt mode */
 	{
 		/* Mode did change but was it to automatic mode? (ie bit is a zero) */
@@ -966,8 +1030,12 @@ void MFP_VectorReg_WriteByte(void)
 void MFP_TimerACtrl_WriteByte(void)
 {
 	Uint8 old_tacr;
+
+	M68000_WaitState(4);
+
 	old_tacr = MFP_TACR;                /* Remember old control state */
 	MFP_TACR = IoMem[0xfffa19] & 0x0f;  /* Mask, Fish (auto160) writes into top nibble! */
+
 	if ((MFP_TACR^old_tacr) & 0x0f)     /* Check if Timer A control changed */
 		MFP_StartTimerA();              /* Reset timers if need to */
 }
@@ -979,8 +1047,12 @@ void MFP_TimerACtrl_WriteByte(void)
 void MFP_TimerBCtrl_WriteByte(void)
 {
 	Uint8 old_tbcr;
+
+	M68000_WaitState(4);
+
 	old_tbcr = MFP_TBCR;                /* Remember old control state */
 	MFP_TBCR = IoMem[0xfffa1b] & 0x0f;  /* Mask, Fish (auto160) writes into top nibble! */
+
 	if ((MFP_TBCR^old_tbcr) & 0x0f)     /* Check if Timer B control changed */
 		MFP_StartTimerB();              /* Reset timers if need to */
 }
@@ -992,6 +1064,8 @@ void MFP_TimerBCtrl_WriteByte(void)
 void MFP_TimerCDCtrl_WriteByte(void)
 {
 	Uint8 old_tcdcr;
+
+	M68000_WaitState(4);
 
 	old_tcdcr = MFP_TCDCR;              /* Remember old control state */
 	MFP_TCDCR = IoMem[0xfffa1d];        /* Store new one */
@@ -1035,7 +1109,10 @@ void MFP_TimerCDCtrl_WriteByte(void)
 */
 void MFP_TimerAData_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_TADR = IoMem[0xfffa1f];         /* Store into data register */
+
 	if (MFP_TACR == 0)                  /* Now check if timer is running - if so do not set */
 	{
 		MFP_TA_MAINCOUNTER = MFP_TADR;  /* Timer is off, store to main counter */
@@ -1049,7 +1126,10 @@ void MFP_TimerAData_WriteByte(void)
 */
 void MFP_TimerBData_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_TBDR = IoMem[0xfffa21];         /* Store into data register */
+
 	if (MFP_TBCR == 0)                  /* Now check if timer is running - if so do not set */
 	{
 		MFP_TB_MAINCOUNTER = MFP_TBDR;  /* Timer is off, store to main counter */
@@ -1063,7 +1143,10 @@ void MFP_TimerBData_WriteByte(void)
 */
 void MFP_TimerCData_WriteByte(void)
 {
+	M68000_WaitState(4);
+
 	MFP_TCDR = IoMem[0xfffa23];         /* Store into data register */
+
 	if ((MFP_TCDCR&0x70) == 0)          /* Now check if timer is running - if so do not set */
 	{
 		MFP_StartTimerC();              /* Add our interrupt */
@@ -1077,6 +1160,8 @@ void MFP_TimerCData_WriteByte(void)
 void MFP_TimerDData_WriteByte(void)
 {
 	Uint32 pc = m68k_getpc();
+
+	M68000_WaitState(4);
 
 	/* Need to change baud rate of RS232 emulation? */
 	if (ConfigureParams.RS232.bEnableRS232 && (IoMem[0xfffa1d] & 0x07))

@@ -24,6 +24,7 @@ extern Uint32 BusErrorAddress;
 extern Uint32 BusErrorPC;
 extern BOOL bBusErrorReadWrite;
 extern int nCpuFreqShift;
+extern int nWaitStateCycles;
 
 
 /*-----------------------------------------------------------------------*/
@@ -42,6 +43,6 @@ extern void M68000_Reset(BOOL bCold);
 extern void M68000_MemorySnapShot_Capture(BOOL bSave);
 extern void M68000_BusError(Uint32 addr, BOOL bReadWrite);
 extern void M68000_Exception(Uint32 ExceptionVector);
-extern void M68000_WaitState(void);
+extern void M68000_WaitState(int nCycles);
 
 #endif

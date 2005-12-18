@@ -12,7 +12,7 @@
   checked each HBL to perform the transfer of data from our disk image into
   the ST RAM area by simulating the DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.23 2005-09-26 15:20:14 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.24 2005-12-18 18:02:11 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -1122,6 +1122,8 @@ void FDC_DiskController_WriteWord(void)
 		return;
 	}
 
+	M68000_WaitState(4);
+
 	DiskControllerWord_ff8604wr = IoMem_ReadWord(0xff8604);
 
 	HDC_WriteCommandPacket();                 /*  Handle HDC functions */
@@ -1169,6 +1171,8 @@ void FDC_DiskControllerStatus_ReadWord(void)
 		M68000_BusError(IoAccessBaseAddress, 1);
 		return;
 	}
+
+	M68000_WaitState(4);
 
 	if (DMAModeControl_ff8606wr == 0x08A)     /* HDC status reg selected? */
 	{
