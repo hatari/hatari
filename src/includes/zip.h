@@ -11,9 +11,10 @@
 
 #include <dirent.h>
 
-typedef struct {
-  char **names;
-  int nfiles;
+typedef struct
+{
+	char **names;
+	int nfiles;
 } zip_dir;
 
 extern BOOL ZIP_FileNameIsZIP(char *pszFileName);
@@ -22,6 +23,7 @@ extern void ZIP_FreeZipDir(zip_dir *zd);
 extern zip_dir *ZIP_GetFiles(char *pszFileName);
 extern Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize);
 extern BOOL ZIP_WriteDisk(char *pszFileName,unsigned char *pBuffer,int ImageSize);
+extern Uint8 *ZIP_ReadFirstFile(char *pszFileName, long *pImageSize, const char *ppszExts[]);
 
 
 #endif  /* HATARI_ZIP_H */

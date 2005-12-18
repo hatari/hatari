@@ -6,7 +6,7 @@
 
   Zipped disk support, uses zlib
 */
-char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.14 2005-12-18 18:50:46 thothy Exp $";
+char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.15 2005-12-18 23:20:39 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +33,16 @@ char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.14 2005-12-18 18:50:46 thothy Exp $";
 #define ZIP_FILE_ST   1
 #define ZIP_FILE_MSA  2
 #define ZIP_FILE_DIM  3
+
+
+/* Possible disk image extensions to scan for */
+static const char *pszDiskNameExts[] =
+{
+  ".msa",
+  ".st",
+  ".dim",
+  NULL
+};
 
 
 /*-----------------------------------------------------------------------*/
@@ -298,14 +308,14 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiskType)
 
 	if (unzLocateFile(uf,filename, 0) != UNZ_OK)
 	{
-		Log_Printf(LOG_ERROR, "Error: File \"%s\"not found in the archive!", filename);
-		return(-1);
+		Log_Printf(LOG_ERROR, "Error: File \"%s\" not found in the archive!", filename);
+		return -1;
 	}
 
 	if (unzGetCurrentFileInfo(uf, &file_info, filename, ZIP_PATH_MAX, NULL, 0, NULL, 0) != UNZ_OK)
 	{
 		Log_Printf(LOG_ERROR, "Error with zipfile in unzGetCurrentFileInfo \n");
-		return(-1);
+		return -1;
 	}
 
 	/* check for a .msa or .st extention */
@@ -333,16 +343,17 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiskType)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Return the first .st, .msa or .dim file in a zip, or NULL on failure
+  Return the first matching file in a zip, or NULL on failure
 */
-static char *ZIP_FirstFile(char *filename)
+static char *ZIP_FirstFile(char *filename, const char *ppsExts[])
 {
 	zip_dir *files;
-	int i;
+	int i, j;
 	char *name;
 
-	if ((files = ZIP_GetFiles(filename)) == NULL)
-		return(NULL);
+	files = ZIP_GetFiles(filename);
+	if (files == NULL)
+		return NULL;
 
 	name = malloc(ZIP_PATH_MAX);
 	if (!name)
@@ -351,13 +362,26 @@ static char *ZIP_FirstFile(char *filename)
 		return NULL;
 	}
 
-	name[0] = '\0';
-	for(i = files->nfiles-1; i >= 0; i--)
+	/* Do we have to scan for a certain extension? */
+	if (ppsExts)
 	{
-		if (MSA_FileNameIsMSA(files->names[i], FALSE)
-		    || ST_FileNameIsST(files->names[i], FALSE)
-		    || DIM_FileNameIsDIM(files->names[i], FALSE))
-			strncpy(name, files->names[i], ZIP_PATH_MAX);
+		name[0] = '\0';
+		for(i = files->nfiles-1; i >= 0; i--)
+		{
+			for (j = 0; ppsExts[j] != NULL; j++)
+			{
+				if (File_DoesFileExtensionMatch(files->names[i], ppsExts[j]))
+				{
+					strncpy(name, files->names[i], ZIP_PATH_MAX);
+					break;
+				}
+			}
+		}
+	}
+	else
+	{
+		/* There was no extension given -> use the very first name */
+		strncpy(name, files->names[0], ZIP_PATH_MAX);
 	}
 
 	/* free the files */
@@ -431,7 +455,7 @@ static void *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
 /*-----------------------------------------------------------------------*/
 /*
   Load disk image from a .ZIP archive into memory, and return the number
-  of bytes loaded
+  of bytes loaded.
 */
 Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
 {
@@ -453,7 +477,8 @@ Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
 
 	if (pszZipPath == NULL || pszZipPath[0] == 0)
 	{
-		if((pszZipPath = ZIP_FirstFile(pszFileName)) == NULL)
+		pszZipPath = ZIP_FirstFile(pszFileName, pszDiskNameExts);
+		if (pszZipPath == NULL)
 		{
 			Log_Printf(LOG_ERROR, "Cannot open %s\n", pszFileName);
 			unzClose(uf);
@@ -462,7 +487,8 @@ Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
 		pathAllocated=TRUE;
 	}
 
-	if((ImageSize = ZIP_CheckImageFile(uf, pszZipPath, &nDiskType)) <= 0)
+	ImageSize = ZIP_CheckImageFile(uf, pszZipPath, &nDiskType);
+	if (ImageSize <= 0)
 	{
 		unzClose(uf);
 		return NULL;
@@ -472,7 +498,7 @@ Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
 	buf=ZIP_ExtractFile(uf, pszZipPath, ImageSize);
 	unzCloseCurrentFile(uf);
 	unzClose(uf);
-	if(buf == NULL)
+	if (buf == NULL)
 	{
 		return NULL;  /* failed extraction, return error */
 	}
@@ -501,7 +527,7 @@ Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
 	/* Free the buffers */
 	if (pDiskBuffer != buf)
 		free(buf);
-	if(pathAllocated == TRUE)
+	if (pathAllocated == TRUE)
 		free(pszZipPath);
 
 	if (pDiskBuffer != NULL)
@@ -522,3 +548,62 @@ BOOL ZIP_WriteDisk(char *pszFileName,unsigned char *pBuffer,int ImageSize)
 	return FALSE;
 }
 
+
+/*-----------------------------------------------------------------------*/
+/*
+  Load first file from a .ZIP archive into memory, and return the number
+  of bytes loaded.
+*/
+Uint8 *ZIP_ReadFirstFile(char *pszFileName, long *pImageSize, const char *ppszExts[])
+{
+	unzFile uf=NULL;
+	Uint8 *pBuffer;
+	char *pszZipPath;
+	unz_file_info file_info;
+
+	*pImageSize = 0;
+
+	/* Open the ZIP file */
+	uf = unzOpen(pszFileName);
+	if (uf == NULL)
+	{
+		Log_Printf(LOG_ERROR, "Cannot open '%s'\n", pszFileName);
+		return NULL;
+	}
+
+	/* Locate the first file in the ZIP archive */
+	pszZipPath = ZIP_FirstFile(pszFileName, ppszExts);
+	if (pszZipPath == NULL)
+	{
+		Log_Printf(LOG_ERROR, "Failed to locate first file in '%s'\n", pszFileName);
+		unzClose(uf);
+		return NULL;
+	}
+
+	if (unzLocateFile(uf, pszZipPath, 0) != UNZ_OK)
+	{
+		Log_Printf(LOG_ERROR, "Error: Can not locate '%s' in the archive!", pszZipPath);
+		return NULL;
+	}
+
+	/* Get file information (file size!) */
+	if (unzGetCurrentFileInfo(uf, &file_info, pszZipPath, ZIP_PATH_MAX, NULL, 0, NULL, 0) != UNZ_OK)
+	{
+		Log_Printf(LOG_ERROR, "Error with zipfile in unzGetCurrentFileInfo.\n");
+		return NULL;
+	}
+
+	/* Extract to buffer */
+	pBuffer = ZIP_ExtractFile(uf, pszZipPath, file_info.uncompressed_size);
+
+	/* And close the file */
+	unzCloseCurrentFile(uf);
+	unzClose(uf);
+
+	free(pszZipPath);
+
+	if (pBuffer)
+		*pImageSize = file_info.uncompressed_size;
+
+	return pBuffer;
+}

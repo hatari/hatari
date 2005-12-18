@@ -20,7 +20,6 @@ extern BOOL File_DoesFileExtensionMatch(const char *pszFileName, const char *psz
 extern BOOL File_IsRootFileName(char *pszFileName);
 extern const char *File_RemoveFileNameDrive(const char *pszFileName);
 extern BOOL File_DoesFileNameEndWithSlash(char *pszFileName);
-extern void File_RemoveFileNameTrailingSlashes(char *pszFileName);
 extern void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *ppszExts[]);
 extern BOOL File_Save(char *pszFileName, void *pAddress, size_t Size, BOOL bQueryOverwrite);
 extern int File_Length(const char *pszFileName);

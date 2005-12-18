@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.34 2005-10-19 08:16:25 thothy Exp $";
+char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.35 2005-12-18 23:20:39 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -311,16 +311,22 @@ static void TOS_SetDefaultMemoryConfig(void)
 int TOS_LoadImage(void)
 {
   Uint8 *pTosFile = NULL;
+  long nFileSize;
 
   bTosImageLoaded = FALSE;
 
   /* Load TOS image into memory so we can check it's vesion */
   TosVersion = 0;
-  pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, NULL, NULL, pszTosNameExts);
-  TosSize = File_Length(ConfigureParams.Rom.szTosImageFileName);
+  pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, NULL, &nFileSize, pszTosNameExts);
 
-  if(pTosFile && TosSize>0)
+  if (!pTosFile || nFileSize <= 0)
   {
+    Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
+    return -1;
+  }
+
+   TosSize = nFileSize;
+
     /* Check for RAM TOS images first: */
     if(SDL_SwapBE32(*(Uint32 *)pTosFile) == 0x46FC2700)
     {
@@ -363,12 +369,6 @@ int TOS_LoadImage(void)
 
     /* Copy loaded image into ST memory */
     memcpy(STRam+TosAddress, pTosFile, TosSize);
-  }
-  else
-  {
-    Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
-    return -1;
-  }
 
   Log_Printf(LOG_DEBUG, "Loaded TOS version %i.%c%c, starting at $%x, "
           "country code = %i, %s\n", TosVersion>>8, '0'+((TosVersion>>4)&0x0f),
@@ -394,5 +394,6 @@ int TOS_LoadImage(void)
   free(pTosFile);
 
   bTosImageLoaded = TRUE;
+
   return 0;
 }

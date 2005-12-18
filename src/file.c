@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-char File_rcsid[] = "Hatari $Id: file.c,v 1.24 2005-09-13 01:10:09 thothy Exp $";
+char File_rcsid[] = "Hatari $Id: file.c,v 1.25 2005-12-18 23:20:38 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -19,6 +19,7 @@ char File_rcsid[] = "Hatari $Id: file.c,v 1.24 2005-09-13 01:10:09 thothy Exp $"
 #include "dialog.h"
 #include "file.h"
 #include "createBlankImage.h"
+#include "zip.h"
 
 
 #if defined(__BEOS__) || (defined(__sun) && defined(__SVR4))
@@ -239,27 +240,6 @@ BOOL File_DoesFileNameEndWithSlash(char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Remove any double '/'s  from end of filenames. So just the one
-*/
-void File_RemoveFileNameTrailingSlashes(char *pszFileName)
-{
-  int Length;
-
-  /* Do have slash at end of filename? */
-  Length = strlen(pszFileName);
-  if (Length>=3)
-  {
-    if (pszFileName[Length-1]=='/')       /* Yes, have one previous? */
-    {
-      if (pszFileName[Length-2]=='/')
-        pszFileName[Length-1] = '\0';     /* then remove it! */
-    }
-  }
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
   Read file from disk into memory, allocate memory for it if need to (pass
   Address as NULL).
 */
@@ -275,7 +255,7 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
     File_FindPossibleExtFileName(pszFileName, ppszExts);
   }
 
-  /* Normal file or gzipped file? */
+  /* Is it a gzipped file? */
   if (File_DoesFileExtensionMatch(pszFileName, ".gz"))
   {
     gzFile hGzFile;
@@ -304,7 +284,18 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
       gzclose(hGzFile);
     }
   }
-  else
+  else if (File_DoesFileExtensionMatch(pszFileName, ".zip"))
+  {
+    /* It is a .ZIP file! -> Try to load the first file in the archive */
+    pFile = ZIP_ReadFirstFile(pszFileName, &FileSize, ppszExts);
+    if (pFile && pAddress)
+    {
+      memcpy(pAddress, pFile, FileSize);
+      free(pFile);
+      pFile = pAddress;
+    }
+  }
+  else          /* It is a normal file */
   {
     FILE *hDiskFile;
     /* Open and read normal file */
