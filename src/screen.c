@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.45 2005-10-04 09:45:14 thothy Exp $";
+char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.46 2005-12-25 19:59:10 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -47,7 +47,7 @@ int STRes=ST_LOW_RES;         /* current resolution */
 int PrevSTRes=ST_LOW_RES;     /* previous ST resolution */
 Uint32 STRGBPalette[16];      /* Palette buffer used in conversion routines */
 Uint32 ST2RGB[4096];          /* Table to convert ST 0x777 / STe 0xfff palette to PC format RGB551 (2 pixels each entry) */
-SDL_Surface *sdlscrn;         /* The SDL screen surface */
+SDL_Surface *sdlscrn = NULL;  /* The SDL screen surface */
 Uint8 *pSTScreen;
 FRAMEBUFFER *pFrameBuffer;    /* Pointer into current 'FrameBuffer' */
 
@@ -343,6 +343,14 @@ static void Screen_SetResolution(void)
   else
   {
     sdlVideoFlags  = SDL_SWSURFACE|SDL_HWPALETTE;
+  }
+
+  /* Check if we really have to change the video mode: */
+  if (sdlscrn && sdlscrn->w == Width && sdlscrn->h == Height
+      && sdlscrn->format->BitsPerPixel == BitCount
+      && (sdlscrn->flags&SDL_FULLSCREEN) == (sdlVideoFlags&SDL_FULLSCREEN))
+  {
+    return;
   }
 
   sdlscrn = SDL_SetVideoMode(Width, Height, BitCount, sdlVideoFlags);
