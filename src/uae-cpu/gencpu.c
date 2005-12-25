@@ -22,7 +22,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.8 2004-04-19 08:53:49 thothy Exp $";
+char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.9 2005-12-25 18:30:23 thothy Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -1473,22 +1473,29 @@ static void gen_opcode (unsigned long int opcode)
 	genamode (curi->smode, "srcreg", curi->size, "src", 0, 0);
 	genamode (curi->dmode, "dstreg", curi->size, "dst", 2, 0);
 	genastore ("srca", curi->dmode, "dstreg", curi->size, "dst");
-        if(curi->smode==Ad8r || curi->smode==PC8r)
-          insn_n_cycles += 2;
+        /* Set correct cycles: According to the M68K User Manual, LEA takes 12
+         * cycles in Ad8r and PC8r mode, but it takes 16 cycles on a real ST: */
+        if (curi->smode == Ad8r || curi->smode == PC8r)
+          insn_n_cycles = 16;
 	break;
     case i_PEA:
 	genamode (curi->smode, "srcreg", curi->size, "src", 0, 0);
 	genamode (Apdi, "7", sz_long, "dst", 2, 0);
 	genastore ("srca", Apdi, "7", sz_long, "dst");
+	/* Set correct cycles: */
         switch(curi->smode)
          {
           case Aind:  insn_n_cycles=12; break;
           case Ad16:  insn_n_cycles=16; break;
-          case Ad8r:  insn_n_cycles=20; break;
+          /* Note: according to the M68K User Manual, PEA takes 20 cycles for
+           * the Ad8r mode, but on a real ST, it takes 24 cycles! */
+          case Ad8r:  insn_n_cycles=24; break;
           case absw:  insn_n_cycles=16; break;
           case absl:  insn_n_cycles=20; break;
           case PC16:  insn_n_cycles=16; break;
-          case PC8r:  insn_n_cycles=20; break;
+          /* Note: PEA with PC8r takes 20 cycles according to the User Manual,
+           * but it takes 24 cycles on a real ST: */
+          case PC8r:  insn_n_cycles=24; break;
          }
 	break;
     case i_DBcc:
