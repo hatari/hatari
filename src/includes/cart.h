@@ -10,4 +10,4 @@
 #define CART_VDI_OPCODE_ADDR  (0xfa0028)
 #define CART_GEMDOS           (0xfa002a)
 
-extern void Cart_LoadImage(void);
+extern void Cart_ResetImage(void);

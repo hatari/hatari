@@ -14,50 +14,102 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to a byte
   array and stored in 'Cart_data[]' (see cartdata.c).
 */
-char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.8 2005-09-13 01:10:09 thothy Exp $";
+char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.9 2006-01-02 20:55:12 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
 #include "configuration.h"
 #include "file.h"
+#include "log.h"
 #include "stMemory.h"
 #include "vdi.h"
 
 #include "cartData.c"
 
 
+/* Possible cartridge file extensions to scan for */
+static const char *psCartNameExts[] =
+{
+  ".img",
+  ".rom",
+  ".stc",
+  NULL
+};
+
+
 /*-----------------------------------------------------------------------*/
 /*
-  Load ST GEMDOS intercept program image into cartridge memory space.
-  This is used as an interface to the host file system and for GemDOS.
+  Load an external cartridge image file.
 */
-void Cart_LoadImage(void)
+static void Cart_LoadImage(void)
 {
+	Uint8 *pCartData;
+	long nCartSize;
 	char *pCartFileName = ConfigureParams.Rom.szCartridgeImageFileName;
 
+	/* Try to load the image file: */
+	pCartData = File_Read(pCartFileName, NULL, &nCartSize, psCartNameExts);
+	if (!pCartData)
+	{
+		Log_Printf(LOG_ERROR, "Failed to load '%s'.\n", pCartFileName);
+		return;
+	}
+
+	if (nCartSize > 0x20000 && nCartSize != 0x20004)
+	{
+		Log_Printf(LOG_ERROR, "Cartridge file '%s' is too big.\n", pCartFileName);
+		return;
+	}
+
+	/* There are two type of cartridge images, normal 1:1 images which are
+	 * always smaller than 0x20000 bytes, and the .STC images, which are
+	 * always 0x20004 bytes (the first 4 bytes are a dummy header).
+	 * So if size is 0x20004 bytes we have to skip the first 4 bytes */
+	if (nCartSize == 0x20004)
+	{
+		memcpy(&STRam[0xfa0000], pCartData+4, 0x20000);
+	}
+	else
+	{
+		memcpy(&STRam[0xfa0000], pCartData, nCartSize);
+	}
+
+	free(pCartData);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Copy ST GEMDOS intercept program image into cartridge memory space
+  or load an external cartridge file.
+  The intercept program is part of Hatari and used as an interface to the host
+  file system through GemDOS. It is also needed for Line-A-Init when using
+  extended VDI resolutions.
+*/
+void Cart_ResetImage(void)
+{
 	/* "Clear" cartridge ROM space */
 	memset(&STRam[0xfa0000], 0xff, 0x20000);
 
+	/* Print a warning if user tries to use an external cartridge file
+	 * together with GEMDOS HD emulation or extended VDI resolution: */
+	if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)
+	{
+		if (bUseVDIRes)
+			Log_Printf(LOG_WARN, "Cartridge can't be used together with extended VDI resolution!\n");
+		if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
+			Log_Printf(LOG_WARN, "Cartridge can't be used together with GEMDOS hard disk emulation!\n");
+	}
+
+	/* Use internal cartridge when user wants extended VDI resolution or GEMDOS HD. */
 	if (bUseVDIRes || ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
-		/* Copy cartrige data into ST's cartridge memory */
+		/* Copy built-in cartrige data into the cartridge memory of the ST */
 		memcpy(&STRam[0xfa0000], Cart_data, sizeof(Cart_data));
 	}
-	else if (strlen(pCartFileName) > 0)
+	else if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)
 	{
-		/* Check if we can load an external cartridge file: */
-		if (bUseVDIRes)
-			fprintf(stderr, "Warning: Cartridge can't be used together with extended VDI resolution!\n");
-		else if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
-			fprintf(stderr, "Warning: Cartridge can't be used together with GEMDOS hard disk emulation!\n");
-		else if (!File_Exists(pCartFileName))
-			fprintf(stderr, "Cartridge file not found: %s\n", pCartFileName);
-		else if (File_Length(pCartFileName) > 0x20000)
-			fprintf(stderr, "Cartridge file %s is too big.\n", pCartFileName);
-		else
-		{
-			/* Now we can load it: */
-			File_Read(pCartFileName, &STRam[0xfa0000], NULL, NULL);
-		}
+		/* Load external image file: */
+		Cart_LoadImage();
 	}
 }

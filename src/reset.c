@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.10 2005-08-21 21:13:43 thothy Exp $";
+char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.11 2006-01-02 20:55:12 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -66,7 +66,7 @@ int Reset_ST(BOOL bCold)
     STMemory_WriteLong(0, 0x0000f000);        /* And reset stack pointer */
 
     Floppy_GetBootDrive();      /* Find which device to boot from(A: or C:) */
-    Cart_LoadImage();           /* Load program into cartridge memory. Used for gemdos loading */
+    Cart_ResetImage();          /* Load cartridge program into ROM memory. */
 
     ret = TOS_LoadImage();      /* Load TOS, writes into cartridge memory */
     if(ret)
