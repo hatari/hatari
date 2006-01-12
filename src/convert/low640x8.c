@@ -107,8 +107,6 @@ static void ConvertLowRes_640x8Bit(void)
     ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);   /* Previous ST format screen */
     esi = (Uint32 *)pPCScreenDest;                    /* PC format screen */
 
-    AdjustLinePaletteRemap(y);
-
     if((AdjustLinePaletteRemap(y) & 0x00030000) == 0)    /* Change palette table */
       Line_ConvertLowRes_640x8Bit(edi, ebp, esi, eax);
     else
