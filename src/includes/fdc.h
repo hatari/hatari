@@ -91,6 +91,7 @@ extern void FDC_SetDMAStatus(BOOL bError);
 extern void FDC_DmaStatus_ReadWord(void);
 extern int FDC_FindFloppyDrive(void);
 extern void FDC_AcknowledgeInterrupt(void);
+extern void FDC_GpipRead(void);
 extern void FDC_UpdateHBL(void);
 extern void FDC_UpdateRestoreCmd(void);
 extern void FDC_UpdateSeekCmd(void);

@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.23 2005-12-18 18:02:11 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.24 2006-01-20 17:42:51 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -641,6 +641,8 @@ void MFP_GPIP_ReadByte(void)
 				MFP_GPIP &= ~1;
 		}
 	}
+
+	FDC_GpipRead();
 
 	IoMem[0xfffa01] = MFP_GPIP;
 }

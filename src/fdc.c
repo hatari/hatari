@@ -12,7 +12,7 @@
   checked each HBL to perform the transfer of data from our disk image into
   the ST RAM area by simulating the DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.24 2005-12-18 18:02:11 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.25 2006-01-20 17:42:51 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -156,6 +156,8 @@ static unsigned short int nReadWriteSectorsPerTrack;
 static short int nReadWriteSectors;
 
 static Uint8 DMASectorWorkSpace[NUMBYTESPERSECTOR];             /* Workspace used to copy to/from for floppy DMA */
+
+static int nFdcDelayHbls;                                       /* Used to slow down FDC emulation */
 
 
 /*-----------------------------------------------------------------------*/
@@ -408,6 +410,27 @@ static void FDC_SetReadWriteParameters(int nSectors)
 
 /*-----------------------------------------------------------------------*/
 /*
+  ST program (or TOS) has read the MFP GPIP register to check if the FDC
+  is already done. Then we can skip the usual FDC waiting period!
+*/
+void FDC_GpipRead()
+{
+	static int nLastGpipBit;
+
+	if ((MFP_GPIP & 0x20) == nLastGpipBit)
+	{
+		if (!ConfigureParams.System.bSlowFDC)
+			nFdcDelayHbls = 0;
+	}
+	else
+	{
+		nLastGpipBit = MFP_GPIP & 0x20;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Update floppy drive on each HBL (approx' 512 cycles)
 */
 void FDC_UpdateHBL(void)
@@ -415,14 +438,10 @@ void FDC_UpdateHBL(void)
 	/* Seems like some games/demos (e.g. Fantasia by Dune, Alien World, ...) don't
 	 * work if the FDC is too fast... so here's a quick-n-dirty hack to get them
 	 * working... Should be replaced with proper FDC timings one day! */
-	static int nDelayHBLs = 300;
-	if (ConfigureParams.System.bSlowFDC)
-	{
-		if (nDelayHBLs-- > 0)
-			return;
-		else
-			nDelayHBLs = 180;
-	}
+	if (nFdcDelayHbls-- > 0)
+		return;
+	else
+		nFdcDelayHbls = 180;
 
 	/* Do we have a DMA ready to copy? */
 	if (bDMAWaiting)
