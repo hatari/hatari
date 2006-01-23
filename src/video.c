@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.42 2005-11-15 12:24:41 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.43 2006-01-23 21:08:50 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -48,6 +48,9 @@ Uint32 HBLPaletteMasks[NUM_VISIBLE_LINES+1];    /* Bit mask of palette colours c
 Uint32 *pHBLPaletteMasks;
 int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 70 Hz in mono */
 Uint32 VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */
+
+int nScanlinesPerFrame = 313;                   /* Number of scan lines per frame */
+int nCyclesPerLine = 512;                       /* Cycles per horiztonal line scan */
 
 static Uint8 HWScrollCount;                     /* HW scroll pixel offset, STe only (0...15) */
 static Uint8 ScanLineSkip;                      /* Scan line width add, STe only (words, minus 1) */
@@ -92,7 +95,7 @@ static Uint32 Video_CalculateAddress(void)
   FrameCycles = Int_FindFrameCycles();
 
   /* Top of screen is usually 64 lines from VBL (64x512=32768 cycles) */
-  if (FrameCycles < nStartHBL*CYCLES_PER_LINE)
+  if (FrameCycles < nStartHBL*nCyclesPerLine)
   {
     VideoAddress = VideoBase;
   }
@@ -100,17 +103,17 @@ static Uint32 Video_CalculateAddress(void)
   {
     /* Now find which pixel we are on (ignore left/right borders) */
     /* 96 + 320 + 96 = 512 pixels per scan line (each pixel is one cycle) */
-    X = FrameCycles % CYCLES_PER_LINE;
+    X = FrameCycles % nCyclesPerLine;
     if (X < SCREEN_START_CYCLE)       /* Limit if in NULL area outside screen */
       X = SCREEN_START_CYCLE;
-    if (X > (CYCLES_PER_LINE - SCREEN_START_CYCLE))
-      X = (CYCLES_PER_LINE - SCREEN_START_CYCLE);
+    if (X > (nCyclesPerLine - SCREEN_START_CYCLE))
+      X = (nCyclesPerLine - SCREEN_START_CYCLE);
     /* X is now from 96 to 416 (320 pixels), subtract 96 to give X pixel across screen! */
     X = ((X-SCREEN_START_CYCLE)>>1)&(~1);
 
     VideoAddress = pVideoRaster - STRam;
     /* Add line cycles if we have not reached end of screen yet: */
-    if (FrameCycles < nEndHBL*CYCLES_PER_LINE)
+    if (FrameCycles < nEndHBL*nCyclesPerLine)
       VideoAddress += X;
   }
 
@@ -129,8 +132,8 @@ void Video_InterruptHandler_HBL(void)
   Int_AcknowledgeInterrupt();
 
   /* Generate new Timer AB, if need to - there are 313 HBLs per frame */
-  if(nHBL < (SCANLINES_PER_FRAME-1))
-    Int_AddAbsoluteInterrupt(CYCLES_PER_LINE,INTERRUPT_VIDEO_HBL);
+  if (nHBL < nScanlinesPerFrame-1)
+    Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_HBL);
 
   M68000_Exception(EXCEPTION_HBLANK);   /* Horizontal blank interrupt, level 2! */
 }
@@ -148,7 +151,7 @@ static void Video_WriteToShifter(Uint8 Byte)
   nFrameCycles = Int_FindFrameCycles();
 
   /* We only care for cycle position in the actual screen line */
-  nLineCycles = nFrameCycles % CYCLES_PER_LINE;
+  nLineCycles = nFrameCycles % nCyclesPerLine;
 
   /*fprintf(stderr,"Shifter=0x%2.2X %d (%d) @ %d\n",
           Byte, nFrameCycles, nLineCycles, nHBL);*/
@@ -185,7 +188,7 @@ void Video_Sync_WriteByte(void)
   nFrameCycles = Int_FindFrameCycles();
 
   /* We only care for cycle position in the actual screen line */
-  nLineCycles = nFrameCycles % CYCLES_PER_LINE;
+  nLineCycles = nFrameCycles % nCyclesPerLine;
 
   /*fprintf(stderr,"Sync=0x%2.2X %d (%d) @ %d\n",
           Byte, nFrameCycles, nLineCycles, nHBL);*/
@@ -512,8 +515,8 @@ void Video_InterruptHandler_EndLine(void)
   /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
   /* Generate new HBL, if need to - there are 313 HBLs per frame */
-  if (nHBL < SCANLINES_PER_FRAME-1)
-    Int_AddAbsoluteInterrupt(CYCLES_PER_LINE,INTERRUPT_VIDEO_ENDLINE);
+  if (nHBL < nScanlinesPerFrame-1)
+    Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_ENDLINE);
 
   /* Is this a good place to send the keyboard packets? Done once per frame */
   if (nHBL == nStartHBL)
@@ -577,7 +580,7 @@ static void Video_SetHBLPaletteMaskPointers(void)
 
   /* Find 'line' into palette - screen starts 64 lines down, less 28 for top overscan */
   /* And if write to last 96 cycle of line it will count as the NEXT line(needed else games may flicker) */
-  Line = (FrameCycles-(FIRST_VISIBLE_HBL*CYCLES_PER_LINE)+SCREEN_START_CYCLE)/CYCLES_PER_LINE;
+  Line = (FrameCycles-(FIRST_VISIBLE_HBL*nCyclesPerLine)+SCREEN_START_CYCLE)/nCyclesPerLine;
   if (Line<0)          /* Limit to top/bottom of possible visible screen */
     Line = 0;
   if (Line>=NUM_VISIBLE_LINES)
@@ -631,7 +634,7 @@ void Video_InterruptHandler_VBL(void)
   /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
   /* Start HBL interrupts - MUST do before add in cycles */
-  Int_AddAbsoluteInterrupt(CYCLES_ENDLINE,INTERRUPT_VIDEO_ENDLINE);
+  Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_ENDLINE);
   Int_AddAbsoluteInterrupt(CYCLES_HBL,INTERRUPT_VIDEO_HBL);
   Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME,INTERRUPT_VIDEO_VBL);
 

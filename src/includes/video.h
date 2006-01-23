@@ -8,16 +8,55 @@
 #ifndef HATARI_VIDEO_H
 #define HATARI_VIDEO_H
 
+/*
+  All the following processor timings are based on a bog standard 8MHz 68000 as
+  found in all standard STs:
+
+  Clock cycles per line (50Hz)      : 512
+  NOPs per scan line (50Hz)         : 128
+  Scan lines per VBL (50Hz)         : 313 (64 at top,200 screen,49 bottom)
+
+  Clock cycles per line (60Hz)      : 508
+  NOPs per scan line (60Hz)         : 127
+  Scan lines per VBL (60Hz)         : 263
+
+  Clock cycles per VBL (50Hz)       : 160256
+  NOPs per VBL (50Hz)               : 40064
+
+  Pixels per clock cycle (low res)  : 1
+  Pixels per clock cycle (med res)  : 2
+  Pixels per clock cycle (high res) : 4
+  Pixels per NOP (low res)          : 4
+  Pixels per NOP (med res)          : 8
+  Pixels per NOP (high res)         : 16
+*/
+
+/* Scan lines per frame */
+#define SCANLINES_PER_FRAME_50HZ 313    /* Number of scan lines per frame in 50 Hz */
+#define SCANLINES_PER_FRAME_60HZ 263    /* Number of scan lines per frame in 60 Hz */
+#define MAX_SCANLINES_PER_FRAME 313     /* Max. number of scan lines per frame */
+
+
 extern BOOL bUseHighRes;
 extern int nVBLs,nHBL;
 extern int nStartHBL, nEndHBL;
 extern int OverscanMode;
-extern Uint16 HBLPalettes[(NUM_VISIBLE_LINES+1)*16];
+extern Uint16 HBLPalettes[];
 extern Uint16 *pHBLPalettes;
-extern Uint32 HBLPaletteMasks[NUM_VISIBLE_LINES+1];
+extern Uint32 HBLPaletteMasks[];
 extern Uint32 *pHBLPaletteMasks;
 extern Uint32 VideoBase;
 extern int nScreenRefreshRate;
+
+extern int nScanlinesPerFrame;
+extern int nCyclesPerLine;
+
+/* Legacy defines */
+#define SCREEN_START_CYCLE  96          /* Cycle first normal pixel appears on */
+#define CYCLES_VBL_IN       (SCREEN_START_HBL*nCyclesPerLine)     /* ((28+64)*CYCLES_PER_LINE) */
+#define CYCLES_PER_FRAME    (nScanlinesPerFrame*nCyclesPerLine)  /* Cycles per VBL @ 50fps = 160256 */
+#define CYCLES_PER_SEC      (CYCLES_PER_FRAME*50) /* Cycles per second */
+#define CYCLES_HBL          (nCyclesPerLine+96)   /* Cycles for first HBL - very inaccurate on ST */
 
 extern void Video_Reset(void);
 extern void Video_MemorySnapShot_Capture(BOOL bSave);

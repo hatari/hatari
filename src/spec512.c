@@ -18,7 +18,7 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.10 2005-07-30 09:07:18 eerot Exp $";
+char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.11 2006-01-23 21:08:50 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -30,10 +30,10 @@ char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.10 2005-07-30 09:07:18 eerot E
 
 
 /* 314k; 1024-bytes per line */
-CYCLEPALETTE CyclePalettes[(SCANLINES_PER_FRAME+1)*MAX_CYCLEPALETTES_PERLINE];
+CYCLEPALETTE CyclePalettes[(MAX_SCANLINES_PER_FRAME+1)*MAX_CYCLEPALETTES_PERLINE];
 CYCLEPALETTE *pCyclePalette;
-int nCyclePalettes[(SCANLINES_PER_FRAME+1)];  /* Number of entries in above table for each scanline */
-int nPalettesAccess[(SCANLINES_PER_FRAME+1)]; /* Number of times accessed palette register 'x' in this scan line */
+int nCyclePalettes[(MAX_SCANLINES_PER_FRAME+1)];  /* Number of entries in above table for each scanline */
+int nPalettesAccess[(MAX_SCANLINES_PER_FRAME+1)]; /* Number of times accessed palette register 'x' in this scan line */
 static Uint16 CycleColour;
 static int CycleColourIndex;
 static int nScanLine, ScanLineCycleCount;
@@ -67,9 +67,9 @@ BOOL Spec512_IsImage(void)
 void Spec512_StartVBL(void)
 {
   /* Clear number of cycle palettes on each frame */
-  memset(nCyclePalettes,0x0,(SCANLINES_PER_FRAME+1)*sizeof(int));
+  memset(nCyclePalettes, 0x0, (nScanlinesPerFrame+1)*sizeof(int));
   /* Clear number of times accessed on entry in palette (used to check if is true Spectrum 512 image) */
-  memset(nPalettesAccess,0x0,(SCANLINES_PER_FRAME+1)*sizeof(int));
+  memset(nPalettesAccess, 0x0, (nScanlinesPerFrame+1)*sizeof(int));
   /* Set as not Spectrum 512 displayed image */
   bIsSpec512Display = FALSE;
   last_spc512line = -1;
@@ -94,17 +94,17 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
   FrameCycles = Int_FindFrameCycles();
 
   /* Find scan line we are currently on and get index into cycle-palette table */
-  ScanLine = (FrameCycles/CYCLES_PER_LINE);
+  ScanLine = (FrameCycles/nCyclesPerLine);
   pTmpCyclePalette = &CyclePalettes[ (ScanLine*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[ScanLine] ];
   /* Do we have a previous entry at the same cycles? If so, 68000 have used a 'move.l' instruction so stagger writes */
   if (nCyclePalettes[ScanLine]>0)
   {
-    if ((pTmpCyclePalette-1)->LineCycles == (FrameCycles % CYCLES_PER_LINE))
+    if ((pTmpCyclePalette-1)->LineCycles == (FrameCycles % nCyclesPerLine))
       FrameCycles += 4;              /* Colors are staggered by [4,20] when writing a long word! */
   }
 
   /* Store palette access */
-  pTmpCyclePalette->LineCycles = FrameCycles % CYCLES_PER_LINE;  /* Cycles into scanline */
+  pTmpCyclePalette->LineCycles = FrameCycles % nCyclesPerLine;   /* Cycles into scanline */
   pTmpCyclePalette->Colour = CycleColour;                        /* Store ST/STe colour RGB */
   pTmpCyclePalette->Index = CycleColourIndex;                    /* And Index (0...15) */
   /* Increment count(this can never overflow as you cannot write to the palette more than 'MAX_CYCLEPALETTES_PERLINE' times per scanline) */
@@ -144,7 +144,7 @@ void Spec512_StartFrame(void)
   Screen_SetFullUpdate();
 
   /* Set terminators on each line, so when scan during conversion we know when to stop */
-  for(i=0; i<(SCANLINES_PER_FRAME+1); i++)
+  for (i = 0; i < (nScanlinesPerFrame+1); i++)
   {
     pCyclePalette = &CyclePalettes[ (i*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[i] ];
     pCyclePalette->LineCycles = -1;          /* Term */
@@ -219,7 +219,7 @@ void Spec512_StartScanLine(void)
 void Spec512_EndScanLine(void)
 {
   /* Continue to reads palette until complete so have correct version for next line */
-  while(ScanLineCycleCount<CYCLES_PER_LINE)
+  while (ScanLineCycleCount < nCyclesPerLine)
     Spec512_UpdatePaletteSpan();
 }
 

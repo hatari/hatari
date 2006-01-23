@@ -105,55 +105,6 @@ enum {
 #define MAX_68000_INSTRUCTION_SIZE  10  /* Longest 68000 instruction is 10 bytes(6+4) */
 #define MIN_68000_INSTRUCTION_SIZE  2   /* Smallest 68000 instruction is 2 bytes(ie NOP) */
 
-/*
-  All the following processor timings are based on a bog standard 8MHz 68000 as found in all standard ST's
-
-  Clock cycles per line (50Hz)      : 512
-  NOPs per scan line (50Hz)         : 128
-  Scan lines per VBL (50Hz)         : 313 (64 at top,200 screen,49 bottom)
-
-  Clock cycles per line (60Hz)      : 508
-  NOPs per scan line (60Hz)         : 127
-  Scan lines per VBL (60Hz)         : 263
-
-  Clock cycles per VBL (50Hz)       : 160256
-  NOPs per VBL (50Hz)               : 40064
-
-  Pixels per clock cycle (low res)  : 1
-  Pixels per clock cycle (med res)  : 2
-  Pixels per clock cycle (high res) : 4
-  Pixels per NOP (low res)          : 4
-  Pixels per NOP (med res)          : 8
-  Pixels per NOP (high res)         : 16
-*/
-#define SCREEN_START_HBL   64           /* This is usually the first line of the displayed screen */
-#define SCREEN_HEIGHT_HBL  200          /* This is usually the height of the screen */
-#define FIRST_VISIBLE_HBL  (SCREEN_START_HBL-OVERSCAN_TOP)    /* Normal screen starts 64 lines in, top border is 28 lines */
-#define NUM_VISIBLE_LINES  (OVERSCAN_TOP+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM)  /* Number of visible screen lines including top/bottom borders */
-
-/* Assumes 32 pixels left+right */
-#define SCREENBYTES_LEFT    16          /* Bytes for left border in ST screen */
-#define SCREENBYTES_MIDDLE  160         /* Middle (320 pixels) */
-#define SCREENBYTES_RIGHT   16          /* right border */
-#define SCREENBYTES_LINE    (SCREENBYTES_LEFT+SCREENBYTES_MIDDLE+SCREENBYTES_RIGHT)
-#define SCREENBYTES_MONOLINE 80         /* Byte per line in ST-high resolution */
-
-/* Overscan values */
-#define OVERSCAN_LEFT       (SCREENBYTES_LEFT*2)    /* Number of pixels in each border */
-#define OVERSCAN_RIGHT      (SCREENBYTES_RIGHT*2)
-#define OVERSCAN_TOP        29
-#define OVERSCAN_BOTTOM     38
-#define OVERSCAN_MIDDLE     320         /* Number of pixels across screen(low res) */
-
-#define SCREEN_START_CYCLE  96          /* Cycle first normal pixel appears on */
-#define SCANLINES_PER_FRAME 313         /* Number of scan lines per frame */
-#define CYCLES_PER_LINE     512         /* Cycles per horiztonal line scan */
-#define CYCLES_VBL_IN       (SCREEN_START_HBL*CYCLES_PER_LINE)     /* ((28+64)*CYCLES_PER_LINE) */
-#define CYCLES_PER_FRAME    (SCANLINES_PER_FRAME*CYCLES_PER_LINE)  /* Cycles per VBL @ 50fps = 160256 */
-#define CYCLES_PER_SEC      (CYCLES_PER_FRAME*50) /* Cycles per second */
-#define CYCLES_ENDLINE      (64+320+88+40)        /* DE(Display Enable) */
-#define CYCLES_HBL          (CYCLES_PER_LINE+96)  /* Cycles for first HBL - very inaccurate on ST */
-
 /* Illegal Opcode used to help emulation. eg. free entries are 8 to 15 inc' */
 #define  GEMDOS_OPCODE        8  /* Free op-code to intercept GemDOS trap */
 #define  SYSINIT_OPCODE      10  /* Free op-code to initialize system (connected drives etc.) */
