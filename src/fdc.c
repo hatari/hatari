@@ -12,7 +12,7 @@
   checked each HBL to perform the transfer of data from our disk image into
   the ST RAM area by simulating the DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.25 2006-01-20 17:42:51 thothy Exp $";
+char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.26 2006-01-23 20:54:57 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -413,7 +413,7 @@ static void FDC_SetReadWriteParameters(int nSectors)
   ST program (or TOS) has read the MFP GPIP register to check if the FDC
   is already done. Then we can skip the usual FDC waiting period!
 */
-void FDC_GpipRead()
+void FDC_GpipRead(void)
 {
 	static int nLastGpipBit;
 
