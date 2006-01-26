@@ -8,10 +8,10 @@
 #ifndef HATARI_M68000_H
 #define HATARI_M68000_H
 
-#include "sound.h"	/* for SoundCycles */
+#include "cycles.h"     /* for nCyclesMainCounter */
 #include "sysdeps.h"
 #include "memory.h"
-#include "newcpu.h"	/* for regs */
+#include "newcpu.h"     /* for regs */
 
 #define Regs regs.regs  /* Ugly hack to glue the WinSTon sources to the UAE CPU core. */
 #define SR regs.sr      /* Don't forget to call MakeFromSR() and MakeSR() */
@@ -36,7 +36,7 @@ static inline void M68000_AddCycles(int cycles)
 {
 	cycles = ((cycles + 3) & ~3) >> nCpuFreqShift;
 	PendingInterruptCount -= cycles;
-	SoundCycles += cycles;
+	nCyclesMainCounter += cycles;
 }
 
 extern void M68000_Reset(BOOL bCold);

@@ -18,11 +18,12 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.11 2006-01-23 21:08:50 thothy Exp $";
+char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.12 2006-01-26 21:52:25 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
 #include "main.h"
+#include "cycles.h"
 #include "int.h"
 #include "screen.h"
 #include "spec512.h"
@@ -91,7 +92,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
   CycleColourIndex = (addr-0xff8240)>>1;
 
   /* Find number of cycles into frame */
-  FrameCycles = Int_FindFrameCycles();
+  FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 
   /* Find scan line we are currently on and get index into cycle-palette table */
   ScanLine = (FrameCycles/nCyclesPerLine);

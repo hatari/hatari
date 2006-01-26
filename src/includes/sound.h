@@ -15,7 +15,6 @@
 extern BOOL bWriteEnvelopeFreq,bWriteChannelAAmp,bWriteChannelBAmp,bWriteChannelCAmp;
 extern BOOL bEnvelopeFreqFlag;
 extern Sint8 MixBuffer[MIXBUFFER_SIZE];
-extern int SoundCycles;
 extern int nGeneratedSamples;
 
 extern void Sound_Init(void);

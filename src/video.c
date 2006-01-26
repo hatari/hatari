@@ -9,12 +9,13 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.43 2006-01-23 21:08:50 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.44 2006-01-26 21:52:25 thothy Exp $";
 
 #include <SDL_endian.h>
 
 #include "main.h"
 #include "configuration.h"
+#include "cycles.h"
 #include "fdc.h"
 #include "int.h"
 #include "ikbd.h"
@@ -92,7 +93,7 @@ static Uint32 Video_CalculateAddress(void)
   Uint32 VideoAddress;      /* Address of video display in ST screen space */
 
   /* Find number of cycles passed during frame */
-  FrameCycles = Int_FindFrameCycles();
+  FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO);
 
   /* Top of screen is usually 64 lines from VBL (64x512=32768 cycles) */
   if (FrameCycles < nStartHBL*nCyclesPerLine)
@@ -148,7 +149,7 @@ static void Video_WriteToShifter(Uint8 Byte)
   static int nLastHBL = -1, LastByte, nLastCycles;
   int nFrameCycles, nLineCycles;
   
-  nFrameCycles = Int_FindFrameCycles();
+  nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 
   /* We only care for cycle position in the actual screen line */
   nLineCycles = nFrameCycles % nCyclesPerLine;
@@ -185,7 +186,7 @@ void Video_Sync_WriteByte(void)
   /* Note: We're only interested in lower 2 bits (50/60Hz) */
   Byte = IoMem[0xff820a] & 3;
 
-  nFrameCycles = Int_FindFrameCycles();
+  nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 
   /* We only care for cycle position in the actual screen line */
   nLineCycles = nFrameCycles % nCyclesPerLine;
@@ -576,7 +577,7 @@ static void Video_SetHBLPaletteMaskPointers(void)
 
   /* Top of standard screen is 64 lines from VBL(64x512=32768 cycles) */
   /* Each line is 96 + 320 + 96 = 512 pixels per scan line(each pixel is one cycle) */
-  FrameCycles = Int_FindFrameCycles();
+  FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 
   /* Find 'line' into palette - screen starts 64 lines down, less 28 for top overscan */
   /* And if write to last 96 cycle of line it will count as the NEXT line(needed else games may flicker) */
@@ -633,13 +634,13 @@ void Video_InterruptHandler_VBL(void)
 
   /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
-  /* Start HBL interrupts - MUST do before add in cycles */
+  /* Start HBL interrupts */
   Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_ENDLINE);
   Int_AddAbsoluteInterrupt(CYCLES_HBL,INTERRUPT_VIDEO_HBL);
   Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME,INTERRUPT_VIDEO_VBL);
 
   /* Set frame cycles, used for Video Address */
-  nFrameCyclesOver = PendingCyclesOver;      /* Number of cycles into frame */
+  Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver);
 
   /* Set the screen refresh rate */
 #if 0

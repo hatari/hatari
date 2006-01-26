@@ -19,12 +19,13 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.21 2005-09-27 08:53:50 thothy Exp $";
+char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.22 2006-01-26 21:52:25 thothy Exp $";
 
 #include <SDL_types.h>
 
 #include "main.h"
 #include "audio.h"
+#include "cycles.h"
 #include "dmaSnd.h"
 #include "file.h"
 #include "int.h"
@@ -76,7 +77,6 @@ BOOL bEnvelopeFreqFlag;                                         /* As above, but
 /* Buffer to store circular samples */
 Sint8 MixBuffer[MIXBUFFER_SIZE];
 int nGeneratedSamples;                                          /* Generated samples since audio buffer update */
-int SoundCycles;
 
 
 /*-----------------------------------------------------------------------*/
@@ -230,7 +230,7 @@ void Sound_Reset(void)
   memset(MixBuffer, 0, MIXBUFFER_SIZE);
 
   /* Clear cycle counts, buffer index and register '13' flags */
-  SoundCycles = 0;
+  Cycles_SetCounter(CYCLES_COUNTER_SOUND, 0);
   bEnvelopeFreqFlag = FALSE;
   bWriteEnvelopeFreq = FALSE;
   bWriteChannelAAmp = bWriteChannelBAmp = bWriteChannelCAmp = FALSE;
@@ -280,19 +280,22 @@ void Sound_MemorySnapShot_Capture(BOOL bSave)
 /*-----------------------------------------------------------------------*/
 /*
   Find how many samples to generate and store in 'nSamplesToGenerate'
-  Also update 'SoundCycles' to store how many we actually did so generates set
-  amount each frame.
+  Also update sound cycles counter to store how many we actually did
+  so generates set amount each frame.
 */
 static void Sound_SetSamplesPassed(void)
 {
   int nSampleCycles;
   int nSamplesPerFrame;
   int Dec=1;
+  int nSoundCycles;
+
+  nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_SOUND);
 
   /* Check how many cycles have passed, as we use this to help find out if we are playing sample data */
 
   /* First, add decay to channel amplitude variables */
-  if (SoundCycles>(CYCLES_PER_FRAME/4))
+  if (nSoundCycles > (CYCLES_PER_FRAME/4))
     Dec = 16;                            /* Been long time between sound writes, must be normal tone sound */
 
   if (!bWriteChannelAAmp)                /* Not written to amplitude, decay value */
@@ -315,20 +318,21 @@ static void Sound_SetSamplesPassed(void)
   /* 882/160256 samples per clock cycle */
   nSamplesPerFrame = SAMPLES_PER_FRAME;
 #if 0  /* Use floats for calculation */
-  nSamplesToGenerate = (int)( (float)SoundCycles * ((float)nSamplesPerFrame/(float)CYCLES_PER_FRAME) );
+  nSamplesToGenerate = (int)( (float)nSoundCycles * ((float)nSamplesPerFrame/(float)CYCLES_PER_FRAME) );
   if (nSamplesToGenerate > nSamplesPerFrame)
     nSamplesToGenerate = nSamplesPerFrame;
 
   nSampleCycles = (int)( (float)nSamplesToGenerate / ((float)nSamplesPerFrame/(float)CYCLES_PER_FRAME) );
-  SoundCycles -= nSampleCycles;
 #else  /* Use integers for calculation - both of these calculations should fit into 32-bit int */
-  nSamplesToGenerate = SoundCycles * nSamplesPerFrame / CYCLES_PER_FRAME;
+  nSamplesToGenerate = nSoundCycles * nSamplesPerFrame / CYCLES_PER_FRAME;
   if (nSamplesToGenerate > nSamplesPerFrame)
     nSamplesToGenerate = nSamplesPerFrame;
 
   nSampleCycles = nSamplesToGenerate * CYCLES_PER_FRAME / nSamplesPerFrame;
-  SoundCycles -= nSampleCycles;
 #endif
+
+  nSoundCycles -= nSampleCycles;
+  Cycles_SetCounter(CYCLES_COUNTER_SOUND, nSoundCycles);
 }
 
 

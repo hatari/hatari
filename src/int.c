@@ -16,7 +16,7 @@
   the current instruction takes 20 cycles we will be 16 cycles late - this is handled in
   the adjust functions.
 */
-char Int_rcsid[] = "Hatari $Id: int.c,v 1.10 2005-12-02 21:08:58 eerot Exp $";
+char Int_rcsid[] = "Hatari $Id: int.c,v 1.11 2006-01-26 21:52:25 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -28,8 +28,9 @@ char Int_rcsid[] = "Hatari $Id: int.c,v 1.10 2005-12-02 21:08:58 eerot Exp $";
 #include "sound.h"
 #include "video.h"
 
-int nCyclesOver=0;
-int nFrameCyclesOver=0;
+
+int nCyclesOver = 0;
+
 
 /* List of possible interrupt handlers to be store in 'PendingInterruptTable', used for 'MemorySnapShot' */
 static void *pIntHandlerFunctions[] =
@@ -104,7 +105,6 @@ void Int_MemorySnapShot_Capture(BOOL bSave)
     }
   }
   MemorySnapShot_Store(&nCyclesOver,sizeof(nCyclesOver));
-  MemorySnapShot_Store(&nFrameCyclesOver,sizeof(nFrameCyclesOver));
 }
 
 
@@ -139,16 +139,6 @@ void *Int_IDToHandlerFunction(int ID)
 {
   /* Get function pointer */
   return( pIntHandlerFunctions[ID] );
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Return number of clock cycles into retrace
-*/
-int Int_FindFrameCycles(void)
-{
-  return( nFrameCyclesOver + (InterruptHandlers[ActiveInterrupt].Cycles-PendingInterruptCount) );
 }
 
 
@@ -199,7 +189,6 @@ static void Int_UpdateInterrupt(void)
     if (InterruptHandlers[i].bUsed)
       InterruptHandlers[i].Cycles -= CycleSubtract;
   }
-  nFrameCyclesOver += CycleSubtract;
 }
 
 

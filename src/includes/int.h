@@ -27,13 +27,11 @@ enum
 };
 
 extern int nCyclesOver;
-extern int nFrameCyclesOver;
 
 extern void Int_Reset(void);
 extern void Int_MemorySnapShot_Capture(BOOL bSave);
 extern int Int_HandlerFunctionToID(void *pHandlerFunction);
 extern void *Int_IDToHandlerFunction(int ID);
-extern int Int_FindFrameCycles(void);
 extern void Int_AcknowledgeInterrupt(void);
 extern void Int_AddAbsoluteInterrupt(int CycleTime, int Handler);
 extern void Int_AddRelativeInterrupt(int CycleTime, int Handler);
