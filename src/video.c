@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.44 2006-01-26 21:52:25 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.45 2006-01-29 17:44:20 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -51,7 +51,7 @@ int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 70 Hz i
 Uint32 VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */
 
 int nScanlinesPerFrame = 313;                   /* Number of scan lines per frame */
-int nCyclesPerLine = 512;                       /* Cycles per horiztonal line scan */
+int nCyclesPerLine = 512;                       /* Cycles per horizontal line scan */
 
 static Uint8 HWScrollCount;                     /* HW scroll pixel offset, STe only (0...15) */
 static Uint8 ScanLineSkip;                      /* Scan line width add, STe only (words, minus 1) */
