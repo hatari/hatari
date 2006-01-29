@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.24 2006-01-20 17:42:51 thothy Exp $";
+char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.25 2006-01-29 19:54:47 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -59,19 +59,20 @@ Input -----/             |         ------------------------              |      
 
 /* MFP Registers */
 Uint8 MFP_GPIP;                     /* General Purpose Pins */
-Uint8 MFP_AER,MFP_DDR;              /* Active Edge Register, Data Direction Register */
 Uint8 MFP_IERA,MFP_IERB;            /* Interrupt Enable Registers A,B  0xfffa07,0xfffa09 */
 Uint8 MFP_IPRA,MFP_IPRB;            /* Interrupt Pending Registers A,B  0xfffa0b,0xfffa0d */
-Uint8 MFP_ISRA,MFP_ISRB;            /* Interrupt In-Service Registers A,B  0xfffa0f,0xfffa11 */
-Uint8 MFP_IMRA,MFP_IMRB;            /* Interrupt Mask Registers A,B  0xfffa13,0xfffa15 */
 Uint8 MFP_VR;                       /* Vector Register  0xfffa17 */
 Uint8 MFP_TACR,MFP_TBCR,MFP_TCDCR;  /* Timer A,B,C+D Control Registers */
-Uint8 MFP_TADR,MFP_TBDR;            /* Timer A,B Data Registers */
-Uint8 MFP_TCDR,MFP_TDDR;            /* Timer C,D Data Registers */
-Uint8 MFP_TA_MAINCOUNTER;           /* Timer A Main Counter (internal to MFP) */
-Uint8 MFP_TB_MAINCOUNTER;           /* Timer B Main Counter */
-Uint8 MFP_TC_MAINCOUNTER;           /* Timer C Main Counter (these are temp's, set when read as) */
-Uint8 MFP_TD_MAINCOUNTER;           /* Timer D Main Counter (as done via interrupts) */
+
+static Uint8 MFP_AER,MFP_DDR;       /* Active Edge Register, Data Direction Register */
+static Uint8 MFP_ISRA,MFP_ISRB;     /* Interrupt In-Service Registers A,B  0xfffa0f,0xfffa11 */
+static Uint8 MFP_IMRA,MFP_IMRB;     /* Interrupt Mask Registers A,B  0xfffa13,0xfffa15 */
+static Uint8 MFP_TADR,MFP_TBDR;     /* Timer A,B Data Registers */
+static Uint8 MFP_TCDR,MFP_TDDR;     /* Timer C,D Data Registers */
+static Uint8 MFP_TA_MAINCOUNTER;    /* Timer A Main Counter (internal to MFP) */
+static Uint8 MFP_TB_MAINCOUNTER;    /* Timer B Main Counter */
+static Uint8 MFP_TC_MAINCOUNTER;    /* Timer C Main Counter (these are temp's, set when read as) */
+static Uint8 MFP_TD_MAINCOUNTER;    /* Timer D Main Counter (as done via interrupts) */
 
 /* CPU clock cycle counts for each timer */
 static int TimerAClockCycles=0;
@@ -186,6 +187,26 @@ static void MFP_Exception(int Interrupt)
 
 /*-----------------------------------------------------------------------*/
 /*
+  This is called whenever the MFP_IPRA or MFP_IPRB registers are modified.
+  We set the special flag SPCFLAG_MFP accordingly (to say if an MFP interrupt
+  is to be checked) so we only have one compare during the decode
+  instruction loop.
+*/
+static void MFP_UpdateFlags(void)
+{
+  if( MFP_IPRA|MFP_IPRB )
+  {
+    set_special(SPCFLAG_MFP);
+  }
+  else
+  {
+    unset_special(SPCFLAG_MFP);
+  }
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Test interrupt request to see if can cause exception,return TRUE if pass vector
 */
 static BOOL MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingReg, Uint8 MaskRegister,
@@ -261,26 +282,6 @@ void MFP_CheckPendingInterrupts(void)
 
   if (MFP_IPRB & MFP_TIMER_D_BIT)       /* Check Timer D (bit 4) */
     MFP_InterruptRequest(MFP_EXCEPT_TIMERD, MFP_TIMER_D_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0xf0, &MFP_ISRB);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  This is called whenever the MFP_IPRA or MFP_IPRB registers are modified.
-  We set the special flag SPCFLAG_MFP accordingly (to say if an MFP interrupt
-  is to be checked) so we only have one compare during the decode
-  instruction loop.
-*/
-void MFP_UpdateFlags(void)
-{
-  if( MFP_IPRA|MFP_IPRB )
-  {
-    set_special(SPCFLAG_MFP);
-  }
-  else
-  {
-    unset_special(SPCFLAG_MFP);
-  }
 }
 
 
@@ -447,7 +448,7 @@ static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCoun
   Start Timer A
   (This does not start the EventCount mode time as this is taken care of by the HBL)
 */
-void MFP_StartTimerA(void)
+static void MFP_StartTimerA(void)
 {
   TimerAClockCycles = MFP_StartTimer_AB(MFP_TACR,MFP_TADR,INTERRUPT_MFP_TIMERA,TRUE);
 }
@@ -457,7 +458,7 @@ void MFP_StartTimerA(void)
 /*
   Read Timer A
 */
-void MFP_ReadTimerA(void)
+static void MFP_ReadTimerA(void)
 {
   MFP_TA_MAINCOUNTER = MFP_ReadTimer_AB(MFP_TACR,MFP_TA_MAINCOUNTER,TimerAClockCycles,INTERRUPT_MFP_TIMERA);
 }
@@ -468,7 +469,7 @@ void MFP_ReadTimerA(void)
   Start Timer B
   (This does not start the EventCount mode time as this is taken care of by the HBL)
 */
-void MFP_StartTimerB(void)
+static void MFP_StartTimerB(void)
 {
   TimerBClockCycles = MFP_StartTimer_AB(MFP_TBCR,MFP_TBDR,INTERRUPT_MFP_TIMERB,TRUE);
 }
@@ -478,7 +479,7 @@ void MFP_StartTimerB(void)
 /*
   Read Timer B
 */
-void MFP_ReadTimerB(void)
+static void MFP_ReadTimerB(void)
 {
   MFP_TB_MAINCOUNTER = MFP_ReadTimer_AB(MFP_TBCR,MFP_TB_MAINCOUNTER,TimerBClockCycles,INTERRUPT_MFP_TIMERB);
 }
@@ -488,7 +489,7 @@ void MFP_ReadTimerB(void)
 /*
   Start Timer C
 */
-void MFP_StartTimerC(void)
+static void MFP_StartTimerC(void)
 {
   TimerCClockCycles = MFP_StartTimer_CD(MFP_TCDCR>>4,MFP_TCDR,INTERRUPT_MFP_TIMERC,TRUE);
 }
@@ -498,7 +499,7 @@ void MFP_StartTimerC(void)
 /*
   Read Timer C
 */
-void MFP_ReadTimerC(void)
+static void MFP_ReadTimerC(void)
 {
   MFP_TC_MAINCOUNTER = MFP_ReadTimerCD(MFP_TCDCR>>4,MFP_TCDR,MFP_TC_MAINCOUNTER,TimerCClockCycles,INTERRUPT_MFP_TIMERC);
 }
@@ -508,7 +509,7 @@ void MFP_ReadTimerC(void)
 /*
   Start Timer D
 */
-void MFP_StartTimerD(void)
+static void MFP_StartTimerD(void)
 {
   TimerDClockCycles = MFP_StartTimer_CD(MFP_TCDCR,MFP_TDDR,INTERRUPT_MFP_TIMERD,TRUE);
 }
@@ -518,7 +519,7 @@ void MFP_StartTimerD(void)
 /*
   Read Timer D
 */
-void MFP_ReadTimerD(void)
+static void MFP_ReadTimerD(void)
 {
   MFP_TD_MAINCOUNTER = MFP_ReadTimerCD(MFP_TCDCR,MFP_TDDR,MFP_TC_MAINCOUNTER,TimerDClockCycles,INTERRUPT_MFP_TIMERD);
 }
