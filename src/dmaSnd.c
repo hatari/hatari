@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.5 2005-09-26 15:20:14 thothy Exp $";
+char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.6 2006-01-29 19:07:13 eerot Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -45,8 +45,8 @@ char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.5 2005-09-26 15:20:14 thothy Exp
 
 
 Uint16 nDmaSoundControl;                /* Sound control register */
-Uint16 nDmaSoundMode;                   /* Sound mode register */
 
+static Uint16 nDmaSoundMode;            /* Sound mode register */
 static Uint16 nMicrowireData;           /* Microwire Data register */
 static Uint16 nMicrowireMask;           /* Microwire Mask register */
 static int nMwTransferSteps;
