@@ -77,6 +77,6 @@ static void ConvertVDIRes_2Colour(void)
     while( --x );                    /* Loop on X */
 
     /* Offset to next line */
-    pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine);
+    pPCScreenDest = (((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine);
   }
 }

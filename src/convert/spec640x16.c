@@ -157,7 +157,7 @@ static void ConvertSpec512_640x16Bit(void)
     Spec512_EndScanLine();
 
     /* Offset to next line: */
-    pPCScreenDest = (void *)(((unsigned char *)pPCScreenDest)+2*PCScreenBytesPerLine);
+    pPCScreenDest = (((Uint8 *)pPCScreenDest)+2*PCScreenBytesPerLine);
   }
 
   bScreenContentsChanged = TRUE;

@@ -61,7 +61,7 @@ static void ConvertLowRes_320x16Bit(void)
     }
    while( --x );                         /* Loop on X */
 
-   pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine);  /* Offset to next line */
+   pPCScreenDest = (((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine);  /* Offset to next line */
   }
 }
 

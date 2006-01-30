@@ -23,7 +23,7 @@ static void ConvertMediumRes_640x16Bit(void)
      Line_ConvertMediumRes_640x16Bit(edi, ebp, esi, eax);
 
    /* Offset to next line */
-   pPCScreenDest = (void *)(((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine*2);
+   pPCScreenDest = (((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine*2);
   }
 }
 
