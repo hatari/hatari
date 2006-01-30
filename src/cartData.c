@@ -1,12 +1,15 @@
 /*
-  Hatari - cartdata.c
+  Hatari - cartData.c
 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  The assembled cartridge Pexec program (source code can be found in cart_asm.s)
+  The assembled cartridge Pexec() program (source code can be found in the
+  file cart_asm.s).
+  NOTE: This file is included by cart.c - do not compile and link this file
+  separately!
 */
-char CartData_rcsid[] = "Hatari $Id: cartData.c,v 1.2 2005-03-17 09:01:17 thothy Exp $";
+char CartData_rcsid[] = "Hatari $Id: cartData.c,v 1.3 2006-01-30 22:06:08 thothy Exp $";
 
 
 /*

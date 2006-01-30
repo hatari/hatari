@@ -6,15 +6,15 @@
 
   Cartridge program
 
-  To load programs into memory, through TOS, we need to intercept GEMDOS so we can
-  relocate/execute programs via GEMDOS call $4B (Pexec).
+  To load programs into memory, through TOS, we need to intercept GEMDOS so we
+  can relocate/execute programs via GEMDOS call $4B (Pexec).
   We have some 68000 assembler, located at 0xFA0000 (cartridge memory), which is
   used as our new GEMDOS handler. This checks if we need to intercept the call.
 
-  The assembler routine can be found in 'cart_asm.s', and has been converted to a byte
-  array and stored in 'Cart_data[]' (see cartdata.c).
+  The assembler routine can be found in 'cart_asm.s', and has been converted to
+  a byte array and stored in 'Cart_data[]' (see cartData.c).
 */
-char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.9 2006-01-02 20:55:12 thothy Exp $";
+char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.10 2006-01-30 22:06:07 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -30,10 +30,10 @@ char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.9 2006-01-02 20:55:12 thothy Exp $";
 /* Possible cartridge file extensions to scan for */
 static const char *psCartNameExts[] =
 {
-  ".img",
-  ".rom",
-  ".stc",
-  NULL
+	".img",
+	".rom",
+	".stc",
+	NULL
 };
 
 
