@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.18 2005-12-18 18:02:12 thothy Exp $";
+char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.19 2006-02-04 16:44:04 eerot Exp $";
 
 #ifndef HAVE_TERMIOS_H
 #define HAVE_TERMIOS_H 1
@@ -54,16 +54,17 @@ char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.18 2005-12-18 18:02:12 thothy Exp 
 #endif
 
 
-BOOL bConnectedRS232 = FALSE;       /* Connection to RS232? */
-static FILE *hComIn = NULL;         /* Handle to file for reading */
-static FILE *hComOut = NULL;        /* Handle to file for writing */
-SDL_Thread *RS232Thread = NULL;     /* Thread handle for reading incoming data */
-unsigned char InputBuffer_RS232[MAX_RS232INPUT_BUFFER];
-int InputBuffer_Head=0, InputBuffer_Tail=0;
-SDL_sem* pSemFreeBuf;               /* Semaphore to sync free space in InputBuffer_RS232 */
+BOOL bConnectedRS232 = FALSE;      /* Connection to RS232? */
+static FILE *hComIn = NULL;        /* Handle to file for reading */
+static FILE *hComOut = NULL;       /* Handle to file for writing */
+
+static unsigned char InputBuffer_RS232[MAX_RS232INPUT_BUFFER];
+static int InputBuffer_Head=0, InputBuffer_Tail=0;
 
 
-#if HAVE_TERMIOS_H && !HAVE_CFMAKERAW
+#if HAVE_TERMIOS_H
+
+#if !HAVE_CFMAKERAW
 static inline void cfmakeraw(struct termios *termios_p)
 {
 	termios_p->c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
@@ -73,6 +74,241 @@ static inline void cfmakeraw(struct termios *termios_p)
 	termios_p->c_cflag |= CS8;
 }
 #endif
+
+/*-----------------------------------------------------------------------*/
+/*
+  Set serial line parameters to "raw" mode.
+*/
+static BOOL RS232_SetRawMode(FILE *fhndl)
+{
+	struct termios termmode;
+	int fd;
+
+	memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
+	fd = fileno(fhndl);                         /* Get file descriptor */
+
+	if (isatty(fd))
+	{
+		if (tcgetattr(fd, &termmode) != 0)
+			return FALSE;
+
+		/* Set "raw" mode: */
+		termmode.c_cc[VMIN] = 1;
+		termmode.c_cc[VTIME] = 0;
+		cfmakeraw(&termmode);
+		if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Set hardware configuration of RS-232:
+  - Bits per character
+  - Parity
+  - Start/stop bits
+*/
+static BOOL RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, BOOL bUseParity, BOOL bEvenParity)
+{
+	struct termios termmode;
+
+	memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
+
+	if (isatty(fd))
+	{
+		if (tcgetattr(fd, &termmode) != 0)
+		{
+			Dprintf(("RS232_SetBitsConfig: tcgetattr failed.\n"));
+			return FALSE;
+		}
+
+		/* Set the character size: */
+		termmode.c_cflag &= ~CSIZE;
+		switch (nCharSize)
+		{
+		 case 8: termmode.c_cflag |= CS8; break;
+		 case 7: termmode.c_cflag |= CS7; break;
+		 case 6: termmode.c_cflag |= CS6; break;
+		 case 5: termmode.c_cflag |= CS5; break;
+		}
+
+		/* Set stop bits: */
+		if (nStopBits >= 2)
+			termmode.c_oflag |= CSTOPB;
+		else
+			termmode.c_oflag &= ~CSTOPB;
+
+		/* Parity bit: */
+		if (bUseParity)
+			termmode.c_cflag |= PARENB;
+		else
+			termmode.c_cflag &= ~PARENB;
+
+		if (bEvenParity)
+			termmode.c_cflag &= ~PARODD;
+		else
+			termmode.c_cflag |= PARODD;
+
+		/* Now store the configuration: */
+		if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
+		{
+			Dprintf(("RS232_SetBitsConfig: tcsetattr failed.\n"));
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+#endif /* HAVE_TERMIOS_H */
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Open file on COM port.
+*/
+static BOOL RS232_OpenCOMPort(void)
+{
+	bConnectedRS232 = FALSE;
+
+	/* Create our COM file for output */
+	hComOut = fopen(ConfigureParams.RS232.szOutFileName, "wb"); 
+	if (hComOut == NULL)
+	{
+		Dprintf(("RS232: Failed to open output file %s\n",
+		         ConfigureParams.RS232.szOutFileName));
+		return FALSE;
+	}
+	setvbuf(hComOut, NULL, _IONBF, 0);
+
+	/* Create our COM file for input */
+	hComIn = fopen(ConfigureParams.RS232.szInFileName, "rb"); 
+	if (hComIn == NULL)
+	{
+		Dprintf(("RS232: Failed to open input file %s\n",
+		         ConfigureParams.RS232.szInFileName));
+		fclose(hComOut); hComOut = NULL;
+		return FALSE;
+	}
+	setvbuf(hComIn, NULL, _IONBF, 0);
+
+#if HAVE_TERMIOS_H
+	/* First set the output parameters to "raw" mode */
+	if (!RS232_SetRawMode(hComOut))
+	{
+		fprintf(stderr, "Can't set raw mode for %s\n",
+		        ConfigureParams.RS232.szOutFileName);
+	}
+
+	/* Now set the input parameters to "raw" mode */
+	if (!RS232_SetRawMode(hComIn))
+	{
+		fprintf(stderr, "Can't set raw mode for %s\n",
+		        ConfigureParams.RS232.szInFileName);
+	}
+#endif
+
+	/* Set all OK */
+	bConnectedRS232 = TRUE;
+
+	Dprintf(("Successfully opened RS232 files.\n"));
+
+	return TRUE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Close file on COM port
+*/
+static void RS232_CloseCOMPort(void)
+{
+	/* Do have file open? */
+	if (bConnectedRS232)
+	{
+		bConnectedRS232 = FALSE;
+
+		/* Close */
+		fclose(hComIn);
+		hComIn = NULL;
+
+		fclose(hComOut);
+		hComOut = NULL;
+
+		Dprintf(("Closed RS232 files.\n"));
+	}
+}
+
+
+/* thread stuff */
+static SDL_sem* pSemFreeBuf;       /* Semaphore to sync free space in InputBuffer_RS232 */
+static SDL_Thread *RS232Thread = NULL; /* Thread handle for reading incoming data */
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Add incoming bytes from other machine into our input buffer
+*/
+static void RS232_AddBytesToInputBuffer(unsigned char *pBytes, int nBytes)
+{
+	int i;
+
+	/* Copy bytes into input buffer */
+	for (i=0; i<nBytes; i++)
+	{
+		SDL_SemWait(pSemFreeBuf);    /* Wait for free space in buffer */
+		InputBuffer_RS232[InputBuffer_Tail] = *pBytes++;
+		InputBuffer_Tail = (InputBuffer_Tail+1) % MAX_RS232INPUT_BUFFER;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Thread to read incoming RS-232 data, and pass to emulator input buffer
+*/
+static int RS232_ThreadFunc(void *pData)
+{
+	int iInChar;
+	unsigned char cInChar;
+
+	/* Check for any RS-232 incoming data */
+	while (TRUE)
+	{
+		if (hComIn)
+		{
+			/* Read the bytes in, if we have any */
+			iInChar = fgetc(hComIn);
+			if (iInChar != EOF)
+			{
+				/* Copy into our internal queue */
+				cInChar = iInChar;
+				RS232_AddBytesToInputBuffer(&cInChar, 1);
+				/* FIXME: Use semaphores to lock MFP variables? */
+				MFP_InputOnChannel(MFP_RCVBUFFULL_BIT, MFP_IERA, &MFP_IPRA);
+				Dprintf(("RS232: Read character $%x\n", iInChar));
+			}
+			else
+			{
+				/*Dprintf(("RS232: Reached end of input file!\n"));*/
+				clearerr(hComIn);
+				SDL_Delay(20);
+			}
+
+			/* Sleep for a while */
+			SDL_Delay(2);
+		}
+		else
+		{
+			/* No RS-232 connection, sleep for 20ms */
+			SDL_Delay(20);
+		}
+	}
+
+	return(TRUE);
+}
 
 
 /*-----------------------------------------------------------------------*/
@@ -129,176 +365,6 @@ void RS232_UnInit(void)
 		pSemFreeBuf = NULL;
 	}
 }
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Set serial line parameters to "raw" mode.
-*/
-#if HAVE_TERMIOS_H
-static BOOL RS232_SetRawMode(FILE *fhndl)
-{
-	struct termios termmode;
-	int fd;
-
-	memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
-	fd = fileno(fhndl);                         /* Get file descriptor */
-
-	if (isatty(fd))
-	{
-		if (tcgetattr(fd, &termmode) != 0)
-			return FALSE;
-
-		/* Set "raw" mode: */
-		termmode.c_cc[VMIN] = 1;
-		termmode.c_cc[VTIME] = 0;
-		cfmakeraw(&termmode);
-		if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
-			return FALSE;
-	}
-
-	return TRUE;
-}
-#endif /* HAVE_TERMIOS_H */
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Open file on COM port.
-*/
-BOOL RS232_OpenCOMPort(void)
-{
-	bConnectedRS232 = FALSE;
-
-	/* Create our COM file for output */
-	hComOut = fopen(ConfigureParams.RS232.szOutFileName, "wb"); 
-	if (hComOut == NULL)
-	{
-		Dprintf(("RS232: Failed to open output file %s\n",
-		         ConfigureParams.RS232.szOutFileName));
-		return FALSE;
-	}
-	setvbuf(hComOut, NULL, _IONBF, 0);
-
-	/* Create our COM file for input */
-	hComIn = fopen(ConfigureParams.RS232.szInFileName, "rb"); 
-	if (hComIn == NULL)
-	{
-		Dprintf(("RS232: Failed to open input file %s\n",
-		         ConfigureParams.RS232.szInFileName));
-		fclose(hComOut); hComOut = NULL;
-		return FALSE;
-	}
-	setvbuf(hComIn, NULL, _IONBF, 0);
-
-#if HAVE_TERMIOS_H
-	/* First set the output parameters to "raw" mode */
-	if (!RS232_SetRawMode(hComOut))
-	{
-		fprintf(stderr, "Can't set raw mode for %s\n",
-		        ConfigureParams.RS232.szOutFileName);
-	}
-
-	/* Now set the input parameters to "raw" mode */
-	if (!RS232_SetRawMode(hComIn))
-	{
-		fprintf(stderr, "Can't set raw mode for %s\n",
-		        ConfigureParams.RS232.szInFileName);
-	}
-#endif
-
-	/* Set all OK */
-	bConnectedRS232 = TRUE;
-
-	Dprintf(("Successfully opened RS232 files.\n"));
-
-	return TRUE;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Close file on COM port
-*/
-void RS232_CloseCOMPort(void)
-{
-	/* Do have file open? */
-	if (bConnectedRS232)
-	{
-		bConnectedRS232 = FALSE;
-
-		/* Close */
-		fclose(hComIn);
-		hComIn = NULL;
-
-		fclose(hComOut);
-		hComOut = NULL;
-
-		Dprintf(("Closed RS232 files.\n"));
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Set hardware configuration of RS-232:
-  - Bits per character
-  - Parity
-  - Start/stop bits
-*/
-#if HAVE_TERMIOS_H
-static BOOL RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, BOOL bUseParity, BOOL bEvenParity)
-{
-	struct termios termmode;
-
-	memset (&termmode, 0, sizeof(termmode));    /* Init with zeroes */
-
-	if (isatty(fd))
-	{
-		if (tcgetattr(fd, &termmode) != 0)
-		{
-			Dprintf(("RS232_SetBitsConfig: tcgetattr failed.\n"));
-			return FALSE;
-		}
-
-		/* Set the character size: */
-		termmode.c_cflag &= ~CSIZE;
-		switch (nCharSize)
-		{
-		 case 8: termmode.c_cflag |= CS8; break;
-		 case 7: termmode.c_cflag |= CS7; break;
-		 case 6: termmode.c_cflag |= CS6; break;
-		 case 5: termmode.c_cflag |= CS5; break;
-		}
-
-		/* Set stop bits: */
-		if (nStopBits >= 2)
-			termmode.c_oflag |= CSTOPB;
-		else
-			termmode.c_oflag &= ~CSTOPB;
-
-		/* Parity bit: */
-		if (bUseParity)
-			termmode.c_cflag |= PARENB;
-		else
-			termmode.c_cflag &= ~PARENB;
-
-		if (bEvenParity)
-			termmode.c_cflag &= ~PARODD;
-		else
-			termmode.c_cflag |= PARODD;
-
-		/* Now store the configuration: */
-		if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
-		{
-			Dprintf(("RS232_SetBitsConfig: tcsetattr failed.\n"));
-			return FALSE;
-		}
-	}
-
-	return TRUE;
-}
-#endif /* HAVE_TERMIOS_H */
 
 
 /*-----------------------------------------------------------------------*/
@@ -570,70 +636,6 @@ BOOL RS232_GetStatus(void)
 
 	/* No, none */
 	return(FALSE);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Add incoming bytes from other machine into our input buffer
-*/
-static void RS232_AddBytesToInputBuffer(unsigned char *pBytes, int nBytes)
-{
-	int i;
-
-	/* Copy bytes into input buffer */
-	for (i=0; i<nBytes; i++)
-	{
-		SDL_SemWait(pSemFreeBuf);    /* Wait for free space in buffer */
-		InputBuffer_RS232[InputBuffer_Tail] = *pBytes++;
-		InputBuffer_Tail = (InputBuffer_Tail+1) % MAX_RS232INPUT_BUFFER;
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Thread to read incoming RS-232 data, and pass to emulator input buffer
-*/
-int RS232_ThreadFunc(void *pData)
-{
-	int iInChar;
-	unsigned char cInChar;
-
-	/* Check for any RS-232 incoming data */
-	while (TRUE)
-	{
-		if (hComIn)
-		{
-			/* Read the bytes in, if we have any */
-			iInChar = fgetc(hComIn);
-			if (iInChar != EOF)
-			{
-				/* Copy into our internal queue */
-				cInChar = iInChar;
-				RS232_AddBytesToInputBuffer(&cInChar, 1);
-				/* FIXME: Use semaphores to lock MFP variables? */
-				MFP_InputOnChannel(MFP_RCVBUFFULL_BIT, MFP_IERA, &MFP_IPRA);
-				Dprintf(("RS232: Read character $%x\n", iInChar));
-			}
-			else
-			{
-				/*Dprintf(("RS232: Reached end of input file!\n"));*/
-				clearerr(hComIn);
-				SDL_Delay(20);
-			}
-
-			/* Sleep for a while */
-			SDL_Delay(2);
-		}
-		else
-		{
-			/* No RS-232 connection, sleep for 20ms */
-			SDL_Delay(20);
-		}
-	}
-
-	return(TRUE);
 }
 
 
