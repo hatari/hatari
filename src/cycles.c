@@ -10,22 +10,22 @@
   and sound cycles), we simply update these counters with the main counter
   before returning the current counter value.
 */
-char Cycles_rcsid[] = "Hatari $Id: cycles.c,v 1.1 2006-01-26 21:52:25 thothy Exp $";
+char Cycles_rcsid[] = "Hatari $Id: cycles.c,v 1.2 2006-02-04 21:34:41 eerot Exp $";
 
 #include "main.h"
 #include "cycles.h"
 
 
-int nCyclesMainCounter;                             /* Main cycles counter */
+int nCyclesMainCounter;                         /* Main cycles counter */
 
-static int nCyclesCounter[CYCLES_COUNTER_MAX];      /* Array with all counters */
+static int nCyclesCounter[CYCLES_COUNTER_MAX];  /* Array with all counters */
 
 
 /*-----------------------------------------------------------------------*/
 /*
   Update all cycles counters with the current value of nCyclesMainCounter.
 */
-void Cycles_UpdateCounters(void)
+static void Cycles_UpdateCounters(void)
 {
 	int i;
 

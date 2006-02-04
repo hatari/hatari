@@ -20,7 +20,6 @@ enum
 extern int nCyclesMainCounter;
 
 
-extern void Cycles_UpdateCounters(void);
 extern void Cycles_SetCounter(int nId, int nValue);
 extern int Cycles_GetCounter(int nId);
 extern int Cycles_GetCounterOnReadAccess(int nId);
