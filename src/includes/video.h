@@ -34,8 +34,20 @@
 /* Scan lines per frame */
 #define SCANLINES_PER_FRAME_50HZ 313    /* Number of scan lines per frame in 50 Hz */
 #define SCANLINES_PER_FRAME_60HZ 263    /* Number of scan lines per frame in 60 Hz */
-#define MAX_SCANLINES_PER_FRAME 313     /* Max. number of scan lines per frame */
+#define MAX_SCANLINES_PER_FRAME  313    /* Max. number of scan lines per frame */
 
+/* Cycles per line */
+#define CYCLES_PER_LINE_50HZ  512
+#define CYCLES_PER_LINE_60HZ  508
+
+/* Vertical border/display enable/disable:
+ * Normal screen starts 63 lines in, top border is 29 lines */
+#define SCREEN_START_HBL_50HZ   63      /* Usually the first line of the displayed screen in 50 Hz */
+#define SCREEN_START_HBL_60HZ   34      /* The first line of the displayed screen in 60 Hz */
+#define FIRST_VISIBLE_HBL_50HZ  34      /* At this line we start rendering our screen in 50 Hz */
+#define FIRST_VISIBLE_HBL_60HZ  (34-29) /* At this line we start rendering our screen in 60 Hz */
+
+#define SCREEN_HEIGHT_HBL  200          /* This is usually the height of the screen */
 
 extern BOOL bUseHighRes;
 extern int nVBLs,nHBL;

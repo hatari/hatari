@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.45 2006-01-29 17:44:20 eerot Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.46 2006-02-07 16:32:53 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -41,7 +41,7 @@ char Video_rcsid[] = "Hatari $Id: video.c,v 1.45 2006-01-29 17:44:20 eerot Exp $
 
 BOOL bUseHighRes = FALSE;                       /* Use hi-res (ie Mono monitor) */
 int nVBLs, nHBL;                                /* VBL Counter, HBL line */
-int nStartHBL, nEndHBL;                         /* Start/End HBL for visible screen(64 lines in Top border) */
+int nStartHBL, nEndHBL;                         /* Start/End HBL for visible screen */
 int OverscanMode;                               /* OVERSCANMODE_xxxx for current display frame */
 Uint16 HBLPalettes[(NUM_VISIBLE_LINES+1)*16];   /* 1x16 colour palette per screen line, +1 line just incase write after line 200 */
 Uint16 *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
@@ -52,6 +52,7 @@ Uint32 VideoBase;                               /* Base address in ST Ram for sc
 
 int nScanlinesPerFrame = 313;                   /* Number of scan lines per frame */
 int nCyclesPerLine = 512;                       /* Cycles per horizontal line scan */
+static int nFirstVisibleHbl = 34;               /* The first line of the ST screen that is copied to the PC screen buffer */
 
 static Uint8 HWScrollCount;                     /* HW scroll pixel offset, STe only (0...15) */
 static Uint8 ScanLineSkip;                      /* Scan line width add, STe only (words, minus 1) */
@@ -95,7 +96,7 @@ static Uint32 Video_CalculateAddress(void)
   /* Find number of cycles passed during frame */
   FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO);
 
-  /* Top of screen is usually 64 lines from VBL (64x512=32768 cycles) */
+  /* Top of screen is usually 63 lines from VBL in 50 Hz */
   if (FrameCycles < nStartHBL*nCyclesPerLine)
   {
     VideoAddress = VideoBase;
@@ -198,23 +199,26 @@ void Video_Sync_WriteByte(void)
    * FIXME: These are very inaccurate tests that should be improved,
    * but we probably need better CPU cycles emulation first. There's
    * also no support for sync-scrolling yet :-( */
-  if (LastByte == 0x00 && Byte == 0x02)   /* switched from 50 Hz to 60 Hz and back to 50 Hz? */
+  if (LastByte == 0x02 && Byte == 0x00)   /* switched from 50 Hz to 60 Hz? */
   {
-    if (nHBL >= OVERSCAN_TOP && nHBL <= 39 && nStartHBL > FIRST_VISIBLE_HBL)
+    if (nHBL >= SCREEN_START_HBL_60HZ-1 && nHBL <= SCREEN_START_HBL_60HZ+1)
     {
       /* Top border */
       OverscanMode |= OVERSCANMODE_TOP;       /* Set overscan bit */
-      nStartHBL = FIRST_VISIBLE_HBL;          /* New start screen line */
+      nStartHBL = SCREEN_START_HBL_60HZ;      /* New start screen line */
       pHBLPaletteMasks -= OVERSCAN_TOP;
       pHBLPalettes -= OVERSCAN_TOP;
     }
-    else if (nHBL == SCREEN_START_HBL+SCREEN_HEIGHT_HBL)
+    else if (nHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL)
     {
       /* Bottom border */
       OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
-      nEndHBL = SCREEN_START_HBL+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM;  /* New end screen line */
+      nEndHBL = SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM;  /* New end screen line */
     }
+  }
 
+  if (LastByte == 0x00 && Byte == 0x02)   /* switched from 60 Hz to 50 Hz? */
+  {
     if (nHBL == nLastHBL && nLineCycles >= 400 && nLineCycles <= 480
         && nLineCycles-nLastCycles <= 16)
     {
@@ -443,8 +447,8 @@ static void Video_CopyScreenLine(void)
   /* Read STE fine scrolling registers */
   if (ConfigureParams.System.nMachineType != MACHINE_ST)
   {
-    ScanLineSkip = STMemory_ReadByte(0xff820f);
-    HWScrollCount = STMemory_ReadByte(0xff8265) & 0x0f;
+    ScanLineSkip = IoMem_ReadByte(0xff820f);
+    HWScrollCount = IoMem_ReadByte(0xff8265) & 0x0f;
   }
 
   /* Only copy screen line if not doing high VDI resolution */
@@ -482,20 +486,20 @@ static void Video_CopyVDIScreen(void)
 static void Video_EndHBL(void)
 {
   /* Are we in possible visible display (including borders)? */
-  if (nHBL >= FIRST_VISIBLE_HBL && nHBL < FIRST_VISIBLE_HBL+NUM_VISIBLE_LINES)
+  if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+NUM_VISIBLE_LINES)
   {
     /* Copy line of screen to buffer to simulate TV raster trace
      * - required for mouse cursor display/game updates
      * Eg, Lemmings and The Killing Game Show are good examples */
     Video_CopyScreenLine();
 
-    if (nHBL == FIRST_VISIBLE_HBL)    /* Very first line on screen - HBLPalettes[0] */
+    if (nHBL == nFirstVisibleHbl)    /* Very first line on screen - HBLPalettes[0] */
     {
       /* Store ALL palette for this line into raster table for datum */
       Video_StoreFirstLinePalette();
     }
     /* Store resolution for every line so can check for mix low/medium screens */
-    Video_StoreResolution(nHBL-FIRST_VISIBLE_HBL);
+    Video_StoreResolution(nHBL-nFirstVisibleHbl);
   }
 
   /* Finally increase HBL count */
@@ -570,18 +574,16 @@ static void Video_SetHBLPaletteMaskPointers(void)
   int FrameCycles;
   int Line;
 
-  /* Top of standard screen is 64 lines from VBL(64x512=32768 cycles) */
-  /* Each line is 64+320+64+64(Blank) = 512 pixels per scan line      */
-  /* Timer occurs at end of 64+320+64; Display Enable(DE)=Low         */
-  /* HBL is incorrect on machine and occurs around 96+ cycles in      */
+  /* Top of standard screen is 63 lines from VBL (in 50 Hz)      */
+  /* Each line is 64+320+64+64(Blank) = 512 pixels per scan line */
+  /* Timer occurs at end of 64+320+64; Display Enable(DE)=Low    */
+  /* HBL is incorrect on machine and occurs around 96+ cycles in */
 
-  /* Top of standard screen is 64 lines from VBL(64x512=32768 cycles) */
-  /* Each line is 96 + 320 + 96 = 512 pixels per scan line(each pixel is one cycle) */
   FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 
-  /* Find 'line' into palette - screen starts 64 lines down, less 28 for top overscan */
+  /* Find 'line' into palette - screen starts 63 lines down, less 29 for top overscan */
   /* And if write to last 96 cycle of line it will count as the NEXT line(needed else games may flicker) */
-  Line = (FrameCycles-(FIRST_VISIBLE_HBL*nCyclesPerLine)+SCREEN_START_CYCLE)/nCyclesPerLine;
+  Line = (FrameCycles-(nFirstVisibleHbl*nCyclesPerLine)+SCREEN_START_CYCLE)/nCyclesPerLine;
   if (Line<0)          /* Limit to top/bottom of possible visible screen */
     Line = 0;
   if (Line>=NUM_VISIBLE_LINES)
@@ -595,22 +597,64 @@ static void Video_SetHBLPaletteMaskPointers(void)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Set video shifter timing variables according to screen refresh rate
+*/
+static void Video_ResetShifterTimings(void)
+{
+  Uint8 nSyncByte;
+
+  nSyncByte = IoMem_ReadByte(0xff820a);
+
+  /* Check if running in 50 Hz or in 60 Hz */
+  if (nSyncByte & 2)
+  {
+    /* 50 Hz */
+    nStartHBL = SCREEN_START_HBL_50HZ;
+    nScanlinesPerFrame = SCANLINES_PER_FRAME_50HZ;
+    nCyclesPerLine = CYCLES_PER_LINE_50HZ;
+    nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;
+  }
+  else
+  {
+    /* 60 Hz */
+    nStartHBL = SCREEN_START_HBL_60HZ;
+    nScanlinesPerFrame = SCANLINES_PER_FRAME_60HZ;
+    nCyclesPerLine = CYCLES_PER_LINE_60HZ;
+    nFirstVisibleHbl = FIRST_VISIBLE_HBL_60HZ;
+  }
+
+  nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL;
+
+  /* Set the screen refresh rate */
+#if 0
+  if(bUseHighRes)
+    nScreenRefreshRate = 70;
+  else if (nSyncByte & 2)               /* Is it 50Hz or is it 60Hz? */
+    nScreenRefreshRate = 50;
+  else
+    nScreenRefreshRate = 60;
+#endif
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Called on VBL, set registers ready for frame
 */
 static void Video_ClearOnVBL(void)
 {
   /* New screen, so first HBL */
   nHBL = 0;
-  nStartHBL = SCREEN_START_HBL;
-  nEndHBL = SCREEN_START_HBL+SCREEN_HEIGHT_HBL;
   OverscanMode = OVERSCANMODE_NONE;
 
+  Video_ResetShifterTimings();
+
   /* Get screen address pointer, aligned to 256 bytes on ST (ie ignore lowest byte) */
-  VideoBase = (Uint32)STMemory_ReadByte(0xff8201)<<16 | (Uint32)STMemory_ReadByte(0xff8203)<<8;
+  VideoBase = (Uint32)IoMem_ReadByte(0xff8201)<<16 | (Uint32)IoMem_ReadByte(0xff8203)<<8;
   if (ConfigureParams.System.nMachineType != MACHINE_ST)
   {
     /* on STe 2 aligned, on Falcon 4 aligned, on TT 8 aligned. We do STe. */
-    VideoBase |= STMemory_ReadByte(0xff820d) & ~1;
+    VideoBase |= IoMem_ReadByte(0xff820d) & ~1;
   }
   pVideoRaster = &STRam[VideoBase];
   pSTScreen = pFrameBuffer->pSTScreen;
@@ -641,16 +685,6 @@ void Video_InterruptHandler_VBL(void)
 
   /* Set frame cycles, used for Video Address */
   Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver);
-
-  /* Set the screen refresh rate */
-#if 0
-  if(bUseHighRes)
-    nScreenRefreshRate = 70;
-  else if(IoMem[0xff820a] & 2)               /* Is it 50Hz or is it 60Hz? */
-    nScreenRefreshRate = 50;
-  else
-    nScreenRefreshRate = 60;
-#endif
 
   /* Clear any key presses which are due to be de-bounced (held for one ST frame) */
   Keymap_DebounceAllKeys();

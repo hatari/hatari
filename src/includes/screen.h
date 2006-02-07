@@ -23,14 +23,9 @@
 #define OVERSCAN_RIGHT      (SCREENBYTES_RIGHT*2)
 #define OVERSCAN_TOP        29
 #define OVERSCAN_BOTTOM     38
-#define OVERSCAN_MIDDLE     320         /* Number of pixels across screen(low res) */
 
 /* Number of visible screen lines including top/bottom borders */
-#define NUM_VISIBLE_LINES  (OVERSCAN_TOP+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM)
-
-#define SCREEN_START_HBL   64           /* This is usually the first line of the displayed screen */
-#define SCREEN_HEIGHT_HBL  200          /* This is usually the height of the screen */
-#define FIRST_VISIBLE_HBL  (SCREEN_START_HBL-OVERSCAN_TOP)    /* Normal screen starts 64 lines in, top border is 28 lines */
+#define NUM_VISIBLE_LINES  (OVERSCAN_TOP+200+OVERSCAN_BOTTOM)
 
 
 /* Frame buffer, used to store details in screen conversion */
