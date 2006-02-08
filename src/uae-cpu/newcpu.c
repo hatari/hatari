@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.40 2005-12-18 18:02:12 thothy Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.41 2006-02-08 22:46:10 eerot Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"

@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.8 2005-08-13 11:21:44 thothy Exp $";
+const char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.9 2006-02-08 22:46:10 eerot Exp $";
 
 #include "main.h"
 #include "dialog.h"

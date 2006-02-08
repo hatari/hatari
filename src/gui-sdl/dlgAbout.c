@@ -6,7 +6,7 @@
 
   Show information about the program and its license.
 */
-char DlgAbout_rcsid[] = "Hatari $Id: dlgAbout.c,v 1.5 2005-02-12 23:11:28 thothy Exp $";
+const char DlgAbout_rcsid[] = "Hatari $Id: dlgAbout.c,v 1.6 2006-02-08 22:46:10 eerot Exp $";
 
 #include "main.h"
 #include "dialog.h"

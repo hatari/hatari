@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.19 2005-08-14 18:29:37 eerot Exp $";
+const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.20 2006-02-08 22:46:10 eerot Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"

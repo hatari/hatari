@@ -10,7 +10,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-char Build68k_rcsid[] = "Hatari $Id: build68k.c,v 1.4 2004-04-19 08:53:49 thothy Exp $";
+const char Build68k_rcsid[] = "Hatari $Id: build68k.c,v 1.5 2006-02-08 22:46:10 eerot Exp $";
 
 #include <assert.h>
 #include <ctype.h>

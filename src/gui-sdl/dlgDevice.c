@@ -6,7 +6,7 @@
 
   Device (Printer etc.) setup dialog
 */
-char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.7 2005-02-13 16:18:52 thothy Exp $";
+const char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.8 2006-02-08 22:46:10 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"

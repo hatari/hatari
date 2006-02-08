@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.5 2005-02-13 16:18:52 thothy Exp $";
+const char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.6 2006-02-08 22:46:10 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"

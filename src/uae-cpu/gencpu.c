@@ -22,7 +22,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.10 2006-01-23 19:47:49 thothy Exp $";
+const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.11 2006-02-08 22:46:10 eerot Exp $";
 
 #include <ctype.h>
 #include <string.h>

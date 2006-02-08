@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgDisk_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.13 2005-10-04 15:31:52 thothy Exp $";
+const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.14 2006-02-08 22:46:10 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"

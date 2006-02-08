@@ -16,7 +16,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License (gpl.txt) for more details.
  */
-char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.3 2005-06-05 17:29:05 thothy Exp $";
+const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.4 2006-02-08 22:46:10 eerot Exp $";
 
 #include <string.h>
 

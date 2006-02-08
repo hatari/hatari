@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.7 2005-10-15 14:00:10 thothy Exp $";
+const char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.8 2006-02-08 22:46:10 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"

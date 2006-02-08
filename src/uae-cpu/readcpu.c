@@ -10,7 +10,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-char ReadCpu_rcsid[] = "Hatari $Id: readcpu.c,v 1.5 2005-03-07 23:15:50 thothy Exp $";
+const char ReadCpu_rcsid[] = "Hatari $Id: readcpu.c,v 1.6 2006-02-08 22:46:10 eerot Exp $";
 
 #include <ctype.h>
 #include <string.h>
