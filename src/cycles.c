@@ -10,7 +10,7 @@
   and sound cycles), we simply update these counters with the main counter
   before returning the current counter value.
 */
-char Cycles_rcsid[] = "Hatari $Id: cycles.c,v 1.2 2006-02-04 21:34:41 eerot Exp $";
+const char Cycles_rcsid[] = "Hatari $Id: cycles.c,v 1.3 2006-02-08 22:49:27 eerot Exp $";
 
 #include "main.h"
 #include "cycles.h"

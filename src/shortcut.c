@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.21 2005-09-27 08:53:50 thothy Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.22 2006-02-08 22:49:27 eerot Exp $";
 
 #include <SDL.h>
 

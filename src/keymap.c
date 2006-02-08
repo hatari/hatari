@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.22 2005-09-26 18:24:09 thothy Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.23 2006-02-08 22:49:27 eerot Exp $";
 
 #include "main.h"
 #include "keymap.h"

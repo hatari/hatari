@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.34 2005-12-18 18:02:11 thothy Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.35 2006-02-08 22:49:27 eerot Exp $";
 
 #include "main.h"
 #include "bios.h"

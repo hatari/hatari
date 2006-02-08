@@ -33,7 +33,7 @@
     4 - 7  Length Of Data To Follow
     8 - end  Data (Samples)
 */
-char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.11 2005-09-26 15:20:14 thothy Exp $";
+const char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.12 2006-02-08 22:49:27 eerot Exp $";
 
 #include <SDL_endian.h>
 

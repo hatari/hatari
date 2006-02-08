@@ -9,7 +9,7 @@
   When Hatari runs, it can output information, debug, warning and error texts
   to the error log file and/or displays them in alert dialog boxes.
 */
-char Log_rcsid[] = "Hatari $Id: log.c,v 1.2 2005-06-05 14:19:39 thothy Exp $";
+const char Log_rcsid[] = "Hatari $Id: log.c,v 1.3 2006-02-08 22:49:27 eerot Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>

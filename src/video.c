@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.47 2006-02-08 09:17:01 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.48 2006-02-08 22:49:27 eerot Exp $";
 
 #include <SDL_endian.h>
 

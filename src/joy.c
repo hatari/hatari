@@ -8,7 +8,7 @@
 
   NOTE: The ST uses the joystick port 1 as the default controller.
 */
-char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.9 2005-12-17 10:22:52 thothy Exp $";
+const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.10 2006-02-08 22:49:27 eerot Exp $";
 
 #include <SDL.h>
 

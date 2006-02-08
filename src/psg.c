@@ -8,7 +8,7 @@
 
   Also used for the printer (centronics) port emulation (PSG Port B, Register 15)
 */
-char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.9 2005-12-18 18:02:12 thothy Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.10 2006-02-08 22:49:27 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"

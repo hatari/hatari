@@ -9,7 +9,7 @@
   NOTE: This file is included by cart.c - do not compile and link this file
   separately!
 */
-char CartData_rcsid[] = "Hatari $Id: cartData.c,v 1.3 2006-01-30 22:06:08 thothy Exp $";
+const char CartData_rcsid[] = "Hatari $Id: cartData.c,v 1.4 2006-02-08 22:49:27 eerot Exp $";
 
 
 /*

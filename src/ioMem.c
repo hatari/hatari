@@ -28,7 +28,7 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.9 2005-10-20 07:52:19 thothy Exp $";
+const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.10 2006-02-08 22:49:27 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"

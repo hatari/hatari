@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.24 2005-12-18 18:02:11 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.25 2006-02-08 22:49:27 eerot Exp $";
 
 #include <time.h>
 

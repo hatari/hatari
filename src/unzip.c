@@ -11,7 +11,7 @@
 
    Read unzip.h for more info
 */
-char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.5 2005-09-13 01:10:09 thothy Exp $";
+const char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.6 2006-02-08 22:49:27 eerot Exp $";
 
 
 #include <stdio.h>

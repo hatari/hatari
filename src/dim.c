@@ -6,7 +6,7 @@
 
   DIM disk image support.
 */
-char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.5 2005-11-23 17:20:40 thothy Exp $";
+const char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.6 2006-02-08 22:49:27 eerot Exp $";
 
 #include <zlib.h>
 

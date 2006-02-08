@@ -6,7 +6,7 @@
 
   ST Memory access functions.
 */
-char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.7 2005-07-15 19:30:32 thothy Exp $";
+const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.8 2006-02-08 22:49:27 eerot Exp $";
 
 #include "stMemory.h"
 

@@ -6,7 +6,7 @@
 
   YM File output, for use with STSound etc...
 */
-char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.12 2005-07-15 19:30:32 thothy Exp $";
+const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.13 2006-02-08 22:49:27 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"

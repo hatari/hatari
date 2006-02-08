@@ -9,7 +9,7 @@
   We intercept and direct some Bios calls to handle input/output to RS-232
   or the printer etc...
 */
-char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.8 2005-09-13 01:10:09 thothy Exp $";
+const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.9 2006-02-08 22:49:27 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"

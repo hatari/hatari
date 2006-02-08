@@ -6,7 +6,7 @@
 
   Tables with hardware IO handlers.
 */
-char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.13 2005-10-21 21:58:16 eerot Exp $";
+const char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.14 2006-02-08 22:49:27 eerot Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"

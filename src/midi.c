@@ -20,7 +20,7 @@
      the data register, but probably it should rather be done when reading the
      status register?).
 */
-char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.6 2005-12-18 18:02:12 thothy Exp $";
+const char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.7 2006-02-08 22:49:27 eerot Exp $";
 
 #include <SDL_types.h>
 

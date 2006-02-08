@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.25 2006-01-29 19:54:47 eerot Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.26 2006-02-08 22:49:27 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -90,7 +90,7 @@ static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer
  Now, Timer C set on a delay of 192($C0) and a preset DIV of 64 is 200Hz
  This makes the table entry 208.66666*192=40064(200Hz)
 */
-static float MFPTimerToCPUCycleTable[] = {
+static const float MFPTimerToCPUCycleTable[] = {
    0,             /* Timer Stop */
    13.04166667f,  /* Div by 4  */
    32.60416667f,  /* Div by 10 */

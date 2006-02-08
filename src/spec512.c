@@ -18,7 +18,7 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.12 2006-01-26 21:52:25 thothy Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.13 2006-02-08 22:49:27 eerot Exp $";
 
 #include <SDL_byteorder.h>
 

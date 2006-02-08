@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.22 2006-01-26 21:52:25 thothy Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.23 2006-02-08 22:49:27 eerot Exp $";
 
 #include <SDL_types.h>
 

@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.35 2005-12-18 23:20:39 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.36 2006-02-08 22:49:27 eerot Exp $";
 
 #include <SDL_endian.h>
 

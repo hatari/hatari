@@ -6,7 +6,7 @@
 
   Misc functions
 */
-char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.10 2005-02-13 16:18:49 thothy Exp $";
+const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.11 2006-02-08 22:49:27 eerot Exp $";
 
 #include <ctype.h>
 

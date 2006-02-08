@@ -12,7 +12,7 @@
   checked each HBL to perform the transfer of data from our disk image into
   the ST RAM area by simulating the DMA.
 */
-char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.26 2006-01-23 20:54:57 eerot Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.27 2006-02-08 22:49:27 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"

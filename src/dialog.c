@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.49 2005-10-04 21:44:22 thothy Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.50 2006-02-08 22:49:27 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"

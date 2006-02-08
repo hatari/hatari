@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.29 2005-09-26 15:20:14 thothy Exp $";
+const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.30 2006-02-08 22:49:27 eerot Exp $";
 
 #include <sys/stat.h>
 

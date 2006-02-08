@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.6 2006-01-29 19:07:13 eerot Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.7 2006-02-08 22:49:27 eerot Exp $";
 
 #include "main.h"
 #include "audio.h"

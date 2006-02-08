@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.47 2005-10-04 15:31:52 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.48 2006-02-08 22:49:27 eerot Exp $";
 
 #include <SDL_keysym.h>
 
