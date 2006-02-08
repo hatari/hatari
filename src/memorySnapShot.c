@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.20 2006-01-26 21:52:25 thothy Exp $";
+char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.21 2006-02-08 09:17:34 thothy Exp $";
 
 #include <SDL_types.h>
 #include <errno.h>
@@ -42,7 +42,7 @@ char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.20 2006-01-26 21
 #include "video.h"
 
 
-#define VERSION_STRING      "0.81 "   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "0.82 "   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 
