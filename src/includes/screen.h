@@ -22,7 +22,7 @@
 #define OVERSCAN_LEFT       (SCREENBYTES_LEFT*2)    /* Number of pixels in each border */
 #define OVERSCAN_RIGHT      (SCREENBYTES_RIGHT*2)
 #define OVERSCAN_TOP        29
-#define OVERSCAN_BOTTOM     38
+#define OVERSCAN_BOTTOM     47
 
 /* Number of visible screen lines including top/bottom borders */
 #define NUM_VISIBLE_LINES  (OVERSCAN_TOP+200+OVERSCAN_BOTTOM)
