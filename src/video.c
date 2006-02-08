@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-char Video_rcsid[] = "Hatari $Id: video.c,v 1.46 2006-02-07 16:32:53 thothy Exp $";
+char Video_rcsid[] = "Hatari $Id: video.c,v 1.47 2006-02-08 09:17:01 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -81,6 +81,9 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&ScanLineSkip,sizeof(ScanLineSkip));
   MemorySnapShot_Store(&HWScrollCount,sizeof(HWScrollCount));
   MemorySnapShot_Store(&pVideoRaster,sizeof(pVideoRaster));
+  MemorySnapShot_Store(&nScanlinesPerFrame, sizeof(nScanlinesPerFrame));
+  MemorySnapShot_Store(&nCyclesPerLine, sizeof(nCyclesPerLine));
+  MemorySnapShot_Store(&nFirstVisibleHbl, sizeof(nFirstVisibleHbl));
 }
 
 
@@ -133,7 +136,7 @@ void Video_InterruptHandler_HBL(void)
   /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
 
-  /* Generate new Timer AB, if need to - there are 313 HBLs per frame */
+  /* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
   if (nHBL < nScanlinesPerFrame-1)
     Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_HBL);
 
@@ -256,7 +259,7 @@ static void Video_StoreFirstLinePalette(void)
   for(i=0; i<16; i++)
     HBLPalettes[i] = SDL_SwapBE16(*pp2++);
   /* And set mask flag with palette and resolution */
-  HBLPaletteMasks[0] = (PALETTEMASK_RESOLUTION|PALETTEMASK_PALETTE) | (((unsigned long)IoMem_ReadByte(0xff8260)&0x3)<<16);
+  HBLPaletteMasks[0] = (PALETTEMASK_RESOLUTION|PALETTEMASK_PALETTE) | (((Uint32)IoMem_ReadByte(0xff8260)&0x3)<<16);
 }
 
 
@@ -270,7 +273,7 @@ static void Video_StoreResolution(int y)
   if (!(bUseHighRes || bUseVDIRes))
   {
     HBLPaletteMasks[y] &= ~(0x3<<16);
-    HBLPaletteMasks[y] |= ((unsigned long)IoMem_ReadByte(0xff8260)&0x3)<<16;
+    HBLPaletteMasks[y] |= ((Uint32)IoMem_ReadByte(0xff8260)&0x3)<<16;
   }
 }
 
@@ -485,6 +488,30 @@ static void Video_CopyVDIScreen(void)
 */
 static void Video_EndHBL(void)
 {
+  Uint8 nSyncByte = IoMem_ReadByte(0xff820a);
+
+  /* Check if we need to open borders: If we are running basically in 50 Hz, but
+   * a program switched to 60 Hz at certain screen lines, we have to open the
+   * corresponding border. The "Level 16" fullscreen in the Union demo is a good example. */
+  if ((nSyncByte & 2) == 0)
+  {
+    if (nHBL == SCREEN_START_HBL_60HZ-1 && nStartHBL == SCREEN_START_HBL_50HZ)
+    {
+      /* Top border */
+      OverscanMode |= OVERSCANMODE_TOP;       /* Set overscan bit */
+      nStartHBL = SCREEN_START_HBL_60HZ;      /* New start screen line */
+      pHBLPaletteMasks -= OVERSCAN_TOP;
+      pHBLPalettes -= OVERSCAN_TOP;
+    }
+    else if (nHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL-1
+             && nEndHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL)
+    {
+      /* Bottom border */
+      OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
+      nEndHBL = SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM;  /* New end screen line */
+    }
+  }
+
   /* Are we in possible visible display (including borders)? */
   if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+NUM_VISIBLE_LINES)
   {
@@ -971,6 +998,6 @@ void Video_ShifterMode_WriteByte(void)
     Video_SetHBLPaletteMaskPointers();
     *pHBLPaletteMasks &= 0xff00ffff;
     /* Store resolution after palette mask and set resolution write bit: */
-    *pHBLPaletteMasks |= (((unsigned long)VideoShifterByte|0x04)<<16);
+    *pHBLPaletteMasks |= (((Uint32)VideoShifterByte|0x04)<<16);
   }
 }
