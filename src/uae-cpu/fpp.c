@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.5 2006-02-08 22:46:10 eerot Exp $";
+const char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.6 2006-02-09 22:02:26 eerot Exp $";
 
 
 #define __USE_ISOC9X  /* We might be able to pick up a NaN */
@@ -197,8 +197,8 @@ STATIC_INLINE int get_fp_value (uae_u32 opcode, uae_u16 extra, fptype *src)
     int mode;
     int reg;
     uae_u32 ad = 0;
-    static int sz1[8] = { 4, 4, 12, 12, 2, 8, 1, 0 };
-    static int sz2[8] = { 4, 4, 12, 12, 2, 8, 2, 0 };
+    static const int sz1[8] = { 4, 4, 12, 12, 2, 8, 1, 0 };
+    static const int sz2[8] = { 4, 4, 12, 12, 2, 8, 2, 0 };
 
     if ((extra & 0x4000) == 0) {
 	*src = regs.fp[(extra >> 10) & 7];
@@ -325,8 +325,8 @@ STATIC_INLINE int put_fp_value (fptype value, uae_u32 opcode, uae_u16 extra)
     int mode;
     int reg;
     uae_u32 ad;
-    static int sz1[8] = { 4, 4, 12, 12, 2, 8, 1, 0 };
-    static int sz2[8] = { 4, 4, 12, 12, 2, 8, 2, 0 };
+    static const int sz1[8] = { 4, 4, 12, 12, 2, 8, 1, 0 };
+    static const int sz2[8] = { 4, 4, 12, 12, 2, 8, 2, 0 };
 
     if ((extra & 0x4000) == 0) {
 	regs.fp[(extra >> 10) & 7] = value;

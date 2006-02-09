@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.41 2006-02-08 22:46:10 eerot Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.42 2006-02-09 22:02:26 eerot Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -38,8 +38,8 @@ uaecptr last_addr_for_exception_3;
 /* Address that generated the exception */
 uaecptr last_fault_for_exception_3;
 
-int areg_byteinc[] = { 1,1,1,1,1,1,1,2 };
-int imm8_table[] = { 8,1,2,3,4,5,6,7 };
+const int areg_byteinc[] = { 1,1,1,1,1,1,1,2 };
+const int imm8_table[] = { 8,1,2,3,4,5,6,7 };
 
 int movem_index1[256];
 int movem_index2[256];
@@ -118,12 +118,12 @@ void build_cpufunctbl(void)
 {
     int i;
     unsigned long opcode;
-    struct cputbl *tbl = (cpu_level == 4 ? op_smalltbl_0_ff
-			  : cpu_level == 3 ? op_smalltbl_1_ff
-			  : cpu_level == 2 ? op_smalltbl_2_ff
-			  : cpu_level == 1 ? op_smalltbl_3_ff
-			  : ! cpu_compatible ? op_smalltbl_4_ff
-			  : op_smalltbl_5_ff);
+    const struct cputbl *tbl = (cpu_level == 4 ? op_smalltbl_0_ff
+			      : cpu_level == 3 ? op_smalltbl_1_ff
+			      : cpu_level == 2 ? op_smalltbl_2_ff
+			      : cpu_level == 1 ? op_smalltbl_3_ff
+			      : ! cpu_compatible ? op_smalltbl_4_ff
+			      : op_smalltbl_5_ff);
 
     Log_Printf(LOG_DEBUG, "Building CPU function table (%d %d %d).\n",
 	           cpu_level, cpu_compatible, address_space_24);
@@ -1504,7 +1504,7 @@ static void m68k_verify (uaecptr addr, uaecptr *nextpc)
 
 void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
-    static const char* ccnames[] =
+    static const char * const ccnames[] =
         { "T ","F ","HI","LS","CC","CS","NE","EQ",
           "VC","VS","PL","MI","GE","LT","GT","LE" };
 
@@ -1514,7 +1514,7 @@ void m68k_disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	char instrname[20],*ccpt;
 	int opwords;
 	uae_u32 opcode;
-	struct mnemolookup *lookup;
+	const struct mnemolookup *lookup;
 	struct instr *dp;
 	fprintf (f, "%08lx: ", m68k_getpc () + m68kpc_offset);
 	for (opwords = 0; opwords < 5; opwords++){

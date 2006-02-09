@@ -44,7 +44,7 @@ ENUMDECL {
     i_MMUOP
 } ENUMNAME (instrmnem);
 
-extern struct mnemolookup {
+extern const struct mnemolookup {
     instrmnem mnemo;
     const char *name;
 } lookuptab[];
@@ -82,7 +82,7 @@ struct instr_def {
     const char *opcstr;
 };
 
-extern struct instr_def defs68k[];
+extern const struct instr_def defs68k[];
 extern int n_defs68k;
 
 extern struct instr {

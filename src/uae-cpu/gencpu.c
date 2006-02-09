@@ -22,7 +22,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.11 2006-02-08 22:46:10 eerot Exp $";
+const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.12 2006-02-09 22:02:26 eerot Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -2537,7 +2537,7 @@ static void generate_func (void)
 	}
 
 	postfix = i;
-	fprintf (stblfile, "struct cputbl CPUFUNC(op_smalltbl_%d)[] = {\n", postfix);
+	fprintf (stblfile, "const struct cputbl CPUFUNC(op_smalltbl_%d)[] = {\n", postfix);
 
 	/* sam: this is for people with low memory (eg. me :)) */
 	printf ("\n"

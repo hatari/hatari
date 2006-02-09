@@ -10,7 +10,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-const char Build68k_rcsid[] = "Hatari $Id: build68k.c,v 1.5 2006-02-08 22:46:10 eerot Exp $";
+const char Build68k_rcsid[] = "Hatari $Id: build68k.c,v 1.6 2006-02-09 22:02:26 eerot Exp $";
 
 #include <assert.h>
 #include <ctype.h>
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
     /*printf ("#include \"sysconfig.h\"\n");*/
     printf ("#include \"sysdeps.h\"\n");
     printf ("#include \"readcpu.h\"\n");
-    printf ("struct instr_def defs68k[] = {\n");
+    printf ("const struct instr_def defs68k[] = {\n");
 #if 0
     tablef = fopen("table68k","r");
     if (tablef == NULL) {

@@ -56,8 +56,8 @@
 #define COPY_CARRY (SET_XFLG (GET_CFLG))
 #endif
 
-extern int areg_byteinc[];
-extern int imm8_table[];
+extern const int areg_byteinc[];
+extern const int imm8_table[];
 
 extern int movem_index1[256];
 extern int movem_index2[256];
@@ -321,17 +321,17 @@ extern uaecptr last_fault_for_exception_3;
 #define CPU_OP_NAME(a) op ## a
 
 /* 68040 */
-extern struct cputbl op_smalltbl_0_ff[];
+extern const struct cputbl op_smalltbl_0_ff[];
 /* 68020 + 68881 */
-extern struct cputbl op_smalltbl_1_ff[];
+extern const struct cputbl op_smalltbl_1_ff[];
 /* 68020 */
-extern struct cputbl op_smalltbl_2_ff[];
+extern const struct cputbl op_smalltbl_2_ff[];
 /* 68010 */
-extern struct cputbl op_smalltbl_3_ff[];
+extern const struct cputbl op_smalltbl_3_ff[];
 /* 68000 */
-extern struct cputbl op_smalltbl_4_ff[];
+extern const struct cputbl op_smalltbl_4_ff[];
 /* 68000 slow but compatible.  */
-extern struct cputbl op_smalltbl_5_ff[];
+extern const struct cputbl op_smalltbl_5_ff[];
 
 extern cpuop_func *cpufunctbl[65536];
 

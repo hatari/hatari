@@ -10,7 +10,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-const char ReadCpu_rcsid[] = "Hatari $Id: readcpu.c,v 1.6 2006-02-08 22:46:10 eerot Exp $";
+const char ReadCpu_rcsid[] = "Hatari $Id: readcpu.c,v 1.7 2006-02-09 22:02:26 eerot Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -19,7 +19,7 @@ const char ReadCpu_rcsid[] = "Hatari $Id: readcpu.c,v 1.6 2006-02-08 22:46:10 ee
 
 int nr_cpuop_funcs;
 
-struct mnemolookup lookuptab[] = {
+const struct mnemolookup lookuptab[] = {
     { i_ILLG, "ILLEGAL" },
     { i_OR, "OR" },
     { i_CHK, "CHK" },
