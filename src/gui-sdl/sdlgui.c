@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.12 2006-02-08 22:46:10 eerot Exp $";
+const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.13 2006-02-09 21:55:44 eerot Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -31,10 +31,11 @@ static int fontwidth, fontheight;           /* Width & height of the actual font
 /*
   Load an 1 plane XBM into a 8 planes SDL_Surface.
 */
-static SDL_Surface *SDLGui_LoadXBM(int w, int h, void *pXbmBits)
+static SDL_Surface *SDLGui_LoadXBM(int w, int h, const Uint8 *pXbmBits)
 {
   SDL_Surface *bitmap;
-  Uint8 *dstbits, *srcbits;
+  Uint8 *dstbits;
+  const Uint8 *srcbits;
   int x, y, srcpitch;
   int mask;
 
