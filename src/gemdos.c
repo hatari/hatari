@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.44 2005-11-23 17:43:38 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.45 2006-02-12 21:23:43 eerot Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -35,6 +35,7 @@ char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.44 2005-11-23 17:43:38 thothy Ex
 #include "floppy.h"
 #include "hdc.h"
 #include "gemdos.h"
+#include "gemdos_defines.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "misc.h"
@@ -47,15 +48,11 @@ char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.44 2005-11-23 17:43:38 thothy Ex
 
 // #define GEMDOS_VERBOSE
 // uncomment the following line to debug filename lookups on hd
-// #define FILE_DEBUG 1
+// #define GEMDOS_FILE_DEBUG 1
 
 #define ENABLE_SAVING             /* Turn on saving stuff */
 
 #define INVALID_HANDLE_VALUE -1
-
-#ifndef MAX_PATH
-#define MAX_PATH 256
-#endif
 
 /* GLOB_ONLYDIR is a GNU extension for the glob() function and not defined
  * on some systems. We should probably use something different for this
@@ -65,15 +62,54 @@ char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.44 2005-11-23 17:43:38 thothy Ex
 #define GLOB_ONLYDIR 0
 #endif
 
+/* Have we re-directed GemDOS vector to our own routines yet? */
+BOOL bInitGemDOS;
 
-/* structure with all the drive-specific data for our emulated drives */
+/* structure with all the drive-specific data for our emulated drives,
+ * used by GEMDOS_EMU_ON macro
+ */
 EMULATEDDRIVE **emudrives = NULL;
+
+#define  ISHARDDRIVE(Drive)  (Drive!=-1)
+
+/*
+  Disk Tranfer Address (DTA)
+*/
+#define TOS_NAMELEN  14
+
+typedef struct {
+  unsigned char index[2];
+  unsigned char magic[4];
+  char dta_pat[TOS_NAMELEN];
+  char dta_sattrib;
+  char dta_attrib;
+  unsigned char dta_time[2];
+  unsigned char dta_date[2];
+  unsigned char dta_size[4];
+  char dta_name[TOS_NAMELEN];
+} DTA;
+
+#define DTA_MAGIC_NUMBER  0x12983476
+#define MAX_DTAS_FILES    256      /* Must be ^2 */
+#define CALL_PEXEC_ROUTINE 3       /* Call our cartridge pexec routine */
+
+#define  BASE_FILEHANDLE     64    /* Our emulation handles - MUST not be valid TOS ones, but MUST be <256 */
+#define  MAX_FILE_HANDLES    32    /* We can allow 32 files open at once */
+
+/* 
+   DateTime structure used by TOS call $57 f_dattime 
+   Changed to fix potential problem with alignment.
+*/
+typedef struct {
+  unsigned short word1;
+  unsigned short word2;
+} DATETIME;
 
 typedef struct
 {
 	BOOL bUsed;
 	FILE *FileHandle;
-	char szActualName[MAX_PATH];        /* used by F_DATIME (0x57) */
+	char szActualName[MAX_GEMDOS_PATH];        /* used by F_DATIME (0x57) */
 } FILE_HANDLE;
 
 typedef struct
@@ -82,16 +118,15 @@ typedef struct
 	int  nentries;                      /* number of entries in fs directory */
 	int  centry;                        /* current entry # */
 	struct dirent **found;              /* legal files */
-	char path[MAX_PATH];                /* sfirst path */
+	char path[MAX_GEMDOS_PATH];                /* sfirst path */
 } INTERNAL_DTA;
 
-FILE_HANDLE  FileHandles[MAX_FILE_HANDLES];
-INTERNAL_DTA InternalDTAs[MAX_DTAS_FILES];
-int DTAIndex;                               /* Circular index into above */
-BOOL bInitGemDOS;                           /* Have we re-directed GemDOS vector to our own routines yet? */
-DTA *pDTA;                                  /* Our GEMDOS hard drive Disk Transfer Address structure */
-unsigned short int CurrentDrive;            /* Current drive (0=A,1=B,2=C etc...) */
-Uint32 act_pd;                              /* Used to get a pointer to the current basepage */
+static FILE_HANDLE  FileHandles[MAX_FILE_HANDLES];
+static INTERNAL_DTA InternalDTAs[MAX_DTAS_FILES];
+static int DTAIndex;        /* Circular index into above */
+static DTA *pDTA;           /* Our GEMDOS hard drive Disk Transfer Address structure */
+static Uint16 CurrentDrive; /* Current drive (0=A,1=B,2=C etc...) */
+static Uint32 act_pd;       /* Used to get a pointer to the current basepage */
 
 
 #ifdef GEMDOS_VERBOSE
@@ -270,7 +305,7 @@ static unsigned char GemDOS_ConvertAttribute(mode_t mode)
 */
 static BOOL PopulateDTA(char *path, struct dirent *file)
 {
-	char tempstr[MAX_PATH];
+	char tempstr[MAX_GEMDOS_PATH];
 	struct stat filestat;
 	int n;
 
@@ -792,7 +827,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 					found = 1;
 				}
 			}
-#if FILE_DEBUG
+#if GEMDOS_FILE_DEBUG
 			if (!found)
 			{
 				/* It's often normal, the gem uses this to test for existence */
@@ -804,7 +839,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 		}
 	}
 
-#if FILE_DEBUG
+#if GEMDOS_FILE_DEBUG
 	fprintf(stderr,"conv %s -> %s\n",pszFileName,pszDestName);
 #endif
 }
@@ -977,7 +1012,7 @@ static BOOL GemDOS_DFree(Uint32 Params)
 */
 static BOOL GemDOS_MkDir(Uint32 Params)
 {
-	char szDirPath[MAX_PATH];
+	char szDirPath[MAX_GEMDOS_PATH];
 	char *pDirName;
 	int Drive;
 
@@ -1009,7 +1044,7 @@ static BOOL GemDOS_MkDir(Uint32 Params)
 */
 static BOOL GemDOS_RmDir(Uint32 Params)
 {
-	char szDirPath[MAX_PATH];
+	char szDirPath[MAX_GEMDOS_PATH];
 	char *pDirName;
 	int Drive;
 
@@ -1039,13 +1074,13 @@ static BOOL GemDOS_RmDir(Uint32 Params)
 */
 static BOOL GemDOS_ChDir(Uint32 Params)
 {
-	char szDirPath[MAX_PATH];
+	char szDirPath[MAX_GEMDOS_PATH];
 	char *pDirName;
 	int Drive;
 
 	/* Find new directory */
 	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
-#if FILE_DEBUG
+#if GEMDOS_FILE_DEBUG
 
 	fprintf(stderr,"chdir %s\n",pDirName);
 #endif
@@ -1085,7 +1120,7 @@ static BOOL GemDOS_ChDir(Uint32 Params)
 */
 static BOOL GemDOS_Create(Uint32 Params)
 {
-	char szActualFileName[MAX_PATH];
+	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
 	const char *rwflags[] =
 		{
@@ -1147,7 +1182,7 @@ static BOOL GemDOS_Create(Uint32 Params)
 */
 static BOOL GemDOS_Open(Uint32 Params)
 {
-	char szActualFileName[MAX_PATH];
+	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
 	const char *open_modes[] =
 		{ "rb", "wb", "r+", "rb"
@@ -1322,7 +1357,7 @@ static BOOL GemDOS_Write(Uint32 Params)
 static BOOL GemDOS_UnLink(Uint32 Params)
 {
 #ifdef ENABLE_SAVING
-	char szActualFileName[MAX_PATH];
+	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
 	int Drive;
 
@@ -1385,7 +1420,7 @@ static BOOL GemDOS_LSeek(Uint32 Params)
 */
 static BOOL GemDOS_Fattrib(Uint32 Params)
 {
-	char sActualFileName[MAX_PATH];
+	char sActualFileName[MAX_GEMDOS_PATH];
 	char *psFileName;
 	int nDrive;
 	int nRwFlag, nAttrib;
@@ -1447,7 +1482,7 @@ static int GemDOS_GetDir(Uint32 Params)
 	/* is it our drive? */
 	if ((Drive == 0 && CurrentDrive >= 2) || Drive >= 3)
 	{
-		char path[MAX_PATH];
+		char path[MAX_GEMDOS_PATH];
 		int i,len,c;
 
 		Regs[REG_D0] = GEMDOS_EOK;          /* OK */
@@ -1460,7 +1495,7 @@ static int GemDOS_GetDir(Uint32 Params)
 			c = path[i];
 			STMemory_WriteByte(Address+i, (c=='/' ? '\\' : c) );
 		}
-#if FILE_DEBUG
+#if GEMDOS_FILE_DEBUG
 		fprintf(stderr,"curdir %d -> %s\n",Drive,path);
 #endif
 
@@ -1592,8 +1627,8 @@ static BOOL GemDOS_SNext(Uint32 Params)
 */
 static BOOL GemDOS_SFirst(Uint32 Params)
 {
-	char szActualFileName[MAX_PATH];
-	char tempstr[MAX_PATH];
+	char szActualFileName[MAX_GEMDOS_PATH];
+	char tempstr[MAX_GEMDOS_PATH];
 	char *pszFileName;
 	struct dirent **files;
 	Uint16 Attr;
@@ -1700,7 +1735,7 @@ static BOOL GemDOS_SFirst(Uint32 Params)
 static BOOL GemDOS_Rename(Uint32 Params)
 {
 	char *pszNewFileName,*pszOldFileName;
-	char szNewActualFileName[MAX_PATH],szOldActualFileName[MAX_PATH];
+	char szNewActualFileName[MAX_GEMDOS_PATH],szOldActualFileName[MAX_GEMDOS_PATH];
 	int NewDrive, OldDrive;
 
 	/* Read details from stack */
