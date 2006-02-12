@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-char Main_rcsid[] = "Hatari $Id: main.c,v 1.82 2005-11-23 19:08:27 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.83 2006-02-12 18:53:06 eerot Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -16,6 +16,7 @@ char Main_rcsid[] = "Hatari $Id: main.c,v 1.82 2005-11-23 19:08:27 thothy Exp $"
 
 #include "main.h"
 #include "configuration.h"
+#include "options.h"
 #include "dialog.h"
 #include "audio.h"
 #include "joy.h"
@@ -48,13 +49,13 @@ char Main_rcsid[] = "Hatari $Id: main.c,v 1.82 2005-11-23 19:08:27 thothy Exp $"
 #include "uae-cpu/hatari-glue.h"
 
 
-BOOL bQuitProgram=FALSE;                  /* Flag to quit program cleanly */
-BOOL bEmulationActive=TRUE;               /* Run emulation when started */
-BOOL bEnableDebug=FALSE;                  /* Enable debug UI? */
-static BOOL bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
-static char szBootDiskImage[FILENAME_MAX];
+BOOL bQuitProgram = FALSE;                /* Flag to quit program cleanly */
+BOOL bEnableDebug = FALSE;                /* Enable debug UI? */
 char szWorkingDir[FILENAME_MAX];          /* Working directory */
-BOOL bIgnoreNextMouseMotion = FALSE;      /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
+static BOOL bEmulationActive = TRUE;      /* Run emulation when started */
+static BOOL bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
+static char szBootDiskImage[FILENAME_MAX];   /* boot disk path or empty */
+static BOOL bIgnoreNextMouseMotion = FALSE;  /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
 
 
 /*-----------------------------------------------------------------------*/
@@ -302,280 +303,6 @@ void Main_EventHandler(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Show supported options.
-*/
-static void Main_ShowOptions(void)
-{
-  printf("Usage:\n hatari [options] [disk image name]\n"
-         "Where options are:\n"
-         "  --help or -h          Print this help text and exit.\n"
-         "  --version or -v       Print version number and exit.\n"
-         "  --mono or -m          Start in monochrome mode instead of color.\n"
-         "  --fullscreen or -f    Start emulator in fullscreen mode.\n"
-         "  --window or -w        Start emulator in window mode.\n"
-         "  --joystick or -j      Emulate a ST joystick with the cursor keys.\n"
-         "  --nosound             Disable sound (faster!).\n"
-         "  --printer             Enable printer support (experimental).\n"
-         "  --midi <filename>     Enable midi support and write midi data to <filename>.\n"
-         "  --rs232 <filename>    Use <filename> as the serial port device.\n"
-         "  --frameskip           Skip every second frame (speeds up emulation!).\n"
-         "  --debug or -D         Allow debug interface.\n"
-         "  --harddrive <dir>     Emulate an ST harddrive\n"
-         "     or -d <dir>         (<dir> = root directory).\n"
-         "  --hdimage <imagename> Emulate an ST harddrive with an image.\n"
-         "  --tos <file>          Use TOS image <file>.\n"
-         "  --cartridge <file>    Use ROM cartridge image <file>.\n"
-         "  --cpulevel <x>        Set the CPU type (x => 680x0) (TOS 2.06 only!).\n"
-         "  --compatible          Use a more compatible (but slower) 68000 CPU mode.\n"
-         "  --blitter             Enable blitter emulation (unstable!)\n"
-         "  --vdi                 Use extended VDI resolution\n"
-         "  --memsize <x>         ST RAM size. x = size in MiB from 0 to 14; 0 for 512KiB\n"
-         "  --configfile <file>   Use <file> instead of ~/.hatari.cfg as configuration\n"
-         "     or -c <file>        file.\n"
-         "  --slowfdc             Slow down FDC emulation (very experimental!).\n"
-         "  --machine <x>         Select machine type (x = st or ste)\n"
-        );
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Check for any passed parameters
-*/
-static void Main_ReadParameters(int argc, char *argv[])
-{
-  int i;
-
-  /* Scan for any which we can use */
-  for(i=1; i<argc; i++)
-  {
-    if (strlen(argv[i])>0)
-    {
-      if (!strcmp(argv[i],"--help") || !strcmp(argv[i],"-h"))
-      {
-        Main_ShowOptions();
-        exit(0);
-      }
-      else if (!strcmp(argv[i],"--version") || !strcmp(argv[i],"-v"))
-      {
-        printf("This is %s.\n", PROG_NAME);
-        printf("This program is free software licensed under the GNU GPL.\n");
-        exit(0);
-      }
-      else if (!strcmp(argv[i],"--mono") || !strcmp(argv[i],"-m"))
-      {
-        bUseHighRes=TRUE;
-        ConfigureParams.Screen.bUseHighRes=TRUE;
-        STRes=PrevSTRes=ST_HIGH_RES;
-      }
-      else if (!strcmp(argv[i],"--fullscreen") || !strcmp(argv[i],"-f"))
-      {
-        ConfigureParams.Screen.bFullScreen = TRUE;
-      }
-      else if (!strcmp(argv[i],"--window") || !strcmp(argv[i],"-w"))
-      {
-        ConfigureParams.Screen.bFullScreen = FALSE;
-      }
-      else if (!strcmp(argv[i],"--joystick") || !strcmp(argv[i],"-j"))
-      {
-        ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_KEYBOARD;
-      }
-      else if ( !strcmp(argv[i],"--nosound") )
-      {
-        ConfigureParams.Sound.bEnableSound = FALSE;
-      }
-      else if ( !strcmp(argv[i],"--frameskip") )
-      {
-        ConfigureParams.Screen.bFrameSkip = TRUE;
-      }
-      else if ( !strcmp(argv[i],"--printer") )
-      {
-        /* FIXME: add more commandline configuration for printing */
-        ConfigureParams.Printer.bEnablePrinting = TRUE;
-      }
-      else if (!strcmp(argv[i], "--midi"))
-      {
-        if(i+1 >= argc)
-          fprintf(stderr, "Missing argument for --midi\n");
-        else
-        {
-          if (strlen(argv[i+1]) <= sizeof(ConfigureParams.Midi.szMidiOutFileName))
-          {
-            ConfigureParams.Midi.bEnableMidi = TRUE;
-            strcpy(ConfigureParams.Midi.szMidiOutFileName, argv[i+1]);
-          }
-          else fprintf(stderr, "Midi file name too long!\n");
-          i += 1;
-        }
-      }
-      else if (!strcmp(argv[i], "--rs232"))
-      {
-        if(i+1 >= argc)
-          fprintf(stderr, "Missing argument for --rs232\n");
-        else
-        {
-          if (strlen(argv[i+1]) <= sizeof(ConfigureParams.RS232.szOutFileName))
-          {
-            ConfigureParams.RS232.bEnableRS232 = TRUE;
-            strcpy(ConfigureParams.RS232.szOutFileName, argv[i+1]);
-            strcpy(ConfigureParams.RS232.szInFileName, argv[i+1]);
-          }
-          else fprintf(stderr, "RS232 file name too long!\n");
-          i += 1;
-        }
-      }
-      else if (!strcmp(argv[i],"--debug") || !strcmp(argv[i],"-D"))
-      {
-        bEnableDebug=TRUE;
-      }
-      else if (!strcmp(argv[i],"--hdimage"))
-      {
-        if(i+1 >= argc)
-          fprintf(stderr, "Missing argument for --hdimage\n");
-        else
-        {
-          if (strlen(argv[i+1]) <= sizeof(ConfigureParams.HardDisk.szHardDiskImage))
-          {
-            ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
-            strcpy(ConfigureParams.HardDisk.szHardDiskImage, argv[i+1]);
-          }
-          else fprintf(stderr, "HD image file name too long!\n");
-          i += 1;
-        }
-      }
-      else if (!strcmp(argv[i],"--harddrive") || !strcmp(argv[i],"-d"))
-      {
-        if(i+1 >= argc)
-          fprintf(stderr, "Missing argument for --harddrive\n");
-        else
-        {
-          if(strlen(argv[i+1]) <= MAX_PATH )
-          {
-            ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
-            ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
-            strcpy(ConfigureParams.HardDisk.szHardDiskDirectories[0], argv[i+1]);
-          }
-          else fprintf(stderr, "HD directory name too long!\n");
-          i += 1;
-        }
-      }
-      else if (!strcmp(argv[i],"--tos"))
-      {
-        if(i+1>=argc)
-          fprintf(stderr,"Missing argument for --tos.\n");
-        else
-          strncpy(ConfigureParams.Rom.szTosImageFileName, argv[++i], sizeof(ConfigureParams.Rom.szTosImageFileName));
-      }
-      else if (!strcmp(argv[i],"--cartridge"))
-      {
-        if(i+1>=argc)
-          fprintf(stderr,"Missing argument for --cartridge.\n");
-        else
-          strncpy(ConfigureParams.Rom.szCartridgeImageFileName, argv[++i], sizeof(ConfigureParams.Rom.szCartridgeImageFileName));
-      }
-      else if (!strcmp(argv[i],"--cpulevel"))
-      {
-        if(i+1>=argc)
-          fprintf(stderr,"Missing argument for --cpulevel.\n");
-         else
-          cpu_level = atoi(argv[++i]);
-        if(cpu_level<0 || cpu_level>4)
-          cpu_level = 0;
-        ConfigureParams.System.nCpuLevel = cpu_level;
-      }
-      else if (!strcmp(argv[i],"--compatible") || !strcmp(argv[i],"-d"))
-      {
-        cpu_compatible = TRUE;
-        ConfigureParams.System.bCompatibleCpu = TRUE;
-      }
-      else if (!strcmp(argv[i],"--blitter"))
-      {
-        ConfigureParams.System.bBlitter = TRUE;
-      }
-      else if (!strcmp(argv[i], "--vdi"))
-      {
-        bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
-      }
-      else if (!strcmp(argv[i], "--memsize"))
-      {
-        if(i+1 >= argc)
-          fprintf(stderr,"Missing argument for --memsize.\n");
-        else
-          ConfigureParams.Memory.nMemorySize = atoi(argv[++i]);
-        if (ConfigureParams.Memory.nMemorySize < 0 || ConfigureParams.Memory.nMemorySize > 14)
-        {
-          fprintf(stderr, "Memory size must be between 0 and 14 MB.\n");
-          ConfigureParams.Memory.nMemorySize = 1;
-        }
-      }
-      else if (!strcmp(argv[i],"--configfile") || !strcmp(argv[i],"-c"))
-      {
-        if (i+1 >= argc)
-          fprintf(stderr, "Missing argument for --configfile\n");
-        else
-        {
-          if (strlen(argv[i+1]) <= sizeof(sConfigFileName))
-          {
-            strcpy(sConfigFileName, argv[i+1]);
-            Configuration_Load(NULL);
-          }
-          else
-            fprintf(stderr, "Config file name too long!\n");
-          i += 1;
-        }
-      }
-      else if (!strcmp(argv[i], "--slowfdc"))
-      {
-        ConfigureParams.System.bSlowFDC = TRUE;
-      }
-      else if (!strcmp(argv[i],"--machine"))
-      {
-        if (i+1 >= argc)
-          fprintf(stderr, "Missing argument for --machine\n");
-        else
-        {
-          if (strcasecmp(argv[i+1], "st") == 0)
-          {
-            ConfigureParams.System.nMachineType = MACHINE_ST;
-          }
-          else if (strcasecmp(argv[i+1], "ste") == 0)
-          {
-            ConfigureParams.System.nMachineType = MACHINE_STE;
-          }
-          else if (strcasecmp(argv[i+1], "tt") == 0)
-          {
-            ConfigureParams.System.nMachineType = MACHINE_TT;
-            ConfigureParams.System.nCpuLevel = cpu_level = 3;
-            ConfigureParams.System.nCpuFreq = 32;
-          }
-          else
-          {
-            fprintf(stderr, "Unknown machine type: %s\n", argv[i+1]);
-          }
-          i += 1;
-        }
-      }
-      else
-      {
-        /* Possible passed disk image filename, ie starts with character other than '-' */
-        if (argv[i][0] != '-' && strlen(argv[i]) < sizeof(szBootDiskImage)
-            && File_Exists(argv[i]))
-        {
-          strcpy(szBootDiskImage, argv[i]);
-          File_MakeAbsoluteName(szBootDiskImage);
-        }
-        else
-          fprintf(stderr,"Illegal parameter: %s\n", argv[i]);
-      }
-    }
-  }
-
-  Configuration_WorkOnDetails(FALSE);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
   Initialise emulation
 */
 static void Main_Init(void)
@@ -685,6 +412,7 @@ int main(int argc, char *argv[])
   /* Get working directory */
   getcwd(szWorkingDir, FILENAME_MAX);
 
+  /* no boot disk image */
   szBootDiskImage[0] = 0;
 
   /* Set default configuration values: */
@@ -694,8 +422,8 @@ int main(int argc, char *argv[])
   Configuration_Load(CONFDIR"/hatari.cfg");     /* Try the global configuration file first */
   Configuration_Load(NULL);                     /* Now try the users configuration file */
 
-  /* Check for any passed parameters */
-  Main_ReadParameters(argc, argv);
+  /* Check for any passed parameters, get boot disk */
+  Opt_ParseParameters(argc, argv, szBootDiskImage, sizeof(szBootDiskImage));
 
   /* Init emulator system */
   Main_Init();
