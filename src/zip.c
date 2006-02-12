@@ -6,7 +6,7 @@
 
   Zipped disk support, uses zlib
 */
-const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.16 2006-02-08 22:49:27 eerot Exp $";
+const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.17 2006-02-12 21:28:22 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +36,7 @@ const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.16 2006-02-08 22:49:27 eerot Exp
 
 
 /* Possible disk image extensions to scan for */
-static const char *pszDiskNameExts[] =
+static const char * const pszDiskNameExts[] =
 {
   ".msa",
   ".st",
@@ -345,7 +345,7 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiskType)
 /*
   Return the first matching file in a zip, or NULL on failure
 */
-static char *ZIP_FirstFile(char *filename, const char *ppsExts[])
+static char *ZIP_FirstFile(char *filename, const char * const ppsExts[])
 {
 	zip_dir *files;
 	int i, j;
@@ -554,7 +554,7 @@ BOOL ZIP_WriteDisk(char *pszFileName,unsigned char *pBuffer,int ImageSize)
   Load first file from a .ZIP archive into memory, and return the number
   of bytes loaded.
 */
-Uint8 *ZIP_ReadFirstFile(char *pszFileName, long *pImageSize, const char *ppszExts[])
+Uint8 *ZIP_ReadFirstFile(char *pszFileName, long *pImageSize, const char * const ppszExts[])
 {
 	unzFile uf=NULL;
 	Uint8 *pBuffer;

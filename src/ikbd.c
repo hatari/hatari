@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.25 2006-02-08 22:49:27 eerot Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.26 2006-02-12 21:28:22 eerot Exp $";
 
 #include <time.h>
 
@@ -51,7 +51,8 @@ KEYBOARD Keyboard;
 
 /* Keyboard processor */
 KEYBOARD_PROCESSOR KeyboardProcessor;   /* Keyboard processor details */
-BOOL DoubleClickPattern[] = {           /* Pattern of mouse button up/down in ST frames (run off a double-click message) */
+/* Pattern of mouse button up/down in ST frames (run off a double-click message) */
+static const BOOL DoubleClickPattern[] = {
  BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,
  0,0,0,0,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE };
 
@@ -146,7 +147,7 @@ static BOOL bByteInTransitToACIA = FALSE;   /* Is a byte being sent to the ACIA 
 */
 
 /* List of possible keyboard commands, others are seen as NOPs by keyboard processor */
-static IKBD_COMMAND_PARAMS KeyboardCommands[] = {
+static const IKBD_COMMAND_PARAMS KeyboardCommands[] = {
   /* Known messages, counts include command byte */
   { 0x80,2,  IKBD_Cmd_Reset },
   { 0x07,2,  IKBD_Cmd_MouseAction },

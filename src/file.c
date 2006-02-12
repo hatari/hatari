@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.26 2006-02-08 22:49:27 eerot Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.27 2006-02-12 21:28:22 eerot Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -243,7 +243,7 @@ BOOL File_DoesFileNameEndWithSlash(char *pszFileName)
   Read file from disk into memory, allocate memory for it if need to (pass
   Address as NULL).
 */
-void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *ppszExts[])
+void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char * const ppszExts[])
 {
   void *pFile = NULL;
   long FileSize = 0;
@@ -331,7 +331,7 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
 /*
   Save file to disk, return FALSE if errors
 */
-BOOL File_Save(char *pszFileName, void *pAddress, size_t Size, BOOL bQueryOverwrite)
+BOOL File_Save(char *pszFileName, const void *pAddress, size_t Size, BOOL bQueryOverwrite)
 {
   BOOL bRet = FALSE;
 
@@ -444,7 +444,7 @@ BOOL File_QueryOverwrite(const char *pszFileName)
 /*
   Try filename with various extensions and check if file exists - if so return correct name
 */
-BOOL File_FindPossibleExtFileName(char *pszFileName, const char *ppszExts[])
+BOOL File_FindPossibleExtFileName(char *pszFileName, const char * const ppszExts[])
 {
   char *szSrcDir, *szSrcName, *szSrcExt;
   char *szTempFileName;

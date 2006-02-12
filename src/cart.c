@@ -14,7 +14,7 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to
   a byte array and stored in 'Cart_data[]' (see cartData.c).
 */
-const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.11 2006-02-08 22:49:27 eerot Exp $";
+const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.12 2006-02-12 21:28:22 eerot Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -28,7 +28,7 @@ const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.11 2006-02-08 22:49:27 eerot E
 
 
 /* Possible cartridge file extensions to scan for */
-static const char *psCartNameExts[] =
+static const char * const psCartNameExts[] =
 {
 	".img",
 	".rom",

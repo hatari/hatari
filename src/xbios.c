@@ -9,7 +9,7 @@
   We intercept and direct some XBios calls to handle the RS-232 etc. and help
   with floppy debugging.
 */
-const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.10 2006-02-08 22:49:27 eerot Exp $";
+const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.11 2006-02-12 21:28:22 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -27,7 +27,7 @@ const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.10 2006-02-08 22:49:27 eerot
 
 
 /* List of Atari ST RS-232 baud rates */
-static int BaudRates[] = {
+static const int BaudRates[] = {
   19200, /* 0 */
   9600,  /* 1 */
   4800,  /* 2 */

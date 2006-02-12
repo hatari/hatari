@@ -17,8 +17,8 @@ typedef struct
 	void *WriteFunc;             /* Write function */
 } INTERCEPT_ACCESS_FUNC;
 
-extern INTERCEPT_ACCESS_FUNC IoMemTable_ST[];
-extern INTERCEPT_ACCESS_FUNC IoMemTable_STE[];
-extern INTERCEPT_ACCESS_FUNC IoMemTable_TT[];
+extern const INTERCEPT_ACCESS_FUNC IoMemTable_ST[];
+extern const INTERCEPT_ACCESS_FUNC IoMemTable_STE[];
+extern const INTERCEPT_ACCESS_FUNC IoMemTable_TT[];
 
 #endif

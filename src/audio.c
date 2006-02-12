@@ -6,7 +6,7 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-const char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.24 2006-02-08 22:49:27 eerot Exp $";
+const char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.25 2006-02-12 21:28:22 eerot Exp $";
 
 #include <SDL.h>
 
@@ -18,7 +18,7 @@ const char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.24 2006-02-08 22:49:27 eerot
 
 
 /* 11Khz, 22Khz, 44Khz playback */
-int SoundPlayBackFrequencies[] =
+int const SoundPlayBackFrequencies[] =
 {
 	11025,  /* PLAYBACK_LOW */
 	22050,  /* PLAYBACK_MEDIUM */

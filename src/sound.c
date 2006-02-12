@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.23 2006-02-08 22:49:27 eerot Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.24 2006-02-12 21:28:22 eerot Exp $";
 
 #include <SDL_types.h>
 
@@ -87,7 +87,7 @@ typedef struct
 } ENVSHAPE;
 
 /* Envelope shapes */
-static ENVSHAPE EnvShapes[16] =
+static const ENVSHAPE EnvShapes[16] =
 {
  { {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  00xx  */
  { {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  00xx  */
@@ -108,7 +108,7 @@ static ENVSHAPE EnvShapes[16] =
 };
 
 /* Square wave look up table */
-static int SquareWave[16] = { 127,127,127,127,127,127,127,127, -128,-128,-128,-128,-128,-128,-128,-128 };
+static const int SquareWave[16] = { 127,127,127,127,127,127,127,127, -128,-128,-128,-128,-128,-128,-128,-128 };
 /* LogTable */
 static int LogTable[256];
 static int LogTable16[16];
@@ -151,7 +151,7 @@ static void Sound_CreateLogTables(void)
   Create envelope shape, store to table
   ( Wave is stored as 4 cycles, where cycles 1,2 are start and 3,4 are looped )
 */
-static void Sound_CreateEnvelopeShape(ENVSHAPE *pEnvShape,int *pEnvelopeValues)
+static void Sound_CreateEnvelopeShape(const ENVSHAPE *pEnvShape,int *pEnvelopeValues)
 {
   int i,j,Value;
 

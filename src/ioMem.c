@@ -28,7 +28,7 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.10 2006-02-08 22:49:27 eerot Exp $";
+const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.11 2006-02-12 21:28:22 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -91,7 +91,7 @@ void IoMem_Init(void)
 {
 	Uint32 addr;
 	int i;
-	INTERCEPT_ACCESS_FUNC *pInterceptAccessFuncs = NULL;
+	const INTERCEPT_ACCESS_FUNC *pInterceptAccessFuncs = NULL;
 
 	/* Set default IO access handler (-> bus error) */
 	IoMem_SetBusErrorRegion(0xff8000, 0xffffff);

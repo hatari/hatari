@@ -6,7 +6,7 @@
 
   Tables with hardware IO handlers.
 */
-const char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.14 2006-02-08 22:49:27 eerot Exp $";
+const char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.15 2006-02-12 21:28:22 eerot Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -28,7 +28,7 @@ const char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.14 2006-02-08 22
 /*
   List of functions to handle read/write hardware interceptions for a plain ST.
 */
-INTERCEPT_ACCESS_FUNC IoMemTable_ST[] =
+const INTERCEPT_ACCESS_FUNC IoMemTable_ST[] =
 {
 	{ 0xff8001, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Memory configuration */
 
@@ -174,7 +174,7 @@ INTERCEPT_ACCESS_FUNC IoMemTable_ST[] =
 /*
   List of functions to handle read/write hardware interceptions for a STE.
 */
-INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
+const INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 {
 	{ 0xff8000, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8001, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Memory configuration */
@@ -372,7 +372,7 @@ INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
   List of functions to handle read/write hardware interceptions for a TT.
   Note: This is not very well tested yet!
 */
-INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
+const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 {
 	{ 0xff8000, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8001, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Memory configuration */

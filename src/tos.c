@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.36 2006-02-08 22:49:27 eerot Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.37 2006-02-12 21:28:22 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -43,7 +43,7 @@ int nNumDrives = 2;                     /* Number of drives, default is 2 for A:
 
 
 /* Possible TOS file extensions to scan for */
-static const char *pszTosNameExts[] =
+static const char * const pszTosNameExts[] =
 {
   ".img",
   ".rom",

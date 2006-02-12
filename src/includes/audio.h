@@ -16,7 +16,7 @@ enum
   FREQ_44Khz
 };
 
-extern int SoundPlayBackFrequencies[];
+extern const int SoundPlayBackFrequencies[];
 extern BOOL bSoundWorking;
 extern int OutputAudioFreqIndex;
 extern int SoundBufferSize;

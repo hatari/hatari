@@ -16,7 +16,7 @@
   the current instruction takes 20 cycles we will be 16 cycles late - this is handled in
   the adjust functions.
 */
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.12 2006-02-08 22:49:27 eerot Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.13 2006-02-12 21:28:22 eerot Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -33,7 +33,7 @@ int nCyclesOver = 0;
 
 
 /* List of possible interrupt handlers to be store in 'PendingInterruptTable', used for 'MemorySnapShot' */
-static void *pIntHandlerFunctions[] =
+static void * const pIntHandlerFunctions[] =
 {
   NULL,
   Video_InterruptHandler_VBL,

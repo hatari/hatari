@@ -9,7 +9,7 @@
   NOTE: This file is included by cart.c - do not compile and link this file
   separately!
 */
-const char CartData_rcsid[] = "Hatari $Id: cartData.c,v 1.4 2006-02-08 22:49:27 eerot Exp $";
+const char CartData_rcsid[] = "Hatari $Id: cartData.c,v 1.5 2006-02-12 21:28:22 eerot Exp $";
 
 
 /*
@@ -18,7 +18,7 @@ const char CartData_rcsid[] = "Hatari $Id: cartData.c,v 1.4 2006-02-08 22:49:27 
   file or use an assembler like TurboAss that can generate absolute binary images.
   (I am using TurboAss and  hexdump -v -e ' 16/1 "0x%02x," "\n" '  to create it).
  */
-Uint8 Cart_data[] =
+const Uint8 Cart_data[] =
 {
 0xab,0xcd,0xef,0x42,0x00,0x00,0x00,0x00,0x08,0xfa,0x02,0x04,0x00,0xfa,0x02,0x0a,
 0x58,0x00,0x32,0x29,0x00,0x00,0x36,0x9e,0x48,0x41,0x54,0x41,0x52,0x49,0x2e,0x54,

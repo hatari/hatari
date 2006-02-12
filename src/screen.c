@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.47 2006-02-08 22:49:27 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.48 2006-02-12 21:28:22 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -829,7 +829,7 @@ static void Screen_Blit(BOOL bSwapScreen)
 /*     { 0,0, 640,400 },                                       /\* ST_HIGH_RES *\/ */
 /*     { (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400 },   /\* ST_LOWMEDIUM_MIX_RES *\/ */
 /*   }; */
-  static SDL_Rect SrcWindowBitmapSizes[] =
+  static const SDL_Rect SrcWindowBitmapSizes[] =
   {
     { 0,0, 320,200 },                /* ST_LOW_RES */
     { 0,0, 640,400 },      /* ST_MEDIUM_RES */
@@ -837,7 +837,7 @@ static void Screen_Blit(BOOL bSwapScreen)
     { 0,0, 640,400 },   /* ST_LOWMEDIUM_MIX_RES */
   };
 
-  static SDL_Rect SrcWindowOverscanBitmapSizes[] =
+  static const SDL_Rect SrcWindowOverscanBitmapSizes[] =
   {
     { 0,0, OVERSCAN_LEFT+320+OVERSCAN_RIGHT,OVERSCAN_TOP+200+OVERSCAN_BOTTOM },
     { 0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1) },
@@ -846,7 +846,7 @@ static void Screen_Blit(BOOL bSwapScreen)
   };
 
   unsigned char *pTmpScreen;
-  SDL_Rect *SrcRect;
+  const SDL_Rect *SrcRect;
 
   /* Blit to full screen or window? */
   if (bInFullScreen)
@@ -891,7 +891,7 @@ static void Screen_Blit(BOOL bSwapScreen)
 */
 static void Screen_DrawFrame(BOOL bForceFlip)
 {
-  void *pDrawFunction;
+  void * pDrawFunction;
 
   /* Scan palette/resolution masks for each line and build up palette/difference tables */
   STRes = Screen_ComparePaletteMask();

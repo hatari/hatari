@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.7 2006-02-08 22:49:27 eerot Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.8 2006-02-12 21:28:22 eerot Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -56,7 +56,7 @@ static Uint32 nFrameEndAddr;            /* Sound frame end */
 static double FrameCounter;             /* Counter in current sound frame */
 static int nFrameLen;                   /* Length of the frame */
 
-static int DmaSndSampleRates[4] =
+static const int DmaSndSampleRates[4] =
 {
 	6258,
 	12517,

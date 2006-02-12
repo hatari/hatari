@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.23 2006-02-08 22:49:27 eerot Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.24 2006-02-12 21:28:22 eerot Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -321,7 +321,7 @@ static Uint8 SdlSymToSdlScan[SDLK_LAST];
 
 
 /* List of ST scan codes to NOT de-bounce when running in maximum speed */
-static char DebounceExtendedKeys[] =
+static const char DebounceExtendedKeys[] =
 {
   0x1d,  /* CTRL */
   0x2a,  /* Left SHIFT */
