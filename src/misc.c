@@ -6,7 +6,7 @@
 
   Misc functions
 */
-const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.11 2006-02-08 22:49:27 eerot Exp $";
+const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.12 2006-02-12 21:35:17 eerot Exp $";
 
 #include <ctype.h>
 
@@ -71,7 +71,7 @@ unsigned char Misc_ConvertToBCD(unsigned short int Value)
 
 /*-----------------------------------------------------------------------*/
 /*
-  See own random number(must be !=0)
+  Seed own random number (must be !=0)
 */
 void Misc_SeedRandom(unsigned long Seed)
 {
@@ -81,7 +81,7 @@ void Misc_SeedRandom(unsigned long Seed)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Get mext random number
+  Get next random number
 */
 static long Misc_NextLongRand(long Seed)
 {
