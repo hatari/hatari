@@ -23,7 +23,7 @@ GUIOBJS = ./gui-sdl/dlgAbout.o ./gui-sdl/dlgAlert.o ./gui-sdl/dlgDevice.o \
   ./gui-sdl/dlgSystem.o ./gui-sdl/dlgFileSelect.o ./gui-sdl/sdlgui.o
 
 
-SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c \
+SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c options.c \
   createBlankImage.c cycles.c debugui.c dialog.c dim.c dmaSnd.c fdc.c file.c \
   floppy.c gemdos.c hdc.c ikbd.c int.c ioMem.c ioMemTables.c joy.c keymap.c \
   log.c m68000.c main.c midi.c memorySnapShot.c mfp.c misc.c msa.c psg.c \
