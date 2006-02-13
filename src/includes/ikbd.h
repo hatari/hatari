@@ -13,8 +13,8 @@
 
 /* Keyboard Command */
 typedef struct {
-  unsigned char Command;
-  unsigned char NumParameters;
+  Uint8 Command;
+  Uint8 NumParameters;
   void *pCallFunction;
 } IKBD_COMMAND_PARAMS;
 
@@ -23,7 +23,7 @@ typedef struct {
 typedef struct {
   int X,Y;                        /* Position of mouse */
   int MaxX,MaxY;                  /* Max limits of mouse */
-  unsigned char PrevReadAbsMouseButtons;    /* Previous button mask for 'IKBD_Cmd_ReadAbsMousePos' */
+  Uint8 PrevReadAbsMouseButtons;  /* Previous button mask for 'IKBD_Cmd_ReadAbsMousePos' */
 } ABS_MOUSE;
 
 typedef struct {
@@ -31,14 +31,14 @@ typedef struct {
   int DeltaX,DeltaY;              /* Final XY mouse position delta */
   int XScale,YScale;              /* Scale of mouse */
   int XThreshold,YThreshold;      /* Threshold */
-  unsigned char KeyCodeDeltaX,KeyCodeDeltaY;    /* Delta X,Y for mouse keycode mode */
+  Uint8 KeyCodeDeltaX,KeyCodeDeltaY;    /* Delta X,Y for mouse keycode mode */
   int YAxis;                      /* Y-Axis direction */
-  unsigned char Action;           /* Bit 0-Report abs position of press, Bit 1-Report abs on release */
+  Uint8 Action;                   /* Bit 0-Report abs position of press, Bit 1-Report abs on release */
 } MOUSE;
 
 typedef struct {
-  unsigned char JoyData[2];       /* Joystick details */
-  unsigned char PrevJoyData[2];   /* Previous joystick details, used to check for 'IKBD_SelAutoJoysticks' */
+  Uint8 JoyData[2];               /* Joystick details */
+  Uint8 PrevJoyData[2];           /* Previous joystick details, used to check for 'IKBD_SelAutoJoysticks' */
 } JOY;
 
 typedef struct {
@@ -55,10 +55,10 @@ typedef struct {
 #define KEYBOARD_BUFFER_MASK      (SIZE_KEYBOARD_BUFFER-1)
 #define SIZE_KEYBOARDINPUT_BUFFER 8
 typedef struct {
-  unsigned char KeyStates[SDLK_LAST];           /* State of PC's keys, TRUE is down */
-  unsigned char Buffer[SIZE_KEYBOARD_BUFFER];   /* Keyboard buffer */
+  Uint8 KeyStates[SDLK_LAST];           /* State of PC's keys, TRUE is down */
+  Uint8 Buffer[SIZE_KEYBOARD_BUFFER];   /* Keyboard buffer */
   int BufferHead,BufferTail;                    /* Pointers into above buffer */
-  unsigned char InputBuffer[SIZE_KEYBOARDINPUT_BUFFER];  /* Buffer for data send from CPU to keyboard processor (commands) */
+  Uint8 InputBuffer[SIZE_KEYBOARDINPUT_BUFFER];  /* Buffer for data send from CPU to keyboard processor (commands) */
   int nBytesInInputBuffer;                      /* Number of command bytes in above buffer */
 
   int bLButtonDown,bRButtonDown;                /* Mouse states in emulation system, BUTTON_xxxx */
@@ -121,12 +121,12 @@ extern void IKBD_Cmd_LoadMemory(void);
 extern void IKBD_Cmd_ReadMemory(void);
 extern void IKBD_Cmd_Execute(void);
 
-extern void IKBD_SendByteToKeyboardProcessor(unsigned short bl);
-extern unsigned short IKBD_GetByteFromACIA(void);
+extern void IKBD_SendByteToKeyboardProcessor(Uint16 bl);
+extern Uint16 IKBD_GetByteFromACIA(void);
 extern void IKBD_InterruptHandler_ACIA(void);
 extern void IKBD_SendByteToACIA(void);
-extern void IKBD_AddKeyToKeyboardBuffer(unsigned char Data);
-extern void IKBD_PressSTKey(unsigned char ScanCode,BOOL bPress);
+extern void IKBD_AddKeyToKeyboardBuffer(Uint8 Data);
+extern void IKBD_PressSTKey(Uint8 ScanCode, BOOL bPress);
 
 extern void IKBD_KeyboardControl_ReadByte(void);
 extern void IKBD_KeyboardData_ReadByte(void);

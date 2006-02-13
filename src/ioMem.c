@@ -28,7 +28,7 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.11 2006-02-12 21:28:22 eerot Exp $";
+const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.12 2006-02-13 21:18:01 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -53,7 +53,7 @@ static void (*pInterceptWriteTable[0x8000])(void);    /* Table with write access
 
 int nIoMemAccessSize;                                 /* Set to 1, 2 or 4 according to byte, word or long word access */
 Uint32 IoAccessBaseAddress;                           /* Stores the base address of the IO mem access */
-Uint32 IoAccessCurrentAddress;                        /* Current byte address while handling WORD and LONG accesses */
+static Uint32 IoAccessCurrentAddress;                 /* Current byte address while handling WORD and LONG accesses */
 static int nBusErrorAccesses;                         /* Needed to count bus error accesses */
 
 

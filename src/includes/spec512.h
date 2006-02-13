@@ -8,16 +8,6 @@
 #ifndef HATARI_SPEC512_H
 #define HATARI_SPEC512_H
 
-#define MAX_CYCLEPALETTES_PERLINE  (512/4)  /* As 68000 clock multiple of 4 this mean we can only write to the palette this many time per scanline */
-
-/* Store writes to palette by cycles per scan line, colour and index in ST */
-typedef struct
-{
-  int LineCycles;                   /* Number of cycles into line(MUST be div by 4) */
-  Uint16 Colour;                    /* ST Colour value */
-  unsigned short int Index;         /* Index into ST palette (0...15) */
-} CYCLEPALETTE;
-
 extern BOOL Spec512_IsImage(void);
 extern void Spec512_StartVBL(void);
 extern void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr);

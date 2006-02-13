@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.45 2006-02-12 21:23:43 eerot Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.46 2006-02-13 21:18:01 eerot Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -78,14 +78,14 @@ EMULATEDDRIVE **emudrives = NULL;
 #define TOS_NAMELEN  14
 
 typedef struct {
-  unsigned char index[2];
-  unsigned char magic[4];
+  Uint8 index[2];
+  Uint8 magic[4];
   char dta_pat[TOS_NAMELEN];
   char dta_sattrib;
   char dta_attrib;
-  unsigned char dta_time[2];
-  unsigned char dta_date[2];
-  unsigned char dta_size[4];
+  Uint8 dta_time[2];
+  Uint8 dta_date[2];
+  Uint8 dta_size[4];
   char dta_name[TOS_NAMELEN];
 } DTA;
 
@@ -101,8 +101,8 @@ typedef struct {
    Changed to fix potential problem with alignment.
 */
 typedef struct {
-  unsigned short word1;
-  unsigned short word2;
+  Uint16 word1;
+  Uint16 word2;
 } DATETIME;
 
 typedef struct

@@ -18,7 +18,7 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.13 2006-02-08 22:49:27 eerot Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.14 2006-02-13 21:18:01 eerot Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -29,12 +29,22 @@ const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.13 2006-02-08 22:49:27 e
 #include "spec512.h"
 #include "video.h"
 
+/* As 68000 clock multiple of 4 this mean we can only write to the palette this many time per scanline */
+#define MAX_CYCLEPALETTES_PERLINE  (512/4)
+
+/* Store writes to palette by cycles per scan line, colour and index in ST */
+typedef struct
+{
+  int LineCycles;       /* Number of cycles into line (MUST be div by 4) */
+  Uint16 Colour;        /* ST Colour value */
+  Uint16 Index;         /* Index into ST palette (0...15) */
+} CYCLEPALETTE;
 
 /* 314k; 1024-bytes per line */
-CYCLEPALETTE CyclePalettes[(MAX_SCANLINES_PER_FRAME+1)*MAX_CYCLEPALETTES_PERLINE];
-CYCLEPALETTE *pCyclePalette;
-int nCyclePalettes[(MAX_SCANLINES_PER_FRAME+1)];  /* Number of entries in above table for each scanline */
-int nPalettesAccess[(MAX_SCANLINES_PER_FRAME+1)]; /* Number of times accessed palette register 'x' in this scan line */
+static CYCLEPALETTE CyclePalettes[(MAX_SCANLINES_PER_FRAME+1)*MAX_CYCLEPALETTES_PERLINE];
+static CYCLEPALETTE *pCyclePalette;
+static int nCyclePalettes[(MAX_SCANLINES_PER_FRAME+1)];  /* Number of entries in above table for each scanline */
+static int nPalettesAccess[(MAX_SCANLINES_PER_FRAME+1)]; /* Number of times accessed palette register 'x' in this scan line */
 static Uint16 CycleColour;
 static int CycleColourIndex;
 static int nScanLine, ScanLineCycleCount;

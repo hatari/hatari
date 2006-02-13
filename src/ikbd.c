@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.26 2006-02-12 21:28:22 eerot Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.27 2006-02-13 21:18:00 eerot Exp $";
 
 #include <time.h>
 
@@ -51,13 +51,14 @@ KEYBOARD Keyboard;
 
 /* Keyboard processor */
 KEYBOARD_PROCESSOR KeyboardProcessor;   /* Keyboard processor details */
+
 /* Pattern of mouse button up/down in ST frames (run off a double-click message) */
 static const BOOL DoubleClickPattern[] = {
  BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,
  0,0,0,0,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE };
 
-BOOL bMouseDisabled, bJoystickDisabled;
-BOOL bDuringResetCriticalTime, bBothMouseAndJoy;
+static BOOL bMouseDisabled, bJoystickDisabled;
+static BOOL bDuringResetCriticalTime, bBothMouseAndJoy;
 
 /* ACIA */
 static Uint8 ACIAControlRegister = 0;
@@ -428,7 +429,7 @@ static void IKBD_DuplicateMouseFireButtons(void)
 static void IKBD_SendRelMousePacket(void)
 {
   int ByteRelX,ByteRelY;
-  unsigned char Header;
+  Uint8 Header;
 
   if ( (KeyboardProcessor.Mouse.DeltaX!=0) || (KeyboardProcessor.Mouse.DeltaY!=0)
    || (!IKBD_ButtonsEqual(Keyboard.bOldLButtonDown,Keyboard.bLButtonDown)) || (!IKBD_ButtonsEqual(Keyboard.bOldRButtonDown,Keyboard.bRButtonDown)) ) {
@@ -470,7 +471,7 @@ static void IKBD_SendRelMousePacket(void)
 */
 static void IKBD_SelAutoJoysticks(void)
 {
-  unsigned char JoyData;
+  Uint8 JoyData;
 
   /* Did joystick 0/mouse change? */
   JoyData = KeyboardProcessor.Joy.JoyData[0];
@@ -934,7 +935,7 @@ void IKBD_Cmd_SetMouseScale(void)
 */
 void IKBD_Cmd_ReadAbsMousePos(void)
 {
-  unsigned char Buttons,PrevButtons;
+  Uint8 Buttons,PrevButtons;
 
   /* Test buttons */
   Buttons = 0;
@@ -1343,7 +1344,7 @@ void IKBD_Cmd_Execute(void)
   For our emulation we bypass the ACIA (I've yet to see anything check for this)
   and add the byte directly into the keyboard input buffer.
 */
-static void IKBD_RunKeyboardCommand(unsigned short aciabyte)
+static void IKBD_RunKeyboardCommand(Uint16 aciabyte)
 {
   int i=0;
 
@@ -1375,7 +1376,7 @@ static void IKBD_RunKeyboardCommand(unsigned short aciabyte)
 /*
   Send byte to our keyboard processor, and execute
 */
-void IKBD_SendByteToKeyboardProcessor(unsigned short bl)
+void IKBD_SendByteToKeyboardProcessor(Uint16 bl)
 {
   IKBD_RunKeyboardCommand(bl);  /* And send */
 }
@@ -1386,7 +1387,7 @@ void IKBD_SendByteToKeyboardProcessor(unsigned short bl)
   The byte stored in the ACIA 'ACIAByte' has been read by the CPU by reading from
   address $fffc02. We clear the status flag and set the GPIP register to signal read.
 */
-unsigned short IKBD_GetByteFromACIA(void)
+Uint16 IKBD_GetByteFromACIA(void)
 {
   /* ACIA is now reset */
   ACIAStatusRegister &= ~(ACIA_STATUS_REGISTER__RX_BUFFER_FULL | ACIA_STATUS_REGISTER__INTERRUPT_REQUEST | ACIA_STATUS_REGISTER__OVERRUN_ERROR);
@@ -1459,7 +1460,7 @@ void IKBD_SendByteToACIA(void)
   This is done via a delay to mimick the STs internal workings, as this is needed for games such
   as Carrier Command.
 */
-void IKBD_AddKeyToKeyboardBuffer(unsigned char Data)
+void IKBD_AddKeyToKeyboardBuffer(Uint8 Data)
 {
   /* Is keyboard initialised yet? Ignore any bytes until it is */
   if (!KeyboardProcessor.bReset)
@@ -1481,7 +1482,7 @@ void IKBD_AddKeyToKeyboardBuffer(unsigned char Data)
 /*
   When press/release key under host OS, execute this function.
 */
-void IKBD_PressSTKey(unsigned char ScanCode,BOOL bPress)
+void IKBD_PressSTKey(Uint8 ScanCode, BOOL bPress)
 {
   if (!bPress)
     ScanCode |= 0x80;    /* Set top bit if released key */
