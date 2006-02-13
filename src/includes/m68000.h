@@ -17,6 +17,10 @@
 #define SR regs.sr      /* Don't forget to call MakeFromSR() and MakeSR() */
 
 
+/* bus error mode */
+#define BUS_ERROR_WRITE 0
+#define BUS_ERROR_READ 1
+
 extern void *PendingInterruptFunction;
 extern short int PendingInterruptCount;
 
