@@ -6,7 +6,7 @@
 
   DIM disk image support.
 */
-const char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.6 2006-02-08 22:49:27 eerot Exp $";
+const char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.7 2006-02-16 22:07:03 eerot Exp $";
 
 #include <zlib.h>
 
@@ -70,7 +70,8 @@ Uint8 *DIM_ReadDisk(char *pszFileName, long *pImageSize)
 	if (pDimFile)
 	{
 		/* Check header for valid image: */
-		if (*(Uint16 *)pDimFile != 0x4242 || pDimFile[0x03] != 0 || pDimFile[0x0A] != 0)
+		if (pDimFile[0x00] != 0x42 || pDimFile[0x01] != 0x42 ||
+		    pDimFile[0x03] != 0 || pDimFile[0x0A] != 0)
 		{
 			fprintf(stderr, "This is not a valid DIM image!\n");
 			*pImageSize = 0;
