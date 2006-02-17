@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.24 2006-02-12 21:28:22 eerot Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.25 2006-02-17 21:01:42 eerot Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -595,7 +595,7 @@ char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
 void Keymap_LoadRemapFile(char *pszFileName)
 {
   char szString[1024];
-  unsigned int STScanCode, PCKeyCode;
+  int STScanCode, PCKeyCode;
   FILE *in;
 
   /* Initialize table with default values */
@@ -622,12 +622,17 @@ void Keymap_LoadRemapFile(char *pszFileName)
           /* Read values */
           sscanf(szString, "%d,%d", &PCKeyCode, &STScanCode);
           /* Store into remap table, check both value within range */
-          if ( (PCKeyCode>=0) && (PCKeyCode<SDLK_LAST) && (STScanCode>=0) && (STScanCode<256) )
+          if ( (PCKeyCode>=0) && (PCKeyCode<SDLK_LAST) &&
+	       (STScanCode>=0) && (STScanCode<256) )
             LoadedKeyToSTScanCode[PCKeyCode] = STScanCode;
         }
       }
 
       fclose(in);
+    }
+    else
+    {
+       fprintf(stderr, "Failed to open keymap file '%s'\n", pszFileName);
     }
   }
 }
