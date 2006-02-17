@@ -6,7 +6,7 @@
 
   Functions for showing and parsing all of Hatari's command line options
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.1 2006-02-12 18:53:06 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.2 2006-02-17 21:00:18 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -111,7 +111,7 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Slow down FDC emulation (very experimental!)" },
 	{ OPT_MACHINE,   NULL, "--machine",
 	  "<x>", "Select machine type (x = st/ste/tt)" },
-	{ OPT_NONE, NULL, NULL, NULL }
+	{ OPT_NONE, NULL, NULL, NULL, NULL }
 };
 
 /* Show Hatari options and exit().
