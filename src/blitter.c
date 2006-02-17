@@ -30,7 +30,7 @@
  *
  *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.13 2006-02-12 21:28:22 eerot Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.14 2006-02-17 20:59:30 eerot Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -116,7 +116,7 @@ static void show_halftones(void)
 
 
 /* called only before halftone operations, for HOP modes 01 and 11 */
-static void load_halftone_ram(Uint32 source_addr, Uint8 skew)
+static void load_halftone_ram(Uint32 source_addr)
 {
 	halftone_ram[0]  = STMemory_ReadWord(REG_HT_RAM);
 	halftone_ram[1]  = STMemory_ReadWord(REG_HT_RAM+2);
@@ -165,7 +165,7 @@ static void _fn_name (void)  \
 	source_y_inc = (short) STMemory_ReadWord(REG_SRC_Y_INC);  \
 	dest_x_inc   = (short) STMemory_ReadWord(REG_DST_X_INC);  \
 	dest_y_inc   = (short) STMemory_ReadWord(REG_DST_Y_INC);  \
-	if (hop & 1) load_halftone_ram(source_addr, skew);  \
+	if (hop & 1) load_halftone_ram(source_addr);  \
 	do  \
 	{  \
 		Uint16 x, dst_data, opd_data;  \
