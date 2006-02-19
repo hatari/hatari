@@ -4,9 +4,14 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  Functions for showing and parsing all of Hatari's command line options
+  Functions for showing and parsing all of Hatari's command line options.
+  
+  To add a new option:
+  - Add option ID to the enum
+  - Add the option information to corresponding place in HatariOptions[]
+  - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.2 2006-02-17 21:00:18 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.3 2006-02-19 21:48:37 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
