@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.47 2006-02-16 22:19:18 eerot Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.48 2006-02-21 13:41:51 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -694,8 +694,13 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 {
 	char *s,*start;
 
+	/* Check for valid string */
 	if (pszFileName[0] == '\0')
-		return; /* check for valid string */
+		return;
+
+	/* Is it a valid hard drive? */
+	if (Drive < 2)
+		return;
 
 	/* case full filename "C:\foo\bar" */
 	s=pszDestName;
@@ -1585,7 +1590,7 @@ static int GemDOS_Pexec(Uint32 Params)
   GEMDOS Search Next
   Call 0x4F
 */
-static BOOL GemDOS_SNext(Uint32 Params)
+static BOOL GemDOS_SNext(void)
 {
 	struct dirent **temp;
 	int Index;
@@ -1717,7 +1722,7 @@ static BOOL GemDOS_SFirst(Uint32 Params)
 		}
 
 		/* Scan for first file (SNext uses no parameters) */
-		GemDOS_SNext(0);
+		GemDOS_SNext();
 		/* increment DTA index */
 		DTAIndex++;
 		DTAIndex&=(MAX_DTAS_FILES-1);
@@ -1952,7 +1957,7 @@ void GemDOS_OpCode(void)
 			RunOld = FALSE;
 		break;
 	 case 0x4f:
-		if (GemDOS_SNext(Params))
+		if (GemDOS_SNext())
 			RunOld = FALSE;
 		break;
 	 case 0x56:
