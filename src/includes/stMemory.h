@@ -88,5 +88,6 @@ static inline Uint8 STMemory_ReadByte(Uint32 Address)
 
 
 extern void STMemory_Clear(Uint32 StartAddress, Uint32 EndAddress);
+extern void STMemory_SetDefaultConfig(void);
 
 #endif

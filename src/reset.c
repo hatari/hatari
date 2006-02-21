@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.13 2006-02-08 22:49:27 eerot Exp $";
+const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.14 2006-02-21 14:15:35 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -60,10 +60,7 @@ int Reset_ST(BOOL bCold)
   {
     int ret;
 
-    STMemory_Clear(0x00000000, 0x00400000);   /* Clear First 4Mb */
     STMemory_Clear(0x00e00000, 0x00ffffff);   /* Clear Upper memory */
-    STMemory_WriteLong(4, 0x00fc0000);        /* Set reset vector */
-    STMemory_WriteLong(0, 0x0000f000);        /* And reset stack pointer */
 
     Floppy_GetBootDrive();      /* Find which device to boot from(A: or C:) */
     Cart_ResetImage();          /* Load cartridge program into ROM memory. */
