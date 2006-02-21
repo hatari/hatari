@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.25 2006-02-17 21:01:42 eerot Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.26 2006-02-21 19:09:34 eerot Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -17,6 +17,7 @@ const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.25 2006-02-17 21:01:42 eer
 #include "shortcut.h"
 #include "screen.h"
 #include "debugui.h"
+#include "log.h"
 
 
 /*-----------------------------------------------------------------------*/
@@ -632,7 +633,9 @@ void Keymap_LoadRemapFile(char *pszFileName)
     }
     else
     {
-       fprintf(stderr, "Failed to open keymap file '%s'\n", pszFileName);
+      Log_Printf(LOG_DEBUG,
+		 "Keymap_LoadRemapFile: failed to open keymap file '%s'\n",
+		 pszFileName);
     }
   }
 }
