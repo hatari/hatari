@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.20 2006-02-08 22:46:10 eerot Exp $";
+const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.21 2006-02-21 21:45:32 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -214,7 +214,8 @@ static uae_u8 *BusErrMem_xlate (uaecptr addr)
 
 /* **** ST RAM memory **** */
 
-static uae_u8 *STmemory;
+/*static uae_u8 *STmemory;*/
+#define STmemory STRam
 
 static uae_u32 STmem_lget(uaecptr addr)
 {
@@ -638,9 +639,12 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /*write_log("memory_init: STmem_size=$%x, TTmem_size=$%x, ROM-Start=$%x,\n",
               STmem_size, TTmem_size, nNewRomMemStart);*/
 
+/*  // STmemory is currently directly defined to STRam for speed reasons!
     STmemory = STRam;
+*/
     ROMmemory = STRam + ROMmem_start;
     IOmemory = STRam + IOmem_start;
+
 /*
     while (! STmemory && STmem_size > 512*1024) {
 	STmem_size >>= 1;
