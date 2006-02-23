@@ -18,7 +18,7 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.14 2006-02-13 21:18:01 eerot Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.15 2006-02-23 21:00:43 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -49,7 +49,6 @@ static Uint16 CycleColour;
 static int CycleColourIndex;
 static int nScanLine, ScanLineCycleCount;
 static BOOL bIsSpec512Display;
-static int nb_spc512lines, last_spc512line;
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 static const int STRGBPalEndianTable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
@@ -83,8 +82,6 @@ void Spec512_StartVBL(void)
   memset(nPalettesAccess, 0x0, (nScanlinesPerFrame+1)*sizeof(int));
   /* Set as not Spectrum 512 displayed image */
   bIsSpec512Display = FALSE;
-  last_spc512line = -1;
-  nb_spc512lines = 0;
 }
 
 
@@ -96,7 +93,7 @@ void Spec512_StartVBL(void)
 void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 {
   CYCLEPALETTE *pTmpCyclePalette;
-  int FrameCycles, ScanLine;
+  int FrameCycles, ScanLine, nHorPos;
 
   CycleColour = col;
   CycleColourIndex = (addr-0xff8240)>>1;
@@ -105,40 +102,47 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
   FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 
   /* Find scan line we are currently on and get index into cycle-palette table */
-  ScanLine = (FrameCycles/nCyclesPerLine);
+  ScanLine = FrameCycles / nCyclesPerLine;
   pTmpCyclePalette = &CyclePalettes[ (ScanLine*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[ScanLine] ];
+
+  nHorPos = FrameCycles % nCyclesPerLine;
+
+  /* Temporary hack until we've got better CPU cycles emulation:
+   * The position needs to be corrected for a few positions.
+   * I think it might be related to the shifter which handles 16 pixels
+   * at a time / plane, since here we arrive every 20 cycles there are
+   * synchronizations problems. Now the very good question is : why does
+   * it happen only for the left part of the screen ???!!!!!
+   * If we add the same correction for the right part, then bad black pixels
+   * appear. This definetely requires some investigation... */
+#if 0
+  if (nHorPos == 104 || nHorPos == 124 || nHorPos == 144)
+    nHorPos += 4;
+#endif
+
   /* Do we have a previous entry at the same cycles? If so, 68000 have used a 'move.l' instruction so stagger writes */
   if (nCyclePalettes[ScanLine]>0)
   {
-    if ((pTmpCyclePalette-1)->LineCycles == (FrameCycles % nCyclesPerLine))
-      FrameCycles += 4;              /* Colors are staggered by [4,20] when writing a long word! */
+    /* In case the ST uses a move.l or a movem.l to update colors, we need
+     * to add at least 4 cycles between each color: */
+    if ((pTmpCyclePalette-1)->LineCycles >= nHorPos)
+      nHorPos = (pTmpCyclePalette-1)->LineCycles + 4;
   }
 
   /* Store palette access */
-  pTmpCyclePalette->LineCycles = FrameCycles % nCyclesPerLine;   /* Cycles into scanline */
-  pTmpCyclePalette->Colour = CycleColour;                        /* Store ST/STe colour RGB */
-  pTmpCyclePalette->Index = CycleColourIndex;                    /* And Index (0...15) */
-  /* Increment count(this can never overflow as you cannot write to the palette more than 'MAX_CYCLEPALETTES_PERLINE' times per scanline) */
+  pTmpCyclePalette->LineCycles = nHorPos;           /* Cycles into scanline */
+  pTmpCyclePalette->Colour = CycleColour;           /* Store ST/STe color RGB */
+  pTmpCyclePalette->Index = CycleColourIndex;       /* And index (0...15) */
+
+  /* Increment count (this can never overflow as you cannot write to the palette more than 'MAX_CYCLEPALETTES_PERLINE' times per scanline) */
   nCyclePalettes[ScanLine]++;
 
   /* Check if program wrote to certain palette entry multiple times on a single scan-line  */
   /* If we did then we must be using a Spectrum512 image or some kind of colour cycling... */
   nPalettesAccess[ScanLine]++;
-  if (nPalettesAccess[ScanLine]>=32)
+  if (nPalettesAccess[ScanLine] >= 32)
   {
-    /* This code has obviously something wrong. It detects the grav44 disk
-       demo as a spec512 image because the scroller at the bottom of the screen
-       uses more than 1 palette... But doing so, it ruins the colours of the
-       rest of the screen. I should review all this code, but later.
-       For now, I just make sure it chooses this mode only when most of the
-       screen is a spec512 screen (at least 80 lines) ! */
-    if (last_spc512line != ScanLine)
-    {
-      last_spc512line = ScanLine;
-      nb_spc512lines++;
-      if (nb_spc512lines >= 80)
-        bIsSpec512Display = TRUE;
-    }
+    bIsSpec512Display = TRUE;
   }
 }
 
@@ -215,7 +219,7 @@ void Spec512_StartScanLine(void)
 
   /* Update palette entries until we reach start of displayed screen */
   ScanLineCycleCount = 0;
-  for(i=0; i<((SCREEN_START_CYCLE-8)/4); i++)   /* This '8' is as we've already added in the 'move' instruction timing */
+  for(i=0; i<((SCREEN_START_CYCLE-16)/4); i++)  /* This '16' is as we've already added in the 'move' instruction timing */
     Spec512_UpdatePaletteSpan();                /* Update palette for this 4-cycle period */
   /* And skip for left border is not using overscan display to user */
   for (i=0; i<(STScreenLeftSkipBytes/2); i++)   /* Eg, 16 bytes = 32 pixels or 8 palette periods */
