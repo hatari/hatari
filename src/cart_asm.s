@@ -312,7 +312,7 @@ infotext:
 
 
 hatarix32:
-	ibytes	'hatari.x32'
+	ibytes	'cart_mus.x32'
 
 
 infoprgend:
