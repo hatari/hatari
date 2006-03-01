@@ -45,9 +45,17 @@
 #define SCREEN_START_HBL_50HZ   63      /* Usually the first line of the displayed screen in 50 Hz */
 #define SCREEN_START_HBL_60HZ   34      /* The first line of the displayed screen in 60 Hz */
 #define FIRST_VISIBLE_HBL_50HZ  34      /* At this line we start rendering our screen in 50 Hz */
-#define FIRST_VISIBLE_HBL_60HZ  (34-29) /* At this line we start rendering our screen in 60 Hz */
+#define FIRST_VISIBLE_HBL_60HZ  (34-29) /* At this line we start rendering our screen in 60 Hz (29 = 63-34) */
 
 #define SCREEN_HEIGHT_HBL  200          /* This is usually the height of the screen */
+
+/* FIXME: SCREEN_START_CYCLE should rather be 52 or so, but this breaks a lot of other things at the moment... */
+#define SCREEN_START_CYCLE  96          /* Cycle first normal pixel appears on */
+
+/* Legacy defines: */
+#define CYCLES_PER_FRAME    (nScanlinesPerFrame*nCyclesPerLine)  /* Cycles per VBL @ 50fps = 160256 */
+#define CYCLES_HBL          (nCyclesPerLine+96)   /* Cycles for first HBL - very inaccurate on ST */
+
 
 extern BOOL bUseHighRes;
 extern int nVBLs,nHBL;
@@ -63,12 +71,6 @@ extern int nScreenRefreshRate;
 extern int nScanlinesPerFrame;
 extern int nCyclesPerLine;
 
-/* Legacy defines */
-#define SCREEN_START_CYCLE  96          /* Cycle first normal pixel appears on */
-#define CYCLES_VBL_IN       (SCREEN_START_HBL*nCyclesPerLine)     /* ((28+64)*CYCLES_PER_LINE) */
-#define CYCLES_PER_FRAME    (nScanlinesPerFrame*nCyclesPerLine)  /* Cycles per VBL @ 50fps = 160256 */
-#define CYCLES_PER_SEC      (CYCLES_PER_FRAME*50) /* Cycles per second */
-#define CYCLES_HBL          (nCyclesPerLine+96)   /* Cycles for first HBL - very inaccurate on ST */
 
 extern void Video_Reset(void);
 extern void Video_MemorySnapShot_Capture(BOOL bSave);
