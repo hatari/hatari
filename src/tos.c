@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.38 2006-02-21 14:15:35 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.39 2006-03-01 20:46:48 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -44,32 +44,32 @@ int nNumDrives = 2;                     /* Number of drives, default is 2 for A:
 /* Possible TOS file extensions to scan for */
 static const char * const pszTosNameExts[] =
 {
-  ".img",
-  ".rom",
-  ".tos",
-  NULL
+	".img",
+	".rom",
+	".tos",
+	NULL
 };
 
 
 /* Flags that define if a TOS patch should be applied */
 enum
 {
-  TP_ALWAYS,            /* Patch should alway be applied */
-  TP_ACSI_OFF,          /* Apply patch only if ACSI HD emulation is off */
-  TP_ANTI_STE           /* Apply patch only if running on plain ST */
+	TP_ALWAYS,            /* Patch should alway be applied */
+	TP_ACSI_OFF,          /* Apply patch only if ACSI HD emulation is off */
+	TP_ANTI_STE           /* Apply patch only if running on plain ST */
 };
 
 /* This structure is used for patching the TOS ROMs */
 typedef struct
 {
-  Uint16 Version;       /* TOS version number */
-  Sint16 Country;       /* TOS country code: -1 if it does not matter, 0=US, 1=Germany, 2=France, etc. */
-  const char *pszName;  /* Name of the patch */
-  int Flags;            /* When should the patch be applied? (see enum above) */
-  Uint32 Address;       /* Where the patch should be applied */
-  Uint32 OldData;       /* Expected first 4 old bytes */
-  Uint32 Size;          /* Length of the patch */
-  const void *pNewData; /* Pointer to the new bytes */
+	Uint16 Version;       /* TOS version number */
+	Sint16 Country;       /* TOS country code: -1 if it does not matter, 0=US, 1=Germany, 2=France, etc. */
+	const char *pszName;  /* Name of the patch */
+	int Flags;            /* When should the patch be applied? (see enum above) */
+	Uint32 Address;       /* Where the patch should be applied */
+	Uint32 OldData;       /* Expected first 4 old bytes */
+	Uint32 Size;          /* Length of the patch */
+	const void *pNewData; /* Pointer to the new bytes */
 } TOS_PATCH;
 
 static const char pszDmaBoot[] = "boot from DMA bus";
@@ -144,83 +144,83 @@ static const TOS_PATCH TosPatches[] =
 */
 void TOS_MemorySnapShot_Capture(BOOL bSave)
 {
-  /* Save/Restore details */
-  MemorySnapShot_Store(&TosVersion, sizeof(TosVersion));
-  MemorySnapShot_Store(&TosAddress, sizeof(TosAddress));
-  MemorySnapShot_Store(&TosSize, sizeof(TosSize));
-  MemorySnapShot_Store(&ConnectedDriveMask, sizeof(ConnectedDriveMask));
-  MemorySnapShot_Store(&nNumDrives, sizeof(nNumDrives));
+	/* Save/Restore details */
+	MemorySnapShot_Store(&TosVersion, sizeof(TosVersion));
+	MemorySnapShot_Store(&TosAddress, sizeof(TosAddress));
+	MemorySnapShot_Store(&TosSize, sizeof(TosSize));
+	MemorySnapShot_Store(&ConnectedDriveMask, sizeof(ConnectedDriveMask));
+	MemorySnapShot_Store(&nNumDrives, sizeof(nNumDrives));
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
   Patch TOS to skip some TOS setup code which we don't support/need.
-
+ 
   So, how do we find these addresses when we have no commented source code?
   - For the "Boot from DMA bus" patch:
     Scan at start of rom for tst.w $482, boot call will be just above it.
 */
 static void TOS_FixRom(void)
 {
-  int nGoodPatches, nBadPatches;
-  short TosCountry;
-  const TOS_PATCH *pPatch;
+	int nGoodPatches, nBadPatches;
+	short TosCountry;
+	const TOS_PATCH *pPatch;
 
-  /* Check for EmuTOS first since we can not patch it */
-  if(STMemory_ReadLong(TosAddress+0x2c) == 0x45544F53)      /* 0x45544F53 = 'ETOS' */
-  {
-    Log_Printf(LOG_DEBUG, "Detected EmuTOS, skipping TOS patches.\n");
-    return;
-  }
+	/* Check for EmuTOS first since we can not patch it */
+	if (STMemory_ReadLong(TosAddress+0x2c) == 0x45544F53)   /* 0x45544F53 = 'ETOS' */
+	{
+		Log_Printf(LOG_DEBUG, "Detected EmuTOS, skipping TOS patches.\n");
+		return;
+	}
 
-  /* We also can't patch RAM TOS images (yet) */
-  if(bRamTosImage)
-  {
-    Log_Printf(LOG_DEBUG, "Detected RAM TOS image, skipping TOS patches.\n");
-    return;
-  }
+	/* We also can't patch RAM TOS images (yet) */
+	if (bRamTosImage)
+	{
+		Log_Printf(LOG_DEBUG, "Detected RAM TOS image, skipping TOS patches.\n");
+		return;
+	}
 
-  nGoodPatches = nBadPatches = 0;
-  TosCountry = STMemory_ReadWord(TosAddress+28)>>1;   /* TOS country code */
-  pPatch = TosPatches;
+	nGoodPatches = nBadPatches = 0;
+	TosCountry = STMemory_ReadWord(TosAddress+28)>>1;   /* TOS country code */
+	pPatch = TosPatches;
 
-  /* Apply TOS patches: */
-  while(pPatch->Version)
-  {
-    /* Only apply patches that suit to the actual TOS  version: */
-    if(pPatch->Version == TosVersion
-       && (pPatch->Country == TosCountry || pPatch->Country == -1))
-    {
-      /* Make sure that we really patch the right place by comparing data: */
-      if(STMemory_ReadLong(pPatch->Address) == pPatch->OldData)
-      {
-        /* Only apply the patch if it is really needed: */
-        if (pPatch->Flags == TP_ALWAYS || (pPatch->Flags == TP_ACSI_OFF && !ACSI_EMU_ON)
-            || (pPatch->Flags == TP_ANTI_STE && ConfigureParams.System.nMachineType == MACHINE_ST))
-        {
-          /* Now we can really apply the patch! */
-          /*fprintf(stderr, "Applying TOS patch '%s'.\n", pPatch->pszName);*/
-          memcpy(&STRam[pPatch->Address], pPatch->pNewData, pPatch->Size);
-          nGoodPatches += 1;
-        }
-        else
-        {
-          /*fprintf(stderr, "Skipped patch '%s'.\n", pPatch->pszName);*/
-        }
-      }
-      else
-      {
-        Log_Printf(LOG_DEBUG, "Failed to apply TOS patch '%s' at %x (expected %x, found %x).\n",
-                   pPatch->pszName, pPatch->Address, pPatch->OldData, STMemory_ReadLong(pPatch->Address));
-        nBadPatches += 1;
-      }
-    }
-    pPatch += 1;
-  }
+	/* Apply TOS patches: */
+	while (pPatch->Version)
+	{
+		/* Only apply patches that suit to the actual TOS  version: */
+		if (pPatch->Version == TosVersion
+		    && (pPatch->Country == TosCountry || pPatch->Country == -1))
+		{
+			/* Make sure that we really patch the right place by comparing data: */
+			if(STMemory_ReadLong(pPatch->Address) == pPatch->OldData)
+			{
+				/* Only apply the patch if it is really needed: */
+				if (pPatch->Flags == TP_ALWAYS || (pPatch->Flags == TP_ACSI_OFF && !ACSI_EMU_ON)
+				    || (pPatch->Flags == TP_ANTI_STE && ConfigureParams.System.nMachineType == MACHINE_ST))
+				{
+					/* Now we can really apply the patch! */
+					/*fprintf(stderr, "Applying TOS patch '%s'.\n", pPatch->pszName);*/
+					memcpy(&STRam[pPatch->Address], pPatch->pNewData, pPatch->Size);
+					nGoodPatches += 1;
+				}
+				else
+				{
+					/*fprintf(stderr, "Skipped patch '%s'.\n", pPatch->pszName);*/
+				}
+			}
+			else
+			{
+				Log_Printf(LOG_DEBUG, "Failed to apply TOS patch '%s' at %x (expected %x, found %x).\n",
+				           pPatch->pszName, pPatch->Address, pPatch->OldData, STMemory_ReadLong(pPatch->Address));
+				nBadPatches += 1;
+			}
+		}
+		pPatch += 1;
+	}
 
-  Log_Printf(LOG_DEBUG, "Applied %i TOS patches, %i patches failed.\n",
-             nGoodPatches, nBadPatches);
+	Log_Printf(LOG_DEBUG, "Applied %i TOS patches, %i patches failed.\n",
+	           nGoodPatches, nBadPatches);
 }
 
 
@@ -231,90 +231,90 @@ static void TOS_FixRom(void)
 */
 int TOS_LoadImage(void)
 {
-  Uint8 *pTosFile = NULL;
-  long nFileSize;
+	Uint8 *pTosFile = NULL;
+	long nFileSize;
 
-  bTosImageLoaded = FALSE;
+	bTosImageLoaded = FALSE;
 
-  /* Load TOS image into memory so we can check it's vesion */
-  TosVersion = 0;
-  pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, NULL, &nFileSize, pszTosNameExts);
+	/* Load TOS image into memory so we can check it's vesion */
+	TosVersion = 0;
+	pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, NULL, &nFileSize, pszTosNameExts);
 
-  if (!pTosFile || nFileSize <= 0)
-  {
-    Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
-    return -1;
-  }
+	if (!pTosFile || nFileSize <= 0)
+	{
+		Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
+		return -1;
+	}
 
-   TosSize = nFileSize;
+	TosSize = nFileSize;
 
-    /* Check for RAM TOS images first: */
-    if(SDL_SwapBE32(*(Uint32 *)pTosFile) == 0x46FC2700)
-    {
-      Log_Printf(LOG_WARN, "Detected a RAM TOS - this will probably not work very well!\n");
-      /* RAM TOS images have a 256 bytes loader function before the real image
-       * starts, so we simply skip the first 256 bytes here: */
-      TosSize -= 0x100;
-      memmove(pTosFile, pTosFile + 0x100, TosSize);
-      bRamTosImage = TRUE;
-    }
-    else
-    {
-      bRamTosImage = FALSE;
-    }
+	/* Check for RAM TOS images first: */
+	if (SDL_SwapBE32(*(Uint32 *)pTosFile) == 0x46FC2700)
+	{
+		Log_Printf(LOG_WARN, "Detected a RAM TOS - this will probably not work very well!\n");
+		/* RAM TOS images have a 256 bytes loader function before the real image
+		 * starts, so we simply skip the first 256 bytes here: */
+		TosSize -= 0x100;
+		memmove(pTosFile, pTosFile + 0x100, TosSize);
+		bRamTosImage = TRUE;
+	}
+	else
+	{
+		bRamTosImage = FALSE;
+	}
 
-    /* Now, look at start of image to find Version number and address */
-    TosVersion = SDL_SwapBE16(*(Uint16 *)&pTosFile[2]);
-    TosAddress = SDL_SwapBE32(*(Uint32 *)&pTosFile[8]);
+	/* Now, look at start of image to find Version number and address */
+	TosVersion = SDL_SwapBE16(*(Uint16 *)&pTosFile[2]);
+	TosAddress = SDL_SwapBE32(*(Uint32 *)&pTosFile[8]);
 
-    /* Check for reasonable TOS version: */
-    if(TosVersion<0x100 || TosVersion>0x500 || TosSize>1024*1024L
-       || (!bRamTosImage && TosAddress!=0xe00000 && TosAddress!=0xfc0000))
-    {
-      Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
-                              "(TOS version %x, address $%x)", TosVersion, TosAddress);
-      return -2;
-    }
+	/* Check for reasonable TOS version: */
+	if (TosVersion<0x100 || TosVersion>0x500 || TosSize>1024*1024L
+	    || (!bRamTosImage && TosAddress!=0xe00000 && TosAddress!=0xfc0000))
+	{
+		Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
+		             "(TOS version %x, address $%x)", TosVersion, TosAddress);
+		return -2;
+	}
 
-    /* TOSes 1.06 and 1.62 are for the STE ONLY and so don't run on a real ST. */
-    /* They access illegal memory addresses which don't exist on a real machine and cause the OS */
-    /* to lock up. So, if user selects one of these, switch to STE mode. */
-    if ((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
-    {
-      Log_AlertDlg(LOG_INFO, "TOS versions 1.06 and 1.62\nare NOT valid ST ROM images.\n"
-                             " => Switching to STE mode now.\n");
-      IoMem_UnInit();
-      ConfigureParams.System.nMachineType = MACHINE_STE;
-      IoMem_Init();
-    }
+	/* TOSes 1.06 and 1.62 are for the STE ONLY and so don't run on a real ST. */
+	/* They access illegal memory addresses which don't exist on a real machine and cause the OS */
+	/* to lock up. So, if user selects one of these, switch to STE mode. */
+	if ((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
+	{
+		Log_AlertDlg(LOG_INFO, "TOS versions 1.06 and 1.62\nare NOT valid ST ROM images.\n"
+		             " => Switching to STE mode now.\n");
+		IoMem_UnInit();
+		ConfigureParams.System.nMachineType = MACHINE_STE;
+		IoMem_Init();
+	}
 
-    /* Copy loaded image into ST memory */
-    memcpy(STRam+TosAddress, pTosFile, TosSize);
+	/* Copy loaded image into ST memory */
+	memcpy(STRam+TosAddress, pTosFile, TosSize);
 
-  Log_Printf(LOG_DEBUG, "Loaded TOS version %i.%c%c, starting at $%x, "
-          "country code = %i, %s\n", TosVersion>>8, '0'+((TosVersion>>4)&0x0f),
-          '0'+(TosVersion&0x0f), TosAddress, STMemory_ReadWord(TosAddress+28)>>1,
-          (STMemory_ReadWord(TosAddress+28)&1)?"PAL":"NTSC");
+	Log_Printf(LOG_DEBUG, "Loaded TOS version %i.%c%c, starting at $%x, "
+	           "country code = %i, %s\n", TosVersion>>8, '0'+((TosVersion>>4)&0x0f),
+	           '0'+(TosVersion&0x0f), TosAddress, STMemory_ReadWord(TosAddress+28)>>1,
+	           (STMemory_ReadWord(TosAddress+28)&1)?"PAL":"NTSC");
 
-  /* Are we allowed VDI under this TOS? */
-  if (TosVersion == 0x0100 && bUseVDIRes)
-  {
-    /* Warn user */
-    Log_AlertDlg(LOG_WARN, "To use GEM extended resolutions, you must select a TOS >= 1.02.");
-    /* And select non VDI */
-    bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
-  }
+	/* Are we allowed VDI under this TOS? */
+	if (TosVersion == 0x0100 && bUseVDIRes)
+	{
+		/* Warn user */
+		Log_AlertDlg(LOG_WARN, "To use GEM extended resolutions, you must select a TOS >= 1.02.");
+		/* And select non VDI */
+		bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
+	}
 
-  /* Fix TOS image, modify code for emulation */
-  TOS_FixRom();
+	/* Fix TOS image, modify code for emulation */
+	TOS_FixRom();
 
-  /* Set connected devices, memory configuration, etc. */
-  STMemory_SetDefaultConfig();
+	/* Set connected devices, memory configuration, etc. */
+	STMemory_SetDefaultConfig();
 
-  /* and free loaded image */
-  free(pTosFile);
+	/* and free loaded image */
+	free(pTosFile);
 
-  bTosImageLoaded = TRUE;
+	bTosImageLoaded = TRUE;
 
-  return 0;
+	return 0;
 }
