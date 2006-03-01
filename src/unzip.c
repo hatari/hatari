@@ -11,7 +11,7 @@
 
    Read unzip.h for more info
 */
-const char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.7 2006-03-01 20:46:48 thothy Exp $";
+const char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.8 2006-03-01 20:54:37 thothy Exp $";
 
 
 #include <stdio.h>
@@ -466,7 +466,7 @@ local int unzlocal_GetCurrentFileInfoInternal (unzFile file,
                                                void *extraField,
                                                uLong extraFieldBufferSize,
                                                char *szComment,
-                                               uLong commentBufferSize));
+                                               uLong commentBufferSize)
 {
 	unz_s* s;
 	unz_file_info file_info;
