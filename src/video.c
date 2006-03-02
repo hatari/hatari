@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.49 2006-03-02 22:20:28 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.50 2006-03-02 23:17:27 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -37,6 +37,7 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.49 2006-03-02 22:20:28 thoth
 #define BORDERMASK_NONE    0x00                 /* Borders masks */
 #define BORDERMASK_LEFT    0x01
 #define BORDERMASK_RIGHT   0x02
+#define BORDERMASK_MIDDLE  0x04
 
 
 BOOL bUseHighRes = FALSE;                       /* Use hi-res (ie Mono monitor) */
@@ -59,6 +60,7 @@ static Uint8 ScanLineSkip;                      /* Scan line width add, STe only
 static Uint8 *pVideoRaster;                     /* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 static Uint8 VideoShifterByte;                  /* VideoShifter (0xff8260) value store in video chip */
 static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simulate left/right border removal */
+static int nLastAccessCycleLeft;                /* Line cycle where program tried to open left border */
 
 
 /*-----------------------------------------------------------------------*/
@@ -169,6 +171,7 @@ static void Video_WriteToShifter(Uint8 Byte)
       && nLineCycles <= 48 && nLineCycles-nLastCycles <= 16)
   {
     LeftRightBorder |= BORDERMASK_LEFT;
+    nLastAccessCycleLeft = nLineCycles;
   }
 
   nLastHBL = nHBL;
@@ -226,7 +229,15 @@ void Video_Sync_WriteByte(void)
         && nLineCycles-nLastCycles <= 16)
     {
       /* Right border */
-      LeftRightBorder |= BORDERMASK_RIGHT;
+      //fprintf(stderr,"Right sync: %i - %i = %i\n", nLineCycles, nLastAccessCycleLeft, nLineCycles - nLastAccessCycleLeft);
+      if (nLineCycles - nLastAccessCycleLeft == 368)
+      {
+        LeftRightBorder |= BORDERMASK_MIDDLE;   /* Program tries to shorten line by 2 bytes */
+      }
+      else
+      {
+        LeftRightBorder |= BORDERMASK_RIGHT;    /* Program tries to open right border */
+      }
     }
   }
 
@@ -360,17 +371,26 @@ static void Video_CopyScreenLineColor(void)
     memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE);
     pVideoRaster += SCREENBYTES_MIDDLE;
 
-    /* Does have right border? If not, clear to color '0' */
+    /* Does have right border? */
     if (LeftRightBorder & BORDERMASK_RIGHT)
     {
       memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT);
       pVideoRaster += BORDERBYTES_RIGHT-SCREENBYTES_RIGHT;
       pVideoRaster += SCREENBYTES_RIGHT;
     }
+    else if (LeftRightBorder & BORDERMASK_MIDDLE)
+    {
+      /* Shortened line by 2 bytes? */
+      memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE-2, 0, SCREENBYTES_RIGHT+2);
+      pVideoRaster -= 2;
+    }
     else
+    {
+      /* Simply clear right border to '0' */
       memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,0,SCREENBYTES_RIGHT);
+    }
 
-    /* Correct the "-2" offset for pVideoRaster from above */
+    /* Correct the "-2" offset for pVideoRaster from BORDERMASK_LEFT above */
     if (LeftRightBorder & BORDERMASK_LEFT)
       pVideoRaster += 2;
 
