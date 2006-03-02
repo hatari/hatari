@@ -14,7 +14,7 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to
   a byte array and stored in 'Cart_data[]' (see cartData.c).
 */
-const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.12 2006-02-12 21:28:22 eerot Exp $";
+const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.13 2006-03-02 09:06:08 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -55,15 +55,15 @@ static void Cart_LoadImage(void)
 		return;
 	}
 
-	if (nCartSize > 0x20000 && nCartSize != 0x20004)
+	if (nCartSize < 40 || (nCartSize > 0x20000 && nCartSize != 0x20004))
 	{
-		Log_Printf(LOG_ERROR, "Cartridge file '%s' is too big.\n", pCartFileName);
+		Log_Printf(LOG_ERROR, "Cartridge file '%s' has illegal size.\n", pCartFileName);
 		return;
 	}
 
 	/* There are two type of cartridge images, normal 1:1 images which are
-	 * always smaller than 0x20000 bytes, and the .STC images, which are
-	 * always 0x20004 bytes (the first 4 bytes are a dummy header).
+	 * always smaller than or equal to 0x20000 bytes, and the .STC images,
+	 * which are always 0x20004 bytes (the first 4 bytes are a dummy header).
 	 * So if size is 0x20004 bytes we have to skip the first 4 bytes */
 	if (nCartSize == 0x20004)
 	{

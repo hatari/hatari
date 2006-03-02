@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.48 2006-02-08 22:49:27 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.49 2006-03-02 09:06:08 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -419,7 +419,8 @@ void Configuration_WorkOnDetails(BOOL bReset)
 
 	/* Clean file and directory names */
 	File_MakeAbsoluteName(ConfigureParams.Rom.szTosImageFileName);
-	File_MakeAbsoluteName(ConfigureParams.Rom.szCartridgeImageFileName);
+	if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)
+		File_MakeAbsoluteName(ConfigureParams.Rom.szCartridgeImageFileName);
 	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskImage);
 	File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);

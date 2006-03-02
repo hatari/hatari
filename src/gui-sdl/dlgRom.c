@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.5 2006-02-08 22:46:10 eerot Exp $";
+const char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.6 2006-03-02 09:06:08 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -74,8 +74,11 @@ void DlgRom_Main(void)
 			strcpy(tmpname, DialogParams.Rom.szTosImageFileName);
 			if (SDLGui_FileSelect(tmpname, NULL, FALSE))   /* Show and process the file selection dlg */
 			{
-				strcpy(DialogParams.Rom.szTosImageFileName, tmpname);
-				File_ShrinkName(szDlgTosName, DialogParams.Rom.szTosImageFileName, sizeof(szDlgTosName)-1);
+				if (!File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname))
+				{
+					strcpy(DialogParams.Rom.szTosImageFileName, tmpname);
+					File_ShrinkName(szDlgTosName, DialogParams.Rom.szTosImageFileName, sizeof(szDlgTosName)-1);
+				}
 			}
 			break;
 
@@ -89,8 +92,16 @@ void DlgRom_Main(void)
 			File_MakeAbsoluteName(tmpname);
 			if (SDLGui_FileSelect(tmpname, NULL, FALSE))   /* Show and process the file selection dlg */
 			{
-				strcpy(DialogParams.Rom.szCartridgeImageFileName, tmpname);
-				File_ShrinkName(szDlgCartName, DialogParams.Rom.szCartridgeImageFileName, sizeof(szDlgCartName)-1);
+				if (!File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname))
+				{
+					strcpy(DialogParams.Rom.szCartridgeImageFileName, tmpname);
+					File_ShrinkName(szDlgCartName, DialogParams.Rom.szCartridgeImageFileName, sizeof(szDlgCartName)-1);
+				}
+				else
+				{
+					szDlgCartName[0] = 0;
+					DialogParams.Rom.szCartridgeImageFileName[0] = 0;
+				}
 			}
 			break;
 		}
