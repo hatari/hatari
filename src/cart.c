@@ -14,7 +14,7 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to
   a byte array and stored in 'Cart_data[]' (see cartData.c).
 */
-const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.13 2006-03-02 09:06:08 thothy Exp $";
+const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.14 2006-03-02 09:17:16 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -58,6 +58,7 @@ static void Cart_LoadImage(void)
 	if (nCartSize < 40 || (nCartSize > 0x20000 && nCartSize != 0x20004))
 	{
 		Log_Printf(LOG_ERROR, "Cartridge file '%s' has illegal size.\n", pCartFileName);
+		free(pCartData);
 		return;
 	}
 
