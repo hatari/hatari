@@ -52,6 +52,10 @@
 /* FIXME: SCREEN_START_CYCLE should rather be 52 or so, but this breaks a lot of other things at the moment... */
 #define SCREEN_START_CYCLE  96          /* Cycle first normal pixel appears on */
 
+/* Bytes for opened left and right border: */
+#define BORDERBYTES_LEFT  26
+#define BORDERBYTES_RIGHT 44
+
 /* Legacy defines: */
 #define CYCLES_PER_FRAME    (nScanlinesPerFrame*nCyclesPerLine)  /* Cycles per VBL @ 50fps = 160256 */
 #define CYCLES_HBL          (nCyclesPerLine+96)   /* Cycles for first HBL - very inaccurate on ST */

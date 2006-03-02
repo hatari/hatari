@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.48 2006-02-08 22:49:27 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.49 2006-03-02 22:20:28 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -348,7 +348,8 @@ static void Video_CopyScreenLineColor(void)
     /* Does have left border? If not, clear to color '0' */
     if (LeftRightBorder & BORDERMASK_LEFT)
     {
-      pVideoRaster += 24-SCREENBYTES_LEFT;
+      /* The "-2" in the following line is needed so that the offset is a multiple of 8 */
+      pVideoRaster += BORDERBYTES_LEFT-SCREENBYTES_LEFT-2;
       memcpy(pSTScreen, pVideoRaster, SCREENBYTES_LEFT);
       pVideoRaster += SCREENBYTES_LEFT;
     }
@@ -363,11 +364,15 @@ static void Video_CopyScreenLineColor(void)
     if (LeftRightBorder & BORDERMASK_RIGHT)
     {
       memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT);
-      pVideoRaster += 46-SCREENBYTES_RIGHT;
+      pVideoRaster += BORDERBYTES_RIGHT-SCREENBYTES_RIGHT;
       pVideoRaster += SCREENBYTES_RIGHT;
     }
     else
       memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,0,SCREENBYTES_RIGHT);
+
+    /* Correct the "-2" offset for pVideoRaster from above */
+    if (LeftRightBorder & BORDERMASK_LEFT)
+      pVideoRaster += 2;
 
     /* Handle STE fine scrolling (HWScrollCount is zero on ST). */
     if (HWScrollCount)
