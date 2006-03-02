@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.27 2006-02-12 21:28:22 eerot Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.28 2006-03-02 08:42:02 thothy Exp $";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -279,7 +279,7 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
         pFile = malloc(FileSize);
       /* Read in... */
       if (pFile)
-        gzread(hGzFile, pFile, FileSize);
+        FileSize = gzread(hGzFile, pFile, FileSize);
 
       gzclose(hGzFile);
     }
@@ -313,7 +313,7 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
         pFile = malloc(FileSize);
       /* Read in... */
       if (pFile)
-        fread(pFile, 1, FileSize, hDiskFile);
+        FileSize = fread(pFile, 1, FileSize, hDiskFile);
 
       fclose(hDiskFile);
     }
