@@ -6,7 +6,7 @@
 
   Tables with hardware IO handlers.
 */
-const char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.15 2006-02-12 21:28:22 eerot Exp $";
+const char IoMemTables_rcsid[] = "Hatari $Id: ioMemTables.c,v 1.16 2006-03-23 22:03:16 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -428,6 +428,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xff860e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff860f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 
+	{ 0xff8780, 16, IoMem_VoidRead, IoMem_WriteWithoutInterception },        /* TT SCSI controller */
+
 	{ 0xff8800, SIZE_BYTE, PSG_SelectRegister_ReadByte, PSG_SelectRegister_WriteByte },
 	{ 0xff8801, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },
 	{ 0xff8802, SIZE_BYTE, PSG_DataRegister_ReadByte, PSG_DataRegister_WriteByte },
@@ -459,8 +461,6 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xff8926, 26,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 
 	/* Note: The TT does not have a blitter (0xff8a00 - 0xff8a3e) */
-
-	{ 0xff8780, 16, IoMem_VoidRead, IoMem_WriteWithoutInterception },        /* TT SCSI controller */
 
 	{ 0xff8e00, 16, IoMem_VoidRead, IoMem_WriteWithoutInterception },        /* VME Bus IO */
 
