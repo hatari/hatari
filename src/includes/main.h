@@ -116,7 +116,6 @@ enum {
 
 extern BOOL bQuitProgram;
 extern BOOL bEnableDebug;
-extern BOOL bEmulationActive;
 extern char szWorkingDir[FILENAME_MAX];
 
 
