@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.50 2006-03-02 23:17:27 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.51 2006-04-05 15:34:51 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -61,6 +61,7 @@ static Uint8 *pVideoRaster;                     /* Pointer to Video raster, afte
 static Uint8 VideoShifterByte;                  /* VideoShifter (0xff8260) value store in video chip */
 static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simulate left/right border removal */
 static int nLastAccessCycleLeft;                /* Line cycle where program tried to open left border */
+static BOOL bSteBorderFlag;                     /* TRUE when screen width has been switched to 336 (e.g. in Obsession) */
 
 
 /*-----------------------------------------------------------------------*/
@@ -86,6 +87,7 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&nScanlinesPerFrame, sizeof(nScanlinesPerFrame));
   MemorySnapShot_Store(&nCyclesPerLine, sizeof(nCyclesPerLine));
   MemorySnapShot_Store(&nFirstVisibleHbl, sizeof(nFirstVisibleHbl));
+  MemorySnapShot_Store(&bSteBorderFlag, sizeof(bSteBorderFlag));
 }
 
 
@@ -394,8 +396,12 @@ static void Video_CopyScreenLineColor(void)
     if (LeftRightBorder & BORDERMASK_LEFT)
       pVideoRaster += 2;
 
-    /* Handle STE fine scrolling (HWScrollCount is zero on ST). */
-    if (HWScrollCount)
+    if (bSteBorderFlag)
+    {
+      memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, 4*2);
+      pVideoRaster += 4 * 2;
+    }
+    else if (HWScrollCount)     /* Handle STE fine scrolling (HWScrollCount is zero on ST) */
     {
       Uint16 *pScrollAdj;       /* Pointer to actual position in line */
       int nNegScrollCnt;
@@ -472,13 +478,6 @@ static void Video_CopyScreenLineColor(void)
 */
 static void Video_CopyScreenLine(void)
 {
-  /* Read STE fine scrolling registers */
-  if (ConfigureParams.System.nMachineType != MACHINE_ST)
-  {
-    ScanLineSkip = IoMem_ReadByte(0xff820f);
-    HWScrollCount = IoMem_ReadByte(0xff8265) & 0x0f;
-  }
-
   /* Only copy screen line if not doing high VDI resolution */
   if (!bUseVDIRes)
   {
@@ -801,6 +800,8 @@ void Video_Reset(void)
   /* Reset STe screen variables */
   ScanLineSkip = 0;
   HWScrollCount = 0;
+  bSteBorderFlag = FALSE;
+
   /* Clear ready for new VBL */
   Video_ClearOnVBL();
 }
@@ -889,6 +890,8 @@ void Video_LineWidth_ReadByte(void)
 {
   if (ConfigureParams.System.nMachineType == MACHINE_ST)
     IoMem[0xff820f] = 0;        /* On ST this is always 0 */
+  else
+    IoMem[0xff820f] = ScanLineSkip;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -903,7 +906,24 @@ void Video_ShifterMode_ReadByte(void)
     IoMem[0xff8260] = VideoShifterByte;   /* Read shifter register */
 }
 
+/*-----------------------------------------------------------------------*/
+/*
+  Read horizontal scroll register (0xff8265)
+*/
+void Video_HorScroll_Read(void)
+{
+  IoMem[0xff8265] = HWScrollCount;
+}
 
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write video line width register (0xff820f) - STE only.
+*/
+void Video_LineWidth_WriteByte(void)
+{
+    ScanLineSkip = IoMem_ReadByte(0xff820f);
+}
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -1025,4 +1045,44 @@ void Video_ShifterMode_WriteByte(void)
     /* Store resolution after palette mask and set resolution write bit: */
     *pHBLPaletteMasks |= (((Uint32)VideoShifterByte|0x04)<<16);
   }
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write to horizontal scroll register (0xff8265).
+  Note: The STE shifter has a funny "bug"  that allows to increase the
+  resolution to 336x200 instead of 320x200. It occurs when a program writes
+  certain values to 0xff8264:
+	move.w  #1,$ffff8264      ; Word access!
+	clr.b   $ffff8264         ; Byte access!
+  Some games (Obsession, Skulls) and demos (Pacemaker by Paradox) use this
+  feature to increase the resolution, so we have to emulate this bug, too!
+*/
+void Video_HorScroll_Write(void)
+{
+  static BOOL bFirstSteAccess = FALSE;
+
+  HWScrollCount = IoMem[0xff8265];
+
+  /*fprintf(stderr, "Write to 0x%x (0x%x, 0x%x, %i)\n", IoAccessBaseAddress,
+          IoMem[0xff8264], HWScrollCount, nIoMemAccessSize);*/
+
+  if (IoAccessBaseAddress == 0xff8264 && nIoMemAccessSize == SIZE_WORD
+      && HWScrollCount == 1)
+  {
+    /*fprintf(stderr, "STE border removal - access 1\n");*/
+    bFirstSteAccess = TRUE;
+  }
+  else if (bFirstSteAccess && HWScrollCount == 1 &&
+           IoAccessBaseAddress == 0xff8264 && nIoMemAccessSize == SIZE_BYTE)
+  {
+    /*fprintf(stderr, "STE border removal - access 2\n");*/
+    bSteBorderFlag = TRUE;
+  }
+  else
+  {
+    bFirstSteAccess = bSteBorderFlag = FALSE;
+  }
+
+  HWScrollCount &= 0x0f;
 }

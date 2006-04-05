@@ -90,10 +90,12 @@ extern void Video_Sync_ReadByte(void);
 extern void Video_BaseLow_ReadByte(void);
 extern void Video_LineWidth_ReadByte(void);
 extern void Video_ShifterMode_ReadByte(void);
+extern void Video_HorScroll_Read(void);
 
 extern void Video_ScreenBaseSTE_WriteByte(void);
 extern void Video_ScreenCounter_WriteByte(void);
 extern void Video_Sync_WriteByte(void);
+extern void Video_LineWidth_WriteByte(void);
 extern void Video_Color0_WriteWord(void);
 extern void Video_Color1_WriteWord(void);
 extern void Video_Color2_WriteWord(void);
@@ -111,5 +113,6 @@ extern void Video_Color13_WriteWord(void);
 extern void Video_Color14_WriteWord(void);
 extern void Video_Color15_WriteWord(void);
 extern void Video_ShifterMode_WriteByte(void);
+extern void Video_HorScroll_Write(void);
 
 #endif  /* HATARI_VIDEO_H */
