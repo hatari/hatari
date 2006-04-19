@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.83 2006-02-12 18:53:06 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.84 2006-04-19 21:46:13 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -384,6 +384,7 @@ static void Main_UnInit(void)
   Printer_UnInit();
   IoMem_UnInit();
   GemDOS_UnInitDrives();
+  Joy_UnInit();
   if(Sound_AreWeRecording())
     Sound_EndRecording();
   Audio_UnInit();

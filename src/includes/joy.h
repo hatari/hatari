@@ -39,6 +39,7 @@ enum
 extern int JoystickSpaceBar;
 
 extern void Joy_Init(void);
+extern void Joy_UnInit(void);
 extern Uint8 Joy_GetStickData(int nStJoyId);
 extern void Joy_ToggleCursorEmulation(void);
 extern BOOL Joy_KeyDown(int symkey, int modkey);

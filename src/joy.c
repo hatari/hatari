@@ -8,7 +8,7 @@
 
   NOTE: The ST uses the joystick port 1 as the default controller.
 */
-const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.10 2006-02-08 22:49:27 eerot Exp $";
+const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.11 2006-04-19 21:46:13 thothy Exp $";
 
 #include <SDL.h>
 
@@ -78,6 +78,26 @@ void Joy_Init(void)
 	}
 
 	JoystickSpaceBar = FALSE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Close the (real) joysticks.
+*/
+void Joy_UnInit(void)
+{
+	int i, nPadsConnected;
+
+	nPadsConnected = SDL_NumJoysticks();
+
+	for (i = 0; i < nPadsConnected && i < 6; i++)
+	{
+		if (bJoystickWorking[i] == TRUE)
+		{
+			SDL_JoystickClose(sdlJoystick[i]);
+		}
+	}
 }
 
 
