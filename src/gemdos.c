@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.48 2006-02-21 13:41:51 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.49 2006-05-04 19:36:17 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -858,15 +858,15 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 #if 0
 static BOOL GemDOS_Cauxin(Uint32 Params)
 {
-	unsigned char Char;
+	unsigned char c;
 
 	/* Wait here until a character is ready */
 	while(!RS232_GetStatus())
 		;
 
 	/* And read character */
-	RS232_ReadBytes(&Char,1);
-	Regs[REG_D0] = Char;
+	RS232_ReadBytes(&c,1);
+	Regs[REG_D0] = c;
 
 	return TRUE;
 }
@@ -880,11 +880,11 @@ static BOOL GemDOS_Cauxin(Uint32 Params)
 #if 0
 static BOOL GemDOS_Cauxout(Uint32 Params)
 {
-	unsigned char Char;
+	unsigned char c;
 
 	/* Send character to RS232 */
-	Char = STMemory_ReadWord(Params+SIZE_WORD);
-	RS232_TransferBytesTo(&Char,1);
+	c = STMemory_ReadWord(Params+SIZE_WORD);
+	RS232_TransferBytesTo(&c, 1);
 
 	return TRUE;
 }
@@ -897,11 +897,11 @@ static BOOL GemDOS_Cauxout(Uint32 Params)
 */
 static BOOL GemDOS_Cprnout(Uint32 Params)
 {
-	unsigned char Char;
+	unsigned char c;
 
 	/* Send character to printer(or file) */
-	Char = STMemory_ReadWord(Params+SIZE_WORD);
-	Printer_TransferByteTo(Char);
+	c = STMemory_ReadWord(Params+SIZE_WORD);
+	Printer_TransferByteTo(c);
 	Regs[REG_D0] = -1;                /* Printer OK */
 
 	return TRUE;
