@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.49 2006-05-04 19:36:17 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.50 2006-05-20 08:05:14 thothy Exp $";
 
 #include <sys/stat.h>
 #include <time.h>
@@ -36,6 +36,7 @@ const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.49 2006-05-04 19:36:17 tho
 #include "hdc.h"
 #include "gemdos.h"
 #include "gemdos_defines.h"
+#include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "misc.h"
@@ -61,6 +62,10 @@ const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.49 2006-05-04 19:36:17 tho
 #warning GLOB_ONLYDIR was not defined.
 #define GLOB_ONLYDIR 0
 #endif
+
+/* Maximum supported length of a GEMDOS path: */
+#define MAX_GEMDOS_PATH 256
+
 
 /* Have we re-directed GemDOS vector to our own routines yet? */
 BOOL bInitGemDOS;
@@ -309,7 +314,7 @@ static BOOL PopulateDTA(char *path, struct dirent *file)
 	struct stat filestat;
 	int n;
 
-	sprintf(tempstr, "%s/%s", path, file->d_name);
+	snprintf(tempstr, sizeof(tempstr), "%s/%s", path, file->d_name);
 	n = stat(tempstr, &filestat);
 	if (n != 0)
 		return FALSE;   /* return on error */
@@ -399,7 +404,8 @@ static void fsfirst_dirname(char *string, char *new)
 {
 	int i=0;
 
-	sprintf(new, string);
+	strcpy(new, string);
+
 	/* convert to front slashes. */
 	i=0;
 	while (new[i] != '\0')
@@ -416,8 +422,8 @@ static void fsfirst_dirname(char *string, char *new)
 	while (new[i] != '/')
 		i--; /* find last slash */
 	new[i] = '\0';
-
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -1072,6 +1078,7 @@ static BOOL GemDOS_RmDir(Uint32 Params)
 	return FALSE;
 }
 
+
 /*-----------------------------------------------------------------------*/
 /*
   GEMDOS ChDir
@@ -1079,44 +1086,54 @@ static BOOL GemDOS_RmDir(Uint32 Params)
 */
 static BOOL GemDOS_ChDir(Uint32 Params)
 {
-	char szDirPath[MAX_GEMDOS_PATH];
 	char *pDirName;
 	int Drive;
 
 	/* Find new directory */
 	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
-#if GEMDOS_FILE_DEBUG
 
-	fprintf(stderr,"chdir %s\n",pDirName);
+#if GEMDOS_FILE_DEBUG
+	Log_Printf(LOG_DEBUG, "Dsetpath(\"%s\")\n", pDirName);
 #endif
 
 	Drive = GemDOS_IsFileNameAHardDrive(pDirName);
 
 	if (ISHARDDRIVE(Drive))
 	{
-
 		struct stat buf;
+		char *psTempDirPath;
 
-		GemDOS_CreateHardDriveFileName(Drive,pDirName,szDirPath);
-		if (stat(szDirPath,&buf))
-		{ /* error */
+		/* Allocate temporary memory for path name: */
+		psTempDirPath = malloc(FILENAME_MAX);
+		if (!psTempDirPath)
+		{
+			perror("GemDOS_ChDir");
+			Regs[REG_D0] = GEMDOS_ENSMEM;
+			return TRUE;
+		}
+
+		GemDOS_CreateHardDriveFileName(Drive, pDirName, psTempDirPath);
+		if (stat(psTempDirPath, &buf))
+		{
+			/* error */
+			free(psTempDirPath);
 			Regs[REG_D0] = GEMDOS_EPTHNF;
 			return TRUE;
 		}
 
-		strcat(szDirPath, "/");
+		File_AddSlashToEndFileName(psTempDirPath);
+		File_MakeAbsoluteName(psTempDirPath);
 
-		/* remove any trailing slashes */
-		if (szDirPath[strlen(szDirPath)-2]=='/')
-			szDirPath[strlen(szDirPath)-1] = '\0';     /* then remove it! */
+		strcpy(emudrives[0]->fs_currpath, psTempDirPath);
+		free(psTempDirPath);
 
-		strcpy(emudrives[0]->fs_currpath, szDirPath);
 		Regs[REG_D0] = GEMDOS_EOK;
 		return TRUE;
 	}
 
 	return FALSE;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -1216,7 +1233,8 @@ static BOOL GemDOS_Open(Uint32 Params)
 		/* Open file */
 		FileHandles[Index].FileHandle =  fopen(szActualFileName, open_modes[Mode&0x03]);
 
-		sprintf(FileHandles[Index].szActualName,"%s",szActualFileName);
+		snprintf(FileHandles[Index].szActualName, sizeof(FileHandles[Index].szActualName),
+		         "%s", szActualFileName);
 
 		if (FileHandles[Index].FileHandle != NULL)
 		{
@@ -1439,7 +1457,7 @@ static BOOL GemDOS_Fattrib(Uint32 Params)
 	nAttrib = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 
 #ifdef GEMDOS_VERBOSE
-	fprintf(stderr,"Fattrib('%s', %d, 0x%x)\n",psFileName, nRwFlag, nAttrib);
+	Log_Printf(LOG_DEBUG, "Fattrib('%s', %d, 0x%x)\n", psFileName, nRwFlag, nAttrib);
 #endif
 
 	if (ISHARDDRIVE(nDrive))
@@ -1502,7 +1520,7 @@ static int GemDOS_GetDir(Uint32 Params)
 			STMemory_WriteByte(Address+i, (c=='/' ? '\\' : c) );
 		}
 #if GEMDOS_FILE_DEBUG
-		fprintf(stderr,"curdir %d -> %s\n",Drive,path);
+		Log_Printf(LOG_DEBUG, "GemDOS_GetDir (%d) = %s\n", Drive, path);
 #endif
 
 		return TRUE;
@@ -1614,7 +1632,7 @@ static BOOL GemDOS_SNext(void)
 		temp = InternalDTAs[Index].found;
 		if (PopulateDTA(InternalDTAs[Index].path, temp[InternalDTAs[Index].centry++]) == FALSE)
 		{
-			fprintf(stderr,"\tError setting DTA.\n");
+			Log_Printf(LOG_ERROR, "\tError setting DTA.\n");
 			return TRUE;
 		}
 

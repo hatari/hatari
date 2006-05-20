@@ -8,10 +8,9 @@
 #define HATARI_GEMDOS_H
 
 
-#define MAX_GEMDOS_PATH 256
 typedef struct {
-  char hd_emulation_dir[MAX_GEMDOS_PATH];  /* hd emulation directory */
-  char fs_currpath[MAX_GEMDOS_PATH];       /* current path */
+  char hd_emulation_dir[FILENAME_MAX];     /* hd emulation directory */
+  char fs_currpath[FILENAME_MAX];          /* current path */
   int hd_letter;                           /* drive letter */
 } EMULATEDDRIVE;
 
