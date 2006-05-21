@@ -114,6 +114,7 @@ Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
       <li><a href="#STE games">STE games</a>
       <li><a href="#STE demos">STE demos</a>
       <li><a href="#STE applications">STE applications</a>
+      <li><a href="#68030 software">68030 software</a>
     </ul>
   </ul>
 </ul>
@@ -224,7 +225,8 @@ the following systems:
 FreeBSD 5.1 </li>
   <li>OpenBSD 3.5 </li>
   <li>Solaris 8 on a SUN UltraSparc 1</li>
-  <li>Zaurus SL-C760 PDA </li>
+  <li>Zaurus SL-C760 PDA</li>
+  <li>Nokia N770 Linux Web Tablet</li>
 </ul>
 
 <a name="Compiling and running"></a><h2>Compiling and running</h2>
@@ -392,9 +394,9 @@ This currently does not work together with GEMDOS hard disk emulation!<br>
       <td align="center">specify TOS ROM image to use</td>
     </tr>
     <tr>
-      <td align="center">--memsize x</td>
-      <td align="center">set amount of emulated RAM<br>
-x=0 for 512K, x=1,x=2 or x=4 for 1,2 or 4 MB</td>
+      <td align="center">-s x (--memsize x)</td>
+      <td align="center">set amount of emulated RAM upto 14MB<br>
+x=0 for 512K, x=1,x=2 or x=4 for 1, 2 or 4 MB</td>
     </tr>
     <tr>
       <td align="center">--cpulevel x</td>
@@ -434,7 +436,7 @@ instead of ~/.hatari.cfg</td>
     </tr>
     <tr>
       <td align="center">--machine &lt;x&gt;</td>
-      <td align="center">Select machine type (x = st or ste)</td>
+      <td align="center">Select machine type (x = st, ste or tt)</td>
     </tr>
   </tbody>
 </table>
@@ -485,7 +487,8 @@ that you have made.</p>
  plain 68000.</p>
 <p>Choose whether you want to emulate a normal ST or an STE.
  <em>Note:</em> STE emulation is very incomplete. It may not work very well.</p>
-<p>For STE emulation a STE compatible TOS image, e.q. version 1.06, 1.62 or 2.x, is strongly recommended.</p>
+<p>For STE emulation a STE compatible TOS image, e.q. version 1.06, 1.62 or
+2.x, is strongly recommended. EmuTOS can also be used.</p>
 <p>Select the CPU clock you want to use. 8Mhz is ST standard and the most
  compatible, 16MHz is for Mega STE emulation.</p>
 <p>With the &quot;Slower but more compatible CPU&quot; option, you can enable
@@ -899,6 +902,7 @@ the Hatari window. Do this by pressing the <span class="key">ALTGR+m</span>
 hotkey combination.
 Press it again to go back to normal mouse behaviour which allows you to
 work in other X11 windows while Hatari is up and running. </p>
+<p>Mouse scrollwheel will act as cursor up and down keys. </p>
 
 <a name="Emulated joystick"></a><h3>Emulated joystick</h3>
 
@@ -1761,10 +1765,10 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>&nbsp;</td>
     </tr>
     <tr>
-      <td>Obsession</td>
+      <td>Obsession (demo)</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>opens top &amp; bottom border, but part from the right is not visible on screen - some flicker near top border and above panel but seems fully playable</td>
+      <td>opens top, right and bottom borders</td>
     </tr>
     <tr>
       <td>Operation Garfield</td>
@@ -1801,13 +1805,13 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Skulls</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>part from the right border is not visible on screen</td>
+      <td>Opens right border</td>
     </tr>
     <tr>
       <td>Starball*</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>&nbsp;</td>
+      <td>Uses DMA sound</td>
     </tr>
     <tr>
       <td>Stardust (demo)</td>
@@ -1945,16 +1949,17 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Paradox: X-mas 1994 demo</td>
-      <td>yes</td>
+      <td>Partially</td>
       <td>&nbsp;</td>
-      <td>&nbsp;</td>
+      <td>Scroller stopped working in some earlier Hatari version</td>
     </tr>
     <tr>
       <td>Paradox: Pacemaker</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>The end screen doesn't look quite correct and at the end of the
-      screen there's double bus error, otherwise this is perfect.</td>
+      <td>The end screen doesn't look quite correct and when returning
+      to desktop, the screen is corrupted. Otherwise this is perfect.
+      With EmuTOS, stops in the middle.</td>
     </tr>
     <tr>
       <td>Reservoir Gods: Mind Rewind</td>
@@ -2045,6 +2050,38 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr> 
   </tbody>
 </table>
+
+<br>
+
+<a name="68030 software"></a><h4>68030 software</h4>
+
+<p>Here're listed some Atari programs that don't work on STs/STEs because
+they require 68030 CPU, but work in Hatari TT-emulation when using
+ST-resolution</p>
+<table border="1" cellpadding="3">
+  <caption align="bottom">68030 software</caption> <tbody>
+    <tr class="backdropped">
+      <td align="center">Title</td>
+      <td align="center">Working</td>
+      <td align="center">Sound</td>
+      <td align="center">Comment</td>
+    </tr>
+    <tr>
+      <td>TT/Falcon bytetros (ray//.tSCc)</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>glasstro, bragg256, 256mbrot, yabt</td>
+    </tr> 
+    <tr>
+      <td>Movie player</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>68030 version</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>(Naturally these work also on TTs and Falcons)</p>
 
 <br>
 
