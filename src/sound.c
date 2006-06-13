@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.24 2006-02-12 21:28:22 eerot Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.25 2006-06-13 20:22:01 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -317,22 +317,21 @@ static void Sound_SetSamplesPassed(void)
   /* 160256 cycles per VBL, 44Khz = 882 samples per VBL */
   /* 882/160256 samples per clock cycle */
   nSamplesPerFrame = SAMPLES_PER_FRAME;
-#if 0  /* Use floats for calculation */
-  nSamplesToGenerate = (int)( (float)nSoundCycles * ((float)nSamplesPerFrame/(float)CYCLES_PER_FRAME) );
-  if (nSamplesToGenerate > nSamplesPerFrame)
-    nSamplesToGenerate = nSamplesPerFrame;
 
-  nSampleCycles = (int)( (float)nSamplesToGenerate / ((float)nSamplesPerFrame/(float)CYCLES_PER_FRAME) );
-#else  /* Use integers for calculation - both of these calculations should fit into 32-bit int */
   nSamplesToGenerate = nSoundCycles * nSamplesPerFrame / CYCLES_PER_FRAME;
   if (nSamplesToGenerate > nSamplesPerFrame)
     nSamplesToGenerate = nSamplesPerFrame;
 
   nSampleCycles = nSamplesToGenerate * CYCLES_PER_FRAME / nSamplesPerFrame;
-#endif
-
   nSoundCycles -= nSampleCycles;
   Cycles_SetCounter(CYCLES_COUNTER_SOUND, nSoundCycles);
+
+  if (nSamplesToGenerate > MIXBUFFER_SIZE - nGeneratedSamples)
+  {
+    nSamplesToGenerate = MIXBUFFER_SIZE - nGeneratedSamples;
+    if (nSamplesToGenerate < 0)
+      nSamplesToGenerate = 0;
+  }
 }
 
 
