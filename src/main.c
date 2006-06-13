@@ -6,11 +6,10 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.84 2006-04-19 21:46:13 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.85 2006-06-13 20:26:05 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
-#include <sched.h>      /* for sched_yield() */
 
 #include <SDL.h>
 
@@ -125,51 +124,47 @@ void Main_UnPauseEmulation(void)
 */
 void Main_WaitOnVbl(void)
 {
-  int nCurrentMilliTicks, nDestMilliTicks;
-  static int nOldMilliTicks = 0;
+  int nCurrentMilliTicks;
+  static int nDestMilliTicks = 0;
+  int nFrameDuration;
   signed int nDelay;
 
   nCurrentMilliTicks = SDL_GetTicks();
 
-  /* Only wait in normal speed mode */
-  if (ConfigureParams.System.nMinMaxSpeed != MINMAXSPEED_MAX)
+  nFrameDuration = 1000/nScreenRefreshRate;
+  nDelay = nDestMilliTicks - nCurrentMilliTicks;
+
+  /* Do not wait if we are in max speed mode or if we are totally out of sync */
+  if (ConfigureParams.System.nMinMaxSpeed == MINMAXSPEED_MAX
+      || nDelay < -4*nFrameDuration)
   {
-    nDestMilliTicks = nOldMilliTicks + 1000/nScreenRefreshRate;
-    nDelay = nDestMilliTicks - nCurrentMilliTicks;
-
-    if (bAccurateDelays)
-    {
-      /* Accurate sleeping is possible -> use SDL_Delay to free the CPU */
-      if (nDelay > 1)
-      {
-        SDL_Delay(nDelay - 1);
-      }
-    }
-    else
-    {
-      /* No accurate SDL_Delay -> only wait if more than 10ms to go... */
-      if (nDelay >= 10)
-      {
-        SDL_Delay(9);
-      }
-    }
-
-    /* Now busy-wait for the right tick: */
-    do
-    {
-      nCurrentMilliTicks = SDL_GetTicks();
-      nDelay = nDestMilliTicks - nCurrentMilliTicks;
-
-      if (nDelay > 3)
-      {
-        /* Avoid getting a bad priority -> call sched_yield... */
-        sched_yield();
-      }
-    }
-    while (nDelay > 0);
+	/* Only update nDestMilliTicks for next VBL */
+	nDestMilliTicks = nCurrentMilliTicks + nFrameDuration;
+    return;
   }
 
-  nOldMilliTicks = nCurrentMilliTicks;
+  if (bAccurateDelays)
+  {
+    /* Accurate sleeping is possible -> use SDL_Delay to free the CPU */
+    if (nDelay > 1)
+      SDL_Delay(nDelay - 1);
+  }
+  else
+  {
+    /* No accurate SDL_Delay -> only wait if more than 5ms to go... */
+    if (nDelay > 5)
+      SDL_Delay(nDelay<10 ? nDelay-1 : 9);
+  }
+
+  /* Now busy-wait for the right tick: */
+  while (nDelay > 0)
+  {
+    nCurrentMilliTicks = SDL_GetTicks();
+    nDelay = nDestMilliTicks - nCurrentMilliTicks;
+  }
+
+  /* Update nDestMilliTicks for next VBL */
+  nDestMilliTicks += nFrameDuration;
 }
 
 
