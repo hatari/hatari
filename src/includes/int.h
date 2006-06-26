@@ -30,7 +30,7 @@ extern int nCyclesOver;
 
 extern void Int_Reset(void);
 extern void Int_MemorySnapShot_Capture(BOOL bSave);
-extern int Int_HandlerFunctionToID(void *pHandlerFunction);
+extern int Int_HandlerFunctionToID(void (*pHandlerFunction)(void));
 extern void *Int_IDToHandlerFunction(int ID);
 extern void Int_AcknowledgeInterrupt(void);
 extern void Int_AddAbsoluteInterrupt(int CycleTime, int Handler);

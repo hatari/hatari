@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.49 2006-02-15 19:16:52 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.50 2006-06-26 23:03:09 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -61,8 +61,8 @@ static int STScreenWidthBytes;
 static int STScreenLineOffset[NUM_VISIBLE_LINES];  /* Offsets for ST screen lines eg, 0,160,320... */
 static Uint16 HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
 
-static void *ScreenDrawFunctionsNormal[4];         /* Screen draw functions */
-static void *ScreenDrawFunctionsVDI[3] =
+static void (*ScreenDrawFunctionsNormal[4])(void); /* Screen draw functions */
+static void (*ScreenDrawFunctionsVDI[3])(void) =
 {
   ConvertVDIRes_16Colour,
   ConvertVDIRes_4Colour,
@@ -851,7 +851,7 @@ static void Screen_Blit(BOOL bSwapScreen)
 */
 static void Screen_DrawFrame(BOOL bForceFlip)
 {
-  void * pDrawFunction;
+  void (*pDrawFunction)(void);
 
   /* Scan palette/resolution masks for each line and build up palette/difference tables */
   STRes = Screen_ComparePaletteMask();

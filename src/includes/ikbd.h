@@ -15,7 +15,7 @@
 typedef struct {
   Uint8 Command;
   Uint8 NumParameters;
-  void *pCallFunction;
+  void (*pCallFunction)(void);
 } IKBD_COMMAND_PARAMS;
 
 /* Keyboard processor details */

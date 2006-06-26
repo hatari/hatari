@@ -21,7 +21,7 @@
 #define BUS_ERROR_WRITE 0
 #define BUS_ERROR_READ 1
 
-extern void *PendingInterruptFunction;
+extern void (*PendingInterruptFunction)(void);
 extern short int PendingInterruptCount;
 
 extern Uint32 BusErrorAddress;

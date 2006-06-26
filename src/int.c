@@ -16,7 +16,7 @@
   the current instruction takes 20 cycles we will be 16 cycles late - this is handled in
   the adjust functions.
 */
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.13 2006-02-12 21:28:22 eerot Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.14 2006-06-26 23:03:09 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -33,7 +33,7 @@ int nCyclesOver = 0;
 
 
 /* List of possible interrupt handlers to be store in 'PendingInterruptTable', used for 'MemorySnapShot' */
-static void * const pIntHandlerFunctions[] =
+static void (* const pIntHandlerFunctions[])(void) =
 {
   NULL,
   Video_InterruptHandler_VBL,
@@ -54,7 +54,7 @@ typedef struct
 {
   BOOL bUsed;                   /* Is interrupt active? */
   int Cycles;
-  void *pFunction;
+  void (*pFunction)(void);
 } INTERRUPTHANDLER;
 
 static INTERRUPTHANDLER InterruptHandlers[MAX_INTERRUPTS];
@@ -112,7 +112,7 @@ void Int_MemorySnapShot_Capture(BOOL bSave)
 /*
   Convert interrupt handler function pointer to ID, used for saving
 */
-int Int_HandlerFunctionToID(void *pHandlerFunction)
+int Int_HandlerFunctionToID(void (*pHandlerFunction)(void))
 {
   int i;
 

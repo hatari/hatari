@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.35 2006-02-08 22:49:27 eerot Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.36 2006-06-26 23:03:09 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -24,7 +24,7 @@ const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.35 2006-02-08 22:49:27 eer
 #include "xbios.h"
 
 
-void *PendingInterruptFunction;
+void (*PendingInterruptFunction)(void);
 short int PendingInterruptCount;
 
 Uint32 BusErrorAddress;          /* Stores the offending address for bus-/address errors */
