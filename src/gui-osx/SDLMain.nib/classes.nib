@@ -1,0 +1,127 @@
+{
+    IBClasses = (
+        {
+            ACTIONS = {createFloppyImage = id; runModal = id; }; 
+            CLASS = CreateFloppyController; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {
+                sectors = NSMatrix; 
+                sides = NSMatrix; 
+                tracks = NSPopUpButton; 
+                window = NSWindow; 
+            }; 
+            SUPERCLASS = NSObject; 
+        }, 
+        {CLASS = FirstResponder; LANGUAGE = ObjC; SUPERCLASS = NSObject; }, 
+        {
+            ACTIONS = {
+                changeViewedJoystick = id; 
+                chooseCartridgeImage = id; 
+                chooseDefaultImagesLocation = id; 
+                chooseFloppyImageA = id; 
+                chooseFloppyImageB = id; 
+                chooseGemdosImage = id; 
+                chooseHdImage = id; 
+                chooseKeyboardMappingFile = id; 
+                chooseMidiOutputFile = id; 
+                choosePrintToFile = id; 
+                chooseRS232InputFile = id; 
+                chooseRS232OutputFile = id; 
+                chooseTosImage = id; 
+                commitAndClose = id; 
+                ejectFloppyA = id; 
+                ejectFloppyB = id; 
+                ejectGemdosImage = id; 
+                ejectHdImage = id; 
+                loadConfig = id; 
+                loadPrefs = id; 
+                myAction = id; 
+                saveConfig = id; 
+                updateEnabledStates = id; 
+            }; 
+            CLASS = PrefsController; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {
+                autoInsertB = NSButton; 
+                blitter = NSButton; 
+                bootFromHD = NSButton; 
+                captureOnChange = NSButton; 
+                cartridgeImage = NSTextField; 
+                colorDepth = NSMatrix; 
+                compatibleCpu = NSButton; 
+                cpuClock = NSMatrix; 
+                cpuType = NSMatrix; 
+                currentJoystick = NSPopUpButton; 
+                defaultImagesLocation = NSTextField; 
+                enableAutoFire = NSButton; 
+                enableMidi = NSButton; 
+                enablePrinter = NSButton; 
+                enableRS232 = NSButton; 
+                enableSound = NSButton; 
+                floppyImageA = NSTextField; 
+                floppyImageB = NSTextField; 
+                force8bpp = NSButton; 
+                frameSkip = NSButton; 
+                fullscreen = NSButton; 
+                gemdosImage = NSTextField; 
+                hdImage = NSTextField; 
+                interleaved = NSButton; 
+                joystickDown = NSPopUpButton; 
+                joystickFire = NSPopUpButton; 
+                joystickLeft = NSPopUpButton; 
+                joystickMode = NSMatrix; 
+                joystickRight = NSPopUpButton; 
+                joystickUp = NSPopUpButton; 
+                keyboardMapping = NSMatrix; 
+                keyboardMappingFile = NSTextField; 
+                machineType = NSMatrix; 
+                monitor = NSMatrix; 
+                patchTimerD = NSButton; 
+                playbackQuality = NSMatrix; 
+                printToFile = NSTextField; 
+                ramSize = NSMatrix; 
+                readRS232FromFile = NSTextField; 
+                realJoystick = NSPopUpButton; 
+                realTime = NSButton; 
+                resolution = NSMatrix; 
+                slowFDC = NSButton; 
+                tosImage = NSTextField; 
+                useBorders = NSButton; 
+                useVDIResolution = NSButton; 
+                window = NSWindow; 
+                writeMidiToFile = NSTextField; 
+                writeProtection = NSMatrix; 
+                writeRS232ToFile = NSTextField; 
+                zoomSTLowRes = NSButton; 
+            }; 
+            SUPERCLASS = NSObject; 
+        }, 
+        {
+            ACTIONS = {
+                captureAnimation = id; 
+                captureScreen = id; 
+                captureSound = id; 
+                coldReset = id; 
+                endCaptureAnimation = id; 
+                endCaptureSound = id; 
+                help = id; 
+                insertDiskA = id; 
+                insertDiskB = id; 
+                prefsMenu = id; 
+                restoreMemorySnap = id; 
+                saveMemorySnap = id; 
+                warmReset = id; 
+            }; 
+            CLASS = SDLMain; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {
+                beginCaptureAnim = id; 
+                beginCaptureSound = id; 
+                endCaptureAnim = id; 
+                endCaptureSound = id; 
+            }; 
+            SUPERCLASS = NSObject; 
+        }
+    ); 
+    IBVersion = 1; 
+}
