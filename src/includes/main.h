@@ -8,7 +8,7 @@
 #ifndef HATARI_MAIN_H
 #define HATARI_MAIN_H
 
-typedef int BOOL;
+typedef signed char BOOL;
 
 #define PROG_NAME      "Hatari v0.83" /* Name, version for window title */
 #define PROG_VERSION   "v0.83"

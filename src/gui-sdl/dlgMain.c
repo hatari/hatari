@@ -6,7 +6,7 @@
 
   The main dialog.
 */
-const char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.9 2006-02-08 22:46:10 eerot Exp $";
+const char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.10 2006-07-03 20:36:28 clafou Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -118,26 +118,10 @@ int Dialog_MainDlg(BOOL *bReset)
         Dialog_DeviceDlg();
         break;
       case MAINDLG_LOADCFG:
-        {
-          CNF_PARAMS tmpParams;
-          /* Configuration_Load uses the variables from ConfigureParams.
-           * That's why we have to temporarily back it up here */
-          tmpParams = ConfigureParams;
-          Configuration_Load(NULL);
-          DialogParams = ConfigureParams;
-          ConfigureParams = tmpParams;
-        }
+		Dialog_LoadParams();
         break;
       case MAINDLG_SAVECFG:
-        {
-          CNF_PARAMS tmpParams;
-          /* Configuration_Save uses the variables from ConfigureParams.
-           * That's why we have to temporarily back it up here */
-          tmpParams = ConfigureParams;
-          ConfigureParams = DialogParams;
-          Configuration_Save();
-          ConfigureParams = tmpParams;
-        }
+		Dialog_SaveParams();
         break;
       case MAINDLG_QUIT:
         bQuitProgram = TRUE;

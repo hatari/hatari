@@ -29,5 +29,9 @@ extern void Dialog_ScreenDlg(void);
 extern void Dialog_SoundDlg(void);
 extern void Dialog_SystemDlg(void);
 extern void DlgRom_Main(void);
+extern void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset);
+extern BOOL Dialog_DoNeedReset(void);
+extern void Dialog_LoadParams(void);
+extern void Dialog_SaveParams(void);
 
 #endif

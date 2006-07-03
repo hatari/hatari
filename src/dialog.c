@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.50 2006-02-08 22:49:27 eerot Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.51 2006-07-03 20:36:28 clafou Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -44,7 +44,7 @@ CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can
   Check if need to warn user that changes will take place after reset.
   Return TRUE if wants to reset.
 */
-static BOOL Dialog_DoNeedReset(void)
+BOOL Dialog_DoNeedReset(void)
 {
 	/* Did we change colour/mono monitor? If so, must reset */
 	if (ConfigureParams.Screen.bUseHighRes!=DialogParams.Screen.bUseHighRes)
@@ -84,7 +84,7 @@ static BOOL Dialog_DoNeedReset(void)
 /*
   Copy details back to configuration and perform reset.
 */
-static void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
+void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 {
 	BOOL NeedReset;
 	BOOL bReInitGemdosDrive = FALSE, bReInitAcsiEmu = FALSE;
@@ -245,4 +245,36 @@ BOOL Dialog_DoProperty(void)
 		set_special(SPCFLAG_BRK);           /* Assure that CPU core shuts down */
 
 	return bOKDialog;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Loads params from the configuration file into DialogParams
+*/
+void Dialog_LoadParams(void)
+{
+	CNF_PARAMS tmpParams;
+	/* Configuration_Load uses the variables from ConfigureParams.
+    * That's why we have to temporarily back it up here */
+    tmpParams = ConfigureParams;
+    Configuration_Load(NULL);
+    DialogParams = ConfigureParams;
+    ConfigureParams = tmpParams;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Saves params in DialogParams to the configuration file
+*/
+void Dialog_SaveParams(void)
+{
+	CNF_PARAMS tmpParams;
+	/* Configuration_Save uses the variables from ConfigureParams.
+    * That's why we have to temporarily back it up here */
+    tmpParams = ConfigureParams;
+    ConfigureParams = DialogParams;
+    Configuration_Save();
+    ConfigureParams = tmpParams;
 }

@@ -16,7 +16,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License (gpl.txt) for more details.
  */
-const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.4 2006-02-08 22:46:10 eerot Exp $";
+const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.5 2006-07-03 20:36:28 clafou Exp $";
 
 #include <string.h>
 
@@ -30,6 +30,14 @@ const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.4 2006-02-08 22:46:10 
 
 static char dlglines[MAX_LINES][50+1];
 
+#ifdef ALERT_HOOKS 
+	// The alert hook functions
+	extern int HookedAlertNotice(const char* szMessage);	// Must return TRUE if OK clicked, FALSE otherwise
+	extern int HookedAlertQuery(const char* szMessage);		// Must return TRUE if OK clicked, FALSE otherwise
+
+	// Runtime switch to activate/deactivate alert hooks
+	BOOL useAlertHooks = FALSE;
+#endif
 
 #define DLGALERT_OK       5
 #define DLGALERT_CANCEL   6
@@ -154,6 +162,14 @@ static int DlgAlert_ShowDlg(const char *text)
 */
 int DlgAlert_Notice(const char *text)
 {
+#ifdef ALERT_HOOKS 
+	// If activated, used the hooked function instead
+	if (useAlertHooks)
+	{
+		return HookedAlertNotice(text);
+	}
+#endif
+
 	/* Hide "cancel" button: */
 	alertdlg[DLGALERT_CANCEL].type = SGTEXT;
 	alertdlg[DLGALERT_CANCEL].txt = "";
@@ -172,6 +188,14 @@ int DlgAlert_Notice(const char *text)
 */
 int DlgAlert_Query(const char *text)
 {
+#ifdef ALERT_HOOKS
+	// If activated, used the hooked function instead
+	if (useAlertHooks)
+	{
+		return HookedAlertQuery(text);
+	}
+#endif
+
 	/* Show "cancel" button: */
 	alertdlg[DLGALERT_CANCEL].type = SGBUTTON;
 	alertdlg[DLGALERT_CANCEL].txt = "Cancel";
