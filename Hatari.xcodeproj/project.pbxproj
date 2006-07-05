@@ -108,7 +108,6 @@
 		962F64EB09A922B20054BE9B /* PrefsController.h in Headers */ = {isa = PBXBuildFile; fileRef = 962F64E909A922B20054BE9B /* PrefsController.h */; };
 		962F64EC09A922B20054BE9B /* PrefsController.m in Sources */ = {isa = PBXBuildFile; fileRef = 962F64EA09A922B20054BE9B /* PrefsController.m */; };
 		9652821D0998134C00BE6A34 /* cycles.c in Sources */ = {isa = PBXBuildFile; fileRef = 9652821A0998134C00BE6A34 /* cycles.c */; };
-		9652821E0998134C00BE6A34 /* hatari.x32 in Resources */ = {isa = PBXBuildFile; fileRef = 9652821B0998134C00BE6A34 /* hatari.x32 */; };
 		965282200998136500BE6A34 /* cycles.h in Headers */ = {isa = PBXBuildFile; fileRef = 9652821F0998136500BE6A34 /* cycles.h */; };
 		968DE4D00A59B1E8007517A4 /* gemdos_defines.h in Headers */ = {isa = PBXBuildFile; fileRef = 968DE4CE0A59B1E8007517A4 /* gemdos_defines.h */; };
 		968DE4D10A59B1E8007517A4 /* options.h in Headers */ = {isa = PBXBuildFile; fileRef = 968DE4CF0A59B1E8007517A4 /* options.h */; };
@@ -304,7 +303,6 @@
 		962F64E909A922B20054BE9B /* PrefsController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrefsController.h; sourceTree = "<group>"; };
 		962F64EA09A922B20054BE9B /* PrefsController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PrefsController.m; sourceTree = "<group>"; };
 		9652821A0998134C00BE6A34 /* cycles.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cycles.c; path = src/cycles.c; sourceTree = "<group>"; };
-		9652821B0998134C00BE6A34 /* hatari.x32 */ = {isa = PBXFileReference; lastKnownFileType = file; name = hatari.x32; path = "src/gui-osx/hatari.x32"; sourceTree = "<group>"; };
 		9652821F0998136500BE6A34 /* cycles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cycles.h; sourceTree = "<group>"; };
 		968DE4CE0A59B1E8007517A4 /* gemdos_defines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gemdos_defines.h; sourceTree = "<group>"; };
 		968DE4CF0A59B1E8007517A4 /* options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = options.h; sourceTree = "<group>"; };
@@ -500,7 +498,6 @@
 			isa = PBXGroup;
 			children = (
 				96D6324C0A4E9A4300FBFA27 /* gui-osx */,
-				9652821B0998134C00BE6A34 /* hatari.x32 */,
 				29B97315FDCFA39411CA2CEA /* Other Sources */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
@@ -860,7 +857,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				089C165EFE840E0CC02AAC07 /* InfoPlist.strings in Resources */,
-				9652821E0998134C00BE6A34 /* hatari.x32 in Resources */,
 				96D632680A4E9B9D00FBFA27 /* SDLMain.nib in Resources */,
 				96CD27C30A58450A008DE57F /* Hatari.icns in Resources */,
 			);
