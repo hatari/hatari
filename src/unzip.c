@@ -11,20 +11,18 @@
 
    Read unzip.h for more info
 */
-const char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.8 2006-03-01 20:54:37 thothy Exp $";
+const char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.9 2006-07-11 18:52:18 thothy Exp $";
 
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
+#include <strings.h>
 #include <zlib.h>
+
 #include "unzip.h"
 
-#ifdef STDC
-#  include <stddef.h>
-#  include <string.h>
-#  include <stdlib.h>
-#endif
 #ifdef NO_ERRNO_H
     extern int errno;
 #else

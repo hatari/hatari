@@ -6,8 +6,10 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.28 2006-03-02 08:42:02 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.29 2006-07-11 18:52:18 thothy Exp $";
 
+#include <string.h>
+#include <strings.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>

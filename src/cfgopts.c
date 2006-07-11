@@ -54,11 +54,12 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.8 2006-02-08 22:49:27 eerot Exp $";
+const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.9 2006-07-11 18:52:18 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "main.h"
 #include "cfgopts.h"
