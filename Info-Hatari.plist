@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>st</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>ST disk image</string>
+			<key>CFBundleTypeRole</key>
+			<string></string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>msa</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>MSA disk image</string>
+			<key>CFBundleTypeRole</key>
+			<string></string>
+		</dict>
+	</array>
+	<key>CFBundleIconFile</key>
+	<string>Hatari</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>0.80</string>
+	<key>Hatari</key>
+	<string>SDL Cocoa App</string>
+	<key>NSMainNibFile</key>
+	<string>SDLMain.nib</string>
+	<key>NSPrincipalClass</key>
+	<string>SDLApplication</string>
+</dict>
+</plist>
