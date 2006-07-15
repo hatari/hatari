@@ -169,7 +169,7 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = E97980AD07513008008815D3 /* cpuemu.c */;
+			remoteGlobalIDString = E97980AD07513008008815D3;
 			remoteInfo = cpuemu.c;
 		};
 /* End PBXContainerItemProxy section */

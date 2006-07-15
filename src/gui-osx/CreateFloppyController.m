@@ -42,8 +42,13 @@
 		char szPath[cbPath];
 		strncpy(szPath, constSzPath, cbPath);
 					
+		// Get the tracks, sectors and sides values
+		int cTracks = [[tracks selectedCell] tag];
+		int cSectors = [[sectors selectedCell] tag];
+		int cSides = [[sides selectedCell] tag];
+					
 		// Create the image
-		CreateBlankImage_CreateFile(szPath, [tracks intValue], [sectors intValue], [sides intValue]);
+		CreateBlankImage_CreateFile(szPath, cTracks, cSectors, cSides);
 	}
 }
 

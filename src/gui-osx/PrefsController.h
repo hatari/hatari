@@ -30,7 +30,6 @@
     IBOutlet NSTextField *floppyImageB;
     IBOutlet NSButton *force8bpp;
     IBOutlet NSButton *frameSkip;
-    IBOutlet NSButton *fullscreen;
     IBOutlet NSTextField *gemdosImage;
     IBOutlet NSTextField *hdImage;
     IBOutlet NSButton *interleaved;

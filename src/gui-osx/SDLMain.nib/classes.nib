@@ -62,7 +62,6 @@
                 floppyImageB = NSTextField; 
                 force8bpp = NSButton; 
                 frameSkip = NSButton; 
-                fullscreen = NSButton; 
                 gemdosImage = NSTextField; 
                 hdImage = NSTextField; 
                 interleaved = NSButton; 
@@ -102,6 +101,7 @@
                 captureScreen = id; 
                 captureSound = id; 
                 coldReset = id; 
+                doFullScreen = id; 
                 endCaptureAnimation = id; 
                 endCaptureSound = id; 
                 help = id; 

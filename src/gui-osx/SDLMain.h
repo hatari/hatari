@@ -27,6 +27,7 @@
 - (IBAction)endCaptureSound:(id)sender;
 - (IBAction)saveMemorySnap:(id)sender;
 - (IBAction)restoreMemorySnap:(id)sender;
+- (IBAction)doFullScreen:(id)sender;
 - (BOOL)validateMenuItem:(NSMenuItem*)item;
 
 

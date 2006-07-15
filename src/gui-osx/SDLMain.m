@@ -10,6 +10,7 @@
 
 #import "SDL.h"
 #import "SDLMain.h"
+#import "SDL_events.h"
 #import "Shared.h"
 #import <sys/param.h> /* for MAXPATHLEN */
 #import <unistd.h>
@@ -304,6 +305,22 @@ static BOOL   gFinderLaunch;
     }
 	
 	GuiOsx_ResumeFromCocoaUI();
+}
+
+- (IBAction)doFullScreen:(id)sender
+{
+	// A call to Screen_EnterFullScreen() would be required, but this causes a crash when using SDL runtime 1.2.11, probably due to conflicts between Cocoa and SDL.
+	// Therefore we simulate the fullscreen key press instead
+	
+	SDL_KeyboardEvent event;
+    event.type = SDL_KEYDOWN;
+    event.which = 0;
+    event.state = SDL_PRESSED;
+    event.keysym.sym = SDLK_F11;
+    SDL_PushEvent((SDL_Event*)&event);	// Send the F11 key press
+    event.type = SDL_KEYUP;
+    event.state = SDL_RELEASED;
+    SDL_PushEvent((SDL_Event*)&event);	// Send the F11 key release
 }
 
 - (IBAction)help:(id)sender

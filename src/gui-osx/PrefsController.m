@@ -427,7 +427,7 @@ void DisplayModeToFlags(int chosenDisplayMode, BOOL *pZoomSTLowRes, BOOL *pForce
 	{
 		Dialog_CopyDialogParamsToConfiguration(FALSE);
 	}
-	
+
 	// Close the window
 	[window close];	
 }
@@ -547,7 +547,6 @@ void DisplayModeToFlags(int chosenDisplayMode, BOOL *pZoomSTLowRes, BOOL *pForce
     IMPORT_SWITCH(enableSound, DialogParams.Sound.bEnableSound);
     IMPORT_SWITCH(force8bpp, bForce8bpp);
     IMPORT_SWITCH(frameSkip, DialogParams.Screen.bFrameSkip);
-    IMPORT_SWITCH(fullscreen, DialogParams.Screen.bFullScreen);
     IMPORT_SWITCH(interleaved, DialogParams.Screen.bInterleavedScreen);
     IMPORT_RADIO(keyboardMapping, DialogParams.Keyboard.nKeymapType);
     IMPORT_TEXTFIELD(keyboardMappingFile, DialogParams.Keyboard.szMappingFileName);
@@ -704,7 +703,6 @@ void DisplayModeToFlags(int chosenDisplayMode, BOOL *pZoomSTLowRes, BOOL *pForce
     EXPORT_SWITCH(enableSound, DialogParams.Sound.bEnableSound);
     EXPORT_SWITCH(force8bpp, bForce8bpp);
     EXPORT_SWITCH(frameSkip, DialogParams.Screen.bFrameSkip);
-    EXPORT_SWITCH(fullscreen, DialogParams.Screen.bFullScreen);
     EXPORT_SWITCH(interleaved, DialogParams.Screen.bInterleavedScreen);
     EXPORT_RADIO(keyboardMapping, DialogParams.Keyboard.nKeymapType);
     EXPORT_TEXTFIELD(keyboardMappingFile, DialogParams.Keyboard.szMappingFileName);
