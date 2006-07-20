@@ -6,14 +6,14 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.10 2006-02-08 22:46:10 eerot Exp $";
+const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.11 2006-07-20 21:43:21 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <dirent.h>
 
 #include "main.h"
+#include "scandir.h"
 #include "sdlgui.h"
 #include "file.h"
 #include "zip.h"

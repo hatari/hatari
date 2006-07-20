@@ -27,8 +27,8 @@ SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c options.c \
   createBlankImage.c cycles.c debugui.c dialog.c dim.c dmaSnd.c fdc.c file.c \
   floppy.c gemdos.c hdc.c ikbd.c int.c ioMem.c ioMemTables.c joy.c keymap.c \
   log.c m68000.c main.c midi.c memorySnapShot.c mfp.c misc.c msa.c psg.c \
-  printer.c rs232.c reset.c rtc.c st.c stMemory.c screen.c screenSnapShot.c \
-  shortcut.c sound.c spec512.c tos.c unzip.c vdi.c video.c \
+  printer.c rs232.c reset.c rtc.c scandir.c st.c stMemory.c screen.c \
+  screenSnapShot.c shortcut.c sound.c spec512.c tos.c unzip.c vdi.c video.c \
   wavFormat.c xbios.c ymFormat.c zip.c
 
 OBJS = $(SRCS:.c=.o)

@@ -8,12 +8,6 @@
 #ifndef HATARI_FILE_H
 #define HATARI_FILE_H
 
-#if defined(__BEOS__) || (defined(__sun) && defined(__SVR4))
-#include <dirent.h>
-extern int alphasort(const void *d1, const void *d2);
-extern int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(struct dirent *), int (*dcomp)(const void *, const void *));
-#endif  /* __BEOS__ */
-
 extern void File_CleanFileName(char *pszFileName);
 extern void File_AddSlashToEndFileName(char *pszFileName);
 extern BOOL File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension);
