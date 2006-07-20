@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.26 2006-02-21 19:09:34 eerot Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.27 2006-07-20 21:00:56 thothy Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -677,7 +677,7 @@ static BOOL Keymap_DebounceSTKey(char STScanCode)
 */
 void Keymap_DebounceAllKeys(void)
 {
-  unsigned int key;
+  SDLKey key;
   char STScanCode;
   SDL_keysym tmpKeySym;
 
@@ -688,10 +688,10 @@ void Keymap_DebounceAllKeys(void)
      return;
   }
 
-  tmpKeySym.mod = 0;
+  tmpKeySym.mod = KMOD_NONE;
 
   /* Now run through each PC key looking for ones held down */
-  for(key = 0; key < SDLK_LAST; key++)
+  for(key = SDLK_FIRST; key < SDLK_LAST; key++)
   {
     /* Is key held? */
     if(Keyboard.KeyStates[key])
