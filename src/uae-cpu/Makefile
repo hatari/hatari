@@ -23,14 +23,24 @@ all: $(CPU_OBS)
 
 
 clean:
-	rm -f *.o gencpu build68k cpudefs.c cpustbl.c cputbl.h cpuemu.c
+	$(RM) *.o gencpu build68k cpudefs.c cpustbl.c cputbl.h cpuemu.c
 
 
 build68k: build68k.c
 	$(HOSTCC) $(HOSTCFLAGS) -o $@ $<
 
-cpudefs.c: ./build68k ./table68k
-	./build68k <./table68k >cpudefs.c
+# Hack for compiling with MinGW (it does not like the "./" before build68k):
+ifeq ($(SHELL),sh.exe)
+
+cpudefs.c: build68k table68k
+	build68k <table68k >cpudefs.c
+
+else
+
+cpudefs.c: build68k table68k
+	./build68k <table68k >cpudefs.c
+
+endif
 
 cpudefs-host.o: cpudefs.c
 	$(HOSTCC) $(HOSTCFLAGS) -c -o $@ $<

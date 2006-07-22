@@ -22,7 +22,7 @@ DLGOBJS = $(DLGSRCS:.c=.o)
 all: $(DLGOBJS)
 
 clean:
-	rm -f *.o
+	$(RM) *.o
 
 font5x8.h: font5x8.bmp
 	convert font5x8.bmp xbm:font5x8.h

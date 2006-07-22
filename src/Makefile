@@ -43,7 +43,7 @@ hatari: $(ALLOBJS)
 	$(CC) $(LDFLAGS) $(ALLOBJS) $(SDL_LIBS) $(LIBS) -o hatari
 
 clean:
-	rm -f *.o hatari
+	$(RM) *.o hatari
 	$(MAKE) -C gui-sdl/ clean
 	$(MAKE) -C uae-cpu/ clean
 
