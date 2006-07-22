@@ -6,10 +6,11 @@
 
   scandir function for BEOS, SunOS etc..
 */
-const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.1 2006-07-20 21:43:21 thothy Exp $";
+const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.2 2006-07-22 15:49:23 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -134,6 +135,7 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
  *-----------------------------------------------------------------------*/
 #if defined(WIN32)
 
+#undef DATADIR     // stupid windows.h defines DATADIR, too
 #include <windows.h>
 
 /*-----------------------------------------------------------------------*/
@@ -160,8 +162,7 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 	unsigned long ret;
 
 	len    = strlen(dirname);
-	//findIn = malloc(len+5); // <bohan> c to c++ fix
-	findIn = static_cast<char *>(malloc(len+5)); // <bohan> c to c++ fix
+	findIn = (char *)malloc(len+5);
 	strcpy(findIn, dirname);
 	printf("scandir : findIn orign=%s\n", findIn);
 	for (d = findIn; *d; d++)
@@ -212,8 +213,7 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 		{
 			if (nDir==NDir)
 			{
-				//struct dirent **tempDir = calloc(sizeof(struct dirent*), NDir+33); // <bohan> c to c++ fix
-				struct dirent **tempDir = static_cast<dirent **>(calloc(sizeof(struct dirent*), NDir+33)); // <bohan> c to c++ fix
+				struct dirent **tempDir = (struct dirent **)calloc(sizeof(struct dirent*), NDir+33);
 				if (NDir)
 					memcpy(tempDir, dir, sizeof(struct dirent*)*NDir);
 				if (dir)

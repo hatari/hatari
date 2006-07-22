@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.52 2006-07-20 21:43:21 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.53 2006-07-22 15:49:23 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -26,7 +26,10 @@ const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.52 2006-07-20 21:43:21 tho
 #include <time.h>
 #include <ctype.h>
 #include <unistd.h>
+
+#ifndef WIN32
 #include <glob.h>
+#endif
 
 #include "main.h"
 #include "cart.h"
@@ -231,6 +234,33 @@ static const char *pszGemDOSNames[] =
 };
 #endif
 
+
+
+/* Poor Windows does not have a glob() function... */
+#ifdef WIN32
+#warning sorry, no glob function on Windows
+
+typedef struct
+{
+    size_t gl_pathc;    /* Count of paths matched so far  */
+    char **gl_pathv;    /* List of matched pathnames.  */
+    size_t gl_offs;     /* Slots to reserve in `gl_pathv'.  */
+} glob_t;
+
+int glob(const char *pattern, int flags,
+	 int errfunc(const char *epath, int eerrno),
+         glob_t *pglob)
+{
+	return 0;
+}
+
+void globfree(glob_t *pglob)
+{
+}
+
+#define mkdir(name,mode) mkdir(name)
+
+#endif  /* WIN32 */
 
 
 
