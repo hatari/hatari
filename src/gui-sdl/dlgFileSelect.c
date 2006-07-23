@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.11 2006-07-20 21:43:21 thothy Exp $";
+const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.12 2006-07-23 15:32:51 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -116,7 +116,7 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, BOOL 
 
 			if( browsingzip )
 			{
-				if( tempstr[strlen(tempstr)-1] == '/'  )
+				if (File_DoesFileNameEndWithSlash(tempstr))
 					dlgfilenames[i][0] = SGFOLDER;    /* Mark folders */
 			}
 			else
@@ -347,7 +347,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 			{
 				strcpy(tempstr, zipdir);
 				strcat(tempstr, files[retbut-SGFSDLG_ENTRY1+ypos]->d_name);
-				if(tempstr[strlen(tempstr)-1] == '/')
+				if (File_DoesFileNameEndWithSlash(tempstr))
 				{
 					/* handle the ../ directory */
 					if(strcmp(files[retbut-SGFSDLG_ENTRY1+ypos]->d_name, "../") == 0)
@@ -368,9 +368,9 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 							i=strlen(tempstr)-1;
 							n=0;
 							while(i > 0 && n < 3)
-								if( tempstr[i--] == '/' )
+								if (tempstr[i--] == PATHSEP)
 									n++;
-							if(tempstr[i+1] == '/')
+							if (tempstr[i+1] == PATHSEP)
 								tempstr[i+2] = '\0';
 							else
 								tempstr[0] = '\0';
@@ -411,9 +411,9 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 					strcpy(path, tempstr);
 					if( strlen(path)>=3 )
 					{
-						if(path[strlen(path)-2]=='/' && path[strlen(path)-1]=='.')
+						if (path[strlen(path)-2] == PATHSEP && path[strlen(path)-1]=='.')
 							path[strlen(path)-2] = 0;  /* Strip a single dot at the end of the path name */
-						if(path[strlen(path)-3]=='/' && path[strlen(path)-2]=='.' && path[strlen(path)-1]=='.')
+						if (path[strlen(path)-3] == PATHSEP && path[strlen(path)-2]=='.' && path[strlen(path)-1]=='.')
 						{
 							/* Handle the ".." folder */
 							char *ptr;
@@ -422,7 +422,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 							else
 							{
 								path[strlen(path)-3] = 0;
-								ptr = strrchr(path, '/');
+								ptr = strrchr(path, PATHSEP);
 								if(ptr)
 									*(ptr+1) = 0;
 							}
@@ -494,9 +494,9 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 						i=strlen(zipdir)-1;
 						n=0;
 						while(i > 0 && n < 2)
-							if( zipdir[i--] == '/' )
+							if (zipdir[i--] == PATHSEP)
 								n++;
-						if(zipdir[i+1] == '/')
+						if (zipdir[i+1] == PATHSEP)
 							zipdir[i+2] = '\0';
 						else
 							zipdir[0] = '\0';
@@ -513,7 +513,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 				{
 					char *ptr;
 					File_CleanFileName(path);
-					ptr = strrchr(path, '/');
+					ptr = strrchr(path, PATHSEP);
 					if(ptr)
 						*(ptr+1) = 0;
 					File_AddSlashToEndFileName(path);

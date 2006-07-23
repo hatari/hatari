@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.49 2006-03-02 09:06:08 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.50 2006-07-23 15:32:51 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -321,12 +321,12 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for Memory */
 	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */
-	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s/hatari.sav", szWorkingDir);
+	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s%chatari.sav", szWorkingDir,PATHSEP);
 
 	/* Set defaults for Printer */
 	ConfigureParams.Printer.bEnablePrinting = FALSE;
 	ConfigureParams.Printer.bPrintToFile = TRUE;
-	sprintf(ConfigureParams.Printer.szPrintToFileName, "%s/hatari.prn", szWorkingDir);
+	sprintf(ConfigureParams.Printer.szPrintToFileName, "%s%chatari.prn", szWorkingDir,PATHSEP);
 
 	/* Set defaults for RS232 */
 	ConfigureParams.RS232.bEnableRS232 = FALSE;
@@ -353,10 +353,10 @@ void Configuration_SetDefault(void)
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableSound = TRUE;
 	ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
-	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s/hatari.wav", szWorkingDir);
+	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s%chatari.wav", szWorkingDir,PATHSEP);
 
 	/* Set defaults for Rom */
-	sprintf(ConfigureParams.Rom.szTosImageFileName, "%s/tos.img", DATADIR);
+	sprintf(ConfigureParams.Rom.szTosImageFileName, "%s%ctos.img", DATADIR,PATHSEP);
 	strcpy(ConfigureParams.Rom.szCartridgeImageFileName, "");
 
 	/* Set defaults for System */
@@ -374,7 +374,7 @@ void Configuration_SetDefault(void)
 	/* Initialize the configuration file name */
 	homeDir = getenv("HOME");
 	if (homeDir != NULL && homeDir[0] != 0 && strlen(homeDir) < sizeof(sConfigFileName)-13)
-		sprintf(sConfigFileName, "%s/.hatari.cfg", homeDir);
+		sprintf(sConfigFileName, "%s%c.hatari.cfg", homeDir,PATHSEP);
 	else
 		strcpy(sConfigFileName, "hatari.cfg");
 }

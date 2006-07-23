@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.30 2006-07-20 21:43:21 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.31 2006-07-23 15:32:51 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -42,7 +42,7 @@ void File_CleanFileName(char *pszFileName)
   }
 
   /* Remove end slash from filename! But / remains! Doh! */
-  if( len>2 && pszFileName[len-1]=='/' )
+  if( len>2 && pszFileName[len-1]==PATHSEP )
     pszFileName[len-1] = 0;
 }
 
@@ -53,11 +53,18 @@ void File_CleanFileName(char *pszFileName)
 */
 void File_AddSlashToEndFileName(char *pszFileName)
 {
+  int len;
+
+  len = strlen(pszFileName);
+
   /* Check dir/filenames */
-  if (strlen(pszFileName)!=0)
+  if (len != 0)
   {
-    if (pszFileName[strlen(pszFileName)-1]!='/')
-      strcat(pszFileName,"/");  /* Must use end slash */
+    if (pszFileName[strlen(pszFileName)-1] != PATHSEP)
+    {
+      pszFileName[len] = PATHSEP; /* Must use end slash */
+      pszFileName[len+1] = 0;
+    }
   }
 }
 
@@ -90,8 +97,13 @@ BOOL File_IsRootFileName(char *pszFileName)
   if (pszFileName[0]=='\0')     /* If NULL string return! */
     return(FALSE);
 
-  if (pszFileName[0]=='/')
+  if (pszFileName[0]==PATHSEP)
     return(TRUE);
+
+#ifdef WIN32
+  if (pszFileName[1]==':')
+    return(TRUE);
+#endif
 
   return(FALSE);
 }
@@ -122,7 +134,7 @@ BOOL File_DoesFileNameEndWithSlash(char *pszFileName)
     return(FALSE);
 
   /* Does string end in a '/'? */
-  if (pszFileName[strlen(pszFileName)-1]=='/')
+  if (pszFileName[strlen(pszFileName)-1] == PATHSEP)
     return(TRUE);
 
   return(FALSE);
@@ -237,7 +249,7 @@ BOOL File_Save(char *pszFileName, const void *pAddress, size_t Size, BOOL bQuery
   /* Normal file or gzipped file? */
   if (File_DoesFileExtensionMatch(pszFileName, ".gz"))
   {
-    gzFile *hGzFile;
+    gzFile hGzFile;
     /* Create a gzipped file: */
     hGzFile = gzopen(pszFileName, "wb");
     if (hGzFile != NULL)
@@ -389,7 +401,7 @@ void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *pEx
   char *ptr1, *ptr2;
 
   /* Build pathname: */
-  ptr1 = strrchr(pSrcFileName, '/');
+  ptr1 = strrchr(pSrcFileName, PATHSEP);
   if( ptr1 )
   {
     strcpy(pDir, pSrcFileName);
@@ -398,7 +410,7 @@ void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *pEx
   }
   else
   {
-    strcpy(pDir, "./");
+    sprintf(pDir, ".%c", PATHSEP);
     strcpy(pName, pSrcFileName);
   }
 
@@ -425,11 +437,18 @@ void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *pEx
 */
 void File_makepath(char *pDestFileName, const char *pDir, const char *pName, const char *pExt)
 {
+  int len;
+
   strcpy(pDestFileName, pDir);
-  if( strlen(pDestFileName)==0 )
-    strcpy(pDestFileName, "./");
-  if( pDestFileName[strlen(pDestFileName)-1]!='/' )
-    strcat(pDestFileName, "/");
+  len = strlen(pDestFileName);
+
+  if (len == 0)
+    sprintf(pDestFileName, ".%c", PATHSEP);
+  if (pDestFileName[len-1] != PATHSEP)
+  {
+    pDestFileName[len] = PATHSEP;
+    pDestFileName[len+1] = 0;
+  }
 
   strcat(pDestFileName, pName);
 
@@ -485,7 +504,7 @@ void File_MakeAbsoluteName(char *pFileName)
   }
 
   /* Is it already an absolute name? */
-  if(pFileName[0] == '/')
+  if(File_IsRootFileName(pFileName))
   {
     outpos = 0;
   }
@@ -504,18 +523,18 @@ void File_MakeAbsoluteName(char *pFileName)
   /* Now filter out the relative paths "./" and "../" */
   while (pFileName[inpos] != 0 && outpos < FILENAME_MAX)
   {
-    if (pFileName[inpos] == '.' && pFileName[inpos+1] == '/')
+    if (pFileName[inpos] == '.' && pFileName[inpos+1] == PATHSEP)
     {
       /* Ignore "./" */
       inpos += 2;
     }
-    else if (pFileName[inpos] == '.' && pFileName[inpos+1] == '.' && pFileName[inpos+2] == '/')
+    else if (pFileName[inpos] == '.' && pFileName[inpos+1] == '.' && pFileName[inpos+2] == PATHSEP)
     {
       /* Handle "../" */
       char *pSlashPos;
       inpos += 3;
       pTempName[outpos - 1] = 0;
-      pSlashPos = strrchr(pTempName, '/');
+      pSlashPos = strrchr(pTempName, PATHSEP);
       if (pSlashPos)
       {
         *(pSlashPos + 1) = 0;
@@ -523,7 +542,7 @@ void File_MakeAbsoluteName(char *pFileName)
       }
       else
       {
-        pTempName[0] = '/';
+        pTempName[0] = PATHSEP;
         outpos = 1;
       }
     }
@@ -533,7 +552,7 @@ void File_MakeAbsoluteName(char *pFileName)
       while (pFileName[inpos] != 0 && outpos < FILENAME_MAX)
       {
         pTempName[outpos++] = pFileName[inpos++];
-        if (pFileName[inpos - 1] == '/')  break;
+        if (pFileName[inpos - 1] == PATHSEP)  break;
       }
     }
   }
@@ -564,7 +583,7 @@ void File_MakeValidPathName(char *pPathName)
       break;
     }
 
-    pLastSlash = strrchr(pPathName, '/');
+    pLastSlash = strrchr(pPathName, PATHSEP);
     if (pLastSlash)
     {
       /* Erase the (probably invalid) part after the last slash */
@@ -573,7 +592,8 @@ void File_MakeValidPathName(char *pPathName)
     else
     {
       /* Path name seems to be completely invalid -> set to root directory */
-      strcpy(pPathName, "/");
+      pPathName[0] = PATHSEP;
+      pPathName[1] = 0;
     }
   }
   while (pLastSlash);

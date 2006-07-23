@@ -10,8 +10,8 @@
 
 typedef signed char BOOL;
 
-#define PROG_NAME      "Hatari v0.83" /* Name, version for window title */
-#define PROG_VERSION   "v0.83"
+#define PROG_NAME      "Hatari v0.84" /* Name, version for window title */
+#define PROG_VERSION   "v0.84"
 
 
 #include <stdio.h>
@@ -26,6 +26,12 @@ typedef signed char BOOL;
 #ifndef FALSE
 #define FALSE 0
 #define TRUE (!0)
+#endif
+
+#ifdef WIN32
+#define PATHSEP '\\'
+#else
+#define PATHSEP '/'
 #endif
 
 #define CALL_VAR(func)  { ((void(*)(void))func)(); }
