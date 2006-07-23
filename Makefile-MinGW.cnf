@@ -1,0 +1,58 @@
+# Makefile configuration for Hatari.
+# This is a sample configuriation for MinGW.
+# Rename this file to Makefile.cnf before you start compiling.
+
+# Set the C compiler (e.g. gcc)
+CC = gcc
+
+# What warnings to use
+WARNFLAGS = -Wmissing-prototypes -Wstrict-prototypes -Wsign-compare \
+  -Wbad-function-cast -Wcast-qual  -Wpointer-arith \
+  -Wshadow -Wall -Wwrite-strings #-Wcast-align -Werror
+
+# Set flags passed to the compiler (e.g. optimization flags)
+CFLAGS := -g -O2 $(WARNFLAGS)
+
+# Set flags passed to the preprocessor (e.g. -I<include dir>)
+CPPFLAGS = -DHAVE_TERMIOS_H=0
+
+# Additional libraries and linker flags:
+LIBS = -lzdll
+LDFLAGS = -mwindows
+
+
+# The native C compiler.
+# This is normaly the same as $(CC) unless you are using a cross compiler.
+HOSTCC = $(CC)
+
+# Native C compiler flags:
+HOSTCFLAGS = -g -O -Wall
+
+# Native linker flags:
+HOSTLDFLAGS =
+
+
+# SDL-Library configuration (compiler flags and linker options) - you normally
+# don't have to change this if you have correctly installed the SDL library!
+SDL_CFLAGS = -I/mingw/include/SDL
+SDL_LIBS = -lmingw32 -lSDLmain -lSDL
+
+
+# Here you can define the default data directory for Hatari.
+# The emulator looks there for the default TOS image etc.
+# For example you can use the local directory with "." or if you want
+# a system-wide installation, use something like "/usr/share/hatari".
+DATADIR = .
+
+# In this folder, Hatari searches the global configuration file.
+# /etc or /usr/local/etc is a good place for this.
+CONFDIR = /windows
+
+# The executable will be installed in BINDIR
+BINDIR = .
+
+
+# Program used for "make install"
+INSTALL = install -c
+INSTALL_PROGRAM = $(INSTALL) -s
+INSTALL_DATA = $(INSTALL) -m 644
