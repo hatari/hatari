@@ -6,7 +6,7 @@
 
   Zipped disk support, uses zlib
 */
-const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.18 2006-07-11 18:52:18 thothy Exp $";
+const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.19 2006-07-27 20:00:34 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +14,8 @@ const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.18 2006-07-11 18:52:18 thothy Ex
 #include <strings.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <sys/types.h>
+#include <sys/dir.h>
 
 #include <zlib.h>
 
@@ -26,6 +28,10 @@ const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.18 2006-07-11 18:52:18 thothy Ex
 #include "st.h"
 #include "unzip.h"
 #include "zip.h"
+
+#ifdef QNX
+#define dirent direct
+#endif
 
 /* #define SAVE_TO_ZIP_IMAGES */
 
