@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.21 2006-02-12 21:28:22 eerot Exp $";
+const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.22 2006-07-27 19:57:44 thothy Exp $";
 
 #ifndef HAVE_TERMIOS_H
 #define HAVE_TERMIOS_H 1
@@ -444,7 +444,9 @@ BOOL RS232_SetBaudRate(int nBaud)
 		{ 38400, B38400 },
 		{ 57600, B57600 },
 		{ 115200, B115200 },
+#ifdef B230400                 /* B230400 is not defined on all systems */
 		{ 230400, B230400 },
+#endif
 		{ -1, -1 }
 	};
 
