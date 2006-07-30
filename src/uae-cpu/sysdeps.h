@@ -35,7 +35,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include <SDL_types.h>
+#include <stdint.h>
 
 
 #if EEXIST == ENOTEMPTY
@@ -86,24 +86,23 @@ extern void* q_memcpy(void*,const void*,size_t);
 
 
 /* The variable-types used in the CPU core: */
-/* We're mapping them to the SDL types, I hope this will work on all systems... */
-typedef Uint8 uae_u8;
-typedef Sint8 uae_s8;
+typedef uint8_t uae_u8;
+typedef int8_t uae_s8;
 
-typedef Uint16 uae_u16;
-typedef Sint16 uae_s16;
+typedef uint16_t uae_u16;
+typedef int16_t uae_s16;
 
-typedef Uint32 uae_u32;
-typedef Sint32 uae_s32;
+typedef uint32_t uae_u32;
+typedef int32_t uae_s32;
 
 typedef uae_u32 uaecptr;
 
 #undef uae_s64
 #undef uae_u64
 
-#if defined(SDL_HAS_64BIT_TYPE)
-# define uae_s64 Sint64
-# define uae_u64 Uint64
+#if defined(INT64_MAX)
+# define uae_u64 uint64_t
+# define uae_s64 int64_t
 # if defined(__GNUC__) || defined(__MWERKS__) || defined(__SUNPRO_C)
 #  define VAL64(a) (a ## LL)
 #  define UVAL64(a) (a ## ULL)
