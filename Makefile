@@ -7,8 +7,14 @@ include Makefile.cnf
 all:
 	$(MAKE) -C src/
 
+
 clean:
 	$(MAKE) -C src/ clean
+
+distclean:
+	$(MAKE) -C src/ distclean
+	$(RM) config.cache config.log
+
 
 # Use "make depend" to generate file dependencies:
 depend:

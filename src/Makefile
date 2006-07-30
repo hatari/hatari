@@ -42,12 +42,6 @@ all: hatari
 hatari: $(ALLOBJS)
 	$(CC) $(LDFLAGS) $(ALLOBJS) $(SDL_LIBS) $(LIBS) -o hatari
 
-clean:
-	$(RM) *.o hatari
-	$(MAKE) -C gui-sdl/ clean
-	$(MAKE) -C uae-cpu/ clean
-
-
 # Sub-folder dependencies:
 uae-cpu/%.o: uae-cpu/%.c
 	$(MAKE) -C uae-cpu/ all
@@ -62,12 +56,23 @@ gui-sdl/%.o: gui-sdl/%.c
 	$(MAKE) -C gui-sdl/ all
 
 
+clean:
+	$(RM) *.o hatari
+	$(MAKE) -C gui-sdl/ clean
+	$(MAKE) -C uae-cpu/ clean
+
+distclean:
+	$(RM) *.o hatari
+	$(RM) Makefile.dep *~ *.bak *.orig
+	$(MAKE) -C gui-sdl/ distclean
+	$(MAKE) -C uae-cpu/ distclean
+
+
 # Use "make depend" to generate file dependencies:
-depend: $(SRCS)
+Makefile.dep: Makefile
 	$(CC) -MM $(CFLAGS) $(SRCS) > Makefile.dep
+
+depend: Makefile.dep
 	$(MAKE) -C gui-sdl/ depend
 
-ifneq (,$(wildcard Makefile.dep))
-include Makefile.dep
-endif
-
+-include Makefile.dep

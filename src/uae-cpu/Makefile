@@ -20,10 +20,6 @@ CPU_OBS = $(CPUCSRCS:.c=.o) $(CPUEMUSRCS:.c=.o)
 all: $(CPU_OBS)
 
 
-clean:
-	$(RM) *.o gencpu build68k cpudefs.c cpustbl.c cputbl.h cpuemu.c
-
-
 build68k: build68k.c
 	$(HOSTCC) $(HOSTCFLAGS) -o $@ $<
 
@@ -79,3 +75,11 @@ cpuemu8.o: cpuemu.c
 
 
 newcpu.o: sysdeps.h hatari-glue.h maccess.h memory.h newcpu.h
+
+
+clean:
+	$(RM) *.o gencpu build68k
+
+distclean:	clean
+	$(RM) cpudefs.c cpustbl.c cputbl.h cpuemu.c
+	$(RM) *~ *.bak *.orig

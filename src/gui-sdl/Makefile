@@ -21,19 +21,24 @@ DLGOBJS = $(DLGSRCS:.c=.o)
 
 all: $(DLGOBJS)
 
-clean:
-	$(RM) *.o
-
 font5x8.h: font5x8.bmp
 	convert font5x8.bmp xbm:font5x8.h
 
 font10x16.h: font10x16.bmp
 	convert font10x16.bmp xbm:font10x16.h
 
+
+clean:
+	$(RM) *.o
+
+distclean: clean
+	$(RM) Makefile.dep *~ *.bak *.orig
+
+
 # Use "make depend" to generate file dependencies:
-depend: $(DLGSRCS)
+Makefile.dep: Makefile
 	$(CC) -MM $(CFLAGS) $(DLGSRCS) > Makefile.dep
 
-ifneq (,$(wildcard Makefile.dep))
-include Makefile.dep
-endif
+depend: Makefile.dep
+
+-include Makefile.dep
