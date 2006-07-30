@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.12 2006-07-23 15:32:51 thothy Exp $";
+const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.13 2006-07-30 22:49:05 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -24,13 +24,14 @@ const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.12 2006-07-2
 
 #define SGFSDLG_FILENAME  5
 #define SGFSDLG_UPDIR     6
-#define SGFSDLG_ROOTDIR   7
-#define SGFSDLG_ENTRY1    10
-#define SGFSDLG_ENTRY16   25
-#define SGFSDLG_UP        26
-#define SGFSDLG_DOWN      27
-#define SGFSDLG_OKAY      28
-#define SGFSDLG_CANCEL    29
+#define SGFSDLG_HOMEDIR   7
+#define SGFSDLG_ROOTDIR   8
+#define SGFSDLG_ENTRY1    11
+#define SGFSDLG_ENTRY16   26
+#define SGFSDLG_UP        27
+#define SGFSDLG_DOWN      28
+#define SGFSDLG_OKAY      29
+#define SGFSDLG_CANCEL    30
 
 
 #define DLGPATH_SIZE 62
@@ -51,7 +52,8 @@ static SGOBJ fsdlg[] =
 	{ SGTEXT, 0, 0, 1,3, DLGPATH_SIZE,1, dlgpath },
 	{ SGTEXT, 0, 0, 1,4, 6,1, "File:" },
 	{ SGTEXT, 0, 0, 7,4, DLGFNAME_SIZE,1, dlgfname },
-	{ SGBUTTON, 0, 0, 55,1, 4,1, ".." },
+	{ SGBUTTON, 0, 0, 51,1, 4,1, ".." },
+	{ SGBUTTON, 0, 0, 56,1, 3,1, "~" },
 	{ SGBUTTON, 0, 0, 60,1, 3,1, "/" },
 	{ SGBOX, 0, 0, 1,6, 62,16, NULL },
 	{ SGBOX, 0, 0, 62,7, 1,14, NULL },
@@ -525,6 +527,26 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 					ypos = 0;
 				}
 				break;
+
+			case SGFSDLG_HOMEDIR:               /* Change to home directory */
+				if (getenv("HOME") == NULL)
+					break;
+				if (browsingzip)
+				{
+					/* free zip file entries */
+					ZIP_FreeZipDir(zipfiles);
+					zipfiles = NULL;
+					browsingzip = FALSE;
+				}
+				strcpy(path, getenv("HOME"));
+				reloaddir = TRUE;
+				strcpy(dlgpath, path);
+				selection = -1;                 /* Remove old selection */
+				fname[0] = 0;
+				dlgfname[0] = 0;
+				ypos = 0;
+				break;
+
 			case SGFSDLG_ROOTDIR:               /* Change to root directory */
 				if( browsingzip )
 				{
