@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.13 2006-07-30 22:49:05 thothy Exp $";
+const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.14 2006-08-01 20:18:28 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -30,8 +30,9 @@ const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.13 2006-07-3
 #define SGFSDLG_ENTRY16   26
 #define SGFSDLG_UP        27
 #define SGFSDLG_DOWN      28
-#define SGFSDLG_OKAY      29
-#define SGFSDLG_CANCEL    30
+#define SGFSDLG_SHOWHIDDEN  29
+#define SGFSDLG_OKAY      30
+#define SGFSDLG_CANCEL    31
 
 
 #define DLGPATH_SIZE 62
@@ -75,8 +76,9 @@ static SGOBJ fsdlg[] =
 	{ SGTEXT, SG_EXIT, 0, 2,21, DLGFILENAMES_SIZE,1, dlgfilenames[15] },
 	{ SGBUTTON, SG_TOUCHEXIT, 0, 62,6, 1,1, "\x01" },           /* Arrow up */
 	{ SGBUTTON, SG_TOUCHEXIT, 0, 62,21, 1,1, "\x02" },          /* Arrow down */
-	{ SGBUTTON, 0, 0, 14,23, 8,1, "Okay" },
-	{ SGBUTTON, 0, 0, 34,23, 8,1, "Cancel" },
+	{ SGCHECKBOX, SG_EXIT, SG_SELECTED, 2,23, 18,1, "Show hidden files" },
+	{ SGBUTTON, 0, 0, 32,23, 8,1, "Okay" },
+	{ SGBUTTON, 0, 0, 50,23, 8,1, "Cancel" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -135,6 +137,51 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, BOOL 
 
 	free(tempstr);
 	return TRUE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Remove all hidden files (files with file names that begin with a dot) from
+  the list.
+*/
+static void DlgFileSelect_RemoveHiddenFiles(struct dirent **files)
+{
+	int i;
+	int nActPos = -1;
+	int nOldEntries;
+
+	nOldEntries = entries;
+
+	/* Scan list for hidden files and remove them. */
+	for (i = 0; i < nOldEntries; i++)
+	{
+		/* Does file name start with a dot? -> hidden file! */
+		if (files[i]->d_name[0] == '.')
+		{
+			if (nActPos == -1)
+				nActPos = i;
+			/* Remove file from list: */
+			free(files[i]);
+			files[i] = NULL;
+			entries -= 1;
+		}
+	}
+
+	/* Now close the gaps in the list: */
+	if (nActPos != -1)
+	{
+		for (i = nActPos; i < nOldEntries; i++)
+		{
+			if (files[i] != NULL)
+			{
+				/* Move entry to earlier position: */
+				files[nActPos] = files[i];
+				files[i] = NULL;
+				nActPos += 1;
+			}
+		}
+	}
 }
 
 
@@ -215,6 +262,8 @@ static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
   input: zip_path = pointer to buffer to contain file path within a selected
   zip file, or NULL if browsing zip files is disallowed.
   bAllowNew: TRUE if the user is allowed to insert new file names.
+
+  TODO: This function urgently needs refactoring... it's way too big!
 */
 int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 {
@@ -305,6 +354,12 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 			{
 				/* Load directory entries: */
 				entries = scandir(path, &files, 0, alphasort);
+			}
+			
+			/* Remove hidden files from the list if necessary: */
+			if (!(fsdlg[SGFSDLG_SHOWHIDDEN].state & SG_SELECTED))
+			{
+				DlgFileSelect_RemoveHiddenFiles(files);
 			}
 
 			if (entries < 0)
@@ -539,6 +594,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 					browsingzip = FALSE;
 				}
 				strcpy(path, getenv("HOME"));
+				File_AddSlashToEndFileName(path);
 				reloaddir = TRUE;
 				strcpy(dlgpath, path);
 				selection = -1;                 /* Remove old selection */
@@ -574,6 +630,10 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 				break;
 			case SGFSDLG_FILENAME:              /* User entered new filename */
 				strcpy(fname, dlgfname);
+				break;
+			case SGFSDLG_SHOWHIDDEN:            /* Show/hide hidden files */
+				reloaddir = TRUE;
+				ypos = 0;
 				break;
 			case SDLGUI_UNKNOWNEVENT:
 				DlgFileSelect_HandleSdlEvents(&sdlEvent);
