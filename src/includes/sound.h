@@ -23,7 +23,6 @@ extern void Sound_ResetBufferIndex(void);
 extern void Sound_MemorySnapShot_Capture(BOOL bSave);
 extern void Sound_Update(void);
 extern void Sound_Update_VBL(void);
-extern void Sound_UpdateFromAudioCallBack(void);
 extern BOOL Sound_BeginRecording(char *pszCaptureFileName);
 extern void Sound_EndRecording(void);
 extern BOOL Sound_AreWeRecording(void);

@@ -6,7 +6,7 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-const char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.25 2006-02-12 21:28:22 eerot Exp $";
+const char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.26 2006-08-01 09:23:05 thothy Exp $";
 
 #include <SDL.h>
 
@@ -43,34 +43,38 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 	Uint8 *pBuffer;
 	int i;
 
-	/* If there are only some samples missing to have a complete buffer,
-	 * we generate them here (sounds much better then!). However, if a lot of
-	 * samples are missing, then the system is probably too slow, so we don't
-	 * generate more samples to not make things worse... */
-	if (nGeneratedSamples < len && len-nGeneratedSamples < 128)
-		Sound_UpdateFromAudioCallBack();
-
-	/* Pass completed buffer to audio system: Write samples into sound buffer
-	 * and convert them from 'signed' to 'unsigned' */
 	pBuffer = stream;
-	for (i = 0; i < len; i++)
-	{
-		*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE] ^ 128;
-	}
 
-	/* We should now have generated a complete frame of samples.
-	 * However, for slow systems we have to check how many generated samples
-	 * we may advance... */
 	if (nGeneratedSamples >= len)
 	{
+		/* Enough samples available: Pass completed buffer to audio system
+		 * by write samples into sound buffer and by converting them from
+		 * 'signed' to 'unsigned' */
+		for (i = 0; i < len; i++)
+		{
+			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE] ^ 128;
+		}
 		CompleteSndBufIdx += len;
 		nGeneratedSamples -= len;
 	}
-	else
+	else  /* Not enough samples available: */
 	{
+		for (i = 0; i < nGeneratedSamples; i++)
+		{
+			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE] ^ 128;
+		}
+		/* If the buffer is filled more than 50%, mirror sample buffer to fake the
+		 * missing samples */
+		if (nGeneratedSamples >= len/2)
+		{
+			int remaining = len - nGeneratedSamples;
+			memcpy(pBuffer, stream+nGeneratedSamples-remaining, remaining);
+		}
 		CompleteSndBufIdx += nGeneratedSamples;
 		nGeneratedSamples = 0;
+		
 	}
+
 	CompleteSndBufIdx = CompleteSndBufIdx % MIXBUFFER_SIZE;
 }
 

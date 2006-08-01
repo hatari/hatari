@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.25 2006-06-13 20:22:01 thothy Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.26 2006-08-01 09:23:05 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -236,8 +236,9 @@ void Sound_Reset(void)
   bWriteChannelAAmp = bWriteChannelBAmp = bWriteChannelCAmp = FALSE;
 
   CompleteSndBufIdx = 0;
-  ActiveSndBufIdx =  (SoundBufferSize + SAMPLES_PER_FRAME) % MIXBUFFER_SIZE;
-  nGeneratedSamples = 0;
+  /* We do not start with 0 here to fake some initial samples: */
+  nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
+  ActiveSndBufIdx = nGeneratedSamples % MIXBUFFER_SIZE;
 
   /* Clear frequency counter */
   for(i=0; i<3; i++)
@@ -258,8 +259,8 @@ void Sound_Reset(void)
 void Sound_ResetBufferIndex(void)
 {
   Audio_Lock();
-  ActiveSndBufIdx =  (CompleteSndBufIdx + SoundBufferSize + SAMPLES_PER_FRAME)
-                     % MIXBUFFER_SIZE;
+  nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
+  ActiveSndBufIdx =  (CompleteSndBufIdx + nGeneratedSamples) % MIXBUFFER_SIZE;
   Audio_Unlock();
 }
 
@@ -550,24 +551,6 @@ void Sound_Update_VBL(void)
 
   /* Clear write to register '13', used for YM file saving */
   bEnvelopeFreqFlag = FALSE;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  This is called from the audio callback function to create enough samples
-  to fill the current sound buffer.
-*/
-void Sound_UpdateFromAudioCallBack(void)
-{
-  /* If there are already enough samples or if we are recording, we should
-   * not generate more samples here! */
-  if(nGeneratedSamples >= SoundBufferSize || Sound_AreWeRecording())
-    return;
-
-  nSamplesToGenerate = SoundBufferSize - nGeneratedSamples;
-
-  Sound_GenerateSamples();
 }
 
 
