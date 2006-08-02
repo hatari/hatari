@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.31 2006-07-23 15:32:51 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.32 2006-08-02 10:54:56 eerot Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -444,7 +444,7 @@ void File_makepath(char *pDestFileName, const char *pDir, const char *pName, con
 
   if (len == 0)
     sprintf(pDestFileName, ".%c", PATHSEP);
-  if (pDestFileName[len-1] != PATHSEP)
+  else if (pDestFileName[len-1] != PATHSEP)
   {
     pDestFileName[len] = PATHSEP;
     pDestFileName[len+1] = 0;
