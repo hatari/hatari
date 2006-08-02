@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.4 2006-08-02 11:51:21 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.5 2006-08-02 20:09:15 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,6 +53,7 @@ enum {
 	OPT_VDI,
 	OPT_MEMSIZE,
 	OPT_CONFIGFILE,
+	OPT_KEYMAPFILE,
 	OPT_SLOWFDC,
 	OPT_MACHINE,
 	OPT_NONE,
@@ -112,6 +113,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "ST RAM size. x = size in MiB from 0 to 14, 0 for 512KiB" },
 	{ OPT_CONFIGFILE,"-c", "--configfile",
 	  "<file>", "Use <file> instead of the ~/.hatari.cfg config file" },
+	{ OPT_KEYMAPFILE,"-k", "--keymap",
+	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	{ OPT_SLOWFDC,   NULL, "--slowfdc",
 	  NULL, "Slow down FDC emulation (very experimental!)" },
 	{ OPT_MACHINE,   NULL, "--machine",
@@ -420,6 +423,16 @@ void Opt_ParseParameters(int argc, char *argv[],
 				Configuration_Load(NULL);
 			} else {
 				Opt_ShowExit(OPT_NONE, argv[i], "Config file name too long!\n");
+			}
+			break;
+			
+		case OPT_KEYMAPFILE:
+			i += 1;
+			if (File_Exists(argv[i])) {
+				strcpy(ConfigureParams.Keyboard.szMappingFileName, argv[i]);
+				ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
+			} else {
+				Opt_ShowExit(OPT_NONE, argv[i], "Given keymap file doesn't exist!\n");
 			}
 			break;
 			
