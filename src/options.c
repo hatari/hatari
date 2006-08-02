@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.3 2006-02-19 21:48:37 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.4 2006-08-02 11:51:21 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,7 +83,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DEBUG,     "-D", "--debug",
 	  NULL, "Allow debug interface" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
-	  NULL, "Emulate a ST joystick with the cursor keys" },
+	  "<port>", "Emulate joystick in <port> 0 or 1 with cursor keys" },
 	{ OPT_NOSOUND,   NULL, "--nosound",
 	  NULL, "Disable sound (faster!)" },
 	{ OPT_PRINTER,   NULL, "--printer",
@@ -222,7 +222,7 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 void Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
-	int i;
+	int i, j, port;
 	
 	for(i = 1; i < argc; i++) {
 		
@@ -266,7 +266,25 @@ void Opt_ParseParameters(int argc, char *argv[],
 			break;
 			
 		case OPT_JOYSTICK:
-			ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_KEYBOARD;
+			port = argv[++i][0] - '0';
+			if (port < 0 || port > 1) {
+				/* TODO: replace this with an error message
+				 * for the next version.  For now assume
+				 * that -j was used without an argument
+				 * which earlier defaulted to port 1
+				 */
+				i--;
+				port = 1;
+			}
+			/* enable cursor emulation in given port and
+			 * disable it in others
+			 */
+			for (j = 0; j < JOYSTICK_COUNT; j++) {
+				if (j == port)
+					ConfigureParams.Joysticks.Joy[j].nJoystickMode = JOYSTICK_KEYBOARD;
+				else if (ConfigureParams.Joysticks.Joy[j].nJoystickMode == JOYSTICK_KEYBOARD)
+					ConfigureParams.Joysticks.Joy[j].nJoystickMode = JOYSTICK_DISABLED;
+			}
 			break;
 			
 		case OPT_NOSOUND:

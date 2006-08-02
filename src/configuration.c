@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.50 2006-07-23 15:32:51 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.51 2006-08-02 11:51:21 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -300,7 +300,7 @@ void Configuration_SetDefault(void)
 	strcpy(ConfigureParams.HardDisk.szHardDiskImage, szWorkingDir);
 
 	/* Set defaults for Joysticks */
-	for (i = 0; i < 6; i++)
+	for (i = 0; i < JOYSTICK_COUNT; i++)
 	{
 		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
 		ConfigureParams.Joysticks.Joy[i].bEnableAutoFire = FALSE;

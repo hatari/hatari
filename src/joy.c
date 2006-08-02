@@ -8,7 +8,7 @@
 
   NOTE: The ST uses the joystick port 1 as the default controller.
 */
-const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.11 2006-04-19 21:46:13 thothy Exp $";
+const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.12 2006-08-02 11:51:21 eerot Exp $";
 
 #include <SDL.h>
 
@@ -261,7 +261,7 @@ BOOL Joy_KeyDown(int symkey, int modkey)
 {
 	int i;
 
-	for (i = 0; i < 6; i++)
+	for (i = 0; i < JOYSTICK_COUNT; i++)
 	{
 		if (ConfigureParams.Joysticks.Joy[i].nJoystickMode == JOYSTICK_KEYBOARD
 		    && !(modkey & KMOD_SHIFT))
@@ -307,7 +307,7 @@ BOOL Joy_KeyUp(int symkey, int modkey)
 {
 	int i;
 
-	for (i = 0; i < 6; i++)
+	for (i = 0; i < JOYSTICK_COUNT; i++)
 	{
 		if (ConfigureParams.Joysticks.Joy[i].nJoystickMode == JOYSTICK_KEYBOARD
 		    && !(modkey & KMOD_SHIFT))

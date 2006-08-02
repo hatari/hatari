@@ -91,9 +91,11 @@ typedef struct
   int nKeyCodeUp, nKeyCodeDown, nKeyCodeLeft, nKeyCodeRight, nKeyCodeFire;
 } JOYSTICK;
 
+#define JOYSTICK_COUNT 6
+
 typedef struct
 {
-  JOYSTICK Joy[6];
+  JOYSTICK Joy[JOYSTICK_COUNT];
 } CNF_JOYSTICKS;
 
 

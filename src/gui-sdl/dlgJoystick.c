@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.8 2006-02-08 22:46:10 eerot Exp $";
+const char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.9 2006-08-02 11:51:21 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -72,7 +72,7 @@ static SGOBJ joykeysdlg[] =
 };
 
 
-static char *sJoystickNames[6] =
+static char *sJoystickNames[JOYSTICK_COUNT] =
 {
 	"ST Joystick 0",
 	"ST Joystick 1",
