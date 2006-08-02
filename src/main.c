@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.85 2006-06-13 20:26:05 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.86 2006-08-02 07:45:00 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -208,6 +208,62 @@ void Main_WarpMouse(int x, int y)
 
 /* ----------------------------------------------------------------------- */
 /*
+  Handle mouse motion event.
+*/
+static void Main_HandleMouseMotion(SDL_Event *pEvent)
+{
+	int dx, dy;
+	static int ax = 0, ay = 0;
+
+	
+	if (bIgnoreNextMouseMotion)
+	{
+		bIgnoreNextMouseMotion = FALSE;
+		return;
+	}
+
+	dx = pEvent->motion.xrel;
+	dy = pEvent->motion.yrel;
+
+	if (STRes == ST_LOW_RES &&
+	    (ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_LOWCOL_HIGHRES ||
+	     ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_HICOL_HIGHRES))
+	{
+		/* In zoomed ST-Low res mode, we devide dx and dy by two so that the ST mouse
+		 * cursor stays in sync with the host mouse. However, we have to take care of
+		 * lowest bit of dx and dy which will get lost when dividing by two. So we
+		 * store these bits in ax and ay and add them to dx and dy the next time. */
+		dx += ax;
+		dy += ay;
+		if (dx & 1)
+			ax = (dx > 0) ? 1 : -1;
+		else
+			ax = 0;
+		if (dy & 1)
+			ay = (dy > 0) ? 1 : -1;
+		else
+			ay = 0;
+		dx /= 2;
+		dy /= 2;
+	}
+	else if (STRes == ST_MEDIUM_RES || STRes == ST_LOWMEDIUM_MIX_RES)
+	{
+		/* In medium resolution, we only have to take care about dy. */
+		dy += ay;
+		if (dy & 1)
+			ay = (dy > 0) ? 1 : -1;
+		else
+			ay = 0;
+		dy /= 2;
+	}
+
+	KeyboardProcessor.Mouse.dx += dx;
+	KeyboardProcessor.Mouse.dy += dy;
+}
+
+
+/* ----------------------------------------------------------------------- */
+/*
   Message handler
   Here we process the SDL events (keyboard, mouse, ...) and map it to
   Atari IKBD events.
@@ -226,15 +282,7 @@ void Main_EventHandler(void)
        break;
 
     case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */
-       if (bIgnoreNextMouseMotion)
-       {
-         bIgnoreNextMouseMotion = FALSE;
-       }
-       else
-       {
-         KeyboardProcessor.Mouse.dx += event.motion.xrel;
-         KeyboardProcessor.Mouse.dy += event.motion.yrel;
-       }
+       Main_HandleMouseMotion(&event);
        break;
 
     case SDL_MOUSEBUTTONDOWN:
