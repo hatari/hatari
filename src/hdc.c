@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.10 2006-02-08 22:49:27 eerot Exp $";
+const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.11 2006-08-05 08:33:54 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -150,7 +150,7 @@ static void HDC_ReadSector(void)
   fseek(hd_image_file, HDC_GetOffset(),0);
 
 #ifdef HDC_VERBOSE
-  fprintf(stderr,"Reading %i sectors from 0x%lx to addr:%lx\n", HD_SECTORCOUNT(HDCCommand), HDC_GetOffset() ,FDC_ReadDMAAddress()); 
+  fprintf(stderr,"Reading %i sectors from 0x%lx to addr: 0x%x\n", HD_SECTORCOUNT(HDCCommand), HDC_GetOffset() ,FDC_ReadDMAAddress()); 
 #endif
 
   fread((char *)((unsigned long)STRam+FDC_ReadDMAAddress()), 
@@ -208,50 +208,62 @@ void HDC_EmulateCommandPacket()
   }
 }
 
+
 /*---------------------------------------------------------------------*/
 /*
   Debug routine for HDC command packets.
 */
+#ifdef HDC_REALLY_VERBOSE
 void HDC_DebugCommandPacket(FILE *hdlogFile)
 {
-  switch(HD_OPCODE(HDCCommand)){
-  case HD_VERIFY_TRACK:
-    fprintf(hdlogFile, "OpCode: VERIFY TRACK\n");
-    break;
-  case HD_FORMAT_TRACK:
-    fprintf(hdlogFile, "OpCode: FORMAT TRACK\n");
-    break;  
-  case HD_READ_SECTOR: 
-    fprintf(hdlogFile, "OpCode: READ SECTOR(S)\n");
-    break;
-  case HD_WRITE_SECTOR:
-    fprintf(hdlogFile, "OpCode: WRITE SECTOR(S)\n");
-    break;
-  case HD_INQUIRY:        
-    fprintf(hdlogFile, "OpCode: INQUIRY\n");
-    break;
-  case HD_SEEK:        
-    fprintf(hdlogFile, "OpCode: SEEK\n");
-    break;
-  case HD_CORRECTION:  
-    fprintf(hdlogFile, "OpCode: CORRECTION\n");
-    break;
-  case HD_MODESENSE:   
-    fprintf(hdlogFile, "OpCode: MODESENSE\n");
-    break;
+  int opcode;
+  static const char *psComNames[] =
+  {
+    "TEST UNIT READY",
+    "REZERO",
+    "???",
+    "REQUEST SENSE",
+    "FORMAT DRIVE",
+    "VERIFY TRACK (?)",
+    "FORMAT TRACK (?)",
+    "REASSIGN BLOCK",
+    "READ SECTOR(S)",
+    "???",
+    "WRITE SECTOR(S)",
+    "SEEK",
+    "???",
+    "CORRECTION",
+    "???",
+    "TRANSLATE",
+    "SET ERROR THRESHOLD",	/* 0x10 */
+    "USAGE COUNTERS",
+    "INQUIRY",
+    "WRITE DATA BUFFER",
+    "READ DATA BUFFER",
+    "MODE SELECT",
+    "???",
+    "???",
+    "EXTENDED READ",
+    "READ TOC",
+    "MODE SENSE",
+    "SHIP",
+    "RECEIVE DIAGNOSTICS",
+    "SEND DIAGNOSTICS"
+  };
 
-  case HD_SHIP:   
-    fprintf(hdlogFile, "OpCode: SHIP\n");
-    break;
+  opcode = HD_OPCODE(HDCCommand);
 
-  case HD_REQ_SENSE:   
-    fprintf(hdlogFile, "OpCode: MODESENSE\n");
-    break;
+  fprintf(hdlogFile,"----\n");
 
-  default:
-    fprintf(hdlogFile, "Unknown OpCode!! Value = %x\n", HD_OPCODE(HDCCommand));
-    break;
+  if (opcode >= 0 && opcode <= (int)(sizeof(psComNames)/sizeof(psComNames[0])))
+  {
+    fprintf(hdlogFile, "HDC opcode 0x%x : %s\n",opcode,psComNames[opcode]);
   }
+  else
+  {
+    fprintf(hdlogFile, "Unknown HDC opcode!! Value = 0x%x\n", opcode);
+  }
+
   fprintf(hdlogFile, "Controller: %i\n", HD_CONTROLLER(HDCCommand));
   fprintf(hdlogFile, "Drive: %i\n", HD_DRIVENUM(HDCCommand));
   fprintf(hdlogFile, "LBA: %lx\n", HDC_GetOffset());
@@ -261,6 +273,8 @@ void HDC_DebugCommandPacket(FILE *hdlogFile)
   fprintf(hdlogFile, "FDC sector count: %x\n", FDCSectorCountRegister);
   fprintf(hdlogFile, "Control byte: %x\n", HD_CONTROL(HDCCommand));
 }
+#endif
+
 
 /*---------------------------------------------------------------------*/
 /*
@@ -379,19 +393,4 @@ void HDC_WriteCommandPacket(void)
     HDCCommand.byteCount = 0;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

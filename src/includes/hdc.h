@@ -36,6 +36,7 @@
 #define HD_SEEK            0x0B               /* Seek */
 #define HD_CORRECTION      0x0D               /* Correction */
 #define HD_INQUIRY         0x12               /* Inquiry */
+#define HD_MODESELECT      0x15               /* Mode select */
 #define HD_MODESENSE       0x1A               /* Mode sense */
 #define HD_REQ_SENSE       0x03               /* Request sense */
 #define HD_SHIP            0x1B               /* Ship drive */
