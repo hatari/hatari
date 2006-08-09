@@ -8,7 +8,6 @@
 #ifndef HATARI_CONFIGURATION_H
 #define HATARI_CONFIGURATION_H
 
-
 /* Logging */
 typedef struct
 {
@@ -66,6 +65,31 @@ typedef struct
   KEYMAPTYPE nKeymapType;
   char szMappingFileName[FILENAME_MAX];
 } CNF_KEYBOARD;
+
+
+typedef enum {
+  SHORTCUT_OPTIONS,
+  SHORTCUT_FULLSCREEN,
+  SHORTCUT_MOUSEMODE,
+  SHORTCUT_COLDRESET,
+  SHORTCUT_WARMRESET,
+  SHORTCUT_SCREENSHOT,
+  SHORTCUT_BOSSKEY,
+  SHORTCUT_CURSOREMU,
+  SHORTCUT_MAXSPEED,
+  SHORTCUT_RECANIM,
+  SHORTCUT_RECSOUND,
+  SHORTCUT_SOUND,
+  SHORTCUT_QUIT,
+  SHORTCUT_KEYS,  /* number of shortcuts */
+  SHORTCUT_NONE
+} SHORTCUTKEYIDX;
+
+typedef struct
+{
+  int withModifier[SHORTCUT_KEYS];
+  int withoutModifier[SHORTCUT_KEYS];
+} CNF_SHORTCUT;
 
 
 typedef struct
@@ -213,6 +237,7 @@ typedef struct
   CNF_SCREEN Screen;
   CNF_JOYSTICKS Joysticks;
   CNF_KEYBOARD Keyboard;
+  CNF_SHORTCUT Shortcut;
   CNF_SOUND Sound;
   CNF_MEMORY Memory;
   CNF_DISKIMAGE DiskImage;

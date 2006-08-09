@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.27 2006-07-20 21:00:56 thothy Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.28 2006-08-09 08:14:24 eerot Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -93,10 +93,6 @@ Ins   Del
 
 
 */
-
-
-/* Mask of valid shortcut key modifiers */
-#define KEYMAP_SHORTCUTMODS  (KMOD_RALT|KMOD_LMETA|KMOD_RMETA|KMOD_MODE)
 
 
 /* SDL symbolic key to ST scan code mapping table */
@@ -726,16 +722,8 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 
   /*fprintf(stderr, "keydown: sym=%i scan=%i mod=$%x\n",symkey, sdlkey->scancode, modkey);*/
 
-  /* If pressed short-cut key, retain keypress until safe to execute (start of VBL) */
-  if ((modkey & KEYMAP_SHORTCUTMODS) || symkey == SDLK_F11 || symkey == SDLK_F12)
-  {
-    ShortCutKey.Key = symkey;
-    if (modkey & KMOD_CTRL)
-      ShortCutKey.bCtrlPressed = TRUE;
-    if (modkey & KMOD_SHIFT)
-      ShortCutKey.bShiftPressed = TRUE;
+  if (ShortCut_CheckKeys(modkey, symkey, 1))
     return;
-  }
 
   /* If using joystick emulation via keyboard, DON'T send keys to keyboard processor!!!
    * Some games use keyboard as pause! */
@@ -783,10 +771,9 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
   /*fprintf(stderr, "keyup: sym=%i scan=%i mod=$%x\n",symkey, sdlkey->scancode, modkey);*/
 
   /* Ignore short-cut keys here */
-  if ((modkey & KEYMAP_SHORTCUTMODS) || symkey == SDLK_F11 || symkey == SDLK_F12)
-  {
+
+  if (ShortCut_CheckKeys(modkey, symkey, 0))
     return;
-  }
 
   /* If using keyboard emulation, DON'T send keys to keyboard processor!!!
    * Some games use keyboard as pause! */

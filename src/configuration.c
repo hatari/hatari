@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.51 2006-08-02 11:51:21 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.52 2006-08-09 08:14:24 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -150,6 +150,45 @@ static const struct Config_Tag configs_Keyboard[] =
 	{ "szMappingFileName", String_Tag, ConfigureParams.Keyboard.szMappingFileName },
 	{ NULL , Error_Tag, NULL }
 };
+
+/* Used to load/save shortcut key bindings with modifiers options */
+static const struct Config_Tag configs_ShortCutWithMod[] =
+{
+	{ "keyOptions",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_OPTIONS] },
+	{ "keyFullScreen", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_FULLSCREEN] },
+	{ "keyMouseMode",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_MOUSEMODE] },
+	{ "keyColdReset",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_COLDRESET] },
+	{ "keyWarmReset",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_WARMRESET] },
+	{ "keyScreenShot", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SCREENSHOT] },
+	{ "keyBossKey",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_BOSSKEY] },
+	{ "keyCursorEmu",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_CURSOREMU] },
+	{ "keyMaxSpeed",   Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_MAXSPEED] },
+	{ "keyRecAnim",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_RECANIM] },
+	{ "keyRecSound",   Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_RECSOUND] },
+	{ "keySound",      Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SOUND] },
+	{ "keyQuit",       Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_QUIT] },
+	{ NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save shortcut key bindings without modifiers options */
+static const struct Config_Tag configs_ShortCutWithoutMod[] =
+{
+	{ "keyOptions",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] },
+	{ "keyFullScreen", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_FULLSCREEN] },
+	{ "keyMouseMode",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_MOUSEMODE] },
+	{ "keyColdReset",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_COLDRESET] },
+	{ "keyWarmReset",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_WARMRESET] },
+	{ "keyScreenShot", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SCREENSHOT] },
+	{ "keyBossKey",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_BOSSKEY] },
+	{ "keyCursorEmu",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_CURSOREMU] },
+	{ "keyMaxSpeed",   Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_MAXSPEED] },
+	{ "keyRecAnim",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_RECANIM] },
+	{ "keyRecSound",   Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_RECSOUND] },
+	{ "keySound",      Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SOUND] },
+	{ "keyQuit",       Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_QUIT] },
+	{ NULL , Error_Tag, NULL }
+};
+
 
 /* Used to load/save sound options */
 static const struct Config_Tag configs_Sound[] =
@@ -318,7 +357,25 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Keyboard.bDisableKeyRepeat = TRUE;
 	ConfigureParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
 	strcpy(ConfigureParams.Keyboard.szMappingFileName, "");
-
+  
+  /* Set defaults for Shortcuts */
+  ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] = SDLK_F12;
+  ConfigureParams.Shortcut.withoutModifier[SHORTCUT_FULLSCREEN] = SDLK_F11;
+  
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_OPTIONS] = SDLK_o;
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_FULLSCREEN] = SDLK_f;
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_MOUSEMODE] = SDLK_m;
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_COLDRESET] = SDLK_c;
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_WARMRESET] = SDLK_r;
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_SCREENSHOT] = SDLK_g;
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_BOSSKEY] = SDLK_i;
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_CURSOREMU] = SDLK_j;
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_MAXSPEED] = SDLK_x;
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_RECANIM] = SDLK_a;
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_RECSOUND] = SDLK_y;
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_SOUND] = SDLK_s;
+  ConfigureParams.Shortcut.withModifier[SHORTCUT_QUIT] = SDLK_q;
+         
 	/* Set defaults for Memory */
 	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */
 	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s%chatari.sav", szWorkingDir,PATHSEP);
@@ -475,6 +532,8 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Joystick4, "[Joystick4]");
 	Configuration_LoadSection(psFileName, configs_Joystick5, "[Joystick5]");
 	Configuration_LoadSection(psFileName, configs_Keyboard, "[Keyboard]");
+	Configuration_LoadSection(psFileName, configs_ShortCutWithMod, "[ShortcutsWithModifiers]");
+	Configuration_LoadSection(psFileName, configs_ShortCutWithoutMod, "[ShortcutsWithoutModifiers]");
 	Configuration_LoadSection(psFileName, configs_Sound, "[Sound]");
 	Configuration_LoadSection(psFileName, configs_Memory, "[Memory]");
 	Configuration_LoadSection(psFileName, configs_OldFloppy, "[Floppy]");  /* <- to be removed */
@@ -531,6 +590,8 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Joystick4, "[Joystick4]");
 	Configuration_SaveSection(sConfigFileName, configs_Joystick5, "[Joystick5]");
 	Configuration_SaveSection(sConfigFileName, configs_Keyboard, "[Keyboard]");
+	Configuration_SaveSection(sConfigFileName, configs_ShortCutWithMod, "[ShortcutsWithModifiers]");
+	Configuration_SaveSection(sConfigFileName, configs_ShortCutWithoutMod, "[ShortcutsWithoutModifiers]");
 	Configuration_SaveSection(sConfigFileName, configs_Sound, "[Sound]");
 	Configuration_SaveSection(sConfigFileName, configs_Memory, "[Memory]");
 	Configuration_SaveSection(sConfigFileName, configs_Floppy, "[Floppy]");

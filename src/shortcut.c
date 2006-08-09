@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.22 2006-02-08 22:49:27 eerot Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.23 2006-08-09 08:14:24 eerot Exp $";
 
 #include <SDL.h>
 
@@ -19,11 +19,11 @@ const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.22 2006-02-08 22:49:27
 #include "reset.h"
 #include "screen.h"
 #include "screenSnapShot.h"
+#include "configuration.h"
 #include "shortcut.h"
 #include "sound.h"
 
-
-SHORTCUT_KEY ShortCutKey;
+static SHORTCUTKEYIDX ShortCutKey = SHORTCUT_NONE;  /* current shortcut key */
 
 
 /*-----------------------------------------------------------------------*/
@@ -208,12 +208,12 @@ static void ShortCut_WarmReset(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Clear shortkey structure
+  Shortcut for quitting
 */
-static void ShortCut_ClearKeys(void)
+static void ShortCut_Quit(void)
 {
-  /* Clear short-cut key structure */
-  memset(&ShortCutKey, 0, sizeof(SHORTCUT_KEY));
+  bQuitProgram = TRUE;           /* Quit program */
+  set_special(SPCFLAG_BRK);
 }
 
 
@@ -221,55 +221,95 @@ static void ShortCut_ClearKeys(void)
 /*
   Check to see if pressed any shortcut keys, and call handling function
 */
-void ShortCut_CheckKeys(void)
+void ShortCut_ActKey(void)
 {
-  /* Check for supported keys: */
-  switch(ShortCutKey.Key)
+  if (ShortCutKey == SHORTCUT_NONE)
+    return;
+
+  switch(ShortCutKey)
   {
-   case SDLK_f:
-   case SDLK_F11:                  /* Switch between fullscreen/windowed mode */
-    ShortCut_FullScreen();
+  case SHORTCUT_OPTIONS:
+    Dialog_DoProperty();           /* Show options dialog */
     break;
-   case SDLK_o:
-   case SDLK_F12:                  /* Show options dialog */
-    Dialog_DoProperty();
+  case SHORTCUT_FULLSCREEN:
+    ShortCut_FullScreen();         /* Switch between fullscreen/windowed mode */
     break;
-   case SDLK_a:                    /* Record animation */
-    ShortCut_RecordAnimation();
+  case SHORTCUT_MOUSEMODE:
+    ShortCut_MouseMode();          /* Toggle mouse mode */
     break;
-   case SDLK_c:                    /* Cold reset */
-    ShortCut_ColdReset();
+  case SHORTCUT_COLDRESET:
+    ShortCut_ColdReset();          /* Cold reset */
     break;
-   case SDLK_g:                    /* Grab screenshot */
-    ScreenSnapShot_SaveScreen();
+  case SHORTCUT_WARMRESET:
+    ShortCut_WarmReset();          /* Warm reset */
     break;
-   case SDLK_i:                    /* Boss key */
-    ShortCut_BossKey		();
+  case SHORTCUT_SCREENSHOT:
+    ScreenSnapShot_SaveScreen();   /* Grab screenshot */
     break;
-   case SDLK_j:                    /* Toggle cursor-joystick emulation */
+  case SHORTCUT_BOSSKEY:
+    ShortCut_BossKey();            /* Boss key */
+    break;
+  case SHORTCUT_CURSOREMU:
     ShortCut_JoystickCursorEmulation();
     break;
-   case SDLK_m:                    /* Toggle mouse mode */
-    ShortCut_MouseMode();
+  case SHORTCUT_MAXSPEED:
+    ShortCut_MaximumSpeed();       /* Toggle Min/Max speed */
     break;
-   case SDLK_r:                    /* Warm reset */
-    ShortCut_WarmReset();
+  case SHORTCUT_RECANIM:
+    ShortCut_RecordAnimation();    /* Record animation */
     break;
-   case SDLK_s:                    /* Enable/disable sound */
-    ShortCut_SoundOnOff();
+  case SHORTCUT_RECSOUND:
+    ShortCut_RecordSound();        /* Toggle sound recording */
     break;
-   case SDLK_q:                    /* Quit program */
-    bQuitProgram = TRUE;
-    set_special(SPCFLAG_BRK);
+  case SHORTCUT_SOUND:
+    ShortCut_SoundOnOff();         /* Enable/disable sound */
     break;
-   case SDLK_x:                    /* Toggle Min/Max speed */
-    ShortCut_MaximumSpeed();
+  case SHORTCUT_QUIT:
+    ShortCut_Quit();               /* Quit program */
     break;
-   case SDLK_y:                    /* Toggle sound recording */
-    ShortCut_RecordSound();
+  case SHORTCUT_KEYS:
+  case SHORTCUT_NONE:
+    /* ERROR: cannot happen, just make compiler happy */
     break;
   }
+  ShortCutKey = SHORTCUT_NONE;
+}
 
-  /* And clear */
-  ShortCut_ClearKeys();
+
+/*-----------------------------------------------------------------------*/
+/*
+  Check whether given key was any of the ones in given shortcut array.
+  Return corresponding array index or SHORTCUT_NONE for no match
+*/
+static SHORTCUTKEYIDX ShortCut_CheckKey(int symkey, int *keys)
+{
+  SHORTCUTKEYIDX key;
+  for (key = 0; key < SHORTCUT_KEYS; key++)
+  {
+    if (symkey == keys[key])
+      return key;
+  }
+  return SHORTCUT_NONE;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Check which Shortcut key is pressed/released.
+  If press is set, store the key array index.
+  Return zero if key didn't match to a shortcut
+*/
+int ShortCut_CheckKeys(int modkey, int symkey, BOOL press)
+{
+  SHORTCUTKEYIDX key;
+
+  if (modkey & (KMOD_RALT|KMOD_LMETA|KMOD_RMETA|KMOD_MODE))
+    key = ShortCut_CheckKey(symkey, ConfigureParams.Shortcut.withModifier);
+  else
+    key = ShortCut_CheckKey(symkey, ConfigureParams.Shortcut.withoutModifier);
+
+  if (key == SHORTCUT_NONE)
+    return 0;
+  if (press)
+    ShortCutKey = key;
+  return 1;
 }

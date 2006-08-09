@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.51 2006-04-05 15:34:51 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.52 2006-08-09 08:14:24 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -739,8 +739,8 @@ void Video_InterruptHandler_VBL(void)
 
   /* Clear any key presses which are due to be de-bounced (held for one ST frame) */
   Keymap_DebounceAllKeys();
-  /* Check shortcut keys */
-  ShortCut_CheckKeys();
+  /* Act on shortcut keys */
+  ShortCut_ActKey();
 
   /* Draw screen, skip frame if need to */
   if (!ConfigureParams.Screen.bFrameSkip || (nVBLs&1))

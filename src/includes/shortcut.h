@@ -5,14 +5,9 @@
   your option any later version. Read the file gpl.txt for details.
 */
 
-
-typedef struct
-{
-  unsigned short Key;
-  BOOL bShiftPressed;
-  BOOL bCtrlPressed;
-} SHORTCUT_KEY;
-
-extern SHORTCUT_KEY ShortCutKey;
-
-extern void ShortCut_CheckKeys(void);
+/* If pressed short-cut key modifier or standalone short-cut key,
+ * retain keypress until safe to execute (start of VBL). Returns zero
+ * if key wasn't a shortcut */
+extern int ShortCut_CheckKeys(int modkey, int symkey, BOOL press);
+/* Act on the stored keypress (in VBL) */
+extern void ShortCut_ActKey(void);
