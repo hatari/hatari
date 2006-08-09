@@ -41,6 +41,7 @@ extern int JoystickSpaceBar;
 extern void Joy_Init(void);
 extern void Joy_UnInit(void);
 extern Uint8 Joy_GetStickData(int nStJoyId);
+extern BOOL Joy_SetCursorEmulation(int port);
 extern void Joy_ToggleCursorEmulation(void);
 extern BOOL Joy_KeyDown(int symkey, int modkey);
 extern BOOL Joy_KeyUp(int symkey, int modkey);

@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.5 2006-08-02 20:09:15 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.6 2006-08-09 08:10:56 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +25,7 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.5 2006-08-02 20:09:15 eerot
 #include "screen.h"
 #include "video.h"
 #include "vdi.h"
+#include "joy.h"
 
 #include "uae-cpu/hatari-glue.h"
 
@@ -225,7 +226,7 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 void Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
-	int i, j, port;
+	int i;
 	
 	for(i = 1; i < argc; i++) {
 		
@@ -269,24 +270,16 @@ void Opt_ParseParameters(int argc, char *argv[],
 			break;
 			
 		case OPT_JOYSTICK:
-			port = argv[++i][0] - '0';
-			if (port < 0 || port > 1) {
+			i++;
+			if (!Joy_SetCursorEmulation(argv[i][0] - '0')) {
 				/* TODO: replace this with an error message
 				 * for the next version.  For now assume
 				 * that -j was used without an argument
 				 * which earlier defaulted to port 1
 				 */
+				fprintf(stderr, "WARNING: assuming -j <port> argument is missing and defaulting to port 1.\n");
+				Joy_SetCursorEmulation(1);
 				i--;
-				port = 1;
-			}
-			/* enable cursor emulation in given port and
-			 * disable it in others
-			 */
-			for (j = 0; j < JOYSTICK_COUNT; j++) {
-				if (j == port)
-					ConfigureParams.Joysticks.Joy[j].nJoystickMode = JOYSTICK_KEYBOARD;
-				else if (ConfigureParams.Joysticks.Joy[j].nJoystickMode == JOYSTICK_KEYBOARD)
-					ConfigureParams.Joysticks.Joy[j].nJoystickMode = JOYSTICK_DISABLED;
 			}
 			break;
 			

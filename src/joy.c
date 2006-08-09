@@ -8,7 +8,7 @@
 
   NOTE: The ST uses the joystick port 1 as the default controller.
 */
-const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.12 2006-08-02 11:51:21 eerot Exp $";
+const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.13 2006-08-09 08:10:56 eerot Exp $";
 
 #include <SDL.h>
 
@@ -237,17 +237,49 @@ static int Joy_GetFireButtons(int nStJoyId)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Toggle cursor emulation
+  Set joystick cursor emulation for given port.  This assumes that
+  if the same keys have been defined for "cursor key emulation" in
+  other ports, the emulation for them has been switched off. Returns
+  1 if the port number was OK, zero for error.
+*/
+BOOL Joy_SetCursorEmulation(int port)
+{
+	if (port < 0 || port >= JOYSTICK_COUNT) {
+		return 0;
+	}
+	ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_KEYBOARD;
+	return 1;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Toggle joystick cursor emulation between port 0, port 1 and being off
+  from them. When it's turned off from them, the port's previous state
+  is restored
 */
 void Joy_ToggleCursorEmulation(void)
 {
-	/* Toggle joystick 1 keyboard emulation */
-	if (ConfigureParams.Joysticks.Joy[1].nJoystickMode != JOYSTICK_DISABLED)
-	{
-		if (ConfigureParams.Joysticks.Joy[1].nJoystickMode == JOYSTICK_REALSTICK)
-			ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_KEYBOARD;
-		else
-			ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_REALSTICK;
+	static int saved[2] = { JOYSTICK_DISABLED, JOYSTICK_DISABLED };
+	int i, state, port = 2;
+	for (i = 0; i < 2; i++) {
+		state = ConfigureParams.Joysticks.Joy[i].nJoystickMode;
+		if (state == JOYSTICK_KEYBOARD) {
+			port = i;
+		} else {
+			saved[i] = state;
+		}
+	}
+	switch (port) {
+	case 0:  /* (only) in port 0, disable cursor emu */
+		ConfigureParams.Joysticks.Joy[0].nJoystickMode = saved[0];
+		break;
+	case 1:  /* (at least) in port 1, switch cursor emu to port 0 */
+		ConfigureParams.Joysticks.Joy[1].nJoystickMode = saved[1];
+		ConfigureParams.Joysticks.Joy[0].nJoystickMode = JOYSTICK_KEYBOARD;
+		break;
+	default:  /* neither in port 0 or 1, enable cursor emu to port 1 */
+		ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_KEYBOARD;
 	}
 }
 
