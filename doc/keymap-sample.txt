@@ -3,10 +3,11 @@
 #
 # Lines starting with a '#' or with a ';' are comments.
 # All other lines should contain exactly two numbers separated by a comma.
-# The first number is the symbolic PC key code (see keymap.c in the Hatari
-# sources or the file SDL_keysym.h from the SDL library header files).
+# The first number is the symbolic PC key code (see the SDL_keysym.h file
+# from the SDL library header files usually in /usr/share/SDL/).
 # The corresponding key will be mapped to the ST key which is specified by
-# second number - the ST scan code of the key.
+# second number - the ST scan code of the key (see src/keymap.c in the Hatari
+# sources).
 #
 # Example: If you want to get the 'y' and 'z' keys right with a german TOS
 # ROM, you can use the following two lines to map the PC keys to the right
