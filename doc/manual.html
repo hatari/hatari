@@ -354,7 +354,7 @@ resolution</td>
     <tr>
       <td align="center">-j &lt;port&gt; (--joystick &lt;port&gt;)</td>
       <td align="center">activates joystick emulation via cursor keys
-for given joystick port (0 or 1)</td>
+for given joystick "port" (0-5, see joystick dialog)</td>
     </tr>
     <tr>
       <td align="center">--nosound</td>
@@ -783,7 +783,8 @@ Don't enable them unless you really need them!
 <a name="Keyboard shortcuts"></a><h3>Keyboard shortcuts</h3>
 
 <p> While the emulator is running, you can activate or toggle various
-features via the following keyboard shortcuts. </p>
+features via Hatari keyboard shortcuts. Below are listed the default
+shortcut key bindings:</p>
 <table border="1" cellpadding="3">
   <tbody>
     <tr class="backdropped">
@@ -805,7 +806,8 @@ window</td>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+j</span></td>
-      <td align="center">activates joystick emulation via cursor keys</td>
+      <td align="center">toggles joystick emulation via cursor keys
+between port 0, port 1 and being off from those ports</td>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+m</span></td>
@@ -851,6 +853,11 @@ switch)</td>
     </tr>
   </tbody>
 </table>
+
+<p>You can change the key bindings from the Hatari configuration file.
+The required key values you can see from the SDL_keysym.h include file
+(usually in /usr/include/SDL/).
+
 
 <a name="Emulated Atari ST keyboard"></a><h3>Emulated Atari ST keyboard</h3>
 
