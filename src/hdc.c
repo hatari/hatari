@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.13 2006-08-10 17:26:38 thothy Exp $";
+const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.14 2006-08-10 19:10:35 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -166,6 +166,79 @@ static void HDC_RequestSense(void)
 
 /*---------------------------------------------------------------------*/
 /*
+  Mode sense - Get parameters from disk.
+  (Just enough to make the HDX tool from AHDI 5.0 happy)
+*/
+static void HDC_ModeSense(void)
+{
+	Uint32 nDmaAddr;
+
+#ifdef HDC_VERBOSE
+	fprintf(stderr,"HDC: Mode Sense.\n");
+#endif
+
+	nDmaAddr = FDC_ReadDMAAddress();
+
+	if (HDCCommand.command[2] == 0 && HD_SECTORCOUNT(HDCCommand) == 0x10)
+	{
+		size_t blocks;
+		blocks = File_Length(ConfigureParams.HardDisk.szHardDiskImage) / 512;
+
+		STRam[nDmaAddr+0] = 0;
+		STRam[nDmaAddr+1] = 0;
+		STRam[nDmaAddr+2] = 0;
+		STRam[nDmaAddr+3] = 8;
+		STRam[nDmaAddr+4] = 0;
+
+		STRam[nDmaAddr+5] = blocks >> 16;  // Number of blocks, high (?)
+		STRam[nDmaAddr+6] = blocks >> 8;   // Number of blocks, med (?)
+		STRam[nDmaAddr+7] = blocks;        // Number of blocks, low (?)
+
+		STRam[nDmaAddr+8] = 0;
+
+		STRam[nDmaAddr+9] = 0;      // Block size in bytes, high
+		STRam[nDmaAddr+10] = 2;     // Block size in bytes, med
+		STRam[nDmaAddr+11] = 0;     // Block size in bytes, low
+
+		STRam[nDmaAddr+12] = 0;
+		STRam[nDmaAddr+13] = 0;
+		STRam[nDmaAddr+14] = 0;
+		STRam[nDmaAddr+15] = 0;
+	}
+	else
+	{
+		Log_Printf(LOG_ERROR, "HDC: Unsupported MODE SENSE command\n");
+		return;
+	}
+
+	FDC_SetDMAStatus(FALSE);            /* no DMA error */
+	FDC_AcknowledgeInterrupt();
+	HDCCommand.returnCode = HD_STATUS_OK;
+	FDCSectorCountRegister = 0;
+}
+
+
+/*---------------------------------------------------------------------*/
+/*
+  Format drive.
+*/
+static void HDC_FormatDrive(void)
+{
+#ifdef HDC_VERBOSE
+	fprintf(stderr,"HDC: Format drive!\n");
+#endif
+
+	/* Should erase the whole image file here... */
+
+	FDC_SetDMAStatus(FALSE);            /* no DMA error */
+	FDC_AcknowledgeInterrupt();
+	HDCCommand.returnCode = HD_STATUS_OK;
+	FDCSectorCountRegister = 0;
+}
+
+
+/*---------------------------------------------------------------------*/
+/*
   Write a sector off our disk - (seek implied)
 */
 static void HDC_WriteSector(void)
@@ -244,11 +317,18 @@ void HDC_EmulateCommandPacket()
 		HDC_RequestSense();
 		break;
 
+	 case HD_MODESENSE:
+		HDC_ModeSense();
+		break;
+
+	 case HD_FORMAT_DRIVE:
+		HDC_FormatDrive();
+		break;
+
 	 /* as of yet unsupported commands */
 	 case HD_VERIFY_TRACK:
 	 case HD_FORMAT_TRACK:
 	 case HD_CORRECTION:
-	 case HD_MODESENSE:
 
 	 default:
 		HDCCommand.returnCode = HD_STATUS_OPCODE;
@@ -315,12 +395,12 @@ void HDC_DebugCommandPacket(FILE *hdlogFile)
 
 	fprintf(hdlogFile, "Controller: %i\n", HD_CONTROLLER(HDCCommand));
 	fprintf(hdlogFile, "Drive: %i\n", HD_DRIVENUM(HDCCommand));
-	fprintf(hdlogFile, "LBA: %lx\n", HDC_GetOffset());
+	fprintf(hdlogFile, "LBA: 0x%lx\n", HDC_GetOffset());
 
-	fprintf(hdlogFile, "Sector count: %x\n", HD_SECTORCOUNT(HDCCommand));
-	fprintf(hdlogFile, "HDC sector count: %x\n", HDCSectorCount);
-	fprintf(hdlogFile, "FDC sector count: %x\n", FDCSectorCountRegister);
-	fprintf(hdlogFile, "Control byte: %x\n", HD_CONTROL(HDCCommand));
+	fprintf(hdlogFile, "Sector count: 0x%x\n", HD_SECTORCOUNT(HDCCommand));
+	fprintf(hdlogFile, "HDC sector count: 0x%x\n", HDCSectorCount);
+	fprintf(hdlogFile, "FDC sector count: 0x%x\n", FDCSectorCountRegister);
+	fprintf(hdlogFile, "Control byte: 0x%x\n", HD_CONTROL(HDCCommand));
 }
 #endif
 
@@ -461,11 +541,12 @@ void HDC_WriteCommandPacket(void)
 		}
 		else
 		{
-			FDC_SetDMAStatus(FALSE);
-			FDC_AcknowledgeInterrupt();
+			/* No drive/controller */
+			FDC_SetDMAStatus(TRUE);
+			//FDC_AcknowledgeInterrupt();
 			HDCCommand.returnCode = HD_STATUS_NODRIVE;
 			FDCSectorCountRegister = 0;
-			FDC_AcknowledgeInterrupt();
+			MFP_GPIP |= 0x20;
 		}
 
 		HDCCommand.byteCount = 0;
