@@ -6,13 +6,15 @@
 
   Low-level hard drive emulation
 */
-const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.12 2006-08-08 07:19:15 thothy Exp $";
+const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.13 2006-08-10 17:26:38 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "debugui.h"
+#include "file.h"
 #include "fdc.h"
 #include "hdc.h"
+#include "log.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "stMemory.h"
@@ -37,15 +39,16 @@ const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.12 2006-08-08 07:19:15 thothy Ex
   see the TOS DMA boot code) 
 */
 
-/* #define DISALLOW_HDC_WRITE */
-/* #define HDC_VERBOSE */        /* display operations */
-/* #define HDC_REALLY_VERBOSE */ /* display command packets */
+// #define DISALLOW_HDC_WRITE
+// #define HDC_VERBOSE           /* display operations */
+// #define HDC_REALLY_VERBOSE    /* display command packets */
 
 /* HDC globals */
 HDCOMMAND HDCCommand;
 FILE *hd_image_file = NULL;
 int nPartitions = 0;
 short int HDCSectorCount;
+BOOL bAcsiEmuOn = FALSE;
 
 /*
   FDC registers used:
@@ -128,6 +131,41 @@ static void HDC_Inquiry(void)
 
 /*---------------------------------------------------------------------*/
 /*
+  Request sense - return some disk information
+*/
+static void HDC_RequestSense(void)
+{
+	Uint32 nDmaAddr;
+
+#ifdef HDC_VERBOSE
+	fprintf(stderr,"HDC: Request Sense.\n");
+#endif
+
+	if (HD_SECTORCOUNT(HDCCommand) != 4)
+	{
+		Log_Printf(LOG_ERROR, "HDC: Strange REQUEST SENSE\n");
+		return;
+	}
+
+	nDmaAddr = FDC_ReadDMAAddress();
+
+	if (HD_CONTROLLER(HDCCommand) == 0 && HD_DRIVENUM(HDCCommand) == 0)
+		STRam[nDmaAddr] = 0;            /* Always OK at the moment */
+	else
+		STRam[nDmaAddr] = 4;            /* Drive not ready */
+	STRam[nDmaAddr+1] = 0;
+	STRam[nDmaAddr+2] = 0;
+	STRam[nDmaAddr+3] = 0;
+
+	FDC_SetDMAStatus(FALSE);            /* no DMA error */
+	FDC_AcknowledgeInterrupt();
+	HDCCommand.returnCode = HD_STATUS_OK;
+	FDCSectorCountRegister = 0;
+}
+
+
+/*---------------------------------------------------------------------*/
+/*
   Write a sector off our disk - (seek implied)
 */
 static void HDC_WriteSector(void)
@@ -202,12 +240,15 @@ void HDC_EmulateCommandPacket()
 		FDC_AcknowledgeInterrupt();
 		break;
 
-		/* as of yet unsupported commands */
+	 case HD_REQ_SENSE:
+		HDC_RequestSense();
+		break;
+
+	 /* as of yet unsupported commands */
 	 case HD_VERIFY_TRACK:
 	 case HD_FORMAT_TRACK:
 	 case HD_CORRECTION:
 	 case HD_MODESENSE:
-	 case HD_REQ_SENSE:
 
 	 default:
 		HDCCommand.returnCode = HD_STATUS_OPCODE;
@@ -332,10 +373,24 @@ static void HDC_GetInfo(void)
  */
 BOOL HDC_Init(char *filename)
 {
-	if ( (hd_image_file = fopen(filename, "r+")) == NULL)
+	bAcsiEmuOn = FALSE;
+
+	/* Sanity check - is file length a multiple of 512? */
+	if (File_Length(filename) & 0x1ff)
+	{
+		Log_Printf(LOG_ERROR, "HD file '%s' has strange size!\n", filename);
 		return FALSE;
+	}
+
+
+	if ((hd_image_file = fopen(filename, "rb+")) == NULL)
+	{
+		Log_Printf(LOG_ERROR, "Can not open HD file '%s'!\n", filename);
+		return FALSE;
+	}
 
 	HDC_GetInfo();
+	/*
 	if (!nPartitions)
 	{
 		fclose( hd_image_file );
@@ -343,8 +398,11 @@ BOOL HDC_Init(char *filename)
 		ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
 		return FALSE;
 	}
+	*/
 	/* set number of partitions */
 	nNumDrives += nPartitions;
+
+	bAcsiEmuOn = TRUE;
 
 	return TRUE;
 }
@@ -357,12 +415,15 @@ BOOL HDC_Init(char *filename)
  */
 void HDC_UnInit(void)
 {
-	if (!(ACSI_EMU_ON))
+	if (!bAcsiEmuOn)
 		return;
+
 	fclose(hd_image_file);
 	hd_image_file = NULL;
+
 	nNumDrives -= nPartitions;
 	nPartitions = 0;
+	bAcsiEmuOn = FALSE;
 }
 
 
@@ -378,7 +439,7 @@ void HDC_WriteCommandPacket(void)
 		return;
 
 	/* is HDC emulation enabled? */
-	if (!(ACSI_EMU_ON))
+	if (!bAcsiEmuOn)
 		return;
 
 	/* command byte sent, store it. */

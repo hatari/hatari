@@ -12,7 +12,7 @@
   checked each HBL to perform the transfer of data from our disk image into
   the ST RAM area by simulating the DMA.
 */
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.28 2006-02-13 21:18:53 eerot Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.29 2006-08-10 17:26:38 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -1148,7 +1148,7 @@ void FDC_DiskController_WriteWord(void)
 	HDC_WriteCommandPacket();                 /*  Handle HDC functions */
 
 	/* filter hdc commands */
-	if ((DMAModeControl_ff8606wr & 0x0018) == 8 && nPartitions == 0)
+	if ((DMAModeControl_ff8606wr & 0x0018) == 8 && !bAcsiEmuOn)
 		return;
 
 	/* Are we trying to set the SectorCount? */

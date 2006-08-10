@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  This file contains definitios used for hardware-level
+  This file contains definitions which are used for hardware-level
   harddrive emulation.
 */
 
@@ -45,8 +45,8 @@
 #define HD_STATUS_NODRIVE  0x25               /* Invalid drive */
 #define HD_STATUS_OPCODE   0x20               /* Opcode not supported */
 
-#define ACSI_EMU_ON         (nPartitions != 0) 
-/* do we have hdc emulation */
+#define ACSI_EMU_ON        bAcsiEmuOn         /* Do we have HDC emulation? */
+
 /* 
    Structure representing an ACSI command block.
 */
@@ -60,6 +60,7 @@ extern FILE *hd_image_file;
 extern HDCOMMAND HDCCommand;
 extern short int HDCSectorCount;
 extern int nPartitions;
+extern BOOL bAcsiEmuOn;
 
 extern BOOL HDC_Init(char *filename);
 extern void HDC_UnInit(void);
