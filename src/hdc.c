@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.14 2006-08-10 19:10:35 thothy Exp $";
+const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.15 2006-08-11 09:25:43 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -411,8 +411,16 @@ void HDC_DebugCommandPacket(FILE *hdlogFile)
 */
 static void HDC_GetInfo(void)
 {
+/* Partition table contains hd size + 4 partition entries
+ * (composed of flag byte, 3 char ID, start offset and size),
+ * this is followed by bad sector list + count and the root sector checksum.
+ * Before this there's the boot code and with ICD hd driver additional 8
+ * partition entries (at offset 0x156).
+ */
+#define HD_PARTITIONTABLE_SIZE (4+4*12)
+#define HD_PARTITIONTABLE_OFFSET 0x1C2
 	long offset;
-	unsigned char hdinfo[64];
+	unsigned char hdinfo[HD_PARTITIONTABLE_SIZE];
 	int i;
 #ifdef HDC_VERBOSE
 	unsigned long size;
@@ -423,8 +431,8 @@ static void HDC_GetInfo(void)
 		return;
 	offset = ftell(hd_image_file);
 
-	fseek(hd_image_file, 0x1C2, 0);
-	fread(hdinfo, 64, 1, hd_image_file);
+	fseek(hd_image_file, HD_PARTITIONTABLE_OFFSET, 0);
+	fread(hdinfo, HD_PARTITIONTABLE_SIZE, 1, hd_image_file);
 
 #ifdef HDC_VERBOSE
 	size = (((unsigned long) hdinfo[0] << 24)
@@ -433,6 +441,7 @@ static void HDC_GetInfo(void)
 	        | ((unsigned long) hdinfo[3]));
 
 	fprintf(stderr, "Total disk size %li Mb\n", size>>11);
+	/* flags for each partition entry are zero if they are not valid */
 	fprintf(stderr, "Partition 0 exists?: %s\n", (hdinfo[4] != 0)?"Yes":"No");
 	fprintf(stderr, "Partition 1 exists?: %s\n", (hdinfo[4+12] != 0)?"Yes":"No");
 	fprintf(stderr, "Partition 2 exists?: %s\n", (hdinfo[4+24] != 0)?"Yes":"No");
