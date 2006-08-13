@@ -12,7 +12,7 @@
   checked each HBL to perform the transfer of data from our disk image into
   the ST RAM area by simulating the DMA.
 */
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.29 2006-08-10 17:26:38 thothy Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.30 2006-08-13 23:33:32 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -273,7 +273,7 @@ void FDC_ResetDMAStatus(void)
 
 	HDCSectorCount = 0;
 	HDCCommand.byteCount = 0;         /* Reset HDC command status */
-	HDCCommand.returnCode = 0xFF;
+	HDCCommand.returnCode = 0;
 }
 
 
@@ -299,7 +299,7 @@ void FDC_SetDMAStatus(BOOL bError)
 	/* Set zero sector count */
 
 	if (DMAModeControl_ff8606wr&0x08)         /* Get which sector count? */
-		DMAStatus_ff8606rd |= (HDCSectorCount)?0:0x2;         /* HDC */
+		DMAStatus_ff8606rd |= (HDCSectorCount)?0x2:0;         /* HDC */
 	else
 		DMAStatus_ff8606rd |= (FDCSectorCountRegister)?0x2:0; /* FDC */
 	/* Perhaps the DRQ should be set here */
@@ -1148,14 +1148,15 @@ void FDC_DiskController_WriteWord(void)
 	HDC_WriteCommandPacket();                 /*  Handle HDC functions */
 
 	/* filter hdc commands */
-	if ((DMAModeControl_ff8606wr & 0x0018) == 8 && !bAcsiEmuOn)
-		return;
+	if ((DMAModeControl_ff8606wr & 0x0018) == 8)
+		return;	
 
 	/* Are we trying to set the SectorCount? */
 	if (DMAModeControl_ff8606wr&0x10)         /* Bit 4 */
 		FDC_WriteSectorCountRegister();
 	else
-	{   /* Write to FDC registers */
+	{
+		/* Write to FDC registers */
 		switch(DMAModeControl_ff8606wr&0x6)
 		{   /* Bits 1,2 (A1,A0) */
 		 case 0x0:                            /* 0 0 - Command register */
@@ -1193,10 +1194,15 @@ void FDC_DiskControllerStatus_ReadWord(void)
 
 	M68000_WaitState(4);
 
-	if (DMAModeControl_ff8606wr == 0x08A)     /* HDC status reg selected? */
+	if ((DMAModeControl_ff8606wr & 0x18) == 0x08)     /* HDC status reg selected? */
 	{
 		/* return the HDC status reg */
 		DiskControllerByte = HDCCommand.returnCode;
+	}
+	else if ((DMAModeControl_ff8606wr & 0x18) == 0x18)  /* HDC sector counter??? */
+	{
+		Log_Printf(LOG_DEBUG, "*** Read HDC sector counter???\n");
+		DiskControllerByte = HDCSectorCount;
 	}
 	else
 	{

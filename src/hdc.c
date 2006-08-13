@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.15 2006-08-11 09:25:43 eerot Exp $";
+const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.16 2006-08-13 23:33:32 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -49,6 +49,10 @@ FILE *hd_image_file = NULL;
 int nPartitions = 0;
 short int HDCSectorCount;
 BOOL bAcsiEmuOn = FALSE;
+
+static Uint32 nLastBlockAddr;
+static BOOL bSetLastBlockAddr;
+static Uint8 nLastError;
 
 /*
   FDC registers used:
@@ -97,14 +101,25 @@ static unsigned long HDC_GetOffset(void)
 /*
   Seek - move to a sector
 */
-static void HDC_Seek(void)
+static void HDC_Cmd_Seek(void)
 {
-	fseek(hd_image_file, HDC_GetOffset(),0);
+	nLastBlockAddr = HDC_GetOffset();
+
+	if (fseek(hd_image_file, nLastBlockAddr, SEEK_SET) == 0)
+	{
+		HDCCommand.returnCode = HD_STATUS_OK;
+		nLastError = HD_REQSENS_OK;
+	}
+	else
+	{
+		HDCCommand.returnCode = HD_STATUS_ERROR;
+		nLastError = HD_REQSENS_INVADDR;
+	}
 
 	FDC_SetDMAStatus(FALSE);              /* no DMA error */
 	FDC_AcknowledgeInterrupt();
-	HDCCommand.returnCode = HD_STATUS_OK;
-	FDCSectorCountRegister = 0;
+	bSetLastBlockAddr = TRUE;
+	//FDCSectorCountRegister = 0;
 }
 
 
@@ -112,7 +127,7 @@ static void HDC_Seek(void)
 /*
   Inquiry - return some disk information
 */
-static void HDC_Inquiry(void)
+static void HDC_Cmd_Inquiry(void)
 {
 #ifdef HDC_VERBOSE
 		fprintf(stderr,"Inquiry made.\n");
@@ -125,7 +140,9 @@ static void HDC_Inquiry(void)
 	FDC_SetDMAStatus(FALSE);              /* no DMA error */
 	FDC_AcknowledgeInterrupt();
 	HDCCommand.returnCode = HD_STATUS_OK;
-	FDCSectorCountRegister = 0;
+	nLastError = HD_REQSENS_OK;
+	bSetLastBlockAddr = FALSE;
+	//FDCSectorCountRegister = 0;
 }
 
 
@@ -133,34 +150,87 @@ static void HDC_Inquiry(void)
 /*
   Request sense - return some disk information
 */
-static void HDC_RequestSense(void)
+static void HDC_Cmd_RequestSense(void)
 {
 	Uint32 nDmaAddr;
+	int nRetLen;
+	Uint8 retbuf[22];
 
 #ifdef HDC_VERBOSE
 	fprintf(stderr,"HDC: Request Sense.\n");
 #endif
 
-	if (HD_SECTORCOUNT(HDCCommand) != 4)
+	nRetLen = HD_SECTORCOUNT(HDCCommand);
+
+	if ((nRetLen < 4 && nRetLen != 0) || nRetLen > 22)
 	{
-		Log_Printf(LOG_ERROR, "HDC: Strange REQUEST SENSE\n");
-		return;
+		Log_Printf(LOG_ERROR, "HDC: *** Strange REQUEST SENSE ***!\n");
+	}
+
+	/* Limit to sane length */
+	if (nRetLen <= 0)
+	{
+		nRetLen = 4;
+	}
+	else if (nRetLen > 22)
+	{
+		nRetLen = 22;
 	}
 
 	nDmaAddr = FDC_ReadDMAAddress();
 
-	if (HD_CONTROLLER(HDCCommand) == 0 && HD_DRIVENUM(HDCCommand) == 0)
-		STRam[nDmaAddr] = 0;            /* Always OK at the moment */
+	memset(retbuf, 0, nRetLen);
+
+	if (nRetLen <= 4)
+	{
+		retbuf[0] = nLastError;
+		if (bSetLastBlockAddr)
+		{
+			retbuf[0] |= 0x80;
+			retbuf[1] = nLastBlockAddr >> 16;
+			retbuf[2] = nLastBlockAddr >> 8;
+			retbuf[3] = nLastBlockAddr;
+		}
+	}
 	else
-		STRam[nDmaAddr] = 4;            /* Drive not ready */
-	STRam[nDmaAddr+1] = 0;
-	STRam[nDmaAddr+2] = 0;
-	STRam[nDmaAddr+3] = 0;
+	{
+		retbuf[0] = 0x70;
+		if (bSetLastBlockAddr)
+		{
+			retbuf[0] |= 0x80;
+			retbuf[4] = nLastBlockAddr >> 16;
+			retbuf[5] = nLastBlockAddr >> 8;
+			retbuf[6] = nLastBlockAddr;
+		}
+		switch (nLastError)
+		{
+		 case HD_REQSENS_OK:  retbuf[2] = 0; break;
+		 case HD_REQSENS_OPCODE:  retbuf[2] = 5; break;
+		 case HD_REQSENS_INVADDR:  retbuf[2] = 5; break;
+		 case HD_REQSENS_INVARG:  retbuf[2] = 5; break;
+		 case HD_REQSENS_NODRIVE:  retbuf[2] = 2; break;
+		 default: retbuf[2] = 4; break;
+		}
+		retbuf[7] = 14;
+		retbuf[12] = nLastError;
+		retbuf[19] = nLastBlockAddr >> 16;
+		retbuf[20] = nLastBlockAddr >> 8;
+		retbuf[21] = nLastBlockAddr;
+	}
+
+	/*
+	fprintf(stderr,"*** Requested sense packet:\n");
+	int i;
+	for (i = 0; i<nRetLen; i++) fprintf(stderr,"%2x ",retbuf[i]);
+	fprintf(stderr,"\n");
+	*/
+
+	memcpy(&STRam[nDmaAddr], retbuf, nRetLen);
 
 	FDC_SetDMAStatus(FALSE);            /* no DMA error */
 	FDC_AcknowledgeInterrupt();
 	HDCCommand.returnCode = HD_STATUS_OK;
-	FDCSectorCountRegister = 0;
+	//FDCSectorCountRegister = 0;
 }
 
 
@@ -169,7 +239,7 @@ static void HDC_RequestSense(void)
   Mode sense - Get parameters from disk.
   (Just enough to make the HDX tool from AHDI 5.0 happy)
 */
-static void HDC_ModeSense(void)
+static void HDC_Cmd_ModeSense(void)
 {
 	Uint32 nDmaAddr;
 
@@ -204,17 +274,21 @@ static void HDC_ModeSense(void)
 		STRam[nDmaAddr+13] = 0;
 		STRam[nDmaAddr+14] = 0;
 		STRam[nDmaAddr+15] = 0;
+
+		HDCCommand.returnCode = HD_STATUS_OK;
+		nLastError = HD_REQSENS_OK;
 	}
 	else
 	{
 		Log_Printf(LOG_ERROR, "HDC: Unsupported MODE SENSE command\n");
-		return;
+		HDCCommand.returnCode = HD_STATUS_ERROR;
+		nLastError = HD_REQSENS_INVARG;
 	}
 
 	FDC_SetDMAStatus(FALSE);            /* no DMA error */
 	FDC_AcknowledgeInterrupt();
-	HDCCommand.returnCode = HD_STATUS_OK;
-	FDCSectorCountRegister = 0;
+	bSetLastBlockAddr = FALSE;
+	//FDCSectorCountRegister = 0;
 }
 
 
@@ -222,7 +296,7 @@ static void HDC_ModeSense(void)
 /*
   Format drive.
 */
-static void HDC_FormatDrive(void)
+static void HDC_Cmd_FormatDrive(void)
 {
 #ifdef HDC_VERBOSE
 	fprintf(stderr,"HDC: Format drive!\n");
@@ -233,7 +307,9 @@ static void HDC_FormatDrive(void)
 	FDC_SetDMAStatus(FALSE);            /* no DMA error */
 	FDC_AcknowledgeInterrupt();
 	HDCCommand.returnCode = HD_STATUS_OK;
-	FDCSectorCountRegister = 0;
+	nLastError = HD_REQSENS_OK;
+	bSetLastBlockAddr = FALSE;
+	//FDCSectorCountRegister = 0;
 }
 
 
@@ -241,21 +317,32 @@ static void HDC_FormatDrive(void)
 /*
   Write a sector off our disk - (seek implied)
 */
-static void HDC_WriteSector(void)
+static void HDC_Cmd_WriteSector(void)
 {
-	/* seek to the position */
-	fseek(hd_image_file, HDC_GetOffset(),0);
+	nLastBlockAddr = HDC_GetOffset();
 
-	/* write -if allowed */
+	/* seek to the position */
+	if (fseek(hd_image_file, nLastBlockAddr, SEEK_SET) != 0)
+	{
+		HDCCommand.returnCode = HD_STATUS_ERROR;
+		nLastError = HD_REQSENS_INVADDR;
+	}
+	else
+	{
+		HDCCommand.returnCode = HD_STATUS_OK;
+		nLastError = HD_REQSENS_OK;
+
+		/* write - if allowed */
 #ifndef DISALLOW_HDC_WRITE
-	fwrite(&STRam[FDC_ReadDMAAddress()], 512, HD_SECTORCOUNT(HDCCommand),
-	       hd_image_file);
+		fwrite(&STRam[FDC_ReadDMAAddress()], 512, HD_SECTORCOUNT(HDCCommand),
+		       hd_image_file);
 #endif
+	}
 
 	FDC_SetDMAStatus(FALSE);              /* no DMA error */
 	FDC_AcknowledgeInterrupt();
-	HDCCommand.returnCode = HD_STATUS_OK;
-	FDCSectorCountRegister = 0;
+	bSetLastBlockAddr = TRUE;
+	//FDCSectorCountRegister = 0;
 }
 
 
@@ -263,23 +350,33 @@ static void HDC_WriteSector(void)
 /*
   Read a sector off our disk - (implied seek)
 */
-static void HDC_ReadSector(void)
+static void HDC_Cmd_ReadSector(void)
 {
-	/* seek to the position */
-	fseek(hd_image_file, HDC_GetOffset(),0);
+	nLastBlockAddr = HDC_GetOffset();
 
 #ifdef HDC_VERBOSE
-	fprintf(stderr,"Reading %i sectors from 0x%lx to addr: 0x%x\n",
-	        HD_SECTORCOUNT(HDCCommand), HDC_GetOffset() ,FDC_ReadDMAAddress());
+	fprintf(stderr,"Reading %i sectors from 0x%x to addr: 0x%x\n",
+	        HD_SECTORCOUNT(HDCCommand), nLastBlockAddr, FDC_ReadDMAAddress());
 #endif
 
-	fread(&STRam[FDC_ReadDMAAddress()], 512, HD_SECTORCOUNT(HDCCommand),
-	      hd_image_file);
+	/* seek to the position */
+	if (fseek(hd_image_file, nLastBlockAddr, SEEK_SET) != 0)
+	{
+		HDCCommand.returnCode = HD_STATUS_ERROR;
+		nLastError = HD_REQSENS_INVADDR;
+	}
+	else
+	{
+		fread(&STRam[FDC_ReadDMAAddress()], 512, HD_SECTORCOUNT(HDCCommand),
+		      hd_image_file);
+		HDCCommand.returnCode = HD_STATUS_OK;
+		nLastError = HD_REQSENS_OK;
+	}
 
 	FDC_SetDMAStatus(FALSE);              /* no DMA error */
 	FDC_AcknowledgeInterrupt();
-	HDCCommand.returnCode = HD_STATUS_OK;
-	FDCSectorCountRegister = 0;
+	bSetLastBlockAddr = TRUE;
+	//FDCSectorCountRegister = 0;
 }
 
 
@@ -294,18 +391,18 @@ void HDC_EmulateCommandPacket()
 	{
 
 	 case HD_READ_SECTOR:
-		HDC_ReadSector();
+		HDC_Cmd_ReadSector();
 		break;
 	 case HD_WRITE_SECTOR:
-		HDC_WriteSector();
+		HDC_Cmd_WriteSector();
 		break;
 
 	 case HD_INQUIRY:
-		HDC_Inquiry();
+		HDC_Cmd_Inquiry();
 		break;
 
 	 case HD_SEEK:
-		HDC_Seek();
+		HDC_Cmd_Seek();
 		break;
 
 	 case HD_SHIP:
@@ -314,15 +411,24 @@ void HDC_EmulateCommandPacket()
 		break;
 
 	 case HD_REQ_SENSE:
-		HDC_RequestSense();
+		HDC_Cmd_RequestSense();
+		break;
+
+	 case HD_MODESELECT:
+		Log_Printf(LOG_DEBUG, "HDC: MODE SELECT call not implemented yet.\n");
+		HDCCommand.returnCode = HD_STATUS_OK;
+		nLastError = HD_REQSENS_OK;
+		bSetLastBlockAddr = FALSE;
+		FDC_SetDMAStatus(FALSE);
+		FDC_AcknowledgeInterrupt();
 		break;
 
 	 case HD_MODESENSE:
-		HDC_ModeSense();
+		HDC_Cmd_ModeSense();
 		break;
 
 	 case HD_FORMAT_DRIVE:
-		HDC_FormatDrive();
+		HDC_Cmd_FormatDrive();
 		break;
 
 	 /* as of yet unsupported commands */
@@ -331,7 +437,9 @@ void HDC_EmulateCommandPacket()
 	 case HD_CORRECTION:
 
 	 default:
-		HDCCommand.returnCode = HD_STATUS_OPCODE;
+		HDCCommand.returnCode = HD_STATUS_ERROR;
+		nLastError = HD_REQSENS_OPCODE;
+		bSetLastBlockAddr = FALSE;
 		FDC_AcknowledgeInterrupt();
 		break;
 	}
@@ -399,7 +507,7 @@ void HDC_DebugCommandPacket(FILE *hdlogFile)
 
 	fprintf(hdlogFile, "Sector count: 0x%x\n", HD_SECTORCOUNT(HDCCommand));
 	fprintf(hdlogFile, "HDC sector count: 0x%x\n", HDCSectorCount);
-	fprintf(hdlogFile, "FDC sector count: 0x%x\n", FDCSectorCountRegister);
+	//fprintf(hdlogFile, "FDC sector count: 0x%x\n", FDCSectorCountRegister);
 	fprintf(hdlogFile, "Control byte: 0x%x\n", HD_CONTROL(HDCCommand));
 }
 #endif
@@ -479,15 +587,7 @@ BOOL HDC_Init(char *filename)
 	}
 
 	HDC_GetInfo();
-	/*
-	if (!nPartitions)
-	{
-		fclose( hd_image_file );
-		hd_image_file = NULL;
-		ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
-		return FALSE;
-	}
-	*/
+
 	/* set number of partitions */
 	nNumDrives += nPartitions;
 
@@ -535,7 +635,7 @@ void HDC_WriteCommandPacket(void)
 	HDCCommand.command[HDCCommand.byteCount++] =  (DiskControllerWord_ff8604wr&0xFF);
 
 	/* have we received a complete 6-byte packet yet? */
-	if(HDCCommand.byteCount >= 6)
+	if (HDCCommand.byteCount >= 6)
 	{
 
 #ifdef HDC_REALLY_VERBOSE
@@ -543,21 +643,38 @@ void HDC_WriteCommandPacket(void)
 #endif
 
 		/* If it's aimed for our drive, emulate it! */
-		if((HD_CONTROLLER(HDCCommand)) == 0)
+		if ((HD_CONTROLLER(HDCCommand)) == 0)
 		{
-			if(HD_DRIVENUM(HDCCommand) == 0)
+			if (HD_DRIVENUM(HDCCommand) == 0)
 				HDC_EmulateCommandPacket();
+			else
+				Log_Printf(LOG_WARN, "HDC: Program tries to access illegal drive.\n");
 		}
 		else
 		{
 			/* No drive/controller */
 			FDC_SetDMAStatus(TRUE);
 			//FDC_AcknowledgeInterrupt();
-			HDCCommand.returnCode = HD_STATUS_NODRIVE;
-			FDCSectorCountRegister = 0;
+			HDCCommand.returnCode = HD_STATUS_ERROR;
+			//FDCSectorCountRegister = 0;
 			MFP_GPIP |= 0x20;
 		}
 
 		HDCCommand.byteCount = 0;
+	}
+	else
+	{
+		if (HD_CONTROLLER(HDCCommand) == 0)
+		{
+			FDC_AcknowledgeInterrupt();
+			FDC_SetDMAStatus(FALSE);
+			HDCCommand.returnCode = HD_STATUS_OK;
+		}
+		else
+		{
+			/* If there's no controller, the interrupt line stays high */
+			HDCCommand.returnCode = HD_STATUS_ERROR;
+			MFP_GPIP |= 0x20;
+		}
 	}
 }
