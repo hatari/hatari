@@ -14,6 +14,8 @@
 - Marco Herrn <marco@mherrn.de> : Wrote the initial version of the "man" page
   of Hatari and maintains the Hatari Debian packages.
 
+- Sébastien Molines : Maintains the new fancy Mac OS X GUI for Hatari.
+
 
  Contributors:
  -------------
@@ -50,7 +52,13 @@ please remind me!):
 - Matthias Alles : He initiated the port of Hatari to MiNT and helped me with
   a lot of technical questions about the ST.
 
-- "Jo" : Patches for compiling Hatari on a 64-bit Alpha machine.
+- "Jo" (?) : Patches for compiling Hatari on a 64-bit Alpha machine.
+
+- Ventzislav Tzvetkov : Joystick closing patch; ported Hatari to AmigaOS.
+
+- Mark Keates : Patches for compiling Hatari with MinGW.
+
+- Anatol Paruntik (?) : Patches for compiling Hatari on QNX.
 
 
  Code from other projects

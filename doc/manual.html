@@ -48,7 +48,7 @@
 <h1 align="center">Hatari User's Manual</h1>
 
 <p align="center">
-Version 0.80
+Version 0.90
 </p>
 <p align="center">
 Project initiator and main developer of Hatari: <strong>Thomas Huth</strong>
@@ -102,6 +102,10 @@ Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
   </ul>
   <li><a href="#Floppy disk images">Floppy disk images</a>
   <li><a href="#Hard disk support">Hard disk support</a>
+  <ul>
+    <li><a href="#ACSI hard disk emulation">ACSI hard disk emulation</a></li>
+    <li><a href="#GEMDOS based hard disk emulation">GEMDOS based hard disk emulation</a></li>
+  </ul>
   <li><a href="#Appendix">Appendix</a>
   <ul>
     <li><a href="#Copying">Copying</a>
@@ -152,7 +156,7 @@ and demos. Of course you can run normal GEM applications with Hatari, too.
   <li>ST Shifter with ST-High, ST-Medium and ST-Low resolutions,
 overscan effects for lower border and partially in the upper, left and
 right border too</li>
-  <li>512 colour ST palette</li>
+  <li>512 color ST palette</li>
   <li>Blitter chip emulation (not very accurate)</li>
   <li>PSG YM2149 emulation (soundchip) including STFM samples</li>
   <li>Printer emulation on GEMDOS and Hardware level (print to file)</li>
@@ -176,12 +180,12 @@ and *.DIM)</li>
   <li>recording of sound as .WAV and .YM files</li>
   <li>screenshots in .BMP format</li>
   <li>animation capturing</li>
-  <li>interlaced rendering of ST-Low and ST-Medium resolutions </li>
-  <li>scaling of ST-Low and ST-Medium to 800x600 resolution </li>
+  <li>scaling of ST-low resolution by factor two</li>
+  <li>interleaved lines rendering of ST-medium and (scaled) ST-low resolutions</li>
 </ul>
 
 <a name="Experimental STE hardware emulation:"></a><h4>Experimental STE hardware emulation:</h4>
-STE emulation is still considered as instable, but if you dare to use it,
+STE emulation is still a little bit experimental, but basically
 there is support for most of the enhanced STE features:
 <ul>
   <li>horizontal and vertical hardware fine scrolling</li>
@@ -269,15 +273,18 @@ in the src/ subdirectory.
 
 <a name="Installation of a TOS ROM"></a><h3>Installation of a TOS ROM</h3>
 
-<p> Then you'll have to copy a TOS ROM to the data directory (the data
-directory is specified
+<p>
+Before you can start Hatari, you have to copy a TOS ROM image to the data
+directory (the data directory is specified
 in the configuration file <span class="file">Makefile.cnf</span>) and
 rename it to <span class="commandline">tos.img</span>, or use the
 <span class="commandline">--tos</span> command line option to tell
 Hatari where to find a TOS ROM.
 Hatari needs a TOS ROM image because this contains the operating system
-of the emulated Atari.</p>
-<p> Sorry, it is not possible to ship an original ROM
+of the emulated Atari.
+</p>
+<p>
+Unfortunately it is not possible to ship an original ROM
 image with the Hatari package since these images are still copyrighted.
 But you can easily create an image with a real ST and one of those various
 ROM-image programs for the ST (search for &quot;TOSDUMP&quot; with your
@@ -319,7 +326,7 @@ to toggle windowed and fullscreen mode. </p>
 
 <a name="Command line options"></a><h2>Command line options</h2>
 
-<p> Hatari ofcourse understands several command line options. </p>
+<p> Hatari of course understands several command line options. </p>
 <p> Type <span class="commandline">hatari --help</span> to list them
 all. </p>
 <p> The command line options in detail are as follows (in brackets the
@@ -548,15 +555,16 @@ from the emulated drive. The emulated ST will act as if had no floppy
 disk in its drive.</p>
 <p>You can specify a default directory where Hatari will start to
 browse the filesystem.</p>
-<p>Check the "Auto insert B" option if you want Hatari to be smart and
-insert the second disk
-of a two disk game automatically. This option will insert the second
-disk in drive B and some
-games may not be able to find the disks there. In that rare case you
-will need to insert the
-second disk manually when prompted.</p>
 <p>
-<em>NOTE:</em> This option does not always work properly.
+Check the "Auto insert B" option if you want Hatari to be smart and
+insert the second disk of a two disk game automatically.
+Some games then use the second drive automatically.
+In the case that a game is not able to find the disk in the second drive,
+you have to insert the second disk in drive A: manually when prompted.
+<br>
+<em>NOTE:</em> This option only works properly if the file name of the
+first disks ends with an 'a' before the extension and the second disk name
+ends with a 'b'.
 </p>
 <p>If you need to create a new blank disk image, click on <span
  class="button">Create disk image</span>.
@@ -685,8 +693,8 @@ to color modes from the running ST.
 This toggle acts like a monitor switch with a color and monochrome
 monitor connected.</p>
 <p>"Zoom ST-Low res." will control if Hatari renders ST-LOW to a
-320x200 or 640x400 PC display (with borders turned off) or 384x267 or
-768x534.
+320x200 or 640x400 PC display (with borders turned off) or 384x276 or
+768x552.
 Basically select this to toggle between a small or a large window.</p>
 Extended GEM resolutions will emulate some sort of extended graphics
 card in the emulated ST giving you larger resolutions and a higher
@@ -1064,12 +1072,30 @@ a zipped disk image.</p>
 
 <p>Hatari supports two ways of emulating a ST hard drive: The low-level
 ACSI hard disk emulation and a GEMDOS based drive emulation. </p>
-<p>To use the ACSI hard disk emulation, you need a hard disk image file
+
+<a name="ACSI hard disk emulation"></a><h3>ACSI hard disk emulation</h3>
+<p>
+To use the ACSI hard disk emulation, you need a hard disk image file
 with a pre-installed HD driver in it. So either try to image your old
-ST
-hard disk or grab one from the internet. There is a HD image on the
-Hatari web page for download. Perhaps we'll also provide a tool for
-creating HD images one day. </p>
+ST hard disk or grab one from the internet (e.g. from the Hatari website).
+Please note that AHDI 5.0 is the <em>only</em> hard disk driver that
+is currently working and supported. Other hard disk drivers likely will not
+work.
+</p>
+<p>
+To create a new ACSI hard disk image, you can start with an empty image that
+you have for example created with the following command:
+<span class="commandline">dd if=/dev/zero of=hd.img bs=512 count=xxx</span>.
+Then copy the complete AHDI 5.0 package to a floppy disk image, and enable
+this floppy disk image and the fresh hard disk image in the emulator.
+Start HDX.PRG from the floppy disk and format and partition the hard disk
+with this tool. When you're finished, you have to restart the emulated system,
+run AHDI.PRG from the floppy disk and HINSTALL.PRG afterwards.
+With HINSTALL.PRG you can install the hard disk driver to the fresh HD image,
+so you can directly boot from the hard disk image in the future.
+</p>
+
+<a name="GEMDOS based hard disk emulation"></a><h3>GEMDOS based hard disk emulation</h3>
 <p>With the GEMDOS based drive emulation, you can easily "mount" a
 folder from the host file system to a drive of the emulated Atari. To
 use the GEMDOS based drive emulation, you should use a folder on your
@@ -1093,7 +1119,11 @@ GEMDOS drive emulation. </p>
 <p> Note that changing the HD-image or the GEMDOS HD-folder will reset
 the emulated Atari since it is not possible to switch the hard disk
 while the emulator is running. </p>
-<p> May the fun without the price to be with you ;-) ! </p>
+
+<p>
+That's all for the moment.
+May the fun without the price to be with you ;-) !
+</p>
 
 <a name="Appendix"></a><h2>Appendix</h2>
 
