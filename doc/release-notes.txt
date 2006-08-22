@@ -4,6 +4,36 @@
                                 Release Notes
 
 
+ Version 0.90 (2006-08-22):
+ --------------------------
+
+- Better Spectrum 512 support (60Hz support, improved I/O memory waitstates)
+- STE right border opening support (used in Obsession, Pacemaker)
+- Blitter Smudge mode support (used in Pacemaker demo)
+- Wheel-mouse simulates cursor up and down
+- Work-around to FDC handling, --slow-fdc option is not anymore needed
+- Bugfix to MFP, sound works now in more YMRockerz releases
+- Bugfix to GEMDOS path handling (Hatari SIGSEGV)
+- Bugfix to emulated memory initialization (4MB was cleared earlier, now
+  exactly the amount set up for Hatari.  Saves memory on embedded systems
+  if less than 4MB is specified.)
+- Re-written command-line option handling
+- (Again) lots of code const/static, type usage and indentation cleanup
+- Preliminary support for TOS 3.0x and 030 TT software that runs in ST
+  resolutions and doesn't need MMU (
+- Native GUI for Mac OSX
+- ACSI emulation fixes to get HD formatting to work with AHDI 5. HD emulation
+  now works quite fine with AHDI 5 (but other HD drivers are currently not
+  supported)
+- Joystick shortcut changed to toggle cursor emulation between ports
+  0 and 1
+- Keys for all Hatari shortcuts can now be configured from hatari.cfg
+- Added command line option for setting ST keyboard mapping
+- Joystick command line option requires now parameter for a port for which
+  the joystick cursor emu is enabled
+- Fixed relative mouse event handling in zoomed low-rez
+
+
  Version 0.80 (2005-10-12):
  --------------------------
 

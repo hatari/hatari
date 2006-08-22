@@ -23,8 +23,6 @@ touch with us:
   good replacement (STSoundLibrary by Leonard, STonX, Castaway CE, SC68,
   STsndplay or psgplay by NoCrew, ...).
 
-- Fix sound problems on systems with inaccurate SDL_Delay (e.g. on Mac OS X)
-
 - Fix IKBD emulation (e.g. some games like "Big Run" have problems with the
   joystick fire button).
 
@@ -49,11 +47,13 @@ touch with us:
 
 - Fix the problems with horizontal STE scrolling (Zool, Mind Rewind demo, ...)
 
-- Add support for STE small overscan effect (Endscreen in Pacemaker by Paradox,
-  Obsession, Skulls, ...)
+- Add x3 and x4 zooming routines for ST-Low resolution.
 
 - Include some fancy zooming routines like 2xSaI or Super-Eagle.
 
-- Add support for hardware accelerated zooming with SDL YUV overlays.
+- Add support for hardware accelerated zooming with SDL YUV overlays or
+  OpenGL.
 
 - Improve shifter emulation (full screen effects, sync scrolling, ...)
+
+- Improve the built-in debugger.

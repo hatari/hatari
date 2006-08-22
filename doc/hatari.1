@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2004-12-14" "Hatari" ""
+.TH "HATARI" "1" "2006-08-22" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
@@ -41,8 +41,8 @@ start the emulator in fullscreen mode
 .B \-w, \-\-window
 start the emulator in window mode
 .TP 
-.B \-j, \-\-joystick
-activate joystick emulation via cursor keys
+.B \-j, \-\-joystick <port>
+emulate ST joystick in <port> 0 or 1 with keyboard
 .TP 
 .B \-\-nosound
 disable sound (makes emulation faster)
@@ -69,12 +69,10 @@ specify TOS ROM image to use
 use ROM cartridge image <file> (only works if GEMDOS HD emulation and
 extended VDI resolution are disabled)
 .TP 
-.B \-\-memsize x
+.B \-s, \-\-memsize x
 set amount of emulated RAM
 .br 
-x=0 for 512K,
-.br 
-x=1, x=2 or x=4 for 1, 2 or 4 MB
+x=0 for 512K, and x=1, x=2 or x=4 for 1, 2 or 4 MB
 .TP 
 .B \-\-cpulevel x
 specify CPU (680x0) to use (TOS 2.06 only!!)
@@ -102,8 +100,13 @@ use the mentioned file as configuration file instead of ~/.hatari.cfg
 .TP 
 .B \-\-machine <x>
 select machine type (x = st or ste)
+.TP 
+.B \-\-keymap <file>
+load keyboard mapping from <file>
 
 .SH "COMMANDS"
+The shortcut keys can be configured in the configuration file.
+The default settings are:
 .TP
 .B AltGr + a
 record animation
@@ -187,12 +190,15 @@ The homepage of hatari: http://hatari.sourceforge.net
 
 .SH "FILES"
 .TP
+/etc/hatari.cfg (or /usr/local/etc/hatari.cfg)
+the global configuration file of Hatari
+.TP
 ~/.hatari.cfg
-the personal Hatari configuration file
+the user's personal Hatari configuration file
 .TP
 tos.img
-TOS ROM will be searched from current directory if it's not
-specified in the command line
+The TOS ROM image will be loaded from the data directory of Hatari unless it
+is specified on the command line or the configuration file.
 
 .SH "AUTHOR"
 This manual page was written by Marco Herrn <marco@mherrn.de>, for the
