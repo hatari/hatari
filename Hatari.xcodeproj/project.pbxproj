@@ -162,6 +162,8 @@
 		9670E1AA0A5FA132009A73E0 /* options.c in Sources */ = {isa = PBXBuildFile; fileRef = 968DE4D30A59B234007517A4 /* options.c */; };
 		9670E1AC0A5FA132009A73E0 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		9670E1C20A5FA25A009A73E0 /* SDL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9670E1C10A5FA25A009A73E0 /* SDL.framework */; };
+		969191280AA205A80008B3A0 /* scandir.c in Sources */ = {isa = PBXBuildFile; fileRef = 969191270AA205A80008B3A0 /* scandir.c */; };
+		9691912A0AA205D60008B3A0 /* scandir.h in Headers */ = {isa = PBXBuildFile; fileRef = 969191290AA205D60008B3A0 /* scandir.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -189,6 +191,8 @@
 		968DE4CE0A59B1E8007517A4 /* gemdos_defines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gemdos_defines.h; sourceTree = "<group>"; };
 		968DE4CF0A59B1E8007517A4 /* options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = options.h; sourceTree = "<group>"; };
 		968DE4D30A59B234007517A4 /* options.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = options.c; path = src/options.c; sourceTree = "<group>"; };
+		969191270AA205A80008B3A0 /* scandir.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = scandir.c; path = src/scandir.c; sourceTree = "<group>"; };
+		969191290AA205D60008B3A0 /* scandir.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scandir.h; sourceTree = "<group>"; };
 		96BEBB3F0A567AC0007ADA48 /* AlertHooks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AlertHooks.h; sourceTree = "<group>"; };
 		96BEBB400A567AC0007ADA48 /* AlertHooks.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AlertHooks.m; sourceTree = "<group>"; };
 		96C84DB40A549F4B00CAF172 /* Shared.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Shared.h; sourceTree = "<group>"; };
@@ -394,6 +398,7 @@
 		29B97315FDCFA39411CA2CEA /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
+				969191270AA205A80008B3A0 /* scandir.c */,
 				968DE4D30A59B234007517A4 /* options.c */,
 				E930274E08EC5CD0000FB60E /* dmaSnd.c */,
 				E9283E7307512EA200DA6B24 /* audio.c */,
@@ -519,6 +524,7 @@
 		E9283E9D07512EA200DA6B24 /* includes */ = {
 			isa = PBXGroup;
 			children = (
+				969191290AA205D60008B3A0 /* scandir.h */,
 				968DE4CE0A59B1E8007517A4 /* gemdos_defines.h */,
 				968DE4CF0A59B1E8007517A4 /* options.h */,
 				9652821F0998136500BE6A34 /* cycles.h */,
@@ -682,6 +688,7 @@
 				9670E1530A5FA132009A73E0 /* AlertHooks.h in Headers */,
 				9670E1540A5FA132009A73E0 /* gemdos_defines.h in Headers */,
 				9670E1550A5FA132009A73E0 /* options.h in Headers */,
+				9691912A0AA205D60008B3A0 /* scandir.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -839,6 +846,7 @@
 				9670E1A80A5FA132009A73E0 /* AlertHooks.m in Sources */,
 				9670E1A90A5FA132009A73E0 /* dlgRom.c in Sources */,
 				9670E1AA0A5FA132009A73E0 /* options.c in Sources */,
+				969191280AA205A80008B3A0 /* scandir.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
