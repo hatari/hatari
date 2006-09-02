@@ -1,8 +1,13 @@
 # Makefile configuration for Hatari.
-
+#
+# Use of '?=' for assignment allows overriding the given value with
+# an environment variable, e.g. like this "make CC=my-gcc"
+#
+# Following variables can be overridden:
+#   CC, HOSTCC, DATADIR, CONFDIR, BINDIR
 
 # Set the C compiler (e.g. gcc)
-CC = gcc
+CC ?= gcc
 
 # What warnings to use
 WARNFLAGS = -Wmissing-prototypes -Wstrict-prototypes -Wsign-compare \
@@ -22,7 +27,7 @@ LDFLAGS =
 
 # The native C compiler.
 # This is normaly the same as $(CC) unless you are using a cross compiler.
-HOSTCC = $(CC)
+HOSTCC ?= $(CC)
 
 # Native C compiler flags:
 HOSTCFLAGS = -g -O -Wall
@@ -33,25 +38,26 @@ HOSTLDFLAGS =
 
 # SDL-Library configuration (compiler flags and linker options) - you normally
 # don't have to change this if you have correctly installed the SDL library!
-SDL_CFLAGS = $(shell sdl-config --cflags)
-SDL_LIBS = $(shell sdl-config --libs)
+SDL_CFLAGS := $(shell sdl-config --cflags)
+SDL_LIBS := $(shell sdl-config --libs)
 
 
 # Here you can define the default data directory for Hatari.
 # The emulator looks there for the default TOS image etc.
 # For example you can use the local directory with "." or if you want
 # a system-wide installation, use something like "/usr/share/hatari".
-DATADIR = .
+DATADIR ?= .
 
 # In this folder, Hatari searches the global configuration file.
 # /etc or /usr/local/etc is a good place for this.
-CONFDIR = /etc
+CONFDIR ?= /etc
 
 # The executable will be installed in BINDIR
-BINDIR = /usr/local/bin
+BINDIR ?= /usr/local/bin
 
 
 # Program used for "make install"
 INSTALL = install -c
 INSTALL_PROGRAM = $(INSTALL) -s
 INSTALL_DATA = $(INSTALL) -m 644
+
