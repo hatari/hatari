@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.33 2006-08-08 07:19:15 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.34 2006-09-12 17:55:44 eerot Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -306,17 +306,15 @@ int File_Length(const char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Return TRUE if file exists
+  Return TRUE if file exists and is readable
 */
-BOOL File_Exists(const char *pszFileName)
+BOOL File_Exists(const char *filename)
 {
-	FILE *hDiskFile;
-
-	/* Attempt to open file */
-	hDiskFile = fopen(pszFileName, "rb");
-	if (hDiskFile!=NULL)
-	{
-		fclose(hDiskFile);
+	struct stat buf;
+	if (stat(filename, &buf) == 0 &&
+	    (buf.st_mode & S_IRUSR) &&
+	    (buf.st_mode & S_IFREG)) {
+		/* file points to user readable regular file */
 		return TRUE;
 	}
 	return FALSE;
