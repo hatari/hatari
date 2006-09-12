@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.40 2006-09-12 21:21:05 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.41 2006-09-12 21:43:44 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -84,7 +84,8 @@ static const Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0
         0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
         0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71 };  /* 0x4E71 = NOP */
 static const Uint8 pMouseOpcode[] = { 0xD3, 0xC1 };  /* "ADDA.L D1,A1" (instead of "ADDA.W D1,A1") */
-static const Uint8 pRomCheckOpcode[] = { 0x60, 0x00, 0x00, 0x98 };  /* BRA $e00894 */
+static const Uint8 pRomCheckOpcode206[] = { 0x60, 0x00, 0x00, 0x98 };  /* BRA $e00894 */
+static const Uint8 pRomCheckOpcode306[] = { 0x60, 0x00, 0x00, 0xB0 };  /* BRA $e00886 */
 static const Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
 
 /* The patches for the TOS: */
@@ -128,9 +129,10 @@ static const TOS_PATCH TosPatches[] =
   /* E007FA  MOVE.L  #$1FFFE,D7  Run checksums on 2xROMs (skip) */
   /* Checksum is total of TOS ROM image, but get incorrect results */
   /* as we've changed bytes in the ROM! So, just skip anyway! */
-  { 0x206, -1, pszRomCheck, TP_ALWAYS, 0xE007FA, 0x2E3C0001, 4, pRomCheckOpcode },
+  { 0x206, -1, pszRomCheck, TP_ALWAYS, 0xE007FA, 0x2E3C0001, 4, pRomCheckOpcode206 },
   { 0x206, -1, pszDmaBoot, TP_ACSI_OFF, 0xE00898, 0x610000E0, 4, pNopOpcodes }, /* BSR.W $E0097A */
 
+  { 0x306, -1, pszRomCheck, TP_ALWAYS, 0xE007D4, 0x2E3C0001, 4, pRomCheckOpcode306 },
   { 0x306, -1, pszNoPmmu, TP_ALWAYS, 0xE00068, 0xF0394000, 24, pNopOpcodes },
   { 0x306, -1, pszNoPmmu, TP_ALWAYS, 0xE01702, 0xF0394C00, 32, pNopOpcodes },
 
