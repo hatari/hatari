@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.39 2006-03-01 20:46:48 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.40 2006-09-12 21:21:05 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -31,6 +31,7 @@ const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.39 2006-03-01 20:46:48 thothy Ex
 #include "stMemory.h"
 #include "tos.h"
 #include "vdi.h"
+#include "uae-cpu/hatari-glue.h"
 
 
 Uint16 TosVersion;                      /* eg, 0x0100, 0x0102 */
@@ -132,6 +133,10 @@ static const TOS_PATCH TosPatches[] =
 
   { 0x306, -1, pszNoPmmu, TP_ALWAYS, 0xE00068, 0xF0394000, 24, pNopOpcodes },
   { 0x306, -1, pszNoPmmu, TP_ALWAYS, 0xE01702, 0xF0394C00, 32, pNopOpcodes },
+
+  { 0x404, -1, pszNoPmmu, TP_ALWAYS, 0xE0006A, 0xF0394000, 24, pNopOpcodes },
+  { 0x404, -1, pszNoPmmu, TP_ALWAYS, 0xE014E6, 0xF0394C00, 32, pNopOpcodes },
+  { 0x404, -1, pszNoPmmu, TP_ALWAYS, 0xE039A0, 0xF0394000, 24, pNopOpcodes },
 
   { 0, 0, NULL, 0, 0, 0, 0, NULL }
 };
@@ -286,6 +291,26 @@ int TOS_LoadImage(void)
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
 		IoMem_Init();
+	}
+	else if ((TosVersion & 0x0f00) == 0x0300 && ConfigureParams.System.nMachineType != MACHINE_TT)
+	{
+		Log_AlertDlg(LOG_INFO, "TOS versions 3.0x are for Atari TT only.\n"
+		             " => Switching to TT mode now.\n");
+		IoMem_UnInit();
+		ConfigureParams.System.nMachineType = MACHINE_TT;
+		IoMem_Init();
+		ConfigureParams.System.nCpuLevel = 3;
+		check_prefs_changed_cpu(ConfigureParams.System.nCpuLevel, ConfigureParams.System.bCompatibleCpu);
+	}
+	else if ((TosVersion & 0x0f00) == 0x0400 && ConfigureParams.System.nMachineType != MACHINE_FALCON)
+	{
+		Log_AlertDlg(LOG_INFO, "TOS versions 4.0x are for Atari Falcon only.\n"
+		             " => Switching to Falcon mode now.\n(not working yet!)\n");
+		IoMem_UnInit();
+		ConfigureParams.System.nMachineType = MACHINE_FALCON;
+		IoMem_Init();
+		ConfigureParams.System.nCpuLevel = 3;
+		check_prefs_changed_cpu(ConfigureParams.System.nCpuLevel, ConfigureParams.System.bCompatibleCpu);
 	}
 
 	/* Copy loaded image into ST memory */

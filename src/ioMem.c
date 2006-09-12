@@ -28,7 +28,7 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.12 2006-02-13 21:18:01 eerot Exp $";
+const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.13 2006-09-12 21:21:05 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -101,6 +101,7 @@ void IoMem_Init(void)
 		case MACHINE_ST:  pInterceptAccessFuncs = IoMemTable_ST; break;
 		case MACHINE_STE: pInterceptAccessFuncs = IoMemTable_STE; break;
 		case MACHINE_TT: pInterceptAccessFuncs = IoMemTable_TT; break;
+		case MACHINE_FALCON: pInterceptAccessFuncs = IoMemTable_Falcon;
 	}
 
 	/* Now set the correct handlers */
@@ -126,7 +127,7 @@ void IoMem_Init(void)
 	}
 
 	/* Disable blitter? */
-	if (!ConfigureParams.System.bBlitter && ConfigureParams.System.nMachineType != MACHINE_STE)
+	if (!ConfigureParams.System.bBlitter && ConfigureParams.System.nMachineType == MACHINE_ST)
 	{
 		IoMem_SetBusErrorRegion(0xff8a00, 0xff8a3f);
 	}

@@ -210,7 +210,8 @@ typedef enum
 {
   MACHINE_ST,
   MACHINE_STE,
-  MACHINE_TT
+  MACHINE_TT,
+  MACHINE_FALCON
 } MACHINETYPE;
 
 typedef struct

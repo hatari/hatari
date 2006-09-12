@@ -20,5 +20,6 @@ typedef struct
 extern const INTERCEPT_ACCESS_FUNC IoMemTable_ST[];
 extern const INTERCEPT_ACCESS_FUNC IoMemTable_STE[];
 extern const INTERCEPT_ACCESS_FUNC IoMemTable_TT[];
+extern const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[];
 
 #endif
