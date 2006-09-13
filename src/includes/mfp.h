@@ -42,8 +42,8 @@
 extern Uint8 MFP_GPIP;
 extern Uint8 MFP_IERA,MFP_IERB;
 extern Uint8 MFP_IPRA,MFP_IPRB;
+extern Uint8 MFP_TACR,MFP_TBCR;
 extern Uint8 MFP_VR;
-extern Uint8 MFP_TACR,MFP_TBCR,MFP_TCDCR;
 
 extern void MFP_Reset(void);
 extern void MFP_MemorySnapShot_Capture(BOOL bSave);

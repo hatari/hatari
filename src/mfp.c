@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.26 2006-02-08 22:49:27 eerot Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.27 2006-09-13 20:21:45 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -53,17 +53,15 @@ Input -----/             |         ------------------------              |      
 
 
 /*-----------------------------------------------------------------------*/
-/* Set clock times for each instruction, see '68000 timing' pages for details */
-#define  ROUND_CYCLES_TO4(var)  (((int)(var)+3)&0xfffffffc)
-
 
 /* MFP Registers */
 Uint8 MFP_GPIP;                     /* General Purpose Pins */
+Uint8 MFP_VR;                       /* Vector Register  0xfffa17 */
 Uint8 MFP_IERA,MFP_IERB;            /* Interrupt Enable Registers A,B  0xfffa07,0xfffa09 */
 Uint8 MFP_IPRA,MFP_IPRB;            /* Interrupt Pending Registers A,B  0xfffa0b,0xfffa0d */
-Uint8 MFP_VR;                       /* Vector Register  0xfffa17 */
-Uint8 MFP_TACR,MFP_TBCR,MFP_TCDCR;  /* Timer A,B,C+D Control Registers */
+Uint8 MFP_TACR,MFP_TBCR;            /* Timer A,B Control Registers */
 
+static Uint8 MFP_TCDCR;             /* C+D Control Registers */
 static Uint8 MFP_AER,MFP_DDR;       /* Active Edge Register, Data Direction Register */
 static Uint8 MFP_ISRA,MFP_ISRB;     /* Interrupt In-Service Registers A,B  0xfffa0f,0xfffa11 */
 static Uint8 MFP_IMRA,MFP_IMRB;     /* Interrupt Mask Registers A,B  0xfffa13,0xfffa15 */
@@ -83,7 +81,8 @@ static int TimerDClockCycles=0;
 BOOL bAppliedTimerDPatch;           /* TRUE if the Timer-D patch has been applied */
 static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer-D patch */
 
-
+#define FLOATS 0
+#if FLOATS
 /*
  Number of CPU cycles for Timer C+D
  These figures were based on 50Hz=160256cycles, so 200Hz=40064
@@ -100,6 +99,36 @@ static const float MFPTimerToCPUCycleTable[] = {
   326.04166667f,  /* Div by 100 */
   652.08333333f   /* Div by 200 */
 };
+/* Clock times for each instruction need to be rounded to 4,
+ * see '68000 timing' pages for details
+ */
+#define MFP_MUL_CYCLES_TO4(val,idx) \
+	(((int)(val*MFPTimerToCPUCycleTable[idx&0x7])+3)&0xfffffffc)
+#define MFP_DIV_CYCLES(val,idx) \
+	(val/MFPTimerToCPUCycleTable[idx&0x7])
+
+#else	/* FLOATS */
+
+/* integer fraction multiplication lookup table is faster than floating
+ * point one, if both the multiplied and result value will be integers.
+ * Even on x86 which has FPU. ++eero
+ */
+static const Uint16 MFPDiv[] = {
+	0,
+	626,
+	1565,
+	2504,
+	7825,
+	10016,
+	15650,
+	31300
+};
+#define MFP_MUL_CYCLES_TO4(val,idx) \
+	((((Uint32)val*MFPDiv[idx&0x7]/48)+3)&0xfffffffc)
+#define MFP_DIV_CYCLES(val,idx) \
+	(48*val/MFPDiv[idx&0x7])
+
+#endif	/* FLOATS */
 
 
 /*-----------------------------------------------------------------------*/
@@ -233,12 +262,12 @@ static BOOL MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
 
         /* Call interrupt, adds in base (default 0x100) */
         MFP_Exception(nMfpException);
-        return(TRUE);
+        return TRUE;
       }
     }
   }
 
-  return(FALSE);
+  return FALSE;
 }
 
 
@@ -338,7 +367,7 @@ void MFP_TimerB_EventCount_Interrupt(void)
 /*
   Start Timer A or B - EventCount mode is done in HBL handler to time correctly
 */
-static int MFP_StartTimer_AB(Uint8 TimerControl, unsigned int TimerData, int Handler, BOOL bFirstTimer)
+static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler, BOOL bFirstTimer)
 {
   int TimerClockCycles = 0;
 
@@ -348,7 +377,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, unsigned int TimerData, int Han
     /* As timer occurs very often we multiply by counter to speed up emulator */
     if (TimerData==0)                   /* Data=0 is actually Data=256 */
       TimerData = 256;
-    TimerClockCycles = ROUND_CYCLES_TO4( TimerData*MFPTimerToCPUCycleTable[TimerControl&0x7] );
+    TimerClockCycles = MFP_MUL_CYCLES_TO4(TimerData,TimerControl);
 
     /* And add to our internal interrupt list, if timer cycles is zero then timer is stopped */
     Int_RemovePendingInterrupt(Handler);
@@ -364,7 +393,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, unsigned int TimerData, int Han
     Int_RemovePendingInterrupt(Handler);
   }
 
-  return(TimerClockCycles);
+  return TimerClockCycles;
 }
 
 
@@ -372,7 +401,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, unsigned int TimerData, int Han
 /*
   Start Timer C or D
 */
-static int MFP_StartTimer_CD(Uint8 TimerControl, unsigned int TimerData, int Handler, BOOL bFirstTimer)
+static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, int Handler, BOOL bFirstTimer)
 {
   int TimerClockCycles = 0;
 
@@ -382,7 +411,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, unsigned int TimerData, int Han
     /* As timer occurs very often we multiply by counter to speed up emulator */
     if (TimerData==0)                   /* Data=0 is actually Data=256 */
       TimerData = 256;
-    TimerClockCycles = ROUND_CYCLES_TO4( TimerData*MFPTimerToCPUCycleTable[TimerControl&0x7] );
+    TimerClockCycles = MFP_MUL_CYCLES_TO4(TimerData,TimerControl);
 
     /* And add to our internal interrupt list, if timer cycles is zero then timer is stopped */
     Int_RemovePendingInterrupt(Handler);
@@ -398,7 +427,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, unsigned int TimerData, int Han
     Int_RemovePendingInterrupt(Handler);
   }
 
-  return(TimerClockCycles);
+  return TimerClockCycles;
 }
 
 
@@ -414,10 +443,10 @@ static Uint8 MFP_ReadTimer_AB(Uint8 TimerControl, Uint8 MainCounter, int TimerCy
   if (Int_InterruptActive(Handler)) {
     /* Find cycles passed since last interrupt */
     TimerCyclesPassed = TimerCycles-Int_FindCyclesPassed(Handler);
-    MainCounter = TimerCyclesPassed/(MFPTimerToCPUCycleTable[TimerControl&0x7]);
+    MainCounter = MFP_DIV_CYCLES(TimerCyclesPassed,TimerControl);
   }
 
-  return(MainCounter);
+  return MainCounter;
 }
 
 
@@ -433,13 +462,13 @@ static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCoun
   if (Int_InterruptActive(Handler)) {
     /* Find cycles passed since last interrupt */
     TimerCyclesPassed = TimerCycles-Int_FindCyclesPassed(Handler);
-    MainCounter = TimerCyclesPassed/(MFPTimerToCPUCycleTable[TimerControl&0x7]);
+    MainCounter = MFP_DIV_CYCLES(TimerCyclesPassed,TimerControl);
   }
   else {
     MainCounter = TimerData;
   }
 
-  return(MainCounter);
+  return MainCounter;
 }
 
 
