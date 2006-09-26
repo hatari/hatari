@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.23 2006-09-26 13:52:40 thothy Exp $";
+const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.24 2006-09-26 15:13:28 thothy Exp $";
 
 #ifndef HAVE_TERMIOS_H
 #define HAVE_TERMIOS_H 1
@@ -46,7 +46,7 @@ const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.23 2006-09-26 13:52:40 thoth
 
 
 #ifndef HAVE_CFMAKERAW
-# if defined(__BEOS__) || (defined(__sun) && defined(__SVR4)) || defined(__AMIGAOS4__)
+# if defined(__BEOS__) || (defined(__sun) && defined(__SVR4)) || defined(__AMIGAOS4__) || defined(__riscos)
 #  define HAVE_CFMAKERAW 0
 # else
 #  define HAVE_CFMAKERAW 1
@@ -208,7 +208,7 @@ static BOOL RS232_OpenCOMPort(void)
 	bConnectedRS232 = FALSE;
 
 	/* Create our COM file for output */
-	hComOut = fopen(ConfigureParams.RS232.szOutFileName, "wb"); 
+	hComOut = fopen(ConfigureParams.RS232.szOutFileName, "wb");
 	if (hComOut == NULL)
 	{
 		Dprintf(("RS232: Failed to open output file %s\n",
@@ -218,7 +218,7 @@ static BOOL RS232_OpenCOMPort(void)
 	setvbuf(hComOut, NULL, _IONBF, 0);
 
 	/* Create our COM file for input */
-	hComIn = fopen(ConfigureParams.RS232.szInFileName, "rb"); 
+	hComIn = fopen(ConfigureParams.RS232.szInFileName, "rb");
 	if (hComIn == NULL)
 	{
 		Dprintf(("RS232: Failed to open input file %s\n",
@@ -392,7 +392,7 @@ void RS232_UnInit(void)
 		RS232Thread = NULL;
 	}
 	RS232_CloseCOMPort();
-	
+
 	if (pSemFreeBuf)
 	{
 		SDL_DestroySemaphore(pSemFreeBuf);
