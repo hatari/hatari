@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.22 2006-07-27 19:57:44 thothy Exp $";
+const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.23 2006-09-26 13:52:40 thothy Exp $";
 
 #ifndef HAVE_TERMIOS_H
 #define HAVE_TERMIOS_H 1
@@ -46,7 +46,7 @@ const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.22 2006-07-27 19:57:44 thoth
 
 
 #ifndef HAVE_CFMAKERAW
-# if defined(__BEOS__) || (defined(__sun) && defined(__SVR4))
+# if defined(__BEOS__) || (defined(__sun) && defined(__SVR4)) || defined(__AMIGAOS4__)
 #  define HAVE_CFMAKERAW 0
 # else
 #  define HAVE_CFMAKERAW 1
@@ -74,6 +74,40 @@ static inline void cfmakeraw(struct termios *termios_p)
 	termios_p->c_cflag |= CS8;
 }
 #endif
+
+
+#if defined(__AMIGAOS4__)
+
+// dummy functions. REMOVE THEM LATER
+
+int tcgetattr(int file_descriptor,struct termios *tios_p)
+{
+	return -1;
+}
+
+int tcsetattr(int file_descriptor,int action,struct termios *tios_p)
+{
+	return -1;
+}
+
+int cfsetospeed(struct termios *tios, speed_t ospeed)
+{
+
+	tios->c_ospeed = ospeed;
+
+	return 0;
+}
+
+
+int cfsetispeed(struct termios *tios,speed_t ispeed)
+{
+	tios->c_ispeed = ispeed;
+
+	return 0;
+}
+
+#endif  /* __AMIGAOS4__ */
+
 
 /*-----------------------------------------------------------------------*/
 /*
