@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.36 2006-06-26 23:03:09 thothy Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.37 2006-09-26 19:12:35 eerot Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -23,9 +23,6 @@ const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.36 2006-06-26 23:03:09 tho
 #include "vdi.h"
 #include "xbios.h"
 
-
-void (*PendingInterruptFunction)(void);
-short int PendingInterruptCount;
 
 Uint32 BusErrorAddress;          /* Stores the offending address for bus-/address errors */
 Uint32 BusErrorPC;               /* Value of the PC when bus error occurs */
@@ -60,25 +57,11 @@ void M68000_Reset(BOOL bCold)
 */
 void M68000_MemorySnapShot_Capture(BOOL bSave)
 {
-  int ID;
   Uint32 savepc;
 
   /* Save/Restore details */
   MemorySnapShot_Store(Regs,sizeof(Regs));
   MemorySnapShot_Store(&STRamEnd,sizeof(STRamEnd));
-  MemorySnapShot_Store(&PendingInterruptCount,sizeof(PendingInterruptCount));
-  if (bSave)
-  {
-    /* Convert function to ID */
-    ID = Int_HandlerFunctionToID(PendingInterruptFunction);
-    MemorySnapShot_Store(&ID,sizeof(int));
-  }
-  else
-  {
-    /* Convert ID to function */
-    MemorySnapShot_Store(&ID,sizeof(int));
-    PendingInterruptFunction = Int_IDToHandlerFunction(ID);
-  }
 
   /* For the UAE CPU core: */
   MemorySnapShot_Store(&cpu_level, sizeof(cpu_level));          /* MODEL */

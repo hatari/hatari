@@ -12,6 +12,7 @@
 #include "sysdeps.h"
 #include "memory.h"
 #include "newcpu.h"     /* for regs */
+#include "int.h"
 
 #define Regs regs.regs  /* Ugly hack to glue the WinSTon sources to the UAE CPU core. */
 #define SR regs.sr      /* Don't forget to call MakeFromSR() and MakeSR() */
@@ -20,9 +21,6 @@
 /* bus error mode */
 #define BUS_ERROR_WRITE 0
 #define BUS_ERROR_READ 1
-
-extern void (*PendingInterruptFunction)(void);
-extern short int PendingInterruptCount;
 
 extern Uint32 BusErrorAddress;
 extern Uint32 BusErrorPC;

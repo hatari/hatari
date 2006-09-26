@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.27 2006-09-13 20:21:45 eerot Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.28 2006-09-26 19:12:35 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -384,8 +384,9 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler, 
     if (TimerClockCycles) {
       /* Start timer from now? If not continue timer so from original offset */
       if (bFirstTimer)
-        nCyclesOver = 0;
-      Int_AddRelativeInterrupt(TimerClockCycles,Handler);
+        Int_AddRelativeInterruptNoOffset(TimerClockCycles,Handler);
+      else
+        Int_AddRelativeInterrupt(TimerClockCycles,Handler);
     }
   }
   else {
@@ -418,8 +419,9 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, int Handler, 
     if (TimerClockCycles) {
       /* Start timer from now? If not continue timer so from original offset */
       if (bFirstTimer)
-        nCyclesOver = 0;
-      Int_AddRelativeInterrupt(TimerClockCycles,Handler);
+        Int_AddRelativeInterruptNoOffset(TimerClockCycles,Handler);
+      else
+        Int_AddRelativeInterrupt(TimerClockCycles,Handler);
     }
   }
   else {

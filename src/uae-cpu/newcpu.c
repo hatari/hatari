@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.42 2006-02-09 22:02:26 eerot Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.43 2006-09-26 19:12:35 eerot Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -20,6 +20,7 @@ const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.42 2006-02-09 22:02:26 eer
 #include "../includes/main.h"
 #include "../includes/log.h"
 #include "../includes/m68000.h"
+#include "../includes/int.h"
 #include "../includes/mfp.h"
 #include "../includes/tos.h"
 #include "../includes/vdi.h"

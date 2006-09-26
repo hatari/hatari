@@ -9,7 +9,7 @@
 #define HATARI_INT_H
 
 /* Interrupt handlers in system */
-enum
+typedef enum
 {
   INTERRUPT_NULL,
   INTERRUPT_VIDEO_VBL,
@@ -24,19 +24,19 @@ enum
   INTERRUPT_DMASOUND,
 
   MAX_INTERRUPTS
-};
+} interrupt_id;
 
-extern int nCyclesOver;
+extern void (*PendingInterruptFunction)(void);
+extern short int PendingInterruptCount;
 
 extern void Int_Reset(void);
 extern void Int_MemorySnapShot_Capture(BOOL bSave);
-extern int Int_HandlerFunctionToID(void (*pHandlerFunction)(void));
-extern void *Int_IDToHandlerFunction(int ID);
 extern void Int_AcknowledgeInterrupt(void);
-extern void Int_AddAbsoluteInterrupt(int CycleTime, int Handler);
-extern void Int_AddRelativeInterrupt(int CycleTime, int Handler);
-extern void Int_RemovePendingInterrupt(int Handler);
-extern BOOL Int_InterruptActive(int Handler);
-extern int Int_FindCyclesPassed(int Handler);
+extern void Int_AddAbsoluteInterrupt(int CycleTime, interrupt_id Handler);
+extern void Int_AddRelativeInterrupt(int CycleTime, interrupt_id Handler);
+extern void Int_AddRelativeInterruptNoOffset(int CycleTime, interrupt_id Handler);
+extern void Int_RemovePendingInterrupt(interrupt_id Handler);
+extern BOOL Int_InterruptActive(interrupt_id Handler);
+extern int Int_FindCyclesPassed(interrupt_id Handler);
 
 #endif /* ifndef HATARI_INT_H */
