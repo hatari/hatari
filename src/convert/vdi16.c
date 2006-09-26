@@ -6,7 +6,7 @@ static void ConvertVDIRes_16Colour(void)
   Uint32 *esi;
   Uint32 eax, edx;
   Uint32 ebx, ecx;
-  int y, x;
+  int y, x, update;
 
   edx = eax = 0;
 
@@ -15,6 +15,7 @@ static void ConvertVDIRes_16Colour(void)
   
   edi = (Uint32 *)pSTScreen;        /* ST format screen 4-plane 16 colours */
   ebp = (Uint32 *)pSTScreenCopy;    /* Previous ST format screen */
+  update = ScrUpdateFlag & PALETTEMASK_UPDATEMASK;
 
   for (y = 0; y < VDIHeight; y++) {
 
@@ -29,7 +30,7 @@ static void ConvertVDIRes_16Colour(void)
       ecx = *(edi+1);
 
       /* Full update? or just test changes? */
-      if((ScrUpdateFlag&0xe0000000) || ebx!=*ebp || ecx!=*(ebp+1))  /* Does differ? */
+      if(update || ebx!=*ebp || ecx!=*(ebp+1))  /* Does differ? */
       {
         bScreenContentsChanged = TRUE;
 

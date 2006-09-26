@@ -6,7 +6,7 @@ static void ConvertHighRes_640x8Bit(void)
   Uint16 *edi, *ebp;
   Uint32 *esi;
   Uint16 eax, ebx;
-  int y, x;
+  int y, x, update;
 
 /*
   // This is the method that I first used in Hatari...
@@ -44,6 +44,7 @@ static void ConvertHighRes_640x8Bit(void)
   esi = (Uint32 *)pPCScreenDest;    /* PC format screen */
 
   /* NOTE 'ScrUpdateFlag' is already set (to full update or check, no palettes) */
+  update = ScrUpdateFlag & PALETTEMASK_UPDATEMASK;
   
   for (y = STScreenStartHorizLine; y < STScreenEndHorizLine; y++) {
 
@@ -52,7 +53,7 @@ static void ConvertHighRes_640x8Bit(void)
       /* Do 16 pixels at one time */
       ebx = *edi;
       
-      if( (ScrUpdateFlag&0xe0000000) || ebx!=*ebp )  /* Does differ? */
+      if( update || ebx!=*ebp )  /* Does differ? */
        {
         bScreenContentsChanged = TRUE;
 

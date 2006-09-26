@@ -23,10 +23,10 @@ static void ConvertMediumRes_640x8Bit(void)
     ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);   /* Previous ST format screen */
     esi = (Uint32 *)pPCScreenDest;                    /* PC format screen */
 
-    if((AdjustLinePaletteRemap(y) & 0x00030000) == 0)    /* Change palette table */
-      Line_ConvertLowRes_640x8Bit(edi, ebp, esi, eax);
-    else
+    if(AdjustLinePaletteRemap(y) & 0x00030000)        /* Change palette table */
       Line_ConvertMediumRes_640x8Bit(edi, ebp, esi, eax);
+    else
+      Line_ConvertLowRes_640x8Bit(edi, ebp, esi, eax);
 
     pPCScreenDest = (((Uint8 *)pPCScreenDest)+PCScreenBytesPerLine*2);  /* Offset to next line */
   }
@@ -36,9 +36,11 @@ static void ConvertMediumRes_640x8Bit(void)
 static void Line_ConvertMediumRes_640x8Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi, Uint32 eax)
 {
   Uint32 ebx, ecx;
-  int x;
+  int x, update, Screen4BytesPerLine;
 
   x = STScreenWidthBytes>>2;   /* Amount to draw across in 16-pixels (4 bytes) */
+  Screen4BytesPerLine = PCScreenBytesPerLine/4;
+  update = ScrUpdateFlag & PALETTEMASK_UPDATEMASK;
 
   do    /* x-loop */
   {
@@ -46,7 +48,7 @@ static void Line_ConvertMediumRes_640x8Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi
     /* Do 16 pixels at one time */
     ebx = *edi;
 
-    if((ScrUpdateFlag&0xe0000000) || ebx!=*ebp)       /* Does differ? */
+    if(update || ebx!=*ebp)       /* Does differ? */
     {  /* copy word */
 
       bScreenContentsChanged = TRUE;

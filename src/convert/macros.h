@@ -205,10 +205,10 @@ static const Uint32 Remap_1_Plane[16] = {
 { \
   ebpp = ecx + BASECOLOUR_LONG; \
   ecx = ((ebpp & 0x0000ff00) << 8) | (ebpp & 0x000000ff); \
-  esi[offset+PCScreenBytesPerLine/4] = \
+  esi[offset+Screen4BytesPerLine] = \
   esi[offset]   = SDL_SwapLE32((ecx << 8) | ecx); \
   ecx = ((ebpp & 0x00ff0000) >> 8) | (ebpp & 0xff000000); \
-  esi[offset+1+PCScreenBytesPerLine/4] = \
+  esi[offset+1+Screen4BytesPerLine] = \
   esi[offset+1] = SDL_SwapLE32((ecx >> 8) | ecx); \
 }
 
@@ -225,13 +225,13 @@ static const Uint32 Remap_1_Plane[16] = {
 #define PLOT_LOW_640_16BIT_DOUBLE_Y(offset) \
 { \
  ebx = STRGBPalette[ecx & 0x000000ff]; \
- esi[offset]   = esi[offset+PCScreenBytesPerLine/4]   = ebx; \
+ esi[offset]   = esi[offset+Screen4BytesPerLine]   = ebx; \
  ebx = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
- esi[offset+1] = esi[offset+1+PCScreenBytesPerLine/4] = ebx; \
+ esi[offset+1] = esi[offset+1+Screen4BytesPerLine] = ebx; \
  ebx = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
- esi[offset+2] = esi[offset+2+PCScreenBytesPerLine/4] = ebx; \
+ esi[offset+2] = esi[offset+2+Screen4BytesPerLine] = ebx; \
  ebx = STRGBPalette[(ecx >> 24) & 0x000000ff]; \
- esi[offset+3] = esi[offset+3+PCScreenBytesPerLine/4] = ebx; \
+ esi[offset+3] = esi[offset+3+Screen4BytesPerLine] = ebx; \
 }
 
 
@@ -244,7 +244,7 @@ static const Uint32 Remap_1_Plane[16] = {
 /* Plot Medium Resolution (640xH) 8-Bit pixels (Double on Y) */
 #define PLOT_MED_640_8BIT_DOUBLE_Y(offset) \
 { \
-  esi[offset] = esi[offset+PCScreenBytesPerLine/4] =\
+  esi[offset] = esi[offset+Screen4BytesPerLine] =\
   SDL_SwapLE32(ecx + BASECOLOUR_LONG); \
 }
 
@@ -260,13 +260,13 @@ static const Uint32 Remap_1_Plane[16] = {
 /* Plot Medium Resolution(640xH) 16-Bit pixels (Double on Y) */
 #define PLOT_MED_640_16BIT_DOUBLE_Y(offset) \
 { \
- esi[offset+PCScreenBytesPerLine/2]   =\
+ esi[offset+Screen2BytesPerLine]   =\
  esi[offset]   = (Uint16)STRGBPalette[ecx & 0x000000ff]; \
- esi[offset+1+PCScreenBytesPerLine/2] =\
+ esi[offset+1+Screen2BytesPerLine] =\
  esi[offset+1] = (Uint16)STRGBPalette[(ecx >> 8) & 0x000000ff]; \
- esi[offset+2+PCScreenBytesPerLine/2] =\
+ esi[offset+2+Screen2BytesPerLine] =\
  esi[offset+2] = (Uint16)STRGBPalette[(ecx >> 16) & 0x000000ff]; \
- esi[offset+3+PCScreenBytesPerLine/2] =\
+ esi[offset+3+Screen2BytesPerLine] =\
  esi[offset+3] = (Uint16)STRGBPalette[(ecx >> 24) & 0x000000ff]; \
 }
 
@@ -316,7 +316,7 @@ static const Uint32 Remap_1_Plane[16] = {
 /* Plot Spectrum512 Resolution (640xH) 16-Bit pixels (Double on Y) */
 #define PLOT_SPEC512_LEFT_LOW_640_16BIT_DOUBLE_Y(offset)	\
 { \
-  esi[offset+PCScreenBytesPerLine/4] = \
+  esi[offset+Screen4BytesPerLine] = \
   esi[offset] = STRGBPalette[ecx & 0x000000ff]; \
 }
 
@@ -327,11 +327,11 @@ static const Uint32 Remap_1_Plane[16] = {
 #define PLOT_SPEC512_END_LOW_640_16BIT_DOUBLE_Y(offset)	\
 { \
   ebx = STRGBPalette[ecx & 0x000000ff]; \
-  esi[offset]   = esi[offset+PCScreenBytesPerLine/4]   = ebx; \
+  esi[offset]   = esi[offset+Screen4BytesPerLine]   = ebx; \
   ebx = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
-  esi[offset+1] = esi[offset+1+PCScreenBytesPerLine/4] = ebx; \
+  esi[offset+1] = esi[offset+1+Screen4BytesPerLine] = ebx; \
   ebx = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
-  esi[offset+2] = esi[offset+2+PCScreenBytesPerLine/4] = ebx; \
+  esi[offset+2] = esi[offset+2+Screen4BytesPerLine] = ebx; \
 }
 
 #endif /* HATARI_CONVERTMACROS_H */

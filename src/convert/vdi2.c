@@ -27,10 +27,11 @@ static void ConvertVDIRes_2Colour(void)
   Uint16 *edi, *ebp;
   Uint32 *esi;
   Uint16 eax, ebx;
-  int y, x;
+  int y, x, update;
 
   edi = (Uint16 *)pSTScreen;            /* ST format screen */
   ebp = (Uint16 *)pSTScreenCopy;        /* Previous ST format screen */
+  update = ScrUpdateFlag & PALETTEMASK_UPDATEMASK;
 
   for (y = 0; y < VDIHeight; y++) {
 
@@ -43,7 +44,7 @@ static void ConvertVDIRes_2Colour(void)
       /* Do 16 pixels at one time */
       ebx = *edi;
 
-      if( (ScrUpdateFlag&0xe0000000) || ebx!=*ebp )  /* Does differ? */
+      if( update || ebx!=*ebp )  /* Does differ? */
       {
         bScreenContentsChanged = TRUE;
 

@@ -6,7 +6,7 @@ static void ConvertLowRes_320x16Bit(void)
  Uint16 *esi;
  Uint32 eax, edx;
  Uint32 ebx, ecx;
- int y, x;
+ int y, x, update;
 
  Convert_StartFrame();            /* Start frame, track palettes */
 
@@ -17,7 +17,7 @@ static void ConvertLowRes_320x16Bit(void)
    ebp = (Uint32 *)((Uint8 *)pSTScreenCopy + eax);    /* Previous ST format screen */
    esi = (Uint16 *)pPCScreenDest;                     /* PC format screen */
 
-   AdjustLinePaletteRemap(y);
+   update = AdjustLinePaletteRemap(y) & PALETTEMASK_UPDATEMASK;
  
    x = STScreenWidthBytes>>3; /* Amount to draw across in 16-pixels(8 bytes) */
 
@@ -27,7 +27,7 @@ static void ConvertLowRes_320x16Bit(void)
      ebx=*edi;
      ecx=*(edi+1);
 
-     if( (ScrUpdateFlag&0xe0000000) || ebx!=*ebp || ecx!=*(ebp+1) )     /* Does differ? */
+     if( update || ebx!=*ebp || ecx!=*(ebp+1) )     /* Does differ? */
       { /* copy word */
 
        bScreenContentsChanged=TRUE;

@@ -6,11 +6,12 @@ static void ConvertVDIRes_4Colour(void)
   Uint32 *edi, *ebp;
   Uint32 *esi;
   Uint32 eax, ebx, ecx;
-  int y, x;
+  int y, x, update;
 
   /* Get screen addresses, 'edi'-ST screen, 'ebp'-Previous ST screen, 'esi'-PC screen */
   edi = (Uint32 *)pSTScreen;          /* ST format screen 2-plane 4 colors */
   ebp = (Uint32 *)pSTScreenCopy;      /* Previous ST format screen */
+  update = ScrUpdateFlag & PALETTEMASK_UPDATEMASK;
 
   for (y = 0; y < VDIHeight; y++) {
 
@@ -23,7 +24,7 @@ static void ConvertVDIRes_4Colour(void)
       /* Do 16 pixels at one time */
       ebx = *edi;
 
-      if( (ScrUpdateFlag&0xe0000000) || ebx!=*ebp )  /* Update? */
+      if( update || ebx!=*ebp )  /* Update? */
 	  {
 	    bScreenContentsChanged = TRUE;
 

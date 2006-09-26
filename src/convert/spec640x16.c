@@ -14,10 +14,10 @@ static void ConvertSpec512_640x16Bit(void)
   Uint32 *esi;
   Uint32 eax, ebx, ecx, edx;
   Uint32 pixelspace[4]; /* Workspace to store pixels to so can print in right order for Spec512 */
-  int y, x;
+  int y, x, Screen4BytesPerLine;
 
   Spec512_StartFrame();                 /* Start frame, track palettes */
-
+  Screen4BytesPerLine = PCScreenBytesPerLine/4;
   edx = 0;                              /* Clear index for loop */
 
   for (y = STScreenStartHorizLine; y < STScreenEndHorizLine; y++) {
