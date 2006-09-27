@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.7 2006-09-12 21:21:05 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.8 2006-09-27 08:58:43 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +44,8 @@ enum {
 	OPT_PRINTER,
 	OPT_MIDI,
 	OPT_RS232,
-	OPT_HDIMAGE,
+	OPT_ACSIHDIMAGE,
+	OPT_IDEHDIMAGE,
 	OPT_HARDDRIVE,
 	OPT_TOS,
 	OPT_CARTRIDGE,
@@ -94,8 +95,10 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Enable midi support and write midi data to <file>" },
 	{ OPT_RS232,     NULL, "--rs232",
 	  "<file>", "Use <file> as the serial port device" },
-	{ OPT_HDIMAGE,   NULL, "--hdimage",
-	  "<file>", "Emulate an ST harddrive with an image <file>" },
+	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
+	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
+	{ OPT_IDEHDIMAGE,   NULL, "--ide",
+	  "<file>", "Emulate an IDE harddrive with an image <file> (not working yet)" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
 	  "<dir>", "Emulate an ST harddrive (<dir> = root directory)" },
 	{ OPT_TOS,       "-t", "--tos",
@@ -321,7 +324,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			break;
 			
-		case OPT_HDIMAGE:
+		case OPT_ACSIHDIMAGE:
 			i += 1;
 			if (!File_Exists(argv[i])) {
 				Opt_ShowExit(OPT_NONE, argv[i], "Given HD image file doesn't exist!\n");
@@ -334,6 +337,19 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			break;
 			
+		case OPT_IDEHDIMAGE:
+			i += 1;
+			if (!File_Exists(argv[i])) {
+				Opt_ShowExit(OPT_NONE, argv[i], "Given HD image file doesn't exist!\n");
+			}
+			if (strlen(argv[i]) < sizeof(ConfigureParams.HardDisk.szIdeHardDiskImage)) {
+				ConfigureParams.HardDisk.bUseIdeHardDiskImage = TRUE;
+				strcpy(ConfigureParams.HardDisk.szIdeHardDiskImage, argv[i]);
+			} else {
+				Opt_ShowExit(OPT_NONE, argv[i], "HD image file name too long!\n");
+			}
+			break;
+
 		case OPT_HARDDRIVE:
 			i += 1;
 			if(strlen(argv[i]) < sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]))	{

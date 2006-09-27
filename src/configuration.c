@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.52 2006-08-09 08:14:24 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.53 2006-09-27 08:58:43 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -217,14 +217,6 @@ static const struct Config_Tag configs_Floppy[] =
 	{ NULL , Error_Tag, NULL }
 };
 
-/* Obsolete - to be removed */
-static const struct Config_Tag configs_OldFloppy[] =
-{
-	{ "bAutoInsertDiscB", Bool_Tag, &ConfigureParams.DiskImage.bAutoInsertDiskB },
-	{ "szDiscImageDirectory", String_Tag, ConfigureParams.DiskImage.szDiskImageDirectory },
-	{ NULL , Error_Tag, NULL }
-};
-
 /* Used to load/save HD options */
 static const struct Config_Tag configs_HardDisk[] =
 {
@@ -236,17 +228,6 @@ static const struct Config_Tag configs_HardDisk[] =
 	/*{ "szHardDiskDirF", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_F] },*/
 	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskImage },
 	{ "szHardDiskImage", String_Tag, ConfigureParams.HardDisk.szHardDiskImage },
-	{ NULL , Error_Tag, NULL }
-};
-
-/* Obsolete - to be removed */
-static const struct Config_Tag configs_OldHardDisc[] =
-{
-	{ "bBootFromHardDisc", Bool_Tag, &ConfigureParams.HardDisk.bBootFromHardDisk },
-	{ "bUseHardDiscDirectory", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskDirectories },
-	{ "szHardDiscDirectory", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C] },
-	{ "bUseHardDiscImage", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskImage },
-	{ "szHardDiscImage", String_Tag, ConfigureParams.HardDisk.szHardDiskImage },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -337,6 +318,8 @@ void Configuration_SetDefault(void)
 	}
 	ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
 	strcpy(ConfigureParams.HardDisk.szHardDiskImage, szWorkingDir);
+	ConfigureParams.HardDisk.bUseIdeHardDiskImage = FALSE;
+	strcpy(ConfigureParams.HardDisk.szIdeHardDiskImage, szWorkingDir);
 
 	/* Set defaults for Joysticks */
 	for (i = 0; i < JOYSTICK_COUNT; i++)
@@ -536,9 +519,7 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_ShortCutWithoutMod, "[ShortcutsWithoutModifiers]");
 	Configuration_LoadSection(psFileName, configs_Sound, "[Sound]");
 	Configuration_LoadSection(psFileName, configs_Memory, "[Memory]");
-	Configuration_LoadSection(psFileName, configs_OldFloppy, "[Floppy]");  /* <- to be removed */
 	Configuration_LoadSection(psFileName, configs_Floppy, "[Floppy]");
-	Configuration_LoadSection(psFileName, configs_OldHardDisc, "[HardDisc]");  /* <- to be removed */
 	Configuration_LoadSection(psFileName, configs_HardDisk, "[HardDisk]");
 	Configuration_LoadSection(psFileName, configs_Rom, "[ROM]");
 	Configuration_LoadSection(psFileName, configs_Rs232, "[RS232]");

@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.41 2006-09-12 21:43:44 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.42 2006-09-27 08:58:43 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -56,7 +56,7 @@ static const char * const pszTosNameExts[] =
 enum
 {
 	TP_ALWAYS,            /* Patch should alway be applied */
-	TP_ACSI_OFF,          /* Apply patch only if ACSI HD emulation is off */
+	TP_HDIMAGE_OFF,       /* Apply patch only if HD emulation is off */
 	TP_ANTI_STE           /* Apply patch only if running on plain ST */
 };
 
@@ -91,9 +91,9 @@ static const Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
 /* The patches for the TOS: */
 static const TOS_PATCH TosPatches[] =
 {
-  { 0x100, -1, pszDmaBoot, TP_ACSI_OFF, 0xFC03D6, 0x610000D0, 4, pNopOpcodes }, /* BSR $FC04A8 */
+  { 0x100, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xFC03D6, 0x610000D0, 4, pNopOpcodes }, /* BSR $FC04A8 */
 
-  { 0x102, -1, pszDmaBoot, TP_ACSI_OFF, 0xFC0472, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $FC0558 */
+  { 0x102, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xFC0472, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $FC0558 */
   { 0x102, 0, pszMouse, TP_ALWAYS, 0xFD0030, 0xD2C147F9, 2, pMouseOpcode },
   { 0x102, 1, pszMouse, TP_ALWAYS, 0xFD008A, 0xD2C147F9, 2, pMouseOpcode },
   { 0x102, 2, pszMouse, TP_ALWAYS, 0xFD00A8, 0xD2C147F9, 2, pMouseOpcode },
@@ -101,13 +101,13 @@ static const TOS_PATCH TosPatches[] =
   { 0x102, 6, pszMouse, TP_ALWAYS, 0xFCFEF0, 0xD2C147F9, 2, pMouseOpcode },
   { 0x102, 8, pszMouse, TP_ALWAYS, 0xFCFEFE, 0xD2C147F9, 2, pMouseOpcode },
 
-  { 0x104, -1, pszDmaBoot, TP_ACSI_OFF, 0xFC0466, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $FC054C */
+  { 0x104, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xFC0466, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $FC054C */
 
-  { 0x106, -1, pszDmaBoot, TP_ACSI_OFF, 0xE00576, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $E0065C */
+  { 0x106, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xE00576, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $E0065C */
 
-  { 0x162, -1, pszDmaBoot, TP_ACSI_OFF, 0xE00576, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $E0065C */
+  { 0x162, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xE00576, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $E0065C */
 
-  { 0x205, -1, pszDmaBoot, TP_ACSI_OFF, 0xE006AE, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $E00794 */
+  { 0x205, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xE006AE, 0x610000E4, 4, pNopOpcodes }, /* BSR.W $E00794 */
   /* An unpatched TOS 2.05 only works on STEs, so apply some anti-STE patches... */
   { 0x205, -1, pszNoSteHw, TP_ANTI_STE, 0xE00096, 0x42788900, 4, pNopOpcodes }, /* CLR.W $FFFF8900 */
   { 0x205, -1, pszNoSteHw, TP_ANTI_STE, 0xE0009E, 0x31D88924, 4, pNopOpcodes }, /* MOVE.W (A0)+,$FFFF8924 */
@@ -130,7 +130,7 @@ static const TOS_PATCH TosPatches[] =
   /* Checksum is total of TOS ROM image, but get incorrect results */
   /* as we've changed bytes in the ROM! So, just skip anyway! */
   { 0x206, -1, pszRomCheck, TP_ALWAYS, 0xE007FA, 0x2E3C0001, 4, pRomCheckOpcode206 },
-  { 0x206, -1, pszDmaBoot, TP_ACSI_OFF, 0xE00898, 0x610000E0, 4, pNopOpcodes }, /* BSR.W $E0097A */
+  { 0x206, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xE00898, 0x610000E0, 4, pNopOpcodes }, /* BSR.W $E0097A */
 
   { 0x306, -1, pszRomCheck, TP_ALWAYS, 0xE007D4, 0x2E3C0001, 4, pRomCheckOpcode306 },
   { 0x306, -1, pszNoPmmu, TP_ALWAYS, 0xE00068, 0xF0394000, 24, pNopOpcodes },
@@ -203,7 +203,8 @@ static void TOS_FixRom(void)
 			if(STMemory_ReadLong(pPatch->Address) == pPatch->OldData)
 			{
 				/* Only apply the patch if it is really needed: */
-				if (pPatch->Flags == TP_ALWAYS || (pPatch->Flags == TP_ACSI_OFF && !ACSI_EMU_ON)
+				if (pPatch->Flags == TP_ALWAYS
+				    || (pPatch->Flags == TP_HDIMAGE_OFF && !ACSI_EMU_ON && !ConfigureParams.HardDisk.bUseIdeHardDiskImage)
 				    || (pPatch->Flags == TP_ANTI_STE && ConfigureParams.System.nMachineType == MACHINE_ST))
 				{
 					/* Now we can really apply the patch! */

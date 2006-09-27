@@ -159,6 +159,8 @@ typedef struct
   BOOL bUseHardDiskImage;
   char szHardDiskDirectories[MAX_HARDDRIVES][FILENAME_MAX];
   char szHardDiskImage[FILENAME_MAX];
+  BOOL bUseIdeHardDiskImage;
+  char szIdeHardDiskImage[FILENAME_MAX];
 } CNF_HARDDISK;
 
 

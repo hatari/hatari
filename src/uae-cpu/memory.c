@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.21 2006-02-21 21:45:32 thothy Exp $";
+const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.22 2006-09-27 08:58:43 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -18,6 +18,7 @@ const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.21 2006-02-21 21:45:32 tho
 #include "memory.h"
 #include "../includes/main.h"
 #include "../includes/tos.h"
+#include "../includes/ide.h"
 #include "../includes/ioMem.h"
 #include "../includes/reset.h"
 #include "../includes/stMemory.h"
@@ -30,14 +31,17 @@ static uae_u32 TTmem_mask;
 
 #define STmem_start  0x00000000
 #define ROMmem_start 0x00E00000
+#define IdeMem_start 0x00F00000
 #define IOmem_start  0x00FF0000
 #define TTmem_start  0x01000000
 
+#define IdeMem_size  65536
 #define IOmem_size  65536
 #define ROMmem_size (0x00FF0000 - 0x00E00000)  /* So we cover both possible ROM regions + cartridge */
 
 #define STmem_mask  0x00ffffff
 #define ROMmem_mask 0x00ffffff
+#define IdeMem_mask  (IdeMem_size - 1)
 #define IOmem_mask  (IOmem_size - 1)
 
 
@@ -539,8 +543,28 @@ static uae_u8 *ROMmem_xlate(uaecptr addr)
 }
 
 
+/* IDE controller IO memory */
+/* see also ide.c */
+
+static uae_u8 *IdeMemory;
+
+static int IdeMem_check(uaecptr addr, uae_u32 size)
+{
+    addr -= IdeMem_start;
+    addr &= IdeMem_mask;
+    return (addr + size) <= IdeMem_size;
+}
+
+static uae_u8 *IdeMem_xlate(uaecptr addr)
+{
+    addr -= IdeMem_start;
+    addr &= IdeMem_mask;
+    return IdeMemory + addr;
+}
+
+
 /* Hardware IO memory */
-/* see also intercept.c */
+/* see also ioMem.c */
 
 static uae_u8 *IOmemory;
 
@@ -611,6 +635,13 @@ static addrbank ROMmem_bank =
     ROMmem_xlate, ROMmem_check
 };
 
+static addrbank IdeMem_bank =
+{
+    Ide_Mem_lget, Ide_Mem_wget, Ide_Mem_bget,
+    Ide_Mem_lput, Ide_Mem_wput, Ide_Mem_bput,
+    IdeMem_xlate, IdeMem_check
+};
+
 static addrbank IOmem_bank =
 {
     IoMem_lget, IoMem_wget, IoMem_bget,
@@ -643,6 +674,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     STmemory = STRam;
 */
     ROMmemory = STRam + ROMmem_start;
+    IdeMemory = STRam + IdeMem_start;
     IOmemory = STRam + IOmem_start;
 
 /*
@@ -701,8 +733,11 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /* IO memory: */
     map_banks(&IOmem_bank, IOmem_start>>16, 0x1);
 
+    /* IDE controller memory region: */
+    map_banks(&IdeMem_bank, IdeMem_start >> 16, 0x1);  /* IDE controller on the Falcon */
+
     /* Illegal memory regions cause a bus error on the ST: */
-    map_banks(&BusErrMem_bank, 0xF00000 >> 16, 0xA);  /* IDE controller on the Falcon */
+    map_banks(&BusErrMem_bank, 0xF10000 >> 16, 0x9);
 }
 
 
