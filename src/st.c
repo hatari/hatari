@@ -4,26 +4,15 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  ST Disk support.
-*/
-const char ST_rcsid[] = "Hatari $Id: st.c,v 1.6 2006-02-08 22:49:27 eerot Exp $";
+  ST disk image support.
 
-#include "main.h"
-#include "file.h"
-#include "st.h"
-
-#define SAVE_TO_ST_IMAGES
-
-/*
-    .ST FILE FORMAT
-  --===============-------------------------------------------------------------
-
-  The file format of the .ST image files used by PaCifiST is simplicity itself;
-  they are just straight images of the disk in question, with sectors stored in
-  the expected logical order. So, on a sector basis the images run from sector
-  0 (bootsector) to however many sectors are on the disk. On a track basis the
-  layout is the same as for MSA files but obviously the data is raw, no track
-  header or compression or anything like that.
+  The file format of the .ST image files is simplicity itself. They are just
+  straight images of the disk in question, with sectors stored in the expected
+  logical order.
+  So, on a sector basis the images run from sector 0 (bootsector) to however
+  many sectors are on the disk. On a track basis the layout is the same as for
+  MSA files but obviously the data is raw, no track header or compression or
+  anything like that.
 
   TRACK 0, SIDE 0
   TRACK 0, SIDE 1
@@ -32,6 +21,21 @@ const char ST_rcsid[] = "Hatari $Id: st.c,v 1.6 2006-02-08 22:49:27 eerot Exp $"
   TRACK 2, SIDE 0
   TRACK 2, SIDE 1
 */
+const char ST_rcsid[] = "Hatari $Id: st.c,v 1.7 2006-09-28 15:21:06 thothy Exp $";
+
+#include "main.h"
+#include "file.h"
+#include "st.h"
+
+#define SAVE_TO_ST_IMAGES
+
+
+#if defined(__riscos)
+/* The following two lines are required on RISC OS for preventing it from
+ * interfering with the .ST image files: */
+#include <unixlib/local.h>
+int __feature_imagefs_is_file = 1;
+#endif
 
 
 /*-----------------------------------------------------------------------*/
