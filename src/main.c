@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.86 2006-08-02 07:45:00 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.87 2006-09-28 18:27:19 eerot Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -362,7 +362,6 @@ static void Main_Init(void)
     exit(-1);
   }
 
-  Misc_SeedRandom(1043618);
   SDLGui_Init();
   Printer_Init();
   RS232_Init();

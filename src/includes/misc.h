@@ -12,7 +12,5 @@ extern void Misc_RemoveWhiteSpace(char *pszString,int Length);
 extern void Misc_strupr(char *pString);
 extern int Misc_LimitInt(int Value, int MinRange, int MaxRange);
 extern unsigned char Misc_ConvertToBCD(unsigned short int Value);
-extern void Misc_SeedRandom(unsigned long Seed);
-extern long Misc_GetRandom(void);
 
 #endif

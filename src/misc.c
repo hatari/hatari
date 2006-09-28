@@ -6,15 +6,12 @@
 
   Misc functions
 */
-const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.12 2006-02-12 21:35:17 eerot Exp $";
+const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.13 2006-09-28 18:27:19 eerot Exp $";
 
 #include <ctype.h>
 
 #include "main.h"
 #include "misc.h"
-
-
-static long RandomNum;
 
 
 /*-----------------------------------------------------------------------*/
@@ -67,49 +64,3 @@ unsigned char Misc_ConvertToBCD(unsigned short int Value)
 {
   return (((Value/10))<<4) | (Value%10);
 }
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Seed own random number (must be !=0)
-*/
-void Misc_SeedRandom(unsigned long Seed)
-{
-  RandomNum = Seed;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Get next random number
-*/
-static long Misc_NextLongRand(long Seed)
-{
-  unsigned long Lo, Hi;
-
-  Lo = 16807 * (long)(Seed & 0xffff);
-  Hi = 16807 * (long)((unsigned long)Seed >> 16);
-  Lo += (Hi & 0x7fff) << 16;
-  if (Lo > 2147483647L) {
-    Lo &= 2147483647L;
-    ++Lo;
-  }
-  Lo += Hi >> 15;
-  if (Lo > 2147483647L) {
-    Lo &= 2147483647L;
-    ++Lo;
-  }
-  return((long)Lo);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Get own random number
-*/
-long Misc_GetRandom(void)
-{
-  RandomNum = Misc_NextLongRand(RandomNum);
-  return(RandomNum);
-}
-

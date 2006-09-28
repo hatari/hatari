@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.26 2006-08-01 09:23:05 thothy Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.27 2006-09-28 18:27:19 eerot Exp $";
 
 #include <SDL_types.h>
 
@@ -202,10 +202,13 @@ static void Sound_CreateSoundMixClipTable(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Init sound tables and envelopes
+  Init random generator, sound tables and envelopes
 */
+static Uint32 RandomNum;
+
 void Sound_Init(void)
 {
+  RandomNum = 1043618;	/* must be != 0 */
   Sound_CreateLogTables();
   Sound_CreateEnvelopeShapes();
   Sound_CreateSoundMixClipTable();
@@ -370,8 +373,27 @@ static void Sound_GenerateEnvelope(unsigned char EnvShape, unsigned char Fine, u
 
 /*-----------------------------------------------------------------------*/
 /*
-  Generate nosie for this time-frame
+  Generate noise for this time-frame
 */
+static inline Uint32 Random_Next(void)
+{
+  Uint32 Lo, Hi;
+
+  Lo = 16807 * (Sint32)((Sint32)RandomNum & 0xffff);
+  Hi = 16807 * (Sint32)((Uint32)RandomNum >> 16);
+  Lo += (Hi & 0x7fff) << 16;
+  if (Lo > 2147483647L) {
+    Lo &= 2147483647L;
+    ++Lo;
+  }
+  Lo += Hi >> 15;
+  if (Lo > 2147483647L) {
+    Lo &= 2147483647L;
+    ++Lo;
+  }
+  RandomNum = Lo;
+  return Lo;
+}
 static void Sound_GenerateNoise(unsigned char MixerControl, unsigned char NoiseGen)
 {
   int NoiseValue;
@@ -380,7 +402,7 @@ static void Sound_GenerateNoise(unsigned char MixerControl, unsigned char NoiseG
 
   NoisePeriod = NOISE_PERIOD((Uint32)NoiseGen);
 
-  if (NoisePeriod==0)                                            /* Handle div by zero */
+  if (NoisePeriod==0)                              /* Handle div by zero */
     NoiseFreqDelta = 0;
   else
     NoiseFreqDelta = (((LONGLONG)YM_FREQ)<<NOISEFREQ_SHIFT) / NoisePeriod;  /* 4.28 fixed point */
@@ -388,8 +410,8 @@ static void Sound_GenerateNoise(unsigned char MixerControl, unsigned char NoiseG
   /* Generate noise samples */
   for(i=0; i<nSamplesToGenerate; i++)
   {
-    NoiseValue = (unsigned int)Misc_GetRandom()%96;              /* Get random value */
-    if (SquareWave[NoiseFreq>>NOISEFREQ_SHIFT]<=0)               /* Add to square wave at given frequency */
+    NoiseValue = Random_Next()%96;                 /* Get random value */
+    if (SquareWave[NoiseFreq>>NOISEFREQ_SHIFT]<=0) /* Add to square wave at given frequency */
       NoiseValue = -NoiseValue;
 
     Noise[i] = NoiseValue;
@@ -604,5 +626,5 @@ void Sound_EndRecording(void)
 */
 BOOL Sound_AreWeRecording(void)
 {
-  return(bRecordingYM || bRecordingWav);
+  return (bRecordingYM || bRecordingWav);
 }
