@@ -6,7 +6,7 @@
 
   ST Memory access functions.
 */
-const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.9 2006-02-21 14:15:35 thothy Exp $";
+const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.10 2006-09-29 11:20:56 thothy Exp $";
 
 #include "stMemory.h"
 #include "configuration.h"
@@ -91,6 +91,27 @@ void STMemory_SetDefaultConfig(void)
 		nMemControllerByte = 0x0f;
 	STMemory_WriteByte(0x424, nMemControllerByte);
 	IoMem_WriteByte(0xff8001, nMemControllerByte);
+
+	/* Set the Falcon memory (and monitor) configuration register: */
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	{
+		Uint8 nFalcSysCntrl;
+		/* TODO: How does the 0xff8006 register work exactly on the Falcon?
+		 * The following values are just guessed... */
+		if (ConfigureParams.Memory.nMemorySize == 14)
+			nFalcSysCntrl=  0x26;
+		else if (ConfigureParams.Memory.nMemorySize >= 4)
+			nFalcSysCntrl = 0x16;
+		else if (ConfigureParams.Memory.nMemorySize >= 2)
+			nFalcSysCntrl = 0x14;
+		else if (ConfigureParams.Memory.nMemorySize == 1)
+			nFalcSysCntrl = 0x06;
+		else
+			nFalcSysCntrl = 0x04;
+		if (!ConfigureParams.Screen.bUseHighRes)
+			nFalcSysCntrl |= 0x40;
+		STMemory_WriteByte(0xff8006, nFalcSysCntrl);
+	}
 
 	/* Set TOS floppies */
 	STMemory_WriteWord(0x446, nBootDrive);          /* Boot up on A(0) or C(2) */
