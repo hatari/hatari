@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the Falcon (not working yet!).
 */
-const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.1 2006-09-12 21:21:05 thothy Exp $";
+const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.2 2006-09-29 01:07:07 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -51,6 +51,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff820d, SIZE_BYTE, Video_BaseLow_ReadByte, IoMem_WriteWithoutInterception },
 	{ 0xff820e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff820f, SIZE_BYTE, Video_LineWidth_ReadByte, Video_LineWidth_WriteByte },
+	{ 0xff8210, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon line width */
 	{ 0xff8240, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color0_WriteWord },         /* COLOR 0 */
 	{ 0xff8242, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color1_WriteWord },         /* COLOR 1 */
 	{ 0xff8244, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color2_WriteWord },         /* COLOR 2 */
@@ -139,7 +140,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 
 	{ 0xff8e00, 16, IoMem_VoidRead, IoMem_WriteWithoutInterception },        /* VME Bus IO */
 
-	//{ 0xff8960, 4, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* TT clock chip */
+	{ 0xff8960, 4, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* TT clock chip */
 
 	//{ 0xff8c80, 8, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* SCC */
 
@@ -154,6 +155,10 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff9222, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Lightpen Y position */
 
 	{ 0xff9800, 256, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon Videl palette */
+
+	{ 0xff9900, 0x300, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* No bus errors here */
+
+	{ 0xffa200, 8, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* TODO: Falcon DSP */
 
 	{ 0xfffa01, SIZE_BYTE, MFP_GPIP_ReadByte, MFP_GPIP_WriteByte },
 	{ 0xfffa03, SIZE_BYTE, MFP_ActiveEdge_ReadByte, MFP_ActiveEdge_WriteByte },

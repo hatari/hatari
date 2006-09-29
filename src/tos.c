@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.42 2006-09-27 08:58:43 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.43 2006-09-29 01:07:07 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -78,6 +78,7 @@ static const char pszMouse[] = "working mouse in big screen resolutions";
 static const char pszRomCheck[] = "ROM checksum";
 static const char pszNoSteHw[] = "disable STE hardware access";
 static const char pszNoPmmu[] = "disable PMMU access";
+static const char pszHwDisable[] = "disable hardware access";
 
 //static Uint8 pRtsOpcode[] = { 0x4E, 0x75 };  /* 0x4E75 = RTS */
 static const Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
@@ -139,6 +140,9 @@ static const TOS_PATCH TosPatches[] =
   { 0x404, -1, pszNoPmmu, TP_ALWAYS, 0xE0006A, 0xF0394000, 24, pNopOpcodes },
   { 0x404, -1, pszNoPmmu, TP_ALWAYS, 0xE014E6, 0xF0394C00, 32, pNopOpcodes },
   { 0x404, -1, pszNoPmmu, TP_ALWAYS, 0xE039A0, 0xF0394000, 24, pNopOpcodes },
+
+  { 0x404, -1, pszHwDisable, TP_ALWAYS, 0xe01ffe, 0x66f27000, 2, pNopOpcodes },  /* Disable RTC check */
+  { 0x404, -1, pszHwDisable, TP_ALWAYS, 0xe05132, 0x67f811d8, 2, pNopOpcodes },  /* Disable DSP check */
 
   { 0, 0, NULL, 0, 0, 0, 0, NULL }
 };
