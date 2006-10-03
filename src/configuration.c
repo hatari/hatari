@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.53 2006-09-27 08:58:43 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.54 2006-10-03 10:38:58 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -417,6 +417,11 @@ void Configuration_SetDefault(void)
 		sprintf(sConfigFileName, "%s%c.hatari.cfg", homeDir,PATHSEP);
 	else
 		strcpy(sConfigFileName, "hatari.cfg");
+
+#if defined(__AMIGAOS4__)
+	/* Fix default path names on Amiga OS */
+	sprintf(ConfigureParams.Rom.szTosImageFileName, "%stos.img", DATADIR);
+#endif
 }
 
 

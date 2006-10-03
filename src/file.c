@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.35 2006-09-26 22:01:59 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.36 2006-10-03 10:38:58 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -493,6 +493,11 @@ void File_MakeAbsoluteName(char *pFileName)
 {
 	char *pTempName;
 	int inpos, outpos;
+
+#if defined (__AMIGAOS4__)
+	/* This function does not work on Amiga OS */
+	return;
+#endif
 
 	inpos = 0;
 	pTempName = malloc(FILENAME_MAX);
