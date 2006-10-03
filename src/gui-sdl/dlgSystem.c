@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.7 2006-02-08 22:46:10 eerot Exp $";
+const char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.8 2006-10-03 09:59:51 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -19,14 +19,16 @@ const char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.7 2006-02-08 22:46:1
 #define DLGSYS_68040    8
 #define DLGSYS_ST       11
 #define DLGSYS_STE      12
-#define DLGSYS_8MHZ     14
-#define DLGSYS_16MHZ    15
-#define DLGSYS_32MHZ    16
-#define DLGSYS_PREFETCH 17
-#define DLGSYS_BLITTER  18
-#define DLGSYS_RTC      19
-#define DLGSYS_TIMERD   20
-#define DLGSYS_SLOWFDC  21
+#define DLGSYS_TT       13
+#define DLGSYS_FALCON   14
+#define DLGSYS_8MHZ     17
+#define DLGSYS_16MHZ    18
+#define DLGSYS_32MHZ    19
+#define DLGSYS_PREFETCH 20
+#define DLGSYS_BLITTER  21
+#define DLGSYS_RTC      22
+#define DLGSYS_TIMERD   23
+#define DLGSYS_SLOWFDC  24
 
 
 /* The "System" dialog: */
@@ -45,8 +47,11 @@ static SGOBJ systemdlg[] =
 
 	{ SGBOX, 0, 0, 19,3, 15,9, NULL },
 	{ SGTEXT, 0, 0, 20,4, 13,1, "Machine type:" },
-	{ SGRADIOBUT, 0, 0, 23,6, 7,1, "ST" },
-	{ SGRADIOBUT, 0, 0, 23,7, 7,1, "STE" },
+	{ SGRADIOBUT, 0, 0, 23,6, 8,1, "ST" },
+	{ SGRADIOBUT, 0, 0, 23,7, 8,1, "STE" },
+	{ SGRADIOBUT, 0, 0, 23,8, 8,1, "TT *" },
+	{ SGRADIOBUT, 0, 0, 23,9, 8,1, "Falcon *" },
+	{ SGTEXT, 0, 0, 21,11, 12,1, "* incomplete" },
 
 	{ SGTEXT, 0, 0, 2,13, 15,1, "CPU clock (MHz):" },
 	{ SGRADIOBUT, 0, 0, 19,13, 3,1, "8" },
@@ -58,9 +63,6 @@ static SGOBJ systemdlg[] =
 	{ SGCHECKBOX, 0, 0, 2,17, 27,1, "Real time clock emulation" },
 	{ SGCHECKBOX, 0, 0, 2,18, 15,1, "Patch Timer-D" },
 	{ SGCHECKBOX, 0, 0, 2,19, 25,1, "Slow down FDC emulation" },
-
-	{ SGTEXT, 0, 0, 20, 9, 13,1, "(STE mode is" },
-	{ SGTEXT, 0, 0, 20,10, 13,1, " incomplete!)" },
 
 	{ SGBUTTON, 0, 0, 8,21, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
@@ -85,7 +87,7 @@ void Dialog_SystemDlg(void)
 	}
 	systemdlg[DLGSYS_68000+DialogParams.System.nCpuLevel].state |= SG_SELECTED;
 
-	for (i = DLGSYS_ST; i <= DLGSYS_STE; i++)
+	for (i = DLGSYS_ST; i <= DLGSYS_FALCON; i++)
 	{
 		systemdlg[i].state &= ~SG_SELECTED;
 	}
