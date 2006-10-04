@@ -4,9 +4,9 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  Table with hardware IO handlers for the Falcon (not working yet!).
+  Table with hardware IO handlers for the Falcon.
 */
-const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.2 2006-09-29 01:07:07 thothy Exp $";
+const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.3 2006-10-04 20:34:49 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -22,7 +22,9 @@ const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.2 2006-09-29
 #include "rtc.h"
 #include "video.h"
 #include "blitter.h"
-
+#if ENABLE_FALCON
+#include "falcon/videl.h"
+#endif
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -52,6 +54,9 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff820e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff820f, SIZE_BYTE, Video_LineWidth_ReadByte, Video_LineWidth_WriteByte },
 	{ 0xff8210, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon line width */
+#if ENABLE_FALCON
+	{ 0xff8240, 32, IoMem_ReadWithoutInterception, VIDEL_ColorRegsWrite },                  /* ST color regs */
+#else
 	{ 0xff8240, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color0_WriteWord },         /* COLOR 0 */
 	{ 0xff8242, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color1_WriteWord },         /* COLOR 1 */
 	{ 0xff8244, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color2_WriteWord },         /* COLOR 2 */
@@ -68,10 +73,16 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff825a, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color13_WriteWord },        /* COLOR 13 */
 	{ 0xff825c, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color14_WriteWord },        /* COLOR 14 */
 	{ 0xff825e, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color15_WriteWord },        /* COLOR 15 */
+#endif
 	{ 0xff8260, SIZE_BYTE, Video_ShifterMode_ReadByte, Video_ShifterMode_WriteByte },
 	{ 0xff8261, 4,         IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 	{ 0xff8265, SIZE_BYTE, Video_HorScroll_Read, Video_HorScroll_Write },                   /* horizontal fine scrolling */
-	{ 0xff8266, 26,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
+#if ENABLE_FALCON
+	{ 0xff8266, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_ShiftModeWriteWord },       /* Falcon shift mode */
+#else
+	{ 0xff8266, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon shift mode */
+#endif
+	{ 0xff8268, 24,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 
 	{ 0xff8280, 68, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* TODO: Falcon video */
 
@@ -154,11 +165,15 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff9220, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Lightpen X position */
 	{ 0xff9222, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception }, /* Lightpen Y position */
 
-	{ 0xff9800, 256, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon Videl palette */
+#if ENABLE_FALCON
+	{ 0xff9800, 0x400, IoMem_ReadWithoutInterception, VIDEL_ColorRegsWrite }, /* Falcon Videl palette */
+#else
+	{ 0xff9800, 0x400, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon Videl palette */
+#endif
 
-	{ 0xff9900, 0x300, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* No bus errors here */
-
-	{ 0xffa200, 8, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* TODO: Falcon DSP */
+	{ 0xffa200, 2, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* TODO: Falcon DSP */
+	{ 0xffa202, 1, IoMem_VoidRead, IoMem_WriteWithoutInterception },                /* TODO: Falcon DSP */
+	{ 0xffa203, 5, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* TODO: Falcon DSP */
 
 	{ 0xfffa01, SIZE_BYTE, MFP_GPIP_ReadByte, MFP_GPIP_WriteByte },
 	{ 0xfffa03, SIZE_BYTE, MFP_ActiveEdge_ReadByte, MFP_ActiveEdge_WriteByte },

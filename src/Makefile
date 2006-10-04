@@ -1,5 +1,8 @@
 # Main Makefile for Hatari.
 
+# Set ENABLE_FALCON to 1 to enable experimental Falcon code:
+ENABLE_FALCON = 0
+
 # Include settings
 include ../Makefile.cnf
 
@@ -9,6 +12,9 @@ INCFLAGS = -I./includes -I./uae-cpu
 
 CFLAGS += -DDATADIR=\"$(DATADIR)\" -DCONFDIR=\"$(CONFDIR)\" $(INCFLAGS) $(SDL_CFLAGS)
 
+ifeq ($(ENABLE_FALCON),1)
+CFLAGS += -DENABLE_FALCON=1
+endif
 
 CPUOBJS = ./uae-cpu/hatari-glue.o ./uae-cpu/memory.o ./uae-cpu/newcpu.o \
   ./uae-cpu/readcpu.o ./uae-cpu/fpp.o ./uae-cpu/cpustbl.o ./uae-cpu/cpudefs.o \
@@ -22,6 +28,11 @@ GUIOBJS = ./gui-sdl/dlgAbout.o ./gui-sdl/dlgAlert.o ./gui-sdl/dlgDevice.o \
   ./gui-sdl/dlgRom.o ./gui-sdl/dlgScreen.o ./gui-sdl/dlgSound.o  \
   ./gui-sdl/dlgSystem.o ./gui-sdl/dlgFileSelect.o ./gui-sdl/sdlgui.o
 
+ifeq ($(ENABLE_FALCON),1)
+FALCOBJS = ./falcon/videl.o ./falcon/hostscreen.o
+else
+FALCOBJS =
+endif
 
 SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c options.c \
   createBlankImage.c cycles.c debugui.c dialog.c dim.c dmaSnd.c fdc.c file.c \
@@ -35,7 +46,7 @@ SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c options.c \
 OBJS = $(SRCS:.c=.o)
 
 
-ALLOBJS = $(OBJS) $(GUIOBJS) $(CPUOBJS)
+ALLOBJS = $(OBJS) $(GUIOBJS) $(CPUOBJS) $(FALCOBJS)
 
 
 all: hatari
@@ -56,22 +67,27 @@ uae-cpu/cpudefs.c: uae-cpu/build68k.c uae-cpu/table68k
 gui-sdl/%.o: gui-sdl/%.c
 	$(MAKE) -C gui-sdl/ all
 
+falcon/%.o: falcon/%.c
+	$(MAKE) -C falcon/ all
+
 
 clean:
 	$(RM) *.o hatari
 	$(MAKE) -C gui-sdl/ clean
 	$(MAKE) -C uae-cpu/ clean
+	$(MAKE) -C falcon/ clean
 
 distclean:
 	$(RM) *.o hatari
 	$(RM) Makefile.dep *~ *.bak *.orig
 	$(MAKE) -C gui-sdl/ distclean
 	$(MAKE) -C uae-cpu/ distclean
+	$(MAKE) -C falcon/ distclean
 
 
 # Use "make depend" to generate file dependencies:
 Makefile.dep: Makefile
-	$(CC) -MM $(CFLAGS) $(SRCS) > Makefile.dep
+	$(CC) -M $(CFLAGS) $(SRCS) > Makefile.dep
 
 depend: Makefile.dep
 	$(MAKE) -C gui-sdl/ depend

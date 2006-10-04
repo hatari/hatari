@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.87 2006-09-28 18:27:19 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.88 2006-10-04 20:34:49 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -367,6 +367,9 @@ static void Main_Init(void)
   RS232_Init();
   Midi_Init();
   Screen_Init();
+#if ENABLE_FALCON
+  HostScreen_Init();
+#endif
   Floppy_Init();
   Init680x0();                  /* Init CPU emulation */
   Audio_Init();
@@ -432,6 +435,9 @@ static void Main_UnInit(void)
   Audio_UnInit();
   YMFormat_FreeRecording();
   SDLGui_UnInit();
+#if ENABLE_FALCON
+  HostScreen_UnInit();
+#endif
   Screen_UnInit();
   Exit680x0();
 

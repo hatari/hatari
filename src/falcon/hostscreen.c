@@ -1,51 +1,29 @@
 /*
- * hostscreen.cpp - host video routines
- *
- * Copyright (c) 2001-2005 STanda of ARAnyM developer team (see AUTHORS)
- *
- * This file is part of the ARAnyM project which builds a new and powerful
- * TOS/FreeMiNT compatible virtual machine running on almost any hardware.
- *
- * ARAnyM is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * ARAnyM is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with ARAnyM; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */
+  Hatari - hostscreen.c
 
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
 
-#include "sysdeps.h"
-#include "hardware.h"
-#include "cpu_emulation.h"
-#include "memory.h"
-#include "hostscreen.h"
-#include "parameters.h"
-#include "gui-sdl/sdlgui.h"
+  Host video routines. This file originally came from the Aranym project but
+  has been thoroughly reworked for Hatari. However, integration with the rest
+  of the Hatari source code is still bad and needs a lot of improvement...
+*/
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.2 2006-10-04 20:34:49 thothy Exp $";
+
 #include "main.h"
+#include "sysdeps.h"
+#include "stMemory.h"
+#include "ioMem.h"
+#include "hostscreen.h"
 
-#define DEBUG 0
-#include "debug.h"
+#define VIDEL_DEBUG 1
 
-#ifdef ENABLE_OPENGL
-#include <SDL_opengl.h>
-#endif
-
-#ifdef OS_cygwin
-# define WIN32 1
-# include <SDL_syswm.h>
-# include <windows.h>
-# undef WIN32
+#if VIDEL_DEBUG
+#define Dprintf(a) printf a
 #else
-# include <SDL_syswm.h>
+#define Dprintf(a)
 #endif
+
 
 #define RGB_BLACK     0x00000000
 #define RGB_BLUE      0x000000ff
@@ -64,6 +42,23 @@
 #define RGB_LTYELLOW  0xaaaa0000
 #define RGB_WHITE     0xffff00ff
 
+
+static SDL_Surface *mainSurface;		// The main window surface
+static SDL_Surface *backgroundSurf;	// Background window surface
+static SDL_Surface *surf;			// pointer to actual surface for VDI
+
+
+SDL_mutex   *screenLock;
+uint32 sdl_videoparams;
+uint32 hs_width, hs_height, hs_bpp;
+BOOL   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
+
+struct { // TOS palette (bpp < 16) to SDL color mapping
+	SDL_Color	standard[256];
+	uint32		native[256];
+} palette;
+
+
 static const unsigned long default_palette[] = {
     RGB_WHITE, RGB_RED, RGB_GREEN, RGB_YELLOW,
     RGB_BLUE, RGB_MAGENTA, RGB_CYAN, RGB_LTGRAY,
@@ -71,76 +66,34 @@ static const unsigned long default_palette[] = {
     RGB_LTBLUE, RGB_LTMAGENTA, RGB_LTCYAN, RGB_BLACK
 };
 
-HostScreen::HostScreen(void) {
-	for(int i=0; i<256; i++) {
+void HostScreen_Init(void) {
+	int i;
+	for(i=0; i<256; i++) {
 		unsigned long color = default_palette[i%16];
 		palette.standard[i].r = color >> 24;
 		palette.standard[i].g = (color >> 16) & 0xff;
 		palette.standard[i].b = color & 0xff;
 	}
 
-	// the counter init
-	snapCounter = 0;
-
 	screenLock = SDL_CreateMutex();
 
 	backgroundSurf = NULL;
-	GUIopened = false;
 
 	mainSurface=NULL;
-
-#ifdef ENABLE_OPENGL
-	// OpenGL stuff
-	SdlGlSurface=NULL;
-	SdlGlTexture=NULL;
-	dirty_rects=NULL;
-	dirty_w=dirty_h=0;
-	npot_texture=rect_texture=SDL_FALSE;
-	rect_target=GL_TEXTURE_2D;
-#endif /* ENABLE_OPENGL */
-
-	DisableOpenGLVdi();
 }
 
-HostScreen::~HostScreen(void) {
+void HostScreen_UnInit(void) {
 	SDL_DestroyMutex(screenLock);
 
 	if (backgroundSurf) {
 		SDL_FreeSurface(backgroundSurf);
 		backgroundSurf=NULL;
 	}
-
-	// OpenGL stuff
-#ifdef ENABLE_OPENGL
-	if (bx_options.opengl.enabled) {
-		if (dirty_rects) {
-			delete dirty_rects;
-			dirty_rects=NULL;
-		}
-
-		if (mainSurface) {
-			SDL_FreeSurface(mainSurface);
-			mainSurface=NULL;
-		}
-
-		if (SdlGlTexture) {
-			glDeleteTextures(1, &SdlGlTexObj);
-			SdlGlTexture=NULL;
-		}
-	}
-#endif
-}
-
-void HostScreen::makeSnapshot()
-{
-	char filename[15];
-	sprintf( filename, "snap%03d.bmp", snapCounter++ );
-
-	SDL_SaveBMP( surf, filename );
 }
 
 
-void HostScreen::toggleFullScreen()
+#if 0
+void HostScreen_toggleFullScreen()
 {
 	bx_options.video.fullscreen = !bx_options.video.fullscreen;
 	sdl_videoparams ^= SDL_FULLSCREEN;
@@ -168,93 +121,15 @@ void HostScreen::toggleFullScreen()
 		if (SDL_BlitSurface(temp, NULL, mainSurface, NULL) != 0)
 			bug("toggleFullScreen: Unable to restore screen content.");
 		SDL_FreeSurface(temp);
-#ifdef SDL_GUI
-		if (isGUIopen() == 0)
-			surf = mainSurface;
-#endif /* SDL_GUI */
 
 		/* refresh the screen */
-		update( true);
+		update(TRUE);
 	}
 }
+#endif
 
-#ifdef SDL_GUI
-void HostScreen::allocateBackgroundSurf()
-{
-	// allocate new background video surface
-	if (backgroundSurf != NULL)
-		panicbug("Memory leak? The background video surface should not be allocated.");
 
-	backgroundSurf = SDL_ConvertSurface(mainSurface, mainSurface->format, mainSurface->flags);
-
-	D(bug("Allocating background video surface"));
-}
-
-void HostScreen::freeBackgroundSurf()
-{
-	// free background video surface
-	if (backgroundSurf != NULL) {
-		D(bug("Freeing background video surface"));
-		SDL_FreeSurface(backgroundSurf);
-		backgroundSurf = NULL;
-	}
-}
-
-void HostScreen::openGUI()
-{
-	D(bug("open GUI"));
-	if (isGUIopen()) {
-		D(bug("GUI is already open!"));
-		return;
-	}
-	allocateBackgroundSurf();
-	GUIopened = true;
-}
-
-void HostScreen::closeGUI()
-{
-	D(bug("close GUI"));
-	// update the main surface and then redirect VDI to it
-	restoreBackground();
-	surf = mainSurface;			// redirect VDI to main surface
-	D(bug("VDI redirected back to main video surface"));
-	freeBackgroundSurf();
-	GUIopened = false;
-}
-
-void HostScreen::saveBackground()
-{
-	if (backgroundSurf != NULL) {
-		SDL_BlitSurface(mainSurface, NULL, backgroundSurf, NULL);
-		surf = backgroundSurf;	// redirect VDI to background surface
-		D(bug("video surface saved to background, VDI redirected"));
-	}
-}
-
-void HostScreen::restoreBackground()
-{
-	if (backgroundSurf != NULL) {
-		SDL_BlitSurface(backgroundSurf, NULL, mainSurface, NULL);
-		update(true);
-		D(bug("video surface restored"));
-	}
-}
-void HostScreen::blendBackgrounds()
-{
-	if (backgroundSurf != NULL) {
-		SDL_Rect *Rect;
-
-		Rect = SDLGui_GetFirstBackgroundRect();
-		while (Rect != NULL) {
-			SDL_BlitSurface(backgroundSurf, Rect, mainSurface, Rect);
-			Rect = SDLGui_GetNextBackgroundRect();
-		}
-		update(true);
-	}
-}
-#endif /* SDL_GUI */
-
-int HostScreen::selectVideoMode(SDL_Rect **modes, uint32 *width, uint32 *height)
+int HostScreen_selectVideoMode(SDL_Rect **modes, uint32 *width, uint32 *height)
 {
 	int i, bestw, besth;
 
@@ -272,19 +147,19 @@ int HostScreen::selectVideoMode(SDL_Rect **modes, uint32 *width, uint32 *height)
 
 	*width = bestw;
 	*height = besth;
-	D(bug("hostscreen: video mode found: %dx%d",*width,*height));
+	Dprintf(("hostscreen: video mode found: %dx%d\n",*width,*height));
 
 	return 1;
 }
 
-void HostScreen::searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp )
+void HostScreen_searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp )
 {
 	SDL_Rect **modes;
 	SDL_PixelFormat pixelformat;
 	int modeflags;
 
 	/* Search in available modes the best suited */
-	D(bug("hostscreen: video mode asked: %dx%dx%d",*width,*height,*bpp));
+	Dprintf(("hostscreen: video mode asked: %dx%dx%d\n",*width,*height,*bpp));
 
 	if ((*width == 0) || (*height == 0)) {
 		*width = 640;
@@ -293,7 +168,7 @@ void HostScreen::searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp )
 
 	/* Read available video modes */
 	modeflags = 0 /*SDL_HWSURFACE | SDL_HWPALETTE*/;
-	if (bx_options.video.fullscreen)
+	if (0 /*bx_options.video.fullscreen*/)
 		modeflags |= SDL_FULLSCREEN;
 
 	/*--- Search a video mode with asked bpp ---*/
@@ -301,9 +176,9 @@ void HostScreen::searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp )
 		pixelformat.BitsPerPixel = *bpp;
 		modes = SDL_ListModes(&pixelformat, modeflags);
 		if ((modes != (SDL_Rect **) 0) && (modes != (SDL_Rect **) -1)) {
-			D(bug("hostscreen: searching a good video mode (any bpp)"));
-			if (selectVideoMode(modes,width,height)) {
-				D(bug("hostscreen: video mode selected: %dx%dx%d",*width,*height,*bpp));
+			Dprintf(("hostscreen: searching a good video mode (any bpp)\n"));
+			if (HostScreen_selectVideoMode(modes,width,height)) {
+				Dprintf(("hostscreen: video mode selected: %dx%dx%d\n",*width,*height,*bpp));
 				return;
 			}
 		}
@@ -312,1088 +187,79 @@ void HostScreen::searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp )
 	/*--- Search a video mode with any bpp ---*/
 	modes = SDL_ListModes(NULL, modeflags);
 	if ((modes != (SDL_Rect **) 0) && (modes != (SDL_Rect **) -1)) {
-		D(bug("hostscreen: searching a good video mode"));
-		if (selectVideoMode(modes,width,height)) {
-			D(bug("hostscreen: video mode selected: %dx%dx%d",*width,*height,*bpp));
+		Dprintf(("hostscreen: searching a good video mode\n"));
+		if (HostScreen_selectVideoMode(modes,width,height)) {
+			Dprintf(("hostscreen: video mode selected: %dx%dx%d\n",*width,*height,*bpp));
 			return;
 		}
 	}
 
 	if (modes == (SDL_Rect **) 0) {
-		D(bug("hostscreen: No modes available"));
+		Dprintf(("hostscreen: No modes available\n"));
 	}
 
 	if (modes == (SDL_Rect **) -1) {
 		/* Any mode available */
-		D(bug("hostscreen: Any modes available"));
+		Dprintf(("hostscreen: Any modes available\n"));
 	}
 
-	D(bug("hostscreen: video mode selected: %dx%dx%d",*width,*height,*bpp));
+	Dprintf(("hostscreen: video mode selected: %dx%dx%d\n",*width,*height,*bpp));
 }
 
-void HostScreen::setWindowSize( uint32 width, uint32 height, uint32 bpp )
+void HostScreen_setWindowSize( uint32 width, uint32 height, uint32 bpp )
 {
+/*
 	if (bx_options.autozoom.fixedsize) {
 		width = bx_options.autozoom.width;
 		height = bx_options.autozoom.height;
 	}
-
+*/
 	// Select a correct video mode
-	searchVideoMode(&width, &height, &bpp);	
+	HostScreen_searchVideoMode(&width, &height, &bpp);	
 
-	this->width	 = width;
-	this->height = height;
-	this->bpp = bpp;
+	hs_width	 = width;
+	hs_height = height;
+	hs_bpp = bpp;
 
 	// SelectVideoMode();
 	sdl_videoparams = 0 /*SDL_HWSURFACE | SDL_HWPALETTE*/;
-	if (bx_options.video.fullscreen)
-		sdl_videoparams |= SDL_FULLSCREEN;
+//	if (bx_options.video.fullscreen)
+//		sdl_videoparams |= SDL_FULLSCREEN;
 
-#ifdef ENABLE_OPENGL
-	if (bx_options.opengl.enabled) {
-		int filtering, i, gl_bpp[4]={0,16,24,32};
+	mainSurface = SDL_SetVideoMode(width, height, bpp, sdl_videoparams);
 
-		sdl_videoparams |= SDL_OPENGL;
-
-		/* Setup at least 15 bits true colour OpenGL context */
-		SDL_GL_SetAttribute(SDL_GL_RED_SIZE,5);
-		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE,5);
-		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,5);
-		SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE,15);
-
-		for (i=0;i<4;i++) {
-			SdlGlSurface = SDL_SetVideoMode(width, height, gl_bpp[i], sdl_videoparams);
-			if (SdlGlSurface) {
-				break;
-			}
-		}
-		if (!SdlGlSurface) {
-			fprintf(stderr,"Can not setup %dx%d OpenGL video mode\n",width,height);
-			QuitEmulator();
-		}
-		this->width = width = SdlGlSurface->w;
-		this->height = height = SdlGlSurface->h;
-		this->bpp = bpp = 32;	/* bpp of texture that will be used */
-
-		glViewport(0, 0, width, height);
-
-		/* Projection matrix */
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity();
-		glOrtho(0.0, width, height, 0.0, -1.0, 1.0);
-
-		/* Texture matrix */
-		glMatrixMode(GL_TEXTURE);
-		glLoadIdentity();
-
-		/* Model view matrix */
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-		glTranslatef(0.375, 0.375, 0.0);
-
-		/* Setup texturing mode */
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
-		/* Delete previous stuff */
-		if (mainSurface) {
-			SDL_FreeSurface(mainSurface);
-			mainSurface=NULL;
-		}
-
-		if (SdlGlTexture) {
-			glDeleteTextures(1, &SdlGlTexObj);
-		}
-
-		/* Full screen OpenGL rendering ? */
-		if (!OpenGLVdi) {
-			GLint MaxTextureSize;
-			char *extensions;
-
-			rect_target=GL_TEXTURE_2D;
-			npot_texture = rect_texture = SDL_FALSE;
-			glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
-
-			extensions = (char *)glGetString(GL_EXTENSIONS);
-
-			/* Check texture rectangle extensions */
-
-#if defined(GL_NV_texture_rectangle)
-			if (strstr(extensions, "GL_NV_texture_rectangle")) {
-				rect_texture = SDL_TRUE;
-				rect_target=GL_TEXTURE_RECTANGLE_NV;
-				glGetIntegerv(GL_MAX_RECTANGLE_TEXTURE_SIZE_NV, &MaxTextureSize);
-			}
-#endif
-#if defined(GL_EXT_texture_rectangle)
-			if (strstr(extensions, "GL_EXT_texture_rectangle")) {
-				rect_texture = SDL_TRUE;
-				rect_target=GL_TEXTURE_RECTANGLE_EXT;
-				glGetIntegerv(GL_MAX_RECTANGLE_TEXTURE_SIZE_EXT, &MaxTextureSize);
-			}
-#endif
-#if defined(GL_ARB_texture_rectangle)
-			if (strstr(extensions, "GL_ARB_texture_rectangle")) {
-				rect_texture = SDL_TRUE;
-				rect_target=GL_TEXTURE_RECTANGLE_ARB;
-				glGetIntegerv(GL_MAX_RECTANGLE_TEXTURE_SIZE_ARB, &MaxTextureSize);
-			}
-#endif
-
-			/* Check non power of two texture extension */
-			npot_texture = rect_texture;
-			if (strstr(extensions, "GL_ARB_texture_non_power_of_two")) {
-				npot_texture=SDL_TRUE;
-				rect_texture=SDL_FALSE;
-				rect_target=GL_TEXTURE_2D;
-				glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
-			}
-
-			SdlGlTextureWidth = SdlGlTextureHeight = MaxTextureSize;
-			D(bug("gl: need at least a %dx%d texture",width,height));
-			D(bug("gl: texture is at most a %dx%d texture",MaxTextureSize,MaxTextureSize));
-
-			if (!npot_texture) {
-				/* Calculate the smallest needed texture */
-				if (width<SdlGlTextureWidth) {
-					while (((SdlGlTextureWidth>>1)>width) && (SdlGlTextureWidth>64)) {
-						SdlGlTextureWidth>>=1;
-					}
-				}
-				if (height<SdlGlTextureHeight) {
-					while (((SdlGlTextureHeight>>1)>height) && (SdlGlTextureHeight>64)) {
-						SdlGlTextureHeight>>=1;
-					}
-				}
-			} else {
-				if (width<SdlGlTextureWidth) {
-					if (width>64) {
-						SdlGlTextureWidth=width;
-					} else {
-						SdlGlTextureWidth=64;
-					}
-				}
-				if (height<SdlGlTextureHeight) {
-					if (height>64) {
-						SdlGlTextureHeight=height;
-					} else {
-						SdlGlTextureHeight=64;
-					}
-				}
-			}
-			D(bug("gl: texture will be %dx%d texture",SdlGlTextureWidth,SdlGlTextureHeight));
-		}
-
-		mainSurface = SDL_CreateRGBSurface(SDL_SWSURFACE,
-			SdlGlTextureWidth,SdlGlTextureHeight,32,
-#if SDL_BYTEORDER == SDL_LIL_ENDIAN
-			255<<16,255<<8,255,255<<24	/* GL_BGRA little endian */
-#else
-			255<<8,255<<16,255<<24,255	/* GL_BGRA big endian */
-#endif
-		);
-		if (!mainSurface) {
-			fprintf(stderr,"Can not create %dx%dx%d texture\n",SdlGlTextureWidth,SdlGlTextureHeight,bpp);
-			QuitEmulator();
-		}
-		SdlGlTexture = (uint8 *) (mainSurface->pixels);
-
-		if (!OpenGLVdi) {
-			glGenTextures(1, &SdlGlTexObj);
-			glBindTexture(GL_TEXTURE_2D, SdlGlTexObj);
-
-			filtering = GL_NEAREST;		
-			if (bx_options.opengl.filtered) {
-				filtering = GL_LINEAR;
-			}
-			glTexParameteri(rect_target, GL_TEXTURE_MAG_FILTER, filtering); // scale when image bigger than texture
-			glTexParameteri(rect_target, GL_TEXTURE_MIN_FILTER, filtering); // scale when image smaller than texture
-
-			glTexImage2D(rect_target, 0, GL_RGBA, SdlGlTextureWidth, SdlGlTextureHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, SdlGlTexture);
-
-			D(bug("gl: texture created"));
-
-			/* Activate autozoom if texture smaller than screen */
-			SdlGlWidth = width;
-			SdlGlHeight = height;
-			if ((width>SdlGlTextureWidth) || (height>SdlGlTextureHeight)) {
-				this->width = width = SdlGlTextureWidth;
-				this->height = height = SdlGlTextureHeight;
-				bx_options.autozoom.enabled = true;
-				bx_options.autozoom.integercoefs = false;
-
-				D(bug("gl: autozoom enabled"));
-			} else {
-				bx_options.autozoom.enabled = false;
-				bx_options.autozoom.integercoefs = false;
-				D(bug("gl: autozoom disabled"));
-			}
-
-			/* Create dirty rectangles list */
-			if (dirty_rects)
-				delete dirty_rects;
-		
-			dirty_w=((width|15)+1)>>4;
-			dirty_h=((height|15)+1)>>4;
-			dirty_rects=new SDL_bool[dirty_w*dirty_h];
-			memset(dirty_rects,SDL_FALSE,sizeof(SDL_bool)*dirty_w*dirty_h);
-		}
-	}
-	else
-#endif /* ENABLE_OPENGL */
-	{
-		mainSurface = SDL_SetVideoMode(width, height, bpp, sdl_videoparams);
-	}
-
-#ifdef SDL_GUI
-	if (isGUIopen()) {
-		freeBackgroundSurf();
-		allocateBackgroundSurf();
-		saveBackground();
-		// force SDL GUI to redraw the dialog because resolution has changed
-		SDL_Event event;
-		event.type = SDL_USEREVENT;
-		event.user.code = SDL_USEREVENT; // misused this code for signalizing the resolution change. Did that because I knew the code was unique (needed something distinguishable from keyboard and mouse codes that are sent by the same event name from the input checking thread)
-		SDL_PeepEvents(&event, 1, SDL_ADDEVENT, SDL_EVENTMASK(SDL_USEREVENT));
-	}
-	else
-#endif /* SDL_GUI */
-	{
-		surf = mainSurface;
-	}
-
-	SDL_WM_SetCaption(VERSION_STRING, "ARAnyM");
+	surf = mainSurface;
 
 	// update the surface's palette
-	updatePalette( 256 );
+	HostScreen_updatePalette( 256 );
 
-	D(bug("Surface Pitch = %d, width = %d, height = %d", surf->pitch, surf->w, surf->h));
-	D(bug("Must Lock? %s", SDL_MUSTLOCK(surf) ? "YES" : "NO"));
+	Dprintf(("Surface Pitch = %d, width = %d, height = %d\n", surf->pitch, surf->w, surf->h));
+	Dprintf(("Must Lock? %s\n", SDL_MUSTLOCK(surf) ? "YES" : "NO"));
 
 	// is the SDL_update needed?
 	doUpdate = ( surf->flags & SDL_HWSURFACE ) == 0;
 
-	renderBegin();
+	HostScreen_renderBegin();
 
-	VideoRAMBaseHost = (uint8 *) surf->pixels;
-	InitVMEMBaseDiff(VideoRAMBaseHost, VideoRAMBase);
-	D(bug("VideoRAM starts at %p (%08x)", VideoRAMBaseHost, VideoRAMBase));
-	D(bug("surf->pixels = %x, getVideoSurface() = %x",
-			VideoRAMBaseHost, SDL_GetVideoSurface()->pixels));
+//	VideoRAMBaseHost = (uint8 *) surf->pixels;
+//	InitVMEMBaseDiff(VideoRAMBaseHost, VideoRAMBase);
+//	Dprintf(("VideoRAM starts at %p (%08x)\n", VideoRAMBaseHost, VideoRAMBase));
+	Dprintf(("surf->pixels = %p, getVideoSurface() = %p\n",
+			surf->pixels, SDL_GetVideoSurface()->pixels));
 
-	renderEnd();
+	HostScreen_renderEnd();
 
-	D(bug("Pixel format:bitspp=%d, tmasks r=%04x g=%04x b=%04x"
+	Dprintf(("Pixel format:bitspp=%d, tmasks r=%04x g=%04x b=%04x"
 			", tshifts r=%d g=%d b=%d"
-			", tlosses r=%d g=%d b=%d",
+			", tlosses r=%d g=%d b=%d\n",
 			surf->format->BitsPerPixel,
 			surf->format->Rmask, surf->format->Gmask, surf->format->Bmask,
 			surf->format->Rshift, surf->format->Gshift, surf->format->Bshift,
 			surf->format->Rloss, surf->format->Gloss, surf->format->Bloss));
 }
 
-/*
-extern "C" {
-	static void getBinary( uint16 data, char *buffer ) {
-		for( uint16 i=0; i<=15; i++ ) {
-			buffer[i] = (data & 1)?'1':' ';
-			data>>=1;
-		}
-		buffer[16]='\0';
-	}
-}
-*/
 
-
-inline void HostScreen::putPixel( int16 x, int16 y, uint16 pattern, uint32 fgColor, uint32 bgColor, uint16 logOp )
-{
-	switch (logOp) {
-		case 1:
-			gfxFastPixelColorNolock( x, y, pattern ? fgColor : bgColor );
-			break;
-		case 2:
-			if ( pattern )
-				gfxFastPixelColorNolock( x, y, fgColor );
-			break;
-		case 3:
-			if ( pattern )
-				gfxFastPixelColorNolock( x, y, ~ gfxGetPixel( x, y ) );
-			break;
-		case 4:
-			if ( ! pattern )
-				gfxFastPixelColorNolock( x, y, fgColor );
-			break;
-	}
-}
-
-
-void HostScreen::gfxHLineColor ( int16 x1, int16 x2, int16 y, uint16 pattern, uint32 fgColor, uint32 bgColor, uint16 logOp )
-{
-	uint8 *pixel,*pixellast;
-	int dx;
-	int pixx, pixy;
-	int16 w;
-	int16 xtmp;
-	uint8 ppos;
-
-	/* Swap x1, x2 if required */
-	if (x1>x2) {
-		xtmp=x1; x1=x2; x2=xtmp;
-	}
-
-	/* Calculate width */
-	w=x2-x1;
-
-	/* Sanity check on width */
-	if (w<0)
-		return;
-
-	/* More variable setup */
-	dx=w+1;
-	pixx = surf->format->BytesPerPixel;
-	pixy = surf->pitch;
-	pixel = ((uint8*)surf->pixels) + pixx * (int)x1 + pixy * (int)y;
-	ppos = 0;
-
-	D2(bug("HLn %3d,%3d,%3d", x1, x2, y));
-
-	/* Draw */
-	switch(surf->format->BytesPerPixel) {
-		case 1:
-			pixellast = pixel + dx;
-			switch (logOp) {
-				case 1:
-					for (; pixel<pixellast; pixel += pixx)
-						*(uint8*)pixel = (( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 ) ? fgColor : bgColor);
-					break;
-				case 2:
-					for (; pixel<pixellast; pixel += pixx)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint8*)pixel = fgColor;
-					break;
-				case 3:
-					for (; pixel<pixellast; pixel += pixx)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint8*)pixel = ~(*(uint8*)pixel);
-					break;
-				case 4:
-					for (; pixel<pixellast; pixel += pixx)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) == 0 )
-							*(uint8*)pixel = fgColor;
-					break;
-			}
-			break;
-		case 2:
-			pixellast = pixel + dx + dx;
-			switch (logOp) {
-				case 1:
-					for (; pixel<pixellast; pixel += pixx)
-						*(uint16*)pixel = (( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 ) ? fgColor : bgColor);
-					break;
-				case 2:
-					for (; pixel<pixellast; pixel += pixx)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint16*)pixel = fgColor;
-					break;
-				case 3:
-					for (; pixel<pixellast; pixel += pixx)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint16*)pixel = ~(*(uint16*)pixel);
-					break;
-				case 4:
-					for (; pixel<pixellast; pixel += pixx)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) == 0 )
-							*(uint16*)pixel = fgColor;
-					break;
-			}
-			break;
-		case 3:
-			pixellast = pixel + dx + dx + dx;
-			switch (logOp) {
-				case 1:
-					for (; pixel<pixellast; pixel += pixx)
-						putBpp24Pixel( pixel, (( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 ) ? fgColor : bgColor ) );
-					break;
-				case 2:
-					for (; pixel<pixellast; pixel += pixx)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							putBpp24Pixel( pixel, fgColor );
-					break;
-				case 3:
-					for (; pixel<pixellast; pixel += pixx)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							putBpp24Pixel( pixel, ~ getBpp24Pixel( pixel ) );
-					break;
-				case 4:
-					for (; pixel<pixellast; pixel += pixx)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) == 0 )
-							putBpp24Pixel( pixel, fgColor );
-					break;
-			}
-			break;
-		default: /* case 4*/
-			dx = dx + dx;
-			pixellast = pixel + dx + dx;
-			switch (logOp) {
-				case 1:
-					for (; pixel<pixellast; pixel += pixx)
-						*(uint32*)pixel = (( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 ) ? fgColor : bgColor);
-					break;
-				case 2:
-					for (; pixel<pixellast; pixel += pixx)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint32*)pixel = fgColor;
-					break;
-				case 3:
-					for (; pixel<pixellast; pixel += pixx)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint32*)pixel = ~(*(uint32*)pixel);
-					break;
-				case 4:
-					for (; pixel<pixellast; pixel += pixx)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) == 0 )
-							*(uint32*)pixel = fgColor;
-					break;
-			}
-			break;
-	}
-}
-
-
-void HostScreen::gfxVLineColor( int16 x, int16 y1, int16 y2,
-								uint16 pattern, uint32 fgColor, uint32 bgColor, uint16 logOp )
-{
-	uint8 *pixel, *pixellast;
-	int dy;
-	int pixx, pixy;
-	int16 h;
-	int16 ytmp;
-	uint8 ppos;
-
-	/* Swap y1, y2 if required */
-	if (y1>y2) {
-		ytmp=y1; y1=y2; y2=ytmp;
-	}
-
-	/* Calculate height */
-	h=y2-y1;
-
-	/* Sanity check on height */
-	if (h<0)
-		return;
-
-	ppos = 0;
-
-	D2(bug("VLn %3d,%3d,%3d", x, y1, y2));
-
-	/* More variable setup */
-	dy=h+1;
-	pixx = surf->format->BytesPerPixel;
-	pixy = surf->pitch;
-	pixel = ((uint8*)surf->pixels) + pixx * (int)x + pixy * (int)y1;
-	pixellast = pixel + pixy*dy;
-
-	/* Draw */
-	switch(surf->format->BytesPerPixel) {
-		case 1:
-			switch (logOp) {
-				case 1:
-					for (; pixel<pixellast; pixel += pixy)
-						*(uint8*)pixel = (( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 ) ? fgColor : bgColor);
-					break;
-				case 2:
-					for (; pixel<pixellast; pixel += pixy)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint8*)pixel = fgColor;
-					break;
-				case 3:
-					for (; pixel<pixellast; pixel += pixy)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint8*)pixel = ~(*(uint8*)pixel);
-					break;
-				case 4:
-					for (; pixel<pixellast; pixel += pixy)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) == 0 )
-							*(uint8*)pixel = fgColor;
-					break;
-			}
-			break;
-		case 2:
-			switch (logOp) {
-				case 1:
-					for (; pixel<pixellast; pixel += pixy)
-						*(uint16*)pixel = (( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 ) ? fgColor : bgColor);
-					break;
-				case 2:
-					for (; pixel<pixellast; pixel += pixy)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint16*)pixel = fgColor;
-					break;
-				case 3:
-					for (; pixel<pixellast; pixel += pixy)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint16*)pixel = ~(*(uint16*)pixel);
-					break;
-				case 4:
-					for (; pixel<pixellast; pixel += pixy)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) == 0 )
-							*(uint16*)pixel = fgColor;
-					break;
-			}
-			break;
-		case 3:
-			switch (logOp) {
-				case 1:
-					for (; pixel<pixellast; pixel += pixy)
-						putBpp24Pixel( pixel, (( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 ) ? fgColor : bgColor ) );
-					break;
-				case 2:
-					for (; pixel<pixellast; pixel += pixy)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							putBpp24Pixel( pixel, fgColor );
-					break;
-				case 3:
-					for (; pixel<pixellast; pixel += pixy)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							putBpp24Pixel( pixel, ~ getBpp24Pixel( pixel ) );
-					break;
-				case 4:
-					for (; pixel<pixellast; pixel += pixy)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) == 0 )
-							putBpp24Pixel( pixel, fgColor );
-					break;
-			}
-			break;
-		default: /* case 4*/
-			switch (logOp) {
-				case 1:
-					for (; pixel<pixellast; pixel += pixy)
-						*(uint32*)pixel = (( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 ) ? fgColor : bgColor);
-					break;
-				case 2:
-					for (; pixel<pixellast; pixel += pixy)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint32*)pixel = fgColor;
-					break;
-				case 3:
-					for (; pixel<pixellast; pixel += pixy)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint32*)pixel = ~(*(uint32*)pixel);
-					break;
-				case 4:
-					for (; pixel<pixellast; pixel += pixy)
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) == 0 )
-							*(uint32*)pixel = fgColor;
-					break;
-			}
-			break;
-	}
-}
-
-
-/* ----- Line */
-
-/* Non-alpha line drawing code adapted from routine			 */
-/* by Pete Shinners, pete@shinners.org						 */
-/* Originally from pygame, http://pygame.seul.org			 */
-
-void HostScreen::gfxLineColor( int16 x1, int16 y1, int16 x2, int16 y2,
-                               uint16 pattern, uint32 fgColor, uint32 bgColor, uint16 logOp,
-                               bool last_pixel )
-{
-	int16 pixx, pixy;
-	int16 x, y;
-	int16 dx, dy;
-	int16 sx, sy;
-	int16 swaptmp;
-	uint8 *pixel;
-	uint8 ppos;
-
-	/* Test for special cases of straight lines or single point */
-	if (x1 == x2) {
-		if (y1 < y2) {
-			gfxVLineColor(x1, y1, y2 - !last_pixel, pattern, fgColor, bgColor, logOp);
-			return;
-		} else if (y1 > y2) {
-			gfxVLineColor(x1, y2 + !last_pixel, y1, pattern, fgColor, bgColor, logOp);
-			return;
-		} else if (last_pixel) {
-			putPixel( x1, y1, pattern & 0x8000, fgColor, bgColor, logOp );
-		}
-	}
-	if (y1 == y2) {
-		if (x1 < x2) {
-			gfxHLineColor(x1, x2 - !last_pixel, y1, pattern, fgColor, bgColor, logOp);
-			return;
-		} else if (x1 > x2) {
-			gfxHLineColor(x2 + !last_pixel, x1, y1, pattern, fgColor, bgColor, logOp);
-			return;
-		}
-	}
-
-	D2(bug("CLn %3d,%3d,%3d,%3d", x1, x2, y1, y2));
-
-	/* Variable setup */
-	dx = x2 - x1;
-	dy = y2 - y1;
-	sx = (dx >= 0) ? 1 : -1;
-	sy = (dy >= 0) ? 1 : -1;
-	ppos = 0;
-
-	/* More variable setup */
-	dx = sx * dx + 1;
-	dy = sy * dy + 1;
-	pixx = surf->format->BytesPerPixel;
-	pixy = surf->pitch;
-	pixel = ((uint8*)surf->pixels) + pixx * (uint32)x1 + pixy * (uint32)y1;
-	pixx *= sx;
-	pixy *= sy;
-	if (dx < dy) {
-		swaptmp = dx; dx = dy; dy = swaptmp;
-		swaptmp = pixx; pixx = pixy; pixy = swaptmp;
-	}
-
-	//	D2(bug("ln pix pixx, pixy: %d,%d : %d,%d : %x, %d", sx, sy, dx, dy, pixx, pixy));
-
-	/* Draw */
-	x = !last_pixel;	// 0 if last pixel should be drawn, else 1
-	y = 0;
-	switch(surf->format->BytesPerPixel) {
-		case 1:
-			switch (logOp) {
-				case 1:
-					for (; x < dx; x++, pixel += pixx) {
-						*(uint8*)pixel = (( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 ) ? fgColor : bgColor);
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-				case 2:
-					for (; x < dx; x++, pixel += pixx) {
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint8*)pixel = fgColor;
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-				case 3:
-					for (; x < dx; x++, pixel += pixx) {
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint8*)pixel = ~(*(uint8*)pixel);
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-				case 4:
-					for (; x < dx; x++, pixel += pixx) {
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) == 0 )
-							*(uint8*)pixel = fgColor;
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-			}
-			break;
-		case 2:
-			switch (logOp) {
-				case 1:
-					for (; x < dx; x++, pixel += pixx) {
-						*(uint16*)pixel = (( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 ) ? fgColor : bgColor);
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-				case 2:
-					for (; x < dx; x++, pixel += pixx) {
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint16*)pixel = fgColor;
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-				case 3:
-					for (; x < dx; x++, pixel += pixx) {
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint16*)pixel = ~(*(uint16*)pixel);
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-				case 4:
-					for (; x < dx; x++, pixel += pixx) {
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) == 0 )
-							*(uint16*)pixel = fgColor;
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-			}
-			break;
-		case 3:
-			switch (logOp) {
-				case 1:
-					for (; x < dx; x++, pixel += pixx) {
-						putBpp24Pixel( pixel, (( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 ) ? fgColor : bgColor) );
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-				case 2:
-					for (; x < dx; x++, pixel += pixx) {
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							putBpp24Pixel( pixel, fgColor );
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-				case 3:
-					for (; x < dx; x++, pixel += pixx) {
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							putBpp24Pixel( pixel, ~ getBpp24Pixel( pixel ) );
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-				case 4:
-					for (; x < dx; x++, pixel += pixx) {
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) == 0 )
-							putBpp24Pixel( pixel, fgColor );
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-			}
-			break;
-		default: /* case 4 */
-			switch (logOp) {
-				case 1:
-					for (; x < dx; x++, pixel += pixx) {
-						*(uint32*)pixel = (( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 ) ? fgColor : bgColor);
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-				case 2:
-					for (; x < dx; x++, pixel += pixx) {
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint32*)pixel = fgColor;
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-				case 3:
-					for (; x < dx; x++, pixel += pixx) {
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) != 0 )
-							*(uint32*)pixel = ~(*(uint32*)pixel);
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-				case 4:
-					for (; x < dx; x++, pixel += pixx) {
-						if ( ( pattern & ( 1 << ( (ppos++) & 0xf ) )) == 0 )
-							*(uint32*)pixel = fgColor;
-
-						y += dy;
-						if (y >= dx) {
-							y -= dx;
-							pixel += pixy;
-						}
-					}
-					break;
-			}
-			break;
-	}
-}
-
-
-
-
-/**
- * Derived from the SDL_gfxPrimitives::boxColor().
- * The colors are in the destination surface format here.
- * The trivial cases optimalization removed.
- *
- * @author STanda
- **/
-void HostScreen::gfxBoxColorPattern (int16 x, int16 y, int16 w, int16 h,
-									 uint16 *areaPattern, uint32 fgColor, uint32 bgColor, uint16 logOp)
-{
-	uint8 *pixel, *pixellast;
-	int16 pixx, pixy;
-	int16 i;
-	int16 dx=w;
-	int16 dy=h;
-
-	/* More variable setup */
-	pixx = surf->format->BytesPerPixel;
-	pixy = surf->pitch;
-	pixel = ((uint8*)surf->pixels) + pixx * (int32)x + pixy * (int32)y;
-	pixellast = pixel + pixy*dy;
-
-	// STanda // FIXME here the pattern should be checked out of the loops for performance
-			  // but for now it is good enough (if there is no pattern -> another switch?)
-
-	/* Draw */
-	switch(surf->format->BytesPerPixel) {
-		case 1:
-			pixy -= (pixx*dx);
-			switch (logOp) {
-				case 1:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							*(uint8*)pixel = (( ( pattern & ( 1 << ( (x+i) & 0xf ) )) != 0 ) ? fgColor : bgColor);
-							pixel += pixx;
-						}
-					}
-					break;
-				case 2:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							if ( ( pattern & ( 1 << ( (x+i) & 0xf ) )) != 0 )
-								*(uint8*)pixel = fgColor;
-							pixel += pixx;
-						}
-					}
-					break;
-				case 3:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							if ( ( pattern & ( 1 << ( (x+i) & 0xf ) )) != 0 )
-								*(uint8*)pixel = ~(*(uint8*)pixel);
-							pixel += pixx;
-						};
-					}
-					break;
-				case 4:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							if ( ( pattern & ( 1 << ( (x+i) & 0xf ) )) == 0 )
-								*(uint8*)pixel = fgColor;
-							pixel += pixx;
-						}
-					}
-					break;
-			}
-			break;
-		case 2:
-			pixy -= (pixx*dx);
-			//				D2(bug("bix pix: %d, %x, %d", y, pixel, pixy));
-
-			switch (logOp) {
-				case 1:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							*(uint16*)pixel = (( ( pattern & ( 1 << ( (x+i) & 0xf ) )) != 0 ) ? fgColor : bgColor);
-							pixel += pixx;
-						}
-					}
-					break;
-				case 2:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							if ( ( pattern & ( 1 << ( (x+i) & 0xf ) )) != 0 )
-								*(uint16*)pixel = fgColor;
-							pixel += pixx;
-						}
-					}
-					break;
-				case 3:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							if ( ( pattern & ( 1 << ( (x+i) & 0xf ) )) != 0 )
-								*(uint16*)pixel = ~(*(uint16*)pixel);
-							pixel += pixx;
-						};
-					}
-					break;
-				case 4:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							if ( ( pattern & ( 1 << ( (x+i) & 0xf ) )) == 0 )
-								*(uint16*)pixel = fgColor;
-							pixel += pixx;
-						}
-					}
-					break;
-			}
-			break;
-		case 3:
-			pixy -= (pixx*dx);
-			switch (logOp) {
-				case 1:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							putBpp24Pixel( pixel, (( ( pattern & ( 1 << ( (x+i) & 0xf ) )) != 0 ) ? fgColor : bgColor) );
-							pixel += pixx;
-						}
-					}
-					break;
-				case 2:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							if ( ( pattern & ( 1 << ( (x+i) & 0xf ) )) != 0 )
-								putBpp24Pixel( pixel, fgColor );
-							pixel += pixx;
-						}
-					}
-					break;
-				case 3:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							if ( ( pattern & ( 1 << ( (x+i) & 0xf ) )) != 0 )
-								putBpp24Pixel( pixel, ~ getBpp24Pixel( pixel ) );
-							pixel += pixx;
-						};
-					}
-					break;
-				case 4:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							if ( ( pattern & ( 1 << ( (x+i) & 0xf ) )) == 0 )
-								putBpp24Pixel( pixel, fgColor );
-							pixel += pixx;
-						}
-					}
-					break;
-			}
-			break;
-		default: /* case 4*/
-			pixy -= (pixx*dx);
-			switch (logOp) {
-				case 1:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							*(uint32*)pixel = (( ( pattern & ( 1 << ( (x+i) & 0xf ) )) != 0 ) ? fgColor : bgColor);
-							pixel += pixx;
-						}
-					}
-					break;
-				case 2:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							if ( ( pattern & ( 1 << ( (x+i) & 0xf ) )) != 0 )
-								*(uint32*)pixel = fgColor;
-							pixel += pixx;
-						}
-					}
-					break;
-				case 3:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							if ( ( pattern & ( 1 << ( (x+i) & 0xf ) )) != 0 )
-								*(uint32*)pixel = ~(*(uint32*)pixel);
-							pixel += pixx;
-						};
-					}
-					break;
-				case 4:
-					for (; pixel<pixellast; pixel += pixy) {
-						uint16 pattern = areaPattern ? areaPattern[ y++ & 0xf ] : 0xffff;
-
-						for (i=0; i<dx; i++) {
-							if ( ( pattern & ( 1 << ( (x+i) & 0xf ) )) == 0 )
-								*(uint32*)pixel = fgColor;
-							pixel += pixx;
-						}
-					}
-					break;
-			}
-			break;
-	}  // switch
-}
-
-void HostScreen::update( int32 x, int32 y, int32 w, int32 h, bool forced )
+void HostScreen_update5( int32 x, int32 y, int32 w, int32 h, BOOL forced )
 {
 	if ( !forced && !doUpdate ) // the HW surface is available
 		return;
@@ -1401,117 +267,273 @@ void HostScreen::update( int32 x, int32 y, int32 w, int32 h, bool forced )
 	//	SDL_UpdateRect(SDL_GetVideoSurface(), 0, 0, width, height);
 	// SDL_UpdateRect(surf, x, y, w, h);
 	SDL_UpdateRect(mainSurface, x, y, w, h);
-
-#ifdef ENABLE_OPENGL
-	if (!OpenGLVdi && bx_options.opengl.enabled && dirty_rects) {
-		/* Mark dirty rectangles */
-		int x1,y1,x2,y2, i,j;
-		
-		x1=x>>4;
-		y1=y>>4;
-		x2=x+w;
-		if (x2&15) x2=(x2|15)+1;
-		x2>>=4;
-		y2=y+h;
-		if (y2&15) y2=(y2|15)+1;
-		y2>>=4;
-
-		for (j=y1;j<y2;j++) {
-			for (i=x1;i<x2;i++) {
-				dirty_rects[i+(j*dirty_w)]=SDL_TRUE;
-			}
-		}
-	}
-#endif
 }
 
-void HostScreen::update( bool forced )
+void HostScreen_update1( BOOL forced )
 {
-	update( 0, 0, width, height, forced );
+	HostScreen_update5( 0, 0, hs_width, hs_height, forced );
 }
 
-void HostScreen::update()
+void HostScreen_update0()
 {
-	update( 0, 0, width, height, false );
+	HostScreen_update5( 0, 0, hs_width, hs_height, FALSE );
 }
 
-void HostScreen::OpenGLUpdate(void)
-{
-#ifdef ENABLE_OPENGL
-	GLfloat tex_width, tex_height;
 
-	if (OpenGLVdi) {
-		return;
-	}
-
-	glEnable(rect_target);
-	glBindTexture(rect_target, SdlGlTexObj);
-
-	/* Update the texture */
-	{
-		int x,y;
-
-		for (y=0;y<dirty_h;y++) {
-			SDL_bool update_line=SDL_FALSE;
-			for (x=0;x<dirty_w;x++) {
-				if (dirty_rects[y*dirty_w+x]==SDL_TRUE) {
-					update_line=SDL_TRUE;
-					break;
-				}
-			}
-			if (update_line) {
-				glTexSubImage2D(rect_target, 0,
-					 0, y<<4,
-					 SdlGlTextureWidth, 16,
-					 GL_BGRA, GL_UNSIGNED_BYTE,
-					 SdlGlTexture + (y<<4)*SdlGlTextureWidth*4
-				);
-			}
-		}
-	}
-	memset(dirty_rects,SDL_FALSE,sizeof(SDL_bool)*dirty_w*dirty_h);
-
-	/* Render the textured quad */
-	tex_width = ((GLfloat)width)/((GLfloat)SdlGlTextureWidth);
-	tex_height = ((GLfloat)height)/((GLfloat)SdlGlTextureHeight);
-	if (rect_target!=GL_TEXTURE_2D) {
-		tex_width = (GLfloat)width;
-		tex_height = (GLfloat)height;
-	}
-
-	glBegin(GL_QUADS);
-		glTexCoord2f( 0.0, 0.0 );
-		glVertex2i( 0, 0);
-
-		glTexCoord2f( tex_width, 0.0 );
-		glVertex2i( SdlGlWidth, 0);
-
-		glTexCoord2f( tex_width, tex_height);
-		glVertex2i( SdlGlWidth, SdlGlHeight);
-
-		glTexCoord2f( 0.0, tex_height);
-		glVertex2i( 0, SdlGlHeight);
-	glEnd();
-
-	glDisable(rect_target);
-#endif
-}
-
-uint32 HostScreen::getBitsPerPixel(void)
+uint32 HostScreen_getBitsPerPixel(void)
 {
 	return surf->format->BitsPerPixel;
 }
 
-void HostScreen::EnableOpenGLVdi(void)
+
+#if 0
+void HostScreen_gfxFastPixelColorNolock(int16 x, int16 y, uint32 color)
 {
-	OpenGLVdi = SDL_TRUE;
+	int bpp;
+	uint8 *p;
+
+	/* Get destination format */
+	bpp = surf->format->BytesPerPixel;
+	p = (uint8 *)surf->pixels + y * surf->pitch + x * bpp;
+	switch(bpp) {
+		case 1:
+			*p = color;
+			break;
+		case 2:
+			*(uint16 *)p = color;
+			break;
+		case 3:
+			putBpp24Pixel( p, color );
+			break;
+		case 4:
+			*(uint32 *)p = color;
+			break;
+	} /* switch */
+}
+#endif
+
+#if 0
+uint32 HostScreen_gfxGetPixel( int16 x, int16 y )
+{
+	int bpp;
+	uint8 *p;
+
+	/* Get destination format */
+	bpp = surf->format->BytesPerPixel;
+	p = (uint8 *)surf->pixels + y * surf->pitch + x * bpp;
+	switch(bpp) {
+		case 1:
+			return (uint32)(*(uint8 *)p);
+		case 2:
+			return (uint32)(*(uint16 *)p);
+		case 3:
+			// FIXME maybe some & problems? and endian
+			return getBpp24Pixel( p );
+		case 4:
+			return *(uint32 *)p;
+	} /* switch */
+	return 0;	// should never happen
+}
+#endif
+
+uint32 HostScreen_getBpp()
+{
+	return surf->format->BytesPerPixel;
 }
 
-void HostScreen::DisableOpenGLVdi(void)
-{
-	OpenGLVdi = SDL_FALSE;
+uint32 HostScreen_getPitch() {
+	return surf->pitch;
 }
 
-/*
-vim:ts=4:sw=4:
-*/
+uint32 HostScreen_getWidth() {
+	return hs_width;
+}
+
+uint32 HostScreen_getHeight() {
+	return hs_height;
+}
+
+uintptr HostScreen_getVideoramAddress() {
+	return (uintptr)surf->pixels;	/* FIXME maybe this should be mainSurface? */
+}
+
+void HostScreen_setPaletteColor( uint8 idx, uint32 red, uint32 green, uint32 blue ) {
+	SDL_Color color = palette.standard[idx];
+	color.r = red; color.g = green; color.b = blue; // set the SDL standard RGB palette settings
+	palette.native[idx] = SDL_MapRGB( surf->format, red, green, blue ); // convert the color to native
+}
+
+uint32 HostScreen_getPaletteColor( uint8 idx ) {
+	return palette.native[idx];
+}
+
+void HostScreen_updatePalette( uint16 colorCount ) {
+	SDL_SetColors( surf, palette.standard, 0, colorCount );
+}
+
+uint32 HostScreen_getColor( uint32 red, uint32 green, uint32 blue ) {
+	return SDL_MapRGB( surf->format, red, green, blue );
+}
+
+#if 0
+void HostScreen_lock(void) {
+	while (SDL_mutexP(screenLock)==-1) {
+		SDL_Delay(20);
+		fprintf(stderr, "Couldn't lock mutex\n");
+	}
+}
+
+void HostScreen_unlock(void) {
+	while (SDL_mutexV(screenLock)==-1) {
+		SDL_Delay(20);
+		fprintf(stderr, "Couldn't unlock mutex\n");
+	}
+}
+#endif
+
+BOOL HostScreen_renderBegin(void) {
+	if (SDL_MUSTLOCK(surf))
+		if (SDL_LockSurface(surf) < 0) {
+			printf("Couldn't lock surface to refresh!\n");
+			return FALSE;
+		}
+
+	return TRUE;
+}
+
+void HostScreen_renderEnd() {
+	if (SDL_MUSTLOCK(surf))
+		SDL_UnlockSurface(surf);
+}
+
+
+
+/**
+ * Performs conversion from the TOS's bitplane word order (big endian) data
+ * into the native chunky color index.
+ */
+void HostScreen_bitplaneToChunky( uint16 *atariBitplaneData, uint16 bpp, uint8 colorValues[16] )
+{
+	uint32 a, b, c, d, x;
+
+	/* Obviously the different cases can be broken out in various
+	 * ways to lessen the amount of work needed for <8 bit modes.
+	 * It's doubtful if the usage of those modes warrants it, though.
+	 * The branches below should be ~100% correctly predicted and
+	 * thus be more or less for free.
+	 * Getting the palette values inline does not seem to help
+	 * enough to worry about. The palette lookup is much slower than
+	 * this code, though, so it would be nice to do something about it.
+	 */
+	if (bpp >= 4) {
+		d = *(uint32 *)&atariBitplaneData[0];
+		c = *(uint32 *)&atariBitplaneData[2];
+		if (bpp == 4) {
+			a = b = 0;
+		} else {
+			b = *(uint32 *)&atariBitplaneData[4];
+			a = *(uint32 *)&atariBitplaneData[6];
+		}
+	} else {
+		a = b = c = 0;
+		if (bpp == 2) {
+			d = *(uint32 *)&atariBitplaneData[0];
+		} else {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+			d = atariBitplaneData[0]<<16;
+#else
+			d = atariBitplaneData[0];
+#endif
+		}
+	}
+
+	x = a;
+	a =  (a & 0xf0f0f0f0)       | ((c & 0xf0f0f0f0) >> 4);
+	c = ((x & 0x0f0f0f0f) << 4) |  (c & 0x0f0f0f0f);
+	x = b;
+	b =  (b & 0xf0f0f0f0)       | ((d & 0xf0f0f0f0) >> 4);
+	d = ((x & 0x0f0f0f0f) << 4) |  (d & 0x0f0f0f0f);
+
+	x = a;
+	a =  (a & 0xcccccccc)       | ((b & 0xcccccccc) >> 2);
+	b = ((x & 0x33333333) << 2) |  (b & 0x33333333);
+	x = c;
+	c =  (c & 0xcccccccc)       | ((d & 0xcccccccc) >> 2);
+	d = ((x & 0x33333333) << 2) |  (d & 0x33333333);
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	a = (a & 0x5555aaaa) | ((a & 0x00005555) << 17) | ((a & 0xaaaa0000) >> 17);
+	b = (b & 0x5555aaaa) | ((b & 0x00005555) << 17) | ((b & 0xaaaa0000) >> 17);
+	c = (c & 0x5555aaaa) | ((c & 0x00005555) << 17) | ((c & 0xaaaa0000) >> 17);
+	d = (d & 0x5555aaaa) | ((d & 0x00005555) << 17) | ((d & 0xaaaa0000) >> 17);
+	
+	colorValues[ 8] = a;
+	a >>= 8;
+	colorValues[ 0] = a;
+	a >>= 8;
+	colorValues[ 9] = a;
+	a >>= 8;
+	colorValues[ 1] = a;
+	
+	colorValues[10] = b;
+	b >>= 8;
+	colorValues[ 2] = b;
+	b >>= 8;
+	colorValues[11] = b;
+	b >>= 8;
+	colorValues[ 3] = b;
+	
+	colorValues[12] = c;
+	c >>= 8;
+	colorValues[ 4] = c;
+	c >>= 8;
+	colorValues[13] = c;
+	c >>= 8;
+	colorValues[ 5] = c;
+	
+	colorValues[14] = d;
+	d >>= 8;
+	colorValues[ 6] = d;
+	d >>= 8;
+	colorValues[15] = d;
+	d >>= 8;
+	colorValues[ 7] = d;
+#else
+	a = (a & 0xaaaa5555) | ((a & 0x0000aaaa) << 15) | ((a & 0x55550000) >> 15);
+	b = (b & 0xaaaa5555) | ((b & 0x0000aaaa) << 15) | ((b & 0x55550000) >> 15);
+	c = (c & 0xaaaa5555) | ((c & 0x0000aaaa) << 15) | ((c & 0x55550000) >> 15);
+	d = (d & 0xaaaa5555) | ((d & 0x0000aaaa) << 15) | ((d & 0x55550000) >> 15);
+
+	colorValues[ 1] = a;
+	a >>= 8;
+	colorValues[ 9] = a;
+	a >>= 8;
+	colorValues[ 0] = a;
+	a >>= 8;
+	colorValues[ 8] = a;
+
+	colorValues[ 3] = b;
+	b >>= 8;
+	colorValues[11] = b;
+	b >>= 8;
+	colorValues[ 2] = b;
+	b >>= 8;
+	colorValues[10] = b;
+
+	colorValues[ 5] = c;
+	c >>= 8;
+	colorValues[13] = c;
+	c >>= 8;
+	colorValues[ 4] = c;
+	c >>= 8;
+	colorValues[12] = c;
+
+	colorValues[ 7] = d;
+	d >>= 8;
+	colorValues[15] = d;
+	d >>= 8;
+	colorValues[ 6] = d;
+	d >>= 8;
+	colorValues[14] = d;
+#endif
+}

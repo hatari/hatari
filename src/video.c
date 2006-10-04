@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.53 2006-09-26 19:12:35 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.54 2006-10-04 20:34:49 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -751,7 +751,12 @@ void Video_InterruptHandler_VBL(void)
       Video_CopyVDIScreen();
 
     /* Now draw the screen! */
-    Screen_Draw();
+#if ENABLE_FALCON
+    if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+      VIDEL_renderScreen();
+    else
+#endif
+      Screen_Draw();
   }
 
   /* Update counter for number of screen refreshes per second(for debugging) */
