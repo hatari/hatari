@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.2 2006-10-04 20:34:49 thothy Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.3 2006-10-05 23:31:40 thothy Exp $";
 
 #include "main.h"
 #include "sysdeps.h"
@@ -43,9 +43,8 @@ const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.2 2006-10-04 20:34
 #define RGB_WHITE     0xffff00ff
 
 
-static SDL_Surface *mainSurface;		// The main window surface
-static SDL_Surface *backgroundSurf;	// Background window surface
-static SDL_Surface *surf;			// pointer to actual surface for VDI
+static SDL_Surface *mainSurface;        // The main window surface
+static SDL_Surface *surf;               // pointer to actual surface
 
 
 SDL_mutex   *screenLock;
@@ -66,6 +65,7 @@ static const unsigned long default_palette[] = {
     RGB_LTBLUE, RGB_LTMAGENTA, RGB_LTCYAN, RGB_BLACK
 };
 
+
 void HostScreen_Init(void) {
 	int i;
 	for(i=0; i<256; i++) {
@@ -77,18 +77,11 @@ void HostScreen_Init(void) {
 
 	screenLock = SDL_CreateMutex();
 
-	backgroundSurf = NULL;
-
 	mainSurface=NULL;
 }
 
 void HostScreen_UnInit(void) {
 	SDL_DestroyMutex(screenLock);
-
-	if (backgroundSurf) {
-		SDL_FreeSurface(backgroundSurf);
-		backgroundSurf=NULL;
-	}
 }
 
 
@@ -358,9 +351,12 @@ uintptr HostScreen_getVideoramAddress() {
 }
 
 void HostScreen_setPaletteColor( uint8 idx, uint32 red, uint32 green, uint32 blue ) {
-	SDL_Color color = palette.standard[idx];
-	color.r = red; color.g = green; color.b = blue; // set the SDL standard RGB palette settings
-	palette.native[idx] = SDL_MapRGB( surf->format, red, green, blue ); // convert the color to native
+	// set the SDL standard RGB palette settings
+	palette.standard[idx].r = red;
+	palette.standard[idx].g = green;
+	palette.standard[idx].b = blue;
+	// convert the color to native
+	palette.native[idx] = SDL_MapRGB( surf->format, red, green, blue );
 }
 
 uint32 HostScreen_getPaletteColor( uint8 idx ) {
