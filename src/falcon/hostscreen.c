@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.3 2006-10-05 23:31:40 thothy Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.4 2006-10-07 11:41:01 thothy Exp $";
 
 #include "main.h"
 #include "sysdeps.h"
@@ -47,12 +47,12 @@ static SDL_Surface *mainSurface;        // The main window surface
 static SDL_Surface *surf;               // pointer to actual surface
 
 
-SDL_mutex   *screenLock;
-uint32 sdl_videoparams;
-uint32 hs_width, hs_height, hs_bpp;
-BOOL   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
+static SDL_mutex   *screenLock;
+static uint32 sdl_videoparams;
+static uint32 hs_width, hs_height, hs_bpp;
+static BOOL   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
 
-struct { // TOS palette (bpp < 16) to SDL color mapping
+static struct { // TOS palette (bpp < 16) to SDL color mapping
 	SDL_Color	standard[256];
 	uint32		native[256];
 } palette;
@@ -346,8 +346,8 @@ uint32 HostScreen_getHeight() {
 	return hs_height;
 }
 
-uintptr HostScreen_getVideoramAddress() {
-	return (uintptr)surf->pixels;	/* FIXME maybe this should be mainSurface? */
+uint8 *HostScreen_getVideoramAddress() {
+	return surf->pixels;	/* FIXME maybe this should be mainSurface? */
 }
 
 void HostScreen_setPaletteColor( uint8 idx, uint32 red, uint32 green, uint32 blue ) {

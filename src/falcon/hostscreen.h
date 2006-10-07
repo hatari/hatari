@@ -18,8 +18,6 @@
 #define int16 Sint16
 #define int8 Sint8
 
-typedef unsigned long uintptr;
-
 
 /**
  * This macro handles the endianity for 24 bit per item data
@@ -65,7 +63,7 @@ extern uint32 HostScreen_getBitsPerPixel(void);
 extern uint32 HostScreen_getPitch(void);
 extern uint32 HostScreen_getWidth(void);
 extern uint32 HostScreen_getHeight(void);
-extern uintptr HostScreen_getVideoramAddress(void);
+extern uint8 * HostScreen_getVideoramAddress(void);
 extern void HostScreen_setPaletteColor( uint8 idx, uint32 red, uint32 green, uint32 blue );
 extern uint32 HostScreen_getPaletteColor( uint8 idx );
 extern void HostScreen_updatePalette( uint16 colorCount );

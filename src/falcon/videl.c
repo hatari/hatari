@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.2 2006-10-04 20:34:49 thothy Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.3 2006-10-07 11:41:01 thothy Exp $";
 
 #include "main.h"
 #include "ioMem.h"
@@ -86,12 +86,12 @@ void VIDEL_ShiftModeWriteWord(void)
 		}
 }
 
-long VIDEL_getVideoramAddress()
+static long VIDEL_getVideoramAddress(void)
 {
 	return (handleRead(HW + 1) << 16) | (handleRead(HW + 3) << 8) | handleRead(HW + 0x0d);
 }
 
-int VIDEL_getScreenBpp()
+static int VIDEL_getScreenBpp(void)
 {
 	int f_shift = handleReadW(HW + 0x66);
 	int st_shift = handleReadW(HW + 0x60);
@@ -121,12 +121,12 @@ int VIDEL_getScreenBpp()
 	return bits_per_pixel;
 }
 
-int VIDEL_getScreenWidth()
+static int VIDEL_getScreenWidth(void)
 {
 	return handleReadW(HW + 0x10) * 16 / VIDEL_getScreenBpp();
 }
 
-int VIDEL_getScreenHeight()
+static int VIDEL_getScreenHeight(void)
 {
 	int vdb = handleReadW(HW + 0xa8);
 	int vde = handleReadW(HW + 0xaa);
@@ -147,7 +147,7 @@ int VIDEL_getScreenHeight()
 }
 
 
-void VIDEL_updateColors()
+void VIDEL_updateColors(void)
 {
 	//Dprintf(("ColorUpdate in progress\n"));
 
@@ -157,7 +157,7 @@ void VIDEL_updateColors()
 	int st_shift = handleReadW(HW + 0x60);
 	if (st_shift == 0) {		   // bpp == 4
 		int hreg = handleReadW(HW + 0x82); // Too lame!
-		if (hreg == 0x10 | hreg == 0x17 | hreg == 0x3e)	  // Better way how to make out ST LOW mode wanted
+		if (hreg == 0x10 || hreg == 0x17 || hreg == 0x3e)	  // Better way how to make out ST LOW mode wanted
 			stCompatibleColorPalette = TRUE;
 
 		//Dprintf(("ColorUpdate %x\n", hreg));
@@ -167,7 +167,7 @@ void VIDEL_updateColors()
 	else						   // bpp == 1	// if (st_shift == 0x200)
 		stCompatibleColorPalette = TRUE;
 
-	Dprintf(("stCompatibleColorPalette = %i\n", stCompatibleColorPalette));
+	//Dprintf(("stCompatibleColorPalette = %i\n", stCompatibleColorPalette));
 
 	// map the colortable into the correct pixel format
 	int r,g,b;
@@ -256,7 +256,7 @@ void VIDEL_renderScreen(void)
 }
 
 
-void VIDEL_renderScreenNoZoom()
+void VIDEL_renderScreenNoZoom(void)
 {
 	int vw	 = VIDEL_getScreenWidth();
 	int vh	 = VIDEL_getScreenHeight();
@@ -286,7 +286,7 @@ void VIDEL_renderScreenNoZoom()
 	long atariVideoRAM = VIDEL_getVideoramAddress();
 
 	uint16 *fvram = (uint16 *) Atari2HostAddr(atariVideoRAM);
-	uint8 *hvram = (uint8 *) HostScreen_getVideoramAddress();;
+	uint8 *hvram = HostScreen_getVideoramAddress();
 
 	/* Clip to SDL_Surface dimensions */
 	int scrwidth = HostScreen_getWidth();
@@ -550,7 +550,7 @@ void VIDEL_renderScreenNoZoom()
 
 
 #if 0
-void VIDEL_renderScreenZoom()
+void VIDEL_renderScreenZoom(void)
 {
 	int i, j, w, h, cursrcline;
 
