@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.50 2006-06-26 23:03:09 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.51 2006-10-07 12:22:38 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -501,6 +501,15 @@ void Screen_ReturnFromFullScreen(void)
 */
 void Screen_DidResolutionChange(void)
 {
+#if ENABLE_FALCON
+  /* Don't run this function if Videl emulation is running! */
+  if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+  {
+    PrevSTRes = STRes;
+    return;
+  }
+#endif
+
   /* Did change res? */
   if (STRes!=PrevSTRes)
   {
