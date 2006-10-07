@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.8 2006-09-27 08:58:43 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.9 2006-10-07 11:01:30 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -139,11 +139,13 @@ static void Opt_ShowExit(int option, const char *value, const char *error)
 	
 	printf("This is %s.\n", PROG_NAME);
 	printf("This program is free software licensed under the GNU GPL.\n\n");
-	printf("Usage:\n hatari [options] [disk image name]\n"
-	       "Where options are:\n");
+
 	if (option == OPT_VERSION) {
         	exit(0);
         }
+
+	printf("Usage:\n hatari [options] [disk image name]\n"
+	       "Where options are:\n");
 
 	/* find largest option name and check option IDs */
 	i = maxlen = 0;
@@ -327,7 +329,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_ACSIHDIMAGE:
 			i += 1;
 			if (!File_Exists(argv[i])) {
-				Opt_ShowExit(OPT_NONE, argv[i], "Given HD image file doesn't exist!\n");
+				Opt_ShowExit(OPT_NONE, argv[i], "Given HD image file doesn't exist (or has wrong file permissions)!\n");
 			}
 			if (strlen(argv[i]) < sizeof(ConfigureParams.HardDisk.szHardDiskImage)) {
 				ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
@@ -340,7 +342,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_IDEHDIMAGE:
 			i += 1;
 			if (!File_Exists(argv[i])) {
-				Opt_ShowExit(OPT_NONE, argv[i], "Given HD image file doesn't exist!\n");
+				Opt_ShowExit(OPT_NONE, argv[i], "Given HD image file doesn't exist (or has wrong file permissions)!\n");
 			}
 			if (strlen(argv[i]) < sizeof(ConfigureParams.HardDisk.szIdeHardDiskImage)) {
 				ConfigureParams.HardDisk.bUseIdeHardDiskImage = TRUE;
@@ -364,7 +366,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_TOS:
 			i += 1;
 			if (!File_Exists(argv[i])) {
-				Opt_ShowExit(OPT_NONE, argv[i], "Given TOS image file doesn't exist!\n");
+				Opt_ShowExit(OPT_NONE, argv[i], "Given TOS image file doesn't exist (or has wrong file permissions)!\n");
 			}
 			if (strlen(argv[i]) < sizeof(ConfigureParams.Rom.szTosImageFileName)) {
 				strcpy(ConfigureParams.Rom.szTosImageFileName, argv[i]);
@@ -376,7 +378,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_CARTRIDGE:
 			i += 1;
 			if (!File_Exists(argv[i])) {
-				Opt_ShowExit(OPT_NONE, argv[i], "Given Cartridge image file doesn't exist!\n");
+				Opt_ShowExit(OPT_NONE, argv[i], "Given Cartridge image file doesn't exist (or has wrong file permissions)!\n");
 			}
 			if (strlen(argv[i]) < sizeof(ConfigureParams.Rom.szCartridgeImageFileName)) {
 				strcpy(ConfigureParams.Rom.szCartridgeImageFileName, argv[i]);
@@ -425,7 +427,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_CONFIGFILE:
 			i += 1;
 			if (!File_Exists(argv[i])) {
-				Opt_ShowExit(OPT_NONE, argv[i], "Given config file doesn't exist!\n");
+				Opt_ShowExit(OPT_NONE, argv[i], "Given config file doesn't exist (or has wrong file permissions)!\n");
 			}
 			if (strlen(argv[i]) < sizeof(sConfigFileName)) {
 				strcpy(sConfigFileName, argv[i]);
@@ -441,7 +443,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 				strcpy(ConfigureParams.Keyboard.szMappingFileName, argv[i]);
 				ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
 			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "Given keymap file doesn't exist!\n");
+				Opt_ShowExit(OPT_NONE, argv[i], "Given keymap file doesn't exist (or has wrong file permissions)!\n");
 			}
 			break;
 			
