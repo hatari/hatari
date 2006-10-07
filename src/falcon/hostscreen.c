@@ -8,13 +8,15 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.4 2006-10-07 11:41:01 thothy Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.5 2006-10-07 13:32:30 thothy Exp $";
 
 #include "main.h"
+#include "configuration.h"
 #include "sysdeps.h"
 #include "stMemory.h"
 #include "ioMem.h"
 #include "hostscreen.h"
+#include "screen.h"
 
 #define VIDEL_DEBUG 1
 
@@ -201,12 +203,16 @@ void HostScreen_searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp )
 
 void HostScreen_setWindowSize( uint32 width, uint32 height, uint32 bpp )
 {
-/*
-	if (bx_options.autozoom.fixedsize) {
-		width = bx_options.autozoom.width;
-		height = bx_options.autozoom.height;
+	if (ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_LOWCOL_HIGHRES
+	    || ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_HICOL_HIGHRES) {
+		/* Ugly: 400x300 threshold is currently hard-coded. */
+		/* Should rather be selectable by the user! */	
+	    	if (width <= 400)
+			width *= 2;
+	    	if (height <= 400)
+			height *= 2;
 	}
-*/
+
 	// Select a correct video mode
 	HostScreen_searchVideoMode(&width, &height, &bpp);	
 

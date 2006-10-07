@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.51 2006-07-03 20:36:28 clafou Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.52 2006-10-07 13:32:30 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -34,6 +34,7 @@ const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.51 2006-07-03 20:36:28 cla
 #include "video.h"
 #include "sdlgui.h"
 #include "uae-cpu/hatari-glue.h"
+#include "falcon/videl.h"
 
 
 CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can also choose 'Cancel') */
@@ -103,8 +104,17 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 	{
 		ConfigureParams.Screen.ChosenDisplayMode = DialogParams.Screen.ChosenDisplayMode;
 		ConfigureParams.Screen.bAllowOverscan = DialogParams.Screen.bAllowOverscan;
-		PrevSTRes = -1;
-		Screen_DidResolutionChange();
+#if ENABLE_FALCON
+		if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		{
+			VIDEL_ZoomModeChanged();
+		}
+		else
+#endif
+		{
+			PrevSTRes = -1;
+			Screen_DidResolutionChange();
+		}
 	}
 
 	/* Did set new printer parameters? */
