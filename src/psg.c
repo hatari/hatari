@@ -8,7 +8,7 @@
 
   Also used for the printer (centronics) port emulation (PSG Port B, Register 15)
 */
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.10 2006-02-08 22:49:27 eerot Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.11 2006-10-08 12:10:11 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -19,7 +19,9 @@ const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.10 2006-02-08 22:49:27 eerot Exp
 #include "sound.h"
 #include "printer.h"            /* because Printer I/O goes through PSG Register 15 */
 #include "psg.h"
-
+#if ENABLE_FALCON
+#include "falcon/dsp.h"
+#endif
 
 Uint8 PSGRegisterSelect;        /* 0xff8800 (read/write) */
 Uint8 PSGRegisters[16];         /* Register in PSG, see PSG_REG_xxxx */
@@ -154,6 +156,14 @@ void PSG_DataRegister_WriteByte(void)
 				Printer_TransferByteTo((unsigned char) PSGRegisters[PSG_REG_IO_PORTB]);
 			}
 		}
+#if ENABLE_FALCON
+		if (ConfigureParams.System.nMachineType == MACHINE_FALCON
+		    && (PSGRegisters[PSG_REG_IO_PORTA]&(1<<4)))
+		{
+			fprintf(stderr, "Calling DSP_Reset?\n");
+			//DSP_Reset();
+		}
+#endif
 		break;
 	}
 

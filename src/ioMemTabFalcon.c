@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the Falcon.
 */
-const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.3 2006-10-04 20:34:49 thothy Exp $";
+const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.4 2006-10-08 12:10:11 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -24,6 +24,7 @@ const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.3 2006-10-04
 #include "blitter.h"
 #if ENABLE_FALCON
 #include "falcon/videl.h"
+#include "falcon/dsp.h"
 #endif
 
 /*-----------------------------------------------------------------------*/
@@ -171,9 +172,13 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff9800, 0x400, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon Videl palette */
 #endif
 
-	{ 0xffa200, 2, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* TODO: Falcon DSP */
-	{ 0xffa202, 1, IoMem_VoidRead, IoMem_WriteWithoutInterception },                /* TODO: Falcon DSP */
-	{ 0xffa203, 5, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* TODO: Falcon DSP */
+#if 0 // ENABLE_FALCON
+	{ 0xffa200, 8, DSP_HandleReadAccess, DSP_HandleWriteAccess }, /* Falcon DSP */
+#else
+	{ 0xffa200, 2, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DSP */
+	{ 0xffa202, 1, IoMem_VoidRead, IoMem_WriteWithoutInterception },                /* DSP */
+	{ 0xffa203, 5, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DSP */
+#endif
 
 	{ 0xfffa01, SIZE_BYTE, MFP_GPIP_ReadByte, MFP_GPIP_WriteByte },
 	{ 0xfffa03, SIZE_BYTE, MFP_ActiveEdge_ReadByte, MFP_ActiveEdge_WriteByte },

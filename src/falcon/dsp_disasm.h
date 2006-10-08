@@ -2,6 +2,7 @@
  *  Dsp56K disassembler
  *
  *  ARAnyM (C) 2003 Patrice Mandin
+ *  Adaption to Hatari (C) 2006 by Thomas Huth
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

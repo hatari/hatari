@@ -1,17 +1,15 @@
 /*
  * dsp.h - Atari DSP56001 emulation code - declaration
  *
- * Copyright (c) 2001-2004 Petr Stehlik of ARAnyM dev team (see AUTHORS)
+ * Copyright (c) 2001-2004 Petr Stehlik of ARAnyM dev team
+ * Adaption to Hatari (C) 2006 by Thomas Huth
  * 
- * This file is part of the ARAnyM project which builds a new and powerful
- * TOS/FreeMiNT compatible virtual machine running on almost any hardware.
- *
- * ARAnyM is free software; you can redistribute it and/or modify
+ * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * ARAnyM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -24,7 +22,8 @@
 #ifndef _DSP_H
 #define _DSP_H
 
-#include "icio.h"
+#include <SDL.h>
+#include "araglue.h"
 
 #define DSP_RAMSIZE 32768
 
@@ -102,66 +101,50 @@
 #define DSP_HOST_HSR_HF1	0x04
 #define DSP_HOST_HSR_DMA	0x07
 
-class DSP : public BASE_IO {
-	
-	public:
-		DSP(memptr, uint32);
-		virtual uint8 handleRead(memptr addr);
-		virtual void handleWrite(memptr, uint8);
 
-#if DSP_EMULATION
-		/* Constructor, destructor */
-		void init(void);
-		~DSP();
+/* DSP state */
+extern uint8	dsp_state;
 
-		/* Setup functions */
-		void reset(void);
-		void shutdown(void);
+/* Registers */
+extern uint16	dsp_pc;
+extern uint32	dsp_registers[64];
 
-		/* Host port transfer */
-		void host2dsp(void);
-		void dsp2host(void);
+/* stack[0=ssh], stack[1=ssl] */
+extern uint16	dsp_stack[2][15];
 
-		/* DSP state */
-		uint8	state;
+/* ram[0] is x:, ram[1] is y:, ram[2] is p: */
+extern uint32	dsp_ram[3][DSP_RAMSIZE];
 
-		/* Registers */
-		uint16	pc;
-		uint32	registers[64];
+/* rom[0] is x:, rom[1] is y: */
+extern uint32	dsp_rom[2][512];
 
-		/* stack[0=ssh], stack[1=ssl] */
-		uint16	stack[2][15];
+/* peripheral space, [x|y]:0xffc0-0xffff */
+extern uint32	dsp_periph[2][64];
 
-		/* ram[0] is x:, ram[1] is y:, ram[2] is p: */
-		uint32	ram[3][DSP_RAMSIZE];
+/* host port, CPU side */
+extern uint8 dsp_hostport[8];
 
-		/* rom[0] is x:, rom[1] is y: */
-		uint32	rom[2][512];
+/* Misc */
+extern uint32 dsp_loop_rep;		/* executing rep ? */
+extern uint32 dsp_last_loop_inst;	/* executing the last instruction in DO ? */
+extern uint32 dsp_first_host_write;	/* first byte written to host port */
 
-		/* peripheral space, [x|y]:0xffc0-0xffff */
-		uint32	periph[2][64];
+extern SDL_sem	*dsp56k_sem;
 
-		/* host port, CPU side */
-		uint8 hostport[8];
 
-		/* Misc */
-		uint32 loop_rep;		/* executing rep ? */
-		uint32 last_loop_inst;	/* executing the last instruction in DO ? */
-		uint32 first_host_write;	/* first byte written to host port */
+void DSP_HandleReadAccess(void);
+void DSP_HandleWriteAccess(void);
 
-		SDL_sem		*dsp56k_sem;
+extern void DSP_Init(void);
+extern void DSP_UnInit(void);
 
-	private:
-		/* For bootstrap routine */
-		uint16	bootstrap_pos;
-		uint32	bootstrap_accum;
+/* Setup functions */
+extern void DSP_Reset(void);
+extern void DSP_shutdown(void);
 
-		/* Force execution of DSP if needed */
-		void	force_exec(void);
+/* Host port transfer */
+extern void DSP_host2dsp(void);
+extern void DSP_dsp2host(void);
 
-		SDL_Thread	*dsp56k_thread;
-
-#endif	/* DSP_EMULATION */
-};
 
 #endif /* _DSP_H */
