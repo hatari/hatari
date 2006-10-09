@@ -39,7 +39,7 @@ touch with us:
 
 - Get the games/demos working that are marked as non-working in the manual.
 
-- Add TT and/or Falcon emulation ;-)
+- Improve TT and/or Falcon emulation
 
 - Add proper Blitter timing emulation.
 
@@ -57,3 +57,5 @@ touch with us:
 - Improve shifter emulation (full screen effects, sync scrolling, ...)
 
 - Improve the built-in debugger.
+
+- Extend the GEMDOS HD emulation to support more than one drive.
