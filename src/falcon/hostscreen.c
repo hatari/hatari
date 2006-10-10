@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.5 2006-10-07 13:32:30 thothy Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.6 2006-10-10 20:13:05 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -87,13 +87,11 @@ void HostScreen_UnInit(void) {
 }
 
 
-#if 0
-void HostScreen_toggleFullScreen()
+void HostScreen_toggleFullScreen(void)
 {
-	bx_options.video.fullscreen = !bx_options.video.fullscreen;
 	sdl_videoparams ^= SDL_FULLSCREEN;
 	if(SDL_WM_ToggleFullScreen(mainSurface) == 0) {
-		D2(bug("toggleFullScreen: SDL_WM_ToggleFullScreen() not supported -> using SDL_SetVideoMode()"));
+		Dprintf(("toggleFullScreen: SDL_WM_ToggleFullScreen() not supported -> using SDL_SetVideoMode()"));
 
 		// SDL_WM_ToggleFullScreen() did not work.
 		// We have to change video mode "by hand".
@@ -103,7 +101,7 @@ void HostScreen_toggleFullScreen()
 			bug("toggleFullScreen: Unable to save screen content.");
 
 #if 1
-		setWindowSize( width, height, bpp );
+		HostScreen_setWindowSize(hs_width, hs_height, hs_bpp);
 #else
 		mainSurface = SDL_SetVideoMode(width, height, bpp, sdl_videoparams);
 		if (mainSurface == NULL)
@@ -118,10 +116,9 @@ void HostScreen_toggleFullScreen()
 		SDL_FreeSurface(temp);
 
 		/* refresh the screen */
-		update(TRUE);
+		HostScreen_update1(TRUE);
 	}
 }
-#endif
 
 
 int HostScreen_selectVideoMode(SDL_Rect **modes, uint32 *width, uint32 *height)
@@ -163,7 +160,7 @@ void HostScreen_searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp )
 
 	/* Read available video modes */
 	modeflags = 0 /*SDL_HWSURFACE | SDL_HWPALETTE*/;
-	if (0 /*bx_options.video.fullscreen*/)
+	if (bInFullScreen)
 		modeflags |= SDL_FULLSCREEN;
 
 	/*--- Search a video mode with asked bpp ---*/
@@ -221,9 +218,10 @@ void HostScreen_setWindowSize( uint32 width, uint32 height, uint32 bpp )
 	hs_bpp = bpp;
 
 	// SelectVideoMode();
-	sdl_videoparams = 0 /*SDL_HWSURFACE | SDL_HWPALETTE*/;
-//	if (bx_options.video.fullscreen)
-//		sdl_videoparams |= SDL_FULLSCREEN;
+	if (bInFullScreen)
+		sdl_videoparams = SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN;
+	else
+		sdl_videoparams = SDL_SWSURFACE|SDL_HWPALETTE;
 
 	mainSurface = SDL_SetVideoMode(width, height, bpp, sdl_videoparams);
 

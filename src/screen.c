@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.51 2006-10-07 12:22:38 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.52 2006-10-10 20:13:05 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -38,6 +38,9 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.51 2006-10-07 12:22:38 tho
 #include "vdi.h"
 #include "video.h"
 
+#if ENABLE_FALCON
+#include "falcon/hostscreen.h"
+#endif
 
 BOOL bGrabMouse = FALSE;      /* Grab the mouse cursor in the window */
 BOOL bInFullScreen=FALSE;     /* TRUE if in full screen */
@@ -461,14 +464,22 @@ void Screen_EnterFullScreen(void)
   if (!bInFullScreen)
   {
     Main_PauseEmulation();        /* Hold things... */
-
     bInFullScreen = TRUE;
-    Screen_SetResolution();
 
-    SDL_Delay(20);                /* To give monitor time to change to new resolution */
-    Screen_ClearScreen();         /* Black out screen bitmap as will be invalid when return */
+#if ENABLE_FALCON
+    if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+    {
+      HostScreen_toggleFullScreen();
+    }
+    else
+#endif
+    {
+      Screen_SetResolution();
+      Screen_ClearScreen();         /* Black out screen bitmap as will be invalid when return */
+    }
 
-    Main_UnPauseEmulation();      /* And off we go... */
+    SDL_Delay(20);                  /* To give monitor time to change to new resolution */
+    Main_UnPauseEmulation();        /* And off we go... */
 
     SDL_WM_GrabInput(SDL_GRAB_ON);  /* Grab mouse pointer in fullscreen */
   }
@@ -484,12 +495,22 @@ void Screen_ReturnFromFullScreen(void)
   if (bInFullScreen)
   {
     Main_PauseEmulation();        /* Hold things... */
-
     bInFullScreen = FALSE;
-    Screen_SetResolution();
+
+#if ENABLE_FALCON
+    if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+    {
+      HostScreen_toggleFullScreen();
+      if (!bGrabMouse)
+        SDL_WM_GrabInput(SDL_GRAB_OFF); /* Un-grab mouse pointer in windowed mode */
+    }
+    else
+#endif
+    {
+      Screen_SetResolution();
+    }
 
     SDL_Delay(20);                /* To give monitor time to switch resolution */
-
     Main_UnPauseEmulation();      /* And off we go... */
   }
 }
