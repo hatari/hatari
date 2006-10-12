@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the Falcon.
 */
-const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.4 2006-10-08 12:10:11 thothy Exp $";
+const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.5 2006-10-12 20:56:10 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -26,6 +26,22 @@ const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.4 2006-10-08
 #include "falcon/videl.h"
 #include "falcon/dsp.h"
 #endif
+
+
+/* Just a temporary hack - some programs are polling on this register and
+ * are expecting the handshake bit (#7) to change after a while... */
+static void DSP_DummyHostCommand_ReadByte(void)
+{
+	IoMem[0xffa201] ^= 0x80;
+}
+
+/* Just a temporary hack - some programs are polling on this register and
+ * are expecting some bits to change after a while... */
+static void DSP_DummyInterruptStatus_ReadByte(void)
+{
+	IoMem[0xffa202] ^= 0xff;
+}
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -175,8 +191,9 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 #if 0 // ENABLE_FALCON
 	{ 0xffa200, 8, DSP_HandleReadAccess, DSP_HandleWriteAccess }, /* Falcon DSP */
 #else
-	{ 0xffa200, 2, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DSP */
-	{ 0xffa202, 1, IoMem_VoidRead, IoMem_WriteWithoutInterception },                /* DSP */
+	{ 0xffa200, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DSP */
+	{ 0xffa201, 1, DSP_DummyHostCommand_ReadByte, IoMem_WriteWithoutInterception }, /* DSP */
+	{ 0xffa202, 1, DSP_DummyInterruptStatus_ReadByte, IoMem_WriteWithoutInterception }, /* DSP */
 	{ 0xffa203, 5, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DSP */
 #endif
 
