@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.44 2006-09-29 10:45:57 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.45 2006-10-15 21:24:26 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -138,12 +138,23 @@ static const TOS_PATCH TosPatches[] =
   { 0x306, -1, pszNoPmmu, TP_ALWAYS, 0xE00068, 0xF0394000, 24, pNopOpcodes },
   { 0x306, -1, pszNoPmmu, TP_ALWAYS, 0xE01702, 0xF0394C00, 32, pNopOpcodes },
 
+  { 0x402, -1, pszNoPmmu, TP_ALWAYS, 0xE0006A, 0xF0394000, 24, pNopOpcodes },
+  { 0x402, -1, pszNoPmmu, TP_ALWAYS, 0xE014a8, 0xF0394C00, 32, pNopOpcodes },
+  { 0x402, -1, pszNoPmmu, TP_ALWAYS, 0xE03946, 0xF0394000, 24, pNopOpcodes },
+  { 0x402, -1, pszRomCheck, TP_ALWAYS, 0xE006A6, 0x2E3C0007, 4, pRomCheckOpcode404 },
+  { 0x402, -1, pszHwDisable, TP_ALWAYS, 0xe01fc0, 0x66f27000, 2, pNopOpcodes },  /* Disable RTC check */
+
   { 0x404, -1, pszNoPmmu, TP_ALWAYS, 0xE0006A, 0xF0394000, 24, pNopOpcodes },
   { 0x404, -1, pszNoPmmu, TP_ALWAYS, 0xE014E6, 0xF0394C00, 32, pNopOpcodes },
   { 0x404, -1, pszNoPmmu, TP_ALWAYS, 0xE039A0, 0xF0394000, 24, pNopOpcodes },
   { 0x404, -1, pszRomCheck, TP_ALWAYS, 0xE006B0, 0x2E3C0007, 4, pRomCheckOpcode404 },
   { 0x404, -1, pszHwDisable, TP_ALWAYS, 0xe01ffe, 0x66f27000, 2, pNopOpcodes },  /* Disable RTC check */
   { 0x404, -1, pszHwDisable, TP_ALWAYS, 0xe05132, 0x67f811d8, 2, pNopOpcodes },  /* Disable DSP check */
+
+  { 0x492, -1, pszNoPmmu, TP_ALWAYS, 0x00f946, 0xF0394000, 24, pNopOpcodes },
+  { 0x492, -1, pszNoPmmu, TP_ALWAYS, 0x01097a, 0xF0394C00, 32, pNopOpcodes },
+  { 0x492, -1, pszNoPmmu, TP_ALWAYS, 0x012e04, 0xF0394000, 24, pNopOpcodes },
+  { 0x492, -1, pszHwDisable, TP_ALWAYS, 0x011460, 0x66f27000, 2, pNopOpcodes },  /* Disable RTC check */
 
   { 0, 0, NULL, 0, 0, 0, 0, NULL }
 };
@@ -187,7 +198,7 @@ static void TOS_FixRom(void)
 	}
 
 	/* We also can't patch RAM TOS images (yet) */
-	if (bRamTosImage)
+	if (bRamTosImage && TosVersion != 0x0492)
 	{
 		Log_Printf(LOG_DEBUG, "Detected RAM TOS image, skipping TOS patches.\n");
 		return;
@@ -213,13 +224,13 @@ static void TOS_FixRom(void)
 				    || (pPatch->Flags == TP_ANTI_STE && ConfigureParams.System.nMachineType == MACHINE_ST))
 				{
 					/* Now we can really apply the patch! */
-					/*fprintf(stderr, "Applying TOS patch '%s'.\n", pPatch->pszName);*/
+					Log_Printf(LOG_DEBUG, "Applying TOS patch '%s'.\n", pPatch->pszName);
 					memcpy(&STRam[pPatch->Address], pPatch->pNewData, pPatch->Size);
 					nGoodPatches += 1;
 				}
 				else
 				{
-					/*fprintf(stderr, "Skipped patch '%s'.\n", pPatch->pszName);*/
+					Log_Printf(LOG_DEBUG, "Skipped patch '%s'.\n", pPatch->pszName);
 				}
 			}
 			else
@@ -264,11 +275,17 @@ int TOS_LoadImage(void)
 	/* Check for RAM TOS images first: */
 	if (SDL_SwapBE32(*(Uint32 *)pTosFile) == 0x46FC2700)
 	{
+		int nRamTosLoaderSize;
 		Log_Printf(LOG_WARN, "Detected a RAM TOS - this will probably not work very well!\n");
 		/* RAM TOS images have a 256 bytes loader function before the real image
-		 * starts, so we simply skip the first 256 bytes here: */
-		TosSize -= 0x100;
-		memmove(pTosFile, pTosFile + 0x100, TosSize);
+		 * starts (34 bytes for TOS 4.92). Since we directly copy the image to the right
+		 * location later, we simply skip this additional header here: */
+		if (SDL_SwapBE32(*(Uint32 *)(pTosFile+34)) == 0x602E0492)
+			nRamTosLoaderSize = 0x22;
+		else
+			nRamTosLoaderSize = 0x100;
+		TosSize -= nRamTosLoaderSize;
+		memmove(pTosFile, pTosFile + nRamTosLoaderSize, TosSize);
 		bRamTosImage = TRUE;
 	}
 	else
@@ -281,7 +298,7 @@ int TOS_LoadImage(void)
 	TosAddress = SDL_SwapBE32(*(Uint32 *)&pTosFile[8]);
 
 	/* Check for reasonable TOS version: */
-	if (TosVersion<0x100 || TosVersion>0x500 || TosSize>1024*1024L
+	if (TosVersion<0x100 || TosVersion>=0x500 || TosSize>1024*1024L
 	    || (!bRamTosImage && TosAddress!=0xe00000 && TosAddress!=0xfc0000))
 	{
 		Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
@@ -312,8 +329,8 @@ int TOS_LoadImage(void)
 	}
 	else if ((TosVersion & 0x0f00) == 0x0400 && ConfigureParams.System.nMachineType != MACHINE_FALCON)
 	{
-		Log_AlertDlg(LOG_INFO, "TOS versions 4.0x are for Atari Falcon only.\n"
-		             " => Switching to Falcon mode now.\n(not working yet!)\n");
+		Log_AlertDlg(LOG_INFO, "TOS versions 4.x are for Atari Falcon only.\n"
+		             " => Switching to Falcon mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
 		IoMem_Init();
