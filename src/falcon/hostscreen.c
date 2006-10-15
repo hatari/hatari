@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.6 2006-10-10 20:13:05 thothy Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.7 2006-10-15 21:35:31 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -225,7 +225,7 @@ void HostScreen_setWindowSize( uint32 width, uint32 height, uint32 bpp )
 
 	mainSurface = SDL_SetVideoMode(width, height, bpp, sdl_videoparams);
 
-	surf = mainSurface;
+	sdlscrn = surf = mainSurface;
 
 	// update the surface's palette
 	HostScreen_updatePalette( 256 );
