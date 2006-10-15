@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.43 2006-09-26 19:12:35 eerot Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.44 2006-10-15 21:20:51 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -811,6 +811,8 @@ void Exception(int nr, uaecptr oldpc)
     /* Set PC and flags */
     if (bEnableDebug && get_long (regs.vbr + 4*nr) == 0) {
         write_log("Uninitialized exception handler #%i!\n", nr);
+	if (bEnableDebug)
+	      DebugUI();
     }
     m68k_setpc (get_long (regs.vbr + 4*nr));
     fill_prefetch_0 ();
