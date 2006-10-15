@@ -6,7 +6,7 @@
 
   ST Memory access functions.
 */
-const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.10 2006-09-29 11:20:56 thothy Exp $";
+const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.11 2006-10-15 21:21:54 thothy Exp $";
 
 #include "stMemory.h"
 #include "configuration.h"
@@ -58,8 +58,17 @@ void STMemory_SetDefaultConfig(void)
 	else
 		STRamEnd = 0x80000;   /* 512 KiB */
 
-	/* Clear ST-RAM */
-	STMemory_Clear(0x00000000, STRamEnd);
+	if (bRamTosImage)
+	{
+		/* Clear ST-RAM, excluding the RAM TOS image */
+		STMemory_Clear(0x00000000, TosAddress);
+		STMemory_Clear(TosAddress+TosSize, STRamEnd);
+	}
+	else
+	{
+		/* Clear whole ST-RAM */
+		STMemory_Clear(0x00000000, STRamEnd);
+	}
 
 	/* Mirror ROM boot vectors */
 	STMemory_WriteLong(0x00, STMemory_ReadLong(TosAddress));
