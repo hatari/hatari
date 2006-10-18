@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.45 2006-10-15 21:24:26 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.46 2006-10-18 00:08:41 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -138,22 +138,34 @@ static const TOS_PATCH TosPatches[] =
   { 0x306, -1, pszNoPmmu, TP_ALWAYS, 0xE00068, 0xF0394000, 24, pNopOpcodes },
   { 0x306, -1, pszNoPmmu, TP_ALWAYS, 0xE01702, 0xF0394C00, 32, pNopOpcodes },
 
+  { 0x400, -1, pszNoPmmu, TP_ALWAYS, 0xE00064, 0xF0394000, 24, pNopOpcodes },
+  { 0x400, -1, pszNoPmmu, TP_ALWAYS, 0xE0148A, 0xF0394C00, 32, pNopOpcodes },
+  { 0x400, -1, pszNoPmmu, TP_ALWAYS, 0xE03948, 0xF0394000, 24, pNopOpcodes },
+  { 0x400, -1, pszRomCheck, TP_ALWAYS, 0xE00686, 0x2E3C0007, 4, pRomCheckOpcode404 },
+  { 0x400, -1, pszHwDisable, TP_ALWAYS, 0xE01FC2, 0x66F27000, 2, pNopOpcodes },  /* Disable RTC check */
+
+  { 0x401, -1, pszNoPmmu, TP_ALWAYS, 0xE0006A, 0xF0394000, 24, pNopOpcodes },
+  { 0x401, -1, pszNoPmmu, TP_ALWAYS, 0xE014A8, 0xF0394C00, 32, pNopOpcodes },
+  { 0x401, -1, pszNoPmmu, TP_ALWAYS, 0xE03946, 0xF0394000, 24, pNopOpcodes },
+  { 0x401, -1, pszRomCheck, TP_ALWAYS, 0xE006A6, 0x2E3C0007, 4, pRomCheckOpcode404 },
+  { 0x401, -1, pszHwDisable, TP_ALWAYS, 0xE01FC0, 0x66F27000, 2, pNopOpcodes },  /* Disable RTC check */
+
   { 0x402, -1, pszNoPmmu, TP_ALWAYS, 0xE0006A, 0xF0394000, 24, pNopOpcodes },
-  { 0x402, -1, pszNoPmmu, TP_ALWAYS, 0xE014a8, 0xF0394C00, 32, pNopOpcodes },
+  { 0x402, -1, pszNoPmmu, TP_ALWAYS, 0xE014A8, 0xF0394C00, 32, pNopOpcodes },
   { 0x402, -1, pszNoPmmu, TP_ALWAYS, 0xE03946, 0xF0394000, 24, pNopOpcodes },
   { 0x402, -1, pszRomCheck, TP_ALWAYS, 0xE006A6, 0x2E3C0007, 4, pRomCheckOpcode404 },
-  { 0x402, -1, pszHwDisable, TP_ALWAYS, 0xe01fc0, 0x66f27000, 2, pNopOpcodes },  /* Disable RTC check */
+  { 0x402, -1, pszHwDisable, TP_ALWAYS, 0xE01FC0, 0x66F27000, 2, pNopOpcodes },  /* Disable RTC check */
 
   { 0x404, -1, pszNoPmmu, TP_ALWAYS, 0xE0006A, 0xF0394000, 24, pNopOpcodes },
   { 0x404, -1, pszNoPmmu, TP_ALWAYS, 0xE014E6, 0xF0394C00, 32, pNopOpcodes },
   { 0x404, -1, pszNoPmmu, TP_ALWAYS, 0xE039A0, 0xF0394000, 24, pNopOpcodes },
   { 0x404, -1, pszRomCheck, TP_ALWAYS, 0xE006B0, 0x2E3C0007, 4, pRomCheckOpcode404 },
-  { 0x404, -1, pszHwDisable, TP_ALWAYS, 0xe01ffe, 0x66f27000, 2, pNopOpcodes },  /* Disable RTC check */
-  { 0x404, -1, pszHwDisable, TP_ALWAYS, 0xe05132, 0x67f811d8, 2, pNopOpcodes },  /* Disable DSP check */
+  { 0x404, -1, pszHwDisable, TP_ALWAYS, 0xE01FFE, 0x66F27000, 2, pNopOpcodes },  /* Disable RTC check */
+  { 0x404, -1, pszHwDisable, TP_ALWAYS, 0xE05132, 0x67F811D8, 2, pNopOpcodes },  /* Disable DSP check */
 
-  { 0x492, -1, pszNoPmmu, TP_ALWAYS, 0x00f946, 0xF0394000, 24, pNopOpcodes },
-  { 0x492, -1, pszNoPmmu, TP_ALWAYS, 0x01097a, 0xF0394C00, 32, pNopOpcodes },
-  { 0x492, -1, pszNoPmmu, TP_ALWAYS, 0x012e04, 0xF0394000, 24, pNopOpcodes },
+  { 0x492, -1, pszNoPmmu, TP_ALWAYS, 0x00F946, 0xF0394000, 24, pNopOpcodes },
+  { 0x492, -1, pszNoPmmu, TP_ALWAYS, 0x01097A, 0xF0394C00, 32, pNopOpcodes },
+  { 0x492, -1, pszNoPmmu, TP_ALWAYS, 0x012E04, 0xF0394000, 24, pNopOpcodes },
   { 0x492, -1, pszHwDisable, TP_ALWAYS, 0x011460, 0x66f27000, 2, pNopOpcodes },  /* Disable RTC check */
 
   { 0, 0, NULL, 0, 0, 0, 0, NULL }
