@@ -9,10 +9,7 @@
 #define HATARI_VIDEL_H
 
 extern void VIDEL_renderScreen(void);
-extern void VIDEL_renderScreenNoZoom(void);
-extern void VIDEL_renderScreenZoom(void);
 extern void VIDEL_reset(void);
-extern void VIDEL_updateColors(void);
 extern void VIDEL_ColorRegsWrite(void);
 extern void VIDEL_ShiftModeWriteWord(void);
 extern void VIDEL_ZoomModeChanged(void);

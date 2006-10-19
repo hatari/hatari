@@ -45,11 +45,8 @@
 extern void HostScreen_Init(void);
 extern void HostScreen_UnInit(void);
 extern void HostScreen_toggleFullScreen(void);
-extern int HostScreen_selectVideoMode(SDL_Rect **modes, uint32 *width, uint32 *height);
-extern void HostScreen_searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp );
 extern BOOL HostScreen_renderBegin(void);
-extern void	HostScreen_renderEnd(void);
-extern void HostScreen_update5( int32 x, int32 y, int32 w, int32 h, BOOL forced);
+extern void HostScreen_renderEnd(void);
 extern void HostScreen_update1(BOOL forced);
 extern void HostScreen_update0(void);
 extern uint32 HostScreen_getBpp(void);	/* Bytes per pixel */

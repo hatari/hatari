@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.7 2006-10-15 21:35:31 thothy Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.8 2006-10-19 20:09:39 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -67,6 +67,9 @@ static const unsigned long default_palette[] = {
     RGB_LTBLUE, RGB_LTMAGENTA, RGB_LTCYAN, RGB_BLACK
 };
 
+static int HostScreen_selectVideoMode(SDL_Rect **modes, uint32 *width, uint32 *height);
+static void HostScreen_searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp );
+
 
 void HostScreen_Init(void) {
 	int i;
@@ -120,8 +123,7 @@ void HostScreen_toggleFullScreen(void)
 	}
 }
 
-
-int HostScreen_selectVideoMode(SDL_Rect **modes, uint32 *width, uint32 *height)
+static int HostScreen_selectVideoMode(SDL_Rect **modes, uint32 *width, uint32 *height)
 {
 	int i, bestw, besth;
 
@@ -144,7 +146,7 @@ int HostScreen_selectVideoMode(SDL_Rect **modes, uint32 *width, uint32 *height)
 	return 1;
 }
 
-void HostScreen_searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp )
+static void HostScreen_searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp )
 {
 	SDL_Rect **modes;
 	SDL_PixelFormat pixelformat;
@@ -256,7 +258,7 @@ void HostScreen_setWindowSize( uint32 width, uint32 height, uint32 bpp )
 }
 
 
-void HostScreen_update5( int32 x, int32 y, int32 w, int32 h, BOOL forced )
+static void HostScreen_update5( int32 x, int32 y, int32 w, int32 h, BOOL forced )
 {
 	if ( !forced && !doUpdate ) // the HW surface is available
 		return;

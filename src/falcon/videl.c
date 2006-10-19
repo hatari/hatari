@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.4 2006-10-07 13:32:30 thothy Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.5 2006-10-19 20:09:39 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -47,6 +47,9 @@ static int zoomwidth, prev_scrwidth;
 static int zoomheight, prev_scrheight;
 static int *zoomxtable;
 static int *zoomytable;
+
+static void VIDEL_renderScreenNoZoom(void);
+static void VIDEL_renderScreenZoom(void);
 
 
 // Called upon startup and when CPU encounters a RESET instruction.
@@ -148,7 +151,7 @@ static int VIDEL_getScreenHeight(void)
 }
 
 
-void VIDEL_updateColors(void)
+static void VIDEL_updateColors(void)
 {
 	//Dprintf(("ColorUpdate in progress\n"));
 
@@ -265,7 +268,7 @@ void VIDEL_renderScreen(void)
 }
 
 
-void VIDEL_renderScreenNoZoom(void)
+static void VIDEL_renderScreenNoZoom(void)
 {
 	int vw	 = VIDEL_getScreenWidth();
 	int vh	 = VIDEL_getScreenHeight();
@@ -558,7 +561,7 @@ void VIDEL_renderScreenNoZoom(void)
 }
 
 
-void VIDEL_renderScreenZoom(void)
+static void VIDEL_renderScreenZoom(void)
 {
 	int i, j, w, h, cursrcline;
 
