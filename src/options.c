@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.9 2006-10-07 11:01:30 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.10 2006-10-20 11:49:56 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -122,7 +122,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_SLOWFDC,   NULL, "--slowfdc",
 	  NULL, "Slow down FDC emulation (very experimental!)" },
 	{ OPT_MACHINE,   NULL, "--machine",
-	  "<x>", "Select machine type (x = st/ste/tt)" },
+	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
 	{ OPT_NONE, NULL, NULL, NULL, NULL }
 };
 
@@ -451,8 +451,10 @@ void Opt_ParseParameters(int argc, char *argv[],
 			i += 1;
 			if (strcasecmp(argv[i], "st") == 0) {
 				ConfigureParams.System.nMachineType = MACHINE_ST;
+				ConfigureParams.System.nCpuLevel = cpu_level = 0;
 			} else if (strcasecmp(argv[i], "ste") == 0) {
 				ConfigureParams.System.nMachineType = MACHINE_STE;
+				ConfigureParams.System.nCpuLevel = cpu_level = 0;
 			} else if (strcasecmp(argv[i], "tt") == 0) {
 				ConfigureParams.System.nMachineType = MACHINE_TT;
 				ConfigureParams.System.nCpuLevel = cpu_level = 3;
