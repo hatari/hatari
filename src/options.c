@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.10 2006-10-20 11:49:56 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.11 2006-10-22 20:51:27 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -452,9 +452,11 @@ void Opt_ParseParameters(int argc, char *argv[],
 			if (strcasecmp(argv[i], "st") == 0) {
 				ConfigureParams.System.nMachineType = MACHINE_ST;
 				ConfigureParams.System.nCpuLevel = cpu_level = 0;
+				ConfigureParams.System.nCpuFreq = 8;
 			} else if (strcasecmp(argv[i], "ste") == 0) {
 				ConfigureParams.System.nMachineType = MACHINE_STE;
 				ConfigureParams.System.nCpuLevel = cpu_level = 0;
+				ConfigureParams.System.nCpuFreq = 8;
 			} else if (strcasecmp(argv[i], "tt") == 0) {
 				ConfigureParams.System.nMachineType = MACHINE_TT;
 				ConfigureParams.System.nCpuLevel = cpu_level = 3;
