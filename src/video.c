@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.54 2006-10-04 20:34:49 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.55 2006-10-23 17:56:46 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -32,6 +32,7 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.54 2006-10-04 20:34:49 thoth
 #include "vdi.h"
 #include "video.h"
 #include "ymFormat.h"
+#include "falcon/videl.h"
 
 
 #define BORDERMASK_NONE    0x00                 /* Borders masks */
