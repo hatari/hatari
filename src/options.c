@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.11 2006-10-22 20:51:27 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.12 2006-10-25 19:00:30 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +34,8 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.11 2006-10-22 20:51:27 eero
 enum {
 	OPT_HELP,
 	OPT_VERSION,
-	OPT_MONO,
+	OPT_MONO,	/* TODO: remove */
+	OPT_MONITOR,
 	OPT_FULLSCREEN,
 	OPT_WINDOW,
 	OPT_FRAMESKIP,
@@ -77,6 +78,8 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Print version number & help and exit" },
 	{ OPT_MONO,      "-m", "--mono",
 	  NULL, "Start in monochrome mode instead of color" },
+	{ OPT_MONITOR,      NULL, "--monitor",
+	  "<x>", "Select monitor type (x = mono/rgb/vga/tv)" },
 	{ OPT_FULLSCREEN,"-f", "--fullscreen",
 	  NULL, "Start emulator in fullscreen mode" },
 	{ OPT_WINDOW,    "-w", "--window",
@@ -264,6 +267,26 @@ void Opt_ParseParameters(int argc, char *argv[],
 			bUseHighRes = TRUE;
 			ConfigureParams.Screen.bUseHighRes = TRUE;
 			STRes = PrevSTRes = ST_HIGH_RES;
+			break;
+
+		case OPT_MONITOR:
+			i += 1;
+			if (strcasecmp(argv[i], "mono") == 0) {
+				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_MONO;
+				/* TODO: remove this when it's not anymore needed */
+				ConfigureParams.Screen.bUseHighRes = TRUE;
+			} else {
+				ConfigureParams.Screen.bUseHighRes = FALSE;
+				if (strcasecmp(argv[i], "rgb") == 0) {
+					ConfigureParams.Screen.MonitorType = MONITOR_TYPE_RGB;
+				} else if (strcasecmp(argv[i], "vga") == 0) {
+					ConfigureParams.Screen.MonitorType = MONITOR_TYPE_VGA;
+				} else if (strcasecmp(argv[i], "tv") == 0) {
+					ConfigureParams.Screen.MonitorType = MONITOR_TYPE_TV;
+				} else {
+					Opt_ShowExit(OPT_NONE, argv[i], "Unknown monitor type");
+				}
+			}
 			break;
 			
 		case OPT_FULLSCREEN:

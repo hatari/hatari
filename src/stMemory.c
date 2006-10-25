@@ -6,7 +6,7 @@
 
   ST Memory access functions.
 */
-const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.11 2006-10-15 21:21:54 thothy Exp $";
+const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.12 2006-10-25 19:00:30 eerot Exp $";
 
 #include "stMemory.h"
 #include "configuration.h"
@@ -117,8 +117,21 @@ void STMemory_SetDefaultConfig(void)
 			nFalcSysCntrl = 0x06;
 		else
 			nFalcSysCntrl = 0x04;
-		if (!ConfigureParams.Screen.bUseHighRes)
-			nFalcSysCntrl |= 0x40;
+		nFalcSysCntrl &= FALCON_MONITOR_MASK;
+		switch(ConfigureParams.Screen.MonitorType) {
+		case MONITOR_TYPE_TV:
+			nFalcSysCntrl |= FALCON_MONITOR_TV;
+			break;
+		case MONITOR_TYPE_VGA:
+			nFalcSysCntrl |= FALCON_MONITOR_VGA;
+			break;
+		case MONITOR_TYPE_RGB:
+			nFalcSysCntrl |= FALCON_MONITOR_RGB;
+			break;
+		case MONITOR_TYPE_MONO:
+			nFalcSysCntrl |= FALCON_MONITOR_MONO;
+			break;
+		}
 		STMemory_WriteByte(0xff8006, nFalcSysCntrl);
 	}
 

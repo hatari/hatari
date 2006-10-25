@@ -163,6 +163,25 @@ typedef struct
   char szIdeHardDiskImage[FILENAME_MAX];
 } CNF_HARDDISK;
 
+/* Falcon register $FFFF8006 bits 6 & 7 (mirrored in $FFFF82C0 bits 0 & 1):
+ * 00 Monochrome
+ * 01 RGB - Colormonitor
+ * 10 VGA - Colormonitor
+ * 11 TV
+ */
+#define FALCON_MONITOR_MASK 0x3F
+#define FALCON_MONITOR_MONO 0x00  /* SM124 */
+#define FALCON_MONITOR_RGB  0x40
+#define FALCON_MONITOR_VGA  0x80
+#define FALCON_MONITOR_TV   0xC0
+
+typedef enum
+{
+  MONITOR_TYPE_MONO,
+  MONITOR_TYPE_RGB,
+  MONITOR_TYPE_VGA,
+  MONITOR_TYPE_TV
+} MONITORTYPE;
 
 /* Screen configuration */
 typedef struct
@@ -172,6 +191,7 @@ typedef struct
   BOOL bAllowOverscan;
   BOOL bInterleavedScreen;
   int ChosenDisplayMode;
+  MONITORTYPE MonitorType;
   BOOL bUseHighRes;
   BOOL bUseExtVdiResolutions;
   int nVdiResolution;

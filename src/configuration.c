@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.54 2006-10-03 10:38:58 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.55 2006-10-25 19:00:27 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -49,6 +49,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
 	{ "bInterleavedScreen", Bool_Tag, &ConfigureParams.Screen.bInterleavedScreen },
 	{ "ChosenDisplayMode", Int_Tag, &ConfigureParams.Screen.ChosenDisplayMode },
+	{ "MonitorType", Int_Tag, &ConfigureParams.Screen.MonitorType },
 	{ "bUseHighRes", Bool_Tag, &ConfigureParams.Screen.bUseHighRes },
 	{ "bUseExtVdiResolutions", Bool_Tag, &ConfigureParams.Screen.bUseExtVdiResolutions },
 	{ "nVdiResolution", Int_Tag, &ConfigureParams.Screen.nVdiResolution },
@@ -383,6 +384,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bAllowOverscan = TRUE;
 	ConfigureParams.Screen.bInterleavedScreen = FALSE;
 	ConfigureParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
+	ConfigureParams.Screen.MonitorType = MONITOR_TYPE_RGB;
 	ConfigureParams.Screen.bUseHighRes = FALSE;
 	ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
 	ConfigureParams.Screen.nVdiResolution = GEMRES_640x480;
@@ -436,6 +438,7 @@ void Configuration_WorkOnDetails(BOOL bReset)
 	if (bReset)
 	{
 		bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions;
+		/* TODO: check MonitorType */
 		bUseHighRes = (!bUseVDIRes && ConfigureParams.Screen.bUseHighRes)
 					  || (bUseVDIRes && ConfigureParams.Screen.nVdiColors==GEMCOLOUR_2);
 		VDI_SetResolution(ConfigureParams.Screen.nVdiResolution, ConfigureParams.Screen.nVdiColors);
