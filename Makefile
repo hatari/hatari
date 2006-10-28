@@ -1,4 +1,7 @@
 # Top directory Makefile for Hatari.
+#
+# You can set DESTDIR as temporary installation prefix
+# e.g. when creating RPM packages.
 
 # Include settings
 include Makefile.cnf
