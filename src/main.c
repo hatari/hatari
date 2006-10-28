@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.89 2006-10-08 12:10:11 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.90 2006-10-28 19:13:17 eerot Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -480,6 +480,11 @@ int main(int argc, char *argv[])
 
   /* Check for any passed parameters, get boot disk */
   Opt_ParseParameters(argc, argv, szBootDiskImage, sizeof(szBootDiskImage));
+
+  /* Needed on N770 but useful also with other X11 window managers
+   * for window grouping when you have multiple SDL windows open
+   */
+  putenv(strdup("SDL_VIDEO_X11_WMCLASS=hatari"));
 
   /* Init emulator system */
   Main_Init();
