@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the TT.
 */
-const char IoMemTabTT_rcsid[] = "Hatari $Id: ioMemTabTT.c,v 1.1 2006-08-31 19:24:47 thothy Exp $";
+const char IoMemTabTT_rcsid[] = "Hatari $Id: ioMemTabTT.c,v 1.2 2006-10-29 11:00:52 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -17,6 +17,7 @@ const char IoMemTabTT_rcsid[] = "Hatari $Id: ioMemTabTT.c,v 1.1 2006-08-31 19:24
 #include "joy.h"
 #include "mfp.h"
 #include "midi.h"
+#include "nvram.h"
 #include "psg.h"
 #include "rs232.h"
 #include "rtc.h"
@@ -117,11 +118,12 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xff8924, SIZE_WORD, DmaSnd_MicrowireMask_ReadWord, DmaSnd_MicrowireMask_WriteWord }, /* Microwire mask */
 	{ 0xff8926, 26,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 
+	{ 0xff8961, SIZE_BYTE, NvRam_Select_ReadByte, NvRam_Select_WriteByte },                 /* NVRAM/RTC chip */
+	{ 0xff8963, SIZE_BYTE, NvRam_Data_ReadByte, NvRam_Data_WriteByte },                     /* NVRAM/RTC chip */
+
 	/* Note: The TT does not have a blitter (0xff8a00 - 0xff8a3e) */
 
 	{ 0xff8e00, 16, IoMem_VoidRead, IoMem_WriteWithoutInterception },        /* VME Bus IO */
-
-	//{ 0xff8960, 4, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* TT clock chip */
 
 	//{ 0xff8c80, 8, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* SCC */
 
