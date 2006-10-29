@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the Falcon.
 */
-const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.5 2006-10-12 20:56:10 thothy Exp $";
+const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.6 2006-10-29 09:25:07 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -17,6 +17,7 @@ const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.5 2006-10-12
 #include "joy.h"
 #include "mfp.h"
 #include "midi.h"
+#include "nvram.h"
 #include "psg.h"
 #include "rs232.h"
 #include "rtc.h"
@@ -146,7 +147,10 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8922, SIZE_WORD, DmaSnd_MicrowireData_ReadWord, DmaSnd_MicrowireData_WriteWord }, /* Microwire data */
 	{ 0xff8924, SIZE_WORD, DmaSnd_MicrowireMask_ReadWord, DmaSnd_MicrowireMask_WriteWord }, /* Microwire mask */
 
-	{ 0xff8930, 0x14, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon DMA sound / DSP */
+	{ 0xff8930, 0x14, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },      /* Falcon DMA sound / DSP */
+
+	{ 0xff8961, SIZE_BYTE, NvRam_Select_ReadByte, NvRam_Select_WriteByte },                 /* NVRAM/RTC chip */
+	{ 0xff8963, SIZE_BYTE, NvRam_Data_ReadByte, NvRam_Data_WriteByte },                     /* NVRAM/RTC chip */
 
 	{ 0xff8a00, 32,        IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter halftone RAM */
 	{ 0xff8a20, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter source x increment */
@@ -167,8 +171,6 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8a3e, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 
 	{ 0xff8e00, 16, IoMem_VoidRead, IoMem_WriteWithoutInterception },        /* VME Bus IO */
-
-	{ 0xff8960, 4, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* TT clock chip */
 
 	//{ 0xff8c80, 8, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* SCC */
 
