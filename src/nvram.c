@@ -11,7 +11,7 @@
   Atari TT and Falcon NVRAM/RTC emulation code.
   This is a MC146818A or compatible chip.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.1 2006-10-29 09:25:07 thothy Exp $";
+const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.2 2006-11-01 20:29:48 eerot Exp $";
 
 #include "main.h"
 #include "ioMem.h"
@@ -36,9 +36,9 @@ const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.1 2006-10-29 09:25:07 thothy
 #define NVRAM_START  14
 #define NVRAM_LEN    50
 
-uint8 nvram[64]={48,255,21,255,23,255,1,25,3,33,42,14,112,128,
-		0,0,0,0,0,0,0,0,17,46,32,1,255,0,0,56,135,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,224,31};
+static uint8 nvram[64]={48,255,21,255,23,255,1,25,3,33,42,14,112,128,
+	0,0,0,0,0,0,0,0,17,46,32,1,255,0,0,56,135,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,224,31};
 
 #define NVRAM_KEYBOARD_LANGUAGE	21
 
