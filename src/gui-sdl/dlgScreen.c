@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.6 2006-02-08 22:46:10 eerot Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.7 2006-11-01 11:05:36 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -21,20 +21,22 @@ const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.6 2006-02-08 22:46:1
 #define DLGSCRN_INTERLEAVE 6
 #define DLGSCRN_8BPP       7
 #define DLGSCRN_ZOOMLOWRES 8
-#define DLGSCRN_COLOR      10
-#define DLGSCRN_MONO       11
-#define DLGSCRN_USEVDIRES  13
-#define DLGSCRN_RES640     15
-#define DLGSCRN_RES800     16
-#define DLGSCRN_RES1024    17
-#define DLGSCRN_BPP1       19
-#define DLGSCRN_BPP2       20
-#define DLGSCRN_BPP4       21
-#define DLGSCRN_ONCHANGE   24
-#define DLGSCRN_FPSPOPUP   26
-#define DLGSCRN_CAPTURE    27
-#define DLGSCRN_RECANIM    28
-#define DLGSCRN_EXIT       29
+#define DLGSCRN_MONO       10
+#define DLGSCRN_RGB        11
+#define DLGSCRN_VGA        12
+#define DLGSCRN_TV         13
+#define DLGSCRN_USEVDIRES  15
+#define DLGSCRN_RES640     17
+#define DLGSCRN_RES800     18
+#define DLGSCRN_RES1024    19
+#define DLGSCRN_BPP1       21
+#define DLGSCRN_BPP2       22
+#define DLGSCRN_BPP4       23
+#define DLGSCRN_ONCHANGE   26
+#define DLGSCRN_FPSPOPUP   28
+#define DLGSCRN_CAPTURE    29
+#define DLGSCRN_RECANIM    30
+#define DLGSCRN_EXIT       31
 
 
 /* The screen dialog: */
@@ -51,8 +53,10 @@ static SGOBJ screendlg[] =
   { SGCHECKBOX, 0, 0, 25,4, 13,1, "Force 8 bpp" },
   { SGCHECKBOX, 0, 0, 25,5, 18,1, "Zoom ST-low res." },
   { SGTEXT, 0, 0, 4,7, 8,1, "Monitor:" },
-  { SGRADIOBUT, 0, 0, 16,7, 7,1, "Color" },
-  { SGRADIOBUT, 0, 0, 26,7, 6,1, "Mono" },
+  { SGRADIOBUT, 0, 0, 14,7, 6,1, "Mono" },
+  { SGRADIOBUT, 0, 0, 22,7, 5,1, "RGB" },
+  { SGRADIOBUT, 0, 0, 29,7, 5,1, "VGA" },
+  { SGRADIOBUT, 0, 0, 36,7, 4,1, "TV" },
 
   { SGBOX, 0, 0, 1,9, 48,6, NULL },
   { SGCHECKBOX, 0, 0, 2,10, 33,1, "Use extended GEM VDI resolution" },
@@ -123,16 +127,9 @@ void Dialog_ScreenDlg(void)
   else
     screendlg[DLGSCRN_ZOOMLOWRES].state &= ~SG_SELECTED;
 
-  if (DialogParams.Screen.bUseHighRes)
-  {
-    screendlg[DLGSCRN_COLOR].state &= ~SG_SELECTED;
-    screendlg[DLGSCRN_MONO].state |= SG_SELECTED;
-  }
-  else
-  {
-    screendlg[DLGSCRN_COLOR].state |= SG_SELECTED;
-    screendlg[DLGSCRN_MONO].state &= ~SG_SELECTED;
-  }
+  for (i = DLGSCRN_MONO; i <= DLGSCRN_TV; i++)
+    screendlg[i].state &= ~SG_SELECTED;
+  screendlg[DLGSCRN_MONO+DialogParams.Screen.MonitorType].state |= SG_SELECTED;
 
   /* Initialize VDI resolution options: */
 
@@ -197,7 +194,6 @@ void Dialog_ScreenDlg(void)
   DialogParams.Screen.bFrameSkip = (screendlg[DLGSCRN_FRAMESKIP].state & SG_SELECTED);
   DialogParams.Screen.bAllowOverscan = (screendlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
   DialogParams.Screen.bInterleavedScreen = (screendlg[DLGSCRN_INTERLEAVE].state & SG_SELECTED);
-  DialogParams.Screen.bUseHighRes = (screendlg[DLGSCRN_MONO].state & SG_SELECTED);
 
   if (screendlg[DLGSCRN_8BPP].state & SG_SELECTED)
   {
@@ -215,7 +211,16 @@ void Dialog_ScreenDlg(void)
   }
 
   DialogParams.Screen.bUseExtVdiResolutions = (screendlg[DLGSCRN_USEVDIRES].state & SG_SELECTED);
-  for(i=0; i<3; i++)
+  for (i = DLGSCRN_MONO; i <= DLGSCRN_TV; i++)
+  {
+    if (screendlg[i].state & SG_SELECTED)
+    {
+      DialogParams.Screen.MonitorType = i - DLGSCRN_MONO;
+      break;
+    }
+  }
+  DialogParams.Screen.bUseHighRes = (DialogParams.Screen.MonitorType == MONITOR_TYPE_MONO);
+  for (i=0; i<3; i++)
   {
     if(screendlg[DLGSCRN_RES640 + i].state & SG_SELECTED)
       DialogParams.Screen.nVdiResolution = GEMRES_640x480 + i;
