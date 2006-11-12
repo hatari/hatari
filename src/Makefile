@@ -87,7 +87,7 @@ distclean:
 
 # Use "make depend" to generate file dependencies:
 Makefile.dep: Makefile
-	$(CC) -M $(CFLAGS) $(SRCS) > Makefile.dep
+	$(CC) -M $(CFLAGS) $(CPPFLAGS) $(SRCS) > Makefile.dep
 
 depend: Makefile.dep
 	$(MAKE) -C gui-sdl/ depend

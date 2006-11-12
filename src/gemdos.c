@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.54 2006-10-10 20:14:10 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.55 2006-11-12 23:34:18 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -251,11 +251,16 @@ int glob(const char *pattern, int flags,
 	 int errfunc(const char *epath, int eerrno),
          glob_t *pglob)
 {
+	/* Just a quick hack to keep Hatari happy... */
+	pglob->gl_pathv = malloc(1 * sizeof(void *));
+	pglob->gl_pathv[0] = NULL;
+	pglob->gl_pathc = 0;
 	return 0;
 }
 
 void globfree(glob_t *pglob)
 {
+	free(pglob->gl_pathv);
 }
 
 #define mkdir(name,mode) mkdir(name)
@@ -346,7 +351,7 @@ static BOOL PopulateDTA(char *path, struct dirent *file)
 	struct stat filestat;
 	int n;
 
-	snprintf(tempstr, sizeof(tempstr), "%s/%s", path, file->d_name);
+	snprintf(tempstr, sizeof(tempstr), "%s%c%s", path, PATHSEP, file->d_name);
 	n = stat(tempstr, &filestat);
 	if (n != 0)
 	{
@@ -446,7 +451,7 @@ static void fsfirst_dirname(char *string, char *new)
 	while (new[i] != '\0')
 	{
 		if (new[i] == '\\')
-			new[i] = '/';
+			new[i] = PATHSEP;
 		i++;
 	}
 	while (string[i] != '\0')
@@ -454,7 +459,7 @@ static void fsfirst_dirname(char *string, char *new)
 		new[i] = string[i];
 		i++;
 	} /* find end of string */
-	while (new[i] != '/')
+	while (new[i] != PATHSEP)
 		i--; /* find last slash */
 	new[i] = '\0';
 }
@@ -470,7 +475,7 @@ static void fsfirst_dirmask(char *string, char *new)
 
 	while (string[i] != '\0')
 		i++;   /* go to end of string */
-	while (string[i] != '/')
+	while (string[i] != PATHSEP)
 		i--;   /* find last slash */
 	i++;
 	while (string[i] != '\0')
@@ -777,7 +782,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 			int len, found, base_len;
 			unsigned int j;
 
-			*start++ = '/';
+			*start++ = PATHSEP;
 			old1 = *start;
 			*start++ = '*';
 			old2 = *start;
@@ -798,7 +803,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 						strncasecmp(globbuf.gl_pathv[j],pszDestName,len)))
 				{
 					/* we found a matching name... */
-					sprintf(dest,"%s%c%s",globbuf.gl_pathv[j],'/',s+1);
+					sprintf(dest,"%s%c%s",globbuf.gl_pathv[j], PATHSEP,s+1);
 					strcpy(pszDestName,dest);
 					j = globbuf.gl_pathc;
 					found = 1;
@@ -818,7 +823,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 					if (!strncasecmp(globbuf.gl_pathv[j],pszDestName,len))
 					{
 						/* we found a matching name... */
-						sprintf(dest,"%s%c%s",globbuf.gl_pathv[j],'/',s+1);
+						sprintf(dest,"%s%c%s",globbuf.gl_pathv[j], PATHSEP,s+1);
 						strcpy(pszDestName,dest);
 						j = globbuf.gl_pathc;
 						found = 1;
@@ -827,7 +832,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 				globfree(&globbuf);
 				if (!found)
 				{           /* really nothing ! */
-					*s = '/';
+					*s = PATHSEP;
 					fprintf(stderr,"no path for %s\n",pszDestName);
 				}
 			}
@@ -836,11 +841,11 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 	}
 
 	if (!start)
-		start = strrchr(pszDestName,'/'); // path already converted ?
+		start = strrchr(pszDestName, PATHSEP); // path already converted ?
 
 	if (start)
 	{
-		*start++ = '/';     /* in case there was only 1 anti slash */
+		*start++ = PATHSEP;     /* in case there was only 1 anti slash */
 		if (*start && !strchr(start,'?') && !strchr(start,'*'))
 		{
 			/* We have a complete name after the path, not a wildcard */
@@ -1552,7 +1557,7 @@ static int GemDOS_GetDir(Uint32 Params)
 		for (i = 0; i <= len; i++)
 		{
 			c = path[i];
-			STMemory_WriteByte(Address+i, (c=='/' ? '\\' : c) );
+			STMemory_WriteByte(Address+i, (c==PATHSEP ? '\\' : c) );
 		}
 #if GEMDOS_FILE_DEBUG
 		Log_Printf(LOG_DEBUG, "GemDOS_GetDir (%d) = %s\n", Drive, path);
