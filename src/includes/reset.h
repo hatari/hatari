@@ -10,6 +10,5 @@
 
 extern int Reset_Cold(void);
 extern int Reset_Warm(void);
-extern int Reset_ST(BOOL bCold);
 
 #endif
