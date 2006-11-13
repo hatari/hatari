@@ -4,7 +4,7 @@
 # an environment variable, e.g. like this "make CC=my-gcc"
 #
 # Following variables can be overridden:
-#   CC, HOSTCC, DATADIR, CONFDIR, BINDIR
+#   CC, CPPFLAGS, LDFLAGS, HOSTCC, DATADIR, CONFDIR, BINDIR
 
 # Set the C compiler (e.g. gcc)
 CC ?= gcc
@@ -18,11 +18,11 @@ WARNFLAGS = -Wmissing-prototypes -Wstrict-prototypes -Wsign-compare \
 CFLAGS := -g -O2 $(WARNFLAGS)
 
 # Set flags passed to the preprocessor (e.g. -I<include dir>)
-CPPFLAGS =
+CPPFLAGS ?=
 
 # Additional libraries and linker flags:
 LIBS = -lz
-LDFLAGS =
+LDFLAGS ?=
 
 
 # The native C compiler.

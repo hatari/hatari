@@ -4,7 +4,7 @@
 include ../../Makefile.cnf
 
 
-CFLAGS += -I. $(SDL_CFLAGS)
+CFLAGS += -I. $(CPPFLAGS) $(SDL_CFLAGS)
 # disable several warnings for the CPU emu code as it comes from elsewhere
 QUIETCFLAGS = $(CFLAGS) -Wno-unused -Wno-sign-compare -Wno-shadow
 
@@ -57,21 +57,21 @@ cputbl.h: cpuemu.c
 
 # this is for people with low memory (is there a way do do this with a single rule ?)
 cpuemu1.o: cpuemu.c
-	$(CC) -DPART_1 -c $(CPPFLAGS) $(QUIETCFLAGS) $< -o $@
+	$(CC) -DPART_1 -c $(QUIETCFLAGS) $< -o $@
 cpuemu2.o: cpuemu.c
-	$(CC) -DPART_2 -c $(CPPFLAGS) $(QUIETCFLAGS) $< -o $@
+	$(CC) -DPART_2 -c $(QUIETCFLAGS) $< -o $@
 cpuemu3.o: cpuemu.c
-	$(CC) -DPART_3 -c $(CPPFLAGS) $(QUIETCFLAGS) $< -o $@
+	$(CC) -DPART_3 -c $(QUIETCFLAGS) $< -o $@
 cpuemu4.o: cpuemu.c
-	$(CC) -DPART_4 -c $(CPPFLAGS) $(QUIETCFLAGS) $< -o $@
+	$(CC) -DPART_4 -c $(QUIETCFLAGS) $< -o $@
 cpuemu5.o: cpuemu.c
-	$(CC) -DPART_5 -c $(CPPFLAGS) $(QUIETCFLAGS) $< -o $@
+	$(CC) -DPART_5 -c $(QUIETCFLAGS) $< -o $@
 cpuemu6.o: cpuemu.c
-	$(CC) -DPART_6 -c $(CPPFLAGS) $(QUIETCFLAGS) $< -o $@
+	$(CC) -DPART_6 -c $(QUIETCFLAGS) $< -o $@
 cpuemu7.o: cpuemu.c
-	$(CC) -DPART_7 -c $(CPPFLAGS) $(QUIETCFLAGS) $< -o $@
+	$(CC) -DPART_7 -c $(QUIETCFLAGS) $< -o $@
 cpuemu8.o: cpuemu.c
-	$(CC) -DPART_8 -c $(CPPFLAGS) $(QUIETCFLAGS) $< -o $@
+	$(CC) -DPART_8 -c $(QUIETCFLAGS) $< -o $@
 
 
 newcpu.o: sysdeps.h hatari-glue.h maccess.h memory.h newcpu.h

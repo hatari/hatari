@@ -7,7 +7,7 @@ ENABLE_FALCON = 1
 include ../Makefile.cnf
 
 # Additional include directories:
-INCFLAGS = -I./includes -I./uae-cpu
+INCFLAGS = -I./includes -I./uae-cpu $(CPPFLAGS)
 
 
 CFLAGS += -DDATADIR=\"$(DATADIR)\" -DCONFDIR=\"$(CONFDIR)\" $(INCFLAGS) $(SDL_CFLAGS)
@@ -87,7 +87,7 @@ distclean:
 
 # Use "make depend" to generate file dependencies:
 Makefile.dep: Makefile
-	$(CC) -M $(CFLAGS) $(CPPFLAGS) $(SRCS) > Makefile.dep
+	$(CC) -M $(CFLAGS) $(SRCS) > Makefile.dep
 
 depend: Makefile.dep
 	$(MAKE) -C gui-sdl/ depend
