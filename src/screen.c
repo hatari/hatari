@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.52 2006-10-10 20:13:05 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.53 2006-11-13 22:25:49 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -358,6 +358,7 @@ static void Screen_SetScreenLineOffsets(void)
 void Screen_Init(void)
 {
   int i;
+  SDL_Surface *pIconSurf;
 
   /* Clear frame buffer structures and set current pointer */
   memset(FrameBuffers, 0, NUM_FRAMEBUFFERS * sizeof(FRAMEBUFFER));
@@ -375,6 +376,15 @@ void Screen_Init(void)
   }
   pFrameBuffer = &FrameBuffers[0];
 
+  /* Load and set icon */
+  pIconSurf = SDL_LoadBMP(DATADIR "/hatari-icon.bmp");
+  if (pIconSurf)
+  {
+    //SDL_SetColorKey(pIconSurf, SDL_SRCCOLORKEY, SDL_MapRGB(pIconSurf->format, 255, 255, 255));
+    SDL_WM_SetIcon(pIconSurf, NULL);
+  }
+
+  /* Set initial window resolution */
   Screen_SetResolution();
 
   Video_SetScreenRasters();                       /* Set rasters ready for first screen */

@@ -27,6 +27,7 @@ install: all
 	$(INSTALL) -d $(DESTDIR)$(BINDIR)
 	$(INSTALL) -d $(DESTDIR)$(DATADIR)
 	$(INSTALL_PROGRAM) src/hatari $(DESTDIR)$(BINDIR)/hatari
+	$(INSTALL_DATA) src/hatari-icon.bmp $(DESTDIR)$(DATADIR)/hatari-icon.bmp
 	if test -f src/tos.img -a \! -f $(DESTDIR)$(DATADIR)/tos.img ; then \
 	  $(INSTALL_DATA) src/tos.img $(DESTDIR)$(DATADIR)/tos.img ; \
 	fi
