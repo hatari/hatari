@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.55 2006-11-12 23:34:18 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.56 2006-11-15 19:34:42 eerot Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -247,7 +247,7 @@ typedef struct
     size_t gl_offs;     /* Slots to reserve in `gl_pathv'.  */
 } glob_t;
 
-int glob(const char *pattern, int flags,
+static int glob(const char *pattern, int flags,
 	 int errfunc(const char *epath, int eerrno),
          glob_t *pglob)
 {
@@ -258,7 +258,7 @@ int glob(const char *pattern, int flags,
 	return 0;
 }
 
-void globfree(glob_t *pglob)
+static void globfree(glob_t *pglob)
 {
 	free(pglob->gl_pathv);
 }
