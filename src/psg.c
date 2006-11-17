@@ -8,7 +8,7 @@
 
   Also used for the printer (centronics) port emulation (PSG Port B, Register 15)
 */
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.11 2006-10-08 12:10:11 thothy Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.12 2006-11-17 18:08:03 simonsunnyboy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -149,19 +149,43 @@ void PSG_DataRegister_WriteByte(void)
 		/* Printer dispatching only when printing is activated */
 		if (ConfigureParams.Printer.bEnablePrinting)
 		{
-			/* Is STROBE low and did the last write go to IOB? */
-			if ((PSGRegisters[PSG_REG_IO_PORTA]&32)==0 && bLastWriteToIOB)
+			/* Bit 5 - Centronics strobe? If STROBE is low and the last write did go to IOB then
+			 * there is data in PORTB to print/transfer to the emulated Centronics port
+			 */
+			if ((((PSGRegisters[PSG_REG_IO_PORTA]&(1<<5))==0) && bLastWriteToIOB))
 			{
 				/* Seems like we want to print something... */
 				Printer_TransferByteTo((unsigned char) PSGRegisters[PSG_REG_IO_PORTB]);
 			}
 		}
-#if ENABLE_FALCON
-		if (ConfigureParams.System.nMachineType == MACHINE_FALCON
-		    && (PSGRegisters[PSG_REG_IO_PORTA]&(1<<4)))
+		/* Bit 3 - Centronics as input */
+		if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<3))
 		{
-			fprintf(stderr, "Calling DSP_Reset?\n");
-			//DSP_Reset();
+			/* FIXME: might be needed if we want to emulate sound sampling hardware */
+		}
+		
+#if ENABLE_FALCON
+		/* handle Falcon specific bits in PORTA of the PSG */
+		if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		{
+			/* Bit 4 - DSP reset? */
+			if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<4))
+			{
+				fprintf(stderr, "Calling DSP_Reset?\n");
+				//DSP_Reset();
+			}
+			/* Bit 6 - Internal Speaker control */
+			if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<6))
+			{
+				fprintf(stderr, "Falcon: Internal Speaker state\n");
+				/* FIXME: add code to handle? (if we want to emulate the speaker at all? */
+			}
+			/* Bit 7 - Reset IDE? */
+			if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<7))
+			{
+				fprintf(stderr, "Falcon: Reset IDE subsystem\n");
+				/* FIXME: add code to handle IDE reset */
+			}
 		}
 #endif
 		break;

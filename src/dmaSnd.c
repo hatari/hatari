@@ -32,10 +32,11 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.8 2006-02-12 21:28:22 eerot Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.9 2006-11-17 18:08:03 simonsunnyboy Exp $";
 
 #include "main.h"
 #include "audio.h"
+#include "configuration.h"
 #include "dmaSnd.h"
 #include "int.h"
 #include "ioMem.h"
@@ -252,6 +253,7 @@ void DmaSnd_SoundControl_ReadWord(void)
 /*
   Write word to sound control register (0xff8900).
 */
+/* FIXME: add Falcon specific handler here... */
 void DmaSnd_SoundControl_WriteWord(void)
 {
 	Uint16 nNewSndCtrl;
@@ -315,10 +317,32 @@ void DmaSnd_SoundMode_ReadWord(void)
 /*-----------------------------------------------------------------------*/
 /*
   Write word to sound mode register (0xff8920).
+  Handling framework for Falcon specific bits by Matthias Arndt <marndt@asmsoftware.de>
 */
 void DmaSnd_SoundMode_WriteWord(void)
 {
-	nDmaSoundMode = IoMem_ReadWord(0xff8920);
+	/* Handle Falcon specialities: STE and TT only have bits 7,1 and 0 in this register */
+#if ENABLE_FALCON
+		/* Falcon has meaning in almost all bits of SND_SMC */
+		if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		{
+			
+			nDmaSoundMode = IoMem_ReadWord(0xff8920);
+			/* FIXME: add code here to evaluate Falcon specific settings */
+			
+			
+		} else {
+			/* STE or TT - hopefully STFM emulation never gets here :)
+			 * we maskout the Falcon only bits so we only hit bits that exist on a real STE
+			 */
+			nDmaSoundMode = (IoMem_ReadWord(0xff8920)&0x008F);
+			/* we also write the masked value back into the emulated hw registers so we have a correct value there */
+			IoMem_WriteWord(0xff8920,nDmaSoundMode);
+		}
+#else
+	nDmaSoundMode = (IoMem_ReadWord(0xff8920)&0x008F);
+	IoMem_WriteWord(0xff8920,nDmaSoundMode);
+#endif
 	//fprintf(stderr,"New sound mode = $%x\n", nDmaSoundMode);
 }
 
