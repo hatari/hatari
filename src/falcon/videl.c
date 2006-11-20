@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.5 2006-10-19 20:09:39 eerot Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.6 2006-11-20 00:20:25 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -98,7 +98,7 @@ static long VIDEL_getVideoramAddress(void)
 static int VIDEL_getScreenBpp(void)
 {
 	int f_shift = handleReadW(HW + 0x66);
-	int st_shift = handleReadW(HW + 0x60);
+	int st_shift = handleRead(HW + 0x60);
 	/* to get bpp, we must examine f_shift and st_shift.
 	 * f_shift is valid if any of bits no. 10, 8 or 4
 	 * is set. Priority in f_shift is: 10 ">" 8 ">" 4, i.e.
@@ -115,9 +115,9 @@ static int VIDEL_getScreenBpp(void)
 		bits_per_pixel = 8;
 	else if (st_shift == 0)
 		bits_per_pixel = 4;
-	else if (st_shift == 0x100)
+	else if (st_shift == 0x01)
 		bits_per_pixel = 2;
-	else /* if (st_shift == 0x200) */
+	else /* if (st_shift == 0x02) */
 		bits_per_pixel = 1;
 
 	// Dprintf(("Videl works in %d bpp, f_shift=%04x, st_shift=%d", bits_per_pixel, f_shift, st_shift));
@@ -158,7 +158,7 @@ static void VIDEL_updateColors(void)
 	// Test the ST compatible set or not.
 	BOOL stCompatibleColorPalette = FALSE;
 
-	int st_shift = handleReadW(HW + 0x60);
+	int st_shift = handleRead(HW + 0x60);
 	if (st_shift == 0) {		   // bpp == 4
 		int hreg = handleReadW(HW + 0x82); // Too lame!
 		if (hreg == 0x10 || hreg == 0x17 || hreg == 0x3e)	  // Better way how to make out ST LOW mode wanted
@@ -166,9 +166,9 @@ static void VIDEL_updateColors(void)
 
 		//Dprintf(("ColorUpdate %x\n", hreg));
 	}
-	else if (st_shift == 0x100)	   // bpp == 2
+	else if (st_shift == 0x01)	   // bpp == 2
 		stCompatibleColorPalette = TRUE;
-	else						   // bpp == 1	// if (st_shift == 0x200)
+	else						   // bpp == 1	// if (st_shift == 0x02)
 		stCompatibleColorPalette = TRUE;
 
 	//Dprintf(("stCompatibleColorPalette = %i\n", stCompatibleColorPalette));
