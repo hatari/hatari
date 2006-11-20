@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the Falcon.
 */
-const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.6 2006-10-29 09:25:07 thothy Exp $";
+const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.7 2006-11-20 00:21:54 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -69,7 +69,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff820b, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff820c, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff820d, SIZE_BYTE, Video_BaseLow_ReadByte, IoMem_WriteWithoutInterception },
-	{ 0xff820e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
+	{ 0xff820e, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon line offset */
 	{ 0xff820f, SIZE_BYTE, Video_LineWidth_ReadByte, Video_LineWidth_WriteByte },
 	{ 0xff8210, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon line width */
 #if ENABLE_FALCON
@@ -93,7 +93,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff825e, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color15_WriteWord },        /* COLOR 15 */
 #endif
 	{ 0xff8260, SIZE_BYTE, Video_ShifterMode_ReadByte, Video_ShifterMode_WriteByte },
-	{ 0xff8261, 4,         IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
+	{ 0xff8261, 3,         IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
+	{ 0xff8264, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon horizontal fine scrolling high ? */
 	{ 0xff8265, SIZE_BYTE, Video_HorScroll_Read, Video_HorScroll_Write },                   /* horizontal fine scrolling */
 #if ENABLE_FALCON
 	{ 0xff8266, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_ShiftModeWriteWord },       /* Falcon shift mode */
