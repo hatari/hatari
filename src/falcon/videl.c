@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.6 2006-11-20 00:20:25 thothy Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.7 2006-11-21 22:40:42 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -308,6 +308,12 @@ static void VIDEL_renderScreenNoZoom(void)
 	if (vw>scrwidth) vw_clip = scrwidth;
 	if (vh>scrheight) vh_clip = scrheight;	
 
+	/* Horizontal scroll register set? */
+	if (handleRead(HW + 0x65) & 0x0f) {
+		/* Yes, so we need to adjust offset to next line: */
+		nextline += bpp;
+	}
+
 	/* Center screen */
 	hvram += ((scrheight-vh_clip)>>1)*scrpitch;
 	hvram += ((scrwidth-vw_clip)>>1)*HostScreen_getBpp();
@@ -582,6 +588,12 @@ static void VIDEL_renderScreenZoom(void)
 	int scrheight = HostScreen_getHeight();
 	int scrbpp = HostScreen_getBpp();
 	uint8 *hvram = (uint8 *) HostScreen_getVideoramAddress();
+
+	/* Horizontal scroll register set? */
+	if (handleRead(HW + 0x65) & 0x0f) {
+		/* Yes, so we need to adjust offset to next line: */
+		nextline += bpp;
+	}
 
 	/* Integer zoom coef ? */
 	if (/*(bx_options.autozoom.integercoefs) &&*/ (scrwidth>=vw) && (scrheight>=vh)) {
