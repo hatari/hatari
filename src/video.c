@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.55 2006-10-23 17:56:46 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.56 2006-11-25 11:26:48 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -33,6 +33,7 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.55 2006-10-23 17:56:46 eerot
 #include "video.h"
 #include "ymFormat.h"
 #include "falcon/videl.h"
+#include "falcon/hostscreen.h"
 
 
 #define BORDERMASK_NONE    0x00                 /* Borders masks */
@@ -63,6 +64,7 @@ static Uint8 VideoShifterByte;                  /* VideoShifter (0xff8260) value
 static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simulate left/right border removal */
 static int nLastAccessCycleLeft;                /* Line cycle where program tried to open left border */
 static BOOL bSteBorderFlag;                     /* TRUE when screen width has been switched to 336 (e.g. in Obsession) */
+static int nTTRes;                              /* TT shifter resolution mode */
 
 
 /*-----------------------------------------------------------------------*/
@@ -717,6 +719,58 @@ static void Video_ClearOnVBL(void)
 }
 
 
+
+/*-----------------------------------------------------------------------*/
+/*
+  Draw screen (either with ST/STE shifter drawing functions or with
+  Videl drawing functions)
+*/
+static void Video_DrawScreen(void)
+{
+  /* Skip frame if need to */
+  if (ConfigureParams.Screen.bFrameSkip && (nVBLs&1))
+    return;
+ 
+  /* Use extended VDI resolution?
+   * If so, just copy whole screen on VBL rather than per HBL */
+  if (bUseVDIRes)
+    Video_CopyVDIScreen();
+
+  /* Now draw the screen! */
+#if ENABLE_FALCON
+  if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+  {
+    VIDEL_renderScreen();
+  }
+  else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+  {
+    static int nPrevTTRes = -1;
+    int width, height, bpp;
+    switch (nTTRes)
+    {
+      case 0: width = 320; height = 200; bpp = 4; break;
+      case 1: width = 640; height = 200; bpp = 2; break;
+      case 2: width = 640; height = 400; bpp = 1; break;
+      case 4: width = 640; height = 480; bpp = 4; break;
+      case 6: width = 1280; height = 960; bpp = 1; break;
+      case 7: width = 320; height = 480; bpp = 8; break;
+      default: fprintf(stderr, "TT res error!\n"); width = 320; height = 200; bpp = 4; break;
+    }
+    if (nTTRes != nPrevTTRes)
+    {
+      HostScreen_setWindowSize(width, height, 8);
+    }
+    /* Yes, we are abusing the Videl routines for rendering the TT modes! */
+    VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);
+    HostScreen_update1( FALSE );
+    nPrevTTRes = nTTRes;
+  }
+  else
+#endif
+    Screen_Draw();
+}
+
+
 /*-----------------------------------------------------------------------*/
 /*
   VBL interrupt, draw screen and reset counters
@@ -743,22 +797,7 @@ void Video_InterruptHandler_VBL(void)
   /* Act on shortcut keys */
   ShortCut_ActKey();
 
-  /* Draw screen, skip frame if need to */
-  if (!ConfigureParams.Screen.bFrameSkip || (nVBLs&1))
-  {
-    /* Use extended VDI resolution?
-     * If so, just copy whole screen on VBL rather than per HBL */
-    if (bUseVDIRes)
-      Video_CopyVDIScreen();
-
-    /* Now draw the screen! */
-#if ENABLE_FALCON
-    if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
-      VIDEL_renderScreen();
-    else
-#endif
-      Screen_Draw();
-  }
+  Video_DrawScreen();
 
   /* Update counter for number of screen refreshes per second(for debugging) */
   nVBLs++;
@@ -1092,4 +1131,21 @@ void Video_HorScroll_Write(void)
   }
 
   HWScrollCount &= 0x0f;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Write to TT shifter mode register (0xff8262)
+*/
+void Video_TTShiftMode_WriteWord(void)
+{
+	nTTRes = IoMem_ReadByte(0xff8262) & 7;
+	fprintf(stderr, "Write to FF8262: %x, res=%i\n", IoMem_ReadWord(0xff8262),nTTRes);
+	/* Is it an ST compatible resolution? */
+	if (nTTRes <= 2)
+	{
+		IoMem_WriteByte(0xff8260, nTTRes);
+		Video_ShifterMode_WriteByte();
+	}
 }

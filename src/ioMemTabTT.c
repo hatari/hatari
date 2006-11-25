@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the TT.
 */
-const char IoMemTabTT_rcsid[] = "Hatari $Id: ioMemTabTT.c,v 1.2 2006-10-29 11:00:52 thothy Exp $";
+const char IoMemTabTT_rcsid[] = "Hatari $Id: ioMemTabTT.c,v 1.3 2006-11-25 11:26:48 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -69,7 +69,9 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xff825c, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color14_WriteWord },        /* COLOR 14 */
 	{ 0xff825e, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color15_WriteWord },        /* COLOR 15 */
 	{ 0xff8260, SIZE_BYTE, Video_ShifterMode_ReadByte, Video_ShifterMode_WriteByte },
-	{ 0xff8261, 4,         IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
+	{ 0xff8261, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
+	{ 0xff8262, SIZE_WORD, IoMem_ReadWithoutInterception, Video_TTShiftMode_WriteWord },    /* TT screen mode */
+	{ 0xff8264, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 	{ 0xff8265, SIZE_BYTE, Video_HorScroll_Read, Video_HorScroll_Write },                   /* horizontal fine scrolling */
 	{ 0xff8266, 26,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 

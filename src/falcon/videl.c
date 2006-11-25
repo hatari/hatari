@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.7 2006-11-21 22:40:42 thothy Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.8 2006-11-25 11:26:49 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -293,6 +293,17 @@ static void VIDEL_renderScreenNoZoom(void)
 	*/
 	int nextline = linewidth + lineoffset;
 
+	if (bpp < 16 && !hostColorsSync) {
+		VIDEL_updateColors();
+	}
+
+
+	VIDEL_ConvertScreenNoZoom(vw, vh, bpp, nextline);
+}
+
+
+void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline)
+{
 	int scrpitch = HostScreen_getPitch();
 
 	long atariVideoRAM = VIDEL_getVideoramAddress();
@@ -321,8 +332,6 @@ static void VIDEL_renderScreenNoZoom(void)
 	/* Render */
 	if (bpp < 16) {
 		/* Bitplanes modes */
-		if (!hostColorsSync)
-			VIDEL_updateColors();
 
 		// The SDL colors blitting...
 		uint8 color[16];

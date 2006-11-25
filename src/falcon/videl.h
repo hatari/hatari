@@ -13,5 +13,6 @@ extern void VIDEL_reset(void);
 extern void VIDEL_ColorRegsWrite(void);
 extern void VIDEL_ShiftModeWriteWord(void);
 extern void VIDEL_ZoomModeChanged(void);
+extern void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline);
 
 #endif /* _VIDEL_H */
