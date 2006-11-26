@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.54 2006-11-14 21:08:29 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.55 2006-11-26 17:50:34 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -29,7 +29,6 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.54 2006-11-14 21:08:29 eer
 #include "ikbd.h"
 #include "m68000.h"
 #include "misc.h"
-#include "printer.h"
 #include "screen.h"
 #include "convert/routines.h"
 #include "screenSnapShot.h"
@@ -968,9 +967,6 @@ void Screen_Draw(void)
       /* And status bar */
       /*StatusBar_UpdateIcons();*/ /* Sorry - no statusbar in Hatari yet */
     }
-
-    /* Check printer status */
-    Printer_CheckIdleStatus();
   }
 }
 

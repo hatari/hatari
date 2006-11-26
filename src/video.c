@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.56 2006-11-25 11:26:48 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.57 2006-11-26 17:50:34 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -24,6 +24,7 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.56 2006-11-25 11:26:48 thoth
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
+#include "printer.h"
 #include "screen.h"
 #include "shortcut.h"
 #include "sound.h"
@@ -799,7 +800,10 @@ void Video_InterruptHandler_VBL(void)
 
   Video_DrawScreen();
 
-  /* Update counter for number of screen refreshes per second(for debugging) */
+  /* Check printer status */
+  Printer_CheckIdleStatus();
+
+  /* Update counter for number of screen refreshes per second */
   nVBLs++;
   /* Set video registers for frame */
   Video_ClearOnVBL();
