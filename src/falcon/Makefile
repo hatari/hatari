@@ -4,7 +4,7 @@
 include ../../Makefile.cnf
 
 # Additional include directories:
-INCFLAGS = -I../includes -I../uae-cpu
+INCFLAGS = -I../includes -I../uae-cpu $(CPPFLAGS)
 
 
 # Set flags passed to the compiler (e.g. optimization flags)
