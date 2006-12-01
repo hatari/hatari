@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.8 2006-11-25 11:26:49 thothy Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.9 2006-12-01 19:42:54 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -302,7 +302,7 @@ static void VIDEL_renderScreenNoZoom(void)
 }
 
 
-void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline)
+void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 {
 	int scrpitch = HostScreen_getPitch();
 
@@ -322,7 +322,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline)
 	/* Horizontal scroll register set? */
 	if (handleRead(HW + 0x65) & 0x0f) {
 		/* Yes, so we need to adjust offset to next line: */
-		nextline += bpp;
+		nextline += vbpp;
 	}
 
 	/* Center screen */
@@ -330,7 +330,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline)
 	hvram += ((scrwidth-vw_clip)>>1)*HostScreen_getBpp();
 
 	/* Render */
-	if (bpp < 16) {
+	if (vbpp < 16) {
 		/* Bitplanes modes */
 
 		// The SDL colors blitting...
@@ -350,12 +350,12 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline)
 						int w;
 
 						for (w = 0; w < (vw_clip+15)>>4; w++) {
-							HostScreen_bitplaneToChunky( fvram_column, bpp, color );
+							HostScreen_bitplaneToChunky( fvram_column, vbpp, color );
 
 							memcpy(hvram_column, color, 16);
 
 							hvram_column += 16;
-							fvram_column += bpp;
+							fvram_column += vbpp;
 						}
 
 						hvram_line += scrpitch;
@@ -376,13 +376,13 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline)
 
 						for (w = 0; w < (vw_clip+15)>>4; w++) {
 							int j;
-							HostScreen_bitplaneToChunky( fvram_column, bpp, color );
+							HostScreen_bitplaneToChunky( fvram_column, vbpp, color );
 
 							for (j=0; j<16; j++) {
 								*hvram_column++ = HostScreen_getPaletteColor( color[j] );
 							}
 
-							fvram_column += bpp;
+							fvram_column += vbpp;
 						}
 
 						hvram_line += scrpitch>>1;
@@ -403,7 +403,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline)
 
 						for (w = 0; w < (vw_clip+15)>>4; w++) {
 							int j;
-							HostScreen_bitplaneToChunky( fvram_column, bpp, color );
+							HostScreen_bitplaneToChunky( fvram_column, vbpp, color );
 
 							for (j=0; j<16; j++) {
 								uint32 tmpColor = HostScreen_getPaletteColor( color[j] );
@@ -411,7 +411,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline)
 								hvram_column += 3;
 							}
 
-							fvram_column += bpp;
+							fvram_column += vbpp;
 						}
 
 						hvram_line += scrpitch;
@@ -432,13 +432,13 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline)
 
 						for (w = 0; w < (vw_clip+15)>>4; w++) {
 							int j;
-							HostScreen_bitplaneToChunky( fvram_column, bpp, color );
+							HostScreen_bitplaneToChunky( fvram_column, vbpp, color );
 
 							for (j=0; j<16; j++) {
 								*hvram_column++ = HostScreen_getPaletteColor( color[j] );
 							}
 
-							fvram_column += bpp;
+							fvram_column += vbpp;
 						}
 
 						hvram_line += scrpitch>>2;
@@ -462,16 +462,12 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline)
 					for (h = 0; h < vh_clip; h++) {
 						uint16 *fvram_column = fvram_line;
 						uint8 *hvram_column = hvram_line;
-						int w;
+						int w, tmp;
 
 						for (w = 0; w < vw_clip; w++) {
-							int tmp;
 							
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-							tmp = *fvram_column;
-#else
-							tmp = ((*fvram_column) >> 8) | ((*fvram_column) << 8);
-#endif
+							tmp = SDL_SwapBE16(*fvram_column);
+
 							*hvram_column = ((tmp>>13) & 7) << 5;
 							*hvram_column |= ((tmp>>8) & 7) << 2;
 							*hvram_column |= ((tmp>>2) & 3);
@@ -502,9 +498,8 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int bpp, int nextline)
 						uint16 *hvram_column = hvram_line;
 
 						for (w = 0; w < vw_clip; w++) {
-							// byteswap
-							int data = *fvram_column++;
-							*hvram_column++ = (data >> 8) | (data << 8);
+							// byteswap with SDL asm macros
+							*hvram_column++ = SDL_SwapBE16(*fvram_column++);
 						}
 #endif // SDL_BYTEORDER == SDL_BIG_ENDIAN
 
@@ -847,11 +842,8 @@ static void VIDEL_renderScreenZoom(void)
 								uint16 srcword;
 								uint8 dstbyte;
 							
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-								srcword = fvram_column[zoomxtable[w]];
-#else
-								srcword = (fvram_column[zoomxtable[w]] >> 8) | (fvram_column[zoomxtable[w]] << 8);
-#endif
+								srcword = SDL_SwapBE16(fvram_column[zoomxtable[w]]);
+
 								dstbyte = ((srcword>>13) & 7) << 5;
 								dstbyte |= ((srcword>>8) & 7) << 2;
 								dstbyte |= ((srcword>>2) & 3);
@@ -883,11 +875,7 @@ static void VIDEL_renderScreenZoom(void)
 							for (w = 0; w < scrwidth; w++) {
 								uint16 srcword;
 							
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-								srcword = fvram_column[zoomxtable[w]];
-#else
-								srcword = (fvram_column[zoomxtable[w]] >> 8) | (fvram_column[zoomxtable[w]] << 8);
-#endif
+								srcword = SDL_SwapBE16(fvram_column[zoomxtable[w]]);
 								*hvram_column++ = srcword;
 							}
 						}
