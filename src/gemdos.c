@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.56 2006-11-15 19:34:42 eerot Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.57 2006-12-03 15:35:24 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -277,15 +277,26 @@ static void globfree(glob_t *pglob)
 static Uint16 GemDOS_Time2dos(time_t t)
 {
 	struct tm *x;
-	x = localtime (&t);
+
+	x = localtime(&t);
+	
+	if (x == NULL)
+		return 0;
+
 	return (x->tm_sec>>1)|(x->tm_min<<5)|(x->tm_hour<<11);
 }
 
 static Uint16 GemDOS_Date2dos(time_t t)
 {
 	struct tm *x;
-	x = localtime (&t);
-	return x->tm_mday | ((x->tm_mon+1)<<5) | (((x->tm_year-80 > 0) ? x->tm_year-80 : 0) << 9);
+
+	x = localtime(&t);
+
+	if (x == NULL)
+		return 0;
+
+	return x->tm_mday | ((x->tm_mon+1)<<5)
+	       | (((x->tm_year-80 > 0) ? x->tm_year-80 : 0) << 9);
 }
 
 
@@ -302,7 +313,10 @@ static BOOL GemDOS_GetFileInformation(char *name, DATETIME *DateTime)
 	n = stat(name, &filestat);
 	if (n != 0)
 		return FALSE;
-	x = localtime( &filestat.st_mtime );
+
+	x = localtime(&filestat.st_mtime);
+	if (x == NULL)
+		return FALSE;
 
 	DateTime->word1 = 0;
 	DateTime->word2 = 0;
