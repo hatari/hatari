@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.44 2006-10-15 21:20:51 thothy Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.45 2006-12-03 23:33:10 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -845,7 +845,7 @@ void Exception(int nr, uaecptr oldpc)
         if(nr < 64)
           M68000_AddCycles(4);       /* Coprocessor and unassigned exceptions (???) */
         else
-          M68000_AddCycles(24);      /* Must be a MFP interrupt */
+          M68000_AddCycles(44);      /* Must be a MFP interrupt */
         break;
     }
 }

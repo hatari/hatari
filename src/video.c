@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.57 2006-11-26 17:50:34 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.58 2006-12-03 23:33:09 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -115,13 +115,12 @@ static Uint32 Video_CalculateAddress(void)
   else
   {
     /* Now find which pixel we are on (ignore left/right borders) */
-    /* 96 + 320 + 96 = 512 pixels per scan line (each pixel is one cycle) */
     X = FrameCycles % nCyclesPerLine;
     if (X < SCREEN_START_CYCLE)       /* Limit if in NULL area outside screen */
       X = SCREEN_START_CYCLE;
     if (X > (nCyclesPerLine - SCREEN_START_CYCLE))
       X = (nCyclesPerLine - SCREEN_START_CYCLE);
-    /* X is now from 96 to 416 (320 pixels), subtract 96 to give X pixel across screen! */
+    /* X is now in the correct range, subtract SCREEN_START_CYCLE to give X pixel across screen! */
     X = ((X-SCREEN_START_CYCLE)>>1)&(~1);
 
     VideoAddress = pVideoRaster - STRam;
@@ -158,7 +157,7 @@ void Video_InterruptHandler_HBL(void)
 */
 static void Video_WriteToShifter(Uint8 Byte)
 {
-  static int nLastHBL = -1, LastByte, nLastCycles;
+  static int nLastByte, nLastFrameCycles;
   int nFrameCycles, nLineCycles;
   
   nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
@@ -173,16 +172,15 @@ static void Video_WriteToShifter(Uint8 Byte)
    * FIXME: This is a very inaccurate test that should be improved,
    * but we probably need better CPU cycles emulation first. There's
    * also no support for sync-scrolling yet :-( */
-  if (nHBL == nLastHBL && LastByte == 0x02 && Byte == 0x00
-      && nLineCycles <= 48 && nLineCycles-nLastCycles <= 16)
+  if (nLastByte == 0x02 && Byte == 0x00 && nLineCycles <= 12
+      && nFrameCycles-nLastFrameCycles <= 16)
   {
     LeftRightBorder |= BORDERMASK_LEFT;
     nLastAccessCycleLeft = nLineCycles;
   }
 
-  nLastHBL = nHBL;
-  LastByte = Byte;
-  nLastCycles = nLineCycles;
+  nLastByte = Byte;
+  nLastFrameCycles = nFrameCycles;
 }
 
 
@@ -231,8 +229,9 @@ void Video_Sync_WriteByte(void)
 
   if (LastByte == 0x00 && Byte == 0x02)   /* switched from 60 Hz to 50 Hz? */
   {
-    if (nHBL == nLastHBL && nLineCycles >= 400 && nLineCycles <= 480
-        && nLineCycles-nLastCycles <= 16)
+    if (nHBL == nLastHBL && nLineCycles-nLastCycles <= 16
+        && nLineCycles >= (SCREEN_START_CYCLE+320-40)
+        && nLineCycles <= (SCREEN_START_CYCLE+320+40))
     {
       /* Right border */
       //fprintf(stderr,"Right sync: %i - %i = %i\n", nLineCycles, nLastAccessCycleLeft, nLineCycles - nLastAccessCycleLeft);
@@ -786,8 +785,8 @@ void Video_InterruptHandler_VBL(void)
   /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
   /* Start HBL interrupts */
-  Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_ENDLINE);
-  Int_AddAbsoluteInterrupt(CYCLES_HBL,INTERRUPT_VIDEO_HBL);
+  Int_AddAbsoluteInterrupt(nCyclesPerLine-96, INTERRUPT_VIDEO_ENDLINE);
+  Int_AddAbsoluteInterrupt(nCyclesPerLine,INTERRUPT_VIDEO_HBL);
   Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME,INTERRUPT_VIDEO_VBL);
 
   /* Set frame cycles, used for Video Address */

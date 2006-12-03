@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.17 2006-11-12 18:48:15 eerot Exp $";
+const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.18 2006-12-03 23:33:09 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -74,8 +74,8 @@ static int Reset_ST(BOOL bCold)
   M68000_Reset(bCold);          /* Reset CPU */
 
   /* And VBL interrupt, MUST always be one interrupt ready to trigger */
-  Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_ENDLINE);
-  Int_AddAbsoluteInterrupt(CYCLES_HBL, INTERRUPT_VIDEO_HBL);
+  Int_AddAbsoluteInterrupt(nCyclesPerLine-96, INTERRUPT_VIDEO_ENDLINE);
+  Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_HBL);
   Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME, INTERRUPT_VIDEO_VBL);
 
   return 0;
