@@ -8,12 +8,13 @@
 
   Also used for the printer (centronics) port emulation (PSG Port B, Register 15)
 */
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.12 2006-11-17 18:08:03 simonsunnyboy Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.13 2006-12-05 21:58:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
 #include "joy.h"
+#include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "sound.h"
@@ -171,19 +172,19 @@ void PSG_DataRegister_WriteByte(void)
 			/* Bit 4 - DSP reset? */
 			if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<4))
 			{
-				fprintf(stderr, "Calling DSP_Reset?\n");
+				Log_Printf(LOG_DEBUG, "Calling DSP_Reset?\n");
 				//DSP_Reset();
 			}
 			/* Bit 6 - Internal Speaker control */
 			if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<6))
 			{
-				fprintf(stderr, "Falcon: Internal Speaker state\n");
+				/*Log_Printf(LOG_DEBUG, "Falcon: Internal Speaker state\n");*/
 				/* FIXME: add code to handle? (if we want to emulate the speaker at all? */
 			}
 			/* Bit 7 - Reset IDE? */
 			if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<7))
 			{
-				fprintf(stderr, "Falcon: Reset IDE subsystem\n");
+				Log_Printf(LOG_DEBUG, "Falcon: Reset IDE subsystem\n");
 				/* FIXME: add code to handle IDE reset */
 			}
 		}
