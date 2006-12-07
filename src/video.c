@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.58 2006-12-03 23:33:09 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.59 2006-12-07 20:23:41 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -1144,7 +1144,9 @@ void Video_HorScroll_Write(void)
 void Video_TTShiftMode_WriteWord(void)
 {
 	nTTRes = IoMem_ReadByte(0xff8262) & 7;
-	fprintf(stderr, "Write to FF8262: %x, res=%i\n", IoMem_ReadWord(0xff8262),nTTRes);
+
+	/*fprintf(stderr, "Write to FF8262: %x, res=%i\n", IoMem_ReadWord(0xff8262),nTTRes);*/
+
 	/* Is it an ST compatible resolution? */
 	if (nTTRes <= 2)
 	{
