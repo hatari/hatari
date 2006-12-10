@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.59 2006-12-07 20:23:41 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.60 2006-12-10 21:00:51 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -130,24 +130,6 @@ static Uint32 Video_CalculateAddress(void)
   }
 
   return VideoAddress;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  HBL interrupt - this is very inaccurate on ST and appears to occur around 1/3rd way into
-  the display!
-*/
-void Video_InterruptHandler_HBL(void)
-{
-  /* Remove this interrupt from list and re-order */
-  Int_AcknowledgeInterrupt();
-
-  /* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
-  if (nHBL < nScanlinesPerFrame-1)
-    Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_HBL);
-
-  M68000_Exception(EXCEPTION_HBLANK);   /* Horizontal blank interrupt, level 2! */
 }
 
 
@@ -565,6 +547,24 @@ static void Video_EndHBL(void)
 
 /*-----------------------------------------------------------------------*/
 /*
+  HBL interrupt - this is very inaccurate on ST and appears to occur around
+  1/3rd way into the display!
+*/
+void Video_InterruptHandler_HBL(void)
+{
+  /* Remove this interrupt from list and re-order */
+  Int_AcknowledgeInterrupt();
+
+  /* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
+  if (nHBL < nScanlinesPerFrame-1)
+    Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_HBL);
+
+  M68000_Exception(EXCEPTION_HBLANK);   /* Horizontal blank interrupt, level 2! */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   End Of Line interrupt
   As this occurs at the end of a line we cannot get timing for START of first
   line (as in Spectrum 512)
@@ -584,16 +584,13 @@ void Video_InterruptHandler_EndLine(void)
     IKBD_SendAutoKeyboardCommands();
   }
 
-  /* Timer A/B occur at END of first visible screen line in Event Count mode */
+  /* Timer B occurs at END of first visible screen line in Event Count mode */
   if (nHBL >= nStartHBL && nHBL < nEndHBL)
-   {
-    /* Handle Timers A and B when using Event Count mode(timer taken from HBL) */
-// FIXME: Really raise Timer A here?
-//    if (MFP_TACR==0x08)        /* Is timer in Event Count mode? */
-//      MFP_TimerA_EventCount_Interrupt();
-    if (MFP_TBCR==0x08)        /* Is timer in Event Count mode? */
+  {
+    /* Handle Timer B when using Event Count mode */
+    if (MFP_TBCR == 0x08)      /* Is timer in Event Count mode? */
       MFP_TimerB_EventCount_Interrupt();
-   }
+  }
 
   FDC_UpdateHBL();             /* Update FDC motion */
   Video_EndHBL();              /* Increase HBL count, copy line to display buffer and do any video trickery */
@@ -773,6 +770,18 @@ static void Video_DrawScreen(void)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Start HBL and VBL interrupts.
+*/
+void Video_StartInterrupts(void)
+{
+  Int_AddAbsoluteInterrupt(nCyclesPerLine-96, INTERRUPT_VIDEO_ENDLINE);
+  Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_HBL);
+  Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME, INTERRUPT_VIDEO_VBL);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   VBL interrupt, draw screen and reset counters
 */
 void Video_InterruptHandler_VBL(void)
@@ -784,10 +793,9 @@ void Video_InterruptHandler_VBL(void)
 
   /* Remove this interrupt from list and re-order */
   Int_AcknowledgeInterrupt();
-  /* Start HBL interrupts */
-  Int_AddAbsoluteInterrupt(nCyclesPerLine-96, INTERRUPT_VIDEO_ENDLINE);
-  Int_AddAbsoluteInterrupt(nCyclesPerLine,INTERRUPT_VIDEO_HBL);
-  Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME,INTERRUPT_VIDEO_VBL);
+
+  /* Start VBL & HBL interrupts */
+  Video_StartInterrupts();
 
   /* Set frame cycles, used for Video Address */
   Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver);
