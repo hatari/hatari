@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.55 2006-11-26 17:50:34 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.56 2006-12-11 18:06:40 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -206,39 +206,35 @@ static void Screen_Handle8BitPalettes(void)
 */
 static void Screen_SetDrawFunctions(void)
 {
-  switch (ConfigureParams.Screen.ChosenDisplayMode)
-  {
-    case DISPLAYMODE_LOWCOL_LOWRES:     /* low color, low resolution */
-      ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x8Bit;
-      ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
-      ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-      ScreenDrawFunctionsNormal[ST_LOWMEDIUM_MIX_RES] = ConvertMediumRes_640x8Bit;
-      break;
-    case DISPLAYMODE_LOWCOL_HIGHRES:    /* low color, zoomed resolution */
+  if (ConfigureParams.Screen.bForce8Bpp) {
+
+    if (ConfigureParams.Screen.bZoomLowRes) {
+      /* low color, zoomed resolution */
       ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x8Bit;
       ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
       ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
       ScreenDrawFunctionsNormal[ST_LOWMEDIUM_MIX_RES] = ConvertMediumRes_640x8Bit;
-      break;
-    case DISPLAYMODE_HICOL_LOWRES:      /* high color, low resolution */
-      ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x16Bit;
-      ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
+    } else {
+      /* low color, low resolution */
+      ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x8Bit;
+      ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
       ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-      ScreenDrawFunctionsNormal[ST_LOWMEDIUM_MIX_RES] = ConvertMediumRes_640x16Bit;
-      break;
-    case DISPLAYMODE_HICOL_HIGHRES:     /* high color, zoomed resolution */
+      ScreenDrawFunctionsNormal[ST_LOWMEDIUM_MIX_RES] = ConvertMediumRes_640x8Bit;
+    }
+  } else {
+    if (ConfigureParams.Screen.bZoomLowRes) {
+      /* high color, zoomed resolution */
       ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x16Bit;
       ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
       ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
       ScreenDrawFunctionsNormal[ST_LOWMEDIUM_MIX_RES] = ConvertMediumRes_640x16Bit;
-      break;
-    default:
-      fprintf(stderr, "Illegal display mode: %i\n", ConfigureParams.Screen.ChosenDisplayMode);
-      ScreenDrawFunctionsNormal[ST_LOW_RES] = NULL;
-      ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = NULL;
-      ScreenDrawFunctionsNormal[ST_HIGH_RES] = NULL;
-      ScreenDrawFunctionsNormal[ST_LOWMEDIUM_MIX_RES] = NULL;
-      break;
+    } else {
+      /* high color, low resolution */
+      ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x16Bit;
+      ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
+      ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
+      ScreenDrawFunctionsNormal[ST_LOWMEDIUM_MIX_RES] = ConvertMediumRes_640x16Bit;
+    }
   }
 }
 
@@ -260,9 +256,7 @@ static void Screen_SetResolution(void)
   }
   else
   {
-    if (STRes == ST_LOW_RES &&
-        (ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_LOWCOL_LOWRES
-         || ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_HICOL_LOWRES))
+    if (STRes == ST_LOW_RES && !ConfigureParams.Screen.bZoomLowRes)
     {
       Width = 320;
       Height = 200;
@@ -284,9 +278,7 @@ static void Screen_SetResolution(void)
   }
 
   /* Bits per pixel */
-  if (ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_LOWCOL_LOWRES
-      || ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_LOWCOL_HIGHRES
-      || STRes == ST_HIGH_RES || bUseVDIRes)
+  if (ConfigureParams.Screen.bForce8Bpp || STRes == ST_HIGH_RES || bUseVDIRes)
   {
     BitCount = 8;
   }
@@ -306,6 +298,11 @@ static void Screen_SetResolution(void)
   {
     sdlVideoFlags  = SDL_SWSURFACE|SDL_HWPALETTE;
   }
+
+  /* set draw functions in case SDL attribs didn't change
+   * but STRes changed (e.g. medres -> zoomed lowres)
+   */
+  Screen_SetDrawFunctions();
 
   /* Check if we really have to change the video mode: */
   if (sdlscrn && sdlscrn->w == Width && sdlscrn->h == Height
@@ -332,7 +329,6 @@ static void Screen_SetResolution(void)
   if (!bGrabMouse)
     SDL_WM_GrabInput(SDL_GRAB_OFF); /* Un-grab mouse pointer in windowed mode */
 
-  Screen_SetDrawFunctions();        /* Set draw functions */
   Screen_SetFullUpdate();           /* Cause full update of screen */
 }
 
@@ -744,7 +740,7 @@ static void Screen_SetConvertDetails(void)
       STScreenLeftSkipBytes = 0;                /* Number of bytes to skip on ST screen for left (border) */
       STScreenStartHorizLine = 0;               /* Full height */
 
-      if (ConfigureParams.Screen.bUseHighRes)
+      if (bUseHighRes)
       {
         pFrameBuffer->OverscanModeCopy = OverscanMode = OVERSCANMODE_NONE;
         STScreenEndHorizLine = 400;
@@ -859,7 +855,7 @@ static void Screen_Blit(BOOL bSwapScreen)
   else
   {
     /* VDI resolution? */
-    if (bUseVDIRes || ConfigureParams.Screen.bUseHighRes)
+    if (bUseVDIRes || bUseHighRes)
     {
       /* Show VDI or mono resolution, no overscan */
       SDL_UpdateRect(sdlscrn, 0,0,0,0);

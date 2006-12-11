@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.55 2006-10-25 19:00:27 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.56 2006-12-11 18:06:39 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -45,12 +45,12 @@ static const struct Config_Tag configs_Log[] =
 static const struct Config_Tag configs_Screen[] =
 {
 	{ "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
-	{ "bFrameSkip", Bool_Tag, &ConfigureParams.Screen.bFrameSkip },
+	{ "FrameSkips", Int_Tag, &ConfigureParams.Screen.FrameSkips },
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
 	{ "bInterleavedScreen", Bool_Tag, &ConfigureParams.Screen.bInterleavedScreen },
-	{ "ChosenDisplayMode", Int_Tag, &ConfigureParams.Screen.ChosenDisplayMode },
+	{ "bForce8Bpp", Bool_Tag, &ConfigureParams.Screen.bForce8Bpp },
+	{ "bZoomLowRes", Bool_Tag, &ConfigureParams.Screen.bZoomLowRes },
 	{ "MonitorType", Int_Tag, &ConfigureParams.Screen.MonitorType },
-	{ "bUseHighRes", Bool_Tag, &ConfigureParams.Screen.bUseHighRes },
 	{ "bUseExtVdiResolutions", Bool_Tag, &ConfigureParams.Screen.bUseExtVdiResolutions },
 	{ "nVdiResolution", Int_Tag, &ConfigureParams.Screen.nVdiResolution },
 	{ "nVdiColors", Int_Tag, &ConfigureParams.Screen.nVdiColors },
@@ -342,24 +342,24 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
 	strcpy(ConfigureParams.Keyboard.szMappingFileName, "");
   
-  /* Set defaults for Shortcuts */
-  ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] = SDLK_F12;
-  ConfigureParams.Shortcut.withoutModifier[SHORTCUT_FULLSCREEN] = SDLK_F11;
+	/* Set defaults for Shortcuts */
+	ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] = SDLK_F12;
+	ConfigureParams.Shortcut.withoutModifier[SHORTCUT_FULLSCREEN] = SDLK_F11;
   
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_OPTIONS] = SDLK_o;
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_FULLSCREEN] = SDLK_f;
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_MOUSEMODE] = SDLK_m;
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_COLDRESET] = SDLK_c;
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_WARMRESET] = SDLK_r;
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_SCREENSHOT] = SDLK_g;
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_BOSSKEY] = SDLK_i;
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_CURSOREMU] = SDLK_j;
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_MAXSPEED] = SDLK_x;
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_RECANIM] = SDLK_a;
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_RECSOUND] = SDLK_y;
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_SOUND] = SDLK_s;
-  ConfigureParams.Shortcut.withModifier[SHORTCUT_QUIT] = SDLK_q;
-         
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_OPTIONS] = SDLK_o;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_FULLSCREEN] = SDLK_f;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_MOUSEMODE] = SDLK_m;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_COLDRESET] = SDLK_c;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_WARMRESET] = SDLK_r;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_SCREENSHOT] = SDLK_g;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_BOSSKEY] = SDLK_i;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_CURSOREMU] = SDLK_j;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_MAXSPEED] = SDLK_x;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_RECANIM] = SDLK_a;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_RECSOUND] = SDLK_y;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_SOUND] = SDLK_s;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_QUIT] = SDLK_q;
+	
 	/* Set defaults for Memory */
 	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */
 	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s%chatari.sav", szWorkingDir,PATHSEP);
@@ -380,12 +380,12 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for Screen */
 	ConfigureParams.Screen.bFullScreen = FALSE;
-	ConfigureParams.Screen.bFrameSkip = FALSE;
+	ConfigureParams.Screen.FrameSkips = 1;
 	ConfigureParams.Screen.bAllowOverscan = TRUE;
 	ConfigureParams.Screen.bInterleavedScreen = FALSE;
-	ConfigureParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
+	ConfigureParams.Screen.bForce8Bpp = FALSE;
+	ConfigureParams.Screen.bZoomLowRes = FALSE;
 	ConfigureParams.Screen.MonitorType = MONITOR_TYPE_RGB;
-	ConfigureParams.Screen.bUseHighRes = FALSE;
 	ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
 	ConfigureParams.Screen.nVdiResolution = GEMRES_640x480;
 	ConfigureParams.Screen.nVdiColors = GEMCOLOUR_16;
@@ -430,17 +430,20 @@ void Configuration_SetDefault(void)
 /*-----------------------------------------------------------------------*/
 /*
   Copy details from configuration structure into global variables for system,
-  clean file names, etc...
+  clean file names, etc...  Called from main.c and dialog.c files.
 */
-void Configuration_WorkOnDetails(BOOL bReset)
+void Configuration_Apply(BOOL bReset)
 {
-	/* Set resolution change */
 	if (bReset)
 	{
+		/* Set resolution change */
 		bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions;
-		/* TODO: check MonitorType */
-		bUseHighRes = (!bUseVDIRes && ConfigureParams.Screen.bUseHighRes)
-					  || (bUseVDIRes && ConfigureParams.Screen.nVdiColors==GEMCOLOUR_2);
+		bUseHighRes = ((!bUseVDIRes) && ConfigureParams.Screen.MonitorType == MONITOR_TYPE_MONO)
+			|| (bUseVDIRes && ConfigureParams.Screen.nVdiColors == GEMCOLOUR_2);
+		if (bUseHighRes)
+		{
+			STRes = ST_HIGH_RES;
+		}
 		VDI_SetResolution(ConfigureParams.Screen.nVdiResolution, ConfigureParams.Screen.nVdiColors);
 	}
 
@@ -464,6 +467,9 @@ void Configuration_WorkOnDetails(BOOL bReset)
 		ConfigureParams.System.nCpuFreq = 16;
 		nCpuFreqShift = 1;
 	}
+	/* Change UAE cpu_level and cpu_compatible accordingly */
+	check_prefs_changed_cpu(ConfigureParams.System.nCpuLevel,
+				ConfigureParams.System.bCompatibleCpu);
 
 	/* Clean file and directory names */
 	File_MakeAbsoluteName(ConfigureParams.Rom.szTosImageFileName);
@@ -534,12 +540,6 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Printer, "[Printer]");
 	Configuration_LoadSection(psFileName, configs_Midi, "[Midi]");
 	Configuration_LoadSection(psFileName, configs_System, "[System]");
-
-	/* Copy details to global variables */
-	cpu_level = ConfigureParams.System.nCpuLevel;
-	cpu_compatible = ConfigureParams.System.bCompatibleCpu;
-
-	Configuration_WorkOnDetails(TRUE);
 }
 
 

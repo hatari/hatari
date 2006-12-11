@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.91 2006-10-29 09:25:07 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.92 2006-12-11 18:06:39 eerot Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -231,11 +231,9 @@ static void Main_HandleMouseMotion(SDL_Event *pEvent)
 	dx = pEvent->motion.xrel;
 	dy = pEvent->motion.yrel;
 
-	if (STRes == ST_LOW_RES &&
-	    (ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_LOWCOL_HIGHRES ||
-	     ConfigureParams.Screen.ChosenDisplayMode == DISPLAYMODE_HICOL_HIGHRES))
+	if (STRes == ST_LOW_RES && ConfigureParams.Screen.bZoomLowRes)
 	{
-		/* In zoomed ST-Low res mode, we devide dx and dy by two so that the ST mouse
+		/* In zoomed ST-Low res mode, we divide dx and dy by two so that the ST mouse
 		 * cursor stays in sync with the host mouse. However, we have to take care of
 		 * lowest bit of dx and dy which will get lost when dividing by two. So we
 		 * store these bits in ax and ay and add them to dx and dy the next time. */
@@ -483,11 +481,13 @@ int main(int argc, char *argv[])
 
   /* Check for any passed parameters, get boot disk */
   Opt_ParseParameters(argc, argv, szBootDiskImage, sizeof(szBootDiskImage));
+  /* monitor type option might require "reset" -> TRUE */
+  Configuration_Apply(TRUE);
 
   /* Needed on N770 but useful also with other X11 window managers
    * for window grouping when you have multiple SDL windows open
    */
-  putenv(strdup("SDL_VIDEO_X11_WMCLASS=hatari"));
+  setenv("SDL_VIDEO_X11_WMCLASS", "hatari", 1);
 
   /* Init emulator system */
   Main_Init();

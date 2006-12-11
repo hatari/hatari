@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.12 2006-10-25 19:00:30 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.13 2006-12-11 18:06:40 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,7 +38,11 @@ enum {
 	OPT_MONITOR,
 	OPT_FULLSCREEN,
 	OPT_WINDOW,
+	OPT_ZOOM,
 	OPT_FRAMESKIP,
+	OPT_FRAMESKIPS,
+	OPT_FORCE8BPP,
+	OPT_BORDERS,
 	OPT_DEBUG,
 	OPT_JOYSTICK,
 	OPT_NOSOUND,
@@ -77,15 +81,23 @@ static const opt_t HatariOptions[] = {
 	{ OPT_VERSION,   "-v", "--version",
 	  NULL, "Print version number & help and exit" },
 	{ OPT_MONO,      "-m", "--mono",
-	  NULL, "Start in monochrome mode instead of color" },
+	  NULL, "Start in monochrome mode instead of color (deprecated)" },
 	{ OPT_MONITOR,      NULL, "--monitor",
 	  "<x>", "Select monitor type (x = mono/rgb/vga/tv)" },
 	{ OPT_FULLSCREEN,"-f", "--fullscreen",
 	  NULL, "Start emulator in fullscreen mode" },
 	{ OPT_WINDOW,    "-w", "--window",
 	  NULL, "Start emulator in window mode" },
+	{ OPT_ZOOM, "-z", "--zoom",
+	  "<x>", "Double ST low resolution (1=no, 2=yes)" },
 	{ OPT_FRAMESKIP, NULL, "--frameskip",
-	  NULL, "Skip every second frame (speeds up emulation!)" },
+	  NULL, "Skip every second frame (deprecated)" },
+	{ OPT_FRAMESKIPS, NULL, "--frameskips",
+	  "<x>", "Show only every <x> frame (speeds up emulation!)" },
+	{ OPT_FORCE8BPP, NULL, "--force8bpp",
+	  NULL, "Force use of 8-bit window (speeds up emulation!)" },
+	{ OPT_BORDERS, NULL, "--borders",
+	  NULL, "Show screen borders (for overscan demos etc)" },
 	{ OPT_DEBUG,     "-D", "--debug",
 	  NULL, "Allow debug interface" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
@@ -113,7 +125,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_COMPATIBLE,NULL, "--compatible",
 	  NULL, "Use a more compatible (but slower) 68000 CPU mode" },
 	{ OPT_BLITTER,   NULL, "--blitter",
-	  NULL, "Enable blitter emulation (unstable!)" },
+	  NULL, "Enable blitter emulation" },
 	{ OPT_VDI,       NULL, "--vdi",
 	  NULL, "Use extended VDI resolution" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
@@ -123,7 +135,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_KEYMAPFILE,"-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	{ OPT_SLOWFDC,   NULL, "--slowfdc",
-	  NULL, "Slow down FDC emulation (very experimental!)" },
+	  NULL, "Slow down FDC emulation (deprecated)" },
 	{ OPT_MACHINE,   NULL, "--machine",
 	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
 	{ OPT_NONE, NULL, NULL, NULL, NULL }
@@ -234,7 +246,7 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 void Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
-	int i;
+	int i, ncpu, skips, zoom;
 	
 	for(i = 1; i < argc; i++) {
 		
@@ -264,19 +276,14 @@ void Opt_ParseParameters(int argc, char *argv[],
 			break;
 			
 		case OPT_MONO:
-			bUseHighRes = TRUE;
-			ConfigureParams.Screen.bUseHighRes = TRUE;
-			STRes = PrevSTRes = ST_HIGH_RES;
+			ConfigureParams.Screen.MonitorType = MONITOR_TYPE_MONO;
 			break;
 
 		case OPT_MONITOR:
 			i += 1;
 			if (strcasecmp(argv[i], "mono") == 0) {
 				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_MONO;
-				/* TODO: remove this when it's not anymore needed */
-				ConfigureParams.Screen.bUseHighRes = TRUE;
 			} else {
-				ConfigureParams.Screen.bUseHighRes = FALSE;
 				if (strcasecmp(argv[i], "rgb") == 0) {
 					ConfigureParams.Screen.MonitorType = MONITOR_TYPE_RGB;
 				} else if (strcasecmp(argv[i], "vga") == 0) {
@@ -297,6 +304,39 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ConfigureParams.Screen.bFullScreen = FALSE;
 			break;
 			
+		case OPT_ZOOM:
+			zoom = atoi(argv[++i]);
+			if(zoom < 1) {
+				Opt_ShowExit(OPT_NONE, argv[i], "Invalid zoom value");
+			}
+			if (zoom > 1) {
+				/* TODO: only doubling supported for now */
+				ConfigureParams.Screen.bZoomLowRes = TRUE;
+			} else {
+				ConfigureParams.Screen.bZoomLowRes = FALSE;
+			}
+			break;
+			
+		case OPT_FRAMESKIP:
+			ConfigureParams.Screen.FrameSkips = 1;
+			break;
+			
+		case OPT_FRAMESKIPS:
+			skips = atoi(argv[++i]);
+			if(skips < 1) {
+				Opt_ShowExit(OPT_NONE, argv[i], "Invalid frame skip value");
+			}
+			ConfigureParams.Screen.FrameSkips = skips;
+			break;
+			
+		case OPT_FORCE8BPP:
+			ConfigureParams.Screen.bForce8Bpp = TRUE;
+			break;
+			
+		case OPT_BORDERS:
+			ConfigureParams.Screen.bAllowOverscan = TRUE;
+			break;
+			
 		case OPT_JOYSTICK:
 			i++;
 			if (!Joy_SetCursorEmulation(argv[i][0] - '0')) {
@@ -313,10 +353,6 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 		case OPT_NOSOUND:
 			ConfigureParams.Sound.bEnableSound = FALSE;
-			break;
-			
-		case OPT_FRAMESKIP:
-			ConfigureParams.Screen.bFrameSkip = TRUE;
 			break;
 			
 		case OPT_DEBUG:
@@ -412,25 +448,24 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 		case OPT_CPULEVEL:
 			/* UAE core uses cpu_level variable */
-			cpu_level = atoi(argv[++i]);
-			if(cpu_level < 0 || cpu_level > 4) {
-				fprintf(stderr, "CPU level %d is invalid (valid: 0-4), set to 0.\n", cpu_level);
-				cpu_level = 0;
+			ncpu = atoi(argv[++i]);
+			if(ncpu < 0 || ncpu > 4) {
+				fprintf(stderr, "CPU level %d is invalid (valid: 0-4), set to 0.\n", ncpu);
+				ncpu = 0;
 			}
-			ConfigureParams.System.nCpuLevel = cpu_level;
+			ConfigureParams.System.nCpuLevel = ncpu;
 			break;
 			
 		case OPT_COMPATIBLE:
-			cpu_compatible = TRUE;
 			ConfigureParams.System.bCompatibleCpu = TRUE;
 			break;
 			
 		case OPT_BLITTER:
 			ConfigureParams.System.bBlitter = TRUE;
-			break;
-			
+			break;			
+
 		case OPT_VDI:
-			bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
+			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
 			break;
 			
 		case OPT_SLOWFDC:
@@ -474,20 +509,22 @@ void Opt_ParseParameters(int argc, char *argv[],
 			i += 1;
 			if (strcasecmp(argv[i], "st") == 0) {
 				ConfigureParams.System.nMachineType = MACHINE_ST;
-				ConfigureParams.System.nCpuLevel = cpu_level = 0;
+				ConfigureParams.System.nCpuLevel = 0;
 				ConfigureParams.System.nCpuFreq = 8;
 			} else if (strcasecmp(argv[i], "ste") == 0) {
 				ConfigureParams.System.nMachineType = MACHINE_STE;
-				ConfigureParams.System.nCpuLevel = cpu_level = 0;
+				ConfigureParams.System.nCpuLevel = 0;
 				ConfigureParams.System.nCpuFreq = 8;
 			} else if (strcasecmp(argv[i], "tt") == 0) {
 				ConfigureParams.System.nMachineType = MACHINE_TT;
-				ConfigureParams.System.nCpuLevel = cpu_level = 3;
+				ConfigureParams.System.nCpuLevel = 3;
 				ConfigureParams.System.nCpuFreq = 32;
+#if ENABLE_FALCON
 			} else if (strcasecmp(argv[i], "falcon") == 0) {
 				ConfigureParams.System.nMachineType = MACHINE_FALCON;
-				ConfigureParams.System.nCpuLevel = cpu_level = 3;
+				ConfigureParams.System.nCpuLevel = 3;
 				ConfigureParams.System.nCpuFreq = 16;
+#endif
 			} else {
 				Opt_ShowExit(OPT_NONE, argv[i], "Unknown machine type");
 			}
@@ -497,6 +534,4 @@ void Opt_ParseParameters(int argc, char *argv[],
 			Opt_ShowExit(OPT_NONE, argv[i], "Program didn't handle documented option");
 		}
 	}
-	
-	Configuration_WorkOnDetails(FALSE);
 }

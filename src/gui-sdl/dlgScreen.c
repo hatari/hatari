@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.7 2006-11-01 11:05:36 thothy Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.8 2006-12-11 18:06:41 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -47,7 +47,7 @@ static SGOBJ screendlg[] =
   { SGBOX, 0, 0, 1,1, 48,7, NULL },
   { SGTEXT, 0, 0, 18,1, 14,1, "Screen options" },
   { SGCHECKBOX, 0, 0, 4,3, 12,1, "Fullscreen" },
-  { SGCHECKBOX, 0, 0, 4,4, 12,1, "Frame skip" },
+  { SGCHECKBOX, 0, 0, 4,4, 12,1, "Frame skips" },
   { SGCHECKBOX, 0, 0, 4,5, 13,1, "Use borders" },
   { SGCHECKBOX, 0, 0, 25,3, 18,1, "Interleaved mode" },
   { SGCHECKBOX, 0, 0, 25,4, 13,1, "Force 8 bpp" },
@@ -100,7 +100,7 @@ void Dialog_ScreenDlg(void)
   else
     screendlg[DLGSCRN_FULLSCRN].state &= ~SG_SELECTED;
 
-  if (DialogParams.Screen.bFrameSkip)
+  if (DialogParams.Screen.FrameSkips)
     screendlg[DLGSCRN_FRAMESKIP].state |= SG_SELECTED;
   else
     screendlg[DLGSCRN_FRAMESKIP].state &= ~SG_SELECTED;
@@ -115,14 +115,12 @@ void Dialog_ScreenDlg(void)
   else
     screendlg[DLGSCRN_INTERLEAVE].state &= ~SG_SELECTED;
 
-  if (DialogParams.Screen.ChosenDisplayMode <= DISPLAYMODE_LOWCOL_LOWRES
-      || DialogParams.Screen.ChosenDisplayMode <= DISPLAYMODE_LOWCOL_HIGHRES)
+  if (DialogParams.Screen.bForce8Bpp)
     screendlg[DLGSCRN_8BPP].state |= SG_SELECTED;
   else
     screendlg[DLGSCRN_8BPP].state &= ~SG_SELECTED;
 
-  if (DialogParams.Screen.ChosenDisplayMode == DISPLAYMODE_LOWCOL_HIGHRES
-      || DialogParams.Screen.ChosenDisplayMode == DISPLAYMODE_HICOL_HIGHRES)
+  if (DialogParams.Screen.bZoomLowRes)
     screendlg[DLGSCRN_ZOOMLOWRES].state |= SG_SELECTED;
   else
     screendlg[DLGSCRN_ZOOMLOWRES].state &= ~SG_SELECTED;
@@ -191,24 +189,23 @@ void Dialog_ScreenDlg(void)
   /* Read new values from dialog: */
 
   DialogParams.Screen.bFullScreen = (screendlg[DLGSCRN_FULLSCRN].state & SG_SELECTED);
-  DialogParams.Screen.bFrameSkip = (screendlg[DLGSCRN_FRAMESKIP].state & SG_SELECTED);
   DialogParams.Screen.bAllowOverscan = (screendlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
   DialogParams.Screen.bInterleavedScreen = (screendlg[DLGSCRN_INTERLEAVE].state & SG_SELECTED);
 
-  if (screendlg[DLGSCRN_8BPP].state & SG_SELECTED)
-  {
-    if (screendlg[DLGSCRN_ZOOMLOWRES].state & SG_SELECTED)
-      DialogParams.Screen.ChosenDisplayMode = DISPLAYMODE_LOWCOL_HIGHRES;
-    else
-      DialogParams.Screen.ChosenDisplayMode = DISPLAYMODE_LOWCOL_LOWRES;
-  }
+  if (screendlg[DLGSCRN_FRAMESKIP].state & SG_SELECTED)
+    DialogParams.Screen.FrameSkips = 2;
   else
-  {
-    if (screendlg[DLGSCRN_ZOOMLOWRES].state & SG_SELECTED)
-      DialogParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_HIGHRES;
-    else
-      DialogParams.Screen.ChosenDisplayMode = DISPLAYMODE_HICOL_LOWRES;
-  }
+    DialogParams.Screen.FrameSkips = 1;
+
+  if (screendlg[DLGSCRN_8BPP].state & SG_SELECTED)
+    DialogParams.Screen.bForce8Bpp = TRUE;
+  else
+    DialogParams.Screen.bForce8Bpp = FALSE;
+
+  if (screendlg[DLGSCRN_ZOOMLOWRES].state & SG_SELECTED)
+    DialogParams.Screen.bZoomLowRes = TRUE;
+  else
+    DialogParams.Screen.bZoomLowRes = FALSE;
 
   DialogParams.Screen.bUseExtVdiResolutions = (screendlg[DLGSCRN_USEVDIRES].state & SG_SELECTED);
   for (i = DLGSCRN_MONO; i <= DLGSCRN_TV; i++)
@@ -219,7 +216,6 @@ void Dialog_ScreenDlg(void)
       break;
     }
   }
-  DialogParams.Screen.bUseHighRes = (DialogParams.Screen.MonitorType == MONITOR_TYPE_MONO);
   for (i=0; i<3; i++)
   {
     if(screendlg[DLGSCRN_RES640 + i].state & SG_SELECTED)

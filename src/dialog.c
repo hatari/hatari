@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.52 2006-10-07 13:32:30 thothy Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.53 2006-12-11 18:06:39 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -47,8 +47,8 @@ CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can
 */
 BOOL Dialog_DoNeedReset(void)
 {
-	/* Did we change colour/mono monitor? If so, must reset */
-	if (ConfigureParams.Screen.bUseHighRes!=DialogParams.Screen.bUseHighRes)
+	/* Did we change monitor type? If so, must reset */
+	if (ConfigureParams.Screen.MonitorType != DialogParams.Screen.MonitorType)
 		return TRUE;
 
 	/* Did change to GEM VDI display? */
@@ -99,10 +99,13 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 
 	/* Do need to change resolution? Need if change display/overscan settings */
 	/*(if switch between Colour/Mono cause reset later) */
-	if (DialogParams.Screen.ChosenDisplayMode != ConfigureParams.Screen.ChosenDisplayMode
-	    || DialogParams.Screen.bAllowOverscan != ConfigureParams.Screen.bAllowOverscan)
+	if (!NeedReset &&
+	    (DialogParams.Screen.bForce8Bpp != ConfigureParams.Screen.bForce8Bpp
+	     || DialogParams.Screen.bZoomLowRes != ConfigureParams.Screen.bZoomLowRes
+	     || DialogParams.Screen.bAllowOverscan != ConfigureParams.Screen.bAllowOverscan))
 	{
-		ConfigureParams.Screen.ChosenDisplayMode = DialogParams.Screen.ChosenDisplayMode;
+		ConfigureParams.Screen.bForce8Bpp = DialogParams.Screen.bForce8Bpp;
+		ConfigureParams.Screen.bZoomLowRes = DialogParams.Screen.bZoomLowRes;
 		ConfigureParams.Screen.bAllowOverscan = DialogParams.Screen.bAllowOverscan;
 #if ENABLE_FALCON
 		if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
@@ -172,14 +175,11 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 	ConfigureParams = DialogParams;
 
 	/* Copy details to global, if we reset copy them all */
-	Configuration_WorkOnDetails(NeedReset);
+	Configuration_Apply(NeedReset);
 
 	/* Set keyboard remap file */
 	if (ConfigureParams.Keyboard.nKeymapType == KEYMAP_LOADED)
 		Keymap_LoadRemapFile(ConfigureParams.Keyboard.szMappingFileName);
-
-	/* Did the user changed the CPU mode? */
-	check_prefs_changed_cpu(DialogParams.System.nCpuLevel, DialogParams.System.bCompatibleCpu);
 
 	/* Mount a new HD image: */
 	if (bReInitAcsiEmu && ConfigureParams.HardDisk.bUseHardDiskImage)

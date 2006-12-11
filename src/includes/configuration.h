@@ -186,13 +186,13 @@ typedef enum
 /* Screen configuration */
 typedef struct
 {
+  MONITORTYPE MonitorType;
+  int FrameSkips;
   BOOL bFullScreen;
-  BOOL bFrameSkip;
   BOOL bAllowOverscan;
   BOOL bInterleavedScreen;
-  int ChosenDisplayMode;
-  MONITORTYPE MonitorType;
-  BOOL bUseHighRes;
+  BOOL bForce8Bpp;
+  BOOL bZoomLowRes;
   BOOL bUseExtVdiResolutions;
   int nVdiResolution;
   int nVdiColors;
@@ -278,7 +278,7 @@ extern CNF_PARAMS ConfigureParams;
 extern char sConfigFileName[FILENAME_MAX];
 
 extern void Configuration_SetDefault(void);
-extern void Configuration_WorkOnDetails(BOOL bReset);
+extern void Configuration_Apply(BOOL bReset);
 extern void Configuration_Load(const char *psFileName);
 extern void Configuration_Save(void);
 
