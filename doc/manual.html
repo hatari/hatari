@@ -348,7 +348,11 @@ long version): </p>
     <tr>
       <td align="center">-m (--mono)</td>
       <td align="center">starts the emulated Atari ST in monochrome
-resolution</td>
+resolution (deprecated)</td>
+    </tr>
+    <tr>
+      <td align="center">--monitor &lt;x&gt;</td>
+      <td align="center">select monitor type (x = mono/rgb/vga/tv)</td>
     </tr>
     <tr>
       <td align="center">-f (--fullscreen)</td>
@@ -359,9 +363,29 @@ resolution</td>
       <td align="center">forces Hatari to use a windowed mode</td>
     </tr>
     <tr>
-      <td align="center">-j &lt;port&gt; (--joystick &lt;port&gt;)</td>
+      <td align="center">-z &lt;x&gt;<br>(--zoom &lt;x&gt;)</td>
+      <td align="center">doubles ST low resolution (1=no, 2=yes)</td>
+    </tr>
+    <tr>
+      <td align="center">--frameskip</td>
+      <td align="center">drops every second frame (deprecated)</td>
+    </tr>
+    <tr>
+      <td align="center">--frameskips &lt;x&gt;</td>
+      <td align="center">Shows only every &lt;x&gt; frame (speeds up emulation!)</td>
+    </tr>
+    <tr>
+      <td align="center">--force8bpp</td>
+      <td align="center">force use of 8-bit window</td>
+    </tr>
+    <tr>
+      <td align="center">--borders</td>
+      <td align="center">show screen borders (for overscan demos etc)</td>
+    </tr>
+    <tr>
+      <td align="center">-j &lt;port&gt;<br>(--joystick &lt;port&gt;)</td>
       <td align="center">activates joystick emulation via cursor keys
-for given joystick "port" (0-5, see joystick dialog)</td>
+for given joystick "port"<br>(0-5, see joystick dialog)</td>
     </tr>
     <tr>
       <td align="center">--nosound</td>
@@ -369,8 +393,7 @@ for given joystick "port" (0-5, see joystick dialog)</td>
     </tr>
     <tr>
       <td align="center">--frameskip</td>
-      <td align="center">drops every second frame (accelerates
-emulation)</td>
+      <td align="center">drops every second frame (accelerates emulation)</td>
     </tr>
     <tr>
       <td align="center">-D (--debug)</td>
@@ -378,11 +401,10 @@ emulation)</td>
     </tr>
     <tr>
       <td align="center">--slowfdc</td>
-      <td align="center">slows down FDC emulation (needed to make some
-games and demos work)</td>
+      <td align="center">slows down FDC emulation (deprecated)</td>
     </tr>
     <tr>
-      <td align="center">-d &lt;dir&gt; (--harddrive &lt;dir&gt;)</td>
+      <td align="center">-d &lt;dir&gt;<br>(--harddrive &lt;dir&gt;)</td>
       <td align="center">emulates &lt;dir&gt; as a hard disk</td>
     </tr>
     <tr>
@@ -402,7 +424,7 @@ This currently does not work together with GEMDOS hard disk emulation!<br>
       <td align="center">specify TOS ROM image to use</td>
     </tr>
     <tr>
-      <td align="center">-s x (--memsize x)</td>
+      <td align="center">-s x<br>(--memsize x)</td>
       <td align="center">set amount of emulated RAM upto 14MB<br>
 x=0 for 512K, x=1,x=2 or x=4 for 1, 2 or 4 MB</td>
     </tr>
@@ -449,7 +471,7 @@ uses the given file as keyboard mapping file</td>
     </tr>
     <tr>
       <td align="center">--machine &lt;x&gt;</td>
-      <td align="center">Select machine type (x = st, ste or tt)</td>
+      <td align="center">Select machine type (x = st/ste/tt/falcon)</td>
     </tr>
   </tbody>
 </table>
@@ -1316,7 +1338,7 @@ tested with the current STE hardware emulation.</p>
       <td>Alien World</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>Try &quot;--slowfdc&quot; if it does not work</td>
+      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Skweek</td>
@@ -1341,26 +1363,24 @@ tested with the current STE hardware emulation.</p>
       <td>Fantasia (by Dune/Sector1)</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>Try &quot;--slowfdc&quot; if it does not work</td>
     </tr>
     <tr>
       <td>Oddstuff (by Dune/Sector1)</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>Try &quot;--slowfdc&quot; if it does not work.
-          Enable &quot;frameskip&quot; to avoid the flicker.</td>
+      <td>Enable &quot;frameskip&quot; to avoid the flicker</td>
     </tr>
     <tr>
       <td>If pigs could fly (by Syndicate)</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>Try &quot;--slowfdc&quot; if it does not work</td>
+      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>LongScreen (by X-Troll)</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>Try &quot;--slowfdc&quot; if it does not work</td>
+      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Overdose (by Aggression)</td>
@@ -1414,19 +1434,19 @@ tested with the current STE hardware emulation.</p>
       <td>B.I.G-demo (musicdemo by Exceptions)</td>
       <td>partially</td>
       <td>&nbsp;</td>
-      <td>Flickers and colors in 3 of the screens don't look right</td>
+      <td>Minor flickering and problems in the overscan bottom</td>
     </tr>
     <tr>
       <td>SoWatt (by CareBears)</td>
-      <td>partially</td>
+      <td>Yes</td>
       <td>&nbsp;</td>
-      <td>Colors and scrolling in the main menu are broken</td>
+      <td>Works fully with Hatari version 0.92 and later</td>
     </tr>
     <tr>
       <td>Punish your machine</td>
-      <td>partially</td>
+      <td>yes</td>
       <td>&nbsp;</td>
-      <td>Colors and scrolling in the main menu are broken</td>
+      <td>Works fully with Hatari version 0.92 and later</td>
     </tr>
     <tr>
       <td>Froggies over the Fence<br>Oh no more Froggies</td>
@@ -1889,9 +1909,9 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Utopos (demo)</td>
-      <td>partially</td>
+      <td>yes</td>
       <td>&nbsp;</td>
-      <td>screen corrupted</td>
+      <td>some lines on screen flicker</td>
     </tr>
     <tr>
       <td>Ultimate Arena</td>
@@ -1907,9 +1927,9 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Zool (demo)</td>
-      <td>partially</td>
+      <td>yes</td>
       <td>&nbsp;</td>
-      <td>screen corrupted, scrolling fails</td>
+      <td>&nbsp;</td>
     </tr>
   </tbody>
 </table>
