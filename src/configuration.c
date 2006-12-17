@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.56 2006-12-11 18:06:39 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.57 2006-12-17 10:21:43 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -275,6 +275,7 @@ static const struct Config_Tag configs_System[] =
 	{ "bCompatibleCpu", Bool_Tag, &ConfigureParams.System.bCompatibleCpu },
 	{ "nMachineType", Int_Tag, &ConfigureParams.System.nMachineType },
 	{ "bBlitter", Bool_Tag, &ConfigureParams.System.bBlitter },
+	{ "bDSP", Bool_Tag, &ConfigureParams.System.bDSP },
 	{ "bRealTimeClock", Bool_Tag, &ConfigureParams.System.bRealTimeClock },
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bSlowFDC", Bool_Tag, &ConfigureParams.System.bSlowFDC },
@@ -408,6 +409,7 @@ void Configuration_SetDefault(void)
 	/*ConfigureParams.System.bAddressSpace24 = TRUE;*/
 	ConfigureParams.System.nMachineType = MACHINE_ST;
 	ConfigureParams.System.bBlitter = FALSE;
+	ConfigureParams.System.bDSP = FALSE;
 	ConfigureParams.System.bPatchTimerD = TRUE;
 	ConfigureParams.System.bRealTimeClock = TRUE;
 	ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;

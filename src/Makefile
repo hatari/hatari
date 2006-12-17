@@ -29,7 +29,8 @@ GUIOBJS = ./gui-sdl/dlgAbout.o ./gui-sdl/dlgAlert.o ./gui-sdl/dlgDevice.o \
   ./gui-sdl/dlgSystem.o ./gui-sdl/dlgFileSelect.o ./gui-sdl/sdlgui.o
 
 ifeq ($(ENABLE_FALCON),1)
-FALCOBJS = ./falcon/videl.o ./falcon/hostscreen.o
+FALCOBJS = ./falcon/videl.o ./falcon/hostscreen.o \
+  ./falcon/dsp.o ./falcon/dsp_cpu.o ./falcon/dsp_disasm.o
 else
 FALCOBJS =
 endif

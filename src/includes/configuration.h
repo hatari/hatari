@@ -243,7 +243,8 @@ typedef struct
   BOOL bCompatibleCpu;
   /*BOOL bAddressSpace24;*/
   MACHINETYPE nMachineType;
-  BOOL bBlitter;                  /* TRUE if blitter is enabled */
+  BOOL bBlitter;                  /* TRUE if Blitter is enabled */
+  BOOL bDSP;                      /* TRUE if DSP is enabled */
   BOOL bRealTimeClock;
   BOOL bPatchTimerD;
   BOOL bSlowFDC;                  /* TRUE to slow down FDC emulation */

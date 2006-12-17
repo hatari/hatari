@@ -8,7 +8,7 @@
 
   Also used for the printer (centronics) port emulation (PSG Port B, Register 15)
 */
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.13 2006-12-05 21:58:59 thothy Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.14 2006-12-17 10:21:43 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -173,7 +173,9 @@ void PSG_DataRegister_WriteByte(void)
 			if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<4))
 			{
 				Log_Printf(LOG_DEBUG, "Calling DSP_Reset?\n");
-				//DSP_Reset();
+				if (ConfigureParams.System.bDSP) {
+					DSP_Reset();
+				}
 			}
 			/* Bit 6 - Internal Speaker control */
 			if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<6))

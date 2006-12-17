@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.53 2006-12-11 18:06:39 eerot Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.54 2006-12-17 10:21:43 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -34,7 +34,10 @@ const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.53 2006-12-11 18:06:39 eer
 #include "video.h"
 #include "sdlgui.h"
 #include "uae-cpu/hatari-glue.h"
-#include "falcon/videl.h"
+#if ENABLE_FALCON
+# include "falcon/videl.h"
+# include "falcon/dsp.h"
+#endif
 
 
 CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can also choose 'Cancel') */
@@ -164,18 +167,37 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 
 	/* Did change blitter, rtc or system type? */
 	if (DialogParams.System.bBlitter != ConfigureParams.System.bBlitter
+#if ENABLE_FALCON
+	    || DialogParams.System.bDSP != ConfigureParams.System.bDSP
+#endif
 	    || DialogParams.System.bRealTimeClock != ConfigureParams.System.bRealTimeClock
 	    || DialogParams.System.nMachineType != ConfigureParams.System.nMachineType)
 	{
 		IoMem_UnInit();
 		bReInitIoMem = TRUE;
 	}
+	
+#if ENABLE_FALCON
+	/* Disabled DSP? */
+	if (DialogParams.System.bDSP &&
+	    (DialogParams.System.bDSP != ConfigureParams.System.bDSP))
+	{
+		DSP_UnInit();
+	}
+#endif
 
 	/* Copy details to configuration, so can be saved out or set on reset */
 	ConfigureParams = DialogParams;
 
 	/* Copy details to global, if we reset copy them all */
 	Configuration_Apply(NeedReset);
+
+#if ENABLE_FALCON
+	if (ConfigureParams.System.bDSP)
+	{
+		DSP_Init();
+	}
+#endif
 
 	/* Set keyboard remap file */
 	if (ConfigureParams.Keyboard.nKeymapType == KEYMAP_LOADED)

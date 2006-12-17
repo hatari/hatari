@@ -22,4 +22,9 @@ extern const INTERCEPT_ACCESS_FUNC IoMemTable_STE[];
 extern const INTERCEPT_ACCESS_FUNC IoMemTable_TT[];
 extern const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[];
 
+extern void IoMemTabFalcon_NoDSP(void (**readtab)(void), void (**writetab)(void));
+#if ENABLE_FALCON
+extern void IoMemTabFalcon_EnableDSP(void (**readtab)(void), void (**writetab)(void));
+#endif
+
 #endif

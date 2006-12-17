@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the Falcon.
 */
-const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.7 2006-11-20 00:21:54 thothy Exp $";
+const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.8 2006-12-17 10:21:43 eerot Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -42,6 +42,35 @@ static void DSP_DummyInterruptStatus_ReadByte(void)
 {
 	IoMem[0xffa202] ^= 0xff;
 }
+
+/* dummy IO when DSP is not enabled */
+void IoMemTabFalcon_NoDSP(void (**readtab)(void), void (**writetab)(void))
+{
+	int i, offset;
+	offset = 0xffa200 - 0xff8000;
+	readtab[offset+0] = IoMem_ReadWithoutInterception;
+	readtab[offset+1] = DSP_DummyHostCommand_ReadByte;
+	readtab[offset+2] = DSP_DummyInterruptStatus_ReadByte;
+	for (i = 3; i < 8; i++) {
+		readtab[offset+i] = IoMem_ReadWithoutInterception;
+	}
+	for (i = 0; i < 8; i++) {
+		writetab[offset+i] = IoMem_WriteWithoutInterception;
+	}
+}
+
+#if ENABLE_FALCON
+/* enable DSP */
+void IoMemTabFalcon_EnableDSP(void (**readtab)(void), void (**writetab)(void))
+{
+	int i, offset;
+	offset = 0xffa200 - 0xff8000;
+	for (i = 0; i < 8; i++) {
+		readtab[offset+i]  = DSP_HandleReadAccess;
+		writetab[offset+i] = DSP_HandleWriteAccess;
+	}
+}
+#endif
 
 
 /*-----------------------------------------------------------------------*/
@@ -189,15 +218,6 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff9800, 0x400, IoMem_ReadWithoutInterception, VIDEL_ColorRegsWrite }, /* Falcon Videl palette */
 #else
 	{ 0xff9800, 0x400, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Falcon Videl palette */
-#endif
-
-#if 0 // ENABLE_FALCON
-	{ 0xffa200, 8, DSP_HandleReadAccess, DSP_HandleWriteAccess }, /* Falcon DSP */
-#else
-	{ 0xffa200, 1, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DSP */
-	{ 0xffa201, 1, DSP_DummyHostCommand_ReadByte, IoMem_WriteWithoutInterception }, /* DSP */
-	{ 0xffa202, 1, DSP_DummyInterruptStatus_ReadByte, IoMem_WriteWithoutInterception }, /* DSP */
-	{ 0xffa203, 5, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DSP */
 #endif
 
 	{ 0xfffa01, SIZE_BYTE, MFP_GPIP_ReadByte, MFP_GPIP_WriteByte },

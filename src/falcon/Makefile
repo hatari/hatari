@@ -15,7 +15,7 @@ CFLAGS += -DDATADIR=\"$(DATADIR)\" $(INCFLAGS) $(SDL_CFLAGS)
 
 
 
-FALCSRCS = videl.c hostscreen.c
+FALCSRCS = videl.c hostscreen.c dsp.c dsp_cpu.c dsp_disasm.c
 
 FALCOBJS = $(FALCSRCS:.c=.o)
 

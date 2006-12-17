@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.92 2006-12-11 18:06:39 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.93 2006-12-17 10:21:43 eerot Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -373,7 +373,9 @@ static void Main_Init(void)
   Screen_Init();
 #if ENABLE_FALCON
   HostScreen_Init();
-  //DSP_Init();
+  if (ConfigureParams.System.bDSP) {
+    DSP_Init();
+  }
 #endif
   Floppy_Init();
   Init680x0();                  /* Init CPU emulation */
@@ -443,7 +445,9 @@ static void Main_UnInit(void)
   YMFormat_FreeRecording();
   SDLGui_UnInit();
 #if ENABLE_FALCON
-  //DSP_UnInit();
+  if (ConfigureParams.System.bDSP) {
+    DSP_UnInit();
+  }
   HostScreen_UnInit();
 #endif
   Screen_UnInit();

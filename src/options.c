@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.13 2006-12-11 18:06:40 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.14 2006-12-17 10:21:43 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -57,6 +57,9 @@ enum {
 	OPT_CPULEVEL,
 	OPT_COMPATIBLE,
 	OPT_BLITTER,
+#if ENABLE_FALCON
+	OPT_DSP,
+#endif
 	OPT_VDI,
 	OPT_MEMSIZE,
 	OPT_CONFIGFILE,
@@ -125,7 +128,11 @@ static const opt_t HatariOptions[] = {
 	{ OPT_COMPATIBLE,NULL, "--compatible",
 	  NULL, "Use a more compatible (but slower) 68000 CPU mode" },
 	{ OPT_BLITTER,   NULL, "--blitter",
-	  NULL, "Enable blitter emulation" },
+	  NULL, "Enable blitter emulation (ST only)" },
+#if ENABLE_FALCON
+	{ OPT_DSP,   NULL, "--dsp",
+	  NULL, "Enable DSP emulation (very experimental, Falcon only)" },
+#endif
 	{ OPT_VDI,       NULL, "--vdi",
 	  NULL, "Use extended VDI resolution" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
@@ -463,6 +470,12 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_BLITTER:
 			ConfigureParams.System.bBlitter = TRUE;
 			break;			
+
+#if ENABLE_FALCON
+		case OPT_DSP:
+			ConfigureParams.System.bDSP = TRUE;
+			break;
+#endif			
 
 		case OPT_VDI:
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
