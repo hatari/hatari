@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.45 2006-12-03 23:33:10 thothy Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.46 2006-12-18 10:57:08 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -867,12 +867,34 @@ uae_u32 reg_caar, reg_cacr;
 static uae_u32 itt0, itt1, dtt0, dtt1, tc, mmusr, urp, srp;
 
 
+static int movec_illg (int regno)
+{
+    int regno2 = regno & 0x7ff;
+    if (cpu_level == 1) { /* 68010 */
+	if (regno2 < 2)
+	    return 0;
+	return 1;
+    }
+    if (cpu_level == 2 || cpu_level == 3) { /* 68020 */
+	if (regno == 3) return 1; /* 68040 only */
+	 /* 4 is >=68040, but 0x804 is in 68020 */
+	 if (regno2 < 4 || regno == 0x804)
+	    return 0;
+	return 1;
+    }
+    if (cpu_level >= 4) { /* 68040 */
+	if (regno == 0x802) return 1; /* 68020 only */
+	if (regno2 < 8) return 0;
+	if (cpu_level == 6 && regno2 == 8) /* 68060 only */
+	    return 0;
+	return 1;
+    }
+    return 1;
+}
+
 int m68k_move2c (int regno, uae_u32 *regp)
 {
-    if ((cpu_level == 1 && (regno & 0x7FF) > 1)
-	|| (cpu_level < 4 && (regno & 0x7FF) > 2)
-	|| (cpu_level == 4 && regno == 0x802))
-    {
+    if (movec_illg (regno)) {
 	op_illg (0x4E7B);
 	return 0;
     } else {
@@ -905,10 +927,7 @@ int m68k_move2c (int regno, uae_u32 *regp)
 
 int m68k_movec2 (int regno, uae_u32 *regp)
 {
-    if ((cpu_level == 1 && (regno & 0x7FF) > 1)
-	|| (cpu_level < 4 && (regno & 0x7FF) > 2)
-	|| (cpu_level == 4 && regno == 0x802))
-    {
+    if (movec_illg (regno)) {
 	op_illg (0x4E7A);
 	return 0;
     } else {
