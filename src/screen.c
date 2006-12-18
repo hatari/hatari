@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.56 2006-12-11 18:06:40 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.57 2006-12-18 21:27:49 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -38,18 +38,25 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.56 2006-12-11 18:06:40 eer
 #include "video.h"
 
 #if ENABLE_FALCON
+#include "falcon/videl.h"
 #include "falcon/hostscreen.h"
 #endif
 
+/* extern for several purposes */
+int STRes = ST_LOW_RES;       /* current resolution */
+SDL_Surface *sdlscrn = NULL;  /* The SDL screen surface */
+
+/* extern for shortcuts and falcon/hostscreen.c */
 BOOL bGrabMouse = FALSE;      /* Grab the mouse cursor in the window */
-BOOL bInFullScreen=FALSE;     /* TRUE if in full screen */
+BOOL bInFullScreen = FALSE;   /* TRUE if in full screen */
+
+/* extern for spec512.c */
 int STScreenLeftSkipBytes;
 int STScreenStartHorizLine;   /* Start lines to be converted */
-int STRes=ST_LOW_RES;         /* current resolution */
-int PrevSTRes=ST_LOW_RES;     /* previous ST resolution */
 Uint32 STRGBPalette[16];      /* Palette buffer used in conversion routines */
 Uint32 ST2RGB[4096];          /* Table to convert ST 0x777 / STe 0xfff palette to PC format RGB551 (2 pixels each entry) */
-SDL_Surface *sdlscrn = NULL;  /* The SDL screen surface */
+
+/* extern for video.c */
 Uint8 *pSTScreen;
 FRAMEBUFFER *pFrameBuffer;    /* Pointer into current 'FrameBuffer' */
 
@@ -63,7 +70,7 @@ static int STScreenWidthBytes;
 static int STScreenLineOffset[NUM_VISIBLE_LINES];  /* Offsets for ST screen lines eg, 0,160,320... */
 static Uint16 HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
 
-static void (*ScreenDrawFunctionsNormal[4])(void); /* Screen draw functions */
+static void (*ScreenDrawFunctionsNormal[3])(void); /* Screen draw functions */
 static void (*ScreenDrawFunctionsVDI[3])(void) =
 {
   ConvertVDIRes_16Colour,
@@ -213,13 +220,11 @@ static void Screen_SetDrawFunctions(void)
       ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x8Bit;
       ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
       ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-      ScreenDrawFunctionsNormal[ST_LOWMEDIUM_MIX_RES] = ConvertMediumRes_640x8Bit;
     } else {
       /* low color, low resolution */
       ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x8Bit;
       ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
       ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-      ScreenDrawFunctionsNormal[ST_LOWMEDIUM_MIX_RES] = ConvertMediumRes_640x8Bit;
     }
   } else {
     if (ConfigureParams.Screen.bZoomLowRes) {
@@ -227,13 +232,11 @@ static void Screen_SetDrawFunctions(void)
       ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x16Bit;
       ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
       ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-      ScreenDrawFunctionsNormal[ST_LOWMEDIUM_MIX_RES] = ConvertMediumRes_640x16Bit;
     } else {
       /* high color, low resolution */
       ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x16Bit;
       ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
       ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-      ScreenDrawFunctionsNormal[ST_LOWMEDIUM_MIX_RES] = ConvertMediumRes_640x16Bit;
     }
   }
 }
@@ -431,9 +434,8 @@ void Screen_Reset(void)
     else
       STRes = ST_LOW_RES;
   }
-  PrevSTRes = -1;
   /* Cause full update */
-  Screen_SetFullUpdate();
+  Screen_ModeChanged();
 }
 
 
@@ -524,55 +526,69 @@ void Screen_ReturnFromFullScreen(void)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Have we changes beteen low/medium/high res?
+  Have we changed between low/med/high res?
 */
-void Screen_DidResolutionChange(void)
+static void Screen_DidResolutionChange(int new_res)
 {
+  if (new_res != STRes)
+  {
+    STRes = new_res;
+    Screen_ModeChanged();
+  }
+  else
+  {
+    /* Did change overscan mode? Causes full update */
+    if (pFrameBuffer->OverscanModeCopy != OverscanMode)
+      pFrameBuffer->bFullUpdate = TRUE;
+  }
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Force things associated with changing between low/medium/high res.
+*/
+void Screen_ModeChanged(void)
+{
+  if (!sdlscrn)
+  {
+    /* screen not yet initialized */
+    return;
+  }
 #if ENABLE_FALCON
   /* Don't run this function if Videl emulation is running! */
   if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
   {
-    PrevSTRes = STRes;
+    VIDEL_ZoomModeChanged();
     return;
   }
 #endif
-
-  /* Did change res? */
-  if (STRes!=PrevSTRes)
-  {
-    /* Set new display mode, if differs from current */
-    Screen_SetResolution();
-    PrevSTRes = STRes;
-  }
-
-  /* Did change overscan mode? Causes full update */
-  if (pFrameBuffer->OverscanModeCopy != OverscanMode)
-    pFrameBuffer->bFullUpdate = TRUE;
+  /* Set new display mode, if differs from current */
+  Screen_SetResolution();
+  Screen_SetFullUpdate();
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
   Compare current resolution on line with previous, and set 'UpdateLine' accordingly
-  Also check if swap between low/medium resolution and return in 'bLowMedMix'
+  Return if swap between low/medium resolution
 */
-static void Screen_CompareResolution(int y, int *pUpdateLine, BOOL *pbLowMedMix)
+static BOOL Screen_CompareResolution(int y, int *pUpdateLine, int oldres)
 {
-  int Resolution;
-
   /* Check if wrote to resolution register */
   if (HBLPaletteMasks[y]&PALETTEMASK_RESOLUTION)  /* See 'Intercept_ShifterMode_WriteByte' */
   {
-    Resolution = (HBLPaletteMasks[y]>>16)&0x1;
-    /* Have used any low/medium res mix? */
-    if (Resolution!=(STRes&0x1))
-      *pbLowMedMix = TRUE;
-    /* Did change resolution */
-    if (Resolution!=(int)((pFrameBuffer->HBLPaletteMasks[y]>>16)&0x1))
+    int newres = (HBLPaletteMasks[y]>>16)&ST_MEDIUM_RES_BIT;
+    /* Did resolution change? */
+    if (newres != (int)((pFrameBuffer->HBLPaletteMasks[y]>>16)&ST_MEDIUM_RES_BIT))
       *pUpdateLine |= PALETTEMASK_UPDATERES;
     else
       *pUpdateLine &= ~PALETTEMASK_UPDATERES;
+    /* Have used any low/medium res mix? */
+    return (newres != (oldres&ST_MEDIUM_RES_BIT));
   }
+  return FALSE;
 }
 
 
@@ -613,11 +629,12 @@ static void Screen_ComparePalette(int y, int *pUpdateLine)
   Check for differences in Palette and Resolution from Mask table and update
   and store off which lines need updating and create full-screen palette.
   (It is very important for these routines to check for colour changes with
-  the previous screen so only the very minimum parts are updated)
+  the previous screen so only the very minimum parts are updated).
+  Return new STRes value.
 */
-static int Screen_ComparePaletteMask(void)
+static int Screen_ComparePaletteMask(int res)
 {
-  BOOL bLowMedMix=FALSE;
+  BOOL bLowMedMix = FALSE;
   int LineUpdate = 0;
   int y;
 
@@ -653,7 +670,7 @@ static int Screen_ComparePaletteMask(void)
   if (bUseVDIRes)
   {
     /* Force to VDI resolution screen, without overscan */
-    STRes = VDIRes;
+    res = VDIRes;
 
     /* Colors changed? */
     if (HBLPalettes[0]!=PrevHBLPalette[0])
@@ -669,30 +686,30 @@ static int Screen_ComparePaletteMask(void)
   else if (bUseHighRes)
   {
     /* Force to standard hi-resolution screen, without overscan */
-    STRes = ST_HIGH_RES;
+    res = ST_HIGH_RES;
   }
   else    /* Full colour */
   {
     /* Get resolution */
-    STRes = (HBLPaletteMasks[0]>>16)&0x3;
+    res = (HBLPaletteMasks[0]>>16)&ST_RES_MASK;
     /* Do all lines - first is tagged as full-update */
     for(y=0; y<NUM_VISIBLE_LINES; y++)
     {
       /* Find any resolution/palette change and update palette/mask buffer */
       /* ( LineUpdate has top two bits set to say if line needs updating due to palette or resolution change ) */
-      Screen_CompareResolution(y,&LineUpdate,&bLowMedMix);
+      bLowMedMix |= Screen_CompareResolution(y, &LineUpdate, res);
       Screen_ComparePalette(y,&LineUpdate);
       HBLPaletteMasks[y] = (HBLPaletteMasks[y]&(~PALETTEMASK_UPDATEMASK)) | LineUpdate;
       /* Copy palette and mask for next frame */
       memcpy(&pFrameBuffer->HBLPalettes[y*16],HBLPalette,sizeof(short int)*16);
       pFrameBuffer->HBLPaletteMasks[y] = HBLPaletteMasks[y];
     }
-    /* Did mix resolution? */
-    if (bLowMedMix)
-      STRes = ST_LOWMEDIUM_MIX_RES;
+    /* Did mix/have medium resolution? */
+    if (bLowMedMix || (res & ST_MEDIUM_RES_BIT))
+      res = ST_MEDIUM_RES;
   }
 
-  return(STRes);
+  return res;
 }
 
 
@@ -817,28 +834,20 @@ static void Screen_SwapSTBuffers(void)
 */
 static void Screen_Blit(BOOL bSwapScreen)
 {
-  /* Rectangle areas to Blit according to if overscan is enabled or not (source always includes all borders) */
-/*   static SDL_Rect SrcWindowBitmapSizes[] = */
-/*   { */
-/*     { OVERSCAN_LEFT,OVERSCAN_TOP, 320,200 },                /\* ST_LOW_RES *\/ */
-/*     { (OVERSCAN_LEFT<<1),(OVERSCAN_TOP<<1), 640,400 },      /\* ST_MEDIUM_RES *\/ */
-/*     { 0,0, 640,400 },                                       /\* ST_HIGH_RES *\/ */
-/*     { (OVERSCAN_LEFT<<1),(OVERSCAN_BOTTOM<<1), 640,400 },   /\* ST_LOWMEDIUM_MIX_RES *\/ */
-/*   }; */
+  /* Rectangle areas to Blit according to if overscan is enabled or not
+   * (source always includes all borders)
+   */
   static const SDL_Rect SrcWindowBitmapSizes[] =
   {
-    { 0,0, 320,200 },                /* ST_LOW_RES */
+    { 0,0, 320,200 },      /* ST_LOW_RES */
     { 0,0, 640,400 },      /* ST_MEDIUM_RES */
-    { 0,0, 640,400 },                                       /* ST_HIGH_RES */
-    { 0,0, 640,400 },   /* ST_LOWMEDIUM_MIX_RES */
+    { 0,0, 640,400 }       /* ST_HIGH_RES */
   };
-
   static const SDL_Rect SrcWindowOverscanBitmapSizes[] =
   {
     { 0,0, OVERSCAN_LEFT+320+OVERSCAN_RIGHT,OVERSCAN_TOP+200+OVERSCAN_BOTTOM },
     { 0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1) },
-    { 0,0, 640,400 },
-    { 0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1) },
+    { 0,0, 640,400 }
   };
 
   unsigned char *pTmpScreen;
@@ -887,14 +896,15 @@ static void Screen_Blit(BOOL bSwapScreen)
 */
 static void Screen_DrawFrame(BOOL bForceFlip)
 {
+  int new_res;
   void (*pDrawFunction)(void);
 
   /* Scan palette/resolution masks for each line and build up palette/difference tables */
-  STRes = Screen_ComparePaletteMask();
+  new_res = Screen_ComparePaletteMask(STRes);
   /* Do require palette? Check if changed and update */
   Screen_Handle8BitPalettes();
   /* Did we change resolution this frame - allocate new screen if did so */
-  Screen_DidResolutionChange();
+  Screen_DidResolutionChange(new_res);
   /* Is need full-update, tag as such */
   if (pFrameBuffer->bFullUpdate)
     Screen_SetFullUpdateMask();

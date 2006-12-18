@@ -48,9 +48,10 @@ enum
 {
   ST_LOW_RES,
   ST_MEDIUM_RES,
-  ST_HIGH_RES,
-  ST_LOWMEDIUM_MIX_RES
+  ST_HIGH_RES
 };
+#define ST_MEDIUM_RES_BIT 0x1
+#define ST_RES_MASK 0x3
 
 /* Update Palette defines */
 enum
@@ -91,7 +92,7 @@ enum
 
 extern BOOL bGrabMouse;
 extern BOOL bInFullScreen;
-extern int STRes,PrevSTRes;
+extern int STRes;
 extern int STScreenStartHorizLine;
 extern int STScreenLeftSkipBytes;
 extern FRAMEBUFFER *pFrameBuffer;
@@ -106,7 +107,7 @@ extern void Screen_Reset(void);
 extern void Screen_SetFullUpdate(void);
 extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);
-extern void Screen_DidResolutionChange(void);
+extern void Screen_ModeChanged(void);
 extern void Screen_Draw(void);
 
 #endif  /* ifndef HATARI_SCREEN_H */

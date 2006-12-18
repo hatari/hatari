@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.93 2006-12-17 10:21:43 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.94 2006-12-18 21:27:49 eerot Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -250,7 +250,7 @@ static void Main_HandleMouseMotion(SDL_Event *pEvent)
 		dx /= 2;
 		dy /= 2;
 	}
-	else if (STRes == ST_MEDIUM_RES || STRes == ST_LOWMEDIUM_MIX_RES)
+	else if (STRes == ST_MEDIUM_RES)
 	{
 		/* In medium resolution, we only have to take care about dy. */
 		dy += ay;
