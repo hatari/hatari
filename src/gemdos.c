@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.57 2006-12-03 15:35:24 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.58 2006-12-18 10:22:59 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -1297,6 +1297,10 @@ static BOOL GemDOS_Open(Uint32 Params)
 			Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
 			return TRUE;
 		}
+
+		if (Mode != 1 && errno == EACCES)
+			Log_Printf(LOG_DEBUG, "Missing permission to read file '%s'\n", szActualFileName);
+
 		Regs[REG_D0] = GEMDOS_EFILNF;     /* File not found/ error opening */
 		return TRUE;
 	}
