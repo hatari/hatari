@@ -18,7 +18,7 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.16 2006-08-30 19:54:38 thothy Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.17 2006-12-18 20:19:05 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -45,7 +45,7 @@ CYCLEPALETTE;
 static CYCLEPALETTE CyclePalettes[(MAX_SCANLINES_PER_FRAME+1)*MAX_CYCLEPALETTES_PERLINE];
 static CYCLEPALETTE *pCyclePalette;
 static int nCyclePalettes[(MAX_SCANLINES_PER_FRAME+1)];  /* Number of entries in above table for each scanline */
-static int nPalettesAccess[(MAX_SCANLINES_PER_FRAME+1)]; /* Number of times accessed palette register 'x' in this scan line */
+static int nPalettesAccesses;   /* Number of times accessed palette registers */
 static Uint16 CycleColour;
 static int CycleColourIndex;
 static int nScanLine, ScanLineCycleCount;
@@ -84,7 +84,7 @@ void Spec512_StartVBL(void)
 	memset(nCyclePalettes, 0x0, (nScanlinesPerFrame+1)*sizeof(int));
 
 	/* Clear number of times accessed on entry in palette (used to check if is true Spectrum 512 image) */
-	memset(nPalettesAccess, 0x0, (nScanlinesPerFrame+1)*sizeof(int));
+	nPalettesAccesses = 0x0;
 
 	/* Set as not Spectrum 512 displayed image */
 	bIsSpec512Display = FALSE;
@@ -143,10 +143,10 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	/* Increment count (this can never overflow as you cannot write to the palette more than 'MAX_CYCLEPALETTES_PERLINE' times per scanline) */
 	nCyclePalettes[ScanLine]++;
 
-	/* Check if program wrote to certain palette entry multiple times on a single scan-line  */
-	/* If we did then we must be using a Spectrum512 image or some kind of colour cycling... */
-	nPalettesAccess[ScanLine]++;
-	if (nPalettesAccess[ScanLine] >= 32)
+	/* Check if program wrote to palette registers multiple times on a frame. */
+	/* If so it must be using a spec512 image or some kind of color cycling. */
+	nPalettesAccesses++;
+	if (nPalettesAccesses >= 200*2)
 	{
 		bIsSpec512Display = TRUE;
 	}
