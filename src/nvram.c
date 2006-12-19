@@ -11,7 +11,7 @@
   Atari TT and Falcon NVRAM/RTC emulation code.
   This is a MC146818A or compatible chip.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.2 2006-11-01 20:29:48 eerot Exp $";
+const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.3 2006-12-19 21:54:28 thothy Exp $";
 
 #include "main.h"
 #include "ioMem.h"
@@ -134,13 +134,13 @@ static void NvRam_SetChecksum(void)
 */
 void NvRam_Init(void)
 {
-	const char basename[] = ".hatari.nvram";
+	const char sBaseName[] = ".hatari.nvram";
 	// set up the nvram filename
 	if (getenv("HOME") != NULL
-	    && strlen(getenv("HOME"))+sizeof(basename)+1 < sizeof(nvram_filename))
-		sprintf(nvram_filename, "%s%c%s", getenv("HOME"), PATHSEP, basename);
+	    && strlen(getenv("HOME"))+sizeof(sBaseName)+1 < sizeof(nvram_filename))
+		sprintf(nvram_filename, "%s%c%s", getenv("HOME"), PATHSEP, sBaseName);
 	else
-		strcpy(nvram_filename, basename);
+		strcpy(nvram_filename, sBaseName);
 
 	if (!NvRam_Load())		// load NVRAM file automatically
 	{

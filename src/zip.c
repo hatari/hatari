@@ -6,7 +6,7 @@
 
   Zipped disk support, uses zlib
 */
-const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.20 2006-08-01 09:19:28 thothy Exp $";
+const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.21 2006-12-19 21:54:28 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -518,7 +518,7 @@ Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
 	else if (nDiskType == ZIP_FILE_MSA)
 	{
 		/* uncompress the MSA file */
-		pDiskBuffer = MSA_UnCompress(buf, &ImageSize);
+		pDiskBuffer = MSA_UnCompress(buf, (long *)&ImageSize);
 	}
 	else if (nDiskType == ZIP_FILE_DIM)
 	{
