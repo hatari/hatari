@@ -6,7 +6,7 @@
 
   Device (Printer etc.) setup dialog
 */
-const char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.9 2006-08-14 18:32:45 thothy Exp $";
+const char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.10 2006-12-19 10:55:34 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -161,7 +161,8 @@ void Dialog_DeviceDlg(void)
 			break;
 		}
 	}
-	while (but != DEVDLG_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
+	while (but != DEVDLG_EXIT && but != SDLGUI_QUIT
+	       && but != SDLGUI_ERROR && !bQuitProgram);
 
 	/* Read values from dialog */
 	DialogParams.Printer.bEnablePrinting = (devicedlg[DEVDLG_PRNENABLE].state & SG_SELECTED);

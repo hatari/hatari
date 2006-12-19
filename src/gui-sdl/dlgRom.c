@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.6 2006-03-02 09:06:08 thothy Exp $";
+const char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.7 2006-12-19 10:55:34 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -106,7 +106,8 @@ void DlgRom_Main(void)
 			break;
 		}
 	}
-	while (but != DLGROM_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
+	while (but != DLGROM_EXIT && but != SDLGUI_QUIT
+	       && but != SDLGUI_ERROR && !bQuitProgram);
 
 	free(tmpname);
 }

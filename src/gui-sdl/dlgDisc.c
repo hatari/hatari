@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.14 2006-02-08 22:46:10 eerot Exp $";
+const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.15 2006-12-19 10:55:34 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -261,7 +261,8 @@ void Dialog_DiskDlg(void)
         break;
     }
   }
-  while (but!=DISKDLG_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
+  while (but!=DISKDLG_EXIT && but != SDLGUI_QUIT
+         && but != SDLGUI_ERROR && !bQuitProgram);
 
   /* Read values from dialog: */
 

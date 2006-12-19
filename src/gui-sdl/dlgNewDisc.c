@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgNewDisk_rcsid[] = "Hatari $Id: dlgNewDisc.c,v 1.5 2006-02-08 22:46:10 eerot Exp $";
+const char DlgNewDisk_rcsid[] = "Hatari $Id: dlgNewDisc.c,v 1.6 2006-12-19 10:55:34 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -117,7 +117,8 @@ void DlgNewDisk_Main(void)
 			break;
 		}
 	}
-	while (but != DLGNEWDISK_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
+	while (but != DLGNEWDISK_EXIT && but != SDLGUI_QUIT
+	       && but != SDLGUI_ERROR && !bQuitProgram);
 
 	free(szNewDiskName);
 }

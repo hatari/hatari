@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.7 2006-02-08 22:46:10 eerot Exp $";
+const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.8 2006-12-19 10:55:34 thothy Exp $";
 
 #include <unistd.h>
 
@@ -94,7 +94,8 @@ void Dialog_KeyboardDlg(void)
     }
 
   }
-  while (but != DLGKEY_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
+  while (but != DLGKEY_EXIT && but != SDLGUI_QUIT
+         && but != SDLGUI_ERROR && !bQuitProgram);
 
   /* Read values from dialog: */
   if(keyboarddlg[DLGKEY_SYMBOLIC].state & SG_SELECTED)

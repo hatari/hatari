@@ -6,7 +6,7 @@
 
   The main dialog.
 */
-const char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.10 2006-07-03 20:36:28 clafou Exp $";
+const char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.11 2006-12-19 10:55:34 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -128,7 +128,8 @@ int Dialog_MainDlg(BOOL *bReset)
         break;
     }
   }
-  while (retbut!=MAINDLG_OK && retbut!=MAINDLG_CANCEL && retbut!=SDLGUI_QUIT && !bQuitProgram);
+  while (retbut!=MAINDLG_OK && retbut!=MAINDLG_CANCEL && retbut!=SDLGUI_QUIT
+         && retbut!=SDLGUI_ERROR && !bQuitProgram);
 
 
   if( maindlg[MAINDLG_RESET].state & SG_SELECTED )

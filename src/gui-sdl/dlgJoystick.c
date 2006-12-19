@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.9 2006-08-02 11:51:21 eerot Exp $";
+const char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.10 2006-12-19 10:55:34 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -257,7 +257,8 @@ void Dialog_JoyDlg(void)
 			break;
 		}
 	}
-	while (but != DLGJOY_EXIT && but != SDLGUI_QUIT && !bQuitProgram );
+	while (but != DLGJOY_EXIT && but != SDLGUI_QUIT
+	       && but != SDLGUI_ERROR && !bQuitProgram);
 
 	DlgJoystick_WriteValuesToConf(nActJoy);
 }

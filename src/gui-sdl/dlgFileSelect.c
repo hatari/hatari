@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.14 2006-08-01 20:18:28 thothy Exp $";
+const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.15 2006-12-19 10:55:34 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -643,7 +643,8 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 
 
 	} /* do */
-	while (retbut!=SGFSDLG_OKAY && retbut!=SGFSDLG_CANCEL && retbut!=SDLGUI_QUIT && !bQuitProgram);
+	while (retbut!=SGFSDLG_OKAY && retbut!=SGFSDLG_CANCEL
+	       && retbut!=SDLGUI_QUIT && but != SDLGUI_ERROR && !bQuitProgram);
 
 	if (oldcursorstate == SDL_DISABLE)
 		SDL_ShowCursor(SDL_DISABLE);

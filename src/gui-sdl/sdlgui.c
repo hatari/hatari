@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.13 2006-02-09 21:55:44 eerot Exp $";
+const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.14 2006-12-19 10:55:34 thothy Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -581,7 +581,13 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
   Uint32 grey;
   SDL_Surface *pBgSurface;
   SDL_Rect dlgrect, bgrect;
-  
+
+  if (pSdlGuiScrn->h / fontheight < dlg[0].h)
+  {
+    fprintf(stderr, "Screen size too small for dialog!\n");
+    return SDLGUI_ERROR;
+  }
+
   grey = SDL_MapRGB(pSdlGuiScrn->format,192,192,192);
 
   dlgrect.x = dlg[0].x * fontwidth;

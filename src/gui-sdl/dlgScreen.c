@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.8 2006-12-11 18:06:41 eerot Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.9 2006-12-19 10:55:34 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -184,7 +184,8 @@ void Dialog_ScreenDlg(void)
         break;
     }
   }
-  while (but != DLGSCRN_EXIT && but != SDLGUI_QUIT && !bQuitProgram);
+  while (but != DLGSCRN_EXIT && but != SDLGUI_QUIT
+         && but != SDLGUI_ERROR && !bQuitProgram);
 
   /* Read new values from dialog: */
 

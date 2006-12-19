@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.6 2006-02-08 22:46:10 eerot Exp $";
+const char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.7 2006-12-19 10:55:34 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -128,7 +128,8 @@ void Dialog_SoundDlg(void)
         break;
     }
   }
-  while (but != DLGSOUND_EXIT && but != SDLGUI_QUIT && !bQuitProgram );
+  while (but != DLGSOUND_EXIT && but != SDLGUI_QUIT
+         && but != SDLGUI_ERROR && !bQuitProgram );
 
   /* Read values from dialog */
   DialogParams.Sound.bEnableSound = (sounddlg[DLGSOUND_ENABLE].state & SG_SELECTED);
