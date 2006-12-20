@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.94 2006-12-18 21:27:49 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.95 2006-12-20 14:14:00 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -231,34 +231,22 @@ static void Main_HandleMouseMotion(SDL_Event *pEvent)
 	dx = pEvent->motion.xrel;
 	dy = pEvent->motion.yrel;
 
-	if (STRes == ST_LOW_RES && ConfigureParams.Screen.bZoomLowRes)
+	/* In zoomed low res mode, we divide dx and dy by the zoom factor so that
+	 * the ST mouse cursor stays in sync with the host mouse. However, we have
+	 * to take care of lowest bit of dx and dy which will get lost when
+	 * dividing. So we store these bits in ax and ay and add them to dx and dy
+	 * the next time. */
+	if (nScreenZoomX != 1)
 	{
-		/* In zoomed ST-Low res mode, we divide dx and dy by two so that the ST mouse
-		 * cursor stays in sync with the host mouse. However, we have to take care of
-		 * lowest bit of dx and dy which will get lost when dividing by two. So we
-		 * store these bits in ax and ay and add them to dx and dy the next time. */
 		dx += ax;
-		dy += ay;
-		if (dx & 1)
-			ax = (dx > 0) ? 1 : -1;
-		else
-			ax = 0;
-		if (dy & 1)
-			ay = (dy > 0) ? 1 : -1;
-		else
-			ay = 0;
-		dx /= 2;
-		dy /= 2;
+		ax = dx % nScreenZoomX;
+		dx /= nScreenZoomX;
 	}
-	else if (STRes == ST_MEDIUM_RES)
+	if (nScreenZoomY != 1)
 	{
-		/* In medium resolution, we only have to take care about dy. */
 		dy += ay;
-		if (dy & 1)
-			ay = (dy > 0) ? 1 : -1;
-		else
-			ay = 0;
-		dy /= 2;
+		ay = dy % nScreenZoomY;
+		dy /= nScreenZoomY;
 	}
 
 	KeyboardProcessor.Mouse.dx += dx;

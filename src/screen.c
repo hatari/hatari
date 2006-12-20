@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.57 2006-12-18 21:27:49 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.58 2006-12-20 14:14:00 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -45,6 +45,7 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.57 2006-12-18 21:27:49 eer
 /* extern for several purposes */
 int STRes = ST_LOW_RES;       /* current resolution */
 SDL_Surface *sdlscrn = NULL;  /* The SDL screen surface */
+int nScreenZoomX, nScreenZoomY;  /* Zooming factors, used for scaling mouse motions */
 
 /* extern for shortcuts and falcon/hostscreen.c */
 BOOL bGrabMouse = FALSE;      /* Grab the mouse cursor in the window */
@@ -288,6 +289,23 @@ static void Screen_SetResolution(void)
   else
   {
     BitCount = 16;
+  }
+
+  /* Set zoom factors, used for scaling mouse motions */
+  if (STRes == ST_LOW_RES && ConfigureParams.Screen.bZoomLowRes)
+  {
+    nScreenZoomX = 2;
+    nScreenZoomY = 2;
+  }
+  else if (STRes == ST_MEDIUM_RES)
+  {
+    nScreenZoomX = 1;
+    nScreenZoomY = 2;
+  }
+  else
+  {
+    nScreenZoomX = 1;
+    nScreenZoomY = 1;
   }
 
   /* SDL Video attributes: */
