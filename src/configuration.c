@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.57 2006-12-17 10:21:43 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.58 2006-12-23 19:45:19 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -446,7 +446,11 @@ void Configuration_Apply(BOOL bReset)
 		{
 			STRes = ST_HIGH_RES;
 		}
-		VDI_SetResolution(ConfigureParams.Screen.nVdiResolution, ConfigureParams.Screen.nVdiColors);
+		if (bUseVDIRes)
+		{
+			VDI_SetResolution(ConfigureParams.Screen.nVdiResolution,
+			                  ConfigureParams.Screen.nVdiColors);
+		}
 	}
 
 	/* Set playback frequency */
