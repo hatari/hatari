@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.23 2006-08-09 08:14:24 eerot Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.24 2006-12-27 21:28:06 thothy Exp $";
 
 #include <SDL.h>
 
@@ -266,6 +266,12 @@ void ShortCut_ActKey(void)
     break;
   case SHORTCUT_QUIT:
     ShortCut_Quit();               /* Quit program */
+    break;
+  case SHORTCUT_LOADMEM:
+    MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName);
+    break;
+  case SHORTCUT_SAVEMEM:
+    MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName);
     break;
   case SHORTCUT_KEYS:
   case SHORTCUT_NONE:

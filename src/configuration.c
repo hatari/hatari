@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.58 2006-12-23 19:45:19 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.59 2006-12-27 21:28:06 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -360,6 +360,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_RECSOUND] = SDLK_y;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_SOUND] = SDLK_s;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_QUIT] = SDLK_q;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_LOADMEM] = SDLK_l;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_SAVEMEM] = SDLK_k;
 	
 	/* Set defaults for Memory */
 	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */
