@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.58 2006-12-18 10:22:59 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.59 2006-12-28 19:07:06 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -208,7 +208,7 @@ static const char *pszGemDOSNames[] =
 	"Close",      /*0x3e*/
 	"Read",       /*0x3f*/
 	"Write",      /*0x40*/
-	"UnLink",     /*0x41*/
+	"Fdelete",    /*0x41*/
 	"LSeek",      /*0x42*/
 	"Fattrib",    /*0x43*/
 	"",           /*0x44*/
@@ -1077,7 +1077,6 @@ static BOOL GemDOS_DFree(Uint32 Params)
 */
 static BOOL GemDOS_MkDir(Uint32 Params)
 {
-	char szDirPath[MAX_GEMDOS_PATH];
 	char *pDirName;
 	int Drive;
 
@@ -1088,15 +1087,25 @@ static BOOL GemDOS_MkDir(Uint32 Params)
 
 	if (ISHARDDRIVE(Drive))
 	{
+		char *psDirPath;
+		psDirPath = malloc(FILENAME_MAX);
+		if (!psDirPath)
+		{
+			perror("GemDOS_MkDir");
+			Regs[REG_D0] = GEMDOS_ENSMEM;
+			return TRUE;
+		}
+
 		/* Copy old directory, as if calls fails keep this one */
-		GemDOS_CreateHardDriveFileName(Drive,pDirName,szDirPath);
+		GemDOS_CreateHardDriveFileName(Drive, pDirName, psDirPath);
 
 		/* Attempt to make directory */
-		if ( mkdir(szDirPath, 0755)==0 )
+		if (mkdir(psDirPath, 0755) == 0)
 			Regs[REG_D0] = GEMDOS_EOK;
 		else
 			Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
 
+		free(psDirPath);
 		return TRUE;
 	}
 	return FALSE;
@@ -1109,7 +1118,6 @@ static BOOL GemDOS_MkDir(Uint32 Params)
 */
 static BOOL GemDOS_RmDir(Uint32 Params)
 {
-	char szDirPath[MAX_GEMDOS_PATH];
 	char *pDirName;
 	int Drive;
 
@@ -1118,15 +1126,25 @@ static BOOL GemDOS_RmDir(Uint32 Params)
 	Drive = GemDOS_IsFileNameAHardDrive(pDirName);
 	if (ISHARDDRIVE(Drive))
 	{
+		char *psDirPath;
+		psDirPath = malloc(FILENAME_MAX);
+		if (!psDirPath)
+		{
+			perror("GemDOS_RmDir");
+			Regs[REG_D0] = GEMDOS_ENSMEM;
+			return TRUE;
+		}
+
 		/* Copy old directory, as if calls fails keep this one */
-		GemDOS_CreateHardDriveFileName(Drive,pDirName,szDirPath);
+		GemDOS_CreateHardDriveFileName(Drive, pDirName, psDirPath);
 
 		/* Attempt to make directory */
-		if ( rmdir(szDirPath)==0 )
+		if (rmdir(psDirPath) == 0)
 			Regs[REG_D0] = GEMDOS_EOK;
 		else
 			Regs[REG_D0] = GEMDOS_EACCDN;        /* Access denied */
 
+		free(psDirPath);
 		return TRUE;
 	}
 	return FALSE;
@@ -1433,13 +1451,12 @@ static BOOL GemDOS_Write(Uint32 Params)
 
 /*-----------------------------------------------------------------------*/
 /*
-  GEMDOS UnLink (Delete) file
+  GEMDOS Delete file
   Call 0x41
 */
-static BOOL GemDOS_UnLink(Uint32 Params)
+static BOOL GemDOS_FDelete(Uint32 Params)
 {
 #ifdef ENABLE_SAVING
-	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
 	int Drive;
 
@@ -1448,15 +1465,25 @@ static BOOL GemDOS_UnLink(Uint32 Params)
 	Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
 	if (ISHARDDRIVE(Drive))
 	{
+		char *psActualFileName;
+		psActualFileName = malloc(FILENAME_MAX);
+		if (!psActualFileName)
+		{
+			perror("GemDOS_FDelete");
+			Regs[REG_D0] = GEMDOS_ENSMEM;
+			return TRUE;
+		}
+
 		/* And convert to hard drive filename */
-		GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
+		GemDOS_CreateHardDriveFileName(Drive, pszFileName, psActualFileName);
 
 		/* Now delete file?? */
-		if ( unlink(szActualFileName)==0 )
+		if (unlink(psActualFileName) == 0)
 			Regs[REG_D0] = GEMDOS_EOK;          /* OK */
 		else
 			Regs[REG_D0] = GEMDOS_EFILNF;       /* File not found */
 
+		free(psActualFileName);
 		return TRUE;
 	}
 #endif
@@ -2009,7 +2036,7 @@ void GemDOS_OpCode(void)
 			RunOld = FALSE;
 		break;
 	 case 0x41:
-		if (GemDOS_UnLink(Params))
+		if (GemDOS_FDelete(Params))
 			RunOld = FALSE;
 		break;
 	 case 0x42:
