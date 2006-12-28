@@ -4,11 +4,15 @@
 # e.g. when creating RPM packages.
 
 # Include settings
-include Makefile.cnf
+-include Makefile.cnf
 
 
 all:
 	$(MAKE) -C src/
+
+# No Makefile configuration available yet? Then use the default file: 
+Makefile.cnf:
+	 cp Makefile-default.cnf Makefile.cnf
 
 
 clean:

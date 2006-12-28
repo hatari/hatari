@@ -21,7 +21,7 @@ CFLAGS := -g -O2 $(WARNFLAGS)
 CPPFLAGS ?=
 
 # Additional libraries and linker flags:
-LIBS = -lz
+LIBS = -lz -lreadline -ltermcap
 LDFLAGS ?=
 
 
