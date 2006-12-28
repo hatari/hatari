@@ -8,7 +8,7 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.12 2006-02-08 22:49:27 eerot Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.13 2006-12-28 18:33:57 thothy Exp $";
 
 #include <ctype.h>
 
@@ -579,7 +579,8 @@ static void DebugUI_Help(void)
 	        " l filename address - load a file into memory starting at address. \n"
 	        " s filename address length - dump length bytes from memory to a file. \n"
 	        " o - disable debug mode\n\n"
-	        " q - return to emulation\n\n"
+	        " q - quit emulator\n"
+	        " c - continue emulation\n\n"
 	        " Adresses may be given as a range e.g. fc0000-fc0100\nAll values in hexadecimal.\n"
 	        "-----------------------------\n"
 	        "\n");
@@ -610,8 +611,14 @@ static int DebugUI_Getcommand(void)
 
 	switch (command[0])
 	{
+	 case 'c':
+		return DEBUG_QUIT;
+		break;
+
 	 case 'q':
-		return(DEBUG_QUIT);
+		bQuitProgram = TRUE;
+		set_special(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
+		return DEBUG_QUIT;
 		break;
 
 	 case 'h':
@@ -721,8 +728,8 @@ void DebugUI(void)
 	disasm_addr = 0;
 
 
-	fprintf(stderr, "\nYou have entered debug mode. Type q to quit, h for help."
-	                "\n------------------------------\n");
+	fprintf(stderr, "\nYou have entered debug mode. Type c to continue emulation, h for help."
+	                "\n----------------------------------------------------------------------\n");
 	while (DebugUI_Getcommand() != DEBUG_QUIT)
 		;
 	if (debugLogFile != NULL)
