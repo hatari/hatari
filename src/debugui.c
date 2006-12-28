@@ -8,9 +8,15 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.13 2006-12-28 18:33:57 thothy Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.14 2006-12-28 21:25:12 thothy Exp $";
 
 #include <ctype.h>
+#include <stdio.h>
+
+#if 1  // HAVE_READLINE
+#include <readline/readline.h>
+#include <readline/history.h>
+#endif
 
 #include "main.h"
 #include "configuration.h"
@@ -490,7 +496,7 @@ static void DebugUI_MemDump(char *arg, BOOL cont)
 /*
   Do a memory write, arg = starting address, followed by bytes.
 */
-static void DebugUI_MemWrite(char *addr_str, char *arg)
+static void DebugUI_MemWrite(char *arg)
 {
 	int i, j, numBytes;
 	long write_addr;
@@ -592,45 +598,63 @@ static void DebugUI_Help(void)
 */
 static int DebugUI_Getcommand(void)
 {
-	char temp[255];
 	char command[255], arg[255];
+	static char lastcommand = 0;
+	char *pInput;
 	int i;
+	int retval;
 
+#if 1    // HAVE_READLINE
+	pInput = readline("> ");
+	if (!pInput)
+		return DEBUG_QUIT;
+	if (pInput[0] != 0)
+		add_history(pInput);
+#else
 	fprintf(stderr, "> ");
-	temp[0] = '\0';
-	fgets(temp, sizeof(temp), stdin);
+	pInput = malloc(256);
+	if (!pInput)
+		return DEBUG_QUIT;
+	pInput[0] = '\0';
+	fgets(pInput, 256, stdin);
+#endif
 
-	i = sscanf(temp, "%s%s", command, arg);
+	command[0] = lastcommand;          /* Used for 'm' and 'd' to continue at last pos */
+	command[1] = 0;
+	arg[0] = 0;
+	i = sscanf(pInput, "%s%s", command, arg);
 	string_tolower(command);
 
 	if (i == 0)
 	{
 		fprintf(stderr, "  Unknown command.\n");
+		free(pInput);
 		return DEBUG_CMD;
 	}
+
+	lastcommand = 0;
+	retval = DEBUG_CMD;                /* Default return value */
 
 	switch (command[0])
 	{
 	 case 'c':
-		return DEBUG_QUIT;
+		retval = DEBUG_QUIT;
 		break;
 
 	 case 'q':
 		bQuitProgram = TRUE;
 		set_special(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
-		return DEBUG_QUIT;
+		retval = DEBUG_QUIT;
 		break;
 
 	 case 'h':
 	 case '?':
 		DebugUI_Help(); /* get help */
-		return(DEBUG_CMD);
 		break;
 
 	 case 'o':
 		bEnableDebug = FALSE;
 		fprintf(stderr, "  Debug mode disabled.\n");
-		return(DEBUG_CMD);
 		break;
 
 	 case 'd':
@@ -638,20 +662,20 @@ static int DebugUI_Getcommand(void)
 			DebugUI_DisAsm(arg, TRUE);    /* No arg - disassemble at PC */
 		else
 			DebugUI_DisAsm(arg, FALSE);   /* disasm at address. */
+		lastcommand = 'd';
 		break;
 
 	 case 'm':
 		if (i < 2)
 		{  /* no arg? */
 			if (bMemDump == FALSE)
-			{
 				fprintf(stderr,"  Usage: m address\n");
-				return(DEBUG_CMD);
-			}
-			DebugUI_MemDump(arg, TRUE);   /* No arg - continue memdump */
+			else
+				DebugUI_MemDump(arg, TRUE);   /* No arg - continue memdump */
 		}
 		else
 			DebugUI_MemDump(arg, FALSE);  /* new memdump */
+		lastcommand = 'm';
 		break;
 
 	 case 'f':
@@ -671,47 +695,42 @@ static int DebugUI_Getcommand(void)
 		break;
 
 	 case 'w':
-		if (i < 2)
-		{  /* no arg? */
+		if (i < 2)    /* not enough args? */
 			fprintf(stderr, "  Usage: w address bytes\n");
-			return DEBUG_CMD;
-		}
-		DebugUI_MemWrite(arg, temp);
+		else
+			DebugUI_MemWrite(pInput);
 		break;
 
 	 case 'r':
 		if (i < 2)
-		{  /* no arg - dump regs */
-			DebugUI_RegDump();
-			return DEBUG_CMD;
-		}
-		DebugUI_RegSet(arg);
+			DebugUI_RegDump();  /* no arg - dump regs */
+		else
+			DebugUI_RegSet(arg);
 		break;
 
 	 case 'l':
-		if (i < 2)
-		{  /* no arg? */
+		if (i < 2)    /* not enough args? */
 			fprintf(stderr,"  Usage: l filename address\n");
-			return DEBUG_CMD;
-		}
-		DebugUI_LoadBin(temp);
+		else
+			DebugUI_LoadBin(pInput);
 		break;
 
 	 case 's':
-		if (i < 2)
-		{  /* no arg? */
+		if (i < 2)    /* not enough args? */
 			fprintf(stderr,"  Usage: s filename address bytes\n");
-			return DEBUG_CMD;
-		}
-		DebugUI_SaveBin(temp);
+		else
+			DebugUI_SaveBin(pInput);
 		break;
 
 	 default:
-		fprintf(stderr,"  Unknown command: '%s'\n", command);
+		if (command[0])
+			fprintf(stderr,"  Unknown command: '%s'\n", command);
 		break;
 	}
 
-	return DEBUG_CMD;
+	free(pInput);
+
+	return retval;
 }
 
 

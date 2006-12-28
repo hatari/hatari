@@ -57,6 +57,8 @@ SDL_VERSION=1.2.0
 AM_PATH_SDL($SDL_VERSION, :,
   AC_MSG_ERROR([*** SDL version $SDL_VERSION not found!]))
 
+dnl Check for readline library
+VL_LIB_READLINE
 
 CPPFLAGS="${CPPFLAGS} ${INCL}"
 
