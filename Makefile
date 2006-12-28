@@ -20,7 +20,7 @@ clean:
 
 distclean:
 	$(MAKE) -C src/ distclean
-	$(RM) config.cache config.log
+	$(RM) config.cache config.log Makefile.cnf
 
 
 # Use "make depend" to generate file dependencies:
