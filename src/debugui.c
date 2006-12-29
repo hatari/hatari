@@ -8,12 +8,14 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.14 2006-12-28 21:25:12 thothy Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.15 2006-12-29 15:22:30 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
 
-#if 1  // HAVE_READLINE
+#include "config.h"
+
+#if HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
 #endif
@@ -604,7 +606,7 @@ static int DebugUI_Getcommand(void)
 	int i;
 	int retval;
 
-#if 1    // HAVE_READLINE
+#if HAVE_LIBREADLINE
 	pInput = readline("> ");
 	if (!pInput)
 		return DEBUG_QUIT;
