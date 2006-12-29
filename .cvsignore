@@ -6,5 +6,7 @@ config.guess
 config.log
 config.status
 config.sub
+config.h.in
+config.h
 configure
 install-sh

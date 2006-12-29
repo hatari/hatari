@@ -8,6 +8,8 @@ AC_INIT(hatari, 0.90)
 AC_CONFIG_SRCDIR([src/main.c])
 AC_PREREQ(2.50)
 
+AC_CONFIG_HEADERS([config.h])
+
 #AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 
@@ -70,7 +72,7 @@ AC_HEADER_DIRENT
 
 AC_CHECK_HEADERS([unistd.h zlib.h], ,
   AC_MSG_ERROR([header file not found!]))
-
+AC_CHECK_HEADERS([termios.h glob.h])
 
 dnl Checks for types.
 AC_TYPE_MODE_T
@@ -154,6 +156,6 @@ AC_MSG_NOTICE([| After compiling, you can install the program by     |])
 AC_MSG_NOTICE([| typing:  make install  (or: gmake install)          |])
 AC_MSG_NOTICE([|                                                     |])
 AC_MSG_NOTICE([| For information about the configuration variables,  |])
-AC_MSG_NOTICE([| please have a look at Makefile.cnf.                 |])
+AC_MSG_NOTICE([| please have a look at Makefile.cnf and config.h.    |])
 AC_MSG_NOTICE([|                                                     |])
 AC_MSG_NOTICE([+-----------------------------------------------------+])

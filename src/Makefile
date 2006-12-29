@@ -7,7 +7,7 @@ ENABLE_FALCON = 1
 include ../Makefile.cnf
 
 # Additional include directories:
-INCFLAGS = -I./includes -I./uae-cpu $(CPPFLAGS)
+INCFLAGS = -I.. -I./includes -I./uae-cpu $(CPPFLAGS)
 
 
 CFLAGS += -DDATADIR=\"$(DATADIR)\" -DCONFDIR=\"$(CONFDIR)\" $(INCFLAGS) $(SDL_CFLAGS)

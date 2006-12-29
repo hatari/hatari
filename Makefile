@@ -12,7 +12,9 @@ all:
 
 # No Makefile configuration available yet? Then use the default file: 
 Makefile.cnf:
-	 cp Makefile-default.cnf Makefile.cnf
+	@echo "Did not find config files! I will try to use the default configuration now..."
+	cp Makefile-default.cnf Makefile.cnf
+	cp config-default.h config.h
 
 
 clean:
@@ -20,7 +22,7 @@ clean:
 
 distclean:
 	$(MAKE) -C src/ distclean
-	$(RM) config.cache config.log Makefile.cnf
+	$(RM) config.cache config.log Makefile.cnf config.h
 
 
 # Use "make depend" to generate file dependencies:
