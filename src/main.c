@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.96 2007-01-02 20:27:34 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.97 2007-01-02 22:20:43 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -475,6 +475,10 @@ int main(int argc, char *argv[])
   Opt_ParseParameters(argc, argv, szBootDiskImage, sizeof(szBootDiskImage));
   /* monitor type option might require "reset" -> TRUE */
   Configuration_Apply(TRUE);
+
+#ifdef WIN32
+  Win_OpenCon();
+#endif
 
   /* Needed on N770 but useful also with other X11 window managers
    * for window grouping when you have multiple SDL windows open

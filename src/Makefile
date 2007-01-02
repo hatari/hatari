@@ -28,7 +28,7 @@ GUIOBJS = ./gui-sdl/dlgAbout.o ./gui-sdl/dlgAlert.o ./gui-sdl/dlgDevice.o \
   ./gui-sdl/dlgRom.o ./gui-sdl/dlgScreen.o ./gui-sdl/dlgSound.o  \
   ./gui-sdl/dlgSystem.o ./gui-sdl/dlgFileSelect.o ./gui-sdl/sdlgui.o
 
-GUIWINOBJS = gui-win/hatari-winicon.o
+GUIWINOBJS = ./gui-win/hatari-winicon.o ./gui-win/opencon.o
 
 ifeq ($(ENABLE_FALCON),1)
 FALCOBJS = ./falcon/videl.o ./falcon/hostscreen.o \
@@ -84,6 +84,7 @@ falcon/%.o: falcon/%.c
 clean:
 	$(RM) *.o hatari
 	$(MAKE) -C gui-sdl/ clean
+	$(MAKE) -C gui-win/ clean
 	$(MAKE) -C uae-cpu/ clean
 	$(MAKE) -C falcon/ clean
 
@@ -91,6 +92,7 @@ distclean:
 	$(RM) *.o hatari
 	$(RM) Makefile.dep *~ *.bak *.orig
 	$(MAKE) -C gui-sdl/ distclean
+	$(MAKE) -C gui-win/ distclean
 	$(MAKE) -C uae-cpu/ distclean
 	$(MAKE) -C falcon/ distclean
 
