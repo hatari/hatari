@@ -2,6 +2,8 @@
 # This is a sample configuriation for MinGW.
 # Rename this file to Makefile.cnf before you start compiling.
 
+SYS_WINDOWS = 1
+
 # Set the C compiler (e.g. gcc)
 CC = gcc
 
@@ -14,7 +16,7 @@ WARNFLAGS = -Wmissing-prototypes -Wstrict-prototypes -Wsign-compare \
 CFLAGS := -g -O2 $(WARNFLAGS)
 
 # Set flags passed to the preprocessor (e.g. -I<include dir>)
-CPPFLAGS = -DHAVE_TERMIOS_H=0
+CPPFLAGS =
 
 # Additional libraries and linker flags:
 LIBS = -lzdll

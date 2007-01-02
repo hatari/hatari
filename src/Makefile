@@ -28,6 +28,8 @@ GUIOBJS = ./gui-sdl/dlgAbout.o ./gui-sdl/dlgAlert.o ./gui-sdl/dlgDevice.o \
   ./gui-sdl/dlgRom.o ./gui-sdl/dlgScreen.o ./gui-sdl/dlgSound.o  \
   ./gui-sdl/dlgSystem.o ./gui-sdl/dlgFileSelect.o ./gui-sdl/sdlgui.o
 
+GUIWINOBJS = gui-win/hatari-winicon.o
+
 ifeq ($(ENABLE_FALCON),1)
 FALCOBJS = ./falcon/videl.o ./falcon/hostscreen.o \
   ./falcon/dsp.o ./falcon/dsp_cpu.o ./falcon/dsp_disasm.o
@@ -49,6 +51,10 @@ OBJS = $(SRCS:.c=.o)
 
 ALLOBJS = $(OBJS) $(GUIOBJS) $(CPUOBJS) $(FALCOBJS)
 
+ifeq ($(SYS_WINDOWS),1)
+  ALLOBJS += $(GUIWINOBJS)
+endif
+
 
 all: hatari
 
@@ -67,6 +73,9 @@ uae-cpu/cpudefs.c: uae-cpu/build68k.c uae-cpu/table68k
 
 gui-sdl/%.o: gui-sdl/%.c
 	$(MAKE) -C gui-sdl/ all
+
+gui-win/%.o:
+	$(MAKE) -C gui-win/ all
 
 falcon/%.o: falcon/%.c
 	$(MAKE) -C falcon/ all
