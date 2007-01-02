@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.95 2006-12-20 14:14:00 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.96 2007-01-02 20:27:34 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -479,7 +479,9 @@ int main(int argc, char *argv[])
   /* Needed on N770 but useful also with other X11 window managers
    * for window grouping when you have multiple SDL windows open
    */
+#ifndef WIN32
   setenv("SDL_VIDEO_X11_WMCLASS", "hatari", 1);
+#endif
 
   /* Init emulator system */
   Main_Init();
