@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.14 2006-12-17 10:21:43 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.15 2007-01-06 10:47:44 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,7 +39,6 @@ enum {
 	OPT_FULLSCREEN,
 	OPT_WINDOW,
 	OPT_ZOOM,
-	OPT_FRAMESKIP,
 	OPT_FRAMESKIPS,
 	OPT_FORCE8BPP,
 	OPT_BORDERS,
@@ -93,10 +92,8 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Start emulator in window mode" },
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Double ST low resolution (1=no, 2=yes)" },
-	{ OPT_FRAMESKIP, NULL, "--frameskip",
-	  NULL, "Skip every second frame (deprecated)" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
-	  "<x>", "Show only every <x> frame (speeds up emulation!)" },
+	  "<x>", "Skip <x> frames after each displayed frame (0 <= <x> <= 3)" },
 	{ OPT_FORCE8BPP, NULL, "--force8bpp",
 	  NULL, "Force use of 8-bit window (speeds up emulation!)" },
 	{ OPT_BORDERS, NULL, "--borders",
@@ -324,13 +321,9 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			break;
 			
-		case OPT_FRAMESKIP:
-			ConfigureParams.Screen.FrameSkips = 1;
-			break;
-			
 		case OPT_FRAMESKIPS:
 			skips = atoi(argv[++i]);
-			if(skips < 1) {
+			if(skips < 0 || skips > 10) {
 				Opt_ShowExit(OPT_NONE, argv[i], "Invalid frame skip value");
 			}
 			ConfigureParams.Screen.FrameSkips = skips;

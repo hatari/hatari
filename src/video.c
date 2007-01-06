@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.61 2006-12-11 18:06:40 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.62 2007-01-06 10:47:44 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -725,7 +725,7 @@ static void Video_ClearOnVBL(void)
 static void Video_DrawScreen(void)
 {
   /* Skip frame if need to */
-  if (nVBLs % ConfigureParams.Screen.FrameSkips)
+  if (nVBLs % (ConfigureParams.Screen.FrameSkips+1))
     return;
 
   /* Use extended VDI resolution?

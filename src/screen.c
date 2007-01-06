@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.58 2006-12-20 14:14:00 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.59 2007-01-06 10:47:44 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -757,7 +757,8 @@ static void Screen_SetConvertDetails(void)
 
   PCScreenBytesPerLine = sdlscrn->pitch;        /* Bytes per line */
   pHBLPalettes = pFrameBuffer->HBLPalettes;     /* HBL palettes pointer */
-  bScrDoubleY = !ConfigureParams.Screen.bInterleavedScreen; /* non-interleaved? => double up on Y */
+  /* Not in TV-Mode? Then double up on Y: */
+  bScrDoubleY = !(ConfigureParams.Screen.MonitorType == MONITOR_TYPE_TV);
 
   if (bUseVDIRes)
   {

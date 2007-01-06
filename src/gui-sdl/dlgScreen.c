@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.9 2006-12-19 10:55:34 thothy Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.10 2007-01-06 10:47:45 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -16,27 +16,29 @@ const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.9 2006-12-19 10:55:3
 
 
 #define DLGSCRN_FULLSCRN   3
-#define DLGSCRN_FRAMESKIP  4
-#define DLGSCRN_OVERSCAN   5
-#define DLGSCRN_INTERLEAVE 6
-#define DLGSCRN_8BPP       7
-#define DLGSCRN_ZOOMLOWRES 8
-#define DLGSCRN_MONO       10
-#define DLGSCRN_RGB        11
-#define DLGSCRN_VGA        12
-#define DLGSCRN_TV         13
-#define DLGSCRN_USEVDIRES  15
-#define DLGSCRN_RES640     17
-#define DLGSCRN_RES800     18
-#define DLGSCRN_RES1024    19
-#define DLGSCRN_BPP1       21
-#define DLGSCRN_BPP2       22
-#define DLGSCRN_BPP4       23
-#define DLGSCRN_ONCHANGE   26
-#define DLGSCRN_FPSPOPUP   28
-#define DLGSCRN_CAPTURE    29
-#define DLGSCRN_RECANIM    30
-#define DLGSCRN_EXIT       31
+#define DLGSCRN_OVERSCAN   4
+#define DLGSCRN_ZOOMLOWRES 5
+#define DLGSCRN_8BPP       6
+#define DLGSCRN_SKIP0      8
+#define DLGSCRN_SKIP1      9
+#define DLGSCRN_SKIP2      10
+#define DLGSCRN_SKIP3      11
+#define DLGSCRN_MONO       13
+#define DLGSCRN_RGB        14
+#define DLGSCRN_VGA        15
+#define DLGSCRN_TV         16
+#define DLGSCRN_USEVDIRES  18
+#define DLGSCRN_RES640     20
+#define DLGSCRN_RES800     21
+#define DLGSCRN_RES1024    22
+#define DLGSCRN_BPP1       24
+#define DLGSCRN_BPP2       25
+#define DLGSCRN_BPP4       26
+#define DLGSCRN_ONCHANGE   29
+#define DLGSCRN_FPSPOPUP   31
+#define DLGSCRN_CAPTURE    32
+#define DLGSCRN_RECANIM    33
+#define DLGSCRN_EXIT       34
 
 
 /* The screen dialog: */
@@ -47,11 +49,14 @@ static SGOBJ screendlg[] =
   { SGBOX, 0, 0, 1,1, 48,7, NULL },
   { SGTEXT, 0, 0, 18,1, 14,1, "Screen options" },
   { SGCHECKBOX, 0, 0, 4,3, 12,1, "Fullscreen" },
-  { SGCHECKBOX, 0, 0, 4,4, 12,1, "Frame skips" },
-  { SGCHECKBOX, 0, 0, 4,5, 13,1, "Use borders" },
-  { SGCHECKBOX, 0, 0, 25,3, 18,1, "Interleaved mode" },
+  { SGCHECKBOX, 0, 0, 4,4, 13,1, "Use borders" },
+  { SGCHECKBOX, 0, 0, 25,3, 18,1, "Zoom ST-low res." },
   { SGCHECKBOX, 0, 0, 25,4, 13,1, "Force 8 bpp" },
-  { SGCHECKBOX, 0, 0, 25,5, 18,1, "Zoom ST-low res." },
+  { SGTEXT, 0, 0, 4,6, 9,1, "Frame skip:" },
+  { SGRADIOBUT, 0, 0, 17,6, 5,1, "Off" },
+  { SGRADIOBUT, 0, 0, 24,6, 3,1, "1" },
+  { SGRADIOBUT, 0, 0, 29,6, 3,1, "2" },
+  { SGRADIOBUT, 0, 0, 35,6, 3,1, "3" },
   { SGTEXT, 0, 0, 4,7, 8,1, "Monitor:" },
   { SGRADIOBUT, 0, 0, 14,7, 6,1, "Mono" },
   { SGRADIOBUT, 0, 0, 22,7, 5,1, "RGB" },
@@ -100,20 +105,10 @@ void Dialog_ScreenDlg(void)
   else
     screendlg[DLGSCRN_FULLSCRN].state &= ~SG_SELECTED;
 
-  if (DialogParams.Screen.FrameSkips)
-    screendlg[DLGSCRN_FRAMESKIP].state |= SG_SELECTED;
-  else
-    screendlg[DLGSCRN_FRAMESKIP].state &= ~SG_SELECTED;
-
   if (DialogParams.Screen.bAllowOverscan)
     screendlg[DLGSCRN_OVERSCAN].state |= SG_SELECTED;
   else
     screendlg[DLGSCRN_OVERSCAN].state &= ~SG_SELECTED;
-
-  if (DialogParams.Screen.bInterleavedScreen)
-    screendlg[DLGSCRN_INTERLEAVE].state |= SG_SELECTED;
-  else
-    screendlg[DLGSCRN_INTERLEAVE].state &= ~SG_SELECTED;
 
   if (DialogParams.Screen.bForce8Bpp)
     screendlg[DLGSCRN_8BPP].state |= SG_SELECTED;
@@ -124,6 +119,10 @@ void Dialog_ScreenDlg(void)
     screendlg[DLGSCRN_ZOOMLOWRES].state |= SG_SELECTED;
   else
     screendlg[DLGSCRN_ZOOMLOWRES].state &= ~SG_SELECTED;
+
+  for (i = DLGSCRN_SKIP0; i <= DLGSCRN_SKIP3; i++)
+    screendlg[i].state &= ~SG_SELECTED;
+  screendlg[DLGSCRN_SKIP0+DialogParams.Screen.FrameSkips].state |= SG_SELECTED;
 
   for (i = DLGSCRN_MONO; i <= DLGSCRN_TV; i++)
     screendlg[i].state &= ~SG_SELECTED;
@@ -191,12 +190,6 @@ void Dialog_ScreenDlg(void)
 
   DialogParams.Screen.bFullScreen = (screendlg[DLGSCRN_FULLSCRN].state & SG_SELECTED);
   DialogParams.Screen.bAllowOverscan = (screendlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
-  DialogParams.Screen.bInterleavedScreen = (screendlg[DLGSCRN_INTERLEAVE].state & SG_SELECTED);
-
-  if (screendlg[DLGSCRN_FRAMESKIP].state & SG_SELECTED)
-    DialogParams.Screen.FrameSkips = 2;
-  else
-    DialogParams.Screen.FrameSkips = 1;
 
   if (screendlg[DLGSCRN_8BPP].state & SG_SELECTED)
     DialogParams.Screen.bForce8Bpp = TRUE;
@@ -209,6 +202,14 @@ void Dialog_ScreenDlg(void)
     DialogParams.Screen.bZoomLowRes = FALSE;
 
   DialogParams.Screen.bUseExtVdiResolutions = (screendlg[DLGSCRN_USEVDIRES].state & SG_SELECTED);
+  for (i = DLGSCRN_SKIP0; i <= DLGSCRN_SKIP3; i++)
+  {
+    if (screendlg[i].state & SG_SELECTED)
+    {
+      DialogParams.Screen.FrameSkips = i - DLGSCRN_SKIP0;
+      break;
+    }
+  }
   for (i = DLGSCRN_MONO; i <= DLGSCRN_TV; i++)
   {
     if (screendlg[i].state & SG_SELECTED)

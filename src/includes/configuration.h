@@ -192,7 +192,6 @@ typedef struct
   int FrameSkips;
   BOOL bFullScreen;
   BOOL bAllowOverscan;
-  BOOL bInterleavedScreen;
   BOOL bForce8Bpp;
   BOOL bZoomLowRes;
   BOOL bUseExtVdiResolutions;
