@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.15 2007-01-06 10:47:44 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.16 2007-01-07 21:42:37 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -93,7 +93,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Double ST low resolution (1=no, 2=yes)" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
-	  "<x>", "Skip <x> frames after each displayed frame (0 <= <x> <= 3)" },
+	  "<x>", "Skip <x> frames after each displayed frame (0 <= <x> <= 8)" },
 	{ OPT_FORCE8BPP, NULL, "--force8bpp",
 	  NULL, "Force use of 8-bit window (speeds up emulation!)" },
 	{ OPT_BORDERS, NULL, "--borders",
@@ -287,16 +287,14 @@ void Opt_ParseParameters(int argc, char *argv[],
 			i += 1;
 			if (strcasecmp(argv[i], "mono") == 0) {
 				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_MONO;
+			} else if (strcasecmp(argv[i], "rgb") == 0) {
+				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_RGB;
+			} else if (strcasecmp(argv[i], "vga") == 0) {
+				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_VGA;
+			} else if (strcasecmp(argv[i], "tv") == 0) {
+				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_TV;
 			} else {
-				if (strcasecmp(argv[i], "rgb") == 0) {
-					ConfigureParams.Screen.MonitorType = MONITOR_TYPE_RGB;
-				} else if (strcasecmp(argv[i], "vga") == 0) {
-					ConfigureParams.Screen.MonitorType = MONITOR_TYPE_VGA;
-				} else if (strcasecmp(argv[i], "tv") == 0) {
-					ConfigureParams.Screen.MonitorType = MONITOR_TYPE_TV;
-				} else {
-					Opt_ShowExit(OPT_NONE, argv[i], "Unknown monitor type");
-				}
+				Opt_ShowExit(OPT_NONE, argv[i], "Unknown monitor type");
 			}
 			break;
 			
@@ -323,7 +321,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 		case OPT_FRAMESKIPS:
 			skips = atoi(argv[++i]);
-			if(skips < 0 || skips > 10) {
+			if(skips < 0 || skips > 8) {
 				Opt_ShowExit(OPT_NONE, argv[i], "Invalid frame skip value");
 			}
 			ConfigureParams.Screen.FrameSkips = skips;

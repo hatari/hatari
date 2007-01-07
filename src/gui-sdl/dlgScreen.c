@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.10 2007-01-06 10:47:45 thothy Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.11 2007-01-07 21:42:37 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -23,23 +23,28 @@ const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.10 2007-01-06 10:47:
 #define DLGSCRN_SKIP1      9
 #define DLGSCRN_SKIP2      10
 #define DLGSCRN_SKIP3      11
-#define DLGSCRN_MONO       13
-#define DLGSCRN_RGB        14
-#define DLGSCRN_VGA        15
-#define DLGSCRN_TV         16
-#define DLGSCRN_USEVDIRES  18
-#define DLGSCRN_RES640     20
-#define DLGSCRN_RES800     21
-#define DLGSCRN_RES1024    22
-#define DLGSCRN_BPP1       24
-#define DLGSCRN_BPP2       25
-#define DLGSCRN_BPP4       26
-#define DLGSCRN_ONCHANGE   29
-#define DLGSCRN_FPSPOPUP   31
-#define DLGSCRN_CAPTURE    32
-#define DLGSCRN_RECANIM    33
-#define DLGSCRN_EXIT       34
+#define DLGSCRN_SKIP4      12
+#define DLGSCRN_MONO       14
+#define DLGSCRN_RGB        15
+#define DLGSCRN_VGA        16
+#define DLGSCRN_TV         17
+#define DLGSCRN_USEVDIRES  19
+#define DLGSCRN_RES640     21
+#define DLGSCRN_RES800     22
+#define DLGSCRN_RES1024    23
+#define DLGSCRN_BPP1       25
+#define DLGSCRN_BPP2       26
+#define DLGSCRN_BPP4       27
+#define DLGSCRN_ONCHANGE   30
+#define DLGSCRN_FPSPOPUP   32
+#define DLGSCRN_CAPTURE    33
+#define DLGSCRN_RECANIM    34
+#define DLGSCRN_EXIT       35
 
+#define ITEMS_IN_ARRAY(a) (sizeof(a)/sizeof(a[0]))
+
+/* needs to match Frame skip values in screendlg[]! */
+static const int skip_frames[] = { 0, 1, 2, 4, 8 };
 
 /* The screen dialog: */
 static SGOBJ screendlg[] =
@@ -56,7 +61,8 @@ static SGOBJ screendlg[] =
   { SGRADIOBUT, 0, 0, 17,6, 5,1, "Off" },
   { SGRADIOBUT, 0, 0, 24,6, 3,1, "1" },
   { SGRADIOBUT, 0, 0, 29,6, 3,1, "2" },
-  { SGRADIOBUT, 0, 0, 35,6, 3,1, "3" },
+  { SGRADIOBUT, 0, 0, 35,6, 3,1, "4" },
+  { SGRADIOBUT, 0, 0, 40,6, 3,1, "8" },
   { SGTEXT, 0, 0, 4,7, 8,1, "Monitor:" },
   { SGRADIOBUT, 0, 0, 14,7, 6,1, "Mono" },
   { SGRADIOBUT, 0, 0, 22,7, 5,1, "RGB" },
@@ -93,8 +99,8 @@ static SGOBJ screendlg[] =
 */
 void Dialog_ScreenDlg(void)
 {
-  int but;
-  int i;
+  int but, skip = 0;
+  unsigned int i;
 
   SDLGui_CenterDlg(screendlg);
 
@@ -120,9 +126,13 @@ void Dialog_ScreenDlg(void)
   else
     screendlg[DLGSCRN_ZOOMLOWRES].state &= ~SG_SELECTED;
 
-  for (i = DLGSCRN_SKIP0; i <= DLGSCRN_SKIP3; i++)
-    screendlg[i].state &= ~SG_SELECTED;
-  screendlg[DLGSCRN_SKIP0+DialogParams.Screen.FrameSkips].state |= SG_SELECTED;
+  for (i = 0; i < ITEMS_IN_ARRAY(skip_frames); i++)
+  {
+    if (DialogParams.Screen.FrameSkips >= skip_frames[i])
+      skip = i;
+    screendlg[i+DLGSCRN_SKIP0].state &= ~SG_SELECTED;
+  }
+  screendlg[DLGSCRN_SKIP0+skip].state |= SG_SELECTED;
 
   for (i = DLGSCRN_MONO; i <= DLGSCRN_TV; i++)
     screendlg[i].state &= ~SG_SELECTED;
@@ -206,7 +216,7 @@ void Dialog_ScreenDlg(void)
   {
     if (screendlg[i].state & SG_SELECTED)
     {
-      DialogParams.Screen.FrameSkips = i - DLGSCRN_SKIP0;
+      DialogParams.Screen.FrameSkips = skip_frames[i-DLGSCRN_SKIP0];
       break;
     }
   }
