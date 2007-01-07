@@ -1,0 +1,223 @@
+.\" Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH "HATARI" "1" "2006-12-31" "Hatari" ""
+.\" Please adjust this date whenever revising the manpage.
+
+.SH "NAME"
+Hatari \- emulateur Atari ST(e)
+.SH "SYNOPSIS"
+.B Hatari
+.RI  [options]
+.RI  [diskimage]
+.SH "DESCRIPTION"
+Hatari est un emulateur d'Atari ST(e) pour Linux, FreeBSD, BeOS ainsi
+que tout systemes d'exploitation supportant la bibliotheque SDL.
+
+.PP
+Avec Hatari vous pouvez lancer des jeux, demos ou des applications
+ecrites pour l'Atari ST ou STE.
+Il supporte egalement les images de disquettes les plus couramment
+utilisees a savoir *.st et *.msa. Il permet aussi l'emulation de
+disque dur.
+.PP
+Pour lancer l'emulateur une image ROM du TOS est requise. EmuTOS
+est une implementation libre du TOS fournie avec Hatari.
+Malheureusement cette derniere n'est pas entierement compatible avec
+le TOS original donc certains programmes risquent de ne pas
+fonctionner correctement. Pour cela, il est recommande d'utiliser
+une ROM TOS issue d'un veritable Atari.
+.SH "OPTIONS"
+.TP 
+.B \-h, \-\-help
+affiche les options de la ligne de commande
+.TP 
+.B \-v, \-\-version
+affiche les informations sur la version
+.TP 
+.B \-m, \-\-mono
+demarre l'emulation Atari ST en resolution monochrome
+.TP 
+.B \-f, \-\-fullscreen
+demarre l'emulateur en mode plein ecran
+.TP 
+.B \-w, \-\-window
+demarre l'emulateur en mode fenetre
+.TP 
+.B \-j, \-\-joystick <port>
+emule le joystick ST sur le <port> 0 ou 1 avec le clavier
+.TP 
+.B \-\-nosound
+desactive le son (rend l'emulation plus rapide)
+.TP 
+.B \-\-frameskip
+drop every second frame (accelerates emulation)
+.TP 
+.B \-D, \-\-debug
+active le deboggueur integre
+.TP 
+.B \-\-slowfdc
+attenue l'emulation du FDC (requis pour que certains jeux ou demos fonctionnent)
+.TP 
+.B \-d, \-\-harddrive <dir>
+utilise <dir> comme un disque dur emule
+.TP 
+.B \-\-hdimage <imagefile>
+emule un disque dur a partir d'un fichier image
+.TP 
+.B \-\-tos <imagefile>
+specifie une image ROM TOS a utiliser
+.TP 
+.B \-\-cartridge <imagefile>
+utilise une image ROM de cartouche <file> (fonctionne uniquement si
+l'emulation de disque dur et VDI etendue sont desactivee)
+.TP 
+.B \-s, \-\-memsize x
+fixe une quantite de memoire pour la RAM emulee
+.br 
+x=0 for 512K, and x=1, x=2 or x=4 for 1, 2 or 4 MB
+.TP 
+.B \-\-cpulevel x
+specifie un CPU (680x0) a utiliser (TOS 2.06 uniquement!!)
+.TP 
+.B \-\-compatible
+utilise le mode de compatibilite plus fidele mais plus lent
+que le mode 68000
+.TP 
+.B \-\-blitter
+active l'emulation du blitter
+.TP 
+.B \-\-vdi
+utilise une resolution VDI etendue
+.TP 
+.B \-\-printer
+active le support experimental de l'imprimante
+.TP 
+.B \-\-midi <filename>
+active la sortie MIDI experimentale vers un fichier
+mentionne par un nom
+.TP 
+.B \-\-rs232 <filename>
+active l'emulation experimentale du RS232 via un fichier/device
+nomme explicitement
+.TP 
+.B \-c, \-\-configfile <filename>
+utilise un fichier nomme explicitement comme fichier de configuration
+en lieu et place du ~/.hatari.cfg
+.TP 
+.B \-\-machine <x>
+selectionne un type de machine (x = st ou ste)
+.TP 
+.B \-\-keymap <file>
+charge un fichier de refinition du clavier de <file>
+.SH "COMMANDS"
+
+Les touches de raccourcis peuvent etre parametrees dans le fichier
+de configurations.
+Par defaut, les parametres sont:
+.TP
+.B AltGr + a
+enregistre l'animation
+.TP
+.B AltGr + g
+fait une capture d'ecran
+.TP
+.B AltGr + i
+touche patron: quitte le mode plein ecran et met la fenetre en icone
+.TP
+.B AltGr + j
+active l'emulation joystick via les touches de directions
+.TP
+.B AltGr + m
+(active/desactive) la souris dans la fenetre
+.TP
+.B AltGr + r
+eteint le ST (a chaud)
+.TP
+.B AltGr + c
+eteint le ST a froid (comme le bouton original d'allumage)
+.TP
+.B AltGr + s
+active/desactive le son
+.TP
+.B AltGr + q
+quitte l'emulateur
+.TP
+.B AltGr + x
+change la vitesse normale/maximum
+.TP
+.B AltGr + y
+active/desactive l'enregistrement du son
+.TP
+.B F11
+change le mode entre plein ecran et fenetre
+.TP
+.B F12 
+active les commandes GUI de Hatari
+.br
+Vous pouvez avoir besoin de tenir la touche SHIFT en mode fenetre.
+.TP
+.B Pause
+Ouvrira le deboggueur, s'il etait active avec l'option -\-debug
+.SH Clavier d'Atari ST emule
+Toutes les autres touches du clavier PC agissent comme celles de Atari ST
+donc si vous appuyez sur ESPACE sur votre PC il en resultera sur 
+le clavier d'Atari ST un appuis sur la touche ESPACE. Les touches suivantes
+ont une signification speciales :
+.TP
+.B  Alt
+Agira comme la touche ALTERNATE du clavier ST
+.TP
+.B  left Ctrl
+Agira comme la touche CONTROL du clavier ST
+.TP
+.B  Page Up
+Emulera la touche HELP du clavier ST
+.TP
+.B  Page Down
+Emulera la touche UNDO du clavier ST
+.PP
+.B AltGr
+Agira comme
+.B Alternate
+tel sauf si vous appuyez sur les touches speciales d'Hatari. 
+
+La touche
+.B right Ctrl
+est utilisee comme le bouton feu d'un joystick emule
+que vous aurez active precedement par l'emulation du joystick via
+les touches du clavier.
+
+Le touche de directions agiront comme les touches de directions sur
+l'Atari ST tant que l'emulation du joystick par le clavier est inactive.
+.SH "VOIR AUSSI"
+La documentation originale du programme, habituellement
+en /usr/share/doc/.
+.PP
+La page d'accueil d'Hatari : http://hatari.sourceforge.net
+
+.SH "FICHIERS"
+.TP
+/etc/hatari.cfg (ou /usr/local/etc/hatari.cfg)
+le fichier de configuration global d'Hatari
+.TP
+~/.hatari.cfg
+Le fichier de configuration de l'utilisateur personnel
+d'Hatari
+.TP
+tos.img
+L'image ROM du TOS qui sera charge a partir du repertoire de donnees d'Hatari
+si aucun argument n'est specifie sur la ligne de commande ou dans le fichier
+de configuration.
+
+.SH "AUTEURS"
+This manual page was written by Marco Herrn <marco@mherrn.de>, for the
+Debian project and later modified by Thomas Huth to suit the latest
+version of Hatari.
+Cette page du manuel a ete ecrite par Marco Herrn <marco@mherrn.de>,
+pour le projet Debian et modifiee par la suite par Thomas Huth pour les
+versions plus recentes d'Hatari
+
+.SH "TRADUCTEUR"
+Benoît TUDURI <skweek@users.sourceforge.net>
