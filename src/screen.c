@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.59 2007-01-06 10:47:44 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.60 2007-01-09 00:07:07 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -578,6 +578,13 @@ void Screen_ModeChanged(void)
   if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
   {
     VIDEL_ZoomModeChanged();
+    return;
+  }
+  else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+  {
+    int width, height, bpp;
+    Video_GetTTRes(&width, &height, &bpp);
+    HostScreen_setWindowSize(width, height, 8);
     return;
   }
 #endif

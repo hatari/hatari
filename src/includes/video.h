@@ -77,6 +77,7 @@ extern int nCyclesPerLine;
 
 extern void Video_Reset(void);
 extern void Video_MemorySnapShot_Capture(BOOL bSave);
+extern void Video_GetTTRes(int *width, int *height, int *bpp);
 extern void Video_StartInterrupts(void);
 extern void Video_InterruptHandler_VBL(void);
 extern void Video_InterruptHandler_EndLine(void);

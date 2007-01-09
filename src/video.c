@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.62 2007-01-06 10:47:44 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.63 2007-01-09 00:07:07 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -716,6 +716,27 @@ static void Video_ClearOnVBL(void)
 }
 
 
+/*-----------------------------------------------------------------------*/
+/*
+  Get width, height and bpp according to TT-Resolution
+*/
+void Video_GetTTRes(int *width, int *height, int *bpp)
+{
+  switch (nTTRes)
+  {
+    case 0: *width = 320; *height = 200; *bpp = 4; break;
+    case 1: *width = 640; *height = 200; *bpp = 2; break;
+    case 2: *width = 640; *height = 400; *bpp = 1; break;
+    case 4: *width = 640; *height = 480; *bpp = 4; break;
+    case 6: *width = 1280; *height = 960; *bpp = 1; break;
+    case 7: *width = 320; *height = 480; *bpp = 8; break;
+    default:
+      fprintf(stderr, "TT res error!\n");
+      *width = 320; *height = 200; *bpp = 4;
+      break;
+  }
+}
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -743,22 +764,16 @@ static void Video_DrawScreen(void)
   {
     static int nPrevTTRes = -1;
     int width, height, bpp;
-    switch (nTTRes)
-    {
-      case 0: width = 320; height = 200; bpp = 4; break;
-      case 1: width = 640; height = 200; bpp = 2; break;
-      case 2: width = 640; height = 400; bpp = 1; break;
-      case 4: width = 640; height = 480; bpp = 4; break;
-      case 6: width = 1280; height = 960; bpp = 1; break;
-      case 7: width = 320; height = 480; bpp = 8; break;
-      default: fprintf(stderr, "TT res error!\n"); width = 320; height = 200; bpp = 4; break;
-    }
+    Video_GetTTRes(&width, &height, &bpp);
     if (nTTRes != nPrevTTRes)
     {
       HostScreen_setWindowSize(width, height, 8);
     }
     /* Yes, we are abusing the Videl routines for rendering the TT modes! */
-    VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);
+    if (ConfigureParams.Screen.bZoomLowRes)
+      VIDEL_ConvertScreenZoom(width, height, bpp, width * bpp / 16);
+    else
+      VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);
     HostScreen_update1( FALSE );
     nPrevTTRes = nTTRes;
   }
