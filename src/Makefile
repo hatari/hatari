@@ -54,6 +54,9 @@ ALLOBJS = $(OBJS) $(GUIOBJS) $(CPUOBJS) $(FALCOBJS)
 ifeq ($(SYS_WINDOWS),1)
   ALLOBJS += $(GUIWINOBJS)
 endif
+ifneq ($(strip $(shell gcc -v 2>&1 |grep "cygwin")),)
+  ALLOBJS += $(GUIWINOBJS)
+endif 
 
 
 all: hatari
