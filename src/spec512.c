@@ -18,7 +18,7 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.17 2006-12-18 20:19:05 thothy Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.18 2007-01-11 23:01:07 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -146,7 +146,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	/* Check if program wrote to palette registers multiple times on a frame. */
 	/* If so it must be using a spec512 image or some kind of color cycling. */
 	nPalettesAccesses++;
-	if (nPalettesAccesses >= 200*2)
+	if (nPalettesAccesses >= 128)
 	{
 		bIsSpec512Display = TRUE;
 	}
