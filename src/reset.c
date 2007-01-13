@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.19 2006-12-10 21:00:51 thothy Exp $";
+const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.20 2007-01-13 10:00:23 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -26,6 +26,7 @@ const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.19 2006-12-10 21:00:51 thoth
 #include "sound.h"
 #include "stMemory.h"
 #include "tos.h"
+#include "vdi.h"
 #include "video.h"
 #include "falcon/videl.h"
 
@@ -66,7 +67,7 @@ static int Reset_ST(BOOL bCold)
   Sound_Reset();                /* Reset Sound */
   IKBD_Reset(bCold);            /* Keyboard */
 #if ENABLE_FALCON
-  if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+  if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
     VIDEL_reset();
   else
 #endif

@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.60 2007-01-09 00:07:07 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.61 2007-01-13 10:00:24 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -493,7 +493,8 @@ void Screen_EnterFullScreen(void)
     bInFullScreen = TRUE;
 
 #if ENABLE_FALCON
-    if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+    if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
+         || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
     {
       HostScreen_toggleFullScreen();
     }
@@ -524,7 +525,8 @@ void Screen_ReturnFromFullScreen(void)
     bInFullScreen = FALSE;
 
 #if ENABLE_FALCON
-    if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+    if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
+         || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
     {
       HostScreen_toggleFullScreen();
       if (!bGrabMouse)
@@ -575,12 +577,12 @@ void Screen_ModeChanged(void)
   }
 #if ENABLE_FALCON
   /* Don't run this function if Videl emulation is running! */
-  if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+  if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
   {
     VIDEL_ZoomModeChanged();
     return;
   }
-  else if (ConfigureParams.System.nMachineType == MACHINE_TT)
+  else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
   {
     int width, height, bpp;
     Video_GetTTRes(&width, &height, &bpp);
