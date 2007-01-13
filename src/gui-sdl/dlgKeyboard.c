@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.8 2006-12-19 10:55:34 thothy Exp $";
+const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.9 2007-01-13 11:57:41 thothy Exp $";
 
 #include <unistd.h>
 
@@ -36,7 +36,7 @@ static SGOBJ keyboarddlg[] =
   { SGTEXT, 0, 0, 2,7, 13,1, "Mapping file:" },
   { SGTEXT, 0, 0, 2,8, 36,1, NULL },
   { SGBUTTON, 0, 0, 32,7, 6,1, "Browse" },
-  { SGBUTTON, 0, 0, 10,10, 20,1, "Back to main menu" },
+  { SGBUTTON, SG_DEFAULT, 0, 10,10, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 

@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.15 2006-12-19 10:55:34 thothy Exp $";
+const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.16 2007-01-13 11:57:41 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -74,7 +74,7 @@ static SGOBJ diskdlg[] =
   { SGTEXT, 0, 0, 3,18, 58,1, NULL },
   { SGCHECKBOX, 0, 0, 2,20, 14,1, "Boot from HD" },
 
-  { SGBUTTON, 0, 0, 22,23, 20,1, "Back to main menu" },
+  { SGBUTTON, SG_DEFAULT, 0, 22,23, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 

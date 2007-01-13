@@ -6,7 +6,7 @@
 
   Show information about the program and its license.
 */
-const char DlgAbout_rcsid[] = "Hatari $Id: dlgAbout.c,v 1.6 2006-02-08 22:46:10 eerot Exp $";
+const char DlgAbout_rcsid[] = "Hatari $Id: dlgAbout.c,v 1.7 2007-01-13 11:57:41 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -33,7 +33,7 @@ static SGOBJ aboutdlg[] =
 	{ SGTEXT, 0, 0, 1,18, 38,1, "hope that it will be useful, but" },
 	{ SGTEXT, 0, 0, 1,19, 38,1, "WITHOUT ANY WARRANTY. See the GNU Ge-" },
 	{ SGTEXT, 0, 0, 1,20, 38,1, "neral Public License for more details." },
-	{ SGBUTTON, 0, 0, 16,23, 8,1, "Okay" },
+	{ SGBUTTON, SG_DEFAULT, 0, 16,23, 8,1, "Okay" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 

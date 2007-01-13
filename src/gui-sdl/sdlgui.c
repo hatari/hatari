@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.14 2006-12-19 10:55:34 thothy Exp $";
+const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.15 2007-01-13 11:57:41 thothy Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -566,6 +566,25 @@ static int SDLGui_FindObj(const SGOBJ *dlg, int fx, int fy)
 
 /*-----------------------------------------------------------------------*/
 /*
+  Search the default button in a dialog.
+*/
+static int SDLGui_SearchDefaultButton(const SGOBJ *dlg)
+{
+  int i = 0;
+
+  while (dlg[i].type != -1)
+  {
+    if (dlg[i].flags & SG_DEFAULT)
+      return i;
+    i++;
+  }
+
+  return 0;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
   Show and process a dialog. Returns the button number that has been
   pressed or SDLGUI_UNKNOWNEVENT if an unsupported event occured (will be
   stored in parameter pEventOut).
@@ -754,6 +773,18 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
           break;
 
         case SDL_MOUSEMOTION:
+          break;
+
+        case SDL_KEYDOWN:                     /* Key pressed */
+          if (sdlEvent.key.keysym.sym == SDLK_RETURN
+              || sdlEvent.key.keysym.sym == SDLK_KP_ENTER)
+          {
+            retbutton = SDLGui_SearchDefaultButton(dlg);
+          }
+          else if (pEventOut)
+          {
+            retbutton = SDLGUI_UNKNOWNEVENT;
+          }
           break;
 
         default:

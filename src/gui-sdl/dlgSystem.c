@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.8 2006-10-03 09:59:51 thothy Exp $";
+const char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.9 2007-01-13 11:57:41 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -64,7 +64,7 @@ static SGOBJ systemdlg[] =
 	{ SGCHECKBOX, 0, 0, 2,18, 15,1, "Patch Timer-D" },
 	{ SGCHECKBOX, 0, 0, 2,19, 25,1, "Slow down FDC emulation" },
 
-	{ SGBUTTON, 0, 0, 8,21, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 8,21, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 

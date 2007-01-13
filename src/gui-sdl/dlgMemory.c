@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.10 2006-12-19 10:55:34 thothy Exp $";
+const char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.11 2007-01-13 11:57:41 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -51,7 +51,7 @@ static SGOBJ memorydlg[] =
   { SGBUTTON, 0, 0, 8,15, 10,1, "Save" },
   { SGBUTTON, 0, 0, 22,15, 10,1, "Restore" },
 
-  { SGBUTTON, 0, 0, 10,19, 20,1, "Back to main menu" },
+  { SGBUTTON, SG_DEFAULT, 0, 10,19, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 

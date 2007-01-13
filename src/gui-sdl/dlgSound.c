@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.7 2006-12-19 10:55:34 thothy Exp $";
+const char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.8 2007-01-13 11:57:41 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -44,7 +44,7 @@ SGOBJ sounddlg[] =
   { SGTEXT, 0, 0, 2,17, 34,1, dlgRecordName },
   { SGBUTTON, 0, 0, 30,16, 6,1, "Browse" },
   { SGBUTTON, 0, 0, 12,19, 16,1, NULL },
-  { SGBUTTON, 0, 0, 10,22, 20,1, "Back to main menu" },
+  { SGBUTTON, SG_DEFAULT, 0, 10,22, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 

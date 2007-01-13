@@ -6,7 +6,7 @@
 
   Device (Printer etc.) setup dialog
 */
-const char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.10 2006-12-19 10:55:34 thothy Exp $";
+const char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.11 2007-01-13 11:57:41 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -63,7 +63,7 @@ static SGOBJ devicedlg[] =
  	{ SGBUTTON, 0, 0, 42,17, 8,1, "Browse" },
  	{ SGTEXT, 0, 0, 3,18, 46,1, dlgMidiOutName },
 
- 	{ SGBUTTON, 0, 0, 16,20, 20,1, "Back to main menu" },
+ 	{ SGBUTTON, SG_DEFAULT, 0, 16,20, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 

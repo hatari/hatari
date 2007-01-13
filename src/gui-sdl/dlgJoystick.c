@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.10 2006-12-19 10:55:34 thothy Exp $";
+const char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.11 2007-01-13 11:57:41 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -53,7 +53,7 @@ static SGOBJ joydlg[] =
 	{ SGBUTTON, 0, 0, 1,3, 3,1, "\x04" },         /* Arrow left */
 	{ SGBUTTON, 0, 0, 28,3, 3,1, "\x03" },        /* Arrow right */
 
-	{ SGBUTTON, 0, 0, 6,16, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 6,16, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 

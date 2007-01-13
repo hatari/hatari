@@ -16,7 +16,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License (gpl.txt) for more details.
  */
-const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.5 2006-07-03 20:36:28 clafou Exp $";
+const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.6 2007-01-13 11:57:41 thothy Exp $";
 
 #include <string.h>
 
@@ -50,7 +50,7 @@ static SGOBJ alertdlg[] =
 	{ SGTEXT, 0, 0, 1,2, 50,1, dlglines[1] },
 	{ SGTEXT, 0, 0, 1,3, 50,1, dlglines[2] },
 	{ SGTEXT, 0, 0, 1,4, 50,1, dlglines[3] },
-	{ SGBUTTON, 0, 0, 5,5, 8,1, "OK" },
+	{ SGBUTTON, SG_DEFAULT, 0, 5,5, 8,1, "OK" },
 	{ SGBUTTON, 0, 0, 24,5, 8,1, "Cancel" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
@@ -122,6 +122,7 @@ static int DlgAlert_ShowDlg(const char *text)
 	int lines;
 	int i;
 	BOOL bOldMouseVisibility;
+	int nOldMouseX, nOldMouseY;
 
 	strcpy(t, text);
 	lines = DlgAlert_FormatTextToBox(t, maxlen);
@@ -145,12 +146,15 @@ static int DlgAlert_ShowDlg(const char *text)
 		return FALSE;
 	SDLGui_CenterDlg(alertdlg);
 
+	SDL_GetMouseState(&nOldMouseX, &nOldMouseY);
 	bOldMouseVisibility = SDL_ShowCursor(SDL_QUERY);
 	SDL_ShowCursor(SDL_ENABLE);
 
 	i = SDLGui_DoDialog(alertdlg, NULL);
 
+	SDL_UpdateRect(sdlscrn, 0,0, 0,0);
 	SDL_ShowCursor(bOldMouseVisibility);
+	Main_WarpMouse(nOldMouseX, nOldMouseY);
 
 	return (i == DLGALERT_OK);
 }

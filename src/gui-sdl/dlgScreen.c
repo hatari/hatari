@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.11 2007-01-07 21:42:37 eerot Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.12 2007-01-13 11:57:41 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -88,7 +88,7 @@ static SGOBJ screendlg[] =
   { SGBUTTON, 0, 0, 6,20, 16,1, "Capture screen" },
   { SGBUTTON, 0, 0, 26,20, 18,1, NULL },
 
-  { SGBUTTON, 0, 0, 15,23, 20,1, "Back to main menu" },
+  { SGBUTTON, SG_DEFAULT, 0, 15,23, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
 

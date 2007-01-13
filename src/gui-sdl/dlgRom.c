@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.7 2006-12-19 10:55:34 thothy Exp $";
+const char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.8 2007-01-13 11:57:41 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -37,7 +37,7 @@ static SGOBJ romdlg[] =
 	{ SGBUTTON, 0, 0, 42,14, 8,1, "Browse" },
 	{ SGTEXT, 0, 0, 2,16, 46,1, NULL },
 	{ SGTEXT, 0, 0, 2,19, 25,1, "A reset is needed after changing these options." },
-	{ SGBUTTON, 0, 0, 16,21, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 16,21, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
