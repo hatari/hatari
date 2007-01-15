@@ -10,8 +10,8 @@
 
 typedef signed char BOOL;
 
-#define PROG_NAME      "Hatari v0.91" /* Name, version for window title */
-#define PROG_VERSION   "v0.91"
+#define PROG_NAME      "Hatari v0.92" /* Name, version for window title */
+#define PROG_VERSION   "v0.92"
 
 
 #include <stdio.h>
