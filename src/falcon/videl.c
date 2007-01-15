@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.11 2007-01-09 00:07:07 thothy Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.12 2007-01-15 13:50:36 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -309,6 +309,8 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 	uint16 *fvram = (uint16 *) Atari2HostAddr(atariVideoRAM);
 	uint8 *hvram = HostScreen_getVideoramAddress();
 
+	int hscrolloffset = (handleRead(HW + 0x65) & 0x0f);
+
 	/* Clip to SDL_Surface dimensions */
 	int scrwidth = HostScreen_getWidth();
 	int scrheight = HostScreen_getHeight();
@@ -318,7 +320,7 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 	if (vh>scrheight) vh_clip = scrheight;	
 
 	/* Horizontal scroll register set? */
-	if (handleRead(HW + 0x65) & 0x0f) {
+	if (hscrolloffset) {
 		/* Yes, so we need to adjust offset to next line: */
 		nextline += vbpp;
 	}
@@ -347,13 +349,22 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 						uint8 *hvram_column = hvram_line;
 						int w;
 
-						for (w = 0; w < (vw_clip+15)>>4; w++) {
+						/* First 16 pixels: */
+						HostScreen_bitplaneToChunky(fvram_column, vbpp, color);
+						memcpy(hvram_column, color+hscrolloffset, 16-hscrolloffset);
+						hvram_column += 16-hscrolloffset;
+						fvram_column += vbpp;
+						/* Now the main part of the line: */
+						for (w = 1; w < (vw_clip+15)>>4; w++) {
 							HostScreen_bitplaneToChunky( fvram_column, vbpp, color );
-
 							memcpy(hvram_column, color, 16);
-
 							hvram_column += 16;
 							fvram_column += vbpp;
+						}
+						/* Last pixels of the line for fine scrolling: */
+						if (hscrolloffset) {
+							HostScreen_bitplaneToChunky(fvram_column, vbpp, color);
+							memcpy(hvram_column, color, hscrolloffset);
 						}
 
 						hvram_line += scrpitch;
@@ -602,8 +613,10 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 	int scrbpp = HostScreen_getBpp();
 	uint8 *hvram = (uint8 *) HostScreen_getVideoramAddress();
 
+	int hscrolloffset = (handleRead(HW + 0x65) & 0x0f);
+
 	/* Horizontal scroll register set? */
-	if (handleRead(HW + 0x65) & 0x0f) {
+	if (hscrolloffset) {
 		/* Yes, so we need to adjust offset to next line: */
 		nextline += vbpp;
 	}
@@ -670,16 +683,24 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 							uint16 *fvram_column = fvram_line;
 							uint8 *hvram_column = p2cline;
 
-							/* Convert a new line */
-							for (w=0; w < (vw+15)>>4; w++) {
+							/* First 16 pixels of a new line */
+							HostScreen_bitplaneToChunky(fvram_column, vbpp, color);
+							memcpy(hvram_column, color+hscrolloffset, 16-hscrolloffset);
+							hvram_column += 16-hscrolloffset;
+							fvram_column += vbpp;
+							/* Convert main part of the new line */
+							for (w=1; w < (vw+15)>>4; w++) {
 								HostScreen_bitplaneToChunky( fvram_column, vbpp, color );
-
 								memcpy(hvram_column, color, 16);
-
 								hvram_column += 16;
 								fvram_column += vbpp;
 							}
-							
+							/* Last pixels of the line for fine scrolling: */
+							if (hscrolloffset) {
+								HostScreen_bitplaneToChunky(fvram_column, vbpp, color);
+								memcpy(hvram_column, color, hscrolloffset);
+							}
+
 							/* Zoom a new line */
 							for (w=0; w<scrwidth; w++) {
 								hvram_line[w] = p2cline[zoomxtable[w]];
