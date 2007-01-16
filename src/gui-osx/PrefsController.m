@@ -7,6 +7,7 @@
   Preferences window controller implementation file
 
   Feb-Mar 2006, Sébastien Molines - Created
+  Jan 2006, Sébastien Molines - Updated for recent emulator updates
 */
 
 // TODO: Set the default paths to MacOS-friendly values
@@ -253,37 +254,6 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 
 /*-----------------------------------------------------------------------*/
 /*
-  Helper function to convert display bits to a display mode number
-*/
-int DisplayModeFromFlags(BOOL zoomSTLowRes, BOOL force8bpp)
-{
-    if (zoomSTLowRes)
-    {
-        return (force8bpp)? DISPLAYMODE_LOWCOL_HIGHRES : DISPLAYMODE_HICOL_HIGHRES;
-    }
-    else
-    {
-        return (force8bpp)? DISPLAYMODE_LOWCOL_LOWRES : DISPLAYMODE_HICOL_LOWRES;
-    }
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
-  Helper function to convert a display mode number to display bits
-*/
-void DisplayModeToFlags(int chosenDisplayMode, BOOL *pZoomSTLowRes, BOOL *pForce8bpp)
-{
-    *pZoomSTLowRes = (  (chosenDisplayMode == DISPLAYMODE_LOWCOL_HIGHRES)
-                     ||(chosenDisplayMode == DISPLAYMODE_HICOL_HIGHRES) );
-            
-    *pForce8bpp = (  (chosenDisplayMode == DISPLAYMODE_LOWCOL_LOWRES)
-                  ||(chosenDisplayMode == DISPLAYMODE_LOWCOL_HIGHRES) );
-}
-
-
-/*-----------------------------------------------------------------------*/
-/*
   Methods for all the "Choose" buttons
 */
 - (IBAction)chooseCartridgeImage:(id)sender;
@@ -521,10 +491,6 @@ void DisplayModeToFlags(int chosenDisplayMode, BOOL *pZoomSTLowRes, BOOL *pForce
 */
 - (void)setAllControls
 {
-	// Get the display mode flags
-	BOOL bZoomSTLowRes, bForce8bpp;
-	DisplayModeToFlags(DialogParams.Screen.ChosenDisplayMode, &bZoomSTLowRes, &bForce8bpp);
-
 	// Import the floppy paths into their controls.
 	// Note: Floppy images are exposed in the prefs dialog, however they aren't stored with the prefs and won't need to be saved on exit.
 	IMPORT_TEXTFIELD(floppyImageA, EmulationDrives[0].szFileName); 
@@ -545,13 +511,12 @@ void DisplayModeToFlags(int chosenDisplayMode, BOOL *pZoomSTLowRes, BOOL *pForce
     IMPORT_SWITCH(enablePrinter, DialogParams.Printer.bEnablePrinting);
     IMPORT_SWITCH(enableRS232, DialogParams.RS232.bEnableRS232);
     IMPORT_SWITCH(enableSound, DialogParams.Sound.bEnableSound);
-    IMPORT_SWITCH(force8bpp, bForce8bpp);
-    IMPORT_SWITCH(frameSkip, DialogParams.Screen.bFrameSkip);
-    IMPORT_SWITCH(interleaved, DialogParams.Screen.bInterleavedScreen);
+    IMPORT_SWITCH(force8bpp, DialogParams.Screen.bForce8Bpp);
+    IMPORT_DROPDOWN(frameSkip, DialogParams.Screen.FrameSkips);
     IMPORT_RADIO(keyboardMapping, DialogParams.Keyboard.nKeymapType);
     IMPORT_TEXTFIELD(keyboardMappingFile, DialogParams.Keyboard.szMappingFileName);
     IMPORT_RADIO(machineType, DialogParams.System.nMachineType);
-    IMPORT_RADIO(monitor, DialogParams.Screen.bUseHighRes);
+    IMPORT_RADIO(monitor, DialogParams.Screen.MonitorType);
     IMPORT_SWITCH(patchTimerD, DialogParams.System.bPatchTimerD);
     IMPORT_RADIO(playbackQuality, DialogParams.Sound.nPlaybackQuality);
     IMPORT_TEXTFIELD(printToFile, DialogParams.Printer.szPrintToFileName);
@@ -566,7 +531,7 @@ void DisplayModeToFlags(int chosenDisplayMode, BOOL *pZoomSTLowRes, BOOL *pForce
     IMPORT_TEXTFIELD(writeMidiToFile, DialogParams.Midi.szMidiOutFileName);
 	IMPORT_RADIO(writeProtection, DialogParams.DiskImage.nWriteProtection);
     IMPORT_TEXTFIELD(writeRS232ToFile, DialogParams.RS232.szOutFileName);
-    IMPORT_SWITCH(zoomSTLowRes, bZoomSTLowRes);
+    IMPORT_SWITCH(zoomSTLowRes, DialogParams.Screen.bZoomLowRes);
 	
 	// If the HD flag is set, load the HD path, otherwise make it blank
 	if (DialogParams.HardDisk.bUseHardDiskImage)
@@ -684,8 +649,6 @@ void DisplayModeToFlags(int chosenDisplayMode, BOOL *pZoomSTLowRes, BOOL *pForce
 */
 - (void)saveAllControls
 {
-	BOOL bZoomSTLowRes, bForce8bpp;
-
 	// Export the preference controls into their vars
 	EXPORT_SWITCH(autoInsertB, DialogParams.DiskImage.bAutoInsertDiskB);
     EXPORT_SWITCH(blitter, DialogParams.System.bBlitter);
@@ -701,13 +664,12 @@ void DisplayModeToFlags(int chosenDisplayMode, BOOL *pZoomSTLowRes, BOOL *pForce
     EXPORT_SWITCH(enablePrinter, DialogParams.Printer.bEnablePrinting);
     EXPORT_SWITCH(enableRS232, DialogParams.RS232.bEnableRS232);
     EXPORT_SWITCH(enableSound, DialogParams.Sound.bEnableSound);
-    EXPORT_SWITCH(force8bpp, bForce8bpp);
-    EXPORT_SWITCH(frameSkip, DialogParams.Screen.bFrameSkip);
-    EXPORT_SWITCH(interleaved, DialogParams.Screen.bInterleavedScreen);
+    EXPORT_SWITCH(force8bpp, DialogParams.Screen.bForce8Bpp);
+    EXPORT_DROPDOWN(frameSkip, DialogParams.Screen.FrameSkips);
     EXPORT_RADIO(keyboardMapping, DialogParams.Keyboard.nKeymapType);
     EXPORT_TEXTFIELD(keyboardMappingFile, DialogParams.Keyboard.szMappingFileName);
     EXPORT_RADIO(machineType, DialogParams.System.nMachineType);
-    EXPORT_RADIO(monitor, DialogParams.Screen.bUseHighRes);
+    EXPORT_RADIO(monitor, DialogParams.Screen.MonitorType);
     EXPORT_SWITCH(patchTimerD, DialogParams.System.bPatchTimerD);
     EXPORT_RADIO(playbackQuality, DialogParams.Sound.nPlaybackQuality);
     EXPORT_TEXTFIELD(printToFile, DialogParams.Printer.szPrintToFileName);
@@ -722,11 +684,8 @@ void DisplayModeToFlags(int chosenDisplayMode, BOOL *pZoomSTLowRes, BOOL *pForce
     EXPORT_TEXTFIELD(writeMidiToFile, DialogParams.Midi.szMidiOutFileName);
 	EXPORT_RADIO(writeProtection, DialogParams.DiskImage.nWriteProtection);
     EXPORT_TEXTFIELD(writeRS232ToFile, DialogParams.RS232.szOutFileName);
-    EXPORT_SWITCH(zoomSTLowRes, bZoomSTLowRes);	
+    EXPORT_SWITCH(zoomSTLowRes, DialogParams.Screen.bZoomLowRes);	
 	
-	// Set the display mode based on the display flags
-	DialogParams.Screen.ChosenDisplayMode = DisplayModeFromFlags(bZoomSTLowRes, bForce8bpp);
-
 	// Define the HD flag, and export the HD path if one is selected
 	if ([[hdImage stringValue] length] > 0)
 	{

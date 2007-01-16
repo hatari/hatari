@@ -61,10 +61,9 @@
                 floppyImageA = NSTextField; 
                 floppyImageB = NSTextField; 
                 force8bpp = NSButton; 
-                frameSkip = NSButton; 
+                frameSkip = NSPopUpButton; 
                 gemdosImage = NSTextField; 
                 hdImage = NSTextField; 
-                interleaved = NSButton; 
                 joystickDown = NSPopUpButton; 
                 joystickFire = NSPopUpButton; 
                 joystickLeft = NSPopUpButton; 

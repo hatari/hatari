@@ -7,6 +7,31 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		961322D70B5BCDB900007C3E /* acsite.m4 in Resources */ = {isa = PBXBuildFile; fileRef = 961322D20B5BCDB900007C3E /* acsite.m4 */; };
+		961322D80B5BCDB900007C3E /* config-default.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322D30B5BCDB900007C3E /* config-default.h */; };
+		961322D90B5BCDB900007C3E /* config-MinGW.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322D40B5BCDB900007C3E /* config-MinGW.h */; };
+		961322DA0B5BCDB900007C3E /* Makefile-default.cnf in Resources */ = {isa = PBXBuildFile; fileRef = 961322D50B5BCDB900007C3E /* Makefile-default.cnf */; };
+		961322DB0B5BCDB900007C3E /* Makefile-MinGW.cnf in Resources */ = {isa = PBXBuildFile; fileRef = 961322D60B5BCDB900007C3E /* Makefile-MinGW.cnf */; };
+		961322E70B5BCFBB00007C3E /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322E60B5BCFBB00007C3E /* config.h */; };
+		961322FB0B5BD0B800007C3E /* araglue.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322EF0B5BD0B800007C3E /* araglue.h */; };
+		961322FC0B5BD0B800007C3E /* dsp_cpu.c in Sources */ = {isa = PBXBuildFile; fileRef = 961322F00B5BD0B800007C3E /* dsp_cpu.c */; };
+		961322FD0B5BD0B800007C3E /* dsp_cpu.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322F10B5BD0B800007C3E /* dsp_cpu.h */; };
+		961322FE0B5BD0B800007C3E /* dsp_disasm.c in Sources */ = {isa = PBXBuildFile; fileRef = 961322F20B5BD0B800007C3E /* dsp_disasm.c */; };
+		961322FF0B5BD0B800007C3E /* dsp_disasm.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322F30B5BD0B800007C3E /* dsp_disasm.h */; };
+		961323000B5BD0B800007C3E /* dsp.c in Sources */ = {isa = PBXBuildFile; fileRef = 961322F40B5BD0B800007C3E /* dsp.c */; };
+		961323010B5BD0B800007C3E /* dsp.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322F50B5BD0B800007C3E /* dsp.h */; };
+		961323020B5BD0B800007C3E /* hostscreen.c in Sources */ = {isa = PBXBuildFile; fileRef = 961322F60B5BD0B800007C3E /* hostscreen.c */; };
+		961323030B5BD0B800007C3E /* hostscreen.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322F70B5BD0B800007C3E /* hostscreen.h */; };
+		961323050B5BD0B800007C3E /* videl.c in Sources */ = {isa = PBXBuildFile; fileRef = 961322F90B5BD0B800007C3E /* videl.c */; };
+		961323060B5BD0B800007C3E /* videl.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322FA0B5BD0B800007C3E /* videl.h */; };
+		9613230C0B5BD14B00007C3E /* ioMemTabFalcon.c in Sources */ = {isa = PBXBuildFile; fileRef = 961323070B5BD14B00007C3E /* ioMemTabFalcon.c */; };
+		9613230D0B5BD14B00007C3E /* ioMemTabST.c in Sources */ = {isa = PBXBuildFile; fileRef = 961323080B5BD14B00007C3E /* ioMemTabST.c */; };
+		9613230E0B5BD14B00007C3E /* ioMemTabSTE.c in Sources */ = {isa = PBXBuildFile; fileRef = 961323090B5BD14B00007C3E /* ioMemTabSTE.c */; };
+		9613230F0B5BD14B00007C3E /* ioMemTabTT.c in Sources */ = {isa = PBXBuildFile; fileRef = 9613230A0B5BD14B00007C3E /* ioMemTabTT.c */; };
+		961323100B5BD14B00007C3E /* nvram.c in Sources */ = {isa = PBXBuildFile; fileRef = 9613230B0B5BD14B00007C3E /* nvram.c */; };
+		961323130B5BD17700007C3E /* ide.h in Headers */ = {isa = PBXBuildFile; fileRef = 961323110B5BD17700007C3E /* ide.h */; };
+		961323140B5BD17700007C3E /* nvram.h in Headers */ = {isa = PBXBuildFile; fileRef = 961323120B5BD17700007C3E /* nvram.h */; };
+		961323300B5BD66600007C3E /* ide.c in Sources */ = {isa = PBXBuildFile; fileRef = 9613232F0B5BD66600007C3E /* ide.c */; };
 		9670E1100A5FA132009A73E0 /* SDLMain.h in Headers */ = {isa = PBXBuildFile; fileRef = F5A47A9D01A0482F01D3D55B /* SDLMain.h */; };
 		9670E1110A5FA132009A73E0 /* font10x16.h in Headers */ = {isa = PBXBuildFile; fileRef = E9283E9607512EA200DA6B24 /* font10x16.h */; };
 		9670E1120A5FA132009A73E0 /* font5x8.h in Headers */ = {isa = PBXBuildFile; fileRef = E9283E9807512EA200DA6B24 /* font5x8.h */; };
@@ -150,7 +175,6 @@
 		9670E19E0A5FA132009A73E0 /* cpudefs.c in Sources */ = {isa = PBXBuildFile; fileRef = E9987A7B075135D6007DC37B /* cpudefs.c */; };
 		9670E19F0A5FA132009A73E0 /* cpustbl.c in Sources */ = {isa = PBXBuildFile; fileRef = E9987A7C075135D6007DC37B /* cpustbl.c */; };
 		9670E1A00A5FA132009A73E0 /* ioMem.c in Sources */ = {isa = PBXBuildFile; fileRef = E99035B107E8C909000E7CD7 /* ioMem.c */; };
-		9670E1A10A5FA132009A73E0 /* ioMemTables.c in Sources */ = {isa = PBXBuildFile; fileRef = E99035B207E8C909000E7CD7 /* ioMemTables.c */; };
 		9670E1A20A5FA132009A73E0 /* log.c in Sources */ = {isa = PBXBuildFile; fileRef = E9933BC20802F0F800E20172 /* log.c */; };
 		9670E1A30A5FA132009A73E0 /* dmaSnd.c in Sources */ = {isa = PBXBuildFile; fileRef = E930274E08EC5CD0000FB60E /* dmaSnd.c */; };
 		9670E1A40A5FA132009A73E0 /* cycles.c in Sources */ = {isa = PBXBuildFile; fileRef = 9652821A0998134C00BE6A34 /* cycles.c */; };
@@ -181,6 +205,31 @@
 		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
+		961322D20B5BCDB900007C3E /* acsite.m4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = acsite.m4; sourceTree = "<group>"; };
+		961322D30B5BCDB900007C3E /* config-default.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "config-default.h"; sourceTree = "<group>"; };
+		961322D40B5BCDB900007C3E /* config-MinGW.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "config-MinGW.h"; sourceTree = "<group>"; };
+		961322D50B5BCDB900007C3E /* Makefile-default.cnf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Makefile-default.cnf"; sourceTree = "<group>"; };
+		961322D60B5BCDB900007C3E /* Makefile-MinGW.cnf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Makefile-MinGW.cnf"; sourceTree = "<group>"; };
+		961322E60B5BCFBB00007C3E /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
+		961322EF0B5BD0B800007C3E /* araglue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = araglue.h; path = src/falcon/araglue.h; sourceTree = "<group>"; };
+		961322F00B5BD0B800007C3E /* dsp_cpu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dsp_cpu.c; path = src/falcon/dsp_cpu.c; sourceTree = "<group>"; };
+		961322F10B5BD0B800007C3E /* dsp_cpu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dsp_cpu.h; path = src/falcon/dsp_cpu.h; sourceTree = "<group>"; };
+		961322F20B5BD0B800007C3E /* dsp_disasm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dsp_disasm.c; path = src/falcon/dsp_disasm.c; sourceTree = "<group>"; };
+		961322F30B5BD0B800007C3E /* dsp_disasm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dsp_disasm.h; path = src/falcon/dsp_disasm.h; sourceTree = "<group>"; };
+		961322F40B5BD0B800007C3E /* dsp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dsp.c; path = src/falcon/dsp.c; sourceTree = "<group>"; };
+		961322F50B5BD0B800007C3E /* dsp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dsp.h; path = src/falcon/dsp.h; sourceTree = "<group>"; };
+		961322F60B5BD0B800007C3E /* hostscreen.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hostscreen.c; path = src/falcon/hostscreen.c; sourceTree = "<group>"; };
+		961322F70B5BD0B800007C3E /* hostscreen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hostscreen.h; path = src/falcon/hostscreen.h; sourceTree = "<group>"; };
+		961322F90B5BD0B800007C3E /* videl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = videl.c; path = src/falcon/videl.c; sourceTree = "<group>"; };
+		961322FA0B5BD0B800007C3E /* videl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = videl.h; path = src/falcon/videl.h; sourceTree = "<group>"; };
+		961323070B5BD14B00007C3E /* ioMemTabFalcon.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ioMemTabFalcon.c; path = src/ioMemTabFalcon.c; sourceTree = "<group>"; };
+		961323080B5BD14B00007C3E /* ioMemTabST.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ioMemTabST.c; path = src/ioMemTabST.c; sourceTree = "<group>"; };
+		961323090B5BD14B00007C3E /* ioMemTabSTE.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ioMemTabSTE.c; path = src/ioMemTabSTE.c; sourceTree = "<group>"; };
+		9613230A0B5BD14B00007C3E /* ioMemTabTT.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ioMemTabTT.c; path = src/ioMemTabTT.c; sourceTree = "<group>"; };
+		9613230B0B5BD14B00007C3E /* nvram.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = nvram.c; path = src/nvram.c; sourceTree = "<group>"; };
+		961323110B5BD17700007C3E /* ide.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ide.h; path = src/includes/ide.h; sourceTree = "<group>"; };
+		961323120B5BD17700007C3E /* nvram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nvram.h; path = src/includes/nvram.h; sourceTree = "<group>"; };
+		9613232F0B5BD66600007C3E /* ide.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ide.c; path = src/ide.c; sourceTree = "<group>"; };
 		962F64E909A922B20054BE9B /* PrefsController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrefsController.h; sourceTree = "<group>"; };
 		962F64EA09A922B20054BE9B /* PrefsController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PrefsController.m; sourceTree = "<group>"; };
 		9652821A0998134C00BE6A34 /* cycles.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cycles.c; path = src/cycles.c; sourceTree = "<group>"; };
@@ -333,7 +382,6 @@
 		E99035AD07E8C8D6000E7CD7 /* ioMem.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = ioMem.h; sourceTree = "<group>"; };
 		E99035AE07E8C8D6000E7CD7 /* ioMemTables.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = ioMemTables.h; sourceTree = "<group>"; };
 		E99035B107E8C909000E7CD7 /* ioMem.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = ioMem.c; path = src/ioMem.c; sourceTree = "<group>"; };
-		E99035B207E8C909000E7CD7 /* ioMemTables.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = ioMemTables.c; path = src/ioMemTables.c; sourceTree = "<group>"; };
 		E9933BC00802F0DF00E20172 /* log.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = log.h; sourceTree = "<group>"; };
 		E9933BC20802F0F800E20172 /* log.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = log.c; path = src/log.c; sourceTree = "<group>"; };
 		E9987A66075134AA007DC37B /* cpuemu.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = cpuemu.c; sourceTree = "<group>"; };
@@ -385,6 +433,13 @@
 		29B97314FDCFA39411CA2CEA /* Hatari */ = {
 			isa = PBXGroup;
 			children = (
+				9613232F0B5BD66600007C3E /* ide.c */,
+				961322E60B5BCFBB00007C3E /* config.h */,
+				961322D20B5BCDB900007C3E /* acsite.m4 */,
+				961322D30B5BCDB900007C3E /* config-default.h */,
+				961322D40B5BCDB900007C3E /* config-MinGW.h */,
+				961322D50B5BCDB900007C3E /* Makefile-default.cnf */,
+				961322D60B5BCDB900007C3E /* Makefile-MinGW.cnf */,
 				96D6324C0A4E9A4300FBFA27 /* gui-osx */,
 				29B97315FDCFA39411CA2CEA /* Other Sources */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
@@ -398,6 +453,24 @@
 		29B97315FDCFA39411CA2CEA /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
+				961323110B5BD17700007C3E /* ide.h */,
+				961323120B5BD17700007C3E /* nvram.h */,
+				961323070B5BD14B00007C3E /* ioMemTabFalcon.c */,
+				961323080B5BD14B00007C3E /* ioMemTabST.c */,
+				961323090B5BD14B00007C3E /* ioMemTabSTE.c */,
+				9613230A0B5BD14B00007C3E /* ioMemTabTT.c */,
+				9613230B0B5BD14B00007C3E /* nvram.c */,
+				961322EF0B5BD0B800007C3E /* araglue.h */,
+				961322F00B5BD0B800007C3E /* dsp_cpu.c */,
+				961322F10B5BD0B800007C3E /* dsp_cpu.h */,
+				961322F20B5BD0B800007C3E /* dsp_disasm.c */,
+				961322F30B5BD0B800007C3E /* dsp_disasm.h */,
+				961322F40B5BD0B800007C3E /* dsp.c */,
+				961322F50B5BD0B800007C3E /* dsp.h */,
+				961322F60B5BD0B800007C3E /* hostscreen.c */,
+				961322F70B5BD0B800007C3E /* hostscreen.h */,
+				961322F90B5BD0B800007C3E /* videl.c */,
+				961322FA0B5BD0B800007C3E /* videl.h */,
 				969191270AA205A80008B3A0 /* scandir.c */,
 				968DE4D30A59B234007517A4 /* options.c */,
 				E930274E08EC5CD0000FB60E /* dmaSnd.c */,
@@ -423,7 +496,6 @@
 				E9283E9D07512EA200DA6B24 /* includes */,
 				E9283ED307512EA200DA6B24 /* int.c */,
 				E99035B107E8C909000E7CD7 /* ioMem.c */,
-				E99035B207E8C909000E7CD7 /* ioMemTables.c */,
 				E9283ED507512EA200DA6B24 /* joy.c */,
 				E9283ED607512EA200DA6B24 /* keymap.c */,
 				E9933BC20802F0F800E20172 /* log.c */,
@@ -689,6 +761,17 @@
 				9670E1540A5FA132009A73E0 /* gemdos_defines.h in Headers */,
 				9670E1550A5FA132009A73E0 /* options.h in Headers */,
 				9691912A0AA205D60008B3A0 /* scandir.h in Headers */,
+				961322D80B5BCDB900007C3E /* config-default.h in Headers */,
+				961322D90B5BCDB900007C3E /* config-MinGW.h in Headers */,
+				961322E70B5BCFBB00007C3E /* config.h in Headers */,
+				961322FB0B5BD0B800007C3E /* araglue.h in Headers */,
+				961322FD0B5BD0B800007C3E /* dsp_cpu.h in Headers */,
+				961322FF0B5BD0B800007C3E /* dsp_disasm.h in Headers */,
+				961323010B5BD0B800007C3E /* dsp.h in Headers */,
+				961323030B5BD0B800007C3E /* hostscreen.h in Headers */,
+				961323060B5BD0B800007C3E /* videl.h in Headers */,
+				961323130B5BD17700007C3E /* ide.h in Headers */,
+				961323140B5BD17700007C3E /* nvram.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -756,6 +839,9 @@
 				9670E1570A5FA132009A73E0 /* InfoPlist.strings in Resources */,
 				9670E1580A5FA132009A73E0 /* SDLMain.nib in Resources */,
 				9670E1590A5FA132009A73E0 /* Hatari.icns in Resources */,
+				961322D70B5BCDB900007C3E /* acsite.m4 in Resources */,
+				961322DA0B5BCDB900007C3E /* Makefile-default.cnf in Resources */,
+				961322DB0B5BCDB900007C3E /* Makefile-MinGW.cnf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -836,7 +922,6 @@
 				9670E19E0A5FA132009A73E0 /* cpudefs.c in Sources */,
 				9670E19F0A5FA132009A73E0 /* cpustbl.c in Sources */,
 				9670E1A00A5FA132009A73E0 /* ioMem.c in Sources */,
-				9670E1A10A5FA132009A73E0 /* ioMemTables.c in Sources */,
 				9670E1A20A5FA132009A73E0 /* log.c in Sources */,
 				9670E1A30A5FA132009A73E0 /* dmaSnd.c in Sources */,
 				9670E1A40A5FA132009A73E0 /* cycles.c in Sources */,
@@ -847,6 +932,17 @@
 				9670E1A90A5FA132009A73E0 /* dlgRom.c in Sources */,
 				9670E1AA0A5FA132009A73E0 /* options.c in Sources */,
 				969191280AA205A80008B3A0 /* scandir.c in Sources */,
+				961322FC0B5BD0B800007C3E /* dsp_cpu.c in Sources */,
+				961322FE0B5BD0B800007C3E /* dsp_disasm.c in Sources */,
+				961323000B5BD0B800007C3E /* dsp.c in Sources */,
+				961323020B5BD0B800007C3E /* hostscreen.c in Sources */,
+				961323050B5BD0B800007C3E /* videl.c in Sources */,
+				9613230C0B5BD14B00007C3E /* ioMemTabFalcon.c in Sources */,
+				9613230D0B5BD14B00007C3E /* ioMemTabST.c in Sources */,
+				9613230E0B5BD14B00007C3E /* ioMemTabSTE.c in Sources */,
+				9613230F0B5BD14B00007C3E /* ioMemTabTT.c in Sources */,
+				961323100B5BD14B00007C3E /* nvram.c in Sources */,
+				961323300B5BD66600007C3E /* ide.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

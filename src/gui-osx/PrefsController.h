@@ -29,7 +29,7 @@
     IBOutlet NSTextField *floppyImageA;
     IBOutlet NSTextField *floppyImageB;
     IBOutlet NSButton *force8bpp;
-    IBOutlet NSButton *frameSkip;
+    IBOutlet NSPopUpButton *frameSkip;
     IBOutlet NSTextField *gemdosImage;
     IBOutlet NSTextField *hdImage;
     IBOutlet NSButton *interleaved;
