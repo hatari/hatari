@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.61 2007-01-13 10:00:24 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.62 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -85,10 +85,10 @@ static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create ST 0x777 / STe 0xfff color format to 16-bits per pixel conversion
-  table. Called each time when changed resolution or to/from fullscreen mode.
-*/
+/**
+ * Create ST 0x777 / STe 0xfff color format to 16-bits per pixel conversion
+ * table. Called each time when changed resolution or to/from fullscreen mode.
+ */
 static void Screen_SetupRGBTable(void)
 {
   Uint16 STColour, RGBColour;
@@ -116,9 +116,9 @@ static void Screen_SetupRGBTable(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create new palette for display.
-*/
+/**
+ * Create new palette for display.
+ */
 static void Screen_CreatePalette(void)
 {
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -169,9 +169,9 @@ static void Screen_CreatePalette(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create 8-Bit palette for display if needed.
-*/
+/**
+ * Create 8-Bit palette for display if needed.
+ */
 static void Screen_Handle8BitPalettes(void)
 {
   BOOL bPaletteChanged=FALSE;
@@ -209,9 +209,9 @@ static void Screen_Handle8BitPalettes(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set screen draw functions.
-*/
+/**
+ * Set screen draw functions.
+ */
 static void Screen_SetDrawFunctions(void)
 {
   if (ConfigureParams.Screen.bForce8Bpp) {
@@ -244,9 +244,9 @@ static void Screen_SetDrawFunctions(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Initialize SDL screen surface / set resolution.
-*/
+/**
+ * Initialize SDL screen surface / set resolution.
+ */
 static void Screen_SetResolution(void)
 {
   int Width, Height, BitCount;
@@ -355,9 +355,9 @@ static void Screen_SetResolution(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Store Y offset for each horizontal line in our source ST screen for each reference in assembler(no multiply)
-*/
+/**
+ * Store Y offset for each horizontal line in our source ST screen for each reference in assembler(no multiply)
+ */
 static void Screen_SetScreenLineOffsets(void)
 {
   int i;
@@ -368,9 +368,9 @@ static void Screen_SetScreenLineOffsets(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Init Screen bitmap and buffers/tables needed for ST to PC screen conversion
-*/
+/**
+ * Init Screen bitmap and buffers/tables needed for ST to PC screen conversion
+ */
 void Screen_Init(void)
 {
   int i;
@@ -418,9 +418,9 @@ void Screen_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Free screen bitmap and allocated resources
-*/
+/**
+ * Free screen bitmap and allocated resources
+ */
 void Screen_UnInit(void)
 {
   int i;
@@ -435,9 +435,9 @@ void Screen_UnInit(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset screen
-*/
+/**
+ * Reset screen
+ */
 void Screen_Reset(void)
 {
   /* On re-boot, always correct ST resolution for monitor, eg Colour/Mono */
@@ -458,10 +458,10 @@ void Screen_Reset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set flags so screen will be TOTALLY re-drawn (clears whole of full-screen)
-  next time around
-*/
+/**
+ * Set flags so screen will be TOTALLY re-drawn (clears whole of full-screen)
+ * next time around
+ */
 void Screen_SetFullUpdate(void)
 {
   int i;
@@ -473,18 +473,18 @@ void Screen_SetFullUpdate(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Clear Window display memory
-*/
+/**
+ * Clear Window display memory
+ */
 static void Screen_ClearScreen(void)
 {
   SDL_FillRect(sdlscrn,NULL, SDL_MapRGB(sdlscrn->format, 0, 0, 0) );
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Enter Full screen mode
-*/
+/**
+ * Enter Full screen mode
+ */
 void Screen_EnterFullScreen(void)
 {
   if (!bInFullScreen)
@@ -514,9 +514,9 @@ void Screen_EnterFullScreen(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return from Full screen mode back to a window
-*/
+/**
+ * Return from Full screen mode back to a window
+ */
 void Screen_ReturnFromFullScreen(void)
 {
   if (bInFullScreen)
@@ -545,9 +545,9 @@ void Screen_ReturnFromFullScreen(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Have we changed between low/med/high res?
-*/
+/**
+ * Have we changed between low/med/high res?
+ */
 static void Screen_DidResolutionChange(int new_res)
 {
   if (new_res != STRes)
@@ -565,9 +565,9 @@ static void Screen_DidResolutionChange(int new_res)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Force things associated with changing between low/medium/high res.
-*/
+/**
+ * Force things associated with changing between low/medium/high res.
+ */
 void Screen_ModeChanged(void)
 {
   if (!sdlscrn)
@@ -597,10 +597,10 @@ void Screen_ModeChanged(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Compare current resolution on line with previous, and set 'UpdateLine' accordingly
-  Return if swap between low/medium resolution
-*/
+/**
+ * Compare current resolution on line with previous, and set 'UpdateLine' accordingly
+ * Return if swap between low/medium resolution
+ */
 static BOOL Screen_CompareResolution(int y, int *pUpdateLine, int oldres)
 {
   /* Check if wrote to resolution register */
@@ -620,9 +620,9 @@ static BOOL Screen_CompareResolution(int y, int *pUpdateLine, int oldres)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check to see if palette changes cause screen update and keep 'HBLPalette[]' up-to-date
-*/
+/**
+ * Check to see if palette changes cause screen update and keep 'HBLPalette[]' up-to-date
+ */
 static void Screen_ComparePalette(int y, int *pUpdateLine)
 {
   BOOL bPaletteChanged = FALSE;
@@ -652,13 +652,13 @@ static void Screen_ComparePalette(int y, int *pUpdateLine)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check for differences in Palette and Resolution from Mask table and update
-  and store off which lines need updating and create full-screen palette.
-  (It is very important for these routines to check for colour changes with
-  the previous screen so only the very minimum parts are updated).
-  Return new STRes value.
-*/
+/**
+ * Check for differences in Palette and Resolution from Mask table and update
+ * and store off which lines need updating and create full-screen palette.
+ * (It is very important for these routines to check for colour changes with
+ * the previous screen so only the very minimum parts are updated).
+ * Return new STRes value.
+ */
 static int Screen_ComparePaletteMask(int res)
 {
   BOOL bLowMedMix = FALSE;
@@ -741,10 +741,10 @@ static int Screen_ComparePaletteMask(int res)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Update Palette Mask to show 'full-update' required. This is usually done after a resolution change
-  or when going between a Window and full-screen display
-*/
+/**
+ * Update Palette Mask to show 'full-update' required. This is usually done after a resolution change
+ * or when going between a Window and full-screen display
+ */
 static void Screen_SetFullUpdateMask(void)
 {
   int y;
@@ -755,9 +755,9 @@ static void Screen_SetFullUpdateMask(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set details for ST screen conversion.
-*/
+/**
+ * Set details for ST screen conversion.
+ */
 static void Screen_SetConvertDetails(void)
 {
   pSTScreen = pFrameBuffer->pSTScreen;          /* Source in ST memory */
@@ -809,9 +809,9 @@ static void Screen_SetConvertDetails(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Lock full-screen for drawing
-*/
+/**
+ * Lock full-screen for drawing
+ */
 static BOOL Screen_Lock(void)
 {
   if(SDL_MUSTLOCK(sdlscrn))
@@ -827,9 +827,9 @@ static BOOL Screen_Lock(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  UnLock full-screen
-*/
+/**
+ * UnLock full-screen
+ */
 static void Screen_UnLock(void)
 {
   if( SDL_MUSTLOCK(sdlscrn) )
@@ -838,9 +838,9 @@ static void Screen_UnLock(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Swap ST Buffers, used for full-screen where have double-buffering
-*/
+/**
+ * Swap ST Buffers, used for full-screen where have double-buffering
+ */
 static void Screen_SwapSTBuffers(void)
 {
 #if NUM_FRAMEBUFFERS > 1
@@ -856,10 +856,10 @@ static void Screen_SwapSTBuffers(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Blit our converted ST screen to window/full-screen
-  Note that our source image includes all borders so if have them disabled simply blit a smaller source rectangle!
-*/
+/**
+ * Blit our converted ST screen to window/full-screen
+ * Note that our source image includes all borders so if have them disabled simply blit a smaller source rectangle!
+ */
 static void Screen_Blit(BOOL bSwapScreen)
 {
   /* Rectangle areas to Blit according to if overscan is enabled or not
@@ -919,9 +919,9 @@ static void Screen_Blit(BOOL bSwapScreen)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Draw ST screen to window/full-screen framebuffer
-*/
+/**
+ * Draw ST screen to window/full-screen framebuffer
+ */
 static void Screen_DrawFrame(BOOL bForceFlip)
 {
   int new_res;
@@ -986,9 +986,9 @@ static void Screen_DrawFrame(BOOL bForceFlip)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Draw ST screen to window/full-screen
-*/
+/**
+ * Draw ST screen to window/full-screen
+ */
 void Screen_Draw(void)
 {
   if (!bQuitProgram)
@@ -1021,7 +1021,8 @@ void Screen_Draw(void)
 */
 
 
-/*-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
+/**
  * Update the STRGBPalette[] array with current colours for this raster line.
  *
  * Return 'ScrUpdateFlag', 0x80000000=Full update, 0x40000000=Update
@@ -1050,7 +1051,8 @@ static int AdjustLinePaletteRemap(int y)
 }
 
 
-/*-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------*/
+/**
  * Run updates to palette(STRGBPalette[]) until get to screen line
  * we are to convert from
  */

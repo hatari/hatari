@@ -6,7 +6,7 @@
 
   This is where we intercept read/writes to/from the IDE controller hardware.
 */
-const char Ide_rcsid[] = "Hatari $Id: ide.c,v 1.1 2006-09-27 08:58:43 thothy Exp $";
+const char Ide_rcsid[] = "Hatari $Id: ide.c,v 1.2 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -26,9 +26,9 @@ const char Ide_rcsid[] = "Hatari $Id: ide.c,v 1.1 2006-09-27 08:58:43 thothy Exp
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle byte read access from IDE IO memory.
-*/
+/**
+ * Handle byte read access from IDE IO memory.
+ */
 uae_u32 Ide_Mem_bget(uaecptr addr)
 {
 	Dprintf(("IdeMem_bget($%x)\n", addr));
@@ -47,9 +47,9 @@ uae_u32 Ide_Mem_bget(uaecptr addr)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle word read access from IDE IO memory.
-*/
+/**
+ * Handle word read access from IDE IO memory.
+ */
 uae_u32 Ide_Mem_wget(uaecptr addr)
 {
 	Dprintf(("IdeMem_wget($%x)\n", addr));
@@ -69,9 +69,9 @@ uae_u32 Ide_Mem_wget(uaecptr addr)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle long-word read access from IDE IO memory.
-*/
+/**
+ * Handle long-word read access from IDE IO memory.
+ */
 uae_u32 Ide_Mem_lget(uaecptr addr)
 {
 	Dprintf(("IdeMem_lget($%x)\n", addr));
@@ -91,9 +91,9 @@ uae_u32 Ide_Mem_lget(uaecptr addr)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle byte write access to IDE IO memory.
-*/
+/**
+ * Handle byte write access to IDE IO memory.
+ */
 void Ide_Mem_bput(uaecptr addr, uae_u32 val)
 {
 	Dprintf(("IdeMem_bput($%x, $%x)\n", addr, val));
@@ -113,9 +113,9 @@ void Ide_Mem_bput(uaecptr addr, uae_u32 val)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle word write access to IDE IO memory.
-*/
+/**
+ * Handle word write access to IDE IO memory.
+ */
 void Ide_Mem_wput(uaecptr addr, uae_u32 val)
 {
 	Dprintf(("IdeMem_wput($%x, $%x)\n", addr, val));
@@ -135,9 +135,9 @@ void Ide_Mem_wput(uaecptr addr, uae_u32 val)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle long-word write access to IDE IO memory.
-*/
+/**
+ * Handle long-word write access to IDE IO memory.
+ */
 void Ide_Mem_lput(uaecptr addr, uae_u32 val)
 {
 	Dprintf(("IdeMem_lput($%x, $%x)\n", addr, val));

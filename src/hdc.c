@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.16 2006-08-13 23:33:32 thothy Exp $";
+const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.17 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -79,10 +79,10 @@ static unsigned char inquiry_bytes[] =
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Return the file offset of the sector specified in the current
-  ACSI command block.
-*/
+/**
+ * Return the file offset of the sector specified in the current
+ * ACSI command block.
+ */
 static unsigned long HDC_GetOffset(void)
 {
 	unsigned long offset;
@@ -98,9 +98,9 @@ static unsigned long HDC_GetOffset(void)
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Seek - move to a sector
-*/
+/**
+ * Seek - move to a sector
+ */
 static void HDC_Cmd_Seek(void)
 {
 	nLastBlockAddr = HDC_GetOffset();
@@ -124,9 +124,9 @@ static void HDC_Cmd_Seek(void)
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Inquiry - return some disk information
-*/
+/**
+ * Inquiry - return some disk information
+ */
 static void HDC_Cmd_Inquiry(void)
 {
 #ifdef HDC_VERBOSE
@@ -147,9 +147,9 @@ static void HDC_Cmd_Inquiry(void)
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Request sense - return some disk information
-*/
+/**
+ * Request sense - return some disk information
+ */
 static void HDC_Cmd_RequestSense(void)
 {
 	Uint32 nDmaAddr;
@@ -235,10 +235,10 @@ static void HDC_Cmd_RequestSense(void)
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Mode sense - Get parameters from disk.
-  (Just enough to make the HDX tool from AHDI 5.0 happy)
-*/
+/**
+ * Mode sense - Get parameters from disk.
+ * (Just enough to make the HDX tool from AHDI 5.0 happy)
+ */
 static void HDC_Cmd_ModeSense(void)
 {
 	Uint32 nDmaAddr;
@@ -293,9 +293,9 @@ static void HDC_Cmd_ModeSense(void)
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Format drive.
-*/
+/**
+ * Format drive.
+ */
 static void HDC_Cmd_FormatDrive(void)
 {
 #ifdef HDC_VERBOSE
@@ -314,9 +314,9 @@ static void HDC_Cmd_FormatDrive(void)
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Write a sector off our disk - (seek implied)
-*/
+/**
+ * Write a sector off our disk - (seek implied)
+ */
 static void HDC_Cmd_WriteSector(void)
 {
 	nLastBlockAddr = HDC_GetOffset();
@@ -347,9 +347,9 @@ static void HDC_Cmd_WriteSector(void)
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Read a sector off our disk - (implied seek)
-*/
+/**
+ * Read a sector off our disk - (implied seek)
+ */
 static void HDC_Cmd_ReadSector(void)
 {
 	nLastBlockAddr = HDC_GetOffset();
@@ -381,9 +381,9 @@ static void HDC_Cmd_ReadSector(void)
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Emulation routine for HDC command packets.
-*/
+/**
+ * Emulation routine for HDC command packets.
+ */
 void HDC_EmulateCommandPacket()
 {
 
@@ -447,9 +447,9 @@ void HDC_EmulateCommandPacket()
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Debug routine for HDC command packets.
-*/
+/**
+ * Debug routine for HDC command packets.
+ */
 #ifdef HDC_REALLY_VERBOSE
 void HDC_DebugCommandPacket(FILE *hdlogFile)
 {
@@ -514,9 +514,9 @@ void HDC_DebugCommandPacket(FILE *hdlogFile)
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Print data about the hard drive image
-*/
+/**
+ * Print data about the hard drive image
+ */
 static void HDC_GetInfo(void)
 {
 /* Partition table contains hd size + 4 partition entries
@@ -565,8 +565,8 @@ static void HDC_GetInfo(void)
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Open the disk image file, set partitions.
+/**
+ * Open the disk image file, set partitions.
  */
 BOOL HDC_Init(char *filename)
 {
@@ -598,9 +598,9 @@ BOOL HDC_Init(char *filename)
 
 
 /*---------------------------------------------------------------------*/
-/*
-  HDC_UnInit - close image file
- 
+/**
+ * HDC_UnInit - close image file
+ *
  */
 void HDC_UnInit(void)
 {
@@ -617,10 +617,10 @@ void HDC_UnInit(void)
 
 
 /*---------------------------------------------------------------------*/
-/*
-  Process HDC command packets, called when bytes are 
-  written to $FFFF8606 and the HDC (not the FDC) is selected.
-*/
+/**
+ * Process HDC command packets, called when bytes are 
+ * written to $FFFF8606 and the HDC (not the FDC) is selected.
+ */
 void HDC_WriteCommandPacket(void)
 {
 	/* check status byte */

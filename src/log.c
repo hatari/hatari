@@ -9,7 +9,7 @@
   When Hatari runs, it can output information, debug, warning and error texts
   to the error log file and/or displays them in alert dialog boxes.
 */
-const char Log_rcsid[] = "Hatari $Id: log.c,v 1.3 2006-02-08 22:49:27 eerot Exp $";
+const char Log_rcsid[] = "Hatari $Id: log.c,v 1.4 2007-01-16 18:42:59 thothy Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -26,9 +26,9 @@ static FILE *hLogFile = NULL;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Initialize the logging functions (open the log file etc.).
-*/
+/**
+ * Initialize the logging functions (open the log file etc.).
+ */
 void Log_Init(void)
 {
 	/* First check for "stdout" and "stderr" which are special */
@@ -52,9 +52,9 @@ void Log_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Un-Initialize - close error log file etc.
-*/
+/**
+ * Un-Initialize - close error log file etc.
+ */
 void Log_UnInit(void)
 {
 	if (hLogFile && hLogFile != stdout && hLogFile != stderr)
@@ -66,9 +66,9 @@ void Log_UnInit(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Output string to log file
-*/
+/**
+ * Output string to log file
+ */
 void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 {
 	va_list argptr;
@@ -83,9 +83,9 @@ void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show logging alert dialog box and output string to log file
-*/
+/**
+ * Show logging alert dialog box and output string to log file
+ */
 void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 {
 	va_list argptr;

@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.9 2006-11-17 18:08:03 simonsunnyboy Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.10 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -67,9 +67,9 @@ static const int DmaSndSampleRates[4] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset DMA sound variables.
-*/
+/**
+ * Reset DMA sound variables.
+ */
 void DmaSnd_Reset(BOOL bCold)
 {
 	nDmaSoundControl = 0;
@@ -82,9 +82,9 @@ void DmaSnd_Reset(BOOL bCold)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
-*/
+/**
+ * Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
+ */
 void DmaSnd_MemorySnapShot_Capture(BOOL bSave)
 {
 	/* Save/Restore details */
@@ -101,11 +101,11 @@ void DmaSnd_MemorySnapShot_Capture(BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  This function is called when a new sound frame is started.
-  It copies the start and end address from the I/O registers, calculates
-  the sample length, etc.
-*/
+/**
+ * This function is called when a new sound frame is started.
+ * It copies the start and end address from the I/O registers, calculates
+ * the sample length, etc.
+ */
 static void DmaSnd_StartNewFrame(void)
 {
 	int nCyclesForFrame;
@@ -126,11 +126,11 @@ static void DmaSnd_StartNewFrame(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check if end-of-frame has been reached and raise interrupts if needed.
-  Returns TRUE if DMA sound processing should be stopped now and FALSE
-  if it continues.
-*/
+/**
+ * Check if end-of-frame has been reached and raise interrupts if needed.
+ * Returns TRUE if DMA sound processing should be stopped now and FALSE
+ * if it continues.
+ */
 static inline int DmaSnd_CheckForEndOfFrame(int nFrameCounter)
 {
 	if (nFrameCounter >= nFrameLen)
@@ -156,9 +156,9 @@ static inline int DmaSnd_CheckForEndOfFrame(int nFrameCounter)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Mix DMA sound sample with the normal PSG sound samples.
-*/
+/**
+ * Mix DMA sound sample with the normal PSG sound samples.
+ */
 void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
 	double FreqRatio;
@@ -203,10 +203,10 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  DMA sound end of frame "interrupt". Used for updating the sound after
-  a frame has been finished.
-*/
+/**
+ * DMA sound end of frame "interrupt". Used for updating the sound after
+ * a frame has been finished.
+ */
 void DmaSnd_InterruptHandler(void)
 {
 	/* Remove this interrupt from list and re-order */
@@ -221,9 +221,9 @@ void DmaSnd_InterruptHandler(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create actual position for frame count registers.
-*/
+/**
+ * Create actual position for frame count registers.
+ */
 static Uint32 DmaSnd_GetFrameCount(void)
 {
 	Uint32 nActCount;
@@ -240,9 +240,9 @@ static Uint32 DmaSnd_GetFrameCount(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read word from sound control register (0xff8900).
-*/
+/**
+ * Read word from sound control register (0xff8900).
+ */
 void DmaSnd_SoundControl_ReadWord(void)
 {
 	IoMem_WriteWord(0xff8900, nDmaSoundControl);
@@ -250,9 +250,9 @@ void DmaSnd_SoundControl_ReadWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write word to sound control register (0xff8900).
-*/
+/**
+ * Write word to sound control register (0xff8900).
+ */
 /* FIXME: add Falcon specific handler here... */
 void DmaSnd_SoundControl_WriteWord(void)
 {
@@ -275,9 +275,9 @@ void DmaSnd_SoundControl_WriteWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read word from sound frame count high register (0xff8909).
-*/
+/**
+ * Read word from sound frame count high register (0xff8909).
+ */
 void DmaSnd_FrameCountHigh_ReadByte(void)
 {
 	IoMem_WriteByte(0xff8909, DmaSnd_GetFrameCount() >> 16);
@@ -285,9 +285,9 @@ void DmaSnd_FrameCountHigh_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read word from sound frame count medium register (0xff890b).
-*/
+/**
+ * Read word from sound frame count medium register (0xff890b).
+ */
 void DmaSnd_FrameCountMed_ReadByte(void)
 {
 	IoMem_WriteByte(0xff890b, DmaSnd_GetFrameCount() >> 8);
@@ -295,9 +295,9 @@ void DmaSnd_FrameCountMed_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read word from sound frame count low register (0xff890d).
-*/
+/**
+ * Read word from sound frame count low register (0xff890d).
+ */
 void DmaSnd_FrameCountLow_ReadByte(void)
 {
 	IoMem_WriteByte(0xff890d, DmaSnd_GetFrameCount());
@@ -305,9 +305,9 @@ void DmaSnd_FrameCountLow_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read word from sound mode register (0xff8920).
-*/
+/**
+ * Read word from sound mode register (0xff8920).
+ */
 void DmaSnd_SoundMode_ReadWord(void)
 {
 	IoMem_WriteWord(0xff8920, nDmaSoundMode);
@@ -315,10 +315,10 @@ void DmaSnd_SoundMode_ReadWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write word to sound mode register (0xff8920).
-  Handling framework for Falcon specific bits by Matthias Arndt <marndt@asmsoftware.de>
-*/
+/**
+ * Write word to sound mode register (0xff8920).
+ * Handling framework for Falcon specific bits by Matthias Arndt <marndt@asmsoftware.de>
+ */
 void DmaSnd_SoundMode_WriteWord(void)
 {
 	/* Handle Falcon specialities: STE and TT only have bits 7,1 and 0 in this register */
@@ -348,9 +348,9 @@ void DmaSnd_SoundMode_WriteWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read word from microwire data register (0xff8922).
-*/
+/**
+ * Read word from microwire data register (0xff8922).
+ */
 void DmaSnd_MicrowireData_ReadWord(void)
 {
 	/* The Microwire shifts the data register bit by bit until it is zero
@@ -369,9 +369,9 @@ void DmaSnd_MicrowireData_ReadWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write word to microwire data register (0xff8922).
-*/
+/**
+ * Write word to microwire data register (0xff8922).
+ */
 void DmaSnd_MicrowireData_WriteWord(void)
 {
 	nMicrowireData = IoMem_ReadWord(0xff8922);
@@ -380,9 +380,9 @@ void DmaSnd_MicrowireData_WriteWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read word from microwire mask register (0xff8924).
-*/
+/**
+ * Read word from microwire mask register (0xff8924).
+ */
 void DmaSnd_MicrowireMask_ReadWord(void)
 {
 	/* Same as with data register, but mask register is rotated, not  shifted. */
@@ -400,9 +400,9 @@ void DmaSnd_MicrowireMask_ReadWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write word to microwire mask register (0xff8924).
-*/
+/**
+ * Write word to microwire mask register (0xff8924).
+ */
 void DmaSnd_MicrowireMask_WriteWord(void)
 {
 	nMicrowireMask = IoMem_ReadWord(0xff8924);

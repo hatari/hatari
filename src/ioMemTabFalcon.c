@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the Falcon.
 */
-const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.8 2006-12-17 10:21:43 eerot Exp $";
+const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.9 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -29,21 +29,27 @@ const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.8 2006-12-17
 #endif
 
 
-/* Just a temporary hack - some programs are polling on this register and
- * are expecting the handshake bit (#7) to change after a while... */
+/**
+ *  Just a temporary hack - some programs are polling on this register and
+ * are expecting the handshake bit (#7) to change after a while...
+ */
 static void DSP_DummyHostCommand_ReadByte(void)
 {
 	IoMem[0xffa201] ^= 0x80;
 }
 
-/* Just a temporary hack - some programs are polling on this register and
- * are expecting some bits to change after a while... */
+/**
+ *  Just a temporary hack - some programs are polling on this register and
+ * are expecting some bits to change after a while...
+ */
 static void DSP_DummyInterruptStatus_ReadByte(void)
 {
 	IoMem[0xffa202] ^= 0xff;
 }
 
-/* dummy IO when DSP is not enabled */
+/**
+ * dummy IO when DSP is not enabled
+ */
 void IoMemTabFalcon_NoDSP(void (**readtab)(void), void (**writetab)(void))
 {
 	int i, offset;
@@ -60,7 +66,9 @@ void IoMemTabFalcon_NoDSP(void (**readtab)(void), void (**writetab)(void))
 }
 
 #if ENABLE_FALCON
-/* enable DSP */
+/**
+ * enable DSP
+ */
 void IoMemTabFalcon_EnableDSP(void (**readtab)(void), void (**writetab)(void))
 {
 	int i, offset;

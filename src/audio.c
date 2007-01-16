@@ -6,7 +6,7 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-const char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.26 2006-08-01 09:23:05 thothy Exp $";
+const char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.27 2007-01-16 18:42:58 thothy Exp $";
 
 #include <SDL.h>
 
@@ -35,9 +35,9 @@ int CompleteSndBufIdx;                    /* Replay-index into MixBuffer */
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SDL audio callback function - copy emulation sound to audio system.
-*/
+/**
+ * SDL audio callback function - copy emulation sound to audio system.
+ */
 static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 {
 	Uint8 *pBuffer;
@@ -80,10 +80,10 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Initialize the audio subsystem. Return TRUE if all OK.
-  We use direct access to the sound buffer, set to a unsigned 8-bit mono stream.
-*/
+/**
+ * Initialize the audio subsystem. Return TRUE if all OK.
+ * We use direct access to the sound buffer, set to a unsigned 8-bit mono stream.
+ */
 void Audio_Init(void)
 {
 	SDL_AudioSpec desiredAudioSpec;    /* We fill in the desired SDL audio options here */
@@ -139,9 +139,9 @@ void Audio_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Free audio subsystem
-*/
+/**
+ * Free audio subsystem
+ */
 void Audio_UnInit(void)
 {
 	if (bSoundWorking)
@@ -157,9 +157,9 @@ void Audio_UnInit(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Lock the audio sub system so that the callback function will not be called.
-*/
+/**
+ * Lock the audio sub system so that the callback function will not be called.
+ */
 void Audio_Lock(void)
 {
 	SDL_LockAudio();
@@ -167,9 +167,9 @@ void Audio_Lock(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Unlock the audio sub system so that the callback function will be called again.
-*/
+/**
+ * Unlock the audio sub system so that the callback function will be called again.
+ */
 void Audio_Unlock(void)
 {
 	SDL_UnlockAudio();
@@ -177,9 +177,9 @@ void Audio_Unlock(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set audio playback frequency variable, pass as PLAYBACK_xxxx
-*/
+/**
+ * Set audio playback frequency variable, pass as PLAYBACK_xxxx
+ */
 void Audio_SetOutputAudioFreq(int Frequency)
 {
 	/* Do not reset sound system if nothing has changed! */
@@ -199,9 +199,9 @@ void Audio_SetOutputAudioFreq(int Frequency)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Start/Stop sound buffer
-*/
+/**
+ * Start/Stop sound buffer
+ */
 void Audio_EnableAudio(BOOL bEnable)
 {
 	if (bEnable && !bPlayingBuffer)

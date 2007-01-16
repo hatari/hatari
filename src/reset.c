@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.20 2007-01-13 10:00:23 thothy Exp $";
+const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.21 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -32,9 +32,9 @@ const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.20 2007-01-13 10:00:23 thoth
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset ST emulator states, chips, interrupts and registers
-*/
+/**
+ * Reset ST emulator states, chips, interrupts and registers
+ */
 static int Reset_ST(BOOL bCold)
 {
   if (bCold)
@@ -82,9 +82,9 @@ static int Reset_ST(BOOL bCold)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Cold reset ST (reset memory, all registers and reboot)
-*/
+/**
+ * Cold reset ST (reset memory, all registers and reboot)
+ */
 int Reset_Cold(void)
 {
   Main_WarpMouse(sdlscrn->w/2, sdlscrn->h/2);  /* Set mouse pointer to the middle of the screen */
@@ -94,9 +94,9 @@ int Reset_Cold(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Warm reset ST (reset registers, leave in same state and reboot)
-*/
+/**
+ * Warm reset ST (reset registers, leave in same state and reboot)
+ */
 int Reset_Warm(void)
 {
   return Reset_ST(FALSE);

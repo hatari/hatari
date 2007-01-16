@@ -6,7 +6,7 @@
 
   Screen Snapshots.
 */
-const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.11 2006-11-20 21:43:12 thothy Exp $";
+const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.12 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL.h>
 #include <dirent.h>
@@ -26,9 +26,9 @@ static int GrabFrameCounter,GrabFrameLatch;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Scan working directory to get the screenshot number
-*/
+/**
+ * Scan working directory to get the screenshot number
+ */
 static void ScreenSnapShot_GetNum(void)
 {
   char dummy[5];
@@ -60,9 +60,9 @@ static void ScreenSnapShot_GetNum(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save screen shot out .BMP file with filename 'grab0000.bmp','grab0001.bmp'....
-*/
+/**
+ * Save screen shot out .BMP file with filename 'grab0000.bmp','grab0001.bmp'....
+ */
 void ScreenSnapShot_SaveScreen(void)
 {
   char *szFileName = malloc(FILENAME_MAX);
@@ -82,18 +82,18 @@ void ScreenSnapShot_SaveScreen(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Are we recording an animation?
-*/
+/**
+ * Are we recording an animation?
+ */
 BOOL ScreenSnapShot_AreWeRecording(void)
 {
   return(bRecordingAnimation);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Start recording animation
-*/
+/**
+ * Start recording animation
+ */
 void ScreenSnapShot_BeginRecording(BOOL bCaptureChange, int nFramesPerSecond)
 {
   /* Set in globals */
@@ -109,9 +109,9 @@ void ScreenSnapShot_BeginRecording(BOOL bCaptureChange, int nFramesPerSecond)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Stop recording animation
-*/
+/**
+ * Stop recording animation
+ */
 void ScreenSnapShot_EndRecording()
 {
   /* Were we recording? */
@@ -125,9 +125,9 @@ void ScreenSnapShot_EndRecording()
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Recording animation frame
-*/
+/**
+ * Recording animation frame
+ */
 void ScreenSnapShot_RecordFrame(BOOL bFrameChanged)
 {
   /* As we recording? */

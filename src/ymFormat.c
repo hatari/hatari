@@ -6,7 +6,7 @@
 
   YM File output, for use with STSound etc...
 */
-const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.14 2006-08-30 19:54:38 thothy Exp $";
+const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.15 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -26,9 +26,9 @@ unsigned char *pYMWorkspace = NULL, *pYMData;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Start recording YM registers to workspace
-*/
+/**
+ * Start recording YM registers to workspace
+ */
 BOOL YMFormat_BeginRecording(char *pszYMFileName)
 {
 	/* Free any previous data, don't save */
@@ -68,9 +68,9 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  End recording YM registers and save as '.YM' file
-*/
+/**
+ * End recording YM registers and save as '.YM' file
+ */
 void YMFormat_EndRecording(void)
 {
 	/* Have recorded information? */
@@ -95,9 +95,9 @@ void YMFormat_EndRecording(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Free up any resources used by YM recording
-*/
+/**
+ * Free up any resources used by YM recording
+ */
 void YMFormat_FreeRecording(void)
 {
 	/* Free workspace */
@@ -111,9 +111,9 @@ void YMFormat_FreeRecording(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Store a VBLs worth of YM registers to workspace - call each VBL
-*/
+/**
+ * Store a VBLs worth of YM registers to workspace - call each VBL
+ */
 void YMFormat_UpdateRecording(void)
 {
 	int i;
@@ -140,17 +140,17 @@ void YMFormat_UpdateRecording(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Convert YM data to stream for output
- 
-  Data is:
-    4 Byte header 'YM3!'
-    VBL Count x 14 PSG registers
-  BUT
-    We need data in a register stream, eg Reg 0, VBL 1, VBL 2, VBL n and then next register...
- 
-  Convert to new workspace and return TRUE if all OK
-*/
+/**
+ * Convert YM data to stream for output
+ *
+ * Data is:
+ *   4 Byte header 'YM3!'
+ *   VBL Count x 14 PSG registers
+ * BUT
+ *   We need data in a register stream, eg Reg 0, VBL 1, VBL 2, VBL n and then next register...
+ * 
+ * Convert to new workspace and return TRUE if all OK
+ */
 BOOL YMFormat_ConvertToStreams(void)
 {
 	unsigned char *pNewYMWorkspace;

@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.27 2006-02-13 21:18:00 eerot Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.28 2007-01-16 18:42:59 thothy Exp $";
 
 #include <time.h>
 
@@ -195,9 +195,9 @@ static const IKBD_COMMAND_PARAMS KeyboardCommands[] = {
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset the IKBD processor
-*/
+/**
+ * Reset the IKBD processor
+ */
 void IKBD_Reset(BOOL bCold)
 {
   /* Reset internal keyboard processor details */
@@ -246,9 +246,9 @@ void IKBD_Reset(BOOL bCold)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
-*/
+/**
+ * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+ */
 void IKBD_MemorySnapShot_Capture(BOOL bSave)
 {
   /* Save/Restore details */
@@ -262,9 +262,9 @@ void IKBD_MemorySnapShot_Capture(BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Calculate out 'delta' that mouse has moved by each frame, and add this to our internal keyboard position
-*/
+/**
+ * Calculate out 'delta' that mouse has moved by each frame, and add this to our internal keyboard position
+ */
 static void IKBD_UpdateInternalMousePosition(void)
 {
 
@@ -291,11 +291,11 @@ static void IKBD_UpdateInternalMousePosition(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  When running in maximum speed the emulation will not see 'double-clicks' of the mouse
-  as it is running so fast. In this case, we check for a double-click and pass
-  the 'up'/'down' messages in emulation time to simulate the double-click effect!
-*/
+/**
+ * When running in maximum speed the emulation will not see 'double-clicks' of the mouse
+ * as it is running so fast. In this case, we check for a double-click and pass
+ * the 'up'/'down' messages in emulation time to simulate the double-click effect!
+ */
 static void IKBD_CheckForDoubleClicks(void)
 {
   /*
@@ -364,9 +364,9 @@ static void IKBD_CheckForDoubleClicks(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Convert button to BOOL value
-*/
+/**
+ * Convert button to BOOL value
+ */
 static BOOL IKBD_ButtonBool(int Button)
 {
   /* Button pressed? */
@@ -377,9 +377,9 @@ static BOOL IKBD_ButtonBool(int Button)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return TRUE if buttons match, use this as buttons are a mask and not BOOLean
-*/
+/**
+ * Return TRUE if buttons match, use this as buttons are a mask and not BOOLean
+ */
 static BOOL IKBD_ButtonsEqual(int Button1,int Button2)
 {
   /* Return BOOL compare */
@@ -388,10 +388,10 @@ static BOOL IKBD_ButtonsEqual(int Button1,int Button2)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  According to if the mouse if enabled or not the joystick 1 fire button/right mouse button
-  will become the same button, ie pressing one will also press the other and vise-versa
-*/
+/**
+ * According to if the mouse if enabled or not the joystick 1 fire button/right mouse button
+ * will become the same button, ie pressing one will also press the other and vise-versa
+ */
 static void IKBD_DuplicateMouseFireButtons(void)
 {
   /* Don't duplicate fire button when program tries to use both! */
@@ -423,9 +423,9 @@ static void IKBD_DuplicateMouseFireButtons(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Send 'relative' mouse position
-*/
+/**
+ * Send 'relative' mouse position
+ */
 static void IKBD_SendRelMousePacket(void)
 {
   int ByteRelX,ByteRelY;
@@ -466,9 +466,9 @@ static void IKBD_SendRelMousePacket(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Send 'joysticks' bit masks
-*/
+/**
+ * Send 'joysticks' bit masks
+ */
 static void IKBD_SelAutoJoysticks(void)
 {
   Uint8 JoyData;
@@ -493,10 +493,10 @@ static void IKBD_SelAutoJoysticks(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Send packets which are generated from the mouse action settings
-  If relative mode is on, still generate these packets
-*/
+/**
+ * Send packets which are generated from the mouse action settings
+ * If relative mode is on, still generate these packets
+ */
 static void IKBD_SendOnMouseAction(void)
 {
   BOOL bReportPosition = FALSE;
@@ -565,9 +565,9 @@ static void IKBD_SendOnMouseAction(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Send mouse movements as cursor keys
-*/
+/**
+ * Send mouse movements as cursor keys
+ */
 static void IKBD_SendCursorMousePacket(void)
 {
   int i=0;
@@ -624,9 +624,9 @@ static void IKBD_SendCursorMousePacket(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return packets from keyboard for auto, rel mouse, joystick etc...
-*/
+/**
+ * Return packets from keyboard for auto, rel mouse, joystick etc...
+ */
 void IKBD_SendAutoKeyboardCommands(void)
 {
   /* Don't do anything until processor is first reset */
@@ -684,11 +684,11 @@ void IKBD_SendAutoKeyboardCommands(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  On ST if disable Mouse AND Joystick with a set time of a RESET command they are
-  actually turned back on! (A number of games do this so can get mouse and joystick
-  packets at the same time)
-*/
+/**
+ * On ST if disable Mouse AND Joystick with a set time of a RESET command they are
+ * actually turned back on! (A number of games do this so can get mouse and joystick
+ * packets at the same time)
+ */
 static void IKBD_CheckResetDisableBug(void)
 {
   /* Have disabled BOTH mouse and joystick? */
@@ -712,10 +712,10 @@ static void IKBD_CheckResetDisableBug(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Start timer after keyboard RESET command to emulate 'quirk'
-  If some IKBD commands are sent during time after a RESET they may be ignored
-*/
+/**
+ * Start timer after keyboard RESET command to emulate 'quirk'
+ * If some IKBD commands are sent during time after a RESET they may be ignored
+ */
 void IKBD_InterruptHandler_ResetTimer(void)
 {
   /* Remove this interrupt from list and re-order */
@@ -737,9 +737,9 @@ void IKBD_InterruptHandler_ResetTimer(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Blank function for some keyboard commands - this can be used to find errors
-*/
+/**
+ * Blank function for some keyboard commands - this can be used to find errors
+ */
 void IKBD_Cmd_NullFunction(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
@@ -750,15 +750,15 @@ void IKBD_Cmd_NullFunction(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  RESET
-
-  0x80
-  0x01
-
-  Performs self test and checks for stuck (closed) keys, if OK returns 0xF0. Otherwise
-  returns break codes for keys
-*/
+/**
+ * RESET
+ *
+ * 0x80
+ * 0x01
+ *
+ * Performs self test and checks for stuck (closed) keys, if OK returns 0xF0. Otherwise
+ * returns break codes for keys
+ */
 void IKBD_Cmd_Reset(void)
 {
   /* Check for error series of bytes, eg 0x80,0x01 */
@@ -797,18 +797,18 @@ void IKBD_Cmd_Reset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET MOUSE BUTTON ACTION
-
-  0x07
-  %00000mss  ; mouse button action
-        ;  (m is presumed =1 when in MOUSE KEYCODE mode)
-        ; mss=0xy, mouse button press or release causes mouse
-        ;  position report
-        ;  where y=1, mouse key press causes absolute report
-        ;  and x=1, mouse key release causes absolute report
-        ; mss=100, mouse buttons act like keys
-*/
+/**
+ * SET MOUSE BUTTON ACTION
+ *
+ * 0x07
+ * %00000mss  ; mouse button action
+ *       ;  (m is presumed =1 when in MOUSE KEYCODE mode)
+ *       ; mss=0xy, mouse button press or release causes mouse
+ *       ;  position report
+ *       ;  where y=1, mouse key press causes absolute report
+ *       ;  and x=1, mouse key release causes absolute report
+ *       ; mss=100, mouse buttons act like keys
+ */
 void IKBD_Cmd_MouseAction(void)
 {
   KeyboardProcessor.Mouse.Action = Keyboard.InputBuffer[1];
@@ -821,11 +821,11 @@ void IKBD_Cmd_MouseAction(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET RELATIVE MOUSE POSITION REPORTING
-
-  0x08
-*/
+/**
+ * SET RELATIVE MOUSE POSITION REPORTING
+ *
+ * 0x08
+ */
 void IKBD_Cmd_RelMouseMode(void)
 {
   KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
@@ -837,15 +837,15 @@ void IKBD_Cmd_RelMouseMode(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET ABSOLUTE MOUSE POSITIONING
-
-  0x09
-  XMSB      ;X maximum (in scaled mouse clicks)
-  XLSB
-  YMSB      ;Y maximum (in scaled mouse clicks)
-  YLSB
-*/
+/**
+ * SET ABSOLUTE MOUSE POSITIONING
+ *
+ * 0x09
+ * XMSB      ;X maximum (in scaled mouse clicks)
+ * XLSB
+ * YMSB      ;Y maximum (in scaled mouse clicks)
+ * YLSB
+ */
 void IKBD_Cmd_AbsMouseMode(void)
 {
   /* These maximums are 'inclusive' */
@@ -860,13 +860,13 @@ void IKBD_Cmd_AbsMouseMode(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET MOUSE KEYCODE MODE
-
-  0x0A
-  deltax      ; distance in X clicks to return (LEFT) or (RIGHT)
-  deltay      ; distance in Y clicks to return (UP) or (DOWN)
-*/
+/**
+ * SET MOUSE KEYCODE MODE
+ *
+ * 0x0A
+ * deltax      ; distance in X clicks to return (LEFT) or (RIGHT)
+ * deltay      ; distance in Y clicks to return (UP) or (DOWN)
+ */
 void IKBD_Cmd_MouseCursorKeycodes(void)
 {
   KeyboardProcessor.MouseMode = AUTOMODE_MOUSECURSOR;
@@ -880,13 +880,13 @@ void IKBD_Cmd_MouseCursorKeycodes(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET MOUSE THRESHOLD
-
-  0x0B
-  X      ; x threshold in mouse ticks (positive integers)
-  Y      ; y threshold in mouse ticks (positive integers)
-*/
+/**
+ * SET MOUSE THRESHOLD
+ *
+ * 0x0B
+ * X      ; x threshold in mouse ticks (positive integers)
+ * Y      ; y threshold in mouse ticks (positive integers)
+ */
 void IKBD_Cmd_SetMouseThreshold(void)
 {
   KeyboardProcessor.Mouse.XThreshold = (unsigned int)Keyboard.InputBuffer[1];
@@ -899,13 +899,13 @@ void IKBD_Cmd_SetMouseThreshold(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET MOUSE SCALE
-
-  0x0C
-  X      ; horizontal mouse ticks per internel X
-  Y      ; vertical mouse ticks per internel Y
-*/
+/**
+ * SET MOUSE SCALE
+ *
+ * 0x0C
+ * X      ; horizontal mouse ticks per internel X
+ * Y      ; vertical mouse ticks per internel Y
+ */
 void IKBD_Cmd_SetMouseScale(void)
 {
   KeyboardProcessor.Mouse.XScale = (unsigned int)Keyboard.InputBuffer[1];
@@ -917,22 +917,22 @@ void IKBD_Cmd_SetMouseScale(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  INTERROGATE MOUSE POSITION
-
-  0x0D
-    Returns:  0xF7  ; absolute mouse position header
-      BUTTONS
-        0000dcba
-        where a is right button down since last interrogation
-        b is right button up since last
-        c is left button down since last
-        d is left button up since last
-      XMSB      ; X coordinate
-      XLSB
-      YMSB      ; Y coordinate
-      YLSB
-*/
+/**
+ * INTERROGATE MOUSE POSITION
+ *
+ * 0x0D
+ *   Returns:  0xF7  ; absolute mouse position header
+ *     BUTTONS
+ *       0000dcba
+ *       where a is right button down since last interrogation
+ *       b is right button up since last
+ *       c is left button down since last
+ *       d is left button up since last
+ *     XMSB      ; X coordinate
+ *     XLSB
+ *     YMSB      ; Y coordinate
+ *     YLSB
+ */
 void IKBD_Cmd_ReadAbsMousePos(void)
 {
   Uint8 Buttons,PrevButtons;
@@ -968,16 +968,16 @@ void IKBD_Cmd_ReadAbsMousePos(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  LOAD MOUSE POSITION
-
-  0x0E
-  0x00      ; filler
-  XMSB      ; X coordinate
-  XLSB      ; (in scaled coordinate system)
-  YMSB      ; Y coordinate
-  YLSB
-*/
+/**
+ * LOAD MOUSE POSITION
+ *
+ * 0x0E
+ * 0x00      ; filler
+ * XMSB      ; X coordinate
+ * XLSB      ; (in scaled coordinate system)
+ * YMSB      ; Y coordinate
+ * YLSB
+ */
 void IKBD_Cmd_SetInternalMousePos(void)
 {
   /* Setting these do not clip internal position(this happens on next update) */
@@ -991,11 +991,11 @@ void IKBD_Cmd_SetInternalMousePos(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET Y=0 AT BOTTOM
-
-  0x0F
-*/
+/**
+ * SET Y=0 AT BOTTOM
+ *
+ * 0x0F
+ */
 void IKBD_Cmd_SetYAxisDown(void)
 {
   KeyboardProcessor.Mouse.YAxis = -1;
@@ -1007,11 +1007,11 @@ void IKBD_Cmd_SetYAxisDown(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET Y=0 AT TOP
-
-  0x10
-*/
+/**
+ * SET Y=0 AT TOP
+ *
+ * 0x10
+ */
 void IKBD_Cmd_SetYAxisUp(void)
 {
   KeyboardProcessor.Mouse.YAxis = 1;
@@ -1023,11 +1023,11 @@ void IKBD_Cmd_SetYAxisUp(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  RESUME
-
-  0x11
-*/
+/**
+ *  RESUME
+ *
+ * 0x11
+ */
 void IKBD_Cmd_StartKeyboardTransfer(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1038,11 +1038,11 @@ void IKBD_Cmd_StartKeyboardTransfer(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  DISABLE MOUSE
-
-  0x12
-*/
+/**
+ * DISABLE MOUSE
+ *
+ * 0x12
+ */
 void IKBD_Cmd_TurnMouseOff(void)
 {
   KeyboardProcessor.MouseMode = AUTOMODE_OFF;
@@ -1057,11 +1057,11 @@ void IKBD_Cmd_TurnMouseOff(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  PAUSE OUTPUT
-
-  0x13
-*/
+/**
+ * PAUSE OUTPUT
+ *
+ * 0x13
+ */
 void IKBD_Cmd_StopKeyboardTransfer(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1072,11 +1072,11 @@ void IKBD_Cmd_StopKeyboardTransfer(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET JOYSTICK EVENT REPORTING
-
-  0x14
-*/
+/**
+ * SET JOYSTICK EVENT REPORTING
+ *
+ * 0x14
+ */
 void IKBD_Cmd_ReturnJoystickAuto(void)
 {
   KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
@@ -1096,11 +1096,11 @@ void IKBD_Cmd_ReturnJoystickAuto(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET JOYSTICK INTERROGATION MODE
-
-  0x15
-*/
+/**
+ * SET JOYSTICK INTERROGATION MODE
+ *
+ * 0x15
+ */
 void IKBD_Cmd_StopJoystick(void)
 {
   KeyboardProcessor.JoystickMode = AUTOMODE_OFF;
@@ -1109,11 +1109,11 @@ void IKBD_Cmd_StopJoystick(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  JOYSTICK INTERROGATE
-
-  0x16
-*/
+/**
+ * JOYSTICK INTERROGATE
+ *
+ * 0x16
+ */
 void IKBD_Cmd_ReturnJoystick(void)
 {
   IKBD_AddKeyToKeyboardBuffer(0xFD);
@@ -1127,17 +1127,17 @@ void IKBD_Cmd_ReturnJoystick(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET JOYSTICK MONITORING
-
-  0x17
-  rate      ; time between samples in hundreths of a second
-    Returns: (in packets of two as long as in mode)
-      %000000xy  where y is JOYSTICK1 Fire button
-          and x is JOYSTICK0 Fire button
-      %nnnnmmmm  where m is JOYSTICK1 state
-          and n is JOYSTICK0 state
-*/
+/**
+ * SET JOYSTICK MONITORING
+ *
+ * 0x17
+ * rate      ; time between samples in hundreths of a second
+ *   Returns: (in packets of two as long as in mode)
+ *     %000000xy  where y is JOYSTICK1 Fire button
+ *         and x is JOYSTICK0 Fire button
+ *     %nnnnmmmm  where m is JOYSTICK1 state
+ *         and n is JOYSTICK0 state
+ */
 void IKBD_Cmd_SetJoystickDuration(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1148,14 +1148,14 @@ void IKBD_Cmd_SetJoystickDuration(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET FIRE BUTTON MONITORING
-
-  0x18
-    Returns: (as long as in mode)
-      %bbbbbbbb  ; state of the JOYSTICK1 fire button packed
-            ; 8 bits per byte, the first sample if the MSB
-*/
+/**
+ * SET FIRE BUTTON MONITORING
+ *
+ * 0x18
+ *   Returns: (as long as in mode)
+ *     %bbbbbbbb  ; state of the JOYSTICK1 fire button packed
+ *           ; 8 bits per byte, the first sample if the MSB
+ */
 void IKBD_Cmd_SetJoystickFireDuration(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1166,27 +1166,27 @@ void IKBD_Cmd_SetJoystickFireDuration(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  SET JOYSTICK KEYCODE MODE
-
-  0x19
-  RX        ; length of time (in tenths of seconds) until
-          ; horizontal velocity breakpoint is reached
-  RY        ; length of time (in tenths of seconds) until
-          ; vertical velocity breakpoint is reached
-  TX        ; length (in tenths of seconds) of joystick closure
-          ; until horizontal cursor key is generated before RX
-          ; has elapsed
-  TY        ; length (in tenths of seconds) of joystick closure
-          ; until vertical cursor key is generated before RY
-          ; has elapsed
-  VX        ; length (in tenths of seconds) of joystick closure
-          ; until horizontal cursor keystokes are generated after RX
-          ; has elapsed
-  VY        ; length (in tenths of seconds) of joystick closure
-          ; until vertical cursor keystokes are generated after RY
-          ; has elapsed
-*/
+/**
+ * SET JOYSTICK KEYCODE MODE
+ *
+ * 0x19
+ * RX        ; length of time (in tenths of seconds) until
+ *         ; horizontal velocity breakpoint is reached
+ * RY        ; length of time (in tenths of seconds) until
+ *         ; vertical velocity breakpoint is reached
+ * TX        ; length (in tenths of seconds) of joystick closure
+ *         ; until horizontal cursor key is generated before RX
+ *         ; has elapsed
+ * TY        ; length (in tenths of seconds) of joystick closure
+ *         ; until vertical cursor key is generated before RY
+ *         ; has elapsed
+ * VX        ; length (in tenths of seconds) of joystick closure
+ *         ; until horizontal cursor keystokes are generated after RX
+ *         ; has elapsed
+ * VY        ; length (in tenths of seconds) of joystick closure
+ *         ; until vertical cursor keystokes are generated after RY
+ *         ; has elapsed
+ */
 void IKBD_Cmd_SetCursorForJoystick(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1197,11 +1197,11 @@ void IKBD_Cmd_SetCursorForJoystick(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  DISABLE JOYSTICKS
-
-  0x1A
-*/
+/**
+ * DISABLE JOYSTICKS
+ *
+ * 0x1A
+ */
 void IKBD_Cmd_DisableJoysticks(void)
 {
   KeyboardProcessor.JoystickMode = AUTOMODE_OFF;
@@ -1216,17 +1216,17 @@ void IKBD_Cmd_DisableJoysticks(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  TIME-OF-DAY CLOCK SET
-
-  0x1B
-  YY        ; year (2 least significant digits)
-  MM        ; month
-  DD        ; day
-  hh        ; hour
-  mm        ; minute
-  ss        ; second
-*/
+/**
+ * TIME-OF-DAY CLOCK SET
+ *
+ * 0x1B
+ * YY        ; year (2 least significant digits)
+ * MM        ; month
+ * DD        ; day
+ * hh        ; hour
+ * mm        ; minute
+ * ss        ; second
+ */
 void IKBD_Cmd_SetClock(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1237,25 +1237,25 @@ void IKBD_Cmd_SetClock(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  INTERROGATE TIME-OF-DAT CLOCK
-
-  0x1C
-    Returns:
-      0xFC  ; time-of-day event header
-      YY    ; year (2 least significant digits)
-      There seems to be a problem with the bcd conversion of the year
-      when year/10 >= 10. So the bcd conversion keeps the part > 10.
-      If you put year%100 here (as says the doc), and put a real bcd
-      conversion function in misc.c, then you end up with year 2031
-      instead of 2003...
-
-      MM    ; month
-      DD    ; day
-      hh    ; hour
-      mm    ; minute
-      ss    ; second
-*/
+/**
+ * INTERROGATE TIME-OF-DAT CLOCK
+ *
+ * 0x1C
+ *   Returns:
+ *     0xFC  ; time-of-day event header
+ *     YY    ; year (2 least significant digits)
+ *     There seems to be a problem with the bcd conversion of the year
+ *     when year/10 >= 10. So the bcd conversion keeps the part > 10.
+ *     If you put year%100 here (as says the doc), and put a real bcd
+ *     conversion function in misc.c, then you end up with year 2031
+ *     instead of 2003...
+ *
+ *     MM    ; month
+ *     DD    ; day
+ *     hh    ; hour
+ *     mm    ; minute
+ *     ss    ; second
+ */
 void IKBD_Cmd_ReadClock(void)
 {
   struct tm *SystemTime;
@@ -1282,15 +1282,15 @@ void IKBD_Cmd_ReadClock(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  MEMORY LOAD
-
-  0x20
-  ADRMSB      ; address in controller
-  ADRLSB      ; memory to be loaded
-  NUM        ; number of bytes (0-128)
-  { data }
-*/
+/**
+ * MEMORY LOAD
+ *
+ * 0x20
+ * ADRMSB      ; address in controller
+ * ADRLSB      ; memory to be loaded
+ * NUM        ; number of bytes (0-128)
+ * { data }
+ */
 void IKBD_Cmd_LoadMemory(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1301,17 +1301,17 @@ void IKBD_Cmd_LoadMemory(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  MEMORY READ
-
-  0x21
-  ADRMSB        ; address in controller
-  ADRLSB        ; memory to be read
-    Returns:
-      0xF6    ; status header
-      0x20    ; memory access
-      { data }  ; 6 data bytes starting at ADR
-*/
+/**
+ * MEMORY READ
+ *
+ * 0x21
+ * ADRMSB        ; address in controller
+ * ADRLSB        ; memory to be read
+ *   Returns:
+ *     0xF6    ; status header
+ *     0x20    ; memory access
+ *     { data }  ; 6 data bytes starting at ADR
+ */
 void IKBD_Cmd_ReadMemory(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1322,13 +1322,13 @@ void IKBD_Cmd_ReadMemory(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  CONTROLLER EXECUTE
-
-  0x22
-  ADRMSB      ; address of subroutine in
-  ADRLSB      ; controller memory to be called
-*/
+/**
+ * CONTROLLER EXECUTE
+ *
+ * 0x22
+ * ADRMSB      ; address of subroutine in
+ * ADRLSB      ; controller memory to be called
+ */
 void IKBD_Cmd_Execute(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1339,11 +1339,11 @@ void IKBD_Cmd_Execute(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Send data to keyboard processor via ACIA by writing to address 0xfffc02.
-  For our emulation we bypass the ACIA (I've yet to see anything check for this)
-  and add the byte directly into the keyboard input buffer.
-*/
+/**
+ * Send data to keyboard processor via ACIA by writing to address 0xfffc02.
+ * For our emulation we bypass the ACIA (I've yet to see anything check for this)
+ * and add the byte directly into the keyboard input buffer.
+ */
 static void IKBD_RunKeyboardCommand(Uint16 aciabyte)
 {
   int i=0;
@@ -1373,9 +1373,9 @@ static void IKBD_RunKeyboardCommand(Uint16 aciabyte)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Send byte to our keyboard processor, and execute
-*/
+/**
+ * Send byte to our keyboard processor, and execute
+ */
 void IKBD_SendByteToKeyboardProcessor(Uint16 bl)
 {
   IKBD_RunKeyboardCommand(bl);  /* And send */
@@ -1383,10 +1383,10 @@ void IKBD_SendByteToKeyboardProcessor(Uint16 bl)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  The byte stored in the ACIA 'ACIAByte' has been read by the CPU by reading from
-  address $fffc02. We clear the status flag and set the GPIP register to signal read.
-*/
+/**
+ * The byte stored in the ACIA 'ACIAByte' has been read by the CPU by reading from
+ * address $fffc02. We clear the status flag and set the GPIP register to signal read.
+ */
 Uint16 IKBD_GetByteFromACIA(void)
 {
   /* ACIA is now reset */
@@ -1399,11 +1399,11 @@ Uint16 IKBD_GetByteFromACIA(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Byte received in the ACIA from the keyboard processor. Store byte for read from $fffc02
-  and clear the GPIP I4 register. This register will be remain low until byte has been
-  read from ACIA.
-*/
+/**
+ * Byte received in the ACIA from the keyboard processor. Store byte for read from $fffc02
+ * and clear the GPIP I4 register. This register will be remain low until byte has been
+ * read from ACIA.
+ */
 void IKBD_InterruptHandler_ACIA(void)
 {
   /* Remove this interrupt from list and re-order */
@@ -1437,11 +1437,11 @@ void IKBD_InterruptHandler_ACIA(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Send a byte from the keyboard buffer to the ACIA. On a real ST this takes some time to send
-  so we must be as accurate in the timing as possible - bytes do not appear to the 68000 instantly!
-  We do this via an internal interrupt - neat!
-*/
+/**
+ * Send a byte from the keyboard buffer to the ACIA. On a real ST this takes some time to send
+ * so we must be as accurate in the timing as possible - bytes do not appear to the 68000 instantly!
+ * We do this via an internal interrupt - neat!
+ */
 void IKBD_SendByteToACIA(void)
 {
   /* Transmit byte from keyboard processor to ACIA. This takes approx ACIA_CYCLES CPU clock cycles to complete */
@@ -1455,11 +1455,11 @@ void IKBD_SendByteToACIA(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Add characer our internal keyboard buffer. These bytes are then sent one at a time to the ACIA.
-  This is done via a delay to mimick the STs internal workings, as this is needed for games such
-  as Carrier Command.
-*/
+/**
+ * Add characer our internal keyboard buffer. These bytes are then sent one at a time to the ACIA.
+ * This is done via a delay to mimick the STs internal workings, as this is needed for games such
+ * as Carrier Command.
+ */
 void IKBD_AddKeyToKeyboardBuffer(Uint8 Data)
 {
   /* Is keyboard initialised yet? Ignore any bytes until it is */
@@ -1479,9 +1479,9 @@ void IKBD_AddKeyToKeyboardBuffer(Uint8 Data)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  When press/release key under host OS, execute this function.
-*/
+/**
+ * When press/release key under host OS, execute this function.
+ */
 void IKBD_PressSTKey(Uint8 ScanCode, BOOL bPress)
 {
   if (!bPress)
@@ -1491,9 +1491,9 @@ void IKBD_PressSTKey(Uint8 ScanCode, BOOL bPress)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from keyboard control ACIA register (0xfffc00)
-*/
+/**
+ * Handle read from keyboard control ACIA register (0xfffc00)
+ */
 void IKBD_KeyboardControl_ReadByte(void)
 {
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
@@ -1504,9 +1504,9 @@ void IKBD_KeyboardControl_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from keyboard data ACIA register (0xfffc02)
-*/
+/**
+ * Handle read from keyboard data ACIA register (0xfffc02)
+ */
 void IKBD_KeyboardData_ReadByte(void)
 {
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
@@ -1517,9 +1517,9 @@ void IKBD_KeyboardData_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to keyboard control ACIA register (0xfffc00)
-*/
+/**
+ * Handle write to keyboard control ACIA register (0xfffc00)
+ */
 void IKBD_KeyboardControl_WriteByte(void)
 {
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
@@ -1529,9 +1529,9 @@ void IKBD_KeyboardControl_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to keyboard data ACIA register (0xfffc02)
-*/
+/**
+ * Handle write to keyboard data ACIA register (0xfffc02)
+ */
 void IKBD_KeyboardData_WriteByte(void)
 {
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */

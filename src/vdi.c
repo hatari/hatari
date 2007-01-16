@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.19 2006-12-23 19:45:19 thothy Exp $";
+const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.20 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -93,9 +93,9 @@ static const Uint8 NewDeskScript[786] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set Width/Height/BitDepth according to passed GEMRES_640x480, GEMRES_800x600 or GEMRES_1024x768
-*/
+/**
+ * Set Width/Height/BitDepth according to passed GEMRES_640x480, GEMRES_800x600 or GEMRES_1024x768
+ */
 void VDI_SetResolution(int GEMRes,int GEMColour)
 {
   /* Resolution */
@@ -144,12 +144,12 @@ void VDI_SetResolution(int GEMRes,int GEMColour)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check VDI call and see if we need to re-direct to our own routines
-  Return TRUE if we've handled the exception, else return FALSE
-
-  We enter here with Trap #2, so D1 is pointer to VDI vectors, ie Control, Intin, Ptsin etc...
-*/
+/**
+ * Check VDI call and see if we need to re-direct to our own routines
+ * Return TRUE if we've handled the exception, else return FALSE
+ *
+ * We enter here with Trap #2, so D1 is pointer to VDI vectors, ie Control, Intin, Ptsin etc...
+ */
 BOOL VDI(void)
 {
   Uint32 TablePtr = Regs[REG_D1];
@@ -178,9 +178,9 @@ BOOL VDI(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Modify Line-A structure for our VDI resolutions
-*/
+/**
+ * Modify Line-A structure for our VDI resolutions
+ */
 void VDI_LineA(void)
 {
   if (bUseVDIRes)
@@ -201,9 +201,9 @@ void VDI_LineA(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  This is called on completion of a VDI Trap, used to modify return structure for 
-*/
+/**
+ * This is called on completion of a VDI Trap, used to modify return structure for 
+ */
 void VDI_Complete(void)
 {
   unsigned short int OpCode;
@@ -226,9 +226,9 @@ void VDI_Complete(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save desktop configuration file for VDI, eg desktop.inf(TOS 1.04) or newdesk.inf(TOS 2.06)
-*/
+/**
+ * Save desktop configuration file for VDI, eg desktop.inf(TOS 1.04) or newdesk.inf(TOS 2.06)
+ */
 static void VDI_SaveDesktopInf(char *pszFileName, const Uint8 *Script, long ScriptSize)
 {
   /* Just save file */
@@ -237,9 +237,9 @@ static void VDI_SaveDesktopInf(char *pszFileName, const Uint8 *Script, long Scri
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Modify exisiting ST desktop configuration files to set resolution(keep user settings)
-*/
+/**
+ * Modify exisiting ST desktop configuration files to set resolution(keep user settings)
+ */
 static void VDI_ModifyDesktopInf(char *pszFileName)
 {
   long InfSize;
@@ -274,10 +274,10 @@ done_modify:;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Modify (or create) ST desktop configuration files so VDI boots up in
-  correct color depth
-*/
+/**
+ * Modify (or create) ST desktop configuration files so VDI boots up in
+ * correct color depth
+ */
 void VDI_FixDesktopInf(void)
 {
   char *szDesktopFileName, *szNewDeskFileName;

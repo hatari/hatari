@@ -8,7 +8,7 @@
 
   NOTE: The ST uses the joystick port 1 as the default controller.
 */
-const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.13 2006-08-09 08:10:56 eerot Exp $";
+const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.14 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL.h>
 
@@ -40,9 +40,9 @@ static Uint16 nSteJoySelect;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  This function initialises the (real) joysticks.
-*/
+/**
+ * This function initialises the (real) joysticks.
+ */
 void Joy_Init(void)
 {
 	int i, nPadsConnected;
@@ -82,9 +82,9 @@ void Joy_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Close the (real) joysticks.
-*/
+/**
+ * Close the (real) joysticks.
+ */
 void Joy_UnInit(void)
 {
 	int i, nPadsConnected;
@@ -102,10 +102,10 @@ void Joy_UnInit(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read details from joystick using SDL calls
-  NOTE ID is that of SDL
-*/
+/**
+ * Read details from joystick using SDL calls
+ * NOTE ID is that of SDL
+ */
 static BOOL Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
 {
 	/* Joystick is OK, read position */
@@ -122,12 +122,12 @@ static BOOL Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read PC joystick and return ST format byte, i.e. lower 4 bits direction
-  and top bit fire.
-  NOTE : ID 0 is Joystick 0/Mouse and ID 1 is Joystick 1 (default),
-         ID 2 and 3 are STE joypads and ID 4 and 5 are parport joysticks.
-*/
+/**
+ * Read PC joystick and return ST format byte, i.e. lower 4 bits direction
+ * and top bit fire.
+ * NOTE : ID 0 is Joystick 0/Mouse and ID 1 is Joystick 1 (default),
+ *        ID 2 and 3 are STE joypads and ID 4 and 5 are parport joysticks.
+ */
 Uint8 Joy_GetStickData(int nStJoyId)
 {
 	Uint8 nData = 0;
@@ -194,11 +194,11 @@ Uint8 Joy_GetStickData(int nStJoyId)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Get the fire button states.
-  Note: More than one fire buttons are only supported for real joystick,
-  not for keyboard emulation!
-*/
+/**
+ * Get the fire button states.
+ * Note: More than one fire buttons are only supported for real joystick,
+ * not for keyboard emulation!
+ */
 static int Joy_GetFireButtons(int nStJoyId)
 {
 	int nButtons = 0;
@@ -236,12 +236,12 @@ static int Joy_GetFireButtons(int nStJoyId)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set joystick cursor emulation for given port.  This assumes that
-  if the same keys have been defined for "cursor key emulation" in
-  other ports, the emulation for them has been switched off. Returns
-  1 if the port number was OK, zero for error.
-*/
+/**
+ * Set joystick cursor emulation for given port.  This assumes that
+ * if the same keys have been defined for "cursor key emulation" in
+ * other ports, the emulation for them has been switched off. Returns
+ * 1 if the port number was OK, zero for error.
+ */
 BOOL Joy_SetCursorEmulation(int port)
 {
 	if (port < 0 || port >= JOYSTICK_COUNT) {
@@ -253,11 +253,11 @@ BOOL Joy_SetCursorEmulation(int port)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Toggle joystick cursor emulation between port 0, port 1 and being off
-  from them. When it's turned off from them, the port's previous state
-  is restored
-*/
+/**
+ * Toggle joystick cursor emulation between port 0, port 1 and being off
+ * from them. When it's turned off from them, the port's previous state
+ * is restored
+ */
 void Joy_ToggleCursorEmulation(void)
 {
 	static int saved[2] = { JOYSTICK_DISABLED, JOYSTICK_DISABLED };
@@ -285,10 +285,10 @@ void Joy_ToggleCursorEmulation(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  A key has been pressed down, check if we use it for joystick emulation
-  via keyboard.
-*/
+/**
+ * A key has been pressed down, check if we use it for joystick emulation
+ * via keyboard.
+ */
 BOOL Joy_KeyDown(int symkey, int modkey)
 {
 	int i;
@@ -331,10 +331,10 @@ BOOL Joy_KeyDown(int symkey, int modkey)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  A key has been released, check if we use it for joystick emulation
-  via keyboard.
-*/
+/**
+ * A key has been released, check if we use it for joystick emulation
+ * via keyboard.
+ */
 BOOL Joy_KeyUp(int symkey, int modkey)
 {
 	int i;
@@ -377,9 +377,9 @@ BOOL Joy_KeyUp(int symkey, int modkey)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read from STE joypad buttons register (0xff9200)
-*/
+/**
+ * Read from STE joypad buttons register (0xff9200)
+ */
 void Joy_StePadButtons_ReadWord(void)
 {
 	Uint16 nData = 0xffff;
@@ -445,9 +445,9 @@ void Joy_StePadButtons_ReadWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read from STE joypad direction/buttons register (0xff9202)
-*/
+/**
+ * Read from STE joypad direction/buttons register (0xff9202)
+ */
 void Joy_StePadMulti_ReadWord(void)
 {
 	Uint8 nData = 0xff;
@@ -501,9 +501,9 @@ void Joy_StePadMulti_ReadWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to STE joypad selection register (0xff9202)
-*/
+/**
+ * Write to STE joypad selection register (0xff9202)
+ */
 void Joy_StePadMulti_WriteWord(void)
 {
 	nSteJoySelect = IoMem_ReadWord(0xff9202);

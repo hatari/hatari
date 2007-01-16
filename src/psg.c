@@ -8,7 +8,7 @@
 
   Also used for the printer (centronics) port emulation (PSG Port B, Register 15)
 */
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.14 2006-12-17 10:21:43 eerot Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.15 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -31,9 +31,9 @@ static BOOL bLastWriteToIOB;    /* boolean flag: did the last write to the PSG g
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset variables used in PSG
-*/
+/**
+ * Reset variables used in PSG
+ */
 void PSG_Reset(void)
 {
 	PSGRegisterSelect = 0;
@@ -43,9 +43,9 @@ void PSG_Reset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
-*/
+/**
+ * Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
+ */
 void PSG_MemorySnapShot_Capture(BOOL bSave)
 {
 	/* Save/Restore details */
@@ -56,10 +56,10 @@ void PSG_MemorySnapShot_Capture(BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write byte to 0xff88000, this is used as a selector for when we read/write
-  to address 0xff8802
-*/
+/**
+ * Write byte to 0xff88000, this is used as a selector for when we read/write
+ * to address 0xff8802
+ */
 void PSG_SelectRegister_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -69,9 +69,9 @@ void PSG_SelectRegister_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read byte from 0xff8800, returns PSG data
-*/
+/**
+ * Read byte from 0xff8800, returns PSG data
+ */
 void PSG_SelectRegister_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -108,9 +108,9 @@ void PSG_SelectRegister_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write byte to 0xff8802, stores according to PSG select register (write 0xff8800)
-*/
+/**
+ * Write byte to 0xff8802, stores according to PSG select register (write 0xff8800)
+ */
 void PSG_DataRegister_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -200,9 +200,9 @@ void PSG_DataRegister_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read byte from 0xff8802, returns 0xff
-*/
+/**
+ * Read byte from 0xff8802, returns 0xff
+ */
 void PSG_DataRegister_ReadByte(void)
 {
 	M68000_WaitState(4);

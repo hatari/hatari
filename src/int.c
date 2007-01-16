@@ -16,7 +16,7 @@
   the current instruction takes 20 cycles we will be 16 cycles late - this is handled in
   the adjust functions.
 */
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.15 2006-09-26 19:12:35 eerot Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.16 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -63,9 +63,9 @@ static int ActiveInterrupt=0;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset interrupts, handlers
-*/
+/**
+ * Reset interrupts, handlers
+ */
 void Int_Reset(void)
 {
   int i;
@@ -84,9 +84,9 @@ void Int_Reset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Convert interrupt handler function pointer to ID, used for saving
-*/
+/**
+ * Convert interrupt handler function pointer to ID, used for saving
+ */
 static int Int_HandlerFunctionToID(void (*pHandlerFunction)(void))
 {
   int i;
@@ -105,9 +105,9 @@ static int Int_HandlerFunctionToID(void (*pHandlerFunction)(void))
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Convert ID back into interrupt handler function, used for restoring
-*/
+/**
+ * Convert ID back into interrupt handler function, used for restoring
+ */
 static void *Int_IDToHandlerFunction(int ID)
 {
   /* Get function pointer */
@@ -116,9 +116,9 @@ static void *Int_IDToHandlerFunction(int ID)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
-*/
+/**
+ * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+ */
 void Int_MemorySnapShot_Capture(BOOL bSave)
 {
   int i,ID;
@@ -156,9 +156,9 @@ void Int_MemorySnapShot_Capture(BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Find next interrupt to occur, and store to global variables for decrement in instruction decode loop
-*/
+/**
+ * Find next interrupt to occur, and store to global variables for decrement in instruction decode loop
+ */
 static void Int_SetNewInterrupt(void)
 {
   int LowestCycleCount=999999,LowestInterrupt=0;
@@ -183,9 +183,9 @@ static void Int_SetNewInterrupt(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Adjust all interrupt timings, MUST call Int_SetNewInterrupt after this
-*/
+/**
+ * Adjust all interrupt timings, MUST call Int_SetNewInterrupt after this
+ */
 static void Int_UpdateInterrupt(void)
 {
   int CycleSubtract;
@@ -205,9 +205,9 @@ static void Int_UpdateInterrupt(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Adjust all interrupt timings as 'ActiveInterrupt' has occured, and remove from active list
-*/
+/**
+ * Adjust all interrupt timings as 'ActiveInterrupt' has occured, and remove from active list
+ */
 void Int_AcknowledgeInterrupt(void)
 {
   /* Update list cycle counts */
@@ -222,9 +222,9 @@ void Int_AcknowledgeInterrupt(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Add interrupt from time last one occurred
-*/
+/**
+ * Add interrupt from time last one occurred
+ */
 void Int_AddAbsoluteInterrupt(int CycleTime, interrupt_id Handler)
 {
   InterruptHandlers[Handler].bUsed = TRUE;
@@ -236,9 +236,9 @@ void Int_AddAbsoluteInterrupt(int CycleTime, interrupt_id Handler)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Add interrupt to occur from now
-*/
+/**
+ * Add interrupt to occur from now
+ */
 void Int_AddRelativeInterrupt(int CycleTime, interrupt_id Handler)
 {
   InterruptHandlers[Handler].bUsed = TRUE;
@@ -250,9 +250,9 @@ void Int_AddRelativeInterrupt(int CycleTime, interrupt_id Handler)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Add interrupt to occur from now without offset
-*/
+/**
+ * Add interrupt to occur from now without offset
+ */
 void Int_AddRelativeInterruptNoOffset(int CycleTime, interrupt_id Handler)
 {
   nCyclesOver = 0;
@@ -265,9 +265,9 @@ void Int_AddRelativeInterruptNoOffset(int CycleTime, interrupt_id Handler)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Remove a pending interrupt from our table
-*/
+/**
+ * Remove a pending interrupt from our table
+ */
 void Int_RemovePendingInterrupt(interrupt_id Handler)
 {
   /* Stop interrupt */
@@ -281,9 +281,9 @@ void Int_RemovePendingInterrupt(interrupt_id Handler)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return TRUE if interrupt is active in list
-*/
+/**
+ * Return TRUE if interrupt is active in list
+ */
 BOOL Int_InterruptActive(interrupt_id Handler)
 {
   /* Is timer active? */
@@ -295,9 +295,9 @@ BOOL Int_InterruptActive(interrupt_id Handler)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return cycles passed for an interrupt handler
-*/
+/**
+ * Return cycles passed for an interrupt handler
+ */
 int Int_FindCyclesPassed(interrupt_id Handler)
 {
   int CyclesPassed, CyclesFromLastInterrupt;

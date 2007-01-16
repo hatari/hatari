@@ -28,7 +28,7 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.15 2006-12-17 10:21:43 eerot Exp $";
+const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.16 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -57,9 +57,9 @@ static int nBusErrorAccesses;                         /* Needed to count bus err
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Fill a region with bus error handlers.
-*/
+/**
+ * Fill a region with bus error handlers.
+ */
 static void IoMem_SetBusErrorRegion(Uint32 startaddr, Uint32 endaddr)
 {
 	Uint32 a;
@@ -81,11 +81,11 @@ static void IoMem_SetBusErrorRegion(Uint32 startaddr, Uint32 endaddr)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create 'intercept' tables for hardware address access. Each 'intercept
-  table is a list of 0x8000 pointers to a list of functions to call when
-  that location in the ST's memory is accessed. 
-*/
+/**
+ * Create 'intercept' tables for hardware address access. Each 'intercept
+ * table is a list of 0x8000 pointers to a list of functions to call when
+ * that location in the ST's memory is accessed. 
+ */
 void IoMem_Init(void)
 {
 	Uint32 addr;
@@ -158,19 +158,19 @@ void IoMem_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Uninitialize the IoMem code (currently unused).
-*/
+/**
+ * Uninitialize the IoMem code (currently unused).
+ */
 void IoMem_UnInit(void)
 {
 }
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check if need to change our address as maybe a mirror register.
-  Currently we only have a PSG mirror area.
-*/
+/**
+ * Check if need to change our address as maybe a mirror register.
+ * Currently we only have a PSG mirror area.
+ */
 static Uint32 IoMem_CheckMirrorAddresses(Uint32 addr)
 {
 	if (addr>=0xff8800 && addr<0xff8900)    /* Is a PSG mirror registers? */
@@ -182,9 +182,9 @@ static Uint32 IoMem_CheckMirrorAddresses(Uint32 addr)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle byte read access from IO memory.
-*/
+/**
+ * Handle byte read access from IO memory.
+ */
 uae_u32 IoMem_bget(uaecptr addr)
 {
 	Dprintf(("IoMem_bget($%x)\n", addr));
@@ -218,9 +218,9 @@ uae_u32 IoMem_bget(uaecptr addr)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle word read access from IO memory.
-*/
+/**
+ * Handle word read access from IO memory.
+ */
 uae_u32 IoMem_wget(uaecptr addr)
 {
 	Uint32 idx;
@@ -268,9 +268,9 @@ uae_u32 IoMem_wget(uaecptr addr)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle long-word read access from IO memory.
-*/
+/**
+ * Handle long-word read access from IO memory.
+ */
 uae_u32 IoMem_lget(uaecptr addr)
 {
 	Uint32 idx;
@@ -330,9 +330,9 @@ uae_u32 IoMem_lget(uaecptr addr)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle byte write access to IO memory.
-*/
+/**
+ * Handle byte write access to IO memory.
+ */
 void IoMem_bput(uaecptr addr, uae_u32 val)
 {
 	Dprintf(("IoMem_bput($%x, $%x)\n", addr, val));
@@ -365,9 +365,9 @@ void IoMem_bput(uaecptr addr, uae_u32 val)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle word write access to IO memory.
-*/
+/**
+ * Handle word write access to IO memory.
+ */
 void IoMem_wput(uaecptr addr, uae_u32 val)
 {
 	Uint32 idx;
@@ -414,9 +414,9 @@ void IoMem_wput(uaecptr addr, uae_u32 val)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle long-word write access to IO memory.
-*/
+/**
+ * Handle long-word write access to IO memory.
+ */
 void IoMem_lput(uaecptr addr, uae_u32 val)
 {
 	Uint32 idx;
@@ -475,24 +475,24 @@ void IoMem_lput(uaecptr addr, uae_u32 val)
 
 
 /*-------------------------------------------------------------------------*/
-/*
-  This handler will be called if a ST program tries to read from an address
-  that causes a bus error on a real ST. However, we can't call M68000_BusError()
-  directly: For example, a "move.b $ff8204,d0" triggers a bus error on a real ST,
-  while a "move.w $ff8204,d0" works! So we have to count the accesses to bus error
-  addresses and we only trigger a bus error later if the count matches the complete
-  access size (e.g. nBusErrorAccesses==4 for a long word access).
-*/
+/**
+ * This handler will be called if a ST program tries to read from an address
+ * that causes a bus error on a real ST. However, we can't call M68000_BusError()
+ * directly: For example, a "move.b $ff8204,d0" triggers a bus error on a real ST,
+ * while a "move.w $ff8204,d0" works! So we have to count the accesses to bus error
+ * addresses and we only trigger a bus error later if the count matches the complete
+ * access size (e.g. nBusErrorAccesses==4 for a long word access).
+ */
 void IoMem_BusErrorEvenReadAccess(void)
 {
 	nBusErrorAccesses += 1;
 	IoMem[IoAccessCurrentAddress] = 0xff;
 }
 
-/*
-  We need two handler so that the IoMem_*get functions can distinguish
-  consecutive addresses.
-*/
+/**
+ * We need two handler so that the IoMem_*get functions can distinguish
+ * consecutive addresses.
+ */
 void IoMem_BusErrorOddReadAccess(void)
 {
 	nBusErrorAccesses += 1;
@@ -500,18 +500,18 @@ void IoMem_BusErrorOddReadAccess(void)
 }
 
 /*-------------------------------------------------------------------------*/
-/*
-  Same as IoMem_BusErrorReadAccess() but for write access this time.
-*/
+/**
+ * Same as IoMem_BusErrorReadAccess() but for write access this time.
+ */
 void IoMem_BusErrorEvenWriteAccess(void)
 {
 	nBusErrorAccesses += 1;
 }
 
-/*
-  We need two handler so that the IoMem_*put functions can distinguish
-  consecutive addresses.
-*/
+/**
+ * We need two handler so that the IoMem_*put functions can distinguish
+ * consecutive addresses.
+ */
 void IoMem_BusErrorOddWriteAccess(void)
 {
 	nBusErrorAccesses += 1;
@@ -519,11 +519,11 @@ void IoMem_BusErrorOddWriteAccess(void)
 
 
 /*-------------------------------------------------------------------------*/
-/*
-  This is the read handler for the IO memory locations without an assigned
-  IO register and which also do not generate a bus error. Reading from such
-  a register will return the result 0xff.
-*/
+/**
+ * This is the read handler for the IO memory locations without an assigned
+ * IO register and which also do not generate a bus error. Reading from such
+ * a register will return the result 0xff.
+ */
 void IoMem_VoidRead(void)
 {
 	Uint32 a;
@@ -539,11 +539,11 @@ void IoMem_VoidRead(void)
 }
 
 /*-------------------------------------------------------------------------*/
-/*
-  This is the write handler for the IO memory locations without an assigned
-  IO register and which also do not generate a bus error. We simply ignore
-  a write access to these registers.
-*/
+/**
+ * This is the write handler for the IO memory locations without an assigned
+ * IO register and which also do not generate a bus error. We simply ignore
+ * a write access to these registers.
+ */
 void IoMem_VoidWrite(void)
 {
 	/* Nothing... */
@@ -551,20 +551,20 @@ void IoMem_VoidWrite(void)
 
 
 /*-------------------------------------------------------------------------*/
-/*
-  A dummy function that does nothing at all - for memory regions that don't
-  need a special handler for read access.
-*/
+/**
+ * A dummy function that does nothing at all - for memory regions that don't
+ * need a special handler for read access.
+ */
 void IoMem_ReadWithoutInterception(void)
 {
 	/* Nothing... */
 }
 
 /*-------------------------------------------------------------------------*/
-/*
-  A dummy function that does nothing at all - for memory regions that don't
-  need a special handler for write access.
-*/
+/**
+ * A dummy function that does nothing at all - for memory regions that don't
+ * need a special handler for write access.
+ */
 void IoMem_WriteWithoutInterception(void)
 {
 	/* Nothing... */

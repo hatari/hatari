@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.60 2007-01-06 10:47:44 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.61 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -283,9 +283,9 @@ static const struct Config_Tag configs_System[] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set default configuration values.
-*/
+/**
+ * Set default configuration values.
+ */
 void Configuration_SetDefault(void)
 {
 	int i;
@@ -430,10 +430,10 @@ void Configuration_SetDefault(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Copy details from configuration structure into global variables for system,
-  clean file names, etc...  Called from main.c and dialog.c files.
-*/
+/**
+ * Copy details from configuration structure into global variables for system,
+ * clean file names, etc...  Called from main.c and dialog.c files.
+ */
 void Configuration_Apply(BOOL bReset)
 {
 	if (bReset)
@@ -491,9 +491,9 @@ void Configuration_Apply(BOOL bReset)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Load a settings section from the configuration file.
-*/
+/**
+ * Load a settings section from the configuration file.
+ */
 static int Configuration_LoadSection(const char *pFilename, const struct Config_Tag configs[], const char *pSection)
 {
 	int ret;
@@ -509,10 +509,10 @@ static int Configuration_LoadSection(const char *pFilename, const struct Config_
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Load program setting from configuration file. If psFileName is NULL, use
-  the default (i.e. the users) configuration file.
-*/
+/**
+ * Load program setting from configuration file. If psFileName is NULL, use
+ * the default (i.e. the users) configuration file.
+ */
 void Configuration_Load(const char *psFileName)
 {
 	if (psFileName == NULL)
@@ -550,9 +550,9 @@ void Configuration_Load(const char *psFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save a settings section to configuration file
-*/
+/**
+ * Save a settings section to configuration file
+ */
 static int Configuration_SaveSection(const char *pFilename, const struct Config_Tag configs[], const char *pSection)
 {
 	int ret;
@@ -567,9 +567,9 @@ static int Configuration_SaveSection(const char *pFilename, const struct Config_
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save program setting to configuration file
-*/
+/**
+ * Save program setting to configuration file
+ */
 void Configuration_Save(void)
 {
 	if (Configuration_SaveSection(sConfigFileName, configs_Log, "[Log]") < 0)

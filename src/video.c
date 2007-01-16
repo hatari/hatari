@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.65 2007-01-15 17:42:44 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.66 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -69,9 +69,9 @@ static int nTTRes;                              /* TT shifter resolution mode */
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
-*/
+/**
+ * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+ */
 void Video_MemorySnapShot_Capture(BOOL bSave)
 {
   /* Save/Restore details */
@@ -97,9 +97,9 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Calculate and return video address pointer.
-*/
+/**
+ * Calculate and return video address pointer.
+ */
 static Uint32 Video_CalculateAddress(void)
 {
   int X, FrameCycles;
@@ -135,9 +135,9 @@ static Uint32 Video_CalculateAddress(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to VideoShifter (0xff8260), resolution bits
-*/
+/**
+ * Write to VideoShifter (0xff8260), resolution bits
+ */
 static void Video_WriteToShifter(Uint8 Byte)
 {
   static int nLastByte, nLastFrameCycles;
@@ -168,9 +168,9 @@ static void Video_WriteToShifter(Uint8 Byte)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to VideoSync (0xff820a), Hz setting
-*/
+/**
+ * Write to VideoSync (0xff820a), Hz setting
+ */
 void Video_Sync_WriteByte(void)
 {
   static int nLastHBL = -1, LastByte, nLastCycles;
@@ -236,9 +236,9 @@ void Video_Sync_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset Sync/Shifter table at start of each HBL
-*/
+/**
+ * Reset Sync/Shifter table at start of each HBL
+ */
 static void Video_StartHBL(void)
 {
   LeftRightBorder = BORDERMASK_NONE;
@@ -246,9 +246,9 @@ static void Video_StartHBL(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Store whole palette on first line so have reference to work from
-*/
+/**
+ * Store whole palette on first line so have reference to work from
+ */
 static void Video_StoreFirstLinePalette(void)
 {
   Uint16 *pp2;
@@ -263,9 +263,9 @@ static void Video_StoreFirstLinePalette(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Store resolution on each line(used to test if mixed low/medium resolutions)
-*/
+/**
+ * Store resolution on each line(used to test if mixed low/medium resolutions)
+ */
 static void Video_StoreResolution(int y)
 {
   /* Clear resolution, and set with current value */
@@ -278,9 +278,9 @@ static void Video_StoreResolution(int y)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Copy one line of monochrome screen into buffer for conversion later.
-*/
+/**
+ * Copy one line of monochrome screen into buffer for conversion later.
+ */
 static void Video_CopyScreenLineMono(void)
 {
   int i;
@@ -330,10 +330,10 @@ static void Video_CopyScreenLineMono(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Copy one line of color screen into buffer for conversion later.
-  Possible lines may be top/bottom border, and/or left/right borders.
-*/
+/**
+ * Copy one line of color screen into buffer for conversion later.
+ * Possible lines may be top/bottom border, and/or left/right borders.
+ */
 static void Video_CopyScreenLineColor(void)
 {
   /* Is total blank line? I.e. top/bottom border? */
@@ -459,9 +459,9 @@ static void Video_CopyScreenLineColor(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Copy line of screen into buffer for conversion later.
-*/
+/**
+ * Copy line of screen into buffer for conversion later.
+ */
 static void Video_CopyScreenLine(void)
 {
   /* Only copy screen line if not doing high VDI resolution */
@@ -482,9 +482,9 @@ static void Video_CopyScreenLine(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Copy extended GEM resolution screen
-*/
+/**
+ * Copy extended GEM resolution screen
+ */
 static void Video_CopyVDIScreen(void)
 {
   /* Copy whole screen, don't care about being exact as for GEM only */
@@ -493,9 +493,9 @@ static void Video_CopyVDIScreen(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check at end of each HBL to see if any Sync/Shifter hardware tricks have been attempted
-*/
+/**
+ * Check at end of each HBL to see if any Sync/Shifter hardware tricks have been attempted
+ */
 static void Video_EndHBL(void)
 {
   Uint8 nSyncByte = IoMem_ReadByte(0xff820a);
@@ -547,10 +547,10 @@ static void Video_EndHBL(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  HBL interrupt - this is very inaccurate on ST and appears to occur around
-  1/3rd way into the display!
-*/
+/**
+ * HBL interrupt - this is very inaccurate on ST and appears to occur around
+ * 1/3rd way into the display!
+ */
 void Video_InterruptHandler_HBL(void)
 {
   /* Remove this interrupt from list and re-order */
@@ -565,11 +565,11 @@ void Video_InterruptHandler_HBL(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  End Of Line interrupt
-  As this occurs at the end of a line we cannot get timing for START of first
-  line (as in Spectrum 512)
-*/
+/**
+ * End Of Line interrupt
+ *  As this occurs at the end of a line we cannot get timing for START of first
+ * line (as in Spectrum 512)
+ */
 void Video_InterruptHandler_EndLine(void)
 {
   /* Remove this interrupt from list and re-order */
@@ -605,10 +605,10 @@ void Video_InterruptHandler_EndLine(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Clear raster line table to store changes in palette/resolution on a line
-  basic. Called once on VBL interrupt.
-*/
+/**
+ * Clear raster line table to store changes in palette/resolution on a line
+ * basic. Called once on VBL interrupt.
+ */
 void Video_SetScreenRasters(void)
 {
   pHBLPaletteMasks = HBLPaletteMasks;
@@ -618,9 +618,9 @@ void Video_SetScreenRasters(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set pointers to HBLPalette tables to store correct colours/resolutions
-*/
+/**
+ * Set pointers to HBLPalette tables to store correct colours/resolutions
+ */
 static void Video_SetHBLPaletteMaskPointers(void)
 {
   int FrameCycles;
@@ -648,9 +648,9 @@ static void Video_SetHBLPaletteMaskPointers(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set video shifter timing variables according to screen refresh rate
-*/
+/**
+ * Set video shifter timing variables according to screen refresh rate
+ */
 static void Video_ResetShifterTimings(void)
 {
   Uint8 nSyncByte;
@@ -690,9 +690,9 @@ static void Video_ResetShifterTimings(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Called on VBL, set registers ready for frame
-*/
+/**
+ * Called on VBL, set registers ready for frame
+ */
 static void Video_ClearOnVBL(void)
 {
   /* New screen, so first HBL */
@@ -718,9 +718,9 @@ static void Video_ClearOnVBL(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Get width, height and bpp according to TT-Resolution
-*/
+/**
+ * Get width, height and bpp according to TT-Resolution
+ */
 void Video_GetTTRes(int *width, int *height, int *bpp)
 {
   switch (nTTRes)
@@ -740,10 +740,10 @@ void Video_GetTTRes(int *width, int *height, int *bpp)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Draw screen (either with ST/STE shifter drawing functions or with
-  Videl drawing functions)
-*/
+/**
+ * Draw screen (either with ST/STE shifter drawing functions or with
+ * Videl drawing functions)
+ */
 static void Video_DrawScreen(void)
 {
   /* Skip frame if need to */
@@ -785,9 +785,9 @@ static void Video_DrawScreen(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Start HBL and VBL interrupts.
-*/
+/**
+ * Start HBL and VBL interrupts.
+ */
 void Video_StartInterrupts(void)
 {
   Int_AddAbsoluteInterrupt(nCyclesPerLine-96, INTERRUPT_VIDEO_ENDLINE);
@@ -797,9 +797,9 @@ void Video_StartInterrupts(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  VBL interrupt, draw screen and reset counters
-*/
+/**
+ * VBL interrupt, draw screen and reset counters
+ */
 void Video_InterruptHandler_VBL(void)
 {
   int PendingCyclesOver;
@@ -851,9 +851,9 @@ void Video_InterruptHandler_VBL(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset video chip
-*/
+/**
+ * Reset video chip
+ */
 void Video_Reset(void)
 {
   /* NOTE! Must reset all of these register type things here!!!! */
@@ -881,48 +881,48 @@ void Video_Reset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to video address base high and med register (0xff8201 and 0xff8203).
-  When a program writes to these registers, some other video registers
-  are reset to zero.
-*/
+/**
+ * Write to video address base high and med register (0xff8201 and 0xff8203).
+ * When a program writes to these registers, some other video registers
+ * are reset to zero.
+ */
 void Video_ScreenBaseSTE_WriteByte(void)
 {
   IoMem[0xff820d] = 0;          /* Reset screen base low register */
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read video address counter high byte (0xff8205)
-*/
+/**
+ * Read video address counter high byte (0xff8205)
+ */
 void Video_ScreenCounterHigh_ReadByte(void)
 {
   IoMem[0xff8205] = Video_CalculateAddress() >> 16;   /* Get video address counter high byte */
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read video address counter med byte (0xff8207)
-*/
+/**
+ * Read video address counter med byte (0xff8207)
+ */
 void Video_ScreenCounterMed_ReadByte(void)
 {
   IoMem[0xff8207] = Video_CalculateAddress() >> 8;    /* Get video address counter med byte */
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read video address counter low byte (0xff8209)
-*/
+/**
+ * Read video address counter low byte (0xff8209)
+ */
 void Video_ScreenCounterLow_ReadByte(void)
 {
   IoMem[0xff8209] = Video_CalculateAddress();         /* Get video address counter low byte */
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to video address counter (0xff8205, 0xff8207 and 0xff8209).
-  Called on STE only and like with base address, you cannot set lowest bit.
-*/
+/**
+ * Write to video address counter (0xff8205, 0xff8207 and 0xff8209).
+ * Called on STE only and like with base address, you cannot set lowest bit.
+ */
 void Video_ScreenCounter_WriteByte(void)
 {
   Uint32 addr;
@@ -931,19 +931,19 @@ void Video_ScreenCounter_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read video sync register (0xff820a)
-*/
+/**
+ * Read video sync register (0xff820a)
+ */
 void Video_Sync_ReadByte(void)
 {
   /* Nothing... */
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read video base address low byte (0xff820d). A plain ST can only store
-  screen addresses rounded to 256 bytes (i.e. no lower byte).
-*/
+/**
+ * Read video base address low byte (0xff820d). A plain ST can only store
+ * screen addresses rounded to 256 bytes (i.e. no lower byte).
+ */
 void Video_BaseLow_ReadByte(void)
 {
   if (ConfigureParams.System.nMachineType == MACHINE_ST)
@@ -956,9 +956,9 @@ void Video_BaseLow_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read video line width register (0xff820f)
-*/
+/**
+ * Read video line width register (0xff820f)
+ */
 void Video_LineWidth_ReadByte(void)
 {
   if (ConfigureParams.System.nMachineType == MACHINE_ST)
@@ -968,9 +968,9 @@ void Video_LineWidth_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read video shifter mode register (0xff8260)
-*/
+/**
+ * Read video shifter mode register (0xff8260)
+ */
 void Video_ShifterMode_ReadByte(void)
 {
   if (bUseHighRes)
@@ -980,9 +980,9 @@ void Video_ShifterMode_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read horizontal scroll register (0xff8265)
-*/
+/**
+ * Read horizontal scroll register (0xff8265)
+ */
 void Video_HorScroll_Read(void)
 {
   IoMem[0xff8265] = HWScrollCount;
@@ -990,18 +990,18 @@ void Video_HorScroll_Read(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write video line width register (0xff820f) - STE only.
-*/
+/**
+ * Write video line width register (0xff820f) - STE only.
+ */
 void Video_LineWidth_WriteByte(void)
 {
     ScanLineSkip = IoMem_ReadByte(0xff820f);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to video shifter palette registers (0xff8240-0xff825e)
-*/
+/**
+ * Write to video shifter palette registers (0xff8240-0xff825e)
+ */
 static void Video_ColorReg_WriteWord(Uint32 addr)
 {
   if (!bUseHighRes)                        /* Don't store if hi-res */
@@ -1104,9 +1104,9 @@ void Video_Color15_WriteWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write video shifter mode register (0xff860)
-*/
+/**
+ * Write video shifter mode register (0xff860)
+ */
 void Video_ShifterMode_WriteByte(void)
 {
   if (!bUseHighRes && !bUseVDIRes)                    /* Don't store if hi-res and don't store if VDI resolution */
@@ -1121,16 +1121,16 @@ void Video_ShifterMode_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to horizontal scroll register (0xff8265).
-  Note: The STE shifter has a funny "bug"  that allows to increase the
-  resolution to 336x200 instead of 320x200. It occurs when a program writes
-  certain values to 0xff8264:
-	move.w  #1,$ffff8264      ; Word access!
-	clr.b   $ffff8264         ; Byte access!
-  Some games (Obsession, Skulls) and demos (Pacemaker by Paradox) use this
-  feature to increase the resolution, so we have to emulate this bug, too!
-*/
+/**
+ * Write to horizontal scroll register (0xff8265).
+ * Note: The STE shifter has a funny "bug"  that allows to increase the
+ * resolution to 336x200 instead of 320x200. It occurs when a program writes
+ * certain values to 0xff8264:
+ *	move.w  #1,$ffff8264      ; Word access!
+ *	clr.b   $ffff8264         ; Byte access!
+ * Some games (Obsession, Skulls) and demos (Pacemaker by Paradox) use this
+ * feature to increase the resolution, so we have to emulate this bug, too!
+ */
 void Video_HorScroll_Write(void)
 {
   static BOOL bFirstSteAccess = FALSE;
@@ -1162,9 +1162,9 @@ void Video_HorScroll_Write(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to TT shifter mode register (0xff8262)
-*/
+/**
+ * Write to TT shifter mode register (0xff8262)
+ */
 void Video_TTShiftMode_WriteWord(void)
 {
 	nTTRes = IoMem_ReadByte(0xff8262) & 7;

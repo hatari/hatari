@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.27 2006-09-28 18:27:19 eerot Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.28 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -116,9 +116,9 @@ static int *pEnvelopeLogTable = &LogTable[128];
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create Log tables
-*/
+/**
+ * Create Log tables
+ */
 static void Sound_CreateLogTables(void)
 {
   float a;
@@ -147,10 +147,10 @@ static void Sound_CreateLogTables(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create envelope shape, store to table
-  ( Wave is stored as 4 cycles, where cycles 1,2 are start and 3,4 are looped )
-*/
+/**
+ * Create envelope shape, store to table
+ * ( Wave is stored as 4 cycles, where cycles 1,2 are start and 3,4 are looped )
+ */
 static void Sound_CreateEnvelopeShape(const ENVSHAPE *pEnvShape,int *pEnvelopeValues)
 {
   int i,j,Value;
@@ -166,9 +166,9 @@ static void Sound_CreateEnvelopeShape(const ENVSHAPE *pEnvShape,int *pEnvelopeVa
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create YM2149 envelope shapes(x16)
-*/
+/**
+ * Create YM2149 envelope shapes(x16)
+ */
 static void Sound_CreateEnvelopeShapes(void)
 {
   int i;
@@ -180,11 +180,11 @@ static void Sound_CreateEnvelopeShapes(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create table to clip samples top 8-bit range
-  This keeps then 'signed', although many sound cards want 'unsigned' values,
-  but we keep them signed so we can vary the volume easily.
-*/
+/**
+ * Create table to clip samples top 8-bit range
+ * This keeps then 'signed', although many sound cards want 'unsigned' values,
+ * but we keep them signed so we can vary the volume easily.
+ */
 static void Sound_CreateSoundMixClipTable(void)
 {
   int i,v;
@@ -201,9 +201,9 @@ static void Sound_CreateSoundMixClipTable(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Init random generator, sound tables and envelopes
-*/
+/**
+ * Init random generator, sound tables and envelopes
+ */
 static Uint32 RandomNum;
 
 void Sound_Init(void)
@@ -218,9 +218,9 @@ void Sound_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset the sound emulation
-*/
+/**
+ * Reset the sound emulation
+ */
 void Sound_Reset(void)
 {
   int i;
@@ -256,9 +256,9 @@ void Sound_Reset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset the sound buffer index variables.
-*/
+/**
+ * Reset the sound buffer index variables.
+ */
 void Sound_ResetBufferIndex(void)
 {
   Audio_Lock();
@@ -269,9 +269,9 @@ void Sound_ResetBufferIndex(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
-*/
+/**
+ * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+ */
 void Sound_MemorySnapShot_Capture(BOOL bSave)
 {
   /* Save/Restore details */
@@ -282,11 +282,11 @@ void Sound_MemorySnapShot_Capture(BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Find how many samples to generate and store in 'nSamplesToGenerate'
-  Also update sound cycles counter to store how many we actually did
-  so generates set amount each frame.
-*/
+/**
+ * Find how many samples to generate and store in 'nSamplesToGenerate'
+ * Also update sound cycles counter to store how many we actually did
+ * so generates set amount each frame.
+ */
 static void Sound_SetSamplesPassed(void)
 {
   int nSampleCycles;
@@ -340,9 +340,9 @@ static void Sound_SetSamplesPassed(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Generate envelope wave for this time-frame
-*/
+/**
+ * Generate envelope wave for this time-frame
+ */
 static void Sound_GenerateEnvelope(unsigned char EnvShape, unsigned char Fine, unsigned char Coarse)
 {
   int *pEnvelopeValues;
@@ -372,9 +372,9 @@ static void Sound_GenerateEnvelope(unsigned char EnvShape, unsigned char Fine, u
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Generate noise for this time-frame
-*/
+/**
+ * Generate noise for this time-frame
+ */
 static inline Uint32 Random_Next(void)
 {
   Uint32 Lo, Hi;
@@ -421,9 +421,9 @@ static void Sound_GenerateNoise(unsigned char MixerControl, unsigned char NoiseG
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Generate channel of samples for this time-frame
-*/
+/**
+ * Generate channel of samples for this time-frame
+ */
 static void Sound_GenerateChannel(int *pBuffer, unsigned char ToneFine, unsigned char ToneCoarse, unsigned char Amplitude, unsigned char MixerControl, Uint32 *pChannelFreq, int MixMask)
 {   
   int *pNoise = Noise, *pEnvelope = Envelope;
@@ -502,9 +502,9 @@ static void Sound_GenerateChannel(int *pBuffer, unsigned char ToneFine, unsigned
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Generate samples for all channels during this time-frame
-*/
+/**
+ * Generate samples for all channels during this time-frame
+ */
 static void Sound_GenerateSamples(void)
 {
   int *pChannelA=Channel_A_Buffer, *pChannelB=Channel_B_Buffer, *pChannelC=Channel_C_Buffer;
@@ -540,9 +540,9 @@ static void Sound_GenerateSamples(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  This is called to built samples up until this clock cycle
-*/
+/**
+ * This is called to built samples up until this clock cycle
+ */
 void Sound_Update(void)
 {
   int OldSndBufIdx = ActiveSndBufIdx;
@@ -564,9 +564,9 @@ void Sound_Update(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  On each VBL (50fps) complete samples.
-*/
+/**
+ * On each VBL (50fps) complete samples.
+ */
 void Sound_Update_VBL(void)
 {
   Sound_Update();
@@ -577,9 +577,9 @@ void Sound_Update_VBL(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Start recording sound, as .YM or .WAV output
-*/
+/**
+ * Start recording sound, as .YM or .WAV output
+ */
 BOOL Sound_BeginRecording(char *pszCaptureFileName)
 {
   BOOL bRet;
@@ -607,9 +607,9 @@ BOOL Sound_BeginRecording(char *pszCaptureFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  End sound recording
-*/
+/**
+ * End sound recording
+ */
 void Sound_EndRecording(void)
 {
   /* Stop sound recording and close files */
@@ -621,9 +621,9 @@ void Sound_EndRecording(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Are we recording sound data?
-*/
+/**
+ * Are we recording sound data?
+ */
 BOOL Sound_AreWeRecording(void)
 {
   return (bRecordingYM || bRecordingWav);

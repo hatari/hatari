@@ -11,7 +11,7 @@
   Atari TT and Falcon NVRAM/RTC emulation code.
   This is a MC146818A or compatible chip.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.3 2006-12-19 21:54:28 thothy Exp $";
+const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.4 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "ioMem.h"
@@ -48,10 +48,10 @@ static char nvram_filename[FILENAME_MAX];
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  NvRam_Reset: Called during init and reset, used for resetting the
-  emulated chip.
-*/
+/**
+ * NvRam_Reset: Called during init and reset, used for resetting the
+ * emulated chip.
+ */
 void NvRam_Reset(void)
 {
 	nvram_index = 0;
@@ -59,9 +59,9 @@ void NvRam_Reset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Load NVRAM data from file.
-*/
+/**
+ * Load NVRAM data from file.
+ */
 static BOOL NvRam_Load(void)
 {
 	BOOL ret = FALSE;
@@ -87,9 +87,9 @@ static BOOL NvRam_Load(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save NVRAM data to file
-*/
+/**
+ * Save NVRAM data to file
+ */
 static BOOL NvRam_Save(void)
 {
 	BOOL ret = FALSE;
@@ -112,10 +112,10 @@ static BOOL NvRam_Save(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create NVRAM checksum. The checksum is over all bytes except the
-  checksum bytes themselves; these are at the very end.
-*/
+/**
+ * Create NVRAM checksum. The checksum is over all bytes except the
+ * checksum bytes themselves; these are at the very end.
+ */
 static void NvRam_SetChecksum(void)
 {
 	int i;
@@ -129,9 +129,9 @@ static void NvRam_SetChecksum(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Initialization
-*/
+/**
+ * Initialization
+ */
 void NvRam_Init(void)
 {
 	const char sBaseName[] = ".hatari.nvram";
@@ -175,9 +175,9 @@ void NvRam_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  De-Initialization
-*/
+/**
+ * De-Initialization
+ */
 void NvRam_UnInit(void)
 {
 	NvRam_Save();		// save NVRAM file upon exit automatically (should be conditionalized)
@@ -185,9 +185,9 @@ void NvRam_UnInit(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read from RTC/NVRAM offset selection register ($ff8961)
-*/
+/**
+ * Read from RTC/NVRAM offset selection register ($ff8961)
+ */
 void NvRam_Select_ReadByte(void)
 {
 	IoMem_WriteByte(0xff8961, nvram_index);
@@ -195,9 +195,9 @@ void NvRam_Select_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to RTC/NVRAM offset selection register ($ff8961)
-*/
+/**
+ * Write to RTC/NVRAM offset selection register ($ff8961)
+ */
 void NvRam_Select_WriteByte(void)
 {
 	Uint8 value = IoMem_ReadByte(0xff8961);
@@ -214,9 +214,9 @@ void NvRam_Select_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read from RTC/NVRAM data register ($ff8963)
-*/
+/**
+ * Read from RTC/NVRAM data register ($ff8963)
+ */
 void NvRam_Data_ReadByte(void)
 {
 	uint8 value = 0;
@@ -262,9 +262,9 @@ void NvRam_Data_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to RTC/NVRAM data register ($ff8963)
-*/
+/**
+ * Write to RTC/NVRAM data register ($ff8963)
+ */
 
 void NvRam_Data_WriteByte(void)
 {

@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.27 2007-01-15 17:42:44 thothy Exp $";
+const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.28 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL_types.h>
 #include <string.h>
@@ -67,9 +67,9 @@ static BOOL bCaptureSave, bCaptureError;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Open file.
-*/
+/**
+ * Open file.
+ */
 static MSS_File MemorySnapShot_fopen(const char *pszFileName, const char *pszMode)
 {
 #ifdef COMPRESS_MEMORYSNAPSHOT
@@ -81,9 +81,9 @@ static MSS_File MemorySnapShot_fopen(const char *pszFileName, const char *pszMod
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Close file.
-*/
+/**
+ * Close file.
+ */
 static void MemorySnapShot_fclose(MSS_File fhndl)
 {
 #ifdef COMPRESS_MEMORYSNAPSHOT
@@ -95,9 +95,9 @@ static void MemorySnapShot_fclose(MSS_File fhndl)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read from file.
-*/
+/**
+ * Read from file.
+ */
 static int MemorySnapShot_fread(MSS_File fhndl, char *buf, int len)
 {
 #ifdef COMPRESS_MEMORYSNAPSHOT
@@ -109,9 +109,9 @@ static int MemorySnapShot_fread(MSS_File fhndl, char *buf, int len)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write data to file.
-*/
+/**
+ * Write data to file.
+ */
 static int MemorySnapShot_fwrite(MSS_File fhndl, const char *buf, int len)
 {
 #ifdef COMPRESS_MEMORYSNAPSHOT
@@ -123,10 +123,10 @@ static int MemorySnapShot_fwrite(MSS_File fhndl, const char *buf, int len)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Open/Create snapshot file, and set flag so 'MemorySnapShot_Store' knows
-  how to handle data.
-*/
+/**
+ * Open/Create snapshot file, and set flag so 'MemorySnapShot_Store' knows
+ * how to handle data.
+ */
 static BOOL MemorySnapShot_OpenFile(const char *pszFileName, BOOL bSave)
 {
 	char VersionString[VERSION_STRING_SIZE];
@@ -182,9 +182,9 @@ static BOOL MemorySnapShot_OpenFile(const char *pszFileName, BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Close snapshot file.
-*/
+/**
+ * Close snapshot file.
+ */
 static void MemorySnapShot_CloseFile(void)
 {
 	MemorySnapShot_fclose(CaptureFile);
@@ -192,9 +192,9 @@ static void MemorySnapShot_CloseFile(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore data to/from file.
-*/
+/**
+ * Save/Restore data to/from file.
+ */
 void MemorySnapShot_Store(void *pData, int Size)
 {
 	long nBytes;
@@ -216,9 +216,9 @@ void MemorySnapShot_Store(void *pData, int Size)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save 'snapshot' of memory/chips/emulation variables
-*/
+/**
+ * Save 'snapshot' of memory/chips/emulation variables
+ */
 void MemorySnapShot_Capture(const char *pszFileName)
 {
 	/* Set to 'saving' */
@@ -253,9 +253,9 @@ void MemorySnapShot_Capture(const char *pszFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Restore 'snapshot' of memory/chips/emulation variables
-*/
+/**
+ * Restore 'snapshot' of memory/chips/emulation variables
+ */
 void MemorySnapShot_Restore(const char *pszFileName)
 {
 	/* Set to 'restore' */

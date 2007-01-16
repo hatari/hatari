@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.37 2006-09-26 19:12:35 eerot Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.38 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "bios.h"
@@ -32,9 +32,9 @@ int nWaitStateCycles;            /* Used to emulate the wait state cycles of cer
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset CPU 68000 variables
-*/
+/**
+ * Reset CPU 68000 variables
+ */
 void M68000_Reset(BOOL bCold)
 {
   int i;
@@ -52,9 +52,9 @@ void M68000_Reset(BOOL bCold)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of CPU variables ('MemorySnapShot_Store' handles type)
-*/
+/**
+ * Save/Restore snapshot of CPU variables ('MemorySnapShot_Store' handles type)
+ */
 void M68000_MemorySnapShot_Capture(BOOL bSave)
 {
   Uint32 savepc;
@@ -125,10 +125,10 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  BUSERROR - Access outside valid memory range.
-  Use bReadWrite = 0 for write errors and bReadWrite = 1 for read errors!
-*/
+/**
+ * BUSERROR - Access outside valid memory range.
+ * Use bReadWrite = 0 for write errors and bReadWrite = 1 for read errors!
+ */
 void M68000_BusError(Uint32 addr, BOOL bReadWrite)
 {
   /* FIXME: In prefetch mode, m68k_getpc() seems already to point to the next instruction */
@@ -147,9 +147,9 @@ void M68000_BusError(Uint32 addr, BOOL bReadWrite)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Exception handler
-*/
+/**
+ * Exception handler
+ */
 void M68000_Exception(Uint32 ExceptionVector)
 {
   int exceptionNr = ExceptionVector/4;
@@ -195,10 +195,10 @@ void M68000_Exception(Uint32 ExceptionVector)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  There seem to be wait states when a program accesses certain hardware
-  registers on the ST. Use this function to simulate these wait states.
-*/
+/**
+ * There seem to be wait states when a program accesses certain hardware
+ * registers on the ST. Use this function to simulate these wait states.
+ */
 void M68000_WaitState(int nCycles)
 {
   set_special(SPCFLAG_EXTRA_CYCLES);

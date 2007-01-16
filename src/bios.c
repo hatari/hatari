@@ -9,7 +9,7 @@
   We intercept and direct some Bios calls to handle input/output to RS-232
   or the printer etc...
 */
-const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.9 2006-02-08 22:49:27 eerot Exp $";
+const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.10 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -27,10 +27,10 @@ const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.9 2006-02-08 22:49:27 eerot Ex
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  BIOS Return input device status
-  Call 1
-*/
+/**
+ * BIOS Return input device status
+ * Call 1
+ */
 static BOOL Bios_Bconstat(Uint32 Params)
 {
 	Uint16 Dev;
@@ -71,10 +71,10 @@ static BOOL Bios_Bconstat(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  BIOS Read character from device
-  Call 2
-*/
+/**
+ * BIOS Read character from device
+ * Call 2
+ */
 static BOOL Bios_Bconin(Uint32 Params)
 {
 	Uint16 Dev;
@@ -114,10 +114,10 @@ static BOOL Bios_Bconin(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  BIOS Write character to device
-  Call 3
-*/
+/**
+ * BIOS Write character to device
+ * Call 3
+ */
 static BOOL Bios_Bconout(Uint32 Params)
 {
 	Uint16 Dev;
@@ -157,10 +157,10 @@ static BOOL Bios_Bconout(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  BIOS Read/Write disk sector
-  Call 4
-*/
+/**
+ * BIOS Read/Write disk sector
+ * Call 4
+ */
 static BOOL Bios_RWabs(Uint32 Params)
 {
 #if BIOS_DEBUG
@@ -182,10 +182,10 @@ static BOOL Bios_RWabs(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  BIOS Return output device status
-  Call 8
-*/
+/**
+ * BIOS Return output device status
+ * Call 8
+ */
 static BOOL Bios_Bcostat(Uint32 Params)
 {
 	Uint16 Dev;
@@ -223,10 +223,10 @@ static BOOL Bios_Bcostat(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check Bios call and see if we need to re-direct to our own routines
-  Return TRUE if we've handled the exception, else return FALSE to let TOS attempt it
-*/
+/**
+ * Check Bios call and see if we need to re-direct to our own routines
+ * Return TRUE if we've handled the exception, else return FALSE to let TOS attempt it
+ */
 BOOL Bios(void)
 {
 	Uint32 Params;

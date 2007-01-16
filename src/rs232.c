@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.26 2006-12-29 14:20:03 thothy Exp $";
+const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.27 2007-01-16 18:42:59 thothy Exp $";
 
 #include "config.h"
 
@@ -108,9 +108,9 @@ int cfsetispeed(struct termios *tios,speed_t ispeed)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set serial line parameters to "raw" mode.
-*/
+/**
+ * Set serial line parameters to "raw" mode.
+ */
 static BOOL RS232_SetRawMode(FILE *fhndl)
 {
 	struct termios termmode;
@@ -136,12 +136,12 @@ static BOOL RS232_SetRawMode(FILE *fhndl)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set hardware configuration of RS-232:
-  - Bits per character
-  - Parity
-  - Start/stop bits
-*/
+/**
+ * Set hardware configuration of RS-232:
+ * - Bits per character
+ * - Parity
+ * - Start/stop bits
+ */
 static BOOL RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, BOOL bUseParity, BOOL bEvenParity)
 {
 	struct termios termmode;
@@ -198,9 +198,9 @@ static BOOL RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, BOOL bUseP
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Open file on COM port.
-*/
+/**
+ * Open file on COM port.
+ */
 static BOOL RS232_OpenCOMPort(void)
 {
 	bConnectedRS232 = FALSE;
@@ -252,9 +252,9 @@ static BOOL RS232_OpenCOMPort(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Close file on COM port
-*/
+/**
+ * Close file on COM port
+ */
 static void RS232_CloseCOMPort(void)
 {
 	/* Do have file open? */
@@ -280,9 +280,9 @@ static SDL_Thread *RS232Thread = NULL; /* Thread handle for reading incoming dat
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Add incoming bytes from other machine into our input buffer
-*/
+/**
+ * Add incoming bytes from other machine into our input buffer
+ */
 static void RS232_AddBytesToInputBuffer(unsigned char *pBytes, int nBytes)
 {
 	int i;
@@ -298,9 +298,9 @@ static void RS232_AddBytesToInputBuffer(unsigned char *pBytes, int nBytes)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Thread to read incoming RS-232 data, and pass to emulator input buffer
-*/
+/**
+ * Thread to read incoming RS-232 data, and pass to emulator input buffer
+ */
 static int RS232_ThreadFunc(void *pData)
 {
 	int iInChar;
@@ -344,10 +344,10 @@ static int RS232_ThreadFunc(void *pData)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Initialize RS-232, start thread to wait for incoming data
-  (we will open a connection when first bytes are sent).
-*/
+/**
+ * Initialize RS-232, start thread to wait for incoming data
+ * (we will open a connection when first bytes are sent).
+ */
 void RS232_Init(void)
 {
 	if (ConfigureParams.RS232.bEnableRS232)
@@ -375,9 +375,9 @@ void RS232_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Close RS-232 connection and stop checking for incoming data.
-*/
+/**
+ * Close RS-232 connection and stop checking for incoming data.
+ */
 void RS232_UnInit(void)
 {
 	/* Close, kill thread and free resource */
@@ -400,25 +400,25 @@ void RS232_UnInit(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set hardware configuration of RS-232 according to the USART control register.
-
-  ucr: USART Control Register
-    Bit 0: unused
-    Bit 1: 0-Odd Parity, 1-Even Parity
-    Bit 2: 0-No Parity, 1-Parity
-    Bits 3,4: Start/Stop bits
-      0 0 : 0-Start, 0-Stop    Synchronous
-      0 1 : 0-Start, 1-Stop    Asynchronous
-      1 0 : 1-Start, 1.5-Stop  Asynchronous
-      1 1 : 1-Start, 2-Stop    Asynchronous
-    Bits 5,6: 'WordLength'
-      0 0 : 8 Bits
-      0 1 : 7 Bits
-      1 0 : 6 Bits
-      1 1 : 5 Bits
-    Bit 7: Frequency from TC and RC
-*/
+/**
+ * Set hardware configuration of RS-232 according to the USART control register.
+ *
+ * ucr: USART Control Register
+ *   Bit 0: unused
+ *   Bit 1: 0-Odd Parity, 1-Even Parity
+ *   Bit 2: 0-No Parity, 1-Parity
+ *   Bits 3,4: Start/Stop bits
+ *     0 0 : 0-Start, 0-Stop    Synchronous
+ *     0 1 : 0-Start, 1-Stop    Asynchronous
+ *     1 0 : 1-Start, 1.5-Stop  Asynchronous
+ *     1 1 : 1-Start, 2-Stop    Asynchronous
+ *   Bits 5,6: 'WordLength'
+ *     0 0 : 8 Bits
+ *     0 1 : 7 Bits
+ *     1 0 : 6 Bits
+ *     1 1 : 5 Bits
+ *   Bit 7: Frequency from TC and RC
+ */
 void RS232_HandleUCR(short int ucr)
 {
 #if HAVE_TERMIOS_H
@@ -447,9 +447,9 @@ void RS232_HandleUCR(short int ucr)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set baud rate configuration of RS-232.
-*/
+/**
+ * Set baud rate configuration of RS-232.
+ */
 BOOL RS232_SetBaudRate(int nBaud)
 {
 #if HAVE_TERMIOS_H
@@ -541,10 +541,10 @@ BOOL RS232_SetBaudRate(int nBaud)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set baud rate configuration of RS-232 according to the Timer-D hardware
-  registers.
-*/
+/**
+ * Set baud rate configuration of RS-232 according to the Timer-D hardware
+ * registers.
+ */
 void RS232_SetBaudRateFromTimerD(void)
 {
 	int nTimerD_CR, nTimerD_DR, nBaudRate;
@@ -587,9 +587,9 @@ void RS232_SetBaudRateFromTimerD(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set flow control configuration of RS-232.
-*/
+/**
+ * Set flow control configuration of RS-232.
+ */
 void RS232_SetFlowControl(int ctrl)
 {
 	Dprintf(("RS232_SetFlowControl(%i)\n", ctrl));
@@ -599,9 +599,9 @@ void RS232_SetFlowControl(int ctrl)
 
 
 /*----------------------------------------------------------------------- */
-/*
-  Pass bytes from emulator to RS-232
-*/
+/**
+ * Pass bytes from emulator to RS-232
+ */
 BOOL RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
 {
 	/* Do need to open a connection to RS232? */
@@ -630,9 +630,9 @@ BOOL RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read characters from our internal input buffer (bytes from other machine)
-*/
+/**
+ * Read characters from our internal input buffer (bytes from other machine)
+ */
 BOOL RS232_ReadBytes(unsigned char *pBytes, int nBytes)
 {
 	int i;
@@ -655,9 +655,9 @@ BOOL RS232_ReadBytes(unsigned char *pBytes, int nBytes)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return TRUE if bytes waiting!
-*/
+/**
+ * Return TRUE if bytes waiting!
+ */
 BOOL RS232_GetStatus(void)
 {
 	/* Connected? */
@@ -674,9 +674,9 @@ BOOL RS232_GetStatus(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read from the Syncronous Character Register.
-*/
+/**
+ * Read from the Syncronous Character Register.
+ */
 void RS232_SCR_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -685,9 +685,9 @@ void RS232_SCR_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to the Syncronous Character Register.
-*/
+/**
+ * Write to the Syncronous Character Register.
+ */
 void RS232_SCR_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -697,9 +697,9 @@ void RS232_SCR_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read from the USART Control Register.
-*/
+/**
+ * Read from the USART Control Register.
+ */
 void RS232_UCR_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -708,9 +708,9 @@ void RS232_UCR_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to the USART Control Register.
-*/
+/**
+ * Write to the USART Control Register.
+ */
 void RS232_UCR_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -723,9 +723,9 @@ void RS232_UCR_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read from the Receiver Status Register.
-*/
+/**
+ * Read from the Receiver Status Register.
+ */
 void RS232_RSR_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -739,9 +739,9 @@ void RS232_RSR_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to the Receiver Status Register.
-*/
+/**
+ * Write to the Receiver Status Register.
+ */
 void RS232_RSR_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -751,9 +751,9 @@ void RS232_RSR_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read from the Transmitter Status Register.
-*/
+/**
+ * Read from the Transmitter Status Register.
+ */
 void RS232_TSR_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -767,9 +767,9 @@ void RS232_TSR_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to the Transmitter Status Register.
-*/
+/**
+ * Write to the Transmitter Status Register.
+ */
 void RS232_TSR_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -779,9 +779,9 @@ void RS232_TSR_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read from the USART Data Register.
-*/
+/**
+ * Read from the USART Data Register.
+ */
 void RS232_UDR_ReadByte(void)
 {
 	unsigned char InByte;
@@ -800,9 +800,9 @@ void RS232_UDR_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to the USART Data Register.
-*/
+/**
+ * Write to the USART Data Register.
+ */
 void RS232_UDR_WriteByte(void)
 {
 	unsigned char OutByte;

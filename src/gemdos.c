@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.59 2006-12-28 19:07:06 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.60 2007-01-16 18:42:59 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -270,10 +270,10 @@ static void globfree(glob_t *pglob)
 
 
 /*-------------------------------------------------------*/
-/*
-  Routines to convert time and date to MSDOS format.
-  Originally from the STonX emulator. (cheers!)
-*/
+/**
+ * Routines to convert time and date to MSDOS format.
+ * Originally from the STonX emulator. (cheers!)
+ */
 static Uint16 GemDOS_Time2dos(time_t t)
 {
 	struct tm *x;
@@ -301,9 +301,9 @@ static Uint16 GemDOS_Date2dos(time_t t)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Populate a DATETIME structure with file info
-*/
+/**
+ * Populate a DATETIME structure with file info
+ */
 static BOOL GemDOS_GetFileInformation(char *name, DATETIME *DateTime)
 {
 	struct stat filestat;
@@ -334,9 +334,9 @@ static BOOL GemDOS_GetFileInformation(char *name, DATETIME *DateTime)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Covert from FindFirstFile/FindNextFile attribute to GemDOS format
-*/
+/**
+ * Covert from FindFirstFile/FindNextFile attribute to GemDOS format
+ */
 static unsigned char GemDOS_ConvertAttribute(mode_t mode)
 {
 	unsigned char Attrib = 0;
@@ -356,9 +356,9 @@ static unsigned char GemDOS_ConvertAttribute(mode_t mode)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Populate the DTA buffer with file info
-*/
+/**
+ * Populate the DTA buffer with file info
+ */
 static BOOL PopulateDTA(char *path, struct dirent *file)
 {
 	char tempstr[MAX_GEMDOS_PATH];
@@ -387,9 +387,9 @@ static BOOL PopulateDTA(char *path, struct dirent *file)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Clear a used DTA structure.
-*/
+/**
+ * Clear a used DTA structure.
+ */
 static void ClearInternalDTA(void)
 {
 	int i;
@@ -408,9 +408,9 @@ static void ClearInternalDTA(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Match a file to a dir mask.
-*/
+/**
+ * Match a file to a dir mask.
+ */
 static int match (char *pat, char *name)
 {
 	char *p=pat, *n=name;
@@ -450,10 +450,10 @@ static int match (char *pat, char *name)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Parse directory from sfirst mask
-  - e.g.: input:  "hdemudir/auto/mask*.*" outputs: "hdemudir/auto"
-*/
+/**
+ * Parse directory from sfirst mask
+ * - e.g.: input:  "hdemudir/auto/mask*.*" outputs: "hdemudir/auto"
+ */
 static void fsfirst_dirname(char *string, char *new)
 {
 	int i=0;
@@ -480,9 +480,9 @@ static void fsfirst_dirname(char *string, char *new)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Parse directory mask, e.g. "*.*"
-*/
+/**
+ * Parse directory mask, e.g. "*.*"
+ */
 static void fsfirst_dirmask(char *string, char *new)
 {
 	int i=0, j=0;
@@ -499,9 +499,9 @@ static void fsfirst_dirmask(char *string, char *new)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Initialize GemDOS/PC file system
-*/
+/**
+ * Initialize GemDOS/PC file system
+ */
 void GemDOS_Init(void)
 {
 	int i;
@@ -521,9 +521,9 @@ void GemDOS_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset GemDOS file system
-*/
+/**
+ * Reset GemDOS file system
+ */
 void GemDOS_Reset(void)
 {
 	int i;
@@ -553,10 +553,10 @@ void GemDOS_Reset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Initialize a GEMDOS drive.
-  Only 1 emulated drive allowed, as of yet.
-*/
+/**
+ * Initialize a GEMDOS drive.
+ * Only 1 emulated drive allowed, as of yet.
+ */
 void GemDOS_InitDrives(void)
 {
 	int i;
@@ -593,9 +593,9 @@ void GemDOS_InitDrives(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Un-init the GEMDOS drive
-*/
+/**
+ * Un-init the GEMDOS drive
+ */
 void GemDOS_UnInitDrives(void)
 {
 	int i;
@@ -617,9 +617,9 @@ void GemDOS_UnInitDrives(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
-*/
+/**
+ * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+ */
 void GemDOS_MemorySnapShot_Capture(BOOL bSave)
 {
 	unsigned int Addr;
@@ -654,9 +654,9 @@ void GemDOS_MemorySnapShot_Capture(BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return free PC file handle table index, or -1 if error
-*/
+/**
+ * Return free PC file handle table index, or -1 if error
+ */
 static int GemDOS_FindFreeFileHandle(void)
 {
 	int i;
@@ -673,9 +673,9 @@ static int GemDOS_FindFreeFileHandle(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check ST handle is within our table range, return TRUE if not
-*/
+/**
+ * Check ST handle is within our table range, return TRUE if not
+ */
 static BOOL GemDOS_IsInvalidFileHandle(int Handle)
 {
 	BOOL bInvalidHandle=FALSE;
@@ -690,10 +690,10 @@ static BOOL GemDOS_IsInvalidFileHandle(int Handle)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Find drive letter from a filename, eg C,D... and return as drive ID(C:2, D:3...)
-  returns the current drive number if none is specified.
-*/
+/**
+ * Find drive letter from a filename, eg C,D... and return as drive ID(C:2, D:3...)
+ * returns the current drive number if none is specified.
+ */
 static int GemDOS_FindDriveNumber(char *pszFileName)
 {
 	/* Does have 'A:' or 'C:' etc.. at start of string? */
@@ -709,9 +709,9 @@ static int GemDOS_FindDriveNumber(char *pszFileName)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return drive ID(C:2, D:3 etc...) or -1 if not one of our emulation hard-drives
-*/
+/**
+ * Return drive ID(C:2, D:3 etc...) or -1 if not one of our emulation hard-drives
+ */
 static int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 {
 	int DriveLetter;
@@ -734,10 +734,10 @@ static int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Returns the length of the basename of the file passed in parameter
-   (ie the file without extension)
-*/
+/**
+ * Returns the length of the basename of the file passed in parameter
+ *  (ie the file without extension)
+ */
 static int baselen(char *s)
 {
 	char *ext = strchr(s,'.');
@@ -747,9 +747,9 @@ static int baselen(char *s)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Use hard-drive directory, current ST directory and filename to create full path
-*/
+/**
+ * Use hard-drive directory, current ST directory and filename to create full path
+ */
 void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *pszDestName)
 {
 	char *s,*start;
@@ -911,10 +911,10 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Cauxin
-  Call 0x3
-*/
+/**
+ * GEMDOS Cauxin
+ * Call 0x3
+ */
 #if 0
 static BOOL GemDOS_Cauxin(Uint32 Params)
 {
@@ -933,10 +933,10 @@ static BOOL GemDOS_Cauxin(Uint32 Params)
 #endif
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Cauxout
-  Call 0x4
-*/
+/**
+ * GEMDOS Cauxout
+ * Call 0x4
+ */
 #if 0
 static BOOL GemDOS_Cauxout(Uint32 Params)
 {
@@ -951,10 +951,10 @@ static BOOL GemDOS_Cauxout(Uint32 Params)
 #endif
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Cprnout
-  Call 0x5
-*/
+/**
+ * GEMDOS Cprnout
+ * Call 0x5
+ */
 static BOOL GemDOS_Cprnout(Uint32 Params)
 {
 	unsigned char c;
@@ -968,10 +968,10 @@ static BOOL GemDOS_Cprnout(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Set drive (0=A,1=B,2=C etc...)
-  Call 0xE
-*/
+/**
+ * GEMDOS Set drive (0=A,1=B,2=C etc...)
+ * Call 0xE
+ */
 static BOOL GemDOS_SetDrv(Uint32 Params)
 {
 	/* Read details from stack for our own use */
@@ -982,10 +982,10 @@ static BOOL GemDOS_SetDrv(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Cprnos
-  Call 0x11
-*/
+/**
+ * GEMDOS Cprnos
+ * Call 0x11
+ */
 static BOOL GemDOS_Cprnos(Uint32 Params)
 {
 	/* pritner status depends if printing is enabled or not... */
@@ -998,10 +998,10 @@ static BOOL GemDOS_Cprnos(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Cauxis
-  Call 0x12
-*/
+/**
+ * GEMDOS Cauxis
+ * Call 0x12
+ */
 #if 0
 static BOOL GemDOS_Cauxis(Uint32 Params)
 {
@@ -1016,10 +1016,10 @@ static BOOL GemDOS_Cauxis(Uint32 Params)
 #endif
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Cauxos
-  Call 0x13
-*/
+/**
+ * GEMDOS Cauxos
+ * Call 0x13
+ */
 #if 0
 static BOOL GemDOS_Cauxos(Uint32 Params)
 {
@@ -1030,10 +1030,10 @@ static BOOL GemDOS_Cauxos(Uint32 Params)
 #endif
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Set Disk Transfer Address (DTA)
-  Call 0x1A
-*/
+/**
+ * GEMDOS Set Disk Transfer Address (DTA)
+ * Call 0x1A
+ */
 static BOOL GemDOS_SetDTA(Uint32 Params)
 {
 	/* Look up on stack to find where DTA is! Store as PC pointer */
@@ -1043,10 +1043,10 @@ static BOOL GemDOS_SetDTA(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Dfree Free disk space.
-  Call 0x39
-*/
+/**
+ * GEMDOS Dfree Free disk space.
+ * Call 0x39
+ */
 static BOOL GemDOS_DFree(Uint32 Params)
 {
 	int Drive;
@@ -1071,10 +1071,10 @@ static BOOL GemDOS_DFree(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS MkDir
-  Call 0x39
-*/
+/**
+ * GEMDOS MkDir
+ * Call 0x39
+ */
 static BOOL GemDOS_MkDir(Uint32 Params)
 {
 	char *pDirName;
@@ -1112,10 +1112,10 @@ static BOOL GemDOS_MkDir(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS RmDir
-  Call 0x3A
-*/
+/**
+ * GEMDOS RmDir
+ * Call 0x3A
+ */
 static BOOL GemDOS_RmDir(Uint32 Params)
 {
 	char *pDirName;
@@ -1152,10 +1152,10 @@ static BOOL GemDOS_RmDir(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS ChDir
-  Call 0x3B
-*/
+/**
+ * GEMDOS ChDir
+ * Call 0x3B
+ */
 static BOOL GemDOS_ChDir(Uint32 Params)
 {
 	char *pDirName;
@@ -1208,10 +1208,10 @@ static BOOL GemDOS_ChDir(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Create file
-  Call 0x3C
-*/
+/**
+ * GEMDOS Create file
+ * Call 0x3C
+ */
 static BOOL GemDOS_Create(Uint32 Params)
 {
 	char szActualFileName[MAX_GEMDOS_PATH];
@@ -1270,10 +1270,10 @@ static BOOL GemDOS_Create(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Open file
-  Call 0x3D
-*/
+/**
+ * GEMDOS Open file
+ * Call 0x3D
+ */
 static BOOL GemDOS_Open(Uint32 Params)
 {
 	char szActualFileName[MAX_GEMDOS_PATH];
@@ -1327,10 +1327,10 @@ static BOOL GemDOS_Open(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Close file
-  Call 0x3E
-*/
+/**
+ * GEMDOS Close file
+ * Call 0x3E
+ */
 static BOOL GemDOS_Close(Uint32 Params)
 {
 	int Handle;
@@ -1356,10 +1356,10 @@ static BOOL GemDOS_Close(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Read file
-  Call 0x3F
-*/
+/**
+ * GEMDOS Read file
+ * Call 0x3F
+ */
 static BOOL GemDOS_Read(Uint32 Params)
 {
 	char *pBuffer;
@@ -1413,10 +1413,10 @@ static BOOL GemDOS_Read(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Write file
-  Call 0x40
-*/
+/**
+ * GEMDOS Write file
+ * Call 0x40
+ */
 static BOOL GemDOS_Write(Uint32 Params)
 {
 	char *pBuffer;
@@ -1450,10 +1450,10 @@ static BOOL GemDOS_Write(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Delete file
-  Call 0x41
-*/
+/**
+ * GEMDOS Delete file
+ * Call 0x41
+ */
 static BOOL GemDOS_FDelete(Uint32 Params)
 {
 #ifdef ENABLE_SAVING
@@ -1492,10 +1492,10 @@ static BOOL GemDOS_FDelete(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS File seek
-  Call 0x42
-*/
+/**
+ * GEMDOS File seek
+ * Call 0x42
+ */
 static BOOL GemDOS_LSeek(Uint32 Params)
 {
 	long Offset;
@@ -1523,10 +1523,10 @@ static BOOL GemDOS_LSeek(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Fattrib() - get or set file attributes
-  Call 0x43
-*/
+/**
+ * GEMDOS Fattrib() - get or set file attributes
+ * Call 0x43
+ */
 static BOOL GemDOS_Fattrib(Uint32 Params)
 {
 	char sActualFileName[MAX_GEMDOS_PATH];
@@ -1577,10 +1577,10 @@ static BOOL GemDOS_Fattrib(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Get Directory
-  Call 0x47
-*/
+/**
+ * GEMDOS Get Directory
+ * Call 0x47
+ */
 static int GemDOS_GetDir(Uint32 Params)
 {
 	Uint32 Address;
@@ -1614,11 +1614,11 @@ static int GemDOS_GetDir(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  PExec Load And Go - Redirect to cart' routine at address 0xFA1000
- 
-  If loading from hard-drive(ie drive ID 2 or more) set condition codes to run own GEMDos routines
-*/
+/**
+ * PExec Load And Go - Redirect to cart' routine at address 0xFA1000
+ *
+ * If loading from hard-drive(ie drive ID 2 or more) set condition codes to run own GEMDos routines
+ */
 static int GemDOS_Pexec_LoadAndGo(Uint32 Params)
 {
 	/* add multiple disk support here too */
@@ -1635,9 +1635,9 @@ static int GemDOS_Pexec_LoadAndGo(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  PExec Load But Don't Go - Redirect to cart' routine at address 0xFA1000
-*/
+/**
+ * PExec Load But Don't Go - Redirect to cart' routine at address 0xFA1000
+ */
 static int GemDOS_Pexec_LoadDontGo(Uint32 Params)
 {
 	/* Hard-drive? */
@@ -1651,10 +1651,10 @@ static int GemDOS_Pexec_LoadDontGo(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS PExec handler
-  Call 0x4B
-*/
+/**
+ * GEMDOS PExec handler
+ * Call 0x4B
+ */
 static int GemDOS_Pexec(Uint32 Params)
 {
 	Uint16 Mode;
@@ -1689,10 +1689,10 @@ static int GemDOS_Pexec(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Search Next
-  Call 0x4F
-*/
+/**
+ * GEMDOS Search Next
+ * Call 0x4F
+ */
 static BOOL GemDOS_SNext(void)
 {
 	struct dirent **temp;
@@ -1730,10 +1730,10 @@ static BOOL GemDOS_SNext(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Find first file
-  Call 0x4E
-*/
+/**
+ * GEMDOS Find first file
+ * Call 0x4E
+ */
 static BOOL GemDOS_SFirst(Uint32 Params)
 {
 	char szActualFileName[MAX_GEMDOS_PATH];
@@ -1837,10 +1837,10 @@ static BOOL GemDOS_SFirst(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS Rename
-  Call 0x56
-*/
+/**
+ * GEMDOS Rename
+ * Call 0x56
+ */
 static BOOL GemDOS_Rename(Uint32 Params)
 {
 	char *pszNewFileName,*pszOldFileName;
@@ -1871,10 +1871,10 @@ static BOOL GemDOS_Rename(Uint32 Params)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  GEMDOS GSDToF
-  Call 0x57
-*/
+/**
+ * GEMDOS GSDToF
+ * Call 0x57
+ */
 static BOOL GemDOS_GSDToF(Uint32 Params)
 {
 	DATETIME DateTime;
@@ -1913,14 +1913,14 @@ static BOOL GemDOS_GSDToF(Uint32 Params)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Run GEMDos call, and re-direct if need to. Used to handle hard disk emulation etc...
-  This sets the condition codes (in SR), which are used in the 'cart_asm.s' program to
-  decide if we need to run old GEM vector, or PExec or nothing.
- 
-  This method keeps the stack and other states consistant with the original ST which is very important
-  for the PExec call and maximum compatibility through-out
-*/
+/**
+ * Run GEMDos call, and re-direct if need to. Used to handle hard disk emulation etc...
+ * This sets the condition codes (in SR), which are used in the 'cart_asm.s' program to
+ * decide if we need to run old GEM vector, or PExec or nothing.
+ * 
+ * This method keeps the stack and other states consistant with the original ST which is very important
+ * for the PExec call and maximum compatibility through-out
+ */
 void GemDOS_OpCode(void)
 {
 	unsigned short int GemDOSCall,CallingSReg;
@@ -2088,10 +2088,10 @@ void GemDOS_OpCode(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  GemDOS_Boot - routine called on the first occurence of the gemdos opcode.
-  (this should be in the cartridge bootrom)
-  Sets up our gemdos handler (or, if we don't need one, just turn off keyclicks)
+/**
+ * GemDOS_Boot - routine called on the first occurence of the gemdos opcode.
+ * (this should be in the cartridge bootrom)
+ * Sets up our gemdos handler (or, if we don't need one, just turn off keyclicks)
  */
 void GemDOS_Boot(void)
 {

@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.16 2007-01-07 21:42:37 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.17 2007-01-16 18:42:59 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -145,7 +145,8 @@ static const opt_t HatariOptions[] = {
 	{ OPT_NONE, NULL, NULL, NULL, NULL }
 };
 
-/* Show Hatari options and exit().
+/**
+ *  Show Hatari options and exit().
  * If 'error' given, show that error message.
  * If 'option' != OPT_NONE, tells for which option the error is,
  * otherwise 'value' is show as the option user gave.
@@ -215,7 +216,7 @@ static void Opt_ShowExit(int option, const char *value, const char *error)
 	exit(0);
 }
 
-/*
+/**
  * matches string under given index in the argv against all Hatari
  * short and long options. If match is found, returns ID for that,
  * otherwise shows help.
@@ -244,9 +245,9 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check for any passed parameters, return boot disk
-*/
+/**
+ * Check for any passed parameters, return boot disk
+ */
 void Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {

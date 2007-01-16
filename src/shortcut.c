@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.24 2006-12-27 21:28:06 thothy Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.25 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL.h>
 
@@ -27,9 +27,9 @@ static SHORTCUTKEYIDX ShortCutKey = SHORTCUT_NONE;  /* current shortcut key */
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Shortcut to toggle full-screen
-*/
+/**
+ * Shortcut to toggle full-screen
+ */
 static void ShortCut_FullScreen(void)
 {
   if(!bInFullScreen)
@@ -44,9 +44,9 @@ static void ShortCut_FullScreen(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Shortcut to toggle mouse mode
-*/
+/**
+ * Shortcut to toggle mouse mode
+ */
 static void ShortCut_MouseMode(void)
 {
   bGrabMouse = !bGrabMouse;        /* Toggle flag */
@@ -67,9 +67,9 @@ static void ShortCut_MouseMode(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Shortcut to toggle YM/WAV sound recording
-*/
+/**
+ * Shortcut to toggle YM/WAV sound recording
+ */
 static void ShortCut_RecordSound(void)
 {
   /* Is working? */
@@ -91,9 +91,9 @@ static void ShortCut_RecordSound(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Shortcut to toggle screen animation recording
-*/
+/**
+ * Shortcut to toggle screen animation recording
+ */
 static void ShortCut_RecordAnimation(void)
 {
   /* Are we currently recording? If so stop */
@@ -111,9 +111,9 @@ static void ShortCut_RecordAnimation(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Shortcut to toggle joystick cursor emulation
-*/
+/**
+ * Shortcut to toggle joystick cursor emulation
+ */
 static void ShortCut_JoystickCursorEmulation(void)
 {
   /* Toggle it on/off */
@@ -122,9 +122,9 @@ static void ShortCut_JoystickCursorEmulation(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Shortcut to sound on/off
-*/
+/**
+ * Shortcut to sound on/off
+ */
 static void ShortCut_SoundOnOff(void)
 {
   /* Toggle sound on/off */
@@ -144,9 +144,9 @@ static void ShortCut_SoundOnOff(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Shortcut to maximum speed
-*/
+/**
+ * Shortcut to maximum speed
+ */
 static void ShortCut_MaximumSpeed(void)
 {
   /* If already on max speed, switch back to normal */
@@ -167,9 +167,9 @@ static void ShortCut_MaximumSpeed(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Shortcut to 'Boss' key, ie minmize Window and switch to another application
-*/
+/**
+ * Shortcut to 'Boss' key, ie minmize Window and switch to another application
+ */
 static void ShortCut_BossKey(void)
 {
   /* If we are in full-screen, then return to a window */
@@ -187,9 +187,9 @@ static void ShortCut_BossKey(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Shortcut to 'Cold' reset
-*/
+/**
+ * Shortcut to 'Cold' reset
+ */
 static void ShortCut_ColdReset(void)
 {
   Reset_Cold();                 /* Reset emulator with 'cold' (clear all) */
@@ -197,9 +197,9 @@ static void ShortCut_ColdReset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Shortcut to 'Warm' reset
-*/
+/**
+ * Shortcut to 'Warm' reset
+ */
 static void ShortCut_WarmReset(void)
 {
   Reset_Warm();                 /* Emulator 'warm' reset */
@@ -207,9 +207,9 @@ static void ShortCut_WarmReset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Shortcut for quitting
-*/
+/**
+ * Shortcut for quitting
+ */
 static void ShortCut_Quit(void)
 {
   bQuitProgram = TRUE;           /* Quit program */
@@ -218,9 +218,9 @@ static void ShortCut_Quit(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check to see if pressed any shortcut keys, and call handling function
-*/
+/**
+ * Check to see if pressed any shortcut keys, and call handling function
+ */
 void ShortCut_ActKey(void)
 {
   if (ShortCutKey == SHORTCUT_NONE)
@@ -283,10 +283,10 @@ void ShortCut_ActKey(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check whether given key was any of the ones in given shortcut array.
-  Return corresponding array index or SHORTCUT_NONE for no match
-*/
+/**
+ * Check whether given key was any of the ones in given shortcut array.
+ * Return corresponding array index or SHORTCUT_NONE for no match
+ */
 static SHORTCUTKEYIDX ShortCut_CheckKey(int symkey, int *keys)
 {
   SHORTCUTKEYIDX key;
@@ -299,11 +299,11 @@ static SHORTCUTKEYIDX ShortCut_CheckKey(int symkey, int *keys)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check which Shortcut key is pressed/released.
-  If press is set, store the key array index.
-  Return zero if key didn't match to a shortcut
-*/
+/**
+ * Check which Shortcut key is pressed/released.
+ * If press is set, store the key array index.
+ * Return zero if key didn't match to a shortcut
+ */
 int ShortCut_CheckKeys(int modkey, int symkey, BOOL press)
 {
   SHORTCUTKEYIDX key;

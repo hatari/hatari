@@ -12,7 +12,7 @@
   NOTE - Tab's are converted to spaces as the PC 'Tab' setting differs to that
   of the ST.
 */
-const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.18 2006-02-08 22:49:27 eerot Exp $";
+const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.19 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -40,9 +40,9 @@ static FILE *PrinterFileHandle;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Initialise Printer
-*/
+/**
+ * Initialise Printer
+ */
 void Printer_Init(void)
 {
 #ifdef PRINTER_DEBUG
@@ -69,9 +69,9 @@ void Printer_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Uninitialise Printer
-*/
+/**
+ * Uninitialise Printer
+ */
 void Printer_UnInit(void)
 {
 	/* Close any open files */
@@ -84,9 +84,9 @@ void Printer_UnInit(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Close all open files etc.
-*/
+/**
+ * Close all open files etc.
+ */
 void Printer_CloseAllConnections(void)
 {
 	/* Empty buffer */
@@ -101,9 +101,9 @@ void Printer_CloseAllConnections(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Open file on disk, to which all printer output will be sent.
-*/
+/**
+ * Open file on disk, to which all printer output will be sent.
+ */
 BOOL Printer_OpenFile(void)
 {
 
@@ -119,9 +119,9 @@ BOOL Printer_OpenFile(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Close file on disk, if we have one open.
-*/
+/**
+ * Close file on disk, if we have one open.
+ */
 void Printer_CloseFile(void)
 {
 	/* Do have file open? */
@@ -135,9 +135,9 @@ void Printer_CloseFile(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Empty to file on disk.
-*/
+/**
+ * Empty to file on disk.
+ */
 void Printer_EmptyFile(void)
 {
 	/* Do have file open? */
@@ -156,9 +156,9 @@ void Printer_EmptyFile(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset Printer Buffer
-*/
+/**
+ * Reset Printer Buffer
+ */
 void Printer_ResetInternalBuffer(void)
 {
 	nPrinterBufferChars = 0;
@@ -166,9 +166,9 @@ void Printer_ResetInternalBuffer(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset character line
-*/
+/**
+ * Reset character line
+ */
 void Printer_ResetCharsOnLine(void)
 {
 	nPrinterBufferCharsOnLine = 0;
@@ -176,9 +176,9 @@ void Printer_ResetCharsOnLine(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Empty Printer Buffer
-*/
+/**
+ * Empty Printer Buffer
+ */
 BOOL Printer_EmptyInternalBuffer(void)
 {
 	/* Write bytes to file */
@@ -196,9 +196,9 @@ BOOL Printer_EmptyInternalBuffer(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return TRUE if byte is standard ASCII character which is OK to output
-*/
+/**
+ * Return TRUE if byte is standard ASCII character which is OK to output
+ */
 BOOL Printer_ValidByte(unsigned char Byte)
 {
 	/* Return/New line? */
@@ -215,9 +215,9 @@ BOOL Printer_ValidByte(unsigned char Byte)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Add byte to our internal buffer, and when full write out - needed to speed
-*/
+/**
+ * Add byte to our internal buffer, and when full write out - needed to speed
+ */
 void Printer_AddByteToInternalBuffer(unsigned char Byte)
 {
 	/* Is buffer full? If so empty */
@@ -232,9 +232,9 @@ void Printer_AddByteToInternalBuffer(unsigned char Byte)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Add 'Tab' to internal buffer
-*/
+/**
+ * Add 'Tab' to internal buffer
+ */
 void Printer_AddTabToInternalBuffer(void)
 {
 	int i,NumSpaces;
@@ -253,9 +253,9 @@ void Printer_AddTabToInternalBuffer(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Pass byte from emulator to printer
-*/
+/**
+ * Pass byte from emulator to printer
+ */
 BOOL Printer_TransferByteTo(unsigned char Byte)
 {
 	/* Do we want to output to a printer/file? */
@@ -294,10 +294,10 @@ BOOL Printer_TransferByteTo(unsigned char Byte)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Empty printer buffer, and if remains idle for set time close connection
-  (ie close file, stop printer)
-*/
+/**
+ * Empty printer buffer, and if remains idle for set time close connection
+ * (ie close file, stop printer)
+ */
 void Printer_CheckIdleStatus(void)
 {
 	/* Is anything waiting for printer? */

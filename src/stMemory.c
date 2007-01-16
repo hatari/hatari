@@ -6,7 +6,7 @@
 
   ST Memory access functions.
 */
-const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.12 2006-10-25 19:00:30 eerot Exp $";
+const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.13 2007-01-16 18:42:59 thothy Exp $";
 
 #include "stMemory.h"
 #include "configuration.h"
@@ -22,9 +22,9 @@ Uint32 STRamEnd;                /* End of ST Ram, above this address is no-mans-
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Clear section of ST's memory space.
-*/
+/**
+ * Clear section of ST's memory space.
+ */
 void STMemory_Clear(Uint32 StartAddress, Uint32 EndAddress)
 {
 	memset(&STRam[StartAddress], 0, EndAddress-StartAddress);
@@ -32,13 +32,13 @@ void STMemory_Clear(Uint32 StartAddress, Uint32 EndAddress)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set default memory configuration, connected floppies, memory size and
-  clear the ST-RAM area.
-  As TOS checks hardware for memory size + connected devices on boot-up
-  we set these values ourselves and fill in the magic numbers so TOS
-  skips these tests.
-*/
+/**
+ * Set default memory configuration, connected floppies, memory size and
+ * clear the ST-RAM area.
+ * As TOS checks hardware for memory size + connected devices on boot-up
+ * we set these values ourselves and fill in the magic numbers so TOS
+ * skips these tests.
+ */
 void STMemory_SetDefaultConfig(void)
 {
 	int i;

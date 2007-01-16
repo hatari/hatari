@@ -6,7 +6,7 @@
  
   Create blank .ST/.MSA disk images.
 */
-const char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.14 2006-02-08 22:49:27 eerot Exp $";
+const char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.15 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -40,9 +40,9 @@ const char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.14 200
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Calculate the size of a disk in dialog.
-*/
+/**
+ * Calculate the size of a disk in dialog.
+ */
 static int CreateBlankImage_GetDiskImageCapacity(int nTracks, int nSectors, int nSides)
 {
 	/* Find size of disk image */
@@ -51,10 +51,10 @@ static int CreateBlankImage_GetDiskImageCapacity(int nTracks, int nSectors, int 
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write a short integer to addr using little endian byte order
-  (needed for 16 bit values in the bootsector of the disk image).
-*/
+/**
+ * Write a short integer to addr using little endian byte order
+ * (needed for 16 bit values in the bootsector of the disk image).
+ */
 static inline void WriteShortLE(void *addr, Uint16 val)
 {
 	Uint8 *p = (Uint8 *)addr;
@@ -65,9 +65,9 @@ static inline void WriteShortLE(void *addr, Uint16 val)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create .ST/.MSA disk image according to 'Tracks,Sector,Sides' and save as filename
-*/
+/**
+ * Create .ST/.MSA disk image according to 'Tracks,Sector,Sides' and save as filename
+ */
 void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, int nSides)
 {
 	Uint8 *pDiskFile;

@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.47 2006-10-29 09:25:07 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.48 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -168,9 +168,9 @@ static const TOS_PATCH TosPatches[] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
-*/
+/**
+ * Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
+ */
 void TOS_MemorySnapShot_Capture(BOOL bSave)
 {
 	/* Save/Restore details */
@@ -183,13 +183,13 @@ void TOS_MemorySnapShot_Capture(BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Patch TOS to skip some TOS setup code which we don't support/need.
- 
-  So, how do we find these addresses when we have no commented source code?
-  - For the "Boot from DMA bus" patch:
-    Scan at start of rom for tst.w $482, boot call will be just above it.
-*/
+/**
+ * Patch TOS to skip some TOS setup code which we don't support/need.
+ *
+ * So, how do we find these addresses when we have no commented source code?
+ * - For the "Boot from DMA bus" patch:
+ *   Scan at start of rom for tst.w $482, boot call will be just above it.
+ */
 static void TOS_FixRom(void)
 {
 	int nGoodPatches, nBadPatches;
@@ -255,10 +255,10 @@ static void TOS_FixRom(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Load TOS Rom image file into ST memory space and fix image so can emulate correctly
-  Pre TOS 1.06 are loaded at 0xFC0000 with later ones at 0xE00000
-*/
+/**
+ * Load TOS Rom image file into ST memory space and fix image so can emulate correctly
+ * Pre TOS 1.06 are loaded at 0xFC0000 with later ones at 0xE00000
+ */
 int TOS_LoadImage(void)
 {
 	Uint8 *pTosFile = NULL;

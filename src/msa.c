@@ -6,7 +6,7 @@
 
   MSA Disk support
 */
-const char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.10 2006-02-08 22:49:27 eerot Exp $";
+const char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.11 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -103,9 +103,9 @@ typedef struct {
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Does filename end with a .MSA extension? If so, return TRUE
-*/
+/**
+ * Does filename end with a .MSA extension? If so, return TRUE
+ */
 BOOL MSA_FileNameIsMSA(char *pszFileName, BOOL bAllowGZ)
 {
   return(File_DoesFileExtensionMatch(pszFileName,".msa")
@@ -114,9 +114,9 @@ BOOL MSA_FileNameIsMSA(char *pszFileName, BOOL bAllowGZ)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Uncompress .MSA data into a new buffer.
-*/
+/**
+ * Uncompress .MSA data into a new buffer.
+ */
 Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 {
   MSAHEADERSTRUCT *pMSAHeader;
@@ -199,10 +199,10 @@ Uint8 *MSA_UnCompress(Uint8 *pMSAFile, long *pImageSize)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Uncompress .MSA file into memory, set number bytes of the disk image and
-  return a pointer to the buffer.
-*/
+/**
+ * Uncompress .MSA file into memory, set number bytes of the disk image and
+ * return a pointer to the buffer.
+ */
 Uint8 *MSA_ReadDisk(char *pszFileName, long *pImageSize)
 {
   Uint8 *pMsaFile;
@@ -227,10 +227,10 @@ Uint8 *MSA_ReadDisk(char *pszFileName, long *pImageSize)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return number of bytes of the same byte in the passed buffer
-  If we return '0' this means no run (or end of buffer)
-*/
+/**
+ * Return number of bytes of the same byte in the passed buffer
+ * If we return '0' this means no run (or end of buffer)
+ */
 static int MSA_FindRunOfBytes(unsigned char *pBuffer, int nBytesInBuffer)
 {
   unsigned char ScannedByte;
@@ -270,9 +270,9 @@ static int MSA_FindRunOfBytes(unsigned char *pBuffer, int nBytesInBuffer)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save compressed .MSA file from memory buffer. Returns TRUE is all OK
-*/
+/**
+ * Save compressed .MSA file from memory buffer. Returns TRUE is all OK
+ */
 BOOL MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_MSA_IMAGES

@@ -33,7 +33,7 @@
     4 - 7  Length Of Data To Follow
     8 - end  Data (Samples)
 */
-const char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.12 2006-02-08 22:49:27 eerot Exp $";
+const char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.13 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -52,8 +52,9 @@ BOOL bRecordingWav = FALSE;             /* Is a WAV file open and recording? */
 
 
 /*-----------------------------------------------------------------------*/
-/*
-*/
+/**
+ *
+ */
 BOOL WAVFormat_OpenFile(char *pszWavFileName)
 {
 	const Uint32 Blank = 0;
@@ -104,8 +105,9 @@ BOOL WAVFormat_OpenFile(char *pszWavFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-*/
+/**
+ * 
+ */
 void WAVFormat_CloseFile()
 {
 	if (bRecordingWav)
@@ -134,8 +136,9 @@ void WAVFormat_CloseFile()
 
 
 /*-----------------------------------------------------------------------*/
-/*
-*/
+/**
+ *
+ */
 void WAVFormat_Update(Sint8 *pSamples, int Index, int Length)
 {
 	Sint8 sample;

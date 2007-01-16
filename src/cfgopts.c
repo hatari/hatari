@@ -54,7 +54,7 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.9 2006-07-11 18:52:18 thothy Exp $";
+const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.10 2007-01-16 18:42:59 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -66,7 +66,9 @@ const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.9 2006-07-11 18:52:18 th
 
 
 
-/* --- Remove spaces from beginning and end of a string --- */
+/**
+ *  --- Remove spaces from beginning and end of a string ---
+ */
 static char *trim(char *buffer)
 {
 	const char SPACE = ' ';
@@ -104,17 +106,19 @@ static char *trim(char *buffer)
 }
 
 
-/*---------------------------------------------------------------------/
-/   reads from an input configuration (INI) file.
-/---------------------------------------------------------------------*/
-/*>>------[   input_config()   ]-------------[ 08-02-95 14:02PM ]------/
-/ return value:
-/     int                     ; number of records read or -1 on error
-/ parameters:
-/     char *filename          ; filename of INI style file
-/     struct Config_Tag configs[]; Configuration structure
-/     char *header            ; INI header name (i.e. "[TEST]")
-/-------------------------------------------------------------------<<*/
+/**
+ * ---------------------------------------------------------------------/
+ * /   reads from an input configuration (INI) file.
+ * /---------------------------------------------------------------------
+ * >>------[   input_config()   ]-------------[ 08-02-95 14:02PM ]------/
+ * / return value:
+ * /     int                     ; number of records read or -1 on error
+ * / parameters:
+ * /     char *filename          ; filename of INI style file
+ * /     struct Config_Tag configs[]; Configuration structure
+ * /     char *header            ; INI header name (i.e. "[TEST]")
+ * /-------------------------------------------------------------------<<
+ */
 int input_config(const char *filename, const struct Config_Tag configs[], const char *header)
 {
 	const struct Config_Tag *ptr;
@@ -220,7 +224,9 @@ int input_config(const char *filename, const struct Config_Tag configs[], const 
 }
 
 
-/* Write out an settings line */
+/**
+ *  Write out an settings line
+ */
 static int write_token(FILE *outfile, const struct Config_Tag *ptr)
 {
 	fprintf(outfile,"%s = ",ptr->code);
@@ -269,17 +275,19 @@ static int write_token(FILE *outfile, const struct Config_Tag *ptr)
 }
 
 
-/*---------------------------------------------------------------------/
-/   updates an input configuration (INI) file from a structure.
-/---------------------------------------------------------------------*/
-/*>>------[   update_config()  ]-------------[ 08-02-95 14:02PM ]------/
-/ return value:
-/     int                     ; Number of records read & updated
-/ parameters:
-/     char *filename          ; filename of INI file
-/     struct Config_Tag configs[]; Configuration structure
-/     char *header            ; INI header name (i.e. "[TEST]")
-/-------------------------------------------------------------------<<*/
+/**
+ * ---------------------------------------------------------------------/
+ * /   updates an input configuration (INI) file from a structure.
+ * /---------------------------------------------------------------------
+ * >>------[   update_config()  ]-------------[ 08-02-95 14:02PM ]------/
+ * / return value:
+ * /     int                     ; Number of records read & updated
+ * / parameters:
+ * /     char *filename          ; filename of INI file
+ * /     struct Config_Tag configs[]; Configuration structure
+ * /     char *header            ; INI header name (i.e. "[TEST]")
+ * /-------------------------------------------------------------------<<
+ */
 int update_config(const char *filename, const struct Config_Tag configs[], const char *header)
 {
 	const struct Config_Tag *ptr;

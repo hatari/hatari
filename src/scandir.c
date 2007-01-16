@@ -6,7 +6,7 @@
 
   scandir function for BEOS, SunOS etc..
 */
-const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.2 2006-07-22 15:49:23 thothy Exp $";
+const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.3 2007-01-16 18:42:59 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -37,9 +37,9 @@ const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.2 2006-07-22 15:49:23 th
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Alphabetic order comparison routine.
-*/
+/**
+ * Alphabetic order comparison routine.
+ */
 int alphasort(const void *d1, const void *d2)
 {
 	return strcmp((*(struct dirent * const *)d1)->d_name, (*(struct dirent * const *)d2)->d_name);
@@ -47,9 +47,9 @@ int alphasort(const void *d1, const void *d2)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Scan a directory for all its entries
-*/
+/**
+ * Scan a directory for all its entries
+ */
 int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(struct dirent *), int (*dcomp)(const void *, const void *))
 {
 	struct dirent *d, *p, **names;
@@ -139,18 +139,18 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 #include <windows.h>
 
 /*-----------------------------------------------------------------------*/
-/*
-  Alphabetic order comparison routine.
-*/
+/**
+ * Alphabetic order comparison routine.
+ */
 int alphasort(const void *d1, const void *d2)
 {
 	return stricmp((*(struct dirent * const *)d1)->d_name, (*(struct dirent * const *)d2)->d_name);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Scan a directory for all its entries
-*/
+/**
+ * Scan a directory for all its entries
+ */
 int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(struct dirent *), int (*dcomp)(const void *, const void *))
 {
 	int len;

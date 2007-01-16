@@ -20,7 +20,7 @@
      the data register, but probably it should rather be done when reading the
      status register?).
 */
-const char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.7 2006-02-08 22:49:27 eerot Exp $";
+const char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.8 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -50,9 +50,9 @@ static Uint8 MidiStatusRegister;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Initialization: Open MIDI device.
-*/
+/**
+ * Initialization: Open MIDI device.
+ */
 void Midi_Init(void)
 {
 	MidiStatusRegister = 2;
@@ -75,9 +75,9 @@ void Midi_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Close MIDI device.
-*/
+/**
+ * Close MIDI device.
+ */
 void Midi_UnInit(void)
 {
 	if (pMidiOutFileHandle)
@@ -90,9 +90,9 @@ void Midi_UnInit(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read MIDI status register ($FFFC04).
-*/
+/**
+ * Read MIDI status register ($FFFC04).
+ */
 void Midi_Control_ReadByte(void)
 {
 	/* Dprintf(("Midi_ReadControl : $%x.\n", MidiStatusRegister)); */
@@ -105,9 +105,9 @@ void Midi_Control_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read MIDI data register ($FFFC06).
-*/
+/**
+ * Read MIDI data register ($FFFC06).
+ */
 void Midi_Data_ReadByte(void)
 {
 	Dprintf(("Midi_ReadData : $%x.\n", 1));
@@ -122,9 +122,9 @@ void Midi_Data_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to MIDI control register ($FFFC04).
-*/
+/**
+ * Write to MIDI control register ($FFFC04).
+ */
 void Midi_Control_WriteByte(void)
 {
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
@@ -148,9 +148,9 @@ void Midi_Control_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to MIDI data register ($FFFC06).
-*/
+/**
+ * Write to MIDI data register ($FFFC06).
+ */
 void Midi_Data_WriteByte(void)
 {
 	Uint8 dataByte;

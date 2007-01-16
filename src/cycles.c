@@ -10,7 +10,7 @@
   and sound cycles), we simply update these counters with the main counter
   before returning the current counter value.
 */
-const char Cycles_rcsid[] = "Hatari $Id: cycles.c,v 1.3 2006-02-08 22:49:27 eerot Exp $";
+const char Cycles_rcsid[] = "Hatari $Id: cycles.c,v 1.4 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "cycles.h"
@@ -22,9 +22,9 @@ static int nCyclesCounter[CYCLES_COUNTER_MAX];  /* Array with all counters */
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Update all cycles counters with the current value of nCyclesMainCounter.
-*/
+/**
+ * Update all cycles counters with the current value of nCyclesMainCounter.
+ */
 static void Cycles_UpdateCounters(void)
 {
 	int i;
@@ -39,9 +39,9 @@ static void Cycles_UpdateCounters(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set a counter to a new value.
-*/
+/**
+ * Set a counter to a new value.
+ */
 void Cycles_SetCounter(int nId, int nValue)
 {
 	/* Update counters first (nCyclesMainCounter must be 0 afterwards) */
@@ -53,9 +53,9 @@ void Cycles_SetCounter(int nId, int nValue)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read a counter.
-*/
+/**
+ * Read a counter.
+ */
 int Cycles_GetCounter(int nId)
 {
 	/* Update counters first so we read an up-to-date value */
@@ -66,10 +66,10 @@ int Cycles_GetCounter(int nId)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read a counter on CPU memory read access by taking care of the instruction
-  type (add the needed amount of additional cycles).
-*/
+/**
+ * Read a counter on CPU memory read access by taking care of the instruction
+ * type (add the needed amount of additional cycles).
+ */
 int Cycles_GetCounterOnReadAccess(int nId)
 {
 	int nAddCycles;
@@ -85,10 +85,10 @@ int Cycles_GetCounterOnReadAccess(int nId)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read a counter on CPU memory write access by taking care of the instruction
-  type (add the needed amount of additional cycles).
-*/
+/**
+ * Read a counter on CPU memory write access by taking care of the instruction
+ * type (add the needed amount of additional cycles).
+ */
 int Cycles_GetCounterOnWriteAccess(int nId)
 {
 	int nAddCycles;

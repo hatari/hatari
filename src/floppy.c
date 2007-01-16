@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.32 2006-08-08 07:19:15 thothy Exp $";
+const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.33 2007-01-16 18:42:59 thothy Exp $";
 
 #include <sys/stat.h>
 
@@ -55,9 +55,9 @@ static const char * const pszDiskImageNameExts[] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Initialize emulation floppy drives
-*/
+/**
+ * Initialize emulation floppy drives
+ */
 void Floppy_Init(void)
 {
 	int i;
@@ -72,9 +72,9 @@ void Floppy_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  UnInitialize drives
-*/
+/**
+ * UnInitialize drives
+ */
 void Floppy_UnInit(void)
 {
 	Floppy_EjectBothDrives();
@@ -82,9 +82,9 @@ void Floppy_UnInit(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
-*/
+/**
+ * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+ */
 void Floppy_MemorySnapShot_Capture(BOOL bSave)
 {
 	int i;
@@ -115,9 +115,9 @@ void Floppy_MemorySnapShot_Capture(BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Find which device to boot from (hard drive or floppy).
-*/
+/**
+ * Find which device to boot from (hard drive or floppy).
+ */
 void Floppy_GetBootDrive(void)
 {
 	/* Boot from hard drive if user wants this and HD emulation is turned on */
@@ -129,11 +129,11 @@ void Floppy_GetBootDrive(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Test if disk image is write protected. Write protection can be configured
-  in the GUI. When set to "automatic", we check the file permissions of the
-  floppy disk image to decide.
-*/
+/**
+ * Test if disk image is write protected. Write protection can be configured
+ * in the GUI. When set to "automatic", we check the file permissions of the
+ * floppy disk image to decide.
+ */
 BOOL Floppy_IsWriteProtected(int Drive)
 {
 	if (ConfigureParams.DiskImage.nWriteProtection == WRITEPROT_OFF)
@@ -157,14 +157,14 @@ BOOL Floppy_IsWriteProtected(int Drive)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Test disk image for valid boot-sector.
-  It has been noticed that some disks, eg blank images made by the MakeDisk
-  utility or PaCifiST emulator fill in the boot-sector with incorrect information.
-  Such images cannot be read correctly using a real ST, and also Hatari.
-  To try and prevent data loss, we check for this error and flag the drive so
-  the image will not be saved back to the file.
-*/
+/**
+ * Test disk image for valid boot-sector.
+ * It has been noticed that some disks, eg blank images made by the MakeDisk
+ * utility or PaCifiST emulator fill in the boot-sector with incorrect information.
+ * Such images cannot be read correctly using a real ST, and also Hatari.
+ * To try and prevent data loss, we check for this error and flag the drive so
+ * the image will not be saved back to the file.
+ */
 static BOOL Floppy_IsBootSectorOK(int Drive)
 {
 	Uint8 *pDiskBuffer;
@@ -192,10 +192,10 @@ static BOOL Floppy_IsBootSectorOK(int Drive)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Try to create disk B filename, eg 'auto_100a' becomes 'auto_100b'
-  Return TRUE if think we should try!
-*/
+/**
+ * Try to create disk B filename, eg 'auto_100a' becomes 'auto_100b'
+ * Return TRUE if think we should try!
+ */
 static BOOL Floppy_CreateDiskBFileName(const char *pSrcFileName, char *pDestFileName)
 {
 	char *szDir, *szName, *szExt;
@@ -236,10 +236,10 @@ static BOOL Floppy_CreateDiskBFileName(const char *pSrcFileName, char *pDestFile
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Insert disk into floppy drive.
-  The WHOLE image is copied into our drive buffers, and uncompressed if necessary
-*/
+/**
+ * Insert disk into floppy drive.
+ * The WHOLE image is copied into our drive buffers, and uncompressed if necessary
+ */
 BOOL Floppy_InsertDiskIntoDrive(int Drive, char *pszFileName)
 {
 	return Floppy_ZipInsertDiskIntoDrive(Drive, pszFileName, NULL);
@@ -300,10 +300,10 @@ BOOL Floppy_ZipInsertDiskIntoDrive(int Drive, char *pszFileName, char *pszZipPat
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Eject disk from floppy drive, save contents back to PCs hard-drive if
-  they have been changed.
-*/
+/**
+ * Eject disk from floppy drive, save contents back to PCs hard-drive if
+ * they have been changed.
+ */
 void Floppy_EjectDiskFromDrive(int Drive, BOOL bInformUser)
 {
 	/* Does our drive have a disk in? */
@@ -349,9 +349,9 @@ void Floppy_EjectDiskFromDrive(int Drive, BOOL bInformUser)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Eject all disk image from floppy drives - call when quit.
-*/
+/**
+ * Eject all disk image from floppy drives - call when quit.
+ */
 void Floppy_EjectBothDrives(void)
 {
 	/* Eject disk images from drives 'A' and 'B' */
@@ -361,13 +361,13 @@ void Floppy_EjectBothDrives(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Double-check information read from boot-sector as this is sometimes found to
-  be incorrect. The .ST image file should be divisible by the sector size and
-  sectors per track.
-  NOTE - Pass information from boot-sector to this function (if we can't
-  decide we leave it alone).
-*/
+/**
+ * Double-check information read from boot-sector as this is sometimes found to
+ * be incorrect. The .ST image file should be divisible by the sector size and
+ * sectors per track.
+ * NOTE - Pass information from boot-sector to this function (if we can't
+ * decide we leave it alone).
+ */
 static void Floppy_DoubleCheckFormat(long nDiskSize, Uint16 *pnSides, Uint16 *pnSectorsPerTrack)
 {
 	int nSectorsPerTrack;
@@ -402,11 +402,11 @@ static void Floppy_DoubleCheckFormat(long nDiskSize, Uint16 *pnSides, Uint16 *pn
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Find details of disk image. We need to do this via a function as sometimes the boot-block
-  is not actually correct with the image - some demos/game disks have incorrect bytes in the
-  boot sector and this attempts to find the correct values.
-*/
+/**
+ * Find details of disk image. We need to do this via a function as sometimes the boot-block
+ * is not actually correct with the image - some demos/game disks have incorrect bytes in the
+ * boot sector and this attempts to find the correct values.
+ */
 void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
                             unsigned short *pnSectorsPerTrack, unsigned short *pnSides)
 {
@@ -432,10 +432,10 @@ void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read sectors from floppy disk image, return TRUE if all OK
-  NOTE Pass -ve as Count to read whole track
-*/
+/**
+ * Read sectors from floppy disk image, return TRUE if all OK
+ * NOTE Pass -ve as Count to read whole track
+ */
 BOOL Floppy_ReadSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
                         unsigned short Track, unsigned short Side, short Count,
                         int *pnSectorsPerTrack)
@@ -511,10 +511,10 @@ BOOL Floppy_ReadSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write sectors from floppy disk image, return TRUE if all OK
-  NOTE Pass -ve as Count to write whole track
-*/
+/**
+ * Write sectors from floppy disk image, return TRUE if all OK
+ * NOTE Pass -ve as Count to write whole track
+ */
 BOOL Floppy_WriteSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
                          unsigned short Track, unsigned short Side, short Count,
                          int *pnSectorsPerTrack)

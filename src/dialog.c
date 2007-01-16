@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.56 2007-01-06 11:15:18 thothy Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.57 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -43,10 +43,10 @@ CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check if need to warn user that changes will take place after reset.
-  Return TRUE if wants to reset.
-*/
+/**
+ * Check if need to warn user that changes will take place after reset.
+ * Return TRUE if wants to reset.
+ */
 BOOL Dialog_DoNeedReset(void)
 {
 	/* Did we change monitor type? If so, must reset */
@@ -87,9 +87,9 @@ BOOL Dialog_DoNeedReset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Copy details back to configuration and perform reset.
-*/
+/**
+ * Copy details back to configuration and perform reset.
+ */
 void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 {
 	BOOL NeedReset;
@@ -241,10 +241,10 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Open Property sheet Options dialog.
-  Return TRUE if user choses OK, or FALSE if cancel!
-*/
+/**
+ * Open Property sheet Options dialog.
+ * Return TRUE if user choses OK, or FALSE if cancel!
+ */
 BOOL Dialog_DoProperty(void)
 {
 	BOOL bOKDialog;  /* Did user 'OK' dialog? */
@@ -274,9 +274,9 @@ BOOL Dialog_DoProperty(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Loads params from the configuration file into DialogParams
-*/
+/**
+ * Loads params from the configuration file into DialogParams
+ */
 void Dialog_LoadParams(void)
 {
 	CNF_PARAMS tmpParams;
@@ -290,9 +290,9 @@ void Dialog_LoadParams(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Saves params in DialogParams to the configuration file
-*/
+/**
+ * Saves params in DialogParams to the configuration file
+ */
 void Dialog_SaveParams(void)
 {
 	CNF_PARAMS tmpParams;

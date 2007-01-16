@@ -12,7 +12,7 @@
   In fact these mappings seems to force the gem to ask the IKBD for the real
   time (seconds units). See ikbd.c for the time returned by the IKBD.
 */
-const char Rtc_rcsid[] = "Hatari $Id: rtc.c,v 1.5 2006-02-08 22:49:27 eerot Exp $";
+const char Rtc_rcsid[] = "Hatari $Id: rtc.c,v 1.6 2007-01-16 18:42:59 thothy Exp $";
 
 #include <time.h>
 
@@ -26,9 +26,9 @@ static Sint8 fake_am, fake_amz;
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read seconds units.
-*/
+/**
+ * Read seconds units.
+ */
 void Rtc_SecondsUnits_ReadByte(void)
 {
   struct tm *SystemTime;
@@ -42,9 +42,9 @@ void Rtc_SecondsUnits_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read seconds tens.
-*/
+/**
+ * Read seconds tens.
+ */
 void Rtc_SecondsTens_ReadByte(void)
 {
   struct tm *SystemTime;
@@ -58,9 +58,9 @@ void Rtc_SecondsTens_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read minutes units.
-*/
+/**
+ * Read minutes units.
+ */
 void Rtc_MinutesUnits_ReadByte(void)
 {
   if(rtc_bank)
@@ -81,9 +81,9 @@ void Rtc_MinutesUnits_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write minutes units.
-*/
+/**
+ * Write minutes units.
+ */
 void Rtc_MinutesUnits_WriteByte(void)
 {
   /* TOS 1.0x uses this... */
@@ -94,9 +94,9 @@ void Rtc_MinutesUnits_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read minutes tens.
-*/
+/**
+ * Read minutes tens.
+ */
 void Rtc_MinutesTens_ReadByte(void)
 {
   if(rtc_bank)
@@ -117,9 +117,9 @@ void Rtc_MinutesTens_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write minutes tens.
-*/
+/**
+ * Write minutes tens.
+ */
 void Rtc_MinutesTens_WriteByte(void)
 {
   /* TOS 1.0x uses this... */
@@ -130,9 +130,9 @@ void Rtc_MinutesTens_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read hours units.
-*/
+/**
+ * Read hours units.
+ */
 void Rtc_HoursUnits_ReadByte(void)
 {
   struct tm *SystemTime;
@@ -146,9 +146,9 @@ void Rtc_HoursUnits_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read hours tens.
-*/
+/**
+ * Read hours tens.
+ */
 void Rtc_HoursTens_ReadByte(void)
 {
   struct tm *SystemTime;
@@ -162,9 +162,9 @@ void Rtc_HoursTens_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read weekday.
-*/
+/**
+ * Read weekday.
+ */
 void Rtc_Weekday_ReadByte(void)
 {
   struct tm *SystemTime;
@@ -178,9 +178,9 @@ void Rtc_Weekday_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read day units.
-*/
+/**
+ * Read day units.
+ */
 void Rtc_DayUnits_ReadByte(void)
 {
   struct tm *SystemTime;
@@ -194,9 +194,9 @@ void Rtc_DayUnits_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read day tens.
-*/
+/**
+ * Read day tens.
+ */
 void Rtc_DayTens_ReadByte(void)
 {
   struct tm *SystemTime;
@@ -210,9 +210,9 @@ void Rtc_DayTens_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read month units.
-*/
+/**
+ * Read month units.
+ */
 void Rtc_MonthUnits_ReadByte(void)
 {
   struct tm *SystemTime;
@@ -226,9 +226,9 @@ void Rtc_MonthUnits_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read month tens.
-*/
+/**
+ * Read month tens.
+ */
 void Rtc_MonthTens_ReadByte(void)
 {
   struct tm *SystemTime;
@@ -242,9 +242,9 @@ void Rtc_MonthTens_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read year units.
-*/
+/**
+ * Read year units.
+ */
 void Rtc_YearUnits_ReadByte(void)
 {
   struct tm *SystemTime;
@@ -258,9 +258,9 @@ void Rtc_YearUnits_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read year tens.
-*/
+/**
+ * Read year tens.
+ */
 void Rtc_YearTens_ReadByte(void)
 {
   struct tm *SystemTime;
@@ -274,9 +274,9 @@ void Rtc_YearTens_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read clock mod.
-*/
+/**
+ * Read clock mod.
+ */
 void Rtc_ClockMod_ReadByte(void)
 {
   STRam[0xfffc3b] = ((STRam[0xfffc3b] & 0x0f) | 0xf0);
@@ -284,9 +284,9 @@ void Rtc_ClockMod_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write clock mod.
-*/
+/**
+ * Write clock mod.
+ */
 void Rtc_ClockMod_WriteByte(void)
 {
   rtc_bank = STRam[0xfffc3b] & 1;

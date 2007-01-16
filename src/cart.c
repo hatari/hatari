@@ -14,7 +14,7 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to
   a byte array and stored in 'Cart_data[]' (see cartData.c).
 */
-const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.14 2006-03-02 09:17:16 thothy Exp $";
+const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.15 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -38,9 +38,9 @@ static const char * const psCartNameExts[] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Load an external cartridge image file.
-*/
+/**
+ * Load an external cartridge image file.
+ */
 static void Cart_LoadImage(void)
 {
 	Uint8 *pCartData;
@@ -80,13 +80,13 @@ static void Cart_LoadImage(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Copy ST GEMDOS intercept program image into cartridge memory space
-  or load an external cartridge file.
-  The intercept program is part of Hatari and used as an interface to the host
-  file system through GemDOS. It is also needed for Line-A-Init when using
-  extended VDI resolutions.
-*/
+/**
+ * Copy ST GEMDOS intercept program image into cartridge memory space
+ * or load an external cartridge file.
+ * The intercept program is part of Hatari and used as an interface to the host
+ * file system through GemDOS. It is also needed for Line-A-Init when using
+ * extended VDI resolutions.
+ */
 void Cart_ResetImage(void)
 {
 	/* "Clear" cartridge ROM space */

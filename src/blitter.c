@@ -30,7 +30,7 @@
  *
  *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.14 2006-02-17 20:59:30 eerot Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.15 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -375,9 +375,9 @@ static void (* const do_hop_op_P[4][16])(void) =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Do the blit.
-*/
+/**
+ * Do the blit.
+ */
 static void Do_Blit(void)
 {
 	if (((short)STMemory_ReadWord(REG_SRC_X_INC)) < 0)
@@ -387,81 +387,81 @@ static void Do_Blit(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read blitter endmask 1.
-*/
+/**
+ * Read blitter endmask 1.
+ */
 void Blitter_Endmask1_ReadWord(void)
 {
 	IoMem_WriteWord(REG_END_MASK1, end_mask_1);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read blitter endmask 2.
-*/
+/**
+ * Read blitter endmask 2.
+ */
 void Blitter_Endmask2_ReadWord(void)
 {
 	IoMem_WriteWord(REG_END_MASK2, end_mask_2);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read blitter endmask 3.
-*/
+/**
+ * Read blitter endmask 3.
+ */
 void Blitter_Endmask3_ReadWord(void)
 {
 	IoMem_WriteWord(REG_END_MASK3, end_mask_3);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read blitter destination address.
-*/
+/**
+ * Read blitter destination address.
+ */
 void Blitter_DestAddr_ReadLong(void)
 {
 	IoMem_WriteLong(REG_DST_ADDR, dest_addr_reg);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read blitter words-per-line register.
-*/
+/**
+ * Read blitter words-per-line register.
+ */
 void Blitter_WordsPerLine_ReadWord(void)
 {
 	IoMem_WriteWord(REG_X_COUNT, x_count);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read blitter lines-per-bitblock register.
-*/
+/**
+ * Read blitter lines-per-bitblock register.
+ */
 void Blitter_LinesPerBitblock_ReadWord(void)
 {
 	IoMem_WriteWord(REG_Y_COUNT, y_count);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read blitter halftone operation register.
-*/
+/**
+ * Read blitter halftone operation register.
+ */
 void Blitter_HalftoneOp_ReadByte(void)
 {
 	IoMem_WriteByte(REG_BLIT_HOP, hop);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read blitter logical operation register.
-*/
+/**
+ * Read blitter logical operation register.
+ */
 void Blitter_LogOp_ReadByte(void)
 {
 	IoMem_WriteByte(REG_BLIT_LOP, op);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read blitter control register.
-*/
+/**
+ * Read blitter control register.
+ */
 void Blitter_Control_ReadByte(void)
 {
 	/* we don't implement Blit mode so this can never be
@@ -474,9 +474,9 @@ void Blitter_Control_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read blitter skew register.
-*/
+/**
+ * Read blitter skew register.
+ */
 void Blitter_Skew_ReadByte(void)
 {
 	IoMem_WriteByte(REG_SKEW, skewreg);
@@ -484,63 +484,63 @@ void Blitter_Skew_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to blitter endmask 1.
-*/
+/**
+ * Write to blitter endmask 1.
+ */
 void Blitter_Endmask1_WriteWord(void)
 {
 	end_mask_1 = IoMem_ReadWord(REG_END_MASK1);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to blitter endmask 2.
-*/
+/**
+ * Write to blitter endmask 2.
+ */
 void Blitter_Endmask2_WriteWord(void)
 {
 	end_mask_2 = IoMem_ReadWord(REG_END_MASK2);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to blitter endmask 3.
-*/
+/**
+ * Write to blitter endmask 3.
+ */
 void Blitter_Endmask3_WriteWord(void)
 {
 	end_mask_3 = IoMem_ReadWord(REG_END_MASK3);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to blitter destination address register.
-*/
+/**
+ * Write to blitter destination address register.
+ */
 void Blitter_DestAddr_WriteLong(void)
 {
 	dest_addr_reg = IoMem_ReadLong(REG_DST_ADDR) & 0x0fffffe;
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to blitter words-per-line register.
-*/
+/**
+ * Write to blitter words-per-line register.
+ */
 void Blitter_WordsPerLine_WriteWord(void)
 {
 	x_count = IoMem_ReadWord(REG_X_COUNT);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to blitter words-per-bitblock register.
-*/
+/**
+ * Write to blitter words-per-bitblock register.
+ */
 void Blitter_LinesPerBitblock_WriteWord(void)
 {
 	y_count = IoMem_ReadWord(REG_Y_COUNT);
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to blitter halftone operation register.
-*/
+/**
+ * Write to blitter halftone operation register.
+ */
 void Blitter_HalftoneOp_WriteByte(void)
 {
 	/* h/ware reg masks out the top 6 bits! */
@@ -548,9 +548,9 @@ void Blitter_HalftoneOp_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to blitter logical operation register.
-*/
+/**
+ * Write to blitter logical operation register.
+ */
 void Blitter_LogOp_WriteByte(void)
 {	
 	/* h/ware reg masks out the top 4 bits! */
@@ -558,9 +558,9 @@ void Blitter_LogOp_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to blitter control register.
-*/
+/**
+ * Write to blitter control register.
+ */
 void Blitter_Control_WriteByte(void)
 {
 	/* Control register bits:
@@ -599,9 +599,9 @@ void Blitter_Control_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to blitter skew register.
-*/
+/**
+ * Write to blitter skew register.
+ */
 void Blitter_Skew_WriteByte(void)
 {
 	Uint8 v = IoMem_ReadByte(REG_SKEW);
@@ -612,9 +612,9 @@ void Blitter_Skew_WriteByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of Blitter variables.
-*/
+/**
+ * Save/Restore snapshot of Blitter variables.
+ */
 void Blitter_MemorySnapShot_Capture(BOOL bSave)
 {
 	/* Save/Restore details */

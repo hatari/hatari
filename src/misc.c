@@ -6,7 +6,7 @@
 
   Misc functions
 */
-const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.13 2006-09-28 18:27:19 eerot Exp $";
+const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.14 2007-01-16 18:42:59 thothy Exp $";
 
 #include <ctype.h>
 
@@ -15,9 +15,9 @@ const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.13 2006-09-28 18:27:19 eerot E
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Remove 'white-space' from beginning of text string
-*/
+/**
+ * Remove 'white-space' from beginning of text string
+ */
 void Misc_RemoveWhiteSpace(char *pszString,int Length)
 {
   while( (*pszString==' ') || (*pszString=='\t') ) {
@@ -28,9 +28,9 @@ void Misc_RemoveWhiteSpace(char *pszString,int Length)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-   Convert a string to uppercase.
-*/
+/**
+ *  Convert a string to uppercase.
+ */
 void Misc_strupr(char *pString)
 {
   while(*pString)
@@ -42,9 +42,9 @@ void Misc_strupr(char *pString)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Limit integer between min/max range
-*/
+/**
+ * Limit integer between min/max range
+ */
 int Misc_LimitInt(int Value, int MinRange, int MaxRange)
 {
   if (Value<MinRange)
@@ -57,9 +57,9 @@ int Misc_LimitInt(int Value, int MinRange, int MaxRange)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Convert value to 2-digit BCD
-*/
+/**
+ * Convert value to 2-digit BCD
+ */
 unsigned char Misc_ConvertToBCD(unsigned short int Value)
 {
   return (((Value/10))<<4) | (Value%10);

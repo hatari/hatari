@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.28 2006-08-09 08:14:24 eerot Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.29 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -331,9 +331,9 @@ static const char DebounceExtendedKeys[] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Initialization.
-*/
+/**
+ * Initialization.
+ */
 void Keymap_Init(void)
 {
   memset(SdlSymToSdlScan, 0, sizeof(SdlSymToSdlScan));      /* Clear array */
@@ -342,12 +342,12 @@ void Keymap_Init(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Heuristic analysis to find out the obscure scancode offset.
-  Some keys like 'z' can't be used for detection since they are on different
-  locations on "qwertz" and "azerty" keyboards.
-  This clever code has originally been taken from the emulator Aranym. (cheers!)
-*/
+/**
+ * Heuristic analysis to find out the obscure scancode offset.
+ * Some keys like 'z' can't be used for detection since they are on different
+ * locations on "qwertz" and "azerty" keyboards.
+ * This clever code has originally been taken from the emulator Aranym. (cheers!)
+ */
 static int Keymap_FindScanCodeOffset(SDL_keysym* keysym)
 {
   int offset = -1;    /* uninitialized scancode offset */
@@ -426,10 +426,10 @@ static int Keymap_FindScanCodeOffset(SDL_keysym* keysym)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Map PC scancode to ST scancode.
-  This code was heavily inspired by the emulator Aranym. (cheers!)
-*/
+/**
+ * Map PC scancode to ST scancode.
+ * This code was heavily inspired by the emulator Aranym. (cheers!)
+ */
 static char Keymap_PcToStScanCode(SDL_keysym* keysym)
 {
   static int offset = -1;    /* uninitialized scancode offset */
@@ -494,11 +494,11 @@ static char Keymap_PcToStScanCode(SDL_keysym* keysym)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Remap a keypad key to ST scan code. We use a separate function for this
-  so that we can easily toggle between number and cursor mode with the
-  numlock key.
-*/
+/**
+ * Remap a keypad key to ST scan code. We use a separate function for this
+ * so that we can easily toggle between number and cursor mode with the
+ * numlock key.
+ */
 static char Keymap_GetKeyPadScanCode(SDL_keysym* pKeySym)
 {
   if(SDL_GetModState() & KMOD_NUM)
@@ -541,9 +541,9 @@ static char Keymap_GetKeyPadScanCode(SDL_keysym* pKeySym)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Remap SDL Key to ST Scan code
-*/
+/**
+ * Remap SDL Key to ST Scan code
+ */
 char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
 {
   if(pKeySym->sym >= SDLK_LAST)  return -1;  /* Avoid illegal keys */
@@ -586,9 +586,9 @@ char Keymap_RemapKeyToSTScanCode(SDL_keysym* pKeySym)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Load keyboard remap file
-*/
+/**
+ * Load keyboard remap file
+ */
 void Keymap_LoadRemapFile(char *pszFileName)
 {
   char szString[1024];
@@ -638,10 +638,10 @@ void Keymap_LoadRemapFile(char *pszFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Scan list of keys to NOT de-bounce when running in maximum speed, eg ALT,SHIFT,CTRL etc...
-  Return TRUE if key requires de-bouncing
-*/
+/**
+ * Scan list of keys to NOT de-bounce when running in maximum speed, eg ALT,SHIFT,CTRL etc...
+ * Return TRUE if key requires de-bouncing
+ */
 static BOOL Keymap_DebounceSTKey(char STScanCode)
 {
   int i=0;
@@ -667,10 +667,10 @@ static BOOL Keymap_DebounceSTKey(char STScanCode)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Debounce any PC key held down if running with key repeat disabled
-  This is called each ST frame, so keys get held down for one VBL which is enough for 68000 code to scan
-*/
+/**
+ * Debounce any PC key held down if running with key repeat disabled
+ * This is called each ST frame, so keys get held down for one VBL which is enough for 68000 code to scan
+ */
 void Keymap_DebounceAllKeys(void)
 {
   SDLKey key;
@@ -710,9 +710,9 @@ void Keymap_DebounceAllKeys(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  User press key down
-*/
+/**
+ * User press key down
+ */
 void Keymap_KeyDown(SDL_keysym *sdlkey)
 {
   BOOL bPreviousKeyState;
@@ -759,9 +759,9 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  User released key
-*/
+/**
+ * User released key
+ */
 void Keymap_KeyUp(SDL_keysym *sdlkey)
 {
   char STScanCode;

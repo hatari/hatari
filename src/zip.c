@@ -6,7 +6,7 @@
 
   Zipped disk support, uses zlib
 */
-const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.21 2006-12-19 21:54:28 thothy Exp $";
+const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.22 2007-01-16 18:42:59 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,9 +53,9 @@ static const char * const pszDiskNameExts[] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Does filename end with a .ZIP extension? If so, return TRUE
-*/
+/**
+ * Does filename end with a .ZIP extension? If so, return TRUE
+ */
 BOOL ZIP_FileNameIsZIP(char *pszFileName)
 {
 	return File_DoesFileExtensionMatch(pszFileName,".zip");
@@ -63,9 +63,9 @@ BOOL ZIP_FileNameIsZIP(char *pszFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check if a file name contains a slash or backslash and return its position.
-*/
+/**
+ * Check if a file name contains a slash or backslash and return its position.
+ */
 static int Zip_FileNameHasSlash(char *fn)
 {
 	int i=0;
@@ -81,11 +81,11 @@ static int Zip_FileNameHasSlash(char *fn)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Returns a list of files from a zip file. returns NULL on failure,
-  returns a pointer to an array of strings if successful. Sets nfiles
-  to the number of files.
-*/
+/**
+ * Returns a list of files from a zip file. returns NULL on failure,
+ * returns a pointer to an array of strings if successful. Sets nfiles
+ * to the number of files.
+ */
 zip_dir *ZIP_GetFiles(char *pszFileName)
 {
 	int nfiles;
@@ -172,9 +172,9 @@ zip_dir *ZIP_GetFiles(char *pszFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Free the memory that has been allocated for a zip_dir.
-*/
+/**
+ * Free the memory that has been allocated for a zip_dir.
+ */
 void ZIP_FreeZipDir(zip_dir *f_zd)
 {
 	while (f_zd->nfiles > 0)
@@ -190,11 +190,11 @@ void ZIP_FreeZipDir(zip_dir *f_zd)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-    Returns a list of files from the directory (dir) in a zip file list (zip)
-    sets entries to the number of entries and returns a dirent structure, or
-    NULL on failure. NOTE: only f_name is set in the dirent structures. 
-*/
+/**
+ *   Returns a list of files from the directory (dir) in a zip file list (zip)
+ *   sets entries to the number of entries and returns a dirent structure, or
+ *   NULL on failure. NOTE: only f_name is set in the dirent structures. 
+ */
 struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
 {
 	int i,j;
@@ -306,9 +306,9 @@ struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check an image file in the archive, return the uncompressed length
-*/
+/**
+ * Check an image file in the archive, return the uncompressed length
+ */
 static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiskType)
 {
 	unz_file_info file_info;
@@ -349,9 +349,9 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiskType)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return the first matching file in a zip, or NULL on failure
-*/
+/**
+ * Return the first matching file in a zip, or NULL on failure
+ */
 static char *ZIP_FirstFile(char *filename, const char * const ppsExts[])
 {
 	zip_dir *files;
@@ -401,11 +401,11 @@ static char *ZIP_FirstFile(char *filename, const char * const ppsExts[])
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Extract a file (filename) from a ZIP-file (uf), the number of 
-  bytes to uncompress is size. Returns a pointer to a buffer containing
-  the uncompressed data, or NULL.
-*/
+/**
+ * Extract a file (filename) from a ZIP-file (uf), the number of 
+ * bytes to uncompress is size. Returns a pointer to a buffer containing
+ * the uncompressed data, or NULL.
+ */
 static void *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
 {
 	int err = UNZ_OK;
@@ -460,10 +460,10 @@ static void *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Load disk image from a .ZIP archive into memory, and return the number
-  of bytes loaded.
-*/
+/**
+ * Load disk image from a .ZIP archive into memory, and return the number
+ * of bytes loaded.
+ */
 Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
 {
 	uLong ImageSize=0;
@@ -545,11 +545,11 @@ Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save .ZIP file from memory buffer. Returns TRUE is all OK
-
-  Not yet implemented.
-*/
+/**
+ * Save .ZIP file from memory buffer. Returns TRUE is all OK
+ *
+ * Not yet implemented.
+ */
 BOOL ZIP_WriteDisk(char *pszFileName,unsigned char *pBuffer,int ImageSize)
 {
 	return FALSE;
@@ -557,10 +557,10 @@ BOOL ZIP_WriteDisk(char *pszFileName,unsigned char *pBuffer,int ImageSize)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Load first file from a .ZIP archive into memory, and return the number
-  of bytes loaded.
-*/
+/**
+ * Load first file from a .ZIP archive into memory, and return the number
+ * of bytes loaded.
+ */
 Uint8 *ZIP_ReadFirstFile(char *pszFileName, long *pImageSize, const char * const ppszExts[])
 {
 	unzFile uf=NULL;

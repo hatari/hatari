@@ -8,7 +8,7 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.15 2006-12-29 15:22:30 thothy Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.16 2007-01-16 18:42:59 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -48,7 +48,9 @@ static FILE *debugLogFile;
 static FILE *debug_stdout;
 
 
-/* convert string to lowercase */
+/**
+ * convert string to lowercase
+ */
 static void string_tolower(char *str)
 {
 	int i=0;
@@ -60,7 +62,9 @@ static void string_tolower(char *str)
 	}
 }
 
-/* truncate string at first unprintable char (e.g. newline) */
+/**
+ * truncate string at first unprintable char (e.g. newline)
+ */
 static void string_trunc(char *str)
 {
 	int i=0;
@@ -72,7 +76,9 @@ static void string_trunc(char *str)
 	}
 }
 
-/* check if string is valid hex number. */
+/**
+ * check if string is valid hex number.
+ */
 static BOOL isHex(char *str)
 {
 	int i=0;
@@ -87,12 +93,12 @@ static BOOL isHex(char *str)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Get a hex adress range, eg. "fa0000-fa0100" 
-  returns -1 if not a range,
-  -2 if a range, but not a valid one.
-  0 if OK.
-*/
+/**
+ * Get a hex adress range, eg. "fa0000-fa0100" 
+ * returns -1 if not a range,
+ * -2 if a range, but not a valid one.
+ * 0 if OK.
+ */
 static BOOL getRange(char *str, unsigned long *lower, unsigned long *upper)
 {
 	BOOL fDash = FALSE;
@@ -120,9 +126,9 @@ static BOOL getRange(char *str, unsigned long *lower, unsigned long *upper)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Open a log file.
-*/
+/**
+ * Open a log file.
+ */
 static void DebugUI_OpenLog(const char *arg)
 {
 	debugLogFile = fopen(arg, "w");
@@ -133,9 +139,9 @@ static void DebugUI_OpenLog(const char *arg)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Load a binary file to a memory address.
-*/
+/**
+ * Load a binary file to a memory address.
+ */
 static void DebugUI_LoadBin(char *args)
 {
 	FILE *fp;
@@ -169,9 +175,9 @@ static void DebugUI_LoadBin(char *args)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Dump memory from an address to a binary file.
-*/
+/**
+ * Dump memory from an address to a binary file.
+ */
 static void DebugUI_SaveBin(char *args)
 {
 	FILE *fp;
@@ -204,9 +210,9 @@ static void DebugUI_SaveBin(char *args)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Do a register dump.
-*/
+/**
+ * Do a register dump.
+ */
 static void DebugUI_RegDump(void)
 {
 	uaecptr nextpc;
@@ -216,9 +222,9 @@ static void DebugUI_RegDump(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Dissassemble - arg = starting address, or PC.
-*/
+/**
+ * Dissassemble - arg = starting address, or PC.
+ */
 static void DebugUI_DisAsm(char *arg, BOOL cont)
 {
 	int i,j;
@@ -280,9 +286,9 @@ static void DebugUI_DisAsm(char *arg, BOOL cont)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set a register: 
-*/
+/**
+ * Set a register: 
+ */
 static void DebugUI_RegSet(char *arg)
 {
 	int i;
@@ -408,9 +414,9 @@ static void DebugUI_RegSet(char *arg)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Do a memory dump, args = starting address.
-*/
+/**
+ * Do a memory dump, args = starting address.
+ */
 static void DebugUI_MemDump(char *arg, BOOL cont)
 {
 	int i,j;
@@ -495,9 +501,9 @@ static void DebugUI_MemDump(char *arg, BOOL cont)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Do a memory write, arg = starting address, followed by bytes.
-*/
+/**
+ * Do a memory write, arg = starting address, followed by bytes.
+ */
 static void DebugUI_MemWrite(char *arg)
 {
 	int i, j, numBytes;
@@ -572,9 +578,9 @@ static void DebugUI_MemWrite(char *arg)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Print help.
-*/
+/**
+ * Print help.
+ */
 static void DebugUI_Help(void)
 {
 	fprintf(stderr, "---- debug mode commands ----\n"
@@ -595,9 +601,9 @@ static void DebugUI_Help(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Get a UI command, return it.
-*/
+/**
+ * Get a UI command, return it.
+ */
 static int DebugUI_Getcommand(void)
 {
 	char command[255], arg[255];
@@ -737,9 +743,9 @@ static int DebugUI_Getcommand(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Debug UI
-*/
+/**
+ * Debug UI
+ */
 void DebugUI(void)
 {
 	debugLogFile = NULL;

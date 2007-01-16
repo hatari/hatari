@@ -18,7 +18,7 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.18 2007-01-11 23:01:07 thothy Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.19 2007-01-16 18:42:59 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -60,9 +60,9 @@ static const int STRGBPalEndianTable[16] =
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return TRUE if this frame is a Spectrum 512 style image(MUST be low res/non-mix)
-*/
+/**
+ * Return TRUE if this frame is a Spectrum 512 style image(MUST be low res/non-mix)
+ */
 BOOL Spec512_IsImage(void)
 {
 	/* Normal Low res screen? */
@@ -74,10 +74,10 @@ BOOL Spec512_IsImage(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  We store every palette access in a table to perform Spectrum 512 colour effects
-  This is cleared on each VBL
-*/
+/**
+ * We store every palette access in a table to perform Spectrum 512 colour effects
+ * This is cleared on each VBL
+ */
 void Spec512_StartVBL(void)
 {
 	/* Clear number of cycle palettes on each frame */
@@ -92,10 +92,10 @@ void Spec512_StartVBL(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Store color into table 'CyclePalettes[]' for screen conversion according
-  to cycles into frame.
-*/
+/**
+ * Store color into table 'CyclePalettes[]' for screen conversion according
+ * to cycles into frame.
+ */
 void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 {
 	CYCLEPALETTE *pTmpCyclePalette;
@@ -154,9 +154,9 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Begin palette calculation for Spectrum 512 style images,
-*/
+/**
+ * Begin palette calculation for Spectrum 512 style images,
+ */
 void Spec512_StartFrame(void)
 {
 	int i;
@@ -194,10 +194,10 @@ void Spec512_StartFrame(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Scan whole line and build up palette - need to do this so when get to screen line we have
-  the correct 16 colours set
-*/
+/**
+ * Scan whole line and build up palette - need to do this so when get to screen line we have
+ * the correct 16 colours set
+ */
 void Spec512_ScanWholeLine(void)
 {
 	/* Store pointer to line of palette cycle writes */
@@ -212,9 +212,9 @@ void Spec512_ScanWholeLine(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Build up palette for this scan line and store in 'ScanLinePalettes'
-*/
+/**
+ * Build up palette for this scan line and store in 'ScanLinePalettes'
+ */
 void Spec512_StartScanLine(void)
 {
 	int i;
@@ -236,9 +236,9 @@ void Spec512_StartScanLine(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Run to end of scan line looking up palettes so 'STRGBPalette' is up-to-date
-*/
+/**
+ * Run to end of scan line looking up palettes so 'STRGBPalette' is up-to-date
+ */
 void Spec512_EndScanLine(void)
 {
 	/* Continue to reads palette until complete so have correct version for next line */
@@ -248,9 +248,9 @@ void Spec512_EndScanLine(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Update palette for 4-pixels span, storing to 'STRGBPalette'
-*/
+/**
+ * Update palette for 4-pixels span, storing to 'STRGBPalette'
+ */
 void Spec512_UpdatePaletteSpan(void)
 {
 	if( pCyclePalette->LineCycles == ScanLineCycleCount )

@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.28 2006-09-26 19:12:35 eerot Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.29 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -132,9 +132,9 @@ static const Uint16 MFPDiv[] = {
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset all MFP variables and start interrupts on their way!
-*/
+/**
+ * Reset all MFP variables and start interrupts on their way!
+ */
 void MFP_Reset(void)
 {
   /* Reset MFP internal variables */
@@ -159,9 +159,9 @@ void MFP_Reset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
-*/
+/**
+ * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+ */
 void MFP_MemorySnapShot_Capture(BOOL bSave)
 {
   /* Save/Restore details */
@@ -196,14 +196,14 @@ void MFP_MemorySnapShot_Capture(BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Call MFP interrupt - NOTE when the MFP is in Auto interrupt (AEI), the MFP
-  puts the interrupt number on the data bus and then the 68000 reads it, multiplies
-  it by 4 and adds in a base(usually 0x100) to give the vector. Some programs
-  change this offset, eg RoboCod. This offset is stored in the top 4 bits of register
-  0xfffa17(0x40 is the default=0x100)
-  Many thanks to Steve Bak for that one!
-*/
+/**
+ * Call MFP interrupt - NOTE when the MFP is in Auto interrupt (AEI), the MFP
+ * puts the interrupt number on the data bus and then the 68000 reads it, multiplies
+ * it by 4 and adds in a base(usually 0x100) to give the vector. Some programs
+ * change this offset, eg RoboCod. This offset is stored in the top 4 bits of register
+ * 0xfffa17(0x40 is the default=0x100)
+ * Many thanks to Steve Bak for that one!
+ */
 static void MFP_Exception(int Interrupt)
 {
   unsigned int Vec;
@@ -215,12 +215,12 @@ static void MFP_Exception(int Interrupt)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  This is called whenever the MFP_IPRA or MFP_IPRB registers are modified.
-  We set the special flag SPCFLAG_MFP accordingly (to say if an MFP interrupt
-  is to be checked) so we only have one compare during the decode
-  instruction loop.
-*/
+/**
+ * This is called whenever the MFP_IPRA or MFP_IPRB registers are modified.
+ * We set the special flag SPCFLAG_MFP accordingly (to say if an MFP interrupt
+ * is to be checked) so we only have one compare during the decode
+ * instruction loop.
+ */
 static void MFP_UpdateFlags(void)
 {
   if( MFP_IPRA|MFP_IPRB )
@@ -235,9 +235,9 @@ static void MFP_UpdateFlags(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Test interrupt request to see if can cause exception,return TRUE if pass vector
-*/
+/**
+ * Test interrupt request to see if can cause exception,return TRUE if pass vector
+ */
 static BOOL MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingReg, Uint8 MaskRegister,
                                  Uint8 PriorityMaskLow, Uint8 PriorityMaskHigh, Uint8 *pInServiceReg)
 {
@@ -272,10 +272,10 @@ static BOOL MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check 'pending' registers to see if any MFP interrupts need servicing.
-  Request interrupt if necessary.
-*/
+/**
+ * Check 'pending' registers to see if any MFP interrupts need servicing.
+ * Request interrupt if necessary.
+ */
 void MFP_CheckPendingInterrupts(void)
 {
   if ((MFP_IPRA & 0xb5) == 0 && (MFP_IPRB & 0xf0) == 0)
@@ -315,9 +315,9 @@ void MFP_CheckPendingInterrupts(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Interrupt Channel is active, set pending bit so can be serviced
-*/
+/**
+ * Interrupt Channel is active, set pending bit so can be serviced
+ */
 void MFP_InputOnChannel(Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg)
 {
   /* Input has occurred on MFP channel, set interrupt pending to request interrupt when able */
@@ -330,9 +330,9 @@ void MFP_InputOnChannel(Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Generate Timer A Interrupt when in Event Count mode
-*/
+/**
+ * Generate Timer A Interrupt when in Event Count mode
+ */
 void MFP_TimerA_EventCount_Interrupt(void)
 {
   if (MFP_TA_MAINCOUNTER==1) {          /* Timer expired? If so, generate interrupt */
@@ -347,9 +347,9 @@ void MFP_TimerA_EventCount_Interrupt(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Generate Timer B Interrupt when in Event Count mode
-*/
+/**
+ * Generate Timer B Interrupt when in Event Count mode
+ */
 void MFP_TimerB_EventCount_Interrupt(void)
 {
   if (MFP_TB_MAINCOUNTER==1) {          /* Timer expired? If so, generate interrupt */
@@ -364,9 +364,9 @@ void MFP_TimerB_EventCount_Interrupt(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Start Timer A or B - EventCount mode is done in HBL handler to time correctly
-*/
+/**
+ * Start Timer A or B - EventCount mode is done in HBL handler to time correctly
+ */
 static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler, BOOL bFirstTimer)
 {
   int TimerClockCycles = 0;
@@ -399,9 +399,9 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler, 
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Start Timer C or D
-*/
+/**
+ * Start Timer C or D
+ */
 static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, int Handler, BOOL bFirstTimer)
 {
   int TimerClockCycles = 0;
@@ -434,9 +434,9 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, int Handler, 
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read Timer A or B - If in EventCount MainCounter already has correct value
-*/
+/**
+ * Read Timer A or B - If in EventCount MainCounter already has correct value
+ */
 static Uint8 MFP_ReadTimer_AB(Uint8 TimerControl, Uint8 MainCounter, int TimerCycles, int Handler)
 {
   int TimerCyclesPassed;
@@ -453,9 +453,9 @@ static Uint8 MFP_ReadTimer_AB(Uint8 TimerControl, Uint8 MainCounter, int TimerCy
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read Timer C or D
-*/
+/**
+ * Read Timer C or D
+ */
 static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCounter, int TimerCycles, int Handler)
 {
   int TimerCyclesPassed;
@@ -475,10 +475,10 @@ static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCoun
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Start Timer A
-  (This does not start the EventCount mode time as this is taken care of by the HBL)
-*/
+/**
+ * Start Timer A
+ * (This does not start the EventCount mode time as this is taken care of by the HBL)
+ */
 static void MFP_StartTimerA(void)
 {
   TimerAClockCycles = MFP_StartTimer_AB(MFP_TACR,MFP_TADR,INTERRUPT_MFP_TIMERA,TRUE);
@@ -486,9 +486,9 @@ static void MFP_StartTimerA(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read Timer A
-*/
+/**
+ * Read Timer A
+ */
 static void MFP_ReadTimerA(void)
 {
   MFP_TA_MAINCOUNTER = MFP_ReadTimer_AB(MFP_TACR,MFP_TA_MAINCOUNTER,TimerAClockCycles,INTERRUPT_MFP_TIMERA);
@@ -496,10 +496,10 @@ static void MFP_ReadTimerA(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Start Timer B
-  (This does not start the EventCount mode time as this is taken care of by the HBL)
-*/
+/**
+ * Start Timer B
+ * (This does not start the EventCount mode time as this is taken care of by the HBL)
+ */
 static void MFP_StartTimerB(void)
 {
   TimerBClockCycles = MFP_StartTimer_AB(MFP_TBCR,MFP_TBDR,INTERRUPT_MFP_TIMERB,TRUE);
@@ -507,9 +507,9 @@ static void MFP_StartTimerB(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read Timer B
-*/
+/**
+ * Read Timer B
+ */
 static void MFP_ReadTimerB(void)
 {
   MFP_TB_MAINCOUNTER = MFP_ReadTimer_AB(MFP_TBCR,MFP_TB_MAINCOUNTER,TimerBClockCycles,INTERRUPT_MFP_TIMERB);
@@ -517,9 +517,9 @@ static void MFP_ReadTimerB(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Start Timer C
-*/
+/**
+ * Start Timer C
+ */
 static void MFP_StartTimerC(void)
 {
   TimerCClockCycles = MFP_StartTimer_CD(MFP_TCDCR>>4,MFP_TCDR,INTERRUPT_MFP_TIMERC,TRUE);
@@ -527,9 +527,9 @@ static void MFP_StartTimerC(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read Timer C
-*/
+/**
+ * Read Timer C
+ */
 static void MFP_ReadTimerC(void)
 {
   MFP_TC_MAINCOUNTER = MFP_ReadTimerCD(MFP_TCDCR>>4,MFP_TCDR,MFP_TC_MAINCOUNTER,TimerCClockCycles,INTERRUPT_MFP_TIMERC);
@@ -537,9 +537,9 @@ static void MFP_ReadTimerC(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Start Timer D
-*/
+/**
+ * Start Timer D
+ */
 static void MFP_StartTimerD(void)
 {
   TimerDClockCycles = MFP_StartTimer_CD(MFP_TCDCR,MFP_TDDR,INTERRUPT_MFP_TIMERD,TRUE);
@@ -547,9 +547,9 @@ static void MFP_StartTimerD(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read Timer D
-*/
+/**
+ * Read Timer D
+ */
 static void MFP_ReadTimerD(void)
 {
   MFP_TD_MAINCOUNTER = MFP_ReadTimerCD(MFP_TCDCR,MFP_TDDR,MFP_TC_MAINCOUNTER,TimerDClockCycles,INTERRUPT_MFP_TIMERD);
@@ -557,9 +557,9 @@ static void MFP_ReadTimerD(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle Timer A Interrupt
-*/
+/**
+ * Handle Timer A Interrupt
+ */
 void MFP_InterruptHandler_TimerA(void)
 {
   /* Remove this interrupt from list and re-order */
@@ -575,9 +575,9 @@ void MFP_InterruptHandler_TimerA(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle Timer B Interrupt
-*/
+/**
+ * Handle Timer B Interrupt
+ */
 void MFP_InterruptHandler_TimerB(void)
 {
   /* Remove this interrupt from list and re-order */
@@ -593,9 +593,9 @@ void MFP_InterruptHandler_TimerB(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle Timer C Interrupt
-*/
+/**
+ * Handle Timer C Interrupt
+ */
 void MFP_InterruptHandler_TimerC(void)
 {
   /* Remove this interrupt from list and re-order */
@@ -611,9 +611,9 @@ void MFP_InterruptHandler_TimerC(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle Timer D Interrupt
-*/
+/**
+ * Handle Timer D Interrupt
+ */
 void MFP_InterruptHandler_TimerD(void)
 {
   /* Remove this interrupt from list and re-order */
@@ -630,21 +630,21 @@ void MFP_InterruptHandler_TimerD(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from GPIP pins register (0xfffa01).
-
-  - Bit 0 is the BUSY signal of the printer port, it is SET if no printer
-    is connected or on BUSY. Therefor we should assume it to be 0 in Hatari
-    when a printer is emulated.
-  - Bit 1 is used for RS232: DCD
-  - Bit 2 is used for RS232: CTS
-  - Bit 3 is used by the blitter for signalling when its done.
-  - Bit 4 is used by the ACIAs.
-  - Bit 5 is used by the floppy controller / ACSI DMA
-  - Bit 6 is used for RS232: RI
-  - Bit 7 is monochrome monitor detection signal. On STE it is also XORed with
-    the DMA sound play bit.
-*/
+/**
+ * Handle read from GPIP pins register (0xfffa01).
+ *
+ * - Bit 0 is the BUSY signal of the printer port, it is SET if no printer
+ *   is connected or on BUSY. Therefor we should assume it to be 0 in Hatari
+ *   when a printer is emulated.
+ * - Bit 1 is used for RS232: DCD
+ * - Bit 2 is used for RS232: CTS
+ * - Bit 3 is used by the blitter for signalling when its done.
+ * - Bit 4 is used by the ACIAs.
+ * - Bit 5 is used by the floppy controller / ACSI DMA
+ * - Bit 6 is used for RS232: RI
+ * - Bit 7 is monochrome monitor detection signal. On STE it is also XORed with
+ *   the DMA sound play bit.
+ */
 void MFP_GPIP_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -680,9 +680,9 @@ void MFP_GPIP_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from active edge register (0xfffa03).
-*/
+/**
+ * Handle read from active edge register (0xfffa03).
+ */
 void MFP_ActiveEdge_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -691,9 +691,9 @@ void MFP_ActiveEdge_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from data direction register (0xfffa05).
-*/
+/**
+ * Handle read from data direction register (0xfffa05).
+ */
 void MFP_DataDirection_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -702,9 +702,9 @@ void MFP_DataDirection_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from interupt enable register A (0xfffa07).
-*/
+/**
+ * Handle read from interupt enable register A (0xfffa07).
+ */
 void MFP_EnableA_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -713,9 +713,9 @@ void MFP_EnableA_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from interupt enable register B (0xfffa09).
-*/
+/**
+ * Handle read from interupt enable register B (0xfffa09).
+ */
 void MFP_EnableB_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -724,9 +724,9 @@ void MFP_EnableB_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from interupt pending register A (0xfffa0b).
-*/
+/**
+ * Handle read from interupt pending register A (0xfffa0b).
+ */
 void MFP_PendingA_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -735,9 +735,9 @@ void MFP_PendingA_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from interupt pending register A (0xfffa0d).
-*/
+/**
+ * Handle read from interupt pending register A (0xfffa0d).
+ */
 void MFP_PendingB_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -746,9 +746,9 @@ void MFP_PendingB_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from interupt in service register A (0xfffa0f).
-*/
+/**
+ * Handle read from interupt in service register A (0xfffa0f).
+ */
 void MFP_InServiceA_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -757,9 +757,9 @@ void MFP_InServiceA_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from interupt in service register B (0xfffa11).
-*/
+/**
+ * Handle read from interupt in service register B (0xfffa11).
+ */
 void MFP_InServiceB_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -768,9 +768,9 @@ void MFP_InServiceB_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from interupt mask register A (0xfffa13).
-*/
+/**
+ * Handle read from interupt mask register A (0xfffa13).
+ */
 void MFP_MaskA_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -779,9 +779,9 @@ void MFP_MaskA_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from interupt mask register B (0xfffa15).
-*/
+/**
+ * Handle read from interupt mask register B (0xfffa15).
+ */
 void MFP_MaskB_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -790,9 +790,9 @@ void MFP_MaskB_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from MFP vector register (0xfffa17).
-*/
+/**
+ * Handle read from MFP vector register (0xfffa17).
+ */
 void MFP_VectorReg_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -801,9 +801,9 @@ void MFP_VectorReg_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from timer A control register (0xfffa19).
-*/
+/**
+ * Handle read from timer A control register (0xfffa19).
+ */
 void MFP_TimerACtrl_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -812,9 +812,9 @@ void MFP_TimerACtrl_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from timer B control register (0xfffa1b).
-*/
+/**
+ * Handle read from timer B control register (0xfffa1b).
+ */
 void MFP_TimerBCtrl_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -823,9 +823,9 @@ void MFP_TimerBCtrl_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from timer C/D control register (0xfffa1d).
-*/
+/**
+ * Handle read from timer C/D control register (0xfffa1d).
+ */
 void MFP_TimerCDCtrl_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -834,9 +834,9 @@ void MFP_TimerCDCtrl_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from timer A data register (0xfffa1f).
-*/
+/**
+ * Handle read from timer A data register (0xfffa1f).
+ */
 void MFP_TimerAData_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -848,9 +848,9 @@ void MFP_TimerAData_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from timer B data register (0xfffa21).
-*/
+/**
+ * Handle read from timer B data register (0xfffa21).
+ */
 void MFP_TimerBData_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -862,9 +862,9 @@ void MFP_TimerBData_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from timer C data register (0xfffa23).
-*/
+/**
+ * Handle read from timer C data register (0xfffa23).
+ */
 void MFP_TimerCData_ReadByte(void)
 {
 	M68000_WaitState(4);
@@ -875,9 +875,9 @@ void MFP_TimerCData_ReadByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle read from timer D data register (0xfffa25).
-*/
+/**
+ * Handle read from timer D data register (0xfffa25).
+ */
 void MFP_TimerDData_ReadByte(void)
 {
 	Uint32 pc = m68k_getpc();
@@ -898,9 +898,9 @@ void MFP_TimerDData_ReadByte(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to GPIP register (0xfffa01).
-*/
+/**
+ * Handle write to GPIP register (0xfffa01).
+ */
 void MFP_GPIP_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -911,9 +911,9 @@ void MFP_GPIP_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to AER (0xfffa03).
-*/
+/**
+ * Handle write to AER (0xfffa03).
+ */
 void MFP_ActiveEdge_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -922,9 +922,9 @@ void MFP_ActiveEdge_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to data direction register (0xfffa05).
-*/
+/**
+ * Handle write to data direction register (0xfffa05).
+ */
 void MFP_DataDirection_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -933,9 +933,9 @@ void MFP_DataDirection_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to interrupt enable register A (0xfffa07).
-*/
+/**
+ * Handle write to interrupt enable register A (0xfffa07).
+ */
 void MFP_EnableA_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -949,9 +949,9 @@ void MFP_EnableA_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to interrupt enable register B (0xfffa09).
-*/
+/**
+ * Handle write to interrupt enable register B (0xfffa09).
+ */
 void MFP_EnableB_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -965,9 +965,9 @@ void MFP_EnableB_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to interrupt pending register A (0xfffa0b).
-*/
+/**
+ * Handle write to interrupt pending register A (0xfffa0b).
+ */
 void MFP_PendingA_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -977,9 +977,9 @@ void MFP_PendingA_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to interrupt pending register B (0xfffa0d).
-*/
+/**
+ * Handle write to interrupt pending register B (0xfffa0d).
+ */
 void MFP_PendingB_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -989,9 +989,9 @@ void MFP_PendingB_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to interrupt in service register A (0xfffa0f).
-*/
+/**
+ * Handle write to interrupt in service register A (0xfffa0f).
+ */
 void MFP_InServiceA_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -1000,9 +1000,9 @@ void MFP_InServiceA_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to interrupt in service register B (0xfffa11).
-*/
+/**
+ * Handle write to interrupt in service register B (0xfffa11).
+ */
 void MFP_InServiceB_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -1011,9 +1011,9 @@ void MFP_InServiceB_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to interrupt mask register A (0xfffa13).
-*/
+/**
+ * Handle write to interrupt mask register A (0xfffa13).
+ */
 void MFP_MaskA_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -1022,9 +1022,9 @@ void MFP_MaskA_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to interrupt mask register B (0xfffa15).
-*/
+/**
+ * Handle write to interrupt mask register B (0xfffa15).
+ */
 void MFP_MaskB_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -1033,9 +1033,9 @@ void MFP_MaskB_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to MFP vector register (0xfffa17).
-*/
+/**
+ * Handle write to MFP vector register (0xfffa17).
+ */
 void MFP_VectorReg_WriteByte(void)
 {
 	Uint8 old_vr;
@@ -1058,9 +1058,9 @@ void MFP_VectorReg_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to timer A control register (0xfffa19).
-*/
+/**
+ * Handle write to timer A control register (0xfffa19).
+ */
 void MFP_TimerACtrl_WriteByte(void)
 {
 	Uint8 old_tacr;
@@ -1075,9 +1075,9 @@ void MFP_TimerACtrl_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to timer B control register (0xfffa1b).
-*/
+/**
+ * Handle write to timer B control register (0xfffa1b).
+ */
 void MFP_TimerBCtrl_WriteByte(void)
 {
 	Uint8 old_tbcr;
@@ -1092,9 +1092,9 @@ void MFP_TimerBCtrl_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to timer C/D control register (0xfffa1d).
-*/
+/**
+ * Handle write to timer C/D control register (0xfffa1d).
+ */
 void MFP_TimerCDCtrl_WriteByte(void)
 {
 	Uint8 old_tcdcr;
@@ -1138,9 +1138,9 @@ void MFP_TimerCDCtrl_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to timer A data register (0xfffa1f).
-*/
+/**
+ * Handle write to timer A data register (0xfffa1f).
+ */
 void MFP_TimerAData_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -1155,9 +1155,9 @@ void MFP_TimerAData_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to timer B data register (0xfffa21).
-*/
+/**
+ * Handle write to timer B data register (0xfffa21).
+ */
 void MFP_TimerBData_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -1172,9 +1172,9 @@ void MFP_TimerBData_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to timer C data register (0xfffa23).
-*/
+/**
+ * Handle write to timer C data register (0xfffa23).
+ */
 void MFP_TimerCData_WriteByte(void)
 {
 	M68000_WaitState(4);
@@ -1188,9 +1188,9 @@ void MFP_TimerCData_WriteByte(void)
 }
 
 /*-----------------------------------------------------------------------*/
-/*
-  Handle write to timer D data register (0xfffa25).
-*/
+/**
+ * Handle write to timer D data register (0xfffa25).
+ */
 void MFP_TimerDData_WriteByte(void)
 {
 	Uint32 pc = m68k_getpc();

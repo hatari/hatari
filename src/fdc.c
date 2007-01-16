@@ -12,7 +12,7 @@
   checked each HBL to perform the transfer of data from our disk image into
   the ST RAM area by simulating the DMA.
 */
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.30 2006-08-13 23:33:32 thothy Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.31 2007-01-16 18:42:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -161,9 +161,9 @@ static int nFdcDelayHbls;                                       /* Used to slow 
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset variables used in FDC
-*/
+/**
+ * Reset variables used in FDC
+ */
 void FDC_Reset(void)
 {
 	/* Clear out FDC registers */
@@ -189,9 +189,9 @@ void FDC_Reset(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
-*/
+/**
+ * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+ */
 void FDC_MemorySnapShot_Capture(BOOL bSave)
 {
 	/* Save/Restore details */
@@ -221,9 +221,9 @@ void FDC_MemorySnapShot_Capture(BOOL bSave)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Turn floppy motor on
-*/
+/**
+ * Turn floppy motor on
+ */
 static void FDC_TurnMotorOn(void)
 {
 	bMotorOn = TRUE;                  /* Turn motor on */
@@ -232,9 +232,9 @@ static void FDC_TurnMotorOn(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Turn floppy motor off (this sets a count as it takes a set amount of time for the motor to slow to a halt)
-*/
+/**
+ * Turn floppy motor off (this sets a count as it takes a set amount of time for the motor to slow to a halt)
+ */
 static void FDC_TurnMotorOff(void)
 {
 	MotorSlowingCount = 160;          /* Set timer so takes 'x' HBLs before turn off... */
@@ -242,9 +242,9 @@ static void FDC_TurnMotorOff(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Update floppy drive motor each HBL, to simulate slowing down and stopping for drive; needed for New Zealand Story(PP_001)
-*/
+/**
+ * Update floppy drive motor each HBL, to simulate slowing down and stopping for drive; needed for New Zealand Story(PP_001)
+ */
 static void FDC_UpdateMotor(void)
 {
 	/* Is drive slowing down? Decrement counter */
@@ -259,11 +259,11 @@ static void FDC_UpdateMotor(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Reset DMA Status (RD 0xff8606)
- 
-  This is done by 'toggling' bit 8 of the DMA Mode Control register
-*/
+/**
+ * Reset DMA Status (RD 0xff8606)
+ *
+ * This is done by 'toggling' bit 8 of the DMA Mode Control register
+ */
 void FDC_ResetDMAStatus(void)
 {
 	DMAStatus_ff8606rd = 0;           /* Clear out */
@@ -278,16 +278,16 @@ void FDC_ResetDMAStatus(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set DMA Status (RD 0xff8606)
- 
-  NOTE FDC Doc's are incorrect - Bit 0 is '0' on error (See TOS floprd, Ninja III etc...)
-  Look like Atari(yet again) connected the hardware up differently to the spec'
- 
-  Bit 0 - _Error Status (0=Error)
-  Bit 1 - _Sector Count Zero Status (0=Sector Count Zero)
-  Bit 2 - _Data Request Inactive Status
-*/
+/**
+ * Set DMA Status (RD 0xff8606)
+ * 
+ * NOTE FDC Doc's are incorrect - Bit 0 is '0' on error (See TOS floprd, Ninja III etc...)
+ * Look like Atari(yet again) connected the hardware up differently to the spec'
+ *
+ * Bit 0 - _Error Status (0=Error)
+ * Bit 1 - _Sector Count Zero Status (0=Sector Count Zero)
+ * Bit 2 - _Data Request Inactive Status
+ */
 void FDC_SetDMAStatus(BOOL bError)
 {
 	DMAStatus_ff8606rd &= 0x1;        /* Clear(except for error) */
@@ -307,9 +307,9 @@ void FDC_SetDMAStatus(BOOL bError)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read DMA Status (RD 0xff8606)
-*/
+/**
+ * Read DMA Status (RD 0xff8606)
+ */
 void FDC_DmaStatus_ReadWord(void)
 {
 	if (nIoMemAccessSize == SIZE_BYTE)
@@ -324,8 +324,9 @@ void FDC_DmaStatus_ReadWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-*/
+/**
+ * 
+ */
 static void FDC_UpdateDiskDrive(void)
 {
 	/* Set details for current selecte drive */
@@ -337,9 +338,9 @@ static void FDC_UpdateDiskDrive(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Set disk controller status (RD 0xff8604)
-*/
+/**
+ * Set disk controller status (RD 0xff8604)
+ */
 static void FDC_SetDiskControllerStatus(void)
 {
 	/* Update disk */
@@ -363,9 +364,9 @@ static void FDC_SetDiskControllerStatus(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return device for FDC, check PORTA bits 1,2(0=on,1=off)
-*/
+/**
+ * Return device for FDC, check PORTA bits 1,2(0=on,1=off)
+ */
 int FDC_FindFloppyDrive(void)
 {
 	/* Check Drive A first */
@@ -381,9 +382,9 @@ int FDC_FindFloppyDrive(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Acknowledge FDC interrupt
-*/
+/**
+ * Acknowledge FDC interrupt
+ */
 void FDC_AcknowledgeInterrupt(void)
 {
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
@@ -393,9 +394,9 @@ void FDC_AcknowledgeInterrupt(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Copy parameters for disk sector/s read/write
-*/
+/**
+ * Copy parameters for disk sector/s read/write
+ */
 static void FDC_SetReadWriteParameters(int nSectors)
 {
 	/* Copy read/write details so we can modify them */
@@ -409,10 +410,10 @@ static void FDC_SetReadWriteParameters(int nSectors)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  ST program (or TOS) has read the MFP GPIP register to check if the FDC
-  is already done. Then we can skip the usual FDC waiting period!
-*/
+/**
+ * ST program (or TOS) has read the MFP GPIP register to check if the FDC
+ * is already done. Then we can skip the usual FDC waiting period!
+ */
 void FDC_GpipRead(void)
 {
 	static int nLastGpipBit;
@@ -430,9 +431,9 @@ void FDC_GpipRead(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Update floppy drive on each HBL (approx' 512 cycles)
-*/
+/**
+ * Update floppy drive on each HBL (approx' 512 cycles)
+ */
 void FDC_UpdateHBL(void)
 {
 	/* Seems like some games/demos (e.g. Fantasia by Dune, Alien World, ...) don't
@@ -494,9 +495,9 @@ void FDC_UpdateHBL(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Run 'RESTORE' command
-*/
+/**
+ * Run 'RESTORE' command
+ */
 void FDC_UpdateRestoreCmd(void)
 {
 	/* Which command is running? */
@@ -527,9 +528,9 @@ void FDC_UpdateRestoreCmd(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Run 'SEEK' command
-*/
+/**
+ * Run 'SEEK' command
+ */
 void FDC_UpdateSeekCmd(void)
 {
 	/* Which command is running? */
@@ -563,9 +564,9 @@ void FDC_UpdateSeekCmd(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Run 'STEP' command
-*/
+/**
+ * Run 'STEP' command
+ */
 void FDC_UpdateStepCmd(void)
 {
 	/* Which command is running? */
@@ -594,9 +595,9 @@ void FDC_UpdateStepCmd(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Run 'STEP IN' command
-*/
+/**
+ * Run 'STEP IN' command
+ */
 void FDC_UpdateStepInCmd(void)
 {
 	/* Which command is running? */
@@ -622,9 +623,9 @@ void FDC_UpdateStepInCmd(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Run 'STEP OUT' command
-*/
+/**
+ * Run 'STEP OUT' command
+ */
 void FDC_UpdateStepOutCmd(void)
 {
 	/* Which command is running? */
@@ -652,9 +653,9 @@ void FDC_UpdateStepOutCmd(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Run 'READ SECTOR/S' command
-*/
+/**
+ * Run 'READ SECTOR/S' command
+ */
 void FDC_UpdateReadSectorsCmd(void)
 {
 	/* Which command is running? */
@@ -702,9 +703,9 @@ void FDC_UpdateReadSectorsCmd(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Run 'WRITE SECTOR/S' command
-*/
+/**
+ * Run 'WRITE SECTOR/S' command
+ */
 void FDC_UpdateWriteSectorsCmd(void)
 {
 	/* Which command is running? */
@@ -754,11 +755,11 @@ void FDC_UpdateWriteSectorsCmd(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Type I Commands
- 
-  Restore, Seek, Step, Step-In and Step-Out
-*/
+/**
+ * Type I Commands
+ *
+ * Restore, Seek, Step, Step-In and Step-Out
+ */
 
 
 /*-----------------------------------------------------------------------*/
@@ -819,11 +820,11 @@ static void FDC_TypeI_StepOut(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Type II Commands
- 
-  Read Sector, Read Multiple Sectors, Write Sector, Write Multiple Sectors
-*/
+/**
+ * Type II Commands
+ *
+ * Read Sector, Read Multiple Sectors, Write Sector, Write Multiple Sectors
+ */
 
 
 /*-----------------------------------------------------------------------*/
@@ -879,11 +880,11 @@ static void FDC_TypeII_WriteMultipleSectors(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Type III Commands
- 
-  Read Address, Read Track, Write Track
-*/
+/**
+ * Type III Commands
+ *
+ * Read Address, Read Track, Write Track
+ */
 
 
 /*-----------------------------------------------------------------------*/
@@ -928,11 +929,11 @@ static void FDC_TypeIII_WriteTrack(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Type IV Commands
-
-  Force Interrupt
-*/
+/**
+ * Type IV Commands
+ *
+ * Force Interrupt
+ */
 
 
 /*-----------------------------------------------------------------------*/
@@ -949,9 +950,9 @@ static void FDC_TypeIV_ForceInterrupt(BOOL bCauseCPUInterrupt)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Execute Type I commands
-*/
+/**
+ * Execute Type I commands
+ */
 static void FDC_ExecuteTypeICommands(void)
 {
 	MFP_GPIP |= 0x20;
@@ -985,9 +986,9 @@ static void FDC_ExecuteTypeICommands(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Execute Type II commands
-*/
+/**
+ * Execute Type II commands
+ */
 static void FDC_ExecuteTypeIICommands(void)
 {
 	MFP_GPIP |= 0x20;
@@ -1015,9 +1016,9 @@ static void FDC_ExecuteTypeIICommands(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Execute Type III commands
-*/
+/**
+ * Execute Type III commands
+ */
 static void FDC_ExecuteTypeIIICommands(void)
 {
 	MFP_GPIP |= 0x20;
@@ -1042,9 +1043,9 @@ static void FDC_ExecuteTypeIIICommands(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Execute Type IV commands
-*/
+/**
+ * Execute Type IV commands
+ */
 static void FDC_ExecuteTypeIVCommands(void)
 {
 	if (FDCCommandRegister!=0xD8)           /* Is an 'immediate interrupt command'? don't reset interrupt */
@@ -1059,9 +1060,9 @@ static void FDC_ExecuteTypeIVCommands(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Find FDC command type and execute
-*/
+/**
+ * Find FDC command type and execute
+ */
 static void FDC_ExecuteCommand(void)
 {
 	/* Check type of command and execute */
@@ -1077,9 +1078,9 @@ static void FDC_ExecuteCommand(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to SectorCount register (WR 0xff8604)
-*/
+/**
+ * Write to SectorCount register (WR 0xff8604)
+ */
 static void FDC_WriteSectorCountRegister(void)
 {
 	FDCSectorCountRegister = DiskControllerWord_ff8604wr;
@@ -1087,9 +1088,9 @@ static void FDC_WriteSectorCountRegister(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to Command register (WR 0xff8604)
-*/
+/**
+ * Write to Command register (WR 0xff8604)
+ */
 static void FDC_WriteCommandRegister(void)
 {
 	FDCCommandRegister = DiskControllerWord_ff8604wr;
@@ -1099,9 +1100,9 @@ static void FDC_WriteCommandRegister(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to Track register (WR 0xff8604)
-*/
+/**
+ * Write to Track register (WR 0xff8604)
+ */
 static void FDC_WriteTrackRegister(void)
 {
 	FDCTrackRegister = DiskControllerWord_ff8604wr;    /* 0...79 */
@@ -1109,9 +1110,9 @@ static void FDC_WriteTrackRegister(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to Track register (WR 0xff8604)
-*/
+/**
+ * Write to Track register (WR 0xff8604)
+ */
 static void FDC_WriteSectorRegister(void)
 {
 	FDCSectorRegister = DiskControllerWord_ff8604wr;  /* 1,2,3..... */
@@ -1119,9 +1120,9 @@ static void FDC_WriteSectorRegister(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write to Data register (WR 0xff8604)
-*/
+/**
+ * Write to Data register (WR 0xff8604)
+ */
 static void FDC_WriteDataRegister(void)
 {
 	FDCDataRegister = DiskControllerWord_ff8604wr;
@@ -1129,9 +1130,9 @@ static void FDC_WriteDataRegister(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Store byte in FDC registers, when write to 0xff8604
-*/
+/**
+ * Store byte in FDC registers, when write to 0xff8604
+ */
 void FDC_DiskController_WriteWord(void)
 {
 	if (nIoMemAccessSize == SIZE_BYTE)
@@ -1177,10 +1178,10 @@ void FDC_DiskController_WriteWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read Status/FDC registers, when read from 0xff8604
-  Return 'DiskControllerByte'
-*/
+/**
+ * Read Status/FDC registers, when read from 0xff8604
+ * Return 'DiskControllerByte'
+ */
 void FDC_DiskControllerStatus_ReadWord(void)
 {
 	Sint16 DiskControllerByte = 0;            /* Used to pass back the parameter */
@@ -1247,9 +1248,9 @@ void FDC_DiskControllerStatus_ReadWord(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read DMA address from ST's RAM (always up-to-date)
-*/
+/**
+ * Read DMA address from ST's RAM (always up-to-date)
+ */
 Uint32 FDC_ReadDMAAddress(void)
 {
 	Uint32 Address;
@@ -1262,9 +1263,9 @@ Uint32 FDC_ReadDMAAddress(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write DMA address to ST's RAM(always keep up-to-date)
-*/
+/**
+ * Write DMA address to ST's RAM(always keep up-to-date)
+ */
 void FDC_WriteDMAAddress(Uint32 Address)
 {
 	/* Store as 24-bit address */
@@ -1275,10 +1276,10 @@ void FDC_WriteDMAAddress(Uint32 Address)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read sector from floppy drive into workspace
-  We copy the bytes in chunks to simulate reading of the floppy using DMA
-*/
+/**
+ * Read sector from floppy drive into workspace
+ * We copy the bytes in chunks to simulate reading of the floppy using DMA
+ */
 BOOL FDC_ReadSectorFromFloppy(void)
 {
 	/* Copy in 1 sector to our workspace */
@@ -1300,10 +1301,10 @@ BOOL FDC_ReadSectorFromFloppy(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write sector from workspace to floppy drive
-  We copy the bytes in chunks to simulate writing of the floppy using DMA
-*/
+/**
+ * Write sector from workspace to floppy drive
+ * We copy the bytes in chunks to simulate writing of the floppy using DMA
+ */
 BOOL FDC_WriteSectorFromFloppy(void)
 {
 	Uint32 Address;
@@ -1330,9 +1331,9 @@ BOOL FDC_WriteSectorFromFloppy(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Copy data from DMA workspace into ST RAM
-*/
+/**
+ * Copy data from DMA workspace into ST RAM
+ */
 void FDC_DMADataFromFloppy(void)
 {
 	/* Copy data to DMA address */
@@ -1344,17 +1345,17 @@ void FDC_DMADataFromFloppy(void)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Write word to 0xff8606 (DMA Mode Control)
- 
-  Eg.
-  $80 - Selects command/status register
-  $82 - Selects track register
-  $84 - Selects sector register
-  $86 - Selects data regsiter
-  NOTE - OR above values with $100 is transfer from memory to floppy
-  Also if bit 4 is set, write to sector count register
-*/
+/**
+ * Write word to 0xff8606 (DMA Mode Control)
+ * 
+ * Eg.
+ * $80 - Selects command/status register
+ * $82 - Selects track register
+ * $84 - Selects sector register
+ * $86 - Selects data regsiter
+ * NOTE - OR above values with $100 is transfer from memory to floppy
+ * Also if bit 4 is set, write to sector count register
+ */
 void FDC_DmaModeControl_WriteWord(void)
 {
 	Uint16 DMAModeControl_ff8606wr_prev;                     /* stores previous write to 0xff8606 for 'toggle' checks */

@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.36 2006-10-03 10:38:58 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.37 2007-01-16 18:42:59 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -25,9 +25,9 @@ const char File_rcsid[] = "Hatari $Id: file.c,v 1.36 2006-10-03 10:38:58 thothy 
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Remove any '/'s from end of filenames, but keeps / intact
-*/
+/**
+ * Remove any '/'s from end of filenames, but keeps / intact
+ */
 void File_CleanFileName(char *pszFileName)
 {
 	int len;
@@ -48,9 +48,9 @@ void File_CleanFileName(char *pszFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Add '/' to end of filename
-*/
+/**
+ * Add '/' to end of filename
+ */
 void File_AddSlashToEndFileName(char *pszFileName)
 {
 	int len;
@@ -70,9 +70,9 @@ void File_AddSlashToEndFileName(char *pszFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Does filename extension match? If so, return TRUE
-*/
+/**
+ * Does filename extension match? If so, return TRUE
+ */
 BOOL File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension)
 {
 	if (strlen(pszFileName) < strlen(pszExtension))
@@ -87,11 +87,11 @@ BOOL File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtensi
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check if filename is from root
-  
-  Return TRUE if filename is '/', else give FALSE
-*/
+/**
+ * Check if filename is from root
+ * 
+ * Return TRUE if filename is '/', else give FALSE
+ */
 BOOL File_IsRootFileName(char *pszFileName)
 {
 	if (pszFileName[0]=='\0')     /* If NULL string return! */
@@ -111,9 +111,9 @@ BOOL File_IsRootFileName(char *pszFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return string, to remove 'C:' part of filename
-*/
+/**
+ * Return string, to remove 'C:' part of filename
+ */
 const char *File_RemoveFileNameDrive(const char *pszFileName)
 {
 	if ( (pszFileName[0]!='\0') && (pszFileName[1]==':') )
@@ -124,11 +124,11 @@ const char *File_RemoveFileNameDrive(const char *pszFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Check if filename end with a '/'
-  
-  Return TRUE if filename ends with '/'
-*/
+/**
+ * Check if filename end with a '/'
+ * 
+ * Return TRUE if filename ends with '/'
+ */
 BOOL File_DoesFileNameEndWithSlash(char *pszFileName)
 {
 	if (pszFileName[0] == '\0')    /* If NULL string return! */
@@ -143,10 +143,10 @@ BOOL File_DoesFileNameEndWithSlash(char *pszFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Read file from disk into memory, allocate memory for it if need to (pass
-  Address as NULL).
-*/
+/**
+ * Read file from disk into memory, allocate memory for it if need to (pass
+ * Address as NULL).
+ */
 void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char * const ppszExts[])
 {
 	void *pFile = NULL;
@@ -232,9 +232,9 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save file to disk, return FALSE if errors
-*/
+/**
+ * Save file to disk, return FALSE if errors
+ */
 BOOL File_Save(char *pszFileName, const void *pAddress, size_t Size, BOOL bQueryOverwrite)
 {
 	BOOL bRet = FALSE;
@@ -282,9 +282,9 @@ BOOL File_Save(char *pszFileName, const void *pAddress, size_t Size, BOOL bQuery
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return size of file, -1 if error
-*/
+/**
+ * Return size of file, -1 if error
+ */
 int File_Length(const char *pszFileName)
 {
 	FILE *hDiskFile;
@@ -305,10 +305,10 @@ int File_Length(const char *pszFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Return TRUE if file exists, is readable or writable at least and is not
-  a directory. 
-*/
+/**
+ * Return TRUE if file exists, is readable or writable at least and is not
+ * a directory. 
+ */
 BOOL File_Exists(const char *filename)
 {
 	struct stat buf;
@@ -322,9 +322,9 @@ BOOL File_Exists(const char *filename)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Find if file exists, and if so ask user if OK to overwrite
-*/
+/**
+ * Find if file exists, and if so ask user if OK to overwrite
+ */
 BOOL File_QueryOverwrite(const char *pszFileName)
 {
 	char szString[FILENAME_MAX + 26];
@@ -343,9 +343,9 @@ BOOL File_QueryOverwrite(const char *pszFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Try filename with various extensions and check if file exists - if so return correct name
-*/
+/**
+ * Try filename with various extensions and check if file exists - if so return correct name
+ */
 BOOL File_FindPossibleExtFileName(char *pszFileName, const char * const ppszExts[])
 {
 	char *szSrcDir, *szSrcName, *szSrcExt;
@@ -391,10 +391,10 @@ BOOL File_FindPossibleExtFileName(char *pszFileName, const char * const ppszExts
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Split a complete filename into path, filename and extension.
-  If pExt is NULL, don't split the extension from the file name!
-*/
+/**
+ * Split a complete filename into path, filename and extension.
+ * If pExt is NULL, don't split the extension from the file name!
+ */
 void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *pExt)
 {
 	char *ptr1, *ptr2;
@@ -430,10 +430,10 @@ void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *pEx
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Build a complete filename from path, filename and extension.
-  pExt can also be NULL.
-*/
+/**
+ * Build a complete filename from path, filename and extension.
+ * pExt can also be NULL.
+ */
 void File_makepath(char *pDestFileName, const char *pDir, const char *pName, const char *pExt)
 {
 	int len;
@@ -461,10 +461,10 @@ void File_makepath(char *pDestFileName, const char *pDir, const char *pName, con
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Shrink a file name to a certain length and insert some dots if we cut
-  something away (usefull for showing file names in a dialog).
-*/
+/**
+ * Shrink a file name to a certain length and insert some dots if we cut
+ * something away (usefull for showing file names in a dialog).
+ */
 void File_ShrinkName(char *pDestFileName, char *pSrcFileName, int maxlen)
 {
 	int srclen = strlen(pSrcFileName);
@@ -484,11 +484,11 @@ void File_ShrinkName(char *pDestFileName, char *pSrcFileName, int maxlen)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create a clean absolute file name from a (possibly) relative file name.
-  I.e. filter out all occurancies of "./" and "../".
-  pFileName needs to point to a buffer of at least FILENAME_MAX bytes.
-*/
+/**
+ * Create a clean absolute file name from a (possibly) relative file name.
+ * I.e. filter out all occurancies of "./" and "../".
+ * pFileName needs to point to a buffer of at least FILENAME_MAX bytes.
+ */
 void File_MakeAbsoluteName(char *pFileName)
 {
 	char *pTempName;
@@ -570,11 +570,11 @@ void File_MakeAbsoluteName(char *pFileName)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Create a valid path name from a possibly invalid name by erasing invalid
-  path parts at the end of the string.
-  pPathName needs to point to a buffer of at least FILENAME_MAX bytes.
-*/
+/**
+ * Create a valid path name from a possibly invalid name by erasing invalid
+ * path parts at the end of the string.
+ * pPathName needs to point to a buffer of at least FILENAME_MAX bytes.
+ */
 void File_MakeValidPathName(char *pPathName)
 {
 	struct stat dirstat;

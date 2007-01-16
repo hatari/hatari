@@ -6,7 +6,7 @@
 
   DIM disk image support.
 */
-const char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.7 2006-02-16 22:07:03 eerot Exp $";
+const char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.8 2007-01-16 18:42:59 thothy Exp $";
 
 #include <zlib.h>
 
@@ -45,9 +45,9 @@ const char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.7 2006-02-16 22:07:03 eerot Exp 
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Does filename end with a .DIM extension? If so, return TRUE
-*/
+/**
+ * Does filename end with a .DIM extension? If so, return TRUE
+ */
 BOOL DIM_FileNameIsDIM(char *pszFileName, BOOL bAllowGZ)
 {
 	return(File_DoesFileExtensionMatch(pszFileName,".dim")
@@ -56,10 +56,10 @@ BOOL DIM_FileNameIsDIM(char *pszFileName, BOOL bAllowGZ)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Load .DIM file into memory, set number of bytes loaded and return a pointer
-  to the buffer.
-*/
+/**
+ * Load .DIM file into memory, set number of bytes loaded and return a pointer
+ * to the buffer.
+ */
 Uint8 *DIM_ReadDisk(char *pszFileName, long *pImageSize)
 {
 	Uint8 *pDimFile;
@@ -101,9 +101,9 @@ Uint8 *DIM_ReadDisk(char *pszFileName, long *pImageSize)
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Save .DIM file from memory buffer. Returns TRUE is all OK
-*/
+/**
+ * Save .DIM file from memory buffer. Returns TRUE is all OK
+ */
 BOOL DIM_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_DIM_IMAGES
