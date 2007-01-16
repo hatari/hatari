@@ -116,5 +116,6 @@ extern void Video_Color15_WriteWord(void);
 extern void Video_ShifterMode_WriteByte(void);
 extern void Video_HorScroll_Write(void);
 extern void Video_TTShiftMode_WriteWord(void);
+extern void Video_TTColorRegs_WriteWord(void);
 
 #endif  /* HATARI_VIDEO_H */

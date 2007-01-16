@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.66 2007-01-16 18:42:59 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.67 2007-01-16 21:14:32 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -66,6 +66,7 @@ static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simul
 static int nLastAccessCycleLeft;                /* Line cycle where program tried to open left border */
 static BOOL bSteBorderFlag;                     /* TRUE when screen width has been switched to 336 (e.g. in Obsession) */
 static int nTTRes;                              /* TT shifter resolution mode */
+static int bTTColorsSync = TRUE;                /* whether TT colors need convertion to SDL */
 
 
 /*-----------------------------------------------------------------------*/
@@ -741,6 +742,53 @@ void Video_GetTTRes(int *width, int *height, int *bpp)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Convert TT palette to SDL and blit TT screen using VIDEL code
+ */
+static void Video_RenderTTScreen(void)
+{
+  static int nPrevTTRes = -1;
+  int width, height, bpp;
+
+  Video_GetTTRes(&width, &height, &bpp);
+  if (nTTRes != nPrevTTRes)
+  {
+    HostScreen_setWindowSize(width, height, 8);
+    nPrevTTRes = nTTRes;
+  }
+
+  /* colors need synching? */
+  if (!bTTColorsSync) {
+    int i, colors = 1 << bpp;
+    uint32 palette = 0xff8400;     /* TT palette */
+    uint8 r,g,b, lowbyte, highbyte;
+
+    for (i = 0; i < colors; i++)
+    {
+      lowbyte = IoMem_ReadByte(palette++);
+      highbyte = IoMem_ReadByte(palette++);
+      r = (lowbyte & 0x0f) << 4;
+      g = ((highbyte>>4) & 0x0f) << 4;
+      b = (highbyte & 0x0f) << 4;
+      //printf("%d: (%d,%d,%d)\n", i,r,g,b);
+      HostScreen_setPaletteColor(i, r,g,b);
+    }
+    HostScreen_updatePalette( colors );
+    bTTColorsSync = TRUE;
+  }
+  
+  /* Yes, we are abusing the Videl routines for rendering the TT modes! */
+  if (!HostScreen_renderBegin())
+    return;
+  if (ConfigureParams.Screen.bZoomLowRes)
+    VIDEL_ConvertScreenZoom(width, height, bpp, width * bpp / 16);
+  else
+    VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);
+  HostScreen_renderEnd();
+  HostScreen_update1(FALSE);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Draw screen (either with ST/STE shifter drawing functions or with
  * Videl drawing functions)
  */
@@ -763,20 +811,7 @@ static void Video_DrawScreen(void)
   }
   else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
   {
-    static int nPrevTTRes = -1;
-    int width, height, bpp;
-    Video_GetTTRes(&width, &height, &bpp);
-    if (nTTRes != nPrevTTRes)
-    {
-      HostScreen_setWindowSize(width, height, 8);
-    }
-    /* Yes, we are abusing the Videl routines for rendering the TT modes! */
-    if (ConfigureParams.Screen.bZoomLowRes)
-      VIDEL_ConvertScreenZoom(width, height, bpp, width * bpp / 16);
-    else
-      VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);
-    HostScreen_update1( FALSE );
-    nPrevTTRes = nTTRes;
+    Video_RenderTTScreen();
   }
   else
 #endif
@@ -1177,4 +1212,13 @@ void Video_TTShiftMode_WriteWord(void)
 		IoMem_WriteByte(0xff8260, nTTRes);
 		Video_ShifterMode_WriteByte();
 	}
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to TT color register (0xff8400)
+ */
+void Video_TTColorRegs_WriteWord(void)
+{
+  bTTColorsSync = FALSE;
 }
