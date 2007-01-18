@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.69 2007-01-18 09:27:04 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.70 2007-01-18 23:37:44 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -769,9 +769,9 @@ static void Video_RenderTTScreen(void)
       /* sync TT ST-palette to TT-palette */
       src = 0xff8240;	/* ST-palette */
       offset = (IoMem_ReadWord(0xff8262) & 0x0f);
-      fprintf(stdout, "offset: %d\n", offset);
+      /*fprintf(stdout, "offset: %d\n", offset);*/
       dst = ttpalette + offset * 16*SIZE_WORD;
-      
+
       for (i = 0; i < 16; i++)
       {
         stcolor = IoMem_ReadWord(src);
@@ -795,7 +795,7 @@ static void Video_RenderTTScreen(void)
     HostScreen_updatePalette(colors);
     bTTColorsSync = TRUE;
   }
-  
+
   /* Yes, we are abusing the Videl routines for rendering the TT modes! */
   if (!HostScreen_renderBegin())
     return;
@@ -1162,6 +1162,12 @@ void Video_Color15_WriteWord(void)
  */
 void Video_ShifterMode_WriteByte(void)
 {
+  if (ConfigureParams.System.nMachineType == MACHINE_TT)
+  {
+    nTTRes = IoMem_ReadByte(0xff8260) & 7;
+    IoMem_WriteByte(0xff8262, nTTRes);                /* Copy to TT shifter mode register */
+  }
+
   if (!bUseHighRes && !bUseVDIRes)                    /* Don't store if hi-res and don't store if VDI resolution */
   {
     VideoShifterByte = IoMem[0xff8260] & 3;           /* We only care for lower 2-bits */
