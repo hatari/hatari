@@ -1,7 +1,10 @@
 # Main Makefile for Hatari.
 
-# Set ENABLE_FALCON to 1 to enable experimental Falcon code:
-ENABLE_FALCON = 1
+# Set ENABLE_DSP to 1 to enable experimental DSP emulation code
+# (there are currently no known programs which this would help,
+# but it will make many of the Falcon programs not to work).
+# If you change this, do "make clean"
+ENABLE_DSP = 0
 
 # Include settings
 include ../Makefile.cnf
@@ -12,8 +15,8 @@ INCFLAGS = -I.. -I./includes -I./uae-cpu $(CPPFLAGS)
 
 CFLAGS += -DDATADIR=\"$(DATADIR)\" -DCONFDIR=\"$(CONFDIR)\" $(INCFLAGS) $(SDL_CFLAGS)
 
-ifeq ($(ENABLE_FALCON),1)
-CFLAGS += -DENABLE_FALCON=1
+ifeq ($(ENABLE_DSP),1)
+CFLAGS += -DENABLE_DSP=1
 endif
 
 CPUOBJS = ./uae-cpu/hatari-glue.o ./uae-cpu/memory.o ./uae-cpu/newcpu.o \
@@ -30,11 +33,9 @@ GUIOBJS = ./gui-sdl/dlgAbout.o ./gui-sdl/dlgAlert.o ./gui-sdl/dlgDevice.o \
 
 GUIWINOBJS = ./gui-win/hatari-winicon.o ./gui-win/opencon.o
 
-ifeq ($(ENABLE_FALCON),1)
-FALCOBJS = ./falcon/videl.o ./falcon/hostscreen.o \
-  ./falcon/dsp.o ./falcon/dsp_cpu.o ./falcon/dsp_disasm.o
-else
-FALCOBJS =
+FALCOBJS = ./falcon/videl.o ./falcon/hostscreen.o
+ifeq ($(ENABLE_DSP),1)
+FALCOBJS += ./falcon/dsp.o ./falcon/dsp_cpu.o ./falcon/dsp_disasm.o
 endif
 
 SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c options.c \
@@ -75,13 +76,13 @@ uae-cpu/cpudefs.c: uae-cpu/build68k.c uae-cpu/table68k
 	$(MAKE) -C uae-cpu/ cpudefs.c
 
 gui-sdl/%.o: gui-sdl/%.c
-	$(MAKE) -C gui-sdl/ all
+	$(MAKE) ENABLE_DSP=$(ENABLE_DSP) -C gui-sdl/ all
 
 gui-win/%.o:
-	$(MAKE) -C gui-win/ all
+	$(MAKE) ENABLE_DSP=$(ENABLE_DSP) -C gui-win/ all
 
 falcon/%.o: falcon/%.c
-	$(MAKE) -C falcon/ all
+	$(MAKE) ENABLE_DSP=$(ENABLE_DSP) -C falcon/ all
 
 
 clean:

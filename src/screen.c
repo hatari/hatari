@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.62 2007-01-16 18:42:59 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.63 2007-01-18 09:24:25 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -36,11 +36,9 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.62 2007-01-16 18:42:59 tho
 #include "spec512.h"
 #include "vdi.h"
 #include "video.h"
-
-#if ENABLE_FALCON
 #include "falcon/videl.h"
 #include "falcon/hostscreen.h"
-#endif
+
 
 /* extern for several purposes */
 int STRes = ST_LOW_RES;       /* current resolution */
@@ -492,14 +490,12 @@ void Screen_EnterFullScreen(void)
     Main_PauseEmulation();        /* Hold things... */
     bInFullScreen = TRUE;
 
-#if ENABLE_FALCON
     if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
          || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
     {
       HostScreen_toggleFullScreen();
     }
     else
-#endif
     {
       Screen_SetResolution();
       Screen_ClearScreen();         /* Black out screen bitmap as will be invalid when return */
@@ -524,7 +520,6 @@ void Screen_ReturnFromFullScreen(void)
     Main_PauseEmulation();        /* Hold things... */
     bInFullScreen = FALSE;
 
-#if ENABLE_FALCON
     if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
          || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
     {
@@ -533,7 +528,6 @@ void Screen_ReturnFromFullScreen(void)
         SDL_WM_GrabInput(SDL_GRAB_OFF); /* Un-grab mouse pointer in windowed mode */
     }
     else
-#endif
     {
       Screen_SetResolution();
     }
@@ -575,7 +569,6 @@ void Screen_ModeChanged(void)
     /* screen not yet initialized */
     return;
   }
-#if ENABLE_FALCON
   /* Don't run this function if Videl emulation is running! */
   if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
   {
@@ -589,7 +582,6 @@ void Screen_ModeChanged(void)
     HostScreen_setWindowSize(width, height, 8);
     return;
   }
-#endif
   /* Set new display mode, if differs from current */
   Screen_SetResolution();
   Screen_SetFullUpdate();

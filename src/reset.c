@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.21 2007-01-16 18:42:59 thothy Exp $";
+const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.22 2007-01-18 09:24:25 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -66,11 +66,9 @@ static int Reset_ST(BOOL bCold)
   PSG_Reset();                  /* Reset PSG */
   Sound_Reset();                /* Reset Sound */
   IKBD_Reset(bCold);            /* Keyboard */
-#if ENABLE_FALCON
   if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
     VIDEL_reset();
   else
-#endif
     Screen_Reset();               /* Reset screen */
   M68000_Reset(bCold);          /* Reset CPU */
 

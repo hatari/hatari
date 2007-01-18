@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.98 2007-01-16 18:42:59 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.99 2007-01-18 09:24:25 eerot Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -48,8 +48,8 @@ const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.98 2007-01-16 18:42:59 thothy E
 
 #include "uae-cpu/hatari-glue.h"
 
-#if ENABLE_FALCON
 #include "falcon/hostscreen.h"
+#if ENABLE_DSP
 #include "falcon/dsp.h"
 #endif
 
@@ -359,8 +359,8 @@ static void Main_Init(void)
   RS232_Init();
   Midi_Init();
   Screen_Init();
-#if ENABLE_FALCON
   HostScreen_Init();
+#if ENABLE_DSP
   if (ConfigureParams.System.bDSP) {
     DSP_Init();
   }
@@ -432,7 +432,7 @@ static void Main_UnInit(void)
   Audio_UnInit();
   YMFormat_FreeRecording();
   SDLGui_UnInit();
-#if ENABLE_FALCON
+#if ENABLE_DSP
   if (ConfigureParams.System.bDSP) {
     DSP_UnInit();
   }

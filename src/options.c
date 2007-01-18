@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.17 2007-01-16 18:42:59 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.18 2007-01-18 09:24:25 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,7 +56,7 @@ enum {
 	OPT_CPULEVEL,
 	OPT_COMPATIBLE,
 	OPT_BLITTER,
-#if ENABLE_FALCON
+#if ENABLE_DSP
 	OPT_DSP,
 #endif
 	OPT_VDI,
@@ -126,7 +126,7 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Use a more compatible (but slower) 68000 CPU mode" },
 	{ OPT_BLITTER,   NULL, "--blitter",
 	  NULL, "Enable blitter emulation (ST only)" },
-#if ENABLE_FALCON
+#if ENABLE_DSP
 	{ OPT_DSP,   NULL, "--dsp",
 	  NULL, "Enable DSP emulation (very experimental, Falcon only)" },
 #endif
@@ -463,7 +463,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ConfigureParams.System.bBlitter = TRUE;
 			break;			
 
-#if ENABLE_FALCON
+#if ENABLE_DSP
 		case OPT_DSP:
 			ConfigureParams.System.bDSP = TRUE;
 			break;
@@ -524,12 +524,10 @@ void Opt_ParseParameters(int argc, char *argv[],
 				ConfigureParams.System.nMachineType = MACHINE_TT;
 				ConfigureParams.System.nCpuLevel = 3;
 				ConfigureParams.System.nCpuFreq = 32;
-#if ENABLE_FALCON
 			} else if (strcasecmp(argv[i], "falcon") == 0) {
 				ConfigureParams.System.nMachineType = MACHINE_FALCON;
 				ConfigureParams.System.nCpuLevel = 3;
 				ConfigureParams.System.nCpuFreq = 16;
-#endif
 			} else {
 				Opt_ShowExit(OPT_NONE, argv[i], "Unknown machine type");
 			}

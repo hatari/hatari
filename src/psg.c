@@ -8,7 +8,7 @@
 
   Also used for the printer (centronics) port emulation (PSG Port B, Register 15)
 */
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.15 2007-01-16 18:42:59 thothy Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.16 2007-01-18 09:24:25 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -20,7 +20,7 @@ const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.15 2007-01-16 18:42:59 thothy Ex
 #include "sound.h"
 #include "printer.h"            /* because Printer I/O goes through PSG Register 15 */
 #include "psg.h"
-#if ENABLE_FALCON
+#if ENABLE_DSP
 #include "falcon/dsp.h"
 #endif
 
@@ -165,7 +165,6 @@ void PSG_DataRegister_WriteByte(void)
 			/* FIXME: might be needed if we want to emulate sound sampling hardware */
 		}
 		
-#if ENABLE_FALCON
 		/* handle Falcon specific bits in PORTA of the PSG */
 		if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 		{
@@ -173,9 +172,11 @@ void PSG_DataRegister_WriteByte(void)
 			if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<4))
 			{
 				Log_Printf(LOG_DEBUG, "Calling DSP_Reset?\n");
+#if ENABLE_DSP
 				if (ConfigureParams.System.bDSP) {
 					DSP_Reset();
 				}
+#endif
 			}
 			/* Bit 6 - Internal Speaker control */
 			if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<6))
@@ -190,7 +191,6 @@ void PSG_DataRegister_WriteByte(void)
 				/* FIXME: add code to handle IDE reset */
 			}
 		}
-#endif
 		break;
 	}
 

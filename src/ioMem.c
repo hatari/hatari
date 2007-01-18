@@ -28,7 +28,7 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.16 2007-01-16 18:42:59 thothy Exp $";
+const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.17 2007-01-18 09:24:25 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -125,18 +125,18 @@ void IoMem_Init(void)
 		}
 	}
 
-#if ENABLE_FALCON
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
+#if ENABLE_DSP
 		/* Enable DSP? */
 		if (ConfigureParams.System.bDSP)
 			IoMemTabFalcon_EnableDSP(pInterceptReadTable,
 						 pInterceptWriteTable);
 		else
+#endif
 			IoMemTabFalcon_NoDSP(pInterceptReadTable,
 					     pInterceptWriteTable);
 	}
-#endif
 
 	/* Disable blitter? */
 	if (!ConfigureParams.System.bBlitter && ConfigureParams.System.nMachineType == MACHINE_ST)
