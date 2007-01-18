@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.9 2007-01-13 11:57:41 thothy Exp $";
+const char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.10 2007-01-18 23:21:54 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -143,7 +143,7 @@ void Dialog_SystemDlg(void)
 		}
 	}
 
-	for (i = DLGSYS_ST; i <= DLGSYS_STE; i++)
+	for (i = DLGSYS_ST; i <= DLGSYS_FALCON; i++)
 	{
 		if (systemdlg[i].state&SG_SELECTED)
 		{

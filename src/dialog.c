@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.58 2007-01-18 09:24:25 eerot Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.59 2007-01-18 23:21:54 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -80,6 +80,10 @@ BOOL Dialog_DoNeedReset(void)
 	if (DialogParams.HardDisk.bUseHardDiskDirectories != ConfigureParams.HardDisk.bUseHardDiskDirectories
 	    || (strcmp(DialogParams.HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0])
 	        && DialogParams.HardDisk.bUseHardDiskDirectories))
+		return TRUE;
+
+	/* Did change machine type? */
+	if (DialogParams.System.nMachineType != ConfigureParams.System.nMachineType)
 		return TRUE;
 
 	return FALSE;
