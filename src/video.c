@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.68 2007-01-18 09:24:25 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.69 2007-01-18 09:27:04 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -66,7 +66,7 @@ static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simul
 static int nLastAccessCycleLeft;                /* Line cycle where program tried to open left border */
 static BOOL bSteBorderFlag;                     /* TRUE when screen width has been switched to 336 (e.g. in Obsession) */
 static int nTTRes;                              /* TT shifter resolution mode */
-static int bTTColorsSync = TRUE;                /* whether TT colors need convertion to SDL */
+static BOOL bTTColorsSync, bTTColorsSTSync;     /* whether TT colors need convertion to SDL */
 
 
 /*-----------------------------------------------------------------------*/
@@ -747,7 +747,10 @@ void Video_GetTTRes(int *width, int *height, int *bpp)
 static void Video_RenderTTScreen(void)
 {
   static int nPrevTTRes = -1;
-  int width, height, bpp;
+  int width, height, bpp, i, colors, offset;
+  uint8 r,g,b, lowbyte, highbyte;
+  uint32 ttpalette, src, dst;
+  Uint16 stcolor, ttcolor;
 
   Video_GetTTRes(&width, &height, &bpp);
   if (nTTRes != nPrevTTRes)
@@ -757,22 +760,39 @@ static void Video_RenderTTScreen(void)
   }
 
   /* colors need synching? */
-  if (!bTTColorsSync) {
-    int i, colors = 1 << bpp;
-    uint32 palette = 0xff8400;     /* TT palette */
-    uint8 r,g,b, lowbyte, highbyte;
+  if (!(bTTColorsSync && bTTColorsSTSync))
+  {
+    ttpalette = 0xff8400;
 
+    if (!bTTColorsSTSync)
+    {
+      /* sync TT ST-palette to TT-palette */
+      src = 0xff8240;	/* ST-palette */
+      offset = (IoMem_ReadWord(0xff8262) & 0x0f);
+      fprintf(stdout, "offset: %d\n", offset);
+      dst = ttpalette + offset * 16*SIZE_WORD;
+      
+      for (i = 0; i < 16; i++)
+      {
+        stcolor = IoMem_ReadWord(src);
+        ttcolor = ((stcolor&0x700) << 1) | ((stcolor&0x70) << 1) | ((stcolor&0x7) << 1);
+        IoMem_WriteWord(dst, ttcolor);
+        src += SIZE_WORD; dst += SIZE_WORD;
+      }
+      bTTColorsSTSync = TRUE;
+    }
+    colors = 1 << bpp;
     for (i = 0; i < colors; i++)
     {
-      lowbyte = IoMem_ReadByte(palette++);
-      highbyte = IoMem_ReadByte(palette++);
-      r = (lowbyte & 0x0f) << 4;
-      g = ((highbyte>>4) & 0x0f) << 4;
+      lowbyte = IoMem_ReadByte(ttpalette++);
+      highbyte = IoMem_ReadByte(ttpalette++);
+      r = (lowbyte  & 0x0f) << 4;
+      g = (highbyte & 0xf0);
       b = (highbyte & 0x0f) << 4;
       //printf("%d: (%d,%d,%d)\n", i,r,g,b);
       HostScreen_setPaletteColor(i, r,g,b);
     }
-    HostScreen_updatePalette( colors );
+    HostScreen_updatePalette(colors);
     bTTColorsSync = TRUE;
   }
   
@@ -1219,4 +1239,13 @@ void Video_TTShiftMode_WriteWord(void)
 void Video_TTColorRegs_WriteWord(void)
 {
   bTTColorsSync = FALSE;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to ST color register on TT (0xff8400)
+ */
+void Video_TTColorSTRegs_WriteWord(void)
+{
+  bTTColorsSTSync = FALSE;
 }

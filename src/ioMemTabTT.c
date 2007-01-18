@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the TT.
 */
-const char IoMemTabTT_rcsid[] = "Hatari $Id: ioMemTabTT.c,v 1.4 2007-01-16 21:14:32 eerot Exp $";
+const char IoMemTabTT_rcsid[] = "Hatari $Id: ioMemTabTT.c,v 1.5 2007-01-18 09:27:04 eerot Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -52,22 +52,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xff820d, SIZE_BYTE, Video_BaseLow_ReadByte, IoMem_WriteWithoutInterception },
 	{ 0xff820e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff820f, SIZE_BYTE, Video_LineWidth_ReadByte, Video_LineWidth_WriteByte },
-	{ 0xff8240, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color0_WriteWord },         /* COLOR 0 */
-	{ 0xff8242, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color1_WriteWord },         /* COLOR 1 */
-	{ 0xff8244, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color2_WriteWord },         /* COLOR 2 */
-	{ 0xff8246, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color3_WriteWord },         /* COLOR 3 */
-	{ 0xff8248, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color4_WriteWord },         /* COLOR 4 */
-	{ 0xff824a, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color5_WriteWord },         /* COLOR 5 */
-	{ 0xff824c, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color6_WriteWord },         /* COLOR 6 */
-	{ 0xff824e, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color7_WriteWord },         /* COLOR 7 */
-	{ 0xff8250, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color8_WriteWord },         /* COLOR 8 */
-	{ 0xff8252, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color9_WriteWord },         /* COLOR 9 */
-	{ 0xff8254, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color10_WriteWord },        /* COLOR 10 */
-	{ 0xff8256, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color11_WriteWord },        /* COLOR 11 */
-	{ 0xff8258, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color12_WriteWord },        /* COLOR 12 */
-	{ 0xff825a, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color13_WriteWord },        /* COLOR 13 */
-	{ 0xff825c, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color14_WriteWord },        /* COLOR 14 */
-	{ 0xff825e, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color15_WriteWord },        /* COLOR 15 */
+	{ 0xff8240, 32, IoMem_ReadWithoutInterception, Video_TTColorSTRegs_WriteWord },         /* 16 TT ST-palette entries */
 	{ 0xff8260, SIZE_BYTE, Video_ShifterMode_ReadByte, Video_ShifterMode_WriteByte },
 	{ 0xff8261, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 	{ 0xff8262, SIZE_WORD, IoMem_ReadWithoutInterception, Video_TTShiftMode_WriteWord },    /* TT screen mode */
@@ -75,7 +60,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 	{ 0xff8265, SIZE_BYTE, Video_HorScroll_Read, Video_HorScroll_Write },                   /* horizontal fine scrolling */
 	{ 0xff8266, 26,        IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus errors here */
 
-	{ 0xff8400, 512,       IoMem_ReadWithoutInterception, Video_TTColorRegs_WriteWord },    /* TT palette */
+	{ 0xff8400, 512,       IoMem_ReadWithoutInterception, Video_TTColorRegs_WriteWord },    /* 256 TT palette entries */
 
 	{ 0xff8604, SIZE_WORD, FDC_DiskControllerStatus_ReadWord, FDC_DiskController_WriteWord },
 	{ 0xff8606, SIZE_WORD, FDC_DmaStatus_ReadWord, FDC_DmaModeControl_WriteWord },
