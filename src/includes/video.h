@@ -60,6 +60,7 @@
 #define CYCLES_PER_FRAME    (nScanlinesPerFrame*nCyclesPerLine)  /* Cycles per VBL @ 50fps = 160256 */
 
 
+extern BOOL bUseSTShifter;
 extern BOOL bUseHighRes;
 extern int nVBLs,nHBL;
 extern int nStartHBL, nEndHBL;

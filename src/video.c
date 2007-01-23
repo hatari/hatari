@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.70 2007-01-18 23:37:44 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.71 2007-01-23 20:34:24 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -43,7 +43,8 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.70 2007-01-18 23:37:44 thoth
 #define BORDERMASK_MIDDLE  0x04
 
 
-BOOL bUseHighRes = FALSE;                       /* Use hi-res (ie Mono monitor) */
+BOOL bUseSTShifter;                             /* Falcon: whether to use ST palette */
+BOOL bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
 int nVBLs, nHBL;                                /* VBL Counter, HBL line */
 int nStartHBL, nEndHBL;                         /* Start/End HBL for visible screen */
 int OverscanMode;                               /* OVERSCANMODE_xxxx for current display frame */
@@ -1167,7 +1168,14 @@ void Video_ShifterMode_WriteByte(void)
     nTTRes = IoMem_ReadByte(0xff8260) & 7;
     IoMem_WriteByte(0xff8262, nTTRes);                /* Copy to TT shifter mode register */
   }
-
+  if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+  {
+    /* - activate STE palette
+     * - TODO: set line width ($8210)
+     * - TODO: sets paramaters in $82c2 (double lines/interlace & cycles/pixel)
+     */
+    bUseSTShifter = TRUE;
+  }
   if (!bUseHighRes && !bUseVDIRes)                    /* Don't store if hi-res and don't store if VDI resolution */
   {
     VideoShifterByte = IoMem[0xff8260] & 3;           /* We only care for lower 2-bits */

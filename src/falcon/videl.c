@@ -12,13 +12,14 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.12 2007-01-15 13:50:36 thothy Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.13 2007-01-23 20:34:24 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
 #include "hostscreen.h"
 #include "screen.h"
+#include "video.h"
 #include "videl.h"
 
 
@@ -80,14 +81,7 @@ void VIDEL_ColorRegsWrite(void)
 void VIDEL_ShiftModeWriteWord(void)
 {
 	Dprintf(("VIDEL f_shift: %06x = 0x%x\n", IoAccessBaseAddress, handleReadW(HW+0x66)));
-	// IMPORTANT:
-	// set st_shift to 0, so we can tell the screen-depth if f_shift==0.
-	// Writing 0 to f_shift enables 4 plane Falcon mode but
-	// doesn't set st_shift. st_shift!=0 (!=4planes) is impossible
-	// with Falcon palette so we set st_shift to 0 manually.
-	if (handleReadW(HW+0x66) == 0) {
-		IoMem_WriteByte(HW+0x60, 0);
-	}
+	bUseSTShifter = FALSE;
 }
 
 static long VIDEL_getVideoramAddress(void)
@@ -103,16 +97,19 @@ static int VIDEL_getScreenBpp(void)
 	 * f_shift is valid if any of bits no. 10, 8 or 4
 	 * is set. Priority in f_shift is: 10 ">" 8 ">" 4, i.e.
 	 * if bit 10 set then bit 8 and bit 4 don't care...
-	 * If all these bits are 0 get display depth from st_shift
+	 * If all these bits are 0 and ST shifter is written
+	 * after Falcon one, get display depth from st_shift
 	 * (as for ST and STE)
 	 */
-	int bits_per_pixel = 1;
-	if (f_shift & 0x400)		/* 2 colors */
+	int bits_per_pixel;
+	if (f_shift & 0x400)		/* Falcon: 2 colors */
 		bits_per_pixel = 1;
-	else if (f_shift & 0x100)	/* hicolor */
+	else if (f_shift & 0x100)	/* Falcon: hicolor */
 		bits_per_pixel = 16;
-	else if (f_shift & 0x010)	/* 8 bitplanes */
+	else if (f_shift & 0x010)	/* Falcon: 8 bitplanes */
 		bits_per_pixel = 8;
+	else if (!bUseSTShifter)	/* Falcon: 4 bitplanes */
+		bits_per_pixel = 4;
 	else if (st_shift == 0)
 		bits_per_pixel = 4;
 	else if (st_shift == 0x01)
@@ -151,37 +148,19 @@ static int VIDEL_getScreenHeight(void)
 }
 
 
+/** map the correct colortable into the correct pixel format
+ */
 static void VIDEL_updateColors(void)
 {
 	//Dprintf(("ColorUpdate in progress\n"));
 
-	// Test the ST compatible set or not.
-	BOOL stCompatibleColorPalette = FALSE;
-
-	int st_shift = handleRead(HW + 0x60);
-	if (st_shift == 0) {		   // bpp == 4
-		int hreg = handleReadW(HW + 0x82); // Too lame!
-		if (hreg == 0x10 || hreg == 0x17 || hreg == 0x3e)	  // Better way how to make out ST LOW mode wanted
-			stCompatibleColorPalette = TRUE;
-
-		//Dprintf(("ColorUpdate %x\n", hreg));
-	}
-	else if (st_shift == 0x01)	   // bpp == 2
-		stCompatibleColorPalette = TRUE;
-	else						   // bpp == 1	// if (st_shift == 0x02)
-		stCompatibleColorPalette = TRUE;
-
-	//Dprintf(("stCompatibleColorPalette = %i\n", stCompatibleColorPalette));
-
-	// map the colortable into the correct pixel format
-	int r,g,b;
+	int i, r, g, b, colors = 1 << bpp;
 
 #define F_COLORS(i) handleRead(VIDEL_COLOR_REGS_BEGIN + (i))
 #define STE_COLORS(i)	handleRead(0xff8240 + (i))
 
-	if (!stCompatibleColorPalette) {
-		int i;
-		for (i = 0; i < 256; i++) {
+	if (!bUseSTShifter) {
+		for (i = 0; i < colors; i++) {
 			int offset = i << 2;
 			r = F_COLORS(offset) & 0xfc;
 			r |= r>>6;
@@ -191,10 +170,9 @@ static void VIDEL_updateColors(void)
 			b |= b>>6;
 			HostScreen_setPaletteColor(i, r,g,b);
 		}
-		HostScreen_updatePalette( 256 );
+		HostScreen_updatePalette(colors);
 	} else {
-		int i;
-		for (i = 0; i < 16; i++) {
+		for (i = 0; i < colors; i++) {
 			int offset = i << 1;
 			r = STE_COLORS(offset) & 0x0f;
 			r = ((r & 7)<<1)|(r>>3);
@@ -207,7 +185,7 @@ static void VIDEL_updateColors(void)
 			b |= b<<4;
 			HostScreen_setPaletteColor(i, r,g,b);
 		}
-		HostScreen_updatePalette( 16 );
+		HostScreen_updatePalette(colors);
 	}
 
 	hostColorsSync = TRUE;
