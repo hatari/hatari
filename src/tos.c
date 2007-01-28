@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.48 2007-01-16 18:42:59 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.49 2007-01-28 22:59:09 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -74,7 +74,7 @@ typedef struct
 } TOS_PATCH;
 
 static const char pszDmaBoot[] = "boot from DMA bus";
-static const char pszMouse[] = "working mouse in big screen resolutions";
+static const char pszMouse[] = "big resolutions mouse driver";
 static const char pszRomCheck[] = "ROM checksum";
 static const char pszNoSteHw[] = "disable STE hardware access";
 static const char pszNoPmmu[] = "disable PMMU access";
@@ -317,8 +317,8 @@ int TOS_LoadImage(void)
 	/* to lock up. So, if user selects one of these, switch to STE mode. */
 	if ((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
 	{
-		Log_AlertDlg(LOG_INFO, "TOS versions 1.06 and 1.62\nare NOT valid ST ROM images.\n"
-		             " => Switching to STE mode now.\n");
+		Log_AlertDlg(LOG_INFO, "TOS versions 1.06 and 1.62 are for Atari STE only.\n"
+		             " ==> Switching to STE mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
 		IoMem_Init();
@@ -326,7 +326,7 @@ int TOS_LoadImage(void)
 	else if ((TosVersion & 0x0f00) == 0x0300 && ConfigureParams.System.nMachineType != MACHINE_TT)
 	{
 		Log_AlertDlg(LOG_INFO, "TOS versions 3.0x are for Atari TT only.\n"
-		             " => Switching to TT mode now.\n");
+		             " ==> Switching to TT mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_TT;
 		IoMem_Init();
@@ -336,12 +336,26 @@ int TOS_LoadImage(void)
 	else if ((TosVersion & 0x0f00) == 0x0400 && ConfigureParams.System.nMachineType != MACHINE_FALCON)
 	{
 		Log_AlertDlg(LOG_INFO, "TOS versions 4.x are for Atari Falcon only.\n"
-		             " => Switching to Falcon mode now.\n");
+		             " ==> Switching to Falcon mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
 		IoMem_Init();
 		ConfigureParams.System.nCpuLevel = 3;
 		check_prefs_changed_cpu(ConfigureParams.System.nCpuLevel, ConfigureParams.System.bCompatibleCpu);
+	}
+	else if ((TosVersion < 0x0300 && ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	         || (TosVersion < 0x0200 && ConfigureParams.System.nMachineType == MACHINE_TT))
+	{
+		Log_AlertDlg(LOG_INFO, "This TOS versions does not work in TT/Falcon mode.\n"
+		             " ==> Switching to STE mode now.\n");
+		IoMem_UnInit();
+		ConfigureParams.System.nMachineType = MACHINE_STE;
+		IoMem_Init();
+		if (TosVersion <= 0x0104)
+		{
+			ConfigureParams.System.nCpuLevel = 0;
+			check_prefs_changed_cpu(ConfigureParams.System.nCpuLevel, ConfigureParams.System.bCompatibleCpu);
+		}
 	}
 
 	/* Copy loaded image into ST memory */
