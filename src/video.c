@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.71 2007-01-23 20:34:24 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.72 2007-01-28 23:05:57 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -79,6 +79,7 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
   /* Save/Restore details */
   MemorySnapShot_Store(&VideoShifterByte, sizeof(VideoShifterByte));
   MemorySnapShot_Store(&nTTRes, sizeof(nTTRes));
+  MemorySnapShot_Store(&bUseSTShifter, sizeof(bUseSTShifter));
   MemorySnapShot_Store(&bUseHighRes,sizeof(bUseHighRes));
   MemorySnapShot_Store(&nVBLs,sizeof(nVBLs));
   MemorySnapShot_Store(&nHBL,sizeof(nHBL));
