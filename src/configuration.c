@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.61 2007-01-16 18:42:59 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.62 2007-01-28 22:41:56 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -20,6 +20,7 @@ const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.61 2007-01-1
 #include "file.h"
 #include "log.h"
 #include "m68000.h"
+#include "memorySnapShot.h"
 #include "screen.h"
 #include "vdi.h"
 #include "video.h"
@@ -596,5 +597,42 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");
 	Configuration_SaveSection(sConfigFileName, configs_Midi, "[Midi]");
 	Configuration_SaveSection(sConfigFileName, configs_System, "[System]");
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Save/restore snapshot of configuration variables
+ * ('MemorySnapShot_Store' handles type)
+ */
+void Configuration_MemorySnapShot_Capture(BOOL bSave)
+{
+	MemorySnapShot_Store(ConfigureParams.Rom.szTosImageFileName, sizeof(ConfigureParams.Rom.szTosImageFileName));
+	MemorySnapShot_Store(ConfigureParams.Rom.szCartridgeImageFileName, sizeof(ConfigureParams.Rom.szCartridgeImageFileName));
+
+	MemorySnapShot_Store(&ConfigureParams.Memory.nMemorySize, sizeof(ConfigureParams.Memory.nMemorySize));
+
+	MemorySnapShot_Store(&ConfigureParams.HardDisk.bUseHardDiskDirectories, sizeof(ConfigureParams.HardDisk.bUseHardDiskDirectories));
+	MemorySnapShot_Store(ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C]));
+	MemorySnapShot_Store(&ConfigureParams.HardDisk.bUseHardDiskImage, sizeof(ConfigureParams.HardDisk.bUseHardDiskImage));
+	MemorySnapShot_Store(ConfigureParams.HardDisk.szHardDiskImage, sizeof(ConfigureParams.HardDisk.szHardDiskImage));
+
+	MemorySnapShot_Store(&ConfigureParams.Screen.MonitorType, sizeof(ConfigureParams.Screen.MonitorType));
+	MemorySnapShot_Store(&ConfigureParams.Screen.bUseExtVdiResolutions, sizeof(ConfigureParams.Screen.bUseExtVdiResolutions));
+	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiResolution, sizeof(ConfigureParams.Screen.nVdiResolution));
+	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiColors, sizeof(ConfigureParams.Screen.nVdiColors));
+
+	MemorySnapShot_Store(&ConfigureParams.System.nCpuLevel, sizeof(ConfigureParams.System.nCpuLevel));
+	MemorySnapShot_Store(&ConfigureParams.System.nCpuFreq, sizeof(ConfigureParams.System.nCpuFreq));
+	MemorySnapShot_Store(&ConfigureParams.System.bCompatibleCpu, sizeof(ConfigureParams.System.bCompatibleCpu));
+	MemorySnapShot_Store(&ConfigureParams.System.nMachineType, sizeof(ConfigureParams.System.nMachineType));
+	MemorySnapShot_Store(&ConfigureParams.System.bBlitter, sizeof(ConfigureParams.System.bBlitter));
+	MemorySnapShot_Store(&ConfigureParams.System.bDSP, sizeof(ConfigureParams.System.bDSP));
+	MemorySnapShot_Store(&ConfigureParams.System.bRealTimeClock, sizeof(ConfigureParams.System.bRealTimeClock));
+	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
+	MemorySnapShot_Store(&ConfigureParams.System.bSlowFDC, sizeof(ConfigureParams.System.bSlowFDC));
+
+	if (!bSave)
+		Configuration_Apply(TRUE);
 }
 

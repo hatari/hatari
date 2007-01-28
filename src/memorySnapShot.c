@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.28 2007-01-16 18:42:59 thothy Exp $";
+const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.29 2007-01-28 22:41:56 thothy Exp $";
 
 #include <SDL_types.h>
 #include <string.h>
@@ -33,6 +33,7 @@ const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.28 2007-01
 #include "gemdos.h"
 #include "ikbd.h"
 #include "int.h"
+#include "ioMem.h"
 #include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
@@ -44,7 +45,7 @@ const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.28 2007-01
 #include "video.h"
 
 
-#define VERSION_STRING      "0.92 "   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "0.93 "   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 
@@ -225,6 +226,8 @@ void MemorySnapShot_Capture(const char *pszFileName)
 	if (MemorySnapShot_OpenFile(pszFileName,TRUE))
 	{
 		/* Capture each files details */
+		Configuration_MemorySnapShot_Capture(TRUE);
+		TOS_MemorySnapShot_Capture(TRUE);
 		Main_MemorySnapShot_Capture(TRUE);
 		FDC_MemorySnapShot_Capture(TRUE);
 		Floppy_MemorySnapShot_Capture(TRUE);
@@ -235,7 +238,6 @@ void MemorySnapShot_Capture(const char *pszFileName)
 		MFP_MemorySnapShot_Capture(TRUE);
 		PSG_MemorySnapShot_Capture(TRUE);
 		Sound_MemorySnapShot_Capture(TRUE);
-		TOS_MemorySnapShot_Capture(TRUE);
 		Video_MemorySnapShot_Capture(TRUE);
 		Blitter_MemorySnapShot_Capture(TRUE);
 		DmaSnd_MemorySnapShot_Capture(TRUE);
@@ -261,7 +263,11 @@ void MemorySnapShot_Restore(const char *pszFileName)
 	/* Set to 'restore' */
 	if (MemorySnapShot_OpenFile(pszFileName,FALSE))
 	{
+		Configuration_MemorySnapShot_Capture(FALSE);
+		TOS_MemorySnapShot_Capture(FALSE);
+
 		/* Reset emulator to get things running */
+		IoMem_UnInit();  IoMem_Init();
 		Reset_Cold();
 
 		/* Capture each files details */
@@ -275,7 +281,6 @@ void MemorySnapShot_Restore(const char *pszFileName)
 		MFP_MemorySnapShot_Capture(FALSE);
 		PSG_MemorySnapShot_Capture(FALSE);
 		Sound_MemorySnapShot_Capture(FALSE);
-		TOS_MemorySnapShot_Capture(FALSE);
 		Video_MemorySnapShot_Capture(FALSE);
 		Blitter_MemorySnapShot_Capture(FALSE);
 		DmaSnd_MemorySnapShot_Capture(FALSE);
