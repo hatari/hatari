@@ -16,7 +16,7 @@ CFLAGS += -DDATADIR=\"$(DATADIR)\" $(INCFLAGS) $(SDL_CFLAGS)
 
 
 FALCSRCS = videl.c hostscreen.c
-ifeq ($(ENABLE_DSP),1)
+ifeq ($(ENABLE_DSP_EMU),1)
 FALCSRCS += dsp.c dsp_cpu.c dsp_disasm.c
 endif
 

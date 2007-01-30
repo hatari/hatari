@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.59 2007-01-18 23:21:54 thothy Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.60 2007-01-30 20:33:49 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -34,7 +34,7 @@ const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.59 2007-01-18 23:21:54 tho
 #include "video.h"
 #include "sdlgui.h"
 #include "uae-cpu/hatari-glue.h"
-#if ENABLE_DSP
+#if ENABLE_DSP_EMU
 # include "falcon/dsp.h"
 #endif
 
@@ -164,8 +164,8 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 
 	/* Did change blitter, rtc or system type? */
 	if (DialogParams.System.bBlitter != ConfigureParams.System.bBlitter
-#if ENABLE_DSP
-	    || DialogParams.System.bDSP != ConfigureParams.System.bDSP
+#if ENABLE_DSP_EMU
+	    || DialogParams.System.nDSPType != ConfigureParams.System.nDSPType
 #endif
 	    || DialogParams.System.bRealTimeClock != ConfigureParams.System.bRealTimeClock
 	    || DialogParams.System.nMachineType != ConfigureParams.System.nMachineType)
@@ -174,10 +174,10 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 		bReInitIoMem = TRUE;
 	}
 	
-#if ENABLE_DSP
+#if ENABLE_DSP_EMU
 	/* Disabled DSP? */
-	if (DialogParams.System.bDSP &&
-	    (DialogParams.System.bDSP != ConfigureParams.System.bDSP))
+	if (DialogParams.System.nDSPType == DSP_TYPE_EMU &&
+	    (DialogParams.System.nDSPType != ConfigureParams.System.nDSPType))
 	{
 		DSP_UnInit();
 	}
@@ -189,8 +189,8 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 	/* Copy details to global, if we reset copy them all */
 	Configuration_Apply(NeedReset);
 
-#if ENABLE_DSP
-	if (ConfigureParams.System.bDSP)
+#if ENABLE_DSP_EMU
+	if (ConfigureParams.System.nDSPType == DSP_TYPE_EMU)
 	{
 		DSP_Init();
 	}

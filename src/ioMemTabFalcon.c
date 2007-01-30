@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the Falcon.
 */
-const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.10 2007-01-18 09:24:25 eerot Exp $";
+const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.11 2007-01-30 20:33:49 eerot Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -24,10 +24,25 @@ const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.10 2007-01-1
 #include "video.h"
 #include "blitter.h"
 #include "falcon/videl.h"
-#if ENABLE_DSP
+#if ENABLE_DSP_EMU
 #include "falcon/dsp.h"
 #endif
 
+/**
+ * no DSP
+ */
+void IoMemTabFalcon_DSPnone(void (**readtab)(void), void (**writetab)(void))
+{
+	int i, offset;
+	offset = 0xffa200 - 0xff8000;
+	for (i = 0; i < 8; i++) {
+		readtab[offset+i] = IoMem_ReadWithoutInterception;
+	}
+	readtab[offset+2] = IoMem_VoidRead;	/* TODO: why this is needed */
+	for (i = 0; i < 8; i++) {
+		writetab[offset+i] = IoMem_WriteWithoutInterception;
+	}
+}
 
 /**
  *  Just a temporary hack - some programs are polling on this register and
@@ -48,9 +63,9 @@ static void DSP_DummyInterruptStatus_ReadByte(void)
 }
 
 /**
- * dummy IO when DSP is not enabled
+ * dummy IO when DSP emulation is not enabled
  */
-void IoMemTabFalcon_NoDSP(void (**readtab)(void), void (**writetab)(void))
+void IoMemTabFalcon_DSPdummy(void (**readtab)(void), void (**writetab)(void))
 {
 	int i, offset;
 	offset = 0xffa200 - 0xff8000;
@@ -65,11 +80,11 @@ void IoMemTabFalcon_NoDSP(void (**readtab)(void), void (**writetab)(void))
 	}
 }
 
-#if ENABLE_DSP
+#if ENABLE_DSP_EMU
 /**
- * enable DSP
+ * enable DSP emulation
  */
-void IoMemTabFalcon_EnableDSP(void (**readtab)(void), void (**writetab)(void))
+void IoMemTabFalcon_DSPemulation(void (**readtab)(void), void (**writetab)(void))
 {
 	int i, offset;
 	offset = 0xffa200 - 0xff8000;

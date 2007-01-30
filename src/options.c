@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.18 2007-01-18 09:24:25 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.19 2007-01-30 20:33:49 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,9 +56,7 @@ enum {
 	OPT_CPULEVEL,
 	OPT_COMPATIBLE,
 	OPT_BLITTER,
-#if ENABLE_DSP
 	OPT_DSP,
-#endif
 	OPT_VDI,
 	OPT_MEMSIZE,
 	OPT_CONFIGFILE,
@@ -126,10 +124,8 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Use a more compatible (but slower) 68000 CPU mode" },
 	{ OPT_BLITTER,   NULL, "--blitter",
 	  NULL, "Enable blitter emulation (ST only)" },
-#if ENABLE_DSP
 	{ OPT_DSP,   NULL, "--dsp",
-	  NULL, "Enable DSP emulation (very experimental, Falcon only)" },
-#endif
+	  "<x>", "DSP emulation (x=none/dummy/emu, experimental, Falcon only)" },
 	{ OPT_VDI,       NULL, "--vdi",
 	  NULL, "Use extended VDI resolution" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
@@ -463,11 +459,22 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ConfigureParams.System.bBlitter = TRUE;
 			break;			
 
-#if ENABLE_DSP
 		case OPT_DSP:
-			ConfigureParams.System.bDSP = TRUE;
+			i += 1;
+			if (strcasecmp(argv[i], "none") == 0) {
+				ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
+			} else if (strcasecmp(argv[i], "dummy") == 0) {
+				ConfigureParams.System.nDSPType = DSP_TYPE_DUMMY;
+			} else if (strcasecmp(argv[i], "emu") == 0) {
+#if ENABLE_DSP_EMU
+				ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
+#else
+				Opt_ShowExit(OPT_NONE, argv[i], "DSP type 'emu' support not compiled in");
+#endif
+			} else {
+				Opt_ShowExit(OPT_NONE, argv[i], "Unknown DSP type");
+			}
 			break;
-#endif			
 
 		case OPT_VDI:
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;

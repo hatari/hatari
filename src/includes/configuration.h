@@ -237,6 +237,13 @@ typedef enum
   MACHINE_FALCON
 } MACHINETYPE;
 
+typedef enum
+{
+  DSP_TYPE_NONE,
+  DSP_TYPE_DUMMY,
+  DSP_TYPE_EMU
+} DSPTYPE;
+
 typedef struct
 {
   int nCpuLevel;
@@ -245,7 +252,7 @@ typedef struct
   /*BOOL bAddressSpace24;*/
   MACHINETYPE nMachineType;
   BOOL bBlitter;                  /* TRUE if Blitter is enabled */
-  BOOL bDSP;                      /* TRUE if DSP is enabled */
+  DSPTYPE nDSPType;               /* how to "emulate" DSP */
   BOOL bRealTimeClock;
   BOOL bPatchTimerD;
   BOOL bSlowFDC;                  /* TRUE to slow down FDC emulation */

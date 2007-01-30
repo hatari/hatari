@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.62 2007-01-28 22:41:56 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.63 2007-01-30 20:33:49 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -275,7 +275,7 @@ static const struct Config_Tag configs_System[] =
 	{ "bCompatibleCpu", Bool_Tag, &ConfigureParams.System.bCompatibleCpu },
 	{ "nMachineType", Int_Tag, &ConfigureParams.System.nMachineType },
 	{ "bBlitter", Bool_Tag, &ConfigureParams.System.bBlitter },
-	{ "bDSP", Bool_Tag, &ConfigureParams.System.bDSP },
+	{ "nDSPType", Int_Tag, &ConfigureParams.System.nDSPType },
 	{ "bRealTimeClock", Bool_Tag, &ConfigureParams.System.bRealTimeClock },
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bSlowFDC", Bool_Tag, &ConfigureParams.System.bSlowFDC },
@@ -410,7 +410,7 @@ void Configuration_SetDefault(void)
 	/*ConfigureParams.System.bAddressSpace24 = TRUE;*/
 	ConfigureParams.System.nMachineType = MACHINE_ST;
 	ConfigureParams.System.bBlitter = FALSE;
-	ConfigureParams.System.bDSP = FALSE;
+	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
 	ConfigureParams.System.bPatchTimerD = TRUE;
 	ConfigureParams.System.bRealTimeClock = TRUE;
 	ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;
@@ -627,7 +627,7 @@ void Configuration_MemorySnapShot_Capture(BOOL bSave)
 	MemorySnapShot_Store(&ConfigureParams.System.bCompatibleCpu, sizeof(ConfigureParams.System.bCompatibleCpu));
 	MemorySnapShot_Store(&ConfigureParams.System.nMachineType, sizeof(ConfigureParams.System.nMachineType));
 	MemorySnapShot_Store(&ConfigureParams.System.bBlitter, sizeof(ConfigureParams.System.bBlitter));
-	MemorySnapShot_Store(&ConfigureParams.System.bDSP, sizeof(ConfigureParams.System.bDSP));
+	MemorySnapShot_Store(&ConfigureParams.System.nDSPType, sizeof(ConfigureParams.System.nDSPType));
 	MemorySnapShot_Store(&ConfigureParams.System.bRealTimeClock, sizeof(ConfigureParams.System.bRealTimeClock));
 	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
 	MemorySnapShot_Store(&ConfigureParams.System.bSlowFDC, sizeof(ConfigureParams.System.bSlowFDC));
