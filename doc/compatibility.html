@@ -73,15 +73,15 @@ Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
     <li><a href="#STE demos">STE demos</a>
     <li><a href="#STE applications">STE applications</a>
   </ul>
+  <li><a href="#TT">TT software compatibility list</a>
+  <ul>
+    <li><a href="#TT demos">TT demos</a>
+  </ul>
   <li><a href="#Falcon">Falcon software compatibility list</a>
   <ul>
     <li><a href="#Falcon games">Falcon games</a>
     <li><a href="#Falcon demos">Falcon demos</a>
     <li><a href="#Falcon games">Falcon applications</a>
-  </ul>
-  <li><a href="#TT">TT software compatibility list</a>
-  <ul>
-    <li><a href="#TT demos">TT demos</a>
   </ul>
 </ul>
 
@@ -1017,59 +1017,6 @@ are just STE enhanced.  These are marked with '*'.</p>
 </table>
 
 
-<a name="Falcon"></a><h2>Falcon software compatibility list</h2>
-
-<a name="Falcon games"></a><h4>Falcon games</h4>
-
-<p>TODO: Here are listed some Falcon games.</p>
-<table border="1" cellpadding="3">
-  <caption align="bottom">Falcon games</caption> <tbody>
-    <tr class="backdropped">
-      <td align="center">Title</td>
-      <td align="center">Working</td>
-      <td align="center">Sound</td>
-      <td align="center">Comment</td>
-    </tr>
-  </tbody>
-</table>
-
-
-<a name="Falcon demos"></a><h4>Falcon demos</h4>
-
-<p>TODO: Here are listed some Falcon demos.</p>
-<table border="1" cellpadding="3">
-  <caption align="bottom">Falcon demos</caption> <tbody>
-    <tr class="backdropped">
-      <td align="center">Title</td>
-      <td align="center">Working</td>
-      <td align="center">Sound</td>
-      <td align="center">Comment</td>
-    </tr>
-    <tr>
-      <td>TT/Falcon bytetros (ray//.tSCc)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
-      <td>glasstro, bragg256, 256mbrot, yabt</td>
-    </tr> 
-  </tbody>
-</table>
-
-
-<a name="Falcon applications"></a><h4>Falcon applications</h4>
-
-<p>TODO: Here are listed some Falcon applications.</p>
-<table border="1" cellpadding="3">
-  <caption align="bottom">Falcon applications</caption> <tbody>
-    <tr class="backdropped">
-      <td align="center">Title</td>
-      <td align="center">Working</td>
-      <td align="center">Sound</td>
-      <td align="center">Comment</td>
-    </tr>
-  </tbody>
-</table>
-
-
 <a name="TT"></a><h2>TT software compatibility list</h2>
 
 <p>Programs that work on TT work also in the Falcon emulation and
@@ -1094,6 +1041,853 @@ this section lists only TT-specific demos.</p>
     </tr>
   </tbody>
 </table>
+
+
+<a name="Falcon"></a><h2>Falcon software compatibility list</h2>
+
+<p>The main thing preventing Falcon programs from working is missing
+DSP emulation.  You can select between three different DSP emulation
+modes with the "--dsp" option:
+<ul>
+  <li><b>none</b>:  Most programs work best with this</li>
+  <li><b>dummy</b>: Faked DSP response to DSP commands,
+      makes some demos to work</li>
+  <li><b>emu</b>:   Experimental DSP emulation. So far it just
+      makes programs to <i>stop</i> working. No program works better
+      with it, so by default it's not enabled when Hatari is built</li>
+</ul>
+
+<p>The "dsp" column in tables below tells which DSP emulation
+mode needs to be used for the given program to work.  If it
+doesn't matter, the column contains "-". Many games use DSP
+for sound and therefore that doesn't work.</p>
+
+
+<a name="Falcon games"></a><h4>Falcon games</h4>
+
+<p>Here are listed some Falcon games:</p>
+<table border="1" cellpadding="3">
+  <caption align="bottom">Falcon games</caption> <tbody>
+    <tr class="backdropped">
+      <td align="center">Title</td>
+      <td align="center">Working</td>
+      <td align="center">Sound</td>
+      <td align="center">DSP</td>
+      <td align="center">Comment</td>
+    </tr>
+    <tr>
+      <td>Addsub</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Input doesn't work, up arrow exits game</td>
+    </tr>
+    <tr>
+      <td>Blackhole</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Only 256-color mode</td>
+    </tr> 
+    <tr>
+      <td>Block Blizzard</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Blum</td>
+      <td>yes</td>
+      <td>no</td>
+      <td>-</td>
+      <td>Disable sound</td>
+    </tr>
+    <tr>
+      <td>Bomb Squad</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td></td>
+    </tr> 
+    <tr>
+      <td>Bugger by RG</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr> 
+    <tr>
+      <td>Bunion by RG</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr> 
+    <tr>
+      <td>Capy</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Cavemania (demo)</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Black screen, noise</td>
+    </tr>
+    <tr>
+      <td>Conquest of Elysium II</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr> 
+    <tr>
+      <td>Columns by Deadheart (demo)</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td>Nice</td>
+    </tr>
+    <tr>
+      <td>Corsair</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td></td>
+    </tr> 
+    <tr>
+      <td>Cravon (demo)</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Intros work, game doesn't</td>
+    </tr>
+    <tr>
+      <td>DB4K</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>DB in 4KB</td>
+    </tr> 
+    <tr>
+      <td>Double Bobble 2000</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Joystick direction repeat doesn't work, nice</td>
+    </tr> 
+    <tr>
+      <td>DryEgg</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Needs over 4MB</td>
+    </tr> 
+    <tr>
+      <td>Falcon Fighter II</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Problems with scrolling</td>
+    </tr> 
+    <tr>
+      <td>FalcTron</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td></td>
+    </tr> 
+    <tr>
+      <td>Ganymed.pd</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Stops at beginning when showing hiscore</td>
+    </tr>
+    <tr>
+      <td>H2O</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Bombs out</td>
+    </tr>
+    <tr>
+      <td>Heretic</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Very slow</td>
+    </tr> 
+    <tr>
+      <td>Hexogon</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td></td>
+    </tr> 
+    <tr>
+      <td>Impulse</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Bus error at startup</td>
+    </tr>
+    <tr>
+      <td>Kwiks.pd</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>none</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Lamemine</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td></td>
+    </tr> 
+    <tr>
+      <td>Lasers and Hommes</td>
+      <td>NO</td>
+      <td>yes</td>
+      <td>dummy</td>
+      <td>Intros work, game doesn't</td>
+    </tr>
+    <tr>
+      <td>Llamazap</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Use joypad</td>
+    </tr> 
+    <tr>
+      <td>Madtris</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Men at War</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Fire button doesn't work, intro has sync problems</td>
+    </tr>
+    <tr>
+      <td>Milanopol</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Mine</td>
+      <td>partially</td>
+      <td>-</td>
+      <td>-</td>
+      <td>v1.02, GFA</td>
+    </tr>
+    <tr>
+      <td>Moongame</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Multi Briques</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Neurobot.108</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Nibe2</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Videl emu doesn't support rasters (in title screen)</td>
+    </tr>
+    <tr>
+      <td>Offworld</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Screen goes black at startup</td>
+    </tr>
+    <tr>
+      <td>Pac Them</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Nice</td>
+    </tr>
+    <tr>
+      <td>Painium Disaster</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td>Some display problems</td>
+    </tr>
+    <tr>
+      <td>Pingo98</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Stops at startup, worked earlier</td>
+    </tr>
+    <tr>
+      <td>Poker</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Complains that it doesn't work on this type of monitor</td>
+    </tr>
+    <tr>
+      <td>Pong 2K (demo)</td>
+      <td>partially</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Pouspous</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Only in HiColof</td>
+    </tr>
+    <tr>
+      <td>Push It</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Q-Blue</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Radical (demo)</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td>Nice</td>
+    </tr>
+    <tr>
+      <td>Raiden</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Use joypad, needs over 4MB</td>
+    </tr>
+    <tr>
+      <td>Rave</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Reeking Rubber</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Doesn't do anything</td>
+    </tr>
+    <tr>
+      <td>SBM v0.8</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Nice</td>
+    </tr>
+    <tr>
+      <td>SBM</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td>Newer versions bomb out</td>
+    </tr>
+    <tr>
+      <td>Snatch by FUN</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>VGA only, screen is not properly updated</td>
+    </tr>
+    <tr>
+      <td>Sky Fall by RG</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Slippery Sam</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Sokoban by FUN</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>VGA only, screen is not properly updated</td>
+    </tr>
+    <tr>
+      <td>Space Taxi</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Spice</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Nice Defender clone</td>
+    </tr>
+    <tr>
+      <td>Static</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Stbruch</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Switch</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Sworm by RG</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Tank Blaster</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>TeknoBalls</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Black screen at startup</td>
+    </tr>
+    <tr>
+      <td>Tautology II by RG</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>none</td>
+      <td>Problems with input, nice Mahjongg variant</td>
+    </tr>
+    <tr>
+      <td>Tetrhex</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Towers 2</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Black screen at startup</td>
+    </tr>
+    <tr>
+      <td>ToyMan</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Tron2</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Tron2001</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Bus error at startup</td>
+    </tr>
+    <tr>
+      <td>TUM</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>GEM minesweeper</td>
+    </tr>
+    <tr>
+      <td>Ufo War</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Screen scrambled</td>
+    </tr>
+    <tr>
+      <td>Vertical Mayhem(+)</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Works perfectly, nice columns clone</td>
+    </tr>
+    <tr>
+      <td>Watership</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td>Throws bus errors at startup</td>
+    </tr>
+    <tr>
+      <td>Willie Adventurer</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Wotanoid</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Stops at startup</td>
+    </tr>
+    <tr>
+      <td>Zodiax (demo)</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Nice R-type game clone</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<a name="Falcon demos"></a><h4>Falcon demos</h4>
+
+<p>TODO: Here are listed some Falcon demos:</p>
+<table border="1" cellpadding="3">
+  <caption align="bottom">Falcon demos</caption> <tbody>
+    <tr class="backdropped">
+      <td align="center">Title</td>
+      <td align="center">Working</td>
+      <td align="center">Sound</td>
+      <td align="center">DSP</td>
+      <td align="center">Comment</td>
+    </tr>
+    <tr>
+      <td>124 Beers</td>
+      <td>partially</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Some screens don't work</td>
+    </tr>
+    <tr>
+      <td>256mbrot, Bragg256, Glasstro, Orion-B, Yabt</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>TT intros by ray//.tSCc</td>
+    </tr>
+    <tr>
+      <td>Ascii, SnowStorm, HongTron</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Intros by Reservoir Gods (RG)</td>
+    </tr>
+    <tr>
+      <td>Alive</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Has strange screen size changes</td>
+    </tr>
+    <tr>
+      <td>Ats by DHS</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Beams (Falcon version)</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Music is buggy</td>
+    </tr>
+    <tr>
+      <td>Birdshow</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>FLI animation, worked earlier, now just black screen</td>
+    </tr>
+    <tr>
+      <td>Bugs from Outer Space</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>dummy</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Cebit93</td>
+      <td>partially</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Screen is not updated properly</td>
+    </tr>
+    <tr>
+      <td>Chrome Dragon</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Cruor 96k</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Bus errors</td>
+    </tr>
+    <tr>
+      <td>Delta</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Stops almost immediately after startings</td>
+    </tr>
+    <tr>
+      <td>Digital Obsolence</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Bus errors + illegal io-mem accesses</td>
+    </tr>
+    <tr>
+      <td>Eearth</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>none</td>
+      <td>(Texturemapped ball)</td>
+    </tr>
+    <tr>
+      <td>E.K.O System</td>
+      <td>partially</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Many screens missing</td>
+    </tr>
+    <tr>
+      <td>Falcon Flight</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Firestar</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Fogintro</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Bus errors</td>
+    </tr>
+    <tr>
+      <td>GEM-demo</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Hmmm</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Strange screen size with blank screen</td>
+    </tr>
+    <tr>
+      <td>Ice</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Illness</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td>Shows fully?</td>
+    </tr>
+    <tr>
+      <td>LostBlubb</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Infinite bus errors</td>
+    </tr>
+    <tr>
+      <td>Madness</td>
+      <td>NO</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Only music works</td>
+    </tr>
+    <tr>
+      <td>Mahabharata</td>
+      <td>partially</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Very slow and misses stuff</td>
+    </tr>
+    <tr>
+      <td>Out by Lineout</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Stops at startup</td>
+    </tr>
+    <tr>
+      <td>Sonolumineszenz</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>White screen at startup</td>
+    </tr>
+    <tr>
+      <td>Stax 96k</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Says "Something wrong with Falcon"</td>
+    </tr>
+    <tr>
+      <td>UK Demos</td>
+      <td>partially</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Only Motorola Inside screen works</td>
+    </tr>
+    <tr>
+      <td>Virtual City</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>HiColor only, doesn't show the city (reqs DSP?)</td>
+    </tr>
+    <tr>
+      <td>Weltchmerz</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Yepyha</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td>Strange screen size changes</td>
+    </tr>
+    <tr>
+      <td>Xtasie</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Might require 030 MMU which AUE core doesn't emulate</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<a name="Falcon applications"></a><h4>Falcon applications</h4>
+
+<p>Here are listed some <i>Falcon specific</i> applications:</p>
+<table border="1" cellpadding="3">
+  <caption align="bottom">Falcon applications</caption> <tbody>
+    <tr class="backdropped">
+      <td align="center">Title</td>
+      <td align="center">Working</td>
+      <td align="center">Sound</td>
+      <td align="center">DSP</td>
+      <td align="center">Comment</td>
+    </tr>
+    <tr>
+      <td>Apex Animator (demo)</td>
+      <td>NO</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Resets the emulator. The separate imageviewers work except
+          for the JPEG one which requires DSP</td>
+    </tr>
+    <tr>
+      <td>Escapepaint</td>
+      <td>partially</td>
+      <td>-</td>
+      <td>-</td>
+      <td>UI works, the effects don't (requires DSP?)</td>
+    </tr>
+    <tr>
+      <td>Whip</td>
+      <td>partially</td>
+      <td>-</td>
+      <td>-</td>
+      <td>UI works, the effects don't (requires DSP?)</td>
+    </tr>
+  </tbody>
+</table>
+
 
 <br>
 
