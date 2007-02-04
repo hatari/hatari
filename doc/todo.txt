@@ -35,7 +35,7 @@ touch with us:
 
 - Fix MFP emulation (e.g. "Froggies over the fence" does not work yet).
 
-- Improve MIDI emulation (MIDI-Input, support for ALSA on Linux, ...).
+- Improve MIDI emulation (MIDI-Input ...).
 
 - Get the games/demos working that are marked as non-working in the manual.
 
