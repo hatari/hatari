@@ -66,6 +66,9 @@ Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
     <li><a href="#ST games">ST games</a>
     <li><a href="#ST demos">ST demos</a>
     <li><a href="#ST applications">ST applications</a>
+    <ul>
+      <li><a href="#midinotes">Midi setup</a>
+    </ul>
   </ul>
   <li><a href="#STE">STE software compatibility list</a>
   <ul>
@@ -452,18 +455,17 @@ with disk images</td>
     <tr>
       <td>Accompanist<br>(Henry Cosh Sequencer)</td>
       <td>partially</td>
-      <td>Program works, but couldn't get Hatari midi output to work</td>
+      <td><a href="#midinotes">MIDI output</a> works, input doesn't</td>
     </tr>
     <tr>
       <td>Cubase Lite</td>
       <td>partially</td>
-      <td>Program works, but couldn't get Hatari midi output to work</td>
+      <td><a href="#midinotes">MIDI output</a> works, input doesn't</td>
     </tr>
     <tr>
       <td>Sequencer One</td>
       <td>partially</td>
-      <td>Program and sample sounds work, but couldn't get Hatari midi
-      output to work</td>
+      <td>Both <a href="#midinotes">MIDI output</a> and sound work, MIDI input doesn't</td>
     </tr>
     <tr class="backdropped">
       <td colspan="3" align="right"><i>Text Editors</i></td>
@@ -613,6 +615,15 @@ with disk images</td>
     </tr>
   </tbody>
 </table>
+
+<a name="midinotes"></a><h4>Midi setup</h4>
+
+<p>At the moment Hatari doesn't emulate MIDI input, it has only
+simple MIDI output emulation.</p>
+
+<p>If you don't have a MIDI sequencer, on Linux you can use
+a softsynth like Timidity or FluidSynth instead (if your distribution
+supports ALSA). For instructions, see alsa-midi.txt file.</p>
 
 
 <a name="STE"></a><h2>STE software compatibility list</h2>

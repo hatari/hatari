@@ -1,0 +1,131 @@
+
+Getting (Linux) ALSA midi support to work with Hatari
+=====================================================
+
+If you don't have a real MIDI sequencer, use a software synthetizer.
+For links to software referenced in this text, see end of the text.
+Most of the distros should have in their repositories packages at
+least for some of them though.
+
+
+Making MIDI soft-synthetizer to work with ALSA
+-----------------------------------------------
+
+Make Timidity into an ALSA output device with:
+  timidity -Os -iA
+(-O: output=alsa, -i: interface=alsa)
+
+To make it use less CPU and be more responsive, use:
+  timidity -Os -iA -B2,8 -EFreverb=0 -EFchorus=0
+(-B: 2,8=set small buffers, -EFx=0: disable effects)
+
+Make vkeybd (virtual midi keyboard app) into an ALSA input device with:
+  vkeybd
+
+View the resulting (software) ALSA input and output devices:
+  aconnect -i -o
+
+Then connect the vkeybd input to timidity output with:
+  kaconnect
+or if you don't have this UI program, just use 'aconnect' directly:
+  aconnect <sender port> <receiver port>
+
+Now you can use the virtual midi keyboard for testing the sound
+synthesis.
+
+
+Finally You can test how well midi files are played.
+Check which ALSA port Timidity provides:
+  aplaymidi -l
+
+And use that port for playing a midi file:
+  aplaymidi -p <port, e.g. 129:0> test.mid
+(or use 'pmidi')
+
+Note: Remember that you need to re-connect the (virtual) device
+ports each time you restart them.
+
+
+Using FluidSynth instead of Timidity
+------------------------------------
+
+Instead of Timidity, you also use other soft-synthetizers,
+like FluidSynth:
+  fluidsynth --audio-driver=alsa --midi-driver=alsa_seq soundfont.sf2
+
+You could play a bit with other options to get more performance,
+sound volume etc:
+  --reverb=no --chorus=no -o synth.polyphony=16 --gain=0.6
+
+And if you don't like the FluidSynth shell, use:
+  --no-shell --server
+
+FYI: Current (v1.0.7a) FluidSynth has buffer overruns, but they
+will  be fixed in the next release (hopefully coming soon).
+
+
+Making it all to work with Hatari
+---------------------------------
+
+Hatari requires midi hardware devices to work, it doesn't support
+ALSA directly.  To get the software synth ALSA devices to appear
+as HW midi devices, run following as *root*:
+  modprobe snd-virmidi
+
+When you you list your ALSA output devices with:
+  aconnect -o
+You should see in addition to Timidity also 4 virtual hardware
+devices.
+
+Then connect (either with aconnect or kaconnect) the first virtual
+HW port to the same Timidity port where you connected the virtual
+midi keyboard.
+
+Now check which number your new virtual midi card got from ALSA:
+  cat /proc/asound/cards
+
+And give to Hatari the corresponding ALSA midi device.  In my case
+VirMidi was Card 1 and as the port used above was first one, I give
+Hatari the following midi device:
+  hatari --midi /dev/snd/midiC1D0
+
+Note: I also needed --nosound option because Hatari wanted exclusive
+access to the PCM (sound) device and Timidity was already connected
+to it.  This may not be the case if you've compiled Hatari with another
+/ newer SDL_mixer library versions.
+
+
+Links
+-----
+
+Software
+
+Vkeybd:
+  http://alsa.opensrc.org/Vkeybd
+
+Patch (ALSA connecting) utilities:
+  http://alsa.opensrc.org/AlsaMidiPatchbays    
+
+FluidSynth:
+  http://www.iiwu.org/fluidsynth/
+
+Soundfonts:
+  http://alsa.opensrc.org/SoundFontHandling
+
+List of some soft-synthetizers:
+  http://alsa.opensrc.org/SoftSynths
+
+
+Overviews:
+
+ALSA midi overview:
+  http://alsa.opensrc.org/AlsaMidiOverview
+
+Virtual midi hardware setup:
+  http://www.tldp.org/HOWTO/MIDI-HOWTO-10.html
+
+Timidity Howto:
+  http://lau.linuxaudio.org/TiMidity-howto.html
+
+Midi with ALSA (old):
+  http://www.linuxfocus.org/English/September2002/article259.shtml
