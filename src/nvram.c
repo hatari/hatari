@@ -9,11 +9,28 @@
   - Adaption to Hatari (c) 2006 by Thomas Huth
 
   Atari TT and Falcon NVRAM/RTC emulation code.
-  This is a MC146818A or compatible chip.
+  This is a MC146818A or compatible chip with a non-volatile RAM area.
+
+  These are the important bytes in the nvram array:
+
+  Byte:    Description:
+
+  14-15    Prefered operating system (TOS, Unix)
+   20      Language
+   21      Keyboard layout
+   22      Format of date/time
+   23      Separator for date
+   24      Boot delay
+  28-29    Video mode
+   30      SCSI-ID in bits 0-2, bus arbitration flag in bit 7 (1=off, 0=on)
+  62-63    Checksum
+
+  All other cells are reserved / unused.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.4 2007-01-16 18:42:59 thothy Exp $";
+const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.5 2007-02-07 00:54:00 thothy Exp $";
 
 #include "main.h"
+#include "configuration.h"
 #include "ioMem.h"
 #include "log.h"
 #include "nvram.h"
@@ -36,11 +53,9 @@ const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.4 2007-01-16 18:42:59 thothy
 #define NVRAM_START  14
 #define NVRAM_LEN    50
 
-static uint8 nvram[64]={48,255,21,255,23,255,1,25,3,33,42,14,112,128,
-	0,0,0,0,0,0,0,0,17,46,32,1,255,0,0,56,135,0,0,0,0,0,0,0,
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,224,31};
-
-#define NVRAM_KEYBOARD_LANGUAGE	21
+static uint8 nvram[64] = { 48,255,21,255,23,255,1,25,3,33,42,14,112,128,
+	0,0,0,0,0,0,0,0,17,46,32,1,255,0,1,10,135,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 
 
 static Uint8 nvram_index;
@@ -144,29 +159,14 @@ void NvRam_Init(void)
 
 	if (!NvRam_Load())		// load NVRAM file automatically
 	{
-/*
-		if (bx_options.video.monitor != -1)
+		if (ConfigureParams.Screen.MonitorType == MONITOR_TYPE_VGA)   // VGA ?
 		{
-			if (bx_options.video.monitor == 0)	// VGA
-				nvram[29] |= 32;		// the monitor type should be set on a working copy only
-			else
-				nvram[29] &= ~32;
+			nvram[29] |= 32;		// VGA mode
 		}
-		if (bx_options.video.boot_color_depth != -1)
+		else
 		{
-			int res = nvram[29] & 0x07;
-			switch(bx_options.video.boot_color_depth)
-			{
-			 case 1: res = 0; break;
-			 case 2: res = 1; break;
-			 case 4: res = 2; break;
-			 case 8: res = 3; break;
-			 case 16: res = 4; break;
-			}
-			nvram[29] &= ~0x07;
-			nvram[29] |= res;		// the booting resolution should be set on a working copy only
+			nvram[29] &= ~32;		// TV/RGB mode
 		}
-*/
 		NvRam_SetChecksum();
 	}
 
