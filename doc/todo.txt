@@ -59,3 +59,8 @@ touch with us:
 - Improve the built-in debugger.
 
 - Extend the GEMDOS HD emulation to support more than one drive.
+
+- Add IDE and/or SCSI hard disk emulation for Falcon/TT mode.
+
+- Add SCC serial port emulation for Falcon/TT mode.
+
