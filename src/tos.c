@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.49 2007-01-28 22:59:09 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.50 2007-02-11 23:00:50 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -196,14 +196,7 @@ static void TOS_FixRom(void)
 	short TosCountry;
 	const TOS_PATCH *pPatch;
 
-	/* Check for EmuTOS first since we can not patch it */
-	if (STMemory_ReadLong(TosAddress+0x2c) == 0x45544F53)   /* 0x45544F53 = 'ETOS' */
-	{
-		Log_Printf(LOG_DEBUG, "Detected EmuTOS, skipping TOS patches.\n");
-		return;
-	}
-
-	/* We also can't patch RAM TOS images (yet) */
+	/* We can't patch RAM TOS images (yet) */
 	if (bRamTosImage && TosVersion != 0x0492)
 	{
 		Log_Printf(LOG_DEBUG, "Detected RAM TOS image, skipping TOS patches.\n");
@@ -256,65 +249,16 @@ static void TOS_FixRom(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Load TOS Rom image file into ST memory space and fix image so can emulate correctly
- * Pre TOS 1.06 are loaded at 0xFC0000 with later ones at 0xE00000
+ * Assert that TOS version matches the machine type and change the system
+ * configuration if necessary.
+ * For example TOSes 1.06 and 1.62 are for the STE ONLY and so don't run
+ * on a real ST, TOS 3.0x is TT only and TOS 4.x is Falcon only.
+ * These TOS version access illegal memory addresses on machine they were
+ * not designed for and so cause the OS to lock up. So, if user selects one
+ * of these, switch to the appropriate machine type.
  */
-int TOS_LoadImage(void)
+static void TOS_CheckSysConfig(void)
 {
-	Uint8 *pTosFile = NULL;
-	long nFileSize;
-
-	bTosImageLoaded = FALSE;
-
-	/* Load TOS image into memory so we can check it's vesion */
-	TosVersion = 0;
-	pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, NULL, &nFileSize, pszTosNameExts);
-
-	if (!pTosFile || nFileSize <= 0)
-	{
-		Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
-		return -1;
-	}
-
-	TosSize = nFileSize;
-
-	/* Check for RAM TOS images first: */
-	if (SDL_SwapBE32(*(Uint32 *)pTosFile) == 0x46FC2700)
-	{
-		int nRamTosLoaderSize;
-		Log_Printf(LOG_WARN, "Detected a RAM TOS - this will probably not work very well!\n");
-		/* RAM TOS images have a 256 bytes loader function before the real image
-		 * starts (34 bytes for TOS 4.92). Since we directly copy the image to the right
-		 * location later, we simply skip this additional header here: */
-		if (SDL_SwapBE32(*(Uint32 *)(pTosFile+34)) == 0x602E0492)
-			nRamTosLoaderSize = 0x22;
-		else
-			nRamTosLoaderSize = 0x100;
-		TosSize -= nRamTosLoaderSize;
-		memmove(pTosFile, pTosFile + nRamTosLoaderSize, TosSize);
-		bRamTosImage = TRUE;
-	}
-	else
-	{
-		bRamTosImage = FALSE;
-	}
-
-	/* Now, look at start of image to find Version number and address */
-	TosVersion = SDL_SwapBE16(*(Uint16 *)&pTosFile[2]);
-	TosAddress = SDL_SwapBE32(*(Uint32 *)&pTosFile[8]);
-
-	/* Check for reasonable TOS version: */
-	if (TosVersion<0x100 || TosVersion>=0x500 || TosSize>1024*1024L
-	    || (!bRamTosImage && TosAddress!=0xe00000 && TosAddress!=0xfc0000))
-	{
-		Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
-		             "(TOS version %x, address $%x)", TosVersion, TosAddress);
-		return -2;
-	}
-
-	/* TOSes 1.06 and 1.62 are for the STE ONLY and so don't run on a real ST. */
-	/* They access illegal memory addresses which don't exist on a real machine and cause the OS */
-	/* to lock up. So, if user selects one of these, switch to STE mode. */
 	if ((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
 	{
 		Log_AlertDlg(LOG_INFO, "TOS versions 1.06 and 1.62 are for Atari STE only.\n"
@@ -357,6 +301,75 @@ int TOS_LoadImage(void)
 			check_prefs_changed_cpu(ConfigureParams.System.nCpuLevel, ConfigureParams.System.bCompatibleCpu);
 		}
 	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Load TOS Rom image file into ST memory space and fix image so can emulate correctly
+ * Pre TOS 1.06 are loaded at 0xFC0000 with later ones at 0xE00000
+ */
+int TOS_LoadImage(void)
+{
+	Uint8 *pTosFile = NULL;
+	long nFileSize;
+	BOOL bIsEmuTOS;
+
+	bTosImageLoaded = FALSE;
+
+	/* Load TOS image into memory so we can check it's vesion */
+	TosVersion = 0;
+	pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, NULL, &nFileSize, pszTosNameExts);
+
+	if (!pTosFile || nFileSize <= 0)
+	{
+		Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
+		return -1;
+	}
+
+	TosSize = nFileSize;
+
+	/* Check for RAM TOS images first: */
+	if (SDL_SwapBE32(*(Uint32 *)pTosFile) == 0x46FC2700)
+	{
+		int nRamTosLoaderSize;
+		Log_Printf(LOG_WARN, "Detected a RAM TOS - this will probably not work very well!\n");
+		/* RAM TOS images have a 256 bytes loader function before the real image
+		 * starts (34 bytes for TOS 4.92). Since we directly copy the image to the right
+		 * location later, we simply skip this additional header here: */
+		if (SDL_SwapBE32(*(Uint32 *)(pTosFile+34)) == 0x602E0492)
+			nRamTosLoaderSize = 0x22;
+		else
+			nRamTosLoaderSize = 0x100;
+		TosSize -= nRamTosLoaderSize;
+		memmove(pTosFile, pTosFile + nRamTosLoaderSize, TosSize);
+		bRamTosImage = TRUE;
+	}
+	else
+	{
+		bRamTosImage = FALSE;
+	}
+
+	/* Check for EmuTOS ... (0x45544F53 = 'ETOS') */
+	bIsEmuTOS = (SDL_SwapBE32(*(Uint32 *)&pTosFile[0x2c]) == 0x45544F53);
+
+	/* Now, look at start of image to find Version number and address */
+	TosVersion = SDL_SwapBE16(*(Uint16 *)&pTosFile[2]);
+	TosAddress = SDL_SwapBE32(*(Uint32 *)&pTosFile[8]);
+
+	/* Check for reasonable TOS version: */
+	if (TosVersion<0x100 || TosVersion>=0x500 || TosSize>1024*1024L
+	    || (!bRamTosImage && TosAddress!=0xe00000 && TosAddress!=0xfc0000))
+	{
+		Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
+		             "(TOS version %x, address $%x)", TosVersion, TosAddress);
+		return -2;
+	}
+
+	/* Assert that machine type matches the TOS version. Note that EmuTOS can
+	 * handle all machine types, so we don't do the system check there: */
+	if (!bIsEmuTOS)
+		TOS_CheckSysConfig();
 
 	/* Copy loaded image into ST memory */
 	memcpy(STRam+TosAddress, pTosFile, TosSize);
@@ -376,7 +389,8 @@ int TOS_LoadImage(void)
 	}
 
 	/* Fix TOS image, modify code for emulation */
-	TOS_FixRom();
+	if (!bIsEmuTOS)
+		TOS_FixRom();
 
 	/* Set connected devices, memory configuration, etc. */
 	STMemory_SetDefaultConfig();
