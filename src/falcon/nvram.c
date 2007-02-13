@@ -27,14 +27,14 @@
 
   All other cells are reserved / unused.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.5 2007-02-07 00:54:00 thothy Exp $";
+const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.1 2007-02-13 19:32:29 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
 #include "log.h"
 #include "nvram.h"
-#include "falcon/araglue.h"
+#include "araglue.h"
 
 #define DEBUG 0
 
