@@ -27,7 +27,7 @@
 
   All other cells are reserved / unused.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.1 2007-02-13 19:32:29 thothy Exp $";
+const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.2 2007-02-13 20:44:38 simonsunnyboy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -138,8 +138,8 @@ static void NvRam_SetChecksum(void)
 	
 	for(i = CKS_RANGE_START; i <= CKS_RANGE_END; ++i)
 		sum += nvram[i];
-	nvram[CKS_LOC] = ~sum;
-	nvram[CKS_LOC+1] = sum;
+	nvram[NVRAM_CHKSUM1] = ~sum;
+	nvram[NVRAM_CHKSUM2] = sum;
 }
 
 
@@ -161,11 +161,11 @@ void NvRam_Init(void)
 	{
 		if (ConfigureParams.Screen.MonitorType == MONITOR_TYPE_VGA)   // VGA ?
 		{
-			nvram[29] |= 32;		// VGA mode
+			nvram[NVRAM_MONITOR] |= 32;		// VGA mode
 		}
 		else
 		{
-			nvram[29] &= ~32;		// TV/RGB mode
+			nvram[NVRAM_MONITOR] &= ~32;		// TV/RGB mode
 		}
 		NvRam_SetChecksum();
 	}
@@ -221,19 +221,20 @@ void NvRam_Data_ReadByte(void)
 {
 	uint8 value = 0;
 
-	if (nvram_index == 0 || nvram_index == 2 || nvram_index == 4
-	    || (nvram_index >=7 && nvram_index <=9) )
+	if (nvram_index == NVRAM_SECONDS || nvram_index == NVRAM_MINUTES || nvram_index == NVRAM_HOURS
+	    || (nvram_index >=NVRAM_DAY && nvram_index <=NVRAM_YEAR) )
 	{
+		/* access to RTC?  - then read host clock and return its values */
 		time_t tim = time(NULL);
-		struct tm *curtim = localtime(&tim);	// current time
+		struct tm *curtim = localtime(&tim);	/* current time */
 		switch(nvram_index)
 		{
-			case 0:	value = curtim->tm_sec; break;
-			case 2: value = curtim->tm_min; break;
-			case 4: value = curtim->tm_hour; break;
-			case 7: value = curtim->tm_mday; break;
-			case 8: value = curtim->tm_mon+1; break;
-			case 9: value = curtim->tm_year - 68; break;
+			case NVRAM_SECONDS: value = curtim->tm_sec; break;
+			case NVRAM_MINUTES: value = curtim->tm_min; break;
+			case NVRAM_HOURS: value = curtim->tm_hour; break;
+			case NVRAM_DAY: value = curtim->tm_mday; break;
+			case NVRAM_MONTH: value = curtim->tm_mon+1; break;
+			case NVRAM_YEAR: value = curtim->tm_year - 68; break;
 		}
 	}
 	else if (nvram_index == 10)
@@ -272,3 +273,4 @@ void NvRam_Data_WriteByte(void)
 	D(bug("Writing NVRAM data at %d = %d ($%02x)", nvram_index, value, value));
 	nvram[nvram_index] = value;
 }
+
