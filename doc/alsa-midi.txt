@@ -129,3 +129,6 @@ Timidity Howto:
 
 Midi with ALSA (old):
   http://www.linuxfocus.org/English/September2002/article259.shtml
+
+Midi on Linux:
+  http://www.linuxjournal.com/article/7773
