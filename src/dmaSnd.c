@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.11 2007-01-18 09:24:25 eerot Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.12 2007-02-17 18:43:40 thothy Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -63,6 +63,26 @@ static const int DmaSndSampleRates[4] =
 	12517,
 	25033,
 	50066
+};
+
+
+static const int DmaSndFalcSampleRates[] =
+{
+	49170,
+	32780,
+	24585,
+	19668,
+	16390,
+	14049,
+	12292,
+	10927,
+	 9834,
+	 8940,
+	 8195,
+	 7565,
+	 7024,
+	 6556,
+	 6146,
 };
 
 
@@ -100,6 +120,21 @@ void DmaSnd_MemorySnapShot_Capture(BOOL bSave)
 }
 
 
+static double DmaSnd_DetectSampleRate(void)
+{
+	int nFalcClk = IoMem[0xff8935] & 0x0f;
+
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && nFalcClk != 0)
+	{
+		return (double)DmaSndFalcSampleRates[nFalcClk-1];
+	}
+	else
+	{
+		return (double)DmaSndSampleRates[nDmaSoundMode & 3];
+	}
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * This function is called when a new sound frame is started.
@@ -118,7 +153,7 @@ static void DmaSnd_StartNewFrame(void)
 
 	/* To get smooth sound, set an "interrupt" for the end of the frame that
 	 * updates the sound mix buffer. */
-	nCyclesForFrame = nFrameLen * (8013000.0 / (double)DmaSndSampleRates[nDmaSoundMode & 3]);
+	nCyclesForFrame = nFrameLen * (8013000.0 / DmaSnd_DetectSampleRate());
 	if (!(nDmaSoundMode & DMASNDMODE_MONO))  /* Is it stereo? */
 		nCyclesForFrame = nCyclesForFrame / 2;
 	Int_AddRelativeInterrupt(nCyclesForFrame, INTERRUPT_DMASOUND);
@@ -170,12 +205,26 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		return;
 
 	pFrameStart = (Sint8 *)&STRam[nFrameStartAddr];
-	FreqRatio = (double)DmaSndSampleRates[nDmaSoundMode & 3]
-	            / (double)SoundPlayBackFrequencies[OutputAudioFreqIndex];
+	FreqRatio = DmaSnd_DetectSampleRate() / (double)SoundPlayBackFrequencies[OutputAudioFreqIndex];
 
-	if (nDmaSoundMode & DMASNDMODE_MONO)  /* Stereo or mono? */
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON
+	    && (nDmaSoundMode & 0x40))
 	{
-		/* Mono */
+		/* Stereo 16-bit */
+		FreqRatio *= 4.0;
+		for (i = 0; i < nSamplesToGenerate; i++)
+		{
+			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+			MixBuffer[nBufIdx] = ((int)MixBuffer[nBufIdx] + (int)pFrameStart[((int)FrameCounter)&~1]
+			                      + (int)pFrameStart[(((int)FrameCounter)&~1)+2]) / 3;
+			FrameCounter += FreqRatio;
+			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
+				break;
+		}
+	}
+	else if (nDmaSoundMode & DMASNDMODE_MONO)  /* 8-bit stereo or mono? */
+	{
+		/* Mono 8-bit */
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
@@ -187,7 +236,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	}
 	else
 	{
-		/* Stereo */
+		/* Stereo 8-bit */
 		FreqRatio *= 2.0;
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
