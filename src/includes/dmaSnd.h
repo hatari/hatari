@@ -8,10 +8,11 @@
 #ifndef HATARI_DMASND_H
 #define HATARI_DMASND_H
 
-#define DMASNDCTRL_PLAY      0x01
-#define DMASNDCTRL_PLAYLOOP  0x02
+#define DMASNDCTRL_PLAY         0x01
+#define DMASNDCTRL_PLAYLOOP     0x02
 
-#define DMASNDMODE_MONO      0x80
+#define DMASNDMODE_16BITSTEREO  0x40
+#define DMASNDMODE_MONO         0x80
 
 extern Uint16 nDmaSoundControl;
 

@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.12 2007-02-17 18:43:40 thothy Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.13 2007-02-17 22:14:59 eerot Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -57,7 +57,7 @@ static Uint32 nFrameEndAddr;            /* Sound frame end */
 static double FrameCounter;             /* Counter in current sound frame */
 static int nFrameLen;                   /* Length of the frame */
 
-static const int DmaSndSampleRates[4] =
+static const double DmaSndSampleRates[4] =
 {
 	6258,
 	12517,
@@ -66,7 +66,7 @@ static const int DmaSndSampleRates[4] =
 };
 
 
-static const int DmaSndFalcSampleRates[] =
+static const double DmaSndFalcSampleRates[] =
 {
 	49170,
 	32780,
@@ -126,11 +126,11 @@ static double DmaSnd_DetectSampleRate(void)
 
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && nFalcClk != 0)
 	{
-		return (double)DmaSndFalcSampleRates[nFalcClk-1];
+		return DmaSndFalcSampleRates[nFalcClk-1];
 	}
 	else
 	{
-		return (double)DmaSndSampleRates[nDmaSoundMode & 3];
+		return DmaSndSampleRates[nDmaSoundMode & 3];
 	}
 }
 
@@ -208,7 +208,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	FreqRatio = DmaSnd_DetectSampleRate() / (double)SoundPlayBackFrequencies[OutputAudioFreqIndex];
 
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON
-	    && (nDmaSoundMode & 0x40))
+	    && (nDmaSoundMode & DMASNDMODE_16BITSTEREO))
 	{
 		/* Stereo 16-bit */
 		FreqRatio *= 4.0;
