@@ -1069,7 +1069,8 @@ this section lists only TT-specific demos.</p>
 <a name="Falcon"></a><h2>Falcon software compatibility list</h2>
 
 <p>The main thing preventing Falcon programs from working is missing
-DSP emulation.  You can select between three different DSP emulation
+DSP emulation (and even of the programs working, many would use DSP
+for music).  You can select between three different DSP emulation
 modes with the "--dsp" option:
 <ul>
   <li><b>none</b>:  Most programs work best with this</li>
@@ -1082,9 +1083,13 @@ modes with the "--dsp" option:
 
 <p>The "dsp" column in tables below tells which DSP emulation
 mode needs to be used for the given program to work.  If it
-doesn't matter, the column contains "-". Many games use DSP
-for sound and therefore that doesn't work.</p>
+doesn't matter, the column contains "-".  Most programs work
+both with "none" and "dummy" setting, if they've been tested
+not to work with others, the value is followed with "!".</p>
 
+<p>The column for whether the program works and whether
+it has (working) sound have "yes" when this is true and
+otherwise "-".
 
 <a name="Falcon games"></a><h4>Falcon games</h4>
 
@@ -1100,7 +1105,7 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Addsub</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Input doesn't work, up arrow exits game</td>
@@ -1110,7 +1115,7 @@ for sound and therefore that doesn't work.</p>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td>Only 256-color mode</td>
+      <td>256-color mode only</td>
     </tr> 
     <tr>
       <td>Block Blizzard</td>
@@ -1122,7 +1127,7 @@ for sound and therefore that doesn't work.</p>
     <tr>
       <td>Blum</td>
       <td>yes</td>
-      <td>no</td>
+      <td>-</td>
       <td>-</td>
       <td>Disable sound</td>
     </tr>
@@ -1149,14 +1154,14 @@ for sound and therefore that doesn't work.</p>
     </tr> 
     <tr>
       <td>Capy</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td></td>
     </tr>
     <tr>
       <td>Cavemania (demo)</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Black screen, noise</td>
@@ -1172,19 +1177,19 @@ for sound and therefore that doesn't work.</p>
       <td>Columns by Deadheart (demo)</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td>Nice</td>
     </tr>
     <tr>
       <td>Corsair</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td></td>
     </tr> 
     <tr>
       <td>Cravon (demo)</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Intros work, game doesn't</td>
@@ -1226,14 +1231,14 @@ for sound and therefore that doesn't work.</p>
     </tr> 
     <tr>
       <td>Ganymed.pd</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Stops at beginning when showing hiscore</td>
     </tr>
     <tr>
       <td>H2O</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Bombs out</td>
@@ -1254,7 +1259,7 @@ for sound and therefore that doesn't work.</p>
     </tr> 
     <tr>
       <td>Impulse</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Bus error at startup</td>
@@ -1263,22 +1268,22 @@ for sound and therefore that doesn't work.</p>
       <td>Kwiks.pd</td>
       <td>yes</td>
       <td>-</td>
-      <td>none</td>
+      <td>none!</td>
       <td></td>
     </tr>
     <tr>
       <td>Lamemine</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>dummy!</td>
       <td></td>
     </tr> 
     <tr>
-      <td>Lasers and Hommes</td>
-      <td>NO</td>
+      <td>Lasers and Hommes (DLDH2)</td>
+      <td>-</td>
       <td>yes</td>
-      <td>dummy</td>
-      <td>Intros work, game doesn't</td>
+      <td>none</td>
+      <td>Intros work (including music), game doesn't</td>
     </tr>
     <tr>
       <td>Llamazap</td>
@@ -1317,14 +1322,14 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Moongame</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td></td>
     </tr>
     <tr>
       <td>Multi Briques</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td></td>
@@ -1345,7 +1350,7 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Offworld</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Screen goes black at startup</td>
@@ -1361,19 +1366,19 @@ for sound and therefore that doesn't work.</p>
       <td>Painium Disaster</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td>Some display problems</td>
     </tr>
     <tr>
       <td>Pingo98</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Stops at startup, worked earlier</td>
     </tr>
     <tr>
       <td>Poker</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Complains that it doesn't work on this type of monitor</td>
@@ -1382,7 +1387,7 @@ for sound and therefore that doesn't work.</p>
       <td>Pong 2K (demo)</td>
       <td>partially</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td></td>
     </tr>
     <tr>
@@ -1390,13 +1395,13 @@ for sound and therefore that doesn't work.</p>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td>Only in HiColof</td>
+      <td>HiColor only</td>
     </tr>
     <tr>
       <td>Push It</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td></td>
     </tr>
     <tr>
@@ -1404,13 +1409,13 @@ for sound and therefore that doesn't work.</p>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>Hicolor / VGA only</td>
     </tr>
     <tr>
       <td>Radical (demo)</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td>Nice</td>
     </tr>
     <tr>
@@ -1424,12 +1429,12 @@ for sound and therefore that doesn't work.</p>
       <td>Rave</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>dummy!</td>
       <td></td>
     </tr>
     <tr>
       <td>Reeking Rubber</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Doesn't do anything</td>
@@ -1443,14 +1448,14 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>SBM</td>
-      <td>NO</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>-</td>
+      <td>none</td>
       <td>Newer versions bomb out</td>
     </tr>
     <tr>
       <td>Snatch by FUN</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>VGA only, screen is not properly updated</td>
@@ -1466,12 +1471,12 @@ for sound and therefore that doesn't work.</p>
       <td>Slippery Sam</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td></td>
     </tr>
     <tr>
       <td>Sokoban by FUN</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>VGA only, screen is not properly updated</td>
@@ -1501,14 +1506,14 @@ for sound and therefore that doesn't work.</p>
       <td>Stbruch</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td></td>
     </tr>
     <tr>
       <td>Switch</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td></td>
     </tr>
     <tr>
@@ -1520,14 +1525,14 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Tank Blaster</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td></td>
     </tr>
     <tr>
       <td>TeknoBalls</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Black screen at startup</td>
@@ -1536,7 +1541,7 @@ for sound and therefore that doesn't work.</p>
       <td>Tautology II by RG</td>
       <td>yes</td>
       <td>-</td>
-      <td>none</td>
+      <td>none!</td>
       <td>Problems with input, nice Mahjongg variant</td>
     </tr>
     <tr>
@@ -1548,7 +1553,7 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Towers 2</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Black screen at startup</td>
@@ -1564,12 +1569,12 @@ for sound and therefore that doesn't work.</p>
       <td>Tron2</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td></td>
     </tr>
     <tr>
       <td>Tron2001</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Bus error at startup</td>
@@ -1583,7 +1588,7 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Ufo War</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Screen scrambled</td>
@@ -1597,21 +1602,21 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Watership</td>
-      <td>NO</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>-</td>
+      <td>?</td>
       <td>Throws bus errors at startup</td>
     </tr>
     <tr>
       <td>Willie Adventurer</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td></td>
     </tr>
     <tr>
       <td>Wotanoid</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Stops at startup</td>
@@ -1683,7 +1688,7 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Birdshow</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>FLI animation, worked earlier, now just black screen</td>
@@ -1692,7 +1697,7 @@ for sound and therefore that doesn't work.</p>
       <td>Bugs from Outer Space</td>
       <td>yes</td>
       <td>yes</td>
-      <td>dummy</td>
+      <td>none</td>
       <td></td>
     </tr>
     <tr>
@@ -1711,7 +1716,7 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Cruor 96k</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Bus errors</td>
@@ -1725,14 +1730,14 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Delta</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Stops almost immediately after startings</td>
     </tr>
     <tr>
       <td>Digital Obsolence</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Bus errors + illegal io-mem accesses</td>
@@ -1741,7 +1746,7 @@ for sound and therefore that doesn't work.</p>
       <td>Eearth</td>
       <td>yes</td>
       <td>-</td>
-      <td>none</td>
+      <td>none!</td>
       <td>(Texturemapped ball)</td>
     </tr>
     <tr>
@@ -1767,7 +1772,7 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Fogintro</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Bus errors</td>
@@ -1781,7 +1786,7 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Hmmm</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Strange screen size with blank screen</td>
@@ -1790,26 +1795,26 @@ for sound and therefore that doesn't work.</p>
       <td>Ice</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td></td>
     </tr>
     <tr>
       <td>Illness</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy</td>
+      <td>none</td>
       <td>Shows fully?</td>
     </tr>
     <tr>
       <td>LostBlubb</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Infinite bus errors</td>
     </tr>
     <tr>
       <td>Madness</td>
-      <td>NO</td>
+      <td>-</td>
       <td>yes</td>
       <td>-</td>
       <td>Only music works</td>
@@ -1822,29 +1827,36 @@ for sound and therefore that doesn't work.</p>
       <td>Very slow and misses stuff</td>
     </tr>
     <tr>
+      <td>Mouse</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>none!</td>
+      <td>AVR animation/music with Brainstorm player</td>
+    </tr>
+    <tr>
       <td>Oergs by Lazer</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>dummy</td>
       <td></td>
     </tr>
     <tr>
       <td>Out by Lineout</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Stops at startup</td>
     </tr>
     <tr>
       <td>Sonolumineszenz</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>White screen at startup</td>
     </tr>
     <tr>
       <td>Stax 96k</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Says "Something wrong with Falcon"</td>
@@ -1886,14 +1898,14 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Yepyha</td>
-      <td>yes</td>
+      <td>partially</td>
       <td>-</td>
-      <td>dummy</td>
-      <td>Strange screen size changes</td>
+      <td>none</td>
+      <td>Stops in middle</td>
     </tr>
     <tr>
       <td>Xtasie</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Might require 030 MMU which AUE core doesn't emulate</td>
@@ -1923,7 +1935,7 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Apex Animator (demo)</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Resets the emulator. The separate imageviewers work except
@@ -1931,7 +1943,7 @@ for sound and therefore that doesn't work.</p>
     </tr>
     <tr>
       <td>Chronos 3D player</td>
-      <td>NO</td>
+      <td>-</td>
       <td>-</td>
       <td>-</td>
       <td>Complains about wrong resolution, requires 15-bit</td>
