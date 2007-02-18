@@ -78,6 +78,7 @@ Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
   </ul>
   <li><a href="#TT">TT software compatibility list</a>
   <ul>
+    <li><a href="#TT games">TT games</a>
     <li><a href="#TT demos">TT demos</a>
   </ul>
   <li><a href="#Falcon">Falcon software compatibility list</a>
@@ -1042,9 +1043,29 @@ are just STE enhanced.  These are marked with '*'.</p>
 
 <a name="TT"></a><h2>TT software compatibility list</h2>
 
-<p>Programs that work on TT work also in the Falcon emulation and
+<p>Most programs that work on TT work also in the Falcon emulation and
 as all 1-8 bit GEM programs work without problems under TT emulation
-this section lists only TT-specific demos.</p>
+this section lists only TT-specific games and demos.</p>
+
+<a name="TT games"></a><h4>TT games</h4>
+
+<table border="1" cellpadding="3">
+  <caption align="bottom">TT games</caption>
+  <tbody>
+    <tr class="backdropped">
+      <td align="center">Title</td>
+      <td align="center">Working</td>
+      <td align="center">Sound</td>
+      <td align="center">Comment</td>
+    </tr>
+    <tr>
+      <td>Oxyd 2 TT</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>Oxyd 2 in color</td>
+    </tr>
+  </tbody>
+</table>
 
 <a name="TT demos"></a><h4>TT demos</h4>
 
@@ -1061,6 +1082,12 @@ this section lists only TT-specific demos.</p>
       <td>no</td>
       <td>&nbsp;</td>
       <td>Stops at startup screen</td>
+    </tr>
+    <tr>
+      <td>TT-Wars</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>Star Wars demo</td>
     </tr>
   </tbody>
 </table>
@@ -1214,7 +1241,15 @@ otherwise "-".
       <td>-</td>
       <td>-</td>
       <td>Needs over 4MB</td>
-    </tr> 
+    </tr>
+    <tr>
+      <td>Evolution Dino Dudes<br>(aka. Humans)</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Intro and menu work, but graphics are distorted in game.<br>
+          (Game writes twice to the $ff820e register during one VBL!)</td>
+    </tr>
     <tr>
       <td>Falcon Fighter II</td>
       <td>yes</td>
@@ -1421,7 +1456,7 @@ otherwise "-".
     <tr>
       <td>Raiden</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td>Use joypad, needs over 4MB</td>
     </tr>
