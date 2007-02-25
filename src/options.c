@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.20 2007-02-25 21:20:10 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.21 2007-02-25 22:14:33 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -362,7 +362,6 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_LOG:
 			i += 1;
 			if (strlen(argv[i]) < sizeof(ConfigureParams.Log.sLogFileName)) {
-				ConfigureParams.Printer.bEnablePrinting = TRUE;
 				strcpy(ConfigureParams.Log.sLogFileName, argv[i]);
 			} else {
 				Opt_ShowExit(OPT_NONE, argv[i], "Log file name too long!\n");

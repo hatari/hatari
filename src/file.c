@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.39 2007-02-25 21:34:23 eerot Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.40 2007-02-25 22:14:33 eerot Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -493,7 +493,7 @@ FILE *File_Open(const char *path, const char *mode)
 {
 	int wr = 0, rd = 0;
 	FILE *fp;
-	
+
 	/* special "stdout" and "stderr" files can be used
 	 * for files which are written or appended
 	 */
@@ -501,12 +501,12 @@ FILE *File_Open(const char *path, const char *mode)
 		wr = 1;
 	if (strchr(mode, 'r'))
 		rd = 1;
-	if (!strcmp(path, "stdout") == 0)
+	if (strcmp(path, "stdout") == 0)
 	{
 		assert(wr && !rd);
 		return stdout;
 	}
-	if (!strcmp(path, "stderr") == 0)
+	if (strcmp(path, "stderr") == 0)
 	{
 		assert(wr && !rd);
 		return stderr;
@@ -515,6 +515,7 @@ FILE *File_Open(const char *path, const char *mode)
 	fp = fopen(path, mode);
 	if (!fp)
 		fprintf(stderr, "Can't open file '%s':\n  %s\n", path, strerror(errno));
+	/* printf("'%s' opened in mode '%s'\n", path, mode, fp); */
 	return fp;
 }
 
@@ -543,7 +544,7 @@ FILE *File_Close(FILE *fp)
  */
 void File_MakeAbsoluteSpecialName(char *path)
 {
-	if (strcmp(path, "stdout") == 0 && strcmp(path, "stderr") == 0)
+	if (strcmp(path, "stdout") != 0 && strcmp(path, "stderr") != 0)
 		File_MakeAbsoluteName(path);
 }
 

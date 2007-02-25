@@ -12,7 +12,7 @@
   NOTE - Tab's are converted to spaces as the PC 'Tab' setting differs to that
   of the ST.
 */
-const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.20 2007-02-25 21:20:10 eerot Exp $";
+const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.21 2007-02-25 22:14:33 eerot Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -33,7 +33,7 @@ const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.20 2007-02-25 21:20:10 e
 static Uint8 PrinterBuffer[PRINTER_BUFFER_SIZE];   /* Buffer to store character before output */
 static size_t nPrinterBufferChars;      /* # characters in above buffer */
 static int nPrinterBufferCharsOnLine;
-static BOOL bConnectedPrinter = FALSE;
+static BOOL bConnectedPrinter;
 static int nIdleCount;
 
 static FILE *pPrinterHandle;
@@ -112,6 +112,26 @@ void Printer_CloseAllConnections(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Reset Printer Buffer
+ */
+static void Printer_ResetInternalBuffer(void)
+{
+	nPrinterBufferChars = 0;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Reset character line
+ */
+static void Printer_ResetCharsOnLine(void)
+{
+	nPrinterBufferCharsOnLine = 0;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Empty to file on disk.
  */
 static void Printer_EmptyFile(void)
@@ -128,26 +148,6 @@ static void Printer_EmptyFile(void)
 		/* Reset */
 		Printer_ResetInternalBuffer();
 	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Reset Printer Buffer
- */
-static void Printer_ResetInternalBuffer(void)
-{
-	nPrinterBufferChars = 0;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Reset character line
- */
-static void Printer_ResetCharsOnLine(void)
-{
-	nPrinterBufferCharsOnLine = 0;
 }
 
 
@@ -230,7 +230,7 @@ static void Printer_AddTabToInternalBuffer(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Pass byte from emulator to printer.  Opens the printer file appending
- * if it isn't already open. Returns FALSE is connection to "printer"
+ * if it isn't already open. Returns FALSE if connection to "printer"
  * failed
  */
 BOOL Printer_TransferByteTo(Uint8 Byte)
