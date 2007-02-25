@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.19 2007-01-30 20:33:49 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.20 2007-02-25 21:20:10 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,9 +42,10 @@ enum {
 	OPT_FRAMESKIPS,
 	OPT_FORCE8BPP,
 	OPT_BORDERS,
-	OPT_DEBUG,
 	OPT_JOYSTICK,
 	OPT_NOSOUND,
+	OPT_DEBUG,
+	OPT_LOG,
 	OPT_PRINTER,
 	OPT_MIDI,
 	OPT_RS232,
@@ -96,18 +97,20 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Force use of 8-bit window (speeds up emulation!)" },
 	{ OPT_BORDERS, NULL, "--borders",
 	  NULL, "Show screen borders (for overscan demos etc)" },
-	{ OPT_DEBUG,     "-D", "--debug",
-	  NULL, "Allow debug interface" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
 	  "<port>", "Emulate joystick in <port> 0 or 1 with cursor keys" },
 	{ OPT_NOSOUND,   NULL, "--nosound",
 	  NULL, "Disable sound (faster!)" },
+	{ OPT_DEBUG,     "-D", "--debug",
+	  NULL, "Allow debug interface" },
+	{ OPT_LOG,     NULL, "--log",
+	  "<file>", "Save log to <file>" },
 	{ OPT_PRINTER,   NULL, "--printer",
-	  NULL, "Enable printer support (experimental)" },
+	  "<file>", "Enable printer support and write data to <file>" },
 	{ OPT_MIDI,      NULL, "--midi",
 	  "<file>", "Enable midi support and write midi data to <file>" },
 	{ OPT_RS232,     NULL, "--rs232",
-	  "<file>", "Use <file> as the serial port device" },
+	  "<file>", "Enable serial port support and use <file> as the device" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
 	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
 	{ OPT_IDEHDIMAGE,   NULL, "--ide",
@@ -163,7 +166,7 @@ static void Opt_ShowExit(int option, const char *value, const char *error)
 	printf("Usage:\n hatari [options] [disk image name]\n"
 	       "Where options are:\n");
 
-	/* find largest option name and check option IDs */
+	/* find longest option name and check option IDs */
 	i = maxlen = 0;
 	for (opt = HatariOptions; opt->id != OPT_NONE; opt++) {
 		assert(opt->id == i++);
@@ -201,6 +204,8 @@ static void Opt_ShowExit(int option, const char *value, const char *error)
 			}
 		}
 	}
+	printf("\nNote: 'stdout' and 'stderr' have special meaning as <file> names.\n");
+	printf("If you use stdout for midi or printer, set log to stderr!\n");
 	if (error) {
 		if (option != OPT_NONE) {
 			fprintf(stderr, "\nError (%s): %s\n", HatariOptions[option].str, error);
@@ -354,9 +359,24 @@ void Opt_ParseParameters(int argc, char *argv[],
 			bEnableDebug = TRUE;
 			break;
 			
+		case OPT_LOG:
+			i += 1;
+			if (strlen(argv[i]) < sizeof(ConfigureParams.Log.sLogFileName)) {
+				ConfigureParams.Printer.bEnablePrinting = TRUE;
+				strcpy(ConfigureParams.Log.sLogFileName, argv[i]);
+			} else {
+				Opt_ShowExit(OPT_NONE, argv[i], "Log file name too long!\n");
+			}
+			break;
+			
 		case OPT_PRINTER:
-			/* FIXME: add more commandline configuration for printing */
-			ConfigureParams.Printer.bEnablePrinting = TRUE;
+			i += 1;
+			if (strlen(argv[i]) < sizeof(ConfigureParams.Printer.szPrintToFileName)) {
+				ConfigureParams.Printer.bEnablePrinting = TRUE;
+				strcpy(ConfigureParams.Printer.szPrintToFileName, argv[i]);
+			} else {
+				Opt_ShowExit(OPT_NONE, argv[i], "Printer file name too long!\n");
+			}
 			break;
 			
 		case OPT_MIDI:

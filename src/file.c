@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.37 2007-01-16 18:42:59 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.38 2007-02-25 21:20:10 eerot Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -14,7 +14,8 @@ const char File_rcsid[] = "Hatari $Id: file.c,v 1.37 2007-01-16 18:42:59 thothy 
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-
+#include <assert.h>
+#include <errno.h>
 #include <zlib.h>
 
 #include "main.h"
@@ -482,6 +483,69 @@ void File_ShrinkName(char *pDestFileName, char *pSrcFileName, int maxlen)
 	}
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Open given filename in given mode and handle "stdout" & "stderr"
+ * filenames specially. Return FILE* to the opened file or NULL on error.
+ */
+FILE *File_Open(const char *path, const char *mode)
+{
+	int wr = 0, rd = 0;
+	FILE *fp;
+	
+	/* special "stdout" and "stderr" files can be used
+	 * files which are written or appended
+	 */
+	if (strchr(mode, 'w') || strchr(mode, 'a'))
+		wr = 1;
+	if (strchr(mode, 'r'))
+		rd = 1;
+	if (!strcmp(path, "stdout") == 0)
+	{
+		assert(wr && !rd);
+		return stdout;
+	}
+	if (!strcmp(path, "stderr") == 0)
+	{
+		assert(wr && !rd);
+		return stderr;
+	}
+	/* Open a normal log file */
+	fp = fopen(path, mode);
+	if (!fp)
+		fprintf(stderr, "Can't open file '%s':\n  %s\n", path, strerror(errno));
+	return fp;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Close given FILE pointer and return the closed pointer
+ * as NULL for the idiom "fp = File_Close(fp);"
+ */
+FILE *File_Close(FILE *fp)
+{
+	if (fp && fp != stdout && fp != stderr)
+	{
+		fclose(fp);
+	}
+	return NULL;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Wrapper for File_MakeAbsoluteName() which special-cases "stdout" and
+ * "stderr" files.  The given buffer should be opened with File_Open()
+ * and closed with File_Close() if this function is used!
+ * (On Linux one can use /dev/stdout etc, this is intended for other OSes)
+ */
+void File_MakeAbsoluteSpecialName(char *path)
+{
+	if (strcmp(path, "stdout") == 0 && strcmp(path, "stderr") == 0)
+		File_MakeAbsoluteName(path);
+}
 
 /*-----------------------------------------------------------------------*/
 /**

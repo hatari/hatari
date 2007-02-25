@@ -20,7 +20,7 @@
      the data register, but probably it should rather be done when reading the
      status register?).
 */
-const char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.8 2007-01-16 18:42:59 thothy Exp $";
+const char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.9 2007-02-25 21:20:10 eerot Exp $";
 
 #include <SDL_types.h>
 
@@ -30,13 +30,12 @@ const char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.8 2007-01-16 18:42:59 thothy E
 #include "m68000.h"
 #include "mfp.h"
 #include "midi.h"
+#include "file.h"
 
 
 #define ACIA_SR_INTERRUPT_REQUEST  0x80
 
-
 #define MIDI_DEBUG 0
-
 #if MIDI_DEBUG
 #define Dprintf(a) printf a
 #else
@@ -57,20 +56,17 @@ void Midi_Init(void)
 {
 	MidiStatusRegister = 2;
 
-	if (ConfigureParams.Midi.bEnableMidi)
+	if (!ConfigureParams.Midi.bEnableMidi)
+		return;
+
+	/* Open MIDI file... */
+	pMidiOutFileHandle = File_Open(ConfigureParams.Midi.szMidiOutFileName, "wb");
+	if (!pMidiOutFileHandle)
 	{
-		/* Open MIDI file... */
-		pMidiOutFileHandle = fopen(ConfigureParams.Midi.szMidiOutFileName, "wb");
-
-		if (!pMidiOutFileHandle)
-		{
-			fprintf(stderr, "Failed to open %s.\n", ConfigureParams.Midi.szMidiOutFileName);
-			ConfigureParams.Midi.bEnableMidi = FALSE;
-			return;
-		}
-
-		Dprintf(("Opened midi file %s.\n", ConfigureParams.Midi.szMidiOutFileName));
+		ConfigureParams.Midi.bEnableMidi = FALSE;
+		return;
 	}
+	Dprintf(("Opened midi file '%s'.\n", ConfigureParams.Midi.szMidiOutFileName));
 }
 
 
@@ -80,12 +76,7 @@ void Midi_Init(void)
  */
 void Midi_UnInit(void)
 {
-	if (pMidiOutFileHandle)
-	{
-		/* Close MIDI file... */
-		fclose(pMidiOutFileHandle);
-		pMidiOutFileHandle = NULL;
-	}
+	pMidiOutFileHandle = File_Close(pMidiOutFileHandle);
 }
 
 

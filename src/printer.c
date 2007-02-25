@@ -12,13 +12,14 @@
   NOTE - Tab's are converted to spaces as the PC 'Tab' setting differs to that
   of the ST.
 */
-const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.19 2007-01-16 18:42:59 thothy Exp $";
+const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.20 2007-02-25 21:20:10 eerot Exp $";
 
 #include "main.h"
 #include "dialog.h"
 #include "file.h"
 #include "printer.h"
 #include "screen.h"
+#include "file.h"
 
 /* #define PRINTER_DEBUG */
 
@@ -29,14 +30,23 @@ const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.19 2007-01-16 18:42:59 t
 
 #define PRINTER_BUFFER_SIZE  2048       /* 2k buffer which when full will be written to printer/file */
 
-static unsigned char PrinterBuffer[PRINTER_BUFFER_SIZE];   /* Buffer to store character before output */
+static Uint8 PrinterBuffer[PRINTER_BUFFER_SIZE];   /* Buffer to store character before output */
 static size_t nPrinterBufferChars;      /* # characters in above buffer */
 static int nPrinterBufferCharsOnLine;
-static BOOL bConnectedPrinter=FALSE;
-static BOOL bPrinterFile = FALSE;
+static BOOL bConnectedPrinter = FALSE;
 static int nIdleCount;
 
-static FILE *PrinterFileHandle;
+static FILE *pPrinterHandle;
+
+
+/* internal functions */
+static void Printer_EmptyFile(void);
+static void Printer_ResetInternalBuffer(void);
+static void Printer_ResetCharsOnLine(void);
+static BOOL Printer_EmptyInternalBuffer(void);
+static BOOL Printer_ValidByte(Uint8 Byte);
+static void Printer_AddByteToInternalBuffer(Uint8 Byte);
+static void Printer_AddTabToInternalBuffer(void);
 
 
 /*-----------------------------------------------------------------------*/
@@ -85,7 +95,7 @@ void Printer_UnInit(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Close all open files etc.
+ * Close all open output file, empty buffers etc.
  */
 void Printer_CloseAllConnections(void)
 {
@@ -93,7 +103,7 @@ void Printer_CloseAllConnections(void)
 	Printer_EmptyInternalBuffer();
 
 	/* Close any open files */
-	Printer_CloseFile();
+	pPrinterHandle = File_Close(pPrinterHandle);
 
 	/* Signal finished with printing */
 	bConnectedPrinter = FALSE;
@@ -102,49 +112,15 @@ void Printer_CloseAllConnections(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Open file on disk, to which all printer output will be sent.
- */
-BOOL Printer_OpenFile(void)
-{
-
-	bPrinterFile = TRUE;
-
-	/* open printer file... */
-	PrinterFileHandle = fopen(ConfigureParams.Printer.szPrintToFileName, "a+");
-	if (!PrinterFileHandle)
-		bPrinterFile = FALSE;
-
-	return bPrinterFile;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Close file on disk, if we have one open.
- */
-void Printer_CloseFile(void)
-{
-	/* Do have file open? */
-	if (bPrinterFile)
-	{
-		/* Close */
-		fclose(PrinterFileHandle);
-		bPrinterFile = FALSE;
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Empty to file on disk.
  */
-void Printer_EmptyFile(void)
+static void Printer_EmptyFile(void)
 {
 	/* Do have file open? */
-	if (bPrinterFile)
+	if (pPrinterHandle)
 	{
 		/* Write bytes out */
-		if (fwrite((unsigned char *)PrinterBuffer,sizeof(unsigned char),nPrinterBufferChars,PrinterFileHandle) < nPrinterBufferChars)
+		if (fwrite((Uint8 *)PrinterBuffer,sizeof(Uint8),nPrinterBufferChars,pPrinterHandle) < nPrinterBufferChars)
 		{
 			/* we wrote less then all chars in the buffer --> ERROR */
 			fprintf(stderr,"Printer_EmptyFile(): ERROR not all chars were written\n");
@@ -159,7 +135,7 @@ void Printer_EmptyFile(void)
 /**
  * Reset Printer Buffer
  */
-void Printer_ResetInternalBuffer(void)
+static void Printer_ResetInternalBuffer(void)
 {
 	nPrinterBufferChars = 0;
 }
@@ -169,7 +145,7 @@ void Printer_ResetInternalBuffer(void)
 /**
  * Reset character line
  */
-void Printer_ResetCharsOnLine(void)
+static void Printer_ResetCharsOnLine(void)
 {
 	nPrinterBufferCharsOnLine = 0;
 }
@@ -179,17 +155,16 @@ void Printer_ResetCharsOnLine(void)
 /**
  * Empty Printer Buffer
  */
-BOOL Printer_EmptyInternalBuffer(void)
+static BOOL Printer_EmptyInternalBuffer(void)
 {
 	/* Write bytes to file */
-	if (nPrinterBufferChars>0)
+	if (nPrinterBufferChars > 0)
 	{
-		if (bPrinterFile)
+		if (pPrinterHandle)
 			Printer_EmptyFile();
 
 		return TRUE;
 	}
-
 	/* Nothing to do */
 	return FALSE;
 }
@@ -199,7 +174,7 @@ BOOL Printer_EmptyInternalBuffer(void)
 /**
  * Return TRUE if byte is standard ASCII character which is OK to output
  */
-BOOL Printer_ValidByte(unsigned char Byte)
+static BOOL Printer_ValidByte(Uint8 Byte)
 {
 	/* Return/New line? */
 	if ((Byte == 0x0d) || (Byte == 0x0a))
@@ -218,7 +193,7 @@ BOOL Printer_ValidByte(unsigned char Byte)
 /**
  * Add byte to our internal buffer, and when full write out - needed to speed
  */
-void Printer_AddByteToInternalBuffer(unsigned char Byte)
+static void Printer_AddByteToInternalBuffer(Uint8 Byte)
 {
 	/* Is buffer full? If so empty */
 	if (nPrinterBufferChars == PRINTER_BUFFER_SIZE)
@@ -235,7 +210,7 @@ void Printer_AddByteToInternalBuffer(unsigned char Byte)
 /**
  * Add 'Tab' to internal buffer
  */
-void Printer_AddTabToInternalBuffer(void)
+static void Printer_AddTabToInternalBuffer(void)
 {
 	int i,NumSpaces;
 
@@ -254,9 +229,11 @@ void Printer_AddTabToInternalBuffer(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Pass byte from emulator to printer
+ * Pass byte from emulator to printer.  Opens the printer file appending
+ * if it isn't already open. Returns FALSE is connection to "printer"
+ * failed
  */
-BOOL Printer_TransferByteTo(unsigned char Byte)
+BOOL Printer_TransferByteTo(Uint8 Byte)
 {
 	/* Do we want to output to a printer/file? */
 	if (!ConfigureParams.Printer.bEnablePrinting)
@@ -265,7 +242,9 @@ BOOL Printer_TransferByteTo(unsigned char Byte)
 	/* Have we made a connection to our printer/file? */
 	if (!bConnectedPrinter)
 	{
-		bConnectedPrinter = Printer_OpenFile();
+		/* open printer file... */
+		pPrinterHandle = File_Open(ConfigureParams.Printer.szPrintToFileName, "a+");
+		bConnectedPrinter = (pPrinterHandle != NULL);
 
 		/* Reset the printer */
 		Printer_ResetInternalBuffer();

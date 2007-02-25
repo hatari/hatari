@@ -23,6 +23,9 @@ extern BOOL File_FindPossibleExtFileName(char *pszFileName,const char * const pp
 extern void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *Ext);
 extern void File_makepath(char *pDestFileName, const char *pDir, const char *pName, const char *pExt);
 extern void File_ShrinkName(char *pDestFileName, char *pSrcFileName, int maxlen);
+extern FILE *File_Open(const char *path, const char *mode);
+extern FILE *File_Close(FILE *fp);
+extern void File_MakeAbsoluteSpecialName(char *pszFileName);
 extern void File_MakeAbsoluteName(char *pszFileName);
 extern void File_MakeValidPathName(char *pPathName);
 
