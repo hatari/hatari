@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.38 2007-02-25 21:20:10 eerot Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.39 2007-02-25 21:34:23 eerot Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -495,7 +495,7 @@ FILE *File_Open(const char *path, const char *mode)
 	FILE *fp;
 	
 	/* special "stdout" and "stderr" files can be used
-	 * files which are written or appended
+	 * for files which are written or appended
 	 */
 	if (strchr(mode, 'w') || strchr(mode, 'a'))
 		wr = 1;
