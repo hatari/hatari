@@ -7,6 +7,8 @@ For links to software referenced in this text, see end of the text.
 Most of the distros should have in their repositories packages at
 least for some of them though.
 
+There are also some notes about midi networking.
+
 
 Making MIDI soft-synthetizer to work with ALSA
 -----------------------------------------------
@@ -95,10 +97,32 @@ to it.  This may not be the case if you've compiled Hatari with another
 / newer SDL_mixer library versions.
 
 
+Sending the midi data over network
+----------------------------------
+
+If you direct the data to stdout, you can use e.g. ssh to pipe
+it over network:
+  hatari --midi /dev/stdout --log /dev/stderr |\
+    ssh user@remote.site "cat>/dev/snd/midiC1D0"
+
+Note that logging is re-directed to stderr so that it doesn't
+mess the midi output.
+
+Same can be done with socat so that the connections are bi-directional.
+Once Hatari supports midi input, you can use socat like this to do
+midi-networking between (emulated) Ataris:
+  @remote.site:
+    socat PIPE:redirect.pipe TCP4-LISTEN:www
+    hatari --midi redirect.pipe --log stderr
+  @local.site:
+    socat PIPE:redirect.pipe TCP4:remote.site:www
+    hatari --midi redirect.pipe --log stderr
+
+
 Links
 -----
 
-Software
+Software:
 
 Vkeybd:
   http://alsa.opensrc.org/Vkeybd
@@ -114,6 +138,9 @@ Soundfonts:
 
 List of some soft-synthetizers:
   http://alsa.opensrc.org/SoftSynths
+
+socat:
+  http://www.dest-unreach.org/socat/
 
 
 Overviews:
