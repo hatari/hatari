@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.40 2007-02-25 22:14:33 eerot Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.41 2007-02-27 20:53:52 eerot Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -501,6 +501,11 @@ FILE *File_Open(const char *path, const char *mode)
 		wr = 1;
 	if (strchr(mode, 'r'))
 		rd = 1;
+	if (strcmp(path, "stdin") == 0)
+	{
+		assert(rd && !wr);
+		return stdin;
+	}
 	if (strcmp(path, "stdout") == 0)
 	{
 		assert(wr && !rd);
@@ -527,7 +532,7 @@ FILE *File_Open(const char *path, const char *mode)
  */
 FILE *File_Close(FILE *fp)
 {
-	if (fp && fp != stdout && fp != stderr)
+	if (fp && fp != stdin && fp != stdout && fp != stderr)
 	{
 		fclose(fp);
 	}
@@ -537,14 +542,16 @@ FILE *File_Close(FILE *fp)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Wrapper for File_MakeAbsoluteName() which special-cases "stdout" and
- * "stderr" files.  The given buffer should be opened with File_Open()
+ * Wrapper for File_MakeAbsoluteName() which special-cases stdin/out/err
+ * named files.  The given buffer should be opened with File_Open()
  * and closed with File_Close() if this function is used!
  * (On Linux one can use /dev/stdout etc, this is intended for other OSes)
  */
 void File_MakeAbsoluteSpecialName(char *path)
 {
-	if (strcmp(path, "stdout") != 0 && strcmp(path, "stderr") != 0)
+	if (strcmp(path, "stdin")  != 0 &&
+	    strcmp(path, "stdout") != 0 &&
+	    strcmp(path, "stderr") != 0)
 		File_MakeAbsoluteName(path);
 }
 

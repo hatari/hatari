@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.64 2007-02-25 21:20:10 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.65 2007-02-27 20:53:52 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -485,9 +485,15 @@ void Configuration_Apply(BOOL bReset)
 	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskImage);
 	File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
+	File_MakeAbsoluteName(ConfigureParams.Memory.szMemoryCaptureFileName);
+	File_MakeAbsoluteName(ConfigureParams.Sound.szYMCaptureFileName);
+	File_MakeAbsoluteName(ConfigureParams.Keyboard.szMappingFileName);
+	File_MakeAbsoluteName(ConfigureParams.RS232.szOutFileName);
+	File_MakeAbsoluteName(ConfigureParams.RS232.szInFileName);
+	
+	/* make path names absolute, but handle special file names */
+	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sLogFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.szMidiOutFileName);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.szOutFileName);
-	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.szInFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Printer.szPrintToFileName);
 }
 
