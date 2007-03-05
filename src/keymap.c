@@ -6,12 +6,13 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.29 2007-01-16 18:42:59 thothy Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.30 2007-03-05 22:19:54 thothy Exp $";
 
 #include "main.h"
 #include "keymap.h"
 #include "misc.h"
 #include "configuration.h"
+#include "file.h"
 #include "ikbd.h"
 #include "joy.h"
 #include "shortcut.h"
@@ -31,7 +32,7 @@ const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.29 2007-01-16 18:42:59 tho
      1   59  60  61  62    63  64  65  66    67  68  87  88                70     69
 
 
-¬  !   "   £   $   %   ^   &   *   (   )   _   +                                 Page
+   !   "       $   %   ^   &   *   (   )   _   +                                 Page
 `  1   2   3   4   5   6   7   8   9   0   -   =   <-               Ins   Home    Up
 
 41 2   3   4   5   6   7   8   9   10  11  12  13  14               82     71     73
@@ -599,7 +600,7 @@ void Keymap_LoadRemapFile(char *pszFileName)
   memcpy(LoadedKeyToSTScanCode, SymbolicKeyToSTScanCode, sizeof(LoadedKeyToSTScanCode));
 
   /* Attempt to load file */
-  if (strlen(pszFileName)>0)
+  if (strlen(pszFileName) > 0 && !File_DoesFileNameEndWithSlash(pszFileName))
   {
     /* Open file */
     in = fopen(pszFileName, "r");
@@ -608,7 +609,8 @@ void Keymap_LoadRemapFile(char *pszFileName)
       while(!feof(in))
       {
         /* Read line from file */
-        fgets(szString, sizeof(szString), in);
+        if (fgets(szString, sizeof(szString), in) == NULL)
+          break;
         /* Remove white-space from start of line */
         Misc_RemoveWhiteSpace(szString,sizeof(szString));
         if (strlen(szString)>0)
