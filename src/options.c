@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.21 2007-02-25 22:14:33 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.22 2007-03-10 17:49:33 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -155,8 +155,8 @@ static void Opt_ShowExit(int option, const char *value, const char *error)
 	unsigned int i, len, maxlen;
 	char buf[64];
 	const opt_t *opt;
-	
-	printf("This is %s.\n", PROG_NAME);
+
+	printf("This is %s - the Atari ST, STE, TT and Falcon emulator.\n", PROG_NAME);
 	printf("This program is free software licensed under the GNU GPL.\n\n");
 
 	if (option == OPT_VERSION) {
