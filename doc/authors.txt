@@ -9,7 +9,7 @@
   fixed the printer emulation functions.
 
 - Eero Tamminen <eerot@users.sourceforge.net> : Many speed improvements, code
-  cleanup, parts of the STE emulation and other patches.
+  cleanup, parts of the STE emulation and many other patches.
 
 - Marco Herrn <marco@mherrn.de> : Wrote the initial version of the "man" page
   of Hatari and maintains the Hatari Debian packages.
@@ -62,6 +62,10 @@ please remind me!):
 
 - James Lampard : Adapted Hatari to Acorn RISC OS machines.
 
+- George Nakos : Helped to track down a bug in the GEMDOS HD emulation.
+
+- Pieter van der Meer : Traced a bug in the VIDEL emulation.
+
 
  Code from other projects
  ------------------------
@@ -72,7 +76,7 @@ The initial Hatari source code was based on two main sources:
   written by Paul Bates (see: http://www.sourceforge.net/projects/winston/).
 
 - The CPU core has been taken from UAE which has been written by Bernd Schmidt
-  and others (http://www.freiburg.linux.de/~uae/).
+  and others (http://uae.coresystems.de/).
 
 Beside these two main sources, Hatari also uses some code from other projects:
 
@@ -80,8 +84,9 @@ Beside these two main sources, Hatari also uses some code from other projects:
   STonX that has been written by Marinos Yannikos and Martin Griffiths
   (http://stonx.sourceforge.net/).
 
-- Some code (e.g. the scancode keyboard mapping) has been taken from the
-  emulator Aranym (http://aranym.atari.org/).
+- A lot of code (e.g. the scancode keyboard mapping, Videl, NVRAM and DSP
+  emulation) has been adapted from the sources of the emulator Aranym
+  (http://aranym.atari.org/).
 
 - The code for decompressing ZIP files (unzip.c) has been taken from Gilles
   Vollant's miniunzip program (http://www.winimage.com/zLibDll/unzip.html).
