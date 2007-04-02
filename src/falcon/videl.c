@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.14 2007-01-29 20:50:34 eerot Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.15 2007-04-02 19:46:47 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -564,12 +564,13 @@ static void VIDEL_renderScreenZoom(void)
 	/* Atari screen infos */
 	int vw	 = VIDEL_getScreenWidth();
 	int vh	 = VIDEL_getScreenHeight();
-	if ((vw<32) || (vh<32)) return;
 
 	int lineoffset = handleReadW(HW + 0x0e) & 0x01ff; // 9 bits
 	int linewidth = handleReadW(HW + 0x10) & 0x03ff; // 10 bits
 	/* same remark as before: too naive */
 	int nextline = linewidth + lineoffset;
+
+	if ((vw<32) || (vh<32))  return;
 
 	if (bpp<16 && !hostColorsSync) {
 		VIDEL_updateColors();
@@ -835,10 +836,12 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					uint8 *hvram_line = hvram;
 
 					for (h = 0; h < scrheight; h++) {
-						fvram_line = fvram + (zoomytable[h] * nextline);
+						uint16 *fvram_column;
+						uint8 *hvram_column;
 
-						uint16 *fvram_column = fvram_line;
-						uint8 *hvram_column = hvram_line;
+						fvram_line = fvram + (zoomytable[h] * nextline);
+						fvram_column = fvram_line;
+						hvram_column = hvram_line;
 
 						/* Recopy the same line ? */
 						if (zoomytable[h] == cursrcline) {
@@ -869,10 +872,12 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					uint16 *hvram_line = (uint16 *)hvram;
 
 					for (h = 0; h < scrheight; h++) {
-						fvram_line = fvram + (zoomytable[h] * nextline);
+						uint16 *fvram_column;
+						uint16 *hvram_column;
 
-						uint16 *fvram_column = fvram_line;
-						uint16 *hvram_column = hvram_line;
+						fvram_line = fvram + (zoomytable[h] * nextline);
+						fvram_column = fvram_line;
+						hvram_column = hvram_line;
 
 						/* Recopy the same line ? */
 						if (zoomytable[h] == cursrcline) {
@@ -897,10 +902,12 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					uint8 *hvram_line = hvram;
 
 					for (h = 0; h < scrheight; h++) {
-						fvram_line = fvram + (zoomytable[h] * nextline);
+						uint16 *fvram_column;
+						uint8 *hvram_column;
 
-						uint16 *fvram_column = fvram_line;
-						uint8 *hvram_column = hvram_line;
+						fvram_line = fvram + (zoomytable[h] * nextline);
+						fvram_column = fvram_line;
+						hvram_column = hvram_line;
 
 						/* Recopy the same line ? */
 						if (zoomytable[h] == cursrcline) {
@@ -934,10 +941,12 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					uint32 *hvram_line = (uint32 *)hvram;
 
 					for (h = 0; h < scrheight; h++) {
-						fvram_line = fvram + (zoomytable[h] * nextline);
+						uint16 *fvram_column;
+						uint32 *hvram_column;
 
-						uint16 *fvram_column = fvram_line;
-						uint32 *hvram_column = hvram_line;
+						fvram_line = fvram + (zoomytable[h] * nextline);
+						fvram_column = fvram_line;
+						hvram_column = hvram_line;
 
 						/* Recopy the same line ? */
 						if (zoomytable[h] == cursrcline) {

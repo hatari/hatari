@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.11 2006-12-20 14:14:00 thothy Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.12 2007-04-02 19:46:46 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -94,12 +94,12 @@ void HostScreen_toggleFullScreen(void)
 {
 	sdl_videoparams ^= SDL_FULLSCREEN;
 	if(SDL_WM_ToggleFullScreen(mainSurface) == 0) {
-		Dprintf(("toggleFullScreen: SDL_WM_ToggleFullScreen() not supported -> using SDL_SetVideoMode()"));
-
 		// SDL_WM_ToggleFullScreen() did not work.
 		// We have to change video mode "by hand".
 		SDL_Surface *temp = SDL_ConvertSurface(mainSurface, mainSurface->format,
 		                                       mainSurface->flags);
+		Dprintf(("toggleFullScreen: SDL_WM_ToggleFullScreen() not supported"
+		         " -> using SDL_SetVideoMode()"));
 		if (temp == NULL)
 			bug("toggleFullScreen: Unable to save screen content.");
 
