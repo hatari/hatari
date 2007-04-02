@@ -8,10 +8,9 @@
 #ifndef HATARI_MAIN_H
 #define HATARI_MAIN_H
 
-typedef signed char BOOL;
 
-#define PROG_NAME      "Hatari v0.93" /* Name, version for window title */
-#define PROG_VERSION   "v0.93"
+/* Name and version for window title: */
+#define PROG_NAME "Hatari CVS (" __DATE__ ")"
 
 
 #include <stdio.h>
@@ -22,6 +21,8 @@ typedef signed char BOOL;
 
 #include <SDL_types.h>
 
+
+typedef signed char BOOL;
 
 #ifndef FALSE
 #define FALSE 0
