@@ -753,33 +753,57 @@ certain games. In some other games, it gets worse if you enable this option.</p>
 
 <a name="The Screen Dialog"></a><h4>The Screen Dialog</h4>
 
-<div class="image" align="center">
-<img src="images/screen.png" width="768" height="534" alt="Hatari's GUI - the screen dialog">
+<div class="floatimage">
+<img src="images/screen.png" width="500" height="400" alt="Hatari's GUI - the screen dialog">
 </div>
 
-<p>Here you control the video output of the emulated ST.</p>
-<p>Check "Fullscreen" to run Hatari fullscreen, default is windowed.</p>
-<p>Check "Interleaved mode" if you wish to have that old TV feeling in
-Hatari. Every second line will be black.
-This will only work in ST-MEDIUM or ST-LOW in scaled up resolutions.</p>
-<p>Check "Frame Skip" to speed Hatari up if emulation is too slow. This
-will only draw every second ST frame
-instead of the default of drawing every ST frame. Uncheck if you have a
-fast PC.</p>
-<p>Check "Use Borders" if you wish to have the borders around the ST
-screen.</p>
-<p>"Force 8Bpp" will force SDL to use an 8bit video mode. You don't
-need this for modern video cards.</p>
-<p>You can select which sort of monitor to use. Check "Color" for games
-and demos. If you check "Mono" here,
-Hatari will emulate the good old SM124 and will not allow you to switch
-to color modes from the running ST.
-This toggle acts like a monitor switch with a color and monochrome
-monitor connected.</p>
-<p>"Zoom ST-Low res." will control if Hatari renders ST-LOW to a
-320x200 or 640x400 PC display (with borders turned off) or 384x276 or
-768x552.
-Basically select this to toggle between a small or a large window.</p>
+<p>
+ Here you control the video output of the emulated Atari.
+</p>
+<p>
+ Check &quot;Fullscreen&quot; to run Hatari fullscreen, default is windowed.
+</p>
+<p>
+ &quot;Use Borders&quot; toggles the displaying of the borders around the ST
+ screen. Some few demos/games use the borders for displaying additional
+ graphics. However, when you enable this option, it increases CPU computing
+ time, so you should not enable it if you have a slow computer.
+ Please note that this option also only affects the ST and STE mode, TT and
+ Falcon modes are always displayed without borders.
+</p>
+<p>
+ &quot;Zoom ST-Low res.&quot; controls wether Hatari doubles the low
+ resolutions. For example Hatari then zooms the ST low resolution 320x200 to
+ 640x400 and it doubles 384x267 (ST low with borders) to 768x534.
+ Note that zooming also takes a lot of CPU computing time and should not be
+ enabled on slow computers.
+</p>
+<p>
+ &quot;Force 8Bpp&quot; will force Hatari to use an 8bit video mode.
+ You don't need this for modern video cards.
+</p>
+<p>
+ The &quot;Frame Skip&quot; option can be set to speed up the emulator
+ if it is running too slow on your system. 1 to 8 frames will be dropped
+ after each frame that has been drawn. Disable frame-skip if you have a
+ fast computer.
+</p>
+<p>
+ You can select which sort of monitor to use. This option depends on the
+ machine type which you have selected in the &quot;System options&quot;
+ dialog. In ST and STE mode, you can choose between monochrome mode (select
+ &quot;Mono&quot;) and color mode (select one of the other monitor types).
+ Note that when you select &quot;TV&quot; and use zoomed low resolution or
+ switch to ST medium resolution, you will get a TV-like screen rendering
+ which is a little bit faster but darker compared to the normal &quot;RGB&quot;
+ monitor mode. Switching between mono and a color monitor acts like a monitor
+ switch on a real ST - so beware, this will reboot your emulated system!<br>
+ In TT mode, you can only choose between TT-high resolution (&quot;Mono&quot;)
+ and normal modes (select one of the other monitor types).
+ Finally the Falcon mode supports all four types of monitors. Note that most
+ Falcon demos/games require a RGB or TV mode and do not work with VGA.
+</p>
+<p>
 Extended GEM resolutions will emulate some sort of extended graphics
 card in the emulated ST giving you larger resolutions and a higher
 colordepth in GEM. Select a resolution and color depth. Check to
@@ -787,7 +811,8 @@ activate. It will disable all other video options mentioned above.
 Uncheck to get back to a normal ST behaviour.<br>
 <em>Note:</em> Using an extended resolution will only work with GEM
 conformant applications. 99% of all games and demos will not run if you
-activate any extended resolution here.<br>
+activate any extended resolution here.
+</p>
 <p>Click <span class="button">Capture Screen</span> to create a
 screenshot in .BMP format to the current working directory or click <span
  class="button">Record Animation</span> to record a sequence of single
