@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.15 2007-04-02 19:46:47 thothy Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.16 2007-04-04 15:23:58 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -28,7 +28,7 @@ const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.15 2007-04-02 19:46:47 thoth
 #define handleReadW(a) IoMem_ReadWord(a)
 #define Atari2HostAddr(a) (&STRam[a])
 
-#define VIDEL_DEBUG 1
+#define VIDEL_DEBUG 0
 
 #if VIDEL_DEBUG
 #define Dprintf(a) printf a

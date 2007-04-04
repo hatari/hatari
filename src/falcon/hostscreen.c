@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.12 2007-04-02 19:46:46 thothy Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.13 2007-04-04 15:23:58 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -18,7 +18,7 @@ const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.12 2007-04-02 19:4
 #include "hostscreen.h"
 #include "screen.h"
 
-#define VIDEL_DEBUG 1
+#define VIDEL_DEBUG 0
 
 #if VIDEL_DEBUG
 #define Dprintf(a) printf a
