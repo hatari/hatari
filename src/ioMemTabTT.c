@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the TT.
 */
-const char IoMemTabTT_rcsid[] = "Hatari $Id: ioMemTabTT.c,v 1.5 2007-01-18 09:27:04 eerot Exp $";
+const char IoMemTabTT_rcsid[] = "Hatari $Id: ioMemTabTT.c,v 1.6 2007-04-16 19:42:53 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -110,9 +110,9 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 
 	/* Note: The TT does not have a blitter (0xff8a00 - 0xff8a3e) */
 
-	{ 0xff8e00, 16, IoMem_VoidRead, IoMem_WriteWithoutInterception },        /* VME Bus IO */
-
 	//{ 0xff8c80, 8, IoMem_VoidRead, IoMem_WriteWithoutInterception },         /* SCC */
+
+	{ 0xff8e00, 16, IoMem_VoidRead, IoMem_WriteWithoutInterception },        /* VME Bus IO */
 
 	{ 0xff9000, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff9200, SIZE_WORD, Joy_StePadButtons_ReadWord, IoMem_WriteWithoutInterception },    /* Joypad fire buttons */
