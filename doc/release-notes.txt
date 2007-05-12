@@ -4,6 +4,26 @@
                                 Release Notes
 
 
+ Version 0.95 (2007-05-12):
+ --------------------------
+
+- This release brings you basic Atari TT and Falcon emulation!
+  Please note that both new emulation modes are still highly experiemental,
+  some few games and demos work, but most still have more or less big
+  problems.
+- Basic emulation of Falcon video shifter (Videl), NVRAM and DMA sound is in
+  place. The biggest drawback: There is no working Falcon DSP emulation yet.
+- Screen/Shifter emulation timings have slightly been changed. Some things
+  now work better, some others work worse...
+- Some patches for compiling on RiscOS and AmigaOS have been included.
+- Compiling Hatari for Windows now works better.
+- Added Hatari icon (hatari-icon.bmp).
+- Fixed "movec" bug in 68020 CPU mode.
+- Keyboard shortcuts for loading & saving memory snapshots (AltGr+k & AltGr+l).
+- The built-in debugger has been slightly improved to be more user-friendly.
+
+
+
  Version 0.90 (2006-08-22):
  --------------------------
 
