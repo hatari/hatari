@@ -7,7 +7,7 @@
 #   CC, CPPFLAGS, LDFLAGS, HOSTCC, DATADIR, CONFDIR, BINDIR
 
 # Set the C compiler (e.g. gcc)
-CC ?= gcc
+CC = gcc
 
 # What warnings to use
 WARNFLAGS = -Wmissing-prototypes -Wstrict-prototypes -Wsign-compare \
