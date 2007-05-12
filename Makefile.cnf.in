@@ -34,6 +34,7 @@ SDL_LIBS = @SDL_LIBS@
 # Paths and directories
 prefix = @prefix@
 exec_prefix = @exec_prefix@
+datarootdir = @datarootdir@
 
 # Here you can define the default data directory for Hatari.
 # The emulator looks there for the default TOS image etc.
