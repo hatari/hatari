@@ -36,7 +36,7 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>0.80</string>
+	<string>0.95</string>
 	<key>Hatari</key>
 	<string>SDL Cocoa App</string>
 	<key>NSMainNibFile</key>

@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                                 Version 0.90
+                                 Version 0.95
 
                         http://hatari.sourceforge.net/
 
