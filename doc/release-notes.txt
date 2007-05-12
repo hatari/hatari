@@ -21,7 +21,8 @@
 - Fixed "movec" bug in 68020 CPU mode.
 - Keyboard shortcuts for loading & saving memory snapshots (AltGr+k & AltGr+l).
 - The built-in debugger has been slightly improved to be more user-friendly.
-
+- Added "hmsa" tool - a little program for converting .MSA files to .ST and
+  vice versa.
 
 
  Version 0.90 (2006-08-22):
