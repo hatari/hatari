@@ -11,7 +11,7 @@
 
    Read unzip.h for more info
 */
-const char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.10 2007-01-16 18:42:59 thothy Exp $";
+const char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.11 2007-05-12 12:12:14 thothy Exp $";
 
 
 #include <stdio.h>
@@ -165,12 +165,12 @@ local int unzlocal_getByte(FILE *fin, int *pi)
 local int unzlocal_getShort (FILE* fin, uLong *pX)
 {
     uLong x ;
-    int i;
+    int i = 0;
     int err;
 
     err = unzlocal_getByte(fin,&i);
     x = (uLong)i;
-    
+
     if (err==UNZ_OK)
         err = unzlocal_getByte(fin,&i);
     x += ((uLong)i)<<8;
@@ -185,12 +185,12 @@ local int unzlocal_getShort (FILE* fin, uLong *pX)
 local int unzlocal_getLong (FILE* fin, uLong *pX)
 {
     uLong x ;
-    int i;
+    int i = 0;
     int err;
 
     err = unzlocal_getByte(fin,&i);
     x = (uLong)i;
-    
+
     if (err==UNZ_OK)
         err = unzlocal_getByte(fin,&i);
     x += ((uLong)i)<<8;
@@ -202,7 +202,7 @@ local int unzlocal_getLong (FILE* fin, uLong *pX)
     if (err==UNZ_OK)
         err = unzlocal_getByte(fin,&i);
     x += ((uLong)i)<<24;
-   
+
     if (err==UNZ_OK)
         *pX = x;
     else
