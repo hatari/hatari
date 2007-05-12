@@ -54,12 +54,13 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.10 2007-01-16 18:42:59 thothy Exp $";
+const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.11 2007-05-12 09:24:36 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <unistd.h>
 
 #include "main.h"
 #include "cfgopts.h"
@@ -295,6 +296,8 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 	FILE *cfgfile, *tempfile;
 	char *fptr, *tok, *next;
 	char line[1024];
+	BOOL bUseTempCfg = FALSE;
+	const char *sTempCfgName = "_temp_.cfg";
 
 	cfgfile = fopen(filename, "r");
 
@@ -321,8 +324,15 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 	tempfile = tmpfile();                        /* Open a temporary file for output */
 	if (tempfile == NULL)
 	{
+		/* tmpfile() failed, let's try a normal open */
+		tempfile = fopen(sTempCfgName, "w+");
+		bUseTempCfg = TRUE;
+	}
+	if (tempfile == NULL)
+	{
 		fclose(cfgfile);
-		return -1;                                /* return error designation. */
+		perror("update_config");
+		return -1;                               /* return error designation. */
 	}
 
 	if (header != NULL)
@@ -441,6 +451,8 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 	if (cfgfile == NULL)
 	{
 		fclose(tempfile);
+		if (bUseTempCfg)
+			unlink(sTempCfgName);
 		return -1;
 	}
 
@@ -448,6 +460,8 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 	{
 		fclose(cfgfile);
 		fclose(tempfile);
+		if (bUseTempCfg)
+			unlink(sTempCfgName);
 		return -1;
 	}
 
@@ -456,16 +470,22 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 	{
 		size_t copycount;
 		copycount = fread(line, sizeof(char), sizeof(line), tempfile);
-		if (fwrite(line, sizeof(char), copycount, cfgfile) != copycount)
+		if (copycount <= 0
+		    || fwrite(line, sizeof(char), copycount, cfgfile) != copycount)
 		{
 			fclose(cfgfile);
 			fclose(tempfile);
+			if (bUseTempCfg)
+				unlink(sTempCfgName);
 			return -1;
 		}
 	}
 
 	fclose(cfgfile);
 	fclose(tempfile);
+	if (bUseTempCfg)
+		unlink(sTempCfgName);
+
 	return count;
 }
 
