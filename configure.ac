@@ -133,8 +133,12 @@ AC_CHECK_FUNCS([getcwd memmove memset mkdir rmdir strcasecmp \
 
 dnl Output
 
+# Convert e.g. /usr/share to /usr/share/hatari :
 if test "${datadir}" = '${prefix}/share'; then
   datadir='${prefix}/share/hatari'
+fi
+if test "${datadir}" = '${datarootdir}'; then
+  datadir='${datarootdir}/hatari'
 fi
 
 AC_SUBST(HOSTCC)
