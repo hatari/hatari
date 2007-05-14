@@ -28,10 +28,10 @@
 		9613230D0B5BD14B00007C3E /* ioMemTabST.c in Sources */ = {isa = PBXBuildFile; fileRef = 961323080B5BD14B00007C3E /* ioMemTabST.c */; };
 		9613230E0B5BD14B00007C3E /* ioMemTabSTE.c in Sources */ = {isa = PBXBuildFile; fileRef = 961323090B5BD14B00007C3E /* ioMemTabSTE.c */; };
 		9613230F0B5BD14B00007C3E /* ioMemTabTT.c in Sources */ = {isa = PBXBuildFile; fileRef = 9613230A0B5BD14B00007C3E /* ioMemTabTT.c */; };
-		961323100B5BD14B00007C3E /* nvram.c in Sources */ = {isa = PBXBuildFile; fileRef = 9613230B0B5BD14B00007C3E /* nvram.c */; };
 		961323130B5BD17700007C3E /* ide.h in Headers */ = {isa = PBXBuildFile; fileRef = 961323110B5BD17700007C3E /* ide.h */; };
-		961323140B5BD17700007C3E /* nvram.h in Headers */ = {isa = PBXBuildFile; fileRef = 961323120B5BD17700007C3E /* nvram.h */; };
 		961323300B5BD66600007C3E /* ide.c in Sources */ = {isa = PBXBuildFile; fileRef = 9613232F0B5BD66600007C3E /* ide.c */; };
+		96635B770BF86FDF00518B3B /* nvram.c in Sources */ = {isa = PBXBuildFile; fileRef = 96635B750BF86FDF00518B3B /* nvram.c */; };
+		96635B780BF86FDF00518B3B /* nvram.h in Headers */ = {isa = PBXBuildFile; fileRef = 96635B760BF86FDF00518B3B /* nvram.h */; };
 		9670E1100A5FA132009A73E0 /* SDLMain.h in Headers */ = {isa = PBXBuildFile; fileRef = F5A47A9D01A0482F01D3D55B /* SDLMain.h */; };
 		9670E1110A5FA132009A73E0 /* font10x16.h in Headers */ = {isa = PBXBuildFile; fileRef = E9283E9607512EA200DA6B24 /* font10x16.h */; };
 		9670E1120A5FA132009A73E0 /* font5x8.h in Headers */ = {isa = PBXBuildFile; fileRef = E9283E9807512EA200DA6B24 /* font5x8.h */; };
@@ -226,14 +226,14 @@
 		961323080B5BD14B00007C3E /* ioMemTabST.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ioMemTabST.c; path = src/ioMemTabST.c; sourceTree = "<group>"; };
 		961323090B5BD14B00007C3E /* ioMemTabSTE.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ioMemTabSTE.c; path = src/ioMemTabSTE.c; sourceTree = "<group>"; };
 		9613230A0B5BD14B00007C3E /* ioMemTabTT.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ioMemTabTT.c; path = src/ioMemTabTT.c; sourceTree = "<group>"; };
-		9613230B0B5BD14B00007C3E /* nvram.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = nvram.c; path = src/nvram.c; sourceTree = "<group>"; };
 		961323110B5BD17700007C3E /* ide.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ide.h; path = src/includes/ide.h; sourceTree = "<group>"; };
-		961323120B5BD17700007C3E /* nvram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nvram.h; path = src/includes/nvram.h; sourceTree = "<group>"; };
 		9613232F0B5BD66600007C3E /* ide.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ide.c; path = src/ide.c; sourceTree = "<group>"; };
 		962F64E909A922B20054BE9B /* PrefsController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrefsController.h; sourceTree = "<group>"; };
 		962F64EA09A922B20054BE9B /* PrefsController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PrefsController.m; sourceTree = "<group>"; };
 		9652821A0998134C00BE6A34 /* cycles.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cycles.c; path = src/cycles.c; sourceTree = "<group>"; };
 		9652821F0998136500BE6A34 /* cycles.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cycles.h; sourceTree = "<group>"; };
+		96635B750BF86FDF00518B3B /* nvram.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = nvram.c; path = src/falcon/nvram.c; sourceTree = "<group>"; };
+		96635B760BF86FDF00518B3B /* nvram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nvram.h; path = src/falcon/nvram.h; sourceTree = "<group>"; };
 		9670E1B00A5FA132009A73E0 /* Info-Hatari.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "Info-Hatari.plist"; sourceTree = "<group>"; };
 		9670E1B10A5FA132009A73E0 /* Hatari.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hatari.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9670E1C10A5FA25A009A73E0 /* SDL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL.framework; path = /Library/Frameworks/SDL.framework; sourceTree = "<absolute>"; };
@@ -453,13 +453,13 @@
 		29B97315FDCFA39411CA2CEA /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
+				96635B750BF86FDF00518B3B /* nvram.c */,
+				96635B760BF86FDF00518B3B /* nvram.h */,
 				961323110B5BD17700007C3E /* ide.h */,
-				961323120B5BD17700007C3E /* nvram.h */,
 				961323070B5BD14B00007C3E /* ioMemTabFalcon.c */,
 				961323080B5BD14B00007C3E /* ioMemTabST.c */,
 				961323090B5BD14B00007C3E /* ioMemTabSTE.c */,
 				9613230A0B5BD14B00007C3E /* ioMemTabTT.c */,
-				9613230B0B5BD14B00007C3E /* nvram.c */,
 				961322EF0B5BD0B800007C3E /* araglue.h */,
 				961322F00B5BD0B800007C3E /* dsp_cpu.c */,
 				961322F10B5BD0B800007C3E /* dsp_cpu.h */,
@@ -771,7 +771,7 @@
 				961323030B5BD0B800007C3E /* hostscreen.h in Headers */,
 				961323060B5BD0B800007C3E /* videl.h in Headers */,
 				961323130B5BD17700007C3E /* ide.h in Headers */,
-				961323140B5BD17700007C3E /* nvram.h in Headers */,
+				96635B780BF86FDF00518B3B /* nvram.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -941,8 +941,8 @@
 				9613230D0B5BD14B00007C3E /* ioMemTabST.c in Sources */,
 				9613230E0B5BD14B00007C3E /* ioMemTabSTE.c in Sources */,
 				9613230F0B5BD14B00007C3E /* ioMemTabTT.c in Sources */,
-				961323100B5BD14B00007C3E /* nvram.c in Sources */,
 				961323300B5BD66600007C3E /* ide.c in Sources */,
+				96635B770BF86FDF00518B3B /* nvram.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
