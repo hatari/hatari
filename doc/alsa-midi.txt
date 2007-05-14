@@ -142,6 +142,9 @@ List of some soft-synthetizers:
 socat:
   http://www.dest-unreach.org/socat/
 
+MidiMaze:
+  http://en.wikipedia.org/wiki/MIDI_Maze
+
 
 Overviews:
 
