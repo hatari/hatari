@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.63 2007-01-18 09:24:25 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.64 2007-05-18 17:53:33 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -290,12 +290,12 @@ static void Screen_SetResolution(void)
   }
 
   /* Set zoom factors, used for scaling mouse motions */
-  if (STRes == ST_LOW_RES && ConfigureParams.Screen.bZoomLowRes)
+  if (STRes == ST_LOW_RES && ConfigureParams.Screen.bZoomLowRes && !bUseVDIRes)
   {
     nScreenZoomX = 2;
     nScreenZoomY = 2;
   }
-  else if (STRes == ST_MEDIUM_RES)
+  else if (STRes == ST_MEDIUM_RES && !bUseVDIRes)
   {
     nScreenZoomX = 1;
     nScreenZoomY = 2;
