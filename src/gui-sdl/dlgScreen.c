@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.12 2007-01-13 11:57:41 thothy Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.13 2007-06-29 20:01:46 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -212,7 +212,7 @@ void Dialog_ScreenDlg(void)
     DialogParams.Screen.bZoomLowRes = FALSE;
 
   DialogParams.Screen.bUseExtVdiResolutions = (screendlg[DLGSCRN_USEVDIRES].state & SG_SELECTED);
-  for (i = DLGSCRN_SKIP0; i <= DLGSCRN_SKIP3; i++)
+  for (i = DLGSCRN_SKIP0; i <= DLGSCRN_SKIP4; i++)
   {
     if (screendlg[i].state & SG_SELECTED)
     {
