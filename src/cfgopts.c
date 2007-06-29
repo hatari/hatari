@@ -54,7 +54,7 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.11 2007-05-12 09:24:36 thothy Exp $";
+const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.12 2007-06-29 19:54:57 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -470,8 +470,9 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 	{
 		size_t copycount;
 		copycount = fread(line, sizeof(char), sizeof(line), tempfile);
-		if (copycount <= 0
-		    || fwrite(line, sizeof(char), copycount, cfgfile) != copycount)
+		if (copycount == 0)
+			break;
+		if (fwrite(line, sizeof(char), copycount, cfgfile) != copycount)
 		{
 			fclose(cfgfile);
 			fclose(tempfile);
