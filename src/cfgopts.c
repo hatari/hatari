@@ -54,7 +54,7 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.12 2007-06-29 19:54:57 thothy Exp $";
+const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.13 2007-07-29 21:17:34 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -277,6 +277,26 @@ static int write_token(FILE *outfile, const struct Config_Tag *ptr)
 
 
 /**
+ * Write given section header and tokens for that
+ * Return number of written tokens
+ */
+static int write_header_tokens(FILE *fp, const struct Config_Tag *ptr, const char *header)
+{
+	int count = 0;
+	if (header != NULL)
+	{
+		fprintf(fp, "%s\n", header);
+	}
+	for (; ptr->buf; ++ptr)        /* scan for token */
+	{
+		if (write_token(fp, ptr) == 0)
+			++count;
+	}
+	return count;
+}
+
+
+/**
  * ---------------------------------------------------------------------/
  * /   updates an input configuration (INI) file from a structure.
  * /---------------------------------------------------------------------
@@ -292,7 +312,7 @@ static int write_token(FILE *outfile, const struct Config_Tag *ptr)
 int update_config(const char *filename, const struct Config_Tag configs[], const char *header)
 {
 	const struct Config_Tag *ptr;
-	int count=0, lineno=0;
+	int count=0, lineno=0, retval;
 	FILE *cfgfile, *tempfile;
 	char *fptr, *tok, *next;
 	char line[1024];
@@ -307,36 +327,28 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 		cfgfile = fopen(filename, "w");
 		if (cfgfile == NULL)
 			return -1;                             /* return error designation. */
-		if (header != NULL)
-		{
-			fprintf(cfgfile,"%s\n",header);
-		}
-		for (ptr=configs; ptr->buf; ++ptr)        /* scan for token */
-		{
-			if (write_token(cfgfile, ptr) == 0)
-				++count;
-		}
-
+		count = write_header_tokens(cfgfile, configs, header);
 		fclose(cfgfile);
 		return count;
 	}
 
 	tempfile = tmpfile();                        /* Open a temporary file for output */
-	if (tempfile == NULL)
-	{
+ 	if (tempfile == NULL)
+ 	{
 		/* tmpfile() failed, let's try a normal open */
 		tempfile = fopen(sTempCfgName, "w+");
 		bUseTempCfg = TRUE;
 	}
 	if (tempfile == NULL)
 	{
-		fclose(cfgfile);
 		perror("update_config");
-		return -1;                               /* return error designation. */
+		fclose(cfgfile);
+		return -1;                         /* return error designation. */
 	}
 
 	if (header != NULL)
 	{
+		int headerlen = strlen(header);
 		do
 		{
 			fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
@@ -344,36 +356,29 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 				break;
 			fprintf(tempfile, "%s", line);
 		}
-		while(memcmp(line, header, strlen(header)));
+		while(memcmp(line, header, headerlen));
 	}
 
 	if (feof(cfgfile))
 	{
-		if (header != NULL)
-		{
-			fprintf(tempfile, "\n%s\n", header);
-		}
-		for (ptr = configs; ptr->buf; ++ptr)                /* scan for token */
-		{
-			if (write_token(tempfile, ptr) == 0)
-				++count;
-		}
+		count += write_header_tokens(tempfile, configs, header);
 	}
 	else
 	{
-		char *savedtokenflags;            /* Array to log the saved tokens */
-		int numtokens;                    /* Total number of tokens to save */
+		char *savedtokenflags = NULL;   /* Array to log the saved tokens */
+		int numtokens = 0;              /* Total number of tokens to save */
 
 		/* Find total number of tokens: */
-		numtokens = 0;
 		for (ptr=configs; ptr->buf; ++ptr)
 		{
 			numtokens += 1;
 		}
-
-		savedtokenflags = malloc(numtokens * sizeof(char));
-		if (savedtokenflags)
-			memset(savedtokenflags, 0, numtokens * sizeof(char));
+		if (numtokens)
+		{
+			savedtokenflags = malloc(numtokens * sizeof(char));
+			if (savedtokenflags)
+				memset(savedtokenflags, 0, numtokens * sizeof(char));
+		}
 
 		for(;;)
 		{
@@ -429,8 +434,10 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 		}
 
 		if (savedtokenflags)
+		{
 			free(savedtokenflags);
-		savedtokenflags = NULL;
+			savedtokenflags = NULL;
+		}
 
 		if (!feof(cfgfile) && fptr != NULL)
 			fprintf(tempfile, "\n%s", line);
@@ -448,25 +455,15 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 	/* Re-open the config file for writing: */
 	fclose(cfgfile);
 	cfgfile = fopen(filename, "wb");
-	if (cfgfile == NULL)
+	if (cfgfile == NULL || fseek(tempfile, 0, SEEK_SET) != 0)
 	{
-		fclose(tempfile);
-		if (bUseTempCfg)
-			unlink(sTempCfgName);
-		return -1;
-	}
-
-	if (fseek(tempfile, 0, SEEK_SET) != 0)
-	{
-		fclose(cfgfile);
-		fclose(tempfile);
-		if (bUseTempCfg)
-			unlink(sTempCfgName);
-		return -1;
+		retval = -1;
+		goto cleanup;
 	}
 
 	/* Now copy the temporary file to the configuration file: */
-	while(!feof(tempfile))
+	retval = count;
+	while(!(feof(tempfile) || ferror(cfgfile)))
 	{
 		size_t copycount;
 		copycount = fread(line, sizeof(char), sizeof(line), tempfile);
@@ -474,19 +471,24 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 			break;
 		if (fwrite(line, sizeof(char), copycount, cfgfile) != copycount)
 		{
-			fclose(cfgfile);
-			fclose(tempfile);
-			if (bUseTempCfg)
-				unlink(sTempCfgName);
-			return -1;
+			retval = -1;
+			break;
 		}
 	}
-
-	fclose(cfgfile);
-	fclose(tempfile);
-	if (bUseTempCfg)
-		unlink(sTempCfgName);
-
-	return count;
+cleanup:
+	if (cfgfile)
+	{
+		if (ferror(cfgfile))
+			perror("update_config");
+		fclose(cfgfile);
+	}
+	if (tempfile)
+	{
+		/* tmpfile() is removed automatically on close */
+		fclose(tempfile);
+		if (bUseTempCfg)
+			unlink(sTempCfgName);
+	}
+	return retval;
 }
 
