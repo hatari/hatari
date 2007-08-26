@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-const char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.25 2006-02-08 22:46:10 eerot Exp $";
+const char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.26 2007-08-26 17:16:37 eerot Exp $";
 
 
 #include <stdio.h>
@@ -132,11 +132,10 @@ unsigned long OpCode_SysInit(uae_u32 opcode)
     /* Init on boot - see cart.c */
     GemDOS_Boot();
 
-    /* We use this to get pointer to Line-A structure details
-     * (to fix for extended VDI res) */
-    LineABase = regs.regs[0];  /* D0 */
-    FontBase = regs.regs[9];   /* A1 */
-    VDI_LineA();
+    /* Update LineA for extended VDI res
+     * D0: LineA base, A1: Font base
+     */
+    VDI_LineA(regs.regs[0], regs.regs[9]);
   }
 
   m68k_incpc(2);

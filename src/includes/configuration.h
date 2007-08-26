@@ -196,6 +196,8 @@ typedef struct
   BOOL bZoomLowRes;
   BOOL bUseExtVdiResolutions;
   int nVdiResolution;
+  int nVdiWidth;
+  int nVdiHeight;
   int nVdiColors;
   BOOL bCaptureChange;
   int nFramesPerSecond;

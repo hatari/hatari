@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.22 2007-03-10 17:49:33 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.23 2007-08-26 17:16:37 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,6 +59,8 @@ enum {
 	OPT_BLITTER,
 	OPT_DSP,
 	OPT_VDI,
+	OPT_VDIX,
+	OPT_VDIY,
 	OPT_MEMSIZE,
 	OPT_CONFIGFILE,
 	OPT_KEYMAPFILE,
@@ -127,10 +129,14 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Use a more compatible (but slower) 68000 CPU mode" },
 	{ OPT_BLITTER,   NULL, "--blitter",
 	  NULL, "Enable blitter emulation (ST only)" },
-	{ OPT_DSP,   NULL, "--dsp",
+	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x=none/dummy/emu, experimental, Falcon only)" },
 	{ OPT_VDI,       NULL, "--vdi",
 	  NULL, "Use extended VDI resolution" },
+	{ OPT_VDIX,      NULL, "--vdix",
+	  "<x>", "VDI resolution width (320 < x <= 1024)" },
+	{ OPT_VDIY,      NULL, "--vdiy",
+	  "<x>", "VDI resolution height (200 < x <= 768)" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
 	  "<x>", "ST RAM size. x = size in MiB from 0 to 14, 0 for 512KiB" },
 	{ OPT_CONFIGFILE,"-c", "--configfile",
@@ -496,6 +502,18 @@ void Opt_ParseParameters(int argc, char *argv[],
 			break;
 
 		case OPT_VDI:
+			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
+			break;
+
+		case OPT_VDIX:
+			ConfigureParams.Screen.nVdiWidth = atoi(argv[++i]);
+			ConfigureParams.Screen.nVdiResolution = GEMRES_OTHER;
+			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
+			break;
+
+		case OPT_VDIY:
+			ConfigureParams.Screen.nVdiHeight = atoi(argv[++i]);
+			ConfigureParams.Screen.nVdiResolution = GEMRES_OTHER;
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
 			break;
 			

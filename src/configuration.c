@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.65 2007-02-27 20:53:52 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.66 2007-08-26 17:16:37 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -53,6 +53,8 @@ static const struct Config_Tag configs_Screen[] =
 	{ "MonitorType", Int_Tag, &ConfigureParams.Screen.MonitorType },
 	{ "bUseExtVdiResolutions", Bool_Tag, &ConfigureParams.Screen.bUseExtVdiResolutions },
 	{ "nVdiResolution", Int_Tag, &ConfigureParams.Screen.nVdiResolution },
+	{ "nVdiWidth", Int_Tag, &ConfigureParams.Screen.nVdiWidth },
+	{ "nVdiHeight", Int_Tag, &ConfigureParams.Screen.nVdiHeight },
 	{ "nVdiColors", Int_Tag, &ConfigureParams.Screen.nVdiColors },
 	{ "bCaptureChange", Bool_Tag, &ConfigureParams.Screen.bCaptureChange },
 	{ "nFramesPerSecond", Int_Tag, &ConfigureParams.Screen.nFramesPerSecond },
@@ -390,6 +392,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.MonitorType = MONITOR_TYPE_RGB;
 	ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
 	ConfigureParams.Screen.nVdiResolution = GEMRES_640x480;
+	ConfigureParams.Screen.nVdiWidth = 0;
+	ConfigureParams.Screen.nVdiHeight = 0;
 	ConfigureParams.Screen.nVdiColors = GEMCOLOUR_16;
 	ConfigureParams.Screen.bCaptureChange = FALSE;
 	ConfigureParams.Screen.nFramesPerSecond = 25;
@@ -627,6 +631,8 @@ void Configuration_MemorySnapShot_Capture(BOOL bSave)
 	MemorySnapShot_Store(&ConfigureParams.Screen.MonitorType, sizeof(ConfigureParams.Screen.MonitorType));
 	MemorySnapShot_Store(&ConfigureParams.Screen.bUseExtVdiResolutions, sizeof(ConfigureParams.Screen.bUseExtVdiResolutions));
 	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiResolution, sizeof(ConfigureParams.Screen.nVdiResolution));
+	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiWidth, sizeof(ConfigureParams.Screen.nVdiWidth));
+	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiHeight, sizeof(ConfigureParams.Screen.nVdiHeight));
 	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiColors, sizeof(ConfigureParams.Screen.nVdiColors));
 
 	MemorySnapShot_Store(&ConfigureParams.System.nCpuLevel, sizeof(ConfigureParams.System.nCpuLevel));

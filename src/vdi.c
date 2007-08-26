@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.20 2007-01-16 18:42:59 thothy Exp $";
+const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.21 2007-08-26 17:16:37 eerot Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -21,17 +21,23 @@ const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.20 2007-01-16 18:42:59 thothy Ex
 #include "stMemory.h"
 #include "vdi.h"
 #include "video.h"
+#include "configuration.h"
 #include "uae-cpu/newcpu.h"
 
 
-BOOL bUseVDIRes=FALSE;             /* Set to TRUE (if want VDI), or FALSE (ie for games) */
-Uint32 LineABase;                  /* Line-A structure */
-Uint32 FontBase;                   /* Font base, used for 16-pixel high font */
 Uint32 VDI_OldPC;                  /* When call Trap#2, store off PC */
 
-int VDIWidth=640,VDIHeight=480;    /* 640x480,800x600 or 1024x768 */
-int VDIRes=0;                      /* 0,1 or 2(low, medium, high) */
-int VDIPlanes=4,VDIColours=16,VDICharHeight=8;  /* To match VDIRes */
+BOOL bUseVDIRes = FALSE;           /* Set to TRUE (if want VDI), or FALSE (ie for games) */
+/* defaults */
+int VDIRes = 0;                    /* 0,1 or 2 (low, medium, high) */
+int VDIWidth = 640;                /* 640x480, 800x600 or 1024x768 */
+int VDIHeight = 480;
+int VDIPlanes = 4;
+static int VDIColours = 16;
+static int VDICharHeight = 8;
+
+static Uint32 LineABase;           /* Line-A structure */
+static Uint32 FontBase;            /* Font base, used for 16-pixel high font */
 
 static Uint32 Control;
 static Uint32 Intin;
@@ -94,27 +100,28 @@ static const Uint8 NewDeskScript[786] =
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Returns given value after making it evenly divisable by "align"
+ * and within "min" and "max" values.
+ */
+static int limit(int value, int align, int min, int max)
+{
+	value = (value/align)*align;
+	if (value < min) {
+		value = min;
+	}
+	if (value > max) {
+		value = max;
+	}
+	return value;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Set Width/Height/BitDepth according to passed GEMRES_640x480, GEMRES_800x600 or GEMRES_1024x768
  */
 void VDI_SetResolution(int GEMRes,int GEMColour)
 {
-  /* Resolution */
-  switch(GEMRes)
-  {
-    case GEMRES_640x480:
-      VDIWidth = 640;
-      VDIHeight = 480;
-      break;
-    case GEMRES_800x600:
-      VDIWidth = 800;
-      VDIHeight = 600;
-      break;
-    case GEMRES_1024x768:
-      VDIWidth = 1024;
-      VDIHeight = 768;
-      break;
-  }
-
   /* Colour depth */
   switch(GEMColour)
   {
@@ -135,6 +142,29 @@ void VDI_SetResolution(int GEMRes,int GEMColour)
       VDIPlanes = 4;
       VDIColours = 16;
       VDICharHeight = 8;
+      break;
+  }
+
+  /* Resolution */
+  switch(GEMRes)
+  {
+    case GEMRES_640x480:
+      VDIWidth = 640;
+      VDIHeight = 480;
+      break;
+    case GEMRES_800x600:
+      VDIWidth = 800;
+      VDIHeight = 600;
+      break;
+    case GEMRES_1024x768:
+      VDIWidth = 1024;
+      VDIHeight = 768;
+      break;
+    case GEMRES_OTHER:
+      /* width needs to be divisable by 128 in TOS < 4 in mono */
+      VDIWidth = limit(ConfigureParams.Screen.nVdiWidth, 128, 384, 1024);
+      /* height needs to be multiple of cell height */
+      VDIHeight = limit(ConfigureParams.Screen.nVdiHeight, VDICharHeight, 208, 768);
       break;
   }
 
@@ -173,7 +203,7 @@ BOOL VDI(void)
 */
 
   /* Call as normal! */
-  return(FALSE);
+  return FALSE;
 }
 
 
@@ -181,22 +211,23 @@ BOOL VDI(void)
 /**
  * Modify Line-A structure for our VDI resolutions
  */
-void VDI_LineA(void)
+void VDI_LineA(Uint32 linea, Uint32 fontbase)
 {
   if (bUseVDIRes)
   {
-    STMemory_WriteWord(LineABase-6*2,VDIWidth);                      /* v_rez_hz */
-    STMemory_WriteWord(LineABase-2*2,VDIHeight);                     /* v_rez_vt */
-    STMemory_WriteWord(LineABase-1*2,(VDIWidth*VDIPlanes)/8);        /* bytes_lin */
-    STMemory_WriteWord(LineABase+1*2,(VDIWidth*VDIPlanes)/8);        /* width */
+    STMemory_WriteWord(linea-46,VDICharHeight);                /* v_cel_ht */
+    STMemory_WriteWord(linea-44,(VDIWidth/8)-1);               /* v_cel_mx (cols-1) */
+    STMemory_WriteWord(linea-42,(VDIHeight/VDICharHeight)-1);  /* v_cel_my (rows-1) */
+    STMemory_WriteWord(linea-40,VDICharHeight*((VDIWidth*VDIPlanes)/8));  /* v_cel_wr */
 
-    STMemory_WriteWord(LineABase-23*2,VDICharHeight);                /* char height */
-    STMemory_WriteWord(LineABase-22*2,(VDIWidth/8)-1);               /* v_cel_mx */
-    STMemory_WriteWord(LineABase-21*2,(VDIHeight/VDICharHeight)-1);  /* v_cel_my */
-    STMemory_WriteWord(LineABase-20*2,VDICharHeight*((VDIWidth*VDIPlanes)/8));  /* v_cel_wr */
-
-    STMemory_WriteWord(LineABase-0*2,VDIPlanes);                     /* planes */
+    STMemory_WriteWord(linea-12,VDIWidth);                      /* v_rez_hz */
+    STMemory_WriteWord(linea-4, VDIHeight);                     /* v_rez_vt */
+    STMemory_WriteWord(linea-2, (VDIWidth*VDIPlanes)/8);        /* bytes_lin */
+    STMemory_WriteWord(linea+0, VDIPlanes);                     /* planes */
+    STMemory_WriteWord(linea+2, (VDIWidth*VDIPlanes)/8);        /* width */
   }
+  LineABase = linea;
+  FontBase = fontbase;
 }
 
 
@@ -220,7 +251,7 @@ void VDI_Complete(void)
     STMemory_WriteWord(LineABase-0x15a*2,VDIWidth-1);              /* WKXRez */
     STMemory_WriteWord(LineABase-0x159*2,VDIHeight-1);             /* WKYRez */
 
-    VDI_LineA();                  /* And modify Line-A structure accordingly */
+    VDI_LineA(LineABase, FontBase);  /* And modify Line-A structure accordingly */
   }
 }
 
