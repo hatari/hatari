@@ -53,6 +53,7 @@
 #define GEMDOS_FILE_ATTRIB_SYSTEM_FILE   0x04
 #define GEMDOS_FILE_ATTRIB_VOLUME_LABEL  0x08
 #define GEMDOS_FILE_ATTRIB_SUBDIRECTORY  0x10
+/* file was written and closed correctly (used automatically on gemdos >=0.15) */
 #define GEMDOS_FILE_ATTRIB_WRITECLOSE    0x20
 
 #endif /* HATARI_GEMDOS_DEFINES_H */

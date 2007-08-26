@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.60 2007-01-16 18:42:59 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.61 2007-08-26 19:54:36 eerot Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -52,7 +52,7 @@ const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.60 2007-01-16 18:42:59 tho
 #include "uae-cpu/maccess.h"
 
 
-// #define GEMDOS_VERBOSE
+//#define GEMDOS_VERBOSE
 // uncomment the following line to debug filename lookups on hd
 // #define GEMDOS_FILE_DEBUG 1
 
@@ -1216,57 +1216,58 @@ static BOOL GemDOS_Create(Uint32 Params)
 {
 	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
-	const char *rwflags[] =
-		{
-			"w+", /* read / write (truncate if exists) */
-			"wb"  /* write only */
-		};
 	int Drive,Index,Mode;
+	const char *rwflags;
 
 	/* Find filename */
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
 	Mode = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
 	Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
-	if (ISHARDDRIVE(Drive))
+	if (!ISHARDDRIVE(Drive))
 	{
-		/* And convert to hard drive filename */
-		GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
-
-		/* Find slot to store file handle, as need to return WORD handle for ST */
-		Index = GemDOS_FindFreeFileHandle();
-		if (Index==-1)
-		{
-			/* No free handles, return error code */
-			Regs[REG_D0] = GEMDOS_ENHNDL;       /* No more handles */
-			return TRUE;
-		}
-		else
-		{
-#ifdef ENABLE_SAVING
-
-			FileHandles[Index].FileHandle = fopen(szActualFileName, rwflags[Mode&0x01]);
-
-			if (FileHandles[Index].FileHandle != NULL)
-			{
-				/* Tag handle table entry as used and return handle */
-				FileHandles[Index].bUsed = TRUE;
-				Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
-				return TRUE;
-			}
-			else
-			{
-				Regs[REG_D0] = GEMDOS_EFILNF;     /* File not found */
-				return TRUE;
-			}
-#else
-			Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
-			return TRUE;
-#endif
-
-		}
+		return FALSE;
 	}
-
-	return FALSE;
+	/* And convert to hard drive filename */
+	GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
+	
+	/* Find slot to store file handle, as need to return WORD handle for ST */
+	Index = GemDOS_FindFreeFileHandle();
+	if (Index==-1)
+	{
+		/* No free handles, return error code */
+		Regs[REG_D0] = GEMDOS_ENHNDL;       /* No more handles */
+		return TRUE;
+	}
+	if (Mode == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
+	{
+		fprintf(stderr, "Warning: Hatari doesn't support GEMDOS volume label setting\n(for '%s')\n", szActualFileName);
+		Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
+		return TRUE;
+	}
+#ifdef ENABLE_SAVING
+	/* FIXME: implement other Mode attributes
+	 * - GEMDOS_FILE_ATTRIB_HIDDEN       (FA_HIDDEN)
+	 * - GEMDOS_FILE_ATTRIB_SYSTEM_FILE  (FA_SYSTEM)
+	 * - GEMDOS_FILE_ATTRIB_SUBDIRECTORY (FA_DIR)
+	 * - GEMDOS_FILE_ATTRIB_WRITECLOSE   (FA_ARCHIVE)
+	 *   (set automatically by GemDOS >= 0.15)
+	 */
+	if (Mode & GEMDOS_FILE_ATTRIB_READONLY)
+		rwflags = "wb";
+	else
+		rwflags = "wb+";
+	FileHandles[Index].FileHandle = fopen(szActualFileName, rwflags);
+	
+	if (FileHandles[Index].FileHandle != NULL)
+	{
+		/* Tag handle table entry as used and return handle */
+		FileHandles[Index].bUsed = TRUE;
+		Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
+		return TRUE;
+	}
+#endif
+	Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
+	return TRUE;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1279,9 +1280,12 @@ static BOOL GemDOS_Open(Uint32 Params)
 	char szActualFileName[MAX_GEMDOS_PATH];
 	char *pszFileName;
 	const char *open_modes[] =
-		{ "rb", "wb", "r+", "rb"
-		}
-		;  /* convert atari modes to stdio modes */
+		{	/* convert atari modes to stdio modes */
+			"rb",	/* read only */
+			"rb+",	/* FIXME: should be write only, but "wb" truncates */
+			"rb+"	/* read/write */
+			"rb"	/* read only */
+		};
 	int Drive,Index,Mode;
 
 	/* Find filename */
@@ -1289,41 +1293,44 @@ static BOOL GemDOS_Open(Uint32 Params)
 	Mode = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
 	Drive = GemDOS_IsFileNameAHardDrive(pszFileName);
 
-	if (ISHARDDRIVE(Drive))
+	if (!ISHARDDRIVE(Drive))
 	{
-		/* And convert to hard drive filename */
-		GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
-		/* Find slot to store file handle, as need to return WORD handle for ST  */
-		Index = GemDOS_FindFreeFileHandle();
-		if (Index == -1)
-		{
-			/* No free handles, return error code */
-			Regs[REG_D0] = GEMDOS_ENHNDL;       /* No more handles */
-			return TRUE;
-		}
-
-		/* Open file */
-		FileHandles[Index].FileHandle =  fopen(szActualFileName, open_modes[Mode&0x03]);
-
-		snprintf(FileHandles[Index].szActualName, sizeof(FileHandles[Index].szActualName),
-		         "%s", szActualFileName);
-
-		if (FileHandles[Index].FileHandle != NULL)
-		{
-			/* Tag handle table entry as used and return handle */
-			FileHandles[Index].bUsed = TRUE;
-			Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
-			return TRUE;
-		}
-
-		if (Mode != 1 && errno == EACCES)
-			Log_Printf(LOG_DEBUG, "Missing permission to read file '%s'\n", szActualFileName);
-
-		Regs[REG_D0] = GEMDOS_EFILNF;     /* File not found/ error opening */
+		return FALSE;
+	}
+	/* And convert to hard drive filename */
+	GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
+	/* Find slot to store file handle, as need to return WORD handle for ST  */
+	Index = GemDOS_FindFreeFileHandle();
+	if (Index == -1)
+	{
+		/* No free handles, return error code */
+		Regs[REG_D0] = GEMDOS_ENHNDL;       /* No more handles */
 		return TRUE;
 	}
 
-	return FALSE;
+	/* FIXME: Open file
+	 * - fopen() modes don't allow write-only mode without truncating.
+	 *   Fixing this requires using open() and file descriptors instead
+	 *   of fopen() and FILE* pointers, but Windows doesn't support that
+	 */
+	FileHandles[Index].FileHandle =  fopen(szActualFileName, open_modes[Mode&0x03]);
+	
+	snprintf(FileHandles[Index].szActualName, sizeof(FileHandles[Index].szActualName),
+		 "%s", szActualFileName);
+	
+	if (FileHandles[Index].FileHandle != NULL)
+	{
+		/* Tag handle table entry as used and return handle */
+		FileHandles[Index].bUsed = TRUE;
+		Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
+		return TRUE;
+	}
+	
+	if (Mode != 1 && errno == EACCES)
+		Log_Printf(LOG_DEBUG, "Missing permission to read file '%s'\n", szActualFileName);
+	
+	Regs[REG_D0] = GEMDOS_EFILNF;     /* File not found/ error opening */
+	return TRUE;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1533,6 +1540,7 @@ static BOOL GemDOS_Fattrib(Uint32 Params)
 	char *psFileName;
 	int nDrive;
 	int nRwFlag, nAttrib;
+	struct stat FileStat;
 
 	/* Find filename */
 	psFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
@@ -1545,34 +1553,43 @@ static BOOL GemDOS_Fattrib(Uint32 Params)
 	Log_Printf(LOG_DEBUG, "Fattrib('%s', %d, 0x%x)\n", psFileName, nRwFlag, nAttrib);
 #endif
 
-	if (ISHARDDRIVE(nDrive))
+	if (!ISHARDDRIVE(nDrive))
 	{
-		struct stat FileStat;
+		return FALSE;
+	}
 
-		/* Convert to hard drive filename */
-		GemDOS_CreateHardDriveFileName(nDrive, psFileName, sActualFileName);
+	/* Convert to hard drive filename */
+	GemDOS_CreateHardDriveFileName(nDrive, psFileName, sActualFileName);
 
-		if (stat(sActualFileName, &FileStat) != 0)
+	if (nAttrib == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
+	{
+		fprintf(stderr, "Warning: Hatari doesn't support GEMDOS volume label setting\n(for '%s')\n", sActualFileName);
+		Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
+		return TRUE;
+	}
+	if (stat(sActualFileName, &FileStat) != 0)
+	{
+		Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
+		return TRUE;
+	}
+	if (nRwFlag == 0)
+	{
+		/* Read attributes */
+		Regs[REG_D0] = GemDOS_ConvertAttribute(FileStat.st_mode);
+		return TRUE;
+	}
+	if (nAttrib & GEMDOS_FILE_ATTRIB_READONLY)
+	{
+		/* set read-only (readable by all) */
+		if (chmod(sActualFileName, S_IRUSR|S_IRGRP|S_IROTH) == 0)
 		{
-			Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
-			return TRUE;
-		}
-
-		if (nRwFlag == 0)
-		{
-			/* Read attributes */
-			Regs[REG_D0] = GemDOS_ConvertAttribute(FileStat.st_mode);
-			return TRUE;
-		}
-		else
-		{
-			/* Write attributes */
-			Regs[REG_D0] = GEMDOS_EACCDN;         /* Acces denied */
+			Regs[REG_D0] = GEMDOS_FILE_ATTRIB_READONLY;
 			return TRUE;
 		}
 	}
-
-	return FALSE;
+	/* FIXME: support hidden/system/archive flags? */
+	Regs[REG_D0] = GEMDOS_EACCDN;         /* Acces denied */
+	return TRUE;
 }
 
 
