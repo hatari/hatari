@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.66 2007-08-26 17:16:37 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.67 2007-09-07 11:31:35 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -45,12 +45,12 @@ static const struct Config_Tag configs_Log[] =
 /* Used to load/save screen options */
 static const struct Config_Tag configs_Screen[] =
 {
-	{ "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
+	{ "MonitorType", Int_Tag, &ConfigureParams.Screen.MonitorType },
 	{ "FrameSkips", Int_Tag, &ConfigureParams.Screen.FrameSkips },
+	{ "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
 	{ "bForce8Bpp", Bool_Tag, &ConfigureParams.Screen.bForce8Bpp },
 	{ "bZoomLowRes", Bool_Tag, &ConfigureParams.Screen.bZoomLowRes },
-	{ "MonitorType", Int_Tag, &ConfigureParams.Screen.MonitorType },
 	{ "bUseExtVdiResolutions", Bool_Tag, &ConfigureParams.Screen.bUseExtVdiResolutions },
 	{ "nVdiResolution", Int_Tag, &ConfigureParams.Screen.nVdiResolution },
 	{ "nVdiWidth", Int_Tag, &ConfigureParams.Screen.nVdiWidth },
@@ -170,6 +170,8 @@ static const struct Config_Tag configs_ShortCutWithMod[] =
 	{ "keyRecSound",   Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_RECSOUND] },
 	{ "keySound",      Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SOUND] },
 	{ "keyQuit",       Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_QUIT] },
+	{ "keyLoadMem",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_LOADMEM] },
+	{ "keySaveMem",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SAVEMEM] },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -189,6 +191,8 @@ static const struct Config_Tag configs_ShortCutWithoutMod[] =
 	{ "keyRecSound",   Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_RECSOUND] },
 	{ "keySound",      Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SOUND] },
 	{ "keyQuit",       Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_QUIT] },
+	{ "keyLoadMem",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_LOADMEM] },
+	{ "keySaveMem",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SAVEMEM] },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -271,7 +275,6 @@ static const struct Config_Tag configs_Midi[] =
 /* Used to load/save system options */
 static const struct Config_Tag configs_System[] =
 {
-	{ "nMinMaxSpeed", Int_Tag, &ConfigureParams.System.nMinMaxSpeed },
 	{ "nCpuLevel", Int_Tag, &ConfigureParams.System.nCpuLevel },
 	{ "nCpuFreq", Int_Tag, &ConfigureParams.System.nCpuFreq },
 	{ "bCompatibleCpu", Bool_Tag, &ConfigureParams.System.bCompatibleCpu },
@@ -281,6 +284,7 @@ static const struct Config_Tag configs_System[] =
 	{ "bRealTimeClock", Bool_Tag, &ConfigureParams.System.bRealTimeClock },
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bSlowFDC", Bool_Tag, &ConfigureParams.System.bSlowFDC },
+	{ "nMinMaxSpeed", Int_Tag, &ConfigureParams.System.nMinMaxSpeed },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -454,7 +458,9 @@ void Configuration_Apply(BOOL bReset)
 		if (bUseVDIRes)
 		{
 			VDI_SetResolution(ConfigureParams.Screen.nVdiResolution,
-			                  ConfigureParams.Screen.nVdiColors);
+			                  ConfigureParams.Screen.nVdiColors,
+			                  ConfigureParams.Screen.nVdiWidth,
+			                  ConfigureParams.Screen.nVdiHeight);
 		}
 	}
 

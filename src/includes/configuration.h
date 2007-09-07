@@ -31,12 +31,12 @@ typedef enum
   PLAYBACK_LOW,
   PLAYBACK_MEDIUM,
   PLAYBACK_HIGH
-} SOUND_QUALITIY;
+} SOUND_QUALITY;
 
 typedef struct
 {
   BOOL bEnableSound;
-  SOUND_QUALITIY nPlaybackQuality;
+  SOUND_QUALITY nPlaybackQuality;
   char szYMCaptureFileName[FILENAME_MAX];
 } CNF_SOUND;
 

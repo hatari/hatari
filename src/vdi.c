@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.21 2007-08-26 17:16:37 eerot Exp $";
+const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.22 2007-09-07 11:31:35 eerot Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -100,27 +100,28 @@ static const Uint8 NewDeskScript[786] =
 
 /*-----------------------------------------------------------------------*/
 /**
- * Returns given value after making it evenly divisable by "align"
- * and within "min" and "max" values.
+ * Returns given value after constraining it within "min" and "max" values
+ * and making it evenly divisable by "align"
  */
 static int limit(int value, int align, int min, int max)
 {
-	value = (value/align)*align;
 	if (value < min) {
 		value = min;
 	}
 	if (value > max) {
 		value = max;
 	}
+	value = (value/align)*align;
 	return value;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Set Width/Height/BitDepth according to passed GEMRES_640x480, GEMRES_800x600 or GEMRES_1024x768
+ * Set Width/Height/BitDepth according to passed GEMRES_640x480,
+ * GEMRES_800x600, GEMRES_OTHER. Align size when necessary.
  */
-void VDI_SetResolution(int GEMRes,int GEMColour)
+void VDI_SetResolution(int GEMRes, int GEMColour, int WidthRequest, int HeightRequest)
 {
   /* Colour depth */
   switch(GEMColour)
@@ -149,24 +150,26 @@ void VDI_SetResolution(int GEMRes,int GEMColour)
   switch(GEMRes)
   {
     case GEMRES_640x480:
-      VDIWidth = 640;
-      VDIHeight = 480;
+      WidthRequest = 640;
+      HeightRequest = 480;
       break;
     case GEMRES_800x600:
-      VDIWidth = 800;
-      VDIHeight = 600;
+      WidthRequest = 800;
+      HeightRequest = 600;
       break;
     case GEMRES_1024x768:
-      VDIWidth = 1024;
-      VDIHeight = 768;
+      WidthRequest = 1024;
+      HeightRequest = 768;
       break;
     case GEMRES_OTHER:
-      /* width needs to be divisable by 128 in TOS < 4 in mono */
-      VDIWidth = limit(ConfigureParams.Screen.nVdiWidth, 128, 384, 1024);
-      /* height needs to be multiple of cell height */
-      VDIHeight = limit(ConfigureParams.Screen.nVdiHeight, VDICharHeight, 208, 768);
       break;
   }
+  /* width needs to be aligned to 16 bytes */
+  VDIWidth = limit(WidthRequest, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+  /* height needs to be multiple of cell height */
+  VDIHeight = limit(HeightRequest, VDICharHeight, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+  printf("VDI screen: request = %dx%d@%d, aligned result = %dx%d\n",
+         WidthRequest, HeightRequest, VDIPlanes, VDIWidth, VDIHeight);
 
   /* Write resolution to re-boot takes effect with correct bit-depth */
   VDI_FixDesktopInf();

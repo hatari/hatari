@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.23 2007-08-26 17:16:37 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.24 2007-09-07 11:31:35 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,8 +59,9 @@ enum {
 	OPT_BLITTER,
 	OPT_DSP,
 	OPT_VDI,
-	OPT_VDIX,
-	OPT_VDIY,
+	OPT_VDI_PLANES,
+	OPT_VDI_X,
+	OPT_VDI_Y,
 	OPT_MEMSIZE,
 	OPT_CONFIGFILE,
 	OPT_KEYMAPFILE,
@@ -133,9 +134,11 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "DSP emulation (x=none/dummy/emu, experimental, Falcon only)" },
 	{ OPT_VDI,       NULL, "--vdi",
 	  NULL, "Use extended VDI resolution" },
-	{ OPT_VDIX,      NULL, "--vdix",
+	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
+	  NULL, "VDI resolution bit-depth (x = 1/2/4)" },
+	{ OPT_VDI_X,     NULL, "--vdi-x",
 	  "<x>", "VDI resolution width (320 < x <= 1024)" },
-	{ OPT_VDIY,      NULL, "--vdiy",
+	{ OPT_VDI_Y,     NULL, "--vdi-y",
 	  "<x>", "VDI resolution height (200 < x <= 768)" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
 	  "<x>", "ST RAM size. x = size in MiB from 0 to 14, 0 for 512KiB" },
@@ -258,7 +261,7 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 void Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
-	int i, ncpu, skips, zoom;
+	int i, ncpu, skips, zoom, planes;
 	
 	for(i = 1; i < argc; i++) {
 		
@@ -505,13 +508,31 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
 			break;
 
-		case OPT_VDIX:
+		case OPT_VDI_PLANES:
+			planes = atoi(argv[++i]);
+			switch(planes) {
+			case 1:
+				ConfigureParams.Screen.nVdiColors = GEMCOLOUR_2;
+				break;
+			case 2:
+				ConfigureParams.Screen.nVdiColors = GEMCOLOUR_4;
+				break;
+			case 4:
+				ConfigureParams.Screen.nVdiColors = GEMCOLOUR_16;
+				break;
+			default:
+				Opt_ShowExit(OPT_NONE, argv[i], "Unsupported VDI bit-depth");
+			}
+			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
+			break;
+
+		case OPT_VDI_X:
 			ConfigureParams.Screen.nVdiWidth = atoi(argv[++i]);
 			ConfigureParams.Screen.nVdiResolution = GEMRES_OTHER;
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
 			break;
 
-		case OPT_VDIY:
+		case OPT_VDI_Y:
 			ConfigureParams.Screen.nVdiHeight = atoi(argv[++i]);
 			ConfigureParams.Screen.nVdiResolution = GEMRES_OTHER;
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
