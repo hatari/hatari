@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.50 2007-02-11 23:00:50 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.51 2007-09-09 20:49:59 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -31,7 +31,6 @@ const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.50 2007-02-11 23:00:50 thothy Ex
 #include "stMemory.h"
 #include "tos.h"
 #include "vdi.h"
-#include "uae-cpu/hatari-glue.h"
 
 
 Uint16 TosVersion;                      /* eg, 0x0100, 0x0102 */
@@ -275,7 +274,7 @@ static void TOS_CheckSysConfig(void)
 		ConfigureParams.System.nMachineType = MACHINE_TT;
 		IoMem_Init();
 		ConfigureParams.System.nCpuLevel = 3;
-		check_prefs_changed_cpu(ConfigureParams.System.nCpuLevel, ConfigureParams.System.bCompatibleCpu);
+		M68000_CheckCpuLevel();
 	}
 	else if ((TosVersion & 0x0f00) == 0x0400 && ConfigureParams.System.nMachineType != MACHINE_FALCON)
 	{
@@ -285,7 +284,7 @@ static void TOS_CheckSysConfig(void)
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
 		IoMem_Init();
 		ConfigureParams.System.nCpuLevel = 3;
-		check_prefs_changed_cpu(ConfigureParams.System.nCpuLevel, ConfigureParams.System.bCompatibleCpu);
+		M68000_CheckCpuLevel();
 	}
 	else if ((TosVersion < 0x0300 && ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	         || (TosVersion < 0x0200 && ConfigureParams.System.nMachineType == MACHINE_TT))
@@ -298,7 +297,7 @@ static void TOS_CheckSysConfig(void)
 		if (TosVersion <= 0x0104)
 		{
 			ConfigureParams.System.nCpuLevel = 0;
-			check_prefs_changed_cpu(ConfigureParams.System.nCpuLevel, ConfigureParams.System.bCompatibleCpu);
+			M68000_CheckCpuLevel();
 		}
 	}
 }

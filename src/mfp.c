@@ -14,7 +14,7 @@
   It shows the main details of the chip's behaviour with regard to interrupts
   and pending/service bits.
 */
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.29 2007-01-16 18:42:59 thothy Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.30 2007-09-09 20:49:59 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -225,11 +225,11 @@ static void MFP_UpdateFlags(void)
 {
   if( MFP_IPRA|MFP_IPRB )
   {
-    set_special(SPCFLAG_MFP);
+    M68000_SetSpecial(SPCFLAG_MFP);
   }
   else
   {
-    unset_special(SPCFLAG_MFP);
+    M68000_UnsetSpecial(SPCFLAG_MFP);
   }
 }
 
@@ -247,7 +247,6 @@ static BOOL MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
     /* Is masked? */
     if (MaskRegister&Bit)
     {
-      MakeSR();
       /* CPU allows interrupt of an MFP level? */
       if (6 > FIND_IPL)
       {
@@ -281,7 +280,7 @@ void MFP_CheckPendingInterrupts(void)
   if ((MFP_IPRA & 0xb5) == 0 && (MFP_IPRB & 0xf0) == 0)
   { 
     /* Should never get here, but if do just clear flag (see 'MFP_UpdateFlags') */
-    unset_special(SPCFLAG_MFP);
+    M68000_UnsetSpecial(SPCFLAG_MFP);
     return;
   }
 
@@ -880,7 +879,7 @@ void MFP_TimerCData_ReadByte(void)
  */
 void MFP_TimerDData_ReadByte(void)
 {
-	Uint32 pc = m68k_getpc();
+	Uint32 pc = M68000_GetPC();
 
 	M68000_WaitState(4);
 
@@ -1109,7 +1108,7 @@ void MFP_TimerCDCtrl_WriteByte(void)
 
 	if ((MFP_TCDCR^old_tcdcr) & 0x07)   /* Check if Timer D control changed */
 	{
-		Uint32 pc = m68k_getpc();
+		Uint32 pc = M68000_GetPC();
 
 		/* Need to change baud rate of RS232 emulation? */
 		if (ConfigureParams.RS232.bEnableRS232)
@@ -1193,7 +1192,7 @@ void MFP_TimerCData_WriteByte(void)
  */
 void MFP_TimerDData_WriteByte(void)
 {
-	Uint32 pc = m68k_getpc();
+	Uint32 pc = M68000_GetPC();
 
 	M68000_WaitState(4);
 

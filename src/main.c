@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.100 2007-01-30 20:33:49 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.101 2007-09-09 20:49:59 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -46,7 +46,7 @@ const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.100 2007-01-30 20:33:49 eerot E
 #include "ymFormat.h"
 #include "debugui.h"
 
-#include "uae-cpu/hatari-glue.h"
+#include "hatari-glue.h"
 
 #include "falcon/hostscreen.h"
 #if ENABLE_DSP_EMU
@@ -270,7 +270,7 @@ void Main_EventHandler(void)
 
     case SDL_QUIT:
        bQuitProgram = TRUE;
-       set_special(SPCFLAG_BRK);        /* Assure that CPU core shuts down */
+       M68000_SetSpecial(SPCFLAG_BRK);  /* Assure that CPU core shuts down */
        break;
 
     case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */

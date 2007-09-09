@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.22 2007-09-07 11:31:35 eerot Exp $";
+const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.23 2007-09-09 20:49:59 thothy Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -22,7 +22,6 @@ const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.22 2007-09-07 11:31:35 eerot Exp
 #include "vdi.h"
 #include "video.h"
 #include "configuration.h"
-#include "uae-cpu/newcpu.h"
 
 
 Uint32 VDI_OldPC;                  /* When call Trap#2, store off PC */

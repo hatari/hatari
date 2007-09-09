@@ -8,10 +8,10 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.39 2007-01-28 22:41:56 thothy Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.40 2007-09-09 20:49:58 thothy Exp $";
 
 #include "main.h"
-#include "bios.h"
+#include "configuration.h"
 #include "gemdos.h"
 #include "hatari-glue.h"
 #include "int.h"
@@ -20,8 +20,6 @@ const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.39 2007-01-28 22:41:56 tho
 #include "mfp.h"
 #include "stMemory.h"
 #include "tos.h"
-#include "vdi.h"
-#include "xbios.h"
 
 
 Uint32 BusErrorAddress;          /* Stores the offending address for bus-/address errors */
@@ -53,6 +51,25 @@ void M68000_Reset(BOOL bCold)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Check wether the CPU mode has been changed.
+ */
+void M68000_CheckCpuLevel(void)
+{
+#ifdef UAE_NEWCPU_H
+	check_prefs_changed_cpu(ConfigureParams.System.nCpuLevel,
+	                        ConfigureParams.System.bCompatibleCpu);
+#else
+	changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
+	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
+	changed_prefs.cpu_cycle_exact = 0;  // TODO
+	if (table68k)
+		check_prefs_changed_cpu();
+#endif
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Save/Restore snapshot of CPU variables ('MemorySnapShot_Store' handles type)
  */
 void M68000_MemorySnapShot_Capture(BOOL bSave)
@@ -66,21 +83,35 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
   /* For the UAE CPU core: */
   MemorySnapShot_Store(&address_space_24, sizeof(address_space_24));
   MemorySnapShot_Store(&regs.regs[0], sizeof(regs.regs));       /* D0-D7 A0-A6 */
+
   if (bSave)
   {
-    savepc = m68k_getpc();
+    savepc = M68000_GetPC();
     MemorySnapShot_Store(&savepc, sizeof(savepc));              /* PC */
   }
   else
   {
     MemorySnapShot_Store(&savepc, sizeof(savepc));              /* PC */
     regs.pc = savepc;
+#ifdef UAE_NEWCPU_H
     regs.prefetch_pc = regs.pc + 128;
+#endif
   }
+
+#ifdef UAE_NEWCPU_H
   MemorySnapShot_Store(&regs.prefetch, sizeof(regs.prefetch));  /* prefetch */
+#else
+  uae_u32 prefetch_dummy;
+  MemorySnapShot_Store(&prefetch_dummy, sizeof(prefetch_dummy));
+#endif
+
   if (bSave)
   {
-    MakeSR ();
+#ifdef UAE_NEWCPU_H
+    MakeSR();
+#else
+    MakeSR(&regs);
+#endif
     if (regs.s)
     {
       MemorySnapShot_Store(&regs.usp, sizeof(regs.usp));        /* USP */
@@ -103,21 +134,35 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&regs.dfc, sizeof(regs.dfc));            /* DFC */
   MemorySnapShot_Store(&regs.sfc, sizeof(regs.sfc));            /* SFC */
   MemorySnapShot_Store(&regs.vbr, sizeof(regs.vbr));            /* VBR */
+#ifdef UAE_NEWCPU_H
   MemorySnapShot_Store(&reg_caar, sizeof(reg_caar));            /* CAAR */
   MemorySnapShot_Store(&reg_cacr, sizeof(reg_cacr));            /* CACR */
+#else
+  MemorySnapShot_Store(&caar, sizeof(caar));                    /* CAAR */
+  MemorySnapShot_Store(&cacr, sizeof(cacr));                    /* CACR */
+#endif
   MemorySnapShot_Store(&regs.msp, sizeof(regs.msp));            /* MSP */
 
   if (!bSave)
   {
-    m68k_setpc (regs.pc);
+    M68000_SetPC(regs.pc);
     /* MakeFromSR() must not swap stack pointer */
     regs.s = (regs.sr >> 13) & 1;
+#ifdef UAE_NEWCPU_H
     MakeFromSR();
     /* set stack pointer */
     if (regs.s)
       m68k_areg(regs, 7) = regs.isp;
     else
       m68k_areg(regs, 7) = regs.usp;
+#else
+    MakeFromSR(&regs);
+    /* set stack pointer */
+    if (regs.s)
+      m68k_areg(&regs, 7) = regs.isp;
+    else
+      m68k_areg(&regs, 7) = regs.usp;
+#endif
   }
 
 }
@@ -131,7 +176,7 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
 void M68000_BusError(Uint32 addr, BOOL bReadWrite)
 {
   /* FIXME: In prefetch mode, m68k_getpc() seems already to point to the next instruction */
-  BusErrorPC = m68k_getpc();
+  BusErrorPC = M68000_GetPC();
 
   if(BusErrorPC < TosAddress || BusErrorPC > TosAddress + TosSize)
   {
@@ -141,7 +186,7 @@ void M68000_BusError(Uint32 addr, BOOL bReadWrite)
 
   BusErrorAddress = addr;         /* Store for exception frame */
   bBusErrorReadWrite = bReadWrite;
-  set_special(SPCFLAG_BUSERROR);    /* The exception will be done in newcpu.c */
+  M68000_SetSpecial(SPCFLAG_BUSERROR);  /* The exception will be done in newcpu.c */
 }
 
 
@@ -159,21 +204,28 @@ void M68000_Exception(Uint32 ExceptionVector)
      * (see intlev() and do_specialties() in UAE CPU core) */
     int intnr = exceptionNr - 24;
     pendingInterrupts |= (1 << intnr);
-    set_special(SPCFLAG_INT);
+    M68000_SetSpecial(SPCFLAG_INT);
   }
   else
   {
+    Uint16 SR;
+
     /* Was the CPU stopped, i.e. by a STOP instruction? */
     if(regs.spcflags & SPCFLAG_STOP)
     {
       regs.stopped = 0;
-      unset_special(SPCFLAG_STOP);      /* All is go,go,go! */
+      M68000_SetSpecial(SPCFLAG_STOP);    /* All is go,go,go! */
     }
 
     /* 68k exceptions are handled by Exception() of the UAE CPU core */
+#ifdef UAE_NEWCPU_H
     Exception(exceptionNr, m68k_getpc());
+#else
+    Exception(exceptionNr, &regs, m68k_getpc(&regs));
+#endif
 
-    MakeSR();
+    SR = M68000_GetSR();
+
     /* Set Status Register so interrupt can ONLY be stopped by another interrupt
      * of higher priority! */
 #if 0  /* VBL and HBL are handled in the UAE CPU core (see above). */
@@ -188,7 +240,8 @@ void M68000_Exception(Uint32 ExceptionVector)
       if ( (ExceptionVector>=MFPBaseVector) && (ExceptionVector<=(MFPBaseVector+0x34)) )
         SR = (SR&SR_CLEAR_IPL)|0x0600; /* MFP, level 6 */
     }
-    MakeFromSR();
+
+    M68000_SetSR(SR);
   }
 }
 
@@ -200,7 +253,7 @@ void M68000_Exception(Uint32 ExceptionVector)
  */
 void M68000_WaitState(int nCycles)
 {
-  set_special(SPCFLAG_EXTRA_CYCLES);
+  M68000_SetSpecial(SPCFLAG_EXTRA_CYCLES);
 
   nWaitStateCycles = nCycles;
 }

@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.72 2007-01-28 23:05:57 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.73 2007-09-09 20:49:59 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -898,7 +898,7 @@ void Video_InterruptHandler_VBL(void)
   {
     /* Pass NULL interrupt function to quit cleanly */
     Int_AddAbsoluteInterrupt(4, INTERRUPT_NULL);
-    set_special(SPCFLAG_BRK);         /* Assure that CPU core shuts down */
+    M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
   }
 
   Main_WaitOnVbl();

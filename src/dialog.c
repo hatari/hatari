@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.60 2007-01-30 20:33:49 eerot Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.61 2007-09-09 20:49:58 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -33,7 +33,7 @@ const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.60 2007-01-30 20:33:49 eer
 #include "vdi.h"
 #include "video.h"
 #include "sdlgui.h"
-#include "uae-cpu/hatari-glue.h"
+#include "hatari-glue.h"
 #if ENABLE_DSP_EMU
 # include "falcon/dsp.h"
 #endif
@@ -271,7 +271,7 @@ BOOL Dialog_DoProperty(void)
 	Main_UnPauseEmulation();
 
 	if (bQuitProgram)
-		set_special(SPCFLAG_BRK);           /* Assure that CPU core shuts down */
+		M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
 
 	return bOKDialog;
 }

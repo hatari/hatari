@@ -6,7 +6,7 @@
 
   ST Memory access functions.
 */
-const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.13 2007-01-16 18:42:59 thothy Exp $";
+const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.14 2007-09-09 20:49:59 thothy Exp $";
 
 #include "stMemory.h"
 #include "configuration.h"
@@ -14,7 +14,7 @@ const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.13 2007-01-16 18:42:59
 #include "ioMem.h"
 #include "tos.h"
 #include "vdi.h"
-#include "uae-cpu/memory.h"
+#include "memory.h"
 
 
 Uint8 STRam[16*1024*1024];      /* This is our ST Ram, includes all TOS/hardware areas for ease */

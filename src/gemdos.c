@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.61 2007-08-26 19:54:36 eerot Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.62 2007-09-09 20:49:58 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -48,8 +48,8 @@ const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.61 2007-08-26 19:54:36 eer
 #include "rs232.h"
 #include "scandir.h"
 #include "stMemory.h"
-#include "uae-cpu/hatari-glue.h"
-#include "uae-cpu/maccess.h"
+#include "hatari-glue.h"
+#include "maccess.h"
 
 
 //#define GEMDOS_VERBOSE
@@ -1943,18 +1943,24 @@ void GemDOS_OpCode(void)
 	unsigned short int GemDOSCall,CallingSReg;
 	Uint32 Params;
 	short RunOld;
+	Uint16 SR;
 
+	SR = M68000_GetSR();
 
 	/* Read SReg from stack to see if parameters are on User or Super stack  */
-	MakeSR();  /* update value of SR */
 	CallingSReg = STMemory_ReadWord(Regs[REG_A7]);
 	if ((CallingSReg&SR_SUPERMODE)==0)      /* Calling from user mode */
 		Params = regs.usp;
 	else
 	{
 		Params = Regs[REG_A7]+SIZE_WORD+SIZE_LONG;  /* super stack */
+#ifdef UAE_NEWCPU_H
 		if (cpu_level > 0)
 			Params += SIZE_WORD;   /* Skip extra word whe CPU is >=68010 */
+#else
+		if (currprefs.cpu_level > 0)
+			Params += SIZE_WORD;   /* Skip extra word whe CPU is >=68010 */
+#endif
 	}
 
 	/* Default to run TOS GemDos (SR_NEG run Gemdos, SR_ZERO already done, SR_OVERFLOW run own 'Pexec' */
@@ -2100,7 +2106,7 @@ void GemDOS_OpCode(void)
 		break;
 	}
 
-	MakeFromSR();  /* update the flags from the SR register */
+	M68000_SetSR(SR);   /* update the flags in the SR register */
 }
 
 

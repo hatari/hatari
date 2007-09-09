@@ -28,14 +28,14 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.18 2007-01-30 20:33:49 eerot Exp $";
+const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.19 2007-09-09 20:49:58 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
 #include "ioMemTables.h"
 #include "m68000.h"
-#include "uae-cpu/sysdeps.h"
+#include "sysdeps.h"
 
 #define IOMEM_DEBUG 0
 

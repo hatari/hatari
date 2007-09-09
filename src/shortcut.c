@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.25 2007-01-16 18:42:59 thothy Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.26 2007-09-09 20:49:59 thothy Exp $";
 
 #include <SDL.h>
 
@@ -213,7 +213,7 @@ static void ShortCut_WarmReset(void)
 static void ShortCut_Quit(void)
 {
   bQuitProgram = TRUE;           /* Quit program */
-  set_special(SPCFLAG_BRK);
+  M68000_SetSpecial(SPCFLAG_BRK);
 }
 
 

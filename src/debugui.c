@@ -8,7 +8,7 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.16 2007-01-16 18:42:59 thothy Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.17 2007-09-09 20:49:58 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -29,7 +29,7 @@ const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.16 2007-01-16 18:42:59 t
 #include "tos.h"
 #include "debugui.h"
 
-#include "uae-cpu/hatari-glue.h"
+#include "hatari-glue.h"
 
 
 #define DEBUG_QUIT     0
@@ -264,7 +264,7 @@ static void DebugUI_DisAsm(char *arg, BOOL cont)
 	}
 	else /* continue*/
 		if(!disasm_addr)
-			disasm_addr = m68k_getpc();
+			disasm_addr = M68000_GetPC();
 
 	disasm_addr &= 0x00FFFFFF;
 
@@ -331,12 +331,11 @@ static void DebugUI_RegSet(char *arg)
 	/* set SR and update conditional flags for the UAE CPU core. */
 	if (reg[0] == 'S' && reg[1] == 'R')
 	{
-		SR = value;
-		MakeFromSR();
+		M68000_SetSR(value);
 	}
 	else if (reg[0] == 'P' && reg[1] == 'C')   /* set PC? */
 	{
-		m68k_setpc( value );
+		M68000_SetPC(value);
 	}
 	else if (reg[0] == 'D')  /* Data regs? */
 	{
@@ -651,7 +650,7 @@ static int DebugUI_Getcommand(void)
 
 	 case 'q':
 		bQuitProgram = TRUE;
-		set_special(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
+		M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
 		retval = DEBUG_QUIT;
 		break;
 

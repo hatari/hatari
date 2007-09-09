@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.24 2007-09-07 11:31:35 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.25 2007-09-09 20:49:59 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,7 +27,7 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.24 2007-09-07 11:31:35 eero
 #include "vdi.h"
 #include "joy.h"
 
-#include "uae-cpu/hatari-glue.h"
+#include "hatari-glue.h"
 
 
 /*  List of supported options. */

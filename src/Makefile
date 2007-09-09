@@ -6,22 +6,19 @@
 # If you change this, do "make clean"
 ENABLE_DSP_EMU = 0
 
+# Select CPU directory:
+CPUDIR = uae-cpu
+
 # Include settings
 include ../Makefile.cnf
 
 # Additional include directories:
-CPPFLAGS += -I.. -I./includes -I./uae-cpu -I./falcon
+CPPFLAGS += -I.. -I./includes -I$(CPUDIR) -I./falcon
 CPPFLAGS += -DDATADIR=\"$(DATADIR)\" -DCONFDIR=\"$(CONFDIR)\" $(SDL_CFLAGS)
 
 ifeq ($(ENABLE_DSP_EMU),1)
 CPPFLAGS += -DENABLE_DSP_EMU=1
 endif
-
-CPUOBJS = ./uae-cpu/hatari-glue.o ./uae-cpu/memory.o ./uae-cpu/newcpu.o \
-  ./uae-cpu/readcpu.o ./uae-cpu/fpp.o ./uae-cpu/cpustbl.o ./uae-cpu/cpudefs.o \
-  ./uae-cpu/cpuemu1.o ./uae-cpu/cpuemu2.o ./uae-cpu/cpuemu3.o \
-  ./uae-cpu/cpuemu4.o ./uae-cpu/cpuemu5.o ./uae-cpu/cpuemu6.o \
-  ./uae-cpu/cpuemu7.o ./uae-cpu/cpuemu8.o
 
 GUIOBJS = ./gui-sdl/dlgAbout.o ./gui-sdl/dlgAlert.o ./gui-sdl/dlgDevice.o \
   ./gui-sdl/dlgDisc.o ./gui-sdl/dlgJoystick.o ./gui-sdl/dlgKeyboard.o \
@@ -48,7 +45,7 @@ SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c options.c \
 OBJS = $(SRCS:.c=.o)
 
 
-ALLOBJS = $(OBJS) $(GUIOBJS) $(CPUOBJS) $(FALCOBJS)
+ALLOBJS = $(OBJS) $(GUIOBJS) $(CPUDIR)/cpu68k.a $(FALCOBJS)
 
 ifeq ($(SYS_WINDOWS),1)
   ALLOBJS += $(GUIWINOBJS)
@@ -64,14 +61,9 @@ hatari: $(ALLOBJS)
 	$(CC) $(LDFLAGS) $(ALLOBJS) $(SDL_LIBS) $(LIBS) -o hatari
 
 # Sub-folder dependencies:
-uae-cpu/%.o: uae-cpu/%.c
-	$(MAKE) -C uae-cpu/ all
-uae-cpu/cpuemu%.o: uae-cpu/cpuemu.c
-	$(MAKE) -C uae-cpu/ all
-uae-cpu/cpuemu.c: uae-cpu/gencpu.o uae-cpu/readcpu.c uae-cpu/cpudefs.c
-	$(MAKE) -C uae-cpu/ cpuemu.c
-uae-cpu/cpudefs.c: uae-cpu/build68k.c uae-cpu/table68k
-	$(MAKE) -C uae-cpu/ cpudefs.c
+.PHONY : $(CPUDIR)/cpu68k.a
+$(CPUDIR)/cpu68k.a:
+	$(MAKE) -C $(CPUDIR)
 
 gui-sdl/%.o: gui-sdl/%.c
 	$(MAKE) ENABLE_DSP_EMU=$(ENABLE_DSP_EMU) -C gui-sdl/ all
@@ -80,14 +72,14 @@ gui-win/%.o:
 	$(MAKE) ENABLE_DSP_EMU=$(ENABLE_DSP_EMU) -C gui-win/ all
 
 falcon/%.o: falcon/%.c
-	$(MAKE) ENABLE_DSP_EMU=$(ENABLE_DSP_EMU) -C falcon/ all
+	$(MAKE) ENABLE_DSP_EMU=$(ENABLE_DSP_EMU) CPUDIR=$(CPUDIR) -C falcon/
 
 
 clean:
 	$(RM) *.o hatari
 	$(MAKE) -C gui-sdl/ clean
 	$(MAKE) -C gui-win/ clean
-	$(MAKE) -C uae-cpu/ clean
+	$(MAKE) -C $(CPUDIR) clean
 	$(MAKE) -C falcon/ clean
 
 distclean:
@@ -95,7 +87,7 @@ distclean:
 	$(RM) Makefile.dep *~ *.bak *.orig
 	$(MAKE) -C gui-sdl/ distclean
 	$(MAKE) -C gui-win/ distclean
-	$(MAKE) -C uae-cpu/ distclean
+	$(MAKE) -C $(CPUDIR) distclean
 	$(MAKE) -C falcon/ distclean
 
 

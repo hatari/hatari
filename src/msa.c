@@ -6,7 +6,7 @@
 
   MSA Disk support
 */
-const char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.11 2007-01-16 18:42:59 thothy Exp $";
+const char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.12 2007-09-09 20:49:59 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -16,8 +16,8 @@ const char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.11 2007-01-16 18:42:59 thothy Ex
 #include "misc.h"
 #include "msa.h"
 
-#include "uae-cpu/sysdeps.h"
-#include "uae-cpu/maccess.h"
+#include "sysdeps.h"
+#include "maccess.h"
 
 
 #define SAVE_TO_MSA_IMAGES

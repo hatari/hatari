@@ -17,24 +17,16 @@ CPUEMUSRCS = cpuemu1.c cpuemu2.c cpuemu3.c cpuemu4.c \
 CPU_OBS = $(CPUCSRCS:.c=.o) $(CPUEMUSRCS:.c=.o)
 
 
-all: $(CPU_OBS)
+all: cpu68k.a
 
+cpu68k.a: $(CPU_OBS)
+	$(AR) cru $@ $^
 
 build68k: build68k.c
 	$(HOSTCC) $(HOSTCFLAGS) -o $@ $<
 
-# Hack for compiling with MinGW (it does not like the "./" before build68k):
-ifeq ($(SHELL),sh.exe)
-
-cpudefs.c: build68k table68k
-	build68k <table68k >cpudefs.c
-
-else
-
 cpudefs.c: build68k table68k
 	./build68k <table68k >cpudefs.c
-
-endif
 
 cpudefs-host.o: cpudefs.c
 	$(HOSTCC) $(HOSTCFLAGS) -c -o $@ $<
@@ -78,7 +70,7 @@ newcpu.o: sysdeps.h hatari-glue.h maccess.h memory.h newcpu.h
 
 
 clean:
-	$(RM) *.o gencpu build68k
+	$(RM) *.o gencpu build68k cpu68k.a
 
 distclean:	clean
 	$(RM) cpudefs.c cpustbl.c cputbl.h cpuemu.c

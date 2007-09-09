@@ -1,10 +1,12 @@
 # Makefile for Hatari's Falcon support.
 
+CPUDIR ?= uae-cpu
+
 # Include settings
 include ../../Makefile.cnf
 
 # Additional include directories:
-INCFLAGS = -I../includes -I../uae-cpu $(CPPFLAGS)
+INCFLAGS = -I../includes -I../$(CPUDIR) $(CPPFLAGS)
 
 
 # Set flags passed to the compiler (e.g. optimization flags)

@@ -10,8 +10,8 @@
 
 
 /* Name and version for window title: */
-/* #define PROG_NAME "Hatari CVS (" __DATE__ ")" */
-#define PROG_NAME "Hatari v0.95"
+#define PROG_NAME "Hatari CVS (" __DATE__ ")"
+// #define PROG_NAME "Hatari v0.96"
 
 
 #include <stdio.h>
@@ -106,8 +106,6 @@ enum {
 #define  EXCEPTION_TRAP13     0x000000B4
 #define  EXCEPTION_TRAP14     0x000000B8
 
-/* Find IPL - don't forget to call MakeSR() before you use it! */
-#define FIND_IPL    ((SR>>8)&0x7)
 
 /* Size of 68000 instructions */
 #define MAX_68000_INSTRUCTION_SIZE  10  /* Longest 68000 instruction is 10 bytes(6+4) */

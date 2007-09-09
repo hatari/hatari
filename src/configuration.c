@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.67 2007-09-07 11:31:35 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.68 2007-09-09 20:49:58 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -24,7 +24,6 @@ const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.67 2007-09-0
 #include "screen.h"
 #include "vdi.h"
 #include "video.h"
-#include "uae-cpu/hatari-glue.h"
 
 
 BOOL bFirstTimeInstall = FALSE;             /* Has been run before? Used to set default joysticks etc... */
@@ -485,8 +484,7 @@ void Configuration_Apply(BOOL bReset)
 		nCpuFreqShift = 1;
 	}
 	/* Change UAE cpu_level and cpu_compatible accordingly */
-	check_prefs_changed_cpu(ConfigureParams.System.nCpuLevel,
-				ConfigureParams.System.bCompatibleCpu);
+	M68000_CheckCpuLevel();
 
 	/* Clean file and directory names */
 	File_MakeAbsoluteName(ConfigureParams.Rom.szTosImageFileName);

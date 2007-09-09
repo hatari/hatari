@@ -6,14 +6,14 @@
 
   This is where we intercept read/writes to/from the IDE controller hardware.
 */
-const char Ide_rcsid[] = "Hatari $Id: ide.c,v 1.2 2007-01-16 18:42:59 thothy Exp $";
+const char Ide_rcsid[] = "Hatari $Id: ide.c,v 1.3 2007-09-09 20:49:58 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "ide.h"
 #include "m68000.h"
 #include "stMemory.h"
-#include "uae-cpu/sysdeps.h"
+#include "sysdeps.h"
 
 
 #define IDE_DEBUG 0
