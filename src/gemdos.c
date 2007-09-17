@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.62 2007-09-09 20:49:58 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.63 2007-09-17 20:32:37 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -1954,13 +1954,8 @@ void GemDOS_OpCode(void)
 	else
 	{
 		Params = Regs[REG_A7]+SIZE_WORD+SIZE_LONG;  /* super stack */
-#ifdef UAE_NEWCPU_H
-		if (cpu_level > 0)
-			Params += SIZE_WORD;   /* Skip extra word whe CPU is >=68010 */
-#else
 		if (currprefs.cpu_level > 0)
 			Params += SIZE_WORD;   /* Skip extra word whe CPU is >=68010 */
-#endif
 	}
 
 	/* Default to run TOS GemDos (SR_NEG run Gemdos, SR_ZERO already done, SR_OVERFLOW run own 'Pexec' */

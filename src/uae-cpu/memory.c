@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.22 2006-09-27 08:58:43 thothy Exp $";
+const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.23 2007-09-17 20:32:39 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -24,6 +24,10 @@ const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.22 2006-09-27 08:58:43 tho
 #include "../includes/stMemory.h"
 #include "../includes/m68000.h"
 #include "newcpu.h"
+
+
+/* Set illegal_mem to 1 for debug output: */
+#define illegal_mem 1
 
 
 static uae_u32 STmem_size, TTmem_size = 0;
@@ -766,7 +770,7 @@ void map_banks (addrbank *bank, int start, int size)
 	return;
     }
     /* Some ROMs apparently require a 24 bit address space... */
-    if (address_space_24)
+    if (currprefs.address_space_24)
 	endhioffs = 0x10000;
     for (hioffs = 0; hioffs < endhioffs; hioffs += 0x100)
 	for (bnr = start; bnr < start+size; bnr++)

@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.40 2007-09-09 20:49:58 thothy Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.41 2007-09-17 20:32:37 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -55,16 +55,13 @@ void M68000_Reset(BOOL bCold)
  */
 void M68000_CheckCpuLevel(void)
 {
-#ifdef UAE_NEWCPU_H
-	check_prefs_changed_cpu(ConfigureParams.System.nCpuLevel,
-	                        ConfigureParams.System.bCompatibleCpu);
-#else
 	changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
 	changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
+#ifndef UAE_NEWCPU_H
 	changed_prefs.cpu_cycle_exact = 0;  // TODO
+#endif
 	if (table68k)
 		check_prefs_changed_cpu();
-#endif
 }
 
 
@@ -81,7 +78,8 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&STRamEnd,sizeof(STRamEnd));
 
   /* For the UAE CPU core: */
-  MemorySnapShot_Store(&address_space_24, sizeof(address_space_24));
+  MemorySnapShot_Store(&currprefs.address_space_24,
+                       sizeof(currprefs.address_space_24));
   MemorySnapShot_Store(&regs.regs[0], sizeof(regs.regs));       /* D0-D7 A0-A6 */
 
   if (bSave)

@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.46 2006-12-18 10:57:08 thothy Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.47 2007-09-17 20:32:39 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -119,15 +119,15 @@ void build_cpufunctbl(void)
 {
     int i;
     unsigned long opcode;
-    const struct cputbl *tbl = (cpu_level == 4 ? op_smalltbl_0_ff
-			      : cpu_level == 3 ? op_smalltbl_1_ff
-			      : cpu_level == 2 ? op_smalltbl_2_ff
-			      : cpu_level == 1 ? op_smalltbl_3_ff
-			      : ! cpu_compatible ? op_smalltbl_4_ff
+    const struct cputbl *tbl = (currprefs.cpu_level == 4 ? op_smalltbl_0_ff
+			      : currprefs.cpu_level == 3 ? op_smalltbl_1_ff
+			      : currprefs.cpu_level == 2 ? op_smalltbl_2_ff
+			      : currprefs.cpu_level == 1 ? op_smalltbl_3_ff
+			      : ! currprefs.cpu_compatible ? op_smalltbl_4_ff
 			      : op_smalltbl_5_ff);
 
     Log_Printf(LOG_DEBUG, "Building CPU function table (%d %d %d).\n",
-	           cpu_level, cpu_compatible, address_space_24);
+	           currprefs.cpu_level, currprefs.cpu_compatible, currprefs.address_space_24);
 
     for (opcode = 0; opcode < 65536; opcode++)
 	cpufunctbl[opcode] = op_illg_1;
@@ -138,7 +138,7 @@ void build_cpufunctbl(void)
     for (opcode = 0; opcode < 65536; opcode++) {
 	cpuop_func *f;
 
-	if (table68k[opcode].mnemo == i_ILLG || table68k[opcode].clev > cpu_level)
+	if (table68k[opcode].mnemo == i_ILLG || table68k[opcode].clev > currprefs.cpu_level)
 	    continue;
 
 	if (table68k[opcode].handler != -1) {
@@ -200,9 +200,9 @@ void init_m68k (void)
     }
 #endif
     write_log ("Building CPU table for configuration: 68");
-    if (address_space_24 && cpu_level > 1)
+    if (currprefs.address_space_24 && currprefs.cpu_level > 1)
         write_log ("EC");
-    switch (cpu_level) {
+    switch (currprefs.cpu_level) {
     case 1:
         write_log ("010");
         break;
@@ -220,7 +220,7 @@ void init_m68k (void)
         write_log ("000");
         break;
     }
-    if (cpu_compatible)
+    if (currprefs.cpu_compatible)
         write_log (" (compatible mode)");
     write_log ("\n");
 
@@ -637,7 +637,7 @@ void MakeFromSR (void)
     SET_ZFLG ((regs.sr >> 2) & 1);
     SET_VFLG ((regs.sr >> 1) & 1);
     SET_CFLG (regs.sr & 1);
-    if (cpu_level >= 2) {
+    if (currprefs.cpu_level >= 2) {
 	if (olds != regs.s) {
 	    if (olds) {
 		if (oldm)
@@ -719,7 +719,7 @@ void Exception(int nr, uaecptr oldpc)
     /* Change to supervisor mode if necessary */
     if (!regs.s) {
 	regs.usp = m68k_areg(regs, 7);
-	if (cpu_level >= 2)
+	if (currprefs.cpu_level >= 2)
 	    m68k_areg(regs, 7) = regs.m ? regs.msp : regs.isp;
 	else
 	    m68k_areg(regs, 7) = regs.isp;
@@ -727,7 +727,7 @@ void Exception(int nr, uaecptr oldpc)
     }
 
     /* Build additional exception stack frame for 68010 and higher */
-    if (cpu_level > 0) {
+    if (currprefs.cpu_level > 0) {
 	if (nr == 2 || nr == 3) {
 	    int i;
 	    /* @@@ this is probably wrong (?) */
@@ -768,7 +768,7 @@ void Exception(int nr, uaecptr oldpc)
     put_word (m68k_areg(regs, 7), regs.sr);
 
     /* 68000 bus/address errors: */
-    if (cpu_level==0 && (nr==2 || nr==3)) {
+    if (currprefs.cpu_level==0 && (nr==2 || nr==3)) {
 	uae_u16 specialstatus = 0x2001;
 	/* Special status word emulation isn't perfect yet... :-( */
 	if (regs.sr & 0x2000)
@@ -870,22 +870,22 @@ static uae_u32 itt0, itt1, dtt0, dtt1, tc, mmusr, urp, srp;
 static int movec_illg (int regno)
 {
     int regno2 = regno & 0x7ff;
-    if (cpu_level == 1) { /* 68010 */
+    if (currprefs.cpu_level == 1) { /* 68010 */
 	if (regno2 < 2)
 	    return 0;
 	return 1;
     }
-    if (cpu_level == 2 || cpu_level == 3) { /* 68020 */
+    if (currprefs.cpu_level == 2 || currprefs.cpu_level == 3) { /* 68020 */
 	if (regno == 3) return 1; /* 68040 only */
 	 /* 4 is >=68040, but 0x804 is in 68020 */
 	 if (regno2 < 4 || regno == 0x804)
 	    return 0;
 	return 1;
     }
-    if (cpu_level >= 4) { /* 68040 */
+    if (currprefs.cpu_level >= 4) { /* 68040 */
 	if (regno == 0x802) return 1; /* 68020 only */
 	if (regno2 < 8) return 0;
-	if (cpu_level == 6 && regno2 == 8) /* 68060 only */
+	if (currprefs.cpu_level == 6 && regno2 == 8) /* 68060 only */
 	    return 0;
 	return 1;
     }
@@ -901,7 +901,7 @@ int m68k_move2c (int regno, uae_u32 *regp)
 	switch (regno) {
 	case 0: regs.sfc = *regp & 7; break;
 	case 1: regs.dfc = *regp & 7; break;
-	case 2: reg_cacr = *regp & (cpu_level < 4 ? 0x3 : 0x80008000); break;
+	case 2: reg_cacr = *regp & (currprefs.cpu_level < 4 ? 0x3 : 0x80008000); break;
 	case 3: tc = *regp & 0xc000; break;
 	  /* Mask out fields that should be zero.  */
 	case 4: itt0 = *regp & 0xffffe364; break;
@@ -1271,7 +1271,7 @@ static uaecptr last_trace_ad = 0;
 
 static void do_trace (void)
 {
-    if (regs.t0 && cpu_level >= 2) {
+    if (regs.t0 && currprefs.cpu_level >= 2) {
 	uae_u16 opcode;
 	/* should also include TRAP, CHK, SR modification FPcc */
 	/* probably never used so why bother */
@@ -1483,7 +1483,7 @@ void m68k_go (int may_quit)
 
     in_m68k_go++;
     while (!(regs.spcflags & SPCFLAG_BRK)) {
-        if(cpu_compatible)
+        if(currprefs.cpu_compatible)
           m68k_run_1();
          else
           m68k_run_2();
@@ -1615,7 +1615,7 @@ void m68k_dumpstate (FILE *f, uaecptr *nextpc)
 	     (regs.fpsr & 0x4000000) != 0,
 	     (regs.fpsr & 0x2000000) != 0,
 	     (regs.fpsr & 0x1000000) != 0);
-    if (cpu_compatible)
+    if (currprefs.cpu_compatible)
 	fprintf (f, "prefetch %08lx\n", (unsigned long)do_get_mem_long(&regs.prefetch));
 
     m68k_disasm (f, m68k_getpc (), nextpc, 1);

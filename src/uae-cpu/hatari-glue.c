@@ -7,12 +7,13 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-const char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.26 2007-08-26 17:16:37 eerot Exp $";
+const char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.27 2007-09-17 20:32:38 thothy Exp $";
 
 
 #include <stdio.h>
 
 #include "../includes/main.h"
+#include "../includes/configuration.h"
 #include "../includes/int.h"
 #include "../includes/tos.h"
 #include "../includes/gemdos.h"
@@ -32,10 +33,7 @@ const char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.26 2007-08-26 17:
 #endif
 
 
-int illegal_mem = TRUE;
-int address_space_24 = TRUE;
-int cpu_level = 0;              /* 68000 (default) */
-int cpu_compatible = FALSE;
+struct uae_prefs currprefs, changed_prefs;
 
 int pendingInterrupts = 0;
 
@@ -75,7 +73,9 @@ int intlev(void)
 /* Initialize 680x0 emulation */
 int Init680x0(void)
 {
-  /* Note: memory_init() is now done in tos.c */
+  currprefs.cpu_level = changed_prefs.cpu_level = ConfigureParams.System.nCpuLevel;
+  currprefs.cpu_compatible = changed_prefs.cpu_compatible = ConfigureParams.System.bCompatibleCpu;
+  currprefs.address_space_24 = changed_prefs.address_space_24 = TRUE;
 
   init_m68k();
   return TRUE;
@@ -101,15 +101,14 @@ void Start680x0(void)
 
 
 /* Check if the CPU type has been changed */
-void check_prefs_changed_cpu(int new_level, int new_compatible)
+void check_prefs_changed_cpu(void)
 {
-  if(cpu_level!=new_level || cpu_compatible!=new_compatible)
+  if (currprefs.cpu_level != changed_prefs.cpu_level
+      || currprefs.cpu_compatible != changed_prefs.cpu_compatible)
   {
-    cpu_level = new_level;
-    cpu_compatible = new_compatible;
+    currprefs.cpu_level = changed_prefs.cpu_level;
+    currprefs.cpu_compatible = changed_prefs.cpu_compatible;
     set_special(SPCFLAG_MODE_CHANGE);
-    if (table68k)
-      build_cpufunctbl ();
   }
 }
 
