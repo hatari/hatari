@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.7 2007-09-17 20:32:38 thothy Exp $";
+const char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.8 2007-09-22 09:30:28 thothy Exp $";
 
 
 #define __USE_ISOC9X  /* We might be able to pick up a NaN */
@@ -20,7 +20,12 @@ const char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.7 2007-09-17 20:32:38 thothy Exp
 #include "hatari-glue.h"
 #include "memory.h"
 #include "newcpu.h"
-#include "fpp-unknown.h"
+
+#if defined(powerpc) || defined(__mc68020__)
+# include "fpp-ieee-be.h"
+#else
+# include "fpp-unknown.h"
+#endif
 
 
 #if 1
