@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.41 2007-09-17 20:32:37 thothy Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.42 2007-09-26 21:42:40 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -132,13 +132,8 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&regs.dfc, sizeof(regs.dfc));            /* DFC */
   MemorySnapShot_Store(&regs.sfc, sizeof(regs.sfc));            /* SFC */
   MemorySnapShot_Store(&regs.vbr, sizeof(regs.vbr));            /* VBR */
-#ifdef UAE_NEWCPU_H
-  MemorySnapShot_Store(&reg_caar, sizeof(reg_caar));            /* CAAR */
-  MemorySnapShot_Store(&reg_cacr, sizeof(reg_cacr));            /* CACR */
-#else
   MemorySnapShot_Store(&caar, sizeof(caar));                    /* CAAR */
   MemorySnapShot_Store(&cacr, sizeof(cacr));                    /* CACR */
-#endif
   MemorySnapShot_Store(&regs.msp, sizeof(regs.msp));            /* MSP */
 
   if (!bSave)

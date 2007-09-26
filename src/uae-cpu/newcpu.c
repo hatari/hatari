@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.47 2007-09-17 20:32:39 thothy Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.48 2007-09-26 21:42:40 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -863,7 +863,7 @@ static void Interrupt(int nr)
 }
 
 
-uae_u32 reg_caar, reg_cacr;
+uae_u32 caar, cacr;
 static uae_u32 itt0, itt1, dtt0, dtt1, tc, mmusr, urp, srp;
 
 
@@ -901,7 +901,7 @@ int m68k_move2c (int regno, uae_u32 *regp)
 	switch (regno) {
 	case 0: regs.sfc = *regp & 7; break;
 	case 1: regs.dfc = *regp & 7; break;
-	case 2: reg_cacr = *regp & (currprefs.cpu_level < 4 ? 0x3 : 0x80008000); break;
+	case 2: cacr = *regp & (currprefs.cpu_level < 4 ? 0x3 : 0x80008000); break;
 	case 3: tc = *regp & 0xc000; break;
 	  /* Mask out fields that should be zero.  */
 	case 4: itt0 = *regp & 0xffffe364; break;
@@ -911,7 +911,7 @@ int m68k_move2c (int regno, uae_u32 *regp)
 
 	case 0x800: regs.usp = *regp; break;
 	case 0x801: regs.vbr = *regp; break;
-	case 0x802: reg_caar = *regp & 0xfc; break;
+	case 0x802: caar = *regp & 0xfc; break;
 	case 0x803: regs.msp = *regp; if (regs.m == 1) m68k_areg(regs, 7) = regs.msp; break;
 	case 0x804: regs.isp = *regp; if (regs.m == 0) m68k_areg(regs, 7) = regs.isp; break;
 	case 0x805: mmusr = *regp; break;
@@ -934,7 +934,7 @@ int m68k_movec2 (int regno, uae_u32 *regp)
 	switch (regno) {
 	case 0: *regp = regs.sfc; break;
 	case 1: *regp = regs.dfc; break;
-	case 2: *regp = reg_cacr; break;
+	case 2: *regp = cacr; break;
 	case 3: *regp = tc; break;
 	case 4: *regp = itt0; break;
 	case 5: *regp = itt1; break;
@@ -942,7 +942,7 @@ int m68k_movec2 (int regno, uae_u32 *regp)
 	case 7: *regp = dtt1; break;
 	case 0x800: *regp = regs.usp; break;
 	case 0x801: *regp = regs.vbr; break;
-	case 0x802: *regp = reg_caar; break;
+	case 0x802: *regp = caar; break;
 	case 0x803: *regp = regs.m == 1 ? m68k_areg(regs, 7) : regs.msp; break;
 	case 0x804: *regp = regs.m == 0 ? m68k_areg(regs, 7) : regs.isp; break;
 	case 0x805: *regp = mmusr; break;
