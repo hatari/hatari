@@ -8,7 +8,7 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.42 2007-09-26 21:42:40 thothy Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.43 2007-09-29 21:54:34 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -207,7 +207,7 @@ void M68000_Exception(Uint32 ExceptionVector)
     if(regs.spcflags & SPCFLAG_STOP)
     {
       regs.stopped = 0;
-      M68000_SetSpecial(SPCFLAG_STOP);    /* All is go,go,go! */
+      M68000_UnsetSpecial(SPCFLAG_STOP);    /* All is go,go,go! */
     }
 
     /* 68k exceptions are handled by Exception() of the UAE CPU core */
