@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.61 2007-09-09 20:49:58 thothy Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.62 2007-10-04 20:08:25 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -21,6 +21,7 @@ const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.61 2007-09-09 20:49:58 tho
 #include "ioMem.h"
 #include "joy.h"
 #include "keymap.h"
+#include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "printer.h"
@@ -264,9 +265,19 @@ BOOL Dialog_DoProperty(void)
 
 	bOKDialog = Dialog_MainDlg(&bForceReset);
 
-	/* Copy details to configuration, and ask user if wishes to reset */
-	if (bOKDialog)
+	/* Check if reset is required and ask user if he really wants to continue then */
+	if (bOKDialog && !bForceReset && Dialog_DoNeedReset()
+	    && ConfigureParams.Log.nAlertDlgLogLevel >= LOG_INFO) {
+		bOKDialog = DlgAlert_Query("The emulated system must be "
+		                           "reset to apply these changes. "
+		                           "Apply changes now and reset "
+		                           "the emulator?");
+	}
+
+	/* Copy details to configuration */
+	if (bOKDialog) {
 		Dialog_CopyDialogParamsToConfiguration(bForceReset);
+	}
 
 	Main_UnPauseEmulation();
 
@@ -285,11 +296,11 @@ void Dialog_LoadParams(void)
 {
 	CNF_PARAMS tmpParams;
 	/* Configuration_Load uses the variables from ConfigureParams.
-    * That's why we have to temporarily back it up here */
-    tmpParams = ConfigureParams;
-    Configuration_Load(NULL);
-    DialogParams = ConfigureParams;
-    ConfigureParams = tmpParams;
+	 * That's why we have to temporarily back it up here */
+	tmpParams = ConfigureParams;
+	Configuration_Load(NULL);
+	DialogParams = ConfigureParams;
+	ConfigureParams = tmpParams;
 }
 
 
@@ -301,9 +312,9 @@ void Dialog_SaveParams(void)
 {
 	CNF_PARAMS tmpParams;
 	/* Configuration_Save uses the variables from ConfigureParams.
-    * That's why we have to temporarily back it up here */
-    tmpParams = ConfigureParams;
-    ConfigureParams = DialogParams;
-    Configuration_Save();
-    ConfigureParams = tmpParams;
+	 * That's why we have to temporarily back it up here */
+	tmpParams = ConfigureParams;
+	ConfigureParams = DialogParams;
+	Configuration_Save();
+	ConfigureParams = tmpParams;
 }
