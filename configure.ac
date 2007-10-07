@@ -16,6 +16,7 @@ AC_CANONICAL_TARGET
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
+AC_PROG_RANLIB
 
 # extra command line options
 

@@ -14,6 +14,9 @@ CPPFLAGS = @CPPFLAGS@
 LIBS = @LIBS@
 LDFLAGS = @LDFLAGS@
 
+# Ranlib - for generating an index of an archive
+RANLIB = @RANLIB@
+
 
 # The native C compiler.
 # This is normaly the same as $(CC) unless you are using a cross compiler.

@@ -22,6 +22,9 @@ CPPFLAGS =
 LIBS = -lzdll
 LDFLAGS = -mwindows
 
+# Ranlib - for generating an index of an archive
+RANLIB = ranlib
+
 
 # The native C compiler.
 # This is normaly the same as $(CC) unless you are using a cross compiler.

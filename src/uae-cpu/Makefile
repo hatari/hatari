@@ -21,6 +21,7 @@ all: cpu68k.a
 
 cpu68k.a: $(CPU_OBS)
 	$(AR) cru $@ $^
+	$(RANLIB) $@
 
 build68k: build68k.c
 	$(HOSTCC) $(HOSTCFLAGS) -o $@ $<
