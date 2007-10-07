@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.27 2007-01-16 18:42:59 thothy Exp $";
+const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.28 2007-10-07 14:09:20 thothy Exp $";
 
 #include "config.h"
 
@@ -44,7 +44,7 @@ const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.27 2007-01-16 18:42:59 thoth
 
 
 #ifndef HAVE_CFMAKERAW
-# if defined(__BEOS__) || (defined(__sun) && defined(__SVR4)) || defined(__AMIGAOS4__) || defined(__riscos)
+# if defined(__BEOS__) || (defined(__sun) && defined(__SVR4)) || defined(__AMIGAOS4__) || defined(__riscos) || defined(__CEGCC__)
 #  define HAVE_CFMAKERAW 0
 # else
 #  define HAVE_CFMAKERAW 1
