@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.63 2007-09-17 20:32:37 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.64 2007-10-07 14:07:02 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -26,6 +26,7 @@ const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.63 2007-09-17 20:32:37 tho
 #include <time.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <errno.h>
 
 #ifndef WIN32
 #include <glob.h>

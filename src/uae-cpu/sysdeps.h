@@ -22,7 +22,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <assert.h>
 #include <limits.h>
 
@@ -31,10 +30,6 @@
 #endif
 
 #include <stdarg.h>
-
-#include <errno.h>
-#include <assert.h>
-
 #include <stdint.h>
 
 
