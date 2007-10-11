@@ -8,43 +8,70 @@
   * Copyright 1996 Herman ten Brugge
   */
 
-#ifndef HAVE_to_single
-STATIC_INLINE double to_single (uae_u32 value)
-{
-    double frac;
+#include <SDL_endian.h>
 
-    if ((value & 0x7fffffff) == 0)
-        return (0.0);
-    frac = (double) ((value & 0x7fffff) | 0x800000) / 8388608.0;
-    if (value & 0x80000000)
-        frac = -frac;
-    return (ldexp (frac, ((value >> 23) & 0xff) - 127));
+typedef double	fpu_register;
+typedef union {
+	fpu_register val;
+	uae_u32 parts[sizeof(fpu_register) / 4];
+} fpu_register_parts;
+enum {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	FHI		= 0,
+	FLO		= 1
+#else
+	FHI		= 1,
+	FLO		= 0
+#endif
+};
+
+
+#ifndef HAVE_to_single
+STATIC_INLINE double to_single(uae_u32 value)
+{
+	uae_u32 sign;
+	uae_u32 expon;
+	fpu_register result;
+	fpu_register_parts * p = (fpu_register_parts *)&result;
+
+	if ((value & 0x7fffffff) == 0)
+		return (0.0);
+
+	sign = (value & 0x80000000);
+	expon  = ((value & 0x7F800000) >> 23) + 1023 - 127;
+
+	p->parts[FLO] = value << 29;
+	p->parts[FHI] = sign | (expon << 20) | ((value & 0x007FFFFF) >> 3);
+
+	return result;
 }
 #endif
 
 #ifndef HAVE_from_single
-STATIC_INLINE uae_u32 from_single (double src)
+STATIC_INLINE uae_u32 from_single(double src)
 {
-    int expon;
-    uae_u32 tmp;
-    double frac;
+	uae_u32 sign;
+	uae_u32 expon;
+	uae_u32 result;
+	fpu_register_parts const *p = (fpu_register_parts const *)&src;
 
-    if (src == 0.0)
-        return 0;
-    if (src < 0) {
-        tmp = 0x80000000;
-        src = -src;
-    } else {
-        tmp = 0;
-    }
-    frac = frexp (src, &expon);
-    frac += 0.5 / 16777216.0;
-    if (frac >= 1.0) {
-        frac /= 2.0;
-        expon++;
-    }
-    return (tmp | (((expon + 127 - 1) & 0xff) << 23) |
-            (((int) (frac * 16777216.0)) & 0x7fffff));
+	if (src == 0.0)
+		return 0;
+
+	sign  = (p->parts[FHI] & 0x80000000);
+	expon = (p->parts[FHI] & 0x7FF00000) >> 20;
+
+	if (expon + 127 < 1023) {
+		expon = 0;
+	} else if (expon > 1023 + 127) {
+		expon = 255;
+	} else {
+		expon = expon + 127 - 1023;
+	}
+
+	result = sign | (expon << 23) | ((p->parts[FHI] & 0x000FFFFF) << 3) | (p->parts[FLO] >> 29);
+
+	return result;
 }
 #endif
 
@@ -96,44 +123,30 @@ STATIC_INLINE void from_exten(double src, uae_u32 * wrd1, uae_u32 * wrd2, uae_u3
 #ifndef HAVE_to_double
 STATIC_INLINE double to_double(uae_u32 wrd1, uae_u32 wrd2)
 {
-    double frac;
+	fpu_register result;
+	fpu_register_parts *p = (fpu_register_parts *)&result;
 
-    if ((wrd1 & 0x7fffffff) == 0 && wrd2 == 0)
-        return 0.0;
-    frac = (double) ((wrd1 & 0xfffff) | 0x100000) / 1048576.0 +
-        (double) wrd2 / 4503599627370496.0;
-    if (wrd1 & 0x80000000)
-        frac = -frac;
-    return ldexp (frac, ((wrd1 >> 20) & 0x7ff) - 1023);
+	if ((wrd1 & 0x7fffffff) == 0 && wrd2 == 0)
+		return 0.0;
+
+	p->parts[FLO] = wrd2;
+	p->parts[FHI] = wrd1;
+
+	return result;
 }
 #endif
 
 #ifndef HAVE_from_double
 STATIC_INLINE void from_double(double src, uae_u32 * wrd1, uae_u32 * wrd2)
 {
-    int expon;
-    int tmp;
-    double frac;
-
-    if (src == 0.0) {
-        *wrd1 = 0;
-        *wrd2 = 0;
-        return;
-    }
-    if (src < 0) {
-        *wrd1 = 0x80000000;
-        src = -src;
-    } else {
-        *wrd1 = 0;
-    }
-    frac = frexp (src, &expon);
-    frac += 0.5 / 9007199254740992.0;
-    if (frac >= 1.0) {
-        frac /= 2.0;
-        expon++;
-    }
-    tmp = (uae_u32) (frac * 2097152.0);
-    *wrd1 |= (((expon + 1023 - 1) & 0x7ff) << 20) | (tmp & 0xfffff);
-    *wrd2 = (uae_u32) (frac * 9007199254740992.0 - tmp * 4294967296.0);
+/*
+	if (src == 0.0) {
+		*wrd1 = *wrd2 = 0;
+		return;
+	}
+*/
+	fpu_register_parts const *p = (fpu_register_parts const *)&src;
+	*wrd2 = p->parts[FLO];
+	*wrd1 = p->parts[FHI];
 }
 #endif
