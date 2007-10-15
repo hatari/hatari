@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the Falcon.
 */
-const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.13 2007-04-02 22:35:15 thothy Exp $";
+const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.14 2007-10-15 22:00:57 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -146,7 +146,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff860c, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff860d, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA base and counter low byte  */
 	{ 0xff860e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff860f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
+	{ 0xff860f, SIZE_BYTE, FDC_FloppyMode_ReadByte, FDC_FloppyMode_WriteByte },             /* Floppy mode (?) register */
 
 	{ 0xff8800, SIZE_BYTE, PSG_SelectRegister_ReadByte, PSG_SelectRegister_WriteByte },
 	{ 0xff8801, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },

@@ -12,7 +12,7 @@
   checked each HBL to perform the transfer of data from our disk image into
   the ST RAM area by simulating the DMA.
 */
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.31 2007-01-16 18:42:59 thothy Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.32 2007-10-15 22:00:57 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -1373,4 +1373,53 @@ void FDC_DmaModeControl_WriteWord(void)
 	/* When write to 0xff8606, check bit '8' toggle. This causes DMA status reset */
 	if ((DMAModeControl_ff8606wr_prev ^ DMAModeControl_ff8606wr) & 0x0100)
 		FDC_ResetDMAStatus();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to floppy mode/control (?) register (0xff860F).
+ * Used on Falcon only!
+ * FIXME: I've found hardly any documentation about this register, only
+ * the following description of the bits:
+ *
+ *   __________54__10  Floppy Controll-Register
+ *             ||  ||
+ *             ||  |+- Prescaler 1
+ *             ||  +-- Media detect 1
+ *             |+----- Prescaler 2
+ *             +------ Media detect 2
+ *
+ * For DD - disks:  0x00
+ * For HD - disks:  0x03
+ * for ED - disks:  0x30 (not supported by TOS)
+ */
+void FDC_FloppyMode_WriteByte(void)
+{
+	// printf("Write to floppy mode reg.: 0x%02x\n", IoMem_ReadByte(0xff860f));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read from floppy mode/control (?) register (0xff860F).
+ * Used on Falcon only!
+ * FIXME: I've found hardly any documentation about this register, only
+ * the following description of the bits:
+ *
+ *   ________76543210  Floppy Controll-Register
+ *           ||||||||
+ *           |||||||+- Prescaler 1
+ *           ||||||+-- Mode select 1
+ *           |||||+--- Media detect 1
+ *           ||||+---- accessed during DMA transfers (?)
+ *           |||+----- Prescaler 2
+ *           ||+------ Mode select 2
+ *           |+------- Media detect 2
+ *           +-------- Disk changed
+ */
+void FDC_FloppyMode_ReadByte(void)
+{
+	IoMem_WriteByte(0xff860f, 0x80);  // FIXME: Is this ok?
+	// printf("Read from floppy mode reg.: 0x%02x\n", IoMem_ReadByte(0xff860f));
 }

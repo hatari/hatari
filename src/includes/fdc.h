@@ -108,6 +108,8 @@ extern void FDC_DMADataFromFloppy(void);
 extern void FDC_DiskController_WriteWord(void);
 extern void FDC_DiskControllerStatus_ReadWord(void);
 extern void FDC_DmaModeControl_WriteWord(void);
+extern void FDC_FloppyMode_WriteByte(void);
+extern void FDC_FloppyMode_ReadByte(void);
 
 
 #endif /* ifndef HATARI_FDC_H */
