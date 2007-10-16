@@ -11,8 +11,9 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.25 2007-09-09 20:49:59 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.26 2007-10-16 20:39:23 eerot Exp $";
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +35,7 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.25 2007-09-09 20:49:59 thot
 enum {
 	OPT_HELP,
 	OPT_VERSION,
+	OPT_CONFIRMQUIT,
 	OPT_MONO,	/* TODO: remove */
 	OPT_MONITOR,
 	OPT_FULLSCREEN,
@@ -84,6 +86,8 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Print this help text and exit" },
 	{ OPT_VERSION,   "-v", "--version",
 	  NULL, "Print version number & help and exit" },
+	{ OPT_CONFIRMQUIT,NULL, "--confirm-quit",
+	  "<x>", "Whether Hatari confirms quit (y/n)" },
 	{ OPT_MONO,      "-m", "--mono",
 	  NULL, "Start in monochrome mode instead of color (deprecated)" },
 	{ OPT_MONITOR,      NULL, "--monitor",
@@ -254,6 +258,33 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 	return OPT_NONE;
 }
 
+/**
+ * return
+ * - true if given string is y, Y, yes, YES
+ * - false if given string is n, N, no, NO
+ * otherwise exit
+ */
+static int Opt_YesNo(const char *arg, int opt)
+{
+	int ret;
+	char *input, *str, *orig;
+	str = strdup(arg);
+	input = str;
+	orig = arg;
+	while (*str) {
+		*str++ = tolower(*arg++);
+	}
+	if (strcmp("y", input) == 0 || strcmp("yes", input) == 0) {
+		ret = TRUE;
+	} else if (strcmp("n", input) == 0 || strcmp("no", input) == 0) {
+		ret = FALSE;
+	} else {
+		Opt_ShowExit(opt, orig, "Unrecognized value");
+	}
+	free(input);
+	return ret;
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Check for any passed parameters, return boot disk
@@ -262,6 +293,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
 	int i, ncpu, skips, zoom, planes;
+	char confirm;
 	
 	for(i = 1; i < argc; i++) {
 		
@@ -288,6 +320,10 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 		case OPT_VERSION:
 			Opt_ShowExit(OPT_VERSION, NULL, NULL);
+			break;
+
+		case OPT_CONFIRMQUIT:
+			ConfigureParams.System.bConfirmQuit = Opt_YesNo(argv[++i], OPT_CONFIRMQUIT);
 			break;
 			
 		case OPT_MONO:

@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.62 2007-10-04 20:08:25 thothy Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.63 2007-10-16 20:39:22 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -48,7 +48,7 @@ CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can
  * Check if need to warn user that changes will take place after reset.
  * Return TRUE if wants to reset.
  */
-BOOL Dialog_DoNeedReset(void)
+static BOOL Dialog_DoNeedReset(void)
 {
 	/* Did we change monitor type? If so, must reset */
 	if (ConfigureParams.Screen.MonitorType != DialogParams.Screen.MonitorType
@@ -248,7 +248,7 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 /*-----------------------------------------------------------------------*/
 /**
  * Open Property sheet Options dialog.
- * Return TRUE if user choses OK, or FALSE if cancel!
+ * Return TRUE if user chooses OK, or FALSE if cancel!
  */
 BOOL Dialog_DoProperty(void)
 {
@@ -282,7 +282,7 @@ BOOL Dialog_DoProperty(void)
 	Main_UnPauseEmulation();
 
 	if (bQuitProgram)
-		M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
+		Main_RequestQuit();
 
 	return bOKDialog;
 }

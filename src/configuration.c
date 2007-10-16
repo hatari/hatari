@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.68 2007-09-09 20:49:58 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.69 2007-10-16 20:39:22 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -284,6 +284,7 @@ static const struct Config_Tag configs_System[] =
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bSlowFDC", Bool_Tag, &ConfigureParams.System.bSlowFDC },
 	{ "nMinMaxSpeed", Int_Tag, &ConfigureParams.System.nMinMaxSpeed },
+	{ "bConfirmQuit", Bool_Tag, &ConfigureParams.System.bConfirmQuit },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -422,6 +423,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bRealTimeClock = TRUE;
 	ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;
 	ConfigureParams.System.bSlowFDC = FALSE;
+	ConfigureParams.System.bConfirmQuit = TRUE;
 
 	/* Initialize the configuration file name */
 	homeDir = getenv("HOME");

@@ -128,6 +128,7 @@ extern char szWorkingDir[FILENAME_MAX];
 extern void Main_MemorySnapShot_Capture(BOOL bSave);
 extern void Main_PauseEmulation(void);
 extern void Main_UnPauseEmulation(void);
+extern void Main_RequestQuit(void);
 extern void Main_WaitOnVbl(void);
 extern void Main_WarpMouse(int x, int y);
 extern void Main_EventHandler(void);

@@ -12,8 +12,6 @@
 
 extern CNF_PARAMS  DialogParams;
 
-extern BOOL Dialog_DoProperty(void);
-
 /* prototypes for gui-sdl/dlg*.c functions: */
 extern int Dialog_MainDlg(BOOL *bReset);
 extern void Dialog_AboutDlg(void);
@@ -29,8 +27,9 @@ extern void Dialog_ScreenDlg(void);
 extern void Dialog_SoundDlg(void);
 extern void Dialog_SystemDlg(void);
 extern void DlgRom_Main(void);
+/* and dialog.c */
+extern BOOL Dialog_DoProperty(void);
 extern void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset);
-extern BOOL Dialog_DoNeedReset(void);
 extern void Dialog_LoadParams(void);
 extern void Dialog_SaveParams(void);
 

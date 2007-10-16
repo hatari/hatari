@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.101 2007-09-09 20:49:59 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.102 2007-10-16 20:39:23 eerot Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -118,6 +118,23 @@ void Main_UnPauseEmulation(void)
   }
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Optionally ask user whether to quit and set bQuitProgram accordingly
+ */
+void Main_RequestQuit(void)
+{
+	if (ConfigureParams.System.bConfirmQuit) {
+		bQuitProgram = FALSE;	/* if set TRUE, dialog exits */
+		bQuitProgram = DlgAlert_Query("Quit Hatari?");
+	} else {
+		bQuitProgram = TRUE;
+	}
+	if (bQuitProgram) {
+		/* Assure that CPU core shuts down */
+		M68000_SetSpecial(SPCFLAG_BRK);
+	}
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -269,8 +286,7 @@ void Main_EventHandler(void)
    {
 
     case SDL_QUIT:
-       bQuitProgram = TRUE;
-       M68000_SetSpecial(SPCFLAG_BRK);  /* Assure that CPU core shuts down */
+       Main_RequestQuit();
        break;
 
     case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */

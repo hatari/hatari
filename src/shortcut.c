@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.26 2007-09-09 20:49:59 thothy Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.27 2007-10-16 20:39:23 eerot Exp $";
 
 #include <SDL.h>
 
@@ -112,17 +112,6 @@ static void ShortCut_RecordAnimation(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Shortcut to toggle joystick cursor emulation
- */
-static void ShortCut_JoystickCursorEmulation(void)
-{
-  /* Toggle it on/off */
-  Joy_ToggleCursorEmulation();
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Shortcut to sound on/off
  */
 static void ShortCut_SoundOnOff(void)
@@ -188,37 +177,6 @@ static void ShortCut_BossKey(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Shortcut to 'Cold' reset
- */
-static void ShortCut_ColdReset(void)
-{
-  Reset_Cold();                 /* Reset emulator with 'cold' (clear all) */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Shortcut to 'Warm' reset
- */
-static void ShortCut_WarmReset(void)
-{
-  Reset_Warm();                 /* Emulator 'warm' reset */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Shortcut for quitting
- */
-static void ShortCut_Quit(void)
-{
-  bQuitProgram = TRUE;           /* Quit program */
-  M68000_SetSpecial(SPCFLAG_BRK);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Check to see if pressed any shortcut keys, and call handling function
  */
 void ShortCut_ActKey(void)
@@ -238,10 +196,10 @@ void ShortCut_ActKey(void)
     ShortCut_MouseMode();          /* Toggle mouse mode */
     break;
   case SHORTCUT_COLDRESET:
-    ShortCut_ColdReset();          /* Cold reset */
+    Reset_Cold();                  /* Reset emulator with 'cold' (clear all) */
     break;
   case SHORTCUT_WARMRESET:
-    ShortCut_WarmReset();          /* Warm reset */
+    Reset_Warm();                  /* Emulator 'warm' reset */
     break;
   case SHORTCUT_SCREENSHOT:
     ScreenSnapShot_SaveScreen();   /* Grab screenshot */
@@ -249,8 +207,8 @@ void ShortCut_ActKey(void)
   case SHORTCUT_BOSSKEY:
     ShortCut_BossKey();            /* Boss key */
     break;
-  case SHORTCUT_CURSOREMU:
-    ShortCut_JoystickCursorEmulation();
+  case SHORTCUT_CURSOREMU:         /* Toggle joystick emu on/off */
+    Joy_ToggleCursorEmulation();
     break;
   case SHORTCUT_MAXSPEED:
     ShortCut_MaximumSpeed();       /* Toggle Min/Max speed */
@@ -265,7 +223,7 @@ void ShortCut_ActKey(void)
     ShortCut_SoundOnOff();         /* Enable/disable sound */
     break;
   case SHORTCUT_QUIT:
-    ShortCut_Quit();               /* Quit program */
+    Main_RequestQuit();
     break;
   case SHORTCUT_LOADMEM:
     MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName);

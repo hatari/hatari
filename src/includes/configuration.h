@@ -259,6 +259,7 @@ typedef struct
   BOOL bPatchTimerD;
   BOOL bSlowFDC;                  /* TRUE to slow down FDC emulation */
   MINMAXSPEED_TYPE nMinMaxSpeed;
+  BOOL bConfirmQuit;
 } CNF_SYSTEM;
 
 
