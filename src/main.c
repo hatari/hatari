@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.102 2007-10-16 20:39:23 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.103 2007-10-19 19:54:40 eerot Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -126,7 +126,7 @@ void Main_RequestQuit(void)
 {
 	if (ConfigureParams.System.bConfirmQuit) {
 		bQuitProgram = FALSE;	/* if set TRUE, dialog exits */
-		bQuitProgram = DlgAlert_Query("Quit Hatari?");
+		bQuitProgram = DlgAlert_Query("All unsaved data will be lost.\nDo you really want to quit?");
 	} else {
 		bQuitProgram = TRUE;
 	}

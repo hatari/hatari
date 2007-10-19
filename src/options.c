@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.26 2007-10-16 20:39:23 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.27 2007-10-19 19:54:40 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -266,8 +266,9 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
  */
 static int Opt_YesNo(const char *arg, int opt)
 {
-	int ret;
-	char *input, *str, *orig;
+	int ret = FALSE;
+	char *input, *str;
+	const char *orig;
 	str = strdup(arg);
 	input = str;
 	orig = arg;
@@ -293,7 +294,6 @@ void Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
 	int i, ncpu, skips, zoom, planes;
-	char confirm;
 	
 	for(i = 1; i < argc; i++) {
 		
