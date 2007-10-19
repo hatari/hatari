@@ -11,4 +11,3 @@ extern BOOL YMFormat_BeginRecording(char *pszYMFileName);
 extern void YMFormat_EndRecording(void);
 extern void YMFormat_FreeRecording(void);
 extern void YMFormat_UpdateRecording(void);
-extern BOOL YMFormat_ConvertToStreams(void);

@@ -33,7 +33,7 @@
     4 - 7  Length Of Data To Follow
     8 - end  Data (Samples)
 */
-const char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.13 2007-01-16 18:42:59 thothy Exp $";
+const char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.14 2007-10-19 21:56:23 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -108,7 +108,7 @@ BOOL WAVFormat_OpenFile(char *pszWavFileName)
 /**
  * 
  */
-void WAVFormat_CloseFile()
+void WAVFormat_CloseFile(void)
 {
 	if (bRecordingWav)
 	{

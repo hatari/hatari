@@ -19,7 +19,7 @@
   sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
   the sound - that's it.
 */
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.28 2007-01-16 18:42:59 thothy Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.29 2007-10-19 21:56:23 eerot Exp $";
 
 #include <SDL_types.h>
 
@@ -559,7 +559,8 @@ void Sound_Update(void)
   Audio_Unlock();
 
   /* Save to WAV file, if open */
-  WAVFormat_Update(MixBuffer, OldSndBufIdx, nSamplesToGenerate);
+  if (bRecordingWav)
+    WAVFormat_Update(MixBuffer, OldSndBufIdx, nSamplesToGenerate);
 }
 
 

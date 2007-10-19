@@ -6,7 +6,7 @@
 
   YM File output, for use with STSound etc...
 */
-const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.15 2007-01-16 18:42:59 thothy Exp $";
+const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.16 2007-10-19 21:56:23 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -64,6 +64,63 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
 	Log_AlertDlg(LOG_INFO, "YM sound data recording has been started.");
 
 	return TRUE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Convert YM data to stream for output
+ *
+ * Data is:
+ *   4 Byte header 'YM3!'
+ *   VBL Count x 14 PSG registers
+ * BUT
+ *   We need data in a register stream, eg Reg 0, VBL 1, VBL 2, VBL n and then next register...
+ * 
+ * Convert to new workspace and return TRUE if all OK
+ */
+static BOOL YMFormat_ConvertToStreams(void)
+{
+	unsigned char *pNewYMWorkspace;
+	unsigned char *pTmpYMData, *pNewYMData;
+	unsigned char *pTmpYMStream, *pNewYMStream;
+	int Reg, Count;
+
+	/* Allocate new workspace to convert data to */
+	pNewYMWorkspace = (unsigned char *)malloc(YM_RECORDSIZE);
+	if (pNewYMWorkspace)
+	{
+		/* Convert data, first copy over header */
+		pTmpYMData = pYMWorkspace;
+		pNewYMData = pNewYMWorkspace;
+		*pNewYMData++ = *pTmpYMData++;
+		*pNewYMData++ = *pTmpYMData++;
+		*pNewYMData++ = *pTmpYMData++;
+		*pNewYMData++ = *pTmpYMData++;
+
+		/* Now copy over each stream */
+		for(Reg=0; Reg<NUM_PSG_SOUND_REGISTERS; Reg++)
+		{
+			/* Get pointer to source / destination */
+			pTmpYMStream = pTmpYMData + Reg;
+			pNewYMStream = pNewYMData + (Reg*nYMVBLS);
+
+			/* Copy recording VBLs worth */
+			for(Count=0; Count<nYMVBLS; Count++)
+			{
+				*pNewYMStream++ = *pTmpYMStream;
+				pTmpYMStream += NUM_PSG_SOUND_REGISTERS;
+			}
+		}
+
+		/* Delete old workspace and assign new */
+		free(pYMWorkspace);
+		pYMWorkspace = pNewYMWorkspace;
+
+		return TRUE;
+	}
+	else
+		return FALSE;
 }
 
 
@@ -138,59 +195,3 @@ void YMFormat_UpdateRecording(void)
 	}
 }
 
-
-/*-----------------------------------------------------------------------*/
-/**
- * Convert YM data to stream for output
- *
- * Data is:
- *   4 Byte header 'YM3!'
- *   VBL Count x 14 PSG registers
- * BUT
- *   We need data in a register stream, eg Reg 0, VBL 1, VBL 2, VBL n and then next register...
- * 
- * Convert to new workspace and return TRUE if all OK
- */
-BOOL YMFormat_ConvertToStreams(void)
-{
-	unsigned char *pNewYMWorkspace;
-	unsigned char *pTmpYMData, *pNewYMData;
-	unsigned char *pTmpYMStream, *pNewYMStream;
-	int Reg, Count;
-
-	/* Allocate new workspace to convert data to */
-	pNewYMWorkspace = (unsigned char *)malloc(YM_RECORDSIZE);
-	if (pNewYMWorkspace)
-	{
-		/* Convert data, first copy over header */
-		pTmpYMData = pYMWorkspace;
-		pNewYMData = pNewYMWorkspace;
-		*pNewYMData++ = *pTmpYMData++;
-		*pNewYMData++ = *pTmpYMData++;
-		*pNewYMData++ = *pTmpYMData++;
-		*pNewYMData++ = *pTmpYMData++;
-
-		/* Now copy over each stream */
-		for(Reg=0; Reg<NUM_PSG_SOUND_REGISTERS; Reg++)
-		{
-			/* Get pointer to source / destination */
-			pTmpYMStream = pTmpYMData + Reg;
-			pNewYMStream = pNewYMData + (Reg*nYMVBLS);
-
-			/* Copy recording VBLs worth */
-			for(Count=0; Count<nYMVBLS; Count++)
-			{
-				*pNewYMStream++ = *pTmpYMStream;
-				pTmpYMStream += NUM_PSG_SOUND_REGISTERS;
-			}
-		}
-
-		/* Delete old workspace and assign new */
-		free(pYMWorkspace);
-		pYMWorkspace = pNewYMWorkspace;
-
-		return TRUE;
-	}
-	else
-		return FALSE;
-}
