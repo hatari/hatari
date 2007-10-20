@@ -16,7 +16,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License (gpl.txt) for more details.
  */
-const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.7 2007-10-16 20:39:23 eerot Exp $";
+const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.8 2007-10-20 19:01:34 eerot Exp $";
 
 #include <string.h>
 
@@ -58,11 +58,13 @@ static SGOBJ alertdlg[] =
 
 /*-----------------------------------------------------------------------*/
 /*
-   Breaks long string to several strings of max_width, divided by '\0'
-   and returns the number of lines you need to display the strings.
+   Breaks long string to several strings of max_width, divided by '\0',
+   sets text_width to the longest line width and returns the number of lines
+   you need to display the strings.
 */
-static int DlgAlert_FormatTextToBox(char *text, int max_width)
+static int DlgAlert_FormatTextToBox(char *text, int max_width, int *text_width)
 {
+	int columns = 0;
 	int lines = 1;
 	int txtlen;
 	char *p;		/* pointer to begin of actual line */
@@ -97,14 +99,17 @@ static int DlgAlert_FormatTextToBox(char *text, int max_width)
 					llb = p + max_width;		/* we loose one character */
 			}
 			else
-				llb = r;			/* break in this place */
+				llb = r;			/* break from previous delimiter */
 
 			*llb = '\0';			/* BREAK */
+			if ((llb-p) > columns)
+				columns = llb - p;	/* longest line so far */
 			p = q = llb + 1;		/* next line begins here */
 			lines++;				/* increment line counter */
 		}
 	}
 
+	*text_width = columns;
 	return lines;					/* return line counter */
 }
 
@@ -116,22 +121,24 @@ static int DlgAlert_FormatTextToBox(char *text, int max_width)
 */
 static int DlgAlert_ShowDlg(const char *text)
 {
+	static int maxlen = sizeof(dlglines[0])-1;
 	char *t = (char *)malloc(strlen(text)+1);
 	char *orig_t = t;
-	static int maxlen = sizeof(dlglines[0])-1;
-	int lines;
-	int i;
+	int lines, i, len, offset;
 	BOOL bOldMouseVisibility;
 	int nOldMouseX, nOldMouseY;
 
 	strcpy(t, text);
-	lines = DlgAlert_FormatTextToBox(t, maxlen);
+	lines = DlgAlert_FormatTextToBox(t, maxlen, &len);
+	offset = (maxlen-len)/2;
 
 	for(i=0; i<MAX_LINES; i++)
 	{
 		if (i < lines)
 		{
-			strcpy(dlglines[i], t);
+			/* center text to current dlgline */
+			memset(dlglines[i], ' ', offset);
+			strcpy(dlglines[i] + offset, t);
 			t += strlen(t)+1;
 		}
 		else
