@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.23 2007-09-09 20:49:59 thothy Exp $";
+const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.24 2007-10-21 12:21:01 eerot Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -104,13 +104,16 @@ static const Uint8 NewDeskScript[786] =
  */
 static int limit(int value, int align, int min, int max)
 {
-	if (value < min) {
-		value = min;
-	}
-	if (value > max) {
-		value = max;
-	}
 	value = (value/align)*align;
+	if (value > max) {
+		/* align down */
+	        return (max/align)*align;
+	}
+	if (value < min) {
+		/* align up */
+		min += align-1;
+		return (min/align)*align;
+	}
 	return value;
 }
 
@@ -167,8 +170,8 @@ void VDI_SetResolution(int GEMRes, int GEMColour, int WidthRequest, int HeightRe
   VDIWidth = limit(WidthRequest, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
   /* height needs to be multiple of cell height */
   VDIHeight = limit(HeightRequest, VDICharHeight, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
-  printf("VDI screen: request = %dx%d@%d, aligned result = %dx%d\n",
-         WidthRequest, HeightRequest, VDIPlanes, VDIWidth, VDIHeight);
+  printf("VDI screen: request = %dx%d@%d, aligned result = %dx%d@%d\n",
+         WidthRequest, HeightRequest, VDIPlanes, VDIWidth, VDIHeight, VDIPlanes);
 
   /* Write resolution to re-boot takes effect with correct bit-depth */
   VDI_FixDesktopInf();

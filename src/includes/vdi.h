@@ -6,9 +6,9 @@
 #define HATARI_VDI_H
 
 #define MAX_VDI_WIDTH  1024
-#define MIN_VDI_WIDTH   384
+#define MIN_VDI_WIDTH   320
 #define MAX_VDI_HEIGHT  768
-#define MIN_VDI_HEIGHT  208
+#define MIN_VDI_HEIGHT  200
 #define MAX_VDI_PLANES  4
 
 /* VDIRes value is used to determine whether screen size has changed.
