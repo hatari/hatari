@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.73 2007-09-09 20:49:59 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.74 2007-10-21 14:50:58 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -45,8 +45,6 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.73 2007-09-09 20:49:59 thoth
 
 BOOL bUseSTShifter;                             /* Falcon: whether to use ST palette */
 BOOL bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
-int nVBLs, nHBL;                                /* VBL Counter, HBL line */
-int nStartHBL, nEndHBL;                         /* Start/End HBL for visible screen */
 int OverscanMode;                               /* OVERSCANMODE_xxxx for current display frame */
 Uint16 HBLPalettes[(NUM_VISIBLE_LINES+1)*16];   /* 1x16 colour palette per screen line, +1 line just incase write after line 200 */
 Uint16 *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
@@ -55,9 +53,13 @@ Uint32 *pHBLPaletteMasks;
 int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 70 Hz in mono */
 Uint32 VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */
 
+int nVBLs;                                      /* VBL Counter */
+int nStartHBL;                                  /* Start HBL for visible screen */
 int nScanlinesPerFrame = 313;                   /* Number of scan lines per frame */
 int nCyclesPerLine = 512;                       /* Cycles per horizontal line scan */
 static int nFirstVisibleHbl = 34;               /* The first line of the ST screen that is copied to the PC screen buffer */
+static int nEndHBL;                             /* End HBL for visible screen */
+static int nHBL;                                /* HBL line */
 
 static Uint8 HWScrollCount;                     /* HW scroll pixel offset, STe only (0...15) */
 static Uint8 ScanLineSkip;                      /* Scan line width add, STe only (words, minus 1) */
@@ -490,8 +492,8 @@ static void Video_CopyScreenLine(void)
  */
 static void Video_CopyVDIScreen(void)
 {
-  /* Copy whole screen, don't care about being exact as for GEM only */
-  memcpy(pSTScreen, pVideoRaster, ((VDIWidth*VDIPlanes)/8)*VDIHeight);  /* 640x400x16colour */
+  /* Just copy whole VDI screen as GEM doesn't care about cycle accuracy */
+  memcpy(pSTScreen, pVideoRaster, ((VDIWidth*VDIPlanes)/8)*VDIHeight);
 }
 
 

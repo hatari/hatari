@@ -62,8 +62,8 @@
 
 extern BOOL bUseSTShifter;
 extern BOOL bUseHighRes;
-extern int nVBLs,nHBL;
-extern int nStartHBL, nEndHBL;
+extern int nVBLs;
+extern int nStartHBL;
 extern int OverscanMode;
 extern Uint16 HBLPalettes[];
 extern Uint16 *pHBLPalettes;
