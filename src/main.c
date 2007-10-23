@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.103 2007-10-19 19:54:40 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.104 2007-10-23 20:00:28 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -124,7 +124,7 @@ void Main_UnPauseEmulation(void)
  */
 void Main_RequestQuit(void)
 {
-	if (ConfigureParams.System.bConfirmQuit) {
+	if (ConfigureParams.Log.bConfirmQuit) {
 		bQuitProgram = FALSE;	/* if set TRUE, dialog exits */
 		bQuitProgram = DlgAlert_Query("All unsaved data will be lost.\nDo you really want to quit?");
 	} else {

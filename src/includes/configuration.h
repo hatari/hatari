@@ -14,6 +14,7 @@ typedef struct
   char sLogFileName[FILENAME_MAX];
   int nTextLogLevel;
   int nAlertDlgLogLevel;
+  BOOL bConfirmQuit;
 } CNF_LOG;
 
 
@@ -259,7 +260,6 @@ typedef struct
   BOOL bPatchTimerD;
   BOOL bSlowFDC;                  /* TRUE to slow down FDC emulation */
   MINMAXSPEED_TYPE nMinMaxSpeed;
-  BOOL bConfirmQuit;
 } CNF_SYSTEM;
 
 

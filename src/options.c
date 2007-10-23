@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.27 2007-10-19 19:54:40 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.28 2007-10-23 20:00:28 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -323,7 +323,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			break;
 
 		case OPT_CONFIRMQUIT:
-			ConfigureParams.System.bConfirmQuit = Opt_YesNo(argv[++i], OPT_CONFIRMQUIT);
+			ConfigureParams.Log.bConfirmQuit = Opt_YesNo(argv[++i], OPT_CONFIRMQUIT);
 			break;
 			
 		case OPT_MONO:

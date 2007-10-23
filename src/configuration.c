@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.69 2007-10-16 20:39:22 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.70 2007-10-23 20:00:28 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -37,6 +37,7 @@ static const struct Config_Tag configs_Log[] =
 	{ "sLogFileName", String_Tag, ConfigureParams.Log.sLogFileName },
 	{ "nTextLogLevel", Int_Tag, &ConfigureParams.Log.nTextLogLevel },
 	{ "nAlertDlgLogLevel", Int_Tag, &ConfigureParams.Log.nAlertDlgLogLevel },
+	{ "bConfirmQuit", Bool_Tag, &ConfigureParams.Log.bConfirmQuit },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -284,7 +285,6 @@ static const struct Config_Tag configs_System[] =
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bSlowFDC", Bool_Tag, &ConfigureParams.System.bSlowFDC },
 	{ "nMinMaxSpeed", Int_Tag, &ConfigureParams.System.nMinMaxSpeed },
-	{ "bConfirmQuit", Bool_Tag, &ConfigureParams.System.bConfirmQuit },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -308,6 +308,7 @@ void Configuration_SetDefault(void)
 	strcpy(ConfigureParams.Log.sLogFileName, "stderr");
 	ConfigureParams.Log.nTextLogLevel = LOG_INFO;
 	ConfigureParams.Log.nAlertDlgLogLevel = LOG_INFO;
+	ConfigureParams.Log.bConfirmQuit = TRUE;
 
 	/* Set defaults for floppy disk images */
 	ConfigureParams.DiskImage.bAutoInsertDiskB = TRUE;
@@ -423,7 +424,6 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bRealTimeClock = TRUE;
 	ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;
 	ConfigureParams.System.bSlowFDC = FALSE;
-	ConfigureParams.System.bConfirmQuit = TRUE;
 
 	/* Initialize the configuration file name */
 	homeDir = getenv("HOME");
