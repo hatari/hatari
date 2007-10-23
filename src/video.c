@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.74 2007-10-21 14:50:58 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.75 2007-10-23 21:02:52 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -288,13 +288,6 @@ static void Video_StoreResolution(int y)
  */
 static void Video_CopyScreenLineMono(void)
 {
-  int i;
-
-  /* Since Hatari does not emulate monochrome HBLs correctly yet
-   * (only 200 are raised, just like in low resolution), we have to
-   * copy two lines each HBL to finally copy all 400 lines. */
-  for (i = 0; i < 2; i++)
-  {
     /* Copy one line - 80 bytes in ST high resolution */
     memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MONOLINE);
     pVideoRaster += SCREENBYTES_MONOLINE;
@@ -330,7 +323,6 @@ static void Video_CopyScreenLineMono(void)
 
     /* Each screen line copied to buffer is always same length */
     pSTScreen += SCREENBYTES_MONOLINE;
-  }
 }
 
 
@@ -465,29 +457,6 @@ static void Video_CopyScreenLineColor(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Copy line of screen into buffer for conversion later.
- */
-static void Video_CopyScreenLine(void)
-{
-  /* Only copy screen line if not doing high VDI resolution */
-  if (!bUseVDIRes)
-  {
-    if (bUseHighRes)
-    {
-      /* Copy for hi-res (no overscan) */
-      Video_CopyScreenLineMono();
-    }
-    else
-    {
-      /* Copy for low and medium resolution */
-      Video_CopyScreenLineColor();
-    }
-  }
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Copy extended GEM resolution screen
  */
 static void Video_CopyVDIScreen(void)
@@ -527,21 +496,32 @@ static void Video_EndHBL(void)
     }
   }
 
-  /* Are we in possible visible display (including borders)? */
-  if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+NUM_VISIBLE_LINES)
+  /* Store palette for very first line on screen - HBLPalettes[0] */
+  if (nHBL == nFirstVisibleHbl)
   {
-    /* Copy line of screen to buffer to simulate TV raster trace
-     * - required for mouse cursor display/game updates
-     * Eg, Lemmings and The Killing Game Show are good examples */
-    Video_CopyScreenLine();
+    /* Store ALL palette for this line into raster table for datum */
+    Video_StoreFirstLinePalette();
+  }
 
-    if (nHBL == nFirstVisibleHbl)    /* Very first line on screen - HBLPalettes[0] */
+  if (!bUseVDIRes)
+  {
+    if (bUseHighRes)
     {
-      /* Store ALL palette for this line into raster table for datum */
-      Video_StoreFirstLinePalette();
+      /* Copy for hi-res (no overscan) */
+      if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+400)
+        Video_CopyScreenLineMono();
     }
-    /* Store resolution for every line so can check for mix low/medium screens */
-    Video_StoreResolution(nHBL-nFirstVisibleHbl);
+    /* Are we in possible visible color display (including borders)? */
+    else if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+NUM_VISIBLE_LINES)
+    {
+      /* Copy line of screen to buffer to simulate TV raster trace
+       * - required for mouse cursor display/game updates
+       * Eg, Lemmings and The Killing Game Show are good examples */
+      Video_CopyScreenLineColor();
+
+      /* Store resolution for every line so can check for mix low/med screens */
+      Video_StoreResolution(nHBL-nFirstVisibleHbl);
+    }
   }
 
   /* Finally increase HBL count */
@@ -654,7 +634,10 @@ static void Video_SetHBLPaletteMaskPointers(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Set video shifter timing variables according to screen refresh rate
+ * Set video shifter timing variables according to screen refresh rate.
+ * Note: The following equation must be satisfied for correct timings:
+ *
+ *   nCyclesPerLine * nScanlinesPerFrame * nScreenRefreshRate = 8 MHz
  */
 static void Video_ResetShifterTimings(void)
 {
@@ -662,35 +645,35 @@ static void Video_ResetShifterTimings(void)
 
   nSyncByte = IoMem_ReadByte(0xff820a);
 
-  /* Check if running in 50 Hz or in 60 Hz */
-  if (nSyncByte & 2)
+  if (bUseHighRes)
+  {
+    /* 71 Hz, monochrome */
+    nScreenRefreshRate = 71;
+    nScanlinesPerFrame = 500;           /* FIXME: maybe 501 instead of 500 ? */
+    nCyclesPerLine = 226;               /* FIXME: this value is not verified */
+    nStartHBL = nFirstVisibleHbl = 34;  /* FIXME: this value is not verified */
+    nEndHBL = nStartHBL + 400;
+  }
+  else if (nSyncByte & 2)  /* Check if running in 50 Hz or in 60 Hz */
   {
     /* 50 Hz */
-    nStartHBL = SCREEN_START_HBL_50HZ;
+    nScreenRefreshRate = 50;
     nScanlinesPerFrame = SCANLINES_PER_FRAME_50HZ;
     nCyclesPerLine = CYCLES_PER_LINE_50HZ;
+    nStartHBL = SCREEN_START_HBL_50HZ;
+    nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL;
     nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;
   }
   else
   {
     /* 60 Hz */
-    nStartHBL = SCREEN_START_HBL_60HZ;
+    nScreenRefreshRate = 60;
     nScanlinesPerFrame = SCANLINES_PER_FRAME_60HZ;
     nCyclesPerLine = CYCLES_PER_LINE_60HZ;
+    nStartHBL = SCREEN_START_HBL_60HZ;
+    nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL;
     nFirstVisibleHbl = FIRST_VISIBLE_HBL_60HZ;
   }
-
-  nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL;
-
-  /* Set the screen refresh rate */
-#if 0
-  if(bUseHighRes)
-    nScreenRefreshRate = 70;
-  else if (nSyncByte & 2)               /* Is it 50Hz or is it 60Hz? */
-    nScreenRefreshRate = 50;
-  else
-    nScreenRefreshRate = 60;
-#endif
 }
 
 
