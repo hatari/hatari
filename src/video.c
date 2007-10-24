@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.75 2007-10-23 21:02:52 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.76 2007-10-24 23:19:52 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -649,9 +649,9 @@ static void Video_ResetShifterTimings(void)
   {
     /* 71 Hz, monochrome */
     nScreenRefreshRate = 71;
-    nScanlinesPerFrame = 500;           /* FIXME: maybe 501 instead of 500 ? */
-    nCyclesPerLine = 226;               /* FIXME: this value is not verified */
-    nStartHBL = nFirstVisibleHbl = 34;  /* FIXME: this value is not verified */
+    nScanlinesPerFrame = 501;           /* could also be 500 ? */
+    nCyclesPerLine = 224;
+    nStartHBL = nFirstVisibleHbl = 34;  /* FIXME: 34 is not verified */
     nEndHBL = nStartHBL + 400;
   }
   else if (nSyncByte & 2)  /* Check if running in 50 Hz or in 60 Hz */
