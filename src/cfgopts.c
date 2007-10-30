@@ -54,7 +54,7 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.13 2007-07-29 21:17:34 eerot Exp $";
+const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.14 2007-10-30 23:33:48 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -283,15 +283,20 @@ static int write_token(FILE *outfile, const struct Config_Tag *ptr)
 static int write_header_tokens(FILE *fp, const struct Config_Tag *ptr, const char *header)
 {
 	int count = 0;
+
 	if (header != NULL)
 	{
 		fprintf(fp, "%s\n", header);
 	}
+
 	for (; ptr->buf; ++ptr)        /* scan for token */
 	{
 		if (write_token(fp, ptr) == 0)
 			++count;
 	}
+
+	fprintf(fp, "\n");
+
 	return count;
 }
 
