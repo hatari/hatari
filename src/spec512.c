@@ -18,7 +18,7 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.19 2007-01-16 18:42:59 thothy Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.20 2007-10-30 01:13:57 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -81,7 +81,7 @@ BOOL Spec512_IsImage(void)
 void Spec512_StartVBL(void)
 {
 	/* Clear number of cycle palettes on each frame */
-	memset(nCyclePalettes, 0x0, (nScanlinesPerFrame+1)*sizeof(int));
+	memset(nCyclePalettes, 0x0, sizeof(nCyclePalettes));
 
 	/* Clear number of times accessed on entry in palette (used to check if is true Spectrum 512 image) */
 	nPalettesAccesses = 0x0;
