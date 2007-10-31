@@ -17,13 +17,13 @@ typedef struct
 	int nfiles;
 } zip_dir;
 
-extern BOOL ZIP_FileNameIsZIP(char *pszFileName);
+extern BOOL ZIP_FileNameIsZIP(const char *pszFileName);
 extern struct dirent **ZIP_GetFilesDir(zip_dir *files, char *dir, int *entries);
 extern void ZIP_FreeZipDir(zip_dir *zd);
-extern zip_dir *ZIP_GetFiles(char *pszFileName);
-extern Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize);
-extern BOOL ZIP_WriteDisk(char *pszFileName,unsigned char *pBuffer,int ImageSize);
-extern Uint8 *ZIP_ReadFirstFile(char *pszFileName, long *pImageSize, const char * const ppszExts[]);
+extern zip_dir *ZIP_GetFiles(const char *pszFileName);
+extern Uint8 *ZIP_ReadDisk(const char *pszFileName, const char *pszZipPath, long *pImageSize);
+extern BOOL ZIP_WriteDisk(const char *pszFileName,unsigned char *pBuffer,int ImageSize);
+extern Uint8 *ZIP_ReadFirstFile(const char *pszFileName, long *pImageSize, const char * const ppszExts[]);
 
 
 #endif  /* HATARI_ZIP_H */

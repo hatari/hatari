@@ -6,7 +6,7 @@
 
   Zipped disk support, uses zlib
 */
-const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.22 2007-01-16 18:42:59 thothy Exp $";
+const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.23 2007-10-31 21:31:51 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,7 +56,7 @@ static const char * const pszDiskNameExts[] =
 /**
  * Does filename end with a .ZIP extension? If so, return TRUE
  */
-BOOL ZIP_FileNameIsZIP(char *pszFileName)
+BOOL ZIP_FileNameIsZIP(const char *pszFileName)
 {
 	return File_DoesFileExtensionMatch(pszFileName,".zip");
 }
@@ -66,7 +66,7 @@ BOOL ZIP_FileNameIsZIP(char *pszFileName)
 /**
  * Check if a file name contains a slash or backslash and return its position.
  */
-static int Zip_FileNameHasSlash(char *fn)
+static int Zip_FileNameHasSlash(const char *fn)
 {
 	int i=0;
 
@@ -86,7 +86,7 @@ static int Zip_FileNameHasSlash(char *fn)
  * returns a pointer to an array of strings if successful. Sets nfiles
  * to the number of files.
  */
-zip_dir *ZIP_GetFiles(char *pszFileName)
+zip_dir *ZIP_GetFiles(const char *pszFileName)
 {
 	int nfiles;
 	unsigned int i;
@@ -352,7 +352,7 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiskType)
 /**
  * Return the first matching file in a zip, or NULL on failure
  */
-static char *ZIP_FirstFile(char *filename, const char * const ppsExts[])
+static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
 {
 	zip_dir *files;
 	int i, j;
@@ -461,16 +461,16 @@ static void *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Load disk image from a .ZIP archive into memory, and return the number
- * of bytes loaded.
+ * Load disk image from a .ZIP archive into memory, set  the number
+ * of bytes loaded into pImageSize and return the data or NULL on error.
  */
-Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
+Uint8 *ZIP_ReadDisk(const char *pszFileName, const char *pszZipPath, long *pImageSize)
 {
 	uLong ImageSize=0;
 	unzFile uf=NULL;
 	Uint8 *buf;
+	char *path;
 	int nDiskType = -1;
-	BOOL pathAllocated=FALSE;
 	Uint8 *pDiskBuffer = NULL;
 
 	*pImageSize = 0;
@@ -484,62 +484,58 @@ Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
 
 	if (pszZipPath == NULL || pszZipPath[0] == 0)
 	{
-		pszZipPath = ZIP_FirstFile(pszFileName, pszDiskNameExts);
-		if (pszZipPath == NULL)
+		path = ZIP_FirstFile(pszFileName, pszDiskNameExts);
+		if (path == NULL)
 		{
 			Log_Printf(LOG_ERROR, "Cannot open %s\n", pszFileName);
 			unzClose(uf);
 			return NULL;
 		}
-		pathAllocated=TRUE;
+	}
+	else
+	{
+		path = strdup(pszZipPath);
 	}
 
-	ImageSize = ZIP_CheckImageFile(uf, pszZipPath, &nDiskType);
+	ImageSize = ZIP_CheckImageFile(uf, path, &nDiskType);
 	if (ImageSize <= 0)
 	{
 		unzClose(uf);
+		free(path);
 		return NULL;
 	}
 
 	/* extract to buf */
-	buf=ZIP_ExtractFile(uf, pszZipPath, ImageSize);
+	buf = ZIP_ExtractFile(uf, path, ImageSize);
 	unzCloseCurrentFile(uf);
 	unzClose(uf);
+	free(path);
 	if (buf == NULL)
 	{
 		return NULL;  /* failed extraction, return error */
 	}
 
-	if (nDiskType == ZIP_FILE_ST)
-	{
-		/* ST image => return buffer directly */
-		pDiskBuffer = buf;
-	}
-	else if (nDiskType == ZIP_FILE_MSA)
-	{
+	switch(nDiskType) {
+	case ZIP_FILE_MSA:
 		/* uncompress the MSA file */
 		pDiskBuffer = MSA_UnCompress(buf, (long *)&ImageSize);
-	}
-	else if (nDiskType == ZIP_FILE_DIM)
-	{
+		free(buf);
+		break;
+	case ZIP_FILE_DIM:
 		/* Skip DIM header */
 		ImageSize -= 32;
-		pDiskBuffer = malloc(ImageSize);
-		if (pDiskBuffer)
-			memcpy(pDiskBuffer, buf+32, ImageSize);
-		else
-			perror("ZIP_ReadDisk");
+		memmove(buf, buf+32, ImageSize);
+		/* ...and passthrough */
+	case ZIP_FILE_ST:
+		/* ST image => return buffer directly */
+		pDiskBuffer = buf;
+		break;
 	}
-
-	/* Free the buffers */
-	if (pDiskBuffer != buf)
-		free(buf);
-	if (pathAllocated == TRUE)
-		free(pszZipPath);
-
-	if (pDiskBuffer != NULL)
+	
+	if (pDiskBuffer)
+	{
 		*pImageSize = ImageSize;
-
+	}
 	return pDiskBuffer;
 }
 
@@ -550,7 +546,7 @@ Uint8 *ZIP_ReadDisk(char *pszFileName, char *pszZipPath, long *pImageSize)
  *
  * Not yet implemented.
  */
-BOOL ZIP_WriteDisk(char *pszFileName,unsigned char *pBuffer,int ImageSize)
+BOOL ZIP_WriteDisk(const char *pszFileName,unsigned char *pBuffer,int ImageSize)
 {
 	return FALSE;
 }
@@ -561,7 +557,7 @@ BOOL ZIP_WriteDisk(char *pszFileName,unsigned char *pBuffer,int ImageSize)
  * Load first file from a .ZIP archive into memory, and return the number
  * of bytes loaded.
  */
-Uint8 *ZIP_ReadFirstFile(char *pszFileName, long *pImageSize, const char * const ppszExts[])
+Uint8 *ZIP_ReadFirstFile(const char *pszFileName, long *pImageSize, const char * const ppszExts[])
 {
 	unzFile uf=NULL;
 	Uint8 *pBuffer;
@@ -590,6 +586,7 @@ Uint8 *ZIP_ReadFirstFile(char *pszFileName, long *pImageSize, const char * const
 	if (unzLocateFile(uf, pszZipPath, 0) != UNZ_OK)
 	{
 		Log_Printf(LOG_ERROR, "Error: Can not locate '%s' in the archive!", pszZipPath);
+		free(pszZipPath);
 		return NULL;
 	}
 
@@ -597,6 +594,7 @@ Uint8 *ZIP_ReadFirstFile(char *pszFileName, long *pImageSize, const char * const
 	if (unzGetCurrentFileInfo(uf, &file_info, pszZipPath, ZIP_PATH_MAX, NULL, 0, NULL, 0) != UNZ_OK)
 	{
 		Log_Printf(LOG_ERROR, "Error with zipfile in unzGetCurrentFileInfo.\n");
+		free(pszZipPath);
 		return NULL;
 	}
 

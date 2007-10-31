@@ -14,7 +14,7 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to
   a byte array and stored in 'Cart_data[]' (see cartData.c).
 */
-const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.15 2007-01-16 18:42:59 thothy Exp $";
+const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.16 2007-10-31 21:31:48 eerot Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -48,7 +48,7 @@ static void Cart_LoadImage(void)
 	char *pCartFileName = ConfigureParams.Rom.szCartridgeImageFileName;
 
 	/* Try to load the image file: */
-	pCartData = File_Read(pCartFileName, NULL, &nCartSize, psCartNameExts);
+	pCartData = File_Read(pCartFileName, &nCartSize, psCartNameExts);
 	if (!pCartData)
 	{
 		Log_Printf(LOG_ERROR, "Failed to load '%s'.\n", pCartFileName);

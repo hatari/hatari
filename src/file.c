@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.41 2007-02-27 20:53:52 eerot Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.42 2007-10-31 21:31:49 eerot Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -35,16 +35,9 @@ void File_CleanFileName(char *pszFileName)
 
 	len = strlen(pszFileName);
 
-	/* Security length check: */
-	if (len > FILENAME_MAX)
-	{
-		pszFileName[FILENAME_MAX-1] = 0;
-		len = FILENAME_MAX;
-	}
-
 	/* Remove end slash from filename! But / remains! Doh! */
 	if (len > 2 && pszFileName[len-1] == PATHSEP)
-		pszFileName[len-1] = 0;
+		pszFileName[len-1] = '\0';
 }
 
 
@@ -61,10 +54,10 @@ void File_AddSlashToEndFileName(char *pszFileName)
 	/* Check dir/filenames */
 	if (len != 0)
 	{
-		if (pszFileName[strlen(pszFileName)-1] != PATHSEP)
+		if (pszFileName[len-1] != PATHSEP)
 		{
 			pszFileName[len] = PATHSEP; /* Must use end slash */
-			pszFileName[len+1] = 0;
+			pszFileName[len+1] = '\0';
 		}
 	}
 }
@@ -93,17 +86,17 @@ BOOL File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtensi
  * 
  * Return TRUE if filename is '/', else give FALSE
  */
-BOOL File_IsRootFileName(char *pszFileName)
+static BOOL File_IsRootFileName(const char *pszFileName)
 {
-	if (pszFileName[0]=='\0')     /* If NULL string return! */
+	if (pszFileName[0] == '\0')     /* If NULL string return! */
 		return FALSE;
 
-	if (pszFileName[0]==PATHSEP)
+	if (pszFileName[0] == PATHSEP)
 		return TRUE;
 
 #ifdef WIN32
 
-	if (pszFileName[1]==':')
+	if (pszFileName[1] == ':')
 		return TRUE;
 #endif
 
@@ -117,7 +110,7 @@ BOOL File_IsRootFileName(char *pszFileName)
  */
 const char *File_RemoveFileNameDrive(const char *pszFileName)
 {
-	if ( (pszFileName[0]!='\0') && (pszFileName[1]==':') )
+	if ( (pszFileName[0] != '\0') && (pszFileName[1] == ':') )
 		return &pszFileName[2];
 	else
 		return pszFileName;
@@ -134,21 +127,22 @@ BOOL File_DoesFileNameEndWithSlash(char *pszFileName)
 {
 	if (pszFileName[0] == '\0')    /* If NULL string return! */
 		return FALSE;
-
+	
 	/* Does string end in a '/'? */
 	if (pszFileName[strlen(pszFileName)-1] == PATHSEP)
 		return TRUE;
-
+	
 	return FALSE;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read file from disk into memory, allocate memory for it if need to (pass
- * Address as NULL).
+ * Read file from disk into allocated buffer and return the buffer
+ * or NULL for error.  If pFileSize is non-NULL, read file size
+ * is set to that.
  */
-void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char * const ppszExts[])
+Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const ppszExts[])
 {
 	void *pFile = NULL;
 	long FileSize = 0;
@@ -177,12 +171,8 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
 			while (!gzeof(hGzFile));
 			FileSize = gztell(hGzFile);
 			gzrewind(hGzFile);
-			/* Find pointer to where to load, allocate memory if pass NULL */
-			if (pAddress)
-				pFile = pAddress;
-			else
-				pFile = malloc(FileSize);
 			/* Read in... */
+			pFile = malloc(FileSize);
 			if (pFile)
 				FileSize = gzread(hGzFile, pFile, FileSize);
 
@@ -193,12 +183,6 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
 	{
 		/* It is a .ZIP file! -> Try to load the first file in the archive */
 		pFile = ZIP_ReadFirstFile(pszFileName, &FileSize, ppszExts);
-		if (pFile && pAddress)
-		{
-			memcpy(pAddress, pFile, FileSize);
-			free(pFile);
-			pFile = pAddress;
-		}
 	}
 	else          /* It is a normal file */
 	{
@@ -211,12 +195,8 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
 			fseek(hDiskFile, 0, SEEK_END);
 			FileSize = ftell(hDiskFile);
 			fseek(hDiskFile, 0, SEEK_SET);
-			/* Find pointer to where to load, allocate memory if pass NULL */
-			if (pAddress)
-				pFile = pAddress;
-			else
-				pFile = malloc(FileSize);
 			/* Read in... */
+			pFile = malloc(FileSize);
 			if (pFile)
 				FileSize = fread(pFile, 1, FileSize, hDiskFile);
 
@@ -236,7 +216,7 @@ void *File_Read(char *pszFileName, void *pAddress, long *pFileSize, const char *
 /**
  * Save file to disk, return FALSE if errors
  */
-BOOL File_Save(char *pszFileName, const void *pAddress, size_t Size, BOOL bQueryOverwrite)
+BOOL File_Save(const char *pszFileName, const void *pAddress, size_t Size, BOOL bQueryOverwrite)
 {
 	BOOL bRet = FALSE;
 
@@ -328,18 +308,22 @@ BOOL File_Exists(const char *filename)
  */
 BOOL File_QueryOverwrite(const char *pszFileName)
 {
-	char szString[FILENAME_MAX + 26];
+	const char *fmt;
+	char *szString;
+	BOOL ret = TRUE;
 
 	/* Try and find if file exists */
 	if (File_Exists(pszFileName))
 	{
+		fmt = "File '%s' exists, overwrite?";
 		/* File does exist, are we OK to overwrite? */
-		snprintf(szString, sizeof(szString), "File '%s' exists, overwrite?", pszFileName);
+		szString = malloc(strlen(pszFileName) + strlen(fmt) + 1);
+		sprintf(szString, fmt, pszFileName);
 		fprintf(stderr, "%s\n", szString);
-		return DlgAlert_Query(szString);
+		ret = DlgAlert_Query(szString);
+		free(szString);
 	}
-
-	return TRUE;
+	return ret;
 }
 
 
@@ -395,6 +379,7 @@ BOOL File_FindPossibleExtFileName(char *pszFileName, const char * const ppszExts
 /**
  * Split a complete filename into path, filename and extension.
  * If pExt is NULL, don't split the extension from the file name!
+ * It's safe for pSrcFileName and pDir to be the same string.
  */
 void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *pExt)
 {
@@ -404,14 +389,14 @@ void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *pEx
 	ptr1 = strrchr(pSrcFileName, PATHSEP);
 	if (ptr1)
 	{
-		strcpy(pDir, pSrcFileName);
 		strcpy(pName, ptr1+1);
+		memmove(pDir, pSrcFileName, ptr1-pSrcFileName);
 		pDir[ptr1-pSrcFileName+1] = 0;
 	}
 	else
 	{
+ 		strcpy(pName, pSrcFileName);
 		sprintf(pDir, ".%c", PATHSEP);
-		strcpy(pName, pSrcFileName);
 	}
 
 	/* Build the raw filename: */
@@ -464,15 +449,16 @@ void File_makepath(char *pDestFileName, const char *pDir, const char *pName, con
 /*-----------------------------------------------------------------------*/
 /**
  * Shrink a file name to a certain length and insert some dots if we cut
- * something away (usefull for showing file names in a dialog).
+ * something away (useful for showing file names in a dialog).
  */
-void File_ShrinkName(char *pDestFileName, char *pSrcFileName, int maxlen)
+void File_ShrinkName(char *pDestFileName, const char *pSrcFileName, int maxlen)
 {
 	int srclen = strlen(pSrcFileName);
 	if (srclen < maxlen)
 		strcpy(pDestFileName, pSrcFileName);  /* It fits! */
 	else
 	{
+		assert(maxlen > 6);
 		strncpy(pDestFileName, pSrcFileName, maxlen/2);
 		if (maxlen&1)  /* even or uneven? */
 			pDestFileName[maxlen/2-1] = 0;
@@ -645,7 +631,6 @@ void File_MakeAbsoluteName(char *pFileName)
 /**
  * Create a valid path name from a possibly invalid name by erasing invalid
  * path parts at the end of the string.
- * pPathName needs to point to a buffer of at least FILENAME_MAX bytes.
  */
 void File_MakeValidPathName(char *pPathName)
 {
@@ -666,7 +651,7 @@ void File_MakeValidPathName(char *pPathName)
 			/* Erase the (probably invalid) part after the last slash */
 			*pLastSlash = 0;
 		}
-		else
+		else if (pPathName[0])
 		{
 			/* Path name seems to be completely invalid -> set to root directory */
 			pPathName[0] = PATHSEP;

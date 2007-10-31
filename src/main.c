@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.104 2007-10-23 20:00:28 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.105 2007-10-31 21:31:49 eerot Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -446,7 +446,6 @@ static void Main_UnInit(void)
   if(Sound_AreWeRecording())
     Sound_EndRecording();
   Audio_UnInit();
-  YMFormat_FreeRecording();
   SDLGui_UnInit();
 #if ENABLE_DSP_EMU
   if (ConfigureParams.System.nDSPType == DSP_TYPE_EMU) {

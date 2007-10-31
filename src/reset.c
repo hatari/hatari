@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.22 2007-01-18 09:24:25 eerot Exp $";
+const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.23 2007-10-31 21:31:49 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -33,7 +33,8 @@ const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.22 2007-01-18 09:24:25 eerot
 
 /*-----------------------------------------------------------------------*/
 /**
- * Reset ST emulator states, chips, interrupts and registers
+ * Reset ST emulator states, chips, interrupts and registers.
+ * Return zero or negative TOS image load error code.
  */
 static int Reset_ST(BOOL bCold)
 {

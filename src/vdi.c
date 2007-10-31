@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.24 2007-10-21 12:21:01 eerot Exp $";
+const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.25 2007-10-31 21:31:50 eerot Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -283,7 +283,7 @@ static void VDI_ModifyDesktopInf(char *pszFileName)
   int i;
 
   /* Load our '.inf' file */
-  pInfData = (Uint8 *)File_Read(pszFileName,NULL,&InfSize,NULL);
+  pInfData = File_Read(pszFileName, &InfSize, NULL);
   if (pInfData)
   {
     /* Scan file for '#E' */

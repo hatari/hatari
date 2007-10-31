@@ -21,7 +21,7 @@
   TRACK 2, SIDE 0
   TRACK 2, SIDE 1
 */
-const char ST_rcsid[] = "Hatari $Id: st.c,v 1.8 2007-01-16 18:42:59 thothy Exp $";
+const char ST_rcsid[] = "Hatari $Id: st.c,v 1.9 2007-10-31 21:31:50 eerot Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -56,16 +56,16 @@ BOOL ST_FileNameIsST(char *pszFileName, BOOL bAllowGZ)
  */
 Uint8 *ST_ReadDisk(char *pszFileName, long *pImageSize)
 {
-	void *pStFile;
+	Uint8 *pStFile;
 
 	*pImageSize = 0;
 
 	/* Just load directly a buffer, and set ImageSize accordingly */
-	pStFile = File_Read(pszFileName, NULL, pImageSize, NULL);
+	pStFile = File_Read(pszFileName, pImageSize, NULL);
 	if (!pStFile)
 		*pImageSize = 0;
 
-	return(pStFile);
+	return pStFile;
 }
 
 
@@ -83,7 +83,7 @@ BOOL ST_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 #else   /*SAVE_TO_ST_IMAGES*/
 
 	/* Oops, cannot save */
-	return(FALSE);
+	return FALSE;
 
 #endif  /*SAVE_TO_ST_IMAGES*/
 }

@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.51 2007-09-09 20:49:59 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.52 2007-10-31 21:31:50 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -318,7 +318,7 @@ int TOS_LoadImage(void)
 
 	/* Load TOS image into memory so we can check it's vesion */
 	TosVersion = 0;
-	pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, NULL, &nFileSize, pszTosNameExts);
+	pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, &nFileSize, pszTosNameExts);
 
 	if (!pTosFile || nFileSize <= 0)
 	{

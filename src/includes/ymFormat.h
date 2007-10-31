@@ -7,7 +7,6 @@
 
 extern BOOL bRecordingYM;
 
-extern BOOL YMFormat_BeginRecording(char *pszYMFileName);
+extern BOOL YMFormat_BeginRecording(const char *pszYMFileName);
 extern void YMFormat_EndRecording(void);
-extern void YMFormat_FreeRecording(void);
 extern void YMFormat_UpdateRecording(void);

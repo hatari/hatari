@@ -6,7 +6,7 @@
 
   MSA Disk support
 */
-const char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.12 2007-09-09 20:49:59 thothy Exp $";
+const char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.13 2007-10-31 21:31:49 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -211,7 +211,7 @@ Uint8 *MSA_ReadDisk(char *pszFileName, long *pImageSize)
   *pImageSize = 0;
 
   /* Read in file */
-  pMsaFile = File_Read(pszFileName, NULL, NULL, NULL);
+  pMsaFile = File_Read(pszFileName, NULL, NULL);
   if (pMsaFile)
   {
     /* Uncompress into disk buffer */
@@ -279,14 +279,14 @@ BOOL MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 
   MSAHEADERSTRUCT *pMSAHeader;
   unsigned short int *pMSADataLength;
-  unsigned char *pMSAImageBuffer, *pMSABuffer, *pImageBuffer;
+  Uint8 *pMSAImageBuffer, *pMSABuffer, *pImageBuffer;
   unsigned short int nSectorsPerTrack, nSides, nCompressedBytes, nBytesPerTrack;
   BOOL nRet;
   int nTracks,nBytesToGo,nBytesRun;
   int Track,Side;
 
   /* Allocate workspace for compressed image */
-  pMSAImageBuffer = (unsigned char *)malloc(MSA_WORKSPACE_SIZE);
+  pMSAImageBuffer = (Uint8 *)malloc(MSA_WORKSPACE_SIZE);
   if (!pMSAImageBuffer)
   {
     perror("MSA_WriteDisk");
@@ -312,8 +312,8 @@ BOOL MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
       pImageBuffer = pBuffer + (nBytesPerTrack*Side) + ((nBytesPerTrack*nSides)*Track);
 
       /* Skip data length (fill in later) */
-      pMSADataLength = (unsigned short int *)pMSABuffer;
-      pMSABuffer += sizeof(short int);
+      pMSADataLength = (Uint16 *)pMSABuffer;
+      pMSABuffer += sizeof(Uint16);
       
       /* Compress track */
       nBytesToGo = NUMBYTESPERSECTOR * nSectorsPerTrack;
@@ -331,7 +331,7 @@ BOOL MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
           *pMSABuffer++ = 0xE5;               /* Marker */
           *pMSABuffer++ = *pImageBuffer;      /* Byte, and follow with 16-bit length */
           do_put_mem_word(pMSABuffer, nBytesRun);
-          pMSABuffer += sizeof(short int);
+          pMSABuffer += sizeof(Uint16);
           pImageBuffer += nBytesRun;
           nCompressedBytes += 4;
         }
@@ -346,7 +346,7 @@ BOOL MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
       else {
         /* No, just store uncompressed track */
         do_put_mem_word(pMSADataLength, NUMBYTESPERSECTOR*nSectorsPerTrack);
-        pMSABuffer = ((unsigned char *)pMSADataLength) + 2;
+        pMSABuffer = ((Uint8 *)pMSADataLength) + 2;
         pImageBuffer = pBuffer + (nBytesPerTrack*Side) + ((nBytesPerTrack*nSides)*Track);
         memcpy(pMSABuffer,pImageBuffer,(NUMBYTESPERSECTOR*nSectorsPerTrack));
         pMSABuffer += (NUMBYTESPERSECTOR*nSectorsPerTrack);
@@ -360,12 +360,12 @@ BOOL MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
   /* Free workspace */
   free(pMSAImageBuffer);
 
-  return(nRet);
+  return nRet;
 
 #else   /*SAVE_TO_MSA_IMAGES*/
 
   /* Oops, cannot save */
-  return(FALSE);
+  return FALSE;
 
 #endif  /*SAVE_TO_MSA_IMAGES*/
 }

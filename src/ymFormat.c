@@ -6,7 +6,7 @@
 
   YM File output, for use with STSound etc...
 */
-const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.16 2007-10-19 21:56:23 eerot Exp $";
+const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.17 2007-10-31 21:31:50 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -21,32 +21,39 @@ const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.16 2007-10-19 21:56:23
 #define YM_RECORDSIZE  (4+(YM_MAX_VBLS*NUM_PSG_SOUND_REGISTERS))  /* ~330k for 8 minutes */
 
 BOOL bRecordingYM = FALSE;
-int nYMVBLS = 0;
-unsigned char *pYMWorkspace = NULL, *pYMData;
-
+static int nYMVBLS = 0;
+static Uint8 *pYMData, *pYMWorkspace = NULL;
+static char *pszYMFileName = NULL;
 
 /*-----------------------------------------------------------------------*/
 /**
  * Start recording YM registers to workspace
  */
-BOOL YMFormat_BeginRecording(char *pszYMFileName)
+BOOL YMFormat_BeginRecording(const char *filename)
 {
 	/* Free any previous data, don't save */
-	YMFormat_FreeRecording();
+	bRecordingYM = FALSE;
+	YMFormat_EndRecording();
 
 	/* Make sure we have a proper filename to use */
-	if (!pszYMFileName || strlen(pszYMFileName)<=0)
+	if (!filename || strlen(filename) <= 0)
+	{
+		return FALSE;
+	}
+	pszYMFileName = strdup(filename);
+	if (!pszYMFileName)
 	{
 		return FALSE;
 	}
 
 	/* Create YM workspace */
-	pYMWorkspace = (unsigned char *)malloc(YM_RECORDSIZE);
+	pYMWorkspace = (Uint8 *)malloc(YM_RECORDSIZE);
 
 	if (!pYMWorkspace)
 	{
 		/* Failed to allocate memory, cannot record */
-		bRecordingYM = FALSE;
+		free(pszYMFileName);
+		pszYMFileName = NULL;
 		return FALSE;
 	}
 
@@ -81,13 +88,13 @@ BOOL YMFormat_BeginRecording(char *pszYMFileName)
  */
 static BOOL YMFormat_ConvertToStreams(void)
 {
-	unsigned char *pNewYMWorkspace;
-	unsigned char *pTmpYMData, *pNewYMData;
-	unsigned char *pTmpYMStream, *pNewYMStream;
+	Uint8 *pNewYMWorkspace;
+	Uint8 *pTmpYMData, *pNewYMData;
+	Uint8 *pTmpYMStream, *pNewYMStream;
 	int Reg, Count;
 
 	/* Allocate new workspace to convert data to */
-	pNewYMWorkspace = (unsigned char *)malloc(YM_RECORDSIZE);
+	pNewYMWorkspace = (Uint8 *)malloc(YM_RECORDSIZE);
 	if (pNewYMWorkspace)
 	{
 		/* Convert data, first copy over header */
@@ -119,8 +126,7 @@ static BOOL YMFormat_ConvertToStreams(void)
 
 		return TRUE;
 	}
-	else
-		return FALSE;
+	return FALSE;
 }
 
 
@@ -130,38 +136,32 @@ static BOOL YMFormat_ConvertToStreams(void)
  */
 void YMFormat_EndRecording(void)
 {
-	/* Have recorded information? */
-	if (pYMWorkspace && nYMVBLS)
+	/* Recording, have recorded information? */
+	if (bRecordingYM && pszYMFileName && pYMWorkspace && nYMVBLS)
 	{
 		/* Convert YM to correct format(list of register 1, then register 2...) */
 		if (YMFormat_ConvertToStreams())
 		{
 			/* Save YM File */
-			if (strlen(ConfigureParams.Sound.szYMCaptureFileName) > 0)
-			{
-				File_Save(ConfigureParams.Sound.szYMCaptureFileName, pYMWorkspace,(size_t)(nYMVBLS*NUM_PSG_SOUND_REGISTERS)+4, FALSE);
-				/* And inform user */
-				Log_AlertDlg(LOG_INFO, "YM sound data recording has been stopped.");
-			}
+			File_Save(pszYMFileName, pYMWorkspace,(size_t)(nYMVBLS*NUM_PSG_SOUND_REGISTERS)+4, FALSE);
+			/* And inform user */
+			Log_AlertDlg(LOG_INFO, "YM sound data recording has been stopped.");
 		}
+		else
+			Log_AlertDlg(LOG_INFO, "YM sound data conversion failed!");
+
 	}
-
 	/* And free */
-	YMFormat_FreeRecording();
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Free up any resources used by YM recording
- */
-void YMFormat_FreeRecording(void)
-{
-	/* Free workspace */
 	if (pYMWorkspace)
+	{
 		free(pYMWorkspace);
-	pYMWorkspace = NULL;
-
+		pYMWorkspace = NULL;
+	}
+	if (pszYMFileName)
+	{
+		free(pszYMFileName);
+		pszYMFileName = NULL;
+	}
 	/* Stop recording */
 	bRecordingYM = FALSE;
 }
