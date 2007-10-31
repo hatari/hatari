@@ -16,7 +16,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License (gpl.txt) for more details.
  */
-const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.8 2007-10-20 19:01:34 eerot Exp $";
+const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.9 2007-10-31 21:01:03 eerot Exp $";
 
 #include <string.h>
 
@@ -107,9 +107,12 @@ static int DlgAlert_FormatTextToBox(char *text, int max_width, int *text_width)
 			p = q = llb + 1;		/* next line begins here */
 			lines++;				/* increment line counter */
 		}
+		*text_width = columns;
 	}
-
-	*text_width = columns;
+	else
+	{
+		*text_width = txtlen;
+	}
 	return lines;					/* return line counter */
 }
 
