@@ -14,7 +14,7 @@ extern BOOL File_DoesFileExtensionMatch(const char *pszFileName, const char *psz
 extern const char *File_RemoveFileNameDrive(const char *pszFileName);
 extern BOOL File_DoesFileNameEndWithSlash(char *pszFileName);
 extern Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const ppszExts[]);
-extern BOOL File_Save(const char *pszFileName, const void *pAddress, size_t Size, BOOL bQueryOverwrite);
+extern BOOL File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, BOOL bQueryOverwrite);
 extern int File_Length(const char *pszFileName);
 extern BOOL File_Exists(const char *pszFileName);
 extern BOOL File_QueryOverwrite(const char *pszFileName);

@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.42 2007-10-31 21:31:49 eerot Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.43 2007-10-31 21:43:14 eerot Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -216,7 +216,7 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 /**
  * Save file to disk, return FALSE if errors
  */
-BOOL File_Save(const char *pszFileName, const void *pAddress, size_t Size, BOOL bQueryOverwrite)
+BOOL File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, BOOL bQueryOverwrite)
 {
 	BOOL bRet = FALSE;
 
