@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.28 2007-10-23 20:00:28 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.29 2007-11-01 12:51:29 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -85,7 +85,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_HELP,      "-h", "--help",
 	  NULL, "Print this help text and exit" },
 	{ OPT_VERSION,   "-v", "--version",
-	  NULL, "Print version number & help and exit" },
+	  NULL, "Print version number and exit" },
 	{ OPT_CONFIRMQUIT,NULL, "--confirm-quit",
 	  "<x>", "Whether Hatari confirms quit (y/n)" },
 	{ OPT_MONO,      "-m", "--mono",
@@ -99,7 +99,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Double ST low resolution (1=no, 2=yes)" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
-	  "<x>", "Skip <x> frames after each displayed frame (0 <= <x> <= 8)" },
+	  "<x>", "Skip <x> frames after each displayed frame (0 <= x <= 8)" },
 	{ OPT_FORCE8BPP, NULL, "--force8bpp",
 	  NULL, "Force use of 8-bit window (speeds up emulation!)" },
 	{ OPT_BORDERS, NULL, "--borders",
@@ -121,7 +121,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
 	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
 	{ OPT_IDEHDIMAGE,   NULL, "--ide",
-	  "<file>", "Emulate an IDE harddrive with an image <file> (not working yet)" },
+	  "<file>", "Emulate an IDE harddrive using <file> (not working yet)" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
 	  "<dir>", "Emulate an ST harddrive (<dir> = root directory)" },
 	{ OPT_TOS,       "-t", "--tos",
@@ -135,7 +135,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_BLITTER,   NULL, "--blitter",
 	  NULL, "Enable blitter emulation (ST only)" },
 	{ OPT_DSP,       NULL, "--dsp",
-	  "<x>", "DSP emulation (x=none/dummy/emu, experimental, Falcon only)" },
+	  "<x>", "DSP emulation (x=none/dummy/emu, for Falcon mode only)" },
 	{ OPT_VDI,       NULL, "--vdi",
 	  NULL, "Use extended VDI resolution" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
@@ -157,78 +157,123 @@ static const opt_t HatariOptions[] = {
 	{ OPT_NONE, NULL, NULL, NULL, NULL }
 };
 
+
 /**
- *  Show Hatari options and exit().
- * If 'error' given, show that error message.
- * If 'option' != OPT_NONE, tells for which option the error is,
- * otherwise 'value' is show as the option user gave.
+ * Show version string.
  */
-static void Opt_ShowExit(int option, const char *value, const char *error)
+static void Opt_ShowVersion(void)
+{
+	printf("\nThis is %s - the Atari ST, STE, TT and Falcon emulator.\n\n",
+	       PROG_NAME);
+	printf("Hatari is free software licensed under the GNU General"
+	       " Public License.\n\n");
+}
+
+
+/**
+ * Show help text.
+ */
+static void Opt_ShowHelp(void)
 {
 	unsigned int i, len, maxlen;
 	char buf[64];
 	const opt_t *opt;
 
-	printf("This is %s - the Atari ST, STE, TT and Falcon emulator.\n", PROG_NAME);
-	printf("This program is free software licensed under the GNU GPL.\n\n");
-
-	if (option == OPT_VERSION) {
-        	exit(0);
-        }
-
-	printf("Usage:\n hatari [options] [disk image name]\n"
+	Opt_ShowVersion();
+	
+	printf("Usage:\n hatari [options] [disk image name]\n\n"
 	       "Where options are:\n");
 
 	/* find longest option name and check option IDs */
 	i = maxlen = 0;
-	for (opt = HatariOptions; opt->id != OPT_NONE; opt++) {
+	for (opt = HatariOptions; opt->id != OPT_NONE; opt++)
+	{
 		assert(opt->id == i++);
 		len = strlen(opt->str);
-		if (opt->arg) {
+		if (opt->arg)
+		{
 			len += strlen(opt->arg);
 			len += 1;
 			/* with arg, short options go to another line */
-		} else {
-			if (opt->chr) {
+		}
+		else
+		{
+			if (opt->chr)
+			{
 				/* ' or -c' */
 				len += 6;
 			}
 		}
-		if (len > maxlen) {
+		if (len > maxlen)
+		{
 			maxlen = len;
 		}
 	}
 	assert(maxlen < sizeof(buf));
 	
 	/* output all options */
-	for (opt = HatariOptions; opt->id != OPT_NONE; opt++) {
-		if (opt->arg) {
+	for (opt = HatariOptions; opt->id != OPT_NONE; opt++)
+	{
+		if (opt->arg)
+		{
 			sprintf(buf, "%s %s", opt->str, opt->arg);
 			printf("  %-*s %s\n", maxlen, buf, opt->desc);
-			if (opt->chr) {
+			if (opt->chr)
+			{
 				printf("    or %s %s\n", opt->chr, opt->arg);
 			}
-		} else {
-			if (opt->chr) {
+		}
+		else
+		{
+			if (opt->chr)
+			{
 				sprintf(buf, "%s or %s", opt->str, opt->chr);
 				printf("  %-*s %s\n", maxlen, buf, opt->desc);
-			} else {
+			}
+			else
+			{
 				printf("  %-*s %s\n", maxlen, opt->str, opt->desc);
 			}
 		}
 	}
 	printf("\nNote: 'stdout' and 'stderr' have special meaning as <file> names.\n");
 	printf("If you use stdout for midi or printer, set log to stderr!\n");
-	if (error) {
-		if (option != OPT_NONE) {
+}
+
+
+/**
+ * Show Hatari options and exit().
+ * If 'error' given, show that error message.
+ * If 'option' != OPT_NONE, tells for which option the error is,
+ * otherwise 'value' is show as the option user gave.
+ */
+static void Opt_ShowExit(int option, const char *value, const char *error)
+{
+	Opt_ShowVersion();
+	
+	printf("Usage:\n hatari [options] [disk image name]\n\n"
+	       "Try option \"-h\" or \"--help\" to display more information.\n");
+
+	if (error)
+	{
+		if (option != OPT_NONE && value != NULL)
+		{
+			fprintf(stderr, "\nError while parsing parameter %s :\n"
+			        " %s (%s)\n", HatariOptions[option].str, error, value);
+		}
+		else if (option != OPT_NONE)
+		{
 			fprintf(stderr, "\nError (%s): %s\n", HatariOptions[option].str, error);
-		} else {
+		}
+		else
+		{
 			fprintf(stderr, "\nError: %s (%s)\n", error, value);
 		}
 		exit(1);
 	}
 	exit(0);
 }
+
 
 /**
  * matches string under given index in the argv against all Hatari
@@ -243,12 +288,14 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 	const opt_t *opt;
 	const char *str = argv[idx];
 
-	for (opt = HatariOptions; opt->id != OPT_NONE; opt++) {
-		
+	for (opt = HatariOptions; opt->id != OPT_NONE; opt++)
+	{	
 		if ((!strcmp(str, opt->str)) ||
-		    (opt->chr && !strcmp(str, opt->chr))) {
+		    (opt->chr && !strcmp(str, opt->chr)))
+		{
 			
-			if (opt->arg && idx+1 >= argc) {
+			if (opt->arg && idx+1 >= argc)
+			{
 				Opt_ShowExit(opt->id, NULL, "Missing argument");
 			}
 			return opt->id;
@@ -257,6 +304,7 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 	Opt_ShowExit(OPT_NONE, argv[idx], "Unrecognized option");
 	return OPT_NONE;
 }
+
 
 /**
  * return
@@ -272,21 +320,49 @@ static int Opt_YesNo(const char *arg, int opt)
 	str = strdup(arg);
 	input = str;
 	orig = arg;
-	while (*str) {
+	while (*str)
+	{
 		*str++ = tolower(*arg++);
 	}
-	if (strcmp("y", input) == 0 || strcmp("yes", input) == 0) {
+	if (strcmp("y", input) == 0 || strcmp("yes", input) == 0)
+	{
 		ret = TRUE;
-	} else if (strcmp("n", input) == 0 || strcmp("no", input) == 0) {
+	}
+	else if (strcmp("n", input) == 0 || strcmp("no", input) == 0)
+	{
 		ret = FALSE;
-	} else {
+	}
+	else
+	{
 		Opt_ShowExit(opt, orig, "Unrecognized value");
 	}
 	free(input);
 	return ret;
 }
 
-/*-----------------------------------------------------------------------*/
+
+/**
+ * Copy option string, check string length and test if file exists
+ * and bail out on errors.
+ */
+static void Opt_StrCpy(int option, BOOL checkexist, char *dst, char *src, size_t dstlen)
+{
+	if (checkexist && !File_Exists(src))
+	{
+		Opt_ShowExit(option, src, "Given file doesn't exist (or has wrong file permissions)!\n");
+	}
+
+	if (strlen(src) < dstlen)
+	{
+		strcpy(dst, src);
+	}
+	else
+	{
+		Opt_ShowExit(option, src, "File name too long!\n");
+	}
+}
+
+
 /**
  * Check for any passed parameters, return boot disk
  */
@@ -295,15 +371,19 @@ void Opt_ParseParameters(int argc, char *argv[],
 {
 	int i, ncpu, skips, zoom, planes;
 	
-	for(i = 1; i < argc; i++) {
-		
-		if (argv[i][0] != '-') {
+	for(i = 1; i < argc; i++)
+	{	
+		if (argv[i][0] != '-')
+		{
 			/* Possible passed disk image filename */
 			if (argv[i][0] && File_Exists(argv[i]) &&
-			    strlen(argv[i]) < bootlen) {
+			    strlen(argv[i]) < bootlen)
+			{
 				strcpy(bootdisk, argv[i]);
 				File_MakeAbsoluteName(bootdisk);
-			} else {
+			}
+			else
+			{
 				Opt_ShowExit(OPT_NONE, argv[i], "Not an option nor disk image");
 			}
 			continue;
@@ -312,14 +392,17 @@ void Opt_ParseParameters(int argc, char *argv[],
 		/* WhichOption() checks also that there is an argument,
 		 * so we don't need to check that below
 		 */
-		switch(Opt_WhichOption(argc, argv, i)) {
+		switch(Opt_WhichOption(argc, argv, i))
+		{
 
 		case OPT_HELP:
-			Opt_ShowExit(OPT_HELP, NULL, NULL);
+			Opt_ShowHelp();
+			exit(0);
 			break;
 			
 		case OPT_VERSION:
-			Opt_ShowExit(OPT_VERSION, NULL, NULL);
+			Opt_ShowVersion();
+			exit(0);
 			break;
 
 		case OPT_CONFIRMQUIT:
@@ -332,16 +415,25 @@ void Opt_ParseParameters(int argc, char *argv[],
 
 		case OPT_MONITOR:
 			i += 1;
-			if (strcasecmp(argv[i], "mono") == 0) {
+			if (strcasecmp(argv[i], "mono") == 0)
+			{
 				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_MONO;
-			} else if (strcasecmp(argv[i], "rgb") == 0) {
+			}
+			else if (strcasecmp(argv[i], "rgb") == 0)
+			{
 				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_RGB;
-			} else if (strcasecmp(argv[i], "vga") == 0) {
+			}
+			else if (strcasecmp(argv[i], "vga") == 0)
+			{
 				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_VGA;
-			} else if (strcasecmp(argv[i], "tv") == 0) {
+			}
+			else if (strcasecmp(argv[i], "tv") == 0)
+			{
 				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_TV;
-			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "Unknown monitor type");
+			}
+			else
+			{
+				Opt_ShowExit(OPT_MONITOR, argv[i], "Unknown monitor type");
 			}
 			break;
 			
@@ -355,21 +447,27 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 		case OPT_ZOOM:
 			zoom = atoi(argv[++i]);
-			if(zoom < 1) {
-				Opt_ShowExit(OPT_NONE, argv[i], "Invalid zoom value");
+			if (zoom < 1)
+			{
+				Opt_ShowExit(OPT_ZOOM, argv[i], "Invalid zoom value");
 			}
-			if (zoom > 1) {
+			if (zoom > 1)
+			{
 				/* TODO: only doubling supported for now */
 				ConfigureParams.Screen.bZoomLowRes = TRUE;
-			} else {
+			}
+			else
+			{
 				ConfigureParams.Screen.bZoomLowRes = FALSE;
 			}
 			break;
 			
 		case OPT_FRAMESKIPS:
 			skips = atoi(argv[++i]);
-			if(skips < 0 || skips > 8) {
-				Opt_ShowExit(OPT_NONE, argv[i], "Invalid frame skip value");
+			if (skips < 0 || skips > 8)
+			{
+				Opt_ShowExit(OPT_FRAMESKIPS, argv[i],
+				             "Invalid frame skip value");
 			}
 			ConfigureParams.Screen.FrameSkips = skips;
 			break;
@@ -384,7 +482,8 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 		case OPT_JOYSTICK:
 			i++;
-			if (!Joy_SetCursorEmulation(argv[i][0] - '0')) {
+			if (!Joy_SetCursorEmulation(argv[i][0] - '0'))
+			{
 				/* TODO: replace this with an error message
 				 * for the next version.  For now assume
 				 * that -j was used without an argument
@@ -406,109 +505,72 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 		case OPT_LOG:
 			i += 1;
-			if (strlen(argv[i]) < sizeof(ConfigureParams.Log.sLogFileName)) {
-				strcpy(ConfigureParams.Log.sLogFileName, argv[i]);
-			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "Log file name too long!\n");
-			}
+			Opt_StrCpy(OPT_LOG, FALSE, ConfigureParams.Log.sLogFileName,
+			           argv[i], sizeof(ConfigureParams.Log.sLogFileName));
 			break;
 			
 		case OPT_PRINTER:
 			i += 1;
-			if (strlen(argv[i]) < sizeof(ConfigureParams.Printer.szPrintToFileName)) {
-				ConfigureParams.Printer.bEnablePrinting = TRUE;
-				strcpy(ConfigureParams.Printer.szPrintToFileName, argv[i]);
-			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "Printer file name too long!\n");
-			}
+			Opt_StrCpy(OPT_PRINTER, FALSE, ConfigureParams.Printer.szPrintToFileName,
+			           argv[i], sizeof(ConfigureParams.Printer.szPrintToFileName));
+			ConfigureParams.Printer.bEnablePrinting = TRUE;
 			break;
 			
 		case OPT_MIDI:
 			i += 1;
-			if (strlen(argv[i]) < sizeof(ConfigureParams.Midi.szMidiOutFileName)) {
-				ConfigureParams.Midi.bEnableMidi = TRUE;
-				strcpy(ConfigureParams.Midi.szMidiOutFileName, argv[i]);
-			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "Midi file name too long!\n");
-			}
+			Opt_StrCpy(OPT_MIDI, FALSE, ConfigureParams.Midi.szMidiOutFileName,
+			           argv[i], sizeof(ConfigureParams.Midi.szMidiOutFileName));
+			ConfigureParams.Midi.bEnableMidi = TRUE;
 			break;
       
 		case OPT_RS232:
 			i += 1;
-			if (strlen(argv[i]) < sizeof(ConfigureParams.RS232.szOutFileName)) {
-				ConfigureParams.RS232.bEnableRS232 = TRUE;
-				strcpy(ConfigureParams.RS232.szOutFileName, argv[i]);
-				strcpy(ConfigureParams.RS232.szInFileName, argv[i]);
-			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "RS232 file name too long!\n");
-			}
+			Opt_StrCpy(OPT_RS232, TRUE, ConfigureParams.RS232.szInFileName,
+			           argv[i], sizeof(ConfigureParams.RS232.szInFileName));
+			strncpy(ConfigureParams.RS232.szOutFileName, argv[i],
+			        sizeof(ConfigureParams.RS232.szOutFileName));
+			ConfigureParams.RS232.bEnableRS232 = TRUE;
 			break;
 			
 		case OPT_ACSIHDIMAGE:
 			i += 1;
-			if (!File_Exists(argv[i])) {
-				Opt_ShowExit(OPT_NONE, argv[i], "Given HD image file doesn't exist (or has wrong file permissions)!\n");
-			}
-			if (strlen(argv[i]) < sizeof(ConfigureParams.HardDisk.szHardDiskImage)) {
-				ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
-				strcpy(ConfigureParams.HardDisk.szHardDiskImage, argv[i]);
-			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "HD image file name too long!\n");
-			}
+			Opt_StrCpy(OPT_ACSIHDIMAGE, TRUE, ConfigureParams.HardDisk.szHardDiskImage,
+			           argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskImage));
+			ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
 			break;
 			
 		case OPT_IDEHDIMAGE:
 			i += 1;
-			if (!File_Exists(argv[i])) {
-				Opt_ShowExit(OPT_NONE, argv[i], "Given HD image file doesn't exist (or has wrong file permissions)!\n");
-			}
-			if (strlen(argv[i]) < sizeof(ConfigureParams.HardDisk.szIdeHardDiskImage)) {
-				ConfigureParams.HardDisk.bUseIdeHardDiskImage = TRUE;
-				strcpy(ConfigureParams.HardDisk.szIdeHardDiskImage, argv[i]);
-			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "HD image file name too long!\n");
-			}
+			Opt_StrCpy(OPT_IDEHDIMAGE, TRUE, ConfigureParams.HardDisk.szIdeHardDiskImage,
+			           argv[i], sizeof(ConfigureParams.HardDisk.szIdeHardDiskImage));
+			ConfigureParams.HardDisk.bUseIdeHardDiskImage = TRUE;
 			break;
 
 		case OPT_HARDDRIVE:
 			i += 1;
-			if(strlen(argv[i]) < sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]))	{
-				ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
-				ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
-				strcpy(ConfigureParams.HardDisk.szHardDiskDirectories[0], argv[i]);
-			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "HD directory name too long!\n");
-			}
+			Opt_StrCpy(OPT_HARDDRIVE, FALSE, ConfigureParams.HardDisk.szHardDiskDirectories[0],
+			           argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]));
+			ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
+			ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
 			break;
 			
 		case OPT_TOS:
 			i += 1;
-			if (!File_Exists(argv[i])) {
-				Opt_ShowExit(OPT_NONE, argv[i], "Given TOS image file doesn't exist (or has wrong file permissions)!\n");
-			}
-			if (strlen(argv[i]) < sizeof(ConfigureParams.Rom.szTosImageFileName)) {
-				strcpy(ConfigureParams.Rom.szTosImageFileName, argv[i]);
-			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "TOS image file name too long!\n");
-			}
+			Opt_StrCpy(OPT_TOS, TRUE, ConfigureParams.Rom.szTosImageFileName,
+			           argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName));
 			break;
       
 		case OPT_CARTRIDGE:
 			i += 1;
-			if (!File_Exists(argv[i])) {
-				Opt_ShowExit(OPT_NONE, argv[i], "Given Cartridge image file doesn't exist (or has wrong file permissions)!\n");
-			}
-			if (strlen(argv[i]) < sizeof(ConfigureParams.Rom.szCartridgeImageFileName)) {
-				strcpy(ConfigureParams.Rom.szCartridgeImageFileName, argv[i]);
-			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "Cartridge image file name too long!\n");
-			}
+			Opt_StrCpy(OPT_CARTRIDGE, TRUE, ConfigureParams.Rom.szCartridgeImageFileName,
+			           argv[i], sizeof(ConfigureParams.Rom.szCartridgeImageFileName));
 			break;
 			
 		case OPT_CPULEVEL:
 			/* UAE core uses cpu_level variable */
 			ncpu = atoi(argv[++i]);
-			if(ncpu < 0 || ncpu > 4) {
+			if(ncpu < 0 || ncpu > 4)
+			{
 				fprintf(stderr, "CPU level %d is invalid (valid: 0-4), set to 0.\n", ncpu);
 				ncpu = 0;
 			}
@@ -525,17 +587,24 @@ void Opt_ParseParameters(int argc, char *argv[],
 
 		case OPT_DSP:
 			i += 1;
-			if (strcasecmp(argv[i], "none") == 0) {
+			if (strcasecmp(argv[i], "none") == 0)
+			{
 				ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
-			} else if (strcasecmp(argv[i], "dummy") == 0) {
+			}
+			else if (strcasecmp(argv[i], "dummy") == 0)
+			{
 				ConfigureParams.System.nDSPType = DSP_TYPE_DUMMY;
-			} else if (strcasecmp(argv[i], "emu") == 0) {
+			}
+			else if (strcasecmp(argv[i], "emu") == 0)
+			{
 #if ENABLE_DSP_EMU
 				ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
 #else
 				Opt_ShowExit(OPT_NONE, argv[i], "DSP type 'emu' support not compiled in");
 #endif
-			} else {
+			}
+			else
+			{
 				Opt_ShowExit(OPT_NONE, argv[i], "Unknown DSP type");
 			}
 			break;
@@ -546,17 +615,18 @@ void Opt_ParseParameters(int argc, char *argv[],
 
 		case OPT_VDI_PLANES:
 			planes = atoi(argv[++i]);
-			switch(planes) {
-			case 1:
+			switch(planes)
+			{
+			 case 1:
 				ConfigureParams.Screen.nVdiColors = GEMCOLOUR_2;
 				break;
-			case 2:
+			 case 2:
 				ConfigureParams.Screen.nVdiColors = GEMCOLOUR_4;
 				break;
-			case 4:
+			 case 4:
 				ConfigureParams.Screen.nVdiColors = GEMCOLOUR_16;
 				break;
-			default:
+			 default:
 				Opt_ShowExit(OPT_NONE, argv[i], "Unsupported VDI bit-depth");
 			}
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
@@ -581,7 +651,8 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_MEMSIZE:
 			ConfigureParams.Memory.nMemorySize = atoi(argv[++i]);
 			if (ConfigureParams.Memory.nMemorySize < 0 ||
-			    ConfigureParams.Memory.nMemorySize > 14) {
+			    ConfigureParams.Memory.nMemorySize > 14)
+			{
 				fprintf(stderr, "Memory size %d is invalid (valid: 0-14MB), set to 1.\n",
 					ConfigureParams.Memory.nMemorySize);
 				ConfigureParams.Memory.nMemorySize = 1;
@@ -590,46 +661,46 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 		case OPT_CONFIGFILE:
 			i += 1;
-			if (!File_Exists(argv[i])) {
-				Opt_ShowExit(OPT_NONE, argv[i], "Given config file doesn't exist (or has wrong file permissions)!\n");
-			}
-			if (strlen(argv[i]) < sizeof(sConfigFileName)) {
-				strcpy(sConfigFileName, argv[i]);
-				Configuration_Load(NULL);
-			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "Config file name too long!\n");
-			}
+			Opt_StrCpy(OPT_CONFIGFILE, TRUE, sConfigFileName,
+			           argv[i], sizeof(sConfigFileName));
+			Configuration_Load(NULL);
 			break;
-			
+
 		case OPT_KEYMAPFILE:
 			i += 1;
-			if (File_Exists(argv[i])) {
-				strcpy(ConfigureParams.Keyboard.szMappingFileName, argv[i]);
-				ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
-			} else {
-				Opt_ShowExit(OPT_NONE, argv[i], "Given keymap file doesn't exist (or has wrong file permissions)!\n");
-			}
+			Opt_StrCpy(OPT_KEYMAPFILE, TRUE, ConfigureParams.Keyboard.szMappingFileName,
+			           argv[i], sizeof(ConfigureParams.Keyboard.szMappingFileName));
+			ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
 			break;
 			
 		case OPT_MACHINE:
 			i += 1;
-			if (strcasecmp(argv[i], "st") == 0) {
+			if (strcasecmp(argv[i], "st") == 0)
+			{
 				ConfigureParams.System.nMachineType = MACHINE_ST;
 				ConfigureParams.System.nCpuLevel = 0;
 				ConfigureParams.System.nCpuFreq = 8;
-			} else if (strcasecmp(argv[i], "ste") == 0) {
+			}
+			else if (strcasecmp(argv[i], "ste") == 0)
+			{
 				ConfigureParams.System.nMachineType = MACHINE_STE;
 				ConfigureParams.System.nCpuLevel = 0;
 				ConfigureParams.System.nCpuFreq = 8;
-			} else if (strcasecmp(argv[i], "tt") == 0) {
+			}
+			else if (strcasecmp(argv[i], "tt") == 0)
+			{
 				ConfigureParams.System.nMachineType = MACHINE_TT;
 				ConfigureParams.System.nCpuLevel = 3;
 				ConfigureParams.System.nCpuFreq = 32;
-			} else if (strcasecmp(argv[i], "falcon") == 0) {
+			}
+			else if (strcasecmp(argv[i], "falcon") == 0)
+			{
 				ConfigureParams.System.nMachineType = MACHINE_FALCON;
 				ConfigureParams.System.nCpuLevel = 3;
 				ConfigureParams.System.nCpuFreq = 16;
-			} else {
+			}
+			else
+			{
 				Opt_ShowExit(OPT_NONE, argv[i], "Unknown machine type");
 			}
 			break;
