@@ -14,7 +14,7 @@
   in this game has a bug in it, which corrupts its own registers if more than one byte is queued up. This
   value was found by a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.28 2007-01-16 18:42:59 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.29 2007-11-19 21:19:02 thothy Exp $";
 
 #include <time.h>
 
@@ -258,6 +258,10 @@ void IKBD_MemorySnapShot_Capture(BOOL bSave)
   MemorySnapShot_Store(&ACIAStatusRegister,sizeof(ACIAStatusRegister));
   MemorySnapShot_Store(&ACIAByte,sizeof(ACIAByte));
   MemorySnapShot_Store(&bByteInTransitToACIA,sizeof(bByteInTransitToACIA));
+  MemorySnapShot_Store(&bMouseDisabled, sizeof(bMouseDisabled));
+  MemorySnapShot_Store(&bJoystickDisabled, sizeof(bJoystickDisabled));
+  MemorySnapShot_Store(&bDuringResetCriticalTime, sizeof(bDuringResetCriticalTime));
+  MemorySnapShot_Store(&bBothMouseAndJoy, sizeof(bBothMouseAndJoy));
 }
 
 
