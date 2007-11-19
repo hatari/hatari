@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.43 2007-10-31 21:43:14 eerot Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.44 2007-11-19 21:20:39 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -390,7 +390,7 @@ void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *pEx
 	if (ptr1)
 	{
 		strcpy(pName, ptr1+1);
-		memmove(pDir, pSrcFileName, ptr1-pSrcFileName);
+		memmove(pDir, pSrcFileName, ptr1-pSrcFileName+1);
 		pDir[ptr1-pSrcFileName+1] = 0;
 	}
 	else
