@@ -16,7 +16,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License (gpl.txt) for more details.
  */
-const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.9 2007-10-31 21:01:03 eerot Exp $";
+const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.10 2007-11-20 22:11:28 thothy Exp $";
 
 #include <string.h>
 
@@ -67,53 +67,56 @@ static int DlgAlert_FormatTextToBox(char *text, int max_width, int *text_width)
 	int columns = 0;
 	int lines = 1;
 	int txtlen;
-	char *p;		/* pointer to begin of actual line */
-	char *q;		/* pointer to start of next search */
-	char *llb;		/* pointer to last place suitable for breaking the line */
-	char *txtend;	/* pointer to end of the text */
+	char *p;            /* pointer to begin of actual line */
+	char *q;            /* pointer to start of next search */
+	char *llb;          /* pointer to last place suitable for breaking the line */
+	char *txtend;       /* pointer to end of the text */
 
 	txtlen = strlen(text);
 
 	q = p = text;
-	llb = text-1;	/* pointer to last line break */
+	llb = text-1;       /* pointer to last line break */
 	txtend = text + txtlen;
 
-	if (txtlen > max_width)
-	{
-		while(q < txtend)						/* q was last place suitable for breaking */
-		{
-			char *r = strpbrk(q, " \t/\\\n");	/* find next suitable place for the break */
-			if (r == NULL)
-				r = txtend;						/* if there's no place then point to the end */
-
-			if ((r-p) < max_width && *r != '\n')	/* '\n' is always used for breaking */
-			{
-				llb = r;						/* remember new place suitable for breaking */
-				q++;
-				continue;						/* search again */
-			}
-
-			if ((r-p) > max_width)				/* too long line already? */
-			{
-				if (p > llb)					/* bad luck - no place for the delimiter. Let's do it the strong way */
-					llb = p + max_width;		/* we loose one character */
-			}
-			else
-				llb = r;			/* break from previous delimiter */
-
-			*llb = '\0';			/* BREAK */
-			if ((llb-p) > columns)
-				columns = llb - p;	/* longest line so far */
-			p = q = llb + 1;		/* next line begins here */
-			lines++;				/* increment line counter */
-		}
-		*text_width = columns;
-	}
-	else
+	if (txtlen <= max_width)
 	{
 		*text_width = txtlen;
+		return lines;
 	}
-	return lines;					/* return line counter */
+
+	while(q < txtend)                             /* q was last place suitable for breaking */
+	{
+		char *r = strpbrk(q, " \t/\\\n");     /* find next suitable place for the break */
+		if (r == NULL)
+			r = txtend;                   /* if there's no place then point to the end */
+
+		if ((r-p) < max_width && *r != '\n')  /* '\n' is always used for breaking */
+		{
+			llb = r;                      /* remember new place suitable for breaking */
+			q++;
+			if ((r-p) > columns)
+				columns = r - p;
+			continue;                     /* search again */
+		}
+
+		if ((r-p) > max_width)                /* too long line already? */
+		{
+			if (p > llb)                  /* bad luck - no place for the delimiter. Let's do it the strong way */
+				llb = p + max_width;  /* we loose one character */
+		}
+		else
+			llb = r;                /* break from previous delimiter */
+
+		*llb = '\0';                    /* BREAK */
+		if ((llb-p) > columns)
+			columns = llb - p;      /* longest line so far */
+		p = q = llb + 1;                /* next line begins here */
+		lines++;                        /* increment line counter */
+	}
+
+	*text_width = columns;
+
+	return lines;                           /* return line counter */
 }
 
 
