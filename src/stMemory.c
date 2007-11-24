@@ -6,7 +6,7 @@
 
   ST Memory access functions.
 */
-const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.14 2007-09-09 20:49:59 thothy Exp $";
+const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.15 2007-11-24 19:45:49 thothy Exp $";
 
 #include "stMemory.h"
 #include "configuration.h"
@@ -42,6 +42,7 @@ void STMemory_Clear(Uint32 StartAddress, Uint32 EndAddress)
 void STMemory_SetDefaultConfig(void)
 {
 	int i;
+	int screensize;
 	Uint8 nMemControllerByte;
 	static const int MemControllerTable[] =
 	{
@@ -79,18 +80,16 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteLong(0x43a, 0x237698aa);            /* another magic # */
 	STMemory_WriteLong(0x51a, 0x5555aaaa);            /* and another */
 
-	/* Set memory size, adjust for extra VDI screens if needed */
+	/* Set memory size, adjust for extra VDI screens if needed.
+	 * Note: TOS seems to set phys_top-0x8000 as the screen base
+	 * address - so we have to move phys_top down in VDI resolution
+	 * mode, although there is more "physical" ST RAM available. */
 	if (bUseVDIRes)
-	{
-		/* This is enough for 1024x768x16colors (0x60000) */
-		STMemory_WriteLong(0x436, STRamEnd-0x60000);  /* mem top - upper end of user memory (before 32k screen) */
-		STMemory_WriteLong(0x42e, STRamEnd-0x58000);  /* phys top */
-	}
+		screensize = VDIWidth * VDIHeight / 8 * VDIPlanes;
 	else
-	{
-		STMemory_WriteLong(0x436, STRamEnd-0x8000);   /* mem top - upper end of user memory (before 32k screen) */
-		STMemory_WriteLong(0x42e, STRamEnd);          /* phys top */
-	}
+		screensize = 0x8000;                      /* 32 kiB */
+	STMemory_WriteLong(0x436, STRamEnd-screensize);   /* mem top - upper end of user memory (before screen) */
+	STMemory_WriteLong(0x42e, STRamEnd-screensize+0x8000);  /* phys top */
 
 	/* Set memory controller byte according to different memory sizes */
 	/* Setting per bank: %00=128k %01=512k %10=2Mb %11=reserved. - e.g. %1010 means 4Mb */
