@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.71 2007-10-30 23:22:24 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.72 2007-11-25 14:31:22 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -52,7 +52,6 @@ static const struct Config_Tag configs_Screen[] =
 	{ "bForce8Bpp", Bool_Tag, &ConfigureParams.Screen.bForce8Bpp },
 	{ "bZoomLowRes", Bool_Tag, &ConfigureParams.Screen.bZoomLowRes },
 	{ "bUseExtVdiResolutions", Bool_Tag, &ConfigureParams.Screen.bUseExtVdiResolutions },
-	{ "nVdiResolution", Int_Tag, &ConfigureParams.Screen.nVdiResolution },
 	{ "nVdiWidth", Int_Tag, &ConfigureParams.Screen.nVdiWidth },
 	{ "nVdiHeight", Int_Tag, &ConfigureParams.Screen.nVdiHeight },
 	{ "nVdiColors", Int_Tag, &ConfigureParams.Screen.nVdiColors },
@@ -396,10 +395,9 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bZoomLowRes = FALSE;
 	ConfigureParams.Screen.MonitorType = MONITOR_TYPE_RGB;
 	ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
-	ConfigureParams.Screen.nVdiResolution = GEMRES_640x480;
-	ConfigureParams.Screen.nVdiWidth = 0;
-	ConfigureParams.Screen.nVdiHeight = 0;
-	ConfigureParams.Screen.nVdiColors = GEMCOLOUR_16;
+	ConfigureParams.Screen.nVdiWidth = 640;
+	ConfigureParams.Screen.nVdiHeight = 480;
+	ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
 	ConfigureParams.Screen.bCaptureChange = FALSE;
 	ConfigureParams.Screen.nFramesPerSecond = 25;
 
@@ -451,15 +449,14 @@ void Configuration_Apply(BOOL bReset)
 		/* Set resolution change */
 		bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions;
 		bUseHighRes = ((!bUseVDIRes) && ConfigureParams.Screen.MonitorType == MONITOR_TYPE_MONO)
-			|| (bUseVDIRes && ConfigureParams.Screen.nVdiColors == GEMCOLOUR_2);
+			|| (bUseVDIRes && ConfigureParams.Screen.nVdiColors == GEMCOLOR_2);
 		if (bUseHighRes)
 		{
 			STRes = ST_HIGH_RES;
 		}
 		if (bUseVDIRes)
 		{
-			VDI_SetResolution(ConfigureParams.Screen.nVdiResolution,
-			                  ConfigureParams.Screen.nVdiColors,
+			VDI_SetResolution(ConfigureParams.Screen.nVdiColors,
 			                  ConfigureParams.Screen.nVdiWidth,
 			                  ConfigureParams.Screen.nVdiHeight);
 		}
@@ -637,7 +634,6 @@ void Configuration_MemorySnapShot_Capture(BOOL bSave)
 
 	MemorySnapShot_Store(&ConfigureParams.Screen.MonitorType, sizeof(ConfigureParams.Screen.MonitorType));
 	MemorySnapShot_Store(&ConfigureParams.Screen.bUseExtVdiResolutions, sizeof(ConfigureParams.Screen.bUseExtVdiResolutions));
-	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiResolution, sizeof(ConfigureParams.Screen.nVdiResolution));
 	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiWidth, sizeof(ConfigureParams.Screen.nVdiWidth));
 	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiHeight, sizeof(ConfigureParams.Screen.nVdiHeight));
 	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiColors, sizeof(ConfigureParams.Screen.nVdiColors));

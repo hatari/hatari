@@ -11,7 +11,7 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.29 2007-11-01 12:51:29 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.30 2007-11-25 14:31:22 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -60,10 +60,9 @@ enum {
 	OPT_COMPATIBLE,
 	OPT_BLITTER,
 	OPT_DSP,
-	OPT_VDI,
 	OPT_VDI_PLANES,
-	OPT_VDI_X,
-	OPT_VDI_Y,
+	OPT_VDI_WIDTH,
+	OPT_VDI_HEIGHT,
 	OPT_MEMSIZE,
 	OPT_CONFIGFILE,
 	OPT_KEYMAPFILE,
@@ -136,14 +135,12 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Enable blitter emulation (ST only)" },
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x=none/dummy/emu, for Falcon mode only)" },
-	{ OPT_VDI,       NULL, "--vdi",
-	  NULL, "Use extended VDI resolution" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
 	  NULL, "VDI resolution bit-depth (x = 1/2/4)" },
-	{ OPT_VDI_X,     NULL, "--vdi-x",
-	  "<x>", "VDI resolution width (320 < x <= 1024)" },
-	{ OPT_VDI_Y,     NULL, "--vdi-y",
-	  "<x>", "VDI resolution height (200 < x <= 768)" },
+	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
+	  "<w>", "Use VDI resolution with width w (320 < w <= 1024)" },
+	{ OPT_VDI_HEIGHT,     NULL, "--vdi-height",
+	  "<h>", "VDI resolution with height h (200 < h <= 768)" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
 	  "<x>", "ST RAM size. x = size in MiB from 0 to 14, 0 for 512KiB" },
 	{ OPT_CONFIGFILE,"-c", "--configfile",
@@ -609,22 +606,18 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			break;
 
-		case OPT_VDI:
-			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
-			break;
-
 		case OPT_VDI_PLANES:
 			planes = atoi(argv[++i]);
 			switch(planes)
 			{
 			 case 1:
-				ConfigureParams.Screen.nVdiColors = GEMCOLOUR_2;
+				ConfigureParams.Screen.nVdiColors = GEMCOLOR_2;
 				break;
 			 case 2:
-				ConfigureParams.Screen.nVdiColors = GEMCOLOUR_4;
+				ConfigureParams.Screen.nVdiColors = GEMCOLOR_4;
 				break;
 			 case 4:
-				ConfigureParams.Screen.nVdiColors = GEMCOLOUR_16;
+				ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
 				break;
 			 default:
 				Opt_ShowExit(OPT_NONE, argv[i], "Unsupported VDI bit-depth");
@@ -632,15 +625,13 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
 			break;
 
-		case OPT_VDI_X:
+		case OPT_VDI_WIDTH:
 			ConfigureParams.Screen.nVdiWidth = atoi(argv[++i]);
-			ConfigureParams.Screen.nVdiResolution = GEMRES_OTHER;
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
 			break;
 
-		case OPT_VDI_Y:
+		case OPT_VDI_HEIGHT:
 			ConfigureParams.Screen.nVdiHeight = atoi(argv[++i]);
-			ConfigureParams.Screen.nVdiResolution = GEMRES_OTHER;
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
 			break;
 			

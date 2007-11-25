@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.13 2007-06-29 20:01:46 thothy Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.14 2007-11-25 14:31:22 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -29,22 +29,29 @@ const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.13 2007-06-29 20:01:
 #define DLGSCRN_VGA        16
 #define DLGSCRN_TV         17
 #define DLGSCRN_USEVDIRES  19
-#define DLGSCRN_RES640     21
-#define DLGSCRN_RES800     22
-#define DLGSCRN_RES1024    23
-#define DLGSCRN_BPP1       25
-#define DLGSCRN_BPP2       26
-#define DLGSCRN_BPP4       27
-#define DLGSCRN_ONCHANGE   30
-#define DLGSCRN_FPSPOPUP   32
-#define DLGSCRN_CAPTURE    33
-#define DLGSCRN_RECANIM    34
-#define DLGSCRN_EXIT       35
+#define DLGSCRN_WIDTHLESS  21
+#define DLGSCRN_WIDTHTEXT  22
+#define DLGSCRN_WIDTHMORE  23
+#define DLGSCRN_HEIGHTLESS 25
+#define DLGSCRN_HEIGHTTEXT 26
+#define DLGSCRN_HEIGHTMORE 27
+#define DLGSCRN_BPP1       29
+#define DLGSCRN_BPP2       30
+#define DLGSCRN_BPP4       31
+#define DLGSCRN_ONCHANGE   34
+#define DLGSCRN_FPSPOPUP   36
+#define DLGSCRN_CAPTURE    37
+#define DLGSCRN_RECANIM    38
+#define DLGSCRN_EXIT       39
 
 #define ITEMS_IN_ARRAY(a) (sizeof(a)/sizeof(a[0]))
 
 /* needs to match Frame skip values in screendlg[]! */
 static const int skip_frames[] = { 0, 1, 2, 4, 8 };
+
+/* Strings for VDI resolution width and height */
+static char sVdiWidth[5];
+static char sVdiHeight[5];
 
 /* The screen dialog: */
 static SGOBJ screendlg[] =
@@ -72,9 +79,14 @@ static SGOBJ screendlg[] =
   { SGBOX, 0, 0, 1,9, 48,6, NULL },
   { SGCHECKBOX, 0, 0, 2,10, 33,1, "Use extended GEM VDI resolution" },
   { SGTEXT, 0, 0, 2,12, 11,1, "Resolution:" },
-  { SGRADIOBUT, 0, 0, 15,12, 9,1, "640x480" },
-  { SGRADIOBUT, 0, 0, 26,12, 9,1, "800x600" },
-  { SGRADIOBUT, 0, 0, 37,12, 10,1, "1024x768" },
+  { SGBUTTON, 0, 0, 18,12, 1,1, "\x04" },     /* Arrow left */
+  { SGTEXT, 0, 0, 20,12, 4,1, sVdiWidth },
+  { SGBUTTON, 0, 0, 25,12, 1,1, "\x03" },     /* Arrow right */
+  { SGTEXT, 0, 0, 28,12, 1,1, "*" },
+  { SGBUTTON, 0, 0, 31,12, 1,1, "\x04" },     /* Arrow left */
+  { SGTEXT, 0, 0, 33,12, 4,1, sVdiHeight },
+  { SGBUTTON, 0, 0, 38,12, 1,1, "\x03" },     /* Arrow right */
+
   { SGTEXT, 0, 0, 2,13, 12,1, "Color Depth:" },
   { SGRADIOBUT, 0, 0, 17,13, 7,1, "1 bpp" },
   { SGRADIOBUT, 0, 0, 26,13, 7,1, "2 bpp" },
@@ -144,14 +156,11 @@ void Dialog_ScreenDlg(void)
     screendlg[DLGSCRN_USEVDIRES].state |= SG_SELECTED;
   else
     screendlg[DLGSCRN_USEVDIRES].state &= ~SG_SELECTED;
-
   for (i=0; i<3; i++)
-  {
-    screendlg[DLGSCRN_RES640 + i].state &= ~SG_SELECTED;
     screendlg[DLGSCRN_BPP1 + i].state &= ~SG_SELECTED;
-  }
-  screendlg[DLGSCRN_RES640 + DialogParams.Screen.nVdiResolution - GEMRES_640x480].state |= SG_SELECTED;
-  screendlg[DLGSCRN_BPP1 + DialogParams.Screen.nVdiColors - GEMCOLOUR_2].state |= SG_SELECTED;
+  screendlg[DLGSCRN_BPP1 + DialogParams.Screen.nVdiColors - GEMCOLOR_2].state |= SG_SELECTED;
+  sprintf(sVdiWidth, "%4i", DialogParams.Screen.nVdiWidth);
+  sprintf(sVdiHeight, "%4i", DialogParams.Screen.nVdiHeight);
 
   /* Initialize screen capture options: */
 
@@ -174,6 +183,35 @@ void Dialog_ScreenDlg(void)
       case DLGSCRN_FPSPOPUP:
         fprintf(stderr,"Sorry, popup menus don't work yet\n");
         break;
+
+      case DLGSCRN_WIDTHLESS:
+        // TOS can only handle resolutions correctly when width is dividable by 128!
+        DialogParams.Screen.nVdiWidth -= 128;
+        if (DialogParams.Screen.nVdiWidth < MIN_VDI_WIDTH)
+          DialogParams.Screen.nVdiWidth = MIN_VDI_WIDTH;
+        sprintf(sVdiWidth, "%4i", DialogParams.Screen.nVdiWidth);
+        break;
+      case DLGSCRN_WIDTHMORE:
+        // TOS can only handle resolutions correctly when width is dividable by 128!
+        DialogParams.Screen.nVdiWidth += 128;
+        if (DialogParams.Screen.nVdiWidth > MAX_VDI_WIDTH)
+          DialogParams.Screen.nVdiWidth = MAX_VDI_WIDTH;
+        sprintf(sVdiWidth, "%4i", DialogParams.Screen.nVdiWidth);
+        break;
+
+      case DLGSCRN_HEIGHTLESS:
+        DialogParams.Screen.nVdiHeight -= 16;
+        if (DialogParams.Screen.nVdiHeight < MIN_VDI_HEIGHT)
+          DialogParams.Screen.nVdiHeight = MIN_VDI_HEIGHT;
+        sprintf(sVdiHeight, "%4i", DialogParams.Screen.nVdiHeight);
+        break;
+      case DLGSCRN_HEIGHTMORE:
+        DialogParams.Screen.nVdiHeight += 16;
+        if (DialogParams.Screen.nVdiHeight > MAX_VDI_HEIGHT)
+          DialogParams.Screen.nVdiHeight = MAX_VDI_HEIGHT;
+        sprintf(sVdiHeight, "%4i", DialogParams.Screen.nVdiHeight);
+        break;
+
       case DLGSCRN_CAPTURE:
         SDL_UpdateRect(sdlscrn, 0,0,0,0);
         ScreenSnapShot_SaveScreen();
@@ -230,10 +268,8 @@ void Dialog_ScreenDlg(void)
   }
   for (i=0; i<3; i++)
   {
-    if(screendlg[DLGSCRN_RES640 + i].state & SG_SELECTED)
-      DialogParams.Screen.nVdiResolution = GEMRES_640x480 + i;
     if(screendlg[DLGSCRN_BPP1 + i].state & SG_SELECTED)
-      DialogParams.Screen.nVdiColors = GEMCOLOUR_2 + i;
+      DialogParams.Screen.nVdiColors = GEMCOLOR_2 + i;
   }
 
   DialogParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);

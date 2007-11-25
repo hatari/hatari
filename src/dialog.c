@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.63 2007-10-16 20:39:22 eerot Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.64 2007-11-25 14:31:22 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -61,9 +61,10 @@ static BOOL Dialog_DoNeedReset(void)
 	if (ConfigureParams.Screen.bUseExtVdiResolutions != DialogParams.Screen.bUseExtVdiResolutions)
 		return TRUE;
 
-	/* Did change GEM resolution or colour depth? */
+	/* Did change GEM resolution or color depth? */
 	if (DialogParams.Screen.bUseExtVdiResolutions &&
-	    (ConfigureParams.Screen.nVdiResolution != DialogParams.Screen.nVdiResolution
+	    (ConfigureParams.Screen.nVdiWidth != DialogParams.Screen.nVdiWidth
+	     || ConfigureParams.Screen.nVdiHeight != DialogParams.Screen.nVdiHeight
 	     || ConfigureParams.Screen.nVdiColors != DialogParams.Screen.nVdiColors))
 		return TRUE;
 

@@ -196,7 +196,6 @@ typedef struct
   BOOL bForce8Bpp;
   BOOL bZoomLowRes;
   BOOL bUseExtVdiResolutions;
-  int nVdiResolution;
   int nVdiWidth;
   int nVdiHeight;
   int nVdiColors;

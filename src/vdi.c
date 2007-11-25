@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.25 2007-10-31 21:31:50 eerot Exp $";
+const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.26 2007-11-25 14:31:22 thothy Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -32,7 +32,7 @@ int VDIRes = 0;                    /* 0,1 or 2 (low, medium, high) */
 int VDIWidth = 640;                /* 640x480, 800x600 or 1024x768 */
 int VDIHeight = 480;
 int VDIPlanes = 4;
-static int VDIColours = 16;
+static int VDIColors = 16;
 static int VDICharHeight = 8;
 
 static Uint32 LineABase;           /* Line-A structure */
@@ -123,49 +123,31 @@ static int limit(int value, int align, int min, int max)
  * Set Width/Height/BitDepth according to passed GEMRES_640x480,
  * GEMRES_800x600, GEMRES_OTHER. Align size when necessary.
  */
-void VDI_SetResolution(int GEMRes, int GEMColour, int WidthRequest, int HeightRequest)
+void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 {
-  /* Colour depth */
-  switch(GEMColour)
+  /* Color depth */
+  switch(GEMColor)
   {
-    case GEMCOLOUR_2:
+    case GEMCOLOR_2:
       VDIRes = 2;
       VDIPlanes = 1;
-      VDIColours = 2;
+      VDIColors = 2;
       VDICharHeight = 16;
       break;
-    case GEMCOLOUR_4:
+    case GEMCOLOR_4:
       VDIRes = 1;
       VDIPlanes = 2;
-      VDIColours = 4;
+      VDIColors = 4;
       VDICharHeight = 8;
       break;
-    case GEMCOLOUR_16:
+    case GEMCOLOR_16:
       VDIRes = 0;
       VDIPlanes = 4;
-      VDIColours = 16;
+      VDIColors = 16;
       VDICharHeight = 8;
       break;
   }
 
-  /* Resolution */
-  switch(GEMRes)
-  {
-    case GEMRES_640x480:
-      WidthRequest = 640;
-      HeightRequest = 480;
-      break;
-    case GEMRES_800x600:
-      WidthRequest = 800;
-      HeightRequest = 600;
-      break;
-    case GEMRES_1024x768:
-      WidthRequest = 1024;
-      HeightRequest = 768;
-      break;
-    case GEMRES_OTHER:
-      break;
-  }
   /* width needs to be aligned to 16 bytes */
   VDIWidth = limit(WidthRequest, 128/VDIPlanes, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
   /* height needs to be multiple of cell height */
@@ -250,8 +232,8 @@ void VDI_Complete(void)
   {
     STMemory_WriteWord(Intout,VDIWidth-1);                         /* IntOut[0] Width-1 */
     STMemory_WriteWord(Intout+1*2,VDIHeight-1);                    /* IntOut[1] Height-1 */
-    STMemory_WriteWord(Intout+13*2,VDIColours);                    /* IntOut[13] #colours */
-    STMemory_WriteWord(Intout+39*2,512);                           /* IntOut[39] #available colours */
+    STMemory_WriteWord(Intout+13*2, VDIColors);                    /* IntOut[13] #colors */
+    STMemory_WriteWord(Intout+39*2,512);                           /* IntOut[39] #available colors */
 
     STMemory_WriteWord(LineABase-0x15a*2,VDIWidth-1);              /* WKXRez */
     STMemory_WriteWord(LineABase-0x159*2,VDIHeight-1);             /* WKYRez */
