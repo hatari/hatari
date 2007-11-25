@@ -6,7 +6,7 @@
 
   ST Memory access functions.
 */
-const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.15 2007-11-24 19:45:49 thothy Exp $";
+const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.16 2007-11-25 14:23:05 thothy Exp $";
 
 #include "stMemory.h"
 #include "configuration.h"
@@ -84,10 +84,10 @@ void STMemory_SetDefaultConfig(void)
 	 * Note: TOS seems to set phys_top-0x8000 as the screen base
 	 * address - so we have to move phys_top down in VDI resolution
 	 * mode, although there is more "physical" ST RAM available. */
-	if (bUseVDIRes)
-		screensize = VDIWidth * VDIHeight / 8 * VDIPlanes;
-	else
-		screensize = 0x8000;                      /* 32 kiB */
+	screensize = VDIWidth * VDIHeight / 8 * VDIPlanes;
+        /* Use 32 kiB in normal screen mode or when the screen size is smaller than 32 kiB */
+	if (!bUseVDIRes || screensize < 0x8000)
+		screensize = 0x8000;
 	STMemory_WriteLong(0x436, STRamEnd-screensize);   /* mem top - upper end of user memory (before screen) */
 	STMemory_WriteLong(0x42e, STRamEnd-screensize+0x8000);  /* phys top */
 
