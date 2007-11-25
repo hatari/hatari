@@ -24,7 +24,7 @@ extern void GemDOS_Reset(void);
 extern void GemDOS_InitDrives(void);
 extern void GemDOS_UnInitDrives(void);
 extern void GemDOS_MemorySnapShot_Capture(BOOL bSave);
-extern void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *pszDestName);
+extern void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *pszDestName, int nDestNameLen);
 extern BOOL GemDOS(void);
 extern void GemDOS_OpCode(void);
 extern void GemDOS_RunOldOpCode(void);

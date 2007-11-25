@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.64 2007-10-07 14:07:02 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.65 2007-11-25 15:14:58 thothy Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -751,7 +751,8 @@ static int baselen(char *s)
 /**
  * Use hard-drive directory, current ST directory and filename to create full path
  */
-void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *pszDestName)
+void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
+                                    char *pszDestName, int nDestNameLen)
 {
 	char *s,*start;
 
@@ -764,22 +765,25 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 		return;
 
 	/* case full filename "C:\foo\bar" */
-	s=pszDestName;
-	start=NULL;
+	s = pszDestName;
+	start = NULL;
 
 	if (pszFileName[1] == ':')
 	{
-		sprintf(pszDestName, "%s%s", emudrives[0]->hd_emulation_dir, File_RemoveFileNameDrive(pszFileName));
+		snprintf(pszDestName, nDestNameLen, "%s%s",
+		         emudrives[0]->hd_emulation_dir, File_RemoveFileNameDrive(pszFileName));
 	}
 	/* case referenced from root:  "\foo\bar" */
 	else if (pszFileName[0] == '\\')
 	{
-		sprintf(pszDestName, "%s%s", emudrives[0]->hd_emulation_dir, pszFileName);
+		snprintf(pszDestName, nDestNameLen, "%s%s",
+		         emudrives[0]->hd_emulation_dir, pszFileName);
 	}
 	/* case referenced from current directory */
 	else
 	{
-		sprintf(pszDestName, "%s%s",  emudrives[0]->fs_currpath, pszFileName);
+		snprintf(pszDestName, nDestNameLen, "%s%s",
+		         emudrives[0]->fs_currpath, pszFileName);
 		start = pszDestName + strlen(emudrives[0]->fs_currpath)-1;
 	}
 
@@ -793,7 +797,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 		}
 		{
 			glob_t globbuf;
-			char old1,old2,dest[256];
+			char old1, old2;
 			int len, found, base_len;
 			unsigned int j;
 
@@ -818,8 +822,8 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 						strncasecmp(globbuf.gl_pathv[j],pszDestName,len)))
 				{
 					/* we found a matching name... */
-					sprintf(dest,"%s%c%s",globbuf.gl_pathv[j], PATHSEP,s+1);
-					strcpy(pszDestName,dest);
+					snprintf(pszDestName, nDestNameLen, "%s%c%s",
+					         globbuf.gl_pathv[j], PATHSEP, s+1);
 					j = globbuf.gl_pathc;
 					found = 1;
 				}
@@ -838,8 +842,8 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 					if (!strncasecmp(globbuf.gl_pathv[j],pszDestName,len))
 					{
 						/* we found a matching name... */
-						sprintf(dest,"%s%c%s",globbuf.gl_pathv[j], PATHSEP,s+1);
-						strcpy(pszDestName,dest);
+						snprintf(pszDestName, nDestNameLen, "%s%c%s",
+						         globbuf.gl_pathv[j], PATHSEP, s+1);
 						j = globbuf.gl_pathc;
 						found = 1;
 					}
@@ -888,7 +892,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *ps
 						strncasecmp(globbuf.gl_pathv[j],pszDestName,len)))
 				{
 					/* we found a matching name... */
-					strcpy(pszDestName,globbuf.gl_pathv[j]);
+					strncpy(pszDestName, globbuf.gl_pathv[j], nDestNameLen);
 					j = globbuf.gl_pathc;
 					found = 1;
 				}
@@ -1098,7 +1102,7 @@ static BOOL GemDOS_MkDir(Uint32 Params)
 		}
 
 		/* Copy old directory, as if calls fails keep this one */
-		GemDOS_CreateHardDriveFileName(Drive, pDirName, psDirPath);
+		GemDOS_CreateHardDriveFileName(Drive, pDirName, psDirPath, FILENAME_MAX);
 
 		/* Attempt to make directory */
 		if (mkdir(psDirPath, 0755) == 0)
@@ -1137,7 +1141,7 @@ static BOOL GemDOS_RmDir(Uint32 Params)
 		}
 
 		/* Copy old directory, as if calls fails keep this one */
-		GemDOS_CreateHardDriveFileName(Drive, pDirName, psDirPath);
+		GemDOS_CreateHardDriveFileName(Drive, pDirName, psDirPath, FILENAME_MAX);
 
 		/* Attempt to make directory */
 		if (rmdir(psDirPath) == 0)
@@ -1185,7 +1189,7 @@ static BOOL GemDOS_ChDir(Uint32 Params)
 			return TRUE;
 		}
 
-		GemDOS_CreateHardDriveFileName(Drive, pDirName, psTempDirPath);
+		GemDOS_CreateHardDriveFileName(Drive, pDirName, psTempDirPath, FILENAME_MAX);
 		if (stat(psTempDirPath, &buf))
 		{
 			/* error */
@@ -1228,21 +1232,25 @@ static BOOL GemDOS_Create(Uint32 Params)
 	{
 		return FALSE;
 	}
-	/* And convert to hard drive filename */
-	GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
-	
+
+	if (Mode == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
+	{
+		fprintf(stderr, "Warning: Hatari doesn't support GEMDOS volume"
+		        " label setting\n(for '%s')\n", pszFileName);
+		Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
+		return TRUE;
+	}
+
+	/* Now convert to hard drive filename */
+	GemDOS_CreateHardDriveFileName(Drive, pszFileName,
+	                            szActualFileName, sizeof(szActualFileName));
+
 	/* Find slot to store file handle, as need to return WORD handle for ST */
 	Index = GemDOS_FindFreeFileHandle();
 	if (Index==-1)
 	{
 		/* No free handles, return error code */
 		Regs[REG_D0] = GEMDOS_ENHNDL;       /* No more handles */
-		return TRUE;
-	}
-	if (Mode == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
-	{
-		fprintf(stderr, "Warning: Hatari doesn't support GEMDOS volume label setting\n(for '%s')\n", szActualFileName);
-		Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */
 		return TRUE;
 	}
 #ifdef ENABLE_SAVING
@@ -1299,7 +1307,9 @@ static BOOL GemDOS_Open(Uint32 Params)
 		return FALSE;
 	}
 	/* And convert to hard drive filename */
-	GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
+	GemDOS_CreateHardDriveFileName(Drive, pszFileName,
+	                            szActualFileName, sizeof(szActualFileName));
+
 	/* Find slot to store file handle, as need to return WORD handle for ST  */
 	Index = GemDOS_FindFreeFileHandle();
 	if (Index == -1)
@@ -1483,7 +1493,7 @@ static BOOL GemDOS_FDelete(Uint32 Params)
 		}
 
 		/* And convert to hard drive filename */
-		GemDOS_CreateHardDriveFileName(Drive, pszFileName, psActualFileName);
+		GemDOS_CreateHardDriveFileName(Drive, pszFileName, psActualFileName, FILENAME_MAX);
 
 		/* Now delete file?? */
 		if (unlink(psActualFileName) == 0)
@@ -1560,7 +1570,8 @@ static BOOL GemDOS_Fattrib(Uint32 Params)
 	}
 
 	/* Convert to hard drive filename */
-	GemDOS_CreateHardDriveFileName(nDrive, psFileName, sActualFileName);
+	GemDOS_CreateHardDriveFileName(nDrive, psFileName,
+	                              sActualFileName, sizeof(sActualFileName));
 
 	if (nAttrib == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
 	{
@@ -1775,7 +1786,8 @@ static BOOL GemDOS_SFirst(Uint32 Params)
 	{
 
 		/* And convert to hard drive filename */
-		GemDOS_CreateHardDriveFileName(Drive,pszFileName,szActualFileName);
+		GemDOS_CreateHardDriveFileName(Drive, pszFileName,
+		                    szActualFileName, sizeof(szActualFileName));
 
 		/* Populate DTA, set index for our use */
 		do_put_mem_word(pDTA->index, DTAIndex);
@@ -1874,8 +1886,10 @@ static BOOL GemDOS_Rename(Uint32 Params)
 	if (ISHARDDRIVE(NewDrive) && ISHARDDRIVE(OldDrive))
 	{
 		/* And convert to hard drive filenames */
-		GemDOS_CreateHardDriveFileName(NewDrive,pszNewFileName,szNewActualFileName);
-		GemDOS_CreateHardDriveFileName(OldDrive,pszOldFileName,szOldActualFileName);
+		GemDOS_CreateHardDriveFileName(NewDrive, pszNewFileName,
+		              szNewActualFileName, sizeof(szNewActualFileName));
+		GemDOS_CreateHardDriveFileName(OldDrive, pszOldFileName,
+		              szOldActualFileName, sizeof(szOldActualFileName));
 
 		/* Rename files */
 		if ( rename(szOldActualFileName,szNewActualFileName)==0 )

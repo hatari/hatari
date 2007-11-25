@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.26 2007-11-25 14:31:22 thothy Exp $";
+const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.27 2007-11-25 15:14:58 thothy Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -315,8 +315,8 @@ void VDI_FixDesktopInf(void)
   szNewDeskFileName = szDesktopFileName + FILENAME_MAX;
 
   /* Create filenames for hard-drive */
-  GemDOS_CreateHardDriveFileName(2, "\\DESKTOP.INF", szDesktopFileName);
-  GemDOS_CreateHardDriveFileName(2, "\\NEWDESK.INF", szNewDeskFileName);
+  GemDOS_CreateHardDriveFileName(2, "\\DESKTOP.INF", szDesktopFileName, FILENAME_MAX);
+  GemDOS_CreateHardDriveFileName(2, "\\NEWDESK.INF", szNewDeskFileName, FILENAME_MAX);
 
   /* First, check if files exist(ie modify or replace) */
   if (!File_Exists(szDesktopFileName))
