@@ -16,7 +16,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License (gpl.txt) for more details.
  */
-const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.10 2007-11-20 22:11:28 thothy Exp $";
+const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.11 2007-11-25 14:05:48 thothy Exp $";
 
 #include <string.h>
 
@@ -90,7 +90,7 @@ static int DlgAlert_FormatTextToBox(char *text, int max_width, int *text_width)
 		if (r == NULL)
 			r = txtend;                   /* if there's no place then point to the end */
 
-		if ((r-p) < max_width && *r != '\n')  /* '\n' is always used for breaking */
+		if ((r-p) <= max_width && *r != '\n') /* '\n' is always used for breaking */
 		{
 			llb = r;                      /* remember new place suitable for breaking */
 			q++;
