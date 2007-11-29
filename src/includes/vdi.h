@@ -27,6 +27,7 @@ extern BOOL bUseVDIRes;
 extern int VDIWidth,VDIHeight;
 extern int VDIRes,VDIPlanes;
 
+extern int VDI_Limit(int value, int align, int min, int max);
 extern void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest);
 extern BOOL VDI(void);
 extern void VDI_FixDesktopInf(void);

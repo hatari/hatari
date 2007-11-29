@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.14 2007-11-25 14:31:22 thothy Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.15 2007-11-29 11:13:24 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -88,9 +88,9 @@ static SGOBJ screendlg[] =
   { SGBUTTON, 0, 0, 38,12, 1,1, "\x03" },     /* Arrow right */
 
   { SGTEXT, 0, 0, 2,13, 12,1, "Color Depth:" },
-  { SGRADIOBUT, 0, 0, 17,13, 7,1, "1 bpp" },
-  { SGRADIOBUT, 0, 0, 26,13, 7,1, "2 bpp" },
-  { SGRADIOBUT, 0, 0, 35,13, 7,1, "4 bpp" },
+  { SGRADIOBUT, SG_EXIT, 0, 17,13, 7,1, "1 bpp" },
+  { SGRADIOBUT, SG_EXIT, 0, 26,13, 7,1, "2 bpp" },
+  { SGRADIOBUT, SG_EXIT, 0, 35,13, 7,1, "4 bpp" },
 
   { SGBOX, 0, 0, 1,16, 48,6, NULL },
   { SGTEXT, 0, 0, 18,16, 14,1, "Screen capture" },
@@ -103,6 +103,39 @@ static SGOBJ screendlg[] =
   { SGBUTTON, SG_DEFAULT, 0, 15,23, 20,1, "Back to main menu" },
   { -1, 0, 0, 0,0, 0,0, NULL }
 };
+
+
+static int nVdiStepX, nVdiStepY;   /* VDI resolution changing steps */
+
+
+/**
+ * Set width and height stepping for VDI resolution changing.
+ * Depending on the color depth we can only change the VDI resolution
+ * in certain steps:
+ * - The screen width must be dividable by 16 bytes (i.e. 128 pixels in
+ *   monochrome, 32 pixels in 16 color mode), or the text mode scrolling
+ *   function of TOS will fail.
+ * - The screen height must be a multiple of the character cell height
+ *   (i.e. 16 pixels in monochrome, 8 pixels in color mode).
+ */
+static void DlgScreen_SetStepping(void)
+{
+	if (screendlg[DLGSCRN_BPP1].state & SG_SELECTED)
+	{
+		nVdiStepX = 128;
+		nVdiStepY = 16;
+	}
+	else if (screendlg[DLGSCRN_BPP2].state & SG_SELECTED)
+	{
+		nVdiStepX = 64;
+		nVdiStepY = 8;
+	}
+	else
+	{
+		nVdiStepX = 32;
+		nVdiStepY = 8;
+	}
+}
 
 
 /*-----------------------------------------------------------------------*/
@@ -161,6 +194,7 @@ void Dialog_ScreenDlg(void)
   screendlg[DLGSCRN_BPP1 + DialogParams.Screen.nVdiColors - GEMCOLOR_2].state |= SG_SELECTED;
   sprintf(sVdiWidth, "%4i", DialogParams.Screen.nVdiWidth);
   sprintf(sVdiHeight, "%4i", DialogParams.Screen.nVdiHeight);
+  DlgScreen_SetStepping();
 
   /* Initialize screen capture options: */
 
@@ -185,30 +219,37 @@ void Dialog_ScreenDlg(void)
         break;
 
       case DLGSCRN_WIDTHLESS:
-        // TOS can only handle resolutions correctly when width is dividable by 128!
-        DialogParams.Screen.nVdiWidth -= 128;
-        if (DialogParams.Screen.nVdiWidth < MIN_VDI_WIDTH)
-          DialogParams.Screen.nVdiWidth = MIN_VDI_WIDTH;
+        DialogParams.Screen.nVdiWidth = VDI_Limit(DialogParams.Screen.nVdiWidth - nVdiStepX,
+                                                  nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
         sprintf(sVdiWidth, "%4i", DialogParams.Screen.nVdiWidth);
         break;
       case DLGSCRN_WIDTHMORE:
-        // TOS can only handle resolutions correctly when width is dividable by 128!
-        DialogParams.Screen.nVdiWidth += 128;
-        if (DialogParams.Screen.nVdiWidth > MAX_VDI_WIDTH)
-          DialogParams.Screen.nVdiWidth = MAX_VDI_WIDTH;
+        DialogParams.Screen.nVdiWidth = VDI_Limit(DialogParams.Screen.nVdiWidth + nVdiStepX,
+                                                  nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
         sprintf(sVdiWidth, "%4i", DialogParams.Screen.nVdiWidth);
         break;
 
       case DLGSCRN_HEIGHTLESS:
-        DialogParams.Screen.nVdiHeight -= 16;
-        if (DialogParams.Screen.nVdiHeight < MIN_VDI_HEIGHT)
-          DialogParams.Screen.nVdiHeight = MIN_VDI_HEIGHT;
+        DialogParams.Screen.nVdiHeight = VDI_Limit(DialogParams.Screen.nVdiHeight - nVdiStepY,
+                                                   nVdiStepY, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
         sprintf(sVdiHeight, "%4i", DialogParams.Screen.nVdiHeight);
         break;
       case DLGSCRN_HEIGHTMORE:
-        DialogParams.Screen.nVdiHeight += 16;
-        if (DialogParams.Screen.nVdiHeight > MAX_VDI_HEIGHT)
-          DialogParams.Screen.nVdiHeight = MAX_VDI_HEIGHT;
+        DialogParams.Screen.nVdiHeight = VDI_Limit(DialogParams.Screen.nVdiHeight + nVdiStepY,
+                                                   nVdiStepY, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+        sprintf(sVdiHeight, "%4i", DialogParams.Screen.nVdiHeight);
+        break;
+
+      case DLGSCRN_BPP1:
+      case DLGSCRN_BPP2:
+      case DLGSCRN_BPP4:
+        DlgScreen_SetStepping();
+        /* Align resolution to actual conditions: */
+        DialogParams.Screen.nVdiWidth = VDI_Limit(DialogParams.Screen.nVdiWidth, nVdiStepX,
+                                                  MIN_VDI_WIDTH, MAX_VDI_WIDTH);
+        DialogParams.Screen.nVdiHeight = VDI_Limit(DialogParams.Screen.nVdiHeight, nVdiStepY,
+                                                   MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
+        sprintf(sVdiWidth, "%4i", DialogParams.Screen.nVdiWidth);
         sprintf(sVdiHeight, "%4i", DialogParams.Screen.nVdiHeight);
         break;
 
