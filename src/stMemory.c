@@ -6,7 +6,7 @@
 
   ST Memory access functions.
 */
-const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.16 2007-11-25 14:23:05 thothy Exp $";
+const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.17 2007-11-29 11:29:12 thothy Exp $";
 
 #include "stMemory.h"
 #include "configuration.h"
@@ -43,6 +43,7 @@ void STMemory_SetDefaultConfig(void)
 {
 	int i;
 	int screensize;
+	int memtop;
 	Uint8 nMemControllerByte;
 	static const int MemControllerTable[] =
 	{
@@ -88,8 +89,12 @@ void STMemory_SetDefaultConfig(void)
         /* Use 32 kiB in normal screen mode or when the screen size is smaller than 32 kiB */
 	if (!bUseVDIRes || screensize < 0x8000)
 		screensize = 0x8000;
-	STMemory_WriteLong(0x436, STRamEnd-screensize);   /* mem top - upper end of user memory (before screen) */
-	STMemory_WriteLong(0x42e, STRamEnd-screensize+0x8000);  /* phys top */
+	/* mem top - upper end of user memory (right before the screen memory).
+	 * Note: memtop / phystop must be dividable by 512, or TOS crashes */
+	memtop = (STRamEnd - screensize) & 0xfffffe00;
+	STMemory_WriteLong(0x436, memtop);
+	/* phys top - This must be memtop + 0x8000 to make TOS happy */
+	STMemory_WriteLong(0x42e, memtop+0x8000);
 
 	/* Set memory controller byte according to different memory sizes */
 	/* Setting per bank: %00=128k %01=512k %10=2Mb %11=reserved. - e.g. %1010 means 4Mb */
