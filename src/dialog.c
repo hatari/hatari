@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.64 2007-11-25 14:31:22 thothy Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.65 2007-12-03 22:11:13 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -48,7 +48,7 @@ CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can
  * Check if need to warn user that changes will take place after reset.
  * Return TRUE if wants to reset.
  */
-static BOOL Dialog_DoNeedReset(void)
+BOOL Dialog_DoNeedReset(void)
 {
 	/* Did we change monitor type? If so, must reset */
 	if (ConfigureParams.Screen.MonitorType != DialogParams.Screen.MonitorType

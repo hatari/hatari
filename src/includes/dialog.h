@@ -28,6 +28,7 @@ extern void Dialog_SoundDlg(void);
 extern void Dialog_SystemDlg(void);
 extern void DlgRom_Main(void);
 /* and dialog.c */
+extern BOOL Dialog_DoNeedReset(void);
 extern BOOL Dialog_DoProperty(void);
 extern void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset);
 extern void Dialog_LoadParams(void);
