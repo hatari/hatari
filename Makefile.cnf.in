@@ -34,10 +34,12 @@ SDL_CFLAGS = @SDL_CFLAGS@
 SDL_LIBS = @SDL_LIBS@
 
 
-# Paths and directories
+# Various autoconf variables (paths, directories, etc.):
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 datarootdir = @datarootdir@
+PACKAGE_TARNAME = @PACKAGE_TARNAME@
+
 
 # Here you can define the default data directory for Hatari.
 # The emulator looks there for the default TOS image etc.
@@ -51,6 +53,12 @@ CONFDIR = @sysconfdir@
 
 # The executable will be installed in BINDIR
 BINDIR = @bindir@
+
+# The man-page will be install in MANDIR
+MANDIR = @mandir@/man1
+
+# All other documentation will be installed in DOCDIR
+DOCDIR = @docdir@
 
 
 # Program used for "make install"
