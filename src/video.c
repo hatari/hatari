@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.76 2007-10-24 23:19:52 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.77 2007-12-09 21:25:29 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -207,11 +207,11 @@ void Video_Sync_WriteByte(void)
       pHBLPaletteMasks -= OVERSCAN_TOP;
       pHBLPalettes -= OVERSCAN_TOP;
     }
-    else if (nHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL)
+    else if (nHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR)
     {
       /* Bottom border */
       OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
-      nEndHBL = SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM;  /* New end screen line */
+      nEndHBL = SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR+OVERSCAN_BOTTOM;  /* New end screen line */
     }
   }
 
@@ -487,12 +487,12 @@ static void Video_EndHBL(void)
       pHBLPaletteMasks -= OVERSCAN_TOP;
       pHBLPalettes -= OVERSCAN_TOP;
     }
-    else if (nHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL-1
-             && nEndHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL)
+    else if (nHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR-1
+             && nEndHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR)
     {
       /* Bottom border */
       OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
-      nEndHBL = SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL+OVERSCAN_BOTTOM;  /* New end screen line */
+      nEndHBL = SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR+OVERSCAN_BOTTOM;  /* New end screen line */
     }
   }
 
@@ -649,10 +649,10 @@ static void Video_ResetShifterTimings(void)
   {
     /* 71 Hz, monochrome */
     nScreenRefreshRate = 71;
-    nScanlinesPerFrame = 501;           /* could also be 500 ? */
-    nCyclesPerLine = 224;
-    nStartHBL = nFirstVisibleHbl = 34;  /* FIXME: 34 is not verified */
-    nEndHBL = nStartHBL + 400;
+    nScanlinesPerFrame = SCANLINES_PER_FRAME_71HZ;
+    nCyclesPerLine = CYCLES_PER_LINE_71HZ;
+    nStartHBL = SCREEN_START_HBL_71HZ;
+    nFirstVisibleHbl = FIRST_VISIBLE_HBL_71HZ;
   }
   else if (nSyncByte & 2)  /* Check if running in 50 Hz or in 60 Hz */
   {
@@ -661,7 +661,6 @@ static void Video_ResetShifterTimings(void)
     nScanlinesPerFrame = SCANLINES_PER_FRAME_50HZ;
     nCyclesPerLine = CYCLES_PER_LINE_50HZ;
     nStartHBL = SCREEN_START_HBL_50HZ;
-    nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL;
     nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;
   }
   else
@@ -671,8 +670,15 @@ static void Video_ResetShifterTimings(void)
     nScanlinesPerFrame = SCANLINES_PER_FRAME_60HZ;
     nCyclesPerLine = CYCLES_PER_LINE_60HZ;
     nStartHBL = SCREEN_START_HBL_60HZ;
-    nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL;
     nFirstVisibleHbl = FIRST_VISIBLE_HBL_60HZ;
+  }
+  if (bUseHighRes)
+  {
+    nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL_MONO;
+  }
+  else
+  {
+    nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL_COLOR;
   }
 }
 
