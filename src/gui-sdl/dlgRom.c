@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.8 2007-01-13 11:57:41 thothy Exp $";
+const char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.9 2007-12-11 19:02:20 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -48,14 +48,9 @@ static SGOBJ romdlg[] =
 */
 void DlgRom_Main(void)
 {
-	char *tmpname;
 	char szDlgTosName[47];
 	char szDlgCartName[47];
 	int but;
-
-	tmpname = malloc(FILENAME_MAX);
-	if (tmpname == NULL)
-		return;
 
 	SDLGui_CenterDlg(romdlg);
 
@@ -71,15 +66,11 @@ void DlgRom_Main(void)
 		switch (but)
 		{
 		 case DLGROM_TOSBROWSE:
-			strcpy(tmpname, DialogParams.Rom.szTosImageFileName);
-			if (SDLGui_FileSelect(tmpname, NULL, FALSE))   /* Show and process the file selection dlg */
-			{
-				if (!File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname))
-				{
-					strcpy(DialogParams.Rom.szTosImageFileName, tmpname);
-					File_ShrinkName(szDlgTosName, DialogParams.Rom.szTosImageFileName, sizeof(szDlgTosName)-1);
-				}
-			}
+			/* Show and process the file selection dlg */
+			SDLGui_FileConfSelect(szDlgTosName,
+					      DialogParams.Rom.szTosImageFileName,
+					      sizeof(szDlgTosName)-1,
+					      FALSE);
 			break;
 
 		 case DLGROM_CARTEJECT:
@@ -88,26 +79,14 @@ void DlgRom_Main(void)
 			break;
 
 		 case DLGROM_CARTBROWSE:
-			strcpy(tmpname, DialogParams.Rom.szCartridgeImageFileName);
-			File_MakeAbsoluteName(tmpname);
-			if (SDLGui_FileSelect(tmpname, NULL, FALSE))   /* Show and process the file selection dlg */
-			{
-				if (!File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname))
-				{
-					strcpy(DialogParams.Rom.szCartridgeImageFileName, tmpname);
-					File_ShrinkName(szDlgCartName, DialogParams.Rom.szCartridgeImageFileName, sizeof(szDlgCartName)-1);
-				}
-				else
-				{
-					szDlgCartName[0] = 0;
-					DialogParams.Rom.szCartridgeImageFileName[0] = 0;
-				}
-			}
+			/* Show and process the file selection dlg */
+			SDLGui_FileConfSelect(szDlgCartName,
+					      DialogParams.Rom.szCartridgeImageFileName,
+					       sizeof(szDlgCartName)-1,
+					      FALSE);
 			break;
 		}
 	}
 	while (but != DLGROM_EXIT && but != SDLGUI_QUIT
 	       && but != SDLGUI_ERROR && !bQuitProgram);
-
-	free(tmpname);
 }

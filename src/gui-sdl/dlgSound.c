@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.8 2007-01-13 11:57:41 thothy Exp $";
+const char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.9 2007-12-11 19:02:20 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -56,15 +56,6 @@ SGOBJ sounddlg[] =
 void Dialog_SoundDlg(void)
 {
   int but;
-  char *tmpname;
-
-  /* Allocate memory for tmpname: */
-  tmpname = malloc(FILENAME_MAX);
-  if (!tmpname)
-  {
-    perror("Dialog_SoundDlg");
-    return;
-  }
 
   SDLGui_CenterDlg(sounddlg);
 
@@ -99,15 +90,10 @@ void Dialog_SoundDlg(void)
     switch(but)
     {
       case DLGSOUND_RECBROWSE:                    /* Choose a new record file */
-        strcpy(tmpname, DialogParams.Sound.szYMCaptureFileName);
-        if( SDLGui_FileSelect(tmpname, NULL, TRUE) )
-        {
-          if( !File_DoesFileNameEndWithSlash(tmpname) )
-          {
-            strcpy(DialogParams.Sound.szYMCaptureFileName, tmpname);
-            File_ShrinkName(dlgRecordName, tmpname, sounddlg[DLGSOUND_RECNAME].w);
-          }
-        }
+	SDLGui_FileConfSelect(dlgRecordName,
+			      DialogParams.Sound.szYMCaptureFileName,
+			      sounddlg[DLGSOUND_RECNAME].w,
+			      TRUE);
         break;
       case  DLGSOUND_RECORD:
         if(Sound_AreWeRecording())
@@ -139,6 +125,4 @@ void Dialog_SoundDlg(void)
     DialogParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
   else
     DialogParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
-
-  free(tmpname);
 }

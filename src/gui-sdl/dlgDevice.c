@@ -6,7 +6,7 @@
 
   Device (Printer etc.) setup dialog
 */
-const char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.11 2007-01-13 11:57:41 thothy Exp $";
+const char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.12 2007-12-11 19:02:19 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -30,11 +30,11 @@ const char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.11 2007-01-13 11:57:
 #define DEVDLG_EXIT            20
 
 
-static char dlgPrinterName[46+1];
-static char dlgRs232OutName[46+1];
-static char dlgRs232InName[46+1];
-static char dlgMidiOutName[46+1];
-
+#define MAX_DLG_FILENAME 46+1
+static char dlgPrinterName[MAX_DLG_FILENAME];
+static char dlgRs232OutName[MAX_DLG_FILENAME];
+static char dlgRs232InName[MAX_DLG_FILENAME];
+static char dlgMidiOutName[MAX_DLG_FILENAME];
 
 /* The devices dialog: */
 static SGOBJ devicedlg[] =
@@ -75,15 +75,6 @@ static SGOBJ devicedlg[] =
 void Dialog_DeviceDlg(void)
 {
 	int but;
-	char *tmpname;
-
-	/* Allocate memory for tmpname: */
-	tmpname = malloc(FILENAME_MAX);
-	if (!tmpname)
-	{
-		perror("Dialog_DeviceDlg");
-		return;
-	}
 
 	SDLGui_CenterDlg(devicedlg);
 
@@ -116,48 +107,28 @@ void Dialog_DeviceDlg(void)
 		switch(but)
 		{
 		 case DEVDLG_PRNBROWSE:                 /* Choose a new printer file */
-			strcpy(tmpname, DialogParams.Printer.szPrintToFileName);
-			if (SDLGui_FileSelect(tmpname, NULL, TRUE))
-			{
-				if (!File_DoesFileNameEndWithSlash(tmpname))
-				{
-					strcpy(DialogParams.Printer.szPrintToFileName, tmpname);
-					File_ShrinkName(dlgPrinterName, tmpname, devicedlg[DEVDLG_PRNFILENAME].w);
-				}
-			}
+			SDLGui_FileConfSelect(dlgPrinterName,
+                                              DialogParams.Printer.szPrintToFileName,
+                                              devicedlg[DEVDLG_PRNFILENAME].w,
+                                              TRUE);
 			break;
 		 case DEVDLG_RS232OUTBROWSE:            /* Choose a new RS232 output file */
-			strcpy(tmpname, DialogParams.RS232.szOutFileName);
-			if (SDLGui_FileSelect(tmpname, NULL, TRUE))
-			{
-				if (!File_DoesFileNameEndWithSlash(tmpname))
-				{
-					strcpy(DialogParams.RS232.szOutFileName, tmpname);
-					File_ShrinkName(dlgRs232OutName, tmpname, devicedlg[DEVDLG_RS232OUTNAME].w);
-				}
-			}
+			SDLGui_FileConfSelect(dlgRs232OutName,
+                                              DialogParams.RS232.szOutFileName,
+                                              devicedlg[DEVDLG_RS232OUTNAME].w,
+                                              TRUE);
 			break;
 		 case DEVDLG_RS232INBROWSE:             /* Choose a new RS232 input file */
-			strcpy(tmpname, DialogParams.RS232.szInFileName);
-			if (SDLGui_FileSelect(tmpname, NULL, TRUE))
-			{
-				if (!File_DoesFileNameEndWithSlash(tmpname))
-				{
-					strcpy(DialogParams.RS232.szInFileName, tmpname);
-					File_ShrinkName(dlgRs232InName, tmpname, devicedlg[DEVDLG_RS232INNAME].w);
-				}
-			}
+			SDLGui_FileConfSelect(dlgRs232InName,
+                                              DialogParams.RS232.szInFileName,
+                                              devicedlg[DEVDLG_RS232INNAME].w,
+                                              TRUE);
 			break;
 		 case DEVDLG_MIDIBROWSE:                /* Choose a new MIDI file */
-			strcpy(tmpname, DialogParams.Midi.szMidiOutFileName);
-			if (SDLGui_FileSelect(tmpname, NULL, TRUE))
-			{
-				if (!File_DoesFileNameEndWithSlash(tmpname))
-				{
-					strcpy(DialogParams.Midi.szMidiOutFileName, tmpname);
-					File_ShrinkName(dlgMidiOutName, tmpname, devicedlg[DEVDLG_MIDIOUTNAME].w);
-				}
-			}
+			SDLGui_FileConfSelect(dlgMidiOutName,
+                                              DialogParams.Midi.szMidiOutFileName,
+                                              devicedlg[DEVDLG_MIDIOUTNAME].w,
+                                              TRUE);
 			break;
 		}
 	}
@@ -168,6 +139,4 @@ void Dialog_DeviceDlg(void)
 	DialogParams.Printer.bEnablePrinting = (devicedlg[DEVDLG_PRNENABLE].state & SG_SELECTED);
 	DialogParams.RS232.bEnableRS232 = (devicedlg[DEVDLG_RS232ENABLE].state & SG_SELECTED);
 	DialogParams.Midi.bEnableMidi = (devicedlg[DEVDLG_MIDIENABLE].state & SG_SELECTED);
-
-	free(tmpname);
 }

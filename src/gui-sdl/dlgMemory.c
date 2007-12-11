@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.11 2007-01-13 11:57:41 thothy Exp $";
+const char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.12 2007-12-11 19:02:20 eerot Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -64,15 +64,6 @@ void Dialog_MemDlg(void)
 {
   int i;
   int but;
-  char *tmpname;
-
-  /* Allocate memory for tmpname: */
-  tmpname = malloc(FILENAME_MAX);
-  if (!tmpname)
-  {
-    perror("Dialog_MemDlg");
-    return;
-  }
 
   SDLGui_CenterDlg(memorydlg);
 
@@ -100,28 +91,16 @@ void Dialog_MemDlg(void)
     switch(but)
     {
      case DLGMEM_SAVE:                  /* Save memory snap-shot */
-        strcpy(tmpname, DialogParams.Memory.szMemoryCaptureFileName);
-        if( SDLGui_FileSelect(tmpname, NULL, TRUE) )  /* Choose file name */
-        {
-          if( !File_DoesFileNameEndWithSlash(tmpname) )
-          {
-            strcpy(DialogParams.Memory.szMemoryCaptureFileName, tmpname);
-            File_ShrinkName(dlgSnapShotName, tmpname, memorydlg[DLGMEM_FILENAME].w);
-            MemorySnapShot_Capture(DialogParams.Memory.szMemoryCaptureFileName);
-          }
-        }
-        break;
+       if (SDLGui_FileConfSelect(dlgSnapShotName,
+				 DialogParams.Memory.szMemoryCaptureFileName,
+				 memorydlg[DLGMEM_FILENAME].w, TRUE))
+         MemorySnapShot_Capture(DialogParams.Memory.szMemoryCaptureFileName);
+       break;
      case DLGMEM_RESTORE:               /* Load memory snap-shot */
-        strcpy(tmpname, DialogParams.Memory.szMemoryCaptureFileName);
-        if( SDLGui_FileSelect(tmpname, NULL, FALSE) )  /* Choose file name */
-        {
-          if( !File_DoesFileNameEndWithSlash(tmpname) )
-          {
-            strcpy(DialogParams.Memory.szMemoryCaptureFileName, tmpname);
-            File_ShrinkName(dlgSnapShotName, tmpname, memorydlg[DLGMEM_FILENAME].w);
-            MemorySnapShot_Restore(DialogParams.Memory.szMemoryCaptureFileName);
-          }
-        }
+       if (SDLGui_FileConfSelect(dlgSnapShotName,
+				 DialogParams.Memory.szMemoryCaptureFileName,
+				 memorydlg[DLGMEM_FILENAME].w, FALSE))
+         MemorySnapShot_Restore(DialogParams.Memory.szMemoryCaptureFileName);
         break;
     }
   }
@@ -140,6 +119,4 @@ void Dialog_MemDlg(void)
     DialogParams.Memory.nMemorySize = 8;
   else
     DialogParams.Memory.nMemorySize = 14;
-
-  free(tmpname);
 }

@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.17 2007-01-13 11:57:41 thothy Exp $";
+const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.18 2007-12-11 19:02:19 eerot Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -685,3 +685,42 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 	return(retbut == SGFSDLG_OKAY);
 }
 
+
+/*-----------------------------------------------------------------------*/
+/* Let user browse for a file, confname is used as default.
+ * If bAllowNew is true, user can select new files also.
+ * 
+ * If no file is selected, or there's some problem with the file,
+ * return FALSE and clear dlgname & confname.
+ * Otherwise return TRUE, set dlgname & confname to the new file name
+ * (dlgname is shrinked & limited to maxlen).
+ */
+BOOL SDLGui_FileConfSelect(char *dlgname, char *confname, int maxlen, BOOL bAllowNew)
+{
+	char *selname;
+	int ret = FALSE;
+
+	selname = malloc(FILENAME_MAX);
+	if (selname == NULL)
+	{
+		dlgname[0] = confname[0] = 0;
+		return ret;
+	}
+	strcpy(selname, confname);
+	if (SDLGui_FileSelect(selname, NULL, bAllowNew))
+	{
+		if (!File_DoesFileNameEndWithSlash(selname) &&
+		    (bAllowNew || File_Exists(selname)))
+		{
+			strcpy(confname, selname);
+			File_ShrinkName(dlgname, selname, maxlen);
+		}
+		else
+		{
+			dlgname[0] = confname[0] = 0;
+		}
+		ret = TRUE;
+	}
+	free(selname);
+	return ret;
+}

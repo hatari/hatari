@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.9 2007-01-13 11:57:41 thothy Exp $";
+const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.10 2007-12-11 19:02:20 eerot Exp $";
 
 #include <unistd.h>
 
@@ -49,14 +49,6 @@ void Dialog_KeyboardDlg(void)
 {
   int i, but;
   char dlgmapfile[40];
-  char *tmpname;
-
-  tmpname = malloc(FILENAME_MAX);
-  if (!tmpname)
-  {
-    perror("Dialog_KeyboardDlg");
-    return;
-  }
 
   SDLGui_CenterDlg(keyboarddlg);
 
@@ -77,22 +69,11 @@ void Dialog_KeyboardDlg(void)
 
     if(but == DLGKEY_MAPBROWSE)
     {
-      strcpy(tmpname, DialogParams.Keyboard.szMappingFileName);
-      if(!tmpname[0])
-      {
-        getcwd(tmpname, FILENAME_MAX);
-        File_AddSlashToEndFileName(tmpname);
-      }
-      if( SDLGui_FileSelect(tmpname, NULL, FALSE) )
-      {
-        strcpy(DialogParams.Keyboard.szMappingFileName, tmpname);
-        if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
-          File_ShrinkName(dlgmapfile, tmpname, keyboarddlg[DLGKEY_MAPNAME].w);
-        else
-          dlgmapfile[0] = 0;
-      }
+      SDLGui_FileConfSelect(dlgmapfile,
+			    DialogParams.Keyboard.szMappingFileName,
+                            keyboarddlg[DLGKEY_MAPNAME].w,
+			    FALSE);
     }
-
   }
   while (but != DLGKEY_EXIT && but != SDLGUI_QUIT
          && but != SDLGUI_ERROR && !bQuitProgram);
@@ -104,6 +85,4 @@ void Dialog_KeyboardDlg(void)
     DialogParams.Keyboard.nKeymapType = KEYMAP_SCANCODE;
   else
     DialogParams.Keyboard.nKeymapType = KEYMAP_LOADED;
-
-  free(tmpname);
 }
