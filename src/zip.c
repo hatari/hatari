@@ -6,7 +6,7 @@
 
   Zipped disk support, uses zlib
 */
-const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.24 2007-11-01 11:03:07 thothy Exp $";
+const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.25 2007-12-11 00:41:51 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -250,7 +250,7 @@ struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
 						}
 						if (flag == FALSE)
 						{
-							files->names[files->nfiles] = (char *)malloc(slash+1);
+							files->names[files->nfiles] = (char *)malloc(slash+2);
 							if (!files->names[files->nfiles])
 							{
 								perror("ZIP_GetFilesDir");
