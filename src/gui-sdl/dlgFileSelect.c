@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.18 2007-12-11 19:02:19 eerot Exp $";
+const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.19 2007-12-16 22:09:19 eerot Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -313,7 +313,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 		/* assure that a directory name ends with a '/' */
 		File_AddSlashToEndFileName(path_and_name);
 	}
-	File_splitpath(path_and_name, path, fname, NULL);
+	File_SplitPath(path_and_name, path, fname, NULL);
 	File_MakeAbsoluteName(path);
 	File_MakeValidPathName(path);
 	File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
@@ -649,7 +649,9 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 	if (oldcursorstate == SDL_DISABLE)
 		SDL_ShowCursor(SDL_DISABLE);
 
-	File_makepath(path_and_name, path, fname, NULL);
+	path = File_MakePath(path, fname, NULL);
+	strcpy(path_and_name, path);
+	free(path);
 
 	/* Free old allocated memory: */
 	if (files != NULL)

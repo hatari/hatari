@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.44 2007-11-19 21:20:39 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.45 2007-12-16 22:09:19 eerot Exp $";
 
 #include <string.h>
 #include <strings.h>
@@ -144,22 +144,25 @@ BOOL File_DoesFileNameEndWithSlash(char *pszFileName)
  */
 Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const ppszExts[])
 {
+	char *filepath = NULL;
 	void *pFile = NULL;
 	long FileSize = 0;
 
 	/* Does the file exist? If not, see if can scan for other extensions and try these */
 	if (!File_Exists(pszFileName) && ppszExts)
 	{
-		/* Try other extensions, if suceeds correct filename is now in 'pszFileName' */
-		File_FindPossibleExtFileName(pszFileName, ppszExts);
+		/* Try other extensions, if succeeds, returns correct one */
+		filepath = File_FindPossibleExtFileName(pszFileName, ppszExts);
 	}
+	if (!filepath)
+		filepath = strdup(pszFileName);
 
 	/* Is it a gzipped file? */
-	if (File_DoesFileExtensionMatch(pszFileName, ".gz"))
+	if (File_DoesFileExtensionMatch(filepath, ".gz"))
 	{
 		gzFile hGzFile;
 		/* Open and read gzipped file */
-		hGzFile = gzopen(pszFileName, "rb");
+		hGzFile = gzopen(filepath, "rb");
 		if (hGzFile != NULL)
 		{
 			/* Find size of file: */
@@ -179,16 +182,16 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 			gzclose(hGzFile);
 		}
 	}
-	else if (File_DoesFileExtensionMatch(pszFileName, ".zip"))
+	else if (File_DoesFileExtensionMatch(filepath, ".zip"))
 	{
 		/* It is a .ZIP file! -> Try to load the first file in the archive */
-		pFile = ZIP_ReadFirstFile(pszFileName, &FileSize, ppszExts);
+		pFile = ZIP_ReadFirstFile(filepath, &FileSize, ppszExts);
 	}
 	else          /* It is a normal file */
 	{
 		FILE *hDiskFile;
 		/* Open and read normal file */
-		hDiskFile = fopen(pszFileName, "rb");
+		hDiskFile = fopen(filepath, "rb");
 		if (hDiskFile != NULL)
 		{
 			/* Find size of file: */
@@ -203,6 +206,7 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 			fclose(hDiskFile);
 		}
 	}
+	free(filepath);
 
 	/* Store size of file we read in (or 0 if failed) */
 	if (pFileSize)
@@ -329,49 +333,49 @@ BOOL File_QueryOverwrite(const char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Try filename with various extensions and check if file exists - if so return correct name
+ * Try filename with various extensions and check if file exists
+ * - if so, return allocated string which caller should free,
+ *   otherwise return NULL
  */
-BOOL File_FindPossibleExtFileName(char *pszFileName, const char * const ppszExts[])
+char * File_FindPossibleExtFileName(const char *pszFileName, const char * const ppszExts[])
 {
 	char *szSrcDir, *szSrcName, *szSrcExt;
-	char *szTempFileName;
-	int i = 0;
-	BOOL bFileExists = FALSE;
-
+	int i;
+	
 	/* Allocate temporary memory for strings: */
-	szTempFileName = malloc(4 * FILENAME_MAX);
-	if (!szTempFileName)
+	szSrcDir = malloc(3 * FILENAME_MAX);
+	if (!szSrcDir)
 	{
 		perror("File_FindPossibleExtFileName");
 		return FALSE;
 	}
-	szSrcDir = szTempFileName + FILENAME_MAX;
 	szSrcName = szSrcDir + FILENAME_MAX;
 	szSrcExt = szSrcName + FILENAME_MAX;
-
+	
 	/* Split filename into parts */
-	File_splitpath(pszFileName, szSrcDir, szSrcName, szSrcExt);
+	File_SplitPath(pszFileName, szSrcDir, szSrcName, szSrcExt);
 
 	/* Scan possible extensions */
-	while(ppszExts[i] && !bFileExists)
+	for (i = 0; ppszExts[i]; i++)
 	{
+		char *szTempFileName;
+
 		/* Re-build with new file extension */
-		File_makepath(szTempFileName, szSrcDir, szSrcName, ppszExts[i]);
-		/* Does this file exist? */
-		if (File_Exists(szTempFileName))
+		szTempFileName = File_MakePath(szSrcDir, szSrcName, ppszExts[i]);
+		if (szTempFileName)
 		{
-			/* Copy name for return */
-			strcpy(pszFileName, szTempFileName);
-			bFileExists = TRUE;
+			/* Does this file exist? */
+			if (File_Exists(szTempFileName))
+			{
+				free(szSrcDir);
+				/* return filename without extra strings */
+				return szTempFileName;
+			}
+			free(szTempFileName);
 		}
-
-		/* Next one */
-		i++;
 	}
-
-	free(szTempFileName);
-
-	return bFileExists;
+	free(szSrcDir);
+	return NULL;
 }
 
 
@@ -381,7 +385,7 @@ BOOL File_FindPossibleExtFileName(char *pszFileName, const char * const ppszExts
  * If pExt is NULL, don't split the extension from the file name!
  * It's safe for pSrcFileName and pDir to be the same string.
  */
-void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *pExt)
+void File_SplitPath(const char *pSrcFileName, char *pDir, char *pName, char *pExt)
 {
 	char *ptr1, *ptr2;
 
@@ -417,32 +421,45 @@ void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *pEx
 
 /*-----------------------------------------------------------------------*/
 /**
- * Build a complete filename from path, filename and extension.
+ * Construct a complete filename from path, filename and extension.
+ * Return the constructed filename.
  * pExt can also be NULL.
  */
-void File_makepath(char *pDestFileName, const char *pDir, const char *pName, const char *pExt)
+char * File_MakePath(const char *pDir, const char *pName, const char *pExt)
 {
+	char *filepath;
 	int len;
 
-	strcpy(pDestFileName, pDir);
-	len = strlen(pDestFileName);
-
-	if (len == 0)
-		sprintf(pDestFileName, ".%c", PATHSEP);
-	else if (pDestFileName[len-1] != PATHSEP)
+	/* dir or "." + "/" + name + "." + ext + \0 */
+	len = strlen(pDir) + 2 + strlen(pName) + 1 + (pExt ? strlen(pExt) : 0) + 1;
+	filepath = malloc(len);
+	if (!filepath)
 	{
-		pDestFileName[len] = PATHSEP;
-		pDestFileName[len+1] = 0;
+		perror("File_MakePath");
+		return NULL;
 	}
-
-	strcat(pDestFileName, pName);
-
-	if (pExt != NULL)
+	if (!pDir[0])
 	{
-		if (strlen(pExt) > 0 && pExt[0] != '.')
-			strcat(pDestFileName, ".");
-		strcat(pDestFileName, pExt);
+		filepath[0] = '.';
+		filepath[1] = '\0';
+	} else {
+		strcpy(filepath, pDir);
 	}
+	len = strlen(filepath);
+	if (filepath[len-1] != PATHSEP)
+	{
+		filepath[len++] = PATHSEP;
+	}
+	strcpy(&filepath[len], pName);
+
+	if (pExt != NULL && pExt[0])
+	{
+		len += strlen(pName);
+		if (pExt[0] != '.')
+			strcat(&filepath[len++], ".");
+		strcat(&filepath[len], pExt);
+	}
+	return filepath;
 }
 
 
@@ -651,6 +668,7 @@ void File_MakeValidPathName(char *pPathName)
 			/* Erase the (probably invalid) part after the last slash */
 			*pLastSlash = 0;
 		}
+		/* make sure we only shorten path... */
 		else if (pPathName[0])
 		{
 			/* Path name seems to be completely invalid -> set to root directory */

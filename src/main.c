@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.105 2007-10-31 21:31:49 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.106 2007-12-16 22:09:19 eerot Exp $";
 
 #include <time.h>
 #include <unistd.h>
@@ -422,7 +422,7 @@ static void Main_Init(void)
   /* Check passed disk image parameter, boot directly into emulator */
   if (strlen(szBootDiskImage) > 0)
   {
-    Floppy_InsertDiskIntoDrive(0, szBootDiskImage);
+    Floppy_InsertDiskIntoDrive(0, szBootDiskImage, sizeof(szBootDiskImage));
   }
 }
 

@@ -18,9 +18,9 @@ extern BOOL File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Siz
 extern int File_Length(const char *pszFileName);
 extern BOOL File_Exists(const char *pszFileName);
 extern BOOL File_QueryOverwrite(const char *pszFileName);
-extern BOOL File_FindPossibleExtFileName(char *pszFileName,const char * const ppszExts[]);
-extern void File_splitpath(const char *pSrcFileName, char *pDir, char *pName, char *Ext);
-extern void File_makepath(char *pDestFileName, const char *pDir, const char *pName, const char *pExt);
+extern char* File_FindPossibleExtFileName(const char *pszFileName,const char * const ppszExts[]);
+extern void File_SplitPath(const char *pSrcFileName, char *pDir, char *pName, char *Ext);
+extern char* File_MakePath(const char *pDir, const char *pName, const char *pExt);
 extern void File_ShrinkName(char *pDestFileName, const char *pSrcFileName, int maxlen);
 extern FILE *File_Open(const char *path, const char *mode);
 extern FILE *File_Close(FILE *fp);

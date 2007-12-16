@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.33 2007-01-16 18:42:59 thothy Exp $";
+const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.34 2007-12-16 22:09:19 eerot Exp $";
 
 #include <sys/stat.h>
 
@@ -194,13 +194,12 @@ static BOOL Floppy_IsBootSectorOK(int Drive)
 /*-----------------------------------------------------------------------*/
 /**
  * Try to create disk B filename, eg 'auto_100a' becomes 'auto_100b'
- * Return TRUE if think we should try!
+ * Return new filename if think we should try, otherwise NULL
  */
-static BOOL Floppy_CreateDiskBFileName(const char *pSrcFileName, char *pDestFileName)
+static char* Floppy_CreateDiskBFileName(const char *pSrcFileName)
 {
 	char *szDir, *szName, *szExt;
-	BOOL bFileExists = FALSE;
-
+	
 	/* Allocate temporary memory for strings: */
 	szDir = malloc(3 * FILENAME_MAX);
 	if (!szDir)
@@ -212,7 +211,7 @@ static BOOL Floppy_CreateDiskBFileName(const char *pSrcFileName, char *pDestFile
 	szExt = szName + FILENAME_MAX;
 
 	/* So, first split name into parts */
-	File_splitpath(pSrcFileName, szDir, szName, szExt);
+	File_SplitPath(pSrcFileName, szDir, szName, szExt);
 
 	/* All OK? */
 	if (strlen(szName) > 0)
@@ -220,57 +219,83 @@ static BOOL Floppy_CreateDiskBFileName(const char *pSrcFileName, char *pDestFile
 		/* Now, did filename end with an 'A' or 'a'? */
 		if ((szName[strlen(szName)-1]=='A') || (szName[strlen(szName)-1]=='a'))
 		{
+			char *szFull;
 			/* Change 'A' to a 'B' */
 			szName[strlen(szName)-1] += 1;
 			/* And re-build name into destination */
-			File_makepath(pDestFileName, szDir, szName, szExt);
-			/* Does file exist? */
-			bFileExists = File_Exists(pDestFileName);
+			szFull = File_MakePath(szDir, szName, szExt);
+			if (szFull)
+			{
+				/* Does file exist? */
+				if (File_Exists(szFull))
+				{
+					free(szDir);
+					return szFull;
+				}
+				free(szFull);
+			}
 		}
 	}
-
 	free(szDir);
-
-	return bFileExists;
+	return NULL;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Insert disk into floppy drive.
- * The WHOLE image is copied into our drive buffers, and uncompressed if necessary
+ * Insert disk into floppy drive. Sets the disk image name
+ * back to given string with corrected extension. Maxlen is
+ * maximum string lenght.
+ * Returns TRUE of success and FALSE for failure.
+ * The WHOLE image is copied into our drive buffers,
+ * and uncompressed if necessary
  */
-BOOL Floppy_InsertDiskIntoDrive(int Drive, char *pszFileName)
+BOOL Floppy_InsertDiskIntoDrive(int Drive, char *pszFileName, int maxlen)
 {
-	return Floppy_ZipInsertDiskIntoDrive(Drive, pszFileName, NULL);
+	char *path;
+	path = Floppy_ZipInsertDiskIntoDrive(Drive, pszFileName, NULL);
+	if (path)
+	{
+		strncpy(pszFileName, path, maxlen);
+		pszFileName[maxlen-1] = '\0';
+		free(path);
+		return TRUE;
+	}
+	return FALSE;
 }
 
-BOOL Floppy_ZipInsertDiskIntoDrive(int Drive, char *pszFileName, char *pszZipPath)
+/* Read image into buffers, handles different image extensions,
+ * return corrected file name on success and NULL on failure.
+ */
+char* Floppy_ZipInsertDiskIntoDrive(int Drive, const char *pszFileName, const char *pszZipPath)
 {
 	long nImageBytes = 0;
+	char *filename;
 
-	/* Eject disk, if one is inserted(don't inform user) */
+	/* Eject disk, if one is inserted (doesn't inform user) */
 	Floppy_EjectDiskFromDrive(Drive,FALSE);
 
-	/* See if file exists, and if not get correct extension */
+	/* See if file exists, and if not, get/add correct extension */
 	if ( !File_Exists(pszFileName) )
-		File_FindPossibleExtFileName(pszFileName,pszDiskImageNameExts);
-
+		filename = File_FindPossibleExtFileName(pszFileName, pszDiskImageNameExts);
+	else
+		filename = strdup(pszFileName);
+	
 	/* Check disk image type and read the file: */
-	if (MSA_FileNameIsMSA(pszFileName, TRUE))
-		EmulationDrives[Drive].pBuffer = MSA_ReadDisk(pszFileName, &nImageBytes);
-	else if (ST_FileNameIsST(pszFileName, TRUE))
-		EmulationDrives[Drive].pBuffer = ST_ReadDisk(pszFileName, &nImageBytes);
-	else if (DIM_FileNameIsDIM(pszFileName, TRUE))
-		EmulationDrives[Drive].pBuffer = DIM_ReadDisk(pszFileName, &nImageBytes);
-	else if (ZIP_FileNameIsZIP(pszFileName))
-		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(pszFileName, pszZipPath, &nImageBytes);
+	if (MSA_FileNameIsMSA(filename, TRUE))
+		EmulationDrives[Drive].pBuffer = MSA_ReadDisk(filename, &nImageBytes);
+	else if (ST_FileNameIsST(filename, TRUE))
+		EmulationDrives[Drive].pBuffer = ST_ReadDisk(filename, &nImageBytes);
+	else if (DIM_FileNameIsDIM(filename, TRUE))
+		EmulationDrives[Drive].pBuffer = DIM_ReadDisk(filename, &nImageBytes);
+	else if (ZIP_FileNameIsZIP(filename))
+		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(filename, pszZipPath, &nImageBytes);
 
 	/* Did load OK? */
 	if (EmulationDrives[Drive].pBuffer != NULL)
 	{
 		/* Store filename and size */
-		strcpy(EmulationDrives[Drive].szFileName,pszFileName);
+		strcpy(EmulationDrives[Drive].szFileName, filename);
 		EmulationDrives[Drive].nImageBytes = nImageBytes;
 		/* And set drive states */
 		EmulationDrives[Drive].bDiskInserted = TRUE;
@@ -282,20 +307,25 @@ BOOL Floppy_ZipInsertDiskIntoDrive(int Drive, char *pszFileName, char *pszZipPat
 	/* If we insert a disk into Drive A, should be try to put disk 2 into drive B? */
 	if (Drive == 0 && ConfigureParams.DiskImage.bAutoInsertDiskB)
 	{
-		char *szDiskBFileName = malloc(FILENAME_MAX);
+		char *szTmp;
 		/* Attempt to make up second filename, eg was 'auto_100a' to 'auto_100b' */
-		if (szDiskBFileName && Floppy_CreateDiskBFileName(pszFileName, szDiskBFileName))
+		char *szDiskBFileName =  Floppy_CreateDiskBFileName(filename);
+		if (szDiskBFileName)
 		{
-			/* Put image into Drive B, clear out if fails */
-			if (!Floppy_InsertDiskIntoDrive(1,szDiskBFileName))
-				strcpy(EmulationDrives[1].szFileName,"");
+			/* recurse with Drive B */
+			szTmp = Floppy_ZipInsertDiskIntoDrive(1, szDiskBFileName, NULL);
+			if (szTmp)
+				free(szTmp);
+			free(szDiskBFileName);
 		}
-		free(szDiskBFileName);
 	}
 
-
-	/* Return TRUE if loaded OK */
-	return (EmulationDrives[Drive].pBuffer != NULL);
+	if (EmulationDrives[Drive].pBuffer == NULL)
+	{
+		free(filename);
+		return NULL;
+	}
+	return filename;
 }
 
 
