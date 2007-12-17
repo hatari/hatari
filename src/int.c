@@ -4,19 +4,20 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  This code handles our interrupt table. So we do not need to test for every possible
-  interrupt we add any pending interrupts into a table. We then scan the list if used
-  entries in the table and copy the one with the least cycle count into the global
-  'PendingInterruptCount' variable. This is then decremented by the execution loop -
-  rather than decrement each and every entry (as the others cannot occur before this one)
-  We have two methods of adding interrupts; Absolute and Relative. Absolute will set values
-  from the time of the previous interrupt(eg, add HBL every 512 cycles), and Relative
-  will add from the current cycle time.
-  Note that interrupt may occur 'late'. Ie, if an interrupt is due in 4 cycles time but
-  the current instruction takes 20 cycles we will be 16 cycles late - this is handled in
-  the adjust functions.
+  This code handles our interrupt table. So we do not need to test for every
+  possible interrupt we add any pending interrupts into a table. We then scan
+  the list if used entries in the table and copy the one with the least cycle
+  count into the global 'PendingInterruptCount' variable. This is then
+  decremented by the execution loop - rather than decrement each and every
+  entry (as the others cannot occur before this one).
+  We have two methods of adding interrupts; Absolute and Relative.
+  Absolute will set values from the time of the previous interrupt (e.g., add
+  HBL every 512 cycles), and Relative will add from the current cycle time.
+  Note that interrupt may occur 'late'. I.e., if an interrupt is due in 4
+  cycles time but the current instruction takes 20 cycles we will be 16 cycles
+  late - this is handled in the adjust functions.
 */
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.16 2007-01-16 18:42:59 thothy Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.17 2007-12-17 23:03:34 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -34,28 +35,30 @@ short int PendingInterruptCount;
 
 static int nCyclesOver;
 
-/* List of possible interrupt handlers to be store in 'PendingInterruptTable', used for 'MemorySnapShot' */
+/* List of possible interrupt handlers to be store in 'PendingInterruptTable',
+ * used for 'MemorySnapShot' */
 static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 {
-  NULL,
-  Video_InterruptHandler_VBL,
-  Video_InterruptHandler_HBL,
-  Video_InterruptHandler_EndLine,
-  MFP_InterruptHandler_TimerA,
-  MFP_InterruptHandler_TimerB,
-  MFP_InterruptHandler_TimerC,
-  MFP_InterruptHandler_TimerD,
-  IKBD_InterruptHandler_ResetTimer,
-  IKBD_InterruptHandler_ACIA,
-  DmaSnd_InterruptHandler
+	NULL,
+	Video_InterruptHandler_VBL,
+	Video_InterruptHandler_HBL,
+	Video_InterruptHandler_EndLine,
+	MFP_InterruptHandler_TimerA,
+	MFP_InterruptHandler_TimerB,
+	MFP_InterruptHandler_TimerC,
+	MFP_InterruptHandler_TimerD,
+	IKBD_InterruptHandler_ResetTimer,
+	IKBD_InterruptHandler_ACIA,
+	DmaSnd_InterruptHandler
 };
 
-/* Event timer structure - keeps next timer to occur in structure so don't need to check all entries */
+/* Event timer structure - keeps next timer to occur in structure so don't need
+ * to check all entries */
 typedef struct
 {
-  BOOL bUsed;                   /* Is interrupt active? */
-  int Cycles;
-  void (*pFunction)(void);
+	BOOL bUsed;                   /* Is interrupt active? */
+	int Cycles;
+	void (*pFunction)(void);
 } INTERRUPTHANDLER;
 
 static INTERRUPTHANDLER InterruptHandlers[MAX_INTERRUPTS];
@@ -68,18 +71,19 @@ static int ActiveInterrupt=0;
  */
 void Int_Reset(void)
 {
-  int i;
+	int i;
 
-  /* Reset counts */
-  PendingInterruptCount = 0;
-  ActiveInterrupt = 0;
-  nCyclesOver = 0;
+	/* Reset counts */
+	PendingInterruptCount = 0;
+	ActiveInterrupt = 0;
+	nCyclesOver = 0;
 
-  /* Reset interrupt table */
-  for(i=0; i<MAX_INTERRUPTS; i++) {
-    InterruptHandlers[i].bUsed = FALSE;
-    InterruptHandlers[i].pFunction = pIntHandlerFunctions[i];
-  }
+	/* Reset interrupt table */
+	for (i=0; i<MAX_INTERRUPTS; i++)
+	{
+		InterruptHandlers[i].bUsed = FALSE;
+		InterruptHandlers[i].pFunction = pIntHandlerFunctions[i];
+	}
 }
 
 
@@ -89,18 +93,19 @@ void Int_Reset(void)
  */
 static int Int_HandlerFunctionToID(void (*pHandlerFunction)(void))
 {
-  int i;
+	int i;
 
-  /* Scan for function match */
-  for(i=0; i<MAX_INTERRUPTS; i++) {
-    if (pIntHandlerFunctions[i]==pHandlerFunction)
-      return i;
-  }
-  
-  /* Didn't find one! Oops */
-  fprintf(stderr, "\nError: didn't find interrupt function matching 0x%p\n",
-	  pHandlerFunction);
-  return 0;
+	/* Scan for function match */
+	for (i=0; i<MAX_INTERRUPTS; i++)
+	{
+		if (pIntHandlerFunctions[i]==pHandlerFunction)
+			return i;
+	}
+
+	/* Didn't find one! Oops */
+	fprintf(stderr, "\nError: didn't find interrupt function matching 0x%p\n",
+	        pHandlerFunction);
+	return 0;
 }
 
 
@@ -110,8 +115,8 @@ static int Int_HandlerFunctionToID(void (*pHandlerFunction)(void))
  */
 static void *Int_IDToHandlerFunction(int ID)
 {
-  /* Get function pointer */
-  return pIntHandlerFunctions[ID];
+	/* Get function pointer */
+	return pIntHandlerFunctions[ID];
 }
 
 
@@ -121,37 +126,40 @@ static void *Int_IDToHandlerFunction(int ID)
  */
 void Int_MemorySnapShot_Capture(BOOL bSave)
 {
-  int i,ID;
+	int i,ID;
 
-  /* Save/Restore details */
-  for(i=0; i<MAX_INTERRUPTS; i++) {
-    MemorySnapShot_Store(&InterruptHandlers[i].bUsed,sizeof(InterruptHandlers[i].bUsed));
-    MemorySnapShot_Store(&InterruptHandlers[i].Cycles,sizeof(InterruptHandlers[i].Cycles));
-    if (bSave) {
-      /* Convert function to ID */
-      ID = Int_HandlerFunctionToID(InterruptHandlers[i].pFunction);
-      MemorySnapShot_Store(&ID,sizeof(int));
-    }
-    else {
-      /* Convert ID to function */
-      MemorySnapShot_Store(&ID,sizeof(int));
-      InterruptHandlers[i].pFunction = Int_IDToHandlerFunction(ID);
-    }
-  }
-  MemorySnapShot_Store(&nCyclesOver,sizeof(nCyclesOver));
-  MemorySnapShot_Store(&PendingInterruptCount,sizeof(PendingInterruptCount));
-  if (bSave)
-  {
-    /* Convert function to ID */
-    ID = Int_HandlerFunctionToID(PendingInterruptFunction);
-    MemorySnapShot_Store(&ID,sizeof(int));
-  }
-  else
-  {
-    /* Convert ID to function */
-    MemorySnapShot_Store(&ID,sizeof(int));
-    PendingInterruptFunction = Int_IDToHandlerFunction(ID);
-  }
+	/* Save/Restore details */
+	for (i=0; i<MAX_INTERRUPTS; i++)
+	{
+		MemorySnapShot_Store(&InterruptHandlers[i].bUsed, sizeof(InterruptHandlers[i].bUsed));
+		MemorySnapShot_Store(&InterruptHandlers[i].Cycles, sizeof(InterruptHandlers[i].Cycles));
+		if (bSave)
+		{
+			/* Convert function to ID */
+			ID = Int_HandlerFunctionToID(InterruptHandlers[i].pFunction);
+			MemorySnapShot_Store(&ID, sizeof(int));
+		}
+		else
+		{
+			/* Convert ID to function */
+			MemorySnapShot_Store(&ID, sizeof(int));
+			InterruptHandlers[i].pFunction = Int_IDToHandlerFunction(ID);
+		}
+	}
+	MemorySnapShot_Store(&nCyclesOver, sizeof(nCyclesOver));
+	MemorySnapShot_Store(&PendingInterruptCount, sizeof(PendingInterruptCount));
+	if (bSave)
+	{
+		/* Convert function to ID */
+		ID = Int_HandlerFunctionToID(PendingInterruptFunction);
+		MemorySnapShot_Store(&ID ,sizeof(int));
+	}
+	else
+	{
+		/* Convert ID to function */
+		MemorySnapShot_Store(&ID, sizeof(int));
+		PendingInterruptFunction = Int_IDToHandlerFunction(ID);
+	}
 }
 
 
@@ -161,77 +169,82 @@ void Int_MemorySnapShot_Capture(BOOL bSave)
  */
 static void Int_SetNewInterrupt(void)
 {
-  int LowestCycleCount=999999,LowestInterrupt=0;
-  int i;
+	int LowestCycleCount=999999, LowestInterrupt=0;
+	int i;
 
-  /* Find next interrupt to go off */
-  for(i=1; i<MAX_INTERRUPTS; i++) {
-    /* Is interrupt pending? */
-    if (InterruptHandlers[i].bUsed) {
-      if (InterruptHandlers[i].Cycles<LowestCycleCount) {
-        LowestCycleCount = InterruptHandlers[i].Cycles;
-        LowestInterrupt = i;
-      }
-    }
-  }
+	/* Find next interrupt to go off */
+	for (i = 1; i < MAX_INTERRUPTS; i++)
+	{
+		/* Is interrupt pending? */
+		if (InterruptHandlers[i].bUsed)
+		{
+			if (InterruptHandlers[i].Cycles < LowestCycleCount)
+			{
+				LowestCycleCount = InterruptHandlers[i].Cycles;
+				LowestInterrupt = i;
+			}
+		}
+	}
 
-  /* Set new counts, active interrupt */
-  PendingInterruptCount = InterruptHandlers[LowestInterrupt].Cycles;
-  PendingInterruptFunction = InterruptHandlers[LowestInterrupt].pFunction;
-  ActiveInterrupt = LowestInterrupt;
+	/* Set new counts, active interrupt */
+	PendingInterruptCount = InterruptHandlers[LowestInterrupt].Cycles;
+	PendingInterruptFunction = InterruptHandlers[LowestInterrupt].pFunction;
+	ActiveInterrupt = LowestInterrupt;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Adjust all interrupt timings, MUST call Int_SetNewInterrupt after this
+ * Adjust all interrupt timings, MUST call Int_SetNewInterrupt after this.
  */
 static void Int_UpdateInterrupt(void)
 {
-  int CycleSubtract;
-  int i;
+	int CycleSubtract;
+	int i;
 
-  /* Find out how many cycles we went over (<=0) */
-  nCyclesOver = PendingInterruptCount;
-  /* Calculate how many cycles have passed, included time we went over */
-  CycleSubtract = InterruptHandlers[ActiveInterrupt].Cycles-nCyclesOver;
+	/* Find out how many cycles we went over (<=0) */
+	nCyclesOver = PendingInterruptCount;
+	/* Calculate how many cycles have passed, included time we went over */
+	CycleSubtract = InterruptHandlers[ActiveInterrupt].Cycles-nCyclesOver;
 
-  /* Adjust table */
-  for(i=0; i<MAX_INTERRUPTS; i++) {
-    if (InterruptHandlers[i].bUsed)
-      InterruptHandlers[i].Cycles -= CycleSubtract;
-  }
+	/* Adjust table */
+	for (i = 0; i < MAX_INTERRUPTS; i++)
+	{
+		if (InterruptHandlers[i].bUsed)
+			InterruptHandlers[i].Cycles -= CycleSubtract;
+	}
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Adjust all interrupt timings as 'ActiveInterrupt' has occured, and remove from active list
+ * Adjust all interrupt timings as 'ActiveInterrupt' has occured, and
+ * remove from active list.
  */
 void Int_AcknowledgeInterrupt(void)
 {
-  /* Update list cycle counts */
-  Int_UpdateInterrupt();
+	/* Update list cycle counts */
+	Int_UpdateInterrupt();
 
-  /* Disable interrupt entry which has just occured */
-  InterruptHandlers[ActiveInterrupt].bUsed = FALSE;
+	/* Disable interrupt entry which has just occured */
+	InterruptHandlers[ActiveInterrupt].bUsed = FALSE;
 
-  /* Set new */
-  Int_SetNewInterrupt();
+	/* Set new */
+	Int_SetNewInterrupt();
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Add interrupt from time last one occurred
+ * Add interrupt from time last one occurred.
  */
 void Int_AddAbsoluteInterrupt(int CycleTime, interrupt_id Handler)
 {
-  InterruptHandlers[Handler].bUsed = TRUE;
-  InterruptHandlers[Handler].Cycles = CycleTime + nCyclesOver;
+	InterruptHandlers[Handler].bUsed = TRUE;
+	InterruptHandlers[Handler].Cycles = CycleTime + nCyclesOver;
 
-  /* Set new */
-  Int_SetNewInterrupt();
+	/* Set new */
+	Int_SetNewInterrupt();
 }
 
 
@@ -241,11 +254,11 @@ void Int_AddAbsoluteInterrupt(int CycleTime, interrupt_id Handler)
  */
 void Int_AddRelativeInterrupt(int CycleTime, interrupt_id Handler)
 {
-  InterruptHandlers[Handler].bUsed = TRUE;
-  InterruptHandlers[Handler].Cycles = CycleTime;
+	InterruptHandlers[Handler].bUsed = TRUE;
+	InterruptHandlers[Handler].Cycles = CycleTime;
 
-  /* Set new */
-  Int_SetNewInterrupt();
+	/* Set new */
+	Int_SetNewInterrupt();
 }
 
 
@@ -255,12 +268,12 @@ void Int_AddRelativeInterrupt(int CycleTime, interrupt_id Handler)
  */
 void Int_AddRelativeInterruptNoOffset(int CycleTime, interrupt_id Handler)
 {
-  nCyclesOver = 0;
-  InterruptHandlers[Handler].bUsed = TRUE;
-  InterruptHandlers[Handler].Cycles = CycleTime;
+	nCyclesOver = 0;
+	InterruptHandlers[Handler].bUsed = TRUE;
+	InterruptHandlers[Handler].Cycles = CycleTime;
 
-  /* Set new */
-  Int_SetNewInterrupt();
+	/* Set new */
+	Int_SetNewInterrupt();
 }
 
 
@@ -270,13 +283,13 @@ void Int_AddRelativeInterruptNoOffset(int CycleTime, interrupt_id Handler)
  */
 void Int_RemovePendingInterrupt(interrupt_id Handler)
 {
-  /* Stop interrupt */
-  InterruptHandlers[Handler].bUsed = FALSE;
+	/* Stop interrupt */
+	InterruptHandlers[Handler].bUsed = FALSE;
 
-  /* Update list cycle counts */
-  Int_UpdateInterrupt();
-  /* Set new */
-  Int_SetNewInterrupt();
+	/* Update list cycle counts */
+	Int_UpdateInterrupt();
+	/* Set new */
+	Int_SetNewInterrupt();
 }
 
 
@@ -286,11 +299,11 @@ void Int_RemovePendingInterrupt(interrupt_id Handler)
  */
 BOOL Int_InterruptActive(interrupt_id Handler)
 {
-  /* Is timer active? */
-  if (InterruptHandlers[Handler].bUsed)
-    return TRUE;
+	/* Is timer active? */
+	if (InterruptHandlers[Handler].bUsed)
+		return TRUE;
 
-  return FALSE;
+	return FALSE;
 }
 
 
@@ -300,10 +313,10 @@ BOOL Int_InterruptActive(interrupt_id Handler)
  */
 int Int_FindCyclesPassed(interrupt_id Handler)
 {
-  int CyclesPassed, CyclesFromLastInterrupt;
+	int CyclesPassed, CyclesFromLastInterrupt;
 
-  CyclesFromLastInterrupt = InterruptHandlers[ActiveInterrupt].Cycles - PendingInterruptCount;
-  CyclesPassed = InterruptHandlers[Handler].Cycles - CyclesFromLastInterrupt;
+	CyclesFromLastInterrupt = InterruptHandlers[ActiveInterrupt].Cycles - PendingInterruptCount;
+	CyclesPassed = InterruptHandlers[Handler].Cycles - CyclesFromLastInterrupt;
 
-  return CyclesPassed;
+	return CyclesPassed;
 }
