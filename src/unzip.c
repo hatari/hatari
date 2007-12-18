@@ -11,15 +11,19 @@
 
    Read unzip.h for more info
 */
-const char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.11 2007-05-12 12:12:14 thothy Exp $";
+const char Unzip_rcsid[] = "Hatari $Id: unzip.c,v 1.12 2007-12-18 20:35:06 thothy Exp $";
 
+#include <config.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#include <strings.h>
 #include <zlib.h>
+
+#if HAVE_STRINGS_H
+#include <strings.h>
+#endif
 
 #include "unzip.h"
 

@@ -6,17 +6,21 @@
 
   Zipped disk support, uses zlib
 */
-const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.25 2007-12-11 00:41:51 thothy Exp $";
+const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.26 2007-12-18 20:35:06 thothy Exp $";
+
+#include <config.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/types.h>
-
 #include <zlib.h>
+
+#if HAVE_STRINGS_H
+#include <strings.h>
+#endif
 
 #include "main.h"
 #include "dim.h"
