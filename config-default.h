@@ -18,11 +18,25 @@
 /* Define to 1 if you have the <glob.h> header file. */
 #define HAVE_GLOB_H 1
 
+/* Define to 1 if you have the <strings.h> header file. */
+#if defined(__CEGCC__)
+# undef HAVE_STRINGS_H
+#else
+# define HAVE_STRINGS_H 1
+#endif
+
 /* Define to 1 if you have the `strcasecmp' function. */
 #define HAVE_STRCASECMP 1
 
 /* Define to 1 if you have the `strncasecmp' function. */
 #define HAVE_STRNCASECMP 1
+
+/* Define to 1 if you have the `cfmakeraw' function. */
+#if defined(__BEOS__) || (defined(__sun) && defined(__SVR4)) || defined(__AMIGAOS4__) || defined(__riscos) || defined(__CEGCC__)
+# undef HAVE_CFMAKERAW
+#else
+# define HAVE_CFMAKERAW 1
+#endif
 
 
 /* Define to the full name of this package. */
