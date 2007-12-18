@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.53 2007-12-18 17:09:57 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.54 2007-12-18 18:56:19 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -223,7 +223,7 @@ static void TOS_FixRom(void)
 				{
 					/* Now we can really apply the patch! */
 					Log_Printf(LOG_DEBUG, "Applying TOS patch '%s'.\n", pPatch->pszName);
-					memcpy(&STRam[pPatch->Address], pPatch->pNewData, pPatch->Size);
+					memcpy(&RomMem[pPatch->Address], pPatch->pNewData, pPatch->Size);
 					nGoodPatches += 1;
 				}
 				else
@@ -381,11 +381,11 @@ int TOS_LoadImage(void)
 	memory_uninit();
 	memory_init(STRamEnd, 0, TosAddress);
 
-	/* Clear Upper memory */
-	STMemory_Clear(0x00e00000, 0x00ffffff);
+	/* Clear Upper memory (ROM and IO memory) */
+	memset(&RomMem[0xe00000], 0, 0x200000);
 
 	/* Copy loaded image into ST memory */
-	memcpy(STRam+TosAddress, pTosFile, TosSize);
+	memcpy(&RomMem[TosAddress], pTosFile, TosSize);
 
 	Log_Printf(LOG_DEBUG, "Loaded TOS version %i.%c%c, starting at $%x, "
 	           "country code = %i, %s\n", TosVersion>>8, '0'+((TosVersion>>4)&0x0f),

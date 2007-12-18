@@ -14,7 +14,7 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to
   a byte array and stored in 'Cart_data[]' (see cartData.c).
 */
-const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.16 2007-10-31 21:31:48 eerot Exp $";
+const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.17 2007-12-18 18:56:19 thothy Exp $";
 
 #include "main.h"
 #include "cart.h"
@@ -68,11 +68,11 @@ static void Cart_LoadImage(void)
 	 * So if size is 0x20004 bytes we have to skip the first 4 bytes */
 	if (nCartSize == 0x20004)
 	{
-		memcpy(&STRam[0xfa0000], pCartData+4, 0x20000);
+		memcpy(&RomMem[0xfa0000], pCartData+4, 0x20000);
 	}
 	else
 	{
-		memcpy(&STRam[0xfa0000], pCartData, nCartSize);
+		memcpy(&RomMem[0xfa0000], pCartData, nCartSize);
 	}
 
 	free(pCartData);
@@ -90,7 +90,7 @@ static void Cart_LoadImage(void)
 void Cart_ResetImage(void)
 {
 	/* "Clear" cartridge ROM space */
-	memset(&STRam[0xfa0000], 0xff, 0x20000);
+	memset(&RomMem[0xfa0000], 0xff, 0x20000);
 
 	/* Print a warning if user tries to use an external cartridge file
 	 * together with GEMDOS HD emulation or extended VDI resolution: */

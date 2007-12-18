@@ -16,6 +16,8 @@
 extern Uint8 STRam[16*1024*1024];
 extern Uint32 STRamEnd;
 
+/* Use RomMem instead of STRam for accessing TOS + cartridge space */
+#define RomMem STRam
 
 /* Offset ST address to PC pointer: */
 #define STRAM_ADDR(Var)  ((unsigned long)STRam+((Uint32)(Var) & 0x00ffffff))
