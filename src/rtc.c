@@ -12,12 +12,12 @@
   In fact these mappings seems to force the gem to ask the IKBD for the real
   time (seconds units). See ikbd.c for the time returned by the IKBD.
 */
-const char Rtc_rcsid[] = "Hatari $Id: rtc.c,v 1.6 2007-01-16 18:42:59 thothy Exp $";
+const char Rtc_rcsid[] = "Hatari $Id: rtc.c,v 1.7 2007-12-18 18:36:28 thothy Exp $";
 
 #include <time.h>
 
 #include "main.h"
-#include "stMemory.h"
+#include "ioMem.h"
 #include "rtc.h"
 
 
@@ -37,7 +37,7 @@ void Rtc_SecondsUnits_ReadByte(void)
   /* Get system time */
   nTimeTicks = time(NULL);
   SystemTime = localtime(&nTimeTicks);
-  STRam[0xfffc21] = SystemTime->tm_sec % 10;
+  IoMem[0xfffc21] = SystemTime->tm_sec % 10;
 }
 
 
@@ -53,7 +53,7 @@ void Rtc_SecondsTens_ReadByte(void)
   /* Get system time */
   nTimeTicks = time(NULL);
   SystemTime = localtime(&nTimeTicks);
-  STRam[0xfffc23] = SystemTime->tm_sec / 10;
+  IoMem[0xfffc23] = SystemTime->tm_sec / 10;
 }
 
 
@@ -65,7 +65,7 @@ void Rtc_MinutesUnits_ReadByte(void)
 {
   if(rtc_bank)
   {
-    STRam[0xfffc25] = fake_am;
+    IoMem[0xfffc25] = fake_am;
   }
   else
   {
@@ -75,7 +75,7 @@ void Rtc_MinutesUnits_ReadByte(void)
     /* Get system time */
     nTimeTicks = time(NULL);
     SystemTime = localtime(&nTimeTicks);
-    STRam[0xfffc25] = SystemTime->tm_min % 10;
+    IoMem[0xfffc25] = SystemTime->tm_min % 10;
   }
 }
 
@@ -88,7 +88,7 @@ void Rtc_MinutesUnits_WriteByte(void)
 {
   /* TOS 1.0x uses this... */
   if(rtc_bank)
-    fake_am = ((STRam[0xfffc25] & 0x0f) | 0xf0);
+    fake_am = ((IoMem[0xfffc25] & 0x0f) | 0xf0);
   /* else ignore */
 }
 
@@ -101,7 +101,7 @@ void Rtc_MinutesTens_ReadByte(void)
 {
   if(rtc_bank)
   {
-    STRam[0xfffc27] = fake_amz;
+    IoMem[0xfffc27] = fake_amz;
   }
   else
   {
@@ -111,7 +111,7 @@ void Rtc_MinutesTens_ReadByte(void)
     /* Get system time */
     nTimeTicks = time(NULL);
     SystemTime = localtime(&nTimeTicks);
-    STRam[0xfffc27] = SystemTime->tm_min / 10;
+    IoMem[0xfffc27] = SystemTime->tm_min / 10;
   }
 }
 
@@ -124,7 +124,7 @@ void Rtc_MinutesTens_WriteByte(void)
 {
   /* TOS 1.0x uses this... */
   if(rtc_bank)
-    fake_amz = ((STRam[0xfffc27] & 0x0f) | 0xf0);
+    fake_amz = ((IoMem[0xfffc27] & 0x0f) | 0xf0);
   /* else ignore */
 }
 
@@ -141,7 +141,7 @@ void Rtc_HoursUnits_ReadByte(void)
   /* Get system time */
   nTimeTicks = time(NULL);
   SystemTime = localtime(&nTimeTicks);
-  STRam[0xfffc29] = SystemTime->tm_hour % 10;
+  IoMem[0xfffc29] = SystemTime->tm_hour % 10;
 }
 
 
@@ -157,7 +157,7 @@ void Rtc_HoursTens_ReadByte(void)
   /* Get system time */
   nTimeTicks = time(NULL);
   SystemTime = localtime(&nTimeTicks);
-  STRam[0xfffc2b] = SystemTime->tm_hour / 10;
+  IoMem[0xfffc2b] = SystemTime->tm_hour / 10;
 }
 
 
@@ -173,7 +173,7 @@ void Rtc_Weekday_ReadByte(void)
   /* Get system time */
   nTimeTicks = time(NULL);
   SystemTime = localtime(&nTimeTicks);
-  STRam[0xfffc2d] = SystemTime->tm_wday;
+  IoMem[0xfffc2d] = SystemTime->tm_wday;
 }
 
 
@@ -189,7 +189,7 @@ void Rtc_DayUnits_ReadByte(void)
   /* Get system time */
   nTimeTicks = time(NULL);
   SystemTime = localtime(&nTimeTicks);
-  STRam[0xfffc2f] = SystemTime->tm_mday % 10;
+  IoMem[0xfffc2f] = SystemTime->tm_mday % 10;
 }
 
 
@@ -205,7 +205,7 @@ void Rtc_DayTens_ReadByte(void)
   /* Get system time */
   nTimeTicks = time(NULL);
   SystemTime = localtime(&nTimeTicks);
-  STRam[0xfffc31] = SystemTime->tm_mday / 10;
+  IoMem[0xfffc31] = SystemTime->tm_mday / 10;
 }
 
 
@@ -221,7 +221,7 @@ void Rtc_MonthUnits_ReadByte(void)
   /* Get system time */
   nTimeTicks = time(NULL);
   SystemTime = localtime(&nTimeTicks);
-  STRam[0xfffc33] = (SystemTime->tm_mon + 1) % 10;
+  IoMem[0xfffc33] = (SystemTime->tm_mon + 1) % 10;
 }
 
 
@@ -237,7 +237,7 @@ void Rtc_MonthTens_ReadByte(void)
   /* Get system time */
   nTimeTicks = time(NULL);
   SystemTime = localtime(&nTimeTicks);
-  STRam[0xfffc35] = (SystemTime->tm_mon + 1) / 10;
+  IoMem[0xfffc35] = (SystemTime->tm_mon + 1) / 10;
 }
 
 
@@ -253,7 +253,7 @@ void Rtc_YearUnits_ReadByte(void)
   /* Get system time */
   nTimeTicks = time(NULL);
   SystemTime = localtime(&nTimeTicks);
-  STRam[0xfffc37] = SystemTime->tm_year % 10;
+  IoMem[0xfffc37] = SystemTime->tm_year % 10;
 }
 
 
@@ -269,7 +269,7 @@ void Rtc_YearTens_ReadByte(void)
   /* Get system time */
   nTimeTicks = time(NULL);
   SystemTime = localtime(&nTimeTicks);
-  STRam[0xfffc39] = (SystemTime->tm_year - 80) / 10;
+  IoMem[0xfffc39] = (SystemTime->tm_year - 80) / 10;
 }
 
 
@@ -279,7 +279,7 @@ void Rtc_YearTens_ReadByte(void)
  */
 void Rtc_ClockMod_ReadByte(void)
 {
-  STRam[0xfffc3b] = ((STRam[0xfffc3b] & 0x0f) | 0xf0);
+  IoMem[0xfffc3b] = ((IoMem[0xfffc3b] & 0x0f) | 0xf0);
 }
 
 
@@ -289,6 +289,6 @@ void Rtc_ClockMod_ReadByte(void)
  */
 void Rtc_ClockMod_WriteByte(void)
 {
-  rtc_bank = STRam[0xfffc3b] & 1;
+  rtc_bank = IoMem[0xfffc3b] & 1;
 }
 
