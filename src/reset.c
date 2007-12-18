@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.23 2007-10-31 21:31:49 eerot Exp $";
+const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.24 2007-12-18 17:09:57 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -42,16 +42,13 @@ static int Reset_ST(BOOL bCold)
   {
     int ret;
 
-    STMemory_Clear(0x00e00000, 0x00ffffff);   /* Clear Upper memory */
-
-    Floppy_GetBootDrive();      /* Find which device to boot from(A: or C:) */
-    Cart_ResetImage();          /* Load cartridge program into ROM memory. */
+    Floppy_GetBootDrive();      /* Find which device to boot from (A: or C:) */
 
     ret = TOS_LoadImage();      /* Load TOS, writes into cartridge memory */
-    if(ret)
-    {
+    if (ret)
       return ret;               /* If we can not load a TOS image, return now! */
-    }
+
+    Cart_ResetImage();          /* Load cartridge program into ROM memory. */
   }
   Int_Reset();                  /* Reset interrupts */
   MFP_Reset();                  /* Setup MFP chip */

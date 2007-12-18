@@ -6,7 +6,7 @@
 
   ST Memory access functions.
 */
-const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.17 2007-11-29 11:29:12 thothy Exp $";
+const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.18 2007-12-18 17:09:57 thothy Exp $";
 
 #include "stMemory.h"
 #include "configuration.h"
@@ -17,8 +17,8 @@ const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.17 2007-11-29 11:29:12
 #include "memory.h"
 
 
-Uint8 STRam[16*1024*1024];      /* This is our ST Ram, includes all TOS/hardware areas for ease */
-Uint32 STRamEnd;                /* End of ST Ram, above this address is no-mans-land and hardware vectors */
+Uint8 STRam[16*1024*1024];  /* Our ST Ram, includes all TOS/hardware areas for ease */
+Uint32 STRamEnd;            /* End of ST Ram, above this address is no-mans-land and ROM/IO memory */
 
 
 /*-----------------------------------------------------------------------*/
@@ -53,12 +53,6 @@ void STMemory_SetDefaultConfig(void)
 		0x06,   /* 2.5 MiB */
 		0x0A    /* 4 MiB */
 	};
-
-	/* Calculate end of RAM */
-	if (ConfigureParams.Memory.nMemorySize > 0 && ConfigureParams.Memory.nMemorySize <= 14)
-		STRamEnd = ConfigureParams.Memory.nMemorySize * 0x100000;
-	else
-		STRamEnd = 0x80000;   /* 512 KiB */
 
 	if (bRamTosImage)
 	{
@@ -151,8 +145,4 @@ void STMemory_SetDefaultConfig(void)
 	/* Set connected drives system variable.
 	 * NOTE: some TOS images overwrite this value, see 'OpCode_SysInit', too */
 	STMemory_WriteLong(0x4c2, ConnectedDriveMask);
-
-	/* Initialize the memory banks: */
-	memory_uninit();
-	memory_init(STRamEnd, 0, TosAddress);
 }
