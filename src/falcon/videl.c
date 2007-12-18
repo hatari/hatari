@@ -12,13 +12,14 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.16 2007-04-04 15:23:58 thothy Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.17 2007-12-18 20:35:55 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
 #include "hostscreen.h"
 #include "screen.h"
+#include "stMemory.h"
 #include "video.h"
 #include "videl.h"
 #include <SDL_endian.h>
