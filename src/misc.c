@@ -6,7 +6,7 @@
 
   Misc functions
 */
-const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.14 2007-01-16 18:42:59 thothy Exp $";
+const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.15 2007-12-19 11:13:28 thothy Exp $";
 
 #include <ctype.h>
 
@@ -20,10 +20,11 @@ const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.14 2007-01-16 18:42:59 thothy 
  */
 void Misc_RemoveWhiteSpace(char *pszString,int Length)
 {
-  while( (*pszString==' ') || (*pszString=='\t') ) {
-    /* Copy line left one character */
-    memmove(pszString,pszString+1,Length-1);
-  }
+	while ((*pszString==' ') || (*pszString=='\t'))
+	{
+		/* Copy line left one character */
+		memmove(pszString, pszString+1, Length-1);
+	}
 }
 
 
@@ -33,11 +34,11 @@ void Misc_RemoveWhiteSpace(char *pszString,int Length)
  */
 void Misc_strupr(char *pString)
 {
-  while(*pString)
-  {
-    *pString = toupper(*pString);
-    pString++;
-  }
+	while (*pString)
+	{
+		*pString = toupper(*pString);
+		pString++;
+	}
 }
 
 
@@ -47,12 +48,12 @@ void Misc_strupr(char *pString)
  */
 int Misc_LimitInt(int Value, int MinRange, int MaxRange)
 {
-  if (Value<MinRange)
-    Value = MinRange;
-  else if (Value>MaxRange)
-    Value = MaxRange;
+	if (Value < MinRange)
+		Value = MinRange;
+	else if (Value > MaxRange)
+		Value = MaxRange;
 
-  return(Value);
+	return Value;
 }
 
 
@@ -62,5 +63,5 @@ int Misc_LimitInt(int Value, int MinRange, int MaxRange)
  */
 unsigned char Misc_ConvertToBCD(unsigned short int Value)
 {
-  return (((Value/10))<<4) | (Value%10);
+	return (((Value/10))<<4) | (Value%10);
 }
