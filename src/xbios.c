@@ -9,7 +9,7 @@
   We intercept and direct some XBios calls to handle the RS-232 etc. and help
   with floppy debugging.
 */
-const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.12 2007-01-16 18:42:59 thothy Exp $";
+const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.13 2007-12-19 11:54:41 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -27,23 +27,24 @@ const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.12 2007-01-16 18:42:59 thoth
 
 
 /* List of Atari ST RS-232 baud rates */
-static const int BaudRates[] = {
-  19200, /* 0 */
-  9600,  /* 1 */
-  4800,  /* 2 */
-  3600,  /* 3 */
-  2400,  /* 4 */
-  2000,  /* 5 */
-  1800,  /* 6 */
-  1200,  /* 7 */
-  600,   /* 8 */
-  300,   /* 9 */
-  200,   /* 10 */
-  150,   /* 11 */
-  134,   /* 12 */
-  110,   /* 13 */
-  75,    /* 14 */
-  50     /* 15 */
+static const int BaudRates[] =
+{
+	19200, /* 0 */
+	9600,  /* 1 */
+	4800,  /* 2 */
+	3600,  /* 3 */
+	2400,  /* 4 */
+	2000,  /* 5 */
+	1800,  /* 6 */
+	1200,  /* 7 */
+	600,   /* 8 */
+	300,   /* 9 */
+	200,   /* 10 */
+	150,   /* 11 */
+	134,   /* 12 */
+	110,   /* 13 */
+	75,    /* 14 */
+	50     /* 15 */
 };
 
 
@@ -55,22 +56,22 @@ static const int BaudRates[] = {
 static BOOL XBios_Floprd(Uint32 Params)
 {
 #if XBIOS_DEBUG
-  char *pBuffer;
-  Uint16 Dev,Sector,Side,Track,Count;
+	char *pBuffer;
+	Uint16 Dev,Sector,Side,Track,Count;
 
-  /* Read details from stack */
-  pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
-  Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG);
-  Sector = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD);
-  Track = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD);
-  Side = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-  Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	/* Read details from stack */
+	pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
+	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG);
+	Sector = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD);
+	Track = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD);
+	Side = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-  Log_Printf(LOG_DEBUG, "FLOPRD %s,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].szFileName,
-             Side, Track, Sector, Count, m68k_getpc());
+	Log_Printf(LOG_DEBUG, "FLOPRD %s,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].szFileName,
+	           Side, Track, Sector, Count, m68k_getpc());
 #endif
 
-  return(FALSE);
+	return FALSE;
 }
 
 
@@ -82,22 +83,22 @@ static BOOL XBios_Floprd(Uint32 Params)
 static BOOL XBios_Flopwr(Uint32 Params)
 {
 #if XBIOS_DEBUG
-  char *pBuffer;
-  Uint16 Dev,Sector,Side,Track,Count;
+	char *pBuffer;
+	Uint16 Dev,Sector,Side,Track,Count;
 
-  /* Read details from stack */
-  pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
-  Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG);
-  Sector = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD);
-  Track = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD);
-  Side = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-  Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	/* Read details from stack */
+	pBuffer = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
+	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG);
+	Sector = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD);
+	Track = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD);
+	Side = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-  Log_Printf(LOG_DEBUG, "FLOPWR %s,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].szFileName,
-             Side, Track, Sector, Count, m68k_getpc());
+	Log_Printf(LOG_DEBUG, "FLOPWR %s,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].szFileName,
+	           Side, Track, Sector, Count, m68k_getpc());
 #endif
 
-  return(FALSE);
+	return FALSE;
 }
 
 
@@ -108,40 +109,40 @@ static BOOL XBios_Flopwr(Uint32 Params)
  */
 static BOOL XBios_Rsconf(Uint32 Params)
 {
-  short int Baud,Ctrl,Ucr,Rsr,Tsr,Scr;
+	short int Baud,Ctrl,Ucr,Rsr,Tsr,Scr;
 
-  Baud = STMemory_ReadWord(Params+SIZE_WORD);
-  Ctrl = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
-  Ucr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-  Rsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-  Tsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-  Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	Baud = STMemory_ReadWord(Params+SIZE_WORD);
+	Ctrl = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
+	Ucr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	Rsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	Tsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
+	Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-  /* Set baud rate and other configuration, if RS232 emaulation is enabled */
-  if (ConfigureParams.RS232.bEnableRS232)
-  {
-    if (Baud>=0 && Baud<=15)
-    {
-      /* Convert ST baud rate index to value */
-      int BaudRate = BaudRates[Baud];
-      /* And set new baud rate: */
-      RS232_SetBaudRate(BaudRate);
-    }
+	/* Set baud rate and other configuration, if RS232 emaulation is enabled */
+	if (ConfigureParams.RS232.bEnableRS232)
+	{
+		if (Baud>=0 && Baud<=15)
+		{
+			/* Convert ST baud rate index to value */
+			int BaudRate = BaudRates[Baud];
+			/* And set new baud rate: */
+			RS232_SetBaudRate(BaudRate);
+		}
 
-    if (Ucr != -1)
-    {
-      RS232_HandleUCR(Ucr);
-    }
+		if (Ucr != -1)
+		{
+			RS232_HandleUCR(Ucr);
+		}
 
-    if (Ctrl != -1)
-    {    
-      RS232_SetFlowControl(Ctrl);
-    }
+		if (Ctrl != -1)
+		{
+			RS232_SetFlowControl(Ctrl);
+		}
 
-    return(TRUE);
-  }
+		return TRUE;
+	}
 
-  return(FALSE);
+	return FALSE;
 }
 
 
@@ -152,14 +153,14 @@ static BOOL XBios_Rsconf(Uint32 Params)
  */
 static BOOL XBios_Scrdmp(Uint32 Params)
 {
-  fprintf(stderr, "XBIOS screendump!\n");
+	fprintf(stderr, "XBIOS screendump!\n");
 
-  ScreenSnapShot_SaveScreen();
+	ScreenSnapShot_SaveScreen();
 
-  /* Correct return code? */
-  Regs[REG_D0] = 0;
+	/* Correct return code? */
+	Regs[REG_D0] = 0;
 
-  return(TRUE);
+	return TRUE;
 }
 
 
@@ -170,12 +171,12 @@ static BOOL XBios_Scrdmp(Uint32 Params)
  */
 static BOOL XBios_Prtblk(Uint32 Params)
 {
-  fprintf(stderr, "Intercepted XBIOS Prtblk()\n");
+	fprintf(stderr, "Intercepted XBIOS Prtblk()\n");
 
-  /* Correct return code? */
-  Regs[REG_D0] = 0;
+	/* Correct return code? */
+	Regs[REG_D0] = 0;
 
-  return(TRUE);
+	return TRUE;
 }
 
 
@@ -185,29 +186,29 @@ static BOOL XBios_Prtblk(Uint32 Params)
  */
 BOOL XBios(void)
 {
-  Uint32 Params;
-  Uint16 XBiosCall;
+	Uint32 Params;
+	Uint16 XBiosCall;
 
-  /* Find call */
-  Params = Regs[REG_A7];
-  XBiosCall = STMemory_ReadWord(Params);
+	/* Find call */
+	Params = Regs[REG_A7];
+	XBiosCall = STMemory_ReadWord(Params);
 
-  /*Log_Printf(LOG_DEBUG, "XBIOS %d\n",XBiosCall);*/
+	/*Log_Printf(LOG_DEBUG, "XBIOS %d\n",XBiosCall);*/
 
-  switch(XBiosCall)
-  {
-    case 8:
-      return(XBios_Floprd(Params));
-    case 9:
-      return(XBios_Flopwr(Params));
-    case 15:
-      return(XBios_Rsconf(Params));
-    case 20:
-      return(XBios_Scrdmp(Params));
-    case 36:
-      return(XBios_Prtblk(Params));
+	switch (XBiosCall)
+	{
+	 case 8:
+		return XBios_Floprd(Params);
+	 case 9:
+		return XBios_Flopwr(Params);
+	 case 15:
+		return XBios_Rsconf(Params);
+	 case 20:
+		return XBios_Scrdmp(Params);
+	 case 36:
+		return XBios_Prtblk(Params);
 
-    default:  /* Call as normal! */
-      return(FALSE);
-  }
+	 default:  /* Call as normal! */
+		return FALSE;
+	}
 }

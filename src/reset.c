@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.24 2007-12-18 17:09:57 thothy Exp $";
+const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.25 2007-12-19 11:54:41 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -38,42 +38,42 @@ const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.24 2007-12-18 17:09:57 thoth
  */
 static int Reset_ST(BOOL bCold)
 {
-  if (bCold)
-  {
-    int ret;
+	if (bCold)
+	{
+		int ret;
 
-    Floppy_GetBootDrive();      /* Find which device to boot from (A: or C:) */
+		Floppy_GetBootDrive();      /* Find which device to boot from (A: or C:) */
 
-    ret = TOS_LoadImage();      /* Load TOS, writes into cartridge memory */
-    if (ret)
-      return ret;               /* If we can not load a TOS image, return now! */
+		ret = TOS_LoadImage();      /* Load TOS, writes into cartridge memory */
+		if (ret)
+			return ret;               /* If we can not load a TOS image, return now! */
 
-    Cart_ResetImage();          /* Load cartridge program into ROM memory. */
-  }
-  Int_Reset();                  /* Reset interrupts */
-  MFP_Reset();                  /* Setup MFP chip */
-  Video_Reset();                /* Reset video */
+		Cart_ResetImage();          /* Load cartridge program into ROM memory. */
+	}
+	Int_Reset();                  /* Reset interrupts */
+	MFP_Reset();                  /* Setup MFP chip */
+	Video_Reset();                /* Reset video */
 
-  GemDOS_Reset();               /* Reset GEMDOS emulation */
-  if (bCold)
-  {
-    FDC_Reset();                /* Reset FDC */
-  }
+	GemDOS_Reset();               /* Reset GEMDOS emulation */
+	if (bCold)
+	{
+		FDC_Reset();                /* Reset FDC */
+	}
 
-  DmaSnd_Reset(bCold);          /* Reset DMA sound */
-  PSG_Reset();                  /* Reset PSG */
-  Sound_Reset();                /* Reset Sound */
-  IKBD_Reset(bCold);            /* Keyboard */
-  if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
-    VIDEL_reset();
-  else
-    Screen_Reset();               /* Reset screen */
-  M68000_Reset(bCold);          /* Reset CPU */
+	DmaSnd_Reset(bCold);          /* Reset DMA sound */
+	PSG_Reset();                  /* Reset PSG */
+	Sound_Reset();                /* Reset Sound */
+	IKBD_Reset(bCold);            /* Keyboard */
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
+		VIDEL_reset();
+	else
+		Screen_Reset();               /* Reset screen */
+	M68000_Reset(bCold);          /* Reset CPU */
 
-  /* Start HBL and VBL interrupts */
-  Video_StartInterrupts();
+	/* Start HBL and VBL interrupts */
+	Video_StartInterrupts();
 
-  return 0;
+	return 0;
 }
 
 
@@ -83,9 +83,9 @@ static int Reset_ST(BOOL bCold)
  */
 int Reset_Cold(void)
 {
-  Main_WarpMouse(sdlscrn->w/2, sdlscrn->h/2);  /* Set mouse pointer to the middle of the screen */
+	Main_WarpMouse(sdlscrn->w/2, sdlscrn->h/2);  /* Set mouse pointer to the middle of the screen */
 
-  return Reset_ST(TRUE);
+	return Reset_ST(TRUE);
 }
 
 
@@ -95,5 +95,5 @@ int Reset_Cold(void)
  */
 int Reset_Warm(void)
 {
-  return Reset_ST(FALSE);
+	return Reset_ST(FALSE);
 }
