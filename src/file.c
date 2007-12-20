@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.47 2007-12-20 11:41:04 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.48 2007-12-20 12:01:22 thothy Exp $";
 
 #include <config.h>
 
@@ -612,12 +612,18 @@ void File_MakeAbsoluteName(char *pFileName)
 			/* Ignore "./" */
 			inpos += 2;
 		}
+		else if (pFileName[inpos] == '.' && pFileName[inpos+1] == 0)
+		{
+			inpos += 1;        /* Ignore "." at the end of the path string */
+			if (outpos > 1)
+				pTempName[outpos - 1] = 0;   /* Remove the last slash, too */
+		}
 		else if (pFileName[inpos] == '.' && pFileName[inpos+1] == '.'
 		         && (pFileName[inpos+2] == PATHSEP || pFileName[inpos+2] == 0))
 		{
 			/* Handle "../" */
 			char *pSlashPos;
-			inpos += 3;
+			inpos += 2;
 			pTempName[outpos - 1] = 0;
 			pSlashPos = strrchr(pTempName, PATHSEP);
 			if (pSlashPos)
@@ -629,6 +635,20 @@ void File_MakeAbsoluteName(char *pFileName)
 			{
 				pTempName[0] = PATHSEP;
 				outpos = 1;
+			}
+			/* Were we already at the end of the string or is there more to come? */
+			if (pFileName[inpos] == PATHSEP)
+			{
+				/* There was a slash after the '..', so skip slash and
+				 * simply proceed with next part */
+				inpos += 1;
+			}
+			else
+			{
+				/* We were at the end of the string, so let's remove the slash
+				 * from the new string, too */
+				if (outpos > 1)
+					pTempName[outpos - 1] = 0;
 			}
 		}
 		else
@@ -644,12 +664,6 @@ void File_MakeAbsoluteName(char *pFileName)
 	}
 
 	pTempName[outpos] = 0;
-
-	if (outpos > 2 && pTempName[outpos-1] == PATHSEP)
-	{
-		/* Remove trailing slash from path name */
-		pTempName[outpos-1] = 0;
-	}
 
 	strcpy(pFileName, pTempName);          /* Copy back */
 	free(pTempName);
