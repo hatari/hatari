@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.77 2007-12-09 21:25:29 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.78 2007-12-20 00:37:47 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -78,26 +78,26 @@ static BOOL bTTColorsSync, bTTColorsSTSync;     /* whether TT colors need conver
  */
 void Video_MemorySnapShot_Capture(BOOL bSave)
 {
-  /* Save/Restore details */
-  MemorySnapShot_Store(&VideoShifterByte, sizeof(VideoShifterByte));
-  MemorySnapShot_Store(&nTTRes, sizeof(nTTRes));
-  MemorySnapShot_Store(&bUseSTShifter, sizeof(bUseSTShifter));
-  MemorySnapShot_Store(&bUseHighRes,sizeof(bUseHighRes));
-  MemorySnapShot_Store(&nVBLs,sizeof(nVBLs));
-  MemorySnapShot_Store(&nHBL,sizeof(nHBL));
-  MemorySnapShot_Store(&nStartHBL,sizeof(nStartHBL));
-  MemorySnapShot_Store(&nEndHBL,sizeof(nEndHBL));
-  MemorySnapShot_Store(&OverscanMode,sizeof(OverscanMode));
-  MemorySnapShot_Store(HBLPalettes,sizeof(HBLPalettes));
-  MemorySnapShot_Store(HBLPaletteMasks,sizeof(HBLPaletteMasks));
-  MemorySnapShot_Store(&VideoBase,sizeof(VideoBase));
-  MemorySnapShot_Store(&ScanLineSkip,sizeof(ScanLineSkip));
-  MemorySnapShot_Store(&HWScrollCount,sizeof(HWScrollCount));
-  MemorySnapShot_Store(&pVideoRaster,sizeof(pVideoRaster));
-  MemorySnapShot_Store(&nScanlinesPerFrame, sizeof(nScanlinesPerFrame));
-  MemorySnapShot_Store(&nCyclesPerLine, sizeof(nCyclesPerLine));
-  MemorySnapShot_Store(&nFirstVisibleHbl, sizeof(nFirstVisibleHbl));
-  MemorySnapShot_Store(&bSteBorderFlag, sizeof(bSteBorderFlag));
+	/* Save/Restore details */
+	MemorySnapShot_Store(&VideoShifterByte, sizeof(VideoShifterByte));
+	MemorySnapShot_Store(&nTTRes, sizeof(nTTRes));
+	MemorySnapShot_Store(&bUseSTShifter, sizeof(bUseSTShifter));
+	MemorySnapShot_Store(&bUseHighRes, sizeof(bUseHighRes));
+	MemorySnapShot_Store(&nVBLs, sizeof(nVBLs));
+	MemorySnapShot_Store(&nHBL, sizeof(nHBL));
+	MemorySnapShot_Store(&nStartHBL, sizeof(nStartHBL));
+	MemorySnapShot_Store(&nEndHBL, sizeof(nEndHBL));
+	MemorySnapShot_Store(&OverscanMode, sizeof(OverscanMode));
+	MemorySnapShot_Store(HBLPalettes, sizeof(HBLPalettes));
+	MemorySnapShot_Store(HBLPaletteMasks, sizeof(HBLPaletteMasks));
+	MemorySnapShot_Store(&VideoBase, sizeof(VideoBase));
+	MemorySnapShot_Store(&ScanLineSkip, sizeof(ScanLineSkip));
+	MemorySnapShot_Store(&HWScrollCount, sizeof(HWScrollCount));
+	MemorySnapShot_Store(&pVideoRaster, sizeof(pVideoRaster));
+	MemorySnapShot_Store(&nScanlinesPerFrame, sizeof(nScanlinesPerFrame));
+	MemorySnapShot_Store(&nCyclesPerLine, sizeof(nCyclesPerLine));
+	MemorySnapShot_Store(&nFirstVisibleHbl, sizeof(nFirstVisibleHbl));
+	MemorySnapShot_Store(&bSteBorderFlag, sizeof(bSteBorderFlag));
 }
 
 
@@ -107,35 +107,35 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
  */
 static Uint32 Video_CalculateAddress(void)
 {
-  int X, FrameCycles;
-  Uint32 VideoAddress;      /* Address of video display in ST screen space */
+	int X, FrameCycles;
+	Uint32 VideoAddress;      /* Address of video display in ST screen space */
 
-  /* Find number of cycles passed during frame */
-  FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO);
+	/* Find number of cycles passed during frame */
+	FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO);
 
-  /* Top of screen is usually 63 lines from VBL in 50 Hz */
-  if (FrameCycles < nStartHBL*nCyclesPerLine)
-  {
-    VideoAddress = VideoBase;
-  }
-  else
-  {
-    /* Now find which pixel we are on (ignore left/right borders) */
-    X = FrameCycles % nCyclesPerLine;
-    if (X < SCREEN_START_CYCLE)       /* Limit if in NULL area outside screen */
-      X = SCREEN_START_CYCLE;
-    if (X > (nCyclesPerLine - SCREEN_START_CYCLE))
-      X = (nCyclesPerLine - SCREEN_START_CYCLE);
-    /* X is now in the correct range, subtract SCREEN_START_CYCLE to give X pixel across screen! */
-    X = ((X-SCREEN_START_CYCLE)>>1)&(~1);
+	/* Top of screen is usually 63 lines from VBL in 50 Hz */
+	if (FrameCycles < nStartHBL*nCyclesPerLine)
+	{
+		VideoAddress = VideoBase;
+	}
+	else
+	{
+		/* Now find which pixel we are on (ignore left/right borders) */
+		X = FrameCycles % nCyclesPerLine;
+		if (X < SCREEN_START_CYCLE)   /* Limit if in NULL area outside screen */
+			X = SCREEN_START_CYCLE;
+		if (X > (nCyclesPerLine - SCREEN_START_CYCLE))
+			X = (nCyclesPerLine - SCREEN_START_CYCLE);
+		/* X is now in the correct range, subtract SCREEN_START_CYCLE to give X pixel across screen! */
+		X = ((X-SCREEN_START_CYCLE)>>1)&(~1);
 
-    VideoAddress = pVideoRaster - STRam;
-    /* Add line cycles if we have not reached end of screen yet: */
-    if (FrameCycles < nEndHBL*nCyclesPerLine)
-      VideoAddress += X;
-  }
+		VideoAddress = pVideoRaster - STRam;
+		/* Add line cycles if we have not reached end of screen yet: */
+		if (FrameCycles < nEndHBL*nCyclesPerLine)
+			VideoAddress += X;
+	}
 
-  return VideoAddress;
+	return VideoAddress;
 }
 
 
@@ -145,30 +145,30 @@ static Uint32 Video_CalculateAddress(void)
  */
 static void Video_WriteToShifter(Uint8 Byte)
 {
-  static int nLastByte, nLastFrameCycles;
-  int nFrameCycles, nLineCycles;
-  
-  nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+	static int nLastByte, nLastFrameCycles;
+	int nFrameCycles, nLineCycles;
 
-  /* We only care for cycle position in the actual screen line */
-  nLineCycles = nFrameCycles % nCyclesPerLine;
+	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 
-  /*fprintf(stderr,"Shifter=0x%2.2X %d (%d) @ %d\n",
-          Byte, nFrameCycles, nLineCycles, nHBL);*/
+	/* We only care for cycle position in the actual screen line */
+	nLineCycles = nFrameCycles % nCyclesPerLine;
 
-  /* Check if program tries to open left border.
-   * FIXME: This is a very inaccurate test that should be improved,
-   * but we probably need better CPU cycles emulation first. There's
-   * also no support for sync-scrolling yet :-( */
-  if (nLastByte == 0x02 && Byte == 0x00 && nLineCycles <= 12
-      && nFrameCycles-nLastFrameCycles <= 16)
-  {
-    LeftRightBorder |= BORDERMASK_LEFT;
-    nLastAccessCycleLeft = nLineCycles;
-  }
+	/*fprintf(stderr,"Shifter=0x%2.2X %d (%d) @ %d\n",
+	        Byte, nFrameCycles, nLineCycles, nHBL);*/
 
-  nLastByte = Byte;
-  nLastFrameCycles = nFrameCycles;
+	/* Check if program tries to open left border.
+	 * FIXME: This is a very inaccurate test that should be improved,
+	 * but we probably need better CPU cycles emulation first. There's
+	 * also no support for sync-scrolling yet :-( */
+	if (nLastByte == 0x02 && Byte == 0x00 && nLineCycles <= 12
+	        && nFrameCycles-nLastFrameCycles <= 16)
+	{
+		LeftRightBorder |= BORDERMASK_LEFT;
+		nLastAccessCycleLeft = nLineCycles;
+	}
+
+	nLastByte = Byte;
+	nLastFrameCycles = nFrameCycles;
 }
 
 
@@ -178,65 +178,65 @@ static void Video_WriteToShifter(Uint8 Byte)
  */
 void Video_Sync_WriteByte(void)
 {
-  static int nLastHBL = -1, LastByte, nLastCycles;
-  int nFrameCycles, nLineCycles;
-  Uint8 Byte;
+	static int nLastHBL = -1, LastByte, nLastCycles;
+	int nFrameCycles, nLineCycles;
+	Uint8 Byte;
 
-  /* Note: We're only interested in lower 2 bits (50/60Hz) */
-  Byte = IoMem[0xff820a] & 3;
+	/* Note: We're only interested in lower 2 bits (50/60Hz) */
+	Byte = IoMem[0xff820a] & 3;
 
-  nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 
-  /* We only care for cycle position in the actual screen line */
-  nLineCycles = nFrameCycles % nCyclesPerLine;
+	/* We only care for cycle position in the actual screen line */
+	nLineCycles = nFrameCycles % nCyclesPerLine;
 
-  /*fprintf(stderr,"Sync=0x%2.2X %d (%d) @ %d\n",
-          Byte, nFrameCycles, nLineCycles, nHBL);*/
+	/*fprintf(stderr,"Sync=0x%2.2X %d (%d) @ %d\n",
+	        Byte, nFrameCycles, nLineCycles, nHBL);*/
 
-  /* Check if program tries to open a border.
-   * FIXME: These are very inaccurate tests that should be improved,
-   * but we probably need better CPU cycles emulation first. There's
-   * also no support for sync-scrolling yet :-( */
-  if (LastByte == 0x02 && Byte == 0x00)   /* switched from 50 Hz to 60 Hz? */
-  {
-    if (nHBL >= SCREEN_START_HBL_60HZ-1 && nHBL <= SCREEN_START_HBL_60HZ+1)
-    {
-      /* Top border */
-      OverscanMode |= OVERSCANMODE_TOP;       /* Set overscan bit */
-      nStartHBL = SCREEN_START_HBL_60HZ;      /* New start screen line */
-      pHBLPaletteMasks -= OVERSCAN_TOP;
-      pHBLPalettes -= OVERSCAN_TOP;
-    }
-    else if (nHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR)
-    {
-      /* Bottom border */
-      OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
-      nEndHBL = SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR+OVERSCAN_BOTTOM;  /* New end screen line */
-    }
-  }
+	/* Check if program tries to open a border.
+	 * FIXME: These are very inaccurate tests that should be improved,
+	 * but we probably need better CPU cycles emulation first. There's
+	 * also no support for sync-scrolling yet :-( */
+	if (LastByte == 0x02 && Byte == 0x00)   /* switched from 50 Hz to 60 Hz? */
+	{
+		if (nHBL >= SCREEN_START_HBL_60HZ-1 && nHBL <= SCREEN_START_HBL_60HZ+1)
+		{
+			/* Top border */
+			OverscanMode |= OVERSCANMODE_TOP;       /* Set overscan bit */
+			nStartHBL = SCREEN_START_HBL_60HZ;      /* New start screen line */
+			pHBLPaletteMasks -= OVERSCAN_TOP;
+			pHBLPalettes -= OVERSCAN_TOP;
+		}
+		else if (nHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR)
+		{
+			/* Bottom border */
+			OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
+			nEndHBL = SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR+OVERSCAN_BOTTOM;  /* New end screen line */
+		}
+	}
 
-  if (LastByte == 0x00 && Byte == 0x02)   /* switched from 60 Hz to 50 Hz? */
-  {
-    if (nHBL == nLastHBL && nLineCycles-nLastCycles <= 16
-        && nLineCycles >= (SCREEN_START_CYCLE+320-40)
-        && nLineCycles <= (SCREEN_START_CYCLE+320+40))
-    {
-      /* Right border */
-      //fprintf(stderr,"Right sync: %i - %i = %i\n", nLineCycles, nLastAccessCycleLeft, nLineCycles - nLastAccessCycleLeft);
-      if (nLineCycles - nLastAccessCycleLeft == 368)
-      {
-        LeftRightBorder |= BORDERMASK_MIDDLE;   /* Program tries to shorten line by 2 bytes */
-      }
-      else
-      {
-        LeftRightBorder |= BORDERMASK_RIGHT;    /* Program tries to open right border */
-      }
-    }
-  }
+	if (LastByte == 0x00 && Byte == 0x02)   /* switched from 60 Hz to 50 Hz? */
+	{
+		if (nHBL == nLastHBL && nLineCycles-nLastCycles <= 16
+		        && nLineCycles >= (SCREEN_START_CYCLE+320-40)
+		        && nLineCycles <= (SCREEN_START_CYCLE+320+40))
+		{
+			/* Right border */
+			//fprintf(stderr,"Right sync: %i - %i = %i\n", nLineCycles, nLastAccessCycleLeft, nLineCycles - nLastAccessCycleLeft);
+			if (nLineCycles - nLastAccessCycleLeft == 368)
+			{
+				LeftRightBorder |= BORDERMASK_MIDDLE;   /* Program tries to shorten line by 2 bytes */
+			}
+			else
+			{
+				LeftRightBorder |= BORDERMASK_RIGHT;    /* Program tries to open right border */
+			}
+		}
+	}
 
-  nLastHBL = nHBL;
-  LastByte = Byte;
-  nLastCycles = nLineCycles;
+	nLastHBL = nHBL;
+	LastByte = Byte;
+	nLastCycles = nLineCycles;
 }
 
 
@@ -246,7 +246,7 @@ void Video_Sync_WriteByte(void)
  */
 static void Video_StartHBL(void)
 {
-  LeftRightBorder = BORDERMASK_NONE;
+	LeftRightBorder = BORDERMASK_NONE;
 }
 
 
@@ -256,14 +256,14 @@ static void Video_StartHBL(void)
  */
 static void Video_StoreFirstLinePalette(void)
 {
-  Uint16 *pp2;
-  int i;
+	Uint16 *pp2;
+	int i;
 
-  pp2 = (Uint16 *)&IoMem[0xff8240];
-  for(i=0; i<16; i++)
-    HBLPalettes[i] = SDL_SwapBE16(*pp2++);
-  /* And set mask flag with palette and resolution */
-  HBLPaletteMasks[0] = (PALETTEMASK_RESOLUTION|PALETTEMASK_PALETTE) | (((Uint32)IoMem_ReadByte(0xff8260)&0x3)<<16);
+	pp2 = (Uint16 *)&IoMem[0xff8240];
+	for (i = 0; i < 16; i++)
+		HBLPalettes[i] = SDL_SwapBE16(*pp2++);
+	/* And set mask flag with palette and resolution */
+	HBLPaletteMasks[0] = (PALETTEMASK_RESOLUTION|PALETTEMASK_PALETTE) | (((Uint32)IoMem_ReadByte(0xff8260)&0x3)<<16);
 }
 
 
@@ -273,12 +273,12 @@ static void Video_StoreFirstLinePalette(void)
  */
 static void Video_StoreResolution(int y)
 {
-  /* Clear resolution, and set with current value */
-  if (!(bUseHighRes || bUseVDIRes))
-  {
-    HBLPaletteMasks[y] &= ~(0x3<<16);
-    HBLPaletteMasks[y] |= ((Uint32)IoMem_ReadByte(0xff8260)&0x3)<<16;
-  }
+	/* Clear resolution, and set with current value */
+	if (!(bUseHighRes || bUseVDIRes))
+	{
+		HBLPaletteMasks[y] &= ~(0x3<<16);
+		HBLPaletteMasks[y] |= ((Uint32)IoMem_ReadByte(0xff8260)&0x3)<<16;
+	}
 }
 
 
@@ -288,41 +288,41 @@ static void Video_StoreResolution(int y)
  */
 static void Video_CopyScreenLineMono(void)
 {
-    /* Copy one line - 80 bytes in ST high resolution */
-    memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MONOLINE);
-    pVideoRaster += SCREENBYTES_MONOLINE;
+	/* Copy one line - 80 bytes in ST high resolution */
+	memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MONOLINE);
+	pVideoRaster += SCREENBYTES_MONOLINE;
 
-    /* Handle STE fine scrolling (HWScrollCount is zero on ST). */
-    if (HWScrollCount)
-    {
-      Uint16 *pScrollAdj;
-      int nNegScrollCnt;
+	/* Handle STE fine scrolling (HWScrollCount is zero on ST). */
+	if (HWScrollCount)
+	{
+		Uint16 *pScrollAdj;
+		int nNegScrollCnt;
 
-      pScrollAdj = (Uint16 *)pSTScreen;
-      nNegScrollCnt = 16 - HWScrollCount;
+		pScrollAdj = (Uint16 *)pSTScreen;
+		nNegScrollCnt = 16 - HWScrollCount;
 
-      /* Shift the whole line by the given scroll count */
-      while ((Uint8*)pScrollAdj < pSTScreen + SCREENBYTES_MONOLINE-2)
-      {
-        do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
-                        | (do_get_mem_word(pScrollAdj+1) >> nNegScrollCnt));
-        ++pScrollAdj;
-      }
+		/* Shift the whole line by the given scroll count */
+		while ((Uint8*)pScrollAdj < pSTScreen + SCREENBYTES_MONOLINE-2)
+		{
+			do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
+			                | (do_get_mem_word(pScrollAdj+1) >> nNegScrollCnt));
+			++pScrollAdj;
+		}
 
-      /* Handle the last 16 pixels of the line */
-      do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
-                      | (do_get_mem_word(pVideoRaster) >> nNegScrollCnt));
+		/* Handle the last 16 pixels of the line */
+		do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
+		                | (do_get_mem_word(pVideoRaster) >> nNegScrollCnt));
 
-      /* HW scrolling advances Shifter video counter by one */
-      pVideoRaster += 1 * 2;
-    }
+		/* HW scrolling advances Shifter video counter by one */
+		pVideoRaster += 1 * 2;
+	}
 
-    /* ScanLineSkip is zero on ST. */
-    /* On STE, the Shifter skips the given amount of words. */
-    pVideoRaster += ScanLineSkip*2;
+	/* ScanLineSkip is zero on ST. */
+	/* On STE, the Shifter skips the given amount of words. */
+	pVideoRaster += ScanLineSkip*2;
 
-    /* Each screen line copied to buffer is always same length */
-    pSTScreen += SCREENBYTES_MONOLINE;
+	/* Each screen line copied to buffer is always same length */
+	pSTScreen += SCREENBYTES_MONOLINE;
 }
 
 
@@ -333,125 +333,125 @@ static void Video_CopyScreenLineMono(void)
  */
 static void Video_CopyScreenLineColor(void)
 {
-  /* Is total blank line? I.e. top/bottom border? */
-  if (nHBL < nStartHBL || nHBL >= nEndHBL)
-  {
-    /* Clear line to color '0' */
-    memset(pSTScreen, 0, SCREENBYTES_LINE);
-  }
-  else
-  {
-    /* Does have left border? If not, clear to color '0' */
-    if (LeftRightBorder & BORDERMASK_LEFT)
-    {
-      /* The "-2" in the following line is needed so that the offset is a multiple of 8 */
-      pVideoRaster += BORDERBYTES_LEFT-SCREENBYTES_LEFT-2;
-      memcpy(pSTScreen, pVideoRaster, SCREENBYTES_LEFT);
-      pVideoRaster += SCREENBYTES_LEFT;
-    }
-    else
-      memset(pSTScreen,0,SCREENBYTES_LEFT);
+	/* Is total blank line? I.e. top/bottom border? */
+	if (nHBL < nStartHBL || nHBL >= nEndHBL)
+	{
+		/* Clear line to color '0' */
+		memset(pSTScreen, 0, SCREENBYTES_LINE);
+	}
+	else
+	{
+		/* Does have left border? If not, clear to color '0' */
+		if (LeftRightBorder & BORDERMASK_LEFT)
+		{
+			/* The "-2" in the following line is needed so that the offset is a multiple of 8 */
+			pVideoRaster += BORDERBYTES_LEFT-SCREENBYTES_LEFT-2;
+			memcpy(pSTScreen, pVideoRaster, SCREENBYTES_LEFT);
+			pVideoRaster += SCREENBYTES_LEFT;
+		}
+		else
+			memset(pSTScreen,0,SCREENBYTES_LEFT);
 
-    /* Copy middle - always present */
-    memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE);
-    pVideoRaster += SCREENBYTES_MIDDLE;
+		/* Copy middle - always present */
+		memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE);
+		pVideoRaster += SCREENBYTES_MIDDLE;
 
-    /* Does have right border? */
-    if (LeftRightBorder & BORDERMASK_RIGHT)
-    {
-      memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT);
-      pVideoRaster += BORDERBYTES_RIGHT-SCREENBYTES_RIGHT;
-      pVideoRaster += SCREENBYTES_RIGHT;
-    }
-    else if (LeftRightBorder & BORDERMASK_MIDDLE)
-    {
-      /* Shortened line by 2 bytes? */
-      memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE-2, 0, SCREENBYTES_RIGHT+2);
-      pVideoRaster -= 2;
-    }
-    else
-    {
-      /* Simply clear right border to '0' */
-      memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,0,SCREENBYTES_RIGHT);
-    }
+		/* Does have right border? */
+		if (LeftRightBorder & BORDERMASK_RIGHT)
+		{
+			memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT);
+			pVideoRaster += BORDERBYTES_RIGHT-SCREENBYTES_RIGHT;
+			pVideoRaster += SCREENBYTES_RIGHT;
+		}
+		else if (LeftRightBorder & BORDERMASK_MIDDLE)
+		{
+			/* Shortened line by 2 bytes? */
+			memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE-2, 0, SCREENBYTES_RIGHT+2);
+			pVideoRaster -= 2;
+		}
+		else
+		{
+			/* Simply clear right border to '0' */
+			memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,0,SCREENBYTES_RIGHT);
+		}
 
-    /* Correct the "-2" offset for pVideoRaster from BORDERMASK_LEFT above */
-    if (LeftRightBorder & BORDERMASK_LEFT)
-      pVideoRaster += 2;
+		/* Correct the "-2" offset for pVideoRaster from BORDERMASK_LEFT above */
+		if (LeftRightBorder & BORDERMASK_LEFT)
+			pVideoRaster += 2;
 
-    if (bSteBorderFlag)
-    {
-      memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, 4*2);
-      pVideoRaster += 4 * 2;
-    }
-    else if (HWScrollCount)     /* Handle STE fine scrolling (HWScrollCount is zero on ST) */
-    {
-      Uint16 *pScrollAdj;       /* Pointer to actual position in line */
-      int nNegScrollCnt;
-      Uint16 *pScrollEndAddr;   /* Pointer to end of the line */
+		if (bSteBorderFlag)
+		{
+			memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, 4*2);
+			pVideoRaster += 4 * 2;
+		}
+		else if (HWScrollCount)     /* Handle STE fine scrolling (HWScrollCount is zero on ST) */
+		{
+			Uint16 *pScrollAdj;     /* Pointer to actual position in line */
+			int nNegScrollCnt;
+			Uint16 *pScrollEndAddr; /* Pointer to end of the line */
 
-      nNegScrollCnt = 16 - HWScrollCount;
-      if (LeftRightBorder & BORDERMASK_LEFT)
-        pScrollAdj = (Uint16 *)pSTScreen;
-      else
-        pScrollAdj = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT);
-      if (LeftRightBorder & BORDERMASK_RIGHT)
-        pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LINE - 8);
-      else
-        pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT + SCREENBYTES_MIDDLE - 8);
+			nNegScrollCnt = 16 - HWScrollCount;
+			if (LeftRightBorder & BORDERMASK_LEFT)
+				pScrollAdj = (Uint16 *)pSTScreen;
+			else
+				pScrollAdj = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT);
+			if (LeftRightBorder & BORDERMASK_RIGHT)
+				pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LINE - 8);
+			else
+				pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT + SCREENBYTES_MIDDLE - 8);
 
-      if (STRes == ST_MEDIUM_RES)
-      {
-        /* TODO: Implement fine scrolling for medium resolution, too */
-        /* HW scrolling advances Shifter video counter by one */
-        pVideoRaster += 2 * 2;
-      }
-      else
-      {
-        /* Shift the whole line by the given scroll count */
-        while (pScrollAdj < pScrollEndAddr)
-        {
-          do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
-                          | (do_get_mem_word(pScrollAdj+4) >> nNegScrollCnt));
-          ++pScrollAdj;
-        }
-        /* Handle the last 16 pixels of the line */
-        if (LeftRightBorder & BORDERMASK_RIGHT)
-        {
-          /* When right border is open, we have to deal with this ugly offset
-           * of 46-SCREENBYTES_RIGHT=30 - The demo "Mind rewind" is a good example */
-          do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
-                          | (do_get_mem_word(pVideoRaster-30) >> nNegScrollCnt));
-          do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
-                          | (do_get_mem_word(pVideoRaster-28) >> nNegScrollCnt));
-          do_put_mem_word(pScrollAdj+2, (do_get_mem_word(pScrollAdj+2) << HWScrollCount)
-                          | (do_get_mem_word(pVideoRaster-26) >> nNegScrollCnt));
-          do_put_mem_word(pScrollAdj+3, (do_get_mem_word(pScrollAdj+3) << HWScrollCount)
-                          | (do_get_mem_word(pVideoRaster-24) >> nNegScrollCnt));
-        }
-        else
-        {
-          do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
-                          | (do_get_mem_word(pVideoRaster+0) >> nNegScrollCnt));
-          do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
-                          | (do_get_mem_word(pVideoRaster+2) >> nNegScrollCnt));
-          do_put_mem_word(pScrollAdj+2, (do_get_mem_word(pScrollAdj+2) << HWScrollCount)
-                          | (do_get_mem_word(pVideoRaster+4) >> nNegScrollCnt));
-          do_put_mem_word(pScrollAdj+3, (do_get_mem_word(pScrollAdj+3) << HWScrollCount)
-                          | (do_get_mem_word(pVideoRaster+6) >> nNegScrollCnt));
-        }
-        /* HW scrolling advances Shifter video counter by one */
-        pVideoRaster += 4 * 2;
-      }
-    }
+			if (STRes == ST_MEDIUM_RES)
+			{
+				/* TODO: Implement fine scrolling for medium resolution, too */
+				/* HW scrolling advances Shifter video counter by one */
+				pVideoRaster += 2 * 2;
+			}
+			else
+			{
+				/* Shift the whole line by the given scroll count */
+				while (pScrollAdj < pScrollEndAddr)
+				{
+					do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
+					                | (do_get_mem_word(pScrollAdj+4) >> nNegScrollCnt));
+					++pScrollAdj;
+				}
+				/* Handle the last 16 pixels of the line */
+				if (LeftRightBorder & BORDERMASK_RIGHT)
+				{
+					/* When right border is open, we have to deal with this ugly offset
+					 * of 46-SCREENBYTES_RIGHT=30 - The demo "Mind rewind" is a good example */
+					do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
+					                | (do_get_mem_word(pVideoRaster-30) >> nNegScrollCnt));
+					do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
+					                | (do_get_mem_word(pVideoRaster-28) >> nNegScrollCnt));
+					do_put_mem_word(pScrollAdj+2, (do_get_mem_word(pScrollAdj+2) << HWScrollCount)
+					                | (do_get_mem_word(pVideoRaster-26) >> nNegScrollCnt));
+					do_put_mem_word(pScrollAdj+3, (do_get_mem_word(pScrollAdj+3) << HWScrollCount)
+					                | (do_get_mem_word(pVideoRaster-24) >> nNegScrollCnt));
+				}
+				else
+				{
+					do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
+					                | (do_get_mem_word(pVideoRaster+0) >> nNegScrollCnt));
+					do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
+					                | (do_get_mem_word(pVideoRaster+2) >> nNegScrollCnt));
+					do_put_mem_word(pScrollAdj+2, (do_get_mem_word(pScrollAdj+2) << HWScrollCount)
+					                | (do_get_mem_word(pVideoRaster+4) >> nNegScrollCnt));
+					do_put_mem_word(pScrollAdj+3, (do_get_mem_word(pScrollAdj+3) << HWScrollCount)
+					                | (do_get_mem_word(pVideoRaster+6) >> nNegScrollCnt));
+				}
+				/* HW scrolling advances Shifter video counter by one */
+				pVideoRaster += 4 * 2;
+			}
+		}
 
-    /* ScanLineSkip is zero on ST. */
-    /* On STE, the Shifter skips the given amount of words. */
-    pVideoRaster += ScanLineSkip*2;
-  }
+		/* ScanLineSkip is zero on ST. */
+		/* On STE, the Shifter skips the given amount of words. */
+		pVideoRaster += ScanLineSkip*2;
+	}
 
-  /* Each screen line copied to buffer is always same length */
-  pSTScreen += SCREENBYTES_LINE;
+	/* Each screen line copied to buffer is always same length */
+	pSTScreen += SCREENBYTES_LINE;
 }
 
 
@@ -461,8 +461,8 @@ static void Video_CopyScreenLineColor(void)
  */
 static void Video_CopyVDIScreen(void)
 {
-  /* Just copy whole VDI screen as GEM doesn't care about cycle accuracy */
-  memcpy(pSTScreen, pVideoRaster, ((VDIWidth*VDIPlanes)/8)*VDIHeight);
+	/* Just copy whole VDI screen as GEM doesn't care about cycle accuracy */
+	memcpy(pSTScreen, pVideoRaster, ((VDIWidth*VDIPlanes)/8)*VDIHeight);
 }
 
 
@@ -472,62 +472,63 @@ static void Video_CopyVDIScreen(void)
  */
 static void Video_EndHBL(void)
 {
-  Uint8 nSyncByte = IoMem_ReadByte(0xff820a);
+	Uint8 nSyncByte = IoMem_ReadByte(0xff820a);
 
-  /* Check if we need to open borders: If we are running basically in 50 Hz, but
-   * a program switched to 60 Hz at certain screen lines, we have to open the
-   * corresponding border. The "Level 16" fullscreen in the Union demo is a good example. */
-  if ((nSyncByte & 2) == 0)
-  {
-    if (nHBL == SCREEN_START_HBL_60HZ-1 && nStartHBL == SCREEN_START_HBL_50HZ)
-    {
-      /* Top border */
-      OverscanMode |= OVERSCANMODE_TOP;       /* Set overscan bit */
-      nStartHBL = SCREEN_START_HBL_60HZ;      /* New start screen line */
-      pHBLPaletteMasks -= OVERSCAN_TOP;
-      pHBLPalettes -= OVERSCAN_TOP;
-    }
-    else if (nHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR-1
-             && nEndHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR)
-    {
-      /* Bottom border */
-      OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
-      nEndHBL = SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR+OVERSCAN_BOTTOM;  /* New end screen line */
-    }
-  }
+	/* Check if we need to open borders: If we are running basically in 50 Hz,
+	 * but a program switched to 60 Hz at certain screen lines, we have to open
+	 * the corresponding border. The "Level 16" fullscreen in the Union demo is
+	 * a good example. */
+	if ((nSyncByte & 2) == 0)
+	{
+		if (nHBL == SCREEN_START_HBL_60HZ-1 && nStartHBL == SCREEN_START_HBL_50HZ)
+		{
+			/* Top border */
+			OverscanMode |= OVERSCANMODE_TOP;       /* Set overscan bit */
+			nStartHBL = SCREEN_START_HBL_60HZ;      /* New start screen line */
+			pHBLPaletteMasks -= OVERSCAN_TOP;
+			pHBLPalettes -= OVERSCAN_TOP;
+		}
+		else if (nHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR-1
+		         && nEndHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR)
+		{
+			/* Bottom border */
+			OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
+			nEndHBL = SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR+OVERSCAN_BOTTOM;  /* New end screen line */
+		}
+	}
 
-  /* Store palette for very first line on screen - HBLPalettes[0] */
-  if (nHBL == nFirstVisibleHbl)
-  {
-    /* Store ALL palette for this line into raster table for datum */
-    Video_StoreFirstLinePalette();
-  }
+	/* Store palette for very first line on screen - HBLPalettes[0] */
+	if (nHBL == nFirstVisibleHbl)
+	{
+		/* Store ALL palette for this line into raster table for datum */
+		Video_StoreFirstLinePalette();
+	}
 
-  if (!bUseVDIRes)
-  {
-    if (bUseHighRes)
-    {
-      /* Copy for hi-res (no overscan) */
-      if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+400)
-        Video_CopyScreenLineMono();
-    }
-    /* Are we in possible visible color display (including borders)? */
-    else if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+NUM_VISIBLE_LINES)
-    {
-      /* Copy line of screen to buffer to simulate TV raster trace
-       * - required for mouse cursor display/game updates
-       * Eg, Lemmings and The Killing Game Show are good examples */
-      Video_CopyScreenLineColor();
+	if (!bUseVDIRes)
+	{
+		if (bUseHighRes)
+		{
+			/* Copy for hi-res (no overscan) */
+			if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+400)
+				Video_CopyScreenLineMono();
+		}
+		/* Are we in possible visible color display (including borders)? */
+		else if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+NUM_VISIBLE_LINES)
+		{
+			/* Copy line of screen to buffer to simulate TV raster trace
+			 * - required for mouse cursor display/game updates
+			 * Eg, Lemmings and The Killing Game Show are good examples */
+			Video_CopyScreenLineColor();
 
-      /* Store resolution for every line so can check for mix low/med screens */
-      Video_StoreResolution(nHBL-nFirstVisibleHbl);
-    }
-  }
+			/* Store resolution for every line so can check for mix low/med screens */
+			Video_StoreResolution(nHBL-nFirstVisibleHbl);
+		}
+	}
 
-  /* Finally increase HBL count */
-  nHBL++;
+	/* Finally increase HBL count */
+	nHBL++;
 
-  Video_StartHBL();                  /* Setup next one */
+	Video_StartHBL();                  /* Setup next one */
 }
 
 
@@ -538,14 +539,14 @@ static void Video_EndHBL(void)
  */
 void Video_InterruptHandler_HBL(void)
 {
-  /* Remove this interrupt from list and re-order */
-  Int_AcknowledgeInterrupt();
+	/* Remove this interrupt from list and re-order */
+	Int_AcknowledgeInterrupt();
 
-  /* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
-  if (nHBL < nScanlinesPerFrame-1)
-    Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_HBL);
+	/* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
+	if (nHBL < nScanlinesPerFrame-1)
+		Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_HBL);
 
-  M68000_Exception(EXCEPTION_HBLANK);   /* Horizontal blank interrupt, level 2! */
+	M68000_Exception(EXCEPTION_HBLANK);   /* Horizontal blank interrupt, level 2! */
 }
 
 
@@ -557,35 +558,35 @@ void Video_InterruptHandler_HBL(void)
  */
 void Video_InterruptHandler_EndLine(void)
 {
-  /* Remove this interrupt from list and re-order */
-  Int_AcknowledgeInterrupt();
-  /* Generate new HBL, if need to - there are 313 HBLs per frame */
-  if (nHBL < nScanlinesPerFrame-1)
-    Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_ENDLINE);
+	/* Remove this interrupt from list and re-order */
+	Int_AcknowledgeInterrupt();
+	/* Generate new HBL, if need to - there are 313 HBLs per frame */
+	if (nHBL < nScanlinesPerFrame-1)
+		Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_ENDLINE);
 
-  /* Is this a good place to send the keyboard packets? Done once per frame */
-  if (nHBL == nStartHBL)
-  {
-    /* On each VBL send automatic keyboard packets for mouse, joysticks etc... */
-    IKBD_SendAutoKeyboardCommands();
-  }
+	/* Is this a good place to send the keyboard packets? Done once per frame */
+	if (nHBL == nStartHBL)
+	{
+		/* On each VBL send automatic keyboard packets for mouse, joysticks etc... */
+		IKBD_SendAutoKeyboardCommands();
+	}
 
-  /* Timer B occurs at END of first visible screen line in Event Count mode */
-  if (nHBL >= nStartHBL && nHBL < nEndHBL)
-  {
-    /* Handle Timer B when using Event Count mode */
-    if (MFP_TBCR == 0x08)      /* Is timer in Event Count mode? */
-      MFP_TimerB_EventCount_Interrupt();
-  }
+	/* Timer B occurs at END of first visible screen line in Event Count mode */
+	if (nHBL >= nStartHBL && nHBL < nEndHBL)
+	{
+		/* Handle Timer B when using Event Count mode */
+		if (MFP_TBCR == 0x08)      /* Is timer in Event Count mode? */
+			MFP_TimerB_EventCount_Interrupt();
+	}
 
-  FDC_UpdateHBL();             /* Update FDC motion */
-  Video_EndHBL();              /* Increase HBL count, copy line to display buffer and do any video trickery */
+	FDC_UpdateHBL();    /* Update FDC motion */
+	Video_EndHBL();     /* Increase HBL count, copy line to display buffer and do any video trickery */
 
-  /* If we don't often pump data into the event queue, the SDL misses events... grr... */
-  if (!(nHBL & 63))
-  {
-    Main_EventHandler();
-  }
+	/* If we don't often pump data into the event queue, the SDL misses events... grr... */
+	if (!(nHBL & 63))
+	{
+		Main_EventHandler();
+	}
 }
 
 
@@ -596,9 +597,9 @@ void Video_InterruptHandler_EndLine(void)
  */
 void Video_SetScreenRasters(void)
 {
-  pHBLPaletteMasks = HBLPaletteMasks;
-  pHBLPalettes = HBLPalettes;
-  memset(pHBLPaletteMasks, 0, sizeof(Uint32)*NUM_VISIBLE_LINES);  /* Clear array */
+	pHBLPaletteMasks = HBLPaletteMasks;
+	pHBLPalettes = HBLPalettes;
+	memset(pHBLPaletteMasks, 0, sizeof(Uint32)*NUM_VISIBLE_LINES);  /* Clear array */
 }
 
 
@@ -608,27 +609,27 @@ void Video_SetScreenRasters(void)
  */
 static void Video_SetHBLPaletteMaskPointers(void)
 {
-  int FrameCycles;
-  int Line;
+	int FrameCycles;
+	int Line;
 
-  /* Top of standard screen is 63 lines from VBL (in 50 Hz)      */
-  /* Each line is 64+320+64+64(Blank) = 512 pixels per scan line */
-  /* Timer occurs at end of 64+320+64; Display Enable(DE)=Low    */
-  /* HBL is incorrect on machine and occurs around 96+ cycles in */
+	/* Top of standard screen is 63 lines from VBL (in 50 Hz)      */
+	/* Each line is 64+320+64+64(Blank) = 512 pixels per scan line */
+	/* Timer occurs at end of 64+320+64; Display Enable(DE)=Low    */
+	/* HBL is incorrect on machine and occurs around 96+ cycles in */
 
-  FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+	FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 
-  /* Find 'line' into palette - screen starts 63 lines down, less 29 for top overscan */
-  /* And if write to last 96 cycle of line it will count as the NEXT line(needed else games may flicker) */
-  Line = (FrameCycles-(nFirstVisibleHbl*nCyclesPerLine)+SCREEN_START_CYCLE)/nCyclesPerLine;
-  if (Line<0)          /* Limit to top/bottom of possible visible screen */
-    Line = 0;
-  if (Line>=NUM_VISIBLE_LINES)
-    Line = NUM_VISIBLE_LINES-1;
+	/* Find 'line' into palette - screen starts 63 lines down, less 29 for top overscan */
+	/* And if write to last 96 cycle of line it will count as the NEXT line(needed else games may flicker) */
+	Line = (FrameCycles-(nFirstVisibleHbl*nCyclesPerLine)+SCREEN_START_CYCLE)/nCyclesPerLine;
+	if (Line < 0)        /* Limit to top/bottom of possible visible screen */
+		Line = 0;
+	if (Line >= NUM_VISIBLE_LINES)
+		Line = NUM_VISIBLE_LINES-1;
 
-  /* Store pointers */
-  pHBLPaletteMasks = &HBLPaletteMasks[Line];  /* Next mask entry */
-  pHBLPalettes = &HBLPalettes[16*Line];       /* Next colour raster list x16 colours */
+	/* Store pointers */
+	pHBLPaletteMasks = &HBLPaletteMasks[Line];  /* Next mask entry */
+	pHBLPalettes = &HBLPalettes[16*Line];       /* Next colour raster list x16 colours */
 }
 
 
@@ -641,45 +642,46 @@ static void Video_SetHBLPaletteMaskPointers(void)
  */
 static void Video_ResetShifterTimings(void)
 {
-  Uint8 nSyncByte;
+	Uint8 nSyncByte;
 
-  nSyncByte = IoMem_ReadByte(0xff820a);
+	nSyncByte = IoMem_ReadByte(0xff820a);
 
-  if (bUseHighRes)
-  {
-    /* 71 Hz, monochrome */
-    nScreenRefreshRate = 71;
-    nScanlinesPerFrame = SCANLINES_PER_FRAME_71HZ;
-    nCyclesPerLine = CYCLES_PER_LINE_71HZ;
-    nStartHBL = SCREEN_START_HBL_71HZ;
-    nFirstVisibleHbl = FIRST_VISIBLE_HBL_71HZ;
-  }
-  else if (nSyncByte & 2)  /* Check if running in 50 Hz or in 60 Hz */
-  {
-    /* 50 Hz */
-    nScreenRefreshRate = 50;
-    nScanlinesPerFrame = SCANLINES_PER_FRAME_50HZ;
-    nCyclesPerLine = CYCLES_PER_LINE_50HZ;
-    nStartHBL = SCREEN_START_HBL_50HZ;
-    nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;
-  }
-  else
-  {
-    /* 60 Hz */
-    nScreenRefreshRate = 60;
-    nScanlinesPerFrame = SCANLINES_PER_FRAME_60HZ;
-    nCyclesPerLine = CYCLES_PER_LINE_60HZ;
-    nStartHBL = SCREEN_START_HBL_60HZ;
-    nFirstVisibleHbl = FIRST_VISIBLE_HBL_60HZ;
-  }
-  if (bUseHighRes)
-  {
-    nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL_MONO;
-  }
-  else
-  {
-    nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL_COLOR;
-  }
+	if (bUseHighRes)
+	{
+		/* 71 Hz, monochrome */
+		nScreenRefreshRate = 71;
+		nScanlinesPerFrame = SCANLINES_PER_FRAME_71HZ;
+		nCyclesPerLine = CYCLES_PER_LINE_71HZ;
+		nStartHBL = SCREEN_START_HBL_71HZ;
+		nFirstVisibleHbl = FIRST_VISIBLE_HBL_71HZ;
+	}
+	else if (nSyncByte & 2)  /* Check if running in 50 Hz or in 60 Hz */
+	{
+		/* 50 Hz */
+		nScreenRefreshRate = 50;
+		nScanlinesPerFrame = SCANLINES_PER_FRAME_50HZ;
+		nCyclesPerLine = CYCLES_PER_LINE_50HZ;
+		nStartHBL = SCREEN_START_HBL_50HZ;
+		nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;
+	}
+	else
+	{
+		/* 60 Hz */
+		nScreenRefreshRate = 60;
+		nScanlinesPerFrame = SCANLINES_PER_FRAME_60HZ;
+		nCyclesPerLine = CYCLES_PER_LINE_60HZ;
+		nStartHBL = SCREEN_START_HBL_60HZ;
+		nFirstVisibleHbl = FIRST_VISIBLE_HBL_60HZ;
+	}
+
+	if (bUseHighRes)
+	{
+		nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL_MONO;
+	}
+	else
+	{
+		nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL_COLOR;
+	}
 }
 
 
@@ -689,25 +691,25 @@ static void Video_ResetShifterTimings(void)
  */
 static void Video_ClearOnVBL(void)
 {
-  /* New screen, so first HBL */
-  nHBL = 0;
-  OverscanMode = OVERSCANMODE_NONE;
+	/* New screen, so first HBL */
+	nHBL = 0;
+	OverscanMode = OVERSCANMODE_NONE;
 
-  Video_ResetShifterTimings();
+	Video_ResetShifterTimings();
 
-  /* Get screen address pointer, aligned to 256 bytes on ST (ie ignore lowest byte) */
-  VideoBase = (Uint32)IoMem_ReadByte(0xff8201)<<16 | (Uint32)IoMem_ReadByte(0xff8203)<<8;
-  if (ConfigureParams.System.nMachineType != MACHINE_ST)
-  {
-    /* on STe 2 aligned, on Falcon 4 aligned, on TT 8 aligned. We do STe. */
-    VideoBase |= IoMem_ReadByte(0xff820d) & ~1;
-  }
-  pVideoRaster = &STRam[VideoBase];
-  pSTScreen = pFrameBuffer->pSTScreen;
+	/* Get screen address pointer, aligned to 256 bytes on ST (ie ignore lowest byte) */
+	VideoBase = (Uint32)IoMem_ReadByte(0xff8201)<<16 | (Uint32)IoMem_ReadByte(0xff8203)<<8;
+	if (ConfigureParams.System.nMachineType != MACHINE_ST)
+	{
+		/* on STe 2 aligned, on Falcon 4 aligned, on TT 8 aligned. We do STe. */
+		VideoBase |= IoMem_ReadByte(0xff820d) & ~1;
+	}
+	pVideoRaster = &STRam[VideoBase];
+	pSTScreen = pFrameBuffer->pSTScreen;
 
-  Video_StartHBL();
-  Video_SetScreenRasters();
-  Spec512_StartVBL();
+	Video_StartHBL();
+	Video_SetScreenRasters();
+	Spec512_StartVBL();
 }
 
 
@@ -717,19 +719,19 @@ static void Video_ClearOnVBL(void)
  */
 void Video_GetTTRes(int *width, int *height, int *bpp)
 {
-  switch (nTTRes)
-  {
-    case 0: *width = 320; *height = 200; *bpp = 4; break;
-    case 1: *width = 640; *height = 200; *bpp = 2; break;
-    case 2: *width = 640; *height = 400; *bpp = 1; break;
-    case 4: *width = 640; *height = 480; *bpp = 4; break;
-    case 6: *width = 1280; *height = 960; *bpp = 1; break;
-    case 7: *width = 320; *height = 480; *bpp = 8; break;
-    default:
-      fprintf(stderr, "TT res error!\n");
-      *width = 320; *height = 200; *bpp = 4;
-      break;
-  }
+	switch (nTTRes)
+	{
+	 case 0: *width = 320; *height = 200; *bpp = 4; break;
+	 case 1: *width = 640; *height = 200; *bpp = 2; break;
+	 case 2: *width = 640; *height = 400; *bpp = 1; break;
+	 case 4: *width = 640; *height = 480; *bpp = 4; break;
+	 case 6: *width = 1280; *height = 960; *bpp = 1; break;
+	 case 7: *width = 320; *height = 480; *bpp = 8; break;
+	 default:
+		fprintf(stderr, "TT res error!\n");
+		*width = 320; *height = 200; *bpp = 4;
+		break;
+	}
 }
 
 
@@ -739,65 +741,66 @@ void Video_GetTTRes(int *width, int *height, int *bpp)
  */
 static void Video_RenderTTScreen(void)
 {
-  static int nPrevTTRes = -1;
-  int width, height, bpp, i, colors, offset;
-  uint8 r,g,b, lowbyte, highbyte;
-  uint32 ttpalette, src, dst;
-  Uint16 stcolor, ttcolor;
+	static int nPrevTTRes = -1;
+	int width, height, bpp, i, colors, offset;
+	uint8 r,g,b, lowbyte, highbyte;
+	uint32 ttpalette, src, dst;
+	Uint16 stcolor, ttcolor;
 
-  Video_GetTTRes(&width, &height, &bpp);
-  if (nTTRes != nPrevTTRes)
-  {
-    HostScreen_setWindowSize(width, height, 8);
-    nPrevTTRes = nTTRes;
-  }
+	Video_GetTTRes(&width, &height, &bpp);
+	if (nTTRes != nPrevTTRes)
+	{
+		HostScreen_setWindowSize(width, height, 8);
+		nPrevTTRes = nTTRes;
+	}
 
-  /* colors need synching? */
-  if (!(bTTColorsSync && bTTColorsSTSync))
-  {
-    ttpalette = 0xff8400;
+	/* colors need synching? */
+	if (!(bTTColorsSync && bTTColorsSTSync))
+	{
+		ttpalette = 0xff8400;
 
-    if (!bTTColorsSTSync)
-    {
-      /* sync TT ST-palette to TT-palette */
-      src = 0xff8240;	/* ST-palette */
-      offset = (IoMem_ReadWord(0xff8262) & 0x0f);
-      /*fprintf(stdout, "offset: %d\n", offset);*/
-      dst = ttpalette + offset * 16*SIZE_WORD;
+		if (!bTTColorsSTSync)
+		{
+			/* sync TT ST-palette to TT-palette */
+			src = 0xff8240;	/* ST-palette */
+			offset = (IoMem_ReadWord(0xff8262) & 0x0f);
+			/*fprintf(stdout, "offset: %d\n", offset);*/
+			dst = ttpalette + offset * 16*SIZE_WORD;
 
-      for (i = 0; i < 16; i++)
-      {
-        stcolor = IoMem_ReadWord(src);
-        ttcolor = ((stcolor&0x700) << 1) | ((stcolor&0x70) << 1) | ((stcolor&0x7) << 1);
-        IoMem_WriteWord(dst, ttcolor);
-        src += SIZE_WORD; dst += SIZE_WORD;
-      }
-      bTTColorsSTSync = TRUE;
-    }
-    colors = 1 << bpp;
-    for (i = 0; i < colors; i++)
-    {
-      lowbyte = IoMem_ReadByte(ttpalette++);
-      highbyte = IoMem_ReadByte(ttpalette++);
-      r = (lowbyte  & 0x0f) << 4;
-      g = (highbyte & 0xf0);
-      b = (highbyte & 0x0f) << 4;
-      //printf("%d: (%d,%d,%d)\n", i,r,g,b);
-      HostScreen_setPaletteColor(i, r,g,b);
-    }
-    HostScreen_updatePalette(colors);
-    bTTColorsSync = TRUE;
-  }
+			for (i = 0; i < 16; i++)
+			{
+				stcolor = IoMem_ReadWord(src);
+				ttcolor = ((stcolor&0x700) << 1) | ((stcolor&0x70) << 1) | ((stcolor&0x7) << 1);
+				IoMem_WriteWord(dst, ttcolor);
+				src += SIZE_WORD;
+				dst += SIZE_WORD;
+			}
+			bTTColorsSTSync = TRUE;
+		}
+		colors = 1 << bpp;
+		for (i = 0; i < colors; i++)
+		{
+			lowbyte = IoMem_ReadByte(ttpalette++);
+			highbyte = IoMem_ReadByte(ttpalette++);
+			r = (lowbyte  & 0x0f) << 4;
+			g = (highbyte & 0xf0);
+			b = (highbyte & 0x0f) << 4;
+			//printf("%d: (%d,%d,%d)\n", i,r,g,b);
+			HostScreen_setPaletteColor(i, r,g,b);
+		}
+		HostScreen_updatePalette(colors);
+		bTTColorsSync = TRUE;
+	}
 
-  /* Yes, we are abusing the Videl routines for rendering the TT modes! */
-  if (!HostScreen_renderBegin())
-    return;
-  if (ConfigureParams.Screen.bZoomLowRes)
-    VIDEL_ConvertScreenZoom(width, height, bpp, width * bpp / 16);
-  else
-    VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);
-  HostScreen_renderEnd();
-  HostScreen_update1(FALSE);
+	/* Yes, we are abusing the Videl routines for rendering the TT modes! */
+	if (!HostScreen_renderBegin())
+		return;
+	if (ConfigureParams.Screen.bZoomLowRes)
+		VIDEL_ConvertScreenZoom(width, height, bpp, width * bpp / 16);
+	else
+		VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);
+	HostScreen_renderEnd();
+	HostScreen_update1(FALSE);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -807,26 +810,26 @@ static void Video_RenderTTScreen(void)
  */
 static void Video_DrawScreen(void)
 {
-  /* Skip frame if need to */
-  if (nVBLs % (ConfigureParams.Screen.FrameSkips+1))
-    return;
+	/* Skip frame if need to */
+	if (nVBLs % (ConfigureParams.Screen.FrameSkips+1))
+		return;
 
-  /* Use extended VDI resolution?
-   * If so, just copy whole screen on VBL rather than per HBL */
-  if (bUseVDIRes)
-    Video_CopyVDIScreen();
+	/* Use extended VDI resolution?
+	 * If so, just copy whole screen on VBL rather than per HBL */
+	if (bUseVDIRes)
+		Video_CopyVDIScreen();
 
-  /* Now draw the screen! */
-  if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
-  {
-    VIDEL_renderScreen();
-  }
-  else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
-  {
-    Video_RenderTTScreen();
-  }
-  else
-    Screen_Draw();
+	/* Now draw the screen! */
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
+	{
+		VIDEL_renderScreen();
+	}
+	else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
+	{
+		Video_RenderTTScreen();
+	}
+	else
+		Screen_Draw();
 }
 
 
@@ -836,9 +839,9 @@ static void Video_DrawScreen(void)
  */
 void Video_StartInterrupts(void)
 {
-  Int_AddAbsoluteInterrupt(nCyclesPerLine-96, INTERRUPT_VIDEO_ENDLINE);
-  Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_HBL);
-  Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME, INTERRUPT_VIDEO_VBL);
+	Int_AddAbsoluteInterrupt(nCyclesPerLine-96, INTERRUPT_VIDEO_ENDLINE);
+	Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_HBL);
+	Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME, INTERRUPT_VIDEO_VBL);
 }
 
 
@@ -848,51 +851,51 @@ void Video_StartInterrupts(void)
  */
 void Video_InterruptHandler_VBL(void)
 {
-  int PendingCyclesOver;
+	int PendingCyclesOver;
 
-  /* Store cycles we went over for this frame(this is our inital count) */
-  PendingCyclesOver = -PendingInterruptCount;    /* +ve */
+	/* Store cycles we went over for this frame(this is our inital count) */
+	PendingCyclesOver = -PendingInterruptCount;    /* +ve */
 
-  /* Remove this interrupt from list and re-order */
-  Int_AcknowledgeInterrupt();
+	/* Remove this interrupt from list and re-order */
+	Int_AcknowledgeInterrupt();
 
-  /* Start VBL & HBL interrupts */
-  Video_StartInterrupts();
+	/* Start VBL & HBL interrupts */
+	Video_StartInterrupts();
 
-  /* Set frame cycles, used for Video Address */
-  Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver);
+	/* Set frame cycles, used for Video Address */
+	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver);
 
-  /* Clear any key presses which are due to be de-bounced (held for one ST frame) */
-  Keymap_DebounceAllKeys();
-  /* Act on shortcut keys */
-  ShortCut_ActKey();
+	/* Clear any key presses which are due to be de-bounced (held for one ST frame) */
+	Keymap_DebounceAllKeys();
+	/* Act on shortcut keys */
+	ShortCut_ActKey();
 
-  Video_DrawScreen();
+	Video_DrawScreen();
 
-  /* Check printer status */
-  Printer_CheckIdleStatus();
+	/* Check printer status */
+	Printer_CheckIdleStatus();
 
-  /* Update counter for number of screen refreshes per second */
-  nVBLs++;
-  /* Set video registers for frame */
-  Video_ClearOnVBL();
-  /* Store off PSG registers for YM file, is enabled */
-  YMFormat_UpdateRecording();
-  /* Generate 1/50th second of sound sample data, to be played by sound thread */
-  Sound_Update_VBL();
+	/* Update counter for number of screen refreshes per second */
+	nVBLs++;
+	/* Set video registers for frame */
+	Video_ClearOnVBL();
+	/* Store off PSG registers for YM file, is enabled */
+	YMFormat_UpdateRecording();
+	/* Generate 1/50th second of sound sample data, to be played by sound thread */
+	Sound_Update_VBL();
 
-  M68000_Exception(EXCEPTION_VBLANK);   /* Vertical blank interrupt, level 4! */
+	M68000_Exception(EXCEPTION_VBLANK);   /* Vertical blank interrupt, level 4! */
 
-  /* And handle any messages, check for quit message */
-  Main_EventHandler();         /* Process messages, set 'bQuitProgram' if user tries to quit */
-  if (bQuitProgram)
-  {
-    /* Pass NULL interrupt function to quit cleanly */
-    Int_AddAbsoluteInterrupt(4, INTERRUPT_NULL);
-    M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
-  }
+	/* And handle any messages, check for quit message */
+	Main_EventHandler();         /* Process messages, set 'bQuitProgram' if user tries to quit */
+	if (bQuitProgram)
+	{
+		/* Pass NULL interrupt function to quit cleanly */
+		Int_AddAbsoluteInterrupt(4, INTERRUPT_NULL);
+		M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
+	}
 
-  Main_WaitOnVbl();
+	Main_WaitOnVbl();
 }
 
 
@@ -902,27 +905,27 @@ void Video_InterruptHandler_VBL(void)
  */
 void Video_Reset(void)
 {
-  /* NOTE! Must reset all of these register type things here!!!! */
+	/* NOTE! Must reset all of these register type things here!!!! */
 
-  /* Are we in high-res? */
-  if (bUseHighRes)
-    VideoShifterByte = ST_HIGH_RES;    /* Boot up for mono monitor */
-  else
-    VideoShifterByte = ST_LOW_RES;
-  if(bUseVDIRes)
-    VideoShifterByte = VDIRes;
+	/* Are we in high-res? */
+	if (bUseHighRes)
+		VideoShifterByte = ST_HIGH_RES;    /* Boot up for mono monitor */
+	else
+		VideoShifterByte = ST_LOW_RES;
+	if (bUseVDIRes)
+		VideoShifterByte = VDIRes;
 
-  /* Reset VBL counter */
-  nVBLs = 0;
-  /* Reset addresses */
-  VideoBase = 0L;
-  /* Reset STe screen variables */
-  ScanLineSkip = 0;
-  HWScrollCount = 0;
-  bSteBorderFlag = FALSE;
+	/* Reset VBL counter */
+	nVBLs = 0;
+	/* Reset addresses */
+	VideoBase = 0L;
+	/* Reset STe screen variables */
+	ScanLineSkip = 0;
+	HWScrollCount = 0;
+	bSteBorderFlag = FALSE;
 
-  /* Clear ready for new VBL */
-  Video_ClearOnVBL();
+	/* Clear ready for new VBL */
+	Video_ClearOnVBL();
 }
 
 
@@ -934,7 +937,7 @@ void Video_Reset(void)
  */
 void Video_ScreenBaseSTE_WriteByte(void)
 {
-  IoMem[0xff820d] = 0;          /* Reset screen base low register */
+	IoMem[0xff820d] = 0;          /* Reset screen base low register */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -943,7 +946,7 @@ void Video_ScreenBaseSTE_WriteByte(void)
  */
 void Video_ScreenCounterHigh_ReadByte(void)
 {
-  IoMem[0xff8205] = Video_CalculateAddress() >> 16;   /* Get video address counter high byte */
+	IoMem[0xff8205] = Video_CalculateAddress() >> 16; /* Get video address counter high byte */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -952,7 +955,7 @@ void Video_ScreenCounterHigh_ReadByte(void)
  */
 void Video_ScreenCounterMed_ReadByte(void)
 {
-  IoMem[0xff8207] = Video_CalculateAddress() >> 8;    /* Get video address counter med byte */
+	IoMem[0xff8207] = Video_CalculateAddress() >> 8;  /* Get video address counter med byte */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -961,7 +964,7 @@ void Video_ScreenCounterMed_ReadByte(void)
  */
 void Video_ScreenCounterLow_ReadByte(void)
 {
-  IoMem[0xff8209] = Video_CalculateAddress();         /* Get video address counter low byte */
+	IoMem[0xff8209] = Video_CalculateAddress();       /* Get video address counter low byte */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -971,9 +974,9 @@ void Video_ScreenCounterLow_ReadByte(void)
  */
 void Video_ScreenCounter_WriteByte(void)
 {
-  Uint32 addr;
-  addr = (IoMem[0xff8205] << 16) | (IoMem[0xff8207] << 8) | IoMem[0xff8209];
-  pVideoRaster = &STRam[addr & ~1];
+	Uint32 addr;
+	addr = (IoMem[0xff8205] << 16) | (IoMem[0xff8207] << 8) | IoMem[0xff8209];
+	pVideoRaster = &STRam[addr & ~1];
 }
 
 /*-----------------------------------------------------------------------*/
@@ -982,7 +985,7 @@ void Video_ScreenCounter_WriteByte(void)
  */
 void Video_Sync_ReadByte(void)
 {
-  /* Nothing... */
+	/* Nothing... */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -992,13 +995,13 @@ void Video_Sync_ReadByte(void)
  */
 void Video_BaseLow_ReadByte(void)
 {
-  if (ConfigureParams.System.nMachineType == MACHINE_ST)
-    IoMem[0xff820d] = 0;        /* On ST this is always 0 */
+	if (ConfigureParams.System.nMachineType == MACHINE_ST)
+		IoMem[0xff820d] = 0;        /* On ST this is always 0 */
 
-  /* Note that you should not do anything here for STe because
-   * VideoBase address is set in an interrupt and would be wrong
-   * here.   It's fine like this.
-   */
+	/* Note that you should not do anything here for STe because
+	 * VideoBase address is set in an interrupt and would be wrong
+	 * here.   It's fine like this.
+	 */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1007,10 +1010,10 @@ void Video_BaseLow_ReadByte(void)
  */
 void Video_LineWidth_ReadByte(void)
 {
-  if (ConfigureParams.System.nMachineType == MACHINE_ST)
-    IoMem[0xff820f] = 0;        /* On ST this is always 0 */
-  else
-    IoMem[0xff820f] = ScanLineSkip;
+	if (ConfigureParams.System.nMachineType == MACHINE_ST)
+		IoMem[0xff820f] = 0;        /* On ST this is always 0 */
+	else
+		IoMem[0xff820f] = ScanLineSkip;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1019,10 +1022,10 @@ void Video_LineWidth_ReadByte(void)
  */
 void Video_ShifterMode_ReadByte(void)
 {
-  if (bUseHighRes)
-    IoMem[0xff8260] = 2;                  /* If mono monitor, force to high resolution */
-  else
-    IoMem[0xff8260] = VideoShifterByte;   /* Read shifter register */
+	if (bUseHighRes)
+		IoMem[0xff8260] = 2;                  /* If mono monitor, force to high resolution */
+	else
+		IoMem[0xff8260] = VideoShifterByte;   /* Read shifter register */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1031,7 +1034,7 @@ void Video_ShifterMode_ReadByte(void)
  */
 void Video_HorScroll_Read(void)
 {
-  IoMem[0xff8265] = HWScrollCount;
+	IoMem[0xff8265] = HWScrollCount;
 }
 
 
@@ -1041,7 +1044,7 @@ void Video_HorScroll_Read(void)
  */
 void Video_LineWidth_WriteByte(void)
 {
-    ScanLineSkip = IoMem_ReadByte(0xff820f);
+	ScanLineSkip = IoMem_ReadByte(0xff820f);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1050,102 +1053,102 @@ void Video_LineWidth_WriteByte(void)
  */
 static void Video_ColorReg_WriteWord(Uint32 addr)
 {
-  if (!bUseHighRes)                        /* Don't store if hi-res */
-  {
-    int idx;
-    Uint16 col;
-    Video_SetHBLPaletteMaskPointers();     /* Set 'pHBLPalettes' etc.. according cycles into frame */
-    col = IoMem_ReadWord(addr);
-    if (ConfigureParams.System.nMachineType == MACHINE_ST)
-      col &= 0x777;                          /* Mask off to ST 512 palette */
-    else
-      col &= 0xfff;                          /* Mask off to STe 4096 palette */
-    IoMem_WriteWord(addr, col);            /* (some games write 0xFFFF and read back to see if STe) */
-    Spec512_StoreCyclePalette(col, addr);  /* Store colour into CyclePalettes[] */
-    idx = (addr-0xff8240)/2;               /* words */
-    pHBLPalettes[idx] = col;               /* Set colour x */
-    *pHBLPaletteMasks |= 1 << idx;         /* And mask */
-  }
+	if (!bUseHighRes)                          /* Don't store if hi-res */
+	{
+		int idx;
+		Uint16 col;
+		Video_SetHBLPaletteMaskPointers();     /* Set 'pHBLPalettes' etc.. according cycles into frame */
+		col = IoMem_ReadWord(addr);
+		if (ConfigureParams.System.nMachineType == MACHINE_ST)
+			col &= 0x777;                      /* Mask off to ST 512 palette */
+		else
+			col &= 0xfff;                      /* Mask off to STe 4096 palette */
+		IoMem_WriteWord(addr, col);            /* (some games write 0xFFFF and read back to see if STe) */
+		Spec512_StoreCyclePalette(col, addr);  /* Store colour into CyclePalettes[] */
+		idx = (addr-0xff8240)/2;               /* words */
+		pHBLPalettes[idx] = col;               /* Set colour x */
+		*pHBLPaletteMasks |= 1 << idx;         /* And mask */
+	}
 }
 
 void Video_Color0_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff8240);
+	Video_ColorReg_WriteWord(0xff8240);
 }
 
 void Video_Color1_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff8242);
+	Video_ColorReg_WriteWord(0xff8242);
 }
 
 void Video_Color2_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff8244);
+	Video_ColorReg_WriteWord(0xff8244);
 }
 
 void Video_Color3_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff8246);
+	Video_ColorReg_WriteWord(0xff8246);
 }
 
 void Video_Color4_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff8248);
+	Video_ColorReg_WriteWord(0xff8248);
 }
 
 void Video_Color5_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff824a);
+	Video_ColorReg_WriteWord(0xff824a);
 }
 
 void Video_Color6_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff824c);
+	Video_ColorReg_WriteWord(0xff824c);
 }
 
 void Video_Color7_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff824e);
+	Video_ColorReg_WriteWord(0xff824e);
 }
 
 void Video_Color8_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff8250);
+	Video_ColorReg_WriteWord(0xff8250);
 }
 
 void Video_Color9_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff8252);
+	Video_ColorReg_WriteWord(0xff8252);
 }
 
 void Video_Color10_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff8254);
+	Video_ColorReg_WriteWord(0xff8254);
 }
 
 void Video_Color11_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff8256);
+	Video_ColorReg_WriteWord(0xff8256);
 }
 
 void Video_Color12_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff8258);
+	Video_ColorReg_WriteWord(0xff8258);
 }
 
 void Video_Color13_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff825a);
+	Video_ColorReg_WriteWord(0xff825a);
 }
 
 void Video_Color14_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff825c);
+	Video_ColorReg_WriteWord(0xff825c);
 }
 
 void Video_Color15_WriteWord(void)
 {
-  Video_ColorReg_WriteWord(0xff825e);
+	Video_ColorReg_WriteWord(0xff825e);
 }
 
 
@@ -1155,28 +1158,28 @@ void Video_Color15_WriteWord(void)
  */
 void Video_ShifterMode_WriteByte(void)
 {
-  if (ConfigureParams.System.nMachineType == MACHINE_TT)
-  {
-    nTTRes = IoMem_ReadByte(0xff8260) & 7;
-    IoMem_WriteByte(0xff8262, nTTRes);                /* Copy to TT shifter mode register */
-  }
-  if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
-  {
-    /* - activate STE palette
-     * - TODO: set line width ($8210)
-     * - TODO: sets paramaters in $82c2 (double lines/interlace & cycles/pixel)
-     */
-    bUseSTShifter = TRUE;
-  }
-  if (!bUseHighRes && !bUseVDIRes)                    /* Don't store if hi-res and don't store if VDI resolution */
-  {
-    VideoShifterByte = IoMem[0xff8260] & 3;           /* We only care for lower 2-bits */
-    Video_WriteToShifter(VideoShifterByte);
-    Video_SetHBLPaletteMaskPointers();
-    *pHBLPaletteMasks &= 0xff00ffff;
-    /* Store resolution after palette mask and set resolution write bit: */
-    *pHBLPaletteMasks |= (((Uint32)VideoShifterByte|0x04)<<16);
-  }
+	if (ConfigureParams.System.nMachineType == MACHINE_TT)
+	{
+		nTTRes = IoMem_ReadByte(0xff8260) & 7;
+		IoMem_WriteByte(0xff8262, nTTRes);                /* Copy to TT shifter mode register */
+	}
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	{
+		/* - activate STE palette
+		 * - TODO: set line width ($8210)
+		 * - TODO: sets paramaters in $82c2 (double lines/interlace & cycles/pixel)
+		 */
+		bUseSTShifter = TRUE;
+	}
+	if (!bUseHighRes && !bUseVDIRes)                    /* Don't store if hi-res and don't store if VDI resolution */
+	{
+		VideoShifterByte = IoMem[0xff8260] & 3;           /* We only care for lower 2-bits */
+		Video_WriteToShifter(VideoShifterByte);
+		Video_SetHBLPaletteMaskPointers();
+		*pHBLPaletteMasks &= 0xff00ffff;
+		/* Store resolution after palette mask and set resolution write bit: */
+		*pHBLPaletteMasks |= (((Uint32)VideoShifterByte|0x04)<<16);
+	}
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1192,31 +1195,31 @@ void Video_ShifterMode_WriteByte(void)
  */
 void Video_HorScroll_Write(void)
 {
-  static BOOL bFirstSteAccess = FALSE;
+	static BOOL bFirstSteAccess = FALSE;
 
-  HWScrollCount = IoMem[0xff8265];
+	HWScrollCount = IoMem[0xff8265];
 
-  /*fprintf(stderr, "Write to 0x%x (0x%x, 0x%x, %i)\n", IoAccessBaseAddress,
-          IoMem[0xff8264], HWScrollCount, nIoMemAccessSize);*/
+	/*fprintf(stderr, "Write to 0x%x (0x%x, 0x%x, %i)\n", IoAccessBaseAddress,
+	        IoMem[0xff8264], HWScrollCount, nIoMemAccessSize);*/
 
-  if (IoAccessBaseAddress == 0xff8264 && nIoMemAccessSize == SIZE_WORD
-      && HWScrollCount == 1)
-  {
-    /*fprintf(stderr, "STE border removal - access 1\n");*/
-    bFirstSteAccess = TRUE;
-  }
-  else if (bFirstSteAccess && HWScrollCount == 1 &&
-           IoAccessBaseAddress == 0xff8264 && nIoMemAccessSize == SIZE_BYTE)
-  {
-    /*fprintf(stderr, "STE border removal - access 2\n");*/
-    bSteBorderFlag = TRUE;
-  }
-  else
-  {
-    bFirstSteAccess = bSteBorderFlag = FALSE;
-  }
+	if (IoAccessBaseAddress == 0xff8264 && nIoMemAccessSize == SIZE_WORD
+	        && HWScrollCount == 1)
+	{
+		/*fprintf(stderr, "STE border removal - access 1\n");*/
+		bFirstSteAccess = TRUE;
+	}
+	else if (bFirstSteAccess && HWScrollCount == 1 &&
+	         IoAccessBaseAddress == 0xff8264 && nIoMemAccessSize == SIZE_BYTE)
+	{
+		/*fprintf(stderr, "STE border removal - access 2\n");*/
+		bSteBorderFlag = TRUE;
+	}
+	else
+	{
+		bFirstSteAccess = bSteBorderFlag = FALSE;
+	}
 
-  HWScrollCount &= 0x0f;
+	HWScrollCount &= 0x0f;
 }
 
 
@@ -1244,7 +1247,7 @@ void Video_TTShiftMode_WriteWord(void)
  */
 void Video_TTColorRegs_WriteWord(void)
 {
-  bTTColorsSync = FALSE;
+	bTTColorsSync = FALSE;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1253,5 +1256,5 @@ void Video_TTColorRegs_WriteWord(void)
  */
 void Video_TTColorSTRegs_WriteWord(void)
 {
-  bTTColorsSTSync = FALSE;
+	bTTColorsSTSync = FALSE;
 }
