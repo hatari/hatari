@@ -13,14 +13,22 @@
 #define HAVE_ZLIB_H 1
 
 /* Define to 1 if you have the <termios.h> header file. */
-#define HAVE_TERMIOS_H 1
+#if defined(WIN32)
+# undef  HAVE_TERMIOS_H
+#else
+# define HAVE_TERMIOS_H 1
+#endif
 
 /* Define to 1 if you have the <glob.h> header file. */
-#define HAVE_GLOB_H 1
+#if defined(WIN32)
+# undef  HAVE_GLOB_H
+#else
+# define HAVE_GLOB_H 1
+#endif
 
 /* Define to 1 if you have the <strings.h> header file. */
 #if defined(__CEGCC__)
-# undef HAVE_STRINGS_H
+# undef  HAVE_STRINGS_H
 #else
 # define HAVE_STRINGS_H 1
 #endif
@@ -32,8 +40,9 @@
 #define HAVE_STRNCASECMP 1
 
 /* Define to 1 if you have the `cfmakeraw' function. */
-#if defined(__BEOS__) || (defined(__sun) && defined(__SVR4)) || defined(__AMIGAOS4__) || defined(__riscos) || defined(__CEGCC__)
-# undef HAVE_CFMAKERAW
+#if defined(__BEOS__) || (defined(__sun) && defined(__SVR4)) \
+    || defined(__AMIGAOS4__) || defined(__riscos) || defined(__CEGCC__)
+# undef  HAVE_CFMAKERAW
 #else
 # define HAVE_CFMAKERAW 1
 #endif
