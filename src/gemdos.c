@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.66 2007-12-18 20:35:05 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.67 2007-12-20 12:12:48 thothy Exp $";
 
 #include <config.h>
 
@@ -33,7 +33,7 @@ const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.66 2007-12-18 20:35:05 tho
 #include <strings.h>
 #endif
 
-#ifndef WIN32
+#if HAVE_GLOB_H
 #include <glob.h>
 #endif
 
@@ -242,9 +242,9 @@ static const char *pszGemDOSNames[] =
 
 
 
-/* Poor Windows does not have a glob() function... */
-#ifdef WIN32
-#warning sorry, no glob function on Windows
+/* Poor Windows (and maybe other systems) do not have a glob() function... */
+#if !HAVE_GLOB_H
+#warning sorry, no glob function available
 
 typedef struct
 {
@@ -254,8 +254,8 @@ typedef struct
 } glob_t;
 
 static int glob(const char *pattern, int flags,
-	 int errfunc(const char *epath, int eerrno),
-         glob_t *pglob)
+                int errfunc(const char *epath, int eerrno),
+                glob_t *pglob)
 {
 	/* Just a quick hack to keep Hatari happy... */
 	pglob->gl_pathv = malloc(1 * sizeof(void *));
@@ -269,8 +269,11 @@ static void globfree(glob_t *pglob)
 	free(pglob->gl_pathv);
 }
 
-#define mkdir(name,mode) mkdir(name)
+#endif  /* HAVE_GLOB_H */
 
+
+#ifdef WIN32
+#define mkdir(name,mode) mkdir(name)
 #endif  /* WIN32 */
 
 
