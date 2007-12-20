@@ -142,6 +142,10 @@ if test "${datadir}" = '${datarootdir}'; then
   datadir='${datarootdir}/hatari'
 fi
 
+adl_COMPUTE_RELATIVE_PATHS([bindir:datadir:bin2datadir])
+AC_DEFINE_UNQUOTED([BIN2DATADIR], ["${bin2datadir}"],
+                   [Relative path from bindir to datadir])
+
 AC_SUBST(HOSTCC)
 AC_SUBST(HOSTCFLAGS)
 AC_SUBST(HOSTLDFLAGS)

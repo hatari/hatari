@@ -48,6 +48,10 @@
 #endif
 
 
+/* Relative path from bindir to datadir */
+#define BIN2DATADIR "."
+
+
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "hatari"
 
