@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.64 2007-05-18 17:53:33 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.65 2007-12-20 00:15:14 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -72,9 +72,9 @@ static Uint16 HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, 
 static void (*ScreenDrawFunctionsNormal[3])(void); /* Screen draw functions */
 static void (*ScreenDrawFunctionsVDI[3])(void) =
 {
-  ConvertVDIRes_16Colour,
-  ConvertVDIRes_4Colour,
-  ConvertVDIRes_2Colour
+	ConvertVDIRes_16Colour,
+	ConvertVDIRes_4Colour,
+	ConvertVDIRes_2Colour
 };
 
 static BOOL bScreenContentsChanged;     /* TRUE if buffer changed and requires blitting */
@@ -89,29 +89,30 @@ static int ScrUpdateFlag;               /* Bit mask of how to update screen */
  */
 static void Screen_SetupRGBTable(void)
 {
-  Uint16 STColour, RGBColour;
-  int r, g, b;
-  int rr, gg, bb;
+	Uint16 STColour, RGBColour;
+	int r, g, b;
+	int rr, gg, bb;
 
-  /* Do Red, Green and Blue for all 16*16*16 = 4096 STe colors */
-  for(r=0; r < 16; r++)
-  {
-      for(g=0; g < 16; g++)
-      {
-        for(b=0; b < 16; b++)
-        {
-          /* STe 0xfff format */
-          STColour = (r<<8) | (g<<4) | (b);
-          rr = ((r & 0x7) << 5) | ((r & 0x8) << 1);
-          gg = ((g & 0x7) << 5) | ((g & 0x8) << 1);
-          bb = ((b & 0x7) << 5) | ((b & 0x8) << 1);
-          RGBColour = SDL_MapRGB(sdlscrn->format, rr, gg, bb);
-          /* As longs, for speed (write two pixels at once) */
-          ST2RGB[STColour] = (RGBColour<<16) | RGBColour;
-        }
-      }
-  }
+	/* Do Red, Green and Blue for all 16*16*16 = 4096 STe colors */
+	for (r = 0; r < 16; r++)
+	{
+		for (g = 0; g < 16; g++)
+		{
+			for (b = 0; b < 16; b++)
+			{
+				/* STe 0xfff format */
+				STColour = (r<<8) | (g<<4) | (b);
+				rr = ((r & 0x7) << 5) | ((r & 0x8) << 1);
+				gg = ((g & 0x7) << 5) | ((g & 0x8) << 1);
+				bb = ((b & 0x7) << 5) | ((b & 0x8) << 1);
+				RGBColour = SDL_MapRGB(sdlscrn->format, rr, gg, bb);
+				/* As longs, for speed (write two pixels at once) */
+				ST2RGB[STColour] = (RGBColour<<16) | RGBColour;
+			}
+		}
+	}
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -120,49 +121,49 @@ static void Screen_SetupRGBTable(void)
 static void Screen_CreatePalette(void)
 {
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-  static const int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
+	static const int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
 #endif
-  SDL_Color sdlColors[16];
-  int i, j;
+	SDL_Color sdlColors[16];
+	int i, j;
 
-  if (bUseHighRes)
-  {
-    /* Colors for monochrome screen mode emulation */
-    if (HBLPalettes[0])
-    {
-      sdlColors[0].r = sdlColors[0].g = sdlColors[0].b = 255;
-      sdlColors[1].r = sdlColors[1].g = sdlColors[1].b = 0;
-    }
-    else
-    {
-      sdlColors[0].r = sdlColors[0].g = sdlColors[0].b = 0;
-      sdlColors[1].r = sdlColors[1].g = sdlColors[1].b = 255;
-    }
-    SDL_SetColors(sdlscrn, sdlColors, 10, 2);
-    /*SDL_SetColors(sdlscrn, sdlColors, 0, 2);*/
-  }
-  else
-  {
-      int r, g, b;
-      /* Colors for STe color screen mode emulation */
-      for (i=0; i<16; i++)
-      {
+	if (bUseHighRes)
+	{
+		/* Colors for monochrome screen mode emulation */
+		if (HBLPalettes[0])
+		{
+			sdlColors[0].r = sdlColors[0].g = sdlColors[0].b = 255;
+			sdlColors[1].r = sdlColors[1].g = sdlColors[1].b = 0;
+		}
+		else
+		{
+			sdlColors[0].r = sdlColors[0].g = sdlColors[0].b = 0;
+			sdlColors[1].r = sdlColors[1].g = sdlColors[1].b = 255;
+		}
+		SDL_SetColors(sdlscrn, sdlColors, 10, 2);
+		/*SDL_SetColors(sdlscrn, sdlColors, 0, 2);*/
+	}
+	else
+	{
+		int r, g, b;
+		/* Colors for STe color screen mode emulation */
+		for (i = 0; i < 16; i++)
+		{
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-        j = endiantable[i];
+			j = endiantable[i];
 #else
-        j = i;
+			j = i;
 #endif
-        /* normalize all to 0x1e0 */
-        r = HBLPalettes[i] >> 3;
-        g = HBLPalettes[i] << 1;
-        b = HBLPalettes[i] << 5;
-        /* move top bit of 0x1e0 to lowest in 0xf0 */
-        sdlColors[j].r = (r & 0xe0) | ((r & 0x100) >> 4);
-        sdlColors[j].g = (g & 0xe0) | ((g & 0x100) >> 4);
-        sdlColors[j].b = (b & 0xe0) | ((b & 0x100) >> 4);
-      }
-      SDL_SetColors(sdlscrn, sdlColors, 10, 16);
-  }
+			/* normalize all to 0x1e0 */
+			r = HBLPalettes[i] >> 3;
+			g = HBLPalettes[i] << 1;
+			b = HBLPalettes[i] << 5;
+			/* move top bit of 0x1e0 to lowest in 0xf0 */
+			sdlColors[j].r = (r & 0xe0) | ((r & 0x100) >> 4);
+			sdlColors[j].g = (g & 0xe0) | ((g & 0x100) >> 4);
+			sdlColors[j].b = (b & 0xe0) | ((b & 0x100) >> 4);
+		}
+		SDL_SetColors(sdlscrn, sdlColors, 10, 16);
+	}
 }
 
 
@@ -172,37 +173,37 @@ static void Screen_CreatePalette(void)
  */
 static void Screen_Handle8BitPalettes(void)
 {
-  BOOL bPaletteChanged=FALSE;
-  int i;
+	BOOL bPaletteChanged=FALSE;
+	int i;
 
-  /* Do need to check for 8-Bit palette change? Ie, update whole screen */
-  /* VDI screens and monochrome modes are ALL 8-Bit at the moment! */
-  if (sdlscrn->format->BitsPerPixel == 8)
-  {
-    /* If using HiRes palette update with full update flag */
-    if (!bUseHighRes)
-    {
-      /* Check if palette of 16 colours changed from previous frame */
-      for (i=0; i<16 && !bPaletteChanged; i++)
-      {
-        /* Check with first line palette(stored in 'Screen_ComparePaletteMask') */
-        if (HBLPalettes[i] != PrevHBLPalette[i])
-          bPaletteChanged = TRUE;
-      }
-    }
+	/* Do need to check for 8-Bit palette change? Ie, update whole screen */
+	/* VDI screens and monochrome modes are ALL 8-Bit at the moment! */
+	if (sdlscrn->format->BitsPerPixel == 8)
+	{
+		/* If using HiRes palette update with full update flag */
+		if (!bUseHighRes)
+		{
+			/* Check if palette of 16 colours changed from previous frame */
+			for (i = 0; i < 16 && !bPaletteChanged; i++)
+			{
+				/* Check with first line palette (stored in 'Screen_ComparePaletteMask') */
+				if (HBLPalettes[i] != PrevHBLPalette[i])
+					bPaletteChanged = TRUE;
+			}
+		}
 
-    /* Did palette change or do we require a full update? */
-    if (bPaletteChanged || pFrameBuffer->bFullUpdate)
-    {
-      /* Create palette, for Full-Screen of Window */
-      Screen_CreatePalette();
-      /* Make sure update whole screen */
-      pFrameBuffer->bFullUpdate = TRUE;
-    }
-  }
+		/* Did palette change or do we require a full update? */
+		if (bPaletteChanged || pFrameBuffer->bFullUpdate)
+		{
+			/* Create palette, for Full-Screen of Window */
+			Screen_CreatePalette();
+			/* Make sure update whole screen */
+			pFrameBuffer->bFullUpdate = TRUE;
+		}
+	}
 
-  /* Copy old palette for 8-Bit compare as this routine writes over it */
-  memcpy(PrevHBLPalette,HBLPalettes, sizeof(Uint16)*16);
+	/* Copy old palette for 8-Bit compare as this routine writes over it */
+	memcpy(PrevHBLPalette,HBLPalettes, sizeof(Uint16)*16);
 }
 
 
@@ -212,32 +213,41 @@ static void Screen_Handle8BitPalettes(void)
  */
 static void Screen_SetDrawFunctions(void)
 {
-  if (ConfigureParams.Screen.bForce8Bpp) {
+	if (ConfigureParams.Screen.bForce8Bpp)
+	{
 
-    if (ConfigureParams.Screen.bZoomLowRes) {
-      /* low color, zoomed resolution */
-      ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x8Bit;
-      ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
-      ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-    } else {
-      /* low color, low resolution */
-      ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x8Bit;
-      ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
-      ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-    }
-  } else {
-    if (ConfigureParams.Screen.bZoomLowRes) {
-      /* high color, zoomed resolution */
-      ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x16Bit;
-      ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
-      ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-    } else {
-      /* high color, low resolution */
-      ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x16Bit;
-      ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
-      ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-    }
-  }
+		if (ConfigureParams.Screen.bZoomLowRes)
+		{
+			/* low color, zoomed resolution */
+			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x8Bit;
+			ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
+			ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
+		}
+		else
+		{
+			/* low color, low resolution */
+			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x8Bit;
+			ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
+			ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
+		}
+	}
+	else
+	{
+		if (ConfigureParams.Screen.bZoomLowRes)
+		{
+			/* high color, zoomed resolution */
+			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x16Bit;
+			ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
+			ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
+		}
+		else
+		{
+			/* high color, low resolution */
+			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x16Bit;
+			ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
+			ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
+		}
+	}
 }
 
 
@@ -247,108 +257,107 @@ static void Screen_SetDrawFunctions(void)
  */
 static void Screen_SetResolution(void)
 {
-  int Width, Height, BitCount;
-  unsigned int sdlVideoFlags;
+	int Width, Height, BitCount;
+	unsigned int sdlVideoFlags;
 
-  /* Determine which resolution to use */
-  if (bUseVDIRes)
-  {
-    Width = VDIWidth;
-    Height = VDIHeight;
-  }
-  else
-  {
-    if (STRes == ST_LOW_RES && !ConfigureParams.Screen.bZoomLowRes)
-    {
-      Width = 320;
-      Height = 200;
-    }
-    else    /* else use 640x400 */
-    {
-      Width = 640;
-      Height = 400;
-    }
+	/* Determine which resolution to use */
+	if (bUseVDIRes)
+	{
+		Width = VDIWidth;
+		Height = VDIHeight;
+	}
+	else
+	{
+		if (STRes == ST_LOW_RES && !ConfigureParams.Screen.bZoomLowRes)
+		{
+			Width = 320;
+			Height = 200;
+		}
+		else    /* else use 640x400 */
+		{
+			Width = 640;
+			Height = 400;
+		}
 
-    /* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
-    if (ConfigureParams.Screen.bAllowOverscan && !bUseHighRes)
-    {
-      int nZoom = ((Width == 640) ? 2 : 1);
-      /* Add in overscan borders (if 640x200 bitmap is double on Y) */
-      Width += (OVERSCAN_LEFT+OVERSCAN_RIGHT) * nZoom;
-      Height += (OVERSCAN_TOP+OVERSCAN_BOTTOM) * nZoom;
-    }
-  }
+		/* Adjust width/height for overscan borders, if mono or VDI we have no overscan */
+		if (ConfigureParams.Screen.bAllowOverscan && !bUseHighRes)
+		{
+			int nZoom = ((Width == 640) ? 2 : 1);
+			/* Add in overscan borders (if 640x200 bitmap is double on Y) */
+			Width += (OVERSCAN_LEFT+OVERSCAN_RIGHT) * nZoom;
+			Height += (OVERSCAN_TOP+OVERSCAN_BOTTOM) * nZoom;
+		}
+	}
 
-  /* Bits per pixel */
-  if (ConfigureParams.Screen.bForce8Bpp || STRes == ST_HIGH_RES || bUseVDIRes)
-  {
-    BitCount = 8;
-  }
-  else
-  {
-    BitCount = 16;
-  }
+	/* Bits per pixel */
+	if (ConfigureParams.Screen.bForce8Bpp || STRes == ST_HIGH_RES || bUseVDIRes)
+	{
+		BitCount = 8;
+	}
+	else
+	{
+		BitCount = 16;
+	}
 
-  /* Set zoom factors, used for scaling mouse motions */
-  if (STRes == ST_LOW_RES && ConfigureParams.Screen.bZoomLowRes && !bUseVDIRes)
-  {
-    nScreenZoomX = 2;
-    nScreenZoomY = 2;
-  }
-  else if (STRes == ST_MEDIUM_RES && !bUseVDIRes)
-  {
-    nScreenZoomX = 1;
-    nScreenZoomY = 2;
-  }
-  else
-  {
-    nScreenZoomX = 1;
-    nScreenZoomY = 1;
-  }
+	/* Set zoom factors, used for scaling mouse motions */
+	if (STRes == ST_LOW_RES && ConfigureParams.Screen.bZoomLowRes && !bUseVDIRes)
+	{
+		nScreenZoomX = 2;
+		nScreenZoomY = 2;
+	}
+	else if (STRes == ST_MEDIUM_RES && !bUseVDIRes)
+	{
+		nScreenZoomX = 1;
+		nScreenZoomY = 2;
+	}
+	else
+	{
+		nScreenZoomX = 1;
+		nScreenZoomY = 1;
+	}
 
-  /* SDL Video attributes: */
-  if (bInFullScreen)
-  {
-    sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN|SDL_HWPALETTE/*|SDL_DOUBLEBUF*/;
-    /* SDL_DOUBLEBUF is a good idea, but the GUI doesn't work with double buffered
-     * screens yet, so double buffering is currently disabled. */
-  }
-  else
-  {
-    sdlVideoFlags  = SDL_SWSURFACE|SDL_HWPALETTE;
-  }
+	/* SDL Video attributes: */
+	if (bInFullScreen)
+	{
+		sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN|SDL_HWPALETTE/*|SDL_DOUBLEBUF*/;
+		/* SDL_DOUBLEBUF is a good idea, but the GUI doesn't work with double buffered
+		 * screens yet, so double buffering is currently disabled. */
+	}
+	else
+	{
+		sdlVideoFlags  = SDL_SWSURFACE|SDL_HWPALETTE;
+	}
 
-  /* set draw functions in case SDL attribs didn't change
-   * but STRes changed (e.g. medres -> zoomed lowres)
-   */
-  Screen_SetDrawFunctions();
+	/* Set draw functions in case SDL attribs didn't change
+	 * but STRes changed (e.g. medres -> zoomed lowres) */
+	Screen_SetDrawFunctions();
 
-  /* Check if we really have to change the video mode: */
-  if (sdlscrn && sdlscrn->w == Width && sdlscrn->h == Height
-      && sdlscrn->format->BitsPerPixel == BitCount
-      && (sdlscrn->flags&SDL_FULLSCREEN) == (sdlVideoFlags&SDL_FULLSCREEN))
-  {
-    return;
-  }
+	/* Check if we really have to change the video mode: */
+	if (sdlscrn && sdlscrn->w == Width && sdlscrn->h == Height
+	        && sdlscrn->format->BitsPerPixel == BitCount
+	        && (sdlscrn->flags&SDL_FULLSCREEN) == (sdlVideoFlags&SDL_FULLSCREEN))
+	{
+		return;
+	}
 
-  sdlscrn = SDL_SetVideoMode(Width, Height, BitCount, sdlVideoFlags);
-  if (!sdlscrn)
-  {
-    fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
-    SDL_Quit();
-    exit(-2);
-  }
+	sdlscrn = SDL_SetVideoMode(Width, Height, BitCount, sdlVideoFlags);
+	if (!sdlscrn)
+	{
+		fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
+		SDL_Quit();
+		exit(-2);
+	}
 
-  /* Re-init screen palette: */
-  if (BitCount == 8)
-    Screen_Handle8BitPalettes();    /* Initialize new 8 bit palette */
-  else
-    Screen_SetupRGBTable();         /* Create color convertion table */
+	/* Re-init screen palette: */
+	if (BitCount == 8)
+		Screen_Handle8BitPalettes();    /* Initialize new 8 bit palette */
+	else
+		Screen_SetupRGBTable();         /* Create color convertion table */
 
-  if (!bGrabMouse)
-    SDL_WM_GrabInput(SDL_GRAB_OFF); /* Un-grab mouse pointer in windowed mode */
+	if (!bGrabMouse)
+		SDL_WM_GrabInput(SDL_GRAB_OFF); /* Un-grab mouse pointer in windowed mode */
 
-  Screen_SetFullUpdate();           /* Cause full update of screen */
+	Screen_SetFullUpdate();           /* Cause full update of screen */
 }
 
 
@@ -358,10 +367,10 @@ static void Screen_SetResolution(void)
  */
 static void Screen_SetScreenLineOffsets(void)
 {
-  int i;
+	int i;
 
-  for(i=0; i<NUM_VISIBLE_LINES; i++)
-    STScreenLineOffset[i] = i * SCREENBYTES_LINE;
+	for (i = 0; i < NUM_VISIBLE_LINES; i++)
+		STScreenLineOffset[i] = i * SCREENBYTES_LINE;
 }
 
 
@@ -371,47 +380,47 @@ static void Screen_SetScreenLineOffsets(void)
  */
 void Screen_Init(void)
 {
-  int i;
-  SDL_Surface *pIconSurf;
+	int i;
+	SDL_Surface *pIconSurf;
 
-  /* Clear frame buffer structures and set current pointer */
-  memset(FrameBuffers, 0, NUM_FRAMEBUFFERS * sizeof(FRAMEBUFFER));
+	/* Clear frame buffer structures and set current pointer */
+	memset(FrameBuffers, 0, NUM_FRAMEBUFFERS * sizeof(FRAMEBUFFER));
 
-  /* Allocate previous screen check workspace. We are going to double-buffer a double-buffered screen. Oh. */
-  for(i=0; i<NUM_FRAMEBUFFERS; i++)
-  {
-    FrameBuffers[i].pSTScreen = (unsigned char *)malloc(((MAX_VDI_WIDTH*MAX_VDI_PLANES)/8)*MAX_VDI_HEIGHT);
-    FrameBuffers[i].pSTScreenCopy = (unsigned char *)malloc(((MAX_VDI_WIDTH*MAX_VDI_PLANES)/8)*MAX_VDI_HEIGHT);
-    if (!FrameBuffers[i].pSTScreen || !FrameBuffers[i].pSTScreenCopy)
-    {
-      fprintf(stderr, "Failed to allocate frame buffer memory.\n");
-      exit(-1);
-    }
-  }
-  pFrameBuffer = &FrameBuffers[0];
+	/* Allocate previous screen check workspace. We are going to double-buffer a double-buffered screen. Oh. */
+	for (i = 0; i < NUM_FRAMEBUFFERS; i++)
+	{
+		FrameBuffers[i].pSTScreen = malloc(((MAX_VDI_WIDTH*MAX_VDI_PLANES)/8)*MAX_VDI_HEIGHT);
+		FrameBuffers[i].pSTScreenCopy = malloc(((MAX_VDI_WIDTH*MAX_VDI_PLANES)/8)*MAX_VDI_HEIGHT);
+		if (!FrameBuffers[i].pSTScreen || !FrameBuffers[i].pSTScreenCopy)
+		{
+			fprintf(stderr, "Failed to allocate frame buffer memory.\n");
+			exit(-1);
+		}
+	}
+	pFrameBuffer = &FrameBuffers[0];
 
-  /* Load and set icon */
-  pIconSurf = SDL_LoadBMP(DATADIR "/hatari-icon.bmp");
-  if (pIconSurf)
-  {
-    SDL_SetColorKey(pIconSurf, SDL_SRCCOLORKEY, SDL_MapRGB(pIconSurf->format, 255, 255, 255));
-    SDL_WM_SetIcon(pIconSurf, NULL);
-    SDL_FreeSurface(pIconSurf);
-  }
+	/* Load and set icon */
+	pIconSurf = SDL_LoadBMP(DATADIR "/hatari-icon.bmp");
+	if (pIconSurf)
+	{
+		SDL_SetColorKey(pIconSurf, SDL_SRCCOLORKEY, SDL_MapRGB(pIconSurf->format, 255, 255, 255));
+		SDL_WM_SetIcon(pIconSurf, NULL);
+		SDL_FreeSurface(pIconSurf);
+	}
 
-  /* Set initial window resolution */
-  Screen_SetResolution();
+	/* Set initial window resolution */
+	Screen_SetResolution();
 
-  Video_SetScreenRasters();                       /* Set rasters ready for first screen */
+	Video_SetScreenRasters();                       /* Set rasters ready for first screen */
 
-  Screen_SetScreenLineOffsets();                  /* Store offset to each horizontal line */
+	Screen_SetScreenLineOffsets();                  /* Store offset to each horizontal line */
 
-  /* Configure some SDL stuff: */
-  SDL_WM_SetCaption(PROG_NAME, "Hatari");
-  SDL_EventState(SDL_MOUSEMOTION, SDL_ENABLE);
-  SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_ENABLE);
-  SDL_EventState(SDL_MOUSEBUTTONUP, SDL_ENABLE);
-  SDL_ShowCursor(SDL_DISABLE);
+	/* Configure some SDL stuff: */
+	SDL_WM_SetCaption(PROG_NAME, "Hatari");
+	SDL_EventState(SDL_MOUSEMOTION, SDL_ENABLE);
+	SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_ENABLE);
+	SDL_EventState(SDL_MOUSEBUTTONUP, SDL_ENABLE);
+	SDL_ShowCursor(SDL_DISABLE);
 }
 
 
@@ -421,14 +430,14 @@ void Screen_Init(void)
  */
 void Screen_UnInit(void)
 {
-  int i;
+	int i;
 
-  /* Free memory used for copies */
-  for(i=0; i<NUM_FRAMEBUFFERS; i++)
-  {
-    free(FrameBuffers[i].pSTScreen);
-    free(FrameBuffers[i].pSTScreenCopy);
-  }
+	/* Free memory used for copies */
+	for (i = 0; i < NUM_FRAMEBUFFERS; i++)
+	{
+		free(FrameBuffers[i].pSTScreen);
+		free(FrameBuffers[i].pSTScreenCopy);
+	}
 }
 
 
@@ -438,20 +447,20 @@ void Screen_UnInit(void)
  */
 void Screen_Reset(void)
 {
-  /* On re-boot, always correct ST resolution for monitor, eg Colour/Mono */
-  if (bUseVDIRes)
-  {
-    STRes = VDIRes;
-  }
-  else
-  {
-    if (bUseHighRes)
-      STRes = ST_HIGH_RES;
-    else
-      STRes = ST_LOW_RES;
-  }
-  /* Cause full update */
-  Screen_ModeChanged();
+	/* On re-boot, always correct ST resolution for monitor, eg Colour/Mono */
+	if (bUseVDIRes)
+	{
+		STRes = VDIRes;
+	}
+	else
+	{
+		if (bUseHighRes)
+			STRes = ST_HIGH_RES;
+		else
+			STRes = ST_LOW_RES;
+	}
+	/* Cause full update */
+	Screen_ModeChanged();
 }
 
 
@@ -462,11 +471,11 @@ void Screen_Reset(void)
  */
 void Screen_SetFullUpdate(void)
 {
-  int i;
+	int i;
 
-  /* Update frame buffers */
-  for(i=0; i<NUM_FRAMEBUFFERS; i++)
-    FrameBuffers[i].bFullUpdate = TRUE;
+	/* Update frame buffers */
+	for (i = 0; i < NUM_FRAMEBUFFERS; i++)
+		FrameBuffers[i].bFullUpdate = TRUE;
 }
 
 
@@ -476,7 +485,7 @@ void Screen_SetFullUpdate(void)
  */
 static void Screen_ClearScreen(void)
 {
-  SDL_FillRect(sdlscrn,NULL, SDL_MapRGB(sdlscrn->format, 0, 0, 0) );
+	SDL_FillRect(sdlscrn,NULL, SDL_MapRGB(sdlscrn->format, 0, 0, 0) );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -485,27 +494,27 @@ static void Screen_ClearScreen(void)
  */
 void Screen_EnterFullScreen(void)
 {
-  if (!bInFullScreen)
-  {
-    Main_PauseEmulation();        /* Hold things... */
-    bInFullScreen = TRUE;
+	if (!bInFullScreen)
+	{
+		Main_PauseEmulation();         /* Hold things... */
+		bInFullScreen = TRUE;
 
-    if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
-         || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
-    {
-      HostScreen_toggleFullScreen();
-    }
-    else
-    {
-      Screen_SetResolution();
-      Screen_ClearScreen();         /* Black out screen bitmap as will be invalid when return */
-    }
+		if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
+		     || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
+		{
+			HostScreen_toggleFullScreen();
+		}
+		else
+		{
+			Screen_SetResolution();
+			Screen_ClearScreen();       /* Black out screen bitmap as will be invalid when return */
+		}
 
-    SDL_Delay(20);                  /* To give monitor time to change to new resolution */
-    Main_UnPauseEmulation();        /* And off we go... */
+		SDL_Delay(20);                  /* To give monitor time to change to new resolution */
+		Main_UnPauseEmulation();        /* And off we go... */
 
-    SDL_WM_GrabInput(SDL_GRAB_ON);  /* Grab mouse pointer in fullscreen */
-  }
+		SDL_WM_GrabInput(SDL_GRAB_ON);  /* Grab mouse pointer in fullscreen */
+	}
 }
 
 
@@ -515,26 +524,26 @@ void Screen_EnterFullScreen(void)
  */
 void Screen_ReturnFromFullScreen(void)
 {
-  if (bInFullScreen)
-  {
-    Main_PauseEmulation();        /* Hold things... */
-    bInFullScreen = FALSE;
+	if (bInFullScreen)
+	{
+		Main_PauseEmulation();        /* Hold things... */
+		bInFullScreen = FALSE;
 
-    if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
-         || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
-    {
-      HostScreen_toggleFullScreen();
-      if (!bGrabMouse)
-        SDL_WM_GrabInput(SDL_GRAB_OFF); /* Un-grab mouse pointer in windowed mode */
-    }
-    else
-    {
-      Screen_SetResolution();
-    }
+		if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
+		     || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
+		{
+			HostScreen_toggleFullScreen();
+			if (!bGrabMouse)
+				SDL_WM_GrabInput(SDL_GRAB_OFF); /* Un-grab mouse pointer in windowed mode */
+		}
+		else
+		{
+			Screen_SetResolution();
+		}
 
-    SDL_Delay(20);                /* To give monitor time to switch resolution */
-    Main_UnPauseEmulation();      /* And off we go... */
-  }
+		SDL_Delay(20);                /* To give monitor time to switch resolution */
+		Main_UnPauseEmulation();      /* And off we go... */
+	}
 }
 
 
@@ -544,17 +553,17 @@ void Screen_ReturnFromFullScreen(void)
  */
 static void Screen_DidResolutionChange(int new_res)
 {
-  if (new_res != STRes)
-  {
-    STRes = new_res;
-    Screen_ModeChanged();
-  }
-  else
-  {
-    /* Did change overscan mode? Causes full update */
-    if (pFrameBuffer->OverscanModeCopy != OverscanMode)
-      pFrameBuffer->bFullUpdate = TRUE;
-  }
+	if (new_res != STRes)
+	{
+		STRes = new_res;
+		Screen_ModeChanged();
+	}
+	else
+	{
+		/* Did change overscan mode? Causes full update */
+		if (pFrameBuffer->OverscanModeCopy != OverscanMode)
+			pFrameBuffer->bFullUpdate = TRUE;
+	}
 }
 
 
@@ -564,27 +573,27 @@ static void Screen_DidResolutionChange(int new_res)
  */
 void Screen_ModeChanged(void)
 {
-  if (!sdlscrn)
-  {
-    /* screen not yet initialized */
-    return;
-  }
-  /* Don't run this function if Videl emulation is running! */
-  if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
-  {
-    VIDEL_ZoomModeChanged();
-    return;
-  }
-  else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
-  {
-    int width, height, bpp;
-    Video_GetTTRes(&width, &height, &bpp);
-    HostScreen_setWindowSize(width, height, 8);
-    return;
-  }
-  /* Set new display mode, if differs from current */
-  Screen_SetResolution();
-  Screen_SetFullUpdate();
+	if (!sdlscrn)
+	{
+		/* screen not yet initialized */
+		return;
+	}
+	/* Don't run this function if Videl emulation is running! */
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
+	{
+		VIDEL_ZoomModeChanged();
+		return;
+	}
+	else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
+	{
+		int width, height, bpp;
+		Video_GetTTRes(&width, &height, &bpp);
+		HostScreen_setWindowSize(width, height, 8);
+		return;
+	}
+	/* Set new display mode, if differs from current */
+	Screen_SetResolution();
+	Screen_SetFullUpdate();
 }
 
 
@@ -595,19 +604,19 @@ void Screen_ModeChanged(void)
  */
 static BOOL Screen_CompareResolution(int y, int *pUpdateLine, int oldres)
 {
-  /* Check if wrote to resolution register */
-  if (HBLPaletteMasks[y]&PALETTEMASK_RESOLUTION)  /* See 'Intercept_ShifterMode_WriteByte' */
-  {
-    int newres = (HBLPaletteMasks[y]>>16)&ST_MEDIUM_RES_BIT;
-    /* Did resolution change? */
-    if (newres != (int)((pFrameBuffer->HBLPaletteMasks[y]>>16)&ST_MEDIUM_RES_BIT))
-      *pUpdateLine |= PALETTEMASK_UPDATERES;
-    else
-      *pUpdateLine &= ~PALETTEMASK_UPDATERES;
-    /* Have used any low/medium res mix? */
-    return (newres != (oldres&ST_MEDIUM_RES_BIT));
-  }
-  return FALSE;
+	/* Check if wrote to resolution register */
+	if (HBLPaletteMasks[y]&PALETTEMASK_RESOLUTION)  /* See 'Intercept_ShifterMode_WriteByte' */
+	{
+		int newres = (HBLPaletteMasks[y]>>16)&ST_MEDIUM_RES_BIT;
+		/* Did resolution change? */
+		if (newres != (int)((pFrameBuffer->HBLPaletteMasks[y]>>16)&ST_MEDIUM_RES_BIT))
+			*pUpdateLine |= PALETTEMASK_UPDATERES;
+		else
+			*pUpdateLine &= ~PALETTEMASK_UPDATERES;
+		/* Have used any low/medium res mix? */
+		return (newres != (oldres&ST_MEDIUM_RES_BIT));
+	}
+	return FALSE;
 }
 
 
@@ -617,29 +626,29 @@ static BOOL Screen_CompareResolution(int y, int *pUpdateLine, int oldres)
  */
 static void Screen_ComparePalette(int y, int *pUpdateLine)
 {
-  BOOL bPaletteChanged = FALSE;
-  int i;
+	BOOL bPaletteChanged = FALSE;
+	int i;
 
-  /* Did write to palette in this or previous frame? */
-  if (((HBLPaletteMasks[y]|pFrameBuffer->HBLPaletteMasks[y])&PALETTEMASK_PALETTE)!=0)
-  {
-    /* Check and update ones which changed */
-    for(i=0; i<16; i++)
-    {
-      if (HBLPaletteMasks[y]&(1<<i))        /* Update changes in ST palette */
-        HBLPalette[i] = HBLPalettes[(y*16)+i];
-    }
-    /* Now check with same palette from previous frame for any differences(may be changing palette back) */
-    for(i=0; (i<16) && (!bPaletteChanged); i++)
-    {
-      if (HBLPalette[i]!=pFrameBuffer->HBLPalettes[(y*16)+i])
-        bPaletteChanged = TRUE;
-    }
-    if (bPaletteChanged)
-      *pUpdateLine |= PALETTEMASK_UPDATEPAL;
-    else
-      *pUpdateLine &= ~PALETTEMASK_UPDATEPAL;
-  }
+	/* Did write to palette in this or previous frame? */
+	if (((HBLPaletteMasks[y]|pFrameBuffer->HBLPaletteMasks[y])&PALETTEMASK_PALETTE)!=0)
+	{
+		/* Check and update ones which changed */
+		for (i = 0; i < 16; i++)
+		{
+			if (HBLPaletteMasks[y]&(1<<i))        /* Update changes in ST palette */
+				HBLPalette[i] = HBLPalettes[(y*16)+i];
+		}
+		/* Now check with same palette from previous frame for any differences(may be changing palette back) */
+		for (i = 0; (i < 16) && (!bPaletteChanged); i++)
+		{
+			if (HBLPalette[i]!=pFrameBuffer->HBLPalettes[(y*16)+i])
+				bPaletteChanged = TRUE;
+		}
+		if (bPaletteChanged)
+			*pUpdateLine |= PALETTEMASK_UPDATEPAL;
+		else
+			*pUpdateLine &= ~PALETTEMASK_UPDATEPAL;
+	}
 }
 
 
@@ -653,82 +662,82 @@ static void Screen_ComparePalette(int y, int *pUpdateLine)
  */
 static int Screen_ComparePaletteMask(int res)
 {
-  BOOL bLowMedMix = FALSE;
-  int LineUpdate = 0;
-  int y;
+	BOOL bLowMedMix = FALSE;
+	int LineUpdate = 0;
+	int y;
 
-  /* Set for monochrome? */
-  if (bUseHighRes)
-  {
-    OverscanMode = OVERSCANMODE_NONE;
+	/* Set for monochrome? */
+	if (bUseHighRes)
+	{
+		OverscanMode = OVERSCANMODE_NONE;
 
-    /* Just copy mono colours, 0x777 checked also in convert/vdi2.c */
-    if (HBLPalettes[0] & 0x777)
-    {
-      HBLPalettes[0] = 0x777;
-      HBLPalettes[1] = 0x000;
-    }
-    else
-    {
-      HBLPalettes[0] = 0x000;
-      HBLPalettes[1] = 0x777;
-    }
+		/* Just copy mono colours, 0x777 checked also in convert/vdi2.c */
+		if (HBLPalettes[0] & 0x777)
+		{
+			HBLPalettes[0] = 0x777;
+			HBLPalettes[1] = 0x000;
+		}
+		else
+		{
+			HBLPalettes[0] = 0x000;
+			HBLPalettes[1] = 0x777;
+		}
 
-    /* Colors changed? */
-    if (HBLPalettes[0] != PrevHBLPalette[0])
-      pFrameBuffer->bFullUpdate = TRUE;
+		/* Colors changed? */
+		if (HBLPalettes[0] != PrevHBLPalette[0])
+			pFrameBuffer->bFullUpdate = TRUE;
 
-    /* Set bit to flag 'full update' */
-    if (pFrameBuffer->bFullUpdate)
-      ScrUpdateFlag = PALETTEMASK_UPDATEFULL;
-    else
-      ScrUpdateFlag = 0x00000000;
-  }
+		/* Set bit to flag 'full update' */
+		if (pFrameBuffer->bFullUpdate)
+			ScrUpdateFlag = PALETTEMASK_UPDATEFULL;
+		else
+			ScrUpdateFlag = 0x00000000;
+	}
 
-  /* Use VDI resolution? */
-  if (bUseVDIRes)
-  {
-    /* Force to VDI resolution screen, without overscan */
-    res = VDIRes;
+	/* Use VDI resolution? */
+	if (bUseVDIRes)
+	{
+		/* Force to VDI resolution screen, without overscan */
+		res = VDIRes;
 
-    /* Colors changed? */
-    if (HBLPalettes[0]!=PrevHBLPalette[0])
-      pFrameBuffer->bFullUpdate = TRUE;
+		/* Colors changed? */
+		if (HBLPalettes[0] != PrevHBLPalette[0])
+			pFrameBuffer->bFullUpdate = TRUE;
 
-    /* Set bit to flag 'full update' */
-    if (pFrameBuffer->bFullUpdate)
-      ScrUpdateFlag = PALETTEMASK_UPDATEFULL;
-    else
-      ScrUpdateFlag = 0x00000000;
-  }
-  /* Are in Mono? Force to monochrome and no overscan */
-  else if (bUseHighRes)
-  {
-    /* Force to standard hi-resolution screen, without overscan */
-    res = ST_HIGH_RES;
-  }
-  else    /* Full colour */
-  {
-    /* Get resolution */
-    res = (HBLPaletteMasks[0]>>16)&ST_RES_MASK;
-    /* Do all lines - first is tagged as full-update */
-    for(y=0; y<NUM_VISIBLE_LINES; y++)
-    {
-      /* Find any resolution/palette change and update palette/mask buffer */
-      /* ( LineUpdate has top two bits set to say if line needs updating due to palette or resolution change ) */
-      bLowMedMix |= Screen_CompareResolution(y, &LineUpdate, res);
-      Screen_ComparePalette(y,&LineUpdate);
-      HBLPaletteMasks[y] = (HBLPaletteMasks[y]&(~PALETTEMASK_UPDATEMASK)) | LineUpdate;
-      /* Copy palette and mask for next frame */
-      memcpy(&pFrameBuffer->HBLPalettes[y*16],HBLPalette,sizeof(short int)*16);
-      pFrameBuffer->HBLPaletteMasks[y] = HBLPaletteMasks[y];
-    }
-    /* Did mix/have medium resolution? */
-    if (bLowMedMix || (res & ST_MEDIUM_RES_BIT))
-      res = ST_MEDIUM_RES;
-  }
+		/* Set bit to flag 'full update' */
+		if (pFrameBuffer->bFullUpdate)
+			ScrUpdateFlag = PALETTEMASK_UPDATEFULL;
+		else
+			ScrUpdateFlag = 0x00000000;
+	}
+	/* Are in Mono? Force to monochrome and no overscan */
+	else if (bUseHighRes)
+	{
+		/* Force to standard hi-resolution screen, without overscan */
+		res = ST_HIGH_RES;
+	}
+	else    /* Full colour */
+	{
+		/* Get resolution */
+		res = (HBLPaletteMasks[0]>>16)&ST_RES_MASK;
+		/* Do all lines - first is tagged as full-update */
+		for (y = 0; y < NUM_VISIBLE_LINES; y++)
+		{
+			/* Find any resolution/palette change and update palette/mask buffer */
+			/* ( LineUpdate has top two bits set to say if line needs updating due to palette or resolution change ) */
+			bLowMedMix |= Screen_CompareResolution(y, &LineUpdate, res);
+			Screen_ComparePalette(y,&LineUpdate);
+			HBLPaletteMasks[y] = (HBLPaletteMasks[y]&(~PALETTEMASK_UPDATEMASK)) | LineUpdate;
+			/* Copy palette and mask for next frame */
+			memcpy(&pFrameBuffer->HBLPalettes[y*16],HBLPalette,sizeof(short int)*16);
+			pFrameBuffer->HBLPaletteMasks[y] = HBLPaletteMasks[y];
+		}
+		/* Did mix/have medium resolution? */
+		if (bLowMedMix || (res & ST_MEDIUM_RES_BIT))
+			res = ST_MEDIUM_RES;
+	}
 
-  return res;
+	return res;
 }
 
 
@@ -739,10 +748,10 @@ static int Screen_ComparePaletteMask(int res)
  */
 static void Screen_SetFullUpdateMask(void)
 {
-  int y;
+	int y;
 
-  for(y=0; y<NUM_VISIBLE_LINES; y++)
-    HBLPaletteMasks[y] |= PALETTEMASK_UPDATEFULL;
+	for (y = 0; y < NUM_VISIBLE_LINES; y++)
+		HBLPaletteMasks[y] |= PALETTEMASK_UPDATEFULL;
 }
 
 
@@ -752,51 +761,51 @@ static void Screen_SetFullUpdateMask(void)
  */
 static void Screen_SetConvertDetails(void)
 {
-  pSTScreen = pFrameBuffer->pSTScreen;          /* Source in ST memory */
-  pSTScreenCopy = pFrameBuffer->pSTScreenCopy;  /* Previous ST screen */
-  pPCScreenDest = sdlscrn->pixels;              /* Destination PC screen */
+	pSTScreen = pFrameBuffer->pSTScreen;          /* Source in ST memory */
+	pSTScreenCopy = pFrameBuffer->pSTScreenCopy;  /* Previous ST screen */
+	pPCScreenDest = sdlscrn->pixels;              /* Destination PC screen */
 
-  PCScreenBytesPerLine = sdlscrn->pitch;        /* Bytes per line */
-  pHBLPalettes = pFrameBuffer->HBLPalettes;     /* HBL palettes pointer */
-  /* Not in TV-Mode? Then double up on Y: */
-  bScrDoubleY = !(ConfigureParams.Screen.MonitorType == MONITOR_TYPE_TV);
+	PCScreenBytesPerLine = sdlscrn->pitch;        /* Bytes per line */
+	pHBLPalettes = pFrameBuffer->HBLPalettes;     /* HBL palettes pointer */
+	/* Not in TV-Mode? Then double up on Y: */
+	bScrDoubleY = !(ConfigureParams.Screen.MonitorType == MONITOR_TYPE_TV);
 
-  if (bUseVDIRes)
-  {
-    /* Select screen draw for standard or VDI display */
-    STScreenLeftSkipBytes = 0;
-    STScreenWidthBytes = VDIWidth * VDIPlanes / 8;
-    STScreenStartHorizLine = 0;
-    STScreenEndHorizLine = VDIHeight;
-  }
-  else
-  {
-    if (ConfigureParams.Screen.bAllowOverscan)  /* Use borders? */
-    {
-      /* Always draw to WHOLE screen including ALL borders */
-      STScreenLeftSkipBytes = 0;                /* Number of bytes to skip on ST screen for left (border) */
-      STScreenStartHorizLine = 0;               /* Full height */
+	if (bUseVDIRes)
+	{
+		/* Select screen draw for standard or VDI display */
+		STScreenLeftSkipBytes = 0;
+		STScreenWidthBytes = VDIWidth * VDIPlanes / 8;
+		STScreenStartHorizLine = 0;
+		STScreenEndHorizLine = VDIHeight;
+	}
+	else
+	{
+		if (ConfigureParams.Screen.bAllowOverscan)  /* Use borders? */
+		{
+			/* Always draw to WHOLE screen including ALL borders */
+			STScreenLeftSkipBytes = 0;              /* Number of bytes to skip on ST screen for left (border) */
+			STScreenStartHorizLine = 0;             /* Full height */
 
-      if (bUseHighRes)
-      {
-        pFrameBuffer->OverscanModeCopy = OverscanMode = OVERSCANMODE_NONE;
-        STScreenEndHorizLine = 400;
-      }
-      else
-      {
-        STScreenWidthBytes = SCREENBYTES_LINE;  /* Number of horizontal bytes in our ST screen */
-        STScreenEndHorizLine = NUM_VISIBLE_LINES;
-      }
-    }
-    else
-    {
-      /* Only draw main area and centre on Y */
-      STScreenLeftSkipBytes = SCREENBYTES_LEFT;
-      STScreenWidthBytes = SCREENBYTES_MIDDLE;
-      STScreenStartHorizLine = OVERSCAN_TOP;
-      STScreenEndHorizLine = OVERSCAN_TOP + (bUseHighRes ? 400 : 200);
-    }
-  }
+			if (bUseHighRes)
+			{
+				pFrameBuffer->OverscanModeCopy = OverscanMode = OVERSCANMODE_NONE;
+				STScreenEndHorizLine = 400;
+			}
+			else
+			{
+				STScreenWidthBytes = SCREENBYTES_LINE;  /* Number of horizontal bytes in our ST screen */
+				STScreenEndHorizLine = NUM_VISIBLE_LINES;
+			}
+		}
+		else
+		{
+			/* Only draw main area and centre on Y */
+			STScreenLeftSkipBytes = SCREENBYTES_LEFT;
+			STScreenWidthBytes = SCREENBYTES_MIDDLE;
+			STScreenStartHorizLine = OVERSCAN_TOP;
+			STScreenEndHorizLine = OVERSCAN_TOP + (bUseHighRes ? 400 : 200);
+		}
+	}
 }
 
 
@@ -806,16 +815,16 @@ static void Screen_SetConvertDetails(void)
  */
 static BOOL Screen_Lock(void)
 {
-  if(SDL_MUSTLOCK(sdlscrn))
-  {
-    if(SDL_LockSurface(sdlscrn))
-    {
-      Screen_ReturnFromFullScreen();   /* All OK? If not need to jump back to a window */
-      return(FALSE);
-    }
-  }
+	if (SDL_MUSTLOCK(sdlscrn))
+	{
+		if (SDL_LockSurface(sdlscrn))
+		{
+			Screen_ReturnFromFullScreen();   /* All OK? If not need to jump back to a window */
+			return(FALSE);
+		}
+	}
 
-  return(TRUE);
+	return TRUE;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -824,8 +833,8 @@ static BOOL Screen_Lock(void)
  */
 static void Screen_UnLock(void)
 {
-  if( SDL_MUSTLOCK(sdlscrn) )
-    SDL_UnlockSurface(sdlscrn);
+	if ( SDL_MUSTLOCK(sdlscrn) )
+		SDL_UnlockSurface(sdlscrn);
 }
 
 
@@ -836,13 +845,13 @@ static void Screen_UnLock(void)
 static void Screen_SwapSTBuffers(void)
 {
 #if NUM_FRAMEBUFFERS > 1
-  if (sdlscrn->flags & SDL_DOUBLEBUF)
-  {
-    if (pFrameBuffer==&FrameBuffers[0])
-      pFrameBuffer = &FrameBuffers[1];
-    else
-      pFrameBuffer = &FrameBuffers[0];
-  }
+	if (sdlscrn->flags & SDL_DOUBLEBUF)
+	{
+		if (pFrameBuffer==&FrameBuffers[0])
+			pFrameBuffer = &FrameBuffers[1];
+		else
+			pFrameBuffer = &FrameBuffers[0];
+	}
 #endif
 }
 
@@ -854,59 +863,59 @@ static void Screen_SwapSTBuffers(void)
  */
 static void Screen_Blit(BOOL bSwapScreen)
 {
-  /* Rectangle areas to Blit according to if overscan is enabled or not
-   * (source always includes all borders)
-   */
-  static const SDL_Rect SrcWindowBitmapSizes[] =
-  {
-    { 0,0, 320,200 },      /* ST_LOW_RES */
-    { 0,0, 640,400 },      /* ST_MEDIUM_RES */
-    { 0,0, 640,400 }       /* ST_HIGH_RES */
-  };
-  static const SDL_Rect SrcWindowOverscanBitmapSizes[] =
-  {
-    { 0,0, OVERSCAN_LEFT+320+OVERSCAN_RIGHT,OVERSCAN_TOP+200+OVERSCAN_BOTTOM },
-    { 0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1) },
-    { 0,0, 640,400 }
-  };
+	/* Rectangle areas to Blit according to if overscan is enabled or not
+	 * (source always includes all borders)
+	 */
+	static const SDL_Rect SrcWindowBitmapSizes[] =
+	{
+		{ 0,0, 320,200 },      /* ST_LOW_RES */
+		{ 0,0, 640,400 },      /* ST_MEDIUM_RES */
+		{ 0,0, 640,400 }       /* ST_HIGH_RES */
+	};
+	static const SDL_Rect SrcWindowOverscanBitmapSizes[] =
+	{
+		{ 0,0, OVERSCAN_LEFT+320+OVERSCAN_RIGHT,OVERSCAN_TOP+200+OVERSCAN_BOTTOM },
+		{ 0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1) },
+		{ 0,0, 640,400 }
+	};
 
-  unsigned char *pTmpScreen;
-  const SDL_Rect *SrcRect;
+	unsigned char *pTmpScreen;
+	const SDL_Rect *SrcRect;
 
-  /* Blit to full screen or window? */
-  if (bInFullScreen)
-  {
-    Screen_SwapSTBuffers();
-    /* Swap screen */
-    if (bSwapScreen)
-      SDL_Flip(sdlscrn);
-  }
-  else
-  {
-    /* VDI resolution? */
-    if (bUseVDIRes || bUseHighRes)
-    {
-      /* Show VDI or mono resolution, no overscan */
-      SDL_UpdateRect(sdlscrn, 0,0,0,0);
-    }
-    else
-    {
-      /* Find rectangle to draw from... */
-      if (ConfigureParams.Screen.bAllowOverscan)
-        SrcRect = &SrcWindowOverscanBitmapSizes[STRes];
-      else
-        SrcRect = &SrcWindowBitmapSizes[STRes];
+	/* Blit to full screen or window? */
+	if (bInFullScreen)
+	{
+		Screen_SwapSTBuffers();
+		/* Swap screen */
+		if (bSwapScreen)
+			SDL_Flip(sdlscrn);
+	}
+	else
+	{
+		/* VDI resolution? */
+		if (bUseVDIRes || bUseHighRes)
+		{
+			/* Show VDI or mono resolution, no overscan */
+			SDL_UpdateRect(sdlscrn, 0,0,0,0);
+		}
+		else
+		{
+			/* Find rectangle to draw from... */
+			if (ConfigureParams.Screen.bAllowOverscan)
+				SrcRect = &SrcWindowOverscanBitmapSizes[STRes];
+			else
+				SrcRect = &SrcWindowBitmapSizes[STRes];
 
-      /* Blit image */
-      SDL_UpdateRect(sdlscrn, 0,0,0,0);
-      //SDL_UpdateRects(sdlscrn, 1, SrcRect);  /* FIXME */
-    }
-  }
+			/* Blit image */
+			SDL_UpdateRect(sdlscrn, 0,0,0,0);
+			//SDL_UpdateRects(sdlscrn, 1, SrcRect);  /* FIXME */
+		}
+	}
 
-  /* Swap copy/raster buffers in screen. */
-  pTmpScreen = pFrameBuffer->pSTScreenCopy;
-  pFrameBuffer->pSTScreenCopy = pFrameBuffer->pSTScreen;
-  pFrameBuffer->pSTScreen = pTmpScreen;
+	/* Swap copy/raster buffers in screen. */
+	pTmpScreen = pFrameBuffer->pSTScreenCopy;
+	pFrameBuffer->pSTScreenCopy = pFrameBuffer->pSTScreen;
+	pFrameBuffer->pSTScreen = pTmpScreen;
 }
 
 
@@ -916,64 +925,64 @@ static void Screen_Blit(BOOL bSwapScreen)
  */
 static void Screen_DrawFrame(BOOL bForceFlip)
 {
-  int new_res;
-  void (*pDrawFunction)(void);
+	int new_res;
+	void (*pDrawFunction)(void);
 
-  /* Scan palette/resolution masks for each line and build up palette/difference tables */
-  new_res = Screen_ComparePaletteMask(STRes);
-  /* Do require palette? Check if changed and update */
-  Screen_Handle8BitPalettes();
-  /* Did we change resolution this frame - allocate new screen if did so */
-  Screen_DidResolutionChange(new_res);
-  /* Is need full-update, tag as such */
-  if (pFrameBuffer->bFullUpdate)
-    Screen_SetFullUpdateMask();
+	/* Scan palette/resolution masks for each line and build up palette/difference tables */
+	new_res = Screen_ComparePaletteMask(STRes);
+	/* Do require palette? Check if changed and update */
+	Screen_Handle8BitPalettes();
+	/* Did we change resolution this frame - allocate new screen if did so */
+	Screen_DidResolutionChange(new_res);
+	/* Is need full-update, tag as such */
+	if (pFrameBuffer->bFullUpdate)
+		Screen_SetFullUpdateMask();
 
-  /* Lock screen ready for drawing */
-  if (Screen_Lock())
-  {
-    bScreenContentsChanged = FALSE;      /* Did change (ie needs blit?) */
-    /* Set details */
-    Screen_SetConvertDetails();
-    /* Clear screen on full update to clear out borders and also interleaved lines */
-    if (pFrameBuffer->bFullUpdate && !bUseVDIRes)
-      Screen_ClearScreen();
-    /* Call drawing for full-screen */
-    if (bUseVDIRes)
-    {
-      pDrawFunction = ScreenDrawFunctionsVDI[VDIRes];
-    }
-    else
-    {
-      pDrawFunction = ScreenDrawFunctionsNormal[STRes];
-      /* Check if is Spec512 image */
-      if (Spec512_IsImage())
-      {
-        /* What mode were we in? Keep to 320xH or 640xH */
-        if (pDrawFunction==ConvertLowRes_320x16Bit)
-          pDrawFunction = ConvertSpec512_320x16Bit;
-        else if (pDrawFunction==ConvertLowRes_640x16Bit)
-          pDrawFunction = ConvertSpec512_640x16Bit;
-      }
-    }
+	/* Lock screen ready for drawing */
+	if (Screen_Lock())
+	{
+		bScreenContentsChanged = FALSE;      /* Did change (ie needs blit?) */
+		/* Set details */
+		Screen_SetConvertDetails();
+		/* Clear screen on full update to clear out borders and also interleaved lines */
+		if (pFrameBuffer->bFullUpdate && !bUseVDIRes)
+			Screen_ClearScreen();
+		/* Call drawing for full-screen */
+		if (bUseVDIRes)
+		{
+			pDrawFunction = ScreenDrawFunctionsVDI[VDIRes];
+		}
+		else
+		{
+			pDrawFunction = ScreenDrawFunctionsNormal[STRes];
+			/* Check if is Spec512 image */
+			if (Spec512_IsImage())
+			{
+				/* What mode were we in? Keep to 320xH or 640xH */
+				if (pDrawFunction==ConvertLowRes_320x16Bit)
+					pDrawFunction = ConvertSpec512_320x16Bit;
+				else if (pDrawFunction==ConvertLowRes_640x16Bit)
+					pDrawFunction = ConvertSpec512_640x16Bit;
+			}
+		}
 
-    if (pDrawFunction)
-      CALL_VAR(pDrawFunction)
+		if (pDrawFunction)
+			CALL_VAR(pDrawFunction)
 
-    /* Unlock screen */
-    Screen_UnLock();
-    /* Clear flags, remember type of overscan as if change need screen full update */
-    pFrameBuffer->bFullUpdate = FALSE;
-    pFrameBuffer->OverscanModeCopy = OverscanMode;
+			/* Unlock screen */
+			Screen_UnLock();
+		/* Clear flags, remember type of overscan as if change need screen full update */
+		pFrameBuffer->bFullUpdate = FALSE;
+		pFrameBuffer->OverscanModeCopy = OverscanMode;
 
-    /* And show to user */
-    if (bScreenContentsChanged || bForceFlip)
-      Screen_Blit(TRUE);
+		/* And show to user */
+		if (bScreenContentsChanged || bForceFlip)
+			Screen_Blit(TRUE);
 
-    /* Grab any animation */
-    if(bRecordingAnimation)
-      ScreenSnapShot_RecordFrame(bScreenContentsChanged);
-  }
+		/* Grab any animation */
+		if (bRecordingAnimation)
+			ScreenSnapShot_RecordFrame(bScreenContentsChanged);
+	}
 }
 
 
@@ -983,17 +992,17 @@ static void Screen_DrawFrame(BOOL bForceFlip)
  */
 void Screen_Draw(void)
 {
-  if (!bQuitProgram)
-  {
-    if(VideoBase)
-    {
-      /* And draw(if screen contents changed) */
-      Screen_DrawFrame(FALSE);
+	if (!bQuitProgram)
+	{
+		if (VideoBase)
+		{
+			/* And draw(if screen contents changed) */
+			Screen_DrawFrame(FALSE);
 
-      /* And status bar */
-      /*StatusBar_UpdateIcons();*/ /* Sorry - no statusbar in Hatari yet */
-    }
-  }
+			/* And status bar */
+			/*StatusBar_UpdateIcons();*/ /* Sorry - no statusbar in Hatari yet */
+		}
+	}
 }
 
 
@@ -1023,23 +1032,23 @@ void Screen_Draw(void)
 static int AdjustLinePaletteRemap(int y)
 {
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-  static const int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
+	static const int endiantable[16] = {0,2,1,3,8,10,9,11,4,6,5,7,12,14,13,15};
 #endif
-  Uint16 *actHBLPal;
-  int i;
+	Uint16 *actHBLPal;
+	int i;
 
-  /* Copy palette and convert to RGB in display format */
-  actHBLPal = pHBLPalettes + (y<<4);    /* offset in palette */
-  for(i=0; i<16; i++)
-   {
+	/* Copy palette and convert to RGB in display format */
+	actHBLPal = pHBLPalettes + (y<<4);    /* offset in palette */
+	for (i=0; i<16; i++)
+	{
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-    STRGBPalette[endiantable[i]] = ST2RGB[*actHBLPal++];
+		STRGBPalette[endiantable[i]] = ST2RGB[*actHBLPal++];
 #else
-    STRGBPalette[i] = ST2RGB[*actHBLPal++];
+		STRGBPalette[i] = ST2RGB[*actHBLPal++];
 #endif
-   }
-  ScrUpdateFlag = HBLPaletteMasks[y];
-  return ScrUpdateFlag;
+	}
+	ScrUpdateFlag = HBLPaletteMasks[y];
+	return ScrUpdateFlag;
 }
 
 
@@ -1050,11 +1059,11 @@ static int AdjustLinePaletteRemap(int y)
  */
 static void Convert_StartFrame(void)
 {
-  int y = 0;
-  /* Get #lines before conversion starts */
-  int lines = STScreenStartHorizLine;
-  while (lines--)
-    AdjustLinePaletteRemap(y++);     /* Update palette */
+	int y = 0;
+	/* Get #lines before conversion starts */
+	int lines = STScreenStartHorizLine;
+	while (lines--)
+		AdjustLinePaletteRemap(y++);     /* Update palette */
 }
 
 /* lookup tables and conversion macros */

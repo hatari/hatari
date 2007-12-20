@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.27 2007-10-16 20:39:23 eerot Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.28 2007-12-20 00:15:14 thothy Exp $";
 
 #include <SDL.h>
 
@@ -32,14 +32,14 @@ static SHORTCUTKEYIDX ShortCutKey = SHORTCUT_NONE;  /* current shortcut key */
  */
 static void ShortCut_FullScreen(void)
 {
-  if(!bInFullScreen)
-  {
-    Screen_EnterFullScreen();
-  }
-  else
-  {
-    Screen_ReturnFromFullScreen();
-  }
+	if (!bInFullScreen)
+	{
+		Screen_EnterFullScreen();
+	}
+	else
+	{
+		Screen_ReturnFromFullScreen();
+	}
 }
 
 
@@ -49,20 +49,20 @@ static void ShortCut_FullScreen(void)
  */
 static void ShortCut_MouseMode(void)
 {
-  bGrabMouse = !bGrabMouse;        /* Toggle flag */
+	bGrabMouse = !bGrabMouse;        /* Toggle flag */
 
-  /* If we are in windowed mode, toggle the mouse cursor mode now: */
-  if(!bInFullScreen)
-  {
-    if(bGrabMouse)
-    {
-      SDL_WM_GrabInput(SDL_GRAB_ON);
-    }
-    else
-    {
-      SDL_WM_GrabInput(SDL_GRAB_OFF);
-    }
-  }
+	/* If we are in windowed mode, toggle the mouse cursor mode now: */
+	if (!bInFullScreen)
+	{
+		if (bGrabMouse)
+		{
+			SDL_WM_GrabInput(SDL_GRAB_ON);
+		}
+		else
+		{
+			SDL_WM_GrabInput(SDL_GRAB_OFF);
+		}
+	}
 }
 
 
@@ -72,21 +72,21 @@ static void ShortCut_MouseMode(void)
  */
 static void ShortCut_RecordSound(void)
 {
-  /* Is working? */
-  if (bSoundWorking)
-  {
-    /* Are we currently recording? If so stop */
-    if (Sound_AreWeRecording())
-    {
-      /* Stop, and save */
-      Sound_EndRecording();
-    }
-    else
-    {
-      /* Begin recording */
-      Sound_BeginRecording(ConfigureParams.Sound.szYMCaptureFileName);
-    }
-  }
+	/* Is working? */
+	if (bSoundWorking)
+	{
+		/* Are we currently recording? If so stop */
+		if (Sound_AreWeRecording())
+		{
+			/* Stop, and save */
+			Sound_EndRecording();
+		}
+		else
+		{
+			/* Begin recording */
+			Sound_BeginRecording(ConfigureParams.Sound.szYMCaptureFileName);
+		}
+	}
 }
 
 
@@ -96,17 +96,18 @@ static void ShortCut_RecordSound(void)
  */
 static void ShortCut_RecordAnimation(void)
 {
-  /* Are we currently recording? If so stop */
-  if (ScreenSnapShot_AreWeRecording())
-  {
-    /* Stop */
-    ScreenSnapShot_EndRecording();
-  }
-  else
-  {
-    /* Start animation */
-    ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange, ConfigureParams.Screen.nFramesPerSecond);
-  }
+	/* Are we currently recording? If so stop */
+	if (ScreenSnapShot_AreWeRecording())
+	{
+		/* Stop */
+		ScreenSnapShot_EndRecording();
+	}
+	else
+	{
+		/* Start animation */
+		ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange,
+		                              ConfigureParams.Screen.nFramesPerSecond);
+	}
 }
 
 
@@ -116,19 +117,20 @@ static void ShortCut_RecordAnimation(void)
  */
 static void ShortCut_SoundOnOff(void)
 {
-  /* Toggle sound on/off */
-  ConfigureParams.Sound.bEnableSound ^= TRUE;
-  /* And start/stop if need to */
-  if (!ConfigureParams.Sound.bEnableSound)
-  {
-    if (Sound_AreWeRecording())
-      Sound_EndRecording();
-    Audio_UnInit();
-  }
-  else
-  {
-    Audio_Init();
-  }
+	/* Toggle sound on/off */
+	ConfigureParams.Sound.bEnableSound ^= TRUE;
+
+	/* And start/stop if need to */
+	if (!ConfigureParams.Sound.bEnableSound)
+	{
+		if (Sound_AreWeRecording())
+			Sound_EndRecording();
+		Audio_UnInit();
+	}
+	else
+	{
+		Audio_Init();
+	}
 }
 
 
@@ -138,20 +140,20 @@ static void ShortCut_SoundOnOff(void)
  */
 static void ShortCut_MaximumSpeed(void)
 {
-  /* If already on max speed, switch back to normal */
-  if (ConfigureParams.System.nMinMaxSpeed == MINMAXSPEED_MAX)
-  {
-    /* Restore */
-    ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;
-    
-    /* Reset the sound emulation variables: */
-    Sound_ResetBufferIndex();
-  }
-  else
-  {
-    /* Set maximum speed */
-    ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MAX;
-  }
+	/* If already on max speed, switch back to normal */
+	if (ConfigureParams.System.nMinMaxSpeed == MINMAXSPEED_MAX)
+	{
+		/* Restore */
+		ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;
+
+		/* Reset the sound emulation variables: */
+		Sound_ResetBufferIndex();
+	}
+	else
+	{
+		/* Set maximum speed */
+		ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MAX;
+	}
 }
 
 
@@ -161,17 +163,17 @@ static void ShortCut_MaximumSpeed(void)
  */
 static void ShortCut_BossKey(void)
 {
-  /* If we are in full-screen, then return to a window */
-  Screen_ReturnFromFullScreen();
+	/* If we are in full-screen, then return to a window */
+	Screen_ReturnFromFullScreen();
 
-  if(bGrabMouse)
-  {
-    SDL_WM_GrabInput(SDL_GRAB_OFF);
-    bGrabMouse = FALSE;
-  }
+	if (bGrabMouse)
+	{
+		SDL_WM_GrabInput(SDL_GRAB_OFF);
+		bGrabMouse = FALSE;
+	}
 
-  /* Minimize Window and give up processing to next one! */
-  SDL_WM_IconifyWindow();
+	/* Minimize Window and give up processing to next one! */
+	SDL_WM_IconifyWindow();
 }
 
 
@@ -181,62 +183,62 @@ static void ShortCut_BossKey(void)
  */
 void ShortCut_ActKey(void)
 {
-  if (ShortCutKey == SHORTCUT_NONE)
-    return;
+	if (ShortCutKey == SHORTCUT_NONE)
+		return;
 
-  switch(ShortCutKey)
-  {
-  case SHORTCUT_OPTIONS:
-    Dialog_DoProperty();           /* Show options dialog */
-    break;
-  case SHORTCUT_FULLSCREEN:
-    ShortCut_FullScreen();         /* Switch between fullscreen/windowed mode */
-    break;
-  case SHORTCUT_MOUSEMODE:
-    ShortCut_MouseMode();          /* Toggle mouse mode */
-    break;
-  case SHORTCUT_COLDRESET:
-    Reset_Cold();                  /* Reset emulator with 'cold' (clear all) */
-    break;
-  case SHORTCUT_WARMRESET:
-    Reset_Warm();                  /* Emulator 'warm' reset */
-    break;
-  case SHORTCUT_SCREENSHOT:
-    ScreenSnapShot_SaveScreen();   /* Grab screenshot */
-    break;
-  case SHORTCUT_BOSSKEY:
-    ShortCut_BossKey();            /* Boss key */
-    break;
-  case SHORTCUT_CURSOREMU:         /* Toggle joystick emu on/off */
-    Joy_ToggleCursorEmulation();
-    break;
-  case SHORTCUT_MAXSPEED:
-    ShortCut_MaximumSpeed();       /* Toggle Min/Max speed */
-    break;
-  case SHORTCUT_RECANIM:
-    ShortCut_RecordAnimation();    /* Record animation */
-    break;
-  case SHORTCUT_RECSOUND:
-    ShortCut_RecordSound();        /* Toggle sound recording */
-    break;
-  case SHORTCUT_SOUND:
-    ShortCut_SoundOnOff();         /* Enable/disable sound */
-    break;
-  case SHORTCUT_QUIT:
-    Main_RequestQuit();
-    break;
-  case SHORTCUT_LOADMEM:
-    MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName);
-    break;
-  case SHORTCUT_SAVEMEM:
-    MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName);
-    break;
-  case SHORTCUT_KEYS:
-  case SHORTCUT_NONE:
-    /* ERROR: cannot happen, just make compiler happy */
-    break;
-  }
-  ShortCutKey = SHORTCUT_NONE;
+	switch (ShortCutKey)
+	{
+	 case SHORTCUT_OPTIONS:
+		Dialog_DoProperty();           /* Show options dialog */
+		break;
+	 case SHORTCUT_FULLSCREEN:
+		ShortCut_FullScreen();         /* Switch between fullscreen/windowed mode */
+		break;
+	 case SHORTCUT_MOUSEMODE:
+		ShortCut_MouseMode();          /* Toggle mouse mode */
+		break;
+	 case SHORTCUT_COLDRESET:
+		Reset_Cold();                  /* Reset emulator with 'cold' (clear all) */
+		break;
+	 case SHORTCUT_WARMRESET:
+		Reset_Warm();                  /* Emulator 'warm' reset */
+		break;
+	 case SHORTCUT_SCREENSHOT:
+		ScreenSnapShot_SaveScreen();   /* Grab screenshot */
+		break;
+	 case SHORTCUT_BOSSKEY:
+		ShortCut_BossKey();            /* Boss key */
+		break;
+	 case SHORTCUT_CURSOREMU:          /* Toggle joystick emu on/off */
+		Joy_ToggleCursorEmulation();
+		break;
+	 case SHORTCUT_MAXSPEED:
+		ShortCut_MaximumSpeed();       /* Toggle Min/Max speed */
+		break;
+	 case SHORTCUT_RECANIM:
+		ShortCut_RecordAnimation();    /* Record animation */
+		break;
+	 case SHORTCUT_RECSOUND:
+		ShortCut_RecordSound();        /* Toggle sound recording */
+		break;
+	 case SHORTCUT_SOUND:
+		ShortCut_SoundOnOff();         /* Enable/disable sound */
+		break;
+	 case SHORTCUT_QUIT:
+		Main_RequestQuit();
+		break;
+	 case SHORTCUT_LOADMEM:
+		MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName);
+		break;
+	 case SHORTCUT_SAVEMEM:
+		MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName);
+		break;
+	 case SHORTCUT_KEYS:
+	 case SHORTCUT_NONE:
+		/* ERROR: cannot happen, just make compiler happy */
+		break;
+	}
+	ShortCutKey = SHORTCUT_NONE;
 }
 
 
@@ -247,13 +249,13 @@ void ShortCut_ActKey(void)
  */
 static SHORTCUTKEYIDX ShortCut_CheckKey(int symkey, int *keys)
 {
-  SHORTCUTKEYIDX key;
-  for (key = 0; key < SHORTCUT_KEYS; key++)
-  {
-    if (symkey == keys[key])
-      return key;
-  }
-  return SHORTCUT_NONE;
+	SHORTCUTKEYIDX key;
+	for (key = 0; key < SHORTCUT_KEYS; key++)
+	{
+		if (symkey == keys[key])
+			return key;
+	}
+	return SHORTCUT_NONE;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -264,16 +266,16 @@ static SHORTCUTKEYIDX ShortCut_CheckKey(int symkey, int *keys)
  */
 int ShortCut_CheckKeys(int modkey, int symkey, BOOL press)
 {
-  SHORTCUTKEYIDX key;
+	SHORTCUTKEYIDX key;
 
-  if (modkey & (KMOD_RALT|KMOD_LMETA|KMOD_RMETA|KMOD_MODE))
-    key = ShortCut_CheckKey(symkey, ConfigureParams.Shortcut.withModifier);
-  else
-    key = ShortCut_CheckKey(symkey, ConfigureParams.Shortcut.withoutModifier);
+	if (modkey & (KMOD_RALT|KMOD_LMETA|KMOD_RMETA|KMOD_MODE))
+		key = ShortCut_CheckKey(symkey, ConfigureParams.Shortcut.withModifier);
+	else
+		key = ShortCut_CheckKey(symkey, ConfigureParams.Shortcut.withoutModifier);
 
-  if (key == SHORTCUT_NONE)
-    return 0;
-  if (press)
-    ShortCutKey = key;
-  return 1;
+	if (key == SHORTCUT_NONE)
+		return 0;
+	if (press)
+		ShortCutKey = key;
+	return 1;
 }

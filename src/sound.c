@@ -4,22 +4,26 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  This is where we emulate the YM2149. To obtain cycle-accurate timing we store the current cycle
-  time and this is incremented during each instruction. When a write occurs in the PSG registers
-  we take the difference in time and generate this many samples using the previous register data.
-  Now we begin again from this point. To make sure we always have 1/50th of samples we update
-  the buffer generation every 1/50th second, just in case no write took place on the PSG.
-  As with most 'sample' emulation it appears very quiet. We detect for any sample playback on a channel
-  by a decay timer on the channel amplitude - this will remain high if the PSG register is constantly
-  written to. We use this decay timer to boost the output of a sampled channel so the final sound is more
-  even through-out.
-  NOTE: If the emulator runs slower than 50fps it cannot update the buffers, but the sound thread still
-  needs some data to play to prevent a 'pop'. The ONLY feasible solution is to play the same buffer again.
-  I have tried all kinds of methods to play the sound 'slower', but this produces un-even timing in the
-  sound and it simply doesn't work. If the emulator cannot keep the speed, users will have to turn off
-  the sound - that's it.
+  This is where we emulate the YM2149. To obtain cycle-accurate timing we store
+  the current cycle time and this is incremented during each instruction.
+  When a write occurs in the PSG registers we take the difference in time and
+  generate this many samples using the previous register data.
+  Now we begin again from this point. To make sure we always have 1/50th of
+  samples we update the buffer generation every 1/50th second, just in case no
+  write took place on the PSG.
+  As with most 'sample' emulation it appears very quiet. We detect for any
+  sample playback on a channel by a decay timer on the channel amplitude - this
+  will remain high if the PSG register is constantly written to. We use this
+  decay timer to boost the output of a sampled channel so the final sound is
+  more even through-out.
+  NOTE: If the emulator runs slower than 50fps it cannot update the buffers,
+  but the sound thread still needs some data to play to prevent a 'pop'. The
+  ONLY feasible solution is to play the same buffer again. I have tried all
+  kinds of methods to play the sound 'slower', but this produces un-even timing
+  in the sound and it simply doesn't work. If the emulator cannot keep the
+  speed, users will have to turn off the sound - that's it.
 */
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.29 2007-10-19 21:56:23 eerot Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.30 2007-12-20 00:15:15 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -83,28 +87,28 @@ int nGeneratedSamples;                                          /* Generated sam
 /* Envelope shape table */
 typedef struct
 {
-  int WaveStart[4], WaveDelta[4];
+	int WaveStart[4], WaveDelta[4];
 } ENVSHAPE;
 
 /* Envelope shapes */
 static const ENVSHAPE EnvShapes[16] =
 {
- { {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  00xx  */
- { {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  00xx  */
- { {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  00xx  */
- { {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  00xx  */
- { {-128,-128,-128,-128},   {1, 0, 0, 0} },   /*  /_____  01xx  */
- { {-128,-128,-128,-128},   {1, 0, 0, 0} },   /*  /_____  01xx  */
- { {-128,-128,-128,-128},   {1, 0, 0, 0} },   /*  /_____  01xx  */
- { {-128,-128,-128,-128},   {1, 0, 0, 0} },   /*  /_____  01xx  */
- { {127,127,127,127},       {-1,-1,-1,-1} },  /*  \\\\\\  1000  */
- { {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  1001  */
- { {127,-128,127,-128},     {-1, 1,-1, 1} },  /*  \/\/\/  1010  */
- { {127,127,127,127},       {-1, 0, 0, 0} },  /*  \~~~~~  1011  */
- { {-128,-128,-128,-128},   {1, 1, 1, 1} },   /*  //////  1100  */
- { {-128,127,127,127},      {1, 0, 0, 0} },   /*  /~~~~~  1101  */
- { {-128,127,-128,127},     {1,-1, 1,-1} },   /*  /\/\/\  1110  */
- { {-128,-128,-128,-128},   {1, 0, 0, 0} }    /*  /_____  1111  */
+	{ {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  00xx  */
+	{ {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  00xx  */
+	{ {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  00xx  */
+	{ {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  00xx  */
+	{ {-128,-128,-128,-128},   {1, 0, 0, 0} },   /*  /_____  01xx  */
+	{ {-128,-128,-128,-128},   {1, 0, 0, 0} },   /*  /_____  01xx  */
+	{ {-128,-128,-128,-128},   {1, 0, 0, 0} },   /*  /_____  01xx  */
+	{ {-128,-128,-128,-128},   {1, 0, 0, 0} },   /*  /_____  01xx  */
+	{ {127,127,127,127},       {-1,-1,-1,-1} },  /*  \\\\\\  1000  */
+	{ {127,-128,-128,-128},    {-1, 0, 0, 0} },  /*  \_____  1001  */
+	{ {127,-128,127,-128},     {-1, 1,-1, 1} },  /*  \/\/\/  1010  */
+	{ {127,127,127,127},       {-1, 0, 0, 0} },  /*  \~~~~~  1011  */
+	{ {-128,-128,-128,-128},   {1, 1, 1, 1} },   /*  //////  1100  */
+	{ {-128,127,127,127},      {1, 0, 0, 0} },   /*  /~~~~~  1101  */
+	{ {-128,127,-128,127},     {1,-1, 1,-1} },   /*  /\/\/\  1110  */
+	{ {-128,-128,-128,-128},   {1, 0, 0, 0} }    /*  /_____  1111  */
 };
 
 /* Square wave look up table */
@@ -121,28 +125,28 @@ static int *pEnvelopeLogTable = &LogTable[128];
  */
 static void Sound_CreateLogTables(void)
 {
-  float a;
-  int i;
+	float a;
+	int i;
 
-  /* Generate 'log' table for envelope output. It isn't quite a 'log' but it mimicks the ST */
-  /* output very well */
-  a = 1.0f;
-  for(i=0; i<256; i++)
-  {
-    LogTable[255-i] = (int)(255*a);
-    a /= 1.02f;
-  }
-  LogTable[0] = 0;
+	/* Generate 'log' table for envelope output. It isn't quite a 'log' but it mimicks the ST */
+	/* output very well */
+	a = 1.0f;
+	for (i = 0; i < 256; i++)
+	{
+		LogTable[255-i] = (int)(255*a);
+		a /= 1.02f;
+	}
+	LogTable[0] = 0;
 
-  /* And a 16 entry version(thanks to Nick for the '/= 1.5' bit) */
-  /* This is VERY important for clear sample playback */
-  a = 1.0f;
-  for(i=0; i<15; i++)
-  {
-    LogTable16[15-i] = (int)(255*a);
-    a /= 1.5f;
-  }
-  LogTable16[0] = 0;
+	/* And a 16 entry version(thanks to Nick for the '/= 1.5' bit) */
+	/* This is VERY important for clear sample playback */
+	a = 1.0f;
+	for (i = 0; i < 15; i++)
+	{
+		LogTable16[15-i] = (int)(255*a);
+		a /= 1.5f;
+	}
+	LogTable16[0] = 0;
 }
 
 
@@ -153,15 +157,15 @@ static void Sound_CreateLogTables(void)
  */
 static void Sound_CreateEnvelopeShape(const ENVSHAPE *pEnvShape,int *pEnvelopeValues)
 {
-  int i,j,Value;
+	int i, j, Value;
 
-  /* Create shape */
-  for(i=0; i<4; i++)
-  {
-    Value = pEnvShape->WaveStart[i];        /* Set starting value for gradient */
-    for(j=0; j<256; j++,Value+=pEnvShape->WaveDelta[i])
-      *pEnvelopeValues++ = Misc_LimitInt(Value,-128,127);
-  }
+	/* Create shape */
+	for (i = 0; i < 4; i++)
+	{
+		Value = pEnvShape->WaveStart[i];        /* Set starting value for gradient */
+		for (j = 0; j < 256; j++, Value += pEnvShape->WaveDelta[i])
+			*pEnvelopeValues++ = Misc_LimitInt(Value,-128,127);
+	}
 }
 
 
@@ -171,11 +175,11 @@ static void Sound_CreateEnvelopeShape(const ENVSHAPE *pEnvShape,int *pEnvelopeVa
  */
 static void Sound_CreateEnvelopeShapes(void)
 {
-  int i;
+	int i;
 
-  /* Create 'envelopes' for YM table */
-  for(i=0; i<16; i++)
-    Sound_CreateEnvelopeShape(&EnvShapes[i],&EnvelopeShapeValues[i*1024]);
+	/* Create 'envelopes' for YM table */
+	for (i = 0; i < 16; i++)
+		Sound_CreateEnvelopeShape(&EnvShapes[i],&EnvelopeShapeValues[i*1024]);
 }
 
 
@@ -187,16 +191,16 @@ static void Sound_CreateEnvelopeShapes(void)
  */
 static void Sound_CreateSoundMixClipTable(void)
 {
-  int i,v;
+	int i,v;
 
-  /* Create table to 'clip' values to -128...127 */
-  for(i=0; i<MIXTABLE_SIZE; i++)
-  {
-    v = (float)(i-(MIXTABLE_SIZE/2)) * 0.3f;    /* Scale, to prevent clipping */
-    if (v<-128)  v = -128;                      /* Limit -128..128 */
-    if (v>127)  v = 127;
-    MixTable[i] = v;
-  }
+	/* Create table to 'clip' values to -128...127 */
+	for (i = 0; i < MIXTABLE_SIZE; i++)
+	{
+		v = (float)(i-(MIXTABLE_SIZE/2)) * 0.3f;    /* Scale, to prevent clipping */
+		if (v<-128)  v = -128;                      /* Limit -128..128 */
+		if (v>127)  v = 127;
+		MixTable[i] = v;
+	}
 }
 
 
@@ -208,12 +212,12 @@ static Uint32 RandomNum;
 
 void Sound_Init(void)
 {
-  RandomNum = 1043618;	/* must be != 0 */
-  Sound_CreateLogTables();
-  Sound_CreateEnvelopeShapes();
-  Sound_CreateSoundMixClipTable();
+	RandomNum = 1043618;	/* must be != 0 */
+	Sound_CreateLogTables();
+	Sound_CreateEnvelopeShapes();
+	Sound_CreateSoundMixClipTable();
 
-  Sound_Reset();
+	Sound_Reset();
 }
 
 
@@ -223,35 +227,35 @@ void Sound_Init(void)
  */
 void Sound_Reset(void)
 {
-  int i;
+	int i;
 
-  /* Lock audio system before accessing variables which are used by the
-   * callback function, too! */
-  Audio_Lock();
+	/* Lock audio system before accessing variables which are used by the
+	 * callback function, too! */
+	Audio_Lock();
 
-  /* Clear sound mixing buffer: */
-  memset(MixBuffer, 0, MIXBUFFER_SIZE);
+	/* Clear sound mixing buffer: */
+	memset(MixBuffer, 0, MIXBUFFER_SIZE);
 
-  /* Clear cycle counts, buffer index and register '13' flags */
-  Cycles_SetCounter(CYCLES_COUNTER_SOUND, 0);
-  bEnvelopeFreqFlag = FALSE;
-  bWriteEnvelopeFreq = FALSE;
-  bWriteChannelAAmp = bWriteChannelBAmp = bWriteChannelCAmp = FALSE;
+	/* Clear cycle counts, buffer index and register '13' flags */
+	Cycles_SetCounter(CYCLES_COUNTER_SOUND, 0);
+	bEnvelopeFreqFlag = FALSE;
+	bWriteEnvelopeFreq = FALSE;
+	bWriteChannelAAmp = bWriteChannelBAmp = bWriteChannelCAmp = FALSE;
 
-  CompleteSndBufIdx = 0;
-  /* We do not start with 0 here to fake some initial samples: */
-  nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
-  ActiveSndBufIdx = nGeneratedSamples % MIXBUFFER_SIZE;
+	CompleteSndBufIdx = 0;
+	/* We do not start with 0 here to fake some initial samples: */
+	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
+	ActiveSndBufIdx = nGeneratedSamples % MIXBUFFER_SIZE;
 
-  /* Clear frequency counter */
-  for(i=0; i<3; i++)
-  {
-    ChannelFreq[i] =
-    ChannelAmpDecayTime[i] = 0;
-  }
-  EnvelopeFreq = NoiseFreq = 0;
+	/* Clear frequency counter */
+	for (i = 0; i < 3; i++)
+	{
+		ChannelFreq[i] =
+		    ChannelAmpDecayTime[i] = 0;
+	}
+	EnvelopeFreq = NoiseFreq = 0;
 
-  Audio_Unlock();
+	Audio_Unlock();
 }
 
 
@@ -261,10 +265,10 @@ void Sound_Reset(void)
  */
 void Sound_ResetBufferIndex(void)
 {
-  Audio_Lock();
-  nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
-  ActiveSndBufIdx =  (CompleteSndBufIdx + nGeneratedSamples) % MIXBUFFER_SIZE;
-  Audio_Unlock();
+	Audio_Lock();
+	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
+	ActiveSndBufIdx =  (CompleteSndBufIdx + nGeneratedSamples) % MIXBUFFER_SIZE;
+	Audio_Unlock();
 }
 
 
@@ -274,10 +278,10 @@ void Sound_ResetBufferIndex(void)
  */
 void Sound_MemorySnapShot_Capture(BOOL bSave)
 {
-  /* Save/Restore details */
-  MemorySnapShot_Store(ChannelFreq,sizeof(ChannelFreq));
-  MemorySnapShot_Store(&EnvelopeFreq,sizeof(EnvelopeFreq));
-  MemorySnapShot_Store(&NoiseFreq,sizeof(NoiseFreq));
+	/* Save/Restore details */
+	MemorySnapShot_Store(ChannelFreq, sizeof(ChannelFreq));
+	MemorySnapShot_Store(&EnvelopeFreq, sizeof(EnvelopeFreq));
+	MemorySnapShot_Store(&NoiseFreq, sizeof(NoiseFreq));
 }
 
 
@@ -289,53 +293,53 @@ void Sound_MemorySnapShot_Capture(BOOL bSave)
  */
 static void Sound_SetSamplesPassed(void)
 {
-  int nSampleCycles;
-  int nSamplesPerFrame;
-  int Dec=1;
-  int nSoundCycles;
+	int nSampleCycles;
+	int nSamplesPerFrame;
+	int Dec=1;
+	int nSoundCycles;
 
-  nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_SOUND);
+	nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_SOUND);
 
-  /* Check how many cycles have passed, as we use this to help find out if we are playing sample data */
+	/* Check how many cycles have passed, as we use this to help find out if we are playing sample data */
 
-  /* First, add decay to channel amplitude variables */
-  if (nSoundCycles > (CYCLES_PER_FRAME/4))
-    Dec = 16;                            /* Been long time between sound writes, must be normal tone sound */
+	/* First, add decay to channel amplitude variables */
+	if (nSoundCycles > (CYCLES_PER_FRAME/4))
+		Dec = 16;                            /* Been long time between sound writes, must be normal tone sound */
 
-  if (!bWriteChannelAAmp)                /* Not written to amplitude, decay value */
-  {
-    ChannelAmpDecayTime[0]-=Dec;
-    if (ChannelAmpDecayTime[0]<0)  ChannelAmpDecayTime[0] = 0;
-  }
-  if (!bWriteChannelBAmp)
-  {
-    ChannelAmpDecayTime[1]-=Dec;
-    if (ChannelAmpDecayTime[1]<0)  ChannelAmpDecayTime[1] = 0;
-  }
-  if (!bWriteChannelCAmp)
-  {
-    ChannelAmpDecayTime[2]-=Dec;
-    if (ChannelAmpDecayTime[2]<0)  ChannelAmpDecayTime[2] = 0;
-  }
+	if (!bWriteChannelAAmp)                /* Not written to amplitude, decay value */
+	{
+		ChannelAmpDecayTime[0]-=Dec;
+		if (ChannelAmpDecayTime[0]<0)  ChannelAmpDecayTime[0] = 0;
+	}
+	if (!bWriteChannelBAmp)
+	{
+		ChannelAmpDecayTime[1]-=Dec;
+		if (ChannelAmpDecayTime[1]<0)  ChannelAmpDecayTime[1] = 0;
+	}
+	if (!bWriteChannelCAmp)
+	{
+		ChannelAmpDecayTime[2]-=Dec;
+		if (ChannelAmpDecayTime[2]<0)  ChannelAmpDecayTime[2] = 0;
+	}
 
-  /* 160256 cycles per VBL, 44Khz = 882 samples per VBL */
-  /* 882/160256 samples per clock cycle */
-  nSamplesPerFrame = SAMPLES_PER_FRAME;
+	/* 160256 cycles per VBL, 44Khz = 882 samples per VBL */
+	/* 882/160256 samples per clock cycle */
+	nSamplesPerFrame = SAMPLES_PER_FRAME;
 
-  nSamplesToGenerate = nSoundCycles * nSamplesPerFrame / CYCLES_PER_FRAME;
-  if (nSamplesToGenerate > nSamplesPerFrame)
-    nSamplesToGenerate = nSamplesPerFrame;
+	nSamplesToGenerate = nSoundCycles * nSamplesPerFrame / CYCLES_PER_FRAME;
+	if (nSamplesToGenerate > nSamplesPerFrame)
+		nSamplesToGenerate = nSamplesPerFrame;
 
-  nSampleCycles = nSamplesToGenerate * CYCLES_PER_FRAME / nSamplesPerFrame;
-  nSoundCycles -= nSampleCycles;
-  Cycles_SetCounter(CYCLES_COUNTER_SOUND, nSoundCycles);
+	nSampleCycles = nSamplesToGenerate * CYCLES_PER_FRAME / nSamplesPerFrame;
+	nSoundCycles -= nSampleCycles;
+	Cycles_SetCounter(CYCLES_COUNTER_SOUND, nSoundCycles);
 
-  if (nSamplesToGenerate > MIXBUFFER_SIZE - nGeneratedSamples)
-  {
-    nSamplesToGenerate = MIXBUFFER_SIZE - nGeneratedSamples;
-    if (nSamplesToGenerate < 0)
-      nSamplesToGenerate = 0;
-  }
+	if (nSamplesToGenerate > MIXBUFFER_SIZE - nGeneratedSamples)
+	{
+		nSamplesToGenerate = MIXBUFFER_SIZE - nGeneratedSamples;
+		if (nSamplesToGenerate < 0)
+			nSamplesToGenerate = 0;
+	}
 }
 
 
@@ -345,29 +349,29 @@ static void Sound_SetSamplesPassed(void)
  */
 static void Sound_GenerateEnvelope(unsigned char EnvShape, unsigned char Fine, unsigned char Coarse)
 {
-  int *pEnvelopeValues;
-  Uint32 EnvelopePeriod, EnvelopeFreqDelta;
-  int i;
+	int *pEnvelopeValues;
+	Uint32 EnvelopePeriod, EnvelopeFreqDelta;
+	int i;
 
-  /* Find envelope details */
-  if (bWriteEnvelopeFreq)
-    EnvelopeFreq = 0;
-  pEnvelopeValues = &EnvelopeShapeValues[ (EnvShape&0x0f)*1024 ];          /* Envelope shape values */
-  EnvelopePeriod = ENVELOPE_PERIOD((Uint32)Fine, (Uint32)Coarse);
+	/* Find envelope details */
+	if (bWriteEnvelopeFreq)
+		EnvelopeFreq = 0;
+	pEnvelopeValues = &EnvelopeShapeValues[ (EnvShape&0x0f)*1024 ]; /* Envelope shape values */
+	EnvelopePeriod = ENVELOPE_PERIOD((Uint32)Fine, (Uint32)Coarse);
 
-  if (EnvelopePeriod==0)                                                   /* Handle div by zero */
-    EnvelopeFreqDelta = 0;
-  else
-    EnvelopeFreqDelta = ((LONGLONG)YM_FREQ<<ENVFREQ_SHIFT) / (EnvelopePeriod);  /* 16.16 fixed point */
+	if (EnvelopePeriod==0)                                          /* Handle div by zero */
+		EnvelopeFreqDelta = 0;
+	else
+		EnvelopeFreqDelta = ((LONGLONG)YM_FREQ<<ENVFREQ_SHIFT) / (EnvelopePeriod);  /* 16.16 fixed point */
 
-  /* Create envelope from current shape and frequency */
-  for(i=0; i<nSamplesToGenerate; i++)
-  {
-    Envelope[i] = pEnvelopeValues[EnvelopeFreq>>ENVFREQ_SHIFT];           /* Store envelope wave, already applied 'log' function */
-    EnvelopeFreq += EnvelopeFreqDelta;
-    if (EnvelopeFreq&0xfe000000)
-      EnvelopeFreq = 0x02000000 | (EnvelopeFreq&0x01ffffff);              /* Keep in range 512-1024 once past 511! */
-  }
+	/* Create envelope from current shape and frequency */
+	for (i = 0; i < nSamplesToGenerate; i++)
+	{
+		Envelope[i] = pEnvelopeValues[EnvelopeFreq>>ENVFREQ_SHIFT]; /* Store envelope wave, already applied 'log' function */
+		EnvelopeFreq += EnvelopeFreqDelta;
+		if (EnvelopeFreq&0xfe000000)
+			EnvelopeFreq = 0x02000000 | (EnvelopeFreq&0x01ffffff);  /* Keep in range 512-1024 once past 511! */
+	}
 }
 
 
@@ -377,46 +381,49 @@ static void Sound_GenerateEnvelope(unsigned char EnvShape, unsigned char Fine, u
  */
 static inline Uint32 Random_Next(void)
 {
-  Uint32 Lo, Hi;
+	Uint32 Lo, Hi;
 
-  Lo = 16807 * (Sint32)((Sint32)RandomNum & 0xffff);
-  Hi = 16807 * (Sint32)((Uint32)RandomNum >> 16);
-  Lo += (Hi & 0x7fff) << 16;
-  if (Lo > 2147483647L) {
-    Lo &= 2147483647L;
-    ++Lo;
-  }
-  Lo += Hi >> 15;
-  if (Lo > 2147483647L) {
-    Lo &= 2147483647L;
-    ++Lo;
-  }
-  RandomNum = Lo;
-  return Lo;
+	Lo = 16807 * (Sint32)((Sint32)RandomNum & 0xffff);
+	Hi = 16807 * (Sint32)((Uint32)RandomNum >> 16);
+	Lo += (Hi & 0x7fff) << 16;
+	if (Lo > 2147483647L)
+	{
+		Lo &= 2147483647L;
+		++Lo;
+	}
+	Lo += Hi >> 15;
+	if (Lo > 2147483647L)
+	{
+		Lo &= 2147483647L;
+		++Lo;
+	}
+	RandomNum = Lo;
+	return Lo;
 }
+
 static void Sound_GenerateNoise(unsigned char MixerControl, unsigned char NoiseGen)
 {
-  int NoiseValue;
-  Uint32 NoisePeriod, NoiseFreqDelta;
-  int i;
+	int NoiseValue;
+	Uint32 NoisePeriod, NoiseFreqDelta;
+	int i;
 
-  NoisePeriod = NOISE_PERIOD((Uint32)NoiseGen);
+	NoisePeriod = NOISE_PERIOD((Uint32)NoiseGen);
 
-  if (NoisePeriod==0)                              /* Handle div by zero */
-    NoiseFreqDelta = 0;
-  else
-    NoiseFreqDelta = (((LONGLONG)YM_FREQ)<<NOISEFREQ_SHIFT) / NoisePeriod;  /* 4.28 fixed point */
+	if (NoisePeriod==0)                              /* Handle div by zero */
+		NoiseFreqDelta = 0;
+	else
+		NoiseFreqDelta = (((LONGLONG)YM_FREQ)<<NOISEFREQ_SHIFT) / NoisePeriod;  /* 4.28 fixed point */
 
-  /* Generate noise samples */
-  for(i=0; i<nSamplesToGenerate; i++)
-  {
-    NoiseValue = Random_Next()%96;                 /* Get random value */
-    if (SquareWave[NoiseFreq>>NOISEFREQ_SHIFT]<=0) /* Add to square wave at given frequency */
-      NoiseValue = -NoiseValue;
+	/* Generate noise samples */
+	for (i = 0; i < nSamplesToGenerate; i++)
+	{
+		NoiseValue = Random_Next()%96;                 /* Get random value */
+		if (SquareWave[NoiseFreq>>NOISEFREQ_SHIFT]<=0) /* Add to square wave at given frequency */
+			NoiseValue = -NoiseValue;
 
-    Noise[i] = NoiseValue;
-    NoiseFreq += NoiseFreqDelta;
-  }
+		Noise[i] = NoiseValue;
+		NoiseFreq += NoiseFreqDelta;
+	}
 }
 
 
@@ -425,79 +432,80 @@ static void Sound_GenerateNoise(unsigned char MixerControl, unsigned char NoiseG
  * Generate channel of samples for this time-frame
  */
 static void Sound_GenerateChannel(int *pBuffer, unsigned char ToneFine, unsigned char ToneCoarse, unsigned char Amplitude, unsigned char MixerControl, Uint32 *pChannelFreq, int MixMask)
-{   
-  int *pNoise = Noise, *pEnvelope = Envelope;
-  Uint32 ToneFreq = *pChannelFreq;
-  Uint32 TonePeriod;
-  Uint32 ToneFreqDelta;
-  int i,Amp,Mix;
-  int ToneOutput,NoiseOutput,MixerOutput,EnvelopeOutput,AmplitudeOutput;
+{
+	int *pNoise = Noise, *pEnvelope = Envelope;
+	Uint32 ToneFreq = *pChannelFreq;
+	Uint32 TonePeriod;
+	Uint32 ToneFreqDelta;
+	int i,Amp,Mix;
+	int ToneOutput, NoiseOutput, MixerOutput, EnvelopeOutput, AmplitudeOutput;
 
-  TonePeriod = TONE_PERIOD((Uint32)ToneFine, (Uint32)ToneCoarse);
-  /* Find frequency of channel */
-  if (TonePeriod==0)
-    ToneFreqDelta = 0;                                  /* Handle div by zero */
-  else
-    ToneFreqDelta = (((LONGLONG)YM_FREQ)<<TONEFREQ_SHIFT) / TonePeriod;    /* 4.28 fixed point */
-  Amp = LogTable16[(Amplitude&0x0f)];
-  Mix = (MixerControl>>MixMask)&9;                      /* Read I/O Mixer */
+	TonePeriod = TONE_PERIOD((Uint32)ToneFine, (Uint32)ToneCoarse);
+	/* Find frequency of channel */
+	if (TonePeriod==0)
+		ToneFreqDelta = 0;                                  /* Handle div by zero */
+	else
+		ToneFreqDelta = (((LONGLONG)YM_FREQ)<<TONEFREQ_SHIFT) / TonePeriod;    /* 4.28 fixed point */
+	Amp = LogTable16[(Amplitude&0x0f)];
+	Mix = (MixerControl>>MixMask)&9;                      /* Read I/O Mixer */
 
-  /* Check if we are trying to play a 'sample' - we need to up the volume on these as they tend to be rather quiet */
-  if ((Amplitude&0x10)==0)                /* Fixed level amplitude? */
-  {
-    ChannelAmpDecayTime[MixMask]++;       /* Increment counter to find out if we are playing samples... */
-    if (ChannelAmpDecayTime[MixMask]>16)
-      ChannelAmpDecayTime[MixMask] = 16;  /* And limit */
-  }
+	/* Check if we are trying to play a 'sample' - we need to up the volume on these as they tend to be rather quiet */
+	if ((Amplitude&0x10) == 0)                /* Fixed level amplitude? */
+	{
+		ChannelAmpDecayTime[MixMask]++;       /* Increment counter to find out if we are playing samples... */
+		if (ChannelAmpDecayTime[MixMask]>16)
+			ChannelAmpDecayTime[MixMask] = 16;  /* And limit */
+	}
 
-  for(i=0; i<nSamplesToGenerate; i++)
-  {
-    /* Output from Tone Generator(0-255) */
-    ToneOutput = SquareWave[ToneFreq>>TONEFREQ_SHIFT];
+	for (i = 0; i < nSamplesToGenerate; i++)
+	{
+		/* Output from Tone Generator(0-255) */
+		ToneOutput = SquareWave[ToneFreq>>TONEFREQ_SHIFT];
 
-    /* Output from Noise Generator(0-255) */
-    NoiseOutput = *pNoise++; 
-    /* Output from Mixer(combines Tone+Noise) */
-    switch (Mix) {
-      case 0:    /* Has Noise and Tone */
-        MixerOutput = NoiseOutput+ToneOutput;
-        break;
-      case 1:    /* Has Noise */
-        MixerOutput = NoiseOutput;
-        break;
-      case 8:    /* Has Tone */
-        MixerOutput = ToneOutput;
-        break;
+		/* Output from Noise Generator(0-255) */
+		NoiseOutput = *pNoise++;
+		/* Output from Mixer(combines Tone+Noise) */
+		switch (Mix)
+		{
+		 case 0:    /* Has Noise and Tone */
+			MixerOutput = NoiseOutput+ToneOutput;
+			break;
+		 case 1:    /* Has Noise */
+			MixerOutput = NoiseOutput;
+			break;
+		 case 8:    /* Has Tone */
+			MixerOutput = ToneOutput;
+			break;
 
-      default:  /* This is used to emulate samples - should give no output, but ST gives set tone!!?? */
-        /* MixerControl gets set to give a continuous tone and then then Amplitude */
-        /* of channels A,B and C get changed with all other registers in the PSG */
-        /* staying as zero's. This produces the sounds from Quartet, Speech, NoiseTracker etc...! */
-        MixerOutput = 127;
-    }
+		 default:  /* This is used to emulate samples - should give no output, but ST gives set tone!!?? */
+			/* MixerControl gets set to give a continuous tone and then then Amplitude */
+			/* of channels A,B and C get changed with all other registers in the PSG */
+			/* staying as zero's. This produces the sounds from Quartet, Speech, NoiseTracker etc...! */
+			MixerOutput = 127;
+		}
 
-    EnvelopeOutput = pEnvelopeLogTable[*pEnvelope++];
+		EnvelopeOutput = pEnvelopeLogTable[*pEnvelope++];
 
-    if ((Amplitude&0x10)==0)
-    {
-      AmplitudeOutput = Amp;          /* Fixed level amplitude */
+		if ((Amplitude&0x10)==0)
+		{
+			AmplitudeOutput = Amp;          /* Fixed level amplitude */
 
-      /* As with most emulators, sample playback is always 'quiet'. We check to see if */
-      /* the amplitude of a channel is repeatedly changing and when this is detected we */
-      /* scale the volume accordingly */
-      if (ChannelAmpDecayTime[MixMask]>8)
-        AmplitudeOutput <<= 1;        /* Scale up by a factor of 2 */
-    }
-    else
-      AmplitudeOutput = EnvelopeOutput;
+			/* As with most emulators, sample playback is always 'quiet'. We check to see if */
+			/* the amplitude of a channel is repeatedly changing and when this is detected we */
+			/* scale the volume accordingly */
+			if (ChannelAmpDecayTime[MixMask]>8)
+				AmplitudeOutput <<= 1;        /* Scale up by a factor of 2 */
+		}
+		else
+			AmplitudeOutput = EnvelopeOutput;
 
-    *pBuffer++ = (MixerOutput*AmplitudeOutput)>>8;
+		*pBuffer++ = (MixerOutput*AmplitudeOutput)>>8;
 
-    ToneFreq+=ToneFreqDelta;
-  }
+		ToneFreq+=ToneFreqDelta;
+	}
 
-  /* Store back incremented frequency, for next call */
-  *pChannelFreq = ToneFreq;
+	/* Store back incremented frequency, for next call */
+	*pChannelFreq = ToneFreq;
 }
 
 
@@ -507,35 +515,35 @@ static void Sound_GenerateChannel(int *pBuffer, unsigned char ToneFine, unsigned
  */
 static void Sound_GenerateSamples(void)
 {
-  int *pChannelA=Channel_A_Buffer, *pChannelB=Channel_B_Buffer, *pChannelC=Channel_C_Buffer;
-  int i;
+	int *pChannelA=Channel_A_Buffer, *pChannelB=Channel_B_Buffer, *pChannelC=Channel_C_Buffer;
+	int i;
 
-  /* Anything to do? */
-  if (nSamplesToGenerate>0)
-  {
-    /* Generate envelope/noise samples for this time */
-    Sound_GenerateEnvelope(PSGRegisters[PSG_REG_ENV_SHAPE],PSGRegisters[PSG_REG_ENV_FINE],PSGRegisters[PSG_REG_ENV_COARSE]);
-    Sound_GenerateNoise(PSGRegisters[PSG_REG_MIXER_CONTROL],PSGRegisters[PSG_REG_NOISE_GENERATOR]);
+	/* Anything to do? */
+	if (nSamplesToGenerate>0)
+	{
+		/* Generate envelope/noise samples for this time */
+		Sound_GenerateEnvelope(PSGRegisters[PSG_REG_ENV_SHAPE],PSGRegisters[PSG_REG_ENV_FINE],PSGRegisters[PSG_REG_ENV_COARSE]);
+		Sound_GenerateNoise(PSGRegisters[PSG_REG_MIXER_CONTROL],PSGRegisters[PSG_REG_NOISE_GENERATOR]);
 
-    /* Generate 3 channels, store to separate buffer so can mix/clip */
-    Sound_GenerateChannel(pChannelA,PSGRegisters[PSG_REG_CHANNEL_A_FINE],PSGRegisters[PSG_REG_CHANNEL_A_COARSE],PSGRegisters[PSG_REG_CHANNEL_A_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[0],0); 
-    Sound_GenerateChannel(pChannelB,PSGRegisters[PSG_REG_CHANNEL_B_FINE],PSGRegisters[PSG_REG_CHANNEL_B_COARSE],PSGRegisters[PSG_REG_CHANNEL_B_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[1],1);
-    Sound_GenerateChannel(pChannelC,PSGRegisters[PSG_REG_CHANNEL_C_FINE],PSGRegisters[PSG_REG_CHANNEL_C_COARSE],PSGRegisters[PSG_REG_CHANNEL_C_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[2],2);
+		/* Generate 3 channels, store to separate buffer so can mix/clip */
+		Sound_GenerateChannel(pChannelA,PSGRegisters[PSG_REG_CHANNEL_A_FINE],PSGRegisters[PSG_REG_CHANNEL_A_COARSE],PSGRegisters[PSG_REG_CHANNEL_A_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[0],0);
+		Sound_GenerateChannel(pChannelB,PSGRegisters[PSG_REG_CHANNEL_B_FINE],PSGRegisters[PSG_REG_CHANNEL_B_COARSE],PSGRegisters[PSG_REG_CHANNEL_B_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[1],1);
+		Sound_GenerateChannel(pChannelC,PSGRegisters[PSG_REG_CHANNEL_C_FINE],PSGRegisters[PSG_REG_CHANNEL_C_COARSE],PSGRegisters[PSG_REG_CHANNEL_C_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[2],2);
 
-    /* Mix channels together, using table to clip and convert to proper 8-bit type */
-    for(i=0; i<nSamplesToGenerate; i++)
-      MixBuffer[(i+ActiveSndBufIdx)%MIXBUFFER_SIZE] = pMixTable[(*pChannelA++) + (*pChannelB++) + (*pChannelC++)];
+		/* Mix channels together, using table to clip and convert to proper 8-bit type */
+		for (i=0; i<nSamplesToGenerate; i++)
+			MixBuffer[(i+ActiveSndBufIdx)%MIXBUFFER_SIZE] = pMixTable[(*pChannelA++) + (*pChannelB++) + (*pChannelC++)];
 
-    DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
+		DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
 
-    ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
-    nGeneratedSamples += nSamplesToGenerate;
+		ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
+		nGeneratedSamples += nSamplesToGenerate;
 
-    /* Reset the write to register '13' flag */
-    bWriteEnvelopeFreq = FALSE;
-    /* And amplitude write flags */
-    bWriteChannelAAmp = bWriteChannelBAmp = bWriteChannelCAmp = FALSE;
-  }
+		/* Reset the write to register '13' flag */
+		bWriteEnvelopeFreq = FALSE;
+		/* And amplitude write flags */
+		bWriteChannelAAmp = bWriteChannelBAmp = bWriteChannelCAmp = FALSE;
+	}
 }
 
 
@@ -545,22 +553,22 @@ static void Sound_GenerateSamples(void)
  */
 void Sound_Update(void)
 {
-  int OldSndBufIdx = ActiveSndBufIdx;
+	int OldSndBufIdx = ActiveSndBufIdx;
 
-  /* Make sure that we don't interfere with the audio callback function */
-  Audio_Lock();
+	/* Make sure that we don't interfere with the audio callback function */
+	Audio_Lock();
 
-  /* Find how many to generate */
-  Sound_SetSamplesPassed();
-  /* And generate */
-  Sound_GenerateSamples();
+	/* Find how many to generate */
+	Sound_SetSamplesPassed();
+	/* And generate */
+	Sound_GenerateSamples();
 
-  /* Allow audio callback function to occur again */
-  Audio_Unlock();
+	/* Allow audio callback function to occur again */
+	Audio_Unlock();
 
-  /* Save to WAV file, if open */
-  if (bRecordingWav)
-    WAVFormat_Update(MixBuffer, OldSndBufIdx, nSamplesToGenerate);
+	/* Save to WAV file, if open */
+	if (bRecordingWav)
+		WAVFormat_Update(MixBuffer, OldSndBufIdx, nSamplesToGenerate);
 }
 
 
@@ -570,10 +578,10 @@ void Sound_Update(void)
  */
 void Sound_Update_VBL(void)
 {
-  Sound_Update();
+	Sound_Update();
 
-  /* Clear write to register '13', used for YM file saving */
-  bEnvelopeFreqFlag = FALSE;
+	/* Clear write to register '13', used for YM file saving */
+	bEnvelopeFreqFlag = FALSE;
 }
 
 
@@ -583,27 +591,27 @@ void Sound_Update_VBL(void)
  */
 BOOL Sound_BeginRecording(char *pszCaptureFileName)
 {
-  BOOL bRet;
+	BOOL bRet;
 
-  if (!pszCaptureFileName || strlen(pszCaptureFileName) <= 3)
-  {
-    Log_Printf(LOG_ERROR, "Illegal sound recording file name!\n");
-    return FALSE;
-  }
+	if (!pszCaptureFileName || strlen(pszCaptureFileName) <= 3)
+	{
+		Log_Printf(LOG_ERROR, "Illegal sound recording file name!\n");
+		return FALSE;
+	}
 
-  /* Did specify .YM or .WAV? If neither report error */
-  if (File_DoesFileExtensionMatch(pszCaptureFileName,".ym"))
-    bRet = YMFormat_BeginRecording(pszCaptureFileName);
-  else if (File_DoesFileExtensionMatch(pszCaptureFileName,".wav"))
-    bRet = WAVFormat_OpenFile(pszCaptureFileName);
-  else
-  {
-    Log_AlertDlg(LOG_ERROR, "Unknown Sound Recording format.\n"
-                            "Please specify a .YM or .WAV output file.");
-    bRet = FALSE;
-  }
+	/* Did specify .YM or .WAV? If neither report error */
+	if (File_DoesFileExtensionMatch(pszCaptureFileName,".ym"))
+		bRet = YMFormat_BeginRecording(pszCaptureFileName);
+	else if (File_DoesFileExtensionMatch(pszCaptureFileName,".wav"))
+		bRet = WAVFormat_OpenFile(pszCaptureFileName);
+	else
+	{
+		Log_AlertDlg(LOG_ERROR, "Unknown Sound Recording format.\n"
+		             "Please specify a .YM or .WAV output file.");
+		bRet = FALSE;
+	}
 
-  return bRet;
+	return bRet;
 }
 
 
@@ -613,11 +621,11 @@ BOOL Sound_BeginRecording(char *pszCaptureFileName)
  */
 void Sound_EndRecording(void)
 {
-  /* Stop sound recording and close files */
-  if (bRecordingYM)
-    YMFormat_EndRecording();
-  if (bRecordingWav)
-    WAVFormat_CloseFile();
+	/* Stop sound recording and close files */
+	if (bRecordingYM)
+		YMFormat_EndRecording();
+	if (bRecordingWav)
+		WAVFormat_CloseFile();
 }
 
 
@@ -627,5 +635,5 @@ void Sound_EndRecording(void)
  */
 BOOL Sound_AreWeRecording(void)
 {
-  return (bRecordingYM || bRecordingWav);
+	return (bRecordingYM || bRecordingWav);
 }
