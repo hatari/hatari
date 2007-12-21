@@ -7,14 +7,28 @@
 -include Makefile.cnf
 
 
-all:
+all: Makefile.cnf config.h
 	$(MAKE) -C src/
 
-# No Makefile configuration available yet? Then use the default file: 
-Makefile.cnf:
-	@echo "Did not find config files! I will try to use the default configuration now..."
-	cp Makefile-default.cnf Makefile.cnf
-	cp config-default.h config.h
+# Makefile.cnf doesn't exist or is older than Makefile.default.cnf?
+Makefile.cnf: Makefile-default.cnf
+	@echo "Trying to use the default Makefile configuration..."
+	@if [ -f Makefile.cnf ]; then \
+		echo "ERROR: Makefile.cnf exists already and is older (remove if unchanged)"; \
+		exit 1; \
+	else \
+		cp -v Makefile-default.cnf Makefile.cnf; \
+	fi
+
+# config.h doesn't exist or is older than config-default.h?
+config.h: config-default.h
+	@echo "Trying to use the default config.h configuration..."
+	@if [ -f config.h ]; then \
+		echo "ERROR: config.h exists already and is older (remove if unchanged)"; \
+		exit 1; \
+	else \
+		cp -v config-default.h config.h; \
+	fi
 
 hatari.1.gz: doc/hatari.1
 	gzip -9 -c doc/hatari.1 > $@
