@@ -10,7 +10,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-const char Build68k_rcsid[] = "Hatari $Id: build68k.c,v 1.6 2006-02-09 22:02:26 eerot Exp $";
+const char Build68k_rcsid[] = "Hatari $Id: build68k.c,v 1.7 2007-12-23 18:54:50 thothy Exp $";
 
 #include <assert.h>
 #include <ctype.h>
@@ -218,12 +218,12 @@ int main(int argc, char **argv)
 	    char *opstrp = opcstr, *osendp;
 	    int slen = 0;
 
-	    while (isspace(*opstrp))
+	    while (isspace((unsigned)(*opstrp)))
 		opstrp++;
 
 	    osendp = opstrp;
 	    while (*osendp) {
-		if (!isspace (*osendp))
+		if (!isspace ((unsigned)(*osendp)))
 		    slen = osendp - opstrp + 1;
 		osendp++;
 	    }

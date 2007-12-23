@@ -8,7 +8,7 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.17 2007-09-09 20:49:58 thothy Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.18 2007-12-23 18:54:50 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -56,7 +56,7 @@ static void string_tolower(char *str)
 	int i=0;
 	while(str[i] != '\0')
 	{
-		if(isupper(str[i]))
+		if(isupper((unsigned)str[i]))
 			str[i] = tolower(str[i]);
 		i++;
 	}
@@ -70,7 +70,7 @@ static void string_trunc(char *str)
 	int i=0;
 	while (str[i] != '\0')
 	{
-		if (!isprint(str[i]))
+		if (!isprint((unsigned)str[i]))
 			str[i] = '\0';
 		i++;
 	}
@@ -84,7 +84,7 @@ static BOOL isHex(char *str)
 	int i=0;
 	while (str[i] != '\0' && str[i] != ' ')
 	{
-		if (!isxdigit(str[i]))
+		if (!isxdigit((unsigned)str[i]))
 			return FALSE;
 		i++;
 	}
@@ -472,7 +472,7 @@ static void DebugUI_MemDump(char *arg, BOOL cont)
 			for (i = 0; i < MEMDUMP_COLS; i++)
 			{
 				c = STMemory_ReadByte(memdump_addr-MEMDUMP_COLS+i);
-				if (!isprint(c))
+				if (!isprint((unsigned)c))
 					c = NON_PRINT_CHAR;         /* non-printable as dots */
 				fprintf(debug_stdout,"%c", c);
 			}
@@ -490,7 +490,7 @@ static void DebugUI_MemDump(char *arg, BOOL cont)
 		for (i = 0; i < MEMDUMP_COLS; i++)
 		{
 			c = STMemory_ReadByte(memdump_addr-MEMDUMP_COLS+i);
-			if(!isprint(c))
+			if(!isprint((unsigned)c))
 				c = NON_PRINT_CHAR;             /* non-printable as dots */
 			fprintf(debug_stdout,"%c", c);
 		}
@@ -523,7 +523,7 @@ static void DebugUI_MemWrite(char *arg)
 		i++; /* skip spaces */
 
 	j = 0;
-	while (isxdigit(arg[i]) && j < 14) /* get address */
+	while (isxdigit((unsigned)arg[i]) && j < 14) /* get address */
 		temp[j++] = arg[i++];
 	temp[j] = '\0';
 	j = sscanf(temp, "%lx", &write_addr);
@@ -544,7 +544,7 @@ static void DebugUI_MemWrite(char *arg)
 	while (arg[i] != '\0')
 	{
 		j = 0;
-		while(isxdigit(arg[i]) && j < 14) /* get byte */
+		while(isxdigit((unsigned)arg[i]) && j < 14) /* get byte */
 			temp[j++] = arg[i++];
 		temp[j] = '\0';
 

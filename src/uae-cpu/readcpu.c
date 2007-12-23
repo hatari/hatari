@@ -10,7 +10,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-const char ReadCpu_rcsid[] = "Hatari $Id: readcpu.c,v 1.7 2006-02-09 22:02:26 eerot Exp $";
+const char ReadCpu_rcsid[] = "Hatari $Id: readcpu.c,v 1.8 2007-12-23 18:54:50 thothy Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -292,7 +292,7 @@ static void build_insn (int insn)
 	    bitval[bitc] = bitval[bitC];
 
 	pos = 0;
-	while (opcstr[pos] && !isspace(opcstr[pos])) {
+	while (opcstr[pos] && !isspace((unsigned)opcstr[pos])) {
 	    if (opcstr[pos] == '.') {
 		pos++;
 		switch (opcstr[pos]) {
@@ -327,7 +327,7 @@ static void build_insn (int insn)
 	mnemonic[mnp] = 0;
 
 	/* now, we have read the mnemonic and the size */
-	while (opcstr[pos] && isspace(opcstr[pos]))
+	while (opcstr[pos] && isspace((unsigned)opcstr[pos]))
 	    pos++;
 
 	/* A goto a day keeps the D******a away. */
