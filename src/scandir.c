@@ -6,10 +6,11 @@
 
   scandir function for BEOS, SunOS etc..
 */
-const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.5 2007-12-18 20:35:06 thothy Exp $";
+const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.6 2007-12-23 17:30:09 thothy Exp $";
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
