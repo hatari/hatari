@@ -47,6 +47,12 @@
 # define HAVE_CFMAKERAW 1
 #endif
 
+/* Define to 1 if you have the 'setenv' function. */
+#if defined(WIN32) || (defined(__sun) && defined(__SVR4))
+# undef HAVE_SETENV
+#else
+# define HAVE_SETENV 1
+#endif
 
 /* Relative path from bindir to datadir */
 #define BIN2DATADIR "."

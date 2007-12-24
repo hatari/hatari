@@ -129,7 +129,7 @@ AC_FUNC_STAT
 AC_CHECK_FUNCS([getcwd memmove memset mkdir rmdir strcasecmp \
   strchr strerror strncasecmp strrchr strstr],,
   [AC_MSG_ERROR([A necessary function could not be found.])])
-AC_CHECK_FUNCS([cfmakeraw])
+AC_CHECK_FUNCS([cfmakeraw setenv])
 
 
 dnl Output

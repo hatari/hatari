@@ -6,13 +6,14 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.107 2007-12-17 23:42:13 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.108 2007-12-24 15:56:23 thothy Exp $";
 
 #include <time.h>
 #include <unistd.h>
 
 #include <SDL.h>
 
+#include "config.h"
 #include "main.h"
 #include "configuration.h"
 #include "options.h"
@@ -508,7 +509,7 @@ int main(int argc, char *argv[])
 	/* Needed on N770 but useful also with other X11 window managers
 	 * for window grouping when you have multiple SDL windows open
 	 */
-#ifndef WIN32
+#if HAVE_SETENV
 	setenv("SDL_VIDEO_X11_WMCLASS", "hatari", 1);
 #endif
 
