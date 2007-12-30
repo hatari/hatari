@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.72 2007-11-25 14:31:22 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.73 2007-12-30 20:43:05 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -433,6 +433,16 @@ void Configuration_SetDefault(void)
 #if defined(__AMIGAOS4__)
 	/* Fix default path names on Amiga OS */
 	sprintf(ConfigureParams.Rom.szTosImageFileName, "%stos.img", DATADIR);
+#endif
+
+#if defined(__CEGCC__)
+	/* Special configuration for Windows Mobile / CeGCC */
+	strcpy(ConfigureParams.Log.sLogFileName, "hatarilog.txt");
+	ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] = SDLK_F1;
+	ConfigureParams.Screen.bAllowOverscan = FALSE;
+	ConfigureParams.Screen.bFullScreen = TRUE;
+	ConfigureParams.Screen.nVdiWidth = 320;
+	ConfigureParams.Screen.nVdiHeight = 240;
 #endif
 }
 
