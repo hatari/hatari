@@ -25,6 +25,11 @@ AC_ARG_ENABLE([werror],
   [ ENABLE_WERROR="${enableval}" ],
   [ ENABLE_WERROR="no" ])
 
+AC_ARG_ENABLE([small-mem],
+  [  --enable-small-mem      Use less memory - at the expense of emulation speed],
+  [ AC_DEFINE([ENABLE_SMALL_MEM], [1],
+     [Define to 1 to use less memory - at the expense of emulation speed])])
+
 AC_ARG_WITH([extra-inc],
   [  --with-extra-inc=DIR    additional include files are in DIR],
   [ if test "${withval}" != no; then

@@ -57,6 +57,12 @@
 /* Relative path from bindir to datadir */
 #define BIN2DATADIR "."
 
+/* Define to 1 to use less memory - at the expense of emulation speed */
+#if defined(__CEGCC__)
+# define ENABLE_SMALL_MEM 1
+#else
+# undef ENABLE_SMALL_MEM
+#endif
 
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "hatari"

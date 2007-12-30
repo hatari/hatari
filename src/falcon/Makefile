@@ -6,7 +6,7 @@ CPUDIR ?= uae-cpu
 include ../../Makefile.cnf
 
 # Additional include directories:
-INCFLAGS = -I../includes -I../$(CPUDIR) $(CPPFLAGS)
+INCFLAGS = -I../.. -I../includes -I../$(CPUDIR) $(CPPFLAGS)
 
 
 # Set flags passed to the compiler (e.g. optimization flags)

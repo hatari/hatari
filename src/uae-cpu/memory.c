@@ -10,8 +10,9 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.23 2007-09-17 20:32:39 thothy Exp $";
+const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.24 2007-12-30 20:02:04 thothy Exp $";
 
+#include "config.h"
 #include "sysdeps.h"
 #include "hatari-glue.h"
 #include "maccess.h"
@@ -485,7 +486,7 @@ static uae_u8 *TTmem_xlate(uaecptr addr)
 
 /* **** ROM memory **** */
 
-static uae_u8 *ROMmemory;
+uae_u8 *ROMmemory;
 
 static uae_u32 ROMmem_lget(uaecptr addr)
 {
@@ -570,7 +571,7 @@ static uae_u8 *IdeMem_xlate(uaecptr addr)
 /* Hardware IO memory */
 /* see also ioMem.c */
 
-static uae_u8 *IOmemory;
+uae_u8 *IOmemory;
 
 static int IOmem_check(uaecptr addr, uae_u32 size)
 {
@@ -674,25 +675,39 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     /*write_log("memory_init: STmem_size=$%x, TTmem_size=$%x, ROM-Start=$%x,\n",
               STmem_size, TTmem_size, nNewRomMemStart);*/
 
-/*  // STmemory is currently directly defined to STRam for speed reasons!
-    STmemory = STRam;
-*/
+#if ENABLE_SMALL_MEM
+
+    /* Allocate memory for ROM areas and IO memory space (0xE00000 - 0xFFFFFF) */
+    ROMmemory = malloc(2*1024*1024);
+    if (!ROMmemory) {
+	fprintf(stderr, "Out of memory (ROM/IO mem)!\n");
+	exit(1);
+    }
+    IdeMemory = ROMmemory + 0x100000;
+    IOmemory  = ROMmemory + 0x1f0000;
+
+    /* Allocate memory for normal ST RAM */
+    STmemory = malloc(STmem_size);
+    while (!STmemory && STmem_size > 512*1024) {
+	STmem_size >>= 1;
+	STmemory = (uae_u8 *)malloc (STmem_size);
+	if (STmemory)
+	    write_log ("Reducing STmem size to %dkb\n", STmem_size >> 10);
+    }
+    if (!STmemory) {
+	write_log ("virtual memory exhausted (STmemory)!\n");
+	exit(1);
+    }
+
+#else
+
+    /* STmemory points to the 16 MiB STRam array, we just have to set up
+     * the remaining pointers here: */
     ROMmemory = STRam + ROMmem_start;
     IdeMemory = STRam + IdeMem_start;
     IOmemory = STRam + IOmem_start;
 
-/*
-    while (! STmemory && STmem_size > 512*1024) {
-	STmem_size >>= 1;
-	STmemory = (uae_u8 *)malloc (STmem_size);
-	if (STmemory)
-	    fprintf (stderr, "Reducing STmem size to %dkb\n", STmem_size >> 10);
-    }
-    if (! STmemory) {
-	write_log ("virtual memory exhausted (STmemory)!\n");
-	abort ();
-    }
-*/
+#endif
 
     init_mem_banks();
 
@@ -751,11 +766,24 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
 void memory_uninit (void)
 {
     /* Here, we free allocated memory from memory_init */
-    if(TTmem_size > 0)
-    {
-      free(TTmemory);
-      TTmemory = NULL;
+    if (TTmem_size > 0) {
+	free(TTmemory);
+	TTmemory = NULL;
     }
+
+#if ENABLE_SMALL_MEM
+
+    if (STmemory) {
+	free(STmemory);
+	STmemory = NULL;
+    }
+
+    if (ROMmemory) {
+	free(ROMmemory);
+	ROMmemory = NULL;
+    }
+
+#endif  /* ENABLE_SMALL_MEM */
 }
 
 

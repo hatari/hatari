@@ -6,7 +6,9 @@
 
   ST Memory access functions.
 */
-const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.18 2007-12-18 17:09:57 thothy Exp $";
+const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.19 2007-12-30 20:02:01 thothy Exp $";
+
+#include "config.h"
 
 #include "stMemory.h"
 #include "configuration.h"
@@ -17,7 +19,17 @@ const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.18 2007-12-18 17:09:57
 #include "memory.h"
 
 
-Uint8 STRam[16*1024*1024];  /* Our ST Ram, includes all TOS/hardware areas for ease */
+/* STRam points to our ST Ram. Unless the user enabled SMALL_MEM where we have
+ * to save memory, this includes all TOS ROM and IO hardware areas for ease
+ * and emulation speed - so we create a 16 MiB array directly here.
+ * But when the user turned on ENABLE_SMALL_MEM, this only points to a malloc'ed
+ * buffer with the ST RAM; the ROM and IO memory will be handled separately. */
+#if ENABLE_SMALL_MEM
+Uint8 *STRam;
+#else
+Uint8 STRam[16*1024*1024];
+#endif
+
 Uint32 STRamEnd;            /* End of ST Ram, above this address is no-mans-land and ROM/IO memory */
 
 
