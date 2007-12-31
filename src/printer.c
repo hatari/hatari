@@ -12,14 +12,12 @@
   NOTE - Tab's are converted to spaces as the PC 'Tab' setting differs to that
   of the ST.
 */
-const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.21 2007-02-25 22:14:33 eerot Exp $";
+const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.22 2007-12-31 12:21:41 thothy Exp $";
 
 #include "main.h"
-#include "dialog.h"
+#include "configuration.h"
 #include "file.h"
 #include "printer.h"
-#include "screen.h"
-#include "file.h"
 
 /* #define PRINTER_DEBUG */
 

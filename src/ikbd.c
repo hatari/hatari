@@ -17,12 +17,11 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.30 2007-12-17 23:03:34 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.31 2007-12-31 12:21:41 thothy Exp $";
 
 #include <time.h>
 
 #include "main.h"
-#include "gemdos.h"
 #include "ikbd.h"
 #include "int.h"
 #include "ioMem.h"
@@ -31,8 +30,6 @@ const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.30 2007-12-17 23:03:34 thothy 
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "misc.h"
-#include "screen.h"
-#include "video.h"
 
 
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */
