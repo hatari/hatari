@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.65 2007-12-20 00:15:14 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.66 2007-12-31 13:05:42 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -27,6 +27,7 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.65 2007-12-20 00:15:14 tho
 #include "main.h"
 #include "configuration.h"
 #include "ikbd.h"
+#include "log.h"
 #include "m68000.h"
 #include "misc.h"
 #include "screen.h"
@@ -409,6 +410,7 @@ void Screen_Init(void)
 	}
 
 	/* Set initial window resolution */
+	bInFullScreen = ConfigureParams.Screen.bFullScreen;
 	Screen_SetResolution();
 
 	Video_SetScreenRasters();                       /* Set rasters ready for first screen */
