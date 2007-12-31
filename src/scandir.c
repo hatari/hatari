@@ -6,7 +6,7 @@
 
   scandir function for BEOS, SunOS etc..
 */
-const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.6 2007-12-23 17:30:09 thothy Exp $";
+const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.7 2007-12-31 14:23:25 thothy Exp $";
 
 #include <string.h>
 #include <stdio.h>
@@ -17,6 +17,7 @@ const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.6 2007-12-23 17:30:09 th
 #include <unistd.h>
 
 #include "scandir.h"
+#include "log.h"
 
 /*-----------------------------------------------------------------------
  * Here come alphasort and scandir for BeOS and SunOS
@@ -29,7 +30,7 @@ const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.6 2007-12-23 17:30:09 th
 		((sizeof(struct dirent) - sizeof(dp)->d_name) +     \
 		(((dp)->d_reclen + 1 + 3) &~ 3))
 
-#if defined(__sun) && defined(__SVR4)
+#if (defined(__sun) && defined(__SVR4)) || defined(__CEGCC__)
 # define dirfd(d) ((d)->dd_fd)
 #elif defined(__BEOS__)
 # define dirfd(d) ((d)->fd)
@@ -137,6 +138,7 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 
 #undef DATADIR     // stupid windows.h defines DATADIR, too
 #include <windows.h>
+#include <wchar.h>
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -163,8 +165,12 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 
 	len    = strlen(dirname);
 	findIn = (char *)malloc(len+5);
+	if (!findIn)
+		return -1;
+
 	strcpy(findIn, dirname);
-	printf("scandir : findIn orign=%s\n", findIn);
+	Log_Printf(LOG_DEBUG, "scandir : findIn orign='%s'\n", findIn);
+
 	for (d = findIn; *d; d++)
 		if (*d=='/')
 			*d='\\';
@@ -192,10 +198,22 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 		*d = 0;
 	}
 
-	printf("scandir : findIn processed=%s\n", findIn);
-	if ((h=FindFirstFile(findIn, &find))==INVALID_HANDLE_VALUE)
+	Log_Printf(LOG_DEBUG, "scandir : findIn processed='%s'\n", findIn);
+
+#if defined(__CEGCC__)
+	void *findInW = NULL;
+	findInW = malloc((len+6)*2);
+	if (!findInW)
+		return -1;
+	mbstowcs(findInW, findIn, len+6);
+	h = FindFirstFileW(findInW, &find);
+#else
+	h = FindFirstFile(findIn, &find);
+#endif
+
+	if (h == INVALID_HANDLE_VALUE)
 	{
-		printf("scandir : FindFirstFile error\n");
+		Log_Printf(LOG_DEBUG, "scandir : FindFirstFile error\n");
 		ret = GetLastError();
 		if (ret != ERROR_NO_MORE_FILES)
 		{
@@ -204,11 +222,16 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 		*namelist = dir;
 		return nDir;
 	}
+
 	do
 	{
-		printf("scandir : findFile=%s\n", find.cFileName);
-		selectDir=(struct dirent*)malloc(sizeof(struct dirent)+strlen(find.cFileName));
+		selectDir=(struct dirent*)malloc(sizeof(struct dirent)+lstrlen(find.cFileName)+1);
+#if defined(__CEGCC__)
+		wcstombs(selectDir->d_name, find.cFileName, lstrlen(find.cFileName)+1);
+#else
 		strcpy(selectDir->d_name, find.cFileName);
+#endif
+		//Log_Printf(LOG_DEBUG, "scandir : findFile='%s'\n", selectDir->d_name);
 		if (!sdfilter || (*sdfilter)(selectDir))
 		{
 			if (nDir==NDir)
@@ -229,16 +252,29 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 		{
 			free(selectDir);
 		}
+	
+#if defined(__CEGCC__)
+		ret = FindNextFileW(h, &find);
+#else
+		ret = FindNextFile(h, &find);
+#endif
 	}
-	while (FindNextFile(h, &find));
+	while (ret);
+
 	ret = GetLastError();
 	if (ret != ERROR_NO_MORE_FILES)
 	{
 		// TODO: return some error code
+		Log_Printf(LOG_DEBUG, "scandir: last error = %d\n", ret);
 	}
+
 	FindClose(h);
 
-	free (findIn);
+	free(findIn);
+
+#if defined(__CEGCC__)
+	free(findInW);
+#endif
 
 	if (dcomp)
 		qsort (dir, nDir, sizeof(*dir),dcomp);
