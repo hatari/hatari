@@ -5,18 +5,18 @@
 # package are under the same license as the package itself.
 #
 
-BuildRequires: bash bzip2 coreutils cpio cpp diffutils file filesystem findutils glibc glibc-devel grep groff gzip libgcc m4 make man mktemp patch readline sed tar unzip util-linux zlib zlib-devel SDL SDL-devel autoconf binutils gcc libtool rpm
+BuildRequires: bash coreutils cpio cpp diffutils file filesystem findutils glibc glibc-devel grep groff gzip libgcc m4 make man mktemp patch readline sed tar unzip util-linux zlib zlib-devel SDL SDL-devel autoconf binutils gcc libtool rpm
 
 Name:         hatari
 URL:          http://hatari.sourceforge.net/
 License:      GPL
 Group:        System/Emulators/Other
 Autoreqprov:  on
-Version:      0.95
+Version:      1.0.0
 Release:      1
 Summary:      an Atari ST emulator suitable for playing games
-Source:       %{name}-%{version}.tar.bz2
-#Patch:        %{name}-0.95.dif
+Source:       %{name}-%{version}.tar.gz
+#Patch:        %{name}-%{version}.dif
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
 
 %description
@@ -41,12 +41,6 @@ make
 %install
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
-install -d -m 755 ${RPM_BUILD_ROOT}%_mandir/man1
-install -m 644 doc/hatari.1 ${RPM_BUILD_ROOT}%_mandir/man1
-install -d -m 755 ${RPM_BUILD_ROOT}%_docdir/%{name}
-install -m 644 *.txt doc/*.txt doc/*.html ${RPM_BUILD_ROOT}%_docdir/%{name}/
-install -d -m 755 ${RPM_BUILD_ROOT}%_docdir/%{name}/images
-install -m 644 doc/images/*.png ${RPM_BUILD_ROOT}%_docdir/%{name}/images/
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -56,7 +50,6 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/hatari
 /usr/share/hatari
 %doc %_mandir/man1/hatari.1*
-#%doc *.txt doc/*.txt doc/*.html
 %dir %_docdir/%{name}
 %_docdir/%{name}/*.txt
 %_docdir/%{name}/*.html
@@ -64,6 +57,9 @@ rm -rf $RPM_BUILD_ROOT
 %_docdir/%{name}/images/*.png
 
 %changelog -n hatari
+
+* Wed Jan 02 2008 - thothy@users.sourceforge.net
+- Adapted RPM to the latest source code level (aiming at version 1.0.0)
 
 * Sun May 06 2007 - thothy@users.sourceforge.net
 - Adapted spec file to be able to build Hatari with RedHat, too
