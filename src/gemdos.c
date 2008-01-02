@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.67 2007-12-20 12:12:48 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.68 2008-01-02 21:48:29 thothy Exp $";
 
 #include <config.h>
 
@@ -275,6 +275,11 @@ static void globfree(glob_t *pglob)
 #ifdef WIN32
 #define mkdir(name,mode) mkdir(name)
 #endif  /* WIN32 */
+
+#ifndef S_IRGRP
+#define S_IRGRP 0
+#define S_IROTH 0
+#endif
 
 
 
