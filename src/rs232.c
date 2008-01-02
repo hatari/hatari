@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.29 2007-12-18 20:55:17 thothy Exp $";
+const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.30 2008-01-02 20:01:54 thothy Exp $";
 
 #include <config.h>
 
@@ -775,7 +775,7 @@ void RS232_TSR_WriteByte(void)
  */
 void RS232_UDR_ReadByte(void)
 {
-	unsigned char InByte;
+	unsigned char InByte = 0;
 
 	M68000_WaitState(4);
 
