@@ -4,9 +4,9 @@
 # Process this file with autoconf to produce a configure script.
 # Don't forget to run aclocal first!
 
-AC_INIT(hatari, 0.95)
+AC_INIT(hatari, 1.0.0)
 AC_CONFIG_SRCDIR([src/main.c])
-AC_PREREQ(2.50)
+AC_PREREQ(2.60)
 
 AC_CONFIG_HEADERS([config.h])
 
