@@ -18,6 +18,7 @@ Summary:      an Atari ST emulator suitable for playing games
 Source:       %{name}-%{version}.tar.gz
 #Patch:        %{name}-%{version}.dif
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build
+Prefix:       /usr
 
 %description
 Hatari is an emulator for the Atari ST, STE, TT and Falcon computers.
