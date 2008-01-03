@@ -54,10 +54,10 @@ int main(int argc, char *argv[])
 
 	if(argc!=2 || argv[1][0]=='-')
 	{
-		printf("\rHatari Magic Shadow (Un-)Archiver version 0.2.0.\n\n"
+		printf("\rHatari Magic Shadow (Un-)Archiver version 0.2.1.\n\n"
 		       "Usage:  %s FILENAME\n\n"
-		       "This program converts a MSA disk image into a ST disk image and vice versa.\n"
-		       "It is distributed under the GNU Public License, version 2 or at your\n"
+		       "This program converts a MSA disk image into a ST disk image and vice versa.\n\n"
+		       "This software is distributed under the GNU Public License, version 2 or at your\n"
 		       "option any later version. Please read the file gpl.txt for details.\n",
 		       argv[0]);
 		return 0;
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 		nImageBytes = 0;
 
 		/* Read the source disk image: Just load directly into buffer */
-		diskBuffer = File_Read(sourceFileName, NULL, &nImageBytes, NULL);
+		diskBuffer = File_Read(sourceFileName, &nImageBytes, NULL);
 		if (!diskBuffer || nImageBytes < 512*8)
 		{
 			fprintf(stderr,"Could not read ST disk!\n");
