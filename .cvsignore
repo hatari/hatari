@@ -10,3 +10,4 @@ config.h.in
 config.h
 configure
 install-sh
+hatari.1.gz
