@@ -6,7 +6,7 @@
 
   scandir function for BEOS, SunOS etc..
 */
-const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.7 2007-12-31 14:23:25 thothy Exp $";
+const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.8 2008-01-03 12:09:18 thothy Exp $";
 
 #include <string.h>
 #include <stdio.h>
@@ -136,7 +136,6 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
  *-----------------------------------------------------------------------*/
 #if defined(WIN32) || defined(__CEGCC__)
 
-#undef DATADIR     // stupid windows.h defines DATADIR, too
 #include <windows.h>
 #include <wchar.h>
 

@@ -6,7 +6,9 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.108 2007-12-24 15:56:23 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.109 2008-01-03 12:09:18 thothy Exp $";
+
+#include "config.h"
 
 #include <time.h>
 #include <unistd.h>
@@ -57,11 +59,13 @@ const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.108 2007-12-24 15:56:23 thothy 
 
 BOOL bQuitProgram = FALSE;                /* Flag to quit program cleanly */
 BOOL bEnableDebug = FALSE;                /* Enable debug UI? */
-char szWorkingDir[FILENAME_MAX];          /* Working directory */
 static BOOL bEmulationActive = TRUE;      /* Run emulation when started */
 static BOOL bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
-static char szBootDiskImage[FILENAME_MAX];   /* boot disk path or empty */
 static BOOL bIgnoreNextMouseMotion = FALSE;  /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
+static char szBootDiskImage[FILENAME_MAX];   /* boot disk path or empty */
+
+char szWorkingDir[FILENAME_MAX];          /* Working directory */
+char szDataDir[FILENAME_MAX];             /* Directory where data files of Hatari can be found */
 
 
 /*-----------------------------------------------------------------------*/
@@ -477,6 +481,133 @@ static void Main_UnInit(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Explore the PATH environment variable to see where our executable is
+ * installed.
+ */
+static void Main_GetExecDirFromPath(char *argv0, char *pExecDir, int nMaxLen)
+{
+	char *pPathEnv;
+	char *pAct;
+	char *pTmpName;
+	const char *pToken;
+
+	/* Get the PATH environment string */
+	pPathEnv = getenv("PATH");
+	if (!pPathEnv)
+		return;
+	/* Duplicate the string because strtok destroys it later */
+	pPathEnv = strdup(pPathEnv);
+	if (!pPathEnv)
+		return;
+
+	pTmpName = malloc(FILENAME_MAX);
+	if (!pTmpName)
+		return;
+
+	/* If there is a semicolon in the PATH, we assume it is the PATH
+	 * separator token (like on Windows), otherwise we use a colon. */
+	if (strchr((pPathEnv), ';'))
+		pToken = ";";
+	else
+		pToken = ":";
+
+	pAct = strtok (pPathEnv, pToken);
+	while (pAct)
+	{
+		snprintf(pTmpName, FILENAME_MAX, "%s%c%s",
+		         pAct, PATHSEP, argv0);
+		if (File_Exists(pTmpName))
+		{
+			/* Found the executable - so use the corresponding path: */
+			strncpy(pExecDir, pAct, nMaxLen);
+			pExecDir[nMaxLen-1] = 0;
+			break;
+		}
+		pAct = strtok (0, pToken);
+  	}
+
+	free(pPathEnv);
+	free(pTmpName);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Initialize directory names (szWorkingDir and szDataDir).
+ *
+ * The datadir will be initialized relative to the bindir (where the executable
+ * has been installed to). This means a lot of additional effort since we first
+ * have to find out where the executable is. But thanks to this effort, we get
+ * a relocatable package (we don't have any absolute path names in the program)!
+ */
+static void Main_InitDirNames(char *argv0)
+{
+	char szExecDir[FILENAME_MAX];  /* Where the hatari executable can be found */
+
+	/* Get working directory */
+	getcwd(szWorkingDir, FILENAME_MAX);
+
+	/* Determine the bindir...
+	 * Start with empty string, then try to use OS specific functions,
+	 * and finally analyze the PATH variable if it has not been found yet. */
+	szExecDir[0] = 0;
+
+#if defined(__linux__)
+	/* On Linux, we can analyze the symlink /proc/self/exe */
+	if (readlink("/proc/self/exe", szExecDir, sizeof(szExecDir)) > 0)
+	{
+		char *p;
+		p = strrchr(szExecDir, '/');    /* Search last slash */
+		if (p)
+			*p = 0;                     /* Strip file name from path */
+	}
+#elif defined(WIN32) || defined(__CEGCC__)
+	/* On Windows we can use GetModuleFileName for getting the exe path */
+	GetModuleFileName(NULL, szExecDir, sizeof(szExecDir));
+#endif
+
+	/* If we do not have the execdir yet, analyze argv[0] and the PATH: */
+	if (szExecDir[0] == 0)
+	{
+		if (strchr(argv0, PATHSEP) == 0)
+		{
+			/* No separator in argv[0], we have to explore PATH... */
+			Main_GetExecDirFromPath(argv0, szExecDir, sizeof(szExecDir));
+		}
+		else
+		{
+			/* There was a path separator in argv[0], so let's assume a
+			 * relative or absolute path to the current directory in argv[0] */
+			char *p;
+			strncpy(szExecDir, argv0, sizeof(szExecDir));
+			szExecDir[FILENAME_MAX-1] = 0;
+			p = strrchr(szExecDir, '/');    /* Search last slash */
+			if (p)
+				*p = 0;                     /* Strip file name from path */
+			
+		}
+	}
+
+	/* Now create the datadir path name from the bindir path name: */
+	if (strlen(szExecDir) > 0)
+	{
+		snprintf(szDataDir, sizeof(szDataDir), "%s%c%s",
+		         szExecDir, PATHSEP, BIN2DATADIR);
+	}
+	else
+	{
+		/* bindir could not be determined, let's assume datadir is relative
+		 * to current working directory... */
+		strcpy(szDataDir, BIN2DATADIR);
+	}
+
+	/* And finally make a proper absolute path out of datadir: */
+	File_MakeAbsoluteName(szDataDir);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Main
  */
 int main(int argc, char *argv[])
@@ -484,8 +615,8 @@ int main(int argc, char *argv[])
 	/* Generate random seed */
 	srand(time(NULL));
 
-	/* Get working directory */
-	getcwd(szWorkingDir, FILENAME_MAX);
+	/* Initialize directory strings */
+	Main_InitDirNames(argv[0]);
 
 	/* no boot disk image */
 	szBootDiskImage[0] = 0;

@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.75 2008-01-02 20:55:23 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.76 2008-01-03 12:09:18 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -407,7 +407,7 @@ void Configuration_SetDefault(void)
 	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s%chatari.wav", szWorkingDir,PATHSEP);
 
 	/* Set defaults for Rom */
-	sprintf(ConfigureParams.Rom.szTosImageFileName, "%s%ctos.img", DATADIR,PATHSEP);
+	sprintf(ConfigureParams.Rom.szTosImageFileName, "%s%ctos.img", szDataDir, PATHSEP);
 	strcpy(ConfigureParams.Rom.szCartridgeImageFileName, "");
 
 	/* Set defaults for System */
@@ -426,13 +426,13 @@ void Configuration_SetDefault(void)
 	/* Initialize the configuration file name */
 	homeDir = getenv("HOME");
 	if (homeDir != NULL && homeDir[0] != 0 && strlen(homeDir) < sizeof(sConfigFileName)-13)
-		sprintf(sConfigFileName, "%s%c.hatari.cfg", homeDir,PATHSEP);
+		sprintf(sConfigFileName, "%s%c.hatari.cfg", homeDir, PATHSEP);
 	else
 		strcpy(sConfigFileName, "hatari.cfg");
 
 #if defined(__AMIGAOS4__)
 	/* Fix default path names on Amiga OS */
-	sprintf(ConfigureParams.Rom.szTosImageFileName, "%stos.img", DATADIR);
+	sprintf(ConfigureParams.Rom.szTosImageFileName, "%stos.img", szDataDir);
 #endif
 }
 

@@ -14,7 +14,7 @@ include ../Makefile.cnf
 
 # Additional include directories:
 CPPFLAGS += -I.. -I./includes -I$(CPUDIR) -I./falcon
-CPPFLAGS += -DDATADIR=\"$(DATADIR)\" -DCONFDIR=\"$(CONFDIR)\" $(SDL_CFLAGS)
+CPPFLAGS += -DCONFDIR=\"$(CONFDIR)\" $(SDL_CFLAGS)
 
 ifeq ($(ENABLE_DSP_EMU),1)
 CPPFLAGS += -DENABLE_DSP_EMU=1

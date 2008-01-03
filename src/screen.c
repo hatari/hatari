@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.66 2007-12-31 13:05:42 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.67 2008-01-03 12:09:18 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -383,6 +383,7 @@ void Screen_Init(void)
 {
 	int i;
 	SDL_Surface *pIconSurf;
+	char sIconFileName[FILENAME_MAX];
 
 	/* Clear frame buffer structures and set current pointer */
 	memset(FrameBuffers, 0, NUM_FRAMEBUFFERS * sizeof(FRAMEBUFFER));
@@ -401,7 +402,9 @@ void Screen_Init(void)
 	pFrameBuffer = &FrameBuffers[0];
 
 	/* Load and set icon */
-	pIconSurf = SDL_LoadBMP(DATADIR "/hatari-icon.bmp");
+	snprintf(sIconFileName, sizeof(sIconFileName), "%s%chatari-icon.bmp",
+	         szDataDir, PATHSEP);
+	pIconSurf = SDL_LoadBMP(sIconFileName);
 	if (pIconSurf)
 	{
 		SDL_SetColorKey(pIconSurf, SDL_SRCCOLORKEY, SDL_MapRGB(pIconSurf->format, 255, 255, 255));

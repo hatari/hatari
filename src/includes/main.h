@@ -123,7 +123,7 @@ enum {
 extern BOOL bQuitProgram;
 extern BOOL bEnableDebug;
 extern char szWorkingDir[FILENAME_MAX];
-
+extern char szDataDir[FILENAME_MAX];
 
 extern void Main_MemorySnapShot_Capture(BOOL bSave);
 extern void Main_PauseEmulation(void);

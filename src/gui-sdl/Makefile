@@ -7,7 +7,7 @@ include ../../Makefile.cnf
 INCFLAGS = -I../includes $(CPPFLAGS)
 
 
-CFLAGS += -DDATADIR=\"$(DATADIR)\" $(INCFLAGS) $(SDL_CFLAGS) -Wno-write-strings
+CFLAGS += $(INCFLAGS) $(SDL_CFLAGS) -Wno-write-strings
 
 
 

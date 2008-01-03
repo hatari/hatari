@@ -13,7 +13,7 @@ INCFLAGS = -I../.. -I../includes -I../$(CPUDIR) $(CPPFLAGS)
 #CFLAGS := -g -O2 -Wall
 
 
-CFLAGS += -DDATADIR=\"$(DATADIR)\" $(INCFLAGS) $(SDL_CFLAGS)
+CFLAGS += $(INCFLAGS) $(SDL_CFLAGS)
 
 
 
