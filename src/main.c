@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.109 2008-01-03 12:09:18 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.110 2008-01-04 11:13:18 thothy Exp $";
 
 #include "config.h"
 
@@ -542,57 +542,64 @@ static void Main_GetExecDirFromPath(char *argv0, char *pExecDir, int nMaxLen)
  */
 static void Main_InitDirNames(char *argv0)
 {
-	char szExecDir[FILENAME_MAX];  /* Where the hatari executable can be found */
+	char *psExecDir;  /* Path string where the hatari executable can be found */
 
 	/* Get working directory */
 	getcwd(szWorkingDir, FILENAME_MAX);
 
+	/* Allocate memory for storing the path string of the executable */
+	psExecDir = malloc(FILENAME_MAX);
+	if (!psExecDir)
+	{
+		fprintf(stderr, "Out of memory (Main_InitDirNames)\n");
+		exit(-1);
+	}
+
 	/* Determine the bindir...
 	 * Start with empty string, then try to use OS specific functions,
 	 * and finally analyze the PATH variable if it has not been found yet. */
-	szExecDir[0] = 0;
+	psExecDir[0] = 0;
 
 #if defined(__linux__)
 	/* On Linux, we can analyze the symlink /proc/self/exe */
-	if (readlink("/proc/self/exe", szExecDir, sizeof(szExecDir)) > 0)
+	if (readlink("/proc/self/exe", psExecDir, FILENAME_MAX) > 0)
 	{
 		char *p;
-		p = strrchr(szExecDir, '/');    /* Search last slash */
+		p = strrchr(psExecDir, '/');    /* Search last slash */
 		if (p)
 			*p = 0;                     /* Strip file name from path */
 	}
 #elif defined(WIN32) || defined(__CEGCC__)
 	/* On Windows we can use GetModuleFileName for getting the exe path */
-	GetModuleFileName(NULL, szExecDir, sizeof(szExecDir));
+	GetModuleFileName(NULL, psExecDir, FILENAME_MAX);
 #endif
 
 	/* If we do not have the execdir yet, analyze argv[0] and the PATH: */
-	if (szExecDir[0] == 0)
+	if (psExecDir[0] == 0)
 	{
 		if (strchr(argv0, PATHSEP) == 0)
 		{
 			/* No separator in argv[0], we have to explore PATH... */
-			Main_GetExecDirFromPath(argv0, szExecDir, sizeof(szExecDir));
+			Main_GetExecDirFromPath(argv0, psExecDir, FILENAME_MAX);
 		}
 		else
 		{
 			/* There was a path separator in argv[0], so let's assume a
 			 * relative or absolute path to the current directory in argv[0] */
 			char *p;
-			strncpy(szExecDir, argv0, sizeof(szExecDir));
-			szExecDir[FILENAME_MAX-1] = 0;
-			p = strrchr(szExecDir, '/');    /* Search last slash */
+			strncpy(psExecDir, argv0, FILENAME_MAX);
+			psExecDir[FILENAME_MAX-1] = 0;
+			p = strrchr(psExecDir, PATHSEP);  /* Search last slash */
 			if (p)
-				*p = 0;                     /* Strip file name from path */
-			
+				*p = 0;                       /* Strip file name from path */
 		}
 	}
 
 	/* Now create the datadir path name from the bindir path name: */
-	if (strlen(szExecDir) > 0)
+	if (strlen(psExecDir) > 0)
 	{
 		snprintf(szDataDir, sizeof(szDataDir), "%s%c%s",
-		         szExecDir, PATHSEP, BIN2DATADIR);
+		         psExecDir, PATHSEP, BIN2DATADIR);
 	}
 	else
 	{
@@ -603,6 +610,8 @@ static void Main_InitDirNames(char *argv0)
 
 	/* And finally make a proper absolute path out of datadir: */
 	File_MakeAbsoluteName(szDataDir);
+
+	free(psExecDir);
 }
 
 
