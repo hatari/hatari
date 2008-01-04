@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.110 2008-01-04 11:13:18 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.111 2008-01-04 19:28:56 thothy Exp $";
 
 #include "config.h"
 
@@ -569,9 +569,9 @@ static void Main_InitDirNames(char *argv0)
 		if (p)
 			*p = 0;                     /* Strip file name from path */
 	}
-#elif defined(WIN32) || defined(__CEGCC__)
-	/* On Windows we can use GetModuleFileName for getting the exe path */
-	GetModuleFileName(NULL, psExecDir, FILENAME_MAX);
+//#elif defined(WIN32) || defined(__CEGCC__)
+//	/* On Windows we can use GetModuleFileName for getting the exe path */
+//	GetModuleFileName(NULL, psExecDir, FILENAME_MAX);
 #endif
 
 	/* If we do not have the execdir yet, analyze argv[0] and the PATH: */
