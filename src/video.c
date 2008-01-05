@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.78 2007-12-20 00:37:47 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.79 2008-01-05 20:26:30 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -737,47 +737,45 @@ void Video_GetTTRes(int *width, int *height, int *bpp)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Convert TT palette to SDL and blit TT screen using VIDEL code
+ * Convert TT palette to SDL palette
  */
-static void Video_RenderTTScreen(void)
+static void Video_UpdateTTPalette(int bpp)
 {
-	static int nPrevTTRes = -1;
-	int width, height, bpp, i, colors, offset;
-	uint8 r,g,b, lowbyte, highbyte;
-	uint32 ttpalette, src, dst;
+	Uint32 ttpalette, src, dst;
+	Uint8 r,g,b, lowbyte, highbyte;
 	Uint16 stcolor, ttcolor;
+	int i, offset, colors;
 
-	Video_GetTTRes(&width, &height, &bpp);
-	if (nTTRes != nPrevTTRes)
+	ttpalette = 0xff8400;
+
+	if (!bTTColorsSTSync)
 	{
-		HostScreen_setWindowSize(width, height, 8);
-		nPrevTTRes = nTTRes;
+		/* sync TT ST-palette to TT-palette */
+		src = 0xff8240;	/* ST-palette */
+		offset = (IoMem_ReadWord(0xff8262) & 0x0f);
+		/*fprintf(stdout, "offset: %d\n", offset);*/
+		dst = ttpalette + offset * 16*SIZE_WORD;
+
+		for (i = 0; i < 16; i++)
+		{
+			stcolor = IoMem_ReadWord(src);
+			ttcolor = ((stcolor&0x700) << 1) | ((stcolor&0x70) << 1) | ((stcolor&0x7) << 1);
+			IoMem_WriteWord(dst, ttcolor);
+			src += SIZE_WORD;
+			dst += SIZE_WORD;
+		}
+		bTTColorsSTSync = TRUE;
 	}
 
-	/* colors need synching? */
-	if (!(bTTColorsSync && bTTColorsSTSync))
+	colors = 1 << bpp;
+	if (bpp == 1)
 	{
-		ttpalette = 0xff8400;
-
-		if (!bTTColorsSTSync)
-		{
-			/* sync TT ST-palette to TT-palette */
-			src = 0xff8240;	/* ST-palette */
-			offset = (IoMem_ReadWord(0xff8262) & 0x0f);
-			/*fprintf(stdout, "offset: %d\n", offset);*/
-			dst = ttpalette + offset * 16*SIZE_WORD;
-
-			for (i = 0; i < 16; i++)
-			{
-				stcolor = IoMem_ReadWord(src);
-				ttcolor = ((stcolor&0x700) << 1) | ((stcolor&0x70) << 1) | ((stcolor&0x7) << 1);
-				IoMem_WriteWord(dst, ttcolor);
-				src += SIZE_WORD;
-				dst += SIZE_WORD;
-			}
-			bTTColorsSTSync = TRUE;
-		}
-		colors = 1 << bpp;
+		/* Monochrome mode... palette is hardwired (?) */
+		HostScreen_setPaletteColor(0, 255, 255, 255);
+		HostScreen_setPaletteColor(1, 0, 0, 0);
+	}
+	else
+	{
 		for (i = 0; i < colors; i++)
 		{
 			lowbyte = IoMem_ReadByte(ttpalette++);
@@ -788,8 +786,35 @@ static void Video_RenderTTScreen(void)
 			//printf("%d: (%d,%d,%d)\n", i,r,g,b);
 			HostScreen_setPaletteColor(i, r,g,b);
 		}
-		HostScreen_updatePalette(colors);
-		bTTColorsSync = TRUE;
+	}
+
+	HostScreen_updatePalette(colors);
+	bTTColorsSync = TRUE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Update TT palette and blit TT screen using VIDEL code
+ */
+static void Video_RenderTTScreen(void)
+{
+	static int nPrevTTRes = -1;
+	int width, height, bpp;
+
+	Video_GetTTRes(&width, &height, &bpp);
+	if (nTTRes != nPrevTTRes)
+	{
+		HostScreen_setWindowSize(width, height, 8);
+		nPrevTTRes = nTTRes;
+		if (bpp == 1)   /* Assert that mono palette will be used in mono mode */
+			bTTColorsSync = FALSE;
+	}
+
+	/* colors need synching? */
+	if (!(bTTColorsSync && bTTColorsSTSync))
+	{
+		Video_UpdateTTPalette(bpp);
 	}
 
 	/* Yes, we are abusing the Videl routines for rendering the TT modes! */
@@ -802,6 +827,7 @@ static void Video_RenderTTScreen(void)
 	HostScreen_renderEnd();
 	HostScreen_update1(FALSE);
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**
