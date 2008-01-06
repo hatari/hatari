@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.67 2008-01-03 12:09:18 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.68 2008-01-06 20:43:18 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -42,7 +42,6 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.67 2008-01-03 12:09:18 tho
 
 
 /* extern for several purposes */
-int STRes = ST_LOW_RES;       /* current resolution */
 SDL_Surface *sdlscrn = NULL;  /* The SDL screen surface */
 int nScreenZoomX, nScreenZoomY;  /* Zooming factors, used for scaling mouse motions */
 
@@ -460,9 +459,15 @@ void Screen_Reset(void)
 	else
 	{
 		if (bUseHighRes)
+		{
 			STRes = ST_HIGH_RES;
+			TTRes = 6;  // TT-High
+		}
 		else
+		{
 			STRes = ST_LOW_RES;
+			TTRes = 4;  // TT-Medium
+		}
 	}
 	/* Cause full update */
 	Screen_ModeChanged();

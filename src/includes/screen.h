@@ -93,7 +93,6 @@ enum
 extern BOOL bGrabMouse;
 extern BOOL bInFullScreen;
 extern int nScreenZoomX, nScreenZoomY;
-extern int STRes;
 extern int STScreenStartHorizLine;
 extern int STScreenLeftSkipBytes;
 extern FRAMEBUFFER *pFrameBuffer;

@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.79 2008-01-05 20:26:30 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.80 2008-01-06 20:43:18 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -43,6 +43,9 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.79 2008-01-05 20:26:30 thoth
 #define BORDERMASK_MIDDLE  0x04
 
 
+int STRes = ST_LOW_RES;                         /* current ST resolution */
+int TTRes;                                      /* TT shifter resolution mode */
+
 BOOL bUseSTShifter;                             /* Falcon: whether to use ST palette */
 BOOL bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
 int OverscanMode;                               /* OVERSCANMODE_xxxx for current display frame */
@@ -68,7 +71,6 @@ static Uint8 VideoShifterByte;                  /* VideoShifter (0xff8260) value
 static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simulate left/right border removal */
 static int nLastAccessCycleLeft;                /* Line cycle where program tried to open left border */
 static BOOL bSteBorderFlag;                     /* TRUE when screen width has been switched to 336 (e.g. in Obsession) */
-static int nTTRes;                              /* TT shifter resolution mode */
 static BOOL bTTColorsSync, bTTColorsSTSync;     /* whether TT colors need convertion to SDL */
 
 
@@ -80,7 +82,7 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&VideoShifterByte, sizeof(VideoShifterByte));
-	MemorySnapShot_Store(&nTTRes, sizeof(nTTRes));
+	MemorySnapShot_Store(&TTRes, sizeof(TTRes));
 	MemorySnapShot_Store(&bUseSTShifter, sizeof(bUseSTShifter));
 	MemorySnapShot_Store(&bUseHighRes, sizeof(bUseHighRes));
 	MemorySnapShot_Store(&nVBLs, sizeof(nVBLs));
@@ -719,7 +721,7 @@ static void Video_ClearOnVBL(void)
  */
 void Video_GetTTRes(int *width, int *height, int *bpp)
 {
-	switch (nTTRes)
+	switch (TTRes)
 	{
 	 case 0: *width = 320; *height = 200; *bpp = 4; break;
 	 case 1: *width = 640; *height = 200; *bpp = 2; break;
@@ -803,10 +805,10 @@ static void Video_RenderTTScreen(void)
 	int width, height, bpp;
 
 	Video_GetTTRes(&width, &height, &bpp);
-	if (nTTRes != nPrevTTRes)
+	if (TTRes != nPrevTTRes)
 	{
 		HostScreen_setWindowSize(width, height, 8);
-		nPrevTTRes = nTTRes;
+		nPrevTTRes = TTRes;
 		if (bpp == 1)   /* Assert that mono palette will be used in mono mode */
 			bTTColorsSync = FALSE;
 	}
@@ -1186,8 +1188,8 @@ void Video_ShifterMode_WriteByte(void)
 {
 	if (ConfigureParams.System.nMachineType == MACHINE_TT)
 	{
-		nTTRes = IoMem_ReadByte(0xff8260) & 7;
-		IoMem_WriteByte(0xff8262, nTTRes);                /* Copy to TT shifter mode register */
+		TTRes = IoMem_ReadByte(0xff8260) & 7;
+		IoMem_WriteByte(0xff8262, TTRes);                /* Copy to TT shifter mode register */
 	}
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
@@ -1255,14 +1257,14 @@ void Video_HorScroll_Write(void)
  */
 void Video_TTShiftMode_WriteWord(void)
 {
-	nTTRes = IoMem_ReadByte(0xff8262) & 7;
+	TTRes = IoMem_ReadByte(0xff8262) & 7;
 
-	/*fprintf(stderr, "Write to FF8262: %x, res=%i\n", IoMem_ReadWord(0xff8262),nTTRes);*/
+	/*fprintf(stderr, "Write to FF8262: %x, res=%i\n", IoMem_ReadWord(0xff8262), TTRes);*/
 
 	/* Is it an ST compatible resolution? */
-	if (nTTRes <= 2)
+	if (TTRes <= 2)
 	{
-		IoMem_WriteByte(0xff8260, nTTRes);
+		IoMem_WriteByte(0xff8260, TTRes);
 		Video_ShifterMode_WriteByte();
 	}
 }
