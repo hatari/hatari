@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.111 2008-01-04 19:28:56 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.112 2008-01-06 16:42:42 thothy Exp $";
 
 #include "config.h"
 
@@ -558,7 +558,7 @@ static void Main_InitDirNames(char *argv0)
 	/* Determine the bindir...
 	 * Start with empty string, then try to use OS specific functions,
 	 * and finally analyze the PATH variable if it has not been found yet. */
-	psExecDir[0] = 0;
+	memset(psExecDir, 0, FILENAME_MAX);
 
 #if defined(__linux__)
 	/* On Linux, we can analyze the symlink /proc/self/exe */
