@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.68 2008-01-06 20:43:18 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.69 2008-01-06 21:27:49 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -461,12 +461,12 @@ void Screen_Reset(void)
 		if (bUseHighRes)
 		{
 			STRes = ST_HIGH_RES;
-			TTRes = 6;  // TT-High
+			TTRes = TT_HIGH_RES;
 		}
 		else
 		{
 			STRes = ST_LOW_RES;
-			TTRes = 4;  // TT-Medium
+			TTRes = TT_MEDIUM_RES;
 		}
 	}
 	/* Cause full update */

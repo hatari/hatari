@@ -9,7 +9,7 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.80 2008-01-06 20:43:18 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.81 2008-01-06 21:27:49 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -723,12 +723,12 @@ void Video_GetTTRes(int *width, int *height, int *bpp)
 {
 	switch (TTRes)
 	{
-	 case 0: *width = 320; *height = 200; *bpp = 4; break;
-	 case 1: *width = 640; *height = 200; *bpp = 2; break;
-	 case 2: *width = 640; *height = 400; *bpp = 1; break;
-	 case 4: *width = 640; *height = 480; *bpp = 4; break;
-	 case 6: *width = 1280; *height = 960; *bpp = 1; break;
-	 case 7: *width = 320; *height = 480; *bpp = 8; break;
+	 case ST_LOW_RES:   *width = 320;  *height = 200; *bpp = 4; break;
+	 case ST_MEDIUM_RES:*width = 640;  *height = 200; *bpp = 2; break;
+	 case ST_HIGH_RES:  *width = 640;  *height = 400; *bpp = 1; break;
+	 case TT_LOW_RES:   *width = 320;  *height = 480; *bpp = 8; break;
+	 case TT_MEDIUM_RES:*width = 640;  *height = 480; *bpp = 4; break;
+	 case TT_HIGH_RES:  *width = 1280; *height = 960; *bpp = 1; break;
 	 default:
 		fprintf(stderr, "TT res error!\n");
 		*width = 320; *height = 200; *bpp = 4;

@@ -43,12 +43,15 @@ typedef struct
 #define NUM_FRAMEBUFFERS  2
 
 
-/* ST Resolution defines */
+/* ST/TT resolution defines */
 enum
 {
   ST_LOW_RES,
   ST_MEDIUM_RES,
-  ST_HIGH_RES
+  ST_HIGH_RES,
+  TT_MEDIUM_RES = 4,
+  TT_HIGH_RES = 6,
+  TT_LOW_RES
 };
 #define ST_MEDIUM_RES_BIT 0x1
 #define ST_RES_MASK 0x3
