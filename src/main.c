@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.112 2008-01-06 16:42:42 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.113 2008-01-06 18:31:37 eerot Exp $";
 
 #include "config.h"
 
@@ -558,16 +558,21 @@ static void Main_InitDirNames(char *argv0)
 	/* Determine the bindir...
 	 * Start with empty string, then try to use OS specific functions,
 	 * and finally analyze the PATH variable if it has not been found yet. */
-	memset(psExecDir, 0, FILENAME_MAX);
+	psExecDir[0] = '\0';
 
 #if defined(__linux__)
-	/* On Linux, we can analyze the symlink /proc/self/exe */
-	if (readlink("/proc/self/exe", psExecDir, FILENAME_MAX) > 0)
 	{
-		char *p;
-		p = strrchr(psExecDir, '/');    /* Search last slash */
-		if (p)
-			*p = 0;                     /* Strip file name from path */
+		int i;
+		/* On Linux, we can analyze the symlink /proc/self/exe */
+		i = readlink("/proc/self/exe", psExecDir, FILENAME_MAX);
+		if (i > 0)
+		{
+			char *p;
+			psExecDir[i] = '\0';
+			p = strrchr(psExecDir, '/');    /* Search last slash */
+			if (p)
+				*p = 0;                     /* Strip file name from path */
+		}
 	}
 //#elif defined(WIN32) || defined(__CEGCC__)
 //	/* On Windows we can use GetModuleFileName for getting the exe path */
