@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.34 2007-12-16 22:09:19 eerot Exp $";
+const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.35 2008-01-07 21:54:22 eerot Exp $";
 
 #include <sys/stat.h>
 
@@ -291,20 +291,21 @@ char* Floppy_ZipInsertDiskIntoDrive(int Drive, const char *pszFileName, const ch
 	else if (ZIP_FileNameIsZIP(filename))
 		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(filename, pszZipPath, &nImageBytes);
 
-	/* Did load OK? */
-	if (EmulationDrives[Drive].pBuffer != NULL)
+	if (EmulationDrives[Drive].pBuffer == NULL)
 	{
-		/* Store filename and size */
-		strcpy(EmulationDrives[Drive].szFileName, filename);
-		EmulationDrives[Drive].nImageBytes = nImageBytes;
-		/* And set drive states */
-		EmulationDrives[Drive].bDiskInserted = TRUE;
-		EmulationDrives[Drive].bContentsChanged = FALSE;
-		EmulationDrives[Drive].bMediaChanged = TRUE;
-		EmulationDrives[Drive].bOKToSave = Floppy_IsBootSectorOK(Drive);
+		free(filename);
+		return NULL;
 	}
+	/* Store filename and size */
+	strcpy(EmulationDrives[Drive].szFileName, filename);
+	EmulationDrives[Drive].nImageBytes = nImageBytes;
+	/* And set drive states */
+	EmulationDrives[Drive].bDiskInserted = TRUE;
+	EmulationDrives[Drive].bContentsChanged = FALSE;
+	EmulationDrives[Drive].bMediaChanged = TRUE;
+	EmulationDrives[Drive].bOKToSave = Floppy_IsBootSectorOK(Drive);
 
-	/* If we insert a disk into Drive A, should be try to put disk 2 into drive B? */
+	/* If we insert a disk into Drive A, should we try to put disk 2 into drive B? */
 	if (Drive == 0 && ConfigureParams.DiskImage.bAutoInsertDiskB)
 	{
 		char *szTmp;
@@ -318,12 +319,6 @@ char* Floppy_ZipInsertDiskIntoDrive(int Drive, const char *pszFileName, const ch
 				free(szTmp);
 			free(szDiskBFileName);
 		}
-	}
-
-	if (EmulationDrives[Drive].pBuffer == NULL)
-	{
-		free(filename);
-		return NULL;
 	}
 	return filename;
 }
