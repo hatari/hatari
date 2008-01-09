@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.68 2008-01-02 21:48:29 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.69 2008-01-09 23:34:29 thothy Exp $";
 
 #include <config.h>
 
@@ -1233,7 +1233,7 @@ static BOOL GemDOS_ChDir(Uint32 Params)
 static BOOL GemDOS_Create(Uint32 Params)
 {
 	char szActualFileName[MAX_GEMDOS_PATH];
-	char *pszFileName;
+	char *pszFileName, *ptr;
 	int Drive,Index,Mode;
 	const char *rwflags;
 
@@ -1286,6 +1286,21 @@ static BOOL GemDOS_Create(Uint32 Params)
 		FileHandles[Index].bUsed = TRUE;
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
 		return TRUE;
+	}
+
+	/* We failed to create the file... now we have to return the right
+	 * error code: Normally we return FILE-NOT-FOUND, but in case the
+	 * directory did not exist yet, we have to return PATH-NOT-FOUND
+	 * (ST-Zip 2.6 relies on that during extraction of ZIP files). */
+	ptr = strrchr(szActualFileName, PATHSEP);
+	if (ptr)
+	{
+		*ptr = 0;   /* Strip filename from string */
+		if (!File_DirectoryExists(szActualFileName))
+		{
+			Regs[REG_D0] = GEMDOS_EPTHNF; /* Path not found */
+			return TRUE;
+		}
 	}
 #endif
 	Regs[REG_D0] = GEMDOS_EFILNF;         /* File not found */

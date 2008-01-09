@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.48 2007-12-20 12:01:22 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.49 2008-01-09 23:34:29 thothy Exp $";
 
 #include <config.h>
 
@@ -303,8 +303,24 @@ BOOL File_Exists(const char *filename)
 {
 	struct stat buf;
 	if (stat(filename, &buf) == 0 &&
-	    (buf.st_mode & (S_IRUSR|S_IWUSR)) && !(buf.st_mode & S_IFDIR)) {
+	    (buf.st_mode & (S_IRUSR|S_IWUSR)) && !(buf.st_mode & S_IFDIR))
+	{
 		/* file points to user readable regular file */
+		return TRUE;
+	}
+	return FALSE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Return TRUE if directory exists. 
+ */
+BOOL File_DirectoryExists(const char *psDirName)
+{
+	struct stat buf;
+	if (stat(psDirName, &buf) == 0 && (buf.st_mode & S_IFDIR))
+	{
 		return TRUE;
 	}
 	return FALSE;

@@ -17,6 +17,7 @@ extern Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * c
 extern BOOL File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, BOOL bQueryOverwrite);
 extern int File_Length(const char *pszFileName);
 extern BOOL File_Exists(const char *pszFileName);
+extern BOOL File_DirectoryExists(const char *psDirName);
 extern BOOL File_QueryOverwrite(const char *pszFileName);
 extern char* File_FindPossibleExtFileName(const char *pszFileName,const char * const ppszExts[]);
 extern void File_SplitPath(const char *pSrcFileName, char *pDir, char *pName, char *Ext);
