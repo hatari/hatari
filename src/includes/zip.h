@@ -18,7 +18,7 @@ typedef struct
 } zip_dir;
 
 extern BOOL ZIP_FileNameIsZIP(const char *pszFileName);
-extern struct dirent **ZIP_GetFilesDir(zip_dir *files, char *dir, int *entries);
+extern struct dirent **ZIP_GetFilesDir(const zip_dir *files, const char *dir, int *entries);
 extern void ZIP_FreeZipDir(zip_dir *zd);
 extern zip_dir *ZIP_GetFiles(const char *pszFileName);
 extern Uint8 *ZIP_ReadDisk(const char *pszFileName, const char *pszZipPath, long *pImageSize);

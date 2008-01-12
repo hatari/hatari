@@ -6,7 +6,7 @@
 
   Zipped disk support, uses zlib
 */
-const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.26 2007-12-18 20:35:06 thothy Exp $";
+const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.27 2008-01-12 17:44:49 eerot Exp $";
 
 #include <config.h>
 
@@ -199,7 +199,7 @@ void ZIP_FreeZipDir(zip_dir *f_zd)
  *   sets entries to the number of entries and returns a dirent structure, or
  *   NULL on failure. NOTE: only f_name is set in the dirent structures. 
  */
-struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
+struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entries)
 {
 	int i,j;
 	zip_dir *files;
@@ -313,7 +313,7 @@ struct dirent **ZIP_GetFilesDir(zip_dir *zip, char *dir, int *entries)
 /**
  * Check an image file in the archive, return the uncompressed length
  */
-static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiskType)
+static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pDiskType)
 {
 	unz_file_info file_info;
 
@@ -323,7 +323,7 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiskType)
 		return -1;
 	}
 
-	if (unzGetCurrentFileInfo(uf, &file_info, filename, ZIP_PATH_MAX, NULL, 0, NULL, 0) != UNZ_OK)
+	if (unzGetCurrentFileInfo(uf, &file_info, filename, namelen, NULL, 0, NULL, 0) != UNZ_OK)
 	{
 		Log_Printf(LOG_ERROR, "Error with zipfile in unzGetCurrentFileInfo \n");
 		return -1;
@@ -354,7 +354,8 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int *pDiskType)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return the first matching file in a zip, or NULL on failure
+ * Return the first matching file in a zip, or NULL on failure.
+ * String buffer size is ZIP_PATH_MAX
  */
 static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
 {
@@ -410,7 +411,7 @@ static char *ZIP_FirstFile(const char *filename, const char * const ppsExts[])
  * bytes to uncompress is size. Returns a pointer to a buffer containing
  * the uncompressed data, or NULL.
  */
-static void *ZIP_ExtractFile(unzFile uf, char *filename, uLong size)
+static void *ZIP_ExtractFile(unzFile uf, const char *filename, uLong size)
 {
 	int err = UNZ_OK;
 	char filename_inzip[ZIP_PATH_MAX];
@@ -498,10 +499,18 @@ Uint8 *ZIP_ReadDisk(const char *pszFileName, const char *pszZipPath, long *pImag
 	}
 	else
 	{
-		path = strdup(pszZipPath);
+		path = malloc(ZIP_PATH_MAX);
+		if (path == NULL)
+		{
+			perror("ZIP_ReadDisk");
+			unzClose(uf);
+			return NULL;
+		}
+		strncpy(path, pszZipPath, ZIP_PATH_MAX);
+		path[ZIP_PATH_MAX-1] = '\0';
 	}
 
-	ImageSize = ZIP_CheckImageFile(uf, path, &nDiskType);
+	ImageSize = ZIP_CheckImageFile(uf, path, ZIP_PATH_MAX, &nDiskType);
 	if (ImageSize <= 0)
 	{
 		unzClose(uf);
