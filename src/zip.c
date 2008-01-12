@@ -6,7 +6,7 @@
 
   Zipped disk support, uses zlib
 */
-const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.27 2008-01-12 17:44:49 eerot Exp $";
+const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.28 2008-01-12 18:22:43 eerot Exp $";
 
 #include <config.h>
 
@@ -319,13 +319,13 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pDi
 
 	if (unzLocateFile(uf,filename, 0) != UNZ_OK)
 	{
-		Log_Printf(LOG_ERROR, "Error: File \"%s\" not found in the archive!", filename);
+		Log_Printf(LOG_ERROR, "Error: File \"%s\" not found in the archive!\n", filename);
 		return -1;
 	}
 
 	if (unzGetCurrentFileInfo(uf, &file_info, filename, namelen, NULL, 0, NULL, 0) != UNZ_OK)
 	{
-		Log_Printf(LOG_ERROR, "Error with zipfile in unzGetCurrentFileInfo \n");
+		Log_Printf(LOG_ERROR, "Error with zipfile in unzGetCurrentFileInfo\n");
 		return -1;
 	}
 
@@ -602,7 +602,7 @@ Uint8 *ZIP_ReadFirstFile(const char *pszFileName, long *pImageSize, const char *
 
 	if (unzLocateFile(uf, pszZipPath, 0) != UNZ_OK)
 	{
-		Log_Printf(LOG_ERROR, "Error: Can not locate '%s' in the archive!", pszZipPath);
+		Log_Printf(LOG_ERROR, "Error: Can not locate '%s' in the archive!\n", pszZipPath);
 		free(pszZipPath);
 		return NULL;
 	}
