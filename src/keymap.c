@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.31 2007-12-17 23:03:35 thothy Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.32 2008-01-12 02:04:59 thothy Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -139,7 +139,7 @@ static const char SymbolicKeyToSTScanCode[SDLK_LAST] =
 	-1,    /* SDLK_DOLLAR = 36 */
 	-1,    /* 37 */
 	-1,    /* SDLK_AMPERSAND = 38 */
-	-1,    /* SDLK_QUOTE = 39 */
+	0x28,  /* SDLK_QUOTE = 39 */
 	0x63,  /* SDLK_LEFTPAREN = 40 */
 	0x64,  /* SDLK_RIGHTPAREN = 41 */
 	-1,    /* SDLK_ASTERISK = 42 */
@@ -147,7 +147,7 @@ static const char SymbolicKeyToSTScanCode[SDLK_LAST] =
 	0x33,  /* SDLK_COMMA = 44 */
 	0x35,  /* SDLK_MINUS = 45 */
 	0x34,  /* SDLK_PERIOD = 46 */
-	-1,    /* SDLK_SLASH = 47 */
+	0x35,  /* SDLK_SLASH = 47 */
 	0x0B,  /* SDLK_0 = 48 */
 	0x02,  /* SDLK_1 = 49 */
 	0x03,  /* SDLK_2 = 50 */
@@ -159,9 +159,9 @@ static const char SymbolicKeyToSTScanCode[SDLK_LAST] =
 	0x09,  /* SDLK_8 = 56 */
 	0x0A,  /* SDLK_9 = 57 */
 	-1,    /* SDLK_COLON = 58 */
-	-1,    /* SDLK_SEMICOLON = 59 */
+	0x27,  /* SDLK_SEMICOLON = 59 */
 	0x60,  /* SDLK_LESS = 60 */
-	-1,    /* SDLK_EQUALS = 61 */
+	0x0D,  /* SDLK_EQUALS = 61 */
 	-1,    /* SDLK_GREATER  = 62 */
 	-1,    /* SDLK_QUESTION = 63 */
 	-1,    /* SDLK_AT = 64 */
@@ -192,11 +192,11 @@ static const char SymbolicKeyToSTScanCode[SDLK_LAST] =
 	-1,    /* 89 */
 	-1,    /* 90 */
 	0x63,  /* SDLK_LEFTBRACKET = 91 */
-	-1,    /* SDLK_BACKSLASH = 92 */
+	0x2B,  /* SDLK_BACKSLASH = 92 */     /* Might be 0x60 for UK keyboards */
 	0x64,  /* SDLK_RIGHTBRACKET = 93 */
 	0x2B,  /* SDLK_CARET = 94 */
 	-1,    /* SDLK_UNDERSCORE = 95 */
-	-1,    /* SDLK_BACKQUOTE = 96 */
+	0x52,  /* SDLK_BACKQUOTE = 96 */
 	0x1E,  /* SDLK_a = 97 */
 	0x30,  /* SDLK_b = 98 */
 	0x2E,  /* SDLK_c = 99 */
