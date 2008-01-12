@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.19 2007-12-16 22:09:19 eerot Exp $";
+const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.20 2008-01-12 19:14:08 eerot Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -105,9 +105,9 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, BOOL 
 	}
 
 	/* Copy entries to dialog: */
-	for(i=0; i<SGFS_NUMENTRIES; i++)
+	for (i=0; i<SGFS_NUMENTRIES; i++)
 	{
-		if( i+ypos < entries )
+		if (i+ypos < entries)
 		{
 			struct stat filestat;
 			/* Prepare entries: */
@@ -118,7 +118,7 @@ static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, BOOL 
 			strcpy(tempstr, path);
 			strcat(tempstr, files[i+ypos]->d_name);
 
-			if( browsingzip )
+			if (browsingzip)
 			{
 				if (File_DoesFileNameEndWithSlash(tempstr))
 					dlgfilenames[i][0] = SGFOLDER;    /* Mark folders */
@@ -219,6 +219,7 @@ static void DlgFileSelect_ScrollDown(void)
 */
 static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 {
+	int oldypos = ypos;
 	switch (pEvent->type)
 	{
 	 case SDL_MOUSEBUTTONDOWN:
@@ -230,47 +231,109 @@ static void DlgFileSelect_HandleSdlEvents(SDL_Event *pEvent)
 	 case SDL_KEYDOWN:
 		switch (pEvent->key.keysym.sym)
 		{
-		 case SDLK_UP:  	DlgFileSelect_ScrollUp(); break;
-		 case SDLK_DOWN:	DlgFileSelect_ScrollDown(); break;
-		 case SDLK_HOME:	ypos = 0; refreshentries = TRUE; break;
-		 case SDLK_END: 	ypos = entries-SGFS_NUMENTRIES; refreshentries = TRUE; break;
-		 case SDLK_PAGEUP:
-			if (ypos > SGFS_NUMENTRIES)
-				ypos -= SGFS_NUMENTRIES;
-			else
-				ypos = 0;
-			refreshentries = TRUE;
-			break;
+		 case SDLK_UP:       DlgFileSelect_ScrollUp(); break;
+		 case SDLK_DOWN:     DlgFileSelect_ScrollDown(); break;
+		 case SDLK_HOME:     ypos = 0; break;
+		 case SDLK_END:      ypos = entries-SGFS_NUMENTRIES; break;
+		 case SDLK_PAGEUP:   ypos -= SGFS_NUMENTRIES; break;
 		 case SDLK_PAGEDOWN:
 			if (ypos+2*SGFS_NUMENTRIES < entries)
 				ypos += SGFS_NUMENTRIES;
 			else
 				ypos = entries-SGFS_NUMENTRIES;
-			refreshentries = TRUE;
 			break;
-		 default: break;
+		 default:
+			break;
 		}
 		break;
+	default:
+		break;
 	}
+	if (ypos < 0)
+		ypos = 0;
+	if (ypos != oldypos)
+		refreshentries = TRUE;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /*
-  Show and process a file selection dialog.
-  Returns TRUE if the use selected "okay", FALSE if "cancel".
-  input: zip_path = pointer to buffer to contain file path within a selected
-  zip file, or NULL if browsing zip files is disallowed.
-  bAllowNew: TRUE if the user is allowed to insert new file names.
-
-  TODO: This function urgently needs refactoring... it's way too big!
+  Free file entries
 */
-int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
+static struct dirent **files_free(struct dirent **files)
 {
-	int i,n;
+	int i;
+	if (files != NULL)
+	{
+		for(i=0; i<entries; i++)
+		{
+			free(files[i]);
+		}
+		free(files);
+	}
+	return NULL;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  Copy to dst src+add if they are below maxlen and return true,
+  otherwise return false
+*/
+static int strcat_maxlen(char *dst, int maxlen, const char *src, const char *add)
+{
+	int slen, alen;
+	slen = strlen(src);
+	alen = strlen(add);
+	if (slen + alen < maxlen)
+	{
+		strcpy(dst, src);
+		strcpy(dst+slen, add);
+		return 1;
+	}
+	return 0;
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Create and return suitable path into zip file
+*/
+static char* zip_get_path(const char *zipdir, const char *zipfilename, int browsingzip)
+{
+	if (browsingzip)
+	{
+		char *zippath;
+		zippath = malloc(strlen(zipdir) + strlen(zipfilename) + 1);
+		strcpy(zippath, zipdir);
+		strcat(zippath, zipfilename);
+		return zippath;
+	}
+	return strdup("");
+}
+
+/* string for zip root needs to be empty, check and correct if needed */
+static void correct_zip_root(char *zippath)
+{
+	if (zippath[0] == PATHSEP && !zippath[1])
+	{
+		zippath[0] = '\0';
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/*
+  Show and process a file selection dialog.
+  Returns path/name user selected or NULL if user canceled
+  input: zip_path = pointer's pointer to buffer to contain file path
+  within a selected zip file, or NULL if browsing zip files is disallowed.
+  bAllowNew: TRUE if the user is allowed to insert new file names.
+*/
+char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, BOOL bAllowNew)
+{
 	struct dirent **files = NULL;
 	char *pStringMem;
-	char *path, *fname;                 /* The actual file and path names */
+	char *retpath;
+	char *home, *path, *fname;          /* The actual file and path names */
 	BOOL reloaddir = TRUE;              /* Do we have to reload the directory file list? */
 	int retbut;
 	int oldcursorstate;
@@ -290,9 +353,8 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 	pStringMem = malloc(4 * FILENAME_MAX);
 	path = pStringMem;
 	fname = pStringMem + FILENAME_MAX;
-	zipfilename = pStringMem + 2 * FILENAME_MAX;
-	zipdir = pStringMem + 3 * FILENAME_MAX;
-
+	zipdir = pStringMem + 2 * FILENAME_MAX;
+	zipfilename = pStringMem + 3 * FILENAME_MAX;
 	zipfilename[0] = 0;
 
 	SDLGui_CenterDlg(fsdlg);
@@ -308,18 +370,32 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 	}
 
 	/* Prepare the path and filename variables */
-	if (stat(path_and_name, &filestat) == 0 && S_ISDIR(filestat.st_mode))
+	if (path_and_name && path_and_name[0])
 	{
-		/* assure that a directory name ends with a '/' */
-		File_AddSlashToEndFileName(path_and_name);
+		strncpy(path, path_and_name, FILENAME_MAX);
+		path[FILENAME_MAX-1] = '\0';
 	}
-	File_SplitPath(path_and_name, path, fname, NULL);
+	else
+	{
+		if (!getcwd(path, FILENAME_MAX))
+		{
+			perror("SDLGui_FileSelect");
+			return NULL;
+		}
+	}
+	if (stat(path, &filestat) == 0 && S_ISDIR(filestat.st_mode))
+	{
+		File_AddSlashToEndFileName(path);
+		fname[0] = 0;
+	}
+	else
+		File_SplitPath(path, path, fname, NULL);
 	File_MakeAbsoluteName(path);
 	File_MakeValidPathName(path);
 	File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
 	File_ShrinkName(dlgfname, fname, DLGFNAME_SIZE);
 
-	/* Save old mouse cursor state and enable cursor anyway */
+	/* Save old mouse cursor state and enable cursor */
 	oldcursorstate = SDL_ShowCursor(SDL_QUERY);
 	if (oldcursorstate == SDL_DISABLE)
 		SDL_ShowCursor(SDL_ENABLE);
@@ -328,23 +404,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 	{
 		if (reloaddir)
 		{
-			if (strlen(path) >= FILENAME_MAX)
-			{
-				fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
-				free(pStringMem);
-				return FALSE;
-			}
-
-			/* Free old allocated memory: */
-			if (files != NULL)
-			{
-				for(i=0; i<entries; i++)
-				{
-					free(files[i]);
-				}
-				free(files);
-				files = NULL;
-			}
+			files = files_free(files);
 
 			if (browsingzip)
 			{
@@ -369,6 +429,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 				return FALSE;
 			}
 
+			/* reload always implies refresh */
 			reloaddir = FALSE;
 			refreshentries = TRUE;
 		}/* reloaddir */
@@ -388,10 +449,10 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 		retbut = SDLGui_DoDialog(fsdlg, &sdlEvent);
 
 		/* Has the user clicked on a file or folder? */
-		if( retbut>=SGFSDLG_ENTRY1 && retbut<=SGFSDLG_ENTRY16 && retbut-SGFSDLG_ENTRY1+ypos<entries)
+		if (retbut>=SGFSDLG_ENTRY1 && retbut<=SGFSDLG_ENTRY16 && retbut-SGFSDLG_ENTRY1+ypos<entries)
 		{
 			char *tempstr;
-
+			
 			tempstr = malloc(FILENAME_MAX);
 			if (!tempstr)
 			{
@@ -400,19 +461,24 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 				return FALSE;
 			}
 
-			if( browsingzip == TRUE )
+			if (browsingzip == TRUE)
 			{
-				strcpy(tempstr, zipdir);
-				strcat(tempstr, files[retbut-SGFSDLG_ENTRY1+ypos]->d_name);
+				if (!strcat_maxlen(tempstr, FILENAME_MAX,
+						   zipdir, files[retbut-SGFSDLG_ENTRY1+ypos]->d_name))
+				{
+					fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
+					free(pStringMem);
+					return FALSE;
+				}
+				/* directory? */
 				if (File_DoesFileNameEndWithSlash(tempstr))
 				{
 					/* handle the ../ directory */
-					if(strcmp(files[retbut-SGFSDLG_ENTRY1+ypos]->d_name, "../") == 0)
+					if (strcmp(files[retbut-SGFSDLG_ENTRY1+ypos]->d_name, "../") == 0)
 					{
 						/* close the zip file */
-						if( strcmp(tempstr, "../") == 0 )
+						if (strcmp(tempstr, "../") == 0)
 						{
-							reloaddir = refreshentries = TRUE;
 							/* free zip file entries */
 							ZIP_FreeZipDir(zipfiles);
 							zipfiles = NULL;
@@ -422,16 +488,9 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 						}
 						else
 						{
-							i=strlen(tempstr)-1;
-							n=0;
-							while(i > 0 && n < 3)
-								if (tempstr[i--] == PATHSEP)
-									n++;
-							if (tempstr[i+1] == PATHSEP)
-								tempstr[i+2] = '\0';
-							else
-								tempstr[0] = '\0';
-
+							/* remove "../" and previous dir from path */
+							File_PathShorten(tempstr, 2);
+							correct_zip_root(tempstr);
 							strcpy(zipdir, tempstr);
 							File_ShrinkName(dlgpath, zipdir, DLGPATH_SIZE);
 						}
@@ -447,48 +506,33 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 					zipfilename[0] = '\0';
 					dlgfname[0] = 0;
 					ypos = 0;
-
 				}
 				else
 				{
-					/* Select a file in the zip */
+					/* not dir, select a file in the zip */
 					selection = retbut-SGFSDLG_ENTRY1+ypos;
 					strcpy(zipfilename, files[selection]->d_name);
 					File_ShrinkName(dlgfname, zipfilename, DLGFNAME_SIZE);
 				}
 
-			} /* if browsingzip */
-			else
+			}
+			else /* not browsingzip */
 			{
-				strcpy(tempstr, path);
-				strcat(tempstr, files[retbut-SGFSDLG_ENTRY1+ypos]->d_name);
-				if( stat(tempstr, &filestat)==0 && S_ISDIR(filestat.st_mode) )
+				if (!strcat_maxlen(tempstr, FILENAME_MAX,
+						   path, files[retbut-SGFSDLG_ENTRY1+ypos]->d_name))
 				{
-					/* Set the new directory */
-					strcpy(path, tempstr);
-					if( strlen(path)>=3 )
-					{
-						if (path[strlen(path)-2] == PATHSEP && path[strlen(path)-1]=='.')
-							path[strlen(path)-2] = 0;  /* Strip a single dot at the end of the path name */
-						if (path[strlen(path)-3] == PATHSEP && path[strlen(path)-2]=='.' && path[strlen(path)-1]=='.')
-						{
-							/* Handle the ".." folder */
-							char *ptr;
-							if( strlen(path)==3 )
-								path[1] = 0;
-							else
-							{
-								path[strlen(path)-3] = 0;
-								ptr = strrchr(path, PATHSEP);
-								if(ptr)
-									*(ptr+1) = 0;
-							}
-						}
-					}
-					File_AddSlashToEndFileName(path);
-					reloaddir = TRUE;
+					fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
+					free(pStringMem);
+					return FALSE;
+				}
+				if (stat(tempstr, &filestat) == 0 && S_ISDIR(filestat.st_mode))
+				{
+					File_HandleDotDirs(tempstr);
+					File_AddSlashToEndFileName(tempstr);
 					/* Copy the path name to the dialog */
-					File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
+					File_ShrinkName(dlgpath, tempstr, DLGPATH_SIZE);
+					strcpy(path, tempstr);
+					reloaddir = TRUE;
 					selection = -1;                /* Remove old selection */
 					dlgfname[0] = 0;
 					ypos = 0;
@@ -497,15 +541,15 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 				{
 					/* open a zip file */
 					zipfiles = ZIP_GetFiles(tempstr);
-					if( zipfiles != NULL && browsingzip == FALSE )
+					if (zipfiles != NULL && browsingzip == FALSE)
 					{
 						selection = retbut-SGFSDLG_ENTRY1+ypos;
 						strcpy(fname, files[selection]->d_name);
 						File_ShrinkName(dlgfname, fname, DLGFNAME_SIZE);
-						browsingzip=TRUE;
-						strcpy(zipdir, "");
+						browsingzip = TRUE;
+						zipdir[0] = '\0'; /* zip root */
 						File_ShrinkName(dlgpath, zipdir, DLGPATH_SIZE);
-						reloaddir = refreshentries = TRUE;
+						reloaddir = TRUE;
 						ypos = 0;
 					}
 
@@ -528,63 +572,37 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 			{
 			case SGFSDLG_UPDIR:                 /* Change path to parent directory */
 
-				if( browsingzip )
+				if (browsingzip)
 				{
-					/* close the zip file */
-					if( strcmp(zipdir, "") == 0 )
+					/* close the zip file? */
+					if (!zipdir[0])
 					{
-						reloaddir = refreshentries = TRUE;
 						/* free zip file entries */
 						ZIP_FreeZipDir(zipfiles);
-						zipfiles = NULL;
-						/* Copy the path name to the dialog */
-						File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
 						browsingzip = FALSE;
-						reloaddir = TRUE;
-						selection = -1;         /* Remove old selection */
-						fname[0] = 0;
-						dlgfname[0] = 0;
-						ypos = 0;
+						zipfiles = NULL;
+						File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
 					}
 					else
 					{
-						i=strlen(zipdir)-1;
-						n=0;
-						while(i > 0 && n < 2)
-							if (zipdir[i--] == PATHSEP)
-								n++;
-						if (zipdir[i+1] == PATHSEP)
-							zipdir[i+2] = '\0';
-						else
-							zipdir[0] = '\0';
-
+						/* remove last dir from zipdir path */
+						File_PathShorten(zipdir, 1);
+						correct_zip_root(zipdir);
 						File_ShrinkName(dlgpath, zipdir, DLGPATH_SIZE);
-						reloaddir = TRUE;
-						selection = -1;         /* Remove old selection */
 						zipfilename[0] = '\0';
-						dlgfname[0] = 0;
-						ypos = 0;
 					}
 				}  /* not a zip file: */
-				else if( strlen(path)>2 )
+				else
 				{
-					char *ptr;
-					File_CleanFileName(path);
-					ptr = strrchr(path, PATHSEP);
-					if(ptr)
-						*(ptr+1) = 0;
-					File_AddSlashToEndFileName(path);
-					reloaddir = TRUE;
-					File_ShrinkName(dlgpath, path, DLGPATH_SIZE);  /* Copy the path name to the dialog */
-					selection = -1;             /* Remove old selection */
-					fname[0] = 0;
-					dlgfname[0] = 0;
-					ypos = 0;
+					File_PathShorten(path, 1);
+					File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
 				}
+				reloaddir = TRUE;
 				break;
 
 			case SGFSDLG_HOMEDIR:               /* Change to home directory */
-				if (getenv("HOME") == NULL)
+				home = getenv("HOME");
+				if (home == NULL)
 					break;
 				if (browsingzip)
 				{
@@ -593,32 +611,23 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 					zipfiles = NULL;
 					browsingzip = FALSE;
 				}
-				strcpy(path, getenv("HOME"));
+				strcpy(path, home);
 				File_AddSlashToEndFileName(path);
+				File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
 				reloaddir = TRUE;
-				strcpy(dlgpath, path);
-				selection = -1;                 /* Remove old selection */
-				fname[0] = 0;
-				dlgfname[0] = 0;
-				ypos = 0;
 				break;
 
 			case SGFSDLG_ROOTDIR:               /* Change to root directory */
-				if( browsingzip )
+				if (browsingzip)
 				{
 					/* free zip file entries */
 					ZIP_FreeZipDir(zipfiles);
 					zipfiles = NULL;
 					browsingzip = FALSE;
 				}
-
 				strcpy(path, "/");
-				reloaddir = TRUE;
 				strcpy(dlgpath, path);
-				selection = -1;                 /* Remove old selection */
-				fname[0] = 0;
-				dlgfname[0] = 0;
-				ypos = 0;
+				reloaddir = TRUE;
 				break;
 			case SGFSDLG_UP:                    /* Scroll up */
 				DlgFileSelect_ScrollUp();
@@ -639,6 +648,15 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 				DlgFileSelect_HandleSdlEvents(&sdlEvent);
 				break;
 			} /* switch */
+      
+			if (reloaddir)
+			{
+				/* Remove old selection */
+				selection = -1;
+				fname[0] = 0;
+				dlgfname[0] = 0;
+				ypos = 0;
+			}
 		} /* other button code */
 
 
@@ -649,20 +667,7 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 	if (oldcursorstate == SDL_DISABLE)
 		SDL_ShowCursor(SDL_DISABLE);
 
-	path = File_MakePath(path, fname, NULL);
-	strcpy(path_and_name, path);
-	free(path);
-
-	/* Free old allocated memory: */
-	if (files != NULL)
-	{
-		for(i=0; i<entries; i++)
-		{
-			free(files[i]);
-		}
-		free(files);
-		files = NULL;
-	}
+	files_free(files);
 
 	if (browsingzip)
 	{
@@ -671,20 +676,16 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
 		zipfiles = NULL;
 	}
 
-	if (zip_path != NULL)
+	if (retbut == SGFSDLG_OKAY)
 	{
-		if( browsingzip )
-		{
-			strcpy(zip_path, zipdir);
-			strcat(zip_path, zipfilename);
-		}
-		else
-			zip_path[0] = '\0';
+		if (zip_path)
+			*zip_path = zip_get_path(zipdir, zipfilename, browsingzip);
+		retpath = File_MakePath(path, fname, NULL);
 	}
-
+	else
+		retpath = NULL;
 	free(pStringMem);
-
-	return(retbut == SGFSDLG_OKAY);
+	return retpath;
 }
 
 
@@ -695,34 +696,29 @@ int SDLGui_FileSelect(char *path_and_name, char *zip_path, BOOL bAllowNew)
  * If no file is selected, or there's some problem with the file,
  * return FALSE and clear dlgname & confname.
  * Otherwise return TRUE, set dlgname & confname to the new file name
- * (dlgname is shrinked & limited to maxlen).
+ * (dlgname is shrinked & limited to maxlen and confname is assumed
+ * to have FILENAME_MAX amount of space).
  */
 BOOL SDLGui_FileConfSelect(char *dlgname, char *confname, int maxlen, BOOL bAllowNew)
 {
 	char *selname;
-	int ret = FALSE;
-
-	selname = malloc(FILENAME_MAX);
-	if (selname == NULL)
-	{
-		dlgname[0] = confname[0] = 0;
-		return ret;
-	}
-	strcpy(selname, confname);
-	if (SDLGui_FileSelect(selname, NULL, bAllowNew))
+	
+	selname = SDLGui_FileSelect(confname, NULL, bAllowNew);
+	if (selname)
 	{
 		if (!File_DoesFileNameEndWithSlash(selname) &&
 		    (bAllowNew || File_Exists(selname)))
 		{
-			strcpy(confname, selname);
+			strncpy(confname, selname, FILENAME_MAX);
+			confname[FILENAME_MAX-1] = '\0';
 			File_ShrinkName(dlgname, selname, maxlen);
 		}
 		else
 		{
 			dlgname[0] = confname[0] = 0;
 		}
-		ret = TRUE;
+		free(selname);
+		return TRUE;
 	}
-	free(selname);
-	return ret;
+	return FALSE;
 }

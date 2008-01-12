@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgNewDisk_rcsid[] = "Hatari $Id: dlgNewDisc.c,v 1.6 2006-12-19 10:55:34 thothy Exp $";
+const char DlgNewDisk_rcsid[] = "Hatari $Id: dlgNewDisc.c,v 1.7 2008-01-12 19:14:08 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -49,6 +49,7 @@ static SGOBJ newdiskdlg[] =
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
+#define DEFAULT_DISK_NAME "new_disk.st"
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -57,22 +58,20 @@ static SGOBJ newdiskdlg[] =
 void DlgNewDisk_Main(void)
 {
 	int but;
-	char *szNewDiskName;
-
+	char *szNewDiskName, *tmpname;
 	sprintf(szTracks, "%i", nTracks);
 
  	SDLGui_CenterDlg(newdiskdlg);
 
 	/* Initialize disk image name: */
-	szNewDiskName = malloc(FILENAME_MAX);
+	szNewDiskName = malloc(strlen(DialogParams.DiskImage.szDiskImageDirectory) + strlen(DEFAULT_DISK_NAME) + 1);
 	if (!szNewDiskName)
 	{
 		perror("DlgNewDisk_Main");
 		return;
 	}
 	strcpy(szNewDiskName, DialogParams.DiskImage.szDiskImageDirectory);
-	if (strlen(szNewDiskName) < FILENAME_MAX-12)
-		strcat(szNewDiskName, "new_disk.st");
+	strcat(szNewDiskName, "new_disk.st");
 
 	/* Draw and process the dialog */
 	do
@@ -91,9 +90,10 @@ void DlgNewDisk_Main(void)
 			sprintf(szTracks, "%i", nTracks);
 			break;
 		 case DLGNEWDISK_SAVE:
-			if (SDLGui_FileSelect(szNewDiskName, NULL, TRUE))
+			tmpname = SDLGui_FileSelect(szNewDiskName, NULL, TRUE);
+			if (tmpname)
 			{
-				if (!File_DoesFileNameEndWithSlash(szNewDiskName))
+				if (!File_DoesFileNameEndWithSlash(tmpname))
 				{
 					int nSectors, nSides;
 
@@ -111,8 +111,9 @@ void DlgNewDisk_Main(void)
 					else
 						nSides = 2;
 
-					CreateBlankImage_CreateFile(szNewDiskName, nTracks, nSectors, nSides);
+					CreateBlankImage_CreateFile(tmpname, nTracks, nSectors, nSides);
 				}
+				free(tmpname);
 			}
 			break;
 		}

@@ -28,5 +28,7 @@ extern FILE *File_Close(FILE *fp);
 extern void File_MakeAbsoluteSpecialName(char *pszFileName);
 extern void File_MakeAbsoluteName(char *pszFileName);
 extern void File_MakeValidPathName(char *pPathName);
+extern void File_PathShorten(char *path, int dirs);
+extern void File_HandleDotDirs(char *path);
 
 #endif /* HATARI_FILE_H */

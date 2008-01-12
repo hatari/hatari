@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.17 2007-12-11 19:02:19 eerot Exp $";
+const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisc.c,v 1.18 2008-01-12 19:14:08 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -85,30 +85,31 @@ static SGOBJ diskdlg[] =
  */
 static BOOL Dialog_BrowseDisk(char *dlgname, int drive, int diskid)
 {
-  char *tmpname, *zip_path;
+  char *selname, *zip_path;
+  const char *tmpname;
 
-  tmpname = malloc(2 * FILENAME_MAX);
-  if (!tmpname)
-  {
-    perror("Dialog_BrowseDisk");
-    return FALSE;
-  }
-  zip_path = tmpname + FILENAME_MAX;
-  zip_path[0] = 0;
-	
   assert(drive >= 0 && drive < 2);
   if( EmulationDrives[drive].bDiskInserted )
-    strcpy(tmpname, EmulationDrives[drive].szFileName);
+    tmpname = EmulationDrives[drive].szFileName;
   else
-    strcpy(tmpname, DialogParams.DiskImage.szDiskImageDirectory);
+    tmpname = DialogParams.DiskImage.szDiskImageDirectory;
 
-  if (SDLGui_FileSelect(tmpname, zip_path, FALSE))
+  selname = SDLGui_FileSelect(tmpname, &zip_path, FALSE);
+  if (selname)
   {
-    if( !File_DoesFileNameEndWithSlash(tmpname) && File_Exists(tmpname) )
+    if( !File_DoesFileNameEndWithSlash(selname) && File_Exists(selname) )
     {
+      char *realname;
       /* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
-      Floppy_ZipInsertDiskIntoDrive(drive, tmpname, zip_path);
-      File_ShrinkName(dlgname, tmpname, diskdlg[diskid].w);
+      realname = Floppy_ZipInsertDiskIntoDrive(drive, selname, zip_path);
+      /* TODO: error dialog when this fails */
+      if (realname)
+      {
+	File_ShrinkName(dlgname, realname, diskdlg[diskid].w);
+	free(realname);
+      }
+      if (zip_path)
+        free(zip_path);
     }
     else
     {
@@ -116,10 +117,9 @@ static BOOL Dialog_BrowseDisk(char *dlgname, int drive, int diskid)
       Floppy_EjectDiskFromDrive(0, FALSE);
       dlgname[0] = 0;
     }
-    free(tmpname);
+    free(selname);
     return TRUE;
   }
-  free(tmpname);
   return FALSE;
 }
 
@@ -128,20 +128,13 @@ static BOOL Dialog_BrowseDisk(char *dlgname, int drive, int diskid)
  */
 static BOOL Dialog_BrowseDir(char *dlgname, char *confname, int maxlen)
 {
-  char *str, *tmpname;
+  char *str, *selname;
 
-  tmpname = malloc(FILENAME_MAX);
-  if (!tmpname)
+  selname = SDLGui_FileSelect(confname, NULL, FALSE);
+  if (selname)
   {
-    perror("Dialog_BrowseDir");
-    return FALSE;
-  }
-  strcpy(tmpname, confname);
-
-  if (SDLGui_FileSelect(tmpname, NULL, FALSE))
-  {
-    strcpy(confname, tmpname);
-    free(tmpname);
+    strcpy(confname, selname);
+    free(selname);
 
     str = strrchr(confname, '/');
     if (str != NULL)
@@ -150,7 +143,6 @@ static BOOL Dialog_BrowseDir(char *dlgname, char *confname, int maxlen)
     File_ShrinkName(dlgname, confname, maxlen);
     return TRUE;
   }
-  free(tmpname);
   return FALSE;
 }
 

@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.49 2008-01-09 23:34:29 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.50 2008-01-12 19:14:07 eerot Exp $";
 
 #include <config.h>
 
@@ -719,4 +719,64 @@ void File_MakeValidPathName(char *pPathName)
 		}
 	}
 	while (pLastSlash);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Remove given number of path elements from the end of the given path.
+ * Leaves '/' at the end if path still has directories. Given path
+ * may not be empty.
+ */
+void File_PathShorten(char *path, int dirs)
+{
+	int i, n = 0;
+	/* ignore last char, it may or may not be '/' */
+	i = strlen(path)-1;
+	assert(i >= 0);
+	while(i > 0 && n < dirs) {
+		if (path[--i] == PATHSEP)
+			n++;
+	}
+	if (path[i] == PATHSEP) {
+		path[i+1] = '\0';
+	} else {
+		path[0] = PATHSEP;
+		path[1] = '\0';
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+  If "/." or "/.." at end, remove that and in case of ".." remove
+  also preceding dir (go one dir up).  Leave '/' at the end of
+  the path.
+*/
+void File_HandleDotDirs(char *path)
+{
+	int len = strlen(path);
+	if (len >= 2 &&
+	    path[len-2] == PATHSEP &&
+	    path[len-1] == '.')
+	{
+		/* keep in same dir */
+		path[len-1] = '\0';
+	}
+	else if (len >= 3 &&
+	    path[len-3] == PATHSEP &&
+	    path[len-2] == '.' &&
+	    path[len-1] == '.')
+	{
+		/* go one dir up */
+		if (len == 3) {
+			path[1] = 0;		/* already root */
+		} else {
+			char *ptr;
+			path[len-3] = 0;
+			ptr = strrchr(path, PATHSEP);
+			if (ptr)
+				*(ptr+1) = 0;
+		}
+	}
 }
