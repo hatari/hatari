@@ -9,7 +9,7 @@
   We intercept and direct some XBios calls to handle the RS-232 etc. and help
   with floppy debugging.
 */
-const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.13 2007-12-19 11:54:41 thothy Exp $";
+const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.14 2008-01-23 19:32:36 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -68,7 +68,7 @@ static BOOL XBios_Floprd(Uint32 Params)
 	Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
 	Log_Printf(LOG_DEBUG, "FLOPRD %s,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].szFileName,
-	           Side, Track, Sector, Count, m68k_getpc());
+	           Side, Track, Sector, Count, M68000_GetPC());
 #endif
 
 	return FALSE;
@@ -95,7 +95,7 @@ static BOOL XBios_Flopwr(Uint32 Params)
 	Count = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
 	Log_Printf(LOG_DEBUG, "FLOPWR %s,%d,%d,%d,%d at addr 0x%X\n", EmulationDrives[Dev].szFileName,
-	           Side, Track, Sector, Count, m68k_getpc());
+	           Side, Track, Sector, Count, M68000_GetPC());
 #endif
 
 	return FALSE;
