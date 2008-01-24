@@ -11,7 +11,10 @@
   - Add the option information to corresponding place in HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.30 2007-11-25 14:31:22 thothy Exp $";
+
+/* 2007/09/27   [NP]    Add parsing for the '--trace' option.				*/
+
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.31 2008-01-24 18:53:57 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -27,6 +30,7 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.30 2007-11-25 14:31:22 thot
 #include "video.h"
 #include "vdi.h"
 #include "joy.h"
+#include "trace.h"
 
 #include "hatari-glue.h"
 
@@ -68,6 +72,7 @@ enum {
 	OPT_KEYMAPFILE,
 	OPT_SLOWFDC,
 	OPT_MACHINE,
+	OPT_TRACE,
 	OPT_NONE,
 };
 
@@ -151,6 +156,8 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Slow down FDC emulation (deprecated)" },
 	{ OPT_MACHINE,   NULL, "--machine",
 	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
+	{ OPT_TRACE,   NULL, "--trace",
+	  "<trace1,...>", "Activate debugging traces. Use --trace help to see all options" },
 	{ OPT_NONE, NULL, NULL, NULL, NULL }
 };
 
@@ -696,6 +703,14 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			break;
 			
+		case OPT_TRACE:
+			i += 1;
+			if ( ParseTraceOptions ( argv[i] ) == 0 )
+			{
+				Opt_ShowExit(OPT_NONE, argv[i], "Error parsing trace options (use --trace help for available list)!\n");
+			}
+			break;
+
 		default:
 			Opt_ShowExit(OPT_NONE, argv[i], "Program didn't handle documented option");
 		}

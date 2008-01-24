@@ -12,7 +12,10 @@
   checked each HBL to perform the transfer of data from our disk image into
   the ST RAM area by simulating the DMA.
 */
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.32 2007-10-15 22:00:57 thothy Exp $";
+
+/* 2007/11/06   [NP]    Add calls to HATARI_TRACE and set FDC_DELAY_HBL=180		*/
+
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.33 2008-01-24 18:53:57 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -28,6 +31,7 @@ const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.32 2007-10-15 22:00:57 thothy Ex
 #include "misc.h"
 #include "psg.h"
 #include "stMemory.h"
+#include "trace.h"
 
 
 /*
@@ -442,7 +446,7 @@ void FDC_UpdateHBL(void)
 	if (nFdcDelayHbls-- > 0)
 		return;
 	else
-		nFdcDelayHbls = 180;
+		nFdcDelayHbls = FDC_DELAY_HBL;
 
 	/* Do we have a DMA ready to copy? */
 	if (bDMAWaiting)
@@ -1083,6 +1087,9 @@ static void FDC_ExecuteCommand(void)
  */
 static void FDC_WriteSectorCountRegister(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 sector count=0x%x video_cyc=%d\n" ,
+		DiskControllerWord_ff8604wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	FDCSectorCountRegister = DiskControllerWord_ff8604wr;
 }
 
@@ -1093,6 +1100,9 @@ static void FDC_WriteSectorCountRegister(void)
  */
 static void FDC_WriteCommandRegister(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 command=0x%x video_cyc=%d\n" ,
+		DiskControllerWord_ff8604wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	FDCCommandRegister = DiskControllerWord_ff8604wr;
 	/* And execute */
 	FDC_ExecuteCommand();
@@ -1105,6 +1115,9 @@ static void FDC_WriteCommandRegister(void)
  */
 static void FDC_WriteTrackRegister(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 track=0x%x video_cyc=%d\n" ,
+		DiskControllerWord_ff8604wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	FDCTrackRegister = DiskControllerWord_ff8604wr;    /* 0...79 */
 }
 
@@ -1115,6 +1128,9 @@ static void FDC_WriteTrackRegister(void)
  */
 static void FDC_WriteSectorRegister(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 sector=0x%x video_cyc=%d\n" ,
+		DiskControllerWord_ff8604wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	FDCSectorRegister = DiskControllerWord_ff8604wr;  /* 1,2,3..... */
 }
 
@@ -1125,6 +1141,9 @@ static void FDC_WriteSectorRegister(void)
  */
 static void FDC_WriteDataRegister(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 data=0x%x video_cyc=%d\n" ,
+		DiskControllerWord_ff8604wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	FDCDataRegister = DiskControllerWord_ff8604wr;
 }
 
@@ -1145,6 +1164,9 @@ void FDC_DiskController_WriteWord(void)
 	M68000_WaitState(4);
 
 	DiskControllerWord_ff8604wr = IoMem_ReadWord(0xff8604);
+
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 data=0x%x video_cyc=%d\n" ,
+		DiskControllerWord_ff8604wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 
 	HDC_WriteCommandPacket();                 /*  Handle HDC functions */
 
@@ -1244,6 +1266,9 @@ void FDC_DiskControllerStatus_ReadWord(void)
 	}
 
 	IoMem_WriteWord(0xff8604, DiskControllerByte);
+
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc read 8604 ctrl status=0x%x video_cyc=%d\n" ,
+		DiskControllerByte , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 }
 
 
@@ -1268,6 +1293,8 @@ Uint32 FDC_ReadDMAAddress(void)
  */
 void FDC_WriteDMAAddress(Uint32 Address)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 0x%x to dma address video_cyc=%d\n" , Address , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Store as 24-bit address */
 	STMemory_WriteByte(0xff8609, Address>>16);
 	STMemory_WriteByte(0xff860b, Address>>8);
@@ -1282,6 +1309,9 @@ void FDC_WriteDMAAddress(Uint32 Address)
  */
 BOOL FDC_ReadSectorFromFloppy(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc read sector dev=%d sect=%d track=%d side=%d video_cyc=%d\n" ,
+		nReadWriteDev, nReadWriteSector, nReadWriteTrack, nReadWriteSide, Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Copy in 1 sector to our workspace */
 	if (Floppy_ReadSectors(nReadWriteDev, DMASectorWorkSpace, nReadWriteSector, nReadWriteTrack, nReadWriteSide, 1, NULL))
 	{
@@ -1296,6 +1326,7 @@ BOOL FDC_ReadSectorFromFloppy(void)
 	}
 
 	/* Failed */
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc read sector failed\n" );
 	return FALSE;
 }
 
@@ -1312,6 +1343,9 @@ BOOL FDC_WriteSectorFromFloppy(void)
 	/* Get DMA address */
 	Address = FDC_ReadDMAAddress();
 
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write sector addr=%x dev=%d sect=%d track=%d side=%d video_cyc=%d\n" ,
+		Address, nReadWriteDev, nReadWriteSector, nReadWriteTrack, nReadWriteSide, Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Write out 1 sector from our workspace */
 	if (Floppy_WriteSectors(nReadWriteDev, &STRam[Address], nReadWriteSector, nReadWriteTrack, nReadWriteSide, 1, NULL))
 	{
@@ -1326,6 +1360,7 @@ BOOL FDC_WriteSectorFromFloppy(void)
 	}
 
 	/* Failed */
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write sector failed\n" );
 	return FALSE;
 }
 
@@ -1369,6 +1404,8 @@ void FDC_DmaModeControl_WriteWord(void)
 
 	DMAModeControl_ff8606wr_prev = DMAModeControl_ff8606wr;  /* Store previous to check for _read/_write toggle (DMA reset) */
 	DMAModeControl_ff8606wr = IoMem_ReadWord(0xff8606);      /* Store to DMA Mode control */
+
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8606 ctrl=0x%x video_cyc=%d\n" , DMAModeControl_ff8606wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 
 	/* When write to 0xff8606, check bit '8' toggle. This causes DMA status reset */
 	if ((DMAModeControl_ff8606wr_prev ^ DMAModeControl_ff8606wr) & 0x0100)

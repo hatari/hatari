@@ -79,6 +79,12 @@ enum
 };
 
 
+/* Commands are taking the equivalent of FDC_HBL_DELAY hbl's to execute */
+/* to try to simulate the speed of a real ST floppy drive */
+#define FDC_DELAY_HBL		180
+//#define FDC_DELAY_HBL		3	// 'Just Bugging Demo' by ACF requires a very fast delay (bug in the loader)
+
+
 extern Sint16 FDCSectorCountRegister;
 extern Uint16 DiskControllerWord_ff8604wr;
 extern Uint16 DMAModeControl_ff8606wr;
