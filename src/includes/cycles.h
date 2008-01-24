@@ -19,6 +19,8 @@ enum
 
 extern int nCyclesMainCounter;
 
+extern int CurrentInstrCycles;
+
 
 extern void Cycles_SetCounter(int nId, int nValue);
 extern int Cycles_GetCounter(int nId);

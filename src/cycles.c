@@ -10,7 +10,16 @@
   and sound cycles), we simply update these counters with the main counter
   before returning the current counter value.
 */
-const char Cycles_rcsid[] = "Hatari $Id: cycles.c,v 1.4 2007-01-16 18:42:59 thothy Exp $";
+
+
+/* 2007/03/xx	[NP]	Use 'CurrentInstrCycles' to get a good approximation for	*/
+/*			Cycles_GetCounterOnReadAccess and Cycles_GetCounterOnWriteAccess*/
+/*			(this should work correctly with 'move' instruction).		*/
+
+
+
+
+const char Cycles_rcsid[] = "Hatari $Id: cycles.c,v 1.5 2008-01-24 21:41:54 thothy Exp $";
 
 #include "main.h"
 #include "cycles.h"
@@ -19,6 +28,8 @@ const char Cycles_rcsid[] = "Hatari $Id: cycles.c,v 1.4 2007-01-16 18:42:59 thot
 int nCyclesMainCounter;                         /* Main cycles counter */
 
 static int nCyclesCounter[CYCLES_COUNTER_MAX];  /* Array with all counters */
+
+int CurrentInstrCycles;
 
 
 /*-----------------------------------------------------------------------*/
@@ -77,8 +88,9 @@ int Cycles_GetCounterOnReadAccess(int nId)
 	/* Update counters first so we read an up-to-date value */
 	Cycles_UpdateCounters();
 
-	/* TODO: Find proper cycle offset depending on the type of the current instruction */
-	nAddCycles = 0;
+	/* TODO: Find proper cycles count depending on the type of the current instruction */
+	/* (e.g. movem is not correctly handled) */
+	nAddCycles = CurrentInstrCycles;		/* read is effective at the end of the instr */
 
 	return nCyclesCounter[nId] + nAddCycles;
 }
@@ -96,8 +108,14 @@ int Cycles_GetCounterOnWriteAccess(int nId)
 	/* Update counters first so we read an up-to-date value */
 	Cycles_UpdateCounters();
 
-	/* TODO: Find proper cycle offset depending on the type of the current instruction */
-	nAddCycles = 0;
+	/* TODO: Find proper cycles count depending on the type of the current instruction */
+	/* (e.g. movem is not correctly handled) */
+	nAddCycles = CurrentInstrCycles;
+
+	/* assume the behaviour of a 'move' (since this is the most */
+	/* common instr used when requiring cycle precise writes) */
+	if ( nAddCycles >= 8 )
+	  nAddCycles -= 4;				/* last 4 cycles are for prefetch */
 
 	return nCyclesCounter[nId] + nAddCycles;
 }

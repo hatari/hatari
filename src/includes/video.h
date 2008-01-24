@@ -54,15 +54,47 @@
 #define SCREEN_HEIGHT_HBL_COLOR  200    /* This is usually the height of the screen */
 #define SCREEN_HEIGHT_HBL_MONO   400
 
+#define SCREEN_END_HBL_50HZ	( SCREEN_START_HBL_50HZ + SCREEN_HEIGHT_HBL_COLOR )	/* 263 */
+#define SCREEN_END_HBL_60HZ	( SCREEN_START_HBL_60HZ + SCREEN_HEIGHT_HBL_COLOR )	/* 234 */
+
 /* FIXME: SCREEN_START_CYCLE should rather be 52 or so, but this breaks a lot of other things at the moment... */
 #define SCREEN_START_CYCLE  56          /* Cycle first normal pixel appears on */
 
+#define LINE_REMOVE_TOP_CYCLE    504    /* switch to 60 Hz on line 33 should not occur after cycle 504 to remove top border */
+                                        /* switch to 50 Hz should occur after cycle 504 on line 33 */
+#define LINE_REMOVE_BOTTOM_CYCLE 504    /* same value than top border, but on line 262 (50 Hz) or 233 (60 Hz) */
+
+
+#define LINE_START_CYCLE_50	56
+#define LINE_START_CYCLE_60	52
+#define LINE_START_CYCLE_70	0
+#define LINE_END_CYCLE_50	376
+#define LINE_END_CYCLE_60	372
+#define LINE_END_CYCLE_70	160
+#define LINE_END_CYCLE_NO_RIGHT	460
+#define LINE_END_CYCLE_50_2	(LINE_END_CYCLE_50+44*2)	/* used in enchanted lands */
+#define LINE_END_CYCLE_FULL	512				/* used in enchanted lands */
+#define LINE_SCROLL_13_CYCLE_50	20	/* 13 pixels right "hardware" scrolling */
+#define LINE_SCROLL_9_CYCLE_50	24	/*  9 pixels right "hardware" scrolling */
+#define LINE_SCROLL_5_CYCLE_50	28	/*  5 pixels right "hardware" scrolling */
+#define LINE_SCROLL_1_CYCLE_50	32	/*  1 pixels right "hardware" scrolling */
+#define LINE_LEFT_MID_CYCLE_1	20	/* mid res overscan, shifts display by 0 byte */
+#define LINE_LEFT_MID_CYCLE_2	28	/* mid res overscan, shifts display by 2 bytes */
+
 /* Bytes for opened left and right border: */
-#define BORDERBYTES_LEFT  26
-#define BORDERBYTES_RIGHT 44
+#define BORDERBYTES_NORMAL	160	/* size of a "normal" line */
+#define BORDERBYTES_LEFT	26
+#define BORDERBYTES_RIGHT	44
+#define BORDERBYTES_RIGHT_FULL	22
 
 /* Legacy defines: */
 #define CYCLES_PER_FRAME    (nScanlinesPerFrame*nCyclesPerLine)  /* Cycles per VBL @ 50fps = 160256 */
+
+
+#define VBL_VIDEO_CYCLE_OFFSET		(60+4)
+#define HBL_VIDEO_CYCLE_OFFSET		(12-12)			/* cycles after end of current line */
+#define TIMERB_VIDEO_CYCLE_OFFSET	(96+12)			/* cycles before end of current line (28 cycles after display off) */
+#define RESTART_VIDEO_COUNTER_CYCLE	( (MAX_SCANLINES_PER_FRAME-3) * CYCLES_PER_LINE_50HZ + 48 )
 
 
 extern int STRes;
@@ -70,6 +102,7 @@ extern int TTRes;
 extern BOOL bUseSTShifter;
 extern BOOL bUseHighRes;
 extern int nVBLs;
+extern int nHBL;
 extern int nStartHBL;
 extern int OverscanMode;
 extern Uint16 HBLPalettes[];
