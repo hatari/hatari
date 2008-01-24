@@ -39,5 +39,7 @@ extern void PSG_SelectRegister_WriteByte(void);
 extern void PSG_SelectRegister_ReadByte(void);
 extern void PSG_DataRegister_WriteByte(void);
 extern void PSG_DataRegister_ReadByte(void);
+extern void PSG_Void_WriteByte(void);
+extern void PSG_Void_ReadByte(void);
 
 #endif  /* HATARI_PSG_H */

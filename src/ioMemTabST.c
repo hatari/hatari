@@ -6,7 +6,14 @@
 
   Table with hardware IO handlers for the ST.
 */
-const char IoMemTabST_rcsid[] = "Hatari $Id: ioMemTabST.c,v 1.1 2006-08-31 19:24:46 thothy Exp $";
+
+/* 2007/04/29	[NP]	Functions PSG_Void_WriteByte and PSG_Void_ReadByte to handle	*/
+/*			accesses to $ff8801/03. These adresses have no effect, but they	*/
+/*			give some wait states (e.g. move.l d0,ff8800). 			*/
+/* 2007/12/16	[NP]	0xff820d/0xff820f are only available on STE, not on ST. We call	*/
+/*			IoMem_VoidRead and IoMem_VoidWrite for these addresses.		*/
+
+const char IoMemTabST_rcsid[] = "Hatari $Id: ioMemTabST.c,v 1.2 2008-01-24 21:21:54 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -39,8 +46,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_ST[] =
 	{ 0xff8209, SIZE_BYTE, Video_ScreenCounterLow_ReadByte, IoMem_WriteWithoutInterception },
 	{ 0xff820a, SIZE_BYTE, Video_Sync_ReadByte, Video_Sync_WriteByte },
 	{ 0xff820b, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff820d, SIZE_BYTE, Video_BaseLow_ReadByte, IoMem_WriteWithoutInterception },
-	{ 0xff820f, SIZE_BYTE, Video_LineWidth_ReadByte, IoMem_WriteWithoutInterception },
+	{ 0xff820d, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },
+	{ 0xff820f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },
 	{ 0xff8240, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color0_WriteWord },         /* COLOR 0 */
 	{ 0xff8242, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color1_WriteWord },         /* COLOR 1 */
 	{ 0xff8244, SIZE_WORD, IoMem_ReadWithoutInterception, Video_Color2_WriteWord },         /* COLOR 2 */
@@ -68,9 +75,9 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_ST[] =
 	{ 0xff860f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 
 	{ 0xff8800, SIZE_BYTE, PSG_SelectRegister_ReadByte, PSG_SelectRegister_WriteByte },
-	{ 0xff8801, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },
+	{ 0xff8801, SIZE_BYTE, PSG_Void_ReadByte, PSG_Void_WriteByte },
 	{ 0xff8802, SIZE_BYTE, PSG_DataRegister_ReadByte, PSG_DataRegister_WriteByte },
-	{ 0xff8803, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },
+	{ 0xff8803, SIZE_BYTE, PSG_Void_ReadByte, PSG_Void_WriteByte },
 
 	{ 0xff8a00, 32,        IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter halftone RAM */
 	{ 0xff8a20, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter source x increment */

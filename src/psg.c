@@ -8,7 +8,61 @@
 
   Also used for the printer (centronics) port emulation (PSG Port B, Register 15)
 */
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.17 2007-01-30 20:33:50 eerot Exp $";
+
+
+/* 2007/04/14	[NP]	First approximation to get cycle accurate accesses to ff8800/02	*/
+/*			by cumulating wait state of 1 cycle and rounding the final	*/
+/*			result to 4.							*/
+/* 2007/04/29	[NP]	Functions PSG_Void_WriteByte and PSG_Void_ReadByte to handle	*/
+/*			accesses to $ff8801/03. These adresses have no effect, but they	*/
+/*			must give a 1 cycle wait state (e.g. move.l d0,ff8800).		*/
+/* 2007/09/29	[NP]	Replace printf by calls to HATARI_TRACE.			*/
+/* 2007/10/23	[NP]	In PSG_Void_WriteByte, add a wait state only if no wait state	*/
+/*			were added so far (hack, but gives good result).		*/
+/* 2007/11/18	[NP]	In PSG_DataRegister_WriteByte, set unused bit to 0, in case	*/
+/*			the data reg is read later (fix Mindbomb Demo / BBC).		*/
+
+
+/* Emulating wait states when accessing $ff8800/01/02/03 with different 'move' variants	*/
+/* is a complex task. So far, adding 1 cycle wait state to each access and rounding the	*/
+/* final number to 4 gives some good results, but this is certainly not the way it's	*/
+/* working for real in the ST.								*/
+/* The following examples show some verified wait states for different accesses :	*/
+/*	lea     $ffff8800,a1								*/
+/*	lea     $ffff8802,a2								*/
+/*	lea     $ffff8801,a3								*/
+/*											*/
+/*	movep.w d1,(a1)         ; 20 16+4       (ventura loader)			*/
+/*	movep.l d1,(a1)         ; 28 24+4       (ventura loader, ulm loader)		*/
+/*											*/
+/*	movep.l d6,0(a5)        ; 28 24+4       (SNY I, TCB)				*/
+/*	movep.w d5,0(a5)        ; 20 16+4       (SNY I, TCB)				*/
+/*											*/
+/*	move.b d1,(a1)          ; 12 8+4						*/
+/*	move.b d1,(a2)          ; 12 8+4						*/
+/*	move.b d1,(a3)          ; 12 8+4        (crickey ulm hidden)			*/
+/*											*/
+/*	move.w d1,(a1)          ; 12 8+4						*/
+/*	move.w d1,(a2)          ; 12 8+4						*/
+/*	move.l d1,(a1)          ; 16 12+4       (ulm loader)				*/
+/*											*/
+/*	movem.l d1,(a1)         ; 20 16+4						*/
+/*	movem.l d1-d2,(a1)      ; 28 24+4						*/
+/*	movem.l d1-d3,(a1)      ; 40 32+4+4						*/
+/*	movem.l d1-d4,(a1)      ; 48 40+4+4						*/
+/*	movem.l d1-d5,(a1)      ; 60 48+4+4+4						*/
+/*	movem.l d1-d6,(a1)      ; 68 56+4+4+4						*/
+/*	movem.l d1-d7,(a1)      ; 80 64+4+4+4+4						*/
+/*	movem.l d0-d7,(a1)      ; 88 72+4+4+4+4						*/
+/*											*/
+/* This gives the following "model" :							*/
+/*	- each access to $ff8800 or $ff8802 add 1 cycle wait state			*/
+/*	- access to $ff8801 or $ff8803 give 0 wait state, except if this is the only	*/
+/*	  register accessed (move.b for example).					*/
+
+
+
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.18 2008-01-24 21:21:54 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -23,6 +77,8 @@ const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.17 2007-01-30 20:33:50 eerot Exp
 #if ENABLE_DSP_EMU
 #include "falcon/dsp.h"
 #endif
+#include "video.h"
+#include "trace.h"
 
 Uint8 PSGRegisterSelect;        /* 0xff8800 (read/write) */
 Uint8 PSGRegisters[16];         /* Register in PSG, see PSG_REG_xxxx */
@@ -62,9 +118,18 @@ void PSG_MemorySnapShot_Capture(BOOL bSave)
  */
 void PSG_SelectRegister_WriteByte(void)
 {
-	M68000_WaitState(4);
+//	M68000_WaitState(4);
+	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
 
 	PSGRegisterSelect = IoMem[0xff8800] & 0x0f;     /* Store register to select (value in bits 0-3) */
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_REG ) )
+	  {
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nLineCycles = nFrameCycles % nCyclesPerLine;
+	    HATARI_TRACE_PRINT ( "write ym sel reg=%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		PSGRegisterSelect, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	  }
 }
 
 
@@ -113,10 +178,30 @@ void PSG_SelectRegister_ReadByte(void)
  */
 void PSG_DataRegister_WriteByte(void)
 {
-	M68000_WaitState(4);
+//	M68000_WaitState(4);
+	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
 
-	Sound_Update();                            /* Create samples up until this point with current values */
+	Sound_Update();					/* Create samples up until this point with current values */
 	PSGRegisters[PSGRegisterSelect] = IoMem[0xff8802];        /* Write value to PSGRegisters[] */
+
+	/* [NP] Clear unused bits for some regs */
+	if ( ( PSGRegisterSelect == PSG_REG_CHANNEL_A_COARSE ) || ( PSGRegisterSelect == PSG_REG_CHANNEL_B_COARSE )
+		|| ( PSGRegisterSelect == PSG_REG_CHANNEL_C_COARSE ) || ( PSGRegisterSelect == PSG_REG_ENV_SHAPE ) )
+	  PSGRegisters[PSGRegisterSelect] &= 0x0f;	/* only keep bits 0 - 3 */
+
+	else if ( ( PSGRegisterSelect == PSG_REG_CHANNEL_A_AMP ) || ( PSGRegisterSelect == PSG_REG_CHANNEL_B_AMP )
+		|| ( PSGRegisterSelect == PSG_REG_CHANNEL_C_AMP ) )
+	  PSGRegisters[PSGRegisterSelect] &= 0x1f;	/* only keep bits 0 - 4 */
+
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_DATA ) )
+	  {
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nLineCycles = nFrameCycles % nCyclesPerLine;
+	    HATARI_TRACE_PRINT ( "write ym data reg=%x val=%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		PSGRegisterSelect, IoMem[0xff8802], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	  }
+
 
 	switch (PSGRegisterSelect)
 	{
@@ -209,3 +294,39 @@ void PSG_DataRegister_ReadByte(void)
 
 	IoMem[0xff8802] = 0xff;
 }
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write byte to 0xff8801/03. Do nothing, but add some wait states if needed.
+ */
+void PSG_Void_WriteByte(void)
+{
+	/* [NP] FIXME If no wait states were added so far, it's possible we're accessing */
+	/* 8801/8803 through a .B instruction, so we need to add a wait state */
+	/* Else, the wait states will be added when writing to 8800/8802 */
+	/* This works so far, but this model is certainly not 100% accurate */
+	if ( nWaitStateCycles == 0 )
+	  M68000_WaitState(1);
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_DATA ) )
+	  {
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nLineCycles = nFrameCycles % nCyclesPerLine;
+	    HATARI_TRACE_PRINT ( "write ym 8801/03 video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	  }
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read byte from 0xff8801/03. Do nothing, but add some wait states.
+ */
+void PSG_Void_ReadByte(void)
+{
+	M68000_WaitState(1);
+}
+

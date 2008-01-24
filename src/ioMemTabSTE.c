@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the STE.
 */
-const char IoMemTabSTE_rcsid[] = "Hatari $Id: ioMemTabSTE.c,v 1.1 2006-08-31 19:24:47 thothy Exp $";
+const char IoMemTabSTE_rcsid[] = "Hatari $Id: ioMemTabSTE.c,v 1.2 2008-01-24 21:21:54 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -83,9 +83,9 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_STE[] =
 	{ 0xff860f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 
 	{ 0xff8800, SIZE_BYTE, PSG_SelectRegister_ReadByte, PSG_SelectRegister_WriteByte },
-	{ 0xff8801, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },
+	{ 0xff8801, SIZE_BYTE, PSG_Void_ReadByte, PSG_Void_WriteByte },
 	{ 0xff8802, SIZE_BYTE, PSG_DataRegister_ReadByte, PSG_DataRegister_WriteByte },
-	{ 0xff8803, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },
+	{ 0xff8803, SIZE_BYTE, PSG_Void_ReadByte, PSG_Void_WriteByte },
 
 	{ 0xff8900, SIZE_WORD, DmaSnd_SoundControl_ReadWord, DmaSnd_SoundControl_WriteWord },   /* DMA sound control */
 	{ 0xff8902, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
