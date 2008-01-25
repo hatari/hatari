@@ -10,7 +10,56 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.48 2007-09-26 21:42:40 thothy Exp $";
+
+
+/* 2007/11/12	[NP]	Add HATARI_TRACE_CPU_DISASM.							*/
+/* 2007/11/15	[NP]	In MakeFromSR, writes to m and t0 should be ignored and set to 0 if cpu < 68020 */
+/* 2007/11/26	[NP]	We set BusErrorPC in m68k_run_1 instead of M68000_BusError, else the BusErrorPC	*/
+/*			will not point to the opcode that generated the bus error.			*/
+/*			Huge debug/work on Exceptions 2/3 stack frames, result is more accurate and	*/
+/*			allow to pass the very tricky Transbeauce 2 Demo's protection.			*/
+/* 2007/11/28	[NP]	Backport DIVS/DIVU cycles exact routines from WinUAE (original work by Jorge	*/
+/*			Cwik, pasti@fxatari.com).							*/
+/* 2007/12/06	[NP]	The PC stored in the stack frame for the bus error is complex to emulate,	*/
+/*			because it doesn't necessarily point to the next instruction after the one that	*/
+/*			triggered the bus error. In the case of the Transbeauce 2 Demo, after 		*/
+/*			'move.l $0.w,$24.w', PC is incremented of 4 bytes, not 6, and stored in the	*/
+/*			stack. Special case to decrement PC of 2 bytes if opcode is '21f8'.		*/
+/*			This should be fixed with a real model.						*/
+/* 2007/12/07	[NP]	If Trace is enabled and a group 2 exception occurs (such as CHK), the trace	*/
+/*			handler should be called after the group 2's handler. If a bus error, address	*/
+/*			error or illegal occurs while Trace is enabled, the trace handler should not be	*/
+/*			called after this instruction (Transbeauce 2 Demo, Phaleon Demo).		*/
+/*			This means that if a CHK is executed while trace bit was set, we must set PC	*/
+/*			to CHK handler, turn trace off in the internal SR, but we must still call the	*/
+/*			trace handler one last time with the PC set to the CHK's handler (even if	*/
+/*			trace mode is internally turned off while processing an exception). Once trace	*/
+/*			handler is finished (RTE), we return to the CHK's handler.			*/
+/*			This is true for DIV BY 0, CHK, TRAPV and TRAP.					*/
+/*			Backport exception_trace() from WinUAE to handle this behaviour	(used in	*/
+/*			Transbeauce 2 demo).								*/
+/* 2007/12/09	[NP]	'dc.w $a' should not be used to call 'OpCode_SysInit' but should give an illegal*/
+/*			instruction (Transbeauce 2 demo).						*/
+/*			Instead of always replacing the illegal instructions $8, $a and $c by the	*/
+/*			3 functions required for HD emulation, we now do it in cart.c only if the	*/
+/*			built-in cartridge image is loaded.						*/
+/*			YEAH! Hatari is now the first emulator to pass the Transbeauce 2 protection :)	*/
+/* 2007/12/18	[NP]	More precise timings for HBL, VBL and MFP interrupts. On ST, these interrupts	*/
+/*			are taking 56 cycles instead of the 44 cycles in the 68000's documentation.	*/
+/* 2007/12/24	[NP]	If an interrupt (HBL, VBL) is pending after intruction 'n' was processed, the	*/
+/*			exception should be called before instr. 'n+1' is processed, not after (else the*/
+/*			interrupt's handler is delayed by one 68000's instruction, which could break	*/
+/*			some demos with too strict timings) (ACF's Demo Main Menu).			*/
+/*			We call the interrupt if ( SPCFLAG_INT | SPCFLAG_DOINT ) is set, not only if	*/
+/*			SPCFLAG_DOINT is set (as it was already the case when handling 'STOP').		*/
+/* 2007/12/25	[NP]	FIXME When handling exceptions' cycles, using nr >= 64 to determine if this is	*/
+/*			an MFP exception could be wrong if the MFP VR was set to another value than the	*/
+/*			default $40 (this could be a problem with programs requiring a precise cycles	*/
+/*			calculation while changing VR, but no such programs were encountered so far).	*/
+
+
+
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.49 2008-01-25 22:43:09 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -28,7 +77,10 @@ const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.48 2007-09-26 21:42:40 tho
 #include "../includes/debugui.h"
 #include "../includes/bios.h"
 #include "../includes/xbios.h"
+#include "../includes/video.h"
+#include "../includes/trace.h"
 
+//#define DEBUG_PREFETCH
 
 struct flag_struct regflags;
 
@@ -52,6 +104,7 @@ int fpp_movem_next[256];
 
 cpuop_func *cpufunctbl[65536];
 
+int OpcodeFamily;
 
 #define COUNT_INSTRS 0
 
@@ -152,11 +205,6 @@ void build_cpufunctbl(void)
 	if (tbl[i].specific)
 	    cpufunctbl[tbl[i].opcode] = tbl[i].handler;
     }
-
-    /* Hatari's illegal opcodes: */
-    cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;
-    cpufunctbl[SYSINIT_OPCODE] = OpCode_SysInit;
-    cpufunctbl[VDI_OPCODE] = OpCode_VDI;
 }
 
 
@@ -659,6 +707,10 @@ void MakeFromSR (void)
 	    }
 	}
     } else {
+	/* [NP] If cpu < 68020, m and t0 are ignored and should be set to 0 */
+	regs.t0 = 0;
+	regs.m = 0;
+
 	if (olds != regs.s) {
 	    if (olds) {
 		regs.isp = m68k_areg(regs, 7);
@@ -678,6 +730,20 @@ void MakeFromSR (void)
 	/* Keep SPCFLAG_DOTRACE, we still want a trace exception for
 	   SR-modifying instructions (including STOP).  */
 	unset_special (SPCFLAG_TRACE);
+}
+
+
+static void exception_trace (int nr)
+{
+    unset_special (SPCFLAG_TRACE | SPCFLAG_DOTRACE);		
+    if (regs.t1 && !regs.t0) {
+        /* trace stays pending if exception is div by zero, chk,
+         * trapv or trap #x
+         */
+        if (nr == 5 || nr == 6 || nr == 7 || (nr >= 32 && nr <= 47))
+            set_special (SPCFLAG_DOTRACE);
+    }
+    regs.t1 = regs.t0 = regs.m = 0;
 }
 
 
@@ -767,14 +833,19 @@ void Exception(int nr, uaecptr oldpc)
     m68k_areg(regs, 7) -= 2;
     put_word (m68k_areg(regs, 7), regs.sr);
 
+    HATARI_TRACE ( HATARI_TRACE_CPU_EXCEPTION , "cpu exception %d currpc %x buspc %x fault_e3 %x op_e3 %hx addr_e3 %x\n" ,
+	nr, currpc, BusErrorPC, last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3 );
+
     /* 68000 bus/address errors: */
     if (currprefs.cpu_level==0 && (nr==2 || nr==3)) {
-	uae_u16 specialstatus = 0x2001;
+	uae_u16 specialstatus = 1;
+
 	/* Special status word emulation isn't perfect yet... :-( */
 	if (regs.sr & 0x2000)
 	    specialstatus |= 0x4;
 	m68k_areg(regs, 7) -= 8;
 	if (nr == 3) {    /* Address error */
+	    specialstatus |= ( last_op_for_exception_3 & (~0x1f) );	/* [NP] unused bits of specialstatus are those of the last opcode ! */
 	    put_word (m68k_areg(regs, 7), specialstatus);
 	    put_long (m68k_areg(regs, 7)+2, last_fault_for_exception_3);
 	    put_word (m68k_areg(regs, 7)+6, last_op_for_exception_3);
@@ -785,11 +856,17 @@ void Exception(int nr, uaecptr oldpc)
 	    }
 	}
 	else {    /* Bus error */
+	    specialstatus |= ( get_word(BusErrorPC) & (~0x1f) );	/* [NP] unused bits of special status are those of the last opcode ! */
 	    if (bBusErrorReadWrite)
 	      specialstatus |= 0x10;
 	    put_word (m68k_areg(regs, 7), specialstatus);
 	    put_long (m68k_areg(regs, 7)+2, BusErrorAddress);
-	    put_word (m68k_areg(regs, 7)+6, get_word(BusErrorPC));  /* Opcode */
+	    put_word (m68k_areg(regs, 7)+6, get_word(BusErrorPC));	/* Opcode */
+
+	    /* [NP] PC stored in the stack frame is not necessarily pointing to the next instruction ! */
+	    /* FIXME : we should have a proper model for this, in the meantime we handle specific cases */
+	    if ( get_word(BusErrorPC) == 0x21f8 )			/* move.l $0.w,$24.w (Transbeauce 2 loader) */ 
+	      put_long (m68k_areg(regs, 7)+10, currpc-2);		/* correct PC is 2 bytes less than usual value */
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {
 	      fprintf(stderr, "Detected double bus error at address $%x, PC=$%lx => CPU halted!\n",
@@ -816,36 +893,39 @@ void Exception(int nr, uaecptr oldpc)
     }
     m68k_setpc (get_long (regs.vbr + 4*nr));
     fill_prefetch_0 ();
-    regs.t1 = regs.t0 = regs.m = 0;
-    unset_special (SPCFLAG_TRACE | SPCFLAG_DOTRACE);
+    /* Handle trace flags depending on current state */
+    exception_trace (nr);
 
-    /* Handle exception cycles: */
+    /* Handle exception cycles */
     if(nr >= 24 && nr <= 31)
     {
-      M68000_AddCycles(44+4);                 /* Interrupt */
+      if ( ( nr == 26 ) || ( nr == 28 ) )	/* HBL or VBL */
+        M68000_AddCycles(44+12);		/* Video Interrupt */
+      else
+        M68000_AddCycles(44+4);			/* Other Interrupts */
     }
     else if(nr >= 32 && nr <= 47)
     {
-      M68000_AddCycles(34);                   /* Trap */
+      M68000_AddCycles(34);			/* Trap */
     }
     else switch(nr)
     {
-      case 2: M68000_AddCycles(50); break;    /* Bus error */
-      case 3: M68000_AddCycles(50); break;    /* Address error */
-      case 4: M68000_AddCycles(34); break;    /* Illegal instruction */
-      case 5: M68000_AddCycles(38); break;    /* Div by zero */
-      case 6: M68000_AddCycles(40); break;    /* CHK */
-      case 7: M68000_AddCycles(34); break;    /* TRAPV */
-      case 8: M68000_AddCycles(34); break;    /* Privilege violation */
-      case 9: M68000_AddCycles(34); break;    /* Trace */
-      case 10: M68000_AddCycles(34); break;   /* Line-A - probably wrong */
-      case 11: M68000_AddCycles(34); break;   /* Line-F - probably wrong */
+      case 2: M68000_AddCycles(50); break;	/* Bus error */
+      case 3: M68000_AddCycles(50); break;	/* Address error */
+      case 4: M68000_AddCycles(34); break;	/* Illegal instruction */
+      case 5: M68000_AddCycles(38); break;	/* Div by zero */
+      case 6: M68000_AddCycles(40); break;	/* CHK */
+      case 7: M68000_AddCycles(34); break;	/* TRAPV */
+      case 8: M68000_AddCycles(34); break;	/* Privilege violation */
+      case 9: M68000_AddCycles(34); break;	/* Trace */
+      case 10: M68000_AddCycles(34); break;	/* Line-A - probably wrong */
+      case 11: M68000_AddCycles(34); break;	/* Line-F - probably wrong */
       default:
         /* FIXME: Add right cycles value for MFP interrupts and copro exceptions ... */
         if(nr < 64)
-          M68000_AddCycles(4);       /* Coprocessor and unassigned exceptions (???) */
+          M68000_AddCycles(4);			/* Coprocessor and unassigned exceptions (???) */
         else
-          M68000_AddCycles(44);      /* Must be a MFP interrupt */
+          M68000_AddCycles(44+12);		/* Must be a MFP interrupt */
         break;
     }
 }
@@ -1322,6 +1402,7 @@ static int do_specialties (void)
 	/* Add some extra cycles to simulate a wait state */
 	unset_special(SPCFLAG_EXTRA_CYCLES);
 	M68000_AddCycles(nWaitStateCycles);
+	nWaitStateCycles = 0;
     }
 
     if (regs.spcflags & SPCFLAG_DOTRACE) {
@@ -1355,10 +1436,13 @@ static int do_specialties (void)
     if (regs.spcflags & SPCFLAG_TRACE)
 	do_trace ();
 
-    if (regs.spcflags & SPCFLAG_DOINT) {
+//    if (regs.spcflags & SPCFLAG_DOINT) {
+    /* [NP] pending int should be processed now, not after the current instr */
+    if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
 	int intr = intlev ();
 	/* SPCFLAG_DOINT will be enabled again in MakeFromSR to handle pending interrupts! */
-	unset_special (SPCFLAG_DOINT);
+//	unset_special (SPCFLAG_DOINT);
+	unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
 	if (intr != -1 && intr > regs.intmask) {
 	    Interrupt (intr);
 	    regs.stopped = 0;
@@ -1406,7 +1490,13 @@ static void m68k_run_1 (void)
 #endif
 
 	/*m68k_dumpstate(stderr, NULL);*/
-	/*m68k_disasm(stderr, m68k_getpc (), NULL, 1);*/
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_CPU_DISASM ) )
+	  {
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nLineCycles = nFrameCycles % nCyclesPerLine;
+	    HATARI_TRACE_PRINT ( "video_cyc=%6d %3d@%3d : " , nFrameCycles, nLineCycles, nHBL );
+	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+	  }
 
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
 /*	regs_backup[backup_pointer = (backup_pointer + 1) % 16] = regs;*/
@@ -1417,11 +1507,15 @@ static void m68k_run_1 (void)
 	instrcount[opcode]++;
 #endif
 
+	/* In case of a Bus Error, we need the PC of the instruction that caused */
+	/* the error to build the exception stack frame */
+	BusErrorPC = m68k_getpc();
+
 	cycles = (*cpufunctbl[opcode])(opcode);
 
 #ifdef DEBUG_PREFETCH
 	if (memcmp (saved_bytes, oldpcp, 20) != 0) {
-	    fprintf (stderr, "Self-modifying code detected.\n");
+	    fprintf (stderr, "Self-modifying code detected %x.\n" , m68k_getpc() );
 	    set_special (SPCFLAG_BRK);
 	    debugging = 1;
 	}
@@ -1447,7 +1541,14 @@ static void m68k_run_2 (void)
 	uae_u32 opcode = get_iword (0);
 
 	/*m68k_dumpstate(stderr, NULL);*/
-	/*m68k_disasm(stderr, m68k_getpc (), NULL, 1);*/
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_CPU_DISASM ) )
+	  {
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nLineCycles = nFrameCycles % nCyclesPerLine;
+	    HATARI_TRACE_PRINT ( "video_cyc=%6d %3d@%3d : " , nFrameCycles, nLineCycles, nHBL );
+	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
+	  }
+
 
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
 /*	regs_backup[backup_pointer = (backup_pointer + 1) % 16] = regs;*/
@@ -1621,4 +1722,140 @@ void m68k_dumpstate (FILE *f, uaecptr *nextpc)
     m68k_disasm (f, m68k_getpc (), nextpc, 1);
     if (nextpc)
 	fprintf (f, "next PC: %08lx\n", (long)*nextpc);
+}
+
+
+/*
+
+ The routines below take dividend and divisor as parameters.
+ They return 0 if division by zero, or exact number of cycles otherwise.
+
+ The number of cycles returned assumes a register operand.
+ Effective address time must be added if memory operand.
+
+ For 68000 only (not 68010, 68012, 68020, etc).
+ Probably valid for 68008 after adding the extra prefetch cycle.
+
+
+ Best and worst cases are for register operand:
+ (Note the difference with the documented range.)
+
+
+ DIVU:
+
+ Overflow (always): 10 cycles.
+ Worst case: 136 cycles.
+ Best case: 76 cycles.
+
+
+ DIVS:
+
+ Absolute overflow: 16-18 cycles.
+ Signed overflow is not detected prematurely.
+
+ Worst case: 156 cycles.
+ Best case without signed overflow: 122 cycles.
+ Best case with signed overflow: 120 cycles
+
+
+ */
+
+
+//
+// DIVU
+// Unsigned division
+//
+
+STATIC_INLINE int getDivu68kCycles_2 (uae_u32 dividend, uae_u16 divisor)
+{
+    int mcycles;
+    uae_u32 hdivisor;
+    int i;
+
+    if (divisor == 0)
+	return 0;
+
+    // Overflow
+    if ((dividend >> 16) >= divisor)
+	return (mcycles = 5) * 2;
+
+    mcycles = 38;
+    hdivisor = divisor << 16;
+
+    for (i = 0; i < 15; i++) {
+	uae_u32 temp;
+	temp = dividend;
+
+	dividend <<= 1;
+
+	// If carry from shift
+	if ((uae_s32)temp < 0)
+	    dividend -= hdivisor;
+	else {
+	    mcycles += 2;
+	    if (dividend >= hdivisor) {
+		dividend -= hdivisor;
+		mcycles--;
+	    }
+	}
+    }
+    return mcycles * 2;
+}
+int getDivu68kCycles (uae_u32 dividend, uae_u16 divisor)
+{
+    int v = getDivu68kCycles_2 (dividend, divisor) - 4;
+//    write_log ("U%d ", v);
+    return v;
+}
+
+//
+// DIVS
+// Signed division
+//
+
+STATIC_INLINE int getDivs68kCycles_2 (uae_s32 dividend, uae_s16 divisor)
+{
+    int mcycles;
+    uae_u32 aquot;
+    int i;
+
+    if (divisor == 0)
+	return 0;
+
+    mcycles = 6;
+
+    if (dividend < 0)
+	mcycles++;
+
+    // Check for absolute overflow
+    if (((uae_u32)abs (dividend) >> 16) >= (uae_u16)abs (divisor))
+	return (mcycles + 2) * 2;
+
+    // Absolute quotient
+    aquot = (uae_u32) abs (dividend) / (uae_u16)abs (divisor);
+
+    mcycles += 55;
+
+    if (divisor >= 0) {
+	if (dividend >= 0)
+	    mcycles--;
+	else
+	    mcycles++;
+    }
+
+    // Count 15 msbits in absolute of quotient
+
+    for (i = 0; i < 15; i++) {
+	if ((uae_s16)aquot >= 0)
+	    mcycles++;
+	aquot <<= 1;
+    }
+
+    return mcycles * 2;
+}
+int getDivs68kCycles (uae_s32 dividend, uae_s16 divisor)
+{
+    int v = getDivs68kCycles_2 (dividend, divisor) - 4;
+//    write_log ("S%d ", v);
+    return v;
 }

@@ -16,6 +16,7 @@
 
 #include "readcpu.h"
 #include "m68k.h"
+#include "memory.h"
 
 
 /* Special flags */
@@ -310,6 +311,8 @@ extern void fbcc_opp (uae_u32, uaecptr, uae_u32);
 extern void fsave_opp (uae_u32);
 extern void frestore_opp (uae_u32);
 
+extern int getDivu68kCycles (uae_u32 dividend, uae_u16 divisor);
+extern int getDivs68kCycles (uae_s32 dividend, uae_s16 divisor);
 
 /* Opcode of faulting instruction */
 extern uae_u16 last_op_for_exception_3;
@@ -336,5 +339,8 @@ extern const struct cputbl op_smalltbl_5_ff[];
 extern cpuop_func *cpufunctbl[65536];
 
 extern uae_u32 caar, cacr;
+
+/* Family of the latest instruction executed (to check for pairing) */
+extern int OpcodeFamily;			/* see instrmnem in readcpu.h */
 
 #endif	/* UAE_NEWCPU_H */

@@ -22,7 +22,41 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.12 2006-02-09 22:02:26 eerot Exp $";
+
+
+/* 2007/03/xx	[NP]	Use add_cycles.pl to set 'CurrentInstrCycles' in each opcode.			*/
+/* 2007/04/09	[NP]	Correct CLR : on 68000, CLR reads the memory before clearing it (but we should	*/
+/*			not add cycles for reading). This means CLR can give 2 wait states (one for	*/
+/*			read and one for right) (clr.b $fa1b.w in Decade's Demo Main Menu).		*/
+/* 2007/04/14	[NP]	- Although dest -(an) normally takes 2 cycles, this is not the case for move :	*/
+/*			move dest (an), (an)+ and -(an) all take the same time (curi->dmode == Apdi)	*/
+/*			(Syntax Terror Demo Reset).							*/
+/*			- Scc takes 6 cycles instead of 4 if the result is true (Ventura Demo Loader).	*/
+/*			- Store the family of the current opcode into OpcodeFamily : used to check	*/
+/*			instruction pairing on ST into m68000.c						*/
+/* 2007/04/17	[NP]	Add support for cycle accurate MULU (No Cooper Greeting Screen).		*/	
+/* 2007/04/24	[NP]	BCLR #n,Dx takes 12 cycles instead of 14 if n<16 (ULM Demo Menu).		*/
+/* 2007/04/25	[NP]	On ST, d8(An,Xn) and d8(PC,Xn) take 2 cycles more than the official 68000's	*/
+/*			table (ULM Demo Menu).								*/
+/* 2007/11/12	[NP]	Add refill_prefetch for i_ADD to fix Transbeauce 2 demo self modified code.	*/
+/*			Ugly hack, we need better prefetch emulation (switch to winuae gencpu.c)	*/
+/* 2007/11/25	[NP]	In i_DBcc, in case of address error, last_addr_for_exception_3 should be	*/
+/*			pc+4, not pc+2 (Transbeauce 2 demo) (e.g. 'dbf d0,#$fff5').			*/
+/*			This means the value pushed on the frame stack should be the address of the	*/
+/*			instruction following the one generating the address error.			*/
+/*			FIXME : this should be the case for i_BSR and i_BCC too	(need to check on	*/
+/*			a real 68000).									*/
+/* 2007/11/28	[NP]	Backport DIVS/DIVU cycles exact routines from WinUAE (original work by Jorge	*/
+/*			Cwik, pasti@fxatari.com).							*/
+/* 2007/12/08	[NP]	In case of CHK/CHK2 exception, PC stored on the stack wasn't pointing to the	*/
+/*			next instruction but to the current CHK/CHK2 instruction (Transbeauce 2 demo).	*/
+/*			We need to call 'sync_m68k_pc' before calling 'Exception'.			*/
+/* 2007/12/09	[NP]	CHK.L (e.g. $4700) doesn't exist on 68000 and should be considered as an illegal*/
+/*			instruction (Transbeauce 2 demo) -> change in table68k.				*/
+
+
+
+const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.13 2008-01-25 22:43:09 thothy Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -296,8 +330,10 @@ static void genamode (amodes mode, char *reg, wordsizes size, char *name, int ge
 	    /* This would ordinarily be done in gen_nextiword, which we bypass.  */
 	    insn_n_cycles += 4;
 	    printf ("\tuaecptr %sa = get_disp_ea_020(m68k_areg(regs, %s), next_iword());\n", name, reg);
-	} else
+	} else {
+	    insn_n_cycles += 2;					/* [NP] on 68000 ST, d8(An,Xn) takes 2 cycles more */
 	    printf ("\tuaecptr %sa = get_disp_ea_000(m68k_areg(regs, %s), %s);\n", name, reg, gen_nextiword ());
+	}
 
 	break;
     case PC16:
@@ -316,6 +352,7 @@ static void genamode (amodes mode, char *reg, wordsizes size, char *name, int ge
 	    printf ("\tuaecptr tmppc = m68k_getpc();\n");
 	    printf ("\tuaecptr %sa = get_disp_ea_020(tmppc, next_iword());\n", name);
 	} else {
+	    insn_n_cycles += 2;					/* [NP] on 68000 ST, d8(PC,Xn) takes 2 cycles more */
 	    printf ("\tuaecptr tmppc = m68k_getpc() + %d;\n", m68k_pc_offset);
 	    printf ("\tuaecptr %sa = get_disp_ea_000(tmppc, %s);\n", name, gen_nextiword ());
 	}
@@ -875,6 +912,9 @@ static void gen_opcode (unsigned long int opcode)
     start_brace ();
     m68k_pc_offset = 2;
 
+    /* [NP] Store the family of the instruction (used to check for pairing on ST) */
+    printf ("\tOpcodeFamily = %d;\n" , curi->mnemo );
+
     switch (curi->plev) {
     case 0: /* not privileged */
 	break;
@@ -1009,6 +1049,7 @@ static void gen_opcode (unsigned long int opcode)
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
 	genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0);
 	start_brace ();
+	printf("\trefill_prefetch (m68k_getpc(), 2);\n");	// FIXME [NP] For Transbeauce 2 demo, need better prefetch emulation
 	genflags (flag_add, curi->size, "newv", "src", "dst");
 	genastore ("newv", curi->dmode, "dstreg", curi->size, "dst");
         if(curi->size==sz_long && curi->dmode==Dreg)
@@ -1102,6 +1143,19 @@ static void gen_opcode (unsigned long int opcode)
 	break;
     case i_CLR:
 	genamode (curi->smode, "srcreg", curi->size, "src", 2, 0);
+
+	/* [NP] CLR does a read before the write only on 68000 */
+	/* but there's no cycle penalty for doing the read */
+	if ( curi->smode != Dreg )			// only if destination is memory
+	  {
+	    if (curi->size==sz_byte)
+	      printf ("\tuae_s8 src = get_byte(srca);\n");
+	    else if (curi->size==sz_word)
+	      printf ("\tuae_s16 src = get_word(srca);\n");
+	    else if (curi->size==sz_long)
+	      printf ("\tuae_s32 src = get_long(srca);\n");
+	  }
+
 	genflags (flag_logical, curi->size, "0", "", "");
 	genastore ("0", curi->smode, "srcreg", curi->size, "src");
         if(curi->size==sz_long)
@@ -1159,6 +1213,9 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\tdst &= ~(1 << src);\n");
 	genastore ("dst", curi->dmode, "dstreg", curi->size, "dst");
         if(curi->dmode==Dreg)  insn_n_cycles += 6;
+	/* [NP] BCLR #n,Dx takes 12 cycles instead of 14 if n<16 */
+        if((curi->smode==imm1) && (curi->dmode==Dreg))
+	    printf ("\tif ( src < 16 ) { m68k_incpc(4); return 12; }\n");
 	break;
     case i_BSET:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
@@ -1217,6 +1274,13 @@ static void gen_opcode (unsigned long int opcode)
     case i_MOVE:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
 	genamode (curi->dmode, "dstreg", curi->size, "dst", 2, 0);
+
+	/* [NP] genamode counts 2 cycles if dest is -(An), this is wrong. */
+	/* For move dest (An), (An)+ and -(An) take the same time */
+	/* (for other instr, dest -(An) really takes 2 cycles more) */
+	if ( curi->dmode == Apdi )
+	  insn_n_cycles -= 2;			/* correct the wrong cycle count for -(An) */
+
 	genflags (flag_logical, curi->size, "src", "", "");
 	genastore ("src", curi->dmode, "dstreg", curi->size, "dst");
 	break;
@@ -1427,7 +1491,7 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\tuae_s32 s = (uae_s32)src + 2;\n");
 	if (using_exception_3) {
 	    printf ("\tif (src & 1) {\n");
-	    printf ("\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");
+	    printf ("\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");	// [NP] FIXME should be +4, not +2 (same as DBcc) ?
 	    printf ("\t\tlast_fault_for_exception_3 = m68k_getpc() + s;\n");
 	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0); goto %s;\n", endlabelstr);
 	    printf ("\t}\n");
@@ -1456,7 +1520,7 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\tif (!cctrue(%d)) goto didnt_jump;\n", curi->cc);
 	if (using_exception_3) {
 	    printf ("\tif (src & 1) {\n");
-	    printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");
+	    printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");	// [NP] FIXME should be +4, not +2 (same as DBcc) ?
 	    printf ("\t\tlast_fault_for_exception_3 = m68k_getpc() + 2 + (uae_s32)src;\n");
 	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0); goto %s;\n", endlabelstr);
 	    printf ("\t}\n");
@@ -1508,7 +1572,7 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\t\tif (src) {\n");
 	if (using_exception_3) {
 	    printf ("\t\t\tif (offs & 1) {\n");
-	    printf ("\t\t\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");
+	    printf ("\t\t\tlast_addr_for_exception_3 = m68k_getpc() + 2 + 2;\n");	// [NP] last_addr is pc+4, not pc+2
 	    printf ("\t\t\tlast_fault_for_exception_3 = m68k_getpc() + 2 + (uae_s32)offs + 2;\n");
 	    printf ("\t\t\tlast_op_for_exception_3 = opcode; Exception(3,0); goto %s;\n", endlabelstr);
 	    printf ("\t\t}\n");
@@ -1534,7 +1598,11 @@ static void gen_opcode (unsigned long int opcode)
 	start_brace ();
 	printf ("\tint val = cctrue(%d) ? 0xff : 0;\n", curi->cc);
 	genastore ("val", curi->smode, "srcreg", curi->size, "src");
-        if(curi->smode!=Dreg)  insn_n_cycles += 4;
+        if (curi->smode!=Dreg)  insn_n_cycles += 4;
+	else
+	  {					/* [NP] if result is TRUE, we return 6 instead of 4 */
+	    printf ("\tif (val) { m68k_incpc(2) ; return 4+2; }\n");
+	  }
 	break;
     case i_DIVU:
 	printf ("\tuaecptr oldpc = m68k_getpc();\n");
@@ -1554,7 +1622,9 @@ static void gen_opcode (unsigned long int opcode)
 	genastore ("newv", curi->dmode, "dstreg", sz_long, "dst");
 	printf ("\t}\n");
 	printf ("\t}\n");
-	insn_n_cycles += 136;
+//	insn_n_cycles += 136;
+	printf ("\tretcycles = getDivu68kCycles((uae_u32)dst, (uae_u16)src);\n");
+        sprintf(exactCpuCycles," return (%i+retcycles);", insn_n_cycles);
 	need_endlabel = 1;
 	break;
     case i_DIVS:
@@ -1572,7 +1642,9 @@ static void gen_opcode (unsigned long int opcode)
 	genastore ("newv", curi->dmode, "dstreg", sz_long, "dst");
 	printf ("\t}\n");
 	printf ("\t}\n");
-	insn_n_cycles += 154;
+//	insn_n_cycles += 154;
+	printf ("\tretcycles = getDivs68kCycles((uae_s32)dst, (uae_s16)src);\n");
+        sprintf(exactCpuCycles," return (%i+retcycles);", insn_n_cycles);
 	need_endlabel = 1;
 	break;
     case i_MULU:
@@ -1582,21 +1654,30 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\tuae_u32 newv = (uae_u32)(uae_u16)dst * (uae_u32)(uae_u16)src;\n");
 	genflags (flag_logical, sz_long, "newv", "", "");
 	genastore ("newv", curi->dmode, "dstreg", sz_long, "dst");
-	insn_n_cycles += 66;
+	/* [NP] number of cycles is 38 + 2n + ea time ; n is the number of 1 bits in src */
+	insn_n_cycles += 38-4;			/* insn_n_cycles is already initialized to 4 instead of 0 */
+	printf ("\twhile (src) { if (src & 1) retcycles++; src = (uae_u16)src >> 1; }\n");
+        sprintf(exactCpuCycles," return (%i+retcycles*2);", insn_n_cycles);
 	break;
     case i_MULS:
 	genamode (curi->smode, "srcreg", sz_word, "src", 1, 0);
 	genamode (curi->dmode, "dstreg", sz_word, "dst", 1, 0);
 	start_brace ();
 	printf ("\tuae_u32 newv = (uae_s32)(uae_s16)dst * (uae_s32)(uae_s16)src;\n");
+	printf ("\tuae_u32 src2;\n");
 	genflags (flag_logical, sz_long, "newv", "", "");
 	genastore ("newv", curi->dmode, "dstreg", sz_long, "dst");
-	insn_n_cycles += 66;
+	/* [NP] number of cycles is 38 + 2n + ea time ; n is the number of 01 or 10 patterns in src expanded to 17 bits */
+	insn_n_cycles += 38-4;			/* insn_n_cycles is already initialized to 4 instead of 0 */
+	printf ("\tsrc2 = ((uae_u32)src) << 1;\n");
+	printf ("\twhile (src2) { if ( ( (src2 & 3) == 1 ) || ( (src2 & 3) == 2 ) ) retcycles++; src2 >>= 1; }\n");
+        sprintf(exactCpuCycles," return (%i+retcycles*2);", insn_n_cycles);
 	break;
     case i_CHK:
 	printf ("\tuaecptr oldpc = m68k_getpc();\n");
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
 	genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0);
+	sync_m68k_pc ();
 	printf ("\tif ((uae_s32)dst < 0) { SET_NFLG (1); Exception(6,oldpc); goto %s; }\n", endlabelstr);
 	printf ("\telse if (dst > src) { SET_NFLG (0); Exception(6,oldpc); goto %s; }\n", endlabelstr);
 	need_endlabel = 1;
@@ -1625,6 +1706,7 @@ static void gen_opcode (unsigned long int opcode)
 	}
 	printf ("\tSET_ZFLG (upper == reg || lower == reg);\n");
 	printf ("\tSET_CFLG (lower <= upper ? reg < lower || reg > upper : reg > upper || reg < lower);\n");
+	sync_m68k_pc ();
 	printf ("\tif ((extra & 0x800) && GET_CFLG) { Exception(6,oldpc); goto %s; }\n}\n", endlabelstr);
 	need_endlabel = 1;
 	break;
@@ -2506,8 +2588,10 @@ static void generate_one_opcode (int rp)
     sprintf (endlabelstr, "endlabel%d", endlabelno);
     if(table68k[opcode].mnemo==i_ASR || table68k[opcode].mnemo==i_ASL || table68k[opcode].mnemo==i_LSR || table68k[opcode].mnemo==i_LSL
        || table68k[opcode].mnemo==i_ROL || table68k[opcode].mnemo==i_ROR || table68k[opcode].mnemo==i_ROXL || table68k[opcode].mnemo==i_ROXR
-       || table68k[opcode].mnemo==i_MVMEL || table68k[opcode].mnemo==i_MVMLE)
-      printf("\tunsigned int retcycles;\n");
+       || table68k[opcode].mnemo==i_MVMEL || table68k[opcode].mnemo==i_MVMLE
+       || table68k[opcode].mnemo==i_MULU || table68k[opcode].mnemo==i_MULS
+       || table68k[opcode].mnemo==i_DIVU || table68k[opcode].mnemo==i_DIVS )
+      printf("\tunsigned int retcycles = 0;\n");
     gen_opcode (opcode);
     if (need_endlabel)
 	printf ("%s: ;\n", endlabelstr);

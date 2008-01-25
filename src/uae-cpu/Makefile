@@ -43,6 +43,9 @@ gencpu: gencpu.o readcpu-host.o cpudefs-host.o
 
 cpuemu.c: gencpu
 	./gencpu
+	mv cpuemu.c cpuemu.c.old
+	./add_cycles.pl cpuemu.c.old > cpuemu.c
+
 
 cpustbl.c: cpuemu.c
 cputbl.h: cpuemu.c
