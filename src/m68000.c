@@ -8,7 +8,26 @@
   few OpCode's such as Line-F and Line-A. In Hatari it has mainly become a
   wrapper between the WinSTon sources and the UAE CPU code.
 */
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.44 2007-12-17 23:42:13 thothy Exp $";
+
+/* 2007/03/xx	[NP]	Possibility to add several wait states for the same instruction in		*/
+/*			M68000_WaitState (e.g. clr.b $fa1b.w in Decade Demo Menu).			*/
+/* 2007/04/14	[NP]	Add support for instruction pairing in M68000_AddCycles, using OpcodeFamily and	*/
+/*			LastOpcodeFamily (No Cooper Loader, Oh Crickey ... Hidden Screen).		*/
+/* 2007/04/24	[NP]	Add pairing for BCLR/Bcc.							*/
+/* 2007/09/29	[NP]	Use the new int.c and INT_CONVERT_TO_INTERNAL.					*/
+/* 2007/11/26	[NP]	We set BusErrorPC in m68k_run_1 instead of M68000_BusError, else the BusErrorPC	*/
+/*			will not point to the opcode that generated the bus error.			*/
+/*			In M68000_BusError, if we have 'move.l $0,$24', we need to generate a bus error	*/
+/*			for the read, not for the write that should occur after (TransBeauce 2 Demo).	*/
+/* 2008/01/07	[NP]	Function 'M68000_InitPairing' and 'PairingArray' as a lookup table for fast	*/
+/*			determination of valid pairing combinations (replace lots of 'if' tests in	*/
+/*			m68000.h).									*/
+
+/* [NP] possible pairing to check :             */
+/*      exg / move.b (a0),d0                    */
+/*      lsr #2,d0 / move.b 0(an,dn) : 24/28     */
+
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.45 2008-01-26 20:29:23 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -22,11 +41,68 @@ const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.44 2007-12-17 23:42:13 tho
 #include "tos.h"
 
 
-Uint32 BusErrorAddress;          /* Stores the offending address for bus-/address errors */
-Uint32 BusErrorPC;               /* Value of the PC when bus error occurs */
-BOOL bBusErrorReadWrite;         /* 0 for write error, 1 for read error */
-int nCpuFreqShift;               /* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
-int nWaitStateCycles;            /* Used to emulate the wait state cycles of certion IO registers */
+Uint32 BusErrorAddress;         /* Stores the offending address for bus-/address errors */
+Uint32 BusErrorPC;              /* Value of the PC when bus error occurs */
+BOOL bBusErrorReadWrite;        /* 0 for write error, 1 for read error */
+int nCpuFreqShift;              /* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
+int nWaitStateCycles;           /* Used to emulate the wait state cycles of certain IO registers */
+
+int LastOpcodeFamily = -1;      /* see the enum in readcpu.h i_XXX */
+int LastInstrCycles = -1;       /* number of cycles for previous instr. (not rounded to 4) */
+int Pairing = 0;                /* set to 1 if the latest 2 intr paired */
+char PairingArray[ MAX_OPCODE_FAMILY ][ MAX_OPCODE_FAMILY ];
+
+
+/* to convert the enum from OpcodeFamily to a readable value for pairing's debug */
+const char *OpcodeName[] = { "ILLG",
+	"OR","AND","EOR","ORSR","ANDSR","EORSR",
+	"SUB","SUBA","SUBX","SBCD",
+	"ADD","ADDA","ADDX","ABCD",
+	"NEG","NEGX","NBCD","CLR","NOT","TST",
+	"BTST","BCHG","BCLR","BSET",
+	"CMP","CMPM","CMPA",
+	"MVPRM","MVPMR","MOVE","MOVEA","MVSR2","MV2SR",
+	"SWAP","EXG","EXT","MVMEL","MVMLE",
+	"TRAP","MVR2USP","MVUSP2R","RESET","NOP","STOP","RTE","RTD",
+	"LINK","UNLK",
+	"RTS","TRAPV","RTR",
+	"JSR","JMP","BSR","Bcc",
+	"LEA","PEA","DBcc","Scc",
+	"DIVU","DIVS","MULU","MULS",
+	"ASR","ASL","LSR","LSL","ROL","ROR","ROXL","ROXR",
+	"ASRW","ASLW","LSRW","LSLW","ROLW","RORW","ROXLW","ROXRW",
+	"CHK","CHK2",
+	"MOVEC2","MOVE2C","CAS","CAS2","DIVL","MULL",
+	"BFTST","BFEXTU","BFCHG","BFEXTS","BFCLR","BFFFO","BFSET","BFINS",
+	"PACK","UNPK","TAS","BKPT","CALLM","RTM","TRAPcc","MOVES",
+	"FPP","FDBcc","FScc","FTRAPcc","FBcc","FSAVE","FRESTORE",
+	"CINVL","CINVP","CINVA","CPUSHL","CPUSHP","CPUSHA","MOVE16",
+	"MMUOP"
+};
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Init the pairing matrix
+ * Two instructions can pair if PairingArray[ LastOpcodeFamily ][ OpcodeFamily ] == 1
+ */
+void M68000_InitPairing(void)
+{
+	/* First, clear the matrix (pairing is false) */
+	memset(PairingArray , 0 , MAX_OPCODE_FAMILY * MAX_OPCODE_FAMILY);
+
+	/* Set all valid pairing combinations to 1 */
+	PairingArray[  i_EXG ][ i_DBcc ] = 1;
+	PairingArray[ i_CMPA ][  i_Bcc ] = 1;
+	PairingArray[  i_ASR ][ i_DBcc ] = 1;
+	PairingArray[  i_ASL ][ i_DBcc ] = 1;
+	PairingArray[  i_LSR ][ i_DBcc ] = 1;
+	PairingArray[  i_LSL ][ i_DBcc ] = 1;
+	PairingArray[  i_ROL ][ i_DBcc ] = 1;
+	PairingArray[  i_ROR ][ i_DBcc ] = 1;
+	PairingArray[ i_ROXR ][ i_DBcc ] = 1;
+	PairingArray[ i_ROXL ][ i_DBcc ] = 1;
+}
 
 
 /*-----------------------------------------------------------------------*/
@@ -46,6 +122,9 @@ void M68000_Reset(BOOL bCold)
 
 	/* Now directly reset the UAE CPU core: */
 	m68k_reset();
+
+	/* Init the pairing matrix */
+	M68000_InitPairing();
 }
 
 
@@ -169,7 +248,7 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
 void M68000_BusError(Uint32 addr, BOOL bReadWrite)
 {
 	/* FIXME: In prefetch mode, m68k_getpc() seems already to point to the next instruction */
-	BusErrorPC = M68000_GetPC();
+	// BusErrorPC = M68000_GetPC();		/* [NP] We set BusErrorPC in m68k_run_1 */
 
 	if (BusErrorPC < TosAddress || BusErrorPC > TosAddress + TosSize)
 	{
@@ -177,9 +256,12 @@ void M68000_BusError(Uint32 addr, BOOL bReadWrite)
 		fprintf(stderr, "M68000_BusError at address $%lx\n", (long)addr);
 	}
 
-	BusErrorAddress = addr;         /* Store for exception frame */
-	bBusErrorReadWrite = bReadWrite;
-	M68000_SetSpecial(SPCFLAG_BUSERROR);  /* The exception will be done in newcpu.c */
+	if ((regs.spcflags & SPCFLAG_BUSERROR) == 0)	/* [NP] Check that the opcode has not already generated a read bus error */
+	{
+		BusErrorAddress = addr;				/* Store for exception frame */
+		bBusErrorReadWrite = bReadWrite;
+		M68000_SetSpecial(SPCFLAG_BUSERROR);		/* The exception will be done in newcpu.c */
+	}
 }
 
 
@@ -243,10 +325,13 @@ void M68000_Exception(Uint32 ExceptionVector)
 /**
  * There seem to be wait states when a program accesses certain hardware
  * registers on the ST. Use this function to simulate these wait states.
+ * [NP] with some instructions like CLR, we have a read then a write at the
+ * same location, so we may have 2 wait states (read and write) to add
+ * (nWaitStateCycles should be reset to 0 after the cycles were added).
  */
 void M68000_WaitState(int nCycles)
 {
 	M68000_SetSpecial(SPCFLAG_EXTRA_CYCLES);
 
-	nWaitStateCycles = nCycles;
+	nWaitStateCycles += nCycles;	/* add all the wait states for this instruction */
 }

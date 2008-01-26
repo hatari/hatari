@@ -5,6 +5,11 @@
   your option any later version. Read the file gpl.txt for details.
 */
 
+/* 2007/11/10	[NP]	Add pairing for lsr / dbcc (and all variants	*/
+/*			working on register, not on memory).		*/
+/* 2008/01/07	[NP]	Use PairingArray to store all valid pairing	*/
+/*			combinations (in m68000.c)			*/
+
 #ifndef HATARI_M68000_H
 #define HATARI_M68000_H
 
@@ -13,6 +18,7 @@
 #include "memory.h"
 #include "newcpu.h"     /* for regs */
 #include "int.h"
+#include "trace.h"
 
 
 /* Ugly hacks to adapt the main code to the different CPU cores: */
@@ -73,6 +79,12 @@ extern BOOL bBusErrorReadWrite;
 extern int nCpuFreqShift;
 extern int nWaitStateCycles;
 
+extern int	LastOpcodeFamily;
+extern int	LastInstrCycles;
+extern int	Pairing;
+extern char	PairingArray[ MAX_OPCODE_FAMILY ][ MAX_OPCODE_FAMILY ];
+extern const char *OpcodeName[];
+
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -81,11 +93,44 @@ extern int nWaitStateCycles;
 */
 static inline void M68000_AddCycles(int cycles)
 {
-	cycles = ((cycles + 3) & ~3) >> nCpuFreqShift;
+	Pairing = 0;
+	/* Check if number of cycles for current instr and for */
+	/* the previous one is of the form 4+2n */
+	/* If so, a pairing could be possible depending on the opcode */
+	if ( ( PairingArray[ LastOpcodeFamily ][ OpcodeFamily ] == 1 )
+	    && ( ( cycles & 3 ) == 2 ) && ( ( LastInstrCycles & 3 ) == 2 ) )
+	{
+		Pairing = 1;
+		HATARI_TRACE( HATARI_TRACE_CPU_PAIRING ,
+		              "pairing detected pc=%x family %s/%s cycles %d/%d\n" ,
+		              m68k_getpc(), OpcodeName[LastOpcodeFamily] ,
+		              OpcodeName[OpcodeFamily], LastInstrCycles, cycles );
+	}
+
+	/* Store current instr (not rounded) to check next time */
+	LastInstrCycles = cycles;
+	LastOpcodeFamily = OpcodeFamily;
+
+	/* If pairing is true, we need to substract 2 cycles for the	*/
+	/* previous instr which was rounded to 4 cycles while it wasn't */
+	/* needed (and we don't round the current one)			*/
+	/* -> both instr will take 4 cycles less on the ST than if ran	*/
+	/* separately.							*/
+	if (Pairing == 1)
+		cycles -= 2;
+	else
+		cycles = (cycles + 3) & ~3;	 /* no pairing, round current instr to 4 cycles */
+
+	cycles = cycles >> nCpuFreqShift;
+
+// FIXME !!! This must be replaced for the upcoming new int.c routines!
+//	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL ( cycles , INT_CPU_CYCLE );
 	PendingInterruptCount -= cycles;
+
 	nCyclesMainCounter += cycles;
 }
 
+extern void M68000_InitPairing(void);
 extern void M68000_Reset(BOOL bCold);
 extern void M68000_CheckCpuLevel(void);
 extern void M68000_MemorySnapShot_Capture(BOOL bSave);
