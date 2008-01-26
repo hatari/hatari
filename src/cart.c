@@ -14,7 +14,12 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to
   a byte array and stored in 'Cart_data[]' (see cartData.c).
 */
-const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.17 2007-12-18 18:56:19 thothy Exp $";
+const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.18 2008-01-26 16:44:21 thothy Exp $";
+
+/* 2007/12/09	[NP]	Change the function associated to opcodes $8, $a and $c only if hard drive	*/
+/*			emulation is ON. Else, these opcodes should give illegal instructions (also	*/
+/*			see uae-cpu/newcpu.c).								*/
+
 
 #include "main.h"
 #include "cart.h"
@@ -23,6 +28,8 @@ const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.17 2007-12-18 18:56:19 thothy 
 #include "log.h"
 #include "stMemory.h"
 #include "vdi.h"
+#include "hatari-glue.h"
+#include "newcpu.h"
 
 #include "cartData.c"
 
@@ -89,6 +96,8 @@ static void Cart_LoadImage(void)
  */
 void Cart_ResetImage(void)
 {
+	int PatchIllegal = FALSE;
+
 	/* "Clear" cartridge ROM space */
 	memset(&RomMem[0xfa0000], 0xff, 0x20000);
 
@@ -107,10 +116,28 @@ void Cart_ResetImage(void)
 	{
 		/* Copy built-in cartrige data into the cartridge memory of the ST */
 		memcpy(&STRam[0xfa0000], Cart_data, sizeof(Cart_data));
+		PatchIllegal = TRUE;
 	}
 	else if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)
 	{
 		/* Load external image file: */
 		Cart_LoadImage();
+	}
+
+	if (PatchIllegal == TRUE)
+	{
+		//fprintf ( stderr ," Cart_ResetImage patch\n" );
+		/* Hatari's specific illegal opcodes for HD emulation */
+		cpufunctbl[GEMDOS_OPCODE] = OpCode_GemDos;	/* 0x0008 */
+		cpufunctbl[SYSINIT_OPCODE] = OpCode_SysInit;	/* 0x000a */
+		cpufunctbl[VDI_OPCODE] = OpCode_VDI;		/* 0x000c */
+	}
+	else
+	{
+		//fprintf ( stderr ," Cart_ResetImage no patch\n" );
+		/* No built-in cartridge loaded : set same handler as 0x4afc (illegal) */
+		cpufunctbl[GEMDOS_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x0008 */
+		cpufunctbl[SYSINIT_OPCODE] = cpufunctbl[ 0x4afc ];	/* 0x000a */
+		cpufunctbl[VDI_OPCODE] = cpufunctbl[ 0x4afc ];		/* 0x000c */
 	}
 }
