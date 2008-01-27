@@ -1,0 +1,18 @@
+
+Files
+-----
+
+pygtk-hatari-embed-test.py -- Two tries at embedding Hatari window, failed
+pygtk-hello-world.py -- simplest PyGtk program
+
+
+The reasons why the Hatari embedding fail are following:
+
+* SDL doesn't handle events for it's window if it's instructed to
+  to use another window instead of creating its own.  I consider
+  this an SDL bug
+
+* For some reason PyGtk reparenting the Hatari window (requires
+  very ugly hack to find the window first after starting Hatari...)
+  doesn't seem to work.  It's not reparented properly.  I'm not
+  sure whether this is a PyGtk or Gtk bug (or mine)

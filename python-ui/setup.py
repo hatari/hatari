@@ -1,3 +1,5 @@
+# dummy (for now) Python distutils setup thing for hatari-ui
+
 from distutils.core import setup
 
 setup(name = 'hatari-ui',

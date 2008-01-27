@@ -23,17 +23,28 @@
 
 import os
 import sys
+import signal
+
+# use correct version of pygtk/gtk
+import pygtk
+pygtk.require('2.0')
 import gtk
 import gtk.glade
 
+
 class HatariUI():
+    gladefile = "hatari-ui.glade"
+    hatari_wd = 640
+    hatari_ht = 400
 
     def __init__(self):
         self.hatari_pid = 0  # running Hatari emulator PID?
         self.changes = False # unsaved configuration changes?
         self.load_hatari_config()
         self.load_ui()
-        
+        # collect hatari process zombies without waitpid()
+        signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+
     def run(self):
         self.window.show_all()
         gtk.main()
@@ -45,7 +56,7 @@ class HatariUI():
             "on_mainwin_destroy": self.mainwin_destroy
         }
         # just instantiate all UI windows/widgets...
-        self.wtree = gtk.glade.XML("hatari-ui.glade")
+        self.wtree = gtk.glade.XML(self.gladefile)
         self.wtree.signal_autoconnect(handlers)
         self.window = self.wtree.get_widget("mainwin")
         self.aboutdialog = self.wtree.get_widget("aboutdialog")
@@ -56,6 +67,20 @@ class HatariUI():
         self.killdialog.set_transient_for(self.window)
         self.quitdialog.set_transient_for(self.window)
 
+        # where to put the Hatari window
+        self.hatariparent = self.wtree.get_widget("hataribox")
+        self.set_widget_bg_image(self.hatariparent, "hatari-bg.png")
+    
+    def set_widget_bg_image(self, widget, image):
+        # works only for widgets with windows of their own
+        # such as top level window, eventbox or drawarea
+        pixbuf = gtk.gdk.pixbuf_new_from_file(image)
+        pixmap, mask = pixbuf.render_pixmap_and_mask()
+        del pixbuf
+        widget.set_app_paintable(True)
+        widget.window.set_back_pixmap(pixmap, False)
+        del pixmap
+        
     def aboutbutton_clicked(self, widget):
         self.aboutdialog.run()
         self.aboutdialog.hide()
@@ -72,46 +97,67 @@ class HatariUI():
         print "TODO: load Hatari configuration file"
         # TODO: remove this once testing is done
         self.changes = True
-
+    
     def ask_hatari_running(self):
+        # is hatari running?
         if not self.hatari_pid:
             return False
+        try:
+            pid,status = os.waitpid(self.hatari_pid, os.WNOHANG)
+        except OSError, value:
+            print "Hatari had exited in the meanwhile:\n\t", value
+            self.hatari_pid = 0
+            return False
+        # is running, OK to kill?
         response = self.killdialog.run()
         self.killdialog.hide()
         if response == gtk.RESPONSE_OK:
-            os.kill(self.hatari_pid, 9)
+            os.kill(self.hatari_pid, signal.SIGKILL)
             print "killed hatari with PID %d" % self.hatari_pid
             self.hatari_pid = 0
             return False
         return True
-
+    
     def runbutton_clicked(self, widget):
         if self.ask_hatari_running():
             return
         pid = os.fork()
+        if pid < 0:
+            print "ERROR: fork()ing Hatari failed!"
+            return
         if pid:
             # in parent
             self.hatari_pid = pid
-            print "TODO: add waitpid stuff to notice if Hatari exits"
         else:
             # child runs Hatari
             os.execvpe("hatari", self.get_hatari_args(), self.get_hatari_env())
 
     def get_hatari_env(self):
-        # tell SDL to embed itself inside this widget
-        widget = self.wtree.get_widget("hatarieventbox")
+        # broken: when SDL uses a window it hasn't created itself,
+        # it for some reason doesn't listen to any events delivered
+        # to that window nor implements XEMBED protocol to get them
+        # in a way most friendliest to embedder:
+        #   http://standards.freedesktop.org/xembed-spec/latest/
+        #
+        # Instead we tell hatari to reparent itself after creating
+        # its own window into this program widget window
+        window = self.hatariparent.window
         if sys.platform == 'win32':
-            win_id = widget.window.handle
+            win_id = window.handle
         else:
-            win_id = widget.window.xid
+            win_id = window.xid
         env = os.environ
-        env["SDL_WINDOWID"] = str(win_id)
+        # tell SDL to use (embed itself inside) given widget's window
+        #env["SDL_WINDOWID"] = str(win_id)
+        env["HATARI_PARENTID"] = str(win_id)
         return env
-    
+
     def get_hatari_args(self):
         print "TODO: get the Hatari options from configuration"
-        args = ("-m", "-z", "2")
+        args = ("hatari", "-m", "-z", "2")
         return args
-        
-app = HatariUI()
-app.run()
+
+
+if __name__ == "__main__":
+    app = HatariUI()
+    app.run()
