@@ -22,12 +22,12 @@
 /* 2008/01/07	[NP]	Function 'M68000_InitPairing' and 'PairingArray' as a lookup table for fast	*/
 /*			determination of valid pairing combinations (replace lots of 'if' tests in	*/
 /*			m68000.h).									*/
+/* 2008/01/25	[NP]	Add pairing for LSR/MOVE (and all other bit shifting instr) (Anomaly Demo Intro)*/
 
 /* [NP] possible pairing to check :             */
 /*      exg / move.b (a0),d0                    */
-/*      lsr #2,d0 / move.b 0(an,dn) : 24/28     */
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.45 2008-01-26 20:29:23 thothy Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.46 2008-01-28 07:40:49 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -102,6 +102,14 @@ void M68000_InitPairing(void)
 	PairingArray[  i_ROR ][ i_DBcc ] = 1;
 	PairingArray[ i_ROXR ][ i_DBcc ] = 1;
 	PairingArray[ i_ROXL ][ i_DBcc ] = 1;
+	PairingArray[  i_ASR ][ i_MOVE ] = 1; 
+	PairingArray[  i_ASL ][ i_MOVE ] = 1; 
+	PairingArray[  i_LSR ][ i_MOVE ] = 1; 
+	PairingArray[  i_LSL ][ i_MOVE ] = 1; 
+	PairingArray[  i_ROL ][ i_MOVE ] = 1; 
+	PairingArray[  i_ROR ][ i_MOVE ] = 1; 
+	PairingArray[ i_ROXR ][ i_MOVE ] = 1; 
+	PairingArray[ i_ROXL ][ i_MOVE ] = 1; 
 }
 
 
