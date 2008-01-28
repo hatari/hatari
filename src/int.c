@@ -16,8 +16,53 @@
   Note that interrupt may occur 'late'. I.e., if an interrupt is due in 4
   cycles time but the current instruction takes 20 cycles we will be 16 cycles
   late - this is handled in the adjust functions.
+
+
+  In order to handle both CPU and MFP interrupts, we don't convert MFP cyles to CPU cycles,
+  because it requires some floating points approximation and accumulates some errors that
+  could lead to bad results.
+  Instead, CPU and MFP cycles are converted to 'internal' cycles with the following rule :
+	- 1 CPU cycle gives  9600 internal cycles
+	- 1 MFP cycle gives 31333 internal cycle
+
+  All interrupts are then handled in the 'internal' units and are converted back to cpu or mfp
+  units when needed. This allows very good synchronisation between CPU and MFP, without the
+  rounding errors of floating points math.
+
+  Thanks to Arnaud Carre (Leonard / Oxygene) for sharing this method used in Saint (and also
+  used in sc68).
+
+  Conversions are based on these values :
+	real MFP frequency is 2457600 Hz
+	real CPU frequency is 8021247 Hz (PAL european STF), which we round to 8021248.
+
+  Then :
+	8021248 = ( 2^8 * 31333 )
+	2457600 = ( 2^15 * 3 * 5^2 )
+
+  So, the ratio 8021248 / 2457600 can be expressed as 31333 / 9600
+
 */
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.17 2007-12-17 23:03:34 thothy Exp $";
+
+
+/* 2007/05/08	[NP]	Call Int_UpdateInterrupt in Int_AddRelativeInterrupt, because		*/
+/*			Int_SetNewInterrupt can change the active int / PendingInterruptCount	*/
+/* 2007/09/29   [NP]    New method to handle interrupt. Instead of using cpu cycles to store	*/
+/*			video int and MFP int (which looses precision because MFP cycles need	*/
+/*			to be rounded to cpu cycles), we're using an 'internal' unit to store	*/
+/*			both cpu cycles and mfp cycles. This removes floating point operations	*/
+/*			and greatly improve the precision for MFP int with a very small divisor	*/
+/*			(thanks to Leonard / Oxygene for the idea, also used in 'sc68').	*/
+/* 2007/10/21	[NP]	Function 'Int_AddRelativeInterruptWithOffset' to restart an MFP timer	*/
+/*			just after it expired (ULM DSOTS and Overscan Demos).			*/
+/* 2007/10/28	[NP]	Function 'Int_ResumeStoppedInterrupt' to continue an interrupt from	*/
+/*			where it was stopped, without updating 'cycles'.			*/
+/* 2007/12/27	[NP]	Parameter 'AddInternalCycle' in Int_AddRelativeInterrupt, used in mfp.c	*/
+/*			to precisely start a timer after the current inst.			*/
+
+
+
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.18 2008-01-28 22:20:10 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -28,10 +73,11 @@ const char Int_rcsid[] = "Hatari $Id: int.c,v 1.17 2007-12-17 23:03:34 thothy Ex
 #include "mfp.h"
 #include "sound.h"
 #include "video.h"
+#include "trace.h"
 
 
 void (*PendingInterruptFunction)(void);
-short int PendingInterruptCount;
+int PendingInterruptCount;
 
 static int nCyclesOver;
 
@@ -152,7 +198,7 @@ void Int_MemorySnapShot_Capture(BOOL bSave)
 	{
 		/* Convert function to ID */
 		ID = Int_HandlerFunctionToID(PendingInterruptFunction);
-		MemorySnapShot_Store(&ID ,sizeof(int));
+		MemorySnapShot_Store(&ID, sizeof(int));
 	}
 	else
 	{
@@ -169,8 +215,12 @@ void Int_MemorySnapShot_Capture(BOOL bSave)
  */
 static void Int_SetNewInterrupt(void)
 {
-	int LowestCycleCount=999999, LowestInterrupt=0;
+	int LowestCycleCount=0x7fffffff, LowestInterrupt=0;
 	int i;
+
+
+	HATARI_TRACE ( HATARI_TRACE_INT , "int set new in video_cyc=%d active_int=%d pending_count=%d\n",
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), ActiveInterrupt, PendingInterruptCount );
 
 	/* Find next interrupt to go off */
 	for (i = 1; i < MAX_INTERRUPTS; i++)
@@ -190,6 +240,9 @@ static void Int_SetNewInterrupt(void)
 	PendingInterruptCount = InterruptHandlers[LowestInterrupt].Cycles;
 	PendingInterruptFunction = InterruptHandlers[LowestInterrupt].pFunction;
 	ActiveInterrupt = LowestInterrupt;
+
+	HATARI_TRACE ( HATARI_TRACE_INT , "int set new out video_cyc=%d active_int=%d pending_count=%d\n",
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), ActiveInterrupt, PendingInterruptCount );
 }
 
 
@@ -213,6 +266,9 @@ static void Int_UpdateInterrupt(void)
 		if (InterruptHandlers[i].bUsed)
 			InterruptHandlers[i].Cycles -= CycleSubtract;
 	}
+
+	HATARI_TRACE ( HATARI_TRACE_INT , "int upd video_cyc=%d cycle_over=%d cycle_sub=%d\n",
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), nCyclesOver, CycleSubtract );
 }
 
 
@@ -231,6 +287,9 @@ void Int_AcknowledgeInterrupt(void)
 
 	/* Set new */
 	Int_SetNewInterrupt();
+
+	HATARI_TRACE ( HATARI_TRACE_INT , "int ack video_cyc=%d active_int=%d active_cyc=%d pending_count=%d\n",
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), ActiveInterrupt, InterruptHandlers[ActiveInterrupt].Cycles, PendingInterruptCount );
 }
 
 
@@ -238,27 +297,49 @@ void Int_AcknowledgeInterrupt(void)
 /**
  * Add interrupt from time last one occurred.
  */
-void Int_AddAbsoluteInterrupt(int CycleTime, interrupt_id Handler)
+void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 {
+	/* Update list cycle counts before adding a new one, */
+	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
+	/* [NP] FIXME : not necessary ? */
+//  if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
+//    Int_UpdateInterrupt();
+
 	InterruptHandlers[Handler].bUsed = TRUE;
-	InterruptHandlers[Handler].Cycles = CycleTime + nCyclesOver;
+	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL ( CycleTime , CycleType ) + nCyclesOver;
 
 	/* Set new */
 	Int_SetNewInterrupt();
+
+	HATARI_TRACE ( HATARI_TRACE_INT , "int add abs video_cyc=%d handler=%d handler_cyc=%d pending_count=%d\n",
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
  * Add interrupt to occur from now
+ * 'AddInternalCycle' can be used to add another delay to the resulting
+ * number of internal cycles (should be 0 most of the time, except in
+ * the MFP emulation to start timers precisely based on the number of
+ * cycles of the current instruction).
  */
-void Int_AddRelativeInterrupt(int CycleTime, interrupt_id Handler)
+void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler, int AddInternalCycle)
 {
+	/* Update list cycle counts before adding a new one, */
+	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
+	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
+		Int_UpdateInterrupt();
+
 	InterruptHandlers[Handler].bUsed = TRUE;
-	InterruptHandlers[Handler].Cycles = CycleTime;
+	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL ( CycleTime , CycleType );
+	InterruptHandlers[Handler].Cycles += AddInternalCycle;
 
 	/* Set new */
 	Int_SetNewInterrupt();
+
+	HATARI_TRACE ( HATARI_TRACE_INT , "int add rel video_cyc=%d handler=%d handler_cyc=%d pending_count=%d\n",
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
 
@@ -266,14 +347,45 @@ void Int_AddRelativeInterrupt(int CycleTime, interrupt_id Handler)
 /**
  * Add interrupt to occur from now without offset
  */
-void Int_AddRelativeInterruptNoOffset(int CycleTime, interrupt_id Handler)
+void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler)
 {
-	nCyclesOver = 0;
+	/* Update list cycle counts before adding a new one, */
+	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
+	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
+		Int_UpdateInterrupt();
+
+//  nCyclesOver = 0;
 	InterruptHandlers[Handler].bUsed = TRUE;
-	InterruptHandlers[Handler].Cycles = CycleTime;
+	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL ( CycleTime , CycleType ) + PendingInterruptCount;
 
 	/* Set new */
 	Int_SetNewInterrupt();
+
+	HATARI_TRACE ( HATARI_TRACE_INT , "int add rel no_off video_cyc=%d handler=%d handler_cyc=%d pending_count=%d\n",
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Add interrupt to occur after CycleTime/CycleType + CycleOffset
+ * This allows to restart an MFP timer just after it expired
+ */
+void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset)
+{
+	/* Update list cycle counts before adding a new one, */
+	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
+	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
+		Int_UpdateInterrupt();
+
+	InterruptHandlers[Handler].bUsed = TRUE;
+	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL ( CycleTime , CycleType ) + CycleOffset;
+
+	/* Set new */
+	Int_SetNewInterrupt();
+
+	HATARI_TRACE ( HATARI_TRACE_INT , "int add rel offset video_cyc=%d handler=%d handler_cyc=%di offset_cyc=%d pending_count=%d\n",
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, CycleOffset, PendingInterruptCount );
 }
 
 
@@ -283,13 +395,37 @@ void Int_AddRelativeInterruptNoOffset(int CycleTime, interrupt_id Handler)
  */
 void Int_RemovePendingInterrupt(interrupt_id Handler)
 {
-	/* Stop interrupt */
+	/* Update list cycle counts, including the handler we want to remove */
+	/* to be able to resume it later (for MFP timers) */
+	Int_UpdateInterrupt();
+
+	/* Stop interrupt after Int_UpdateInterrupt, for Int_ResumeStoppedInterrupt */
 	InterruptHandlers[Handler].bUsed = FALSE;
+
+	/* Set new */
+	Int_SetNewInterrupt();
+
+	HATARI_TRACE ( HATARI_TRACE_INT , "int remove pending video_cyc=%d handler=%d handler_cyc=%d pending_count=%d\n",
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Resume a stopped interrupt from its current cycle count (for MFP timers)
+ */
+void Int_ResumeStoppedInterrupt(interrupt_id Handler)
+{
+	/* Restart interrupt */
+	InterruptHandlers[Handler].bUsed = TRUE;
 
 	/* Update list cycle counts */
 	Int_UpdateInterrupt();
 	/* Set new */
 	Int_SetNewInterrupt();
+
+	HATARI_TRACE ( HATARI_TRACE_INT , "int resume stopped video_cyc=%d handler=%d handler_cyc=%d pending_count=%d\n",
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
 
@@ -311,12 +447,15 @@ BOOL Int_InterruptActive(interrupt_id Handler)
 /**
  * Return cycles passed for an interrupt handler
  */
-int Int_FindCyclesPassed(interrupt_id Handler)
+int Int_FindCyclesPassed(interrupt_id Handler, int CycleType)
 {
 	int CyclesPassed, CyclesFromLastInterrupt;
 
 	CyclesFromLastInterrupt = InterruptHandlers[ActiveInterrupt].Cycles - PendingInterruptCount;
 	CyclesPassed = InterruptHandlers[Handler].Cycles - CyclesFromLastInterrupt;
 
-	return CyclesPassed;
+	HATARI_TRACE ( HATARI_TRACE_INT , "int find passed cyc video_cyc=%d handler=%d last_cyc=%d passed_cyc=%d\n",
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, CyclesFromLastInterrupt, CyclesPassed );
+
+	return INT_CONVERT_FROM_INTERNAL ( CyclesPassed , CycleType ) ;
 }

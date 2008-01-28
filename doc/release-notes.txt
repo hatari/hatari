@@ -4,6 +4,40 @@
                                 Release Notes
 
 
+
+ Version 0.xx (2008-xx-xx):
+ --------------------------
+
+- Added missing read for "clr" in 68000 CPU mode.
+- Cycle correct MULU/MULS/DIVU/DIVS in 68000 CPU mode.
+- Support for 68000 instructions pairing
+- Better emulation of exception stack frame (bus/address error), used in some
+  protections.
+- Don't change illegal 68000 opcodes $8, $a and $c if no cartridge is inserted.
+- Ensure ACIA has consistent values when reset.
+- More precise interrupt handling, allowing to mix CPU cycles and MFP cycles
+  with greater precision.
+- Various improvements in MFP emulation (stop/start timer without writing to data
+  register, reading data register, handle pending cycles when timer "wraps"
+  (i.e. data register reaches 0), ...). Supports programs using some very "fast" timers
+  (Overscan Demos, ULM Demos) and requiring nearly cycle exact synchronisation
+  with the 68000.
+- Mostly correct wait states when accessing sound registers (add wait state for
+  $ff8801/ff8803 when needed).
+- Correct values for Cycles_GetCounterOnReadAccess and Cycles_GetCounterOnWriteAccess
+  for the most common cases used for fullscreen/hardscroll.
+- Correct values for Video_CalculateAddress, taking into account frequency and
+  left/right borders' state, needed for correct synchronisation between video and cpu.
+- Improve top/bottom border removal, including 60 Hz bottom border, as
+  well as "short" 50 Hz screen (171 lines)
+- Support for all left/right border removal, including 0 byte lines.
+- Support for hardscroll on STF, including the most recent ones using 4/5 lines.
+- Support for 4 pixels horizontal hardscroll on STF (ST Connexion in Punish Your Machine)
+- Small adjustements in cycle precise color handling (spec512.c)
+  
+
+
+
  Version 0.95 (2007-05-12):
  --------------------------
 

@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.69 2008-01-06 21:27:49 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.70 2008-01-28 22:20:11 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -729,7 +729,10 @@ static int Screen_ComparePaletteMask(int res)
 	else    /* Full colour */
 	{
 		/* Get resolution */
-		res = (HBLPaletteMasks[0]>>16)&ST_RES_MASK;
+		//res = (HBLPaletteMasks[0]>>16)&ST_RES_MASK;
+		/* [NP] keep only low/med bit (could be hires in case of overscan on the 1st line) */
+		res = (HBLPaletteMasks[0]>>16)&ST_MEDIUM_RES_BIT;
+
 		/* Do all lines - first is tagged as full-update */
 		for (y = 0; y < NUM_VISIBLE_LINES; y++)
 		{

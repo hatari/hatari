@@ -88,6 +88,7 @@ typedef struct {
 extern KEYBOARD_PROCESSOR KeyboardProcessor;
 extern KEYBOARD Keyboard;
 
+extern void ACIA_Reset(void);
 extern void IKBD_Reset(BOOL bCold);
 extern void IKBD_MemorySnapShot_Capture(BOOL bSave);
 extern void IKBD_SendAutoKeyboardCommands(void);

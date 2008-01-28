@@ -17,7 +17,12 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.31 2007-12-31 12:21:41 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.32 2008-01-28 22:20:10 thothy Exp $";
+
+/* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
+/* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
+/*			RX/TX status. Reading the control register fffc00 just after a reset should	*/
+/*			return the value 0x02 (used in Transbeauce 2 demo loader).			*/
 
 #include <time.h>
 
@@ -30,6 +35,8 @@ const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.31 2007-12-31 12:21:41 thothy 
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "misc.h"
+#include "video.h"
+#include "trace.h"
 
 
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */
@@ -199,6 +206,18 @@ static const IKBD_COMMAND_PARAMS KeyboardCommands[] =
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Reset the ACIA
+ */
+void ACIA_Reset(void)
+{
+	bByteInTransitToACIA = FALSE;
+	ACIAControlRegister = 0;
+	ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Reset the IKBD processor
  */
 void IKBD_Reset(BOOL bCold)
@@ -229,9 +248,7 @@ void IKBD_Reset(BOOL bCold)
 	KeyboardProcessor.Joy.PrevJoyData[0] = KeyboardProcessor.Joy.PrevJoyData[1] = 0;
 
 	/* Reset our ACIA status */
-	bByteInTransitToACIA = FALSE;
-	ACIAControlRegister = 0;
-	ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
+	ACIA_Reset();
 	/* And our keyboard states and clear key state table */
 	Keyboard.BufferHead = Keyboard.BufferTail = 0;
 	Keyboard.nBytesInInputBuffer = 0;
@@ -824,9 +841,9 @@ void IKBD_Cmd_Reset(void)
 
 		/* Start timer - some commands are send during this time they may be ignored (see real ST!) */
 		if (!KeyboardProcessor.bReset)
-			Int_AddRelativeInterrupt(IKBD_INIT_RESET_CYCLES, INTERRUPT_IKBD_RESETTIMER);
+			Int_AddRelativeInterrupt(IKBD_INIT_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER, 0);
 		else
-			Int_AddRelativeInterrupt(IKBD_RESET_CYCLES, INTERRUPT_IKBD_RESETTIMER);
+			Int_AddRelativeInterrupt(IKBD_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER, 0);
 
 		/* Set this 'critical' flag, gets reset when timer expires */
 		bDuringResetCriticalTime = TRUE;
@@ -1498,7 +1515,7 @@ void IKBD_SendByteToACIA(void)
 	if (!bByteInTransitToACIA)
 	{
 		/* Send byte to ACIA */
-		Int_AddRelativeInterrupt(ACIA_CYCLES,INTERRUPT_IKBD_ACIA);
+		Int_AddRelativeInterrupt(ACIA_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA, 0);
 		/* Set flag so only transmit one byte at a time */
 		bByteInTransitToACIA = TRUE;
 	}
@@ -1553,6 +1570,14 @@ void IKBD_KeyboardControl_ReadByte(void)
 
 	/* For our emulation send is immediate so acknowledge buffer is empty */
 	IoMem[0xfffc00] = ACIAStatusRegister | ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "read ikbd ctrl=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		                     IoMem[0xfffc00], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1565,6 +1590,14 @@ void IKBD_KeyboardData_ReadByte(void)
 	M68000_WaitState(8);
 
 	IoMem[0xfffc02] = IKBD_GetByteFromACIA();  /* Return our byte from keyboard processor */
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "read ikbd data=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		                     IoMem[0xfffc02], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
 }
 
 
@@ -1577,6 +1610,18 @@ void IKBD_KeyboardControl_WriteByte(void)
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
 	M68000_WaitState(8);
 
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "write ikbd ctrl=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		                     IoMem[0xfffc00], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
+
+	/* [NP] We only handle reset of the ACIA */
+	if ( ( IoMem[0xfffc00] & 0x03 ) == 0x03 )
+		ACIA_Reset();
+
 	/* Nothing... */
 }
 
@@ -1588,6 +1633,14 @@ void IKBD_KeyboardData_WriteByte(void)
 {
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
 	M68000_WaitState(8);
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "write ikbd data=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		                     IoMem[0xfffc02], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
 
 	IKBD_SendByteToKeyboardProcessor(IoMem[0xfffc02]);  /* Pass our byte to the keyboard processor */
 }

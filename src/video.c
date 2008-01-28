@@ -9,7 +9,87 @@
   TV raster trace, border removal, palette changes per HBL, the 'video address
   pointer' etc...
 */
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.82 2008-01-24 21:41:54 thothy Exp $";
+
+/* 2007/03/xx	[NP]	Support for cycle precise border removal / hardware scrolling by using	*/
+/*			Cycles_GetCounterOnWriteAccess (support left/right border and lines with*/
+/*			length of +26, +2, -2, +44, -106 bytes).				*/
+/*			Add support for 'Enchanted Lands' second removal of right border.	*/
+/*			More precise support for reading video counter $ff8205/07/09.		*/
+/* 2007/04/14	[NP]	Precise reloading of $ff8201/03 into $ff8205/07/09 at line 310 on cycle	*/
+/*			RESTART_VIDEO_COUNTER_CYCLE (ULM DSOTS Demo).				*/
+/* 2007/04/16	[NP]	Better Video_CalculateAddress. We must substract a "magic" 12 cycles to	*/
+/*			Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) to get a correct	*/
+/*			value (No Cooper's video synchro protection is finaly OK :) ).		*/
+/* 2007/04/17	[NP]	- Switch to 60 Hz to remove top border on line 33 should occur before	*/
+/*			LINE_REMOVE_TOP_CYCLE (a few cycles before the HBL)			*/
+/* 2007/04/23	[NP]	- Slight change in Video_StoreResolution to ignore hi res if the line	*/
+/*			has left/right border removed -> assume of lo res line.			*/
+/*			- Handle simultaneous removal of right border and bottom border with	*/
+/*			the same long switch to 60 Hz (Sync Screen in SNY II).			*/
+/* 2007/05/06	[NP]	More precise tests for top border's removal.				*/
+/* 2007/05/11	[NP]	Add support for mid res overscan (No Cooper Greetings).			*/
+/* 2007/05/12	[NP]	- LastCycleSync50 and LastCycleSync60 for better top border's removal	*/
+/*			in Video_EndHBL.							*/
+/*			- Use VideoOffset in Video_CopyScreenLineColor to handle missing planes	*/
+/*			depending on line (mid/lo and borders).					*/
+/* 2007/09/25	[NP]	Replace printf by calls to HATARI_TRACE.				*/
+/* 2007/10/02	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE. */
+/* 2007/10/23	[NP]	Add support for 0 byte line (60/50 switch at cycle 56). Allow 5 lines	*/
+/*			hardscroll (e.g. SHFORSTV.EXE by Paulo Simmoes).			*/
+/* 2007/10/31	[NP]	Use BORDERMASK_LEFT_OFF_MID when left border is removed with hi/med	*/
+/*			switch (ST CNX in PYM).							*/
+/* 2007/11/02	[NP]	Add support for 4 pixel hardware scrolling ("Let's Do The Twist" by	*/
+/*			ST CNX in Punish Your Machine).						*/
+/* 2007/11/05	[NP]	Depending on the position of the mid res switch, the planes will be	*/
+/*			shifted when doing midres overscan (Best Part Of the Creation in PYM	*/
+/*			or No Cooper Greetings).						*/
+/* 2007/11/30	[NP]	A hi/mid switch to remove the left border can be either	used to initiate*/
+/*			a right hardware scrolling in low res (St Cnx) or a complete mid res	*/
+/*			overscan line (Dragonnels Reset Part).					*/
+/*			Use bit 0-15, 16-19 and 20-23 in ScreenBorderMask[] to track border	*/
+/*			trick, STF hardware scrolling and plane shifting.			*/
+/* 2007/12/22	[NP]	Very precise values for VBL_VIDEO_CYCLE_OFFSET, HBL_VIDEO_CYCLE_OFFSET	*/
+/*			TIMERB_VIDEO_CYCLE_OFFSET and RESTART_VIDEO_COUNTER_CYCLE. These values	*/
+/*			were calculated using sttiming.s on a real STF and should give some very*/
+/*			accurate results (also uses 56 cycles instead of 44 to process an	*/
+/*			exception).								*/
+/* 2007/12/29	[NP]	Better support for starting line 2 bytes earlier (if the line starts in	*/
+/*			60 Hz and goes back to 50 Hz later), when combined with top border	*/
+/*			removal (Mindbomb Demo - D.I. No Shit).					*/
+/* 2007/12/30	[NP]	Slight improvement of VideoAdress in Video_CalculateAddress when reading*/
+/*			during the top border.							*/
+/*			Correct the case where removing top border on line 33 could also be	*/
+/*			interpreted as a right border removal (which is not possible since the	*/
+/*			display is still off at that point).					*/
+/* 2008/01/03	[NP]	Better handling of nStartHBL and nEndHBL when switching freq from	*/
+/*			50 to 60 Hz. Allows emulation of a "short" 50 Hz screen of 171 lines	*/
+/*			and a more precise removal of bottom border in 50 and 60 Hz.		*/
+/* 2008/01/04	[NP]	More generic detection for removing 2 bytes to the right of the line	*/
+/*			when switching from 60 to 50 Hz (works even with a big number of cycles	*/
+/*			between the freq changes) (Phaleon's Menus).				*/
+/* 2008/01/06	[NP]	More generic detection for stopping the display in the middle of a line	*/
+/*			with a hi / lo res switch (-106 bytes per line). Although switch to	*/
+/*			hi res should occur at cycle 160, some demos use 164 (Phaleon's Menus).	*/
+/* 2008/01/06	[NP]	Better bottom border's removal in 50 Hz : switch to 60 Hz must occur	*/
+/*			before cycle LINE_REMOVE_BOTTOM_CYCLE on line 263 and switch back to 50	*/
+/*			Hz must occur after LINE_REMOVE_BOTTOM_CYCLE on line 263 (this means	*/
+/*			we can already be in 50 Hz when Video_EndHBL is called ans still remove	*/
+/*			the bottom border). This is similar to the tests used to remove the	*/
+/*			top border.								*/
+/* 2008/01/12	[NP]	In Video_SetHBLPaletteMaskPointers, consider that if a color's change	*/
+/*			occurs after cycle LINE_END_CYCLE_NO_RIGHT, then it's related to the	*/
+/*			next line.								*/
+/*			FIXME : it would be better to handle all color changes through spec512.c*/
+/*			and drop the 16 colors palette per line.				*/
+/*			FIXME : we should use Cycles_GetCounterOnWriteAccess, but it doesn't	*/
+/*			support multiple accesses like move.l or movem.				*/
+/* 2008/01/12	[NP]	Handle 60 Hz switch during the active display of the last line to remove*/
+/*			the bottom border : this should also shorten line by 2 bytes (F.N.I.L.	*/
+/*			Demo by TNT).								*/
+/* 2008/01/15	[NP]	Don't do 'left+2' if switch back to 50 Hz occurs when line is not active*/
+/*			(after cycle LINE_END_CYCLE_60) (XXX International Demos).		*/
+
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.83 2008-01-28 22:20:12 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -35,12 +115,35 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.82 2008-01-24 21:41:54 thoth
 #include "ymFormat.h"
 #include "falcon/videl.h"
 #include "falcon/hostscreen.h"
+#include "trace.h"
 
 
 #define BORDERMASK_NONE    0x00                 /* Borders masks */
 #define BORDERMASK_LEFT    0x01
 #define BORDERMASK_RIGHT   0x02
 #define BORDERMASK_MIDDLE  0x04
+
+/* The border's mask allows to keep track of all the border tricks		*/
+/* applied to one video line. The masks for all lines are stored in the array	*/
+/* ScreenBorderMask[].								*/
+/* - bits 0-15 are used to describe the border tricks.				*/
+/* - bits 16-19 are used to store the pixels count in case of right hardware	*/
+/*   scrolling on STF.								*/
+/* - bits 20-23 are used to store the bytes offset to apply for some particular	*/
+/*   tricks (for example mid res overscan can shift display by 0 or 2 bytes	*/
+/*   depending on when the switch to mid res is done after removing the left	*/
+/*   border).									*/
+
+#define BORDERMASK_LEFT_OFF		0x01	/* removal of left border with hi/lo res switch -> +26 bytes */
+#define BORDERMASK_LEFT_PLUS_2		0x02	/* line starts earlier in 60 Hz -> +2 bytes */
+#define BORDERMASK_STOP_MIDDLE		0x04	/* line ends in hires at cycle 160 -> -106 bytes */
+#define BORDERMASK_RIGHT_MINUS_2	0x08	/* line ends earlier in 60 Hz -> -2 bytes */
+#define BORDERMASK_RIGHT_OFF		0x10	/* removal of right border -> +44 bytes */
+#define BORDERMASK_RIGHT_OFF_FULL	0x20	/* full removal of right border and next left border -> +22 bytes */
+#define BORDERMASK_OVERSCAN_MID_RES	0x40	/* some borders were removed and the line is in mid res instead of low res */
+#define BORDERMASK_EMPTY_LINE		0x80	/* 60/50 Hz switch prevents the line to start, video counter is not incremented */
+#define BORDERMASK_LEFT_OFF_MID		0x100	/* removal of left border with hi/mid res switch -> +26 bytes (for 4 pixels hardware scrolling) */
+
 
 
 int STRes = ST_LOW_RES;                         /* current ST resolution */
@@ -59,19 +162,24 @@ Uint32 VideoBase;                               /* Base address in ST Ram for sc
 int nVBLs;                                      /* VBL Counter */
 int nHBL;                                       /* HBL line */
 int nStartHBL;                                  /* Start HBL for visible screen */
+int nEndHBL;                                    /* End HBL for visible screen */
 int nScanlinesPerFrame = 313;                   /* Number of scan lines per frame */
 int nCyclesPerLine = 512;                       /* Cycles per horizontal line scan */
 static int nFirstVisibleHbl = 34;               /* The first line of the ST screen that is copied to the PC screen buffer */
-static int nEndHBL;                             /* End HBL for visible screen */
 
 static Uint8 HWScrollCount;                     /* HW scroll pixel offset, STe only (0...15) */
 static Uint8 ScanLineSkip;                      /* Scan line width add, STe only (words, minus 1) */
 static Uint8 *pVideoRaster;                     /* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 static Uint8 VideoShifterByte;                  /* VideoShifter (0xff8260) value store in video chip */
 static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simulate left/right border removal */
-static int nLastAccessCycleLeft;                /* Line cycle where program tried to open left border */
+static int LineStartCycle;                      /* Cycle where display starts for the current line */
+static int LineEndCycle;                        /* Cycle where display ends for the current line */
 static BOOL bSteBorderFlag;                     /* TRUE when screen width has been switched to 336 (e.g. in Obsession) */
 static BOOL bTTColorsSync, bTTColorsSTSync;     /* whether TT colors need convertion to SDL */
+
+int	ScreenBorderMask[ MAX_SCANLINES_PER_FRAME ];
+int	LastCycleSync50;			/* value of Cycles_GetCounterOnWriteAccess last time ff820a was set to 0x02 for the current VBL */
+int	LastCycleSync60;			/* value of Cycles_GetCounterOnWriteAccess last time ff820a was set to 0x00 for the current VBL */
 
 
 /*-----------------------------------------------------------------------*/
@@ -109,33 +217,152 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
  */
 static Uint32 Video_CalculateAddress(void)
 {
-	int X, FrameCycles;
+	int X, nFrameCycles, NbBytes;
+	int HblCounterVideo;
 	Uint32 VideoAddress;      /* Address of video display in ST screen space */
+	int nSyncByte;
+	int LineBorderMask;
+	int PrevSize;
+	int CurSize;
+
 
 	/* Find number of cycles passed during frame */
-	FrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO);
+	/* We need to substract '12' for correct video address calculation */
+	nFrameCycles = Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) - 12;
+
+	/* Now find which pixel we are on (ignore left/right borders) */
+	X = nFrameCycles % nCyclesPerLine;
+
+	/* Get real video line count (can be different from nHBL) */
+	HblCounterVideo = nFrameCycles / nCyclesPerLine;
+
+
+	nSyncByte = IoMem_ReadByte(0xff820a) & 2;	/* only keep bit 1 */
+	if (nSyncByte)				/* 50 Hz */
+	{
+		LineStartCycle = LINE_START_CYCLE_50;
+		LineEndCycle = LINE_END_CYCLE_50;
+	}
+	else						/* 60 Hz */
+	{
+		LineStartCycle = LINE_START_CYCLE_60;
+		LineEndCycle = LINE_END_CYCLE_60;
+	}
+
 
 	/* Top of screen is usually 63 lines from VBL in 50 Hz */
-	if (FrameCycles < nStartHBL*nCyclesPerLine)
+	if (nFrameCycles < nStartHBL*nCyclesPerLine)
 	{
+		/* VideoBase was set in Video_ClearOnVBL, we should not use ff8201/ff8203 */
+		/* which are reloaded in ff8205/ff8207 only once per VBL */
 		VideoAddress = VideoBase;
 	}
+
+	else if (nFrameCycles > RESTART_VIDEO_COUNTER_CYCLE)
+	{
+		/* This is where ff8205/ff8207 are reloaded with the content of ff8201/ff8203 on a real ST */
+		/* (used in ULM DSOTS demos). VideoBase is also reloaded in Video_ClearOnVBL to be sure */
+		VideoBase = (Uint32)IoMem_ReadByte(0xff8201)<<16 | (Uint32)IoMem_ReadByte(0xff8203)<<8;
+		if (ConfigureParams.System.nMachineType != MACHINE_ST)
+		{
+			/* on STe 2 aligned, on Falcon 4 aligned, on TT 8 aligned. We do STe. */
+			VideoBase |= IoMem_ReadByte(0xff820d) & ~1;
+		}
+
+		VideoAddress = VideoBase;
+	}
+
 	else
 	{
-		/* Now find which pixel we are on (ignore left/right borders) */
-		X = FrameCycles % nCyclesPerLine;
-		if (X < SCREEN_START_CYCLE)   /* Limit if in NULL area outside screen */
-			X = SCREEN_START_CYCLE;
-		if (X > (nCyclesPerLine - SCREEN_START_CYCLE))
-			X = (nCyclesPerLine - SCREEN_START_CYCLE);
-		/* X is now in the correct range, subtract SCREEN_START_CYCLE to give X pixel across screen! */
-		X = ((X-SCREEN_START_CYCLE)>>1)&(~1);
+		VideoAddress = pVideoRaster - STRam;		/* pVideoRaster is updated by Video_CopyScreenLineColor */
 
-		VideoAddress = pVideoRaster - STRam;
+		/* Now find which pixel we are on (ignore left/right borders) */
+		X = ( Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) - 12 ) % nCyclesPerLine;
+
+		/* Get real video line count (can be different from nHBL) */
+		HblCounterVideo = ( Cycles_GetCounterOnReadAccess(CYCLES_COUNTER_VIDEO) - 12 ) / nCyclesPerLine;
+
+		/* Correct the case when read overlaps end of line / start of next line */
+		/* Video_CopyScreenLineColor was not called yet to update VideoAddress */
+		/* so we need to determine the size of the previous line to get the */
+		/* correct value of VideoAddress. */
+		PrevSize = 0;
+		if ( HblCounterVideo < nHBL )
+			X = 0;
+		else if ( ( HblCounterVideo > nHBL )		/* HblCounterVideo = nHBL+1 */
+		          &&  ( nHBL >= nStartHBL ) )		/* if nHBL was not visible, PrevSize = 0 */
+		{
+			LineBorderMask = ScreenBorderMask[ HblCounterVideo-1 ];	/* get border mask for nHBL */
+			PrevSize = BORDERBYTES_NORMAL;		/* normal line */
+
+			if (LineBorderMask & BORDERMASK_LEFT_OFF)
+				PrevSize += BORDERBYTES_LEFT;
+			else if (LineBorderMask & BORDERMASK_LEFT_PLUS_2)
+				PrevSize += 2;
+
+			if (LineBorderMask & BORDERMASK_STOP_MIDDLE)
+				PrevSize -= 106;
+			else if (LineBorderMask & BORDERMASK_RIGHT_MINUS_2)
+				PrevSize -= 2;
+			else if (LineBorderMask & BORDERMASK_RIGHT_OFF)
+				PrevSize += BORDERBYTES_RIGHT;
+
+			if (LineBorderMask & BORDERMASK_EMPTY_LINE)
+				PrevSize = 0;
+		}
+
+
+		LineBorderMask = ScreenBorderMask[ HblCounterVideo ];
+
+		CurSize = BORDERBYTES_NORMAL;			/* normal line */
+
+		if (LineBorderMask & BORDERMASK_LEFT_OFF)
+			CurSize += BORDERBYTES_LEFT;
+		else if (LineBorderMask & BORDERMASK_LEFT_PLUS_2)
+			CurSize += 2;
+
+		if (LineBorderMask & BORDERMASK_STOP_MIDDLE)
+			CurSize -= 106;
+		else if (LineBorderMask & BORDERMASK_RIGHT_MINUS_2)
+			CurSize -= 2;
+		else if (LineBorderMask & BORDERMASK_RIGHT_OFF)
+			CurSize += BORDERBYTES_RIGHT;
+		if (LineBorderMask & BORDERMASK_RIGHT_OFF_FULL)
+			CurSize += BORDERBYTES_RIGHT_FULL;
+
+		if ( LineBorderMask & BORDERMASK_LEFT_PLUS_2)
+			LineStartCycle = LINE_START_CYCLE_60;
+		else if ( LineBorderMask & BORDERMASK_LEFT_OFF )
+			LineStartCycle = LINE_START_CYCLE_70;
+
+		LineEndCycle = LineStartCycle + CurSize*2;
+
+
+		if ( X < LineStartCycle )
+			X = LineStartCycle;				/* display is disabled in the left border */
+		else if ( X > LineEndCycle )
+			X = LineEndCycle;				/* display is disabled in the right border */
+
+		NbBytes = ( (X-LineStartCycle)>>1 ) & (~1);	/* 2 cycles per byte */
+
+
+		/* when left border is open, we have 2 bytes less than theorical value */
+		/* (26 bytes in left border, which is not a multiple of 4 cycles) */
+		if ( LineBorderMask & BORDERMASK_LEFT_OFF )
+			NbBytes -= 2;
+
+		if ( LineBorderMask & BORDERMASK_EMPTY_LINE )
+			NbBytes = 0;
+
 		/* Add line cycles if we have not reached end of screen yet: */
-		if (FrameCycles < nEndHBL*nCyclesPerLine)
-			VideoAddress += X;
+		if (nFrameCycles < nEndHBL*nCyclesPerLine)
+			VideoAddress += PrevSize + NbBytes;
 	}
+
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_ADDR , "video base=%x raster=%x addr=%x video_cyc=%d line_cyc=%d/X=%d @ nHBL=%d/video_hbl=%d %d<->%d pc=%x instr_cyc=%d\n",
+	               VideoBase, pVideoRaster - STRam, VideoAddress, Cycles_GetCounter(CYCLES_COUNTER_VIDEO),
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO) %  nCyclesPerLine, X,
+	               nHBL, HblCounterVideo, LineStartCycle, LineEndCycle, M68000_GetPC(), CurrentInstrCycles );
 
 	return VideoAddress;
 }
@@ -147,29 +374,128 @@ static Uint32 Video_CalculateAddress(void)
  */
 static void Video_WriteToShifter(Uint8 Byte)
 {
-	static int nLastByte, nLastFrameCycles;
+	static int nLastHBL = -1, nLastVBL = -1, nLastByte, nLastCycles, nLastFrameCycles;
 	int nFrameCycles, nLineCycles;
+	int HblCounterVideo;
 
 	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 
 	/* We only care for cycle position in the actual screen line */
 	nLineCycles = nFrameCycles % nCyclesPerLine;
 
-	/*fprintf(stderr,"Shifter=0x%2.2X %d (%d) @ %d\n",
-	        Byte, nFrameCycles, nLineCycles, nHBL);*/
+	HblCounterVideo = nFrameCycles / nCyclesPerLine;
 
-	/* Check if program tries to open left border.
-	 * FIXME: This is a very inaccurate test that should be improved,
-	 * but we probably need better CPU cycles emulation first. There's
-	 * also no support for sync-scrolling yet :-( */
-	if (nLastByte == 0x02 && Byte == 0x00 && nLineCycles <= 12
-	        && nFrameCycles-nLastFrameCycles <= 16)
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+	               Byte, nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
+
+	/* Remove left border : +26 bytes */
+	/* this can be done with a hi/lo res switch or a hi/med res switch */
+	if (nLastByte == 0x02 && Byte == 0x00
+	        && nLineCycles <= (LINE_START_CYCLE_70+20)
+	        && nFrameCycles-nLastFrameCycles <= 30)
 	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove left\n" );
 		LeftRightBorder |= BORDERMASK_LEFT;
-		nLastAccessCycleLeft = nLineCycles;
+		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_LEFT_OFF;
+		LineStartCycle = LINE_START_CYCLE_70;
 	}
 
+	if (nLastByte == 0x02 && Byte == 0x01
+	        && nLineCycles <= (LINE_START_CYCLE_70+20)
+	        && nFrameCycles-nLastFrameCycles <= 30)
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove left mid\n" );
+		LeftRightBorder |= BORDERMASK_LEFT;
+		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_LEFT_OFF_MID;	/* a later switch to low res might gives right scrolling */
+		/* By default, this line will be in mid res, except if we detect hardware scrolling later */
+		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_OVERSCAN_MID_RES | ( 2 << 20 );
+		LineStartCycle = LINE_START_CYCLE_70;
+	}
+
+	/* Start right border near middle of the line : -106 bytes */
+//	if (nLastByte == 0x02 && Byte == 0x00
+//	 && nFrameCycles-nLastFrameCycles <= 20
+//	 && nLineCycles >= LINE_END_CYCLE_70 && nLineCycles <= (LINE_END_CYCLE_70+20) )
+	if ( ( nLastByte == 0x02 && Byte == 0x00 )
+	        && ( nLastHBL == HblCounterVideo )			/* switch during the same line */
+	        && ( nLastCycles <= LINE_END_CYCLE_70+4 )		/* switch to hi res before cycle 164 */
+	        && ( nLineCycles >= LINE_END_CYCLE_70+4 ) )		/* switch to lo res after cycle 164 */
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect stop middle\n" );
+		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_STOP_MIDDLE;
+		LineEndCycle = LINE_END_CYCLE_70;
+	}
+
+	/* Remove right border a second time after removing it a first time : */
+	/* this removes left border on next line too  (used in 'Enchanted Lands')*/
+	if ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_RIGHT_OFF
+	        && nLastByte == 0x02 && Byte == 0x00
+	        && nFrameCycles-nLastFrameCycles <= 20
+	        && nLastCycles == LINE_END_CYCLE_50_2 )
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove right full\n" );
+		LeftRightBorder |= BORDERMASK_RIGHT;    /* Program tries to open right border */
+		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_OFF_FULL;
+		ScreenBorderMask[ HblCounterVideo+1 ] |= BORDERMASK_LEFT_OFF;	/* no left border on next line */
+		LineEndCycle = LINE_END_CYCLE_FULL;
+	}
+
+	/* If left border is opened and we switch to medium resolution */
+	/* during the next cycles, then we assume a mid res overscan line */
+	/* instead of a low res overscan line */
+	/* Used in 'No Cooper' greetings by 1984 and 'Punish Your Machine' by Delta Force */
+	if ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_LEFT_OFF
+	        && Byte == 0x01 )
+	{
+		if ( nLineCycles == LINE_LEFT_MID_CYCLE_1 )		/* 'No Cooper' timing */
+		{
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect midres overscan offset 0 byte\n" );
+			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_OVERSCAN_MID_RES | ( 0 << 20 );
+		}
+		else if ( nLineCycles == LINE_LEFT_MID_CYCLE_2 )	/* 'Best Part Of The Creation / PYM' timing */
+		{
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect midres overscan offset 2 bytes\n" );
+			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_OVERSCAN_MID_RES | ( 2 << 20 );
+		}
+	}
+
+	/* If left border was opened with a hi/mid res switch */
+	/* we need to check if the switch to low res can trigger */
+	/* a right hardware scrolling. */
+	/* We store the pixels count in the upper 16 bits */
+	if ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_LEFT_OFF_MID
+	        && Byte == 0x00 && nLineCycles <= LINE_SCROLL_1_CYCLE_50 )
+	{
+		/* The hi/mid switch was a switch to do low res hardware scrolling, */
+		/* so we must cancel the mid res overscan bit. */
+		ScreenBorderMask[ HblCounterVideo ] &= (~BORDERMASK_OVERSCAN_MID_RES);
+
+		if ( nLineCycles == LINE_SCROLL_13_CYCLE_50 )		/* cycle 20 */
+		{
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect 13 pixels right scroll\n" );
+			ScreenBorderMask[ HblCounterVideo ] |= ( 13 << 16 );
+		}
+		else if ( nLineCycles == LINE_SCROLL_9_CYCLE_50 )	/* cycle 24 */
+		{
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect 9 pixels right scroll\n" );
+			ScreenBorderMask[ HblCounterVideo ] |= ( 9 << 16 );
+		}
+		else if ( nLineCycles == LINE_SCROLL_5_CYCLE_50 )	/* cycle 28 */
+		{
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect 5 pixels right scroll\n" );
+			ScreenBorderMask[ HblCounterVideo ] |= ( 5 << 16 );
+		}
+		else if ( nLineCycles == LINE_SCROLL_1_CYCLE_50 )	/* cycle 32 */
+		{
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect 1 pixel right scroll\n" );
+			ScreenBorderMask[ HblCounterVideo ] |= ( 1 << 16 );
+		}
+	}
+
+	nLastVBL = nVBLs;
+	nLastHBL = HblCounterVideo;
 	nLastByte = Byte;
+	nLastCycles = nLineCycles;
 	nLastFrameCycles = nFrameCycles;
 }
 
@@ -180,65 +506,113 @@ static void Video_WriteToShifter(Uint8 Byte)
  */
 void Video_Sync_WriteByte(void)
 {
-	static int nLastHBL = -1, LastByte, nLastCycles;
+	static int nLastHBL = -1, nLastVBL = -1, nLastByte, nLastCycles, nLastFrameCycles;
 	int nFrameCycles, nLineCycles;
+	int HblCounterVideo;
 	Uint8 Byte;
 
-	/* Note: We're only interested in lower 2 bits (50/60Hz) */
-	Byte = IoMem[0xff820a] & 3;
+	/* We're only interested in lower 2 bits (50/60Hz) */
+	Byte = IoMem[0xff820a] & 2;			/* only keep bit 1 (50/60 Hz) */
 
 	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 
 	/* We only care for cycle position in the actual screen line */
 	nLineCycles = nFrameCycles % nCyclesPerLine;
 
-	/*fprintf(stderr,"Sync=0x%2.2X %d (%d) @ %d\n",
-	        Byte, nFrameCycles, nLineCycles, nHBL);*/
+	HblCounterVideo = nFrameCycles / nCyclesPerLine;
 
-	/* Check if program tries to open a border.
-	 * FIXME: These are very inaccurate tests that should be improved,
-	 * but we probably need better CPU cycles emulation first. There's
-	 * also no support for sync-scrolling yet :-( */
-	if (LastByte == 0x02 && Byte == 0x00)   /* switched from 50 Hz to 60 Hz? */
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_SYNC ,"sync=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+	               Byte, nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
+
+
+	if ( ( nLastByte == 0x00 ) && ( Byte == 0x02 )/* switched from 60 Hz to 50 Hz? */
+	        && ( nLastVBL == nVBLs ) )			/* switched during the same VBL */
 	{
-		if (nHBL >= SCREEN_START_HBL_60HZ-1 && nHBL <= SCREEN_START_HBL_60HZ+1)
+		/* Add 2 bytes to left border */
+//		if ( nFrameCycles-nLastFrameCycles <= 24
+//		 && nLastCycles <= LINE_START_CYCLE_60 && nLineCycles >= LINE_START_CYCLE_50 )
+		if ( ( LastCycleSync60 <= HblCounterVideo * nCyclesPerLine + LINE_START_CYCLE_60 )
+		        && ( nLineCycles >= LINE_START_CYCLE_50 )	/* The line started in 60 Hz and continues in 50 Hz */
+		        && ( nLineCycles <= LINE_END_CYCLE_60 )		/* change when line is active */
+		        && ( ( ScreenBorderMask[ HblCounterVideo ] & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MID ) ) == 0 ) )
 		{
-			/* Top border */
-			OverscanMode |= OVERSCANMODE_TOP;       /* Set overscan bit */
-			nStartHBL = SCREEN_START_HBL_60HZ;      /* New start screen line */
-			pHBLPaletteMasks -= OVERSCAN_TOP;
-			pHBLPalettes -= OVERSCAN_TOP;
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect left+2\n" );
+			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_LEFT_PLUS_2;
+			LineStartCycle = LINE_START_CYCLE_60;
 		}
-		else if (nHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR)
+
+		/* Empty line */
+		else if ( ( nFrameCycles-nLastFrameCycles <= 24 )
+		          && ( nLastCycles == LINE_START_CYCLE_50 ) && ( nLineCycles > LINE_START_CYCLE_50 ) )
 		{
-			/* Bottom border */
-			OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
-			nEndHBL = SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR+OVERSCAN_BOTTOM;  /* New end screen line */
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line\n" );
+			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
+			LineStartCycle = LINE_START_CYCLE_60;
+		}
+
+		/* Remove 2 bytes to the right */
+//      else if ( nFrameCycles-nLastFrameCycles <= 128
+//	&& nLastCycles <= LINE_END_CYCLE_60 && nLineCycles > LINE_END_CYCLE_60
+		if ( ( nLineCycles > LINE_END_CYCLE_60 )
+		        && ( ( nLastCycles > LINE_START_CYCLE_60 ) && ( nLastCycles <= LINE_END_CYCLE_60 ) )
+		        && ( nLastHBL == HblCounterVideo )
+		        && ( ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_STOP_MIDDLE ) == 0 ) )
+		{
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
+			LeftRightBorder |= BORDERMASK_MIDDLE;   /* Program tries to shorten line by 2 bytes */
+			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_MINUS_2;
+			LineEndCycle = LINE_END_CYCLE_60;
 		}
 	}
 
-	if (LastByte == 0x00 && Byte == 0x02)   /* switched from 60 Hz to 50 Hz? */
+	/* special case for right border : some programs don't switch back to */
+	/* 50 Hz immediatly (sync screen in SNY II), so we just check if */
+	/* freq changes to 60 Hz at the position where line should end in 50 Hz */
+	if ( ( nLastByte == 0x02 && Byte == 0x00 )	/* switched from 50 Hz to 60 Hz? */
+	        && ( HblCounterVideo >= nStartHBL ) )	/* only if display is on */
 	{
-		if (nHBL == nLastHBL && nLineCycles-nLastCycles <= 16
-		        && nLineCycles >= (SCREEN_START_CYCLE+320-40)
-		        && nLineCycles <= (SCREEN_START_CYCLE+320+40))
+		if ( ( nLineCycles == LINE_END_CYCLE_50 )
+		        && ( ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_STOP_MIDDLE ) == 0 ) )
 		{
-			/* Right border */
-			//fprintf(stderr,"Right sync: %i - %i = %i\n", nLineCycles, nLastAccessCycleLeft, nLineCycles - nLastAccessCycleLeft);
-			if (nLineCycles - nLastAccessCycleLeft == 368)
-			{
-				LeftRightBorder |= BORDERMASK_MIDDLE;   /* Program tries to shorten line by 2 bytes */
-			}
-			else
-			{
-				LeftRightBorder |= BORDERMASK_RIGHT;    /* Program tries to open right border */
-			}
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove right\n" );
+			LeftRightBorder |= BORDERMASK_RIGHT;    /* Program tries to open right border */
+			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_OFF;
+			LineEndCycle = LINE_END_CYCLE_NO_RIGHT;
 		}
 	}
 
-	nLastHBL = nHBL;
-	LastByte = Byte;
+
+	/* Store cycle position of freq 50/60 to check for top/bottom border removal in Video_EndHBL. */
+	/* Also update start/end line depending on the current value of nHBL */
+	if ( Byte == 0x02 )						/* switch to 50 Hz */
+	{
+		LastCycleSync50 = nFrameCycles;
+
+		if ( ( nHBL < SCREEN_START_HBL_50HZ )			/* nStartHBL can change only if display is not ON yet */
+		        && ( OverscanMode & OVERSCANMODE_TOP ) == 0 )		/* update only if top was not removed */
+			nStartHBL = SCREEN_START_HBL_50HZ;
+
+		if ( ( nHBL < SCREEN_END_HBL_50HZ )			/* nEndHBL can change only if display is not OFF yet */
+		        && ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* update only if bottom was not removed */
+			nEndHBL = SCREEN_END_HBL_50HZ;				/* 263 */
+	}
+	else if ( Byte == 0x00 )					/* switch to 60 Hz */
+	{
+		LastCycleSync60 = nFrameCycles;
+
+		if ( nHBL < SCREEN_START_HBL_60HZ )			/* nStartHBL can change only if display is not ON yet */
+			nStartHBL = SCREEN_START_HBL_60HZ;
+
+		if ( ( nHBL < SCREEN_END_HBL_60HZ )			/* nEndHBL can change only if display is not OFF yet */
+		        && ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* update only if bottom was not removed */
+			nEndHBL = SCREEN_END_HBL_60HZ;				/* 234 */
+	}
+
+	nLastVBL = nVBLs;
+	nLastHBL = HblCounterVideo;
+	nLastByte = Byte;
 	nLastCycles = nLineCycles;
+	nLastFrameCycles = nFrameCycles;
 }
 
 
@@ -248,7 +622,21 @@ void Video_Sync_WriteByte(void)
  */
 static void Video_StartHBL(void)
 {
+	int nSyncByte;
+
 	LeftRightBorder = BORDERMASK_NONE;
+
+	nSyncByte = IoMem_ReadByte(0xff820a);
+	if (nSyncByte & 2)				/* 50 Hz */
+	{
+		LineStartCycle = LINE_START_CYCLE_50;
+		LineEndCycle = LINE_END_CYCLE_50;
+	}
+	else						/* 60 Hz */
+	{
+		LineStartCycle = LINE_START_CYCLE_60;
+		LineEndCycle = LINE_END_CYCLE_60;
+	}
 }
 
 
@@ -264,22 +652,54 @@ static void Video_StoreFirstLinePalette(void)
 	pp2 = (Uint16 *)&IoMem[0xff8240];
 	for (i = 0; i < 16; i++)
 		HBLPalettes[i] = SDL_SwapBE16(*pp2++);
+
 	/* And set mask flag with palette and resolution */
+//	FIXME ; enlever PALETTEMASK_RESOLUTION
+
+//	if ( ScreenBorderMask[ nFirstVisibleHbl ] == BORDERMASK_NONE )	// no border trick, store the current res
 	HBLPaletteMasks[0] = (PALETTEMASK_RESOLUTION|PALETTEMASK_PALETTE) | (((Uint32)IoMem_ReadByte(0xff8260)&0x3)<<16);
+//	else						// border removal, assume low res for the whole line
+//		HBLPaletteMasks[0] = (PALETTEMASK_RESOLUTION|PALETTEMASK_PALETTE) | (0<<16);
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Store resolution on each line(used to test if mixed low/medium resolutions)
+ * Store resolution on each line (used to test if mixed low/medium resolutions)
  */
 static void Video_StoreResolution(int y)
 {
+	Uint8 res;
+	int Mask;
+
 	/* Clear resolution, and set with current value */
 	if (!(bUseHighRes || bUseVDIRes))
 	{
 		HBLPaletteMasks[y] &= ~(0x3<<16);
-		HBLPaletteMasks[y] |= ((Uint32)IoMem_ReadByte(0xff8260)&0x3)<<16;
+		res = IoMem_ReadByte(0xff8260)&0x3;
+
+		Mask = ScreenBorderMask[ y+nFirstVisibleHbl ];
+
+		if ( Mask & BORDERMASK_OVERSCAN_MID_RES )		/* special case for mid res to render the overscan line */
+			res = 1;						/* mid res instead of low res */
+		else if ( Mask != BORDERMASK_NONE )			/* border removal : assume low res for the whole line */
+			res = 0;
+
+		HBLPaletteMasks[y] |= PALETTEMASK_RESOLUTION|((Uint32)res)<<16;
+
+#if 0
+		if ( ( Mask == BORDERMASK_NONE )			/* no border trick, store the current res */
+		        || ( res == 0 ) || ( res == 1 ) )			/* if border trick, ignore passage to hi res */
+			HBLPaletteMasks[y] |= PALETTEMASK_RESOLUTION|((Uint32)res)<<16;
+		else						/* border removal or hi res : assume low res for the whole line */
+			HBLPaletteMasks[y] |= (0)<<16;
+
+		/* special case for mid res to render the overscan line */
+		if ( Mask & BORDERMASK_OVERSCAN_MID_RES )
+			HBLPaletteMasks[y] |= PALETTEMASK_RESOLUTION|((Uint32)1)<<16;	/* mid res instead of low res */
+#endif
+
+//   fprintf ( stderr , "store res %d line %d %x %x\n" , res , y , Mask , HBLPaletteMasks[y] );
 	}
 }
 
@@ -335,8 +755,38 @@ static void Video_CopyScreenLineMono(void)
  */
 static void Video_CopyScreenLineColor(void)
 {
+	int LineBorderMask = ScreenBorderMask[ nHBL ];
+	int VideoOffset = 0;
+	int STF_PixelScroll = 0;
+
+	//fprintf(stderr , "copy line %d start %d end %d %d %x\n" , nHBL, nStartHBL, nEndHBL, LineBorderMask, pVideoRaster - STRam);
+
+	/* If left border is opened, we need to compensate one missing word in low res (1 plan) */
+	/* If overscan is in mid res, the offset is variable */
+	if ( LineBorderMask & BORDERMASK_OVERSCAN_MID_RES )
+		VideoOffset = - ( ( LineBorderMask >> 20 ) & 0x0f );		/* No Cooper=0  PYM=-2 in mid res overscan */
+
+	else if ( LineBorderMask & BORDERMASK_LEFT_OFF )
+		VideoOffset = -2;							/* always 2 bytes in low res overscan */
+
+	/* Handle 4 pixels hardware scrolling ('ST Cnx' demo in 'Punish Your Machine') */
+	/* Depending on the number of pixels, we need to compensate for some skipped words */
+	else if ( LineBorderMask & BORDERMASK_LEFT_OFF_MID )
+	{
+		STF_PixelScroll = ( LineBorderMask >> 16 ) & 0x0f;
+
+		if      ( STF_PixelScroll == 13 )	VideoOffset = 2+8;
+		else if ( STF_PixelScroll == 9 )	VideoOffset = 0+8;
+		else if ( STF_PixelScroll == 5 )	VideoOffset = -2+8;
+		else if ( STF_PixelScroll == 1 )	VideoOffset = -4+8;
+		else					VideoOffset = 0;	/* never used ? */
+
+		// fprintf(stderr , "scr off %d %d\n" , STF_PixelScroll , VideoOffset);
+	}
+
 	/* Is total blank line? I.e. top/bottom border? */
-	if (nHBL < nStartHBL || nHBL >= nEndHBL)
+	if ((nHBL < nStartHBL) || (nHBL >= nEndHBL)
+	    || (LineBorderMask & BORDERMASK_EMPTY_LINE))	/* 60/50 Hz trick to obtain an empty line */
 	{
 		/* Clear line to color '0' */
 		memset(pSTScreen, 0, SCREENBYTES_LINE);
@@ -344,30 +794,47 @@ static void Video_CopyScreenLineColor(void)
 	else
 	{
 		/* Does have left border? If not, clear to color '0' */
-		if (LeftRightBorder & BORDERMASK_LEFT)
+		if ((LineBorderMask & BORDERMASK_LEFT_OFF)
+		    || (LineBorderMask & BORDERMASK_LEFT_OFF_MID))
 		{
 			/* The "-2" in the following line is needed so that the offset is a multiple of 8 */
-			pVideoRaster += BORDERBYTES_LEFT-SCREENBYTES_LEFT-2;
+			pVideoRaster += BORDERBYTES_LEFT-SCREENBYTES_LEFT+VideoOffset;
 			memcpy(pSTScreen, pVideoRaster, SCREENBYTES_LEFT);
 			pVideoRaster += SCREENBYTES_LEFT;
+		}
+		else if (LineBorderMask & BORDERMASK_LEFT_PLUS_2)
+		{
+			/* bigger line by 2 bytes */
+			memcpy(pSTScreen+SCREENBYTES_LEFT-2, pVideoRaster, 2);
+			pVideoRaster += 2;
 		}
 		else
 			memset(pSTScreen,0,SCREENBYTES_LEFT);
 
-		/* Copy middle - always present */
-		memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE);
-		pVideoRaster += SCREENBYTES_MIDDLE;
+		/* Short line due to hires in the middle ? */
+		if (LineBorderMask & BORDERMASK_STOP_MIDDLE)
+		{
+			/* 106 bytes less in the line */
+			memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE-106);
+			pVideoRaster += (SCREENBYTES_MIDDLE-106);
+		}
+		else
+		{
+			/* normal middle part (160 bytes) */
+			memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE);
+			pVideoRaster += SCREENBYTES_MIDDLE;
+		}
 
-		/* Does have right border? */
-		if (LeftRightBorder & BORDERMASK_RIGHT)
+		/* Does have right border ? */
+		if (LineBorderMask & BORDERMASK_RIGHT_OFF)
 		{
 			memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, SCREENBYTES_RIGHT);
 			pVideoRaster += BORDERBYTES_RIGHT-SCREENBYTES_RIGHT;
 			pVideoRaster += SCREENBYTES_RIGHT;
 		}
-		else if (LeftRightBorder & BORDERMASK_MIDDLE)
+		else if (LineBorderMask & BORDERMASK_RIGHT_MINUS_2)
 		{
-			/* Shortened line by 2 bytes? */
+			/* Shortened line by 2 bytes */
 			memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE-2, 0, SCREENBYTES_RIGHT+2);
 			pVideoRaster -= 2;
 		}
@@ -377,10 +844,29 @@ static void Video_CopyScreenLineColor(void)
 			memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE,0,SCREENBYTES_RIGHT);
 		}
 
-		/* Correct the "-2" offset for pVideoRaster from BORDERMASK_LEFT above */
-		if (LeftRightBorder & BORDERMASK_LEFT)
-			pVideoRaster += 2;
+		/* Full right border removal up to the end of the line (cycle 512) */
+		if (LineBorderMask & BORDERMASK_RIGHT_OFF_FULL)
+			pVideoRaster += BORDERBYTES_RIGHT_FULL;
 
+		/* Correct the offset for pVideoRaster from BORDERMASK_LEFT_OFF above if needed */
+		pVideoRaster -= VideoOffset;		/* VideoOffset is 0 or -2 */
+
+
+		/* Handle 4 pixels hardware scrolling ('ST Cnx' demo in 'Punish Your Machine') */
+		/* Shift the line by STF_PixelScroll pixels to the right (we don't need to scroll */
+		/* the first 16 pixels / 8 bytes). */
+		if (STF_PixelScroll != 0)
+		{
+			Uint16 *pScreenLineEnd;
+			int count;
+
+			pScreenLineEnd = (Uint16 *) ( pSTScreen + SCREENBYTES_LINE - 2 );
+			for ( count = 0 ; count < ( SCREENBYTES_LINE - 8 ) / 2 ; count++ , pScreenLineEnd-- )
+				do_put_mem_word ( pScreenLineEnd , ( ( do_get_mem_word ( pScreenLineEnd - 4 ) << 16 ) | ( do_get_mem_word ( pScreenLineEnd ) ) ) >> STF_PixelScroll );
+		}
+
+
+		/* STE specific */
 		if (bSteBorderFlag)
 		{
 			memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, 4*2);
@@ -393,11 +879,11 @@ static void Video_CopyScreenLineColor(void)
 			Uint16 *pScrollEndAddr; /* Pointer to end of the line */
 
 			nNegScrollCnt = 16 - HWScrollCount;
-			if (LeftRightBorder & BORDERMASK_LEFT)
+			if (LineBorderMask & BORDERMASK_LEFT_OFF)
 				pScrollAdj = (Uint16 *)pSTScreen;
 			else
 				pScrollAdj = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT);
-			if (LeftRightBorder & BORDERMASK_RIGHT)
+			if (LineBorderMask & BORDERMASK_RIGHT_OFF)
 				pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LINE - 8);
 			else
 				pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT + SCREENBYTES_MIDDLE - 8);
@@ -418,7 +904,7 @@ static void Video_CopyScreenLineColor(void)
 					++pScrollAdj;
 				}
 				/* Handle the last 16 pixels of the line */
-				if (LeftRightBorder & BORDERMASK_RIGHT)
+				if (LineBorderMask & BORDERMASK_RIGHT_OFF)
 				{
 					/* When right border is open, we have to deal with this ugly offset
 					 * of 46-SCREENBYTES_RIGHT=30 - The demo "Mind rewind" is a good example */
@@ -463,7 +949,7 @@ static void Video_CopyScreenLineColor(void)
  */
 static void Video_CopyVDIScreen(void)
 {
-	/* Just copy whole VDI screen as GEM doesn't care about cycle accuracy */
+	/* Copy whole screen, don't care about being exact as for GEM only */
 	memcpy(pSTScreen, pVideoRaster, ((VDIWidth*VDIPlanes)/8)*VDIHeight);
 }
 
@@ -471,31 +957,61 @@ static void Video_CopyVDIScreen(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Check at end of each HBL to see if any Sync/Shifter hardware tricks have been attempted
+ * This is the place to check if top/bottom border were removed.
+ * NOTE : the tests must be made with nHBL in ascending order.
  */
 static void Video_EndHBL(void)
 {
-	Uint8 nSyncByte = IoMem_ReadByte(0xff820a);
+	Uint8 SyncByte = IoMem_ReadByte(0xff820a) & 2;	/* only keep bit 1 (50/60 Hz) */
 
-	/* Check if we need to open borders: If we are running basically in 50 Hz,
-	 * but a program switched to 60 Hz at certain screen lines, we have to open
-	 * the corresponding border. The "Level 16" fullscreen in the Union demo is
-	 * a good example. */
-	if ((nSyncByte & 2) == 0)
+	// fprintf(stderr,"video_endhbl %d last60 %d last 50 %d\n", nHBL, LastCycleSync60, LastCycleSync50);
+
+	/* Remove top border if the switch to 60 Hz was made during this vbl before cycle	*/
+	/* 33*512+LINE_REMOVE_TOP_CYCLE and if the switch to 50 Hz has not yet occured or	*/
+	/* occured before the 60 Hz or occured after cycle 33*512+LINE_REMOVE_TOP_CYCLE.	*/
+	if (( nHBL == SCREEN_START_HBL_60HZ-1)
+	    && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (SCREEN_START_HBL_60HZ-1) * nCyclesPerLine + LINE_REMOVE_TOP_CYCLE))
+	    && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (SCREEN_START_HBL_60HZ-1) * nCyclesPerLine + LINE_REMOVE_TOP_CYCLE)))
 	{
-		if (nHBL == SCREEN_START_HBL_60HZ-1 && nStartHBL == SCREEN_START_HBL_50HZ)
+		/* Top border */
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove top\n" );
+		OverscanMode |= OVERSCANMODE_TOP;		/* Set overscan bit */
+		nStartHBL = SCREEN_START_HBL_60HZ;	/* New start screen line */
+		pHBLPaletteMasks -= OVERSCAN_TOP;	// FIXME useless ?
+		pHBLPalettes -= OVERSCAN_TOP;	// FIXME useless ?
+	}
+
+	/* Remove bottom border for a 60 Hz screen */
+	else if ((nHBL == SCREEN_END_HBL_60HZ-1)	/* last displayed line in 60 Hz */
+	         && (SyncByte == 0x02)			/* current freq is 50 Hz */
+	         && (LastCycleSync50 >= 0)			/* change occurred during this VBL */
+	         && (nStartHBL == SCREEN_START_HBL_60HZ)	/* screen starts in 60 Hz */
+	         && ((OverscanMode & OVERSCANMODE_TOP) == 0))	/* and top border was not removed : this screen is only 60 Hz */
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
+		OverscanMode |= OVERSCANMODE_BOTTOM;
+		nEndHBL = SCANLINES_PER_FRAME_60HZ;	/* new end for a 60 Hz screen */
+	}
+
+	/* Remove bottom border for a 50 Hz screen (similar method to the one for top border) */
+	else if ((nHBL == SCREEN_END_HBL_50HZ-1)	/* last displayed line in 50 Hz */
+	          && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (SCREEN_END_HBL_50HZ-1) * nCyclesPerLine + LINE_REMOVE_BOTTOM_CYCLE))
+	          && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (SCREEN_END_HBL_50HZ-1) * nCyclesPerLine + LINE_REMOVE_BOTTOM_CYCLE))
+	          && ((OverscanMode & OVERSCANMODE_BOTTOM) == 0))	/* border was not already removed at line SCREEN_END_HBL_60HZ */
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
+		OverscanMode |= OVERSCANMODE_BOTTOM;
+		nEndHBL = SCREEN_END_HBL_50HZ+OVERSCAN_BOTTOM;	/* new end for a 50 Hz screen */
+
+		/* Some programs turn to 60 Hz during the active display of the last line to */
+		/* remove the bottom border (FNIL by TNT), in that case, we should also remove */
+		/* 2 bytes to this line (this is wrong practice as it can distort the display on a real ST) */
+		if (LastCycleSync60 <= (SCREEN_END_HBL_50HZ-1) * nCyclesPerLine + LINE_END_CYCLE_60)
 		{
-			/* Top border */
-			OverscanMode |= OVERSCANMODE_TOP;       /* Set overscan bit */
-			nStartHBL = SCREEN_START_HBL_60HZ;      /* New start screen line */
-			pHBLPaletteMasks -= OVERSCAN_TOP;
-			pHBLPalettes -= OVERSCAN_TOP;
-		}
-		else if (nHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR-1
-		         && nEndHBL == SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR)
-		{
-			/* Bottom border */
-			OverscanMode |= OVERSCANMODE_BOTTOM;    /* Set overscan bit */
-			nEndHBL = SCREEN_START_HBL_50HZ+SCREEN_HEIGHT_HBL_COLOR+OVERSCAN_BOTTOM;  /* New end screen line */
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
+			LeftRightBorder |= BORDERMASK_MIDDLE;		/* Program tries to shorten line by 2 bytes */
+			ScreenBorderMask[ nHBL ] |= BORDERMASK_RIGHT_MINUS_2;
+			LineEndCycle = LINE_END_CYCLE_60;
 		}
 	}
 
@@ -511,7 +1027,7 @@ static void Video_EndHBL(void)
 		if (bUseHighRes)
 		{
 			/* Copy for hi-res (no overscan) */
-			if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+400)
+			if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+SCREEN_HEIGHT_HBL_MONO)
 				Video_CopyScreenLineMono();
 		}
 		/* Are we in possible visible color display (including borders)? */
@@ -536,19 +1052,24 @@ static void Video_EndHBL(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * HBL interrupt - this is very inaccurate on ST and appears to occur around
- * 1/3rd way into the display!
+ * HBL interrupt : this occurs at the end of every line, on cycle 512 (in 50 Hz)
+ * It takes 56 cycles to handle the 68000's exception.
  */
 void Video_InterruptHandler_HBL(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_int_cnt=%d\n" ,
+	               nHBL , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE ) );
+
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
 
 	/* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
 	if (nHBL < nScanlinesPerFrame-1)
-		Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_HBL);
+		Int_AddAbsoluteInterrupt(nCyclesPerLine, INT_CPU_CYCLE, INTERRUPT_VIDEO_HBL);
 
 	M68000_Exception(EXCEPTION_HBLANK);   /* Horizontal blank interrupt, level 2! */
+
+	Video_EndHBL();              /* Increase HBL count, copy line to display buffer and do any video trickery */
 }
 
 
@@ -562,9 +1083,9 @@ void Video_InterruptHandler_EndLine(void)
 {
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
-	/* Generate new HBL, if need to - there are 313 HBLs per frame */
+	/* Generate new Endline, if need to - there are 313 HBLs per frame */
 	if (nHBL < nScanlinesPerFrame-1)
-		Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_ENDLINE);
+		Int_AddAbsoluteInterrupt(nCyclesPerLine, INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
 
 	/* Is this a good place to send the keyboard packets? Done once per frame */
 	if (nHBL == nStartHBL)
@@ -581,8 +1102,8 @@ void Video_InterruptHandler_EndLine(void)
 			MFP_TimerB_EventCount_Interrupt();
 	}
 
-	FDC_UpdateHBL();    /* Update FDC motion */
-	Video_EndHBL();     /* Increase HBL count, copy line to display buffer and do any video trickery */
+	FDC_UpdateHBL();             /* Update FDC motion */
+//	Video_EndHBL();              /* Increase HBL count, copy line to display buffer and do any video trickery */
 
 	/* If we don't often pump data into the event queue, the SDL misses events... grr... */
 	if (!(nHBL & 63))
@@ -613,17 +1134,27 @@ static void Video_SetHBLPaletteMaskPointers(void)
 {
 	int FrameCycles;
 	int Line;
+	int Cycle;
 
-	/* Top of standard screen is 63 lines from VBL (in 50 Hz)      */
-	/* Each line is 64+320+64+64(Blank) = 512 pixels per scan line */
-	/* Timer occurs at end of 64+320+64; Display Enable(DE)=Low    */
-	/* HBL is incorrect on machine and occurs around 96+ cycles in */
-
-	FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+	/* FIXME [NP] We should use Cycles_GetCounterOnWriteAccess, but it wouldn't	*/
+	/* work when using multiple accesses instructions like move.l or movem	*/
+	/* To correct this, assume a delay of 8 cycles (should give a good approximation */
+	/* of a move.w or movem.l for example) */
+	//  FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+	FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
 
 	/* Find 'line' into palette - screen starts 63 lines down, less 29 for top overscan */
-	/* And if write to last 96 cycle of line it will count as the NEXT line(needed else games may flicker) */
 	Line = (FrameCycles-(nFirstVisibleHbl*nCyclesPerLine)+SCREEN_START_CYCLE)/nCyclesPerLine;
+//	Line = ( FrameCycles / nCyclesPerLine ) - nFirstVisibleHbl;
+	Cycle = FrameCycles % nCyclesPerLine;
+
+	/* FIXME [NP] if the color change occurs after the last visible pixel of a line */
+	/* we consider the palette should be modified on the next line. This is quite */
+	/* a hack, we should handle all color changes through spec512.c to have cycle */
+	/* accuracy all the time. */
+//	if ( Cycle >= LINE_END_CYCLE_NO_RIGHT-8 );
+//		Line++;
+
 	if (Line < 0)        /* Limit to top/bottom of possible visible screen */
 		Line = 0;
 	if (Line >= NUM_VISIBLE_LINES)
@@ -684,6 +1215,20 @@ static void Video_ResetShifterTimings(void)
 	{
 		nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL_COLOR;
 	}
+
+	/* Reset freq changes position for the next VBL to come */
+	LastCycleSync50 = -1;
+	LastCycleSync60 = -1;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Clear the array indicating the border state of each line
+ */
+static void Video_ClearScreenBorder(void)
+{
+	memset(ScreenBorderMask, 0, sizeof(int)*MAX_SCANLINES_PER_FRAME);
 }
 
 
@@ -711,6 +1256,7 @@ static void Video_ClearOnVBL(void)
 
 	Video_StartHBL();
 	Video_SetScreenRasters();
+	Video_ClearScreenBorder();
 	Spec512_StartVBL();
 }
 
@@ -867,9 +1413,11 @@ static void Video_DrawScreen(void)
  */
 void Video_StartInterrupts(void)
 {
-	Int_AddAbsoluteInterrupt(nCyclesPerLine-96, INTERRUPT_VIDEO_ENDLINE);
-	Int_AddAbsoluteInterrupt(nCyclesPerLine, INTERRUPT_VIDEO_HBL);
-	Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME, INTERRUPT_VIDEO_VBL);
+	Int_AddAbsoluteInterrupt(nCyclesPerLine - TIMERB_VIDEO_CYCLE_OFFSET - VBL_VIDEO_CYCLE_OFFSET,
+	                         INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
+	Int_AddAbsoluteInterrupt(nCyclesPerLine + HBL_VIDEO_CYCLE_OFFSET - VBL_VIDEO_CYCLE_OFFSET,
+	                         INT_CPU_CYCLE, INTERRUPT_VIDEO_HBL);
+	Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
 }
 
 
@@ -882,7 +1430,7 @@ void Video_InterruptHandler_VBL(void)
 	int PendingCyclesOver;
 
 	/* Store cycles we went over for this frame(this is our inital count) */
-	PendingCyclesOver = -PendingInterruptCount;    /* +ve */
+	PendingCyclesOver = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );    /* +ve */
 
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
@@ -891,7 +1439,7 @@ void Video_InterruptHandler_VBL(void)
 	Video_StartInterrupts();
 
 	/* Set frame cycles, used for Video Address */
-	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver);
+	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver + VBL_VIDEO_CYCLE_OFFSET);
 
 	/* Clear any key presses which are due to be de-bounced (held for one ST frame) */
 	Keymap_DebounceAllKeys();
@@ -912,6 +1460,9 @@ void Video_InterruptHandler_VBL(void)
 	/* Generate 1/50th second of sound sample data, to be played by sound thread */
 	Sound_Update_VBL();
 
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d\n" ,
+	               nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver );
+
 	M68000_Exception(EXCEPTION_VBLANK);   /* Vertical blank interrupt, level 4! */
 
 	/* And handle any messages, check for quit message */
@@ -919,7 +1470,7 @@ void Video_InterruptHandler_VBL(void)
 	if (bQuitProgram)
 	{
 		/* Pass NULL interrupt function to quit cleanly */
-		Int_AddAbsoluteInterrupt(4, INTERRUPT_NULL);
+		Int_AddAbsoluteInterrupt(4, INT_CPU_CYCLE, INTERRUPT_NULL);
 		M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
 	}
 
@@ -1096,6 +1647,15 @@ static void Video_ColorReg_WriteWord(Uint32 addr)
 		idx = (addr-0xff8240)/2;               /* words */
 		pHBLPalettes[idx] = col;               /* Set colour x */
 		*pHBLPaletteMasks |= 1 << idx;         /* And mask */
+
+		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_COLOR ) )
+		{
+			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+			int nLineCycles = nFrameCycles % nCyclesPerLine;
+			HATARI_TRACE_PRINT ( "write col addr=%x col=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , addr , col,
+			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+		}
+
 	}
 }
 
@@ -1182,14 +1742,14 @@ void Video_Color15_WriteWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write video shifter mode register (0xff860)
+ * Write video shifter mode register (0xff8260)
  */
 void Video_ShifterMode_WriteByte(void)
 {
 	if (ConfigureParams.System.nMachineType == MACHINE_TT)
 	{
 		TTRes = IoMem_ReadByte(0xff8260) & 7;
-		IoMem_WriteByte(0xff8262, TTRes);                /* Copy to TT shifter mode register */
+		IoMem_WriteByte(0xff8262, TTRes);           /* Copy to TT shifter mode register */
 	}
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
@@ -1201,7 +1761,7 @@ void Video_ShifterMode_WriteByte(void)
 	}
 	if (!bUseHighRes && !bUseVDIRes)                    /* Don't store if hi-res and don't store if VDI resolution */
 	{
-		VideoShifterByte = IoMem[0xff8260] & 3;           /* We only care for lower 2-bits */
+		VideoShifterByte = IoMem[0xff8260] & 3;     /* We only care for lower 2-bits */
 		Video_WriteToShifter(VideoShifterByte);
 		Video_SetHBLPaletteMaskPointers();
 		*pHBLPaletteMasks &= 0xff00ffff;

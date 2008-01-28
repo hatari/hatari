@@ -18,19 +18,50 @@
   very simple. Speed is a problem, though, as the palette can change once every
   4 pixels - that's a lot of processing.
 */
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.20 2007-10-30 01:13:57 thothy Exp $";
+
+
+/* 2008/01/12	[NP]	In Spec512_StoreCyclePalette, don't use Cycles_GetCounterOnWriteAccess	*/
+/*			as it doesn't support movem for example. Use Cycles_GetCounter with	*/
+/*			an average  correction of 8 cycles (this should be fixed).		*/
+/*			In Spec512_StartScanLine, better handling of SCREENBYTES_LEFT when	*/
+/*			border are present. Better alignement of pixel and color when left	*/
+/*			border is removed (Rotofull in Nostalgia Demo, When Colors Are Going	*/
+/*			Bang Bang by DF in Punish Your Machine).				*/
+/* 2008/01/13	[NP]	In Spec512_StoreCyclePalette, if a movem was used to access several	*/
+/*			color regs just before the end of a line, the value for nHorPos was not	*/
+/*			checked and could take values >= 512, which means some colors in the	*/
+/*			palette were overwritten next time colors were stored on the next line	*/
+/*			and the palette was not set correctly, especially in the bottom of the	*/
+/*			screen (Decade Demo Main Menu, Punish Your Machine Main Menu, ULM	*/
+/*			Hidden Screen in Oh Crickey...).					*/
+/* 2008/01/13	[NP]	One line should contain 512/4 + 1 colors slots, not 512/4. Else, if	*/
+/*			a program manages to change colors every 4 cycles, the '-1' terminator	*/
+/*			added by Spec512_StartFrame will in fact be written on cycle 0 in the	*/
+/*			next line (this is theorical, practically no program changes the color	*/
+/*			128 times per line).							*/
+/*			Use nCyclesPerLine instead of 512 to check if nHorPos is too big and if	*/
+/*			the colors must be stored on the next line when freq is 50 or 60Hz	*/
+/*			(readme.prg by TEX (in 1987))						*/
+/* 2008/01/24	[NP]	In Spec512_StartScanLine, use different values for LineStartCycle when	*/
+/*			running in 50 Hz or 60 Hz (TEX Spectrum Slideshow in 60 Hz).		*/
+
+
+
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.21 2008-01-28 22:20:11 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
 #include "main.h"
 #include "cycles.h"
 #include "int.h"
+#include "m68000.h"
 #include "screen.h"
 #include "spec512.h"
 #include "video.h"
+#include "trace.h"
 
 /* As 68000 clock multiple of 4 this mean we can only write to the palette this many time per scanline */
-#define MAX_CYCLEPALETTES_PERLINE  (512/4)
+#define MAX_CYCLEPALETTES_PERLINE  ((512/4) + 1)		/* +1 for the '-1' added as a line's terminator */
 
 /* Store writes to palette by cycles per scan line, colour and index in ST */
 typedef struct
@@ -84,7 +115,7 @@ void Spec512_StartVBL(void)
 	memset(nCyclePalettes, 0x0, sizeof(nCyclePalettes));
 
 	/* Clear number of times accessed on entry in palette (used to check if is true Spectrum 512 image) */
-	nPalettesAccesses = 0x0;
+	nPalettesAccesses = 0;
 
 	/* Set as not Spectrum 512 displayed image */
 	bIsSpec512Display = FALSE;
@@ -105,7 +136,13 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	CycleColourIndex = (addr-0xff8240)>>1;
 
 	/* Find number of cycles into frame */
-	FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+	/* FIXME [NP] We should use Cycles_GetCounterOnWriteAccess, but it wouldn't	*/
+	/* work when using multiple accesses instructions like move.l or movem	*/
+	/* To correct this, assume a delay of 8 cycles (should give a good approximation */
+	/* of a move.w or movem.l for example) */
+	//  FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+	FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
+
 
 	/* Find scan line we are currently on and get index into cycle-palette table */
 	ScanLine = FrameCycles / nCyclesPerLine;
@@ -133,6 +170,13 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 		 * to add at least 4 cycles between each color: */
 		if ((pTmpCyclePalette-1)->LineCycles >= nHorPos)
 			nHorPos = (pTmpCyclePalette-1)->LineCycles + 4;
+
+		if ( nHorPos >= nCyclesPerLine )	/* end of line reached, continue on the next line */
+		{
+			ScanLine++;
+			pTmpCyclePalette = &CyclePalettes[ (ScanLine*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[ScanLine] ];
+			nHorPos = nCyclePalettes[ScanLine] * 4;	/* 4 cycles per access */
+		}
 	}
 
 	/* Store palette access */
@@ -140,7 +184,15 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	pTmpCyclePalette->Colour = CycleColour;           /* Store ST/STe color RGB */
 	pTmpCyclePalette->Index = CycleColourIndex;       /* And index (0...15) */
 
-	/* Increment count (this can never overflow as you cannot write to the palette more than 'MAX_CYCLEPALETTES_PERLINE' times per scanline) */
+	if ( 0 && HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_COLOR ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "spec store col line %d cyc=%d col=%x idx=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , ScanLine , nHorPos , CycleColour , CycleColourIndex ,
+		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
+
+	/* Increment count (this can never overflow as you cannot write to the palette more than 'MAX_CYCLEPALETTES_PERLINE-1' times per scanline) */
 	nCyclePalettes[ScanLine]++;
 
 	/* Check if program wrote to palette registers multiple times on a frame. */
@@ -218,15 +270,22 @@ void Spec512_ScanWholeLine(void)
 void Spec512_StartScanLine(void)
 {
 	int i;
+	int LineStartCycle;
 
 	/* Store pointer to line of palette cycle writes */
 	pCyclePalette = &CyclePalettes[nScanLine*MAX_CYCLEPALETTES_PERLINE];
 	/* Ready for next scan line */
 	nScanLine++;
 
+	if ( nScanlinesPerFrame == SCANLINES_PER_FRAME_50HZ )
+		LineStartCycle = LINE_START_CYCLE_50;			/* The screen was 50 Hz */
+	else
+		LineStartCycle = LINE_START_CYCLE_60;			/* The screen was 60 Hz */
+
 	/* Update palette entries until we reach start of displayed screen */
 	ScanLineCycleCount = 0;
-	for(i=0; i<((SCREEN_START_CYCLE-16)/4); i++)  /* This '16' is as we've already added in the 'move' instruction timing */
+//	for(i=0; i<((SCREEN_START_CYCLE-16)/4); i++)  /* This '16' is as we've already added in the 'move' instruction timing */
+	for (i=0; i<((LineStartCycle-SCREENBYTES_LEFT*2)/4 + 6); i++)	/* [NP] '6' is required to align pixels and colors */
 		Spec512_UpdatePaletteSpan();              /* Update palette for this 4-cycle period */
 
 	/* And skip for left border is not using overscan display to user */
@@ -253,7 +312,7 @@ void Spec512_EndScanLine(void)
  */
 void Spec512_UpdatePaletteSpan(void)
 {
-	if( pCyclePalette->LineCycles == ScanLineCycleCount )
+	if (pCyclePalette->LineCycles == ScanLineCycleCount)
 	{
 		/* Need to update palette with new entry */
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -261,7 +320,6 @@ void Spec512_UpdatePaletteSpan(void)
 #else
 		STRGBPalette[pCyclePalette->Index] = ST2RGB[pCyclePalette->Colour];
 #endif
-
 		pCyclePalette += 1;
 	}
 	ScanLineCycleCount += 4;      /* Next 4 cycles */

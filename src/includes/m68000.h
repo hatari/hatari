@@ -123,9 +123,7 @@ static inline void M68000_AddCycles(int cycles)
 
 	cycles = cycles >> nCpuFreqShift;
 
-// FIXME !!! This must be replaced for the upcoming new int.c routines!
-//	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL ( cycles , INT_CPU_CYCLE );
-	PendingInterruptCount -= cycles;
+	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL ( cycles , INT_CPU_CYCLE );
 
 	nCyclesMainCounter += cycles;
 }

@@ -11,10 +11,18 @@
 #include <SDL_video.h>    /* for SDL_Surface */
 
 
-/* Assumes 32 pixels left+right */
-#define SCREENBYTES_LEFT    16          /* Bytes for left border in ST screen */
-#define SCREENBYTES_MIDDLE  160         /* Middle (320 pixels) */
-#define SCREENBYTES_RIGHT   16          /* right border */
+/* The 'screen' is a representation of the ST video memory	*/
+/* taking into account all the border tricks. Data are stored	*/
+/* in 'planar' format (1 word per plane) and are then converted	*/
+/* to an SDL buffer that will be displayed.			*/
+/* So, all video lines are converted to a unique line of	*/
+/* SCREENBYTES_LINE bytes in planar format.			*/
+/* SCREENBYTES_LINE should always be a multiple of 8.		*/
+
+/* left/right borders must be multiple of 8 bytes */
+#define SCREENBYTES_LEFT    24		/* Bytes for left border in ST screen */
+#define SCREENBYTES_MIDDLE  160		/* Middle (320 pixels) */
+#define SCREENBYTES_RIGHT   24		/* right border */
 #define SCREENBYTES_LINE    (SCREENBYTES_LEFT+SCREENBYTES_MIDDLE+SCREENBYTES_RIGHT)
 #define SCREENBYTES_MONOLINE 80         /* Byte per line in ST-high resolution */
 

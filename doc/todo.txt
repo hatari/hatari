@@ -28,12 +28,7 @@ touch with us:
 
 - Add proper emulation of IO registers wait-state cycles emulation.
 
-- Add accurate cycles emulation for DIVU and DIVS instructions
-  (see: http://pasti.fxatari.com/68kdocs/div68kCycleAccurate.c).
-
 - Upgrade the CPU core of Hatari to the latest WinUAE or E-UAE CPU core.
-
-- Fix MFP emulation (e.g. "Froggies over the fence" does not work yet).
 
 - Improve MIDI emulation (MIDI-Input ...).
 
