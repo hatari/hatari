@@ -53,10 +53,14 @@
 /*			We need to call 'sync_m68k_pc' before calling 'Exception'.			*/
 /* 2007/12/09	[NP]	CHK.L (e.g. $4700) doesn't exist on 68000 and should be considered as an illegal*/
 /*			instruction (Transbeauce 2 demo) -> change in table68k.				*/
+/* 2008/01/24	[NP]	BCLR Dy,Dx takes 8 cycles instead of 10 if Dy<16 (Fullshade in Anomaly Demos).	*/
+/* 2008/01/26	[NP]	On ST, d8(An,Xn) takes 2 cycles more when used with ADDA/SUBA (ULM Demo Menu)	*/
+/*			but not when used with MOVE (e.g. 'move.l 0(a5,d1),(a4)' takes 26 cycles and so	*/
+/*			can pair with a lsr) (Anomaly Demo Intro).					*/
 
 
 
-const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.13 2008-01-25 22:43:09 thothy Exp $";
+const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.14 2008-01-28 07:46:25 thothy Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -331,7 +335,6 @@ static void genamode (amodes mode, char *reg, wordsizes size, char *name, int ge
 	    insn_n_cycles += 4;
 	    printf ("\tuaecptr %sa = get_disp_ea_020(m68k_areg(regs, %s), next_iword());\n", name, reg);
 	} else {
-	    insn_n_cycles += 2;					/* [NP] on 68000 ST, d8(An,Xn) takes 2 cycles more */
 	    printf ("\tuaecptr %sa = get_disp_ea_000(m68k_areg(regs, %s), %s);\n", name, reg, gen_nextiword ());
 	}
 
@@ -352,7 +355,6 @@ static void genamode (amodes mode, char *reg, wordsizes size, char *name, int ge
 	    printf ("\tuaecptr tmppc = m68k_getpc();\n");
 	    printf ("\tuaecptr %sa = get_disp_ea_020(tmppc, next_iword());\n", name);
 	} else {
-	    insn_n_cycles += 2;					/* [NP] on 68000 ST, d8(PC,Xn) takes 2 cycles more */
 	    printf ("\tuaecptr tmppc = m68k_getpc() + %d;\n", m68k_pc_offset);
 	    printf ("\tuaecptr %sa = get_disp_ea_000(tmppc, %s);\n", name, gen_nextiword ());
 	}
@@ -1007,6 +1009,8 @@ static void gen_opcode (unsigned long int opcode)
           insn_n_cycles += 2;
          else
           insn_n_cycles += 4;
+        if( (curi->smode==Ad8r) || (curi->smode==PC8r) )	/* [NP] on 68000 ST, d8(An,Xn) takes 2 cycles more */
+          insn_n_cycles += 2;
 	break;
     case i_SUBX:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
@@ -1069,6 +1073,8 @@ static void gen_opcode (unsigned long int opcode)
           insn_n_cycles += 2;
          else
           insn_n_cycles += 4;
+        if( (curi->smode==Ad8r) || (curi->smode==PC8r) )	/* [NP] on 68000 ST, d8(An,Xn) takes 2 cycles more */
+          insn_n_cycles += 2;
 	break;
     case i_ADDX:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
@@ -1216,6 +1222,9 @@ static void gen_opcode (unsigned long int opcode)
 	/* [NP] BCLR #n,Dx takes 12 cycles instead of 14 if n<16 */
         if((curi->smode==imm1) && (curi->dmode==Dreg))
 	    printf ("\tif ( src < 16 ) { m68k_incpc(4); return 12; }\n");
+	/* [NP] BCLR Dy,Dx takes 8 cycles instead of 10 if Dy<16 */
+        if((curi->smode==Dreg) && (curi->dmode==Dreg))
+	    printf ("\tif ( src < 16 ) { m68k_incpc(2); return 8; }\n");
 	break;
     case i_BSET:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
