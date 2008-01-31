@@ -10,12 +10,10 @@ touch with us:
 - Improve FDC emulation (e.g. read-track and write-track commands do not work
   right yet).
 
-- Improve support for .DIM disk images (support also disks that have been
-  imaged with the "Get sectors: used" option).
-
-- Add support for .STT disk images (created with the STEEM disk image program).
-
-- Add support for Pasti .STX disk images. (See http://pasti.fxatari.com/)
+- Improve disk image formats support:
+  - Add support for .STT images (created with the STEEM disk image program).
+  - Add support for Pasti .STX images (See http://pasti.fxatari.com/).
+  - Support .DIM images created with the "Get sectors: used" option.
 
 - Improve PSG sound emulation (it sounds not very accurate with some games
   and demos compared to a real ST).
