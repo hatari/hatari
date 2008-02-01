@@ -59,7 +59,7 @@
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.49 2008-01-25 22:43:09 thothy Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.50 2008-02-01 06:03:55 thothy Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -1522,7 +1522,7 @@ static void m68k_run_1 (void)
 #endif
 
 	M68000_AddCycles(cycles);
-	if (PendingInterruptCount<=0 && PendingInterruptFunction)
+	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
 	  CALL_VAR(PendingInterruptFunction);
 
 	if (regs.spcflags) {
@@ -1562,7 +1562,7 @@ static void m68k_run_2 (void)
 	cycles = (*cpufunctbl[opcode])(opcode);
 
 	M68000_AddCycles(cycles);
-	if (PendingInterruptCount<=0 && PendingInterruptFunction)
+	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
 	  CALL_VAR(PendingInterruptFunction);
 
 	if (regs.spcflags) {
