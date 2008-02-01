@@ -24,7 +24,8 @@ touch with us:
 - Fix IKBD emulation (e.g. some games like "Big Run" have problems with the
   joystick fire button).
 
-- Add proper emulation of IO registers wait-state cycles emulation.
+- Add real HD 6301 (keyboard processor of the ST) emulation - this is needed
+  for some demos like Froggies over Fence, Transbeauce II or Dragonells.
 
 - Upgrade the CPU core of Hatari to the latest WinUAE or E-UAE CPU core.
 

@@ -158,9 +158,9 @@ a list of TT demos.</p>
     </tr>
     <tr>
       <td>Lethal Xcess</td>
-      <td>no</td>
+      <td>yes</td>
       <td>&nbsp;</td>
-      <td>crashes while loading, sync scrolling will not work properly</td>
+      <td>Uses sync-scrolling in ST mode and STE HW scrolling in STE mode.</td>
     </tr>
     <tr>
       <td>Star Goose</td>
@@ -257,6 +257,7 @@ a list of TT demos.</p>
       <td>Fantasia (by Dune/Sector1)</td>
       <td>yes</td>
       <td>&nbsp;</td>
+      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Oddstuff (by Dune/Sector1)</td>
@@ -343,10 +344,37 @@ a list of TT demos.</p>
       <td>Works fully with Hatari version 0.92 and later</td>
     </tr>
     <tr>
-      <td>Froggies over the Fence<br>Oh no more Froggies</td>
-      <td>No</td>
+      <td>Froggies over the Fence</td>
+      <td>partially</td>
       <td>&nbsp;</td>
-      <td>Stop when the main menu loads</td>
+      <td>
+        Mouse/keyboard does not work (demo tries to install
+        IKBD code, so it needs a full 6301 emulator)
+      </td>
+    </tr>
+    <tr>
+      <td>Oh no more Froggies</td>
+      <td>partially</td>
+      <td>&nbsp;</td>
+      <td>No more music after a while</td>
+    </tr>
+    <tr>
+      <td>Dragonnels</td>
+      <td>partially</td>
+      <td>&nbsp;</td>
+      <td>
+        Keyboard does not work (demo tries to install
+        IKBD code, so it needs a full 6301 emulator)
+      </td>
+    </tr>
+    <tr>
+      <td>Transbeauce II</td>
+      <td>partially</td>
+      <td>&nbsp;</td>
+      <td>
+        Crashes before main menu (demo tries to install
+        IKBD code, so it needs a full 6301 emulator)
+      </td>
     </tr>
   </tbody>
 </table>
@@ -851,12 +879,10 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td align="center">Comment</td>
     </tr>
     <tr>
-      <td>20 years (collection)*</td>
+      <td>DHS 20 years (collection)*</td>
       <td>Yes</td>
       <td>&nbsp;</td>
-      <td>R. Gods subdemo looks wrong.  (In plain ST mode the main screen
-          has color/sync problems and Paradox subdemo works only
-	  on STe)</td>
+      <td>With Hatari 1.0, most screens work right now.</td>
     </tr>
     <tr>
       <td>Aggression: Braindamage</td>
@@ -940,9 +966,10 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Paradox: Pacemaker</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>The end screen doesn't look quite correct when the demo has been
-          started from hard disk. Otherwise this is perfect.
-          With EmuTOS, stops in the middle.</td>
+      <td>
+        Some garbage in the end screen when the demo has been started from
+        hard disk. End screen currently also fails to open the borders properly.
+        With EmuTOS, stops in the middle.</td>
     </tr>
     <tr>
       <td>Paradox: HighResMode</td>
@@ -952,9 +979,9 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Reservoir Gods: Mind Rewind</td>
-      <td>partially</td>
+      <td>yes</td>
       <td>&nbsp;</td>
-      <td>Opens all borders. Timing problems in current version of Hatari (used to work better with 0.80)</td>
+      <td>Opens all borders, heavily abuses horizontal STE HW scrolling</td>
     </tr>
     <tr>
       <td>Reservoir Gods: Grimey</td>
