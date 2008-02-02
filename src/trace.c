@@ -33,6 +33,7 @@ TraceOptions[] = {
 	{ HATARI_TRACE_VIDEO_ADDR	, "video_addr" } ,
 	{ HATARI_TRACE_VIDEO_HBL	, "video_hbl" } ,
 	{ HATARI_TRACE_VIDEO_VBL	, "video_vbl" } ,
+	{ HATARI_TRACE_VIDEO_STE	, "video_ste" } ,
 	{ HATARI_TRACE_VIDEO_ALL	, "video_all" } ,
 
 	{ HATARI_TRACE_MFP_EXCEPTION	, "mfp_exception" } ,
