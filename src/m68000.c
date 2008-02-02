@@ -23,11 +23,13 @@
 /*			determination of valid pairing combinations (replace lots of 'if' tests in	*/
 /*			m68000.h).									*/
 /* 2008/01/25	[NP]	Add pairing for LSR/MOVE (and all other bit shifting instr) (Anomaly Demo Intro)*/
+/* 2008/02/02	[NP]	Add pairing for CMP/Bcc (Level 16 Fullscreen (1988)).				*/
+
 
 /* [NP] possible pairing to check :             */
 /*      exg / move.b (a0),d0                    */
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.46 2008-01-28 07:40:49 thothy Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.47 2008-02-02 17:30:15 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -110,6 +112,7 @@ void M68000_InitPairing(void)
 	PairingArray[  i_ROR ][ i_MOVE ] = 1; 
 	PairingArray[ i_ROXR ][ i_MOVE ] = 1; 
 	PairingArray[ i_ROXL ][ i_MOVE ] = 1; 
+	PairingArray[  i_CMP ][  i_Bcc ] = 1;
 }
 
 
