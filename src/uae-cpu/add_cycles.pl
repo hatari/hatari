@@ -32,9 +32,9 @@ while ( <> )
       }
 
     # we're entering in a function ; we buffer everything
-    # until we don't reach the 'return' line, then we print
-    # the CurrentInstrCycles based in the numeric value in
-    # the 'return' line, then we print the buffered lines.
+    # until we reach the 'return' line, then we print
+    # the CurrentInstrCycles based on the numeric value in
+    # the 'return' line, finally we print the buffered lines.
     else
       {
 	push @buf , $line;		# create a buffer for the function's body
