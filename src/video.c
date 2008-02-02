@@ -88,8 +88,12 @@
 /*			Demo by TNT).								*/
 /* 2008/01/15	[NP]	Don't do 'left+2' if switch back to 50 Hz occurs when line is not active*/
 /*			(after cycle LINE_END_CYCLE_60) (XXX International Demos).		*/
+/* 2008/01/31	[NP]	Improve left border detection : allow switch to low res on cycle <= 28  */
+/*			instead of <= 20 (Vodka Demo Main Menu).				*/
+/* 2008/02/02	[NP]	Added 0 byte line detection when switching hi/lo res at position 28	*/
+/*			(Lemmings screen in Nostalgic-o-demo).					*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.83 2008-01-28 22:20:12 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.84 2008-02-02 17:33:58 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -391,7 +395,7 @@ static void Video_WriteToShifter(Uint8 Byte)
 	/* Remove left border : +26 bytes */
 	/* this can be done with a hi/lo res switch or a hi/med res switch */
 	if (nLastByte == 0x02 && Byte == 0x00
-	        && nLineCycles <= (LINE_START_CYCLE_70+20)
+	        && nLineCycles <= (LINE_START_CYCLE_70+28)
 	        && nFrameCycles-nLastFrameCycles <= 30)
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove left\n" );
@@ -410,6 +414,15 @@ static void Video_WriteToShifter(Uint8 Byte)
 		/* By default, this line will be in mid res, except if we detect hardware scrolling later */
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_OVERSCAN_MID_RES | ( 2 << 20 );
 		LineStartCycle = LINE_START_CYCLE_70;
+	}
+
+	/* Empty line switching res */
+	else if ( ( nFrameCycles-nLastFrameCycles <= 16 )
+	          && ( nLastCycles == LINE_EMPTY_CYCLE_70 ) )
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
+		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
+		LineStartCycle = LINE_START_CYCLE_60;
 	}
 
 	/* Start right border near middle of the line : -106 bytes */
@@ -541,11 +554,11 @@ void Video_Sync_WriteByte(void)
 			LineStartCycle = LINE_START_CYCLE_60;
 		}
 
-		/* Empty line */
+		/* Empty line switching freq */
 		else if ( ( nFrameCycles-nLastFrameCycles <= 24 )
 		          && ( nLastCycles == LINE_START_CYCLE_50 ) && ( nLineCycles > LINE_START_CYCLE_50 ) )
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line\n" );
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line freq\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
 			LineStartCycle = LINE_START_CYCLE_60;
 		}
