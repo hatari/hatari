@@ -14,7 +14,7 @@
 
 /* 2007/09/27   [NP]    Add parsing for the '--trace' option.				*/
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.31 2008-01-24 18:53:57 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.32 2008-02-03 22:52:55 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -105,7 +105,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
 	  "<x>", "Skip <x> frames after each displayed frame (0 <= x <= 8)" },
 	{ OPT_FORCE8BPP, NULL, "--force8bpp",
-	  NULL, "Force use of 8-bit window (speeds up emulation!)" },
+	  NULL, "Use 8-bit color depths only (for older host computers)" },
 	{ OPT_BORDERS, NULL, "--borders",
 	  NULL, "Show screen borders (for overscan demos etc)" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
@@ -141,7 +141,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x=none/dummy/emu, for Falcon mode only)" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
-	  NULL, "VDI resolution bit-depth (x = 1/2/4)" },
+	  "<x>", "VDI resolution bit-depth (x = 1/2/4)" },
 	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
 	  "<w>", "Use VDI resolution with width w (320 < w <= 1024)" },
 	{ OPT_VDI_HEIGHT,     NULL, "--vdi-height",
