@@ -98,7 +98,7 @@
 /*			should be delayed to the end of the line, after processing the current	*/
 /*			line with Video_CopyScreenLineColor (Stardust Tunnel Demo).		*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.85 2008-02-03 22:00:08 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.86 2008-02-03 23:36:24 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -1592,9 +1592,8 @@ void Video_ScreenCounter_WriteByte(void)
 
 	addr = (IoMem[0xff8205] << 16) | (IoMem[0xff8207] << 8) | IoMem[0xff8209];
 
-	if ( nLineCycles <= LINE_START_CYCLE_50 )
+	if (nLineCycles <= LINE_START_CYCLE_50 || nHBL < nStartHBL)
 		pVideoRaster = &STRam[addr & ~1];	/* display has not started, we can still change */
-
 	else
 		pNewVideoRaster = &STRam[addr & ~1];	/* display has started, can't change pVideoRaster now */
 
