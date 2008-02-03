@@ -61,6 +61,9 @@ Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
 <h2>Index</h2>
 <ul>
   <li><a href="#Introduction">Introduction</a>
+  <ul>
+    <li><a href="#Notes">Notes</a>
+  </ul>
   <li><a href="#ST">ST software compatibility list</a>
   <ul>
     <li><a href="#ST games">ST games</a>
@@ -98,8 +101,27 @@ Hatari. It is by no means finished.</p>
 <p>First is listed software (games, demos and applications) that work
 on normal STs, after them is listed STE only software that has been
 tested with the current STE hardware emulation.
-Then there is a some few TT games and demos, and finally a list of
+Then there are a few TT-only games and demos, and finally a list of
 somewhat working Falcon games, demos and applications.</p>
+
+
+<a name="Notes"></a><h3>Notes</h3>
+
+<p>If something listed here doesn't work as expected, please
+check that you have enabled the "Slower but more compatible CPU"
+Hatari system option (and that the machine type is correct).
+
+<p>Some games and demos may not work if you have specified too little
+or too much memory.  For ST, 1MB memory size is usually fairly safe.
+
+<p>Especially ST demos and games may require some specific TOS version
+and not work at all with others. If you notice that this information
+is missing for some game or demo, please send mail to the hatari-devel
+mailing list about it so that we can update the list.
+
+<p>Most of the (ST/e) games and almost any of the (ST/e) demos do
+NOT work with EmuTOS.  Main reason for this is its missing Line-A
+emulation.
 
 
 <a name="ST"></a><h2>ST software compatibility list</h2>
@@ -161,7 +183,7 @@ somewhat working Falcon games, demos and applications.</p>
       <td>Lethal Xcess</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>Uses sync-scrolling in ST mode and STE HW scrolling in STE mode.</td>
+      <td>Needs Hatari v1.0 or later to work. Uses sync-scrolling in ST mode and STE HW scrolling in STE mode.</td>
     </tr>
     <tr>
       <td>Star Goose</td>
@@ -246,7 +268,8 @@ somewhat working Falcon games, demos and applications.</p>
       <td>yes</td>
       <td>&nbsp;</td>
       <td>
-        Some version do not load at all, others work fine.
+        Some version do not load at all, others work fine
+	(with Hatari v1.0 or later).
         This game heavily uses sync-scrolling techniques!
       </td>
     </tr>
@@ -274,7 +297,7 @@ somewhat working Falcon games, demos and applications.</p>
       <td>Oddstuff (by Dune/Sector1)</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>Enable &quot;frameskip&quot; to avoid the flicker</td>
+      <td>Flickers with ST (not with STe) emulation</td>
     </tr>
     <tr>
       <td>If pigs could fly (by Syndicate)</td>
@@ -334,7 +357,7 @@ somewhat working Falcon games, demos and applications.</p>
       <td>Popstars (chiptunes by YmRockerz)</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>Sound works only with Hatari version &gt;0.80 and later</td>
+      <td>Sound works only with Hatari version 0.80 and later</td>
     </tr>
     <tr>
       <td>B.I.G-demo (musicdemo by Exceptions)</td>
@@ -359,6 +382,7 @@ somewhat working Falcon games, demos and applications.</p>
       <td>partially</td>
       <td>&nbsp;</td>
       <td>
+        Needs TOS 1.02 and Hatari v1.0 or later to work.
         Mouse/keyboard does not work (demo tries to install
         IKBD code, so it needs a full 6301 emulator)
       </td>
@@ -367,7 +391,7 @@ somewhat working Falcon games, demos and applications.</p>
       <td>Oh no more Froggies</td>
       <td>yes</td>
       <td>partially</td>
-      <td>No more music after a while</td>
+      <td>Needs Hatari v1.0 or later to work, no more music after a while</td>
     </tr>
     <tr>
       <td>Dragonnels</td>
@@ -391,7 +415,7 @@ somewhat working Falcon games, demos and applications.</p>
       <td>Dark Side of the Spoon (by ULM)</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>Lots of fullscreens and sync-scrolling</td>
+      <td>Needs Hatari v1.0 or later to work. Lots of fullscreens and sync-scrolling</td>
     </tr>
   </tbody>
 </table>
