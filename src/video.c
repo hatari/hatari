@@ -92,8 +92,13 @@
 /*			instead of <= 20 (Vodka Demo Main Menu).				*/
 /* 2008/02/02	[NP]	Added 0 byte line detection when switching hi/lo res at position 28	*/
 /*			(Lemmings screen in Nostalgic-o-demo).					*/
+/* 2008/02/03	[NP]	On STE, write to video counter $ff8205/07/09 should only be applied	*/
+/*			immediatly if display has not started for the line (before cycle	*/
+/*			LINE_END_CYCLE_50). If write occurs after, the change to pVideoRaster	*/
+/*			should be delayed to the end of the line, after processing the current	*/
+/*			line with Video_CopyScreenLineColor (Stardust Tunnel Demo).		*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.84 2008-02-02 17:33:58 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.85 2008-02-03 22:00:08 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -174,6 +179,7 @@ static int nFirstVisibleHbl = 34;               /* The first line of the ST scre
 static Uint8 HWScrollCount;                     /* HW scroll pixel offset, STe only (0...15) */
 static Uint8 ScanLineSkip;                      /* Scan line width add, STe only (words, minus 1) */
 static Uint8 *pVideoRaster;                     /* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
+static Uint8 *pNewVideoRaster = NULL;           /* Used in STE mode when writing to the video counter $ff8205/07/09 */
 static Uint8 VideoShifterByte;                  /* VideoShifter (0xff8260) value store in video chip */
 static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simulate left/right border removal */
 static int LineStartCycle;                      /* Cycle where display starts for the current line */
@@ -949,6 +955,14 @@ static void Video_CopyScreenLineColor(void)
 		/* ScanLineSkip is zero on ST. */
 		/* On STE, the Shifter skips the given amount of words. */
 		pVideoRaster += ScanLineSkip*2;
+
+		/* On STE, if we wrote to the video counter addr, we set the */
+		/* new video address here, once the current line was processed */
+		if ( pNewVideoRaster )
+		{
+			pVideoRaster = pNewVideoRaster;
+			pNewVideoRaster = NULL;
+		}
 	}
 
 	/* Each screen line copied to buffer is always same length */
@@ -1563,12 +1577,29 @@ void Video_ScreenCounterLow_ReadByte(void)
 /**
  * Write to video address counter (0xff8205, 0xff8207 and 0xff8209).
  * Called on STE only and like with base address, you cannot set lowest bit.
+ * If display has not started yet for this line, we can change pVideoRaster now.
+ * Else, we store the new value in pNewVideoRaster to change it at the end
+ * of the current line when Video_CopyScreenLineColor is called.
  */
 void Video_ScreenCounter_WriteByte(void)
 {
 	Uint32 addr;
+	int nFrameCycles;
+	int nLineCycles;
+
+	nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	nLineCycles = nFrameCycles % nCyclesPerLine;
+
 	addr = (IoMem[0xff8205] << 16) | (IoMem[0xff8207] << 8) | IoMem[0xff8209];
-	pVideoRaster = &STRam[addr & ~1];
+
+	if ( nLineCycles <= LINE_START_CYCLE_50 )
+		pVideoRaster = &STRam[addr & ~1];	/* display has not started, we can still change */
+
+	else
+		pNewVideoRaster = &STRam[addr & ~1];	/* display has started, can't change pVideoRaster now */
+
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste video addr=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , addr,
+		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1637,6 +1668,14 @@ void Video_HorScroll_Read(void)
 void Video_LineWidth_WriteByte(void)
 {
 	ScanLineSkip = IoMem_ReadByte(0xff820f);
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_STE ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "write ste linewidth=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , ScanLineSkip,
+		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1665,7 +1704,7 @@ static void Video_ColorReg_WriteWord(Uint32 addr)
 		{
 			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 			int nLineCycles = nFrameCycles % nCyclesPerLine;
-			HATARI_TRACE_PRINT ( "write col addr=%x col=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , addr , col,
+			HATARI_TRACE_PRINT ( "write col addr=%x col=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , addr, col,
 			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 		}
 
@@ -1799,6 +1838,14 @@ void Video_HorScroll_Write(void)
 	static BOOL bFirstSteAccess = FALSE;
 
 	HWScrollCount = IoMem[0xff8265];
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_STE ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "write ste hwscroll=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , HWScrollCount,
+		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
 
 	/*fprintf(stderr, "Write to 0x%x (0x%x, 0x%x, %i)\n", IoAccessBaseAddress,
 	        IoMem[0xff8264], HWScrollCount, nIoMemAccessSize);*/
