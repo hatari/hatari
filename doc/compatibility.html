@@ -14,7 +14,7 @@
   <!--
 	body {  background-color:#FFFFFF;
 		color:#000000;
-           	margin-left:10px;
+		margin-left:10px;
 		margin-right:10px;
 		font-family:Verdana,Arial,Helvetica,sans-serif; font-size:12pt;
 		}
@@ -27,9 +27,9 @@
 	td { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:12pt; }
 
 	a:link { color:#000099; background-color:#ffffff; text-decoration:none; }
- 	a:visited { color:#cc0000; background-color:#ffffff; text-decoration:none;}
- 	a:hover { color:#0000ff; background-color:#ffffff; text-decoration:none; }
- 	a:active { color:#993399; background-color:#ffffff; text-decoration:none; }
+	a:visited { color:#cc0000; background-color:#ffffff; text-decoration:none;}
+	a:hover { color:#0000ff; background-color:#ffffff; text-decoration:none; }
+	a:active { color:#993399; background-color:#ffffff; text-decoration:none; }
 
 	*.commandline { font-family:Fixed,Courier,monospace; font-size:11pt; }
 	*.file { color: #000088;}
@@ -48,7 +48,7 @@
 <h1 align="center">Hatari Atari Software Compatibility List</h1>
 
 <p align="center">
-Version 0.95
+Version 1.0
 </p>
 <p align="center">
 Project initiator and main developer of Hatari: <strong>Thomas Huth</strong>
@@ -97,9 +97,9 @@ Hatari. It is by no means finished.</p>
 
 <p>First is listed software (games, demos and applications) that work
 on normal STs, after them is listed STE only software that has been
-tested with the current STE hardware emulation, then is list of even
-somewhat working Falcon games, demos and applications and finally
-a list of TT demos.</p>
+tested with the current STE hardware emulation.
+Then there is a some few TT games and demos, and finally a list of
+somewhat working Falcon games, demos and applications.</p>
 
 
 <a name="ST"></a><h2>ST software compatibility list</h2>
@@ -107,7 +107,8 @@ a list of TT demos.</p>
 <a name="ST games"></a><h4>ST games</h4>
 
 <table border="1" cellpadding="3">
-  <caption align="bottom">tested games</caption> <tbody>
+  <caption align="bottom">tested games</caption>
+  <tbody>
     <tr class="backdropped">
       <td align="center">Game</td>
       <td align="center">Working</td>
@@ -240,13 +241,23 @@ a list of TT demos.</p>
       <td>&nbsp;</td>
       <td>Does not work with cartridge / HD emulation</td>
     </tr>
+    <tr>
+      <td>Enchanted Land</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>
+        Some version do not load at all, others work fine.
+        This game heavily uses sync-scrolling techniques!
+      </td>
+    </tr>
   </tbody>
 </table>
 
 <a name="ST demos"></a><h4>ST demos</h4>
 
 <table border="1" cellpadding="3">
-  <caption align="bottom">tested demos</caption> <tbody>
+  <caption align="bottom">tested demos</caption>
+  <tbody>
     <tr class="backdropped">
       <td align="center">Demo</td>
       <td align="center">Working</td>
@@ -354,8 +365,8 @@ a list of TT demos.</p>
     </tr>
     <tr>
       <td>Oh no more Froggies</td>
+      <td>yes</td>
       <td>partially</td>
-      <td>&nbsp;</td>
       <td>No more music after a while</td>
     </tr>
     <tr>
@@ -376,6 +387,12 @@ a list of TT demos.</p>
         IKBD code, so it needs a full 6301 emulator)
       </td>
     </tr>
+    <tr>
+      <td>Dark Side of the Spoon (by ULM)</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>Lots of fullscreens and sync-scrolling</td>
+    </tr>
   </tbody>
 </table>
 
@@ -385,7 +402,8 @@ a list of TT demos.</p>
 configuration or data files are not writable.
 
 <table border="1" cellpadding="3">
-  <caption align="bottom">tested applications</caption> <tbody>
+  <caption align="bottom">tested applications</caption>
+  <tbody>
     <tr class="backdropped">
       <td align="center">Application</td>
       <td align="center">Working</td>
@@ -402,13 +420,15 @@ configuration or data files are not writable.
     <tr>
       <td>Turbo Assembler</td>
       <td>yes</td>
-      <td>Due to a bug you need to have a proper disk image inserted into drive A. Works otherwise!</td>
+      <td>
+        Due to a bug you need to have a proper disk image inserted into drive
+        A:. Works otherwise!
+      </td>
     </tr>
     <tr>
       <td>GFABASIC 3.6TT</td>
       <td>yes</td>
-      <td>MENU.PRG does not like harddisks. Use diskimages for
-compiling.</td>
+      <td>MENU.PRG does not like harddisks. Use diskimages for compiling.</td>
     </tr>
     <tr>
       <td>ST Basic</td>
@@ -670,7 +690,8 @@ in Hatari.  Most of these games work only on STE, but here are also some
 games which work (or have a version that works) also on ST, i.e. they
 are just STE enhanced.  These are marked with '*'.</p>
 <table border="1" cellpadding="3">
-  <caption align="bottom">tested STE games</caption> <tbody>
+  <caption align="bottom">tested STE games</caption>
+  <tbody>
     <tr class="backdropped">
       <td align="center">Title</td>
       <td align="center">Working</td>
@@ -744,16 +765,16 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Requires 4MB RAM</td>
     </tr>
     <tr>
+      <td>Leavin' Teramis*</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>Works <em>only</em> in STE mode</td>
+    </tr>
+    <tr>
       <td>Manga Puzzle</td>
       <td>yes</td>
       <td>&nbsp;</td>
       <td>&nbsp;</td>
-    </tr>
-    <tr>
-      <td>Penta*</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
-      <td>Blitter, DMA audio and STE fadings do work properly</td>
     </tr>
     <tr>
       <td>No Limit II</td>
@@ -778,6 +799,12 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>yes</td>
       <td>&nbsp;</td>
       <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Penta*</td>
+      <td>yes</td>
+      <td>&nbsp;</td>
+      <td>Blitter, DMA audio and STE fadings do work properly</td>
     </tr>
     <tr>
       <td>Pooz*</td>
@@ -811,10 +838,13 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Uses DMA sound</td>
     </tr>
     <tr>
-      <td>Stardust (demo)</td>
-      <td>yes</td>
+      <td>Stardust (tunnel demo)</td>
+      <td>partially</td>
       <td>&nbsp;</td>
-      <td>&nbsp;</td>
+      <td>
+        Status bar at the bottom flickers a lot
+        (this used to work in Hatari 0.95)
+      </td>
     </tr>
     <tr>
       <td>STrEet Fighter 2</td>
@@ -871,7 +901,8 @@ are just STE enhanced.  These are marked with '*'.</p>
 
 <p>Some tested STE demos and intros</p>
 <table border="1" cellpadding="3">
-  <caption align="bottom">tested STE demos</caption> <tbody>
+  <caption align="bottom">tested STE demos</caption>
+  <tbody>
     <tr class="backdropped">
       <td align="center">Title</td>
       <td align="center">Working</td>
@@ -969,7 +1000,7 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>
         Some garbage in the end screen when the demo has been started from
         hard disk. End screen currently also fails to open the borders properly.
-        With EmuTOS, stops in the middle.</td>
+        Stops in the middle with EmuTOS.</td>
     </tr>
     <tr>
       <td>Paradox: HighResMode</td>
@@ -1025,7 +1056,13 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>partially</td>
       <td>&nbsp;</td>
       <td>doesn't look right</td>
-    </tr>    
+    </tr>
+    <tr>
+      <td>Light: E605</td>
+      <td>partially</td>
+      <td>&nbsp;</td>
+      <td>The fullscreen part does not work right yet</td>
+    </tr>
     <tr>
       <td>GGN: The Sierpinski overdose 4K</td>
       <td>no</td>
@@ -1039,7 +1076,8 @@ are just STE enhanced.  These are marked with '*'.</p>
 
 <p>Finally some STE only or STE enhanced applications</p>
 <table border="1" cellpadding="3">
-  <caption align="bottom">tested STE applications</caption> <tbody>
+  <caption align="bottom">tested STE applications</caption>
+  <tbody>
     <tr class="backdropped">
       <td align="center">Title</td>
       <td align="center">Working</td>
@@ -1104,7 +1142,8 @@ this section lists only TT-specific games and demos.</p>
 <a name="TT demos"></a><h4>TT demos</h4>
 
 <table border="1" cellpadding="3">
-  <caption align="bottom">TT demos</caption> <tbody>
+  <caption align="bottom">TT demos</caption>
+  <tbody>
     <tr class="backdropped">
       <td align="center">Title</td>
       <td align="center">Working</td>
@@ -1156,7 +1195,8 @@ otherwise "-".
 
 <p>Here are listed some Falcon games:</p>
 <table border="1" cellpadding="3">
-  <caption align="bottom">Falcon games</caption> <tbody>
+  <caption align="bottom">Falcon games</caption>
+  <tbody>
     <tr class="backdropped">
       <td align="center">Title</td>
       <td align="center">Working</td>
@@ -1712,7 +1752,8 @@ otherwise "-".
 
 <p>TODO: Here are listed some Falcon demos:</p>
 <table border="1" cellpadding="3">
-  <caption align="bottom">Falcon demos</caption> <tbody>
+  <caption align="bottom">Falcon demos</caption>
+  <tbody>
     <tr class="backdropped">
       <td align="center">Title</td>
       <td align="center">Working</td>
@@ -1994,7 +2035,8 @@ otherwise "-".
 
 <p>Here are listed some <i>Falcon specific</i> applications:</p>
 <table border="1" cellpadding="3">
-  <caption align="bottom">Falcon applications</caption> <tbody>
+  <caption align="bottom">Falcon applications</caption>
+  <tbody>
     <tr class="backdropped">
       <td align="center">Title</td>
       <td align="center">Working</td>

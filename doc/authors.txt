@@ -14,7 +14,10 @@
 - Marco Herrn <marco@mherrn.de> : Wrote the initial version of the "man" page
   of Hatari and maintains the Hatari Debian packages.
 
-- S�bastien Molines : Maintains the new fancy Mac OS X GUI for Hatari.
+- Sébastien Molines <clafou@gmail.com> : Maintains the Mac OS X GUI of Hatari.
+
+- Nicolas Pomarede <npomarede@corp.free.fr> : Improvements of CPU and video
+  emulation.
 
 
  Contributors:
@@ -27,44 +30,45 @@ please remind me!):
 - Sven de Marothy : Wrote the screenshot functions, the built-in debugger,
   the ACSI emulation and added support for ZIPed and GZIPed disk images.
 
-- Stefan Berndtsson <stefan@nocrew.org> : Patches to get Hatari running on
-  big endian machines.
-
-- Claus Windeler <goodoldgames@beemulated.net> : BeOS adaption of Hatari.
-
 - Emmanuel Anne <emanne@absysteme.fr> : Contributed lots of patches,
   RTC emulation.
+
+- Tuduri Benoît <skweek@users.sourceforge.net> : French man-page, support
+  for Doxygen.
 
 - Markus Oberhumer : A patch that fixed a problem with ZIPed disk images;
   routine for loading the configuration file from the $HOME directory.
 
-- Tony Smolar : Helped to find some bugs in the sound output routines.
-
 - Philippe Gerin : Fixed a bug in the CPU core (a problem with bus errors).
 
-- Martin Doering : Code for compiling the font data into the executable and
-  some other ideas for cleaning up the source code.
-
-- Patrice Mandin : Some improvements of the autoconf build system files.
-
 - Steve Kemp : Found some possible buffer overflows.
-
-- Matthias Alles : He initiated the port of Hatari to MiNT and helped me with
-  a lot of technical questions about the ST.
-
-- "Jo" (?) : Patches for compiling Hatari on a 64-bit Alpha machine.
-
-- Ventzislav Tzvetkov : Joystick closing patch; ported Hatari to AmigaOS.
-
-- Mark Keates : Patches for compiling Hatari with MinGW.
-
-- Anatol Paruntik (?) : Patches for compiling Hatari on QNX.
-
-- James Lampard : Adapted Hatari to Acorn RISC OS machines.
 
 - George Nakos : Helped to track down a bug in the GEMDOS HD emulation.
 
 - Pieter van der Meer : Traced a bug in the VIDEL emulation.
+
+- Patrice Mandin : Some improvements of the autoconf build system files.
+
+- Martin Doering : Code for compiling the font data into the executable and
+  some other ideas for cleaning up the source code.
+
+- Matthias Alles : He initiated the port of Hatari to MiNT and helped me with
+  a lot of technical questions about the ST.
+
+- Ventzislav Tzvetkov : Joystick closing patch; ported Hatari to AmigaOS.
+
+- "Jo" (?) : Patches for compiling Hatari on a 64-bit Alpha machine.
+
+- Stefan Berndtsson <stefan@nocrew.org> : Patches to get Hatari running on
+  big endian machines.
+
+- Anatol Paruntik (?) : Patches for compiling Hatari on QNX.
+
+- Claus Windeler <goodoldgames@beemulated.net> : BeOS adaption of Hatari.
+
+- James Lampard : Adapted Hatari to Acorn RISC OS machines.
+
+- Mark Keates : Patches for compiling Hatari with MinGW.
 
 
  Code from other projects
