@@ -1,0 +1,17 @@
+To run the emulator a TOS ROM image is needed. EmuTOS, a free implementation
+of TOS, is shipped with the official realeases of Hatari.
+
+EmuTOS is a single-user single-tasking operating system for the 32 bit Atari
+computers and emulators. It can be used as a replacement for the TOS images
+typically needed today for using emulators and it is also running on some
+real hardware, like the Atari Mega STE. All the source code is open and
+free, licensed under the GNU General Public License (GPL). A copy of the GNU
+GPL can be found in the gpl.txt file.
+
+EmuTOS has its home at SourceForge:
+http://sourceforge.net/projects/emutos
+
+The official Hatari releases are shipped with a tos.img ROM image that is
+identical to the official binary package of EmuTOS, which is available at this
+SourceForge website of EmuTOS. For downloading other versions or the source
+code of EmuTOS, please visit the EmuTOS website.
