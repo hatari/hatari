@@ -97,8 +97,11 @@
 /*			LINE_END_CYCLE_50). If write occurs after, the change to pVideoRaster	*/
 /*			should be delayed to the end of the line, after processing the current	*/
 /*			line with Video_CopyScreenLineColor (Stardust Tunnel Demo).		*/
+/* 2008/02/04	[NP]	The problem is similar when writing to hwscroll $ff8264, we must delay	*/
+/*			the change until the end of the line is display was already started	*/
+/*			(Mindrewind by Reservoir Gods).						*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.86 2008-02-03 23:36:24 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.87 2008-02-04 22:09:01 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -177,6 +180,7 @@ int nCyclesPerLine = 512;                       /* Cycles per horizontal line sc
 static int nFirstVisibleHbl = 34;               /* The first line of the ST screen that is copied to the PC screen buffer */
 
 static Uint8 HWScrollCount;                     /* HW scroll pixel offset, STe only (0...15) */
+int newHWScrollCount = -1;                      /* Used in STE mode when writing to the scrolling register */
 static Uint8 ScanLineSkip;                      /* Scan line width add, STe only (words, minus 1) */
 static Uint8 *pVideoRaster;                     /* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 static Uint8 *pNewVideoRaster = NULL;           /* Used in STE mode when writing to the video counter $ff8205/07/09 */
@@ -762,6 +766,22 @@ static void Video_CopyScreenLineMono(void)
 	/* On STE, the Shifter skips the given amount of words. */
 	pVideoRaster += ScanLineSkip*2;
 
+	/* On STE, if we wrote to the video counter addr, we set the */
+	/* new video address here, once the current line was processed */
+	if ( pNewVideoRaster )
+	{
+		pVideoRaster = pNewVideoRaster;
+		pNewVideoRaster = NULL;
+	}
+
+	/* On STE, if we wrote to the hwscroll register, we set the */
+	/* new video address here, once the current line was processed */
+	if ( newHWScrollCount >= 0 )
+	{
+		HWScrollCount = newHWScrollCount;
+		newHWScrollCount = -1;
+	}
+
 	/* Each screen line copied to buffer is always same length */
 	pSTScreen += SCREENBYTES_MONOLINE;
 }
@@ -962,6 +982,14 @@ static void Video_CopyScreenLineColor(void)
 		{
 			pVideoRaster = pNewVideoRaster;
 			pNewVideoRaster = NULL;
+		}
+
+		/* On STE, if we wrote to the hwscroll register, we set the */
+		/* new video address here, once the current line was processed */
+		if ( newHWScrollCount >= 0 )
+		{
+			HWScrollCount = newHWScrollCount;
+			newHWScrollCount = -1;
 		}
 	}
 
@@ -1835,27 +1863,34 @@ void Video_ShifterMode_WriteByte(void)
 void Video_HorScroll_Write(void)
 {
 	static BOOL bFirstSteAccess = FALSE;
+	Uint8 ScrollCount;
+	int nFrameCycles;
+	int nLineCycles;
 
-	HWScrollCount = IoMem[0xff8265];
+	nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	nLineCycles = nFrameCycles % nCyclesPerLine;
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_STE ) )
-	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
-		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "write ste hwscroll=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , HWScrollCount,
+	ScrollCount = IoMem[0xff8265];
+	ScrollCount &= 0x0f;
+
+	if (nLineCycles <= LINE_START_CYCLE_50 || nHBL < nStartHBL)
+		HWScrollCount = ScrollCount;		/* display has not started, we can still change */
+	else
+		newHWScrollCount = ScrollCount;		/* display has started, can't change HWScrollCount now */
+
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste hwscroll=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , ScrollCount,
 		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-	}
 
 	/*fprintf(stderr, "Write to 0x%x (0x%x, 0x%x, %i)\n", IoAccessBaseAddress,
-	        IoMem[0xff8264], HWScrollCount, nIoMemAccessSize);*/
+	        IoMem[0xff8264], ScrollCount, nIoMemAccessSize);*/
 
 	if (IoAccessBaseAddress == 0xff8264 && nIoMemAccessSize == SIZE_WORD
-	        && HWScrollCount == 1)
+	        && ScrollCount == 1)
 	{
 		/*fprintf(stderr, "STE border removal - access 1\n");*/
 		bFirstSteAccess = TRUE;
 	}
-	else if (bFirstSteAccess && HWScrollCount == 1 &&
+	else if (bFirstSteAccess && ScrollCount == 1 &&
 	         IoAccessBaseAddress == 0xff8264 && nIoMemAccessSize == SIZE_BYTE)
 	{
 		/*fprintf(stderr, "STE border removal - access 2\n");*/
@@ -1865,8 +1900,6 @@ void Video_HorScroll_Write(void)
 	{
 		bFirstSteAccess = bSteBorderFlag = FALSE;
 	}
-
-	HWScrollCount &= 0x0f;
 }
 
 
