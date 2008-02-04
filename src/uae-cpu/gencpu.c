@@ -60,7 +60,7 @@
 
 
 
-const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.14 2008-01-28 07:46:25 thothy Exp $";
+const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.15 2008-02-04 21:41:22 thothy Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -79,6 +79,7 @@ static int cpu_level;
 
 char exactCpuCycles[256];   /* Space to store return string for exact cpu cycles */
 
+long nCurInstrCycPos;  /* Stores where we have to patch in the current cycles value */
 
 /* For the current opcode, the next lower level that will have different code.
  * Initialized to -1 for each opcode. If it remains unchanged, indicates we
@@ -911,11 +912,13 @@ static void gen_opcode (unsigned long int opcode)
     struct instr *curi = table68k + opcode;
     insn_n_cycles = 4;
 
+    /* Store the family of the instruction (used to check for pairing on ST)
+     * and leave some space for patching in the current cycles later */
+    printf ("\tOpcodeFamily = %d; CurrentInstrCycles =     \n", curi->mnemo);
+    nCurInstrCycPos = ftell(stdout) - 5;
+
     start_brace ();
     m68k_pc_offset = 2;
-
-    /* [NP] Store the family of the instruction (used to check for pairing on ST) */
-    printf ("\tOpcodeFamily = %d;\n" , curi->mnemo );
 
     switch (curi->plev) {
     case 0: /* not privileged */
@@ -2604,10 +2607,16 @@ static void generate_one_opcode (int rp)
     gen_opcode (opcode);
     if (need_endlabel)
 	printf ("%s: ;\n", endlabelstr);
-    if( strlen(exactCpuCycles) > 0 )
-      printf("%s\n",exactCpuCycles);
-     else
-      printf ("return %d;\n", insn_n_cycles);
+
+    if (strlen(exactCpuCycles) > 0)
+	printf("%s\n",exactCpuCycles);
+    else
+	printf ("return %d;\n", insn_n_cycles);
+    /* Now patch in the instruction cycles at the beginning of the function: */
+    fseek(stdout, nCurInstrCycPos, SEEK_SET);
+    printf("%d;", insn_n_cycles);
+    fseek(stdout, 0, SEEK_END);
+
     printf ("}\n");
     opcode_next_clev[rp] = next_cpu_level;
     opcode_last_postfix[rp] = postfix;
