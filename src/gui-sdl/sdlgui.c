@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.15 2007-01-13 11:57:41 thothy Exp $";
+const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.16 2008-02-04 18:11:17 thothy Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -391,6 +391,10 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
   SDL_Rect rect;
   Uint32 grey, cursorCol;
   SDL_Event event;
+  int nOldUnicodeMode;
+
+  /* Enable unicode translation to get proper characters with SDL_PollEvent */
+  nOldUnicodeMode = SDL_EnableUNICODE(TRUE);
 
   grey = SDL_MapRGB(pSdlGuiScrn->format,192,192,192);
   cursorCol = SDL_MapRGB(pSdlGuiScrn->format,128,128,128);
@@ -414,12 +418,10 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
     }
     else
     {
-      int keysym;
-
       /* Handle events */
       do
       {
-        switch(event.type)
+        switch (event.type)
         {
           case SDL_QUIT:                        /* User wants to quit */
             bQuitProgram = TRUE;
@@ -429,8 +431,7 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
             bStopEditing = TRUE;
             break;
           case SDL_KEYDOWN:                     /* Key pressed */
-            keysym = event.key.keysym.sym;
-            switch(keysym)
+            switch(event.key.keysym.sym)
             {
               case SDLK_RETURN:
               case SDLK_KP_ENTER:
@@ -457,15 +458,13 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
                 break;
               default:
                 /* If it is a "good" key then insert it into the text field */
-                if(keysym >= 32 && keysym < 256)
+                if(event.key.keysym.unicode >= 32 && event.key.keysym.unicode < 128
+                   && event.key.keysym.unicode != PATHSEP)
                 {
                   if(strlen(txt) < (size_t)dlg[objnum].w)
                   {
                     memmove(&txt[cursorPos+1], &txt[cursorPos], strlen(&txt[cursorPos])+1);
-                    if(event.key.keysym.mod & (KMOD_LSHIFT|KMOD_RSHIFT))
-                      txt[cursorPos] = toupper(keysym);
-                    else
-                      txt[cursorPos] = keysym;
+                    txt[cursorPos] = event.key.keysym.unicode;
                     cursorPos += 1;
                   }
                 }
@@ -493,6 +492,8 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
     SDL_UpdateRects(pSdlGuiScrn, 1, &rect);
   }
   while(!bStopEditing);
+
+  SDL_EnableUNICODE(nOldUnicodeMode);
 }
 
 
