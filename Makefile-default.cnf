@@ -56,11 +56,16 @@ DATADIR ?= .
 CONFDIR ?= /etc
 
 # The executable will be installed in BINDIR
-BINDIR ?= /usr/local/bin
+#BINDIR ?= /usr/local/bin
 
+# The man-page will be install in MANDIR
+#MANDIR ?= /usr/local/share/man/man1
+
+# All other documentation will be installed in DOCDIR
+#DOCDIR ?= /usr/local/share/doc/hatari
 
 # Program used for "make install"
-INSTALL = install -c
-INSTALL_PROGRAM = $(INSTALL) -s
-INSTALL_DATA = $(INSTALL) -m 644
+#INSTALL = install -c
+#INSTALL_PROGRAM = $(INSTALL) -s
+#INSTALL_DATA = $(INSTALL) -m 644
 

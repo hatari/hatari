@@ -48,6 +48,11 @@ depend:
 	$(MAKE) -C src/ depend
 
 install: all hatari.1.gz
+	@if [ "x$(INSTALL)" = "x" ]; then \
+		echo; \
+		echo "*** Hatari was not configured for installation. ***"; \
+		exit 1; \
+	fi
 	$(INSTALL) -d $(DESTDIR)$(BINDIR)
 	$(INSTALL) -d $(DESTDIR)$(DATADIR)
 	$(INSTALL) -d $(DESTDIR)$(MANDIR)
