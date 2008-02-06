@@ -46,8 +46,17 @@
 /*			considered effective 4 cycles before the end of the current	*/
 /*			instruction.							*/
 /*			(fix ULM Dark Side Of The Spoon and Decade Demo's Wow Scroll 2).*/
+/* 2008/02/06	[NP]	Handle "fast" timers as those started by the TOS for the RS232	*/
+/*			baud rate generator. In that case, the timers could be too fast	*/
+/*			to be handled by the CPU, which means PendingCyclesOver can be	*/
+/*			>= INT_CONVERT_TO_INTERNAL ( TimerClockCycles , INT_MFP_CYCLE )	*/
+/*			and this will give wrong results when the timer restarts if	*/
+/*			we call Int_AddRelativeInterruptWithOffset. We use a modulo to	*/
+/*			limit PendingCyclesOver to not more than the number of cycles	*/
+/*			of one int (which means we "skip" the ints that	could not be	*/
+/*			processed).							*/
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.32 2008-01-28 22:20:11 thothy Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.33 2008-02-06 23:15:20 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -123,7 +132,7 @@ static BOOL TimerDCanResume = FALSE;
 BOOL bAppliedTimerDPatch;           /* TRUE if the Timer-D patch has been applied */
 static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer-D patch */
 
-static int PendingCyclesOver = 0;
+static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when data counter reaches 0 */
 
 static const Uint16 MFPDiv[] =
 {
@@ -235,7 +244,8 @@ static void MFP_Exception(int Interrupt)
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "mfp excep int=%d vec=0x%x video_cyc=%d %d@%d\n" , Interrupt , Vec, nFrameCycles, nLineCycles, nHBL );
+		HATARI_TRACE_PRINT ( "mfp excep int=%d vec=0x%x new_pc=0x%x video_cyc=%d %d@%d\n" ,
+			Interrupt, Vec, get_long ( Vec ), nFrameCycles, nLineCycles, nHBL );
 	}
 
 	M68000_Exception(Vec);
@@ -439,7 +449,15 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler,
 				if (bFirstTimer)
 					Int_AddRelativeInterrupt(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles);
 				else
-					Int_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, PendingCyclesOver);
+				{
+					int	TimerClockCyclesInternal = INT_CONVERT_TO_INTERNAL ( TimerClockCycles , INT_MFP_CYCLE );
+
+					/* In case we miss more than one int, we must correct the delay for the next one */
+					if ( PendingCyclesOver > TimerClockCyclesInternal )
+						PendingCyclesOver = PendingCyclesOver % TimerClockCyclesInternal;
+
+					Int_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
+				}
 
 				*pTimerCanResume = TRUE;		/* timer was set, resume is possible if stop/start it later */
 			}
@@ -501,7 +519,15 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, int Handler,
 				if (bFirstTimer)
 					Int_AddRelativeInterrupt(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles);
 				else
-					Int_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, PendingCyclesOver);
+				{
+					int	TimerClockCyclesInternal = INT_CONVERT_TO_INTERNAL ( TimerClockCycles , INT_MFP_CYCLE );
+
+					/* In case we miss more than one int, we must correct the delay for the next one */
+					if ( PendingCyclesOver > TimerClockCyclesInternal )
+						PendingCyclesOver = PendingCyclesOver % TimerClockCyclesInternal;
+
+					Int_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
+				}
 
 				*pTimerCanResume = TRUE;		/* timer was set, resume is possible if stop/start it later */
 			}
@@ -677,7 +703,7 @@ void MFP_InterruptHandler_TimerA(void)
 {
 	/* Number of internal cycles we went over for this timer ( <= 0 ),
 	 * used when timer expires and needs to be restarted */
-	PendingCyclesOver = PendingInterruptCount;
+	PendingCyclesOver = -PendingInterruptCount;		/* >= 0 */
 
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
@@ -699,7 +725,7 @@ void MFP_InterruptHandler_TimerB(void)
 {
 	/* Number of internal cycles we went over for this timer ( <= 0 ),
 	 * used when timer expires and needs to be restarted */
-	PendingCyclesOver = PendingInterruptCount;
+	PendingCyclesOver = -PendingInterruptCount;		/* >= 0 */
 
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
@@ -721,7 +747,7 @@ void MFP_InterruptHandler_TimerC(void)
 {
 	/* Number of internal cycles we went over for this timer ( <= 0 ),
 	 * used when timer expires and needs to be restarted */
-	PendingCyclesOver = PendingInterruptCount;
+	PendingCyclesOver = -PendingInterruptCount;		/* >= 0 */
 
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
@@ -743,7 +769,7 @@ void MFP_InterruptHandler_TimerD(void)
 {
 	/* Number of internal cycles we went over for this timer ( <= 0 ),
 	 * used when timer expires and needs to be restarted */
-	PendingCyclesOver = PendingInterruptCount;
+	PendingCyclesOver = -PendingInterruptCount;		/* >= 0 */
 
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
