@@ -116,8 +116,8 @@ or too much memory.  For ST, 1MB memory size is usually fairly safe.</p>
 
 <p>Especially ST demos and games may require some specific TOS version
 and not work at all with others. If you notice that this information
-is missing for some game or demo, please send mail to the hatari-devel
-mailing list about it so that we can update the list.</p>
+is missing for some listed game or demo, please send mail to the
+hatari-devel mailing list about it so that we can update the list.</p>
 
 <p>Most of the (ST/e) games and almost any of the (ST/e) demos do
 NOT work with EmuTOS.  Main reason for this is its missing Line-A
@@ -125,6 +125,13 @@ emulation.</p>
 
 
 <a name="ST"></a><h2>ST software compatibility list</h2>
+
+<p>Almost all ST games work with the emulation except for some quality
+issues with the sound emulation. MIDI input is missing for music
+applications (and for few midi-networked games). Some very rare demos
+would need more cycle accurate emulation and better IKBD emulation.
+By default everything that works on a real ST should work also in
+Hatari.</p>
 
 <a name="ST games"></a><h4>ST games</h4>
 
@@ -152,8 +159,8 @@ emulation.</p>
     <tr>
       <td>Xenon</td>
       <td>yes</td>
-      <td>music ok - fx dodgy</td>
-      <td>bullets and explosions sound weired</td>
+      <td>music ok - bullets and explosions sound wierd</td>
+      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Bubble Bobble</td>
@@ -188,7 +195,7 @@ emulation.</p>
     <tr>
       <td>Star Goose</td>
       <td>yes</td>
-      <td>music ok - bullet sound dodgy</td>
+      <td>music ok - bullets and explosions sound dodgy</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
@@ -212,8 +219,8 @@ emulation.</p>
     <tr>
       <td>Nebulus</td>
       <td>yes</td>
-      <td>music ok; snowball, balls and trapdoors dodgy</td>
-      <td>otherwise working to a playable extend</td>
+      <td>music ok - trapdoors sound dodgy</td>
+      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Leander</td>
@@ -367,9 +374,9 @@ emulation.</p>
     </tr>
     <tr>
       <td>B.I.G-demo (musicdemo by Exceptions)</td>
-      <td>partially</td>
+      <td>yes</td>
       <td>&nbsp;</td>
-      <td>Minor flickering and problems in the overscan bottom</td>
+      <td>Minor problems in Psych-o-screens overscan bottoms</td>
     </tr>
     <tr>
       <td>SoWatt (by CareBears)</td>
@@ -717,6 +724,12 @@ supports ALSA). For instructions, see alsa-midi.txt file.</p>
 
 
 <a name="STE"></a><h2>STE software compatibility list</h2>
+
+<p>By default everything should work with the STE emulation.
+If it doesn't and is missing from these lists, please mail
+hatari-devel so that we can add it here. In addition to compatibility
+issues with the ST emulation, for some STe demos, an additional
+generic issue are some things missing from the Blitter emulation.</p>
 
 <a name="STE games"></a><h4>STE games</h4>
 
