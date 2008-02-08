@@ -24,12 +24,14 @@
 /*			m68000.h).									*/
 /* 2008/01/25	[NP]	Add pairing for LSR/MOVE (and all other bit shifting instr) (Anomaly Demo Intro)*/
 /* 2008/02/02	[NP]	Add pairing for CMP/Bcc (Level 16 Fullscreen (1988)).				*/
+/* 2008/02/08	[NP]	Add pairing for LSL/LEA (and all other bit shifting instr) (TVI 2 - The Year	*/
+/*			After Demo).									*/
 
 
 /* [NP] possible pairing to check :             */
 /*      exg / move.b (a0),d0                    */
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.47 2008-02-02 17:30:15 npomarede Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.48 2008-02-08 19:02:30 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -113,6 +115,14 @@ void M68000_InitPairing(void)
 	PairingArray[ i_ROXR ][ i_MOVE ] = 1; 
 	PairingArray[ i_ROXL ][ i_MOVE ] = 1; 
 	PairingArray[  i_CMP ][  i_Bcc ] = 1;
+	PairingArray[  i_ASR ][  i_LEA ] = 1; 
+	PairingArray[  i_ASL ][  i_LEA ] = 1; 
+	PairingArray[  i_LSR ][  i_LEA ] = 1; 
+	PairingArray[  i_LSL ][  i_LEA ] = 1; 
+	PairingArray[  i_ROL ][  i_LEA ] = 1; 
+	PairingArray[  i_ROR ][  i_LEA ] = 1; 
+	PairingArray[ i_ROXR ][  i_LEA ] = 1; 
+	PairingArray[ i_ROXL ][  i_LEA ] = 1; 
 }
 
 
