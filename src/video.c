@@ -98,10 +98,12 @@
 /*			should be delayed to the end of the line, after processing the current	*/
 /*			line with Video_CopyScreenLineColor (Stardust Tunnel Demo).		*/
 /* 2008/02/04	[NP]	The problem is similar when writing to hwscroll $ff8264, we must delay	*/
-/*			the change until the end of the line is display was already started	*/
+/*			the change until the end of the line if display was already started	*/
 /*			(Mindrewind by Reservoir Gods).						*/
+/* 2008/02/06	[NP]	On STE, when left/right borders are off and hwscroll > 0, we must read	*/
+/*			6 bytes less than the expected value (E605 by Light).			*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.87 2008-02-04 22:09:01 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.88 2008-02-08 20:15:36 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -935,7 +937,7 @@ static void Video_CopyScreenLineColor(void)
 			}
 			else
 			{
-				/* Shift the whole line by the given scroll count */
+				/* Shift the whole line to the left by the given scroll count */
 				while (pScrollAdj < pScrollEndAddr)
 				{
 					do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
@@ -969,6 +971,12 @@ static void Video_CopyScreenLineColor(void)
 				}
 				/* HW scrolling advances Shifter video counter by one */
 				pVideoRaster += 4 * 2;
+
+				/* On STE, when we have a 230 bytes overscan line and HWScrollCount > 0 */
+				/* we must read 6 bytes less than expected */
+				if ( (LineBorderMask & BORDERMASK_LEFT_OFF) && (LineBorderMask & BORDERMASK_RIGHT_OFF) )
+					pVideoRaster -= 6;		/* we don't add 8 bytes, but 2 */
+
 			}
 		}
 
