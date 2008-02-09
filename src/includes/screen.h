@@ -20,7 +20,7 @@
 /* SCREENBYTES_LINE should always be a multiple of 8.		*/
 
 /* left/right borders must be multiple of 8 bytes */
-#define SCREENBYTES_LEFT    24		/* Bytes for left border in ST screen */
+#define SCREENBYTES_LEFT    16		/* Bytes for left border in ST screen */
 #define SCREENBYTES_MIDDLE  160		/* Middle (320 pixels) */
 #define SCREENBYTES_RIGHT   24		/* right border */
 #define SCREENBYTES_LINE    (SCREENBYTES_LEFT+SCREENBYTES_MIDDLE+SCREENBYTES_RIGHT)
