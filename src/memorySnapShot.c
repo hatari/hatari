@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.34 2008-01-28 22:20:10 thothy Exp $";
+const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.35 2008-02-09 11:15:15 thothy Exp $";
 
 #include <config.h>
 
@@ -50,7 +50,7 @@ const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.34 2008-01
 #include "video.h"
 
 
-#define VERSION_STRING      "0.98 "   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "1.0.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 
@@ -299,4 +299,34 @@ void MemorySnapShot_Restore(const char *pszFileName)
 		Log_AlertDlg(LOG_ERROR, "Unable to restore memory state from file.");
 	else
 		Log_AlertDlg(LOG_INFO, "Memory state file restored.");
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Save and restore functions required by the UAE CPU core...
+ * ... don't use them in normal Hatari code!
+ */
+void save_u32(uae_u32 data)
+{
+	MemorySnapShot_Store(&data, 4);
+}
+
+void save_u16(uae_u16 data)
+{
+	MemorySnapShot_Store(&data, 2);
+}
+
+uae_u32 restore_u32(void)
+{
+	uae_u32 data;
+	MemorySnapShot_Store(&data, 4);
+	return data;
+}
+
+uae_u16 restore_u16(void)
+{
+	uae_u16 data;
+	MemorySnapShot_Store(&data, 2);
+	return data;
 }

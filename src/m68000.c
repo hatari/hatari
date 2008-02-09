@@ -31,7 +31,7 @@
 /* [NP] possible pairing to check :             */
 /*      exg / move.b (a0),d0                    */
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.48 2008-02-08 19:02:30 npomarede Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.49 2008-02-09 11:15:15 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -41,6 +41,7 @@ const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.48 2008-02-08 19:02:30 npo
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
+#include "savestate.h"
 #include "stMemory.h"
 #include "tos.h"
 
@@ -258,6 +259,10 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
 #endif
 	}
 
+	if (bSave)
+		save_fpu();
+	else
+		restore_fpu();
 }
 
 

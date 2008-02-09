@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.8 2007-09-22 09:30:28 thothy Exp $";
+const char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.9 2008-02-09 11:15:16 thothy Exp $";
 
 
 #define __USE_ISOC9X  /* We might be able to pick up a NaN */
@@ -20,6 +20,7 @@ const char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.8 2007-09-22 09:30:28 thothy Exp
 #include "hatari-glue.h"
 #include "memory.h"
 #include "newcpu.h"
+#include "savestate.h"
 
 #if defined(powerpc) || defined(__mc68020__)
 # include "fpp-ieee-be.h"
@@ -1350,3 +1351,56 @@ void fpp_opp (uae_u32 opcode, uae_u16 extra)
 }
 
 #endif
+
+
+void restore_fpu (void)
+{
+    int model, i;
+
+    model = restore_u32();
+
+    for (i = 0; i < 8; i++) {
+	uae_u32 w1 = restore_u32 ();
+	uae_u32 w2 = restore_u32 ();
+	uae_u32 w3 = restore_u16 ();
+	regs.fp[i] = to_exten (w1, w2, w3);
+    }
+
+    regs.fpcr = restore_u32 ();
+    regs.fpsr = restore_u32 ();
+    regs.fpiar = restore_u32 ();
+}
+
+
+void save_fpu (void)
+{
+    int model,i;
+
+    switch (currprefs.cpu_level) {
+     case 3:
+	model = 68881;
+	break;
+     case 4:
+	model = 68040;
+	break;
+     case 6:
+	model = 68060;
+	break;
+     default:
+	model = 0;
+    }
+
+    save_u32 (model);
+
+    for (i = 0; i < 8; i++) {
+	uae_u32 w1, w2, w3;
+	from_exten (regs.fp[i], &w1, &w2, &w3);
+	save_u32 (w1);
+	save_u32 (w2);
+	save_u16 (w3);
+    }
+
+    save_u32 (regs.fpcr);
+    save_u32 (regs.fpsr);
+    save_u32 (regs.fpiar);
+}
