@@ -103,7 +103,7 @@
 /* 2008/02/06	[NP]	On STE, when left/right borders are off and hwscroll > 0, we must read	*/
 /*			6 bytes less than the expected value (E605 by Light).			*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.89 2008-02-09 08:35:57 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.90 2008-02-09 10:42:22 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -949,7 +949,7 @@ static void Video_CopyScreenLineColor(void)
 				{
 					/* When right border is open, we have to deal with this ugly offset
 					 * of 46-SCREENBYTES_RIGHT - The demo "Mind rewind" is a good example */
-					Uint16 *pVideoLineEnd = pVideoRaster - (46 - SCREENBYTES_RIGHT);
+					Uint16 *pVideoLineEnd = (Uint16 *)(pVideoRaster - (46 - SCREENBYTES_RIGHT));
 					do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
 					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
 					do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
