@@ -103,7 +103,7 @@
 /* 2008/02/06	[NP]	On STE, when left/right borders are off and hwscroll > 0, we must read	*/
 /*			6 bytes less than the expected value (E605 by Light).			*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.88 2008-02-08 20:15:36 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.89 2008-02-09 08:35:57 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -948,15 +948,16 @@ static void Video_CopyScreenLineColor(void)
 				if (LineBorderMask & BORDERMASK_RIGHT_OFF)
 				{
 					/* When right border is open, we have to deal with this ugly offset
-					 * of 46-SCREENBYTES_RIGHT=30 - The demo "Mind rewind" is a good example */
+					 * of 46-SCREENBYTES_RIGHT - The demo "Mind rewind" is a good example */
+					Uint16 *pVideoLineEnd = pVideoRaster - (46 - SCREENBYTES_RIGHT);
 					do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
-					                | (do_get_mem_word(pVideoRaster-30) >> nNegScrollCnt));
+					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
 					do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
-					                | (do_get_mem_word(pVideoRaster-28) >> nNegScrollCnt));
+					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
 					do_put_mem_word(pScrollAdj+2, (do_get_mem_word(pScrollAdj+2) << HWScrollCount)
-					                | (do_get_mem_word(pVideoRaster-26) >> nNegScrollCnt));
+					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
 					do_put_mem_word(pScrollAdj+3, (do_get_mem_word(pScrollAdj+3) << HWScrollCount)
-					                | (do_get_mem_word(pVideoRaster-24) >> nNegScrollCnt));
+					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
 				}
 				else
 				{
