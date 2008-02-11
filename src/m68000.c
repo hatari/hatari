@@ -26,12 +26,15 @@
 /* 2008/02/02	[NP]	Add pairing for CMP/Bcc (Level 16 Fullscreen (1988)).				*/
 /* 2008/02/08	[NP]	Add pairing for LSL/LEA (and all other bit shifting instr) (TVI 2 - The Year	*/
 /*			After Demo).									*/
+/* 2008/02/11	[NP]	Add pairing for MULS/MOVEA (Delirious Demo IV Loader).				*/
 
 
 /* [NP] possible pairing to check :             */
 /*      exg / move.b (a0),d0                    */
+/*	div / move				*/
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.49 2008-02-09 11:15:15 thothy Exp $";
+
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.50 2008-02-11 22:35:55 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -124,6 +127,10 @@ void M68000_InitPairing(void)
 	PairingArray[  i_ROR ][  i_LEA ] = 1; 
 	PairingArray[ i_ROXR ][  i_LEA ] = 1; 
 	PairingArray[ i_ROXL ][  i_LEA ] = 1; 
+	PairingArray[ i_MULU ][ i_MOVEA] = 1; 
+	PairingArray[ i_MULS ][ i_MOVEA] = 1; 
+	PairingArray[ i_MULU ][ i_MOVE ] = 1; 
+	PairingArray[ i_MULS ][ i_MOVE ] = 1; 
 }
 
 
