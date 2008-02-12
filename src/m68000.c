@@ -27,14 +27,16 @@
 /* 2008/02/08	[NP]	Add pairing for LSL/LEA (and all other bit shifting instr) (TVI 2 - The Year	*/
 /*			After Demo).									*/
 /* 2008/02/11	[NP]	Add pairing for MULS/MOVEA (Delirious Demo IV Loader).				*/
+/* 2008/01/25	[NP]	Add pairing for LSR/MOVEA (and all other bit shifting instr) (Decade Demo Reset)*/
 
 
 /* [NP] possible pairing to check :             */
 /*      exg / move.b (a0),d0                    */
 /*	div / move				*/
+/*	btst / bxx				*/
 
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.50 2008-02-11 22:35:55 npomarede Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.51 2008-02-12 22:05:42 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -118,6 +120,14 @@ void M68000_InitPairing(void)
 	PairingArray[  i_ROR ][ i_MOVE ] = 1; 
 	PairingArray[ i_ROXR ][ i_MOVE ] = 1; 
 	PairingArray[ i_ROXL ][ i_MOVE ] = 1; 
+	PairingArray[  i_ASR ][ i_MOVEA] = 1; 
+	PairingArray[  i_ASL ][ i_MOVEA] = 1; 
+	PairingArray[  i_LSR ][ i_MOVEA] = 1; 
+	PairingArray[  i_LSL ][ i_MOVEA] = 1; 
+	PairingArray[  i_ROL ][ i_MOVEA] = 1; 
+	PairingArray[  i_ROR ][ i_MOVEA] = 1; 
+	PairingArray[ i_ROXR ][ i_MOVEA] = 1; 
+	PairingArray[ i_ROXL ][ i_MOVEA] = 1; 
 	PairingArray[  i_CMP ][  i_Bcc ] = 1;
 	PairingArray[  i_ASR ][  i_LEA ] = 1; 
 	PairingArray[  i_ASL ][  i_LEA ] = 1; 
