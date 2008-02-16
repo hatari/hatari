@@ -28,15 +28,19 @@
 /*			After Demo).									*/
 /* 2008/02/11	[NP]	Add pairing for MULS/MOVEA (Delirious Demo IV Loader).				*/
 /* 2008/01/25	[NP]	Add pairing for LSR/MOVEA (and all other bit shifting instr) (Decade Demo Reset)*/
+/* 2008/02/16	[NP]	Add pairing for MULS/DIVS, but not 100% sure. This fixes e605 demo part 3, but	*/
+/*			this could be due to another missing pairing. This needs to be checked on a	*/
+/*			real ST.									*/
 
 
 /* [NP] possible pairing to check :             */
 /*      exg / move.b (a0),d0                    */
 /*	div / move				*/
 /*	btst / bxx				*/
+/*	mul/div div/mul				*/
 
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.51 2008-02-12 22:05:42 npomarede Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.52 2008-02-16 14:04:36 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -141,6 +145,7 @@ void M68000_InitPairing(void)
 	PairingArray[ i_MULS ][ i_MOVEA] = 1; 
 	PairingArray[ i_MULU ][ i_MOVE ] = 1; 
 	PairingArray[ i_MULS ][ i_MOVE ] = 1; 
+	PairingArray[ i_MULS ][ i_DIVS ] = 1; 		/* not 100% sure of this one */
 }
 
 
@@ -276,10 +281,6 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
 #endif
 	}
 
-	if (bSave)
-		save_fpu();
-	else
-		restore_fpu();
 }
 
 
