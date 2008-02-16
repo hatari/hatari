@@ -40,7 +40,7 @@
 /*	mul/div div/mul				*/
 
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.52 2008-02-16 14:04:36 npomarede Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.53 2008-02-16 18:05:18 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -281,6 +281,10 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
 #endif
 	}
 
+	if (bSave)	 
+		save_fpu();	 
+	else	 
+		restore_fpu();
 }
 
 
