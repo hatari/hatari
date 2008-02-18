@@ -102,8 +102,14 @@
 /*			(Mindrewind by Reservoir Gods).						*/
 /* 2008/02/06	[NP]	On STE, when left/right borders are off and hwscroll > 0, we must read	*/
 /*			6 bytes less than the expected value (E605 by Light).			*/
+/* 2008/02/17	[NP]	In Video_CopyScreenLine, ScanLineSkip*2 bytes should be added after	*/
+/*			pNewVideoRaster is copied to pVideoRaster (Braindamage Demo).		*/
+/*			When reading a byte at ff8205/07/09, all video address bytes should be	*/
+/*			updated in Video_ScreenCounter_ReadByte, not just the byte that was	*/
+/*			read. Fix programs that just modify one byte in the video address	*/
+/*			counter (e.g. sub #1,$ff8207 in Braindamage Demo).			*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.90 2008-02-09 10:42:22 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.91 2008-02-18 23:24:56 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -764,10 +770,6 @@ static void Video_CopyScreenLineMono(void)
 		pVideoRaster += 1 * 2;
 	}
 
-	/* ScanLineSkip is zero on ST. */
-	/* On STE, the Shifter skips the given amount of words. */
-	pVideoRaster += ScanLineSkip*2;
-
 	/* On STE, if we wrote to the video counter addr, we set the */
 	/* new video address here, once the current line was processed */
 	if ( pNewVideoRaster )
@@ -775,6 +777,10 @@ static void Video_CopyScreenLineMono(void)
 		pVideoRaster = pNewVideoRaster;
 		pNewVideoRaster = NULL;
 	}
+
+	/* ScanLineSkip is zero on ST. */
+	/* On STE, the Shifter skips the given amount of words. */
+	pVideoRaster += ScanLineSkip*2;
 
 	/* On STE, if we wrote to the hwscroll register, we set the */
 	/* new video address here, once the current line was processed */
@@ -981,10 +987,6 @@ static void Video_CopyScreenLineColor(void)
 			}
 		}
 
-		/* ScanLineSkip is zero on ST. */
-		/* On STE, the Shifter skips the given amount of words. */
-		pVideoRaster += ScanLineSkip*2;
-
 		/* On STE, if we wrote to the video counter addr, we set the */
 		/* new video address here, once the current line was processed */
 		if ( pNewVideoRaster )
@@ -992,6 +994,10 @@ static void Video_CopyScreenLineColor(void)
 			pVideoRaster = pNewVideoRaster;
 			pNewVideoRaster = NULL;
 		}
+
+		/* ScanLineSkip is zero on ST. */
+		/* On STE, the Shifter skips the given amount of words. */
+		pVideoRaster += ScanLineSkip*2;
 
 		/* On STE, if we wrote to the hwscroll register, we set the */
 		/* new video address here, once the current line was processed */
@@ -1581,6 +1587,14 @@ void Video_Reset(void)
 void Video_ScreenBaseSTE_WriteByte(void)
 {
 	IoMem[0xff820d] = 0;          /* Reset screen base low register */
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_STE ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "write ste video base=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , (IoMem[0xff8201]<<16)+(IoMem[0xff8203]<<8) ,
+		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1608,6 +1622,20 @@ void Video_ScreenCounterMed_ReadByte(void)
 void Video_ScreenCounterLow_ReadByte(void)
 {
 	IoMem[0xff8209] = Video_CalculateAddress();       /* Get video address counter low byte */
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read video address counter and update ff8205/07/09
+ */
+void Video_ScreenCounter_ReadByte(void)
+{
+	Uint32 addr;
+
+	addr = Video_CalculateAddress();		/* get current video address */
+	IoMem[0xff8205] = ( addr >> 16 ) & 0xff;
+	IoMem[0xff8207] = ( addr >> 8 ) & 0xff;
+	IoMem[0xff8209] = addr & 0xff;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1709,7 +1737,7 @@ void Video_LineWidth_WriteByte(void)
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "write ste linewidth=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , ScanLineSkip,
+		HATARI_TRACE_PRINT ( "write ste linewidth=0x%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , ScanLineSkip,
 		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 }

@@ -13,7 +13,7 @@
 /* 2007/12/16	[NP]	0xff820d/0xff820f are only available on STE, not on ST. We call	*/
 /*			IoMem_VoidRead and IoMem_VoidWrite for these addresses.		*/
 
-const char IoMemTabST_rcsid[] = "Hatari $Id: ioMemTabST.c,v 1.2 2008-01-24 21:21:54 thothy Exp $";
+const char IoMemTabST_rcsid[] = "Hatari $Id: ioMemTabST.c,v 1.3 2008-02-18 23:24:56 npomarede Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -41,9 +41,9 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_ST[] =
 
 	{ 0xff8201, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Video base high byte */
 	{ 0xff8203, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Video base med byte */
-	{ 0xff8205, SIZE_BYTE, Video_ScreenCounterHigh_ReadByte, IoMem_WriteWithoutInterception },
-	{ 0xff8207, SIZE_BYTE, Video_ScreenCounterMed_ReadByte, IoMem_WriteWithoutInterception },
-	{ 0xff8209, SIZE_BYTE, Video_ScreenCounterLow_ReadByte, IoMem_WriteWithoutInterception },
+	{ 0xff8205, SIZE_BYTE, Video_ScreenCounter_ReadByte, IoMem_WriteWithoutInterception },
+	{ 0xff8207, SIZE_BYTE, Video_ScreenCounter_ReadByte, IoMem_WriteWithoutInterception },
+	{ 0xff8209, SIZE_BYTE, Video_ScreenCounter_ReadByte, IoMem_WriteWithoutInterception },
 	{ 0xff820a, SIZE_BYTE, Video_Sync_ReadByte, Video_Sync_WriteByte },
 	{ 0xff820b, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff820d, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },
