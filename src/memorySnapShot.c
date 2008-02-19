@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.35 2008-02-09 11:15:15 thothy Exp $";
+const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.36 2008-02-19 18:51:05 eerot Exp $";
 
 #include <config.h>
 
@@ -307,6 +307,8 @@ void MemorySnapShot_Restore(const char *pszFileName)
  * Save and restore functions required by the UAE CPU core...
  * ... don't use them in normal Hatari code!
  */
+#include <savestate.h>
+
 void save_u32(uae_u32 data)
 {
 	MemorySnapShot_Store(&data, 4);
