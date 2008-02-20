@@ -6,7 +6,7 @@
 
   Screen Snapshots.
 */
-const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.13 2007-12-19 11:54:41 thothy Exp $";
+const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.14 2008-02-20 22:47:37 thothy Exp $";
 
 #include <SDL.h>
 #include <dirent.h>
@@ -14,6 +14,7 @@ const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.13 2007-12
 
 #include "main.h"
 #include "log.h"
+#include "paths.h"
 #include "screen.h"
 #include "screenSnapShot.h"
 #include "video.h"
@@ -33,7 +34,7 @@ static void ScreenSnapShot_GetNum(void)
 {
 	char dummy[5];
 	int i, num;
-	DIR *workingdir = opendir(szWorkingDir);
+	DIR *workingdir = opendir(Paths_GetWorkingDir());
 	struct dirent *file;
 
 	nScreenShots = 0;
@@ -78,7 +79,7 @@ void ScreenSnapShot_SaveScreen(void)
 	ScreenSnapShot_GetNum();
 	/* Create our filename */
 	nScreenShots++;
-	sprintf(szFileName,"%s/grab%4.4d.bmp",szWorkingDir,nScreenShots);
+	sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetWorkingDir(), nScreenShots);
 	if (SDL_SaveBMP(sdlscrn, szFileName))
 		fprintf(stderr, "Screen dump failed!\n");
 	else

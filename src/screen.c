@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.70 2008-01-28 22:20:11 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.71 2008-02-20 22:47:37 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -30,6 +30,7 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.70 2008-01-28 22:20:11 tho
 #include "log.h"
 #include "m68000.h"
 #include "misc.h"
+#include "paths.h"
 #include "screen.h"
 #include "convert/routines.h"
 #include "screenSnapShot.h"
@@ -402,7 +403,7 @@ void Screen_Init(void)
 
 	/* Load and set icon */
 	snprintf(sIconFileName, sizeof(sIconFileName), "%s%chatari-icon.bmp",
-	         szDataDir, PATHSEP);
+	         Paths_GetDataDir(), PATHSEP);
 	pIconSurf = SDL_LoadBMP(sIconFileName);
 	if (pIconSurf)
 	{

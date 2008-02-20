@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.76 2008-01-03 12:09:18 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.77 2008-02-20 22:47:37 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -21,6 +21,7 @@ const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.76 2008-01-0
 #include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
+#include "paths.h"
 #include "screen.h"
 #include "vdi.h"
 #include "video.h"
@@ -295,7 +296,10 @@ static const struct Config_Tag configs_System[] =
 void Configuration_SetDefault(void)
 {
 	int i;
-	char *homeDir;
+	const char *psHomeDir;
+	const char *psWorkingDir;
+
+	psWorkingDir = Paths_GetWorkingDir();
 
 	/* Assume first-time install */
 	bFirstTimeInstall = TRUE;
@@ -312,7 +316,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for floppy disk images */
 	ConfigureParams.DiskImage.bAutoInsertDiskB = TRUE;
 	ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_OFF;
-	strcpy(ConfigureParams.DiskImage.szDiskImageDirectory, szWorkingDir);
+	strcpy(ConfigureParams.DiskImage.szDiskImageDirectory, psWorkingDir);
 	File_AddSlashToEndFileName(ConfigureParams.DiskImage.szDiskImageDirectory);
 
 	/* Set defaults for hard disks */
@@ -321,13 +325,13 @@ void Configuration_SetDefault(void)
 	ConfigureParams.HardDisk.bUseHardDiskDirectories = FALSE;
 	for (i=0; i<MAX_HARDDRIVES; i++)
 	{
-		strcpy(ConfigureParams.HardDisk.szHardDiskDirectories[i], szWorkingDir);
+		strcpy(ConfigureParams.HardDisk.szHardDiskDirectories[i], psWorkingDir);
 		File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[i]);
 	}
 	ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
-	strcpy(ConfigureParams.HardDisk.szHardDiskImage, szWorkingDir);
+	strcpy(ConfigureParams.HardDisk.szHardDiskImage, psWorkingDir);
 	ConfigureParams.HardDisk.bUseIdeHardDiskImage = FALSE;
-	strcpy(ConfigureParams.HardDisk.szIdeHardDiskImage, szWorkingDir);
+	strcpy(ConfigureParams.HardDisk.szIdeHardDiskImage, psWorkingDir);
 
 	/* Set defaults for Joysticks */
 	for (i = 0; i < JOYSTICK_COUNT; i++)
@@ -371,12 +375,14 @@ void Configuration_SetDefault(void)
 	
 	/* Set defaults for Memory */
 	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */
-	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s%chatari.sav", szWorkingDir,PATHSEP);
+	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s%chatari.sav",
+	        psWorkingDir, PATHSEP);
 
 	/* Set defaults for Printer */
 	ConfigureParams.Printer.bEnablePrinting = FALSE;
 	ConfigureParams.Printer.bPrintToFile = TRUE;
-	sprintf(ConfigureParams.Printer.szPrintToFileName, "%s%chatari.prn", szWorkingDir,PATHSEP);
+	sprintf(ConfigureParams.Printer.szPrintToFileName, "%s%chatari.prn",
+	        psWorkingDir, PATHSEP);
 
 	/* Set defaults for RS232 */
 	ConfigureParams.RS232.bEnableRS232 = FALSE;
@@ -404,10 +410,12 @@ void Configuration_SetDefault(void)
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableSound = TRUE;
 	ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
-	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s%chatari.wav", szWorkingDir,PATHSEP);
+	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s%chatari.wav",
+	        psWorkingDir, PATHSEP);
 
 	/* Set defaults for Rom */
-	sprintf(ConfigureParams.Rom.szTosImageFileName, "%s%ctos.img", szDataDir, PATHSEP);
+	sprintf(ConfigureParams.Rom.szTosImageFileName, "%s%ctos.img",
+	        Paths_GetDataDir(), PATHSEP);
 	strcpy(ConfigureParams.Rom.szCartridgeImageFileName, "");
 
 	/* Set defaults for System */
@@ -424,15 +432,15 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bSlowFDC = FALSE;
 
 	/* Initialize the configuration file name */
-	homeDir = getenv("HOME");
-	if (homeDir != NULL && homeDir[0] != 0 && strlen(homeDir) < sizeof(sConfigFileName)-13)
-		sprintf(sConfigFileName, "%s%c.hatari.cfg", homeDir, PATHSEP);
+	psHomeDir = Paths_GetUserHome();
+	if (strlen(psHomeDir) < sizeof(sConfigFileName)-13)
+		sprintf(sConfigFileName, "%s%c.hatari.cfg", psHomeDir, PATHSEP);
 	else
 		strcpy(sConfigFileName, "hatari.cfg");
 
 #if defined(__AMIGAOS4__)
 	/* Fix default path names on Amiga OS */
-	sprintf(ConfigureParams.Rom.szTosImageFileName, "%stos.img", szDataDir);
+	sprintf(ConfigureParams.Rom.szTosImageFileName, "%stos.img", Paths_GetDataDir());
 #endif
 }
 

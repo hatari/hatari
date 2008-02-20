@@ -36,7 +36,7 @@ endif
 SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c options.c \
   createBlankImage.c cycles.c debugui.c dialog.c dim.c dmaSnd.c fdc.c file.c \
   floppy.c gemdos.c hdc.c ide.c ikbd.c int.c ioMem.c ioMemTabST.c \
-  ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c keymap.c \
+  ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c keymap.c paths.c \
   log.c m68000.c main.c midi.c memorySnapShot.c mfp.c misc.c msa.c psg.c \
   printer.c rs232.c reset.c rtc.c scandir.c st.c stMemory.c screen.c \
   screenSnapShot.c shortcut.c sound.c spec512.c trace.c tos.c unzip.c \
