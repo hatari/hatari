@@ -126,9 +126,7 @@ extern void Video_InterruptHandler_EndLine(void);
 extern void Video_InterruptHandler_HBL(void);
 extern void Video_SetScreenRasters(void);
 
-extern void Video_ScreenCounterHigh_ReadByte(void);
-extern void Video_ScreenCounterMed_ReadByte(void);
-extern void Video_ScreenCounterLow_ReadByte(void);
+extern void Video_ScreenCounter_ReadByte(void);
 extern void Video_Sync_ReadByte(void);
 extern void Video_BaseLow_ReadByte(void);
 extern void Video_LineWidth_ReadByte(void);

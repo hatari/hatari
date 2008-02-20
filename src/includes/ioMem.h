@@ -23,6 +23,7 @@ extern uae_u8 *IOmemory;
 
 
 extern Uint32 IoAccessBaseAddress;
+extern Uint32 IoAccessCurrentAddress;
 extern int nIoMemAccessSize;
 
 

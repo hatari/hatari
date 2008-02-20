@@ -108,8 +108,13 @@
 /*			updated in Video_ScreenCounter_ReadByte, not just the byte that was	*/
 /*			read. Fix programs that just modify one byte in the video address	*/
 /*			counter (e.g. sub #1,$ff8207 in Braindamage Demo).			*/
+/* 2008/02/19	[NP]	In Video_CalculateAddress, use pVideoRaster instead of VideoBase to	*/
+/*			determine the video address when display is off in the upper part of	*/
+/*			the screen (in case ff8205/07/09 were modified on STE).			*/
+/* 2008/02/20	[NP]	Better handling in Video_ScreenCounter_WriteByte by changing only one	*/
+/*			byte and keeping the other (Braindamage End Part).			*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.91 2008-02-18 23:24:56 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.92 2008-02-20 20:07:54 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -275,9 +280,10 @@ static Uint32 Video_CalculateAddress(void)
 	/* Top of screen is usually 63 lines from VBL in 50 Hz */
 	if (nFrameCycles < nStartHBL*nCyclesPerLine)
 	{
-		/* VideoBase was set in Video_ClearOnVBL, we should not use ff8201/ff8203 */
-		/* which are reloaded in ff8205/ff8207 only once per VBL */
-		VideoAddress = VideoBase;
+		/* pVideoRaster was set during Video_ClearOnVBL using VideoBase */
+		/* and it could also have been modified on STE by writing to ff8205/07/09 */
+		/* We should not use ff8201/ff8203  which are reloaded in ff8205/ff8207 only once per VBL */
+		VideoAddress = pVideoRaster - STRam;
 	}
 
 	else if (nFrameCycles > RESTART_VIDEO_COUNTER_CYCLE)
@@ -1599,33 +1605,6 @@ void Video_ScreenBaseSTE_WriteByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read video address counter high byte (0xff8205)
- */
-void Video_ScreenCounterHigh_ReadByte(void)
-{
-	IoMem[0xff8205] = Video_CalculateAddress() >> 16; /* Get video address counter high byte */
-}
-
-/*-----------------------------------------------------------------------*/
-/**
- * Read video address counter med byte (0xff8207)
- */
-void Video_ScreenCounterMed_ReadByte(void)
-{
-	IoMem[0xff8207] = Video_CalculateAddress() >> 8;  /* Get video address counter med byte */
-}
-
-/*-----------------------------------------------------------------------*/
-/**
- * Read video address counter low byte (0xff8209)
- */
-void Video_ScreenCounterLow_ReadByte(void)
-{
-	IoMem[0xff8209] = Video_CalculateAddress();       /* Get video address counter low byte */
-}
-
-/*-----------------------------------------------------------------------*/
-/**
  * Read video address counter and update ff8205/07/09
  */
 void Video_ScreenCounter_ReadByte(void)
@@ -1645,6 +1624,7 @@ void Video_ScreenCounter_ReadByte(void)
  * If display has not started yet for this line, we can change pVideoRaster now.
  * Else, we store the new value in pNewVideoRaster to change it at the end
  * of the current line when Video_CopyScreenLineColor is called.
+ * We must changing only the byte that was modified and keep the other ones.
  */
 void Video_ScreenCounter_WriteByte(void)
 {
@@ -1655,8 +1635,21 @@ void Video_ScreenCounter_WriteByte(void)
 	nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 	nLineCycles = nFrameCycles % nCyclesPerLine;
 
-	addr = (IoMem[0xff8205] << 16) | (IoMem[0xff8207] << 8) | IoMem[0xff8209];
+	/* Get current video address */
+	if ( pNewVideoRaster )
+		addr = pVideoRaster - STRam;		/* new address was already "pending" */
+	else
+		addr = Video_CalculateAddress();	/* 1st access, get current video address */
 
+	/* Change byte in the current addr */
+	if ( IoAccessCurrentAddress == 0xff8205 )
+		addr = ( addr & 0x00ffff ) | ( IoMem[0xff8205] << 16 );
+	else if ( IoAccessCurrentAddress == 0xff8207 )
+		addr = ( addr & 0xff00ff ) | ( IoMem[0xff8207] << 8 );
+	else if ( IoAccessCurrentAddress == 0xff8209 )
+		addr = ( addr & 0xffff00 ) | ( IoMem[0xff8209] );
+
+	/* Set/save new address */
 	if (nLineCycles <= LINE_START_CYCLE_50 || nHBL < nStartHBL)
 		pVideoRaster = &STRam[addr & ~1];	/* display has not started, we can still change */
 	else
