@@ -114,7 +114,7 @@
 /* 2008/02/20	[NP]	Better handling in Video_ScreenCounter_WriteByte by changing only one	*/
 /*			byte and keeping the other (Braindamage End Part).			*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.92 2008-02-20 20:07:54 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.93 2008-02-20 20:31:37 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -1624,7 +1624,7 @@ void Video_ScreenCounter_ReadByte(void)
  * If display has not started yet for this line, we can change pVideoRaster now.
  * Else, we store the new value in pNewVideoRaster to change it at the end
  * of the current line when Video_CopyScreenLineColor is called.
- * We must changing only the byte that was modified and keep the other ones.
+ * We must change only the byte that was modified and keep the two others ones.
  */
 void Video_ScreenCounter_WriteByte(void)
 {
@@ -1637,7 +1637,7 @@ void Video_ScreenCounter_WriteByte(void)
 
 	/* Get current video address */
 	if ( pNewVideoRaster )
-		addr = pVideoRaster - STRam;		/* new address was already "pending" */
+		addr = pNewVideoRaster - STRam;		/* new address was already "pending" */
 	else
 		addr = Video_CalculateAddress();	/* 1st access, get current video address */
 
