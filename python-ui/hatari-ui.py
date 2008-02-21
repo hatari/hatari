@@ -133,23 +133,24 @@ class HatariUI():
             os.execvpe("hatari", self.get_hatari_args(), self.get_hatari_env())
 
     def get_hatari_env(self):
-        # broken: when SDL uses a window it hasn't created itself,
-        # it for some reason doesn't listen to any events delivered
-        # to that window nor implements XEMBED protocol to get them
-        # in a way most friendliest to embedder:
-        #   http://standards.freedesktop.org/xembed-spec/latest/
-        #
-        # Instead we tell hatari to reparent itself after creating
-        # its own window into this program widget window
         window = self.hatariparent.window
         if sys.platform == 'win32':
             win_id = window.handle
         else:
             win_id = window.xid
         env = os.environ
-        # tell SDL to use (embed itself inside) given widget's window
+        # tell SDL to use given widget's window
         #env["SDL_WINDOWID"] = str(win_id)
-        env["HATARI_PARENTID"] = str(win_id)
+
+        # above is broken: when SDL uses a window it hasn't created itself,
+        # it for some reason doesn't listen to any events delivered to that
+        # window nor implements XEMBED protocol to get them in a way most
+        # friendly to embedder:
+        #   http://standards.freedesktop.org/xembed-spec/latest/
+        #
+        # Instead we tell hatari to reparent itself after creating
+        # its own window into this program widget window
+        env["HATARI_PARENT_WIN"] = str(win_id)
         return env
 
     def get_hatari_args(self):
