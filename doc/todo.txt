@@ -15,6 +15,11 @@ touch with us:
   - Add support for Pasti .STX images (See http://pasti.fxatari.com/).
   - Support .DIM images created with the "Get sectors: used" option.
 
+- Remove FDC_UpdateHBL from video.c and use a proper timer instead (FDC should
+  not depend on the HBL timings...).
+
+- Add the possibility to disable HBLs in VDI mode to speed up the emulation.
+
 - Improve PSG sound emulation (it sounds not very accurate with some games
   and demos compared to a real ST).
   Check if one of the other open-source PSG emulators could be used as a
@@ -57,3 +62,8 @@ touch with us:
 - SCREENBYTES_LEFT and SCREENBYTES_RIGHT should be variables, not defines,
   so that it is easier to adapt these settings to the users' requirements
   (either fit into 800x600 fullscreen resolution or show bigger borders etc.)
+
+- Add the possibility to automatically save a memory snapshot at exit and to
+  restore it when the emulator starts again.
+
+- Cancel a GUI dialog when the user hits the ESC key.
