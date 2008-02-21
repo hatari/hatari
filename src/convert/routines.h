@@ -26,9 +26,4 @@ static void ConvertVDIRes_16Colour(void);
 static void ConvertVDIRes_4Colour(void);
 static void ConvertVDIRes_2Colour(void);
 
-/*
-static void ConvertHighRes_640x1Bit(void);
-static void ConvertVDIRes_2Colour_1Bit(void);
-*/
-
 #endif /* HATARI_CONVERTROUTINES_H */

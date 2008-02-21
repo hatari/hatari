@@ -1,26 +1,5 @@
 /* Screen Conversion, VDI Res to 2Colour (1-Bit and 8-Bit) */
 
-#if 0  /* Currently unused */
-static void ConvertVDIRes_2Colour_1Bit(void)
-{
-  /* Copy palette to bitmap (2 colours) */
-
-  if (HBLPalettes[0]==0x777) {
-    ScreenBMP.Colours[0].rgbRed = ScreenBMP.Colours[0].rgbGreen = ScreenBMP.Colours[0].rgbBlue = 0xff;
-    ScreenBMP.Colours[1].rgbRed = ScreenBMP.Colours[1].rgbGreen = ScreenBMP.Colours[1].rgbBlue = 0x00;
-  }
-  else {
-    ScreenBMP.Colours[0].rgbRed = ScreenBMP.Colours[0].rgbGreen = ScreenBMP.Colours[0].rgbBlue = 0x00;
-    ScreenBMP.Colours[1].rgbRed = ScreenBMP.Colours[1].rgbGreen = ScreenBMP.Colours[1].rgbBlue = 0xff;
-  }
-
-  /* Simply copy ST screen, as same format! */
-  memcpy(pPCScreenDest,pSTScreen,(VDIWidth/8)*VDIHeight);
-
-  bScreenContentsChanged = TRUE;
-}
-#endif
-
 
 static void ConvertVDIRes_2Colour(void)
 {

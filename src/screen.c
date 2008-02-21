@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.71 2008-02-20 22:47:37 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.72 2008-02-21 22:34:36 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -1091,7 +1091,6 @@ static void Convert_StartFrame(void)
 #include "convert/low640x8.c"     /* LowRes To 640xH x 8-bit colour */
 #include "convert/med640x8.c"     /* MediumRes To 640xH x 8-bit colour */
 #include "convert/high640x8.c"    /* HighRes To 640xH x 8-bit colour */
-#include "convert/high640x1.c"    /* HighRes To 640xH x 1-bit colour */
 #include "convert/spec320x16.c"   /* Spectrum 512 To 320xH x 16-bit colour */
 #include "convert/spec640x16.c"   /* Spectrum 512 To 640xH x 16-bit colour */
 

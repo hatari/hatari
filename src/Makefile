@@ -85,6 +85,7 @@ clean:
 distclean:
 	$(RM) *.o hatari
 	$(RM) Makefile.dep *~ *.bak *.orig
+	$(RM) convert/*~ convert/*.bak
 	$(MAKE) -C gui-sdl/ distclean
 	$(MAKE) -C gui-win/ distclean
 	$(MAKE) -C $(CPUDIR) distclean
