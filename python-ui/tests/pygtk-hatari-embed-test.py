@@ -1,26 +1,42 @@
 #!/usr/bin/python
 #
-# tries to embed hatari with two different methods:
-# "embed": Give SDL window into which it should reparent
+# Tests embedding hatari with three different methods:
+# "hatari": ask Hatari to reparent to given window
+# "sdl": Give SDL window into which it should reparent
 #   -> SDL doesn't handle (mouse, key, expose) events
 #      although according to "xev" it's window receives them!
 #      Bug in SDL (not one of the originally needed features?)?
-# "reparent-": Find Hatari window and reparent it into pygtk widget
+# "reparent": Find Hatari window and reparent it into pygtk widget in python
 #   - Needs "xwininfo" and "awk"
+#
+# Using three alternative widgets:
+#   "drawingarea"
 #   "eventbox"
-#     -> PyGtk reparents it under something on rootwindow instead
-#        (reparening eventbox under Hatari window works fine though...)
 #   "socket"
+#
+# Results:
+#   reparent+eventbox
+#     -> PyGtk reparents Hatari under something on rootwindow instead
+#        (reparening eventbox under Hatari window works fine though...)
+#   reparent+socket
 #     -> Hatari seems to be reparented back to where it was
+#   sdl+anything
+#     -> all events are lost
+#   hatari+socket
+#     -> seems to work fine
 import os
 import sys
 import gtk
 import time
 import gobject
 
-def usage():
-    print "\nusage: %s <embed|reparent-eventbox|reparent-socket>\n" % sys.argv[0].split(os.path.sep)[-1]
-    print "Opens window, runs Hatari and tries to embed it with given method\n"
+def usage(error):
+    print "\nusage: %s <widget> <embed method>\n" % sys.argv[0].split(os.path.sep)[-1]
+    print "Opens window with given <widget>, runs Hatari and tries to embed it"
+    print "with given <method>\n"
+    print "<widget> can be <drawingarea|eventbox|socket>"
+    print "<method> can be <sdl|hatari|reparent>\n"
+    print "ERROR: %s\n" % error
     sys.exit(1)
 
 
@@ -28,22 +44,20 @@ class AppUI():
     hatari_wd = 640
     hatari_ht = 400
     
-    def __init__(self, method):
-        if method:
-            if method == "reparent-eventbox":
-                self.method = "reparent"
-                widgettype = gtk.EventBox
-            elif method == "reparent-socket":
-                self.method = "reparent"
-                widgettype = gtk.Socket
-            elif method == "embed":
-                self.method = "embed"
-                # XEMBED socket for Hatari/SDL
-                widgettype = gtk.Socket
-            else:
-                usage()
+    def __init__(self, widget, method):
+        if method in ("hatari", "reparent", "sdl"):
+            self.method = method
         else:
-            usage()
+            usage("unknown <method> '%s'" % method)
+        if widget == "drawingarea":
+            widgettype = gtk.DrawingArea
+        elif widget == "eventbox":
+            widgettype = gtk.EventBox
+        elif widget == "socket":
+            # XEMBED socket for Hatari/SDL
+            widgettype = gtk.Socket
+        else:
+            usage("unknown <widget> '%s'" % widget)
         self.window = self.create_window()
         self.add_hatari_parent(self.window, widgettype)
         gobject.timeout_add(1*1000, self.timeout_cb)
@@ -91,7 +105,7 @@ class AppUI():
                     print "killed process with PID %d" % pid
                     self.hatari_pid = 0
             else:
-                # method == "embed"
+                # method == "sdl" or "hatari"
                 self.hatari_pid = pid
         else:
             # child runs Hatari
@@ -102,9 +116,12 @@ class AppUI():
         if self.method == "reparent":
             return os.environ
         # tell SDL to use (embed itself inside) given widget's window
-        win_id = self.hatariparent.get_id()
+        win_id = self.hatariparent.window.xid
         env = os.environ
-        env["SDL_WINDOWID"] = str(win_id)
+        if self.method == "sdl":
+            env["SDL_WINDOWID"] = str(win_id)
+        elif self.method == "hatari":
+            env["HATARI_PARENT_WIN"] = str(win_id)
         return env
     
     def find_hatari_window(self):
@@ -158,7 +175,7 @@ class AppUI():
         gtk.main()
 
 
-if len(sys.argv) != 2:
-    usage()
-app = AppUI(sys.argv[1])
+if len(sys.argv) != 3:
+    usage("wrong number of arguments")
+app = AppUI(sys.argv[1], sys.argv[2])
 app.run()
