@@ -75,14 +75,33 @@ class AppUI():
         gtk.main_quit()
     
     def add_hatari_parent(self, parent, widgettype):
+        # Note: CAN_FOCUS has to be set for the widget embedding Hatari
+        # and *unset* for everything else, otherwise Hatari doesn't
+        # receive *any* keyevents.
         self.hatari_pid = 0
+        vbox = gtk.VBox()
+        button = gtk.Button("Test Button")
+        button.unset_flags(gtk.CAN_FOCUS)
+        vbox.add(button)
         widget = widgettype()
         widget.set_size_request(self.hatari_wd, self.hatari_ht)
         widget.set_events(gtk.gdk.ALL_EVENTS_MASK)
         widget.set_flags(gtk.CAN_FOCUS)
         self.hatariparent = widget
         # TODO: when running 320x200, parent could be centered to here
-        parent.add(widget)
+        vbox.add(widget)
+        # test focus
+        label = gtk.Label("Test SpinButton:")
+        vbox.add(label)
+        spin = gtk.SpinButton()
+        spin.set_range(0, 10)
+        spin.set_digits(0)
+        spin.set_numeric(True)
+        spin.set_increments(1, 2)
+        # otherwise Hatari doesn't receive keys!!!
+        spin.unset_flags(gtk.CAN_FOCUS)
+        vbox.add(spin)
+        parent.add(vbox)
     
     def timeout_cb(self):
         self.do_hatari_method()

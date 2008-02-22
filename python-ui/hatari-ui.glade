@@ -34,13 +34,11 @@
 	  <property name="spacing">0</property>
 
 	  <child>
-	    <widget class="GtkDrawingArea" id="hataribox">
+	    <widget class="GtkSocket" id="hataribox">
 	      <property name="width_request">640</property>
 	      <property name="height_request">400</property>
 	      <property name="visible">True</property>
 	      <property name="can_focus">True</property>
-	      <property name="has_focus">True</property>
-	      <property name="events">GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_MOTION_MASK | GDK_BUTTON1_MOTION_MASK | GDK_BUTTON2_MOTION_MASK | GDK_BUTTON3_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK | GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_FOCUS_CHANGE_MASK | GDK_STRUCTURE_MASK | GDK_PROPERTY_CHANGE_MASK | GDK_VISIBILITY_NOTIFY_MASK</property>
 	    </widget>
 	    <packing>
 	      <property name="padding">0</property>
@@ -79,11 +77,11 @@
 	  <child>
 	    <widget class="GtkButton" id="aboutbutton">
 	      <property name="visible">True</property>
-	      <property name="can_focus">True</property>
 	      <property name="label" translatable="yes">About</property>
 	      <property name="use_underline">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
-	      <property name="focus_on_click">True</property>
+	      <property name="can_focus">False</property>
+	      <property name="focus_on_click">False</property>
 	      <signal name="clicked" handler="on_aboutbutton_clicked" last_modification_time="Tue, 08 Jan 2008 22:15:24 GMT"/>
 	    </widget>
 	    <packing>
@@ -132,14 +130,14 @@
 	  <child>
 	    <widget class="GtkSpinButton" id="skipbutton">
 	      <property name="visible">True</property>
-	      <property name="can_focus">True</property>
 	      <property name="climb_rate">1</property>
 	      <property name="digits">0</property>
 	      <property name="numeric">True</property>
 	      <property name="update_policy">GTK_UPDATE_ALWAYS</property>
 	      <property name="snap_to_ticks">False</property>
 	      <property name="wrap">False</property>
-	      <property name="adjustment">1 0 16 1 4 4</property>
+	      <property name="adjustment">2 0 16 1 4 4</property>
+	      <property name="can_focus">False</property>
 	      <signal name="changed" handler="on_skipbutton_changed" last_modification_time="Tue, 08 Jan 2008 22:15:41 GMT"/>
 	    </widget>
 	    <packing>
@@ -152,11 +150,11 @@
 	  <child>
 	    <widget class="GtkButton" id="runbutton">
 	      <property name="visible">True</property>
-	      <property name="can_focus">True</property>
 	      <property name="label" translatable="yes">Run Hatari!</property>
 	      <property name="use_underline">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
-	      <property name="focus_on_click">True</property>
+	      <property name="focus_on_click">False</property>
+	      <property name="can_focus">False</property>
 	      <signal name="clicked" handler="on_runbutton_clicked" last_modification_time="Fri, 11 Jan 2008 21:21:08 GMT"/>
 	    </widget>
 	    <packing>
@@ -180,11 +178,11 @@
 	  <child>
 	    <widget class="GtkButton" id="quitbutton">
 	      <property name="visible">True</property>
-	      <property name="can_focus">True</property>
 	      <property name="label" translatable="yes">Quit</property>
 	      <property name="use_underline">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
-	      <property name="focus_on_click">True</property>
+	      <property name="focus_on_click">False</property>
+	      <property name="can_focus">False</property>
 	      <signal name="clicked" handler="on_mainwin_destroy" last_modification_time="Fri, 11 Jan 2008 21:22:31 GMT"/>
 	    </widget>
 	    <packing>
