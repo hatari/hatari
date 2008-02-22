@@ -8,7 +8,6 @@
 #
 # Requires python-glade2 package and its dependencies to be present.
 #
-#
 # Copyright (C) 2008 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
@@ -41,35 +40,69 @@ class HatariUI():
         self.hatari_pid = 0  # running Hatari emulator PID?
         self.changes = False # unsaved configuration changes?
         self.load_hatari_config()
-        self.load_ui()
         # collect hatari process zombies without waitpid()
         signal.signal(signal.SIGCHLD, signal.SIG_IGN)
-
-    def run(self):
-        self.window.show_all()
-        gtk.main()
-        
-    def load_ui(self):
-        handlers = {
-            "on_aboutbutton_clicked": self.aboutbutton_clicked,
-            "on_runbutton_clicked": self.runbutton_clicked,
-            "on_mainwin_destroy": self.mainwin_destroy
-        }
         # just instantiate all UI windows/widgets...
-        self.wtree = gtk.glade.XML(self.gladefile)
-        self.wtree.signal_autoconnect(handlers)
-        self.window = self.wtree.get_widget("mainwin")
-        self.aboutdialog = self.wtree.get_widget("aboutdialog")
-        self.killdialog = self.wtree.get_widget("killdialog")
-        self.quitdialog = self.wtree.get_widget("quitdialog")
-        # modal dialogs need to be transient to their parents
-        self.aboutdialog.set_transient_for(self.window)
-        self.killdialog.set_transient_for(self.window)
-        self.quitdialog.set_transient_for(self.window)
+        mainwin = self.create_mainwin()
+        self.create_dialogs(mainwin)
+        mainwin.show_all()
+
+    def load_hatari_config(self):
+        print "TODO: load Hatari configuration file"
+        # TODO: remove this once testing is done
+        self.changes = True
+
+    def mainwin_destroy(self, widget):
+        if self.ask_hatari_running():
+            return
+        if self.changes:
+            if self.quitdialog.run() == gtk.RESPONSE_OK:
+                gtk.main_quit()
+            self.quitdialog.hide()
+        
+    def create_mainwin(self):
+        vbox = gtk.VBox()
+        button = gtk.Button("About")
+        button.unset_flags(gtk.CAN_FOCUS)
+        button.connect("clicked", self.about_clicked)
+        vbox.add(button)
+
+        button = gtk.Button("Configure")
+        button.unset_flags(gtk.CAN_FOCUS)
+        button.connect("clicked", self.configure_clicked)
+        vbox.add(button)
+
+        button = gtk.ToggleButton("Max Speed")
+        button.unset_flags(gtk.CAN_FOCUS)
+        button.connect("clicked", self.maxspeed_clicked)
+        vbox.add(button)
+
+        button = gtk.Button("Run Hatari!")
+        button.unset_flags(gtk.CAN_FOCUS)
+        button.connect("clicked", self.run_clicked)
+        vbox.add(button)
+
+        button = gtk.Button("Quit")
+        button.unset_flags(gtk.CAN_FOCUS)
+        button.connect("clicked", self.mainwin_destroy)
+        vbox.add(button)
+        
+        widget = gtk.Socket()
+        widget.set_size_request(self.hatari_wd, self.hatari_ht)
+        #TODO: self.set_widget_bg_image(widget, "hatari-bg.png")
+        widget.set_events(gtk.gdk.ALL_EVENTS_MASK)
+        widget.set_flags(gtk.CAN_FOCUS)
 
         # where to put the Hatari window
-        self.hatariparent = self.wtree.get_widget("hataribox")
-        self.set_widget_bg_image(self.hatariparent, "hatari-bg.png")
+        self.hatariparent = widget
+
+        hbox = gtk.HBox()
+        hbox.add(widget)
+        hbox.add(vbox)
+        mainwin = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        mainwin.connect("destroy", self.mainwin_destroy)
+        mainwin.add(hbox)
+        return mainwin
     
     def set_widget_bg_image(self, widget, image):
         # works only for widgets with windows of their own
@@ -81,22 +114,17 @@ class HatariUI():
         widget.window.set_back_pixmap(pixmap, False)
         del pixmap
         
-    def aboutbutton_clicked(self, widget):
-        self.aboutdialog.run()
-        self.aboutdialog.hide()
-
-    def mainwin_destroy(self, widget):
-        if self.ask_hatari_running():
-            return
-        if self.changes:
-            if self.quitdialog.run() == gtk.RESPONSE_OK:
-                gtk.main_quit()
-            self.quitdialog.hide()
-
-    def load_hatari_config(self):
-        print "TODO: load Hatari configuration file"
-        # TODO: remove this once testing is done
-        self.changes = True
+    def create_dialogs(self, parent):
+        # load UI dialogs from glade file
+        wtree = gtk.glade.XML(self.gladefile)
+        #TODO: unused wtree.signal_autoconnect(handlers)
+        self.aboutdialog = wtree.get_widget("aboutdialog")
+        self.killdialog = wtree.get_widget("killdialog")
+        self.quitdialog = wtree.get_widget("quitdialog")
+        # modal dialogs need to be transient to their parents
+        self.aboutdialog.set_transient_for(parent)
+        self.killdialog.set_transient_for(parent)
+        self.quitdialog.set_transient_for(parent)
     
     def ask_hatari_running(self):
         # is hatari running?
@@ -117,8 +145,12 @@ class HatariUI():
             self.hatari_pid = 0
             return False
         return True
+        
+    def about_clicked(self, widget):
+        self.aboutdialog.run()
+        self.aboutdialog.hide()
     
-    def runbutton_clicked(self, widget):
+    def run_clicked(self, widget):
         if self.ask_hatari_running():
             return
         pid = os.fork()
@@ -150,7 +182,7 @@ class HatariUI():
         #
         # Instead we tell hatari to reparent itself after creating
         # its own window into this program widget window
-        env["HATARI_PARENT_WIN"] = str(win_id)
+        env["PARENT_WIN_ID"] = str(win_id)
         return env
 
     def get_hatari_args(self):
@@ -158,7 +190,13 @@ class HatariUI():
         args = ("hatari", "-m", "-z", "2")
         return args
 
+    def configure_clicked(self, widget):
+        print "TODO: configure dialog"
+
+    def maxspeed_clicked(self, widget):
+        print "TODO: maxspeed dialog"
+
 
 if __name__ == "__main__":
     app = HatariUI()
-    app.run()
+    gtk.main()
