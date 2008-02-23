@@ -11,8 +11,8 @@ CFLAGS += $(INCFLAGS) $(SDL_CFLAGS) -Wno-write-strings
 
 
 
-DLGSRCS = dlgAbout.c dlgAlert.c dlgDevice.c dlgDisc.c dlgJoystick.c \
-  dlgKeyboard.c dlgMain.c dlgMemory.c dlgNewDisc.c dlgRom.c \
+DLGSRCS = dlgAbout.c dlgAlert.c dlgDevice.c dlgDisk.c dlgJoystick.c \
+  dlgKeyboard.c dlgMain.c dlgMemory.c dlgNewDisk.c dlgRom.c \
   dlgScreen.c dlgSound.c dlgSystem.c dlgFileSelect.c sdlgui.c
 
 

@@ -1,10 +1,10 @@
 /*
-  Hatari - dlgNewDisc.c
+  Hatari - dlgNewDisk.c
 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgNewDisk_rcsid[] = "Hatari $Id: dlgNewDisc.c,v 1.7 2008-01-12 19:14:08 eerot Exp $";
+const char DlgNewDisk_rcsid[] = "Hatari $Id: dlgNewDisk.c,v 1.1 2008-02-23 22:14:21 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
