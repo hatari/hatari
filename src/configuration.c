@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.77 2008-02-20 22:47:37 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.78 2008-02-23 15:30:46 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -58,6 +58,12 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nVdiColors", Int_Tag, &ConfigureParams.Screen.nVdiColors },
 	{ "bCaptureChange", Bool_Tag, &ConfigureParams.Screen.bCaptureChange },
 	{ "nFramesPerSecond", Int_Tag, &ConfigureParams.Screen.nFramesPerSecond },
+	{ "nWindowBorderPixelsLeft", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsLeft },
+	{ "nWindowBorderPixelsRight", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsRight },
+	{ "nWindowBorderPixelsBottom", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsBottom },
+	{ "nFullScreenBorderPixelsLeft", Int_Tag, &ConfigureParams.Screen.nFullScreenBorderPixelsLeft },
+	{ "nFullScreenBorderPixelsRight", Int_Tag, &ConfigureParams.Screen.nFullScreenBorderPixelsRight },
+	{ "nFullScreenBorderPixelsBottom", Int_Tag, &ConfigureParams.Screen.nFullScreenBorderPixelsBottom },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -406,6 +412,12 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
 	ConfigureParams.Screen.bCaptureChange = FALSE;
 	ConfigureParams.Screen.nFramesPerSecond = 25;
+	ConfigureParams.Screen.nWindowBorderPixelsLeft = 48;
+	ConfigureParams.Screen.nWindowBorderPixelsRight = 48;
+	ConfigureParams.Screen.nWindowBorderPixelsBottom = OVERSCAN_BOTTOM;
+	ConfigureParams.Screen.nFullScreenBorderPixelsLeft = 32;
+	ConfigureParams.Screen.nFullScreenBorderPixelsRight = 32;
+	ConfigureParams.Screen.nFullScreenBorderPixelsBottom = OVERSCAN_BOTTOM;
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableSound = TRUE;

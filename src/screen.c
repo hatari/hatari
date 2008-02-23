@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.72 2008-02-21 22:34:36 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.73 2008-02-23 15:30:46 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -43,8 +43,10 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.72 2008-02-21 22:34:36 tho
 
 
 /* extern for several purposes */
-SDL_Surface *sdlscrn = NULL;  /* The SDL screen surface */
-int nScreenZoomX, nScreenZoomY;  /* Zooming factors, used for scaling mouse motions */
+SDL_Surface *sdlscrn = NULL;                /* The SDL screen surface */
+int nScreenZoomX, nScreenZoomY;             /* Zooming factors, used for scaling mouse motions */
+int nBorderPixelsLeft, nBorderPixelsRight;  /* Pixels in left and right border */
+int nBorderPixelsBottom;                    /* Lines in bottom border */
 
 /* extern for shortcuts and falcon/hostscreen.c */
 BOOL bGrabMouse = FALSE;      /* Grab the mouse cursor in the window */
@@ -254,12 +256,46 @@ static void Screen_SetDrawFunctions(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Set amount of border pixels for windowed and full-screen mode and
+ * store Y offset for each horizontal line in our source ST screen for
+ * reference in tje convert functions.
+ */
+static void Screen_SetSTScreenOffsets(void)
+{
+	int i;
+
+	/* Determine border pixels */
+	if (bInFullScreen)
+	{
+		nBorderPixelsLeft = ConfigureParams.Screen.nFullScreenBorderPixelsLeft;
+		nBorderPixelsRight = ConfigureParams.Screen.nFullScreenBorderPixelsRight;
+		nBorderPixelsBottom = ConfigureParams.Screen.nFullScreenBorderPixelsBottom;
+	}
+	else
+	{
+		nBorderPixelsLeft = ConfigureParams.Screen.nWindowBorderPixelsLeft;
+		nBorderPixelsRight = ConfigureParams.Screen.nWindowBorderPixelsRight;
+		nBorderPixelsBottom = ConfigureParams.Screen.nWindowBorderPixelsBottom;
+	}
+
+	/* Store offset to each horizontal line */
+	for (i = 0; i < NUM_VISIBLE_LINES; i++)
+	{
+		STScreenLineOffset[i] = i * SCREENBYTES_LINE;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Initialize SDL screen surface / set resolution.
  */
 static void Screen_SetResolution(void)
 {
 	int Width, Height, BitCount;
 	unsigned int sdlVideoFlags;
+
+	Screen_SetSTScreenOffsets();  
 
 	/* Determine which resolution to use */
 	if (bUseVDIRes)
@@ -285,8 +321,8 @@ static void Screen_SetResolution(void)
 		{
 			int nZoom = ((Width == 640) ? 2 : 1);
 			/* Add in overscan borders (if 640x200 bitmap is double on Y) */
-			Width += (OVERSCAN_LEFT+OVERSCAN_RIGHT) * nZoom;
-			Height += (OVERSCAN_TOP+OVERSCAN_BOTTOM) * nZoom;
+			Width += (nBorderPixelsLeft+nBorderPixelsRight) * nZoom;
+			Height += (OVERSCAN_TOP+nBorderPixelsBottom) * nZoom;
 		}
 	}
 
@@ -364,19 +400,6 @@ static void Screen_SetResolution(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Store Y offset for each horizontal line in our source ST screen for each reference in assembler(no multiply)
- */
-static void Screen_SetScreenLineOffsets(void)
-{
-	int i;
-
-	for (i = 0; i < NUM_VISIBLE_LINES; i++)
-		STScreenLineOffset[i] = i * SCREENBYTES_LINE;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Init Screen bitmap and buffers/tables needed for ST to PC screen conversion
  */
 void Screen_Init(void)
@@ -417,8 +440,6 @@ void Screen_Init(void)
 	Screen_SetResolution();
 
 	Video_SetScreenRasters();                       /* Set rasters ready for first screen */
-
-	Screen_SetScreenLineOffsets();                  /* Store offset to each horizontal line */
 
 	/* Configure some SDL stuff: */
 	SDL_WM_SetCaption(PROG_NAME, "Hatari");
@@ -877,24 +898,7 @@ static void Screen_SwapSTBuffers(void)
  */
 static void Screen_Blit(BOOL bSwapScreen)
 {
-	/* Rectangle areas to Blit according to if overscan is enabled or not
-	 * (source always includes all borders)
-	 */
-	static const SDL_Rect SrcWindowBitmapSizes[] =
-	{
-		{ 0,0, 320,200 },      /* ST_LOW_RES */
-		{ 0,0, 640,400 },      /* ST_MEDIUM_RES */
-		{ 0,0, 640,400 }       /* ST_HIGH_RES */
-	};
-	static const SDL_Rect SrcWindowOverscanBitmapSizes[] =
-	{
-		{ 0,0, OVERSCAN_LEFT+320+OVERSCAN_RIGHT,OVERSCAN_TOP+200+OVERSCAN_BOTTOM },
-		{ 0,0, (OVERSCAN_LEFT<<1)+640+(OVERSCAN_RIGHT<<1),(OVERSCAN_TOP<<1)+400+(OVERSCAN_BOTTOM<<1) },
-		{ 0,0, 640,400 }
-	};
-
 	unsigned char *pTmpScreen;
-	const SDL_Rect *SrcRect;
 
 	/* Blit to full screen or window? */
 	if (bInFullScreen)
@@ -906,24 +910,8 @@ static void Screen_Blit(BOOL bSwapScreen)
 	}
 	else
 	{
-		/* VDI resolution? */
-		if (bUseVDIRes || bUseHighRes)
-		{
-			/* Show VDI or mono resolution, no overscan */
-			SDL_UpdateRect(sdlscrn, 0,0,0,0);
-		}
-		else
-		{
-			/* Find rectangle to draw from... */
-			if (ConfigureParams.Screen.bAllowOverscan)
-				SrcRect = &SrcWindowOverscanBitmapSizes[STRes];
-			else
-				SrcRect = &SrcWindowBitmapSizes[STRes];
-
-			/* Blit image */
-			SDL_UpdateRect(sdlscrn, 0,0,0,0);
-			//SDL_UpdateRects(sdlscrn, 1, SrcRect);  /* FIXME */
-		}
+		/* Blit image */
+		SDL_UpdateRect(sdlscrn, 0,0,0,0);
 	}
 
 	/* Swap copy/raster buffers in screen. */
@@ -1006,16 +994,10 @@ static void Screen_DrawFrame(BOOL bForceFlip)
  */
 void Screen_Draw(void)
 {
-	if (!bQuitProgram)
+	if (!bQuitProgram && VideoBase)
 	{
-		if (VideoBase)
-		{
-			/* And draw(if screen contents changed) */
-			Screen_DrawFrame(FALSE);
-
-			/* And status bar */
-			/*StatusBar_UpdateIcons();*/ /* Sorry - no statusbar in Hatari yet */
-		}
+		/* And draw (if screen contents changed) */
+		Screen_DrawFrame(FALSE);
 	}
 }
 

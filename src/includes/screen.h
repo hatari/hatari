@@ -20,15 +20,13 @@
 /* SCREENBYTES_LINE should always be a multiple of 8.		*/
 
 /* left/right borders must be multiple of 8 bytes */
-#define SCREENBYTES_LEFT    16		/* Bytes for left border in ST screen */
-#define SCREENBYTES_MIDDLE  160		/* Middle (320 pixels) */
-#define SCREENBYTES_RIGHT   24		/* right border */
+#define SCREENBYTES_LEFT    (nBorderPixelsLeft/2)  /* Bytes for left border */
+#define SCREENBYTES_MIDDLE  160                    /* Middle (320 pixels) */
+#define SCREENBYTES_RIGHT   (nBorderPixelsRight/2) /* Right border */
 #define SCREENBYTES_LINE    (SCREENBYTES_LEFT+SCREENBYTES_MIDDLE+SCREENBYTES_RIGHT)
 #define SCREENBYTES_MONOLINE 80         /* Byte per line in ST-high resolution */
 
 /* Overscan values */
-#define OVERSCAN_LEFT       (SCREENBYTES_LEFT*2)    /* Number of pixels in each border */
-#define OVERSCAN_RIGHT      (SCREENBYTES_RIGHT*2)
 #define OVERSCAN_TOP        29
 #define OVERSCAN_BOTTOM     47
 
@@ -104,6 +102,7 @@ enum
 extern BOOL bGrabMouse;
 extern BOOL bInFullScreen;
 extern int nScreenZoomX, nScreenZoomY;
+extern int nBorderPixelsLeft, nBorderPixelsRight;
 extern int STScreenStartHorizLine;
 extern int STScreenLeftSkipBytes;
 extern FRAMEBUFFER *pFrameBuffer;

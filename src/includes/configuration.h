@@ -201,6 +201,12 @@ typedef struct
   int nVdiColors;
   BOOL bCaptureChange;
   int nFramesPerSecond;
+  int nWindowBorderPixelsLeft;
+  int nWindowBorderPixelsRight;
+  int nWindowBorderPixelsBottom;
+  int nFullScreenBorderPixelsLeft;
+  int nFullScreenBorderPixelsRight;
+  int nFullScreenBorderPixelsBottom;
 } CNF_SCREEN;
 
 
