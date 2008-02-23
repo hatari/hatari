@@ -27,7 +27,7 @@
 
   All other cells are reserved / unused.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.3 2008-02-23 16:51:27 thothy Exp $";
+const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.4 2008-02-23 21:15:56 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -151,7 +151,7 @@ static void NvRam_SetChecksum(void)
 void NvRam_Init(void)
 {
 	const char sBaseName[] = "hatari.nvram";
-	char *psHomeDir;
+	const char *psHomeDir;
 
 	// set up the nvram filename
 	psHomeDir = Paths_GetHatariHome();
