@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.10 2007-12-11 19:02:20 eerot Exp $";
+const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.11 2008-02-23 22:16:07 thothy Exp $";
 
 #include <unistd.h>
 
@@ -27,62 +27,62 @@ const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.10 2007-12-11 19
 /* The keyboard dialog: */
 static SGOBJ keyboarddlg[] =
 {
-  { SGBOX, 0, 0, 0,0, 40,12, NULL },
-  { SGTEXT, 0, 0, 13,1, 14,1, "Keyboard setup" },
-  { SGTEXT, 0, 0, 2,3, 17,1, "Keyboard mapping:" },
-  { SGRADIOBUT, 0, 0, 3,5, 10,1, "Symbolic" },
-  { SGRADIOBUT, 0, 0, 15,5, 10,1, "Scancode" },
-  { SGRADIOBUT, 0, 0, 27,5, 11,1, "From file" },
-  { SGTEXT, 0, 0, 2,7, 13,1, "Mapping file:" },
-  { SGTEXT, 0, 0, 2,8, 36,1, NULL },
-  { SGBUTTON, 0, 0, 32,7, 6,1, "Browse" },
-  { SGBUTTON, SG_DEFAULT, 0, 10,10, 20,1, "Back to main menu" },
-  { -1, 0, 0, 0,0, 0,0, NULL }
+	{ SGBOX, 0, 0, 0,0, 40,12, NULL },
+	{ SGTEXT, 0, 0, 13,1, 14,1, "Keyboard setup" },
+	{ SGTEXT, 0, 0, 2,3, 17,1, "Keyboard mapping:" },
+	{ SGRADIOBUT, 0, 0, 3,5, 10,1, "Symbolic" },
+	{ SGRADIOBUT, 0, 0, 15,5, 10,1, "Scancode" },
+	{ SGRADIOBUT, 0, 0, 27,5, 11,1, "From file" },
+	{ SGTEXT, 0, 0, 2,7, 13,1, "Mapping file:" },
+	{ SGTEXT, 0, 0, 2,8, 36,1, NULL },
+	{ SGBUTTON, 0, 0, 32,7, 6,1, "Browse" },
+	{ SGBUTTON, SG_DEFAULT, 0, 10,10, 20,1, "Back to main menu" },
+	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Show and process the "Keyboard" dialog.
-*/
+/**
+ * Show and process the "Keyboard" dialog.
+ */
 void Dialog_KeyboardDlg(void)
 {
-  int i, but;
-  char dlgmapfile[40];
+	int i, but;
+	char dlgmapfile[40];
 
-  SDLGui_CenterDlg(keyboarddlg);
+	SDLGui_CenterDlg(keyboarddlg);
 
-  /* Set up dialog from actual values: */
-  for(i = DLGKEY_SYMBOLIC; i <= DLGKEY_FROMFILE; i++)
-  {
-    keyboarddlg[i].state &= ~SG_SELECTED;
-  }
-  keyboarddlg[DLGKEY_SYMBOLIC+DialogParams.Keyboard.nKeymapType].state |= SG_SELECTED;
+	/* Set up dialog from actual values: */
+	for (i = DLGKEY_SYMBOLIC; i <= DLGKEY_FROMFILE; i++)
+	{
+		keyboarddlg[i].state &= ~SG_SELECTED;
+	}
+	keyboarddlg[DLGKEY_SYMBOLIC+DialogParams.Keyboard.nKeymapType].state |= SG_SELECTED;
 
-  File_ShrinkName(dlgmapfile, DialogParams.Keyboard.szMappingFileName, keyboarddlg[DLGKEY_MAPNAME].w);
-  keyboarddlg[DLGKEY_MAPNAME].txt = dlgmapfile;
+	File_ShrinkName(dlgmapfile, DialogParams.Keyboard.szMappingFileName,
+	                keyboarddlg[DLGKEY_MAPNAME].w);
+	keyboarddlg[DLGKEY_MAPNAME].txt = dlgmapfile;
 
-  /* Show the dialog: */
-  do
-  {
-    but = SDLGui_DoDialog(keyboarddlg, NULL);
+	/* Show the dialog: */
+	do
+	{
+		but = SDLGui_DoDialog(keyboarddlg, NULL);
 
-    if(but == DLGKEY_MAPBROWSE)
-    {
-      SDLGui_FileConfSelect(dlgmapfile,
-			    DialogParams.Keyboard.szMappingFileName,
-                            keyboarddlg[DLGKEY_MAPNAME].w,
-			    FALSE);
-    }
-  }
-  while (but != DLGKEY_EXIT && but != SDLGUI_QUIT
-         && but != SDLGUI_ERROR && !bQuitProgram);
+		if (but == DLGKEY_MAPBROWSE)
+		{
+			SDLGui_FileConfSelect(dlgmapfile,
+			                      DialogParams.Keyboard.szMappingFileName,
+			                      keyboarddlg[DLGKEY_MAPNAME].w, FALSE);
+		}
+	}
+	while (but != DLGKEY_EXIT && but != SDLGUI_QUIT
+	        && but != SDLGUI_ERROR && !bQuitProgram);
 
-  /* Read values from dialog: */
-  if(keyboarddlg[DLGKEY_SYMBOLIC].state & SG_SELECTED)
-    DialogParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
-  else if(keyboarddlg[DLGKEY_SCANCODE].state & SG_SELECTED)
-    DialogParams.Keyboard.nKeymapType = KEYMAP_SCANCODE;
-  else
-    DialogParams.Keyboard.nKeymapType = KEYMAP_LOADED;
+	/* Read values from dialog: */
+	if (keyboarddlg[DLGKEY_SYMBOLIC].state & SG_SELECTED)
+		DialogParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
+	else if (keyboarddlg[DLGKEY_SCANCODE].state & SG_SELECTED)
+		DialogParams.Keyboard.nKeymapType = KEYMAP_SCANCODE;
+	else
+		DialogParams.Keyboard.nKeymapType = KEYMAP_LOADED;
 }
