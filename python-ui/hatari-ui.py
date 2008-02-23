@@ -8,7 +8,7 @@
 #
 # Requires python-glade2 package and its dependencies to be present.
 #
-# Copyright (C) 2008 by Eero Tamminen
+# Copyright (C) 2008 by Eero Tamminen <eerot@sf.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ class HatariUI():
     def create_mainwin(self, fullscreen):
         # main window
         mainwin = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        mainwin.connect("destroy", self.mainwin_destroy)
+        mainwin.connect("delete_event", self.prevent_mainwin_close)
         mainwin.set_icon_from_file(self.icon)
         mainwin.set_title(self.title)
         
@@ -68,7 +68,7 @@ class HatariUI():
             ("Pause", self.pause_clicked),
             ("Configure", self.configure_clicked),
             ("About", self.about_clicked),
-            ("Quit", self.mainwin_destroy)
+            ("Quit", self.quit_clicked)
         ]
         for label,cb in buttons:
             button = gtk.Button(label)
@@ -126,13 +126,20 @@ class HatariUI():
             return
         self.hatari.run_embedded(self.hatariparent.window)
 
-    def mainwin_destroy(self, widget):
+    def prevent_mainwin_close(self, widget, arg):
         if self.keep_hatari_running():
-            return
+            return True
         if self.config.is_changed():
             if self.quitdialog.run() == gtk.RESPONSE_OK:
                 gtk.main_quit()
+                # continue to mainwin destroy if called by delete_event
+                return False
             self.quitdialog.hide()
+            return True
+        return False
+
+    def quit_clicked(self, widget):
+        self.prevent_mainwin_close(None, None)
 
     def configure_clicked(self, widget):
         print "TODO: configure dialog"

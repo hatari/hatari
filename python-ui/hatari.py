@@ -2,7 +2,7 @@
 #
 # Classes for Hatari configuration and emulator instance
 #
-# Copyright (C) 2008 by Eero Tamminen
+# Copyright (C) 2008 by Eero Tamminen <eerot@sf.net>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
