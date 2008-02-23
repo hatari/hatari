@@ -32,6 +32,7 @@ import gtk.glade
 from hatari import Hatari, Config
 
 def connect_true(object):
+    # disable Socket destroy on Plug (Hatari) disappearance
     return True
 
 class HatariUI():
@@ -97,18 +98,15 @@ class HatariUI():
     def create_dialogs(self, parent):
         # load UI dialogs from glade file
         wtree = gtk.glade.XML(self.gladefile)
-        #TODO: unused wtree.signal_autoconnect(handlers)
         self.aboutdialog = wtree.get_widget("aboutdialog")
-        self.killdialog = wtree.get_widget("killdialog")
+        self.confdialog = wtree.get_widget("confdialog")
         self.quitdialog = wtree.get_widget("quitdialog")
+        self.killdialog = wtree.get_widget("killdialog")
         # modal dialogs need to be transient to their parents
         self.aboutdialog.set_transient_for(parent)
-        self.killdialog.set_transient_for(parent)
+        self.confdialog.set_transient_for(parent)
         self.quitdialog.set_transient_for(parent)
-        
-    def about_clicked(self, widget):
-        self.aboutdialog.run()
-        self.aboutdialog.hide()
+        self.killdialog.set_transient_for(parent)
     
     def keep_hatari_running(self):
         if not self.hatari.is_running():
@@ -140,9 +138,15 @@ class HatariUI():
 
     def quit_clicked(self, widget):
         self.prevent_mainwin_close(None, None)
+        
+    def about_clicked(self, widget):
+        self.aboutdialog.run()
+        self.aboutdialog.hide()
 
     def configure_clicked(self, widget):
-        print "TODO: configure dialog"
+        self.confdialog.run()
+        self.confdialog.hide()
+        print "TODO: configure Hatari accordingly"
 
     def pause_clicked(self, widget):
         if self.hatari.pause():
