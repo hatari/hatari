@@ -22,7 +22,6 @@
 
 import os
 import sys
-import signal
 
 # use correct version of pygtk/gtk
 import pygtk
@@ -30,89 +29,70 @@ pygtk.require('2.0')
 import gtk
 import gtk.glade
 
+from hatari import Hatari, Config
+
+def connect_true(object):
+    return True
 
 class HatariUI():
+    title = "Hatari UI v0.2"
+    icon = "hatari-icon.png"
     gladefile = "hatari-ui.glade"
     hatari_wd = 640
     hatari_ht = 400
 
-    def __init__(self):
-        self.hatari_pid = 0  # running Hatari emulator PID?
-        self.changes = False # unsaved configuration changes?
-        self.load_hatari_config()
-        # collect hatari process zombies without waitpid()
-        signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+    def __init__(self, fullscreen):
+        self.config = Config()
+        self.hatari = Hatari()
         # just instantiate all UI windows/widgets...
-        mainwin = self.create_mainwin()
+        mainwin = self.create_mainwin(fullscreen)
+        if fullscreen:
+            mainwin.fullscreen()
         self.create_dialogs(mainwin)
         mainwin.show_all()
+    
+    def run(self):
+        gtk.main()
 
-    def load_hatari_config(self):
-        print "TODO: load Hatari configuration file"
-        # TODO: remove this once testing is done
-        self.changes = True
-
-    def mainwin_destroy(self, widget):
-        if self.ask_hatari_running():
-            return
-        if self.changes:
-            if self.quitdialog.run() == gtk.RESPONSE_OK:
-                gtk.main_quit()
-            self.quitdialog.hide()
-        
-    def create_mainwin(self):
-        vbox = gtk.VBox()
-        button = gtk.Button("About")
-        button.unset_flags(gtk.CAN_FOCUS)
-        button.connect("clicked", self.about_clicked)
-        vbox.add(button)
-
-        button = gtk.Button("Configure")
-        button.unset_flags(gtk.CAN_FOCUS)
-        button.connect("clicked", self.configure_clicked)
-        vbox.add(button)
-
-        button = gtk.ToggleButton("Max Speed")
-        button.unset_flags(gtk.CAN_FOCUS)
-        button.connect("clicked", self.maxspeed_clicked)
-        vbox.add(button)
-
-        button = gtk.Button("Run Hatari!")
-        button.unset_flags(gtk.CAN_FOCUS)
-        button.connect("clicked", self.run_clicked)
-        vbox.add(button)
-
-        button = gtk.Button("Quit")
-        button.unset_flags(gtk.CAN_FOCUS)
-        button.connect("clicked", self.mainwin_destroy)
-        vbox.add(button)
-        
-        widget = gtk.Socket()
-        widget.set_size_request(self.hatari_wd, self.hatari_ht)
-        #TODO: self.set_widget_bg_image(widget, "hatari-bg.png")
-        widget.set_events(gtk.gdk.ALL_EVENTS_MASK)
-        widget.set_flags(gtk.CAN_FOCUS)
-
-        # where to put the Hatari window
-        self.hatariparent = widget
-
-        hbox = gtk.HBox()
-        hbox.add(widget)
-        hbox.add(vbox)
+    def create_mainwin(self, fullscreen):
+        # main window
         mainwin = gtk.Window(gtk.WINDOW_TOPLEVEL)
         mainwin.connect("destroy", self.mainwin_destroy)
+        mainwin.set_icon_from_file(self.icon)
+        mainwin.set_title(self.title)
+        
+        # add buttons
+        vbox = gtk.VBox()
+        buttons = [
+            ("Run Hatari!", self.run_clicked),
+            ("Pause", self.pause_clicked),
+            ("Configure", self.configure_clicked),
+            ("About", self.about_clicked),
+            ("Quit", self.mainwin_destroy)
+        ]
+        for label,cb in buttons:
+            button = gtk.Button(label)
+            # important, without these Hatari doesn't receive key events!
+            button.unset_flags(gtk.CAN_FOCUS)
+            button.connect("clicked", cb)
+            vbox.add(button)
+
+        # add Hatari parent container
+        socket = gtk.Socket()
+        # without this closing Hatari would remove the socket
+        socket.connect("plug-removed", connect_true)
+        socket.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
+        socket.set_size_request(self.hatari_wd, self.hatari_ht)
+        socket.set_events(gtk.gdk.ALL_EVENTS_MASK)
+        socket.set_flags(gtk.CAN_FOCUS)
+        self.hatariparent = socket
+        
+        # add these to main window
+        hbox = gtk.HBox()
+        hbox.add(socket)
+        hbox.add(vbox)
         mainwin.add(hbox)
         return mainwin
-    
-    def set_widget_bg_image(self, widget, image):
-        # works only for widgets with windows of their own
-        # such as top level window, eventbox or drawarea
-        pixbuf = gtk.gdk.pixbuf_new_from_file(image)
-        pixmap, mask = pixbuf.render_pixmap_and_mask()
-        del pixbuf
-        widget.set_app_paintable(True)
-        widget.window.set_back_pixmap(pixmap, False)
-        del pixmap
         
     def create_dialogs(self, parent):
         # load UI dialogs from glade file
@@ -125,78 +105,59 @@ class HatariUI():
         self.aboutdialog.set_transient_for(parent)
         self.killdialog.set_transient_for(parent)
         self.quitdialog.set_transient_for(parent)
-    
-    def ask_hatari_running(self):
-        # is hatari running?
-        if not self.hatari_pid:
-            return False
-        try:
-            pid,status = os.waitpid(self.hatari_pid, os.WNOHANG)
-        except OSError, value:
-            print "Hatari had exited in the meanwhile:\n\t", value
-            self.hatari_pid = 0
-            return False
-        # is running, OK to kill?
-        response = self.killdialog.run()
-        self.killdialog.hide()
-        if response == gtk.RESPONSE_OK:
-            os.kill(self.hatari_pid, signal.SIGKILL)
-            print "killed hatari with PID %d" % self.hatari_pid
-            self.hatari_pid = 0
-            return False
-        return True
         
     def about_clicked(self, widget):
         self.aboutdialog.run()
         self.aboutdialog.hide()
     
+    def keep_hatari_running(self):
+        if not self.hatari.is_running():
+            return False
+        # Hatari is running, OK to kill?
+        response = self.killdialog.run()
+        self.killdialog.hide()
+        if response == gtk.RESPONSE_OK:
+            self.hatari.stop()
+            return False
+        return True
+    
     def run_clicked(self, widget):
-        if self.ask_hatari_running():
+        if self.keep_hatari_running():
             return
-        pid = os.fork()
-        if pid < 0:
-            print "ERROR: fork()ing Hatari failed!"
+        self.hatari.run_embedded(self.hatariparent.window)
+
+    def mainwin_destroy(self, widget):
+        if self.keep_hatari_running():
             return
-        if pid:
-            # in parent
-            self.hatari_pid = pid
-        else:
-            # child runs Hatari
-            os.execvpe("hatari", self.get_hatari_args(), self.get_hatari_env())
-
-    def get_hatari_env(self):
-        window = self.hatariparent.window
-        if sys.platform == 'win32':
-            win_id = window.handle
-        else:
-            win_id = window.xid
-        env = os.environ
-        # tell SDL to use given widget's window
-        #env["SDL_WINDOWID"] = str(win_id)
-
-        # above is broken: when SDL uses a window it hasn't created itself,
-        # it for some reason doesn't listen to any events delivered to that
-        # window nor implements XEMBED protocol to get them in a way most
-        # friendly to embedder:
-        #   http://standards.freedesktop.org/xembed-spec/latest/
-        #
-        # Instead we tell hatari to reparent itself after creating
-        # its own window into this program widget window
-        env["PARENT_WIN_ID"] = str(win_id)
-        return env
-
-    def get_hatari_args(self):
-        print "TODO: get the Hatari options from configuration"
-        args = ("hatari", "-m", "-z", "2")
-        return args
+        if self.config.is_changed():
+            if self.quitdialog.run() == gtk.RESPONSE_OK:
+                gtk.main_quit()
+            self.quitdialog.hide()
 
     def configure_clicked(self, widget):
         print "TODO: configure dialog"
 
-    def maxspeed_clicked(self, widget):
-        print "TODO: maxspeed dialog"
+    def pause_clicked(self, widget):
+        if self.hatari.pause():
+            widget.set_label("Continue\n(paused)")
+        else:
+            self.hatari.unpause()
+            widget.set_label("Pause")
 
+
+def usage(msg):
+    print "\nusage: %s [-f]" % os.path.basename(sys.argv[0])
+    print "\noptions:"
+    print "\t-f\tstart in fullscreen"
+    print "\nERROR: %s\n" % msg
+    sys.exit(1)
 
 if __name__ == "__main__":
-    app = HatariUI()
-    gtk.main()
+    fullscreen = False
+    for arg in sys.argv[1:]:
+        if arg in ("-f"):
+            fullscreen = True
+        else:
+            usage("unknown option '%s'" % arg)
+    app = HatariUI(fullscreen)
+    app.run()
