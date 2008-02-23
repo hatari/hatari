@@ -8,6 +8,8 @@
 */
 
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "config.h"
 #include "main.h"
@@ -169,6 +171,43 @@ static char *Paths_InitExecDir(char *argv0)
 
 
 /**
+ * Initialize the users home directory string
+ * and Hatari's home directory (~/.hatari)
+ */
+static void Paths_InitHomeDirs(void)
+{
+	char *psHome;
+
+	psHome = getenv("HOME");
+	if (!psHome)
+	{
+		/* $HOME not set, so let's use current working dir as home */
+		strcpy(sUserHomeDir, sWorkingDir);
+		strcpy(sHatariHomeDir, sWorkingDir);
+	}
+	else
+	{
+		strncpy(sUserHomeDir, psHome, FILENAME_MAX);
+		sUserHomeDir[FILENAME_MAX-1] = 0;
+
+		/* Try to use a .hatari directory in the users home directory */
+		snprintf(sHatariHomeDir, FILENAME_MAX, "%s%c.hatari",
+		         sUserHomeDir, PATHSEP);
+		if (!File_DirectoryExists(sHatariHomeDir))
+		{
+			/* Hatari home directory does not exists yet...
+			 * ...so let's try to create it: */
+			if (mkdir(sHatariHomeDir, 0755) != 0)
+			{
+				/* Failed to create, so use user's home dir instead */
+				strcpy(sHatariHomeDir, sUserHomeDir);
+			}
+		}
+	}
+}
+
+
+/**
  * Initialize directory names
  *
  * The datadir will be initialized relative to the bindir (where the executable
@@ -179,23 +218,12 @@ static char *Paths_InitExecDir(char *argv0)
 void Paths_Init(char *argv0)
 {
 	char *psExecDir;  /* Path string where the hatari executable can be found */
-	char *pTmp;
 
 	/* Init working directory string */
 	getcwd(sWorkingDir, FILENAME_MAX);
 
 	/* Init the user's home directory string */
-	pTmp = getenv("HOME");
-	if (pTmp)
-	{
-		strncpy(sUserHomeDir, pTmp, FILENAME_MAX);
-		sUserHomeDir[FILENAME_MAX-1] = 0;
-	}
-	else
-	{
-		/* $HOME not set, so let's use current working dir as home */
-		strcpy(sUserHomeDir, sWorkingDir);
-	}
+	Paths_InitHomeDirs();
 
 	/* Get the directory where the executable resides */
 	psExecDir = Paths_InitExecDir(argv0);
@@ -217,4 +245,7 @@ void Paths_Init(char *argv0)
 	File_MakeAbsoluteName(sDataDir);
 
 	free(psExecDir);
+
+	/* fprintf(stderr, " WorkingDir = %s\n DataDir = %s\n UserHomeDir = %s\n HatariHomeDir = %s\n",
+	        sWorkingDir, sDataDir, sUserHomeDir, sHatariHomeDir); */
 }

@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.78 2008-02-23 15:30:46 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.79 2008-02-23 16:51:27 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -305,6 +305,7 @@ void Configuration_SetDefault(void)
 	const char *psHomeDir;
 	const char *psWorkingDir;
 
+	psHomeDir = Paths_GetHatariHome();
 	psWorkingDir = Paths_GetWorkingDir();
 
 	/* Assume first-time install */
@@ -382,13 +383,13 @@ void Configuration_SetDefault(void)
 	/* Set defaults for Memory */
 	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */
 	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s%chatari.sav",
-	        psWorkingDir, PATHSEP);
+	        psHomeDir, PATHSEP);
 
 	/* Set defaults for Printer */
 	ConfigureParams.Printer.bEnablePrinting = FALSE;
 	ConfigureParams.Printer.bPrintToFile = TRUE;
 	sprintf(ConfigureParams.Printer.szPrintToFileName, "%s%chatari.prn",
-	        psWorkingDir, PATHSEP);
+	        psHomeDir, PATHSEP);
 
 	/* Set defaults for RS232 */
 	ConfigureParams.RS232.bEnableRS232 = FALSE;
@@ -401,7 +402,7 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for Screen */
 	ConfigureParams.Screen.bFullScreen = FALSE;
-	ConfigureParams.Screen.FrameSkips = 1;
+	ConfigureParams.Screen.FrameSkips = 0;
 	ConfigureParams.Screen.bAllowOverscan = TRUE;
 	ConfigureParams.Screen.bForce8Bpp = FALSE;
 	ConfigureParams.Screen.bZoomLowRes = FALSE;
@@ -444,9 +445,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bSlowFDC = FALSE;
 
 	/* Initialize the configuration file name */
-	psHomeDir = Paths_GetUserHome();
 	if (strlen(psHomeDir) < sizeof(sConfigFileName)-13)
-		sprintf(sConfigFileName, "%s%c.hatari.cfg", psHomeDir, PATHSEP);
+		sprintf(sConfigFileName, "%s%chatari.cfg", psHomeDir, PATHSEP);
 	else
 		strcpy(sConfigFileName, "hatari.cfg");
 

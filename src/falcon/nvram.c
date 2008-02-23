@@ -27,13 +27,14 @@
 
   All other cells are reserved / unused.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.2 2007-02-13 20:44:38 simonsunnyboy Exp $";
+const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.3 2008-02-23 16:51:27 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
 #include "log.h"
 #include "nvram.h"
+#include "paths.h"
 #include "araglue.h"
 
 #define DEBUG 0
@@ -149,11 +150,13 @@ static void NvRam_SetChecksum(void)
  */
 void NvRam_Init(void)
 {
-	const char sBaseName[] = ".hatari.nvram";
+	const char sBaseName[] = "hatari.nvram";
+	char *psHomeDir;
+
 	// set up the nvram filename
-	if (getenv("HOME") != NULL
-	    && strlen(getenv("HOME"))+sizeof(sBaseName)+1 < sizeof(nvram_filename))
-		sprintf(nvram_filename, "%s%c%s", getenv("HOME"), PATHSEP, sBaseName);
+	psHomeDir = Paths_GetHatariHome();
+	if (strlen(psHomeDir)+sizeof(sBaseName)+1 < sizeof(nvram_filename))
+		sprintf(nvram_filename, "%s%c%s", psHomeDir, PATHSEP, sBaseName);
 	else
 		strcpy(nvram_filename, sBaseName);
 

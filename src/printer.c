@@ -12,16 +12,17 @@
   NOTE - Tab's are converted to spaces as the PC 'Tab' setting differs to that
   of the ST.
 */
-const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.22 2007-12-31 12:21:41 thothy Exp $";
+const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.23 2008-02-23 16:51:27 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "file.h"
+#include "paths.h"
 #include "printer.h"
 
 /* #define PRINTER_DEBUG */
 
-#define PRINTER_FILENAME "/hatari.prn"
+#define PRINTER_FILENAME "hatari.prn"
 
 #define PRINTER_TAB_SETTING  8          /* A 'Tab' on the ST is 8 spaces */
 #define PRINTER_IDLE_CLOSE   (4*50)     /* After 4 seconds, close printer */
@@ -59,15 +60,22 @@ void Printer_Init(void)
 
 	/* A valid file name for printing is already set up in configuration.c.
 	 * But we check it again since the user might have entered an invalid
-	 * file name in the ~/.hatari.cfg file... */
+	 * file name in the hatari.cfg file... */
 	if (strlen(ConfigureParams.Printer.szPrintToFileName) <= 1)
 	{
+		const char *psHomeDir;
+		psHomeDir = Paths_GetHatariHome();
+
 		/* construct filename for printing.... */
-		if (getenv("HOME") != NULL
-				&& strlen(getenv("HOME"))+strlen(PRINTER_FILENAME) < sizeof(ConfigureParams.Printer.szPrintToFileName))
-			sprintf(ConfigureParams.Printer.szPrintToFileName, "%s%s", getenv("HOME"), PRINTER_FILENAME);
+		if (strlen(psHomeDir)+1+strlen(PRINTER_FILENAME) < sizeof(ConfigureParams.Printer.szPrintToFileName))
+		{
+			sprintf(ConfigureParams.Printer.szPrintToFileName, "%s%c%s",
+			        psHomeDir, PATHSEP, PRINTER_FILENAME);
+		}
 		else
-			sprintf(ConfigureParams.Printer.szPrintToFileName, ".%s",PRINTER_FILENAME);
+		{
+			strcpy(ConfigureParams.Printer.szPrintToFileName, PRINTER_FILENAME);
+		}
 	}
 
 #ifdef PRINTER_DEBUG
