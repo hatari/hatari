@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.80 2008-02-24 20:10:47 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.81 2008-02-24 22:28:43 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -384,7 +384,7 @@ void Configuration_SetDefault(void)
 	
 	/* Set defaults for Memory */
 	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */
-	ConfigureParams.Memory.bAutoSave = TRUE;
+	ConfigureParams.Memory.bAutoSave = FALSE;
 	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s%chatari.sav",
 	        psHomeDir, PATHSEP);
 	sprintf(ConfigureParams.Memory.szAutoSaveFileName, "%s%cauto.sav",
