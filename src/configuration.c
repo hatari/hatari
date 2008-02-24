@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.81 2008-02-24 22:28:43 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.82 2008-02-24 22:34:58 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -427,7 +427,7 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableSound = TRUE;
-	ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
+	ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
 	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s%chatari.wav",
 	        psWorkingDir, PATHSEP);
 
@@ -439,7 +439,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for System */
 	ConfigureParams.System.nCpuLevel = 0;
 	ConfigureParams.System.nCpuFreq = 8;
-	ConfigureParams.System.bCompatibleCpu = FALSE;
+	ConfigureParams.System.bCompatibleCpu = TRUE;
 	/*ConfigureParams.System.bAddressSpace24 = TRUE;*/
 	ConfigureParams.System.nMachineType = MACHINE_ST;
 	ConfigureParams.System.bBlitter = FALSE;
