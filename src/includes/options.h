@@ -7,6 +7,9 @@
 #ifndef HATARI_OPTIONS_H
 #define HATARI_OPTIONS_H
 
+extern BOOL bLoadAutoSave;
+extern BOOL bLoadMemorySave;
+
 /* parses all Hatari command line options and sets Hatari state accordingly,
  * returns boot disk image name (empty if not set)
  */

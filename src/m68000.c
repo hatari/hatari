@@ -40,7 +40,7 @@
 /*	mul/div div/mul				*/
 
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.54 2008-02-24 20:10:47 thothy Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.55 2008-02-24 20:45:30 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -50,6 +50,7 @@ const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.54 2008-02-24 20:10:47 tho
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
+#include "options.h"
 #include "savestate.h"
 #include "stMemory.h"
 #include "tos.h"
@@ -180,9 +181,13 @@ void M68000_Start(void)
 {
 	m68k_reset();
 
-	if (ConfigureParams.Memory.bAutoSave)
+	/* Load initial memory snapshot */
+	if (bLoadMemorySave)
 	{
-		/* Load initial memory snapshot */
+		MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, FALSE);
+	}
+	else if (bLoadAutoSave)
+	{
 		MemorySnapShot_Restore(ConfigureParams.Memory.szAutoSaveFileName, FALSE);
 	}
 

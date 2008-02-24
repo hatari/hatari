@@ -14,7 +14,7 @@
 
 /* 2007/09/27   [NP]    Add parsing for the '--trace' option.				*/
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.32 2008-02-03 22:52:55 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.33 2008-02-24 20:45:30 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -33,6 +33,10 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.32 2008-02-03 22:52:55 thot
 #include "trace.h"
 
 #include "hatari-glue.h"
+
+
+BOOL bLoadAutoSave;        /* Load autosave memory snapshot at startup */
+BOOL bLoadMemorySave;      /* Load memory snapshot provided via option at startup */
 
 
 /*  List of supported options. */
@@ -73,6 +77,7 @@ enum {
 	OPT_SLOWFDC,
 	OPT_MACHINE,
 	OPT_TRACE,
+	OPT_MEMSTATE,
 	OPT_NONE,
 };
 
@@ -158,6 +163,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
 	{ OPT_TRACE,   NULL, "--trace",
 	  "<trace1,...>", "Activate debugging traces. Use --trace help to see all options" },
+	{ OPT_MEMSTATE,   NULL, "--memstate",
+	  "<file>", "Load memory snap-shot <file>" },
 	{ OPT_NONE, NULL, NULL, NULL, NULL }
 };
 
@@ -374,7 +381,11 @@ void Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
 	int i, ncpu, skips, zoom, planes;
-	
+
+	/* Defaults for loading initial memory snap-shots*/
+	bLoadMemorySave = FALSE;
+	bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
+
 	for(i = 1; i < argc; i++)
 	{	
 		if (argv[i][0] != '-')
@@ -385,6 +396,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			{
 				strcpy(bootdisk, argv[i]);
 				File_MakeAbsoluteName(bootdisk);
+				bLoadAutoSave = FALSE;
 			}
 			else
 			{
@@ -415,6 +427,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 		case OPT_MONO:
 			ConfigureParams.Screen.MonitorType = MONITOR_TYPE_MONO;
+			bLoadAutoSave = FALSE;
 			break;
 
 		case OPT_MONITOR:
@@ -439,6 +452,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			{
 				Opt_ShowExit(OPT_MONITOR, argv[i], "Unknown monitor type");
 			}
+			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_FULLSCREEN:
@@ -541,6 +555,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			Opt_StrCpy(OPT_ACSIHDIMAGE, TRUE, ConfigureParams.HardDisk.szHardDiskImage,
 			           argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskImage));
 			ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
+			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_IDEHDIMAGE:
@@ -548,6 +563,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			Opt_StrCpy(OPT_IDEHDIMAGE, TRUE, ConfigureParams.HardDisk.szIdeHardDiskImage,
 			           argv[i], sizeof(ConfigureParams.HardDisk.szIdeHardDiskImage));
 			ConfigureParams.HardDisk.bUseIdeHardDiskImage = TRUE;
+			bLoadAutoSave = FALSE;
 			break;
 
 		case OPT_HARDDRIVE:
@@ -556,18 +572,21 @@ void Opt_ParseParameters(int argc, char *argv[],
 			           argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]));
 			ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
 			ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
+			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_TOS:
 			i += 1;
 			Opt_StrCpy(OPT_TOS, TRUE, ConfigureParams.Rom.szTosImageFileName,
 			           argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName));
+			bLoadAutoSave = FALSE;
 			break;
       
 		case OPT_CARTRIDGE:
 			i += 1;
 			Opt_StrCpy(OPT_CARTRIDGE, TRUE, ConfigureParams.Rom.szCartridgeImageFileName,
 			           argv[i], sizeof(ConfigureParams.Rom.szCartridgeImageFileName));
+			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_CPULEVEL:
@@ -579,14 +598,17 @@ void Opt_ParseParameters(int argc, char *argv[],
 				ncpu = 0;
 			}
 			ConfigureParams.System.nCpuLevel = ncpu;
+			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_COMPATIBLE:
 			ConfigureParams.System.bCompatibleCpu = TRUE;
+			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_BLITTER:
 			ConfigureParams.System.bBlitter = TRUE;
+			bLoadAutoSave = FALSE;
 			break;			
 
 		case OPT_DSP:
@@ -611,6 +633,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			{
 				Opt_ShowExit(OPT_NONE, argv[i], "Unknown DSP type");
 			}
+			bLoadAutoSave = FALSE;
 			break;
 
 		case OPT_VDI_PLANES:
@@ -630,20 +653,24 @@ void Opt_ParseParameters(int argc, char *argv[],
 				Opt_ShowExit(OPT_NONE, argv[i], "Unsupported VDI bit-depth");
 			}
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
+			bLoadAutoSave = FALSE;
 			break;
 
 		case OPT_VDI_WIDTH:
 			ConfigureParams.Screen.nVdiWidth = atoi(argv[++i]);
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
+			bLoadAutoSave = FALSE;
 			break;
 
 		case OPT_VDI_HEIGHT:
 			ConfigureParams.Screen.nVdiHeight = atoi(argv[++i]);
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
+			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_SLOWFDC:
 			ConfigureParams.System.bSlowFDC = TRUE;
+			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_MEMSIZE:
@@ -655,6 +682,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 					ConfigureParams.Memory.nMemorySize);
 				ConfigureParams.Memory.nMemorySize = 1;
 			}
+			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_CONFIGFILE:
@@ -662,6 +690,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			Opt_StrCpy(OPT_CONFIGFILE, TRUE, sConfigFileName,
 			           argv[i], sizeof(sConfigFileName));
 			Configuration_Load(NULL);
+			bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
 			break;
 
 		case OPT_KEYMAPFILE:
@@ -701,14 +730,23 @@ void Opt_ParseParameters(int argc, char *argv[],
 			{
 				Opt_ShowExit(OPT_NONE, argv[i], "Unknown machine type");
 			}
+			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_TRACE:
 			i += 1;
-			if ( ParseTraceOptions ( argv[i] ) == 0 )
+			if (ParseTraceOptions(argv[i]) == 0)
 			{
 				Opt_ShowExit(OPT_NONE, argv[i], "Error parsing trace options (use --trace help for available list)!\n");
 			}
+			break;
+
+		case OPT_MEMSTATE:
+			i += 1;
+			Opt_StrCpy(OPT_MEMSTATE, TRUE, ConfigureParams.Memory.szMemoryCaptureFileName,
+			           argv[i], sizeof(ConfigureParams.Memory.szMemoryCaptureFileName));
+			bLoadMemorySave = TRUE;
+			bLoadAutoSave = FALSE;
 			break;
 
 		default:
