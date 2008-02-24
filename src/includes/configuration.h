@@ -98,7 +98,9 @@ typedef struct
 typedef struct
 {
   int nMemorySize;
+  BOOL bAutoSave;
   char szMemoryCaptureFileName[FILENAME_MAX];
+  char szAutoSaveFileName[FILENAME_MAX];
 } CNF_MEMORY;
 
 

@@ -16,7 +16,6 @@ extern int pendingInterrupts;
 
 int Init680x0(void);
 void Exit680x0(void);
-void Start680x0(void);
 void customreset(void);
 int intlev (void);
 

@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.114 2008-02-20 22:47:37 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.115 2008-02-24 20:10:47 thothy Exp $";
 
 #include "config.h"
 
@@ -129,7 +129,12 @@ void Main_UnPauseEmulation(void)
  */
 void Main_RequestQuit(void)
 {
-	if (ConfigureParams.Log.bConfirmQuit)
+	if (ConfigureParams.Memory.bAutoSave)
+	{
+		bQuitProgram = TRUE;
+		MemorySnapShot_Capture(ConfigureParams.Memory.szAutoSaveFileName, FALSE);
+	}
+	else if (ConfigureParams.Log.bConfirmQuit)
 	{
 		bQuitProgram = FALSE;	/* if set TRUE, dialog exits */
 		bQuitProgram = DlgAlert_Query("All unsaved data will be lost.\nDo you really want to quit?");
@@ -138,6 +143,7 @@ void Main_RequestQuit(void)
 	{
 		bQuitProgram = TRUE;
 	}
+
 	if (bQuitProgram)
 	{
 		/* Assure that CPU core shuts down */
@@ -527,7 +533,7 @@ int main(int argc, char *argv[])
 
 	/* Run emulation */
 	Main_UnPauseEmulation();
-	Start680x0();                 /* Start emulation */
+	M68000_Start();                 /* Start emulation */
 
 	/* Un-init emulation system */
 	Main_UnInit();

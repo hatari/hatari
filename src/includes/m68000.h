@@ -130,6 +130,7 @@ static inline void M68000_AddCycles(int cycles)
 
 extern void M68000_InitPairing(void);
 extern void M68000_Reset(BOOL bCold);
+extern void M68000_Start(void);
 extern void M68000_CheckCpuLevel(void);
 extern void M68000_MemorySnapShot_Capture(BOOL bSave);
 extern void M68000_BusError(Uint32 addr, BOOL bReadWrite);

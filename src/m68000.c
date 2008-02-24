@@ -40,7 +40,7 @@
 /*	mul/div div/mul				*/
 
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.53 2008-02-16 18:05:18 npomarede Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.54 2008-02-24 20:10:47 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -169,6 +169,24 @@ void M68000_Reset(BOOL bCold)
 
 	/* Init the pairing matrix */
 	M68000_InitPairing();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Reset and start 680x0 emulation
+ */
+void M68000_Start(void)
+{
+	m68k_reset();
+
+	if (ConfigureParams.Memory.bAutoSave)
+	{
+		/* Load initial memory snapshot */
+		MemorySnapShot_Restore(ConfigureParams.Memory.szAutoSaveFileName, FALSE);
+	}
+
+	m68k_go(TRUE);
 }
 
 

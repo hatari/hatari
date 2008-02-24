@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-const char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.28 2007-10-04 20:22:14 thothy Exp $";
+const char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.29 2008-02-24 20:10:48 thothy Exp $";
 
 
 #include <stdio.h>
@@ -89,14 +89,6 @@ void Exit680x0(void)
 
   free(table68k);
   table68k = NULL;
-}
-
-
-/* Reset and start 680x0 emulation */
-void Start680x0(void)
-{
-  m68k_reset();
-  m68k_go(TRUE);
 }
 
 

@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.36 2008-02-19 18:51:05 eerot Exp $";
+const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.37 2008-02-24 20:10:47 thothy Exp $";
 
 #include <config.h>
 
@@ -225,7 +225,7 @@ void MemorySnapShot_Store(void *pData, int Size)
 /**
  * Save 'snapshot' of memory/chips/emulation variables
  */
-void MemorySnapShot_Capture(const char *pszFileName)
+void MemorySnapShot_Capture(const char *pszFileName, BOOL bConfirm)
 {
 	/* Set to 'saving' */
 	if (MemorySnapShot_OpenFile(pszFileName,TRUE))
@@ -254,7 +254,7 @@ void MemorySnapShot_Capture(const char *pszFileName)
 	/* Did error */
 	if (bCaptureError)
 		Log_AlertDlg(LOG_ERROR, "Unable to save memory state to file.");
-	else
+	else if (bConfirm)
 		Log_AlertDlg(LOG_INFO, "Memory state file saved.");
 }
 
@@ -263,7 +263,7 @@ void MemorySnapShot_Capture(const char *pszFileName)
 /**
  * Restore 'snapshot' of memory/chips/emulation variables
  */
-void MemorySnapShot_Restore(const char *pszFileName)
+void MemorySnapShot_Restore(const char *pszFileName, BOOL bConfirm)
 {
 	/* Set to 'restore' */
 	if (MemorySnapShot_OpenFile(pszFileName,FALSE))
@@ -297,7 +297,7 @@ void MemorySnapShot_Restore(const char *pszFileName)
 	/* Did error? */
 	if (bCaptureError)
 		Log_AlertDlg(LOG_ERROR, "Unable to restore memory state from file.");
-	else
+	else if (bConfirm)
 		Log_AlertDlg(LOG_INFO, "Memory state file restored.");
 }
 

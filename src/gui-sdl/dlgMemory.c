@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.13 2008-02-23 22:16:07 thothy Exp $";
+const char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.14 2008-02-24 20:10:47 thothy Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -23,7 +23,8 @@ const char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.13 2008-02-23 22:16:
 #define DLGMEM_FILENAME 13
 #define DLGMEM_SAVE     14
 #define DLGMEM_RESTORE  15
-#define DLGMEM_EXIT     16
+#define DLGMEM_AUTOSAVE 16
+#define DLGMEM_EXIT     17
 
 
 static char dlgSnapShotName[36+1];
@@ -32,7 +33,7 @@ static char dlgSnapShotName[36+1];
 /* The memory dialog: */
 static SGOBJ memorydlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 40,21, NULL },
+	{ SGBOX, 0, 0, 0,0, 40,22, NULL },
 
 	{ SGBOX, 0, 0, 1,1, 38,7, NULL },
 	{ SGTEXT, 0, 0, 15,2, 12,1, "Memory setup" },
@@ -44,14 +45,15 @@ static SGOBJ memorydlg[] =
 	{ SGRADIOBUT, 0, 0, 29,5, 7,1, "8 MiB" },
 	{ SGRADIOBUT, 0, 0, 29,6, 8,1, "14 MiB" },
 
-	{ SGBOX, 0, 0, 1,9, 38,8, NULL },
+	{ SGBOX, 0, 0, 1,9, 38,10, NULL },
 	{ SGTEXT, 0, 0, 12,10, 17,1, "Memory state save" },
 	{ SGTEXT, 0, 0, 2,12, 20,1, "Snap-shot file name:" },
 	{ SGTEXT, 0, 0, 2,13, 36,1, dlgSnapShotName },
 	{ SGBUTTON, 0, 0, 8,15, 10,1, "Save" },
 	{ SGBUTTON, 0, 0, 22,15, 10,1, "Restore" },
+	{ SGCHECKBOX, 0, 0, 2,17, 37,1, "Load/save state at start-up/exit" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 10,19, 20,1, "Back to main menu" },
+	{ SGBUTTON, SG_DEFAULT, 0, 10,20, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -96,6 +98,12 @@ void Dialog_MemDlg(void)
 
 	File_ShrinkName(dlgSnapShotName, DialogParams.Memory.szMemoryCaptureFileName, memorydlg[DLGMEM_FILENAME].w);
 
+
+	if (DialogParams.Memory.bAutoSave)
+		memorydlg[DLGMEM_AUTOSAVE].state |= SG_SELECTED;
+	else
+		memorydlg[DLGMEM_AUTOSAVE].state &= ~SG_SELECTED;
+
 	do
 	{
 		but = SDLGui_DoDialog(memorydlg, NULL);
@@ -106,18 +114,20 @@ void Dialog_MemDlg(void)
 			if (SDLGui_FileConfSelect(dlgSnapShotName,
 			                          DialogParams.Memory.szMemoryCaptureFileName,
 			                          memorydlg[DLGMEM_FILENAME].w, TRUE))
-				MemorySnapShot_Capture(DialogParams.Memory.szMemoryCaptureFileName);
+				MemorySnapShot_Capture(DialogParams.Memory.szMemoryCaptureFileName, TRUE);
 			break;
 		 case DLGMEM_RESTORE:           /* Load memory snap-shot */
 			if (SDLGui_FileConfSelect(dlgSnapShotName,
 			                          DialogParams.Memory.szMemoryCaptureFileName,
 			                          memorydlg[DLGMEM_FILENAME].w, FALSE))
-				MemorySnapShot_Restore(DialogParams.Memory.szMemoryCaptureFileName);
+				MemorySnapShot_Restore(DialogParams.Memory.szMemoryCaptureFileName, TRUE);
 			break;
 		}
 	}
 	while (but != DLGMEM_EXIT && but != SDLGUI_QUIT
 	        && but != SDLGUI_ERROR && !bQuitProgram );
+
+	/* Read new values from dialog: */
 
 	if (memorydlg[DLGMEM_512KB].state & SG_SELECTED)
 		DialogParams.Memory.nMemorySize = 0;
@@ -131,4 +141,6 @@ void Dialog_MemDlg(void)
 		DialogParams.Memory.nMemorySize = 8;
 	else
 		DialogParams.Memory.nMemorySize = 14;
+
+	DialogParams.Memory.bAutoSave = (memorydlg[DLGMEM_AUTOSAVE].state & SG_SELECTED);
 }
