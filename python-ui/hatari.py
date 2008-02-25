@@ -38,7 +38,8 @@ class Hatari():
             return False
         return True
     
-    def run_embedded(self, window):
+    def run(self, parent_win = None):
+        # if parent_win given, embed Hatari to it
         pid = os.fork()
         if pid < 0:
             print "ERROR: fork()ing Hatari failed!"
@@ -49,15 +50,17 @@ class Hatari():
         else:
             # child runs Hatari
             args = self.get_args()
-            env = self.get_env(window)
+            env = self.get_env(parent_win)
             os.execvpe("hatari", args, env)
 
-    def get_env(self, window):
-        if sys.platform == 'win32':
-            win_id = window.handle
-        else:
-            win_id = window.xid
+    def get_env(self, parent_win):
         env = os.environ
+        if not parent_win:
+            return env
+        if sys.platform == 'win32':
+            win_id = parent_win.handle
+        else:
+            win_id = parent_win.xid
         # tell SDL to use given widget's window
         #env["SDL_WINDOWID"] = str(win_id)
 

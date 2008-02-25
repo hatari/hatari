@@ -42,11 +42,12 @@ class HatariUI():
     hatari_wd = 640
     hatari_ht = 400
 
-    def __init__(self, fullscreen):
+    def __init__(self, fullscreen = False, embed = False):
         self.config = Config()
         self.hatari = Hatari()
         # just instantiate all UI windows/widgets...
-        mainwin = self.create_mainwin(fullscreen)
+        self.hatariparent = None
+        mainwin = self.create_mainwin(embed)
         if fullscreen:
             mainwin.fullscreen()
         self.create_dialogs(mainwin)
@@ -55,7 +56,7 @@ class HatariUI():
     def run(self):
         gtk.main()
 
-    def create_mainwin(self, fullscreen):
+    def create_mainwin(self, embed):
         # main window
         mainwin = gtk.Window(gtk.WINDOW_TOPLEVEL)
         mainwin.connect("delete_event", self.prevent_mainwin_close)
@@ -77,7 +78,18 @@ class HatariUI():
             button.unset_flags(gtk.CAN_FOCUS)
             button.connect("clicked", cb)
             vbox.add(button)
-
+        # what to add to mainwindow
+        if embed:
+            hbox = gtk.HBox()
+            self.hatariparent = self.create_socket()
+            hbox.add(self.hatariparent)
+            hbox.add(vbox)
+            mainwin.add(hbox)
+        else:
+            mainwin.add(vbox)
+        return mainwin
+    
+    def create_socket(self):
         # add Hatari parent container
         socket = gtk.Socket()
         # without this closing Hatari would remove the socket
@@ -86,15 +98,8 @@ class HatariUI():
         socket.set_size_request(self.hatari_wd, self.hatari_ht)
         socket.set_events(gtk.gdk.ALL_EVENTS_MASK)
         socket.set_flags(gtk.CAN_FOCUS)
-        self.hatariparent = socket
-        
-        # add these to main window
-        hbox = gtk.HBox()
-        hbox.add(socket)
-        hbox.add(vbox)
-        mainwin.add(hbox)
-        return mainwin
-        
+        return socket
+    
     def create_dialogs(self, parent):
         # load UI dialogs from glade file
         wtree = gtk.glade.XML(self.gladefile)
@@ -122,7 +127,10 @@ class HatariUI():
     def run_clicked(self, widget):
         if self.keep_hatari_running():
             return
-        self.hatari.run_embedded(self.hatariparent.window)
+        if self.hatariparent:
+            self.hatari.run(self.hatariparent.window)
+        else:
+            self.hatari.run()
 
     def prevent_mainwin_close(self, widget, arg):
         if self.keep_hatari_running():
@@ -160,15 +168,19 @@ def usage(msg):
     print "\nusage: %s [-f]" % os.path.basename(sys.argv[0])
     print "\noptions:"
     print "\t-f\tstart in fullscreen"
+    print "\t-e\tembed Hatari window"
     print "\nERROR: %s\n" % msg
     sys.exit(1)
 
 if __name__ == "__main__":
+    embed = False
     fullscreen = False
     for arg in sys.argv[1:]:
-        if arg in ("-f"):
+        if arg == "-f":
             fullscreen = True
+        elif arg == "-e":
+            embed = True
         else:
             usage("unknown option '%s'" % arg)
-    app = HatariUI(fullscreen)
+    app = HatariUI(fullscreen, embed)
     app.run()
