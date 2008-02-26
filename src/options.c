@@ -14,7 +14,7 @@
 
 /* 2007/09/27   [NP]    Add parsing for the '--trace' option.				*/
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.33 2008-02-24 20:45:30 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.34 2008-02-26 20:50:57 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -114,7 +114,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_BORDERS, NULL, "--borders",
 	  NULL, "Show screen borders (for overscan demos etc)" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
-	  "<port>", "Emulate joystick in <port> 0 or 1 with cursor keys" },
+	  "<port>", "Emulate joystick with cursor keys in given port (0-5)" },
 	{ OPT_NOSOUND,   NULL, "--nosound",
 	  NULL, "Disable sound (faster!)" },
 	{ OPT_DEBUG,     "-D", "--debug",
@@ -162,7 +162,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_MACHINE,   NULL, "--machine",
 	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
 	{ OPT_TRACE,   NULL, "--trace",
-	  "<trace1,...>", "Activate debugging traces. Use --trace help to see all options" },
+	  "<trace1,...>", "Activate debug traces, see --trace help for options" },
 	{ OPT_MEMSTATE,   NULL, "--memstate",
 	  "<file>", "Load memory snap-shot <file>" },
 	{ OPT_NONE, NULL, NULL, NULL, NULL }
