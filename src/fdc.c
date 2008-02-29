@@ -15,7 +15,7 @@
 
 /* 2007/11/06   [NP]    Add calls to HATARI_TRACE and set FDC_DELAY_HBL=180		*/
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.33 2008-01-24 18:53:57 thothy Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.34 2008-02-29 21:11:12 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -160,8 +160,6 @@ static unsigned short int nReadWriteSectorsPerTrack;
 static short int nReadWriteSectors;
 
 static Uint8 DMASectorWorkSpace[NUMBYTESPERSECTOR];             /* Workspace used to copy to/from for floppy DMA */
-
-static int nFdcDelayHbls;                                       /* Used to slow down FDC emulation */
 
 
 /*-----------------------------------------------------------------------*/
@@ -425,7 +423,11 @@ void FDC_GpipRead(void)
 	if ((MFP_GPIP & 0x20) == nLastGpipBit)
 	{
 		if (!ConfigureParams.System.bSlowFDC)
-			nFdcDelayHbls = 0;
+		{
+			/* Restart FDC update interrupt to occur right after a few cycles */
+			Int_RemovePendingInterrupt(INTERRUPT_FDC);
+			Int_AddRelativeInterrupt(32, INT_CPU_CYCLE, INTERRUPT_FDC, 0);
+		}
 	}
 	else
 	{
@@ -436,17 +438,16 @@ void FDC_GpipRead(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Update floppy drive on each HBL (approx' 512 cycles)
+ * Update floppy drive after a while.
+ * Some games/demos (e.g. Fantasia by Dune, Alien World, ...) don't work
+ * if the FDC is too fast. So we use the update "interrupt" for delayed
+ * execution of the commands.
+ * FIXME: We urgently need better timings here!
  */
-void FDC_UpdateHBL(void)
+void FDC_InterruptHandler_Update(void)
 {
-	/* Seems like some games/demos (e.g. Fantasia by Dune, Alien World, ...) don't
-	 * work if the FDC is too fast... so here's a quick-n-dirty hack to get them
-	 * working... Should be replaced with proper FDC timings one day! */
-	if (nFdcDelayHbls-- > 0)
-		return;
-	else
-		nFdcDelayHbls = FDC_DELAY_HBL;
+	Int_AcknowledgeInterrupt();
+	Int_AddAbsoluteInterrupt(FDC_DELAY_CYCLES,  INT_CPU_CYCLE, INTERRUPT_FDC);
 
 	/* Do we have a DMA ready to copy? */
 	if (bDMAWaiting)

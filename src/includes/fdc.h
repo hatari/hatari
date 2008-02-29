@@ -81,8 +81,8 @@ enum
 
 /* Commands are taking the equivalent of FDC_HBL_DELAY hbl's to execute */
 /* to try to simulate the speed of a real ST floppy drive */
-#define FDC_DELAY_HBL		180
-//#define FDC_DELAY_HBL		3	// 'Just Bugging Demo' by ACF requires a very fast delay (bug in the loader)
+#define FDC_DELAY_CYCLES		92160
+//#define FDC_DELAY_CYCLES		1536	// 'Just Bugging Demo' by ACF requires a very fast delay (bug in the loader)
 
 
 extern Sint16 FDCSectorCountRegister;
@@ -98,7 +98,7 @@ extern void FDC_DmaStatus_ReadWord(void);
 extern int FDC_FindFloppyDrive(void);
 extern void FDC_AcknowledgeInterrupt(void);
 extern void FDC_GpipRead(void);
-extern void FDC_UpdateHBL(void);
+extern void FDC_InterruptHandler_Update(void);
 extern void FDC_UpdateRestoreCmd(void);
 extern void FDC_UpdateSeekCmd(void);
 extern void FDC_UpdateStepCmd(void);

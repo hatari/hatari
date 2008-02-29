@@ -114,7 +114,7 @@
 /* 2008/02/20	[NP]	Better handling in Video_ScreenCounter_WriteByte by changing only one	*/
 /*			byte and keeping the other (Braindamage End Part).			*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.93 2008-02-20 20:31:37 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.94 2008-02-29 21:11:12 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -1178,8 +1178,7 @@ void Video_InterruptHandler_EndLine(void)
 			MFP_TimerB_EventCount_Interrupt();
 	}
 
-	FDC_UpdateHBL();             /* Update FDC motion */
-//	Video_EndHBL();              /* Increase HBL count, copy line to display buffer and do any video trickery */
+	//Video_EndHBL();  /* now done in Video_InterruptHandler_HBL */
 
 	/* If we don't often pump data into the event queue, the SDL misses events... grr... */
 	if (!(nHBL & 63))
