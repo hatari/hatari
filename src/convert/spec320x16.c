@@ -73,8 +73,6 @@ static void ConvertSpec512_320x16Bit(void)
 			PLOT_SPEC512_END_LOW_320_16BIT(13) ;
 
 #else
-			/* Well, I didn't get the code above working on big-endian  machines, too,
-			 * But I hope the following lines are good enough to also do the job... */
 
 			LOW_BUILD_PIXELS_0 ;
 			pixelspace[3] = ecx;
@@ -86,20 +84,23 @@ static void ConvertSpec512_320x16Bit(void)
 			pixelspace[0] = ecx;
 
 			ecx = pixelspace[0];
-			PLOT_SPEC512_MID_320_16BIT(0) ;
+			PLOT_SPEC512_LEFT_LOW_320_16BIT(0);
 			Spec512_UpdatePaletteSpan();
 
-			ecx = pixelspace[1];
-			PLOT_SPEC512_MID_320_16BIT(4) ;
+			ecx = (pixelspace[0] >> 8) | (((Uint8)pixelspace[1])<<24);
+			PLOT_SPEC512_MID_320_16BIT(1);
 			Spec512_UpdatePaletteSpan();
 
-			ecx = pixelspace[2];
-			PLOT_SPEC512_MID_320_16BIT(8) ;
+			ecx = (pixelspace[1] >> 8) | (((Uint8)pixelspace[2])<<24);
+			PLOT_SPEC512_MID_320_16BIT(5);
 			Spec512_UpdatePaletteSpan();
 
-			ecx = pixelspace[3];
-			PLOT_SPEC512_MID_320_16BIT(12) ;
+			ecx = (pixelspace[2] >> 8) | (((Uint8)pixelspace[3])<<24);
+			PLOT_SPEC512_MID_320_16BIT(9);
 			Spec512_UpdatePaletteSpan();
+
+			ecx = (pixelspace[3] >> 8);
+			PLOT_SPEC512_END_LOW_320_16BIT(13);
 
 #endif
 

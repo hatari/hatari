@@ -98,8 +98,6 @@ static void ConvertSpec512_640x16Bit(void)
 			}
 
 #else
-			/* I didn't get the code above working on big-endian  machines, too,
-			 * But I hope the following lines are good enough to do the job... */
 
 			LOW_BUILD_PIXELS_0 ;
 			pixelspace[3] = ecx;
@@ -110,41 +108,47 @@ static void ConvertSpec512_640x16Bit(void)
 			LOW_BUILD_PIXELS_3 ;
 			pixelspace[0] = ecx;
 
-			if (!bScrDoubleY)                 /* Double on Y? */
+			if (!bScrDoubleY)           /* Double on Y? */
 			{
 				ecx = pixelspace[0];
-				PLOT_SPEC512_MID_640_16BIT(0) ;
+				PLOT_SPEC512_LEFT_LOW_640_16BIT(0);
 				Spec512_UpdatePaletteSpan();
 
-				ecx = pixelspace[1];
-				PLOT_SPEC512_MID_640_16BIT(4) ;
+				ecx = (pixelspace[0] >> 8) | (((Uint8)pixelspace[1])<<24);
+				PLOT_SPEC512_MID_640_16BIT(1);
 				Spec512_UpdatePaletteSpan();
 
-				ecx = pixelspace[2];
-				PLOT_SPEC512_MID_640_16BIT(8) ;
+				ecx = (pixelspace[1] >> 8) | (((Uint8)pixelspace[2])<<24);
+				PLOT_SPEC512_MID_640_16BIT(5);
 				Spec512_UpdatePaletteSpan();
 
-				ecx = pixelspace[3];
-				PLOT_SPEC512_MID_640_16BIT(12) ;
+				ecx = (pixelspace[2] >> 8) | (((Uint8)pixelspace[3])<<24);
+				PLOT_SPEC512_MID_640_16BIT(9);
 				Spec512_UpdatePaletteSpan();
+
+				ecx = (pixelspace[3] >> 8);
+				PLOT_SPEC512_END_LOW_640_16BIT(13);
 			}
 			else
 			{
 				ecx = pixelspace[0];
-				PLOT_SPEC512_MID_640_16BIT_DOUBLE_Y(0) ;
+				PLOT_SPEC512_LEFT_LOW_640_16BIT_DOUBLE_Y(0);
 				Spec512_UpdatePaletteSpan();
 
-				ecx = pixelspace[1];
-				PLOT_SPEC512_MID_640_16BIT_DOUBLE_Y(4) ;
+				ecx = (pixelspace[0] >> 8) | (((Uint8)pixelspace[1])<<24);
+				PLOT_SPEC512_MID_640_16BIT_DOUBLE_Y(1);
 				Spec512_UpdatePaletteSpan();
 
-				ecx = pixelspace[2];
-				PLOT_SPEC512_MID_640_16BIT_DOUBLE_Y(8) ;
+				ecx = (pixelspace[1] >> 8) | (((Uint8)pixelspace[2])<<24);
+				PLOT_SPEC512_MID_640_16BIT_DOUBLE_Y(5);
 				Spec512_UpdatePaletteSpan();
 
-				ecx = pixelspace[3];
-				PLOT_SPEC512_MID_640_16BIT_DOUBLE_Y(12) ;
+				ecx = (pixelspace[2] >> 8) | (((Uint8)pixelspace[3])<<24);
+				PLOT_SPEC512_MID_640_16BIT_DOUBLE_Y(9);
 				Spec512_UpdatePaletteSpan();
+
+				ecx = (pixelspace[3] >> 8);
+				PLOT_SPEC512_END_LOW_640_16BIT_DOUBLE_Y(13);
 			}
 
 #endif
