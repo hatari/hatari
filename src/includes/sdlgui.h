@@ -28,6 +28,7 @@ enum
 #define SG_TOUCHEXIT   1   /* Exit immediately when mouse button is pressed down */
 #define SG_EXIT        2   /* Exit when mouse button has been pressed (and released) */
 #define SG_DEFAULT     4   /* Marks a default button, selectable with return key */
+#define SG_CANCEL      8   /* Marks a cancel button, selectable with ESC key */
 
 /* Object states: */
 #define SG_SELECTED   1

@@ -6,7 +6,7 @@
 
   The main dialog.
 */
-const char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.13 2008-02-23 22:16:07 thothy Exp $";
+const char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.14 2008-02-29 20:24:21 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -54,7 +54,7 @@ static SGOBJ maindlg[] =
 	{ SGRADIOBUT, 0, 0, 2,18, 10,1, "No Reset" },
 	{ SGRADIOBUT, 0, 0, 2,20, 10,1, "Reset ST" },
 	{ SGBUTTON, SG_DEFAULT, 0, 14,18, 8,3, "Okay" },
-	{ SGBUTTON, 0, 0, 25,20, 8,1, "Cancel" },
+	{ SGBUTTON, SG_CANCEL, 0, 25,20, 8,1, "Cancel" },
 	{ SGBUTTON, 0, 0, 25,18, 8,1, "Quit" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };

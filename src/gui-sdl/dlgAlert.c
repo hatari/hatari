@@ -16,7 +16,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License (gpl.txt) for more details.
  */
-const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.11 2007-11-25 14:05:48 thothy Exp $";
+const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.12 2008-02-29 20:24:21 thothy Exp $";
 
 #include <string.h>
 
@@ -51,7 +51,7 @@ static SGOBJ alertdlg[] =
 	{ SGTEXT, 0, 0, 1,3, 50,1, dlglines[2] },
 	{ SGTEXT, 0, 0, 1,4, 50,1, dlglines[3] },
 	{ SGBUTTON, SG_DEFAULT, 0, 5,5, 8,1, "OK" },
-	{ SGBUTTON, 0, 0, 24,5, 8,1, "Cancel" },
+	{ SGBUTTON, SG_CANCEL, 0, 24,5, 8,1, "Cancel" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 

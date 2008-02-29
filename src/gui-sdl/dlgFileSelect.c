@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.20 2008-01-12 19:14:08 eerot Exp $";
+const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.21 2008-02-29 20:24:21 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -78,7 +78,7 @@ static SGOBJ fsdlg[] =
 	{ SGBUTTON, SG_TOUCHEXIT, 0, 62,21, 1,1, "\x02" },          /* Arrow down */
 	{ SGCHECKBOX, SG_EXIT, SG_SELECTED, 2,23, 18,1, "Show hidden files" },
 	{ SGBUTTON, SG_DEFAULT, 0, 32,23, 8,1, "Okay" },
-	{ SGBUTTON, 0, 0, 50,23, 8,1, "Cancel" },
+	{ SGBUTTON, SG_CANCEL, 0, 50,23, 8,1, "Cancel" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
