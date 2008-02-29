@@ -120,10 +120,11 @@ Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
 
 <a name="General description"></a><h3>General description</h3>
 <p>
-Hatari is an Atari ST emulator for Linux, FreeBSD, BeOS and other
-Systems which are supported by the SDL library.
+Hatari is an Atari ST, STE, TT and Falcon emulator for Linux, FreeBSD, BeOS and
+other Systems which are supported by the SDL library.
 The emulator is open source software and is distributed under the terms of the
-GNU General Public License (GPL).
+<a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GNU General
+Public License (GPL)</a>.
 </p>
 <p>
 The Atari ST was a 16/32 bit computer system which was first released by Atari
@@ -147,34 +148,33 @@ Recent versions of Hatari even feature basic STE, TT and Falcon emulation.
   <li>optional cartridge images for the ST ROM port</li>
   <li>most of the ST specific hardware</li>
   <li>ST Shifter with ST-High, ST-Medium and ST-Low resolutions,
-overscan effects for lower border and partially in the upper, left and
-right border too</li>
+    overscan effects for all borders in color resolutions</li>
   <li>512 color ST palette</li>
+  <li>many raster effects </li>
+  <li>scaling of ST-low resolution by factor two</li>
+  <li>interleaved lines rendering of ST-medium and (scaled) ST-low
+    resolutions for the TV "monitor type"</li>
   <li>Blitter chip emulation (not very accurate)</li>
   <li>PSG YM2149 emulation (soundchip) including STFM samples</li>
   <li>Printer emulation on GEMDOS and Hardware level (print to file)</li>
   <li>experimental support for RS232</li>
   <li>experimental MIDI output support (no MIDI input/through support)</li>
   <li>Mega ST real time clock</li>
-  <li>many (but not all) raster effects </li>
   <li>IKBD emulation (keyboard, mouse and joystick) with custom
-keyboard mapping</li>
+    keyboard mapping</li>
   <li>joystick emulation via cursor keys and joystick emulation via a
-connected PC joystick</li>
+    connected PC joystick</li>
   <li>FDC emulation using floppy disk images in standard formats (*.ST,
-*.MSA and *.DIM)</li>
-  <li>optional writeprotection for disk images</li>
+    *.MSA and *.DIM)</li>
   <li>support for packed disk images (PkZip and Gzip)</li>
+  <li>optional write-protection for disk images</li>
   <li>partial ACSI emulation for harddisk support</li>
   <li>GEMDOS interface driver to mount a directory as a harddrive</li>
-  <li>experimental support for memory snapshots</li>
+  <li>support for memory snapshots (save whole system state)</li>
   <li>driver for extended VDI resolutions</li>
   <li>recording of sound as .WAV and .YM files</li>
   <li>screenshots in .BMP format</li>
   <li>animation capturing</li>
-  <li>scaling of ST-low resolution by factor two</li>
-  <li>interleaved lines rendering of ST-medium and (scaled) ST-low
-resolutions for the TV "monitor type"</li>
   <li>TOS versions 1.00, 1.02, 1.04 and 2.06 can be used in ST mode.</li>
 </ul>
 
@@ -188,7 +188,7 @@ there is support for most of the enhanced/additional STE features:
   <li>(STE specific) right border opening</li>
   <li>4096 colors STE palette</li>
   <li>DMA sample sound ("microwire" audio balance support missing)</li>
-  <li>analog joypads</li>
+  <li>STE joypads</li>
   <li>TOS versions 1.06, 1.62, 2.05 and 2.06 can be used in STE mode.</li>
 </ul>
 
@@ -198,7 +198,7 @@ There is support for following additional TT features:
 <ul>
   <li>TT low/med/high resolution support</li>
   <li>ST/TT palette switching and video shifter</li>
-  <li>RAM upto 14MB (ST-RAM only, there is no support for TT-RAM yet)</li>
+  <li>RAM upto 14MiB (ST-RAM only, there is no support for TT-RAM yet)</li>
   <li>Only TOS version 3.06 can be used in TT mode.</li>
 </ul>
 
@@ -209,7 +209,7 @@ There is support for following additional Falcon features:
   <li>Videl emulation for all Falcon screen modes</li>
   <li>STE/Falcon palette switching and shifter</li>
   <li>Mono/RGB/VGA/TV monitor types</li>
-  <li>Some view parts of the Falcon sound system are emulated
+  <li>Some few parts of the Falcon sound system are emulated
       (e.g. the additional sample rates of the DMA sound)</li>
   <li>TOS versions 4.00, 4.02, 4.04 and 4.92 can be used in Falcon mode.</li>
 </ul>
@@ -223,7 +223,7 @@ additional demos work.
 
 <p> Hatari currently has the following system requirements: </p>
 <ul>
-  <li>a fast PC (&gt;300MHz, for Falcon and TT emulation even faster) </li>
+  <li>a fast PC (&gt;500MHz, for Falcon and TT emulation even faster) </li>
   <li>some sort of Unix (preferable <a href="http://www.linux.org/">GNU/Linux</a>)
   </li>
   <li>the SDL library (<a href="http://www.libsdl.org/">http://www.libsdl.org/</a>)</li>
@@ -515,6 +515,10 @@ uses the given file as keyboard mapping file</td>
     <tr>
       <td align="center">--machine &lt;x&gt;</td>
       <td align="center">Select machine type (x = st/ste/tt/falcon)</td>
+    </tr>
+    <tr>
+      <td align="center">--memstate &lt;file&gt;</td>
+      <td align="center">Load memory snap-shot file</td>
     </tr>
   </tbody>
 </table>
@@ -1351,8 +1355,7 @@ parts of the emulated system is much trickier.
  src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
  border="0" height="31" width="88"></a></td>
       <td align="right">
-      <address><a href="mailto:marndt@asmsoftware.de">Matthias Arndt</a>
-November 30 2005</address>
+      February 29th 2008
       </td>
     </tr>
   </tbody>
