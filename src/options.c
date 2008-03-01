@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.40 2008-03-01 21:49:41 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.41 2008-03-01 22:37:43 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -52,7 +52,7 @@ enum {
 	OPT_WINDOW,
 	OPT_ZOOM,
 	OPT_FRAMESKIPS,
-	OPT_FORCE8BPP,
+	OPT_FORCEBPP,
 	OPT_BORDERS,
 	OPT_VDI_PLANES,
 	OPT_VDI_WIDTH,
@@ -68,6 +68,7 @@ enum {
 	OPT_TOS,		/* system options */
 	OPT_CARTRIDGE,
 	OPT_CPULEVEL,
+	OPT_CPUCLOCK,
 	OPT_COMPATIBLE,
 	OPT_BLITTER,
 	OPT_DSP,
@@ -117,8 +118,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Skip <x> frames after each displayed frame (0 <= x <= 8)" },
 	{ OPT_BORDERS, NULL, "--borders",
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
-	{ OPT_FORCE8BPP, NULL, "--force8bpp",
-	  "<bool>", "Use 8-bit color depths only (for older host computers)" },
+	{ OPT_FORCEBPP, NULL, "--bpp",
+	  "<x>", "Force given internal bitdepth (x=8/16, x=0 to disable)" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
 	  "<x>", "VDI resolution bit-depth (x = 1/2/4)" },
 	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
@@ -152,7 +153,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_CARTRIDGE, NULL, "--cartridge",
 	  "<file>", "Use ROM cartridge image <file>" },
 	{ OPT_CPULEVEL,  NULL, "--cpulevel",
-	  "<x>", "Set the CPU type (x => 680x0) (TOS 2.06 only!)" },
+	  "<x>", "Set the CPU type (x => 680x0) (EmuTOS/TOS 2.06 only!)" },
+	{ OPT_CPUCLOCK,  NULL, "--cpuclock",
+	  "<x>", "Set the CPU clock (8, 16 or 32)" },
 	{ OPT_COMPATIBLE,NULL, "--compatible",
 	  "<bool>", "Use a more compatible (but slower) 68000 CPU mode" },
 	{ OPT_BLITTER,   NULL, "--blitter",
@@ -170,7 +173,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_MACHINE,   NULL, "--machine",
 	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
 	{ OPT_SOUND,   NULL, "--sound",
-	  "<bool>", "Enable sound (slower)" },
+	  "<x>", "Sound quality (off/low/med/hi (off=faster))" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
@@ -484,7 +487,7 @@ static BOOL Opt_StrCpy(int optid, BOOL checkexist, char *dst, char *src, size_t 
 void Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
-	int i, ncpu, skips, zoom, planes;
+	int i, ncpu, skips, zoom, planes, cpuclock;
 	int hdgiven = FALSE;
 
 	/* Defaults for loading initial memory snap-shots */
@@ -601,8 +604,13 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ConfigureParams.Screen.bAllowOverscan = Opt_Bool(argv[++i], OPT_BORDERS);
 			break;
 			
-		case OPT_FORCE8BPP:
-			ConfigureParams.Screen.bForce8Bpp = Opt_Bool(argv[++i], OPT_FORCE8BPP);
+		case OPT_FORCEBPP:
+			planes = atoi(argv[++i]);
+			if(planes % 8 || planes > 16)
+			{
+				Opt_ShowExit(OPT_FORCEBPP, argv[i], "Invalid bit depth");
+			}
+			ConfigureParams.Screen.nForceBpp = planes;
 			break;
 
 		case OPT_VDI_PLANES:
@@ -734,10 +742,19 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ncpu = atoi(argv[++i]);
 			if(ncpu < 0 || ncpu > 4)
 			{
-				fprintf(stderr, "CPU level %d is invalid (valid: 0-4), set to 0.\n", ncpu);
-				ncpu = 0;
+				Opt_ShowExit(OPT_CPULEVEL, argv[i], "Invalid CPU level");
 			}
 			ConfigureParams.System.nCpuLevel = ncpu;
+			bLoadAutoSave = FALSE;
+			break;
+			
+		case OPT_CPUCLOCK:
+			cpuclock = atoi(argv[++i]);
+			if(cpuclock != 8 && cpuclock != 16 && cpuclock != 32)
+			{
+				Opt_ShowExit(OPT_CPUCLOCK, argv[i], "Invalid CPU clock");
+			}
+			ConfigureParams.System.nCpuFreq = cpuclock;
 			bLoadAutoSave = FALSE;
 			break;
 			
@@ -847,7 +864,30 @@ void Opt_ParseParameters(int argc, char *argv[],
 			break;
 			
 		case OPT_SOUND:
-			ConfigureParams.Sound.bEnableSound = Opt_Bool(argv[++i], OPT_SOUND);
+			i += 1;
+			if (strcasecmp(argv[i], "off") == 0)
+			{
+				ConfigureParams.Sound.bEnableSound = FALSE;
+			}
+			else if (strcasecmp(argv[i], "low") == 0)
+			{
+				ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_LOW;
+				ConfigureParams.Sound.bEnableSound = TRUE;
+			}
+			else if (strcasecmp(argv[i], "med") == 0)
+			{
+				ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
+				ConfigureParams.Sound.bEnableSound = TRUE;
+			}
+			else if (strcasecmp(argv[i], "hi") == 0)
+			{
+				ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
+				ConfigureParams.Sound.bEnableSound = TRUE;
+			}
+			else
+			{
+				Opt_ShowExit(OPT_NONE, argv[i], "Unsupported sound quality");
+			}
 			break;
 			
 			/* debug options */

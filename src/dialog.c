@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.65 2007-12-03 22:11:13 thothy Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.66 2008-03-01 22:37:43 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -111,11 +111,11 @@ void Dialog_CopyDialogParamsToConfiguration(BOOL bForceReset)
 	/* Do need to change resolution? Need if change display/overscan settings */
 	/*(if switch between Colour/Mono cause reset later) */
 	if (!NeedReset &&
-	    (DialogParams.Screen.bForce8Bpp != ConfigureParams.Screen.bForce8Bpp
+	    (DialogParams.Screen.nForceBpp != ConfigureParams.Screen.nForceBpp
 	     || DialogParams.Screen.bZoomLowRes != ConfigureParams.Screen.bZoomLowRes
 	     || DialogParams.Screen.bAllowOverscan != ConfigureParams.Screen.bAllowOverscan))
 	{
-		ConfigureParams.Screen.bForce8Bpp = DialogParams.Screen.bForce8Bpp;
+		ConfigureParams.Screen.nForceBpp = DialogParams.Screen.nForceBpp;
 		ConfigureParams.Screen.bZoomLowRes = DialogParams.Screen.bZoomLowRes;
 		ConfigureParams.Screen.bAllowOverscan = DialogParams.Screen.bAllowOverscan;
 

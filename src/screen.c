@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.73 2008-02-23 15:30:46 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.74 2008-03-01 22:37:43 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -216,7 +216,7 @@ static void Screen_Handle8BitPalettes(void)
  */
 static void Screen_SetDrawFunctions(void)
 {
-	if (ConfigureParams.Screen.bForce8Bpp)
+	if (ConfigureParams.Screen.nForceBpp == 8)
 	{
 
 		if (ConfigureParams.Screen.bZoomLowRes)
@@ -327,13 +327,20 @@ static void Screen_SetResolution(void)
 	}
 
 	/* Bits per pixel */
-	if (ConfigureParams.Screen.bForce8Bpp || STRes == ST_HIGH_RES || bUseVDIRes)
+	if (ConfigureParams.Screen.nForceBpp == 8 || STRes == ST_HIGH_RES || bUseVDIRes)
 	{
 		BitCount = 8;
 	}
 	else
 	{
-		BitCount = 16;
+		if (ConfigureParams.Screen.nForceBpp)
+		{
+			BitCount = ConfigureParams.Screen.nForceBpp;
+		}
+		else
+		{
+			BitCount = 16;
+		}
 	}
 
 	/* Set zoom factors, used for scaling mouse motions */

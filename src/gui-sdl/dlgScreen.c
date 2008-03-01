@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.16 2008-02-23 22:16:07 thothy Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.17 2008-03-01 22:37:44 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -161,7 +161,7 @@ void Dialog_ScreenDlg(void)
 	else
 		screendlg[DLGSCRN_OVERSCAN].state &= ~SG_SELECTED;
 
-	if (DialogParams.Screen.bForce8Bpp)
+	if (DialogParams.Screen.nForceBpp == 8)
 		screendlg[DLGSCRN_8BPP].state |= SG_SELECTED;
 	else
 		screendlg[DLGSCRN_8BPP].state &= ~SG_SELECTED;
@@ -281,9 +281,10 @@ void Dialog_ScreenDlg(void)
 	DialogParams.Screen.bAllowOverscan = (screendlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
 
 	if (screendlg[DLGSCRN_8BPP].state & SG_SELECTED)
-		DialogParams.Screen.bForce8Bpp = TRUE;
+		DialogParams.Screen.nForceBpp = 8;
 	else
-		DialogParams.Screen.bForce8Bpp = FALSE;
+		/* TODO: disables this setting if it's != 8 */
+		DialogParams.Screen.nForceBpp = 0;
 
 	if (screendlg[DLGSCRN_ZOOMLOWRES].state & SG_SELECTED)
 		DialogParams.Screen.bZoomLowRes = TRUE;

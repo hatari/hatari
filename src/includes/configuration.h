@@ -195,12 +195,12 @@ typedef struct
   int FrameSkips;
   BOOL bFullScreen;
   BOOL bAllowOverscan;
-  BOOL bForce8Bpp;
   BOOL bZoomLowRes;
   BOOL bUseExtVdiResolutions;
+  int nForceBpp;
+  int nVdiColors;
   int nVdiWidth;
   int nVdiHeight;
-  int nVdiColors;
   BOOL bCaptureChange;
   int nFramesPerSecond;
   int nWindowBorderPixelsLeft;
