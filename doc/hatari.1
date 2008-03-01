@@ -25,105 +25,123 @@ fully compatible with the original TOS some programs won't run
 correctly with this. Because of this it is recommended to use a TOS
 ROM from a real Atari.
 .SH "OPTIONS"
+Hatari options are split into several categories:
+.SH "General options"
 .TP 
 .B \-h, \-\-help
-print command line options and terminate
+Print command line options and terminate
 .TP 
 .B \-v, \-\-version
-print version information and terminate
+Print version information and terminate
+.TP 
+.B \--confirm-quit <bool>
+Whether Hatari confirms quitting
+.SH "Display options"
+.TP 
+.B \-m, \-\-mono
+Start in monochrome mode instead of color
 .TP 
 .B \-\-monitor <x>
-select monitor type (x = mono/rgb/vga/tv)
+Select monitor type (x = mono/rgb/vga/tv)
 .TP 
 .B \-f, \-\-fullscreen
-start the emulator in fullscreen mode
+Start the emulator in fullscreen mode
 .TP 
 .B \-w, \-\-window
-start the emulator in window mode
+Start the emulator in window mode
 .TP 
 .B \-z, \-\-zoom <x>
 Zoom low resolution (1=no, 2=yes)
-.TP 
-.B \-j, \-\-joystick <port>
-emulate ST joystick in <port> 0 or 1 with keyboard
-.TP 
-.B \-\-nosound
-disable sound (makes emulation faster)
 .TP 
 .B \-\-frameskips <x>
 Skip <x> frames after each displayed frame to accelerate emulation
 (0 <= x <= 8)
 .TP 
-.B \-D, \-\-debug
-activate the simple builtin debugger
+.B \-\-borders <bool>
+Show screen borders (for overscan demos etc)
 .TP 
-.B \-\-slowfdc
-slow down FDC emulation (needed to make some games and demos work)
-.TP 
-.B \-d, \-\-harddrive <dir>
-use <dir> as an emulated hard disk
-.TP 
-.B \-\-acsi <file>
-emulate ACSI hard disk with an image <file>
-.TP 
-.B \-t, \-\-tos <imagefile>
-specify TOS ROM image to use
-.TP 
-.B \-\-cartridge <imagefile>
-use ROM cartridge image <file> (only works if GEMDOS HD emulation and
-extended VDI resolution are disabled)
-.TP 
-.B \-s, \-\-memsize <x>
-set amount of emulated RAM, x = 1 to 14 MiB, or 0 for 512 KiB
-.TP 
-.B \-\-cpulevel <x>
-specify CPU (680x0) to use (use x >= 1 with TOS >= 2.06 only!)
-.TP 
-.B \-\-compatible
-use a more compatible but slower 68000 CPU mode
-.TP 
-.B \-\-blitter
-enable blitter emulation
+.B \-\-force8bpp <bool>
+Use 8-bit color depths only (for older host computers)
 .TP 
 .B \-\-vdi\-planes <x>
-use extended VDI resolution with bit depth <x> (x = 1, 2 or 4)
+Use extended VDI resolution with bit depth <x> (x = 1, 2 or 4)
 .TP 
 .B \-\-vdi\-width <w>
-use extended VDI resolution with width <w> (384 <= w <= 1024)
+Use extended VDI resolution with width <w> (384 <= w <= 1024)
 .TP 
 .B \-\-vdi\-height <h>
-use extended VDI resolution with height <h> (200 < h <= 768)
+Use extended VDI resolution with height <h> (200 < h <= 768)
+.SH "Devices options"
+.TP 
+.B \-j, \-\-joystick <port>
+Emulate joystick with cursor keys in given port (0-5)
 .TP 
 .B \-\-printer <file>
-enable printer support and write data to <file>
+Enable printer support and write data to <file>
 .TP 
 .B \-\-midi <filename>
-enable experimental MIDI output to the mentioned file
+Enable experimental MIDI output to the mentioned file
 .TP 
 .B \-\-rs232 <filename>
-enable experimental RS232 emulation via the mentioned file/device
+Enable experimental RS232 emulation via the mentioned file/device
+.SH "Disk options"
 .TP 
-.B \-c, \-\-configfile <filename>
-use the mentioned file as configuration file instead of ~/.hatari.cfg
+.B \-\-acsi <file>
+Emulate ACSI hard disk with an image <file>
 .TP 
-.B \-\-machine <x>
-select machine type (x = st, ste, tt or falcon)
+.B \-d, \-\-harddrive <dir>
+Use <dir> as an emulated hard disk
+.TP 
+.B \-\-slowfdc <bool>
+slow down FDC emulation (needed to make some games and demos work)
+.SH "System options"
+.TP 
+.B \-t, \-\-tos <imagefile>
+Specify TOS ROM image to use
+.TP 
+.B \-\-cartridge <imagefile>
+Use ROM cartridge image <file> (only works if GEMDOS HD emulation and
+extended VDI resolution are disabled)
+.TP 
+.B \-\-cpulevel <x>
+Specify CPU (680x0) to use (use x >= 1 with TOS >= 2.06 only!)
+.TP 
+.B \-\-compatible <bool>
+Use a more compatible but slower 68000 CPU mode
+.TP 
+.B \-\-blitter <bool>
+Enable blitter emulation
 .TP 
 .B \-\-dsp <x>
 Falcon DSP emulation (x = none, dummy or emu)
 .TP 
+.B \-s, \-\-memsize <x>
+Set amount of emulated RAM, x = 1 to 14 MiB, or 0 for 512 KiB
+.TP 
+.B \-\-memstate <file>
+Load memory snap-shot <file>
+.TP 
+.B \-c, \-\-configfile <filename>
+use the mentioned file as configuration file instead of ~/.hatari.cfg
+.TP 
 .B \-\-keymap <file>
 load keyboard mapping from <file>
+.TP 
+.B \-\-machine <x>
+select machine type (x = st, ste, tt or falcon)
+.TP 
+.B \-\-sound <bool>
+Enable sound (slows down the emulation)
+.SH "Debug options"
+.TP 
+.B \-D, \-\-debug <bool>
+activate the simple builtin debugger
 .TP
 .B \-\-log <file>
 Save log to <file> (can also be "stdout" or "stderr")
 .TP
 .B \-\-trace <trace1,...>
-Activate debugging traces. Use --trace help to see all options
-.TP
-.B \-\-memstate <file>
-Load memory snap-shot <file>
-
+Activate debug traces, see --trace help for tracing options
 .SH "COMMANDS"
 The shortcut keys can be configured in the configuration file.
 The default settings are:
