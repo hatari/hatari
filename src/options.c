@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.37 2008-03-01 20:00:09 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.38 2008-03-01 20:47:36 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -170,7 +170,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_MACHINE,   NULL, "--machine",
 	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
 	{ OPT_SOUND,   NULL, "--sound",
-	  NULL, "Enable sound (slower)" },
+	  "<bool>", "Enable sound (slower)" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
@@ -307,8 +307,9 @@ static void Opt_ShowHelp(void)
 	printf("\nSpecial option values:\n");
 	printf("<bool>\tDisable with 'n', 'no', 'off', or '0'\n");
 	printf("\tEnable with 'y', 'yes', 'on' or '1' as in: --borders on --debug off\n");
-	printf("<file>\t'stdout' and 'stderr' can be used for devices\n");
-	printf("\t(if you use stdout for midi or printer, set log to stderr)\n");
+	printf("<file>\tDevices accept also special 'stdout' and 'stderr' file names\n");
+	printf("\t(if you use stdout for midi or printer, set log to stderr).\n");
+	printf("\tSetting the file to 'none', disables given device or disk\n");
 }
 
 
@@ -319,10 +320,10 @@ __attribute__((noreturn));
 /**
  * Show Hatari options and exit().
  * If 'error' given, show that error message.
- * If 'option' != OPT_NONE, tells for which option the error is,
+ * If 'optid' != OPT_NONE, tells for which option the error is,
  * otherwise 'value' is show as the option user gave.
  */
-static void Opt_ShowExit(unsigned int option, const char *value, const char *error)
+static void Opt_ShowExit(unsigned int optid, const char *value, const char *error)
 {
 	const opt_t *opt;
 
@@ -332,7 +333,7 @@ static void Opt_ShowExit(unsigned int option, const char *value, const char *err
 
 	if (error)
 	{
-		if (option == OPT_NONE)
+		if (optid == OPT_NONE)
 		{
 			fprintf(stderr, "\nError: %s (%s)\n", error, value);
 		}
@@ -340,12 +341,12 @@ static void Opt_ShowExit(unsigned int option, const char *value, const char *err
 		{
 			for (opt = HatariOptions; opt->id != OPT_NONE; opt++)
 			{
-				if (option == opt->id)
+				if (optid == opt->id)
 					break;
 			}
 			if (value != NULL)
 			{
-				fprintf(stderr, "\nError while parsing parameter %s:\n"
+				fprintf(stderr, "\nError while parsing parameter for %s:\n"
 					" %s (%s)\n", opt->str, error, value);
 			}
 			else
@@ -366,7 +367,7 @@ static void Opt_ShowExit(unsigned int option, const char *value, const char *err
  * - FALSE if given option arg is n/no/off/0
  * Otherwise exit.
  */
-static int Opt_Bool(const char *arg, int opt)
+static int Opt_Bool(const char *arg, int optid)
 {
 	const char *enablers[] = { "y", "yes", "on", "1", NULL };
 	const char *disablers[] = { "n", "no", "off", "0", NULL };
@@ -396,7 +397,7 @@ static int Opt_Bool(const char *arg, int opt)
 		}
 	}
 	free(input);
-	Opt_ShowExit(opt, orig, "Not a <bool> value");
+	Opt_ShowExit(optid, orig, "Not a <bool> value");
 }
 
 
@@ -440,22 +441,39 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 
 
 /**
- * Copy option string, check string length and optionally test if file exists.
- * Bail out on errors.
+ * Optionally test if file exists, then check string length,
+ * copy option src string to dst and return TRUE.
+ * If (bool) option pointer is given, set that option to TRUE.
+ * - However, if src is "none", leave dst unmodified, set option
+ *   to FALSE and return FALSE.
+ * Return TRUE if dst set, Exits out on errors.
  */
-static void Opt_StrCpy(int option, BOOL checkexist, char *dst, char *src, size_t dstlen)
+static BOOL Opt_StrCpy(int optid, BOOL checkexist, char *dst, char *src, size_t dstlen, BOOL *option)
 {
+	if (option)
+	{
+		if(strcmp(src, "none") == 0)
+		{
+			*option = FALSE;
+			return FALSE;
+		}
+		else
+		{
+			*option = TRUE;
+		}
+	}
 	if (checkexist && !File_Exists(src))
 	{
-		Opt_ShowExit(option, src, "Given file doesn't exist (or has wrong file permissions)!\n");
+		Opt_ShowExit(optid, src, "Given file doesn't exist (or has wrong file permissions)!\n");
 	}
 	if (strlen(src) < dstlen)
 	{
 		strcpy(dst, src);
+		return TRUE;
 	}
 	else
 	{
-		Opt_ShowExit(option, src, "File name too long!\n");
+		Opt_ShowExit(optid, src, "File name too long!\n");
 	}
 }
 
@@ -638,65 +656,71 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_PRINTER:
 			i += 1;
 			Opt_StrCpy(OPT_PRINTER, FALSE, ConfigureParams.Printer.szPrintToFileName,
-			           argv[i], sizeof(ConfigureParams.Printer.szPrintToFileName));
-			ConfigureParams.Printer.bEnablePrinting = TRUE;
+			           argv[i], sizeof(ConfigureParams.Printer.szPrintToFileName),
+				   &ConfigureParams.Printer.bEnablePrinting);
 			break;
 			
 		case OPT_MIDI:
 			i += 1;
 			Opt_StrCpy(OPT_MIDI, FALSE, ConfigureParams.Midi.szMidiOutFileName,
-			           argv[i], sizeof(ConfigureParams.Midi.szMidiOutFileName));
-			ConfigureParams.Midi.bEnableMidi = TRUE;
+			           argv[i], sizeof(ConfigureParams.Midi.szMidiOutFileName),
+				   &ConfigureParams.Midi.bEnableMidi);
 			break;
       
 		case OPT_RS232:
 			i += 1;
-			Opt_StrCpy(OPT_RS232, TRUE, ConfigureParams.RS232.szInFileName,
-			           argv[i], sizeof(ConfigureParams.RS232.szInFileName));
-			strncpy(ConfigureParams.RS232.szOutFileName, argv[i],
-			        sizeof(ConfigureParams.RS232.szOutFileName));
-			ConfigureParams.RS232.bEnableRS232 = TRUE;
+			if (Opt_StrCpy(OPT_RS232, TRUE, ConfigureParams.RS232.szInFileName,
+				       argv[i], sizeof(ConfigureParams.RS232.szInFileName),
+				       &ConfigureParams.RS232.bEnableRS232))
+			{
+				strncpy(ConfigureParams.RS232.szOutFileName, argv[i],
+					sizeof(ConfigureParams.RS232.szOutFileName));
+			}
 			break;
 
 			/* disk options */
 		case OPT_ACSIHDIMAGE:
 			i += 1;
 			Opt_StrCpy(OPT_ACSIHDIMAGE, TRUE, ConfigureParams.HardDisk.szHardDiskImage,
-			           argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskImage));
-			ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
+			           argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskImage),
+				   &ConfigureParams.HardDisk.bUseHardDiskImage);
 			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_IDEHDIMAGE:
 			i += 1;
 			Opt_StrCpy(OPT_IDEHDIMAGE, TRUE, ConfigureParams.HardDisk.szIdeHardDiskImage,
-			           argv[i], sizeof(ConfigureParams.HardDisk.szIdeHardDiskImage));
-			ConfigureParams.HardDisk.bUseIdeHardDiskImage = TRUE;
+			           argv[i], sizeof(ConfigureParams.HardDisk.szIdeHardDiskImage),
+				   &ConfigureParams.HardDisk.bUseIdeHardDiskImage);
 			bLoadAutoSave = FALSE;
 			break;
 
 		case OPT_HARDDRIVE:
 			i += 1;
-			Opt_StrCpy(OPT_HARDDRIVE, FALSE, ConfigureParams.HardDisk.szHardDiskDirectories[0],
-			           argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]));
-			ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
-			ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
+			if (Opt_StrCpy(OPT_HARDDRIVE, FALSE, ConfigureParams.HardDisk.szHardDiskDirectories[0],
+				       argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
+				       &ConfigureParams.HardDisk.bUseHardDiskDirectories))
+			{
+				ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
+				hdgiven = TRUE;
+			}
 			bLoadAutoSave = FALSE;
-			hdgiven = TRUE;
 			break;
 
 			/* system options */
 		case OPT_TOS:
 			i += 1;
 			Opt_StrCpy(OPT_TOS, TRUE, ConfigureParams.Rom.szTosImageFileName,
-			           argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName));
+			           argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName),
+				   NULL);
 			bLoadAutoSave = FALSE;
 			break;
       
 		case OPT_CARTRIDGE:
 			i += 1;
 			Opt_StrCpy(OPT_CARTRIDGE, TRUE, ConfigureParams.Rom.szCartridgeImageFileName,
-			           argv[i], sizeof(ConfigureParams.Rom.szCartridgeImageFileName));
+			           argv[i], sizeof(ConfigureParams.Rom.szCartridgeImageFileName),
+				   NULL);
 			bLoadAutoSave = FALSE;
 			break;
 			
@@ -767,7 +791,8 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_MEMSTATE:
 			i += 1;
 			Opt_StrCpy(OPT_MEMSTATE, TRUE, ConfigureParams.Memory.szMemoryCaptureFileName,
-			           argv[i], sizeof(ConfigureParams.Memory.szMemoryCaptureFileName));
+			           argv[i], sizeof(ConfigureParams.Memory.szMemoryCaptureFileName),
+				   NULL);
 			bLoadMemorySave = TRUE;
 			bLoadAutoSave = FALSE;
 			break;
@@ -775,7 +800,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_CONFIGFILE:
 			i += 1;
 			Opt_StrCpy(OPT_CONFIGFILE, TRUE, sConfigFileName,
-			           argv[i], sizeof(sConfigFileName));
+			           argv[i], sizeof(sConfigFileName), NULL);
 			Configuration_Load(NULL);
 			bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
 			break;
@@ -783,7 +808,8 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_KEYMAPFILE:
 			i += 1;
 			Opt_StrCpy(OPT_KEYMAPFILE, TRUE, ConfigureParams.Keyboard.szMappingFileName,
-			           argv[i], sizeof(ConfigureParams.Keyboard.szMappingFileName));
+			           argv[i], sizeof(ConfigureParams.Keyboard.szMappingFileName),
+				   NULL);
 			ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
 			break;
 			
@@ -832,7 +858,8 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_LOG:
 			i += 1;
 			Opt_StrCpy(OPT_LOG, FALSE, ConfigureParams.Log.sLogFileName,
-			           argv[i], sizeof(ConfigureParams.Log.sLogFileName));
+			           argv[i], sizeof(ConfigureParams.Log.sLogFileName),
+				   NULL);
 			break;
 			
 		case OPT_TRACE:
