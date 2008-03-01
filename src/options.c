@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.38 2008-03-01 20:47:36 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.39 2008-03-01 20:54:27 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -305,8 +305,8 @@ static void Opt_ShowHelp(void)
 		opt = Opt_ShowHelpSection(opt);
 	}
 	printf("\nSpecial option values:\n");
-	printf("<bool>\tDisable with 'n', 'no', 'off', or '0'\n");
-	printf("\tEnable with 'y', 'yes', 'on' or '1' as in: --borders on --debug off\n");
+	printf("<bool>\tDisable by using 'n', 'no', 'off', 'false', or '0'\n");
+	printf("\tEnable by using 'y', 'yes', 'on', 'true' or '1'\n");
 	printf("<file>\tDevices accept also special 'stdout' and 'stderr' file names\n");
 	printf("\t(if you use stdout for midi or printer, set log to stderr).\n");
 	printf("\tSetting the file to 'none', disables given device or disk\n");
@@ -363,14 +363,14 @@ static void Opt_ShowExit(unsigned int optid, const char *value, const char *erro
 
 /**
  * Return
- * - TRUE if given option arg is y/yes/on/1
- * - FALSE if given option arg is n/no/off/0
+ * - TRUE if given option arg is y/yes/on/true/1
+ * - FALSE if given option arg is n/no/off/false/0
  * Otherwise exit.
  */
 static int Opt_Bool(const char *arg, int optid)
 {
-	const char *enablers[] = { "y", "yes", "on", "1", NULL };
-	const char *disablers[] = { "n", "no", "off", "0", NULL };
+	const char *enablers[] = { "y", "yes", "on", "true", "1", NULL };
+	const char *disablers[] = { "n", "no", "off", "false", "0", NULL };
 	const char **bool_str, *orig = arg;
 	char *input, *str;
 
