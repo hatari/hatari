@@ -60,8 +60,9 @@ Skip <x> frames after each displayed frame to accelerate emulation
 .B \-\-borders <bool>
 Show screen borders (for overscan demos etc)
 .TP 
-.B \-\-force8bpp <bool>
-Use 8-bit color depths only (for older host computers)
+.B \-\-bpp <bool>
+Force given internal bitdepth (x=8/16, x=0 to disable). 8-bit color
+depth may be useful for older host computers
 .TP 
 .B \-\-vdi\-planes <x>
 Use extended VDI resolution with bit depth <x> (x = 1, 2 or 4)
@@ -104,7 +105,10 @@ Use ROM cartridge image <file> (only works if GEMDOS HD emulation and
 extended VDI resolution are disabled)
 .TP 
 .B \-\-cpulevel <x>
-Specify CPU (680x0) to use (use x >= 1 with TOS >= 2.06 only!)
+Specify CPU (680x0) to use (use x >= 1 with EmuTOS or TOS >= 2.06 only!)
+.TP 
+.B \-\-cpuclock <x>
+Set the CPU clock (8, 16 or 32 Mhz)
 .TP 
 .B \-\-compatible <bool>
 Use a more compatible but slower 68000 CPU mode
@@ -130,8 +134,8 @@ load keyboard mapping from <file>
 .B \-\-machine <x>
 select machine type (x = st, ste, tt or falcon)
 .TP 
-.B \-\-sound <bool>
-Enable sound (slows down the emulation)
+.B \-\-sound <x>
+Sound quality (off/low/med/hi (off=faster))
 .SH "Debug options"
 .TP 
 .B \-D, \-\-debug <bool>
