@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.39 2008-03-01 20:54:27 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.40 2008-03-01 21:49:41 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -64,6 +64,7 @@ enum {
 	OPT_ACSIHDIMAGE,	/* disk options */
 	OPT_IDEHDIMAGE,
 	OPT_HARDDRIVE,
+	OPT_SLOWFDC,
 	OPT_TOS,		/* system options */
 	OPT_CARTRIDGE,
 	OPT_CPULEVEL,
@@ -74,7 +75,6 @@ enum {
 	OPT_MEMSTATE,
 	OPT_CONFIGFILE,
 	OPT_KEYMAPFILE,
-	OPT_SLOWFDC,
 	OPT_MACHINE,
 	OPT_SOUND,
 	OPT_DEBUG,		/* debug options */
@@ -143,6 +143,8 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Emulate an IDE harddrive using <file> (not working yet)" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
 	  "<dir>", "Emulate an ST harddrive (<dir> = root directory)" },
+	{ OPT_SLOWFDC,   NULL, "--slowfdc",
+	  "<bool>", "Slow down FDC emulation (deprecated)" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "System" },
 	{ OPT_TOS,       "-t", "--tos",
@@ -165,8 +167,6 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Use <file> instead of the ~/.hatari.cfg config file" },
 	{ OPT_KEYMAPFILE,"-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
-	{ OPT_SLOWFDC,   NULL, "--slowfdc",
-	  "<bool>", "Slow down FDC emulation (deprecated)" },
 	{ OPT_MACHINE,   NULL, "--machine",
 	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
 	{ OPT_SOUND,   NULL, "--sound",
@@ -706,6 +706,11 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			bLoadAutoSave = FALSE;
 			break;
+			
+		case OPT_SLOWFDC:
+			ConfigureParams.System.bSlowFDC = Opt_Bool(argv[++i], OPT_SLOWFDC);
+			bLoadAutoSave = FALSE;
+			break;
 
 			/* system options */
 		case OPT_TOS:
@@ -768,11 +773,6 @@ void Opt_ParseParameters(int argc, char *argv[],
 			{
 				Opt_ShowExit(OPT_NONE, argv[i], "Unknown DSP type");
 			}
-			bLoadAutoSave = FALSE;
-			break;
-			
-		case OPT_SLOWFDC:
-			ConfigureParams.System.bSlowFDC = Opt_Bool(argv[++i], OPT_SLOWFDC);
 			bLoadAutoSave = FALSE;
 			break;
 			
