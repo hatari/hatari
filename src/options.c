@@ -12,10 +12,10 @@
   - Add required actions for that ID to switch in Opt_ParseParameters()
 
   2007-09-27   [NP]    Add parsing for the '--trace' option.
-  2008-03-01   [ET]    Add option sections
+  2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.35 2008-03-01 17:59:13 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.36 2008-03-01 19:27:11 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -76,7 +76,7 @@ enum {
 	OPT_KEYMAPFILE,
 	OPT_SLOWFDC,
 	OPT_MACHINE,
-	OPT_NOSOUND,
+	OPT_SOUND,
 	OPT_DEBUG,		/* debug options */
 	OPT_LOG,
 	OPT_TRACE,
@@ -87,7 +87,7 @@ typedef struct {
 	unsigned int id;	/* option ID */
 	const char *chr;	/* short option */
 	const char *str;	/* long option */
-	const char *arg;	/* name for argument, if any */
+	const char *arg;	/* type name for argument, if any */
 	const char *desc;	/* option description */
 } opt_t;
 
@@ -100,7 +100,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_VERSION,   "-v", "--version",
 	  NULL, "Print version number and exit" },
 	{ OPT_CONFIRMQUIT,NULL, "--confirm-quit",
-	  "<x>", "Whether Hatari confirms quit (y/n)" },
+	  "<bool>", "Whether Hatari confirms quit" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Display" },
 	{ OPT_MONO,      "-m", "--mono",
@@ -115,10 +115,10 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Double ST low resolution (1=no, 2=yes)" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
 	  "<x>", "Skip <x> frames after each displayed frame (0 <= x <= 8)" },
-	{ OPT_FORCE8BPP, NULL, "--force8bpp",
-	  NULL, "Use 8-bit color depths only (for older host computers)" },
 	{ OPT_BORDERS, NULL, "--borders",
-	  NULL, "Show screen borders (for overscan demos etc)" },
+	  "<bool>", "Show screen borders (for overscan demos etc)" },
+	{ OPT_FORCE8BPP, NULL, "--force8bpp",
+	  "<bool>", "Use 8-bit color depths only (for older host computers)" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
 	  "<x>", "VDI resolution bit-depth (x = 1/2/4)" },
 	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
@@ -152,9 +152,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_CPULEVEL,  NULL, "--cpulevel",
 	  "<x>", "Set the CPU type (x => 680x0) (TOS 2.06 only!)" },
 	{ OPT_COMPATIBLE,NULL, "--compatible",
-	  NULL, "Use a more compatible (but slower) 68000 CPU mode" },
+	  "<bool>", "Use a more compatible (but slower) 68000 CPU mode" },
 	{ OPT_BLITTER,   NULL, "--blitter",
-	  NULL, "Enable blitter emulation (ST only)" },
+	  "<bool>", "Use blitter emulation (ST only)" },
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x=none/dummy/emu, for Falcon mode only)" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
@@ -166,15 +166,15 @@ static const opt_t HatariOptions[] = {
 	{ OPT_KEYMAPFILE,"-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	{ OPT_SLOWFDC,   NULL, "--slowfdc",
-	  NULL, "Slow down FDC emulation (deprecated)" },
+	  "<bool>", "Slow down FDC emulation (deprecated)" },
 	{ OPT_MACHINE,   NULL, "--machine",
 	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
-	{ OPT_NOSOUND,   NULL, "--nosound",
-	  NULL, "Disable sound (faster!)" },
+	{ OPT_SOUND,   NULL, "--sound",
+	  NULL, "Enable sound (slower)" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
-	  NULL, "Allow debug interface" },
+	  "<bool>", "Allow debug interface" },
 	{ OPT_LOG,     NULL, "--log",
 	  "<file>", "Save log to <file>" },
 	{ OPT_TRACE,   NULL, "--trace",
@@ -305,10 +305,16 @@ static void Opt_ShowHelp(void)
 		opt = Opt_ShowHelpSection(opt);
 	}
 	printf("\nSpecial option values:\n");
+	printf("<bool>\tDisable with 'n', 'no', 'off', or '0'\n");
+	printf("\tEnable with 'y', 'yes', 'on' or '1' as in: --borders on --debug off\n");
 	printf("<file>\t'stdout' and 'stderr' can be used for devices\n");
-	printf("\tIf you use stdout for midi or printer, set log to stderr!\n");
+	printf("\t(if you use stdout for midi or printer, set log to stderr)\n");
 }
 
+
+/* This function always exits */
+static void Opt_ShowExit(unsigned int option, const char *value, const char *error)
+__attribute__((noreturn));
 
 /**
  * Show Hatari options and exit().
@@ -339,7 +345,7 @@ static void Opt_ShowExit(unsigned int option, const char *value, const char *err
 			}
 			if (value != NULL)
 			{
-				fprintf(stderr, "\nError while parsing parameter %s :\n"
+				fprintf(stderr, "\nError while parsing parameter %s:\n"
 					" %s (%s)\n", opt->str, error, value);
 			}
 			else
@@ -351,6 +357,46 @@ static void Opt_ShowExit(unsigned int option, const char *value, const char *err
 		exit(1);
 	}
 	exit(0);
+}
+
+
+/**
+ * Return
+ * - TRUE if given option arg is y/yes/on/1
+ * - FALSE if given option arg is n/no/off/0
+ * Otherwise exit.
+ */
+static int Opt_Bool(const char *arg, int opt)
+{
+	const char *enablers[] = { "y", "yes", "on", "1", NULL };
+	const char *disablers[] = { "n", "no", "off", "0", NULL };
+	const char **bool_str, *orig = arg;
+	char *input, *str;
+
+	input = strdup(arg);
+	str = input;
+	while (*str)
+	{
+		*str++ = tolower(*arg++);
+	}
+	for (bool_str = enablers; *bool_str; bool_str++)
+	{
+		if (strcmp(input, *bool_str) == 0)
+		{
+			free(input);
+			return TRUE;
+		}
+	}
+	for (bool_str = disablers; *bool_str; bool_str++)
+	{
+		if (strcmp(input, *bool_str) == 0)
+		{
+			free(input);
+			return FALSE;
+		}
+	}
+	free(input);
+	Opt_ShowExit(opt, orig, "Not a <bool> value");
 }
 
 
@@ -373,50 +419,23 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 		    (opt->chr && !strcmp(str, opt->chr)))
 		{
 			
-			if (opt->arg && idx+1 >= argc)
+			if (opt->arg)
 			{
-				Opt_ShowExit(opt->id, NULL, "Missing argument");
+				if (idx+1 >= argc)
+				{
+					Opt_ShowExit(opt->id, NULL, "Missing argument");
+				}
+				/* early check for bools */
+				if (strcmp(opt->arg, "<bool>") == 0)
+				{
+					Opt_Bool(argv[idx+1], opt->id);
+				}
 			}
 			return opt->id;
 		}
 	}
 	Opt_ShowExit(OPT_NONE, argv[idx], "Unrecognized option");
 	return OPT_NONE;
-}
-
-
-/**
- * return
- * - true if given string is y, Y, yes, YES
- * - false if given string is n, N, no, NO
- * otherwise exit
- */
-static int Opt_YesNo(const char *arg, int opt)
-{
-	int ret = FALSE;
-	char *input, *str;
-	const char *orig;
-	str = strdup(arg);
-	input = str;
-	orig = arg;
-	while (*str)
-	{
-		*str++ = tolower(*arg++);
-	}
-	if (strcmp("y", input) == 0 || strcmp("yes", input) == 0)
-	{
-		ret = TRUE;
-	}
-	else if (strcmp("n", input) == 0 || strcmp("no", input) == 0)
-	{
-		ret = FALSE;
-	}
-	else
-	{
-		Opt_ShowExit(opt, orig, "Unrecognized value");
-	}
-	free(input);
-	return ret;
 }
 
 
@@ -430,7 +449,6 @@ static void Opt_StrCpy(int option, BOOL checkexist, char *dst, char *src, size_t
 	{
 		Opt_ShowExit(option, src, "Given file doesn't exist (or has wrong file permissions)!\n");
 	}
-
 	if (strlen(src) < dstlen)
 	{
 		strcpy(dst, src);
@@ -443,14 +461,15 @@ static void Opt_StrCpy(int option, BOOL checkexist, char *dst, char *src, size_t
 
 
 /**
- * Check for any passed parameters, return boot disk
+ * Check for any passed parameters, set boot disk (if given)
  */
 void Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
 	int i, ncpu, skips, zoom, planes;
+	int hdgiven = FALSE;
 
-	/* Defaults for loading initial memory snap-shots*/
+	/* Defaults for loading initial memory snap-shots */
 	bLoadMemorySave = FALSE;
 	bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
 
@@ -490,7 +509,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			break;
 
 		case OPT_CONFIRMQUIT:
-			ConfigureParams.Log.bConfirmQuit = Opt_YesNo(argv[++i], OPT_CONFIRMQUIT);
+			ConfigureParams.Log.bConfirmQuit = Opt_Bool(argv[++i], OPT_CONFIRMQUIT);
 			break;
 			
 		case OPT_MONO:
@@ -559,11 +578,11 @@ void Opt_ParseParameters(int argc, char *argv[],
 			break;
 			
 		case OPT_FORCE8BPP:
-			ConfigureParams.Screen.bForce8Bpp = TRUE;
+			ConfigureParams.Screen.bForce8Bpp = Opt_Bool(argv[++i], OPT_FORCE8BPP);
 			break;
 			
 		case OPT_BORDERS:
-			ConfigureParams.Screen.bAllowOverscan = TRUE;
+			ConfigureParams.Screen.bAllowOverscan = Opt_Bool(argv[++i], OPT_BORDERS);
 			break;
 			
 		case OPT_JOYSTICK:
@@ -581,12 +600,12 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			break;
 			
-		case OPT_NOSOUND:
-			ConfigureParams.Sound.bEnableSound = FALSE;
+		case OPT_SOUND:
+			ConfigureParams.Sound.bEnableSound = Opt_Bool(argv[++i], OPT_SOUND);
 			break;
 			
 		case OPT_DEBUG:
-			bEnableDebug = TRUE;
+			bEnableDebug = Opt_Bool(argv[++i], OPT_DEBUG);
 			break;
 			
 		case OPT_LOG:
@@ -641,6 +660,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
 			ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
 			bLoadAutoSave = FALSE;
+			hdgiven = TRUE;
 			break;
 			
 		case OPT_TOS:
@@ -670,12 +690,12 @@ void Opt_ParseParameters(int argc, char *argv[],
 			break;
 			
 		case OPT_COMPATIBLE:
-			ConfigureParams.System.bCompatibleCpu = TRUE;
+			ConfigureParams.System.bCompatibleCpu = Opt_Bool(argv[++i], OPT_COMPATIBLE);
 			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_BLITTER:
-			ConfigureParams.System.bBlitter = TRUE;
+			ConfigureParams.System.bBlitter = Opt_Bool(argv[++i], OPT_BLITTER);
 			bLoadAutoSave = FALSE;
 			break;			
 
@@ -737,7 +757,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			break;
 			
 		case OPT_SLOWFDC:
-			ConfigureParams.System.bSlowFDC = TRUE;
+			ConfigureParams.System.bSlowFDC = Opt_Bool(argv[++i], OPT_SLOWFDC);
 			bLoadAutoSave = FALSE;
 			break;
 			
@@ -820,5 +840,10 @@ void Opt_ParseParameters(int argc, char *argv[],
 		default:
 			Opt_ShowExit(OPT_NONE, argv[i], "Program didn't handle documented option");
 		}
+	}
+	if (*bootdisk && !hdgiven)
+	{
+		/* floppy image given without HD -> boot from floppy */
+		ConfigureParams.HardDisk.bBootFromHardDisk = FALSE;
 	}
 }

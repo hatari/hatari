@@ -58,7 +58,7 @@ endif
 all: hatari
 
 hatari: $(ALLOBJS)
-	$(CC) $(LDFLAGS) $(ALLOBJS) $(SDL_LIBS) $(LIBS) -o hatari
+	$(CC) $(LDFLAGS) $(ALLOBJS) $(SDL_LIBS) $(LIBS) -lX11 -o hatari
 
 # Sub-folder dependencies:
 .PHONY : $(CPUDIR)/cpu68k.a
