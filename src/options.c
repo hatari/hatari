@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.36 2008-03-01 19:27:11 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.37 2008-03-01 20:00:09 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -497,7 +497,8 @@ void Opt_ParseParameters(int argc, char *argv[],
 		 */
 		switch(Opt_WhichOption(argc, argv, i))
 		{
-
+		
+			/* general options */
 		case OPT_HELP:
 			Opt_ShowHelp();
 			exit(0);
@@ -511,7 +512,8 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_CONFIRMQUIT:
 			ConfigureParams.Log.bConfirmQuit = Opt_Bool(argv[++i], OPT_CONFIRMQUIT);
 			break;
-			
+		
+			/* display options */
 		case OPT_MONO:
 			ConfigureParams.Screen.MonitorType = MONITOR_TYPE_MONO;
 			bLoadAutoSave = FALSE;
@@ -577,14 +579,47 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ConfigureParams.Screen.FrameSkips = skips;
 			break;
 			
-		case OPT_FORCE8BPP:
-			ConfigureParams.Screen.bForce8Bpp = Opt_Bool(argv[++i], OPT_FORCE8BPP);
-			break;
-			
 		case OPT_BORDERS:
 			ConfigureParams.Screen.bAllowOverscan = Opt_Bool(argv[++i], OPT_BORDERS);
 			break;
 			
+		case OPT_FORCE8BPP:
+			ConfigureParams.Screen.bForce8Bpp = Opt_Bool(argv[++i], OPT_FORCE8BPP);
+			break;
+
+		case OPT_VDI_PLANES:
+			planes = atoi(argv[++i]);
+			switch(planes)
+			{
+			 case 1:
+				ConfigureParams.Screen.nVdiColors = GEMCOLOR_2;
+				break;
+			 case 2:
+				ConfigureParams.Screen.nVdiColors = GEMCOLOR_4;
+				break;
+			 case 4:
+				ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
+				break;
+			 default:
+				Opt_ShowExit(OPT_NONE, argv[i], "Unsupported VDI bit-depth");
+			}
+			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
+			bLoadAutoSave = FALSE;
+			break;
+
+		case OPT_VDI_WIDTH:
+			ConfigureParams.Screen.nVdiWidth = atoi(argv[++i]);
+			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
+			bLoadAutoSave = FALSE;
+			break;
+
+		case OPT_VDI_HEIGHT:
+			ConfigureParams.Screen.nVdiHeight = atoi(argv[++i]);
+			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
+			bLoadAutoSave = FALSE;
+			break;
+		
+			/* devices options */
 		case OPT_JOYSTICK:
 			i++;
 			if (!Joy_SetCursorEmulation(argv[i][0] - '0'))
@@ -598,20 +633,6 @@ void Opt_ParseParameters(int argc, char *argv[],
 				Joy_SetCursorEmulation(1);
 				i--;
 			}
-			break;
-			
-		case OPT_SOUND:
-			ConfigureParams.Sound.bEnableSound = Opt_Bool(argv[++i], OPT_SOUND);
-			break;
-			
-		case OPT_DEBUG:
-			bEnableDebug = Opt_Bool(argv[++i], OPT_DEBUG);
-			break;
-			
-		case OPT_LOG:
-			i += 1;
-			Opt_StrCpy(OPT_LOG, FALSE, ConfigureParams.Log.sLogFileName,
-			           argv[i], sizeof(ConfigureParams.Log.sLogFileName));
 			break;
 			
 		case OPT_PRINTER:
@@ -636,7 +657,8 @@ void Opt_ParseParameters(int argc, char *argv[],
 			        sizeof(ConfigureParams.RS232.szOutFileName));
 			ConfigureParams.RS232.bEnableRS232 = TRUE;
 			break;
-			
+
+			/* disk options */
 		case OPT_ACSIHDIMAGE:
 			i += 1;
 			Opt_StrCpy(OPT_ACSIHDIMAGE, TRUE, ConfigureParams.HardDisk.szHardDiskImage,
@@ -662,7 +684,8 @@ void Opt_ParseParameters(int argc, char *argv[],
 			bLoadAutoSave = FALSE;
 			hdgiven = TRUE;
 			break;
-			
+
+			/* system options */
 		case OPT_TOS:
 			i += 1;
 			Opt_StrCpy(OPT_TOS, TRUE, ConfigureParams.Rom.szTosImageFileName,
@@ -723,38 +746,6 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			bLoadAutoSave = FALSE;
 			break;
-
-		case OPT_VDI_PLANES:
-			planes = atoi(argv[++i]);
-			switch(planes)
-			{
-			 case 1:
-				ConfigureParams.Screen.nVdiColors = GEMCOLOR_2;
-				break;
-			 case 2:
-				ConfigureParams.Screen.nVdiColors = GEMCOLOR_4;
-				break;
-			 case 4:
-				ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
-				break;
-			 default:
-				Opt_ShowExit(OPT_NONE, argv[i], "Unsupported VDI bit-depth");
-			}
-			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
-			bLoadAutoSave = FALSE;
-			break;
-
-		case OPT_VDI_WIDTH:
-			ConfigureParams.Screen.nVdiWidth = atoi(argv[++i]);
-			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
-			bLoadAutoSave = FALSE;
-			break;
-
-		case OPT_VDI_HEIGHT:
-			ConfigureParams.Screen.nVdiHeight = atoi(argv[++i]);
-			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
-			bLoadAutoSave = FALSE;
-			break;
 			
 		case OPT_SLOWFDC:
 			ConfigureParams.System.bSlowFDC = Opt_Bool(argv[++i], OPT_SLOWFDC);
@@ -770,6 +761,14 @@ void Opt_ParseParameters(int argc, char *argv[],
 					ConfigureParams.Memory.nMemorySize);
 				ConfigureParams.Memory.nMemorySize = 1;
 			}
+			bLoadAutoSave = FALSE;
+			break;
+
+		case OPT_MEMSTATE:
+			i += 1;
+			Opt_StrCpy(OPT_MEMSTATE, TRUE, ConfigureParams.Memory.szMemoryCaptureFileName,
+			           argv[i], sizeof(ConfigureParams.Memory.szMemoryCaptureFileName));
+			bLoadMemorySave = TRUE;
 			bLoadAutoSave = FALSE;
 			break;
 			
@@ -821,20 +820,27 @@ void Opt_ParseParameters(int argc, char *argv[],
 			bLoadAutoSave = FALSE;
 			break;
 			
+		case OPT_SOUND:
+			ConfigureParams.Sound.bEnableSound = Opt_Bool(argv[++i], OPT_SOUND);
+			break;
+			
+			/* debug options */
+		case OPT_DEBUG:
+			bEnableDebug = Opt_Bool(argv[++i], OPT_DEBUG);
+			break;
+			
+		case OPT_LOG:
+			i += 1;
+			Opt_StrCpy(OPT_LOG, FALSE, ConfigureParams.Log.sLogFileName,
+			           argv[i], sizeof(ConfigureParams.Log.sLogFileName));
+			break;
+			
 		case OPT_TRACE:
 			i += 1;
 			if (ParseTraceOptions(argv[i]) == 0)
 			{
 				Opt_ShowExit(OPT_NONE, argv[i], "Error parsing trace options (use --trace help for available list)!\n");
 			}
-			break;
-
-		case OPT_MEMSTATE:
-			i += 1;
-			Opt_StrCpy(OPT_MEMSTATE, TRUE, ConfigureParams.Memory.szMemoryCaptureFileName,
-			           argv[i], sizeof(ConfigureParams.Memory.szMemoryCaptureFileName));
-			bLoadMemorySave = TRUE;
-			bLoadAutoSave = FALSE;
 			break;
 
 		default:
