@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.116 2008-03-01 19:27:10 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.117 2008-03-01 19:33:19 eerot Exp $";
 
 #include "config.h"
 
@@ -371,51 +371,6 @@ void Main_EventHandler(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Reparent Hatari window if so requested.  Needs to be done inside
- * Hatari because if SDL itself is requested to reparent itself,
- * SDL window stops accepting any input (specifically done like
- * this in SDL backends for some reason).
- * 
- * Should work on X11 and Windows.
- * TODO: implement the Windows part.
- * 
- * SDL_syswm.h automatically includes everything else needed.
- */
-#include <SDL_syswm.h>
-
-static void Main_Reparent_Window(void)
-{
-	Window parent_win;
-	const char *parent_win_id;
-	SDL_SysWMinfo info;
-
-	parent_win_id = getenv("PARENT_WIN_ID");
-	if (!parent_win_id) {
-		return;
-	}
-	parent_win = strtol(parent_win_id, NULL, 0);
-	if (!parent_win) {
-		Log_Printf(LOG_DEBUG, "Invalid PARENT_WIN_ID value '%s'\n", parent_win_id);
-		return;
-	}
-
-	SDL_VERSION(&info.version);
-	if (!SDL_GetWMInfo(&info)) {
-		Log_Printf(LOG_DEBUG, "Failed to get SDL_GetWMInfo()\n");
-		return;
-	}
-	/* reparent Hatari window to parent */
-	XReparentWindow(info.info.x11.display,
-			info.info.x11.window,
-			parent_win, 0, 0);
-	/* remove WM window for Hatari */
-	XDestroyWindow(info.info.x11.display,
-			info.info.x11.wmwindow);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Initialise emulation
  */
 static void Main_Init(void)
@@ -437,7 +392,6 @@ static void Main_Init(void)
 	RS232_Init();
 	Midi_Init();
 	Screen_Init();
-	Main_Reparent_Window();
 	HostScreen_Init();
 #if ENABLE_DSP_EMU
 	if (ConfigureParams.System.nDSPType == DSP_TYPE_EMU)
@@ -558,6 +512,13 @@ int main(int argc, char *argv[])
 
 #ifdef WIN32
 	Win_OpenCon();
+#endif
+
+	/* Needed on maemo but useful also with normal X11 window managers
+	 * for window grouping when you have multiple Hatari SDL windows open
+	 */
+#if HAVE_SETENV
+	setenv("SDL_VIDEO_X11_WMCLASS", "hatari", 1);
 #endif
 
 	/* Init emulator system */
