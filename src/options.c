@@ -8,13 +8,14 @@
   
   To add a new option:
   - Add option ID to the enum
-  - Add the option information to corresponding place in HatariOptions[]
+  - Add the option information to HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
+
+  2007-09-27   [NP]    Add parsing for the '--trace' option.
+  2008-03-01   [ET]    Add option sections
 */
 
-/* 2007/09/27   [NP]    Add parsing for the '--trace' option.				*/
-
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.34 2008-02-26 20:50:57 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.35 2008-03-01 17:59:13 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -41,10 +42,11 @@ BOOL bLoadMemorySave;      /* Load memory snapshot provided via option at startu
 
 /*  List of supported options. */
 enum {
-	OPT_HELP,
+	OPT_HEADER,	/* options section header */
+	OPT_HELP,		/* general options */
 	OPT_VERSION,
 	OPT_CONFIRMQUIT,
-	OPT_MONO,	/* TODO: remove */
+	OPT_MONO,		/* display options */
 	OPT_MONITOR,
 	OPT_FULLSCREEN,
 	OPT_WINDOW,
@@ -52,32 +54,32 @@ enum {
 	OPT_FRAMESKIPS,
 	OPT_FORCE8BPP,
 	OPT_BORDERS,
-	OPT_JOYSTICK,
-	OPT_NOSOUND,
-	OPT_DEBUG,
-	OPT_LOG,
+	OPT_VDI_PLANES,
+	OPT_VDI_WIDTH,
+	OPT_VDI_HEIGHT,
+	OPT_JOYSTICK,		/* device options */
 	OPT_PRINTER,
 	OPT_MIDI,
 	OPT_RS232,
-	OPT_ACSIHDIMAGE,
+	OPT_ACSIHDIMAGE,	/* disk options */
 	OPT_IDEHDIMAGE,
 	OPT_HARDDRIVE,
-	OPT_TOS,
+	OPT_TOS,		/* system options */
 	OPT_CARTRIDGE,
 	OPT_CPULEVEL,
 	OPT_COMPATIBLE,
 	OPT_BLITTER,
 	OPT_DSP,
-	OPT_VDI_PLANES,
-	OPT_VDI_WIDTH,
-	OPT_VDI_HEIGHT,
 	OPT_MEMSIZE,
+	OPT_MEMSTATE,
 	OPT_CONFIGFILE,
 	OPT_KEYMAPFILE,
 	OPT_SLOWFDC,
 	OPT_MACHINE,
+	OPT_NOSOUND,
+	OPT_DEBUG,		/* debug options */
+	OPT_LOG,
 	OPT_TRACE,
-	OPT_MEMSTATE,
 	OPT_NONE,
 };
 
@@ -89,14 +91,18 @@ typedef struct {
 	const char *desc;	/* option description */
 } opt_t;
 
-/* these have(!) to be in the same order as the enums */
+/* it's easier to edit these if they are kept in the same order as the enums */
 static const opt_t HatariOptions[] = {
+	
+	{ OPT_HEADER, NULL, NULL, NULL, "General" },
 	{ OPT_HELP,      "-h", "--help",
 	  NULL, "Print this help text and exit" },
 	{ OPT_VERSION,   "-v", "--version",
 	  NULL, "Print version number and exit" },
 	{ OPT_CONFIRMQUIT,NULL, "--confirm-quit",
 	  "<x>", "Whether Hatari confirms quit (y/n)" },
+	
+	{ OPT_HEADER, NULL, NULL, NULL, "Display" },
 	{ OPT_MONO,      "-m", "--mono",
 	  NULL, "Start in monochrome mode instead of color (deprecated)" },
 	{ OPT_MONITOR,      NULL, "--monitor",
@@ -113,26 +119,32 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Use 8-bit color depths only (for older host computers)" },
 	{ OPT_BORDERS, NULL, "--borders",
 	  NULL, "Show screen borders (for overscan demos etc)" },
+	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
+	  "<x>", "VDI resolution bit-depth (x = 1/2/4)" },
+	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
+	  "<w>", "Use VDI resolution with width w (320 < w <= 1024)" },
+	{ OPT_VDI_HEIGHT,     NULL, "--vdi-height",
+	  "<h>", "VDI resolution with height h (200 < h <= 768)" },
+	
+	{ OPT_HEADER, NULL, NULL, NULL, "Devices" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
 	  "<port>", "Emulate joystick with cursor keys in given port (0-5)" },
-	{ OPT_NOSOUND,   NULL, "--nosound",
-	  NULL, "Disable sound (faster!)" },
-	{ OPT_DEBUG,     "-D", "--debug",
-	  NULL, "Allow debug interface" },
-	{ OPT_LOG,     NULL, "--log",
-	  "<file>", "Save log to <file>" },
 	{ OPT_PRINTER,   NULL, "--printer",
 	  "<file>", "Enable printer support and write data to <file>" },
 	{ OPT_MIDI,      NULL, "--midi",
 	  "<file>", "Enable midi support and write midi data to <file>" },
 	{ OPT_RS232,     NULL, "--rs232",
 	  "<file>", "Enable serial port support and use <file> as the device" },
+	
+	{ OPT_HEADER, NULL, NULL, NULL, "Disk" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
 	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
 	{ OPT_IDEHDIMAGE,   NULL, "--ide",
 	  "<file>", "Emulate an IDE harddrive using <file> (not working yet)" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
 	  "<dir>", "Emulate an ST harddrive (<dir> = root directory)" },
+	
+	{ OPT_HEADER, NULL, NULL, NULL, "System" },
 	{ OPT_TOS,       "-t", "--tos",
 	  "<file>", "Use TOS image <file>" },
 	{ OPT_CARTRIDGE, NULL, "--cartridge",
@@ -145,14 +157,10 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Enable blitter emulation (ST only)" },
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x=none/dummy/emu, for Falcon mode only)" },
-	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
-	  "<x>", "VDI resolution bit-depth (x = 1/2/4)" },
-	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
-	  "<w>", "Use VDI resolution with width w (320 < w <= 1024)" },
-	{ OPT_VDI_HEIGHT,     NULL, "--vdi-height",
-	  "<h>", "VDI resolution with height h (200 < h <= 768)" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
 	  "<x>", "ST RAM size. x = size in MiB from 0 to 14, 0 for 512KiB" },
+	{ OPT_MEMSTATE,   NULL, "--memstate",
+	  "<file>", "Load memory snap-shot <file>" },
 	{ OPT_CONFIGFILE,"-c", "--configfile",
 	  "<file>", "Use <file> instead of the ~/.hatari.cfg config file" },
 	{ OPT_KEYMAPFILE,"-k", "--keymap",
@@ -161,16 +169,23 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Slow down FDC emulation (deprecated)" },
 	{ OPT_MACHINE,   NULL, "--machine",
 	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
+	{ OPT_NOSOUND,   NULL, "--nosound",
+	  NULL, "Disable sound (faster!)" },
+	
+	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
+	{ OPT_DEBUG,     "-D", "--debug",
+	  NULL, "Allow debug interface" },
+	{ OPT_LOG,     NULL, "--log",
+	  "<file>", "Save log to <file>" },
 	{ OPT_TRACE,   NULL, "--trace",
 	  "<trace1,...>", "Activate debug traces, see --trace help for options" },
-	{ OPT_MEMSTATE,   NULL, "--memstate",
-	  "<file>", "Load memory snap-shot <file>" },
+	
 	{ OPT_NONE, NULL, NULL, NULL, NULL }
 };
 
 
 /**
- * Show version string.
+ * Show version string and license.
  */
 static void Opt_ShowVersion(void)
 {
@@ -182,73 +197,116 @@ static void Opt_ShowVersion(void)
 
 
 /**
- * Show help text.
+ * Calculate option + value len
  */
-static void Opt_ShowHelp(void)
+static unsigned int Opt_OptionLen(const opt_t *opt)
 {
-	unsigned int i, len, maxlen;
-	char buf[64];
-	const opt_t *opt;
-
-	Opt_ShowVersion();
-	
-	printf("Usage:\n hatari [options] [disk image name]\n\n"
-	       "Where options are:\n");
-
-	/* find longest option name and check option IDs */
-	i = maxlen = 0;
-	for (opt = HatariOptions; opt->id != OPT_NONE; opt++)
+	unsigned int len;
+	len = strlen(opt->str);
+	if (opt->arg)
 	{
-		assert(opt->id == i++);
-		len = strlen(opt->str);
-		if (opt->arg)
+		len += strlen(opt->arg);
+		len += 1;
+		/* with arg, short options go to another line */
+	}
+	else
+	{
+		if (opt->chr)
 		{
-			len += strlen(opt->arg);
-			len += 1;
-			/* with arg, short options go to another line */
+			/* ' or -c' */
+			len += 6;
+		}
+	}
+	return len;
+}
+
+
+/**
+ * Show single option
+ */
+static void Opt_ShowOption(const opt_t *opt, unsigned int maxlen)
+{
+	char buf[64];
+	if (!maxlen)
+	{
+		maxlen = Opt_OptionLen(opt);
+	}
+	assert(maxlen < sizeof(buf));
+	if (opt->arg)
+	{
+		sprintf(buf, "%s %s", opt->str, opt->arg);
+		printf("  %-*s %s\n", maxlen, buf, opt->desc);
+		if (opt->chr)
+		{
+			printf("    or %s %s\n", opt->chr, opt->arg);
+		}
+	}
+	else
+	{
+		if (opt->chr)
+		{
+			sprintf(buf, "%s or %s", opt->str, opt->chr);
+			printf("  %-*s %s\n", maxlen, buf, opt->desc);
 		}
 		else
 		{
-			if (opt->chr)
-			{
-				/* ' or -c' */
-				len += 6;
-			}
+			printf("  %-*s %s\n", maxlen, opt->str, opt->desc);
 		}
+	}
+}
+
+/**
+ * Show options for section starting from 'start_opt',
+ * return next option after this section.
+ */
+static const opt_t *Opt_ShowHelpSection(const opt_t *start_opt)
+{
+	const opt_t *opt, *last;
+	unsigned int len, maxlen = 0;
+
+	/* find longest option name and check option IDs */
+	for (opt = start_opt; opt->id != OPT_HEADER && opt->id != OPT_NONE; opt++)
+	{
+		len = Opt_OptionLen(opt);
 		if (len > maxlen)
 		{
 			maxlen = len;
 		}
 	}
-	assert(maxlen < sizeof(buf));
+	last = opt;
 	
 	/* output all options */
-	for (opt = HatariOptions; opt->id != OPT_NONE; opt++)
+	for (opt = start_opt; opt != last; opt++)
 	{
-		if (opt->arg)
-		{
-			sprintf(buf, "%s %s", opt->str, opt->arg);
-			printf("  %-*s %s\n", maxlen, buf, opt->desc);
-			if (opt->chr)
-			{
-				printf("    or %s %s\n", opt->chr, opt->arg);
-			}
-		}
-		else
-		{
-			if (opt->chr)
-			{
-				sprintf(buf, "%s or %s", opt->str, opt->chr);
-				printf("  %-*s %s\n", maxlen, buf, opt->desc);
-			}
-			else
-			{
-				printf("  %-*s %s\n", maxlen, opt->str, opt->desc);
-			}
-		}
+		Opt_ShowOption(opt, maxlen);
 	}
-	printf("\nNote: 'stdout' and 'stderr' have special meaning as <file> names.\n");
-	printf("If you use stdout for midi or printer, set log to stderr!\n");
+	return last;
+}
+
+
+/**
+ * Show help text.
+ */
+static void Opt_ShowHelp(void)
+{
+	const opt_t *opt = HatariOptions;
+
+	Opt_ShowVersion();
+	printf("Usage:\n hatari [options] [disk image name]\n");
+
+	while(opt->id != OPT_NONE)
+	{
+		if (opt->id == OPT_HEADER)
+		{
+			assert(opt->desc);
+			printf("\n%s options:\n", opt->desc);
+			opt++;
+		}
+		opt = Opt_ShowHelpSection(opt);
+	}
+	printf("\nSpecial option values:\n");
+	printf("<file>\t'stdout' and 'stderr' can be used for devices\n");
+	printf("\tIf you use stdout for midi or printer, set log to stderr!\n");
 }
 
 
@@ -258,27 +316,37 @@ static void Opt_ShowHelp(void)
  * If 'option' != OPT_NONE, tells for which option the error is,
  * otherwise 'value' is show as the option user gave.
  */
-static void Opt_ShowExit(int option, const char *value, const char *error)
+static void Opt_ShowExit(unsigned int option, const char *value, const char *error)
 {
+	const opt_t *opt;
+
 	Opt_ShowVersion();
-	
 	printf("Usage:\n hatari [options] [disk image name]\n\n"
 	       "Try option \"-h\" or \"--help\" to display more information.\n");
 
 	if (error)
 	{
-		if (option != OPT_NONE && value != NULL)
+		if (option == OPT_NONE)
 		{
-			fprintf(stderr, "\nError while parsing parameter %s :\n"
-			        " %s (%s)\n", HatariOptions[option].str, error, value);
-		}
-		else if (option != OPT_NONE)
-		{
-			fprintf(stderr, "\nError (%s): %s\n", HatariOptions[option].str, error);
+			fprintf(stderr, "\nError: %s (%s)\n", error, value);
 		}
 		else
 		{
-			fprintf(stderr, "\nError: %s (%s)\n", error, value);
+			for (opt = HatariOptions; opt->id != OPT_NONE; opt++)
+			{
+				if (option == opt->id)
+					break;
+			}
+			if (value != NULL)
+			{
+				fprintf(stderr, "\nError while parsing parameter %s :\n"
+					" %s (%s)\n", opt->str, error, value);
+			}
+			else
+			{
+				fprintf(stderr, "\nError (%s): %s\n", opt->str, error);
+			}
+			Opt_ShowOption(opt, 0);
 		}
 		exit(1);
 	}
@@ -301,7 +369,7 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 
 	for (opt = HatariOptions; opt->id != OPT_NONE; opt++)
 	{	
-		if ((!strcmp(str, opt->str)) ||
+		if ((opt->str && !strcmp(str, opt->str)) ||
 		    (opt->chr && !strcmp(str, opt->chr)))
 		{
 			
@@ -353,8 +421,8 @@ static int Opt_YesNo(const char *arg, int opt)
 
 
 /**
- * Copy option string, check string length and test if file exists
- * and bail out on errors.
+ * Copy option string, check string length and optionally test if file exists.
+ * Bail out on errors.
  */
 static void Opt_StrCpy(int option, BOOL checkexist, char *dst, char *src, size_t dstlen)
 {
