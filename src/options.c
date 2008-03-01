@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.41 2008-03-01 22:37:43 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.42 2008-03-01 22:56:47 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -54,7 +54,7 @@ enum {
 	OPT_FRAMESKIPS,
 	OPT_FORCEBPP,
 	OPT_BORDERS,
-	OPT_VDI_PLANES,
+	OPT_VDI_PLANES,		/* VDI options */
 	OPT_VDI_WIDTH,
 	OPT_VDI_HEIGHT,
 	OPT_JOYSTICK,		/* device options */
@@ -120,6 +120,8 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
 	  "<x>", "Force given internal bitdepth (x=8/16, x=0 to disable)" },
+	
+	{ OPT_HEADER, NULL, NULL, NULL, "VDI" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
 	  "<x>", "VDI resolution bit-depth (x = 1/2/4)" },
 	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
