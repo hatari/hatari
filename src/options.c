@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.44 2008-03-02 20:03:22 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.45 2008-03-02 20:14:11 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -67,13 +67,13 @@ enum {
 	OPT_IDEHDIMAGE,
 	OPT_SLOWFDC,
 	OPT_MEMSIZE,		/* memory options */
+	OPT_TOS,
 	OPT_CARTRIDGE,
 	OPT_MEMSTATE,
 	OPT_CPULEVEL,		/* CPU options */
 	OPT_CPUCLOCK,
 	OPT_COMPATIBLE,
-	OPT_TOS,		/* system options */
-	OPT_MACHINE,
+	OPT_MACHINE,		/* system options */
 	OPT_BLITTER,
 	OPT_DSP,
 	OPT_SOUND,
@@ -154,6 +154,8 @@ static const opt_t HatariOptions[] = {
 	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
 	  "<x>", "ST RAM size. x = size in MiB from 0 to 14, 0 for 512KiB" },
+	{ OPT_TOS,       "-t", "--tos",
+	  "<file>", "Use TOS image <file>" },
 	{ OPT_CARTRIDGE, NULL, "--cartridge",
 	  "<file>", "Use ROM cartridge image <file>" },
 	{ OPT_MEMSTATE,   NULL, "--memstate",
@@ -168,8 +170,6 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Use a more compatible (but slower) 68000 CPU mode" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Misc system" },
-	{ OPT_TOS,       "-t", "--tos",
-	  "<file>", "Use TOS image <file>" },
 	{ OPT_MACHINE,   NULL, "--machine",
 	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
 	{ OPT_BLITTER,   NULL, "--blitter",
@@ -739,6 +739,14 @@ void Opt_ParseParameters(int argc, char *argv[],
 			bLoadAutoSave = FALSE;
 			break;
       
+		case OPT_TOS:
+			i += 1;
+			Opt_StrCpy(OPT_TOS, TRUE, ConfigureParams.Rom.szTosImageFileName,
+			           argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName),
+				   NULL);
+			bLoadAutoSave = FALSE;
+			break;
+			
 		case OPT_CARTRIDGE:
 			i += 1;
 			Opt_StrCpy(OPT_CARTRIDGE, TRUE, ConfigureParams.Rom.szCartridgeImageFileName,
@@ -784,14 +792,6 @@ void Opt_ParseParameters(int argc, char *argv[],
 			break;
 
 			/* system options */
-		case OPT_TOS:
-			i += 1;
-			Opt_StrCpy(OPT_TOS, TRUE, ConfigureParams.Rom.szTosImageFileName,
-			           argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName),
-				   NULL);
-			bLoadAutoSave = FALSE;
-			break;
-			
 		case OPT_MACHINE:
 			i += 1;
 			if (strcasecmp(argv[i], "st") == 0)

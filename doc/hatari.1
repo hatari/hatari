@@ -104,6 +104,9 @@ slow down FDC emulation (needed to make some games and demos work)
 .B \-s, \-\-memsize <x>
 Set amount of emulated RAM, x = 1 to 14 MiB, or 0 for 512 KiB
 .TP 
+.B \-t, \-\-tos <imagefile>
+Specify TOS ROM image to use
+.TP 
 .B \-\-cartridge <imagefile>
 Use ROM cartridge image <file> (only works if GEMDOS HD emulation and
 extended VDI resolution are disabled)
@@ -121,9 +124,6 @@ Set the CPU clock (8, 16 or 32 Mhz)
 .B \-\-compatible <bool>
 Use a more compatible but slower 68000 CPU mode
 .SH "Misc system options"
-.TP 
-.B \-t, \-\-tos <imagefile>
-Specify TOS ROM image to use
 .TP 
 .B \-\-machine <x>
 select machine type (x = st, ste, tt or falcon)
