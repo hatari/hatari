@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.42 2008-03-01 22:56:47 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.43 2008-03-02 19:45:59 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -629,7 +629,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 				ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
 				break;
 			 default:
-				Opt_ShowExit(OPT_NONE, argv[i], "Unsupported VDI bit-depth");
+				Opt_ShowExit(OPT_VDI_PLANES, argv[i], "Unsupported VDI bit-depth");
 			}
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
 			bLoadAutoSave = FALSE;
@@ -650,16 +650,10 @@ void Opt_ParseParameters(int argc, char *argv[],
 			/* devices options */
 		case OPT_JOYSTICK:
 			i++;
-			if (!Joy_SetCursorEmulation(argv[i][0] - '0'))
+			if (strlen(argv[i]) != 1 ||
+			    !Joy_SetCursorEmulation(argv[i][0] - '0'))
 			{
-				/* TODO: replace this with an error message
-				 * for the next version.  For now assume
-				 * that -j was used without an argument
-				 * which earlier defaulted to port 1
-				 */
-				fprintf(stderr, "WARNING: assuming -j <port> argument is missing and defaulting to port 1.\n");
-				Joy_SetCursorEmulation(1);
-				i--;
+				Opt_ShowExit(OPT_JOYSTICK, argv[i], "Invalid joystick port");
 			}
 			break;
 			
@@ -785,12 +779,12 @@ void Opt_ParseParameters(int argc, char *argv[],
 #if ENABLE_DSP_EMU
 				ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
 #else
-				Opt_ShowExit(OPT_NONE, argv[i], "DSP type 'emu' support not compiled in");
+				Opt_ShowExit(OPT_DSP, argv[i], "DSP type 'emu' support not compiled in");
 #endif
 			}
 			else
 			{
-				Opt_ShowExit(OPT_NONE, argv[i], "Unknown DSP type");
+				Opt_ShowExit(OPT_DSP, argv[i], "Unknown DSP type");
 			}
 			bLoadAutoSave = FALSE;
 			break;
@@ -800,9 +794,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			if (ConfigureParams.Memory.nMemorySize < 0 ||
 			    ConfigureParams.Memory.nMemorySize > 14)
 			{
-				fprintf(stderr, "Memory size %d is invalid (valid: 0-14MB), set to 1.\n",
-					ConfigureParams.Memory.nMemorySize);
-				ConfigureParams.Memory.nMemorySize = 1;
+				Opt_ShowExit(OPT_MEMSIZE, argv[i], "Invalid memory size");
 			}
 			bLoadAutoSave = FALSE;
 			break;
@@ -860,7 +852,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			else
 			{
-				Opt_ShowExit(OPT_NONE, argv[i], "Unknown machine type");
+				Opt_ShowExit(OPT_MACHINE, argv[i], "Unknown machine type");
 			}
 			bLoadAutoSave = FALSE;
 			break;
@@ -888,7 +880,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			else
 			{
-				Opt_ShowExit(OPT_NONE, argv[i], "Unsupported sound quality");
+				Opt_ShowExit(OPT_SOUND, argv[i], "Unsupported sound quality");
 			}
 			break;
 			
@@ -908,12 +900,12 @@ void Opt_ParseParameters(int argc, char *argv[],
 			i += 1;
 			if (ParseTraceOptions(argv[i]) == 0)
 			{
-				Opt_ShowExit(OPT_NONE, argv[i], "Error parsing trace options (use --trace help for available list)!\n");
+				Opt_ShowExit(OPT_TRACE, argv[i], "Error parsing trace options (use --trace help for available list)!\n");
 			}
 			break;
 
 		default:
-			Opt_ShowExit(OPT_NONE, argv[i], "Program didn't handle documented option");
+			Opt_ShowExit(OPT_NONE, argv[i], "Internal Hatari error, unhandled option");
 		}
 	}
 	if (*bootdisk && !hdgiven)
