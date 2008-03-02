@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.43 2008-03-02 19:45:59 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.44 2008-03-02 20:03:22 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -46,6 +46,7 @@ enum {
 	OPT_HELP,		/* general options */
 	OPT_VERSION,
 	OPT_CONFIRMQUIT,
+	OPT_CONFIGFILE,
 	OPT_MONO,		/* display options */
 	OPT_MONITOR,
 	OPT_FULLSCREEN,
@@ -61,23 +62,22 @@ enum {
 	OPT_PRINTER,
 	OPT_MIDI,
 	OPT_RS232,
-	OPT_ACSIHDIMAGE,	/* disk options */
+	OPT_HARDDRIVE,		/* disk options */
+	OPT_ACSIHDIMAGE,
 	OPT_IDEHDIMAGE,
-	OPT_HARDDRIVE,
 	OPT_SLOWFDC,
-	OPT_TOS,		/* system options */
+	OPT_MEMSIZE,		/* memory options */
 	OPT_CARTRIDGE,
-	OPT_CPULEVEL,
+	OPT_MEMSTATE,
+	OPT_CPULEVEL,		/* CPU options */
 	OPT_CPUCLOCK,
 	OPT_COMPATIBLE,
+	OPT_TOS,		/* system options */
+	OPT_MACHINE,
 	OPT_BLITTER,
 	OPT_DSP,
-	OPT_MEMSIZE,
-	OPT_MEMSTATE,
-	OPT_CONFIGFILE,
-	OPT_KEYMAPFILE,
-	OPT_MACHINE,
 	OPT_SOUND,
+	OPT_KEYMAPFILE,
 	OPT_DEBUG,		/* debug options */
 	OPT_LOG,
 	OPT_TRACE,
@@ -102,10 +102,12 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Print version number and exit" },
 	{ OPT_CONFIRMQUIT,NULL, "--confirm-quit",
 	  "<bool>", "Whether Hatari confirms quit" },
+	{ OPT_CONFIGFILE,"-c", "--configfile",
+	  "<file>", "Use <file> instead of the ~/.hatari.cfg config file" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Display" },
 	{ OPT_MONO,      "-m", "--mono",
-	  NULL, "Start in monochrome mode instead of color (deprecated)" },
+	  NULL, "Start in monochrome mode instead of color" },
 	{ OPT_MONITOR,      NULL, "--monitor",
 	  "<x>", "Select monitor type (x = mono/rgb/vga/tv)" },
 	{ OPT_FULLSCREEN,"-f", "--fullscreen",
@@ -140,42 +142,44 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Enable serial port support and use <file> as the device" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Disk" },
+	{ OPT_HARDDRIVE, "-d", "--harddrive",
+	  "<dir>", "Emulate an ST harddrive (<dir> = root directory)" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
 	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
 	{ OPT_IDEHDIMAGE,   NULL, "--ide",
 	  "<file>", "Emulate an IDE harddrive using <file> (not working yet)" },
-	{ OPT_HARDDRIVE, "-d", "--harddrive",
-	  "<dir>", "Emulate an ST harddrive (<dir> = root directory)" },
 	{ OPT_SLOWFDC,   NULL, "--slowfdc",
 	  "<bool>", "Slow down FDC emulation (deprecated)" },
 	
-	{ OPT_HEADER, NULL, NULL, NULL, "System" },
-	{ OPT_TOS,       "-t", "--tos",
-	  "<file>", "Use TOS image <file>" },
+	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
+	{ OPT_MEMSIZE,   "-s", "--memsize",
+	  "<x>", "ST RAM size. x = size in MiB from 0 to 14, 0 for 512KiB" },
 	{ OPT_CARTRIDGE, NULL, "--cartridge",
 	  "<file>", "Use ROM cartridge image <file>" },
+	{ OPT_MEMSTATE,   NULL, "--memstate",
+	  "<file>", "Load memory snap-shot <file>" },
+	
+	{ OPT_HEADER, NULL, NULL, NULL, "CPU" },
 	{ OPT_CPULEVEL,  NULL, "--cpulevel",
 	  "<x>", "Set the CPU type (x => 680x0) (EmuTOS/TOS 2.06 only!)" },
 	{ OPT_CPUCLOCK,  NULL, "--cpuclock",
 	  "<x>", "Set the CPU clock (8, 16 or 32)" },
 	{ OPT_COMPATIBLE,NULL, "--compatible",
 	  "<bool>", "Use a more compatible (but slower) 68000 CPU mode" },
+	
+	{ OPT_HEADER, NULL, NULL, NULL, "Misc system" },
+	{ OPT_TOS,       "-t", "--tos",
+	  "<file>", "Use TOS image <file>" },
+	{ OPT_MACHINE,   NULL, "--machine",
+	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
 	{ OPT_BLITTER,   NULL, "--blitter",
 	  "<bool>", "Use blitter emulation (ST only)" },
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x=none/dummy/emu, for Falcon mode only)" },
-	{ OPT_MEMSIZE,   "-s", "--memsize",
-	  "<x>", "ST RAM size. x = size in MiB from 0 to 14, 0 for 512KiB" },
-	{ OPT_MEMSTATE,   NULL, "--memstate",
-	  "<file>", "Load memory snap-shot <file>" },
-	{ OPT_CONFIGFILE,"-c", "--configfile",
-	  "<file>", "Use <file> instead of the ~/.hatari.cfg config file" },
-	{ OPT_KEYMAPFILE,"-k", "--keymap",
-	  "<file>", "Read (additional) keyboard mappings from <file>" },
-	{ OPT_MACHINE,   NULL, "--machine",
-	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
 	{ OPT_SOUND,   NULL, "--sound",
 	  "<x>", "Sound quality (off/low/med/hi (off=faster))" },
+	{ OPT_KEYMAPFILE,"-k", "--keymap",
+	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
@@ -535,6 +539,14 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_CONFIRMQUIT:
 			ConfigureParams.Log.bConfirmQuit = Opt_Bool(argv[++i], OPT_CONFIRMQUIT);
 			break;
+			
+		case OPT_CONFIGFILE:
+			i += 1;
+			Opt_StrCpy(OPT_CONFIGFILE, TRUE, sConfigFileName,
+			           argv[i], sizeof(sConfigFileName), NULL);
+			Configuration_Load(NULL);
+			bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
+			break;
 		
 			/* display options */
 		case OPT_MONO:
@@ -683,6 +695,18 @@ void Opt_ParseParameters(int argc, char *argv[],
 			break;
 
 			/* disk options */
+		case OPT_HARDDRIVE:
+			i += 1;
+			if (Opt_StrCpy(OPT_HARDDRIVE, FALSE, ConfigureParams.HardDisk.szHardDiskDirectories[0],
+				       argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
+				       &ConfigureParams.HardDisk.bUseHardDiskDirectories))
+			{
+				ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
+				hdgiven = TRUE;
+			}
+			bLoadAutoSave = FALSE;
+			break;
+
 		case OPT_ACSIHDIMAGE:
 			i += 1;
 			Opt_StrCpy(OPT_ACSIHDIMAGE, TRUE, ConfigureParams.HardDisk.szHardDiskImage,
@@ -698,30 +722,20 @@ void Opt_ParseParameters(int argc, char *argv[],
 				   &ConfigureParams.HardDisk.bUseIdeHardDiskImage);
 			bLoadAutoSave = FALSE;
 			break;
-
-		case OPT_HARDDRIVE:
-			i += 1;
-			if (Opt_StrCpy(OPT_HARDDRIVE, FALSE, ConfigureParams.HardDisk.szHardDiskDirectories[0],
-				       argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
-				       &ConfigureParams.HardDisk.bUseHardDiskDirectories))
-			{
-				ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
-				hdgiven = TRUE;
-			}
-			bLoadAutoSave = FALSE;
-			break;
 			
 		case OPT_SLOWFDC:
 			ConfigureParams.System.bSlowFDC = Opt_Bool(argv[++i], OPT_SLOWFDC);
 			bLoadAutoSave = FALSE;
 			break;
-
-			/* system options */
-		case OPT_TOS:
-			i += 1;
-			Opt_StrCpy(OPT_TOS, TRUE, ConfigureParams.Rom.szTosImageFileName,
-			           argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName),
-				   NULL);
+			
+			/* Memory options */
+		case OPT_MEMSIZE:
+			ConfigureParams.Memory.nMemorySize = atoi(argv[++i]);
+			if (ConfigureParams.Memory.nMemorySize < 0 ||
+			    ConfigureParams.Memory.nMemorySize > 14)
+			{
+				Opt_ShowExit(OPT_MEMSIZE, argv[i], "Invalid memory size");
+			}
 			bLoadAutoSave = FALSE;
 			break;
       
@@ -732,7 +746,17 @@ void Opt_ParseParameters(int argc, char *argv[],
 				   NULL);
 			bLoadAutoSave = FALSE;
 			break;
+
+		case OPT_MEMSTATE:
+			i += 1;
+			Opt_StrCpy(OPT_MEMSTATE, TRUE, ConfigureParams.Memory.szMemoryCaptureFileName,
+			           argv[i], sizeof(ConfigureParams.Memory.szMemoryCaptureFileName),
+				   NULL);
+			bLoadMemorySave = TRUE;
+			bLoadAutoSave = FALSE;
+			break;
 			
+			/* CPU options */
 		case OPT_CPULEVEL:
 			/* UAE core uses cpu_level variable */
 			ncpu = atoi(argv[++i]);
@@ -758,70 +782,14 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ConfigureParams.System.bCompatibleCpu = Opt_Bool(argv[++i], OPT_COMPATIBLE);
 			bLoadAutoSave = FALSE;
 			break;
-			
-		case OPT_BLITTER:
-			ConfigureParams.System.bBlitter = Opt_Bool(argv[++i], OPT_BLITTER);
-			bLoadAutoSave = FALSE;
-			break;			
 
-		case OPT_DSP:
+			/* system options */
+		case OPT_TOS:
 			i += 1;
-			if (strcasecmp(argv[i], "none") == 0)
-			{
-				ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
-			}
-			else if (strcasecmp(argv[i], "dummy") == 0)
-			{
-				ConfigureParams.System.nDSPType = DSP_TYPE_DUMMY;
-			}
-			else if (strcasecmp(argv[i], "emu") == 0)
-			{
-#if ENABLE_DSP_EMU
-				ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
-#else
-				Opt_ShowExit(OPT_DSP, argv[i], "DSP type 'emu' support not compiled in");
-#endif
-			}
-			else
-			{
-				Opt_ShowExit(OPT_DSP, argv[i], "Unknown DSP type");
-			}
-			bLoadAutoSave = FALSE;
-			break;
-			
-		case OPT_MEMSIZE:
-			ConfigureParams.Memory.nMemorySize = atoi(argv[++i]);
-			if (ConfigureParams.Memory.nMemorySize < 0 ||
-			    ConfigureParams.Memory.nMemorySize > 14)
-			{
-				Opt_ShowExit(OPT_MEMSIZE, argv[i], "Invalid memory size");
-			}
-			bLoadAutoSave = FALSE;
-			break;
-
-		case OPT_MEMSTATE:
-			i += 1;
-			Opt_StrCpy(OPT_MEMSTATE, TRUE, ConfigureParams.Memory.szMemoryCaptureFileName,
-			           argv[i], sizeof(ConfigureParams.Memory.szMemoryCaptureFileName),
+			Opt_StrCpy(OPT_TOS, TRUE, ConfigureParams.Rom.szTosImageFileName,
+			           argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName),
 				   NULL);
-			bLoadMemorySave = TRUE;
 			bLoadAutoSave = FALSE;
-			break;
-			
-		case OPT_CONFIGFILE:
-			i += 1;
-			Opt_StrCpy(OPT_CONFIGFILE, TRUE, sConfigFileName,
-			           argv[i], sizeof(sConfigFileName), NULL);
-			Configuration_Load(NULL);
-			bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
-			break;
-
-		case OPT_KEYMAPFILE:
-			i += 1;
-			Opt_StrCpy(OPT_KEYMAPFILE, TRUE, ConfigureParams.Keyboard.szMappingFileName,
-			           argv[i], sizeof(ConfigureParams.Keyboard.szMappingFileName),
-				   NULL);
-			ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
 			break;
 			
 		case OPT_MACHINE:
@@ -857,6 +825,36 @@ void Opt_ParseParameters(int argc, char *argv[],
 			bLoadAutoSave = FALSE;
 			break;
 			
+		case OPT_BLITTER:
+			ConfigureParams.System.bBlitter = Opt_Bool(argv[++i], OPT_BLITTER);
+			bLoadAutoSave = FALSE;
+			break;			
+
+		case OPT_DSP:
+			i += 1;
+			if (strcasecmp(argv[i], "none") == 0)
+			{
+				ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
+			}
+			else if (strcasecmp(argv[i], "dummy") == 0)
+			{
+				ConfigureParams.System.nDSPType = DSP_TYPE_DUMMY;
+			}
+			else if (strcasecmp(argv[i], "emu") == 0)
+			{
+#if ENABLE_DSP_EMU
+				ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
+#else
+				Opt_ShowExit(OPT_DSP, argv[i], "DSP type 'emu' support not compiled in");
+#endif
+			}
+			else
+			{
+				Opt_ShowExit(OPT_DSP, argv[i], "Unknown DSP type");
+			}
+			bLoadAutoSave = FALSE;
+			break;
+			
 		case OPT_SOUND:
 			i += 1;
 			if (strcasecmp(argv[i], "off") == 0)
@@ -882,6 +880,14 @@ void Opt_ParseParameters(int argc, char *argv[],
 			{
 				Opt_ShowExit(OPT_SOUND, argv[i], "Unsupported sound quality");
 			}
+			break;
+
+		case OPT_KEYMAPFILE:
+			i += 1;
+			Opt_StrCpy(OPT_KEYMAPFILE, TRUE, ConfigureParams.Keyboard.szMappingFileName,
+			           argv[i], sizeof(ConfigureParams.Keyboard.szMappingFileName),
+				   NULL);
+			ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
 			break;
 			
 			/* debug options */
