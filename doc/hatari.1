@@ -36,6 +36,9 @@ Print version information and terminate
 .TP 
 .B \--confirm-quit <bool>
 Whether Hatari confirms quitting
+.TP 
+.B \-c, \-\-configfile <filename>
+use the mentioned file as configuration file instead of ~/.hatari.cfg
 .SH "Display options"
 .TP 
 .B \-m, \-\-mono
@@ -88,22 +91,26 @@ Enable experimental MIDI output to the mentioned file
 Enable experimental RS232 emulation via the mentioned file/device
 .SH "Disk options"
 .TP 
-.B \-\-acsi <file>
-Emulate ACSI hard disk with an image <file>
-.TP 
 .B \-d, \-\-harddrive <dir>
 Use <dir> as an emulated hard disk
 .TP 
+.B \-\-acsi <file>
+Emulate ACSI hard disk with an image <file>
+.TP 
 .B \-\-slowfdc <bool>
 slow down FDC emulation (needed to make some games and demos work)
-.SH "System options"
+.SH "Memory options"
 .TP 
-.B \-t, \-\-tos <imagefile>
-Specify TOS ROM image to use
+.B \-s, \-\-memsize <x>
+Set amount of emulated RAM, x = 1 to 14 MiB, or 0 for 512 KiB
 .TP 
 .B \-\-cartridge <imagefile>
 Use ROM cartridge image <file> (only works if GEMDOS HD emulation and
 extended VDI resolution are disabled)
+.TP 
+.B \-\-memstate <file>
+Load memory snap-shot <file>
+.SH "CPU options"
 .TP 
 .B \-\-cpulevel <x>
 Specify CPU (680x0) to use (use x >= 1 with EmuTOS or TOS >= 2.06 only!)
@@ -113,6 +120,13 @@ Set the CPU clock (8, 16 or 32 Mhz)
 .TP 
 .B \-\-compatible <bool>
 Use a more compatible but slower 68000 CPU mode
+.SH "Misc system options"
+.TP 
+.B \-t, \-\-tos <imagefile>
+Specify TOS ROM image to use
+.TP 
+.B \-\-machine <x>
+select machine type (x = st, ste, tt or falcon)
 .TP 
 .B \-\-blitter <bool>
 Enable blitter emulation
@@ -120,23 +134,11 @@ Enable blitter emulation
 .B \-\-dsp <x>
 Falcon DSP emulation (x = none, dummy or emu)
 .TP 
-.B \-s, \-\-memsize <x>
-Set amount of emulated RAM, x = 1 to 14 MiB, or 0 for 512 KiB
-.TP 
-.B \-\-memstate <file>
-Load memory snap-shot <file>
-.TP 
-.B \-c, \-\-configfile <filename>
-use the mentioned file as configuration file instead of ~/.hatari.cfg
+.B \-\-sound <x>
+Sound quality (off/low/med/hi (off=faster))
 .TP 
 .B \-\-keymap <file>
 load keyboard mapping from <file>
-.TP 
-.B \-\-machine <x>
-select machine type (x = st, ste, tt or falcon)
-.TP 
-.B \-\-sound <x>
-Sound quality (off/low/med/hi (off=faster))
 .SH "Debug options"
 .TP 
 .B \-D, \-\-debug <bool>
