@@ -98,7 +98,7 @@ static BOOL   gFinderLaunch;
 		char szPath[cbPath];
 		strncpy(szPath, constSzPath, cbPath);	
 	
-		Floppy_InsertDiskIntoDrive(0, szPath);
+		Floppy_InsertDiskIntoDrive(0, szPath, cbPath);
 	}
 }
 
@@ -121,7 +121,7 @@ static BOOL   gFinderLaunch;
 		char szPath[cbPath];
 		strncpy(szPath, constSzPath, cbPath);	
 	
-		Floppy_InsertDiskIntoDrive(1, szPath);
+		Floppy_InsertDiskIntoDrive(1, szPath, cbPath);
 	}
 }
 
@@ -261,7 +261,7 @@ static BOOL   gFinderLaunch;
 		GuiOsx_ExportPathString(path, ConfigureParams.Memory.szMemoryCaptureFileName, sizeof(ConfigureParams.Memory.szMemoryCaptureFileName));
 
 		// Perform the memory snapshot save
-		MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName);
+		MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName, TRUE);
     }	
 
 	GuiOsx_ResumeFromCocoaUI();
@@ -301,7 +301,7 @@ static BOOL   gFinderLaunch;
 		NSString *path = [[openPanel filenames] objectAtIndex:0];
 		
 		// Perform the memory snapshot load
-		MemorySnapShot_Restore([path cString]);
+		MemorySnapShot_Restore([path cString], TRUE);
     }
 	
 	GuiOsx_ResumeFromCocoaUI();
