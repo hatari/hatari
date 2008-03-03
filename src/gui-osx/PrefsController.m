@@ -247,7 +247,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 		strncpy(szPath, constSzPath, cbPath);
 
 		// Insert the floppy image at this path
-		Floppy_InsertDiskIntoDrive(drive, szPath);
+		Floppy_InsertDiskIntoDrive(drive, szPath, cbPath);
 	}
 }
 
@@ -511,7 +511,6 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     IMPORT_SWITCH(enablePrinter, DialogParams.Printer.bEnablePrinting);
     IMPORT_SWITCH(enableRS232, DialogParams.RS232.bEnableRS232);
     IMPORT_SWITCH(enableSound, DialogParams.Sound.bEnableSound);
-    IMPORT_SWITCH(force8bpp, DialogParams.Screen.bForce8Bpp);
     IMPORT_DROPDOWN(frameSkip, DialogParams.Screen.FrameSkips);
     IMPORT_RADIO(keyboardMapping, DialogParams.Keyboard.nKeymapType);
     IMPORT_TEXTFIELD(keyboardMappingFile, DialogParams.Keyboard.szMappingFileName);
@@ -523,7 +522,6 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     IMPORT_RADIO(ramSize, DialogParams.Memory.nMemorySize);
     IMPORT_TEXTFIELD(readRS232FromFile, DialogParams.RS232.szInFileName);
     IMPORT_SWITCH(realTime, DialogParams.System.bRealTimeClock);
-    IMPORT_RADIO(resolution, DialogParams.Screen.nVdiResolution);
     IMPORT_SWITCH(slowFDC, DialogParams.System.bSlowFDC);
     IMPORT_TEXTFIELD(tosImage, DialogParams.Rom.szTosImageFileName);
     IMPORT_SWITCH(useBorders, DialogParams.Screen.bAllowOverscan);
@@ -532,7 +530,16 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	IMPORT_RADIO(writeProtection, DialogParams.DiskImage.nWriteProtection);
     IMPORT_TEXTFIELD(writeRS232ToFile, DialogParams.RS232.szOutFileName);
     IMPORT_SWITCH(zoomSTLowRes, DialogParams.Screen.bZoomLowRes);
-	
+
+	[(force8bpp) setState:((DialogParams.Screen.nForceBpp==8))? NSOnState : NSOffState];
+
+	if (DialogParams.Screen.nVdiWidth >= 1024)
+		[resolution selectCellWithTag:(2)];
+	else if (DialogParams.Screen.nVdiWidth >= 768)
+		[resolution selectCellWithTag:(1)];
+	else
+		[resolution selectCellWithTag:(0)];
+
 	// If the HD flag is set, load the HD path, otherwise make it blank
 	if (DialogParams.HardDisk.bUseHardDiskImage)
 	{
@@ -664,7 +671,6 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     EXPORT_SWITCH(enablePrinter, DialogParams.Printer.bEnablePrinting);
     EXPORT_SWITCH(enableRS232, DialogParams.RS232.bEnableRS232);
     EXPORT_SWITCH(enableSound, DialogParams.Sound.bEnableSound);
-    EXPORT_SWITCH(force8bpp, DialogParams.Screen.bForce8Bpp);
     EXPORT_DROPDOWN(frameSkip, DialogParams.Screen.FrameSkips);
     EXPORT_RADIO(keyboardMapping, DialogParams.Keyboard.nKeymapType);
     EXPORT_TEXTFIELD(keyboardMappingFile, DialogParams.Keyboard.szMappingFileName);
@@ -676,7 +682,6 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     EXPORT_RADIO(ramSize, DialogParams.Memory.nMemorySize);
     EXPORT_TEXTFIELD(readRS232FromFile, DialogParams.RS232.szInFileName);
     EXPORT_SWITCH(realTime, DialogParams.System.bRealTimeClock);
-    EXPORT_RADIO(resolution, DialogParams.Screen.nVdiResolution);
     EXPORT_SWITCH(slowFDC, DialogParams.System.bSlowFDC);
     EXPORT_TEXTFIELD(tosImage, DialogParams.Rom.szTosImageFileName);
     EXPORT_SWITCH(useBorders, DialogParams.Screen.bAllowOverscan);
@@ -685,7 +690,25 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	EXPORT_RADIO(writeProtection, DialogParams.DiskImage.nWriteProtection);
     EXPORT_TEXTFIELD(writeRS232ToFile, DialogParams.RS232.szOutFileName);
     EXPORT_SWITCH(zoomSTLowRes, DialogParams.Screen.bZoomLowRes);	
-	
+
+	DialogParams.Screen.nForceBpp = ([force8bpp state] == NSOnState) ? 8 : 16;
+
+	switch ([[resolution selectedCell] tag])
+	{
+	 case 0:
+		DialogParams.Screen.nVdiWidth = 640;
+		DialogParams.Screen.nVdiHeight = 480;
+		break;
+	 case 1:
+		DialogParams.Screen.nVdiWidth = 800;
+		DialogParams.Screen.nVdiHeight = 600;
+		break;
+	 case 2:
+		DialogParams.Screen.nVdiWidth = 1024;
+		DialogParams.Screen.nVdiHeight = 768;
+		break;
+	}
+
 	// Define the HD flag, and export the HD path if one is selected
 	if ([[hdImage stringValue] length] > 0)
 	{
