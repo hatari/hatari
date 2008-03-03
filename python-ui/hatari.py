@@ -103,15 +103,46 @@ class Hatari():
 
 # current Hatari configuration, singleton
 class Config():
-    changed = False
-    
+    confpath = None # existing Hatari configuration
+    changed = False # whether it's changed
+
     def __init__(self):
-        print "TODO: load Hatari configuration file"
+        self.confpath = self.get_confpath()
+        if self.confpath:
+            print "TODO: load Hatari configuration file:", self.confpath
+        else:
+            print "Hatari configuration file missing"
         # TODO: remove this once testing is done
         self.changed = True
+
+    def get_confpath(self):
+        # hatari.cfg can be in home or current work dir
+        for path in (os.getenv("HOME"), os.getcwd()):
+            if path:
+                confpath = self.check_confpath(path)
+                if confpath:
+                    return confpath
+        return None
+
+    def check_confpath(self, path):
+        # check path/.hatari/hatari.cfg, path/hatari.cfg
+        path += os.path.sep
+        testpath = path + ".hatari" + os.path.sep + "hatari.cfg"
+        if os.path.exists(testpath):
+            return testpath
+        testpath = path + "hatari.cfg"
+        if os.path.exists(testpath):
+            return testpath
+        return None
 
     def is_changed(self):
         return self.changed
 
+    def write(self, confpath):
+        print "TODO: save Hatari configuration file:", confpath
+            
     def save(self):
-        print "TODO: save Hatari configuration file"
+        if self.confpath:
+            self.write(self.confpath)
+        else:
+            print "WARNING: no existing Hatari configuration to modify, saving canceled"
