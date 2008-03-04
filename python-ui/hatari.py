@@ -49,8 +49,9 @@ class Hatari():
             self.pid = pid
         else:
             # child runs Hatari
-            args = self.get_args()
+            args = ("hatari", ) + self.get_extra_args(parent_win)
             env = self.get_env(parent_win)
+            print "RUN:", args
             os.execvpe("hatari", args, env)
 
     def get_env(self, parent_win):
@@ -75,9 +76,23 @@ class Hatari():
         env["PARENT_WIN_ID"] = str(win_id)
         return env
 
-    def get_args(self):
-        print "TODO: get the Hatari cmdline options from configuration"
-        args = ("hatari", "-m", "-z", "2")
+    def get_extra_args(self, parent_win):
+        print "TODO: save and use temporary Hatari-UI hatari settings?"
+        if not parent_win:
+            return ()
+        # need to modify Hatari settings to match parent window
+        #
+        # TODO: should check for sizes with borders and make
+        # sure "--machine" type is OK (TT and Falcon can have
+        # larger screens)
+        size = parent_win.get_size()
+        if size == (320, 200):
+            args = ("--borders", "off", "--zoom", "1", "--monitor", "vga")
+        elif size == (640, 400):
+            args = ("--borders", "off", "--zoom", "2")
+        else:
+            print "ERROR: unknown Hatari parent window size", size
+            sys.exit(1)
         return args
 
     def pause(self):
