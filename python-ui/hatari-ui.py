@@ -59,7 +59,7 @@ class HatariUI():
     def create_mainwin(self, embed):
         # main window
         mainwin = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        mainwin.connect("delete_event", self.prevent_mainwin_close)
+        mainwin.connect("delete_event", self.quit_clicked)
         mainwin.set_icon_from_file(self.icon)
         mainwin.set_title(self.title)
         
@@ -128,25 +128,21 @@ class HatariUI():
         if self.keep_hatari_running():
             return
         if self.hatariparent:
-            self.hatari.run(self.hatariparent.window)
+            self.hatari.run(self.config, self.hatariparent.window)
         else:
-            self.hatari.run()
+            self.hatari.run(self.config)
 
-    def prevent_mainwin_close(self, widget, arg):
+    def quit_clicked(self, widget, arg = None):
         if self.keep_hatari_running():
             return True
         if self.config.is_changed():
-            if self.quitdialog.run() == gtk.RESPONSE_OK:
-                gtk.main_quit()
-                # continue to mainwin destroy if called by delete_event
-                return False
-            self.quitdialog.hide()
-            return True
+            if self.quitdialog.run() != gtk.RESPONSE_OK:
+                self.quitdialog.hide()
+                return True
+        gtk.main_quit()
+        # continue to mainwin destroy if called by delete_event
         return False
-
-    def quit_clicked(self, widget):
-        self.prevent_mainwin_close(None, None)
-        
+    
     def about_clicked(self, widget):
         self.aboutdialog.run()
         self.aboutdialog.hide()
