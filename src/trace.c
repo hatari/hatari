@@ -39,6 +39,7 @@ TraceOptions[] = {
 	{ HATARI_TRACE_MFP_EXCEPTION	, "mfp_exception" } ,
 	{ HATARI_TRACE_MFP_START	, "mfp_start" } ,
 	{ HATARI_TRACE_MFP_READ		, "mfp_read" } ,
+	{ HATARI_TRACE_MFP_WRITE	, "mfp_write" } ,
 	{ HATARI_TRACE_MFP_ALL		, "mfp_all" } ,
 
 	{ HATARI_TRACE_PSG_WRITE_REG	, "psg_write_reg" } ,

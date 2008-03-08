@@ -55,8 +55,9 @@
 /*			limit PendingCyclesOver to not more than the number of cycles	*/
 /*			of one int (which means we "skip" the ints that	could not be	*/
 /*			processed).							*/
+/* 2008/03/08	[NP]	Add traces when writing to vector register fffa17.		*/
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.33 2008-02-06 23:15:20 npomarede Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.34 2008-03-08 13:12:40 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -1212,6 +1213,15 @@ void MFP_VectorReg_WriteByte(void)
 			MFP_ISRB = 0;
 		}
 	}
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_WRITE ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "mfp write vector reg fa17=%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+			MFP_VR, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
+
 }
 
 /*-----------------------------------------------------------------------*/
