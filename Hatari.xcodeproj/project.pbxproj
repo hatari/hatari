@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		961322D70B5BCDB900007C3E /* acsite.m4 in Resources */ = {isa = PBXBuildFile; fileRef = 961322D20B5BCDB900007C3E /* acsite.m4 */; };
 		961322D80B5BCDB900007C3E /* config-default.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322D30B5BCDB900007C3E /* config-default.h */; };
-		961322D90B5BCDB900007C3E /* config-MinGW.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322D40B5BCDB900007C3E /* config-MinGW.h */; };
 		961322DA0B5BCDB900007C3E /* Makefile-default.cnf in Resources */ = {isa = PBXBuildFile; fileRef = 961322D50B5BCDB900007C3E /* Makefile-default.cnf */; };
 		961322DB0B5BCDB900007C3E /* Makefile-MinGW.cnf in Resources */ = {isa = PBXBuildFile; fileRef = 961322D60B5BCDB900007C3E /* Makefile-MinGW.cnf */; };
 		961322E70B5BCFBB00007C3E /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322E60B5BCFBB00007C3E /* config.h */; };
@@ -123,13 +122,11 @@
 		9670E16A0A5FA132009A73E0 /* dlgAbout.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E8707512EA200DA6B24 /* dlgAbout.c */; };
 		9670E16B0A5FA132009A73E0 /* dlgAlert.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E8807512EA200DA6B24 /* dlgAlert.c */; };
 		9670E16C0A5FA132009A73E0 /* dlgDevice.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E8907512EA200DA6B24 /* dlgDevice.c */; };
-		9670E16D0A5FA132009A73E0 /* dlgDisc.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E8A07512EA200DA6B24 /* dlgDisc.c */; };
 		9670E16E0A5FA132009A73E0 /* dlgFileSelect.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E8B07512EA200DA6B24 /* dlgFileSelect.c */; };
 		9670E16F0A5FA132009A73E0 /* dlgJoystick.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E8C07512EA200DA6B24 /* dlgJoystick.c */; };
 		9670E1700A5FA132009A73E0 /* dlgKeyboard.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E8D07512EA200DA6B24 /* dlgKeyboard.c */; };
 		9670E1710A5FA132009A73E0 /* dlgMain.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E8E07512EA200DA6B24 /* dlgMain.c */; };
 		9670E1720A5FA132009A73E0 /* dlgMemory.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E8F07512EA200DA6B24 /* dlgMemory.c */; };
-		9670E1730A5FA132009A73E0 /* dlgNewDisc.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E9007512EA200DA6B24 /* dlgNewDisc.c */; };
 		9670E1740A5FA132009A73E0 /* dlgScreen.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E9107512EA200DA6B24 /* dlgScreen.c */; };
 		9670E1750A5FA132009A73E0 /* dlgSound.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E9207512EA200DA6B24 /* dlgSound.c */; };
 		9670E1760A5FA132009A73E0 /* dlgSystem.c in Sources */ = {isa = PBXBuildFile; fileRef = E9283E9307512EA200DA6B24 /* dlgSystem.c */; };
@@ -186,8 +183,14 @@
 		9670E1AA0A5FA132009A73E0 /* options.c in Sources */ = {isa = PBXBuildFile; fileRef = 968DE4D30A59B234007517A4 /* options.c */; };
 		9670E1AC0A5FA132009A73E0 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		9670E1C20A5FA25A009A73E0 /* SDL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9670E1C10A5FA25A009A73E0 /* SDL.framework */; };
+		968B50F00D83704D00C21920 /* dlgDisk.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B50EE0D83704D00C21920 /* dlgDisk.c */; };
+		968B50F10D83704D00C21920 /* dlgNewDisk.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B50EF0D83704D00C21920 /* dlgNewDisk.c */; };
 		969191280AA205A80008B3A0 /* scandir.c in Sources */ = {isa = PBXBuildFile; fileRef = 969191270AA205A80008B3A0 /* scandir.c */; };
 		9691912A0AA205D60008B3A0 /* scandir.h in Headers */ = {isa = PBXBuildFile; fileRef = 969191290AA205D60008B3A0 /* scandir.h */; };
+		96B15D550D836F8F000326A2 /* paths.h in Headers */ = {isa = PBXBuildFile; fileRef = 96B15D540D836F8F000326A2 /* paths.h */; };
+		96B15D570D836F9A000326A2 /* trace.h in Headers */ = {isa = PBXBuildFile; fileRef = 96B15D560D836F9A000326A2 /* trace.h */; };
+		96B15D5A0D836FC0000326A2 /* paths.c in Sources */ = {isa = PBXBuildFile; fileRef = 96B15D580D836FC0000326A2 /* paths.c */; };
+		96B15D5B0D836FC0000326A2 /* trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 96B15D590D836FC0000326A2 /* trace.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -207,7 +210,6 @@
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		961322D20B5BCDB900007C3E /* acsite.m4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = acsite.m4; sourceTree = "<group>"; };
 		961322D30B5BCDB900007C3E /* config-default.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "config-default.h"; sourceTree = "<group>"; };
-		961322D40B5BCDB900007C3E /* config-MinGW.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "config-MinGW.h"; sourceTree = "<group>"; };
 		961322D50B5BCDB900007C3E /* Makefile-default.cnf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Makefile-default.cnf"; sourceTree = "<group>"; };
 		961322D60B5BCDB900007C3E /* Makefile-MinGW.cnf */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Makefile-MinGW.cnf"; sourceTree = "<group>"; };
 		961322E60B5BCFBB00007C3E /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
@@ -237,11 +239,17 @@
 		9670E1B00A5FA132009A73E0 /* Info-Hatari.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "Info-Hatari.plist"; sourceTree = "<group>"; };
 		9670E1B10A5FA132009A73E0 /* Hatari.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hatari.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9670E1C10A5FA25A009A73E0 /* SDL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL.framework; path = /Library/Frameworks/SDL.framework; sourceTree = "<absolute>"; };
+		968B50EE0D83704D00C21920 /* dlgDisk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dlgDisk.c; sourceTree = "<group>"; };
+		968B50EF0D83704D00C21920 /* dlgNewDisk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dlgNewDisk.c; sourceTree = "<group>"; };
 		968DE4CE0A59B1E8007517A4 /* gemdos_defines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gemdos_defines.h; sourceTree = "<group>"; };
 		968DE4CF0A59B1E8007517A4 /* options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = options.h; sourceTree = "<group>"; };
 		968DE4D30A59B234007517A4 /* options.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = options.c; path = src/options.c; sourceTree = "<group>"; };
 		969191270AA205A80008B3A0 /* scandir.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = scandir.c; path = src/scandir.c; sourceTree = "<group>"; };
 		969191290AA205D60008B3A0 /* scandir.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scandir.h; sourceTree = "<group>"; };
+		96B15D540D836F8F000326A2 /* paths.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = paths.h; sourceTree = "<group>"; };
+		96B15D560D836F9A000326A2 /* trace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = trace.h; sourceTree = "<group>"; };
+		96B15D580D836FC0000326A2 /* paths.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = paths.c; path = src/paths.c; sourceTree = "<group>"; };
+		96B15D590D836FC0000326A2 /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = trace.c; path = src/trace.c; sourceTree = "<group>"; };
 		96BEBB3F0A567AC0007ADA48 /* AlertHooks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AlertHooks.h; sourceTree = "<group>"; };
 		96BEBB400A567AC0007ADA48 /* AlertHooks.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AlertHooks.m; sourceTree = "<group>"; };
 		96C84DB40A549F4B00CAF172 /* Shared.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Shared.h; sourceTree = "<group>"; };
@@ -269,13 +277,11 @@
 		E9283E8707512EA200DA6B24 /* dlgAbout.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgAbout.c; sourceTree = "<group>"; };
 		E9283E8807512EA200DA6B24 /* dlgAlert.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgAlert.c; sourceTree = "<group>"; };
 		E9283E8907512EA200DA6B24 /* dlgDevice.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgDevice.c; sourceTree = "<group>"; };
-		E9283E8A07512EA200DA6B24 /* dlgDisc.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgDisc.c; sourceTree = "<group>"; };
 		E9283E8B07512EA200DA6B24 /* dlgFileSelect.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgFileSelect.c; sourceTree = "<group>"; };
 		E9283E8C07512EA200DA6B24 /* dlgJoystick.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgJoystick.c; sourceTree = "<group>"; };
 		E9283E8D07512EA200DA6B24 /* dlgKeyboard.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgKeyboard.c; sourceTree = "<group>"; };
 		E9283E8E07512EA200DA6B24 /* dlgMain.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgMain.c; sourceTree = "<group>"; };
 		E9283E8F07512EA200DA6B24 /* dlgMemory.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgMemory.c; sourceTree = "<group>"; };
-		E9283E9007512EA200DA6B24 /* dlgNewDisc.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgNewDisc.c; sourceTree = "<group>"; };
 		E9283E9107512EA200DA6B24 /* dlgScreen.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgScreen.c; sourceTree = "<group>"; };
 		E9283E9207512EA200DA6B24 /* dlgSound.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgSound.c; sourceTree = "<group>"; };
 		E9283E9307512EA200DA6B24 /* dlgSystem.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = dlgSystem.c; sourceTree = "<group>"; };
@@ -437,7 +443,6 @@
 				961322E60B5BCFBB00007C3E /* config.h */,
 				961322D20B5BCDB900007C3E /* acsite.m4 */,
 				961322D30B5BCDB900007C3E /* config-default.h */,
-				961322D40B5BCDB900007C3E /* config-MinGW.h */,
 				961322D50B5BCDB900007C3E /* Makefile-default.cnf */,
 				961322D60B5BCDB900007C3E /* Makefile-MinGW.cnf */,
 				96D6324C0A4E9A4300FBFA27 /* gui-osx */,
@@ -453,6 +458,8 @@
 		29B97315FDCFA39411CA2CEA /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
+				96B15D580D836FC0000326A2 /* paths.c */,
+				96B15D590D836FC0000326A2 /* trace.c */,
 				96635B750BF86FDF00518B3B /* nvram.c */,
 				96635B760BF86FDF00518B3B /* nvram.h */,
 				961323110B5BD17700007C3E /* ide.h */,
@@ -571,17 +578,17 @@
 		E9283E8507512EA200DA6B24 /* gui-sdl */ = {
 			isa = PBXGroup;
 			children = (
+				968B50EE0D83704D00C21920 /* dlgDisk.c */,
+				968B50EF0D83704D00C21920 /* dlgNewDisk.c */,
 				96CD27820A58443F008DE57F /* dlgRom.c */,
 				E9283E8707512EA200DA6B24 /* dlgAbout.c */,
 				E9283E8807512EA200DA6B24 /* dlgAlert.c */,
 				E9283E8907512EA200DA6B24 /* dlgDevice.c */,
-				E9283E8A07512EA200DA6B24 /* dlgDisc.c */,
 				E9283E8B07512EA200DA6B24 /* dlgFileSelect.c */,
 				E9283E8C07512EA200DA6B24 /* dlgJoystick.c */,
 				E9283E8D07512EA200DA6B24 /* dlgKeyboard.c */,
 				E9283E8E07512EA200DA6B24 /* dlgMain.c */,
 				E9283E8F07512EA200DA6B24 /* dlgMemory.c */,
-				E9283E9007512EA200DA6B24 /* dlgNewDisc.c */,
 				E9283E9107512EA200DA6B24 /* dlgScreen.c */,
 				E9283E9207512EA200DA6B24 /* dlgSound.c */,
 				E9283E9307512EA200DA6B24 /* dlgSystem.c */,
@@ -596,6 +603,8 @@
 		E9283E9D07512EA200DA6B24 /* includes */ = {
 			isa = PBXGroup;
 			children = (
+				96B15D560D836F9A000326A2 /* trace.h */,
+				96B15D540D836F8F000326A2 /* paths.h */,
 				969191290AA205D60008B3A0 /* scandir.h */,
 				968DE4CE0A59B1E8007517A4 /* gemdos_defines.h */,
 				968DE4CF0A59B1E8007517A4 /* options.h */,
@@ -762,7 +771,6 @@
 				9670E1550A5FA132009A73E0 /* options.h in Headers */,
 				9691912A0AA205D60008B3A0 /* scandir.h in Headers */,
 				961322D80B5BCDB900007C3E /* config-default.h in Headers */,
-				961322D90B5BCDB900007C3E /* config-MinGW.h in Headers */,
 				961322E70B5BCFBB00007C3E /* config.h in Headers */,
 				961322FB0B5BD0B800007C3E /* araglue.h in Headers */,
 				961322FD0B5BD0B800007C3E /* dsp_cpu.h in Headers */,
@@ -772,6 +780,8 @@
 				961323060B5BD0B800007C3E /* videl.h in Headers */,
 				961323130B5BD17700007C3E /* ide.h in Headers */,
 				96635B780BF86FDF00518B3B /* nvram.h in Headers */,
+				96B15D550D836F8F000326A2 /* paths.h in Headers */,
+				96B15D570D836F9A000326A2 /* trace.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -821,9 +831,11 @@
 		29B97313FDCFA39411CA2CEA /* Project object */ = {
 			isa = PBXProject;
 			buildConfigurationList = 96F027C90998116700577C54 /* Build configuration list for PBXProject "Hatari" */;
+			compatibilityVersion = "Xcode 2.4";
 			hasScannedForEncodings = 1;
 			mainGroup = 29B97314FDCFA39411CA2CEA /* Hatari */;
 			projectDirPath = "";
+			projectRoot = "";
 			targets = (
 				9670E10C0A5FA132009A73E0 /* Hatari */,
 				E97980AD07513008008815D3 /* cpuemu.c */,
@@ -870,13 +882,11 @@
 				9670E16A0A5FA132009A73E0 /* dlgAbout.c in Sources */,
 				9670E16B0A5FA132009A73E0 /* dlgAlert.c in Sources */,
 				9670E16C0A5FA132009A73E0 /* dlgDevice.c in Sources */,
-				9670E16D0A5FA132009A73E0 /* dlgDisc.c in Sources */,
 				9670E16E0A5FA132009A73E0 /* dlgFileSelect.c in Sources */,
 				9670E16F0A5FA132009A73E0 /* dlgJoystick.c in Sources */,
 				9670E1700A5FA132009A73E0 /* dlgKeyboard.c in Sources */,
 				9670E1710A5FA132009A73E0 /* dlgMain.c in Sources */,
 				9670E1720A5FA132009A73E0 /* dlgMemory.c in Sources */,
-				9670E1730A5FA132009A73E0 /* dlgNewDisc.c in Sources */,
 				9670E1740A5FA132009A73E0 /* dlgScreen.c in Sources */,
 				9670E1750A5FA132009A73E0 /* dlgSound.c in Sources */,
 				9670E1760A5FA132009A73E0 /* dlgSystem.c in Sources */,
@@ -943,6 +953,10 @@
 				9613230F0B5BD14B00007C3E /* ioMemTabTT.c in Sources */,
 				961323300B5BD66600007C3E /* ide.c in Sources */,
 				96635B770BF86FDF00518B3B /* nvram.c in Sources */,
+				96B15D5A0D836FC0000326A2 /* paths.c in Sources */,
+				96B15D5B0D836FC0000326A2 /* trace.c in Sources */,
+				968B50F00D83704D00C21920 /* dlgDisk.c in Sources */,
+				968B50F10D83704D00C21920 /* dlgNewDisk.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -983,7 +997,7 @@
 					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_2)",
 					ALERT_HOOKS,
 				);
-				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_1 = "DATADIR=\\\".\\\"";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_1 = "BIN2DATADIR=\\\".\\\"";
 				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_2 = "CONFDIR=\\\".\\\"";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
