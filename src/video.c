@@ -113,8 +113,9 @@
 /*			the screen (in case ff8205/07/09 were modified on STE).			*/
 /* 2008/02/20	[NP]	Better handling in Video_ScreenCounter_WriteByte by changing only one	*/
 /*			byte and keeping the other (Braindamage End Part).			*/
+/* 2008/03/08	[NP]	Use M68000_INT_VIDEO when calling M68000_Exception().			*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.94 2008-02-29 21:11:12 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.95 2008-03-09 12:53:28 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -1143,7 +1144,7 @@ void Video_InterruptHandler_HBL(void)
 	if (nHBL < nScanlinesPerFrame-1)
 		Int_AddAbsoluteInterrupt(nCyclesPerLine, INT_CPU_CYCLE, INTERRUPT_VIDEO_HBL);
 
-	M68000_Exception(EXCEPTION_HBLANK);   /* Horizontal blank interrupt, level 2! */
+	M68000_Exception ( EXCEPTION_HBLANK , M68000_INT_VIDEO );	/* Horizontal blank interrupt, level 2! */
 
 	Video_EndHBL();              /* Increase HBL count, copy line to display buffer and do any video trickery */
 }
@@ -1538,7 +1539,7 @@ void Video_InterruptHandler_VBL(void)
 	HATARI_TRACE ( HATARI_TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d\n" ,
 	               nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver );
 
-	M68000_Exception(EXCEPTION_VBLANK);   /* Vertical blank interrupt, level 4! */
+	M68000_Exception ( EXCEPTION_VBLANK , M68000_INT_VIDEO );	/* Vertical blank interrupt, level 4! */
 
 	/* And handle any messages, check for quit message */
 	Main_EventHandler();         /* Process messages, set 'bQuitProgram' if user tries to quit */

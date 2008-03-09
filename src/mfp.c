@@ -56,8 +56,9 @@
 /*			of one int (which means we "skip" the ints that	could not be	*/
 /*			processed).							*/
 /* 2008/03/08	[NP]	Add traces when writing to vector register fffa17.		*/
+/*			Use M68000_INT_MFP when calling M68000_Exception().		*/
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.34 2008-03-08 13:12:40 npomarede Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.35 2008-03-09 12:53:26 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -249,7 +250,7 @@ static void MFP_Exception(int Interrupt)
 			Interrupt, Vec, get_long ( Vec ), nFrameCycles, nLineCycles, nHBL );
 	}
 
-	M68000_Exception(Vec);
+	M68000_Exception ( Vec , M68000_INT_MFP );
 }
 
 

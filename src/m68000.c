@@ -29,8 +29,16 @@
 /* 2008/02/11	[NP]	Add pairing for MULS/MOVEA (Delirious Demo IV Loader).				*/
 /* 2008/01/25	[NP]	Add pairing for LSR/MOVEA (and all other bit shifting instr) (Decade Demo Reset)*/
 /* 2008/02/16	[NP]	Add pairing for MULS/DIVS, but not 100% sure. This fixes e605 demo part 3, but	*/
-/*			this could be due to another missing pairing. This needs to be checked on a	*/
-/*			real ST.									*/
+/*			this could be due to another missing pairing. FIXME : This needs to be checked	*/
+/*			on a real ST.									*/
+/* 2008/03/08	[NP]	In M68000_Exception, we need to know if the exception was triggered by an MFP	*/
+/*			interrupt or by a video interrupt. In the case MFP vector base was changed in	*/
+/*			fffa17 to an other value than the default $40, testing exceptionNr is not enough*/
+/*			to correctly process the exception. For example, if vector base is set to $10	*/
+/*			then MFP Timer A will call vector stored at address $74, which would be wrongly	*/
+/*			interpreted as a level 5 int (which doesn't exist on Atari and will cause an	*/
+/*			assert to fail in intlevel()). We use InterruptType to correctly recognize the	*/
+/*			MFP interrupts (fix 'Toki' end part fullscreen which sets vector base to $10).	*/
 
 
 /* [NP] possible pairing to check :             */
@@ -40,7 +48,7 @@
 /*	mul/div div/mul				*/
 
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.55 2008-02-24 20:45:30 thothy Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.56 2008-03-09 12:53:28 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -304,9 +312,9 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
 #endif
 	}
 
-	if (bSave)	 
-		save_fpu();	 
-	else	 
+	if (bSave)
+		save_fpu();
+	else
 		restore_fpu();
 }
 
@@ -340,14 +348,16 @@ void M68000_BusError(Uint32 addr, BOOL bReadWrite)
 /**
  * Exception handler
  */
-void M68000_Exception(Uint32 ExceptionVector)
+void M68000_Exception(Uint32 ExceptionVector , int InterruptType)
 {
 	int exceptionNr = ExceptionVector/4;
 
-	if (exceptionNr>24 && exceptionNr<32) /* 68k autovector interrupt? */
+	if ( ( InterruptType == M68000_INT_VIDEO )
+		&& (exceptionNr>24 && exceptionNr<32) )	/* 68k autovector interrupt? */
 	{
 		/* Handle autovector interrupts the UAE's way
 		 * (see intlev() and do_specialties() in UAE CPU core) */
+		/* In our case, this part is only called for HBL and VBL interrupts */
 		int intnr = exceptionNr - 24;
 		pendingInterrupts |= (1 << intnr);
 		M68000_SetSpecial(SPCFLAG_INT);
@@ -383,7 +393,7 @@ void M68000_Exception(Uint32 ExceptionVector)
 #endif
 		{
 			Uint32 MFPBaseVector = (unsigned int)(MFP_VR&0xf0)<<2;
-			if ( (ExceptionVector>=MFPBaseVector) && (ExceptionVector<=(MFPBaseVector+0x34)) )
+			if ( (ExceptionVector>=MFPBaseVector) && (ExceptionVector<=(MFPBaseVector+0x3c)) )
 				SR = (SR&SR_CLEAR_IPL)|0x0600; /* MFP, level 6 */
 		}
 
