@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.74 2008-03-01 22:37:43 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.75 2008-03-10 22:36:31 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -87,12 +87,14 @@ static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 
 /*-----------------------------------------------------------------------*/
 /**
- * Create ST 0x777 / STe 0xfff color format to 16-bits per pixel conversion
- * table. Called each time when changed resolution or to/from fullscreen mode.
+ * Create ST 0x777 / STe 0xfff color format to 16 or 32 bits per pixel
+ * conversion table. Called each time when changed resolution or to/from
+ * fullscreen mode.
  */
 static void Screen_SetupRGBTable(void)
 {
-	Uint16 STColour, RGBColour;
+	Uint16 STColor;
+	Uint32 RGBColor;
 	int r, g, b;
 	int rr, gg, bb;
 
@@ -104,13 +106,20 @@ static void Screen_SetupRGBTable(void)
 			for (b = 0; b < 16; b++)
 			{
 				/* STe 0xfff format */
-				STColour = (r<<8) | (g<<4) | (b);
+				STColor = (r<<8) | (g<<4) | (b);
 				rr = ((r & 0x7) << 5) | ((r & 0x8) << 1);
 				gg = ((g & 0x7) << 5) | ((g & 0x8) << 1);
 				bb = ((b & 0x7) << 5) | ((b & 0x8) << 1);
-				RGBColour = SDL_MapRGB(sdlscrn->format, rr, gg, bb);
-				/* As longs, for speed (write two pixels at once) */
-				ST2RGB[STColour] = (RGBColour<<16) | RGBColour;
+				RGBColor = SDL_MapRGB(sdlscrn->format, rr, gg, bb);
+				if (sdlscrn->format->BitsPerPixel <= 16)
+				{
+					/* As longs, for speed (write two pixels at once) */
+					ST2RGB[STColor] = (RGBColor<<16) | RGBColor;
+				}
+				else
+				{
+					ST2RGB[STColor] = RGBColor;
+				}
 			}
 		}
 	}
@@ -214,42 +223,37 @@ static void Screen_Handle8BitPalettes(void)
 /**
  * Set screen draw functions.
  */
-static void Screen_SetDrawFunctions(void)
+static void Screen_SetDrawFunctions(int nBitCount)
 {
 	if (ConfigureParams.Screen.nForceBpp == 8)
 	{
-
+		/* Low color */
 		if (ConfigureParams.Screen.bZoomLowRes)
-		{
-			/* low color, zoomed resolution */
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x8Bit;
-			ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
-			ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-		}
 		else
-		{
-			/* low color, low resolution */
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x8Bit;
-			ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
-			ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-		}
+		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x8Bit;
+		ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
 	}
-	else
+	else if (nBitCount <= 16)
 	{
+		/* High color */
 		if (ConfigureParams.Screen.bZoomLowRes)
-		{
-			/* high color, zoomed resolution */
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x16Bit;
-			ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
-			ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-		}
 		else
-		{
-			/* high color, low resolution */
 			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x16Bit;
-			ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
-			ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
-		}
+		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x16Bit;
+		ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
+	}
+	else /* Assume 32 bit drawing functions */
+	{
+		/* True color */
+		if (ConfigureParams.Screen.bZoomLowRes)
+			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_640x32Bit;
+		else
+			ScreenDrawFunctionsNormal[ST_LOW_RES] = ConvertLowRes_320x32Bit;
+		ScreenDrawFunctionsNormal[ST_MEDIUM_RES] = ConvertMediumRes_640x32Bit;
+		ScreenDrawFunctionsNormal[ST_HIGH_RES] = ConvertHighRes_640x8Bit;
 	}
 }
 
@@ -333,14 +337,7 @@ static void Screen_SetResolution(void)
 	}
 	else
 	{
-		if (ConfigureParams.Screen.nForceBpp)
-		{
-			BitCount = ConfigureParams.Screen.nForceBpp;
-		}
-		else
-		{
-			BitCount = 16;
-		}
+		BitCount = ConfigureParams.Screen.nForceBpp;
 	}
 
 	/* Set zoom factors, used for scaling mouse motions */
@@ -372,34 +369,42 @@ static void Screen_SetResolution(void)
 		sdlVideoFlags  = SDL_SWSURFACE|SDL_HWPALETTE;
 	}
 
-	/* Set draw functions in case SDL attribs didn't change
-	 * but STRes changed (e.g. medres -> zoomed lowres) */
-	Screen_SetDrawFunctions();
-
 	/* Check if we really have to change the video mode: */
-	if (sdlscrn && sdlscrn->w == Width && sdlscrn->h == Height
-	        && sdlscrn->format->BitsPerPixel == BitCount
-	        && (sdlscrn->flags&SDL_FULLSCREEN) == (sdlVideoFlags&SDL_FULLSCREEN))
+	if (!sdlscrn || sdlscrn->w != Width || sdlscrn->h != Height
+	    || sdlscrn->format->BitsPerPixel != BitCount
+	    || (sdlscrn->flags&SDL_FULLSCREEN) != (sdlVideoFlags&SDL_FULLSCREEN))
 	{
-		return;
+		/* Set new video mode */
+		//fprintf(stderr,"Requesting video mode %i %i %i\n", Width, Height, BitCount);
+		sdlscrn = SDL_SetVideoMode(Width, Height, BitCount, sdlVideoFlags);
+		//fprintf(stderr,"Got video mode %i %i %i\n", sdlscrn->w, sdlscrn->h, sdlscrn->format->BitsPerPixel);
+		/* We do not support 24 bpp (yet) */
+		if (sdlscrn && sdlscrn->format->BitsPerPixel == 24)
+		{
+			fprintf(stderr, "Unsupported color depth 24, trying 32 bpp instead...\n");
+			sdlscrn = SDL_SetVideoMode(Width, Height, 32, sdlVideoFlags);
+		}
+		/* Exit if we can not open a screen */
+		if (!sdlscrn)
+		{
+			fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
+			SDL_Quit();
+			exit(-2);
+		}
+
+		/* Re-init screen palette: */
+		if (BitCount == 8)
+			Screen_Handle8BitPalettes();    /* Initialize new 8 bit palette */
+		else
+			Screen_SetupRGBTable();         /* Create color convertion table */
+
+		/* Un-grab mouse pointer in windowed mode: */
+		if (!bGrabMouse)
+			SDL_WM_GrabInput(SDL_GRAB_OFF);
 	}
 
-	sdlscrn = SDL_SetVideoMode(Width, Height, BitCount, sdlVideoFlags);
-	if (!sdlscrn)
-	{
-		fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
-		SDL_Quit();
-		exit(-2);
-	}
-
-	/* Re-init screen palette: */
-	if (BitCount == 8)
-		Screen_Handle8BitPalettes();    /* Initialize new 8 bit palette */
-	else
-		Screen_SetupRGBTable();         /* Create color convertion table */
-
-	if (!bGrabMouse)
-		SDL_WM_GrabInput(SDL_GRAB_OFF); /* Un-grab mouse pointer in windowed mode */
+	/* Set drawing functions */
+	Screen_SetDrawFunctions(sdlscrn->format->BitsPerPixel);
 
 	Screen_SetFullUpdate();           /* Cause full update of screen */
 }
@@ -972,6 +977,10 @@ static void Screen_DrawFrame(BOOL bForceFlip)
 					pDrawFunction = ConvertSpec512_320x16Bit;
 				else if (pDrawFunction==ConvertLowRes_640x16Bit)
 					pDrawFunction = ConvertSpec512_640x16Bit;
+				else if (pDrawFunction==ConvertLowRes_320x32Bit)
+					pDrawFunction = ConvertSpec512_320x32Bit;
+				else if (pDrawFunction==ConvertLowRes_640x32Bit)
+					pDrawFunction = ConvertSpec512_640x32Bit;
 			}
 		}
 
@@ -1073,16 +1082,24 @@ static void Convert_StartFrame(void)
 #include "convert/macros.h"
 
 /* Conversion routines */
-#include "convert/low320x16.c"    /* LowRes To 320xH x 16-bit colour */
-#include "convert/low640x16.c"    /* LowRes To 640xH x 16-bit colour */
-#include "convert/med640x16.c"    /* MediumRes To 640xH x 16-bit colour */
-#include "convert/low320x8.c"     /* LowRes To 320xH x 8-bit colour */
-#include "convert/low640x8.c"     /* LowRes To 640xH x 8-bit colour */
-#include "convert/med640x8.c"     /* MediumRes To 640xH x 8-bit colour */
-#include "convert/high640x8.c"    /* HighRes To 640xH x 8-bit colour */
-#include "convert/spec320x16.c"   /* Spectrum 512 To 320xH x 16-bit colour */
-#include "convert/spec640x16.c"   /* Spectrum 512 To 640xH x 16-bit colour */
 
-#include "convert/vdi16.c"        /* VDI x 16 colour */
-#include "convert/vdi4.c"         /* VDI x 4 colour */
-#include "convert/vdi2.c"         /* VDI x 2 colour */
+#include "convert/low320x8.c"     /* LowRes To 320xH x 8-bit color */
+#include "convert/low640x8.c"     /* LowRes To 640xH x 8-bit color */
+#include "convert/med640x8.c"     /* MediumRes To 640xH x 8-bit color */
+#include "convert/high640x8.c"    /* HighRes To 640xH x 8-bit color */
+
+#include "convert/low320x16.c"    /* LowRes To 320xH x 16-bit color */
+#include "convert/low640x16.c"    /* LowRes To 640xH x 16-bit color */
+#include "convert/med640x16.c"    /* MediumRes To 640xH x 16-bit color */
+#include "convert/spec320x16.c"   /* Spectrum 512 To 320xH x 16-bit color */
+#include "convert/spec640x16.c"   /* Spectrum 512 To 640xH x 16-bit color */
+
+#include "convert/low320x32.c"    /* LowRes To 320xH x 32-bit color */
+#include "convert/low640x32.c"    /* LowRes To 640xH x 32-bit color */
+#include "convert/med640x32.c"    /* MediumRes To 640xH x 32-bit color */
+#include "convert/spec320x32.c"   /* Spectrum 512 To 320xH x 32-bit color */
+#include "convert/spec640x32.c"   /* Spectrum 512 To 640xH x 32-bit color */
+
+#include "convert/vdi16.c"        /* VDI x 16 color */
+#include "convert/vdi4.c"         /* VDI x 4 color */
+#include "convert/vdi2.c"         /* VDI x 2 color */

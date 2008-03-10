@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.45 2008-03-02 20:14:11 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.46 2008-03-10 22:36:31 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -121,7 +121,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_BORDERS, NULL, "--borders",
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
-	  "<x>", "Force given internal bitdepth (x=8/16, x=0 to disable)" },
+	  "<x>", "Force internal color bitdepth (x=8/16/32, x=0 to disable)" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "VDI" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
@@ -620,9 +620,13 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 		case OPT_FORCEBPP:
 			planes = atoi(argv[++i]);
-			if(planes % 8 || planes > 16)
+			if (((planes % 8) && planes != 15) || planes > 32)
 			{
 				Opt_ShowExit(OPT_FORCEBPP, argv[i], "Invalid bit depth");
+			}
+			if (planes == 24)
+			{
+				planes = 32;  /* We do not support 24 bpp (yet) */
 			}
 			ConfigureParams.Screen.nForceBpp = planes;
 			break;
