@@ -233,6 +233,66 @@ static const Uint32 Remap_1_Plane[16] = {
 }
 
 
+/* Plot Spectrum512 Resolution (320xH) 32-Bit pixels */
+#define PLOT_SPEC512_LEFT_LOW_320_32BIT(offset)	\
+{ \
+	esi[offset] = STRGBPalette[ecx & 0x000000ff]; \
+}
+
+/* Plot Spectrum512 Resolution (320xH) 32-Bit pixels */
+#define PLOT_SPEC512_MID_320_32BIT PLOT_MED_640_32BIT
+
+/* Plot Spectrum512 Resolution(320xH) 32-Bit pixels */
+#define PLOT_SPEC512_END_LOW_320_32BIT(offset) \
+{ \
+	esi[offset]   = STRGBPalette[ecx & 0x000000ff]; \
+	esi[offset+1] = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
+	esi[offset+2] = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
+}
+
+
+/* Plot Spectrum512 Resolution (640xH) 32-Bit pixels */
+#define PLOT_SPEC512_LEFT_LOW_640_32BIT(offset)	\
+{ \
+	esi[offset] = esi[offset+1] = STRGBPalette[ecx & 0x000000ff]; \
+}
+
+/* Plot Spectrum512 Resolution (640xH) 32-Bit pixels */
+#define PLOT_SPEC512_MID_640_32BIT PLOT_LOW_640_32BIT
+
+/* Plot Spectrum512 Resolution (640xH) 32-Bit pixels */
+#define PLOT_SPEC512_END_LOW_640_32BIT(offset)	\
+{ \
+	esi[offset+0] = esi[offset+1] = STRGBPalette[ecx & 0x000000ff]; \
+	esi[offset+2] = esi[offset+3] = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
+	esi[offset+4] = esi[offset+5] = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
+}
+
+/* Plot Spectrum512 Resolution (640xH) 32-Bit pixels (Double on Y) */
+#define PLOT_SPEC512_LEFT_LOW_640_32BIT_DOUBLE_Y(offset)	\
+{ \
+	esi[offset+Screen4BytesPerLine] = esi[offset+Screen4BytesPerLine+1] = \
+	esi[offset] = esi[offset+1] = STRGBPalette[ecx & 0x000000ff]; \
+}
+
+/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels (Double on Y) */
+#define PLOT_SPEC512_MID_640_32BIT_DOUBLE_Y PLOT_LOW_640_32BIT_DOUBLE_Y
+
+/* Plot Spectrum512 Resolution (640xH) 16-Bit pixels (Double on Y) */
+#define PLOT_SPEC512_END_LOW_640_32BIT_DOUBLE_Y(offset)	\
+{ \
+	ebx = STRGBPalette[ecx & 0x000000ff]; \
+	esi[offset+Screen4BytesPerLine] = esi[offset+Screen4BytesPerLine+1] \
+	    = esi[offset] = esi[offset+1] = ebx; \
+	ebx = STRGBPalette[(ecx >> 8) & 0x000000ff]; \
+	esi[offset+2+Screen4BytesPerLine] = esi[offset+3+Screen4BytesPerLine] \
+	    = esi[offset+2] = esi[offset+3] = ebx; \
+	ebx = STRGBPalette[(ecx >> 16) & 0x000000ff]; \
+	esi[offset+4+Screen4BytesPerLine] = esi[offset+5+Screen4BytesPerLine] \
+	    = esi[offset+4] = esi[offset+5] = ebx; \
+}
+
+
 /* Plot Low Resolution (320xH) 16-Bit pixels */
 #define PLOT_LOW_320_16BIT(offset)  \
 { \
