@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.75 2008-03-10 22:36:31 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.76 2008-03-11 14:31:13 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -941,6 +941,7 @@ static void Screen_DrawFrame(BOOL bForceFlip)
 {
 	int new_res;
 	void (*pDrawFunction)(void);
+	static BOOL bPrevFrameWasSpec512 = FALSE;
 
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
 	new_res = Screen_ComparePaletteMask(STRes);
@@ -972,6 +973,7 @@ static void Screen_DrawFrame(BOOL bForceFlip)
 			/* Check if is Spec512 image */
 			if (Spec512_IsImage())
 			{
+				bPrevFrameWasSpec512 = TRUE;
 				/* What mode were we in? Keep to 320xH or 640xH */
 				if (pDrawFunction==ConvertLowRes_320x16Bit)
 					pDrawFunction = ConvertSpec512_320x16Bit;
@@ -981,6 +983,14 @@ static void Screen_DrawFrame(BOOL bForceFlip)
 					pDrawFunction = ConvertSpec512_320x32Bit;
 				else if (pDrawFunction==ConvertLowRes_640x32Bit)
 					pDrawFunction = ConvertSpec512_640x32Bit;
+			}
+			else if (bPrevFrameWasSpec512)
+			{
+				/* If we switch back from Spec512 mode to normal
+				 * screen rendering, we have to make sure to do
+				 * a full update of the screen. */
+				Screen_SetFullUpdateMask();
+				bPrevFrameWasSpec512 = FALSE;
 			}
 		}
 
