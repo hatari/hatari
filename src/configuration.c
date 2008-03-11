@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.83 2008-03-01 22:37:43 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.84 2008-03-11 20:11:08 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -50,6 +50,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "FrameSkips", Int_Tag, &ConfigureParams.Screen.FrameSkips },
 	{ "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
+	{ "nSpec512Threshold", Int_Tag, &ConfigureParams.Screen.nSpec512Threshold },
 	{ "nForceBpp", Int_Tag, &ConfigureParams.Screen.nForceBpp },
 	{ "bZoomLowRes", Bool_Tag, &ConfigureParams.Screen.bZoomLowRes },
 	{ "bUseExtVdiResolutions", Bool_Tag, &ConfigureParams.Screen.bUseExtVdiResolutions },
@@ -409,6 +410,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bFullScreen = FALSE;
 	ConfigureParams.Screen.FrameSkips = 0;
 	ConfigureParams.Screen.bAllowOverscan = TRUE;
+	ConfigureParams.Screen.nSpec512Threshold = 16;
 	ConfigureParams.Screen.nForceBpp = 0;
 	ConfigureParams.Screen.bZoomLowRes = FALSE;
 	ConfigureParams.Screen.MonitorType = MONITOR_TYPE_RGB;

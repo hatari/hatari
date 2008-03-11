@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.46 2008-03-10 22:36:31 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.47 2008-03-11 20:11:08 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -53,8 +53,9 @@ enum {
 	OPT_WINDOW,
 	OPT_ZOOM,
 	OPT_FRAMESKIPS,
-	OPT_FORCEBPP,
 	OPT_BORDERS,
+	OPT_SPEC512,
+	OPT_FORCEBPP,
 	OPT_VDI_PLANES,		/* VDI options */
 	OPT_VDI_WIDTH,
 	OPT_VDI_HEIGHT,
@@ -120,8 +121,10 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Skip <x> frames after each displayed frame (0 <= x <= 8)" },
 	{ OPT_BORDERS, NULL, "--borders",
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
+	{ OPT_SPEC512, NULL, "--spec512",
+	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
-	  "<x>", "Force internal color bitdepth (x=8/16/32, x=0 to disable)" },
+	  "<x>", "Force internal color bitdepth (x=8/16/32, 0=disable)" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "VDI" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
@@ -493,7 +496,7 @@ static BOOL Opt_StrCpy(int optid, BOOL checkexist, char *dst, char *src, size_t 
 void Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
-	int i, ncpu, skips, zoom, planes, cpuclock;
+	int i, ncpu, skips, zoom, planes, cpuclock, threshold;
 	int hdgiven = FALSE;
 
 	/* Defaults for loading initial memory snap-shots */
@@ -618,9 +621,19 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ConfigureParams.Screen.bAllowOverscan = Opt_Bool(argv[++i], OPT_BORDERS);
 			break;
 			
+		case OPT_SPEC512:
+			threshold = atoi(argv[++i]);
+			if (threshold < 0 || threshold > 512)
+			{
+				Opt_ShowExit(OPT_SPEC512, argv[i],
+				             "Invalid palette writes per line threshold for Spec512");
+			}
+			ConfigureParams.Screen.nSpec512Threshold = threshold;
+			break;
+			
 		case OPT_FORCEBPP:
 			planes = atoi(argv[++i]);
-			if (((planes % 8) && planes != 15) || planes > 32)
+			if ((planes % 8) || planes > 32)
 			{
 				Opt_ShowExit(OPT_FORCEBPP, argv[i], "Invalid bit depth");
 			}

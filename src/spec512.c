@@ -47,7 +47,7 @@
 
 
 
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.21 2008-01-28 22:20:11 thothy Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.22 2008-03-11 20:11:08 eerot Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -58,6 +58,7 @@ const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.21 2008-01-28 22:20:11 t
 #include "screen.h"
 #include "spec512.h"
 #include "video.h"
+#include "configuration.h"
 #include "trace.h"
 
 /* As 68000 clock multiple of 4 this mean we can only write to the palette this many time per scanline */
@@ -132,6 +133,9 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	CYCLEPALETTE *pTmpCyclePalette;
 	int FrameCycles, ScanLine, nHorPos;
 
+	if (!ConfigureParams.Screen.nSpec512Threshold)
+		return;
+
 	CycleColour = col;
 	CycleColourIndex = (addr-0xff8240)>>1;
 
@@ -198,7 +202,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	/* Check if program wrote to palette registers multiple times on a frame. */
 	/* If so it must be using a spec512 image or some kind of color cycling. */
 	nPalettesAccesses++;
-	if (nPalettesAccesses >= 128)
+	if (nPalettesAccesses >= ConfigureParams.Screen.nSpec512Threshold)
 	{
 		bIsSpec512Display = TRUE;
 	}

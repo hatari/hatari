@@ -197,6 +197,7 @@ typedef struct
   BOOL bAllowOverscan;
   BOOL bZoomLowRes;
   BOOL bUseExtVdiResolutions;
+  int nSpec512Threshold;
   int nForceBpp;
   int nVdiColors;
   int nVdiWidth;
