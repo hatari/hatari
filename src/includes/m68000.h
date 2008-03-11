@@ -92,11 +92,26 @@ extern const char *OpcodeName[];
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Add CPU cycles.
-  NOTE: All times are rounded up to nearest 4 cycles.
-*/
+/**
+ * Add CPU cycles.
+ * NOTE: All times are rounded up to nearest 4 cycles.
+ */
 static inline void M68000_AddCycles(int cycles)
+{
+	cycles = (cycles + 3) & ~3;
+	cycles = cycles >> nCpuFreqShift;
+
+	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cycles, INT_CPU_CYCLE);
+	nCyclesMainCounter += cycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Add CPU cycles, take cycles pairing into account.
+ * NOTE: All times are rounded up to nearest 4 cycles.
+ */
+static inline void M68000_AddCyclesWithPairing(int cycles)
 {
 	Pairing = 0;
 	/* Check if number of cycles for current instr and for */
@@ -132,6 +147,7 @@ static inline void M68000_AddCycles(int cycles)
 
 	nCyclesMainCounter += cycles;
 }
+
 
 extern void M68000_InitPairing(void);
 extern void M68000_Reset(BOOL bCold);
