@@ -85,9 +85,7 @@ class Hatari():
             return ()
         # need to modify Hatari settings to match parent window
         #
-        # TODO: should check for sizes with borders and make
-        # sure "--machine" type is OK (TT and Falcon can have
-        # larger screens)
+        # TODO: should check also for sizes with borders
         size = parent_win.get_size()
         if size == (320, 200):
             args = ("--borders", "off", "--zoom", "1", "--monitor", "vga")
