@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.26 2008-03-07 00:41:55 thothy Exp $";
+const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.27 2008-03-13 23:17:27 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -72,8 +72,6 @@ static int Reset_ST(BOOL bCold)
 
 	/* Start HBL and VBL interrupts */
 	Video_StartInterrupts();
-
-	Int_AddAbsoluteInterrupt(FDC_DELAY_CYCLES, INT_CPU_CYCLE, INTERRUPT_FDC);
 
 	return 0;
 }

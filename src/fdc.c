@@ -15,7 +15,7 @@
 
 /* 2007/11/06   [NP]    Add calls to HATARI_TRACE and set FDC_DELAY_HBL=180		*/
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.34 2008-02-29 21:11:12 thothy Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.35 2008-03-13 23:17:27 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -426,7 +426,7 @@ void FDC_GpipRead(void)
 		{
 			/* Restart FDC update interrupt to occur right after a few cycles */
 			Int_RemovePendingInterrupt(INTERRUPT_FDC);
-			Int_AddRelativeInterrupt(32, INT_CPU_CYCLE, INTERRUPT_FDC, 0);
+			Int_AddRelativeInterrupt(4, INT_CPU_CYCLE, INTERRUPT_FDC, 0);
 		}
 	}
 	else
@@ -447,7 +447,6 @@ void FDC_GpipRead(void)
 void FDC_InterruptHandler_Update(void)
 {
 	Int_AcknowledgeInterrupt();
-	Int_AddAbsoluteInterrupt(FDC_DELAY_CYCLES,  INT_CPU_CYCLE, INTERRUPT_FDC);
 
 	/* Do we have a DMA ready to copy? */
 	if (bDMAWaiting)
@@ -495,6 +494,11 @@ void FDC_InterruptHandler_Update(void)
 
 		/* Set disk controller status (RD 0xff8604) */
 		FDC_SetDiskControllerStatus();
+	}
+
+	if (FDCEmulationCommand != FDCEMU_CMD_NULL || bMotorOn)
+	{
+		Int_AddAbsoluteInterrupt(FDC_DELAY_CYCLES,  INT_CPU_CYCLE, INTERRUPT_FDC);
 	}
 }
 
@@ -1079,6 +1083,8 @@ static void FDC_ExecuteCommand(void)
 		FDC_ExecuteTypeIIICommands();
 	else                                          /* Type IV - Force Interrupt */
 		FDC_ExecuteTypeIVCommands();
+
+	Int_AddAbsoluteInterrupt(FDC_DELAY_CYCLES,  INT_CPU_CYCLE, INTERRUPT_FDC);
 }
 
 
