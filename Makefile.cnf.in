@@ -5,13 +5,13 @@
 CC = @CC@
 
 # Set flags passed to the compiler (e.g. optimization flags)
-CFLAGS = @CFLAGS@
+CFLAGS = @CFLAGS@ @X_CFLAGS@
 
 # Set flags passed to the preprocessor (e.g. -I<include dir>)
 CPPFLAGS = @CPPFLAGS@
 
 # Additional libraries and linker flags:
-LIBS = @LIBS@
+LIBS = @LIBS@ @X_LIBS@
 LDFLAGS = @LDFLAGS@
 
 # Ranlib - for generating an index of an archive

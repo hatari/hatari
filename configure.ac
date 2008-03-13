@@ -68,6 +68,24 @@ AM_PATH_SDL($SDL_VERSION, :,
 dnl Check for readline library
 VL_LIB_READLINE
 
+dnl check for X11
+no_x=yes
+dnl first check for pkg-config itself
+AC_CHECK_PROG(HAVE_PKG_CONFIG, pkg-config, yes)
+dnl set same variables as AC_PATH_XTRA: X_CFLAGS, X_LIBS, no_x
+if test "x${HAVE_PKG_CONFIG}" = "xyes"; then
+  PKG_CHECK_MODULES(X, x11, no_x=no, no_x=yes)
+fi
+dnl if that failed, try finding X11 without pkg-config
+if test "x${no_x}" = "xyes"; then
+  AC_PATH_XTRA
+fi
+if test "x${no_x}" = "xyes"; then
+  AC_MSG_NOTICE([No X11, disabled Hatari embedding support])
+else
+  AC_DEFINE(HAVE_X11, 1, [Whether X11 is present on the system])
+fi
+
 CPPFLAGS="${CPPFLAGS} ${INCL}"
 
 
