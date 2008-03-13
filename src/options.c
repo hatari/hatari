@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.47 2008-03-11 20:11:08 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.48 2008-03-13 12:32:50 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -186,7 +186,7 @@ static const opt_t HatariOptions[] = {
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
-	  "<bool>", "Allow debug interface" },
+	  NULL, "Allow debug interface" },
 	{ OPT_LOG,     NULL, "--log",
 	  "<file>", "Save log to <file>" },
 	{ OPT_TRACE,   NULL, "--trace",
@@ -909,7 +909,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 			/* debug options */
 		case OPT_DEBUG:
-			bEnableDebug = Opt_Bool(argv[++i], OPT_DEBUG);
+			bEnableDebug = TRUE;
 			break;
 			
 		case OPT_LOG:
