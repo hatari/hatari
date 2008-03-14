@@ -73,7 +73,7 @@
 /* 2008/01/06	[NP]	Better bottom border's removal in 50 Hz : switch to 60 Hz must occur	*/
 /*			before cycle LINE_REMOVE_BOTTOM_CYCLE on line 263 and switch back to 50	*/
 /*			Hz must occur after LINE_REMOVE_BOTTOM_CYCLE on line 263 (this means	*/
-/*			we can already be in 50 Hz when Video_EndHBL is called ans still remove	*/
+/*			we can already be in 50 Hz when Video_EndHBL is called and still remove	*/
 /*			the bottom border). This is similar to the tests used to remove the	*/
 /*			top border.								*/
 /* 2008/01/12	[NP]	In Video_SetHBLPaletteMaskPointers, consider that if a color's change	*/
@@ -102,7 +102,7 @@
 /*			(Mindrewind by Reservoir Gods).						*/
 /* 2008/02/06	[NP]	On STE, when left/right borders are off and hwscroll > 0, we must read	*/
 /*			6 bytes less than the expected value (E605 by Light).			*/
-/* 2008/02/17	[NP]	In Video_CopyScreenLine, ScanLineSkip*2 bytes should be added after	*/
+/* 2008/02/17	[NP]	In Video_CopyScreenLine, LineWidth*2 bytes should be added after	*/
 /*			pNewVideoRaster is copied to pVideoRaster (Braindamage Demo).		*/
 /*			When reading a byte at ff8205/07/09, all video address bytes should be	*/
 /*			updated in Video_ScreenCounter_ReadByte, not just the byte that was	*/
@@ -114,8 +114,24 @@
 /* 2008/02/20	[NP]	Better handling in Video_ScreenCounter_WriteByte by changing only one	*/
 /*			byte and keeping the other (Braindamage End Part).			*/
 /* 2008/03/08	[NP]	Use M68000_INT_VIDEO when calling M68000_Exception().			*/
+/* 2008/03/13	[NP]	On STE, LineWidth value in $ff820f is added to the shifter counter just	*/
+/*			when display is turned off on a line (when right border is started,	*/
+/*			which is usually on cycle 376).						*/
+/*			This means a write to $ff820f should be applied immediatly only if it	*/
+/*			occurs before cycle LineEndCycle. Else, it is stored in NewLineWidth	*/
+/*			and used after Video_CopyScreenLine has processed the current line	*/
+/*			(improve the bump mapping part in Pacemaker by Paradox).		*/
+/*			LineWidth should be added to pVideoRaster before checking the possible	*/
+/*			modification of $ff8205/07/09 in Video_CopyScreenLine.			*/
+/* 2008/03/14	[NP]	Rename ScanLineSkip to LineWidth (more consistent with STE docs).	*/
+/*			On STE, better support for writing to video counter, line width and	*/
+/*			hw scroll. If write to register occurs just at the start of a new line	*/
+/*			but before Video_EndHBL (because the move started just before cycle 512)*/
+/*			then the new value should not be set immediatly but stored and set	*/
+/*			during Video_EndHBL (fix the bump mapping part in Pacemaker by Paradox).*/
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.95 2008-03-09 12:53:28 npomarede Exp $";
+
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.96 2008-03-14 20:13:37 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -194,10 +210,10 @@ int nCyclesPerLine = 512;                       /* Cycles per horizontal line sc
 static int nFirstVisibleHbl = 34;               /* The first line of the ST screen that is copied to the PC screen buffer */
 
 static Uint8 HWScrollCount;                     /* HW scroll pixel offset, STe only (0...15) */
-int newHWScrollCount = -1;                      /* Used in STE mode when writing to the scrolling register */
-static Uint8 ScanLineSkip;                      /* Scan line width add, STe only (words, minus 1) */
+int NewHWScrollCount = -1;                      /* Used in STE mode when writing to the scrolling register $ff8265 */
+static Uint8 LineWidth;                         /* Scan line width add, STe only (words, minus 1) */
+int NewLineWidth = -1;				/* Used in STE mode when writing to the line width register $ff820f */
 static Uint8 *pVideoRaster;                     /* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
-static Uint8 *pNewVideoRaster = NULL;           /* Used in STE mode when writing to the video counter $ff8205/07/09 */
 static Uint8 VideoShifterByte;                  /* VideoShifter (0xff8260) value store in video chip */
 static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simulate left/right border removal */
 static int LineStartCycle;                      /* Cycle where display starts for the current line */
@@ -208,7 +224,9 @@ static BOOL bTTColorsSync, bTTColorsSTSync;     /* whether TT colors need conver
 int	ScreenBorderMask[ MAX_SCANLINES_PER_FRAME ];
 int	LastCycleSync50;			/* value of Cycles_GetCounterOnWriteAccess last time ff820a was set to 0x02 for the current VBL */
 int	LastCycleSync60;			/* value of Cycles_GetCounterOnWriteAccess last time ff820a was set to 0x00 for the current VBL */
-
+int	NewVideoHi = -1;			/* new value for $ff8205 on STE */
+int	NewVideoMed = -1;			/* new value for $ff8207 on STE */
+int	NewVideoLo = -1;			/* new value for $ff8209 on STE */
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -229,7 +247,7 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
 	MemorySnapShot_Store(HBLPalettes, sizeof(HBLPalettes));
 	MemorySnapShot_Store(HBLPaletteMasks, sizeof(HBLPaletteMasks));
 	MemorySnapShot_Store(&VideoBase, sizeof(VideoBase));
-	MemorySnapShot_Store(&ScanLineSkip, sizeof(ScanLineSkip));
+	MemorySnapShot_Store(&LineWidth, sizeof(LineWidth));
 	MemorySnapShot_Store(&HWScrollCount, sizeof(HWScrollCount));
 	MemorySnapShot_Store(&pVideoRaster, sizeof(pVideoRaster));
 	MemorySnapShot_Store(&nScanlinesPerFrame, sizeof(nScanlinesPerFrame));
@@ -748,6 +766,8 @@ static void Video_StoreResolution(int y)
  */
 static void Video_CopyScreenLineMono(void)
 {
+	Uint32 addr;
+
 	/* Copy one line - 80 bytes in ST high resolution */
 	memcpy(pSTScreen, pVideoRaster, SCREENBYTES_MONOLINE);
 	pVideoRaster += SCREENBYTES_MONOLINE;
@@ -777,24 +797,45 @@ static void Video_CopyScreenLineMono(void)
 		pVideoRaster += 1 * 2;
 	}
 
-	/* On STE, if we wrote to the video counter addr, we set the */
-	/* new video address here, once the current line was processed */
-	if ( pNewVideoRaster )
+	/* LineWidth is zero on ST. */
+	/* On STE, the Shifter skips the given amount of words. */
+	pVideoRaster += LineWidth*2;
+
+	/* On STE, handle modifications of the video counter address $ff8205/07/09 */
+	/* that occurred while the display was already ON */
+	if ( NewVideoHi >= 0 )
 	{
-		pVideoRaster = pNewVideoRaster;
-		pNewVideoRaster = NULL;
+		addr = ( ( pVideoRaster - STRam ) & 0x00ffff ) | ( NewVideoHi << 16 );
+		pVideoRaster = &STRam[addr & ~1];
+		NewVideoHi = -1;
+	}
+	if ( NewVideoMed >= 0 )
+	{
+		addr = ( ( pVideoRaster - STRam ) & 0xff00ff ) | ( NewVideoMed << 8 );
+		pVideoRaster = &STRam[addr & ~1];
+		NewVideoMed = -1;
+	}
+	if ( NewVideoLo >= 0 )
+	{
+		addr = ( ( pVideoRaster - STRam ) & 0xffff00 ) | ( NewVideoLo );
+		pVideoRaster = &STRam[addr & ~1];
+		NewVideoLo = -1;
 	}
 
-	/* ScanLineSkip is zero on ST. */
-	/* On STE, the Shifter skips the given amount of words. */
-	pVideoRaster += ScanLineSkip*2;
-
 	/* On STE, if we wrote to the hwscroll register, we set the */
-	/* new video address here, once the current line was processed */
-	if ( newHWScrollCount >= 0 )
+	/* new value here, once the current line was processed */
+	if ( NewHWScrollCount >= 0 )
 	{
-		HWScrollCount = newHWScrollCount;
-		newHWScrollCount = -1;
+		HWScrollCount = NewHWScrollCount;
+		NewHWScrollCount = -1;
+	}
+
+	/* On STE, if we wrote to the linewidth register, we set the */
+	/* new value here, once the current line was processed */
+	if ( NewLineWidth >= 0 )
+	{
+		LineWidth = NewLineWidth;
+		NewLineWidth = -1;
 	}
 
 	/* Each screen line copied to buffer is always same length */
@@ -812,6 +853,7 @@ static void Video_CopyScreenLineColor(void)
 	int LineBorderMask = ScreenBorderMask[ nHBL ];
 	int VideoOffset = 0;
 	int STF_PixelScroll = 0;
+	Uint32 addr;
 
 	//fprintf(stderr , "copy line %d start %d end %d %d %x\n" , nHBL, nStartHBL, nEndHBL, LineBorderMask, pVideoRaster - STRam);
 
@@ -994,24 +1036,45 @@ static void Video_CopyScreenLineColor(void)
 			}
 		}
 
-		/* On STE, if we wrote to the video counter addr, we set the */
-		/* new video address here, once the current line was processed */
-		if ( pNewVideoRaster )
+		/* LineWidth is zero on ST. */
+		/* On STE, the Shifter skips the given amount of words. */
+		pVideoRaster += LineWidth*2;
+
+		/* On STE, handle modifications of the video counter address $ff8205/07/09 */
+		/* that occurred while the display was already ON */
+		if ( NewVideoHi >= 0 )
 		{
-			pVideoRaster = pNewVideoRaster;
-			pNewVideoRaster = NULL;
+			addr = ( ( pVideoRaster - STRam ) & 0x00ffff ) | ( NewVideoHi << 16 );
+			pVideoRaster = &STRam[addr & ~1];
+			NewVideoHi = -1;
+		}
+		if ( NewVideoMed >= 0 )
+		{
+			addr = ( ( pVideoRaster - STRam ) & 0xff00ff ) | ( NewVideoMed << 8 );
+			pVideoRaster = &STRam[addr & ~1];
+			NewVideoMed = -1;
+		}
+		if ( NewVideoLo >= 0 )
+		{
+			addr = ( ( pVideoRaster - STRam ) & 0xffff00 ) | ( NewVideoLo );
+			pVideoRaster = &STRam[addr & ~1];
+			NewVideoLo = -1;
 		}
 
-		/* ScanLineSkip is zero on ST. */
-		/* On STE, the Shifter skips the given amount of words. */
-		pVideoRaster += ScanLineSkip*2;
-
 		/* On STE, if we wrote to the hwscroll register, we set the */
-		/* new video address here, once the current line was processed */
-		if ( newHWScrollCount >= 0 )
+		/* new value here, once the current line was processed */
+		if ( NewHWScrollCount >= 0 )
 		{
-			HWScrollCount = newHWScrollCount;
-			newHWScrollCount = -1;
+			HWScrollCount = NewHWScrollCount;
+			NewHWScrollCount = -1;
+		}
+
+		/* On STE, if we wrote to the linewidth register, we set the */
+		/* new value here, once the current line was processed */
+		if ( NewLineWidth >= 0 )
+		{
+			LineWidth = NewLineWidth;
+			NewLineWidth = -1;
 		}
 	}
 
@@ -1575,9 +1638,12 @@ void Video_Reset(void)
 	/* Reset addresses */
 	VideoBase = 0L;
 	/* Reset STe screen variables */
-	ScanLineSkip = 0;
+	LineWidth = 0;
 	HWScrollCount = 0;
 	bSteBorderFlag = FALSE;
+
+	NewLineWidth = -1;			/* cancel pending modifications set before the reset */
+	NewHWScrollCount = -1;
 
 	/* Clear ready for new VBL */
 	Video_ClearOnVBL();
@@ -1622,41 +1688,56 @@ void Video_ScreenCounter_ReadByte(void)
  * Write to video address counter (0xff8205, 0xff8207 and 0xff8209).
  * Called on STE only and like with base address, you cannot set lowest bit.
  * If display has not started yet for this line, we can change pVideoRaster now.
- * Else, we store the new value in pNewVideoRaster to change it at the end
+ * Else we store the new value of the Hi/Med/Lo address to change it at the end
  * of the current line when Video_CopyScreenLineColor is called.
  * We must change only the byte that was modified and keep the two others ones.
  */
 void Video_ScreenCounter_WriteByte(void)
 {
+	Uint8 AddrByte;
 	Uint32 addr;
 	int nFrameCycles;
 	int nLineCycles;
+	int HblCounterVideo;
 
-	nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);;
 	nLineCycles = nFrameCycles % nCyclesPerLine;
 
-	/* Get current video address */
-	if ( pNewVideoRaster )
-		addr = pNewVideoRaster - STRam;		/* new address was already "pending" */
+	/* Get real video line count (can be different from nHBL) */
+	HblCounterVideo = nFrameCycles / nCyclesPerLine;
+
+	AddrByte = IoMem[ IoAccessCurrentAddress ];
+
+	/* If display has not started, we can still modify pVideoRaster */
+	/* We must also check the write does not overlap the end of the line */
+	if ( ( ( nLineCycles <= LINE_START_CYCLE_50 ) && ( nHBL == HblCounterVideo ) )
+		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
+	{
+		addr = Video_CalculateAddress();		/* get current video address */
+		if ( IoAccessCurrentAddress == 0xff8205 )
+			addr = ( addr & 0x00ffff ) | ( AddrByte << 16 );
+		else if ( IoAccessCurrentAddress == 0xff8207 )
+			addr = ( addr & 0xff00ff ) | ( AddrByte << 8 );
+		else if ( IoAccessCurrentAddress == 0xff8209 )
+			addr = ( addr & 0xffff00 ) | ( AddrByte );
+
+		pVideoRaster = &STRam[addr & ~1];		/* set new video address */
+	}
+
+	/* Can't change pVideoRaster now, store the modified byte for Video_CopyScreenLineColor */
 	else
-		addr = Video_CalculateAddress();	/* 1st access, get current video address */
+	{
+		if ( IoAccessCurrentAddress == 0xff8205 )
+			NewVideoHi = AddrByte;
+		else if ( IoAccessCurrentAddress == 0xff8207 )
+			NewVideoMed = AddrByte;
+		else if ( IoAccessCurrentAddress == 0xff8209 )
+			NewVideoLo = AddrByte;
+	}
 
-	/* Change byte in the current addr */
-	if ( IoAccessCurrentAddress == 0xff8205 )
-		addr = ( addr & 0x00ffff ) | ( IoMem[0xff8205] << 16 );
-	else if ( IoAccessCurrentAddress == 0xff8207 )
-		addr = ( addr & 0xff00ff ) | ( IoMem[0xff8207] << 8 );
-	else if ( IoAccessCurrentAddress == 0xff8209 )
-		addr = ( addr & 0xffff00 ) | ( IoMem[0xff8209] );
-
-	/* Set/save new address */
-	if (nLineCycles <= LINE_START_CYCLE_50 || nHBL < nStartHBL)
-		pVideoRaster = &STRam[addr & ~1];	/* display has not started, we can still change */
-	else
-		pNewVideoRaster = &STRam[addr & ~1];	/* display has started, can't change pVideoRaster now */
-
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste video addr=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , addr,
-		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste video %x val=0x%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
+				IoAccessCurrentAddress, AddrByte,
+				nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1693,7 +1774,7 @@ void Video_LineWidth_ReadByte(void)
 	if (ConfigureParams.System.nMachineType == MACHINE_ST)
 		IoMem[0xff820f] = 0;        /* On ST this is always 0 */
 	else
-		IoMem[0xff820f] = ScanLineSkip;
+		IoMem[0xff820f] = LineWidth;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1721,18 +1802,33 @@ void Video_HorScroll_Read(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Write video line width register (0xff820f) - STE only.
+ * Content of LineWidth is added to the shifter counter when display is
+ * turned off (start of the right border, usually at cycle 376)
  */
 void Video_LineWidth_WriteByte(void)
 {
-	ScanLineSkip = IoMem_ReadByte(0xff820f);
+	Uint8 NewWidth;
+	int nFrameCycles;
+	int nLineCycles;
+	int HblCounterVideo;
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_STE ) )
-	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
-		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "write ste linewidth=0x%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , ScanLineSkip,
-		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-	}
+	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);;
+	nLineCycles = nFrameCycles % nCyclesPerLine;
+
+	/* Get real video line count (can be different from nHBL) */
+	HblCounterVideo = nFrameCycles / nCyclesPerLine;
+
+	NewWidth = IoMem_ReadByte(0xff820f);
+
+	/* We must also check the write does not overlap the end of the line */
+	if ( ( ( nLineCycles <= LineEndCycle ) && ( nHBL == HblCounterVideo ) )
+		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
+		LineWidth = NewWidth;		/* display is on, we can still change */
+	else
+		NewLineWidth = NewWidth;	/* display is off, can't change LineWidth once in right border */
+
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste linewidth=0x%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" , NewWidth,
+					nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1896,20 +1992,26 @@ void Video_HorScroll_Write(void)
 	Uint8 ScrollCount;
 	int nFrameCycles;
 	int nLineCycles;
+	int HblCounterVideo;
 
-	nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);;
 	nLineCycles = nFrameCycles % nCyclesPerLine;
+
+	/* Get real video line count (can be different from nHBL) */
+	HblCounterVideo = nFrameCycles / nCyclesPerLine;
 
 	ScrollCount = IoMem[0xff8265];
 	ScrollCount &= 0x0f;
 
-	if (nLineCycles <= LINE_START_CYCLE_50 || nHBL < nStartHBL)
+	/* We must also check the write does not overlap the end of the line */
+	if ( ( ( nLineCycles <= LINE_START_CYCLE_50 ) && ( nHBL == HblCounterVideo ) )
+		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
 		HWScrollCount = ScrollCount;		/* display has not started, we can still change */
 	else
-		newHWScrollCount = ScrollCount;		/* display has started, can't change HWScrollCount now */
+		NewHWScrollCount = ScrollCount;		/* display has started, can't change HWScrollCount now */
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste hwscroll=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , ScrollCount,
-		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste hwscroll=%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" , ScrollCount,
+		                     nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
 	/*fprintf(stderr, "Write to 0x%x (0x%x, 0x%x, %i)\n", IoAccessBaseAddress,
 	        IoMem[0xff8264], ScrollCount, nIoMemAccessSize);*/
