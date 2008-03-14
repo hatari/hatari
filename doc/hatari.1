@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2008-02-03" "Hatari" ""
+.TH "HATARI" "1" "2008-03-14" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
@@ -62,10 +62,15 @@ Skip <x> frames after each displayed frame to accelerate emulation
 .TP 
 .B \-\-borders <bool>
 Show screen borders (for overscan demos etc)
-.TP 
+.TP
+.B \-\-spec512 <x>
+Hatari uses this threshold to decide when to render a screen with
+the slower but more accurate Spectrum512 screen conversion functions
+(0 <= x <= 512, 0=disable)
+.TP
 .B \-\-bpp <bool>
-Force given internal bitdepth (x=8/16, x=0 to disable). 8-bit color
-depth may be useful for older host computers
+Force given internal bitdepth (x=8/16/32, x=0 for autodetection).
+8-bit color depth may be useful for older host computers
 .SH "VDI options"
 .TP 
 .B \-\-vdi\-planes <x>

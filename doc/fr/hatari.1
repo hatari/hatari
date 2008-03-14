@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2008-02-10" "Hatari" ""
+.TH "HATARI" "1" "2008-03-14" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
@@ -28,12 +28,22 @@ le TOS original donc certains programmes risquent de ne pas
 fonctionner correctement. Pour cela, il est recommande d'utiliser
 une ROM TOS issue d'un veritable Atari.
 .SH "OPTIONS"
+Les options sont classées en sous catégories:
+.SH "Options générale"
 .TP
 .B \-h, \-\-help
 affiche les options de la ligne de commande
 .TP
 .B \-v, \-\-version
 affiche les informations sur la version
+.TP 
+.B \--confirm-quit <bool>
+Whether Hatari confirms quitting
+.TP
+.B \-c, \-\-configfile <filename>
+utilise un fichier nomme explicitement comme fichier de configuration
+en lieu et place du ~/.hatari.cfg
+.SH "Options d'écran
 .TP
 .B \-\-monitor <x>
 selectionne le type de moniteur (x = mono/rgb/vga/tv)
@@ -47,49 +57,22 @@ demarre l'emulateur en mode fenetre
 .B \-z, \-\-zoom <x>
 agrandir les petites résolutions (1=non, 2=oui)
 .TP
-.B \-j, \-\-joystick <port>
-emule le joystick ST sur le <port> 0 ou 1 avec le clavier
-.TP
-.B \-\-nosound
-desactive le son (rend l'emulation plus rapide)
-.TP
 .B \-\-frameskips <x>
 Saute <x> images apres chaque image affichees pour accelerer l'emulation
 (0 <= x <= 8)
+.TP 
+.B \-\-borders <bool>
+Show screen borders (for overscan demos etc)
 .TP
-.B \-D, \-\-debug
-active le deboggueur integre
+.B \-\-spec512 <x>
+Hatari uses this threshold to decide when to render a screen with
+the slower but more accurate Spectrum512 screen conversion functions
+(0 <= x <= 512, 0=disable)
 .TP
-.B \-\-slowfdc
-attenue l'emulation du FDC (requis pour que certains jeux ou demos
-fonctionnent)
-.TP
-.B \-d, \-\-harddrive <dir>
-utilise <dir> comme un disque dur emule
-.TP
-.B \-\-acsi <file>
-emule un disque dur ACSI avec un fichier image <file>
-.TP
-.B \-t, \-\-tos <imagefile>
-specifie une image ROM TOS a utiliser
-.TP
-.B \-\-cartridge <imagefile>
-utilise une image ROM de cartouche <file> (fonctionne uniquement si
-l'emulation de disque dur et VDI etendue sont desactivee)
-.TP
-.B \-s, \-\-memsize <x>
-fixe une quantite de memoire pour la RAM emulee, x = 1 a 14 MiB,
-ou 0 pour 512 Ko
-.TP
-.B \-\-cpulevel <x>
-specifie un CPU (680x0) a utiliser (TOS 2.06 uniquement!!)
-.TP
-.B \-\-compatible
-utilise le mode de compatibilite plus fidele mais plus lent
-que le mode 68000
-.TP
-.B \-\-blitter
-active l'emulation du blitter
+.B \-\-bpp <bool>
+Force given internal bitdepth (x=8/16/32, x=0 for autodetection).
+8-bit color depth may be useful for older host computers
+.SH "Options de VDI"
 .TP
 .B \-\-vdi\-planes <x>
 utilise une resolution VDI etendue avec une profondeur de bit de <x>
@@ -100,34 +83,84 @@ utilise une resolution VDI etendue avec une largeur de <w> (384 <= w <= 1024)
 .TP
 .B \-\-vdi\-height <h>
 utilise une resolution VDI etendue avec une hauteur de <h> (200 < h <= 768)
+.SH "Options d'interface"
+.TP
+.B \-j, \-\-joystick <port>
+emule le joystick ST sur le <port> 0 ou 1 avec le clavier
 .TP
 .B \-\-printer <file>
 active le support de l'imprimante et ecrit les donnees dans le fichier <file>
 .TP
 .B \-\-midi <filename>
-active la sortie MIDI experimentale vers un fichier
-mentionne par un nom
+active la sortie MIDI experimentale vers un fichier mentionne par un nom
 .TP
 .B \-\-rs232 <filename>
 active l'emulation experimentale du RS232 via un fichier/device
 nomme explicitement
+.SH "Options des disques"
 .TP
-.B \-c, \-\-configfile <filename>
-utilise un fichier nomme explicitement comme fichier de configuration
-en lieu et place du ~/.hatari.cfg
+.B \-d, \-\-harddrive <dir>
+utilise <dir> comme un disque dur emule
+.TP
+.B \-\-acsi <file>
+emule un disque dur ACSI avec un fichier image <file>
+.TP
+.B \-\-slowfdc <bool>
+attenue l'emulation du FDC (requis pour que certains jeux ou demos
+fonctionnent)
+.SH "Options de mémoire"
+.TP
+.B \-s, \-\-memsize <x>
+fixe une quantite de memoire pour la RAM emulee, x = 1 a 14 MiB,
+ou 0 pour 512 Ko
+.TP
+.B \-t, \-\-tos <imagefile>
+specifie une image ROM TOS a utiliser
+.TP
+.B \-\-cartridge <imagefile>
+utilise une image ROM de cartouche <file> (fonctionne uniquement si
+l'emulation de disque dur et VDI etendue sont desactivee)
+.TP 
+.B \-\-memstate <file>
+Load memory snap-shot <file>
+.SH "Option du processeur"
+.TP
+.B \-\-cpulevel <x>
+specifie un CPU (680x0) a utiliser (TOS 2.06 uniquement!!)
+.TP 
+.B \-\-cpuclock <x>
+Set the CPU clock (8, 16 or 32 Mhz)
+.TP
+.B \-\-compatible <bool>
+utilise le mode de compatibilite plus fidele mais plus lent
+que le mode 68000
+.SH "Options diverses du système"
 .TP
 .B \-\-machine <x>
 selectionne un type de machine (x = st, ste, tt ou falcon)
-.TP 
+.TP
+.B \-\-blitter <bool>
+active l'emulation du blitter
+.TP
 .B \-\-dsp <x>
 emulation du DSP du Falcon (x = aucune, factice ou emulee)
-.TP 
+.TP
+.B \-\-sound <x>
+Régle le son (x=off/low/med/hi)
+.TP
 .B \-\-keymap <file>
 charge un fichier de refinition du clavier de <file>
+.SH "Options de déboguer"
+.TP
+.B \-D, \-\-debug
+active le deboggueur integre
 .TP
 .B \-\-log <file>
 Sauvegarde le rapport vers le fichier <file> (peut aussi etre "stdout" ou
 "stderr")
+.TP
+.B \-\-trace <trace1,...>
+Activate debug traces, see --trace help for tracing options
 
 .SH "COMMANDS"
 

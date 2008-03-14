@@ -353,172 +353,213 @@ to toggle windowed and fullscreen mode. </p>
 (the long version is in parenthesis): </p>
 <table border="1" cellpadding="3">
   <tbody>
+
     <tr class="backdropped">
-      <td align="center">Option</td>
-      <td align="center">Purpose</td>
+      <th align="center">General options</th>
+      <th>Description</th>
     </tr>
     <tr>
       <td align="center">-h (--help)</td>
-      <td align="center">prints command line options and terminates</td>
+      <td>Prints command line options and terminates</td>
     </tr>
     <tr>
       <td align="center">-v (--version)</td>
-      <td align="center">prints version information and terminates</td>
+      <td>Prints version information and terminates</td>
     </tr>
     <tr>
       <td align="center">--confirm-quit &lt;x&gt;</td>
-      <td align="center">confirm Hatari quitting (x = y/n)</td>
-    </tr>
-    <tr>
-      <td align="center">-m (--mono)</td>
-      <td align="center">starts the emulated Atari ST in monochrome
-resolution (deprecated)</td>
-    </tr>
-    <tr>
-      <td align="center">--monitor &lt;x&gt;</td>
-      <td align="center">select monitor type (x = mono/rgb/vga/tv)</td>
-    </tr>
-    <tr>
-      <td align="center">-f (--fullscreen)</td>
-      <td align="center">tries to use a fullscreen mode</td>
-    </tr>
-    <tr>
-      <td align="center">--window</td>
-      <td align="center">forces Hatari to use a windowed mode</td>
-    </tr>
-    <tr>
-      <td align="center">-z &lt;x&gt;<br>(--zoom &lt;x&gt;)</td>
-      <td align="center">doubles ST low resolution (1=no, 2=yes)</td>
-    </tr>
-    <tr>
-      <td align="center">--frameskip</td>
-      <td align="center">drops every second frame (deprecated)</td>
-    </tr>
-    <tr>
-      <td align="center">--frameskips &lt;x&gt;</td>
-      <td align="center">Shows only every &lt;x&gt; frame (speeds up emulation!)</td>
-    </tr>
-    <tr>
-      <td align="center">--force8bpp</td>
-      <td align="center">force use of 8-bit window</td>
-    </tr>
-    <tr>
-      <td align="center">--borders</td>
-      <td align="center">show screen borders (for overscan demos etc)</td>
-    </tr>
-    <tr>
-      <td align="center">-j &lt;port&gt;<br>(--joystick &lt;port&gt;)</td>
-      <td align="center">activates joystick emulation via cursor keys
-for given joystick "port"<br>(0-5, see joystick dialog)</td>
-    </tr>
-    <tr>
-      <td align="center">--nosound</td>
-      <td align="center">disables sound (makes emulation faster)</td>
-    </tr>
-    <tr>
-      <td align="center">-D (--debug)</td>
-      <td align="center">activates the simple builtin debugger</td>
-    </tr>
-    <tr>
-      <td align="center">--log &lt;file&gt;</td>
-      <td align="center">direct log output to the specified file</td>
-    </tr>
-    <tr>
-      <td align="center">--slowfdc</td>
-      <td align="center">slows down FDC emulation (deprecated)</td>
-    </tr>
-    <tr>
-      <td align="center">-d &lt;dir&gt;<br>(--harddrive &lt;dir&gt;)</td>
-      <td align="center">emulates &lt;dir&gt; as a hard disk</td>
-    </tr>
-    <tr>
-      <td align="center">--hdimage &lt;imagefile&gt;</td>
-      <td align="center">emulate hard disk with an image file<br>
-      </td>
-    </tr>
-    <tr>
-      <td align="center">--cartridge &lt;imagefile&gt;<br>
-      </td>
-      <td align="center">sets imagefile as the cartridge on the ROM port<br>
-This currently does not work together with GEMDOS hard disk emulation!<br>
-      </td>
-    </tr>
-    <tr>
-      <td align="center">--tos &lt;imagefile&gt;</td>
-      <td align="center">specify TOS ROM image to use</td>
-    </tr>
-    <tr>
-      <td align="center">-s &lt;x&gt;<br>(--memsize &lt;x&gt;)</td>
-      <td align="center">set amount of emulated RAM upto 14MB<br>
-x=0 for 512K, x=1,x=2 or x=4 for 1, 2 or 4 MB</td>
-    </tr>
-    <tr>
-      <td align="center">--cpulevel &lt;x&gt;</td>
-      <td align="center">specify CPU (680x0) to use
-         (works on TOS 2.06 only!!)</td>
-    </tr>
-    <tr>
-      <td align="center">--compatible</td>
-      <td align="center">use a more compatible but slower 68000 CPU mode</td>
-    </tr>
-    <tr>
-      <td align="center">--blitter</td>
-      <td align="center">enable blitter emulation (ST only)</td>
-    </tr>
-    <tr>
-      <td align="center">--dsp &lt;x&gt;</td>
-      <td align="center">select DSP type (Falcon only, x = none/dymmy(/emu))</td>
-    </tr>
-    <tr>
-      <td align="center">--vdi</td>
-      <td align="center">use extended VDI resolution</td>
-    </tr>
-    <tr>
-      <td align="center">--vdi-planes</td>
-      <td align="center">specify extended VDI resolution bit-depth, x = 1/2/4</td>
-    </tr>
-    <tr>
-      <td align="center">--vdi-x &lt;x&gt;</td>
-      <td align="center">specify extended VDI resolution width
-      (320 &lt; x &lt;= 1024, multiple of 128)</td>
-    </tr>
-    <tr>
-      <td align="center">--vdi-y &lt;x&gt;</td>
-      <td align="center">specify extended VDI resolution height
-      (200 &lt; x &lt;= 768, multiple of text height)</td>
-    </tr>
-    <tr>
-      <td align="center">--printer &lt;file&gt;</td>
-      <td align="center">enable experimental printer support to the
-specified file</td>
-    </tr>
-    <tr>
-      <td align="center">--midi &lt;file&gt;</td>
-      <td align="center">enable experimental MIDI output to the
-specified file</td>
-    </tr>
-    <tr>
-      <td align="center">--rs232 &lt;file&gt;</td>
-      <td align="center">enable experimental RS232 communication via
-the specified file</td>
+      <td>Confirm Hatari quitting (x = y/n)</td>
     </tr>
     <tr>
       <td align="center">-c &lt;file&gt;<br>(--configfile &lt;file&gt;)</td>
-      <td align="center">Use the given file as configuration file
-instead of ~/.hatari.cfg</td>
+      <td>Use the given file as configuration file
+        instead of ~/.hatari/hatari.cfg</td>
+    </tr>
+
+    <tr class="backdropped">
+      <th align="center">Display options</th>
+      <th>Description</th>
     </tr>
     <tr>
-      <td align="center">-k &lt;file&gt;<br>(--keymap &lt;file&gt;)</td>
-      <td align="center">Sets keyboard mapping to "From file" and<br>
-uses the given file as keyboard mapping file</td>
+      <td align="center">-m (--mono)</td>
+      <td>Starts the emulated Atari ST in monochrome
+        resolution (deprecated)</td>
     </tr>
     <tr>
-      <td align="center">--machine &lt;x&gt;</td>
-      <td align="center">Select machine type (x = st/ste/tt/falcon)</td>
+      <td align="center">--monitor &lt;x&gt;</td>
+      <td>Select monitor type (x = mono/rgb/vga/tv)</td>
+    </tr>
+    <tr>
+      <td align="center">-f (--fullscreen)</td>
+      <td>Start in fullscreen mode</td>
+    </tr>
+    <tr>
+      <td align="center">--window</td>
+      <td>Forces Hatari to use a windowed mode</td>
+    </tr>
+    <tr>
+      <td align="center">-z &lt;x&gt;<br>(--zoom &lt;x&gt;)</td>
+      <td>Doubles ST low resolution (1=no, 2=yes)</td>
+    </tr>
+    <tr>
+      <td align="center">--frameskips &lt;x&gt;</td>
+      <td>Shows only every &lt;x&gt; frame (speeds up emulation!)</td>
+    </tr>
+    <tr>
+      <td align="center">--borders &lt;bool&gt;</td>
+      <td>Show screen borders (for overscan demos etc.)</td>
+    </tr>
+    <tr>
+      <td align="center">--spec512 &lt;x&gt;</td>
+      <td>Use threshold x to decide when to render a screen with the slower
+         but more<br> accurate Spectrum512 screen conversion functions
+         (0 <= x <= 512, 0=disable)</td>
+    </tr>
+    <tr>
+      <td align="center">--bpp &lt;x&gt;</td>
+      <td>Force color bitdepth (x=8/16/32, 0=autodetection)</td>
+    </tr>
+
+    <tr class="backdropped">
+      <th align="center">VDI options</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td align="center">--vdi-planes</td>
+      <td>Specify extended VDI resolution bit-depth, x = 1/2/4</td>
+    </tr>
+    <tr>
+      <td align="center">--vdi-width &lt;w&gt;</td>
+      <td>Specify extended VDI resolution width
+      (320 &lt; w &lt;= 1024, multiple of 128)</td>
+    </tr>
+    <tr>
+      <td align="center">--vdi-height &lt;h&gt;</td>
+      <td>Specify extended VDI resolution height
+      (200 &lt; h &lt;= 768, multiple of text height)</td>
+    </tr>
+
+    <tr class="backdropped">
+      <th align="center">Device options</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td align="center">-j &lt;port&gt;<br>(--joystick &lt;port&gt;)</td>
+      <td>Activates joystick emulation via cursor keys
+         for given joystick "port"<br>(0-5, see joystick dialog)</td>
+    </tr>
+    <tr>
+      <td align="center">--printer &lt;file&gt;</td>
+      <td>Enable printer support and write data to the specified file</td>
+    </tr>
+    <tr>
+      <td align="center">--midi &lt;file&gt;</td>
+      <td>Enable MIDI output and write midi data to the specified file</td>
+    </tr>
+    <tr>
+      <td align="center">--rs232 &lt;file&gt;</td>
+      <td>Enable RS232 communication via the specified file</td>
+    </tr>
+
+    <tr class="backdropped">
+      <th align="center">Disk options</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td align="center">-d &lt;dir&gt;<br>(--harddrive &lt;dir&gt;)</td>
+      <td>Emulates a hard disk at the GEMDOS level
+         (&lt;dir&gt; = root directory)</td>
+    </tr>
+    <tr>
+      <td align="center">--acsi &lt;imagefile&gt;</td>
+      <td>Emulate an ACSI hard disk with an image file</td>
+    </tr>
+    <tr>
+      <td align="center">--slowfdc &lt;bool&gt;</td>
+      <td>Slow down FDC emulation (deprecated)</td>
+    </tr>
+
+    <tr class="backdropped">
+      <th align="center">Memory options</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td align="center">-s &lt;x&gt;<br>(--memsize &lt;x&gt;)</td>
+      <td>set amount of emulated RAM upto 14MB<br>
+        x=0 for 512K, x=1,x=2 or x=4 for 1, 2 or 4 MB</td>
+    </tr>
+    <tr>
+      <td align="center">--tos &lt;imagefile&gt;</td>
+      <td>Specify TOS ROM image to use</td>
+    </tr>
+    <tr>
+      <td align="center">--cartridge &lt;file&gt;</td>
+      <td>Use file as the cartridge on the ROM port.<br>
+        This currently does not work together with GEMDOS hard disk emulation!</td>
     </tr>
     <tr>
       <td align="center">--memstate &lt;file&gt;</td>
-      <td align="center">Load memory snap-shot file</td>
+      <td>Load memory snap-shot file</td>
+    </tr>
+
+    <tr class="backdropped">
+      <th align="center">CPU options</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td align="center">--cpulevel &lt;x&gt;</td>
+      <td>Set the CPU type (x =&gt; 680x0) &mdash;
+         works with EmuTOS / TOS 2.06 only!</td>
+    </tr>
+    <tr>
+      <td align="center">--cpuclock &lt;x&gt;</td>
+      <td>Set the CPU frequency in MHz (8, 16 or 32)</td>
+    </tr>
+    <tr>
+      <td align="center">--compatible &lt;bool&gt;</td>
+      <td>Use a more compatible but slower 68000 CPU mode</td>
+    </tr>
+
+    <tr class="backdropped">
+      <th align="center">Misc system options</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td align="center">--machine &lt;x&gt;</td>
+      <td>Select machine type (x = st/ste/tt/falcon)</td>
+    </tr>
+    <tr>
+      <td align="center">--blitter &lt;bool&gt;</td>
+      <td>Use blitter emulation (for ST only)</td>
+    </tr>
+    <tr>
+      <td align="center">--dsp &lt;x&gt;</td>
+      <td>Select DSP type (Falcon only, x = none/dummy(/emu))</td>
+    </tr>
+    <tr>
+      <td align="center">--sound &lt;x&gt;</td>
+      <td>Sound quality (x = off/low/med/hi)</td>
+    </tr>
+    <tr>
+      <td align="center">-k &lt;file&gt;<br>(--keymap &lt;file&gt;)</td>
+      <td>Read (additional) keyboard mapping from file</td>
+    </tr>
+
+    <tr class="backdropped">
+      <th align="center">Debug options</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td align="center">-D (--debug)</td>
+      <td>Activates the simple builtin debugger</td>
+    </tr>
+    <tr>
+      <td align="center">--log &lt;file&gt;</td>
+      <td>Direct log output to the specified file</td>
+    </tr>
+    <tr>
+      <td align="center">--trace &lt;type1,...&gt;</td>
+      <td>Activate debug traces, use --trace help to see the options</td>
     </tr>
   </tbody>
 </table>
