@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.118 2008-03-13 20:32:47 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.119 2008-03-17 14:15:36 thothy Exp $";
 
 #include "config.h"
 
@@ -384,6 +384,7 @@ void Main_EventHandler(void)
 
 static void Main_Reparent_Window(void)
 {
+#if HAVE_X11
 	Window parent_win;
 	const char *parent_win_id;
 	SDL_SysWMinfo info;
@@ -403,7 +404,7 @@ static void Main_Reparent_Window(void)
 		Log_Printf(LOG_DEBUG, "Failed to get SDL_GetWMInfo()\n");
 		return;
 	}
-#if HAVE_X11
+
 	/* reparent Hatari window to parent */
 	XReparentWindow(info.info.x11.display,
 			info.info.x11.window,

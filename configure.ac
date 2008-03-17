@@ -81,6 +81,9 @@ dnl if that failed, try finding X11 without pkg-config
 if test "x${no_x}" = "xyes"; then
   AC_PATH_XTRA
 fi
+if test "x$with_x" = xno; then
+  no_x=yes
+fi
 if test "x${no_x}" = "xyes"; then
   AC_MSG_NOTICE([No X11, disabled Hatari embedding support])
 else
