@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.119 2008-03-17 14:15:36 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.120 2008-03-17 16:27:34 thothy Exp $";
 
 #include "config.h"
 
@@ -376,11 +376,14 @@ void Main_EventHandler(void)
  * SDL window stops accepting any input (specifically done like
  * this in SDL backends for some reason).
  * 
- * Should work on X11 and Windows.
+ * Currently only works on X11.
  * 
  * SDL_syswm.h automatically includes everything else needed.
  */
+
+#if HAVE_X11
 #include <SDL_syswm.h>
+#endif
 
 static void Main_Reparent_Window(void)
 {
@@ -414,7 +417,7 @@ static void Main_Reparent_Window(void)
 			info.info.x11.wmwindow);
 #else
 	/* TODO: implement the Windows part.  SDL sources offer example */
-	Log_Printf(LOG_DEBUG, "Support for Hatari window reparenting not built in\n");
+	//Log_Printf(LOG_DEBUG, "Support for Hatari window reparenting not built in\n");
 #endif /* HAVE_X11 */
 }
 
@@ -577,10 +580,6 @@ int main(int argc, char *argv[])
 
 	/* Check if SDL_Delay is accurate */
 	Main_CheckForAccurateDelays();
-
-	/* Switch immediately to fullscreen if user wants to */
-	if (ConfigureParams.Screen.bFullScreen)
-		Screen_EnterFullScreen();
 
 	/* Run emulation */
 	Main_UnPauseEmulation();
