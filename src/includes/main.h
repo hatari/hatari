@@ -10,8 +10,8 @@
 
 
 /* Name and version for window title: */
-#define PROG_NAME "Hatari CVS (" __DATE__ ")"
-// #define PROG_NAME "Hatari v0.96"
+// #define PROG_NAME "Hatari CVS (" __DATE__ ")"
+#define PROG_NAME "Hatari v1.0.0"
 
 
 #include <stdio.h>
