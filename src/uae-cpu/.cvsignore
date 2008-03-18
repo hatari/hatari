@@ -1,3 +1,4 @@
+Makefile.dep
 build68k
 cpudefs.c
 gencpu

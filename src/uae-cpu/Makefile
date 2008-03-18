@@ -9,12 +9,13 @@ CFLAGS += -I. -I../.. $(CPPFLAGS) $(SDL_CFLAGS)
 QUIETCFLAGS = $(CFLAGS) -Wno-unused -Wno-sign-compare -Wno-shadow
 
 
-CPUCSRCS = hatari-glue.c memory.c newcpu.c readcpu.c fpp.c cpustbl.c cpudefs.c
+CPUCSRCS = hatari-glue.c memory.c newcpu.c readcpu.c fpp.c
 
-CPUEMUSRCS = cpuemu1.c cpuemu2.c cpuemu3.c cpuemu4.c \
-             cpuemu5.c cpuemu6.c cpuemu7.c cpuemu8.c
+CPUGENOBS = cpuemu1.o cpuemu2.o cpuemu3.o cpuemu4.o \
+            cpuemu5.o cpuemu6.o cpuemu7.o cpuemu8.o \
+            cpudefs.o cpustbl.o
 
-CPU_OBS = $(CPUCSRCS:.c=.o) $(CPUEMUSRCS:.c=.o)
+CPU_OBS = $(CPUCSRCS:.c=.o) $(CPUGENOBS)
 
 
 all: cpu68k.a
@@ -76,4 +77,13 @@ clean:
 
 distclean:	clean
 	$(RM) cpudefs.c cpustbl.c cputbl.h cpuemu.c
-	$(RM) *~ *.bak *.orig
+	$(RM) *~ *.bak *.orig Makefile.dep
+
+
+# Use "make depend" to generate file dependencies:
+Makefile.dep: Makefile
+	$(CC) -M $(CFLAGS) $(CPUCSRCS) > Makefile.dep
+
+depend: Makefile.dep
+
+-include Makefile.dep
