@@ -19,7 +19,7 @@ CFLAGS := -g -O2 $(WARNFLAGS)
 CPPFLAGS =
 
 # Additional libraries and linker flags:
-LIBS = -lzdll
+LIBS = -lz
 LDFLAGS = -mwindows
 
 # Ranlib - for generating an index of an archive

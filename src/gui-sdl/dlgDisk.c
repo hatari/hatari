@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.1 2008-02-23 22:14:21 thothy Exp $";
+const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.2 2008-03-18 00:56:32 thothy Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -139,7 +139,7 @@ static BOOL DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 		strcpy(confname, selname);
 		free(selname);
 
-		str = strrchr(confname, '/');
+		str = strrchr(confname, PATHSEP);
 		if (str != NULL)
 			str[1] = 0;
 		File_CleanFileName(confname);

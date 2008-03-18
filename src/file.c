@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.50 2008-01-12 19:14:07 eerot Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.51 2008-03-18 00:56:32 thothy Exp $";
 
 #include <config.h>
 
@@ -719,6 +719,9 @@ void File_MakeValidPathName(char *pPathName)
 		}
 	}
 	while (pLastSlash);
+
+	/* Make sure that path name ends with a slash */
+	File_AddSlashToEndFileName(pPathName);
 }
 
 
