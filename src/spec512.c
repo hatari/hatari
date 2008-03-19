@@ -47,7 +47,7 @@
 
 
 
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.22 2008-03-11 20:11:08 eerot Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.23 2008-03-19 00:24:44 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -150,22 +150,13 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 
 	/* Find scan line we are currently on and get index into cycle-palette table */
 	ScanLine = FrameCycles / nCyclesPerLine;
+
+	if (ScanLine > MAX_SCANLINES_PER_FRAME)
+		return;
+
 	pTmpCyclePalette = &CyclePalettes[ (ScanLine*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[ScanLine] ];
 
 	nHorPos = FrameCycles % nCyclesPerLine;
-
-	/* Temporary hack until we've got better CPU cycles emulation:
-	 * The position needs to be corrected for a few positions.
-	 * I think it might be related to the shifter which handles 16 pixels
-	 * at a time / plane, since here we arrive every 20 cycles there are
-	 * synchronizations problems. Now the very good question is : why does
-	 * it happen only for the left part of the screen ???!!!!!
-	 * If we add the same correction for the right part, then bad black pixels
-	 * appear. This definetely requires some investigation... */
-#if 0
-	if (nHorPos == 104 || nHorPos == 124 || nHorPos == 144)
-		nHorPos += 4;
-#endif
 
 	/* Do we have a previous entry at the same cycles? If so, 68000 have used a 'move.l' instruction so stagger writes */
 	if (nCyclePalettes[ScanLine] > 0)
