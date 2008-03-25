@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.48 2008-03-13 12:32:50 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.49 2008-03-25 21:50:45 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -124,7 +124,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_SPEC512, NULL, "--spec512",
 	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
-	  "<x>", "Force internal color bitdepth (x=8/16/32, 0=disable)" },
+	  "<x>", "Force internal color bitdepth (x=8/15/16/32, 0=disable)" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "VDI" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
@@ -633,13 +633,18 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 		case OPT_FORCEBPP:
 			planes = atoi(argv[++i]);
-			if ((planes % 8) || planes > 32)
+			switch(planes)
 			{
+			case 32:
+			case 16:
+			case 15:
+			case 8:
+				break;       /* supported */
+			case 24:
+				planes = 32; /* We do not support 24 bpp (yet) */
+				break;
+			default:
 				Opt_ShowExit(OPT_FORCEBPP, argv[i], "Invalid bit depth");
-			}
-			if (planes == 24)
-			{
-				planes = 32;  /* We do not support 24 bpp (yet) */
 			}
 			ConfigureParams.Screen.nForceBpp = planes;
 			break;
