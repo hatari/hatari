@@ -30,7 +30,7 @@
  *
  *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.15 2007-01-16 18:42:59 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.16 2008-03-25 18:06:36 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -161,8 +161,18 @@ static void _fn_name (void)  \
 	Uint8 skew = skewreg & 15;  \
 	/*if(address_space_24)*/  \
 	{ source_addr &= 0x0fffffe; dest_addr &= 0x0fffffe; }  \
-	source_x_inc = (short) STMemory_ReadWord(REG_SRC_X_INC);  \
-	source_y_inc = (short) STMemory_ReadWord(REG_SRC_Y_INC);  \
+	if (op == 0 || op == 15) \
+	{ \
+		/* Do not increment source address for OP 0 and 15  */ \
+		/* (needed for Grotesque demo by Omega for example) */ \
+		source_x_inc = 0; \
+		source_y_inc = 0; \
+	} \
+	else \
+	{ \
+		source_x_inc = (short) STMemory_ReadWord(REG_SRC_X_INC);  \
+		source_y_inc = (short) STMemory_ReadWord(REG_SRC_Y_INC);  \
+	} \
 	dest_x_inc   = (short) STMemory_ReadWord(REG_DST_X_INC);  \
 	dest_y_inc   = (short) STMemory_ReadWord(REG_DST_Y_INC);  \
 	if (hop & 1) load_halftone_ram(source_addr);  \
