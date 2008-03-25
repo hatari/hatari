@@ -129,9 +129,11 @@
 /*			but before Video_EndHBL (because the move started just before cycle 512)*/
 /*			then the new value should not be set immediatly but stored and set	*/
 /*			during Video_EndHBL (fix the bump mapping part in Pacemaker by Paradox).*/
+/* 2008/03/25	[NP]	On STE, when bSteBorderFlag is true, we should add 16 pixels to the left*/
+/*			border, not to the right one (Just Musix 2 Menu by DHS).		*/
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.96 2008-03-14 20:13:37 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.97 2008-03-25 19:26:13 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -904,6 +906,12 @@ static void Video_CopyScreenLineColor(void)
 			memcpy(pSTScreen+SCREENBYTES_LEFT-2, pVideoRaster, 2);
 			pVideoRaster += 2;
 		}
+		else if (bSteBorderFlag)			/* STE specific */
+		{
+			/* bigger line by 8 bytes on the left */
+			memcpy(pSTScreen+SCREENBYTES_LEFT-4*2, pVideoRaster, 4*2);
+			pVideoRaster += 4*2;
+		}
 		else
 			memset(pSTScreen,0,SCREENBYTES_LEFT);
 
@@ -963,12 +971,7 @@ static void Video_CopyScreenLineColor(void)
 
 
 		/* STE specific */
-		if (bSteBorderFlag)
-		{
-			memcpy(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE, pVideoRaster, 4*2);
-			pVideoRaster += 4 * 2;
-		}
-		else if (HWScrollCount)     /* Handle STE fine scrolling (HWScrollCount is zero on ST) */
+		if ( !bSteBorderFlag && HWScrollCount)     /* Handle STE fine scrolling (HWScrollCount is zero on ST) */
 		{
 			Uint16 *pScrollAdj;     /* Pointer to actual position in line */
 			int nNegScrollCnt;
@@ -2027,6 +2030,7 @@ void Video_HorScroll_Write(void)
 	{
 		/*fprintf(stderr, "STE border removal - access 2\n");*/
 		bSteBorderFlag = TRUE;
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect STE left+8\n" );
 	}
 	else
 	{
