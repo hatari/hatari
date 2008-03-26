@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.76 2008-03-11 14:31:13 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.77 2008-03-26 18:45:12 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -225,7 +225,7 @@ static void Screen_Handle8BitPalettes(void)
  */
 static void Screen_SetDrawFunctions(int nBitCount)
 {
-	if (ConfigureParams.Screen.nForceBpp == 8)
+	if (nBitCount == 8)
 	{
 		/* Low color */
 		if (ConfigureParams.Screen.bZoomLowRes)
@@ -393,7 +393,7 @@ static void Screen_SetResolution(void)
 		}
 
 		/* Re-init screen palette: */
-		if (BitCount == 8)
+		if (sdlscrn->format->BitsPerPixel == 8)
 			Screen_Handle8BitPalettes();    /* Initialize new 8 bit palette */
 		else
 			Screen_SetupRGBTable();         /* Create color convertion table */
