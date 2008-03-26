@@ -131,9 +131,12 @@
 /*			during Video_EndHBL (fix the bump mapping part in Pacemaker by Paradox).*/
 /* 2008/03/25	[NP]	On STE, when bSteBorderFlag is true, we should add 16 pixels to the left*/
 /*			border, not to the right one (Just Musix 2 Menu by DHS).		*/
+/* 2008/03/26	[NP]	Clear the rest of the border when using border tricks left+2, left+8	*/
+/*			or right-106 (remove garbage pixels when hatari resolution changes).	*/
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.97 2008-03-25 19:26:13 npomarede Exp $";
+
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.98 2008-03-26 19:17:44 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -902,13 +905,15 @@ static void Video_CopyScreenLineColor(void)
 		}
 		else if (LineBorderMask & BORDERMASK_LEFT_PLUS_2)
 		{
-			/* bigger line by 2 bytes */
+			/* bigger line by 2 bytes on the left */
+			memset(pSTScreen,0,SCREENBYTES_LEFT-2);		/* clear unused pixels */
 			memcpy(pSTScreen+SCREENBYTES_LEFT-2, pVideoRaster, 2);
 			pVideoRaster += 2;
 		}
-		else if (bSteBorderFlag)			/* STE specific */
+		else if (bSteBorderFlag)				/* STE specific */
 		{
 			/* bigger line by 8 bytes on the left */
+			memset(pSTScreen,0,SCREENBYTES_LEFT-4*2);	/* clear unused pixels */
 			memcpy(pSTScreen+SCREENBYTES_LEFT-4*2, pVideoRaster, 4*2);
 			pVideoRaster += 4*2;
 		}
@@ -920,6 +925,7 @@ static void Video_CopyScreenLineColor(void)
 		{
 			/* 106 bytes less in the line */
 			memcpy(pSTScreen+SCREENBYTES_LEFT, pVideoRaster, SCREENBYTES_MIDDLE-106);
+			memset(pSTScreen+SCREENBYTES_LEFT+SCREENBYTES_MIDDLE-106, 0, 106);	/* clear unused pixels */
 			pVideoRaster += (SCREENBYTES_MIDDLE-106);
 		}
 		else
