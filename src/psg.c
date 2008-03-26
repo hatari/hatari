@@ -62,7 +62,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.18 2008-01-24 21:21:54 thothy Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.19 2008-03-26 22:15:27 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -113,7 +113,7 @@ void PSG_MemorySnapShot_Capture(BOOL bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write byte to 0xff88000, this is used as a selector for when we read/write
+ * Write byte to 0xff8800, this is used as a selector for when we read/write
  * to address 0xff8802
  */
 void PSG_SelectRegister_WriteByte(void)
@@ -121,7 +121,9 @@ void PSG_SelectRegister_WriteByte(void)
 //	M68000_WaitState(4);
 	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
 
-	PSGRegisterSelect = IoMem[0xff8800] & 0x0f;     /* Store register to select (value in bits 0-3) */
+	/* Store register to select (value in bits 0-3). Use IoAccessCurrentAddress
+	 * to be able to handle the PSG mirror registers, too. */
+	PSGRegisterSelect = IoMem[IoAccessCurrentAddress] & 0x0f;
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_REG ) )
 	  {
@@ -168,7 +170,7 @@ void PSG_SelectRegister_ReadByte(void)
 	}
 
 	/* Read data last selected by register */
-	IoMem[0xff8800] = PSGRegisters[PSGRegisterSelect];
+	IoMem[IoAccessCurrentAddress] = PSGRegisters[PSGRegisterSelect];
 }
 
 
@@ -181,8 +183,12 @@ void PSG_DataRegister_WriteByte(void)
 //	M68000_WaitState(4);
 	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
 
-	Sound_Update();					/* Create samples up until this point with current values */
-	PSGRegisters[PSGRegisterSelect] = IoMem[0xff8802];        /* Write value to PSGRegisters[] */
+	/* Create samples up until this point with current values */
+	Sound_Update();
+
+	/* Copy value to PSGRegisters[]. Use IoAccessCurrentAddress to be able
+	 * to handle the PSG mirror registers, too. */
+	PSGRegisters[PSGRegisterSelect] = IoMem[IoAccessCurrentAddress];
 
 	/* [NP] Clear unused bits for some regs */
 	if ( ( PSGRegisterSelect == PSG_REG_CHANNEL_A_COARSE ) || ( PSGRegisterSelect == PSG_REG_CHANNEL_B_COARSE )
@@ -199,7 +205,7 @@ void PSG_DataRegister_WriteByte(void)
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
 	    HATARI_TRACE_PRINT ( "write ym data reg=%x val=%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-		PSGRegisterSelect, IoMem[0xff8802], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+		PSGRegisterSelect, PSGRegisters[PSGRegisterSelect], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	  }
 
 
@@ -292,7 +298,7 @@ void PSG_DataRegister_ReadByte(void)
 {
 	M68000_WaitState(4);
 
-	IoMem[0xff8802] = 0xff;
+	IoMem[IoAccessCurrentAddress] = 0xff;
 }
 
 

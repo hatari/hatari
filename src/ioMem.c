@@ -28,7 +28,7 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.20 2008-02-20 20:07:54 npomarede Exp $";
+const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.21 2008-03-26 22:15:27 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -125,9 +125,11 @@ void IoMem_Init(void)
 		}
 	}
 
+	/* Set registers for Falcon DSP emulation */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
-		switch (ConfigureParams.System.nDSPType) {
+		switch (ConfigureParams.System.nDSPType)
+		{
 #if ENABLE_DSP_EMU
 		case DSP_TYPE_EMU:
 			IoMemTabFalcon_DSPemulation(pInterceptReadTable,
@@ -154,10 +156,20 @@ void IoMem_Init(void)
 	/* Disable real time clock? */
 	if (!ConfigureParams.System.bRealTimeClock)
 	{
-		for (addr = 0xfffc21; addr  <= 0xfffc3f; addr++)
+		for (addr = 0xfffc21; addr <= 0xfffc3f; addr++)
 		{
 			pInterceptReadTable[addr - 0xff8000] = IoMem_VoidRead;     /* For 'read' */
 			pInterceptWriteTable[addr - 0xff8000] = IoMem_VoidWrite;   /* and 'write' */
+		}
+	}
+
+	/* Initialize PSG shadow registers */
+	if (ConfigureParams.System.nMachineType != MACHINE_FALCON)
+	{
+		for (addr = 0xff8804; addr < 0xff8900; addr++)
+		{
+			pInterceptReadTable[addr - 0xff8000] = pInterceptReadTable[(addr & 0xfff803) - 0xff8000];
+			pInterceptWriteTable[addr - 0xff8000] = pInterceptWriteTable[(addr & 0xfff803) - 0xff8000];
 		}
 	
 	}
@@ -171,21 +183,6 @@ void IoMem_Init(void)
 void IoMem_UnInit(void)
 {
 }
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Check if need to change our address as maybe a mirror register.
- * Currently we only have a PSG mirror area.
- */
-static Uint32 IoMem_CheckMirrorAddresses(Uint32 addr)
-{
-	if (addr>=0xff8800 && addr<0xff8900)    /* Is a PSG mirror registers? */
-		addr = 0xff8800 + (addr & 3);       /* Bring into 0xff8800-0xff8804 range */
-
-	return addr;
-}
-
 
 
 /*-----------------------------------------------------------------------*/
@@ -208,7 +205,6 @@ uae_u32 IoMem_bget(uaecptr addr)
 	IoAccessBaseAddress = addr;                   /* Store access location */
 	nIoMemAccessSize = SIZE_BYTE;
 	nBusErrorAccesses = 0;
-	addr = IoMem_CheckMirrorAddresses(addr);
 
 	IoAccessCurrentAddress = addr;
 	pInterceptReadTable[addr-0xff8000]();         /* Call handler */
@@ -251,7 +247,6 @@ uae_u32 IoMem_wget(uaecptr addr)
 	IoAccessBaseAddress = addr;                   /* Store for exception frame */
 	nIoMemAccessSize = SIZE_WORD;
 	nBusErrorAccesses = 0;
-	addr = IoMem_CheckMirrorAddresses(addr);
 	idx = addr - 0xff8000;
 
 	IoAccessCurrentAddress = addr;
@@ -301,7 +296,6 @@ uae_u32 IoMem_lget(uaecptr addr)
 	IoAccessBaseAddress = addr;                   /* Store for exception frame */
 	nIoMemAccessSize = SIZE_LONG;
 	nBusErrorAccesses = 0;
-	addr = IoMem_CheckMirrorAddresses(addr);
 	idx = addr - 0xff8000;
 
 	IoAccessCurrentAddress = addr;
@@ -356,7 +350,6 @@ void IoMem_bput(uaecptr addr, uae_u32 val)
 	IoAccessBaseAddress = addr;                   /* Store for exception frame, just in case */
 	nIoMemAccessSize = SIZE_BYTE;
 	nBusErrorAccesses = 0;
-	addr = IoMem_CheckMirrorAddresses(addr);
 
 	IoMem[addr] = val;
 
@@ -398,7 +391,6 @@ void IoMem_wput(uaecptr addr, uae_u32 val)
 	IoAccessBaseAddress = addr;                   /* Store for exception frame, just in case */
 	nIoMemAccessSize = SIZE_WORD;
 	nBusErrorAccesses = 0;
-	addr = IoMem_CheckMirrorAddresses(addr);
 
 	IoMem_WriteWord(addr, val);
 	idx = addr - 0xff8000;
@@ -447,7 +439,6 @@ void IoMem_lput(uaecptr addr, uae_u32 val)
 	IoAccessBaseAddress = addr;                   /* Store for exception frame, just in case */
 	nIoMemAccessSize = SIZE_LONG;
 	nBusErrorAccesses = 0;
-	addr = IoMem_CheckMirrorAddresses(addr);
 
 	IoMem_WriteLong(addr, val);
 	idx = addr - 0xff8000;
