@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.77 2008-03-26 18:45:12 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.78 2008-03-26 19:19:50 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -331,7 +331,7 @@ static void Screen_SetResolution(void)
 	}
 
 	/* Bits per pixel */
-	if (ConfigureParams.Screen.nForceBpp == 8 || STRes == ST_HIGH_RES || bUseVDIRes)
+	if (STRes == ST_HIGH_RES || bUseVDIRes)
 	{
 		BitCount = 8;
 	}
@@ -357,16 +357,14 @@ static void Screen_SetResolution(void)
 		nScreenZoomY = 1;
 	}
 
-	/* SDL Video attributes: */
+	/* SDL Video attributes:
+	 * SDL_DOUBLEBUF is a good idea, but the GUI doesn't work with double
+	 * buffered screens yet, so double buffering is currently disabled.
+	 */
+	sdlVideoFlags  = SDL_HWSURFACE|SDL_HWPALETTE/*|SDL_DOUBLEBUF*/;
 	if (bInFullScreen)
 	{
-		sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN|SDL_HWPALETTE/*|SDL_DOUBLEBUF*/;
-		/* SDL_DOUBLEBUF is a good idea, but the GUI doesn't work with double buffered
-		 * screens yet, so double buffering is currently disabled. */
-	}
-	else
-	{
-		sdlVideoFlags  = SDL_SWSURFACE|SDL_HWPALETTE;
+		sdlVideoFlags |= SDL_FULLSCREEN;
 	}
 
 	/* Check if we really have to change the video mode: */
