@@ -70,6 +70,9 @@ please remind me!):
 
 - Mark Keates : Patches for compiling Hatari with MinGW.
 
+- Fredrik Noring : Tracked down a bug in the blitter emulation and a bug
+  in the PSG shadow register emulation.
+
 
  Code from other projects
  ------------------------
