@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.120 2008-03-17 16:27:34 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.121 2008-03-28 22:33:11 eerot Exp $";
 
 #include "config.h"
 
@@ -408,13 +408,13 @@ static void Main_Reparent_Window(void)
 		return;
 	}
 
-	/* reparent Hatari window to parent */
+	/* hide WM window for Hatari */
+	XUnmapWindow(info.info.x11.display,
+			info.info.x11.wmwindow);
+	/* reparent main Hatari window to given parent */
 	XReparentWindow(info.info.x11.display,
 			info.info.x11.window,
 			parent_win, 0, 0);
-	/* remove WM window for Hatari */
-	XDestroyWindow(info.info.x11.display,
-			info.info.x11.wmwindow);
 #else
 	/* TODO: implement the Windows part.  SDL sources offer example */
 	//Log_Printf(LOG_DEBUG, "Support for Hatari window reparenting not built in\n");
