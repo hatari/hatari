@@ -14,7 +14,7 @@
 /* 2007/09/28	[NP]	Creation of trace.c				*/
 
 
-
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
