@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.30 2008-01-02 20:01:54 thothy Exp $";
+const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.31 2008-03-29 16:59:04 thothy Exp $";
 
 #include <config.h>
 
@@ -28,9 +28,9 @@ const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.30 2008-01-02 20:01:54 thoth
 
 #include "main.h"
 #include "configuration.h"
+#include "ioMem.h"
 #include "m68000.h"
 #include "mfp.h"
-#include "stMemory.h"
 #include "rs232.h"
 
 
@@ -540,15 +540,15 @@ void RS232_SetBaudRateFromTimerD(void)
 {
 	int nTimerD_CR, nTimerD_DR, nBaudRate;
 
-	nTimerD_CR = STRam[0xfffa1d] & 0x07;
-	nTimerD_DR = STRam[0xfffa25];
+	nTimerD_CR = IoMem[0xfffa1d] & 0x07;
+	nTimerD_DR = IoMem[0xfffa25];
 
 	if (!nTimerD_CR)
 		return;
 
 	/* Calculate baud rate: (MFP/Timer-D is supplied with 2.4576 MHz) */
 	nBaudRate = 2457600 / nTimerD_DR / 2;
-	if (STRam[0xfffa29] & 0x80)
+	if (IoMem[0xfffa29] & 0x80)
 	{
 		nBaudRate /= 16;
 	}
@@ -683,7 +683,7 @@ void RS232_SCR_WriteByte(void)
 {
 	M68000_WaitState(4);
 
-	/*Dprintf(("RS232: Write to SCR: $%x\n", (int)STRam[0xfffa27]));*/
+	/*Dprintf(("RS232: Write to SCR: $%x\n", (int)IoMem[0xfffa27]));*/
 }
 
 
@@ -695,7 +695,7 @@ void RS232_UCR_ReadByte(void)
 {
 	M68000_WaitState(4);
 
-	Dprintf(("RS232: Read from UCR: $%x\n", (int)STRam[0xfffa29]));
+	Dprintf(("RS232: Read from UCR: $%x\n", (int)IoMem[0xfffa29]));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -706,10 +706,10 @@ void RS232_UCR_WriteByte(void)
 {
 	M68000_WaitState(4);
 
-	Dprintf(("RS232: Write to UCR: $%x\n", (int)STRam[0xfffa29]));
+	Dprintf(("RS232: Write to UCR: $%x\n", (int)IoMem[0xfffa29]));
 
 	if (bConnectedRS232)
-		RS232_HandleUCR(STRam[0xfffa29]);
+		RS232_HandleUCR(IoMem[0xfffa29]);
 }
 
 
@@ -722,11 +722,11 @@ void RS232_RSR_ReadByte(void)
 	M68000_WaitState(4);
 
 	if (RS232_GetStatus())
-		STRam[0xfffa2b] |= 0x80;        /* Buffer full */
+		IoMem[0xfffa2b] |= 0x80;        /* Buffer full */
 	else
-		STRam[0xfffa2b] &= ~0x80;       /* Buffer not full */
+		IoMem[0xfffa2b] &= ~0x80;       /* Buffer not full */
 
-	Dprintf(("RS232: Read from RSR: $%x\n", (int)STRam[0xfffa2b]));
+	Dprintf(("RS232: Read from RSR: $%x\n", (int)IoMem[0xfffa2b]));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -737,7 +737,7 @@ void RS232_RSR_WriteByte(void)
 {
 	M68000_WaitState(4);
 
-	Dprintf(("RS232: Write to RSR: $%x\n", (int)STRam[0xfffa2b]));
+	Dprintf(("RS232: Write to RSR: $%x\n", (int)IoMem[0xfffa2b]));
 }
 
 
@@ -750,11 +750,11 @@ void RS232_TSR_ReadByte(void)
 	M68000_WaitState(4);
 
 	if (ConfigureParams.RS232.bEnableRS232)
-		STRam[0xfffa2d] |= 0x80;        /* Buffer empty */
+		IoMem[0xfffa2d] |= 0x80;        /* Buffer empty */
 	else
-		STRam[0xfffa2d] &= ~0x80;       /* Buffer not empty */
+		IoMem[0xfffa2d] &= ~0x80;       /* Buffer not empty */
 
-	Dprintf(("RS232: Read from TSR: $%x\n", (int)STRam[0xfffa2d]));
+	Dprintf(("RS232: Read from TSR: $%x\n", (int)IoMem[0xfffa2d]));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -765,7 +765,7 @@ void RS232_TSR_WriteByte(void)
 {
 	M68000_WaitState(4);
 
-	Dprintf(("RS232: Write to TSR: $%x\n", (int)STRam[0xfffa2d]));
+	Dprintf(("RS232: Write to TSR: $%x\n", (int)IoMem[0xfffa2d]));
 }
 
 
@@ -780,8 +780,8 @@ void RS232_UDR_ReadByte(void)
 	M68000_WaitState(4);
 
 	RS232_ReadBytes(&InByte, 1);
-	STRam[0xfffa2f] = InByte;
-	Dprintf(("RS232: Read from UDR: $%x\n", (int)STRam[0xfffa2f]));
+	IoMem[0xfffa2f] = InByte;
+	Dprintf(("RS232: Read from UDR: $%x\n", (int)IoMem[0xfffa2f]));
 
 	if (RS232_GetStatus())              /* More data waiting? */
 	{
@@ -800,7 +800,7 @@ void RS232_UDR_WriteByte(void)
 
 	M68000_WaitState(4);
 
-	OutByte = STRam[0xfffa2f];
+	OutByte = IoMem[0xfffa2f];
 	RS232_TransferBytesTo(&OutByte, 1);
-	Dprintf(("RS232: Write to UDR: $%x\n", (int)STRam[0xfffa2f]));
+	Dprintf(("RS232: Write to UDR: $%x\n", (int)IoMem[0xfffa2f]));
 }
