@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# A PyGtk UI launcher that embeds the Hatari emulator window.
+# A PyGtk UI launcher that can embed the Hatari emulator window.
 #
 # In the future it will provide also some run-time controls
 # and a configuration UI for Hatari.  Run-time controls will
@@ -22,6 +22,7 @@
 
 import os
 import sys
+import getopt
 
 # use correct version of pygtk/gtk
 import pygtk
@@ -31,23 +32,55 @@ import gtk.glade
 
 from hatari import Hatari, Config
 
+
+class Shortcuts():
+    def __init__(self, config):
+        self.config = config
+        self.types = None
+        
+    def set_types(self, types):
+        self.types = types
+        
+    def list_all_types(self):
+        return {
+        "maxspeed": "Run Hatari at max speed",
+        "frameskip": "Increase/decrease screen update skip"
+        }
+
+    def get_box(self, horizontal):
+        if not self.types:
+            return None
+        if horizontal:
+            box = gtk.HBox()
+        else:
+            box = gtk.VBox()
+        # TODO: get actual widgets & callbacks instead of these dummies
+        for label in self.types:
+            button = gtk.Button(label)
+            # important, without these Hatari doesn't receive key events!
+            button.unset_flags(gtk.CAN_FOCUS)
+            #button.connect("clicked", cb)
+            box.add(button)
+        return box
+
+
 def connect_true(object):
-    # disable Socket destroy on Plug (Hatari) disappearance
+    # disable Socket widget being destroyed on Plug (i.e. Hatari) disappearance
     return True
 
 class HatariUI():
-    title = "Hatari UI v0.2"
+    title = "Hatari UI v0.3"
     icon = "hatari-icon.png"
     gladefile = "hatari-ui.glade"
     hatari_wd = 640
     hatari_ht = 400
 
-    def __init__(self, fullscreen = False, embed = False):
-        self.config = Config()
+    def __init__(self, config, shortcuts, fullscreen, embed):
+        self.config = config
         self.hatari = Hatari()
         # just instantiate all UI windows/widgets...
         self.hatariparent = None
-        mainwin = self.create_mainwin(embed)
+        mainwin = self.create_mainwin(embed, shortcuts.get_box(embed))
         if fullscreen:
             mainwin.fullscreen()
         self.create_dialogs(mainwin)
@@ -56,14 +89,14 @@ class HatariUI():
     def run(self):
         gtk.main()
 
-    def create_mainwin(self, embed):
+    def create_mainwin(self, embed, shortcuts):
         # main window
         mainwin = gtk.Window(gtk.WINDOW_TOPLEVEL)
         mainwin.connect("delete_event", self.quit_clicked)
         mainwin.set_icon_from_file(self.icon)
         mainwin.set_title(self.title)
         
-        # add buttons
+        # add main buttons
         buttonbox = gtk.VBox()
         buttons = [
             ("Run Hatari!", self.run_clicked),
@@ -78,18 +111,23 @@ class HatariUI():
             button.unset_flags(gtk.CAN_FOCUS)
             button.connect("clicked", cb)
             buttonbox.add(button)
+
         # what to add to mainwindow
         if embed:
-            #vbox = gtk.VBox()
+            vbox = gtk.VBox()
             hbox = gtk.HBox()
             self.hatariparent = self.create_socket()
             # make sure socket isn't resized
             hbox.pack_start(self.hatariparent, False, False, 0)
             hbox.add(buttonbox)
-            #vbox.pack_start(hbox, False, False, 0)
-            #keybox = gtk.HBox()
-            #vbox.add(keybox)
-            #mainwin.add(vbox)
+            vbox.add(hbox)
+            if shortcuts:
+                vbox.add(shortcuts)
+            mainwin.add(vbox)
+        elif shortcuts:
+            hbox = gtk.HBox()
+            hbox.add(shortcuts)
+            hbox.add(buttonbox)
             mainwin.add(hbox)
         else:
             mainwin.add(buttonbox)
@@ -165,24 +203,50 @@ class HatariUI():
             self.hatari.unpause()
             widget.set_label("Pause")
 
-
-def usage(msg):
-    print "\nusage: %s [-f]" % os.path.basename(sys.argv[0])
+def usage(shortcuts, msg=None):
+    name = os.path.basename(sys.argv[0])
+    print "\nusage: %s [options]" % name
     print "\noptions:"
-    print "\t-f\tstart in fullscreen"
-    print "\t-e\tembed Hatari window"
-    print "\nERROR: %s\n" % msg
+    print "\t-e, --embed\t\tembed Hatari window"
+    print "\t-f, --fullscreen\tstart in fullscreen"
+    print "\t-s, --shortcut <action>\tadd button for shortcut action"
+    print "\nshortcut actions:"
+    for item in shortcuts.list_all_types().items():
+        print "\t%s\t%s" % item
+    print "\nexample:"
+    print "\t%s -f -e -s maxspeed -s frameskip" % name
+    if msg:
+        print "\nERROR: %s\n" % msg
+    print
     sys.exit(1)
 
-if __name__ == "__main__":
+def main():
     embed = False
     fullscreen = False
-    for arg in sys.argv[1:]:
-        if arg == "-f":
-            fullscreen = True
-        elif arg == "-e":
+    config = Config()
+    shortcuts = Shortcuts(config)
+    try:
+        longopts = ["embed", "fullscreen", "help", "shortcut="]
+        opts, args = getopt.getopt(sys.argv[1:], "efhs:", longopts)
+        del longopts
+    except getopt.GetoptError, err:
+        usage(shortcuts, err)
+    types = []
+    for o, a in opts:
+        if o in ("-e", "--embed"):
             embed = True
+        elif o in ("-f", "--fullscreen"):
+            fullscreen = True
+        elif o in ("-h", "--help"):
+            usage(shortcuts)
+        elif o in ("-s", "--shortcut"):
+            if a in shortcuts.list_all_types():
+                types.append(a)
         else:
-            usage("unknown option '%s'" % arg)
-    app = HatariUI(fullscreen, embed)
+            assert False, "getopt returned unhandled option"
+    shortcuts.set_types(types)
+    app = HatariUI(config, shortcuts, fullscreen, embed)
     app.run()
+
+if __name__ == "__main__":
+    main()
