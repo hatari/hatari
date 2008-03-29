@@ -452,4 +452,23 @@ static const Uint32 Remap_1_Plane[16] = {
   esi[offset+2] = esi[offset+2+Screen4BytesPerLine] = ebx; \
 }
 
+/* Get Spec512 pixels which are offset by 1 pixel */
+#if defined(__i386__)    // Unaligned direct access is only supported on i86 platforms
+
+# define GET_SPEC512_OFFSET_PIXELS(pixels, x)  \
+            (*(Uint32 *)(((Uint8 *)pixels) + x))
+# define GET_SPEC512_OFFSET_FINAL_PIXELS(pixels) \
+            (*(Uint32 *)(((Uint8 *)pixels) + 13))
+
+#else
+
+# define GET_SPEC512_OFFSET_PIXELS(pixels, x)  \
+            (((*(Uint32 *)(((Uint8 *)pixels) + x-1)) >> 8) \
+	     | ((*(Uint32 *)(((Uint8 *)pixels) + x+3)) << 24))
+# define GET_SPEC512_OFFSET_FINAL_PIXELS(pixels)  \
+            ((*(Uint32 *)(((Uint8 *)pixels) + 12)) >> 8)
+
+#endif /* __i386__ */
+
+
 #endif /* HATARI_CONVERTMACROS_H */
