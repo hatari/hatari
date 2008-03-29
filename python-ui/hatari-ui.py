@@ -80,16 +80,17 @@ class HatariUI():
             buttonbox.add(button)
         # what to add to mainwindow
         if embed:
-            vbox = gtk.VBox()
+            #vbox = gtk.VBox()
             hbox = gtk.HBox()
             self.hatariparent = self.create_socket()
             # make sure socket isn't resized
             hbox.pack_start(self.hatariparent, False, False, 0)
             hbox.add(buttonbox)
-            vbox.pack_start(hbox, False, False, 0)
-            keybox = gtk.HBox()
-            vbox.add(keybox)
-            mainwin.add(vbox)
+            #vbox.pack_start(hbox, False, False, 0)
+            #keybox = gtk.HBox()
+            #vbox.add(keybox)
+            #mainwin.add(vbox)
+            mainwin.add(hbox)
         else:
             mainwin.add(buttonbox)
         return mainwin
@@ -133,11 +134,7 @@ class HatariUI():
         if self.keep_hatari_running():
             return
         if self.hatariparent:
-            win = self.hatariparent.window
-            if win.get_size() != (640, 400):
-                print "Socket was resized to", win.get_size(), "force 640x400"
-                win.resize(self.hatari_wd, self.hatari_ht)
-            self.hatari.run(self.config, win)
+            self.hatari.run(self.config, self.hatariparent.window)
         else:
             self.hatari.run(self.config)
 

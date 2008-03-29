@@ -84,22 +84,42 @@ class Hatari():
         if not parent_win:
             return ()
         # need to modify Hatari settings to match parent window
-        #
-        # TODO: should check also for sizes with borders
-        size = parent_win.get_size()
-        if size == (320, 200):
-            args = ("--borders", "off", "--zoom", "1", "--monitor", "vga")
-        elif size == (640, 400):
-            args = ("--borders", "off", "--zoom", "2")
+        wd, ht = parent_win.get_size()
+        if wd < 320 or ht < 200:
+            print "ERROR: Hatari needs larger than %dx%d window" % (wd, ht)
+            os.exit(1)
+        # TODO: get border size(s) from the configuration file
+        border = 48
+        if wd < 640 or ht < 400:
+            # only non-zoomed color mode fits to window
+            args = ("--zoom", "1", "--monitor", "vga")
+            if wd < 320+border*2 and ht < 200+border*2:
+                # without borders
+                args += ("--borders", "off")
         else:
-            print "ERROR: unknown Hatari parent window size", size
-            sys.exit(1)
+            # can we have both zooming and borders?
+            if wd < 2*(320+border*2) and ht < 2*(200+border*2):
+                useborder = config.get("[Screen]", "bAllowOverscan")
+                if useborder and useborder.upper() == "TRUE":
+                    # no, just border
+                    args = ("--zoom", "1")
+                else:
+                    # no, just zooming
+                    args = ("--zoom", "2")
+            else:
+                # yes, both
+                args = ("--zoom", "2")
         if config:
-            machine = config.get("[System]", "nMachineType")
+            # for VDI we can use (fairly) exact size
+            usevdi = config.get("[Screen]", "bUseExtVdiResolutions")
+            if usevdi and usevdi.upper() == "TRUE":
+                args += ("--vdi-width", wd, "--vdi-height", ht)            
             # window size for other than ST & STE can differ
+            machine = config.get("[System]", "nMachineType")
             if machine != '0' and machine != '1':
                 print "WARNING: neither ST nor STE, forcing machine to ST"
                 args += ("--machine", "st")
+                    
         return args
 
     def pause(self):
