@@ -34,33 +34,73 @@ from hatari import Hatari, Config
 
 
 class Shortcuts():
-    def __init__(self, config):
-        self.config = config
-        self.types = None
-        
+    def __init__(self):
+        self.all_types = ["maxspeed", "frameskip"]
+        self.use_types = None
+    
     def set_types(self, types):
-        self.types = types
+        for usetype in types:
+            if usetype not in self.all_types:
+                return False
+        self.use_types = types
+        return True
         
     def list_all_types(self):
-        return {
-        "maxspeed": "Run Hatari at max speed",
-        "frameskip": "Increase/decrease screen update skip"
-        }
+        # generate the list from class internal documentation
+        for methodname in self.all_types:
+            yield (methodname, Shortcuts.__dict__[methodname].__doc__)
 
-    def get_box(self, horizontal):
-        if not self.types:
+    def maxspeed_cb(self, widget):
+        # TODO: toggle Hatari maxspeed
+        if widget.get_active():
+            print "Entering hyperspace!"
+        else:
+            print "Returning to normal speed"
+
+    def maxspeed(self, config, horizontal):
+        "Whether to run Hatari at max speed"
+        widget = gtk.CheckButton("maxspeed")
+        if config.get("[System]", "nMinMaxSpeed") != "0":
+            widget.set_active(True)
+        widget.connect("toggled", self.maxspeed_cb)
+        return widget
+    
+    def frameskip_cb(self, widget):
+        # TODO: change Hatari frameskip
+        print "New frameskip value:", widget.get_value()
+
+    def frameskip(self, config, horizontal):
+        "Increase/decrease screen update skip"
+        box = gtk.HBox()
+        label = gtk.Label("frameskip:")
+        box.pack_start(label, False, False, 0)
+        if horizontal:
+            widget = gtk.HScale()
+        else:
+            widget = gtk.VScale()
+        widget.set_range(0, 8)
+        widget.set_digits(0)
+        frameskips = config.get("[Screen]", "FrameSkips")
+        if frameskips:
+            widget.set_value(int(frameskips))
+        widget.connect("value-changed", self.frameskip_cb)
+        box.add(widget)
+        return box
+
+    def get_box(self, config, horizontal):
+        "return Gtk Box container with the specified shortcut widgets"
+        if not self.use_types:
             return None
         if horizontal:
             box = gtk.HBox()
         else:
             box = gtk.VBox()
         # TODO: get actual widgets & callbacks instead of these dummies
-        for label in self.types:
-            button = gtk.Button(label)
+        for methodname in self.use_types:
+            widget = Shortcuts.__dict__[methodname](self, config, horizontal)
             # important, without these Hatari doesn't receive key events!
-            button.unset_flags(gtk.CAN_FOCUS)
-            #button.connect("clicked", cb)
-            box.add(button)
+            widget.unset_flags(gtk.CAN_FOCUS)
+            box.add(widget)
         return box
 
 
@@ -75,12 +115,13 @@ class HatariUI():
     hatari_wd = 640
     hatari_ht = 400
 
-    def __init__(self, config, shortcuts, fullscreen, embed):
-        self.config = config
+    def __init__(self, shortcuts, fullscreen, embed):
+        self.config = Config()
         self.hatari = Hatari()
         # just instantiate all UI windows/widgets...
         self.hatariparent = None
-        mainwin = self.create_mainwin(embed, shortcuts.get_box(embed))
+        shortcutbox = shortcuts.get_box(self.config, embed)
+        mainwin = self.create_mainwin(embed, shortcutbox)
         if fullscreen:
             mainwin.fullscreen()
         self.create_dialogs(mainwin)
@@ -203,7 +244,7 @@ class HatariUI():
             self.hatari.unpause()
             widget.set_label("Pause")
 
-def usage(shortcuts, msg=None):
+def usage(msg=None):
     name = os.path.basename(sys.argv[0])
     print "\nusage: %s [options]" % name
     print "\noptions:"
@@ -211,7 +252,8 @@ def usage(shortcuts, msg=None):
     print "\t-f, --fullscreen\tstart in fullscreen"
     print "\t-s, --shortcut <action>\tadd button for shortcut action"
     print "\nshortcut actions:"
-    for item in shortcuts.list_all_types().items():
+    shortcuts = Shortcuts()
+    for item in shortcuts.list_all_types():
         print "\t%s\t%s" % item
     print "\nexample:"
     print "\t%s -f -e -s maxspeed -s frameskip" % name
@@ -223,14 +265,13 @@ def usage(shortcuts, msg=None):
 def main():
     embed = False
     fullscreen = False
-    config = Config()
-    shortcuts = Shortcuts(config)
+    shortcuts = Shortcuts()
     try:
         longopts = ["embed", "fullscreen", "help", "shortcut="]
         opts, args = getopt.getopt(sys.argv[1:], "efhs:", longopts)
         del longopts
     except getopt.GetoptError, err:
-        usage(shortcuts, err)
+        usage(err)
     types = []
     for o, a in opts:
         if o in ("-e", "--embed"):
@@ -238,14 +279,15 @@ def main():
         elif o in ("-f", "--fullscreen"):
             fullscreen = True
         elif o in ("-h", "--help"):
-            usage(shortcuts)
+            usage()
         elif o in ("-s", "--shortcut"):
-            if a in shortcuts.list_all_types():
                 types.append(a)
         else:
             assert False, "getopt returned unhandled option"
-    shortcuts.set_types(types)
-    app = HatariUI(config, shortcuts, fullscreen, embed)
+    if not shortcuts.set_types(types):
+        usage("unknown shortcut type")
+
+    app = HatariUI(shortcuts, fullscreen, embed)
     app.run()
 
 if __name__ == "__main__":
