@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.38 2008-03-29 11:05:52 npomarede Exp $";
+const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.39 2008-03-29 23:01:56 thothy Exp $";
 
 #include <config.h>
 
@@ -274,7 +274,6 @@ void MemorySnapShot_Restore(const char *pszFileName, BOOL bConfirm)
 		/* Reset emulator to get things running */
 		IoMem_UnInit();  IoMem_Init();
 		Reset_Cold();
-		Video_SetSystemTimings();
 
 		/* Capture each files details */
 		Main_MemorySnapShot_Capture(FALSE);
