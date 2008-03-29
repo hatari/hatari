@@ -113,7 +113,7 @@ class Hatari():
             # for VDI we can use (fairly) exact size
             usevdi = config.get("[Screen]", "bUseExtVdiResolutions")
             if usevdi and usevdi.upper() == "TRUE":
-                args += ("--vdi-width", wd, "--vdi-height", ht)            
+                args += ("--vdi-width", str(wd), "--vdi-height", str(ht))
             # window size for other than ST & STE can differ
             machine = config.get("[System]", "nMachineType")
             if machine != '0' and machine != '1':
