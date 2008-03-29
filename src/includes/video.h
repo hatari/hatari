@@ -60,9 +60,12 @@
 /* FIXME: SCREEN_START_CYCLE should rather be 52 or so, but this breaks a lot of other things at the moment... */
 #define SCREEN_START_CYCLE  56          /* Cycle first normal pixel appears on */
 
-#define LINE_REMOVE_TOP_CYCLE    504    /* switch to 60 Hz on line 33 should not occur after cycle 504 to remove top border */
-                                        /* switch to 50 Hz should occur after cycle 504 on line 33 */
-#define LINE_REMOVE_BOTTOM_CYCLE 504    /* same value than top border, but on line 262 (50 Hz) or 233 (60 Hz) */
+#define LINE_REMOVE_TOP_CYCLE_STF	504	/* switch to 60 Hz on line 33 should not occur after cycle 504 to remove top border */
+						/* switch to 50 Hz should occur after cycle 504 on line 33 */
+#define LINE_REMOVE_BOTTOM_CYCLE_STF	504	/* same value than top border, but on line 262 (50 Hz) or 233 (60 Hz) */
+
+#define LINE_REMOVE_TOP_CYCLE_STE	500	/* on STE, switch can occur 4 cycles earlier */
+#define LINE_REMOVE_BOTTOM_CYCLE_STE	500
 
 
 #define LINE_START_CYCLE_50	56
@@ -117,6 +120,7 @@ extern int nScanlinesPerFrame;
 extern int nCyclesPerLine;
 
 
+extern void Video_SetSystemTimings(void);
 extern void Video_Reset(void);
 extern void Video_MemorySnapShot_Capture(BOOL bSave);
 extern void Video_GetTTRes(int *width, int *height, int *bpp);

@@ -133,10 +133,13 @@
 /*			border, not to the right one (Just Musix 2 Menu by DHS).		*/
 /* 2008/03/26	[NP]	Clear the rest of the border when using border tricks left+2, left+8	*/
 /*			or right-106 (remove garbage pixels when hatari resolution changes).	*/
+/* 2008/03/29	[NP]	Function Video_SetSystemTimings to use different values depending on	*/
+/*			the machine type. On STE, top/bottom border removal can occur at cycle	*/
+/*			500 instead of 504 on STF.						*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.98 2008-03-26 19:17:44 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.99 2008-03-29 11:05:48 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -233,6 +236,10 @@ int	NewVideoHi = -1;			/* new value for $ff8205 on STE */
 int	NewVideoMed = -1;			/* new value for $ff8207 on STE */
 int	NewVideoLo = -1;			/* new value for $ff8209 on STE */
 
+int	LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
+int	LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
@@ -259,6 +266,26 @@ void Video_MemorySnapShot_Capture(BOOL bSave)
 	MemorySnapShot_Store(&nCyclesPerLine, sizeof(nCyclesPerLine));
 	MemorySnapShot_Store(&nFirstVisibleHbl, sizeof(nFirstVisibleHbl));
 	MemorySnapShot_Store(&bSteBorderFlag, sizeof(bSteBorderFlag));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/*
+ * Set specific video timings, depending on the system being emulated.
+ */
+void	Video_SetSystemTimings(void)
+{
+  if ( ConfigureParams.System.nMachineType == MACHINE_ST )
+    {
+      LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
+      LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
+    }
+
+  else					/* STE, Falcon, TT */
+    {
+      LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STE;
+      LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STE;
+    }
 }
 
 
@@ -1116,11 +1143,11 @@ static void Video_EndHBL(void)
 	// fprintf(stderr,"video_endhbl %d last60 %d last 50 %d\n", nHBL, LastCycleSync60, LastCycleSync50);
 
 	/* Remove top border if the switch to 60 Hz was made during this vbl before cycle	*/
-	/* 33*512+LINE_REMOVE_TOP_CYCLE and if the switch to 50 Hz has not yet occured or	*/
-	/* occured before the 60 Hz or occured after cycle 33*512+LINE_REMOVE_TOP_CYCLE.	*/
+	/* 33*512+LineRemoveTopCycle and if the switch to 50 Hz has not yet occured or	*/
+	/* occured before the 60 Hz or occured after cycle 33*512+LineRemoveTopCycle.	*/
 	if (( nHBL == SCREEN_START_HBL_60HZ-1)
-	    && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (SCREEN_START_HBL_60HZ-1) * nCyclesPerLine + LINE_REMOVE_TOP_CYCLE))
-	    && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (SCREEN_START_HBL_60HZ-1) * nCyclesPerLine + LINE_REMOVE_TOP_CYCLE)))
+	    && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (SCREEN_START_HBL_60HZ-1) * nCyclesPerLine + LineRemoveTopCycle))
+	    && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (SCREEN_START_HBL_60HZ-1) * nCyclesPerLine + LineRemoveTopCycle)))
 	{
 		/* Top border */
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove top\n" );
@@ -1144,8 +1171,8 @@ static void Video_EndHBL(void)
 
 	/* Remove bottom border for a 50 Hz screen (similar method to the one for top border) */
 	else if ((nHBL == SCREEN_END_HBL_50HZ-1)	/* last displayed line in 50 Hz */
-	          && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (SCREEN_END_HBL_50HZ-1) * nCyclesPerLine + LINE_REMOVE_BOTTOM_CYCLE))
-	          && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (SCREEN_END_HBL_50HZ-1) * nCyclesPerLine + LINE_REMOVE_BOTTOM_CYCLE))
+	          && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (SCREEN_END_HBL_50HZ-1) * nCyclesPerLine + LineRemoveBottomCycle))
+	          && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (SCREEN_END_HBL_50HZ-1) * nCyclesPerLine + LineRemoveBottomCycle))
 	          && ((OverscanMode & OVERSCANMODE_BOTTOM) == 0))	/* border was not already removed at line SCREEN_END_HBL_60HZ */
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
@@ -1641,6 +1668,9 @@ void Video_Reset(void)
 		VideoShifterByte = ST_LOW_RES;
 	if (bUseVDIRes)
 		VideoShifterByte = VDIRes;
+
+	/* Set system specific timings */
+	Video_SetSystemTimings();
 
 	/* Reset VBL counter */
 	nVBLs = 0;
