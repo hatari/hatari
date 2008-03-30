@@ -59,10 +59,13 @@
 /*			where it was stopped, without updating 'cycles'.			*/
 /* 2007/12/27	[NP]	Parameter 'AddInternalCycle' in Int_AddRelativeInterrupt, used in mfp.c	*/
 /*			to precisely start a timer after the current inst.			*/
+/* 2008/03/30	[NP]	ActiveInterrupt was not saved in the memory snapshot, which could cause	*/
+/*			errors when restoring it. We call Int_SetNewInterrupt() after restoring	*/
+/*			the snapshot to set ActiveInterrupt to the correct value.		*/
 
 
 
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.19 2008-02-29 21:11:12 thothy Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.20 2008-03-30 22:24:46 npomarede Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -112,6 +115,7 @@ typedef struct
 static INTERRUPTHANDLER InterruptHandlers[MAX_INTERRUPTS];
 static int ActiveInterrupt=0;
 
+static void Int_SetNewInterrupt(void);
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -208,6 +212,10 @@ void Int_MemorySnapShot_Capture(BOOL bSave)
 		MemorySnapShot_Store(&ID, sizeof(int));
 		PendingInterruptFunction = Int_IDToHandlerFunction(ID);
 	}
+
+
+	if (!bSave)
+		Int_SetNewInterrupt();			/* when restoring snapshot, compute current state after */
 }
 
 
@@ -386,7 +394,7 @@ void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_
 	/* Set new */
 	Int_SetNewInterrupt();
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int add rel offset video_cyc=%d handler=%d handler_cyc=%di offset_cyc=%d pending_count=%d\n",
+	HATARI_TRACE ( HATARI_TRACE_INT , "int add rel offset video_cyc=%d handler=%d handler_cyc=%d offset_cyc=%d pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, CycleOffset, PendingInterruptCount );
 }
 
