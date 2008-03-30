@@ -12,7 +12,7 @@ URL:          http://hatari.sourceforge.net/
 License:      GPL
 Group:        System/Emulators/Other
 Autoreqprov:  on
-Version:      1.0.0
+Version:      1.0.1
 Release:      1
 Summary:      an Atari ST emulator suitable for playing games
 Source:       %{name}-%{version}.tar.gz

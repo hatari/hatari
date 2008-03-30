@@ -11,7 +11,7 @@
 
 /* Name and version for window title: */
 // #define PROG_NAME "Hatari CVS (" __DATE__ ")"
-#define PROG_NAME "Hatari v1.0.0"
+#define PROG_NAME "Hatari v1.0.1"
 
 
 #include <stdio.h>

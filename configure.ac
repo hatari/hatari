@@ -5,7 +5,7 @@
 # Don't forget to run aclocal and autoheader first...
 # ... or simply run autoreconf -i to create all necessary files for configure.
 
-AC_INIT(hatari, 1.0.0)
+AC_INIT(hatari, 1.0.1)
 AC_CONFIG_SRCDIR([src/main.c])
 AC_PREREQ(2.60)
 

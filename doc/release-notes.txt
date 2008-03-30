@@ -5,6 +5,20 @@
 
 
 
+ Version 1.0.1 (2008-03-30):
+ ---------------------------
+
+- This is just a bug-fix release, without new features.
+- Fixed some compile problems on non-unix-like systems (like MingW).
+- Fixed crashes in Spec512 emulation code ("Dan Dare 3" and little endian ARM).
+- Blitter source address is not incremented anymore in operation mode 0 and 15.
+- STE small overscan video effect is now displayed on the left side instead
+  of the right side (fixes "Just Musix 2" menu for example).
+- Hatari now works on 256 color displays right again.
+- Fixed PSG mirror register emulation (fixes e.g. sample sound in "Ooh Crikey
+  Wot A Scorcher" demo).
+
+
  Version 1.0.0 (2008-03-17):
  ---------------------------
 
