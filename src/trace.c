@@ -10,6 +10,8 @@
  *
 */
 
+const char Trace_rcsid[] = "Hatari $Id: trace.c,v 1.5 2008-03-30 10:08:38 thothy Exp $";
+
 
 /* 2007/09/28	[NP]	Creation of trace.c				*/
 
@@ -81,6 +83,10 @@ int	ParseTraceOptions ( char *OptionsStr )
   int	Mode;				/* 0=add, 1=del */
   int	MaxOptions;
 
+#ifndef HATARI_TRACE_ACTIVATED
+  fprintf(stderr, "\nError: Trace option has not been activated during compile time.\n");
+  exit(1);
+#endif
 
   MaxOptions = sizeof ( TraceOptions ) / sizeof ( TraceOptions[ 0 ] );
 
@@ -146,9 +152,4 @@ int	ParseTraceOptions ( char *OptionsStr )
   free ( OptionsCopy );
   return 1;
 }
-
-
-
-
-
 
