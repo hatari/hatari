@@ -139,7 +139,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.99 2008-03-29 11:05:48 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.100 2008-03-31 17:28:50 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -1560,7 +1560,7 @@ static void Video_RenderTTScreen(void)
 static void Video_DrawScreen(void)
 {
 	/* Skip frame if need to */
-	if (nVBLs % (ConfigureParams.Screen.FrameSkips+1))
+	if (nVBLs % (ConfigureParams.Screen.nFrameSkips+1))
 		return;
 
 	/* Use extended VDI resolution?

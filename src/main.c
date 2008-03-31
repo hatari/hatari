@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.121 2008-03-28 22:33:11 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.122 2008-03-31 17:28:51 eerot Exp $";
 
 #include "config.h"
 
@@ -172,8 +172,8 @@ void Main_WaitOnVbl(void)
 	nFrameDuration = 1000/nScreenRefreshRate;
 	nDelay = nDestMilliTicks - nCurrentMilliTicks;
 
-	/* Do not wait if we are in max speed mode or if we are totally out of sync */
-	if (ConfigureParams.System.nMinMaxSpeed == MINMAXSPEED_MAX
+	/* Do not wait if we are in fast forward mode or if we are totally out of sync */
+	if (ConfigureParams.System.bFastForward == TRUE
 	        || nDelay < -4*nFrameDuration)
 	{
 		/* Only update nDestMilliTicks for next VBL */

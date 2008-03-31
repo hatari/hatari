@@ -77,7 +77,7 @@ typedef enum {
   SHORTCUT_SCREENSHOT,
   SHORTCUT_BOSSKEY,
   SHORTCUT_CURSOREMU,
-  SHORTCUT_MAXSPEED,
+  SHORTCUT_FASTFORWARD,
   SHORTCUT_RECANIM,
   SHORTCUT_RECSOUND,
   SHORTCUT_SOUND,
@@ -191,8 +191,8 @@ typedef enum
 /* Screen configuration */
 typedef struct
 {
-  MONITORTYPE MonitorType;
-  int FrameSkips;
+  MONITORTYPE nMonitorType;
+  int nFrameSkips;
   BOOL bFullScreen;
   BOOL bAllowOverscan;
   BOOL bZoomLowRes;
@@ -233,15 +233,6 @@ typedef struct
 /* Dialog System */
 typedef enum
 {
-  MINMAXSPEED_MIN,
-  MINMAXSPEED_1,
-  MINMAXSPEED_2,
-  MINMAXSPEED_3,
-  MINMAXSPEED_MAX
-} MINMAXSPEED_TYPE;
-
-typedef enum
-{
   MACHINE_ST,
   MACHINE_STE,
   MACHINE_TT,
@@ -267,7 +258,7 @@ typedef struct
   BOOL bRealTimeClock;
   BOOL bPatchTimerD;
   BOOL bSlowFDC;                  /* TRUE to slow down FDC emulation */
-  MINMAXSPEED_TYPE nMinMaxSpeed;
+  BOOL bFastForward;
 } CNF_SYSTEM;
 
 

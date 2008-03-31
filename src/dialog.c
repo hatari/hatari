@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.66 2008-03-01 22:37:43 eerot Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.67 2008-03-31 17:28:51 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -51,10 +51,10 @@ CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can
 BOOL Dialog_DoNeedReset(void)
 {
 	/* Did we change monitor type? If so, must reset */
-	if (ConfigureParams.Screen.MonitorType != DialogParams.Screen.MonitorType
+	if (ConfigureParams.Screen.nMonitorType != DialogParams.Screen.nMonitorType
 	    && (DialogParams.System.nMachineType == MACHINE_FALCON
-	        || ConfigureParams.Screen.MonitorType == MONITOR_TYPE_MONO
-	        || DialogParams.Screen.MonitorType == MONITOR_TYPE_MONO))
+	        || ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_MONO
+	        || DialogParams.Screen.nMonitorType == MONITOR_TYPE_MONO))
 		return TRUE;
 
 	/* Did change to GEM VDI display? */

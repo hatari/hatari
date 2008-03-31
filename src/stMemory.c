@@ -6,7 +6,7 @@
 
   ST Memory access functions.
 */
-const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.19 2007-12-30 20:02:01 thothy Exp $";
+const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.20 2008-03-31 17:28:51 eerot Exp $";
 
 #include "config.h"
 
@@ -128,7 +128,7 @@ void STMemory_SetDefaultConfig(void)
 		else
 			nFalcSysCntrl = 0x04;
 		nFalcSysCntrl &= FALCON_MONITOR_MASK;
-		switch(ConfigureParams.Screen.MonitorType) {
+		switch(ConfigureParams.Screen.nMonitorType) {
 		case MONITOR_TYPE_TV:
 			nFalcSysCntrl |= FALCON_MONITOR_TV;
 			break;

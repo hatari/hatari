@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.49 2008-03-25 21:50:45 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.50 2008-03-31 17:28:51 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -47,6 +47,7 @@ enum {
 	OPT_VERSION,
 	OPT_CONFIRMQUIT,
 	OPT_CONFIGFILE,
+	OPT_FASTFORWARD,
 	OPT_MONO,		/* display options */
 	OPT_MONITOR,
 	OPT_FULLSCREEN,
@@ -101,11 +102,13 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Print this help text and exit" },
 	{ OPT_VERSION,   "-v", "--version",
 	  NULL, "Print version number and exit" },
-	{ OPT_CONFIRMQUIT,NULL, "--confirm-quit",
+	{ OPT_CONFIRMQUIT, NULL, "--confirm-quit",
 	  "<bool>", "Whether Hatari confirms quit" },
-	{ OPT_CONFIGFILE,"-c", "--configfile",
+	{ OPT_CONFIGFILE, "-c", "--configfile",
 	  "<file>", "Use <file> instead of the ~/.hatari.cfg config file" },
-	
+	{ OPT_FASTFORWARD, NULL, "--fast-forward",
+	  "<bool>", "Help skipping stuff on fast machine" },
+
 	{ OPT_HEADER, NULL, NULL, NULL, "Display" },
 	{ OPT_MONO,      "-m", "--mono",
 	  NULL, "Start in monochrome mode instead of color" },
@@ -542,6 +545,10 @@ void Opt_ParseParameters(int argc, char *argv[],
 		case OPT_CONFIRMQUIT:
 			ConfigureParams.Log.bConfirmQuit = Opt_Bool(argv[++i], OPT_CONFIRMQUIT);
 			break;
+
+		case OPT_FASTFORWARD:
+			ConfigureParams.System.bFastForward = Opt_Bool(argv[++i], OPT_FASTFORWARD);
+			break;
 			
 		case OPT_CONFIGFILE:
 			i += 1;
@@ -553,7 +560,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 		
 			/* display options */
 		case OPT_MONO:
-			ConfigureParams.Screen.MonitorType = MONITOR_TYPE_MONO;
+			ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_MONO;
 			bLoadAutoSave = FALSE;
 			break;
 
@@ -561,19 +568,19 @@ void Opt_ParseParameters(int argc, char *argv[],
 			i += 1;
 			if (strcasecmp(argv[i], "mono") == 0)
 			{
-				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_MONO;
+				ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_MONO;
 			}
 			else if (strcasecmp(argv[i], "rgb") == 0)
 			{
-				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_RGB;
+				ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_RGB;
 			}
 			else if (strcasecmp(argv[i], "vga") == 0)
 			{
-				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_VGA;
+				ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_VGA;
 			}
 			else if (strcasecmp(argv[i], "tv") == 0)
 			{
-				ConfigureParams.Screen.MonitorType = MONITOR_TYPE_TV;
+				ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_TV;
 			}
 			else
 			{
@@ -614,7 +621,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 				Opt_ShowExit(OPT_FRAMESKIPS, argv[i],
 				             "Invalid frame skip value");
 			}
-			ConfigureParams.Screen.FrameSkips = skips;
+			ConfigureParams.Screen.nFrameSkips = skips;
 			break;
 			
 		case OPT_BORDERS:

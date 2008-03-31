@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.29 2008-02-24 20:10:47 thothy Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.30 2008-03-31 17:28:51 eerot Exp $";
 
 #include <SDL.h>
 
@@ -136,15 +136,15 @@ static void ShortCut_SoundOnOff(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Shortcut to maximum speed
+ * Shortcut to fast forward
  */
-static void ShortCut_MaximumSpeed(void)
+static void ShortCut_FastForward(void)
 {
 	/* If already on max speed, switch back to normal */
-	if (ConfigureParams.System.nMinMaxSpeed == MINMAXSPEED_MAX)
+	if (ConfigureParams.System.bFastForward == TRUE)
 	{
 		/* Restore */
-		ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;
+		ConfigureParams.System.bFastForward = FALSE;
 
 		/* Reset the sound emulation variables: */
 		Sound_ResetBufferIndex();
@@ -152,7 +152,7 @@ static void ShortCut_MaximumSpeed(void)
 	else
 	{
 		/* Set maximum speed */
-		ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MAX;
+		ConfigureParams.System.bFastForward = TRUE;
 	}
 }
 
@@ -212,8 +212,8 @@ void ShortCut_ActKey(void)
 	 case SHORTCUT_CURSOREMU:          /* Toggle joystick emu on/off */
 		Joy_ToggleCursorEmulation();
 		break;
-	 case SHORTCUT_MAXSPEED:
-		ShortCut_MaximumSpeed();       /* Toggle Min/Max speed */
+	 case SHORTCUT_FASTFORWARD:
+		ShortCut_FastForward();       /* Toggle Min/Max speed */
 		break;
 	 case SHORTCUT_RECANIM:
 		ShortCut_RecordAnimation();    /* Record animation */

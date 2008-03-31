@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.84 2008-03-11 20:11:08 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.85 2008-03-31 17:28:51 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -46,8 +46,8 @@ static const struct Config_Tag configs_Log[] =
 /* Used to load/save screen options */
 static const struct Config_Tag configs_Screen[] =
 {
-	{ "MonitorType", Int_Tag, &ConfigureParams.Screen.MonitorType },
-	{ "FrameSkips", Int_Tag, &ConfigureParams.Screen.FrameSkips },
+	{ "nMonitorType", Int_Tag, &ConfigureParams.Screen.nMonitorType },
+	{ "nFrameSkips", Int_Tag, &ConfigureParams.Screen.nFrameSkips },
 	{ "bFullScreen", Bool_Tag, &ConfigureParams.Screen.bFullScreen },
 	{ "bAllowOverscan", Bool_Tag, &ConfigureParams.Screen.bAllowOverscan },
 	{ "nSpec512Threshold", Int_Tag, &ConfigureParams.Screen.nSpec512Threshold },
@@ -172,7 +172,7 @@ static const struct Config_Tag configs_ShortCutWithMod[] =
 	{ "keyScreenShot", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SCREENSHOT] },
 	{ "keyBossKey",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_BOSSKEY] },
 	{ "keyCursorEmu",  Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_CURSOREMU] },
-	{ "keyMaxSpeed",   Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_MAXSPEED] },
+	{ "keyFastForward",Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_FASTFORWARD] },
 	{ "keyRecAnim",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_RECANIM] },
 	{ "keyRecSound",   Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_RECSOUND] },
 	{ "keySound",      Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SOUND] },
@@ -193,7 +193,7 @@ static const struct Config_Tag configs_ShortCutWithoutMod[] =
 	{ "keyScreenShot", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SCREENSHOT] },
 	{ "keyBossKey",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_BOSSKEY] },
 	{ "keyCursorEmu",  Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_CURSOREMU] },
-	{ "keyMaxSpeed",   Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_MAXSPEED] },
+	{ "keyFastForward",Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_FASTFORWARD] },
 	{ "keyRecAnim",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_RECANIM] },
 	{ "keyRecSound",   Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_RECSOUND] },
 	{ "keySound",      Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SOUND] },
@@ -293,7 +293,7 @@ static const struct Config_Tag configs_System[] =
 	{ "bRealTimeClock", Bool_Tag, &ConfigureParams.System.bRealTimeClock },
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bSlowFDC", Bool_Tag, &ConfigureParams.System.bSlowFDC },
-	{ "nMinMaxSpeed", Int_Tag, &ConfigureParams.System.nMinMaxSpeed },
+	{ "bFastForward", Int_Tag, &ConfigureParams.System.bFastForward },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -375,7 +375,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_SCREENSHOT] = SDLK_g;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_BOSSKEY] = SDLK_i;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_CURSOREMU] = SDLK_j;
-	ConfigureParams.Shortcut.withModifier[SHORTCUT_MAXSPEED] = SDLK_x;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_FASTFORWARD] = SDLK_x;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_RECANIM] = SDLK_a;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_RECSOUND] = SDLK_y;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_SOUND] = SDLK_s;
@@ -408,12 +408,12 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for Screen */
 	ConfigureParams.Screen.bFullScreen = FALSE;
-	ConfigureParams.Screen.FrameSkips = 0;
+	ConfigureParams.Screen.nFrameSkips = 0;
 	ConfigureParams.Screen.bAllowOverscan = TRUE;
 	ConfigureParams.Screen.nSpec512Threshold = 16;
 	ConfigureParams.Screen.nForceBpp = 0;
 	ConfigureParams.Screen.bZoomLowRes = FALSE;
-	ConfigureParams.Screen.MonitorType = MONITOR_TYPE_RGB;
+	ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_RGB;
 	ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
 	ConfigureParams.Screen.nVdiWidth = 640;
 	ConfigureParams.Screen.nVdiHeight = 480;
@@ -448,7 +448,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
 	ConfigureParams.System.bPatchTimerD = TRUE;
 	ConfigureParams.System.bRealTimeClock = TRUE;
-	ConfigureParams.System.nMinMaxSpeed = MINMAXSPEED_MIN;
+	ConfigureParams.System.bFastForward = FALSE;
 	ConfigureParams.System.bSlowFDC = FALSE;
 
 	/* Initialize the configuration file name */
@@ -475,7 +475,7 @@ void Configuration_Apply(BOOL bReset)
 	{
 		/* Set resolution change */
 		bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions;
-		bUseHighRes = ((!bUseVDIRes) && ConfigureParams.Screen.MonitorType == MONITOR_TYPE_MONO)
+		bUseHighRes = ((!bUseVDIRes) && ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_MONO)
 			|| (bUseVDIRes && ConfigureParams.Screen.nVdiColors == GEMCOLOR_2);
 		if (bUseHighRes)
 		{
@@ -659,7 +659,7 @@ void Configuration_MemorySnapShot_Capture(BOOL bSave)
 	MemorySnapShot_Store(&ConfigureParams.HardDisk.bUseHardDiskImage, sizeof(ConfigureParams.HardDisk.bUseHardDiskImage));
 	MemorySnapShot_Store(ConfigureParams.HardDisk.szHardDiskImage, sizeof(ConfigureParams.HardDisk.szHardDiskImage));
 
-	MemorySnapShot_Store(&ConfigureParams.Screen.MonitorType, sizeof(ConfigureParams.Screen.MonitorType));
+	MemorySnapShot_Store(&ConfigureParams.Screen.nMonitorType, sizeof(ConfigureParams.Screen.nMonitorType));
 	MemorySnapShot_Store(&ConfigureParams.Screen.bUseExtVdiResolutions, sizeof(ConfigureParams.Screen.bUseExtVdiResolutions));
 	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiWidth, sizeof(ConfigureParams.Screen.nVdiWidth));
 	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiHeight, sizeof(ConfigureParams.Screen.nVdiHeight));
