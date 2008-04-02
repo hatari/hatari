@@ -136,10 +136,13 @@
 /* 2008/03/29	[NP]	Function Video_SetSystemTimings to use different values depending on	*/
 /*			the machine type. On STE, top/bottom border removal can occur at cycle	*/
 /*			500 instead of 504 on STF.						*/
+/* 2008/04/02	[NP]	Correct a rare case in Video_Sync_WriteByte at the end of line 33 :	*/
+/*			nStartHBL was set to 33 instead of 64, which gave a wrong address in	*/
+/*			Video_CalculateAddress.							*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.100 2008-03-31 17:28:50 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.101 2008-04-02 20:55:27 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -442,6 +445,7 @@ static Uint32 Video_CalculateAddress(void)
 	               VideoBase, pVideoRaster - STRam, VideoAddress, Cycles_GetCounter(CYCLES_COUNTER_VIDEO),
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO) %  nCyclesPerLine, X,
 	               nHBL, HblCounterVideo, LineStartCycle, LineEndCycle, M68000_GetPC(), CurrentInstrCycles );
+fprintf ( stderr , "start %d\n" , nStartHBL );
 
 	return VideoAddress;
 }
@@ -676,11 +680,11 @@ void Video_Sync_WriteByte(void)
 	{
 		LastCycleSync50 = nFrameCycles;
 
-		if ( ( nHBL < SCREEN_START_HBL_50HZ )			/* nStartHBL can change only if display is not ON yet */
-		        && ( OverscanMode & OVERSCANMODE_TOP ) == 0 )		/* update only if top was not removed */
+		if ( ( HblCounterVideo < SCREEN_START_HBL_50HZ )	/* nStartHBL can change only if display is not ON yet */
+		        && ( OverscanMode & OVERSCANMODE_TOP ) == 0 )	/* update only if top was not removed */
 			nStartHBL = SCREEN_START_HBL_50HZ;
 
-		if ( ( nHBL < SCREEN_END_HBL_50HZ )			/* nEndHBL can change only if display is not OFF yet */
+		if ( ( HblCounterVideo < SCREEN_END_HBL_50HZ )		/* nEndHBL can change only if display is not OFF yet */
 		        && ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* update only if bottom was not removed */
 			nEndHBL = SCREEN_END_HBL_50HZ;				/* 263 */
 	}
@@ -688,10 +692,11 @@ void Video_Sync_WriteByte(void)
 	{
 		LastCycleSync60 = nFrameCycles;
 
-		if ( nHBL < SCREEN_START_HBL_60HZ )			/* nStartHBL can change only if display is not ON yet */
+		if ( ( HblCounterVideo < SCREEN_START_HBL_60HZ-1 )	/* nStartHBL can change only if display is not ON yet */
+			|| ( ( HblCounterVideo == SCREEN_START_HBL_60HZ-1 ) && ( nLineCycles <= LineRemoveTopCycle ) ) )
 			nStartHBL = SCREEN_START_HBL_60HZ;
 
-		if ( ( nHBL < SCREEN_END_HBL_60HZ )			/* nEndHBL can change only if display is not OFF yet */
+		if ( ( HblCounterVideo < SCREEN_END_HBL_60HZ )		/* nEndHBL can change only if display is not OFF yet */
 		        && ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* update only if bottom was not removed */
 			nEndHBL = SCREEN_END_HBL_60HZ;				/* 234 */
 	}
