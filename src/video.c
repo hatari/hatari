@@ -142,7 +142,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.101 2008-04-02 20:55:27 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.102 2008-04-03 17:42:23 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -445,7 +445,6 @@ static Uint32 Video_CalculateAddress(void)
 	               VideoBase, pVideoRaster - STRam, VideoAddress, Cycles_GetCounter(CYCLES_COUNTER_VIDEO),
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO) %  nCyclesPerLine, X,
 	               nHBL, HblCounterVideo, LineStartCycle, LineEndCycle, M68000_GetPC(), CurrentInstrCycles );
-fprintf ( stderr , "start %d\n" , nStartHBL );
 
 	return VideoAddress;
 }
