@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.17 2008-03-01 22:37:44 eerot Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.18 2008-04-03 20:19:50 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -173,7 +173,7 @@ void Dialog_ScreenDlg(void)
 
 	for (i = 0; i < ITEMS_IN_ARRAY(skip_frames); i++)
 	{
-		if (DialogParams.Screen.FrameSkips >= skip_frames[i])
+		if (DialogParams.Screen.nFrameSkips >= skip_frames[i])
 			skip = i;
 		screendlg[i+DLGSCRN_SKIP0].state &= ~SG_SELECTED;
 	}
@@ -181,7 +181,7 @@ void Dialog_ScreenDlg(void)
 
 	for (i = DLGSCRN_MONO; i <= DLGSCRN_TV; i++)
 		screendlg[i].state &= ~SG_SELECTED;
-	screendlg[DLGSCRN_MONO+DialogParams.Screen.MonitorType].state |= SG_SELECTED;
+	screendlg[DLGSCRN_MONO+DialogParams.Screen.nMonitorType].state |= SG_SELECTED;
 
 	/* Initialize VDI resolution options: */
 
@@ -296,7 +296,7 @@ void Dialog_ScreenDlg(void)
 	{
 		if (screendlg[i].state & SG_SELECTED)
 		{
-			DialogParams.Screen.FrameSkips = skip_frames[i-DLGSCRN_SKIP0];
+			DialogParams.Screen.nFrameSkips = skip_frames[i-DLGSCRN_SKIP0];
 			break;
 		}
 	}
@@ -304,7 +304,7 @@ void Dialog_ScreenDlg(void)
 	{
 		if (screendlg[i].state & SG_SELECTED)
 		{
-			DialogParams.Screen.MonitorType = i - DLGSCRN_MONO;
+			DialogParams.Screen.nMonitorType = i - DLGSCRN_MONO;
 			break;
 		}
 	}
