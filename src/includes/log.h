@@ -41,7 +41,7 @@ extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...);
 #define HATARI_TRACE_ACTIVATED
 
 
-/* Up to 32 levels when using Uint32 for HatariTraceLevel */
+/* Up to 32 levels when using Uint32 for HatariTraceFlags */
 #define	HATARI_TRACE_VIDEO_SYNC		(1<<0)
 #define	HATARI_TRACE_VIDEO_RES		(1<<1)
 #define	HATARI_TRACE_VIDEO_COLOR	(1<<2)
@@ -94,8 +94,8 @@ extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...);
 #else
 
 #define	HATARI_TRACE( level, args... ) \
-	if ( HatariTraceLevel & level ) fprintf ( stderr , args )
-#define HATARI_TRACE_LEVEL( level )	(HatariTraceLevel & level)
+	if ( HatariTraceFlags & level ) fprintf ( stderr , args )
+#define HATARI_TRACE_LEVEL( level )	(HatariTraceFlags & level)
 
 #endif
 
@@ -104,10 +104,10 @@ extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...);
 
 
 
-extern Uint32 HatariTraceLevel;
+extern Uint32 HatariTraceFlags;
 
 
-int	ParseTraceOptions ( char *OptionsStr );
+int ParseTraceOptions (char *OptionsStr);
 
 
 #endif		/* HATARI_LOG_H */

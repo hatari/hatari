@@ -10,10 +10,10 @@
  * to the error log file and/or displays them in alert dialog boxes.
  *
  * It can also dynamically output trace messages, based on the content
- * of HatariTraceLevel. Multiple trace levels can be set at once, by setting
- * the corresponding bits in HatariTraceLevel
+ * of HatariTraceFlags. Multiple trace levels can be set at once, by setting
+ * the corresponding bits in HatariTraceFlags
  */
-const char Log_rcsid[] = "Hatari $Id: log.c,v 1.7 2008-04-03 20:30:32 eerot Exp $";
+const char Log_rcsid[] = "Hatari $Id: log.c,v 1.8 2008-04-03 20:35:43 eerot Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -70,7 +70,7 @@ TraceOptions[] = {
 };
 
 
-Uint32	HatariTraceLevel = HATARI_TRACE_NONE;
+Uint32	HatariTraceFlags = HATARI_TRACE_NONE;
 
 
 static FILE *hLogFile = NULL;
@@ -161,7 +161,7 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
  * corresponding trace level is turned on.
  * If the string is prefixed with a '-',
  * corresponding trace level is turned off.
- * Result is stored in HatariTraceLevel.
+ * Result is stored in HatariTraceFlags.
  */
 int ParseTraceOptions (char *OptionsStr)
 {
@@ -191,7 +191,7 @@ int ParseTraceOptions (char *OptionsStr)
 		return 0;
 	}
 	
-	HatariTraceLevel = HATARI_TRACE_NONE;
+	HatariTraceFlags = HATARI_TRACE_NONE;
 	
 	OptionsCopy = strdup(OptionsStr);
 	if (!OptionsCopy)
@@ -222,9 +222,9 @@ int ParseTraceOptions (char *OptionsStr)
 		if (i < MaxOptions)		/* option found */
 		{
 			if (Mode == 0)
-				HatariTraceLevel |= TraceOptions[i].Level;
+				HatariTraceFlags |= TraceOptions[i].Level;
 			else
-				HatariTraceLevel &= (~TraceOptions[i].Level);
+				HatariTraceFlags &= (~TraceOptions[i].Level);
 		}
 		else
 		{
@@ -236,7 +236,7 @@ int ParseTraceOptions (char *OptionsStr)
 		cur = sep;
 	}
 	
-	//fprintf(stderr, "trace parse <%x>\n", HatariTraceLevel);
+	//fprintf(stderr, "trace parse <%x>\n", HatariTraceFlags);
 	
 	free (OptionsCopy);
 	return 1;
