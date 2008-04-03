@@ -139,10 +139,12 @@
 /* 2008/04/02	[NP]	Correct a rare case in Video_Sync_WriteByte at the end of line 33 :	*/
 /*			nStartHBL was set to 33 instead of 64, which gave a wrong address in	*/
 /*			Video_CalculateAddress.							*/
+/* 2008/04/04	[NP]	The value of RestartVideoCounterCycle is slightly different between	*/
+/*			an STF and an STE.							*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.103 2008-04-03 20:30:32 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.104 2008-04-03 22:17:50 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -240,6 +242,7 @@ int	NewVideoLo = -1;			/* new value for $ff8209 on STE */
 
 int	LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
 int	LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
+int	RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
 
 
 /*-----------------------------------------------------------------------*/
@@ -281,12 +284,14 @@ void	Video_SetSystemTimings(void)
     {
       LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
       LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
+      RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
     }
 
   else					/* STE, Falcon, TT */
     {
       LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STE;
       LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STE;
+      RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE;
     }
 }
 
@@ -339,7 +344,7 @@ static Uint32 Video_CalculateAddress(void)
 		VideoAddress = pVideoRaster - STRam;
 	}
 
-	else if (nFrameCycles > RESTART_VIDEO_COUNTER_CYCLE)
+	else if (nFrameCycles > RestartVideoCounterCycle)
 	{
 		/* This is where ff8205/ff8207 are reloaded with the content of ff8201/ff8203 on a real ST */
 		/* (used in ULM DSOTS demos). VideoBase is also reloaded in Video_ClearOnVBL to be sure */

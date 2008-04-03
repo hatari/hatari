@@ -64,7 +64,7 @@
 						/* switch to 50 Hz should occur after cycle 504 on line 33 */
 #define LINE_REMOVE_BOTTOM_CYCLE_STF	504	/* same value than top border, but on line 262 (50 Hz) or 233 (60 Hz) */
 
-#define LINE_REMOVE_TOP_CYCLE_STE	500	/* on STE, switch can occur 4 cycles earlier */
+#define LINE_REMOVE_TOP_CYCLE_STE	500	/* on STE, switch can occur 4 cycles earlier than STF */
 #define LINE_REMOVE_BOTTOM_CYCLE_STE	500
 
 
@@ -98,7 +98,10 @@
 #define VBL_VIDEO_CYCLE_OFFSET		(60+4)
 #define HBL_VIDEO_CYCLE_OFFSET		(12-12)			/* cycles after end of current line */
 #define TIMERB_VIDEO_CYCLE_OFFSET	(96+12)			/* cycles before end of current line (28 cycles after display off) */
-#define RESTART_VIDEO_COUNTER_CYCLE	( (MAX_SCANLINES_PER_FRAME-3) * CYCLES_PER_LINE_50HZ + 48 )
+
+/* This is when ff8205/07/09 are reloaded with the content of ff8201/03 (on line 310 in 50 Hz) */
+#define RESTART_VIDEO_COUNTER_CYCLE_STF	( (MAX_SCANLINES_PER_FRAME-3) * CYCLES_PER_LINE_50HZ + 48 )
+#define RESTART_VIDEO_COUNTER_CYCLE_STE	( (MAX_SCANLINES_PER_FRAME-3) * CYCLES_PER_LINE_50HZ + 48 + 4 )	/* 4 cycles later than STF */
 
 
 extern int STRes;
