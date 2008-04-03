@@ -62,7 +62,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.19 2008-03-26 22:15:27 thothy Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.20 2008-04-03 20:30:32 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -78,7 +78,7 @@ const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.19 2008-03-26 22:15:27 thothy Ex
 #include "falcon/dsp.h"
 #endif
 #include "video.h"
-#include "trace.h"
+
 
 Uint8 PSGRegisterSelect;        /* 0xff8800 (read/write) */
 Uint8 PSGRegisters[16];         /* Register in PSG, see PSG_REG_xxxx */

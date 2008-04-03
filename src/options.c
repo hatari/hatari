@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.50 2008-03-31 17:28:51 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.51 2008-04-03 20:30:32 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -31,7 +31,6 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.50 2008-03-31 17:28:51 eero
 #include "video.h"
 #include "vdi.h"
 #include "joy.h"
-#include "trace.h"
 
 #include "hatari-glue.h"
 

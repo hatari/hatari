@@ -15,7 +15,7 @@
 
 /* 2007/11/06   [NP]    Add calls to HATARI_TRACE and set FDC_DELAY_HBL=180		*/
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.35 2008-03-13 23:17:27 thothy Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.36 2008-04-03 20:30:32 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -31,7 +31,6 @@ const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.35 2008-03-13 23:17:27 thothy Ex
 #include "misc.h"
 #include "psg.h"
 #include "stMemory.h"
-#include "trace.h"
 
 
 /*

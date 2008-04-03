@@ -59,7 +59,7 @@
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.51 2008-03-11 13:50:18 thothy Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.52 2008-04-03 20:30:33 eerot Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -78,7 +78,6 @@ const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.51 2008-03-11 13:50:18 tho
 #include "../includes/bios.h"
 #include "../includes/xbios.h"
 #include "../includes/video.h"
-#include "../includes/trace.h"
 
 //#define DEBUG_PREFETCH
 

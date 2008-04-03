@@ -65,7 +65,7 @@
 
 
 
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.20 2008-03-30 22:24:46 npomarede Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.21 2008-04-03 20:30:32 eerot Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -77,7 +77,6 @@ const char Int_rcsid[] = "Hatari $Id: int.c,v 1.20 2008-03-30 22:24:46 npomarede
 #include "mfp.h"
 #include "sound.h"
 #include "video.h"
-#include "trace.h"
 
 
 void (*PendingInterruptFunction)(void);

@@ -47,7 +47,7 @@
 
 
 
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.23 2008-03-19 00:24:44 thothy Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.24 2008-04-03 20:30:32 eerot Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -59,7 +59,7 @@ const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.23 2008-03-19 00:24:44 t
 #include "spec512.h"
 #include "video.h"
 #include "configuration.h"
-#include "trace.h"
+
 
 /* As 68000 clock multiple of 4 this mean we can only write to the palette this many time per scanline */
 #define MAX_CYCLEPALETTES_PERLINE  ((512/4) + 1)		/* +1 for the '-1' added as a line's terminator */

@@ -58,7 +58,7 @@
 /* 2008/03/08	[NP]	Add traces when writing to vector register fffa17.		*/
 /*			Use M68000_INT_MFP when calling M68000_Exception().		*/
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.35 2008-03-09 12:53:26 npomarede Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.36 2008-04-03 20:30:32 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -76,7 +76,6 @@ const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.35 2008-03-09 12:53:26 npomarede
 #include "sound.h"
 #include "tos.h"
 #include "video.h"
-#include "trace.h"
 
 
 /*

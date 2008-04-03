@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.32 2008-01-28 22:20:10 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.33 2008-04-03 20:30:32 eerot Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -36,7 +36,6 @@ const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.32 2008-01-28 22:20:10 thothy 
 #include "mfp.h"
 #include "misc.h"
 #include "video.h"
-#include "trace.h"
 
 
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */

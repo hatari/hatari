@@ -142,7 +142,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.102 2008-04-03 17:42:23 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.103 2008-04-03 20:30:32 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -168,7 +168,6 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.102 2008-04-03 17:42:23 npom
 #include "ymFormat.h"
 #include "falcon/videl.h"
 #include "falcon/hostscreen.h"
-#include "trace.h"
 
 
 #define BORDERMASK_NONE    0x00                 /* Borders masks */

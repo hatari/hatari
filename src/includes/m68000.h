@@ -18,7 +18,7 @@
 #include "memory.h"
 #include "newcpu.h"     /* for regs */
 #include "int.h"
-#include "trace.h"
+#include "log.h"
 
 
 /* Ugly hacks to adapt the main code to the different CPU cores: */
