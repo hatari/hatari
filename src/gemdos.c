@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.69 2008-01-09 23:34:29 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.70 2008-04-03 21:15:10 eerot Exp $";
 
 #include <config.h>
 
@@ -1774,7 +1774,7 @@ static BOOL GemDOS_SNext(void)
 		temp = InternalDTAs[Index].found;
 		if (PopulateDTA(InternalDTAs[Index].path, temp[InternalDTAs[Index].centry++]) == FALSE)
 		{
-			Log_Printf(LOG_ERROR, "GemDOS_SNext: Error setting DTA.\n");
+			Log_Printf(LOG_WARN, "GemDOS_SNext: Error setting DTA.\n");
 			return TRUE;
 		}
 
