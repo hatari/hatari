@@ -27,7 +27,7 @@
 
   All other cells are reserved / unused.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.4 2008-02-23 21:15:56 thothy Exp $";
+const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.5 2008-04-03 20:27:57 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -162,7 +162,7 @@ void NvRam_Init(void)
 
 	if (!NvRam_Load())		// load NVRAM file automatically
 	{
-		if (ConfigureParams.Screen.MonitorType == MONITOR_TYPE_VGA)   // VGA ?
+		if (ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_VGA)   // VGA ?
 		{
 			nvram[NVRAM_MONITOR] |= 32;		// VGA mode
 		}
