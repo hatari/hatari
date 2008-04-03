@@ -27,7 +27,7 @@
 
   All other cells are reserved / unused.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.5 2008-04-03 20:27:57 eerot Exp $";
+const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.6 2008-04-03 21:11:28 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -120,7 +120,7 @@ static BOOL NvRam_Save(void)
 	}
 	else
 	{
-		Log_Printf(LOG_ERROR, "ERROR: cannot store NVRAM to '%s'\n", nvram_filename);
+		Log_Printf(LOG_WARN, "ERROR: cannot store NVRAM to '%s'\n", nvram_filename);
 	}
 
 	return ret;

@@ -6,7 +6,7 @@
 
   YM File output, for use with STSound etc...
 */
-const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.18 2008-04-02 18:02:57 eerot Exp $";
+const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.19 2008-04-03 21:11:28 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -148,7 +148,7 @@ void YMFormat_EndRecording(void)
 			Log_AlertDlg(LOG_INFO, "YM sound data recording has been stopped.");
 		}
 		else
-			Log_AlertDlg(LOG_WARN, "YM sound data conversion failed!");
+			Log_AlertDlg(LOG_ERROR, "YM sound data conversion failed!");
 
 	}
 	/* And free */

@@ -15,7 +15,7 @@
 
 /* 2007/11/06   [NP]    Add calls to HATARI_TRACE and set FDC_DELAY_HBL=180		*/
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.36 2008-04-03 20:30:32 eerot Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.37 2008-04-03 21:11:27 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -898,14 +898,14 @@ static void FDC_TypeII_WriteMultipleSectors(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIII_ReadAddress(void)
 {
-	Log_Printf(LOG_DEBUG, "FDC type III command 'read address' is not implemented yet!\n");
+	Log_Printf(LOG_TODO, "FDC type III command 'read address' is not implemented yet!\n");
 }
 
 
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIII_ReadTrack(void)
 {
-	Log_Printf(LOG_DEBUG, "FDC type III command 'read track' does not work yet!\n");
+	Log_Printf(LOG_TODO, "FDC type III command 'read track' does not work yet!\n");
 
 	/* FIXME: "Read track" should read more than only the sectors! (also sector headers, gaps, etc.) */
 
@@ -922,7 +922,7 @@ static void FDC_TypeIII_ReadTrack(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIII_WriteTrack(void)
 {
-	Log_Printf(LOG_DEBUG, "FDC type III command 'write track' does not work yet!\n");
+	Log_Printf(LOG_TODO, "FDC type III command 'write track' does not work yet!\n");
 
 	/* FIXME: "Write track" not only writes the sectors! (also sector headers, gaps, etc.) */
 

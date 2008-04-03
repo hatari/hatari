@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.17 2007-01-16 18:42:59 thothy Exp $";
+const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.18 2008-04-03 21:11:27 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -164,7 +164,7 @@ static void HDC_Cmd_RequestSense(void)
 
 	if ((nRetLen < 4 && nRetLen != 0) || nRetLen > 22)
 	{
-		Log_Printf(LOG_ERROR, "HDC: *** Strange REQUEST SENSE ***!\n");
+		Log_Printf(LOG_WARN, "HDC: *** Strange REQUEST SENSE ***!\n");
 	}
 
 	/* Limit to sane length */
@@ -280,7 +280,7 @@ static void HDC_Cmd_ModeSense(void)
 	}
 	else
 	{
-		Log_Printf(LOG_ERROR, "HDC: Unsupported MODE SENSE command\n");
+		Log_Printf(LOG_TODO, "HDC: Unsupported MODE SENSE command\n");
 		HDCCommand.returnCode = HD_STATUS_ERROR;
 		nLastError = HD_REQSENS_INVARG;
 	}
@@ -415,7 +415,7 @@ void HDC_EmulateCommandPacket()
 		break;
 
 	 case HD_MODESELECT:
-		Log_Printf(LOG_DEBUG, "HDC: MODE SELECT call not implemented yet.\n");
+		Log_Printf(LOG_TODO, "HDC: MODE SELECT call not implemented yet.\n");
 		HDCCommand.returnCode = HD_STATUS_OK;
 		nLastError = HD_REQSENS_OK;
 		bSetLastBlockAddr = FALSE;

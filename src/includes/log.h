@@ -18,7 +18,7 @@ typedef enum
 /* these just log the issue */
 	LOG_WARN,	/* something failed, but it's less serious */
 	LOG_INFO,	/* user action success (e.g. TOS file load) */
-	LOG_UNIMPLEMENTED,	/* functionality not yet being emulated */
+	LOG_TODO,	/* functionality not yet being emulated */
 	LOG_DEBUG	/* information about internal Hatari working */
 } LOGTYPE;
 

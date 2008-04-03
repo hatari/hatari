@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.85 2008-03-31 17:28:51 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.86 2008-04-03 21:11:27 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -319,8 +319,8 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for logging */
 	strcpy(ConfigureParams.Log.sLogFileName, "stderr");
-	ConfigureParams.Log.nTextLogLevel = LOG_INFO;
-	ConfigureParams.Log.nAlertDlgLogLevel = LOG_INFO;
+	ConfigureParams.Log.nTextLogLevel = LOG_TODO;
+	ConfigureParams.Log.nAlertDlgLogLevel = LOG_ERROR;
 	ConfigureParams.Log.bConfirmQuit = TRUE;
 
 	/* Set defaults for floppy disk images */

@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.122 2008-03-31 17:28:51 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.123 2008-04-03 21:11:27 eerot Exp $";
 
 #include "config.h"
 
@@ -228,7 +228,7 @@ static void Main_CheckForAccurateDelays(void)
 	if (bAccurateDelays)
 		Log_Printf(LOG_DEBUG, "Host system has accurate delays. (%d)\n", nEndTicks - nStartTicks);
 	else
-		Log_Printf(LOG_DEBUG, "Host system does not have accurate delays. (%d)\n", nEndTicks - nStartTicks);
+		Log_Printf(LOG_WARN, "Host system does not have accurate delays. (%d)\n", nEndTicks - nStartTicks);
 }
 
 
@@ -398,13 +398,13 @@ static void Main_Reparent_Window(void)
 	}
 	parent_win = strtol(parent_win_id, NULL, 0);
 	if (!parent_win) {
-		Log_Printf(LOG_DEBUG, "Invalid PARENT_WIN_ID value '%s'\n", parent_win_id);
+		Log_Printf(LOG_WARN, "Invalid PARENT_WIN_ID value '%s'\n", parent_win_id);
 		return;
 	}
 
 	SDL_VERSION(&info.version);
 	if (!SDL_GetWMInfo(&info)) {
-		Log_Printf(LOG_DEBUG, "Failed to get SDL_GetWMInfo()\n");
+		Log_Printf(LOG_WARN, "Failed to get SDL_GetWMInfo()\n");
 		return;
 	}
 
@@ -417,7 +417,7 @@ static void Main_Reparent_Window(void)
 			parent_win, 0, 0);
 #else
 	/* TODO: implement the Windows part.  SDL sources offer example */
-	//Log_Printf(LOG_DEBUG, "Support for Hatari window reparenting not built in\n");
+	//Log_Printf(LOG_INFO, "Support for Hatari window reparenting not built in\n");
 #endif /* HAVE_X11 */
 }
 

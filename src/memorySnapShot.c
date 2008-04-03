@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.39 2008-03-29 23:01:56 thothy Exp $";
+const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.40 2008-04-03 21:11:28 eerot Exp $";
 
 #include <config.h>
 
@@ -175,7 +175,7 @@ static BOOL MemorySnapShot_OpenFile(const char *pszFileName, BOOL bSave)
 		if (strcasecmp(VersionString, VERSION_STRING))
 		{
 			/* No, inform user and error */
-			Log_AlertDlg(LOG_WARN, "Unable to Restore Memory State.\nFile is "
+			Log_AlertDlg(LOG_ERROR, "Unable to Restore Memory State.\nFile is "
 			                       "only compatible with Hatari v%s", VersionString);
 			bCaptureError = TRUE;
 			return(FALSE);

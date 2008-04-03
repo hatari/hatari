@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.54 2007-12-18 18:56:19 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.55 2008-04-03 21:11:28 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -260,7 +260,7 @@ static void TOS_CheckSysConfig(void)
 {
 	if ((TosVersion == 0x0106 || TosVersion == 0x0162) && ConfigureParams.System.nMachineType != MACHINE_STE)
 	{
-		Log_AlertDlg(LOG_INFO, "TOS versions 1.06 and 1.62 are for Atari STE only.\n"
+		Log_AlertDlg(LOG_ERROR, "TOS versions 1.06 and 1.62 are for Atari STE only.\n"
 		             " ==> Switching to STE mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
@@ -268,7 +268,7 @@ static void TOS_CheckSysConfig(void)
 	}
 	else if ((TosVersion & 0x0f00) == 0x0300 && ConfigureParams.System.nMachineType != MACHINE_TT)
 	{
-		Log_AlertDlg(LOG_INFO, "TOS versions 3.0x are for Atari TT only.\n"
+		Log_AlertDlg(LOG_ERROR, "TOS versions 3.0x are for Atari TT only.\n"
 		             " ==> Switching to TT mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_TT;
@@ -278,7 +278,7 @@ static void TOS_CheckSysConfig(void)
 	}
 	else if ((TosVersion & 0x0f00) == 0x0400 && ConfigureParams.System.nMachineType != MACHINE_FALCON)
 	{
-		Log_AlertDlg(LOG_INFO, "TOS versions 4.x are for Atari Falcon only.\n"
+		Log_AlertDlg(LOG_ERROR, "TOS versions 4.x are for Atari Falcon only.\n"
 		             " ==> Switching to Falcon mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_FALCON;
@@ -289,7 +289,7 @@ static void TOS_CheckSysConfig(void)
 	else if ((TosVersion < 0x0300 && ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	         || (TosVersion < 0x0200 && ConfigureParams.System.nMachineType == MACHINE_TT))
 	{
-		Log_AlertDlg(LOG_INFO, "This TOS versions does not work in TT/Falcon mode.\n"
+		Log_AlertDlg(LOG_ERROR, "This TOS versions does not work in TT/Falcon mode.\n"
 		             " ==> Switching to STE mode now.\n");
 		IoMem_UnInit();
 		ConfigureParams.System.nMachineType = MACHINE_STE;
@@ -396,7 +396,7 @@ int TOS_LoadImage(void)
 	if (TosVersion == 0x0100 && bUseVDIRes)
 	{
 		/* Warn user */
-		Log_AlertDlg(LOG_WARN, "To use GEM extended resolutions, you must select a TOS >= 1.02.");
+		Log_AlertDlg(LOG_ERROR, "To use GEM extended resolutions, you must select a TOS >= 1.02.");
 		/* And select non VDI */
 		bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
 	}
