@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.33 2008-03-31 17:28:51 eerot Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.34 2008-04-04 21:18:02 eerot Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -737,13 +737,6 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 	        || symkey == SDLK_MODE || symkey == SDLK_NUMLOCK)
 	{
 		/* Ignore modifier keys that aren't passed to the ST */
-		return;
-	}
-	else if (symkey == SDLK_PAUSE && bEnableDebug)
-	{
-		/* Call the debugger */
-		if (bInFullScreen)  Screen_ReturnFromFullScreen();
-		DebugUI();
 		return;
 	}
 
