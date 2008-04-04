@@ -7,6 +7,9 @@
 #ifndef HATARI_LOG_H
 #define HATARI_LOG_H
 
+#include <SDL_types.h>
+
+
 /* Logging is always enabled as it's information that can be useful
  * to the Hatari users
  */
@@ -19,16 +22,16 @@ typedef enum
 	LOG_WARN,	/* something failed, but it's less serious */
 	LOG_INFO,	/* user action success (e.g. TOS file load) */
 	LOG_TODO,	/* functionality not yet being emulated */
-	LOG_DEBUG	/* information about internal Hatari working */
+	LOG_DEBUG,	/* information about internal Hatari working */
+	LOG_NONE	/* invalid LOG level */
 } LOGTYPE;
 
-extern void Log_Init(void);
+extern int Log_Init(void);
 extern void Log_UnInit(void);
 extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...);
 extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...);
-
-
-#include <SDL_types.h>
+extern LOGTYPE ParseLogOptions(const char *OptionStr);
+extern int ParseTraceOptions(const char *OptionsStr);
 
 
 /* Tracing outputs information about what happens in the emulated
@@ -94,20 +97,16 @@ extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...);
 #else
 
 #define	HATARI_TRACE( level, args... ) \
-	if ( HatariTraceFlags & level ) fprintf ( stderr , args )
+	if ( HatariTraceFlags & level ) fprintf ( TraceFile , args )
 #define HATARI_TRACE_LEVEL( level )	(HatariTraceFlags & level)
 
 #endif
 
 
-#define HATARI_TRACE_PRINT( args... )	fprintf ( stderr , args )
-
+#define HATARI_TRACE_PRINT( args... )	fprintf ( TraceFile , args )
 
 
 extern Uint32 HatariTraceFlags;
-
-
-int ParseTraceOptions (char *OptionsStr);
-
+extern FILE *TraceFile;
 
 #endif		/* HATARI_LOG_H */

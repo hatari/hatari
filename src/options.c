@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.51 2008-04-03 20:30:32 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.52 2008-04-04 20:57:37 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -31,6 +31,7 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.51 2008-04-03 20:30:32 eero
 #include "video.h"
 #include "vdi.h"
 #include "joy.h"
+#include "log.h"
 
 #include "hatari-glue.h"
 
@@ -80,8 +81,11 @@ enum {
 	OPT_SOUND,
 	OPT_KEYMAPFILE,
 	OPT_DEBUG,		/* debug options */
-	OPT_LOG,
 	OPT_TRACE,
+	OPT_TRACEFILE,
+	OPT_LOGFILE,
+	OPT_LOGLEVEL,
+	OPT_ALERTLEVEL,
 	OPT_NONE,
 };
 
@@ -171,7 +175,7 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Set the CPU type (x => 680x0) (EmuTOS/TOS 2.06 only!)" },
 	{ OPT_CPUCLOCK,  NULL, "--cpuclock",
 	  "<x>", "Set the CPU clock (8, 16 or 32)" },
-	{ OPT_COMPATIBLE,NULL, "--compatible",
+	{ OPT_COMPATIBLE, NULL, "--compatible",
 	  "<bool>", "Use a more compatible (but slower) 68000 CPU mode" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Misc system" },
@@ -183,17 +187,23 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "DSP emulation (x=none/dummy/emu, for Falcon mode only)" },
 	{ OPT_SOUND,   NULL, "--sound",
 	  "<x>", "Sound quality (off/low/med/hi (off=faster))" },
-	{ OPT_KEYMAPFILE,"-k", "--keymap",
+	{ OPT_KEYMAPFILE, "-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
-	  NULL, "Allow debug interface" },
-	{ OPT_LOG,     NULL, "--log",
-	  "<file>", "Save log to <file>" },
+	  NULL, "Enable debug interface" },
 	{ OPT_TRACE,   NULL, "--trace",
-	  "<trace1,...>", "Activate debug traces, see --trace help for options" },
-	
+	  "<trace1,...>", "Activate emulation tracing, see --trace help" },
+	{ OPT_TRACEFILE, NULL, "--trace-file",
+	  "<file>", "Save trace output to <file> (default=stderr)" },
+	{ OPT_LOGFILE, NULL, "--log-file",
+	  "<file>", "Save log output to <file> (default=stderr)" },
+	{ OPT_LOGLEVEL, NULL, "--log-level",
+	  "<x>", "Log output level (x=debug/todo/info/warn/error/fatal)" },
+	{ OPT_ALERTLEVEL, NULL, "--alert-level",
+	  "<x>", "Show dialog for log messages above given level" },
+
 	{ OPT_NONE, NULL, NULL, NULL, NULL }
 };
 
@@ -478,7 +488,7 @@ static BOOL Opt_StrCpy(int optid, BOOL checkexist, char *dst, char *src, size_t 
 	}
 	if (checkexist && !File_Exists(src))
 	{
-		Opt_ShowExit(optid, src, "Given file doesn't exist (or has wrong file permissions)!\n");
+		Opt_ShowExit(optid, src, "Given file doesn't exist (or has wrong file permissions)!");
 	}
 	if (strlen(src) < dstlen)
 	{
@@ -487,7 +497,7 @@ static BOOL Opt_StrCpy(int optid, BOOL checkexist, char *dst, char *src, size_t 
 	}
 	else
 	{
-		Opt_ShowExit(optid, src, "File name too long!\n");
+		Opt_ShowExit(optid, src, "File name too long!");
 	}
 }
 
@@ -923,21 +933,46 @@ void Opt_ParseParameters(int argc, char *argv[],
 			bEnableDebug = TRUE;
 			break;
 			
-		case OPT_LOG:
-			i += 1;
-			Opt_StrCpy(OPT_LOG, FALSE, ConfigureParams.Log.sLogFileName,
-			           argv[i], sizeof(ConfigureParams.Log.sLogFileName),
-				   NULL);
-			break;
-			
 		case OPT_TRACE:
 			i += 1;
 			if (ParseTraceOptions(argv[i]) == 0)
 			{
-				Opt_ShowExit(OPT_TRACE, argv[i], "Error parsing trace options (use --trace help for available list)!\n");
+				Opt_ShowExit(OPT_TRACE, argv[i], "Error parsing trace options (use --trace help for available list)!");
 			}
 			break;
 
+		case OPT_TRACEFILE:
+			i += 1;
+			Opt_StrCpy(OPT_TRACEFILE, FALSE, ConfigureParams.Log.sTraceFileName,
+			           argv[i], sizeof(ConfigureParams.Log.sTraceFileName),
+				   NULL);
+			break;
+
+		case OPT_LOGFILE:
+			i += 1;
+			Opt_StrCpy(OPT_LOGFILE, FALSE, ConfigureParams.Log.sLogFileName,
+			           argv[i], sizeof(ConfigureParams.Log.sLogFileName),
+				   NULL);
+			break;
+
+		case OPT_LOGLEVEL:
+			i += 1;
+			ConfigureParams.Log.nTextLogLevel = ParseLogOptions(argv[i]);
+			if (ConfigureParams.Log.nTextLogLevel == LOG_NONE)
+			{
+				Opt_ShowExit(OPT_LOGLEVEL, argv[i], "Unknown log level!");
+			}
+			break;
+
+		case OPT_ALERTLEVEL:
+			i += 1;
+			ConfigureParams.Log.nAlertDlgLogLevel = ParseLogOptions(argv[i]);
+			if (ConfigureParams.Log.nAlertDlgLogLevel == LOG_NONE)
+			{
+				Opt_ShowExit(OPT_ALERTLEVEL, argv[i], "Unknown alert level!");
+			}
+			break;
+		       
 		default:
 			Opt_ShowExit(OPT_NONE, argv[i], "Internal Hatari error, unhandled option");
 		}

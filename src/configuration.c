@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.86 2008-04-03 21:11:27 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.87 2008-04-04 20:57:37 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -36,6 +36,7 @@ char sConfigFileName[FILENAME_MAX];         /* Stores the name of the configurat
 static const struct Config_Tag configs_Log[] =
 {
 	{ "sLogFileName", String_Tag, ConfigureParams.Log.sLogFileName },
+	{ "sTraceFileName", String_Tag, ConfigureParams.Log.sTraceFileName },
 	{ "nTextLogLevel", Int_Tag, &ConfigureParams.Log.nTextLogLevel },
 	{ "nAlertDlgLogLevel", Int_Tag, &ConfigureParams.Log.nAlertDlgLogLevel },
 	{ "bConfirmQuit", Bool_Tag, &ConfigureParams.Log.bConfirmQuit },
@@ -319,6 +320,7 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for logging */
 	strcpy(ConfigureParams.Log.sLogFileName, "stderr");
+	strcpy(ConfigureParams.Log.sTraceFileName, "stderr");
 	ConfigureParams.Log.nTextLogLevel = LOG_TODO;
 	ConfigureParams.Log.nAlertDlgLogLevel = LOG_ERROR;
 	ConfigureParams.Log.bConfirmQuit = TRUE;
@@ -528,6 +530,7 @@ void Configuration_Apply(BOOL bReset)
 	
 	/* make path names absolute, but handle special file names */
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sLogFileName);
+	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sTraceFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.szMidiOutFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Printer.szPrintToFileName);
 }

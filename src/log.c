@@ -13,7 +13,7 @@
  * of HatariTraceFlags. Multiple trace levels can be set at once, by setting
  * the corresponding bits in HatariTraceFlags
  */
-const char Log_rcsid[] = "Hatari $Id: log.c,v 1.8 2008-04-03 20:35:43 eerot Exp $";
+const char Log_rcsid[] = "Hatari $Id: log.c,v 1.9 2008-04-04 20:57:37 eerot Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -71,28 +71,38 @@ TraceOptions[] = {
 
 
 Uint32	HatariTraceFlags = HATARI_TRACE_NONE;
-
+FILE *TraceFile = NULL;
 
 static FILE *hLogFile = NULL;
-
+static LOGTYPE TextLogLevel;
+static LOGTYPE AlertDlgLogLevel;
 
 /*-----------------------------------------------------------------------*/
 /**
- * Initialize the logging functions (open the log file etc.).
+ * Initialize the logging and tracing functionality (open the log files etc.).
+ * 
+ * Return zero if that fails.
  */
-void Log_Init(void)
+int Log_Init(void)
 {
+	TextLogLevel = ConfigureParams.Log.nTextLogLevel;
+	AlertDlgLogLevel = ConfigureParams.Log.nAlertDlgLogLevel;
+
 	hLogFile = File_Open(ConfigureParams.Log.sLogFileName, "w");
+	TraceFile = File_Open(ConfigureParams.Log.sTraceFileName, "w");
+   
+	return (hLogFile && TraceFile);
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Un-Initialize - close error log file etc.
+ * Un-Initialize - close log files etc.
  */
 void Log_UnInit(void)
 {
 	hLogFile = File_Close(hLogFile);
+	TraceFile = File_Close(TraceFile);
 }
 
 
@@ -104,7 +114,7 @@ void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 {
 	va_list argptr;
 
-	if (hLogFile && (int)nType <= ConfigureParams.Log.nTextLogLevel)
+	if (hLogFile && (int)nType <= TextLogLevel)
 	{
 		va_start(argptr, psFormat);
 		vfprintf(hLogFile, psFormat, argptr);
@@ -125,7 +135,7 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	va_list argptr;
 
 	/* Output to log file: */
-	if (hLogFile && (int)nType <= ConfigureParams.Log.nTextLogLevel)
+	if (hLogFile && nType <= TextLogLevel)
 	{
 		va_start(argptr, psFormat);
 		vfprintf(hLogFile, psFormat, argptr);
@@ -136,7 +146,7 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	}
 
 	/* Show alert dialog box: */
-	if (sdlscrn && (int)nType <= ConfigureParams.Log.nAlertDlgLogLevel)
+	if (sdlscrn && nType <= AlertDlgLogLevel)
 	{
 		char *psTmpBuf;
 		psTmpBuf = malloc(2048);
@@ -156,14 +166,45 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * parse what log level should be used and return it
+ */
+LOGTYPE ParseLogOptions(const char *arg)
+{
+	const char *levels[] = {
+		"fail", "error", "warn", "info", "todo", "debug", NULL
+	};
+	const char **level_str;
+	char *input, *str;
+	LOGTYPE level;
+
+	input = strdup(arg);
+	str = input;
+	while (*str)
+	{
+		*str++ = tolower(*arg++);
+	}
+	for (level = 0, level_str = levels; *level_str; level_str++, level++)
+	{
+		if (strcmp(input, *level_str) == 0)
+		{
+			free(input);
+			return level;
+		}
+	}
+	free(input);
+	return level;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Parse a list of comma separated strings.
  * If the string is prefixed with an optional '+',
- * corresponding trace level is turned on.
+ * corresponding trace flag is turned on.
  * If the string is prefixed with a '-',
- * corresponding trace level is turned off.
+ * corresponding trace flag is turned off.
  * Result is stored in HatariTraceFlags.
  */
-int ParseTraceOptions (char *OptionsStr)
+int ParseTraceOptions (const char *OptionsStr)
 {
 	char *OptionsCopy;
 	char *cur, *sep;

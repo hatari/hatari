@@ -12,6 +12,7 @@
 typedef struct
 {
   char sLogFileName[FILENAME_MAX];
+  char sTraceFileName[FILENAME_MAX];
   int nTextLogLevel;
   int nAlertDlgLogLevel;
   BOOL bConfirmQuit;

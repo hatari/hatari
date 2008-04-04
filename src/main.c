@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.123 2008-04-03 21:11:27 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.124 2008-04-04 20:57:37 eerot Exp $";
 
 #include "config.h"
 
@@ -429,7 +429,11 @@ static void Main_Reparent_Window(void)
 static void Main_Init(void)
 {
 	/* Open debug log file */
-	Log_Init();
+	if (!Log_Init())
+	{
+		fprintf(stderr, "Logging/tracing initialization failed");
+		exit(-1);
+	}
 	Log_Printf(LOG_INFO, PROG_NAME ", compiled on:  " __DATE__ ", " __TIME__ "\n");
 
 	/* Init SDL's video subsystem. Note: Audio and joystick subsystems
