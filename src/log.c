@@ -13,7 +13,7 @@
  * of HatariTraceFlags. Multiple trace levels can be set at once, by setting
  * the corresponding bits in HatariTraceFlags
  */
-const char Log_rcsid[] = "Hatari $Id: log.c,v 1.9 2008-04-04 20:57:37 eerot Exp $";
+const char Log_rcsid[] = "Hatari $Id: log.c,v 1.10 2008-04-06 09:07:52 eerot Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -65,6 +65,10 @@ TraceOptions[] = {
 
 	{ HATARI_TRACE_IKBD		, "ikbd" } ,
 
+	{ HATARI_TRACE_OS_BIOS		, "bios" },
+	{ HATARI_TRACE_OS_XBIOS		, "xbios" },
+	{ HATARI_TRACE_OS_GEMDOS	, "gemdos" },
+	{ HATARI_TRACE_OS_ALL		, "os_all" } ,
 
 	{ HATARI_TRACE_ALL		, "all" }
 };
@@ -168,7 +172,7 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 /**
  * parse what log level should be used and return it
  */
-LOGTYPE ParseLogOptions(const char *arg)
+LOGTYPE Log_ParseOptions(const char *arg)
 {
 	const char *levels[] = {
 		"fail", "error", "warn", "info", "todo", "debug", NULL
@@ -204,7 +208,7 @@ LOGTYPE ParseLogOptions(const char *arg)
  * corresponding trace flag is turned off.
  * Result is stored in HatariTraceFlags.
  */
-int ParseTraceOptions (const char *OptionsStr)
+BOOL Log_SetTraceOptions (const char *OptionsStr)
 {
 	char *OptionsCopy;
 	char *cur, *sep;
@@ -229,7 +233,7 @@ int ParseTraceOptions (const char *OptionsStr)
 		
 		fprintf(stderr, "Multiple trace levels can be separated by ','\n");
 		fprintf(stderr, "Levels can be prefixed by '+' or '-' to be mixed.\n\n");
-		return 0;
+		return FALSE;
 	}
 	
 	HatariTraceFlags = HATARI_TRACE_NONE;
@@ -238,7 +242,7 @@ int ParseTraceOptions (const char *OptionsStr)
 	if (!OptionsCopy)
 	{
 		fprintf(stderr, "strdup error in ParseTraceOptions\n");
-		return 0;
+		return FALSE;
 	}
 	
 	cur = OptionsCopy;
@@ -271,7 +275,7 @@ int ParseTraceOptions (const char *OptionsStr)
 		{
 			fprintf(stderr, "unknown trace option %s\n", cur);
 			free(OptionsCopy);
-			return 0;
+			return FALSE;
 		}
 		
 		cur = sep;
@@ -280,5 +284,5 @@ int ParseTraceOptions (const char *OptionsStr)
 	//fprintf(stderr, "trace parse <%x>\n", HatariTraceFlags);
 	
 	free (OptionsCopy);
-	return 1;
+	return TRUE;
 }

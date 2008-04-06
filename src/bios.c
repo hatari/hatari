@@ -9,7 +9,7 @@
   We intercept and direct some Bios calls to handle input/output to RS-232
   or the printer etc...
 */
-const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.10 2007-01-16 18:42:59 thothy Exp $";
+const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.11 2008-04-06 09:07:52 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -23,7 +23,7 @@ const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.10 2007-01-16 18:42:59 thothy 
 #include "bios.h"
 
 
-#define BIOS_DEBUG 0
+#define BIOS_DEBUG 0	/* for floppy r/w */
 
 
 /*-----------------------------------------------------------------------*/
@@ -236,22 +236,26 @@ BOOL Bios(void)
 	Params = Regs[REG_A7];
 	BiosCall = STMemory_ReadWord(Params);
 
-	/* Debug_File("BIOS %d\n",BiosCall); */
-
 	/* Intercept? */
 	switch(BiosCall)
 	{
 	 case 0x1:
+		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS Bconstat()\n" );
 		return Bios_Bconstat(Params);
 	 case 0x2:
+		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS Bconin()\n" );
 		return Bios_Bconin(Params);
 	 case 0x3:
+		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS Bconout()\n" );
 		return Bios_Bconout(Params);
 	 case 0x4:
+		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS RWabs()\n" );
 		return Bios_RWabs(Params);
 	 case 0x8:
+		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS Bcostat()\n" );
 		return Bios_Bcostat(Params);
 	 default:           /* Call as normal! */
+		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS %d\n", BiosCall );
 		return FALSE;
 	}
 }

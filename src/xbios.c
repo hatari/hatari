@@ -9,7 +9,7 @@
   We intercept and direct some XBios calls to handle the RS-232 etc. and help
   with floppy debugging.
 */
-const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.14 2008-01-23 19:32:36 thothy Exp $";
+const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.15 2008-04-06 09:07:52 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -23,7 +23,7 @@ const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.14 2008-01-23 19:32:36 thoth
 #include "xbios.h"
 
 
-#define XBIOS_DEBUG 0
+#define XBIOS_DEBUG 0	/* for floppy read/write */
 
 
 /* List of Atari ST RS-232 baud rates */
@@ -153,8 +153,6 @@ static BOOL XBios_Rsconf(Uint32 Params)
  */
 static BOOL XBios_Scrdmp(Uint32 Params)
 {
-	fprintf(stderr, "XBIOS screendump!\n");
-
 	ScreenSnapShot_SaveScreen();
 
 	/* Correct return code? */
@@ -171,8 +169,6 @@ static BOOL XBios_Scrdmp(Uint32 Params)
  */
 static BOOL XBios_Prtblk(Uint32 Params)
 {
-	fprintf(stderr, "Intercepted XBIOS Prtblk()\n");
-
 	/* Correct return code? */
 	Regs[REG_D0] = 0;
 
@@ -193,22 +189,26 @@ BOOL XBios(void)
 	Params = Regs[REG_A7];
 	XBiosCall = STMemory_ReadWord(Params);
 
-	/*Log_Printf(LOG_DEBUG, "XBIOS %d\n",XBiosCall);*/
-
 	switch (XBiosCall)
 	{
 	 case 8:
+		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS Floprd()\n" );
 		return XBios_Floprd(Params);
 	 case 9:
+		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS Flopwr()\n" );
 		return XBios_Flopwr(Params);
 	 case 15:
+		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS Rsconf()\n" );
 		return XBios_Rsconf(Params);
 	 case 20:
+		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS Scrdmp()\n" );
 		return XBios_Scrdmp(Params);
 	 case 36:
+		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS Prtblk()\n" );
 		return XBios_Prtblk(Params);
 
 	 default:  /* Call as normal! */
+		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS %d\n", XBiosCall );
 		return FALSE;
 	}
 }

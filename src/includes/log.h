@@ -7,6 +7,7 @@
 #ifndef HATARI_LOG_H
 #define HATARI_LOG_H
 
+#include "main.h"	/* BOOL */
 #include <SDL_types.h>
 
 
@@ -30,8 +31,8 @@ extern int Log_Init(void);
 extern void Log_UnInit(void);
 extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...);
 extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...);
-extern LOGTYPE ParseLogOptions(const char *OptionStr);
-extern int ParseTraceOptions(const char *OptionsStr);
+extern LOGTYPE Log_ParseOptions(const char *OptionStr);
+extern BOOL Log_SetTraceOptions(const char *OptionsStr);
 
 
 /* Tracing outputs information about what happens in the emulated
@@ -73,6 +74,10 @@ extern int ParseTraceOptions(const char *OptionsStr);
 
 #define	HATARI_TRACE_IKBD		(1<<20)
 
+#define HATARI_TRACE_OS_BIOS		(1<<21)
+#define HATARI_TRACE_OS_XBIOS		(1<<22)
+#define HATARI_TRACE_OS_GEMDOS		(1<<23)
+
 #define	HATARI_TRACE_NONE		(0)
 #define	HATARI_TRACE_ALL		(~0)
 
@@ -85,6 +90,8 @@ extern int ParseTraceOptions(const char *OptionsStr);
 #define	HATARI_TRACE_PSG_ALL		( HATARI_TRACE_PSG_WRITE_REG | HATARI_TRACE_PSG_WRITE_DATA )
 
 #define	HATARI_TRACE_CPU_ALL		( HATARI_TRACE_CPU_PAIRING | HATARI_TRACE_CPU_DISASM | HATARI_TRACE_CPU_EXCEPTION )
+
+#define	HATARI_TRACE_OS_ALL		( HATARI_TRACE_OS_BIOS | HATARI_TRACE_OS_XBIOS | HATARI_TRACE_OS_GEMDOS )
 
 
 

@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.52 2008-04-04 20:57:37 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.53 2008-04-06 09:07:52 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -935,7 +935,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			
 		case OPT_TRACE:
 			i += 1;
-			if (ParseTraceOptions(argv[i]) == 0)
+			if (Log_SetTraceOptions(argv[i]) == 0)
 			{
 				Opt_ShowExit(OPT_TRACE, argv[i], "Error parsing trace options (use --trace help for available list)!");
 			}
@@ -957,7 +957,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 
 		case OPT_LOGLEVEL:
 			i += 1;
-			ConfigureParams.Log.nTextLogLevel = ParseLogOptions(argv[i]);
+			ConfigureParams.Log.nTextLogLevel = Log_ParseOptions(argv[i]);
 			if (ConfigureParams.Log.nTextLogLevel == LOG_NONE)
 			{
 				Opt_ShowExit(OPT_LOGLEVEL, argv[i], "Unknown log level!");
@@ -966,7 +966,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 
 		case OPT_ALERTLEVEL:
 			i += 1;
-			ConfigureParams.Log.nAlertDlgLogLevel = ParseLogOptions(argv[i]);
+			ConfigureParams.Log.nAlertDlgLogLevel = Log_ParseOptions(argv[i]);
 			if (ConfigureParams.Log.nAlertDlgLogLevel == LOG_NONE)
 			{
 				Opt_ShowExit(OPT_ALERTLEVEL, argv[i], "Unknown alert level!");

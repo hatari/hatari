@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.70 2008-04-03 21:15:10 eerot Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.71 2008-04-06 09:07:52 eerot Exp $";
 
 #include <config.h>
 
@@ -56,11 +56,6 @@ const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.70 2008-04-03 21:15:10 eer
 #include "stMemory.h"
 #include "hatari-glue.h"
 #include "maccess.h"
-
-
-//#define GEMDOS_VERBOSE
-// uncomment the following line to debug filename lookups on hd
-// #define GEMDOS_FILE_DEBUG 1
 
 #define ENABLE_SAVING             /* Turn on saving stuff */
 
@@ -145,7 +140,7 @@ static Uint16 CurrentDrive; /* Current drive (0=A,1=B,2=C etc...) */
 static Uint32 act_pd;       /* Used to get a pointer to the current basepage */
 
 
-#ifdef GEMDOS_VERBOSE
+#ifdef HATARI_TRACE_ACTIVATED
 /* List of GEMDos functions... */
 static const char *pszGemDOSNames[] =
 {
@@ -910,21 +905,18 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 					found = 1;
 				}
 			}
-#if GEMDOS_FILE_DEBUG
+#ifdef HATARI_TRACE_ACTIVATED
 			if (!found)
 			{
 				/* It's often normal, the gem uses this to test for existence */
 				/* of desktop.inf or newdesk.inf for example. */
-				fprintf(stderr,"didn't find filename %s\n",pszDestName);
+				HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "didn't find filename %s\n", pszDestName );
 			}
 #endif
 			globfree(&globbuf);
 		}
 	}
-
-#if GEMDOS_FILE_DEBUG
-	fprintf(stderr,"conv %s -> %s\n",pszFileName,pszDestName);
-#endif
+	HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "conv %s -> %s\n", pszFileName, pszDestName );
 }
 
 
@@ -1182,9 +1174,7 @@ static BOOL GemDOS_ChDir(Uint32 Params)
 	/* Find new directory */
 	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
 
-#if GEMDOS_FILE_DEBUG
-	Log_Printf(LOG_DEBUG, "Dsetpath(\"%s\")\n", pDirName);
-#endif
+	HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "Dsetpath(\"%s\")\n", pDirName );
 
 	Drive = GemDOS_IsFileNameAHardDrive(pDirName);
 
@@ -1366,7 +1356,7 @@ static BOOL GemDOS_Open(Uint32 Params)
 	}
 	
 	if (Mode != 1 && errno == EACCES)
-		Log_Printf(LOG_DEBUG, "Missing permission to read file '%s'\n", szActualFileName);
+		HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "Missing permission to read file '%s'\n", szActualFileName );
 	
 	Regs[REG_D0] = GEMDOS_EFILNF;     /* File not found/ error opening */
 	return TRUE;
@@ -1588,9 +1578,8 @@ static BOOL GemDOS_Fattrib(Uint32 Params)
 	nRwFlag = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
 	nAttrib = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 
-#ifdef GEMDOS_VERBOSE
-	Log_Printf(LOG_DEBUG, "Fattrib('%s', %d, 0x%x)\n", psFileName, nRwFlag, nAttrib);
-#endif
+	HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "Fattrib('%s', %d, 0x%x)\n",
+		       psFileName, nRwFlag, nAttrib );
 
 	if (!ISHARDDRIVE(nDrive))
 	{
@@ -1661,9 +1650,7 @@ static int GemDOS_GetDir(Uint32 Params)
 			c = path[i];
 			STMemory_WriteByte(Address+i, (c==PATHSEP ? '\\' : c) );
 		}
-#if GEMDOS_FILE_DEBUG
-		Log_Printf(LOG_DEBUG, "GemDOS_GetDir (%d) = %s\n", Drive, path);
-#endif
+		HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "GemDOS_GetDir (%d) = %s\n", Drive, path );
 
 		return TRUE;
 	}
@@ -2010,11 +1997,17 @@ void GemDOS_OpCode(void)
 	/* Find pointer to call parameters */
 	GemDOSCall = STMemory_ReadWord(Params);
 
-#ifdef GEMDOS_VERBOSE
+#ifdef HATARI_TRACE_ACTIVATED
 	if (GemDOSCall < (sizeof(pszGemDOSNames)/sizeof(pszGemDOSNames[0])))
-		fprintf(stderr, "GemDOS 0x%X (%s)\n",GemDOSCall,pszGemDOSNames[GemDOSCall]);
+	{
+		HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "GemDOS 0x%X (%s)\n",
+			       GemDOSCall, pszGemDOSNames[GemDOSCall] );
+	}
 	else
-		fprintf(stderr, "GemDOS 0x%X\n",GemDOSCall);
+	{
+		HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "GemDOS 0x%X\n",
+			       GemDOSCall );
+	}
 #endif
 
 	/* Intercept call */
@@ -2158,9 +2151,7 @@ void GemDOS_Boot(void)
 {
 	bInitGemDOS = TRUE;
 
-#ifdef GEMDOS_VERBOSE
-	fprintf(stderr, "Gemdos_Boot()\n");
-#endif
+	HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "Gemdos_Boot()\n" );
 
 	/* install our gemdos handler, if -e or --harddrive option used */
 	if (GEMDOS_EMU_ON)
