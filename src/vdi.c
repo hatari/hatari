@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.29 2007-12-20 00:37:47 thothy Exp $";
+const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.30 2008-04-06 10:33:30 eerot Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -267,7 +267,7 @@ void VDI_LineA(Uint32 linea, Uint32 fontbase)
  */
 void VDI_Complete(void)
 {
-	unsigned short int OpCode;
+	Uint16 OpCode;
 
 	OpCode = STMemory_ReadWord(Control);
 	/* Is 'Open Workstation', or 'Open Virtual Screen Workstation'? */
@@ -283,6 +283,7 @@ void VDI_Complete(void)
 
 		VDI_LineA(LineABase, FontBase);  /* And modify Line-A structure accordingly */
 	}
+	HATARI_TRACE ( HATARI_TRACE_OS_VDI, "VDI opcode %hd completed\n", OpCode );
 }
 
 
