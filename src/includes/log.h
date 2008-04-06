@@ -112,22 +112,26 @@ extern BOOL Log_SetTraceOptions(const char *OptionsStr);
 #define	HATARI_TRACE_OS_ALL		( HATARI_TRACE_OS_BIOS | HATARI_TRACE_OS_XBIOS | HATARI_TRACE_OS_GEMDOS | HATARI_TRACE_OS_VDI )
 
 
-#ifdef HATARI_TRACE_ACTIVATED
-
 extern FILE *TraceFile;
 extern Uint32 HatariTraceFlags;
+
+#ifdef HATARI_TRACE_ACTIVATED
 
 #define	HATARI_TRACE( level, args... ) \
 	if ( HatariTraceFlags & level ) fprintf ( TraceFile , args )
 #define HATARI_TRACE_LEVEL( level )	(HatariTraceFlags & level)
-#define HATARI_TRACE_PRINT( args... )	fprintf ( TraceFile , args )
 
-#else
+#else		/* HATARI_TRACE_ACTIVATED */
 
 #define HATARI_TRACE( level, args... )	{}
 #define HATARI_TRACE_LEVEL( level )	(0)
-#define HATARI_TRACE_PRINT( args... )	{}
 
 #endif		/* HATARI_TRACE_ACTIVATED */
+
+/* Always defined in full to avoid compiler warnings about unused variables.
+ * In code it's used in such a way that it will be optimized away when tracing
+ * is disabled.
+ */
+#define HATARI_TRACE_PRINT( args... )	fprintf ( TraceFile , args )
 
 #endif		/* HATARI_LOG_H */
