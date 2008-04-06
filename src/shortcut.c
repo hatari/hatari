@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.31 2008-04-04 21:18:02 eerot Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.32 2008-04-06 09:01:18 eerot Exp $";
 
 #include <SDL.h>
 
@@ -21,6 +21,7 @@ const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.31 2008-04-04 21:18:02
 #include "screenSnapShot.h"
 #include "configuration.h"
 #include "shortcut.h"
+#include "debugui.h"
 #include "sound.h"
 
 static SHORTCUTKEYIDX ShortCutKey = SHORTCUT_NONE;  /* current shortcut key */
