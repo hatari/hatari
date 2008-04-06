@@ -47,7 +47,7 @@ extern BOOL Log_SetTraceOptions(const char *OptionsStr);
  * Tracing can be enabled but defining HATARI_TRACE_ACTIVATED
  * in the top level config.h
  */
-include "config.h"
+#include "config.h"
 
 /* Up to 32 levels when using Uint32 for HatariTraceFlags */
 #define	HATARI_TRACE_VIDEO_SYNC		(1<<0)
@@ -86,6 +86,7 @@ include "config.h"
 #define	HATARI_TRACE_NONE		(0)
 #define	HATARI_TRACE_ALL		(~0)
 
+
 #define	HATARI_TRACE_VIDEO_ALL		( HATARI_TRACE_VIDEO_SYNC | HATARI_TRACE_VIDEO_RES | HATARI_TRACE_VIDEO_COLOR \
 		| HATARI_TRACE_VIDEO_BORDER_V | HATARI_TRACE_VIDEO_BORDER_H | HATARI_TRACE_VIDEO_ADDR \
 		| HATARI_TRACE_VIDEO_VBL | HATARI_TRACE_VIDEO_HBL | HATARI_TRACE_VIDEO_STE )
@@ -99,26 +100,22 @@ include "config.h"
 #define	HATARI_TRACE_OS_ALL		( HATARI_TRACE_OS_BIOS | HATARI_TRACE_OS_XBIOS | HATARI_TRACE_OS_GEMDOS | HATARI_TRACE_OS_VDI )
 
 
+#ifdef HATARI_TRACE_ACTIVATED
 
-
-#ifndef HATARI_TRACE_ACTIVATED
-
-#define HATARI_TRACE( level, args... )	{}
-#define HATARI_TRACE_LEVEL( level )	(0)
-
-#else
+extern FILE *TraceFile;
+extern Uint32 HatariTraceFlags;
 
 #define	HATARI_TRACE( level, args... ) \
 	if ( HatariTraceFlags & level ) fprintf ( TraceFile , args )
 #define HATARI_TRACE_LEVEL( level )	(HatariTraceFlags & level)
-
-#endif
-
-
 #define HATARI_TRACE_PRINT( args... )	fprintf ( TraceFile , args )
 
+#else
 
-extern Uint32 HatariTraceFlags;
-extern FILE *TraceFile;
+#define HATARI_TRACE( level, args... )	{}
+#define HATARI_TRACE_PRINT( args... )	{}
+#define HATARI_TRACE_LEVEL( level )	(0)
+
+#endif		/* HATARI_TRACE_ACTIVATED */
 
 #endif		/* HATARI_LOG_H */
