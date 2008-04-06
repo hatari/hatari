@@ -59,7 +59,7 @@
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.52 2008-04-03 20:30:33 eerot Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.53 2008-04-06 12:39:47 eerot Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -1489,6 +1489,7 @@ static void m68k_run_1 (void)
 #endif
 
 	/*m68k_dumpstate(stderr, NULL);*/
+#ifdef HATARI_TRACE_ACTIVATED
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_CPU_DISASM ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
@@ -1496,7 +1497,7 @@ static void m68k_run_1 (void)
 	    HATARI_TRACE_PRINT ( "video_cyc=%6d %3d@%3d : " , nFrameCycles, nLineCycles, nHBL );
 	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
 	  }
-
+#endif
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
 /*	regs_backup[backup_pointer = (backup_pointer + 1) % 16] = regs;*/
 #if COUNT_INSTRS == 2
@@ -1540,6 +1541,7 @@ static void m68k_run_2 (void)
 	uae_u32 opcode = get_iword (0);
 
 	/*m68k_dumpstate(stderr, NULL);*/
+#ifdef HATARI_TRACE_ACTIVATED
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_CPU_DISASM ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
@@ -1547,7 +1549,7 @@ static void m68k_run_2 (void)
 	    HATARI_TRACE_PRINT ( "video_cyc=%6d %3d@%3d : " , nFrameCycles, nLineCycles, nHBL );
 	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
 	  }
-
+#endif
 
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
 /*	regs_backup[backup_pointer = (backup_pointer + 1) % 16] = regs;*/

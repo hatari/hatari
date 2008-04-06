@@ -113,8 +113,8 @@ extern Uint32 HatariTraceFlags;
 #else
 
 #define HATARI_TRACE( level, args... )	{}
-#define HATARI_TRACE_PRINT( args... )	{}
 #define HATARI_TRACE_LEVEL( level )	(0)
+#define HATARI_TRACE_PRINT( args... )	{}
 
 #endif		/* HATARI_TRACE_ACTIVATED */
 

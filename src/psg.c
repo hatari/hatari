@@ -62,7 +62,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.20 2008-04-03 20:30:32 eerot Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.21 2008-04-06 12:39:46 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -125,6 +125,7 @@ void PSG_SelectRegister_WriteByte(void)
 	 * to be able to handle the PSG mirror registers, too. */
 	PSGRegisterSelect = IoMem[IoAccessCurrentAddress] & 0x0f;
 
+#ifdef HATARI_TRACE_ACTIVATED
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_REG ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
@@ -132,6 +133,7 @@ void PSG_SelectRegister_WriteByte(void)
 	    HATARI_TRACE_PRINT ( "write ym sel reg=%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		PSGRegisterSelect, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	  }
+#endif
 }
 
 
@@ -199,7 +201,7 @@ void PSG_DataRegister_WriteByte(void)
 		|| ( PSGRegisterSelect == PSG_REG_CHANNEL_C_AMP ) )
 	  PSGRegisters[PSGRegisterSelect] &= 0x1f;	/* only keep bits 0 - 4 */
 
-
+#ifdef HATARI_TRACE_ACTIVATED
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_DATA ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
@@ -207,7 +209,7 @@ void PSG_DataRegister_WriteByte(void)
 	    HATARI_TRACE_PRINT ( "write ym data reg=%x val=%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		PSGRegisterSelect, PSGRegisters[PSGRegisterSelect], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	  }
-
+#endif
 
 	switch (PSGRegisterSelect)
 	{
@@ -316,6 +318,7 @@ void PSG_Void_WriteByte(void)
 	if ( nWaitStateCycles == 0 )
 	  M68000_WaitState(1);
 
+#ifdef HATARI_TRACE_ACTIVATED
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_DATA ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
@@ -323,6 +326,7 @@ void PSG_Void_WriteByte(void)
 	    HATARI_TRACE_PRINT ( "write ym 8801/03 video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	  }
+#endif
 }
 
 

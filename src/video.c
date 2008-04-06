@@ -144,7 +144,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.104 2008-04-03 22:17:50 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.105 2008-04-06 12:39:46 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -1707,6 +1707,7 @@ void Video_ScreenBaseSTE_WriteByte(void)
 {
 	IoMem[0xff820d] = 0;          /* Reset screen base low register */
 
+#ifdef HATARI_TRACE_ACTIVATED
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_STE ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
@@ -1714,6 +1715,7 @@ void Video_ScreenBaseSTE_WriteByte(void)
 		HATARI_TRACE_PRINT ( "write ste video base=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , (IoMem[0xff8201]<<16)+(IoMem[0xff8203]<<8) ,
 		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
+#endif
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1900,6 +1902,7 @@ static void Video_ColorReg_WriteWord(Uint32 addr)
 		pHBLPalettes[idx] = col;               /* Set colour x */
 		*pHBLPaletteMasks |= 1 << idx;         /* And mask */
 
+#ifdef HATARI_TRACE_ACTIVATED
 		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_COLOR ) )
 		{
 			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
@@ -1907,7 +1910,7 @@ static void Video_ColorReg_WriteWord(Uint32 addr)
 			HATARI_TRACE_PRINT ( "write col addr=%x col=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , addr, col,
 			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 		}
-
+#endif
 	}
 }
 

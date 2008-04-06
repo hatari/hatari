@@ -58,7 +58,7 @@
 /* 2008/03/08	[NP]	Add traces when writing to vector register fffa17.		*/
 /*			Use M68000_INT_MFP when calling M68000_Exception().		*/
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.36 2008-04-03 20:30:32 eerot Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.37 2008-04-06 12:39:46 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -241,6 +241,7 @@ static void MFP_Exception(int Interrupt)
 	Vec = (unsigned int)(MFP_VR&0xf0)<<2;
 	Vec += Interrupt<<2;
 
+#ifdef HATARI_TRACE_ACTIVATED
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_EXCEPTION ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
@@ -248,7 +249,7 @@ static void MFP_Exception(int Interrupt)
 		HATARI_TRACE_PRINT ( "mfp excep int=%d vec=0x%x new_pc=0x%x video_cyc=%d %d@%d\n" ,
 			Interrupt, Vec, get_long ( Vec ), nFrameCycles, nLineCycles, nHBL );
 	}
-
+#endif
 	M68000_Exception ( Vec , M68000_INT_MFP );
 }
 
@@ -423,6 +424,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler,
 			TimerData = 256;
 		TimerClockCycles = MFP_REG_TO_CYCLES ( TimerData, TimerControl );
 
+#ifdef HATARI_TRACE_ACTIVATED
 		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_START ) )
 		{
 			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
@@ -432,7 +434,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler,
 			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
 			                     bFirstTimer?"true":"false" , *pTimerCanResume?"true":"false" );
 		}
-
+#endif
 		/* And add to our internal interrupt list, if timer cycles is zero
 		 * then timer is stopped */
 		Int_RemovePendingInterrupt(Handler);
@@ -493,6 +495,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, int Handler,
 			TimerData = 256;
 		TimerClockCycles = MFP_REG_TO_CYCLES ( TimerData, TimerControl );
 
+#ifdef HATARI_TRACE_ACTIVATED
 		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_START ) )
 		{
 			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
@@ -502,7 +505,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, int Handler,
 			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
 			                     bFirstTimer?"true":"false" , *pTimerCanResume?"true":"false" );
 		}
-
+#endif
 		/* And add to our internal interrupt list, if timer cycles is zero
 		 * then timer is stopped */
 		Int_RemovePendingInterrupt(Handler);
@@ -562,6 +565,7 @@ static Uint8 MFP_ReadTimer_AB(Uint8 TimerControl, Uint8 MainCounter, int TimerCy
 		//fprintf ( stderr , "mfp read AB passed %d count %d\n" , TimerCyclesPassed, MainCounter );
 	}
 
+#ifdef HATARI_TRACE_ACTIVATED
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_READ ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
@@ -570,7 +574,7 @@ static Uint8 MFP_ReadTimer_AB(Uint8 TimerControl, Uint8 MainCounter, int TimerCy
 		                     Handler, MainCounter, TimerControl, TimerCycles,
 		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
-
+#endif
 	return MainCounter;
 }
 
@@ -593,6 +597,7 @@ static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCoun
 		//fprintf ( stderr , "mfp read CD passed %d count %d\n" , TimerCyclesPassed, MainCounter );
 	}
 
+#ifdef HATARI_TRACE_ACTIVATED
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_READ ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
@@ -601,7 +606,7 @@ static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCoun
 		                     Handler, MainCounter, TimerControl, TimerCycles,
 		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
-
+#endif
 	return MainCounter;
 }
 
@@ -1214,6 +1219,7 @@ void MFP_VectorReg_WriteByte(void)
 		}
 	}
 
+#ifdef HATARI_TRACE_ACTIVATED
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_WRITE ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
@@ -1221,7 +1227,7 @@ void MFP_VectorReg_WriteByte(void)
 		HATARI_TRACE_PRINT ( "mfp write vector reg fa17=%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 			MFP_VR, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
-
+#endif
 }
 
 /*-----------------------------------------------------------------------*/
