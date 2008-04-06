@@ -47,7 +47,7 @@
 
 
 
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.25 2008-04-06 12:39:46 eerot Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.26 2008-04-06 19:20:06 eerot Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -179,7 +179,6 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	pTmpCyclePalette->Colour = CycleColour;           /* Store ST/STe color RGB */
 	pTmpCyclePalette->Index = CycleColourIndex;       /* And index (0...15) */
 
-#ifdef HATARI_TRACE_ACTIVATED
 	if ( 0 && HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_COLOR ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
@@ -187,7 +186,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 		HATARI_TRACE_PRINT ( "spec store col line %d cyc=%d col=%x idx=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , ScanLine , nHorPos , CycleColour , CycleColourIndex ,
 		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
-#endif
+
 	/* Increment count (this can never overflow as you cannot write to the palette more than 'MAX_CYCLEPALETTES_PERLINE-1' times per scanline) */
 	nCyclePalettes[ScanLine]++;
 
