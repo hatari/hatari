@@ -11,7 +11,9 @@
 #include <SDL_types.h>
 
 
-/* Logging is always enabled as it's information that can be useful
+/* Logging
+ * -------
+ * Is always enabled as it's information that can be useful
  * to the Hatari users
  */
 typedef enum
@@ -35,15 +37,17 @@ extern LOGTYPE Log_ParseOptions(const char *OptionStr);
 extern BOOL Log_SetTraceOptions(const char *OptionsStr);
 
 
-/* Tracing outputs information about what happens in the emulated
- * system and is intended for Hatari developers.  Therefore tracing
- * can be compiled out.  Tracing is including if HATARI_TRACE_ACTIVATED
- * is defined.
- *
- * TODO: This should be a configure option and by default disabled
+/* Tracing
+ * -------
+ * Tracing outputs information about what happens in the emulated
+ * system and slows down the emulation.  As it's intended mainly
+ * just for the Hatari developers, tracing support is compiled in
+ * by default.
+ * 
+ * Tracing can be enabled but defining HATARI_TRACE_ACTIVATED
+ * in the top level config.h
  */
-#define HATARI_TRACE_ACTIVATED
-
+include "config.h"
 
 /* Up to 32 levels when using Uint32 for HatariTraceFlags */
 #define	HATARI_TRACE_VIDEO_SYNC		(1<<0)
