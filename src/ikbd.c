@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.34 2008-04-06 12:39:46 eerot Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.35 2008-04-06 12:57:47 eerot Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -172,6 +172,34 @@ static BOOL bByteInTransitToACIA = FALSE;   /* Is a byte being sent to the ACIA 
 */
 
 /* List of possible keyboard commands, others are seen as NOPs by keyboard processor */
+static void IKBD_Cmd_Reset(void);
+static void IKBD_Cmd_MouseAction(void);
+static void IKBD_Cmd_RelMouseMode(void);
+static void IKBD_Cmd_AbsMouseMode(void);
+static void IKBD_Cmd_MouseCursorKeycodes(void);
+static void IKBD_Cmd_SetMouseThreshold(void);
+static void IKBD_Cmd_SetMouseScale(void);
+static void IKBD_Cmd_ReadAbsMousePos(void);
+static void IKBD_Cmd_SetInternalMousePos(void);
+static void IKBD_Cmd_SetYAxisDown(void);
+static void IKBD_Cmd_SetYAxisUp(void);
+static void IKBD_Cmd_StartKeyboardTransfer(void);
+static void IKBD_Cmd_TurnMouseOff(void);
+static void IKBD_Cmd_StopKeyboardTransfer(void);
+static void IKBD_Cmd_ReturnJoystickAuto(void);
+static void IKBD_Cmd_StopJoystick(void);
+static void IKBD_Cmd_ReturnJoystick(void);
+static void IKBD_Cmd_SetJoystickDuration(void);
+static void IKBD_Cmd_SetJoystickFireDuration(void);
+static void IKBD_Cmd_SetCursorForJoystick(void);
+static void IKBD_Cmd_DisableJoysticks(void);
+static void IKBD_Cmd_SetClock(void);
+static void IKBD_Cmd_ReadClock(void);
+static void IKBD_Cmd_LoadMemory(void);
+static void IKBD_Cmd_ReadMemory(void);
+static void IKBD_Cmd_Execute(void);
+static void IKBD_Cmd_NullFunction(void);
+
 static const IKBD_COMMAND_PARAMS KeyboardCommands[] =
 {
 	/* Known messages, counts include command byte */
@@ -217,6 +245,12 @@ static const IKBD_COMMAND_PARAMS KeyboardCommands[] =
 
 	{ 0xFF,0,  NULL }  /* Term */
 };
+
+
+static void IKBD_SendByteToKeyboardProcessor(Uint16 bl);
+static Uint16 IKBD_GetByteFromACIA(void);
+static void IKBD_SendByteToACIA(void);
+static void IKBD_AddKeyToKeyboardBuffer(Uint8 Data);
 
 
 /*-----------------------------------------------------------------------*/
@@ -815,7 +849,7 @@ void IKBD_InterruptHandler_ResetTimer(void)
 /**
  * Blank function for some keyboard commands - this can be used to find errors
  */
-void IKBD_Cmd_NullFunction(void)
+static void IKBD_Cmd_NullFunction(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
 	Debug_IKBD("IKBD_Cmd_NullFunction\n");
@@ -834,7 +868,7 @@ void IKBD_Cmd_NullFunction(void)
  * Performs self test and checks for stuck (closed) keys, if OK returns 0xF0. Otherwise
  * returns break codes for keys
  */
-void IKBD_Cmd_Reset(void)
+static void IKBD_Cmd_Reset(void)
 {
 	/* Check for error series of bytes, eg 0x80,0x01 */
 	if (Keyboard.InputBuffer[1] == 0x01)
@@ -886,7 +920,7 @@ void IKBD_Cmd_Reset(void)
  *       ;  and x=1, mouse key release causes absolute report
  *       ; mss=100, mouse buttons act like keys
  */
-void IKBD_Cmd_MouseAction(void)
+static void IKBD_Cmd_MouseAction(void)
 {
 	KeyboardProcessor.Mouse.Action = Keyboard.InputBuffer[1];
 	KeyboardProcessor.Abs.PrevReadAbsMouseButtons = ABS_PREVBUTTONS;
@@ -903,7 +937,7 @@ void IKBD_Cmd_MouseAction(void)
  *
  * 0x08
  */
-void IKBD_Cmd_RelMouseMode(void)
+static void IKBD_Cmd_RelMouseMode(void)
 {
 	KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
 #ifdef DEBUG_OUTPUT_IKBD
@@ -923,7 +957,7 @@ void IKBD_Cmd_RelMouseMode(void)
  * YMSB      ;Y maximum (in scaled mouse clicks)
  * YLSB
  */
-void IKBD_Cmd_AbsMouseMode(void)
+static void IKBD_Cmd_AbsMouseMode(void)
 {
 	/* These maximums are 'inclusive' */
 	KeyboardProcessor.MouseMode = AUTOMODE_MOUSEABS;
@@ -944,7 +978,7 @@ void IKBD_Cmd_AbsMouseMode(void)
  * deltax      ; distance in X clicks to return (LEFT) or (RIGHT)
  * deltay      ; distance in Y clicks to return (UP) or (DOWN)
  */
-void IKBD_Cmd_MouseCursorKeycodes(void)
+static void IKBD_Cmd_MouseCursorKeycodes(void)
 {
 	KeyboardProcessor.MouseMode = AUTOMODE_MOUSECURSOR;
 	KeyboardProcessor.Mouse.KeyCodeDeltaX = Keyboard.InputBuffer[1];
@@ -964,7 +998,7 @@ void IKBD_Cmd_MouseCursorKeycodes(void)
  * X      ; x threshold in mouse ticks (positive integers)
  * Y      ; y threshold in mouse ticks (positive integers)
  */
-void IKBD_Cmd_SetMouseThreshold(void)
+static void IKBD_Cmd_SetMouseThreshold(void)
 {
 	KeyboardProcessor.Mouse.XThreshold = (unsigned int)Keyboard.InputBuffer[1];
 	KeyboardProcessor.Mouse.YThreshold = (unsigned int)Keyboard.InputBuffer[2];
@@ -983,7 +1017,7 @@ void IKBD_Cmd_SetMouseThreshold(void)
  * X      ; horizontal mouse ticks per internel X
  * Y      ; vertical mouse ticks per internel Y
  */
-void IKBD_Cmd_SetMouseScale(void)
+static void IKBD_Cmd_SetMouseScale(void)
 {
 	KeyboardProcessor.Mouse.XScale = (unsigned int)Keyboard.InputBuffer[1];
 	KeyboardProcessor.Mouse.YScale = (unsigned int)Keyboard.InputBuffer[2];
@@ -1011,7 +1045,7 @@ void IKBD_Cmd_SetMouseScale(void)
  *     YMSB      ; Y coordinate
  *     YLSB
  */
-void IKBD_Cmd_ReadAbsMousePos(void)
+static void IKBD_Cmd_ReadAbsMousePos(void)
 {
 	Uint8 Buttons,PrevButtons;
 
@@ -1057,7 +1091,7 @@ void IKBD_Cmd_ReadAbsMousePos(void)
  * YMSB      ; Y coordinate
  * YLSB
  */
-void IKBD_Cmd_SetInternalMousePos(void)
+static void IKBD_Cmd_SetInternalMousePos(void)
 {
 	/* Setting these do not clip internal position(this happens on next update) */
 	KeyboardProcessor.Abs.X = (((unsigned int)Keyboard.InputBuffer[2])<<8) | (unsigned int)Keyboard.InputBuffer[3];
@@ -1075,7 +1109,7 @@ void IKBD_Cmd_SetInternalMousePos(void)
  *
  * 0x0F
  */
-void IKBD_Cmd_SetYAxisDown(void)
+static void IKBD_Cmd_SetYAxisDown(void)
 {
 	KeyboardProcessor.Mouse.YAxis = -1;
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1091,7 +1125,7 @@ void IKBD_Cmd_SetYAxisDown(void)
  *
  * 0x10
  */
-void IKBD_Cmd_SetYAxisUp(void)
+static void IKBD_Cmd_SetYAxisUp(void)
 {
 	KeyboardProcessor.Mouse.YAxis = 1;
 #ifdef DEBUG_OUTPUT_IKBD
@@ -1107,7 +1141,7 @@ void IKBD_Cmd_SetYAxisUp(void)
  *
  * 0x11
  */
-void IKBD_Cmd_StartKeyboardTransfer(void)
+static void IKBD_Cmd_StartKeyboardTransfer(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
 	Debug_IKBD("IKBD_Cmd_StartKeyboardTransfer\n");
@@ -1122,7 +1156,7 @@ void IKBD_Cmd_StartKeyboardTransfer(void)
  *
  * 0x12
  */
-void IKBD_Cmd_TurnMouseOff(void)
+static void IKBD_Cmd_TurnMouseOff(void)
 {
 	KeyboardProcessor.MouseMode = AUTOMODE_OFF;
 	bMouseDisabled = TRUE;
@@ -1141,7 +1175,7 @@ void IKBD_Cmd_TurnMouseOff(void)
  *
  * 0x13
  */
-void IKBD_Cmd_StopKeyboardTransfer(void)
+static void IKBD_Cmd_StopKeyboardTransfer(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
 	Debug_IKBD("IKBD_Cmd_StopKeyboardTransfer\n");
@@ -1156,7 +1190,7 @@ void IKBD_Cmd_StopKeyboardTransfer(void)
  *
  * 0x14
  */
-void IKBD_Cmd_ReturnJoystickAuto(void)
+static void IKBD_Cmd_ReturnJoystickAuto(void)
 {
 	KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
 	KeyboardProcessor.MouseMode = AUTOMODE_OFF;
@@ -1180,7 +1214,7 @@ void IKBD_Cmd_ReturnJoystickAuto(void)
  *
  * 0x15
  */
-void IKBD_Cmd_StopJoystick(void)
+static void IKBD_Cmd_StopJoystick(void)
 {
 	KeyboardProcessor.JoystickMode = AUTOMODE_OFF;
 //  Debug_IKBD("IKBD_Cmd_StopJoystick\n");
@@ -1193,7 +1227,7 @@ void IKBD_Cmd_StopJoystick(void)
  *
  * 0x16
  */
-void IKBD_Cmd_ReturnJoystick(void)
+static void IKBD_Cmd_ReturnJoystick(void)
 {
 	IKBD_AddKeyToKeyboardBuffer(0xFD);
 	IKBD_AddKeyToKeyboardBuffer(Joy_GetStickData(0));
@@ -1217,7 +1251,7 @@ void IKBD_Cmd_ReturnJoystick(void)
  *     %nnnnmmmm  where m is JOYSTICK1 state
  *         and n is JOYSTICK0 state
  */
-void IKBD_Cmd_SetJoystickDuration(void)
+static void IKBD_Cmd_SetJoystickDuration(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
 	Debug_IKBD("IKBD_Cmd_SetJoystickDuration\n");
@@ -1235,7 +1269,7 @@ void IKBD_Cmd_SetJoystickDuration(void)
  *     %bbbbbbbb  ; state of the JOYSTICK1 fire button packed
  *           ; 8 bits per byte, the first sample if the MSB
  */
-void IKBD_Cmd_SetJoystickFireDuration(void)
+static void IKBD_Cmd_SetJoystickFireDuration(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
 	Debug_IKBD("IKBD_Cmd_SetJoystickFireDuration\n");
@@ -1266,7 +1300,7 @@ void IKBD_Cmd_SetJoystickFireDuration(void)
  *         ; until vertical cursor keystokes are generated after RY
  *         ; has elapsed
  */
-void IKBD_Cmd_SetCursorForJoystick(void)
+static void IKBD_Cmd_SetCursorForJoystick(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
 	Debug_IKBD("IKBD_Cmd_SetCursorForJoystick\n");
@@ -1281,7 +1315,7 @@ void IKBD_Cmd_SetCursorForJoystick(void)
  *
  * 0x1A
  */
-void IKBD_Cmd_DisableJoysticks(void)
+static void IKBD_Cmd_DisableJoysticks(void)
 {
 	KeyboardProcessor.JoystickMode = AUTOMODE_OFF;
 	bJoystickDisabled = TRUE;
@@ -1306,7 +1340,7 @@ void IKBD_Cmd_DisableJoysticks(void)
  * mm        ; minute
  * ss        ; second
  */
-void IKBD_Cmd_SetClock(void)
+static void IKBD_Cmd_SetClock(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
 	Debug_IKBD("IKBD_Cmd_SetClock\n");
@@ -1335,7 +1369,7 @@ void IKBD_Cmd_SetClock(void)
  *     mm    ; minute
  *     ss    ; second
  */
-void IKBD_Cmd_ReadClock(void)
+static void IKBD_Cmd_ReadClock(void)
 {
 	struct tm *SystemTime;
 	time_t nTimeTicks;
@@ -1370,7 +1404,7 @@ void IKBD_Cmd_ReadClock(void)
  * NUM        ; number of bytes (0-128)
  * { data }
  */
-void IKBD_Cmd_LoadMemory(void)
+static void IKBD_Cmd_LoadMemory(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
 	Debug_IKBD("IKBD_Cmd_LoadMemory\n");
@@ -1391,7 +1425,7 @@ void IKBD_Cmd_LoadMemory(void)
  *     0x20    ; memory access
  *     { data }  ; 6 data bytes starting at ADR
  */
-void IKBD_Cmd_ReadMemory(void)
+static void IKBD_Cmd_ReadMemory(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
 	Debug_IKBD("IKBD_Cmd_ReadMemory\n");
@@ -1408,7 +1442,7 @@ void IKBD_Cmd_ReadMemory(void)
  * ADRMSB      ; address of subroutine in
  * ADRLSB      ; controller memory to be called
  */
-void IKBD_Cmd_Execute(void)
+static void IKBD_Cmd_Execute(void)
 {
 #ifdef DEBUG_OUTPUT_IKBD
 	Debug_IKBD("IKBD_Cmd_Execute\n");
@@ -1458,7 +1492,7 @@ static void IKBD_RunKeyboardCommand(Uint16 aciabyte)
 /**
  * Send byte to our keyboard processor, and execute
  */
-void IKBD_SendByteToKeyboardProcessor(Uint16 bl)
+static void IKBD_SendByteToKeyboardProcessor(Uint16 bl)
 {
 	IKBD_RunKeyboardCommand(bl);  /* And send */
 }
@@ -1524,7 +1558,7 @@ void IKBD_InterruptHandler_ACIA(void)
  * so we must be as accurate in the timing as possible - bytes do not appear to the 68000 instantly!
  * We do this via an internal interrupt - neat!
  */
-void IKBD_SendByteToACIA(void)
+static void IKBD_SendByteToACIA(void)
 {
 	/* Transmit byte from keyboard processor to ACIA. This takes approx ACIA_CYCLES CPU clock cycles to complete */
 	if (!bByteInTransitToACIA)
@@ -1543,7 +1577,7 @@ void IKBD_SendByteToACIA(void)
  * This is done via a delay to mimick the STs internal workings, as this is needed for games such
  * as Carrier Command.
  */
-void IKBD_AddKeyToKeyboardBuffer(Uint8 Data)
+static void IKBD_AddKeyToKeyboardBuffer(Uint8 Data)
 {
 	/* Is keyboard initialised yet? Ignore any bytes until it is */
 	if (!KeyboardProcessor.bReset)
