@@ -29,12 +29,24 @@ typedef enum
 	LOG_NONE	/* invalid LOG level */
 } LOGTYPE;
 
+#ifndef __GNUC__
+/* assuming attributes work only for GCC */
+#define __attribute__(foo)
+#endif
+
 extern int Log_Init(void);
 extern void Log_UnInit(void);
-extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...);
-extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...);
+extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
+	__attribute__ ((format (printf, 2, 3)));
+extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
+	__attribute__ ((format (printf, 2, 3)));
 extern LOGTYPE Log_ParseOptions(const char *OptionStr);
 extern BOOL Log_SetTraceOptions(const char *OptionsStr);
+
+#ifndef __GNUC__
+#undef __attribute__
+#endif
+
 
 
 /* Tracing
