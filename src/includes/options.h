@@ -9,6 +9,7 @@
 
 extern BOOL bLoadAutoSave;
 extern BOOL bLoadMemorySave;
+extern BOOL bBiosIntercept;
 
 /* parses all Hatari command line options and sets Hatari state accordingly,
  * returns boot disk image name (empty if not set)

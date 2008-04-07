@@ -59,7 +59,7 @@
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.53 2008-04-06 12:39:47 eerot Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.54 2008-04-07 20:40:43 eerot Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -78,6 +78,7 @@ const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.53 2008-04-06 12:39:47 eer
 #include "../includes/bios.h"
 #include "../includes/xbios.h"
 #include "../includes/video.h"
+#include "../includes/options.h"
 
 //#define DEBUG_PREFETCH
 
@@ -765,19 +766,20 @@ void Exception(int nr, uaecptr oldpc)
       }
     }
 
-#if 0
-    /* Intercept BIOS or XBIOS trap (Trap #13 or #14) */
-    if (nr == 0x2d)
+    if (bBiosIntercept)
     {
-      /* Intercept BIOS calls */
-      if (Bios())  return;
+      /* Intercept BIOS or XBIOS trap (Trap #13 or #14) */
+      if (nr == 0x2d)
+      {
+        /* Intercept BIOS calls */
+        if (Bios())  return;
+      }
+      else if (nr == 0x2e)
+      {
+        /* Intercept XBIOS calls */
+        if (XBios())  return;
+      }
     }
-    else if (nr == 0x2e)
-    {
-      /* Intercept XBIOS calls */
-      if (XBios())  return;
-    }
-#endif
 
     MakeSR();
 

@@ -15,7 +15,7 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.53 2008-04-06 09:07:52 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.54 2008-04-07 20:40:42 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -38,6 +38,7 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.53 2008-04-06 09:07:52 eero
 
 BOOL bLoadAutoSave;        /* Load autosave memory snapshot at startup */
 BOOL bLoadMemorySave;      /* Load memory snapshot provided via option at startup */
+BOOL bBiosIntercept;       /* whether UAE should intercept Bios & XBios calls */
 
 
 /*  List of supported options. */
@@ -81,6 +82,7 @@ enum {
 	OPT_SOUND,
 	OPT_KEYMAPFILE,
 	OPT_DEBUG,		/* debug options */
+	OPT_BIOSINTERCEPT,
 	OPT_TRACE,
 	OPT_TRACEFILE,
 	OPT_LOGFILE,
@@ -193,6 +195,8 @@ static const opt_t HatariOptions[] = {
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
 	  NULL, "Enable debug interface" },
+	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
+	  NULL, "Enable Bios/XBios interception (experimental)" },
 	{ OPT_TRACE,   NULL, "--trace",
 	  "<trace1,...>", "Activate emulation tracing, see --trace help" },
 	{ OPT_TRACEFILE, NULL, "--trace-file",
@@ -931,6 +935,10 @@ void Opt_ParseParameters(int argc, char *argv[],
 			/* debug options */
 		case OPT_DEBUG:
 			bEnableDebug = TRUE;
+			break;
+
+		case OPT_BIOSINTERCEPT:
+			bBiosIntercept = TRUE;
 			break;
 			
 		case OPT_TRACE:
