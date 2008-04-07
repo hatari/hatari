@@ -141,10 +141,12 @@
 /*			Video_CalculateAddress.							*/
 /* 2008/04/04	[NP]	The value of RestartVideoCounterCycle is slightly different between	*/
 /*			an STF and an STE.							*/
+/* 2008/04/05	[NP]	The value of VblVideoCycleOffset is different of 4 cycles between	*/
+/*			STF and STE (fix end part in Pacemaker by Paradox).			*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.106 2008-04-06 19:20:06 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.107 2008-04-07 22:08:21 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -243,6 +245,7 @@ int	NewVideoLo = -1;			/* new value for $ff8209 on STE */
 int	LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
 int	LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
 int	RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
+int	VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
 
 
 /*-----------------------------------------------------------------------*/
@@ -285,6 +288,7 @@ void	Video_SetSystemTimings(void)
       LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
       LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
       RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
+      VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
     }
 
   else					/* STE, Falcon, TT */
@@ -292,6 +296,7 @@ void	Video_SetSystemTimings(void)
       LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STE;
       LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STE;
       RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STE;
+      VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STE;
     }
 }
 
@@ -1596,9 +1601,9 @@ static void Video_DrawScreen(void)
  */
 void Video_StartInterrupts(void)
 {
-	Int_AddAbsoluteInterrupt(nCyclesPerLine - TIMERB_VIDEO_CYCLE_OFFSET - VBL_VIDEO_CYCLE_OFFSET,
+	Int_AddAbsoluteInterrupt(nCyclesPerLine - TIMERB_VIDEO_CYCLE_OFFSET - VblVideoCycleOffset,
 	                         INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
-	Int_AddAbsoluteInterrupt(nCyclesPerLine + HBL_VIDEO_CYCLE_OFFSET - VBL_VIDEO_CYCLE_OFFSET,
+	Int_AddAbsoluteInterrupt(nCyclesPerLine + HBL_VIDEO_CYCLE_OFFSET - VblVideoCycleOffset,
 	                         INT_CPU_CYCLE, INTERRUPT_VIDEO_HBL);
 	Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
 }
@@ -1622,7 +1627,7 @@ void Video_InterruptHandler_VBL(void)
 	Video_StartInterrupts();
 
 	/* Set frame cycles, used for Video Address */
-	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver + VBL_VIDEO_CYCLE_OFFSET);
+	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver + VblVideoCycleOffset);
 
 	/* Clear any key presses which are due to be de-bounced (held for one ST frame) */
 	Keymap_DebounceAllKeys();

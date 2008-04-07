@@ -95,7 +95,9 @@
 #define CYCLES_PER_FRAME    (nScanlinesPerFrame*nCyclesPerLine)  /* Cycles per VBL @ 50fps = 160256 */
 
 
-#define VBL_VIDEO_CYCLE_OFFSET		(60+4)
+#define VBL_VIDEO_CYCLE_OFFSET_STF	64
+#define VBL_VIDEO_CYCLE_OFFSET_STE	(64+4)			/* 4 cycles difference on STE */
+
 #define HBL_VIDEO_CYCLE_OFFSET		(12-12)			/* cycles after end of current line */
 #define TIMERB_VIDEO_CYCLE_OFFSET	(96+12)			/* cycles before end of current line (28 cycles after display off) */
 
