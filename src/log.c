@@ -13,7 +13,7 @@
  * of HatariTraceFlags. Multiple trace levels can be set at once, by setting
  * the corresponding bits in HatariTraceFlags
  */
-const char Log_rcsid[] = "Hatari $Id: log.c,v 1.12 2008-04-06 12:39:46 eerot Exp $";
+const char Log_rcsid[] = "Hatari $Id: log.c,v 1.13 2008-04-07 19:49:32 thothy Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -120,7 +120,7 @@ void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 {
 	va_list argptr;
 
-	if (hLogFile && (int)nType <= TextLogLevel)
+	if (hLogFile && nType <= TextLogLevel)
 	{
 		va_start(argptr, psFormat);
 		vfprintf(hLogFile, psFormat, argptr);
