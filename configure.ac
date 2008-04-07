@@ -28,7 +28,7 @@ AC_ARG_ENABLE([werror],
 
 AC_ARG_ENABLE([tracing],
   [  --enable-tracing        Enable tracing - at the expense of emulation speed],
-  [ AC_DEFINE([HATARI_TRACING_ACTIVATED], [1],
+  [ AC_DEFINE([HATARI_TRACE_ACTIVATED], [1],
      [Define to enable emulation tracing - at the expense of emulation speed])])
 
 AC_ARG_ENABLE([small-mem],
