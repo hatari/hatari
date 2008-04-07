@@ -14,7 +14,7 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to
   a byte array and stored in 'Cart_data[]' (see cartData.c).
 */
-const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.18 2008-01-26 16:44:21 thothy Exp $";
+const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.19 2008-04-07 19:43:12 thothy Exp $";
 
 /* 2007/12/09	[NP]	Change the function associated to opcodes $8, $a and $c only if hard drive	*/
 /*			emulation is ON. Else, these opcodes should give illegal instructions (also	*/
@@ -26,6 +26,7 @@ const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.18 2008-01-26 16:44:21 thothy 
 #include "configuration.h"
 #include "file.h"
 #include "log.h"
+#include "m68000.h"
 #include "stMemory.h"
 #include "vdi.h"
 #include "hatari-glue.h"
