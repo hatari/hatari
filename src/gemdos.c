@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.71 2008-04-06 09:07:52 eerot Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.72 2008-04-07 21:47:30 thothy Exp $";
 
 #include <config.h>
 
@@ -637,6 +637,7 @@ void GemDOS_MemorySnapShot_Capture(BOOL bSave)
 	/* Save/Restore details */
 	MemorySnapShot_Store(&DTAIndex,sizeof(DTAIndex));
 	MemorySnapShot_Store(&bInitGemDOS,sizeof(bInitGemDOS));
+	MemorySnapShot_Store(&act_pd, sizeof(act_pd));
 	if (bSave)
 	{
 		Addr = ((Uint8 *)pDTA - STRam);
