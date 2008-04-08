@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.72 2008-04-07 21:47:30 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.73 2008-04-08 22:11:54 thothy Exp $";
 
 #include <config.h>
 
@@ -633,6 +633,30 @@ void GemDOS_MemorySnapShot_Capture(BOOL bSave)
 {
 	unsigned int Addr;
 	int i;
+	BOOL bEmudrivesAvailable;
+
+	/* Save/Restore the emudrives structure */
+	bEmudrivesAvailable = (emudrives != NULL);
+	MemorySnapShot_Store(&bEmudrivesAvailable, sizeof(bEmudrivesAvailable));
+	if (bEmudrivesAvailable)
+	{
+		if (!bSave && !emudrives)
+		{
+			/* We're loading a memory snapshot, but the emudrives
+			 * structure has not been malloc yet... let's do it now! */
+			GemDOS_InitDrives();
+		}
+
+		for(i=0; i<MAX_HARDDRIVES; i++)
+		{
+			MemorySnapShot_Store(emudrives[i]->hd_emulation_dir,
+			                     sizeof(emudrives[i]->hd_emulation_dir));
+			MemorySnapShot_Store(emudrives[i]->fs_currpath,
+			                     sizeof(emudrives[i]->fs_currpath));
+			MemorySnapShot_Store(&emudrives[i]->hd_letter,
+			                     sizeof(emudrives[i]->hd_letter));
+		}
+	}
 
 	/* Save/Restore details */
 	MemorySnapShot_Store(&DTAIndex,sizeof(DTAIndex));
