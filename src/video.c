@@ -146,7 +146,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.107 2008-04-07 22:08:21 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.108 2008-04-09 19:55:59 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -1489,7 +1489,7 @@ static void Video_UpdateTTPalette(int bpp)
 		/* sync TT ST-palette to TT-palette */
 		src = 0xff8240;	/* ST-palette */
 		offset = (IoMem_ReadWord(0xff8262) & 0x0f);
-		/*fprintf(stdout, "offset: %d\n", offset);*/
+		/*fprintf(stderr, "offset: %d\n", offset);*/
 		dst = ttpalette + offset * 16*SIZE_WORD;
 
 		for (i = 0; i < 16; i++)
