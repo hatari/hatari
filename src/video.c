@@ -52,7 +52,7 @@
 /*			TIMERB_VIDEO_CYCLE_OFFSET and RESTART_VIDEO_COUNTER_CYCLE. These values	*/
 /*			were calculated using sttiming.s on a real STF and should give some very*/
 /*			accurate results (also uses 56 cycles instead of 44 to process an	*/
-/*			exception).								*/
+/*			HBL/VBL/MFP exception).							*/
 /* 2007/12/29	[NP]	Better support for starting line 2 bytes earlier (if the line starts in	*/
 /*			60 Hz and goes back to 50 Hz later), when combined with top border	*/
 /*			removal (Mindbomb Demo - D.I. No Shit).					*/
@@ -143,10 +143,18 @@
 /*			an STF and an STE.							*/
 /* 2008/04/05	[NP]	The value of VblVideoCycleOffset is different of 4 cycles between	*/
 /*			STF and STE (fix end part in Pacemaker by Paradox).			*/
+/* 2008/04/09	[NP]	Preliminary support for lines using different frequencies in the same	*/
+/*			screen.	In Video_InterruptHandler_EndLine, if the current freq is 50 Hz,*/
+/*			then next int should be scheduled in 512 cycles ; if freq is 60 Hz,	*/
+/*			next int should be in 508 cycles (used by timer B event count mode).	*/
+/* 2008/04/10	[NP]	Update LineEndCycle after changing freq to 50 or 60 Hz.			*/
+/*			Set EndLine interrupt to happen 28 cycles after LineEndCycle. This way	*/
+/*			Timer B occurs at cycle 404 in 50 Hz, or cycle 400 in 60 Hz (improve	*/
+/*			flickering bottom border in B.I.G. Demo screen 1).			*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.108 2008-04-09 19:55:59 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.109 2008-04-11 20:24:29 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -509,7 +517,8 @@ static void Video_WriteToShifter(Uint8 Byte)
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
-		LineStartCycle = LINE_START_CYCLE_60;
+		LineStartCycle = 0;
+		LineEndCycle = 0;
 	}
 
 	/* Start right border near middle of the line : -106 bytes */
@@ -647,7 +656,8 @@ void Video_Sync_WriteByte(void)
 		{
 			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line freq\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
-			LineStartCycle = LINE_START_CYCLE_60;
+			LineStartCycle = 0;
+			LineEndCycle = 0;
 		}
 
 		/* Remove 2 bytes to the right */
@@ -695,6 +705,11 @@ void Video_Sync_WriteByte(void)
 		if ( ( HblCounterVideo < SCREEN_END_HBL_50HZ )		/* nEndHBL can change only if display is not OFF yet */
 		        && ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* update only if bottom was not removed */
 			nEndHBL = SCREEN_END_HBL_50HZ;				/* 263 */
+
+		if ( ( LineEndCycle == LINE_END_CYCLE_60 )		/* Freq is changed before the end of a 60 Hz line */
+			&& ( nLineCycles < LINE_END_CYCLE_60 ) )
+			LineEndCycle = LINE_END_CYCLE_50;
+
 	}
 	else if ( Byte == 0x00 )					/* switch to 60 Hz */
 	{
@@ -707,6 +722,34 @@ void Video_Sync_WriteByte(void)
 		if ( ( HblCounterVideo < SCREEN_END_HBL_60HZ )		/* nEndHBL can change only if display is not OFF yet */
 		        && ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* update only if bottom was not removed */
 			nEndHBL = SCREEN_END_HBL_60HZ;				/* 234 */
+
+		if ( ( LineEndCycle == LINE_END_CYCLE_50 )		/* Freq is changed before the end of a 50 Hz line */
+			&& ( nLineCycles < LINE_END_CYCLE_60 ) )	/* and before the end of a 60 Hz line */
+			LineEndCycle = LINE_END_CYCLE_60;
+	}
+
+	/* If the frequence changed, we need to update the EndLine interrupt */
+	/* so that it happens 28 cycles after the current LineEndCycle.*/
+	/* We check if the change affects the current line or the next one. */
+	if ( Byte != nLastByte )
+	{
+		int nFrameCycles2 = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nLineCycles2 = nFrameCycles2 % nCyclesPerLine;
+
+		if ( nLineCycles2 < LineEndCycle )			/* freq changed before the end of the line */
+			Int_AddRelativeInterrupt ( LineEndCycle - nLineCycles2 + TIMERB_VIDEO_CYCLE_OFFSET ,
+						INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+
+		else							/* freq changed after the end of the line */
+		{
+			/* By default, next EndLine's int will be on line nHBL+1 at pos 376+28 or 372+28 */
+			if ( Byte == 0x02 )		/* 50 Hz, pos 376+28 */
+				Int_AddRelativeInterrupt ( nCyclesPerLine - nLineCycles2 + LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET ,
+							INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+			else				/* 60 Hz, pos 372+28 */
+				Int_AddRelativeInterrupt ( nCyclesPerLine - nLineCycles2 + LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET ,
+							INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+		}
 	}
 
 	nLastVBL = nVBLs;
@@ -1267,14 +1310,40 @@ void Video_InterruptHandler_HBL(void)
  * End Of Line interrupt
  *  As this occurs at the end of a line we cannot get timing for START of first
  * line (as in Spectrum 512)
+ * This interrupt is started on cycle position 404 in 50 Hz and on cycle
+ * position 400 in 60 Hz. 50 Hz display ends at cycle 376 and 60 Hz displays
+ * ends at cycle 372. This means the EndLine interrupt happens 28 cycles
+ * after LineEndCycle.
  */
 void Video_InterruptHandler_EndLine(void)
 {
+	Uint8 SyncByte = IoMem_ReadByte(0xff820a) & 2;	/* only keep bit 1 (50/60 Hz) */
+	int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	int nLineCycles = nFrameCycles % nCyclesPerLine;
+
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "EndLine TB %d video_cyc=%d line_cyc=%d pending_int_cnt=%d\n" ,
+	               nHBL , nFrameCycles , nLineCycles , -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE ) );
+
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
 	/* Generate new Endline, if need to - there are 313 HBLs per frame */
 	if (nHBL < nScanlinesPerFrame-1)
-		Int_AddAbsoluteInterrupt(nCyclesPerLine, INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
+	{
+		/* If EndLine int is delayed too much (more than 100 cycles), nLineCycles will */
+		/* be in the range 0..xxx instead of 400..512. In that case, we need to add */
+		/* nCyclesPerLine to be in the range 512..x+512 */
+		/* Maximum delay should be around 160 cycles (DIVS), we take LINE_END_CYCLE_60 to be sure */
+		if ( nLineCycles < LINE_END_CYCLE_60 )			/* int happened in fact on the next line nHBL+1 */
+			nLineCycles += nCyclesPerLine;
+
+		/* By default, next EndLine's int will be on line nHBL+1 at pos 376+28 or 372+28 */
+		if ( SyncByte == 0x02 )		/* 50 Hz, pos 376+28 */
+			Int_AddRelativeInterrupt ( nCyclesPerLine - nLineCycles + LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET ,
+							INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+		else				/* 60 Hz, pos 372+28 */
+			Int_AddRelativeInterrupt ( nCyclesPerLine - nLineCycles + LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET ,
+							INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+	}
 
 	/* Is this a good place to send the keyboard packets? Done once per frame */
 	if (nHBL == nStartHBL)
@@ -1290,8 +1359,6 @@ void Video_InterruptHandler_EndLine(void)
 		if (MFP_TBCR == 0x08)      /* Is timer in Event Count mode? */
 			MFP_TimerB_EventCount_Interrupt();
 	}
-
-	//Video_EndHBL();  /* now done in Video_InterruptHandler_HBL */
 
 	/* If we don't often pump data into the event queue, the SDL misses events... grr... */
 	if (!(nHBL & 63))
@@ -1601,7 +1668,9 @@ static void Video_DrawScreen(void)
  */
 void Video_StartInterrupts(void)
 {
-	Int_AddAbsoluteInterrupt(nCyclesPerLine - TIMERB_VIDEO_CYCLE_OFFSET - VblVideoCycleOffset,
+	/* Set int to cycle 376+28 or 372+28 because nCyclesPerLine is 512 or 508 */
+	/* (this also means int is set to 512-108 or 508-108 depending on the current freq) */
+	Int_AddAbsoluteInterrupt(nCyclesPerLine - ( CYCLES_PER_LINE_50HZ - LINE_END_CYCLE_50 ) + TIMERB_VIDEO_CYCLE_OFFSET - VblVideoCycleOffset,
 	                         INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
 	Int_AddAbsoluteInterrupt(nCyclesPerLine + HBL_VIDEO_CYCLE_OFFSET - VblVideoCycleOffset,
 	                         INT_CPU_CYCLE, INTERRUPT_VIDEO_HBL);
