@@ -151,10 +151,13 @@
 /*			Set EndLine interrupt to happen 28 cycles after LineEndCycle. This way	*/
 /*			Timer B occurs at cycle 404 in 50 Hz, or cycle 400 in 60 Hz (improve	*/
 /*			flickering bottom border in B.I.G. Demo screen 1).			*/
+/* 2008/04/12	[NP]	In the case of a 'right-2' line, we should not change the EndLine's int	*/
+/*			position when switching back to 50 Hz ; the int should happen at	*/
+/*			position LINE_END_CYCLE_60 + 28 (Anomaly Demo main menu).		*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.109 2008-04-11 20:24:29 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.110 2008-04-12 15:41:33 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -736,7 +739,12 @@ void Video_Sync_WriteByte(void)
 		int nFrameCycles2 = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 		int nLineCycles2 = nFrameCycles2 % nCyclesPerLine;
 
-		if ( nLineCycles2 < LineEndCycle )			/* freq changed before the end of the line */
+		if ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_RIGHT_MINUS_2 )		/* 60/50 Hz switch */
+		{
+			/* Do nothing when switching back to 50 Hz, keep timer B at pos LINE_END_CYCLE_60+TIMERB_VIDEO_CYCLE_OFFSET for this line */
+		}
+
+		else if ( nLineCycles2 < LineEndCycle )			/* freq changed before the end of the line */
 			Int_AddRelativeInterrupt ( LineEndCycle - nLineCycles2 + TIMERB_VIDEO_CYCLE_OFFSET ,
 						INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
 
