@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.34 2008-04-04 21:18:02 eerot Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.35 2008-04-13 22:11:37 thothy Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -16,6 +16,7 @@ const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.34 2008-04-04 21:18:02 eer
 #include "ikbd.h"
 #include "joy.h"
 #include "shortcut.h"
+#include "str.h"
 #include "screen.h"
 #include "debugui.h"
 #include "log.h"
@@ -616,7 +617,7 @@ void Keymap_LoadRemapFile(char *pszFileName)
 			if (fgets(szString, sizeof(szString), in) == NULL)
 				break;
 			/* Remove white-space from start of line */
-			Misc_RemoveWhiteSpace(szString, sizeof(szString));
+			Str_Trim(szString);
 			if (strlen(szString)>0)
 			{
 				/* Is a comment? */

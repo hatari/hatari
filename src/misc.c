@@ -6,40 +6,10 @@
 
   Misc functions
 */
-const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.15 2007-12-19 11:13:28 thothy Exp $";
-
-#include <ctype.h>
+const char Misc_rcsid[] = "Hatari $Id: misc.c,v 1.16 2008-04-13 22:11:37 thothy Exp $";
 
 #include "main.h"
 #include "misc.h"
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Remove 'white-space' from beginning of text string
- */
-void Misc_RemoveWhiteSpace(char *pszString,int Length)
-{
-	while ((*pszString==' ') || (*pszString=='\t'))
-	{
-		/* Copy line left one character */
-		memmove(pszString, pszString+1, Length-1);
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- *  Convert a string to uppercase.
- */
-void Misc_strupr(char *pString)
-{
-	while (*pString)
-	{
-		*pString = toupper(*pString);
-		pString++;
-	}
-}
 
 
 /*-----------------------------------------------------------------------*/

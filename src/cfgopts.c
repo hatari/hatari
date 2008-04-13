@@ -54,62 +54,15 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.15 2007-12-18 20:35:04 thothy Exp $";
-
-#include <config.h>
+const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.16 2008-04-13 22:11:37 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
-
-#if HAVE_STRINGS_H
-#include <strings.h>
-#endif
 
 #include "main.h"
 #include "cfgopts.h"
-
-
-
-/**
- *  --- Remove spaces from beginning and end of a string ---
- */
-static char *trim(char *buffer)
-{
-	const char SPACE = ' ';
-	const char TABULA = '\t';
-
-	if (buffer != NULL)
-	{
-		int i, linelen;
-
-		linelen = strlen(buffer);
-
-		for (i = 0; i < linelen; i++)
-		{
-			if (buffer[i] != SPACE && buffer[i] != TABULA)
-				break;
-		}
-
-		if (i > 0 && i < linelen)
-		{
-			linelen -= i;
-			memmove(buffer, buffer + i, linelen);
-		}
-
-		for (i = linelen; i > 0; i--)
-		{
-			int j = i - 1;
-			if (buffer[j] != SPACE && buffer[j] != TABULA)
-				break;
-		}
-
-		buffer[i] = '\0';
-	}
-
-	return buffer;
-}
+#include "str.h"
 
 
 /**
@@ -141,7 +94,7 @@ int input_config(const char *filename, const struct Config_Tag configs[], const 
 	{
 		do
 		{
-			fptr = trim(fgets(line, sizeof(line), file));  /* get input line */
+			fptr = Str_Trim(fgets(line, sizeof(line), file));  /* get input line */
 		}
 		while ( memcmp(line,header,strlen(header)) && !feof(file));
 	}
@@ -149,7 +102,7 @@ int input_config(const char *filename, const struct Config_Tag configs[], const 
 	if ( !feof(file) )
 		do
 		{
-			fptr = trim(fgets(line, sizeof(line), file));   /* get input line */
+			fptr = Str_Trim(fgets(line, sizeof(line), file));   /* get input line */
 			if (fptr == NULL)
 				continue;
 			lineno++;
@@ -157,10 +110,10 @@ int input_config(const char *filename, const struct Config_Tag configs[], const 
 				continue;                               /* skip comments */
 			if (line[0] == '[')
 				continue;                               /* skip next header */
-			tok = trim(strtok(line, "=\n\r"));          /* get first token */
+			tok = Str_Trim(strtok(line, "=\n\r"));          /* get first token */
 			if (tok != NULL)
 			{
-				next = trim(strtok(NULL, "=\n\r"));     /* get actual config information */
+				next = Str_Trim(strtok(NULL, "=\n\r"));     /* get actual config information */
 				for (ptr = configs; ptr->buf; ++ptr)    /* scan for token */
 				{
 					if (!strcmp(tok, ptr->code))        /* got a match? */
@@ -361,7 +314,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 		int headerlen = strlen(header);
 		do
 		{
-			fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
+			fptr = Str_Trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
 			if (feof(cfgfile))
 				break;
 			fprintf(tempfile, "%s", line);
@@ -392,7 +345,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 
 		for(;;)
 		{
-			fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
+			fptr = Str_Trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
 			if (fptr == NULL)
 				break;
 			lineno++;
@@ -406,7 +359,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 				break;
 			}
 
-			tok = trim(strtok(line, "=\n\r"));           /* get first token */
+			tok = Str_Trim(strtok(line, "=\n\r"));           /* get first token */
 			if (tok != NULL)
 			{
 				int i = 0;
@@ -454,7 +407,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 
 		for(;;)
 		{
-			fptr = trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
+			fptr = Str_Trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
 			if (feof(cfgfile))
 				break;
 			fprintf(tempfile, "%s", line);

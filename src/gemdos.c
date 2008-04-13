@@ -18,20 +18,15 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.73 2008-04-08 22:11:54 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.74 2008-04-13 22:11:37 thothy Exp $";
 
 #include <config.h>
 
-#include <string.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
-
-#if HAVE_STRINGS_H
-#include <strings.h>
-#endif
 
 #if HAVE_GLOB_H
 #include <glob.h>
@@ -54,6 +49,7 @@ const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.73 2008-04-08 22:11:54 tho
 #include "rs232.h"
 #include "scandir.h"
 #include "stMemory.h"
+#include "str.h"
 #include "hatari-glue.h"
 #include "maccess.h"
 
@@ -384,7 +380,7 @@ static BOOL PopulateDTA(char *path, struct dirent *file)
 
 	if (!pDTA)
 		return FALSE;   /* no DTA pointer set */
-	Misc_strupr(file->d_name);    /* convert to atari-style uppercase */
+	Str_ToUpper(file->d_name);    /* convert to atari-style uppercase */
 	strncpy(pDTA->dta_name,file->d_name,TOS_NAMELEN); /* FIXME: better handling of long file names */
 	do_put_mem_long(pDTA->dta_size, filestat.st_size);
 	do_put_mem_word(pDTA->dta_time, GemDOS_Time2dos(filestat.st_mtime));

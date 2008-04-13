@@ -8,8 +8,6 @@
 #ifndef HATARI_MISC_H
 #define HATARI_MISC_H
 
-extern void Misc_RemoveWhiteSpace(char *pszString,int Length);
-extern void Misc_strupr(char *pString);
 extern int Misc_LimitInt(int Value, int MinRange, int MaxRange);
 extern unsigned char Misc_ConvertToBCD(unsigned short int Value);
 
