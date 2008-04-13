@@ -58,7 +58,7 @@
 /* 2008/03/08	[NP]	Add traces when writing to vector register fffa17.		*/
 /*			Use M68000_INT_MFP when calling M68000_Exception().		*/
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.38 2008-04-06 19:20:06 eerot Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.39 2008-04-13 18:08:48 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -468,6 +468,23 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler,
 	{
 		/* Make sure no outstanding interrupts in list if channel is disabled */
 		Int_RemovePendingInterrupt(Handler);
+	}
+
+	if (TimerControl == 8 )				/* event count mode */
+	{
+		/* do nothing, only print some traces */
+
+		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_START ) )
+		{
+			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+			int nLineCycles = nFrameCycles % nCyclesPerLine;
+			HATARI_TRACE_PRINT ( "mfp start AB handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n" ,
+			                     Handler, TimerData, TimerControl, TimerClockCycles, PendingCyclesOver,
+			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
+			                     bFirstTimer?"true":"false" , *pTimerCanResume?"true":"false" );
+		}
+
+
 	}
 
 	return TimerClockCycles;
