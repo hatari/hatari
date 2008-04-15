@@ -28,9 +28,7 @@
 /*			After Demo).									*/
 /* 2008/02/11	[NP]	Add pairing for MULS/MOVEA (Delirious Demo IV Loader).				*/
 /* 2008/01/25	[NP]	Add pairing for LSR/MOVEA (and all other bit shifting instr) (Decade Demo Reset)*/
-/* 2008/02/16	[NP]	Add pairing for MULS/DIVS, but not 100% sure. This fixes e605 demo part 3, but	*/
-/*			this could be due to another missing pairing. FIXME : This needs to be checked	*/
-/*			on a real ST.									*/
+/* 2008/02/16	[NP]	Add pairing for MULS/DIVS (fixes e605 demo part 3).				*/
 /* 2008/03/08	[NP]	In M68000_Exception, we need to know if the exception was triggered by an MFP	*/
 /*			interrupt or by a video interrupt. In the case MFP vector base was changed in	*/
 /*			fffa17 to an other value than the default $40, testing exceptionNr is not enough*/
@@ -39,16 +37,17 @@
 /*			interpreted as a level 5 int (which doesn't exist on Atari and will cause an	*/
 /*			assert to fail in intlevel()). We use InterruptType to correctly recognize the	*/
 /*			MFP interrupts (fix 'Toki' end part fullscreen which sets vector base to $10).	*/
+/* 2008/04/14	[NP]	Add pairing for BTST/Bcc (eg btst #7,d0 + bne.s label  (with branch taken)).	*/
+/* 2008/04/15	[NP]	As tested on a real STF :							*/
+/*				- MUL/DIV can pair (but DIV/MUL can't)					*/
+/*					(eg mulu d0,d0 + divs d1,d1 with d0=0 and d1=1)			*/
+/*				- MUL/MOVE can pair, but not DIV/MOVE					*/
+/*				- EXG/MOVE can pair (eg exg d3,d4 + move.l 0(a3,d1.w),a4)		*/
+/*				- MOVE/DBcc can't pair							*/
 
 
-/* [NP] possible pairing to check :             */
-/*      exg / move.b (a0),d0                    */
-/*	div / move				*/
-/*	btst / bxx				*/
-/*	mul/div div/mul				*/
 
-
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.56 2008-03-09 12:53:28 npomarede Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.57 2008-04-15 21:51:13 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -117,6 +116,7 @@ void M68000_InitPairing(void)
 	/* Set all valid pairing combinations to 1 */
 	PairingArray[  i_EXG ][ i_DBcc ] = 1;
 	PairingArray[ i_CMPA ][  i_Bcc ] = 1;
+	PairingArray[  i_CMP ][  i_Bcc ] = 1;
 	PairingArray[  i_ASR ][ i_DBcc ] = 1;
 	PairingArray[  i_ASL ][ i_DBcc ] = 1;
 	PairingArray[  i_LSR ][ i_DBcc ] = 1;
@@ -141,7 +141,6 @@ void M68000_InitPairing(void)
 	PairingArray[  i_ROR ][ i_MOVEA] = 1; 
 	PairingArray[ i_ROXR ][ i_MOVEA] = 1; 
 	PairingArray[ i_ROXL ][ i_MOVEA] = 1; 
-	PairingArray[  i_CMP ][  i_Bcc ] = 1;
 	PairingArray[  i_ASR ][  i_LEA ] = 1; 
 	PairingArray[  i_ASL ][  i_LEA ] = 1; 
 	PairingArray[  i_LSR ][  i_LEA ] = 1; 
@@ -154,7 +153,13 @@ void M68000_InitPairing(void)
 	PairingArray[ i_MULS ][ i_MOVEA] = 1; 
 	PairingArray[ i_MULU ][ i_MOVE ] = 1; 
 	PairingArray[ i_MULS ][ i_MOVE ] = 1; 
-	PairingArray[ i_MULS ][ i_DIVS ] = 1; 		/* not 100% sure of this one */
+	PairingArray[ i_MULU ][ i_DIVU ] = 1;
+	PairingArray[ i_MULU ][ i_DIVS ] = 1;
+	PairingArray[ i_MULS ][ i_DIVU ] = 1;
+	PairingArray[ i_MULS ][ i_DIVS ] = 1;
+	PairingArray[ i_BTST ][  i_Bcc ] = 1;
+	PairingArray[  i_EXG ][ i_MOVE ] = 1;
+	PairingArray[  i_EXG ][ i_MOVEA] = 1;
 }
 
 

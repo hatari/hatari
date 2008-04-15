@@ -201,6 +201,19 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 		              OpcodeName[OpcodeFamily], LastInstrCycles, cycles );
 	}
 
+	/* [NP] This part is only needed to track possible pairing instructions, */
+	/* we can keep it disabled most of the time */
+#if 0
+	if ( (LastOpcodeFamily!=OpcodeFamily) && ( Pairing == 0 )
+		&& ( ( cycles & 3 ) == 2 ) && ( ( LastInstrCycles & 3 ) == 2 ) )
+	{
+		HATARI_TRACE( HATARI_TRACE_CPU_PAIRING ,
+		              "could pair pc=%x family %s/%s cycles %d/%d\n" ,
+		              m68k_getpc(), OpcodeName[LastOpcodeFamily] ,
+		              OpcodeName[OpcodeFamily], LastInstrCycles, cycles );
+	}
+#endif
+
 	/* Store current instr (not rounded) to check next time */
 	LastInstrCycles = cycles;
 	LastOpcodeFamily = OpcodeFamily;
