@@ -44,10 +44,14 @@
 /*				- MUL/MOVE can pair, but not DIV/MOVE					*/
 /*				- EXG/MOVE can pair (eg exg d3,d4 + move.l 0(a3,d1.w),a4)		*/
 /*				- MOVE/DBcc can't pair							*/
+/* 2008/04/16	[NP]	Functions 'M68000_InitPairing_BitShift' to ease code maintenance.		*/
+/*			Tested on STF : add pairing between bit shift instr and ADD/SUB/OR/AND/EOR/NOT	*/
+/*			CLR/NEG (certainly some more possible, haven't tested everything)		*/
+/*			(fixes lsr.w #4,d4 + add.b $f0(a4,d4),d7 used in Zoolook part of ULM New Year).	*/
 
 
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.57 2008-04-15 21:51:13 npomarede Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.58 2008-04-16 18:49:20 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -105,6 +109,24 @@ const char *OpcodeName[] = { "ILLG",
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Add pairing between all the bit shifting instructions and a given Opcode
+ */
+
+static void M68000_InitPairing_BitShift ( int OpCode )
+{
+	PairingArray[  i_ASR ][ OpCode ] = 1; 
+	PairingArray[  i_ASL ][ OpCode ] = 1; 
+	PairingArray[  i_LSR ][ OpCode ] = 1; 
+	PairingArray[  i_LSL ][ OpCode ] = 1; 
+	PairingArray[  i_ROL ][ OpCode ] = 1; 
+	PairingArray[  i_ROR ][ OpCode ] = 1; 
+	PairingArray[ i_ROXR ][ OpCode ] = 1; 
+	PairingArray[ i_ROXL ][ OpCode ] = 1; 
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Init the pairing matrix
  * Two instructions can pair if PairingArray[ LastOpcodeFamily ][ OpcodeFamily ] == 1
  */
@@ -115,51 +137,37 @@ void M68000_InitPairing(void)
 
 	/* Set all valid pairing combinations to 1 */
 	PairingArray[  i_EXG ][ i_DBcc ] = 1;
+	PairingArray[  i_EXG ][ i_MOVE ] = 1;
+	PairingArray[  i_EXG ][ i_MOVEA] = 1;
+
 	PairingArray[ i_CMPA ][  i_Bcc ] = 1;
 	PairingArray[  i_CMP ][  i_Bcc ] = 1;
-	PairingArray[  i_ASR ][ i_DBcc ] = 1;
-	PairingArray[  i_ASL ][ i_DBcc ] = 1;
-	PairingArray[  i_LSR ][ i_DBcc ] = 1;
-	PairingArray[  i_LSL ][ i_DBcc ] = 1;
-	PairingArray[  i_ROL ][ i_DBcc ] = 1;
-	PairingArray[  i_ROR ][ i_DBcc ] = 1;
-	PairingArray[ i_ROXR ][ i_DBcc ] = 1;
-	PairingArray[ i_ROXL ][ i_DBcc ] = 1;
-	PairingArray[  i_ASR ][ i_MOVE ] = 1; 
-	PairingArray[  i_ASL ][ i_MOVE ] = 1; 
-	PairingArray[  i_LSR ][ i_MOVE ] = 1; 
-	PairingArray[  i_LSL ][ i_MOVE ] = 1; 
-	PairingArray[  i_ROL ][ i_MOVE ] = 1; 
-	PairingArray[  i_ROR ][ i_MOVE ] = 1; 
-	PairingArray[ i_ROXR ][ i_MOVE ] = 1; 
-	PairingArray[ i_ROXL ][ i_MOVE ] = 1; 
-	PairingArray[  i_ASR ][ i_MOVEA] = 1; 
-	PairingArray[  i_ASL ][ i_MOVEA] = 1; 
-	PairingArray[  i_LSR ][ i_MOVEA] = 1; 
-	PairingArray[  i_LSL ][ i_MOVEA] = 1; 
-	PairingArray[  i_ROL ][ i_MOVEA] = 1; 
-	PairingArray[  i_ROR ][ i_MOVEA] = 1; 
-	PairingArray[ i_ROXR ][ i_MOVEA] = 1; 
-	PairingArray[ i_ROXL ][ i_MOVEA] = 1; 
-	PairingArray[  i_ASR ][  i_LEA ] = 1; 
-	PairingArray[  i_ASL ][  i_LEA ] = 1; 
-	PairingArray[  i_LSR ][  i_LEA ] = 1; 
-	PairingArray[  i_LSL ][  i_LEA ] = 1; 
-	PairingArray[  i_ROL ][  i_LEA ] = 1; 
-	PairingArray[  i_ROR ][  i_LEA ] = 1; 
-	PairingArray[ i_ROXR ][  i_LEA ] = 1; 
-	PairingArray[ i_ROXL ][  i_LEA ] = 1; 
+
+	M68000_InitPairing_BitShift ( i_DBcc );
+	M68000_InitPairing_BitShift ( i_MOVE );
+	M68000_InitPairing_BitShift ( i_MOVEA );
+	M68000_InitPairing_BitShift ( i_LEA );
+
 	PairingArray[ i_MULU ][ i_MOVEA] = 1; 
 	PairingArray[ i_MULS ][ i_MOVEA] = 1; 
 	PairingArray[ i_MULU ][ i_MOVE ] = 1; 
 	PairingArray[ i_MULS ][ i_MOVE ] = 1; 
+
 	PairingArray[ i_MULU ][ i_DIVU ] = 1;
 	PairingArray[ i_MULU ][ i_DIVS ] = 1;
 	PairingArray[ i_MULS ][ i_DIVU ] = 1;
 	PairingArray[ i_MULS ][ i_DIVS ] = 1;
+
 	PairingArray[ i_BTST ][  i_Bcc ] = 1;
-	PairingArray[  i_EXG ][ i_MOVE ] = 1;
-	PairingArray[  i_EXG ][ i_MOVEA] = 1;
+
+	M68000_InitPairing_BitShift ( i_ADD );
+	M68000_InitPairing_BitShift ( i_SUB );
+	M68000_InitPairing_BitShift ( i_OR );
+	M68000_InitPairing_BitShift ( i_AND );
+	M68000_InitPairing_BitShift ( i_EOR );
+	M68000_InitPairing_BitShift ( i_NOT );
+	M68000_InitPairing_BitShift ( i_CLR );
+	M68000_InitPairing_BitShift ( i_NEG );
 }
 
 
