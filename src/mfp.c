@@ -57,8 +57,17 @@
 /*			processed).							*/
 /* 2008/03/08	[NP]	Add traces when writing to vector register fffa17.		*/
 /*			Use M68000_INT_MFP when calling M68000_Exception().		*/
+/* 2008/04/17	[NP]	Handle the case where Timer B is in event count mode and the	*/
+/*			content of $fffa21 is updated by the end of line signal while a	*/
+/*			read instruction at addr $fffa21 occurs at the same time (before*/
+/*			calling MFP_TimerB_EventCount_Interrupt).			*/
+/*			In that case, we need to return MFP_TB_MAINCOUNTER - 1.		*/
+/*			(fix B.I.G. Demo Screen 1).					*/
+/*			FIXME : this should be handled by Cycles_GetCounterOnReadAccess	*/
+/*			but it's not correctly implemented at the moment.		*/
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.39 2008-04-13 18:08:48 npomarede Exp $";
+
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.40 2008-04-18 20:35:19 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -1026,10 +1035,49 @@ void MFP_TimerAData_ReadByte(void)
  */
 void MFP_TimerBData_ReadByte(void)
 {
+	Uint8 TB_count;
+
 	M68000_WaitState(4);
 
 	if (MFP_TBCR != 8)          /* Is event count? Need to re-calculate counter */
 		MFP_ReadTimerB();       /* Stores result in 'MFP_TB_MAINCOUNTER' */
+
+	/* Special case when reading $fffa21, we need to test if the current read instruction */
+	/* overlaps the horizontal video position where $fffa21 is changed */
+	else
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int pos_start , pos_read;
+
+		/* Cycle position of the start of the current instruction */
+		pos_start = nFrameCycles % nCyclesPerLine;
+		/* Cycle position of the read for the current instruction (approximatively, we consider */
+		/* the read happens after 4 cycles (due to MFP wait states in that case)) */
+		/* This is quite a hack, but hard to do without proper 68000 read cycle emulation */
+		if ( CurrentInstrCycles <= 8 )			/* move.b (a0),d0 / cmp.b (a0),d0 ... */
+			pos_read = pos_start + 4;		/* wait state */
+		else						/* cmp.b $fa21.w,d0 (BIG Demo) ... */
+			pos_read = pos_start + 8;		/* more time needed to compute the effective address */
+
+		TB_count = MFP_TB_MAINCOUNTER;			/* default value */
+
+		/* If Timer B's change happens before the read cycle of the current instruction, we must return */
+		/* the current value - 1 (because MFP_TimerB_EventCount_Interrupt was not called yet) */
+		if ( ( LineTimerBCycle > pos_start ) && ( LineTimerBCycle < pos_read ) )
+		{
+			HATARI_TRACE ( HATARI_TRACE_MFP_READ , "mfp read TB overlaps pos_start=%d TB_pos=%d pos_read=%d nHBL=%d \n",
+					pos_start, LineTimerBCycle, pos_read , nHBL );
+
+			TB_count--;
+			if ( TB_count == 0 )
+				TB_count = MFP_TBDR;
+		}
+
+		HATARI_TRACE ( HATARI_TRACE_MFP_READ , "mfp read TB data=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
+					TB_count, nFrameCycles, pos_start, nHBL, M68000_GetPC(), CurrentInstrCycles );
+		IoMem[0xfffa21] = TB_count;
+		return;
+	}
 
 	IoMem[0xfffa21] = MFP_TB_MAINCOUNTER;
 }
