@@ -157,7 +157,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.110 2008-04-12 15:41:33 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.111 2008-04-18 20:31:59 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -252,6 +252,7 @@ int	LastCycleSync60;			/* value of Cycles_GetCounterOnWriteAccess last time ff82
 int	NewVideoHi = -1;			/* new value for $ff8205 on STE */
 int	NewVideoMed = -1;			/* new value for $ff8207 on STE */
 int	NewVideoLo = -1;			/* new value for $ff8209 on STE */
+int	LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
 
 int	LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
 int	LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
@@ -745,18 +746,22 @@ void Video_Sync_WriteByte(void)
 		}
 
 		else if ( nLineCycles2 < LineEndCycle )			/* freq changed before the end of the line */
-			Int_AddRelativeInterrupt ( LineEndCycle - nLineCycles2 + TIMERB_VIDEO_CYCLE_OFFSET ,
+		{
+			LineTimerBCycle = LineEndCycle + TIMERB_VIDEO_CYCLE_OFFSET;
+			Int_AddRelativeInterrupt ( LineTimerBCycle - nLineCycles2 ,
 						INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+		}
 
 		else							/* freq changed after the end of the line */
 		{
 			/* By default, next EndLine's int will be on line nHBL+1 at pos 376+28 or 372+28 */
 			if ( Byte == 0x02 )		/* 50 Hz, pos 376+28 */
-				Int_AddRelativeInterrupt ( nCyclesPerLine - nLineCycles2 + LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET ,
-							INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+				LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
 			else				/* 60 Hz, pos 372+28 */
-				Int_AddRelativeInterrupt ( nCyclesPerLine - nLineCycles2 + LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET ,
-							INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+				LineTimerBCycle = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
+
+			Int_AddRelativeInterrupt ( LineTimerBCycle - nLineCycles2 + nCyclesPerLine ,
+						INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
 		}
 	}
 
@@ -1346,11 +1351,12 @@ void Video_InterruptHandler_EndLine(void)
 
 		/* By default, next EndLine's int will be on line nHBL+1 at pos 376+28 or 372+28 */
 		if ( SyncByte == 0x02 )		/* 50 Hz, pos 376+28 */
-			Int_AddRelativeInterrupt ( nCyclesPerLine - nLineCycles + LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET ,
-							INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+			LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
 		else				/* 60 Hz, pos 372+28 */
-			Int_AddRelativeInterrupt ( nCyclesPerLine - nLineCycles + LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET ,
-							INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+			LineTimerBCycle = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
+
+		Int_AddRelativeInterrupt ( LineTimerBCycle - nLineCycles + nCyclesPerLine ,
+					INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
 	}
 
 	/* Is this a good place to send the keyboard packets? Done once per frame */
@@ -1450,6 +1456,7 @@ static void Video_ResetShifterTimings(void)
 		nCyclesPerLine = CYCLES_PER_LINE_71HZ;
 		nStartHBL = SCREEN_START_HBL_71HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_71HZ;
+		LineTimerBCycle = LINE_END_CYCLE_70 + TIMERB_VIDEO_CYCLE_OFFSET;
 	}
 	else if (nSyncByte & 2)  /* Check if running in 50 Hz or in 60 Hz */
 	{
@@ -1459,6 +1466,7 @@ static void Video_ResetShifterTimings(void)
 		nCyclesPerLine = CYCLES_PER_LINE_50HZ;
 		nStartHBL = SCREEN_START_HBL_50HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;
+		LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
 	}
 	else
 	{
@@ -1468,6 +1476,7 @@ static void Video_ResetShifterTimings(void)
 		nCyclesPerLine = CYCLES_PER_LINE_60HZ;
 		nStartHBL = SCREEN_START_HBL_60HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_60HZ;
+		LineTimerBCycle = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
 	}
 
 	if (bUseHighRes)

@@ -72,7 +72,7 @@
 #define LINE_START_CYCLE_60	52
 #define LINE_START_CYCLE_70	0
 #define LINE_END_CYCLE_50	376		/* LINE_START_CYCLE_50 + 320 */
-#define LINE_END_CYCLE_60	372		/* LINE_START_CYCLE_60 * 320 */
+#define LINE_END_CYCLE_60	372		/* LINE_START_CYCLE_60 + 320 */
 #define LINE_END_CYCLE_70	160
 #define LINE_END_CYCLE_NO_RIGHT	460
 #define LINE_END_CYCLE_50_2	(LINE_END_CYCLE_50+44*2)	/* used in enchanted lands */
@@ -123,6 +123,7 @@ extern int nScreenRefreshRate;
 
 extern int nScanlinesPerFrame;
 extern int nCyclesPerLine;
+extern int LineTimerBCycle;
 
 
 extern void Video_SetSystemTimings(void);

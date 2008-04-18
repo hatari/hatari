@@ -15,13 +15,16 @@
 /* 2007/03/xx	[NP]	Use 'CurrentInstrCycles' to get a good approximation for	*/
 /*			Cycles_GetCounterOnReadAccess and Cycles_GetCounterOnWriteAccess*/
 /*			(this should work correctly with 'move' instruction).		*/
+/* 2008/04/14	[NP]	Take nWaitStateCycles into account when computing the value of	*/
+/*			Cycles_GetCounterOnReadAccess and Cycles_GetCounterOnWriteAccess*/
 
 
 
 
-const char Cycles_rcsid[] = "Hatari $Id: cycles.c,v 1.5 2008-01-24 21:41:54 thothy Exp $";
+const char Cycles_rcsid[] = "Hatari $Id: cycles.c,v 1.6 2008-04-18 20:31:59 npomarede Exp $";
 
 #include "main.h"
+#include "m68000.h"
 #include "cycles.h"
 
 
@@ -90,7 +93,7 @@ int Cycles_GetCounterOnReadAccess(int nId)
 
 	/* TODO: Find proper cycles count depending on the type of the current instruction */
 	/* (e.g. movem is not correctly handled) */
-	nAddCycles = CurrentInstrCycles;		/* read is effective at the end of the instr */
+	nAddCycles = CurrentInstrCycles + nWaitStateCycles;	/* read is effective at the end of the instr ? */
 
 	return nCyclesCounter[nId] + nAddCycles;
 }
@@ -110,7 +113,7 @@ int Cycles_GetCounterOnWriteAccess(int nId)
 
 	/* TODO: Find proper cycles count depending on the type of the current instruction */
 	/* (e.g. movem is not correctly handled) */
-	nAddCycles = CurrentInstrCycles;
+	nAddCycles = CurrentInstrCycles + nWaitStateCycles;
 
 	/* assume the behaviour of a 'move' (since this is the most */
 	/* common instr used when requiring cycle precise writes) */
