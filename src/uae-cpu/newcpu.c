@@ -56,10 +56,13 @@
 /*			an MFP exception could be wrong if the MFP VR was set to another value than the	*/
 /*			default $40 (this could be a problem with programs requiring a precise cycles	*/
 /*			calculation while changing VR, but no such programs were encountered so far).	*/
+/* 2008/04/17	[NP]	In m68k_run_1/m68k_run_2, add the wait state cycles before testing if content	*/
+/*			of PendingInterruptCount is <= 0 (else the int could happen a few cycles earlier*/
+/*			than expected in some rare cases (reading $fffa21 in BIG Demo Screen 1)).	*/
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.54 2008-04-07 20:40:43 eerot Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.55 2008-04-19 08:04:26 npomarede Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -1491,7 +1494,6 @@ static void m68k_run_1 (void)
 #endif
 
 	/*m68k_dumpstate(stderr, NULL);*/
-#ifdef HATARI_TRACE_ACTIVATED
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_CPU_DISASM ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
@@ -1499,7 +1501,7 @@ static void m68k_run_1 (void)
 	    HATARI_TRACE_PRINT ( "video_cyc=%6d %3d@%3d : " , nFrameCycles, nLineCycles, nHBL );
 	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
 	  }
-#endif
+
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
 /*	regs_backup[backup_pointer = (backup_pointer + 1) % 16] = regs;*/
 #if COUNT_INSTRS == 2
@@ -1524,7 +1526,14 @@ static void m68k_run_1 (void)
 #endif
 
 	M68000_AddCyclesWithPairing(cycles);
-	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
+	if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+	  /* Add some extra cycles to simulate a wait state */
+	  unset_special(SPCFLAG_EXTRA_CYCLES);
+	  M68000_AddCycles(nWaitStateCycles);
+	  nWaitStateCycles = 0;
+	}
+
+ 	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
 	  CALL_VAR(PendingInterruptFunction);
 
 	if (regs.spcflags) {
@@ -1543,7 +1552,6 @@ static void m68k_run_2 (void)
 	uae_u32 opcode = get_iword (0);
 
 	/*m68k_dumpstate(stderr, NULL);*/
-#ifdef HATARI_TRACE_ACTIVATED
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_CPU_DISASM ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
@@ -1551,7 +1559,6 @@ static void m68k_run_2 (void)
 	    HATARI_TRACE_PRINT ( "video_cyc=%6d %3d@%3d : " , nFrameCycles, nLineCycles, nHBL );
 	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
 	  }
-#endif
 
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
 /*	regs_backup[backup_pointer = (backup_pointer + 1) % 16] = regs;*/
@@ -1565,6 +1572,13 @@ static void m68k_run_2 (void)
 	cycles = (*cpufunctbl[opcode])(opcode);
 
 	M68000_AddCycles(cycles);
+	if (regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
+	  /* Add some extra cycles to simulate a wait state */
+	  unset_special(SPCFLAG_EXTRA_CYCLES);
+	  M68000_AddCycles(nWaitStateCycles);
+	  nWaitStateCycles = 0;
+	}
+
 	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
 	  CALL_VAR(PendingInterruptFunction);
 
