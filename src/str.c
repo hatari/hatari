@@ -6,7 +6,7 @@
 
   String functions.
 */
-const char Str_rcsid[] = "Hatari $Id: str.c,v 1.1 2008-04-13 22:11:37 thothy Exp $";
+const char Str_rcsid[] = "Hatari $Id: str.c,v 1.2 2008-04-20 16:04:23 eerot Exp $";
 
 #include <ctype.h>
 
@@ -14,12 +14,12 @@ const char Str_rcsid[] = "Hatari $Id: str.c,v 1.1 2008-04-13 22:11:37 thothy Exp
 
 
 /**
- * Remove spaces from beginning and end of a string
+ * Remove whitespace from beginning and end of a string.
+ * Returns the trimmed string (string content is moved
+ * so that it still starts from the same address)
  */
 char *Str_Trim(char *buffer)
 {
-	const char SPACE = ' ';
-	const char TABULA = '\t';
 	int i, linelen;
 
 	if (buffer == NULL)
@@ -29,7 +29,7 @@ char *Str_Trim(char *buffer)
 
 	for (i = 0; i < linelen; i++)
 	{
-		if (buffer[i] != SPACE && buffer[i] != TABULA)
+		if (!isspace(buffer[i]))
 			break;
 	}
 
@@ -41,8 +41,7 @@ char *Str_Trim(char *buffer)
 
 	for (i = linelen; i > 0; i--)
 	{
-		int j = i - 1;
-		if (buffer[j] != SPACE && buffer[j] != TABULA)
+		if (!isspace(buffer[i-1]))
 			break;
 	}
 
@@ -53,7 +52,7 @@ char *Str_Trim(char *buffer)
 
 
 /**
- * Convert a string to uppercase.
+ * Convert a string to uppercase in place.
  */
 void Str_ToUpper(char *pString)
 {
