@@ -21,6 +21,8 @@
 /*			were added so far (hack, but gives good result).		*/
 /* 2007/11/18	[NP]	In PSG_DataRegister_WriteByte, set unused bit to 0, in case	*/
 /*			the data reg is read later (fix Mindbomb Demo / BBC).		*/
+/* 2008/04/20	[NP]	In PSG_DataRegister_WriteByte, set unused bit to 0 for register	*/
+/*			6 too (noise period).						*/
 
 
 /* Emulating wait states when accessing $ff8800/01/02/03 with different 'move' variants	*/
@@ -62,7 +64,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.22 2008-04-06 19:20:06 eerot Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.23 2008-04-20 13:11:09 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -198,6 +200,9 @@ void PSG_DataRegister_WriteByte(void)
 	else if ( ( PSGRegisterSelect == PSG_REG_CHANNEL_A_AMP ) || ( PSGRegisterSelect == PSG_REG_CHANNEL_B_AMP )
 		|| ( PSGRegisterSelect == PSG_REG_CHANNEL_C_AMP ) )
 	  PSGRegisters[PSGRegisterSelect] &= 0x1f;	/* only keep bits 0 - 4 */
+
+	else if ( PSGRegisterSelect == PSG_REG_NOISE_GENERATOR )
+	  PSGRegisters[PSGRegisterSelect] &= 0x3f;	/* only keep bits 0 - 5 */
 
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_DATA ) )
