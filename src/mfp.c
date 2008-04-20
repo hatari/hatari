@@ -65,9 +65,14 @@
 /*			(fix B.I.G. Demo Screen 1).					*/
 /*			FIXME : this should be handled by Cycles_GetCounterOnReadAccess	*/
 /*			but it's not correctly implemented at the moment.		*/
+/* 2008/04/20	[NP]	In the TRACE call in 'MFP_Exception', replace 'get_long' by	*/
+/*			'STMemory_ReadLong' because 'get_long' produced a bus error	*/
+/*			if we were not already in supervisor mode when the mfp exception*/
+/*			occured. This could cause bus error when restoring snapshot	*/
+/*			of a gemdos program for example if trace mode was activated.	*/
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.40 2008-04-18 20:35:19 npomarede Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.41 2008-04-20 12:16:24 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -255,7 +260,7 @@ static void MFP_Exception(int Interrupt)
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
 		HATARI_TRACE_PRINT ( "mfp excep int=%d vec=0x%x new_pc=0x%x video_cyc=%d %d@%d\n" ,
-			Interrupt, Vec, get_long ( Vec ), nFrameCycles, nLineCycles, nHBL );
+			Interrupt, Vec, STMemory_ReadLong ( Vec ), nFrameCycles, nLineCycles, nHBL );
 	}
 
 	M68000_Exception ( Vec , M68000_INT_MFP );
