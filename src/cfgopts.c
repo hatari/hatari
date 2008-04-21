@@ -54,7 +54,7 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.16 2008-04-13 22:11:37 thothy Exp $";
+const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.17 2008-04-21 20:49:12 eerot Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -317,7 +317,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 			fptr = Str_Trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
 			if (feof(cfgfile))
 				break;
-			fprintf(tempfile, "%s", line);
+			fprintf(tempfile, "%s\n", line);
 		}
 		while(memcmp(line, header, headerlen));
 	}
@@ -351,7 +351,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 			lineno++;
 			if (line[0] == '#')
 			{
-				fprintf(tempfile, "%s", line);
+				fprintf(tempfile, "%s\n", line);
 				continue;                                 /* skip comments */
 			}
 			if (line[0] == '[' || feof(cfgfile))
@@ -403,14 +403,14 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 		}
 
 		if (!feof(cfgfile) && fptr != NULL)
-			fprintf(tempfile, "\n%s", line);
+			fprintf(tempfile, "\n%s\n", line);
 
 		for(;;)
 		{
 			fptr = Str_Trim(fgets(line, sizeof(line), cfgfile));  /* get input line */
 			if (feof(cfgfile))
 				break;
-			fprintf(tempfile, "%s", line);
+			fprintf(tempfile, "%s\n", line);
 		}
 	}
 
