@@ -25,7 +25,7 @@ import readline
 
 # running Hatari instance
 class Hatari():
-    controlpath = "/tmp/hatari-ui.socket"
+    controlpath = "/tmp/hatari-console.socket"
     hataribin = "hatari"
 
     def __init__(self, args = None):
