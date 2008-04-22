@@ -207,7 +207,10 @@ while 1:
         process_tokens[line]()
     elif line in shortcut_tokens:
         control.send("hatari-shortcut " + line)
-    elif line in option_tokens:
-        control.send("hatari-option " + line)
     else:
-        print "ERROR: unknown command"
+        first = line.split(" ")[0] # first command line option?
+        if first in option_tokens:
+            control.send("hatari-option " + line)
+        else:
+            print "ERROR: unknown command:", line
+
