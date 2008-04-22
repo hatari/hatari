@@ -17,9 +17,12 @@
 import os
 import sys
 import signal
+import socket
 
 # running Hatari instance
 class Hatari():
+    controlpath = "/tmp/hatari-ui.socket"
+
     def __init__(self, hataribin = None):
         # collect hatari process zombies without waitpid()
         signal.signal(signal.SIGCHLD, signal.SIG_IGN)
@@ -27,16 +30,27 @@ class Hatari():
             self.hataribin = hataribin
         else:
             self.hataribin = "hatari"
+        self.control = None
+        self.server = None
         self.paused = False
         self.pid = 0
 
+    def create_control(self):
+        if self.server:
+            return
+        self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        if os.path.exists(self.controlpath):
+            os.unlink(self.controlpath)
+        self.server.bind(self.controlpath)
+        self.server.listen(1)
+        
     def is_running(self):
         if not self.pid:
             return False
         try:
             pid,status = os.waitpid(self.pid, os.WNOHANG)
         except OSError, value:
-            print "Hatari had exited in the meanwhile:\n\t", value
+            print "Hatari PID %d had exited in the meanwhile:\n\t%s" % (self.pid, value)
             self.pid = 0
             return False
         return True
@@ -50,10 +64,16 @@ class Hatari():
         if pid:
             # in parent
             self.pid = pid
+            if self.server:
+                print "WAIT hatari to connect to control socket...",
+                (self.control, addr) = self.server.accept()
+                print "connected!"
         else:
             # child runs Hatari
             env = self.get_env(parent_win)
             args = (self.hataribin, ) + self.get_extra_args(config, parent_win)
+            if self.server:
+                args += ("--control-socket", self.controlpath)
             print "RUN:", args
             os.execvpe(self.hataribin, args, env)
 
