@@ -21,7 +21,7 @@ import socket
 
 # running Hatari instance
 class Hatari():
-    controlpath = "/tmp/hatari-ui.socket"
+    controlpath = "/tmp/hatari-ui-" + os.getenv("USER") + ".socket"
 
     def __init__(self, hataribin = None):
         # collect hatari process zombies without waitpid()
