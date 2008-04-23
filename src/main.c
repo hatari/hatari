@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.124 2008-04-04 20:57:37 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.125 2008-04-23 20:55:35 eerot Exp $";
 
 #include "config.h"
 
@@ -16,6 +16,7 @@ const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.124 2008-04-04 20:57:37 eerot E
 #include "config.h"
 #include "main.h"
 #include "configuration.h"
+#include "change.h"
 #include "options.h"
 #include "dialog.h"
 #include "audio.h"
@@ -296,6 +297,9 @@ void Main_EventHandler(void)
 {
 	SDL_Event event;
 
+	/* check remote process control */
+	Change_CheckUpdates();
+	
 	if (SDL_PollEvent(&event))
 	{
 		switch (event.type)
@@ -564,7 +568,10 @@ int main(int argc, char *argv[])
 	Configuration_Load(NULL);                     /* Now try the users configuration file */
 
 	/* Check for any passed parameters, get boot disk */
-	Opt_ParseParameters(argc, argv, szBootDiskImage, sizeof(szBootDiskImage));
+	if (!Opt_ParseParameters(argc, argv, szBootDiskImage, sizeof(szBootDiskImage)))
+	{
+		return 1;
+	}
 	/* monitor type option might require "reset" -> TRUE */
 	Configuration_Apply(TRUE);
 

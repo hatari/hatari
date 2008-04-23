@@ -13,9 +13,11 @@
 
   2007-09-27   [NP]    Add parsing for the '--trace' option.
   2008-03-01   [ET]    Add option sections and <bool> support.
+  2008-04-07   [ET]    Add bios/xbios intercept support
+  2008-04-16   [ET]    Return FALSE instead of exiting on errors
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.54 2008-04-07 20:40:42 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.55 2008-04-23 20:55:35 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -26,6 +28,7 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.54 2008-04-07 20:40:42 eero
 #include "main.h"
 #include "options.h"
 #include "configuration.h"
+#include "change.h"
 #include "file.h"
 #include "screen.h"
 #include "video.h"
@@ -85,10 +88,11 @@ enum {
 	OPT_BIOSINTERCEPT,
 	OPT_TRACE,
 	OPT_TRACEFILE,
+	OPT_CONTROLSOCKET,
 	OPT_LOGFILE,
 	OPT_LOGLEVEL,
 	OPT_ALERTLEVEL,
-	OPT_NONE,
+	OPT_ERROR,
 };
 
 typedef struct {
@@ -201,6 +205,8 @@ static const opt_t HatariOptions[] = {
 	  "<trace1,...>", "Activate emulation tracing, see --trace help" },
 	{ OPT_TRACEFILE, NULL, "--trace-file",
 	  "<file>", "Save trace output to <file> (default=stderr)" },
+	{ OPT_CONTROLSOCKET, NULL, "--control-socket",
+	  "<file>", "Hatari reads options from given socket at run-time" },
 	{ OPT_LOGFILE, NULL, "--log-file",
 	  "<file>", "Save log output to <file> (default=stderr)" },
 	{ OPT_LOGLEVEL, NULL, "--log-level",
@@ -208,7 +214,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_ALERTLEVEL, NULL, "--alert-level",
 	  "<x>", "Show dialog for log messages above given level" },
 
-	{ OPT_NONE, NULL, NULL, NULL, NULL }
+	{ OPT_ERROR, NULL, NULL, NULL, NULL }
 };
 
 
@@ -293,7 +299,7 @@ static const opt_t *Opt_ShowHelpSection(const opt_t *start_opt)
 	unsigned int len, maxlen = 0;
 
 	/* find longest option name and check option IDs */
-	for (opt = start_opt; opt->id != OPT_HEADER && opt->id != OPT_NONE; opt++)
+	for (opt = start_opt; opt->id != OPT_HEADER && opt->id != OPT_ERROR; opt++)
 	{
 		len = Opt_OptionLen(opt);
 		if (len > maxlen)
@@ -322,7 +328,7 @@ static void Opt_ShowHelp(void)
 	Opt_ShowVersion();
 	printf("Usage:\n hatari [options] [disk image name]\n");
 
-	while(opt->id != OPT_NONE)
+	while(opt->id != OPT_ERROR)
 	{
 		if (opt->id == OPT_HEADER)
 		{
@@ -341,17 +347,14 @@ static void Opt_ShowHelp(void)
 }
 
 
-/* This function always exits */
-static void Opt_ShowExit(unsigned int option, const char *value, const char *error)
-__attribute__((noreturn));
-
 /**
- * Show Hatari options and exit().
+ * Show Hatari version and usage.
  * If 'error' given, show that error message.
- * If 'optid' != OPT_NONE, tells for which option the error is,
+ * If 'optid' != OPT_ERROR, tells for which option the error is,
  * otherwise 'value' is show as the option user gave.
+ * Return FALSE if error string was given, otherwise TRUE
  */
-static void Opt_ShowExit(unsigned int optid, const char *value, const char *error)
+static BOOL Opt_ShowError(unsigned int optid, const char *value, const char *error)
 {
 	const opt_t *opt;
 
@@ -361,13 +364,13 @@ static void Opt_ShowExit(unsigned int optid, const char *value, const char *erro
 
 	if (error)
 	{
-		if (optid == OPT_NONE)
+		if (optid == OPT_ERROR)
 		{
 			fprintf(stderr, "\nError: %s (%s)\n", error, value);
 		}
 		else
 		{
-			for (opt = HatariOptions; opt->id != OPT_NONE; opt++)
+			for (opt = HatariOptions; opt->id != OPT_ERROR; opt++)
 			{
 				if (optid == opt->id)
 					break;
@@ -383,19 +386,19 @@ static void Opt_ShowExit(unsigned int optid, const char *value, const char *erro
 			}
 			Opt_ShowOption(opt, 0);
 		}
-		exit(1);
+		return FALSE;
 	}
-	exit(0);
+	return TRUE;
 }
 
 
 /**
- * Return
- * - TRUE if given option arg is y/yes/on/true/1
- * - FALSE if given option arg is n/no/off/false/0
- * Otherwise exit.
+ * If 'conf' given, set it:
+ * - TRUE if given option 'arg' is y/yes/on/true/1
+ * - FALSE if given option 'arg' is n/no/off/false/0
+ * Return FALSE for any other value, otherwise TRUE
  */
-static int Opt_Bool(const char *arg, int optid)
+static BOOL Opt_Bool(const char *arg, int optid, BOOL *conf)
 {
 	const char *enablers[] = { "y", "yes", "on", "true", "1", NULL };
 	const char *disablers[] = { "n", "no", "off", "false", "0", NULL };
@@ -413,6 +416,10 @@ static int Opt_Bool(const char *arg, int optid)
 		if (strcmp(input, *bool_str) == 0)
 		{
 			free(input);
+			if (conf)
+			{
+				*conf = TRUE;
+			}
 			return TRUE;
 		}
 	}
@@ -421,18 +428,22 @@ static int Opt_Bool(const char *arg, int optid)
 		if (strcmp(input, *bool_str) == 0)
 		{
 			free(input);
-			return FALSE;
+			if (conf)
+			{
+				*conf = FALSE;
+			}
+			return TRUE;
 		}
 	}
 	free(input);
-	Opt_ShowExit(optid, orig, "Not a <bool> value");
+	return Opt_ShowError(optid, orig, "Not a <bool> value");
 }
 
 
 /**
  * matches string under given index in the argv against all Hatari
  * short and long options. If match is found, returns ID for that,
- * otherwise shows help.
+ * otherwise shows help and returns OPT_ERROR.
  * 
  * Checks also that if option is supposed to have argument,
  * whether there's one.
@@ -442,7 +453,7 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 	const opt_t *opt;
 	const char *str = argv[idx];
 
-	for (opt = HatariOptions; opt->id != OPT_NONE; opt++)
+	for (opt = HatariOptions; opt->id != OPT_ERROR; opt++)
 	{	
 		if ((opt->str && !strcmp(str, opt->str)) ||
 		    (opt->chr && !strcmp(str, opt->chr)))
@@ -452,75 +463,81 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
 			{
 				if (idx+1 >= argc)
 				{
-					Opt_ShowExit(opt->id, NULL, "Missing argument");
+					Opt_ShowError(opt->id, NULL, "Missing argument");
+					return OPT_ERROR;
 				}
 				/* early check for bools */
 				if (strcmp(opt->arg, "<bool>") == 0)
 				{
-					Opt_Bool(argv[idx+1], opt->id);
+					if (!Opt_Bool(argv[idx+1], opt->id, NULL))
+					{
+						return OPT_ERROR;
+					}
 				}
 			}
 			return opt->id;
 		}
 	}
-	Opt_ShowExit(OPT_NONE, argv[idx], "Unrecognized option");
-	return OPT_NONE;
+	Opt_ShowError(OPT_ERROR, argv[idx], "Unrecognized option");
+	return OPT_ERROR;
 }
 
 
 /**
- * Optionally test if file exists, then check string length,
- * copy option src string to dst and return TRUE.
- * If (bool) option pointer is given, set that option to TRUE.
- * - However, if src is "none", leave dst unmodified, set option
- *   to FALSE and return FALSE.
- * Return TRUE if dst set, Exits out on errors.
+ * If 'checkexits' is TRUE, assume 'src' is a file and check whether it
+ * exists before copying 'src' to 'dst'. Otherwise just copy option src
+ * string to dst.
+ * If a pointer to (bool) 'option' is given, set that option to TRUE.
+ * - However, if src is "none", leave dst unmodified & set option to FALSE.
+ *   ("none" is used to disable options related to file arguments)
+ * Return FALSE if there were errors, otherwise TRUE
  */
-static BOOL Opt_StrCpy(int optid, BOOL checkexist, char *dst, char *src, size_t dstlen, BOOL *option)
+static BOOL Opt_StrCpy(int optid, BOOL checkexist, char *dst, const char *src, size_t dstlen, BOOL *option)
 {
+	if (strlen(src) >= dstlen)
+	{
+		return Opt_ShowError(optid, src, "File name too long!");
+	}
+	if (checkexist && !File_Exists(src))
+	{
+		return Opt_ShowError(optid, src, "Given file doesn't exist (or has wrong file permissions)!");
+	}
 	if (option)
 	{
 		if(strcmp(src, "none") == 0)
 		{
 			*option = FALSE;
-			return FALSE;
+			return TRUE;
 		}
 		else
 		{
 			*option = TRUE;
 		}
 	}
-	if (checkexist && !File_Exists(src))
-	{
-		Opt_ShowExit(optid, src, "Given file doesn't exist (or has wrong file permissions)!");
-	}
-	if (strlen(src) < dstlen)
-	{
-		strcpy(dst, src);
-		return TRUE;
-	}
-	else
-	{
-		Opt_ShowExit(optid, src, "File name too long!");
-	}
+	strcpy(dst, src);
+	return TRUE;
 }
 
 
 /**
- * Check for any passed parameters, set boot disk (if given)
+ * parse all Hatari command line options and set Hatari state accordingly,
+ * returns boot disk image name in given arg (empty if not set).
+ * On first call (when parsing normal commandline) exits on errors.
+ * After that, returns TRUE if everything was OK, FALSE otherwise.
  */
-void Opt_ParseParameters(int argc, char *argv[],
+BOOL Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
-	int i, ncpu, skips, zoom, planes, cpuclock, threshold;
-	int hdgiven = FALSE;
+	int i, ncpu, skips, zoom, planes, cpuclock, threshold, memsize;
+	int hdgiven = FALSE, ok = TRUE;
+	const char *errstr;
 
 	/* Defaults for loading initial memory snap-shots */
 	bLoadMemorySave = FALSE;
 	bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
 
 	for(i = 1; i < argc; i++)
-	{	
+	{
 		if (argv[i][0] != '-')
 		{
 			/* Possible passed disk image filename */
@@ -533,7 +550,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			else
 			{
-				Opt_ShowExit(OPT_NONE, argv[i], "Not an option nor disk image");
+				return Opt_ShowError(OPT_ERROR, argv[i], "Not an option nor disk image");
 			}
 			continue;
 		}
@@ -547,28 +564,29 @@ void Opt_ParseParameters(int argc, char *argv[],
 			/* general options */
 		case OPT_HELP:
 			Opt_ShowHelp();
-			exit(0);
-			break;
+			return FALSE;
 			
 		case OPT_VERSION:
 			Opt_ShowVersion();
-			exit(0);
-			break;
+			return FALSE;
 
 		case OPT_CONFIRMQUIT:
-			ConfigureParams.Log.bConfirmQuit = Opt_Bool(argv[++i], OPT_CONFIRMQUIT);
+			ok = Opt_Bool(argv[++i], OPT_CONFIRMQUIT, &ConfigureParams.Log.bConfirmQuit);
 			break;
 
 		case OPT_FASTFORWARD:
-			ConfigureParams.System.bFastForward = Opt_Bool(argv[++i], OPT_FASTFORWARD);
+			ok = Opt_Bool(argv[++i], OPT_FASTFORWARD, &ConfigureParams.System.bFastForward);
 			break;
 			
 		case OPT_CONFIGFILE:
 			i += 1;
-			Opt_StrCpy(OPT_CONFIGFILE, TRUE, sConfigFileName,
-			           argv[i], sizeof(sConfigFileName), NULL);
-			Configuration_Load(NULL);
-			bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
+			ok = Opt_StrCpy(OPT_CONFIGFILE, TRUE, sConfigFileName,
+					argv[i], sizeof(sConfigFileName), NULL);
+			if (ok)
+			{
+				Configuration_Load(NULL);
+				bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
+			}
 			break;
 		
 			/* display options */
@@ -597,7 +615,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			else
 			{
-				Opt_ShowExit(OPT_MONITOR, argv[i], "Unknown monitor type");
+				return Opt_ShowError(OPT_MONITOR, argv[i], "Unknown monitor type");
 			}
 			bLoadAutoSave = FALSE;
 			break;
@@ -614,7 +632,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			zoom = atoi(argv[++i]);
 			if (zoom < 1)
 			{
-				Opt_ShowExit(OPT_ZOOM, argv[i], "Invalid zoom value");
+				return Opt_ShowError(OPT_ZOOM, argv[i], "Invalid zoom value");
 			}
 			if (zoom > 1)
 			{
@@ -631,22 +649,22 @@ void Opt_ParseParameters(int argc, char *argv[],
 			skips = atoi(argv[++i]);
 			if (skips < 0 || skips > 8)
 			{
-				Opt_ShowExit(OPT_FRAMESKIPS, argv[i],
-				             "Invalid frame skip value");
+				return Opt_ShowError(OPT_FRAMESKIPS, argv[i],
+						     "Invalid frame skip value");
 			}
 			ConfigureParams.Screen.nFrameSkips = skips;
 			break;
 			
 		case OPT_BORDERS:
-			ConfigureParams.Screen.bAllowOverscan = Opt_Bool(argv[++i], OPT_BORDERS);
+			ok = Opt_Bool(argv[++i], OPT_BORDERS, &ConfigureParams.Screen.bAllowOverscan);
 			break;
 			
 		case OPT_SPEC512:
 			threshold = atoi(argv[++i]);
 			if (threshold < 0 || threshold > 512)
 			{
-				Opt_ShowExit(OPT_SPEC512, argv[i],
-				             "Invalid palette writes per line threshold for Spec512");
+				return Opt_ShowError(OPT_SPEC512, argv[i],
+						     "Invalid palette writes per line threshold for Spec512");
 			}
 			ConfigureParams.Screen.nSpec512Threshold = threshold;
 			break;
@@ -664,7 +682,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 				planes = 32; /* We do not support 24 bpp (yet) */
 				break;
 			default:
-				Opt_ShowExit(OPT_FORCEBPP, argv[i], "Invalid bit depth");
+				return Opt_ShowError(OPT_FORCEBPP, argv[i], "Invalid bit depth");
 			}
 			ConfigureParams.Screen.nForceBpp = planes;
 			break;
@@ -683,7 +701,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 				ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
 				break;
 			 default:
-				Opt_ShowExit(OPT_VDI_PLANES, argv[i], "Unsupported VDI bit-depth");
+				return Opt_ShowError(OPT_VDI_PLANES, argv[i], "Unsupported VDI bit-depth");
 			}
 			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
 			bLoadAutoSave = FALSE;
@@ -707,29 +725,30 @@ void Opt_ParseParameters(int argc, char *argv[],
 			if (strlen(argv[i]) != 1 ||
 			    !Joy_SetCursorEmulation(argv[i][0] - '0'))
 			{
-				Opt_ShowExit(OPT_JOYSTICK, argv[i], "Invalid joystick port");
+				return Opt_ShowError(OPT_JOYSTICK, argv[i], "Invalid joystick port");
 			}
 			break;
 			
 		case OPT_PRINTER:
 			i += 1;
-			Opt_StrCpy(OPT_PRINTER, FALSE, ConfigureParams.Printer.szPrintToFileName,
-			           argv[i], sizeof(ConfigureParams.Printer.szPrintToFileName),
-				   &ConfigureParams.Printer.bEnablePrinting);
+			ok = Opt_StrCpy(OPT_PRINTER, FALSE, ConfigureParams.Printer.szPrintToFileName,
+					argv[i], sizeof(ConfigureParams.Printer.szPrintToFileName),
+					&ConfigureParams.Printer.bEnablePrinting);
 			break;
 			
 		case OPT_MIDI:
 			i += 1;
-			Opt_StrCpy(OPT_MIDI, FALSE, ConfigureParams.Midi.szMidiOutFileName,
-			           argv[i], sizeof(ConfigureParams.Midi.szMidiOutFileName),
-				   &ConfigureParams.Midi.bEnableMidi);
+			ok = Opt_StrCpy(OPT_MIDI, FALSE, ConfigureParams.Midi.szMidiOutFileName,
+					argv[i], sizeof(ConfigureParams.Midi.szMidiOutFileName),
+					&ConfigureParams.Midi.bEnableMidi);
 			break;
       
 		case OPT_RS232:
 			i += 1;
-			if (Opt_StrCpy(OPT_RS232, TRUE, ConfigureParams.RS232.szInFileName,
-				       argv[i], sizeof(ConfigureParams.RS232.szInFileName),
-				       &ConfigureParams.RS232.bEnableRS232))
+			ok = Opt_StrCpy(OPT_RS232, TRUE, ConfigureParams.RS232.szInFileName,
+					argv[i], sizeof(ConfigureParams.RS232.szInFileName),
+					&ConfigureParams.RS232.bEnableRS232);
+			if (ok && ConfigureParams.RS232.bEnableRS232)
 			{
 				strncpy(ConfigureParams.RS232.szOutFileName, argv[i],
 					sizeof(ConfigureParams.RS232.szOutFileName));
@@ -739,9 +758,10 @@ void Opt_ParseParameters(int argc, char *argv[],
 			/* disk options */
 		case OPT_HARDDRIVE:
 			i += 1;
-			if (Opt_StrCpy(OPT_HARDDRIVE, FALSE, ConfigureParams.HardDisk.szHardDiskDirectories[0],
-				       argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
-				       &ConfigureParams.HardDisk.bUseHardDiskDirectories))
+			ok = Opt_StrCpy(OPT_HARDDRIVE, FALSE, ConfigureParams.HardDisk.szHardDiskDirectories[0],
+					argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
+					&ConfigureParams.HardDisk.bUseHardDiskDirectories);
+			if (ok && ConfigureParams.HardDisk.bUseHardDiskDirectories)
 			{
 				ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
 				hdgiven = TRUE;
@@ -751,59 +771,77 @@ void Opt_ParseParameters(int argc, char *argv[],
 
 		case OPT_ACSIHDIMAGE:
 			i += 1;
-			Opt_StrCpy(OPT_ACSIHDIMAGE, TRUE, ConfigureParams.HardDisk.szHardDiskImage,
-			           argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskImage),
-				   &ConfigureParams.HardDisk.bUseHardDiskImage);
-			bLoadAutoSave = FALSE;
+			ok = Opt_StrCpy(OPT_ACSIHDIMAGE, TRUE, ConfigureParams.HardDisk.szHardDiskImage,
+					argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskImage),
+					&ConfigureParams.HardDisk.bUseHardDiskImage);
+			if (ok)
+			{
+				bLoadAutoSave = FALSE;
+			}
 			break;
 			
 		case OPT_IDEHDIMAGE:
 			i += 1;
-			Opt_StrCpy(OPT_IDEHDIMAGE, TRUE, ConfigureParams.HardDisk.szIdeHardDiskImage,
-			           argv[i], sizeof(ConfigureParams.HardDisk.szIdeHardDiskImage),
-				   &ConfigureParams.HardDisk.bUseIdeHardDiskImage);
-			bLoadAutoSave = FALSE;
+			ok = Opt_StrCpy(OPT_IDEHDIMAGE, TRUE, ConfigureParams.HardDisk.szIdeHardDiskImage,
+					argv[i], sizeof(ConfigureParams.HardDisk.szIdeHardDiskImage),
+					&ConfigureParams.HardDisk.bUseIdeHardDiskImage);
+			if (ok)
+			{
+				bLoadAutoSave = FALSE;
+			}
 			break;
 			
 		case OPT_SLOWFDC:
-			ConfigureParams.System.bSlowFDC = Opt_Bool(argv[++i], OPT_SLOWFDC);
-			bLoadAutoSave = FALSE;
+			ok = Opt_Bool(argv[++i], OPT_SLOWFDC, &ConfigureParams.System.bSlowFDC);
+			if (ok)
+			{
+				bLoadAutoSave = FALSE;
+			}
 			break;
 			
 			/* Memory options */
 		case OPT_MEMSIZE:
-			ConfigureParams.Memory.nMemorySize = atoi(argv[++i]);
-			if (ConfigureParams.Memory.nMemorySize < 0 ||
-			    ConfigureParams.Memory.nMemorySize > 14)
+			memsize = atoi(argv[++i]);
+			if (memsize < 0 || memsize > 14)
 			{
-				Opt_ShowExit(OPT_MEMSIZE, argv[i], "Invalid memory size");
+				return Opt_ShowError(OPT_MEMSIZE, argv[i], "Invalid memory size");
 			}
+			ConfigureParams.Memory.nMemorySize = memsize;
 			bLoadAutoSave = FALSE;
 			break;
       
 		case OPT_TOS:
 			i += 1;
-			Opt_StrCpy(OPT_TOS, TRUE, ConfigureParams.Rom.szTosImageFileName,
-			           argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName),
-				   NULL);
-			bLoadAutoSave = FALSE;
+			ok = Opt_StrCpy(OPT_TOS, TRUE, ConfigureParams.Rom.szTosImageFileName,
+					argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName),
+					NULL);
+			if (ok)
+			{
+				bLoadAutoSave = FALSE;
+			}
 			break;
 			
 		case OPT_CARTRIDGE:
 			i += 1;
-			Opt_StrCpy(OPT_CARTRIDGE, TRUE, ConfigureParams.Rom.szCartridgeImageFileName,
-			           argv[i], sizeof(ConfigureParams.Rom.szCartridgeImageFileName),
-				   NULL);
-			bLoadAutoSave = FALSE;
+			ok = Opt_StrCpy(OPT_CARTRIDGE, TRUE, ConfigureParams.Rom.szCartridgeImageFileName,
+					argv[i], sizeof(ConfigureParams.Rom.szCartridgeImageFileName),
+					NULL);
+			if (ok)
+			{
+				bLoadAutoSave = FALSE;
+			}
 			break;
 
 		case OPT_MEMSTATE:
 			i += 1;
-			Opt_StrCpy(OPT_MEMSTATE, TRUE, ConfigureParams.Memory.szMemoryCaptureFileName,
-			           argv[i], sizeof(ConfigureParams.Memory.szMemoryCaptureFileName),
-				   NULL);
-			bLoadMemorySave = TRUE;
-			bLoadAutoSave = FALSE;
+			ok = Opt_StrCpy(OPT_MEMSTATE, TRUE, ConfigureParams.Memory.szMemoryCaptureFileName,
+					argv[i], sizeof(ConfigureParams.Memory.szMemoryCaptureFileName),
+					NULL);
+			if (ok)
+			{
+				bLoadMemorySave = TRUE;
+				bLoadAutoSave = FALSE;
+			}
 			break;
 			
 			/* CPU options */
@@ -812,7 +850,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ncpu = atoi(argv[++i]);
 			if(ncpu < 0 || ncpu > 4)
 			{
-				Opt_ShowExit(OPT_CPULEVEL, argv[i], "Invalid CPU level");
+				return Opt_ShowError(OPT_CPULEVEL, argv[i], "Invalid CPU level");
 			}
 			ConfigureParams.System.nCpuLevel = ncpu;
 			bLoadAutoSave = FALSE;
@@ -822,15 +860,18 @@ void Opt_ParseParameters(int argc, char *argv[],
 			cpuclock = atoi(argv[++i]);
 			if(cpuclock != 8 && cpuclock != 16 && cpuclock != 32)
 			{
-				Opt_ShowExit(OPT_CPUCLOCK, argv[i], "Invalid CPU clock");
+				return Opt_ShowError(OPT_CPUCLOCK, argv[i], "Invalid CPU clock");
 			}
 			ConfigureParams.System.nCpuFreq = cpuclock;
 			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_COMPATIBLE:
-			ConfigureParams.System.bCompatibleCpu = Opt_Bool(argv[++i], OPT_COMPATIBLE);
-			bLoadAutoSave = FALSE;
+			ok = Opt_Bool(argv[++i], OPT_COMPATIBLE, &ConfigureParams.System.bCompatibleCpu);
+			if (ok)
+			{
+				bLoadAutoSave = FALSE;
+			}
 			break;
 
 			/* system options */
@@ -862,14 +903,17 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			else
 			{
-				Opt_ShowExit(OPT_MACHINE, argv[i], "Unknown machine type");
+				return Opt_ShowError(OPT_MACHINE, argv[i], "Unknown machine type");
 			}
 			bLoadAutoSave = FALSE;
 			break;
 			
 		case OPT_BLITTER:
-			ConfigureParams.System.bBlitter = Opt_Bool(argv[++i], OPT_BLITTER);
-			bLoadAutoSave = FALSE;
+			ok = Opt_Bool(argv[++i], OPT_BLITTER, &ConfigureParams.System.bBlitter);
+			if (ok)
+			{
+				bLoadAutoSave = FALSE;
+			}
 			break;			
 
 		case OPT_DSP:
@@ -887,12 +931,12 @@ void Opt_ParseParameters(int argc, char *argv[],
 #if ENABLE_DSP_EMU
 				ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
 #else
-				Opt_ShowExit(OPT_DSP, argv[i], "DSP type 'emu' support not compiled in");
+				return Opt_ShowError(OPT_DSP, argv[i], "DSP type 'emu' support not compiled in");
 #endif
 			}
 			else
 			{
-				Opt_ShowExit(OPT_DSP, argv[i], "Unknown DSP type");
+				return Opt_ShowError(OPT_DSP, argv[i], "Unknown DSP type");
 			}
 			bLoadAutoSave = FALSE;
 			break;
@@ -920,16 +964,19 @@ void Opt_ParseParameters(int argc, char *argv[],
 			}
 			else
 			{
-				Opt_ShowExit(OPT_SOUND, argv[i], "Unsupported sound quality");
+				return Opt_ShowError(OPT_SOUND, argv[i], "Unsupported sound quality");
 			}
 			break;
 
 		case OPT_KEYMAPFILE:
 			i += 1;
-			Opt_StrCpy(OPT_KEYMAPFILE, TRUE, ConfigureParams.Keyboard.szMappingFileName,
-			           argv[i], sizeof(ConfigureParams.Keyboard.szMappingFileName),
-				   NULL);
-			ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
+			ok = Opt_StrCpy(OPT_KEYMAPFILE, TRUE, ConfigureParams.Keyboard.szMappingFileName,
+					argv[i], sizeof(ConfigureParams.Keyboard.szMappingFileName),
+					NULL);
+			if (ok)
+			{
+				ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
+			}
 			break;
 			
 			/* debug options */
@@ -945,22 +992,31 @@ void Opt_ParseParameters(int argc, char *argv[],
 			i += 1;
 			if (Log_SetTraceOptions(argv[i]) == 0)
 			{
-				Opt_ShowExit(OPT_TRACE, argv[i], "Error parsing trace options (use --trace help for available list)!");
+				return Opt_ShowError(OPT_TRACE, argv[i], "Error parsing trace options (use --trace help for available list)!");
 			}
 			break;
 
 		case OPT_TRACEFILE:
 			i += 1;
-			Opt_StrCpy(OPT_TRACEFILE, FALSE, ConfigureParams.Log.sTraceFileName,
-			           argv[i], sizeof(ConfigureParams.Log.sTraceFileName),
-				   NULL);
+			ok = Opt_StrCpy(OPT_TRACEFILE, FALSE, ConfigureParams.Log.sTraceFileName,
+					argv[i], sizeof(ConfigureParams.Log.sTraceFileName),
+					NULL);
+			break;
+
+		case OPT_CONTROLSOCKET:
+			i += 1;
+			errstr = Change_SetControlSocket(argv[i]);
+			if (errstr)
+			{
+				return Opt_ShowError(OPT_CONTROLSOCKET, argv[i], errstr);
+			}
 			break;
 
 		case OPT_LOGFILE:
 			i += 1;
-			Opt_StrCpy(OPT_LOGFILE, FALSE, ConfigureParams.Log.sLogFileName,
-			           argv[i], sizeof(ConfigureParams.Log.sLogFileName),
-				   NULL);
+			ok = Opt_StrCpy(OPT_LOGFILE, FALSE, ConfigureParams.Log.sLogFileName,
+					argv[i], sizeof(ConfigureParams.Log.sLogFileName),
+					NULL);
 			break;
 
 		case OPT_LOGLEVEL:
@@ -968,7 +1024,7 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ConfigureParams.Log.nTextLogLevel = Log_ParseOptions(argv[i]);
 			if (ConfigureParams.Log.nTextLogLevel == LOG_NONE)
 			{
-				Opt_ShowExit(OPT_LOGLEVEL, argv[i], "Unknown log level!");
+				return Opt_ShowError(OPT_LOGLEVEL, argv[i], "Unknown log level!");
 			}
 			break;
 
@@ -977,17 +1033,27 @@ void Opt_ParseParameters(int argc, char *argv[],
 			ConfigureParams.Log.nAlertDlgLogLevel = Log_ParseOptions(argv[i]);
 			if (ConfigureParams.Log.nAlertDlgLogLevel == LOG_NONE)
 			{
-				Opt_ShowExit(OPT_ALERTLEVEL, argv[i], "Unknown alert level!");
+				return Opt_ShowError(OPT_ALERTLEVEL, argv[i], "Unknown alert level!");
 			}
 			break;
 		       
+		case OPT_ERROR:
+			/* unknown option or missing option parameter */
+			return FALSE;
+
 		default:
-			Opt_ShowExit(OPT_NONE, argv[i], "Internal Hatari error, unhandled option");
+			return Opt_ShowError(OPT_ERROR, argv[i], "Internal Hatari error, unhandled option");
+		}
+		if (!ok)
+		{
+			/* Opt_Bool() or Opt_StrCpy() failed */
+			return FALSE;
 		}
 	}
-	if (*bootdisk && !hdgiven)
+	if (bootlen && *bootdisk && !hdgiven)
 	{
 		/* floppy image given without HD -> boot from floppy */
 		ConfigureParams.HardDisk.bBootFromHardDisk = FALSE;
 	}
+	return TRUE;
 }

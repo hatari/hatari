@@ -11,10 +11,11 @@ extern BOOL bLoadAutoSave;
 extern BOOL bLoadMemorySave;
 extern BOOL bBiosIntercept;
 
-/* parses all Hatari command line options and sets Hatari state accordingly,
- * returns boot disk image name (empty if not set)
+/* Parses all Hatari command line options, sets Hatari state and
+ * boot disk image name (empty if not set) accordingly.
+ * Returns TRUE if everything was OK, FALSE otherwise.
  */
-extern void Opt_ParseParameters(int argc, char *argv[],
+extern BOOL Opt_ParseParameters(int argc, char *argv[],
 				char *bootdisk, size_t bootlen);
 
 #endif /* HATARI_OPTIONS_H */

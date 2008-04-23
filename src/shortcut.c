@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.32 2008-04-06 09:01:18 eerot Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.33 2008-04-23 20:55:35 eerot Exp $";
 
 #include <SDL.h>
 
@@ -258,6 +258,55 @@ void ShortCut_ActKey(void)
 		break;
 	}
 	ShortCutKey = SHORTCUT_NONE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Invoke shortcut identified by name. This supports only keys
+ * for functionality that cannot be done through command line
+ * parsing.
+ */
+void Shortcut_Invoke(const char *shortcut)
+{
+	struct {
+		SHORTCUTKEYIDX id;
+		const char *name;
+	} shortcuts[] = {
+		{ SHORTCUT_MOUSEMODE, "mousemode" },
+		{ SHORTCUT_COLDRESET, "coldreset" },
+		{ SHORTCUT_WARMRESET, "warmreset" },
+		{ SHORTCUT_SCREENSHOT, "screenshot" },
+		{ SHORTCUT_BOSSKEY, "bosskey" },
+		{ SHORTCUT_RECANIM, "recanim" },
+		{ SHORTCUT_RECSOUND, "recsound" },
+		{ SHORTCUT_DEBUG, "debug" },
+		{ SHORTCUT_QUIT, "quit" },
+		{ SHORTCUT_NONE, NULL }
+	};
+	int i;
+
+	if (ShortCutKey != SHORTCUT_NONE)
+	{
+		fprintf(stderr, "Shortcut invocation failed, shortcut already active\n");
+		return;
+	}
+	for (i = 0; shortcuts[i].name; i++)
+	{
+		if (strcmp(shortcut, shortcuts[i].name) == 0)
+		{
+			ShortCutKey = shortcuts[i].id;
+			ShortCut_ActKey();
+			ShortCutKey = SHORTCUT_NONE;
+			return;
+		}
+	}
+	fprintf(stderr, "WARNING: unknown shortcut '%s'\n\n", shortcut);
+	fprintf(stderr, "Hatari shortcuts are:\n");
+	for (i = 0; shortcuts[i].name; i++)
+	{
+		fprintf(stderr, "- %s\n", shortcuts[i].name);
+	}
 }
 
 
