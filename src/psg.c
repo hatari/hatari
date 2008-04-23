@@ -64,7 +64,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.23 2008-04-20 13:11:09 npomarede Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.24 2008-04-23 17:59:03 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -198,11 +198,8 @@ void PSG_DataRegister_WriteByte(void)
 	  PSGRegisters[PSGRegisterSelect] &= 0x0f;	/* only keep bits 0 - 3 */
 
 	else if ( ( PSGRegisterSelect == PSG_REG_CHANNEL_A_AMP ) || ( PSGRegisterSelect == PSG_REG_CHANNEL_B_AMP )
-		|| ( PSGRegisterSelect == PSG_REG_CHANNEL_C_AMP ) )
+		|| ( PSGRegisterSelect == PSG_REG_CHANNEL_C_AMP ) || ( PSGRegisterSelect == PSG_REG_NOISE_GENERATOR ) )
 	  PSGRegisters[PSGRegisterSelect] &= 0x1f;	/* only keep bits 0 - 4 */
-
-	else if ( PSGRegisterSelect == PSG_REG_NOISE_GENERATOR )
-	  PSGRegisters[PSGRegisterSelect] &= 0x3f;	/* only keep bits 0 - 5 */
 
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_DATA ) )
