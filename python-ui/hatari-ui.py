@@ -35,9 +35,18 @@ from hatari import Hatari, Config
 
 class Shortcuts():
     def __init__(self):
-        self.all_types = ["maxspeed", "frameskip"]
+        self.all_types = ["fastforward", "frameskip"]
         self.use_types = None
-    
+        self.control = None
+
+    def set_control(self, control):
+        self.control = control
+
+    def change_option(self, option):
+        if not self.control:
+            print "ERROR: missing Hatari control"
+        self.control.send("hatari-option %s" % option)
+
     def set_types(self, types):
         for usetype in types:
             if usetype not in self.all_types:
@@ -50,24 +59,28 @@ class Shortcuts():
         for methodname in self.all_types:
             yield (methodname, Shortcuts.__dict__[methodname].__doc__)
 
-    def maxspeed_cb(self, widget):
-        # TODO: toggle Hatari maxspeed
+    def fastforward_cb(self, widget):
         if widget.get_active():
             print "Entering hyperspace!"
+            self.change_option("--fast-forward on")
         else:
             print "Returning to normal speed"
+            self.change_option("--fast-forward off")
 
-    def maxspeed(self, config, horizontal):
+    def fastforward(self, config, horizontal):
         "Whether to run Hatari at max speed"
-        widget = gtk.CheckButton("maxspeed")
-        if config.get("[System]", "nMinMaxSpeed") != "0":
+        widget = gtk.CheckButton("fastforward")
+        if config.get("[System]", "bFastForward") != "0":
             widget.set_active(True)
-        widget.connect("toggled", self.maxspeed_cb)
+        widget.connect("toggled", self.fastforward_cb)
         return widget
     
     def frameskip_cb(self, widget):
-        # TODO: change Hatari frameskip
-        print "New frameskip value:", widget.get_value()
+        if not self.control:
+            print "ERROR: missing Hatari control"
+        frameskips = widget.get_value()
+        print "New frameskip value:", frameskips
+        self.change_option("--frameskips %d" % frameskips)
 
     def frameskip(self, config, horizontal):
         "Increase/decrease screen update skip"
@@ -84,6 +97,8 @@ class Shortcuts():
         if frameskips:
             widget.set_value(int(frameskips))
         widget.connect("value-changed", self.frameskip_cb)
+        # important, without this Hatari doesn't receive key events!
+        widget.unset_flags(gtk.CAN_FOCUS)
         box.add(widget)
         return box
 
@@ -98,7 +113,7 @@ class Shortcuts():
         # TODO: get actual widgets & callbacks instead of these dummies
         for methodname in self.use_types:
             widget = Shortcuts.__dict__[methodname](self, config, horizontal)
-            # important, without these Hatari doesn't receive key events!
+            # important, without this Hatari doesn't receive key events!
             widget.unset_flags(gtk.CAN_FOCUS)
             box.add(widget)
         return box
@@ -118,10 +133,10 @@ class HatariUI():
     def __init__(self, shortcuts, fullscreen, embed):
         self.config = Config()
         self.hatari = Hatari()
+        self.shortcuts = shortcuts
         # just instantiate all UI windows/widgets...
         self.hatariparent = None
-        shortcutbox = shortcuts.get_box(self.config, embed)
-        mainwin = self.create_mainwin(embed, shortcutbox)
+        mainwin = self.create_mainwin(embed)
         if fullscreen:
             mainwin.fullscreen()
         self.create_dialogs(mainwin)
@@ -130,7 +145,7 @@ class HatariUI():
     def run(self):
         gtk.main()
 
-    def create_mainwin(self, embed, shortcuts):
+    def create_mainwin(self, embed):
         # main window
         mainwin = gtk.Window(gtk.WINDOW_TOPLEVEL)
         mainwin.connect("delete_event", self.quit_clicked)
@@ -154,6 +169,7 @@ class HatariUI():
             buttonbox.add(button)
 
         # what to add to mainwindow
+        shortcuts = self.shortcuts.get_box(self.config, embed)
         if embed:
             vbox = gtk.VBox()
             hbox = gtk.HBox()
@@ -212,10 +228,12 @@ class HatariUI():
     def run_clicked(self, widget):
         if self.keep_hatari_running():
             return
+        self.hatari.create_control()
         if self.hatariparent:
-            self.hatari.run(self.config, self.hatariparent.window)
+            control = self.hatari.run(self.config, self.hatariparent.window)
         else:
-            self.hatari.run(self.config)
+            control = self.hatari.run(self.config)
+        self.shortcuts.set_control(control)
 
     def quit_clicked(self, widget, arg = None):
         if self.keep_hatari_running():
@@ -244,6 +262,7 @@ class HatariUI():
             self.hatari.unpause()
             widget.set_label("Pause")
 
+
 def usage(msg=None):
     name = os.path.basename(sys.argv[0])
     print "\nusage: %s [options]" % name
@@ -256,7 +275,7 @@ def usage(msg=None):
     for item in shortcuts.list_all_types():
         print "\t%s\t%s" % item
     print "\nexample:"
-    print "\t%s -f -e -s maxspeed -s frameskip" % name
+    print "\t%s -f -e -s fastforward -s frameskip" % name
     if msg:
         print "\nERROR: %s\n" % msg
     print

@@ -68,6 +68,7 @@ class Hatari():
                 print "WAIT hatari to connect to control socket...",
                 (self.control, addr) = self.server.accept()
                 print "connected!"
+                return self.control
         else:
             # child runs Hatari
             env = self.get_env(parent_win)
