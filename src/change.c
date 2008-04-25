@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.1 2008-04-23 20:55:35 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.2 2008-04-25 22:17:15 eerot Exp $";
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -357,6 +357,10 @@ static BOOL Change_ApplyCommandline(char *cmdline)
 			inarg++;
 		}
 	}
+	if (inarg)
+	{
+		fprintf(stderr, "- '%s'\n", argv[argc-1]);
+	}
 	argv[argc] = NULL;
 	
 	/* do args */
@@ -368,11 +372,13 @@ static BOOL Change_ApplyCommandline(char *cmdline)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check ControlSocket for new commands and execute them
+ * Check ControlSocket for new commands and execute them.
+ * Commands should be separated by newlines
  */
 extern void Change_CheckUpdates(void)
 {
-	char buffer[128];
+	/* just using all trace options with +/- are about 300 chars */
+	char *cmd, *cmdend, buffer[400];
 	struct timeval tv;
 	fd_set readfds;
 	ssize_t bytes;
@@ -418,21 +424,27 @@ extern void Change_CheckUpdates(void)
 		return;
 	}
 	buffer[bytes] = '\0';
-	
-	/* process... */
-	fprintf(stderr, "got input '%s' -> %d bytes\n", buffer, bytes);
-	if (strncmp(buffer, "hatari-shortcut ", 16) == 0)
-	{
-		Shortcut_Invoke(Str_Trim(buffer+16));
-		return;
-	}
-	if (strncmp(buffer, "hatari-option ", 14) == 0)
-	{
-		Change_ApplyCommandline(buffer+14);
-		return;
-	}
-	/* TODO: assume it's input to emulated machine... */
-	fprintf(stderr, "TODO: unrecognized input\n\t'%s'\n", Str_Trim(buffer));
+	cmd = buffer;
+	do {
+		/* command terminator? */
+		cmdend  = strchr(cmd, '\n');
+		if (cmdend) {
+			*cmdend = '\0';
+		}
+		/* process... */
+		fprintf(stderr, "got input '%s' -> %d bytes\n", cmd, bytes);
+		if (strncmp(cmd, "hatari-shortcut ", 16) == 0) {
+			Shortcut_Invoke(Str_Trim(cmd+16));
+		} else if (strncmp(cmd, "hatari-option ", 14) == 0) {
+			Change_ApplyCommandline(cmd+14);
+		} else {
+			/* TODO: assume it's input to emulated machine... */
+			fprintf(stderr, "TODO: unrecognized input\n\t'%s'\n", Str_Trim(cmd));
+		}
+		if (cmdend) {
+			cmd = cmdend + 1;
+		}
+	} while (cmdend && *cmd);
 }
 
 
