@@ -35,18 +35,31 @@ from hatari import Hatari, Config
 
 class Shortcuts():
     def __init__(self):
-        self.all_types = ["fastforward", "frameskip"]
+        self.all_types = ["fastforward", "frameskip", "debug", "trace"]
+        self.tracedialog = None
         self.use_types = None
         self.control = None
 
+    def set_parent(self, parent):
+        self.parent = parent
+
+    # ------- control -----------
     def set_control(self, control):
         self.control = control
 
     def change_option(self, option):
-        if not self.control:
+        if self.control:
+            self.control.send("hatari-option %s\n" % option)
+        else:
             print "ERROR: missing Hatari control"
-        self.control.send("hatari-option %s" % option)
 
+    def trigger_shortcut(self, shortcut):
+        if self.control:
+            self.control.send("hatari-shortcut %s\n" % shortcut)
+        else:
+            print "ERROR: missing Hatari control"
+
+    # ----- action types ---------
     def set_types(self, types):
         for usetype in types:
             if usetype not in self.all_types:
@@ -59,6 +72,89 @@ class Shortcuts():
         for methodname in self.all_types:
             yield (methodname, Shortcuts.__dict__[methodname].__doc__)
 
+    # ------- debug -----------
+    def debug_cb(self, widget):
+        print "Entering debug mode"
+        self.change_option("--debug")
+        self.trigger_shortcut("debug")
+
+    def debug(self, config, horizontal):
+        "Activate Hatari debug mode"
+        widget = gtk.Button("Debug")
+        widget.connect("clicked", self.debug_cb)
+        return widget
+
+    # ------- trace -----------
+    def trace_cb(self, widget):
+        # hatari --trace help 2>&1|awk '/all$/{next} /^  [^-]/ {printf("\"%s\",\n", $1)}'
+        tracepoints = [
+            "video_sync",
+            "video_res",
+            "video_color",
+            "video_border_v",
+            "video_border_h",
+            "video_addr",
+            "video_hbl",
+            "video_vbl",
+            "video_ste",
+            "mfp_exception",
+            "mfp_start",
+            "mfp_read",
+            "mfp_write",
+            "psg_write_reg",
+            "psg_write_data",
+            "cpu_pairing",
+            "cpu_disasm",
+            "cpu_exception",
+            "int",
+            "fdc",
+            "ikbd",
+            "bios",
+            "xbios",
+            "gemdos",
+            "vdi",
+        ]
+        RESPONSE_CLEAR_ALL = 1  # builtin ones are negative
+        if not self.tracedialog:
+            self.tracedialog = gtk.Dialog("Select trace points", self.parent,
+                gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
+            self.tracedialog.add_button("Clear all", RESPONSE_CLEAR_ALL)
+            self.tracedialog.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
+            self.tracedialog.vbox.add(gtk.Label("Select trace points:"))
+            self.tracewidgets = {}
+            for trace in tracepoints:
+                widget = gtk.CheckButton(trace)
+                self.tracewidgets[trace] = widget
+                self.tracedialog.vbox.add(widget)
+            self.tracedialog.vbox.show_all()
+
+        while True:
+            response = self.tracedialog.run()
+            if response == RESPONSE_CLEAR_ALL:
+                for trace in tracepoints:
+                    self.tracewidgets[trace].set_active(False)
+                continue
+            break
+
+        if response == gtk.RESPONSE_APPLY:
+            traces = []
+            for trace in tracepoints:
+                if self.tracewidgets[trace].get_active():
+                    traces.append(trace)
+            if traces:
+                self.change_option("--trace %s" % ",".join(traces))
+            else:
+                self.change_option("--trace none")
+
+        self.tracedialog.hide()
+
+    def trace(self, config, horizontal):
+        "Hatari tracing setup"
+        widget = gtk.Button("Trace settings")
+        widget.connect("clicked", self.trace_cb)
+        return widget
+
+    # ------- fast forward -----------
     def fastforward_cb(self, widget):
         if widget.get_active():
             print "Entering hyperspace!"
@@ -69,12 +165,13 @@ class Shortcuts():
 
     def fastforward(self, config, horizontal):
         "Whether to run Hatari at max speed"
-        widget = gtk.CheckButton("fastforward")
+        widget = gtk.CheckButton("Fast Forward")
         if config.get("[System]", "bFastForward") != "0":
             widget.set_active(True)
         widget.connect("toggled", self.fastforward_cb)
         return widget
     
+    # ------- frame skip -----------
     def frameskip_cb(self, widget):
         if not self.control:
             print "ERROR: missing Hatari control"
@@ -85,7 +182,7 @@ class Shortcuts():
     def frameskip(self, config, horizontal):
         "Increase/decrease screen update skip"
         box = gtk.HBox()
-        label = gtk.Label("frameskip:")
+        label = gtk.Label("Frameskip:")
         box.pack_start(label, False, False, 0)
         if horizontal:
             widget = gtk.HScale()
@@ -102,6 +199,7 @@ class Shortcuts():
         box.add(widget)
         return box
 
+    # ------- widget box -----------
     def get_box(self, config, horizontal):
         "return Gtk Box container with the specified shortcut widgets"
         if not self.use_types:
@@ -119,10 +217,6 @@ class Shortcuts():
         return box
 
 
-def connect_true(object):
-    # disable Socket widget being destroyed on Plug (i.e. Hatari) disappearance
-    return True
-
 class HatariUI():
     title = "Hatari UI v0.3"
     icon = "hatari-icon.png"
@@ -137,6 +231,7 @@ class HatariUI():
         # just instantiate all UI windows/widgets...
         self.hatariparent = None
         mainwin = self.create_mainwin(embed)
+        self.shortcuts.set_parent(mainwin)
         if fullscreen:
             mainwin.fullscreen()
         self.create_dialogs(mainwin)
@@ -189,12 +284,16 @@ class HatariUI():
         else:
             mainwin.add(buttonbox)
         return mainwin
+
+    def connect_true(self, object):
+        # disable Socket widget being destroyed on Plug (=Hatari) disappearance
+        return True
     
     def create_socket(self):
         # add Hatari parent container
         socket = gtk.Socket()
         # without this closing Hatari would remove the socket
-        socket.connect("plug-removed", connect_true)
+        socket.connect("plug-removed", self.connect_true)
         socket.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
         socket.set_size_request(self.hatari_wd, self.hatari_ht)
         socket.set_events(gtk.gdk.ALL_EVENTS_MASK)
