@@ -190,7 +190,7 @@ class Shortcuts():
             widget = gtk.VScale()
         widget.set_range(0, 8)
         widget.set_digits(0)
-        frameskips = config.get("[Screen]", "FrameSkips")
+        frameskips = config.get("[Screen]", "nFrameSkips")
         if frameskips:
             widget.set_value(int(frameskips))
         widget.connect("value-changed", self.frameskip_cb)
