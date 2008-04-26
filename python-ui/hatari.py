@@ -30,12 +30,13 @@ class Hatari():
             self.hataribin = hataribin
         else:
             self.hataribin = "hatari"
-        self.control = None
         self.server = None
+        self.create_server()
+        self.control = None
         self.paused = False
         self.pid = 0
 
-    def create_control(self):
+    def create_server(self):
         if self.server:
             return
         self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -43,6 +44,18 @@ class Hatari():
             os.unlink(self.controlpath)
         self.server.bind(self.controlpath)
         self.server.listen(1)
+
+    def change_option(self, option):
+        if self.control:
+            self.control.send("hatari-option %s\n" % option)
+        else:
+            print "ERROR: missing Hatari control"
+
+    def trigger_shortcut(self, shortcut):
+        if self.control:
+            self.control.send("hatari-shortcut %s\n" % shortcut)
+        else:
+            print "ERROR: missing Hatari shortcut"
         
     def is_running(self):
         if not self.pid:
@@ -68,7 +81,6 @@ class Hatari():
                 print "WAIT hatari to connect to control socket...",
                 (self.control, addr) = self.server.accept()
                 print "connected!"
-                return self.control
         else:
             # child runs Hatari
             env = self.get_env(parent_win)
