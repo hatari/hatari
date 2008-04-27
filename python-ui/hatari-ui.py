@@ -2,11 +2,7 @@
 #
 # A PyGtk UI launcher that can embed the Hatari emulator window.
 #
-# In the future it will provide also some run-time controls
-# and a configuration UI for Hatari.  Run-time controls will
-# need modifications in Hatari.
-#
-# Requires python-glade2 package and its dependencies to be present.
+# Requires PyGtk (python-gtk2) package and its dependencies to be present.
 #
 # Copyright (C) 2008 by Eero Tamminen <eerot@sf.net>
 #
@@ -31,13 +27,13 @@ import gtk
 import gobject
 
 from hatari import Hatari, Config
+from dialogs import AboutDialog, KillDialog, QuitDialog, TraceDialog
 
 
 class HatariUI():
     version = "v0.4"
     name = "Hatari UI"
     icon = "hatari-icon.png"
-    logo = "hatari.png"
     hatari_wd = 640
     hatari_ht = 400
     all_controls = [
@@ -61,16 +57,17 @@ class HatariUI():
 
     # ----- control types ---------
     def set_controls(self, control_str, side):
+        "return None as OK, error string if controls or side isn't recognized"
         controls = control_str.split(",")
         for control in controls:
             if control not in self.all_controls:
                 if control.find("=") < 0:
-                    return False
+                    return "unrecognized control '%s'" % control
                 try:
                     # part after "=" converts to an int?
                     value = int(control.split("=")[1], 0)
                 except ValueError:
-                    return False
+                    return "invalid value in '%s'" % control
         if side == "left":
             self.controls_left = controls
         elif side == "right":
@@ -80,8 +77,8 @@ class HatariUI():
         elif side == "bottom":
             self.controls_bottom = controls
         else:
-            return False
-        return True
+            return "unknown controls position '%s'" % side
+        return None
         
     def list_all_controls(self):
         # generate the list from class internal documentation
@@ -92,23 +89,7 @@ class HatariUI():
     # ------- about control -----------
     def about_cb(self, widget):
         if not self.aboutdialog:
-            dialog = gtk.AboutDialog()
-            dialog.set_name(self.name)
-            dialog.set_version(self.version)
-            dialog.set_website("http://hatari.sourceforge.net/")
-            dialog.set_website_label("Hatari emulator www-site")
-            dialog.set_authors(["Eero Tamminen"])
-            dialog.set_artists(["The logo is from Hatari"])
-            dialog.set_logo(gtk.gdk.pixbuf_new_from_file(self.logo))
-            dialog.set_translator_credits("translator-credits")
-            dialog.set_copyright("UI copyright (C) 2008 by Eero Tamminen")
-            dialog.set_license("""
-This software is licenced under GPL v2.
-
-You can see the whole license at:
-    http://www.gnu.org/licenses/info/GPLv2.html""")
-            dialog.set_transient_for(self.mainwin)
-            self.aboutdialog = dialog
+            self.aboutdialog = AboutDialog(self.mainwin, self.name, self.version)
         self.aboutdialog.run()
         self.aboutdialog.hide()
 
@@ -147,10 +128,7 @@ You can see the whole license at:
             return True
         if self.config.is_changed():
             if not self.quitdialog:
-                self.quitdialog = gtk.MessageDialog(self.mainwin,
-                    gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                    gtk.MESSAGE_QUESTION, gtk.BUTTONS_OK_CANCEL,
-                    "You have unsaved changes.\n\nQuit anyway?")
+                self.quitdialog = QuitDialog(self.mainwin)
             if self.quitdialog.run() != gtk.RESPONSE_OK:
                 self.quitdialog.hide()
                 return True
@@ -213,66 +191,9 @@ You can see the whole license at:
 
     # ------- trace control -----------
     def trace_cb(self, widget):
-        # hatari --trace help 2>&1|awk '/all$/{next} /^  [^-]/ {printf("\"%s\",\n", $1)}'
-        tracepoints = [
-            "video_sync",
-            "video_res",
-            "video_color",
-            "video_border_v",
-            "video_border_h",
-            "video_addr",
-            "video_hbl",
-            "video_vbl",
-            "video_ste",
-            "mfp_exception",
-            "mfp_start",
-            "mfp_read",
-            "mfp_write",
-            "psg_write_reg",
-            "psg_write_data",
-            "cpu_pairing",
-            "cpu_disasm",
-            "cpu_exception",
-            "int",
-            "fdc",
-            "ikbd",
-            "bios",
-            "xbios",
-            "gemdos",
-            "vdi",
-        ]
-        RESPONSE_CLEAR_ALL = 1  # builtin ones are negative
         if not self.tracedialog:
-            self.tracedialog = gtk.Dialog("Select trace points", self.mainwin,
-                gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
-            self.tracedialog.add_button("Clear all", RESPONSE_CLEAR_ALL)
-            self.tracedialog.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
-            self.tracedialog.vbox.add(gtk.Label("Select trace points:"))
-            self.tracewidgets = {}
-            for trace in tracepoints:
-                widget = gtk.CheckButton(trace)
-                self.tracewidgets[trace] = widget
-                self.tracedialog.vbox.add(widget)
-            self.tracedialog.vbox.show_all()
-
-        while True:
-            response = self.tracedialog.run()
-            if response == RESPONSE_CLEAR_ALL:
-                for trace in tracepoints:
-                    self.tracewidgets[trace].set_active(False)
-                continue
-            break
-
-        if response == gtk.RESPONSE_APPLY:
-            traces = []
-            for trace in tracepoints:
-                if self.tracewidgets[trace].get_active():
-                    traces.append(trace)
-            if traces:
-                self.hatari.change_option("--trace %s" % ",".join(traces))
-            else:
-                self.hatari.change_option("--trace none")
-
+            self.tracedialog = TraceDialog(self.mainwin, self.hatari)
+        self.tracedialog.run()
         self.tracedialog.hide()
 
     def trace(self):
@@ -282,7 +203,7 @@ You can see the whole license at:
     # ------- fast forward control -----------
     def fastforward_cb(self, widget):
         if widget.get_active():
-            print "Entering hyperspace!"
+            print "Entering hyper speed!"
             self.hatari.change_option("--fast-forward on")
         else:
             print "Returning to normal speed"
@@ -324,7 +245,7 @@ You can see the whole license at:
         return box
 
     # ------- control widget box -----------
-    def get_box(self, controls, horizontal):
+    def get_control_box(self, controls, horizontal):
         "return Gtk Box container with the specified control widgets or None for no controls"
         if not controls:
             return None
@@ -334,10 +255,11 @@ You can see the whole license at:
         else:
             box = gtk.VBox(False, self.control_spacing)
         for control in controls:
-            if control.find("=") < 0:
-                widget = HatariUI.__dict__[control](self)
-            else:
+            if control.find("=") >= 0:
+                # handle "<name>=<keycode>" control specification
                 widget = self.create_key_control(control)
+            else:
+                widget = HatariUI.__dict__[control](self)
             # important, without this Hatari doesn't receive key events!
             widget.unset_flags(gtk.CAN_FOCUS)
             # widen widgets other than checkboxes
@@ -360,12 +282,12 @@ You can see the whole license at:
 
     def create_mainwin(self, embed):
         # create control button rows/columns
-        if not (self.controls_left or self.controls_right or self.controls_top or self.controls_right):
+        if not (self.controls_left or self.controls_right or self.controls_top or self.controls_bottom):
             self.controls_bottom = ["about", "pause", "quit"]
-        left   = self.get_box(self.controls_left, False)
-        right  = self.get_box(self.controls_right, False)
-        top    = self.get_box(self.controls_top, True)
-        bottom = self.get_box(self.controls_bottom, True)
+        left   = self.get_control_box(self.controls_left, False)
+        right  = self.get_control_box(self.controls_right, False)
+        top    = self.get_control_box(self.controls_top, True)
+        bottom = self.get_control_box(self.controls_bottom, True)
         # add horizontal elements
         hbox = gtk.HBox()
         if left:
@@ -417,10 +339,7 @@ You can see the whole license at:
             return False
         
         if not self.killdialog:
-            self.killdialog = gtk.MessageDialog(self.mainwin,
-                gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                gtk.MESSAGE_QUESTION, gtk.BUTTONS_OK_CANCEL,
-                "Hatari emulator is already/still running and it needs to be terminated first. However, if it contains unsaved data, that will be lost.\n\nTerminate Hatari anyway?")
+            self.killdialog = KillDialog(self.mainwin)
         # Hatari is running, OK to kill?
         response = self.killdialog.run()
         self.killdialog.hide()
@@ -445,12 +364,11 @@ def usage(app, msg=None):
     print "\t-e, --embed\t\tembed Hatari window in middle of controls"
     print "\t-f, --fullscreen\tstart in fullscreen"
     print "\t-h, --help\t\tthis help"
-    print
     print "\t-l, --left <controls>\tleft UI controls"
     print "\t-r, --right <controls>\tright UI controls"
     print "\t-t, --top <controls>\ttop UI controls"
     print "\t-b, --bottom <controls>\tbottom UI controls"
-    print "\t-s, --spacing\tspacing between controls (in pixels)"
+    print "\t-s, --spacing <pixels>\tspacing between controls in pixels"
     print "\nif no options are given, controls given in example below are used."
     print "\nAvailable controls:"
     for control, description in app.list_all_controls():
@@ -460,47 +378,46 @@ def usage(app, msg=None):
             tabs = "\t"
         print "\t%s%s%s" % (control, tabs, description)
     print "\nExample:"
-    print "\t%s --embed --bottom run,Undo=0x61,about,quit\n" % name
+    print "\t%s -e --top run,Undo=0x61,about,quit -s 8\n" % name
     if msg:
         print "ERROR: %s\n" % msg
     sys.exit(1)
 
 
 def main():
-    embed = False
-    fullscreen = False
     app = HatariUI()
     try:
-        longopts = ["embed", "fullscreen", "help", "left", "right", "top", "bottom", "spacing"]
+        longopts = ["embed", "fullscreen", "help", "left=", "right=", "top=", "bottom=", "spacing="]
         opts, args = getopt.getopt(sys.argv[1:], "efhl:r:t:b:s:", longopts)
         del longopts
     except getopt.GetoptError, err:
         usage(app, err)
+
+    error = None
+    embed = False
+    fullscreen = False
     for o, a in opts:
+        print o, a
         if o in ("-e", "--embed"):
             embed = True
         elif o in ("-f", "--fullscreen"):
             fullscreen = True
         elif o in ("-h", "--help"):
             usage(app)
-
         elif o in ("-l", "--left"):
-            if not app.set_controls(a, "left"):
-                usage(app, "unrecognized control(s) given")
+            error = app.set_controls(a, "left")
         elif o in ("-r", "--right"):
-            if not app.set_controls(a, "right"):
-                usage(app, "unrecognized control(s) given")
+            error = app.set_controls(a, "right")
         elif o in ("-t", "--top"):
-            if not app.set_controls(a, "top"):
-                usage(app, "unrecognized control(s) given")
+            error = app.set_controls(a, "top")
         elif o in ("-b", "--bottom"):
-            if not app.set_controls(a, "bottom"):
-                usage(app, "unrecognized control(s) given")
+            error = app.set_controls(a, "bottom")
         elif o in ("-s", "--spacing"):
-            app.control_spacing = int(a)
-
+            app.control_spacing = int(a, 0)
         else:
             assert False, "getopt returned unhandled option"
+        if error:
+            usage(app, error)
 
     app.create_ui(fullscreen, embed)
     app.main()
