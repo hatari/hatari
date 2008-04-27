@@ -49,13 +49,19 @@ class Hatari():
         if self.control:
             self.control.send("hatari-option %s\n" % option)
         else:
-            print "ERROR: missing Hatari control"
+            print "ERROR: no Hatari (control socket)"
 
     def trigger_shortcut(self, shortcut):
         if self.control:
             self.control.send("hatari-shortcut %s\n" % shortcut)
         else:
-            print "ERROR: missing Hatari shortcut"
+            print "ERROR: no Hatari (control socket)"
+
+    def insert_event(self, event):
+        if self.control:
+            self.control.send("hatari-event %s\n" % event)
+        else:
+            print "ERROR: no Hatari (control socket)"
         
     def is_running(self):
         if not self.pid:

@@ -42,6 +42,7 @@ class HatariUI():
     hatari_ht = 400
     all_controls = [
         "about", "run", "pause", "quit",
+        "rightclick", "doubleclick",
         "fastforward", "frameskip",
         "debug", "trace"
     ]
@@ -63,7 +64,13 @@ class HatariUI():
         controls = control_str.split(",")
         for control in controls:
             if control not in self.all_controls:
-                return False
+                if control.find("=") < 0:
+                    return False
+                try:
+                    # part after "=" converts to an int?
+                    value = int(control.split("=")[1], 0)
+                except ValueError:
+                    return False
         if side == "left":
             self.controls_left = controls
         elif side == "right":
@@ -80,6 +87,7 @@ class HatariUI():
         # generate the list from class internal documentation
         for methodname in self.all_controls:
             yield (methodname, HatariUI.__dict__[methodname].__doc__)
+        yield ("<name>=<code>", "<name> button simulates key <code> press/release")
 
     # ------- about control -----------
     def about_cb(self, widget):
@@ -153,6 +161,45 @@ You can see the whole license at:
     def quit(self):
         "Quit Hatari UI"
         return self.create_button("Quit", self.quit_cb)
+
+    # ------- doubleclick control -----------
+    def doubleclick_cb(self, widget):
+        self.hatari.insert_event("doubleclick")
+
+    def doubleclick(self):
+        "Simulate Atari left button double-click"
+        return self.create_button("Doubleclick", self.doubleclick_cb)
+
+    # ------- rightclick control -----------
+    def rightpress_cb(self, widget):
+        self.hatari.insert_event("rightpress")
+
+    def rightrelease_cb(self, widget):
+        self.hatari.insert_event("rightrelease")
+
+    def rightclick(self):
+        "Simulate Atari right button click"
+        widget = gtk.Button("Rightclick")
+        widget.connect("pressed", self.rightpress_cb)
+        widget.connect("released", self.rightrelease_cb)
+        return widget
+
+    # ------- insert key control -----------
+    def keypress_cb(self, widget, code):
+        self.hatari.insert_event("keypress %s" % code)
+
+    def keyrelease_cb(self, widget, code):
+        self.hatari.insert_event("keyrelease %s" % code)
+
+    def create_key_control(self, namecode):
+        "Simulate Atari key press/release"
+        offset = namecode.rfind("=")
+        name = namecode[:offset]
+        code = namecode[offset+1:]
+        widget = gtk.Button(name)
+        widget.connect("pressed", self.keypress_cb, code)
+        widget.connect("released", self.keyrelease_cb, code)
+        return widget
 
     # ------- debug control -----------
     def debug_cb(self, widget):
@@ -286,8 +333,11 @@ You can see the whole license at:
             box = gtk.HBox(False, self.control_spacing)
         else:
             box = gtk.VBox(False, self.control_spacing)
-        for methodname in controls:
-            widget = HatariUI.__dict__[methodname](self)
+        for control in controls:
+            if control.find("=") < 0:
+                widget = HatariUI.__dict__[control](self)
+            else:
+                widget = self.create_key_control(control)
             # important, without this Hatari doesn't receive key events!
             widget.unset_flags(gtk.CAN_FOCUS)
             # widen widgets other than checkboxes
@@ -410,7 +460,7 @@ def usage(app, msg=None):
             tabs = "\t"
         print "\t%s%s%s" % (control, tabs, description)
     print "\nExample:"
-    print "\t%s --embed --bottom run,about,quit\n" % name
+    print "\t%s --embed --bottom run,Undo=0x61,about,quit\n" % name
     if msg:
         print "ERROR: %s\n" % msg
     sys.exit(1)
