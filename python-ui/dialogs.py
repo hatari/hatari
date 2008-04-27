@@ -104,10 +104,10 @@ class TraceDialog(HatariUIDialog):
     RESPONSE_CLEAR_ALL = 1  # (builtin Gtk responses are negative)
     
     def __init__(self, parent, hatari):
-        dialog = gtk.Dialog("Select trace points", parent,
-            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT)
-        dialog.add_button("Clear all", self.RESPONSE_CLEAR_ALL)
-        dialog.add_button(gtk.STOCK_APPLY, gtk.RESPONSE_APPLY)
+        dialog = gtk.Dialog("Trace settings", parent,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            ("Clear all", self.RESPONSE_CLEAR_ALL,
+             gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
         dialog.vbox.add(gtk.Label("Select trace points:"))
         self.tracewidgets = {}
         for trace in self.tracepoints:
@@ -138,3 +138,26 @@ class TraceDialog(HatariUIDialog):
                 self.hatari.change_option("--trace none")
         return response
 
+
+class SetupDialog(HatariUIDialog):
+    def __init__(self, parent, hatari):
+        dialog = gtk.Dialog("Hatari setup", parent,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
+             gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+        notebook = gtk.Notebook()
+        self.add_machines(notebook)
+        notebook.set_scrollable(True)
+        notebook.show_all()
+        dialog.vbox.add(notebook)
+        self.dialog = dialog
+        self.hatari = hatari
+
+    def add_machines(self, notebook):
+        for name in ("ST", "STe", "TT", "Falcon"):
+            # TODO: TOS (version), amount of memory, disk and HD dir paths
+            todo = gtk.Label()
+            todo.set_use_markup(True)
+            todo.set_markup("<i><b>TODO</b></i>")
+            label = gtk.Label(name)
+            notebook.append_page(todo, label)

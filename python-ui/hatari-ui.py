@@ -27,7 +27,7 @@ import gtk
 import gobject
 
 from hatari import Hatari, Config
-from dialogs import AboutDialog, KillDialog, QuitDialog, TraceDialog
+from dialogs import AboutDialog, KillDialog, QuitDialog, SetupDialog, TraceDialog
 
 
 class HatariUI():
@@ -37,7 +37,7 @@ class HatariUI():
     hatari_wd = 640
     hatari_ht = 400
     all_controls = [
-        "about", "run", "pause", "quit",
+        "about", "run", "pause", "setup", "quit",
         "rightclick", "doubleclick",
         "fastforward", "frameskip",
         "debug", "trace"
@@ -47,6 +47,7 @@ class HatariUI():
         self.aboutdialog = None
         self.killdialog = None
         self.quitdialog = None
+        self.setupdialog = None
         self.tracedialog = None
         # no controls set yet
         self.controls_left = None
@@ -111,16 +112,32 @@ class HatariUI():
         return self.create_button("Run Hatari!", self.run_cb)
 
     # ------- pause control -----------
-    def pause_cb(self, widget):
+    def pause_cb(self, widget, label):
         if self.hatari.pause():
-            widget.set_label("Continue\n(paused)")
+            label.set_markup("<i>Continue</i>")
         else:
             self.hatari.unpause()
-            widget.set_label("Pause")
+            label.set_markup("Pause")
 
     def pause(self):
         "Pause Hatari"
-        return self.create_button("Pause", self.pause_cb)
+        widget = gtk.Button()
+        label = gtk.Label("Pause")
+        label.set_use_markup(True)
+        widget.add(label)
+        widget.connect("clicked", self.pause_cb, label)
+        return widget
+
+    # ------- setup control -----------
+    def setup_cb(self, widget):
+        if not self.setupdialog:
+            self.setupdialog = SetupDialog(self.mainwin, self.hatari)
+        self.setupdialog.run()
+        self.setupdialog.hide()
+
+    def setup(self):
+        "Hatari configuration setup"
+        return self.create_button("Hatari setup", self.setup_cb)
 
     # ------- quit control -----------
     def quit_cb(self, widget, arg = None):

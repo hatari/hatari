@@ -127,7 +127,7 @@ class Hatari():
         if wd < 320 or ht < 200:
             print "ERROR: Hatari needs larger than %dx%d window" % (wd, ht)
             os.exit(1)
-        # TODO: get border size(s) from the configuration file
+        print "TODO: get Hatari window border size(s) from the configuration file"
         border = 48
         if wd < 640 or ht < 400:
             # only non-zoomed color mode fits to window
