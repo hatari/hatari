@@ -10,7 +10,14 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-const char ReadCpu_rcsid[] = "Hatari $Id: readcpu.c,v 1.8 2007-12-23 18:54:50 thothy Exp $";
+
+
+/* 2008/04/26	[NP]	Handle sz_byte for Areg as a valid srcmode if current instruction is a MOVE	*/
+/*			(e.g. move.b a1,(a0) ($1089)) (fix Blood Money on Superior 65)			*/
+
+
+
+const char ReadCpu_rcsid[] = "Hatari $Id: readcpu.c,v 1.9 2008-04-27 11:22:38 npomarede Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -521,7 +528,8 @@ static void build_insn (int insn)
 	{
 	    srcgather = 0;
 	}
-	if (srcmode == Areg && sz == sz_byte)
+//	if (srcmode == Areg && sz == sz_byte)
+	if (srcmode == Areg && sz == sz_byte && strcmp ( mnemonic , "MOVE" ) != 0 )	// [NP] move.b is valid on 68000
 	    goto nomatch;
 
 	if (opcstr[pos] != ',')

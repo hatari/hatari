@@ -57,10 +57,12 @@
 /* 2008/01/26	[NP]	On ST, d8(An,Xn) takes 2 cycles more when used with ADDA/SUBA (ULM Demo Menu)	*/
 /*			but not when used with MOVE (e.g. 'move.l 0(a5,d1),(a4)' takes 26 cycles and so	*/
 /*			can pair with a lsr) (Anomaly Demo Intro).					*/
+/* 2008/04/26	[NP]	Handle sz_byte for Areg in genamode, as 'move.b a1,(a0)' ($1089) is possible	*/
+/*			on ST (fix Blood Money on Superior 65)						*/
 
 
 
-const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.15 2008-02-04 21:41:22 thothy Exp $";
+const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.16 2008-04-27 11:22:38 npomarede Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -287,6 +289,9 @@ static void genamode (amodes mode, char *reg, wordsizes size, char *name, int ge
 	    abort ();
 	if (getv == 1)
 	    switch (size) {
+	    case sz_byte:				// [NP] Areg with .b is possible in MOVE source */
+		printf ("\tuae_s8 %s = m68k_areg(regs, %s);\n", name, reg);
+		break;
 	    case sz_word:
 		printf ("\tuae_s16 %s = m68k_areg(regs, %s);\n", name, reg);
 		break;
