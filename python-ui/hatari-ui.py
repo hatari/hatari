@@ -38,8 +38,8 @@ class HatariUI():
     hatari_ht = 400
     all_controls = [
         "about", "run", "pause", "setup", "quit",
+        "fastforward", "frameskip", "spec512", "sound",
         "rightclick", "doubleclick",
-        "fastforward", "frameskip",
         "debug", "trace"
     ]
     def __init__(self):
@@ -228,11 +228,52 @@ class HatariUI():
 
     def fastforward(self):
         "Whether to fast forward Hatari (needs fast machine)"
-        widget = gtk.CheckButton("Forward")
+        widget = gtk.CheckButton("FastForward")
         if self.config.get("[System]", "bFastForward") != "0":
             widget.set_active(True)
         widget.connect("toggled", self.fastforward_cb)
         return widget
+
+    # ------- spec512 control -----------
+    def spec512_cb(self, widget):
+        if widget.get_active():
+            print "Enable Spec512 support"
+            self.hatari.change_option("--spec512 1")
+        else:
+            print "Disable Spec512 support"
+            self.hatari.change_option("--spec512 0")
+
+    def spec512(self):
+        "Whether to support Spec512 (>16 colors at the same time)"
+        widget = gtk.CheckButton("Spec512 support")
+        if self.config.get("[Screen]", "nSpec512Threshold") != "0":
+            widget.set_active(True)
+        widget.connect("toggled", self.spec512_cb)
+        return widget
+
+    # ------- sound control -----------
+    def sound_cb(self, widget):
+        levels = { 0: "off", 1: "low", 2: "mid", 3: "hi" }
+        quality = levels[widget.get_active()]
+        print "Set sound (quality) to %s" % quality
+        self.hatari.change_option("--sound %s" % quality)
+
+    def sound(self):
+        "Select sound quality"
+        combo = gtk.combo_box_new_text()
+        for text in ("Off", "11kHz", "22kHz", "44kHz"):
+            combo.append_text(text)
+        if self.config.get("[Sound]", "nsoundThreshold") != "0":
+            quality = int(self.config.get("[Sound]", "nPlaybackQuality"))
+            combo.set_active(quality + 1)
+        combo.connect("changed", self.sound_cb)
+        if self.to_horizontal_box:
+            box = gtk.HBox(False, self.control_spacing/2)
+        else:
+            box = gtk.VBox()
+        box.pack_start(gtk.Label("Sound:"), False, False)
+        box.add(combo)
+        return box
     
     # ------- frame skip control -----------
     def frameskip_cb(self, widget):
@@ -241,7 +282,7 @@ class HatariUI():
         self.hatari.change_option("--frameskips %d" % frameskips)
 
     def frameskip(self):
-        "Increase/decrease screen update skip"
+        "Increase/decrease screen frame skip"
         if self.to_horizontal_box:
             box = gtk.HBox(False, self.control_spacing/2)
             box.pack_start(gtk.Label("Frameskip:"), False, False, 0)
