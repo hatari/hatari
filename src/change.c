@@ -10,12 +10,14 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.2 2008-04-25 22:17:15 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.3 2008-04-28 21:26:06 eerot Exp $";
 
+#ifndef WIN32
 #include <sys/socket.h>
+#include <sys/un.h>
+#endif
 #include <sys/types.h>
 #include <sys/time.h>
-#include <sys/un.h>
 #include <unistd.h>
 #include <ctype.h>
 
@@ -28,6 +30,7 @@ const char change_rcsid[] = "Hatari $Id: change.c,v 1.2 2008-04-25 22:17:15 eero
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
+#include "ikbd.h"
 #include "ioMem.h"
 #include "joy.h"
 #include "keymap.h"
@@ -372,13 +375,126 @@ static BOOL Change_ApplyCommandline(char *cmdline)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check ControlSocket for new commands and execute them.
- * Commands should be separated by newlines
+ * Parse key string and synthetize corresponding key press/release
+ * Return FALSE if parsing failed, TRUE otherwise
+ * 
+ * This can be used by external Hatari UI(s) on devices which lack keyboard
  */
-extern void Change_CheckUpdates(void)
+static BOOL Change_InsertKey(const char *event)
 {
+	char *endptr;
+	long int value;
+	int offset, press;
+
+	if (strncmp(event, "keypress ", 9) == 0) {
+		press = TRUE;
+		offset = 9;
+	} else if (strncmp(event, "keyrelease ", 11) == 0) {
+		press = FALSE;
+		offset = 11;
+	} else {
+		fprintf(stderr, "ERROR: event '%s' no key press/release\n", event);
+		return FALSE;
+	}
+	value = strtol(event+offset, &endptr, 0);
+	/* not a valid number or value is out of range */
+	if (!*(event+offset) || *endptr || value < 0 || value > 255) {
+		fprintf(stderr, "ERROR: value '%s' not valid key code, got %ld\n",
+			event+offset, value);
+		return FALSE;
+	}
+	/* Simulate press/release of a key with given ST keycode */
+	IKBD_PressSTKey(value, press);
+	return TRUE;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Parse event string and synthetize corresponding event to emulation
+ * Return FALSE if parsing failed, TRUE otherwise
+ * 
+ * This can be used by external Hatari UI(s) on devices which input
+ * methods differ from normal keyboard and mouse, such as high DPI
+ * touchscreen (no right/middle button, inaccurate clicks)
+ */
+static BOOL Change_InsertEvent(const char *event)
+{
+	if (strcmp(event, "doubleclick") == 0) {
+		Keyboard.LButtonDblClk = 1;
+		return TRUE;
+	}
+	if (strcmp(event, "rightpress") == 0) {
+		Keyboard.bRButtonDown |= BUTTON_MOUSE;
+		return TRUE;
+	}
+	if (strcmp(event, "rightrelease") == 0) {
+		Keyboard.bRButtonDown &= ~BUTTON_MOUSE;
+		return TRUE;
+	}
+	if (Change_InsertKey(event)) {
+		return TRUE;
+	}
+	fprintf(stderr, "ERROR: unrecognized event: '%s'\n", event);
+	fprintf(stderr, "Supported events are:\n");
+	fprintf(stderr, "- doubleclick\n");
+	fprintf(stderr, "- rightpress\n");
+	fprintf(stderr, "- rightrelease\n");
+	fprintf(stderr, "- keypress <key code>\n");
+	fprintf(stderr, "- keyrelease <keycode>\n");
+	return FALSE;	
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Parse Hatari option/shortcut/event command buffer.
+ * Given buffer is modified in-place.
+ * Returns FALSE on error, otherwise TRUE.
+ */
+BOOL Change_ProcessBuffer(char *buffer)
+{
+	char *cmd, *cmdend;
+	int ok = TRUE;
+	
+	cmd = buffer;
+	do {
+		/* command terminator? */
+		cmdend  = strchr(cmd, '\n');
+		if (cmdend) {
+			*cmdend = '\0';
+		}
+		/* process... */
+		if (strncmp(cmd, "hatari-option ", 14) == 0) {
+			ok &= Change_ApplyCommandline(cmd+14);
+		} else if (strncmp(cmd, "hatari-shortcut ", 16) == 0) {
+			ok &= Shortcut_Invoke(Str_Trim(cmd+16));
+		} else if (strncmp(cmd, "hatari-event ", 13) == 0) {
+			ok &= Change_InsertEvent(Str_Trim(cmd+13));
+		} else {
+			fprintf(stderr, "ERROR: unrecognized input\n\t'%s'\n", Str_Trim(cmd));
+			ok = FALSE;
+		}
+		if (cmdend) {
+			cmd = cmdend + 1;
+		}
+	} while (cmdend && *cmd);
+	return ok;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Check ControlSocket for new commands and execute them.
+ * Commands should be separated by newlines.
+ * Return TRUE if everthing is OK, FALSE on error.
+ */
+extern BOOL Change_CheckUpdates(void)
+{
+#ifdef WIN32	/* supports select only for sockets */
+	return TRUE;
+#else
 	/* just using all trace options with +/- are about 300 chars */
-	char *cmd, *cmdend, buffer[400];
+	char buffer[400];
 	struct timeval tv;
 	fd_set readfds;
 	ssize_t bytes;
@@ -390,7 +506,7 @@ extern void Change_CheckUpdates(void)
 	} else if (ControlFile) {
 		sock = fileno(ControlFile);
 	} else {
-		return;
+		return TRUE;
 	}
 	
 	/* ready for reading? */
@@ -400,10 +516,10 @@ extern void Change_CheckUpdates(void)
 	status = select(sock+1, &readfds, NULL, NULL, &tv);
 	if (status < 0) {
 		perror("Control socket select() error");
-		return;
+		return FALSE;
 	}
 	if (status == 0) {
-		return;
+		return TRUE;
 	}
 	
 	/* assume whole command can be read in one go */
@@ -411,7 +527,7 @@ extern void Change_CheckUpdates(void)
 	if (bytes < 0)
 	{
 		perror("Control socket read");
-		return;
+		return FALSE;
 	}
 	if (bytes == 0) {
 		/* closed */
@@ -421,30 +537,11 @@ extern void Change_CheckUpdates(void)
 		} else {
 			ControlFile = NULL;
 		}
-		return;
+		return TRUE;
 	}
 	buffer[bytes] = '\0';
-	cmd = buffer;
-	do {
-		/* command terminator? */
-		cmdend  = strchr(cmd, '\n');
-		if (cmdend) {
-			*cmdend = '\0';
-		}
-		/* process... */
-		fprintf(stderr, "got input '%s' -> %d bytes\n", cmd, bytes);
-		if (strncmp(cmd, "hatari-shortcut ", 16) == 0) {
-			Shortcut_Invoke(Str_Trim(cmd+16));
-		} else if (strncmp(cmd, "hatari-option ", 14) == 0) {
-			Change_ApplyCommandline(cmd+14);
-		} else {
-			/* TODO: assume it's input to emulated machine... */
-			fprintf(stderr, "TODO: unrecognized input\n\t'%s'\n", Str_Trim(cmd));
-		}
-		if (cmdend) {
-			cmd = cmdend + 1;
-		}
-	} while (cmdend && *cmd);
+	return Change_ProcessBuffer(buffer);
+#endif
 }
 
 
@@ -455,6 +552,9 @@ extern void Change_CheckUpdates(void)
  */
 const char *Change_SetControlSocket(const char *socketpath)
 {
+#ifdef WIN32  /* --no-cygwin supports only Winsock, not standard sockets */
+	return "Control socket is not supported on Windows";
+#else
 	struct sockaddr_un address;
 	int newsock;
 
@@ -474,7 +574,7 @@ const char *Change_SetControlSocket(const char *socketpath)
 	address.sun_family = AF_UNIX;
 	strncpy(address.sun_path, socketpath, sizeof(address.sun_path));
 	address.sun_path[sizeof(address.sun_path)-1] = '\0';
-fprintf(stderr, "Connecting to control socket '%s'...\n", address.sun_path);
+	Log_Printf(LOG_INFO, "Connecting to control socket '%s'...\n", address.sun_path);
 	if (connect(newsock, &address, sizeof(address)) < 0)
 	{
 		perror("socket connect");
@@ -488,4 +588,5 @@ fprintf(stderr, "Connecting to control socket '%s'...\n", address.sun_path);
 	ControlSocket = newsock;
 	Log_Printf(LOG_INFO, "new control socket is '%s'\n", socketpath);
 	return NULL;
+#endif
 }

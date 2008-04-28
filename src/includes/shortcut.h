@@ -10,6 +10,6 @@
  * if key wasn't a shortcut */
 extern int ShortCut_CheckKeys(int modkey, int symkey, BOOL press);
 /* Invoke shortcut identified by name */
-extern void Shortcut_Invoke(const char *shortcut);
+extern BOOL Shortcut_Invoke(const char *shortcut);
 /* Act on the stored keypress (in VBL) */
 extern void ShortCut_ActKey(void);

@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.33 2008-04-23 20:55:35 eerot Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.34 2008-04-28 21:26:07 eerot Exp $";
 
 #include <SDL.h>
 
@@ -267,7 +267,7 @@ void ShortCut_ActKey(void)
  * for functionality that cannot be done through command line
  * parsing.
  */
-void Shortcut_Invoke(const char *shortcut)
+BOOL Shortcut_Invoke(const char *shortcut)
 {
 	struct {
 		SHORTCUTKEYIDX id;
@@ -289,7 +289,7 @@ void Shortcut_Invoke(const char *shortcut)
 	if (ShortCutKey != SHORTCUT_NONE)
 	{
 		fprintf(stderr, "Shortcut invocation failed, shortcut already active\n");
-		return;
+		return FALSE;
 	}
 	for (i = 0; shortcuts[i].name; i++)
 	{
@@ -298,7 +298,7 @@ void Shortcut_Invoke(const char *shortcut)
 			ShortCutKey = shortcuts[i].id;
 			ShortCut_ActKey();
 			ShortCutKey = SHORTCUT_NONE;
-			return;
+			return TRUE;
 		}
 	}
 	fprintf(stderr, "WARNING: unknown shortcut '%s'\n\n", shortcut);
@@ -307,6 +307,7 @@ void Shortcut_Invoke(const char *shortcut)
 	{
 		fprintf(stderr, "- %s\n", shortcuts[i].name);
 	}
+	return FALSE;
 }
 
 
