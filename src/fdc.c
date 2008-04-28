@@ -15,7 +15,7 @@
 
 /* 2007/11/06   [NP]    Add calls to HATARI_TRACE and set FDC_DELAY_HBL=180		*/
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.37 2008-04-03 21:11:27 eerot Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.38 2008-04-28 20:22:38 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -31,6 +31,7 @@ const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.37 2008-04-03 21:11:27 eerot Exp
 #include "misc.h"
 #include "psg.h"
 #include "stMemory.h"
+#include "video.h"
 
 
 /*
@@ -773,6 +774,9 @@ void FDC_UpdateWriteSectorsCmd(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeI_Restore(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type I restore VBL=%d video_cyc=%d\n" ,
+		nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Set emulation to seek to track zero */
 	FDCEmulationCommand = FDCEMU_CMD_RESTORE;
 	FDCEmulationRunning = FDCEMU_RUN_RESTORE_SEEKTOTRACKZERO;
@@ -784,6 +788,9 @@ static void FDC_TypeI_Restore(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeI_Seek(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type I seek track=0x%x VBL=%d video_cyc=%d\n" ,
+		FDCDataRegister , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Set emulation to seek to chosen track */
 	FDCEmulationCommand = FDCEMU_CMD_SEEK;
 	FDCEmulationRunning = FDCEMU_RUN_SEEK_TOTRACK;
@@ -795,6 +802,9 @@ static void FDC_TypeI_Seek(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeI_Step(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type I step %d VBL=%d video_cyc=%d\n" ,
+		FDCStepDirection , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Set emulation to step(same direction as last seek executed, eg 'FDCStepDirection') */
 	FDCEmulationCommand = FDCEMU_CMD_STEP;
 	FDCEmulationRunning = FDCEMU_RUN_STEP_ONCE;
@@ -806,6 +816,9 @@ static void FDC_TypeI_Step(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeI_StepIn(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type I step in VBL=%d video_cyc=%d\n" ,
+		nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Set emulation to step in(Set 'FDCStepDirection') */
 	FDCEmulationCommand = FDCEMU_CMD_STEPIN;
 	FDCEmulationRunning = FDCEMU_RUN_STEPIN_ONCE;
@@ -818,6 +831,9 @@ static void FDC_TypeI_StepIn(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeI_StepOut(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type I step out VBL=%d video_cyc=%d\n" ,
+		nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Set emulation to step out(Set 'FDCStepDirection') */
 	FDCEmulationCommand = FDCEMU_CMD_STEPOUT;
 	FDCEmulationRunning = FDCEMU_RUN_STEPOUT_ONCE;
@@ -838,6 +854,9 @@ static void FDC_TypeI_StepOut(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeII_ReadSector(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type II read sector %d VBL=%d video_cyc=%d\n" ,
+		FDCSectorCountRegister , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Set emulation to read a single sector */
 	FDCEmulationCommand = FDCEMU_CMD_READSECTORS;
 	FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
@@ -851,6 +870,9 @@ static void FDC_TypeII_ReadSector(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeII_ReadMultipleSectors(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type II read multi sectors %d VBL=%d video_cyc=%d\n" ,
+		FDCSectorCountRegister , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Set emulation to read sectors */
 	FDCEmulationCommand = FDCEMU_CMD_READMULTIPLESECTORS;
 	FDCEmulationRunning = FDCEMU_RUN_READSECTORS_READDATA;
@@ -864,6 +886,9 @@ static void FDC_TypeII_ReadMultipleSectors(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeII_WriteSector(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type II write sector %d VBL=%d video_cyc=%d\n" ,
+		FDCSectorCountRegister , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Set emulation to write a single sector */
 	FDCEmulationCommand = FDCEMU_CMD_WRITESECTORS;
 	FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
@@ -877,6 +902,9 @@ static void FDC_TypeII_WriteSector(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeII_WriteMultipleSectors(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type II write multi sectors %d VBL=%d video_cyc=%d\n" ,
+		FDCSectorCountRegister , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Set emulation to write sectors */
 	FDCEmulationCommand = FDCEMU_CMD_WRITEMULTIPLESECTORS;
 	FDCEmulationRunning = FDCEMU_RUN_WRITESECTORS_WRITEDATA;
@@ -898,6 +926,9 @@ static void FDC_TypeII_WriteMultipleSectors(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIII_ReadAddress(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type III read address unimplemented VBL=%d video_cyc=%d\n" ,
+		nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	Log_Printf(LOG_TODO, "FDC type III command 'read address' is not implemented yet!\n");
 }
 
@@ -905,6 +936,9 @@ static void FDC_TypeIII_ReadAddress(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIII_ReadTrack(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type III read track 0x%x VBL=%d video_cyc=%d\n" ,
+		FDCTrackRegister , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	Log_Printf(LOG_TODO, "FDC type III command 'read track' does not work yet!\n");
 
 	/* FIXME: "Read track" should read more than only the sectors! (also sector headers, gaps, etc.) */
@@ -922,6 +956,9 @@ static void FDC_TypeIII_ReadTrack(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIII_WriteTrack(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type III write track 0x%x VBL=%d video_cyc=%d\n" ,
+		FDCTrackRegister , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	Log_Printf(LOG_TODO, "FDC type III command 'write track' does not work yet!\n");
 
 	/* FIXME: "Write track" not only writes the sectors! (also sector headers, gaps, etc.) */
@@ -947,6 +984,9 @@ static void FDC_TypeIII_WriteTrack(void)
 /*-----------------------------------------------------------------------*/
 static void FDC_TypeIV_ForceInterrupt(BOOL bCauseCPUInterrupt)
 {
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type IV force int VBL=%d video_cyc=%d\n" ,
+		nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+
 	/* Acknowledge interrupt, move along there's nothing more to see */
 	if (bCauseCPUInterrupt)
 		FDC_AcknowledgeInterrupt();
@@ -1093,8 +1133,8 @@ static void FDC_ExecuteCommand(void)
  */
 static void FDC_WriteSectorCountRegister(void)
 {
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 sector count=0x%x video_cyc=%d\n" ,
-		DiskControllerWord_ff8604wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 sector count=0x%x VBL=%d video_cyc=%d\n" ,
+		DiskControllerWord_ff8604wr , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 
 	FDCSectorCountRegister = DiskControllerWord_ff8604wr;
 }
@@ -1106,8 +1146,8 @@ static void FDC_WriteSectorCountRegister(void)
  */
 static void FDC_WriteCommandRegister(void)
 {
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 command=0x%x video_cyc=%d\n" ,
-		DiskControllerWord_ff8604wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 command=0x%x VBL=%d video_cyc=%d\n" ,
+		DiskControllerWord_ff8604wr , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 
 	FDCCommandRegister = DiskControllerWord_ff8604wr;
 	/* And execute */
@@ -1121,8 +1161,8 @@ static void FDC_WriteCommandRegister(void)
  */
 static void FDC_WriteTrackRegister(void)
 {
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 track=0x%x video_cyc=%d\n" ,
-		DiskControllerWord_ff8604wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 track=0x%x VBL=%d video_cyc=%d\n" ,
+		DiskControllerWord_ff8604wr , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 
 	FDCTrackRegister = DiskControllerWord_ff8604wr;    /* 0...79 */
 }
@@ -1134,8 +1174,8 @@ static void FDC_WriteTrackRegister(void)
  */
 static void FDC_WriteSectorRegister(void)
 {
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 sector=0x%x video_cyc=%d\n" ,
-		DiskControllerWord_ff8604wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 sector=0x%x VBL=%d video_cyc=%d\n" ,
+		DiskControllerWord_ff8604wr , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 
 	FDCSectorRegister = DiskControllerWord_ff8604wr;  /* 1,2,3..... */
 }
@@ -1147,8 +1187,8 @@ static void FDC_WriteSectorRegister(void)
  */
 static void FDC_WriteDataRegister(void)
 {
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 data=0x%x video_cyc=%d\n" ,
-		DiskControllerWord_ff8604wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 data=0x%x VBL=%d video_cyc=%d\n" ,
+		DiskControllerWord_ff8604wr , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 
 	FDCDataRegister = DiskControllerWord_ff8604wr;
 }
@@ -1171,8 +1211,8 @@ void FDC_DiskController_WriteWord(void)
 
 	DiskControllerWord_ff8604wr = IoMem_ReadWord(0xff8604);
 
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 data=0x%x video_cyc=%d\n" ,
-		DiskControllerWord_ff8604wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 data=0x%x VBL=%d video_cyc=%d\n" ,
+		DiskControllerWord_ff8604wr , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 
 	HDC_WriteCommandPacket();                 /*  Handle HDC functions */
 
@@ -1273,8 +1313,8 @@ void FDC_DiskControllerStatus_ReadWord(void)
 
 	IoMem_WriteWord(0xff8604, DiskControllerByte);
 
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc read 8604 ctrl status=0x%x video_cyc=%d\n" ,
-		DiskControllerByte , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc read 8604 ctrl status=0x%x VBL=%d video_cyc=%d\n" ,
+		DiskControllerByte , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 }
 
 
@@ -1299,7 +1339,8 @@ Uint32 FDC_ReadDMAAddress(void)
  */
 void FDC_WriteDMAAddress(Uint32 Address)
 {
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 0x%x to dma address video_cyc=%d\n" , Address , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 0x%x to dma address VBL=%d video_cyc=%d\n" ,
+		Address , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 
 	/* Store as 24-bit address */
 	STMemory_WriteByte(0xff8609, Address>>16);
@@ -1315,8 +1356,8 @@ void FDC_WriteDMAAddress(Uint32 Address)
  */
 BOOL FDC_ReadSectorFromFloppy(void)
 {
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc read sector dev=%d sect=%d track=%d side=%d video_cyc=%d\n" ,
-		nReadWriteDev, nReadWriteSector, nReadWriteTrack, nReadWriteSide, Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc read sector dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d\n" ,
+		nReadWriteDev, nReadWriteSector, nReadWriteTrack, nReadWriteSide, nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 
 	/* Copy in 1 sector to our workspace */
 	if (Floppy_ReadSectors(nReadWriteDev, DMASectorWorkSpace, nReadWriteSector, nReadWriteTrack, nReadWriteSide, 1, NULL))
@@ -1349,8 +1390,8 @@ BOOL FDC_WriteSectorFromFloppy(void)
 	/* Get DMA address */
 	Address = FDC_ReadDMAAddress();
 
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write sector addr=%x dev=%d sect=%d track=%d side=%d video_cyc=%d\n" ,
-		Address, nReadWriteDev, nReadWriteSector, nReadWriteTrack, nReadWriteSide, Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write sector addr=%x dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d\n" ,
+		Address, nReadWriteDev, nReadWriteSector, nReadWriteTrack, nReadWriteSide, nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 
 	/* Write out 1 sector from our workspace */
 	if (Floppy_WriteSectors(nReadWriteDev, &STRam[Address], nReadWriteSector, nReadWriteTrack, nReadWriteSide, 1, NULL))
@@ -1411,7 +1452,8 @@ void FDC_DmaModeControl_WriteWord(void)
 	DMAModeControl_ff8606wr_prev = DMAModeControl_ff8606wr;  /* Store previous to check for _read/_write toggle (DMA reset) */
 	DMAModeControl_ff8606wr = IoMem_ReadWord(0xff8606);      /* Store to DMA Mode control */
 
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8606 ctrl=0x%x video_cyc=%d\n" , DMAModeControl_ff8606wr , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8606 ctrl=0x%x VBL=%d video_cyc=%d\n" ,
+		DMAModeControl_ff8606wr , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) );
 
 	/* When write to 0xff8606, check bit '8' toggle. This causes DMA status reset */
 	if ((DMAModeControl_ff8606wr_prev ^ DMAModeControl_ff8606wr) & 0x0100)
