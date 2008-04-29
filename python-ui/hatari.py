@@ -19,9 +19,10 @@ import sys
 import signal
 import socket
 
-# running Hatari instance
+# Running Hatari instance
 class Hatari():
     controlpath = "/tmp/hatari-ui-" + os.getenv("USER") + ".socket"
+    server = None # singleton due to path being currently one per user
 
     def __init__(self, hataribin = None):
         # collect hatari process zombies without waitpid()
@@ -30,7 +31,6 @@ class Hatari():
             self.hataribin = hataribin
         else:
             self.hataribin = "hatari"
-        self.server = None
         self.create_server()
         self.control = None
         self.paused = False
@@ -74,7 +74,7 @@ class Hatari():
             return False
         return True
     
-    def run(self, config, parent_win = None):
+    def run(self, parent_win = None, embed_args = None):
         # if parent_win given, embed Hatari to it
         pid = os.fork()
         if pid < 0:
@@ -89,17 +89,17 @@ class Hatari():
                 print "connected!"
         else:
             # child runs Hatari
-            env = self.get_env(parent_win)
-            args = (self.hataribin, ) + self.get_extra_args(config, parent_win)
+            env = os.environ
+            args = (self.hataribin, )
+            if parent_win:
+                self.set_embed_env(env, parent_win)
+                args += embed_args
             if self.server:
                 args += ("--control-socket", self.controlpath)
             print "RUN:", args
             os.execvpe(self.hataribin, args, env)
 
-    def get_env(self, parent_win):
-        env = os.environ
-        if not parent_win:
-            return env
+    def set_embed_env(self, env, parent_win):
         if sys.platform == 'win32':
             win_id = parent_win.handle
         else:
@@ -116,50 +116,6 @@ class Hatari():
         # Instead we tell hatari to reparent itself after creating
         # its own window into this program widget window
         env["PARENT_WIN_ID"] = str(win_id)
-        return env
-
-    def get_extra_args(self, config, parent_win):
-        print "TODO: save and use temporary Hatari-UI hatari settings?"
-        if not parent_win:
-            return ()
-        # need to modify Hatari settings to match parent window
-        wd, ht = parent_win.get_size()
-        if wd < 320 or ht < 200:
-            print "ERROR: Hatari needs larger than %dx%d window" % (wd, ht)
-            os.exit(1)
-        print "TODO: get Hatari window border size(s) from the configuration file"
-        border = 48
-        if wd < 640 or ht < 400:
-            # only non-zoomed color mode fits to window
-            args = ("--zoom", "1", "--monitor", "vga")
-            if wd < 320+border*2 and ht < 200+border*2:
-                # without borders
-                args += ("--borders", "off")
-        else:
-            # can we have both zooming and borders?
-            if wd < 2*(320+border*2) and ht < 2*(200+border*2):
-                useborder = config.get("[Screen]", "bAllowOverscan")
-                if useborder and useborder.upper() == "TRUE":
-                    # no, just border
-                    args = ("--zoom", "1")
-                else:
-                    # no, just zooming
-                    args = ("--zoom", "2")
-            else:
-                # yes, both
-                args = ("--zoom", "2")
-        if config:
-            # for VDI we can use (fairly) exact size
-            usevdi = config.get("[Screen]", "bUseExtVdiResolutions")
-            if usevdi and usevdi.upper() == "TRUE":
-                args += ("--vdi-width", str(wd), "--vdi-height", str(ht))
-            # window size for other than ST & STE can differ
-            machine = config.get("[System]", "nMachineType")
-            if machine != '0' and machine != '1':
-                print "WARNING: neither ST nor STE, forcing machine to ST"
-                args += ("--machine", "st")
-                    
-        return args
 
     def pause(self):
         if self.pid and not self.paused:
@@ -182,15 +138,19 @@ class Hatari():
             self.pid = 0
 
 
-# current Hatari configuration
+# Current Hatari configuration.
+#
+# The configuration variable names are unique,
+# so internally this doesn't need to use sections,
+# only when loading/saving.
 class Config():
     def __init__(self, path = None):
         self.changed = False
         if not path:
             path = self.get_path()
         if path:
-            self.sections = self.load(path)
-            if self.sections:
+            self.keys, self.sections = self.load(path)
+            if self.keys:
                 print "Loaded Hatari configuration file:", path
                 #self.write(sys.stdout)
             else:
@@ -199,7 +159,10 @@ class Config():
         else:
             print "Hatari configuration file missing"
             self.sections = {}
+            self.keys = {}
         self.path = path
+        # take copy of the original settings so that we know what changed
+        self.original = self.keys.copy()
 
     def get_path(self):
         # hatari.cfg can be in home or current work dir
@@ -222,11 +185,12 @@ class Config():
         return None
     
     def load(self, path):
-        sections = {}
         config = open(path, "r")
         if not config:
-            return sections
+            return ({}, {})
         name = "[_orphans_]"
+        sections = {}
+        allkeys = {}
         keys = {}
         for line in config.readlines():
             line = line.strip()
@@ -236,48 +200,62 @@ class Config():
                 if line in sections:
                     print "WARNING: section '%s' twice in configuration" % line
                 if keys:
-                    sections[name] = keys
+                    sections[name] = keys.keys()
                     keys = {}
                 name = line
                 continue
             if line.find('=') < 0:
                 print "WARNING: line without key=value pair:\n%s" % line
                 continue
-            key, value = line.split('=')
-            keys[key.strip()] = value.strip()
+            key, value = [string.strip() for string in line.split('=')]
+            allkeys[key] = value
+            keys[key] = value
         if keys:
-            sections[name] = keys
-        return sections
-
-    def get(self, section, key):
-        if section not in self.sections:
-            print "WARNING: unknown section '%s'" % section
+            sections[name] = keys.keys()
+        return allkeys, sections
+    
+    def get(self, key):
+        if key not in self.keys:
+            print "WARNING: unknown key '%s'" % key
             return None
-        if key not in self.sections[section]:
-            print "WARNING: unknown key '%s[%s]'" % (section, key)
-            return None
-        return self.sections[section][key]
+        return self.keys[key]
         
-    def set(self, section, key, value):
-        oldvalue = self.get(section, key)
+    def set(self, key, value):
+        oldvalue = self.get(key)
         if not oldvalue:
             # can only set values which have been loaded
             return False
+        value = str(value)
         if value != oldvalue:
-            self.sections[section][key] = value
+            self.keys[key] = value
             self.changed = True
         return True
 
+    def is_changed(self):
+        return self.changed
+
+    def list_changes(self):
+        "return (key, value) tuple for each change config option"
+        changed = []
+        if self.changed:
+            for key,value in self.keys.items():
+                if value != self.original[key]:
+                    changed.append((key, value))
+        return changed
+
+    def revert(self, key):
+        self.keys[key] = self.original[key]
+    
     def write(self, file):
         sections = self.sections.keys()
         sections.sort()
         for section in sections:
             file.write("%s\n" % section)
-            items = self.sections[section]
-            keys = items.keys()
+            keys = self.sections[section]
             keys.sort()
             for key in keys:
-                file.write("%s = %s\n" % (key, items[key]))
+                file.write("%s = %s\n" % (key, self.keys[key]))
+            file.write("\n")
             
     def save(self):
         if not self.path:
@@ -286,12 +264,129 @@ class Config():
         if not self.changed:
             print "No configuration changes to save, skipping"
             return            
-        file = open(self.path, "w")
+        #file = open(self.path, "w")
+        print "TODO: for now writing config to stdout"
+        file = sys.stdout
         if file:
             self.write(file)
             print "Saved Hatari configuration file:", self.path
         else:
             print "ERROR: opening '%s' for saving failed" % self.path
 
-    def is_changed(self):
-        return self.changed
+
+# Mapping of requested values both to Hatari configuration
+# and command line options.
+#
+# Because of some inconsistensies in the values (see e.g. sound),
+# this cannot just do these according to some mapping, but it
+# needs actual method for (each) setting.
+class ConfigMapping(Config):
+    def __init__(self, hatari):
+        Config.__init__(self)
+        self.hatari = hatari
+
+    # ------------ fastforward ---------------
+    def get_fastforward(self):
+        if self.get("bFastForward") != "0":
+            return True
+        return False
+
+    def set_fastforward(self, value):
+        if value:
+            print "Entering hyper speed!"
+            value = self.set("bFastForward", 1)
+            self.hatari.change_option("--fast-forward on")
+        else:
+            print "Returning to normal speed"
+            value = self.set("bFastForward", 0)
+            self.hatari.change_option("--fast-forward off")
+        
+    # ------------ spec512 ---------------
+    def get_spec512threshold(self):
+        value = self.get("nSpec512Threshold")
+        if value:
+            return int(value)
+        return 0
+
+    def set_spec512threshold(self, value):
+        print "Spec512 support:", value
+        self.set("nSpec512Threshold", value)
+        self.hatari.change_option("--spec512 %d" % value)
+        
+    # ------------ sound ---------------
+    def get_sound_values(self):
+        return ("Off", "11kHz", "22kHz", "44kHz")
+    
+    def get_sound(self):
+        # return index to get_sound_values() array
+        if self.get("bEnableSound").upper() == "TRUE":
+            return int(self.get("nPlaybackQuality")) + 1
+        return 0
+
+    def set_sound(self, value):
+        # map get_sound_values() index to Hatari config
+        if value:
+            enabled = "True"
+        else:
+            enabled = "False"
+        self.set("bEnableSound", enabled)
+        self.set("nPlaybackQuality", value - 1)
+        # and to cli option
+        levels = { 0: "off", 1: "low", 2: "med", 3: "hi" }
+        quality = levels[value]
+        print "Sound (quality):", quality
+        self.hatari.change_option("--sound %s" % quality)
+
+    # ------------ frameskips ---------------
+    def get_frameskips(self):
+        value = self.get("nFrameSkips")
+        if value:
+            return int(value)
+        return 0
+    
+    def set_frameskips(self, value):
+        print "Frameskip value:", value
+        self.set("nFrameSkips", value)
+        self.hatari.change_option("--frameskips %d" % value)
+
+    # ------------ options to embed to requested size ---------------
+    def get_embed_args(self, size):
+        print "TODO: save and use temporary Hatari-UI hatari settings?"
+        # need to modify Hatari settings to match the given window size
+        (wd, ht) = size
+        if wd < 320 or ht < 200:
+            print "ERROR: Hatari needs larger than %dx%d window" % (wd, ht)
+            os.exit(1)
+        print "TODO: get Hatari window border size(s) from the configuration file"
+        border = 48
+        if wd < 640 or ht < 400:
+            # only non-zoomed color mode fits to window
+            args = ("--zoom", "1", "--monitor", "vga")
+            if wd < 320+border*2 and ht < 200+border*2:
+                # without borders
+                args += ("--borders", "off")
+        else:
+            # can we have both zooming and borders?
+            if wd < 2*(320+border*2) and ht < 2*(200+border*2):
+                useborder = self.get("bAllowOverscan")
+                if useborder and useborder.upper() == "TRUE":
+                    # no, just border
+                    args = ("--zoom", "1")
+                else:
+                    # no, just zooming
+                    args = ("--zoom", "2")
+            else:
+                # yes, both
+                args = ("--zoom", "2")
+
+        # for VDI we can use (fairly) exact size
+        usevdi = self.get("bUseExtVdiResolutions")
+        if usevdi and usevdi.upper() == "TRUE":
+            args += ("--vdi-width", str(wd), "--vdi-height", str(ht))
+        # window size for other than ST & STE can differ
+        machine = self.get("nMachineType")
+        if machine != '0' and machine != '1':
+            print "WARNING: neither ST nor STE, forcing machine to ST"
+            args += ("--machine", "st")
+                    
+        return args

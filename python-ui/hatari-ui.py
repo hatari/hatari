@@ -26,8 +26,8 @@ pygtk.require('2.0')
 import gtk
 import gobject
 
-from hatari import Hatari, Config
-from dialogs import AboutDialog, KillDialog, QuitDialog, SetupDialog, TraceDialog
+from hatari import Hatari, ConfigMapping
+from dialogs import AboutDialog, KillDialog, QuitSaveDialog, SetupDialog, TraceDialog
 
 
 class HatariUI():
@@ -103,9 +103,10 @@ class HatariUI():
         if self.keep_hatari_running():
             return
         if self.hatariparent:
-            self.hatari.run(self.config, self.hatariparent.window)
+            size = self.hatariparent.window.get_size()
+            self.hatari.run(self.hatariparent.window, self.config.get_embed_args(size))
         else:
-            self.hatari.run(self.config)
+            self.hatari.run()
 
     def run(self):
         "(Re-)run Hatari"
@@ -145,7 +146,7 @@ class HatariUI():
             return True
         if self.config.is_changed():
             if not self.quitdialog:
-                self.quitdialog = QuitDialog(self.mainwin)
+                self.quitdialog = QuitSaveDialog(self.mainwin, self.config)
             if self.quitdialog.run() != gtk.RESPONSE_OK:
                 self.quitdialog.hide()
                 return True
@@ -219,53 +220,36 @@ class HatariUI():
 
     # ------- fast forward control -----------
     def fastforward_cb(self, widget):
-        if widget.get_active():
-            print "Entering hyper speed!"
-            self.hatari.change_option("--fast-forward on")
-        else:
-            print "Returning to normal speed"
-            self.hatari.change_option("--fast-forward off")
+        self.config.set_fastforward(widget.get_active())
 
     def fastforward(self):
         "Whether to fast forward Hatari (needs fast machine)"
         widget = gtk.CheckButton("FastForward")
-        if self.config.get("[System]", "bFastForward") != "0":
-            widget.set_active(True)
+        widget.set_active(self.config.get_fastforward())
         widget.connect("toggled", self.fastforward_cb)
         return widget
 
     # ------- spec512 control -----------
     def spec512_cb(self, widget):
-        if widget.get_active():
-            print "Enable Spec512 support"
-            self.hatari.change_option("--spec512 1")
-        else:
-            print "Disable Spec512 support"
-            self.hatari.change_option("--spec512 0")
+        self.config.set_spec512threshold(widget.get_active())
 
     def spec512(self):
         "Whether to support Spec512 (>16 colors at the same time)"
         widget = gtk.CheckButton("Spec512 support")
-        if self.config.get("[Screen]", "nSpec512Threshold") != "0":
-            widget.set_active(True)
+        widget.set_active(self.config.get_spec512threshold())
         widget.connect("toggled", self.spec512_cb)
         return widget
 
     # ------- sound control -----------
     def sound_cb(self, widget):
-        levels = { 0: "off", 1: "low", 2: "mid", 3: "hi" }
-        quality = levels[widget.get_active()]
-        print "Set sound (quality) to %s" % quality
-        self.hatari.change_option("--sound %s" % quality)
+        self.config.set_sound(widget.get_active())
 
     def sound(self):
         "Select sound quality"
         combo = gtk.combo_box_new_text()
-        for text in ("Off", "11kHz", "22kHz", "44kHz"):
+        for text in self.config.get_sound_values():
             combo.append_text(text)
-        if self.config.get("[Sound]", "nsoundThreshold") != "0":
-            quality = int(self.config.get("[Sound]", "nPlaybackQuality"))
-            combo.set_active(quality + 1)
+        combo.set_active(self.config.get_sound())
         combo.connect("changed", self.sound_cb)
         if self.to_horizontal_box:
             box = gtk.HBox(False, self.control_spacing/2)
@@ -277,9 +261,7 @@ class HatariUI():
     
     # ------- frame skip control -----------
     def frameskip_cb(self, widget):
-        frameskips = widget.get_value()
-        print "New frameskip value:", frameskips
-        self.hatari.change_option("--frameskips %d" % frameskips)
+        self.config.set_frameskips(widget.get_value())
 
     def frameskip(self):
         "Increase/decrease screen frame skip"
@@ -293,9 +275,7 @@ class HatariUI():
             widget = gtk.VScale()
         widget.set_range(0, 8)
         widget.set_digits(0)
-        frameskips = self.config.get("[Screen]", "nFrameSkips")
-        if frameskips:
-            widget.set_value(int(frameskips))
+        widget.set_value(self.config.get_frameskips())
         widget.connect("value-changed", self.frameskip_cb)
         # important, without this Hatari doesn't receive key events!
         widget.unset_flags(gtk.CAN_FOCUS)
@@ -330,8 +310,8 @@ class HatariUI():
 
     # ---------- create UI ----------------
     def create_ui(self, fullscreen, embed):
-        self.config = Config()
         self.hatari = Hatari()
+        self.config = ConfigMapping(self.hatari)
         # just instantiate all UI windows/widgets...
         self.hatariparent = None
         self.mainwin = self.create_mainwin(embed)

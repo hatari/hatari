@@ -52,12 +52,22 @@ You can see the whole license at:
         self.dialog = dialog
 
 
-class QuitDialog(HatariUIDialog):
-    def __init__(self, parent):
+class QuitSaveDialog(HatariUIDialog):
+    def __init__(self, parent, config):
+        self.config = config
         self.dialog = gtk.MessageDialog(parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             gtk.MESSAGE_QUESTION, gtk.BUTTONS_OK_CANCEL,
-            "You have unsaved changes.\n\nQuit anyway?")
+            "You have unsaved configuration changes.\n\nQuit anyway?")
+    
+    def run(self):
+        print "Configuration changes:"
+        for key, value in self.config.list_changes():
+            print "- %s =" % key, value
+        response = self.dialog.run()
+        print "The configuration that would be saved:"
+        self.config.save()
+        return response
 
 
 class KillDialog(HatariUIDialog):
