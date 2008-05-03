@@ -54,6 +54,13 @@
 # define HAVE_SETENV 1
 #endif
 
+/* Define to 1 if you have unix domain sockets */
+#if defined(WIN32) || defined(__CEGCC__)
+# undef  HAVE_UNIX_DOMAIN_SOCKETS
+#else
+# define HAVE_UNIX_DOMAIN_SOCKETS 1
+#endif
+
 /* Relative path from bindir to datadir */
 #define BIN2DATADIR "."
 

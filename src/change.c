@@ -10,12 +10,15 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.3 2008-04-28 21:26:06 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.4 2008-05-03 18:29:42 thothy Exp $";
 
-#ifndef WIN32
+#include "config.h"
+
+#if HAVE_UNIX_DOMAIN_SOCKETS
 #include <sys/socket.h>
 #include <sys/un.h>
 #endif
+
 #include <sys/types.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -490,7 +493,7 @@ BOOL Change_ProcessBuffer(char *buffer)
  */
 extern BOOL Change_CheckUpdates(void)
 {
-#ifdef WIN32	/* supports select only for sockets */
+#if !HAVE_UNIX_DOMAIN_SOCKETS    /* supports select only for sockets */
 	return TRUE;
 #else
 	/* just using all trace options with +/- are about 300 chars */
@@ -552,8 +555,8 @@ extern BOOL Change_CheckUpdates(void)
  */
 const char *Change_SetControlSocket(const char *socketpath)
 {
-#ifdef WIN32  /* --no-cygwin supports only Winsock, not standard sockets */
-	return "Control socket is not supported on Windows";
+#if !HAVE_UNIX_DOMAIN_SOCKETS
+	return "Control socket is not supported on this platform.";
 #else
 	struct sockaddr_un address;
 	int newsock;

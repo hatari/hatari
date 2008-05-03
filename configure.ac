@@ -163,6 +163,15 @@ AC_CHECK_FUNCS([getcwd memmove memset mkdir rmdir strcasecmp \
   [AC_MSG_ERROR([A necessary function could not be found.])])
 AC_CHECK_FUNCS([cfmakeraw setenv])
 
+AC_MSG_CHECKING([for unix domain sockets])
+AC_COMPILE_IFELSE([
+#include <sys/socket.h>
+#include <sys/un.h>
+int main() { return socket(AF_UNIX, SOCK_STREAM, 0); } ],
+  [AC_MSG_RESULT([yes]) AC_DEFINE([HAVE_UNIX_DOMAIN_SOCKETS], [1],
+                             [Define to 1 if you have unix domain sockets])],
+  [AC_MSG_RESULT([no])])			     
+
 
 dnl Output
 
