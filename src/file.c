@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.51 2008-03-18 00:56:32 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.52 2008-05-03 18:58:22 thothy Exp $";
 
 #include <config.h>
 
@@ -72,7 +72,7 @@ void File_AddSlashToEndFileName(char *pszFileName)
 /**
  * Does filename extension match? If so, return TRUE
  */
-BOOL File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension)
+bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension)
 {
 	if (strlen(pszFileName) < strlen(pszExtension))
 		return FALSE;
@@ -91,7 +91,7 @@ BOOL File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtensi
  * 
  * Return TRUE if filename is '/', else give FALSE
  */
-static BOOL File_IsRootFileName(const char *pszFileName)
+static bool File_IsRootFileName(const char *pszFileName)
 {
 	if (pszFileName[0] == '\0')     /* If NULL string return! */
 		return FALSE;
@@ -100,7 +100,6 @@ static BOOL File_IsRootFileName(const char *pszFileName)
 		return TRUE;
 
 #ifdef WIN32
-
 	if (pszFileName[1] == ':')
 		return TRUE;
 #endif
@@ -128,7 +127,7 @@ const char *File_RemoveFileNameDrive(const char *pszFileName)
  * 
  * Return TRUE if filename ends with '/'
  */
-BOOL File_DoesFileNameEndWithSlash(char *pszFileName)
+bool File_DoesFileNameEndWithSlash(char *pszFileName)
 {
 	if (pszFileName[0] == '\0')    /* If NULL string return! */
 		return FALSE;
@@ -225,9 +224,9 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 /**
  * Save file to disk, return FALSE if errors
  */
-BOOL File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, BOOL bQueryOverwrite)
+bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool bQueryOverwrite)
 {
-	BOOL bRet = FALSE;
+	bool bRet = FALSE;
 
 	/* Check if need to ask user if to overwrite */
 	if (bQueryOverwrite)
@@ -299,7 +298,7 @@ int File_Length(const char *pszFileName)
  * Return TRUE if file exists, is readable or writable at least and is not
  * a directory. 
  */
-BOOL File_Exists(const char *filename)
+bool File_Exists(const char *filename)
 {
 	struct stat buf;
 	if (stat(filename, &buf) == 0 &&
@@ -316,7 +315,7 @@ BOOL File_Exists(const char *filename)
 /**
  * Return TRUE if directory exists. 
  */
-BOOL File_DirectoryExists(const char *psDirName)
+bool File_DirectoryExists(const char *psDirName)
 {
 	struct stat buf;
 	if (stat(psDirName, &buf) == 0 && (buf.st_mode & S_IFDIR))
@@ -331,11 +330,11 @@ BOOL File_DirectoryExists(const char *psDirName)
 /**
  * Find if file exists, and if so ask user if OK to overwrite
  */
-BOOL File_QueryOverwrite(const char *pszFileName)
+bool File_QueryOverwrite(const char *pszFileName)
 {
 	const char *fmt;
 	char *szString;
-	BOOL ret = TRUE;
+	bool ret = TRUE;
 
 	/* Try and find if file exists */
 	if (File_Exists(pszFileName))

@@ -6,7 +6,7 @@
 
   MSA Disk support
 */
-const char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.14 2007-12-19 11:13:28 thothy Exp $";
+const char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.15 2008-05-03 18:58:22 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -107,7 +107,7 @@ typedef struct
 /**
  * Does filename end with a .MSA extension? If so, return TRUE
  */
-BOOL MSA_FileNameIsMSA(char *pszFileName, BOOL bAllowGZ)
+bool MSA_FileNameIsMSA(char *pszFileName, bool bAllowGZ)
 {
 	return(File_DoesFileExtensionMatch(pszFileName,".msa")
 	       || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".msa.gz")));
@@ -248,7 +248,7 @@ static int MSA_FindRunOfBytes(unsigned char *pBuffer, int nBytesInBuffer)
 {
 	unsigned char ScannedByte;
 	int nTotalRun;
-	BOOL bMarker;
+	bool bMarker;
 	int i;
 
 	/* Is this the marker? If so, this is at least a run of one. */
@@ -287,7 +287,7 @@ static int MSA_FindRunOfBytes(unsigned char *pBuffer, int nBytesInBuffer)
 /**
  * Save compressed .MSA file from memory buffer. Returns TRUE is all OK
  */
-BOOL MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
+bool MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_MSA_IMAGES
 
@@ -295,7 +295,7 @@ BOOL MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 	unsigned short int *pMSADataLength;
 	Uint8 *pMSAImageBuffer, *pMSABuffer, *pImageBuffer;
 	unsigned short int nSectorsPerTrack, nSides, nCompressedBytes, nBytesPerTrack;
-	BOOL nRet;
+	bool nRet;
 	int nTracks,nBytesToGo,nBytesRun;
 	int Track,Side;
 

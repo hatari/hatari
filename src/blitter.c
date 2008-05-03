@@ -30,7 +30,7 @@
  *
  *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.16 2008-03-25 18:06:36 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.17 2008-05-03 18:58:22 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -625,7 +625,7 @@ void Blitter_Skew_WriteByte(void)
 /**
  * Save/Restore snapshot of Blitter variables.
  */
-void Blitter_MemorySnapShot_Capture(BOOL bSave)
+void Blitter_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(halftone_ram, sizeof(halftone_ram));

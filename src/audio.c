@@ -6,7 +6,7 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-const char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.27 2007-01-16 18:42:58 thothy Exp $";
+const char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.28 2008-05-03 18:58:22 thothy Exp $";
 
 #include <SDL.h>
 
@@ -26,8 +26,8 @@ int const SoundPlayBackFrequencies[] =
 };
 
 
-BOOL bSoundWorking = FALSE;               /* Is sound OK */
-volatile BOOL bPlayingBuffer = FALSE;     /* Is playing buffer? */
+bool bSoundWorking = FALSE;               /* Is sound OK */
+volatile bool bPlayingBuffer = FALSE;     /* Is playing buffer? */
 int OutputAudioFreqIndex = FREQ_22Khz;    /* Playback rate (11Khz,22Khz or 44Khz) */
 int SoundBufferSize = 1024;               /* Size of sound buffer */
 int CompleteSndBufIdx;                    /* Replay-index into MixBuffer */
@@ -202,7 +202,7 @@ void Audio_SetOutputAudioFreq(int Frequency)
 /**
  * Start/Stop sound buffer
  */
-void Audio_EnableAudio(BOOL bEnable)
+void Audio_EnableAudio(bool bEnable)
 {
 	if (bEnable && !bPlayingBuffer)
 	{

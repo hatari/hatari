@@ -8,9 +8,9 @@
 #ifndef HATARI_WAVFORMAT_H
 #define HATARI_WAVFORMAT_H
 
-extern BOOL bRecordingWav;
+extern bool bRecordingWav;
 
-extern BOOL WAVFormat_OpenFile(char *pszWavFileName);
+extern bool WAVFormat_OpenFile(char *pszWavFileName);
 extern void WAVFormat_CloseFile(void);
 extern void WAVFormat_Update(Sint8 *pSamples, int Index, int Length);
 

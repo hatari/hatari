@@ -23,7 +23,7 @@
   in the sound and it simply doesn't work. If the emulator cannot keep the
   speed, users will have to turn off the sound - that's it.
 */
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.30 2007-12-20 00:15:15 thothy Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.31 2008-05-03 18:58:22 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -75,9 +75,9 @@ static int ActiveSndBufIdx;                                     /* Current worki
 static int nSamplesToGenerate;                                  /* How many samples are needed for this time-frame */
 
 /* global values */
-BOOL bWriteEnvelopeFreq;                                        /* Did write to register '13' - causes frequency reset */
-BOOL bWriteChannelAAmp, bWriteChannelBAmp, bWriteChannelCAmp;   /* Did write to amplitude registers? */
-BOOL bEnvelopeFreqFlag;                                         /* As above, but cleared each frame for YM saving */
+bool bWriteEnvelopeFreq;                                        /* Did write to register '13' - causes frequency reset */
+bool bWriteChannelAAmp, bWriteChannelBAmp, bWriteChannelCAmp;   /* Did write to amplitude registers? */
+bool bEnvelopeFreqFlag;                                         /* As above, but cleared each frame for YM saving */
 /* Buffer to store circular samples */
 Sint8 MixBuffer[MIXBUFFER_SIZE];
 int nGeneratedSamples;                                          /* Generated samples since audio buffer update */
@@ -276,7 +276,7 @@ void Sound_ResetBufferIndex(void)
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  */
-void Sound_MemorySnapShot_Capture(BOOL bSave)
+void Sound_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(ChannelFreq, sizeof(ChannelFreq));
@@ -589,9 +589,9 @@ void Sound_Update_VBL(void)
 /**
  * Start recording sound, as .YM or .WAV output
  */
-BOOL Sound_BeginRecording(char *pszCaptureFileName)
+bool Sound_BeginRecording(char *pszCaptureFileName)
 {
-	BOOL bRet;
+	bool bRet;
 
 	if (!pszCaptureFileName || strlen(pszCaptureFileName) <= 3)
 	{
@@ -633,7 +633,7 @@ void Sound_EndRecording(void)
 /**
  * Are we recording sound data?
  */
-BOOL Sound_AreWeRecording(void)
+bool Sound_AreWeRecording(void)
 {
 	return (bRecordingYM || bRecordingWav);
 }

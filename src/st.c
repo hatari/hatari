@@ -21,7 +21,7 @@
   TRACK 2, SIDE 0
   TRACK 2, SIDE 1
 */
-const char ST_rcsid[] = "Hatari $Id: st.c,v 1.9 2007-10-31 21:31:50 eerot Exp $";
+const char ST_rcsid[] = "Hatari $Id: st.c,v 1.10 2008-05-03 18:58:22 thothy Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -42,7 +42,7 @@ int __feature_imagefs_is_file = 1;
 /**
  * Does filename end with a .ST extension? If so, return TRUE
  */
-BOOL ST_FileNameIsST(char *pszFileName, BOOL bAllowGZ)
+bool ST_FileNameIsST(char *pszFileName, bool bAllowGZ)
 {
 	return(File_DoesFileExtensionMatch(pszFileName,".st")
 	       || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".st.gz")));
@@ -73,7 +73,7 @@ Uint8 *ST_ReadDisk(char *pszFileName, long *pImageSize)
 /**
  * Save .ST file from memory buffer. Returns TRUE is all OK
  */
-BOOL ST_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
+bool ST_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_ST_IMAGES
 

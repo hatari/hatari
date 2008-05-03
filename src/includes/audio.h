@@ -17,7 +17,7 @@ enum
 };
 
 extern const int SoundPlayBackFrequencies[];
-extern BOOL bSoundWorking;
+extern bool bSoundWorking;
 extern int OutputAudioFreqIndex;
 extern int SoundBufferSize;
 extern int CompleteSndBufIdx;
@@ -28,6 +28,6 @@ extern void Audio_Lock(void);
 extern void Audio_Unlock(void);
 extern void Audio_FreeSoundBuffer(void);
 extern void Audio_SetOutputAudioFreq(int Frequency);
-extern void Audio_EnableAudio(BOOL bEnable);
+extern void Audio_EnableAudio(bool bEnable);
 
 #endif  /* HATARI_AUDIO_H */

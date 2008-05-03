@@ -13,7 +13,7 @@
  * of HatariTraceFlags. Multiple trace levels can be set at once, by setting
  * the corresponding bits in HatariTraceFlags
  */
-const char Log_rcsid[] = "Hatari $Id: log.c,v 1.14 2008-04-25 22:15:57 eerot Exp $";
+const char Log_rcsid[] = "Hatari $Id: log.c,v 1.15 2008-05-03 18:58:22 thothy Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -210,7 +210,7 @@ LOGTYPE Log_ParseOptions(const char *arg)
  * corresponding trace flag is turned off.
  * Result is stored in HatariTraceFlags.
  */
-BOOL Log_SetTraceOptions (const char *OptionsStr)
+bool Log_SetTraceOptions (const char *OptionsStr)
 {
 	char *OptionsCopy;
 	char *cur, *sep;

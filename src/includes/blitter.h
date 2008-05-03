@@ -36,6 +36,6 @@ extern void Blitter_LogOp_WriteByte(void);
 extern void Blitter_Control_WriteByte(void);
 extern void Blitter_Skew_WriteByte(void);
 
-extern void Blitter_MemorySnapShot_Capture(BOOL bSave);
+extern void Blitter_MemorySnapShot_Capture(bool bSave);
 
 #endif /* BLITTER_H */

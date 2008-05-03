@@ -5,8 +5,8 @@
   your option any later version. Read the file gpl.txt for details.
 */
 
-extern BOOL bRecordingYM;
+extern bool bRecordingYM;
 
-extern BOOL YMFormat_BeginRecording(const char *pszYMFileName);
+extern bool YMFormat_BeginRecording(const char *pszYMFileName);
 extern void YMFormat_EndRecording(void);
 extern void YMFormat_UpdateRecording(void);

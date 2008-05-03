@@ -5,6 +5,6 @@
   your option any later version. Read the file gpl.txt for details.
 */
 
-extern BOOL ST_FileNameIsST(char *pszFileName, BOOL bAllowGZ);
+extern bool ST_FileNameIsST(char *pszFileName, bool bAllowGZ);
 extern Uint8 *ST_ReadDisk(char *pszFileName, long *pImageSize);
-extern BOOL ST_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize);
+extern bool ST_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize);

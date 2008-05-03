@@ -7,7 +7,7 @@
 #ifndef HATARI_LOG_H
 #define HATARI_LOG_H
 
-#include "main.h"	/* BOOL */
+#include <stdbool.h>
 #include <SDL_types.h>
 
 
@@ -41,7 +41,7 @@ extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	__attribute__ ((format (printf, 2, 3)));
 extern LOGTYPE Log_ParseOptions(const char *OptionStr);
-extern BOOL Log_SetTraceOptions(const char *OptionsStr);
+extern bool Log_SetTraceOptions(const char *OptionsStr);
 
 #ifndef __GNUC__
 #undef __attribute__

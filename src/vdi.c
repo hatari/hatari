@@ -11,7 +11,7 @@
   We need to intercept the initial Line-A call (which we force into the TOS on
   boot-up) and also the init calls to the VDI.
 */
-const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.30 2008-04-06 10:33:30 eerot Exp $";
+const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.31 2008-05-03 18:58:22 thothy Exp $";
 
 #include "main.h"
 #include "file.h"
@@ -26,7 +26,7 @@ const char VDI_rcsid[] = "Hatari $Id: vdi.c,v 1.30 2008-04-06 10:33:30 eerot Exp
 
 Uint32 VDI_OldPC;                  /* When call Trap#2, store off PC */
 
-BOOL bUseVDIRes = FALSE;           /* Set to TRUE (if want VDI), or FALSE (ie for games) */
+bool bUseVDIRes = FALSE;           /* Set to TRUE (if want VDI), or FALSE (ie for games) */
 /* defaults */
 int VDIRes = 0;                    /* 0,1 or 2 (low, medium, high) */
 int VDIWidth = 640;                /* 640x480, 800x600 or 1024x768 */
@@ -210,7 +210,7 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
  *
  * We enter here with Trap #2, so D1 is pointer to VDI vectors, ie Control, Intin, Ptsin etc...
  */
-BOOL VDI(void)
+bool VDI(void)
 {
 	Uint32 TablePtr = Regs[REG_D1];
 	/*unsigned short int OpCode;*/

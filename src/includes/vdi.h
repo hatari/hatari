@@ -23,13 +23,13 @@ enum
 };
 
 extern Uint32 VDI_OldPC;
-extern BOOL bUseVDIRes;
+extern bool bUseVDIRes;
 extern int VDIWidth,VDIHeight;
 extern int VDIRes,VDIPlanes;
 
 extern int VDI_Limit(int value, int align, int min, int max);
 extern void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest);
-extern BOOL VDI(void);
+extern bool VDI(void);
 extern void VDI_FixDesktopInf(void);
 extern void VDI_LineA(Uint32 LineABase, Uint32 FontBase);
 extern void VDI_Complete(void);

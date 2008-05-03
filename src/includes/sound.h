@@ -12,19 +12,19 @@
 #define MIXBUFFER_SIZE    8192          /* Size of circular buffer to store sample to (44Khz) */
 
 
-extern BOOL bWriteEnvelopeFreq,bWriteChannelAAmp,bWriteChannelBAmp,bWriteChannelCAmp;
-extern BOOL bEnvelopeFreqFlag;
+extern bool bWriteEnvelopeFreq,bWriteChannelAAmp,bWriteChannelBAmp,bWriteChannelCAmp;
+extern bool bEnvelopeFreqFlag;
 extern Sint8 MixBuffer[MIXBUFFER_SIZE];
 extern int nGeneratedSamples;
 
 extern void Sound_Init(void);
 extern void Sound_Reset(void);
 extern void Sound_ResetBufferIndex(void);
-extern void Sound_MemorySnapShot_Capture(BOOL bSave);
+extern void Sound_MemorySnapShot_Capture(bool bSave);
 extern void Sound_Update(void);
 extern void Sound_Update_VBL(void);
-extern BOOL Sound_BeginRecording(char *pszCaptureFileName);
+extern bool Sound_BeginRecording(char *pszCaptureFileName);
 extern void Sound_EndRecording(void);
-extern BOOL Sound_AreWeRecording(void);
+extern bool Sound_AreWeRecording(void);
 
 #endif  /* HATARI_SOUND_H */

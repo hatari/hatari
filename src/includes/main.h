@@ -21,13 +21,12 @@
 #include <time.h>
 
 #include <SDL_types.h>
-
-
-typedef signed char BOOL;
-
+#include <stdbool.h>
+/* Do not use "BOOL" anymore for new code - use "bool" instead! */
+#define BOOL  bool
 #ifndef FALSE
-#define FALSE 0
-#define TRUE (!0)
+#define FALSE false
+#define TRUE  true
 #endif
 
 #ifdef WIN32
@@ -45,10 +44,10 @@ typedef signed char BOOL;
 #define SIZE_LONG  4
 
 
-extern BOOL bQuitProgram;
-extern BOOL bEnableDebug;
+extern bool bQuitProgram;
+extern bool bEnableDebug;
 
-extern void Main_MemorySnapShot_Capture(BOOL bSave);
+extern void Main_MemorySnapShot_Capture(bool bSave);
 extern void Main_PauseEmulation(void);
 extern void Main_UnPauseEmulation(void);
 extern void Main_RequestQuit(void);

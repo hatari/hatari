@@ -6,7 +6,7 @@
 
   YM File output, for use with STSound etc...
 */
-const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.19 2008-04-03 21:11:28 eerot Exp $";
+const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.20 2008-05-03 18:58:22 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -20,7 +20,7 @@ const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.19 2008-04-03 21:11:28
 #define YM_MAX_VBLS    (50*60*8)            /* 50=1 second, 50*60=1 minute, 50*60*8=8 minutes, or 24000 */
 #define YM_RECORDSIZE  (4+(YM_MAX_VBLS*NUM_PSG_SOUND_REGISTERS))  /* ~330k for 8 minutes */
 
-BOOL bRecordingYM = FALSE;
+bool bRecordingYM = FALSE;
 static int nYMVBLS = 0;
 static Uint8 *pYMData, *pYMWorkspace = NULL;
 static char *pszYMFileName = NULL;
@@ -29,7 +29,7 @@ static char *pszYMFileName = NULL;
 /**
  * Start recording YM registers to workspace
  */
-BOOL YMFormat_BeginRecording(const char *filename)
+bool YMFormat_BeginRecording(const char *filename)
 {
 	/* Free any previous data, don't save */
 	bRecordingYM = FALSE;
@@ -86,7 +86,7 @@ BOOL YMFormat_BeginRecording(const char *filename)
  * 
  * Convert to new workspace and return TRUE if all OK
  */
-static BOOL YMFormat_ConvertToStreams(void)
+static bool YMFormat_ConvertToStreams(void)
 {
 	Uint8 *pNewYMWorkspace;
 	Uint8 *pTmpYMData, *pNewYMData;

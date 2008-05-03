@@ -33,7 +33,7 @@
     4 - 7  Length Of Data To Follow
     8 - end  Data (Samples)
 */
-const char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.14 2007-10-19 21:56:23 eerot Exp $";
+const char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.15 2008-05-03 18:58:22 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -48,14 +48,14 @@ const char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.14 2007-10-19 21:56:
 
 static FILE *WavFileHndl;
 static int nWavOutputBytes;             /* Number of samples bytes saved */
-BOOL bRecordingWav = FALSE;             /* Is a WAV file open and recording? */
+bool bRecordingWav = FALSE;             /* Is a WAV file open and recording? */
 
 
 /*-----------------------------------------------------------------------*/
 /**
  *
  */
-BOOL WAVFormat_OpenFile(char *pszWavFileName)
+bool WAVFormat_OpenFile(char *pszWavFileName)
 {
 	const Uint32 Blank = 0;
 	const Uint32 FmtLength = SDL_SwapLE32(0x10);

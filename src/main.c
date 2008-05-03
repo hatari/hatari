@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.125 2008-04-23 20:55:35 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.126 2008-05-03 18:58:22 thothy Exp $";
 
 #include "config.h"
 
@@ -57,11 +57,11 @@ const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.125 2008-04-23 20:55:35 eerot E
 #endif
 
 
-BOOL bQuitProgram = FALSE;                /* Flag to quit program cleanly */
-BOOL bEnableDebug = FALSE;                /* Enable debug UI? */
-static BOOL bEmulationActive = TRUE;      /* Run emulation when started */
-static BOOL bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
-static BOOL bIgnoreNextMouseMotion = FALSE;  /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
+bool bQuitProgram = FALSE;                /* Flag to quit program cleanly */
+bool bEnableDebug = FALSE;                /* Enable debug UI? */
+static bool bEmulationActive = TRUE;      /* Run emulation when started */
+static bool bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
+static bool bIgnoreNextMouseMotion = FALSE;  /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
 static char szBootDiskImage[FILENAME_MAX];   /* boot disk path or empty */
 
 extern char sWorkingDir[FILENAME_MAX];
@@ -71,7 +71,7 @@ extern char sWorkingDir[FILENAME_MAX];
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  */
-void Main_MemorySnapShot_Capture(BOOL bSave)
+void Main_MemorySnapShot_Capture(bool bSave)
 {
 	int nBytes;
 
