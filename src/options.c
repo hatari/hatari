@@ -17,7 +17,7 @@
   2008-04-16   [ET]    Return FALSE instead of exiting on errors
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.55 2008-04-23 20:55:35 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.56 2008-05-03 19:09:05 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -529,7 +529,7 @@ BOOL Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
 	int i, ncpu, skips, zoom, planes, cpuclock, threshold, memsize;
-	int hdgiven = FALSE, ok = TRUE;
+	int ok = TRUE;
 	const char *errstr;
 
 	/* Defaults for loading initial memory snap-shots */
@@ -547,6 +547,9 @@ BOOL Opt_ParseParameters(int argc, char *argv[],
 				strcpy(bootdisk, argv[i]);
 				File_MakeAbsoluteName(bootdisk);
 				bLoadAutoSave = FALSE;
+				/* If floppy is specified after hard disk,
+				 * try to boot from floppy first! */
+				ConfigureParams.HardDisk.bBootFromHardDisk = FALSE;
 			}
 			else
 			{
@@ -764,7 +767,6 @@ BOOL Opt_ParseParameters(int argc, char *argv[],
 			if (ok && ConfigureParams.HardDisk.bUseHardDiskDirectories)
 			{
 				ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
-				hdgiven = TRUE;
 			}
 			bLoadAutoSave = FALSE;
 			break;
@@ -1050,10 +1052,6 @@ BOOL Opt_ParseParameters(int argc, char *argv[],
 			return FALSE;
 		}
 	}
-	if (bootlen && *bootdisk && !hdgiven)
-	{
-		/* floppy image given without HD -> boot from floppy */
-		ConfigureParams.HardDisk.bBootFromHardDisk = FALSE;
-	}
+
 	return TRUE;
 }
