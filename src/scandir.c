@@ -6,7 +6,7 @@
 
   scandir function for BEOS, SunOS etc..
 */
-const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.8 2008-01-03 12:09:18 thothy Exp $";
+const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.9 2008-05-04 20:03:34 thothy Exp $";
 
 #include <string.h>
 #include <stdio.h>
@@ -264,7 +264,7 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 	if (ret != ERROR_NO_MORE_FILES)
 	{
 		// TODO: return some error code
-		Log_Printf(LOG_DEBUG, "scandir: last error = %d\n", ret);
+		Log_Printf(LOG_DEBUG, "scandir: last error = %ld\n", ret);
 	}
 
 	FindClose(h);

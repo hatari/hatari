@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.4 2008-05-03 18:29:42 thothy Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.5 2008-05-04 20:03:34 thothy Exp $";
 
 #include "config.h"
 
@@ -58,9 +58,12 @@ const char change_rcsid[] = "Hatari $Id: change.c,v 1.4 2008-05-03 18:29:42 thot
 # include "falcon/dsp.h"
 #endif
 
+
 /* socket from which control command line options are read */
+#if HAVE_UNIX_DOMAIN_SOCKETS
 static int ControlSocket;
 static FILE *ControlFile;
+#endif
 
 
 /*-----------------------------------------------------------------------*/

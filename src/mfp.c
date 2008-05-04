@@ -72,7 +72,7 @@
 /*			of a gemdos program for example if trace mode was activated.	*/
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.41 2008-04-20 12:16:24 npomarede Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.42 2008-05-04 20:03:34 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -88,6 +88,7 @@ const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.41 2008-04-20 12:16:24 npomarede
 #include "psg.h"
 #include "rs232.h"
 #include "sound.h"
+#include "stMemory.h"
 #include "tos.h"
 #include "video.h"
 
