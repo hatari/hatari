@@ -9,14 +9,13 @@
   We intercept and direct some XBios calls to handle the RS-232 etc. and help
   with floppy debugging.
 */
-const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.15 2008-04-06 09:07:52 eerot Exp $";
+const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.16 2008-05-04 19:21:05 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "floppy.h"
 #include "log.h"
 #include "m68000.h"
-#include "misc.h"
 #include "rs232.h"
 #include "screenSnapShot.h"
 #include "stMemory.h"

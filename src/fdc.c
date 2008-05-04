@@ -28,7 +28,7 @@
 /*			the command takes more time than a real ST to complete.		*/
 
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.39 2008-05-03 20:20:56 npomarede Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.40 2008-05-04 19:21:05 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -41,7 +41,6 @@ const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.39 2008-05-03 20:20:56 npomarede
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
-#include "misc.h"
 #include "psg.h"
 #include "stMemory.h"
 #include "video.h"

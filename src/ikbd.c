@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.36 2008-04-06 19:20:06 eerot Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.37 2008-05-04 19:21:05 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -34,7 +34,6 @@ const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.36 2008-04-06 19:20:06 eerot E
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
-#include "misc.h"
 #include "video.h"
 
 
@@ -1335,6 +1334,16 @@ static void IKBD_Cmd_SetClock(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Convert value to 2-digit BCD
+ */
+static unsigned char IKBD_ConvertToBCD(unsigned short int Value)
+{
+	return (((Value/10))<<4) | (Value%10);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * INTERROGATE TIME-OF-DAT CLOCK
  *
  * 0x1C
@@ -1365,12 +1374,12 @@ static void IKBD_Cmd_ReadClock(void)
 	/* Return packet */
 	IKBD_AddKeyToKeyboardBuffer(0xFC);
 	/* Return time-of-day clock as yy-mm-dd-hh-mm-ss as BCD */
-	IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_year));  /* yy - year (2 least significant digits) */
-	IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_mon+1)); /* mm - Month */
-	IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_mday));  /* dd - Day */
-	IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_hour));  /* hh - Hour */
-	IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_min));   /* mm - Minute */
-	IKBD_AddKeyToKeyboardBuffer(Misc_ConvertToBCD(SystemTime->tm_sec));   /* ss - Second */
+	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_year));  /* yy - year (2 least significant digits) */
+	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_mon+1)); /* mm - Month */
+	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_mday));  /* dd - Day */
+	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_hour));  /* hh - Hour */
+	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_min));   /* mm - Minute */
+	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_sec));   /* ss - Second */
 #ifdef DEBUG_OUTPUT_IKBD
 	Debug_IKBD("IKBD_Cmd_ReadClock\n");
 	Debugger_TabIKBD_AddListViewItem("ReadClock");

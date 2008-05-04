@@ -6,14 +6,13 @@
 
   MSA Disk support
 */
-const char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.15 2008-05-03 18:58:22 thothy Exp $";
+const char MSA_rcsid[] = "Hatari $Id: msa.c,v 1.16 2008-05-04 19:21:05 thothy Exp $";
 
 #include <SDL_endian.h>
 
 #include "main.h"
 #include "file.h"
 #include "floppy.h"
-#include "misc.h"
 #include "msa.h"
 
 #include "sysdeps.h"

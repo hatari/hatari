@@ -23,7 +23,7 @@
   in the sound and it simply doesn't work. If the emulator cannot keep the
   speed, users will have to turn off the sound - that's it.
 */
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.31 2008-05-03 18:58:22 thothy Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.32 2008-05-04 19:21:05 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -35,7 +35,6 @@ const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.31 2008-05-03 18:58:22 thoth
 #include "int.h"
 #include "log.h"
 #include "memorySnapShot.h"
-#include "misc.h"
 #include "psg.h"
 #include "sound.h"
 #include "video.h"
@@ -152,6 +151,21 @@ static void Sound_CreateLogTables(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Limit integer between min/max range
+ */
+static int Sound_LimitInt(int Value, int MinRange, int MaxRange)
+{
+	if (Value < MinRange)
+		Value = MinRange;
+	else if (Value > MaxRange)
+		Value = MaxRange;
+
+	return Value;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Create envelope shape, store to table
  * ( Wave is stored as 4 cycles, where cycles 1,2 are start and 3,4 are looped )
  */
@@ -164,7 +178,7 @@ static void Sound_CreateEnvelopeShape(const ENVSHAPE *pEnvShape,int *pEnvelopeVa
 	{
 		Value = pEnvShape->WaveStart[i];        /* Set starting value for gradient */
 		for (j = 0; j < 256; j++, Value += pEnvShape->WaveDelta[i])
-			*pEnvelopeValues++ = Misc_LimitInt(Value,-128,127);
+			*pEnvelopeValues++ = Sound_LimitInt(Value, -128, 127);
 	}
 }
 

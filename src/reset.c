@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.27 2008-03-13 23:17:27 thothy Exp $";
+const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.28 2008-05-04 19:21:05 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -18,7 +18,6 @@ const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.27 2008-03-13 23:17:27 thoth
 #include "ikbd.h"
 #include "int.h"
 #include "m68000.h"
-#include "misc.h"
 #include "mfp.h"
 #include "psg.h"
 #include "reset.h"

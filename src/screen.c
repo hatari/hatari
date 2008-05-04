@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.80 2008-03-31 17:28:51 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.81 2008-05-04 19:21:05 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -29,7 +29,6 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.80 2008-03-31 17:28:51 eer
 #include "ikbd.h"
 #include "log.h"
 #include "m68000.h"
-#include "misc.h"
 #include "paths.h"
 #include "screen.h"
 #include "convert/routines.h"

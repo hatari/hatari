@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.126 2008-05-03 18:58:22 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.127 2008-05-04 19:21:05 thothy Exp $";
 
 #include "config.h"
 
@@ -31,7 +31,6 @@ const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.126 2008-05-03 18:58:22 thothy 
 #include "log.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
-#include "misc.h"
 #include "midi.h"
 #include "nvram.h"
 #include "paths.h"
