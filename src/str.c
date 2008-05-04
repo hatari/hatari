@@ -6,9 +6,10 @@
 
   String functions.
 */
-const char Str_rcsid[] = "Hatari $Id: str.c,v 1.2 2008-04-20 16:04:23 eerot Exp $";
+const char Str_rcsid[] = "Hatari $Id: str.c,v 1.3 2008-05-04 17:43:02 thothy Exp $";
 
 #include <ctype.h>
+#include <stdbool.h>
 
 #include "str.h"
 
@@ -61,4 +62,48 @@ void Str_ToUpper(char *pString)
 		*pString = toupper(*pString);
 		pString++;
 	}
+}
+
+
+/**
+ * Convert string to lowercase
+ */
+void Str_ToLower(char *pString)
+{
+	while (*pString)
+	{
+		*pString = tolower(*pString);
+		pString++;
+	}
+}
+
+
+/**
+ * truncate string at first unprintable char (e.g. newline)
+ */
+void Str_Trunc(char *str)
+{
+	int i=0;
+	while (str[i] != '\0')
+	{
+		if (!isprint((unsigned)str[i]))
+			str[i] = '\0';
+		i++;
+	}
+}
+
+
+/**
+ * check if string is valid hex number.
+ */
+bool Str_IsHex(const char *str)
+{
+	int i=0;
+	while (str[i] != '\0' && str[i] != ' ')
+	{
+		if (!isxdigit((unsigned)str[i]))
+			return false;
+		i++;
+	}
+	return true;
 }

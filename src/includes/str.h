@@ -16,5 +16,8 @@
 
 char *Str_Trim(char *buffer);
 void Str_ToUpper(char *pString);
+void Str_ToLower(char *pString);
+void Str_Trunc(char *str);
+bool Str_IsHex(const char *str);
 
 #endif  /* HATARI_STR_H */

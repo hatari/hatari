@@ -8,7 +8,7 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.19 2008-05-04 17:30:29 thothy Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.20 2008-05-04 17:43:02 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -24,6 +24,7 @@ const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.19 2008-05-04 17:30:29 t
 #include "configuration.h"
 #include "reset.h"
 #include "m68000.h"
+#include "str.h"
 #include "stMemory.h"
 #include "sound.h"
 #include "tos.h"
@@ -47,49 +48,6 @@ static unsigned long disasm_addr;  /* disasm address */
 static FILE *debugLogFile;
 static FILE *debug_stdout;
 
-
-/**
- * convert string to lowercase
- */
-static void string_tolower(char *str)
-{
-	int i=0;
-	while(str[i] != '\0')
-	{
-		if(isupper((unsigned)str[i]))
-			str[i] = tolower(str[i]);
-		i++;
-	}
-}
-
-/**
- * truncate string at first unprintable char (e.g. newline)
- */
-static void string_trunc(char *str)
-{
-	int i=0;
-	while (str[i] != '\0')
-	{
-		if (!isprint((unsigned)str[i]))
-			str[i] = '\0';
-		i++;
-	}
-}
-
-/**
- * check if string is valid hex number.
- */
-static BOOL isHex(char *str)
-{
-	int i=0;
-	while (str[i] != '\0' && str[i] != ' ')
-	{
-		if (!isxdigit((unsigned)str[i]))
-			return FALSE;
-		i++;
-	}
-	return TRUE;
-}
 
 
 /*-----------------------------------------------------------------------*/
@@ -238,7 +196,7 @@ static void DebugUI_DisAsm(char *arg, BOOL cont)
 
 		if (j == -1)
 		{ /* single address, not a range */
-			if (!isHex(arg))
+			if (!Str_IsHex(arg))
 			{
 				fprintf(stderr,"Invalid address!\n");
 				return;
@@ -431,7 +389,7 @@ static void DebugUI_MemDump(char *arg, BOOL cont)
 
 		if (j == -1)
 		{ /* single address, not a range */
-			if (!isHex(arg))
+			if (!Str_IsHex(arg))
 			{
 				bMemDump = FALSE;
 				fprintf(stderr, "Invalid address!\n");
@@ -514,7 +472,7 @@ static void DebugUI_MemWrite(char *arg)
 	numBytes = 0;
 	i = 0;
 
-	string_trunc(arg);
+	Str_Trunc(arg);
 	while (arg[i] == ' ')
 		i++; /* skip spaces */
 	while (arg[i] != ' ')
@@ -630,7 +588,7 @@ static int DebugUI_Getcommand(void)
 	command[1] = 0;
 	arg[0] = 0;
 	i = sscanf(pInput, "%s%s", command, arg);
-	string_tolower(command);
+	Str_ToLower(command);
 
 	if (i == 0)
 	{
