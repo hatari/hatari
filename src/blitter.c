@@ -30,7 +30,7 @@
  *
  *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.17 2008-05-03 18:58:22 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.18 2008-05-04 19:08:46 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -152,74 +152,46 @@ static void load_halftone_ram(Uint32 source_addr)
 }
 
 
-#define HOP_OPS(_fn_name,_op,_do_source_shift,_get_source_data,_shifted_hopd_data, _do_halftone_inc) \
-static void _fn_name (void)  \
-{  \
-	Uint32 source_addr  = STMemory_ReadLong(REG_SRC_ADDR);   \
-	Uint32 dest_addr = dest_addr_reg;  \
-	Uint32 source_buffer = 0;  \
-	Uint8 skew = skewreg & 15;  \
-	/*if(address_space_24)*/  \
-	{ source_addr &= 0x0fffffe; dest_addr &= 0x0fffffe; }  \
-	if (op == 0 || op == 15) \
-	{ \
-		/* Do not increment source address for OP 0 and 15  */ \
-		/* (needed for Grotesque demo by Omega for example) */ \
-		source_x_inc = 0; \
-		source_y_inc = 0; \
-	} \
-	else \
-	{ \
-		source_x_inc = (short) STMemory_ReadWord(REG_SRC_X_INC);  \
-		source_y_inc = (short) STMemory_ReadWord(REG_SRC_Y_INC);  \
-	} \
-	dest_x_inc   = (short) STMemory_ReadWord(REG_DST_X_INC);  \
-	dest_y_inc   = (short) STMemory_ReadWord(REG_DST_Y_INC);  \
-	if (hop & 1) load_halftone_ram(source_addr);  \
-	do  \
-	{  \
-		Uint16 x, dst_data, opd_data;  \
-		if (FXSR)  \
-		{  \
-			_do_source_shift;  \
-			_get_source_data;  \
-			source_addr += source_x_inc;  \
-		}  \
-		_do_source_shift;  \
-		_get_source_data;  \
-		dst_data = STMemory_ReadWord(dest_addr);  \
-		opd_data =  _shifted_hopd_data;  \
-		STMemory_WriteWord(dest_addr,(dst_data & ~end_mask_1) | (_op & end_mask_1));  \
-		for(x=0 ; x<x_count-2 ; x++)  \
-		{  \
-			source_addr += source_x_inc;  \
-			dest_addr += dest_x_inc;  \
-			_do_source_shift;  \
-			_get_source_data;  \
-			dst_data = STMemory_ReadWord(dest_addr);  \
-			opd_data = _shifted_hopd_data;  \
-			STMemory_WriteWord(dest_addr,(dst_data & ~end_mask_2) | (_op & end_mask_2));  \
-		}  \
-		if (x_count >= 2)  \
-		{  \
-			dest_addr += dest_x_inc;  \
-			_do_source_shift;  \
-			if ( (!NFSR) || ((~(0xffff>>skew)) > end_mask_3) )  \
-			{  \
-				source_addr += source_x_inc;  \
-				_get_source_data;  \
-			}  \
-			dst_data = STMemory_ReadWord(dest_addr);  \
-			opd_data = _shifted_hopd_data;  \
-			STMemory_WriteWord(dest_addr,(((Uint16)dst_data) & ~end_mask_3) | (_op & end_mask_3));  \
-		}  \
-		source_addr += source_y_inc;  \
-		dest_addr += dest_y_inc;  \
-		_do_halftone_inc;  \
-	} while (--y_count > 0);  \
-	STMemory_WriteLong(REG_SRC_ADDR, source_addr);  \
-	dest_addr_reg = dest_addr;  \
+static inline Uint16 do_op(Uint16 opd_data, Uint16 dst_data)
+{
+	switch (op)
+	{
+		default:
+		case  0: return (0);
+		case  1: return (opd_data & dst_data);
+		case  2: return (opd_data & ~dst_data);
+		case  3: return (opd_data);
+		case  4: return (~opd_data & dst_data);
+		case  5: return (dst_data);
+		case  6: return (opd_data ^ dst_data);
+		case  7: return (opd_data | dst_data);
+		case  8: return (~opd_data & ~dst_data);
+		case  9: return (~opd_data ^ dst_data);
+		case 10: return (~dst_data);
+		case 11: return (opd_data | ~dst_data);
+		case 12: return (~opd_data);
+		case 13: return (~opd_data | dst_data);
+		case 14: return (~opd_data | ~dst_data);
+		case 15: return (0xffff);
+	}
 }
+
+
+#define do_source_shift() \
+	if (((short)STMemory_ReadWord(REG_SRC_X_INC)) < 0) \
+		source_buffer >>= 16; \
+	else \
+		source_buffer <<= 16
+
+
+#define get_source_data() \
+	if (hop >= 2) \
+	{ \
+		if (((short)STMemory_ReadWord(REG_SRC_X_INC)) < 0) \
+			source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16); \
+		else \
+			source_buffer |= ((Uint32) STMemory_ReadWord(source_addr));  \
+	}
 
 
 /* In smudge mode, the halftone offset is determined by the lowest 4 bits of
@@ -228,173 +200,109 @@ static void _fn_name (void)  \
 	((STMemory_ReadWord(source_addr) >> skew) & 15) : halftone_curroffset)
 
 
-HOP_OPS(_HOP_0_OP_00_N,(0), source_buffer >>=16,;, 0xffff, ;)
-HOP_OPS(_HOP_0_OP_01_N,(opd_data & dst_data) ,source_buffer >>=16,; , 0xffff, ;)
-HOP_OPS(_HOP_0_OP_02_N,(opd_data & ~dst_data) ,source_buffer >>=16,; , 0xffff,;)   
-HOP_OPS(_HOP_0_OP_03_N,(opd_data) ,source_buffer >>=16,; , 0xffff,;)
-HOP_OPS(_HOP_0_OP_04_N,(~opd_data & dst_data) ,source_buffer >>=16,;, 0xffff,;)
-HOP_OPS(_HOP_0_OP_05_N,(dst_data) ,source_buffer >>=16,;, 0xffff, ;)
-HOP_OPS(_HOP_0_OP_06_N,(opd_data ^ dst_data) ,source_buffer >>=16,;, 0xffff, ;)
-HOP_OPS(_HOP_0_OP_07_N,(opd_data | dst_data) ,source_buffer >>=16,; , 0xffff, ;)
-HOP_OPS(_HOP_0_OP_08_N,(~opd_data & ~dst_data) ,source_buffer >>=16,;, 0xffff, ;)
-HOP_OPS(_HOP_0_OP_09_N,(~opd_data ^ dst_data) ,source_buffer >>=16,;, 0xffff, ;)
-HOP_OPS(_HOP_0_OP_10_N,(~dst_data) ,source_buffer >>=16,;, 0xffff, ;)
-HOP_OPS(_HOP_0_OP_11_N,(opd_data | ~dst_data) ,source_buffer >>=16,;, 0xffff, ;)
-HOP_OPS(_HOP_0_OP_12_N,(~opd_data) ,source_buffer >>=16,;, 0xffff, ;)
-HOP_OPS(_HOP_0_OP_13_N,(~opd_data | dst_data) ,source_buffer >>=16,;, 0xffff, ;)   
-HOP_OPS(_HOP_0_OP_14_N,(~opd_data | ~dst_data) ,source_buffer >>=16,;, 0xffff, ;)
-HOP_OPS(_HOP_0_OP_15_N,(0xffff) ,source_buffer >>=16,;, 0xffff, ;)
-
-HOP_OPS(_HOP_1_OP_00_N,(0) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_01_N,(opd_data & dst_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_02_N,(opd_data & ~dst_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_03_N,(opd_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_04_N,(~opd_data & dst_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_05_N,(dst_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_06_N,(opd_data ^ dst_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_07_N,(opd_data | dst_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_08_N,(~opd_data & ~dst_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_09_N,(~opd_data ^ dst_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_10_N,(~dst_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_11_N,(opd_data | ~dst_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_12_N,(~opd_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_13_N,(~opd_data | dst_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_14_N,(~opd_data | ~dst_data) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_15_N,(0xffff) ,source_buffer >>=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-
-HOP_OPS(_HOP_2_OP_00_N,(0) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_01_N,(opd_data & dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_02_N,(opd_data & ~dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_03_N,(opd_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_04_N,(~opd_data & dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_05_N,(dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_06_N,(opd_data ^ dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_07_N,(opd_data | dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_08_N,(~opd_data & ~dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_09_N,(~opd_data ^ dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_10_N,(~dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_11_N,(opd_data | ~dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_12_N,(~opd_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_13_N,(~opd_data | dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_14_N,(~opd_data | ~dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_15_N,(0xffff) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew),;)
-
-HOP_OPS(_HOP_3_OP_00_N,(0) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_01_N,(opd_data & dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_02_N,(opd_data & ~dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_03_N,(opd_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_04_N,(~opd_data & dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_05_N,(dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_06_N,(opd_data ^ dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_07_N,(opd_data | dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_08_N,(~opd_data & ~dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_09_N,(~opd_data ^ dst_data) , source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_10_N,(~dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_11_N,(opd_data | ~dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_12_N,(~opd_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_13_N,(~opd_data | dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-HOP_OPS(_HOP_3_OP_14_N,(~opd_data | ~dst_data) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15) 
-HOP_OPS(_HOP_3_OP_15_N,(0xffff) ,source_buffer >>=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16) ,(source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15)
-
-
-HOP_OPS(_HOP_0_OP_00_P,(0) ,source_buffer <<=16,;, 0xffff,;)
-HOP_OPS(_HOP_0_OP_01_P,(opd_data & dst_data) ,source_buffer <<=16,;, 0xffff,;)  
-HOP_OPS(_HOP_0_OP_02_P,(opd_data & ~dst_data) ,source_buffer <<=16,;, 0xffff,;) 
-HOP_OPS(_HOP_0_OP_03_P,(opd_data) ,source_buffer <<=16,;, 0xffff,;) 
-HOP_OPS(_HOP_0_OP_04_P,(~opd_data & dst_data) ,source_buffer <<=16,;, 0xffff,;) 
-HOP_OPS(_HOP_0_OP_05_P,(dst_data) ,source_buffer <<=16,;, 0xffff,;) 
-HOP_OPS(_HOP_0_OP_06_P,(opd_data ^ dst_data) ,source_buffer <<=16,;, 0xffff,;)  
-HOP_OPS(_HOP_0_OP_07_P,(opd_data | dst_data) ,source_buffer <<=16,;, 0xffff,;)  
-HOP_OPS(_HOP_0_OP_08_P,(~opd_data & ~dst_data) ,source_buffer <<=16,;, 0xffff,;)  
-HOP_OPS(_HOP_0_OP_09_P,(~opd_data ^ dst_data) ,source_buffer <<=16,;, 0xffff,;) 
-HOP_OPS(_HOP_0_OP_10_P,(~dst_data) ,source_buffer <<=16,;, 0xffff,;)  
-HOP_OPS(_HOP_0_OP_11_P,(opd_data | ~dst_data) ,source_buffer <<=16,;, 0xffff,;) 
-HOP_OPS(_HOP_0_OP_12_P,(~opd_data) ,source_buffer <<=16,;, 0xffff,;)  
-HOP_OPS(_HOP_0_OP_13_P,(~opd_data | dst_data) ,source_buffer <<=16,;, 0xffff,;) 
-HOP_OPS(_HOP_0_OP_14_P,(~opd_data | ~dst_data) ,source_buffer <<=16,;, 0xffff,;)  
-HOP_OPS(_HOP_0_OP_15_P,(0xffff) ,source_buffer <<=16,;, 0xffff,;) 
-
-HOP_OPS(_HOP_1_OP_00_P,(0) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_01_P,(opd_data & dst_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_02_P,(opd_data & ~dst_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_03_P,(opd_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_04_P,(~opd_data & dst_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_05_P,(dst_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_06_P,(opd_data ^ dst_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_07_P,(opd_data | dst_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_08_P,(~opd_data & ~dst_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )\
-HOP_OPS(_HOP_1_OP_09_P,(~opd_data ^ dst_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_10_P,(~dst_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_11_P,(opd_data | ~dst_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_12_P,(~opd_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_13_P,(~opd_data | dst_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_14_P,(~opd_data | ~dst_data) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-HOP_OPS(_HOP_1_OP_15_P,(0xffff) ,source_buffer <<=16,;,halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 )
-
-HOP_OPS(_HOP_2_OP_00_P,(0) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_01_P,(opd_data & dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_02_P,(opd_data & ~dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_03_P,(opd_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_04_P,(~opd_data & dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_05_P,(dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_06_P,(opd_data ^ dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_07_P,(opd_data | dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_08_P,(~opd_data & ~dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_09_P,(~opd_data ^ dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_10_P,(~dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_11_P,(opd_data | ~dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-
-HOP_OPS(_HOP_2_OP_12_P,(~opd_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_13_P,(~opd_data | dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_14_P,(~opd_data | ~dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-HOP_OPS(_HOP_2_OP_15_P,(0xffff) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ) , (source_buffer >> skew),;)
-
-HOP_OPS(_HOP_3_OP_00_P,(0) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_01_P,(opd_data & dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_02_P,(opd_data & ~dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_03_P,(opd_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_04_P,(~opd_data & dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_05_P,(dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_06_P,(opd_data ^ dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_07_P,(opd_data | dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_08_P,(~opd_data & ~dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_09_P,(~opd_data ^ dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_10_P,(~dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_11_P,(opd_data | ~dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_12_P,(~opd_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_13_P,(~opd_data | dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_14_P,(~opd_data | ~dst_data) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-HOP_OPS(_HOP_3_OP_15_P,(0xffff) ,source_buffer <<=16,source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) ), (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET],halftone_curroffset=(halftone_curroffset+halftone_direction) & 15 ) 
-
-static void (* const do_hop_op_N[4][16])(void) =
+static inline Uint16 shifted_hopd_data(Uint32 source_addr, Uint32 source_buffer, Uint8 skew)
 {
-  { _HOP_0_OP_00_N, _HOP_0_OP_01_N, _HOP_0_OP_02_N, _HOP_0_OP_03_N, _HOP_0_OP_04_N, _HOP_0_OP_05_N, _HOP_0_OP_06_N, _HOP_0_OP_07_N, _HOP_0_OP_08_N, _HOP_0_OP_09_N, _HOP_0_OP_10_N, _HOP_0_OP_11_N, _HOP_0_OP_12_N, _HOP_0_OP_13_N, _HOP_0_OP_14_N, _HOP_0_OP_15_N,},
-  { _HOP_1_OP_00_N, _HOP_1_OP_01_N, _HOP_1_OP_02_N, _HOP_1_OP_03_N, _HOP_1_OP_04_N, _HOP_1_OP_05_N, _HOP_1_OP_06_N, _HOP_1_OP_07_N, _HOP_1_OP_08_N, _HOP_1_OP_09_N, _HOP_1_OP_10_N, _HOP_1_OP_11_N, _HOP_1_OP_12_N, _HOP_1_OP_13_N, _HOP_1_OP_14_N, _HOP_1_OP_15_N,},
-  { _HOP_2_OP_00_N, _HOP_2_OP_01_N, _HOP_2_OP_02_N, _HOP_2_OP_03_N, _HOP_2_OP_04_N, _HOP_2_OP_05_N, _HOP_2_OP_06_N, _HOP_2_OP_07_N, _HOP_2_OP_08_N, _HOP_2_OP_09_N, _HOP_2_OP_10_N, _HOP_2_OP_11_N, _HOP_2_OP_12_N, _HOP_2_OP_13_N, _HOP_2_OP_14_N, _HOP_2_OP_15_N,},
-  { _HOP_3_OP_00_N, _HOP_3_OP_01_N, _HOP_3_OP_02_N, _HOP_3_OP_03_N, _HOP_3_OP_04_N, _HOP_3_OP_05_N, _HOP_3_OP_06_N, _HOP_3_OP_07_N, _HOP_3_OP_08_N, _HOP_3_OP_09_N, _HOP_3_OP_10_N, _HOP_3_OP_11_N, _HOP_3_OP_12_N, _HOP_3_OP_13_N, _HOP_3_OP_14_N, _HOP_3_OP_15_N,}
-};
-
-static void (* const do_hop_op_P[4][16])(void) =
-{
-  { _HOP_0_OP_00_P, _HOP_0_OP_01_P, _HOP_0_OP_02_P, _HOP_0_OP_03_P, _HOP_0_OP_04_P, _HOP_0_OP_05_P, _HOP_0_OP_06_P, _HOP_0_OP_07_P, _HOP_0_OP_08_P, _HOP_0_OP_09_P, _HOP_0_OP_10_P, _HOP_0_OP_11_P, _HOP_0_OP_12_P, _HOP_0_OP_13_P, _HOP_0_OP_14_P, _HOP_0_OP_15_P,},
-  { _HOP_1_OP_00_P, _HOP_1_OP_01_P, _HOP_1_OP_02_P, _HOP_1_OP_03_P, _HOP_1_OP_04_P, _HOP_1_OP_05_P, _HOP_1_OP_06_P, _HOP_1_OP_07_P, _HOP_1_OP_08_P, _HOP_1_OP_09_P, _HOP_1_OP_10_P, _HOP_1_OP_11_P, _HOP_1_OP_12_P, _HOP_1_OP_13_P, _HOP_1_OP_14_P, _HOP_1_OP_15_P,},
-  { _HOP_2_OP_00_P, _HOP_2_OP_01_P, _HOP_2_OP_02_P, _HOP_2_OP_03_P, _HOP_2_OP_04_P, _HOP_2_OP_05_P, _HOP_2_OP_06_P, _HOP_2_OP_07_P, _HOP_2_OP_08_P, _HOP_2_OP_09_P, _HOP_2_OP_10_P, _HOP_2_OP_11_P, _HOP_2_OP_12_P, _HOP_2_OP_13_P, _HOP_2_OP_14_P, _HOP_2_OP_15_P,},
-  { _HOP_3_OP_00_P, _HOP_3_OP_01_P, _HOP_3_OP_02_P, _HOP_3_OP_03_P, _HOP_3_OP_04_P, _HOP_3_OP_05_P, _HOP_3_OP_06_P, _HOP_3_OP_07_P, _HOP_3_OP_08_P, _HOP_3_OP_09_P, _HOP_3_OP_10_P, _HOP_3_OP_11_P, _HOP_3_OP_12_P, _HOP_3_OP_13_P, _HOP_3_OP_14_P, _HOP_3_OP_15_P,}
-};
-
+	switch (hop)
+	{
+		default:
+		case 0: return 0xffff;
+		case 1: return halftone_ram[HALFTONE_OFFSET];
+		case 2: return (source_buffer >> skew);
+		case 3: return (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET];
+	}
+}
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Do the blit.
+ * Let's do the blit.
  */
 static void Do_Blit(void)
-{
-	if (((short)STMemory_ReadWord(REG_SRC_X_INC)) < 0)
-		do_hop_op_N[hop][op]();
+{ 
+	Uint32 source_addr  = IoMem_ReadLong(REG_SRC_ADDR);
+	Uint32 dest_addr = dest_addr_reg;
+	Uint32 source_buffer = 0;
+	Uint8 skew = skewreg & 15;
+
+	/*if(address_space_24)*/ 
+	{ source_addr &= 0x0fffffe; dest_addr &= 0x0fffffe; }
+
+	if (op == 0 || op == 15)
+	{
+		/* Do not increment source address for OP 0 and 15  */
+		/* (needed for Grotesque demo by Omega for example) */
+		source_x_inc = 0;
+		source_y_inc = 0;
+	}
 	else
-		do_hop_op_P[hop][op]();
+	{
+		source_x_inc = (short) IoMem_ReadWord(REG_SRC_X_INC);
+		source_y_inc = (short) IoMem_ReadWord(REG_SRC_Y_INC);
+	}
+	dest_x_inc   = (short) IoMem_ReadWord(REG_DST_X_INC);
+	dest_y_inc   = (short) IoMem_ReadWord(REG_DST_Y_INC);
+
+	if (hop & 1)
+		load_halftone_ram(source_addr);
+
+	do 
+	{
+		Uint16 x, dst_data, opd_data;
+
+		if (FXSR)
+		{
+			do_source_shift();
+			get_source_data();
+			source_addr += source_x_inc;
+		}
+
+		do_source_shift();
+		get_source_data();
+		dst_data = STMemory_ReadWord(dest_addr);
+		opd_data =  shifted_hopd_data(source_addr, source_buffer, skew);
+		STMemory_WriteWord(dest_addr,(dst_data & ~end_mask_1)
+		                   | (do_op(opd_data, dst_data) & end_mask_1));
+
+		for(x = 0 ; x < x_count-2 ; x++)
+		{
+			source_addr += source_x_inc;
+			dest_addr += dest_x_inc;
+			do_source_shift();
+			get_source_data();
+			dst_data = STMemory_ReadWord(dest_addr);
+			opd_data = shifted_hopd_data(source_addr, source_buffer, skew);
+			STMemory_WriteWord(dest_addr,(dst_data & ~end_mask_2)
+			                   | (do_op(opd_data, dst_data) & end_mask_2));
+		}
+
+		if (x_count >= 2)
+		{
+			dest_addr += dest_x_inc;
+			do_source_shift();
+			if ( (!NFSR) || ((~(0xffff>>skew)) > end_mask_3) ) 
+			{
+				source_addr += source_x_inc;
+				get_source_data();
+			}
+			dst_data = STMemory_ReadWord(dest_addr);
+			opd_data = shifted_hopd_data(source_addr, source_buffer, skew);
+			STMemory_WriteWord(dest_addr,(((Uint16)dst_data) & ~end_mask_3)
+			                   | (do_op(opd_data, dst_data) & end_mask_3));
+		}
+
+		source_addr += source_y_inc;
+		dest_addr += dest_y_inc;
+
+		/* Do halftone increment */
+		if (hop & 1)
+			halftone_curroffset = (halftone_curroffset+halftone_direction) & 15;
+	}
+	while (--y_count > 0);
+
+	IoMem_WriteLong(REG_SRC_ADDR, source_addr);
+	dest_addr_reg = dest_addr;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**
