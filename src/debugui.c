@@ -8,7 +8,7 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.18 2007-12-23 18:54:50 thothy Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.19 2008-05-04 17:30:29 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -99,7 +99,7 @@ static BOOL isHex(char *str)
  * -2 if a range, but not a valid one.
  * 0 if OK.
  */
-static BOOL getRange(char *str, unsigned long *lower, unsigned long *upper)
+static int getRange(char *str, unsigned long *lower, unsigned long *upper)
 {
 	BOOL fDash = FALSE;
 	int i=0;
