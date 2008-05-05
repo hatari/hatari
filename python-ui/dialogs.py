@@ -55,18 +55,37 @@ You can see the whole license at:
 class QuitSaveDialog(HatariUIDialog):
     def __init__(self, parent, config):
         self.config = config
-        self.dialog = gtk.MessageDialog(parent,
+        dialog = gtk.Dialog("Quit and Save?", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-            gtk.MESSAGE_QUESTION, gtk.BUTTONS_OK_CANCEL,
-            "You have unsaved configuration changes.\n\nQuit anyway?")
+            ("Save changes",    gtk.RESPONSE_YES,
+             "Discard changes", gtk.RESPONSE_NO,
+             gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL))
+        dialog.vbox.add(gtk.Label("You have unsaved configuration changes:"))
+        viewport = gtk.Viewport()
+        scrolledwindow = gtk.ScrolledWindow()
+        scrolledwindow.add(viewport)
+        dialog.vbox.add(scrolledwindow)
+        dialog.show_all()
+        self.viewport = viewport
+        self.dialog = dialog
     
     def run(self):
-        print "Configuration changes:"
+        "return RESPONSE_CANCEL if dialog is canceled"
+        changes = []
         for key, value in self.config.list_changes():
-            print "- %s =" % key, value
+            changes.append("%s = %s" % (key, value))
+        if not changes:
+            return gtk.RESPONSE_NO
+        child = self.viewport.get_child()
+        if child:
+            self.viewport.remove(child)
+        self.viewport.add(gtk.Label("\n".join(changes)))
+        self.viewport.show_all()
+        
         response = self.dialog.run()
-        print "The configuration that would be saved:"
-        self.config.save()
+        if response == gtk.RESPONSE_YES:
+            print "The configuration that would be saved:"
+            self.config.save()
         return response
 
 

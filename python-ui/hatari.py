@@ -345,6 +345,7 @@ class ConfigMapping(Config):
         return 0
     
     def set_frameskips(self, value):
+        value = int(value)
         print "Frameskip value:", value
         self.set("nFrameSkips", value)
         self.hatari.change_option("--frameskips %d" % value)

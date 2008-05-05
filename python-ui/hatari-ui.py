@@ -147,7 +147,7 @@ class HatariUI():
         if self.config.is_changed():
             if not self.quitdialog:
                 self.quitdialog = QuitSaveDialog(self.mainwin, self.config)
-            if self.quitdialog.run() != gtk.RESPONSE_OK:
+            if self.quitdialog.run() == gtk.RESPONSE_CANCEL:
                 self.quitdialog.hide()
                 return True
         gtk.main_quit()
