@@ -23,7 +23,14 @@
   in the sound and it simply doesn't work. If the emulator cannot keep the
   speed, users will have to turn off the sound - that's it.
 */
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.32 2008-05-04 19:21:05 thothy Exp $";
+
+/* 2008/05/05	[NP]	Fix case where period is 0 for noise, sound or enveloppe.	*/
+/*			In that case, a real ST sounds as if period was in fact 1.	*/
+/*			(fix buggy sound replay in ESwat that set volume<0 and trigger	*/
+/*			a badly initialised enveloppe with envper=0).			*/
+
+
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.33 2008-05-05 19:39:52 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -374,9 +381,9 @@ static void Sound_GenerateEnvelope(unsigned char EnvShape, unsigned char Fine, u
 	EnvelopePeriod = ENVELOPE_PERIOD((Uint32)Fine, (Uint32)Coarse);
 
 	if (EnvelopePeriod==0)                                          /* Handle div by zero */
-		EnvelopeFreqDelta = 0;
-	else
-		EnvelopeFreqDelta = ((LONGLONG)YM_FREQ<<ENVFREQ_SHIFT) / (EnvelopePeriod);  /* 16.16 fixed point */
+		EnvelopePeriod = 1;					/* per=0 sounds like per=1 */
+
+	EnvelopeFreqDelta = ((LONGLONG)YM_FREQ<<ENVFREQ_SHIFT) / (EnvelopePeriod);  /* 16.16 fixed point */
 
 	/* Create envelope from current shape and frequency */
 	for (i = 0; i < nSamplesToGenerate; i++)
@@ -424,9 +431,9 @@ static void Sound_GenerateNoise(unsigned char MixerControl, unsigned char NoiseG
 	NoisePeriod = NOISE_PERIOD((Uint32)NoiseGen);
 
 	if (NoisePeriod==0)                              /* Handle div by zero */
-		NoiseFreqDelta = 0;
-	else
-		NoiseFreqDelta = (((LONGLONG)YM_FREQ)<<NOISEFREQ_SHIFT) / NoisePeriod;  /* 4.28 fixed point */
+		NoisePeriod = 1;				/* per=0 sounds like per=1 */
+
+	NoiseFreqDelta = (((LONGLONG)YM_FREQ)<<NOISEFREQ_SHIFT) / NoisePeriod;  /* 4.28 fixed point */
 
 	/* Generate noise samples */
 	for (i = 0; i < nSamplesToGenerate; i++)
@@ -457,9 +464,9 @@ static void Sound_GenerateChannel(int *pBuffer, unsigned char ToneFine, unsigned
 	TonePeriod = TONE_PERIOD((Uint32)ToneFine, (Uint32)ToneCoarse);
 	/* Find frequency of channel */
 	if (TonePeriod==0)
-		ToneFreqDelta = 0;                                  /* Handle div by zero */
-	else
-		ToneFreqDelta = (((LONGLONG)YM_FREQ)<<TONEFREQ_SHIFT) / TonePeriod;    /* 4.28 fixed point */
+		TonePeriod = 1;					/* per=0 sounds like per=1 */
+
+	ToneFreqDelta = (((LONGLONG)YM_FREQ)<<TONEFREQ_SHIFT) / TonePeriod;    /* 4.28 fixed point */
 	Amp = LogTable16[(Amplitude&0x0f)];
 	Mix = (MixerControl>>MixMask)&9;                      /* Read I/O Mixer */
 
