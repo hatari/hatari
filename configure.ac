@@ -27,14 +27,23 @@ AC_ARG_ENABLE([werror],
   [ ENABLE_WERROR="no" ])
 
 AC_ARG_ENABLE([tracing],
-  [  --enable-tracing        Enable tracing - at the expense of emulation speed],
-  [ AC_DEFINE([HATARI_TRACE_ACTIVATED], [1],
-     [Define to enable emulation tracing - at the expense of emulation speed])])
+  [  --enable-tracing        Enable tracing],
+  [ enable_tracing="${enableval}" ],
+  [ enable_tracing="yes" ])
+if test "${enable_tracing}" = "yes"; then
+  AC_DEFINE(HATARI_TRACE_ACTIVATED, 1, [Define to 1 to enable emulation tracing])
+else
+  AC_MSG_NOTICE([Tracing disabled])
+fi
 
 AC_ARG_ENABLE([small-mem],
   [  --enable-small-mem      Use less memory - at the expense of emulation speed],
-  [ AC_DEFINE([ENABLE_SMALL_MEM], [1],
-     [Define to 1 to use less memory - at the expense of emulation speed])])
+  [ enable_smallmem="${enableval}" ],
+  [ enable_smallmem="no" ])
+if test "${enable_smallmem}" = "yes"; then
+  AC_DEFINE(ENABLE_SMALL_MEM, 1,
+     [Define to 1 to use less memory - at the expense of emulation speed])
+fi
 
 AC_ARG_WITH([extra-inc],
   [  --with-extra-inc=DIR    additional include files are in DIR],
