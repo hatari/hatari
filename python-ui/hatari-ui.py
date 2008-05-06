@@ -27,7 +27,8 @@ import gtk
 import gobject
 
 from hatari import Hatari, ConfigMapping
-from dialogs import AboutDialog, KillDialog, QuitSaveDialog, SetupDialog, TraceDialog
+from dialogs import AboutDialog, PasteDialog, KillDialog, QuitSaveDialog,\
+     SetupDialog, TraceDialog
 
 
 class HatariUI():
@@ -37,7 +38,7 @@ class HatariUI():
     hatari_wd = 640
     hatari_ht = 400
     all_controls = [
-        "about", "run", "pause", "setup", "quit",
+        "about", "run", "paste", "pause", "setup", "quit",
         "fastforward", "frameskip", "spec512", "sound",
         "rightclick", "doubleclick",
         "debug", "trace"
@@ -46,6 +47,7 @@ class HatariUI():
         # dialogs are created when needed
         self.aboutdialog = None
         self.killdialog = None
+        self.pastedialog = None
         self.quitdialog = None
         self.setupdialog = None
         self.tracedialog = None
@@ -92,7 +94,6 @@ class HatariUI():
         if not self.aboutdialog:
             self.aboutdialog = AboutDialog(self.mainwin, self.name, self.version)
         self.aboutdialog.run()
-        self.aboutdialog.hide()
 
     def about(self):
         "Hatari UI information"
@@ -111,6 +112,16 @@ class HatariUI():
     def run(self):
         "(Re-)run Hatari"
         return self.create_button("Run Hatari!", self.run_cb)
+
+    # ------- paste control -----------
+    def paste_cb(self, widget):
+        if not self.pastedialog:
+            self.pastedialog = PasteDialog(self.mainwin, self.hatari)
+        self.pastedialog.run()
+
+    def paste(self):
+        "Insert text to Hatari window"
+        return self.create_button("Paste", self.paste_cb)
 
     # ------- pause control -----------
     def pause_cb(self, widget, label):
@@ -134,7 +145,6 @@ class HatariUI():
         if not self.setupdialog:
             self.setupdialog = SetupDialog(self.mainwin, self.hatari)
         self.setupdialog.run()
-        self.setupdialog.hide()
 
     def setup(self):
         "Hatari configuration setup"
@@ -148,7 +158,6 @@ class HatariUI():
             if not self.quitdialog:
                 self.quitdialog = QuitSaveDialog(self.mainwin, self.config)
             if self.quitdialog.run() == gtk.RESPONSE_CANCEL:
-                self.quitdialog.hide()
                 return True
         gtk.main_quit()
         # continue to mainwin destroy if called by delete_event
@@ -212,7 +221,6 @@ class HatariUI():
         if not self.tracedialog:
             self.tracedialog = TraceDialog(self.mainwin, self.hatari)
         self.tracedialog.run()
-        self.tracedialog.hide()
 
     def trace(self):
         "Hatari tracing setup"
@@ -379,15 +387,14 @@ class HatariUI():
         if not self.killdialog:
             self.killdialog = KillDialog(self.mainwin)
         # Hatari is running, OK to kill?
-        response = self.killdialog.run()
-        self.killdialog.hide()
-        if response == gtk.RESPONSE_OK:
+        if self.killdialog.run() == gtk.RESPONSE_OK:
             self.hatari.stop()
             return False
         return True
     
     def main(self):
         self.mainwin.show_all()
+        # Hatari window can created only after Socket window is created
         gobject.idle_add(self.run_cb)
         gtk.main()
 

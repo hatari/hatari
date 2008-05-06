@@ -18,6 +18,7 @@
 import pygtk
 pygtk.require('2.0')
 import gtk
+import gobject
 
 
 class HatariUIDialog():
@@ -25,10 +26,9 @@ class HatariUIDialog():
         self.dialog = None
 
     def run(self):
-        return self.dialog.run()
-    
-    def hide(self):
+        response = self.dialog.run()
         self.dialog.hide()
+        return response
 
 
 class AboutDialog(HatariUIDialog):
@@ -50,6 +50,52 @@ This software is licenced under GPL v2.
 You can see the whole license at:
     http://www.gnu.org/licenses/info/GPLv2.html""")
         self.dialog = dialog
+
+
+class PasteDialog(HatariUIDialog):
+    def __init__(self, parent, hatari):
+        self.hatari = hatari
+        dialog = gtk.Dialog("Insert text", parent,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            ("Paste", gtk.RESPONSE_YES))
+        entry = gtk.Entry()
+        entry.connect("activate", self.entry_cb)
+        hbox = gtk.HBox()
+        hbox.add(gtk.Label("Text:"))
+        hbox.add(entry)
+        dialog.vbox.add(hbox)
+        dialog.show_all()
+        self.dialog = dialog
+        self.entry = entry
+    
+    def entry_cb(self, widget):
+        self.dialog.response(gtk.RESPONSE_YES)
+    
+    def text_insert_cb(self):
+        # insert string to Hatari character at the time, at given interval
+        char = self.text[self.index]
+        if self.pressed:
+            self.pressed = False
+            self.hatari.insert_event("keyrelease %c" % char)
+            self.index += 1
+            if self.index >= len(self.text):
+                return False
+        else:
+            self.pressed = True
+            self.hatari.insert_event("keypress %c" % char)
+        return True
+        
+    def run(self):
+        self.entry.set_text("")
+        if self.dialog.run() == gtk.RESPONSE_YES:
+            text = self.entry.get_text()
+            if text:
+                self.index = 0
+                self.text = text
+                self.pressed = False
+                gobject.timeout_add(100, self.text_insert_cb)
+                print "OUTPUT '%s'" % text
+        self.dialog.hide()
 
 
 class QuitSaveDialog(HatariUIDialog):
@@ -83,6 +129,7 @@ class QuitSaveDialog(HatariUIDialog):
         self.viewport.show_all()
         
         response = self.dialog.run()
+        self.dialog.hide()
         if response == gtk.RESPONSE_YES:
             print "The configuration that would be saved:"
             self.config.save()
@@ -155,6 +202,7 @@ class TraceDialog(HatariUIDialog):
                     self.tracewidgets[trace].set_active(False)
                 continue
             break
+        self.dialog.hide()
 
         if response == gtk.RESPONSE_APPLY:
             traces = []
@@ -169,7 +217,7 @@ class TraceDialog(HatariUIDialog):
 
 
 class SetupDialog(HatariUIDialog):
-    def __init__(self, parent, hatari):
+    def __init__(self, parent, config):
         dialog = gtk.Dialog("Hatari setup", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
@@ -180,7 +228,7 @@ class SetupDialog(HatariUIDialog):
         notebook.show_all()
         dialog.vbox.add(notebook)
         self.dialog = dialog
-        self.hatari = hatari
+        self.config = config
 
     def add_machines(self, notebook):
         for name in ("ST", "STe", "TT", "Falcon"):
