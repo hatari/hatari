@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.5 2008-05-04 20:03:34 thothy Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.6 2008-05-06 21:09:37 eerot Exp $";
 
 #include "config.h"
 
@@ -381,36 +381,50 @@ static BOOL Change_ApplyCommandline(char *cmdline)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Parse key string and synthetize corresponding key press/release
+ * Parse key command and synthetize corresponding key press/release
  * Return FALSE if parsing failed, TRUE otherwise
  * 
  * This can be used by external Hatari UI(s) on devices which lack keyboard
  */
 static BOOL Change_InsertKey(const char *event)
 {
-	char *endptr;
-	long int value;
-	int offset, press;
+	SDL_keysym sdlkey;
+	char ascii;
+	int press;
 
 	if (strncmp(event, "keypress ", 9) == 0) {
+		ascii = event[9];
 		press = TRUE;
-		offset = 9;
 	} else if (strncmp(event, "keyrelease ", 11) == 0) {
+		ascii = event[11];
 		press = FALSE;
-		offset = 11;
 	} else {
 		fprintf(stderr, "ERROR: event '%s' no key press/release\n", event);
 		return FALSE;
 	}
-	value = strtol(event+offset, &endptr, 0);
-	/* not a valid number or value is out of range */
-	if (!*(event+offset) || *endptr || value < 0 || value > 255) {
-		fprintf(stderr, "ERROR: value '%s' not valid key code, got %ld\n",
-			event+offset, value);
-		return FALSE;
+	sdlkey.mod = 0;
+	sdlkey.scancode = 0;
+	if (isupper(ascii)) {
+		if (press) {
+			sdlkey.sym = SDLK_LSHIFT;
+			Keymap_KeyDown(&sdlkey);
+		}
+		sdlkey.sym = tolower(ascii);
+		sdlkey.mod = SDLK_LSHIFT;
+	} else {
+		sdlkey.sym = ascii;
 	}
-	/* Simulate press/release of a key with given ST keycode */
-	IKBD_PressSTKey(value, press);
+	if (press) {
+		Keymap_KeyDown(&sdlkey);
+	} else {
+		Keymap_KeyUp(&sdlkey);
+		if (isupper(ascii)) {
+			sdlkey.sym = SDLK_LSHIFT;
+			Keymap_KeyUp(&sdlkey);
+		}
+	}
+	fprintf(stderr, "Simulate '%c' key %s\n",
+		ascii, (press?"press":"release"));
 	return TRUE;
 }
 
@@ -445,8 +459,8 @@ static BOOL Change_InsertEvent(const char *event)
 	fprintf(stderr, "- doubleclick\n");
 	fprintf(stderr, "- rightpress\n");
 	fprintf(stderr, "- rightrelease\n");
-	fprintf(stderr, "- keypress <key code>\n");
-	fprintf(stderr, "- keyrelease <keycode>\n");
+	fprintf(stderr, "- keypress <character>\n");
+	fprintf(stderr, "- keyrelease <character>\n");
 	return FALSE;	
 }
 
