@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.36 2008-05-04 19:21:05 thothy Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.37 2008-05-07 20:53:32 eerot Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -801,3 +801,33 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
 	Keyboard.KeyStates[symkey] = FALSE;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Simulate press or release of a key corresponding to given character
+ */
+void Keymap_SimulateCharacter(char asckey, bool press)
+{
+	SDL_keysym sdlkey;
+
+	sdlkey.mod = 0;
+	sdlkey.scancode = 0;
+	if (isupper(asckey)) {
+		if (press) {
+			sdlkey.sym = SDLK_LSHIFT;
+			Keymap_KeyDown(&sdlkey);
+		}
+		sdlkey.sym = tolower(asckey);
+		sdlkey.mod = SDLK_LSHIFT;
+	} else {
+		sdlkey.sym = asckey;
+	}
+	if (press) {
+		Keymap_KeyDown(&sdlkey);
+	} else {
+		Keymap_KeyUp(&sdlkey);
+		if (isupper(asckey)) {
+			sdlkey.sym = SDLK_LSHIFT;
+			Keymap_KeyUp(&sdlkey);
+		}
+	}
+}

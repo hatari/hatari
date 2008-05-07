@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.6 2008-05-06 21:09:37 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.7 2008-05-07 20:53:32 eerot Exp $";
 
 #include "config.h"
 
@@ -71,7 +71,7 @@ static FILE *ControlFile;
  * Check if need to warn user that changes will take place after reset.
  * Return TRUE if wants to reset.
  */
-BOOL Change_DoNeedReset(CNF_PARAMS *changed)
+bool Change_DoNeedReset(CNF_PARAMS *changed)
 {
 	/* Did we change monitor type? If so, must reset */
 	if (ConfigureParams.Screen.nMonitorType != changed->Screen.nMonitorType
@@ -119,11 +119,11 @@ BOOL Change_DoNeedReset(CNF_PARAMS *changed)
 /**
  * Copy details back to configuration and perform reset.
  */
-void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, BOOL bForceReset)
+void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceReset)
 {
-	BOOL NeedReset;
-	BOOL bReInitGemdosDrive = FALSE, bReInitAcsiEmu = FALSE;
-	BOOL bReInitIoMem = FALSE;
+	bool NeedReset;
+	bool bReInitGemdosDrive = FALSE, bReInitAcsiEmu = FALSE;
+	bool bReInitIoMem = FALSE;
 
 	/* Do we need to warn user of that changes will only take effect after reset? */
 	if (bForceReset)
@@ -274,9 +274,9 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, BOOL bForceRes
  * Change given Hatari options
  * Return FALSE if parsing failed, TRUE otherwise
  */
-static BOOL Change_Options(int argc, char *argv[])
+static bool Change_Options(int argc, char *argv[])
 {
-	BOOL bOK;
+	bool bOK;
 	CNF_PARAMS original, changed;
 
 	Main_PauseEmulation();
@@ -311,11 +311,11 @@ static BOOL Change_Options(int argc, char *argv[])
  * Parse given command line and change Hatari options accordingly
  * Return FALSE if parsing failed or there were no args, TRUE otherwise
  */
-static BOOL Change_ApplyCommandline(char *cmdline)
+static bool Change_ApplyCommandline(char *cmdline)
 {
 	int i, argc, inarg;
 	char **argv;
-	BOOL ret;
+	bool ret;
 
 	/* count args */
 	inarg = argc = 0;
@@ -381,50 +381,45 @@ static BOOL Change_ApplyCommandline(char *cmdline)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Parse key command and synthetize corresponding key press/release
+ * Parse key command and synthetize key press/release
+ * corresponding to given keycode or character.
  * Return FALSE if parsing failed, TRUE otherwise
  * 
- * This can be used by external Hatari UI(s) on devices which lack keyboard
+ * This can be used by external Hatari UI(s) for
+ * string macros, or on devices which lack keyboard
  */
-static BOOL Change_InsertKey(const char *event)
+static bool Change_InsertKey(const char *event)
 {
-	SDL_keysym sdlkey;
-	char ascii;
-	int press;
+	const char *key = NULL;
+	bool press;
 
 	if (strncmp(event, "keypress ", 9) == 0) {
-		ascii = event[9];
+		key = &event[9];
 		press = TRUE;
 	} else if (strncmp(event, "keyrelease ", 11) == 0) {
-		ascii = event[11];
+		key = &event[11];
 		press = FALSE;
-	} else {
-		fprintf(stderr, "ERROR: event '%s' no key press/release\n", event);
+	}
+	if (!(key && key[0])) {
+		fprintf(stderr, "ERROR: event '%s' contains no key press/release\n", event);
 		return FALSE;
 	}
-	sdlkey.mod = 0;
-	sdlkey.scancode = 0;
-	if (isupper(ascii)) {
-		if (press) {
-			sdlkey.sym = SDLK_LSHIFT;
-			Keymap_KeyDown(&sdlkey);
+	if (key[1]) {
+		char *endptr;
+		/* multiple characters, assume it's a keycode */
+		int keycode = strtol(key, &endptr, 0);
+		/* not a valid number or keycode is out of range? */
+		if (*endptr || keycode < 0 || keycode > 255) {
+			fprintf(stderr, "ERROR: '%s' is not valid key code, got %d\n",
+				key, keycode);
+			return FALSE;
 		}
-		sdlkey.sym = tolower(ascii);
-		sdlkey.mod = SDLK_LSHIFT;
+		IKBD_PressSTKey(keycode, press);
 	} else {
-		sdlkey.sym = ascii;
+		Keymap_SimulateCharacter(key[0], press);
 	}
-	if (press) {
-		Keymap_KeyDown(&sdlkey);
-	} else {
-		Keymap_KeyUp(&sdlkey);
-		if (isupper(ascii)) {
-			sdlkey.sym = SDLK_LSHIFT;
-			Keymap_KeyUp(&sdlkey);
-		}
-	}
-	fprintf(stderr, "Simulate '%c' key %s\n",
-		ascii, (press?"press":"release"));
+	fprintf(stderr, "Simulated %s key %s\n",
+		key, (press?"press":"release"));
 	return TRUE;
 }
 
@@ -437,7 +432,7 @@ static BOOL Change_InsertKey(const char *event)
  * methods differ from normal keyboard and mouse, such as high DPI
  * touchscreen (no right/middle button, inaccurate clicks)
  */
-static BOOL Change_InsertEvent(const char *event)
+static bool Change_InsertEvent(const char *event)
 {
 	if (strcmp(event, "doubleclick") == 0) {
 		Keyboard.LButtonDblClk = 1;
@@ -461,6 +456,7 @@ static BOOL Change_InsertEvent(const char *event)
 	fprintf(stderr, "- rightrelease\n");
 	fprintf(stderr, "- keypress <character>\n");
 	fprintf(stderr, "- keyrelease <character>\n");
+	fprintf(stderr, "<character> can be either a single ASCII char or keycode.\n");
 	return FALSE;	
 }
 
@@ -471,7 +467,7 @@ static BOOL Change_InsertEvent(const char *event)
  * Given buffer is modified in-place.
  * Returns FALSE on error, otherwise TRUE.
  */
-BOOL Change_ProcessBuffer(char *buffer)
+bool Change_ProcessBuffer(char *buffer)
 {
 	char *cmd, *cmdend;
 	int ok = TRUE;
@@ -508,7 +504,7 @@ BOOL Change_ProcessBuffer(char *buffer)
  * Commands should be separated by newlines.
  * Return TRUE if everthing is OK, FALSE on error.
  */
-extern BOOL Change_CheckUpdates(void)
+extern bool Change_CheckUpdates(void)
 {
 #if !HAVE_UNIX_DOMAIN_SOCKETS    /* supports select only for sockets */
 	return TRUE;
