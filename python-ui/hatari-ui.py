@@ -28,11 +28,11 @@ import gobject
 
 from hatari import Hatari, ConfigMapping
 from dialogs import AboutDialog, PasteDialog, KillDialog, QuitSaveDialog,\
-     SetupDialog, TraceDialog
+     SetupDialog, TraceDialog, HatariInsertText
 
 
 class HatariUI():
-    version = "v0.4"
+    version = "v0.5"
     name = "Hatari UI"
     icon = "hatari-icon.png"
     hatari_wd = 640
@@ -64,13 +64,10 @@ class HatariUI():
         controls = control_str.split(",")
         for control in controls:
             if control not in self.all_controls:
-                if control.find("=") < 0:
+                # not one of special cases?
+                if control != "|" and control.find("=") < 0:
                     return "unrecognized control '%s'" % control
-                try:
-                    # part after "=" converts to an int?
-                    value = int(control.split("=")[1], 0)
-                except ValueError:
-                    return "invalid value in '%s'" % control
+
         if side == "left":
             self.controls_left = controls
         elif side == "right":
@@ -85,9 +82,10 @@ class HatariUI():
         
     def list_all_controls(self):
         # generate the list from class internal documentation
+        yield ("|", "Separator between controls")
         for methodname in self.all_controls:
             yield (methodname, HatariUI.__dict__[methodname].__doc__)
-        yield ("<name>=<code>", "<name> button simulates key <code> press/release")
+        yield ("<name>=<string/code>", "Insert string or single key <code>")
 
     # ------- about control -----------
     def about_cb(self, widget):
@@ -117,7 +115,9 @@ class HatariUI():
     def paste_cb(self, widget):
         if not self.pastedialog:
             self.pastedialog = PasteDialog(self.mainwin, self.hatari)
-        self.pastedialog.run()
+        text = self.pastedialog.run()
+        if text:
+            HatariInsertText(self.hatari, text)
 
     def paste(self):
         "Insert text to Hatari window"
@@ -138,7 +138,7 @@ class HatariUI():
         label.set_use_markup(True)
         widget.add(label)
         widget.connect("clicked", self.pause_cb, label)
-        return widget
+        return (widget, True)
 
     # ------- setup control -----------
     def setup_cb(self, widget):
@@ -187,7 +187,7 @@ class HatariUI():
         widget = gtk.Button("Rightclick")
         widget.connect("pressed", self.rightpress_cb)
         widget.connect("released", self.rightrelease_cb)
-        return widget
+        return (widget, True)
 
     # ------- insert key control -----------
     def keypress_cb(self, widget, code):
@@ -196,15 +196,24 @@ class HatariUI():
     def keyrelease_cb(self, widget, code):
         self.hatari.insert_event("keyrelease %s" % code)
 
+    def textinsert_cb(self, widget, text):
+        HatariInsertText(self.hatari, text)
+
     def create_key_control(self, namecode):
         "Simulate Atari key press/release"
-        offset = namecode.rfind("=")
+        offset = namecode.find("=")
+        text = namecode[offset+1:]
         name = namecode[:offset]
-        code = namecode[offset+1:]
         widget = gtk.Button(name)
-        widget.connect("pressed", self.keypress_cb, code)
-        widget.connect("released", self.keyrelease_cb, code)
-        return widget
+        try:
+            # part after "=" converts to an int?
+            code = int(text, 0)
+            widget.connect("pressed", self.keypress_cb, code)
+            widget.connect("released", self.keyrelease_cb, code)
+        except ValueError:
+            # no, assume a string macro is wanted instead
+            widget.connect("clicked", self.textinsert_cb, text)
+        return (widget, True)
 
     # ------- debug control -----------
     def debug_cb(self, widget):
@@ -235,7 +244,7 @@ class HatariUI():
         widget = gtk.CheckButton("FastForward")
         widget.set_active(self.config.get_fastforward())
         widget.connect("toggled", self.fastforward_cb)
-        return widget
+        return (widget, False)
 
     # ------- spec512 control -----------
     def spec512_cb(self, widget):
@@ -246,7 +255,7 @@ class HatariUI():
         widget = gtk.CheckButton("Spec512 support")
         widget.set_active(self.config.get_spec512threshold())
         widget.connect("toggled", self.spec512_cb)
-        return widget
+        return (widget, False)
 
     # ------- sound control -----------
     def sound_cb(self, widget):
@@ -265,7 +274,7 @@ class HatariUI():
             box = gtk.VBox()
         box.pack_start(gtk.Label("Sound:"), False, False)
         box.add(combo)
-        return box
+        return (box, False)
     
     # ------- frame skip control -----------
     def frameskip_cb(self, widget):
@@ -288,9 +297,24 @@ class HatariUI():
         # important, without this Hatari doesn't receive key events!
         widget.unset_flags(gtk.CAN_FOCUS)
         box.add(widget)
-        return box
+        return (box, True)
 
     # ------- control widget box -----------
+    def add_method_tooltip(self, method, widget):
+        w = widget
+        # get the first non-label child of a container
+        while w.__gtype__ in (gtk.HBox.__gtype__, gtk.VBox.__gtype__):
+            children = widget.get_children()
+            if not children:
+                break
+            for child in children:
+                if child.__gtype__ not in (gtk.Label.__gtype__,):
+                    break
+            w = child
+        # TODO: for some reason this doesn't work on normal buttons
+        #print "Addding tooltip for:", w.__gtype__
+        self.tooltips.set_tip(w, method.__doc__)
+
     def get_control_box(self, controls, horizontal):
         "return Gtk Box container with the specified control widgets or None for no controls"
         if not controls:
@@ -300,19 +324,25 @@ class HatariUI():
             box = gtk.HBox(False, self.control_spacing)
         else:
             box = gtk.VBox(False, self.control_spacing)
+        self.tooltips = gtk.Tooltips()
         for control in controls:
-            if control.find("=") >= 0:
+            if control == "|":
+                if horizontal:
+                    widget = gtk.VSeparator()
+                else:
+                    widget = gtk.HSeparator()
+                expand = False
+            elif control.find("=") >= 0:
                 # handle "<name>=<keycode>" control specification
-                widget = self.create_key_control(control)
+                (widget, expand) = self.create_key_control(control)
+                self.tooltips.set_tip(widget, control)
             else:
-                widget = HatariUI.__dict__[control](self)
+                method = HatariUI.__dict__[control]
+                (widget, expand) = method(self)
+                self.add_method_tooltip(method, widget)
             # important, without this Hatari doesn't receive key events!
             widget.unset_flags(gtk.CAN_FOCUS)
-            # widen widgets other than checkboxes
-            if widget.__gtype__ == gtk.CheckButton.__gtype__:
-                box.pack_start(widget, False, False, 0)
-            else:
-                box.pack_start(widget, True, True, 0)
+            box.pack_start(widget, expand, expand, 0)
         return box
 
 
@@ -376,9 +406,10 @@ class HatariUI():
 
     # ------- helper methods -----------
     def create_button(self, label, cb):
+        "return (button with given label, expand as True)"
         widget = gtk.Button(label)
         widget.connect("clicked", cb)
-        return widget
+        return (widget, True)
     
     def keep_hatari_running(self):
         if not self.hatari.is_running():
@@ -394,7 +425,7 @@ class HatariUI():
     
     def main(self):
         self.mainwin.show_all()
-        # Hatari window can created only after Socket window is created
+        # Hatari window can be created only after Socket window is created
         gobject.idle_add(self.run_cb)
         gtk.main()
 
@@ -417,13 +448,22 @@ def usage(app, msg=None):
     print "\nif no options are given, controls given in example below are used."
     print "\nAvailable controls:"
     for control, description in app.list_all_controls():
-        if len(control) < 8:
+        size = len(control)
+        if size < 8:
             tabs = "\t\t"
-        else:
+        elif size < 16:
             tabs = "\t"
+        else:
+            tabs = "\n\t\t\t"
         print "\t%s%s%s" % (control, tabs, description)
-    print "\nExample:"
-    print "\t%s -e --top run,Undo=0x61,about,quit -s 8\n" % name
+    print """
+Example:
+\t%s -e \\
+\t-t "about,run,pause,quit" \\
+\t-b "sound,spec512,|,fastforward,|,frameskip" \\
+\t-l "Macro=Testing...,Undo=97,Help=98,Enter=114,F1=59,F2=60,F3=61,F4=62" \\
+\t-r "paste,debug,trace,setup"
+""" % name
     if msg:
         print "ERROR: %s\n" % msg
     sys.exit(1)

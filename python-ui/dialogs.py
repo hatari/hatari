@@ -20,12 +20,45 @@ pygtk.require('2.0')
 import gtk
 import gobject
 
+# ---------- Dialog helper classes --------------
+
+# auxiliary class to be used with the PasteDialog
+class HatariInsertText():
+    def __init__(self, hatari, text):
+        if not text:
+            # TODO: does this object get leaked?
+            return
+        self.index = 0
+        self.text = text
+        self.pressed = False
+        gobject.timeout_add(100, self.text_insert_cb)
+        print "OUTPUT '%s'" % text
+        self.hatari = hatari
+    
+    def text_insert_cb(self):
+        # insert string to Hatari character at the time, at given interval
+        char = self.text[self.index]
+        if self.pressed:
+            self.pressed = False
+            self.hatari.insert_event("keyrelease %c" % char)
+            self.index += 1
+            if self.index >= len(self.text):
+                # TODO: does this object get leaked?
+                return False
+        else:
+            self.pressed = True
+            self.hatari.insert_event("keypress %c" % char)
+        return True
+
+# ---------- Dialogs themselves --------------
 
 class HatariUIDialog():
     def __init__(self):
         self.dialog = None
 
     def run(self):
+        "return dialog response"
+        # subclasses may return also other things than dialog response
         response = self.dialog.run()
         self.dialog.hide()
         return response
@@ -53,8 +86,7 @@ You can see the whole license at:
 
 
 class PasteDialog(HatariUIDialog):
-    def __init__(self, parent, hatari):
-        self.hatari = hatari
+    def __init__(self, parent):
         dialog = gtk.Dialog("Insert text", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             ("Paste", gtk.RESPONSE_YES))
@@ -70,32 +102,16 @@ class PasteDialog(HatariUIDialog):
     
     def entry_cb(self, widget):
         self.dialog.response(gtk.RESPONSE_YES)
-    
-    def text_insert_cb(self):
-        # insert string to Hatari character at the time, at given interval
-        char = self.text[self.index]
-        if self.pressed:
-            self.pressed = False
-            self.hatari.insert_event("keyrelease %c" % char)
-            self.index += 1
-            if self.index >= len(self.text):
-                return False
-        else:
-            self.pressed = True
-            self.hatari.insert_event("keypress %c" % char)
-        return True
         
     def run(self):
+        "return text to insert"
         self.entry.set_text("")
         if self.dialog.run() == gtk.RESPONSE_YES:
             text = self.entry.get_text()
-            if text:
-                self.index = 0
-                self.text = text
-                self.pressed = False
-                gobject.timeout_add(100, self.text_insert_cb)
-                print "OUTPUT '%s'" % text
+        else:
+            text = None
         self.dialog.hide()
+        return text
 
 
 class QuitSaveDialog(HatariUIDialog):
@@ -213,7 +229,6 @@ class TraceDialog(HatariUIDialog):
                 self.hatari.change_option("--trace %s" % ",".join(traces))
             else:
                 self.hatari.change_option("--trace none")
-        return response
 
 
 class SetupDialog(HatariUIDialog):
