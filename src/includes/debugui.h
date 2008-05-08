@@ -5,5 +5,16 @@
   your option any later version. Read the file gpl.txt for details.
 */
 
+#ifndef HATARI_DEBUGUI_H
+#define HATARI_DEBUGUI_H
+
+/* DebugUI_ParseCommand() return values */
+enum {
+	DEBUG_QUIT,
+	DEBUG_CMD
+};
 
 extern void DebugUI(void);
+extern int DebugUI_ParseCommand(char *input);
+
+#endif /* HATARI_DEBUGUI_H */

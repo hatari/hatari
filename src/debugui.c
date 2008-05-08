@@ -8,7 +8,7 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.20 2008-05-04 17:43:02 thothy Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.21 2008-05-08 20:41:29 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -22,6 +22,7 @@ const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.20 2008-05-04 17:43:02 t
 
 #include "main.h"
 #include "configuration.h"
+#include "file.h"
 #include "reset.h"
 #include "m68000.h"
 #include "str.h"
@@ -32,21 +33,16 @@ const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.20 2008-05-04 17:43:02 t
 
 #include "hatari-glue.h"
 
-
-#define DEBUG_QUIT     0
-#define DEBUG_CMD      1
-
 #define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
 #define MEMDUMP_ROWS   4       /* memdump, number of rows */
 #define NON_PRINT_CHAR '.'     /* character to display for non-printables */
 #define DISASM_INSTS   5       /* disasm - number of instructions */
 
-static BOOL bMemDump;          /* has memdump been called? */
+static bool bMemDump;          /* has memdump been called? */
 static unsigned long memdump_addr; /* memdump address */
 static unsigned long disasm_addr;  /* disasm address */
 
-static FILE *debugLogFile;
-static FILE *debug_stdout;
+static FILE *debugOutput;
 
 
 
@@ -59,7 +55,7 @@ static FILE *debug_stdout;
  */
 static int getRange(char *str, unsigned long *lower, unsigned long *upper)
 {
-	BOOL fDash = FALSE;
+	bool fDash = FALSE;
 	int i=0;
 
 	while (str[i] != '\0')
@@ -87,12 +83,29 @@ static int getRange(char *str, unsigned long *lower, unsigned long *upper)
 /**
  * Open a log file.
  */
-static void DebugUI_OpenLog(const char *arg)
+static void DebugUI_LogOpen(const char *logpath)
 {
-	debugLogFile = fopen(arg, "w");
-	if (debugLogFile == NULL)
-		fprintf(stderr, "Can't open file: %s\n", arg);
-	debug_stdout = debugLogFile;
+	File_Close(debugOutput);
+	debugOutput = File_Open(logpath, "w");
+	if (debugOutput)
+		fprintf(stderr, "Debug log '%s' opened\n", logpath);
+	else
+		debugOutput = stderr;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Close a log file.
+ */
+static void DebugUI_LogClose(void)
+{
+	if (debugOutput != stderr)
+	{
+		File_Close(debugOutput);
+		fprintf(stderr, "Debug log closed.\n");
+		debugOutput = stderr;
+	}
 }
 
 
@@ -175,7 +188,7 @@ static void DebugUI_RegDump(void)
 {
 	uaecptr nextpc;
 	/* use the UAE function instead */
-	m68k_dumpstate(debug_stdout, &nextpc);
+	m68k_dumpstate(debugOutput, &nextpc);
 }
 
 
@@ -183,12 +196,12 @@ static void DebugUI_RegDump(void)
 /**
  * Dissassemble - arg = starting address, or PC.
  */
-static void DebugUI_DisAsm(char *arg, BOOL cont)
+static void DebugUI_DisAsm(char *arg, bool cont)
 {
 	int i,j;
 	unsigned long disasm_upper;
 	uaecptr nextpc;
-	BOOL isRange = FALSE;
+	bool isRange = FALSE;
 
 	if (cont != TRUE)
 	{
@@ -229,7 +242,7 @@ static void DebugUI_DisAsm(char *arg, BOOL cont)
 	/* output a single block. */
 	if (isRange == FALSE)
 	{
-		m68k_disasm(debug_stdout, (uaecptr)disasm_addr, &nextpc, DISASM_INSTS);
+		m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, DISASM_INSTS);
 		disasm_addr = nextpc;
 		return;
 	}
@@ -237,7 +250,7 @@ static void DebugUI_DisAsm(char *arg, BOOL cont)
 	/* output a range */
 	while (disasm_addr < disasm_upper)
 	{
-		m68k_disasm(debug_stdout, (uaecptr)disasm_addr, &nextpc, 1);
+		m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, 1);
 		disasm_addr = nextpc;
 	}
 }
@@ -250,7 +263,7 @@ static void DebugUI_DisAsm(char *arg, BOOL cont)
 static void DebugUI_RegSet(char *arg)
 {
 	int i;
-	BOOL s = FALSE;
+	bool s = FALSE;
 	char reg[4];
 	long value;
 
@@ -374,11 +387,11 @@ static void DebugUI_RegSet(char *arg)
 /**
  * Do a memory dump, args = starting address.
  */
-static void DebugUI_MemDump(char *arg, BOOL cont)
+static void DebugUI_MemDump(char *arg, bool cont)
 {
 	int i,j;
 	char c;
-	BOOL isRange = FALSE;
+	bool isRange = FALSE;
 	unsigned long memdump_upper;
 
 
@@ -423,36 +436,36 @@ static void DebugUI_MemDump(char *arg, BOOL cont)
 	{
 		for (j=0;j<MEMDUMP_ROWS;j++)
 		{
-			fprintf(debug_stdout, "%6.6lX: ", memdump_addr); /* print address */
+			fprintf(debugOutput, "%6.6lX: ", memdump_addr); /* print address */
 			for (i = 0; i < MEMDUMP_COLS; i++)               /* print hex data */
-				fprintf(debug_stdout, "%2.2x ", STMemory_ReadByte(memdump_addr++));
-			fprintf(debug_stdout, "  ");                     /* print ASCII data */
+				fprintf(debugOutput, "%2.2x ", STMemory_ReadByte(memdump_addr++));
+			fprintf(debugOutput, "  ");                     /* print ASCII data */
 			for (i = 0; i < MEMDUMP_COLS; i++)
 			{
 				c = STMemory_ReadByte(memdump_addr-MEMDUMP_COLS+i);
 				if (!isprint((unsigned)c))
 					c = NON_PRINT_CHAR;         /* non-printable as dots */
-				fprintf(debug_stdout,"%c", c);
+				fprintf(debugOutput,"%c", c);
 			}
-			fprintf(debug_stdout, "\n");        /* newline */
+			fprintf(debugOutput, "\n");        /* newline */
 		}
 		return;
 	} /* not a range */
 
 	while (memdump_addr < memdump_upper)
 	{
-		fprintf(debug_stdout, "%6.6lX: ", memdump_addr); /* print address */
+		fprintf(debugOutput, "%6.6lX: ", memdump_addr); /* print address */
 		for (i = 0; i < MEMDUMP_COLS; i++)               /* print hex data */
-			fprintf(debug_stdout, "%2.2x ", STMemory_ReadByte(memdump_addr++));
-		fprintf(debug_stdout, "  ");                     /* print ASCII data */
+			fprintf(debugOutput, "%2.2x ", STMemory_ReadByte(memdump_addr++));
+		fprintf(debugOutput, "  ");                     /* print ASCII data */
 		for (i = 0; i < MEMDUMP_COLS; i++)
 		{
 			c = STMemory_ReadByte(memdump_addr-MEMDUMP_COLS+i);
 			if(!isprint((unsigned)c))
 				c = NON_PRINT_CHAR;             /* non-printable as dots */
-			fprintf(debug_stdout,"%c", c);
+			fprintf(debugOutput,"%c", c);
 		}
-		fprintf(debug_stdout, "\n");            /* newline */
+		fprintf(debugOutput, "\n");            /* newline */
 	} /* while */
 } /* end of memdump */
 
@@ -557,43 +570,27 @@ static void DebugUI_Help(void)
 	        "\n");
 }
 
+
 /*-----------------------------------------------------------------------*/
 /**
- * Get a UI command, return it.
+ * Parse and return debug command.
  */
-static int DebugUI_Getcommand(void)
+int DebugUI_ParseCommand(char *input)
 {
 	char command[255], arg[255];
 	static char lastcommand = 0;
-	char *pInput;
-	int i;
-	int retval;
+	int i, retval;
 
-#if HAVE_LIBREADLINE
-	pInput = readline("> ");
-	if (!pInput)
-		return DEBUG_QUIT;
-	if (pInput[0] != 0)
-		add_history(pInput);
-#else
-	fprintf(stderr, "> ");
-	pInput = malloc(256);
-	if (!pInput)
-		return DEBUG_QUIT;
-	pInput[0] = '\0';
-	fgets(pInput, 256, stdin);
-#endif
-
-	command[0] = lastcommand;          /* Used for 'm' and 'd' to continue at last pos */
+	/* Used for 'm' and 'd' to continue at last pos */
+	command[0] = lastcommand;
 	command[1] = 0;
 	arg[0] = 0;
-	i = sscanf(pInput, "%s%s", command, arg);
+	i = sscanf(input, "%s%s", command, arg);
 	Str_ToLower(command);
 
 	if (i == 0)
 	{
 		fprintf(stderr, "  Unknown command.\n");
-		free(pInput);
 		return DEBUG_CMD;
 	}
 
@@ -645,25 +642,16 @@ static int DebugUI_Getcommand(void)
 
 	 case 'f':
 		if (i < 2)
-		{  /* no arg? */
-			if (debugLogFile == NULL)
-				fprintf(stderr, "No log file open.\n");
-			else
-			{
-				fclose(debugLogFile);
-				debug_stdout = stderr;
-				fprintf(stderr, "Log closed.\n");
-			}
-		}
+			DebugUI_LogClose();
 		else
-			DebugUI_OpenLog(arg);
+			DebugUI_LogOpen(arg);
 		break;
 
 	 case 'w':
 		if (i < 2)    /* not enough args? */
 			fprintf(stderr, "  Usage: w address bytes\n");
 		else
-			DebugUI_MemWrite(pInput);
+			DebugUI_MemWrite(input);
 		break;
 
 	 case 'r':
@@ -677,14 +665,14 @@ static int DebugUI_Getcommand(void)
 		if (i < 2)    /* not enough args? */
 			fprintf(stderr,"  Usage: l filename address\n");
 		else
-			DebugUI_LoadBin(pInput);
+			DebugUI_LoadBin(input);
 		break;
 
 	 case 's':
 		if (i < 2)    /* not enough args? */
 			fprintf(stderr,"  Usage: s filename address bytes\n");
 		else
-			DebugUI_SaveBin(pInput);
+			DebugUI_SaveBin(input);
 		break;
 
 	 default:
@@ -693,8 +681,35 @@ static int DebugUI_Getcommand(void)
 		break;
 	}
 
-	free(pInput);
+	return retval;
+}
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Get a UI command, parse and return it.
+ */
+static int DebugUI_GetCommand(void)
+{
+	char *input;
+	int retval;
+
+#if HAVE_LIBREADLINE
+	input = readline("> ");
+	if (!input)
+		return DEBUG_QUIT;
+	if (input[0] != 0)
+		add_history(input);
+#else
+	fprintf(stderr, "> ");
+	input = malloc(256);
+	if (!input)
+		return DEBUG_QUIT;
+	input[0] = '\0';
+	fgets(input, 256, stdin);
+#endif
+	retval = DebugUI_ParseCommand(input);
+
+	free(input);
 	return retval;
 }
 
@@ -705,18 +720,14 @@ static int DebugUI_Getcommand(void)
  */
 void DebugUI(void)
 {
-	debugLogFile = NULL;
-	debug_stdout = stderr;  /* output to screen, until log file opened */
-
 	bMemDump = FALSE;
 	disasm_addr = 0;
 
-
+	DebugUI_LogClose();
 	fprintf(stderr, "\nYou have entered debug mode. Type c to continue emulation, h for help."
 	                "\n----------------------------------------------------------------------\n");
-	while (DebugUI_Getcommand() != DEBUG_QUIT)
+	while (DebugUI_GetCommand() != DEBUG_QUIT)
 		;
-	if (debugLogFile != NULL)
-		fclose(debugLogFile);
 	fprintf(stderr,"Returning to emulation...\n------------------------------\n\n");
+	DebugUI_LogClose();
 }
