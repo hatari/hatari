@@ -66,10 +66,10 @@ class Hatari():
         return self.send_message("hatari-debug %s\n" % cmd)
 
     def pause(self):
-        return self.send_message("hatari-stop")
+        return self.send_message("hatari-stop\n")
 
     def unpause(self):
-        return self.send_message("hatari-cont")
+        return self.send_message("hatari-cont\n")
 
     def is_running(self):
         if not self.pid:
