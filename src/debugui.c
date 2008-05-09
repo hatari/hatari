@@ -8,7 +8,7 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.24 2008-05-09 20:57:56 eerot Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.25 2008-05-09 22:37:54 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -249,6 +249,7 @@ static void DebugUI_DisAsm(char *arg, bool cont)
 	{
 		m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, DISASM_INSTS);
 		disasm_addr = nextpc;
+		fflush(debugOutput);
 		return;
 	}
 
@@ -400,8 +401,6 @@ static void DebugUI_MemDump(char *arg, bool cont)
 	bool isRange = FALSE;
 	unsigned long memdump_upper;
 
-
-
 	if (cont != TRUE)
 	{
 		j = getRange(arg, &memdump_addr, &memdump_upper);
@@ -455,6 +454,7 @@ static void DebugUI_MemDump(char *arg, bool cont)
 			}
 			fprintf(debugOutput, "\n");        /* newline */
 		}
+		fflush(debugOutput);
 		return;
 	} /* not a range */
 
