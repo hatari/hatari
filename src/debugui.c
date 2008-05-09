@@ -8,7 +8,7 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.21 2008-05-08 20:41:29 eerot Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.22 2008-05-09 18:19:24 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -81,9 +81,9 @@ static int getRange(char *str, unsigned long *lower, unsigned long *upper)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Open a log file.
+ * Open given log file.
  */
-static void DebugUI_LogOpen(const char *logpath)
+static void DebugUI_SetLogFile(const char *logpath)
 {
 	File_Close(debugOutput);
 	debugOutput = File_Open(logpath, "w");
@@ -96,14 +96,17 @@ static void DebugUI_LogOpen(const char *logpath)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Close a log file.
+ * Close a log file if open, and set it to default stream.
  */
-static void DebugUI_LogClose(void)
+static void DebugUI_SetLogDefault(void)
 {
 	if (debugOutput != stderr)
 	{
-		File_Close(debugOutput);
-		fprintf(stderr, "Debug log closed.\n");
+		if (debugOutput)
+		{
+			File_Close(debugOutput);
+			fprintf(stderr, "Debug log closed.\n");
+		}
 		debugOutput = stderr;
 	}
 }
@@ -593,6 +596,9 @@ int DebugUI_ParseCommand(char *input)
 		fprintf(stderr, "  Unknown command.\n");
 		return DEBUG_CMD;
 	}
+	if (!debugOutput) {
+		DebugUI_SetLogDefault();
+	}
 
 	lastcommand = 0;
 	retval = DEBUG_CMD;                /* Default return value */
@@ -642,9 +648,9 @@ int DebugUI_ParseCommand(char *input)
 
 	 case 'f':
 		if (i < 2)
-			DebugUI_LogClose();
+			DebugUI_SetLogDefault();
 		else
-			DebugUI_LogOpen(arg);
+			DebugUI_SetLogFile(arg);
 		break;
 
 	 case 'w':
@@ -723,11 +729,10 @@ void DebugUI(void)
 	bMemDump = FALSE;
 	disasm_addr = 0;
 
-	DebugUI_LogClose();
 	fprintf(stderr, "\nYou have entered debug mode. Type c to continue emulation, h for help."
 	                "\n----------------------------------------------------------------------\n");
 	while (DebugUI_GetCommand() != DEBUG_QUIT)
 		;
 	fprintf(stderr,"Returning to emulation...\n------------------------------\n\n");
-	DebugUI_LogClose();
+	DebugUI_SetLogDefault();
 }
