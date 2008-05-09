@@ -189,32 +189,6 @@ class HatariUI():
         widget.connect("released", self.rightrelease_cb)
         return (widget, True)
 
-    # ------- insert key control -----------
-    def keypress_cb(self, widget, code):
-        self.hatari.insert_event("keypress %s" % code)
-
-    def keyrelease_cb(self, widget, code):
-        self.hatari.insert_event("keyrelease %s" % code)
-
-    def textinsert_cb(self, widget, text):
-        HatariInsertText(self.hatari, text)
-
-    def create_key_control(self, namecode):
-        "Simulate Atari key press/release"
-        offset = namecode.find("=")
-        text = namecode[offset+1:]
-        name = namecode[:offset]
-        widget = gtk.Button(name)
-        try:
-            # part after "=" converts to an int?
-            code = int(text, 0)
-            widget.connect("pressed", self.keypress_cb, code)
-            widget.connect("released", self.keyrelease_cb, code)
-        except ValueError:
-            # no, assume a string macro is wanted instead
-            widget.connect("clicked", self.textinsert_cb, text)
-        return (widget, True)
-
     # ------- debug control -----------
     def debug_cb(self, widget):
         if not self.debugui:
@@ -300,8 +274,36 @@ class HatariUI():
         box.add(widget)
         return (box, True)
 
+    # ------- insert key control -----------
+    def keypress_cb(self, widget, code):
+        self.hatari.insert_event("keypress %s" % code)
+
+    def keyrelease_cb(self, widget, code):
+        self.hatari.insert_event("keyrelease %s" % code)
+
+    def textinsert_cb(self, widget, text):
+        HatariInsertText(self.hatari, text)
+
+    def create_key_control(self, namecode):
+        "Simulate Atari key press/release and string inserting"
+        offset = namecode.find("=")
+        text = namecode[offset+1:]
+        name = namecode[:offset]
+        widget = gtk.Button(name)
+        try:
+            # part after "=" converts to an int?
+            code = int(text, 0)
+            widget.connect("pressed", self.keypress_cb, code)
+            widget.connect("released", self.keyrelease_cb, code)
+            tip = "keycode: %d" % code
+        except ValueError:
+            # no, assume a string macro is wanted instead
+            widget.connect("clicked", self.textinsert_cb, text)
+            tip = "string '%s'" % text
+        return (widget, tip, True)
+
     # ------- control widget box -----------
-    def add_method_tooltip(self, method, widget):
+    def add_tooltip(self, widget, text):
         w = widget
         # get the first non-label child of a container
         while w.__gtype__ in (gtk.HBox.__gtype__, gtk.VBox.__gtype__):
@@ -312,9 +314,8 @@ class HatariUI():
                 if child.__gtype__ not in (gtk.Label.__gtype__,):
                     break
             w = child
-        # TODO: for some reason this doesn't work on normal buttons
-        #print "Addding tooltip for:", w.__gtype__
-        self.tooltips.set_tip(w, method.__doc__)
+        #print w.__gtype__, "tooltip:", text
+        self.tooltips.set_tip(w, text)
 
     def get_control_box(self, controls, horizontal):
         "return Gtk Box container with the specified control widgets or None for no controls"
@@ -335,12 +336,13 @@ class HatariUI():
                 expand = False
             elif control.find("=") >= 0:
                 # handle "<name>=<keycode>" control specification
-                (widget, expand) = self.create_key_control(control)
-                self.tooltips.set_tip(widget, control)
+                (widget, tip, expand) = self.create_key_control(control)
+                # TODO: for some reason tooltips don't work on these buttons?
+                self.tooltips.set_tip(widget, "Insert " + tip)
             else:
                 method = HatariUI.__dict__[control]
                 (widget, expand) = method(self)
-                self.add_method_tooltip(method, widget)
+                self.add_tooltip(widget, method.__doc__)
             # important, without this Hatari doesn't receive key events!
             widget.unset_flags(gtk.CAN_FOCUS)
             box.pack_start(widget, expand, expand, 0)
