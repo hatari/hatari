@@ -6,7 +6,7 @@
 
   This code processes commands from the Hatari control socket
 */
-const char control_rcsid[] = "Hatari $Id: control.c,v 1.1 2008-05-09 18:25:06 eerot Exp $";
+const char control_rcsid[] = "Hatari $Id: control.c,v 1.2 2008-05-09 22:38:27 eerot Exp $";
 
 #include "config.h"
 #if HAVE_UNIX_DOMAIN_SOCKETS
@@ -139,6 +139,7 @@ static bool Control_ProcessBuffer(char *buffer)
 		}
 		/* process... */
 		if (strncmp(cmd, "hatari-debug ", 13) == 0) {
+			fprintf(stderr, "%s\n", cmd);
 			ok = DebugUI_ParseCommand(Str_Trim(cmd+13));
 		} else if (strncmp(cmd, "hatari-event ", 13) == 0) {
 			ok = Control_InsertEvent(Str_Trim(cmd+13));
@@ -165,7 +166,8 @@ static bool Control_ProcessBuffer(char *buffer)
 			fprintf(stderr, "- hatari-shortcut <shortcut name>\n");
 			fprintf(stderr, "- hatari-stop\n");
 			fprintf(stderr, "- hatari-cont\n");
-			fprintf(stderr, "The last two can be used to stop and continue the Hatari emulation\n");
+			fprintf(stderr, "The last two can be used to stop and continue the Hatari emulation.\n");
+			fprintf(stderr, "All commands need to be separated by newlines.\n");
 			ok = FALSE;
 		}
 		if (cmdend) {
