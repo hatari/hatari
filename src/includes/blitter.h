@@ -1,19 +1,16 @@
-/**
- * Hatari - Blitter emulation.
- * This file has been taken from STonX.
- *
- * Original information text follows:
- *
- *
- * This file is part of STonX, the Atari ST Emulator for Unix/X
- * ============================================================
- * STonX is free software and comes with NO WARRANTY - read the file
- * COPYING for details
- */
+/*
+  Hatari - blitter.h
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  Blitter emulation.
+*/
 
 #ifndef BLITTER_H
 #define BLITTER_H
 
+extern void Blitter_SourceAddr_ReadLong(void);
 extern void Blitter_Endmask1_ReadWord(void);
 extern void Blitter_Endmask2_ReadWord(void);
 extern void Blitter_Endmask3_ReadWord(void);
@@ -25,6 +22,7 @@ extern void Blitter_LogOp_ReadByte(void);
 extern void Blitter_Control_ReadByte(void);
 extern void Blitter_Skew_ReadByte(void);
 
+extern void Blitter_SourceAddr_WriteLong(void);
 extern void Blitter_Endmask1_WriteWord(void);
 extern void Blitter_Endmask2_WriteWord(void);
 extern void Blitter_Endmask3_WriteWord(void);

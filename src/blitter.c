@@ -5,17 +5,11 @@
  * your option any later version. Read the file gpl.txt for details.
  *
  * Blitter emulation.
- * This file has originally been taken from STonX.
- * 
- * Changes 2005-10-21:
- * - Convert types and helper functions to SDL and Hatari ones
- * - LineNum -> Control (line number is just low nibble of control register)
- * - Add defines for register addresses
- * - Fix bug with Smudge mode
- * - Add documentation
+ * This file has originally been taken from STonX, but it has been largely
+ * modified for better maintainability and compatibility.
+ *
  *
  * Original information text follows:
- *
  *
  * This file is part of STonX, the Atari ST Emulator for Unix/X
  * ============================================================
@@ -30,7 +24,7 @@
  *
  *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.18 2008-05-04 19:08:46 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.19 2008-05-09 20:55:09 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -61,12 +55,12 @@ const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.18 2008-05-04 19:08:46 t
 #define REG_DST_Y_INC	0xff8a30
 #define REG_DST_ADDR	0xff8a32
 
-#define REG_X_COUNT	0xff8a36
-#define REG_Y_COUNT	0xff8a38
+#define REG_X_COUNT 	0xff8a36
+#define REG_Y_COUNT 	0xff8a38
 
 #define REG_BLIT_HOP	0xff8a3a	/* halftone blit operation byte */
 #define REG_BLIT_LOP	0xff8a3b	/* logical blit operation byte */
-#define REG_CONTROL	0xff8a3c
+#define REG_CONTROL 	0xff8a3c
 #define REG_SKEW	0xff8a3d
 
 
@@ -75,22 +69,52 @@ static Uint16 end_mask_1, end_mask_2, end_mask_3;
 static Uint16 x_count, y_count;
 static Uint8 hop, op, blit_control, skewreg;
 static Uint8 NFSR, FXSR; 
-static Uint32 dest_addr_reg = 0;
-static int halftone_curroffset, halftone_direction;
-static int source_x_inc, source_y_inc, dest_x_inc, dest_y_inc;
+static Uint32 dest_addr, source_addr;
+static int halftone_curroffset;
+
+
+/**
+ * Blitter timings - taken from the "Atari ST Internals" document.
+ *
+ * All timing figures are given in nops per word
+ * of transfer. Ie. a value of 2 would take the
+ * equivilent time of 2 nops to transfer 1 word
+ * of data.
+ */
+/*
+static int blitcycles[16][4] =
+{
+	{ 1, 1, 1, 1 },
+	{ 2, 2, 3, 3 },
+	{ 2, 2, 3, 3 },
+	{ 1, 1, 2, 2 },
+	{ 2, 2, 3, 3 },
+	{ 2, 2, 2, 2 },
+	{ 2, 2, 3, 3 },
+	{ 2, 2, 3, 3 },
+	{ 2, 2, 3, 3 },
+	{ 2, 2, 3, 3 },
+	{ 2, 2, 2, 2 },
+	{ 2, 2, 3, 3 },
+	{ 1, 1, 2, 2 },
+	{ 2, 2, 3, 3 },
+	{ 2, 2, 3, 3 },
+	{ 1, 1, 1, 1 }
+};
+*/
 
 
 #if DEBUG
 static void show_params(Uint32 source_addr)
 {
 	fprintf(stderr, "Source Address:%X\n", source_addr);
-	fprintf(stderr, "  Dest Address:%X\n", dest_addr_reg);
+	fprintf(stderr, "  Dest Address:%X\n", dest_addr);
 	fprintf(stderr, "       X count:%X\n", x_count);
 	fprintf(stderr, "       Y count:%X\n", y_count);
-	fprintf(stderr, "  Source X inc:%X\n", source_x_inc);
-	fprintf(stderr, "    Dest X inc:%X\n", dest_x_inc);
-	fprintf(stderr, "  Source Y inc:%X\n", source_y_inc);
-	fprintf(stderr, "    Dest Y inc:%X\n", dest_y_inc);
+	fprintf(stderr, "  Source X inc:%X\n", IoMem_ReadWord(REG_SRC_X_INC));
+	fprintf(stderr, "    Dest X inc:%X\n", IoMem_ReadWord(REG_DST_X_INC));
+	fprintf(stderr, "  Source Y inc:%X\n", IoMem_ReadWord(REG_SRC_Y_INC));
+	fprintf(stderr, "    Dest Y inc:%X\n", IoMem_ReadWord(REG_DST_Y_INC));
 	fprintf(stderr, "HOP:%2X    OP:%X\n", hop, op);
 	fprintf(stderr, "   source SKEW:%X\n", skewreg);
 	fprintf(stderr, "     endmask 1:%X\n", end_mask_1);
@@ -105,8 +129,10 @@ static void show_halftones(void)
 {
 	int i, j;
 	fprintf(stderr, "Halftone registers:\n");
-	for (i = 0; i < 2; i++) {
-		for (j = 0; j < 8; j++) {
+	for (i = 0; i < 2; i++)
+	{
+		for (j = 0; j < 8; j++)
+		{
 			fprintf(stderr,"%4X, ", halftone_ram[i*8+j]);
 		}
 		fprintf(stderr, "\n");
@@ -118,33 +144,29 @@ static void show_halftones(void)
 /* called only before halftone operations, for HOP modes 01 and 11 */
 static void load_halftone_ram(Uint32 source_addr)
 {
-	halftone_ram[0]  = STMemory_ReadWord(REG_HT_RAM);
-	halftone_ram[1]  = STMemory_ReadWord(REG_HT_RAM+2);
-	halftone_ram[2]  = STMemory_ReadWord(REG_HT_RAM+4);
-	halftone_ram[3]  = STMemory_ReadWord(REG_HT_RAM+6);
-	halftone_ram[4]  = STMemory_ReadWord(REG_HT_RAM+8);
-	halftone_ram[5]  = STMemory_ReadWord(REG_HT_RAM+10);
-	halftone_ram[6]  = STMemory_ReadWord(REG_HT_RAM+12);
-	halftone_ram[7]  = STMemory_ReadWord(REG_HT_RAM+14);
-	halftone_ram[8]  = STMemory_ReadWord(REG_HT_RAM+16);
-	halftone_ram[9]  = STMemory_ReadWord(REG_HT_RAM+18);
-	halftone_ram[10] = STMemory_ReadWord(REG_HT_RAM+20);
-	halftone_ram[11] = STMemory_ReadWord(REG_HT_RAM+22);
-	halftone_ram[12] = STMemory_ReadWord(REG_HT_RAM+24);
-	halftone_ram[13] = STMemory_ReadWord(REG_HT_RAM+26);
-	halftone_ram[14] = STMemory_ReadWord(REG_HT_RAM+28);
-	halftone_ram[15] = STMemory_ReadWord(REG_HT_RAM+30);
+	halftone_ram[0]  = IoMem_ReadWord(REG_HT_RAM);
+	halftone_ram[1]  = IoMem_ReadWord(REG_HT_RAM+2);
+	halftone_ram[2]  = IoMem_ReadWord(REG_HT_RAM+4);
+	halftone_ram[3]  = IoMem_ReadWord(REG_HT_RAM+6);
+	halftone_ram[4]  = IoMem_ReadWord(REG_HT_RAM+8);
+	halftone_ram[5]  = IoMem_ReadWord(REG_HT_RAM+10);
+	halftone_ram[6]  = IoMem_ReadWord(REG_HT_RAM+12);
+	halftone_ram[7]  = IoMem_ReadWord(REG_HT_RAM+14);
+	halftone_ram[8]  = IoMem_ReadWord(REG_HT_RAM+16);
+	halftone_ram[9]  = IoMem_ReadWord(REG_HT_RAM+18);
+	halftone_ram[10] = IoMem_ReadWord(REG_HT_RAM+20);
+	halftone_ram[11] = IoMem_ReadWord(REG_HT_RAM+22);
+	halftone_ram[12] = IoMem_ReadWord(REG_HT_RAM+24);
+	halftone_ram[13] = IoMem_ReadWord(REG_HT_RAM+26);
+	halftone_ram[14] = IoMem_ReadWord(REG_HT_RAM+28);
+	halftone_ram[15] = IoMem_ReadWord(REG_HT_RAM+30);
 
-	if (!(blit_control & 0x20)) {
+	if (!(blit_control & 0x20))
+	{
 		/* No smudge mode: Get halftone offset from control register */
 		halftone_curroffset = blit_control & 15;
 	}
 
-	if (dest_y_inc >= 0) {
-		halftone_direction = 1;
-	} else {
-		halftone_direction = -1;
-	}
 #if DEBUG
 	show_params(source_addr);
 	show_halftones();
@@ -219,10 +241,11 @@ static inline Uint16 shifted_hopd_data(Uint32 source_addr, Uint32 source_buffer,
  */
 static void Do_Blit(void)
 { 
-	Uint32 source_addr  = IoMem_ReadLong(REG_SRC_ADDR);
-	Uint32 dest_addr = dest_addr_reg;
 	Uint32 source_buffer = 0;
 	Uint8 skew = skewreg & 15;
+	int source_x_inc, source_y_inc;
+	int dest_x_inc, dest_y_inc;
+	int halftone_direction;
 
 	/*if(address_space_24)*/ 
 	{ source_addr &= 0x0fffffe; dest_addr &= 0x0fffffe; }
@@ -242,9 +265,16 @@ static void Do_Blit(void)
 	dest_x_inc   = (short) IoMem_ReadWord(REG_DST_X_INC);
 	dest_y_inc   = (short) IoMem_ReadWord(REG_DST_Y_INC);
 
+	/* Set up halftone ram */
 	if (hop & 1)
 		load_halftone_ram(source_addr);
 
+	if (dest_y_inc >= 0)
+		halftone_direction = 1;
+	else
+		halftone_direction = -1;
+
+	/* Now we enter the main blitting loop */
 	do 
 	{
 		Uint16 x, dst_data, opd_data;
@@ -298,11 +328,17 @@ static void Do_Blit(void)
 			halftone_curroffset = (halftone_curroffset+halftone_direction) & 15;
 	}
 	while (--y_count > 0);
-
-	IoMem_WriteLong(REG_SRC_ADDR, source_addr);
-	dest_addr_reg = dest_addr;
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read blitter source address (0xff8a24).
+ */
+void Blitter_SourceAddr_ReadLong(void)
+{
+	IoMem_WriteLong(REG_SRC_ADDR, source_addr);
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -337,7 +373,7 @@ void Blitter_Endmask3_ReadWord(void)
  */
 void Blitter_DestAddr_ReadLong(void)
 {
-	IoMem_WriteLong(REG_DST_ADDR, dest_addr_reg);
+	IoMem_WriteLong(REG_DST_ADDR, dest_addr);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -403,6 +439,15 @@ void Blitter_Skew_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Write to blitter source address register (0xff8a24).
+ */
+void Blitter_SourceAddr_WriteLong(void)
+{
+	source_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0x0fffffe;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Write to blitter endmask 1.
  */
 void Blitter_Endmask1_WriteWord(void)
@@ -434,7 +479,7 @@ void Blitter_Endmask3_WriteWord(void)
  */
 void Blitter_DestAddr_WriteLong(void)
 {
-	dest_addr_reg = IoMem_ReadLong(REG_DST_ADDR) & 0x0fffffe;
+	dest_addr = IoMem_ReadLong(REG_DST_ADDR) & 0x0fffffe;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -537,6 +582,7 @@ void Blitter_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(halftone_ram, sizeof(halftone_ram));
+	MemorySnapShot_Store(&source_addr, sizeof(source_addr));
 	MemorySnapShot_Store(&end_mask_1, sizeof(end_mask_1));
 	MemorySnapShot_Store(&end_mask_2, sizeof(end_mask_2));
 	MemorySnapShot_Store(&end_mask_3, sizeof(end_mask_3));
@@ -547,11 +593,6 @@ void Blitter_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&op, sizeof(op));
 	MemorySnapShot_Store(&blit_control, sizeof(blit_control));
 	MemorySnapShot_Store(&skewreg, sizeof(skewreg));
-	MemorySnapShot_Store(&dest_addr_reg, sizeof(dest_addr_reg));
+	MemorySnapShot_Store(&dest_addr, sizeof(dest_addr));
 	MemorySnapShot_Store(&halftone_curroffset, sizeof(halftone_curroffset));
-	MemorySnapShot_Store(&halftone_direction, sizeof(halftone_direction));
-	MemorySnapShot_Store(&source_x_inc, sizeof(source_x_inc));
-	MemorySnapShot_Store(&source_y_inc, sizeof(source_y_inc));
-	MemorySnapShot_Store(&dest_x_inc, sizeof(dest_x_inc));
-	MemorySnapShot_Store(&dest_y_inc, sizeof(dest_y_inc));
 }

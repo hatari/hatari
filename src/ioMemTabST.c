@@ -13,7 +13,7 @@
 /* 2007/12/16	[NP]	0xff820d/0xff820f are only available on STE, not on ST. We call	*/
 /*			IoMem_VoidRead and IoMem_VoidWrite for these addresses.		*/
 
-const char IoMemTabST_rcsid[] = "Hatari $Id: ioMemTabST.c,v 1.3 2008-02-18 23:24:56 npomarede Exp $";
+const char IoMemTabST_rcsid[] = "Hatari $Id: ioMemTabST.c,v 1.4 2008-05-09 20:55:10 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -82,7 +82,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_ST[] =
 	{ 0xff8a00, 32,        IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter halftone RAM */
 	{ 0xff8a20, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter source x increment */
 	{ 0xff8a22, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter source y increment */
-	{ 0xff8a24, SIZE_LONG, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter source address */
+	{ 0xff8a24, SIZE_LONG, Blitter_SourceAddr_ReadLong, Blitter_SourceAddr_WriteLong },     /* Blitter source address */
 	{ 0xff8a28, SIZE_WORD, Blitter_Endmask1_ReadWord, Blitter_Endmask1_WriteWord },
 	{ 0xff8a2a, SIZE_WORD, Blitter_Endmask2_ReadWord, Blitter_Endmask2_WriteWord },
 	{ 0xff8a2c, SIZE_WORD, Blitter_Endmask3_ReadWord, Blitter_Endmask3_WriteWord },
