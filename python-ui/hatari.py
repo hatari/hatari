@@ -45,24 +45,32 @@ class Hatari():
         self.server.bind(self.controlpath)
         self.server.listen(1)
 
-    def change_option(self, option):
+    def send_message(self, msg):
         if self.control:
-            self.control.send("hatari-option %s\n" % option)
+            self.control.send(msg)
+            return True
         else:
             print "ERROR: no Hatari (control socket)"
+            return False
+        
+    def change_option(self, option):
+        return self.send_message("hatari-option %s\n" % option)
 
     def trigger_shortcut(self, shortcut):
-        if self.control:
-            self.control.send("hatari-shortcut %s\n" % shortcut)
-        else:
-            print "ERROR: no Hatari (control socket)"
+        return self.send_message("hatari-shortcut %s\n" % shortcut)
 
     def insert_event(self, event):
-        if self.control:
-            self.control.send("hatari-event %s\n" % event)
-        else:
-            print "ERROR: no Hatari (control socket)"
-        
+        return self.send_message("hatari-event %s\n" % event)
+
+    def debug_command(self, cmd):
+        return self.send_message("hatari-debug %s\n" % cmd)
+
+    def pause(self):
+        return self.send_message("hatari-stop")
+
+    def unpause(self):
+        return self.send_message("hatari-cont")
+
     def is_running(self):
         if not self.pid:
             return False
@@ -117,21 +125,7 @@ class Hatari():
         # its own window into this program widget window
         env["PARENT_WIN_ID"] = str(win_id)
 
-    def pause(self):
-        if self.pid and not self.paused:
-            os.kill(self.pid, signal.SIGSTOP)
-            print "paused hatari with PID %d" % self.pid
-            self.paused = True
-            return True
-        return False
-    
-    def unpause(self):
-        if self.pid and self.paused:
-            os.kill(self.pid, signal.SIGCONT)
-            print "continued hatari with PID %d" % self.pid
-            self.paused = False
-        
-    def stop(self):
+    def kill(self):
         if self.pid:
             os.kill(self.pid, signal.SIGKILL)
             print "killed hatari with PID %d" % self.pid

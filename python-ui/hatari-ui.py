@@ -29,6 +29,7 @@ import gobject
 from hatari import Hatari, ConfigMapping
 from dialogs import AboutDialog, PasteDialog, KillDialog, QuitSaveDialog,\
      SetupDialog, TraceDialog, HatariInsertText
+from debugui import HatariDebugUI
 
 
 class HatariUI():
@@ -44,6 +45,8 @@ class HatariUI():
         "debug", "trace"
     ]
     def __init__(self):
+        self.debugui = None
+
         # dialogs are created when needed
         self.aboutdialog = None
         self.killdialog = None
@@ -51,6 +54,7 @@ class HatariUI():
         self.quitdialog = None
         self.setupdialog = None
         self.tracedialog = None
+
         # no controls set yet
         self.controls_left = None
         self.controls_right = None
@@ -114,7 +118,7 @@ class HatariUI():
     # ------- paste control -----------
     def paste_cb(self, widget):
         if not self.pastedialog:
-            self.pastedialog = PasteDialog(self.mainwin, self.hatari)
+            self.pastedialog = PasteDialog(self.mainwin)
         text = self.pastedialog.run()
         if text:
             HatariInsertText(self.hatari, text)
@@ -124,20 +128,16 @@ class HatariUI():
         return self.create_button("Paste", self.paste_cb)
 
     # ------- pause control -----------
-    def pause_cb(self, widget, label):
-        if self.hatari.pause():
-            label.set_markup("<i>Continue</i>")
+    def pause_cb(self, widget):
+        if widget.get_active():
+            self.hatari.pause()
         else:
             self.hatari.unpause()
-            label.set_markup("Pause")
 
     def pause(self):
-        "Pause Hatari"
-        widget = gtk.Button()
-        label = gtk.Label("Pause")
-        label.set_use_markup(True)
-        widget.add(label)
-        widget.connect("clicked", self.pause_cb, label)
+        "Pause Hatari to save battery"
+        widget = gtk.ToggleButton("Stop")
+        widget.connect("toggled", self.pause_cb)
         return (widget, True)
 
     # ------- setup control -----------
@@ -217,9 +217,10 @@ class HatariUI():
 
     # ------- debug control -----------
     def debug_cb(self, widget):
-        print "Entering debug mode"
-        self.hatari.change_option("--debug")
-        self.hatari.trigger_shortcut("debug")
+        if not self.debugui:
+            self.debugui = HatariDebugUI(self.hatari, self.icon)
+        else:
+            self.debugui.show()
 
     def debug(self):
         "Activate Hatari debug mode"
@@ -369,7 +370,7 @@ class HatariUI():
         if left:
             hbox.add(left)
         if embed:
-            self.hatariparent = self.create_socket()
+            self.hatariparent = self.create_uisocket()
             # make sure socket isn't resized
             hbox.pack_start(self.hatariparent, False, False, 0)
         if right:
@@ -393,7 +394,7 @@ class HatariUI():
         # disable Socket widget being destroyed on Plug (=Hatari) disappearance
         return True
     
-    def create_socket(self):
+    def create_uisocket(self):
         # add Hatari parent container
         socket = gtk.Socket()
         # without this closing Hatari would remove the socket
@@ -419,7 +420,7 @@ class HatariUI():
             self.killdialog = KillDialog(self.mainwin)
         # Hatari is running, OK to kill?
         if self.killdialog.run() == gtk.RESPONSE_OK:
-            self.hatari.stop()
+            self.hatari.kill()
             return False
         return True
     
