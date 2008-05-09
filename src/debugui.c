@@ -8,7 +8,7 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.22 2008-05-09 18:19:24 eerot Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.23 2008-05-09 19:11:46 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -21,6 +21,7 @@ const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.22 2008-05-09 18:19:24 e
 #endif
 
 #include "main.h"
+#include "change.h"
 #include "configuration.h"
 #include "file.h"
 #include "reset.h"
@@ -565,7 +566,7 @@ static void DebugUI_Help(void)
 	        "   Output of reg & mem dumps and disassembly will be written to the log\n"
 	        " l filename address - load a file into memory starting at address. \n"
 	        " s filename address length - dump length bytes from memory to a file. \n"
-	        " o - disable debug mode\n\n"
+	        " o [command line] - set Hatari command line options\n\n"
 	        " q - quit emulator\n"
 	        " c - continue emulation\n\n"
 	        " Adresses may be given as a range e.g. fc0000-fc0100\nAll values in hexadecimal.\n"
@@ -621,8 +622,7 @@ int DebugUI_ParseCommand(char *input)
 		break;
 
 	 case 'o':
-		bEnableDebug = FALSE;
-		fprintf(stderr, "  Debug mode disabled.\n");
+		Change_ApplyCommandline(input+1);
 		break;
 
 	 case 'd':

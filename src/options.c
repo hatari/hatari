@@ -17,7 +17,7 @@
   2008-04-16   [ET]    Return FALSE instead of exiting on errors
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.57 2008-05-09 18:25:07 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.58 2008-05-09 19:11:46 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -983,7 +983,16 @@ BOOL Opt_ParseParameters(int argc, char *argv[],
 			
 			/* debug options */
 		case OPT_DEBUG:
-			bEnableDebug = TRUE;
+			if (bEnableDebug)
+			{
+				/* called at run time (e.g. from debugger) */
+				fprintf(stderr, "Debug mode disabled.\n");
+				bEnableDebug = FALSE;
+			}
+			else
+			{
+				bEnableDebug = TRUE;
+			}
 			break;
 
 		case OPT_BIOSINTERCEPT:
