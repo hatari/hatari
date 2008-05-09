@@ -94,7 +94,7 @@ class HatariDebugUI():
         vbox = gtk.VBox()
         vbox.add(hbox1)
         self.memory_label = gtk.Label()
-        self.memory_label.set_attributes(pango.parse_markup("<tt></tt>")[0])
+        self.memory_label.set_use_markup(True)
         vbox.add(self.memory_label)
         vbox.add(hbox2)
         
@@ -120,7 +120,7 @@ class HatariDebugUI():
             cmd = "d"
         # request memory data from Hatari and wait until it's available
         self.hatari.debug_command("%s %06x" % (cmd, address))
-        self.memory_label.set_text(self.get_data())
+        self.memory_label.set_label(self.get_data())
         self.address = address
 
     def get_data(self):
@@ -130,7 +130,7 @@ class HatariDebugUI():
         select.select([self.fifo], [], [])
         time.sleep(0.1)
         print "...read the data."
-        text = "\n" + "".join(self.fifo.readlines())
+        text = "<tt>\n" + "".join(self.fifo.readlines()) + "</tt>"
         print text
         return text
 
