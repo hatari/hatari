@@ -11,9 +11,6 @@
 
 extern bool Change_DoNeedReset(CNF_PARAMS *changed);
 extern void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceReset);
-extern bool Change_ProcessBuffer(char *buffer);
-/* these two are supported only on POSIX compliant systems */
-extern const char* Change_SetControlSocket(const char *socketpath);
-extern bool Change_CheckUpdates(void);
+extern bool Change_ApplyCommandline(char *cmdline);
 
 #endif /* HATARI_CHANGE_H */

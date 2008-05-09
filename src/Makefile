@@ -34,8 +34,8 @@ FALCOBJS += ./falcon/dsp.o ./falcon/dsp_cpu.o ./falcon/dsp_disasm.o
 endif
 
 SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c options.c \
-  createBlankImage.c change.c cycles.c debugui.c dialog.c dim.c dmaSnd.c \
-  fdc.c file.c floppy.c gemdos.c hdc.c ide.c ikbd.c int.c ioMem.c \
+  createBlankImage.c change.c control.c cycles.c debugui.c dialog.c dim.c \
+  dmaSnd.c fdc.c file.c floppy.c gemdos.c hdc.c ide.c ikbd.c int.c ioMem.c \
   ioMemTabST.c ioMemTabSTE.c ioMemTabTT.c ioMemTabFalcon.c joy.c keymap.c \
   log.c m68000.c main.c midi.c memorySnapShot.c mfp.c msa.c paths.c \
   psg.c printer.c rs232.c reset.c rtc.c scandir.c st.c stMemory.c screen.c \

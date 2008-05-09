@@ -10,59 +10,32 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.7 2008-05-07 20:53:32 eerot Exp $";
-
-#include "config.h"
-
-#if HAVE_UNIX_DOMAIN_SOCKETS
-#include <sys/socket.h>
-#include <sys/un.h>
-#endif
-
-#include <sys/types.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <ctype.h>
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.8 2008-05-09 18:25:06 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
 #include "audio.h"
 #include "change.h"
 #include "dialog.h"
-#include "file.h"
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
-#include "ikbd.h"
 #include "ioMem.h"
 #include "joy.h"
 #include "keymap.h"
-#include "log.h"
 #include "m68000.h"
-#include "memorySnapShot.h"
 #include "options.h"
 #include "printer.h"
 #include "reset.h"
 #include "rs232.h"
 #include "screen.h"
-#include "screenSnapShot.h"
-#include "shortcut.h"
 #include "sound.h"
-#include "str.h"
 #include "tos.h"
 #include "vdi.h"
 #include "video.h"
-#include "sdlgui.h"
 #include "hatari-glue.h"
 #if ENABLE_DSP_EMU
 # include "falcon/dsp.h"
-#endif
-
-
-/* socket from which control command line options are read */
-#if HAVE_UNIX_DOMAIN_SOCKETS
-static int ControlSocket;
-static FILE *ControlFile;
 #endif
 
 
@@ -311,7 +284,7 @@ static bool Change_Options(int argc, char *argv[])
  * Parse given command line and change Hatari options accordingly
  * Return FALSE if parsing failed or there were no args, TRUE otherwise
  */
-static bool Change_ApplyCommandline(char *cmdline)
+bool Change_ApplyCommandline(char *cmdline)
 {
 	int i, argc, inarg;
 	char **argv;
@@ -376,233 +349,4 @@ static bool Change_ApplyCommandline(char *cmdline)
 	ret = Change_Options(argc, argv);
 	free(argv);
 	return ret;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Parse key command and synthetize key press/release
- * corresponding to given keycode or character.
- * Return FALSE if parsing failed, TRUE otherwise
- * 
- * This can be used by external Hatari UI(s) for
- * string macros, or on devices which lack keyboard
- */
-static bool Change_InsertKey(const char *event)
-{
-	const char *key = NULL;
-	bool press;
-
-	if (strncmp(event, "keypress ", 9) == 0) {
-		key = &event[9];
-		press = TRUE;
-	} else if (strncmp(event, "keyrelease ", 11) == 0) {
-		key = &event[11];
-		press = FALSE;
-	}
-	if (!(key && key[0])) {
-		fprintf(stderr, "ERROR: event '%s' contains no key press/release\n", event);
-		return FALSE;
-	}
-	if (key[1]) {
-		char *endptr;
-		/* multiple characters, assume it's a keycode */
-		int keycode = strtol(key, &endptr, 0);
-		/* not a valid number or keycode is out of range? */
-		if (*endptr || keycode < 0 || keycode > 255) {
-			fprintf(stderr, "ERROR: '%s' is not valid key code, got %d\n",
-				key, keycode);
-			return FALSE;
-		}
-		IKBD_PressSTKey(keycode, press);
-	} else {
-		Keymap_SimulateCharacter(key[0], press);
-	}
-	fprintf(stderr, "Simulated %s key %s\n",
-		key, (press?"press":"release"));
-	return TRUE;
-}
-
-/*-----------------------------------------------------------------------*/
-/**
- * Parse event string and synthetize corresponding event to emulation
- * Return FALSE if parsing failed, TRUE otherwise
- * 
- * This can be used by external Hatari UI(s) on devices which input
- * methods differ from normal keyboard and mouse, such as high DPI
- * touchscreen (no right/middle button, inaccurate clicks)
- */
-static bool Change_InsertEvent(const char *event)
-{
-	if (strcmp(event, "doubleclick") == 0) {
-		Keyboard.LButtonDblClk = 1;
-		return TRUE;
-	}
-	if (strcmp(event, "rightpress") == 0) {
-		Keyboard.bRButtonDown |= BUTTON_MOUSE;
-		return TRUE;
-	}
-	if (strcmp(event, "rightrelease") == 0) {
-		Keyboard.bRButtonDown &= ~BUTTON_MOUSE;
-		return TRUE;
-	}
-	if (Change_InsertKey(event)) {
-		return TRUE;
-	}
-	fprintf(stderr, "ERROR: unrecognized event: '%s'\n", event);
-	fprintf(stderr, "Supported events are:\n");
-	fprintf(stderr, "- doubleclick\n");
-	fprintf(stderr, "- rightpress\n");
-	fprintf(stderr, "- rightrelease\n");
-	fprintf(stderr, "- keypress <character>\n");
-	fprintf(stderr, "- keyrelease <character>\n");
-	fprintf(stderr, "<character> can be either a single ASCII char or keycode.\n");
-	return FALSE;	
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Parse Hatari option/shortcut/event command buffer.
- * Given buffer is modified in-place.
- * Returns FALSE on error, otherwise TRUE.
- */
-bool Change_ProcessBuffer(char *buffer)
-{
-	char *cmd, *cmdend;
-	int ok = TRUE;
-	
-	cmd = buffer;
-	do {
-		/* command terminator? */
-		cmdend  = strchr(cmd, '\n');
-		if (cmdend) {
-			*cmdend = '\0';
-		}
-		/* process... */
-		if (strncmp(cmd, "hatari-option ", 14) == 0) {
-			ok &= Change_ApplyCommandline(cmd+14);
-		} else if (strncmp(cmd, "hatari-shortcut ", 16) == 0) {
-			ok &= Shortcut_Invoke(Str_Trim(cmd+16));
-		} else if (strncmp(cmd, "hatari-event ", 13) == 0) {
-			ok &= Change_InsertEvent(Str_Trim(cmd+13));
-		} else {
-			fprintf(stderr, "ERROR: unrecognized input\n\t'%s'\n", Str_Trim(cmd));
-			ok = FALSE;
-		}
-		if (cmdend) {
-			cmd = cmdend + 1;
-		}
-	} while (cmdend && *cmd);
-	return ok;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Check ControlSocket for new commands and execute them.
- * Commands should be separated by newlines.
- * Return TRUE if everthing is OK, FALSE on error.
- */
-extern bool Change_CheckUpdates(void)
-{
-#if !HAVE_UNIX_DOMAIN_SOCKETS    /* supports select only for sockets */
-	return TRUE;
-#else
-	/* just using all trace options with +/- are about 300 chars */
-	char buffer[400];
-	struct timeval tv;
-	fd_set readfds;
-	ssize_t bytes;
-	int status, sock;
-
-	/* socket of file? */
-	if (ControlSocket) {
-		sock = ControlSocket;
-	} else if (ControlFile) {
-		sock = fileno(ControlFile);
-	} else {
-		return TRUE;
-	}
-	
-	/* ready for reading? */
-	FD_ZERO(&readfds);
-	FD_SET(sock, &readfds);
-	tv.tv_usec = tv.tv_sec = 0;
-	status = select(sock+1, &readfds, NULL, NULL, &tv);
-	if (status < 0) {
-		perror("Control socket select() error");
-		return FALSE;
-	}
-	if (status == 0) {
-		return TRUE;
-	}
-	
-	/* assume whole command can be read in one go */
-	bytes = read(sock, buffer, sizeof(buffer)-1);
-	if (bytes < 0)
-	{
-		perror("Control socket read");
-		return FALSE;
-	}
-	if (bytes == 0) {
-		/* closed */
-		if (ControlSocket) {
-			close(ControlSocket);
-			ControlSocket = 0;
-		} else {
-			ControlFile = NULL;
-		}
-		return TRUE;
-	}
-	buffer[bytes] = '\0';
-	return Change_ProcessBuffer(buffer);
-#endif
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Open given control socket.  "stdin" is opened as file.
- * Return NULL for success, otherwise an error string
- */
-const char *Change_SetControlSocket(const char *socketpath)
-{
-#if !HAVE_UNIX_DOMAIN_SOCKETS
-	return "Control socket is not supported on this platform.";
-#else
-	struct sockaddr_un address;
-	int newsock;
-
-	if (strcmp(socketpath, "stdin") == 0)
-	{
-		ControlFile = stdin;
-		return NULL;
-	}
-	
-	newsock = socket(AF_UNIX, SOCK_STREAM, 0);
-	if (newsock < 0)
-	{
-		perror("socket creation");
-		return "Can't create AF_UNIX socket";
-	}
-
-	address.sun_family = AF_UNIX;
-	strncpy(address.sun_path, socketpath, sizeof(address.sun_path));
-	address.sun_path[sizeof(address.sun_path)-1] = '\0';
-	Log_Printf(LOG_INFO, "Connecting to control socket '%s'...\n", address.sun_path);
-	if (connect(newsock, &address, sizeof(address)) < 0)
-	{
-		perror("socket connect");
-		close(newsock);
-		return "connection to control socket failed";
-	}
-				
-	if (ControlSocket) {
-		close(ControlSocket);
-	}
-	ControlSocket = newsock;
-	Log_Printf(LOG_INFO, "new control socket is '%s'\n", socketpath);
-	return NULL;
-#endif
 }

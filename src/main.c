@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.127 2008-05-04 19:21:05 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.128 2008-05-09 18:25:06 eerot Exp $";
 
 #include "config.h"
 
@@ -16,7 +16,7 @@ const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.127 2008-05-04 19:21:05 thothy 
 #include "config.h"
 #include "main.h"
 #include "configuration.h"
-#include "change.h"
+#include "control.h"
 #include "options.h"
 #include "dialog.h"
 #include "audio.h"
@@ -297,7 +297,7 @@ void Main_EventHandler(void)
 	SDL_Event event;
 
 	/* check remote process control */
-	Change_CheckUpdates();
+	Control_CheckUpdates();
 	
 	if (SDL_PollEvent(&event))
 	{

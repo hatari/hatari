@@ -17,7 +17,7 @@
   2008-04-16   [ET]    Return FALSE instead of exiting on errors
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.56 2008-05-03 19:09:05 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.57 2008-05-09 18:25:07 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -28,7 +28,7 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.56 2008-05-03 19:09:05 thot
 #include "main.h"
 #include "options.h"
 #include "configuration.h"
-#include "change.h"
+#include "control.h"
 #include "file.h"
 #include "screen.h"
 #include "video.h"
@@ -1007,7 +1007,7 @@ BOOL Opt_ParseParameters(int argc, char *argv[],
 
 		case OPT_CONTROLSOCKET:
 			i += 1;
-			errstr = Change_SetControlSocket(argv[i]);
+			errstr = Control_SetSocket(argv[i]);
 			if (errstr)
 			{
 				return Opt_ShowError(OPT_CONTROLSOCKET, argv[i], errstr);
