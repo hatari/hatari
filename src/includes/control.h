@@ -16,7 +16,7 @@ extern void Control_CheckUpdates(void);
 extern const char* Control_SetSocket(const char *socketpath);
 #else
 #define Control_CheckUpdates()
-#define Control_SetSocket() "Control socket is not supported on this platform."
+#define Control_SetSocket(path) "Control socket is not supported on this platform."
 #endif /* HAVE_UNIX_DOMAIN_SOCKETS */
 
 #endif /* HATARI_CONTROL_H */
