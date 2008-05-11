@@ -33,8 +33,9 @@ class HatariDebugUI():
     
     def __init__(self, hatari, icon):
         self.hatari = hatari
-        self.dumpmode = self._DISASM
         self.address = None
+        self.default = None
+        self.dumpmode = self._DISASM
         
         self.hatari.pause()
         #raw_input("attach strace now, then press Enter\n")
@@ -58,19 +59,30 @@ class HatariDebugUI():
         stop.connect("toggled", self.stop_cb)
         hbox1.add(stop)
 
-        self.address_label =  gtk.Label()
-        hbox1.add(self.address_label)
+        monitor = gtk.Button("Monitor...")
+        monitor.connect("clicked", self.monitor_cb)
+        hbox1.add(monitor)
         
         buttons = (
-            ("<<", self.pageup_cb),
-            ("<",  self.up_cb),
-            (">",  self.down_cb),
-            (">>", self.pagedown_cb)
+            ("<<", -64),
+            ("<",   -8),
+            (">",    8),
+            (">>",  64)
         )
-        for label, cb in buttons:
+        for label, offset in buttons:
             button = gtk.Button(label)
-            button.connect("clicked", cb)
+            button.connect("clicked", self.set_address_offset, offset)
             hbox1.add(button)
+
+        default = gtk.Button("Default")
+        default.connect("clicked", self.default_cb)
+        hbox1.add(default)
+
+        entry =  gtk.Entry(6)
+        entry.connect("activate", self.address_entry_cb)
+        hbox1.pack_start(entry, False)
+        hbox1.reorder_child(entry, 4) # to middle of <<>> buttons
+        self.address_entry = entry
 
         # disasm/memory dump at the middle
         self.memory_label = gtk.Label()
@@ -96,9 +108,9 @@ class HatariDebugUI():
         group.set_active(True)
 
         dialogs = (
-            ("Monitor...", self.monitor_cb),
             ("Memload...", self.memload_cb),
-            ("Memsave...", self.memsave_cb)
+            ("Memsave...", self.memsave_cb),
+            ("Options...", self.options_cb)
         )
         for label, cb in dialogs:
             button = gtk.Button(label)
@@ -131,6 +143,27 @@ class HatariDebugUI():
             self.dumpmode = mode
             self.dump_address(self.address)
 
+    def address_entry_cb(self, widget):
+        try:
+            address = int(widget.get_text(), 16)
+        except ValueError:
+            widget.set_text("INVALID")
+            widget.modify_font(pango.FontDescription("red"))
+            return
+        self.dump_address(address)
+
+    def set_address_offset(self, widget, offset):
+        if not self.address:
+            print "ERROR: no address"
+            return
+        self.dump_address(self.address + offset)
+
+    def default_cb(self, widget):
+        if self.default:
+            self.dump_address(self.default)
+        else:
+            self.dialog("No default address specified in Options.")
+
     def dump_address(self, address):
         if self.dumpmode == self._REGISTERS:
             self.hatari.debug_command("r")
@@ -156,7 +189,7 @@ class HatariDebugUI():
 
     def set_address(self, address):
         if address:
-            self.address_label.set_text("0x%06x" % address)
+            self.address_entry.set_text("%06X" % address)
             self.address = address
     
     def get_data(self):
@@ -170,26 +203,17 @@ class HatariDebugUI():
         print text
         return text
 
-    def pageup_cb(self, widget):
-        print "TODO: page back in memory"
-
-    def up_cb(self, widget):
-        print "TODO: line back in memory"
-
-    def down_cb(self, widget):
-        print "TODO: line down in memory"
-
-    def pagedown_cb(self, widget):
-        print "TODO: page down in memory"
-
     def monitor_cb(self, widget):
-        print "TODO: add register / memory address range monitor window"
+        self.dialog("TODO: add register / memory address range monitor window.")
 
     def memload_cb(self, widget):
-        print "TODO: load data in given file to memory"
+        self.dialog("TODO: load data in given file to memory.")
 
     def memsave_cb(self, widget):
-        print "TODO: save given range of memory to file"
+        self.dialog("TODO: save given range of memory to file.")
+
+    def options_cb(self, widget):
+        self.dialog("TODO: set step sizes, default address etc.")
 
     def show(self):
         self.hatari.pause()
@@ -201,3 +225,9 @@ class HatariDebugUI():
         self.hatari.unpause()
         self.window.hide()
         return True
+
+    def dialog(self, text):
+        dialog = gtk.MessageDialog(self.window,
+        gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+        gtk.MESSAGE_INFO, gtk.BUTTONS_CLOSE, "\n%s" % text)
+        dialog.run()
