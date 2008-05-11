@@ -1,0 +1,7 @@
+#!/bin/sh
+# run Hatari UI with everything possible
+$0.py  -e \
+-t "about,run,pause,quit" \
+-b "sound,spec512,|,fastforward,|,frameskip" \
+-l "Macro=Testing...,Undo=97,Help=98,Enter=114,F1=59,F2=60,F3=61,F4=62" \
+-r "paste,debug,trace,setup"
