@@ -48,7 +48,6 @@ class HatariDebugUI():
         self.window = self.create_ui("Hatari Debug UI", icon)
         time.sleep(0.1)
         self.fifo = open(self.fifopath, "r")
-        self.dump_address(self.address)
         self.show()
         
     def create_ui(self, title, icon):
@@ -134,6 +133,7 @@ class HatariDebugUI():
     def stop_cb(self, widget):
         if widget.get_active():
             self.hatari.pause()
+            self.address = None
             self.dump_address(self.address)
         else:
             self.hatari.unpause()
@@ -217,6 +217,8 @@ class HatariDebugUI():
 
     def show(self):
         self.hatari.pause()
+        self.address = None
+        self.dump_address(self.address)
         self.window.show_all()
         self.window.deiconify()
 
