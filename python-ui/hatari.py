@@ -352,8 +352,16 @@ class ConfigMapping(Config):
         if wd < 320 or ht < 200:
             print "ERROR: Hatari needs larger than %dx%d window" % (wd, ht)
             os.exit(1)
-        print "TODO: get Hatari window border size(s) from the configuration file"
+        
+        # for VDI we can use (fairly) exact size + ignore other screen options
+        usevdi = self.get("bUseExtVdiResolutions")
+        if usevdi and usevdi.upper() == "TRUE":
+            return ("--vdi-width", str(wd), "--vdi-height", str(ht))
+        
+        print "TODO: get actual Hatari window border size(s) from the configuration file"
+         # max border size
         border = 48
+        args = ()
         if wd < 640 or ht < 400:
             # only non-zoomed color mode fits to window
             args = ("--zoom", "1", "--monitor", "vga")
@@ -361,23 +369,23 @@ class ConfigMapping(Config):
                 # without borders
                 args += ("--borders", "off")
         else:
-            # can we have both zooming and borders?
-            if wd < 2*(320+border*2) and ht < 2*(200+border*2):
-                useborder = self.get("bAllowOverscan")
-                if useborder and useborder.upper() == "TRUE":
-                    # no, just border
-                    args = ("--zoom", "1")
-                else:
-                    # no, just zooming
-                    args = ("--zoom", "2")
-            else:
-                # yes, both
+            zoom = self.get("bZoomLowRes")
+            monitor = self.get("nMonitorType")
+            useborder = self.get("bAllowOverscan")
+            # can we have borders with color zooming or mono?
+            if ((wd < 2*(320+border*2) or ht < 2*(200+border*2)) and
+                (useborder and useborder.upper() == "TRUE")):
+                    if monitor and monitor == "0":
+                        # mono -> no border
+                        args = ("--borders", "off")
+                    elif zoom and zoom.upper() == "TRUE":
+                        # color -> no zoom, just border
+                        args = ("--zoom", "1")
+            elif ((monitor and monitor != "0") or
+                  (zoom and zoom.upper() != "TRUE")):
+                # no mono nor zoom -> zoom
                 args = ("--zoom", "2")
 
-        # for VDI we can use (fairly) exact size
-        usevdi = self.get("bUseExtVdiResolutions")
-        if usevdi and usevdi.upper() == "TRUE":
-            args += ("--vdi-width", str(wd), "--vdi-height", str(ht))
         # window size for other than ST & STE can differ
         machine = self.get("nMachineType")
         if machine != '0' and machine != '1':
