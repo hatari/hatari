@@ -87,7 +87,7 @@ class HatariDebugUI():
         self.memory_label = gtk.Label()
         self.memory_label.modify_font(pango.FontDescription("monospace"))
         align = gtk.Alignment()
-        align.set_padding(8,8,8,8)
+        align.set_padding(8,0,8,8) # top, bottom, left, right
         align.add(self.memory_label)
 
         # buttons at the bottom
