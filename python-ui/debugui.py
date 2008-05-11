@@ -28,17 +28,20 @@ class HatariDebugUI():
     # constants
     _DISASM = 1
     _MEMDUMP = 2
+    _REGISTERS = 3
     fifopath = "/tmp/hatari-ui-" + os.getenv("USER") + ".fifo"
     
     def __init__(self, hatari, icon):
         self.hatari = hatari
-        self.dumpmode = self._MEMDUMP
-        self.address = 0
+        self.dumpmode = self._DISASM
+        self.address = None
         
         self.hatari.pause()
         #raw_input("attach strace now, then press Enter\n")
-        os.unlink(self.fifopath)
-        # TODO: why fifo doesn't work properly (blocks forever on read)
+        if os.path.exists(self.fifopath):
+            os.unlink(self.fifopath)
+        # TODO: why fifo doesn't work properly (blocks forever on read or
+        #       reads only byte at the time and stops after first newline)?
         #os.mkfifo(self.fifopath)
         self.hatari.debug_command("f " + self.fifopath)
         self.window = self.create_ui("Hatari Debug UI", icon)
@@ -48,6 +51,7 @@ class HatariDebugUI():
         self.show()
         
     def create_ui(self, title, icon):
+        # buttons at the top
         hbox1 = gtk.HBox()
         stop = gtk.ToggleButton("Stopped")
         stop.set_active(True)
@@ -67,37 +71,47 @@ class HatariDebugUI():
             button = gtk.Button(label)
             button.connect("clicked", cb)
             hbox1.add(button)
-        
+
+        # disasm/memory dump at the middle
+        self.memory_label = gtk.Label()
+        self.memory_label.modify_font(pango.FontDescription("monospace"))
+        align = gtk.Alignment()
+        align.set_padding(8,8,8,8)
+        align.add(self.memory_label)
+
+        # buttons at the bottom
         hbox2 = gtk.HBox()
-        memdump = gtk.RadioButton(None, "Memdump")
-        disasm = gtk.RadioButton(memdump, "Disasm")
-        if self.dumpmode == self._MEMDUMP:
-            memdump.set_active(True)
-        else:
-            disasm.set_active(True)
-        memdump.connect("toggled", self.memdump_cb)
-        hbox2.add(memdump)
-        hbox2.add(disasm)
+        radios = (
+            ("Disasm", self._DISASM),
+            ("Memdump", self._MEMDUMP),
+            ("Registers", self._REGISTERS)
+        )
+        group = None
+        for label, mode in radios:
+            button = gtk.RadioButton(group, label)
+            if not group:
+                group = button
+            button.connect("toggled", self.dumpmode_cb, mode)
+            hbox2.add(button)
+        group.set_active(True)
 
         dialogs = (
-            ("Registers",  self.registers_cb),
             ("Monitor...", self.monitor_cb),
             ("Memload...", self.memload_cb),
-            ("Memsave...", self.memsave_cb),
-            ("Tracelog",   self.tracelog_cb)
+            ("Memsave...", self.memsave_cb)
         )
         for label, cb in dialogs:
             button = gtk.Button(label)
             button.connect("clicked", cb)
             hbox2.add(button)
 
+        # their containers
         vbox = gtk.VBox()
-        vbox.add(hbox1)
-        self.memory_label = gtk.Label()
-        self.memory_label.set_use_markup(True)
-        vbox.add(self.memory_label)
-        vbox.add(hbox2)
+        vbox.pack_start(hbox1, False)
+        vbox.pack_start(align, True, True)
+        vbox.pack_start(hbox2, False)
         
+        # and the window for all of this
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         window.connect("delete_event", self.hide)
         window.set_icon_from_file(icon)
@@ -112,17 +126,39 @@ class HatariDebugUI():
         else:
             self.hatari.unpause()
 
+    def dumpmode_cb(self, widget, mode):
+        if widget.get_active():
+            self.dumpmode = mode
+            self.dump_address(self.address)
+
     def dump_address(self, address):
-        self.address_label.set_text("0x%06x" % address)
-        if self.dumpmode == self._MEMDUMP:
+        if self.dumpmode == self._REGISTERS:
+            self.hatari.debug_command("r")
+            self.memory_label.set_label(self.get_data())
+            self.set_address(address)
+            return
+        if self.dumpmode == self._DISASM:
+            cmd = "d"
+        elif self.dumpmode == self._MEMDUMP:
             cmd = "m"
         else:
-            cmd = "d"
+            print "ERROR: unknown dumpmode:", self.dumpmode
+            return
         # request memory data from Hatari and wait until it's available
-        self.hatari.debug_command("%s %06x" % (cmd, address))
-        self.memory_label.set_label(self.get_data())
-        self.address = address
+        if address:
+            self.hatari.debug_command("%s %06x" % (cmd, address))
+        else:
+            self.hatari.debug_command(cmd)
+        data = self.get_data()
+        self.memory_label.set_label(data)
+         # debugger data begins with a hex address of the dump
+        self.set_address(int(data[:data.find(":")], 16))
 
+    def set_address(self, address):
+        if address:
+            self.address_label.set_text("0x%06x" % address)
+            self.address = address
+    
     def get_data(self):
         # wait until data is available, wait some more for all
         # of it and only then it can be read
@@ -130,7 +166,7 @@ class HatariDebugUI():
         select.select([self.fifo], [], [])
         time.sleep(0.1)
         print "...read the data."
-        text = "<tt>\n" + "".join(self.fifo.readlines()) + "</tt>"
+        text = "".join(self.fifo.readlines())
         print text
         return text
 
@@ -146,31 +182,14 @@ class HatariDebugUI():
     def pagedown_cb(self, widget):
         print "TODO: page down in memory"
 
-    def memdump_cb(self, widget):
-        if widget.get_active():
-            print "Dumpmode on MEMDUMP"
-            self.dumpmode = self._MEMDUMP
-        else:
-            print "Dumpmode on DISASM"
-            self.dumpmode = self._DISASM
-        self.dump_address(self.address)
-
-    def registers_cb(self, widget):
-        print "TODO: show these in window and allow changing registers"
-        self.hatari.debug_command("r")
-        self.get_data()
-
     def monitor_cb(self, widget):
-        print "TODO: add monitor window for given memory address range"
+        print "TODO: add register / memory address range monitor window"
 
     def memload_cb(self, widget):
         print "TODO: load data in given file to memory"
 
     def memsave_cb(self, widget):
         print "TODO: save given range of memory to file"
-
-    def tracelog_cb(self, widget):
-        print "TODO: show tracelog and allow changing trace settings"
 
     def show(self):
         self.hatari.pause()
