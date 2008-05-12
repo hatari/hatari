@@ -15,8 +15,6 @@
 # GNU General Public License for more details.
 
 import os
-import time
-import select
 # use correct version of pygtk/gtk
 import pygtk
 pygtk.require('2.0')
@@ -29,34 +27,23 @@ class HatariDebugUI():
     _DISASM = 1
     _MEMDUMP = 2
     _REGISTERS = 3
-    fifopath = "/tmp/hatari-ui-" + os.getenv("USER") + ".fifo"
     
     def __init__(self, hatari, icon):
         self.hatari = hatari
         self.address = None
         self.default = None
         self.dumpmode = self._DISASM
+        self.no_destroy = True
         
-        self.hatari.pause()
-        #raw_input("attach strace now, then press Enter\n")
-        if os.path.exists(self.fifopath):
-            os.unlink(self.fifopath)
-        # TODO: why fifo doesn't work properly (blocks forever on read or
-        #       reads only byte at the time and stops after first newline)?
-        #os.mkfifo(self.fifopath)
-        self.hatari.debug_command("f " + self.fifopath)
         self.window = self.create_ui("Hatari Debug UI", icon)
-        time.sleep(0.1)
-        self.fifo = open(self.fifopath, "r")
-        self.show()
+        self.dbg_out_file = self.hatari.open_debug_output()
         
     def create_ui(self, title, icon):
         # buttons at the top
         hbox1 = gtk.HBox()
-        stop = gtk.ToggleButton("Stopped")
-        stop.set_active(True)
-        stop.connect("toggled", self.stop_cb)
-        hbox1.add(stop)
+        self.stop_button = gtk.ToggleButton("Stopped")
+        self.stop_button.connect("toggled", self.stop_cb)
+        hbox1.add(self.stop_button)
 
         monitor = gtk.Button("Monitor...")
         monitor.connect("clicked", self.monitor_cb)
@@ -147,8 +134,8 @@ class HatariDebugUI():
         try:
             address = int(widget.get_text(), 16)
         except ValueError:
-            widget.set_text("INVALID")
             widget.modify_font(pango.FontDescription("red"))
+            widget.set_text("ERROR")
             return
         self.dump_address(address)
 
@@ -167,12 +154,17 @@ class HatariDebugUI():
     def dump_address(self, address):
         if self.dumpmode == self._REGISTERS:
             self.hatari.debug_command("r")
-            self.memory_label.set_label(self.get_data())
+            data = self.hatari.get_data(self.dbg_out_file)
+            self.memory_label.set_label(data)
             self.set_address(address)
             return
+        
         if self.dumpmode == self._DISASM:
             cmd = "d"
         elif self.dumpmode == self._MEMDUMP:
+            if not address:
+                print "ERROR: memdump mode needs always an address"
+                return
             cmd = "m"
         else:
             print "ERROR: unknown dumpmode:", self.dumpmode
@@ -182,7 +174,7 @@ class HatariDebugUI():
             self.hatari.debug_command("%s %06x" % (cmd, address))
         else:
             self.hatari.debug_command(cmd)
-        data = self.get_data()
+        data = self.hatari.get_data(self.dbg_out_file)
         self.memory_label.set_label(data)
          # debugger data begins with a hex address of the dump
         self.set_address(int(data[:data.find(":")], 16))
@@ -191,17 +183,6 @@ class HatariDebugUI():
         if address:
             self.address_entry.set_text("%06X" % address)
             self.address = address
-    
-    def get_data(self):
-        # wait until data is available, wait some more for all
-        # of it and only then it can be read
-        print "Request&wait data from Hatari..."
-        select.select([self.fifo], [], [])
-        time.sleep(0.1)
-        print "...read the data."
-        text = "".join(self.fifo.readlines())
-        print text
-        return text
 
     def monitor_cb(self, widget):
         self.dialog("TODO: add register / memory address range monitor window.")
@@ -215,21 +196,35 @@ class HatariDebugUI():
     def options_cb(self, widget):
         self.dialog("TODO: set step sizes, default address etc.")
 
-    def show(self):
-        self.hatari.pause()
-        self.address = None
-        self.dump_address(self.address)
-        self.window.show_all()
-        self.window.deiconify()
-
-    def hide(self, widget, arg):
-        # continue Hatari, hide window, don't destroy it
-        self.hatari.unpause()
-        self.window.hide()
-        return True
-
     def dialog(self, text):
         dialog = gtk.MessageDialog(self.window,
         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
         gtk.MESSAGE_INFO, gtk.BUTTONS_CLOSE, "\n%s" % text)
         dialog.run()
+
+    def show(self):
+        self.stop_button.set_active(True)
+        self.window.show_all()
+        self.window.deiconify()
+
+    def hide(self, widget, arg):
+        self.window.hide()
+        self.stop_button.set_active(False)
+        if self.no_destroy:
+            return True
+        else:
+            gtk.main_quit()
+            return False
+
+    def set_no_destroy(self, no_destroy):
+        self.no_destroy = no_destroy
+
+
+if __name__ == "__main__":
+    from hatari import Hatari
+    hatari = Hatari()
+    hatari.run()
+    debugui = HatariDebugUI(hatari, "hatari-icon.png")
+    debugui.set_no_destroy(False)
+    debugui.window.show_all()
+    gtk.main()

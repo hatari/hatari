@@ -16,12 +16,18 @@
 
 import os
 import sys
+import time
 import signal
 import socket
+import select
 
 # Running Hatari instance
 class Hatari():
-    controlpath = "/tmp/hatari-ui-" + os.getenv("USER") + ".socket"
+    basepath = "/tmp/hatari-ui-" + os.getenv("USER")
+    logpath = basepath + ".log"
+    tracepath = basepath + ".trace"
+    debugpath = basepath + ".debug"
+    controlpath = basepath + ".socket"
     server = None # singleton due to path being currently one per user
 
     def __init__(self, hataribin = None):
@@ -70,6 +76,45 @@ class Hatari():
 
     def unpause(self):
         return self.send_message("hatari-cont\n")
+    
+    def open_output_file(self, hataricommand, option, path):
+        if os.path.exists(path):
+            os.unlink(path)
+        # TODO: why fifo doesn't work properly (blocks forever on read or
+        #       reads only byte at the time and stops after first newline)?
+        #os.mkfifo(path)
+        #raw_input("attach strace now, then press Enter\n")
+        
+        # ask Hatari to open/create the requested output file...
+        hataricommand("%s %s" % (option, path))
+        wait = 0.025
+        # ...and wait for it to appear before returning it
+        for i in range(0, 8):
+            time.sleep(wait)
+            if os.path.exists(path):
+                return open(path, "r")
+            wait += wait
+        return None
+
+    def open_debug_output(self):
+        return self.open_output_file(self.debug_command, "f", self.debugpath)
+
+    def open_trace_output(self):
+        return self.open_output_file(self.change_option, "--trace-file", self.tracepath)
+
+    def open_log_output(self):
+        return self.open_output_file(self.change_option, "--log-file", self.logpath)
+    
+    def get_data(self, file):
+        # wait until data is available, then wait for some more
+        # and only then the data can be read, otherwise its old
+        print "Request&wait data from Hatari..."
+        select.select([file], [], [])
+        time.sleep(0.1)
+        print "...read the data",
+        text = "".join(file.readlines())
+        print text
+        return text
 
     def is_running(self):
         if not self.pid:

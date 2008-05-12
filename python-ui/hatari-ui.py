@@ -193,8 +193,7 @@ class HatariUI():
     def debug_cb(self, widget):
         if not self.debugui:
             self.debugui = HatariDebugUI(self.hatari, self.icon)
-        else:
-            self.debugui.show()
+        self.debugui.show()
 
     def debug(self):
         "Activate Hatari debug mode"
