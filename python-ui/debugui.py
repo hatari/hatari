@@ -28,17 +28,16 @@ class HatariDebugUI():
     _MEMDUMP = 2
     _REGISTERS = 3
     
-    def __init__(self, hatari, icon):
+    def __init__(self, hatari, icon, do_destroy = False):
         self.hatari = hatari
         self.address = None
-        self.default = None
+        self.default_address = None
         self.dumpmode = self._DISASM
-        self.no_destroy = True
         
-        self.window = self.create_ui("Hatari Debug UI", icon)
+        self.window = self.create_ui("Hatari Debug UI", icon, do_destroy)
         self.dbg_out_file = self.hatari.open_debug_output()
         
-    def create_ui(self, title, icon):
+    def create_ui(self, title, icon, do_destroy):
         # buttons at the top
         hbox1 = gtk.HBox()
         self.stop_button = gtk.ToggleButton("Stopped")
@@ -50,31 +49,41 @@ class HatariDebugUI():
         hbox1.add(monitor)
         
         buttons = (
-            ("<<", -64),
-            ("<",   -8),
-            (">",    8),
-            (">>",  64)
+            ("<<<", "Page_Up",  -64),
+            ("<<",  "Up",       -16),
+            ("<",  "Left",       -2),
+            (">",  "Right",       2),
+            (">>", "Down",       16),
+            (">>>", "Page_Down", 64)
         )
-        for label, offset in buttons:
+        self.keys = {}
+        for label, keyname, offset in buttons:
             button = gtk.Button(label)
             button.connect("clicked", self.set_address_offset, offset)
+            keyval = gtk.gdk.keyval_from_name(keyname)
+            self.keys[keyval] =  offset
             hbox1.add(button)
 
         default = gtk.Button("Default")
         default.connect("clicked", self.default_cb)
         hbox1.add(default)
 
-        entry =  gtk.Entry(6)
+        entry = gtk.Entry(6)
+        entry.set_width_chars(6)
         entry.connect("activate", self.address_entry_cb)
+        mono = pango.FontDescription("monospace")
+        entry.modify_font(mono)
+        # to middle of <<>> buttons
         hbox1.pack_start(entry, False)
-        hbox1.reorder_child(entry, 4) # to middle of <<>> buttons
+        hbox1.reorder_child(entry, 5)
         self.address_entry = entry
 
         # disasm/memory dump at the middle
         self.memory_label = gtk.Label()
-        self.memory_label.modify_font(pango.FontDescription("monospace"))
+        self.memory_label.modify_font(mono)
         align = gtk.Alignment()
-        align.set_padding(8,0,8,8) # top, bottom, left, right
+        # top, bottom, left, right padding
+        align.set_padding(8,0,8,8)
         align.add(self.memory_label)
 
         # buttons at the bottom
@@ -90,6 +99,7 @@ class HatariDebugUI():
             if not group:
                 group = button
             button.connect("toggled", self.dumpmode_cb, mode)
+            button.unset_flags(gtk.CAN_FOCUS)
             hbox2.add(button)
         group.set_active(True)
 
@@ -111,12 +121,21 @@ class HatariDebugUI():
         
         # and the window for all of this
         window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        window.connect("delete_event", self.hide)
+        window.set_events(gtk.gdk.KEY_RELEASE_MASK)
+        window.connect("key_release_event", self.key_event_cb)
+        if do_destroy:
+            window.connect("delete_event", gtk.main_quit)
+        else:
+            window.connect("delete_event", self.hide)
         window.set_icon_from_file(icon)
         window.set_title(title)
         window.add(vbox)
         return window
 
+    def key_event_cb(self, widget, event):
+        if event.keyval in self.keys:
+            self.set_address_offset(None, self.keys[event.keyval])
+        
     def stop_cb(self, widget):
         if widget.get_active():
             self.hatari.pause()
@@ -146,8 +165,8 @@ class HatariDebugUI():
         self.dump_address(self.address + offset)
 
     def default_cb(self, widget):
-        if self.default:
-            self.dump_address(self.default)
+        if self.default_address:
+            self.dump_address(self.default_address)
         else:
             self.dialog("No default address specified in Options.")
 
@@ -201,6 +220,7 @@ class HatariDebugUI():
         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
         gtk.MESSAGE_INFO, gtk.BUTTONS_CLOSE, "\n%s" % text)
         dialog.run()
+        dialog.destroy()
 
     def show(self):
         self.stop_button.set_active(True)
@@ -210,21 +230,13 @@ class HatariDebugUI():
     def hide(self, widget, arg):
         self.window.hide()
         self.stop_button.set_active(False)
-        if self.no_destroy:
-            return True
-        else:
-            gtk.main_quit()
-            return False
-
-    def set_no_destroy(self, no_destroy):
-        self.no_destroy = no_destroy
+        return True
 
 
 if __name__ == "__main__":
     from hatari import Hatari
     hatari = Hatari()
     hatari.run()
-    debugui = HatariDebugUI(hatari, "hatari-icon.png")
-    debugui.set_no_destroy(False)
+    debugui = HatariDebugUI(hatari, "hatari-icon.png", True)
     debugui.window.show_all()
     gtk.main()
