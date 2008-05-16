@@ -105,16 +105,16 @@ class Hatari():
     def open_log_output(self):
         return self.open_output_file(self.change_option, "--log-file", self.logpath)
     
-    def get_data(self, file):
+    def get_lines(self, file):
         # wait until data is available, then wait for some more
         # and only then the data can be read, otherwise its old
         print "Request&wait data from Hatari..."
         select.select([file], [], [])
         time.sleep(0.1)
-        print "...read the data",
-        text = "".join(file.readlines())
-        print text
-        return text
+        print "...read the data lines"
+        lines = file.readlines()
+        print "".join(lines)
+        return lines
 
     def is_running(self):
         if not self.pid:
