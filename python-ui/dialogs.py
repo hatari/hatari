@@ -50,11 +50,13 @@ class HatariInsertText():
             self.hatari.insert_event("keypress %c" % char)
         return True
 
+
 # ---------- Dialogs themselves --------------
 
 class HatariUIDialog():
-    def __init__(self):
+    def __init__(self, parent = None):
         self.dialog = None
+        self.parent = None
 
     def run(self):
         "return dialog response"
@@ -62,6 +64,28 @@ class HatariUIDialog():
         response = self.dialog.run()
         self.dialog.hide()
         return response
+
+    def destroy(self):
+        if self.dialog:
+            self.dialog.destroy()
+
+
+class TodoDialog(HatariUIDialog):
+    def run(self, text):
+        dialog = gtk.MessageDialog(self.parent,
+        gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+        gtk.MESSAGE_INFO, gtk.BUTTONS_CLOSE, "\nTODO: %s" % text)
+        dialog.run()
+        dialog.destroy()
+
+
+class ErrorDialog(HatariUIDialog):
+    def run(self, text):
+        dialog = gtk.MessageDialog(self.parent,
+        gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+        gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE, "\nERROR: %s" % text)
+        dialog.run()
+        dialog.destroy()
 
 
 class AboutDialog(HatariUIDialog):
