@@ -24,7 +24,7 @@
  *
  *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.19 2008-05-09 20:55:09 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.20 2008-05-18 20:45:59 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -174,31 +174,6 @@ static void load_halftone_ram(Uint32 source_addr)
 }
 
 
-static inline Uint16 do_op(Uint16 opd_data, Uint16 dst_data)
-{
-	switch (op)
-	{
-		default:
-		case  0: return (0);
-		case  1: return (opd_data & dst_data);
-		case  2: return (opd_data & ~dst_data);
-		case  3: return (opd_data);
-		case  4: return (~opd_data & dst_data);
-		case  5: return (dst_data);
-		case  6: return (opd_data ^ dst_data);
-		case  7: return (opd_data | dst_data);
-		case  8: return (~opd_data & ~dst_data);
-		case  9: return (~opd_data ^ dst_data);
-		case 10: return (~dst_data);
-		case 11: return (opd_data | ~dst_data);
-		case 12: return (~opd_data);
-		case 13: return (~opd_data | dst_data);
-		case 14: return (~opd_data | ~dst_data);
-		case 15: return (0xffff);
-	}
-}
-
-
 #define do_source_shift() \
 	if (((short)STMemory_ReadWord(REG_SRC_X_INC)) < 0) \
 		source_buffer >>= 16; \
@@ -222,16 +197,45 @@ static inline Uint16 do_op(Uint16 opd_data, Uint16 dst_data)
 	((STMemory_ReadWord(source_addr) >> skew) & 15) : halftone_curroffset)
 
 
-static inline Uint16 shifted_hopd_data(Uint32 source_addr, Uint32 source_buffer, Uint8 skew)
+static inline void put_dst_data(Uint32 source_buffer, Uint8 skew, Uint16 end_mask)
 {
+	Uint16 dst_data, opd_data;
+
+	dst_data = STMemory_ReadWord(dest_addr);
+
 	switch (hop)
 	{
-		default:
-		case 0: return 0xffff;
-		case 1: return halftone_ram[HALFTONE_OFFSET];
-		case 2: return (source_buffer >> skew);
-		case 3: return (source_buffer >> skew) & halftone_ram[HALFTONE_OFFSET];
+	 default:
+	 case 0: opd_data = 0xffff; break;
+	 case 1: opd_data = halftone_ram[HALFTONE_OFFSET]; break;
+	 case 2: opd_data = (source_buffer >> skew); break;
+	 case 3: opd_data = (source_buffer >> skew)
+	                    & halftone_ram[HALFTONE_OFFSET];  break;
 	}
+
+	switch (op)
+	{
+	 default:
+	 case  0: opd_data = 0; break;
+	 case  1: opd_data = opd_data & dst_data; break;
+	 case  2: opd_data = opd_data & ~dst_data; break;
+	 case  3: opd_data = opd_data; break;
+	 case  4: opd_data = ~opd_data & dst_data; break;
+	 case  5: opd_data = dst_data; break;
+	 case  6: opd_data = opd_data ^ dst_data; break;
+	 case  7: opd_data = opd_data | dst_data; break;
+	 case  8: opd_data = ~opd_data & ~dst_data; break;
+	 case  9: opd_data = ~opd_data ^ dst_data; break;
+	 case 10: opd_data = ~dst_data; break;
+	 case 11: opd_data = opd_data | ~dst_data; break;
+	 case 12: opd_data = ~opd_data; break;
+	 case 13: opd_data = ~opd_data | dst_data; break;
+	 case 14: opd_data = ~opd_data | ~dst_data; break;
+	 case 15: opd_data = 0xffff; break;
+	}
+
+	STMemory_WriteWord(dest_addr,
+	                   (dst_data & ~end_mask) | (opd_data & end_mask));
 }
 
 
@@ -277,7 +281,7 @@ static void Do_Blit(void)
 	/* Now we enter the main blitting loop */
 	do 
 	{
-		Uint16 x, dst_data, opd_data;
+		Uint16 x;
 
 		if (FXSR)
 		{
@@ -288,10 +292,7 @@ static void Do_Blit(void)
 
 		do_source_shift();
 		get_source_data();
-		dst_data = STMemory_ReadWord(dest_addr);
-		opd_data =  shifted_hopd_data(source_addr, source_buffer, skew);
-		STMemory_WriteWord(dest_addr,(dst_data & ~end_mask_1)
-		                   | (do_op(opd_data, dst_data) & end_mask_1));
+		put_dst_data(source_buffer, skew, end_mask_1);
 
 		for(x = 0 ; x < x_count-2 ; x++)
 		{
@@ -299,10 +300,7 @@ static void Do_Blit(void)
 			dest_addr += dest_x_inc;
 			do_source_shift();
 			get_source_data();
-			dst_data = STMemory_ReadWord(dest_addr);
-			opd_data = shifted_hopd_data(source_addr, source_buffer, skew);
-			STMemory_WriteWord(dest_addr,(dst_data & ~end_mask_2)
-			                   | (do_op(opd_data, dst_data) & end_mask_2));
+			put_dst_data(source_buffer, skew, end_mask_2);
 		}
 
 		if (x_count >= 2)
@@ -314,10 +312,7 @@ static void Do_Blit(void)
 				source_addr += source_x_inc;
 				get_source_data();
 			}
-			dst_data = STMemory_ReadWord(dest_addr);
-			opd_data = shifted_hopd_data(source_addr, source_buffer, skew);
-			STMemory_WriteWord(dest_addr,(((Uint16)dst_data) & ~end_mask_3)
-			                   | (do_op(opd_data, dst_data) & end_mask_3));
+			put_dst_data(source_buffer, skew, end_mask_3);
 		}
 
 		source_addr += source_y_inc;
