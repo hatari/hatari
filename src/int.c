@@ -65,9 +65,10 @@
 
 
 
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.21 2008-04-03 20:30:32 eerot Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.22 2008-05-18 23:33:28 thothy Exp $";
 
 #include "main.h"
+#include "blitter.h"
 #include "dmaSnd.h"
 #include "fdc.h"
 #include "ikbd.h"
@@ -99,7 +100,8 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	IKBD_InterruptHandler_ResetTimer,
 	IKBD_InterruptHandler_ACIA,
 	DmaSnd_InterruptHandler,
-	FDC_InterruptHandler_Update
+	FDC_InterruptHandler_Update,
+	Blitter_InterruptHandler
 };
 
 /* Event timer structure - keeps next timer to occur in structure so don't need

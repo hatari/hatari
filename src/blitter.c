@@ -24,7 +24,7 @@
  *
  *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.20 2008-05-18 20:45:59 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.21 2008-05-18 23:33:28 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -32,7 +32,6 @@ const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.20 2008-05-18 20:45:59 t
 
 #include "main.h"
 #include "blitter.h"
-#include "hatari-glue.h"
 #include "ioMem.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
@@ -66,11 +65,12 @@ const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.20 2008-05-18 20:45:59 t
 
 static Uint16 halftone_ram[16];
 static Uint16 end_mask_1, end_mask_2, end_mask_3;
-static Uint16 x_count, y_count;
+static Uint16 x_count, x_count_max, y_count;
 static Uint8 hop, op, blit_control, skewreg;
 static Uint8 NFSR, FXSR; 
 static Uint32 dest_addr, source_addr;
 static int halftone_curroffset;
+static Uint32 source_buffer;
 
 
 /**
@@ -81,8 +81,7 @@ static int halftone_curroffset;
  * equivilent time of 2 nops to transfer 1 word
  * of data.
  */
-/*
-static int blitcycles[16][4] =
+static int blit_cycles_tab[16][4] =
 {
 	{ 1, 1, 1, 1 },
 	{ 2, 2, 3, 3 },
@@ -101,11 +100,10 @@ static int blitcycles[16][4] =
 	{ 2, 2, 3, 3 },
 	{ 1, 1, 1, 1 }
 };
-*/
 
 
 #if DEBUG
-static void show_params(Uint32 source_addr)
+static void show_params(void)
 {
 	fprintf(stderr, "Source Address:%X\n", source_addr);
 	fprintf(stderr, "  Dest Address:%X\n", dest_addr);
@@ -142,7 +140,7 @@ static void show_halftones(void)
 
 
 /* called only before halftone operations, for HOP modes 01 and 11 */
-static void load_halftone_ram(Uint32 source_addr)
+static void load_halftone_ram(void)
 {
 	halftone_ram[0]  = IoMem_ReadWord(REG_HT_RAM);
 	halftone_ram[1]  = IoMem_ReadWord(REG_HT_RAM+2);
@@ -168,7 +166,7 @@ static void load_halftone_ram(Uint32 source_addr)
 	}
 
 #if DEBUG
-	show_params(source_addr);
+	show_params();
 	show_halftones();
 #endif
 }
@@ -197,7 +195,7 @@ static void load_halftone_ram(Uint32 source_addr)
 	((STMemory_ReadWord(source_addr) >> skew) & 15) : halftone_curroffset)
 
 
-static inline void put_dst_data(Uint32 source_buffer, Uint8 skew, Uint16 end_mask)
+static inline void put_dst_data(Uint8 skew, Uint16 end_mask, int cyc_per_op)
 {
 	Uint16 dst_data, opd_data;
 
@@ -236,6 +234,12 @@ static inline void put_dst_data(Uint32 source_buffer, Uint8 skew, Uint16 end_mas
 
 	STMemory_WriteWord(dest_addr,
 	                   (dst_data & ~end_mask) | (opd_data & end_mask));
+
+	--x_count;
+
+	// FIXME
+	//PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cyc_per_op, INT_CPU_CYCLE);
+	//nCyclesMainCounter += cyc_per_op;
 }
 
 
@@ -245,11 +249,11 @@ static inline void put_dst_data(Uint32 source_buffer, Uint8 skew, Uint16 end_mas
  */
 static void Do_Blit(void)
 { 
-	Uint32 source_buffer = 0;
 	Uint8 skew = skewreg & 15;
 	int source_x_inc, source_y_inc;
 	int dest_x_inc, dest_y_inc;
 	int halftone_direction;
+	int cyc_per_op, curcycles;
 
 	/*if(address_space_24)*/ 
 	{ source_addr &= 0x0fffffe; dest_addr &= 0x0fffffe; }
@@ -271,17 +275,22 @@ static void Do_Blit(void)
 
 	/* Set up halftone ram */
 	if (hop & 1)
-		load_halftone_ram(source_addr);
+		load_halftone_ram();
 
 	if (dest_y_inc >= 0)
 		halftone_direction = 1;
 	else
 		halftone_direction = -1;
 
+	/* Cycles for one WORD transfer */
+	cyc_per_op = blit_cycles_tab[op][hop] * 4;
+	curcycles = 0;
+
 	/* Now we enter the main blitting loop */
 	do 
 	{
-		Uint16 x;
+		if (x_count == 0)
+			x_count = x_count_max;
 
 		if (FXSR)
 		{
@@ -290,20 +299,28 @@ static void Do_Blit(void)
 			source_addr += source_x_inc;
 		}
 
-		do_source_shift();
-		get_source_data();
-		put_dst_data(source_buffer, skew, end_mask_1);
+		/* First word of a line */
+		if (x_count == x_count_max)
+		{
+			do_source_shift();
+			get_source_data();
+			put_dst_data(skew, end_mask_1, cyc_per_op);
+			curcycles += cyc_per_op;
+		}
 
-		for(x = 0 ; x < x_count-2 ; x++)
+		/* Middle words of a line */
+		while (x_count > 1)
 		{
 			source_addr += source_x_inc;
 			dest_addr += dest_x_inc;
 			do_source_shift();
 			get_source_data();
-			put_dst_data(source_buffer, skew, end_mask_2);
+			put_dst_data(skew, end_mask_2, cyc_per_op);
+			curcycles += cyc_per_op;
 		}
 
-		if (x_count >= 2)
+		/* Last word of a line */
+		if (x_count == 1)
 		{
 			dest_addr += dest_x_inc;
 			do_source_shift();
@@ -312,7 +329,8 @@ static void Do_Blit(void)
 				source_addr += source_x_inc;
 				get_source_data();
 			}
-			put_dst_data(source_buffer, skew, end_mask_3);
+			put_dst_data(skew, end_mask_3, cyc_per_op);
+			curcycles += cyc_per_op;
 		}
 
 		source_addr += source_y_inc;
@@ -322,7 +340,7 @@ static void Do_Blit(void)
 		if (hop & 1)
 			halftone_curroffset = (halftone_curroffset+halftone_direction) & 15;
 	}
-	while (--y_count > 0);
+	while (--y_count > 0 /*&& ((blit_control & 0x40) || curcycles < 64)*/);
 }
 
 
@@ -413,13 +431,8 @@ void Blitter_LogOp_ReadByte(void)
  */
 void Blitter_Control_ReadByte(void)
 {
-	/* we don't implement Blit mode so this can never be
-	 * busy when application gets the return value
-	 * %11101111
-	 * busy, hog/blit, smudge, n/a, 4bits for line number
-	 */
-	//IoMem_WriteByte(REG_CONTROL, (blit_control & 0x6f));
-	IoMem_WriteByte(REG_CONTROL, (blit_control & 0x3f));
+	/* busy, hog/blit, smudge, n/a, 4bits for line number */
+	IoMem_WriteByte(REG_CONTROL, blit_control);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -483,7 +496,7 @@ void Blitter_DestAddr_WriteLong(void)
  */
 void Blitter_WordsPerLine_WriteWord(void)
 {
-	x_count = IoMem_ReadWord(REG_X_COUNT);
+	x_count = x_count_max = IoMem_ReadWord(REG_X_COUNT);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -546,13 +559,20 @@ void Blitter_Control_WriteByte(void)
 		 */
 		Blitter_Skew_WriteByte();
 
-		/* TODO:
-		 * - Emulate the shared bus mode when HOG flag is cleared 
-		 * - Add proper blitter timings
-		 */
-		M68000_AddCycles(y_count);
-
 		Do_Blit();
+
+		if (y_count == 0)
+		{
+			/* We're done, clear busy bit */
+			blit_control &= ~0x80;
+		}
+		else
+		{
+			/* Remove pending update interrupt and add new one */
+			// FIXME
+			//Int_RemovePendingInterrupt(INTERRUPT_BLITTER);
+			//Int_AddRelativeInterrupt(64, INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
+		}
 	}
 }
 
@@ -583,11 +603,39 @@ void Blitter_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&end_mask_3, sizeof(end_mask_3));
 	MemorySnapShot_Store(&NFSR, sizeof(NFSR));
 	MemorySnapShot_Store(&FXSR, sizeof(FXSR));
-	MemorySnapShot_Store(&x_count, sizeof(y_count));
+	MemorySnapShot_Store(&x_count, sizeof(x_count));
+	MemorySnapShot_Store(&x_count_max, sizeof(x_count_max));
+	MemorySnapShot_Store(&y_count, sizeof(y_count));
 	MemorySnapShot_Store(&hop, sizeof(hop));
 	MemorySnapShot_Store(&op, sizeof(op));
 	MemorySnapShot_Store(&blit_control, sizeof(blit_control));
 	MemorySnapShot_Store(&skewreg, sizeof(skewreg));
 	MemorySnapShot_Store(&dest_addr, sizeof(dest_addr));
 	MemorySnapShot_Store(&halftone_curroffset, sizeof(halftone_curroffset));
+	MemorySnapShot_Store(&source_buffer, sizeof(source_buffer));
+}
+
+
+/**
+ * Handler which continues blitting after 64 CPU cycles.
+ */
+void Blitter_InterruptHandler(void)
+{
+	if((y_count !=0) && (blit_control & 0x80))
+	{
+		Do_Blit();
+	}
+
+	Int_AcknowledgeInterrupt();
+
+	if (y_count == 0)
+	{
+		/* We're done, clear busy bit */
+		blit_control &= ~0x80;
+	}
+	else
+	{
+		/* Continue blitting later */
+		Int_AddRelativeInterrupt(64, INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
+	}
 }
