@@ -4,27 +4,13 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  *
- * Blitter emulation.
- * This file has originally been taken from STonX, but it has been largely
- * modified for better maintainability and compatibility.
+ * Blitter emulation. The 'Blitter' chip is found in the Mega-ST, STE/Mega-STE
+ * and Falcon. It provides a very fast BitBlit function in hardware.
  *
- *
- * Original information text follows:
- *
- * This file is part of STonX, the Atari ST Emulator for Unix/X
- * ============================================================
- * STonX is free software and comes with NO WARRANTY - read the file
- * COPYING for details
- *
- *  Blitter Emulator,
- *  Martin Griffiths, 1995/96.
- *  
- *  Here lies the Atari Blitter Emulator - The 'Blitter' chip is found in  
- *  the STE/MegaSTE and provides a very fast BitBlit in hardware.
- *
- *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
+ * This file has originally been taken from STonX, but it has been completely
+ * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.22 2008-05-19 00:07:04 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.23 2008-05-19 22:35:06 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -245,6 +231,9 @@ static inline void put_dst_data(Uint8 skew, Uint16 end_mask, int cyc_per_op)
 /*-----------------------------------------------------------------------*/
 /**
  * Let's do the blit.
+ * Note that in non-HOG mode, the blitter only runs for 64 cycles before
+ * giving the bus back to the CPU. Due to this mode, this function must
+ * be able to abort and resume the blitting at any time.
  */
 static void Do_Blit(void)
 { 
@@ -288,19 +277,16 @@ static void Do_Blit(void)
 	/* Now we enter the main blitting loop */
 	do 
 	{
-		if (x_count == 0)
-			x_count = x_count_max;
-
-		if (FXSR)
-		{
-			do_source_shift();
-			get_source_data();
-			source_addr += source_x_inc;
-		}
-
 		/* First word of a line */
 		if (x_count == x_count_max)
 		{
+			if (FXSR)
+			{
+				do_source_shift();
+				get_source_data();
+				source_addr += source_x_inc;
+			}
+
 			do_source_shift();
 			get_source_data();
 			put_dst_data(skew, end_mask_1, cyc_per_op);
@@ -308,7 +294,7 @@ static void Do_Blit(void)
 		}
 
 		/* Middle words of a line */
-		while (x_count > 1)
+		while (x_count > 1 && ((blit_control & 0x40) || curcycles < 64))
 		{
 			source_addr += source_x_inc;
 			dest_addr += dest_x_inc;
@@ -319,7 +305,7 @@ static void Do_Blit(void)
 		}
 
 		/* Last word of a line */
-		if (x_count == 1)
+		if (x_count == 1 && ((blit_control & 0x40) || curcycles < 64))
 		{
 			dest_addr += dest_x_inc;
 			do_source_shift();
@@ -332,14 +318,21 @@ static void Do_Blit(void)
 			curcycles += cyc_per_op;
 		}
 
-		source_addr += source_y_inc;
-		dest_addr += dest_y_inc;
+		/* Line done? */
+		if (x_count == 0)
+		{
+			--y_count;
+			x_count = x_count_max;
 
-		/* Do halftone increment */
-		if (hop & 1)
-			halftone_curroffset = (halftone_curroffset+halftone_direction) & 15;
+			source_addr += source_y_inc;
+			dest_addr += dest_y_inc;
+
+			/* Do halftone increment */
+			if (hop & 1)
+				halftone_curroffset = (halftone_curroffset+halftone_direction) & 15;
+		}
 	}
-	while (--y_count > 0 && ((blit_control & 0x40) || curcycles < 64));
+	while (y_count > 0 && ((blit_control & 0x40) || curcycles < 64));
 
 	if (!(blit_control & 0x20))
 	{
@@ -555,20 +548,13 @@ void Blitter_Control_WriteByte(void)
 	 * The lowest 4 bits contain the Halftone pattern line number
 	 */
 	blit_control = IoMem_ReadByte(REG_CONTROL) & 0xef;
+
+	/* Remove old pending update interrupt */
+	Int_RemovePendingInterrupt(INTERRUPT_BLITTER);
 	
-	/* Lines to blit and busy bit set? */
-	if((y_count !=0) && (blit_control & 0x80))
+	/* Busy bit set? */
+	if (blit_control & 0x80)
 	{
-		/* Needed if a program executes for example
-		 * move.W #xxxx,$ff8a3c
-		 */
-		Blitter_Skew_WriteByte();
-
-		Do_Blit();
-
-		/* Remove pending update interrupt */
-		Int_RemovePendingInterrupt(INTERRUPT_BLITTER);
-
 		if (y_count == 0)
 		{
 			/* We're done, clear busy bit */
@@ -576,8 +562,8 @@ void Blitter_Control_WriteByte(void)
 		}
 		else
 		{
-			/* Continue blitting after 64 CPU cycles */
-			Int_AddRelativeInterrupt(64, INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
+			/* Start blitting after some CPU cycles */
+			Int_AddRelativeInterrupt(4, INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
 		}
 	}
 }
