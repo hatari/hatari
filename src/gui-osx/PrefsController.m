@@ -19,6 +19,7 @@
 
 #include "main.h"
 #include "configuration.h"
+#include "change.h"
 #include "dialog.h"
 #include "file.h"
 #include "floppy.h"
@@ -385,7 +386,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	[self saveAllControls];
 	
 	// If a reset is required, ask the user first
-	if (Dialog_DoNeedReset())
+	if (Change_DoNeedReset(&DialogParams))
 	{
 		applyChanges = ( 0 == NSRunAlertPanel (@"Reset the emulator?", 
 		@"The emulator must be reset in order to apply your changes.\nAll current work will be lost.",
@@ -395,7 +396,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	// Commit the new configuration
 	if (applyChanges)
 	{
-		Dialog_CopyDialogParamsToConfiguration(FALSE);
+		Change_CopyChangedParamsToConfiguration(&DialogParams, FALSE);
 	}
 
 	// Close the window
@@ -511,11 +512,11 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     IMPORT_SWITCH(enablePrinter, DialogParams.Printer.bEnablePrinting);
     IMPORT_SWITCH(enableRS232, DialogParams.RS232.bEnableRS232);
     IMPORT_SWITCH(enableSound, DialogParams.Sound.bEnableSound);
-    IMPORT_DROPDOWN(frameSkip, DialogParams.Screen.FrameSkips);
+    IMPORT_DROPDOWN(frameSkip, DialogParams.Screen.nFrameSkips);
     IMPORT_RADIO(keyboardMapping, DialogParams.Keyboard.nKeymapType);
     IMPORT_TEXTFIELD(keyboardMappingFile, DialogParams.Keyboard.szMappingFileName);
     IMPORT_RADIO(machineType, DialogParams.System.nMachineType);
-    IMPORT_RADIO(monitor, DialogParams.Screen.MonitorType);
+    IMPORT_RADIO(monitor, DialogParams.Screen.nMonitorType);
     IMPORT_SWITCH(patchTimerD, DialogParams.System.bPatchTimerD);
     IMPORT_RADIO(playbackQuality, DialogParams.Sound.nPlaybackQuality);
     IMPORT_TEXTFIELD(printToFile, DialogParams.Printer.szPrintToFileName);
@@ -671,11 +672,11 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     EXPORT_SWITCH(enablePrinter, DialogParams.Printer.bEnablePrinting);
     EXPORT_SWITCH(enableRS232, DialogParams.RS232.bEnableRS232);
     EXPORT_SWITCH(enableSound, DialogParams.Sound.bEnableSound);
-    EXPORT_DROPDOWN(frameSkip, DialogParams.Screen.FrameSkips);
+    EXPORT_DROPDOWN(frameSkip, DialogParams.Screen.nFrameSkips);
     EXPORT_RADIO(keyboardMapping, DialogParams.Keyboard.nKeymapType);
     EXPORT_TEXTFIELD(keyboardMappingFile, DialogParams.Keyboard.szMappingFileName);
     EXPORT_RADIO(machineType, DialogParams.System.nMachineType);
-    EXPORT_RADIO(monitor, DialogParams.Screen.MonitorType);
+    EXPORT_RADIO(monitor, DialogParams.Screen.nMonitorType);
     EXPORT_SWITCH(patchTimerD, DialogParams.System.bPatchTimerD);
     EXPORT_RADIO(playbackQuality, DialogParams.Sound.nPlaybackQuality);
     EXPORT_TEXTFIELD(printToFile, DialogParams.Printer.szPrintToFileName);
