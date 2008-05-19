@@ -24,7 +24,7 @@
  *
  *  The hardware registers for this chip lie at addresses $ff8a00 - $ff8a3c.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.21 2008-05-18 23:33:28 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.22 2008-05-19 00:07:04 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -173,7 +173,7 @@ static void load_halftone_ram(void)
 
 
 #define do_source_shift() \
-	if (((short)STMemory_ReadWord(REG_SRC_X_INC)) < 0) \
+	if (((short)IoMem_ReadWord(REG_SRC_X_INC)) < 0) \
 		source_buffer >>= 16; \
 	else \
 		source_buffer <<= 16
@@ -182,7 +182,7 @@ static void load_halftone_ram(void)
 #define get_source_data() \
 	if (hop >= 2) \
 	{ \
-		if (((short)STMemory_ReadWord(REG_SRC_X_INC)) < 0) \
+		if (((short)IoMem_ReadWord(REG_SRC_X_INC)) < 0) \
 			source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16); \
 		else \
 			source_buffer |= ((Uint32) STMemory_ReadWord(source_addr));  \
@@ -237,9 +237,8 @@ static inline void put_dst_data(Uint8 skew, Uint16 end_mask, int cyc_per_op)
 
 	--x_count;
 
-	// FIXME
-	//PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cyc_per_op, INT_CPU_CYCLE);
-	//nCyclesMainCounter += cyc_per_op;
+	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cyc_per_op, INT_CPU_CYCLE);
+	nCyclesMainCounter += cyc_per_op;
 }
 
 
@@ -340,7 +339,13 @@ static void Do_Blit(void)
 		if (hop & 1)
 			halftone_curroffset = (halftone_curroffset+halftone_direction) & 15;
 	}
-	while (--y_count > 0 /*&& ((blit_control & 0x40) || curcycles < 64)*/);
+	while (--y_count > 0 && ((blit_control & 0x40) || curcycles < 64));
+
+	if (!(blit_control & 0x20))
+	{
+		/* Not smudge mode: put halftone offset back into control register */
+		blit_control = (blit_control & 0xf0) | halftone_curroffset;
+	}
 }
 
 
@@ -561,6 +566,9 @@ void Blitter_Control_WriteByte(void)
 
 		Do_Blit();
 
+		/* Remove pending update interrupt */
+		Int_RemovePendingInterrupt(INTERRUPT_BLITTER);
+
 		if (y_count == 0)
 		{
 			/* We're done, clear busy bit */
@@ -568,10 +576,8 @@ void Blitter_Control_WriteByte(void)
 		}
 		else
 		{
-			/* Remove pending update interrupt and add new one */
-			// FIXME
-			//Int_RemovePendingInterrupt(INTERRUPT_BLITTER);
-			//Int_AddRelativeInterrupt(64, INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
+			/* Continue blitting after 64 CPU cycles */
+			Int_AddRelativeInterrupt(64, INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
 		}
 	}
 }
