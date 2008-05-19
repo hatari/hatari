@@ -148,10 +148,12 @@ class QuitSaveDialog(HatariUIDialog):
              gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL))
         dialog.vbox.add(gtk.Label("You have unsaved configuration changes:"))
         viewport = gtk.Viewport()
+        viewport.add(gtk.Label())
         scrolledwindow = gtk.ScrolledWindow()
         scrolledwindow.add(viewport)
         dialog.vbox.add(scrolledwindow)
         dialog.show_all()
+        self.scrolledwindow = scrolledwindow
         self.viewport = viewport
         self.dialog = dialog
     
@@ -163,9 +165,12 @@ class QuitSaveDialog(HatariUIDialog):
         if not changes:
             return gtk.RESPONSE_NO
         child = self.viewport.get_child()
-        if child:
-            self.viewport.remove(child)
-        self.viewport.add(gtk.Label("\n".join(changes)))
+        child.set_text("\n".join(changes))
+        width, height = child.get_size_request()
+        if height < 320:
+            self.scrolledwindow.set_size_request(width, height)
+        else:
+            self.scrolledwindow.set_size_request(-1, 320)
         self.viewport.show_all()
         
         response = self.dialog.run()
