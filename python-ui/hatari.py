@@ -20,6 +20,8 @@ import time
 import signal
 import socket
 import select
+from config import ConfigStore
+
 
 # Running Hatari instance
 class Hatari():
@@ -177,179 +179,33 @@ class Hatari():
             self.pid = 0
 
 
-# Current Hatari configuration.
-#
-# The configuration variable names are unique,
-# so internally this doesn't need to use sections,
-# only when loading/saving.
-class Config():
-    def __init__(self, path = None):
-        self.changed = False
-        if not path:
-            path = self.get_path()
-        if path:
-            self.keys, self.sections = self.load(path)
-            if self.keys:
-                print "Loaded Hatari configuration file:", path
-                #self.write(sys.stdout)
-            else:
-                print "WARNING: Hatari configuration file '%' loading failed" % path
-                path = None
-        else:
-            print "Hatari configuration file missing"
-            self.sections = {}
-            self.keys = {}
-        self.path = path
-        # take copy of the original settings so that we know what changed
-        self.original = self.keys.copy()
-
-    def get_path(self):
-        # hatari.cfg can be in home or current work dir
-        for path in (os.getenv("HOME"), os.getcwd()):
-            if path:
-                path = self.check_path(path)
-                if path:
-                    return path
-        return None
-
-    def check_path(self, path):
-        # check path/.hatari/hatari.cfg, path/hatari.cfg
-        path += os.path.sep
-        testpath = path + ".hatari" + os.path.sep + "hatari.cfg"
-        if os.path.exists(testpath):
-            return testpath
-        testpath = path + "hatari.cfg"
-        if os.path.exists(testpath):
-            return testpath
-        return None
-    
-    def load(self, path):
-        config = open(path, "r")
-        if not config:
-            return ({}, {})
-        name = "[_orphans_]"
-        sections = {}
-        allkeys = {}
-        keys = {}
-        for line in config.readlines():
-            line = line.strip()
-            if not line or line[0] == '#':
-                continue
-            if line[0] == '[':
-                if line in sections:
-                    print "WARNING: section '%s' twice in configuration" % line
-                if keys:
-                    sections[name] = keys.keys()
-                    keys = {}
-                name = line
-                continue
-            if line.find('=') < 0:
-                print "WARNING: line without key=value pair:\n%s" % line
-                continue
-            key, value = [string.strip() for string in line.split('=')]
-            allkeys[key] = value
-            keys[key] = value
-        if keys:
-            sections[name] = keys.keys()
-        return allkeys, sections
-    
-    def get(self, key):
-        if key not in self.keys:
-            print "WARNING: unknown key '%s'" % key
-            return None
-        return self.keys[key]
-        
-    def set(self, key, value):
-        oldvalue = self.get(key)
-        if not oldvalue:
-            # can only set values which have been loaded
-            return False
-        value = str(value)
-        if value != oldvalue:
-            self.keys[key] = value
-            self.changed = True
-        return True
-
-    def is_changed(self):
-        return self.changed
-
-    def list_changes(self):
-        "return (key, value) tuple for each change config option"
-        changed = []
-        if self.changed:
-            for key,value in self.keys.items():
-                if value != self.original[key]:
-                    changed.append((key, value))
-        return changed
-
-    def revert(self, key):
-        self.keys[key] = self.original[key]
-    
-    def write(self, file):
-        sections = self.sections.keys()
-        sections.sort()
-        for section in sections:
-            file.write("%s\n" % section)
-            keys = self.sections[section]
-            keys.sort()
-            for key in keys:
-                file.write("%s = %s\n" % (key, self.keys[key]))
-            file.write("\n")
-            
-    def save(self):
-        if not self.path:
-            print "WARNING: no existing Hatari configuration to modify, saving canceled"
-            return
-        if not self.changed:
-            print "No configuration changes to save, skipping"
-            return            
-        #file = open(self.path, "w")
-        print "TODO: for now writing config to stdout"
-        file = sys.stdout
-        if file:
-            self.write(file)
-            print "Saved Hatari configuration file:", self.path
-        else:
-            print "ERROR: opening '%s' for saving failed" % self.path
-
-
 # Mapping of requested values both to Hatari configuration
 # and command line options.
 #
-# Because of some inconsistensies in the values (see e.g. sound),
-# this cannot just do these according to some mapping, but it
-# needs actual method for (each) setting.
-class ConfigMapping(Config):
+# Because of some inconsistencies in the values (see e.g. sound),
+# this cannot just do these according to some mapping table, but
+# it needs actual method for (each) setting.
+class HatariConfigMapping(ConfigStore):
     def __init__(self, hatari):
-        Config.__init__(self)
+        defaults = ({}, {})
+        ConfigStore.__init__(self, defaults, "hatari.cfg")
         self.hatari = hatari
 
     # ------------ fastforward ---------------
     def get_fastforward(self):
-        if self.get("bFastForward") != "0":
-            return True
-        return False
+        return self.variables.bFastForward
 
     def set_fastforward(self, value):
-        if value:
-            print "Entering hyper speed!"
-            value = self.set("bFastForward", 1)
-            self.hatari.change_option("--fast-forward on")
-        else:
-            print "Returning to normal speed"
-            value = self.set("bFastForward", 0)
-            self.hatari.change_option("--fast-forward off")
+        self.variables.bFastForward = value
+        self.hatari.change_option("--fast-forward %s" % str(value))
         
     # ------------ spec512 ---------------
     def get_spec512threshold(self):
-        value = self.get("nSpec512Threshold")
-        if value:
-            return int(value)
-        return 0
+        return self.variables.nSpec512Threshold
 
     def set_spec512threshold(self, value):
-        print "Spec512 support:", value
-        self.set("nSpec512Threshold", value)
+        value = int(value) # guarantee correct type
+        self.variables.nSpec512Threshold = value
         self.hatari.change_option("--spec512 %d" % value)
         
     # ------------ sound ---------------
@@ -358,35 +214,28 @@ class ConfigMapping(Config):
     
     def get_sound(self):
         # return index to get_sound_values() array
-        if self.get("bEnableSound").upper() == "TRUE":
-            return int(self.get("nPlaybackQuality")) + 1
+        if self.variables.bEnableSound:
+            return self.variables.nPlaybackQuality + 1
         return 0
 
     def set_sound(self, value):
         # map get_sound_values() index to Hatari config
         if value:
-            enabled = "True"
+            self.variables.nPlaybackQuality = value - 1
+            self.variables.bEnableSound = True
         else:
-            enabled = "False"
-        self.set("bEnableSound", enabled)
-        self.set("nPlaybackQuality", value - 1)
+            self.variables.bEnableSound = False
         # and to cli option
-        levels = { 0: "off", 1: "low", 2: "med", 3: "hi" }
-        quality = levels[value]
-        print "Sound (quality):", quality
+        quality = { 0: "off", 1: "low", 2: "med", 3: "hi" }[value]
         self.hatari.change_option("--sound %s" % quality)
 
     # ------------ frameskips ---------------
     def get_frameskips(self):
-        value = self.get("nFrameSkips")
-        if value:
-            return int(value)
-        return 0
+        return self.variables.nFrameSkips
     
     def set_frameskips(self, value):
-        value = int(value)
-        print "Frameskip value:", value
-        self.set("nFrameSkips", value)
+        value = int(value) # guarantee correct type
+        self.variables.nFrameSkips = value
         self.hatari.change_option("--frameskips %d" % value)
 
     # ------------ options to embed to requested size ---------------
@@ -399,8 +248,7 @@ class ConfigMapping(Config):
             os.exit(1)
         
         # for VDI we can use (fairly) exact size + ignore other screen options
-        usevdi = self.get("bUseExtVdiResolutions")
-        if usevdi and usevdi.upper() == "TRUE":
+        if self.variables.bUseExtVdiResolutions:
             return ("--vdi-width", str(wd), "--vdi-height", str(ht))
         
         print "TODO: get actual Hatari window border size(s) from the configuration file"
@@ -414,26 +262,22 @@ class ConfigMapping(Config):
                 # without borders
                 args += ("--borders", "off")
         else:
-            zoom = self.get("bZoomLowRes")
-            monitor = self.get("nMonitorType")
-            useborder = self.get("bAllowOverscan")
-            # can we have borders with color zooming or mono?
+            # can we have overscan borders with color zooming or mono?
             if ((wd < 2*(320+border*2) or ht < 2*(200+border*2)) and
-                (useborder and useborder.upper() == "TRUE")):
-                    if monitor and monitor == "0":
+                self.variables.bAllowOverscan):
+                    if self.variables.nMonitorType == 0:
                         # mono -> no border
                         args = ("--borders", "off")
-                    elif zoom and zoom.upper() == "TRUE":
+                    elif self.variables.bZoomLowRes:
                         # color -> no zoom, just border
                         args = ("--zoom", "1")
-            elif ((monitor and monitor != "0") or
-                  (zoom and zoom.upper() != "TRUE")):
+            elif (self.variables.nMonitorType > 0 and 
+                  not self.variables.bZoomLowRes):
                 # no mono nor zoom -> zoom
                 args = ("--zoom", "2")
 
         # window size for other than ST & STE can differ
-        machine = self.get("nMachineType")
-        if machine != '0' and machine != '1':
+        if self.variables.nMachineType not in (0,1):
             print "WARNING: neither ST nor STE, forcing machine to ST"
             args += ("--machine", "st")
                     

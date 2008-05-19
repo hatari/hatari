@@ -26,7 +26,7 @@ pygtk.require('2.0')
 import gtk
 import gobject
 
-from hatari import Hatari, ConfigMapping
+from hatari import Hatari, HatariConfigMapping
 from dialogs import AboutDialog, PasteDialog, KillDialog, QuitSaveDialog,\
      SetupDialog, TraceDialog, HatariInsertText
 from debugui import HatariDebugUI
@@ -351,7 +351,7 @@ class HatariUI():
     # ---------- create UI ----------------
     def create_ui(self, fullscreen, embed):
         self.hatari = Hatari()
-        self.config = ConfigMapping(self.hatari)
+        self.config = HatariConfigMapping(self.hatari)
         # just instantiate all UI windows/widgets...
         self.hatariparent = None
         self.mainwin = self.create_mainwin(embed)
