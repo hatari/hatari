@@ -15,7 +15,7 @@ typedef struct
   char sTraceFileName[FILENAME_MAX];
   int nTextLogLevel;
   int nAlertDlgLogLevel;
-  BOOL bConfirmQuit;
+  bool bConfirmQuit;
 } CNF_LOG;
 
 
@@ -37,7 +37,7 @@ typedef enum
 
 typedef struct
 {
-  BOOL bEnableSound;
+  bool bEnableSound;
   SOUND_QUALITY nPlaybackQuality;
   char szYMCaptureFileName[FILENAME_MAX];
 } CNF_SOUND;
@@ -47,7 +47,7 @@ typedef struct
 /* RS232 configuration */
 typedef struct
 {
-  BOOL bEnableRS232;
+  bool bEnableRS232;
   char szOutFileName[FILENAME_MAX];
   char szInFileName[FILENAME_MAX];
 } CNF_RS232;
@@ -63,7 +63,7 @@ typedef enum
 
 typedef struct
 {
-  BOOL bDisableKeyRepeat;
+  bool bDisableKeyRepeat;
   KEYMAPTYPE nKeymapType;
   char szMappingFileName[FILENAME_MAX];
 } CNF_KEYBOARD;
@@ -100,7 +100,7 @@ typedef struct
 typedef struct
 {
   int nMemorySize;
-  BOOL bAutoSave;
+  bool bAutoSave;
   char szMemoryCaptureFileName[FILENAME_MAX];
   char szAutoSaveFileName[FILENAME_MAX];
 } CNF_MEMORY;
@@ -117,7 +117,7 @@ typedef enum
 typedef struct
 {
   JOYSTICKMODE nJoystickMode;
-  BOOL bEnableAutoFire;
+  bool bEnableAutoFire;
   int nJoyId;
   int nKeyCodeUp, nKeyCodeDown, nKeyCodeLeft, nKeyCodeRight, nKeyCodeFire;
 } JOYSTICK;
@@ -141,7 +141,7 @@ typedef enum
 
 typedef struct
 {
-  BOOL bAutoInsertDiskB;
+  bool bAutoInsertDiskB;
   WRITEPROTECTION nWriteProtection;
   char szDiskImageDirectory[FILENAME_MAX];
 } CNF_DISKIMAGE;
@@ -160,13 +160,13 @@ typedef enum
 
 typedef struct
 {
-  BOOL bBootFromHardDisk;
+  bool bBootFromHardDisk;
   int nHardDiskDir;
-  BOOL bUseHardDiskDirectories;
-  BOOL bUseHardDiskImage;
+  bool bUseHardDiskDirectories;
+  bool bUseHardDiskImage;
   char szHardDiskDirectories[MAX_HARDDRIVES][FILENAME_MAX];
   char szHardDiskImage[FILENAME_MAX];
-  BOOL bUseIdeHardDiskImage;
+  bool bUseIdeHardDiskImage;
   char szIdeHardDiskImage[FILENAME_MAX];
 } CNF_HARDDISK;
 
@@ -195,16 +195,16 @@ typedef struct
 {
   MONITORTYPE nMonitorType;
   int nFrameSkips;
-  BOOL bFullScreen;
-  BOOL bAllowOverscan;
-  BOOL bZoomLowRes;
-  BOOL bUseExtVdiResolutions;
+  bool bFullScreen;
+  bool bAllowOverscan;
+  bool bZoomLowRes;
+  bool bUseExtVdiResolutions;
   int nSpec512Threshold;
   int nForceBpp;
   int nVdiColors;
   int nVdiWidth;
   int nVdiHeight;
-  BOOL bCaptureChange;
+  bool bCaptureChange;
   int nFramesPerSecond;
   int nWindowBorderPixelsLeft;
   int nWindowBorderPixelsRight;
@@ -218,8 +218,8 @@ typedef struct
 /* Printer configuration */
 typedef struct
 {
-  BOOL bEnablePrinting;
-  BOOL bPrintToFile;
+  bool bEnablePrinting;
+  bool bPrintToFile;
   char szPrintToFileName[FILENAME_MAX];
 } CNF_PRINTER;
 
@@ -227,7 +227,7 @@ typedef struct
 /* Midi configuration */
 typedef struct
 {
-  BOOL bEnableMidi;
+  bool bEnableMidi;
   char szMidiOutFileName[FILENAME_MAX];
 } CNF_MIDI;
 
@@ -252,15 +252,15 @@ typedef struct
 {
   int nCpuLevel;
   int nCpuFreq;
-  BOOL bCompatibleCpu;
-  /*BOOL bAddressSpace24;*/
+  bool bCompatibleCpu;
+  /*bool bAddressSpace24;*/
   MACHINETYPE nMachineType;
-  BOOL bBlitter;                  /* TRUE if Blitter is enabled */
+  bool bBlitter;                  /* TRUE if Blitter is enabled */
   DSPTYPE nDSPType;               /* how to "emulate" DSP */
-  BOOL bRealTimeClock;
-  BOOL bPatchTimerD;
-  BOOL bSlowFDC;                  /* TRUE to slow down FDC emulation */
-  BOOL bFastForward;
+  bool bRealTimeClock;
+  bool bPatchTimerD;
+  bool bSlowFDC;                  /* TRUE to slow down FDC emulation */
+  bool bFastForward;
 } CNF_SYSTEM;
 
 
@@ -286,14 +286,14 @@ typedef struct
 } CNF_PARAMS;
 
 
-extern BOOL bFirstTimeInstall;
+extern bool bFirstTimeInstall;
 extern CNF_PARAMS ConfigureParams;
 extern char sConfigFileName[FILENAME_MAX];
 
 extern void Configuration_SetDefault(void);
-extern void Configuration_Apply(BOOL bReset);
+extern void Configuration_Apply(bool bReset);
 extern void Configuration_Load(const char *psFileName);
 extern void Configuration_Save(void);
-extern void Configuration_MemorySnapShot_Capture(BOOL bSave);
+extern void Configuration_MemorySnapShot_Capture(bool bSave);
 
 #endif

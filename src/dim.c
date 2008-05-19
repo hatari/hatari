@@ -6,7 +6,7 @@
 
   DIM disk image support.
 */
-const char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.9 2007-10-31 21:31:49 eerot Exp $";
+const char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.10 2008-05-19 20:34:09 thothy Exp $";
 
 #include <zlib.h>
 
@@ -48,7 +48,7 @@ const char DIM_rcsid[] = "Hatari $Id: dim.c,v 1.9 2007-10-31 21:31:49 eerot Exp 
 /**
  * Does filename end with a .DIM extension? If so, return TRUE
  */
-BOOL DIM_FileNameIsDIM(char *pszFileName, BOOL bAllowGZ)
+bool DIM_FileNameIsDIM(char *pszFileName, bool bAllowGZ)
 {
 	return(File_DoesFileExtensionMatch(pszFileName,".dim")
 	       || (bAllowGZ && File_DoesFileExtensionMatch(pszFileName,".dim.gz")));
@@ -104,7 +104,7 @@ Uint8 *DIM_ReadDisk(char *pszFileName, long *pImageSize)
 /**
  * Save .DIM file from memory buffer. Returns TRUE is all OK
  */
-BOOL DIM_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
+bool DIM_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_DIM_IMAGES
 
@@ -112,7 +112,7 @@ BOOL DIM_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 	gzFile hGzFile;
 	unsigned short int nSectorsPerTrack, nSides;
 	int nTracks;
-	BOOL bRet;
+	bool bRet;
 
 	/* Allocate memory for the whole DIM image: */
 	pDimFile = malloc(ImageSize + 32);

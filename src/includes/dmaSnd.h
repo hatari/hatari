@@ -16,8 +16,8 @@
 
 extern Uint16 nDmaSoundControl;
 
-extern void DmaSnd_Reset(BOOL bCold);
-extern void DmaSnd_MemorySnapShot_Capture(BOOL bSave);
+extern void DmaSnd_Reset(bool bCold);
+extern void DmaSnd_MemorySnapShot_Capture(bool bSave);
 extern void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate);
 extern void DmaSnd_InterruptHandler(void);
 extern void DmaSnd_SoundControl_ReadWord(void);

@@ -17,15 +17,15 @@ typedef struct {
 extern EMULATEDDRIVE **emudrives;
 #define  GEMDOS_EMU_ON  (emudrives != NULL)
 
-extern BOOL bInitGemDOS;
+extern bool bInitGemDOS;
 
 extern void GemDOS_Init(void);
 extern void GemDOS_Reset(void);
 extern void GemDOS_InitDrives(void);
 extern void GemDOS_UnInitDrives(void);
-extern void GemDOS_MemorySnapShot_Capture(BOOL bSave);
+extern void GemDOS_MemorySnapShot_Capture(bool bSave);
 extern void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName, char *pszDestName, int nDestNameLen);
-extern BOOL GemDOS(void);
+extern bool GemDOS(void);
 extern void GemDOS_OpCode(void);
 extern void GemDOS_RunOldOpCode(void);
 extern void GemDOS_Boot(void);

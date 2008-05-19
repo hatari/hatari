@@ -69,9 +69,9 @@ extern FILE *hd_image_file;
 extern HDCOMMAND HDCCommand;
 extern short int HDCSectorCount;
 extern int nPartitions;
-extern BOOL bAcsiEmuOn;
+extern bool bAcsiEmuOn;
 
-extern BOOL HDC_Init(char *filename);
+extern bool HDC_Init(char *filename);
 extern void HDC_UnInit(void);
 extern void HDC_WriteCommandPacket(void);
 extern void HDC_DebugCommandPacket(FILE *hdlogFile);

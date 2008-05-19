@@ -6,7 +6,7 @@
  
   Create blank .ST/.MSA disk images.
 */
-const char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.15 2007-01-16 18:42:59 thothy Exp $";
+const char CreateBlankImage_rcsid[] = "Hatari $Id: createBlankImage.c,v 1.16 2008-05-19 20:34:08 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -73,7 +73,7 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
 	Uint8 *pDiskFile;
 	unsigned long nDiskSize;
 	unsigned short int SPC, nDir, MediaByte, SPF;
-	BOOL bRet=FALSE;
+	bool bRet = false;
 
 	/* Calculate size of disk image */
 	nDiskSize = CreateBlankImage_GetDiskImageCapacity(nTracks, nSectors, nSides);

@@ -91,9 +91,9 @@ extern Uint16 DMAModeControl_ff8606wr;
 
 
 extern void FDC_Reset(void);
-extern void FDC_MemorySnapShot_Capture(BOOL bSave);
+extern void FDC_MemorySnapShot_Capture(bool bSave);
 extern void FDC_ResetDMAStatus(void);
-extern void FDC_SetDMAStatus(BOOL bError);
+extern void FDC_SetDMAStatus(bool bError);
 extern void FDC_DmaStatus_ReadWord(void);
 extern int FDC_FindFloppyDrive(void);
 extern void FDC_AcknowledgeInterrupt(void);
@@ -108,8 +108,8 @@ extern void FDC_UpdateReadSectorsCmd(void);
 extern void FDC_UpdateWriteSectorsCmd(void);
 extern Uint32 FDC_ReadDMAAddress(void);
 extern void FDC_WriteDMAAddress(Uint32 Address);
-extern BOOL FDC_ReadSectorFromFloppy(void);
-extern BOOL FDC_WriteSectorFromFloppy(void);
+extern bool FDC_ReadSectorFromFloppy(void);
+extern bool FDC_WriteSectorFromFloppy(void);
 extern void FDC_DMADataFromFloppy(void);
 extern void FDC_DiskController_WriteWord(void);
 extern void FDC_DiskControllerStatus_ReadWord(void);

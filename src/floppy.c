@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.35 2008-01-07 21:54:22 eerot Exp $";
+const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.36 2008-05-19 20:34:10 thothy Exp $";
 
 #include <sys/stat.h>
 
@@ -85,7 +85,7 @@ void Floppy_UnInit(void)
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  */
-void Floppy_MemorySnapShot_Capture(BOOL bSave)
+void Floppy_MemorySnapShot_Capture(bool bSave)
 {
 	int i;
 
@@ -134,7 +134,7 @@ void Floppy_GetBootDrive(void)
  * in the GUI. When set to "automatic", we check the file permissions of the
  * floppy disk image to decide.
  */
-BOOL Floppy_IsWriteProtected(int Drive)
+bool Floppy_IsWriteProtected(int Drive)
 {
 	if (ConfigureParams.DiskImage.nWriteProtection == WRITEPROT_OFF)
 	{
@@ -165,7 +165,7 @@ BOOL Floppy_IsWriteProtected(int Drive)
  * To try and prevent data loss, we check for this error and flag the drive so
  * the image will not be saved back to the file.
  */
-static BOOL Floppy_IsBootSectorOK(int Drive)
+static bool Floppy_IsBootSectorOK(int Drive)
 {
 	Uint8 *pDiskBuffer;
 
@@ -250,7 +250,7 @@ static char* Floppy_CreateDiskBFileName(const char *pSrcFileName)
  * The WHOLE image is copied into our drive buffers,
  * and uncompressed if necessary
  */
-BOOL Floppy_InsertDiskIntoDrive(int Drive, char *pszFileName, int maxlen)
+bool Floppy_InsertDiskIntoDrive(int Drive, char *pszFileName, int maxlen)
 {
 	char *path;
 	path = Floppy_ZipInsertDiskIntoDrive(Drive, pszFileName, NULL);
@@ -329,7 +329,7 @@ char* Floppy_ZipInsertDiskIntoDrive(int Drive, const char *pszFileName, const ch
  * Eject disk from floppy drive, save contents back to PCs hard-drive if
  * they have been changed.
  */
-void Floppy_EjectDiskFromDrive(int Drive, BOOL bInformUser)
+void Floppy_EjectDiskFromDrive(int Drive, bool bInformUser)
 {
 	/* Does our drive have a disk in? */
 	if (EmulationDrives[Drive].bDiskInserted)
@@ -461,7 +461,7 @@ void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
  * Read sectors from floppy disk image, return TRUE if all OK
  * NOTE Pass -ve as Count to read whole track
  */
-BOOL Floppy_ReadSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
+bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
                         unsigned short Track, unsigned short Side, short Count,
                         int *pnSectorsPerTrack)
 {
@@ -540,7 +540,7 @@ BOOL Floppy_ReadSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
  * Write sectors from floppy disk image, return TRUE if all OK
  * NOTE Pass -ve as Count to write whole track
  */
-BOOL Floppy_WriteSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
+bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
                          unsigned short Track, unsigned short Side, short Count,
                          int *pnSectorsPerTrack)
 {

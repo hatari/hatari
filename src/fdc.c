@@ -28,7 +28,7 @@
 /*			the command takes more time than a real ST to complete.		*/
 
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.40 2008-05-04 19:21:05 thothy Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.41 2008-05-19 20:34:09 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -160,7 +160,7 @@ static Sint16 FDCTrackRegister, FDCSectorRegister, FDCDataRegister;
 static int FDCEmulationCommand;                                 /* FDC emulation command currently being exceuted */
 static int FDCEmulationRunning;                                 /* Running command under above */
 static int FDCStepDirection;                                    /* +Track on 'Step' command */
-static BOOL bDMAWaiting;                                        /* Is DMA waiting to copy? */
+static bool bDMAWaiting;                                        /* Is DMA waiting to copy? */
 static int bMotorOn;                                            /* Is motor on? */
 static int MotorSlowingCount;                                   /* Counter used to slow motor before stopping */
 
@@ -206,7 +206,7 @@ void FDC_Reset(void)
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  */
-void FDC_MemorySnapShot_Capture(BOOL bSave)
+void FDC_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&DiskControllerStatus_ff8604rd, sizeof(DiskControllerStatus_ff8604rd));
@@ -302,7 +302,7 @@ void FDC_ResetDMAStatus(void)
  * Bit 1 - _Sector Count Zero Status (0=Sector Count Zero)
  * Bit 2 - _Data Request Inactive Status
  */
-void FDC_SetDMAStatus(BOOL bError)
+void FDC_SetDMAStatus(bool bError)
 {
 	DMAStatus_ff8606rd &= 0x1;        /* Clear(except for error) */
 
@@ -994,7 +994,7 @@ static void FDC_TypeIII_WriteTrack(void)
 
 
 /*-----------------------------------------------------------------------*/
-static void FDC_TypeIV_ForceInterrupt(BOOL bCauseCPUInterrupt)
+static void FDC_TypeIV_ForceInterrupt(bool bCauseCPUInterrupt)
 {
 	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc type IV force int VBL=%d video_cyc=%d pc=%x\n" ,
 		nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , M68000_GetPC() );
@@ -1366,7 +1366,7 @@ void FDC_WriteDMAAddress(Uint32 Address)
  * Read sector from floppy drive into workspace
  * We copy the bytes in chunks to simulate reading of the floppy using DMA
  */
-BOOL FDC_ReadSectorFromFloppy(void)
+bool FDC_ReadSectorFromFloppy(void)
 {
 	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc read sector dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d pc=%x\n" ,
 		nReadWriteDev, nReadWriteSector, nReadWriteTrack, nReadWriteSide, nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , M68000_GetPC() );
@@ -1395,7 +1395,7 @@ BOOL FDC_ReadSectorFromFloppy(void)
  * Write sector from workspace to floppy drive
  * We copy the bytes in chunks to simulate writing of the floppy using DMA
  */
-BOOL FDC_WriteSectorFromFloppy(void)
+bool FDC_WriteSectorFromFloppy(void)
 {
 	Uint32 Address;
 

@@ -54,7 +54,7 @@
 /  a friend, but please do not charge him....
 /
 /---------------------------------------------------------------------*/
-const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.17 2008-04-21 20:49:12 eerot Exp $";
+const char CfgOpts_rcsid[] = "Hatari $Id: cfgopts.c,v 1.18 2008-05-19 20:34:07 thothy Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -122,9 +122,9 @@ int input_config(const char *filename, const struct Config_Tag configs[], const 
 						{
 						 case Bool_Tag:
 							if (!strcasecmp(next,"FALSE"))
-								*((BOOL *)(ptr->buf)) = FALSE;
+								*((bool *)(ptr->buf)) = false;
 							else if (!strcasecmp(next,"TRUE"))
-								*((BOOL *)(ptr->buf)) = TRUE;
+								*((bool *)(ptr->buf)) = true;
 							++count;
 							break;
 
@@ -193,7 +193,7 @@ static int write_token(FILE *outfile, const struct Config_Tag *ptr)
 	switch (ptr->type)    /* check type */
 	{
 	 case Bool_Tag:
-		fprintf(outfile,"%s\n", *((BOOL *)(ptr->buf)) ? "TRUE" : "FALSE");
+		fprintf(outfile,"%s\n", *((bool *)(ptr->buf)) ? "TRUE" : "FALSE");
 		break;
 
 	 case Char_Tag:
@@ -279,7 +279,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 	FILE *cfgfile, *tempfile;
 	char *fptr, *tok, *next;
 	char line[1024];
-	BOOL bUseTempCfg = FALSE;
+	bool bUseTempCfg = false;
 	const char *sTempCfgName = "_temp_.cfg";
 
 	cfgfile = fopen(filename, "r");

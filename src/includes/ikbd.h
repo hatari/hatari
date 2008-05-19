@@ -47,7 +47,7 @@ typedef struct {
   JOY      Joy;
   int MouseMode;                  /* AUTOMODE_xxxx */
   int JoystickMode;               /* AUTOMODE_xxxx */
-  BOOL bReset;                    /* Set to TRUE is keyboard 'RESET' and now active */
+  bool bReset;                    /* Set to TRUE is keyboard 'RESET' and now active */
 } KEYBOARD_PROCESSOR;
 
 /* Keyboard state */
@@ -89,13 +89,13 @@ extern KEYBOARD_PROCESSOR KeyboardProcessor;
 extern KEYBOARD Keyboard;
 
 extern void ACIA_Reset(void);
-extern void IKBD_Reset(BOOL bCold);
-extern void IKBD_MemorySnapShot_Capture(BOOL bSave);
+extern void IKBD_Reset(bool bCold);
+extern void IKBD_MemorySnapShot_Capture(bool bSave);
 extern void IKBD_SendAutoKeyboardCommands(void);
 extern void IKBD_InterruptHandler_ResetTimer(void);
 extern void IKBD_InterruptHandler_ACIA(void);
 
-extern void IKBD_PressSTKey(Uint8 ScanCode, BOOL bPress);
+extern void IKBD_PressSTKey(Uint8 ScanCode, bool bPress);
 extern void IKBD_KeyboardControl_ReadByte(void);
 extern void IKBD_KeyboardData_ReadByte(void);
 extern void IKBD_KeyboardControl_WriteByte(void);

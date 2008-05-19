@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.18 2008-04-03 21:11:27 eerot Exp $";
+const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.19 2008-05-19 20:34:10 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -48,10 +48,10 @@ HDCOMMAND HDCCommand;
 FILE *hd_image_file = NULL;
 int nPartitions = 0;
 short int HDCSectorCount;
-BOOL bAcsiEmuOn = FALSE;
+bool bAcsiEmuOn = FALSE;
 
 static Uint32 nLastBlockAddr;
-static BOOL bSetLastBlockAddr;
+static bool bSetLastBlockAddr;
 static Uint8 nLastError;
 
 /*
@@ -568,7 +568,7 @@ static void HDC_GetInfo(void)
 /**
  * Open the disk image file, set partitions.
  */
-BOOL HDC_Init(char *filename)
+bool HDC_Init(char *filename)
 {
 	bAcsiEmuOn = FALSE;
 

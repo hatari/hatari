@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.15 2008-01-28 22:20:09 thothy Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.16 2008-05-19 20:34:09 thothy Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -91,7 +91,7 @@ static const double DmaSndFalcSampleRates[] =
 /**
  * Reset DMA sound variables.
  */
-void DmaSnd_Reset(BOOL bCold)
+void DmaSnd_Reset(bool bCold)
 {
 	nDmaSoundControl = 0;
 
@@ -106,7 +106,7 @@ void DmaSnd_Reset(BOOL bCold)
 /**
  * Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
  */
-void DmaSnd_MemorySnapShot_Capture(BOOL bSave)
+void DmaSnd_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&nDmaSoundControl, sizeof(nDmaSoundControl));

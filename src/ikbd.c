@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.37 2008-05-04 19:21:05 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.38 2008-05-19 20:34:10 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -58,20 +58,20 @@ KEYBOARD Keyboard;
 KEYBOARD_PROCESSOR KeyboardProcessor;   /* Keyboard processor details */
 
 /* Pattern of mouse button up/down in ST frames (run off a double-click message) */
-static const BOOL DoubleClickPattern[] =
+static const uint8_t DoubleClickPattern[] =
 {
 	BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,
 	0,0,0,0,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE,BUTTON_MOUSE
 };
 
-static BOOL bMouseDisabled, bJoystickDisabled;
-static BOOL bDuringResetCriticalTime, bBothMouseAndJoy;
+static bool bMouseDisabled, bJoystickDisabled;
+static bool bDuringResetCriticalTime, bBothMouseAndJoy;
 
 /* ACIA */
 static Uint8 ACIAControlRegister = 0;
 static Uint8 ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;  /* Pass when read 0xfffc00 */
 static Uint8 ACIAByte;                      /* When a byte has arrived at the ACIA (from the keyboard) it is stored here */
-static BOOL bByteInTransitToACIA = FALSE;   /* Is a byte being sent to the ACIA from the keyboard? */
+static bool bByteInTransitToACIA = false;   /* Is a byte being sent to the ACIA from the keyboard? */
 
 /*
   6850 ACIA (Asynchronous Communications Inferface Apdater)
@@ -252,7 +252,7 @@ void ACIA_Reset(void)
 /**
  * Reset the IKBD processor
  */
-void IKBD_Reset(BOOL bCold)
+void IKBD_Reset(bool bCold)
 {
 	/* Reset internal keyboard processor details */
 	if (bCold)
@@ -291,7 +291,7 @@ void IKBD_Reset(BOOL bCold)
 	Keyboard.LButtonDblClk = Keyboard.RButtonDblClk = 0;
 	Keyboard.LButtonHistory = Keyboard.RButtonHistory = 0;
 
-	/* Store BOOL for when disable mouse or joystick */
+	/* Store bool for when disable mouse or joystick */
 	bMouseDisabled = bJoystickDisabled = FALSE;
 	/* do emulate hardware 'quirk' where if disable both with 'x' time
 	 * of a RESET command they are ignored! */
@@ -304,7 +304,7 @@ void IKBD_Reset(BOOL bCold)
  * Save/Restore snapshot of local variables
  * ('MemorySnapShot_Store' handles type)
  */
-void IKBD_MemorySnapShot_Capture(BOOL bSave)
+void IKBD_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&Keyboard, sizeof(Keyboard));
@@ -435,9 +435,9 @@ static void IKBD_CheckForDoubleClicks(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Convert button to BOOL value
+ * Convert button to bool value
  */
-static BOOL IKBD_ButtonBool(int Button)
+static bool IKBD_ButtonBool(int Button)
 {
 	/* Button pressed? */
 	if (Button)
@@ -448,11 +448,11 @@ static BOOL IKBD_ButtonBool(int Button)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return TRUE if buttons match, use this as buttons are a mask and not BOOLean
+ * Return TRUE if buttons match, use this as buttons are a mask and not boolean
  */
-static BOOL IKBD_ButtonsEqual(int Button1,int Button2)
+static bool IKBD_ButtonsEqual(int Button1,int Button2)
 {
-	/* Return BOOL compare */
+	/* Return bool compare */
 	return (IKBD_ButtonBool(Button1) == IKBD_ButtonBool(Button2));
 }
 
@@ -573,7 +573,7 @@ static void IKBD_SelAutoJoysticks(void)
  */
 static void IKBD_SendOnMouseAction(void)
 {
-	BOOL bReportPosition = FALSE;
+	bool bReportPosition = FALSE;
 
 	/* Report buttons as keys? Do in relative/absolute mode */
 	if (KeyboardProcessor.Mouse.Action&0x4)
@@ -1593,7 +1593,7 @@ static void IKBD_AddKeyToKeyboardBuffer(Uint8 Data)
 /**
  * When press/release key under host OS, execute this function.
  */
-void IKBD_PressSTKey(Uint8 ScanCode, BOOL bPress)
+void IKBD_PressSTKey(Uint8 ScanCode, bool bPress)
 {
 	if (!bPress)
 		ScanCode |= 0x80;    /* Set top bit if released key */

@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.88 2008-04-04 21:18:02 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.89 2008-05-19 20:34:08 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -27,7 +27,7 @@ const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.88 2008-04-0
 #include "video.h"
 
 
-BOOL bFirstTimeInstall = FALSE;             /* Has been run before? Used to set default joysticks etc... */
+bool bFirstTimeInstall = FALSE;             /* Has been run before? Used to set default joysticks etc... */
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
 char sConfigFileName[FILENAME_MAX];         /* Stores the name of the configuration file */
 
@@ -474,7 +474,7 @@ void Configuration_SetDefault(void)
  * Copy details from configuration structure into global variables for system,
  * clean file names, etc...  Called from main.c and dialog.c files.
  */
-void Configuration_Apply(BOOL bReset)
+void Configuration_Apply(bool bReset)
 {
 	if (bReset)
 	{
@@ -653,7 +653,7 @@ void Configuration_Save(void)
  * Save/restore snapshot of configuration variables
  * ('MemorySnapShot_Store' handles type)
  */
-void Configuration_MemorySnapShot_Capture(BOOL bSave)
+void Configuration_MemorySnapShot_Capture(bool bSave)
 {
 	MemorySnapShot_Store(ConfigureParams.Rom.szTosImageFileName, sizeof(ConfigureParams.Rom.szTosImageFileName));
 	MemorySnapShot_Store(ConfigureParams.Rom.szCartridgeImageFileName, sizeof(ConfigureParams.Rom.szCartridgeImageFileName));

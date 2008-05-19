@@ -2,4 +2,4 @@
   Hatari
 */
 
-extern BOOL Bios(void);
+extern bool Bios(void);

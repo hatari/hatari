@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.68 2008-04-23 20:55:35 eerot Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.69 2008-05-19 20:34:09 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -27,10 +27,10 @@ CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can
  * Open Property sheet Options dialog.
  * Return TRUE if user chooses OK, or FALSE if cancel!
  */
-BOOL Dialog_DoProperty(void)
+bool Dialog_DoProperty(void)
 {
-	BOOL bOKDialog;  /* Did user 'OK' dialog? */
-	BOOL bForceReset;
+	bool bOKDialog;  /* Did user 'OK' dialog? */
+	bool bForceReset;
 
 	Main_PauseEmulation();
 

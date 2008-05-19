@@ -9,7 +9,7 @@
   We intercept and direct some Bios calls to handle input/output to RS-232
   or the printer etc...
 */
-const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.12 2008-05-04 19:21:05 thothy Exp $";
+const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.13 2008-05-19 20:34:07 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -30,7 +30,7 @@ const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.12 2008-05-04 19:21:05 thothy 
  * BIOS Return input device status
  * Call 1
  */
-static BOOL Bios_Bconstat(Uint32 Params)
+static bool Bios_Bconstat(Uint32 Params)
 {
 	Uint16 Dev;
 
@@ -74,7 +74,7 @@ static BOOL Bios_Bconstat(Uint32 Params)
  * BIOS Read character from device
  * Call 2
  */
-static BOOL Bios_Bconin(Uint32 Params)
+static bool Bios_Bconin(Uint32 Params)
 {
 	Uint16 Dev;
 	unsigned char Char;
@@ -117,7 +117,7 @@ static BOOL Bios_Bconin(Uint32 Params)
  * BIOS Write character to device
  * Call 3
  */
-static BOOL Bios_Bconout(Uint32 Params)
+static bool Bios_Bconout(Uint32 Params)
 {
 	Uint16 Dev;
 	unsigned char Char;
@@ -160,7 +160,7 @@ static BOOL Bios_Bconout(Uint32 Params)
  * BIOS Read/Write disk sector
  * Call 4
  */
-static BOOL Bios_RWabs(Uint32 Params)
+static bool Bios_RWabs(Uint32 Params)
 {
 #if BIOS_DEBUG
 	Uint32 pBuffer;
@@ -185,7 +185,7 @@ static BOOL Bios_RWabs(Uint32 Params)
  * BIOS Return output device status
  * Call 8
  */
-static BOOL Bios_Bcostat(Uint32 Params)
+static bool Bios_Bcostat(Uint32 Params)
 {
 	Uint16 Dev;
 
@@ -226,7 +226,7 @@ static BOOL Bios_Bcostat(Uint32 Params)
  * Check Bios call and see if we need to re-direct to our own routines
  * Return TRUE if we've handled the exception, else return FALSE to let TOS attempt it
  */
-BOOL Bios(void)
+bool Bios(void)
 {
 	Uint32 Params;
 	Uint16 BiosCall;
