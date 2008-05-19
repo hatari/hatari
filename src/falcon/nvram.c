@@ -27,7 +27,7 @@
 
   All other cells are reserved / unused.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.6 2008-04-03 21:11:28 eerot Exp $";
+const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.7 2008-05-19 21:00:16 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -78,9 +78,9 @@ void NvRam_Reset(void)
 /**
  * Load NVRAM data from file.
  */
-static BOOL NvRam_Load(void)
+static bool NvRam_Load(void)
 {
-	BOOL ret = FALSE;
+	bool ret = FALSE;
 	FILE *f = fopen(nvram_filename, "rb");
 	if (f != NULL)
 	{
@@ -106,9 +106,9 @@ static BOOL NvRam_Load(void)
 /**
  * Save NVRAM data to file
  */
-static BOOL NvRam_Save(void)
+static bool NvRam_Save(void)
 {
-	BOOL ret = FALSE;
+	bool ret = FALSE;
 	FILE *f = fopen(nvram_filename, "wb");
 	if (f != NULL)
 	{
@@ -242,7 +242,7 @@ void NvRam_Data_ReadByte(void)
 	}
 	else if (nvram_index == 10)
 	{
-		static BOOL rtc_uip = TRUE;
+		static bool rtc_uip = true;
 		value = rtc_uip ? 0x80 : 0;
 		rtc_uip = !rtc_uip;
 	}

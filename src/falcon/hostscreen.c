@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.13 2007-04-04 15:23:58 thothy Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.14 2008-05-19 21:00:16 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -52,7 +52,7 @@ static SDL_Surface *surf;               // pointer to actual surface
 static SDL_mutex   *screenLock;
 static uint32 sdl_videoparams;
 static uint32 hs_width, hs_height, hs_bpp;
-static BOOL   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
+static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
 
 static struct { // TOS palette (bpp < 16) to SDL color mapping
 	SDL_Color	standard[256];
@@ -266,7 +266,7 @@ void HostScreen_setWindowSize( uint32 width, uint32 height, uint32 bpp )
 }
 
 
-static void HostScreen_update5( int32 x, int32 y, int32 w, int32 h, BOOL forced )
+static void HostScreen_update5(int32 x, int32 y, int32 w, int32 h, bool forced)
 {
 	if ( !forced && !doUpdate ) // the HW surface is available
 		return;
@@ -276,7 +276,7 @@ static void HostScreen_update5( int32 x, int32 y, int32 w, int32 h, BOOL forced 
 	SDL_UpdateRect(mainSurface, x, y, w, h);
 }
 
-void HostScreen_update1( BOOL forced )
+void HostScreen_update1(bool forced)
 {
 	HostScreen_update5( 0, 0, hs_width, hs_height, forced );
 }
@@ -401,7 +401,8 @@ void HostScreen_unlock(void) {
 }
 #endif
 
-BOOL HostScreen_renderBegin(void) {
+bool HostScreen_renderBegin(void)
+{
 	if (SDL_MUSTLOCK(surf))
 		if (SDL_LockSurface(surf) < 0) {
 			printf("Couldn't lock surface to refresh!\n");

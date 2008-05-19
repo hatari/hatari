@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.17 2007-12-18 20:35:55 thothy Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.18 2008-05-19 21:00:16 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -43,7 +43,7 @@ const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.17 2007-12-18 20:35:55 thoth
 
 
 static int width, height, bpp, since_last_change;
-static BOOL hostColorsSync;
+static bool hostColorsSync;
 
 /* Autozoom */
 static int zoomwidth, prev_scrwidth;
