@@ -114,8 +114,10 @@ class ConfigVariables:
 # whole configuration file, therefore APIs don't need to
 # use sections, just map them them on load&save.
 class ConfigStore():
+    defaultpath = "%s%c.hatari" % (os.getenv("HOME"), os.path.sep)
+
     def __init__(self, defaults, cfgfile, miss_is_error = True):
-        "ConfigStore(defaults, cfgfile, miss_is_error)"
+        "ConfigStore(defaults,cfgfile[,miss_is_error])"
         self.changed = False
         path = self.get_path(cfgfile)
         if path:
@@ -126,11 +128,12 @@ class ConfigStore():
                 print "WARNING: configuration file '%' loading failed" % path
                 path = None
         else:
-            print "WARNING: configuration file missing, using defaults"
-            variables, sections = defaults
+            print "WARNING: configuration file '%s' missing, using defaults" % cfgfile
+            sections, variables = defaults
         self.variables = ConfigVariables(variables, miss_is_error)
         self.original = variables
         self.sections = sections
+        self.cfgfile = cfgfile
         self.path = path
 
     def get_path(self, cfgfile):
@@ -188,7 +191,7 @@ class ConfigStore():
         return allkeys, sections
         
     def is_changed(self):
-        "return True if current configuration is changed"
+        "is_changed() -> True if current configuration is changed"
         return self.variables.is_changed()
 
     def list_changes(self):
@@ -214,19 +217,19 @@ class ConfigStore():
             keys.sort()
             for key in keys:
                 file.write("%s = %s\n" % (key, str(self.variables.get(key))))
-            file.write("\n")
             
     def save(self):
-        "if configuration changed, save it"
-        if not self.path:
-            print "WARNING: no existing configuration to modify, saving canceled"
-            return
+        "save(), if configuration changed, save it"
         if not self.variables.is_changed():
             print "No configuration changes to save, skipping"
             return            
-        #file = open(self.path, "w")
-        print "TODO: for now writing config to stdout"
-        file = sys.stdout
+        if not self.path:
+            print "WARNING: no existing configuration file, trying to create one"
+            if not os.path.exists(self.defaultpath):
+                os.mkdir(self.defaultpath)
+            self.path = "%s%c%s" % (self.defaultpath, os.path.sep, self.cfgfile)
+        #file = sys.stdout
+        file = open(self.path, "w")
         if file:
             self.write(file)
             print "Saved configuration file:", self.path

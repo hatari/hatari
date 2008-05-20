@@ -22,7 +22,9 @@ import gtk
 import pango
 import gobject
 
+from config import ConfigStore
 from dialogs import HatariUIDialog, TodoDialog, ErrorDialog
+
 
 # base class
 class TableDialog(HatariUIDialog):
@@ -41,16 +43,23 @@ class TableDialog(HatariUIDialog):
         table.attach(entry, 1, 2, row, row+1)
         return entry
 
+
 class OptionsDialog(TableDialog):
     def __init__(self, parent):
         table = gtk.Table(1, 2) # rows, cols
-        self.lines = self.add_entry_row(table, 0, "Memdump/disasm lines:", 2)
         table.set_col_spacings(8)
+        
+        self.lines = self.add_entry_row(table, 0, "Memdump/disasm lines:", 2)
+        self.lines.connect("activate", self.entry_cb)
+        
         self.dialog = gtk.Dialog("Debug UI Options", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
              gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
         self.dialog.vbox.add(table)
+    
+    def entry_cb(self, widget):
+        self.dialog.response(gtk.RESPONSE_APPLY)
     
     def run(self, lines):
         # show given lines value and that or new one, if new is given
@@ -90,12 +99,8 @@ class HatariDebugUI():
         self.dbg_out_file = self.hatari.open_debug_output()
         self.window = self.create_ui("Hatari Debug UI", icon, do_destroy)
         self.options = OptionsDialog(self.window)
-        print "TODO: read debug UI configuration"
-        self.lines = 12
+        self.load_options()
         
-    def options_cb(self, widget):
-        self.lines = self.options.run(self.lines)
-    
     def clear_addresses(self):
         self.address_first = None
         self.address_second = None
@@ -226,24 +231,25 @@ class HatariDebugUI():
 
         if self.dumpmode == self._REGISTERS:
             self.hatari.debug_command("r")
-            lines = self.hatari.get_lines(self.dbg_out_file)
-            self.memory_label.set_label("".join(lines))
+            output = self.hatari.get_lines(self.dbg_out_file)
+            self.memory_label.set_label("".join(output))
             if not self.address_first:
                 # second last line has first PC, last line next PC in next column
-                self.address_first  = int(lines[-2][:lines[-2].find(":")], 16)
-                self.address_second = int(lines[-1][lines[-1].find(":")+2:], 16)
+                self.address_first  = int(output[-2][:output[-2].find(":")], 16)
+                self.address_second = int(output[-1][output[-1].find(":")+2:], 16)
                 self.address_entry.set_text("%06X" % self.address_first)
             return
 
         if not address:
             print "ERROR: address needed"
             return
+        lines = self.config.variables.nLines
 
         # on memdump mode move, have no overlap,
         # use one line of overlap in the the disasm mode
         if self.dumpmode == self._MEMDUMP:
             linewidth = 16
-            screenful = self.lines*linewidth
+            screenful = lines*linewidth
             # no move, left/right, up/down, page up/down
             offsets = [0, 2, linewidth, screenful]
             offset = offsets[abs(move_idx)]
@@ -254,8 +260,8 @@ class HatariDebugUI():
             address1, address2 = self.address_clamp(address, address+screenful)
             self.hatari.debug_command("m %06x-%06x" % (address1, address2))
             # get & set debugger command results
-            lines = self.hatari.get_lines(self.dbg_out_file)
-            self.memory_label.set_label("".join(lines))
+            output = self.hatari.get_lines(self.dbg_out_file)
+            self.memory_label.set_label("".join(output))
             self.address_first = address
             self.address_second = address + linewidth
             self.address_last = address + screenful
@@ -267,7 +273,7 @@ class HatariDebugUI():
             # requested to be sure that the window is filled, assuming
             # 6 bytes is largest possible instruction+args size
             # (I don't remember anymore my m68k asm...)
-            screenful = 6*self.lines
+            screenful = 6*lines
             # no move, left/right, up/down, page up/down
             offsets = [0, 2, 4, screenful]
             offset = offsets[abs(move_idx)]
@@ -287,17 +293,17 @@ class HatariDebugUI():
             address1, address2 = self.address_clamp(address, address+screenful)
             self.hatari.debug_command("d %06x-%06x" % (address1, address2))
             # get & set debugger command results
-            lines = self.hatari.get_lines(self.dbg_out_file)
+            output = self.hatari.get_lines(self.dbg_out_file)
             # cut output to desired length and check new addresses
-            if len(lines) > self.lines:
+            if len(output) > lines:
                 if move_idx < 0:
-                    lines = lines[-self.lines:]
+                    output = output[-lines:]
                 else:
-                    lines = lines[:self.lines]
-            self.memory_label.set_label("".join(lines))
-            self.address_first  = int(lines[0][:lines[0].find(":")], 16)
-            self.address_second = int(lines[1][:lines[1].find(":")], 16)
-            self.address_last   = int(lines[-1][:lines[-1].find(":")], 16)
+                    output = output[:lines]
+            self.memory_label.set_label("".join(output))
+            self.address_first  = int(output[0][:output[0].find(":")], 16)
+            self.address_second = int(output[1][:output[1].find(":")], 16)
+            self.address_last   = int(output[-1][:output[-1].find(":")], 16)
             self.address_entry.set_text("%06X" % self.address_first)
             return
 
@@ -321,6 +327,19 @@ class HatariDebugUI():
 
     def memsave_cb(self, widget):
         TodoDialog(self.window).run("save given range of memory to file.")
+        
+    def options_cb(self, widget):
+        lines = self.config.variables.nLines
+        lines = self.options.run(lines)
+        self.config.variables.nLines = lines
+
+    def load_options(self):
+        miss_is_error = False # needed for adding windows
+        defaults = ({ "[General]": ["nLines"] }, { "nLines": "12" })
+        self.config = ConfigStore(defaults, "debugui.cfg", miss_is_error)
+    
+    def save_options(self):
+        self.config.save()
     
     def show(self):
         self.stop_button.set_active(True)
@@ -340,3 +359,4 @@ if __name__ == "__main__":
     debugui = HatariDebugUI(hatari, "hatari-icon.png", True)
     debugui.window.show_all()
     gtk.main()
+    debugui.save_options()
