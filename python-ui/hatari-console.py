@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #
 # Hatari console:
-# Allows using Hatari shortcuts from console and changing Hatari
+# Allows using Hatari shortcuts, debugger and changing Hatari
 # command line options (even ones you cannot change from the UI)
-# while Hatari is running.
+# from the console while Hatari is running.
 #
 # Copyright (C) 2008 by Eero Tamminen <eerot@sf.net>
 #
@@ -47,7 +47,7 @@ class Hatari():
         if not self.pid:
             return False
         try:
-            pid,status = os.waitpid(self.pid, os.WNOHANG)
+            os.waitpid(self.pid, os.WNOHANG)
         except OSError, value:
             print "Hatari PID %d had exited in the meanwhile:\n\t%s" % (self.pid, value)
             self.pid = 0
@@ -78,17 +78,31 @@ class Hatari():
     def get_control(self):
         return self.control
 
+    def send_message(self, msg):
+        if self.control:
+            self.control.send(msg)
+            return True
+        else:
+            print "ERROR: no Hatari (control socket)"
+            return False
+        
+    def change_option(self, option):
+        return self.send_message("hatari-option %s\n" % option)
+
+    def trigger_shortcut(self, shortcut):
+        return self.send_message("hatari-shortcut %s\n" % shortcut)
+
+    def insert_event(self, event):
+        return self.send_message("hatari-event %s\n" % event)
+
+    def debug_command(self, cmd):
+        return self.send_message("hatari-debug %s\n" % cmd)
+
     def pause(self):
-        if self.pid and not self.paused:
-            os.kill(self.pid, signal.SIGSTOP)
-            print "paused hatari with PID %d" % self.pid
-            self.paused = True
-    
+        return self.send_message("hatari-stop\n")
+
     def unpause(self):
-        if self.pid and self.paused:
-            os.kill(self.pid, signal.SIGCONT)
-            print "continued hatari with PID %d" % self.pid
-            self.paused = False
+        return self.send_message("hatari-cont\n")
         
     def stop(self):
         if self.pid:
@@ -107,21 +121,22 @@ class CommandInput():
         readline.parse_and_bind("tab: complete")
         readline.set_completer_delims(" \t\r\n")
         readline.set_completer(self.complete)
+        self.prompt = "hatari-command: "
         self.commands = commands
     
     def complete(self, text, state):
         idx = 0
-        for command in self.commands:
+        for cmd in self.commands:
             if command.startswith(text):
                 idx += 1
                 if idx > state:
-                    return command
+                    return cmd
         #print "text: '%s', state '%d'" % (text, state)
     
     def loop(self):
         try:
-            line = raw_input("hatari-command: ")
-            return line
+            rawline = raw_input(self.prompt)
+            return rawline
         except EOFError:
             return ""
 
@@ -184,17 +199,36 @@ shortcut_tokens = [
     "debug",
     "quit"
 ]
+event_tokens = [
+    "doubleclick",
+    "rightpress",
+    "rightrelease",
+    "keypress",
+    "keyrelease"
+]
+debugger_tokens = [
+    "r",
+    "d",
+    "m",
+    "f",
+    "w",
+    "l",
+    "s",
+    "h"
+]
 hatari = Hatari(sys.argv[1:])
 process_tokens = {
     "pause": hatari.pause,
     "unpause": hatari.unpause,
+    "quit": hatari.stop
 }
 control = hatari.get_control()
 
 print "************************************************************"
 print "* Use the TAB key to see all the available Hatari commands *"
 print "************************************************************"
-command = CommandInput(option_tokens + shortcut_tokens + process_tokens.keys())
+tokens = option_tokens + shortcut_tokens + event_tokens + debugger_tokens + process_tokens.keys()
+command = CommandInput(tokens)
 
 while 1:
     line = command.loop().strip()
@@ -203,14 +237,16 @@ while 1:
         sys.exit(0)
     if not line:
         continue
+    first = line.split(" ")[0]
     if line in process_tokens:
         process_tokens[line]()
     elif line in shortcut_tokens:
-        control.send("hatari-shortcut %s\n" % line)
+        hatari.trigger_shortcut(line)
+    elif first in event_tokens:
+        hatari.insert_event(line)
+    elif first in debugger_tokens:
+        hatari.debug_command(line)
+    elif first in option_tokens:
+        hatari.change_option(line)
     else:
-        first = line.split(" ")[0] # first command line option?
-        if first in option_tokens:
-            control.send("hatari-option %s\n" % line)
-        else:
-            print "ERROR: unknown command:", line
-
+        print "ERROR: unknown command:", line
