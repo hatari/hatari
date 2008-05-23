@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.128 2008-05-09 18:25:06 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.129 2008-05-23 14:44:22 thothy Exp $";
 
 #include "config.h"
 
@@ -88,7 +88,7 @@ void Main_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(STRam, nBytes);
 	}
 	/* And Cart/TOS/Hardware area */
-	MemorySnapShot_Store(&STRam[0xE00000], 0x200000);
+	MemorySnapShot_Store(&RomMem[0xE00000], 0x200000);
 	MemorySnapShot_Store(szBootDiskImage, sizeof(szBootDiskImage));
 	MemorySnapShot_Store(sWorkingDir, sizeof(sWorkingDir));  /* TODO: Remove this line? */
 }
