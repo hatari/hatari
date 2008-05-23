@@ -14,7 +14,7 @@
   The assembler routine can be found in 'cart_asm.s', and has been converted to
   a byte array and stored in 'Cart_data[]' (see cartData.c).
 */
-const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.19 2008-04-07 19:43:12 thothy Exp $";
+const char Cart_rcsid[] = "Hatari $Id: cart.c,v 1.20 2008-05-23 14:18:25 thothy Exp $";
 
 /* 2007/12/09	[NP]	Change the function associated to opcodes $8, $a and $c only if hard drive	*/
 /*			emulation is ON. Else, these opcodes should give illegal instructions (also	*/
@@ -116,7 +116,7 @@ void Cart_ResetImage(void)
 	if (bUseVDIRes || ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
 		/* Copy built-in cartrige data into the cartridge memory of the ST */
-		memcpy(&STRam[0xfa0000], Cart_data, sizeof(Cart_data));
+		memcpy(&RomMem[0xfa0000], Cart_data, sizeof(Cart_data));
 		PatchIllegal = TRUE;
 	}
 	else if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)
