@@ -10,7 +10,7 @@
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.23 2008-05-19 22:35:06 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.24 2008-05-23 15:10:48 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -18,6 +18,7 @@ const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.23 2008-05-19 22:35:06 t
 
 #include "main.h"
 #include "blitter.h"
+#include "dmaSnd.h"
 #include "ioMem.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
@@ -273,6 +274,17 @@ static void Do_Blit(void)
 	/* Cycles for one WORD transfer */
 	cyc_per_op = blit_cycles_tab[op][hop] * 4;
 	curcycles = 0;
+
+	/* Ugly hack for the game Obsession: */
+	if ((nDmaSoundControl & DMASNDCTRL_PLAY) && (blit_control & 0x40))
+	{
+		/* If DMA sound is running at the same time as the blitter is
+		 * used in HOG mode, we do not emulate blitter cycles at all
+		 * (it messes up Obsession completely).
+		 * DMA sound seems to have a higher priority than blitter.
+		 * I don't know (yet) how to emulate this in a proper way... */
+		cyc_per_op = 0;
+	}
 
 	/* Now we enter the main blitting loop */
 	do 
