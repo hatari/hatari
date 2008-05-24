@@ -55,37 +55,50 @@ class HatariInsertText():
 
 class HatariUIDialog():
     def __init__(self, parent = None):
+        self.parent = parent
         self.dialog = None
-        self.parent = None
 
     def run(self):
         "return dialog response"
         # subclasses may return also other things than dialog response
-        response = self.dialog.run()
-        self.dialog.hide()
-        return response
+        if self.dialog:
+            response = self.dialog.run()
+            self.dialog.hide()
+            return response
+        else:
+            return None
 
     def destroy(self):
         if self.dialog:
             self.dialog.destroy()
 
 
-class TodoDialog(HatariUIDialog):
+class NoteDialog(HatariUIDialog):
+    icontype = gtk.MESSAGE_INFO
+    textpattern = "\n%s"
     def run(self, text):
         dialog = gtk.MessageDialog(self.parent,
         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-        gtk.MESSAGE_INFO, gtk.BUTTONS_CLOSE, "\nTODO: %s" % text)
+        self.icontype, gtk.BUTTONS_CLOSE, self.textpattern % text)
         dialog.run()
         dialog.destroy()
 
+class TodoDialog(NoteDialog):
+    textpattern = "\nTODO: %s"
 
-class ErrorDialog(HatariUIDialog):
+class ErrorDialog(NoteDialog):
+    icontype = gtk.MESSAGE_ERROR
+    textpattern = "\nERROR: %s"
+
+
+class AskDialog(HatariUIDialog):
     def run(self, text):
         dialog = gtk.MessageDialog(self.parent,
         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-        gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE, "\nERROR: %s" % text)
-        dialog.run()
+        gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, text)
+        response = dialog.run()
         dialog.destroy()
+        return (response == gtk.RESPONSE_YES)
 
 
 class AboutDialog(HatariUIDialog):
