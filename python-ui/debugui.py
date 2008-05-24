@@ -23,11 +23,31 @@ import pango
 import gobject
 
 from config import ConfigStore
-from dialogs import HatariUIDialog, TodoDialog, ErrorDialog
+from dialogs import HatariUIDialog, NoteDialog, TodoDialog, ErrorDialog, AskDialog
 
 
-# base class
+# intermediate class with helper methods
+# subclasses need to have:
+# - "title" class variable
+# - "content_rows" class variable
+# - "add_table_content" method
 class TableDialog(HatariUIDialog):
+    title = None
+    content_rows = None
+    def add_table_content(self, table):
+        pass
+
+    def __init__(self, parent):
+        self.dialog = gtk.Dialog(self.title, parent,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
+             gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+
+        table = gtk.Table(self.content_rows, 2) # rows, cols
+        table.set_col_spacings(8)
+        self.add_table_content(table)
+        self.dialog.vbox.add(table)
+
     def add_entry_row(self, table, row, text, size = None):
         # adds given label right aligned to given row in given table
         # returns entry for that line
@@ -43,38 +63,147 @@ class TableDialog(HatariUIDialog):
         table.attach(entry, 1, 2, row, row+1)
         return entry
 
+    def add_widget_row(self, table, row, text, widget):
+        # adds given label right aligned to given row in given table
+        # adds given widget to the right column and returns it
+        # returns entry for that line
+        label = gtk.Label(text)
+        align = gtk.Alignment(1)
+        align.add(label)
+        table.attach(align, 0, 1, row, row+1)
+        table.attach(widget, 1, 2, row, row+1)
+        return widget
+
+    def accept_cb(self, widget):
+        self.dialog.response(gtk.RESPONSE_APPLY)
+
+
+class SaveDialog(TableDialog):
+    title = "Save from memory..."
+    content_rows = 3
+
+    def add_table_content(self, table):
+        entry = gtk.Entry()
+        entry.set_width_chars(12)
+        entry.set_editable(False)
+        self.file = entry
+        button = gtk.Button("Select...")
+        button.connect("clicked", self.select_file_cb)
+        hbox = gtk.HBox()
+        hbox.add(entry)
+        hbox.add(button)
+
+        self.add_widget_row(table, 0, "File name:", hbox)
+        self.address = self.add_entry_row(table, 1, "Save address:", 8)
+        self.address.connect("activate", self.accept_cb)
+        self.length = self.add_entry_row(table, 2, "Number of bytes:", 6)
+        self.length.connect("activate", self.accept_cb)
+
+    def select_file_cb(self, widget):
+        buttons = (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+        fsel = gtk.FileChooserDialog("Select save file", self.dialog, gtk.FILE_CHOOSER_ACTION_SAVE, buttons)
+        fsel.set_local_only(True)
+        if fsel.run() == gtk.RESPONSE_OK:
+            self.file.set_text(fsel.get_filename())
+        fsel.destroy()
+    
+    def run(self, address):
+        if address:
+            self.address.set_text(hex(address))
+        self.dialog.show_all()
+        filename = length = None
+        while 1:
+            response = self.dialog.run()
+            if response == gtk.RESPONSE_APPLY:
+                filename = self.file.get_text()
+                address_txt = self.address.get_text()
+                length_txt = self.length.get_text()
+                if filename and address_txt and length_txt:
+                    try:
+                        address = int(address_txt, 16)
+                    except ValueError:
+                        ErrorDialog(self.dialog).run("address needs to be in hex")
+                        continue
+                    try:
+                        length = int(length_txt)
+                    except ValueError:
+                        ErrorDialog(self.dialog).run("length needs to be a number")
+                        continue
+                    if os.path.exists(filename):
+                        question = "File:\n%s\nexists, replace?" % filename
+                        if not AskDialog(self.dialog).run(question):
+                            continue
+                    break
+                else:
+                    ErrorDialog(self.dialog).run("please fill the field(s)")
+            else:
+                break
+        self.dialog.hide()
+        return (filename, address, length)
+
+
+class LoadDialog(TableDialog):
+    title = "Load to memory..."
+    content_rows = 2
+
+    def add_table_content(self, table):
+        chooser = gtk.FileChooserButton('Select a File')
+        chooser.set_local_only(True)  # Hatari cannot access URIs
+        chooser.set_width_chars(12)
+        self.file = self.add_widget_row(table, 0, "File name:", chooser)
+        self.address = self.add_entry_row(table, 1, "Load address:", 8)
+        self.address.connect("activate", self.accept_cb)
+
+    def run(self, address):
+        if address:
+            self.address.set_text(hex(address))
+        self.dialog.show_all()
+        filename = None
+        while 1:
+            response = self.dialog.run()
+            if response == gtk.RESPONSE_APPLY:
+                filename = self.file.get_filename()
+                address_txt = self.address.get_text()
+                if filename and address_txt:
+                    try:
+                        address = int(address_txt, 16)
+                    except ValueError:
+                        ErrorDialog(self.dialog).run("address needs to be in hex")
+                        continue
+                    break
+                else:
+                    ErrorDialog(self.dialog).run("please fill the field(s)")
+            else:
+                break
+        self.dialog.hide()
+        return (filename, address)
+
 
 class OptionsDialog(TableDialog):
-    def __init__(self, parent):
-        table = gtk.Table(1, 2) # rows, cols
-        table.set_col_spacings(8)
-        
+    title = "Debug UI Options"
+    content_rows = 1
+
+    def add_table_content(self, table):
         self.lines = self.add_entry_row(table, 0, "Memdump/disasm lines:", 2)
-        self.lines.connect("activate", self.entry_cb)
-        
-        self.dialog = gtk.Dialog("Debug UI Options", parent,
-            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-            (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
-             gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
-        self.dialog.vbox.add(table)
-    
-    def entry_cb(self, widget):
-        self.dialog.response(gtk.RESPONSE_APPLY)
+        self.lines.connect("activate", self.accept_cb)
     
     def run(self, lines):
-        # show given lines value and that or new one, if new is given
         self.lines.set_text(str(lines))
         self.dialog.show_all()
         while 1:
+            Lines = None
             response = self.dialog.run()
             if response == gtk.RESPONSE_APPLY:
                 text = self.lines.get_text()
                 if text:
                     try:
                         lines = int(text)
-                        break
                     except ValueError:
                         ErrorDialog(self.dialog).run("lines needs an integer number")
+                        continue
+                    break
+                else:
+                    ErrorDialog(self.dialog).run("please fill the field(s)")
             else:
                 break
         self.dialog.hide()
@@ -93,12 +222,15 @@ class HatariDebugUI():
     
     def __init__(self, hatari, icon, do_destroy = False):
         self.hatari = hatari
-        self.dumpmode = self._REGISTERS
-        self.clear_addresses()
         
         self.dbg_out_file = self.hatari.open_debug_output()
         self.window = self.create_ui("Hatari Debug UI", icon, do_destroy)
-        self.options = OptionsDialog(self.window)
+        self.dumpmode = self._REGISTERS
+        self.clear_addresses()
+
+        self.dialog_load = None
+        self.dialog_save = None
+        self.dialog_options = None
         self.load_options()
         
     def clear_addresses(self):
@@ -323,15 +455,26 @@ class HatariDebugUI():
         TodoDialog(self.window).run("add register / memory address range monitor window.")
 
     def memload_cb(self, widget):
-        TodoDialog(self.window).run("load data in given file to memory.")
+        if not self.dialog_load:
+            self.dialog_load = LoadDialog(self.window)
+        (filename, address) = self.dialog_load.run(self.address_first)
+        if filename and address:
+            self.hatari.debug_command("l %s %06x" % (filename, address))
 
     def memsave_cb(self, widget):
-        TodoDialog(self.window).run("save given range of memory to file.")
+        if not self.dialog_save:
+            self.dialog_save = SaveDialog(self.window)
+        (filename, address, length) = self.dialog_save.run(self.address_first)
+        if filename and address and length:
+            self.hatari.debug_command("s %s %06x %06x" % (filename, address, length))
         
     def options_cb(self, widget):
+        if not self.dialog_options:
+            self.dialog_options = OptionsDialog(self.window)
         lines = self.config.variables.nLines
-        lines = self.options.run(lines)
-        self.config.variables.nLines = lines
+        lines = self.dialog_options.run(lines)
+        if lines:
+            self.config.variables.nLines = lines
 
     def load_options(self):
         miss_is_error = False # needed for adding windows
@@ -349,6 +492,7 @@ class HatariDebugUI():
     def hide(self, widget, arg):
         self.window.hide()
         self.stop_button.set_active(False)
+        self.save_options()
         return True
 
 
