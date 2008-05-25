@@ -20,10 +20,9 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 import pango
-import gobject
 
 from config import ConfigStore
-from dialogs import HatariUIDialog, NoteDialog, TodoDialog, ErrorDialog, AskDialog
+from dialogs import HatariUIDialog, TodoDialog, ErrorDialog, AskDialog, KillDialog
 
 
 # intermediate class with helper methods
@@ -84,6 +83,11 @@ class TableDialog(HatariUIDialog):
 class SaveDialog(TableDialog):
     title = "Save from memory..."
     content_rows = 3
+    def __init__(self, parent):
+        self.file = None
+        self.address = None
+        self.length = None
+        TableDialog.__init__(self, parent)
 
     def add_table_content(self, table):
         entry = gtk.Entry()
@@ -148,6 +152,10 @@ class SaveDialog(TableDialog):
 class LoadDialog(TableDialog):
     title = "Load to memory..."
     content_rows = 2
+    def __init__(self, parent):
+        self.file = None
+        self.address = None
+        TableDialog.__init__(self, parent)
 
     def add_table_content(self, table):
         chooser = gtk.FileChooserButton('Select a File')
@@ -185,6 +193,9 @@ class LoadDialog(TableDialog):
 class OptionsDialog(TableDialog):
     title = "Debug UI Options"
     content_rows = 1
+    def __init__(self, parent):
+        self.lines = None
+        TableDialog.__init__(self, parent)
 
     def add_table_content(self, table):
         self.lines = self.add_entry_row(table, 0, "Memdump/disasm lines:", 2)
@@ -194,7 +205,7 @@ class OptionsDialog(TableDialog):
         self.lines.set_text(str(lines))
         self.dialog.show_all()
         while 1:
-            Lines = None
+            lines = None
             response = self.dialog.run()
             if response == gtk.RESPONSE_APPLY:
                 text = self.lines.get_text()
@@ -213,107 +224,218 @@ class OptionsDialog(TableDialog):
         return lines
 
 
-class HatariDebugUI():
+# class for the memory address entry, view (label) and
+# the logic for memory dump modes and moving in memory
+class MemoryAddress():
     # dump modes
-    _DISASM = 1
-    _MEMDUMP = 2
-    _REGISTERS = 3
+    DISASM = 1
+    MEMDUMP = 2
+    REGISTERS = 3
     # move IDs
-    _MOVE_MIN = 1
-    _MOVE_MED = 2
-    _MOVE_MAX = 3
-    
-    def __init__(self, hatari, icon, do_destroy = False):
-        self.hatari = hatari
-        
-        self.dbg_out_file = self.hatari.open_debug_output()
-        self.window = self.create_ui("Hatari Debug UI", icon, do_destroy)
-        self.dumpmode = self._REGISTERS
-        self.clear_addresses()
+    MOVE_MIN = 1
+    MOVE_MED = 2
+    MOVE_MAX = 3
+    # class variables
+    debug_output = None
+    hatari = None
 
+    def __init__(self, hatariobj):
+        # hatari
+        self.debug_output = hatariobj.open_debug_output()
+        self.hatari = hatariobj
+        # widgets
+        self.entry, self.memory = self.create_widgets()
+        # settings
+        self.dumpmode = self.REGISTERS
+        self.lines = 12
+        # addresses
+        self.first = None
+        self.second = None
+        self.last = None
+        
+    def clear(self):
+        self.first = None
+        self.second = None
+        self.last  = None
+
+    def create_widgets(self):
+        entry = gtk.Entry(6)
+        entry.set_width_chars(6)
+        entry.connect("activate", self.entry_cb)
+        memory = gtk.Label()
+        mono = pango.FontDescription("monospace")
+        memory.modify_font(mono)
+        entry.modify_font(mono)
+        return (entry, memory)
+
+    def entry_cb(self, widget):
+        try:
+            address = int(widget.get_text(), 16)
+        except ValueError:
+            ErrorDialog(widget.get_toplevel()).run("invalid address")
+            return
+        self.dump(address)
+
+    def reset_entry(self):
+        self.entry.set_text("%06X" % self.first)
+        
+    def get(self):
+        return self.first
+
+    def get_memory_label(self):
+        return self.memory
+    
+    def get_address_entry(self):
+        return self.entry
+
+    def get_lines(self):
+        return self.lines
+    
+    def set_lines(self, lines):
+        self.lines = lines
+    
+    def set_dumpmode(self, mode):
+        self.dumpmode = mode
+        self.dump()
+        
+    def dump(self, address = None, move_idx = 0):
+        if not address:
+            address = self.first
+        
+        if self.dumpmode == self.REGISTERS:
+            output = self.get_registers()
+            self.memory.set_label("".join(output))
+            return
+        
+        if not address:
+            print "ERROR: address needed"
+            return
+        
+        if self.dumpmode == self.MEMDUMP:
+            output = self.get_memdump(address, move_idx)
+        elif self.dumpmode == self.DISASM:
+            output = self.get_disasm(address, move_idx)
+        else:
+            print "ERROR: unknown dumpmode:", self.dumpmode
+            return
+        self.memory.set_label("".join(output))
+        if move_idx:
+            self.reset_entry()
+    
+    def get_registers(self):
+        self.hatari.debug_command("r")
+        output = self.hatari.get_lines(self.debug_output)
+        if not self.first:
+            # second last line has first PC, last line next PC in next column
+            self.first  = int(output[-2][:output[-2].find(":")], 16)
+            self.second = int(output[-1][output[-1].find(":")+2:], 16)
+            self.reset_entry()
+        return output
+
+    def get_memdump(self, address, move_idx):
+        linewidth = 16
+        screenful = self.lines*linewidth
+        # no move, left/right, up/down, page up/down (no overlap)
+        offsets = [0, 2, linewidth, screenful]
+        offset = offsets[abs(move_idx)]
+        if move_idx < 0:
+            address -= offset
+        else:
+            address += offset
+        self.set_clamped(address, address+screenful)
+        self.hatari.debug_command("m %06x-%06x" % (self.first, self.last))
+        # get & set debugger command results
+        output = self.hatari.get_lines(self.debug_output)
+        self.second = address + linewidth
+        return output
+        
+    def get_disasm(self, address, move_idx):
+        # TODO: uses brute force i.e. ask for more lines that user has
+        # requested to be sure that the window is filled, assuming
+        # 6 bytes is largest possible instruction+args size
+        # (I don't remember anymore my m68k asm...)
+        screenful = 6*self.lines
+        # no move, left/right, up/down, page up/down
+        offsets = [0, 2, 4, screenful]
+        offset = offsets[abs(move_idx)]
+        # force one line of overlap in page up/down
+        if move_idx < 0:
+            address -= offset
+            if address < 0:
+                address = 0
+            if move_idx == -self.MOVE_MAX and self.second:
+                screenful = self.second - address
+        else:
+            if move_idx == self.MOVE_MED and self.second:
+                address = self.second
+            elif move_idx == self.MOVE_MAX and self.last:
+                address = self.last
+            else:
+                address += offset
+        self.set_clamped(address, address+screenful)
+        self.hatari.debug_command("d %06x-%06x" % (self.first, self.last))
+        # get & set debugger command results
+        output = self.hatari.get_lines(self.debug_output)
+        # cut output to desired length and check new addresses
+        if len(output) > self.lines:
+            if move_idx < 0:
+                output = output[-self.lines:]
+            else:
+                output = output[:self.lines]
+        # with disasm need to re-get the addresses from the output
+        self.first  = int(output[0][:output[0].find(":")], 16)
+        self.second = int(output[1][:output[1].find(":")], 16)
+        self.last   = int(output[-1][:output[-1].find(":")], 16)
+        return output
+
+    def set_clamped(self, first, last):
+        "set_clamped(first,last), clamp addresses to valid address range and set them"
+        assert(first < last)
+        if first < 0:
+            last = last-first
+            first = 0
+        if last > 0xffffff:
+            first = 0xffffff - (last-first)
+            last = 0xffffff
+        self.first = first
+        self.last = last
+
+
+# the Hatari debugger UI class and methods
+class HatariDebugUI():
+    
+    def __init__(self, hatariobj, icon, do_destroy = False):
+        self.address = MemoryAddress(hatariobj)
+        self.hatari = hatariobj
+        # set when needed/created
         self.dialog_load = None
         self.dialog_save = None
         self.dialog_options = None
+        # set when UI created
+        self.keys = None
+        self.stop_button = None
+        # set on option load
+        self.config = None
         self.load_options()
-        
-    def clear_addresses(self):
-        self.address_first = None
-        self.address_second = None
-        self.address_last  = None
+        # UI initialization/creation
+        self.window = self.create_ui("Hatari Debug UI", icon, do_destroy)
         
     def create_ui(self, title, icon, do_destroy):
-        # buttons at the top
+        # buttons at top
         hbox1 = gtk.HBox()
-        self.stop_button = gtk.ToggleButton("Stopped")
-        self.stop_button.connect("toggled", self.stop_cb)
-        hbox1.add(self.stop_button)
-
-        monitor = gtk.Button("Monitor...")
-        monitor.connect("clicked", self.monitor_cb)
-        hbox1.add(monitor)
-        
-        buttons = (
-            ("<<<", "Page_Up",  -self._MOVE_MAX),
-            ("<<",  "Up",       -self._MOVE_MED),
-            ("<",   "Left",     -self._MOVE_MIN),
-            (">",   "Right",     self._MOVE_MIN),
-            (">>",  "Down",      self._MOVE_MED),
-            (">>>", "Page_Down", self._MOVE_MAX)
-        )
-        self.keys = {}
-        for label, keyname, offset in buttons:
-            button = gtk.Button(label)
-            button.connect("clicked", self.set_address_offset, offset)
-            keyval = gtk.gdk.keyval_from_name(keyname)
-            self.keys[keyval] =  offset
-            hbox1.add(button)
-
-        entry = gtk.Entry(6)
-        entry.set_width_chars(6)
-        entry.connect("activate", self.address_entry_cb)
-        mono = pango.FontDescription("monospace")
-        entry.modify_font(mono)
-        # to middle of <<>> buttons
-        hbox1.pack_start(entry, False)
-        hbox1.reorder_child(entry, 5)
-        self.address_entry = entry
+        self.create_top_buttons(hbox1)
 
         # disasm/memory dump at the middle
-        self.memory_label = gtk.Label()
-        self.memory_label.modify_font(mono)
         align = gtk.Alignment()
         # top, bottom, left, right padding
-        align.set_padding(8,0,8,8)
-        align.add(self.memory_label)
+        align.set_padding(8, 0, 8, 8)
+        align.add(self.address.get_memory_label())
 
-        # buttons at the bottom
+        # buttons at bottom
         hbox2 = gtk.HBox()
-        radios = (
-            ("Registers", self._REGISTERS),
-            ("Memdump", self._MEMDUMP),
-            ("Disasm", self._DISASM)
-        )
-        group = None
-        for label, mode in radios:
-            button = gtk.RadioButton(group, label)
-            if not group:
-                group = button
-            button.connect("toggled", self.dumpmode_cb, mode)
-            button.unset_flags(gtk.CAN_FOCUS)
-            hbox2.add(button)
-        group.set_active(True)
+        self.create_bottom_buttons(hbox2)
 
-        dialogs = (
-            ("Memload...", self.memload_cb),
-            ("Memsave...", self.memsave_cb),
-            ("Options...", self.options_cb)
-        )
-        for label, cb in dialogs:
-            button = gtk.Button(label)
-            button.connect("clicked", cb)
-            hbox2.add(button)
-
-        # their containers
+        # their container
         vbox = gtk.VBox()
         vbox.pack_start(hbox1, False)
         vbox.pack_start(align, True, True)
@@ -324,135 +446,88 @@ class HatariDebugUI():
         window.set_events(gtk.gdk.KEY_RELEASE_MASK)
         window.connect("key_release_event", self.key_event_cb)
         if do_destroy:
-            window.connect("delete_event", gtk.main_quit)
+            window.connect("delete_event", self.quit)
         else:
             window.connect("delete_event", self.hide)
         window.set_icon_from_file(icon)
         window.set_title(title)
         window.add(vbox)
         return window
+    
+    def create_top_buttons(self, box):
+        self.stop_button = gtk.ToggleButton("Stopped")
+        self.stop_button.connect("toggled", self.stop_cb)
+        box.add(self.stop_button)
+
+        monitor = gtk.Button("Monitor...")
+        monitor.connect("clicked", self.monitor_cb)
+        box.add(monitor)
+        
+        buttons = (
+            ("<<<", "Page_Up",  -self.address.MOVE_MAX),
+            ("<<",  "Up",       -self.address.MOVE_MED),
+            ("<",   "Left",     -self.address.MOVE_MIN),
+            (">",   "Right",     self.address.MOVE_MIN),
+            (">>",  "Down",      self.address.MOVE_MED),
+            (">>>", "Page_Down", self.address.MOVE_MAX)
+        )
+        self.keys = {}
+        for label, keyname, offset in buttons:
+            button = gtk.Button(label)
+            button.connect("clicked", self.set_address_offset, offset)
+            keyval = gtk.gdk.keyval_from_name(keyname)
+            self.keys[keyval] =  offset
+            box.add(button)
+
+        # to middle of <<>> buttons
+        address_entry = self.address.get_address_entry()
+        box.pack_start(address_entry, False)
+        box.reorder_child(address_entry, 5)
+
+    def create_bottom_buttons(self, box):
+        radios = (
+            ("Registers", self.address.REGISTERS),
+            ("Memdump", self.address.MEMDUMP),
+            ("Disasm", self.address.DISASM)
+        )
+        group = None
+        for label, mode in radios:
+            button = gtk.RadioButton(group, label)
+            if not group:
+                group = button
+            button.connect("toggled", self.dumpmode_cb, mode)
+            button.unset_flags(gtk.CAN_FOCUS)
+            box.add(button)
+        group.set_active(True)
+
+        dialogs = (
+            ("Memload...", self.memload_cb),
+            ("Memsave...", self.memsave_cb),
+            ("Options...", self.options_cb)
+        )
+        for label, cb in dialogs:
+            button = gtk.Button(label)
+            button.connect("clicked", cb)
+            box.add(button)
 
     def stop_cb(self, widget):
         if widget.get_active():
             self.hatari.pause()
-            self.clear_addresses()
-            self.dump_address()
+            self.address.clear()
+            self.address.dump()
         else:
             self.hatari.unpause()
 
     def dumpmode_cb(self, widget, mode):
         if widget.get_active():
-            self.dumpmode = mode
-            self.dump_address()
-
-    def address_entry_cb(self, widget):
-        try:
-            address = int(widget.get_text(), 16)
-        except ValueError:
-            ErrorDialog(self.window).run("invalid address")
-            return
-        self.dump_address(address)
+            self.address.set_dumpmode(mode)
 
     def key_event_cb(self, widget, event):
         if event.keyval in self.keys:
-            self.dump_address(None, self.keys[event.keyval])
+            self.address.dump(None, self.keys[event.keyval])
 
     def set_address_offset(self, widget, move_idx):
-        self.dump_address(None, move_idx)
-
-    def dump_address(self, address = None, move_idx = 0):
-        if not address:
-            address = self.address_first
-
-        if self.dumpmode == self._REGISTERS:
-            self.hatari.debug_command("r")
-            output = self.hatari.get_lines(self.dbg_out_file)
-            self.memory_label.set_label("".join(output))
-            if not self.address_first:
-                # second last line has first PC, last line next PC in next column
-                self.address_first  = int(output[-2][:output[-2].find(":")], 16)
-                self.address_second = int(output[-1][output[-1].find(":")+2:], 16)
-                self.address_entry.set_text("%06X" % self.address_first)
-            return
-
-        if not address:
-            print "ERROR: address needed"
-            return
-        lines = self.config.variables.nLines
-
-        # on memdump mode move, have no overlap,
-        # use one line of overlap in the the disasm mode
-        if self.dumpmode == self._MEMDUMP:
-            linewidth = 16
-            screenful = lines*linewidth
-            # no move, left/right, up/down, page up/down
-            offsets = [0, 2, linewidth, screenful]
-            offset = offsets[abs(move_idx)]
-            if move_idx < 0:
-                address -= offset
-            else:
-                address += offset
-            address1, address2 = self.address_clamp(address, address+screenful)
-            self.hatari.debug_command("m %06x-%06x" % (address1, address2))
-            # get & set debugger command results
-            output = self.hatari.get_lines(self.dbg_out_file)
-            self.memory_label.set_label("".join(output))
-            self.address_first = address
-            self.address_second = address + linewidth
-            self.address_last = address + screenful
-            self.address_entry.set_text("%06X" % address)
-            return
-        
-        if self.dumpmode == self._DISASM:
-            # TODO: use brute force i.e. ask for more lines that user has
-            # requested to be sure that the window is filled, assuming
-            # 6 bytes is largest possible instruction+args size
-            # (I don't remember anymore my m68k asm...)
-            screenful = 6*lines
-            # no move, left/right, up/down, page up/down
-            offsets = [0, 2, 4, screenful]
-            offset = offsets[abs(move_idx)]
-            if move_idx < 0:
-                address -= offset
-                if address < 0:
-                    address = 0
-                if move_idx == -self._MOVE_MAX and self.address_second:
-                    screenful = self.address_second - address
-            else:
-                if move_idx == self._MOVE_MED and self.address_second:
-                    address = self.address_second
-                if move_idx == self._MOVE_MAX and self.address_last:
-                    address = self.address_last
-                else:
-                    address += offset
-            address1, address2 = self.address_clamp(address, address+screenful)
-            self.hatari.debug_command("d %06x-%06x" % (address1, address2))
-            # get & set debugger command results
-            output = self.hatari.get_lines(self.dbg_out_file)
-            # cut output to desired length and check new addresses
-            if len(output) > lines:
-                if move_idx < 0:
-                    output = output[-lines:]
-                else:
-                    output = output[:lines]
-            self.memory_label.set_label("".join(output))
-            self.address_first  = int(output[0][:output[0].find(":")], 16)
-            self.address_second = int(output[1][:output[1].find(":")], 16)
-            self.address_last   = int(output[-1][:output[-1].find(":")], 16)
-            self.address_entry.set_text("%06X" % self.address_first)
-            return
-
-        print "ERROR: unknown dumpmode:", self.dumpmode
-        return
-
-    def address_clamp(self, address1, address2):
-        if address1 < 0:
-            address2 = address2 - address1
-            address1 = 0
-        if address2 > 0xffffff:
-            address1 = 0xffffff - (address2-address1)
-            address2 = 0xffffff
-        return address1, address2
+        self.address.dump(None, move_idx)
     
     def monitor_cb(self, widget):
         TodoDialog(self.window).run("add register / memory address range monitor window.")
@@ -460,29 +535,33 @@ class HatariDebugUI():
     def memload_cb(self, widget):
         if not self.dialog_load:
             self.dialog_load = LoadDialog(self.window)
-        (filename, address) = self.dialog_load.run(self.address_first)
+        (filename, address) = self.dialog_load.run(self.address.get())
         if filename and address:
             self.hatari.debug_command("l %s %06x" % (filename, address))
 
     def memsave_cb(self, widget):
         if not self.dialog_save:
             self.dialog_save = SaveDialog(self.window)
-        (filename, address, length) = self.dialog_save.run(self.address_first)
+        (filename, address, length) = self.dialog_save.run(self.address.get())
         if filename and address and length:
             self.hatari.debug_command("s %s %06x %06x" % (filename, address, length))
         
     def options_cb(self, widget):
         if not self.dialog_options:
             self.dialog_options = OptionsDialog(self.window)
-        lines = self.config.variables.nLines
-        lines = self.dialog_options.run(lines)
+        lines = self.dialog_options.run(self.config.variables.nLines)
         if lines:
             self.config.variables.nLines = lines
+            self.address.set_lines(lines)
 
     def load_options(self):
+        # TODO: move config to MemoryAddress class?
+        # (depends on how monitoring of addresses should work)
+        lines = str(self.address.get_lines())
         miss_is_error = False # needed for adding windows
-        defaults = ({ "[General]": ["nLines"] }, { "nLines": "12" })
+        defaults = ({ "[General]": ["nLines"] }, { "nLines": lines })
         self.config = ConfigStore(defaults, "debugui.cfg", miss_is_error)
+        self.address.set_lines(self.config.variables.nLines)
     
     def save_options(self):
         self.config.save()
@@ -498,13 +577,20 @@ class HatariDebugUI():
         self.save_options()
         return True
 
+    def quit(self, widget, arg):
+        KillDialog(self.window).run(self.hatari)
+        gtk.main_quit()
 
-if __name__ == "__main__":
+
+def main():
     from hatari import Hatari
-    hatari = Hatari()
-    hatari.run()
-    debugui = HatariDebugUI(hatari, "hatari-icon.png", True)
+    hatariobj = Hatari()
+    hatariobj.run()
+    debugui = HatariDebugUI(hatariobj, "hatari-icon.png", True)
     debugui.window.show_all()
     gtk.main()
     debugui.save_options()
-    hatari.kill()
+
+    
+if __name__ == "__main__":
+    main()
