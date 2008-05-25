@@ -75,9 +75,6 @@ class Hatari():
             print "RUN:", allargs
             os.execvp(self.hataribin, allargs)
 
-    def get_control(self):
-        return self.control
-
     def send_message(self, msg):
         if self.control:
             self.control.send(msg)
@@ -114,6 +111,7 @@ class Hatari():
 
 # command line parsing with readline
 class CommandInput():
+    prompt = "hatari-command: "
     historysize = 99
     
     def __init__(self, commands):
@@ -121,17 +119,16 @@ class CommandInput():
         readline.parse_and_bind("tab: complete")
         readline.set_completer_delims(" \t\r\n")
         readline.set_completer(self.complete)
-        self.prompt = "hatari-command: "
         self.commands = commands
     
     def complete(self, text, state):
         idx = 0
+        #print "text: '%s', state '%d'" % (text, state)
         for cmd in self.commands:
-            if command.startswith(text):
+            if cmd.startswith(text):
                 idx += 1
                 if idx > state:
                     return cmd
-        #print "text: '%s', state '%d'" % (text, state)
     
     def loop(self):
         try:
@@ -216,37 +213,43 @@ debugger_tokens = [
     "s",
     "h"
 ]
-hatari = Hatari(sys.argv[1:])
-process_tokens = {
-    "pause": hatari.pause,
-    "unpause": hatari.unpause,
-    "quit": hatari.stop
-}
-control = hatari.get_control()
 
-print "************************************************************"
-print "* Use the TAB key to see all the available Hatari commands *"
-print "************************************************************"
-tokens = option_tokens + shortcut_tokens + event_tokens + debugger_tokens + process_tokens.keys()
-command = CommandInput(tokens)
+def main():
+    hatari = Hatari(sys.argv[1:])
+    process_tokens = {
+        "pause": hatari.pause,
+        "unpause": hatari.unpause,
+        "quit": hatari.stop
+    }
+    
+    print "************************************************************"
+    print "* Use the TAB key to see all the available Hatari commands *"
+    print "************************************************************"
+    tokens = option_tokens + shortcut_tokens + event_tokens \
+             + debugger_tokens + process_tokens.keys()
+    command = CommandInput(tokens)
+    
+    while 1:
+        line = command.loop().strip()
+        if not hatari.is_running():
+            print "Exiting as there's no Hatari (anymore)..."
+            sys.exit(0)
+        if not line:
+            continue
+        first = line.split(" ")[0]
+        if line in process_tokens:
+            process_tokens[line]()
+        elif line in shortcut_tokens:
+            hatari.trigger_shortcut(line)
+        elif first in event_tokens:
+            hatari.insert_event(line)
+        elif first in debugger_tokens:
+            hatari.debug_command(line)
+        elif first in option_tokens:
+            hatari.change_option(line)
+        else:
+            print "ERROR: unknown command:", line
 
-while 1:
-    line = command.loop().strip()
-    if not hatari.is_running():
-        print "Exiting as there's no Hatari (anymore)..."
-        sys.exit(0)
-    if not line:
-        continue
-    first = line.split(" ")[0]
-    if line in process_tokens:
-        process_tokens[line]()
-    elif line in shortcut_tokens:
-        hatari.trigger_shortcut(line)
-    elif first in event_tokens:
-        hatari.insert_event(line)
-    elif first in debugger_tokens:
-        hatari.debug_command(line)
-    elif first in option_tokens:
-        hatari.change_option(line)
-    else:
-        print "ERROR: unknown command:", line
+
+if __name__ == "__main__":
+    main()
