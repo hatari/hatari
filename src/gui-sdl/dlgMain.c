@@ -6,7 +6,7 @@
 
   The main dialog.
 */
-const char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.14 2008-02-29 20:24:21 thothy Exp $";
+const char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.15 2008-05-25 19:58:57 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -64,10 +64,10 @@ static SGOBJ maindlg[] =
 /*
   This functions sets up the actual font and then displays the main dialog.
 */
-int Dialog_MainDlg(BOOL *bReset)
+int Dialog_MainDlg(bool *bReset)
 {
 	int retbut;
-	BOOL bOldMouseVisibility;
+	bool bOldMouseVisibility;
 	int nOldMouseX, nOldMouseY;
 
 	if (SDLGui_SetScreen(sdlscrn))

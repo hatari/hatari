@@ -65,7 +65,7 @@ extern int SDLGui_SetScreen(SDL_Surface *pScrn);
 extern void SDLGui_DrawDialog(const SGOBJ *dlg);
 extern int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut);
 extern void SDLGui_CenterDlg(SGOBJ *dlg);
-extern char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, BOOL bAllowNew);
-extern BOOL SDLGui_FileConfSelect(char *dlgname, char *confname, int maxlen, BOOL bAllowNew);
+extern char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowNew);
+extern bool SDLGui_FileConfSelect(char *dlgname, char *confname, int maxlen, bool bAllowNew);
 
 #endif

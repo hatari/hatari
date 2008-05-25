@@ -7,15 +7,15 @@
 #ifndef HATARI_OPTIONS_H
 #define HATARI_OPTIONS_H
 
-extern BOOL bLoadAutoSave;
-extern BOOL bLoadMemorySave;
-extern BOOL bBiosIntercept;
+extern bool bLoadAutoSave;
+extern bool bLoadMemorySave;
+extern bool bBiosIntercept;
 
 /* Parses all Hatari command line options, sets Hatari state and
  * boot disk image name (empty if not set) accordingly.
  * Returns TRUE if everything was OK, FALSE otherwise.
  */
-extern BOOL Opt_ParseParameters(int argc, char *argv[],
+extern bool Opt_ParseParameters(int argc, char *argv[],
 				char *bootdisk, size_t bootlen);
 
 #endif /* HATARI_OPTIONS_H */

@@ -12,7 +12,7 @@
   In fact these mappings seems to force the gem to ask the IKBD for the real
   time (seconds units). See ikbd.c for the time returned by the IKBD.
 */
-const char Rtc_rcsid[] = "Hatari $Id: rtc.c,v 1.8 2007-12-19 11:54:41 thothy Exp $";
+const char Rtc_rcsid[] = "Hatari $Id: rtc.c,v 1.9 2008-05-25 19:58:56 thothy Exp $";
 
 #include <time.h>
 
@@ -21,7 +21,7 @@ const char Rtc_rcsid[] = "Hatari $Id: rtc.c,v 1.8 2007-12-19 11:54:41 thothy Exp
 #include "rtc.h"
 
 
-static BOOL rtc_bank;           /* RTC bank select (0=normal, 1=configuration(?)) */
+static bool rtc_bank;           /* RTC bank select (0=normal, 1=configuration(?)) */
 static Sint8 fake_am, fake_amz;
 
 

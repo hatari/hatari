@@ -72,7 +72,7 @@
 /*			of a gemdos program for example if trace mode was activated.	*/
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.42 2008-05-04 20:03:34 thothy Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.43 2008-05-25 19:58:56 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -140,12 +140,12 @@ static int TimerDClockCycles=0;
 /* If a timer is stopped then restarted later without writing to the data register, */
 /* we must resume the timer from where we left in the interrupts table, instead of */
 /* computing a new number of clock cycles to restart the interrupt. */
-static BOOL TimerACanResume = FALSE;
-static BOOL TimerBCanResume = FALSE;
-static BOOL TimerCCanResume = FALSE;
-static BOOL TimerDCanResume = FALSE;
+static bool TimerACanResume = FALSE;
+static bool TimerBCanResume = FALSE;
+static bool TimerCCanResume = FALSE;
+static bool TimerDCanResume = FALSE;
 
-BOOL bAppliedTimerDPatch;           /* TRUE if the Timer-D patch has been applied */
+bool bAppliedTimerDPatch;           /* TRUE if the Timer-D patch has been applied */
 static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer-D patch */
 
 static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when data counter reaches 0 */
@@ -203,7 +203,7 @@ void MFP_Reset(void)
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  */
-void MFP_MemorySnapShot_Capture(BOOL bSave)
+void MFP_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&MFP_GPIP, sizeof(MFP_GPIP));
@@ -292,7 +292,7 @@ static void MFP_UpdateFlags(void)
 /**
  * Test interrupt request to see if can cause exception,return TRUE if pass vector
  */
-static BOOL MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingReg, Uint8 MaskRegister,
+static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingReg, Uint8 MaskRegister,
                                  Uint8 PriorityMaskLow, Uint8 PriorityMaskHigh, Uint8 *pInServiceReg)
 {
 	/* Are any higher priority interupts in service? */
@@ -423,7 +423,7 @@ void MFP_TimerB_EventCount_Interrupt(void)
  * Start Timer A or B - EventCount mode is done in HBL handler to time correctly
  */
 static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler,
-                             BOOL bFirstTimer, BOOL *pTimerCanResume)
+                             bool bFirstTimer, bool *pTimerCanResume)
 {
 	int TimerClockCycles = 0;
 
@@ -511,7 +511,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler,
  * Start Timer C or D
  */
 static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, int Handler,
-                             BOOL bFirstTimer, BOOL *pTimerCanResume)
+                             bool bFirstTimer, bool *pTimerCanResume)
 {
 	int TimerClockCycles = 0;
 

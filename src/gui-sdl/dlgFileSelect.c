@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.21 2008-02-29 20:24:21 thothy Exp $";
+const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.22 2008-05-25 19:58:56 thothy Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -84,7 +84,7 @@ static SGOBJ fsdlg[] =
 
 
 static int ypos;                        /* First entry number to be displayed */
-static BOOL refreshentries;             /* Do we have to update the file names in the dialog? */
+static bool refreshentries;             /* Do we have to update the file names in the dialog? */
 static int entries;                     /* How many files are in the actual directory? */
 
 
@@ -93,7 +93,7 @@ static int entries;                     /* How many files are in the actual dire
   Update the file name strings in the dialog.
   Returns FALSE if it failed, TRUE on success.
 */
-static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, BOOL browsingzip)
+static int DlgFileSelect_RefreshEntries(struct dirent **files, char *path, bool browsingzip)
 {
 	int i;
 	char *tempstr = malloc(FILENAME_MAX);
@@ -328,19 +328,19 @@ static void correct_zip_root(char *zippath)
   within a selected zip file, or NULL if browsing zip files is disallowed.
   bAllowNew: TRUE if the user is allowed to insert new file names.
 */
-char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, BOOL bAllowNew)
+char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowNew)
 {
 	struct dirent **files = NULL;
 	char *pStringMem;
 	char *retpath;
 	char *home, *path, *fname;          /* The actual file and path names */
-	BOOL reloaddir = TRUE;              /* Do we have to reload the directory file list? */
+	bool reloaddir = TRUE;              /* Do we have to reload the directory file list? */
 	int retbut;
 	int oldcursorstate;
 	int selection = -1;                 /* The actual selection, -1 if none selected */
 	char *zipfilename;                  /* Filename in zip file */
 	char *zipdir;
-	BOOL browsingzip = FALSE;           /* Are we browsing an archive? */
+	bool browsingzip = FALSE;           /* Are we browsing an archive? */
 	zip_dir *zipfiles = NULL;
 	SDL_Event sdlEvent;
 	struct stat filestat;
@@ -699,7 +699,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, BOOL bAllowN
  * (dlgname is shrinked & limited to maxlen and confname is assumed
  * to have FILENAME_MAX amount of space).
  */
-BOOL SDLGui_FileConfSelect(char *dlgname, char *confname, int maxlen, BOOL bAllowNew)
+bool SDLGui_FileConfSelect(char *dlgname, char *confname, int maxlen, bool bAllowNew)
 {
 	char *selname;
 	

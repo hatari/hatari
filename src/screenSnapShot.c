@@ -6,7 +6,7 @@
 
   Screen Snapshots.
 */
-const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.14 2008-02-20 22:47:37 thothy Exp $";
+const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.15 2008-05-25 19:58:56 thothy Exp $";
 
 #include <SDL.h>
 #include <dirent.h>
@@ -20,9 +20,9 @@ const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.14 2008-02
 #include "video.h"
 
 
-BOOL bRecordingAnimation = FALSE;           /* Recording animation? */
+bool bRecordingAnimation = FALSE;           /* Recording animation? */
 static int nScreenShots = 0;                /* Number of screen shots saved */
-static BOOL bGrabWhenChange;
+static bool bGrabWhenChange;
 static int GrabFrameCounter, GrabFrameLatch;
 
 
@@ -93,7 +93,7 @@ void ScreenSnapShot_SaveScreen(void)
 /**
  * Are we recording an animation?
  */
-BOOL ScreenSnapShot_AreWeRecording(void)
+bool ScreenSnapShot_AreWeRecording(void)
 {
 	return bRecordingAnimation;
 }
@@ -103,7 +103,7 @@ BOOL ScreenSnapShot_AreWeRecording(void)
 /**
  * Start recording animation
  */
-void ScreenSnapShot_BeginRecording(BOOL bCaptureChange, int nFramesPerSecond)
+void ScreenSnapShot_BeginRecording(bool bCaptureChange, int nFramesPerSecond)
 {
 	/* Set in globals */
 	bGrabWhenChange = bCaptureChange;
@@ -140,7 +140,7 @@ void ScreenSnapShot_EndRecording()
 /**
  * Recording animation frame
  */
-void ScreenSnapShot_RecordFrame(BOOL bFrameChanged)
+void ScreenSnapShot_RecordFrame(bool bFrameChanged)
 {
 	/* As we recording? */
 	if (bRecordingAnimation)

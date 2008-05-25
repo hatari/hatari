@@ -8,7 +8,7 @@
 #ifndef HATARI_SPEC512_H
 #define HATARI_SPEC512_H
 
-extern BOOL Spec512_IsImage(void);
+extern bool Spec512_IsImage(void);
 extern void Spec512_StartVBL(void);
 extern void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr);
 extern void Spec512_StartFrame(void);

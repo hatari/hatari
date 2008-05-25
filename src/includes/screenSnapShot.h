@@ -5,10 +5,10 @@
   your option any later version. Read the file gpl.txt for details.
 */
 
-extern BOOL bRecordingAnimation;
+extern bool bRecordingAnimation;
 
 extern void ScreenSnapShot_SaveScreen(void);
-extern BOOL ScreenSnapShot_AreWeRecording(void);
-extern void ScreenSnapShot_BeginRecording(BOOL bCaptureChange, int nFramesPerSecond);
+extern bool ScreenSnapShot_AreWeRecording(void);
+extern void ScreenSnapShot_BeginRecording(bool bCaptureChange, int nFramesPerSecond);
 extern void ScreenSnapShot_EndRecording(void);
-extern void ScreenSnapShot_RecordFrame(BOOL bFrameChanged);
+extern void ScreenSnapShot_RecordFrame(bool bFrameChanged);

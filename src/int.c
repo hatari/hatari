@@ -65,7 +65,7 @@
 
 
 
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.22 2008-05-18 23:33:28 thothy Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.23 2008-05-25 19:58:56 thothy Exp $";
 
 #include "main.h"
 #include "blitter.h"
@@ -108,7 +108,7 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
  * to check all entries */
 typedef struct
 {
-	BOOL bUsed;                   /* Is interrupt active? */
+	bool bUsed;                   /* Is interrupt active? */
 	int Cycles;
 	void (*pFunction)(void);
 } INTERRUPTHANDLER;
@@ -177,7 +177,7 @@ static void *Int_IDToHandlerFunction(int ID)
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  */
-void Int_MemorySnapShot_Capture(BOOL bSave)
+void Int_MemorySnapShot_Capture(bool bSave)
 {
 	int i,ID;
 
@@ -444,7 +444,7 @@ void Int_ResumeStoppedInterrupt(interrupt_id Handler)
 /**
  * Return TRUE if interrupt is active in list
  */
-BOOL Int_InterruptActive(interrupt_id Handler)
+bool Int_InterruptActive(interrupt_id Handler)
 {
 	/* Is timer active? */
 	if (InterruptHandlers[Handler].bUsed)

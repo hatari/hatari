@@ -54,7 +54,7 @@ extern void (*PendingInterruptFunction)(void);
 extern int PendingInterruptCount;
 
 extern void Int_Reset(void);
-extern void Int_MemorySnapShot_Capture(BOOL bSave);
+extern void Int_MemorySnapShot_Capture(bool bSave);
 extern void Int_AcknowledgeInterrupt(void);
 extern void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
 extern void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler, int AddInternalCycle);
@@ -62,7 +62,7 @@ extern void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, inter
 extern void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset);
 extern void Int_RemovePendingInterrupt(interrupt_id Handler);
 extern void Int_ResumeStoppedInterrupt(interrupt_id Handler);
-extern BOOL Int_InterruptActive(interrupt_id Handler);
+extern bool Int_InterruptActive(interrupt_id Handler);
 extern int Int_FindCyclesPassed(interrupt_id Handler, int CycleType);
 
 #endif /* ifndef HATARI_INT_H */

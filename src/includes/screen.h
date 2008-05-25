@@ -42,7 +42,7 @@ typedef struct
   Uint8 *pSTScreen;             /* Copy of screen built up during frame (copy each line on HBL to simulate monitor raster) */
   Uint8 *pSTScreenCopy;         /* Previous frames copy of above  */
   int OverscanModeCopy;         /* Previous screen overscan mode */
-  BOOL bFullUpdate;             /* Set TRUE to cause full update on next draw */
+  bool bFullUpdate;             /* Set TRUE to cause full update on next draw */
 } FRAMEBUFFER;
 
 /* Number of frame buffers (1 or 2) - should be 2 for supporting screen flipping */
@@ -99,8 +99,8 @@ enum
 };
 
 
-extern BOOL bGrabMouse;
-extern BOOL bInFullScreen;
+extern bool bGrabMouse;
+extern bool bInFullScreen;
 extern int nScreenZoomX, nScreenZoomY;
 extern int nBorderPixelsLeft, nBorderPixelsRight;
 extern int STScreenStartHorizLine;

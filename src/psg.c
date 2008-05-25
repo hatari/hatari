@@ -64,7 +64,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.24 2008-04-23 17:59:03 npomarede Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.25 2008-05-25 19:58:56 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -85,7 +85,7 @@ const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.24 2008-04-23 17:59:03 npomarede
 Uint8 PSGRegisterSelect;        /* 0xff8800 (read/write) */
 Uint8 PSGRegisters[16];         /* Register in PSG, see PSG_REG_xxxx */
 
-static BOOL bLastWriteToIOB;    /* boolean flag: did the last write to the PSG go to IOB? */
+static bool bLastWriteToIOB;    /* boolean flag: did the last write to the PSG go to IOB? */
 
 
 /*-----------------------------------------------------------------------*/
@@ -104,7 +104,7 @@ void PSG_Reset(void)
 /**
  * Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
  */
-void PSG_MemorySnapShot_Capture(BOOL bSave)
+void PSG_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&PSGRegisterSelect, sizeof(PSGRegisterSelect));

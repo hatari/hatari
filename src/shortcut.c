@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.34 2008-04-28 21:26:07 eerot Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.35 2008-05-25 19:58:56 thothy Exp $";
 
 #include <SDL.h>
 
@@ -267,7 +267,7 @@ void ShortCut_ActKey(void)
  * for functionality that cannot be done through command line
  * parsing.
  */
-BOOL Shortcut_Invoke(const char *shortcut)
+bool Shortcut_Invoke(const char *shortcut)
 {
 	struct {
 		SHORTCUTKEYIDX id;
@@ -333,7 +333,7 @@ static SHORTCUTKEYIDX ShortCut_CheckKey(int symkey, int *keys)
  * If press is set, store the key array index.
  * Return zero if key didn't match to a shortcut
  */
-int ShortCut_CheckKeys(int modkey, int symkey, BOOL press)
+int ShortCut_CheckKeys(int modkey, int symkey, bool press)
 {
 	SHORTCUTKEYIDX key;
 

@@ -22,8 +22,7 @@
 
 #include <SDL_types.h>
 #include <stdbool.h>
-/* Do not use "BOOL" anymore for new code - use "bool" instead! */
-#define BOOL  bool
+
 #ifndef FALSE
 #define FALSE false
 #define TRUE  true

@@ -19,7 +19,7 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.81 2008-05-04 19:21:05 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.82 2008-05-25 19:58:56 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -48,8 +48,8 @@ int nBorderPixelsLeft, nBorderPixelsRight;  /* Pixels in left and right border *
 int nBorderPixelsBottom;                    /* Lines in bottom border */
 
 /* extern for shortcuts and falcon/hostscreen.c */
-BOOL bGrabMouse = FALSE;      /* Grab the mouse cursor in the window */
-BOOL bInFullScreen = FALSE;   /* TRUE if in full screen */
+bool bGrabMouse = FALSE;      /* Grab the mouse cursor in the window */
+bool bInFullScreen = FALSE;   /* TRUE if in full screen */
 
 /* extern for spec512.c */
 int STScreenLeftSkipBytes;
@@ -79,8 +79,8 @@ static void (*ScreenDrawFunctionsVDI[3])(void) =
 	ConvertVDIRes_2Colour
 };
 
-static BOOL bScreenContentsChanged;     /* TRUE if buffer changed and requires blitting */
-static BOOL bScrDoubleY;                /* TRUE if double on Y */
+static bool bScreenContentsChanged;     /* TRUE if buffer changed and requires blitting */
+static bool bScrDoubleY;                /* TRUE if double on Y */
 static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 
 
@@ -184,7 +184,7 @@ static void Screen_CreatePalette(void)
  */
 static void Screen_Handle8BitPalettes(void)
 {
-	BOOL bPaletteChanged=FALSE;
+	bool bPaletteChanged=FALSE;
 	int i;
 
 	/* Do need to check for 8-Bit palette change? Ie, update whole screen */
@@ -645,7 +645,7 @@ void Screen_ModeChanged(void)
  * Compare current resolution on line with previous, and set 'UpdateLine' accordingly
  * Return if swap between low/medium resolution
  */
-static BOOL Screen_CompareResolution(int y, int *pUpdateLine, int oldres)
+static bool Screen_CompareResolution(int y, int *pUpdateLine, int oldres)
 {
 	/* Check if wrote to resolution register */
 	if (HBLPaletteMasks[y]&PALETTEMASK_RESOLUTION)  /* See 'Intercept_ShifterMode_WriteByte' */
@@ -669,7 +669,7 @@ static BOOL Screen_CompareResolution(int y, int *pUpdateLine, int oldres)
  */
 static void Screen_ComparePalette(int y, int *pUpdateLine)
 {
-	BOOL bPaletteChanged = FALSE;
+	bool bPaletteChanged = FALSE;
 	int i;
 
 	/* Did write to palette in this or previous frame? */
@@ -705,7 +705,7 @@ static void Screen_ComparePalette(int y, int *pUpdateLine)
  */
 static int Screen_ComparePaletteMask(int res)
 {
-	BOOL bLowMedMix = FALSE;
+	bool bLowMedMix = FALSE;
 	int LineUpdate = 0;
 	int y;
 
@@ -859,7 +859,7 @@ static void Screen_SetConvertDetails(void)
 /**
  * Lock full-screen for drawing
  */
-static BOOL Screen_Lock(void)
+static bool Screen_Lock(void)
 {
 	if (SDL_MUSTLOCK(sdlscrn))
 	{
@@ -907,7 +907,7 @@ static void Screen_SwapSTBuffers(void)
  * Blit our converted ST screen to window/full-screen
  * Note that our source image includes all borders so if have them disabled simply blit a smaller source rectangle!
  */
-static void Screen_Blit(BOOL bSwapScreen)
+static void Screen_Blit(bool bSwapScreen)
 {
 	unsigned char *pTmpScreen;
 
@@ -936,11 +936,11 @@ static void Screen_Blit(BOOL bSwapScreen)
 /**
  * Draw ST screen to window/full-screen framebuffer
  */
-static void Screen_DrawFrame(BOOL bForceFlip)
+static void Screen_DrawFrame(bool bForceFlip)
 {
 	int new_res;
 	void (*pDrawFunction)(void);
-	static BOOL bPrevFrameWasSpec512 = FALSE;
+	static bool bPrevFrameWasSpec512 = FALSE;
 
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
 	new_res = Screen_ComparePaletteMask(STRes);

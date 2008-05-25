@@ -154,7 +154,7 @@ static inline void M68000_SetSR(Uint16 v)
 
 extern Uint32 BusErrorAddress;
 extern Uint32 BusErrorPC;
-extern BOOL bBusErrorReadWrite;
+extern bool bBusErrorReadWrite;
 extern int nCpuFreqShift;
 extern int nWaitStateCycles;
 
@@ -237,11 +237,11 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 
 
 extern void M68000_InitPairing(void);
-extern void M68000_Reset(BOOL bCold);
+extern void M68000_Reset(bool bCold);
 extern void M68000_Start(void);
 extern void M68000_CheckCpuLevel(void);
-extern void M68000_MemorySnapShot_Capture(BOOL bSave);
-extern void M68000_BusError(Uint32 addr, BOOL bReadWrite);
+extern void M68000_MemorySnapShot_Capture(bool bSave);
+extern void M68000_BusError(Uint32 addr, bool bReadWrite);
 extern void M68000_Exception(Uint32 ExceptionVector , int InterruptType);
 extern void M68000_WaitState(int nCycles);
 

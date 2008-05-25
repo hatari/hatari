@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.2 2008-03-18 00:56:32 thothy Exp $";
+const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.3 2008-05-25 19:58:56 thothy Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -84,7 +84,7 @@ static SGOBJ diskdlg[] =
  * Let user browse given disk, insert disk if one selected.
  * return FALSE if no disk selected, otherwise return TRUE.
  */
-static BOOL DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
+static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 {
 	char *selname, *zip_path;
 	const char *tmpname;
@@ -129,7 +129,7 @@ static BOOL DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
  * Let user browse given directory, set directory if one selected.
  * return FALSE if none selected, otherwise return TRUE.
  */
-static BOOL DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
+static bool DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 {
 	char *str, *selname;
 

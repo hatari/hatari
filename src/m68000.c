@@ -51,7 +51,7 @@
 
 
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.58 2008-04-16 18:49:20 npomarede Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.59 2008-05-25 19:58:56 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -69,7 +69,7 @@ const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.58 2008-04-16 18:49:20 npo
 
 Uint32 BusErrorAddress;         /* Stores the offending address for bus-/address errors */
 Uint32 BusErrorPC;              /* Value of the PC when bus error occurs */
-BOOL bBusErrorReadWrite;        /* 0 for write error, 1 for read error */
+bool bBusErrorReadWrite;        /* 0 for write error, 1 for read error */
 int nCpuFreqShift;              /* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
 int nWaitStateCycles;           /* Used to emulate the wait state cycles of certain IO registers */
 
@@ -175,7 +175,7 @@ void M68000_InitPairing(void)
 /**
  * Reset CPU 68000 variables
  */
-void M68000_Reset(BOOL bCold)
+void M68000_Reset(bool bCold)
 {
 	int i;
 
@@ -236,7 +236,7 @@ void M68000_CheckCpuLevel(void)
 /**
  * Save/Restore snapshot of CPU variables ('MemorySnapShot_Store' handles type)
  */
-void M68000_MemorySnapShot_Capture(BOOL bSave)
+void M68000_MemorySnapShot_Capture(bool bSave)
 {
 	Uint32 savepc;
 
@@ -337,7 +337,7 @@ void M68000_MemorySnapShot_Capture(BOOL bSave)
  * BUSERROR - Access outside valid memory range.
  * Use bReadWrite = 0 for write errors and bReadWrite = 1 for read errors!
  */
-void M68000_BusError(Uint32 addr, BOOL bReadWrite)
+void M68000_BusError(Uint32 addr, bool bReadWrite)
 {
 	/* FIXME: In prefetch mode, m68k_getpc() seems already to point to the next instruction */
 	// BusErrorPC = M68000_GetPC();		/* [NP] We set BusErrorPC in m68k_run_1 */

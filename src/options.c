@@ -17,7 +17,7 @@
   2008-04-16   [ET]    Return FALSE instead of exiting on errors
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.59 2008-05-25 10:54:17 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.60 2008-05-25 19:58:56 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -39,9 +39,9 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.59 2008-05-25 10:54:17 eero
 #include "hatari-glue.h"
 
 
-BOOL bLoadAutoSave;        /* Load autosave memory snapshot at startup */
-BOOL bLoadMemorySave;      /* Load memory snapshot provided via option at startup */
-BOOL bBiosIntercept;       /* whether UAE should intercept Bios & XBios calls */
+bool bLoadAutoSave;        /* Load autosave memory snapshot at startup */
+bool bLoadMemorySave;      /* Load memory snapshot provided via option at startup */
+bool bBiosIntercept;       /* whether UAE should intercept Bios & XBios calls */
 
 
 /*  List of supported options. */
@@ -354,7 +354,7 @@ static void Opt_ShowHelp(void)
  * otherwise 'value' is show as the option user gave.
  * Return FALSE if error string was given, otherwise TRUE
  */
-static BOOL Opt_ShowError(unsigned int optid, const char *value, const char *error)
+static bool Opt_ShowError(unsigned int optid, const char *value, const char *error)
 {
 	const opt_t *opt;
 
@@ -398,7 +398,7 @@ static BOOL Opt_ShowError(unsigned int optid, const char *value, const char *err
  * - FALSE if given option 'arg' is n/no/off/false/0
  * Return FALSE for any other value, otherwise TRUE
  */
-static BOOL Opt_Bool(const char *arg, int optid, BOOL *conf)
+static bool Opt_Bool(const char *arg, int optid, bool *conf)
 {
 	const char *enablers[] = { "y", "yes", "on", "true", "1", NULL };
 	const char *disablers[] = { "n", "no", "off", "false", "0", NULL };
@@ -492,7 +492,7 @@ static int Opt_WhichOption(int argc, char *argv[], int idx)
  *   ("none" is used to disable options related to file arguments)
  * Return FALSE if there were errors, otherwise TRUE
  */
-static BOOL Opt_StrCpy(int optid, BOOL checkexist, char *dst, const char *src, size_t dstlen, BOOL *option)
+static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, size_t dstlen, bool *option)
 {
 	if (strlen(src) >= dstlen)
 	{
@@ -525,7 +525,7 @@ static BOOL Opt_StrCpy(int optid, BOOL checkexist, char *dst, const char *src, s
  * On first call (when parsing normal commandline) exits on errors.
  * After that, returns TRUE if everything was OK, FALSE otherwise.
  */
-BOOL Opt_ParseParameters(int argc, char *argv[],
+bool Opt_ParseParameters(int argc, char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
 	int i, ncpu, skips, zoom, planes, cpuclock, threshold, memsize;

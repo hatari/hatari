@@ -9,7 +9,7 @@
   We intercept and direct some XBios calls to handle the RS-232 etc. and help
   with floppy debugging.
 */
-const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.16 2008-05-04 19:21:05 thothy Exp $";
+const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.17 2008-05-25 19:58:56 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -52,7 +52,7 @@ static const int BaudRates[] =
  * XBIOS Floppy Read
  * Call 8
  */
-static BOOL XBios_Floprd(Uint32 Params)
+static bool XBios_Floprd(Uint32 Params)
 {
 #if XBIOS_DEBUG
 	char *pBuffer;
@@ -79,7 +79,7 @@ static BOOL XBios_Floprd(Uint32 Params)
  * XBIOS Floppy Write
  * Call 9
  */
-static BOOL XBios_Flopwr(Uint32 Params)
+static bool XBios_Flopwr(Uint32 Params)
 {
 #if XBIOS_DEBUG
 	char *pBuffer;
@@ -106,7 +106,7 @@ static BOOL XBios_Flopwr(Uint32 Params)
  * XBIOS RsConf
  * Call 15
  */
-static BOOL XBios_Rsconf(Uint32 Params)
+static bool XBios_Rsconf(Uint32 Params)
 {
 	short int Baud,Ctrl,Ucr,Rsr,Tsr,Scr;
 
@@ -150,7 +150,7 @@ static BOOL XBios_Rsconf(Uint32 Params)
  * XBIOS Scrdmp
  * Call 20
  */
-static BOOL XBios_Scrdmp(Uint32 Params)
+static bool XBios_Scrdmp(Uint32 Params)
 {
 	ScreenSnapShot_SaveScreen();
 
@@ -166,7 +166,7 @@ static BOOL XBios_Scrdmp(Uint32 Params)
  * XBIOS Prtblk
  * Call 36
  */
-static BOOL XBios_Prtblk(Uint32 Params)
+static bool XBios_Prtblk(Uint32 Params)
 {
 	/* Correct return code? */
 	Regs[REG_D0] = 0;
@@ -179,7 +179,7 @@ static BOOL XBios_Prtblk(Uint32 Params)
 /**
  * Check if we need to re-direct XBios call to our own routines
  */
-BOOL XBios(void)
+bool XBios(void)
 {
 	Uint32 Params;
 	Uint16 XBiosCall;

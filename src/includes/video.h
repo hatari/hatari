@@ -108,8 +108,8 @@
 
 extern int STRes;
 extern int TTRes;
-extern BOOL bUseSTShifter;
-extern BOOL bUseHighRes;
+extern bool bUseSTShifter;
+extern bool bUseHighRes;
 extern int nVBLs;
 extern int nHBL;
 extern int nStartHBL;
@@ -128,7 +128,7 @@ extern int LineTimerBCycle;
 
 extern void Video_SetSystemTimings(void);
 extern void Video_Reset(void);
-extern void Video_MemorySnapShot_Capture(BOOL bSave);
+extern void Video_MemorySnapShot_Capture(bool bSave);
 extern void Video_GetTTRes(int *width, int *height, int *bpp);
 extern void Video_StartInterrupts(void);
 extern void Video_InterruptHandler_VBL(void);

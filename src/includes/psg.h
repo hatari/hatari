@@ -34,7 +34,7 @@ extern Uint8 PSGRegisterSelect;
 extern Uint8 PSGRegisters[16];
 
 extern void PSG_Reset(void);
-extern void PSG_MemorySnapShot_Capture(BOOL bSave);
+extern void PSG_MemorySnapShot_Capture(bool bSave);
 extern void PSG_SelectRegister_WriteByte(void);
 extern void PSG_SelectRegister_ReadByte(void);
 extern void PSG_DataRegister_WriteByte(void);

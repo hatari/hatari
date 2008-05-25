@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.37 2008-05-07 20:53:32 eerot Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.38 2008-05-25 19:58:56 thothy Exp $";
 
 #include "main.h"
 #include "keymap.h"
@@ -641,7 +641,7 @@ void Keymap_LoadRemapFile(char *pszFileName)
  * Scan list of keys to NOT de-bounce when running in maximum speed, eg ALT,SHIFT,CTRL etc...
  * Return TRUE if key requires de-bouncing
  */
-static BOOL Keymap_DebounceSTKey(char STScanCode)
+static bool Keymap_DebounceSTKey(char STScanCode)
 {
 	int i=0;
 
@@ -717,7 +717,7 @@ void Keymap_DebounceAllKeys(void)
  */
 void Keymap_KeyDown(SDL_keysym *sdlkey)
 {
-	BOOL bPreviousKeyState;
+	bool bPreviousKeyState;
 	char STScanCode;
 	int symkey = sdlkey->sym;
 	int modkey = sdlkey->mod;

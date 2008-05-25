@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.31 2008-03-29 16:59:04 thothy Exp $";
+const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.32 2008-05-25 19:58:56 thothy Exp $";
 
 #include <config.h>
 
@@ -43,7 +43,7 @@ const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.31 2008-03-29 16:59:04 thoth
 #endif
 
 
-BOOL bConnectedRS232 = FALSE;      /* Connection to RS232? */
+bool bConnectedRS232 = FALSE;      /* Connection to RS232? */
 static FILE *hComIn = NULL;        /* Handle to file for reading */
 static FILE *hComOut = NULL;       /* Handle to file for writing */
 
@@ -102,7 +102,7 @@ int cfsetispeed(struct termios *tios,speed_t ispeed)
 /**
  * Set serial line parameters to "raw" mode.
  */
-static BOOL RS232_SetRawMode(FILE *fhndl)
+static bool RS232_SetRawMode(FILE *fhndl)
 {
 	struct termios termmode;
 	int fd;
@@ -133,7 +133,7 @@ static BOOL RS232_SetRawMode(FILE *fhndl)
  * - Parity
  * - Start/stop bits
  */
-static BOOL RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, BOOL bUseParity, BOOL bEvenParity)
+static bool RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, bool bUseParity, bool bEvenParity)
 {
 	struct termios termmode;
 
@@ -192,7 +192,7 @@ static BOOL RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, BOOL bUseP
 /**
  * Open file on COM port.
  */
-static BOOL RS232_OpenCOMPort(void)
+static bool RS232_OpenCOMPort(void)
 {
 	bConnectedRS232 = FALSE;
 
@@ -441,7 +441,7 @@ void RS232_HandleUCR(short int ucr)
 /**
  * Set baud rate configuration of RS-232.
  */
-BOOL RS232_SetBaudRate(int nBaud)
+bool RS232_SetBaudRate(int nBaud)
 {
 #if HAVE_TERMIOS_H
 	int i;
@@ -593,7 +593,7 @@ void RS232_SetFlowControl(int ctrl)
 /**
  * Pass bytes from emulator to RS-232
  */
-BOOL RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
+bool RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
 {
 	/* Do need to open a connection to RS232? */
 	if (!bConnectedRS232)
@@ -624,7 +624,7 @@ BOOL RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
 /**
  * Read characters from our internal input buffer (bytes from other machine)
  */
-BOOL RS232_ReadBytes(unsigned char *pBytes, int nBytes)
+bool RS232_ReadBytes(unsigned char *pBytes, int nBytes)
 {
 	int i;
 
@@ -649,7 +649,7 @@ BOOL RS232_ReadBytes(unsigned char *pBytes, int nBytes)
 /**
  * Return TRUE if bytes waiting!
  */
-BOOL RS232_GetStatus(void)
+bool RS232_GetStatus(void)
 {
 	/* Connected? */
 	if (bConnectedRS232)

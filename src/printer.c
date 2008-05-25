@@ -12,7 +12,7 @@
   NOTE - Tab's are converted to spaces as the PC 'Tab' setting differs to that
   of the ST.
 */
-const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.23 2008-02-23 16:51:27 thothy Exp $";
+const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.24 2008-05-25 19:58:56 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -32,7 +32,7 @@ const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.23 2008-02-23 16:51:27 t
 static Uint8 PrinterBuffer[PRINTER_BUFFER_SIZE];   /* Buffer to store character before output */
 static size_t nPrinterBufferChars;      /* # characters in above buffer */
 static int nPrinterBufferCharsOnLine;
-static BOOL bConnectedPrinter;
+static bool bConnectedPrinter;
 static int nIdleCount;
 
 static FILE *pPrinterHandle;
@@ -42,8 +42,8 @@ static FILE *pPrinterHandle;
 static void Printer_EmptyFile(void);
 static void Printer_ResetInternalBuffer(void);
 static void Printer_ResetCharsOnLine(void);
-static BOOL Printer_EmptyInternalBuffer(void);
-static BOOL Printer_ValidByte(Uint8 Byte);
+static bool Printer_EmptyInternalBuffer(void);
+static bool Printer_ValidByte(Uint8 Byte);
 static void Printer_AddByteToInternalBuffer(Uint8 Byte);
 static void Printer_AddTabToInternalBuffer(void);
 
@@ -161,7 +161,7 @@ static void Printer_EmptyFile(void)
 /**
  * Empty Printer Buffer
  */
-static BOOL Printer_EmptyInternalBuffer(void)
+static bool Printer_EmptyInternalBuffer(void)
 {
 	/* Write bytes to file */
 	if (nPrinterBufferChars > 0)
@@ -180,7 +180,7 @@ static BOOL Printer_EmptyInternalBuffer(void)
 /**
  * Return TRUE if byte is standard ASCII character which is OK to output
  */
-static BOOL Printer_ValidByte(Uint8 Byte)
+static bool Printer_ValidByte(Uint8 Byte)
 {
 	/* Return/New line? */
 	if ((Byte == 0x0d) || (Byte == 0x0a))
@@ -239,7 +239,7 @@ static void Printer_AddTabToInternalBuffer(void)
  * if it isn't already open. Returns FALSE if connection to "printer"
  * failed
  */
-BOOL Printer_TransferByteTo(Uint8 Byte)
+bool Printer_TransferByteTo(Uint8 Byte)
 {
 	/* Do we want to output to a printer/file? */
 	if (!ConfigureParams.Printer.bEnablePrinting)

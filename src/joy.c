@@ -8,7 +8,7 @@
 
   NOTE: The ST uses the joystick port 1 as the default controller.
 */
-const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.15 2007-12-31 14:54:21 thothy Exp $";
+const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.16 2008-05-25 19:58:56 thothy Exp $";
 
 #include <SDL.h>
 
@@ -28,7 +28,7 @@ static SDL_Joystick *sdlJoystick[6] =   /* SDL's joystick structures */
 	NULL, NULL, NULL, NULL, NULL, NULL
 };
 
-static BOOL bJoystickWorking[6] =       /* Is joystick plugged in and working? */
+static bool bJoystickWorking[6] =       /* Is joystick plugged in and working? */
 {
 	FALSE, FALSE, FALSE, FALSE, FALSE, FALSE
 }; 
@@ -105,7 +105,7 @@ void Joy_UnInit(void)
  * Read details from joystick using SDL calls
  * NOTE ID is that of SDL
  */
-static BOOL Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
+static bool Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
 {
 	/* Joystick is OK, read position */
 	pJoyReading->XPos = SDL_JoystickGetAxis(sdlJoystick[nSdlJoyID], 0);
@@ -241,7 +241,7 @@ static int Joy_GetFireButtons(int nStJoyId)
  * other ports, the emulation for them has been switched off. Returns
  * 1 if the port number was OK, zero for error.
  */
-BOOL Joy_SetCursorEmulation(int port)
+bool Joy_SetCursorEmulation(int port)
 {
 	if (port < 0 || port >= JOYSTICK_COUNT) {
 		return 0;
@@ -288,7 +288,7 @@ void Joy_ToggleCursorEmulation(void)
  * A key has been pressed down, check if we use it for joystick emulation
  * via keyboard.
  */
-BOOL Joy_KeyDown(int symkey, int modkey)
+bool Joy_KeyDown(int symkey, int modkey)
 {
 	int i;
 
@@ -334,7 +334,7 @@ BOOL Joy_KeyDown(int symkey, int modkey)
  * A key has been released, check if we use it for joystick emulation
  * via keyboard.
  */
-BOOL Joy_KeyUp(int symkey, int modkey)
+bool Joy_KeyUp(int symkey, int modkey)
 {
 	int i;
 

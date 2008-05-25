@@ -157,7 +157,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.111 2008-04-18 20:31:59 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.112 2008-05-25 19:58:56 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -216,8 +216,8 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.111 2008-04-18 20:31:59 npom
 int STRes = ST_LOW_RES;                         /* current ST resolution */
 int TTRes;                                      /* TT shifter resolution mode */
 
-BOOL bUseSTShifter;                             /* Falcon: whether to use ST palette */
-BOOL bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
+bool bUseSTShifter;                             /* Falcon: whether to use ST palette */
+bool bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
 int OverscanMode;                               /* OVERSCANMODE_xxxx for current display frame */
 Uint16 HBLPalettes[(NUM_VISIBLE_LINES+1)*16];   /* 1x16 colour palette per screen line, +1 line just incase write after line 200 */
 Uint16 *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
@@ -243,8 +243,8 @@ static Uint8 VideoShifterByte;                  /* VideoShifter (0xff8260) value
 static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simulate left/right border removal */
 static int LineStartCycle;                      /* Cycle where display starts for the current line */
 static int LineEndCycle;                        /* Cycle where display ends for the current line */
-static BOOL bSteBorderFlag;                     /* TRUE when screen width has been switched to 336 (e.g. in Obsession) */
-static BOOL bTTColorsSync, bTTColorsSTSync;     /* whether TT colors need convertion to SDL */
+static bool bSteBorderFlag;                     /* TRUE when screen width has been switched to 336 (e.g. in Obsession) */
+static bool bTTColorsSync, bTTColorsSTSync;     /* whether TT colors need convertion to SDL */
 
 int	ScreenBorderMask[ MAX_SCANLINES_PER_FRAME ];
 int	LastCycleSync50;			/* value of Cycles_GetCounterOnWriteAccess last time ff820a was set to 0x02 for the current VBL */
@@ -264,7 +264,7 @@ int	VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
 /**
  * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
  */
-void Video_MemorySnapShot_Capture(BOOL bSave)
+void Video_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&VideoShifterByte, sizeof(VideoShifterByte));
@@ -2126,7 +2126,7 @@ void Video_ShifterMode_WriteByte(void)
  */
 void Video_HorScroll_Write(void)
 {
-	static BOOL bFirstSteAccess = FALSE;
+	static bool bFirstSteAccess = FALSE;
 	Uint8 ScrollCount;
 	int nFrameCycles;
 	int nLineCycles;

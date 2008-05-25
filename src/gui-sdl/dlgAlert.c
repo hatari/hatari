@@ -16,7 +16,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License (gpl.txt) for more details.
  */
-const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.12 2008-02-29 20:24:21 thothy Exp $";
+const char DlgAlert_rcsid[] = "Hatari $Id: dlgAlert.c,v 1.13 2008-05-25 19:58:56 thothy Exp $";
 
 #include <string.h>
 
@@ -36,7 +36,7 @@ static char dlglines[MAX_LINES][50+1];
 	extern int HookedAlertQuery(const char* szMessage);		// Must return TRUE if OK clicked, FALSE otherwise
 
 	// Runtime switch to activate/deactivate alert hooks
-	BOOL useAlertHooks = FALSE;
+	bool useAlertHooks = FALSE;
 #endif
 
 #define DLGALERT_OK       5
@@ -131,7 +131,7 @@ static int DlgAlert_ShowDlg(const char *text)
 	char *t = (char *)malloc(strlen(text)+1);
 	char *orig_t = t;
 	int lines, i, len, offset;
-	BOOL bOldMouseVisibility;
+	bool bOldMouseVisibility;
 	int nOldMouseX, nOldMouseY;
 
 	strcpy(t, text);

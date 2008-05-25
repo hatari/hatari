@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.55 2008-04-03 21:11:28 eerot Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.56 2008-05-25 19:58:56 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -35,8 +35,8 @@ const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.55 2008-04-03 21:11:28 eerot Exp
 
 Uint16 TosVersion;                      /* eg, 0x0100, 0x0102 */
 Uint32 TosAddress, TosSize;             /* Address in ST memory and size of TOS image */
-BOOL bTosImageLoaded = FALSE;           /* Successfully loaded a TOS image? */
-BOOL bRamTosImage;                      /* TRUE if we loaded a RAM TOS image */
+bool bTosImageLoaded = FALSE;           /* Successfully loaded a TOS image? */
+bool bRamTosImage;                      /* TRUE if we loaded a RAM TOS image */
 unsigned int ConnectedDriveMask = 0x03; /* Bit mask of connected drives, eg 0x7 is A,B,C */
 int nNumDrives = 2;                     /* Number of drives, default is 2 for A: and B: */
 
@@ -170,7 +170,7 @@ static const TOS_PATCH TosPatches[] =
 /**
  * Save/Restore snapshot of local variables ('MemorySnapShot_Store' handles type)
  */
-void TOS_MemorySnapShot_Capture(BOOL bSave)
+void TOS_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
 	MemorySnapShot_Store(&TosVersion, sizeof(TosVersion));
@@ -312,7 +312,7 @@ int TOS_LoadImage(void)
 {
 	Uint8 *pTosFile = NULL;
 	long nFileSize;
-	BOOL bIsEmuTOS;
+	bool bIsEmuTOS;
 
 	bTosImageLoaded = FALSE;
 

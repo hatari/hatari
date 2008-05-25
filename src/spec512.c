@@ -47,7 +47,7 @@
 
 
 
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.26 2008-04-06 19:20:06 eerot Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.27 2008-05-25 19:58:56 thothy Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -81,7 +81,7 @@ static int nPalettesAccesses;   /* Number of times accessed palette registers */
 static Uint16 CycleColour;
 static int CycleColourIndex;
 static int nScanLine, ScanLineCycleCount;
-static BOOL bIsSpec512Display;
+static bool bIsSpec512Display;
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 static const int STRGBPalEndianTable[16] =
@@ -95,7 +95,7 @@ static const int STRGBPalEndianTable[16] =
 /**
  * Return TRUE if this frame is a Spectrum 512 style image(MUST be low res/non-mix)
  */
-BOOL Spec512_IsImage(void)
+bool Spec512_IsImage(void)
 {
 	/* Normal Low res screen? */
 	if (STRes == ST_LOW_RES && bIsSpec512Display)

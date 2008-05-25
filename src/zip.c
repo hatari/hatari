@@ -6,7 +6,7 @@
 
   Zipped disk support, uses zlib
 */
-const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.28 2008-01-12 18:22:43 eerot Exp $";
+const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.29 2008-05-25 19:58:56 thothy Exp $";
 
 #include <config.h>
 
@@ -60,7 +60,7 @@ static const char * const pszDiskNameExts[] =
 /**
  * Does filename end with a .ZIP extension? If so, return TRUE
  */
-BOOL ZIP_FileNameIsZIP(const char *pszFileName)
+bool ZIP_FileNameIsZIP(const char *pszFileName)
 {
 	return File_DoesFileExtensionMatch(pszFileName,".zip");
 }
@@ -204,7 +204,7 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 	int i,j;
 	zip_dir *files;
 	char *temp;
-	BOOL flag;
+	bool flag;
 	int slash;
 	struct dirent **fentries;
 
@@ -563,7 +563,7 @@ Uint8 *ZIP_ReadDisk(const char *pszFileName, const char *pszZipPath, long *pImag
  *
  * Not yet implemented.
  */
-BOOL ZIP_WriteDisk(const char *pszFileName,unsigned char *pBuffer,int ImageSize)
+bool ZIP_WriteDisk(const char *pszFileName,unsigned char *pBuffer,int ImageSize)
 {
 	return FALSE;
 }

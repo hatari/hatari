@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.41 2008-04-07 21:47:30 thothy Exp $";
+const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.42 2008-05-25 19:58:56 thothy Exp $";
 
 #include <config.h>
 
@@ -69,7 +69,7 @@ typedef FILE* MSS_File;
 
 
 static MSS_File CaptureFile;
-static BOOL bCaptureSave, bCaptureError;
+static bool bCaptureSave, bCaptureError;
 
 
 /*-----------------------------------------------------------------------*/
@@ -133,7 +133,7 @@ static int MemorySnapShot_fwrite(MSS_File fhndl, const char *buf, int len)
  * Open/Create snapshot file, and set flag so 'MemorySnapShot_Store' knows
  * how to handle data.
  */
-static BOOL MemorySnapShot_OpenFile(const char *pszFileName, BOOL bSave)
+static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 {
 	char VersionString[VERSION_STRING_SIZE];
 
@@ -225,7 +225,7 @@ void MemorySnapShot_Store(void *pData, int Size)
 /**
  * Save 'snapshot' of memory/chips/emulation variables
  */
-void MemorySnapShot_Capture(const char *pszFileName, BOOL bConfirm)
+void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 {
 	/* Set to 'saving' */
 	if (MemorySnapShot_OpenFile(pszFileName,TRUE))
@@ -263,7 +263,7 @@ void MemorySnapShot_Capture(const char *pszFileName, BOOL bConfirm)
 /**
  * Restore 'snapshot' of memory/chips/emulation variables
  */
-void MemorySnapShot_Restore(const char *pszFileName, BOOL bConfirm)
+void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 {
 	/* Set to 'restore' */
 	if (MemorySnapShot_OpenFile(pszFileName,FALSE))
