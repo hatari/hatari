@@ -20,38 +20,8 @@ pygtk.require('2.0')
 import gtk
 import gobject
 
-# ---------- Dialog helper classes --------------
 
-# auxiliary class to be used with the PasteDialog
-class HatariInsertText():
-    def __init__(self, hatari, text):
-        if not text:
-            # TODO: does this object get leaked?
-            return
-        self.index = 0
-        self.text = text
-        self.pressed = False
-        gobject.timeout_add(100, self.text_insert_cb)
-        print "OUTPUT '%s'" % text
-        self.hatari = hatari
-    
-    def text_insert_cb(self):
-        # insert string to Hatari character at the time, at given interval
-        char = self.text[self.index]
-        if self.pressed:
-            self.pressed = False
-            self.hatari.insert_event("keyrelease %c" % char)
-            self.index += 1
-            if self.index >= len(self.text):
-                # TODO: does this object get leaked?
-                return False
-        else:
-            self.pressed = True
-            self.hatari.insert_event("keypress %c" % char)
-        return True
-
-
-# ---------- Dialogs themselves --------------
+# ---------- Dialogs --------------
 
 class HatariUIDialog():
     def __init__(self, parent = None):
@@ -205,6 +175,18 @@ Hatari emulator is already/still running and it needs to be terminated first. Ho
 
 Terminate Hatari anyway?""")
 
+    def run(self, hatari):
+        "run(hatari) -> False if Hatari killed, True if left running"
+        if not hatari.is_running():
+            return False
+        # Hatari is running, OK to kill?
+        response = self.dialog.run()
+        self.dialog.hide()
+        if response == gtk.RESPONSE_OK:
+            hatari.kill()
+            return False
+        return True
+
 
 class TraceDialog(HatariUIDialog):
     # you can get this list with:
@@ -310,3 +292,32 @@ class SetupDialog(HatariUIDialog):
             todo.set_markup("<i><b>TODO</b></i>")
             label = gtk.Label(name)
             notebook.append_page(todo, label)
+
+
+# ---------- Dialog helpers --------------
+
+# auxiliary class to be used with the PasteDialog
+class HatariInsertText():
+    def __init__(self, hatari, text):
+        self.index = 0
+        self.text = text
+        self.pressed = False
+        self.hatari = hatari
+        print "OUTPUT '%s'" % text
+        gobject.timeout_add(100, text_insert_cb, self)
+
+def text_insert_cb(textobj):
+    # insert string to Hatari character at the time, at given interval
+    char = textobj.text[textobj.index]
+    if textobj.pressed:
+        textobj.pressed = False
+        textobj.hatari.insert_event("keyrelease %c" % char)
+        textobj.index += 1
+        if textobj.index >= len(textobj.text):
+            del(textobj)
+            return False
+    else:
+        textobj.pressed = True
+        textobj.hatari.insert_event("keypress %c" % char)
+    return True
+

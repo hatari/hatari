@@ -27,13 +27,16 @@ import gtk
 import gobject
 
 from hatari import Hatari, HatariConfigMapping
-from dialogs import AboutDialog, PasteDialog, KillDialog, QuitSaveDialog,\
+from dialogs import AboutDialog, PasteDialog, KillDialog, QuitSaveDialog, \
      SetupDialog, TraceDialog, HatariInsertText
 from debugui import HatariDebugUI
 
 
 # class for all the widgets that the different UI panels and windows can have
 class HatariUIWidgets():
+    version = "v0.6"
+    name = "Hatari UI"
+    icon = "hatari-icon.png"
     # these are the names of methods returning (control widget, expand flag) tuples
     # which also give description of the co. control in their __doc__ attribute
     all_controls = [
@@ -42,10 +45,16 @@ class HatariUIWidgets():
         "rightclick", "doubleclick",
         "debug", "trace"
     ]
+    # spacing between input widget and its label
+    label_spacing = 4
+    
     def __init__(self):
+        self.hatari = Hatari()
+        self.config = HatariConfigMapping(self.hatari)
         # windows are created when needed
+        self.hatariparent = None
+        self.mainwin = None
         self.debugui = None
-
         # dialogs are created when needed
         self.aboutdialog = None
         self.killdialog = None
@@ -53,7 +62,14 @@ class HatariUIWidgets():
         self.quitdialog = None
         self.setupdialog = None
         self.tracedialog = None
+        # temporary settings
+        self.to_horizontal_box = None
 
+    def set_mainwin_hatariparent(self, mainwin, parent):
+        self.killdialog = KillDialog(mainwin)
+        self.hatariparent = parent
+        self.mainwin = mainwin
+        
     # ------- helper methods -----------
     def create_button(self, label, cb, data = None):
         "return (button with given label, expand as True)"
@@ -63,18 +79,6 @@ class HatariUIWidgets():
         else:
             button.connect("clicked", cb, data)
         return (button, True)
-    
-    def keep_hatari_running(self):
-        if not self.hatari.is_running():
-            return False
-        
-        if not self.killdialog:
-            self.killdialog = KillDialog(self.mainwin)
-        # Hatari is running, OK to kill?
-        if self.killdialog.run() == gtk.RESPONSE_OK:
-            self.hatari.kill()
-            return False
-        return True
 
     # ------- about control -----------
     def about_cb(self, widget):
@@ -88,7 +92,7 @@ class HatariUIWidgets():
     
     # ------- run control -----------
     def run_cb(self, widget=None):
-        if self.keep_hatari_running():
+        if self.killdialog.run(self.hatari):
             return
         if self.hatariparent:
             size = self.hatariparent.window.get_size()
@@ -137,7 +141,7 @@ class HatariUIWidgets():
 
     # ------- quit control -----------
     def quit_cb(self, widget, arg = None):
-        if self.keep_hatari_running():
+        if self.killdialog.run(self.hatari):
             return True
         if self.config.is_changed():
             if not self.quitdialog:
@@ -228,7 +232,7 @@ class HatariUIWidgets():
         combo.set_active(self.config.get_sound())
         combo.connect("changed", self.sound_cb)
         if self.to_horizontal_box:
-            box = gtk.HBox(False, self.control_spacing/2)
+            box = gtk.HBox(False, self.label_spacing/2)
         else:
             box = gtk.VBox()
         box.pack_start(gtk.Label("Sound:"), False, False)
@@ -242,7 +246,7 @@ class HatariUIWidgets():
     def frameskip(self):
         "Increase/decrease screen frame skip"
         if self.to_horizontal_box:
-            box = gtk.HBox(False, self.control_spacing/2)
+            box = gtk.HBox(False, self.label_spacing/2)
             box.pack_start(gtk.Label("Frameskip:"), False, False, 0)
             widget = gtk.HScale()
         else:
@@ -271,6 +275,8 @@ class HatariUIWidgets():
 
     def create_key_control(self, name, textcode):
         "Simulate Atari key press/release and string inserting"
+        if not textcode:
+            return (None, None, None)
         widget = gtk.Button(name)
         try:
             # part after "=" converts to an int?
@@ -288,9 +294,6 @@ class HatariUIWidgets():
 # class for the main Hatari UI window, Hatari embedding, panels
 # and control positioning
 class HatariUI(HatariUIWidgets):
-    version = "v0.6"
-    name = "Hatari UI"
-    icon = "hatari-icon.png"
     hatari_wd = 640
     hatari_ht = 400
 
@@ -305,6 +308,8 @@ class HatariUI(HatariUIWidgets):
         self.controls_top = None
         self.controls_bottom = None
         self.control_spacing = 4 # pixels
+        # other widgets
+        self.tooltips = None
 
     # ----- control types ---------
     def set_controls(self, control_str, side):
@@ -378,7 +383,7 @@ class HatariUI(HatariUIWidgets):
             window.connect("delete_event", self.window_hide_cb)
             self.panels[idx] = window
         self.panels[idx].show_all()
-        self.window.deiconify()
+        self.panels[idx].deiconify()
 
     def add_panel_button(self, name):
         "Button for the specified panel window"
@@ -388,18 +393,17 @@ class HatariUI(HatariUIWidgets):
 
     # ------- control widget box -----------
     def add_tooltip(self, widget, text):
-        w = widget
-        # get the first non-label child of a container
-        while w.__gtype__ in (gtk.HBox.__gtype__, gtk.VBox.__gtype__):
+        # get the first non-label child of a box container
+        while widget.__gtype__ in (gtk.HBox.__gtype__, gtk.VBox.__gtype__):
             children = widget.get_children()
             if not children:
                 break
             for child in children:
                 if child.__gtype__ not in (gtk.Label.__gtype__,):
                     break
-            w = child
-        #print w.__gtype__, "tooltip:", text
-        self.tooltips.set_tip(w, text)
+            widget = child
+        #print widget.__gtype__, "tooltip:", text
+        self.tooltips.set_tip(widget, text)
         
     def get_control_box(self, controls, horizontal):
         "return Gtk Box container with the specified control widgets or None for no controls"
@@ -442,13 +446,11 @@ class HatariUI(HatariUIWidgets):
 
     # ---------- create UI ----------------
     def create_ui(self, fullscreen, embed):
-        self.hatari = Hatari()
-        self.config = HatariConfigMapping(self.hatari)
         # just instantiate all UI windows/widgets...
-        self.hatariparent = None
-        self.mainwin = self.create_mainwin(embed)
+        mainwin, hatariparent = self.create_mainwin(embed)
         if fullscreen:
-            self.mainwin.fullscreen()
+            mainwin.fullscreen()
+        self.set_mainwin_hatariparent(mainwin, hatariparent)
 
     def create_mainwin(self, embed):
         # create control button rows/columns
@@ -463,9 +465,11 @@ class HatariUI(HatariUIWidgets):
         if left:
             hbox.add(left)
         if embed:
-            self.hatariparent = self.create_uisocket()
+            parent = self.create_uisocket()
             # make sure socket isn't resized
-            hbox.pack_start(self.hatariparent, False, False, 0)
+            hbox.pack_start(parent, False, False, 0)
+        else:
+            parent = None
         if right:
             hbox.add(right)
         # add vertical elements
@@ -481,9 +485,9 @@ class HatariUI(HatariUIWidgets):
         mainwin.set_title("%s %s" % (self.name, self.version))
         mainwin.set_icon_from_file(self.icon)
         mainwin.add(vbox)
-        return mainwin
+        return (mainwin, parent)
 
-    def plug_remove_cb(self, object):
+    def plug_remove_cb(self, obj):
         # disable Socket widget being destroyed on Plug (=Hatari) disappearance
         return True
     
@@ -560,6 +564,8 @@ def main():
         del longopts
     except getopt.GetoptError, err:
         usage(app, err)
+    if args:
+        usage(app, "arguments given although only options accepted")
 
     error = None
     embed = False
@@ -583,7 +589,7 @@ def main():
         elif opt in ("-p", "--panel"):
             error = app.add_panel(arg)
         elif opt in ("-s", "--spacing"):
-            erorr = app.set_control_spacing(arg)
+            error = app.set_control_spacing(arg)
         else:
             assert False, "getopt returned unhandled option"
         if error:
