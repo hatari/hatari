@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #
-# Classes for handling (Hatari) INI style configuration files
+# Classes for handling (Hatari) INI style configuration files:
+# loading, saving, setting/getting variables, mapping them to
+# sections, listing changes
 #
 # Copyright (C) 2008 by Eero Tamminen <eerot@sf.net>
 #
@@ -15,7 +17,6 @@
 # GNU General Public License for more details.
 
 import os
-import sys
 
 
 # Class for nicer configuration variable access.  Maps booleans, integers
@@ -25,7 +26,7 @@ import sys
 # The actual configuration variables are mapped to instance object attributes
 # with a bit of Python magic so other code doesn't need to deal with strings.
 # This means that the class's own attribute access is more complicated.
-class ConfigVariables:
+class ConfigVariables():
     
     def __init__(self, variables, miss_is_error):
         "ConfigVariables(vars), set dict of allowed variables + their initial values"
@@ -38,7 +39,7 @@ class ConfigVariables:
     
     def set_all(self, variables):
         "set_all(variables), converts given dict values to Python types"
-        dict = {}
+        items = {}
         for key, text in variables.items():
             # bool?
             upper = text.upper()
@@ -53,14 +54,15 @@ class ConfigVariables:
                 except ValueError:
                     # string
                     value = text
-            dict[key] = value
+            items[key] = value
         # has to be done like this to avoid infinite recursion with __setattr__
-        self.__dict__["__vars"] = dict
+        self.__dict__["__vars"] = items
     
     def get_all(self):
         "get_all(variables), converts Python type dict values to strings"
-        dict = {}
+        items = {}
         for key, value in self.__dict__["__vars"].items():
+            #print key, value
             valtype = type(value)
             if valtype == bool:
                 assert(key[0] == "b") # bool prefix
@@ -74,8 +76,8 @@ class ConfigVariables:
             else:
                 assert(key[0] == "s") # string prefix
                 text = value
-            dict[key] = text
-        return dict
+            items[key] = text
+        return items
 
     def is_changed(self):
         return self.__dict__["__changed"]
@@ -104,11 +106,6 @@ class ConfigVariables:
 
 
 # Handle INI style configuration files as used by Hatari
-#
-# This assumes that the configuration file already has
-# all the possible configuration variables, and doesn't
-# allow setting any others.  This works as a version
-# compatibility safe-guard for Hatari,
 #
 # Hatari configuration variable names are unique within,
 # whole configuration file, therefore APIs don't need to
@@ -198,7 +195,7 @@ class ConfigStore():
         "list_changes(), return (key, value) list for each changed config option"
         changed = []
         if self.variables.is_changed():
-            for key,value in self.variables.get_all().items():
+            for key, value in self.variables.get_all().items():
                 if value != self.original[key]:
                     changed.append((key, value))
         return changed
@@ -207,16 +204,16 @@ class ConfigStore():
         "revert(key), revert key to its original (loaded) value"
         self.variables.set(key, self.original[key])
     
-    def write(self, file):
-        "write(file), write current configuration to given file"
+    def write(self, fileobj):
+        "write(fileobj), write current configuration to given file object"
         sections = self.sections.keys()
         sections.sort()
         for section in sections:
-            file.write("%s\n" % section)
+            fileobj.write("%s\n" % section)
             keys = self.sections[section]
             keys.sort()
             for key in keys:
-                file.write("%s = %s\n" % (key, str(self.variables.get(key))))
+                fileobj.write("%s = %s\n" % (key, str(self.variables.get(key))))
             
     def save(self):
         "save(), if configuration changed, save it"
@@ -228,10 +225,10 @@ class ConfigStore():
             if not os.path.exists(self.defaultpath):
                 os.mkdir(self.defaultpath)
             self.path = "%s%c%s" % (self.defaultpath, os.path.sep, self.cfgfile)
-        #file = sys.stdout
-        file = open(self.path, "w")
-        if file:
-            self.write(file)
+        #fileobj = sys.stdout
+        fileobj = open(self.path, "w")
+        if fileobj:
+            self.write(fileobj)
             print "Saved configuration file:", self.path
         else:
             print "ERROR: opening '%s' for saving failed" % self.path

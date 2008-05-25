@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
-# Classes for Hatari configuration and emulator instance
+# Classes for Hatari emulator instance and mapping its congfiguration
+# variables with its command line option.
 #
 # Copyright (C) 2008 by Eero Tamminen <eerot@sf.net>
 #
@@ -107,14 +108,14 @@ class Hatari():
     def open_log_output(self):
         return self.open_output_file(self.change_option, "--log-file", self.logpath)
     
-    def get_lines(self, file):
+    def get_lines(self, fileobj):
         # wait until data is available, then wait for some more
         # and only then the data can be read, otherwise its old
         print "Request&wait data from Hatari..."
-        select.select([file], [], [])
+        select.select([fileobj], [], [])
         time.sleep(0.1)
         print "...read the data lines"
-        lines = file.readlines()
+        lines = fileobj.readlines()
         print "".join(lines)
         return lines
 
@@ -122,7 +123,7 @@ class Hatari():
         if not self.pid:
             return False
         try:
-            pid,status = os.waitpid(self.pid, os.WNOHANG)
+            os.waitpid(self.pid, os.WNOHANG)
         except OSError, value:
             print "Hatari PID %d had exited in the meanwhile:\n\t%s" % (self.pid, value)
             self.pid = 0
@@ -181,6 +182,12 @@ class Hatari():
 
 # Mapping of requested values both to Hatari configuration
 # and command line options.
+#
+# By default this doesn't allow setting any other configuration
+# variables than the ones that were read from the configuration
+# file i.e. you get an exception if configuration variables
+# don't match to current Hatari.  So before using this you should
+# have saved Hatari configuration at least once.
 #
 # Because of some inconsistencies in the values (see e.g. sound),
 # this cannot just do these according to some mapping table, but
@@ -242,43 +249,47 @@ class HatariConfigMapping(ConfigStore):
     def get_embed_args(self, size):
         print "TODO: save and use temporary Hatari-UI hatari settings?"
         # need to modify Hatari settings to match the given window size
-        (wd, ht) = size
-        if wd < 320 or ht < 200:
-            print "ERROR: Hatari needs larger than %dx%d window" % (wd, ht)
-            os.exit(1)
+        (width, height) = size
+        if width < 320 or height < 200:
+            print "ERROR: Hatari needs larger than %dx%d window" % (width, height)
+            sys.exit(1)
         
         # for VDI we can use (fairly) exact size + ignore other screen options
         if self.variables.bUseExtVdiResolutions:
-            return ("--vdi-width", str(wd), "--vdi-height", str(ht))
+            return ("--vdi-width", str(width), "--vdi-height", str(height))
         
-        print "TODO: get actual Hatari window border size(s) from the configuration file"
-         # max border size
-        border = 48
         args = ()
-        if wd < 640 or ht < 400:
+        # max size with overscan borders
+        border_minw = self.variables.nWindowBorderPixelsLeft + 320 + self.variables.nWindowBorderPixelsRight
+        border_minh = 29 + 200 + self.variables.nWindowBorderPixelsBottom
+        if width < 640 or height < 400:
             # only non-zoomed color mode fits to window
             args = ("--zoom", "1", "--monitor", "vga")
-            if wd < 320+border*2 and ht < 200+border*2:
+            if width < border_minw and height < border_minh:
                 # without borders
                 args += ("--borders", "off")
         else:
+            borders = self.variables.bAllowOverscan
+            mono = (self.variables.nMonitorType == 0)
+            zoom = self.variables.bZoomLowRes
             # can we have overscan borders with color zooming or mono?
-            if ((wd < 2*(320+border*2) or ht < 2*(200+border*2)) and
-                self.variables.bAllowOverscan):
-                    if self.variables.nMonitorType == 0:
-                        # mono -> no border
-                        args = ("--borders", "off")
-                    elif self.variables.bZoomLowRes:
-                        # color -> no zoom, just border
-                        args = ("--zoom", "1")
-            elif (self.variables.nMonitorType > 0 and 
-                  not self.variables.bZoomLowRes):
+            if borders and (width < 2*border_minw or height < 2*border_minh):
+                if mono:
+                    # mono -> no border
+                    args = ("--borders", "off")
+                elif zoom:
+                    # color -> no zoom, just border
+                    args = ("--zoom", "1")
+            elif not (mono or zoom):
                 # no mono nor zoom -> zoom
                 args = ("--zoom", "2")
+        if self.variables.bFullScreen:
+            # fullscreen Hatari doesn't make sense with Hatari UI
+            args += ("--window", )
 
         # window size for other than ST & STE can differ
-        if self.variables.nMachineType not in (0,1):
+        if self.variables.nMachineType not in (0, 1):
             print "WARNING: neither ST nor STE, forcing machine to ST"
             args += ("--machine", "st")
-                    
+
         return args
