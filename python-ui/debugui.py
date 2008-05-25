@@ -49,18 +49,21 @@ class TableDialog(HatariUIDialog):
         self.dialog.vbox.add(table)
 
     def add_entry_row(self, table, row, text, size = None):
-        # adds given label right aligned to given row in given table
+        # adds given label to given row in given table
         # returns entry for that line
         label = gtk.Label(text)
-        align = gtk.Alignment(1)
+        align = gtk.Alignment(1) # right aligned
         align.add(label)
+        table.attach(align, 0, 1, row, row+1, gtk.FILL)
         if size:
             entry = gtk.Entry(size)
             entry.set_width_chars(size)
+            align = gtk.Alignment(0) # left aligned (default is centered)
+            align.add(entry)
+            table.attach(align, 1, 2, row, row+1)
         else:
             entry = gtk.Entry()
-        table.attach(align, 0, 1, row, row+1)
-        table.attach(entry, 1, 2, row, row+1)
+            table.attach(entry, 1, 2, row, row+1)
         return entry
 
     def add_widget_row(self, table, row, text, widget):
@@ -70,7 +73,7 @@ class TableDialog(HatariUIDialog):
         label = gtk.Label(text)
         align = gtk.Alignment(1)
         align.add(label)
-        table.attach(align, 0, 1, row, row+1)
+        table.attach(align, 0, 1, row, row+1, gtk.FILL)
         table.attach(widget, 1, 2, row, row+1)
         return widget
 
@@ -91,10 +94,10 @@ class SaveDialog(TableDialog):
         button.connect("clicked", self.select_file_cb)
         hbox = gtk.HBox()
         hbox.add(entry)
-        hbox.add(button)
+        hbox.pack_start(button, False, False)
 
         self.add_widget_row(table, 0, "File name:", hbox)
-        self.address = self.add_entry_row(table, 1, "Save address:", 8)
+        self.address = self.add_entry_row(table, 1, "Save address:", 6)
         self.address.connect("activate", self.accept_cb)
         self.length = self.add_entry_row(table, 2, "Number of bytes:", 6)
         self.length.connect("activate", self.accept_cb)
@@ -109,7 +112,7 @@ class SaveDialog(TableDialog):
     
     def run(self, address):
         if address:
-            self.address.set_text(hex(address))
+            self.address.set_text("%06X" % address)
         self.dialog.show_all()
         filename = length = None
         while 1:
@@ -151,12 +154,12 @@ class LoadDialog(TableDialog):
         chooser.set_local_only(True)  # Hatari cannot access URIs
         chooser.set_width_chars(12)
         self.file = self.add_widget_row(table, 0, "File name:", chooser)
-        self.address = self.add_entry_row(table, 1, "Load address:", 8)
+        self.address = self.add_entry_row(table, 1, "Load address:", 6)
         self.address.connect("activate", self.accept_cb)
 
     def run(self, address):
         if address:
-            self.address.set_text(hex(address))
+            self.address.set_text("%06X" % address)
         self.dialog.show_all()
         filename = None
         while 1:
@@ -504,3 +507,4 @@ if __name__ == "__main__":
     debugui.window.show_all()
     gtk.main()
     debugui.save_options()
+    hatari.kill()
