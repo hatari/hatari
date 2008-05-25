@@ -17,7 +17,7 @@
   2008-04-16   [ET]    Return FALSE instead of exiting on errors
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.58 2008-05-09 19:11:46 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.59 2008-05-25 10:54:17 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -198,7 +198,7 @@ static const opt_t HatariOptions[] = {
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
-	  NULL, "Enable debug interface" },
+	  NULL, "Enable Hatari debugger console interface" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
 	  NULL, "Enable Bios/XBios interception (experimental)" },
 	{ OPT_TRACE,   NULL, "--trace",

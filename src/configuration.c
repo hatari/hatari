@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.89 2008-05-19 20:34:08 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.90 2008-05-25 10:54:17 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -296,7 +296,7 @@ static const struct Config_Tag configs_System[] =
 	{ "bRealTimeClock", Bool_Tag, &ConfigureParams.System.bRealTimeClock },
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bSlowFDC", Bool_Tag, &ConfigureParams.System.bSlowFDC },
-	{ "bFastForward", Int_Tag, &ConfigureParams.System.bFastForward },
+	{ "bFastForward", Bool_Tag, &ConfigureParams.System.bFastForward },
 	{ NULL , Error_Tag, NULL }
 };
 
