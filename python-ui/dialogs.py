@@ -163,6 +163,7 @@ class QuitSaveDialog(HatariUIDialog):
         viewport = gtk.Viewport()
         viewport.add(gtk.Label())
         scrolledwindow = gtk.ScrolledWindow()
+        scrolledwindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         scrolledwindow.add(viewport)
         dialog.vbox.add(scrolledwindow)
         dialog.show_all()
@@ -238,16 +239,30 @@ class TraceDialog(HatariUIDialog):
     RESPONSE_CLEAR_ALL = 1  # (builtin Gtk responses are negative)
     
     def __init__(self, parent, hatari):
+        hbox = gtk.HBox()
+        vbox1 = gtk.VBox()
+        vbox2 = gtk.VBox()
+        hbox.add(vbox1)
+        hbox.add(vbox2)
+        
+        count = 0
+        per_side = (len(self.tracepoints)+1)/2
+        self.tracewidgets = {}
+        for trace in self.tracepoints:
+            widget = gtk.CheckButton(trace)
+            self.tracewidgets[trace] = widget
+            if count < per_side:
+                vbox1.pack_start(widget, False, True)
+            else:
+                vbox2.pack_start(widget, False, True)
+            count += 1
+        
         dialog = gtk.Dialog("Trace settings", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             ("Clear all", self.RESPONSE_CLEAR_ALL,
              gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
         dialog.vbox.add(gtk.Label("Select trace points:"))
-        self.tracewidgets = {}
-        for trace in self.tracepoints:
-            widget = gtk.CheckButton(trace)
-            self.tracewidgets[trace] = widget
-            dialog.vbox.add(widget)
+        dialog.vbox.add(hbox)
         dialog.vbox.show_all()
         self.dialog = dialog
         self.hatari = hatari
