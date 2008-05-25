@@ -10,7 +10,7 @@
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.24 2008-05-23 15:10:48 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.25 2008-05-25 09:18:09 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -219,8 +219,11 @@ static inline void put_dst_data(Uint8 skew, Uint16 end_mask, int cyc_per_op)
 	 case 15: opd_data = 0xffff; break;
 	}
 
-	STMemory_WriteWord(dest_addr,
-	                   (dst_data & ~end_mask) | (opd_data & end_mask));
+	opd_data = (dst_data & ~end_mask) | (opd_data & end_mask);
+	if (dest_addr < 0x00ff8000)
+		STMemory_WriteWord(dest_addr, opd_data);
+	else
+		IoMem_wput(dest_addr, opd_data);
 
 	--x_count;
 
