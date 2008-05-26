@@ -17,5 +17,5 @@
 	int HookedAlertQuery(const char* szMessage);
 
 	// Runtime switch to activate/deactivate alert hooks
-	extern BOOL useAlertHooks;
+	extern bool useAlertHooks;
 #endif
