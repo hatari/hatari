@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Classes for Hatari UI dialogs
+# Classes for the Hatari UI dialogs
 #
 # Copyright (C) 2008 by Eero Tamminen <eerot@sf.net>
 #
@@ -18,7 +18,8 @@
 import pygtk
 pygtk.require('2.0')
 import gtk
-import gobject
+
+from uihelpers import UInfo
 
 
 # ---------- Dialogs --------------
@@ -72,16 +73,16 @@ class AskDialog(HatariUIDialog):
 
 
 class AboutDialog(HatariUIDialog):
-    def __init__(self, parent, name, version):
+    def __init__(self, parent):
         dialog = gtk.AboutDialog()
         dialog.set_transient_for(parent)
-        dialog.set_name(name)
-        dialog.set_version(version)
+        dialog.set_name(UInfo.name)
+        dialog.set_version(UInfo.version)
         dialog.set_website("http://hatari.sourceforge.net/")
         dialog.set_website_label("Hatari emulator www-site")
         dialog.set_authors(["Eero Tamminen"])
         dialog.set_artists(["The logo is from Hatari"])
-        dialog.set_logo(gtk.gdk.pixbuf_new_from_file("hatari.png"))
+        dialog.set_logo(gtk.gdk.pixbuf_new_from_file(UInfo.logo))
         dialog.set_translator_credits("translator-credits")
         dialog.set_copyright("UI copyright (C) 2008 by Eero Tamminen")
         dialog.set_license("""
@@ -292,32 +293,4 @@ class SetupDialog(HatariUIDialog):
             todo.set_markup("<i><b>TODO</b></i>")
             label = gtk.Label(name)
             notebook.append_page(todo, label)
-
-
-# ---------- Dialog helpers --------------
-
-# auxiliary class to be used with the PasteDialog
-class HatariInsertText():
-    def __init__(self, hatari, text):
-        self.index = 0
-        self.text = text
-        self.pressed = False
-        self.hatari = hatari
-        print "OUTPUT '%s'" % text
-        gobject.timeout_add(100, text_insert_cb, self)
-
-def text_insert_cb(textobj):
-    # insert string to Hatari character at the time, at given interval
-    char = textobj.text[textobj.index]
-    if textobj.pressed:
-        textobj.pressed = False
-        textobj.hatari.insert_event("keyrelease %c" % char)
-        textobj.index += 1
-        if textobj.index >= len(textobj.text):
-            del(textobj)
-            return False
-    else:
-        textobj.pressed = True
-        textobj.hatari.insert_event("keypress %c" % char)
-    return True
 

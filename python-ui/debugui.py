@@ -22,6 +22,7 @@ import gtk
 import pango
 
 from config import ConfigStore
+from uihelpers import UInfo, create_button, create_toggle
 from dialogs import HatariUIDialog, TodoDialog, ErrorDialog, AskDialog, KillDialog
 
 
@@ -94,8 +95,7 @@ class SaveDialog(TableDialog):
         entry.set_width_chars(12)
         entry.set_editable(False)
         self.file = entry
-        button = gtk.Button("Select...")
-        button.connect("clicked", self.select_file_cb)
+        button = create_button("Select...", self.select_file_cb)
         hbox = gtk.HBox()
         hbox.add(entry)
         hbox.pack_start(button, False, False)
@@ -224,9 +224,10 @@ class OptionsDialog(TableDialog):
         return lines
 
 
-# class for the memory address entry, view (label) and
-# the logic for memory dump modes and moving in memory
-class MemoryAddress():
+# ----------------------------------------------------
+
+# constants for the other classes
+class Constants:
     # dump modes
     DISASM = 1
     MEMDUMP = 2
@@ -235,6 +236,11 @@ class MemoryAddress():
     MOVE_MIN = 1
     MOVE_MED = 2
     MOVE_MAX = 3
+
+
+# class for the memory address entry, view (label) and
+# the logic for memory dump modes and moving in memory
+class MemoryAddress():
     # class variables
     debug_output = None
     hatari = None
@@ -246,7 +252,7 @@ class MemoryAddress():
         # widgets
         self.entry, self.memory = self.create_widgets()
         # settings
-        self.dumpmode = self.REGISTERS
+        self.dumpmode = Constants.REGISTERS
         self.lines = 12
         # addresses
         self.first = None
@@ -302,7 +308,7 @@ class MemoryAddress():
         if not address:
             address = self.first
         
-        if self.dumpmode == self.REGISTERS:
+        if self.dumpmode == Constants.REGISTERS:
             output = self.get_registers()
             self.memory.set_label("".join(output))
             return
@@ -311,9 +317,9 @@ class MemoryAddress():
             print "ERROR: address needed"
             return
         
-        if self.dumpmode == self.MEMDUMP:
+        if self.dumpmode == Constants.MEMDUMP:
             output = self.get_memdump(address, move_idx)
-        elif self.dumpmode == self.DISASM:
+        elif self.dumpmode == Constants.DISASM:
             output = self.get_disasm(address, move_idx)
         else:
             print "ERROR: unknown dumpmode:", self.dumpmode
@@ -363,12 +369,12 @@ class MemoryAddress():
             address -= offset
             if address < 0:
                 address = 0
-            if move_idx == -self.MOVE_MAX and self.second:
+            if move_idx == -Constants.MOVE_MAX and self.second:
                 screenful = self.second - address
         else:
-            if move_idx == self.MOVE_MED and self.second:
+            if move_idx == Constants.MOVE_MED and self.second:
                 address = self.second
-            elif move_idx == self.MOVE_MAX and self.last:
+            elif move_idx == Constants.MOVE_MAX and self.last:
                 address = self.last
             else:
                 address += offset
@@ -404,7 +410,7 @@ class MemoryAddress():
 # the Hatari debugger UI class and methods
 class HatariDebugUI():
     
-    def __init__(self, hatariobj, icon, do_destroy = False):
+    def __init__(self, hatariobj, do_destroy = False):
         self.address = MemoryAddress(hatariobj)
         self.hatari = hatariobj
         # set when needed/created
@@ -418,9 +424,9 @@ class HatariDebugUI():
         self.config = None
         self.load_options()
         # UI initialization/creation
-        self.window = self.create_ui("Hatari Debug UI", icon, do_destroy)
+        self.window = self.create_ui("Hatari Debug UI", do_destroy)
         
-    def create_ui(self, title, icon, do_destroy):
+    def create_ui(self, title, do_destroy):
         # buttons at top
         hbox1 = gtk.HBox()
         self.create_top_buttons(hbox1)
@@ -449,32 +455,29 @@ class HatariDebugUI():
             window.connect("delete_event", self.quit)
         else:
             window.connect("delete_event", self.hide)
-        window.set_icon_from_file(icon)
+        window.set_icon_from_file(UInfo.icon)
         window.set_title(title)
         window.add(vbox)
         return window
     
     def create_top_buttons(self, box):
-        self.stop_button = gtk.ToggleButton("Stopped")
-        self.stop_button.connect("toggled", self.stop_cb)
+        self.stop_button = create_toggle("Stop", self.stop_cb)
         box.add(self.stop_button)
 
-        monitor = gtk.Button("Monitor...")
-        monitor.connect("clicked", self.monitor_cb)
+        monitor = create_button("Monitor...", self.monitor_cb)
         box.add(monitor)
         
         buttons = (
-            ("<<<", "Page_Up",  -self.address.MOVE_MAX),
-            ("<<",  "Up",       -self.address.MOVE_MED),
-            ("<",   "Left",     -self.address.MOVE_MIN),
-            (">",   "Right",     self.address.MOVE_MIN),
-            (">>",  "Down",      self.address.MOVE_MED),
-            (">>>", "Page_Down", self.address.MOVE_MAX)
+            ("<<<", "Page_Up",  -Constants.MOVE_MAX),
+            ("<<",  "Up",       -Constants.MOVE_MED),
+            ("<",   "Left",     -Constants.MOVE_MIN),
+            (">",   "Right",     Constants.MOVE_MIN),
+            (">>",  "Down",      Constants.MOVE_MED),
+            (">>>", "Page_Down", Constants.MOVE_MAX)
         )
         self.keys = {}
         for label, keyname, offset in buttons:
-            button = gtk.Button(label)
-            button.connect("clicked", self.set_address_offset, offset)
+            button = create_button(label, self.set_address_offset, offset)
             keyval = gtk.gdk.keyval_from_name(keyname)
             self.keys[keyval] =  offset
             box.add(button)
@@ -486,9 +489,9 @@ class HatariDebugUI():
 
     def create_bottom_buttons(self, box):
         radios = (
-            ("Registers", self.address.REGISTERS),
-            ("Memdump", self.address.MEMDUMP),
-            ("Disasm", self.address.DISASM)
+            ("Registers", Constants.REGISTERS),
+            ("Memdump", Constants.MEMDUMP),
+            ("Disasm", Constants.DISASM)
         )
         group = None
         for label, mode in radios:
@@ -506,8 +509,7 @@ class HatariDebugUI():
             ("Options...", self.options_cb)
         )
         for label, cb in dialogs:
-            button = gtk.Button(label)
-            button.connect("clicked", cb)
+            button = create_button(label, cb)
             box.add(button)
 
     def stop_cb(self, widget):
@@ -586,7 +588,7 @@ def main():
     from hatari import Hatari
     hatariobj = Hatari()
     hatariobj.run()
-    debugui = HatariDebugUI(hatariobj, "hatari-icon.png", True)
+    debugui = HatariDebugUI(hatariobj, True)
     debugui.window.show_all()
     gtk.main()
     debugui.save_options()

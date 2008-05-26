@@ -26,20 +26,27 @@ pygtk.require('2.0')
 import gtk
 import gobject
 
-from hatari import Hatari, HatariConfigMapping
-from dialogs import AboutDialog, PasteDialog, KillDialog, QuitSaveDialog, \
-     SetupDialog, TraceDialog, HatariInsertText
 from debugui import HatariDebugUI
+from hatari import Hatari, HatariConfigMapping
+from uihelpers import HatariTextInsert, UInfo, create_button, create_toggle
+from dialogs import AboutDialog, PasteDialog, KillDialog, QuitSaveDialog, \
+     SetupDialog, TraceDialog
 
 
-# class for all the widgets that the different UI panels and windows can have
-class HatariUIWidgets():
-    version = "v0.6"
-    name = "Hatari UI"
-    icon = "hatari-icon.png"
+# helper functions to match callback args
+def window_hide_cb(window, arg):
+    window.hide()
+    return True
+
+
+# class for all the controls that the different UI panels and windows can have
+class HatariControls():
     # these are the names of methods returning (control widget, expand flag) tuples
     # which also give description of the co. control in their __doc__ attribute
-    all_controls = [
+    #
+    # (in a more OO application all these widgets would be separate classes
+    # inheriting a common interface class, but that would be an overkill)
+    all = [
         "about", "run", "paste", "pause", "setup", "quit",
         "fastforward", "frameskip", "spec512", "sound",
         "rightclick", "doubleclick",
@@ -51,11 +58,11 @@ class HatariUIWidgets():
     def __init__(self):
         self.hatari = Hatari()
         self.config = HatariConfigMapping(self.hatari)
-        # windows are created when needed
+        # set later by owner of this object
         self.hatariparent = None
         self.mainwin = None
+        # windows/dialogs are created when needed
         self.debugui = None
-        # dialogs are created when needed
         self.aboutdialog = None
         self.killdialog = None
         self.pastedialog = None
@@ -66,32 +73,30 @@ class HatariUIWidgets():
         self.to_horizontal_box = None
 
     def set_mainwin_hatariparent(self, mainwin, parent):
+        # ugly, but I didn't come up with better place to connect quit_cb
+        mainwin.connect("delete_event", self._quit_cb)
         self.killdialog = KillDialog(mainwin)
         self.hatariparent = parent
         self.mainwin = mainwin
-        
-    # ------- helper methods -----------
-    def create_button(self, label, cb, data = None):
-        "return (button with given label, expand as True)"
-        button = gtk.Button(label)
-        if data == None:
-            button.connect("clicked", cb)
-        else:
-            button.connect("clicked", cb, data)
-        return (button, True)
+        # Hatari window can be created only after Socket window is created.
+        # also ugly to do here...
+        gobject.idle_add(self._run_cb)
+    
+    def set_box_horizontal(self, horizontal):
+        self.to_horizontal_box = horizontal
 
     # ------- about control -----------
-    def about_cb(self, widget):
+    def _about_cb(self, widget):
         if not self.aboutdialog:
-            self.aboutdialog = AboutDialog(self.mainwin, self.name, self.version)
+            self.aboutdialog = AboutDialog(self.mainwin)
         self.aboutdialog.run()
 
     def about(self):
         "Hatari UI information"
-        return self.create_button("About", self.about_cb)
+        return (create_button("About", self._about_cb), True)
     
     # ------- run control -----------
-    def run_cb(self, widget=None):
+    def _run_cb(self, widget=None):
         if self.killdialog.run(self.hatari):
             return
         if self.hatariparent:
@@ -102,22 +107,22 @@ class HatariUIWidgets():
 
     def run(self):
         "(Re-)run Hatari"
-        return self.create_button("Run Hatari!", self.run_cb)
+        return (create_button("Run Hatari!", self._run_cb), True)
 
     # ------- paste control -----------
-    def paste_cb(self, widget):
+    def _paste_cb(self, widget):
         if not self.pastedialog:
             self.pastedialog = PasteDialog(self.mainwin)
         text = self.pastedialog.run()
         if text:
-            HatariInsertText(self.hatari, text)
+            HatariTextInsert(self.hatari, text)
 
     def paste(self):
         "Insert text to Hatari window"
-        return self.create_button("Paste", self.paste_cb)
+        return (create_button("Paste", self._paste_cb), True)
 
     # ------- pause control -----------
-    def pause_cb(self, widget):
+    def _pause_cb(self, widget):
         if widget.get_active():
             self.hatari.pause()
         else:
@@ -125,22 +130,20 @@ class HatariUIWidgets():
 
     def pause(self):
         "Pause Hatari to save battery"
-        widget = gtk.ToggleButton("Stop")
-        widget.connect("toggled", self.pause_cb)
-        return (widget, True)
+        return (create_toggle("Stop", self._pause_cb), True)
 
     # ------- setup control -----------
-    def setup_cb(self, widget):
+    def _setup_cb(self, widget):
         if not self.setupdialog:
             self.setupdialog = SetupDialog(self.mainwin, self.hatari)
         self.setupdialog.run()
 
     def setup(self):
         "Hatari configuration setup"
-        return self.create_button("Hatari setup", self.setup_cb)
+        return (create_button("Hatari setup", self._setup_cb), True)
 
     # ------- quit control -----------
-    def quit_cb(self, widget, arg = None):
+    def _quit_cb(self, widget, arg = None):
         if self.killdialog.run(self.hatari):
             return True
         if self.config.is_changed():
@@ -154,74 +157,74 @@ class HatariUIWidgets():
 
     def quit(self):
         "Quit Hatari UI"
-        return self.create_button("Quit", self.quit_cb)
+        return (create_button("Quit", self._quit_cb), True)
 
     # ------- doubleclick control -----------
-    def doubleclick_cb(self, widget):
+    def _doubleclick_cb(self, widget):
         self.hatari.insert_event("doubleclick")
 
     def doubleclick(self):
         "Simulate Atari left button double-click"
-        return self.create_button("Doubleclick", self.doubleclick_cb)
+        return (create_button("Doubleclick", self._doubleclick_cb), True)
 
     # ------- rightclick control -----------
-    def rightpress_cb(self, widget):
+    def _rightpress_cb(self, widget):
         self.hatari.insert_event("rightpress")
 
-    def rightrelease_cb(self, widget):
+    def _rightrelease_cb(self, widget):
         self.hatari.insert_event("rightrelease")
 
     def rightclick(self):
         "Simulate Atari right button click"
         widget = gtk.Button("Rightclick")
-        widget.connect("pressed", self.rightpress_cb)
-        widget.connect("released", self.rightrelease_cb)
+        widget.connect("pressed", self._rightpress_cb)
+        widget.connect("released", self._rightrelease_cb)
         return (widget, True)
 
     # ------- debug control -----------
-    def debug_cb(self, widget):
+    def _debug_cb(self, widget):
         if not self.debugui:
-            self.debugui = HatariDebugUI(self.hatari, self.icon)
+            self.debugui = HatariDebugUI(self.hatari)
         self.debugui.show()
 
     def debug(self):
         "Activate Hatari debugger"
-        return self.create_button("Debugger", self.debug_cb)
+        return (create_button("Debugger", self._debug_cb), True)
 
     # ------- trace control -----------
-    def trace_cb(self, widget):
+    def _trace_cb(self, widget):
         if not self.tracedialog:
             self.tracedialog = TraceDialog(self.mainwin, self.hatari)
         self.tracedialog.run()
 
     def trace(self):
         "Hatari tracing setup"
-        return self.create_button("Trace settings", self.trace_cb)
+        return (create_button("Trace settings", self._trace_cb), True)
 
     # ------- fast forward control -----------
-    def fastforward_cb(self, widget):
+    def _fastforward_cb(self, widget):
         self.config.set_fastforward(widget.get_active())
 
     def fastforward(self):
         "Whether to fast forward Hatari (needs fast machine)"
         widget = gtk.CheckButton("FastForward")
         widget.set_active(self.config.get_fastforward())
-        widget.connect("toggled", self.fastforward_cb)
+        widget.connect("toggled", self._fastforward_cb)
         return (widget, False)
 
     # ------- spec512 control -----------
-    def spec512_cb(self, widget):
+    def _spec512_cb(self, widget):
         self.config.set_spec512threshold(widget.get_active())
 
     def spec512(self):
         "Whether to support Spec512 (>16 colors at the same time)"
         widget = gtk.CheckButton("Spec512 support")
         widget.set_active(self.config.get_spec512threshold())
-        widget.connect("toggled", self.spec512_cb)
+        widget.connect("toggled", self._spec512_cb)
         return (widget, False)
 
     # ------- sound control -----------
-    def sound_cb(self, widget):
+    def _sound_cb(self, widget):
         self.config.set_sound(widget.get_active())
 
     def sound(self):
@@ -230,7 +233,7 @@ class HatariUIWidgets():
         for text in self.config.get_sound_values():
             combo.append_text(text)
         combo.set_active(self.config.get_sound())
-        combo.connect("changed", self.sound_cb)
+        combo.connect("changed", self._sound_cb)
         if self.to_horizontal_box:
             box = gtk.HBox(False, self.label_spacing/2)
         else:
@@ -240,7 +243,7 @@ class HatariUIWidgets():
         return (box, False)
     
     # ------- frame skip control -----------
-    def frameskip_cb(self, widget):
+    def _frameskip_cb(self, widget):
         self.config.set_frameskips(widget.get_value())
 
     def frameskip(self):
@@ -257,21 +260,21 @@ class HatariUIWidgets():
         widget.set_range(0, 8)
         widget.set_value(self.config.get_frameskips())
         widget.set_update_policy(gtk.UPDATE_DISCONTINUOUS)
-        widget.connect("value-changed", self.frameskip_cb)
+        widget.connect("value-changed", self._frameskip_cb)
         # important, without this Hatari doesn't receive key events!
         widget.unset_flags(gtk.CAN_FOCUS)
         box.add(widget)
         return (box, True)
 
-    # ------- insert key control -----------
-    def keypress_cb(self, widget, code):
+    # ------- insert key special control -----------
+    def _keypress_cb(self, widget, code):
         self.hatari.insert_event("keypress %s" % code)
 
-    def keyrelease_cb(self, widget, code):
+    def _keyrelease_cb(self, widget, code):
         self.hatari.insert_event("keyrelease %s" % code)
 
-    def textinsert_cb(self, widget, text):
-        HatariInsertText(self.hatari, text)
+    def _textinsert_cb(self, widget, text):
+        HatariTextInsert(self.hatari, text)
 
     def create_key_control(self, name, textcode):
         "Simulate Atari key press/release and string inserting"
@@ -281,24 +284,20 @@ class HatariUIWidgets():
         try:
             # part after "=" converts to an int?
             code = int(textcode, 0)
-            widget.connect("pressed", self.keypress_cb, code)
-            widget.connect("released", self.keyrelease_cb, code)
+            widget.connect("pressed", self._keypress_cb, code)
+            widget.connect("released", self._keyrelease_cb, code)
             tip = "keycode: %d" % code
         except ValueError:
             # no, assume a string macro is wanted instead
-            widget.connect("clicked", self.textinsert_cb, textcode)
+            widget.connect("clicked", self._textinsert_cb, textcode)
             tip = "string '%s'" % textcode
         return (widget, tip, True)
 
 
 # class for the main Hatari UI window, Hatari embedding, panels
 # and control positioning
-class HatariUI(HatariUIWidgets):
-    hatari_wd = 640
-    hatari_ht = 400
-
+class HatariUI():
     def __init__(self):
-        HatariUIWidgets.__init__(self)
         self.panel_controls = []
         self.panel_names = []
         self.panels = []
@@ -308,6 +307,7 @@ class HatariUI(HatariUIWidgets):
         self.controls_top = None
         self.controls_bottom = None
         self.control_spacing = 4 # pixels
+        self.controls = HatariControls()
         # other widgets
         self.tooltips = None
 
@@ -316,14 +316,14 @@ class HatariUI(HatariUIWidgets):
         "return None as OK, error string if controls or side isn't recognized"
         controls = control_str.split(",")
         for control in controls:
-            if control in self.all_controls:
+            if control in self.controls.all:
                 # regular control
                 continue
             if control == "|" or control in self.panel_names:
-                # special control
+                # divider or special panel control
                 continue
             if control.find("=") >= 0:
-                # keycode/string control
+                # special keycode/string control
                 continue
             return "unrecognized control '%s'" % control
 
@@ -356,8 +356,8 @@ class HatariUI(HatariUIWidgets):
     def list_all_controls(self):
         # generate the list from class internal documentation
         yield ("|", "Separator between controls")
-        for methodname in self.all_controls:
-            yield (methodname, HatariUIWidgets.__dict__[methodname].__doc__)
+        for methodname in self.controls.all:
+            yield (methodname, HatariControls.__dict__[methodname].__doc__)
         yield ("<panel name>", self.add_panel_button.__doc__)
         yield ("<name>=<string/code>", "Insert string or single key <code>")
 
@@ -369,18 +369,14 @@ class HatariUI(HatariUIWidgets):
             return "argument '%s' is not a number" % arg
 
 
-    # ------- panel control -----------
-    def window_hide_cb(self, widget, arg):
-        widget.hide()
-        return True
-    
-    def panel_cb(self, widget, idx):
+    # ------- panel special control -----------
+    def _panel_cb(self, widget, idx):
         if not self.panels[idx]:
             window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-            window.set_icon_from_file(self.icon)
+            window.set_icon_from_file(UInfo.icon)
             window.set_title(self.panel_names[idx])
             window.add(self.get_control_box(self.panel_controls[idx], True))
-            window.connect("delete_event", self.window_hide_cb)
+            window.connect("delete_event", window_hide_cb)
             self.panels[idx] = window
         self.panels[idx].show_all()
         self.panels[idx].deiconify()
@@ -388,8 +384,8 @@ class HatariUI(HatariUIWidgets):
     def add_panel_button(self, name):
         "Button for the specified panel window"
         index = self.panel_names.index(name)
-        (button, expand) = self.create_button(name, self.panel_cb, index)
-        return (button, name, expand)
+        button = create_button(name, self._panel_cb, index)
+        return (button, name, True)
 
     # ------- control widget box -----------
     def add_tooltip(self, widget, text):
@@ -409,7 +405,7 @@ class HatariUI(HatariUIWidgets):
         "return Gtk Box container with the specified control widgets or None for no controls"
         if not controls:
             return None
-        self.to_horizontal_box = horizontal
+        self.controls.set_box_horizontal(horizontal)
         if horizontal:
             box = gtk.HBox(False, self.control_spacing)
         else:
@@ -421,7 +417,7 @@ class HatariUI(HatariUIWidgets):
                 # handle "<name>=<keycode>" control specification
                 name = control[:offset]
                 text = control[offset+1:]
-                (widget, tip, expand) = self.create_key_control(name, text)
+                (widget, tip, expand) = self.controls.create_key_control(name, text)
                 # TODO: for some reason tooltips don't work on these buttons?
                 self.tooltips.set_tip(widget, "Insert " + tip)
             elif control == "|":
@@ -433,8 +429,8 @@ class HatariUI(HatariUIWidgets):
             elif control in self.panel_names:
                 (widget, tip, expand) = self.add_panel_button(control)
             else:
-                method = HatariUIWidgets.__dict__[control]
-                (widget, expand) = method(self)
+                method = HatariControls.__dict__[control]
+                (widget, expand) = method(self.controls)
                 self.add_tooltip(widget, method.__doc__)
             if not widget:
                 continue
@@ -450,7 +446,8 @@ class HatariUI(HatariUIWidgets):
         mainwin, hatariparent = self.create_mainwin(embed)
         if fullscreen:
             mainwin.fullscreen()
-        self.set_mainwin_hatariparent(mainwin, hatariparent)
+        self.controls.set_mainwin_hatariparent(mainwin, hatariparent)
+        mainwin.show_all()
 
     def create_mainwin(self, embed):
         # create control button rows/columns
@@ -481,40 +478,29 @@ class HatariUI(HatariUIWidgets):
             vbox.add(bottom)
         # put them to main window
         mainwin = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        mainwin.connect("delete_event", self.quit_cb)
-        mainwin.set_title("%s %s" % (self.name, self.version))
-        mainwin.set_icon_from_file(self.icon)
+        mainwin.set_title("%s %s" % (UInfo.name, UInfo.version))
+        mainwin.set_icon_from_file(UInfo.icon)
         mainwin.add(vbox)
         return (mainwin, parent)
-
-    def plug_remove_cb(self, obj):
-        # disable Socket widget being destroyed on Plug (=Hatari) disappearance
-        return True
     
     def create_uisocket(self):
         # add Hatari parent container
         socket = gtk.Socket()
-        # without this closing Hatari would remove the socket
-        socket.connect("plug-removed", self.plug_remove_cb)
+        # without this, closing Hatari would remove the socket widget
+        socket.connect("plug-removed", lambda obj: True)
         socket.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
-        socket.set_size_request(self.hatari_wd, self.hatari_ht)
+        # TODO: get the required size from the Hatari configuration
+        socket.set_size_request(UInfo.width, UInfo.height)
         socket.set_events(gtk.gdk.ALL_EVENTS_MASK)
         socket.set_flags(gtk.CAN_FOCUS)
         return socket
 
-    # ------- run UI -----------
-    def main(self):
-        self.mainwin.show_all()
-        # Hatari window can be created only after Socket window is created
-        gobject.idle_add(self.run_cb)
-        gtk.main()
-
 
 def usage(app, msg=None):
     name = os.path.basename(sys.argv[0])
-    appname = "%s %s" % (app.name, app.version)
-    print "\n%s" % appname
-    print "=" * len(appname)
+    uiname = "%s %s" % (UInfo.name, UInfo.version)
+    print "\n%s" % uiname
+    print "=" * len(uiname)
     print "\nUsage: %s [options]" % name
     print "\nOptions:"
     print "\t-e, --embed\t\tembed Hatari window in middle of controls"
@@ -596,7 +582,7 @@ def main():
             usage(app, error)
 
     app.create_ui(fullscreen, embed)
-    app.main()
+    gtk.main()
 
 if __name__ == "__main__":
     main()
