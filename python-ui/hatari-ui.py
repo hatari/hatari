@@ -119,7 +119,7 @@ class HatariControls():
 
     def paste(self):
         "Insert text to Hatari window"
-        return (create_button("Paste", self._paste_cb), True)
+        return (create_button("Paste text", self._paste_cb), True)
 
     # ------- pause control -----------
     def _pause_cb(self, widget):
@@ -418,7 +418,6 @@ class HatariUI():
                 name = control[:offset]
                 text = control[offset+1:]
                 (widget, tip, expand) = self.controls.create_key_control(name, text)
-                # TODO: for some reason tooltips don't work on these buttons?
                 self.tooltips.set_tip(widget, "Insert " + tip)
             elif control == "|":
                 if horizontal:
@@ -428,6 +427,7 @@ class HatariUI():
                 expand = False
             elif control in self.panel_names:
                 (widget, tip, expand) = self.add_panel_button(control)
+                self.tooltips.set_tip(widget, tip)
             else:
                 method = HatariControls.__dict__[control]
                 (widget, expand) = method(self.controls)
