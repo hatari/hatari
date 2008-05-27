@@ -26,6 +26,7 @@ from config import ConfigStore
 
 # Running Hatari instance
 class Hatari():
+    "running hatari instance and methods for communicating with it"
     basepath = "/tmp/hatari-ui-" + os.getenv("USER")
     logpath = basepath + ".log"
     tracepath = basepath + ".trace"
@@ -40,12 +41,12 @@ class Hatari():
             self.hataribin = hataribin
         else:
             self.hataribin = "hatari"
-        self.create_server()
+        self._create_server()
         self.control = None
         self.paused = False
         self.pid = 0
 
-    def create_server(self):
+    def _create_server(self):
         if self.server:
             return
         self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -54,7 +55,7 @@ class Hatari():
         self.server.bind(self.controlpath)
         self.server.listen(1)
 
-    def send_message(self, msg):
+    def _send_message(self, msg):
         if self.control:
             self.control.send(msg)
             return True
@@ -63,24 +64,30 @@ class Hatari():
             return False
         
     def change_option(self, option):
-        return self.send_message("hatari-option %s\n" % option)
+        "change_option(option), changes given Hatari cli option"
+        return self._send_message("hatari-option %s\n" % option)
 
     def trigger_shortcut(self, shortcut):
-        return self.send_message("hatari-shortcut %s\n" % shortcut)
+        "trigger_shortcut(shortcut), triggers given Hatari (keyboard) shortcut"
+        return self._send_message("hatari-shortcut %s\n" % shortcut)
 
     def insert_event(self, event):
-        return self.send_message("hatari-event %s\n" % event)
+        "insert_event(event), synthetizes given key/mouse Atari event"
+        return self._send_message("hatari-event %s\n" % event)
 
     def debug_command(self, cmd):
-        return self.send_message("hatari-debug %s\n" % cmd)
+        "debug_command(command), runs given Hatari debugger command"
+        return self._send_message("hatari-debug %s\n" % cmd)
 
     def pause(self):
-        return self.send_message("hatari-stop\n")
+        "pause(), pauses Hatari emulation"
+        return self._send_message("hatari-stop\n")
 
     def unpause(self):
-        return self.send_message("hatari-cont\n")
+        "unpause(), continues Hatari emulation"
+        return self._send_message("hatari-cont\n")
     
-    def open_output_file(self, hataricommand, option, path):
+    def _open_output_file(self, hataricommand, option, path):
         if os.path.exists(path):
             os.unlink(path)
         # TODO: why fifo doesn't work properly (blocks forever on read or
@@ -100,15 +107,19 @@ class Hatari():
         return None
 
     def open_debug_output(self):
-        return self.open_output_file(self.debug_command, "f", self.debugpath)
+        "open_debug_output() -> file, opens Hatari debugger output file"
+        return self._open_output_file(self.debug_command, "f", self.debugpath)
 
     def open_trace_output(self):
-        return self.open_output_file(self.change_option, "--trace-file", self.tracepath)
+        "open_trace_output() -> file, opens Hatari tracing output file"
+        return self._open_output_file(self.change_option, "--trace-file", self.tracepath)
 
     def open_log_output(self):
-        return self.open_output_file(self.change_option, "--log-file", self.logpath)
+        "open_trace_output() -> file, opens Hatari debug log file"
+        return self._open_output_file(self.change_option, "--log-file", self.logpath)
     
     def get_lines(self, fileobj):
+        "get_lines(file) -> list of lines readable from given Hatari output file"
         # wait until data is available, then wait for some more
         # and only then the data can be read, otherwise its old
         print "Request&wait data from Hatari..."
@@ -120,6 +131,7 @@ class Hatari():
         return lines
 
     def is_running(self):
+        "is_running() -> bool, True if Hatari is running, False otherwise"
         if not self.pid:
             return False
         try:
@@ -131,6 +143,7 @@ class Hatari():
         return True
     
     def run(self, parent_win = None, embed_args = None):
+        "run([parent window][,embedding args]), runs Hatari"
         # if parent_win given, embed Hatari to it
         pid = os.fork()
         if pid < 0:
@@ -148,14 +161,14 @@ class Hatari():
             env = os.environ
             args = (self.hataribin, )
             if parent_win:
-                self.set_embed_env(env, parent_win)
+                self._set_embed_env(env, parent_win)
                 args += embed_args
             if self.server:
                 args += ("--control-socket", self.controlpath)
             print "RUN:", args
             os.execvpe(self.hataribin, args, env)
 
-    def set_embed_env(self, env, parent_win):
+    def _set_embed_env(self, env, parent_win):
         if sys.platform == 'win32':
             win_id = parent_win.handle
         else:
@@ -174,6 +187,7 @@ class Hatari():
         env["PARENT_WIN_ID"] = str(win_id)
 
     def kill(self):
+        "kill(), kill Hatari if it's running"
         if self.pid:
             os.kill(self.pid, signal.SIGKILL)
             print "killed hatari with PID %d" % self.pid
@@ -193,6 +207,7 @@ class Hatari():
 # this cannot just do these according to some mapping table, but
 # it needs actual method for (each) setting.
 class HatariConfigMapping(ConfigStore):
+    "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
         defaults = ({}, {})
         ConfigStore.__init__(self, defaults, "hatari.cfg")

@@ -59,7 +59,7 @@ class ErrorDialog(NoteDialog):
 
 class AskDialog(HatariUIDialog):
     def run(self, text):
-        "run(text), show question dialog and return True if user OKed it"
+        "run(text) -> bool, show question dialog and return True if user OKed it"
         dialog = gtk.MessageDialog(self.parent,
         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
         gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, text)

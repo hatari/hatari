@@ -313,7 +313,7 @@ class HatariUI():
 
     # ----- control types ---------
     def set_controls(self, control_str, side):
-        "return None as OK, error string if controls or side isn't recognized"
+        "set_controls(controls,side) -> error string, None if all OK"
         controls = control_str.split(",")
         for control in controls:
             if control in self.controls.all:
@@ -342,6 +342,7 @@ class HatariUI():
         return None
 
     def add_panel(self, spec):
+        "add_panel(panel_specification) -> error string, None if all is OK"
         error = None
         offset = spec.find(",")
         if offset <= 0:
@@ -354,6 +355,7 @@ class HatariUI():
         return error
 
     def list_all_controls(self):
+        "list_all_controls() -> list of (control, description) tuples"
         # generate the list from class internal documentation
         yield ("|", "Separator between controls")
         for methodname in self.controls.all:
@@ -362,6 +364,7 @@ class HatariUI():
         yield ("<name>=<string/code>", "Insert string or single key <code>")
 
     def set_control_spacing(self, arg):
+        "set_control_spacing(spacing) -> error string, None if given int-as-string OK"
         try:
             self.control_spacing = int(arg, 0)
             return None
@@ -442,14 +445,15 @@ class HatariUI():
 
     # ---------- create UI ----------------
     def create_ui(self, fullscreen, embed):
+        "create_ui(fullscreen, embed), args are booleans"
         # just instantiate all UI windows/widgets...
-        mainwin, hatariparent = self.create_mainwin(embed)
+        mainwin, hatariparent = self._create_mainwin(embed)
         if fullscreen:
             mainwin.fullscreen()
         self.controls.set_mainwin_hatariparent(mainwin, hatariparent)
         mainwin.show_all()
 
-    def create_mainwin(self, embed):
+    def _create_mainwin(self, embed):
         # create control button rows/columns
         if not (self.controls_left or self.controls_right or self.controls_top or self.controls_bottom):
             self.controls_bottom = ["about", "pause", "quit"]
@@ -462,7 +466,7 @@ class HatariUI():
         if left:
             hbox.add(left)
         if embed:
-            parent = self.create_uisocket()
+            parent = self._create_uisocket()
             # make sure socket isn't resized
             hbox.pack_start(parent, False, False, 0)
         else:
@@ -483,7 +487,7 @@ class HatariUI():
         mainwin.add(vbox)
         return (mainwin, parent)
     
-    def create_uisocket(self):
+    def _create_uisocket(self):
         # add Hatari parent container
         socket = gtk.Socket()
         # without this, closing Hatari would remove the socket widget
