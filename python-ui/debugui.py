@@ -23,90 +23,81 @@ import pango
 
 from config import ConfigStore
 from uihelpers import UInfo, create_button, create_toggle
-from dialogs import HatariUIDialog, TodoDialog, ErrorDialog, AskDialog, KillDialog
+from dialogs import TodoDialog, ErrorDialog, AskDialog, KillDialog
 
 
-# intermediate class with helper methods
-# subclasses need to have:
-# - "title" class variable
-# - "content_rows" class variable
-# - "add_table_content" method
-class TableDialog(HatariUIDialog):
-    title = None
-    content_rows = None
-    def add_table_content(self, table):
-        pass
+# -----------------------------
+# Table dialog helper functions
 
+def create_table_dialog(parent, title, rows):
+    "create_table_dialog(parent,title,rows) -> (table,dialog)"
+    dialog = gtk.Dialog(title, parent,
+        gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+        (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
+        gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+
+    table = gtk.Table(rows, 2) # rows, cols
+    table.set_col_spacings(8)
+    dialog.vbox.add(table)
+    return (table, dialog)
+
+def table_add_entry_row(table, row, label, size = None):
+    "add_table_entry_row(table,row,label,[entry size]) -> entry"
+    # adds given label to given row in given table
+    # returns entry for that line
+    label = gtk.Label(label)
+    align = gtk.Alignment(1) # right aligned
+    align.add(label)
+    table.attach(align, 0, 1, row, row+1, gtk.FILL)
+    if size:
+        entry = gtk.Entry(size)
+        entry.set_width_chars(size)
+        align = gtk.Alignment(0) # left aligned (default is centered)
+        align.add(entry)
+        table.attach(align, 1, 2, row, row+1)
+    else:
+        entry = gtk.Entry()
+        table.attach(entry, 1, 2, row, row+1)
+    return entry
+
+def table_add_widget_row(table, row, label, widget):
+    "add_table_widget_row(table,row,label,widget) -> widget"
+    # adds given label right aligned to given row in given table
+    # adds given widget to the right column and returns it
+    # returns entry for that line
+    label = gtk.Label(label)
+    align = gtk.Alignment(1)
+    align.add(label)
+    table.attach(align, 0, 1, row, row+1, gtk.FILL)
+    table.attach(widget, 1, 2, row, row+1)
+    return widget
+
+def dialog_accept_cb(widget, dialog):
+    dialog.response(gtk.RESPONSE_APPLY)
+
+
+# -------------
+# Table dialogs
+
+class SaveDialog():
     def __init__(self, parent):
-        self.dialog = gtk.Dialog(self.title, parent,
-            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-            (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
-             gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
-
-        table = gtk.Table(self.content_rows, 2) # rows, cols
-        table.set_col_spacings(8)
-        self.add_table_content(table)
-        self.dialog.vbox.add(table)
-
-    def add_entry_row(self, table, row, text, size = None):
-        # adds given label to given row in given table
-        # returns entry for that line
-        label = gtk.Label(text)
-        align = gtk.Alignment(1) # right aligned
-        align.add(label)
-        table.attach(align, 0, 1, row, row+1, gtk.FILL)
-        if size:
-            entry = gtk.Entry(size)
-            entry.set_width_chars(size)
-            align = gtk.Alignment(0) # left aligned (default is centered)
-            align.add(entry)
-            table.attach(align, 1, 2, row, row+1)
-        else:
-            entry = gtk.Entry()
-            table.attach(entry, 1, 2, row, row+1)
-        return entry
-
-    def add_widget_row(self, table, row, text, widget):
-        # adds given label right aligned to given row in given table
-        # adds given widget to the right column and returns it
-        # returns entry for that line
-        label = gtk.Label(text)
-        align = gtk.Alignment(1)
-        align.add(label)
-        table.attach(align, 0, 1, row, row+1, gtk.FILL)
-        table.attach(widget, 1, 2, row, row+1)
-        return widget
-
-    def accept_cb(self, widget):
-        self.dialog.response(gtk.RESPONSE_APPLY)
-
-
-class SaveDialog(TableDialog):
-    title = "Save from memory..."
-    content_rows = 3
-    def __init__(self, parent):
-        self.file = None
-        self.address = None
-        self.length = None
-        TableDialog.__init__(self, parent)
-
-    def add_table_content(self, table):
         entry = gtk.Entry()
         entry.set_width_chars(12)
         entry.set_editable(False)
-        self.file = entry
-        button = create_button("Select...", self.select_file_cb)
         hbox = gtk.HBox()
         hbox.add(entry)
+        self.file = entry
+        button = create_button("Select...", self._select_file_cb)
         hbox.pack_start(button, False, False)
 
-        self.add_widget_row(table, 0, "File name:", hbox)
-        self.address = self.add_entry_row(table, 1, "Save address:", 6)
-        self.address.connect("activate", self.accept_cb)
-        self.length = self.add_entry_row(table, 2, "Number of bytes:", 6)
-        self.length.connect("activate", self.accept_cb)
+        table, self.dialog = create_table_dialog(parent, "Save from memory", 3)
+        table_add_widget_row(table, 0, "File name:", hbox)
+        self.address = table_add_entry_row(table, 1, "Save address:", 6)
+        self.address.connect("activate", dialog_accept_cb, self.dialog)
+        self.length = table_add_entry_row(table, 2, "Number of bytes:", 6)
+        self.length.connect("activate", dialog_accept_cb, self.dialog)
 
-    def select_file_cb(self, widget):
+    def _select_file_cb(self, widget):
         buttons = (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
         fsel = gtk.FileChooserDialog("Select save file", self.dialog, gtk.FILE_CHOOSER_ACTION_SAVE, buttons)
         fsel.set_local_only(True)
@@ -115,6 +106,7 @@ class SaveDialog(TableDialog):
         fsel.destroy()
     
     def run(self, address):
+        "run(address) -> (filename,address,length), all as strings"
         if address:
             self.address.set_text("%06X" % address)
         self.dialog.show_all()
@@ -149,23 +141,18 @@ class SaveDialog(TableDialog):
         return (filename, address, length)
 
 
-class LoadDialog(TableDialog):
-    title = "Load to memory..."
-    content_rows = 2
+class LoadDialog():
     def __init__(self, parent):
-        self.file = None
-        self.address = None
-        TableDialog.__init__(self, parent)
-
-    def add_table_content(self, table):
         chooser = gtk.FileChooserButton('Select a File')
         chooser.set_local_only(True)  # Hatari cannot access URIs
         chooser.set_width_chars(12)
-        self.file = self.add_widget_row(table, 0, "File name:", chooser)
-        self.address = self.add_entry_row(table, 1, "Load address:", 6)
-        self.address.connect("activate", self.accept_cb)
+        table, self.dialog = create_table_dialog(parent, "Load to memory", 2)
+        self.file = table_add_widget_row(table, 0, "File name:", chooser)
+        self.address = table_add_entry_row(table, 1, "Load address:", 6)
+        self.address.connect("activate", dialog_accept_cb, self.dialog)
 
     def run(self, address):
+        "run(address) -> (filename,address), all as strings"
         if address:
             self.address.set_text("%06X" % address)
         self.dialog.show_all()
@@ -190,18 +177,14 @@ class LoadDialog(TableDialog):
         return (filename, address)
 
 
-class OptionsDialog(TableDialog):
-    title = "Debug UI Options"
-    content_rows = 1
+class OptionsDialog():
     def __init__(self, parent):
-        self.lines = None
-        TableDialog.__init__(self, parent)
-
-    def add_table_content(self, table):
-        self.lines = self.add_entry_row(table, 0, "Memdump/disasm lines:", 2)
-        self.lines.connect("activate", self.accept_cb)
+        table, self.dialog = create_table_dialog(parent, "Debugger UI options", 1)
+        self.lines = table_add_entry_row(table, 0, "Memdump/disasm lines:", 2)
+        self.lines.connect("activate", dialog_accept_cb, self.dialog)
     
     def run(self, lines):
+        "run(lines) -> lines, as integers"
         self.lines.set_text(str(lines))
         self.dialog.show_all()
         while 1:
@@ -267,14 +250,14 @@ class MemoryAddress():
     def create_widgets(self):
         entry = gtk.Entry(6)
         entry.set_width_chars(6)
-        entry.connect("activate", self.entry_cb)
+        entry.connect("activate", self._entry_cb)
         memory = gtk.Label()
         mono = pango.FontDescription("monospace")
         memory.modify_font(mono)
         entry.modify_font(mono)
         return (entry, memory)
 
-    def entry_cb(self, widget):
+    def _entry_cb(self, widget):
         try:
             address = int(widget.get_text(), 16)
         except ValueError:
@@ -309,7 +292,7 @@ class MemoryAddress():
             address = self.first
         
         if self.dumpmode == Constants.REGISTERS:
-            output = self.get_registers()
+            output = self._get_registers()
             self.memory.set_label("".join(output))
             return
         
@@ -318,9 +301,9 @@ class MemoryAddress():
             return
         
         if self.dumpmode == Constants.MEMDUMP:
-            output = self.get_memdump(address, move_idx)
+            output = self._get_memdump(address, move_idx)
         elif self.dumpmode == Constants.DISASM:
-            output = self.get_disasm(address, move_idx)
+            output = self._get_disasm(address, move_idx)
         else:
             print "ERROR: unknown dumpmode:", self.dumpmode
             return
@@ -328,7 +311,7 @@ class MemoryAddress():
         if move_idx:
             self.reset_entry()
     
-    def get_registers(self):
+    def _get_registers(self):
         self.hatari.debug_command("r")
         output = self.hatari.get_lines(self.debug_output)
         if not self.first:
@@ -338,7 +321,7 @@ class MemoryAddress():
             self.reset_entry()
         return output
 
-    def get_memdump(self, address, move_idx):
+    def _get_memdump(self, address, move_idx):
         linewidth = 16
         screenful = self.lines*linewidth
         # no move, left/right, up/down, page up/down (no overlap)
@@ -348,14 +331,14 @@ class MemoryAddress():
             address -= offset
         else:
             address += offset
-        self.set_clamped(address, address+screenful)
+        self._set_clamped(address, address+screenful)
         self.hatari.debug_command("m %06x-%06x" % (self.first, self.last))
         # get & set debugger command results
         output = self.hatari.get_lines(self.debug_output)
         self.second = address + linewidth
         return output
         
-    def get_disasm(self, address, move_idx):
+    def _get_disasm(self, address, move_idx):
         # TODO: uses brute force i.e. ask for more lines that user has
         # requested to be sure that the window is filled, assuming
         # 6 bytes is largest possible instruction+args size
@@ -378,7 +361,7 @@ class MemoryAddress():
                 address = self.last
             else:
                 address += offset
-        self.set_clamped(address, address+screenful)
+        self._set_clamped(address, address+screenful)
         self.hatari.debug_command("d %06x-%06x" % (self.first, self.last))
         # get & set debugger command results
         output = self.hatari.get_lines(self.debug_output)
@@ -394,7 +377,7 @@ class MemoryAddress():
         self.last   = int(output[-1][:output[-1].find(":")], 16)
         return output
 
-    def set_clamped(self, first, last):
+    def _set_clamped(self, first, last):
         "set_clamped(first,last), clamp addresses to valid address range and set them"
         assert(first < last)
         if first < 0:
