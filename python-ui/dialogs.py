@@ -25,29 +25,24 @@ from uihelpers import UInfo
 # ---------- Dialogs --------------
 
 class HatariUIDialog():
-    def __init__(self, parent = None):
+    def __init__(self, parent):
+        "<any>Dialog(parent) -> object"
         self.parent = parent
         self.dialog = None
-
+    
     def run(self):
-        "return dialog response"
-        # subclasses may return also other things than dialog response
-        if self.dialog:
-            response = self.dialog.run()
-            self.dialog.hide()
-            return response
-        else:
-            return None
-
-    def destroy(self):
-        if self.dialog:
-            self.dialog.destroy()
+        """run() -> response. Shows dialog and returns response,
+subclasses overriding run() require also an argument."""
+        response = self.dialog.run()
+        self.dialog.hide()
+        return response
 
 
 class NoteDialog(HatariUIDialog):
     icontype = gtk.MESSAGE_INFO
     textpattern = "\n%s"
     def run(self, text):
+        "run(text), show message dialog with given text"
         dialog = gtk.MessageDialog(self.parent,
         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
         self.icontype, gtk.BUTTONS_CLOSE, self.textpattern % text)
@@ -64,6 +59,7 @@ class ErrorDialog(NoteDialog):
 
 class AskDialog(HatariUIDialog):
     def run(self, text):
+        "run(text), show question dialog and return True if user OKed it"
         dialog = gtk.MessageDialog(self.parent,
         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
         gtk.MESSAGE_QUESTION, gtk.BUTTONS_YES_NO, text)
@@ -99,7 +95,7 @@ class PasteDialog(HatariUIDialog):
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             ("Paste", gtk.RESPONSE_YES))
         entry = gtk.Entry()
-        entry.connect("activate", self.entry_cb)
+        entry.connect("activate", self._entry_cb)
         hbox = gtk.HBox()
         hbox.add(gtk.Label("Text:"))
         hbox.add(entry)
@@ -108,11 +104,11 @@ class PasteDialog(HatariUIDialog):
         self.dialog = dialog
         self.entry = entry
     
-    def entry_cb(self, widget):
+    def _entry_cb(self, widget):
         self.dialog.response(gtk.RESPONSE_YES)
         
     def run(self):
-        "return text to insert"
+        "run() -> text to insert"
         self.entry.set_text("")
         if self.dialog.run() == gtk.RESPONSE_YES:
             text = self.entry.get_text()
@@ -123,8 +119,7 @@ class PasteDialog(HatariUIDialog):
 
 
 class QuitSaveDialog(HatariUIDialog):
-    def __init__(self, parent, config):
-        self.config = config
+    def __init__(self, parent):
         dialog = gtk.Dialog("Quit and Save?", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             ("Save changes",    gtk.RESPONSE_YES,
@@ -141,11 +136,11 @@ class QuitSaveDialog(HatariUIDialog):
         self.scrolledwindow = scrolledwindow
         self.viewport = viewport
         self.dialog = dialog
-    
-    def run(self):
-        "return RESPONSE_CANCEL if dialog is canceled"
+        
+    def run(self, config):
+        "run(config) -> RESPONSE_CANCEL if dialog is canceled"
         changes = []
-        for key, value in self.config.list_changes():
+        for key, value in config.list_changes():
             changes.append("%s = %s" % (key, value))
         if not changes:
             return gtk.RESPONSE_NO
@@ -162,7 +157,7 @@ class QuitSaveDialog(HatariUIDialog):
         self.dialog.hide()
         if response == gtk.RESPONSE_YES:
             print "The configuration that would be saved:"
-            self.config.save()
+            config.save()
         return response
 
 
@@ -221,7 +216,7 @@ class TraceDialog(HatariUIDialog):
     ]
     RESPONSE_CLEAR_ALL = 1  # (builtin Gtk responses are negative)
     
-    def __init__(self, parent, hatari):
+    def __init__(self, parent):
         hbox = gtk.HBox()
         vbox1 = gtk.VBox()
         vbox2 = gtk.VBox()
@@ -248,9 +243,9 @@ class TraceDialog(HatariUIDialog):
         dialog.vbox.add(hbox)
         dialog.vbox.show_all()
         self.dialog = dialog
-        self.hatari = hatari
     
-    def run(self):
+    def run(self, hatari):
+        "run(hatari), modify trace settings as user requested"
         while True:
             response = self.dialog.run()
             if response == self.RESPONSE_CLEAR_ALL:
@@ -266,26 +261,25 @@ class TraceDialog(HatariUIDialog):
                 if self.tracewidgets[trace].get_active():
                     traces.append(trace)
             if traces:
-                self.hatari.change_option("--trace %s" % ",".join(traces))
+                hatari.change_option("--trace %s" % ",".join(traces))
             else:
-                self.hatari.change_option("--trace none")
+                hatari.change_option("--trace none")
 
 
 class SetupDialog(HatariUIDialog):
-    def __init__(self, parent, config):
+    def __init__(self, parent):
         dialog = gtk.Dialog("Hatari setup", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
              gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
         notebook = gtk.Notebook()
-        self.add_machines(notebook)
+        self._add_machines(notebook)
         notebook.set_scrollable(True)
         notebook.show_all()
         dialog.vbox.add(notebook)
         self.dialog = dialog
-        self.config = config
 
-    def add_machines(self, notebook):
+    def _add_machines(self, notebook):
         for name in ("ST", "STe", "TT", "Falcon"):
             # TODO: TOS (version), amount of memory, disk and HD dir paths
             todo = gtk.Label()
@@ -294,3 +288,5 @@ class SetupDialog(HatariUIDialog):
             label = gtk.Label(name)
             notebook.append_page(todo, label)
 
+    def run(self, config):
+        HatariUIDialog.run(self)

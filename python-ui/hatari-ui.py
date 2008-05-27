@@ -135,8 +135,8 @@ class HatariControls():
     # ------- setup control -----------
     def _setup_cb(self, widget):
         if not self.setupdialog:
-            self.setupdialog = SetupDialog(self.mainwin, self.hatari)
-        self.setupdialog.run()
+            self.setupdialog = SetupDialog(self.mainwin)
+        self.setupdialog.run(self.config)
 
     def setup(self):
         "Hatari configuration setup"
@@ -148,8 +148,8 @@ class HatariControls():
             return True
         if self.config.is_changed():
             if not self.quitdialog:
-                self.quitdialog = QuitSaveDialog(self.mainwin, self.config)
-            if self.quitdialog.run() == gtk.RESPONSE_CANCEL:
+                self.quitdialog = QuitSaveDialog(self.mainwin)
+            if self.quitdialog.run(self.config) == gtk.RESPONSE_CANCEL:
                 return True
         gtk.main_quit()
         # continue to mainwin destroy if called by delete_event
@@ -194,8 +194,8 @@ class HatariControls():
     # ------- trace control -----------
     def _trace_cb(self, widget):
         if not self.tracedialog:
-            self.tracedialog = TraceDialog(self.mainwin, self.hatari)
-        self.tracedialog.run()
+            self.tracedialog = TraceDialog(self.mainwin)
+        self.tracedialog.run(self.hatari)
 
     def trace(self):
         "Hatari tracing setup"
