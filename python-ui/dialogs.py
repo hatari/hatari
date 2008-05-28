@@ -140,8 +140,8 @@ class QuitSaveDialog(HatariUIDialog):
     def run(self, config):
         "run(config) -> RESPONSE_CANCEL if dialog is canceled"
         changes = []
-        for key, value in config.list_changes():
-            changes.append("%s = %s" % (key, value))
+        for key, value in config.get_changes():
+            changes.append("%s = %s" % (key, str(value)))
         if not changes:
             return gtk.RESPONSE_NO
         child = self.viewport.get_child()
@@ -156,7 +156,6 @@ class QuitSaveDialog(HatariUIDialog):
         response = self.dialog.run()
         self.dialog.hide()
         if response == gtk.RESPONSE_YES:
-            print "The configuration that would be saved:"
             config.save()
         return response
 

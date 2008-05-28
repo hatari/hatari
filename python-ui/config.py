@@ -79,13 +79,33 @@ class ConfigVariables():
             items[key] = text
         return items
 
+    def get_checkpoint(self):
+        "get_checkpoint() -> checkpoint, get the state of variables at this point"
+        return self.__dict__["__vars"].copy()
+    
+    def get_checkpoint_changes(self, items):
+        "get_checkpoint_changes() -> list of (key, value) pairs for later changes"
+        changed = []
+        if self.is_changed():
+            for key, value in self.__dict__["__vars"].items():
+                if key not in items or items[key] != value:
+                    changed.append((key, value))
+        return changed
+    
+    def revert_to_checkpoint(self, items):
+        "revert_to_checkpoint(checkpoint), revert to given checkpoint"
+        self.__dict__["__vars"] = items
+    
     def is_changed(self):
+        "is_changed() -> bool, whether any variables were changed"
         return self.__dict__["__changed"]
 
     def get(self, key):
+        "get(key) -> value"
         return self.__getattr__(key)
 
     def set(self, key, value):
+        "set(key, value)"
         self.__setattr__(key, value)
     
     def __getattr__(self, key):
@@ -128,7 +148,7 @@ class ConfigStore():
             print "WARNING: configuration file '%s' missing, using defaults" % cfgfile
             sections, variables = defaults
         self.variables = ConfigVariables(variables, miss_is_error)
-        self.original = variables
+        self.original = self.variables.get_checkpoint()
         self.sections = sections
         self.cfgfile = cfgfile
         self.path = path
@@ -186,26 +206,28 @@ class ConfigStore():
         if seckeys:
             sections[name] = seckeys
         return allkeys, sections
+
+    def add(self, section, key, value):
+        "add(section,key,value), add given key to given section"
+        if not section in self.sections:
+            self.sections[section] = []
+        elif key in self.sections[section]:
+            print "ERROR: key '%s' already in section '%s'" % (key, section)
+            return
+        self.sections[section][key] = value
+        self.variables.set(key, value)
         
     def is_changed(self):
         "is_changed() -> True if current configuration is changed"
         return self.variables.is_changed()
 
-    def list_changes(self):
-        "list_changes(), return (key, value) list for each changed config option"
-        changed = []
-        if self.variables.is_changed():
-            for key, value in self.variables.get_all().items():
-                if value != self.original[key]:
-                    changed.append((key, value))
-        return changed
-
-    def revert(self, key):
-        "revert(key), revert key to its original (loaded) value"
-        self.variables.set(key, self.original[key])
+    def get_changes(self):
+        "get_changes(), return (key, value) list for each changed config option"
+        return self.variables.get_checkpoint_changes(self.original)
     
     def write(self, fileobj):
         "write(fileobj), write current configuration to given file object"
+        variables = self.variables.get_all()
         sections = self.sections.keys()
         sections.sort()
         for section in sections:
@@ -213,7 +235,8 @@ class ConfigStore():
             keys = self.sections[section]
             keys.sort()
             for key in keys:
-                fileobj.write("%s = %s\n" % (key, str(self.variables.get(key))))
+                fileobj.write("%s = %s\n" % (key, variables[key]))
+            fileobj.write("\n")
             
     def save(self):
         "save(), if configuration changed, save it"
