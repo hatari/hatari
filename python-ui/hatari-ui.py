@@ -58,6 +58,8 @@ class HatariControls():
     def __init__(self):
         self.hatari = Hatari()
         self.config = HatariConfigMapping(self.hatari)
+        # TODO: Hatari UI configuration settings save/load
+        self.tracepoints = None
         # set later by owner of this object
         self.hatariparent = None
         self.mainwin = None
@@ -195,7 +197,7 @@ class HatariControls():
     def _trace_cb(self, widget):
         if not self.tracedialog:
             self.tracedialog = TraceDialog(self.mainwin)
-        self.tracedialog.run(self.hatari)
+        self.tracepoints = self.tracedialog.run(self.hatari, self.tracepoints)
 
     def trace(self):
         "Hatari tracing setup"

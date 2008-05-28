@@ -19,7 +19,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-from uihelpers import UInfo
+from uihelpers import UInfo, create_button
 
 
 # ---------- Dialogs --------------
@@ -213,15 +213,18 @@ class TraceDialog(HatariUIDialog):
         "gemdos",
         "vdi",
     ]
-    RESPONSE_CLEAR_ALL = 1  # (builtin Gtk responses are negative)
-    
     def __init__(self, parent):
-        hbox = gtk.HBox()
+        self.savedpoints = "none"
+        hbox1 = gtk.HBox()
+        hbox1.add(create_button("Load", self._load_traces))
+        hbox1.add(create_button("Clear", self._clear_traces))
+        hbox1.add(create_button("Save", self._save_traces))
+        hbox2 = gtk.HBox()
         vbox1 = gtk.VBox()
         vbox2 = gtk.VBox()
-        hbox.add(vbox1)
-        hbox.add(vbox2)
-        
+        hbox2.add(vbox1)
+        hbox2.add(vbox2)
+
         count = 0
         per_side = (len(self.tracepoints)+1)/2
         self.tracewidgets = {}
@@ -236,33 +239,52 @@ class TraceDialog(HatariUIDialog):
         
         dialog = gtk.Dialog("Trace settings", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-            ("Clear all", self.RESPONSE_CLEAR_ALL,
-             gtk.STOCK_APPLY, gtk.RESPONSE_APPLY))
+            (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
+             gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+        dialog.vbox.add(hbox1)
         dialog.vbox.add(gtk.Label("Select trace points:"))
-        dialog.vbox.add(hbox)
+        dialog.vbox.add(hbox2)
         dialog.vbox.show_all()
         self.dialog = dialog
-    
-    def run(self, hatari):
-        "run(hatari), modify trace settings as user requested"
-        while True:
-            response = self.dialog.run()
-            if response == self.RESPONSE_CLEAR_ALL:
-                for trace in self.tracepoints:
-                    self.tracewidgets[trace].set_active(False)
-                continue
-            break
-        self.dialog.hide()
 
-        if response == gtk.RESPONSE_APPLY:
-            traces = []
-            for trace in self.tracepoints:
-                if self.tracewidgets[trace].get_active():
-                    traces.append(trace)
-            if traces:
-                hatari.change_option("--trace %s" % ",".join(traces))
+    def _get_traces(self):
+        traces = []
+        for trace in self.tracepoints:
+            if self.tracewidgets[trace].get_active():
+                traces.append(trace)
+        if traces:
+            return ",".join(traces)
+        return "none"
+
+    def _set_traces(self, tracepoints):
+        self._clear_traces()
+        for trace in tracepoints.split(","):
+            if trace in self.tracewidgets:
+                self.tracewidgets[trace].set_active(True)
             else:
-                hatari.change_option("--trace none")
+                print "ERROR: unknown trace setting '%s'" % trace
+
+    def _clear_traces(self, widget = None):
+        for trace in self.tracepoints:
+            self.tracewidgets[trace].set_active(False)
+
+    def _load_traces(self, widget):
+        # this doesn't load traces, just sets them from internal variable
+        # that run method gets from caller and sets. It's up to caller
+        # whether the saving or loading happens actually to disk
+        self._set_traces(self.savedpoints)
+    
+    def _save_traces(self, widget):
+        self.savedpoints = self._get_traces()
+
+    def run(self, hatari, savedpoints):
+        "run(hatari,tracepoints) -> tracepoints, caller saves tracepoints"
+        self.savedpoints = savedpoints
+        response = self.dialog.run()
+        self.dialog.hide()
+        if response == gtk.RESPONSE_APPLY:
+            hatari.change_option("--trace %s" % self._get_traces())
+        return self.savedpoints
 
 
 class SetupDialog(HatariUIDialog):
