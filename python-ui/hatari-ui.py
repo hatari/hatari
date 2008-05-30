@@ -587,6 +587,7 @@ def main():
         if error:
             usage(app, error)
 
+    info = UInfo()
     app.create_ui(fullscreen, embed)
     gtk.main()
 

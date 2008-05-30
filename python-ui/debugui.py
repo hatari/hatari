@@ -569,6 +569,7 @@ class HatariDebugUI():
 
 def main():
     from hatari import Hatari
+    info = UInfo()
     hatariobj = Hatari()
     hatariobj.run()
     debugui = HatariDebugUI(hatariobj, True)
