@@ -154,10 +154,13 @@
 /* 2008/04/12	[NP]	In the case of a 'right-2' line, we should not change the EndLine's int	*/
 /*			position when switching back to 50 Hz ; the int should happen at	*/
 /*			position LINE_END_CYCLE_60 + 28 (Anomaly Demo main menu).		*/
+/* 2008/05/31	[NP]	Ignore consecutives writes of the same value in the freq/res register.	*/
+/*			Only the 1st write matters, else this could confuse the code to remove	*/
+/*			top/bottom border (fix OSZI.PRG demo by ULM).				*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.112 2008-05-25 19:58:56 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.113 2008-05-31 17:57:33 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -491,6 +494,10 @@ static void Video_WriteToShifter(Uint8 Byte)
 	HATARI_TRACE ( HATARI_TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 	               Byte, nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
+	/* Ignore consecutive writes of the same value */
+	if ( Byte == nLastByte )
+		return;						/* do nothing */
+
 	/* Remove left border : +26 bytes */
 	/* this can be done with a hi/lo res switch or a hi/med res switch */
 	if (nLastByte == 0x02 && Byte == 0x00
@@ -637,6 +644,9 @@ void Video_Sync_WriteByte(void)
 	HATARI_TRACE ( HATARI_TRACE_VIDEO_SYNC ,"sync=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 	               Byte, nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
+	/* Ignore consecutive writes of the same value */
+	if ( Byte == nLastByte )
+		return;						/* do nothing */
 
 	if ( ( nLastByte == 0x00 ) && ( Byte == 0x02 )/* switched from 60 Hz to 50 Hz? */
 	        && ( nLastVBL == nVBLs ) )			/* switched during the same VBL */
