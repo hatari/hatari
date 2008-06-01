@@ -28,7 +28,7 @@
 
 /* Overscan values */
 #define OVERSCAN_TOP        29
-#define OVERSCAN_BOTTOM     47
+#define OVERSCAN_BOTTOM     45
 
 /* Number of visible screen lines including top/bottom borders */
 #define NUM_VISIBLE_LINES  (OVERSCAN_TOP+200+OVERSCAN_BOTTOM)

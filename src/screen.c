@@ -19,7 +19,15 @@
   only convert the screen every 50 times a second - inbetween frames are not
   processed.
 */
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.82 2008-05-25 19:58:56 thothy Exp $";
+
+/* 2008/06/01	[NP]	Although it seems possible to display 47 lines in the bottom border	*/
+/*			with a second 60/50 Hz switch, most programs consider there're 45	*/
+/*			visible lines in the bottom border, which gives a total of 274 lines	*/
+/*			for a screen. This fixes garbages that could appear in the last two	*/
+/*			lines when displaying 47 lines (Digiwolrd 2 by ICE, Tyranny by DHS).	*/
+
+
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.83 2008-06-01 10:26:34 npomarede Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
