@@ -2184,7 +2184,7 @@ static void dsp_jsset(void)
 
 	cur_inst_len++;
 	if (value & (1<<numbit)) {
-		dsp_stack_push(dsp_pc+cur_inst_len+1, dsp_registers[DSP_REG_SR]);
+		dsp_stack_push(dsp_pc+cur_inst_len/*+1*/, dsp_registers[DSP_REG_SR]);
 
 		newpc = read_memory(DSP_SPACE_P, dsp_pc+1);
 		dsp_pc = newpc;
