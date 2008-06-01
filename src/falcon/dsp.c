@@ -288,7 +288,7 @@ void DSP_shutdown(void)
 static inline void DSP_force_exec(void)
 {
 #if DSP_HOST_FORCEEXEC
-	while (state == DSP_RUNNING) {
+	while (dsp_state == DSP_RUNNING) {
 	}
 #endif
 }
