@@ -8,7 +8,7 @@
 #ifndef HATARI_PATHS_H
 #define HATARI_PATHS_H
 
-extern void Paths_Init(char *argv0);
+extern void Paths_Init(const char *argv0);
 extern const char *Paths_GetWorkingDir(void);
 extern const char *Paths_GetDataDir(void);
 extern const char *Paths_GetUserHome(void);

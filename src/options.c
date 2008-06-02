@@ -17,7 +17,7 @@
   2008-04-16   [ET]    Return FALSE instead of exiting on errors
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.60 2008-05-25 19:58:56 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.61 2008-06-02 20:07:02 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -448,7 +448,7 @@ static bool Opt_Bool(const char *arg, int optid, bool *conf)
  * Checks also that if option is supposed to have argument,
  * whether there's one.
  */
-static int Opt_WhichOption(int argc, char *argv[], int idx)
+static int Opt_WhichOption(int argc, const char *argv[], int idx)
 {
 	const opt_t *opt;
 	const char *str = argv[idx];
@@ -525,7 +525,7 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
  * On first call (when parsing normal commandline) exits on errors.
  * After that, returns TRUE if everything was OK, FALSE otherwise.
  */
-bool Opt_ParseParameters(int argc, char *argv[],
+bool Opt_ParseParameters(int argc, const char *argv[],
 			 char *bootdisk, size_t bootlen)
 {
 	int i, ncpu, skips, zoom, planes, cpuclock, threshold, memsize;

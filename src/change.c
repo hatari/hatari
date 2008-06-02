@@ -10,8 +10,9 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.8 2008-05-09 18:25:06 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.9 2008-06-02 20:07:01 eerot Exp $";
 
+#include <ctype.h>
 #include "main.h"
 #include "configuration.h"
 #include "audio.h"
@@ -247,7 +248,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceRes
  * Change given Hatari options
  * Return FALSE if parsing failed, TRUE otherwise
  */
-static bool Change_Options(int argc, char *argv[])
+static bool Change_Options(int argc, const char *argv[])
 {
 	bool bOK;
 	CNF_PARAMS original, changed;
@@ -287,7 +288,7 @@ static bool Change_Options(int argc, char *argv[])
 bool Change_ApplyCommandline(char *cmdline)
 {
 	int i, argc, inarg;
-	char **argv;
+	const char **argv;
 	bool ret;
 
 	/* count args */

@@ -63,7 +63,7 @@ const char *Paths_GetHatariHome(void)
  * Explore the PATH environment variable to see where our executable is
  * installed.
  */
-static void Paths_GetExecDirFromPATH(char *argv0, char *pExecDir, int nMaxLen)
+static void Paths_GetExecDirFromPATH(const char *argv0, char *pExecDir, int nMaxLen)
 {
 	char *pPathEnv;
 	char *pAct;
@@ -113,7 +113,7 @@ static void Paths_GetExecDirFromPATH(char *argv0, char *pExecDir, int nMaxLen)
 /**
  * Locate the directory where the hatari executable resides
  */
-static char *Paths_InitExecDir(char *argv0)
+static char *Paths_InitExecDir(const char *argv0)
 {
 	char *psExecDir;  /* Path string where the hatari executable can be found */
 
@@ -219,7 +219,7 @@ static void Paths_InitHomeDirs(void)
  * have to find out where the executable is. But thanks to this effort, we get
  * a relocatable package (we don't have any absolute path names in the program)!
  */
-void Paths_Init(char *argv0)
+void Paths_Init(const char *argv0)
 {
 	char *psExecDir;  /* Path string where the hatari executable can be found */
 

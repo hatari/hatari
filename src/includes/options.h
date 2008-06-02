@@ -15,7 +15,7 @@ extern bool bBiosIntercept;
  * boot disk image name (empty if not set) accordingly.
  * Returns TRUE if everything was OK, FALSE otherwise.
  */
-extern bool Opt_ParseParameters(int argc, char *argv[],
+extern bool Opt_ParseParameters(int argc, const char *argv[],
 				char *bootdisk, size_t bootlen);
 
 #endif /* HATARI_OPTIONS_H */

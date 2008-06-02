@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.129 2008-05-23 14:44:22 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.130 2008-06-02 20:07:02 eerot Exp $";
 
 #include "config.h"
 
@@ -548,7 +548,7 @@ static void Main_UnInit(void)
 /**
  * Main
  */
-int main(int argc, char *argv[])
+int main(int argc, const char *argv[])
 {
 	/* Generate random seed */
 	srand(time(NULL));
