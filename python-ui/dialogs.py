@@ -220,21 +220,18 @@ class TraceDialog(HatariUIDialog):
         hbox1.add(create_button("Clear", self._clear_traces))
         hbox1.add(create_button("Save", self._save_traces))
         hbox2 = gtk.HBox()
-        vbox1 = gtk.VBox()
-        vbox2 = gtk.VBox()
-        hbox2.add(vbox1)
-        hbox2.add(vbox2)
+        vboxes = []
+        for idx in (0,1,2):
+            vboxes.append(gtk.VBox())
+            hbox2.add(vboxes[idx])
 
         count = 0
-        per_side = (len(self.tracepoints)+1)/2
+        per_side = (len(self.tracepoints)+2)/3
         self.tracewidgets = {}
         for trace in self.tracepoints:
             widget = gtk.CheckButton(trace)
             self.tracewidgets[trace] = widget
-            if count < per_side:
-                vbox1.pack_start(widget, False, True)
-            else:
-                vbox2.pack_start(widget, False, True)
+            vboxes[count/per_side].pack_start(widget, False, True)
             count += 1
         
         dialog = gtk.Dialog("Trace settings", parent,

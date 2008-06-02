@@ -5,6 +5,6 @@
 $0.py --embed \
 --top "about,run,pause,quit" \
 --panel "Function keys,F1=59,F2=60,F3=61,F4=62,F5=63,F6=64,F7=65,F8=66,F9=67,F10=68" \
---panel "Other keys,paste,Macro=Test,Undo=97,Help=98,Enter=114" \
+--panel "Other keys,paste,Macro=Test,Undo=97,Help=98,Enter=114,close" \
 --right "setup,debug,trace,Function keys,Other keys" \
 --bottom "sound,spec512,|,fastforward,|,frameskip"

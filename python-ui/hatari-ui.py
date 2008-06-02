@@ -50,7 +50,7 @@ class HatariControls():
         "about", "run", "paste", "pause", "setup", "quit",
         "fastforward", "frameskip", "spec512", "sound",
         "rightclick", "doubleclick",
-        "debug", "trace"
+        "debug", "trace", "close"
     ]
     # spacing between input widget and its label
     label_spacing = 4
@@ -110,6 +110,14 @@ class HatariControls():
     def run(self):
         "(Re-)run Hatari"
         return (create_button("Run Hatari!", self._run_cb), True)
+
+    # ------- close control -----------
+    def _close_cb(self, widget):
+        widget.get_toplevel().hide()
+        
+    def close(self):
+        "Close button (makes panel window to a dialog)"
+        return (create_button("Close", self._close_cb), True)
 
     # ------- paste control -----------
     def _paste_cb(self, widget):
@@ -312,6 +320,7 @@ class HatariUI():
         self.controls = HatariControls()
         # other widgets
         self.tooltips = None
+        self.mainwin = None
 
     # ----- control types ---------
     def set_controls(self, control_str, side):
@@ -378,8 +387,11 @@ class HatariUI():
     def _panel_cb(self, widget, idx):
         if not self.panels[idx]:
             window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+            window.set_transient_for(self.mainwin)
             window.set_icon_from_file(UInfo.icon)
             window.set_title(self.panel_names[idx])
+            if "close" in self.panel_controls[idx]:
+                window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
             window.add(self.get_control_box(self.panel_controls[idx], True))
             window.connect("delete_event", window_hide_cb)
             self.panels[idx] = window
@@ -453,6 +465,7 @@ class HatariUI():
         if fullscreen:
             mainwin.fullscreen()
         self.controls.set_mainwin_hatariparent(mainwin, hatariparent)
+        self.mainwin = mainwin
         mainwin.show_all()
 
     def _create_mainwin(self, embed):
