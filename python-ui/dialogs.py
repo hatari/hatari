@@ -212,6 +212,7 @@ class TraceDialog(HatariUIDialog):
         "xbios",
         "gemdos",
         "vdi",
+        "blitter"
     ]
     def __init__(self, parent):
         self.savedpoints = "none"

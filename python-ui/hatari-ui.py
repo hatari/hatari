@@ -228,7 +228,7 @@ class HatariControls():
 
     def spec512(self):
         "Whether to support Spec512 (>16 colors at the same time)"
-        widget = gtk.CheckButton("Spec512 support")
+        widget = gtk.CheckButton("Spec512")
         widget.set_active(self.config.get_spec512threshold())
         widget.connect("toggled", self._spec512_cb)
         return (widget, False)
