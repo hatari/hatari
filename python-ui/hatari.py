@@ -27,7 +27,7 @@ from config import ConfigStore
 # Running Hatari instance
 class Hatari():
     "running hatari instance and methods for communicating with it"
-    basepath = "/tmp/hatari-ui-" + os.getenv("USER")
+    basepath = "/tmp/hatari-ui-" + str(os.getpid())
     logpath = basepath + ".log"
     tracepath = basepath + ".trace"
     debugpath = basepath + ".debug"
