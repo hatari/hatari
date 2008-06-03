@@ -27,7 +27,7 @@
 /*			lines when displaying 47 lines (Digiwolrd 2 by ICE, Tyranny by DHS).	*/
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.83 2008-06-01 10:26:34 npomarede Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.84 2008-06-03 19:41:27 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -549,6 +549,7 @@ void Screen_EnterFullScreen(void)
 	{
 		Main_PauseEmulation();         /* Hold things... */
 		bInFullScreen = TRUE;
+		Main_ReparentWindow(bInFullScreen);
 
 		if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
 		     || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
@@ -591,7 +592,7 @@ void Screen_ReturnFromFullScreen(void)
 		{
 			Screen_SetResolution();
 		}
-
+		Main_ReparentWindow(bInFullScreen);
 		SDL_Delay(20);                /* To give monitor time to switch resolution */
 		Main_UnPauseEmulation();      /* And off we go... */
 	}
