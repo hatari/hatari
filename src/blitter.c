@@ -10,7 +10,7 @@
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.26 2008-06-03 18:10:43 npomarede Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.27 2008-06-03 23:01:10 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -25,7 +25,11 @@ const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.26 2008-06-03 18:10:43 n
 #include "stMemory.h"
 #include "video.h"
 
+
 #define DEBUG 0
+
+#define NONHOG_CYCLES (64*4)    /* Cycles to run for in non-hog mode */
+
 
 /* BLiTTER registers, counts and incs are signed, others unsigned */
 #define REG_HT_RAM	0xff8a00	/* - 0xff8a1e */
@@ -59,6 +63,7 @@ static Uint8 NFSR, FXSR;
 static Uint32 dest_addr, source_addr;
 static int halftone_curroffset;
 static Uint32 source_buffer;
+static int nCurrentCycles;
 
 
 /**
@@ -160,6 +165,17 @@ static void load_halftone_ram(void)
 }
 
 
+/**
+ * Count blitter cycles
+ */
+static void Blitter_AddCycles(int cycles)
+{
+	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cycles, INT_CPU_CYCLE);
+	nCyclesMainCounter += cycles;
+	nCurrentCycles += cycles;
+}
+
+
 #define do_source_shift() \
 	if (((short)IoMem_ReadWord(REG_SRC_X_INC)) < 0) \
 		source_buffer >>= 16; \
@@ -183,7 +199,7 @@ static void load_halftone_ram(void)
 	((STMemory_ReadWord(source_addr) >> skew) & 15) : halftone_curroffset)
 
 
-static inline void put_dst_data(Uint8 skew, Uint16 end_mask, int cyc_per_op)
+static inline void put_dst_data(Uint8 skew, Uint16 end_mask)
 {
 	Uint16 dst_data, opd_data;
 
@@ -227,17 +243,14 @@ static inline void put_dst_data(Uint8 skew, Uint16 end_mask, int cyc_per_op)
 		IoMem_wput(dest_addr, opd_data);
 
 	--x_count;
-
-	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cyc_per_op, INT_CPU_CYCLE);
-	nCyclesMainCounter += cyc_per_op;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
  * Let's do the blit.
- * Note that in non-HOG mode, the blitter only runs for 64 cycles before
- * giving the bus back to the CPU. Due to this mode, this function must
+ * Note that in non-HOG mode, the blitter only runs for 64 bus cycles (2 MHz!)
+ * before giving the bus back to the CPU. Due to this mode, this function must
  * be able to abort and resume the blitting at any time.
  */
 static void Do_Blit(void)
@@ -246,7 +259,7 @@ static void Do_Blit(void)
 	int source_x_inc, source_y_inc;
 	int dest_x_inc, dest_y_inc;
 	int halftone_direction;
-	int cyc_per_op, curcycles;
+	int cyc_per_op;
 
 	/*if(address_space_24)*/ 
 	{ source_addr &= 0x0fffffe; dest_addr &= 0x0fffffe; }
@@ -277,9 +290,10 @@ static void Do_Blit(void)
 
 	/* Cycles for one WORD transfer */
 	cyc_per_op = blit_cycles_tab[op][hop] * 4;
-	curcycles = 0;
+	nCurrentCycles = 0;
 
 	/* Ugly hack for the game Obsession: */
+#if 0
 	if ((nDmaSoundControl & DMASNDCTRL_PLAY) && (blit_control & 0x40))
 	{
 		/* If DMA sound is running at the same time as the blitter is
@@ -289,6 +303,7 @@ static void Do_Blit(void)
 		 * I don't know (yet) how to emulate this in a proper way... */
 		cyc_per_op = 0;
 	}
+#endif
 
 	/* Now we enter the main blitting loop */
 	do 
@@ -301,27 +316,30 @@ static void Do_Blit(void)
 				do_source_shift();
 				get_source_data();
 				source_addr += source_x_inc;
+				Blitter_AddCycles(4);
 			}
 
 			do_source_shift();
 			get_source_data();
-			put_dst_data(skew, end_mask_1, cyc_per_op);
-			curcycles += cyc_per_op;
+			put_dst_data(skew, end_mask_1);
+			Blitter_AddCycles(cyc_per_op);
 		}
 
 		/* Middle words of a line */
-		while (x_count > 1 && ((blit_control & 0x40) || curcycles < 64))
+		while (x_count > 1
+		       && ((blit_control & 0x40) || nCurrentCycles < NONHOG_CYCLES))
 		{
 			source_addr += source_x_inc;
 			dest_addr += dest_x_inc;
 			do_source_shift();
 			get_source_data();
-			put_dst_data(skew, end_mask_2, cyc_per_op);
-			curcycles += cyc_per_op;
+			put_dst_data(skew, end_mask_2);
+			Blitter_AddCycles(cyc_per_op);
 		}
 
 		/* Last word of a line */
-		if (x_count == 1 && ((blit_control & 0x40) || curcycles < 64))
+		if (x_count == 1
+		    && ((blit_control & 0x40) || nCurrentCycles < NONHOG_CYCLES))
 		{
 			dest_addr += dest_x_inc;
 			do_source_shift();
@@ -329,9 +347,13 @@ static void Do_Blit(void)
 			{
 				source_addr += source_x_inc;
 				get_source_data();
+				Blitter_AddCycles(cyc_per_op - 4);
 			}
-			put_dst_data(skew, end_mask_3, cyc_per_op);
-			curcycles += cyc_per_op;
+			else
+			{
+				Blitter_AddCycles(cyc_per_op);
+			}
+			put_dst_data(skew, end_mask_3);
 		}
 
 		/* Line done? */
@@ -348,7 +370,8 @@ static void Do_Blit(void)
 				halftone_curroffset = (halftone_curroffset+halftone_direction) & 15;
 		}
 	}
-	while (y_count > 0 && ((blit_control & 0x40) || curcycles < 64));
+	while (y_count > 0
+	       && ((blit_control & 0x40) || nCurrentCycles < NONHOG_CYCLES));
 
 	if (!(blit_control & 0x20))
 	{
@@ -589,7 +612,8 @@ void Blitter_Control_WriteByte(void)
 		else
 		{
 			/* Start blitting after some CPU cycles */
-			Int_AddRelativeInterrupt(4, INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
+			Int_AddRelativeInterrupt(CurrentInstrCycles+nWaitStateCycles+4,
+			                         INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
 		}
 	}
 }
@@ -635,7 +659,7 @@ void Blitter_MemorySnapShot_Capture(bool bSave)
 
 
 /**
- * Handler which continues blitting after 64 CPU cycles.
+ * Handler which continues blitting after 64 bus cycles.
  */
 void Blitter_InterruptHandler(void)
 {
@@ -654,6 +678,6 @@ void Blitter_InterruptHandler(void)
 	else
 	{
 		/* Continue blitting later */
-		Int_AddRelativeInterrupt(64, INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
+		Int_AddRelativeInterrupt(NONHOG_CYCLES, INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
 	}
 }
