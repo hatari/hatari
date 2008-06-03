@@ -10,7 +10,7 @@
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.25 2008-05-25 09:18:09 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.26 2008-06-03 18:10:43 npomarede Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -23,6 +23,7 @@ const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.25 2008-05-25 09:18:09 t
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "stMemory.h"
+#include "video.h"
 
 #define DEBUG 0
 
@@ -562,6 +563,16 @@ void Blitter_Control_WriteByte(void)
 	 *
 	 * The lowest 4 bits contain the Halftone pattern line number
 	 */
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_BLITTER ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "blitter write ctrl=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , 
+				IoMem_ReadByte(REG_CONTROL) ,
+				nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
+
 	blit_control = IoMem_ReadByte(REG_CONTROL) & 0xef;
 
 	/* Remove old pending update interrupt */

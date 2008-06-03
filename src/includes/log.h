@@ -90,10 +90,12 @@ extern bool Log_SetTraceOptions(const char *OptionsStr);
 
 #define	HATARI_TRACE_IKBD		(1<<20)
 
-#define HATARI_TRACE_OS_BIOS		(1<<21)
-#define HATARI_TRACE_OS_XBIOS		(1<<22)
-#define HATARI_TRACE_OS_GEMDOS		(1<<23)
-#define HATARI_TRACE_OS_VDI		(1<<24)
+#define HATARI_TRACE_BLITTER		(1<<21)
+
+#define HATARI_TRACE_OS_BIOS		(1<<22)
+#define HATARI_TRACE_OS_XBIOS		(1<<23)
+#define HATARI_TRACE_OS_GEMDOS		(1<<24)
+#define HATARI_TRACE_OS_VDI		(1<<25)
 
 #define	HATARI_TRACE_NONE		(0)
 #define	HATARI_TRACE_ALL		(~0)
