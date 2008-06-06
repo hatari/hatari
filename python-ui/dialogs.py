@@ -289,25 +289,43 @@ class TraceDialog(HatariUIDialog):
 
 class SetupDialog(HatariUIDialog):
     def __init__(self, parent):
-        dialog = gtk.Dialog("Hatari setup", parent,
+        self.parent = parent
+        self.initialized = False
+        dialog = gtk.Dialog("Emulated machine configurations", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-            (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
+            ("Reboot emulation",  gtk.RESPONSE_APPLY,
              gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
-        notebook = gtk.Notebook()
-        self._add_machines(notebook)
-        notebook.set_scrollable(True)
-        notebook.show_all()
-        dialog.vbox.add(notebook)
+
+        box1 = gtk.HBox()
+        box1.add(create_button("Add", self._add_setup))
+        box1.add(create_button("Edit", self._edit_setup))
+        box1.add(create_button("Remove", self._remove_setup))
+        dialog.vbox.add(box1)
+
+        box2 = gtk.HBox()
+        self.combo = gtk.combo_box_new_text()
+        box2.pack_start(gtk.Label("Machine setup:"), False, False)
+        box2.add(self.combo)
+        dialog.vbox.add(box2)
+        dialog.vbox.show_all()
         self.dialog = dialog
 
-    def _add_machines(self, notebook):
-        for name in ("ST", "STe", "TT", "Falcon"):
-            # TODO: TOS (version), amount of memory, disk and HD dir paths
-            todo = gtk.Label()
-            todo.set_use_markup(True)
-            todo.set_markup("<i><b>TODO</b></i>")
-            label = gtk.Label(name)
-            notebook.append_page(todo, label)
+    def _add_setup(self, widget):
+        TodoDialog(self.parent).run("Add setup")
+    def _edit_setup(self, widget):
+        TodoDialog(self.parent).run("Edit setup")
+    def _remove_setup(self, widget):
+        TodoDialog(self.parent).run("Remove setup")
+    
+    def _fill_combo(self, config):
+        if not self.initialized:
+            self.initialized = True
+            for text in ("Default", "Another dummy"):
+                self.combo.append_text(text)
+            self.combo.set_active(0)
 
     def run(self, config):
-        HatariUIDialog.run(self)
+        self._fill_combo(config)
+        if self.dialog.run() == gtk.RESPONSE_APPLY:
+            print "TODO: apply setup %d and reboot Hatari" % self.combo.get_active()
+        self.dialog.hide()
