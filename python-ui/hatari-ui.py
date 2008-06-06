@@ -149,8 +149,8 @@ class HatariControls():
         self.setupdialog.run(self.config)
 
     def setup(self):
-        "Hatari configuration setup"
-        return (create_button("Hatari setup", self._setup_cb), True)
+        "Hatari st/e/tt/falcon configuration"
+        return (create_button("Machine setup", self._setup_cb), True)
 
     # ------- quit control -----------
     def _quit_cb(self, widget, arg = None):
@@ -323,33 +323,35 @@ class HatariUI():
         self.mainwin = None
 
     # ----- control types ---------
-    def set_controls(self, control_str, side):
-        "set_controls(controls,side) -> error string, None if all OK"
+    def set_controls(self, control_str, place):
+        "set_controls(controls,place) -> error string, None if all OK"
         controls = control_str.split(",")
         for control in controls:
             if control in self.controls.all:
                 # regular control
+                if control == "close" and place != "panel":
+                    return "close button can be only in a panel"
                 continue
-            if control == "|" or control in self.panel_names:
-                # divider or special panel control
+            if control in ("|", ">") or control in self.panel_names:
+                # divider/line break or special panel control
                 continue
             if control.find("=") >= 0:
                 # special keycode/string control
                 continue
             return "unrecognized control '%s'" % control
 
-        if side == "left":
+        if place == "left":
             self.controls_left = controls
-        elif side == "right":
+        elif place == "right":
             self.controls_right = controls
-        elif side == "top":
+        elif place == "top":
             self.controls_top = controls
-        elif side == "bottom":
+        elif place == "bottom":
             self.controls_bottom = controls
-        elif side == "panel":
+        elif place == "panel":
             self.panel_controls.append(controls)
         else:
-            return "unknown controls position '%s'" % side
+            return "unknown controls position '%s'" % place
         return None
 
     def add_panel(self, spec):
@@ -369,6 +371,7 @@ class HatariUI():
         "list_all_controls() -> list of (control, description) tuples"
         # generate the list from class internal documentation
         yield ("|", "Separator between controls")
+        yield (">", "Line break between controls in panels")
         for methodname in self.controls.all:
             yield (methodname, HatariControls.__dict__[methodname].__doc__)
         yield ("<panel name>", self.add_panel_button.__doc__)
@@ -422,6 +425,19 @@ class HatariUI():
         "return Gtk Box container with the specified control widgets or None for no controls"
         if not controls:
             return None
+        if ">" in controls:
+            if horizontal:
+                box = gtk.VBox(False, self.control_spacing)
+            else:
+                box = gtk.BBox(False, self.control_spacing)
+            while ">" in controls:
+                linebreak = controls.index(">")
+                box.add(self.get_control_box(controls[:linebreak], horizontal))
+                controls = controls[linebreak+1:]
+            if controls:
+                box.add(self.get_control_box(controls, horizontal))
+            return box
+
         self.controls.set_box_horizontal(horizontal)
         if horizontal:
             box = gtk.HBox(False, self.control_spacing)
@@ -547,9 +563,9 @@ You can have as many panels as you wish.  For each panel you need to add
 a control with the name of the panel (see "MyPanel" below).
 
 For example:
-\t%s -e \\
+\t%s --embed \\
 \t-t "about,run,pause,quit" \\
-\t-p "MyPanel,Macro=Test,Undo=97,Help=98,Enter=114,F1=59,F2=60,F3=61,F4=62" \\
+\t-p "MyPanel,Macro=Test,Undo=97,Help=98,>,F1=59,F2=60,F3=61,F4=62,>,close" \\
 \t-r "paste,debug,trace,setup,MyPanel" \\
 \t-b "sound,spec512,|,fastforward,|,frameskip"
 

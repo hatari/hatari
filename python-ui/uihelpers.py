@@ -23,6 +23,11 @@ import gtk
 import gobject
 
 
+# leak debugging
+#import gc
+#gc.set_debug(gc.DEBUG_UNCOLLECTABLE)
+
+
 class UInfo:
     """singleton constants for the UI windows,
     one instance is needed to initialize these properly"""
@@ -52,6 +57,7 @@ class UInfo:
             return testpath
 
 
+# -----------------------------------------------
 # auxiliary class to be used with the PasteDialog
 class HatariTextInsert():
     def __init__(self, hatari, text):
@@ -77,6 +83,8 @@ def _text_insert_cb(textobj):
         textobj.hatari.insert_event("keypress %c" % char)
     return True
 
+
+# ----------------------------------------------
 
 def create_button(label, cb, data = None):
     "create_button(label,cb[,data]) -> button widget"
