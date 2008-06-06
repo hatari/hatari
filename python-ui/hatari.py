@@ -207,28 +207,39 @@ class Hatari():
 # this cannot just do these according to some mapping table, but
 # it needs actual method for (each) setting.
 class HatariConfigMapping(ConfigStore):
+    EMULATED_JOY = 2
+    
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
-        defaults = ({}, {})
-        ConfigStore.__init__(self, defaults, "hatari.cfg")
+        ConfigStore.__init__(self, "hatari.cfg")
         self.hatari = hatari
+        self.joyemu = None
 
     # ------------ fastforward ---------------
     def get_fastforward(self):
-        return self.variables.bFastForward
+        return self.get("[System]", "bFastForward")
 
     def set_fastforward(self, value):
-        self.variables.bFastForward = value
+        self.set("[System]", "bFastForward", value)
         self.hatari.change_option("--fast-forward %s" % str(value))
         
     # ------------ spec512 ---------------
     def get_spec512threshold(self):
-        return self.variables.nSpec512Threshold
+        return self.get("[Screen]", "nSpec512Threshold")
 
     def set_spec512threshold(self, value):
         value = int(value) # guarantee correct type
-        self.variables.nSpec512Threshold = value
+        self.set("[Screen]", "nSpec512Threshold", value)
         self.hatari.change_option("--spec512 %d" % value)
+
+    # ------------ frameskips ---------------
+    def get_frameskips(self):
+        return self.get("[Screen]", "nFrameSkips")
+    
+    def set_frameskips(self, value):
+        value = int(value) # guarantee correct type
+        self.set("[Screen]", "nFrameSkips", value)
+        self.hatari.change_option("--frameskips %d" % value)
         
     # ------------ sound ---------------
     def get_sound_values(self):
@@ -236,29 +247,44 @@ class HatariConfigMapping(ConfigStore):
     
     def get_sound(self):
         # return index to get_sound_values() array
-        if self.variables.bEnableSound:
-            return self.variables.nPlaybackQuality + 1
+        if self.get("[Sound]", "bEnableSound"):
+            return self.get("[Sound]", "nPlaybackQuality") + 1
         return 0
 
     def set_sound(self, value):
         # map get_sound_values() index to Hatari config
         if value:
-            self.variables.nPlaybackQuality = value - 1
-            self.variables.bEnableSound = True
+            self.set("[Sound]", "nPlaybackQuality", value - 1)
+            self.set("[Sound]", "bEnableSound", True)
         else:
-            self.variables.bEnableSound = False
+            self.set("[Sound]", "bEnableSound", False)
         # and to cli option
         quality = { 0: "off", 1: "low", 2: "med", 3: "hi" }[value]
         self.hatari.change_option("--sound %s" % quality)
-
-    # ------------ frameskips ---------------
-    def get_frameskips(self):
-        return self.variables.nFrameSkips
+        
+    # ----------- joyemu --------------
+    def get_joyemu_values(self):
+        return ["Cursors keys"] + ["Joystick " + str(joy) for joy in range(6)]
     
-    def set_frameskips(self, value):
-        value = int(value) # guarantee correct type
-        self.variables.nFrameSkips = value
-        self.hatari.change_option("--frameskips %d" % value)
+    def get_joyemu(self):
+        # return index to get_joyemu_values() array
+        for joy in range(6):
+            if self.get("[Joystick%d]" % joy, "nJoystickMode") == self.EMULATED_JOY:
+                self.joyemu = joy + 1
+                return self.joyemu
+        return 0
+
+    def set_joyemu(self, value):
+        # map get_sound_values() index to Hatari config
+        if value == self.joyemu:
+            return
+        if self.joyemu:
+            # disable previous joystick
+            self.set("[Joystick%d]" % (self.joyemu-1), "nJoystickMode", 0)
+        if value:
+            self.set("[Joystick%d]" % (value-1), "nJoystickMode", self.EMULATED_JOY)
+            self.hatari.change_option("--joystick %d" % (value-1))
+        self.joyemu = value
 
     # ------------ options to embed to requested size ---------------
     def get_embed_args(self, size):
@@ -270,13 +296,15 @@ class HatariConfigMapping(ConfigStore):
             sys.exit(1)
         
         # for VDI we can use (fairly) exact size + ignore other screen options
-        if self.variables.bUseExtVdiResolutions:
+        if self.get("[Screen]", "bUseExtVdiResolutions"):
             return ("--vdi-width", str(width), "--vdi-height", str(height))
         
         args = ()
         # max size with overscan borders
-        border_minw = self.variables.nWindowBorderPixelsLeft + 320 + self.variables.nWindowBorderPixelsRight
-        border_minh = 29 + 200 + self.variables.nWindowBorderPixelsBottom
+        border_minw = 320
+        border_minw += self.get("[Screen]", "nWindowBorderPixelsLeft")
+        border_minw += self.get("[Screen]", "nWindowBorderPixelsRight")
+        border_minh = 29 + 200 + self.get("[Screen]", "nWindowBorderPixelsBottom")
         if width < 640 or height < 400:
             # only non-zoomed color mode fits to window
             args = ("--zoom", "1", "--monitor", "vga")
@@ -284,9 +312,9 @@ class HatariConfigMapping(ConfigStore):
                 # without borders
                 args += ("--borders", "off")
         else:
-            borders = self.variables.bAllowOverscan
-            mono = (self.variables.nMonitorType == 0)
-            zoom = self.variables.bZoomLowRes
+            borders = self.get("[Screen]", "bAllowOverscan")
+            mono = (self.get("[Screen]", "nMonitorType") == 0)
+            zoom = self.get("[Screen]", "bZoomLowRes")
             # can we have overscan borders with color zooming or mono?
             if borders and (width < 2*border_minw or height < 2*border_minh):
                 if mono:
@@ -298,12 +326,12 @@ class HatariConfigMapping(ConfigStore):
             elif not (mono or zoom):
                 # no mono nor zoom -> zoom
                 args = ("--zoom", "2")
-        if self.variables.bFullScreen:
+        if self.get("[Screen]", "bFullScreen"):
             # fullscreen Hatari doesn't make sense with Hatari UI
             args += ("--window", )
 
         # window size for other than ST & STE can differ
-        if self.variables.nMachineType not in (0, 1):
+        if self.get("[System]", "nMachineType") not in (0, 1):
             print "WARNING: neither ST nor STE, forcing machine to ST"
             args += ("--machine", "st")
 

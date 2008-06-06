@@ -534,9 +534,9 @@ class HatariDebugUI():
     def options_cb(self, widget):
         if not self.dialog_options:
             self.dialog_options = OptionsDialog(self.window)
-        lines = self.dialog_options.run(self.config.variables.nLines)
+        lines = self.dialog_options.run(self.config.get("[General]", "nLines"))
         if lines:
-            self.config.variables.nLines = lines
+            self.config.set("[General]", "nLines", lines)
             self.address.set_lines(lines)
 
     def load_options(self):
@@ -544,9 +544,9 @@ class HatariDebugUI():
         # (depends on how monitoring of addresses should work)
         lines = str(self.address.get_lines())
         miss_is_error = False # needed for adding windows
-        defaults = ({ "[General]": ["nLines"] }, { "nLines": lines })
-        self.config = ConfigStore(defaults, "debugui.cfg", miss_is_error)
-        self.address.set_lines(self.config.variables.nLines)
+        defaults = { "[General]": {"nLines": lines} }
+        self.config = ConfigStore("debugui.cfg", defaults, miss_is_error)
+        self.address.set_lines(self.config.get("[General]", "nLines"))
     
     def save_options(self):
         self.config.save()

@@ -49,7 +49,7 @@ class HatariControls():
     all = [
         "about", "run", "paste", "pause", "setup", "quit",
         "fastforward", "frameskip", "spec512", "sound",
-        "rightclick", "doubleclick",
+        "joyemu", "rightclick", "doubleclick",
         "debug", "trace", "close"
     ]
     # spacing between input widget and its label
@@ -249,6 +249,25 @@ class HatariControls():
         else:
             box = gtk.VBox()
         box.pack_start(gtk.Label("Sound:"), False, False)
+        box.add(combo)
+        return (box, False)
+
+    # ------- joyemu control -----------
+    def _joyemu_cb(self, widget):
+        self.config.set_joyemu(widget.get_active())
+
+    def joyemu(self):
+        "Select joystick cursor emulation port"
+        combo = gtk.combo_box_new_text()
+        for text in self.config.get_joyemu_values():
+            combo.append_text(text)
+        combo.set_active(self.config.get_joyemu())
+        combo.connect("changed", self._joyemu_cb)
+        if self.to_horizontal_box:
+            box = gtk.HBox(False, self.label_spacing/2)
+        else:
+            box = gtk.VBox()
+        box.pack_start(gtk.Label("Joyemu:"), False, False)
         box.add(combo)
         return (box, False)
     

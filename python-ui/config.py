@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 #
-# Classes for handling (Hatari) INI style configuration files:
-# loading, saving, setting/getting variables, mapping them to
-# sections, listing changes
+# Class and helper functions for handling (Hatari) INI style
+# configuration files: loading, saving, setting/getting variables,
+# mapping them to sections, listing changes
 #
 # Copyright (C) 2008 by Eero Tamminen <eerot@sf.net>
 #
@@ -18,138 +18,67 @@
 
 import os
 
+# ------------------------------------------------------
+# Helper functions for type safe Hatari configuration variable access.
+# Map booleans, integers and strings to Python types, and back to strings.
 
-# Class for nicer configuration variable access.  Maps booleans, integers
-# and strings to Python types when the variables dictionary is set, and
-# back to strings when is requested.
-#
-# The actual configuration variables are mapped to instance object attributes
-# with a bit of Python magic so other code doesn't need to deal with strings.
-# This means that the class's own attribute access is more complicated.
-class ConfigVariables():
-    
-    def __init__(self, variables, miss_is_error):
-        "ConfigVariables(vars), set dict of allowed variables + their initial values"
-        if miss_is_error and not variables:
-            raise ValueError, "empty configuration"
-        self.set_all(variables)
-        # has to be done like this to avoid infinite recursion with __setattr__
-        self.__dict__["__miss_is_error"] = miss_is_error
-        self.__dict__["__changed"] = False
-    
-    def set_all(self, variables):
-        "set_all(variables), converts given dict values to Python types"
-        items = {}
-        for key, text in variables.items():
-            # bool?
-            upper = text.upper()
-            if upper == "FALSE":
-                value = False
-            elif upper == "TRUE":
-                value = True
-            else:
-                try:
-                    # integer?
-                    value = int(text)
-                except ValueError:
-                    # string
-                    value = text
-            items[key] = value
-        # has to be done like this to avoid infinite recursion with __setattr__
-        self.__dict__["__vars"] = items
-    
-    def get_all(self):
-        "get_all(variables), converts Python type dict values to strings"
-        items = {}
-        for key, value in self.__dict__["__vars"].items():
-            #print key, value
-            valtype = type(value)
-            if valtype == bool:
-                assert(key[0] == "b") # bool prefix
-                if value:
-                    text = "TRUE"
-                else:
-                    text = "FALSE"
-            elif valtype == int:
-                assert(key[0] in ("n", "k")) # numeric/keycode prefix
-                text = str(value)
-            else:
-                assert(key[0] == "s") # string prefix
-                text = value
-            items[key] = text
-        return items
-
-    def get_checkpoint(self):
-        "get_checkpoint() -> checkpoint, get the state of variables at this point"
-        return self.__dict__["__vars"].copy()
-    
-    def get_checkpoint_changes(self, items):
-        "get_checkpoint_changes() -> list of (key, value) pairs for later changes"
-        changed = []
-        if self.is_changed():
-            for key, value in self.__dict__["__vars"].items():
-                if key not in items or items[key] != value:
-                    changed.append((key, value))
-        return changed
-    
-    def revert_to_checkpoint(self, items):
-        "revert_to_checkpoint(checkpoint), revert to given checkpoint"
-        self.__dict__["__vars"] = items
-    
-    def is_changed(self):
-        "is_changed() -> bool, whether any variables were changed"
-        return self.__dict__["__changed"]
-
-    def get(self, key):
-        "get(key) -> value"
-        return self.__getattr__(key)
-
-    def set(self, key, value):
-        "set(key, value)"
-        self.__setattr__(key, value)
-    
-    def __getattr__(self, key):
-        print "get key %s" % key
-        if key in self.__dict__["__vars"]:
-            return self.__dict__["__vars"][key]
+def value_to_text(key, value):
+    "value_to_text(key, value) -> text, convert Python type to string"
+    valtype = type(value)
+    if valtype == bool:
+        assert(key[0] == "b") # bool prefix
+        if value:
+            text = "TRUE"
         else:
-            raise AttributeError, "no config variable '%s' to get" % key
+            text = "FALSE"
+    elif valtype == int:
+        assert(key[0] in ("n", "k")) # numeric/keycode prefix
+        text = str(value)
+    else:
+        assert(key[0] == "s") # string prefix
+        text = value
+    return text
 
-    def __setattr__(self, key, value):
-        print "set %s=%s" % (key, str(value))
-        if key in self.__dict__["__vars"]:
-            if value != self.__dict__["__vars"][key]:
-                self.__dict__["__vars"][key] = value
-                self.__dict__["__changed"] = True
-        elif self.__dict__["__miss_is_error"]:
-            raise AttributeError, "no config variable '%s' to set to '%s'" % (key, str(value))
+def text_to_value(text):
+    "text_to_value(text) -> value, convert INI file values to real types"
+    # bool?
+    upper = text.upper()
+    if upper == "FALSE":
+        value = False
+    elif upper == "TRUE":
+        value = True
+    else:
+        try:
+            # integer?
+            value = int(text)
+        except ValueError:
+            # string
+            value = text
+    return value
 
 
+# ------------------------------------------------------
 # Handle INI style configuration files as used by Hatari
-#
-# Hatari configuration variable names are unique within,
-# whole configuration file, therefore APIs don't need to
-# use sections, just map them them on load&save.
+
 class ConfigStore():
     defaultpath = "%s%c.hatari" % (os.getenv("HOME"), os.path.sep)
 
-    def __init__(self, defaults, cfgfile, miss_is_error = True):
+    def __init__(self, cfgfile, defaults = {}, miss_is_error = True):
         "ConfigStore(defaults,cfgfile[,miss_is_error])"
         self.changed = False
+        self.miss_is_error = miss_is_error
         path = self.get_path(cfgfile)
         if path:
-            variables, sections = self.load(path)
-            if variables:
+            self.sections = self.load(path)
+            if self.sections:
                 print "Loaded configuration file:", path
             else:
                 print "WARNING: configuration file '%' loading failed" % path
                 path = None
         else:
             print "WARNING: configuration file '%s' missing, using defaults" % cfgfile
-            sections, variables = defaults
-        self.variables = ConfigVariables(variables, miss_is_error)
-        self.original = self.variables.get_checkpoint()
-        self.sections = sections
+            self.sections = defaults
+        self.original = self.get_checkpoint()
         self.cfgfile = cfgfile
         self.path = path
 
@@ -182,9 +111,8 @@ class ConfigStore():
         if not config:
             return ({}, {})
         name = "[_orphans_]"
+        seckeys = {}
         sections = {}
-        allkeys = {}
-        seckeys = []
         for line in config.readlines():
             line = line.strip()
             if not line or line[0] == '#':
@@ -194,53 +122,86 @@ class ConfigStore():
                     print "WARNING: section '%s' twice in configuration" % line
                 if seckeys:
                     sections[name] = seckeys
-                    seckeys = []
+                    seckeys = {}
                 name = line
                 continue
             if line.find('=') < 0:
                 print "WARNING: line without key=value pair:\n%s" % line
                 continue
-            key, value = [string.strip() for string in line.split('=')]
-            allkeys[key] = value
-            seckeys.append(key)
+            key, text = [string.strip() for string in line.split('=')]
+            seckeys[key] = text_to_value(text)
         if seckeys:
             sections[name] = seckeys
-        return allkeys, sections
+        return sections
 
-    def add(self, section, key, value):
-        "add(section,key,value), add given key to given section"
-        if not section in self.sections:
-            self.sections[section] = []
-        elif key in self.sections[section]:
-            print "ERROR: key '%s' already in section '%s'" % (key, section)
-            return
+    def get_checkpoint(self):
+        "get_checkpoint() -> checkpoint, get the state of variables at this point"
+        checkpoint = {}
+        for section in self.sections.keys():
+            checkpoint[section] = self.sections[section].copy()
+        return checkpoint
+    
+    def get_checkpoint_changes(self, checkpoint):
+        "get_checkpoint_changes() -> list of (key, value) pairs for later changes"
+        changed = []
+        if not self.changed:
+            return changed
+        for section in self.sections.keys():
+            if section not in checkpoint:
+                for key, value in self.sections[section].items():
+                    changed.append((key, value))
+                continue
+            for key, value in self.sections[section].items():                    
+                if (key not in checkpoint[section] or
+                value != checkpoint[section][key]):
+                    changed.append(("%s.%s" % (section, key), value))
+        return changed
+    
+    def revert_to_checkpoint(self, checkpoint):
+        "revert_to_checkpoint(checkpoint), revert to given checkpoint"
+        self.sections = checkpoint
+
+    def get(self, section, key):
+        return self.sections[section][key]
+
+    def set(self, section, key, value):
+        "set(section,key,value), set given key to given section"
+        if section not in self.sections:
+            if self.miss_is_error:
+                raise AttributeError, "no section '%s'" % section
+            self.sections[section] = {}
+        if key not in self.sections[section]:
+            if self.miss_is_error:
+                raise AttributeError, "key '%s' not in section '%s'" % (key, section)
+            self.sections[section][key] = value
+            self.changed = True
+        elif self.sections[section][key] != value:
+            self.changed = True
         self.sections[section][key] = value
-        self.variables.set(key, value)
         
     def is_changed(self):
         "is_changed() -> True if current configuration is changed"
-        return self.variables.is_changed()
+        return self.changed
 
     def get_changes(self):
         "get_changes(), return (key, value) list for each changed config option"
-        return self.variables.get_checkpoint_changes(self.original)
+        return self.get_checkpoint_changes(self.original)
     
     def write(self, fileobj):
         "write(fileobj), write current configuration to given file object"
-        variables = self.variables.get_all()
         sections = self.sections.keys()
         sections.sort()
-        for section in sections:
-            fileobj.write("%s\n" % section)
-            keys = self.sections[section]
+        for name in sections:
+            fileobj.write("%s\n" % name)
+            keys = self.sections[name].keys()
             keys.sort()
             for key in keys:
-                fileobj.write("%s = %s\n" % (key, variables[key]))
+                fileobj.write("%s = %s\n" % (key, self.sections[name][key]))
             fileobj.write("\n")
-            
+
     def save(self):
         "save(), if configuration changed, save it"
-        if not self.variables.is_changed():
+        if not self.changed:
             print "No configuration changes to save, skipping"
             return            
         if not self.path:

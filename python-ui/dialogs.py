@@ -238,7 +238,7 @@ class TraceDialog(HatariUIDialog):
         dialog = gtk.Dialog("Trace settings", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
-             gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+             gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE))
         dialog.vbox.add(hbox1)
         dialog.vbox.add(gtk.Label("Select trace points:"))
         dialog.vbox.add(hbox2)
@@ -278,11 +278,13 @@ class TraceDialog(HatariUIDialog):
     def run(self, hatari, savedpoints):
         "run(hatari,tracepoints) -> tracepoints, caller saves tracepoints"
         self.savedpoints = savedpoints
-        response = self.dialog.run()
-        self.dialog.hide()
-        if response == gtk.RESPONSE_APPLY:
-            hatari.change_option("--trace %s" % self._get_traces())
-        return self.savedpoints
+        while 1:
+            response = self.dialog.run()
+            if response == gtk.RESPONSE_APPLY:
+                hatari.change_option("--trace %s" % self._get_traces())
+            else:
+                self.dialog.hide()
+                return self.savedpoints
 
 
 class SetupDialog(HatariUIDialog):
