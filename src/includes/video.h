@@ -44,21 +44,21 @@
 
 /* Vertical border/display enable/disable:
  * Normal screen starts 63 lines in, top border is 29 lines */
-#define SCREEN_START_HBL_50HZ   63      /* Usually the first line of the displayed screen in 50 Hz */
-#define SCREEN_START_HBL_60HZ   34      /* The first line of the displayed screen in 60 Hz */
-#define SCREEN_START_HBL_71HZ   34      /* FIXME: 34 is not verified */
-#define FIRST_VISIBLE_HBL_50HZ  34      /* At this line we start rendering our screen in 50 Hz */
-#define FIRST_VISIBLE_HBL_60HZ  (34-29) /* At this line we start rendering our screen in 60 Hz (29 = 63-34) */
-#define FIRST_VISIBLE_HBL_71HZ  34      /* FIXME: 34 is not verified */
+#define VIDEO_START_HBL_50HZ   63	/* Usually the first line of the displayed screen in 50 Hz */
+#define VIDEO_START_HBL_60HZ   34	/* The first line of the displayed screen in 60 Hz */
+#define VIDEO_START_HBL_71HZ   34	/* FIXME: 34 is not verified */
+#define FIRST_VISIBLE_HBL_50HZ  34	/* At this line we start rendering our screen in 50 Hz */
+#define FIRST_VISIBLE_HBL_60HZ  (34-29)	/* At this line we start rendering our screen in 60 Hz (29 = 63-34) */
+#define FIRST_VISIBLE_HBL_71HZ  34	/* FIXME: 34 is not verified */
 
-#define SCREEN_HEIGHT_HBL_COLOR  200    /* This is usually the height of the screen */
-#define SCREEN_HEIGHT_HBL_MONO   400
+#define VIDEO_HEIGHT_HBL_COLOR  200	/* This is usually the height of the screen */
+#define VIDEO_HEIGHT_HBL_MONO   400
 
-#define SCREEN_END_HBL_50HZ	( SCREEN_START_HBL_50HZ + SCREEN_HEIGHT_HBL_COLOR )	/* 263 */
-#define SCREEN_END_HBL_60HZ	( SCREEN_START_HBL_60HZ + SCREEN_HEIGHT_HBL_COLOR )	/* 234 */
+#define VIDEO_HEIGHT_BOTTOM_50HZ 47	/* number of lines in a 50 Hz bottom border */
+#define VIDEO_HEIGHT_BOTTOM_60HZ 29	/* number of lines in a 60 Hz bottom border */
 
-/* FIXME: SCREEN_START_CYCLE should rather be 52 or so, but this breaks a lot of other things at the moment... */
-#define SCREEN_START_CYCLE  56          /* Cycle first normal pixel appears on */
+#define VIDEO_END_HBL_50HZ	( VIDEO_START_HBL_50HZ + VIDEO_HEIGHT_HBL_COLOR )	/* 263 */
+#define VIDEO_END_HBL_60HZ	( VIDEO_START_HBL_60HZ + VIDEO_HEIGHT_HBL_COLOR )	/* 234 */
 
 #define LINE_REMOVE_TOP_CYCLE_STF	504	/* switch to 60 Hz on line 33 should not occur after cycle 504 to remove top border */
 						/* switch to 50 Hz should occur after cycle 504 on line 33 */

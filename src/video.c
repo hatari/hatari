@@ -157,10 +157,16 @@
 /* 2008/05/31	[NP]	Ignore consecutives writes of the same value in the freq/res register.	*/
 /*			Only the 1st write matters, else this could confuse the code to remove	*/
 /*			top/bottom border (fix OSZI.PRG demo by ULM).				*/
+/* 2008/06/07	[NP]	In Video_SetHBLPaletteMaskPointers, use LineStartCycle instead of the	*/
+/*			50 Hz constant SCREEN_START_CYCLE.					*/
+/*			Rename SCREEN_START_HBL_xxx to VIDEO_START_HBL_xxx.			*/
+/*			Rename SCREEN_END_HBL_xxx to VIDEO_END_HBL_xxx.				*/
+/*			Rename SCREEN_HEIGHT_HBL_xxx to VIDEO_HEIGHT_HBL_xxx.			*/
+/*			Use VIDEO_HEIGHT_BOTTOM_50HZ instead of OVERSCAN_BOTTOM.		*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.113 2008-05-31 17:57:33 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.114 2008-06-07 18:42:07 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -712,13 +718,13 @@ void Video_Sync_WriteByte(void)
 	{
 		LastCycleSync50 = nFrameCycles;
 
-		if ( ( HblCounterVideo < SCREEN_START_HBL_50HZ )	/* nStartHBL can change only if display is not ON yet */
+		if ( ( HblCounterVideo < VIDEO_START_HBL_50HZ )		/* nStartHBL can change only if display is not ON yet */
 		        && ( OverscanMode & OVERSCANMODE_TOP ) == 0 )	/* update only if top was not removed */
-			nStartHBL = SCREEN_START_HBL_50HZ;
+			nStartHBL = VIDEO_START_HBL_50HZ;
 
-		if ( ( HblCounterVideo < SCREEN_END_HBL_50HZ )		/* nEndHBL can change only if display is not OFF yet */
+		if ( ( HblCounterVideo < VIDEO_END_HBL_50HZ )		/* nEndHBL can change only if display is not OFF yet */
 		        && ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* update only if bottom was not removed */
-			nEndHBL = SCREEN_END_HBL_50HZ;				/* 263 */
+			nEndHBL = VIDEO_END_HBL_50HZ;				/* 263 */
 
 		if ( ( LineEndCycle == LINE_END_CYCLE_60 )		/* Freq is changed before the end of a 60 Hz line */
 			&& ( nLineCycles < LINE_END_CYCLE_60 ) )
@@ -729,13 +735,13 @@ void Video_Sync_WriteByte(void)
 	{
 		LastCycleSync60 = nFrameCycles;
 
-		if ( ( HblCounterVideo < SCREEN_START_HBL_60HZ-1 )	/* nStartHBL can change only if display is not ON yet */
-			|| ( ( HblCounterVideo == SCREEN_START_HBL_60HZ-1 ) && ( nLineCycles <= LineRemoveTopCycle ) ) )
-			nStartHBL = SCREEN_START_HBL_60HZ;
+		if ( ( HblCounterVideo < VIDEO_START_HBL_60HZ-1 )	/* nStartHBL can change only if display is not ON yet */
+			|| ( ( HblCounterVideo == VIDEO_START_HBL_60HZ-1 ) && ( nLineCycles <= LineRemoveTopCycle ) ) )
+			nStartHBL = VIDEO_START_HBL_60HZ;
 
-		if ( ( HblCounterVideo < SCREEN_END_HBL_60HZ )		/* nEndHBL can change only if display is not OFF yet */
+		if ( ( HblCounterVideo < VIDEO_END_HBL_60HZ )		/* nEndHBL can change only if display is not OFF yet */
 		        && ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* update only if bottom was not removed */
-			nEndHBL = SCREEN_END_HBL_60HZ;				/* 234 */
+			nEndHBL = VIDEO_END_HBL_60HZ;				/* 234 */
 
 		if ( ( LineEndCycle == LINE_END_CYCLE_50 )		/* Freq is changed before the end of a 50 Hz line */
 			&& ( nLineCycles < LINE_END_CYCLE_60 ) )	/* and before the end of a 60 Hz line */
@@ -747,7 +753,7 @@ void Video_Sync_WriteByte(void)
 	/* We check if the change affects the current line or the next one. */
 	if ( Byte != nLastByte )
 	{
-		int nFrameCycles2 = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nFrameCycles2 = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles2 = nFrameCycles2 % nCyclesPerLine;
 
 		if ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_RIGHT_MINUS_2 )		/* 60/50 Hz switch */
@@ -1224,23 +1230,23 @@ static void Video_EndHBL(void)
 	/* Remove top border if the switch to 60 Hz was made during this vbl before cycle	*/
 	/* 33*512+LineRemoveTopCycle and if the switch to 50 Hz has not yet occured or	*/
 	/* occured before the 60 Hz or occured after cycle 33*512+LineRemoveTopCycle.	*/
-	if (( nHBL == SCREEN_START_HBL_60HZ-1)
-	    && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (SCREEN_START_HBL_60HZ-1) * nCyclesPerLine + LineRemoveTopCycle))
-	    && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (SCREEN_START_HBL_60HZ-1) * nCyclesPerLine + LineRemoveTopCycle)))
+	if (( nHBL == VIDEO_START_HBL_60HZ-1)
+	    && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (VIDEO_START_HBL_60HZ-1) * nCyclesPerLine + LineRemoveTopCycle))
+	    && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (VIDEO_START_HBL_60HZ-1) * nCyclesPerLine + LineRemoveTopCycle)))
 	{
 		/* Top border */
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove top\n" );
-		OverscanMode |= OVERSCANMODE_TOP;		/* Set overscan bit */
-		nStartHBL = SCREEN_START_HBL_60HZ;	/* New start screen line */
+		OverscanMode |= OVERSCANMODE_TOP;	/* Set overscan bit */
+		nStartHBL = VIDEO_START_HBL_60HZ;	/* New start screen line */
 		pHBLPaletteMasks -= OVERSCAN_TOP;	// FIXME useless ?
 		pHBLPalettes -= OVERSCAN_TOP;	// FIXME useless ?
 	}
 
 	/* Remove bottom border for a 60 Hz screen */
-	else if ((nHBL == SCREEN_END_HBL_60HZ-1)	/* last displayed line in 60 Hz */
+	else if ((nHBL == VIDEO_END_HBL_60HZ-1)		/* last displayed line in 60 Hz */
 	         && (SyncByte == 0x02)			/* current freq is 50 Hz */
-	         && (LastCycleSync50 >= 0)			/* change occurred during this VBL */
-	         && (nStartHBL == SCREEN_START_HBL_60HZ)	/* screen starts in 60 Hz */
+	         && (LastCycleSync50 >= 0)		/* change occurred during this VBL */
+	         && (nStartHBL == VIDEO_START_HBL_60HZ)	/* screen starts in 60 Hz */
 	         && ((OverscanMode & OVERSCANMODE_TOP) == 0))	/* and top border was not removed : this screen is only 60 Hz */
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
@@ -1249,19 +1255,19 @@ static void Video_EndHBL(void)
 	}
 
 	/* Remove bottom border for a 50 Hz screen (similar method to the one for top border) */
-	else if ((nHBL == SCREEN_END_HBL_50HZ-1)	/* last displayed line in 50 Hz */
-	          && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (SCREEN_END_HBL_50HZ-1) * nCyclesPerLine + LineRemoveBottomCycle))
-	          && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (SCREEN_END_HBL_50HZ-1) * nCyclesPerLine + LineRemoveBottomCycle))
-	          && ((OverscanMode & OVERSCANMODE_BOTTOM) == 0))	/* border was not already removed at line SCREEN_END_HBL_60HZ */
+	else if ((nHBL == VIDEO_END_HBL_50HZ-1)		/* last displayed line in 50 Hz */
+	          && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (VIDEO_END_HBL_50HZ-1) * nCyclesPerLine + LineRemoveBottomCycle))
+	          && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (VIDEO_END_HBL_50HZ-1) * nCyclesPerLine + LineRemoveBottomCycle))
+	          && ((OverscanMode & OVERSCANMODE_BOTTOM) == 0))	/* border was not already removed at line VIDEO_END_HBL_60HZ */
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
 		OverscanMode |= OVERSCANMODE_BOTTOM;
-		nEndHBL = SCREEN_END_HBL_50HZ+OVERSCAN_BOTTOM;	/* new end for a 50 Hz screen */
+		nEndHBL = VIDEO_END_HBL_50HZ+VIDEO_HEIGHT_BOTTOM_50HZ;	/* new end for a 50 Hz screen */
 
 		/* Some programs turn to 60 Hz during the active display of the last line to */
 		/* remove the bottom border (FNIL by TNT), in that case, we should also remove */
 		/* 2 bytes to this line (this is wrong practice as it can distort the display on a real ST) */
-		if (LastCycleSync60 <= (SCREEN_END_HBL_50HZ-1) * nCyclesPerLine + LINE_END_CYCLE_60)
+		if (LastCycleSync60 <= (VIDEO_END_HBL_50HZ-1) * nCyclesPerLine + LINE_END_CYCLE_60)
 		{
 			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
 			LeftRightBorder |= BORDERMASK_MIDDLE;		/* Program tries to shorten line by 2 bytes */
@@ -1282,7 +1288,7 @@ static void Video_EndHBL(void)
 		if (bUseHighRes)
 		{
 			/* Copy for hi-res (no overscan) */
-			if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+SCREEN_HEIGHT_HBL_MONO)
+			if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+VIDEO_HEIGHT_HBL_MONO)
 				Video_CopyScreenLineMono();
 		}
 		/* Are we in possible visible color display (including borders)? */
@@ -1341,7 +1347,7 @@ void Video_InterruptHandler_HBL(void)
 void Video_InterruptHandler_EndLine(void)
 {
 	Uint8 SyncByte = IoMem_ReadByte(0xff820a) & 2;	/* only keep bit 1 (50/60 Hz) */
-	int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	int nLineCycles = nFrameCycles % nCyclesPerLine;
 
 	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "EndLine TB %d video_cyc=%d line_cyc=%d pending_int_cnt=%d\n" ,
@@ -1423,7 +1429,7 @@ static void Video_SetHBLPaletteMaskPointers(void)
 	FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
 
 	/* Find 'line' into palette - screen starts 63 lines down, less 29 for top overscan */
-	Line = (FrameCycles-(nFirstVisibleHbl*nCyclesPerLine)+SCREEN_START_CYCLE)/nCyclesPerLine;
+	Line = (FrameCycles-(nFirstVisibleHbl*nCyclesPerLine)+LineStartCycle)/nCyclesPerLine;
 //	Line = ( FrameCycles / nCyclesPerLine ) - nFirstVisibleHbl;
 	Cycle = FrameCycles % nCyclesPerLine;
 
@@ -1464,7 +1470,7 @@ static void Video_ResetShifterTimings(void)
 		nScreenRefreshRate = 71;
 		nScanlinesPerFrame = SCANLINES_PER_FRAME_71HZ;
 		nCyclesPerLine = CYCLES_PER_LINE_71HZ;
-		nStartHBL = SCREEN_START_HBL_71HZ;
+		nStartHBL = VIDEO_START_HBL_71HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_71HZ;
 		LineTimerBCycle = LINE_END_CYCLE_70 + TIMERB_VIDEO_CYCLE_OFFSET;
 	}
@@ -1474,7 +1480,7 @@ static void Video_ResetShifterTimings(void)
 		nScreenRefreshRate = 50;
 		nScanlinesPerFrame = SCANLINES_PER_FRAME_50HZ;
 		nCyclesPerLine = CYCLES_PER_LINE_50HZ;
-		nStartHBL = SCREEN_START_HBL_50HZ;
+		nStartHBL = VIDEO_START_HBL_50HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;
 		LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
 	}
@@ -1484,18 +1490,18 @@ static void Video_ResetShifterTimings(void)
 		nScreenRefreshRate = 60;
 		nScanlinesPerFrame = SCANLINES_PER_FRAME_60HZ;
 		nCyclesPerLine = CYCLES_PER_LINE_60HZ;
-		nStartHBL = SCREEN_START_HBL_60HZ;
+		nStartHBL = VIDEO_START_HBL_60HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_60HZ;
 		LineTimerBCycle = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
 	}
 
 	if (bUseHighRes)
 	{
-		nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL_MONO;
+		nEndHBL = nStartHBL + VIDEO_HEIGHT_HBL_MONO;
 	}
 	else
 	{
-		nEndHBL = nStartHBL + SCREEN_HEIGHT_HBL_COLOR;
+		nEndHBL = nStartHBL + VIDEO_HEIGHT_HBL_COLOR;
 	}
 
 	/* Reset freq changes position for the next VBL to come */
@@ -1810,7 +1816,7 @@ void Video_ScreenBaseSTE_WriteByte(void)
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_STE ) )
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
 		HATARI_TRACE_PRINT ( "write ste video base=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , (IoMem[0xff8201]<<16)+(IoMem[0xff8203]<<8) ,
 		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
@@ -1848,7 +1854,7 @@ void Video_ScreenCounter_WriteByte(void)
 	int nLineCycles;
 	int HblCounterVideo;
 
-	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);;
+	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 	nLineCycles = nFrameCycles % nCyclesPerLine;
 
 	/* Get real video line count (can be different from nHBL) */
@@ -1960,7 +1966,7 @@ void Video_LineWidth_WriteByte(void)
 	int nLineCycles;
 	int HblCounterVideo;
 
-	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);;
+	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 	nLineCycles = nFrameCycles % nCyclesPerLine;
 
 	/* Get real video line count (can be different from nHBL) */
@@ -2003,7 +2009,7 @@ static void Video_ColorReg_WriteWord(Uint32 addr)
 
 		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_COLOR ) )
 		{
-			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 			int nLineCycles = nFrameCycles % nCyclesPerLine;
 			HATARI_TRACE_PRINT ( "write col addr=%x col=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , addr, col,
 			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
@@ -2142,7 +2148,7 @@ void Video_HorScroll_Write(void)
 	int nLineCycles;
 	int HblCounterVideo;
 
-	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);;
+	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 	nLineCycles = nFrameCycles % nCyclesPerLine;
 
 	/* Get real video line count (can be different from nHBL) */
