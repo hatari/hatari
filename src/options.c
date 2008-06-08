@@ -15,9 +15,10 @@
   2008-03-01   [ET]    Add option sections and <bool> support.
   2008-04-07   [ET]    Add bios/xbios intercept support
   2008-04-16   [ET]    Return FALSE instead of exiting on errors
+  2008-06-08   [ET]    Add disk image options and refactor their handling
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.61 2008-06-02 20:07:02 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.62 2008-06-08 17:37:57 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -30,6 +31,7 @@ const char Main_rcsid[] = "Hatari $Id: options.c,v 1.61 2008-06-02 20:07:02 eero
 #include "configuration.h"
 #include "control.h"
 #include "file.h"
+#include "floppy.h"
 #include "screen.h"
 #include "video.h"
 #include "vdi.h"
@@ -68,7 +70,9 @@ enum {
 	OPT_PRINTER,
 	OPT_MIDI,
 	OPT_RS232,
-	OPT_HARDDRIVE,		/* disk options */
+	OPT_DISKA,		/* disk options */
+	OPT_DISKB,
+	OPT_HARDDRIVE,
 	OPT_ACSIHDIMAGE,
 	OPT_IDEHDIMAGE,
 	OPT_SLOWFDC,
@@ -157,6 +161,10 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Enable serial port support and use <file> as the device" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Disk" },
+	{ OPT_DISKA, "-a", "--disk-a",
+	  "<file>", "Set disk image for floppy drive A" },
+	{ OPT_DISKB, NULL, "--disk-b",
+	  "<file>", "Set disk image for floppy drive B" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
 	  "<dir>", "Emulate an ST harddrive (<dir> = root directory)" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
@@ -520,17 +528,14 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
 
 
 /**
- * parse all Hatari command line options and set Hatari state accordingly,
- * returns boot disk image name in given arg (empty if not set).
- * On first call (when parsing normal commandline) exits on errors.
- * After that, returns TRUE if everything was OK, FALSE otherwise.
+ * parse all Hatari command line options and set Hatari state accordingly.
+ * Returns TRUE if everything was OK, FALSE otherwise.
  */
-bool Opt_ParseParameters(int argc, const char *argv[],
-			 char *bootdisk, size_t bootlen)
+bool Opt_ParseParameters(int argc, const char *argv[])
 {
 	int i, ncpu, skips, zoom, planes, cpuclock, threshold, memsize;
-	int ok = TRUE;
 	const char *errstr;
+	int ok = TRUE;
 
 	/* Defaults for loading initial memory snap-shots */
 	bLoadMemorySave = FALSE;
@@ -540,21 +545,13 @@ bool Opt_ParseParameters(int argc, const char *argv[],
 	{
 		if (argv[i][0] != '-')
 		{
-			/* Possible passed disk image filename */
-			if (argv[i][0] && File_Exists(argv[i]) &&
-			    strlen(argv[i]) < bootlen)
+			if (Floppy_SetDiskFileName(0, argv[i], NULL))
 			{
-				strcpy(bootdisk, argv[i]);
-				File_MakeAbsoluteName(bootdisk);
-				bLoadAutoSave = FALSE;
-				/* If floppy is specified after hard disk,
-				 * try to boot from floppy first! */
 				ConfigureParams.HardDisk.bBootFromHardDisk = FALSE;
+				bLoadAutoSave = FALSE;
 			}
 			else
-			{
 				return Opt_ShowError(OPT_ERROR, argv[i], "Not an option nor disk image");
-			}
 			continue;
 		}
     
@@ -759,6 +756,25 @@ bool Opt_ParseParameters(int argc, const char *argv[],
 			break;
 
 			/* disk options */
+		case OPT_DISKA:
+			i += 1;
+			if (Floppy_SetDiskFileName(0, argv[i], NULL))
+			{
+				ConfigureParams.HardDisk.bBootFromHardDisk = FALSE;
+				bLoadAutoSave = FALSE;
+			}
+			else
+				return Opt_ShowError(OPT_ERROR, argv[i], "Not a disk image");
+			break;
+
+		case OPT_DISKB:
+			i += 1;
+			if (Floppy_SetDiskFileName(1, argv[i], NULL))
+				bLoadAutoSave = FALSE;
+			else
+				return Opt_ShowError(OPT_ERROR, argv[i], "Not a disk image");
+			break;
+
 		case OPT_HARDDRIVE:
 			i += 1;
 			ok = Opt_StrCpy(OPT_HARDDRIVE, FALSE, ConfigureParams.HardDisk.szHardDiskDirectories[0],

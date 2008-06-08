@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.90 2008-05-25 10:54:17 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.91 2008-06-08 17:37:57 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -232,6 +232,10 @@ static const struct Config_Tag configs_Floppy[] =
 {
 	{ "bAutoInsertDiskB", Bool_Tag, &ConfigureParams.DiskImage.bAutoInsertDiskB },
 	{ "nWriteProtection", Int_Tag, &ConfigureParams.DiskImage.nWriteProtection },
+	{ "szDiskAZipPath", String_Tag, ConfigureParams.DiskImage.szDiskZipPath[0] },
+	{ "szDiskAFileName", String_Tag, ConfigureParams.DiskImage.szDiskFileName[0] },
+	{ "szDiskBZipPath", String_Tag, ConfigureParams.DiskImage.szDiskZipPath[1] },
+	{ "szDiskBFileName", String_Tag, ConfigureParams.DiskImage.szDiskFileName[1] },
 	{ "szDiskImageDirectory", String_Tag, ConfigureParams.DiskImage.szDiskImageDirectory },
 	{ NULL , Error_Tag, NULL }
 };
@@ -330,6 +334,11 @@ void Configuration_SetDefault(void)
 	/* Set defaults for floppy disk images */
 	ConfigureParams.DiskImage.bAutoInsertDiskB = TRUE;
 	ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_OFF;
+	for (i = 0; i < 2; i++)
+	{
+		ConfigureParams.DiskImage.szDiskZipPath[i][0] = '\0';
+		ConfigureParams.DiskImage.szDiskFileName[i][0] = '\0';
+	}
 	strcpy(ConfigureParams.DiskImage.szDiskImageDirectory, psWorkingDir);
 	File_AddSlashToEndFileName(ConfigureParams.DiskImage.szDiskImageDirectory);
 
@@ -337,7 +346,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.HardDisk.bBootFromHardDisk = FALSE;
 	ConfigureParams.HardDisk.nHardDiskDir = DRIVE_C;
 	ConfigureParams.HardDisk.bUseHardDiskDirectories = FALSE;
-	for (i=0; i<MAX_HARDDRIVES; i++)
+	for (i = 0; i < MAX_HARDDRIVES; i++)
 	{
 		strcpy(ConfigureParams.HardDisk.szHardDiskDirectories[i], psWorkingDir);
 		File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[i]);

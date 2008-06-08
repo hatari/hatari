@@ -4,10 +4,10 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
-  This where we read/write sectors to/from the disk image buffers. NOTE these
-  buffers are in memory so we only need to write routines for the .ST format.
-  When the buffer is to be saved (ie eject disk) we save it back to the original
-  file in the correct format (.ST or .MSA).
+  This is where we read/write sectors to/from the disk image buffers.
+  NOTE: these buffers are in memory so we only need to write routines for
+  the .ST format. When the buffer is to be saved (ie eject disk) we save
+  it back to the original file in the correct format (.ST or .MSA).
 
   There are some important notes about image accessing - as we use TOS and the
   FDC to access the disk the boot-sector MUST be valid. Sometimes this is NOT
@@ -21,10 +21,10 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.36 2008-05-19 20:34:10 thothy Exp $";
+const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.37 2008-06-08 17:37:57 eerot Exp $";
 
 #include <sys/stat.h>
-
+#include <assert.h>
 #include <SDL_endian.h>
 
 #include "main.h"
@@ -41,8 +41,10 @@ const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.36 2008-05-19 20:34:10 tho
 #include "zip.h"
 
 
-EMULATION_DRIVE EmulationDrives[NUM_EMULATION_DRIVES];  /* Emulation drive details, eg FileName, Inserted, Changed etc... */
-int nBootDrive=0;               /* Drive A, default */
+/* Emulation drive details, eg FileName, Inserted, Changed etc... */
+EMULATION_DRIVE EmulationDrives[MAX_FLOPPYDRIVES];
+/* Drive A is the default */
+int nBootDrive = 0;
 
 /* Possible disk image file extensions to scan for */
 static const char * const pszDiskImageNameExts[] =
@@ -63,10 +65,12 @@ void Floppy_Init(void)
 	int i;
 
 	/* Clear drive structures */
-	for (i = 0; i < NUM_EMULATION_DRIVES; i++)
+	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
-		/* Clear */
+		/* Clear structs and if floppies available, insert them */
 		memset(&EmulationDrives[i], 0, sizeof(EMULATION_DRIVE));
+		if (strlen(ConfigureParams.DiskImage.szDiskFileName[i]) > 0)
+			Floppy_InsertDiskIntoDrive(i);
 	}
 }
 
@@ -94,7 +98,7 @@ void Floppy_MemorySnapShot_Capture(bool bSave)
 		Floppy_EjectBothDrives();
 
 	/* Save/Restore details */
-	for (i = 0; i < NUM_EMULATION_DRIVES; i++)
+	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
 		MemorySnapShot_Store(&EmulationDrives[i].bDiskInserted, sizeof(EmulationDrives[i].bDiskInserted));
 		MemorySnapShot_Store(&EmulationDrives[i].nImageBytes, sizeof(EmulationDrives[i].nImageBytes));
@@ -195,6 +199,8 @@ static bool Floppy_IsBootSectorOK(int Drive)
 /**
  * Try to create disk B filename, eg 'auto_100a' becomes 'auto_100b'
  * Return new filename if think we should try, otherwise NULL
+ * 
+ * TODO: doesn't work with images in ZIP archives
  */
 static char* Floppy_CreateDiskBFileName(const char *pSrcFileName)
 {
@@ -216,12 +222,13 @@ static char* Floppy_CreateDiskBFileName(const char *pSrcFileName)
 	/* All OK? */
 	if (strlen(szName) > 0)
 	{
-		/* Now, did filename end with an 'A' or 'a'? */
-		if ((szName[strlen(szName)-1]=='A') || (szName[strlen(szName)-1]=='a'))
+		char *last = &(szName[strlen(szName)-1]);
+		/* Now, did filename end with an 'A' or 'a' */
+		if (*last == 'A' || *last == 'a')
 		{
 			char *szFull;
 			/* Change 'A' to a 'B' */
-			szName[strlen(szName)-1] += 1;
+			*last += 1;
 			/* And re-build name into destination */
 			szFull = File_MakePath(szDir, szName, szExt);
 			if (szFull)
@@ -243,43 +250,84 @@ static char* Floppy_CreateDiskBFileName(const char *pSrcFileName)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Insert disk into floppy drive. Sets the disk image name
- * back to given string with corrected extension. Maxlen is
- * maximum string lenght.
- * Returns TRUE of success and FALSE for failure.
- * The WHOLE image is copied into our drive buffers,
- * and uncompressed if necessary
+ * Set floppy image to be ejected
  */
-bool Floppy_InsertDiskIntoDrive(int Drive, char *pszFileName, int maxlen)
+void Floppy_SetDiskFileNameNone(int Drive)
 {
-	char *path;
-	path = Floppy_ZipInsertDiskIntoDrive(Drive, pszFileName, NULL);
-	if (path)
-	{
-		strncpy(pszFileName, path, maxlen);
-		pszFileName[maxlen-1] = '\0';
-		free(path);
-		return TRUE;
-	}
-	return FALSE;
+	assert(Drive >= 0 && Drive < MAX_FLOPPYDRIVES);
+	ConfigureParams.DiskImage.szDiskFileName[Drive][0] = '\0';
 }
 
-/* Read image into buffers, handles different image extensions,
- * return corrected file name on success and NULL on failure.
+/*-----------------------------------------------------------------------*/
+/**
+ * Set given floppy drive image file name and handle
+ * different image extensions.
+ * Return corrected file name on success and NULL on failure.
  */
-char* Floppy_ZipInsertDiskIntoDrive(int Drive, const char *pszFileName, const char *pszZipPath)
+const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const char *pszZipPath)
+{
+	char *filename;
+
+	//File_MakeAbsoluteName(bootdisk);
+
+	/* See if file exists, and if not, get/add correct extension */
+	if (!File_Exists(pszFileName))
+		filename = File_FindPossibleExtFileName(pszFileName, pszDiskImageNameExts);
+	else
+		filename = strdup(pszFileName);
+	if (!filename)
+	{
+		Log_AlertDlg(LOG_INFO, "Image '%s' not found", pszFileName);
+		return NULL;
+	}
+	/* If we insert a disk into Drive A, should we try to put disk 2 into drive B? */
+	if (Drive == 0 && ConfigureParams.DiskImage.bAutoInsertDiskB)
+	{
+		/* Attempt to make up second filename, eg was 'auto_100a' to 'auto_100b' */
+		char *szDiskBFileName = Floppy_CreateDiskBFileName(filename);
+		if (szDiskBFileName)
+		{
+			/* recurse with Drive B */
+			Floppy_SetDiskFileName(1, szDiskBFileName, pszZipPath);
+			free(szDiskBFileName);
+		}
+	}
+	assert(Drive >= 0 && Drive < MAX_FLOPPYDRIVES);
+	if (pszZipPath)
+		strcpy(ConfigureParams.DiskImage.szDiskZipPath[Drive], pszZipPath);
+	else
+		ConfigureParams.DiskImage.szDiskZipPath[Drive][0] = '\0';
+	strcpy(ConfigureParams.DiskImage.szDiskFileName[Drive], filename);
+	free(filename);
+	return ConfigureParams.DiskImage.szDiskFileName[Drive];
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Insert previously set disk file image into floppy drive.
+ * The WHOLE image is copied into Hatari drive buffers, and
+ * uncompressed if necessary.
+ * Return TRUE on success, false otherwise.
+ */
+bool Floppy_InsertDiskIntoDrive(int Drive)
 {
 	long nImageBytes = 0;
 	char *filename;
 
 	/* Eject disk, if one is inserted (doesn't inform user) */
-	Floppy_EjectDiskFromDrive(Drive,FALSE);
+	assert(Drive >= 0 && Drive < MAX_FLOPPYDRIVES);
+	Floppy_EjectDiskFromDrive(Drive, FALSE);
 
-	/* See if file exists, and if not, get/add correct extension */
-	if ( !File_Exists(pszFileName) )
-		filename = File_FindPossibleExtFileName(pszFileName, pszDiskImageNameExts);
-	else
-		filename = strdup(pszFileName);
+	filename = ConfigureParams.DiskImage.szDiskFileName[Drive];
+	if (!filename[0])
+	{
+		return TRUE; /* just ejected */
+	}
+	if (!File_Exists(filename))
+	{
+		Log_AlertDlg(LOG_INFO, "Image '%s' not found", filename);
+		return FALSE;
+	}
 	
 	/* Check disk image type and read the file: */
 	if (MSA_FileNameIsMSA(filename, TRUE))
@@ -289,38 +337,25 @@ char* Floppy_ZipInsertDiskIntoDrive(int Drive, const char *pszFileName, const ch
 	else if (DIM_FileNameIsDIM(filename, TRUE))
 		EmulationDrives[Drive].pBuffer = DIM_ReadDisk(filename, &nImageBytes);
 	else if (ZIP_FileNameIsZIP(filename))
-		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(filename, pszZipPath, &nImageBytes);
+	{
+		const char *zippath = ConfigureParams.DiskImage.szDiskZipPath[Drive];
+		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(filename, zippath, &nImageBytes);
+	}
 
 	if (EmulationDrives[Drive].pBuffer == NULL)
 	{
-		free(filename);
-		return NULL;
+		return FALSE;
 	}
-	/* Store filename and size */
+	/* Store image filename, size and set drive states */
 	strcpy(EmulationDrives[Drive].szFileName, filename);
 	EmulationDrives[Drive].nImageBytes = nImageBytes;
-	/* And set drive states */
 	EmulationDrives[Drive].bDiskInserted = TRUE;
 	EmulationDrives[Drive].bContentsChanged = FALSE;
 	EmulationDrives[Drive].bMediaChanged = TRUE;
 	EmulationDrives[Drive].bOKToSave = Floppy_IsBootSectorOK(Drive);
-
-	/* If we insert a disk into Drive A, should we try to put disk 2 into drive B? */
-	if (Drive == 0 && ConfigureParams.DiskImage.bAutoInsertDiskB)
-	{
-		char *szTmp;
-		/* Attempt to make up second filename, eg was 'auto_100a' to 'auto_100b' */
-		char *szDiskBFileName =  Floppy_CreateDiskBFileName(filename);
-		if (szDiskBFileName)
-		{
-			/* recurse with Drive B */
-			szTmp = Floppy_ZipInsertDiskIntoDrive(1, szDiskBFileName, NULL);
-			if (szTmp)
-				free(szTmp);
-			free(szDiskBFileName);
-		}
-	}
-	return filename;
+	Log_Printf(LOG_INFO, "Inserted disk '%s' to drive %c:.",
+		   filename, 'A'+Drive);
+	return TRUE;
 }
 
 
@@ -355,7 +390,13 @@ void Floppy_EjectDiskFromDrive(int Drive, bool bInformUser)
 		/* Inform user that disk has been ejected! */
 		if (bInformUser)
 		{
-			Log_AlertDlg(LOG_INFO, "Disk has been removed from drive '%c:'.", 'A'+Drive);
+			Log_AlertDlg(LOG_INFO, "Disk '%s' has been removed from drive %c:.",
+				     EmulationDrives[Drive].szFileName, 'A'+Drive);
+		}
+		else
+		{
+			Log_Printf(LOG_DEBUG, "Disk '%s' has been removed from drive %c:.",
+				   EmulationDrives[Drive].szFileName, 'A'+Drive);
 		}
 	}
 

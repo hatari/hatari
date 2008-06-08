@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.9 2008-06-02 20:07:01 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.10 2008-06-08 17:37:57 eerot Exp $";
 
 #include <ctype.h>
 #include "main.h"
@@ -39,6 +39,10 @@ const char change_rcsid[] = "Hatari $Id: change.c,v 1.9 2008-06-02 20:07:01 eero
 # include "falcon/dsp.h"
 #endif
 
+/* TODO: change the config change functions so that the it's not
+ * necessary for the current config to be in ConfigureParams
+ * (helps dialog.c), it would just set it after all comparisons
+ */
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -98,6 +102,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceRes
 	bool NeedReset;
 	bool bReInitGemdosDrive = FALSE, bReInitAcsiEmu = FALSE;
 	bool bReInitIoMem = FALSE;
+	int i, FloppyInsert[MAX_FLOPPYDRIVES];
 
 	/* Do we need to warn user of that changes will only take effect after reset? */
 	if (bForceReset)
@@ -141,6 +146,16 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceRes
 		if (Sound_AreWeRecording())
 			Sound_EndRecording();
 		Audio_UnInit();
+	}
+
+	/* Did change floppy (images)? */
+	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
+	{
+		if (strcmp(changed->DiskImage.szDiskFileName[i],
+			   ConfigureParams.DiskImage.szDiskFileName[i]))
+			FloppyInsert[i] = TRUE;
+		else
+			FloppyInsert[i] = FALSE;
 	}
 
 	/* Did change GEMDOS drive? */
@@ -205,6 +220,13 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceRes
 		HDC_Init(ConfigureParams.HardDisk.szHardDiskImage);
 	}
 
+	/* Insert floppies? */
+	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
+	{
+		if (FloppyInsert[i])
+			Floppy_InsertDiskIntoDrive(i);
+	}
+
 	/* Mount a new GEMDOS drive? */
 	if (bReInitGemdosDrive && ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
@@ -258,7 +280,7 @@ static bool Change_Options(int argc, const char *argv[])
 	/* get configuration changes */
 	original = ConfigureParams;
 	ConfigureParams.Screen.bFullScreen = bInFullScreen;
-	bOK = Opt_ParseParameters(argc, argv, NULL, 0);
+	bOK = Opt_ParseParameters(argc, argv);
 	changed = ConfigureParams;
 	ConfigureParams = original;
 

@@ -11,11 +11,9 @@ extern bool bLoadAutoSave;
 extern bool bLoadMemorySave;
 extern bool bBiosIntercept;
 
-/* Parses all Hatari command line options, sets Hatari state and
- * boot disk image name (empty if not set) accordingly.
+/* Parses all Hatari command line options and sets Hatari state.
  * Returns TRUE if everything was OK, FALSE otherwise.
  */
-extern bool Opt_ParseParameters(int argc, const char *argv[],
-				char *bootdisk, size_t bootlen);
+extern bool Opt_ParseParameters(int argc, const char *argv[]);
 
 #endif /* HATARI_OPTIONS_H */

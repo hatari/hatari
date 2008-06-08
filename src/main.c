@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.131 2008-06-03 19:41:26 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.132 2008-06-08 17:37:57 eerot Exp $";
 
 #include "config.h"
 
@@ -61,9 +61,6 @@ bool bEnableDebug = FALSE;                /* Enable debug UI? */
 static bool bEmulationActive = TRUE;      /* Run emulation when started */
 static bool bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
 static bool bIgnoreNextMouseMotion = FALSE;  /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
-static char szBootDiskImage[FILENAME_MAX];   /* boot disk path or empty */
-
-extern char sWorkingDir[FILENAME_MAX];
 
 
 /*-----------------------------------------------------------------------*/
@@ -89,8 +86,8 @@ void Main_MemorySnapShot_Capture(bool bSave)
 	}
 	/* And Cart/TOS/Hardware area */
 	MemorySnapShot_Store(&RomMem[0xE00000], 0x200000);
-	MemorySnapShot_Store(szBootDiskImage, sizeof(szBootDiskImage));
-	MemorySnapShot_Store(sWorkingDir, sizeof(sWorkingDir));  /* TODO: Remove this line? */
+	/* TODO: Remove this line? */
+	MemorySnapShot_Store((char*)Paths_GetWorkingDir(), FILENAME_MAX);
 }
 
 
@@ -507,12 +504,6 @@ static void Main_Init(void)
 	NvRam_Init();
 	Joy_Init();
 	Sound_Init();
-
-	/* Check passed disk image parameter, boot directly into emulator */
-	if (strlen(szBootDiskImage) > 0)
-	{
-		Floppy_InsertDiskIntoDrive(0, szBootDiskImage, sizeof(szBootDiskImage));
-	}
 }
 
 
@@ -566,9 +557,6 @@ int main(int argc, const char *argv[])
 	/* Initialize directory strings */
 	Paths_Init(argv[0]);
 
-	/* no boot disk image */
-	szBootDiskImage[0] = 0;
-
 	/* Set default configuration values: */
 	Configuration_SetDefault();
 
@@ -576,8 +564,8 @@ int main(int argc, const char *argv[])
 	Configuration_Load(CONFDIR"/hatari.cfg");     /* Try the global configuration file first */
 	Configuration_Load(NULL);                     /* Now try the users configuration file */
 
-	/* Check for any passed parameters, get boot disk */
-	if (!Opt_ParseParameters(argc, argv, szBootDiskImage, sizeof(szBootDiskImage)))
+	/* Check for any passed parameters */
+	if (!Opt_ParseParameters(argc, argv))
 	{
 		return 1;
 	}

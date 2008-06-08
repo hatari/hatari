@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.4 2008-06-08 16:07:40 eerot Exp $";
+const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.5 2008-06-08 17:37:57 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -89,9 +89,9 @@ static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 	char *selname, *zip_path;
 	const char *tmpname;
 
-	assert(drive >= 0 && drive < 2);
-	if (EmulationDrives[drive].bDiskInserted)
-		tmpname = EmulationDrives[drive].szFileName;
+	assert(drive >= 0 && drive < MAX_FLOPPYDRIVES);
+	if (ConfigureParams.DiskImage.szDiskFileName[drive][0])
+		tmpname = ConfigureParams.DiskImage.szDiskFileName[drive];
 	else
 		tmpname = ConfigureParams.DiskImage.szDiskImageDirectory;
 
@@ -100,22 +100,19 @@ static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 	{
 		if (!File_DoesFileNameEndWithSlash(selname) && File_Exists(selname))
 		{
-			char *realname;
-			/* FIXME: This shouldn't be done here but in Dialog_CopyConfigureParamsToConfiguration */
-			realname = Floppy_ZipInsertDiskIntoDrive(drive, selname, zip_path);
+			const char *realname;
+			realname = Floppy_SetDiskFileName(drive, selname, zip_path);
 			/* TODO: error dialog when this fails */
 			if (realname)
 			{
 				File_ShrinkName(dlgname, realname, diskdlg[diskid].w);
-				free(realname);
 			}
 			if (zip_path)
 				free(zip_path);
 		}
 		else
 		{
-			/* FIXME: This shouldn't be done here but in Dialog_CopyConfigureParamsToConfiguration */
-			Floppy_EjectDiskFromDrive(0, FALSE);
+			Floppy_SetDiskFileNameNone(drive);
 			dlgname[0] = 0;
 		}
 		free(selname);

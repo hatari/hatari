@@ -20,7 +20,7 @@
 #define mkdir(name,mode) mkdir(name)
 #endif  /* WIN32 */
 
-char sWorkingDir[FILENAME_MAX];           /* Working directory */
+static char sWorkingDir[FILENAME_MAX];    /* Working directory */
 static char sDataDir[FILENAME_MAX];       /* Directory where data files of Hatari can be found */
 static char sUserHomeDir[FILENAME_MAX];   /* User's home directory ($HOME) */
 static char sHatariHomeDir[FILENAME_MAX]; /* Hatari's home directory ($HOME/.hatari/) */

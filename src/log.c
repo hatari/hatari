@@ -13,7 +13,7 @@
  * of HatariTraceFlags. Multiple trace levels can be set at once, by setting
  * the corresponding bits in HatariTraceFlags
  */
-const char Log_rcsid[] = "Hatari $Id: log.c,v 1.16 2008-06-03 18:10:43 npomarede Exp $";
+const char Log_rcsid[] = "Hatari $Id: log.c,v 1.17 2008-06-08 17:37:57 eerot Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -179,11 +179,11 @@ void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 LOGTYPE Log_ParseOptions(const char *arg)
 {
 	const char *levels[] = {
-		"fail", "error", "warn", "info", "todo", "debug", NULL
+		"fatal", "error", "warn", "info", "todo", "debug", NULL
 	};
+	LOGTYPE level = LOG_FATAL;
 	const char **level_str;
 	char *input, *str;
-	LOGTYPE level;
 
 	input = strdup(arg);
 	str = input;
@@ -191,7 +191,7 @@ LOGTYPE Log_ParseOptions(const char *arg)
 	{
 		*str++ = tolower(*arg++);
 	}
-	for (level = 0, level_str = levels; *level_str; level_str++, level++)
+	for (level_str = levels; *level_str; level_str++, level++)
 	{
 		if (strcmp(input, *level_str) == 0)
 		{

@@ -139,10 +139,14 @@ typedef enum
   WRITEPROT_AUTO
 } WRITEPROTECTION;
 
+#define MAX_FLOPPYDRIVES 2
+
 typedef struct
 {
   bool bAutoInsertDiskB;
   WRITEPROTECTION nWriteProtection;
+  char szDiskZipPath[MAX_FLOPPYDRIVES][FILENAME_MAX];
+  char szDiskFileName[MAX_FLOPPYDRIVES][FILENAME_MAX];
   char szDiskImageDirectory[FILENAME_MAX];
 } CNF_DISKIMAGE;
 

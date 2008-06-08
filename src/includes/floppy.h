@@ -8,6 +8,8 @@
 #ifndef HATARI_FLOPPY_H
 #define HATARI_FLOPPY_H
 
+#include "configuration.h"
+
 /* Structure for each drive connected as emulation */
 typedef struct
 {
@@ -20,10 +22,10 @@ typedef struct
   bool bOKToSave;
 } EMULATION_DRIVE;
 
-#define NUM_EMULATION_DRIVES  2            /* A:, B: */
-#define NUMBYTESPERSECTOR    512           /* All disks are 512 bytes per sector */
+#define MAX_FLOPPYDRIVES    2     /* A:, B: */
+#define NUMBYTESPERSECTOR 512     /* All disks are 512 bytes per sector */
 
-extern EMULATION_DRIVE EmulationDrives[NUM_EMULATION_DRIVES];
+extern EMULATION_DRIVE EmulationDrives[MAX_FLOPPYDRIVES];
 extern int nBootDrive;
 
 extern void Floppy_Init(void);
@@ -31,8 +33,9 @@ extern void Floppy_UnInit(void);
 extern void Floppy_MemorySnapShot_Capture(bool bSave);
 extern void Floppy_GetBootDrive(void);
 extern bool Floppy_IsWriteProtected(int Drive);
-extern bool Floppy_InsertDiskIntoDrive(int Drive, char *pszFileName, int maxlen);
-extern char* Floppy_ZipInsertDiskIntoDrive(int Drive, const char *pszFileName, const char *pszZipPath);
+extern void Floppy_SetDiskFileNameNone(int Drive);
+extern const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const char *pszZipPath);
+extern bool Floppy_InsertDiskIntoDrive(int Drive);
 extern void Floppy_EjectDiskFromDrive(int Drive, bool bInformUser);
 extern void Floppy_EjectBothDrives(void);
 extern void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes, unsigned short *pnSectorsPerTrack, unsigned short *pnSides);
