@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.10 2008-06-08 17:37:57 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.11 2008-06-08 19:30:53 eerot Exp $";
 
 #include <ctype.h>
 #include "main.h"
@@ -39,54 +39,50 @@ const char change_rcsid[] = "Hatari $Id: change.c,v 1.10 2008-06-08 17:37:57 eer
 # include "falcon/dsp.h"
 #endif
 
-/* TODO: change the config change functions so that the it's not
- * necessary for the current config to be in ConfigureParams
- * (helps dialog.c), it would just set it after all comparisons
- */
 
 /*-----------------------------------------------------------------------*/
 /**
  * Check if need to warn user that changes will take place after reset.
  * Return TRUE if wants to reset.
  */
-bool Change_DoNeedReset(CNF_PARAMS *changed)
+bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 {
 	/* Did we change monitor type? If so, must reset */
-	if (ConfigureParams.Screen.nMonitorType != changed->Screen.nMonitorType
+	if (current->Screen.nMonitorType != changed->Screen.nMonitorType
 	    && (changed->System.nMachineType == MACHINE_FALCON
-	        || ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_MONO
+	        || current->Screen.nMonitorType == MONITOR_TYPE_MONO
 	        || changed->Screen.nMonitorType == MONITOR_TYPE_MONO))
 		return TRUE;
 
 	/* Did change to GEM VDI display? */
-	if (ConfigureParams.Screen.bUseExtVdiResolutions != changed->Screen.bUseExtVdiResolutions)
+	if (current->Screen.bUseExtVdiResolutions != changed->Screen.bUseExtVdiResolutions)
 		return TRUE;
 
 	/* Did change GEM resolution or color depth? */
 	if (changed->Screen.bUseExtVdiResolutions &&
-	    (ConfigureParams.Screen.nVdiWidth != changed->Screen.nVdiWidth
-	     || ConfigureParams.Screen.nVdiHeight != changed->Screen.nVdiHeight
-	     || ConfigureParams.Screen.nVdiColors != changed->Screen.nVdiColors))
+	    (current->Screen.nVdiWidth != changed->Screen.nVdiWidth
+	     || current->Screen.nVdiHeight != changed->Screen.nVdiHeight
+	     || current->Screen.nVdiColors != changed->Screen.nVdiColors))
 		return TRUE;
 
 	/* Did change TOS ROM image? */
-	if (strcmp(changed->Rom.szTosImageFileName, ConfigureParams.Rom.szTosImageFileName))
+	if (strcmp(changed->Rom.szTosImageFileName, current->Rom.szTosImageFileName))
 		return TRUE;
 
 	/* Did change HD image? */
-	if (changed->HardDisk.bUseHardDiskImage != ConfigureParams.HardDisk.bUseHardDiskImage
-	    || (strcmp(changed->HardDisk.szHardDiskImage, ConfigureParams.HardDisk.szHardDiskImage)
+	if (changed->HardDisk.bUseHardDiskImage != current->HardDisk.bUseHardDiskImage
+	    || (strcmp(changed->HardDisk.szHardDiskImage, current->HardDisk.szHardDiskImage)
 	        && changed->HardDisk.bUseHardDiskImage))
 		return TRUE;
 
 	/* Did change GEMDOS drive? */
-	if (changed->HardDisk.bUseHardDiskDirectories != ConfigureParams.HardDisk.bUseHardDiskDirectories
-	    || (strcmp(changed->HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0])
+	if (changed->HardDisk.bUseHardDiskDirectories != current->HardDisk.bUseHardDiskDirectories
+	    || (strcmp(changed->HardDisk.szHardDiskDirectories[0], current->HardDisk.szHardDiskDirectories[0])
 	        && changed->HardDisk.bUseHardDiskDirectories))
 		return TRUE;
 
 	/* Did change machine type? */
-	if (changed->System.nMachineType != ConfigureParams.System.nMachineType)
+	if (changed->System.nMachineType != current->System.nMachineType)
 		return TRUE;
 
 	return FALSE;
@@ -97,51 +93,50 @@ bool Change_DoNeedReset(CNF_PARAMS *changed)
 /**
  * Copy details back to configuration and perform reset.
  */
-void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceReset)
+void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *changed, bool bForceReset)
 {
 	bool NeedReset;
-	bool bReInitGemdosDrive = FALSE, bReInitAcsiEmu = FALSE;
+	bool bReInitGemdosDrive = FALSE;
+	bool bReInitAcsiEmu = FALSE;
 	bool bReInitIoMem = FALSE;
-	int i, FloppyInsert[MAX_FLOPPYDRIVES];
+	bool bScreenModeChange = FALSE;
+	bool bFloppyInsert[MAX_FLOPPYDRIVES];
+	int i;
 
 	/* Do we need to warn user of that changes will only take effect after reset? */
 	if (bForceReset)
 		NeedReset = bForceReset;
 	else
-		NeedReset = Change_DoNeedReset(changed);
+		NeedReset = Change_DoNeedReset(current, changed);
 
 	/* Do need to change resolution? Need if change display/overscan settings */
 	/*(if switch between Colour/Mono cause reset later) */
 	if (!NeedReset &&
-	    (changed->Screen.nForceBpp != ConfigureParams.Screen.nForceBpp
-	     || changed->Screen.bZoomLowRes != ConfigureParams.Screen.bZoomLowRes
-	     || changed->Screen.bAllowOverscan != ConfigureParams.Screen.bAllowOverscan))
+	    (changed->Screen.nForceBpp != current->Screen.nForceBpp
+	     || changed->Screen.bZoomLowRes != current->Screen.bZoomLowRes
+	     || changed->Screen.bAllowOverscan != current->Screen.bAllowOverscan))
 	{
-		ConfigureParams.Screen.nForceBpp = changed->Screen.nForceBpp;
-		ConfigureParams.Screen.bZoomLowRes = changed->Screen.bZoomLowRes;
-		ConfigureParams.Screen.bAllowOverscan = changed->Screen.bAllowOverscan;
-
-		Screen_ModeChanged();
+		bScreenModeChange = TRUE;
 	}
 
 	/* Did set new printer parameters? */
-	if (changed->Printer.bEnablePrinting != ConfigureParams.Printer.bEnablePrinting
-	    || changed->Printer.bPrintToFile != ConfigureParams.Printer.bPrintToFile
-	    || strcmp(changed->Printer.szPrintToFileName,ConfigureParams.Printer.szPrintToFileName))
+	if (changed->Printer.bEnablePrinting != current->Printer.bEnablePrinting
+	    || changed->Printer.bPrintToFile != current->Printer.bPrintToFile
+	    || strcmp(changed->Printer.szPrintToFileName,current->Printer.szPrintToFileName))
 	{
 		Printer_CloseAllConnections();
 	}
 
 	/* Did set new RS232 parameters? */
-	if (changed->RS232.bEnableRS232 != ConfigureParams.RS232.bEnableRS232
-	    || strcmp(changed->RS232.szOutFileName, ConfigureParams.RS232.szOutFileName)
-	    || strcmp(changed->RS232.szInFileName, ConfigureParams.RS232.szInFileName))
+	if (changed->RS232.bEnableRS232 != current->RS232.bEnableRS232
+	    || strcmp(changed->RS232.szOutFileName, current->RS232.szOutFileName)
+	    || strcmp(changed->RS232.szInFileName, current->RS232.szInFileName))
 	{
 		RS232_UnInit();
 	}
 
 	/* Did stop sound? Or change playback Hz. If so, also stop sound recording */
-	if (!changed->Sound.bEnableSound || changed->Sound.nPlaybackQuality != ConfigureParams.Sound.nPlaybackQuality)
+	if (!changed->Sound.bEnableSound || changed->Sound.nPlaybackQuality != current->Sound.nPlaybackQuality)
 	{
 		if (Sound_AreWeRecording())
 			Sound_EndRecording();
@@ -152,15 +147,15 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceRes
 	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
 		if (strcmp(changed->DiskImage.szDiskFileName[i],
-			   ConfigureParams.DiskImage.szDiskFileName[i]))
-			FloppyInsert[i] = TRUE;
+			   current->DiskImage.szDiskFileName[i]))
+			bFloppyInsert[i] = TRUE;
 		else
-			FloppyInsert[i] = FALSE;
+			bFloppyInsert[i] = FALSE;
 	}
 
 	/* Did change GEMDOS drive? */
-	if (changed->HardDisk.bUseHardDiskDirectories != ConfigureParams.HardDisk.bUseHardDiskDirectories
-	    || (strcmp(changed->HardDisk.szHardDiskDirectories[0], ConfigureParams.HardDisk.szHardDiskDirectories[0])
+	if (changed->HardDisk.bUseHardDiskDirectories != current->HardDisk.bUseHardDiskDirectories
+	    || (strcmp(changed->HardDisk.szHardDiskDirectories[0], current->HardDisk.szHardDiskDirectories[0])
 	        && changed->HardDisk.bUseHardDiskDirectories))
 	{
 		GemDOS_UnInitDrives();
@@ -168,8 +163,8 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceRes
 	}
 
 	/* Did change HD image? */
-	if (changed->HardDisk.bUseHardDiskImage != ConfigureParams.HardDisk.bUseHardDiskImage
-	    || (strcmp(changed->HardDisk.szHardDiskImage, ConfigureParams.HardDisk.szHardDiskImage)
+	if (changed->HardDisk.bUseHardDiskImage != current->HardDisk.bUseHardDiskImage
+	    || (strcmp(changed->HardDisk.szHardDiskImage, current->HardDisk.szHardDiskImage)
 	        && changed->HardDisk.bUseHardDiskImage))
 	{
 		HDC_UnInit();
@@ -177,12 +172,12 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceRes
 	}
 
 	/* Did change blitter, rtc or system type? */
-	if (changed->System.bBlitter != ConfigureParams.System.bBlitter
+	if (changed->System.bBlitter != current->System.bBlitter
 #if ENABLE_DSP_EMU
-	    || changed->System.nDSPType != ConfigureParams.System.nDSPType
+	    || changed->System.nDSPType != current->System.nDSPType
 #endif
-	    || changed->System.bRealTimeClock != ConfigureParams.System.bRealTimeClock
-	    || changed->System.nMachineType != ConfigureParams.System.nMachineType)
+	    || changed->System.bRealTimeClock != current->System.bRealTimeClock
+	    || changed->System.nMachineType != current->System.nMachineType)
 	{
 		IoMem_UnInit();
 		bReInitIoMem = TRUE;
@@ -191,14 +186,19 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceRes
 #if ENABLE_DSP_EMU
 	/* Disabled DSP? */
 	if (changed->System.nDSPType == DSP_TYPE_EMU &&
-	    (changed->System.nDSPType != ConfigureParams.System.nDSPType))
+	    (changed->System.nDSPType != current->System.nDSPType))
 	{
 		DSP_UnInit();
 	}
 #endif
 
-	/* Copy details to configuration, so can be saved out or set on reset */
-	ConfigureParams = *changed;
+	/* Copy details to configuration,
+	 * so it can be saved out or set on reset
+	 */
+	if (changed != &ConfigureParams)
+	{
+		ConfigureParams = *changed;
+	}
 
 	/* Copy details to global, if we reset copy them all */
 	Configuration_Apply(NeedReset);
@@ -223,7 +223,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceRes
 	/* Insert floppies? */
 	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
-		if (FloppyInsert[i])
+		if (bFloppyInsert[i])
 			Floppy_InsertDiskIntoDrive(i);
 	}
 
@@ -251,6 +251,12 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceRes
 		IoMem_Init();
 	}
 
+	/* Force things associated with screen change */
+	if (bScreenModeChange)
+	{
+		Screen_ModeChanged();
+	}
+
 	/* Do we need to perform reset? */
 	if (NeedReset)
 	{
@@ -258,9 +264,9 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceRes
 	}
 
 	/* Go into/return from full screen if flagged */
-	if (!bInFullScreen && changed->Screen.bFullScreen)
+	if (!bInFullScreen && ConfigureParams.Screen.bFullScreen)
 		Screen_EnterFullScreen();
-	else if (bInFullScreen && !changed->Screen.bFullScreen)
+	else if (bInFullScreen && !ConfigureParams.Screen.bFullScreen)
 		Screen_ReturnFromFullScreen();
 }
 
@@ -273,20 +279,18 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *changed, bool bForceRes
 static bool Change_Options(int argc, const char *argv[])
 {
 	bool bOK;
-	CNF_PARAMS original, changed;
+	CNF_PARAMS current;
 
 	Main_PauseEmulation();
 
 	/* get configuration changes */
-	original = ConfigureParams;
+	current = ConfigureParams;
 	ConfigureParams.Screen.bFullScreen = bInFullScreen;
 	bOK = Opt_ParseParameters(argc, argv);
-	changed = ConfigureParams;
-	ConfigureParams = original;
 
 	/* Check if reset is required and ask user if he really wants to continue */
-	if (bOK && Change_DoNeedReset(&changed) &&
-	    ConfigureParams.Log.nAlertDlgLogLevel >= LOG_INFO) {
+	if (bOK && Change_DoNeedReset(&current, &ConfigureParams)
+	    && current.Log.nAlertDlgLogLevel >= LOG_INFO) {
 		bOK = DlgAlert_Query("The emulated system must be "
 				     "reset to apply these changes. "
 				     "Apply changes now and reset "
@@ -294,7 +298,7 @@ static bool Change_Options(int argc, const char *argv[])
 	}
 	/* Copy details to configuration */
 	if (bOK) {
-		Change_CopyChangedParamsToConfiguration(&changed, FALSE);
+		Change_CopyChangedParamsToConfiguration(&current, &ConfigureParams, FALSE);
 	}
 
 	Main_UnPauseEmulation();
