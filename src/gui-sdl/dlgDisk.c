@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.5 2008-06-08 17:37:57 eerot Exp $";
+const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.6 2008-06-08 20:04:08 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -113,7 +113,7 @@ static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 		else
 		{
 			Floppy_SetDiskFileNameNone(drive);
-			dlgname[0] = 0;
+			dlgname[0] = '\0';
 		}
 		free(selname);
 		return TRUE;
@@ -153,7 +153,7 @@ static bool DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 void Dialog_DiskDlg(void)
 {
 	int but, i;
-	char dlgnamea[64], dlgnameb[64], dlgdiskdir[64];
+	char dlgname[MAX_FLOPPYDRIVES][64], dlgdiskdir[64];
 	char dlgnamegdos[64], dlgnamehdimg[64];
 
 	SDLGui_CenterDlg(diskdlg);
@@ -162,19 +162,19 @@ void Dialog_DiskDlg(void)
 
 	/* Disk name A: */
 	if (EmulationDrives[0].bDiskInserted)
-		File_ShrinkName(dlgnamea, EmulationDrives[0].szFileName,
+		File_ShrinkName(dlgname[0], EmulationDrives[0].szFileName,
 		                diskdlg[DISKDLG_DISKA].w);
 	else
-		dlgnamea[0] = 0;
-	diskdlg[DISKDLG_DISKA].txt = dlgnamea;
+		dlgname[0][0] = '\0';
+	diskdlg[DISKDLG_DISKA].txt = dlgname[0];
 
 	/* Disk name B: */
 	if (EmulationDrives[1].bDiskInserted)
-		File_ShrinkName(dlgnameb, EmulationDrives[1].szFileName,
+		File_ShrinkName(dlgname[1], EmulationDrives[1].szFileName,
 		                diskdlg[DISKDLG_DISKB].w);
 	else
-		dlgnameb[0] = 0;
-	diskdlg[DISKDLG_DISKB].txt = dlgnameb;
+		dlgname[1][0] = '\0';
+	diskdlg[DISKDLG_DISKB].txt = dlgname[1];
 
 	/* Default image directory: */
 	File_ShrinkName(dlgdiskdir, ConfigureParams.DiskImage.szDiskImageDirectory,
@@ -205,7 +205,7 @@ void Dialog_DiskDlg(void)
 		File_ShrinkName(dlgnamegdos, ConfigureParams.HardDisk.szHardDiskDirectories[0],
 		                diskdlg[DISKDLG_DISKGDOS].w);
 	else
-		dlgnamegdos[0] = 0;
+		dlgnamegdos[0] = '\0';
 	diskdlg[DISKDLG_DISKGDOS].txt = dlgnamegdos;
 
 	/* Hard disk image: */
@@ -213,7 +213,7 @@ void Dialog_DiskDlg(void)
 		File_ShrinkName(dlgnamehdimg, ConfigureParams.HardDisk.szHardDiskImage,
 		                diskdlg[DISKDLG_DISKHDIMG].w);
 	else
-		dlgnamehdimg[0] = 0;
+		dlgnamehdimg[0] = '\0';
 	diskdlg[DISKDLG_DISKHDIMG].txt = dlgnamehdimg;
 
 	/* Draw and process the dialog */
@@ -223,18 +223,18 @@ void Dialog_DiskDlg(void)
 		switch (but)
 		{
 		 case DISKDLG_EJECTA:                         /* Eject disk in drive A: */
-			Floppy_EjectDiskFromDrive(0, FALSE);
-			dlgnamea[0] = 0;
+			Floppy_SetDiskFileNameNone(0);
+			dlgname[0][0] = '\0';
 			break;
 		 case DISKDLG_BROWSEA:                        /* Choose a new disk A: */
-			DlgDisk_BrowseDisk(dlgnamea, 0, DISKDLG_DISKA);
+			DlgDisk_BrowseDisk(dlgname[0], 0, DISKDLG_DISKA);
 			break;
 		 case DISKDLG_EJECTB:                         /* Eject disk in drive B: */
-			Floppy_EjectDiskFromDrive(1, FALSE);
-			dlgnameb[0] = 0;
+			Floppy_SetDiskFileNameNone(1);
+			dlgname[1][0] = '\0';
 			break;
 		case DISKDLG_BROWSEB:                         /* Choose a new disk B: */
-			DlgDisk_BrowseDisk(dlgnameb, 1, DISKDLG_DISKB);
+			DlgDisk_BrowseDisk(dlgname[1], 1, DISKDLG_DISKB);
 			break;
 		 case DISKDLG_BROWSEIMG:
 			DlgDisk_BrowseDir(dlgdiskdir,
@@ -246,7 +246,7 @@ void Dialog_DiskDlg(void)
 			break;
 		 case DISKDLG_UNMOUNTGDOS:
 			ConfigureParams.HardDisk.bUseHardDiskDirectories = FALSE;
-			dlgnamegdos[0] = 0;
+			dlgnamegdos[0] = '\0';
 			break;
 		 case DISKDLG_BROWSEGDOS:
 			if (DlgDisk_BrowseDir(dlgnamegdos,
@@ -256,7 +256,7 @@ void Dialog_DiskDlg(void)
 			break;
 		 case DISKDLG_EJECTHDIMG:
 			ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
-			dlgnamehdimg[0] = 0;
+			dlgnamehdimg[0] = '\0';
 			break;
 		 case DISKDLG_BROWSEHDIMG:
 			if (SDLGui_FileConfSelect(dlgnamehdimg,

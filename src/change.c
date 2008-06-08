@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.11 2008-06-08 19:30:53 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.12 2008-06-08 20:04:08 eerot Exp $";
 
 #include <ctype.h>
 #include "main.h"
@@ -146,6 +146,11 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	/* Did change floppy (images)? */
 	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
+		/*
+		Log_Printf(LOG_DEBUG, "Old and new disk %c:\n\t%s\n\t%s", 'A'+i,
+			   current->DiskImage.szDiskFileName[i],
+			   changed->DiskImage.szDiskFileName[i]);
+		 */
 		if (strcmp(changed->DiskImage.szDiskFileName[i],
 			   current->DiskImage.szDiskFileName[i]))
 			bFloppyInsert[i] = TRUE;

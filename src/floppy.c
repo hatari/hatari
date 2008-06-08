@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.37 2008-06-08 17:37:57 eerot Exp $";
+const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.38 2008-06-08 20:04:08 eerot Exp $";
 
 #include <sys/stat.h>
 #include <assert.h>
@@ -268,7 +268,7 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 {
 	char *filename;
 
-	//File_MakeAbsoluteName(bootdisk);
+	//File_MakeAbsoluteName(filename);
 
 	/* See if file exists, and if not, get/add correct extension */
 	if (!File_Exists(pszFileName))
@@ -280,6 +280,7 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 		Log_AlertDlg(LOG_INFO, "Image '%s' not found", pszFileName);
 		return NULL;
 	}
+	
 	/* If we insert a disk into Drive A, should we try to put disk 2 into drive B? */
 	if (Drive == 0 && ConfigureParams.DiskImage.bAutoInsertDiskB)
 	{
@@ -292,6 +293,8 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 			free(szDiskBFileName);
 		}
 	}
+	
+	/* do the changes */
 	assert(Drive >= 0 && Drive < MAX_FLOPPYDRIVES);
 	if (pszZipPath)
 		strcpy(ConfigureParams.DiskImage.szDiskZipPath[Drive], pszZipPath);
@@ -316,7 +319,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 
 	/* Eject disk, if one is inserted (doesn't inform user) */
 	assert(Drive >= 0 && Drive < MAX_FLOPPYDRIVES);
-	Floppy_EjectDiskFromDrive(Drive, FALSE);
+	Floppy_EjectDiskFromDrive(Drive);
 
 	filename = ConfigureParams.DiskImage.szDiskFileName[Drive];
 	if (!filename[0])
@@ -363,9 +366,12 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 /**
  * Eject disk from floppy drive, save contents back to PCs hard-drive if
  * they have been changed.
+ * Return TRUE if there was something to eject.
  */
-void Floppy_EjectDiskFromDrive(int Drive, bool bInformUser)
+bool Floppy_EjectDiskFromDrive(int Drive)
 {
+	bool bEjected = FALSE;
+	
 	/* Does our drive have a disk in? */
 	if (EmulationDrives[Drive].bDiskInserted)
 	{
@@ -386,18 +392,10 @@ void Floppy_EjectDiskFromDrive(int Drive, bool bInformUser)
 					ZIP_WriteDisk(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 			}
 		}
-
 		/* Inform user that disk has been ejected! */
-		if (bInformUser)
-		{
-			Log_AlertDlg(LOG_INFO, "Disk '%s' has been removed from drive %c:.",
-				     EmulationDrives[Drive].szFileName, 'A'+Drive);
-		}
-		else
-		{
-			Log_Printf(LOG_DEBUG, "Disk '%s' has been removed from drive %c:.",
-				   EmulationDrives[Drive].szFileName, 'A'+Drive);
-		}
+		Log_AlertDlg(LOG_INFO, "Disk '%s' has been removed from drive %c:.",
+			     EmulationDrives[Drive].szFileName, 'A'+Drive);
+		bEjected = TRUE;
 	}
 
 	/* Drive is now empty */
@@ -406,23 +404,25 @@ void Floppy_EjectDiskFromDrive(int Drive, bool bInformUser)
 		free(EmulationDrives[Drive].pBuffer);
 		EmulationDrives[Drive].pBuffer = NULL;
 	}
-	strcpy(EmulationDrives[Drive].szFileName,"");
+	EmulationDrives[Drive].szFileName[0] = '\0';
 	EmulationDrives[Drive].nImageBytes = 0;
 	EmulationDrives[Drive].bDiskInserted = FALSE;
 	EmulationDrives[Drive].bContentsChanged = FALSE;
 	EmulationDrives[Drive].bOKToSave = FALSE;
+	return bEjected;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
  * Eject all disk image from floppy drives - call when quit.
+ * Return TRUE if there was something to eject.
  */
-void Floppy_EjectBothDrives(void)
+bool Floppy_EjectBothDrives(void)
 {
 	/* Eject disk images from drives 'A' and 'B' */
-	Floppy_EjectDiskFromDrive(0, FALSE);
-	Floppy_EjectDiskFromDrive(1, FALSE);
+	return (Floppy_EjectDiskFromDrive(0) ||
+		Floppy_EjectDiskFromDrive(1));
 }
 
 
