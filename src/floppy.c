@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.38 2008-06-08 20:04:08 eerot Exp $";
+const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.39 2008-06-08 20:09:56 eerot Exp $";
 
 #include <sys/stat.h>
 #include <assert.h>
@@ -268,8 +268,6 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 {
 	char *filename;
 
-	//File_MakeAbsoluteName(filename);
-
 	/* See if file exists, and if not, get/add correct extension */
 	if (!File_Exists(pszFileName))
 		filename = File_FindPossibleExtFileName(pszFileName, pszDiskImageNameExts);
@@ -302,6 +300,7 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 		ConfigureParams.DiskImage.szDiskZipPath[Drive][0] = '\0';
 	strcpy(ConfigureParams.DiskImage.szDiskFileName[Drive], filename);
 	free(filename);
+	//File_MakeAbsoluteName(ConfigureParams.DiskImage.szDiskFileName[Drive]);
 	return ConfigureParams.DiskImage.szDiskFileName[Drive];
 }
 
