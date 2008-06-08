@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.9 2007-12-11 19:02:20 eerot Exp $";
+const char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.10 2008-06-08 16:07:40 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -54,10 +54,10 @@ void DlgRom_Main(void)
 
 	SDLGui_CenterDlg(romdlg);
 
-	File_ShrinkName(szDlgTosName, DialogParams.Rom.szTosImageFileName, sizeof(szDlgTosName)-1);
+	File_ShrinkName(szDlgTosName, ConfigureParams.Rom.szTosImageFileName, sizeof(szDlgTosName)-1);
 	romdlg[DLGROM_TOSNAME].txt = szDlgTosName;
 
-	File_ShrinkName(szDlgCartName, DialogParams.Rom.szCartridgeImageFileName, sizeof(szDlgCartName)-1);
+	File_ShrinkName(szDlgCartName, ConfigureParams.Rom.szCartridgeImageFileName, sizeof(szDlgCartName)-1);
 	romdlg[DLGROM_CARTNAME].txt = szDlgCartName;
 
 	do
@@ -68,20 +68,20 @@ void DlgRom_Main(void)
 		 case DLGROM_TOSBROWSE:
 			/* Show and process the file selection dlg */
 			SDLGui_FileConfSelect(szDlgTosName,
-					      DialogParams.Rom.szTosImageFileName,
+					      ConfigureParams.Rom.szTosImageFileName,
 					      sizeof(szDlgTosName)-1,
 					      FALSE);
 			break;
 
 		 case DLGROM_CARTEJECT:
 			szDlgCartName[0] = 0;
-			DialogParams.Rom.szCartridgeImageFileName[0] = 0;
+			ConfigureParams.Rom.szCartridgeImageFileName[0] = 0;
 			break;
 
 		 case DLGROM_CARTBROWSE:
 			/* Show and process the file selection dlg */
 			SDLGui_FileConfSelect(szDlgCartName,
-					      DialogParams.Rom.szCartridgeImageFileName,
+					      ConfigureParams.Rom.szCartridgeImageFileName,
 					       sizeof(szDlgCartName)-1,
 					      FALSE);
 			break;

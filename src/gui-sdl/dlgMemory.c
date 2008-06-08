@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.14 2008-02-24 20:10:47 thothy Exp $";
+const char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.15 2008-06-08 16:07:40 eerot Exp $";
 
 #include "main.h"
 #include "dialog.h"
@@ -74,7 +74,7 @@ void Dialog_MemDlg(void)
 		memorydlg[i].state &= ~SG_SELECTED;
 	}
 
-	switch (DialogParams.Memory.nMemorySize)
+	switch (ConfigureParams.Memory.nMemorySize)
 	{
 	 case 0:
 		memorydlg[DLGMEM_512KB].state |= SG_SELECTED;
@@ -96,10 +96,10 @@ void Dialog_MemDlg(void)
 		break;
 	}
 
-	File_ShrinkName(dlgSnapShotName, DialogParams.Memory.szMemoryCaptureFileName, memorydlg[DLGMEM_FILENAME].w);
+	File_ShrinkName(dlgSnapShotName, ConfigureParams.Memory.szMemoryCaptureFileName, memorydlg[DLGMEM_FILENAME].w);
 
 
-	if (DialogParams.Memory.bAutoSave)
+	if (ConfigureParams.Memory.bAutoSave)
 		memorydlg[DLGMEM_AUTOSAVE].state |= SG_SELECTED;
 	else
 		memorydlg[DLGMEM_AUTOSAVE].state &= ~SG_SELECTED;
@@ -112,15 +112,15 @@ void Dialog_MemDlg(void)
 		{
 		 case DLGMEM_SAVE:              /* Save memory snap-shot */
 			if (SDLGui_FileConfSelect(dlgSnapShotName,
-			                          DialogParams.Memory.szMemoryCaptureFileName,
+			                          ConfigureParams.Memory.szMemoryCaptureFileName,
 			                          memorydlg[DLGMEM_FILENAME].w, TRUE))
-				MemorySnapShot_Capture(DialogParams.Memory.szMemoryCaptureFileName, TRUE);
+				MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName, TRUE);
 			break;
 		 case DLGMEM_RESTORE:           /* Load memory snap-shot */
 			if (SDLGui_FileConfSelect(dlgSnapShotName,
-			                          DialogParams.Memory.szMemoryCaptureFileName,
+			                          ConfigureParams.Memory.szMemoryCaptureFileName,
 			                          memorydlg[DLGMEM_FILENAME].w, FALSE))
-				MemorySnapShot_Restore(DialogParams.Memory.szMemoryCaptureFileName, TRUE);
+				MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, TRUE);
 			break;
 		}
 	}
@@ -130,17 +130,17 @@ void Dialog_MemDlg(void)
 	/* Read new values from dialog: */
 
 	if (memorydlg[DLGMEM_512KB].state & SG_SELECTED)
-		DialogParams.Memory.nMemorySize = 0;
+		ConfigureParams.Memory.nMemorySize = 0;
 	else if (memorydlg[DLGMEM_1MB].state & SG_SELECTED)
-		DialogParams.Memory.nMemorySize = 1;
+		ConfigureParams.Memory.nMemorySize = 1;
 	else if (memorydlg[DLGMEM_2MB].state & SG_SELECTED)
-		DialogParams.Memory.nMemorySize = 2;
+		ConfigureParams.Memory.nMemorySize = 2;
 	else if (memorydlg[DLGMEM_4MB].state & SG_SELECTED)
-		DialogParams.Memory.nMemorySize = 4;
+		ConfigureParams.Memory.nMemorySize = 4;
 	else if (memorydlg[DLGMEM_8MB].state & SG_SELECTED)
-		DialogParams.Memory.nMemorySize = 8;
+		ConfigureParams.Memory.nMemorySize = 8;
 	else
-		DialogParams.Memory.nMemorySize = 14;
+		ConfigureParams.Memory.nMemorySize = 14;
 
-	DialogParams.Memory.bAutoSave = (memorydlg[DLGMEM_AUTOSAVE].state & SG_SELECTED);
+	ConfigureParams.Memory.bAutoSave = (memorydlg[DLGMEM_AUTOSAVE].state & SG_SELECTED);
 }

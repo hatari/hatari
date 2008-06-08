@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.3 2008-05-25 19:58:56 thothy Exp $";
+const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.4 2008-06-08 16:07:40 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -93,7 +93,7 @@ static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 	if (EmulationDrives[drive].bDiskInserted)
 		tmpname = EmulationDrives[drive].szFileName;
 	else
-		tmpname = DialogParams.DiskImage.szDiskImageDirectory;
+		tmpname = ConfigureParams.DiskImage.szDiskImageDirectory;
 
 	selname = SDLGui_FileSelect(tmpname, &zip_path, FALSE);
 	if (selname)
@@ -101,7 +101,7 @@ static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 		if (!File_DoesFileNameEndWithSlash(selname) && File_Exists(selname))
 		{
 			char *realname;
-			/* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+			/* FIXME: This shouldn't be done here but in Dialog_CopyConfigureParamsToConfiguration */
 			realname = Floppy_ZipInsertDiskIntoDrive(drive, selname, zip_path);
 			/* TODO: error dialog when this fails */
 			if (realname)
@@ -114,7 +114,7 @@ static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 		}
 		else
 		{
-			/* FIXME: This shouldn't be done here but in Dialog_CopyDialogParamsToConfiguration */
+			/* FIXME: This shouldn't be done here but in Dialog_CopyConfigureParamsToConfiguration */
 			Floppy_EjectDiskFromDrive(0, FALSE);
 			dlgname[0] = 0;
 		}
@@ -180,12 +180,12 @@ void Dialog_DiskDlg(void)
 	diskdlg[DISKDLG_DISKB].txt = dlgnameb;
 
 	/* Default image directory: */
-	File_ShrinkName(dlgdiskdir, DialogParams.DiskImage.szDiskImageDirectory,
+	File_ShrinkName(dlgdiskdir, ConfigureParams.DiskImage.szDiskImageDirectory,
 	                diskdlg[DISKDLG_IMGDIR].w);
 	diskdlg[DISKDLG_IMGDIR].txt = dlgdiskdir;
 
 	/* Auto insert disk B: */
-	if (DialogParams.DiskImage.bAutoInsertDiskB)
+	if (ConfigureParams.DiskImage.bAutoInsertDiskB)
 		diskdlg[DISKDLG_AUTOB].state |= SG_SELECTED;
 	else
 		diskdlg[DISKDLG_AUTOB].state &= ~SG_SELECTED;
@@ -195,25 +195,25 @@ void Dialog_DiskDlg(void)
 	{
 		diskdlg[i].state &= ~SG_SELECTED;
 	}
-	diskdlg[DISKDLG_PROTOFF+DialogParams.DiskImage.nWriteProtection].state |= SG_SELECTED;
+	diskdlg[DISKDLG_PROTOFF+ConfigureParams.DiskImage.nWriteProtection].state |= SG_SELECTED;
 
 	/* Boot from harddisk? */
-	if (DialogParams.HardDisk.bBootFromHardDisk)
+	if (ConfigureParams.HardDisk.bBootFromHardDisk)
 		diskdlg[DISKDLG_BOOTHD].state |= SG_SELECTED;
 	else
 		diskdlg[DISKDLG_BOOTHD].state &= ~SG_SELECTED;
 
 	/* GEMDOS hard disk directory: */
-	if (DialogParams.HardDisk.bUseHardDiskDirectories)
-		File_ShrinkName(dlgnamegdos, DialogParams.HardDisk.szHardDiskDirectories[0],
+	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
+		File_ShrinkName(dlgnamegdos, ConfigureParams.HardDisk.szHardDiskDirectories[0],
 		                diskdlg[DISKDLG_DISKGDOS].w);
 	else
 		dlgnamegdos[0] = 0;
 	diskdlg[DISKDLG_DISKGDOS].txt = dlgnamegdos;
 
 	/* Hard disk image: */
-	if (DialogParams.HardDisk.bUseHardDiskImage)
-		File_ShrinkName(dlgnamehdimg, DialogParams.HardDisk.szHardDiskImage,
+	if (ConfigureParams.HardDisk.bUseHardDiskImage)
+		File_ShrinkName(dlgnamehdimg, ConfigureParams.HardDisk.szHardDiskImage,
 		                diskdlg[DISKDLG_DISKHDIMG].w);
 	else
 		dlgnamehdimg[0] = 0;
@@ -241,31 +241,31 @@ void Dialog_DiskDlg(void)
 			break;
 		 case DISKDLG_BROWSEIMG:
 			DlgDisk_BrowseDir(dlgdiskdir,
-			                 DialogParams.DiskImage.szDiskImageDirectory,
+			                 ConfigureParams.DiskImage.szDiskImageDirectory,
 			                 diskdlg[DISKDLG_IMGDIR].w);
 			break;
 		 case DISKDLG_CREATEIMG:
 			DlgNewDisk_Main();
 			break;
 		 case DISKDLG_UNMOUNTGDOS:
-			DialogParams.HardDisk.bUseHardDiskDirectories = FALSE;
+			ConfigureParams.HardDisk.bUseHardDiskDirectories = FALSE;
 			dlgnamegdos[0] = 0;
 			break;
 		 case DISKDLG_BROWSEGDOS:
 			if (DlgDisk_BrowseDir(dlgnamegdos,
-			                     DialogParams.HardDisk.szHardDiskDirectories[0],
+			                     ConfigureParams.HardDisk.szHardDiskDirectories[0],
 			                     diskdlg[DISKDLG_DISKGDOS].w))
-				DialogParams.HardDisk.bUseHardDiskDirectories = TRUE;
+				ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
 			break;
 		 case DISKDLG_EJECTHDIMG:
-			DialogParams.HardDisk.bUseHardDiskImage = FALSE;
+			ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
 			dlgnamehdimg[0] = 0;
 			break;
 		 case DISKDLG_BROWSEHDIMG:
 			if (SDLGui_FileConfSelect(dlgnamehdimg,
-			                          DialogParams.HardDisk.szHardDiskImage,
+			                          ConfigureParams.HardDisk.szHardDiskImage,
 			                          diskdlg[DISKDLG_DISKHDIMG].w, FALSE))
-				DialogParams.HardDisk.bUseHardDiskImage = TRUE;
+				ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
 			break;
 		}
 	}
@@ -278,11 +278,11 @@ void Dialog_DiskDlg(void)
 	{
 		if (diskdlg[i].state & SG_SELECTED)
 		{
-			DialogParams.DiskImage.nWriteProtection = i-DISKDLG_PROTOFF;
+			ConfigureParams.DiskImage.nWriteProtection = i-DISKDLG_PROTOFF;
 			break;
 		}
 	}
 
-	DialogParams.DiskImage.bAutoInsertDiskB = (diskdlg[DISKDLG_AUTOB].state & SG_SELECTED);
-	DialogParams.HardDisk.bBootFromHardDisk = (diskdlg[DISKDLG_BOOTHD].state & SG_SELECTED);
+	ConfigureParams.DiskImage.bAutoInsertDiskB = (diskdlg[DISKDLG_AUTOB].state & SG_SELECTED);
+	ConfigureParams.HardDisk.bBootFromHardDisk = (diskdlg[DISKDLG_BOOTHD].state & SG_SELECTED);
 }

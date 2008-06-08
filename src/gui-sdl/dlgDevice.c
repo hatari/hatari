@@ -6,7 +6,7 @@
 
   Device (Printer etc.) setup dialog
 */
-const char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.12 2007-12-11 19:02:19 eerot Exp $";
+const char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.13 2008-06-08 16:07:39 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -80,24 +80,24 @@ void Dialog_DeviceDlg(void)
 
 	/* Set up dialog from actual values: */
 
-	if (DialogParams.Printer.bEnablePrinting)
+	if (ConfigureParams.Printer.bEnablePrinting)
 		devicedlg[DEVDLG_PRNENABLE].state |= SG_SELECTED;
 	else
 		devicedlg[DEVDLG_PRNENABLE].state &= ~SG_SELECTED;
-	File_ShrinkName(dlgPrinterName, DialogParams.Printer.szPrintToFileName, devicedlg[DEVDLG_PRNFILENAME].w);
+	File_ShrinkName(dlgPrinterName, ConfigureParams.Printer.szPrintToFileName, devicedlg[DEVDLG_PRNFILENAME].w);
 
-	if (DialogParams.RS232.bEnableRS232)
+	if (ConfigureParams.RS232.bEnableRS232)
 		devicedlg[DEVDLG_RS232ENABLE].state |= SG_SELECTED;
 	else
 		devicedlg[DEVDLG_RS232ENABLE].state &= ~SG_SELECTED;
-	File_ShrinkName(dlgRs232OutName, DialogParams.RS232.szOutFileName, devicedlg[DEVDLG_RS232OUTNAME].w);
-	File_ShrinkName(dlgRs232InName, DialogParams.RS232.szInFileName, devicedlg[DEVDLG_RS232INNAME].w);
+	File_ShrinkName(dlgRs232OutName, ConfigureParams.RS232.szOutFileName, devicedlg[DEVDLG_RS232OUTNAME].w);
+	File_ShrinkName(dlgRs232InName, ConfigureParams.RS232.szInFileName, devicedlg[DEVDLG_RS232INNAME].w);
 
-	if (DialogParams.Midi.bEnableMidi)
+	if (ConfigureParams.Midi.bEnableMidi)
 		devicedlg[DEVDLG_MIDIENABLE].state |= SG_SELECTED;
 	else
 		devicedlg[DEVDLG_MIDIENABLE].state &= ~SG_SELECTED;
-	File_ShrinkName(dlgMidiOutName, DialogParams.Midi.szMidiOutFileName, devicedlg[DEVDLG_MIDIOUTNAME].w);
+	File_ShrinkName(dlgMidiOutName, ConfigureParams.Midi.szMidiOutFileName, devicedlg[DEVDLG_MIDIOUTNAME].w);
 
 	/* The devices dialog main loop */
 	do
@@ -108,25 +108,25 @@ void Dialog_DeviceDlg(void)
 		{
 		 case DEVDLG_PRNBROWSE:                 /* Choose a new printer file */
 			SDLGui_FileConfSelect(dlgPrinterName,
-                                              DialogParams.Printer.szPrintToFileName,
+                                              ConfigureParams.Printer.szPrintToFileName,
                                               devicedlg[DEVDLG_PRNFILENAME].w,
                                               TRUE);
 			break;
 		 case DEVDLG_RS232OUTBROWSE:            /* Choose a new RS232 output file */
 			SDLGui_FileConfSelect(dlgRs232OutName,
-                                              DialogParams.RS232.szOutFileName,
+                                              ConfigureParams.RS232.szOutFileName,
                                               devicedlg[DEVDLG_RS232OUTNAME].w,
                                               TRUE);
 			break;
 		 case DEVDLG_RS232INBROWSE:             /* Choose a new RS232 input file */
 			SDLGui_FileConfSelect(dlgRs232InName,
-                                              DialogParams.RS232.szInFileName,
+                                              ConfigureParams.RS232.szInFileName,
                                               devicedlg[DEVDLG_RS232INNAME].w,
                                               TRUE);
 			break;
 		 case DEVDLG_MIDIBROWSE:                /* Choose a new MIDI file */
 			SDLGui_FileConfSelect(dlgMidiOutName,
-                                              DialogParams.Midi.szMidiOutFileName,
+                                              ConfigureParams.Midi.szMidiOutFileName,
                                               devicedlg[DEVDLG_MIDIOUTNAME].w,
                                               TRUE);
 			break;
@@ -136,7 +136,7 @@ void Dialog_DeviceDlg(void)
 	       && but != SDLGUI_ERROR && !bQuitProgram);
 
 	/* Read values from dialog */
-	DialogParams.Printer.bEnablePrinting = (devicedlg[DEVDLG_PRNENABLE].state & SG_SELECTED);
-	DialogParams.RS232.bEnableRS232 = (devicedlg[DEVDLG_RS232ENABLE].state & SG_SELECTED);
-	DialogParams.Midi.bEnableMidi = (devicedlg[DEVDLG_MIDIENABLE].state & SG_SELECTED);
+	ConfigureParams.Printer.bEnablePrinting = (devicedlg[DEVDLG_PRNENABLE].state & SG_SELECTED);
+	ConfigureParams.RS232.bEnableRS232 = (devicedlg[DEVDLG_RS232ENABLE].state & SG_SELECTED);
+	ConfigureParams.Midi.bEnableMidi = (devicedlg[DEVDLG_MIDIENABLE].state & SG_SELECTED);
 }

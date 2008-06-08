@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.11 2008-02-23 22:16:07 thothy Exp $";
+const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.12 2008-06-08 16:07:40 eerot Exp $";
 
 #include <unistd.h>
 
@@ -57,9 +57,9 @@ void Dialog_KeyboardDlg(void)
 	{
 		keyboarddlg[i].state &= ~SG_SELECTED;
 	}
-	keyboarddlg[DLGKEY_SYMBOLIC+DialogParams.Keyboard.nKeymapType].state |= SG_SELECTED;
+	keyboarddlg[DLGKEY_SYMBOLIC+ConfigureParams.Keyboard.nKeymapType].state |= SG_SELECTED;
 
-	File_ShrinkName(dlgmapfile, DialogParams.Keyboard.szMappingFileName,
+	File_ShrinkName(dlgmapfile, ConfigureParams.Keyboard.szMappingFileName,
 	                keyboarddlg[DLGKEY_MAPNAME].w);
 	keyboarddlg[DLGKEY_MAPNAME].txt = dlgmapfile;
 
@@ -71,7 +71,7 @@ void Dialog_KeyboardDlg(void)
 		if (but == DLGKEY_MAPBROWSE)
 		{
 			SDLGui_FileConfSelect(dlgmapfile,
-			                      DialogParams.Keyboard.szMappingFileName,
+			                      ConfigureParams.Keyboard.szMappingFileName,
 			                      keyboarddlg[DLGKEY_MAPNAME].w, FALSE);
 		}
 	}
@@ -80,9 +80,9 @@ void Dialog_KeyboardDlg(void)
 
 	/* Read values from dialog: */
 	if (keyboarddlg[DLGKEY_SYMBOLIC].state & SG_SELECTED)
-		DialogParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
+		ConfigureParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
 	else if (keyboarddlg[DLGKEY_SCANCODE].state & SG_SELECTED)
-		DialogParams.Keyboard.nKeymapType = KEYMAP_SCANCODE;
+		ConfigureParams.Keyboard.nKeymapType = KEYMAP_SCANCODE;
 	else
-		DialogParams.Keyboard.nKeymapType = KEYMAP_LOADED;
+		ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
 }

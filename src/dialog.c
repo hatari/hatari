@@ -9,7 +9,7 @@
   open our dialog we make a backup of this structure. When the user finally
   clicks on 'OK', we can compare and makes the necessary changes.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.69 2008-05-19 20:34:09 thothy Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.70 2008-06-08 16:07:39 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -18,8 +18,6 @@ const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.69 2008-05-19 20:34:09 tho
 #include "log.h"
 #include "sdlgui.h"
 #include "screen.h"
-
-CNF_PARAMS DialogParams;   /* List of configuration for dialogs (so the user can also choose 'Cancel') */
 
 
 /*-----------------------------------------------------------------------*/
@@ -31,16 +29,17 @@ bool Dialog_DoProperty(void)
 {
 	bool bOKDialog;  /* Did user 'OK' dialog? */
 	bool bForceReset;
+	CNF_PARAMS BackupParams, DialogParams;
 
 	Main_PauseEmulation();
-
-	/* Copy details to DialogParams (this is so can restore if 'Cancel' dialog) */
-	ConfigureParams.Screen.bFullScreen = bInFullScreen;
-	DialogParams = ConfigureParams;
-
 	bForceReset = FALSE;
 
+	/* Copy details (this is so can restore if 'Cancel' dialog) */
+	BackupParams = ConfigureParams;
+	BackupParams.Screen.bFullScreen = bInFullScreen;
 	bOKDialog = Dialog_MainDlg(&bForceReset);
+	DialogParams = ConfigureParams;
+	ConfigureParams = BackupParams;
 
 	/* Check if reset is required and ask user if he really wants to continue then */
 	if (bOKDialog && !bForceReset && Change_DoNeedReset(&DialogParams)
@@ -62,36 +61,4 @@ bool Dialog_DoProperty(void)
 		Main_RequestQuit();
 
 	return bOKDialog;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Loads params from the configuration file into DialogParams
- */
-void Dialog_LoadParams(void)
-{
-	CNF_PARAMS tmpParams;
-	/* Configuration_Load uses the variables from ConfigureParams.
-	 * That's why we have to temporarily back it up here */
-	tmpParams = ConfigureParams;
-	Configuration_Load(NULL);
-	DialogParams = ConfigureParams;
-	ConfigureParams = tmpParams;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Saves params in DialogParams to the configuration file
- */
-void Dialog_SaveParams(void)
-{
-	CNF_PARAMS tmpParams;
-	/* Configuration_Save uses the variables from ConfigureParams.
-	 * That's why we have to temporarily back it up here */
-	tmpParams = ConfigureParams;
-	ConfigureParams = DialogParams;
-	Configuration_Save();
-	ConfigureParams = tmpParams;
 }

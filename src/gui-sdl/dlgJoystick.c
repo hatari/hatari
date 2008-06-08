@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.11 2007-01-13 11:57:41 thothy Exp $";
+const char DlgJoystick_rcsid[] = "Hatari $Id: dlgJoystick.c,v 1.12 2008-06-08 16:07:40 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -126,11 +126,11 @@ static void DlgJoystick_DefineKeys(int nActJoy)
 {
 
 	SDLGui_CenterDlg(joykeysdlg);
-	DlgJoystick_DefineOneKey("up", &DialogParams.Joysticks.Joy[nActJoy].nKeyCodeUp);
-	DlgJoystick_DefineOneKey("down", &DialogParams.Joysticks.Joy[nActJoy].nKeyCodeDown);
-	DlgJoystick_DefineOneKey("left", &DialogParams.Joysticks.Joy[nActJoy].nKeyCodeLeft);
-	DlgJoystick_DefineOneKey("right", &DialogParams.Joysticks.Joy[nActJoy].nKeyCodeRight);
-	DlgJoystick_DefineOneKey("fire", &DialogParams.Joysticks.Joy[nActJoy].nKeyCodeFire);
+	DlgJoystick_DefineOneKey("up", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeUp);
+	DlgJoystick_DefineOneKey("down", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeDown);
+	DlgJoystick_DefineOneKey("left", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeLeft);
+	DlgJoystick_DefineOneKey("right", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeRight);
+	DlgJoystick_DefineOneKey("fire", &ConfigureParams.Joysticks.Joy[nActJoy].nKeyCodeFire);
 }
 
 
@@ -147,24 +147,24 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy, int nMaxId)
 	{
 		strcpy(sSdlStickName, "0: (none available)");
 	}
-	else if (DialogParams.Joysticks.Joy[nActJoy].nJoyId <= nMaxId)
+	else if (ConfigureParams.Joysticks.Joy[nActJoy].nJoyId <= nMaxId)
 	{
-		snprintf(sSdlStickName, 20, "%i: %s", DialogParams.Joysticks.Joy[nActJoy].nJoyId,
-		         SDL_JoystickName(DialogParams.Joysticks.Joy[nActJoy].nJoyId));
+		snprintf(sSdlStickName, 20, "%i: %s", ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
+		         SDL_JoystickName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
 	}
 	else
 	{
 		snprintf(sSdlStickName, 20, "0: %s", SDL_JoystickName(0));
 		/* Unavailable joystick ID -> disable it if necessary*/
-		if (DialogParams.Joysticks.Joy[nActJoy].nJoystickMode == JOYSTICK_REALSTICK)
-			DialogParams.Joysticks.Joy[nActJoy].nJoystickMode = JOYSTICK_DISABLED;
+		if (ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode == JOYSTICK_REALSTICK)
+			ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode = JOYSTICK_DISABLED;
 	}
 
 	for (i = DLGJOY_DISABLED; i <= DLGJOY_USEKEYS; i++)
 		joydlg[i].state &= ~SG_SELECTED;
-	joydlg[DLGJOY_DISABLED + DialogParams.Joysticks.Joy[nActJoy].nJoystickMode].state |= SG_SELECTED;
+	joydlg[DLGJOY_DISABLED + ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode].state |= SG_SELECTED;
 
-	if (DialogParams.Joysticks.Joy[nActJoy].bEnableAutoFire)
+	if (ConfigureParams.Joysticks.Joy[nActJoy].bEnableAutoFire)
 		joydlg[DLGJOY_AUTOFIRE].state |= SG_SELECTED;
 	else
 		joydlg[DLGJOY_AUTOFIRE].state &= ~SG_SELECTED;
@@ -182,13 +182,13 @@ static void DlgJoystick_WriteValuesToConf(int nActJoy)
 	{
 		if (joydlg[i].state & SG_SELECTED)
 		{
-			DialogParams.Joysticks.Joy[nActJoy].nJoystickMode = i - DLGJOY_DISABLED;
+			ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode = i - DLGJOY_DISABLED;
 			break;
 		}
 	}
 
-	DialogParams.Joysticks.Joy[nActJoy].bEnableAutoFire = (joydlg[DLGJOY_AUTOFIRE].state & SG_SELECTED);
-	DialogParams.Joysticks.Joy[nActJoy].nJoyId = joydlg[DLGJOY_SDLJOYNAME].txt[0] - '0';
+	ConfigureParams.Joysticks.Joy[nActJoy].bEnableAutoFire = (joydlg[DLGJOY_AUTOFIRE].state & SG_SELECTED);
+	ConfigureParams.Joysticks.Joy[nActJoy].nJoyId = joydlg[DLGJOY_SDLJOYNAME].txt[0] - '0';
 }
 
 
@@ -219,19 +219,19 @@ void Dialog_JoyDlg(void)
 		switch (but)
 		{
 		 case DLGJOY_PREVSDLJOY:        // Select the previous SDL joystick
-			if (DialogParams.Joysticks.Joy[nActJoy].nJoyId > 0)
+			if (ConfigureParams.Joysticks.Joy[nActJoy].nJoyId > 0)
 			{
-				DialogParams.Joysticks.Joy[nActJoy].nJoyId -= 1;
-				snprintf(sSdlStickName, 20, "%i: %s", DialogParams.Joysticks.Joy[nActJoy].nJoyId,
-				         SDL_JoystickName(DialogParams.Joysticks.Joy[nActJoy].nJoyId));
+				ConfigureParams.Joysticks.Joy[nActJoy].nJoyId -= 1;
+				snprintf(sSdlStickName, 20, "%i: %s", ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
+				         SDL_JoystickName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
 			}
 			break;
 		 case DLGJOY_NEXTSDLJOY:        // Select the next SDL joystick
-			if (DialogParams.Joysticks.Joy[nActJoy].nJoyId < nMaxJoyId)
+			if (ConfigureParams.Joysticks.Joy[nActJoy].nJoyId < nMaxJoyId)
 			{
-				DialogParams.Joysticks.Joy[nActJoy].nJoyId += 1;
-				snprintf(sSdlStickName, 20, "%i: %s", DialogParams.Joysticks.Joy[nActJoy].nJoyId,
-				         SDL_JoystickName(DialogParams.Joysticks.Joy[nActJoy].nJoyId));
+				ConfigureParams.Joysticks.Joy[nActJoy].nJoyId += 1;
+				snprintf(sSdlStickName, 20, "%i: %s", ConfigureParams.Joysticks.Joy[nActJoy].nJoyId,
+				         SDL_JoystickName(ConfigureParams.Joysticks.Joy[nActJoy].nJoyId));
 			}
 			break;
 		 case DLGJOY_DEFINEKEYS:        // Define new keys for keyboard emulation

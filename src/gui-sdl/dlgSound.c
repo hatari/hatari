@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.10 2008-02-23 22:16:07 thothy Exp $";
+const char DlgSound_rcsid[] = "Hatari $Id: dlgSound.c,v 1.11 2008-06-08 16:07:42 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -61,7 +61,7 @@ void Dialog_SoundDlg(void)
 
 	/* Set up dialog from actual values: */
 
-	if (DialogParams.Sound.bEnableSound)
+	if (ConfigureParams.Sound.bEnableSound)
 		sounddlg[DLGSOUND_ENABLE].state |= SG_SELECTED;
 	else
 		sounddlg[DLGSOUND_ENABLE].state &= ~SG_SELECTED;
@@ -69,14 +69,14 @@ void Dialog_SoundDlg(void)
 	sounddlg[DLGSOUND_LOW].state &= ~SG_SELECTED;
 	sounddlg[DLGSOUND_MEDIUM].state &= ~SG_SELECTED;
 	sounddlg[DLGSOUND_HIGH].state &= ~SG_SELECTED;
-	if (DialogParams.Sound.nPlaybackQuality == PLAYBACK_LOW)
+	if (ConfigureParams.Sound.nPlaybackQuality == PLAYBACK_LOW)
 		sounddlg[DLGSOUND_LOW].state |= SG_SELECTED;
-	else if (DialogParams.Sound.nPlaybackQuality == PLAYBACK_MEDIUM)
+	else if (ConfigureParams.Sound.nPlaybackQuality == PLAYBACK_MEDIUM)
 		sounddlg[DLGSOUND_MEDIUM].state |= SG_SELECTED;
 	else
 		sounddlg[DLGSOUND_HIGH].state |= SG_SELECTED;
 
-	File_ShrinkName(dlgRecordName, DialogParams.Sound.szYMCaptureFileName, sounddlg[DLGSOUND_RECNAME].w);
+	File_ShrinkName(dlgRecordName, ConfigureParams.Sound.szYMCaptureFileName, sounddlg[DLGSOUND_RECNAME].w);
 
 	if ( Sound_AreWeRecording() )
 		sounddlg[DLGSOUND_RECORD].txt = "Stop recording";
@@ -91,7 +91,7 @@ void Dialog_SoundDlg(void)
 		{
 		 case DLGSOUND_RECBROWSE:                    /* Choose a new record file */
 			SDLGui_FileConfSelect(dlgRecordName,
-			                      DialogParams.Sound.szYMCaptureFileName,
+			                      ConfigureParams.Sound.szYMCaptureFileName,
 			                      sounddlg[DLGSOUND_RECNAME].w,
 			                      TRUE);
 			break;
@@ -104,12 +104,12 @@ void Dialog_SoundDlg(void)
 			else
 			{
 				/* make sure that we have a valid file name... */
-				if (strlen(DialogParams.Sound.szYMCaptureFileName) < 4)
+				if (strlen(ConfigureParams.Sound.szYMCaptureFileName) < 4)
 				{
-					strcpy(DialogParams.Sound.szYMCaptureFileName, "./hatari.wav");
+					strcpy(ConfigureParams.Sound.szYMCaptureFileName, "./hatari.wav");
 				}
 				sounddlg[DLGSOUND_RECORD].txt = "Stop recording";
-				Sound_BeginRecording(DialogParams.Sound.szYMCaptureFileName);
+				Sound_BeginRecording(ConfigureParams.Sound.szYMCaptureFileName);
 			}
 			break;
 		}
@@ -118,11 +118,11 @@ void Dialog_SoundDlg(void)
 	        && but != SDLGUI_ERROR && !bQuitProgram );
 
 	/* Read values from dialog */
-	DialogParams.Sound.bEnableSound = (sounddlg[DLGSOUND_ENABLE].state & SG_SELECTED);
+	ConfigureParams.Sound.bEnableSound = (sounddlg[DLGSOUND_ENABLE].state & SG_SELECTED);
 	if (sounddlg[DLGSOUND_LOW].state & SG_SELECTED)
-		DialogParams.Sound.nPlaybackQuality = PLAYBACK_LOW;
+		ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_LOW;
 	else if (sounddlg[DLGSOUND_MEDIUM].state & SG_SELECTED)
-		DialogParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
+		ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
 	else
-		DialogParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
+		ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
 }

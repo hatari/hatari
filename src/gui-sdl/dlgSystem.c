@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.10 2007-01-18 23:21:54 thothy Exp $";
+const char DlgSystem_rcsid[] = "Hatari $Id: dlgSystem.c,v 1.11 2008-06-08 16:07:42 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -85,46 +85,46 @@ void Dialog_SystemDlg(void)
 	{
 		systemdlg[i].state &= ~SG_SELECTED;
 	}
-	systemdlg[DLGSYS_68000+DialogParams.System.nCpuLevel].state |= SG_SELECTED;
+	systemdlg[DLGSYS_68000+ConfigureParams.System.nCpuLevel].state |= SG_SELECTED;
 
 	for (i = DLGSYS_ST; i <= DLGSYS_FALCON; i++)
 	{
 		systemdlg[i].state &= ~SG_SELECTED;
 	}
-	systemdlg[DLGSYS_ST + DialogParams.System.nMachineType].state |= SG_SELECTED;
+	systemdlg[DLGSYS_ST + ConfigureParams.System.nMachineType].state |= SG_SELECTED;
 
 	for (i = DLGSYS_8MHZ; i <= DLGSYS_16MHZ; i++)
 	{
 		systemdlg[i].state &= ~SG_SELECTED;
 	}
-	if (DialogParams.System.nCpuFreq == 32)
+	if (ConfigureParams.System.nCpuFreq == 32)
 	  systemdlg[DLGSYS_32MHZ].state |= SG_SELECTED;
-	else if (DialogParams.System.nCpuFreq == 16)
+	else if (ConfigureParams.System.nCpuFreq == 16)
 	  systemdlg[DLGSYS_16MHZ].state |= SG_SELECTED;
 	else
 	  systemdlg[DLGSYS_8MHZ].state |= SG_SELECTED;
 
-	if (DialogParams.System.bCompatibleCpu)
+	if (ConfigureParams.System.bCompatibleCpu)
 		systemdlg[DLGSYS_PREFETCH].state |= SG_SELECTED;
 	else
 		systemdlg[DLGSYS_PREFETCH].state &= ~SG_SELECTED;
 
-	if (DialogParams.System.bBlitter)
+	if (ConfigureParams.System.bBlitter)
 		systemdlg[DLGSYS_BLITTER].state |= SG_SELECTED;
 	else
 		systemdlg[DLGSYS_BLITTER].state &= ~SG_SELECTED;
 
-	if (DialogParams.System.bRealTimeClock)
+	if (ConfigureParams.System.bRealTimeClock)
 		systemdlg[DLGSYS_RTC].state |= SG_SELECTED;
 	else
 		systemdlg[DLGSYS_RTC].state &= ~SG_SELECTED;
 
-	if (DialogParams.System.bPatchTimerD)
+	if (ConfigureParams.System.bPatchTimerD)
 		systemdlg[DLGSYS_TIMERD].state |= SG_SELECTED;
 	else
 		systemdlg[DLGSYS_TIMERD].state &= ~SG_SELECTED;
 
-	if (DialogParams.System.bSlowFDC)
+	if (ConfigureParams.System.bSlowFDC)
 		systemdlg[DLGSYS_SLOWFDC].state |= SG_SELECTED;
 	else
 		systemdlg[DLGSYS_SLOWFDC].state &= ~SG_SELECTED;
@@ -138,7 +138,7 @@ void Dialog_SystemDlg(void)
 	{
 		if (systemdlg[i].state&SG_SELECTED)
 		{
-			DialogParams.System.nCpuLevel = i-DLGSYS_68000;
+			ConfigureParams.System.nCpuLevel = i-DLGSYS_68000;
 			break;
 		}
 	}
@@ -147,21 +147,21 @@ void Dialog_SystemDlg(void)
 	{
 		if (systemdlg[i].state&SG_SELECTED)
 		{
-			DialogParams.System.nMachineType = i-DLGSYS_ST;
+			ConfigureParams.System.nMachineType = i-DLGSYS_ST;
 			break;
 		}
 	}
 
 	if (systemdlg[DLGSYS_32MHZ].state & SG_SELECTED)
-		DialogParams.System.nCpuFreq = 32;
+		ConfigureParams.System.nCpuFreq = 32;
 	else if (systemdlg[DLGSYS_16MHZ].state & SG_SELECTED)
-		DialogParams.System.nCpuFreq = 16;
+		ConfigureParams.System.nCpuFreq = 16;
 	else
-		DialogParams.System.nCpuFreq = 8;
+		ConfigureParams.System.nCpuFreq = 8;
 
-	DialogParams.System.bCompatibleCpu = (systemdlg[DLGSYS_PREFETCH].state & SG_SELECTED);
-	DialogParams.System.bBlitter = (systemdlg[DLGSYS_BLITTER].state & SG_SELECTED);
-	DialogParams.System.bRealTimeClock = (systemdlg[DLGSYS_RTC].state & SG_SELECTED);
-	DialogParams.System.bPatchTimerD = (systemdlg[DLGSYS_TIMERD].state & SG_SELECTED);
-	DialogParams.System.bSlowFDC = (systemdlg[DLGSYS_SLOWFDC].state & SG_SELECTED);
+	ConfigureParams.System.bCompatibleCpu = (systemdlg[DLGSYS_PREFETCH].state & SG_SELECTED);
+	ConfigureParams.System.bBlitter = (systemdlg[DLGSYS_BLITTER].state & SG_SELECTED);
+	ConfigureParams.System.bRealTimeClock = (systemdlg[DLGSYS_RTC].state & SG_SELECTED);
+	ConfigureParams.System.bPatchTimerD = (systemdlg[DLGSYS_TIMERD].state & SG_SELECTED);
+	ConfigureParams.System.bSlowFDC = (systemdlg[DLGSYS_SLOWFDC].state & SG_SELECTED);
 }

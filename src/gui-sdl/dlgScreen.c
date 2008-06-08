@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.18 2008-04-03 20:19:50 eerot Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.19 2008-06-08 16:07:42 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -151,29 +151,29 @@ void Dialog_ScreenDlg(void)
 
 	/* Set up general screen options in the dialog from actual values: */
 
-	if (DialogParams.Screen.bFullScreen)
+	if (ConfigureParams.Screen.bFullScreen)
 		screendlg[DLGSCRN_FULLSCRN].state |= SG_SELECTED;
 	else
 		screendlg[DLGSCRN_FULLSCRN].state &= ~SG_SELECTED;
 
-	if (DialogParams.Screen.bAllowOverscan)
+	if (ConfigureParams.Screen.bAllowOverscan)
 		screendlg[DLGSCRN_OVERSCAN].state |= SG_SELECTED;
 	else
 		screendlg[DLGSCRN_OVERSCAN].state &= ~SG_SELECTED;
 
-	if (DialogParams.Screen.nForceBpp == 8)
+	if (ConfigureParams.Screen.nForceBpp == 8)
 		screendlg[DLGSCRN_8BPP].state |= SG_SELECTED;
 	else
 		screendlg[DLGSCRN_8BPP].state &= ~SG_SELECTED;
 
-	if (DialogParams.Screen.bZoomLowRes)
+	if (ConfigureParams.Screen.bZoomLowRes)
 		screendlg[DLGSCRN_ZOOMLOWRES].state |= SG_SELECTED;
 	else
 		screendlg[DLGSCRN_ZOOMLOWRES].state &= ~SG_SELECTED;
 
 	for (i = 0; i < ITEMS_IN_ARRAY(skip_frames); i++)
 	{
-		if (DialogParams.Screen.nFrameSkips >= skip_frames[i])
+		if (ConfigureParams.Screen.nFrameSkips >= skip_frames[i])
 			skip = i;
 		screendlg[i+DLGSCRN_SKIP0].state &= ~SG_SELECTED;
 	}
@@ -181,24 +181,24 @@ void Dialog_ScreenDlg(void)
 
 	for (i = DLGSCRN_MONO; i <= DLGSCRN_TV; i++)
 		screendlg[i].state &= ~SG_SELECTED;
-	screendlg[DLGSCRN_MONO+DialogParams.Screen.nMonitorType].state |= SG_SELECTED;
+	screendlg[DLGSCRN_MONO+ConfigureParams.Screen.nMonitorType].state |= SG_SELECTED;
 
 	/* Initialize VDI resolution options: */
 
-	if (DialogParams.Screen.bUseExtVdiResolutions)
+	if (ConfigureParams.Screen.bUseExtVdiResolutions)
 		screendlg[DLGSCRN_USEVDIRES].state |= SG_SELECTED;
 	else
 		screendlg[DLGSCRN_USEVDIRES].state &= ~SG_SELECTED;
 	for (i=0; i<3; i++)
 		screendlg[DLGSCRN_BPP1 + i].state &= ~SG_SELECTED;
-	screendlg[DLGSCRN_BPP1 + DialogParams.Screen.nVdiColors - GEMCOLOR_2].state |= SG_SELECTED;
-	sprintf(sVdiWidth, "%4i", DialogParams.Screen.nVdiWidth);
-	sprintf(sVdiHeight, "%4i", DialogParams.Screen.nVdiHeight);
+	screendlg[DLGSCRN_BPP1 + ConfigureParams.Screen.nVdiColors - GEMCOLOR_2].state |= SG_SELECTED;
+	sprintf(sVdiWidth, "%4i", ConfigureParams.Screen.nVdiWidth);
+	sprintf(sVdiHeight, "%4i", ConfigureParams.Screen.nVdiHeight);
 	DlgScreen_SetStepping();
 
 	/* Initialize screen capture options: */
 
-	if (DialogParams.Screen.bCaptureChange)
+	if (ConfigureParams.Screen.bCaptureChange)
 		screendlg[DLGSCRN_ONCHANGE].state |= SG_SELECTED;
 	else
 		screendlg[DLGSCRN_ONCHANGE].state &= ~SG_SELECTED;
@@ -219,25 +219,25 @@ void Dialog_ScreenDlg(void)
 			break;
 
 		 case DLGSCRN_WIDTHLESS:
-			DialogParams.Screen.nVdiWidth = VDI_Limit(DialogParams.Screen.nVdiWidth - nVdiStepX,
+			ConfigureParams.Screen.nVdiWidth = VDI_Limit(ConfigureParams.Screen.nVdiWidth - nVdiStepX,
 			                                nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
-			sprintf(sVdiWidth, "%4i", DialogParams.Screen.nVdiWidth);
+			sprintf(sVdiWidth, "%4i", ConfigureParams.Screen.nVdiWidth);
 			break;
 		 case DLGSCRN_WIDTHMORE:
-			DialogParams.Screen.nVdiWidth = VDI_Limit(DialogParams.Screen.nVdiWidth + nVdiStepX,
+			ConfigureParams.Screen.nVdiWidth = VDI_Limit(ConfigureParams.Screen.nVdiWidth + nVdiStepX,
 			                                nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
-			sprintf(sVdiWidth, "%4i", DialogParams.Screen.nVdiWidth);
+			sprintf(sVdiWidth, "%4i", ConfigureParams.Screen.nVdiWidth);
 			break;
 
 		 case DLGSCRN_HEIGHTLESS:
-			DialogParams.Screen.nVdiHeight = VDI_Limit(DialogParams.Screen.nVdiHeight - nVdiStepY,
+			ConfigureParams.Screen.nVdiHeight = VDI_Limit(ConfigureParams.Screen.nVdiHeight - nVdiStepY,
 			                                 nVdiStepY, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
-			sprintf(sVdiHeight, "%4i", DialogParams.Screen.nVdiHeight);
+			sprintf(sVdiHeight, "%4i", ConfigureParams.Screen.nVdiHeight);
 			break;
 		 case DLGSCRN_HEIGHTMORE:
-			DialogParams.Screen.nVdiHeight = VDI_Limit(DialogParams.Screen.nVdiHeight + nVdiStepY,
+			ConfigureParams.Screen.nVdiHeight = VDI_Limit(ConfigureParams.Screen.nVdiHeight + nVdiStepY,
 			                                 nVdiStepY, MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
-			sprintf(sVdiHeight, "%4i", DialogParams.Screen.nVdiHeight);
+			sprintf(sVdiHeight, "%4i", ConfigureParams.Screen.nVdiHeight);
 			break;
 
 		 case DLGSCRN_BPP1:
@@ -245,12 +245,12 @@ void Dialog_ScreenDlg(void)
 		 case DLGSCRN_BPP4:
 			DlgScreen_SetStepping();
 			/* Align resolution to actual conditions: */
-			DialogParams.Screen.nVdiWidth = VDI_Limit(DialogParams.Screen.nVdiWidth, nVdiStepX,
+			ConfigureParams.Screen.nVdiWidth = VDI_Limit(ConfigureParams.Screen.nVdiWidth, nVdiStepX,
 			                                MIN_VDI_WIDTH, MAX_VDI_WIDTH);
-			DialogParams.Screen.nVdiHeight = VDI_Limit(DialogParams.Screen.nVdiHeight, nVdiStepY,
+			ConfigureParams.Screen.nVdiHeight = VDI_Limit(ConfigureParams.Screen.nVdiHeight, nVdiStepY,
 			                                 MIN_VDI_HEIGHT, MAX_VDI_HEIGHT);
-			sprintf(sVdiWidth, "%4i", DialogParams.Screen.nVdiWidth);
-			sprintf(sVdiHeight, "%4i", DialogParams.Screen.nVdiHeight);
+			sprintf(sVdiWidth, "%4i", ConfigureParams.Screen.nVdiWidth);
+			sprintf(sVdiHeight, "%4i", ConfigureParams.Screen.nVdiHeight);
 			break;
 
 		 case DLGSCRN_CAPTURE:
@@ -266,8 +266,8 @@ void Dialog_ScreenDlg(void)
 			else
 			{
 				screendlg[DLGSCRN_RECANIM].txt = "Stop recording";
-				DialogParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
-				ScreenSnapShot_BeginRecording(DialogParams.Screen.bCaptureChange, 25);
+				ConfigureParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
+				ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange, 25);
 			}
 			break;
 		}
@@ -277,26 +277,26 @@ void Dialog_ScreenDlg(void)
 
 	/* Read new values from dialog: */
 
-	DialogParams.Screen.bFullScreen = (screendlg[DLGSCRN_FULLSCRN].state & SG_SELECTED);
-	DialogParams.Screen.bAllowOverscan = (screendlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
+	ConfigureParams.Screen.bFullScreen = (screendlg[DLGSCRN_FULLSCRN].state & SG_SELECTED);
+	ConfigureParams.Screen.bAllowOverscan = (screendlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
 
 	if (screendlg[DLGSCRN_8BPP].state & SG_SELECTED)
-		DialogParams.Screen.nForceBpp = 8;
+		ConfigureParams.Screen.nForceBpp = 8;
 	else
 		/* TODO: disables this setting if it's != 8 */
-		DialogParams.Screen.nForceBpp = 0;
+		ConfigureParams.Screen.nForceBpp = 0;
 
 	if (screendlg[DLGSCRN_ZOOMLOWRES].state & SG_SELECTED)
-		DialogParams.Screen.bZoomLowRes = TRUE;
+		ConfigureParams.Screen.bZoomLowRes = TRUE;
 	else
-		DialogParams.Screen.bZoomLowRes = FALSE;
+		ConfigureParams.Screen.bZoomLowRes = FALSE;
 
-	DialogParams.Screen.bUseExtVdiResolutions = (screendlg[DLGSCRN_USEVDIRES].state & SG_SELECTED);
+	ConfigureParams.Screen.bUseExtVdiResolutions = (screendlg[DLGSCRN_USEVDIRES].state & SG_SELECTED);
 	for (i = DLGSCRN_SKIP0; i <= DLGSCRN_SKIP4; i++)
 	{
 		if (screendlg[i].state & SG_SELECTED)
 		{
-			DialogParams.Screen.nFrameSkips = skip_frames[i-DLGSCRN_SKIP0];
+			ConfigureParams.Screen.nFrameSkips = skip_frames[i-DLGSCRN_SKIP0];
 			break;
 		}
 	}
@@ -304,15 +304,15 @@ void Dialog_ScreenDlg(void)
 	{
 		if (screendlg[i].state & SG_SELECTED)
 		{
-			DialogParams.Screen.nMonitorType = i - DLGSCRN_MONO;
+			ConfigureParams.Screen.nMonitorType = i - DLGSCRN_MONO;
 			break;
 		}
 	}
 	for (i=0; i<3; i++)
 	{
 		if (screendlg[DLGSCRN_BPP1 + i].state & SG_SELECTED)
-			DialogParams.Screen.nVdiColors = GEMCOLOR_2 + i;
+			ConfigureParams.Screen.nVdiColors = GEMCOLOR_2 + i;
 	}
 
-	DialogParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
+	ConfigureParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
 }

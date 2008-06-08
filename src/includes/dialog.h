@@ -10,8 +10,6 @@
 
 #include "configuration.h"
 
-extern CNF_PARAMS  DialogParams;
-
 /* prototypes for gui-sdl/dlg*.c functions: */
 extern int Dialog_MainDlg(bool *bReset);
 extern void Dialog_AboutDlg(void);
@@ -28,10 +26,6 @@ extern void Dialog_SoundDlg(void);
 extern void Dialog_SystemDlg(void);
 extern void DlgRom_Main(void);
 /* and dialog.c */
-extern bool Dialog_DoNeedReset(void);
 extern bool Dialog_DoProperty(void);
-extern void Dialog_CopyDialogParamsToConfiguration(bool bForceReset);
-extern void Dialog_LoadParams(void);
-extern void Dialog_SaveParams(void);
 
 #endif
