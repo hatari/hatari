@@ -161,6 +161,8 @@ option_tokens = [
     "--printer",
     "--midi",
     "--rs232",
+    "--disk-a",
+    "--disk-b",
     "--harddrive",
     "--acsi",
     "--ide",

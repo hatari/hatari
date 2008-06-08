@@ -286,6 +286,14 @@ class HatariConfigMapping(ConfigStore):
             self.hatari.change_option("--joystick %d" % (value-1))
         self.joyemu = value
 
+    # ------------ disk (A) ---------------
+    def get_disk(self):
+        return self.get("[Floppy]", "szDiskAFileName")
+    
+    def set_disk(self, value):
+        self.set("[Floppy]", "szDiskAFileName", value)
+        self.hatari.change_option("--disk-a %s" % value)
+
     # ------------ options to embed to requested size ---------------
     def get_embed_args(self, size):
         print "TODO: save and use temporary Hatari-UI hatari settings?"
