@@ -142,7 +142,7 @@ class Hatari():
             return False
         return True
     
-    def run(self, parent_win = None, embed_args = None):
+    def run(self, extra_args = None, parent_win = None):
         "run([parent window][,embedding args]), runs Hatari"
         # if parent_win given, embed Hatari to it
         pid = os.fork()
@@ -159,12 +159,13 @@ class Hatari():
         else:
             # child runs Hatari
             env = os.environ
-            args = (self.hataribin, )
             if parent_win:
                 self._set_embed_env(env, parent_win)
-                args += embed_args
+            args = [self.hataribin]
+            if extra_args:
+                args += extra_args
             if self.server:
-                args += ("--control-socket", self.controlpath)
+                args += ["--control-socket", self.controlpath]
             print "RUN:", args
             os.execvpe(self.hataribin, args, env)
 
@@ -207,13 +208,11 @@ class Hatari():
 # this cannot just do these according to some mapping table, but
 # it needs actual method for (each) setting.
 class HatariConfigMapping(ConfigStore):
-    EMULATED_JOY = 2
-    
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
         ConfigStore.__init__(self, "hatari.cfg")
         self.hatari = hatari
-        self.joyemu = None
+        self.disk = ["", ""]
 
     # ------------ fastforward ---------------
     def get_fastforward(self):
@@ -262,37 +261,40 @@ class HatariConfigMapping(ConfigStore):
         quality = { 0: "off", 1: "low", 2: "med", 3: "hi" }[value]
         self.hatari.change_option("--sound %s" % quality)
         
-    # ----------- joyemu --------------
-    def get_joyemu_values(self):
-        return ["Cursors keys"] + ["Joystick " + str(joy) for joy in range(6)]
+    # ----------- joystick --------------
+    def get_joystick_types(self):
+        return ("Disabled", "Real joystick", "Keyboard")
     
-    def get_joyemu(self):
-        # return index to get_joyemu_values() array
-        for joy in range(6):
-            if self.get("[Joystick%d]" % joy, "nJoystickMode") == self.EMULATED_JOY:
-                self.joyemu = joy + 1
-                return self.joyemu
-        return 0
+    def get_joystick_names(self):
+        return (
+        "ST Joystick 0",
+        "ST Joystick 1",
+        "STE Joypad A",
+        "STE Joypad B",
+        "Parport stick 1",
+        "Parport stick 2"
+        )
 
-    def set_joyemu(self, value):
+    def get_joystick(self, port):
+        # return index to get_joystick_values() array
+        return self.get("[Joystick%d]" % port, "nJoystickMode")
+
+    def set_joystick(self, port, value):
         # map get_sound_values() index to Hatari config
-        if value == self.joyemu:
-            return
-        if self.joyemu:
-            # disable previous joystick
-            self.set("[Joystick%d]" % (self.joyemu-1), "nJoystickMode", 0)
-        if value:
-            self.set("[Joystick%d]" % (value-1), "nJoystickMode", self.EMULATED_JOY)
-            self.hatari.change_option("--joystick %d" % (value-1))
-        self.joyemu = value
+        self.set("[Joystick%d]" % port, "nJoystickMode", value)
+        joytype = ("none", "real", "keys")[value]
+        self.hatari.change_option("--joy%d %s" % (port, joytype))
 
     # ------------ disk (A) ---------------
-    def get_disk(self):
-        return self.get("[Floppy]", "szDiskAFileName")
+    def get_disk(self, drive):
+        return self.get("[Floppy]", "szDisk%cFileName", ("A", "B")[drive])
     
-    def set_disk(self, value):
-        self.set("[Floppy]", "szDiskAFileName", value)
-        self.hatari.change_option("--disk-a %s" % value)
+    def set_disk(self, drive, filename):
+        if filename == None or filename == self.disk[drive]:
+            return
+        self.set("[Floppy]", "szDisk%cFileName" %  ("A", "B")[drive], filename)
+        self.hatari.change_option("--disk-%c %s" % (("a", "b")[drive], filename))
+        self.disk[drive] = filename
 
     # ------------ options to embed to requested size ---------------
     def get_embed_args(self, size):
@@ -305,9 +307,9 @@ class HatariConfigMapping(ConfigStore):
         
         # for VDI we can use (fairly) exact size + ignore other screen options
         if self.get("[Screen]", "bUseExtVdiResolutions"):
-            return ("--vdi-width", str(width), "--vdi-height", str(height))
+            return ["--vdi-width", str(width), "--vdi-height", str(height)]
         
-        args = ()
+        args = []
         # max size with overscan borders
         border_minw = 320
         border_minw += self.get("[Screen]", "nWindowBorderPixelsLeft")
@@ -315,10 +317,10 @@ class HatariConfigMapping(ConfigStore):
         border_minh = 29 + 200 + self.get("[Screen]", "nWindowBorderPixelsBottom")
         if width < 640 or height < 400:
             # only non-zoomed color mode fits to window
-            args = ("--zoom", "1", "--monitor", "vga")
+            args = ["--zoom", "1", "--monitor", "vga"]
             if width < border_minw and height < border_minh:
                 # without borders
-                args += ("--borders", "off")
+                args += ["--borders", "off"]
         else:
             borders = self.get("[Screen]", "bAllowOverscan")
             mono = (self.get("[Screen]", "nMonitorType") == 0)
@@ -327,20 +329,20 @@ class HatariConfigMapping(ConfigStore):
             if borders and (width < 2*border_minw or height < 2*border_minh):
                 if mono:
                     # mono -> no border
-                    args = ("--borders", "off")
+                    args = ["--borders", "off"]
                 elif zoom:
                     # color -> no zoom, just border
-                    args = ("--zoom", "1")
+                    args = ["--zoom", "1"]
             elif not (mono or zoom):
                 # no mono nor zoom -> zoom
-                args = ("--zoom", "2")
+                args = ["--zoom", "2"]
         if self.get("[Screen]", "bFullScreen"):
             # fullscreen Hatari doesn't make sense with Hatari UI
-            args += ("--window", )
+            args += ["--window"]
 
         # window size for other than ST & STE can differ
         if self.get("[System]", "nMachineType") not in (0, 1):
             print "WARNING: neither ST nor STE, forcing machine to ST"
-            args += ("--machine", "st")
+            args += ["--machine", "st"]
 
         return args

@@ -28,6 +28,9 @@ import gobject
 #gc.set_debug(gc.DEBUG_UNCOLLECTABLE)
 
 
+# ---------------------
+# Hatari UI information
+
 class UInfo:
     """singleton constants for the UI windows,
     one instance is needed to initialize these properly"""
@@ -57,8 +60,9 @@ class UInfo:
             return testpath
 
 
-# -----------------------------------------------
-# auxiliary class to be used with the PasteDialog
+# --------------------------------------------------------
+# auxiliary class+callback to be used with the PasteDialog
+
 class HatariTextInsert():
     def __init__(self, hatari, text):
         self.index = 0
@@ -84,7 +88,8 @@ def _text_insert_cb(textobj):
     return True
 
 
-# ----------------------------------------------
+# ----------------------------
+# helper functions for buttons
 
 def create_button(label, cb, data = None):
     "create_button(label,cb[,data]) -> button widget"
@@ -104,3 +109,55 @@ def create_toggle(label, cb, data = None):
     else:
         button.connect("toggled", cb, data)
     return button
+
+
+# -----------------------------
+# Table dialog helper functions
+
+def create_table_dialog(parent, title, rows):
+    "create_table_dialog(parent,title,rows) -> (table,dialog)"
+    dialog = gtk.Dialog(title, parent,
+        gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+        (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
+        gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+
+    table = gtk.Table(rows, 2) # rows, cols
+    table.set_col_spacings(8)
+    dialog.vbox.add(table)
+    return (table, dialog)
+
+def table_add_entry_row(table, row, label, size = None):
+    "table_add_entry_row(table,row,label,[entry size]) -> entry"
+    # adds given label to given row in given table
+    # returns entry for that line
+    label = gtk.Label(label)
+    align = gtk.Alignment(1) # right aligned
+    align.add(label)
+    table.attach(align, 0, 1, row, row+1, gtk.FILL)
+    if size:
+        entry = gtk.Entry(size)
+        entry.set_width_chars(size)
+        align = gtk.Alignment(0) # left aligned (default is centered)
+        align.add(entry)
+        table.attach(align, 1, 2, row, row+1)
+    else:
+        entry = gtk.Entry()
+        table.attach(entry, 1, 2, row, row+1)
+    return entry
+
+def table_add_widget_row(table, row, label, widget):
+    "table_add_widget_row(table,row,label,widget) -> widget"
+    # adds given label right aligned to given row in given table
+    # adds given widget to the right column and returns it
+    # returns entry for that line
+    label = gtk.Label(label)
+    align = gtk.Alignment(1)
+    align.add(label)
+    table.attach(align, 0, 1, row, row+1, gtk.FILL)
+    table.attach(widget, 1, 2, row, row+1)
+    return widget
+
+def table_add_separator(table, row):
+    "table_add_separator(table,row)"
+    widget = gtk.HSeparator()
+    table.attach(widget, 0, 2, row, row+1, gtk.FILL)

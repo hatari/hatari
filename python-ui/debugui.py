@@ -22,57 +22,12 @@ import gtk
 import pango
 
 from config import ConfigStore
-from uihelpers import UInfo, create_button, create_toggle
+from uihelpers import UInfo, create_button, create_toggle, \
+     create_table_dialog, table_add_entry_row, table_add_widget_row
 from dialogs import TodoDialog, ErrorDialog, AskDialog, KillDialog
 
 
-# -----------------------------
-# Table dialog helper functions
-
-def create_table_dialog(parent, title, rows):
-    "create_table_dialog(parent,title,rows) -> (table,dialog)"
-    dialog = gtk.Dialog(title, parent,
-        gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-        (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
-        gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
-
-    table = gtk.Table(rows, 2) # rows, cols
-    table.set_col_spacings(8)
-    dialog.vbox.add(table)
-    return (table, dialog)
-
-def table_add_entry_row(table, row, label, size = None):
-    "add_table_entry_row(table,row,label,[entry size]) -> entry"
-    # adds given label to given row in given table
-    # returns entry for that line
-    label = gtk.Label(label)
-    align = gtk.Alignment(1) # right aligned
-    align.add(label)
-    table.attach(align, 0, 1, row, row+1, gtk.FILL)
-    if size:
-        entry = gtk.Entry(size)
-        entry.set_width_chars(size)
-        align = gtk.Alignment(0) # left aligned (default is centered)
-        align.add(entry)
-        table.attach(align, 1, 2, row, row+1)
-    else:
-        entry = gtk.Entry()
-        table.attach(entry, 1, 2, row, row+1)
-    return entry
-
-def table_add_widget_row(table, row, label, widget):
-    "add_table_widget_row(table,row,label,widget) -> widget"
-    # adds given label right aligned to given row in given table
-    # adds given widget to the right column and returns it
-    # returns entry for that line
-    label = gtk.Label(label)
-    align = gtk.Alignment(1)
-    align.add(label)
-    table.attach(align, 0, 1, row, row+1, gtk.FILL)
-    table.attach(widget, 1, 2, row, row+1)
-    return widget
-
-def dialog_accept_cb(widget, dialog):
+def dialog_apply_cb(widget, dialog):
     dialog.response(gtk.RESPONSE_APPLY)
 
 
@@ -93,9 +48,9 @@ class SaveDialog():
         table, self.dialog = create_table_dialog(parent, "Save from memory", 3)
         table_add_widget_row(table, 0, "File name:", hbox)
         self.address = table_add_entry_row(table, 1, "Save address:", 6)
-        self.address.connect("activate", dialog_accept_cb, self.dialog)
+        self.address.connect("activate", dialog_apply_cb, self.dialog)
         self.length = table_add_entry_row(table, 2, "Number of bytes:", 6)
-        self.length.connect("activate", dialog_accept_cb, self.dialog)
+        self.length.connect("activate", dialog_apply_cb, self.dialog)
 
     def _select_file_cb(self, widget):
         buttons = (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
@@ -149,7 +104,7 @@ class LoadDialog():
         table, self.dialog = create_table_dialog(parent, "Load to memory", 2)
         self.file = table_add_widget_row(table, 0, "File name:", chooser)
         self.address = table_add_entry_row(table, 1, "Load address:", 6)
-        self.address.connect("activate", dialog_accept_cb, self.dialog)
+        self.address.connect("activate", dialog_apply_cb, self.dialog)
 
     def run(self, address):
         "run(address) -> (filename,address), all as strings"
@@ -181,7 +136,7 @@ class OptionsDialog():
     def __init__(self, parent):
         table, self.dialog = create_table_dialog(parent, "Debugger UI options", 1)
         self.lines = table_add_entry_row(table, 0, "Memdump/disasm lines:", 2)
-        self.lines.connect("activate", dialog_accept_cb, self.dialog)
+        self.lines.connect("activate", dialog_apply_cb, self.dialog)
     
     def run(self, lines):
         "run(lines) -> lines, as integers"
@@ -568,10 +523,20 @@ class HatariDebugUI():
 
 
 def main():
+    import sys
     from hatari import Hatari
-    info = UInfo()
     hatariobj = Hatari()
-    hatariobj.run()
+    if len(sys.argv) > 1:
+        if sys.argv[1] in ("-h", "--help"):
+            basename = sys.argv[0].split(os.path.sep)[-1]
+            print "usage: %s [hatari options]" % basename
+            return
+        args = sys.argv[1:]
+    else:
+        args = None
+    hatariobj.run(args)
+
+    info = UInfo()
     debugui = HatariDebugUI(hatariobj, True)
     debugui.window.show_all()
     gtk.main()

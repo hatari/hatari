@@ -30,7 +30,7 @@ from debugui import HatariDebugUI
 from hatari import Hatari, HatariConfigMapping
 from uihelpers import HatariTextInsert, UInfo, create_button, create_toggle
 from dialogs import AboutDialog, PasteDialog, KillDialog, QuitSaveDialog, \
-     SetupDialog, TraceDialog
+     SetupDialog, TraceDialog, PeripheralsDialog
 
 
 # helper functions to match callback args
@@ -47,9 +47,9 @@ class HatariControls():
     # (in a more OO application all these widgets would be separate classes
     # inheriting a common interface class, but that would be an overkill)
     all = [
-        "about", "run", "paste", "pause", "setup", "quit",
+        "about", "run", "pause", "setup", "quit",
         "fastforward", "frameskip", "spec512", "sound",
-        "joyemu", "rightclick", "doubleclick",
+        "rightclick", "doubleclick", "paste", "peripherals",
         "debug", "trace", "close"
     ]
     # spacing between input widget and its label
@@ -67,6 +67,7 @@ class HatariControls():
         self.debugui = None
         self.aboutdialog = None
         self.killdialog = None
+        self.peripheralsdialog = None
         self.pastedialog = None
         self.quitdialog = None
         self.setupdialog = None
@@ -103,7 +104,7 @@ class HatariControls():
             return
         if self.hatariparent:
             size = self.hatariparent.window.get_size()
-            self.hatari.run(self.hatariparent.window, self.config.get_embed_args(size))
+            self.hatari.run( self.config.get_embed_args(size), self.hatariparent.window)
         else:
             self.hatari.run()
 
@@ -146,7 +147,8 @@ class HatariControls():
     def _setup_cb(self, widget):
         if not self.setupdialog:
             self.setupdialog = SetupDialog(self.mainwin)
-        self.setupdialog.run(self.config)
+        if self.setupdialog.run(self.config):
+            self.hatari.trigger_shortcut("warmreset")
 
     def setup(self):
         "Hatari st/e/tt/falcon configuration"
@@ -168,6 +170,16 @@ class HatariControls():
     def quit(self):
         "Quit Hatari UI"
         return (create_button("Quit", self._quit_cb), True)
+
+    # ------- peripherals control -----------
+    def _peripherals_cb(self, widget):
+        if not self.peripheralsdialog:
+            self.peripheralsdialog = PeripheralsDialog(self.mainwin)
+        self.peripheralsdialog.run(self.config)
+
+    def peripherals(self):
+        "Dialog for setting Hatari peripherals"
+        return (create_button("Peripherals", self._peripherals_cb), True)
 
     # ------- doubleclick control -----------
     def _doubleclick_cb(self, widget):
@@ -249,25 +261,6 @@ class HatariControls():
         else:
             box = gtk.VBox()
         box.pack_start(gtk.Label("Sound:"), False, False)
-        box.add(combo)
-        return (box, False)
-
-    # ------- joyemu control -----------
-    def _joyemu_cb(self, widget):
-        self.config.set_joyemu(widget.get_active())
-
-    def joyemu(self):
-        "Select joystick cursor emulation port"
-        combo = gtk.combo_box_new_text()
-        for text in self.config.get_joyemu_values():
-            combo.append_text(text)
-        combo.set_active(self.config.get_joyemu())
-        combo.connect("changed", self._joyemu_cb)
-        if self.to_horizontal_box:
-            box = gtk.HBox(False, self.label_spacing/2)
-        else:
-            box = gtk.VBox()
-        box.pack_start(gtk.Label("Joyemu:"), False, False)
         box.add(combo)
         return (box, False)
     

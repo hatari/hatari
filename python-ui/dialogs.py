@@ -18,11 +18,14 @@
 import pygtk
 pygtk.require('2.0')
 import gtk
+import pango
 
-from uihelpers import UInfo, create_button
+from uihelpers import UInfo, create_button, create_table_dialog, \
+     table_add_entry_row, table_add_widget_row, table_add_separator
 
 
-# ---------- Dialogs --------------
+# -----------------
+# Dialog base class
 
 class HatariUIDialog():
     def __init__(self, parent):
@@ -37,6 +40,9 @@ subclasses overriding run() require also an argument."""
         self.dialog.hide()
         return response
 
+
+# ---------------------------
+# Note/Todo/Error/Ask dialogs
 
 class NoteDialog(HatariUIDialog):
     icontype = gtk.MESSAGE_INFO
@@ -68,6 +74,9 @@ class AskDialog(HatariUIDialog):
         return (response == gtk.RESPONSE_YES)
 
 
+# ---------------------------
+# About dialog
+
 class AboutDialog(HatariUIDialog):
     def __init__(self, parent):
         dialog = gtk.AboutDialog()
@@ -88,6 +97,9 @@ You can see the whole license at:
     http://www.gnu.org/licenses/info/GPLv2.html""")
         self.dialog = dialog
 
+
+# ---------------------------
+# Paste dialog
 
 class PasteDialog(HatariUIDialog):
     def __init__(self, parent):
@@ -117,6 +129,9 @@ class PasteDialog(HatariUIDialog):
         self.dialog.hide()
         return text
 
+
+# ---------------------------
+# Quit and Save dialog
 
 class QuitSaveDialog(HatariUIDialog):
     def __init__(self, parent):
@@ -160,6 +175,9 @@ class QuitSaveDialog(HatariUIDialog):
         return response
 
 
+# ---------------------------
+# Kill Hatari dialog
+
 class KillDialog(HatariUIDialog):
     def __init__(self, parent):
         self.dialog = gtk.MessageDialog(parent,
@@ -182,6 +200,9 @@ Terminate Hatari anyway?""")
             return False
         return True
 
+
+# ---------------------------
+# Trace settings dialog
 
 class TraceDialog(HatariUIDialog):
     # you can get this list with:
@@ -287,6 +308,55 @@ class TraceDialog(HatariUIDialog):
                 return self.savedpoints
 
 
+# ----------------------------------
+# Peripherals (disk/joystick) dialog
+
+class PeripheralsDialog(HatariUIDialog):
+    def _create_dialog(self, config):
+        table, self.dialog = create_table_dialog(self.parent, "Peripheral settings", 9)
+        row = 0
+
+        self.file = []
+        for drive in ("A", "B"):
+            label = "Disk %c:" % drive
+            fsel = gtk.FileChooserButton(label)
+            # Hatari cannot access URIs
+            fsel.set_local_only(True)
+            fsel.set_width_chars(12)
+            self.file.append(table_add_widget_row(table, row, label, fsel))
+            row += 1
+        
+        table_add_separator(table, row)
+        row += 1
+        
+        joy = 0
+        self.joy = []
+        joytypes = config.get_joystick_types()
+        for label in config.get_joystick_names():
+            combo = gtk.combo_box_new_text()
+            for text in joytypes:
+                combo.append_text(text)
+            combo.set_active(config.get_joystick(joy))
+            self.joy.append(table_add_widget_row(table, row + joy, label, combo))
+            joy += 1
+
+        table.show_all()
+
+    def run(self, config):
+        "run() -> file name, file name for given disk"
+        if not self.dialog:
+            self._create_dialog(config)
+        if self.dialog.run() == gtk.RESPONSE_APPLY:
+            for drive in range(2):
+                config.set_disk(drive, self.file[drive].get_filename())
+            for joy in range(6):
+                config.set_joystick(joy, self.joy[joy].get_active())
+        self.dialog.hide()
+
+
+# ----------------------------------------
+# Setup dialog for settings needing reboot
+
 class SetupDialog(HatariUIDialog):
     def __init__(self, parent):
         self.parent = parent
@@ -325,7 +395,12 @@ class SetupDialog(HatariUIDialog):
             self.combo.set_active(0)
 
     def run(self, config):
+        "run() -> bool, whether to reboot"
         self._fill_combo(config)
         if self.dialog.run() == gtk.RESPONSE_APPLY:
-            print "TODO: apply setup %d and reboot Hatari" % self.combo.get_active()
+            print "TODO: apply setup %d" % self.combo.get_active()
+            reboot = True
+        else:
+            reboot = False
         self.dialog.hide()
+        return reboot

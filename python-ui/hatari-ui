@@ -6,4 +6,4 @@ $0.py --embed \
 --top "about,run,setup,pause,quit" \
 --panel "Keys,F1=59,F2=60,F3=61,F4=62,F5=63,F6=64,F7=65,F8=66,F9=67,F10=68,>,paste,Macro=Test,Undo=97,Help=98,Enter=114,>,close" \
 --panel "Speed settings,frameskip,>,fastforward,|,spec512,|,sound,>,close" \
---bottom "debug,trace,Speed settings,joyemu,Keys" \
+--bottom "debug,trace,peripherals,Speed settings,Keys"
