@@ -16,9 +16,10 @@
   2008-04-07   [ET]    Add bios/xbios intercept support
   2008-04-16   [ET]    Return FALSE instead of exiting on errors
   2008-06-08   [ET]    Add disk image options and refactor their handling
+  2008-06-10   [ET]    Add --vdi and joystick<port> <type> options
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.62 2008-06-08 17:37:57 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.63 2008-06-10 19:53:43 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -63,10 +64,17 @@ enum {
 	OPT_BORDERS,
 	OPT_SPEC512,
 	OPT_FORCEBPP,
-	OPT_VDI_PLANES,		/* VDI options */
+	OPT_VDI,		/* VDI options */
+	OPT_VDI_PLANES,
 	OPT_VDI_WIDTH,
 	OPT_VDI_HEIGHT,
 	OPT_JOYSTICK,		/* device options */
+	OPT_JOYSTICK0,
+	OPT_JOYSTICK1,
+	OPT_JOYSTICK2,
+	OPT_JOYSTICK3,
+	OPT_JOYSTICK4,
+	OPT_JOYSTICK5,
 	OPT_PRINTER,
 	OPT_MIDI,
 	OPT_RS232,
@@ -97,6 +105,7 @@ enum {
 	OPT_LOGLEVEL,
 	OPT_ALERTLEVEL,
 	OPT_ERROR,
+	OPT_CONTINUE
 };
 
 typedef struct {
@@ -118,7 +127,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_CONFIRMQUIT, NULL, "--confirm-quit",
 	  "<bool>", "Whether Hatari confirms quit" },
 	{ OPT_CONFIGFILE, "-c", "--configfile",
-	  "<file>", "Use <file> instead of the ~/.hatari.cfg config file" },
+	  "<file>", "Use <file> instead of the default hatari config file" },
 	{ OPT_FASTFORWARD, NULL, "--fast-forward",
 	  "<bool>", "Help skipping stuff on fast machine" },
 
@@ -143,6 +152,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Force internal color bitdepth (x=8/15/16/32, 0=disable)" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "VDI" },
+	{ OPT_VDI,	NULL, "--vdi",
+	  "<bool>", "Whether to use VDI screen mode" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
 	  "<x>", "VDI resolution bit-depth (x = 1/2/4)" },
 	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
@@ -153,6 +164,21 @@ static const opt_t HatariOptions[] = {
 	{ OPT_HEADER, NULL, NULL, NULL, "Devices" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
 	  "<port>", "Emulate joystick with cursor keys in given port (0-5)" },
+	/* these have to be exactly the same as I'm relying compiler giving
+	 * them the same same string pointer when strings are identical
+	 */
+	{ OPT_JOYSTICK0, NULL, "--joy<port>",
+	  "<type>", "Set joystick type (none/keys/real) for given port" },
+	{ OPT_JOYSTICK1, NULL, "--joy<port>",
+	  "<type>", "Set joystick type (none/keys/real) for given port" },
+	{ OPT_JOYSTICK2, NULL, "--joy<port>",
+	  "<type>", "Set joystick type (none/keys/real) for given port" },
+	{ OPT_JOYSTICK3, NULL, "--joy<port>",
+	  "<type>", "Set joystick type (none/keys/real) for given port" },
+	{ OPT_JOYSTICK4, NULL, "--joy<port>",
+	  "<type>", "Set joystick type (none/keys/real) for given port" },
+	{ OPT_JOYSTICK5, NULL, "--joy<port>",
+	  "<type>", "Set joystick type (none/keys/real) for given port" },
 	{ OPT_PRINTER,   NULL, "--printer",
 	  "<file>", "Enable printer support and write data to <file>" },
 	{ OPT_MIDI,      NULL, "--midi",
@@ -161,7 +187,7 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Enable serial port support and use <file> as the device" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Disk" },
-	{ OPT_DISKA, "-a", "--disk-a",
+	{ OPT_DISKA, NULL, "--disk-a",
 	  "<file>", "Set disk image for floppy drive A" },
 	{ OPT_DISKB, NULL, "--disk-b",
 	  "<file>", "Set disk image for floppy drive B" },
@@ -305,6 +331,7 @@ static const opt_t *Opt_ShowHelpSection(const opt_t *start_opt)
 {
 	const opt_t *opt, *last;
 	unsigned int len, maxlen = 0;
+	const char *previous = NULL;
 
 	/* find longest option name and check option IDs */
 	for (opt = start_opt; opt->id != OPT_HEADER && opt->id != OPT_ERROR; opt++)
@@ -320,7 +347,11 @@ static const opt_t *Opt_ShowHelpSection(const opt_t *start_opt)
 	/* output all options */
 	for (opt = start_opt; opt != last; opt++)
 	{
-		Opt_ShowOption(opt, maxlen);
+		if (previous != opt->str)
+		{
+			Opt_ShowOption(opt, maxlen);
+		}
+		previous = opt->str;
 	}
 	return last;
 }
@@ -449,6 +480,50 @@ static bool Opt_Bool(const char *arg, int optid, bool *conf)
 
 
 /**
+ * checks str argument agaist options of type "--option<digit>".
+ * If match is found, returns ID for that, otherwise OPT_CONTINUE
+ * and OPT_ERROR for errors.
+ */
+static int Opt_CheckBracketValue(const opt_t *opt, const char *str)
+{
+	const char *bracket, *optstr;
+	int offset, digit, i;
+
+	if (!opt->str)
+	{
+		return OPT_CONTINUE;
+	}
+	bracket = index(opt->str, '<');
+	if (!bracket)
+	{
+		return OPT_CONTINUE;
+	}
+	offset = bracket - opt->str;
+	if (strlen(str) != offset + 1)
+	{
+		return OPT_CONTINUE;
+	}
+	digit = str[offset] - '0';
+	if (digit < 0 || digit > 9)
+	{
+		return OPT_CONTINUE;
+	}
+	optstr = opt->str;
+	for (i = 0; opt->str == optstr; opt++, i++)
+	{
+		if (i == digit)
+		{
+			return opt->id;
+		}
+	}
+	/* fprintf(stderr, "opt: %s (%d), str: %s (%d), digit: %d\n",
+		opt->str, offset+1, str, strlen(str), digit);
+	 */
+	return OPT_ERROR;
+}
+
+
+/**
  * matches string under given index in the argv against all Hatari
  * short and long options. If match is found, returns ID for that,
  * otherwise shows help and returns OPT_ERROR.
@@ -460,6 +535,7 @@ static int Opt_WhichOption(int argc, const char *argv[], int idx)
 {
 	const opt_t *opt;
 	const char *str = argv[idx];
+	int id;
 
 	for (opt = HatariOptions; opt->id != OPT_ERROR; opt++)
 	{	
@@ -484,6 +560,15 @@ static int Opt_WhichOption(int argc, const char *argv[], int idx)
 				}
 			}
 			return opt->id;
+		}
+		id = Opt_CheckBracketValue(opt, str);
+		if (id == OPT_ERROR)
+		{
+			break;
+		}
+		if (id != OPT_CONTINUE)
+		{
+			return id;
 		}
 	}
 	Opt_ShowError(OPT_ERROR, argv[idx], "Unrecognized option");
@@ -533,9 +618,9 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
  */
 bool Opt_ParseParameters(int argc, const char *argv[])
 {
-	int i, ncpu, skips, zoom, planes, cpuclock, threshold, memsize;
+	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port;
 	const char *errstr;
-	int ok = TRUE;
+	int i, ok = TRUE;
 
 	/* Defaults for loading initial memory snap-shots */
 	bLoadMemorySave = FALSE;
@@ -687,6 +772,15 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			ConfigureParams.Screen.nForceBpp = planes;
 			break;
 
+			/* VDI options */
+		case OPT_VDI:
+			ok = Opt_Bool(argv[++i], OPT_VDI, &ConfigureParams.Screen.bUseExtVdiResolutions);
+			if (ok)
+			{
+				bLoadAutoSave = FALSE;
+			}
+			break;
+
 		case OPT_VDI_PLANES:
 			planes = atoi(argv[++i]);
 			switch(planes)
@@ -726,6 +820,33 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			    !Joy_SetCursorEmulation(argv[i][0] - '0'))
 			{
 				return Opt_ShowError(OPT_JOYSTICK, argv[i], "Invalid joystick port");
+			}
+			break;
+
+		case OPT_JOYSTICK0:
+		case OPT_JOYSTICK1:
+		case OPT_JOYSTICK2:
+		case OPT_JOYSTICK3:
+		case OPT_JOYSTICK4:
+		case OPT_JOYSTICK5:
+			port = argv[i][strlen(argv[i])-1] - '0';
+			assert(port >= 0 && port < JOYSTICK_COUNT);
+			i += 1;
+			if (strcasecmp(argv[i], "none") == 0)
+			{
+				ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_DISABLED;
+			}
+			else if (strcasecmp(argv[i], "keys") == 0)
+			{
+				ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_KEYBOARD;
+			}
+			else if (strcasecmp(argv[i], "real") == 0)
+			{
+				ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_REALSTICK;
+			}
+			else
+			{
+				return Opt_ShowError(OPT_JOYSTICK0+port, argv[i], "Invalid joystick type");
 			}
 			break;
 			
