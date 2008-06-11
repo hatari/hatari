@@ -323,6 +323,9 @@ class PeripheralsDialog(HatariUIDialog):
             # Hatari cannot access URIs
             fsel.set_local_only(True)
             fsel.set_width_chars(12)
+            filename = config.get_disk(row)
+            if filename:
+                fsel.set_filename(filename)
             self.file.append(table_add_widget_row(table, row, label, fsel))
             row += 1
         

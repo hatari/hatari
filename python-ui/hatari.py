@@ -287,7 +287,7 @@ class HatariConfigMapping(ConfigStore):
 
     # ------------ disk (A) ---------------
     def get_disk(self, drive):
-        return self.get("[Floppy]", "szDisk%cFileName", ("A", "B")[drive])
+        return self.get("[Floppy]", "szDisk%cFileName" % ("A", "B")[drive])
     
     def set_disk(self, drive, filename):
         if filename == None or filename == self.disk[drive]:
