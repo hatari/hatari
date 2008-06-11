@@ -26,13 +26,13 @@ My guess at the required versions for the dependencies are:
 - PyGtk >= 2.8   (on Ubuntu PyGtk is in python-gtk2 package)
 
 You will need also Hatari emulator version newer than 1.0.1.
-Currently (2008-05-30) you can get it only from its CVS,
+Currently (2008-06-11) you can get it only from its CVS,
 like you got Hatari UI itself.
 
 Hatari UI has been tested on Ubuntu Linux (v7.04).  I would
 assume it works also on other unix systems such as Apple OSX.
-It won't work on Windows (the required socket support is
-missing from the Hatari emulator).
+It won't work on Windows (the required Windows socket support
+is missing from the Hatari emulator).
 
 Embedding the Hatari emulator window is currently supported
 only for systems using an X window system (Hatari emulator
@@ -42,11 +42,17 @@ doesn't currently support others).
 Running
 -------
 
-Being a python program, Hatari UI doesn't need to be built.
-You can just run it from where you extracted or checked it
-out by calling its wrapper script:
+Hatari UI needs a Hatari configuration file to know what are
+current Hatari version options and their default values.
+If you have never saved the options from the internal Hatari
+UI (invoked normally by F12), do it before using this
+external Hatari UI.
+
+Being a Python program, Hatari UI doesn't need to be built.
+You can just run it from where you extracted it (or checked
+it out of SF CVS) by calling its wrapper script:
 	/path/to/script/hatari-ui
 
-Or run just the debugger:
+Or you can run just the debugger:
 	/path/to/script/debugui.py
 

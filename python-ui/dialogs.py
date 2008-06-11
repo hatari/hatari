@@ -340,6 +340,7 @@ class PeripheralsDialog(HatariUIDialog):
             self.joy.append(table_add_widget_row(table, row + joy, label, combo))
             joy += 1
 
+        # TODO: add printer, serial, midi, RTC to peripherals?
         table.show_all()
 
     def run(self, config):
