@@ -10,7 +10,7 @@
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.27 2008-06-03 23:01:10 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.28 2008-06-12 17:55:16 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -292,19 +292,6 @@ static void Do_Blit(void)
 	cyc_per_op = blit_cycles_tab[op][hop] * 4;
 	nCurrentCycles = 0;
 
-	/* Ugly hack for the game Obsession: */
-#if 0
-	if ((nDmaSoundControl & DMASNDCTRL_PLAY) && (blit_control & 0x40))
-	{
-		/* If DMA sound is running at the same time as the blitter is
-		 * used in HOG mode, we do not emulate blitter cycles at all
-		 * (it messes up Obsession completely).
-		 * DMA sound seems to have a higher priority than blitter.
-		 * I don't know (yet) how to emulate this in a proper way... */
-		cyc_per_op = 0;
-	}
-#endif
-
 	/* Now we enter the main blitting loop */
 	do 
 	{
@@ -368,6 +355,11 @@ static void Do_Blit(void)
 			/* Do halftone increment */
 			if (hop & 1)
 				halftone_curroffset = (halftone_curroffset+halftone_direction) & 15;
+
+			/* We've got to update pending int functions regularly */
+			if (PendingInterruptCount <= 0 && PendingInterruptFunction) {
+			    CALL_VAR(PendingInterruptFunction);
+			}
 		}
 	}
 	while (y_count > 0
@@ -663,12 +655,12 @@ void Blitter_MemorySnapShot_Capture(bool bSave)
  */
 void Blitter_InterruptHandler(void)
 {
+	Int_AcknowledgeInterrupt();
+
 	if((y_count !=0) && (blit_control & 0x80))
 	{
 		Do_Blit();
 	}
-
-	Int_AcknowledgeInterrupt();
 
 	if (y_count == 0)
 	{
@@ -678,6 +670,6 @@ void Blitter_InterruptHandler(void)
 	else
 	{
 		/* Continue blitting later */
-		Int_AddRelativeInterrupt(NONHOG_CYCLES, INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
+		Int_AddRelativeInterrupt(NONHOG_CYCLES+8, INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
 	}
 }
