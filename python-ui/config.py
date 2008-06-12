@@ -64,7 +64,7 @@ class ConfigStore():
     defaultpath = "%s%c.hatari" % (os.getenv("HOME"), os.path.sep)
 
     def __init__(self, cfgfile, defaults = {}, miss_is_error = True):
-        "ConfigStore(defaults,cfgfile[,miss_is_error])"
+        "ConfigStore(cfgfile[,defaults,miss_is_error])"
         self.changed = False
         self.miss_is_error = miss_is_error
         path = self.get_path(cfgfile)

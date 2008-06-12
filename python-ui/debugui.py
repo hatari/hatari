@@ -497,7 +497,7 @@ class HatariDebugUI():
     def load_options(self):
         # TODO: move config to MemoryAddress class?
         # (depends on how monitoring of addresses should work)
-        lines = str(self.address.get_lines())
+        lines = self.address.get_lines()
         miss_is_error = False # needed for adding windows
         defaults = { "[General]": {"nLines": lines} }
         self.config = ConfigStore("debugui.cfg", defaults, miss_is_error)

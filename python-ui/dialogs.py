@@ -314,8 +314,8 @@ class TraceDialog(HatariUIDialog):
 class PeripheralsDialog(HatariUIDialog):
     def _create_dialog(self, config):
         table, self.dialog = create_table_dialog(self.parent, "Peripheral settings", 9)
+        
         row = 0
-
         self.file = []
         for drive in ("A", "B"):
             label = "Disk %c:" % drive
@@ -350,12 +350,14 @@ class PeripheralsDialog(HatariUIDialog):
         "run() -> file name, file name for given disk"
         if not self.dialog:
             self._create_dialog(config)
-        if self.dialog.run() == gtk.RESPONSE_APPLY:
+        response = self.dialog.run()
+        self.dialog.hide()
+        
+        if response == gtk.RESPONSE_APPLY:
             for drive in range(2):
                 config.set_disk(drive, self.file[drive].get_filename())
             for joy in range(6):
                 config.set_joystick(joy, self.joy[joy].get_active())
-        self.dialog.hide()
 
 
 # ----------------------------------------
