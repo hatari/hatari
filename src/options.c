@@ -19,7 +19,7 @@
   2008-06-10   [ET]    Add --vdi and joystick<port> <type> options
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.64 2008-06-11 20:01:31 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.65 2008-06-12 20:51:51 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -494,7 +494,7 @@ static int Opt_CheckBracketValue(const opt_t *opt, const char *str)
 	{
 		return OPT_CONTINUE;
 	}
-	bracket = index(opt->str, '<');
+	bracket = strchr(opt->str, '<');
 	if (!bracket)
 	{
 		return OPT_CONTINUE;
