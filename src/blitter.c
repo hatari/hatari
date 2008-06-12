@@ -10,7 +10,7 @@
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.28 2008-06-12 17:55:16 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.29 2008-06-12 18:03:26 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -604,7 +604,7 @@ void Blitter_Control_WriteByte(void)
 		else
 		{
 			/* Start blitting after some CPU cycles */
-			Int_AddRelativeInterrupt(CurrentInstrCycles+nWaitStateCycles+4,
+			Int_AddRelativeInterrupt(CurrentInstrCycles+nWaitStateCycles,
 			                         INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
 		}
 	}
