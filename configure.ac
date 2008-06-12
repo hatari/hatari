@@ -1,9 +1,9 @@
 # autoconf script for Hatari for all those people out there who are to lazy
 # to manually edit the Makefile.cnf...
 #
-# Process this file with autoconf to produce a configure script.
-# Don't forget to run aclocal and autoheader first...
-# ... or simply run autoreconf -i to create all necessary files for configure.
+# To create all necessary files for configure, use:
+#   aclocal && autoheader && automake --add-missing --copy && autoconf
+# Later on you can use "autoreconf -i" after updating this file.
 
 AC_INIT(hatari, 1.0.1)
 AC_CONFIG_SRCDIR([src/main.c])
