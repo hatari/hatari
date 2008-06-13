@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.134 2008-06-13 17:44:12 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.135 2008-06-13 21:43:38 eerot Exp $";
 
 #include "config.h"
 
@@ -546,6 +546,8 @@ static void Main_UnInit(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Main
+ * 
+ * Note: 'argv' cannot be declared const, MinGW would then fail to link.
  */
 int main(int argc, char *argv[])
 {
