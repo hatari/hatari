@@ -10,7 +10,7 @@
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.29 2008-06-12 18:03:26 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.30 2008-06-13 06:36:36 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -18,6 +18,7 @@ const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.29 2008-06-12 18:03:26 t
 
 #include "main.h"
 #include "blitter.h"
+#include "configuration.h"
 #include "dmaSnd.h"
 #include "ioMem.h"
 #include "m68000.h"
@@ -288,9 +289,12 @@ static void Do_Blit(void)
 	else
 		halftone_direction = -1;
 
-	/* Cycles for one WORD transfer */
-	cyc_per_op = blit_cycles_tab[op][hop] * 4;
+	/* Set up variables for cycle counting */
 	nCurrentCycles = 0;
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		cyc_per_op = blit_cycles_tab[op][hop] * 2;  // 16 MHz Blitter on Falcon
+	else
+		cyc_per_op = blit_cycles_tab[op][hop] * 4;  // 8 MHz Blitter on ST/STE
 
 	/* Now we enter the main blitting loop */
 	do 
@@ -604,7 +608,7 @@ void Blitter_Control_WriteByte(void)
 		else
 		{
 			/* Start blitting after some CPU cycles */
-			Int_AddRelativeInterrupt(CurrentInstrCycles+nWaitStateCycles,
+			Int_AddRelativeInterrupt((CurrentInstrCycles+nWaitStateCycles)>>nCpuFreqShift,
 			                         INT_CPU_CYCLE, INTERRUPT_BLITTER, 0);
 		}
 	}
