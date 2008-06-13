@@ -38,10 +38,10 @@ extern const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, co
 extern bool Floppy_InsertDiskIntoDrive(int Drive);
 extern bool Floppy_EjectDiskFromDrive(int Drive);
 extern bool Floppy_EjectBothDrives(void);
-extern void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes, unsigned short *pnSectorsPerTrack, unsigned short *pnSides);
-extern bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, unsigned short Sector, unsigned short Track, unsigned short Side, short Count, int *pnSectorsPerTrack);
-extern bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, unsigned short Sector, unsigned short Track, unsigned short Side, short Count, int *pnSectorsPerTrack);
+extern void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes, Uint16 *pnSectorsPerTrack, Uint16 *pnSides);
+extern bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector, Uint16 Track, Uint16 Side, short Count, int *pnSectorsPerTrack);
+extern bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, Uint16 Sector, Uint16 Track, Uint16 Side, short Count, int *pnSectorsPerTrack);
 extern int Floppy_GetPhysicalSectorsPerTrack(int Drive);
-extern bool Floppy_ReadPhysicalSector(int Drive,char *pBuffer,unsigned short int Sector,unsigned short int Track,unsigned short int Side,unsigned short int Count);
+extern bool Floppy_ReadPhysicalSector(int Drive,char *pBuffer, Uint16 Sector, Uint16 Track, Uint16 Side, short Count);
 
 #endif

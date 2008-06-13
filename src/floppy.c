@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.39 2008-06-08 20:09:56 eerot Exp $";
+const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.40 2008-06-13 21:09:58 eerot Exp $";
 
 #include <sys/stat.h>
 #include <assert.h>
@@ -323,7 +323,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 	filename = ConfigureParams.DiskImage.szDiskFileName[Drive];
 	if (!filename[0])
 	{
-		return TRUE; /* just ejected */
+		return TRUE; /* only do eject */
 	}
 	if (!File_Exists(filename))
 	{
@@ -392,8 +392,8 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 			}
 		}
 		/* Inform user that disk has been ejected! */
-		Log_AlertDlg(LOG_INFO, "Disk '%s' has been removed from drive %c:.",
-			     EmulationDrives[Drive].szFileName, 'A'+Drive);
+		Log_Printf(LOG_INFO, "Disk '%s' has been removed from drive %c:.",
+			   EmulationDrives[Drive].szFileName, 'A'+Drive);
 		bEjected = TRUE;
 	}
 
@@ -473,7 +473,7 @@ static void Floppy_DoubleCheckFormat(long nDiskSize, Uint16 *pnSides, Uint16 *pn
  * boot sector and this attempts to find the correct values.
  */
 void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
-                            unsigned short *pnSectorsPerTrack, unsigned short *pnSides)
+                            Uint16 *pnSectorsPerTrack, Uint16 *pnSides)
 {
 	Uint16 nSectorsPerTrack, nSides, nSectors;
 
@@ -501,12 +501,12 @@ void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
  * Read sectors from floppy disk image, return TRUE if all OK
  * NOTE Pass -ve as Count to read whole track
  */
-bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
-                        unsigned short Track, unsigned short Side, short Count,
+bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
+                        Uint16 Track, Uint16 Side, short Count,
                         int *pnSectorsPerTrack)
 {
 	Uint8 *pDiskBuffer;
-	unsigned short int nSectorsPerTrack,nSides,nBytesPerTrack;
+	Uint16 nSectorsPerTrack, nSides, nBytesPerTrack;
 	long Offset;
 	int nImageTracks;
 
@@ -580,12 +580,12 @@ bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
  * Write sectors from floppy disk image, return TRUE if all OK
  * NOTE Pass -ve as Count to write whole track
  */
-bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, unsigned short Sector,
-                         unsigned short Track, unsigned short Side, short Count,
+bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
+                         Uint16 Track, Uint16 Side, short Count,
                          int *pnSectorsPerTrack)
 {
 	Uint8 *pDiskBuffer;
-	unsigned short int nSectorsPerTrack,nSides,nBytesPerTrack;
+	Uint16 nSectorsPerTrack, nSides, nBytesPerTrack;
 	long Offset;
 	int nImageTracks;
 
