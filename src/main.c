@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.133 2008-06-11 20:01:30 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.134 2008-06-13 17:44:12 thothy Exp $";
 
 #include "config.h"
 
@@ -86,8 +86,6 @@ void Main_MemorySnapShot_Capture(bool bSave)
 	}
 	/* And Cart/TOS/Hardware area */
 	MemorySnapShot_Store(&RomMem[0xE00000], 0x200000);
-	/* TODO: Remove this line or move to paths.c? */
-	MemorySnapShot_Store((char*)Paths_GetWorkingDir(), FILENAME_MAX);
 }
 
 
@@ -549,7 +547,7 @@ static void Main_UnInit(void)
 /**
  * Main
  */
-int main(int argc, const char *argv[])
+int main(int argc, char *argv[])
 {
 	/* Generate random seed */
 	srand(time(NULL));
@@ -565,7 +563,7 @@ int main(int argc, const char *argv[])
 	Configuration_Load(NULL);                     /* Now try the users configuration file */
 
 	/* Check for any passed parameters */
-	if (!Opt_ParseParameters(argc, argv))
+	if (!Opt_ParseParameters(argc, (const char**)argv))
 	{
 		return 1;
 	}
