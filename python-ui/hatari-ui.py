@@ -30,7 +30,7 @@ from debugui import HatariDebugUI
 from hatari import Hatari, HatariConfigMapping
 from uihelpers import HatariTextInsert, UInfo, create_button, create_toggle
 from dialogs import AboutDialog, PasteDialog, KillDialog, QuitSaveDialog, \
-     SetupDialog, TraceDialog, PeripheralsDialog
+     ResetDialog, SetupDialog, TraceDialog, PeripheralsDialog
 
 
 # helper functions to match callback args
@@ -47,7 +47,7 @@ class HatariControls():
     # (in a more OO application all these widgets would be separate classes
     # inheriting a common interface class, but that would be an overkill)
     all = [
-        "about", "run", "pause", "setup", "quit",
+        "about", "run", "pause", "reset", "setup", "quit",
         "fastforward", "frameskip", "spec512", "sound",
         "rightclick", "doubleclick", "paste", "peripherals",
         "debug", "trace", "close"
@@ -66,6 +66,7 @@ class HatariControls():
         # windows/dialogs are created when needed
         self.debugui = None
         self.aboutdialog = None
+        self.resetdialog = None
         self.killdialog = None
         self.peripheralsdialog = None
         self.pastedialog = None
@@ -110,7 +111,7 @@ class HatariControls():
 
     def run(self):
         "(Re-)run Hatari"
-        return (create_button("Run Hatari!", self._run_cb), True)
+        return (create_button("Run", self._run_cb), True)
 
     # ------- close control -----------
     def _close_cb(self, widget):
@@ -141,7 +142,17 @@ class HatariControls():
 
     def pause(self):
         "Pause Hatari to save battery"
-        return (create_toggle("Stop", self._pause_cb), True)
+        return (create_toggle("Pause", self._pause_cb), True)
+
+    # ------- reset control -----------
+    def _reset_cb(self, widget):
+        if not self.resetdialog:
+            self.resetdialog = ResetDialog(self.mainwin)
+        self.resetdialog.run(self.hatari)
+
+    def reset(self):
+        "Warm or cold reset Hatari"
+        return (create_button("Reset", self._reset_cb), True)
 
     # ------- setup control -----------
     def _setup_cb(self, widget):

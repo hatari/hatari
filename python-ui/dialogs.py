@@ -200,6 +200,37 @@ Terminate Hatari anyway?""")
             return False
         return True
 
+    
+# ---------------------------
+# Reset Hatari dialog
+
+class ResetDialog(HatariUIDialog):
+    COLD = 1
+    WARM = 2
+    def __init__(self, parent):
+        self.dialog = gtk.Dialog("Reset Atari?", parent,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            ("Cold reset", self.COLD, "Warm reset", self.WARM,
+             gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL))
+        label = gtk.Label("\nRebooting will lose changes in currently\nrunning Atari programs.\n\nReset anyway?\n")
+        self.dialog.vbox.add(label)
+        label.show()
+
+    def run(self, hatari):
+        "run(hatari) -> True if Hatari rebooted, False if canceled"
+        if not hatari.is_running():
+            return False
+        # Hatari is running, how to reboot?
+        response = self.dialog.run()
+        self.dialog.hide()
+        if response == self.COLD:
+            hatari.trigger_shortcut("coldreset")
+        elif response == self.WARM:
+            hatari.trigger_shortcut("warmreset")
+        else:
+            return False
+        return True
+
 
 # ---------------------------
 # Trace settings dialog
