@@ -48,7 +48,7 @@ class HatariControls():
     # inheriting a common interface class, but that would be an overkill)
     all = [
         "about", "run", "pause", "reset", "setup", "quit",
-        "fastforward", "frameskip", "spec512", "sound",
+        "fastforward", "frameskip", "spec512", "sound", "screenshot",
         "rightclick", "doubleclick", "paste", "peripherals",
         "debug", "trace", "close"
     ]
@@ -274,6 +274,15 @@ class HatariControls():
         box.pack_start(gtk.Label("Sound:"), False, False)
         box.add(combo)
         return (box, False)
+
+    # ------- screenshot control -----------
+    def _screenshot_cb(self, widget):
+        print "TODO: Support converting screenshot to PNG and giving its name?"
+        self.hatari.trigger_shortcut("screenshot")
+
+    def screenshot(self):
+        "Take a screenshot"
+        return (create_button("Screenshot", self._screenshot_cb), True)
     
     # ------- frame skip control -----------
     def _frameskip_cb(self, widget):

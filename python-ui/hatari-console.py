@@ -195,7 +195,7 @@ shortcut_tokens = [
     "bosskey",
     "recanim",
     "recsound",
-    "debug",
+    "savemem",
     "quit"
 ]
 event_tokens = [
