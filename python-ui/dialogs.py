@@ -14,6 +14,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+import os
 # use correct version of pygtk/gtk
 import pygtk
 pygtk.require('2.0')
@@ -354,7 +355,7 @@ class PeripheralsDialog(HatariUIDialog):
             # Hatari cannot access URIs
             fsel.set_local_only(True)
             fsel.set_width_chars(12)
-            filename = config.get_disk(row)
+            filename = config.get_floppy(row)
             if filename:
                 fsel.set_filename(filename)
             self.file.append(table_add_widget_row(table, row, label, fsel))
@@ -386,7 +387,7 @@ class PeripheralsDialog(HatariUIDialog):
         
         if response == gtk.RESPONSE_APPLY:
             for drive in range(2):
-                config.set_disk(drive, self.file[drive].get_filename())
+                config.set_floppy(drive, self.file[drive].get_filename())
             for joy in range(6):
                 config.set_joystick(joy, self.joy[joy].get_active())
 
@@ -396,48 +397,191 @@ class PeripheralsDialog(HatariUIDialog):
 
 class SetupDialog(HatariUIDialog):
     def __init__(self, parent):
+        self.setups = []
         self.parent = parent
-        self.initialized = False
-        dialog = gtk.Dialog("Emulated machine configurations", parent,
+        self.editdialog = None
+        self.dialog = None
+
+    def _create_dialog(self, config):
+        dialog = gtk.Dialog("Machine configurations", self.parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-            ("Reboot emulation",  gtk.RESPONSE_APPLY,
+            ("Set and reboot",  gtk.RESPONSE_APPLY,
              gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+        self.editdialog = EditSetupDialog(dialog)
 
         box1 = gtk.HBox()
-        box1.add(create_button("Add", self._add_setup))
-        box1.add(create_button("Edit", self._edit_setup))
+        box1.add(create_button("Add", self._add_setup, config))
+        box1.add(create_button("Edit", self._edit_setup, config))
         box1.add(create_button("Remove", self._remove_setup))
         dialog.vbox.add(box1)
 
         box2 = gtk.HBox()
         self.combo = gtk.combo_box_new_text()
+        self.combo.connect("changed", self._show_setup, config)
         box2.pack_start(gtk.Label("Machine setup:"), False, False)
         box2.add(self.combo)
         dialog.vbox.add(box2)
+
+        dialog.vbox.add(gtk.HSeparator())
+        self.label = gtk.Label()
+        dialog.vbox.add(self.label)
+
         dialog.vbox.show_all()
         self.dialog = dialog
 
-    def _add_setup(self, widget):
-        TodoDialog(self.parent).run("Add setup")
-    def _edit_setup(self, widget):
-        TodoDialog(self.parent).run("Edit setup")
+        self.setups.append({
+            "machine": config.get_machine(),
+            "monitor": config.get_monitor(),
+            "memory": config.get_memory(),
+            "tos": config.get_tos(),
+            "harddisk": config.get_harddisk(),
+            "compatible": config.get_compatible(),
+            "name": "Default"
+        })
+        self.combo.append_text("Default")
+        self.combo.set_active(0)
+        
+    def _add_setup(self, widget, config):
+        current = self.combo.get_active()
+        setup = self.setups[current].copy()
+        setup["name"] = "NEW"
+        setup = self.editdialog.run(config, setup)
+        if setup:
+            self.setups.append(setup)
+            self.combo.append_text(setup["name"])
+            self.combo.set_active(current + 1)
+
+    def _edit_setup(self, widget, config):
+        current = self.combo.get_active()
+        if not current:
+            return ErrorDialog(self.parent).run("Cannot edit default setup")
+        setup = self.setups[current].copy()
+        setup = self.editdialog.run(config, setup)
+        if setup:
+            self.setups[current] = setup
+            self._show_setup(self.combo, config)
+            self.combo.remove_text(current)
+            self.combo.insert_text(current, setup["name"])
+            self.combo.set_active(current)
+
     def _remove_setup(self, widget):
-        TodoDialog(self.parent).run("Remove setup")
+        current = self.combo.get_active()
+        if not current:
+            return ErrorDialog(self.parent).run("Cannot delete default setup")
+        name = self.setups[current]["name"]
+        self.combo.set_active(current - 1)
+        self.combo.remove_text(current)
+        del(self.setups[current])
+        NoteDialog(self.parent).run("Current '%s' setup deleted" % name)
+
+    def _apply_setup(self, config):
+        setup = self.setups[self.combo.get_active()]
+        config.set_machine(setup["machine"])
+        config.set_monitor(setup["monitor"])
+        config.set_memory(setup["memory"])
+        config.set_tos(setup["tos"])
+        config.set_harddisk(setup["harddisk"])
+        config.set_compatible(setup["compatible"])
     
-    def _fill_combo(self, config):
-        if not self.initialized:
-            self.initialized = True
-            for text in ("Default", "Another dummy"):
-                self.combo.append_text(text)
-            self.combo.set_active(0)
+    def _show_setup(self, combo, config):
+        setup = self.setups[combo.get_active()]
+        info = []
+        info.append("Machine type: %s" % config.get_machine_types()[setup["machine"]])
+        info.append("Monitor type: %s" % config.get_monitor_types()[setup["monitor"]])
+        info.append("Memory size: %s" % config.get_memory_sizes()[setup["memory"]])
+        info.append("TOS image: %s" % os.path.basename(setup["tos"]))
+        info.append("Harddisk dir: %s" % setup["harddisk"])
+        info.append("Compatible CPU: %s" % str(setup["compatible"]))
+        self.label.set_text("\n".join(info))
 
     def run(self, config):
         "run() -> bool, whether to reboot"
-        self._fill_combo(config)
-        if self.dialog.run() == gtk.RESPONSE_APPLY:
-            print "TODO: apply setup %d" % self.combo.get_active()
-            reboot = True
-        else:
-            reboot = False
+        if not self.dialog:
+            self._create_dialog(config)
+
+        response = self.dialog.run()
         self.dialog.hide()
-        return reboot
+        if response == gtk.RESPONSE_APPLY:
+            self._apply_setup(config)
+            return True
+        return False
+
+# ----------------------------------------------
+# Dialog for adding/editing setup configurations
+
+class EditSetupDialog(HatariUIDialog):
+    def _create_dialog(self, config):
+        table, self.dialog = create_table_dialog(self.parent, "Add/edit setup", 9)
+
+        row = 0
+        self.name = table_add_entry_row(table, row, "Setup name:")
+        row += 1
+        
+        combo = gtk.combo_box_new_text()
+        for text in config.get_machine_types():
+            combo.append_text(text)
+        self.machine = table_add_widget_row(table, row, "Machine type:", combo)
+        row += 1
+        
+        combo = gtk.combo_box_new_text()
+        for text in config.get_monitor_types():
+            combo.append_text(text)
+        self.monitor = table_add_widget_row(table, row, "Monitor type:", combo)
+        row += 1
+        
+        combo = gtk.combo_box_new_text()
+        for text in config.get_memory_sizes():
+            combo.append_text(text)
+        self.memory = table_add_widget_row(table, row, "Memory size:", combo)
+        row += 1
+        
+        label = "TOS image:"
+        fsel = gtk.FileChooserButton(label)
+        # Hatari cannot access URIs
+        fsel.set_local_only(True)
+        fsel.set_width_chars(12)
+        self.tos = table_add_widget_row(table, row, label, fsel)
+        row += 1
+        
+        label = "Harddisk:"
+        fsel = gtk.FileChooserButton(label)
+        fsel.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+        # Hatari cannot access URIs
+        fsel.set_local_only(True)
+        fsel.set_width_chars(12)
+        self.harddisk = table_add_widget_row(table, row, label, fsel)
+        row += 1
+
+        widget = gtk.CheckButton("Compatible CPU")
+        self.compatible = table_add_widget_row(table, row, None, widget)
+        row += 1
+
+        table.show_all()
+
+    def run(self, config, setup):
+        if not self.dialog:
+            self._create_dialog(config)
+
+        self.name.set_text(setup["name"])
+        self.machine.set_active(setup["machine"])
+        self.monitor.set_active(setup["monitor"])
+        self.memory.set_active(setup["memory"])
+        if setup["tos"]:
+            self.tos.set_filename(setup["tos"])
+        if setup["harddisk"]:
+            self.harddisk.set_filename(setup["harddisk"])
+        self.compatible.set_active(setup["compatible"])
+
+        response = self.dialog.run()
+        self.dialog.hide()
+        if response == gtk.RESPONSE_CANCEL:
+            return None
+        
+        setup["name"] = self.name.get_text()
+        setup["machine"] = self.machine.get_active()
+        setup["monitor"] = self.monitor.get_active()
+        setup["memory"] = self.memory.get_active()
+        setup["tos"] = self.tos.get_filename()
+        setup["harddisk"] = self.harddisk.get_filename()
+        setup["compatible"] = self.compatible.get_active()
+        return setup

@@ -161,7 +161,8 @@ class Hatari():
             env = os.environ
             if parent_win:
                 self._set_embed_env(env, parent_win)
-            args = [self.hataribin]
+            # callers need to take care of confirming quitting
+            args = [self.hataribin, "--confirm-quit", "off"]
             if extra_args:
                 args += extra_args
             if self.server:
@@ -198,6 +199,20 @@ class Hatari():
 # Mapping of requested values both to Hatari configuration
 # and command line options.
 #
+# Following configuration variables/options aren't (yet) mapped:
+# - zoom, windowed/fullscreen and borders (disabled for embedding)
+# - disk-b autoinsertion, disk zip path, write protection
+# - hard disk image, whether to use HD dir or image
+# - joystick autofire, defining the keys for emu
+# - keyboard repeat, key mapping type and file
+# - CPU level and clock, ST blitter, Falcon DSP
+# - vdi planes and size, SDL bpp forcing, FPS
+# - printer, serial, midi, cartridge image
+# - config file, memstate load/save, autosave
+# - log file and levels, bios intercept
+# - rtc, timer-D patching, slow FDC
+# - sound / screen recording
+#
 # By default this doesn't allow setting any other configuration
 # variables than the ones that were read from the configuration
 # file i.e. you get an exception if configuration variables
@@ -208,11 +223,31 @@ class Hatari():
 # this cannot just do these according to some mapping table, but
 # it needs actual method for (each) setting.
 class HatariConfigMapping(ConfigStore):
+    _memory = ("512kB", "1MB", "2MB", None, "4MB", None, None, None, "8MB", None, None, None, "14MB")
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
         ConfigStore.__init__(self, "hatari.cfg")
         self.hatari = hatari
         self.disk = ["", ""]
+
+    # ------------ machine ---------------
+    def get_machine_types(self):
+        return ("ST", "STE", "TT", "Falcon")
+
+    def get_machine(self):
+        return self.get("[System]", "nMachineType")
+
+    def set_machine(self, value):
+        self.set("[System]", "nMachineType", value)
+        self.hatari.change_option("--machine %s" % ("st", "ste", "tt", "falcon")[value])
+
+    # ------------ compatible ---------------
+    def get_compatible(self):
+        return self.get("[System]", "bCompatibleCpu")
+
+    def set_compatible(self, value):
+        self.set("[System]", "bCompatibleCpu", value)
+        self.hatari.change_option("--compatible %s" % str(value))
 
     # ------------ fastforward ---------------
     def get_fastforward(self):
@@ -286,15 +321,67 @@ class HatariConfigMapping(ConfigStore):
         self.hatari.change_option("--joy%d %s" % (port, joytype))
 
     # ------------ disk (A) ---------------
-    def get_disk(self, drive):
+    def get_floppy(self, drive):
         return self.get("[Floppy]", "szDisk%cFileName" % ("A", "B")[drive])
     
-    def set_disk(self, drive, filename):
+    def set_floppy(self, drive, filename):
         if filename == None or filename == self.disk[drive]:
             return
         self.set("[Floppy]", "szDisk%cFileName" %  ("A", "B")[drive], filename)
         self.hatari.change_option("--disk-%c %s" % (("a", "b")[drive], filename))
         self.disk[drive] = filename
+
+    # ------------ harddisk (dir) ---------------
+    def get_harddisk(self):
+        return self.get("[HardDisk]", "szHardDiskDirectory")
+    
+    def set_harddisk(self, dirname):
+        self.set("[HardDisk]", "szHardDiskDirectory", dirname)
+        self.hatari.change_option("--harddrive %s" % dirname)
+        if dirname:
+            self.set("[HardDisk]", "bUseHardDiskDirectory", True)
+
+    # ------------ TOS ROM ---------------
+    def get_tos(self):
+        return self.get("[ROM]", "szTosImageFileName")
+    
+    def set_tos(self, filename):
+        self.set("[ROM]", "szTosImageFileName", filename)
+        self.hatari.change_option("--tos %s" % filename)
+
+    # ------------ memory ---------------
+    def get_memory_sizes(self):
+        # empty item in list shouldn't be shown, filter them out
+        return [x for x in self._memory if x]
+
+    def get_memory(self):
+        size = self.get("[Memory]", "nMemorySize")
+        while not self._memory[size]:
+            size -= 1
+        return size
+
+    def set_memory(self, idx):
+        # map memory item index to memory size
+        memsize = 0
+        for mem in self._memory:
+            if not idx:
+                break
+            if mem:
+                idx -= 1
+            memsize += 1            
+        self.set("[Memory]", "nMemorySize", memsize)
+        self.hatari.change_option("--memsize %d" % memsize)
+
+    # ------------ monitor ---------------
+    def get_monitor_types(self):
+        return ("Mono", "RGB", "VGA", "TV")
+
+    def get_monitor(self):
+        return self.get("[Screen]", "nMonitorType")
+
+    def set_monitor(self, value):
+        self.set("[Screen]", "nMonitorType", value)
+        self.hatari.change_option("--monitor %s" % ("mono", "rgb", "vga", "tv")[value])
 
     # ------------ options to embed to requested size ---------------
     def get_embed_args(self, size):

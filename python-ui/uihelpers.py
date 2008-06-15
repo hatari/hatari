@@ -150,10 +150,11 @@ def table_add_widget_row(table, row, label, widget):
     # adds given label right aligned to given row in given table
     # adds given widget to the right column and returns it
     # returns entry for that line
-    label = gtk.Label(label)
-    align = gtk.Alignment(1)
-    align.add(label)
-    table.attach(align, 0, 1, row, row+1, gtk.FILL)
+    if label:
+        label = gtk.Label(label)
+        align = gtk.Alignment(1)
+        align.add(label)
+        table.attach(align, 0, 1, row, row+1, gtk.FILL)
     table.attach(widget, 1, 2, row, row+1)
     return widget
 

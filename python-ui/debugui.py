@@ -528,8 +528,7 @@ def main():
     hatariobj = Hatari()
     if len(sys.argv) > 1:
         if sys.argv[1] in ("-h", "--help"):
-            basename = sys.argv[0].split(os.path.sep)[-1]
-            print "usage: %s [hatari options]" % basename
+            print "usage: %s [hatari options]" % os.path.basename(sys.argv[0])
             return
         args = sys.argv[1:]
     else:
