@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.35 2008-05-25 19:58:56 thothy Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.36 2008-06-15 12:02:15 eerot Exp $";
 
 #include <SDL.h>
 
@@ -263,9 +263,9 @@ void ShortCut_ActKey(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Invoke shortcut identified by name. This supports only keys
- * for functionality that cannot be done through command line
- * parsing.
+ * Invoke shortcut identified by name. This supports only keys for
+ * functionality that cannot be invoked with command line options
+ * (for remote GUIs etc).
  */
 bool Shortcut_Invoke(const char *shortcut)
 {
@@ -280,7 +280,7 @@ bool Shortcut_Invoke(const char *shortcut)
 		{ SHORTCUT_BOSSKEY, "bosskey" },
 		{ SHORTCUT_RECANIM, "recanim" },
 		{ SHORTCUT_RECSOUND, "recsound" },
-		{ SHORTCUT_DEBUG, "debug" },
+		{ SHORTCUT_SAVEMEM, "savemem" },
 		{ SHORTCUT_QUIT, "quit" },
 		{ SHORTCUT_NONE, NULL }
 	};
