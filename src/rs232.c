@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.32 2008-05-25 19:58:56 thothy Exp $";
+const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.33 2008-06-16 19:22:37 thothy Exp $";
 
 #include <config.h>
 
@@ -548,10 +548,10 @@ void RS232_SetBaudRateFromTimerD(void)
 
 	/* Calculate baud rate: (MFP/Timer-D is supplied with 2.4576 MHz) */
 	nBaudRate = 2457600 / nTimerD_DR / 2;
-	if (IoMem[0xfffa29] & 0x80)
-	{
-		nBaudRate /= 16;
-	}
+
+	/*if (IoMem[0xfffa29] & 0x80)*/  /* We only support the by-16 prescaler */
+	nBaudRate /= 16;
+
 	switch (nTimerD_CR)
 	{
 		case 1:  nBaudRate /= 4;  break;
