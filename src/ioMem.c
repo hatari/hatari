@@ -28,7 +28,7 @@
   Also note the 'mirror' (or shadow) registers of the PSG - this is used by most
   games.
 */
-const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.21 2008-03-26 22:15:27 thothy Exp $";
+const char IoMem_rcsid[] = "Hatari $Id: ioMem.c,v 1.22 2008-06-16 17:10:17 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -340,7 +340,7 @@ void IoMem_bput(uaecptr addr, uae_u32 val)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0xff8000)
+	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 0);
@@ -376,7 +376,7 @@ void IoMem_wput(uaecptr addr, uae_u32 val)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0x00ff8000)
+	if (addr < 0x00ff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 0);
@@ -424,7 +424,7 @@ void IoMem_lput(uaecptr addr, uae_u32 val)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	if (addr < 0xff8000)
+	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
 		M68000_BusError(addr, 0);
