@@ -163,10 +163,17 @@
 /*			Rename SCREEN_END_HBL_xxx to VIDEO_END_HBL_xxx.				*/
 /*			Rename SCREEN_HEIGHT_HBL_xxx to VIDEO_HEIGHT_HBL_xxx.			*/
 /*			Use VIDEO_HEIGHT_BOTTOM_50HZ instead of OVERSCAN_BOTTOM.		*/
+/* 2008/06/16	[NP]	When Hatari is configured to display the screen's borders, 274 lines	*/
+/*			will be rendered on screen, but if the shifter is in 60 Hz, the last	*/
+/*			16 lines will never be used, which can leave some bad pixels on		*/
+/*			screen. We clear the remaining lines before calling 'Screen_Draw'.	*/
+/*			(in FNIL by Delta Force, fix flickering gfx in the bottom border of the */
+/*			F2 screen : last 16 lines were the ones from the menu where bottom	*/
+/*			border was removed ).							*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.114 2008-06-07 18:42:07 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.115 2008-06-16 19:34:45 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -1691,7 +1698,15 @@ static void Video_DrawScreen(void)
 		Video_RenderTTScreen();
 	}
 	else
+	{
+		/* Before drawing the screen, ensure all unused lines are cleared to color 0 */
+		/* (this can happen in 60 Hz when hatari is displaying the screen's border) */
+		/* pSTScreen was set during Video_CopyScreenLineColor */
+		if ( nHBL < nFirstVisibleHbl+NUM_VISIBLE_LINES )
+			memset(pSTScreen, 0, SCREENBYTES_LINE * ( nFirstVisibleHbl+NUM_VISIBLE_LINES - nHBL ) );
+
 		Screen_Draw();
+	}
 }
 
 
