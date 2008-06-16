@@ -97,8 +97,9 @@ static BOOL   gFinderLaunch;
 		size_t cbPath = strlen(constSzPath) + 1;
 		char szPath[cbPath];
 		strncpy(szPath, constSzPath, cbPath);	
-	
-		Floppy_InsertDiskIntoDrive(0, szPath, cbPath);
+
+		Floppy_SetDiskFileName(0, szPath, NULL);
+		Floppy_InsertDiskIntoDrive(0);
 	}
 }
 
@@ -121,7 +122,8 @@ static BOOL   gFinderLaunch;
 		char szPath[cbPath];
 		strncpy(szPath, constSzPath, cbPath);	
 	
-		Floppy_InsertDiskIntoDrive(1, szPath, cbPath);
+		Floppy_SetDiskFileName(1, szPath, NULL);
+		Floppy_InsertDiskIntoDrive(1);
 	}
 }
 
@@ -161,7 +163,7 @@ static BOOL   gFinderLaunch;
 - (IBAction)captureAnimation:(id)sender
 {
 	GuiOsx_PauseAndSwitchToCocoaUI();
-	ScreenSnapShot_BeginRecording(DialogParams.Screen.bCaptureChange, 25);
+	ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange, 25);
 	GuiOsx_ResumeFromCocoaUI();
 }
 

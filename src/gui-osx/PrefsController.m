@@ -36,6 +36,10 @@
 #define IMPORT_RADIO(nsmatrix, source) [(nsmatrix) selectCellWithTag:(source)]
 #define IMPORT_DROPDOWN(nspopupbutton, source) [(nspopupbutton) selectItemAtIndex:[(nspopupbutton) indexOfItemWithTag:(source)]]
 
+// Back up of the current configuration parameters
+CNF_PARAMS CurrentParams;
+
+
 // Keys to be listed in the Joysticks dropdowns
 SDLKey Preferences_KeysForJoysticks[] =
 {
@@ -248,7 +252,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 		strncpy(szPath, constSzPath, cbPath);
 
 		// Insert the floppy image at this path
-		Floppy_InsertDiskIntoDrive(drive, szPath, cbPath);
+		Floppy_SetDiskFileName(drive, szPath, NULL);
 	}
 }
 
@@ -324,7 +328,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 */
 - (IBAction)ejectFloppyA:(id)sender
 {
-	Floppy_EjectDiskFromDrive(0, FALSE);
+	Floppy_SetDiskFileNameNone(0);
 	
 	// Refresh the control
 	[floppyImageA setStringValue:@""];
@@ -332,7 +336,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 
 - (IBAction)ejectFloppyB:(id)sender
 {
-	Floppy_EjectDiskFromDrive(1, FALSE);
+	Floppy_SetDiskFileNameNone(1);
 
 	// Refresh the control
 	[floppyImageB setStringValue:@""];
@@ -340,13 +344,13 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 
 - (IBAction)ejectGemdosImage:(id)sender
 {
-	// Clear the control. Later. saveAllControls will set the DialogParams accordingly to signal this is ejected
+	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly to signal this is ejected
 	[gemdosImage setStringValue:@""];
 }
 
 - (IBAction)ejectHdImage:(id)sender
 {
-	// Clear the control. Later. saveAllControls will set the DialogParams accordingly to signal this is ejected
+	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly to signal this is ejected
 	[hdImage setStringValue:@""];
 }
 
@@ -357,20 +361,20 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 */
 - (IBAction)loadConfig:(id)sender
 {
-	// Load the config into DialogParams
-	Dialog_LoadParams();
+	// Load the config into ConfigureParams
+	Configuration_Load(NULL);
 	
-	// Refresh all the controls to match DialogParams
+	// Refresh all the controls to match ConfigureParams
 	[self setAllControls];
 }
 
 - (IBAction)saveConfig:(id)sender
 {
-	// Update the DialogParams from the controls
+	// Update the ConfigureParams from the controls
 	[self saveAllControls];
 
-	// Save the DialogParams to the config file
-	Dialog_SaveParams();
+	// Save the ConfigureParams to the config file
+	Configuration_Save();
 }
 
 
@@ -386,7 +390,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	[self saveAllControls];
 	
 	// If a reset is required, ask the user first
-	if (Change_DoNeedReset(&DialogParams))
+	if (Change_DoNeedReset(&CurrentParams, &ConfigureParams))
 	{
 		applyChanges = ( 0 == NSRunAlertPanel (@"Reset the emulator?", 
 		@"The emulator must be reset in order to apply your changes.\nAll current work will be lost.",
@@ -396,7 +400,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	// Commit the new configuration
 	if (applyChanges)
 	{
-		Change_CopyChangedParamsToConfiguration(&DialogParams, FALSE);
+		Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, FALSE);
 	}
 
 	// Close the window
@@ -459,8 +463,8 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	}
 
 
-	// Copy configuration settings to DialogParams (which we will only commit back to the configuration settings if choosing OK)
-	DialogParams = ConfigureParams;
+	// Copy configuration settings to ConfigureParams (which we will only commit back to the configuration settings if choosing OK)
+	CurrentParams = ConfigureParams;
 
 	[self setAllControls];
 
@@ -498,53 +502,53 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	IMPORT_TEXTFIELD(floppyImageB, EmulationDrives[1].szFileName); 
 	
 	// Import all the preferences into their controls
-	IMPORT_SWITCH(autoInsertB, DialogParams.DiskImage.bAutoInsertDiskB);
-    IMPORT_SWITCH(blitter, DialogParams.System.bBlitter);
-	IMPORT_SWITCH(bootFromHD, DialogParams.HardDisk.bBootFromHardDisk);	
-    IMPORT_SWITCH(captureOnChange, DialogParams.Screen.bCaptureChange);
-    IMPORT_TEXTFIELD(cartridgeImage, DialogParams.Rom.szCartridgeImageFileName);
-    IMPORT_RADIO(colorDepth, DialogParams.Screen.nVdiColors);
-    IMPORT_SWITCH(compatibleCpu, DialogParams.System.bCompatibleCpu);
-    IMPORT_RADIO(cpuClock, DialogParams.System.nCpuFreq);
-    IMPORT_RADIO(cpuType, DialogParams.System.nCpuLevel);
-	IMPORT_TEXTFIELD(defaultImagesLocation, DialogParams.DiskImage.szDiskImageDirectory);
-    IMPORT_SWITCH(enableMidi, DialogParams.Midi.bEnableMidi);
-    IMPORT_SWITCH(enablePrinter, DialogParams.Printer.bEnablePrinting);
-    IMPORT_SWITCH(enableRS232, DialogParams.RS232.bEnableRS232);
-    IMPORT_SWITCH(enableSound, DialogParams.Sound.bEnableSound);
-    IMPORT_DROPDOWN(frameSkip, DialogParams.Screen.nFrameSkips);
-    IMPORT_RADIO(keyboardMapping, DialogParams.Keyboard.nKeymapType);
-    IMPORT_TEXTFIELD(keyboardMappingFile, DialogParams.Keyboard.szMappingFileName);
-    IMPORT_RADIO(machineType, DialogParams.System.nMachineType);
-    IMPORT_RADIO(monitor, DialogParams.Screen.nMonitorType);
-    IMPORT_SWITCH(patchTimerD, DialogParams.System.bPatchTimerD);
-    IMPORT_RADIO(playbackQuality, DialogParams.Sound.nPlaybackQuality);
-    IMPORT_TEXTFIELD(printToFile, DialogParams.Printer.szPrintToFileName);
-    IMPORT_RADIO(ramSize, DialogParams.Memory.nMemorySize);
-    IMPORT_TEXTFIELD(readRS232FromFile, DialogParams.RS232.szInFileName);
-    IMPORT_SWITCH(realTime, DialogParams.System.bRealTimeClock);
-    IMPORT_SWITCH(slowFDC, DialogParams.System.bSlowFDC);
-    IMPORT_TEXTFIELD(tosImage, DialogParams.Rom.szTosImageFileName);
-    IMPORT_SWITCH(useBorders, DialogParams.Screen.bAllowOverscan);
-    IMPORT_SWITCH(useVDIResolution, DialogParams.Screen.bUseExtVdiResolutions);
-    IMPORT_TEXTFIELD(writeMidiToFile, DialogParams.Midi.szMidiOutFileName);
-	IMPORT_RADIO(writeProtection, DialogParams.DiskImage.nWriteProtection);
-    IMPORT_TEXTFIELD(writeRS232ToFile, DialogParams.RS232.szOutFileName);
-    IMPORT_SWITCH(zoomSTLowRes, DialogParams.Screen.bZoomLowRes);
+	IMPORT_SWITCH(autoInsertB, ConfigureParams.DiskImage.bAutoInsertDiskB);
+    IMPORT_SWITCH(blitter, ConfigureParams.System.bBlitter);
+	IMPORT_SWITCH(bootFromHD, ConfigureParams.HardDisk.bBootFromHardDisk);	
+    IMPORT_SWITCH(captureOnChange, ConfigureParams.Screen.bCaptureChange);
+    IMPORT_TEXTFIELD(cartridgeImage, ConfigureParams.Rom.szCartridgeImageFileName);
+    IMPORT_RADIO(colorDepth, ConfigureParams.Screen.nVdiColors);
+    IMPORT_SWITCH(compatibleCpu, ConfigureParams.System.bCompatibleCpu);
+    IMPORT_RADIO(cpuClock, ConfigureParams.System.nCpuFreq);
+    IMPORT_RADIO(cpuType, ConfigureParams.System.nCpuLevel);
+	IMPORT_TEXTFIELD(defaultImagesLocation, ConfigureParams.DiskImage.szDiskImageDirectory);
+    IMPORT_SWITCH(enableMidi, ConfigureParams.Midi.bEnableMidi);
+    IMPORT_SWITCH(enablePrinter, ConfigureParams.Printer.bEnablePrinting);
+    IMPORT_SWITCH(enableRS232, ConfigureParams.RS232.bEnableRS232);
+    IMPORT_SWITCH(enableSound, ConfigureParams.Sound.bEnableSound);
+    IMPORT_DROPDOWN(frameSkip, ConfigureParams.Screen.nFrameSkips);
+    IMPORT_RADIO(keyboardMapping, ConfigureParams.Keyboard.nKeymapType);
+    IMPORT_TEXTFIELD(keyboardMappingFile, ConfigureParams.Keyboard.szMappingFileName);
+    IMPORT_RADIO(machineType, ConfigureParams.System.nMachineType);
+    IMPORT_RADIO(monitor, ConfigureParams.Screen.nMonitorType);
+    IMPORT_SWITCH(patchTimerD, ConfigureParams.System.bPatchTimerD);
+    IMPORT_RADIO(playbackQuality, ConfigureParams.Sound.nPlaybackQuality);
+    IMPORT_TEXTFIELD(printToFile, ConfigureParams.Printer.szPrintToFileName);
+    IMPORT_RADIO(ramSize, ConfigureParams.Memory.nMemorySize);
+    IMPORT_TEXTFIELD(readRS232FromFile, ConfigureParams.RS232.szInFileName);
+    IMPORT_SWITCH(realTime, ConfigureParams.System.bRealTimeClock);
+    IMPORT_SWITCH(slowFDC, ConfigureParams.System.bSlowFDC);
+    IMPORT_TEXTFIELD(tosImage, ConfigureParams.Rom.szTosImageFileName);
+    IMPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
+    IMPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);
+    IMPORT_TEXTFIELD(writeMidiToFile, ConfigureParams.Midi.szMidiOutFileName);
+	IMPORT_RADIO(writeProtection, ConfigureParams.DiskImage.nWriteProtection);
+    IMPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
+    IMPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
 
-	[(force8bpp) setState:((DialogParams.Screen.nForceBpp==8))? NSOnState : NSOffState];
+	[(force8bpp) setState:((ConfigureParams.Screen.nForceBpp==8))? NSOnState : NSOffState];
 
-	if (DialogParams.Screen.nVdiWidth >= 1024)
+	if (ConfigureParams.Screen.nVdiWidth >= 1024)
 		[resolution selectCellWithTag:(2)];
-	else if (DialogParams.Screen.nVdiWidth >= 768)
+	else if (ConfigureParams.Screen.nVdiWidth >= 768)
 		[resolution selectCellWithTag:(1)];
 	else
 		[resolution selectCellWithTag:(0)];
 
 	// If the HD flag is set, load the HD path, otherwise make it blank
-	if (DialogParams.HardDisk.bUseHardDiskImage)
+	if (ConfigureParams.HardDisk.bUseHardDiskImage)
 	{
-		IMPORT_TEXTFIELD(hdImage, DialogParams.HardDisk.szHardDiskImage);	
+		IMPORT_TEXTFIELD(hdImage, ConfigureParams.HardDisk.szHardDiskImage);	
 	}
 	else
 	{
@@ -552,9 +556,9 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	}
 	
 	// If the Gemdos flag is set, load the Gemdos path, otherwise make it blank
-	if (DialogParams.HardDisk.bUseHardDiskDirectories)
+	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
-		IMPORT_TEXTFIELD(gemdosImage, DialogParams.HardDisk.szHardDiskDirectories[0]);
+		IMPORT_TEXTFIELD(gemdosImage, ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	}
 	else
 	{
@@ -608,29 +612,29 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	EXPORT_DROPDOWN(currentJoystick, nCurrentJoystick);
 
 	// Data validation: If the JoyID is out of bounds, correct it and, if set to use real joystick, change to disabled
-	if ( (DialogParams.Joysticks.Joy[nCurrentJoystick].nJoyId < 0)
-	|| (DialogParams.Joysticks.Joy[nCurrentJoystick].nJoyId >= cRealJoysticks) )
+	if ( (ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoyId < 0)
+	|| (ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoyId >= cRealJoysticks) )
 	{
-		DialogParams.Joysticks.Joy[nCurrentJoystick].nJoyId = 0;
-		if (DialogParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode == JOYSTICK_REALSTICK)
+		ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoyId = 0;
+		if (ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode == JOYSTICK_REALSTICK)
 		{
-			DialogParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode = JOYSTICK_DISABLED;
+			ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode = JOYSTICK_DISABLED;
 		}	
 	}
 
 	// Don't change the realJoystick dropdown if none is available (to keep "(None available)" selected)
 	if (cRealJoysticks > 0)
 	{
-		IMPORT_DROPDOWN(realJoystick, DialogParams.Joysticks.Joy[nCurrentJoystick].nJoyId);
+		IMPORT_DROPDOWN(realJoystick, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoyId);
 	}
 
-	IMPORT_RADIO(joystickMode, DialogParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode);
-	IMPORT_DROPDOWN(joystickUp, DialogParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeUp);
-	IMPORT_DROPDOWN(joystickRight, DialogParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeRight);
-	IMPORT_DROPDOWN(joystickDown, DialogParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeDown);
-	IMPORT_DROPDOWN(joystickLeft, DialogParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeLeft);
-	IMPORT_DROPDOWN(joystickFire, DialogParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeFire);
-	IMPORT_SWITCH(enableAutoFire, DialogParams.Joysticks.Joy[nCurrentJoystick].bEnableAutoFire);
+	IMPORT_RADIO(joystickMode, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode);
+	IMPORT_DROPDOWN(joystickUp, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeUp);
+	IMPORT_DROPDOWN(joystickRight, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeRight);
+	IMPORT_DROPDOWN(joystickDown, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeDown);
+	IMPORT_DROPDOWN(joystickLeft, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeLeft);
+	IMPORT_DROPDOWN(joystickFire, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeFire);
+	IMPORT_SWITCH(enableAutoFire, ConfigureParams.Joysticks.Joy[nCurrentJoystick].bEnableAutoFire);
 }
 
 
@@ -640,14 +644,14 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 */
 - (void)saveJoystickControls
 {
-	EXPORT_RADIO(joystickMode, DialogParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode);	
-	EXPORT_DROPDOWN(realJoystick, DialogParams.Joysticks.Joy[nCurrentJoystick].nJoyId);
-	EXPORT_DROPDOWN(joystickUp, DialogParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeUp);
-	EXPORT_DROPDOWN(joystickRight, DialogParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeRight);
-	EXPORT_DROPDOWN(joystickDown, DialogParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeDown);
-	EXPORT_DROPDOWN(joystickLeft, DialogParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeLeft);
-	EXPORT_DROPDOWN(joystickFire, DialogParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeFire);
-	EXPORT_SWITCH(enableAutoFire, DialogParams.Joysticks.Joy[nCurrentJoystick].bEnableAutoFire);
+	EXPORT_RADIO(joystickMode, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoystickMode);	
+	EXPORT_DROPDOWN(realJoystick, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nJoyId);
+	EXPORT_DROPDOWN(joystickUp, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeUp);
+	EXPORT_DROPDOWN(joystickRight, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeRight);
+	EXPORT_DROPDOWN(joystickDown, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeDown);
+	EXPORT_DROPDOWN(joystickLeft, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeLeft);
+	EXPORT_DROPDOWN(joystickFire, ConfigureParams.Joysticks.Joy[nCurrentJoystick].nKeyCodeFire);
+	EXPORT_SWITCH(enableAutoFire, ConfigureParams.Joysticks.Joy[nCurrentJoystick].bEnableAutoFire);
 }
 
 
@@ -658,78 +662,78 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 - (void)saveAllControls
 {
 	// Export the preference controls into their vars
-	EXPORT_SWITCH(autoInsertB, DialogParams.DiskImage.bAutoInsertDiskB);
-    EXPORT_SWITCH(blitter, DialogParams.System.bBlitter);
-	EXPORT_SWITCH(bootFromHD, DialogParams.HardDisk.bBootFromHardDisk);
-    EXPORT_SWITCH(captureOnChange, DialogParams.Screen.bCaptureChange);
-    EXPORT_TEXTFIELD(cartridgeImage, DialogParams.Rom.szCartridgeImageFileName);
-    EXPORT_RADIO(colorDepth, DialogParams.Screen.nVdiColors);
-    EXPORT_SWITCH(compatibleCpu, DialogParams.System.bCompatibleCpu);
-    EXPORT_RADIO(cpuClock, DialogParams.System.nCpuFreq);
-    EXPORT_RADIO(cpuType, DialogParams.System.nCpuLevel);
-	EXPORT_TEXTFIELD(defaultImagesLocation, DialogParams.DiskImage.szDiskImageDirectory);
-    EXPORT_SWITCH(enableMidi, DialogParams.Midi.bEnableMidi);
-    EXPORT_SWITCH(enablePrinter, DialogParams.Printer.bEnablePrinting);
-    EXPORT_SWITCH(enableRS232, DialogParams.RS232.bEnableRS232);
-    EXPORT_SWITCH(enableSound, DialogParams.Sound.bEnableSound);
-    EXPORT_DROPDOWN(frameSkip, DialogParams.Screen.nFrameSkips);
-    EXPORT_RADIO(keyboardMapping, DialogParams.Keyboard.nKeymapType);
-    EXPORT_TEXTFIELD(keyboardMappingFile, DialogParams.Keyboard.szMappingFileName);
-    EXPORT_RADIO(machineType, DialogParams.System.nMachineType);
-    EXPORT_RADIO(monitor, DialogParams.Screen.nMonitorType);
-    EXPORT_SWITCH(patchTimerD, DialogParams.System.bPatchTimerD);
-    EXPORT_RADIO(playbackQuality, DialogParams.Sound.nPlaybackQuality);
-    EXPORT_TEXTFIELD(printToFile, DialogParams.Printer.szPrintToFileName);
-    EXPORT_RADIO(ramSize, DialogParams.Memory.nMemorySize);
-    EXPORT_TEXTFIELD(readRS232FromFile, DialogParams.RS232.szInFileName);
-    EXPORT_SWITCH(realTime, DialogParams.System.bRealTimeClock);
-    EXPORT_SWITCH(slowFDC, DialogParams.System.bSlowFDC);
-    EXPORT_TEXTFIELD(tosImage, DialogParams.Rom.szTosImageFileName);
-    EXPORT_SWITCH(useBorders, DialogParams.Screen.bAllowOverscan);
-    EXPORT_SWITCH(useVDIResolution, DialogParams.Screen.bUseExtVdiResolutions);
-    EXPORT_TEXTFIELD(writeMidiToFile, DialogParams.Midi.szMidiOutFileName);
-	EXPORT_RADIO(writeProtection, DialogParams.DiskImage.nWriteProtection);
-    EXPORT_TEXTFIELD(writeRS232ToFile, DialogParams.RS232.szOutFileName);
-    EXPORT_SWITCH(zoomSTLowRes, DialogParams.Screen.bZoomLowRes);	
+	EXPORT_SWITCH(autoInsertB, ConfigureParams.DiskImage.bAutoInsertDiskB);
+    EXPORT_SWITCH(blitter, ConfigureParams.System.bBlitter);
+	EXPORT_SWITCH(bootFromHD, ConfigureParams.HardDisk.bBootFromHardDisk);
+    EXPORT_SWITCH(captureOnChange, ConfigureParams.Screen.bCaptureChange);
+    EXPORT_TEXTFIELD(cartridgeImage, ConfigureParams.Rom.szCartridgeImageFileName);
+    EXPORT_RADIO(colorDepth, ConfigureParams.Screen.nVdiColors);
+    EXPORT_SWITCH(compatibleCpu, ConfigureParams.System.bCompatibleCpu);
+    EXPORT_RADIO(cpuClock, ConfigureParams.System.nCpuFreq);
+    EXPORT_RADIO(cpuType, ConfigureParams.System.nCpuLevel);
+	EXPORT_TEXTFIELD(defaultImagesLocation, ConfigureParams.DiskImage.szDiskImageDirectory);
+    EXPORT_SWITCH(enableMidi, ConfigureParams.Midi.bEnableMidi);
+    EXPORT_SWITCH(enablePrinter, ConfigureParams.Printer.bEnablePrinting);
+    EXPORT_SWITCH(enableRS232, ConfigureParams.RS232.bEnableRS232);
+    EXPORT_SWITCH(enableSound, ConfigureParams.Sound.bEnableSound);
+    EXPORT_DROPDOWN(frameSkip, ConfigureParams.Screen.nFrameSkips);
+    EXPORT_RADIO(keyboardMapping, ConfigureParams.Keyboard.nKeymapType);
+    EXPORT_TEXTFIELD(keyboardMappingFile, ConfigureParams.Keyboard.szMappingFileName);
+    EXPORT_RADIO(machineType, ConfigureParams.System.nMachineType);
+    EXPORT_RADIO(monitor, ConfigureParams.Screen.nMonitorType);
+    EXPORT_SWITCH(patchTimerD, ConfigureParams.System.bPatchTimerD);
+    EXPORT_RADIO(playbackQuality, ConfigureParams.Sound.nPlaybackQuality);
+    EXPORT_TEXTFIELD(printToFile, ConfigureParams.Printer.szPrintToFileName);
+    EXPORT_RADIO(ramSize, ConfigureParams.Memory.nMemorySize);
+    EXPORT_TEXTFIELD(readRS232FromFile, ConfigureParams.RS232.szInFileName);
+    EXPORT_SWITCH(realTime, ConfigureParams.System.bRealTimeClock);
+    EXPORT_SWITCH(slowFDC, ConfigureParams.System.bSlowFDC);
+    EXPORT_TEXTFIELD(tosImage, ConfigureParams.Rom.szTosImageFileName);
+    EXPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
+    EXPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);
+    EXPORT_TEXTFIELD(writeMidiToFile, ConfigureParams.Midi.szMidiOutFileName);
+	EXPORT_RADIO(writeProtection, ConfigureParams.DiskImage.nWriteProtection);
+    EXPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
+    EXPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);	
 
-	DialogParams.Screen.nForceBpp = ([force8bpp state] == NSOnState) ? 8 : 16;
+	ConfigureParams.Screen.nForceBpp = ([force8bpp state] == NSOnState) ? 8 : 16;
 
 	switch ([[resolution selectedCell] tag])
 	{
 	 case 0:
-		DialogParams.Screen.nVdiWidth = 640;
-		DialogParams.Screen.nVdiHeight = 480;
+		ConfigureParams.Screen.nVdiWidth = 640;
+		ConfigureParams.Screen.nVdiHeight = 480;
 		break;
 	 case 1:
-		DialogParams.Screen.nVdiWidth = 800;
-		DialogParams.Screen.nVdiHeight = 600;
+		ConfigureParams.Screen.nVdiWidth = 800;
+		ConfigureParams.Screen.nVdiHeight = 600;
 		break;
 	 case 2:
-		DialogParams.Screen.nVdiWidth = 1024;
-		DialogParams.Screen.nVdiHeight = 768;
+		ConfigureParams.Screen.nVdiWidth = 1024;
+		ConfigureParams.Screen.nVdiHeight = 768;
 		break;
 	}
 
 	// Define the HD flag, and export the HD path if one is selected
 	if ([[hdImage stringValue] length] > 0)
 	{
-		EXPORT_TEXTFIELD(hdImage, DialogParams.HardDisk.szHardDiskImage);
-		DialogParams.HardDisk.bUseHardDiskImage = TRUE;
+		EXPORT_TEXTFIELD(hdImage, ConfigureParams.HardDisk.szHardDiskImage);
+		ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
 	}
 	else
 	{
-		DialogParams.HardDisk.bUseHardDiskImage = FALSE;
+		ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
 	}
 	
 	// Define the Gemdos flag, and export the Gemdos path if one is selected
 	if ([[gemdosImage stringValue] length] > 0)
 	{
-		EXPORT_TEXTFIELD(gemdosImage, DialogParams.HardDisk.szHardDiskDirectories[0]);
-		DialogParams.HardDisk.bUseHardDiskDirectories = TRUE;
+		EXPORT_TEXTFIELD(gemdosImage, ConfigureParams.HardDisk.szHardDiskDirectories[0]);
+		ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
 	}
 	else
 	{
-		DialogParams.HardDisk.bUseHardDiskDirectories = FALSE;
+		ConfigureParams.HardDisk.bUseHardDiskDirectories = FALSE;
 	}
 	
 	// Save the per-joystick controls		
