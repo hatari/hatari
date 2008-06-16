@@ -105,7 +105,7 @@ class HatariControls():
             return
         if self.hatariparent:
             size = self.hatariparent.window.get_size()
-            self.hatari.run( self.config.get_embed_args(size), self.hatariparent.window)
+            self.hatari.run(self.config.get_embed_args(size), self.hatariparent.window)
         else:
             self.hatari.run()
 
@@ -527,22 +527,21 @@ class HatariUI():
         # add horizontal elements
         hbox = gtk.HBox()
         if left:
-            hbox.add(left)
+            hbox.pack_start(left, False, True)
         if embed:
             parent = self._create_uisocket()
-            # make sure socket isn't resized
-            hbox.pack_start(parent, False, False, 0)
+            hbox.add(parent)
         else:
             parent = None
         if right:
-            hbox.add(right)
+            hbox.pack_start(right, False, True)
         # add vertical elements
         vbox = gtk.VBox()
         if top:
-            vbox.add(top)
+            vbox.pack_start(top, False, True)
         vbox.add(hbox)
         if bottom:
-            vbox.add(bottom)
+            vbox.pack_start(bottom, False, True)
         # put them to main window
         mainwin = gtk.Window(gtk.WINDOW_TOPLEVEL)
         mainwin.set_title("%s %s" % (UInfo.name, UInfo.version))
