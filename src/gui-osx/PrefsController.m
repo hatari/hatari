@@ -463,7 +463,8 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	}
 
 
-	// Copy configuration settings to ConfigureParams (which we will only commit back to the configuration settings if choosing OK)
+	// Backup of configuration settings to CurrentParams (which we will only
+	// commit back to the configuration settings if choosing OK)
 	CurrentParams = ConfigureParams;
 
 	[self setAllControls];
