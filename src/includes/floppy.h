@@ -33,7 +33,7 @@ extern void Floppy_UnInit(void);
 extern void Floppy_MemorySnapShot_Capture(bool bSave);
 extern void Floppy_GetBootDrive(void);
 extern bool Floppy_IsWriteProtected(int Drive);
-extern void Floppy_SetDiskFileNameNone(int Drive);
+extern const char* Floppy_SetDiskFileNameNone(int Drive);
 extern const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const char *pszZipPath);
 extern bool Floppy_InsertDiskIntoDrive(int Drive);
 extern bool Floppy_EjectDiskFromDrive(int Drive);
