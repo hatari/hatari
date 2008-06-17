@@ -30,7 +30,7 @@ from debugui import HatariDebugUI
 from hatari import Hatari, HatariConfigMapping
 from uihelpers import HatariTextInsert, UInfo, create_button, create_toggle
 from dialogs import AboutDialog, PasteDialog, KillDialog, QuitSaveDialog, \
-     ResetDialog, SetupDialog, TraceDialog, PeripheralsDialog
+     ResetDialog, SetupDialog, TraceDialog, PeripheralsDialog, ErrorDialog
 
 
 # helper functions to match callback args
@@ -58,6 +58,9 @@ class HatariControls():
     def __init__(self):
         self.hatari = Hatari()
         self.config = HatariConfigMapping(self.hatari)
+        if not self.config.is_loaded():
+            ErrorDialog(None).run("Loading Hatari configuration failed.\nMake sure you've saved one!")
+            sys.exit(1)
         # TODO: Hatari UI configuration settings save/load
         self.tracepoints = None
         # set later by owner of this object

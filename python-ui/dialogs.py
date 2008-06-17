@@ -372,7 +372,8 @@ class PeripheralsDialog(HatariUIDialog):
             for text in joytypes:
                 combo.append_text(text)
             combo.set_active(config.get_joystick(joy))
-            self.joy.append(table_add_widget_row(table, row + joy, label, combo))
+            widget = table_add_widget_row(table, row + joy, "%s:" % label, combo)
+            self.joy.append(widget)
             joy += 1
 
         # TODO: add printer, serial, midi, RTC to peripherals?

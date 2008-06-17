@@ -82,6 +82,12 @@ class ConfigStore():
         self.cfgfile = cfgfile
         self.path = path
 
+    def is_loaded(self):
+        "is_loaded() -> True if configuration loading succeeded"
+        if self.sections:
+            return True
+        return False
+        
     def get_path(self, cfgfile):
         "get_path(cfgfile) -> path or None, check first CWD & then HOME for cfgfile"
         # hatari.cfg can be in home or current work dir
