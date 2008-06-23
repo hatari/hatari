@@ -130,6 +130,19 @@ class Hatari():
         print "".join(lines)
         return lines
 
+    def enable_embed_info(self):
+        "enable_embed_info(), request embedded Hatari window ID change information"
+        self._send_message("hatari-embed-info\n")
+
+    def get_embed_info(self):
+        "get_embed_info() -> (width, height), get embedded Hatari window size"
+        width, height = self.control.recv(12).split("x")
+        return (int(width), int(height))
+
+    def get_control_socket(self):
+        "get_control_socket() -> socket which can be checked for embed ID changes"
+        return self.control
+        
     def is_running(self):
         "is_running() -> bool, True if Hatari is running, False otherwise"
         if not self.pid:
@@ -228,7 +241,6 @@ class HatariConfigMapping(ConfigStore):
     def __init__(self, hatari):
         ConfigStore.__init__(self, "hatari.cfg")
         self.hatari = hatari
-        self.disk = ["", ""]
 
     # ------------ machine ---------------
     def get_machine_types(self):
@@ -325,11 +337,8 @@ class HatariConfigMapping(ConfigStore):
         return self.get("[Floppy]", "szDisk%cFileName" % ("A", "B")[drive])
     
     def set_floppy(self, drive, filename):
-        if filename == None or filename == self.disk[drive]:
-            return
         self.set("[Floppy]", "szDisk%cFileName" %  ("A", "B")[drive], filename)
         self.hatari.change_option("--disk-%c %s" % (("a", "b")[drive], filename))
-        self.disk[drive] = filename
 
     # ------------ harddisk (dir) ---------------
     def get_harddisk(self):
@@ -383,53 +392,37 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Screen]", "nMonitorType", value)
         self.hatari.change_option("--monitor %s" % ("mono", "rgb", "vga", "tv")[value])
 
-    # ------------ options to embed to requested size ---------------
-    def get_embed_args(self, size):
-        print "TODO: save and use temporary Hatari-UI hatari settings?"
-        # need to modify Hatari settings to match the given window size
-        (width, height) = size
-        if width < 320 or height < 200:
-            print "ERROR: Hatari needs larger than %dx%d window" % (width, height)
-            sys.exit(1)
-        
-        # for VDI we can use (fairly) exact size + ignore other screen options
-        if self.get("[Screen]", "bUseExtVdiResolutions"):
-            return ["--vdi-width", str(width), "--vdi-height", str(height)]
-        
-        args = []
-        # max size with overscan borders
-        border_minw = 320
-        border_minw += self.get("[Screen]", "nWindowBorderPixelsLeft")
-        border_minw += self.get("[Screen]", "nWindowBorderPixelsRight")
-        border_minh = 29 + 200 + self.get("[Screen]", "nWindowBorderPixelsBottom")
-        if width < 640 or height < 400:
-            # only non-zoomed color mode fits to window
-            args = ["--zoom", "1", "--monitor", "vga"]
-            if width < border_minw and height < border_minh:
-                # without borders
-                args += ["--borders", "off"]
-        else:
-            borders = self.get("[Screen]", "bAllowOverscan")
-            mono = (self.get("[Screen]", "nMonitorType") == 0)
-            zoom = self.get("[Screen]", "bZoomLowRes")
-            # can we have overscan borders with color zooming or mono?
-            if borders and (width < 2*border_minw or height < 2*border_minh):
-                if mono:
-                    # mono -> no border
-                    args = ["--borders", "off"]
-                elif zoom:
-                    # color -> no zoom, just border
-                    args = ["--zoom", "1"]
-            elif not (mono or zoom):
-                # no mono nor zoom -> zoom
-                args = ["--zoom", "2"]
+    # ------------ configured Hatari window size ---------------
+    def get_window_size(self):
         if self.get("[Screen]", "bFullScreen"):
-            # fullscreen Hatari doesn't make sense with Hatari UI
-            args += ["--window"]
-
-        # window size for other than ST & STE can differ
+            print "WARNING: don't start Hatari UI with fullscreened Hatari!"
+            
+        # window sizes for other than ST & STE can differ
         if self.get("[System]", "nMachineType") not in (0, 1):
-            print "WARNING: neither ST nor STE, forcing machine to ST"
-            args += ["--machine", "st"]
+            print "WARNING: neither ST nor STE machine, window size inaccurate!"
 
-        return args
+        # VDI resolution?
+        if self.get("[Screen]", "bUseExtVdiResolutions"):
+            width = self.get("[Screen]", "nVdiWidth")
+            height = self.get("[Screen]", "nVdiHeight")
+            return (width, height)
+
+        # mono monitor?
+        if self.get("[Screen]", "nMonitorType") == 0:
+            return (640, 400)
+
+        # no, color
+        width = 320
+        height = 200
+        # add overscan borders?
+        if self.get("[Screen]", "bAllowOverscan"):
+            # max size with overscan borders
+            width += self.get("[Screen]", "nWindowBorderPixelsLeft")
+            width += self.get("[Screen]", "nWindowBorderPixelsRight")
+            height = 29 + 200 + self.get("[Screen]", "nWindowBorderPixelsBottom")
+        # zoomed?
+        if self.get("[Screen]", "bZoomLowRes"):
+            width *= 2
+            height *= 2
+        return (width, height)
+

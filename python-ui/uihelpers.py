@@ -40,9 +40,6 @@ class UInfo:
     icon = "hatari-icon.png"
     # path to the directory where the called script resides
     path = sys.argv[0][:sys.argv[0].rfind(os.path.sep)]
-    # size reserved for the embedded Hatari window
-    width = 640
-    height = 400
     
     def __init__(self, path = None):
         "UIinfo([path]), set suitable paths for resources from CWD and path"

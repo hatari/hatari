@@ -83,8 +83,12 @@ class HatariControls():
         # ugly, but I didn't come up with better place to connect quit_cb
         mainwin.connect("delete_event", self._quit_cb)
         self.killdialog = KillDialog(mainwin)
-        self.hatariparent = parent
         self.mainwin = mainwin
+        if parent:
+            # set initial embedded hatari size
+            width, height = self.config.get_window_size()
+            parent.set_size_request(width, height)
+        self.hatariparent = parent
         # Hatari window can be created only after Socket window is created.
         # also ugly to do here...
         gobject.idle_add(self._run_cb)
@@ -103,12 +107,32 @@ class HatariControls():
         return (create_button("About", self._about_cb), True)
     
     # ------- run control -----------
+    def _socket_cb(self, fd, event):
+        if event != gobject.IO_IN:
+            print "Warning: Hatari died."
+            return False
+        width, height = self.hatari.get_embed_info()
+        print "New size = %d x %d" % (width, height)
+        # TODO: setting window smaller than currently messes
+        # up the automatic sizing when Hatari window size grows
+        #oldwidth, oldheight = self.hatariparent.get_size_request()
+        #if width < oldwidth or height < oldheight:
+        #    # force mainwin smaller
+        #    self.mainwin.set_size_request(width, height)
+        self.hatariparent.set_size_request(width, height)
+        return True
+
     def _run_cb(self, widget=None):
         if self.killdialog.run(self.hatari):
             return
         if self.hatariparent:
             size = self.hatariparent.window.get_size()
-            self.hatari.run(self.config.get_embed_args(size), self.hatariparent.window)
+            self.hatari.run(None, self.hatariparent.window)
+            # get notifications of Hatari window size changes
+            self.hatari.enable_embed_info()
+            socket = self.hatari.get_control_socket()
+            events = gobject.IO_IN | gobject.IO_HUP | gobject.IO_ERR
+            gobject.io_add_watch(socket.fileno(), events, self._socket_cb)
         else:
             self.hatari.run()
 
@@ -533,7 +557,8 @@ class HatariUI():
             hbox.pack_start(left, False, True)
         if embed:
             parent = self._create_uisocket()
-            hbox.add(parent)
+            # no resizing for the Hatari window
+            hbox.pack_start(parent, False, False)
         else:
             parent = None
         if right:
@@ -558,8 +583,6 @@ class HatariUI():
         # without this, closing Hatari would remove the socket widget
         socket.connect("plug-removed", lambda obj: True)
         socket.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
-        # TODO: get the required size from the Hatari configuration
-        socket.set_size_request(UInfo.width, UInfo.height)
         socket.set_events(gtk.gdk.ALL_EVENTS_MASK)
         socket.set_flags(gtk.CAN_FOCUS)
         return socket
