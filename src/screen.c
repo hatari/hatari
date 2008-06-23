@@ -27,7 +27,7 @@
 /*			lines when displaying 47 lines (Digiwolrd 2 by ICE, Tyranny by DHS).	*/
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.84 2008-06-03 19:41:27 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.85 2008-06-23 20:56:58 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -39,6 +39,7 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.84 2008-06-03 19:41:27 eer
 #include "m68000.h"
 #include "paths.h"
 #include "screen.h"
+#include "control.h"
 #include "convert/routines.h"
 #include "screenSnapShot.h"
 #include "sound.h"
@@ -381,10 +382,23 @@ static void Screen_SetResolution(void)
 	    || sdlscrn->format->BitsPerPixel != BitCount
 	    || (sdlscrn->flags&SDL_FULLSCREEN) != (sdlVideoFlags&SDL_FULLSCREEN))
 	{
+		if (bInFullScreen)
+		{
+			/* unhide the Hatari WM window for fullscreen */
+			Control_ReparentWindow(Width, Height, bInFullScreen);
+		}
+		
 		/* Set new video mode */
 		//fprintf(stderr,"Requesting video mode %i %i %i\n", Width, Height, BitCount);
 		sdlscrn = SDL_SetVideoMode(Width, Height, BitCount, sdlVideoFlags);
 		//fprintf(stderr,"Got video mode %i %i %i\n", sdlscrn->w, sdlscrn->h, sdlscrn->format->BitsPerPixel);
+
+		if (!bInFullScreen)
+		{
+			/* re-embed the new Hatari SDL window */
+			Control_ReparentWindow(Width, Height, bInFullScreen);
+		}
+		
 		/* We do not support 24 bpp (yet) */
 		if (sdlscrn && sdlscrn->format->BitsPerPixel == 24)
 		{
@@ -549,7 +563,6 @@ void Screen_EnterFullScreen(void)
 	{
 		Main_PauseEmulation();         /* Hold things... */
 		bInFullScreen = TRUE;
-		Main_ReparentWindow(bInFullScreen);
 
 		if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
 		     || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
@@ -592,7 +605,6 @@ void Screen_ReturnFromFullScreen(void)
 		{
 			Screen_SetResolution();
 		}
-		Main_ReparentWindow(bInFullScreen);
 		SDL_Delay(20);                /* To give monitor time to switch resolution */
 		Main_UnPauseEmulation();      /* And off we go... */
 	}

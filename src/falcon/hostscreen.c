@@ -8,10 +8,11 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.14 2008-05-19 21:00:16 thothy Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.15 2008-06-23 20:56:58 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
+#include "control.h"
 #include "sysdeps.h"
 #include "stMemory.h"
 #include "ioMem.h"
@@ -93,6 +94,10 @@ void HostScreen_UnInit(void) {
 void HostScreen_toggleFullScreen(void)
 {
 	sdl_videoparams ^= SDL_FULLSCREEN;
+	if (sdl_videoparams & SDL_FULLSCREEN) {
+		/* un-embed the Hatari WM window for fullscreen */
+		Control_ReparentWindow(hs_width, hs_height, TRUE);
+	}
 	if(SDL_WM_ToggleFullScreen(mainSurface) == 0) {
 		// SDL_WM_ToggleFullScreen() did not work.
 		// We have to change video mode "by hand".
@@ -120,6 +125,11 @@ void HostScreen_toggleFullScreen(void)
 
 		/* refresh the screen */
 		HostScreen_update1(TRUE);
+	} else {
+		if (!(sdl_videoparams & SDL_FULLSCREEN)) {
+			/* re-embed the new Hatari SDL window */
+			Control_ReparentWindow(hs_width, hs_height, FALSE);
+		}
 	}
 }
 
@@ -228,13 +238,19 @@ void HostScreen_setWindowSize( uint32 width, uint32 height, uint32 bpp )
 	hs_bpp = bpp;
 
 	// SelectVideoMode();
-	if (bInFullScreen)
+	if (bInFullScreen) {
+		/* un-embed the Hatari WM window for fullscreen */
+		Control_ReparentWindow(width, height, bInFullScreen);
+
 		sdl_videoparams = SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN;
-	else
+	} else {
 		sdl_videoparams = SDL_SWSURFACE|SDL_HWPALETTE;
-
+	}
 	mainSurface = SDL_SetVideoMode(width, height, bpp, sdl_videoparams);
-
+	if (!bInFullScreen) {
+		/* re-embed the new Hatari SDL window */
+		Control_ReparentWindow(width, height, bInFullScreen);
+	}
 	sdlscrn = surf = mainSurface;
 
 	// update the surface's palette

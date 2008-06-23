@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.135 2008-06-13 21:43:38 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.136 2008-06-23 20:56:58 eerot Exp $";
 
 #include "config.h"
 
@@ -369,69 +369,6 @@ void Main_EventHandler(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Reparent Hatari window if so requested.  Needs to be done inside
- * Hatari because if SDL itself is requested to reparent itself,
- * SDL window stops accepting any input (specifically done like
- * this in SDL backends for some reason).
- * 
- * Fullscreen needs to be handled separately, otherwise Hatari
- * window just disappears when returning from fullscreen.
- * 
- * Currently only works on X11.
- * 
- * SDL_syswm.h automatically includes everything else needed.
- */
-
-#if HAVE_X11
-#include <SDL_syswm.h>
-#endif
-
-void Main_ReparentWindow(bool fullscreen)
-{
-#if HAVE_X11
-	Display *display;
-	Window parent_win, sdl_win, wm_win;
-	const char *parent_win_id;
-	SDL_SysWMinfo info;
-
-	parent_win_id = getenv("PARENT_WIN_ID");
-	if (!parent_win_id) {
-		return;
-	}
-	parent_win = strtol(parent_win_id, NULL, 0);
-	if (!parent_win) {
-		Log_Printf(LOG_WARN, "Invalid PARENT_WIN_ID value '%s'\n", parent_win_id);
-		return;
-	}
-
-	SDL_VERSION(&info.version);
-	if (!SDL_GetWMInfo(&info)) {
-		Log_Printf(LOG_WARN, "Failed to get SDL_GetWMInfo()\n");
-		return;
-	}
-	display = info.info.x11.display;
-	sdl_win = info.info.x11.window;
-	wm_win = info.info.x11.wmwindow;
-	info.info.x11.lock_func();
-	if (fullscreen) {
-		/* show WM window again */
-		XMapWindow(display, wm_win);
-	} else {
-		/* hide WM window for Hatari */
-		XUnmapWindow(display, wm_win);
-		/* reparent main Hatari window to given parent */
-		XReparentWindow(display, sdl_win, parent_win, 0, 0);
-	}
-	info.info.x11.unlock_func();
-#else
-	/* TODO: implement the Windows part.  SDL sources offer example */
-	Log_Printf(LOG_INFO, "Support for Hatari window reparenting not built in\n");
-#endif /* HAVE_X11 */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Initialise emulation
  */
 static void Main_Init(void)
@@ -457,7 +394,6 @@ static void Main_Init(void)
 	RS232_Init();
 	Midi_Init();
 	Screen_Init();
-	Main_ReparentWindow(bInFullScreen);
 	HostScreen_Init();
 #if ENABLE_DSP_EMU
 	if (ConfigureParams.System.nDSPType == DSP_TYPE_EMU)

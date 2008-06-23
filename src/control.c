@@ -6,7 +6,7 @@
 
   This code processes commands from the Hatari control socket
 */
-const char control_rcsid[] = "Hatari $Id: control.c,v 1.2 2008-05-09 22:38:27 eerot Exp $";
+const char control_rcsid[] = "Hatari $Id: control.c,v 1.3 2008-06-23 20:56:58 eerot Exp $";
 
 #include "config.h"
 #if HAVE_UNIX_DOMAIN_SOCKETS
@@ -33,7 +33,8 @@ const char control_rcsid[] = "Hatari $Id: control.c,v 1.2 2008-05-09 22:38:27 ee
 /* socket from which control command line options are read */
 static int ControlSocket;
 static FILE *ControlFile;
-
+/* Whether to send embedded window info */
+static bool ControlSendEmbedInfo;
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -147,6 +148,9 @@ static bool Control_ProcessBuffer(char *buffer)
 			ok = Change_ApplyCommandline(cmd+14);
 		} else if (strncmp(cmd, "hatari-shortcut ", 16) == 0) {
 			ok = Shortcut_Invoke(Str_Trim(cmd+16));
+		} else if (strcmp(cmd, "hatari-embed-info") == 0) {
+			fprintf(stderr, "Embedded window ID change messages = ON\n");
+			ControlSendEmbedInfo = TRUE;
 		} else if (strcmp(cmd, "hatari-stop") == 0) {
 			if (!paused) {
 				fprintf(stderr, "Hatari emulation stopped\n");
@@ -164,6 +168,7 @@ static bool Control_ProcessBuffer(char *buffer)
 			fprintf(stderr, "- hatari-event <event to simulate>\n");
 			fprintf(stderr, "- hatari-option <command line options>\n");
 			fprintf(stderr, "- hatari-shortcut <shortcut name>\n");
+			fprintf(stderr, "- hatari-embed-info\n");
 			fprintf(stderr, "- hatari-stop\n");
 			fprintf(stderr, "- hatari-cont\n");
 			fprintf(stderr, "The last two can be used to stop and continue the Hatari emulation.\n");
@@ -286,5 +291,99 @@ const char *Control_SetSocket(const char *socketpath)
 	Log_Printf(LOG_INFO, "new control socket is '%s'\n", socketpath);
 	return NULL;
 }
+
+
+/*-----------------------------------------------------------------------
+ * Currently works only on X11.
+ * 
+ * SDL_syswm.h automatically includes everything else needed.
+ */
+#if HAVE_X11
+
+#include <SDL_syswm.h>
+
+/**
+ * Reparent Hatari window if so requested.  Needs to be done inside
+ * Hatari because if SDL itself is requested to reparent itself,
+ * SDL window stops accepting any input (specifically done like
+ * this in SDL backends for some reason).
+ * 
+ * 'noembed' argument tells whether the SDL window should be embedded
+ * or not.
+ *
+ * If the window is embedded (which means that SDL WM window needs
+ * to be hidden) when SDL is asked to fullscreen, Hatari window just
+ * disappears when returning back from fullscreen.  I.e. call this
+ * with noembed=TRUE _before_ fullscreening and any other time with
+ * noembed=FALSE after changing window size.  You can do this by
+ * giving bInFullscreen as the noembed value.
+ */
+void Control_ReparentWindow(int width, int height, bool noembed)
+{
+	Display *display;
+	Window parent_win, sdl_win, wm_win;
+	const char *parent_win_id;
+	SDL_SysWMinfo info;
+
+	parent_win_id = getenv("PARENT_WIN_ID");
+	if (!parent_win_id) {
+		return;
+	}
+	parent_win = strtol(parent_win_id, NULL, 0);
+	if (!parent_win) {
+		Log_Printf(LOG_WARN, "Invalid PARENT_WIN_ID value '%s'\n", parent_win_id);
+		return;
+	}
+
+	SDL_VERSION(&info.version);
+	if (!SDL_GetWMInfo(&info)) {
+		Log_Printf(LOG_WARN, "Failed to get SDL_GetWMInfo()\n");
+		return;
+	}
+	display = info.info.x11.display;
+	sdl_win = info.info.x11.window;
+	wm_win = info.info.x11.wmwindow;
+	info.info.x11.lock_func();
+	if (noembed) {
+		/* show WM window again */
+		XMapWindow(display, wm_win);
+	} else {
+		char buffer[12];  /* 32-bits in hex (+ '\r') + '\n' + '\0' */
+		int sock;
+
+		/* hide WM window for Hatari */
+		XUnmapWindow(display, wm_win);
+		/* reparent main Hatari window to given parent */
+		XReparentWindow(display, sdl_win, parent_win, 0, 0);
+
+		/* whether to send new window size */
+		if (ControlSendEmbedInfo) {
+			/* socket or file? */
+			if (ControlSocket) {
+				sock = ControlSocket;
+			} else if (ControlFile) {
+				sock = fileno(ControlFile);
+			} else {
+				sock = 0;
+			}
+			if (sock) {
+				fprintf(stderr, "New %dx%d SDL window with ID: %x\n",
+					width, height, sdl_win);
+				sprintf(buffer, "%dx%d", width, height);
+				write(sock, buffer, strlen(buffer));
+			}
+		}
+	}
+	info.info.x11.unlock_func();
+}
+
+#else
+void Control_ReparentWindow(int width, int height, bool noembed)
+{
+	/* TODO: implement the Windows part.  SDL sources offer example */
+	Log_Printf(LOG_INFO, "Support for Hatari window reparenting not built in\n");
+}
+#endif /* HAVE_X11 */
+
 
 #endif /* HAVE_UNIX_DOMAIN_SOCKETS */

@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.12 2008-06-08 20:04:08 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.13 2008-06-23 20:56:58 eerot Exp $";
 
 #include <ctype.h>
 #include "main.h"
@@ -295,7 +295,7 @@ static bool Change_Options(int argc, const char *argv[])
 
 	/* Check if reset is required and ask user if he really wants to continue */
 	if (bOK && Change_DoNeedReset(&current, &ConfigureParams)
-	    && current.Log.nAlertDlgLogLevel >= LOG_INFO) {
+	    && current.Log.nAlertDlgLogLevel >= LOG_WARN) {
 		bOK = DlgAlert_Query("The emulated system must be "
 				     "reset to apply these changes. "
 				     "Apply changes now and reset "
@@ -304,6 +304,8 @@ static bool Change_Options(int argc, const char *argv[])
 	/* Copy details to configuration */
 	if (bOK) {
 		Change_CopyChangedParamsToConfiguration(&current, &ConfigureParams, FALSE);
+	} else {
+		ConfigureParams = current;
 	}
 
 	Main_UnPauseEmulation();

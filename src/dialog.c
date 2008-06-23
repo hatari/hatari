@@ -6,7 +6,7 @@
 
   Code to handle our options dialog.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.71 2008-06-08 19:30:54 eerot Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.72 2008-06-23 20:56:58 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -45,7 +45,7 @@ bool Dialog_DoProperty(void)
 	/* Check if reset is required and ask user if he really wants to continue then */
 	if (bOKDialog && !bForceReset
 	    && Change_DoNeedReset(&current, &ConfigureParams)
-	    && ConfigureParams.Log.nAlertDlgLogLevel >= LOG_INFO) {
+	    && ConfigureParams.Log.nAlertDlgLogLevel >= LOG_WARN) {
 		bOKDialog = DlgAlert_Query("The emulated system must be "
 		                           "reset to apply these changes. "
 		                           "Apply changes now and reset "
@@ -55,6 +55,8 @@ bool Dialog_DoProperty(void)
 	/* Copy details to configuration */
 	if (bOKDialog) {
 		Change_CopyChangedParamsToConfiguration(&current, &ConfigureParams, bForceReset);
+	} else {
+		ConfigureParams = current;
 	}
 
 	Main_UnPauseEmulation();
