@@ -66,6 +66,7 @@ class HatariControls():
         # set later by owner of this object
         self.hatariparent = None
         self.mainwin = None
+        self.io_id = None
         # windows/dialogs are created when needed
         self.debugui = None
         self.aboutdialog = None
@@ -109,7 +110,8 @@ class HatariControls():
     # ------- run control -----------
     def _socket_cb(self, fd, event):
         if event != gobject.IO_IN:
-            print "Warning: Hatari died."
+            # hatari process died, make sure Hatari instance notices
+            self.hatari.kill()
             return False
         width, height = self.hatari.get_embed_info()
         print "New size = %d x %d" % (width, height)
@@ -125,14 +127,16 @@ class HatariControls():
     def _run_cb(self, widget=None):
         if self.killdialog.run(self.hatari):
             return
+        if self.io_id:
+            gobject.source_remove(self.io_id)
         if self.hatariparent:
             size = self.hatariparent.window.get_size()
             self.hatari.run(None, self.hatariparent.window)
             # get notifications of Hatari window size changes
             self.hatari.enable_embed_info()
-            socket = self.hatari.get_control_socket()
+            socket = self.hatari.get_control_socket().fileno()
             events = gobject.IO_IN | gobject.IO_HUP | gobject.IO_ERR
-            gobject.io_add_watch(socket.fileno(), events, self._socket_cb)
+            self.io_id = gobject.io_add_watch(socket, events, self._socket_cb)
         else:
             self.hatari.run()
 
@@ -196,6 +200,8 @@ class HatariControls():
     def _quit_cb(self, widget, arg = None):
         if self.killdialog.run(self.hatari):
             return True
+        if self.io_id:
+            gobject.source_remove(self.io_id)
         if self.config.is_changed():
             if not self.quitdialog:
                 self.quitdialog = QuitSaveDialog(self.mainwin)
