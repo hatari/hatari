@@ -834,7 +834,7 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Obsession (demo)</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>opens top, right and bottom borders</td>
+      <td>Opens top, left (with STE shifter bug) and bottom borders</td>
     </tr>
     <tr>
       <td>Operation Garfield</td>
@@ -964,8 +964,9 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>Aggression: Braindamage</td>
       <td>yes</td>
       <td>&nbsp;</td>
-      <td>Hatari version &gt; v1.0.1 (blitter fixes) needed for
-          the labyrinth screen to show correctly</td>
+      <td>The labyrinth screen (bottom lines) and the bouncing vector ball
+        screen (raster bars at the bottom) do not show up correctly yet,
+        maybe due to bad blitter timing emulation.</td>
     </tr>
     <tr>
       <td>Armada: Armada is Dead</td>
@@ -1102,6 +1103,12 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>partially</td>
       <td>&nbsp;</td>
       <td>doesn't look right</td>
+    </tr>
+    <tr>
+      <td>Unit 17: EPSS</td>
+      <td>partially</td>
+      <td>&nbsp;</td>
+      <td>Fails to open the borders due to bad blitter timing emulation</td>
     </tr>
     <tr>
       <td>Light: E605</td>
