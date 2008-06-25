@@ -348,7 +348,8 @@ class PeripheralsDialog(HatariUIDialog):
         table, self.dialog = create_table_dialog(self.parent, "Peripheral settings", 9)
         
         row = 0
-        self.file = []
+        self.floppy = []
+        path = config.get_floppydir()
         for drive in ("A", "B"):
             label = "Disk %c:" % drive
             fsel = gtk.FileChooserButton(label)
@@ -358,7 +359,15 @@ class PeripheralsDialog(HatariUIDialog):
             filename = config.get_floppy(row)
             if filename:
                 fsel.set_filename(filename)
-            self.file.append(table_add_widget_row(table, row, label, fsel))
+            elif path:
+                fsel.set_current_folder(path)
+            self.floppy.append(fsel)
+            
+            eject = create_button("Eject", self._eject, fsel)
+            box = gtk.HBox()
+            box.pack_start(fsel)
+            box.pack_start(eject, False, False)
+            table_add_widget_row(table, row, label, box)
             row += 1
         
         table_add_separator(table, row)
@@ -379,6 +388,9 @@ class PeripheralsDialog(HatariUIDialog):
         # TODO: add printer, serial, midi, RTC to peripherals?
         table.show_all()
 
+    def _eject(self, widget, fsel):
+        fsel.unselect_all()
+    
     def run(self, config):
         "run() -> file name, file name for given disk"
         if not self.dialog:
@@ -387,10 +399,12 @@ class PeripheralsDialog(HatariUIDialog):
         self.dialog.hide()
         
         if response == gtk.RESPONSE_APPLY:
+            config.lock_updates()
             for drive in range(2):
-                config.set_floppy(drive, self.file[drive].get_filename())
+                config.set_floppy(drive, self.floppy[drive].get_filename())
             for joy in range(6):
                 config.set_joystick(joy, self.joy[joy].get_active())
+            config.flush_updates()
 
 
 # ----------------------------------------
@@ -436,6 +450,7 @@ class SetupDialog(HatariUIDialog):
             "memory": config.get_memory(),
             "tos": config.get_tos(),
             "harddisk": config.get_harddisk(),
+            "usehd": config.get_use_harddisk(),
             "compatible": config.get_compatible(),
             "name": "Default"
         })
@@ -477,12 +492,16 @@ class SetupDialog(HatariUIDialog):
 
     def _apply_setup(self, config):
         setup = self.setups[self.combo.get_active()]
+        config.lock_updates()
         config.set_machine(setup["machine"])
         config.set_monitor(setup["monitor"])
         config.set_memory(setup["memory"])
         config.set_tos(setup["tos"])
+        # usehd has to be before before harddisk
+        config.set_use_harddisk(setup["usehd"])
         config.set_harddisk(setup["harddisk"])
         config.set_compatible(setup["compatible"])
+        config.flush_updates()
     
     def _show_setup(self, combo, config):
         setup = self.setups[combo.get_active()]
@@ -492,6 +511,7 @@ class SetupDialog(HatariUIDialog):
         info.append("Memory size: %s" % config.get_memory_sizes()[setup["memory"]])
         info.append("TOS image: %s" % os.path.basename(setup["tos"]))
         info.append("Harddisk dir: %s" % setup["harddisk"])
+        info.append("Use harddisk: %s" % str(setup["usehd"]))
         info.append("Compatible CPU: %s" % str(setup["compatible"]))
         self.label.set_text("\n".join(info))
 
@@ -537,20 +557,17 @@ class EditSetupDialog(HatariUIDialog):
         row += 1
         
         label = "TOS image:"
-        fsel = gtk.FileChooserButton(label)
-        # Hatari cannot access URIs
-        fsel.set_local_only(True)
-        fsel.set_width_chars(12)
+        fsel = self._fsel(label, gtk.FILE_CHOOSER_ACTION_OPEN)
         self.tos = table_add_widget_row(table, row, label, fsel)
         row += 1
         
         label = "Harddisk:"
-        fsel = gtk.FileChooserButton(label)
-        fsel.set_action(gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
-        # Hatari cannot access URIs
-        fsel.set_local_only(True)
-        fsel.set_width_chars(12)
-        self.harddisk = table_add_widget_row(table, row, label, fsel)
+        fsel = self._fsel(label, gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
+        self.harddisk = table_add_widget_row(table, row, label, fsel)       
+        row += 1
+
+        widget = gtk.CheckButton("Use harddisk")
+        self.usehd = table_add_widget_row(table, row, None, widget)
         row += 1
 
         widget = gtk.CheckButton("Compatible CPU")
@@ -558,6 +575,14 @@ class EditSetupDialog(HatariUIDialog):
         row += 1
 
         table.show_all()
+
+    def _fsel(self, label, action):
+        fsel = gtk.FileChooserButton(label)
+        # Hatari cannot access URIs
+        fsel.set_local_only(True)
+        fsel.set_width_chars(12)
+        fsel.set_action(action)
+        return fsel
 
     def run(self, config, setup):
         if not self.dialog:
@@ -571,6 +596,8 @@ class EditSetupDialog(HatariUIDialog):
             self.tos.set_filename(setup["tos"])
         if setup["harddisk"]:
             self.harddisk.set_filename(setup["harddisk"])
+        if setup["usehd"]:
+            self.usehd.set_active(setup["usehd"])
         self.compatible.set_active(setup["compatible"])
 
         response = self.dialog.run()
@@ -584,5 +611,6 @@ class EditSetupDialog(HatariUIDialog):
         setup["memory"] = self.memory.get_active()
         setup["tos"] = self.tos.get_filename()
         setup["harddisk"] = self.harddisk.get_filename()
+        setup["usehd"] = self.usehd.get_active()
         setup["compatible"] = self.compatible.get_active()
         return setup
