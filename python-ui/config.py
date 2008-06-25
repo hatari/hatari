@@ -36,7 +36,10 @@ def value_to_text(key, value):
         text = str(value)
     else:
         assert(key[0] == "s") # string prefix
-        text = value
+        if value == None:
+            text = ""
+        else:
+            text = value
     return text
 
 def text_to_value(text):
@@ -160,7 +163,8 @@ class ConfigStore():
             for key, value in self.sections[section].items():                    
                 if (key not in checkpoint[section] or
                 value != checkpoint[section][key]):
-                    changed.append(("%s.%s" % (section, key), value))
+                    text = value_to_text(key, value)
+                    changed.append(("%s.%s" % (section, key), text))
         return changed
     
     def revert_to_checkpoint(self, checkpoint):
@@ -202,7 +206,8 @@ class ConfigStore():
             keys = self.sections[name].keys()
             keys.sort()
             for key in keys:
-                fileobj.write("%s = %s\n" % (key, self.sections[name][key]))
+                value = value_to_text(key, self.sections[name][key])
+                fileobj.write("%s = %s\n" % (key, value))
             fileobj.write("\n")
 
     def save(self):
