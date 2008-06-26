@@ -402,6 +402,10 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	{
 		Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, FALSE);
 	}
+	else
+	{
+		ConfigureParams = CurrentParams;
+	}
 
 	// Close the window
 	[window close];	
