@@ -41,10 +41,16 @@ class Hatari():
             self.hataribin = hataribin
         else:
             self.hataribin = "hatari"
+        self._assert_hatari_compatibility()
         self._create_server()
         self.control = None
         self.paused = False
         self.pid = 0
+
+    def _assert_hatari_compatibility(self):
+        if os.system(self.hataribin + " -h|grep control-socket"):
+            print "ERROR: Hatari doesn't support the required --control-socket option!"
+            sys.exit(-1)
 
     def _create_server(self):
         if self.server:
@@ -54,7 +60,7 @@ class Hatari():
             os.unlink(self.controlpath)
         self.server.bind(self.controlpath)
         self.server.listen(1)
-
+        
     def _send_message(self, msg):
         if self.control:
             self.control.send(msg)
