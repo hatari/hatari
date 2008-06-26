@@ -48,9 +48,11 @@ class Hatari():
         self.pid = 0
 
     def _assert_hatari_compatibility(self):
-        if os.system(self.hataribin + " -h|grep control-socket"):
-            print "ERROR: Hatari doesn't support the required --control-socket option!"
-            sys.exit(-1)
+        for line in os.popen(self.hataribin + " -h").readlines():
+            if line.find("--control-socket") >= 0:
+                return
+        print "ERROR: Hatari not found or it doesn't support the required --control-socket option!"
+        sys.exit(-1)
 
     def _create_server(self):
         if self.server:
