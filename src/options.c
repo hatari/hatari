@@ -19,7 +19,7 @@
   2008-06-10   [ET]    Add --vdi and joystick<port> <type> options
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.65 2008-06-12 20:51:51 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.66 2008-06-26 20:00:12 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -239,8 +239,10 @@ static const opt_t HatariOptions[] = {
 	  "<trace1,...>", "Activate emulation tracing, see --trace help" },
 	{ OPT_TRACEFILE, NULL, "--trace-file",
 	  "<file>", "Save trace output to <file> (default=stderr)" },
+#if HAVE_UNIX_DOMAIN_SOCKETS
 	{ OPT_CONTROLSOCKET, NULL, "--control-socket",
 	  "<file>", "Hatari reads options from given socket at run-time" },
+#endif
 	{ OPT_LOGFILE, NULL, "--log-file",
 	  "<file>", "Save log output to <file> (default=stderr)" },
 	{ OPT_LOGLEVEL, NULL, "--log-level",
@@ -257,8 +259,8 @@ static const opt_t HatariOptions[] = {
  */
 static void Opt_ShowVersion(void)
 {
-	printf("\nThis is %s - the Atari ST, STE, TT and Falcon emulator.\n\n",
-	       PROG_NAME);
+	printf("\n" PROG_NAME
+	       " - the Atari ST, STE, TT and Falcon emulator.\n\n");
 	printf("Hatari is free software licensed under the GNU General"
 	       " Public License.\n\n");
 }
