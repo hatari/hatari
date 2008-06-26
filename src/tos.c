@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.56 2008-05-25 19:58:56 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.57 2008-06-26 21:33:20 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -299,6 +299,13 @@ static void TOS_CheckSysConfig(void)
 			ConfigureParams.System.nCpuLevel = 0;
 			M68000_CheckCpuLevel();
 		}
+	}
+	else if (TosVersion >= 0x0300 && ConfigureParams.System.nCpuLevel < 2)
+	{
+		Log_AlertDlg(LOG_ERROR, "This TOS versions requires a CPU >= 68020.\n"
+		             " ==> Switching to 68020 mode now.\n");
+		ConfigureParams.System.nCpuLevel = 2;
+		M68000_CheckCpuLevel();
 	}
 }
 
