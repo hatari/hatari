@@ -170,10 +170,14 @@
 /*			(in FNIL by Delta Force, fix flickering gfx in the bottom border of the */
 /*			F2 screen : last 16 lines were the ones from the menu where bottom	*/
 /*			border was removed ).							*/
+/* 2008/06/26	[NP]	Improve STE scrolling : handle $ff8264 (no prefetch) and $ff8265	*/
+/*			(prefetch). See Video_HorScroll_Write for details on both registers.	*/
+/*			More generic support for starting display 16 pixels earlier on STE	*/
+/*			by writing to $ff8265 and settting $ff8264=0 just after.		*/
+/*			(fix Digiworld 2 by ICE, which uses $ff8264 for horizontal scroll).	*/
 
 
-
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.115 2008-06-16 19:34:45 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.116 2008-06-28 11:22:36 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -228,7 +232,6 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.115 2008-06-16 19:34:45 npom
 #define BORDERMASK_LEFT_OFF_MID		0x100	/* removal of left border with hi/mid res switch -> +26 bytes (for 4 pixels hardware scrolling) */
 
 
-
 int STRes = ST_LOW_RES;                         /* current ST resolution */
 int TTRes;                                      /* TT shifter resolution mode */
 
@@ -250,21 +253,27 @@ int nScanlinesPerFrame = 313;                   /* Number of scan lines per fram
 int nCyclesPerLine = 512;                       /* Cycles per horizontal line scan */
 static int nFirstVisibleHbl = 34;               /* The first line of the ST screen that is copied to the PC screen buffer */
 
-static Uint8 HWScrollCount;                     /* HW scroll pixel offset, STe only (0...15) */
-int NewHWScrollCount = -1;                      /* Used in STE mode when writing to the scrolling register $ff8265 */
-static Uint8 LineWidth;                         /* Scan line width add, STe only (words, minus 1) */
-int NewLineWidth = -1;				/* Used in STE mode when writing to the line width register $ff820f */
-static Uint8 *pVideoRaster;                     /* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
-static Uint8 VideoShifterByte;                  /* VideoShifter (0xff8260) value store in video chip */
-static int LeftRightBorder;                     /* BORDERMASK_xxxx used to simulate left/right border removal */
-static int LineStartCycle;                      /* Cycle where display starts for the current line */
-static int LineEndCycle;                        /* Cycle where display ends for the current line */
-static bool bSteBorderFlag;                     /* TRUE when screen width has been switched to 336 (e.g. in Obsession) */
-static bool bTTColorsSync, bTTColorsSTSync;     /* whether TT colors need convertion to SDL */
+static Uint8 HWScrollCount;			/* HW scroll pixel offset, STE only (0...15) */
+static int NewHWScrollCount = -1;		/* Used in STE mode when writing to the scrolling registers $ff8264/65 */
+static Uint8 HWScrollPrefetch;			/* 0 when scrolling with $ff8264, 1 when scrolling with $ff8265 */
+static int NewHWScrollPrefetch = -1;		/* Used in STE mode when writing to the scrolling registers $ff8264/65 */
+static Uint8 LineWidth;				/* Scan line width add, STe only (words, minus 1) */
+static int NewLineWidth = -1;			/* Used in STE mode when writing to the line width register $ff820f */
+static Uint8 *pVideoRaster;			/* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
+static Uint8 VideoShifterByte;			/* VideoShifter (0xff8260) value store in video chip */
+static int LeftRightBorder;			/* BORDERMASK_xxxx used to simulate left/right border removal */
+static int LineStartCycle;			/* Cycle where display starts for the current line */
+static int LineEndCycle;			/* Cycle where display ends for the current line */
+static bool bSteBorderFlag;			/* TRUE when screen width has been switched to 336 (e.g. in Obsession) */
+static int NewSteBorderFlag = -1;		/* New value for next line */
+static bool bTTColorsSync, bTTColorsSTSync;	/* whether TT colors need convertion to SDL */
 
 int	ScreenBorderMask[ MAX_SCANLINES_PER_FRAME ];
 int	LastCycleSync50;			/* value of Cycles_GetCounterOnWriteAccess last time ff820a was set to 0x02 for the current VBL */
 int	LastCycleSync60;			/* value of Cycles_GetCounterOnWriteAccess last time ff820a was set to 0x00 for the current VBL */
+int	LastCycleScroll8264;			/* value of Cycles_GetCounterOnWriteAccess last time ff8264 was set for the current VBL */
+int	LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess last time ff8265 was set for the current VBL */
+
 int	NewVideoHi = -1;			/* new value for $ff8205 on STE */
 int	NewVideoMed = -1;			/* new value for $ff8207 on STE */
 int	NewVideoLo = -1;			/* new value for $ff8209 on STE */
@@ -1096,11 +1105,11 @@ static void Video_CopyScreenLineColor(void)
 
 
 		/* STE specific */
-		if ( !bSteBorderFlag && HWScrollCount)     /* Handle STE fine scrolling (HWScrollCount is zero on ST) */
+		if (!bSteBorderFlag && HWScrollCount)		/* Handle STE fine scrolling (HWScrollCount is zero on ST) */
 		{
-			Uint16 *pScrollAdj;     /* Pointer to actual position in line */
+			Uint16 *pScrollAdj;	/* Pointer to actual position in line */
 			int nNegScrollCnt;
-			Uint16 *pScrollEndAddr; /* Pointer to end of the line */
+			Uint16 *pScrollEndAddr;	/* Pointer to end of the line */
 
 			nNegScrollCnt = 16 - HWScrollCount;
 			if (LineBorderMask & BORDERMASK_LEFT_OFF)
@@ -1115,8 +1124,9 @@ static void Video_CopyScreenLineColor(void)
 			if (STRes == ST_MEDIUM_RES)
 			{
 				/* TODO: Implement fine scrolling for medium resolution, too */
-				/* HW scrolling advances Shifter video counter by one */
-				pVideoRaster += 2 * 2;
+				/* HW scrolling might prefetch 16 pixels */
+				if ( HWScrollPrefetch == 1 )		/* $ff8265 prefetches 16 pixels */
+					pVideoRaster += 2 * 2;		/* 2 bitplans */
 			}
 			else
 			{
@@ -1153,8 +1163,25 @@ static void Video_CopyScreenLineColor(void)
 					do_put_mem_word(pScrollAdj+3, (do_get_mem_word(pScrollAdj+3) << HWScrollCount)
 					                | (do_get_mem_word(pVideoRaster+6) >> nNegScrollCnt));
 				}
-				/* HW scrolling advances Shifter video counter by one */
-				pVideoRaster += 4 * 2;
+				
+				/* Depending on whether $ff8264 or $ff8265 was used to scroll, */
+				/* we prefetched 16 pixel (8 bytes) */
+				if ( HWScrollPrefetch == 1 )		/* $ff8265 prefetches 16 pixels */
+					pVideoRaster += 4 * 2;		/* 4 bitplans */
+
+				/* If scrolling with $ff8264, there's no prefetch, which means display starts */
+				/* 16 pixels later but still stops at the normal point (eg we display */
+				/* (320-16) pixels in low res). We shift the whole line 8 bytes to the right to */
+				/* get the correct result (using memmove, as src/dest are overlapping). */
+				else
+				{
+					if (LineBorderMask & BORDERMASK_RIGHT_OFF)
+						memmove ( pSTScreen+8 , pSTScreen , SCREENBYTES_LINE - 8 );
+					else
+						memmove ( pSTScreen+8 , pSTScreen , SCREENBYTES_LEFT + SCREENBYTES_MIDDLE - 8 );
+
+					memset ( pSTScreen , 0 , 8 );	/* first 16 pixels are color '0' */
+				}
 
 				/* On STE, when we have a 230 bytes overscan line and HWScrollCount > 0 */
 				/* we must read 6 bytes less than expected */
@@ -1194,7 +1221,20 @@ static void Video_CopyScreenLineColor(void)
 		if ( NewHWScrollCount >= 0 )
 		{
 			HWScrollCount = NewHWScrollCount;
+			HWScrollPrefetch = NewHWScrollPrefetch;
 			NewHWScrollCount = -1;
+			NewHWScrollPrefetch = -1;
+		}
+
+		/* On STE, if we trigger the left border + 16 pixels trick, we set the */
+		/* new value here, once the current line was processed */
+		if ( NewSteBorderFlag >= 0 )
+		{
+			if ( NewSteBorderFlag == 0 )
+				bSteBorderFlag = FALSE;
+			else
+				bSteBorderFlag = TRUE;
+			NewSteBorderFlag = -1;
 		}
 
 		/* On STE, if we wrote to the linewidth register, we set the */
@@ -1514,6 +1554,8 @@ static void Video_ResetShifterTimings(void)
 	/* Reset freq changes position for the next VBL to come */
 	LastCycleSync50 = -1;
 	LastCycleSync60 = -1;
+	LastCycleScroll8264 = -1;
+	LastCycleScroll8265 = -1;
 }
 
 
@@ -2146,22 +2188,73 @@ void Video_ShifterMode_WriteByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to horizontal scroll register (0xff8265).
- * Note: The STE shifter has a funny "bug"  that allows to increase the
- * resolution to 336x200 instead of 320x200. It occurs when a program writes
- * certain values to 0xff8264:
- *	move.w  #1,$ffff8264      ; Word access!
- *	clr.b   $ffff8264         ; Byte access!
+ * Handle horizontal scrolling to the left.
+ * On STE, there're 2 registers that can scroll the line :
+ *  - $ff8264 : scroll without prefetch
+ *  - $ff8265 : scrol with prefetch
+ * Both registers will scroll the line to the left by skipping the amount
+ * of pixels in $ff8264 or $ff8265 (from 0 to 15).
+ * As some pixels will be skipped, this means the shifter needs to read
+ * 16 other pixels in advance in some internal registers to have an uninterrupted flow of pixels.
+ *
+ * This 16 pixels can be prefetched before the display starts (on cycle 56 for example) when using
+ * $ff8265 to scroll the line. In that case 8 more bytes per line (low res) will be read. Most programs
+ * are using $ff8265 to scroll the line.
+ *
+ * When using $ff8264, the next 16 pixels will not be prefetched before the display
+ * starts, they will be read when the display normally starts (cycle 56). While
+ * reading these 16 pixels, the shifter won't be able to display anything, which will
+ * result in 16 pixels having the color 0. So, reading the 16 pixels will in fact delay
+ * the real start of the line, which will look as if it started 16 pixels later. As the
+ * shifter will stop the display at cycle 56+320 anyway, this means the last 16 pixels
+ * of each line won't be displayed and you get the equivalent of a shorter 304 pixels line.
+ * As a consequence, this register is rarely used to scroll the line.
+ *
+ * By writing a value > 0 in $ff8265 (to start prefetching) and immediatly after a value of 0
+ * in $ff8264 (no scroll and no prefetch), it's possible to fill the internal registers used
+ * for the scrolling even if scrolling is set to 0. In that case, the shifter will start displaying
+ * each line 16 pixels earlier (as the data are already available in the internal registers).
+ * This allows to have 336 pixels per line (instead of 320) for all the remaining lines on the screen.
+ *
+ * Although some programs are using this sequence :
+ *	move.w  #1,$ffff8264		; Word access!
+ *	clr.b   $ffff8264		; Byte access!
+ * It is also possible to add 16 pixels by doing :
+ *	move.b  #X,$ff8265		; with X > 0
+ *	move.b	#0,$ff8264
  * Some games (Obsession, Skulls) and demos (Pacemaker by Paradox) use this
  * feature to increase the resolution, so we have to emulate this bug, too!
+ *
+ * So considering a low res line of 320 pixels (160 bytes) :
+ * 	- if both $ff8264/65 are 0, no scrolling happens, the shifter reads 160 bytes and displays 320 pixels (same as STF)
+ *	- if $ff8265 > 0, line is scrolled, the shifter reads 168 bytes and displays 320 pixels.
+ *	- if $ff8264 > 0, line is scrolled, the shifter reads 160 bytes and displays 304 pixels,
+ *		the display starts 16 pixels later.
+ *	- if $ff8265 > 0 and then $ff8264 = 0, there's no scrolling, the shifter reads 168 bytes and displays 336 pixels,
+ *		the display starts 16 pixels earlier.
  */
+
+void Video_HorScroll_Write_8264(void)
+{
+	Video_HorScroll_Write();
+}
+
+void Video_HorScroll_Write_8265(void)
+{
+	Video_HorScroll_Write();
+}
+
 void Video_HorScroll_Write(void)
 {
-	static bool bFirstSteAccess = FALSE;
+	Uint32 RegAddr;
 	Uint8 ScrollCount;
+	Uint8 Prefetch;
 	int nFrameCycles;
 	int nLineCycles;
 	int HblCounterVideo;
+	bool Add16px = FALSE;
+	static Uint8 LastVal8265 = 0;
+
 
 	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 	nLineCycles = nFrameCycles % nCyclesPerLine;
@@ -2169,41 +2262,56 @@ void Video_HorScroll_Write(void)
 	/* Get real video line count (can be different from nHBL) */
 	HblCounterVideo = nFrameCycles / nCyclesPerLine;
 
-	ScrollCount = IoMem[0xff8265];
+	RegAddr = IoAccessCurrentAddress;		/* 0xff8264 or 0xff8265 */
+	ScrollCount = IoMem[ RegAddr ];
 	ScrollCount &= 0x0f;
 
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste %x hwscroll=%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
+		RegAddr , ScrollCount,
+		nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
+
+	if ( RegAddr == 0xff8264 )
+	{
+		Prefetch = 0;				/* scroll without prefetch */
+		LastCycleScroll8264 = nFrameCycles;
+	
+		if ( ( ScrollCount == 0 ) && ( LastVal8265 > 0 ) && ( LastCycleScroll8265 >= 0 )
+			&& ( LastCycleScroll8264 - LastCycleScroll8265 <= 40 ) )
+		{	                        
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect ste left+16 pixels\n" );
+			Add16px = TRUE;
+		}
+	}
+	else
+	{
+		Prefetch = 1;				/* scroll with prefetch */
+		LastCycleScroll8265 = nFrameCycles;
+		LastVal8265 = ScrollCount;
+		Add16px = FALSE;
+	}
+
+
+	/* If the write was made before display starts on the current line, then */
+	/* we can still change the value now. Else, the new values will be used */
+	/* for line n+1. */
 	/* We must also check the write does not overlap the end of the line */
 	if ( ( ( nLineCycles <= LINE_START_CYCLE_50 ) && ( nHBL == HblCounterVideo ) )
 		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
+	{
 		HWScrollCount = ScrollCount;		/* display has not started, we can still change */
+		HWScrollPrefetch = Prefetch;
+		bSteBorderFlag = Add16px;
+	}
 	else
+	{
 		NewHWScrollCount = ScrollCount;		/* display has started, can't change HWScrollCount now */
-
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste hwscroll=%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" , ScrollCount,
-		                     nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
-
-	/*fprintf(stderr, "Write to 0x%x (0x%x, 0x%x, %i)\n", IoAccessBaseAddress,
-	        IoMem[0xff8264], ScrollCount, nIoMemAccessSize);*/
-
-	if (IoAccessBaseAddress == 0xff8264 && nIoMemAccessSize == SIZE_WORD
-	        && ScrollCount == 1)
-	{
-		/*fprintf(stderr, "STE border removal - access 1\n");*/
-		bFirstSteAccess = TRUE;
-	}
-	else if (bFirstSteAccess && ScrollCount == 1 &&
-	         IoAccessBaseAddress == 0xff8264 && nIoMemAccessSize == SIZE_BYTE)
-	{
-		/*fprintf(stderr, "STE border removal - access 2\n");*/
-		bSteBorderFlag = TRUE;
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect STE left+8\n" );
-	}
-	else
-	{
-		bFirstSteAccess = bSteBorderFlag = FALSE;
+		NewHWScrollPrefetch = Prefetch;
+		if ( Add16px )
+			NewSteBorderFlag = 1;
+		else
+			NewSteBorderFlag = 0;
 	}
 }
-
 
 /*-----------------------------------------------------------------------*/
 /**
