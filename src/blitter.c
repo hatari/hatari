@@ -10,7 +10,7 @@
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.30 2008-06-13 06:36:36 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.31 2008-06-29 21:33:12 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -174,6 +174,14 @@ static void Blitter_AddCycles(int cycles)
 	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cycles, INT_CPU_CYCLE);
 	nCyclesMainCounter += cycles;
 	nCurrentCycles += cycles;
+
+	/* We've got to update pending int functions regularly to make sure
+	 * that other effects are not delayed too much. (Needed for "Obsession",
+	 * "Braindamage", and Doughnut screen in "Just Musix 2") */
+	if (PendingInterruptCount <= 0 && PendingInterruptFunction)
+	{
+	    CALL_VAR(PendingInterruptFunction);
+	}
 }
 
 
@@ -359,11 +367,6 @@ static void Do_Blit(void)
 			/* Do halftone increment */
 			if (hop & 1)
 				halftone_curroffset = (halftone_curroffset+halftone_direction) & 15;
-
-			/* We've got to update pending int functions regularly */
-			if (PendingInterruptCount <= 0 && PendingInterruptFunction) {
-			    CALL_VAR(PendingInterruptFunction);
-			}
 		}
 	}
 	while (y_count > 0
