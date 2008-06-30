@@ -30,13 +30,78 @@ from debugui import HatariDebugUI
 from hatari import Hatari, HatariConfigMapping
 from uihelpers import HatariTextInsert, UInfo, create_button, create_toggle
 from dialogs import AboutDialog, PasteDialog, KillDialog, QuitSaveDialog, \
-     ResetDialog, SetupDialog, TraceDialog, PeripheralsDialog, ErrorDialog
+     ResetDialog, SetupDialog, TraceDialog, PeripheralsDialog, ErrorDialog, \
+     DisplayDialog
 
 
 # helper functions to match callback args
 def window_hide_cb(window, arg):
     window.hide()
     return True
+
+
+class UIActions:
+    def __init__(self):
+        self.about = gtk.Action("about", "About", "Hatari UI information", None)
+        self.shot = gtk.Action("shot", "Screenshot", "Take a screenshot", None)
+        self.quit = gtk.Action("quit", "Quit", "Quit Hatari UI", None)
+
+        self.run = gtk.Action("run", "Run", "(Re-)run Hatari", None)
+        self.pause = gtk.Action("pause", "Pause", "Pause Hatari to save battery", None)
+        self.ff = gtk.Action("ff", "FastForward", "Whether to fast forward Hatari (needs fast machine)", None)
+        self.reset = gtk.Action("reset", "Reset", "Warm or cold reset Hatari", None)
+
+        self.display = gtk.Action("display", "Display", "Display settings", None)
+        self.sound = gtk.Action("sound", "Sound", "Sound settings", None)
+        self.devices = gtk.Action("devices", "Peripherals", "Floppy and joystick settings", None)
+        self.machine = gtk.Action("machine", "Machine", "Hatari st/e/tt/falcon configuration", None)
+    
+        self.paste = gtk.Action("paste", "Paste text", "Insert text to Hatari window", None)
+        self.dclick = gtk.Action("dclick", "Doubleclick", "Simulate Atari left button double-click", None)
+        self.rclick = gtk.Action("rclick", "Rightclick", "Simulate Atari right button click", None)
+    
+        self.debug = gtk.Action("debug", "Debugger", "Activate Hatari debugger", None)
+        self.trace = gtk.Action("trace", "Trace settings", "Hatari tracing setup", None)
+        self.close = gtk.Action("close", "Close", "Close button for panel windows", None)
+        
+        self.show_list()
+
+    def show_list(self):
+        for act in (self.about, self.shot, self.quit,
+                    self.run, self.pause,self.ff, self.reset,
+                    self.display, self.sound, self.devices, self.machine,
+                    self.dclick, self.rclick, self.paste,
+                    self.debug, self.trace, self.close):
+            print "%s\t%s" % (act.get_name(), act.get_property("tooltip"))
+
+    def activate(self, widget):
+        print "activated:", widget.get_name()
+        
+    def get_menu(self):
+        allmenus = (
+        ("File", (self.about, None, self.shot, None, self.quit)),
+        ("Emulation", (self.run, self.pause, None, self.ff, None, self.reset)),
+        ("Setup", (self.display, self.sound, self.devices, self.machine)),
+        ("Input", (self.paste, self.dclick, self.rclick)),
+        ("Debug", (self.debug, self.trace))
+        )
+        
+        bar = gtk.MenuBar()
+
+        for title, barmenu in allmenus:
+            submenu = gtk.Menu()
+            for action in barmenu:
+                if action:
+                    action.connect("activate", self.activate)
+                    item = action.create_menu_item()
+                else:
+                    item = gtk.SeparatorMenuItem()
+                submenu.add(item)
+            baritem = gtk.MenuItem(title, False)
+            baritem.set_submenu(submenu)
+            bar.add(baritem)
+
+        return bar
 
 
 # class for all the controls that the different UI panels and windows can have
@@ -48,7 +113,7 @@ class HatariControls():
     # inheriting a common interface class, but that would be an overkill)
     all = [
         "about", "run", "pause", "reset", "setup", "quit",
-        "fastforward", "frameskip", "spec512", "sound", "screenshot",
+        "fastforward", "display", "sound", "screenshot",
         "rightclick", "doubleclick", "paste", "peripherals",
         "debug", "trace", "close"
     ]
@@ -73,6 +138,7 @@ class HatariControls():
         self.resetdialog = None
         self.killdialog = None
         self.peripheralsdialog = None
+        self.displaydialog = None
         self.pastedialog = None
         self.quitdialog = None
         self.setupdialog = None
@@ -222,8 +288,18 @@ class HatariControls():
         self.peripheralsdialog.run(self.config)
 
     def peripherals(self):
-        "Dialog for setting Hatari peripherals"
+        "Dialog for Hatari peripherals settings"
         return (create_button("Peripherals", self._peripherals_cb), True)
+
+    # ------- display control -----------
+    def _display_cb(self, widget):
+        if not self.displaydialog:
+            self.displaydialog = DisplayDialog(self.mainwin)
+        self.displaydialog.run(self.config)
+
+    def display(self):
+        "Dialog for Hatari display settings"
+        return (create_button("Display", self._display_cb), True)
 
     # ------- doubleclick control -----------
     def _doubleclick_cb(self, widget):
@@ -278,17 +354,6 @@ class HatariControls():
         widget.connect("toggled", self._fastforward_cb)
         return (widget, False)
 
-    # ------- spec512 control -----------
-    def _spec512_cb(self, widget):
-        self.config.set_spec512threshold(widget.get_active())
-
-    def spec512(self):
-        "Whether to support Spec512 (>16 colors at the same time)"
-        widget = gtk.CheckButton("Spec512")
-        widget.set_active(self.config.get_spec512threshold())
-        widget.connect("toggled", self._spec512_cb)
-        return (widget, False)
-
     # ------- sound control -----------
     def _sound_cb(self, widget):
         self.config.set_sound(widget.get_active())
@@ -316,30 +381,6 @@ class HatariControls():
     def screenshot(self):
         "Take a screenshot"
         return (create_button("Screenshot", self._screenshot_cb), True)
-    
-    # ------- frame skip control -----------
-    def _frameskip_cb(self, widget):
-        self.config.set_frameskips(widget.get_value())
-
-    def frameskip(self):
-        "Increase/decrease screen frame skip"
-        if self.to_horizontal_box:
-            box = gtk.HBox(False, self.label_spacing/2)
-            box.pack_start(gtk.Label("Frameskip:"), False, False, 0)
-            widget = gtk.HScale()
-        else:
-            box = gtk.VBox()
-            box.pack_end(gtk.Label("Frameskip"), False, False, 0)
-            widget = gtk.VScale()
-        widget.set_digits(0)
-        widget.set_range(0, 8)
-        widget.set_value(self.config.get_frameskips())
-        widget.set_update_policy(gtk.UPDATE_DISCONTINUOUS)
-        widget.connect("value-changed", self._frameskip_cb)
-        # important, without this Hatari doesn't receive key events!
-        widget.unset_flags(gtk.CAN_FOCUS)
-        box.add(widget)
-        return (box, True)
 
     # ------- insert key special control -----------
     def _keypress_cb(self, widget, code):
@@ -571,6 +612,8 @@ class HatariUI():
             hbox.pack_start(right, False, True)
         # add vertical elements
         vbox = gtk.VBox()
+        actions = UIActions()
+        vbox.add(actions.get_menu())
         if top:
             vbox.pack_start(top, False, True)
         vbox.add(hbox)
@@ -630,7 +673,7 @@ For example:
 \t-t "about,run,pause,quit" \\
 \t-p "MyPanel,Macro=Test,Undo=97,Help=98,>,F1=59,F2=60,F3=61,F4=62,>,close" \\
 \t-r "paste,debug,trace,setup,MyPanel" \\
-\t-b "sound,spec512,|,fastforward,|,frameskip"
+\t-b "sound,|,fastforward"
 
 if no options are given, the UI uses basic controls.
 """ % name

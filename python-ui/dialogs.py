@@ -232,6 +232,61 @@ class ResetDialog(HatariUIDialog):
             return False
         return True
 
+    
+# ---------------------------
+# Hatari screen dialog
+
+class DisplayDialog(HatariUIDialog):
+    # immediate action instead of using apply
+    #def _frameskip_cb(self, widget, config):
+    #    config.set_frameskips(widget.get_value())
+    #def _spec512_cb(self, widget, config):
+    #    config.set_spec512threshold(widget.get_active())
+
+    def _create_dialog(self, config):
+        tips = gtk.Tooltips()
+
+        skip = gtk.HScale()
+        skip.set_digits(0)
+        skip.set_range(0, 8)
+        skip.set_size_request(8*8, -1)
+        skip.set_value(config.get_frameskips())
+        #skip.set_update_policy(gtk.UPDATE_DISCONTINUOUS)
+        #skip.connect("value-changed", self._frameskip_cb, config)
+        tips.set_tip(skip, "Increase/decrease screen frame skip")
+        hbox = gtk.HBox()
+        hbox.pack_start(gtk.Label("Frameskip:"), False, False, 0)
+        hbox.add(skip)
+        self.skip = skip
+
+        spec512 = gtk.CheckButton("Spec512")
+        spec512.set_active(config.get_spec512threshold())
+        #spec512.connect("toggled", self._spec512_cb)
+        tips.set_tip(spec512, "Whether to support Spec512 (>16 colors at the same time)")
+        self.spec512 = spec512
+
+        print "TODO: add borders and low-res zoom checkboxes"
+
+        dialog = gtk.Dialog("Display settings", self.parent,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
+             gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL))
+        dialog.vbox.add(hbox)
+        dialog.vbox.add(spec512)
+        dialog.vbox.show_all()
+        self.dialog = dialog
+
+    def run(self, config):
+        "run(config), show display dialog"
+        if not self.dialog:
+            self._create_dialog(config)
+        response = self.dialog.run()
+        self.dialog.hide()
+        if response == gtk.RESPONSE_CANCEL:
+            return
+        config.set_frameskips(self.skip.get_value())
+        config.set_spec512threshold(self.spec512.get_active())
+        
 
 # ---------------------------
 # Trace settings dialog
