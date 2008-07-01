@@ -3,6 +3,7 @@
 # Run Hatari UI with all available controls
 
 $0.py --embed \
---top "run,pause,reset,setup,screenshot,about,quit" \
+--top "run,pause,reset,setup,about,quit" \
 --panel "Input,paste,doubleclick,rightclick,>,F1=59,F2=60,F3=61,F4=62,F5=63,F6=64,F7=65,F8=66,F9=67,F10=68,>,Macro=Test,Undo=97,Help=98,Enter=114,>,close" \
---bottom "fastforward,|,sound,Input,peripherals,display,debug,trace"
+--panel "Misc,fastforward,|,fullscreen,|,sound,>,screenshot,>,close" \
+--bottom "Misc,Input,peripherals,display,debug,trace"

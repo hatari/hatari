@@ -237,11 +237,6 @@ class ResetDialog(HatariUIDialog):
 # Hatari screen dialog
 
 class DisplayDialog(HatariUIDialog):
-    # immediate action instead of using apply
-    #def _frameskip_cb(self, widget, config):
-    #    config.set_frameskips(widget.get_value())
-    #def _spec512_cb(self, widget, config):
-    #    config.set_spec512threshold(widget.get_active())
 
     def _create_dialog(self, config):
         tips = gtk.Tooltips()
@@ -251,28 +246,39 @@ class DisplayDialog(HatariUIDialog):
         skip.set_range(0, 8)
         skip.set_size_request(8*8, -1)
         skip.set_value(config.get_frameskips())
-        #skip.set_update_policy(gtk.UPDATE_DISCONTINUOUS)
-        #skip.connect("value-changed", self._frameskip_cb, config)
         tips.set_tip(skip, "Increase/decrease screen frame skip")
-        hbox = gtk.HBox()
-        hbox.pack_start(gtk.Label("Frameskip:"), False, False, 0)
-        hbox.add(skip)
+        
+        hbox1 = gtk.HBox()
+        hbox1.pack_start(gtk.Label("Frameskip:"), False, False, 0)
+        hbox1.add(skip)
         self.skip = skip
 
         spec512 = gtk.CheckButton("Spec512")
         spec512.set_active(config.get_spec512threshold())
-        #spec512.connect("toggled", self._spec512_cb)
         tips.set_tip(spec512, "Whether to support Spec512 (>16 colors at the same time)")
-        self.spec512 = spec512
 
-        print "TODO: add borders and low-res zoom checkboxes"
+        borders = gtk.CheckButton("Borders")
+        borders.set_active(config.get_borders())
+        tips.set_tip(borders, "Whether to show overscan borders in low/mid-rez")
+
+        zoom = gtk.CheckButton("Zoom ST-low")
+        zoom.set_active(config.get_zoom())
+        tips.set_tip(zoom, "Whether to double ST-low resolution")
+
+        hbox2 = gtk.HBox()
+        hbox2.add(spec512)
+        hbox2.add(borders)
+        hbox2.add(zoom)
+        self.zoom = zoom
+        self.borders = borders
+        self.spec512 = spec512
 
         dialog = gtk.Dialog("Display settings", self.parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
              gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL))
-        dialog.vbox.add(hbox)
-        dialog.vbox.add(spec512)
+        dialog.vbox.add(hbox1)
+        dialog.vbox.add(hbox2)
         dialog.vbox.show_all()
         self.dialog = dialog
 
@@ -284,8 +290,12 @@ class DisplayDialog(HatariUIDialog):
         self.dialog.hide()
         if response == gtk.RESPONSE_CANCEL:
             return
+        config.lock_updates()
         config.set_frameskips(self.skip.get_value())
         config.set_spec512threshold(self.spec512.get_active())
+        config.set_borders(self.borders.get_active())
+        config.set_zoom(self.zoom.get_active())
+        config.flush_updates()
         
 
 # ---------------------------

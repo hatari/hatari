@@ -48,28 +48,29 @@ class UIActions:
 
         self.run = gtk.Action("run", "Run", "(Re-)run Hatari", None)
         self.pause = gtk.Action("pause", "Pause", "Pause Hatari to save battery", None)
-        self.ff = gtk.Action("ff", "FastForward", "Whether to fast forward Hatari (needs fast machine)", None)
-        self.reset = gtk.Action("reset", "Reset", "Warm or cold reset Hatari", None)
+        self.ff = gtk.ToggleAction("ff", "FastForward", "Whether to fast forward Hatari (needs fast machine)", None)
+        self.full = gtk.ToggleAction("full", "Fullscreen", "Toggle whether Hatari is fullscreen", None)
+        self.reset = gtk.Action("reset", "Reset...", "Warm or cold reset Hatari", None)
 
-        self.display = gtk.Action("display", "Display", "Display settings", None)
         self.sound = gtk.Action("sound", "Sound", "Sound settings", None)
-        self.devices = gtk.Action("devices", "Peripherals", "Floppy and joystick settings", None)
-        self.machine = gtk.Action("machine", "Machine", "Hatari st/e/tt/falcon configuration", None)
-    
-        self.paste = gtk.Action("paste", "Paste text", "Insert text to Hatari window", None)
+        self.display = gtk.Action("display", "Display...", "Display settings", None)
+        self.devices = gtk.Action("devices", "Peripherals...", "Floppy and joystick settings", None)
+        self.machine = gtk.Action("machine", "Machine...", "Hatari st/e/tt/falcon configuration", None)
+
+        self.paste = gtk.Action("paste", "Paste text...", "Insert text to Hatari window", None)
         self.dclick = gtk.Action("dclick", "Doubleclick", "Simulate Atari left button double-click", None)
         self.rclick = gtk.Action("rclick", "Rightclick", "Simulate Atari right button click", None)
     
-        self.debug = gtk.Action("debug", "Debugger", "Activate Hatari debugger", None)
-        self.trace = gtk.Action("trace", "Trace settings", "Hatari tracing setup", None)
+        self.debug = gtk.Action("debug", "Debugger...", "Activate Hatari debugger", None)
+        self.trace = gtk.Action("trace", "Trace settings...", "Hatari tracing setup", None)
         self.close = gtk.Action("close", "Close", "Close button for panel windows", None)
         
         self.show_list()
 
     def show_list(self):
         for act in (self.about, self.shot, self.quit,
-                    self.run, self.pause,self.ff, self.reset,
-                    self.display, self.sound, self.devices, self.machine,
+                    self.run, self.pause,self.ff, self.full, self.reset,
+                    self.sound, self.display, self.devices, self.machine,
                     self.dclick, self.rclick, self.paste,
                     self.debug, self.trace, self.close):
             print "%s\t%s" % (act.get_name(), act.get_property("tooltip"))
@@ -80,8 +81,8 @@ class UIActions:
     def get_menu(self):
         allmenus = (
         ("File", (self.about, None, self.shot, None, self.quit)),
-        ("Emulation", (self.run, self.pause, None, self.ff, None, self.reset)),
-        ("Setup", (self.display, self.sound, self.devices, self.machine)),
+        ("Emulation", (self.run, self.pause, None, self.ff, None, self.full, None, self.reset)),
+        ("Setup", (self.sound, self.display, self.devices, self.machine)),
         ("Input", (self.paste, self.dclick, self.rclick)),
         ("Debug", (self.debug, self.trace))
         )
@@ -113,7 +114,7 @@ class HatariControls():
     # inheriting a common interface class, but that would be an overkill)
     all = [
         "about", "run", "pause", "reset", "setup", "quit",
-        "fastforward", "display", "sound", "screenshot",
+        "fullscreen", "fastforward", "display", "sound", "screenshot",
         "rightclick", "doubleclick", "paste", "peripherals",
         "debug", "trace", "close"
     ]
@@ -352,6 +353,17 @@ class HatariControls():
         widget = gtk.CheckButton("FastForward")
         widget.set_active(self.config.get_fastforward())
         widget.connect("toggled", self._fastforward_cb)
+        return (widget, False)
+
+    # ------- fullscreen control -----------
+    def _fullscreen_cb(self, widget):
+        self.config.set_fullscreen(widget.get_active())
+
+    def fullscreen(self):
+        "Hatari window fullscreen toggle"
+        widget = gtk.CheckButton("fullscreen")
+        widget.set_active(self.config.get_fullscreen())
+        widget.connect("toggled", self._fullscreen_cb)
         return (widget, False)
 
     # ------- sound control -----------
@@ -673,7 +685,7 @@ For example:
 \t-t "about,run,pause,quit" \\
 \t-p "MyPanel,Macro=Test,Undo=97,Help=98,>,F1=59,F2=60,F3=61,F4=62,>,close" \\
 \t-r "paste,debug,trace,setup,MyPanel" \\
-\t-b "sound,|,fastforward"
+\t-b "sound,|,fastforward,|,fullscreen"
 
 if no options are given, the UI uses basic controls.
 """ % name

@@ -224,7 +224,6 @@ class Hatari():
 # and command line options.
 #
 # Following configuration variables/options aren't (yet) mapped:
-# - zoom, windowed/fullscreen and borders (disabled for embedding)
 # - disk-b autoinsertion, disk zip path, write protection
 # - hard disk image, whether to use HD dir or image
 # - joystick autofire, defining the keys for emu
@@ -300,24 +299,6 @@ class HatariConfigMapping(ConfigStore):
         self.set("[System]", "bFastForward", value)
         self._change_option("--fast-forward %s" % str(value))
         
-    # ------------ spec512 ---------------
-    def get_spec512threshold(self):
-        return self.get("[Screen]", "nSpec512Threshold")
-
-    def set_spec512threshold(self, value):
-        value = int(value) # guarantee correct type
-        self.set("[Screen]", "nSpec512Threshold", value)
-        self._change_option("--spec512 %d" % value)
-
-    # ------------ frameskips ---------------
-    def get_frameskips(self):
-        return self.get("[Screen]", "nFrameSkips")
-    
-    def set_frameskips(self, value):
-        value = int(value) # guarantee correct type
-        self.set("[Screen]", "nFrameSkips", value)
-        self._change_option("--frameskips %d" % value)
-        
     # ------------ sound ---------------
     def get_sound_values(self):
         return ("Off", "11kHz", "22kHz", "44kHz")
@@ -384,6 +365,7 @@ class HatariConfigMapping(ConfigStore):
     
     def set_use_harddisk(self, value):
         self.set("[HardDisk]", "bUseHardDiskDirectory", value)
+        # TODO: add to hatari option for this
 
     # ------------ harddisk (dir) ---------------
     def get_harddisk(self):
@@ -436,20 +418,69 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Screen]", "nMonitorType", value)
         self._change_option("--monitor %s" % ("mono", "rgb", "vga", "tv")[value])
 
+    # ------------ frameskips ---------------
+    def get_frameskips(self):
+        return self.get("[Screen]", "nFrameSkips")
+    
+    def set_frameskips(self, value):
+        value = int(value) # guarantee correct type
+        self.set("[Screen]", "nFrameSkips", value)
+        self._change_option("--frameskips %d" % value)
+
+    # ------------ spec512 ---------------
+    def get_spec512threshold(self):
+        return self.get("[Screen]", "nSpec512Threshold")
+
+    def set_spec512threshold(self, value):
+        value = int(value) # guarantee correct type
+        self.set("[Screen]", "nSpec512Threshold", value)
+        self._change_option("--spec512 %d" % value)
+
+    # ------------ show fullscreen ---------------
+    def get_fullscreen(self):
+        return self.get("[Screen]", "bFullScreen")
+    
+    def set_fullscreen(self, value):
+        self.set("[Screen]", "bFullScreen", value)
+        if value:
+            self._change_option("--fullscreen")
+        else:
+            self._change_option("--window")
+
+    # ------------ show borders ---------------
+    def get_borders(self):
+        return self.get("[Screen]", "bAllowOverscan")
+    
+    def set_borders(self, value):
+        self.set("[Screen]", "bAllowOverscan", value)
+        self._change_option("--borders %s" % str(value))
+
+    # ------------ use zoom ---------------
+    def get_zoom(self):
+        return self.get("[Screen]", "bZoomLowRes")
+    
+    def set_zoom(self, value):
+        self.set("[Screen]", "bZoomLowRes", value)
+        if value:
+            zoom = 2
+        else:
+            zoom = 1
+        self._change_option("--zoom %d" % zoom)
+
     # ------------ configured Hatari window size ---------------
     def get_window_size(self):
         if self.get("[Screen]", "bFullScreen"):
             print "WARNING: don't start Hatari UI with fullscreened Hatari!"
-            
-        # window sizes for other than ST & STE can differ
-        if self.get("[System]", "nMachineType") not in (0, 1):
-            print "WARNING: neither ST nor STE machine, window size inaccurate!"
 
         # VDI resolution?
         if self.get("[Screen]", "bUseExtVdiResolutions"):
             width = self.get("[Screen]", "nVdiWidth")
             height = self.get("[Screen]", "nVdiHeight")
             return (width, height)
+            
+        # window sizes for other than ST & STE can differ
+        if self.get("[System]", "nMachineType") not in (0, 1):
+            print "WARNING: neither ST nor STE machine, window size inaccurate!"
 
         # mono monitor?
         if self.get("[Screen]", "nMonitorType") == 0:
@@ -468,5 +499,5 @@ class HatariConfigMapping(ConfigStore):
         if self.get("[Screen]", "bZoomLowRes"):
             width *= 2
             height *= 2
-        return (width, height)
 
+        return (width, height)
