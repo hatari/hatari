@@ -34,7 +34,7 @@ import gobject
 class UInfo:
     """singleton constants for the UI windows,
     one instance is needed to initialize these properly"""
-    version = "v0.7"
+    version = "v0.8"
     name = "Hatari UI"
     logo = "hatari.png"
     icon = "hatari-icon.png"
@@ -97,6 +97,14 @@ def create_button(label, cb, data = None):
         button.connect("clicked", cb, data)
     return button
 
+def create_toolbutton(icon, label, cb, data = None):
+    "create_toolbutton(label,cb[,data]) -> toolbar button widget"
+    button = gtk.ToolButton(icon, label)
+    if data == None:
+        button.connect("clicked", cb)
+    else:
+        button.connect("clicked", cb, data)
+    return button
 
 def create_toggle(label, cb, data = None):
     "create_toggle(label,cb[,data]) -> toggle button widget"

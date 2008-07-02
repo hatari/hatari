@@ -21,8 +21,9 @@ pygtk.require('2.0')
 import gtk
 import pango
 
-from uihelpers import UInfo, create_button, create_table_dialog, \
-     table_add_entry_row, table_add_widget_row, table_add_separator
+from uihelpers import UInfo, HatariTextInsert, create_table_dialog, \
+     table_add_entry_row, table_add_widget_row, table_add_separator, \
+     create_button
 
 
 # -----------------
@@ -100,35 +101,62 @@ You can see the whole license at:
 
 
 # ---------------------------
-# Paste dialog
+# Input dialog
 
-class PasteDialog(HatariUIDialog):
+class InputDialog(HatariUIDialog):
     def __init__(self, parent):
-        dialog = gtk.Dialog("Insert text", parent,
+        dialog = gtk.Dialog("Key/mouse input", parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-            ("Paste", gtk.RESPONSE_YES))
+            ("Close", gtk.RESPONSE_CLOSE))
+        
+        tips = gtk.Tooltips()
         entry = gtk.Entry()
         entry.connect("activate", self._entry_cb)
-        hbox = gtk.HBox()
-        hbox.add(gtk.Label("Text:"))
-        hbox.add(entry)
-        dialog.vbox.add(hbox)
+        insert = create_button("Insert", self._entry_cb)
+        tips.set_tip(insert, "Insert text to Hatari window")
+
+        hbox1 = gtk.HBox()
+        hbox1.add(gtk.Label("Text:"))
+        hbox1.add(entry)
+        hbox1.add(insert)
+        dialog.vbox.add(hbox1)
+
+        rclick = gtk.Button("Rightclick")
+        tips.set_tip(rclick, "Simulate Atari left button double-click")
+        rclick.connect("pressed", self._rightpress_cb)
+        rclick.connect("released", self._rightrelease_cb)
+        dclick = create_button("Doubleclick", self._doubleclick_cb)
+        tips.set_tip(dclick, "Simulate Atari rigth button click")
+
+        hbox2 = gtk.HBox()
+        hbox2.add(rclick)
+        hbox2.add(dclick)
+        dialog.vbox.add(hbox2)
+
         dialog.show_all()
         self.dialog = dialog
         self.entry = entry
     
     def _entry_cb(self, widget):
-        self.dialog.response(gtk.RESPONSE_YES)
-        
-    def run(self):
-        "run() -> text to insert"
-        self.entry.set_text("")
-        if self.dialog.run() == gtk.RESPONSE_YES:
-            text = self.entry.get_text()
-        else:
-            text = None
+        text = self.entry.get_text()
+        if text:
+            HatariTextInsert(self.hatari, text)
+            self.entry.set_text("")
+
+    def _doubleclick_cb(self, widget):
+        self.hatari.insert_event("doubleclick")
+
+    def _rightpress_cb(self, widget):
+        self.hatari.insert_event("rightpress")
+
+    def _rightrelease_cb(self, widget):
+        self.hatari.insert_event("rightrelease")
+
+    def run(self, hatari):
+        "run(hatari), do text/mouse click input"
+        self.hatari = hatari
+        self.dialog.run()
         self.dialog.hide()
-        return text
 
 
 # ---------------------------

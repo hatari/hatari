@@ -28,7 +28,7 @@ import gobject
 
 from debugui import HatariDebugUI
 from hatari import Hatari, HatariConfigMapping
-from uihelpers import UInfo, create_button, create_toggle
+from uihelpers import UInfo, create_button, create_toggle, create_toolbutton
 from dialogs import AboutDialog, InputDialog, KillDialog, QuitSaveDialog, \
      ResetDialog, SetupDialog, TraceDialog, PeripheralsDialog, ErrorDialog, \
      DisplayDialog
@@ -40,6 +40,214 @@ def window_hide_cb(window, arg):
     return True
 
 
+class UIActions:
+    def __init__(self):
+        self.actions = gtk.ActionGroup("all")
+        # name, icon ID, label, accel, tooltip, callback
+        self.actions.add_toggle_actions((
+        ("fast", None, "FastForward", None, "Whether to fast forward Hatari (needs fast machine)", None),
+        ("full", None, "Fullscreen", None, "Toggle whether Hatari is fullscreen", None)
+        ))
+        self.actions.add_actions((
+        # name, icon ID, label, accel, tooltip, callback
+        ("about", None, "About", None, "Hatari UI information", None),
+        ("shot", None, "Screenshot", None, "Take a screenshot", None),
+        ("quit", None, "Quit", None, "Quit Hatari UI", None),
+        
+        ("run", None, "Run", None, "(Re-)run Hatari", None),
+        ("pause", None, "Pause", None, "Pause Hatari to save battery", None),
+        ("reset", None, "Reset...", None, "Warm or cold reset Hatari", None),
+        
+        ("sound", None, "Sound...", None, "Sound settings", None),
+        ("display", None, "Display...", None, "Display settings", None),
+        ("devices", None, "Devices...", None, "Floppy and joystick settings", None),
+        ("machine", None, "Machine...", None, "Hatari st/e/tt/falcon configuration", None),
+        
+        ("debug", None, "Debugger...", None, "Activate Hatari debugger", None),
+        ("trace", None, "Trace settings...", None, "Hatari tracing setup", None),
+        
+        # not in menu, just as buttons
+        ("input", None, "Input...", None, "Simulate text input and mouse clicks", None),
+        ("close", None, "Close", None, "Close button for panel windows", None)
+        ))
+        self.action_names = [x.get_name() for x in self.actions.list_actions()]
+        self.panel_actions = []
+        self.panel_names = []
+        self.panels = []
+        # no actions set yet
+        self.toolbars = {}
+
+    # ----- toolbar / panel additions ---------
+    def set_actions(self, action_str, place):
+        "set_actions(actions,place) -> error string, None if all OK"
+        actions = action_str.split(",")
+        for action in actions:
+            if action in self.action_names:
+                # regular action
+                if action == "close" and place != "panel":
+                    return "close button can be only in a panel"
+                continue
+            if action in ("|", ">") or action in self.panel_names:
+                # divider/line break or special panel action
+                continue
+            if action.find("=") >= 0:
+                # special keycode/string action
+                continue
+            return "unrecognized action '%s'" % action
+
+        if place in ("left", "right", "top", "bottom"):
+            self.toolbars[place] = actions
+        elif place == "panel":
+            self.panel_actions.append(actions)
+        else:
+            return "unknown actions position '%s'" % place
+        return None
+
+    def add_panel(self, spec):
+        "add_panel(panel_specification) -> error string, None if all is OK"
+        error = None
+        offset = spec.find(",")
+        if offset <= 0:
+            error = "invalid panel specification '%s'" % spec
+        else:
+            error = self.set_actions(spec[offset+1:], "panel")
+            if not error:
+                self.panel_names.append(spec[:offset])
+                self.panels.append(None)
+        return error
+
+    def list_actions(self):
+        yield ("|", "Separator between actions")
+        yield (">", "Line break between actions in panel windows")
+        # generate the list from action information
+        for act in self.actions.list_actions():
+            yield(act.get_name(), act.get_property("tooltip"))
+        yield ("<panel name>", self.add_panel_button.__doc__)
+        yield ("<name>=<string/code>", "Synthetize string or single key <code>")
+
+    # ------- panel special action -----------
+    def _panel_cb(self, widget, idx):
+        if not self.panels[idx]:
+            window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+            window.set_transient_for(self.mainwin)
+            window.set_icon_from_file(UInfo.icon)
+            window.set_title(self.panel_names[idx])
+            if "close" in self.panel_actions[idx]:
+                window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
+            window.add(self.get_action_box(self.panel_actions[idx], True))
+            window.connect("delete_event", window_hide_cb)
+            self.panels[idx] = window
+        self.panels[idx].show_all()
+        self.panels[idx].deiconify()
+
+    def add_panel_button(self, name):
+        "Button for the specified panel window"
+        index = self.panel_names.index(name)
+        # TODO: icon for the panel window toolbar button
+        button = create_toolbutton(None, name, self._panel_cb, index)
+        return (button, name)
+
+    # ------- key special action -----------
+    def create_key_control(self, name, textcode):
+        "Simulate Atari key press/release and string inserting"
+        if not textcode:
+            return (None, None, None)
+        widget = gtk.Button(name)
+        try:
+            # part after "=" converts to an int?
+            code = int(textcode, 0)
+            widget.connect("pressed", self.callbacks.keypress, code)
+            widget.connect("released", self.callbacks.keyrelease, code)
+            tip = "keycode: %d" % code
+        except ValueError:
+            # no, assume a string macro is wanted instead
+            widget.connect("clicked", self.callbacks_textinsert, textcode)
+            tip = "string '%s'" % textcode
+        return (widget, tip)
+
+    def get_container(self, side, orientation):
+        "return Gtk container with the specified actions or None for no actions"
+        if side not in self.toolbars:
+            return None
+        actions = self.toolbars[side]
+        if not actions:
+            return None
+        
+        if ">" in actions:
+            if orientation == gtk.ORIENTATION_HORIZONTAL:
+                box = gtk.VBox(False, self.action_spacing)
+            else:
+                box = gtk.BBox(False, self.action_spacing)
+            while ">" in actions:
+                linebreak = actions.index(">")
+                box.add(self.get_toolbar(actions[:linebreak], orientation))
+                actions = actions[linebreak+1:]
+            if actions:
+                box.add(self.get_toolbar(actions, orientation))
+            return box
+
+        bar = gtk.Toolbar()
+        bar.set_orientation(orientation)        
+        tooltips = gtk.Tooltips()
+        
+        for action in actions:
+            offset = action.find("=")
+            if offset >= 0:
+                # handle "<name>=<keycode>" action specification
+                name = action[:offset]
+                text = action[offset+1:]
+                (widget, tip) = self.create_key_control(name, text)
+                tooltips.set_tip(widget, "Insert " + tip)
+            elif action == "|":
+                if horizontal:
+                    widget = gtk.VSeparator()
+                else:
+                    widget = gtk.HSeparator()
+            elif action in self.panel_names:
+                (widget, tip) = self.add_panel_button(action)
+                tooltips.set_tip(widget, tip)
+            else:
+                print action
+                widget = self.actions.get_action(action).create_tool_item()
+            if not widget:
+                continue
+            # important, without this Hatari doesn't receive key events!
+            widget.unset_flags(gtk.CAN_FOCUS)
+            bar.insert(widget, -1)
+        return bar
+
+    # ------------- handling menu -------------
+    def activate(self, widget):
+        print "activated:", widget.get_name()
+        
+    def get_menu(self):
+        allmenus = (
+        ("File", ("about", None, "shot", None, "quit")),
+        ("Emulation", ("run", "pause", None, "fast", None, "full", None, "reset")),
+        ("Setup", ("sound", "display", "devices", "machine")),
+        ("Debug", ("debug", "trace"))
+        )
+        bar = gtk.MenuBar()
+
+        for title, barmenu in allmenus:
+            submenu = gtk.Menu()
+            for name in barmenu:
+                if name:
+                    action = self.actions.get_action(name)
+                    # dummy action
+                    action.connect("activate", self.activate)
+                    item = action.create_menu_item()
+                else:
+                    item = gtk.SeparatorMenuItem()
+                submenu.add(item)
+            baritem = gtk.MenuItem(title, False)
+            baritem.set_submenu(submenu)
+            bar.add(baritem)
+
+        print "TODO: add panels menu"
+        return bar
+
+
 # class for all the controls that the different UI panels and windows can have
 class HatariControls():
     # these are the names of methods returning (control widget, expand flag) tuples
@@ -48,9 +256,9 @@ class HatariControls():
     # (in a more OO application all these widgets would be separate classes
     # inheriting a common interface class, but that would be an overkill)
     all = [
-        "about", "run", "pause", "reset", "setup", "quit",
-        "fullscreen", "fastforward", "display", "sound", "screenshot",
-        "input", "peripherals", "debug", "trace", "close"
+        "about", "run", "pause", "reset", "machine", "quit",
+        "full", "fast", "display", "sound", "shot",
+        "input", "devices", "debug", "trace", "close"
     ]
     # spacing between input widget and its label
     label_spacing = 4
@@ -72,9 +280,9 @@ class HatariControls():
         self.aboutdialog = None
         self.resetdialog = None
         self.killdialog = None
-        self.peripheralsdialog = None
+        self.devicesdialog = None
         self.displaydialog = None
-        self.inputdialog = None
+        self.pastedialog = None
         self.quitdialog = None
         self.setupdialog = None
         self.tracedialog = None
@@ -214,15 +422,15 @@ class HatariControls():
         "Quit Hatari UI"
         return (create_button("Quit", self._quit_cb), True)
 
-    # ------- peripherals control -----------
-    def _peripherals_cb(self, widget):
-        if not self.peripheralsdialog:
-            self.peripheralsdialog = PeripheralsDialog(self.mainwin)
-        self.peripheralsdialog.run(self.config)
+    # ------- devices control -----------
+    def _devices_cb(self, widget):
+        if not self.devicesdialog:
+            self.devicesdialog = DevicesDialog(self.mainwin)
+        self.devicesdialog.run(self.config)
 
-    def peripherals(self):
-        "Dialog for Hatari peripherals settings"
-        return (create_button("Peripherals", self._peripherals_cb), True)
+    def devices(self):
+        "Dialog for Hatari devices settings"
+        return (create_button("Devices", self._devices_cb), True)
 
     # ------- display control -----------
     def _display_cb(self, widget):
@@ -314,212 +522,35 @@ class HatariControls():
     def _textinsert_cb(self, widget, text):
         HatariTextInsert(self.hatari, text)
 
-    def create_key_control(self, name, textcode):
-        "Simulate Atari key press/release and string inserting"
-        if not textcode:
-            return (None, None, None)
-        widget = gtk.Button(name)
-        try:
-            # part after "=" converts to an int?
-            code = int(textcode, 0)
-            widget.connect("pressed", self._keypress_cb, code)
-            widget.connect("released", self._keyrelease_cb, code)
-            tip = "keycode: %d" % code
-        except ValueError:
-            # no, assume a string macro is wanted instead
-            widget.connect("clicked", self._textinsert_cb, textcode)
-            tip = "string '%s'" % textcode
-        return (widget, tip, True)
-
 
 # class for the main Hatari UI window, Hatari embedding, panels
 # and control positioning
 class HatariUI():
     def __init__(self):
-        self.panel_controls = []
-        self.panel_names = []
-        self.panels = []
-        # no controls set yet
-        self.controls_left = None
-        self.controls_right = None
-        self.controls_top = None
-        self.controls_bottom = None
-        self.control_spacing = 4 # pixels
-        self.controls = HatariControls()
         # other widgets
         self.tooltips = None
         self.mainwin = None
-
-    # ----- control types ---------
-    def set_controls(self, control_str, place):
-        "set_controls(controls,place) -> error string, None if all OK"
-        controls = control_str.split(",")
-        for control in controls:
-            if control in self.controls.all:
-                # regular control
-                if control == "close" and place != "panel":
-                    return "close button can be only in a panel"
-                continue
-            if control in ("|", ">") or control in self.panel_names:
-                # divider/line break or special panel control
-                continue
-            if control.find("=") >= 0:
-                # special keycode/string control
-                continue
-            return "unrecognized control '%s'" % control
-
-        if place == "left":
-            self.controls_left = controls
-        elif place == "right":
-            self.controls_right = controls
-        elif place == "top":
-            self.controls_top = controls
-        elif place == "bottom":
-            self.controls_bottom = controls
-        elif place == "panel":
-            self.panel_controls.append(controls)
-        else:
-            return "unknown controls position '%s'" % place
-        return None
-
-    def add_panel(self, spec):
-        "add_panel(panel_specification) -> error string, None if all is OK"
-        error = None
-        offset = spec.find(",")
-        if offset <= 0:
-            error = "invalid panel specification '%s'" % spec
-        else:
-            error = self.set_controls(spec[offset+1:], "panel")
-            if not error:
-                self.panel_names.append(spec[:offset])
-                self.panels.append(None)
-        return error
-
-    def list_all_controls(self):
-        "list_all_controls() -> list of (control, description) tuples"
-        # generate the list from class internal documentation
-        yield ("|", "Separator between controls")
-        yield (">", "Line break between controls in panels")
-        for methodname in self.controls.all:
-            yield (methodname, HatariControls.__dict__[methodname].__doc__)
-        yield ("<panel name>", self.add_panel_button.__doc__)
-        yield ("<name>=<string/code>", "Insert string or single key <code>")
-
-    def set_control_spacing(self, arg):
-        "set_control_spacing(spacing) -> error string, None if given int-as-string OK"
-        try:
-            self.control_spacing = int(arg, 0)
-            return None
-        except ValueError:
-            return "argument '%s' is not a number" % arg
-
-
-    # ------- panel special control -----------
-    def _panel_cb(self, widget, idx):
-        if not self.panels[idx]:
-            window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-            window.set_transient_for(self.mainwin)
-            window.set_icon_from_file(UInfo.icon)
-            window.set_title(self.panel_names[idx])
-            if "close" in self.panel_controls[idx]:
-                window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
-            window.add(self.get_control_box(self.panel_controls[idx], True))
-            window.connect("delete_event", window_hide_cb)
-            self.panels[idx] = window
-        self.panels[idx].show_all()
-        self.panels[idx].deiconify()
-
-    def add_panel_button(self, name):
-        "Button for the specified panel window"
-        index = self.panel_names.index(name)
-        button = create_button(name, self._panel_cb, index)
-        return (button, name, True)
-
-    # ------- control widget box -----------
-    def add_tooltip(self, widget, text):
-        # get the first non-label child of a box container
-        while widget.__gtype__ in (gtk.HBox.__gtype__, gtk.VBox.__gtype__):
-            children = widget.get_children()
-            if not children:
-                break
-            for child in children:
-                if child.__gtype__ not in (gtk.Label.__gtype__,):
-                    break
-            widget = child
-        #print widget.__gtype__, "tooltip:", text
-        self.tooltips.set_tip(widget, text)
-        
-    def get_control_box(self, controls, horizontal):
-        "return Gtk Box container with the specified control widgets or None for no controls"
-        if not controls:
-            return None
-        if ">" in controls:
-            if horizontal:
-                box = gtk.VBox(False, self.control_spacing)
-            else:
-                box = gtk.BBox(False, self.control_spacing)
-            while ">" in controls:
-                linebreak = controls.index(">")
-                box.add(self.get_control_box(controls[:linebreak], horizontal))
-                controls = controls[linebreak+1:]
-            if controls:
-                box.add(self.get_control_box(controls, horizontal))
-            return box
-
-        self.controls.set_box_horizontal(horizontal)
-        if horizontal:
-            box = gtk.HBox(False, self.control_spacing)
-        else:
-            box = gtk.VBox(False, self.control_spacing)
-        self.tooltips = gtk.Tooltips()
-        for control in controls:
-            offset = control.find("=")
-            if offset >= 0:
-                # handle "<name>=<keycode>" control specification
-                name = control[:offset]
-                text = control[offset+1:]
-                (widget, tip, expand) = self.controls.create_key_control(name, text)
-                self.tooltips.set_tip(widget, "Insert " + tip)
-            elif control == "|":
-                if horizontal:
-                    widget = gtk.VSeparator()
-                else:
-                    widget = gtk.HSeparator()
-                expand = False
-            elif control in self.panel_names:
-                (widget, tip, expand) = self.add_panel_button(control)
-                self.tooltips.set_tip(widget, tip)
-            else:
-                method = HatariControls.__dict__[control]
-                (widget, expand) = method(self.controls)
-                self.add_tooltip(widget, method.__doc__)
-            if not widget:
-                continue
-            # important, without this Hatari doesn't receive key events!
-            widget.unset_flags(gtk.CAN_FOCUS)
-            box.pack_start(widget, expand, expand, 0)
-        return box
-
+        self.controls = HatariControls()
 
     # ---------- create UI ----------------
-    def create_ui(self, fullscreen, embed):
+    def create_ui(self, actions, fullscreen, embed):
         "create_ui(fullscreen, embed), args are booleans"
         # just instantiate all UI windows/widgets...
-        mainwin, hatariparent = self._create_mainwin(embed)
+        mainwin, hatariparent = self._create_mainwin(actions, embed)
         if fullscreen:
             mainwin.fullscreen()
         self.controls.set_mainwin_hatariparent(mainwin, hatariparent)
         self.mainwin = mainwin
         mainwin.show_all()
 
-    def _create_mainwin(self, embed):
-        # create control button rows/columns
-        if not (self.controls_left or self.controls_right or self.controls_top or self.controls_bottom):
-            self.controls_bottom = ["about", "pause", "quit"]
-        left   = self.get_control_box(self.controls_left, False)
-        right  = self.get_control_box(self.controls_right, False)
-        top    = self.get_control_box(self.controls_top, True)
-        bottom = self.get_control_box(self.controls_bottom, True)
+    def _create_mainwin(self, actions, embed):
+        # create toolbars
+        orient = gtk.ORIENTATION_VERTICAL
+        left   = actions.get_container("left", orient)
+        right  = actions.get_container("right", orient)
+        orient = gtk.ORIENTATION_HORIZONTAL
+        top    = actions.get_container("top", orient)
+        bottom = actions.get_container("bottom", orient)
         # add horizontal elements
         hbox = gtk.HBox()
         if left:
@@ -534,6 +565,7 @@ class HatariUI():
             hbox.pack_start(right, False, True)
         # add vertical elements
         vbox = gtk.VBox()
+        vbox.add(actions.get_menu())
         if top:
             vbox.pack_start(top, False, True)
         vbox.add(hbox)
@@ -557,7 +589,7 @@ class HatariUI():
         return socket
 
 
-def usage(app, msg=None):
+def usage(actions, msg=None):
     name = os.path.basename(sys.argv[0])
     uiname = "%s %s" % (UInfo.name, UInfo.version)
     print "\n%s" % uiname
@@ -571,22 +603,21 @@ def usage(app, msg=None):
     print "\t-r, --right <controls>\tright UI controls"
     print "\t-t, --top <controls>\ttop UI controls"
     print "\t-b, --bottom <controls>\tbottom UI controls"
-    print "\t-s, --spacing <pixels>\tspacing between controls in pixels"
     print "\t-p, --panel <name>,<controls>"
     print "\t\t\t\tseparate window with given name and controls"
     print "\nAvailable controls:"
-    for control, description in app.list_all_controls():
-        size = len(control)
+    for action, description in actions.list_actions():
+        size = len(action)
         if size < 8:
             tabs = "\t\t"
         elif size < 16:
             tabs = "\t"
         else:
             tabs = "\n\t\t\t"
-        print "\t%s%s%s" % (control, tabs, description)
+        print "\t%s%s%s" % (action, tabs, description)
     print """
 You can have as many panels as you wish.  For each panel you need to add
-a control with the name of the panel (see "MyPanel" below).
+a action with the name of the panel (see "MyPanel" below).
 
 For example:
 \t%s --embed \\
@@ -603,16 +634,16 @@ if no options are given, the UI uses basic controls.
 
 
 def main():
-    app = HatariUI()
+    actions = UIActions()
     try:
         longopts = ["embed", "fullscreen", "help",
             "left=", "right=", "top=", "bottom=", "panel=", "spacing="]
         opts, args = getopt.getopt(sys.argv[1:], "efhl:r:t:b:p:s:", longopts)
         del longopts
     except getopt.GetoptError, err:
-        usage(app, err)
+        usage(actions, err)
     if args:
-        usage(app, "arguments given although only options accepted")
+        usage(actions, "arguments given although only options accepted")
 
     error = None
     embed = False
@@ -624,26 +655,24 @@ def main():
         elif opt in ("-f", "--fullscreen"):
             fullscreen = True
         elif opt in ("-h", "--help"):
-            usage(app)
+            usage(actions)
         elif opt in ("-l", "--left"):
-            error = app.set_controls(arg, "left")
+            error = actions.set_actions(arg, "left")
         elif opt in ("-r", "--right"):
-            error = app.set_controls(arg, "right")
+            error = actions.set_actions(arg, "right")
         elif opt in ("-t", "--top"):
-            error = app.set_controls(arg, "top")
+            error = actions.set_actions(arg, "top")
         elif opt in ("-b", "--bottom"):
-            error = app.set_controls(arg, "bottom")
+            error = actions.set_actions(arg, "bottom")
         elif opt in ("-p", "--panel"):
-            error = app.add_panel(arg)
-        elif opt in ("-s", "--spacing"):
-            error = app.set_control_spacing(arg)
+            error = actions.add_panel(arg)
         else:
             assert False, "getopt returned unhandled option"
         if error:
-            usage(app, error)
+            usage(actions, error)
 
     info = UInfo()
-    app.create_ui(fullscreen, embed)
+    HatariUI().create_ui(actions, fullscreen, embed)
     gtk.main()
 
 if __name__ == "__main__":
