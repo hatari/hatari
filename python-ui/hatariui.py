@@ -155,6 +155,8 @@ class UICallbacks():
             socket = self.hatari.get_control_socket().fileno()
             events = gobject.IO_IN | gobject.IO_HUP | gobject.IO_ERR
             self.io_id = gobject.io_add_watch(socket, events, self._socket_cb)
+            # all keyboard events should go to Hatari window
+            self.hatariwin.grab_focus()
         else:
             self.hatari.run()
 
@@ -448,8 +450,6 @@ class UIActions:
         else:
             bar.set_orientation(gtk.ORIENTATION_VERTICAL)
         bar.set_style(gtk.TOOLBAR_BOTH)
-        # important, without this Hatari doesn't receive key events!
-        bar.unset_flags(gtk.CAN_FOCUS)
         bar.set_tooltips(True)
         tooltips = gtk.Tooltips()
         
@@ -475,8 +475,6 @@ class UIActions:
                 continue
             if action != "|":
                 widget.set_expand(True)
-            # important, without this Hatari doesn't receive key events!
-            widget.unset_flags(gtk.CAN_FOCUS)
             bar.insert(widget, -1)
         return bar
 
