@@ -28,7 +28,7 @@ import gobject
 
 from debugui import HatariDebugUI
 from hatari import Hatari, HatariConfigMapping
-from uihelpers import UInfo, create_button, create_toggle, create_toolbutton
+from uihelpers import UInfo, create_button, create_toggle
 from dialogs import AboutDialog, InputDialog, KillDialog, QuitSaveDialog, \
      ResetDialog, SetupDialog, TraceDialog, PeripheralsDialog, ErrorDialog, \
      DisplayDialog
@@ -40,40 +40,306 @@ def window_hide_cb(window, arg):
     return True
 
 
+# ---------------------------------------------------------------
+# Class with Hatari and configuration instances which methods are
+# called to change those (with additional dialogs or directly).
+# Owns the application window and socket widget embedding Hatari.
+class UICallbacks():
+    def __init__(self):
+        # Hatari and configuration
+        self.hatari = Hatari()
+        self.config = HatariConfigMapping(self.hatari)
+        if not self.config.is_loaded():
+            ErrorDialog(None).run("Loading Hatari configuration failed.\nMake sure you've saved one!")
+            sys.exit(1)
+        
+        # windows are created when needed
+        self.mainwin = None
+        self.hatariwin = None
+        self.debugui = None
+        self.panels = {}
+        # dialogs are created when needed
+        self.aboutdialog = None
+        self.resetdialog = None
+        self.inputdialog = None
+        self.devicesdialog = None
+        self.displaydialog = None
+        self.pastedialog = None
+        self.quitdialog = None
+        self.setupdialog = None
+        self.tracedialog = None
+        self.killdialog = None
+
+        # TODO: Hatari UI configuration settings save/load
+        self.tracepoints = None
+        # used by run()
+        self.io_id = None
+
+    # ---------- create UI ----------------
+    def create_ui(self, menu, toolbars, fullscreen, embed):
+        "create_ui(menu, toolbars, fullscreen, embed)"
+        # add horizontal elements
+        hbox = gtk.HBox()
+        if toolbars["left"]:
+            #hbox.add(toolbars["left"])
+            hbox.pack_start(toolbars["left"], False, True)
+        if embed:
+            self._add_uisocket(hbox)
+        if toolbars["right"]:
+            #hbox.add(toolbars["right"])
+            hbox.pack_start(toolbars["right"], False, True)
+        # add vertical elements
+        vbox = gtk.VBox()
+        if menu:
+            vbox.add(menu)
+        if toolbars["top"]:
+            #vbox.add(toolbars["top"])
+            vbox.pack_start(toolbars["top"], False, True)
+        vbox.add(hbox)
+        if toolbars["bottom"]:
+            #vbox.add(toolbars["bottom"])
+            vbox.pack_start(toolbars["bottom"], False, True)
+        # put them to main window
+        mainwin = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        mainwin.set_title("%s %s" % (UInfo.name, UInfo.version))
+        mainwin.set_icon_from_file(UInfo.icon)
+        mainwin.add(vbox)
+        if fullscreen:
+            mainwin.fullscreen()
+        mainwin.show_all()
+        # for run and quit callbacks
+        self.killdialog = KillDialog(mainwin)
+        mainwin.connect("delete_event", self.quit)
+        self.mainwin = mainwin
+    
+    def _add_uisocket(self, box):
+        # add Hatari parent container to given box
+        socket = gtk.Socket()
+        # without this, closing Hatari would remove the socket widget
+        socket.connect("plug-removed", lambda obj: True)
+        socket.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
+        socket.set_events(gtk.gdk.ALL_EVENTS_MASK)
+        socket.set_flags(gtk.CAN_FOCUS)
+        # set initial embedded hatari size
+        width, height = self.config.get_window_size()
+        socket.set_size_request(width, height)
+        # no resizing for the Hatari window
+        box.pack_start(socket, False, False)
+        self.hatariwin = socket
+
+    # ------- run callback -----------
+    def _socket_cb(self, fd, event):
+        if event != gobject.IO_IN:
+            # hatari process died, make sure Hatari instance notices
+            self.hatari.kill()
+            return False
+        width, height = self.hatari.get_embed_info()
+        print "New size = %d x %d" % (width, height)
+        oldwidth, oldheight = self.hatariwin.get_size_request()
+        self.hatariwin.set_size_request(width, height)
+        if width < oldwidth or height < oldheight:
+            # force also mainwin smaller (it automatically grows)
+            self.mainwin.resize(width, height)
+        return True
+
+    def run(self, widget=None):
+        if self.killdialog.run(self.hatari):
+            return
+        if self.io_id:
+            gobject.source_remove(self.io_id)
+        if self.hatariwin:
+            size = self.hatariwin.window.get_size()
+            self.hatari.run(None, self.hatariwin.window)
+            # get notifications of Hatari window size changes
+            self.hatari.enable_embed_info()
+            socket = self.hatari.get_control_socket().fileno()
+            events = gobject.IO_IN | gobject.IO_HUP | gobject.IO_ERR
+            self.io_id = gobject.io_add_watch(socket, events, self._socket_cb)
+        else:
+            self.hatari.run()
+
+    # ------- about callback -----------
+    def about(self, widget):
+        if not self.aboutdialog:
+            self.aboutdialog = AboutDialog(self.mainwin)
+        self.aboutdialog.run()
+
+    # ------- input callback -----------
+    def inputs(self, widget):
+        if not self.inputdialog:
+            self.inputdialog = InputDialog(self.mainwin)
+        self.inputdialog.run(self.hatari)
+
+    # ------- pause callback -----------
+    def pause(self, widget):
+        if widget.get_active():
+            self.hatari.pause()
+        else:
+            self.hatari.unpause()
+
+    # ------- reset callback -----------
+    def reset(self, widget):
+        if not self.resetdialog:
+            self.resetdialog = ResetDialog(self.mainwin)
+        self.resetdialog.run(self.hatari)
+
+    # ------- setup callback -----------
+    def setup(self, widget):
+        if not self.setupdialog:
+            self.setupdialog = SetupDialog(self.mainwin)
+        if self.setupdialog.run(self.config):
+            self.hatari.trigger_shortcut("warmreset")
+
+    # ------- quit callback -----------
+    def quit(self, widget, arg = None):
+        if self.killdialog.run(self.hatari):
+            return True
+        if self.io_id:
+            gobject.source_remove(self.io_id)
+        if self.config.is_changed():
+            if not self.quitdialog:
+                self.quitdialog = QuitSaveDialog(self.mainwin)
+            if self.quitdialog.run(self.config) == gtk.RESPONSE_CANCEL:
+                return True
+        gtk.main_quit()
+        # continue to mainwin destroy if called by delete_event
+        return False
+
+    # ------- devices callback -----------
+    def devices(self, widget):
+        if not self.devicesdialog:
+            self.devicesdialog = PeripheralsDialog(self.mainwin)
+        self.devicesdialog.run(self.config)
+
+    # ------- display callback -----------
+    def display(self, widget):
+        if not self.displaydialog:
+            self.displaydialog = DisplayDialog(self.mainwin)
+        self.displaydialog.run(self.config)
+
+    # ------- debug callback -----------
+    def debugger(self, widget):
+        if not self.debugui:
+            self.debugui = HatariDebugUI(self.hatari)
+        self.debugui.show()
+
+    # ------- trace callback -----------
+    def trace(self, widget):
+        if not self.tracedialog:
+            self.tracedialog = TraceDialog(self.mainwin)
+        self.tracepoints = self.tracedialog.run(self.hatari, self.tracepoints)
+
+    # ------- fast forward callback -----------
+    def fastforward(self, widget):
+        self.config.set_fastforward(widget.get_active())
+
+    def _fastforward(self):
+        # TODO: where to setup these?
+        "Whether to fast forward Hatari (needs fast machine)"
+        widget = gtk.CheckButton("FastForward")
+        widget.set_active(self.config.get_fastforward())
+        widget.connect("toggled", self._fastforward_cb)
+        return (widget, False)
+
+    # ------- fullscreen callback -----------
+    def fullscreen(self, widget):
+        self.config.set_fullscreen(widget.get_active())
+
+    def _fullscreen(self):
+        # TODO: where to setup these?
+        "Hatari window fullscreen toggle"
+        widget = gtk.CheckButton("fullscreen")
+        widget.set_active(self.config.get_fullscreen())
+        widget.connect("toggled", self._fullscreen_cb)
+        return (widget, False)
+
+    # ------- sound callback -----------
+    def sound(self, widget):
+        self.config.set_sound(widget.get_active())
+
+    def _sound(self):
+        #TODO: move to a dialog or menu
+        "Select sound quality"
+        combo = gtk.combo_box_new_text()
+        for text in self.config.get_sound_values():
+            combo.append_text(text)
+        combo.set_active(self.config.get_sound())
+        combo.connect("changed", self._sound_cb)
+        box = gtk.HBox()
+        box.pack_start(gtk.Label("Sound:"), False, False)
+        box.add(combo)
+        return (box, False)
+
+    # ------- screenshot callback -----------
+    def screenshot(self, widget):
+        print "TODO: Support converting screenshot to PNG and giving its name?"
+        self.hatari.trigger_shortcut("screenshot")
+
+    # ------- insert key special callback -----------
+    def keypress(self, widget, code):
+        self.hatari.insert_event("keypress %s" % code)
+        self.hatari.insert_event("keyrelease %s" % code)
+
+    def textinsert(self, widget, text):
+        HatariTextInsert(self.hatari, text)
+
+    # ------- panel callback -----------
+    def panel(self, widget, info):
+        title, content = info
+        if title not in self.panels:
+            window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+            window.set_transient_for(self.mainwin)
+            window.set_icon_from_file(UInfo.icon)
+            window.set_title(title)
+            window.add(content)
+            window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
+            window.connect("delete_event", window_hide_cb)
+            self.panels[title] = window
+        else:
+            window = self.panels(title)
+        window.show_all()
+        window.deiconify()
+
+
+
+# ---------------------------------------------------------------
+# class for creating menus, toolbars and panels
+# and managing actions bound to them
 class UIActions:
     def __init__(self):
+        cb = UICallbacks()
+        # TODO: add icons
         self.actions = gtk.ActionGroup("all")
         # name, icon ID, label, accel, tooltip, callback
         self.actions.add_toggle_actions((
-        ("fast", None, "FastForward", None, "Whether to fast forward Hatari (needs fast machine)", None),
-        ("full", None, "Fullscreen", None, "Toggle whether Hatari is fullscreen", None)
+        ("pause", gtk.STOCK_MEDIA_PAUSE, "Pause", None, "Pause Hatari to save battery", cb.pause),
+        ("fast", gtk.STOCK_MEDIA_FORWARD, "FastForward", None, "Whether to fast forward Hatari (needs fast machine)", cb.fastforward),
+        # TODO: how to know when Hatari gets back from fullscreen?
+        ("full", gtk.STOCK_FULLSCREEN, "Fullscreen", None, "Toggle whether Hatari is fullscreen", cb.fullscreen)
         ))
         self.actions.add_actions((
         # name, icon ID, label, accel, tooltip, callback
-        ("about", None, "About", None, "Hatari UI information", None),
-        ("shot", None, "Screenshot", None, "Take a screenshot", None),
-        ("quit", None, "Quit", None, "Quit Hatari UI", None),
+        ("about", gtk.STOCK_INFO, "About", None, "Hatari UI information", cb.about),
+        ("shot", gtk.STOCK_MEDIA_RECORD, "Screenshot", None, "Take a screenshot", cb.screenshot),
+        ("quit", gtk.STOCK_QUIT, "Quit", None, "Quit Hatari UI", cb.quit),
         
-        ("run", None, "Run", None, "(Re-)run Hatari", None),
-        ("pause", None, "Pause", None, "Pause Hatari to save battery", None),
-        ("reset", None, "Reset...", None, "Warm or cold reset Hatari", None),
+        ("run", gtk.STOCK_MEDIA_PLAY, "Run", None, "(Re-)run Hatari", cb.run),
+        ("input", gtk.STOCK_SPELL_CHECK, "Inputs...", None, "Simulate text input and mouse clicks", cb.inputs),
+        ("reset", gtk.STOCK_REFRESH, "Reset...", None, "Warm or cold reset Hatari", cb.reset),
         
-        ("sound", None, "Sound...", None, "Sound settings", None),
-        ("display", None, "Display...", None, "Display settings", None),
-        ("devices", None, "Devices...", None, "Floppy and joystick settings", None),
-        ("machine", None, "Machine...", None, "Hatari st/e/tt/falcon configuration", None),
+        ("sound", gtk.STOCK_YES, "Sound...", None, "Sound settings", cb.sound),
+        ("display", gtk.STOCK_PROPERTIES, "Display...", None, "Display settings", cb.display),
+        ("devices", gtk.STOCK_FLOPPY, "Peripherals...", None, "Floppy and joystick settings", cb.devices),
+        ("machine", gtk.STOCK_PREFERENCES, "Machine...", None, "Hatari st/e/tt/falcon configuration", cb.setup),
         
-        ("debug", None, "Debugger...", None, "Activate Hatari debugger", None),
-        ("trace", None, "Trace settings...", None, "Hatari tracing setup", None),
-        
-        # not in menu, just as buttons
-        ("input", None, "Input...", None, "Simulate text input and mouse clicks", None),
-        ("close", None, "Close", None, "Close button for panel windows", None)
+        ("debug", gtk.STOCK_FIND, "Debugger...", None, "Activate Hatari debugger", cb.debugger),
+        ("trace", gtk.STOCK_EXECUTE, "Trace settings...", None, "Hatari tracing setup", cb.trace)
         ))
         self.action_names = [x.get_name() for x in self.actions.list_actions()]
+        self.callbacks = cb
+
         self.panel_actions = []
         self.panel_names = []
-        self.panels = []
         # no actions set yet
         self.toolbars = {}
 
@@ -84,11 +350,13 @@ class UIActions:
         for action in actions:
             if action in self.action_names:
                 # regular action
-                if action == "close" and place != "panel":
-                    return "close button can be only in a panel"
                 continue
             if action in ("|", ">") or action in self.panel_names:
-                # divider/line break or special panel action
+                # divider/line break or user specified panel
+                continue
+            if action == "close":
+                if place != "panel":
+                    return "close button can be only in a panel"
                 continue
             if action.find("=") >= 0:
                 # special keycode/string action
@@ -113,81 +381,76 @@ class UIActions:
             error = self.set_actions(spec[offset+1:], "panel")
             if not error:
                 self.panel_names.append(spec[:offset])
-                self.panels.append(None)
         return error
 
     def list_actions(self):
-        yield ("|", "Separator between actions")
-        yield (">", "Line break between actions in panel windows")
+        yield ("|", "Separator between controls")
+        yield (">", "Start next toolbar in panel windows")
         # generate the list from action information
         for act in self.actions.list_actions():
             yield(act.get_name(), act.get_property("tooltip"))
-        yield ("<panel name>", self.add_panel_button.__doc__)
+        yield ("<panel name>", "Button for the specified panel window")
         yield ("<name>=<string/code>", "Synthetize string or single key <code>")
 
-    # ------- panel special action -----------
-    def _panel_cb(self, widget, idx):
-        if not self.panels[idx]:
-            window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-            window.set_transient_for(self.mainwin)
-            window.set_icon_from_file(UInfo.icon)
-            window.set_title(self.panel_names[idx])
-            if "close" in self.panel_actions[idx]:
-                window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
-            window.add(self.get_action_box(self.panel_actions[idx], True))
-            window.connect("delete_event", window_hide_cb)
-            self.panels[idx] = window
-        self.panels[idx].show_all()
-        self.panels[idx].deiconify()
+    # ------- panel special actions -----------
+    def _close_cb(self, widget):
+        widget.get_toplevel().hide()
 
-    def add_panel_button(self, name):
-        "Button for the specified panel window"
+    def _create_panel_button(self, name):
         index = self.panel_names.index(name)
-        # TODO: icon for the panel window toolbar button
-        button = create_toolbutton(None, name, self._panel_cb, index)
-        return (button, name)
+        controls = self._get_container(self.panel_actions[index], True)
+        title = self.panel_names[index]
+        widget = gtk.ToolButton(gtk.STOCK_ADD)
+        widget.connect("clicked", self.callbacks.panel, (title, controls))
+        widget.set_label(name)
+        return (widget, name)
 
     # ------- key special action -----------
-    def create_key_control(self, name, textcode):
+    def _create_key_control(self, name, textcode):
         "Simulate Atari key press/release and string inserting"
         if not textcode:
-            return (None, None, None)
-        widget = gtk.Button(name)
+            return (None, None)
+        # TODO: icon for the key button
+        widget = gtk.ToolButton(gtk.STOCK_PASTE)
+        widget.set_label(name)
         try:
             # part after "=" converts to an int?
             code = int(textcode, 0)
-            widget.connect("pressed", self.callbacks.keypress, code)
-            widget.connect("released", self.callbacks.keyrelease, code)
+            widget.connect("clicked", self.callbacks.keypress, code)
             tip = "keycode: %d" % code
         except ValueError:
             # no, assume a string macro is wanted instead
-            widget.connect("clicked", self.callbacks_textinsert, textcode)
+            widget.connect("clicked", self.callbacks.textinsert, textcode)
             tip = "string '%s'" % textcode
         return (widget, tip)
 
-    def get_container(self, side, orientation):
+    def _get_container(self, actions, horiz):
         "return Gtk container with the specified actions or None for no actions"
-        if side not in self.toolbars:
-            return None
-        actions = self.toolbars[side]
         if not actions:
             return None
         
         if ">" in actions:
-            if orientation == gtk.ORIENTATION_HORIZONTAL:
-                box = gtk.VBox(False, self.action_spacing)
+            if horiz:
+                box = gtk.VBox()
             else:
-                box = gtk.BBox(False, self.action_spacing)
+                box = gtk.HBox()
             while ">" in actions:
                 linebreak = actions.index(">")
-                box.add(self.get_toolbar(actions[:linebreak], orientation))
+                box.add(self._get_container(actions[:linebreak], horiz))
                 actions = actions[linebreak+1:]
             if actions:
-                box.add(self.get_toolbar(actions, orientation))
+                box.add(self._get_container(actions, horiz))
             return box
 
         bar = gtk.Toolbar()
-        bar.set_orientation(orientation)        
+        if horiz:
+            bar.set_orientation(gtk.ORIENTATION_HORIZONTAL)
+        else:
+            bar.set_orientation(gtk.ORIENTATION_VERTICAL)
+        bar.set_style(gtk.TOOLBAR_BOTH)
+        # important, without this Hatari doesn't receive key events!
+        bar.unset_flags(gtk.CAN_FOCUS)
+        bar.set_tooltips(True)
         tooltips = gtk.Tooltips()
         
         for action in actions:
@@ -196,34 +459,32 @@ class UIActions:
                 # handle "<name>=<keycode>" action specification
                 name = action[:offset]
                 text = action[offset+1:]
-                (widget, tip) = self.create_key_control(name, text)
-                tooltips.set_tip(widget, "Insert " + tip)
+                (widget, tip) = self._create_key_control(name, text)
+                widget.set_tooltip(tooltips, "Insert " + tip)
             elif action == "|":
-                if horizontal:
-                    widget = gtk.VSeparator()
-                else:
-                    widget = gtk.HSeparator()
+                widget = gtk.SeparatorToolItem()
+            elif action == "close":
+                widget = gtk.ToolButton(gtk.STOCK_CLOSE)
+                widget.connect("clicked", self._close_cb)
             elif action in self.panel_names:
-                (widget, tip) = self.add_panel_button(action)
-                tooltips.set_tip(widget, tip)
+                (widget, tip) = self._create_panel_button(action)
+                widget.set_tooltip(tooltips, tip)
             else:
-                print action
                 widget = self.actions.get_action(action).create_tool_item()
             if not widget:
                 continue
+            if action != "|":
+                widget.set_expand(True)
             # important, without this Hatari doesn't receive key events!
             widget.unset_flags(gtk.CAN_FOCUS)
             bar.insert(widget, -1)
         return bar
 
     # ------------- handling menu -------------
-    def activate(self, widget):
-        print "activated:", widget.get_name()
-        
-    def get_menu(self):
+    def _get_menu(self):
         allmenus = (
         ("File", ("about", None, "shot", None, "quit")),
-        ("Emulation", ("run", "pause", None, "fast", None, "full", None, "reset")),
+        ("Emulation", ("run", "pause", None, "fast", None, "full", None, "input", None, "reset")),
         ("Setup", ("sound", "display", "devices", "machine")),
         ("Debug", ("debug", "trace"))
         )
@@ -234,8 +495,6 @@ class UIActions:
             for name in barmenu:
                 if name:
                     action = self.actions.get_action(name)
-                    # dummy action
-                    action.connect("activate", self.activate)
                     item = action.create_menu_item()
                 else:
                     item = gtk.SeparatorMenuItem()
@@ -247,348 +506,32 @@ class UIActions:
         print "TODO: add panels menu"
         return bar
 
-
-# class for all the controls that the different UI panels and windows can have
-class HatariControls():
-    # these are the names of methods returning (control widget, expand flag) tuples
-    # which also give description of the co. control in their __doc__ attribute
-    #
-    # (in a more OO application all these widgets would be separate classes
-    # inheriting a common interface class, but that would be an overkill)
-    all = [
-        "about", "run", "pause", "reset", "machine", "quit",
-        "full", "fast", "display", "sound", "shot",
-        "input", "devices", "debug", "trace", "close"
-    ]
-    # spacing between input widget and its label
-    label_spacing = 4
-    
-    def __init__(self):
-        self.hatari = Hatari()
-        self.config = HatariConfigMapping(self.hatari)
-        if not self.config.is_loaded():
-            ErrorDialog(None).run("Loading Hatari configuration failed.\nMake sure you've saved one!")
-            sys.exit(1)
-        # TODO: Hatari UI configuration settings save/load
-        self.tracepoints = None
-        # set later by owner of this object
-        self.hatariparent = None
-        self.mainwin = None
-        self.io_id = None
-        # windows/dialogs are created when needed
-        self.debugui = None
-        self.aboutdialog = None
-        self.resetdialog = None
-        self.killdialog = None
-        self.devicesdialog = None
-        self.displaydialog = None
-        self.pastedialog = None
-        self.quitdialog = None
-        self.setupdialog = None
-        self.tracedialog = None
-        # temporary settings
-        self.to_horizontal_box = None
-
-    def set_mainwin_hatariparent(self, mainwin, parent):
-        # ugly, but I didn't come up with better place to connect quit_cb
-        mainwin.connect("delete_event", self._quit_cb)
-        self.killdialog = KillDialog(mainwin)
-        self.mainwin = mainwin
-        if parent:
-            # set initial embedded hatari size
-            width, height = self.config.get_window_size()
-            parent.set_size_request(width, height)
-        self.hatariparent = parent
-        # Hatari window can be created only after Socket window is created.
-        # also ugly to do here...
-        gobject.idle_add(self._run_cb)
-    
-    def set_box_horizontal(self, horizontal):
-        self.to_horizontal_box = horizontal
-
-    # ------- about control -----------
-    def _about_cb(self, widget):
-        if not self.aboutdialog:
-            self.aboutdialog = AboutDialog(self.mainwin)
-        self.aboutdialog.run()
-
-    def about(self):
-        "Hatari UI information"
-        return (create_button("About", self._about_cb), True)
-    
-    # ------- run control -----------
-    def _socket_cb(self, fd, event):
-        if event != gobject.IO_IN:
-            # hatari process died, make sure Hatari instance notices
-            self.hatari.kill()
-            return False
-        width, height = self.hatari.get_embed_info()
-        print "New size = %d x %d" % (width, height)
-        # TODO: setting window smaller than currently messes
-        # up the automatic sizing when Hatari window size grows
-        #oldwidth, oldheight = self.hatariparent.get_size_request()
-        #if width < oldwidth or height < oldheight:
-        #    # force mainwin smaller
-        #    self.mainwin.set_size_request(width, height)
-        self.hatariparent.set_size_request(width, height)
-        return True
-
-    def _run_cb(self, widget=None):
-        if self.killdialog.run(self.hatari):
-            return
-        if self.io_id:
-            gobject.source_remove(self.io_id)
-        if self.hatariparent:
-            size = self.hatariparent.window.get_size()
-            self.hatari.run(None, self.hatariparent.window)
-            # get notifications of Hatari window size changes
-            self.hatari.enable_embed_info()
-            socket = self.hatari.get_control_socket().fileno()
-            events = gobject.IO_IN | gobject.IO_HUP | gobject.IO_ERR
-            self.io_id = gobject.io_add_watch(socket, events, self._socket_cb)
+    # ------------- run the whole UI -------------
+    def run(self, havemenu, fullscreen, embed):
+        # create menu?
+        if havemenu:
+            menu = self._get_menu()
         else:
-            self.hatari.run()
+            menu = None
 
-    def run(self):
-        "(Re-)run Hatari"
-        return (create_button("Run", self._run_cb), True)
-
-    # ------- close control -----------
-    def _close_cb(self, widget):
-        widget.get_toplevel().hide()
-        
-    def close(self):
-        "Close button (makes panel window to a dialog)"
-        return (create_button("Close", self._close_cb), True)
-
-    # ------- input control -----------
-    def _input_cb(self, widget):
-        if not self.inputdialog:
-            self.inputdialog = InputDialog(self.mainwin)
-        self.inputdialog.run(self.hatari)
-
-    def input(self):
-        "Insert text/mouse clicks to Hatari"
-        return (create_button("Input", self._input_cb), True)
-
-    # ------- pause control -----------
-    def _pause_cb(self, widget):
-        if widget.get_active():
-            self.hatari.pause()
-        else:
-            self.hatari.unpause()
-
-    def pause(self):
-        "Pause Hatari to save battery"
-        return (create_toggle("Pause", self._pause_cb), True)
-
-    # ------- reset control -----------
-    def _reset_cb(self, widget):
-        if not self.resetdialog:
-            self.resetdialog = ResetDialog(self.mainwin)
-        self.resetdialog.run(self.hatari)
-
-    def reset(self):
-        "Warm or cold reset Hatari"
-        return (create_button("Reset", self._reset_cb), True)
-
-    # ------- setup control -----------
-    def _setup_cb(self, widget):
-        if not self.setupdialog:
-            self.setupdialog = SetupDialog(self.mainwin)
-        if self.setupdialog.run(self.config):
-            self.hatari.trigger_shortcut("warmreset")
-
-    def setup(self):
-        "Hatari st/e/tt/falcon configuration"
-        return (create_button("Machine setup", self._setup_cb), True)
-
-    # ------- quit control -----------
-    def _quit_cb(self, widget, arg = None):
-        if self.killdialog.run(self.hatari):
-            return True
-        if self.io_id:
-            gobject.source_remove(self.io_id)
-        if self.config.is_changed():
-            if not self.quitdialog:
-                self.quitdialog = QuitSaveDialog(self.mainwin)
-            if self.quitdialog.run(self.config) == gtk.RESPONSE_CANCEL:
-                return True
-        gtk.main_quit()
-        # continue to mainwin destroy if called by delete_event
-        return False
-
-    def quit(self):
-        "Quit Hatari UI"
-        return (create_button("Quit", self._quit_cb), True)
-
-    # ------- devices control -----------
-    def _devices_cb(self, widget):
-        if not self.devicesdialog:
-            self.devicesdialog = DevicesDialog(self.mainwin)
-        self.devicesdialog.run(self.config)
-
-    def devices(self):
-        "Dialog for Hatari devices settings"
-        return (create_button("Devices", self._devices_cb), True)
-
-    # ------- display control -----------
-    def _display_cb(self, widget):
-        if not self.displaydialog:
-            self.displaydialog = DisplayDialog(self.mainwin)
-        self.displaydialog.run(self.config)
-
-    def display(self):
-        "Dialog for Hatari display settings"
-        return (create_button("Display", self._display_cb), True)
-
-    # ------- debug control -----------
-    def _debug_cb(self, widget):
-        if not self.debugui:
-            self.debugui = HatariDebugUI(self.hatari)
-        self.debugui.show()
-
-    def debug(self):
-        "Activate Hatari debugger"
-        return (create_button("Debugger", self._debug_cb), True)
-
-    # ------- trace control -----------
-    def _trace_cb(self, widget):
-        if not self.tracedialog:
-            self.tracedialog = TraceDialog(self.mainwin)
-        self.tracepoints = self.tracedialog.run(self.hatari, self.tracepoints)
-
-    def trace(self):
-        "Hatari tracing setup"
-        return (create_button("Trace settings", self._trace_cb), True)
-
-    # ------- fast forward control -----------
-    def _fastforward_cb(self, widget):
-        self.config.set_fastforward(widget.get_active())
-
-    def fastforward(self):
-        "Whether to fast forward Hatari (needs fast machine)"
-        widget = gtk.CheckButton("FastForward")
-        widget.set_active(self.config.get_fastforward())
-        widget.connect("toggled", self._fastforward_cb)
-        return (widget, False)
-
-    # ------- fullscreen control -----------
-    def _fullscreen_cb(self, widget):
-        self.config.set_fullscreen(widget.get_active())
-
-    def fullscreen(self):
-        "Hatari window fullscreen toggle"
-        widget = gtk.CheckButton("fullscreen")
-        widget.set_active(self.config.get_fullscreen())
-        widget.connect("toggled", self._fullscreen_cb)
-        return (widget, False)
-
-    # ------- sound control -----------
-    def _sound_cb(self, widget):
-        self.config.set_sound(widget.get_active())
-
-    def sound(self):
-        "Select sound quality"
-        combo = gtk.combo_box_new_text()
-        for text in self.config.get_sound_values():
-            combo.append_text(text)
-        combo.set_active(self.config.get_sound())
-        combo.connect("changed", self._sound_cb)
-        if self.to_horizontal_box:
-            box = gtk.HBox(False, self.label_spacing/2)
-        else:
-            box = gtk.VBox()
-        box.pack_start(gtk.Label("Sound:"), False, False)
-        box.add(combo)
-        return (box, False)
-
-    # ------- screenshot control -----------
-    def _screenshot_cb(self, widget):
-        print "TODO: Support converting screenshot to PNG and giving its name?"
-        self.hatari.trigger_shortcut("screenshot")
-
-    def screenshot(self):
-        "Take a screenshot"
-        return (create_button("Screenshot", self._screenshot_cb), True)
-
-    # ------- insert key special control -----------
-    def _keypress_cb(self, widget, code):
-        self.hatari.insert_event("keypress %s" % code)
-
-    def _keyrelease_cb(self, widget, code):
-        self.hatari.insert_event("keyrelease %s" % code)
-
-    def _textinsert_cb(self, widget, text):
-        HatariTextInsert(self.hatari, text)
-
-
-# class for the main Hatari UI window, Hatari embedding, panels
-# and control positioning
-class HatariUI():
-    def __init__(self):
-        # other widgets
-        self.tooltips = None
-        self.mainwin = None
-        self.controls = HatariControls()
-
-    # ---------- create UI ----------------
-    def create_ui(self, actions, fullscreen, embed):
-        "create_ui(fullscreen, embed), args are booleans"
-        # just instantiate all UI windows/widgets...
-        mainwin, hatariparent = self._create_mainwin(actions, embed)
-        if fullscreen:
-            mainwin.fullscreen()
-        self.controls.set_mainwin_hatariparent(mainwin, hatariparent)
-        self.mainwin = mainwin
-        mainwin.show_all()
-
-    def _create_mainwin(self, actions, embed):
         # create toolbars
-        orient = gtk.ORIENTATION_VERTICAL
-        left   = actions.get_container("left", orient)
-        right  = actions.get_container("right", orient)
-        orient = gtk.ORIENTATION_HORIZONTAL
-        top    = actions.get_container("top", orient)
-        bottom = actions.get_container("bottom", orient)
-        # add horizontal elements
-        hbox = gtk.HBox()
-        if left:
-            hbox.pack_start(left, False, True)
-        if embed:
-            parent = self._create_uisocket()
-            # no resizing for the Hatari window
-            hbox.pack_start(parent, False, False)
-        else:
-            parent = None
-        if right:
-            hbox.pack_start(right, False, True)
-        # add vertical elements
-        vbox = gtk.VBox()
-        vbox.add(actions.get_menu())
-        if top:
-            vbox.pack_start(top, False, True)
-        vbox.add(hbox)
-        if bottom:
-            vbox.pack_start(bottom, False, True)
-        # put them to main window
-        mainwin = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        mainwin.set_title("%s %s" % (UInfo.name, UInfo.version))
-        mainwin.set_icon_from_file(UInfo.icon)
-        mainwin.add(vbox)
-        return (mainwin, parent)
-    
-    def _create_uisocket(self):
-        # add Hatari parent container
-        socket = gtk.Socket()
-        # without this, closing Hatari would remove the socket widget
-        socket.connect("plug-removed", lambda obj: True)
-        socket.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
-        socket.set_events(gtk.gdk.ALL_EVENTS_MASK)
-        socket.set_flags(gtk.CAN_FOCUS)
-        return socket
+        toolbars = { "left":None, "right":None, "top":None, "bottom":None}
+        for side in ("left", "right"):
+            if side in self.toolbars:
+                toolbars[side] = self._get_container(self.toolbars[side], False)
+        for side in ("top", "bottom"):
+            if side in self.toolbars:
+                toolbars[side] = self._get_container(self.toolbars[side], True)
+
+        self.callbacks.create_ui(menu, toolbars, fullscreen, embed)
+
+        # ugly, Hatari socket window ID can be gotten only
+        # after Socket window is realized by gtk_main()
+        gobject.idle_add(self.callbacks.run)
+        gtk.main()
 
 
+# ------------- usage / argument handling --------------
 def usage(actions, msg=None):
     name = os.path.basename(sys.argv[0])
     uiname = "%s %s" % (UInfo.name, UInfo.version)
@@ -596,16 +539,17 @@ def usage(actions, msg=None):
     print "=" * len(uiname)
     print "\nUsage: %s [options]" % name
     print "\nOptions:"
+    print "\t-h, --help\t\tthis help"
+    print "\t-n, --nomenu\t\tomit menus"
     print "\t-e, --embed\t\tembed Hatari window in middle of controls"
     print "\t-f, --fullscreen\tstart in fullscreen"
-    print "\t-h, --help\t\tthis help"
-    print "\t-l, --left <controls>\tleft UI controls"
-    print "\t-r, --right <controls>\tright UI controls"
-    print "\t-t, --top <controls>\ttop UI controls"
-    print "\t-b, --bottom <controls>\tbottom UI controls"
+    print "\t-l, --left <controls>\ttoolbar at left"
+    print "\t-r, --right <controls>\ttoolbar at right"
+    print "\t-t, --top <controls>\ttoolbar at top"
+    print "\t-b, --bottom <controls>\ttoolbar at bottom"
     print "\t-p, --panel <name>,<controls>"
     print "\t\t\t\tseparate window with given name and controls"
-    print "\nAvailable controls:"
+    print "\nAvailable (toolbar) controls:"
     for action, description in actions.list_actions():
         size = len(action)
         if size < 8:
@@ -617,7 +561,7 @@ def usage(actions, msg=None):
         print "\t%s%s%s" % (action, tabs, description)
     print """
 You can have as many panels as you wish.  For each panel you need to add
-a action with the name of the panel (see "MyPanel" below).
+a control with the name of the panel (see "MyPanel" below).
 
 For example:
 \t%s --embed \\
@@ -634,26 +578,31 @@ if no options are given, the UI uses basic controls.
 
 
 def main():
+    info = UInfo()
     actions = UIActions()
     try:
-        longopts = ["embed", "fullscreen", "help",
-            "left=", "right=", "top=", "bottom=", "panel=", "spacing="]
-        opts, args = getopt.getopt(sys.argv[1:], "efhl:r:t:b:p:s:", longopts)
+        longopts = ["embed", "fullscreen", "nomenu", "help",
+            "left=", "right=", "top=", "bottom=", "panel="]
+        opts, args = getopt.getopt(sys.argv[1:], "efnhl:r:t:b:p:", longopts)
         del longopts
     except getopt.GetoptError, err:
         usage(actions, err)
     if args:
         usage(actions, "arguments given although only options accepted")
 
-    error = None
+    menu = True
     embed = False
     fullscreen = False
+
+    error = None
     for opt, arg in opts:
         print opt, arg
         if opt in ("-e", "--embed"):
             embed = True
         elif opt in ("-f", "--fullscreen"):
             fullscreen = True
+        elif opt in ("-n", "--nomenu"):
+            menu = False
         elif opt in ("-h", "--help"):
             usage(actions)
         elif opt in ("-l", "--left"):
@@ -671,9 +620,8 @@ def main():
         if error:
             usage(actions, error)
 
-    info = UInfo()
-    HatariUI().create_ui(actions, fullscreen, embed)
-    gtk.main()
+    actions.run(menu, fullscreen, embed)
+
 
 if __name__ == "__main__":
     main()
