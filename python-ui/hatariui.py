@@ -28,10 +28,11 @@ import gobject
 
 from debugui import HatariDebugUI
 from hatari import Hatari, HatariConfigMapping
-from uihelpers import UInfo, create_button, create_toggle
+from uihelpers import UInfo, create_button, create_toolbutton, create_toggle, \
+     HatariTextInsert
 from dialogs import AboutDialog, InputDialog, KillDialog, QuitSaveDialog, \
      ResetDialog, SetupDialog, TraceDialog, PeripheralsDialog, ErrorDialog, \
-     DisplayDialog
+     DisplayDialog, SoundDialog
 
 
 # helper functions to match callback args
@@ -64,6 +65,7 @@ class UICallbacks():
         self.inputdialog = None
         self.devicesdialog = None
         self.displaydialog = None
+        self.sounddialog = None
         self.pastedialog = None
         self.quitdialog = None
         self.setupdialog = None
@@ -76,7 +78,7 @@ class UICallbacks():
         self.io_id = None
 
     # ---------- create UI ----------------
-    def create_ui(self, menu, toolbars, fullscreen, embed):
+    def create_ui(self, accelgroup, menu, toolbars, fullscreen, embed):
         "create_ui(menu, toolbars, fullscreen, embed)"
         # add horizontal elements
         hbox = gtk.HBox()
@@ -103,9 +105,11 @@ class UICallbacks():
         mainwin = gtk.Window(gtk.WINDOW_TOPLEVEL)
         mainwin.set_title("%s %s" % (UInfo.name, UInfo.version))
         mainwin.set_icon_from_file(UInfo.icon)
-        mainwin.add(vbox)
+        if accelgroup:
+            mainwin.add_accel_group(accelgroup)
         if fullscreen:
             mainwin.fullscreen()
+        mainwin.add(vbox)
         mainwin.show_all()
         # for run and quit callbacks
         self.killdialog = KillDialog(mainwin)
@@ -232,45 +236,24 @@ class UICallbacks():
         self.tracepoints = self.tracedialog.run(self.hatari, self.tracepoints)
 
     # ------- fast forward callback -----------
-    def fastforward(self, widget):
+    def set_fastforward(self, widget):
         self.config.set_fastforward(widget.get_active())
 
-    def _fastforward(self):
-        # TODO: where to setup these?
-        "Whether to fast forward Hatari (needs fast machine)"
-        widget = gtk.CheckButton("FastForward")
-        widget.set_active(self.config.get_fastforward())
-        widget.connect("toggled", self._fastforward_cb)
-        return (widget, False)
+    def get_fastforward(self):
+        return self.config.get_fastforward()
 
     # ------- fullscreen callback -----------
-    def fullscreen(self, widget):
+    def set_fullscreen(self, widget):
         self.config.set_fullscreen(widget.get_active())
 
-    def _fullscreen(self):
-        # TODO: where to setup these?
-        "Hatari window fullscreen toggle"
-        widget = gtk.CheckButton("fullscreen")
-        widget.set_active(self.config.get_fullscreen())
-        widget.connect("toggled", self._fullscreen_cb)
-        return (widget, False)
+    def get_fullscreen(self):
+        return self.config.get_fullscreen()
 
     # ------- sound callback -----------
     def sound(self, widget):
-        self.config.set_sound(widget.get_active())
-
-    def _sound(self):
-        #TODO: move to a dialog or menu
-        "Select sound quality"
-        combo = gtk.combo_box_new_text()
-        for text in self.config.get_sound_values():
-            combo.append_text(text)
-        combo.set_active(self.config.get_sound())
-        combo.connect("changed", self._sound_cb)
-        box = gtk.HBox()
-        box.pack_start(gtk.Label("Sound:"), False, False)
-        box.add(combo)
-        return (box, False)
+        if not self.sounddialog:
+            self.sounddialog = SoundDialog(self.mainwin)
+        self.sounddialog.run(self.config)
 
     # ------- screenshot callback -----------
     def screenshot(self, widget):
@@ -286,19 +269,19 @@ class UICallbacks():
         HatariTextInsert(self.hatari, text)
 
     # ------- panel callback -----------
-    def panel(self, widget, info):
-        title, content = info
+    def panel(self, action, box):
+        title = action.get_name()
         if title not in self.panels:
             window = gtk.Window(gtk.WINDOW_TOPLEVEL)
             window.set_transient_for(self.mainwin)
             window.set_icon_from_file(UInfo.icon)
             window.set_title(title)
-            window.add(content)
+            window.add(box)
             window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
             window.connect("delete_event", window_hide_cb)
             self.panels[title] = window
         else:
-            window = self.panels(title)
+            window = self.panels[title]
         window.show_all()
         window.deiconify()
 
@@ -309,41 +292,39 @@ class UICallbacks():
 # and managing actions bound to them
 class UIActions:
     def __init__(self):
-        cb = UICallbacks()
-        # TODO: add icons
-        self.actions = gtk.ActionGroup("all")
+        cb = self.callbacks = UICallbacks()
+
+        self.actions = gtk.ActionGroup("All")
         # name, icon ID, label, accel, tooltip, callback
         self.actions.add_toggle_actions((
-        ("pause", gtk.STOCK_MEDIA_PAUSE, "Pause", None, "Pause Hatari to save battery", cb.pause),
-        ("fast", gtk.STOCK_MEDIA_FORWARD, "FastForward", None, "Whether to fast forward Hatari (needs fast machine)", cb.fastforward),
-        # TODO: how to know when Hatari gets back from fullscreen?
-        ("full", gtk.STOCK_FULLSCREEN, "Fullscreen", None, "Toggle whether Hatari is fullscreen", cb.fullscreen)
+        ("pause", gtk.STOCK_MEDIA_PAUSE, "Pause", "<Ctrl>P", "Pause Hatari to save battery", cb.pause),
+        # TODO: how to know when these are changed from inside Hatari?
+        ("fast", gtk.STOCK_MEDIA_FORWARD, "FastForward", "<Ctrl>F", "Whether to fast forward Hatari (needs fast machine)", cb.set_fastforward, cb.get_fastforward()),
+        ("full", gtk.STOCK_FULLSCREEN, "Fullscreen", "<Ctrl>U", "Toggle whether Hatari is fullscreen", cb.set_fullscreen, cb.get_fullscreen())
         ))
-        self.actions.add_actions((
         # name, icon ID, label, accel, tooltip, callback
-        ("about", gtk.STOCK_INFO, "About", None, "Hatari UI information", cb.about),
-        ("shot", gtk.STOCK_MEDIA_RECORD, "Screenshot", None, "Take a screenshot", cb.screenshot),
+        self.actions.add_actions((
+        ("about", gtk.STOCK_INFO, "About", "<Ctrl>A", "Hatari UI information", cb.about),
+        ("shot", gtk.STOCK_MEDIA_RECORD, "Screenshot", "<Ctrl>C", "Take a screenshot", cb.screenshot),
         ("quit", gtk.STOCK_QUIT, "Quit", None, "Quit Hatari UI", cb.quit),
         
-        ("run", gtk.STOCK_MEDIA_PLAY, "Run", None, "(Re-)run Hatari", cb.run),
-        ("input", gtk.STOCK_SPELL_CHECK, "Inputs...", None, "Simulate text input and mouse clicks", cb.inputs),
-        ("reset", gtk.STOCK_REFRESH, "Reset...", None, "Warm or cold reset Hatari", cb.reset),
+        ("run", gtk.STOCK_MEDIA_PLAY, "Run", "<Ctrl>R", "(Re-)run Hatari", cb.run),
+        ("input", gtk.STOCK_SPELL_CHECK, "Inputs...", "<Ctrl>N", "Simulate text input and mouse clicks", cb.inputs),
+        ("reset", gtk.STOCK_REFRESH, "Reset...", "<Ctrl>E", "Warm or cold reset Hatari", cb.reset),
         
-        ("sound", gtk.STOCK_YES, "Sound...", None, "Sound settings", cb.sound),
-        ("display", gtk.STOCK_PROPERTIES, "Display...", None, "Display settings", cb.display),
-        ("devices", gtk.STOCK_FLOPPY, "Peripherals...", None, "Floppy and joystick settings", cb.devices),
-        ("machine", gtk.STOCK_PREFERENCES, "Machine...", None, "Hatari st/e/tt/falcon configuration", cb.setup),
+        ("sound", gtk.STOCK_YES, "Sound...", "<Ctrl>S", "Sound settings", cb.sound),
+        ("display", gtk.STOCK_PROPERTIES, "Display...", "<Ctrl>D", "Display settings", cb.display),
+        ("devices", gtk.STOCK_FLOPPY, "Peripherals...", "<Ctrl>H", "Floppy and joystick settings", cb.devices),
+        ("machine", gtk.STOCK_PREFERENCES, "Machine...", "<Ctrl>M", "Hatari st/e/tt/falcon configuration", cb.setup),
         
-        ("debug", gtk.STOCK_FIND, "Debugger...", None, "Activate Hatari debugger", cb.debugger),
-        ("trace", gtk.STOCK_EXECUTE, "Trace settings...", None, "Hatari tracing setup", cb.trace)
+        ("debug", gtk.STOCK_FIND, "Debugger...", "<Ctrl>B", "Activate Hatari debugger", cb.debugger),
+        ("trace", gtk.STOCK_EXECUTE, "Trace settings...", "<Ctrl>T", "Hatari tracing setup", cb.trace)
         ))
         self.action_names = [x.get_name() for x in self.actions.list_actions()]
-        self.callbacks = cb
 
-        self.panel_actions = []
-        self.panel_names = []
-        # no actions set yet
+        # no actions set yet to panels or toolbars
         self.toolbars = {}
+        self.panels = []
 
     # ----- toolbar / panel additions ---------
     def set_actions(self, action_str, place):
@@ -353,12 +334,15 @@ class UIActions:
             if action in self.action_names:
                 # regular action
                 continue
-            if action in ("|", ">") or action in self.panel_names:
-                # divider/line break or user specified panel
+            if action in self.panels:
+                # user specified panel
                 continue
-            if action == "close":
+            if action in ("close", ">"):
                 if place != "panel":
-                    return "close button can be only in a panel"
+                    return "'close' and '>' can be only in a panel"
+                continue
+            if action == "|":
+                # divider
                 continue
             if action.find("=") >= 0:
                 # special keycode/string action
@@ -367,27 +351,40 @@ class UIActions:
 
         if place in ("left", "right", "top", "bottom"):
             self.toolbars[place] = actions
-        elif place == "panel":
-            self.panel_actions.append(actions)
-        else:
-            return "unknown actions position '%s'" % place
-        return None
+            return None
+        if place == "panel":
+            return None
+        return "unknown actions position '%s'" % place
 
     def add_panel(self, spec):
         "add_panel(panel_specification) -> error string, None if all is OK"
-        error = None
         offset = spec.find(",")
         if offset <= 0:
-            error = "invalid panel specification '%s'" % spec
+            return "invalid panel specification '%s'" % spec
+
+        name, panelcontrols = spec[:offset], spec[offset+1:]
+        error = self.set_actions(panelcontrols, "panel")
+        if error:
+            return error
+
+        if ",>," in panelcontrols:
+            box = gtk.VBox()
+            splitcontrols = panelcontrols.split(",>,")
+            for controls in splitcontrols:
+                box.add(self._get_container(controls.split(",")))
         else:
-            error = self.set_actions(spec[offset+1:], "panel")
-            if not error:
-                self.panel_names.append(spec[:offset])
-        return error
+            box = self._get_container(controls)
+            
+        self.panels.append(name)
+        self.actions.add_actions(
+            ((name, gtk.STOCK_ADD, name, None, name, self.callbacks.panel),),
+            box
+        )
+        return None
 
     def list_actions(self):
         yield ("|", "Separator between controls")
-        yield (">", "Start next toolbar in panel windows")
+        yield (">", "Next toolbar in panel windows")
         # generate the list from action information
         for act in self.actions.list_actions():
             yield(act.get_name(), act.get_property("tooltip"))
@@ -397,15 +394,6 @@ class UIActions:
     # ------- panel special actions -----------
     def _close_cb(self, widget):
         widget.get_toplevel().hide()
-
-    def _create_panel_button(self, name):
-        index = self.panel_names.index(name)
-        controls = self._get_container(self.panel_actions[index], True)
-        title = self.panel_names[index]
-        widget = gtk.ToolButton(gtk.STOCK_ADD)
-        widget.connect("clicked", self.callbacks.panel, (title, controls))
-        widget.set_label(name)
-        return (widget, name)
 
     # ------- key special action -----------
     def _create_key_control(self, name, textcode):
@@ -426,34 +414,28 @@ class UIActions:
             tip = "string '%s'" % textcode
         return (widget, tip)
 
-    def _get_container(self, actions, horiz):
+    def _get_container(self, actions, horiz = True):
         "return Gtk container with the specified actions or None for no actions"
         if not actions:
             return None
-        
-        if ">" in actions:
-            if horiz:
-                box = gtk.VBox()
-            else:
-                box = gtk.HBox()
-            while ">" in actions:
-                linebreak = actions.index(">")
-                box.add(self._get_container(actions[:linebreak], horiz))
-                actions = actions[linebreak+1:]
-            if actions:
-                box.add(self._get_container(actions, horiz))
-            return box
 
-        bar = gtk.Toolbar()
-        if horiz:
-            bar.set_orientation(gtk.ORIENTATION_HORIZONTAL)
+        #print "ACTIONS:", actions
+        if len(actions) > 1:
+            bar = gtk.Toolbar()
+            if horiz:
+                bar.set_orientation(gtk.ORIENTATION_HORIZONTAL)
+            else:
+                bar.set_orientation(gtk.ORIENTATION_VERTICAL)
+            bar.set_style(gtk.TOOLBAR_BOTH)
+            # disable overflow menu to get toolbar sized correctly for panels
+            bar.set_show_arrow(False)
+            bar.set_tooltips(True)
         else:
-            bar.set_orientation(gtk.ORIENTATION_VERTICAL)
-        bar.set_style(gtk.TOOLBAR_BOTH)
-        bar.set_tooltips(True)
-        tooltips = gtk.Tooltips()
+            bar = None
         
+        tooltips = gtk.Tooltips()
         for action in actions:
+            #print action
             offset = action.find("=")
             if offset >= 0:
                 # handle "<name>=<keycode>" action specification
@@ -464,21 +446,36 @@ class UIActions:
             elif action == "|":
                 widget = gtk.SeparatorToolItem()
             elif action == "close":
-                widget = gtk.ToolButton(gtk.STOCK_CLOSE)
-                widget.connect("clicked", self._close_cb)
-            elif action in self.panel_names:
-                (widget, tip) = self._create_panel_button(action)
-                widget.set_tooltip(tooltips, tip)
+                if bar:
+                    widget = create_toolbutton(gtk.STOCK_CLOSE, self._close_cb)
+                else:
+                    widget = create_button("Close", self._close_cb)
             else:
                 widget = self.actions.get_action(action).create_tool_item()
             if not widget:
                 continue
-            if action != "|":
-                widget.set_expand(True)
-            bar.insert(widget, -1)
-        return bar
+            if bar:
+                if action != "|":
+                    widget.set_expand(True)
+                bar.insert(widget, -1)
+        if bar:
+            return bar
+        return widget
 
     # ------------- handling menu -------------
+    def _add_submenu(self, bar, title, items):
+        submenu = gtk.Menu()
+        for name in items:
+            if name:
+                action = self.actions.get_action(name)
+                item = action.create_menu_item()
+            else:
+                item = gtk.SeparatorMenuItem()
+            submenu.add(item)
+        baritem = gtk.MenuItem(title, False)
+        baritem.set_submenu(submenu)
+        bar.add(baritem)
+
     def _get_menu(self):
         allmenus = (
         ("File", ("about", None, "shot", None, "quit")),
@@ -488,26 +485,24 @@ class UIActions:
         )
         bar = gtk.MenuBar()
 
-        for title, barmenu in allmenus:
-            submenu = gtk.Menu()
-            for name in barmenu:
-                if name:
-                    action = self.actions.get_action(name)
-                    item = action.create_menu_item()
-                else:
-                    item = gtk.SeparatorMenuItem()
-                submenu.add(item)
-            baritem = gtk.MenuItem(title, False)
-            baritem.set_submenu(submenu)
-            bar.add(baritem)
+        for title, items in allmenus:
+            self._add_submenu(bar, title, items)
 
-        print "TODO: add panels menu"
+        if self.panels:
+            self._add_submenu(bar, "Panels", self.panels)
+
         return bar
 
     # ------------- run the whole UI -------------
     def run(self, havemenu, fullscreen, embed):
+        accelgroup = None
         # create menu?
         if havemenu:
+            # this would steal keys from embedded Hatari
+            if not embed:
+                accelgroup = gtk.AccelGroup()
+                for action in self.actions.list_actions():
+                    action.set_accel_group(accelgroup)
             menu = self._get_menu()
         else:
             menu = None
@@ -521,7 +516,7 @@ class UIActions:
             if side in self.toolbars:
                 toolbars[side] = self._get_container(self.toolbars[side], True)
 
-        self.callbacks.create_ui(menu, toolbars, fullscreen, embed)
+        self.callbacks.create_ui(accelgroup, menu, toolbars, fullscreen, embed)
 
         # ugly, Hatari socket window ID can be gotten only
         # after Socket window is realized by gtk_main()

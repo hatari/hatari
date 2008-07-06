@@ -316,14 +316,46 @@ class DisplayDialog(HatariUIDialog):
             self._create_dialog(config)
         response = self.dialog.run()
         self.dialog.hide()
-        if response == gtk.RESPONSE_CANCEL:
-            return
-        config.lock_updates()
-        config.set_frameskips(self.skip.get_value())
-        config.set_spec512threshold(self.spec512.get_active())
-        config.set_borders(self.borders.get_active())
-        config.set_zoom(self.zoom.get_active())
-        config.flush_updates()
+        if response == gtk.RESPONSE_APPLY:
+            config.lock_updates()
+            config.set_frameskips(self.skip.get_value())
+            config.set_spec512threshold(self.spec512.get_active())
+            config.set_borders(self.borders.get_active())
+            config.set_zoom(self.zoom.get_active())
+            config.flush_updates()
+
+
+# ---------------------------
+# Hatari sound dialog
+
+class SoundDialog(HatariUIDialog):
+
+    def _create_dialog(self, config):
+        combo = gtk.combo_box_new_text()
+        for text in config.get_sound_values():
+            combo.append_text(text)
+        combo.set_active(config.get_sound())
+        box = gtk.HBox()
+        box.pack_start(gtk.Label("Sound:"), False, False)
+        box.add(combo)
+        self.sound = combo
+
+        dialog = gtk.Dialog("Sound settings", self.parent,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
+             gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL))
+        dialog.vbox.add(box)
+        dialog.vbox.show_all()
+        self.dialog = dialog
+
+    def run(self, config):
+        "run(config), show display dialog"
+        if not self.dialog:
+            self._create_dialog(config)
+        response = self.dialog.run()
+        self.dialog.hide()
+        if response == gtk.RESPONSE_APPLY:
+            config.set_sound(self.sound.get_active())
         
 
 # ---------------------------

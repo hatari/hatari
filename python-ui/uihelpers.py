@@ -97,9 +97,9 @@ def create_button(label, cb, data = None):
         button.connect("clicked", cb, data)
     return button
 
-def create_toolbutton(icon, label, cb, data = None):
-    "create_toolbutton(label,cb[,data]) -> toolbar button widget"
-    button = gtk.ToolButton(icon, label)
+def create_toolbutton(stock_id, cb, data = None):
+    "create_toolbutton(stock_id,cb[,data]) -> toolbar button with stock icon+label"
+    button = gtk.ToolButton(stock_id)
     if data == None:
         button.connect("clicked", cb)
     else:
