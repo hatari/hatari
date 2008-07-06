@@ -353,6 +353,8 @@ class UIActions:
             self.toolbars[place] = actions
             return None
         if place == "panel":
+            if len(actions) < 3:
+                return "panel has too few items to be useful"
             return None
         return "unknown actions position '%s'" % place
 
@@ -373,7 +375,7 @@ class UIActions:
             for controls in splitcontrols:
                 box.add(self._get_container(controls.split(",")))
         else:
-            box = self._get_container(controls)
+            box = self._get_container(panelcontrols.split(","))
             
         self.panels.append(name)
         self.actions.add_actions(
