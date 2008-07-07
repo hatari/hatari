@@ -175,9 +175,11 @@
 /*			More generic support for starting display 16 pixels earlier on STE	*/
 /*			by writing to $ff8265 and settting $ff8264=0 just after.		*/
 /*			(fix Digiworld 2 by ICE, which uses $ff8264 for horizontal scroll).	*/
+/* 2008/07/07	[NP]	Ignore other 50/60 Hz switches once the right border was removed, keep	*/
+/*			the timer B to occur at pos 460+28 (fix Oxygene screen in Transbeauce 2)*/
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.116 2008-06-28 11:22:36 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.117 2008-07-07 21:22:12 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -776,6 +778,13 @@ void Video_Sync_WriteByte(void)
 		{
 			/* Do nothing when switching back to 50 Hz, keep timer B at pos LINE_END_CYCLE_60+TIMERB_VIDEO_CYCLE_OFFSET for this line */
 		}
+
+		else if ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_RIGHT_OFF )		/* 60/50 Hz switch */
+		{
+			/* Ignore all other 50/60 Hz switches that could occur on this line after */
+			/* right border was removed. Keep timer B at pos 460+28 */
+		}
+
 
 		else if ( nLineCycles2 < LineEndCycle )			/* freq changed before the end of the line */
 		{
