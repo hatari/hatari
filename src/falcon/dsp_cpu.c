@@ -1273,10 +1273,10 @@ static void dsp_update_rn_modulo(uint32 numreg, int16 modifier)
 	r_reg = (int16) (dsp_registers[DSP_REG_R0+numreg] & BITMASK(16));
 	r_reg += modifier;
 	if (r_reg>hibound) {
-		r_reg -= hibound;
+		r_reg -= hibound + 1;
 		r_reg += lobound;
 	} else if (r_reg<lobound) {
-		r_reg -= lobound;
+		r_reg -= lobound - 1;
 		r_reg += hibound;
 	}
 

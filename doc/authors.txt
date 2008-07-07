@@ -73,6 +73,8 @@ please remind me!):
 - Fredrik Noring : Tracked down a bug in the blitter emulation and a bug
   in the PSG shadow register emulation.
 
+- Laurent Sallafranque: Fixed bugs in the DSP emulation code.
+
 
  Code from other projects
  ------------------------

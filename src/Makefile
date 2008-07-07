@@ -4,7 +4,7 @@
 # (there are currently no known programs which this would help,
 # but it will make many of the Falcon programs not to work).
 # If you change this, do "make clean"
-ENABLE_DSP_EMU = 0
+ENABLE_DSP_EMU = 1
 
 # Select CPU directory:
 CPUDIR = uae-cpu
