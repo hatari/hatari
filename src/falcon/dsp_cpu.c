@@ -36,11 +36,9 @@
 #define D(x)
 #endif
 
-#ifndef DSP_DISASM
-#define DSP_DISASM 0
-#endif
+// #define DSP_DISASM 0
 
-#if DSP_DISASM
+#ifdef DSP_DISASM
 #include "dsp_disasm.h"
 #endif
 
