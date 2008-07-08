@@ -48,10 +48,12 @@
 /*			Tested on STF : add pairing between bit shift instr and ADD/SUB/OR/AND/EOR/NOT	*/
 /*			CLR/NEG (certainly some more possible, haven't tested everything)		*/
 /*			(fixes lsr.w #4,d4 + add.b $f0(a4,d4),d7 used in Zoolook part of ULM New Year).	*/
+/* 2008/07/08	[NP]	Add pairing between bit shift instr and ADDX/SUBX/ABCD/SBCD (fixes lsl.l #1,d0	*/
+/*			+ abcd d1,d1 used in Dragonnels - Rainbow Wall).				*/
 
 
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.59 2008-05-25 19:58:56 thothy Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.60 2008-07-08 20:26:22 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -168,6 +170,10 @@ void M68000_InitPairing(void)
 	M68000_InitPairing_BitShift ( i_NOT );
 	M68000_InitPairing_BitShift ( i_CLR );
 	M68000_InitPairing_BitShift ( i_NEG );
+	M68000_InitPairing_BitShift ( i_ADDX );
+	M68000_InitPairing_BitShift ( i_SUBX );
+	M68000_InitPairing_BitShift ( i_ABCD );
+	M68000_InitPairing_BitShift ( i_SBCD );
 }
 
 
