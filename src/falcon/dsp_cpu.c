@@ -27,9 +27,6 @@
 #include "ioMem.h"
 #include "dsp.h"
 #include "dsp_cpu.h"
-#ifdef DSP_DISASM
-#include "dsp_disasm.h"
-#endif
 
 #define DEBUG 0
 
@@ -39,13 +36,21 @@
 #define D(x)
 #endif
 
+#ifndef DSP_DISASM
+#define DSP_DISASM 0
+#endif
+
+#if DSP_DISASM
+#include "dsp_disasm.h"
+#endif
+
 /* More disasm infos, if wanted */
-#define DSP_DISASM_INST 0		/* Instructions */
+#define DSP_DISASM_INST 1		/* Instructions */
 #define DSP_DISASM_REG 0		/* Registers changes */
 #define DSP_DISASM_MEM 0		/* Memory changes */
 #define DSP_DISASM_STATE 0		/* State changes */
-#define DSP_DISASM_HOSTREAD 0	/* Host port read */
-#define DSP_DISASM_HOSTWRITE 0	/* Host port write */
+#define DSP_DISASM_HOSTREAD 1	/* Host port read */
+#define DSP_DISASM_HOSTWRITE 1	/* Host port write */
 #define DSP_DISASM_INTER 0		/* Interrupts */
 
 /* Prevent DSP from accessing non-present memory */
@@ -979,8 +984,8 @@ static uint32 read_memory(int space, uint16 address)
 				SDL_SemWait(dsp56k_sem);
 
 				return 0xdead;
-#endif /* DSP_CHECK_MEM_ACCESS */
 			}
+#endif /* DSP_CHECK_MEM_ACCESS */
 			break;
 	}
 
@@ -1057,8 +1062,8 @@ static void write_memory(int space, uint32 address, uint32 value)
 				dsp_state = DSP_HALT;
 				SDL_SemWait(dsp56k_sem);
 				return;
-#endif
 			}
+#endif
 			/* x:0x0000-0x01ff is internal ram/rom */
 			/* x:0x0200-0x3fff = p:0x4200-0x7fff */
 			if ((address >= 0x200) && (address <= 0x3fff)) {
@@ -1090,8 +1095,8 @@ static void write_memory(int space, uint32 address, uint32 value)
 				dsp_state = DSP_HALT;
 				SDL_SemWait(dsp56k_sem);
 				return;
-#endif
 			}
+#endif
 			/* y:0x0000-0x01ff is internal ram/rom */
 			/* y:0x0200-0x3fff = p:0x0200-0x3fff */
 			if ((address >= 0x200) && (address <= 0x3fff)) {
