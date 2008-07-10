@@ -4,7 +4,7 @@ path=${0%/*}
 name=${0##*/}
 
 # example setup for Hatari UI
-$path/$name.py --top "about,|,run,pause,|,reset,debug,|,quit" #--embed
+$path/$name.py --right "about,|,run,pause,|,reset,debug,|,quit" --embed
 return
 
 # test setup without embedding, dupplicate toggles
