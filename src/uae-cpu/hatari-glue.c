@@ -7,7 +7,7 @@
   This file contains some code to glue the UAE CPU core to the rest of the
   emulator and Hatari's "illegal" opcodes.
 */
-const char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.29 2008-02-24 20:10:48 thothy Exp $";
+const char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.30 2008-07-12 15:55:41 npomarede Exp $";
 
 
 #include <stdio.h>
@@ -20,6 +20,7 @@ const char HatariGlue_rcsid[] = "Hatari $Id: hatari-glue.c,v 1.29 2008-02-24 20:
 #include "../includes/cart.h"
 #include "../includes/vdi.h"
 #include "../includes/stMemory.h"
+#include "../includes/ikbd.h"
 
 #include "sysdeps.h"
 #include "maccess.h"
@@ -42,6 +43,10 @@ int pendingInterrupts = 0;
 void customreset(void)
 {
   pendingInterrupts = 0;
+
+  /* In case the 6301 was executing a custom program from its RAM */
+  /* we must turn it back to the 'normal' mode. */
+  IKBD_Reset_ExeMode ();
 }
 
 

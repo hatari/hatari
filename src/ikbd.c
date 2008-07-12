@@ -17,12 +17,23 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.38 2008-05-19 20:34:10 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.39 2008-07-12 15:55:41 npomarede Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
 /*			RX/TX status. Reading the control register fffc00 just after a reset should	*/
 /*			return the value 0x02 (used in Transbeauce 2 demo loader).			*/
+/* 2008/07/06	[NP]	Add support for executing 8 bit code sent to the 6301 processor.		*/
+/*			Instead of implementing a full 6301 emulator, we compute a checksum for each	*/
+/*			program sent to the 6301 RAM. If the checksum is recognized, we call some	*/
+/*			functions to emulate the behaviour of the 6301 in that case.			*/
+/*			When the 6301 is in 'Execute' mode (command 0x22), we must stop the normal	*/
+/*			reporting of key/mouse/joystick and use our custom handlers for each read or	*/
+/*			write to $fffc02.								*/
+/*			After a reset command, returns $F1 after $F0 (needed by Dragonnels Demo).	*/
+/*			This fixes the Transbeauce 2 demo menu, the Dragonnels demo menu and the	*/
+/*			Froggies Over The Fence demo menu (yeah ! enjoy this master piece of demo !).	*/
+
 
 #include <time.h>
 
@@ -35,6 +46,7 @@ const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.38 2008-05-19 20:34:10 thothy 
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "video.h"
+#include "utils.h"
 
 
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */
@@ -70,8 +82,8 @@ static bool bDuringResetCriticalTime, bBothMouseAndJoy;
 /* ACIA */
 static Uint8 ACIAControlRegister = 0;
 static Uint8 ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;  /* Pass when read 0xfffc00 */
-static Uint8 ACIAByte;                      /* When a byte has arrived at the ACIA (from the keyboard) it is stored here */
-static bool bByteInTransitToACIA = false;   /* Is a byte being sent to the ACIA from the keyboard? */
+static Uint8 ACIAByte;				/* When a byte has arrived at the ACIA (from the keyboard) it is stored here */
+static bool bByteInTransitToACIA = FALSE;	/* Is a byte being sent to the ACIA from the keyboard? */
 
 /*
   6850 ACIA (Asynchronous Communications Inferface Apdater)
@@ -234,6 +246,75 @@ static void IKBD_SendByteToKeyboardProcessor(Uint16 bl);
 static Uint16 IKBD_GetByteFromACIA(void);
 static void IKBD_SendByteToACIA(void);
 static void IKBD_AddKeyToKeyboardBuffer(Uint8 Data);
+static void IKBD_AddKeyToKeyboardBuffer_Real(Uint8 Data);
+
+
+/* Belows part is used to emulate the behaviour of custom 6301 programs */
+/* sent to the ikbd RAM. */
+
+static void IKBD_LoadMemoryByte ( Uint8 aciabyte );
+
+static void IKBD_CustomCodeHandler_CommonBoot ( Uint8 aciabyte );
+
+static void IKBD_CustomCodeHandler_FroggiesMenu_Read ( void );
+static void IKBD_CustomCodeHandler_FroggiesMenu_Write ( Uint8 aciabyte );
+static void IKBD_CustomCodeHandler_Transbeauce2Menu_Read ( void );
+static void IKBD_CustomCodeHandler_Transbeauce2Menu_Write ( Uint8 aciabyte );
+static void IKBD_CustomCodeHandler_DragonnelsMenu_Read ( void );
+static void IKBD_CustomCodeHandler_DragonnelsMenu_Write ( Uint8 aciabyte );
+
+
+int	MemoryLoadNbBytesTotal = 0;			/* total number of bytes to send with the command 0x20 */
+int	MemoryLoadNbBytesLeft = 0;			/* number of bytes that remain to be sent  */
+Uint32	MemoryLoadCrc = 0xffffffff;			/* CRC of the bytes sent to the ikbd */
+int	MemoryExeNbBytes = 0;				/* current number of bytes sent to the ikbd when IKBD_ExeMode is TRUE */
+
+void	(*pIKBD_CustomCodeHandler_Read) ( void );
+void	(*pIKBD_CustomCodeHandler_Write) ( Uint8 );
+bool	IKBD_ExeMode = FALSE;
+
+Uint8	ScanCodeState[ 128 ];				/* state of each key : 0=released 1=pressed */
+
+/* This array contains all known custom 6301 programs, with their CRC */
+struct {
+	Uint32		LoadMemCrc;			/* CRC of the bytes sent using the command 0x20 */
+	void		(*ExeBootHandler) ( Uint8 );	/* function handling write to $fffc02 during the 'boot' mode */
+	int		MainProgNbBytes;		/* number of bytes of the main 6301 program */
+	Uint32		MainProgCrc;			/* CRC of the main 6301 program */
+	void		(*ExeMainHandler_Read) ( void );/* function handling read to $fffc02 in the main 6301 program */
+	void		(*ExeMainHandler_Write) ( Uint8 ); /* funciton handling write to $fffc02 in the main 6301 program */
+	const char	*Name;
+}
+CustomCodeDefinitions[] = {
+	{
+		0x2efb11b1 ,
+		IKBD_CustomCodeHandler_CommonBoot ,
+		167,
+		0xe7110b6d ,
+		IKBD_CustomCodeHandler_FroggiesMenu_Read ,
+		IKBD_CustomCodeHandler_FroggiesMenu_Write ,
+		"Froggies Over The Fence Main Menu"
+	} ,
+	{
+		0xadb6b503 ,
+		IKBD_CustomCodeHandler_CommonBoot ,
+		165,
+		0x5617c33c ,
+		IKBD_CustomCodeHandler_Transbeauce2Menu_Read ,
+		IKBD_CustomCodeHandler_Transbeauce2Menu_Write ,
+		"Transbeauce 2 Main Menu"
+	} ,
+	{
+		0x33c23cdf ,
+		IKBD_CustomCodeHandler_CommonBoot ,
+		83 ,
+		0xdf3e5a88 ,
+		IKBD_CustomCodeHandler_DragonnelsMenu_Read ,
+		IKBD_CustomCodeHandler_DragonnelsMenu_Write ,
+		"Dragonnels Main Menu"
+	}
+};
+
 
 
 /*-----------------------------------------------------------------------*/
@@ -252,8 +333,33 @@ void ACIA_Reset(void)
 /**
  * Reset the IKBD processor
  */
+
+/* Cancel execution of any program that was uploaded to the 6301's RAM */
+/* This function is also called when performing a 68000 'reset' ; in that */
+/* case we need to return $F0 and $F1. */
+
+void IKBD_Reset_ExeMode ( void )
+{
+	HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd custom exe off\n" );
+
+	/* Reset any custom code run with the Execute command 0x22 */
+	MemoryLoadNbBytesLeft = 0;
+	pIKBD_CustomCodeHandler_Read = NULL;
+	pIKBD_CustomCodeHandler_Write = NULL;
+	IKBD_ExeMode = FALSE;
+		
+	Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
+	bByteInTransitToACIA = FALSE;
+	IKBD_AddKeyToKeyboardBuffer(0xF0);		/* Assume OK, return correct code */
+	IKBD_AddKeyToKeyboardBuffer(0xF1);		/* [NP] Dragonnels demo needs this */
+}
+
+
 void IKBD_Reset(bool bCold)
 {
+	int	i;
+
+
 	/* Reset internal keyboard processor details */
 	if (bCold)
 	{
@@ -279,6 +385,9 @@ void IKBD_Reset(bool bCold)
 
 	KeyboardProcessor.Joy.PrevJoyData[0] = KeyboardProcessor.Joy.PrevJoyData[1] = 0;
 
+	for ( i=0 ; i<128 ; i++ )
+		ScanCodeState[ i ] = 0;				/* key is released */
+
 	/* Reset our ACIA status */
 	ACIA_Reset();
 	/* And our keyboard states and clear key state table */
@@ -296,6 +405,9 @@ void IKBD_Reset(bool bCold)
 	/* do emulate hardware 'quirk' where if disable both with 'x' time
 	 * of a RESET command they are ignored! */
 	bDuringResetCriticalTime = bBothMouseAndJoy = FALSE;
+
+	/* Remove any custom handlers used to emulate code loaded to the 6301's RAM */
+	IKBD_Reset_ExeMode ();
 }
 
 
@@ -306,6 +418,8 @@ void IKBD_Reset(bool bCold)
  */
 void IKBD_MemorySnapShot_Capture(bool bSave)
 {
+	int	i;
+
 	/* Save/Restore details */
 	MemorySnapShot_Store(&Keyboard, sizeof(Keyboard));
 	MemorySnapShot_Store(&KeyboardProcessor, sizeof(KeyboardProcessor));
@@ -317,6 +431,26 @@ void IKBD_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&bJoystickDisabled, sizeof(bJoystickDisabled));
 	MemorySnapShot_Store(&bDuringResetCriticalTime, sizeof(bDuringResetCriticalTime));
 	MemorySnapShot_Store(&bBothMouseAndJoy, sizeof(bBothMouseAndJoy));
+
+	/* restore custom 6301 program if needed */
+	MemorySnapShot_Store(&IKBD_ExeMode, sizeof(IKBD_ExeMode));
+	MemorySnapShot_Store(&MemoryLoadCrc, sizeof(MemoryLoadCrc));
+	if ( ( bSave == FALSE ) && ( IKBD_ExeMode == TRUE ) )	/* restoring a snapshot with active 6301 emulation */
+	{
+		for ( i = 0 ; i < sizeof ( CustomCodeDefinitions ) / sizeof ( CustomCodeDefinitions[0] ); i++ )
+			if ( CustomCodeDefinitions[ i ].MainProgCrc == MemoryLoadCrc )
+			{
+				pIKBD_CustomCodeHandler_Read = CustomCodeDefinitions[ i ].ExeMainHandler_Read;
+				pIKBD_CustomCodeHandler_Write = CustomCodeDefinitions[ i ].ExeMainHandler_Write;
+				Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
+//				(*pIKBD_CustomCodeHandler_Read) ();		/* initialize ACIAByte */
+				ACIAByte = 0;			/* initialize ACIAByte, don't call IKBD_AddKeyToKeyboardBuffer_Real now */
+				break;
+			}
+
+		if ( i >= sizeof ( CustomCodeDefinitions ) / sizeof ( CustomCodeDefinitions[0] ) )	/* not found (should not happen) */
+			IKBD_ExeMode = FALSE;			/* turn off exe mode */
+	}
 }
 
 
@@ -869,7 +1003,9 @@ static void IKBD_Cmd_Reset(void)
 		KeyboardProcessor.Abs.MaxY = ABS_MAY_Y_ONRESET;
 		KeyboardProcessor.Abs.PrevReadAbsMouseButtons = ABS_PREVBUTTONS;
 
-		IKBD_AddKeyToKeyboardBuffer(0xF0);    /* Assume OK, return correct code */
+		Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
+		IKBD_AddKeyToKeyboardBuffer(0xF0);		/* Assume OK, return correct code */
+		IKBD_AddKeyToKeyboardBuffer(0xF1);		/* [NP] Dragonnels demo needs this */
 
 		/* Start timer - some commands are send during this time they may be ignored (see real ST!) */
 		if (!KeyboardProcessor.bReset)
@@ -1403,6 +1539,13 @@ static void IKBD_Cmd_LoadMemory(void)
 	Debug_IKBD("IKBD_Cmd_LoadMemory\n");
 	Debugger_TabIKBD_AddListViewItem("LoadMemory");
 #endif
+
+	HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd loadmemory addr 0x%x count %d\n" ,
+		( Keyboard.InputBuffer[1]<<8 ) + Keyboard.InputBuffer[2] , Keyboard.InputBuffer[3] );
+
+	MemoryLoadNbBytesTotal = Keyboard.InputBuffer[3];
+	MemoryLoadNbBytesLeft = MemoryLoadNbBytesTotal;
+	crc32_reset ( &MemoryLoadCrc );
 }
 
 
@@ -1441,6 +1584,20 @@ static void IKBD_Cmd_Execute(void)
 	Debug_IKBD("IKBD_Cmd_Execute\n");
 	Debugger_TabIKBD_AddListViewItem("Execute");
 #endif
+	
+	if ( pIKBD_CustomCodeHandler_Write )
+	{
+		HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd execute addr 0x%x using custom handler\n" ,
+			( Keyboard.InputBuffer[1]<<8 ) + Keyboard.InputBuffer[2] );
+
+		IKBD_ExeMode = TRUE;				/* turn 6301's custom mode ON */
+	}
+
+	else							/* unknown code uploaded to ikbd RAM */
+	{
+		HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd execute addr 0x%x ignored, no custom handler found\n" ,
+			( Keyboard.InputBuffer[1]<<8 ) + Keyboard.InputBuffer[2] );
+	}
 }
 
 
@@ -1487,7 +1644,18 @@ static void IKBD_RunKeyboardCommand(Uint16 aciabyte)
  */
 static void IKBD_SendByteToKeyboardProcessor(Uint16 bl)
 {
-	IKBD_RunKeyboardCommand(bl);  /* And send */
+	/* If IKBD is executing custom code, send the byte to the function handling this code */
+	if ( IKBD_ExeMode && pIKBD_CustomCodeHandler_Write )
+	{
+		(*pIKBD_CustomCodeHandler_Write) ( (Uint8) bl );
+		return;
+	}
+
+	if ( MemoryLoadNbBytesLeft == 0 )		/* No pending MemoryLoad command */
+		IKBD_RunKeyboardCommand ( bl );		/* check for known commands */
+
+	else						/* MemoryLoad command is not finished yet */
+		IKBD_LoadMemoryByte ( (Uint8) bl );	/* process bytes sent to the ikbd RAM */
 }
 
 
@@ -1566,11 +1734,20 @@ static void IKBD_SendByteToACIA(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Add characer our internal keyboard buffer. These bytes are then sent one at a time to the ACIA.
+ * Add character to our internal keyboard buffer. These bytes are then sent one at a time to the ACIA.
  * This is done via a delay to mimick the STs internal workings, as this is needed for games such
  * as Carrier Command.
  */
 static void IKBD_AddKeyToKeyboardBuffer(Uint8 Data)
+{
+	if ( IKBD_ExeMode )					/* if IKBD is executing custom code, don't add */
+		return;						/* anything to the buffer */
+
+	IKBD_AddKeyToKeyboardBuffer_Real ( Data );
+}
+
+
+static void IKBD_AddKeyToKeyboardBuffer_Real(Uint8 Data)
 {
 	/* Is keyboard initialised yet? Ignore any bytes until it is */
 	if (!KeyboardProcessor.bReset)
@@ -1595,6 +1772,10 @@ static void IKBD_AddKeyToKeyboardBuffer(Uint8 Data)
  */
 void IKBD_PressSTKey(Uint8 ScanCode, bool bPress)
 {
+	/* Store the state of each ST scancode : 1=pressed 0=released */	
+	if ( bPress )		ScanCodeState[ ScanCode & 0x7f ] = 1;
+	else			ScanCodeState[ ScanCode & 0x7f ] = 0;	
+	
 	if (!bPress)
 		ScanCode |= 0x80;    /* Set top bit if released key */
 	IKBD_AddKeyToKeyboardBuffer(ScanCode);  /* And send to keyboard processor */
@@ -1617,7 +1798,7 @@ void IKBD_KeyboardControl_ReadByte(void)
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "read ikbd ctrl=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		HATARI_TRACE_PRINT ( "ikbd read fffc00 ctrl=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		                     IoMem[0xfffc00], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 }
@@ -1631,13 +1812,20 @@ void IKBD_KeyboardData_ReadByte(void)
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
 	M68000_WaitState(8);
 
+	/* If IKBD is executing custom code, call the function to update the byte read in $fffc02 */
+	if ( IKBD_ExeMode && pIKBD_CustomCodeHandler_Read )
+	{
+		(*pIKBD_CustomCodeHandler_Read) ();
+	}
+
+
 	IoMem[0xfffc02] = IKBD_GetByteFromACIA();  /* Return our byte from keyboard processor */
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "read ikbd data=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		HATARI_TRACE_PRINT ( "ikbd read fffc02 data=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		                     IoMem[0xfffc02], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 }
@@ -1656,7 +1844,7 @@ void IKBD_KeyboardControl_WriteByte(void)
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "write ikbd ctrl=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		HATARI_TRACE_PRINT ( "ikbd write fffc00 ctrl=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		                     IoMem[0xfffc00], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 
@@ -1680,9 +1868,229 @@ void IKBD_KeyboardData_WriteByte(void)
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "write ikbd data=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		HATARI_TRACE_PRINT ( "ikbd write fffc02 data=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		                     IoMem[0xfffc02], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 
 	IKBD_SendByteToKeyboardProcessor(IoMem[0xfffc02]);  /* Pass our byte to the keyboard processor */
 }
+
+
+/*************************************************************************/
+/**
+ * Below part is for emulating custom 6301 program sent to the ikbd RAM
+ * Specific read/write functions for each demo/game should be added here,
+ * after being defined in the CustomCodeDefinitions[] array.
+ *
+ * The 6301 has 256 bytes of RAM, but only 128 bytes are available to
+ * put a program (from $80 to $ff).
+ *
+ * Executing a program in the 6301 is a 2 steps process :
+ *	1) a very small program is sent to the RAM using the 0x20 command.
+ *	   This is often loaded at address $a0.
+ * 	   This program will stop interruptions in the 6301 and will accept
+ *	   a second small program that will relocate itself to $80.
+ *	2) the relocated program at address $80 will accept a third (main)
+ *	   program and will execute it once reception is complete.
+ *
+ * Writes during step 1 are handled with the ExeBootHandler matching the
+ * LoadMemory CRC.
+ * ExeBootHandler will compute a 2nd CRC for the writes corresponding to
+ * the 2nd and 3rd programs sent to the 6301's RAM.
+ *
+ * If a match is found for this 2nd CRC, we will override default ikbd's behaviour
+ * for reading/writing to $fffc02 with ExeMainHandler_Read / ExeMainHandler_Write
+ * (once the Execute command 0x22 is received).
+ *
+ * When using custom program (ExeMode==TRUE), we must ignore all keyboard/mouse/joystick
+ * events sent to IKBD_AddKeyToKeyboardBuffer. Only our functions can add bytes
+ * to the keyboard buffer.
+ *
+ * To exit 6301's execution mode, we can use the 68000 'reset' instruction.
+ * Some 6301's programs also handle a write to $fffc02 as an exit signal.
+ */
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Handle writes to $fffc02 when loading bytes in the ikbd RAM.
+ * We compute a CRC of the bytes that are sent until MemoryLoadNbBytesLeft
+ * reaches 0.
+ * When all bytes are loaded, we look for a matching CRC ; if found, we
+ * use the ExeBootHandler defined for this CRC to process the next writes
+ * that will occur in $fffc02.
+ * LoadMemory is often used to load a small boot code into the 6301's RAM.
+ * This small program will be executed later using the command 0x22.
+ */
+
+static void IKBD_LoadMemoryByte ( Uint8 aciabyte )
+{
+	int	i;
+
+
+	crc32_add_byte ( &MemoryLoadCrc , aciabyte );
+
+	MemoryLoadNbBytesLeft--;
+	if ( MemoryLoadNbBytesLeft == 0 )				/* all bytes were received */
+	{
+		/* Search for a match amongst the known custom routines */
+		for ( i = 0 ; i < sizeof ( CustomCodeDefinitions ) / sizeof ( CustomCodeDefinitions[0] ) ; i++ )
+			if ( CustomCodeDefinitions[ i ].LoadMemCrc == MemoryLoadCrc )
+				break;
+
+		if ( i < sizeof ( CustomCodeDefinitions ) / sizeof ( CustomCodeDefinitions[0] ) )	/* found */
+		{
+			HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd loadmemory %d bytes crc=0x%x matches <%s>\n" ,
+				MemoryLoadNbBytesTotal , MemoryLoadCrc , CustomCodeDefinitions[ i ].Name );
+
+			crc32_reset ( &MemoryLoadCrc );
+			MemoryExeNbBytes = 0;
+			pIKBD_CustomCodeHandler_Read = NULL;
+			pIKBD_CustomCodeHandler_Write = CustomCodeDefinitions[ i ].ExeBootHandler;
+		}
+
+		else							/* unknown code uploaded to ikbd RAM */
+		{
+			HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd loadmemory %d bytes crc=0x%x : unknown code\n" ,
+				MemoryLoadNbBytesTotal , MemoryLoadCrc );
+
+			pIKBD_CustomCodeHandler_Read = NULL;
+			pIKBD_CustomCodeHandler_Write = NULL;
+		}
+	}
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Handle writes to $fffc02 when executing custom code in the ikbd RAM.
+ * This is used to send the small ikdb program that will handle keyboard/mouse/joystick
+ * input.
+ * We compute a CRC of the bytes that are sent until we found a match
+ * with a known custom ikbd program.
+ */
+
+static void IKBD_CustomCodeHandler_CommonBoot ( Uint8 aciabyte )
+{
+	int	i;
+
+
+	crc32_add_byte ( &MemoryLoadCrc , aciabyte );
+	MemoryExeNbBytes++;
+
+	HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd custom exe common boot write 0x%02x count %d crc=0x%x\n" ,
+		aciabyte , MemoryExeNbBytes , MemoryLoadCrc );
+
+	/* Search for a match amongst the known custom routines */
+	for ( i = 0 ; i < sizeof ( CustomCodeDefinitions ) / sizeof ( CustomCodeDefinitions[0] ) ; i++ )
+		if ( ( CustomCodeDefinitions[ i ].MainProgNbBytes == MemoryExeNbBytes )
+			&& ( CustomCodeDefinitions[ i ].MainProgCrc == MemoryLoadCrc ) )
+			break;
+
+	if ( i < sizeof ( CustomCodeDefinitions ) / sizeof ( CustomCodeDefinitions[0] ) )	/* found */
+	{
+		HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd custom exe common boot, uploaded code matches <%s>\n" ,
+			CustomCodeDefinitions[ i ].Name );
+
+		pIKBD_CustomCodeHandler_Read = CustomCodeDefinitions[ i ].ExeMainHandler_Read;
+		pIKBD_CustomCodeHandler_Write = CustomCodeDefinitions[ i ].ExeMainHandler_Write;
+		
+		Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
+		(*pIKBD_CustomCodeHandler_Read) ();		/* initialize ACIAByte */
+	}
+
+	/* If not found, we keep on accumulating bytes until we find a matching crc */
+}
+
+
+
+/*----------------------------------------------------------------------*/
+/* Froggies Over The Fence menu.					*/
+/* Returns 2 bytes with the mouse position, keyboard can be used too.	*/
+/* Writing 0xff to $fffc02 will cause the 6301 to exit custom exe mode.	*/
+/*----------------------------------------------------------------------*/
+
+static void IKBD_CustomCodeHandler_FroggiesMenu_Read ( void )
+{
+	Uint8		res1 = 0;
+	Uint8		res2 = 0;
+	
+	if ( KeyboardProcessor.Mouse.DeltaX < 0 )	res1 = 0x7d;	/* mouse left */
+	if ( KeyboardProcessor.Mouse.DeltaX > 0 )	res1 = 0x03;	/* mouse right */
+	if ( KeyboardProcessor.Mouse.DeltaY < 0 )	res2 = 0x7d;	/* mouse up */
+	if ( KeyboardProcessor.Mouse.DeltaY > 0 )	res2 = 0x03;	/* mouse down */
+	if ( Keyboard.bLButtonDown & BUTTON_MOUSE )	res1 |= 0x80;	/* left mouse button */
+
+	if ( ScanCodeState[ 0x4b ] )			res1 |= 0x7d;	/* left */
+	if ( ScanCodeState[ 0x4d ] )			res1 |= 0x03;	/* right */
+	if ( ScanCodeState[ 0x48 ] )			res2 |= 0x7d;	/* up */
+	if ( ScanCodeState[ 0x50 ] )			res2 |= 0x03;	/* down */
+	if ( ScanCodeState[ 0x70 ] )			res1 |= 0x80;	/* keypad 0 */
+
+	IKBD_AddKeyToKeyboardBuffer_Real ( res1 );
+	IKBD_AddKeyToKeyboardBuffer_Real ( res2 );
+}
+
+static void IKBD_CustomCodeHandler_FroggiesMenu_Write ( Uint8 aciabyte )
+{
+	/* When writing 0xff to $fffc02, Froggies ikbd's program will terminate itself */
+	/* and leave Execution mode */
+	if ( aciabyte == 0xff )
+		IKBD_Reset_ExeMode ();
+}
+
+
+
+/*----------------------------------------------------------------------*/
+/* Transbeauce II menu.							*/
+/* Returns 1 byte with the joystick position, keyboard can be used too.	*/
+/*----------------------------------------------------------------------*/
+
+static void IKBD_CustomCodeHandler_Transbeauce2Menu_Read ( void )
+{
+	Uint8		res = 0;
+
+	/* keyboard emulation */
+	if ( ScanCodeState[ 0x48 ] )	res |= 0x01;		/* up */
+	if ( ScanCodeState[ 0x50 ] )	res |= 0x02;		/* down */
+	if ( ScanCodeState[ 0x4b ] )	res |= 0x04;		/* left */
+	if ( ScanCodeState[ 0x4d ] )	res |= 0x08;		/* right */
+	if ( ScanCodeState[ 0x62 ] )	res |= 0x40;		/* help */
+	if ( ScanCodeState[ 0x39 ] )	res |= 0x80;		/* space */
+
+	/* joystick emulation (bit mapping is same as cursor above, with bit 7 = fire button */
+	res |= ( Joy_GetStickData(1) & 0x8f ) ;			/* keep bits 0-3 and 7 */
+	
+	IKBD_AddKeyToKeyboardBuffer_Real ( res );
+}
+
+static void IKBD_CustomCodeHandler_Transbeauce2Menu_Write ( Uint8 aciabyte )
+{
+  /* Ignore write */
+}
+
+
+
+/*----------------------------------------------------------------------*/
+/* Dragonnels demo menu.						*/
+/* Returns 1 byte with the Y position of the mouse.			*/
+/*----------------------------------------------------------------------*/
+
+static void IKBD_CustomCodeHandler_DragonnelsMenu_Read ( void )
+{
+	Uint8		res = 0;
+	
+	if ( KeyboardProcessor.Mouse.DeltaY < 0 )	res = 0xfe;	/* mouse up */
+	if ( KeyboardProcessor.Mouse.DeltaY > 0 )	res = 0x02;	/* mouse down */
+
+	if ( Keyboard.bLButtonDown & BUTTON_MOUSE )	res = 0x80;	/* left mouse button */
+
+	IKBD_AddKeyToKeyboardBuffer_Real ( res );
+}
+
+static void IKBD_CustomCodeHandler_DragonnelsMenu_Write ( Uint8 aciabyte )
+{
+  /* Ignore write */
+}
+
