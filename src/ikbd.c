@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.39 2008-07-12 15:55:41 npomarede Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.40 2008-07-12 21:51:56 npomarede Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -1887,7 +1887,7 @@ void IKBD_KeyboardData_WriteByte(void)
  *
  * Executing a program in the 6301 is a 2 steps process :
  *	1) a very small program is sent to the RAM using the 0x20 command.
- *	   This is often loaded at address $a0.
+ *	   This is often loaded at address $b0.
  * 	   This program will stop interruptions in the 6301 and will accept
  *	   a second small program that will relocate itself to $80.
  *	2) the relocated program at address $80 will accept a third (main)
@@ -2016,16 +2016,16 @@ static void IKBD_CustomCodeHandler_FroggiesMenu_Read ( void )
 	Uint8		res1 = 0;
 	Uint8		res2 = 0;
 	
-	if ( KeyboardProcessor.Mouse.DeltaX < 0 )	res1 = 0x7d;	/* mouse left */
-	if ( KeyboardProcessor.Mouse.DeltaX > 0 )	res1 = 0x03;	/* mouse right */
-	if ( KeyboardProcessor.Mouse.DeltaY < 0 )	res2 = 0x7d;	/* mouse up */
-	if ( KeyboardProcessor.Mouse.DeltaY > 0 )	res2 = 0x03;	/* mouse down */
+	if ( KeyboardProcessor.Mouse.DeltaX < 0 )	res1 = 0x7a;	/* mouse left */
+	if ( KeyboardProcessor.Mouse.DeltaX > 0 )	res1 = 0x06;	/* mouse right */
+	if ( KeyboardProcessor.Mouse.DeltaY < 0 )	res2 = 0x7a;	/* mouse up */
+	if ( KeyboardProcessor.Mouse.DeltaY > 0 )	res2 = 0x06;	/* mouse down */
 	if ( Keyboard.bLButtonDown & BUTTON_MOUSE )	res1 |= 0x80;	/* left mouse button */
 
-	if ( ScanCodeState[ 0x4b ] )			res1 |= 0x7d;	/* left */
-	if ( ScanCodeState[ 0x4d ] )			res1 |= 0x03;	/* right */
-	if ( ScanCodeState[ 0x48 ] )			res2 |= 0x7d;	/* up */
-	if ( ScanCodeState[ 0x50 ] )			res2 |= 0x03;	/* down */
+	if ( ScanCodeState[ 0x4b ] )			res1 |= 0x7a;	/* left */
+	if ( ScanCodeState[ 0x4d ] )			res1 |= 0x06;	/* right */
+	if ( ScanCodeState[ 0x48 ] )			res2 |= 0x7a;	/* up */
+	if ( ScanCodeState[ 0x50 ] )			res2 |= 0x06;	/* down */
 	if ( ScanCodeState[ 0x70 ] )			res1 |= 0x80;	/* keypad 0 */
 
 	IKBD_AddKeyToKeyboardBuffer_Real ( res1 );
@@ -2081,8 +2081,8 @@ static void IKBD_CustomCodeHandler_DragonnelsMenu_Read ( void )
 {
 	Uint8		res = 0;
 	
-	if ( KeyboardProcessor.Mouse.DeltaY < 0 )	res = 0xfe;	/* mouse up */
-	if ( KeyboardProcessor.Mouse.DeltaY > 0 )	res = 0x02;	/* mouse down */
+	if ( KeyboardProcessor.Mouse.DeltaY < 0 )	res = 0xfc;	/* mouse up */
+	if ( KeyboardProcessor.Mouse.DeltaY > 0 )	res = 0x04;	/* mouse down */
 
 	if ( Keyboard.bLButtonDown & BUTTON_MOUSE )	res = 0x80;	/* left mouse button */
 
