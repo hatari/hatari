@@ -177,9 +177,11 @@
 /*			(fix Digiworld 2 by ICE, which uses $ff8264 for horizontal scroll).	*/
 /* 2008/07/07	[NP]	Ignore other 50/60 Hz switches once the right border was removed, keep	*/
 /*			the timer B to occur at pos 460+28 (fix Oxygene screen in Transbeauce 2)*/
+/* 2008/07/14	[NP]	When removing only left border in 60Hz, line size is 26+158 bytes	*/
+/*			instead of 26+160 bytes in 50 Hz (HigResMode demo by Paradox).		*/
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.117 2008-07-07 21:22:12 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.118 2008-07-14 15:03:59 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -1022,6 +1024,13 @@ static void Video_CopyScreenLineColor(void)
 		// fprintf(stderr , "scr off %d %d\n" , STF_PixelScroll , VideoOffset);
 	}
 
+	/* A 60 Hz line with only the left border removed is 26+158 bytes instead */
+	/* of 26+160 in 50 Hz */
+	if ( ( LineBorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MID ) ) 
+	  && ( LineEndCycle == LINE_END_CYCLE_60 ) )
+	  LineBorderMask |= BORDERMASK_RIGHT_MINUS_2;
+
+
 	/* Is total blank line? I.e. top/bottom border? */
 	if ((nHBL < nStartHBL) || (nHBL >= nEndHBL)
 	    || (LineBorderMask & BORDERMASK_EMPTY_LINE))	/* 60/50 Hz trick to obtain an empty line */
@@ -1032,8 +1041,7 @@ static void Video_CopyScreenLineColor(void)
 	else
 	{
 		/* Does have left border? If not, clear to color '0' */
-		if ((LineBorderMask & BORDERMASK_LEFT_OFF)
-		    || (LineBorderMask & BORDERMASK_LEFT_OFF_MID))
+		if ( LineBorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MID ) ) 
 		{
 			/* The "-2" in the following line is needed so that the offset is a multiple of 8 */
 			pVideoRaster += BORDERBYTES_LEFT-SCREENBYTES_LEFT+VideoOffset;
