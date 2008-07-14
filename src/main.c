@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.136 2008-06-23 20:56:58 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.137 2008-07-14 17:42:30 thothy Exp $";
 
 #include "config.h"
 
@@ -466,8 +466,8 @@ static void Main_UnInit(void)
 	{
 		DSP_UnInit();
 	}
-	HostScreen_UnInit();
 #endif
+	HostScreen_UnInit();
 	Screen_UnInit();
 	Exit680x0();
 
