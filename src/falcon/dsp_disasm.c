@@ -2389,11 +2389,17 @@ static void dsp_add(void)
 		case 3:
 			srcname="y";
 			break;
-		case DSP_REG_X0:
-		case DSP_REG_X1:
-		case DSP_REG_Y0:
-		case DSP_REG_Y1:
-			srcname=registers_name[srcreg];
+		case 4:
+			srcname = "x0";
+			break;
+		case 5:
+			srcname = "y0";
+			break;
+		case 6:
+			srcname = "x1";
+			break;
+		case 7:
+			srcname = "y1";
 			break;
 		default:
 			srcname="";
@@ -2988,11 +2994,17 @@ static void dsp_sub(void)
 		case 3:
 			srcname="y";
 			break;
-		case DSP_REG_X0:
-		case DSP_REG_X1:
-		case DSP_REG_Y0:
-		case DSP_REG_Y1:
-			srcname=registers_name[srcreg];
+		case 4:
+			srcname = "x0";
+			break;
+		case 5:
+			srcname = "y0";
+			break;
+		case 6:
+			srcname = "x1";
+			break;
+		case 7:
+			srcname = "y1";
 			break;
 		default:
 			srcname="";
@@ -3047,6 +3059,20 @@ static void dsp_tfr(void)
 
 	if (srcreg==0) {
 		srcreg = DSP_REG_A+(dstreg ^ 1);
+	}
+	else switch(srcreg) {
+		case 4:
+			srcreg = DSP_REG_X0;
+			break;
+		case 5:
+			srcreg = DSP_REG_Y0;
+			break;
+		case 6:
+			srcreg = DSP_REG_X1;
+			break;
+		case 7:
+			srcreg = DSP_REG_Y1;
+			break;
 	}
 
 	registers_changed[DSP_REG_A+dstreg]=1;
