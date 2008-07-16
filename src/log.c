@@ -13,7 +13,7 @@
  * of HatariTraceFlags. Multiple trace levels can be set at once, by setting
  * the corresponding bits in HatariTraceFlags
  */
-const char Log_rcsid[] = "Hatari $Id: log.c,v 1.17 2008-06-08 17:37:57 eerot Exp $";
+const char Log_rcsid[] = "Hatari $Id: log.c,v 1.18 2008-07-16 21:12:12 thothy Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -64,7 +64,10 @@ TraceOptions[] = {
 
 	{ HATARI_TRACE_FDC		, "fdc" } ,
 
-	{ HATARI_TRACE_IKBD		, "ikbd" } ,
+	{ HATARI_TRACE_IKBD_CMDS	, "ikbd_cmds" } ,
+	{ HATARI_TRACE_IKBD_ACIA	, "ikbd_acia" } ,
+	{ HATARI_TRACE_IKBD_EXEC	, "ikbd_exec" } ,
+	{ HATARI_TRACE_IKBD_ALL		, "ikbd_all" } ,
 
 	{ HATARI_TRACE_BLITTER		, "blitter" } ,
 

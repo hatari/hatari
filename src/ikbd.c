@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.40 2008-07-12 21:51:56 npomarede Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.41 2008-07-16 21:12:11 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -276,7 +276,8 @@ bool	IKBD_ExeMode = FALSE;
 Uint8	ScanCodeState[ 128 ];				/* state of each key : 0=released 1=pressed */
 
 /* This array contains all known custom 6301 programs, with their CRC */
-struct {
+struct
+{
 	Uint32		LoadMemCrc;			/* CRC of the bytes sent using the command 0x20 */
 	void		(*ExeBootHandler) ( Uint8 );	/* function handling write to $fffc02 during the 'boot' mode */
 	int		MainProgNbBytes;		/* number of bytes of the main 6301 program */
@@ -285,7 +286,8 @@ struct {
 	void		(*ExeMainHandler_Write) ( Uint8 ); /* funciton handling write to $fffc02 in the main 6301 program */
 	const char	*Name;
 }
-CustomCodeDefinitions[] = {
+CustomCodeDefinitions[] =
+{
 	{
 		0x2efb11b1 ,
 		IKBD_CustomCodeHandler_CommonBoot ,
@@ -340,7 +342,7 @@ void ACIA_Reset(void)
 
 void IKBD_Reset_ExeMode ( void )
 {
-	HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd custom exe off\n" );
+	HATARI_TRACE ( HATARI_TRACE_IKBD_EXEC, "ikbd custom exe off\n" );
 
 	/* Reset any custom code run with the Execute command 0x22 */
 	MemoryLoadNbBytesLeft = 0;
@@ -418,7 +420,7 @@ void IKBD_Reset(bool bCold)
  */
 void IKBD_MemorySnapShot_Capture(bool bSave)
 {
-	int	i;
+	unsigned int i;
 
 	/* Save/Restore details */
 	MemorySnapShot_Store(&Keyboard, sizeof(Keyboard));
@@ -772,9 +774,7 @@ static void IKBD_SendOnMouseAction(void)
 			/* Only report if mouse in absolute mode */
 			if (KeyboardProcessor.MouseMode==AUTOMODE_MOUSEABS)
 			{
-#ifdef DEBUG_OUTPUT_IKBD
-				Debug_IKBD("Report ABS on MouseAction\n");
-#endif
+				HATARI_TRACE(HATARI_TRACE_IKBD_ALL, "Report ABS on MouseAction\n");
 				IKBD_Cmd_ReadAbsMousePos();
 			}
 		}
@@ -928,10 +928,8 @@ static void IKBD_CheckResetDisableBug(void)
 			KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
 			bBothMouseAndJoy = TRUE;
 
-#ifdef DEBUG_OUTPUT_IKBD
-			Debug_IKBD("IKBD Mouse+Joystick disabled during RESET. Revert.\n");
-			Debugger_TabIKBD_AddListViewItem("( Mouse+Joystick disabled during RESET. Revert. )");
-#endif
+			HATARI_TRACE(HATARI_TRACE_IKBD_ALL, "IKBD Mouse+Joystick disabled "
+			             "during RESET. Revert.\n");
 		}
 	}
 }
@@ -968,10 +966,7 @@ void IKBD_InterruptHandler_ResetTimer(void)
  */
 static void IKBD_Cmd_NullFunction(void)
 {
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_NullFunction\n");
-	Debugger_TabIKBD_AddListViewItem("( NullFunction )");
-#endif
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_NullFunction\n");
 }
 
 
@@ -990,9 +985,7 @@ static void IKBD_Cmd_Reset(void)
 	/* Check for error series of bytes, eg 0x80,0x01 */
 	if (Keyboard.InputBuffer[1] == 0x01)
 	{
-#ifdef DEBUG_OUTPUT_IKBD
-		Debug_IKBD("KEYBOARD ON\n");
-#endif
+		HATARI_TRACE(HATARI_TRACE_IKBD_ALL, "KEYBOARD ON\n");
 
 		/* Set defaults */
 		KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
@@ -1019,10 +1012,7 @@ static void IKBD_Cmd_Reset(void)
 		bBothMouseAndJoy = FALSE;
 	}
 	/* else if not 0x80,0x01 just ignore */
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_Reset\n");
-	Debugger_TabIKBD_AddListViewItem("RESET");
-#endif
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_Reset\n");
 }
 
 
@@ -1043,10 +1033,9 @@ static void IKBD_Cmd_MouseAction(void)
 {
 	KeyboardProcessor.Mouse.Action = Keyboard.InputBuffer[1];
 	KeyboardProcessor.Abs.PrevReadAbsMouseButtons = ABS_PREVBUTTONS;
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_MouseAction %d\n",(unsigned int)KeyboardProcessor.Mouse.Action);
-	Debugger_TabIKBD_AddListViewItem("MouseAction %d",(unsigned int)KeyboardProcessor.Mouse.Action);
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_MouseAction %d\n",
+	             (unsigned int)KeyboardProcessor.Mouse.Action);
 }
 
 
@@ -1059,10 +1048,8 @@ static void IKBD_Cmd_MouseAction(void)
 static void IKBD_Cmd_RelMouseMode(void)
 {
 	KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_RelMouseMode\n");
-	Debugger_TabIKBD_AddListViewItem("RelMouseMode");
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_RelMouseMode\n");
 }
 
 
@@ -1082,10 +1069,9 @@ static void IKBD_Cmd_AbsMouseMode(void)
 	KeyboardProcessor.MouseMode = AUTOMODE_MOUSEABS;
 	KeyboardProcessor.Abs.MaxX = (((unsigned int)Keyboard.InputBuffer[1])<<8) | (unsigned int)Keyboard.InputBuffer[2];
 	KeyboardProcessor.Abs.MaxY = (((unsigned int)Keyboard.InputBuffer[3])<<8) | (unsigned int)Keyboard.InputBuffer[4];
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_AbsMouseMode %d,%d\n",KeyboardProcessor.Abs.MaxX,KeyboardProcessor.Abs.MaxY);
-	Debugger_TabIKBD_AddListViewItem("AbsMouseMode %d,%d",KeyboardProcessor.Abs.MaxX,KeyboardProcessor.Abs.MaxY);
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_AbsMouseMode %d,%d\n",
+	             KeyboardProcessor.Abs.MaxX, KeyboardProcessor.Abs.MaxY);
 }
 
 
@@ -1102,10 +1088,10 @@ static void IKBD_Cmd_MouseCursorKeycodes(void)
 	KeyboardProcessor.MouseMode = AUTOMODE_MOUSECURSOR;
 	KeyboardProcessor.Mouse.KeyCodeDeltaX = Keyboard.InputBuffer[1];
 	KeyboardProcessor.Mouse.KeyCodeDeltaY = Keyboard.InputBuffer[2];
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_MouseCursorKeycodes %d,%d\n",(int)KeyboardProcessor.Mouse.KeyCodeDeltaX,(int)KeyboardProcessor.Mouse.KeyCodeDeltaY);
-	Debugger_TabIKBD_AddListViewItem("MouseCursorKeycodes %d,%d",(int)KeyboardProcessor.Mouse.KeyCodeDeltaX,(int)KeyboardProcessor.Mouse.KeyCodeDeltaY);
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_MouseCursorKeycodes %d,%d\n",
+	             (int)KeyboardProcessor.Mouse.KeyCodeDeltaX,
+	             (int)KeyboardProcessor.Mouse.KeyCodeDeltaY);
 }
 
 
@@ -1121,10 +1107,9 @@ static void IKBD_Cmd_SetMouseThreshold(void)
 {
 	KeyboardProcessor.Mouse.XThreshold = (unsigned int)Keyboard.InputBuffer[1];
 	KeyboardProcessor.Mouse.YThreshold = (unsigned int)Keyboard.InputBuffer[2];
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_SetMouseThreshold %d,%d\n",KeyboardProcessor.Mouse.XThreshold,KeyboardProcessor.Mouse.YThreshold);
-	Debugger_TabIKBD_AddListViewItem("SetMouseThreshold %d,%d",KeyboardProcessor.Mouse.XThreshold,KeyboardProcessor.Mouse.YThreshold);
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_SetMouseThreshold %d,%d\n",
+	             KeyboardProcessor.Mouse.XThreshold, KeyboardProcessor.Mouse.YThreshold);
 }
 
 
@@ -1140,10 +1125,9 @@ static void IKBD_Cmd_SetMouseScale(void)
 {
 	KeyboardProcessor.Mouse.XScale = (unsigned int)Keyboard.InputBuffer[1];
 	KeyboardProcessor.Mouse.YScale = (unsigned int)Keyboard.InputBuffer[2];
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_SetMouseScale %d,%d\n",KeyboardProcessor.Mouse.XScale,KeyboardProcessor.Mouse.YScale);
-	Debugger_TabIKBD_AddListViewItem("SetMouseScale %d,%d",KeyboardProcessor.Mouse.XScale,KeyboardProcessor.Mouse.YScale);
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_SetMouseScale %d,%d\n",
+	             KeyboardProcessor.Mouse.XScale, KeyboardProcessor.Mouse.YScale);
 }
 
 
@@ -1192,10 +1176,8 @@ static void IKBD_Cmd_ReadAbsMousePos(void)
 	IKBD_AddKeyToKeyboardBuffer((unsigned int)KeyboardProcessor.Abs.Y>>8);
 	IKBD_AddKeyToKeyboardBuffer((unsigned int)KeyboardProcessor.Abs.Y&0xff);
 
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_ReadAbsMousePos %d,%d 0x%X\n",KeyboardProcessor.Abs.X,KeyboardProcessor.Abs.Y,Buttons);
-	Debugger_TabIKBD_AddListViewItem("ReadAbsMousePos %d,%d 0x%X",KeyboardProcessor.Abs.X,KeyboardProcessor.Abs.Y,Buttons);
-#endif
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReadAbsMousePos %d,%d 0x%X\n",
+	             KeyboardProcessor.Abs.X, KeyboardProcessor.Abs.Y, Buttons);
 }
 
 
@@ -1215,10 +1197,9 @@ static void IKBD_Cmd_SetInternalMousePos(void)
 	/* Setting these do not clip internal position(this happens on next update) */
 	KeyboardProcessor.Abs.X = (((unsigned int)Keyboard.InputBuffer[2])<<8) | (unsigned int)Keyboard.InputBuffer[3];
 	KeyboardProcessor.Abs.Y = (((unsigned int)Keyboard.InputBuffer[4])<<8) | (unsigned int)Keyboard.InputBuffer[5];
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_SetInternalMousePos %d,%d\n",KeyboardProcessor.Abs.X,KeyboardProcessor.Abs.Y);
-	Debugger_TabIKBD_AddListViewItem("SetInternalMousePos %d,%d",KeyboardProcessor.Abs.X,KeyboardProcessor.Abs.Y);
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_SetInternalMousePos %d,%d\n",
+	             KeyboardProcessor.Abs.X, KeyboardProcessor.Abs.Y);
 }
 
 
@@ -1231,10 +1212,8 @@ static void IKBD_Cmd_SetInternalMousePos(void)
 static void IKBD_Cmd_SetYAxisDown(void)
 {
 	KeyboardProcessor.Mouse.YAxis = -1;
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_SetYAxisDown\n");
-	Debugger_TabIKBD_AddListViewItem("SetYAxisDown");
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_SetYAxisDown\n");
 }
 
 
@@ -1247,10 +1226,8 @@ static void IKBD_Cmd_SetYAxisDown(void)
 static void IKBD_Cmd_SetYAxisUp(void)
 {
 	KeyboardProcessor.Mouse.YAxis = 1;
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_SetYAxisUp\n");
-	Debugger_TabIKBD_AddListViewItem("SetYAxisUp");
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_SetYAxisUp\n");
 }
 
 
@@ -1262,10 +1239,7 @@ static void IKBD_Cmd_SetYAxisUp(void)
  */
 static void IKBD_Cmd_StartKeyboardTransfer(void)
 {
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_StartKeyboardTransfer\n");
-	Debugger_TabIKBD_AddListViewItem("StartKeyboardTransfer");
-#endif
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_StartKeyboardTransfer\n");
 }
 
 
@@ -1279,10 +1253,8 @@ static void IKBD_Cmd_TurnMouseOff(void)
 {
 	KeyboardProcessor.MouseMode = AUTOMODE_OFF;
 	bMouseDisabled = TRUE;
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_TurnMouseOff\n");
-	Debugger_TabIKBD_AddListViewItem("TurnMouseOff");
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_TurnMouseOff\n");
 
 	IKBD_CheckResetDisableBug();
 }
@@ -1296,10 +1268,7 @@ static void IKBD_Cmd_TurnMouseOff(void)
  */
 static void IKBD_Cmd_StopKeyboardTransfer(void)
 {
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_StopKeyboardTransfer\n");
-	Debugger_TabIKBD_AddListViewItem("StopKeyboardTransfer");
-#endif
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_StopKeyboardTransfer\n");
 }
 
 
@@ -1321,9 +1290,7 @@ static void IKBD_Cmd_ReturnJoystickAuto(void)
 		bBothMouseAndJoy = TRUE;
 	}
 
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_ReturnJoystickAuto\n");
-#endif
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystickAuto\n");
 }
 
 
@@ -1336,7 +1303,7 @@ static void IKBD_Cmd_ReturnJoystickAuto(void)
 static void IKBD_Cmd_StopJoystick(void)
 {
 	KeyboardProcessor.JoystickMode = AUTOMODE_OFF;
-//  Debug_IKBD("IKBD_Cmd_StopJoystick\n");
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_StopJoystick\n");
 }
 
 
@@ -1351,10 +1318,8 @@ static void IKBD_Cmd_ReturnJoystick(void)
 	IKBD_AddKeyToKeyboardBuffer(0xFD);
 	IKBD_AddKeyToKeyboardBuffer(Joy_GetStickData(0));
 	IKBD_AddKeyToKeyboardBuffer(Joy_GetStickData(1));
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_ReturnJoystick\n");
-	Debugger_TabIKBD_AddListViewItem("ReturnJoystick");
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystick\n");
 }
 
 
@@ -1372,10 +1337,7 @@ static void IKBD_Cmd_ReturnJoystick(void)
  */
 static void IKBD_Cmd_SetJoystickDuration(void)
 {
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_SetJoystickDuration\n");
-	Debugger_TabIKBD_AddListViewItem("SetJoystickDuration");
-#endif
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_SetJoystickDuration\n");
 }
 
 
@@ -1390,10 +1352,7 @@ static void IKBD_Cmd_SetJoystickDuration(void)
  */
 static void IKBD_Cmd_SetJoystickFireDuration(void)
 {
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_SetJoystickFireDuration\n");
-	Debugger_TabIKBD_AddListViewItem("SetJoystickFireDuration");
-#endif
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_SetJoystickFireDuration\n");
 }
 
 
@@ -1421,10 +1380,7 @@ static void IKBD_Cmd_SetJoystickFireDuration(void)
  */
 static void IKBD_Cmd_SetCursorForJoystick(void)
 {
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_SetCursorForJoystick\n");
-	Debugger_TabIKBD_AddListViewItem("SetCursorForJoystick");
-#endif
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_SetCursorForJoystick\n");
 }
 
 
@@ -1438,10 +1394,8 @@ static void IKBD_Cmd_DisableJoysticks(void)
 {
 	KeyboardProcessor.JoystickMode = AUTOMODE_OFF;
 	bJoystickDisabled = TRUE;
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_DisableJoysticks\n");
-	Debugger_TabIKBD_AddListViewItem("DisableJoysticks");
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_DisableJoysticks\n");
 
 	IKBD_CheckResetDisableBug();
 }
@@ -1461,10 +1415,7 @@ static void IKBD_Cmd_DisableJoysticks(void)
  */
 static void IKBD_Cmd_SetClock(void)
 {
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_SetClock\n");
-	Debugger_TabIKBD_AddListViewItem("SetClock");
-#endif
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_SetClock\n");
 }
 
 
@@ -1516,10 +1467,8 @@ static void IKBD_Cmd_ReadClock(void)
 	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_hour));  /* hh - Hour */
 	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_min));   /* mm - Minute */
 	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_sec));   /* ss - Second */
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_ReadClock\n");
-	Debugger_TabIKBD_AddListViewItem("ReadClock");
-#endif
+
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReadClock\n");
 }
 
 
@@ -1535,12 +1484,7 @@ static void IKBD_Cmd_ReadClock(void)
  */
 static void IKBD_Cmd_LoadMemory(void)
 {
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_LoadMemory\n");
-	Debugger_TabIKBD_AddListViewItem("LoadMemory");
-#endif
-
-	HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd loadmemory addr 0x%x count %d\n" ,
+	HATARI_TRACE ( HATARI_TRACE_IKBD_CMDS , "IKBD_Cmd_LoadMemory addr 0x%x count %d\n" ,
 		( Keyboard.InputBuffer[1]<<8 ) + Keyboard.InputBuffer[2] , Keyboard.InputBuffer[3] );
 
 	MemoryLoadNbBytesTotal = Keyboard.InputBuffer[3];
@@ -1563,10 +1507,7 @@ static void IKBD_Cmd_LoadMemory(void)
  */
 static void IKBD_Cmd_ReadMemory(void)
 {
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_ReadMemory\n");
-	Debugger_TabIKBD_AddListViewItem("ReadMemory");
-#endif
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReadMemory\n");
 }
 
 
@@ -1580,22 +1521,18 @@ static void IKBD_Cmd_ReadMemory(void)
  */
 static void IKBD_Cmd_Execute(void)
 {
-#ifdef DEBUG_OUTPUT_IKBD
-	Debug_IKBD("IKBD_Cmd_Execute\n");
-	Debugger_TabIKBD_AddListViewItem("Execute");
-#endif
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_Execute\n");
 	
 	if ( pIKBD_CustomCodeHandler_Write )
 	{
-		HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd execute addr 0x%x using custom handler\n" ,
+		HATARI_TRACE ( HATARI_TRACE_IKBD_EXEC, "ikbd execute addr 0x%x using custom handler\n" ,
 			( Keyboard.InputBuffer[1]<<8 ) + Keyboard.InputBuffer[2] );
 
 		IKBD_ExeMode = TRUE;				/* turn 6301's custom mode ON */
 	}
-
 	else							/* unknown code uploaded to ikbd RAM */
 	{
-		HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd execute addr 0x%x ignored, no custom handler found\n" ,
+		HATARI_TRACE ( HATARI_TRACE_IKBD_EXEC, "ikbd execute addr 0x%x ignored, no custom handler found\n" ,
 			( Keyboard.InputBuffer[1]<<8 ) + Keyboard.InputBuffer[2] );
 	}
 }
@@ -1794,7 +1731,7 @@ void IKBD_KeyboardControl_ReadByte(void)
 	/* For our emulation send is immediate so acknowledge buffer is empty */
 	IoMem[0xfffc00] = ACIAStatusRegister | ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD ) )
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD_ACIA ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
@@ -1821,7 +1758,7 @@ void IKBD_KeyboardData_ReadByte(void)
 
 	IoMem[0xfffc02] = IKBD_GetByteFromACIA();  /* Return our byte from keyboard processor */
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD ) )
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD_ACIA ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
@@ -1840,7 +1777,7 @@ void IKBD_KeyboardControl_WriteByte(void)
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
 	M68000_WaitState(8);
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD ) )
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD_ACIA ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
@@ -1864,7 +1801,7 @@ void IKBD_KeyboardData_WriteByte(void)
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
 	M68000_WaitState(8);
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD ) )
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD_ACIA ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
@@ -1925,8 +1862,7 @@ void IKBD_KeyboardData_WriteByte(void)
 
 static void IKBD_LoadMemoryByte ( Uint8 aciabyte )
 {
-	int	i;
-
+	unsigned int i;
 
 	crc32_add_byte ( &MemoryLoadCrc , aciabyte );
 
@@ -1940,7 +1876,7 @@ static void IKBD_LoadMemoryByte ( Uint8 aciabyte )
 
 		if ( i < sizeof ( CustomCodeDefinitions ) / sizeof ( CustomCodeDefinitions[0] ) )	/* found */
 		{
-			HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd loadmemory %d bytes crc=0x%x matches <%s>\n" ,
+			HATARI_TRACE ( HATARI_TRACE_IKBD_EXEC, "ikbd loadmemory %d bytes crc=0x%x matches <%s>\n" ,
 				MemoryLoadNbBytesTotal , MemoryLoadCrc , CustomCodeDefinitions[ i ].Name );
 
 			crc32_reset ( &MemoryLoadCrc );
@@ -1951,7 +1887,7 @@ static void IKBD_LoadMemoryByte ( Uint8 aciabyte )
 
 		else							/* unknown code uploaded to ikbd RAM */
 		{
-			HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd loadmemory %d bytes crc=0x%x : unknown code\n" ,
+			HATARI_TRACE ( HATARI_TRACE_IKBD_EXEC, "ikbd loadmemory %d bytes crc=0x%x : unknown code\n" ,
 				MemoryLoadNbBytesTotal , MemoryLoadCrc );
 
 			pIKBD_CustomCodeHandler_Read = NULL;
@@ -1973,13 +1909,12 @@ static void IKBD_LoadMemoryByte ( Uint8 aciabyte )
 
 static void IKBD_CustomCodeHandler_CommonBoot ( Uint8 aciabyte )
 {
-	int	i;
-
+	unsigned int i;
 
 	crc32_add_byte ( &MemoryLoadCrc , aciabyte );
 	MemoryExeNbBytes++;
 
-	HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd custom exe common boot write 0x%02x count %d crc=0x%x\n" ,
+	HATARI_TRACE ( HATARI_TRACE_IKBD_EXEC, "ikbd custom exe common boot write 0x%02x count %d crc=0x%x\n" ,
 		aciabyte , MemoryExeNbBytes , MemoryLoadCrc );
 
 	/* Search for a match amongst the known custom routines */
@@ -1990,7 +1925,7 @@ static void IKBD_CustomCodeHandler_CommonBoot ( Uint8 aciabyte )
 
 	if ( i < sizeof ( CustomCodeDefinitions ) / sizeof ( CustomCodeDefinitions[0] ) )	/* found */
 	{
-		HATARI_TRACE ( HATARI_TRACE_IKBD , "ikbd custom exe common boot, uploaded code matches <%s>\n" ,
+		HATARI_TRACE ( HATARI_TRACE_IKBD_EXEC, "ikbd custom exe common boot, uploaded code matches <%s>\n" ,
 			CustomCodeDefinitions[ i ].Name );
 
 		pIKBD_CustomCodeHandler_Read = CustomCodeDefinitions[ i ].ExeMainHandler_Read;
