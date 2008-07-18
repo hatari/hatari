@@ -288,7 +288,14 @@ void DSP_shutdown(void)
 static inline void DSP_force_exec(void)
 {
 #if DSP_HOST_FORCEEXEC
+	int startticks;
+
+	startticks = SDL_GetTicks();
 	while (dsp_state == DSP_RUNNING) {
+		if (SDL_GetTicks() != startticks) {
+			SDL_Delay(1);
+			startticks = SDL_GetTicks();
+		}
 	}
 #endif
 }
