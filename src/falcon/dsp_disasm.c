@@ -602,11 +602,11 @@ static int registers_tcc[16][2]={
 
 	{DSP_REG_X0,DSP_REG_A},
 	{DSP_REG_X0,DSP_REG_B},
-	{DSP_REG_X1,DSP_REG_A},
-	{DSP_REG_X1,DSP_REG_B},
-
 	{DSP_REG_Y0,DSP_REG_A},
 	{DSP_REG_Y0,DSP_REG_B},
+
+	{DSP_REG_X1,DSP_REG_A},
+	{DSP_REG_X1,DSP_REG_B},
 	{DSP_REG_Y1,DSP_REG_A},
 	{DSP_REG_Y1,DSP_REG_B}
 };
@@ -1931,7 +1931,7 @@ static void dsp_tcc(void)
 
 	dsp_calc_cc((cur_inst>>12) & BITMASK(4), ccname);
 	src1reg = registers_tcc[(cur_inst>>3) & BITMASK(4)][0];
-	dst1reg = registers_tcc[(cur_inst>>3) & BITMASK(4)][0];
+	dst1reg = registers_tcc[(cur_inst>>3) & BITMASK(4)][1];
 
 	registers_changed[dst1reg]=1;
 	if (cur_inst & (1<<16)) {
@@ -2390,16 +2390,16 @@ static void dsp_add(void)
 			srcname="y";
 			break;
 		case 4:
-			srcname = "x0";
+			srcname=registers_name[DSP_REG_X0];
 			break;
 		case 5:
-			srcname = "y0";
+			srcname=registers_name[DSP_REG_Y0];
 			break;
 		case 6:
-			srcname = "x1";
+			srcname=registers_name[DSP_REG_X1];
 			break;
 		case 7:
-			srcname = "y1";
+			srcname=registers_name[DSP_REG_Y1];
 			break;
 		default:
 			srcname="";
@@ -2447,16 +2447,30 @@ static void dsp_addr(void)
 
 static void dsp_and(void)
 {
-	uint32 numreg;
+	uint32 srcreg,dstreg;
 
-	numreg = DSP_REG_A+((cur_inst>>3) & 1);
+	switch((cur_inst>>4) & BITMASK(2)) {
+		case 1:
+			srcreg=DSP_REG_Y0;
+			break;
+		case 2:
+			srcreg=DSP_REG_X1;
+			break;
+		case 3:
+			srcreg=DSP_REG_Y1;
+			break;
+		case 0:
+		default:
+			srcreg=DSP_REG_X0;
+	}
+	dstreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
+	registers_changed[dstreg]=1;
 
 	fprintf(stderr,"Dsp: 0x%04x: and %s,%s %s\n",
 		dsp_pc,
-		registers_name[DSP_REG_X0+((cur_inst>>4) & BITMASK(2))],
-		registers_name[numreg],
+		registers_name[srcreg],
+		registers_name[dstreg],
 		parallelmove_name
 	);
 }
@@ -2574,16 +2588,30 @@ static void dsp_cmpm(void)
 
 static void dsp_eor(void)
 {
-	uint32 numreg;
+	uint32 srcreg, dstreg;
 
-	numreg = DSP_REG_A+((cur_inst>>3) & 1);
+	switch((cur_inst>>4) & BITMASK(2)) {
+		case 1:
+			srcreg=DSP_REG_Y0;
+			break;
+		case 2:
+			srcreg=DSP_REG_X1;
+			break;
+		case 3:
+			srcreg=DSP_REG_Y1;
+			break;
+		case 0:
+		default:
+			srcreg=DSP_REG_X0;
+	}
+	dstreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
+	registers_changed[dstreg]=1;
 
 	fprintf(stderr,"Dsp: 0x%04x: eor %s,%s %s\n",
 		dsp_pc,
-		registers_name[DSP_REG_X0+((cur_inst>>4) & BITMASK(2))],
-		registers_name[numreg],
+		registers_name[srcreg],
+		registers_name[dstreg],
 		parallelmove_name
 	);
 }
@@ -2893,16 +2921,30 @@ static void dsp_not(void)
 
 static void dsp_or(void)
 {
-	uint32 numreg;
+	uint32 srcreg, dstreg;
 
-	numreg = DSP_REG_A+((cur_inst>>3) & 1);
+	switch((cur_inst>>4) & BITMASK(2)) {
+		case 1:
+			srcreg=DSP_REG_Y0;
+			break;
+		case 2:
+			srcreg=DSP_REG_X1;
+			break;
+		case 3:
+			srcreg=DSP_REG_Y1;
+			break;
+		case 0:
+		default:
+			srcreg=DSP_REG_X0;
+	}
+	dstreg = DSP_REG_A+((cur_inst>>3) & 1);
 
-	registers_changed[numreg]=1;
+	registers_changed[dstreg]=1;
 
 	fprintf(stderr,"Dsp: 0x%04x: or %s,%s %s\n",
 		dsp_pc,
-		registers_name[DSP_REG_X0+((cur_inst>>4) & BITMASK(2))],
-		registers_name[numreg],
+		registers_name[srcreg],
+		registers_name[dstreg],
 		parallelmove_name
 	);
 }
@@ -2995,16 +3037,16 @@ static void dsp_sub(void)
 			srcname="y";
 			break;
 		case 4:
-			srcname = "x0";
+			srcname=registers_name[DSP_REG_X0];
 			break;
 		case 5:
-			srcname = "y0";
+			srcname=registers_name[DSP_REG_Y0];
 			break;
 		case 6:
-			srcname = "x1";
+			srcname=registers_name[DSP_REG_X1];
 			break;
 		case 7:
-			srcname = "y1";
+			srcname=registers_name[DSP_REG_Y1];
 			break;
 		default:
 			srcname="";
@@ -3057,10 +3099,7 @@ static void dsp_tfr(void)
 	srcreg = (cur_inst>>4) & BITMASK(3);
 	dstreg = (cur_inst>>3) & 1;
 
-	if (srcreg==0) {
-		srcreg = DSP_REG_A+(dstreg ^ 1);
-	}
-	else switch(srcreg) {
+	switch(srcreg) {
 		case 4:
 			srcreg = DSP_REG_X0;
 			break;
@@ -3072,6 +3111,10 @@ static void dsp_tfr(void)
 			break;
 		case 7:
 			srcreg = DSP_REG_Y1;
+			break;
+		case 0:
+		default:
+			srcreg = DSP_REG_A+(dstreg ^ 1);
 			break;
 	}
 

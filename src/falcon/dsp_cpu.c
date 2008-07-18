@@ -36,7 +36,7 @@
 #define D(x)
 #endif
 
-// #define DSP_DISASM 0
+// #define DSP_DISASM
 
 #ifdef DSP_DISASM
 #include "dsp_disasm.h"
@@ -574,11 +574,11 @@ static int registers_tcc[16][2]={
 
 	{DSP_REG_X0,DSP_REG_A},
 	{DSP_REG_X0,DSP_REG_B},
-	{DSP_REG_X1,DSP_REG_A},
-	{DSP_REG_X1,DSP_REG_B},
-
 	{DSP_REG_Y0,DSP_REG_A},
 	{DSP_REG_Y0,DSP_REG_B},
+
+	{DSP_REG_X1,DSP_REG_A},
+	{DSP_REG_X1,DSP_REG_B},
 	{DSP_REG_Y1,DSP_REG_A},
 	{DSP_REG_Y1,DSP_REG_B}
 };
@@ -1959,7 +1959,7 @@ static void dsp_jclr(void)
 			break;
 	}
 
-	cur_inst_len++;
+	++cur_inst_len;
 
 	if ((value & (1<<numbit))==0) {
 		newpc = read_memory(DSP_SPACE_P, dsp_pc+1);
@@ -2081,9 +2081,9 @@ static void dsp_jsclr(void)
 			break;
 	}
 
-	cur_inst_len++;
+	++cur_inst_len;
 	if ((value & (1<<numbit))==0) {
-		dsp_stack_push(dsp_pc+cur_inst_len/*+1*/, dsp_registers[DSP_REG_SR]);
+		dsp_stack_push(dsp_pc+cur_inst_len, dsp_registers[DSP_REG_SR]);
 
 		newpc = read_memory(DSP_SPACE_P, dsp_pc+1);
 		dsp_pc = newpc;
@@ -2126,7 +2126,7 @@ static void dsp_jset(void)
 			break;
 	}
 
-	cur_inst_len++;
+	++cur_inst_len;
 	if (value & (1<<numbit)) {
 		newpc = read_memory(DSP_SPACE_P, dsp_pc+1);
 
@@ -2185,9 +2185,9 @@ static void dsp_jsset(void)
 			break;
 	}
 
-	cur_inst_len++;
+	++cur_inst_len;
 	if (value & (1<<numbit)) {
-		dsp_stack_push(dsp_pc+cur_inst_len/*+1*/, dsp_registers[DSP_REG_SR]);
+		dsp_stack_push(dsp_pc+cur_inst_len, dsp_registers[DSP_REG_SR]);
 
 		newpc = read_memory(DSP_SPACE_P, dsp_pc+1);
 		dsp_pc = newpc;
@@ -2655,7 +2655,7 @@ static void dsp_tcc(void)
 
 	if (dsp_calc_cc(cc_code)) {
 		regsrc1 = registers_tcc[(cur_inst>>3) & BITMASK(4)][0];
-		regdest1 = registers_tcc[(cur_inst>>3) & BITMASK(4)][0];
+		regdest1 = registers_tcc[(cur_inst>>3) & BITMASK(4)][1];
 
 		/* Read S1 */
 		if ((regsrc1 == DSP_REG_A) || (regsrc1 == DSP_REG_B)) {
@@ -3875,7 +3875,20 @@ static void dsp_and(void)
 {
 	uint32 srcreg, dstreg;
 
-	srcreg = DSP_REG_X0+((cur_inst>>4) & BITMASK(2));
+	switch((cur_inst>>4) & BITMASK(2)) {
+		case 1:
+			srcreg=DSP_REG_Y0;
+			break;
+		case 2:
+			srcreg=DSP_REG_X1;
+			break;
+		case 3:
+			srcreg=DSP_REG_Y1;
+			break;
+		case 0:
+		default:
+			srcreg=DSP_REG_X0;
+	}
 	dstreg = DSP_REG_A1+((cur_inst>>3) & 1);
 
 	dsp_registers[dstreg] &= dsp_registers[srcreg];
@@ -4083,7 +4096,20 @@ static void dsp_eor(void)
 {
 	uint32 srcreg, dstreg;
 
-	srcreg = DSP_REG_X0+((cur_inst>>4) & BITMASK(2));
+	switch((cur_inst>>4) & BITMASK(2)) {
+		case 1:
+			srcreg=DSP_REG_Y0;
+			break;
+		case 2:
+			srcreg=DSP_REG_X1;
+			break;
+		case 3:
+			srcreg=DSP_REG_Y1;
+			break;
+		case 0:
+		default:
+			srcreg=DSP_REG_X0;
+	}
 	dstreg = DSP_REG_A1+((cur_inst>>3) & 1);
 
 	dsp_registers[dstreg] ^= dsp_registers[srcreg];
@@ -4340,7 +4366,20 @@ static void dsp_or(void)
 {
 	uint32 srcreg, dstreg;
 
-	srcreg = DSP_REG_X0+((cur_inst>>4) & BITMASK(2));
+	switch((cur_inst>>4) & BITMASK(2)) {
+		case 1:
+			srcreg=DSP_REG_Y0;
+			break;
+		case 2:
+			srcreg=DSP_REG_X1;
+			break;
+		case 3:
+			srcreg=DSP_REG_Y1;
+			break;
+		case 0:
+		default:
+			srcreg=DSP_REG_X0;
+	}
 	dstreg = DSP_REG_A1+((cur_inst>>3) & 1);
 
 	dsp_registers[dstreg] |= dsp_registers[srcreg];
