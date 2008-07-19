@@ -179,9 +179,12 @@
 /*			the timer B to occur at pos 460+28 (fix Oxygene screen in Transbeauce 2)*/
 /* 2008/07/14	[NP]	When removing only left border in 60Hz, line size is 26+158 bytes	*/
 /*			instead of 26+160 bytes in 50 Hz (HigResMode demo by Paradox).		*/
+/* 2008/07/19	[NP]	If $ff8260==3 (which is not a valid resolution mode), we use 0 instead	*/
+/*			(low res) (fix Omegakul screen in old Omega Demo from 1988).		*/
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.118 2008-07-14 15:03:59 npomarede Exp $";
+
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.119 2008-07-19 13:51:12 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -2194,7 +2197,12 @@ void Video_ShifterMode_WriteByte(void)
 	}
 	if (!bUseHighRes && !bUseVDIRes)                    /* Don't store if hi-res and don't store if VDI resolution */
 	{
-		VideoShifterByte = IoMem[0xff8260] & 3;     /* We only care for lower 2-bits */
+		VideoShifterByte = IoMem[0xff8260] & 3;		/* We only care for lower 2-bits */
+		if ( VideoShifterByte == 3 )			/* 3 is not a valid resolution, use low res instead */
+		{
+			VideoShifterByte = 0;
+			IoMem_WriteByte(0xff8260,0);
+		}
 		Video_WriteToShifter(VideoShifterByte);
 		Video_SetHBLPaletteMaskPointers();
 		*pHBLPaletteMasks &= 0xff00ffff;
