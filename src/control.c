@@ -6,7 +6,7 @@
 
   This code processes commands from the Hatari control socket
 */
-const char control_rcsid[] = "Hatari $Id: control.c,v 1.3 2008-06-23 20:56:58 eerot Exp $";
+const char control_rcsid[] = "Hatari $Id: control.c,v 1.4 2008-07-22 20:34:28 thothy Exp $";
 
 #include "config.h"
 #if HAVE_UNIX_DOMAIN_SOCKETS
@@ -368,7 +368,7 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 			}
 			if (sock) {
 				fprintf(stderr, "New %dx%d SDL window with ID: %x\n",
-					width, height, sdl_win);
+					width, height, (int)sdl_win);
 				sprintf(buffer, "%dx%d", width, height);
 				write(sock, buffer, strlen(buffer));
 			}
