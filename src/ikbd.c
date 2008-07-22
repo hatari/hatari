@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.41 2008-07-16 21:12:11 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.42 2008-07-22 20:55:05 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -1614,9 +1614,8 @@ Uint16 IKBD_GetByteFromACIA(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Byte received in the ACIA from the keyboard processor. Store byte for read from $fffc02
- * and clear the GPIP I4 register. This register will be remain low until byte has been
- * read from ACIA.
+ * Byte received in the ACIA from the keyboard processor. Store byte for read
+ * from $fffc02 and schedule MFP interrupt to be triggered later.
  */
 void IKBD_InterruptHandler_ACIA(void)
 {
@@ -1635,15 +1634,34 @@ void IKBD_InterruptHandler_ACIA(void)
 	ACIAStatusRegister |= ACIA_STATUS_REGISTER__RX_BUFFER_FULL;
 	/* Signal interrupt pending */
 	ACIAStatusRegister |= ACIA_STATUS_REGISTER__INTERRUPT_REQUEST;
+
 	/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt */
 	/* NOTE: GPIP will remain low(0) until keyboard data is read from $fffc02. */
 	MFP_GPIP &= ~0x10;
+
+	/* There seems to be a small gap on a real ST between the point in time
+	 * the ACIA_STATUS_REGISTER__RX_BUFFER_FULL bit is set and the MFP
+	 * interrupt is triggered - for example the "V8 music system" demo
+	 * depends on this behaviour. To emulate this, we simply start another
+	 * Int which triggers the MFP interrupt later: */
+	Int_AddRelativeInterrupt(18, INT_CPU_CYCLE, INTERRUPT_IKBD_MFP, 0);
+}
+
+
+/**
+ * Start MFP interrupt after byte has been received in the ACIA.
+ */
+void IKBD_InterruptHandler_MFP(void)
+{
+	/* Remove this interrupt from list and re-order */
+	Int_AcknowledgeInterrupt();
 
 	/* Acknowledge in MFP circuit, pass bit,enable,pending */
 	MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
 
 	/* Clear flag so can allow another byte to be sent along serial line */
 	bByteInTransitToACIA = FALSE;
+
 	/* If another key is waiting, start sending from keyboard processor now */
 	if (Keyboard.BufferHead!=Keyboard.BufferTail)
 		IKBD_SendByteToACIA();

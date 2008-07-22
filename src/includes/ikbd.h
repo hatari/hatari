@@ -95,6 +95,7 @@ extern void IKBD_MemorySnapShot_Capture(bool bSave);
 extern void IKBD_SendAutoKeyboardCommands(void);
 extern void IKBD_InterruptHandler_ResetTimer(void);
 extern void IKBD_InterruptHandler_ACIA(void);
+extern void IKBD_InterruptHandler_MFP(void);
 
 extern void IKBD_PressSTKey(Uint8 ScanCode, bool bPress);
 extern void IKBD_KeyboardControl_ReadByte(void);
