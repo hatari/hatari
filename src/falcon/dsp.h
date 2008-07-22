@@ -102,34 +102,47 @@
 #define DSP_HOST_HSR_DMA	0x07
 
 
-/* DSP state */
-extern uint8	dsp_state;
+struct DSP
+{
+	/* DSP state */
+	uint8	state;
 
-/* Registers */
-extern uint16	dsp_pc;
-extern uint32	dsp_registers[64];
+	/* Registers */
+	uint16	pc;
+	uint32	registers[64];
 
-/* stack[0=ssh], stack[1=ssl] */
-extern uint16	dsp_stack[2][15];
+	/* stack[0=ssh], stack[1=ssl] */
+	uint16	stack[2][15];
 
-/* ram[0] is x:, ram[1] is y:, ram[2] is p: */
-extern uint32	dsp_ram[3][DSP_RAMSIZE];
+	/* External ram[0] is x:, ram[1] is y:, ram[2] is p: */
+	uint32	ram[3][DSP_RAMSIZE];
 
-/* rom[0] is x:, rom[1] is y: */
-extern uint32	dsp_rom[2][512];
+	/* rom[0] is x:, rom[1] is y: */
+	uint32	rom[2][512];
 
-/* peripheral space, [x|y]:0xffc0-0xffff */
-extern uint32	dsp_periph[2][64];
+	/* Internal ram[0] is x:, ram[1] is y:, ram[2] is p: */
+	uint32	ramint[3][512];
 
-/* host port, CPU side */
-extern uint8 dsp_hostport[8];
+	/* peripheral space, [x|y]:0xffc0-0xffff */
+	uint32	periph[2][64];
 
-/* Misc */
-extern uint32 dsp_loop_rep;		/* executing rep ? */
-extern uint32 dsp_last_loop_inst;	/* executing the last instruction in DO ? */
-extern uint32 dsp_first_host_write;	/* first byte written to host port */
+	/* host port, CPU side */
+	uint8 hostport[8];
 
-extern SDL_sem	*dsp56k_sem;
+	/* Misc */
+	uint32 loop_rep;		/* executing rep ? */
+	uint32 last_loop_inst;	/* executing the last instruction in DO ? */
+	uint32 first_host_write;	/* first byte written to host port */
+
+	SDL_sem		*dsp56k_sem;
+};
+
+extern struct DSP dsp;
+
+static inline struct DSP* getDSP(void)
+{
+	return &dsp;
+}
 
 
 void DSP_HandleReadAccess(void);

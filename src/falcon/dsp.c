@@ -44,35 +44,8 @@
 #endif
 
 
-/* DSP state */
-uint8	dsp_state;
-
-/* Registers */
-uint16	dsp_pc;
-uint32	dsp_registers[64];
-
-/* stack[0=ssh], stack[1=ssl] */
-uint16	dsp_stack[2][15];
-
-/* ram[0] is x:, ram[1] is y:, ram[2] is p: */
-uint32	dsp_ram[3][DSP_RAMSIZE];
-
-/* rom[0] is x:, rom[1] is y: */
-uint32	dsp_rom[2][512];
-
-/* peripheral space, [x|y]:0xffc0-0xffff */
-uint32	dsp_periph[2][64];
-
-/* host port, CPU side */
-uint8 dsp_hostport[8];
-
-/* Misc */
-uint32 dsp_loop_rep;		/* executing rep ? */
-uint32 dsp_last_loop_inst;	/* executing the last instruction in DO ? */
-uint32 dsp_first_host_write;	/* first byte written to host port */
-
-SDL_sem		*dsp56k_sem;
-
+/* The structure with all public DSP variables */
+struct DSP dsp;
 
 /* For bootstrap routine */
 static uint16	bootstrap_pos;
@@ -104,7 +77,7 @@ void DSP_Init(void)
 {
 	int i;
 
-	memset(dsp_ram, 0,sizeof(dsp_ram));
+	memset(dsp.ram, 0,sizeof(dsp.ram));
 
 	/* Initialize Y:rom[0x0100-0x01ff] with a sin table */
 	{
@@ -119,7 +92,7 @@ void DSP_Init(void)
 			} else if (dest<-8388608) {
 				dest = -8388608;
 			}
-			dsp_rom[DSP_SPACE_Y][0x100+i]=dest & 0x00ffffff;
+			dsp.rom[DSP_SPACE_Y][0x100+i]=dest & 0x00ffffff;
 		}
 	}
 
@@ -138,7 +111,7 @@ void DSP_Init(void)
 			value = mulaw_base[i]<<8;
 
 			for (j=0;j<16;j++) {
-				dsp_rom[DSP_SPACE_X][position++]=value;
+				dsp.rom[DSP_SPACE_X][position++]=value;
 				value -= offset;
 			}
 
@@ -171,7 +144,7 @@ void DSP_Init(void)
 
 					alawbase2 = alawbase1 + ((base_values[k]*multiply_col[i & 3])<<12);
 
-					dsp_rom[DSP_SPACE_X][pos++]=alawbase2;
+					dsp.rom[DSP_SPACE_X][pos++]=alawbase2;
 				}
 			}
 		}
@@ -180,9 +153,9 @@ void DSP_Init(void)
 	D(bug("Dsp: power-on done"));
 
 	dsp56k_thread = NULL;
-	dsp56k_sem = NULL;
+	dsp.dsp56k_sem = NULL;
 
-	dsp_state = DSP_HALT;
+	dsp.state = DSP_HALT;
 #if DSP_DISASM_STATE
 	D(bug("Dsp: state = HALT"));
 #endif
@@ -202,47 +175,47 @@ void DSP_Reset(void)
 	DSP_shutdown();
 
 	/* Pause thread */
-	dsp_state = DSP_BOOTING;
+	dsp.state = DSP_BOOTING;
 #if DSP_DISASM_STATE
 	D(bug("Dsp: state = BOOTING"));
 #endif
 
 	/* Memory */
-	memset(dsp_periph, 0,sizeof(dsp_periph));
-	memset(dsp_stack, 0,sizeof(dsp_stack));
-	memset(dsp_registers, 0,sizeof(dsp_registers));
+	memset(dsp.periph, 0,sizeof(dsp.periph));
+	memset(dsp.stack, 0,sizeof(dsp.stack));
+	memset(dsp.registers, 0,sizeof(dsp.registers));
 
 	bootstrap_pos = bootstrap_accum = 0;
 	
 	/* Registers */
-	dsp_pc = 0x0000;
-	dsp_registers[DSP_REG_OMR]=0x02;
+	dsp.pc = 0x0000;
+	dsp.registers[DSP_REG_OMR]=0x02;
 	for (i=0;i<8;i++) {
-		dsp_registers[DSP_REG_M0+i]=0x00ffff;
+		dsp.registers[DSP_REG_M0+i]=0x00ffff;
 	}
 
 	/* host port init, dsp side */
-	dsp_periph[DSP_SPACE_X][DSP_HOST_HSR]=(1<<DSP_HOST_HSR_HTDE);
+	dsp.periph[DSP_SPACE_X][DSP_HOST_HSR]=(1<<DSP_HOST_HSR_HTDE);
 
 	/* host port init, cpu side */
-	dsp_hostport[CPU_HOST_CVR]=0x12;
-	dsp_hostport[CPU_HOST_ISR]=(1<<CPU_HOST_ISR_TRDY)|(1<<CPU_HOST_ISR_TXDE);
-	dsp_hostport[CPU_HOST_IVR]=0x0f;
+	dsp.hostport[CPU_HOST_CVR]=0x12;
+	dsp.hostport[CPU_HOST_ISR]=(1<<CPU_HOST_ISR_TRDY)|(1<<CPU_HOST_ISR_TXDE);
+	dsp.hostport[CPU_HOST_IVR]=0x0f;
 
 	/* Other hardware registers */
-	dsp_periph[DSP_SPACE_X][DSP_IPR]=0;
-	dsp_periph[DSP_SPACE_X][DSP_BCR]=0xffff;
+	dsp.periph[DSP_SPACE_X][DSP_IPR]=0;
+	dsp.periph[DSP_SPACE_X][DSP_BCR]=0xffff;
 
 	/* Misc */
-	dsp_loop_rep = 0;
-	dsp_last_loop_inst = 0;
-	dsp_first_host_write = 1;
+	dsp.loop_rep = 0;
+	dsp.last_loop_inst = 0;
+	dsp.first_host_write = 1;
 
 	D(bug("Dsp: reset done"));
 
 	/* Create thread and semaphore if needed */
-	if (dsp56k_sem == NULL) {
-		dsp56k_sem = SDL_CreateSemaphore(0);
+	if (dsp.dsp56k_sem == NULL) {
+		dsp.dsp56k_sem = SDL_CreateSemaphore(0);
 	}
 
 	if (dsp56k_thread == NULL) {
@@ -255,18 +228,18 @@ void DSP_shutdown(void)
 	if (dsp56k_thread != NULL) {
 
 		/* Stop thread */
-		dsp_state = DSP_STOPTHREAD;
+		dsp.state = DSP_STOPTHREAD;
 #if DSP_DISASM_STATE
 		D(bug("Dsp: state = STOPTHREAD"));
 #endif
 
 		/* Release semaphore, if thread waiting for it */
-		if (SDL_SemValue(dsp56k_sem)==0) {
-			SDL_SemPost(dsp56k_sem);
+		if (SDL_SemValue(dsp.dsp56k_sem)==0) {
+			SDL_SemPost(dsp.dsp56k_sem);
 		}
 
 		/* Wait for the thread to finish */
-		while (dsp_state != DSP_STOPPEDTHREAD) {
+		while (dsp.state != DSP_STOPPEDTHREAD) {
 			SDL_Delay(1);
 		}
 
@@ -274,9 +247,9 @@ void DSP_shutdown(void)
 	}
 
 	/* Destroy the semaphore */
-	if (dsp56k_sem != NULL) {
-		SDL_DestroySemaphore(dsp56k_sem);
-		dsp56k_sem = NULL;
+	if (dsp.dsp56k_sem != NULL) {
+		SDL_DestroySemaphore(dsp.dsp56k_sem);
+		dsp.dsp56k_sem = NULL;
 	}
 }
 
@@ -288,10 +261,10 @@ void DSP_shutdown(void)
 static inline void DSP_force_exec(void)
 {
 #if DSP_HOST_FORCEEXEC
-	int startticks;
+	Uint32 startticks;
 
 	startticks = SDL_GetTicks();
-	while (dsp_state == DSP_RUNNING) {
+	while (dsp.state == DSP_RUNNING) {
 		if (SDL_GetTicks() != startticks) {
 			SDL_Delay(1);
 			startticks = SDL_GetTicks();
@@ -321,16 +294,16 @@ static uint8 DSP_handleRead(Uint32 addr)
 
 	switch(addr) {
 		case CPU_HOST_ICR:
-			value = dsp_hostport[CPU_HOST_ICR];
+			value = dsp.hostport[CPU_HOST_ICR];
 			break;
 		case CPU_HOST_CVR:
-			value = dsp_hostport[CPU_HOST_CVR];
+			value = dsp.hostport[CPU_HOST_CVR];
 			break;
 		case CPU_HOST_ISR:
-			value = dsp_hostport[CPU_HOST_ISR];
+			value = dsp.hostport[CPU_HOST_ISR];
 			break;
 		case CPU_HOST_IVR:
-			value = dsp_hostport[CPU_HOST_IVR];
+			value = dsp.hostport[CPU_HOST_IVR];
 			break;
 		case CPU_HOST_RX0:
 			DSP_force_exec();
@@ -338,33 +311,33 @@ static uint8 DSP_handleRead(Uint32 addr)
 			break;
 		case CPU_HOST_RXH:
 			DSP_force_exec();
-			value = dsp_hostport[CPU_HOST_RXH];
+			value = dsp.hostport[CPU_HOST_RXH];
 			break;
 		case CPU_HOST_RXM:
 			DSP_force_exec();
-			value = dsp_hostport[CPU_HOST_RXM];
+			value = dsp.hostport[CPU_HOST_RXM];
 			break;
 		case CPU_HOST_RXL:
 			DSP_force_exec();
-			value = dsp_hostport[CPU_HOST_RXL];
+			value = dsp.hostport[CPU_HOST_RXL];
 
-			if (dsp_state!=DSP_BOOTING) {
+			if (dsp.state!=DSP_BOOTING) {
 				/* Clear RXDF bit to say that CPU has read */
-				dsp_hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
+				dsp.hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
 #if DSP_DISASM_HOSTWRITE
 				D(bug("Dsp: (D->H): Host RXDF cleared"));
 #endif
 			}
 
 			/* Wake up DSP if it was waiting our read */
-			if (dsp_state==DSP_WAITHOSTREAD) {
+			if (dsp.state==DSP_WAITHOSTREAD) {
 #if DSP_DISASM_STATE
 				D(bug("Dsp: state = DSP_RUNNING"));
 #endif
-				dsp_state = DSP_RUNNING;
+				dsp.state = DSP_RUNNING;
 
-				if (SDL_SemValue(dsp56k_sem)==0) {
-					SDL_SemPost(dsp56k_sem);
+				if (SDL_SemValue(dsp.dsp56k_sem)==0) {
+					SDL_SemPost(dsp.dsp56k_sem);
 				}
 			}
 
@@ -397,72 +370,72 @@ static void DSP_handleWrite(Uint32 addr, uint8 value)
 
 	switch(addr) {
 		case CPU_HOST_ICR:
-			dsp_hostport[CPU_HOST_ICR]=value & 0xfb;
+			dsp.hostport[CPU_HOST_ICR]=value & 0xfb;
 			/* Set HF1 and HF0 accordingly on the host side */
-			dsp_periph[DSP_SPACE_X][DSP_HOST_HSR] &=
+			dsp.periph[DSP_SPACE_X][DSP_HOST_HSR] &=
 					0xff-((1<<DSP_HOST_HSR_HF1)|(1<<DSP_HOST_HSR_HF0));
-			dsp_periph[DSP_SPACE_X][DSP_HOST_HSR] |=
-					dsp_hostport[CPU_HOST_ICR] & ((1<<DSP_HOST_HSR_HF1)|(1<<DSP_HOST_HSR_HF0));
+			dsp.periph[DSP_SPACE_X][DSP_HOST_HSR] |=
+					dsp.hostport[CPU_HOST_ICR] & ((1<<DSP_HOST_HSR_HF1)|(1<<DSP_HOST_HSR_HF0));
 			break;
 		case CPU_HOST_CVR:
-			dsp_hostport[CPU_HOST_CVR]=value & 0x9f;
+			dsp.hostport[CPU_HOST_CVR]=value & 0x9f;
 			/* if bit 7=1, host command */
 			if (value & (1<<7)) {
-				dsp_periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HCP;
+				dsp.periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HCP;
 			}
 			break;
 		case CPU_HOST_ISR:
 			/* Read only */
 			break;
 		case CPU_HOST_IVR:
-			dsp_hostport[CPU_HOST_IVR]=value;
+			dsp.hostport[CPU_HOST_IVR]=value;
 			break;
 		case CPU_HOST_TX0:
 			DSP_force_exec();
 
-			if (dsp_first_host_write) {
-				dsp_first_host_write = 0;
+			if (dsp.first_host_write) {
+				dsp.first_host_write = 0;
 				bootstrap_accum = 0;
 			}
 			break;
 		case CPU_HOST_TXH:
 			DSP_force_exec();
 
-			if (dsp_first_host_write) {
-				dsp_first_host_write = 0;
+			if (dsp.first_host_write) {
+				dsp.first_host_write = 0;
 				bootstrap_accum = 0;
 			}
-			dsp_hostport[CPU_HOST_TXH]=value;
+			dsp.hostport[CPU_HOST_TXH]=value;
 			bootstrap_accum |= value<<16;
 			break;
 		case CPU_HOST_TXM:
 			DSP_force_exec();
 
-			if (dsp_first_host_write) {
-				dsp_first_host_write = 0;
-				dsp_hostport[CPU_HOST_TXH]=value;	/* FIXME: is it correct ? */
+			if (dsp.first_host_write) {
+				dsp.first_host_write = 0;
+				dsp.hostport[CPU_HOST_TXH]=value;	/* FIXME: is it correct ? */
 				bootstrap_accum = 0;
 			}
-			dsp_hostport[CPU_HOST_TXM]=value;
+			dsp.hostport[CPU_HOST_TXM]=value;
 			bootstrap_accum |= value<<8;
 			break;
 		case CPU_HOST_TXL:
 			DSP_force_exec();
 
-			if (dsp_first_host_write) {
-				dsp_first_host_write = 0;
-				dsp_hostport[CPU_HOST_TXH]=value;	/* FIXME: is it correct ? */
-				dsp_hostport[CPU_HOST_TXM]=value;	/* FIXME: is it correct ? */
+			if (dsp.first_host_write) {
+				dsp.first_host_write = 0;
+				dsp.hostport[CPU_HOST_TXH]=value;	/* FIXME: is it correct ? */
+				dsp.hostport[CPU_HOST_TXM]=value;	/* FIXME: is it correct ? */
 				bootstrap_accum = 0;
 			}
-			dsp_hostport[CPU_HOST_TXL]=value;
+			dsp.hostport[CPU_HOST_TXL]=value;
 			bootstrap_accum |= value;
 
-			dsp_first_host_write = 1;
+			dsp.first_host_write = 1;
 
-			if (dsp_state != DSP_BOOTING) {
+			if (dsp.state != DSP_BOOTING) {
 				/* Clear TXDE to say that host has written */
-				dsp_hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_TXDE);
+				dsp.hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_TXDE);
 #if DSP_DISASM_HOSTREAD
 				D(bug("Dsp: (H->D): Host TXDE cleared"));
 #endif
@@ -470,18 +443,18 @@ static void DSP_handleWrite(Uint32 addr, uint8 value)
 				DSP_host2dsp();
 			}
 
-			switch(dsp_state) {
+			switch(dsp.state) {
 				case DSP_BOOTING:
-					dsp_ram[DSP_SPACE_P][bootstrap_pos] = bootstrap_accum;
+					dsp.ram[DSP_SPACE_P][bootstrap_pos] = bootstrap_accum;
 /*					D(bug("Dsp: bootstrap: p:0x%04x: 0x%06x written", bootstrap_pos, bootstrap_accum));*/
 					bootstrap_pos++;
 					if (bootstrap_pos == 0x200) {
 #if DSP_DISASM_STATE
 						D(bug("Dsp: bootstrap done"));
 #endif
-						dsp_state = DSP_RUNNING;
+						dsp.state = DSP_RUNNING;
 
-						SDL_SemPost(dsp56k_sem);
+						SDL_SemPost(dsp.dsp56k_sem);
 					}		
 					bootstrap_accum = 0;
 					break;
@@ -490,10 +463,10 @@ static void DSP_handleWrite(Uint32 addr, uint8 value)
 #if DSP_DISASM_STATE
 					D(bug("Dsp: state = DSP_RUNNING"));
 #endif
-					dsp_state = DSP_RUNNING;
+					dsp.state = DSP_RUNNING;
 
-					if (SDL_SemValue(dsp56k_sem)==0) {
-						SDL_SemPost(dsp56k_sem);
+					if (SDL_SemValue(dsp.dsp56k_sem)==0) {
+						SDL_SemPost(dsp.dsp56k_sem);
 					}
 					break;
 			}
@@ -527,35 +500,35 @@ void DSP_host2dsp(void)
 
 	/* Host port transfer ? (host->dsp) */
 	if (
-		((dsp_hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_TXDE))==0) &&
-		((dsp_periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HRDF))==0)
+		((dsp.hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_TXDE))==0) &&
+		((dsp.periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HRDF))==0)
 		) {
 
-		dsp_periph[DSP_SPACE_X][DSP_HOST_HRX] = dsp_hostport[CPU_HOST_TXL];
-		dsp_periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_hostport[CPU_HOST_TXM]<<8;
-		dsp_periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_hostport[CPU_HOST_TXH]<<16;
+		dsp.periph[DSP_SPACE_X][DSP_HOST_HRX] = dsp.hostport[CPU_HOST_TXL];
+		dsp.periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp.hostport[CPU_HOST_TXM]<<8;
+		dsp.periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp.hostport[CPU_HOST_TXH]<<16;
 
 #if DSP_DISASM_HOSTREAD
-		D(bug("Dsp: (H->D): Transfer 0x%06x",dsp_periph[DSP_SPACE_X][DSP_HOST_HRX]));
+		D(bug("Dsp: (H->D): Transfer 0x%06x",dsp.periph[DSP_SPACE_X][DSP_HOST_HRX]));
 #endif
 
 		/* Set HRDF bit to say that DSP can read */
-		dsp_periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HRDF;
+		dsp.periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HRDF;
 #if DSP_DISASM_HOSTREAD
 		D(bug("Dsp: (H->D): Dsp HRDF set"));
 #endif
 
 		/* Set TXDE bit to say that host can write */
-		dsp_hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_TXDE;
+		dsp.hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_TXDE;
 #if DSP_DISASM_HOSTREAD
 		D(bug("Dsp: (H->D): Host TXDE set"));
 #endif
 
 		/* Clear/set TRDY bit */
-		dsp_hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_TRDY);
-		trdy = (dsp_hostport[CPU_HOST_ISR]>>CPU_HOST_ISR_TXDE) & 1;
-		trdy &= !((dsp_periph[DSP_SPACE_X][DSP_HOST_HSR]>>DSP_HOST_HSR_HRDF) & 1);
-		dsp_hostport[CPU_HOST_ISR] |= (trdy & 1)<< CPU_HOST_ISR_TRDY;
+		dsp.hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_TRDY);
+		trdy = (dsp.hostport[CPU_HOST_ISR]>>CPU_HOST_ISR_TXDE) & 1;
+		trdy &= !((dsp.periph[DSP_SPACE_X][DSP_HOST_HSR]>>DSP_HOST_HSR_HRDF) & 1);
+		dsp.hostport[CPU_HOST_ISR] |= (trdy & 1)<< CPU_HOST_ISR_TRDY;
 	}
 }
 
@@ -563,26 +536,26 @@ void DSP_dsp2host(void)
 {
 	/* Host port transfer ? (dsp->host) */
 	if (
-		((dsp_hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_RXDF))==0) &&
-		((dsp_periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HTDE))==0)
+		((dsp.hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_RXDF))==0) &&
+		((dsp.periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HTDE))==0)
 		) {
 
-		dsp_hostport[CPU_HOST_RXL] = dsp_periph[DSP_SPACE_X][DSP_HOST_HTX];
-		dsp_hostport[CPU_HOST_RXM] = dsp_periph[DSP_SPACE_X][DSP_HOST_HTX]>>8;
-		dsp_hostport[CPU_HOST_RXH] = dsp_periph[DSP_SPACE_X][DSP_HOST_HTX]>>16;
+		dsp.hostport[CPU_HOST_RXL] = dsp.periph[DSP_SPACE_X][DSP_HOST_HTX];
+		dsp.hostport[CPU_HOST_RXM] = dsp.periph[DSP_SPACE_X][DSP_HOST_HTX]>>8;
+		dsp.hostport[CPU_HOST_RXH] = dsp.periph[DSP_SPACE_X][DSP_HOST_HTX]>>16;
 
 #if DSP_DISASM_HOSTWRITE
-		D(bug("Dsp: (D->H): Transfer 0x%06x",dsp_periph[DSP_SPACE_X][DSP_HOST_HTX]));
+		D(bug("Dsp: (D->H): Transfer 0x%06x",dsp.periph[DSP_SPACE_X][DSP_HOST_HTX]));
 #endif
 
 		/* Set HTDE bit to say that DSP can write */
-		dsp_periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HTDE;
+		dsp.periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HTDE;
 #if DSP_DISASM_HOSTWRITE
 		D(bug("Dsp: (D->H): Dsp HTDE set"));
 #endif
 
 		/* Set RXDF bit to say that host can read */
-		dsp_hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_RXDF;
+		dsp.hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_RXDF;
 #if DSP_DISASM_HOSTWRITE
 		D(bug("Dsp: (D->H): Host RXDF set"));
 #endif
