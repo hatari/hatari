@@ -3674,23 +3674,21 @@ static void dsp_adc(void)
 	dest[2] = getDSP()->registers[DSP_REG_A0+destreg];
 
 	srcreg = (cur_inst>>4) & 1;
-	switch(srcreg) {
-		case 0:	/* X */
-			source[1] = getDSP()->registers[DSP_REG_X1];
-			source[2] = getDSP()->registers[DSP_REG_X0];
-			source[0] = 0;
-			if (source[1] & (1<<23)) {
-				source[0] = 0x0000ff;
-			}
-			break;
-		case 1:	/* Y */
-			source[1] = getDSP()->registers[DSP_REG_Y1];
-			source[2] = getDSP()->registers[DSP_REG_Y0];
-			source[0] = 0;
-			if (source[1] & (1<<23)) {
-				source[0] = 0x0000ff;
-			}
-			break;
+	if (srcreg == 0) {	/* X */
+		source[1] = getDSP()->registers[DSP_REG_X1];
+		source[2] = getDSP()->registers[DSP_REG_X0];
+		source[0] = 0;
+		if (source[1] & (1<<23)) {
+			source[0] = 0x0000ff;
+		}
+	}
+	else {	/* Y */
+		source[1] = getDSP()->registers[DSP_REG_Y1];
+		source[2] = getDSP()->registers[DSP_REG_Y0];
+		source[0] = 0;
+		if (source[1] & (1<<23)) {
+			source[0] = 0x0000ff;
+		}
 	}
 
 	newsr = dsp_add56(source, dest);
@@ -3780,6 +3778,9 @@ static void dsp_add(void)
 			if (source[1] & (1<<23)) {
 				source[0] = 0x0000ff;
 			}
+			break;
+		default:
+			fprintf(stderr, "source register undefined! dsp_cpu.c: %d", __LINE__);
 			break;
 	}
 
@@ -4001,6 +4002,9 @@ static void dsp_cmp(void)
 				source[0] = 0x0000ff;
 			}
 			break;
+		default:
+			fprintf(stderr, "source register undefined! dsp_cpu.c: %d", __LINE__);
+			break;
 	}
 
 	newsr = dsp_sub56(source, dest);
@@ -4064,6 +4068,9 @@ static void dsp_cmpm(void)
 			if (source[1] & (1<<23)) {
 				source[0] = 0x0000ff;
 			}
+			break;
+		default:
+			fprintf(stderr, "source register undefined! dsp_cpu.c: %d", __LINE__);
 			break;
 	}
 
@@ -4450,23 +4457,21 @@ static void dsp_sbc(void)
 	dest[2] = getDSP()->registers[DSP_REG_A0+destreg];
 
 	srcreg = (cur_inst>>4) & 1;
-	switch(srcreg) {
-		case 0:	/* X */
-			source[1] = getDSP()->registers[DSP_REG_X1];
-			source[2] = getDSP()->registers[DSP_REG_X0];
-			source[0] = 0;
-			if (source[1] & (1<<23)) {
-				source[0] = 0x0000ff;
-			}
-			break;
-		case 1:	/* Y */
-			source[1] = getDSP()->registers[DSP_REG_Y1];
-			source[2] = getDSP()->registers[DSP_REG_Y0];
-			source[0] = 0;
-			if (source[1] & (1<<23)) {
-				source[0] = 0x0000ff;
-			}
-			break;
+	if (srcreg == 0) {	/* X */
+		source[1] = getDSP()->registers[DSP_REG_X1];
+		source[2] = getDSP()->registers[DSP_REG_X0];
+		source[0] = 0;
+		if (source[1] & (1<<23)) {
+			source[0] = 0x0000ff;
+		}
+	}
+	else {	/* Y */
+		source[1] = getDSP()->registers[DSP_REG_Y1];
+		source[2] = getDSP()->registers[DSP_REG_Y0];
+		source[0] = 0;
+		if (source[1] & (1<<23)) {
+			source[0] = 0x0000ff;
+		}
 	}
 
 	newsr = dsp_sub56(source, dest);
@@ -4556,6 +4561,9 @@ static void dsp_sub(void)
 			if (source[1] & (1<<23)) {
 				source[0] = 0x0000ff;
 			}
+			break;
+		default:
+			fprintf(stderr, "source register undefined! dsp_cpu.c: %d", __LINE__);
 			break;
 	}
 
