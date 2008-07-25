@@ -30,7 +30,7 @@ install:
 	install -d $(DATAPATH)
 	install -m 755 hatariui.py debugui.py $(DATAPATH)/
 	install -m 644 config.py dialogs.py hatari.py uihelpers.py $(DATAPATH)/
-	install -m 644 README *.png $(DATAPATH)/
+	install -m 644 README TODO Changelog *.png $(DATAPATH)/
 	install -d $(ICONPATH)
 	install -m 644 hatari-icon.png $(ICONPATH)/
 	install -d $(DESKPATH)

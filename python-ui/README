@@ -1,21 +1,21 @@
 Hatari UI
 ---------
 
-Hatari UI is an out-of-process user interface for the Hatari
-emulator and its built-in debugger which can (optionally)
-embed the Hatari emulator window.
+Hatari UI is an out-of-process user interface for the Hatari Atari
+ST/STe/TT/Falcon emulator and its built-in debugger which can
+(optionally) embed the Hatari emulator window.
 
-Having the UI in another process allows doing it with a higher
-level language and avoiding adding GUI toolkit dependencies
-to Hatari itself. The UI is done with PyGtk i.e. in Python
-language, using the Gtk widget set.
+Having the UI in another process allows doing it with a higher level
+language and avoiding adding GUI toolkit dependencies to Hatari
+itself. The UI is done with PyGtk i.e. in Python language, using the
+Gtk widget set.
 
-The main points of this new UI are its configurability and
-providing a GUI for the (console based) debugger included
-with the Hatari emulator.
+The main points of this new UI over the Hatari internal one are its
+configurability and providing a GUI for the (console based) debugger
+included with the Hatari emulator.
 
-Note: this is an additional UI, the built-in Hatari SDL UI
-isn't being replaced or going anywhere!
+Note: this is an additional UI, the built-in Hatari SDL UI isn't being
+replaced or going anywhere!
 
 
 Requirements
@@ -25,27 +25,26 @@ My guess at the required versions for the dependencies are:
 - Python >=2.4
 - PyGtk >= 2.8   (on Ubuntu PyGtk is in python-gtk2 package)
 
-You will need also Hatari emulator version newer than 1.0.1.
-Currently (2008-07-10) you can get it only from its CVS,
-like you got Hatari UI itself.
+You will need also Hatari emulator version newer than v1.0.1.
+Currently (2008-07-10) you can get it only from its CVS, like
+you got Hatari UI itself.
 
-Hatari UI has been tested on Ubuntu Linux (v7.04).  I would
-assume it works also on other unix systems such as Apple OSX.
-It won't work on Windows (the required Windows socket support
-is missing from the Hatari emulator).
+Hatari UI has been tested only on Linux (Ubuntu v7.04) and Debian
+Etch.) I would assume it works also on other unix systems such as
+Apple OSX. It won't work on Windows (the required Windows socket
+support is missing from the Hatari emulator).
 
-Embedding the Hatari emulator window is currently supported
-only for systems using an X window system (from libSDL sources
-it would seem that Windows would also support window embedding,
-but support for that would need to be added both to Hatari
-and Hatari UI).
+Embedding the Hatari emulator window is currently supported only for
+systems using an X window system (from libSDL sources it would seem
+that Windows would also support window embedding, but support for that
+would need to be added both to Hatari and Hatari UI).
 
 
 Running
 -------
 
 Hatari UI needs a Hatari configuration file to know what are
-current Hatari version options and their default values.
+the current Hatari version options and their default values.
 If you have never saved the options from the internal Hatari
 UI (invoked normally by F12), do it before using this
 external Hatari UI.
@@ -60,3 +59,12 @@ Or you can run just the debugger:
 
 But you can also install it to system directory by using:
 	make install
+
+
+Notes
+-----
+
+If UI is started without the embedding option, the actions
+(in menus and toolbars) have also shortcuts.  They cannot
+be used when Hatari window is embedded because then those
+shortcuts couldn't be used with Hatari.

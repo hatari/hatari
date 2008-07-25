@@ -1,0 +1,101 @@
+TODO
+====
+
+This lists potential TODO items that aren't listed in the Hatari/UI
+sources.
+
+* Support for enabling printer, serial, midi
+  ("hatari-enable/disable/toggle <device>")  
+
+* Support to Hatari UI ("Paths...") for specifying file names
+  ("hatari-path <item> <path>") for:
+  - memstate auto save file
+  - memstate save file
+  - sound output
+    - needs to check that file name ends either in .ym or .wav
+  - printer output
+  - midi output
+  - rs232 in/out
+
+  Note that reset requiring settings like TOS image,
+  harddisk dir & image are different matter
+
+* Support for RTC in machine dialog and remove support for multiple
+  setups now that config loading works (there can be different configs
+  for ST games & apps, STE demos, TT apps, Falcon demos and apps etc)
+
+* Add autofire support to joystick settings,
+  other disk image options to disk settings
+
+* Hatari UI specific configuration which stores:
+  - disk image dir (uses Hatari config value as default)
+  - trace settings
+    - remove dialog specific load/save stuff
+  - list of memory snapshots (10?)
+  - screenshot name
+    - needs support also in screenSnapShot.c
+
+* Features for Help menu:
+  - README/TODO/Changelog viewer
+  - Create empty floppy images
+  - MSA converter
+
+* Work on the debug UI (multiple views to memory)
+
+* Translation support for the UI
+
+---------------------------------------------------------
+
+Additional Steem features Hatari/UI doesn't have:
+- Options:
+  - Slow-mo mode
+  - Automatic fast forward on disk access
+  - Automatic frameskip
+  - Automatic borders
+  - Pause when window inactive (Hatari patch for iconified)
+  - Always-on-top setting (for Hatari-UI)
+  - Brightness/contrast control
+  - Sound volume setting
+- Midi in
+- Floppy access light
+- Speed bar (shows whether emu runs at full speed)
+- Input macros (key, mouse, joystick) and shortcuts
+- Multiple emulator snapshots and undo for snapshot loading
+- File associations (Hatari-UI)
+
+---------------------------------------------------------
+
+Other TODO / strange things in Hatari not related to
+emulation correctness.
+
+* RS232:
+- serial I/O thread uses semaphore for counting free space,
+  but main thread increases it only after bytes are available and
+  read i.e. this doesn't work at all???
+- polls at 2/20ms intervals and reads data byte at the time!
+  SDL_Delay()s & fgetc() should be replaced at least on unix
+  with select() and fread()
+- Why rs232 stuff is commented out in gemdos.c?  Because
+  GemDOS_Cauxin() polls RS232_GetStatus() in busyloop until
+  there's something to read? (see above)
+- Consistency: RS232_ReadBytes() should really be changed to
+  *ReadByte() similarly to other function especially as nothing reads
+  more than one byte at the time...  RS232_TransferBytesTo() should be
+  renamed to *WriteByte() and Printer_TransferByteTo() to *WriteByte().
+
+* Why screenshots & anim go to current dir and memsave, sound recording,
+  printer & midi & serial & output, log output go to file specified in
+  config file?
+- Why not not always to current dir (only) if not set?
+
+* Hatari/screen.c:
+- bScreenContentsChanged always FALSE for recording???
+
+* Support to Hatari for setting anim/screenshot directory / file
+  name from config file (needs support also in screenSnapShot.c).
+  Optional support in Hatari for saving snapshots in other than
+  BMP format by using (latest) SDL_image
+  -> add support to Hatari UI also
+
+* bDisableKeyRepeat config option cannot be set from internal
+  Hatari UI or command line, what it's used for?
