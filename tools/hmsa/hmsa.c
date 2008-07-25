@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "hmsa.h"
+#include "main.h"	/* bool etc. */
 #include "file.h"
 #include "msa.h"
 
