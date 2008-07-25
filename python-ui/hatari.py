@@ -25,7 +25,7 @@ from config import ConfigStore
 
 
 # Running Hatari instance
-class Hatari():
+class Hatari:
     "running hatari instance and methods for communicating with it"
     basepath = "/tmp/hatari-ui-" + str(os.getpid())
     logpath = basepath + ".log"
@@ -184,10 +184,10 @@ class Hatari():
                 self._set_embed_env(env, parent_win)
             # callers need to take care of confirming quitting
             args = [self.hataribin, "--confirm-quit", "off"]
-            if extra_args:
-                args += extra_args
             if self.server:
                 args += ["--control-socket", self.controlpath]
+            if extra_args:
+                args += extra_args
             print "RUN:", args
             os.execvpe(self.hataribin, args, env)
 
@@ -435,17 +435,6 @@ class HatariConfigMapping(ConfigStore):
         value = int(value) # guarantee correct type
         self.set("[Screen]", "nSpec512Threshold", value)
         self._change_option("--spec512 %d" % value)
-
-    # ------------ show fullscreen ---------------
-    def get_fullscreen(self):
-        return self.get("[Screen]", "bFullScreen")
-    
-    def set_fullscreen(self, value):
-        self.set("[Screen]", "bFullScreen", value)
-        if value:
-            self._change_option("--fullscreen")
-        else:
-            self._change_option("--window")
 
     # ------------ show borders ---------------
     def get_borders(self):

@@ -29,7 +29,7 @@ from uihelpers import UInfo, HatariTextInsert, create_table_dialog, \
 # -----------------
 # Dialog base class
 
-class HatariUIDialog():
+class HatariUIDialog:
     def __init__(self, parent):
         "<any>Dialog(parent) -> object"
         self.parent = parent
@@ -182,14 +182,14 @@ class QuitSaveDialog(HatariUIDialog):
         self.dialog = dialog
         
     def run(self, config):
-        "run(config) -> RESPONSE_CANCEL if dialog is canceled"
+        "run(config) -> False if canceled, True otherwise or if no changes"
         changes = []
         for key, value in config.get_changes():
             changes.append("%s = %s" % (key, str(value)))
         if not changes:
-            return gtk.RESPONSE_NO
+            return True
         child = self.viewport.get_child()
-        child.set_text("\n".join(changes))
+        child.set_text(config.get_path() + ":\n" + "\n".join(changes))
         width, height = child.get_size_request()
         if height < 320:
             self.scrolledwindow.set_size_request(width, height)
@@ -199,9 +199,11 @@ class QuitSaveDialog(HatariUIDialog):
         
         response = self.dialog.run()
         self.dialog.hide()
+        if response == gtk.RESPONSE_CANCEL:
+            return False
         if response == gtk.RESPONSE_YES:
             config.save()
-        return response
+        return True
 
 
 # ---------------------------
@@ -218,16 +220,16 @@ Hatari emulator is already/still running and it needs to be terminated first. Ho
 Terminate Hatari anyway?""")
 
     def run(self, hatari):
-        "run(hatari) -> False if Hatari killed, True if left running"
+        "run(hatari) -> True if Hatari killed, False if left running"
         if not hatari.is_running():
-            return False
+            return True
         # Hatari is running, OK to kill?
         response = self.dialog.run()
         self.dialog.hide()
         if response == gtk.RESPONSE_OK:
             hatari.kill()
-            return False
-        return True
+            return True
+        return False
 
     
 # ---------------------------
@@ -260,9 +262,58 @@ class ResetDialog(HatariUIDialog):
             return False
         return True
 
+
+# ----------------------------------
+# Disk image dialog
+
+class DiskDialog(HatariUIDialog):
+    def _create_dialog(self, config):
+        table, self.dialog = create_table_dialog(self.parent, "Disk image settings", 9)
+        
+        row = 0
+        self.floppy = []
+        path = config.get_floppydir()
+        for drive in ("A", "B"):
+            label = "Disk %c:" % drive
+            fsel = gtk.FileChooserButton(label)
+            # Hatari cannot access URIs
+            fsel.set_local_only(True)
+            fsel.set_width_chars(12)
+            filename = config.get_floppy(row)
+            if filename:
+                fsel.set_filename(filename)
+            elif path:
+                fsel.set_current_folder(path)
+            self.floppy.append(fsel)
+            
+            eject = create_button("Eject", self._eject, fsel)
+            box = gtk.HBox()
+            box.pack_start(fsel)
+            box.pack_start(eject, False, False)
+            table_add_widget_row(table, row, label, box)
+            row += 1
+
+        table.show_all()
+
+    def _eject(self, widget, fsel):
+        fsel.unselect_all()
+    
+    def run(self, config):
+        "run(config), show disk image dialog"
+        if not self.dialog:
+            self._create_dialog(config)
+        response = self.dialog.run()
+        self.dialog.hide()
+        
+        if response == gtk.RESPONSE_APPLY:
+            config.lock_updates()
+            for drive in range(2):
+                config.set_floppy(drive, self.floppy[drive].get_filename())
+            config.flush_updates()
+
     
 # ---------------------------
-# Hatari screen dialog
+# Display dialog
 
 class DisplayDialog(HatariUIDialog):
 
@@ -325,8 +376,83 @@ class DisplayDialog(HatariUIDialog):
             config.flush_updates()
 
 
+# ----------------------------------
+# Joystick dialog
+
+class JoystickDialog(HatariUIDialog):
+    def _create_dialog(self, config):
+        table, self.dialog = create_table_dialog(self.parent, "Joystick settings", 9)
+        
+        joy = 0
+        self.joy = []
+        joytypes = config.get_joystick_types()
+        for label in config.get_joystick_names():
+            combo = gtk.combo_box_new_text()
+            for text in joytypes:
+                combo.append_text(text)
+            combo.set_active(config.get_joystick(joy))
+            widget = table_add_widget_row(table, joy, "%s:" % label, combo)
+            self.joy.append(widget)
+            joy += 1
+
+        table.show_all()
+    
+    def run(self, config):
+        "run(config), show joystick dialog"
+        if not self.dialog:
+            self._create_dialog(config)
+        response = self.dialog.run()
+        self.dialog.hide()
+        
+        if response == gtk.RESPONSE_APPLY:
+            config.lock_updates()
+            for joy in range(6):
+                config.set_joystick(joy, self.joy[joy].get_active())
+            config.flush_updates()
+
+
+# ---------------------------------------
+# Peripherals (midi,printer,rs232) dialog
+
+class PeripheralDialog(HatariUIDialog):
+    def _create_dialog(self, config):
+        table, self.dialog = create_table_dialog(self.parent, "Peripheral settings", 9)
+        print "TODO: get midi/printer/rs232 stuff"
+        table.show_all()
+    
+    def run(self, config):
+        "run(config), show peripherals dialog"
+        if not self.dialog:
+            self._create_dialog(config)
+        response = self.dialog.run()
+        self.dialog.hide()
+        
+        if response == gtk.RESPONSE_APPLY:
+            print "TODO: set midi/printer/rs232 stuff"
+
+
+# ---------------------------------------
+# Path dialog
+
+class PathDialog(HatariUIDialog):
+    def _create_dialog(self, config):
+        table, self.dialog = create_table_dialog(self.parent, "Path settings", 2)
+        print "TODO: get path stuff"
+        table.show_all()
+    
+    def run(self, config):
+        "run(config), show paths dialog"
+        if not self.dialog:
+            self._create_dialog(config)
+        response = self.dialog.run()
+        self.dialog.hide()
+        
+        if response == gtk.RESPONSE_APPLY:
+            print "TODO: set path stuff"
+
+
 # ---------------------------
-# Hatari sound dialog
+# Sound dialog
 
 class SoundDialog(HatariUIDialog):
 
@@ -349,7 +475,7 @@ class SoundDialog(HatariUIDialog):
         self.dialog = dialog
 
     def run(self, config):
-        "run(config), show display dialog"
+        "run(config), show sound dialog"
         if not self.dialog:
             self._create_dialog(config)
         response = self.dialog.run()
@@ -465,77 +591,10 @@ class TraceDialog(HatariUIDialog):
                 return self.savedpoints
 
 
-# ----------------------------------
-# Peripherals (disk/joystick) dialog
-
-class PeripheralsDialog(HatariUIDialog):
-    def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Peripheral settings", 9)
-        
-        row = 0
-        self.floppy = []
-        path = config.get_floppydir()
-        for drive in ("A", "B"):
-            label = "Disk %c:" % drive
-            fsel = gtk.FileChooserButton(label)
-            # Hatari cannot access URIs
-            fsel.set_local_only(True)
-            fsel.set_width_chars(12)
-            filename = config.get_floppy(row)
-            if filename:
-                fsel.set_filename(filename)
-            elif path:
-                fsel.set_current_folder(path)
-            self.floppy.append(fsel)
-            
-            eject = create_button("Eject", self._eject, fsel)
-            box = gtk.HBox()
-            box.pack_start(fsel)
-            box.pack_start(eject, False, False)
-            table_add_widget_row(table, row, label, box)
-            row += 1
-        
-        table_add_separator(table, row)
-        row += 1
-        
-        joy = 0
-        self.joy = []
-        joytypes = config.get_joystick_types()
-        for label in config.get_joystick_names():
-            combo = gtk.combo_box_new_text()
-            for text in joytypes:
-                combo.append_text(text)
-            combo.set_active(config.get_joystick(joy))
-            widget = table_add_widget_row(table, row + joy, "%s:" % label, combo)
-            self.joy.append(widget)
-            joy += 1
-
-        # TODO: add printer, serial, midi, RTC to peripherals?
-        table.show_all()
-
-    def _eject(self, widget, fsel):
-        fsel.unselect_all()
-    
-    def run(self, config):
-        "run() -> file name, file name for given disk"
-        if not self.dialog:
-            self._create_dialog(config)
-        response = self.dialog.run()
-        self.dialog.hide()
-        
-        if response == gtk.RESPONSE_APPLY:
-            config.lock_updates()
-            for drive in range(2):
-                config.set_floppy(drive, self.floppy[drive].get_filename())
-            for joy in range(6):
-                config.set_joystick(joy, self.joy[joy].get_active())
-            config.flush_updates()
-
-
 # ----------------------------------------
-# Setup dialog for settings needing reboot
+# Machine dialog for settings needing reboot
 
-class SetupDialog(HatariUIDialog):
+class MachineDialog(HatariUIDialog):
     def __init__(self, parent):
         self.setups = []
         self.parent = parent
@@ -547,7 +606,7 @@ class SetupDialog(HatariUIDialog):
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             ("Set and reboot",  gtk.RESPONSE_APPLY,
              gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
-        self.editdialog = EditSetupDialog(dialog)
+        self.editdialog = EditMachineDialog(dialog)
 
         box1 = gtk.HBox()
         box1.add(create_button("Add", self._add_setup, config))
@@ -641,7 +700,7 @@ class SetupDialog(HatariUIDialog):
         self.label.set_text("\n".join(info))
 
     def run(self, config):
-        "run() -> bool, whether to reboot"
+        "run(config) -> bool, whether to reboot"
         if not self.dialog:
             self._create_dialog(config)
 
@@ -655,7 +714,7 @@ class SetupDialog(HatariUIDialog):
 # ----------------------------------------------
 # Dialog for adding/editing setup configurations
 
-class EditSetupDialog(HatariUIDialog):
+class EditMachineDialog(HatariUIDialog):
     def _create_dialog(self, config):
         table, self.dialog = create_table_dialog(self.parent, "Add/edit setup", 9)
 

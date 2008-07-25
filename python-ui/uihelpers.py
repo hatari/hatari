@@ -39,7 +39,7 @@ class UInfo:
     logo = "hatari.png"
     icon = "hatari-icon.png"
     # path to the directory where the called script resides
-    path = sys.argv[0][:sys.argv[0].rfind(os.path.sep)]
+    path = os.path.dirname(sys.argv[0])
     
     def __init__(self, path = None):
         "UIinfo([path]), set suitable paths for resources from CWD and path"
@@ -60,7 +60,7 @@ class UInfo:
 # --------------------------------------------------------
 # auxiliary class+callback to be used with the PasteDialog
 
-class HatariTextInsert():
+class HatariTextInsert:
     def __init__(self, hatari, text):
         self.index = 0
         self.text = text
@@ -167,3 +167,34 @@ def table_add_separator(table, row):
     "table_add_separator(table,row)"
     widget = gtk.HSeparator()
     table.attach(widget, 0, 2, row, row+1, gtk.FILL)
+
+
+# -----------------------------
+# File selection helpers
+
+def get_open_filename(title, parent, path = None):
+    buttons = (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+    fsel = gtk.FileChooserDialog(title, parent, gtk.FILE_CHOOSER_ACTION_OPEN, buttons)
+    fsel.set_local_only(True)
+    if path:
+        fsel.set_filename(path)
+    if fsel.run() == gtk.RESPONSE_OK:
+        filename = fsel.get_filename()
+    else:
+        filename = None
+    fsel.destroy()
+    return filename
+
+def get_save_filename(title, parent, path = None):
+    buttons = (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+    fsel = gtk.FileChooserDialog(title, parent, gtk.FILE_CHOOSER_ACTION_SAVE, buttons)
+    fsel.set_local_only(True)
+    fsel.set_do_overwrite_confirmation(True)
+    if path:
+        fsel.set_filename(path)
+    if fsel.run() == gtk.RESPONSE_OK:
+        filename = fsel.get_filename()
+    else:
+        filename = None
+    fsel.destroy()
+    return filename

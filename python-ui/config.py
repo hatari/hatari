@@ -63,38 +63,49 @@ def text_to_value(text):
 # ------------------------------------------------------
 # Handle INI style configuration files as used by Hatari
 
-class ConfigStore():
-    defaultpath = "%s%c.hatari" % (os.getenv("HOME"), os.path.sep)
+class ConfigStore:
+    defaultpath = "%s%c.hatari" % (os.path.expanduser("~"), os.path.sep)
 
     def __init__(self, cfgfile, defaults = {}, miss_is_error = True):
         "ConfigStore(cfgfile[,defaults,miss_is_error])"
-        self.changed = False
+        self.defaults = defaults
         self.miss_is_error = miss_is_error
-        path = self.get_path(cfgfile)
-        if path:
-            self.sections = self.load(path)
-            if self.sections:
-                print "Loaded configuration file:", path
-            else:
-                print "WARNING: configuration file '%' loading failed" % path
-                path = None
-        else:
-            print "WARNING: configuration file '%s' missing, using defaults" % cfgfile
-            self.sections = defaults
-        self.original = self.get_checkpoint()
+        path = self._get_fullpath(cfgfile)
         self.cfgfile = cfgfile
+        self.load(path)
+    
+    def load(self, path):
+        "load(path), load given configuration file"
+        if path:
+            sections = self._read(path)
+            if sections:
+                print "Loaded configuration file:", path
+                self.cfgfile = os.path.basename(path)
+                self.sections = sections
+            else:
+                print "ERROR: configuration file '%' loading failed" % path
+                return
+        else:
+            print "WARNING: configuration file missing, using defaults"
+            self.sections = self.defaults
         self.path = path
+        self.original = self.get_checkpoint()
+        self.changed = False
 
     def is_loaded(self):
         "is_loaded() -> True if configuration loading succeeded"
         if self.sections:
             return True
         return False
-        
-    def get_path(self, cfgfile):
-        "get_path(cfgfile) -> path or None, check first CWD & then HOME for cfgfile"
+
+    def get_path(self):
+        "get_path() -> configuration file path"
+        return self.path
+    
+    def _get_fullpath(self, cfgfile):
+        "get_fullpath(cfgfile) -> path or None, check first CWD & then HOME for cfgfile"
         # hatari.cfg can be in home or current work dir
-        for path in (os.getcwd(), os.getenv("HOME")):
+        for path in (os.getcwd(), os.path.expanduser("~")):
             if path:
                 path = self._check_path(path, cfgfile)
                 if path:
@@ -114,8 +125,8 @@ class ConfigStore():
             return testpath
         return None
     
-    def load(self, path):
-        "load(path) -> (all keys, section2key mappings)"
+    def _read(self, path):
+        "_read(path) -> (all keys, section2key mappings)"
         config = open(path, "r")
         if not config:
             return ({}, {})
@@ -211,19 +222,42 @@ class ConfigStore():
             fileobj.write("\n")
 
     def save(self):
-        "save(), if configuration changed, save it"
+        "save() -> path, if configuration changed, save it"
         if not self.changed:
             print "No configuration changes to save, skipping"
-            return            
+            return None
         if not self.path:
             print "WARNING: no existing configuration file, trying to create one"
             if not os.path.exists(self.defaultpath):
                 os.mkdir(self.defaultpath)
             self.path = "%s%c%s" % (self.defaultpath, os.path.sep, self.cfgfile)
-        #fileobj = sys.stdout
         fileobj = open(self.path, "w")
-        if fileobj:
-            self.write(fileobj)
-            print "Saved configuration file:", self.path
-        else:
+        if not fileobj:
             print "ERROR: opening '%s' for saving failed" % self.path
+            return None
+        self.write(fileobj)
+        print "Saved configuration file:", self.path
+        self.changed = False
+        return path
+    
+    def save_as(self, path):
+        "save_as(path) -> path, save configuration to given file and select it"
+        assert(path)
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+        self.path = path
+        self.changed = True
+        self.save()
+        return path
+
+    def save_tmp(self, path):
+        "save_tmp(path) -> path, save configuration to given file without selecting it"
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+        fileobj = open(path, "w")
+        if not fileobj:
+            print "ERROR: opening '%s' for saving failed" % path
+            return None
+        self.write(fileobj)
+        print "Saved temporary configuration file:", path
+        return path

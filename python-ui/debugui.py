@@ -23,7 +23,8 @@ import pango
 
 from config import ConfigStore
 from uihelpers import UInfo, create_button, create_toggle, \
-     create_table_dialog, table_add_entry_row, table_add_widget_row
+     create_table_dialog, table_add_entry_row, table_add_widget_row, \
+     get_save_filename
 from dialogs import TodoDialog, ErrorDialog, AskDialog, KillDialog
 
 
@@ -34,7 +35,7 @@ def dialog_apply_cb(widget, dialog):
 # -------------
 # Table dialogs
 
-class SaveDialog():
+class SaveDialog:
     def __init__(self, parent):
         entry = gtk.Entry()
         entry.set_width_chars(12)
@@ -51,14 +52,11 @@ class SaveDialog():
         self.address.connect("activate", dialog_apply_cb, self.dialog)
         self.length = table_add_entry_row(table, 2, "Number of bytes:", 6)
         self.length.connect("activate", dialog_apply_cb, self.dialog)
-
+    
     def _select_file_cb(self, widget):
-        buttons = (gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
-        fsel = gtk.FileChooserDialog("Select save file", self.dialog, gtk.FILE_CHOOSER_ACTION_SAVE, buttons)
-        fsel.set_local_only(True)
-        if fsel.run() == gtk.RESPONSE_OK:
-            self.file.set_text(fsel.get_filename())
-        fsel.destroy()
+        filename = get_save_filename("Select save file", self.dialog)
+        if filename:
+            self.file.set_text(filename)
     
     def run(self, address):
         "run(address) -> (filename,address,length), all as strings"
@@ -96,7 +94,7 @@ class SaveDialog():
         return (filename, address, length)
 
 
-class LoadDialog():
+class LoadDialog:
     def __init__(self, parent):
         chooser = gtk.FileChooserButton('Select a File')
         chooser.set_local_only(True)  # Hatari cannot access URIs
@@ -132,7 +130,7 @@ class LoadDialog():
         return (filename, address)
 
 
-class OptionsDialog():
+class OptionsDialog:
     def __init__(self, parent):
         table, self.dialog = create_table_dialog(parent, "Debugger UI options", 1)
         self.lines = table_add_entry_row(table, 0, "Memdump/disasm lines:", 2)
@@ -178,7 +176,7 @@ class Constants:
 
 # class for the memory address entry, view (label) and
 # the logic for memory dump modes and moving in memory
-class MemoryAddress():
+class MemoryAddress:
     # class variables
     debug_output = None
     hatari = None
@@ -346,7 +344,7 @@ class MemoryAddress():
 
 
 # the Hatari debugger UI class and methods
-class HatariDebugUI():
+class HatariDebugUI:
     
     def __init__(self, hatariobj, do_destroy = False):
         self.address = MemoryAddress(hatariobj)
