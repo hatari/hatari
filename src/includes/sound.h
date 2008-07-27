@@ -12,7 +12,6 @@
 #define MIXBUFFER_SIZE    8192          /* Size of circular buffer to store sample to (44Khz) */
 
 
-extern bool bWriteEnvelopeFreq,bWriteChannelAAmp,bWriteChannelBAmp,bWriteChannelCAmp;
 extern bool bEnvelopeFreqFlag;
 extern Sint8 MixBuffer[MIXBUFFER_SIZE];
 extern int nGeneratedSamples;
