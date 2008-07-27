@@ -817,6 +817,7 @@ static void dsp_postexecute_interrupts(void)
 static void dsp_ccr_extension(uint32 *reg0, uint32 *reg1, uint32 * reg2)
 {
 	uint32 scaling, value, numbits;
+	int sr_extension = 1<<DSP_SR_E;
 
 	scaling = (getDSP()->registers[DSP_REG_SR]>>DSP_SR_S0) & BITMASK(2);
 	value = (*reg0) & 0xff;
@@ -838,9 +839,12 @@ static void dsp_ccr_extension(uint32 *reg0, uint32 *reg1, uint32 * reg2)
 			return;
 			break;
 	}
+	if ((value==0) || (value==(uint32)BITMASK(numbits))) {
+		sr_extension = 0;
+	}
 
 	getDSP()->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_E);
-	getDSP()->registers[DSP_REG_SR] |= ((value==0) || (value==(uint32)(BITMASK(numbits))))<<DSP_SR_E;
+	getDSP()->registers[DSP_REG_SR] |= sr_extension;
 }
 
 static void dsp_ccr_unnormalized(uint32 *reg0, uint32 *reg1, uint32 *reg2)
@@ -1340,11 +1344,11 @@ static int cc_code_map[8]={
 
 static int dsp_calc_cc(uint32 cc_code)
 {
-	uint16 value;	
+	uint16 value;
 
 	value = getDSP()->registers[DSP_REG_SR] & BITMASK(8);
 	value |= (CCR_BIT(value,DSP_SR_N) ^ CCR_BIT(value, DSP_SR_V))<<DSP_SR_NV;
-	value |= (CCR_BIT(value,DSP_SR_Z) | ((~CCR_BIT(value,DSP_SR_U)) & (~CCR_BIT(value,DSP_SR_E))))<<DSP_SR_ZUE;
+	value |= ((CCR_BIT(value,DSP_SR_Z) | ((~CCR_BIT(value,DSP_SR_U)) & (~CCR_BIT(value,DSP_SR_E)))) & 1)<<DSP_SR_ZUE;
 	value |= (CCR_BIT(value,DSP_SR_Z) | CCR_BIT(value, DSP_SR_NV))<<DSP_SR_ZNV;
 	
 	return (uint32)(CCR_BIT(value,cc_code_map[cc_code & BITMASK(3)]))==((cc_code>>3) & 1);
