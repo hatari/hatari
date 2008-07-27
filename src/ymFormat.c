@@ -6,7 +6,7 @@
 
   YM File output, for use with STSound etc...
 */
-const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.20 2008-05-03 18:58:22 thothy Exp $";
+const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.21 2008-07-27 18:26:19 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -180,10 +180,10 @@ void YMFormat_UpdateRecording(void)
 	{
 		/* Copy VBL registers to workspace */
 		for(i=0; i<(NUM_PSG_SOUND_REGISTERS-1); i++)
-			*pYMData++ = PSGRegisters[i];
+			*pYMData++ = SoundRegs[i];
 		/* Handle register '13'(PSG_REG_ENV_SHAPE) correctly - store 0xFF is did not write to this frame */
 		if (bEnvelopeFreqFlag)
-			*pYMData++ = PSGRegisters[PSG_REG_ENV_SHAPE];
+			*pYMData++ = SoundRegs[PSG_REG_ENV_SHAPE];
 		else
 			*pYMData++ = 0xff;
 

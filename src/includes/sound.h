@@ -17,12 +17,15 @@ extern bool bEnvelopeFreqFlag;
 extern Sint8 MixBuffer[MIXBUFFER_SIZE];
 extern int nGeneratedSamples;
 
+extern Uint8 SoundRegs[ 14 ];		/* store YM regs 0 to 13 */
+
 extern void Sound_Init(void);
 extern void Sound_Reset(void);
 extern void Sound_ResetBufferIndex(void);
 extern void Sound_MemorySnapShot_Capture(bool bSave);
 extern void Sound_Update(void);
 extern void Sound_Update_VBL(void);
+extern void Sound_WriteReg( int Reg , Uint8 Val );
 extern bool Sound_BeginRecording(char *pszCaptureFileName);
 extern void Sound_EndRecording(void);
 extern bool Sound_AreWeRecording(void);

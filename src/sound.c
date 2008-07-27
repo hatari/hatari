@@ -28,9 +28,14 @@
 /*			In that case, a real ST sounds as if period was in fact 1.	*/
 /*			(fix buggy sound replay in ESwat that set volume<0 and trigger	*/
 /*			a badly initialised enveloppe with envper=0).			*/
+/* 2008/07/27	[NP]	Better separation between accesses to the YM hardware registers	*/
+/*			and the sound rendering routines. Use Sound_WriteReg() to pass	*/
+/*			all writes to the sound rendering functions. This allows to	*/
+/*			have sound.c independant of psg.c (to ease replacement of	*/
+/*			sound.c	by another rendering method).				*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.33 2008-05-05 19:39:52 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.34 2008-07-27 18:26:19 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -87,6 +92,8 @@ bool bEnvelopeFreqFlag;                                         /* As above, but
 /* Buffer to store circular samples */
 Sint8 MixBuffer[MIXBUFFER_SIZE];
 int nGeneratedSamples;                                          /* Generated samples since audio buffer update */
+
+Uint8	SoundRegs[ 14 ];					/* store YM regs 0 to 13 */
 
 
 /*-----------------------------------------------------------------------*/
@@ -543,13 +550,13 @@ static void Sound_GenerateSamples(void)
 	if (nSamplesToGenerate>0)
 	{
 		/* Generate envelope/noise samples for this time */
-		Sound_GenerateEnvelope(PSGRegisters[PSG_REG_ENV_SHAPE],PSGRegisters[PSG_REG_ENV_FINE],PSGRegisters[PSG_REG_ENV_COARSE]);
-		Sound_GenerateNoise(PSGRegisters[PSG_REG_MIXER_CONTROL],PSGRegisters[PSG_REG_NOISE_GENERATOR]);
+		Sound_GenerateEnvelope(SoundRegs[PSG_REG_ENV_SHAPE],SoundRegs[PSG_REG_ENV_FINE],SoundRegs[PSG_REG_ENV_COARSE]);
+		Sound_GenerateNoise(SoundRegs[PSG_REG_MIXER_CONTROL],SoundRegs[PSG_REG_NOISE_GENERATOR]);
 
 		/* Generate 3 channels, store to separate buffer so can mix/clip */
-		Sound_GenerateChannel(pChannelA,PSGRegisters[PSG_REG_CHANNEL_A_FINE],PSGRegisters[PSG_REG_CHANNEL_A_COARSE],PSGRegisters[PSG_REG_CHANNEL_A_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[0],0);
-		Sound_GenerateChannel(pChannelB,PSGRegisters[PSG_REG_CHANNEL_B_FINE],PSGRegisters[PSG_REG_CHANNEL_B_COARSE],PSGRegisters[PSG_REG_CHANNEL_B_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[1],1);
-		Sound_GenerateChannel(pChannelC,PSGRegisters[PSG_REG_CHANNEL_C_FINE],PSGRegisters[PSG_REG_CHANNEL_C_COARSE],PSGRegisters[PSG_REG_CHANNEL_C_AMP],PSGRegisters[PSG_REG_MIXER_CONTROL],&ChannelFreq[2],2);
+		Sound_GenerateChannel(pChannelA,SoundRegs[PSG_REG_CHANNEL_A_FINE],SoundRegs[PSG_REG_CHANNEL_A_COARSE],SoundRegs[PSG_REG_CHANNEL_A_AMP],SoundRegs[PSG_REG_MIXER_CONTROL],&ChannelFreq[0],0);
+		Sound_GenerateChannel(pChannelB,SoundRegs[PSG_REG_CHANNEL_B_FINE],SoundRegs[PSG_REG_CHANNEL_B_COARSE],SoundRegs[PSG_REG_CHANNEL_B_AMP],SoundRegs[PSG_REG_MIXER_CONTROL],&ChannelFreq[1],1);
+		Sound_GenerateChannel(pChannelC,SoundRegs[PSG_REG_CHANNEL_C_FINE],SoundRegs[PSG_REG_CHANNEL_C_COARSE],SoundRegs[PSG_REG_CHANNEL_C_AMP],SoundRegs[PSG_REG_MIXER_CONTROL],&ChannelFreq[2],2);
 
 		/* Mix channels together, using table to clip and convert to proper 8-bit type */
 		for (i=0; i<nSamplesToGenerate; i++)
@@ -604,6 +611,42 @@ void Sound_Update_VBL(void)
 	/* Clear write to register '13', used for YM file saving */
 	bEnvelopeFreqFlag = FALSE;
 }
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Store the content of a PSG register and update the necessary variables.
+ */
+void Sound_WriteReg( int Reg , Uint8 Val )
+{
+	/* Store a local copy of the reg */
+	SoundRegs[ Reg ] = Val;
+	
+	/* Writing to certain regs can require some actions */
+	switch ( Reg )
+	{
+
+	 /* Check registers 8,9 and 10 which are 'amplitude' for each channel and
+	  * store if wrote to (to check for sample playback) */
+		case PSG_REG_CHANNEL_A_AMP:
+			bWriteChannelAAmp = TRUE;
+			break;
+		case PSG_REG_CHANNEL_B_AMP:
+			bWriteChannelBAmp = TRUE;
+			break;
+		case PSG_REG_CHANNEL_C_AMP:
+			bWriteChannelCAmp = TRUE;
+			break;
+
+		case PSG_REG_ENV_SHAPE:			/* Whenever 'write' to register 13, cause envelope to reset */
+			bEnvelopeFreqFlag = TRUE;
+			bWriteEnvelopeFreq = TRUE;
+			break;
+	}
+
+}
+
+
 
 
 /*-----------------------------------------------------------------------*/

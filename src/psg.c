@@ -23,6 +23,12 @@
 /*			the data reg is read later (fix Mindbomb Demo / BBC).		*/
 /* 2008/04/20	[NP]	In PSG_DataRegister_WriteByte, set unused bit to 0 for register	*/
 /*			6 too (noise period).						*/
+/* 2008/07/27	[NP]	Better separation between accesses to the YM hardware registers	*/
+/*			and the sound rendering routines. Use Sound_WriteReg() to pass	*/
+/*			all writes to the sound rendering functions. This allows to	*/
+/*			have sound.c independant of psg.c (to ease replacement of	*/
+/*			sound.c	by another rendering method).				*/
+
 
 
 /* Emulating wait states when accessing $ff8800/01/02/03 with different 'move' variants	*/
@@ -64,7 +70,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.25 2008-05-25 19:58:56 thothy Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.26 2008-07-27 18:27:04 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -192,7 +198,7 @@ void PSG_DataRegister_WriteByte(void)
 	 * to handle the PSG mirror registers, too. */
 	PSGRegisters[PSGRegisterSelect] = IoMem[IoAccessCurrentAddress];
 
-	/* [NP] Clear unused bits for some regs */
+	/* Clear unused bits for some regs */
 	if ( ( PSGRegisterSelect == PSG_REG_CHANNEL_A_COARSE ) || ( PSGRegisterSelect == PSG_REG_CHANNEL_B_COARSE )
 		|| ( PSGRegisterSelect == PSG_REG_CHANNEL_C_COARSE ) || ( PSGRegisterSelect == PSG_REG_ENV_SHAPE ) )
 	  PSGRegisters[PSGRegisterSelect] &= 0x0f;	/* only keep bits 0 - 3 */
@@ -211,35 +217,22 @@ void PSG_DataRegister_WriteByte(void)
 	  }
 
 
-	switch (PSGRegisterSelect)
+	if ( PSGRegisterSelect < NUM_PSG_SOUND_REGISTERS )
 	{
+		/* Copy sound related registers 0..13 to the sound module's internal buffer */
+		Sound_WriteReg ( PSGRegisterSelect , PSGRegisters[PSGRegisterSelect] );
+	}
 
-	 /* Check registers 8,9 and 10 which are 'amplitude' for each channel and
-	  * store if wrote to (to check for sample playback) */
-	 case PSG_REG_CHANNEL_A_AMP:
-		bWriteChannelAAmp = TRUE;
-		break;
-	 case PSG_REG_CHANNEL_B_AMP:
-		bWriteChannelBAmp = TRUE;
-		break;
-	 case PSG_REG_CHANNEL_C_AMP:
-		bWriteChannelCAmp = TRUE;
-		break;
-
-	 case PSG_REG_ENV_SHAPE:            /* Whenever 'write' to register 13, cause envelope to reset */
-		bEnvelopeFreqFlag = TRUE;
-		bWriteEnvelopeFreq = TRUE;
-		break;
-
-	 /*
-	  * FIXME: This is only a prelimary dirty hack!
-	  * Port B (Printer port) - writing here needs to be dispatched to the printer
-	  * STROBE (Port A bit5) does a short LOW and back to HIGH when the char is valid
-	  * To print you need to write the character byte to IOB and you need to toggle STROBE
-	  * (like EmuTOS does)....therefor we print when STROBE gets low and last write access to
-	  * the PSG was to IOB
-	  */
-	 case PSG_REG_IO_PORTA:
+	else if ( PSGRegisterSelect == PSG_REG_IO_PORTA )
+	{
+	/*
+	 * FIXME: This is only a prelimary dirty hack!
+	 * Port B (Printer port) - writing here needs to be dispatched to the printer
+	 * STROBE (Port A bit5) does a short LOW and back to HIGH when the char is valid
+	 * To print you need to write the character byte to IOB and you need to toggle STROBE
+	 * (like EmuTOS does)....therefore we print when STROBE gets low and last write access to
+	 * the PSG was to IOB
+	 */
 		/* Printer dispatching only when printing is activated */
 		if (ConfigureParams.Printer.bEnablePrinting)
 		{
@@ -284,11 +277,15 @@ void PSG_DataRegister_WriteByte(void)
 				/* FIXME: add code to handle IDE reset */
 			}
 		}
-		break;
+	
 	}
 
-	/* Remember if we wrote to IO Port B */
-	bLastWriteToIOB = (PSGRegisterSelect == PSG_REG_IO_PORTB);
+	else if ( PSGRegisterSelect == PSG_REG_IO_PORTB )
+	{
+		/* Remember if we wrote to IO Port B */
+		bLastWriteToIOB = TRUE;
+	}
+
 }
 
 
