@@ -21,6 +21,7 @@
 
 #include "main.h"
 #include "sysdeps.h"
+#include "newcpu.h"
 #include "ioMem.h"
 #include "dsp.h"
 #include "dsp_cpu.h"
@@ -63,7 +64,7 @@ static SDL_Thread	*dsp56k_thread;
 #define DSP_DISASM_STATE 0		/* State changes */
 
 /* Execute DSP instructions till the DSP waits for a read/write */
-#define DSP_HOST_FORCEEXEC 0
+#define DSP_HOST_FORCEEXEC 1
 
 
 static inline Uint32 getHWoffset(void)
@@ -78,6 +79,7 @@ void DSP_Init(void)
 	int i;
 
 	memset(dsp.ram, 0,sizeof(dsp.ram));
+	memset(dsp.ramint, 0,sizeof(dsp.ramint));
 
 	/* Initialize Y:rom[0x0100-0x01ff] with a sin table */
 	{
@@ -156,9 +158,6 @@ void DSP_Init(void)
 	dsp.dsp56k_sem = NULL;
 
 	dsp.state = DSP_HALT;
-#if DSP_DISASM_STATE
-	D(bug("Dsp: state = HALT"));
-#endif
 }
 
 void DSP_UnInit(void)
@@ -173,12 +172,6 @@ void DSP_Reset(void)
 
 	/* Kill existing thread and semaphore */
 	DSP_shutdown();
-
-	/* Pause thread */
-	dsp.state = DSP_BOOTING;
-#if DSP_DISASM_STATE
-	D(bug("Dsp: state = BOOTING"));
-#endif
 
 	/* Memory */
 	memset(dsp.periph, 0,sizeof(dsp.periph));
@@ -228,18 +221,10 @@ void DSP_shutdown(void)
 	if (dsp56k_thread != NULL) {
 
 		/* Stop thread */
-		dsp.state = DSP_STOPTHREAD;
-#if DSP_DISASM_STATE
-		D(bug("Dsp: state = STOPTHREAD"));
-#endif
-
-		/* Release semaphore, if thread waiting for it */
-		if (SDL_SemValue(dsp.dsp56k_sem)==0) {
-			SDL_SemPost(dsp.dsp56k_sem);
-		}
+		DSP_setState(DSP_STOPTHREAD, 0);
 
 		/* Wait for the thread to finish */
-		while (dsp.state != DSP_STOPPEDTHREAD) {
+		while (dsp.state != DSP_HALT) {
 			SDL_Delay(1);
 		}
 
@@ -255,22 +240,83 @@ void DSP_shutdown(void)
 
 /**********************************
  *	Force execution of DSP, till something
- *  to read from/write to host port
+ *  to read from/write to host port, timeout after 1 second
  **********************************/
 
 static inline void DSP_force_exec(void)
 {
 #if DSP_HOST_FORCEEXEC
-	Uint32 startticks;
+	Uint32 start = SDL_GetTicks();
 
-	startticks = SDL_GetTicks();
-	while (dsp.state == DSP_RUNNING) {
-		if (SDL_GetTicks() != startticks) {
-			SDL_Delay(1);
-			startticks = SDL_GetTicks();
-		}
+	while ((dsp.state == DSP_RUNNING) && (SDL_GetTicks()-start<1000)) {
+		SDL_Delay(1);
+	}
+
+	if (dsp.state == DSP_RUNNING) {
+		fprintf(stderr, "DSP seems to be stuck... shutting it down!\n");
+		DSP_setState(DSP_STOPTHREAD, 0);
+		dsp56k_thread = NULL;
 	}
 #endif
+}
+
+/* Change state of DSP emulation thread */
+void DSP_setState(uint8 newState, int useSemaphore)
+{
+	if (dsp.state == newState) {
+		return;
+	}
+
+#if DSP_DISASM_STATE
+	uint8 oldState = dsp.state;
+#endif
+	dsp.state = newState;
+
+	switch(newState) {
+		case DSP_BOOTING:
+#if DSP_DISASM_STATE
+			fprintf(stderr, "Dsp: state = DSP_BOOTING\n");
+#endif
+			SDL_SemWait(dsp.dsp56k_sem);
+			break;
+		case DSP_RUNNING:
+#if DSP_DISASM_STATE
+			if (oldState == DSP_BOOTING) {
+				fprintf(stderr, "Dsp: bootstrap done\n");
+			}
+			fprintf(stderr, "Dsp: state = DSP_RUNNING\n");
+#endif
+			SDL_SemPost(dsp.dsp56k_sem);
+			break;
+		case DSP_WAITHOSTWRITE:
+#if DSP_DISASM_STATE
+			fprintf(stderr, "Dsp: state = DSP_WAITHOSTWRITE\n");
+#endif
+			SDL_SemWait(dsp.dsp56k_sem);
+			break;
+		case DSP_WAITHOSTREAD:
+#if DSP_DISASM_STATE
+			fprintf(stderr, "Dsp: state = DSP_WAITHOSTREAD\n");
+#endif
+			SDL_SemWait(dsp.dsp56k_sem);
+			break;
+		case DSP_HALT:
+#if DSP_DISASM_STATE
+			fprintf(stderr, "Dsp: state = DSP_HALT\n");
+#endif
+			if (useSemaphore) {
+				SDL_SemWait(dsp.dsp56k_sem);
+			}
+			break;
+		case DSP_STOPTHREAD:
+#if DSP_DISASM_STATE
+			fprintf(stderr, "Dsp: state = DSP_STOPTHREAD\n");
+#endif
+			SDL_SemPost(dsp.dsp56k_sem);
+			break;
+		default:
+			break;
+	}
 }
 
 #endif /* DSP_EMULATION */
@@ -285,8 +331,6 @@ static uint8 DSP_handleRead(Uint32 addr)
 	uint8 value=0;
 
 	addr -= getHWoffset();
-
-/*	D(bug("HWget_b(0x%08x)=0x%02x at 0x%08x", addr+HW_DSP, value, showPC()));*/
 
 	/* Whenever the host want to read something on host port, we test if a
 	   transfer is needed */
@@ -331,19 +375,13 @@ static uint8 DSP_handleRead(Uint32 addr)
 
 			/* Wake up DSP if it was waiting our read */
 			if (dsp.state==DSP_WAITHOSTREAD) {
-#if DSP_DISASM_STATE
-				D(bug("Dsp: state = DSP_RUNNING"));
-#endif
-				dsp.state = DSP_RUNNING;
-
-				if (SDL_SemValue(dsp.dsp56k_sem)==0) {
-					SDL_SemPost(dsp.dsp56k_sem);
-				}
+				DSP_setState(DSP_RUNNING, 0);
 			}
 
 			break;
 	}
 
+	// D(bug("HWget_b(0x%08x)=0x%02x at 0x%08x", addr+0xffa200, value, m68k_getpc()));
 	return value;
 #else
 	return 0xff;	// this value prevents TOS from hanging in the DSP init code */
@@ -366,7 +404,7 @@ static void DSP_handleWrite(Uint32 addr, uint8 value)
 #if DSP_EMULATION
 	addr -= getHWoffset();
 
-/*	D(bug("HWput_b(0x%08x,0x%02x) at 0x%08x", addr+HW_DSP, value, showPC()));*/
+	// D(bug("HWput_b(0x%08x,0x%02x) at 0x%08x", addr+0xffa200, value, m68k_getpc()));
 
 	switch(addr) {
 		case CPU_HOST_ICR:
@@ -445,29 +483,17 @@ static void DSP_handleWrite(Uint32 addr, uint8 value)
 
 			switch(dsp.state) {
 				case DSP_BOOTING:
+					// D(bug("Dsp: bootstrap p:0x%04x = 0x%06x", bootstrap_pos, bootstrap_accum));
 					dsp.ramint[DSP_SPACE_P][bootstrap_pos] = bootstrap_accum;
-/*					D(bug("Dsp: bootstrap: p:0x%04x: 0x%06x written", bootstrap_pos, bootstrap_accum));*/
 					bootstrap_pos++;
 					if (bootstrap_pos == 0x200) {
-#if DSP_DISASM_STATE
-						D(bug("Dsp: bootstrap done"));
-#endif
-						dsp.state = DSP_RUNNING;
-
-						SDL_SemPost(dsp.dsp56k_sem);
+						DSP_setState(DSP_RUNNING, 0);
 					}		
 					bootstrap_accum = 0;
 					break;
 				case DSP_WAITHOSTWRITE:
 					/* Wake up DSP if it was waiting our write */
-#if DSP_DISASM_STATE
-					D(bug("Dsp: state = DSP_RUNNING"));
-#endif
-					dsp.state = DSP_RUNNING;
-
-					if (SDL_SemValue(dsp.dsp56k_sem)==0) {
-						SDL_SemPost(dsp.dsp56k_sem);
-					}
+					DSP_setState(DSP_RUNNING, 0);
 					break;
 			}
 

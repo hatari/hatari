@@ -34,7 +34,6 @@
 #define DSP_WAITHOSTREAD	3	/* Dsp waits for host to read data */
 #define DSP_HALT			4	/* Dsp is halted */
 #define DSP_STOPTHREAD		5	/* Stop emulation thread */
-#define DSP_STOPPEDTHREAD	6	/* Dsp thread stopped and finished */
 
 /* Host port, CPU side */
 #define CPU_HOST_ICR	0x00
@@ -150,6 +149,7 @@ void DSP_HandleWriteAccess(void);
 
 extern void DSP_Init(void);
 extern void DSP_UnInit(void);
+extern void DSP_setState(uint8 newState, int useSemaphore);
 
 /* Setup functions */
 extern void DSP_Reset(void);
