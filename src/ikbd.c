@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.42 2008-07-22 20:55:05 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.43 2008-07-28 19:49:09 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -244,9 +244,10 @@ static const IKBD_COMMAND_PARAMS KeyboardCommands[] =
 
 static void IKBD_SendByteToKeyboardProcessor(Uint16 bl);
 static Uint16 IKBD_GetByteFromACIA(void);
-static void IKBD_SendByteToACIA(void);
+static void IKBD_SendByteToACIA(int nAciaCycles);
 static void IKBD_AddKeyToKeyboardBuffer(Uint8 Data);
-static void IKBD_AddKeyToKeyboardBuffer_Real(Uint8 Data);
+static void IKBD_AddKeyToKeyboardBufferWithDelay(Uint8 Data, int nAciaCycles);
+static void IKBD_AddKeyToKeyboardBuffer_Real(Uint8 Data, int nAciaCycles);
 
 
 /* Belows part is used to emulate the behaviour of custom 6301 programs */
@@ -1169,7 +1170,7 @@ static void IKBD_Cmd_ReadAbsMousePos(void)
 	Buttons &= ~PrevButtons;
 
 	/* And send packet */
-	IKBD_AddKeyToKeyboardBuffer(0xf7);
+	IKBD_AddKeyToKeyboardBufferWithDelay(0xf7, 18000);
 	IKBD_AddKeyToKeyboardBuffer(Buttons);
 	IKBD_AddKeyToKeyboardBuffer((unsigned int)KeyboardProcessor.Abs.X>>8);
 	IKBD_AddKeyToKeyboardBuffer((unsigned int)KeyboardProcessor.Abs.X&0xff);
@@ -1315,7 +1316,7 @@ static void IKBD_Cmd_StopJoystick(void)
  */
 static void IKBD_Cmd_ReturnJoystick(void)
 {
-	IKBD_AddKeyToKeyboardBuffer(0xFD);
+	IKBD_AddKeyToKeyboardBufferWithDelay(0xFD, 35000);
 	IKBD_AddKeyToKeyboardBuffer(Joy_GetStickData(0));
 	IKBD_AddKeyToKeyboardBuffer(Joy_GetStickData(1));
 
@@ -1459,7 +1460,7 @@ static void IKBD_Cmd_ReadClock(void)
 	SystemTime = localtime(&nTimeTicks);
 
 	/* Return packet */
-	IKBD_AddKeyToKeyboardBuffer(0xFC);
+	IKBD_AddKeyToKeyboardBufferWithDelay(0xFC, 32000);
 	/* Return time-of-day clock as yy-mm-dd-hh-mm-ss as BCD */
 	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_year));  /* yy - year (2 least significant digits) */
 	IKBD_AddKeyToKeyboardBuffer(IKBD_ConvertToBCD(SystemTime->tm_mon+1)); /* mm - Month */
@@ -1664,7 +1665,7 @@ void IKBD_InterruptHandler_MFP(void)
 
 	/* If another key is waiting, start sending from keyboard processor now */
 	if (Keyboard.BufferHead!=Keyboard.BufferTail)
-		IKBD_SendByteToACIA();
+		IKBD_SendByteToACIA(ACIA_CYCLES);
 }
 
 
@@ -1674,13 +1675,14 @@ void IKBD_InterruptHandler_MFP(void)
  * so we must be as accurate in the timing as possible - bytes do not appear to the 68000 instantly!
  * We do this via an internal interrupt - neat!
  */
-static void IKBD_SendByteToACIA(void)
+static void IKBD_SendByteToACIA(int nAciaCycles)
 {
-	/* Transmit byte from keyboard processor to ACIA. This takes approx ACIA_CYCLES CPU clock cycles to complete */
+	/* Transmit byte from keyboard processor to ACIA.
+	 * This takes approx ACIA_CYCLES CPU clock cycles to complete */
 	if (!bByteInTransitToACIA)
 	{
 		/* Send byte to ACIA */
-		Int_AddRelativeInterrupt(ACIA_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA, 0);
+		Int_AddRelativeInterrupt(nAciaCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA, 0);
 		/* Set flag so only transmit one byte at a time */
 		bByteInTransitToACIA = TRUE;
 	}
@@ -1689,20 +1691,40 @@ static void IKBD_SendByteToACIA(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Add character to our internal keyboard buffer. These bytes are then sent one at a time to the ACIA.
- * This is done via a delay to mimick the STs internal workings, as this is needed for games such
- * as Carrier Command.
+ * Add character to our internal keyboard buffer, with default ACIA_CYCLES
+ * timing.
  */
 static void IKBD_AddKeyToKeyboardBuffer(Uint8 Data)
 {
 	if ( IKBD_ExeMode )					/* if IKBD is executing custom code, don't add */
 		return;						/* anything to the buffer */
 
-	IKBD_AddKeyToKeyboardBuffer_Real ( Data );
+	IKBD_AddKeyToKeyboardBuffer_Real(Data, ACIA_CYCLES);
 }
 
 
-static void IKBD_AddKeyToKeyboardBuffer_Real(Uint8 Data)
+/**
+ * Add character to our internal keyboard buffer, with additional delay.
+ * This is required for some keyboard commands like ReadAbsMousePos (0x0d)
+ * where it takes a little bit longer than the typical ACIA_CYCLES until
+ * the first byte arrives from the IKBD (for example the "Unlimited bobs"
+ * screen in the Dragonnels demo depends on this behaviour.
+ */
+static void IKBD_AddKeyToKeyboardBufferWithDelay(Uint8 Data, int nAciaCycles)
+{
+	if (IKBD_ExeMode)				/* if IKBD is executing custom code, */
+		return;						/* don't add anything to the buffer */
+
+	IKBD_AddKeyToKeyboardBuffer_Real(Data, nAciaCycles);
+}
+
+
+/**
+ * Add character to our internal keyboard buffer. These bytes are then sent
+ * one at a time to the ACIA. This is done via a delay to mimick the STs
+ * internal workings, as this is needed for games such as Carrier Command.
+ */
+static void IKBD_AddKeyToKeyboardBuffer_Real(Uint8 Data, int nAciaCycles)
 {
 	/* Is keyboard initialised yet? Ignore any bytes until it is */
 	if (!KeyboardProcessor.bReset)
@@ -1716,7 +1738,7 @@ static void IKBD_AddKeyToKeyboardBuffer_Real(Uint8 Data)
 		Keyboard.BufferTail &= KEYBOARD_BUFFER_MASK;
 
 		/* We have character ready to transmit from the ACIA - see if can send it now */
-		IKBD_SendByteToACIA();
+		IKBD_SendByteToACIA(nAciaCycles);
 	}
 }
 
@@ -1981,8 +2003,8 @@ static void IKBD_CustomCodeHandler_FroggiesMenu_Read ( void )
 	if ( ScanCodeState[ 0x50 ] )			res2 |= 0x06;	/* down */
 	if ( ScanCodeState[ 0x70 ] )			res1 |= 0x80;	/* keypad 0 */
 
-	IKBD_AddKeyToKeyboardBuffer_Real ( res1 );
-	IKBD_AddKeyToKeyboardBuffer_Real ( res2 );
+	IKBD_AddKeyToKeyboardBuffer_Real(res1, ACIA_CYCLES);
+	IKBD_AddKeyToKeyboardBuffer_Real(res2, ACIA_CYCLES);
 }
 
 static void IKBD_CustomCodeHandler_FroggiesMenu_Write ( Uint8 aciabyte )
@@ -2015,7 +2037,7 @@ static void IKBD_CustomCodeHandler_Transbeauce2Menu_Read ( void )
 	/* joystick emulation (bit mapping is same as cursor above, with bit 7 = fire button */
 	res |= ( Joy_GetStickData(1) & 0x8f ) ;			/* keep bits 0-3 and 7 */
 	
-	IKBD_AddKeyToKeyboardBuffer_Real ( res );
+	IKBD_AddKeyToKeyboardBuffer_Real(res, ACIA_CYCLES);
 }
 
 static void IKBD_CustomCodeHandler_Transbeauce2Menu_Write ( Uint8 aciabyte )
@@ -2039,7 +2061,7 @@ static void IKBD_CustomCodeHandler_DragonnelsMenu_Read ( void )
 
 	if ( Keyboard.bLButtonDown & BUTTON_MOUSE )	res = 0x80;	/* left mouse button */
 
-	IKBD_AddKeyToKeyboardBuffer_Real ( res );
+	IKBD_AddKeyToKeyboardBuffer_Real(res, ACIA_CYCLES);
 }
 
 static void IKBD_CustomCodeHandler_DragonnelsMenu_Write ( Uint8 aciabyte )
