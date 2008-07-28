@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.43 2008-07-28 19:49:09 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.44 2008-07-28 20:38:47 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -193,7 +193,14 @@ static void IKBD_Cmd_ReadClock(void);
 static void IKBD_Cmd_LoadMemory(void);
 static void IKBD_Cmd_ReadMemory(void);
 static void IKBD_Cmd_Execute(void);
-static void IKBD_Cmd_NullFunction(void);
+static void IKBD_Cmd_ReportMouseAction(void);
+static void IKBD_Cmd_ReportMouseMode(void);
+static void IKBD_Cmd_ReportMouseThreshold(void);
+static void IKBD_Cmd_ReportMouseScale(void);
+static void IKBD_Cmd_ReportMouseVertical(void);
+static void IKBD_Cmd_ReportMouseAvailability(void);
+static void IKBD_Cmd_ReportJoystickMode(void);
+static void IKBD_Cmd_ReportJoystickAvailability(void);
 
 static const IKBD_COMMAND_PARAMS KeyboardCommands[] =
 {
@@ -225,18 +232,20 @@ static const IKBD_COMMAND_PARAMS KeyboardCommands[] =
 	{ 0x21,3,  IKBD_Cmd_ReadMemory },
 	{ 0x22,3,  IKBD_Cmd_Execute },
 
-	/* Report message (top bit set) - ignore for now... */
-	{ 0x88,1,  IKBD_Cmd_NullFunction },
-	{ 0x89,1,  IKBD_Cmd_NullFunction },
-	{ 0x8A,1,  IKBD_Cmd_NullFunction },
-	{ 0x8B,1,  IKBD_Cmd_NullFunction },
-	{ 0x8C,1,  IKBD_Cmd_NullFunction },
-	{ 0x8F,1,  IKBD_Cmd_NullFunction },
-	{ 0x90,1,  IKBD_Cmd_NullFunction },
-	{ 0x92,1,  IKBD_Cmd_NullFunction },
-	{ 0x94,1,  IKBD_Cmd_NullFunction },
-	{ 0x95,1,  IKBD_Cmd_NullFunction },
-	{ 0x99,1,  IKBD_Cmd_NullFunction },
+	/* Report message (top bit set) */
+	{ 0x87,1,  IKBD_Cmd_ReportMouseAction },
+	{ 0x88,1,  IKBD_Cmd_ReportMouseMode },
+	{ 0x89,1,  IKBD_Cmd_ReportMouseMode },
+	{ 0x8A,1,  IKBD_Cmd_ReportMouseMode },
+	{ 0x8B,1,  IKBD_Cmd_ReportMouseThreshold },
+	{ 0x8C,1,  IKBD_Cmd_ReportMouseScale },
+	{ 0x8F,1,  IKBD_Cmd_ReportMouseVertical },
+	{ 0x90,1,  IKBD_Cmd_ReportMouseVertical },
+	{ 0x92,1,  IKBD_Cmd_ReportMouseAvailability },
+	{ 0x94,1,  IKBD_Cmd_ReportJoystickMode },
+	{ 0x95,1,  IKBD_Cmd_ReportJoystickMode },
+	{ 0x99,1,  IKBD_Cmd_ReportJoystickMode },
+	{ 0x9A,1,  IKBD_Cmd_ReportJoystickAvailability },
 
 	{ 0xFF,0,  NULL }  /* Term */
 };
@@ -963,16 +972,6 @@ void IKBD_InterruptHandler_ResetTimer(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Blank function for some keyboard commands - this can be used to find errors
- */
-static void IKBD_Cmd_NullFunction(void)
-{
-	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_NullFunction\n");
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * RESET
  *
  * 0x80
@@ -1536,6 +1535,220 @@ static void IKBD_Cmd_Execute(void)
 		HATARI_TRACE ( HATARI_TRACE_IKBD_EXEC, "ikbd execute addr 0x%x ignored, no custom handler found\n" ,
 			( Keyboard.InputBuffer[1]<<8 ) + Keyboard.InputBuffer[2] );
 	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * REPORT MOUSE BUTTON ACTION
+ *
+ * 0x87
+ */
+static void IKBD_Cmd_ReportMouseAction(void)
+{
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseAction\n");
+
+	IKBD_AddKeyToKeyboardBufferWithDelay(0xf6, 30000);
+	IKBD_AddKeyToKeyboardBuffer(7);
+	IKBD_AddKeyToKeyboardBuffer(KeyboardProcessor.Mouse.Action);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * REPORT MOUSE MODE
+ *
+ * 0x88 or 0x89 or 0x8A
+ */
+static void IKBD_Cmd_ReportMouseMode(void)
+{
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseMode\n");
+
+	IKBD_AddKeyToKeyboardBufferWithDelay(0xf6, 30000);
+	switch (KeyboardProcessor.MouseMode)
+	{
+	 case AUTOMODE_MOUSEREL:
+		IKBD_AddKeyToKeyboardBuffer(8);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		break;
+	 case AUTOMODE_MOUSEABS:
+		IKBD_AddKeyToKeyboardBuffer(9);
+		IKBD_AddKeyToKeyboardBuffer(KeyboardProcessor.Abs.MaxX >> 8);
+		IKBD_AddKeyToKeyboardBuffer(KeyboardProcessor.Abs.MaxX);
+		IKBD_AddKeyToKeyboardBuffer(KeyboardProcessor.Abs.MaxY >> 8);
+		IKBD_AddKeyToKeyboardBuffer(KeyboardProcessor.Abs.MaxY);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		break;
+	 case AUTOMODE_MOUSECURSOR:
+		IKBD_AddKeyToKeyboardBuffer(10);
+		IKBD_AddKeyToKeyboardBuffer(KeyboardProcessor.Mouse.KeyCodeDeltaX);
+		IKBD_AddKeyToKeyboardBuffer(KeyboardProcessor.Mouse.KeyCodeDeltaY);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		break;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * REPORT MOUSE THRESHOLD
+ *
+ * 0x8B
+ */
+static void IKBD_Cmd_ReportMouseThreshold(void)
+{
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseThreshold\n");
+
+	IKBD_AddKeyToKeyboardBufferWithDelay(0xf6, 30000);
+	IKBD_AddKeyToKeyboardBuffer(0x0B);
+	IKBD_AddKeyToKeyboardBuffer(KeyboardProcessor.Mouse.XThreshold);
+	IKBD_AddKeyToKeyboardBuffer(KeyboardProcessor.Mouse.YThreshold);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * REPORT MOUSE SCALE
+ *
+ * 0x8C
+ */
+static void IKBD_Cmd_ReportMouseScale(void)
+{
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseScale\n");
+
+	IKBD_AddKeyToKeyboardBufferWithDelay(0xf6, 30000);
+	IKBD_AddKeyToKeyboardBuffer(0x0C);
+	IKBD_AddKeyToKeyboardBuffer(KeyboardProcessor.Mouse.XScale);
+	IKBD_AddKeyToKeyboardBuffer(KeyboardProcessor.Mouse.YScale);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * REPORT MOUSE VERTICAL COORDINATES
+ *
+ * 0x8F and 0x90
+ */
+static void IKBD_Cmd_ReportMouseVertical(void)
+{
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseVertical\n");
+
+	IKBD_AddKeyToKeyboardBufferWithDelay(0xf6, 30000);
+	if (KeyboardProcessor.Mouse.YAxis == -1)
+		IKBD_AddKeyToKeyboardBuffer(0x0F);
+	else
+		IKBD_AddKeyToKeyboardBuffer(0x10);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * REPORT MOUSE AVAILABILITY
+ *
+ * 0x92
+ */
+static void IKBD_Cmd_ReportMouseAvailability(void)
+{
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReportMouseAvailability\n");
+
+	IKBD_AddKeyToKeyboardBufferWithDelay(0xf6, 30000);
+	if (KeyboardProcessor.MouseMode == AUTOMODE_OFF)
+		IKBD_AddKeyToKeyboardBuffer(0x12);
+	else
+		IKBD_AddKeyToKeyboardBuffer(0x00);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * REPORT JOYSTICK MODE
+ *
+ * 0x94 or 0x95 or 0x99
+ */
+static void IKBD_Cmd_ReportJoystickMode(void)
+{
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReportJoystickMode\n");
+
+	IKBD_AddKeyToKeyboardBufferWithDelay(0xf6, 30000);
+	switch (KeyboardProcessor.JoystickMode)
+	{
+	 case AUTOMODE_JOYSTICK:
+		IKBD_AddKeyToKeyboardBuffer(0x14);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		break;
+	 default:    /* TODO: Joystick keycodes mode not supported yet! */
+		IKBD_AddKeyToKeyboardBuffer(0x15);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		IKBD_AddKeyToKeyboardBuffer(0);
+		break;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * REPORT JOYSTICK AVAILABILITY
+ *
+ * 0x9A
+ */
+static void IKBD_Cmd_ReportJoystickAvailability(void)
+{
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReportJoystickAvailability\n");
+
+	IKBD_AddKeyToKeyboardBufferWithDelay(0xf6, 30000);
+	if (KeyboardProcessor.JoystickMode == AUTOMODE_OFF)
+		IKBD_AddKeyToKeyboardBuffer(0x1A);
+	else
+		IKBD_AddKeyToKeyboardBuffer(0x00);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
+	IKBD_AddKeyToKeyboardBuffer(0);
 }
 
 
