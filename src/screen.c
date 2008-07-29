@@ -27,7 +27,7 @@
 /*			lines when displaying 47 lines (Digiwolrd 2 by ICE, Tyranny by DHS).	*/
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.85 2008-06-23 20:56:58 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.86 2008-07-29 21:38:06 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -1015,10 +1015,11 @@ static void Screen_DrawFrame(bool bForceFlip)
 		}
 
 		if (pDrawFunction)
-			CALL_VAR(pDrawFunction)
+			CALL_VAR(pDrawFunction);
 
-			/* Unlock screen */
-			Screen_UnLock();
+		/* Unlock screen */
+		Screen_UnLock();
+
 		/* Clear flags, remember type of overscan as if change need screen full update */
 		pFrameBuffer->bFullUpdate = FALSE;
 		pFrameBuffer->OverscanModeCopy = OverscanMode;
