@@ -20,6 +20,7 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "araglue.h"
 #include "main.h"
 #include "sysdeps.h"
 #include "newcpu.h"
@@ -32,6 +33,8 @@
 #if DSP_EMULATION
 static dsp_core_t dsp_core;
 #endif
+
+#define DSP_HW_OFFSET  0xFFA200
 
 
 void DSP_Init(void)
@@ -64,7 +67,7 @@ static uint8 DSP_handleRead(Uint32 addr)
 {
 	uint8 value;
 #if DSP_EMULATION
-	value = dsp_core_read_host(&dsp_core, addr-getHWoffset());
+	value = dsp_core_read_host(&dsp_core, addr-DSP_HW_OFFSET);
 #else
 	/* this value prevents TOS from hanging in the DSP init code */
 	value = 0xff;
@@ -90,7 +93,7 @@ static void DSP_handleWrite(Uint32 addr, uint8 value)
 {
 	D(bug("HWput_b(0x%08x,0x%02x) at 0x%08x", addr, value, showPC()));
 #if DSP_EMULATION
-	dsp_core_write_host(&dsp_core, addr-getHWoffset(), value);
+	dsp_core_write_host(&dsp_core, addr-DSP_HW_OFFSET, value);
 #endif
 }
 
