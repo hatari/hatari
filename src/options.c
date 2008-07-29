@@ -17,9 +17,10 @@
   2008-04-16   [ET]    Return FALSE instead of exiting on errors
   2008-06-08   [ET]    Add disk image options and refactor their handling
   2008-06-10   [ET]    Add --vdi and joystick<port> <type> options
+  2008-07-30   [ET]    Shorter & more consistent option descriptions
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.66 2008-06-26 20:00:12 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.67 2008-07-29 21:27:15 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -143,23 +144,23 @@ static const opt_t HatariOptions[] = {
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Double ST low resolution (1=no, 2=yes)" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
-	  "<x>", "Skip <x> frames after each displayed frame (0 <= x <= 8)" },
+	  "<x>", "Skip <x> frames after each shown frame (0 <= x <= 8)" },
 	{ OPT_BORDERS, NULL, "--borders",
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
 	{ OPT_SPEC512, NULL, "--spec512",
 	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
-	  "<x>", "Force internal color bitdepth (x=8/15/16/32, 0=disable)" },
+	  "<x>", "Force internal bitdepth (x = 8/15/16/32, 0=disable)" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "VDI" },
 	{ OPT_VDI,	NULL, "--vdi",
 	  "<bool>", "Whether to use VDI screen mode" },
 	{ OPT_VDI_PLANES,NULL, "--vdi-planes",
-	  "<x>", "VDI resolution bit-depth (x = 1/2/4)" },
+	  "<x>", "VDI mode bit-depth (x = 1/2/4)" },
 	{ OPT_VDI_WIDTH,     NULL, "--vdi-width",
-	  "<w>", "Use VDI resolution with width w (320 < w <= 1024)" },
+	  "<w>", "VDI mode width (320 < w <= 1024)" },
 	{ OPT_VDI_HEIGHT,     NULL, "--vdi-height",
-	  "<h>", "VDI resolution with height h (200 < h <= 768)" },
+	  "<h>", "VDI mode height (200 < h <= 768)" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Devices" },
 	{ OPT_JOYSTICK,  "-j", "--joystick",
@@ -202,7 +203,7 @@ static const opt_t HatariOptions[] = {
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
-	  "<x>", "ST RAM size. x = size in MiB from 0 to 14, 0 for 512KiB" },
+	  "<x>", "ST RAM size (x = size in MiB from 0 to 14, 0 = 512KiB)" },
 	{ OPT_TOS,       "-t", "--tos",
 	  "<file>", "Use TOS image <file>" },
 	{ OPT_CARTRIDGE, NULL, "--cartridge",
@@ -214,7 +215,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_CPULEVEL,  NULL, "--cpulevel",
 	  "<x>", "Set the CPU type (x => 680x0) (EmuTOS/TOS 2.06 only!)" },
 	{ OPT_CPUCLOCK,  NULL, "--cpuclock",
-	  "<x>", "Set the CPU clock (8, 16 or 32)" },
+	  "<x>", "Set the CPU clock (x = 8/16/32)" },
 	{ OPT_COMPATIBLE, NULL, "--compatible",
 	  "<bool>", "Use a more compatible (but slower) 68000 CPU mode" },
 	
@@ -224,9 +225,9 @@ static const opt_t HatariOptions[] = {
 	{ OPT_BLITTER,   NULL, "--blitter",
 	  "<bool>", "Use blitter emulation (ST only)" },
 	{ OPT_DSP,       NULL, "--dsp",
-	  "<x>", "DSP emulation (x=none/dummy/emu, for Falcon mode only)" },
+	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
 	{ OPT_SOUND,   NULL, "--sound",
-	  "<x>", "Sound quality (off/low/med/hi (off=faster))" },
+	  "<x>", "Sound quality (x = off/low/med/hi, off=faster)" },
 	{ OPT_KEYMAPFILE, "-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	
@@ -236,7 +237,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
 	  NULL, "Enable Bios/XBios interception (experimental)" },
 	{ OPT_TRACE,   NULL, "--trace",
-	  "<trace1,...>", "Activate emulation tracing, see --trace help" },
+	  "<trace1,...>", "Activate emulation tracing, see '--trace help'" },
 	{ OPT_TRACEFILE, NULL, "--trace-file",
 	  "<file>", "Save trace output to <file> (default=stderr)" },
 #if HAVE_UNIX_DOMAIN_SOCKETS
