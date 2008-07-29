@@ -30,7 +30,8 @@ GUIWINOBJS = ./gui-win/hatari-winicon.o ./gui-win/opencon.o
 
 FALCOBJS = ./falcon/videl.o ./falcon/hostscreen.o ./falcon/nvram.o
 ifeq ($(ENABLE_DSP_EMU),1)
-FALCOBJS += ./falcon/dsp.o ./falcon/dsp_cpu.o ./falcon/dsp_disasm.o
+FALCOBJS += ./falcon/dsp.o ./falcon/dsp_core.o \
+            ./falcon/dsp_cpu.o ./falcon/dsp_disasm.o
 endif
 
 SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c options.c \
