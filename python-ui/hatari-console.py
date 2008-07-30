@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #
 # Hatari console:
-# Allows using Hatari shortcuts, debugger and changing Hatari
-# command line options (even ones you cannot change from the UI)
-# from the console while Hatari is running.
+# Allows using Hatari shortcuts & debugger, changing paths, toggling
+# devices and changing Hatari command line options (even for things you
+# cannot change from the UI) from the console while Hatari is running.
 #
 # Copyright (C) 2008 by Eero Tamminen <eerot@sf.net>
 #
@@ -24,13 +24,14 @@ import socket
 import readline
 
 # running Hatari instance
-class Hatari():
+class Hatari:
     controlpath = "/tmp/hatari-console-" + str(os.getpid()) + ".socket"
     hataribin = "hatari"
 
     def __init__(self, args = None):
         # collect hatari process zombies without waitpid()
         signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+        self._assert_hatari_compatibility()
         self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         if os.path.exists(self.controlpath):
             os.unlink(self.controlpath)
@@ -42,6 +43,13 @@ class Hatari():
         if not self.run(args):
             print "ERROR: failed to run Hatari"
             sys.exit(1)
+
+    def _assert_hatari_compatibility(self):
+        for line in os.popen(self.hataribin + " -h").readlines():
+            if line.find("--control-socket") >= 0:
+                return
+        print "ERROR: Hatari not found or it doesn't support the required --control-socket option!"
+        sys.exit(-1)
         
     def is_running(self):
         if not self.pid:
@@ -77,29 +85,35 @@ class Hatari():
 
     def send_message(self, msg):
         if self.control:
-            self.control.send(msg)
+            self.control.send(msg + "\n")
             return True
         else:
             print "ERROR: no Hatari (control socket)"
             return False
         
     def change_option(self, option):
-        return self.send_message("hatari-option %s\n" % option)
+        return self.send_message("hatari-option %s" % option)
 
     def trigger_shortcut(self, shortcut):
-        return self.send_message("hatari-shortcut %s\n" % shortcut)
+        return self.send_message("hatari-shortcut %s" % shortcut)
 
     def insert_event(self, event):
-        return self.send_message("hatari-event %s\n" % event)
+        return self.send_message("hatari-event %s" % event)
 
     def debug_command(self, cmd):
-        return self.send_message("hatari-debug %s\n" % cmd)
+        return self.send_message("hatari-debug %s" % cmd)
+    
+    def change_path(self, path):
+        return self.send_message("hatari-path %s" % path)
+    
+    def toggle_device(self, device):
+        return self.send_message("hatari-toggle %s" % device)
 
     def pause(self):
-        return self.send_message("hatari-stop\n")
+        return self.send_message("hatari-stop")
 
     def unpause(self):
-        return self.send_message("hatari-cont\n")
+        return self.send_message("hatari-cont")
         
     def stop(self):
         if self.pid:
@@ -110,7 +124,7 @@ class Hatari():
 
 
 # command line parsing with readline
-class CommandInput():
+class CommandInput:
     prompt = "hatari-command: "
     historysize = 99
     
@@ -195,8 +209,7 @@ shortcut_tokens = [
     "bosskey",
     "recanim",
     "recsound",
-    "savemem",
-    "quit"
+    "savemem"
 ]
 event_tokens = [
     "doubleclick",
@@ -204,6 +217,20 @@ event_tokens = [
     "rightrelease",
     "keypress",
     "keyrelease"
+]
+device_tokens = [
+    "printer",
+    "rs232",
+    "midi",
+]
+path_tokens = [
+    "memauto",
+    "memsave",
+    "midiout",
+    "printout",
+    "soundout",
+    "rs232in",
+    "rs232out"
 ]
 debugger_tokens = [
     "r",
@@ -216,6 +243,35 @@ debugger_tokens = [
     "h"
 ]
 
+
+def list_items(title, items):
+    print "\n%s:" % title
+    for item in items:
+        print "*", item
+
+def show_help():
+    print """
+Hatari-console help
+-------------------
+
+Hatari-console allows you to invoke Hatari remote configuration facilities
+from console while Hatari is running and use TAB completion on their names.
+The supported facilities are:"""
+    list_items("Command line options", option_tokens)
+    list_items("Keyboard shortcuts", shortcut_tokens)
+    list_items("Event invocation", event_tokens)
+    list_items("Device toggling", device_tokens)
+    list_items("Path setting", path_tokens)
+    list_items("Debugger commands", debugger_tokens)
+    print """
+and commands to "pause", "unpause" and "quit" Hatari.
+
+For command line options you can see further help with "--help"
+and for debugger with "h".  Some other facilities may give help
+if you give them invalid input.
+"""
+
+
 def main():
     hatari = Hatari(sys.argv[1:])
     process_tokens = {
@@ -227,8 +283,15 @@ def main():
     print "************************************************************"
     print "* Use the TAB key to see all the available Hatari commands *"
     print "************************************************************"
-    tokens = option_tokens + shortcut_tokens + event_tokens \
-             + debugger_tokens + process_tokens.keys()
+    tokens = ["help"]
+    for items in [option_tokens, shortcut_tokens, event_tokens,
+            debugger_tokens, device_tokens, path_tokens,
+            process_tokens.keys()]:
+        for token in items:
+            if token in tokens:
+                print "ERROR: token '%s' already in tokens" % token
+                sys.exit(1)
+        tokens += items
     command = CommandInput(tokens)
     
     while 1:
@@ -239,18 +302,26 @@ def main():
         if not line:
             continue
         first = line.split(" ")[0]
-        if line in process_tokens:
-            process_tokens[line]()
-        elif line in shortcut_tokens:
-            hatari.trigger_shortcut(line)
-        elif first in event_tokens:
+        # multiple items
+        if first in event_tokens:
             hatari.insert_event(line)
         elif first in debugger_tokens:
             hatari.debug_command(line)
         elif first in option_tokens:
             hatari.change_option(line)
+        elif first in path_tokens:
+            hatari.change_path(line)
+        # single item
+        elif line in device_tokens:
+            hatari.toggle_device(line)
+        elif line in shortcut_tokens:
+            hatari.trigger_shortcut(line)
+        elif line in process_tokens:
+            process_tokens[line]()
+        elif line == "help":
+            show_help()
         else:
-            print "ERROR: unknown command:", line
+            print "ERROR: unknown hatari-console command:", line
 
 
 if __name__ == "__main__":
