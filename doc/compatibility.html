@@ -107,10 +107,12 @@ STs, after them is listed STE software.  Then there are a few TT-only
 games and demos, and finally a list of somewhat working Falcon games,
 demos and applications.</p>
 
-<p>If something that works on the real hardware, doesn't work properly
-in Hatari and is missing from these lists, please mail hatari-devel mailin
-g list so that we can add it here.  Current issues in the software are
-<em>highlighted</em> in the lists below.</p>
+<p>Issues in the software (with the Hatari version it was tested with)
+are described and <em>highlighted</em> in the list Notes column.  If
+something that works on the real hardware doesn't work properly in
+Hatari (or something has started working in latest Hatari version)
+and this information is missing from these lists, please mail
+hatari-devel mailing list so that we can update the list.</p>
 
 
 <a name="Notes"></a><h3>Compatibility notes</h3>
@@ -362,13 +364,13 @@ They are marked with '*'.</p>
     </tr>
     <tr>
       <td>SoWatt (by CareBears)</td>
-      <td>before 1.0</td>
-      <td>Works fully with Hatari version 0.92 and later</td>
+      <td>1.0</td>
+      <td>Sync-scroll, overscan...</td>
     </tr>
     <tr>
       <td>Punish your machine</td>
-      <td>before 1.0</td>
-      <td>Works fully with Hatari version 0.92 and later</td>
+      <td>1.0</td>
+      <td>Sync-scroll, overscan...</td>
     </tr>
     <tr>
       <td>Froggies over the Fence*</td>
@@ -565,7 +567,7 @@ configuration or data files are not writable.</p>
       <td>Calamus SL (demo)</td>
       <td>before 1.0</td>
       <td>Nice with Hatari 32Mhz 68020+FPU STE emulation at 1024x768x1
-      resolution...</td>
+      VDI resolution...</td>
     </tr>
     <tr>
       <td>Outline Art 3 (demo)</td>
@@ -890,8 +892,8 @@ are just STE enhanced.  These are marked with '*'.</p>
     <tr>
       <td>Aggression: Braindamage</td>
       <td>1.0</td>
-      <td><em>The labyrinth screen (bottom lines) does not show up correctly yet,
-        maybe due to bad blitter timing emulation.</em></td>
+      <td><em>The labyrinth screen has a small dark rectangle in bottom left
+      corner which doesn't show up in videos from real STe.</em></td>
     </tr>
     <tr>
       <td>Armada: Armada is Dead</td>
@@ -950,8 +952,8 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Paradox: X-mas 1994 demo</td>
-      <td>before 1.0</td>
-      <td><em>Fullscreen scroller doesn't work</em></td>
+      <td>1.0</td>
+      <td><em>Fullscreen scroller doesn't show</em></td>
     </tr>
     <tr>
       <td>Paradox: Pacemaker</td>
@@ -1048,8 +1050,8 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Protracker STE</td>
-      <td>before 1.0</td>
-      <td>Garbage at screen bottom, 50KHz replay duff</td>
+      <td>1.0</td>
+      <td><i>50KHz replay duff</i></td>
     </tr> 
     <tr>
       <td>Stretch</td>
@@ -1097,7 +1099,7 @@ this section lists only TT-specific games and demos.</p>
     </tr>
     <tr>
       <td>Beams demo TT-version</td>
-      <td>before 1.0</td>
+      <td>1.0</td>
       <td><em>Doesn't work, stops at startup screen!</em></td>
     </tr>
     <tr>
@@ -1339,8 +1341,8 @@ otherwise "-".</p>
       <td>Lasers and Hommes (DLDH2)</td>
       <td>-</td>
       <td>yes</td>
-      <td>none</td>
-      <td>Intros work (including music), game doesn't</td>
+      <td>emu</td>
+      <td>Intros work (including music), actual game graphics are mostly invisible</td>
     </tr>
     <tr>
       <td>Llamazap</td>
@@ -1927,18 +1929,18 @@ otherwise "-".</p>
       <td>Problems with colors etc</td>
     </tr>
     <tr>
-      <td>UK Demos</td>
-      <td>partially</td>
+      <td>Atari UK demos</td>
+      <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td>Only Motorola Inside screen works</td>
+      <td><em>50fps plasma screen flickers badly</em></td>
     </tr>
     <tr>
       <td>Virtual City</td>
       <td>yes</td>
       <td>-</td>
       <td>emu!</td>
-      <td>HiColor only, drawing the city requires DSP</td>
+      <td>HiColor only, drawing the city requires DSP emulation</td>
     </tr>
     <tr>
       <td>Warum by Lazer</td>
