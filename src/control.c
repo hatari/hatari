@@ -6,7 +6,7 @@
 
   This code processes commands from the Hatari control socket
 */
-const char control_rcsid[] = "Hatari $Id: control.c,v 1.4 2008-07-22 20:34:28 thothy Exp $";
+const char control_rcsid[] = "Hatari $Id: control.c,v 1.5 2008-07-30 16:48:33 eerot Exp $";
 
 #include "config.h"
 #if HAVE_UNIX_DOMAIN_SOCKETS
@@ -21,18 +21,27 @@ const char control_rcsid[] = "Hatari $Id: control.c,v 1.4 2008-07-22 20:34:28 th
 
 #include "main.h"
 #include "change.h"
+#include "configuration.h"
 #include "control.h"
 #include "debugui.h"
 #include "file.h"
 #include "ikbd.h"
 #include "keymap.h"
 #include "log.h"
+#include "midi.h"
+#include "printer.h"
+#include "rs232.h"
 #include "shortcut.h"
 #include "str.h"
 
+typedef enum {
+	DO_DISABLE,
+	DO_ENABLE,
+	DO_TOGGLE
+} action_t;
+
 /* socket from which control command line options are read */
 static int ControlSocket;
-static FILE *ControlFile;
 /* Whether to send embedded window info */
 static bool ControlSendEmbedInfo;
 
@@ -82,8 +91,8 @@ static bool Control_InsertKey(const char *event)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Parse event string and synthetize corresponding event to emulation
- * Return FALSE if parsing failed, TRUE otherwise
+ * Parse event name and synthetize corresponding event to emulation
+ * Return FALSE if name parsing failed, TRUE otherwise
  * 
  * This can be used by external Hatari UI(s) on devices which input
  * methods differ from normal keyboard and mouse, such as high DPI
@@ -117,10 +126,143 @@ static bool Control_InsertEvent(const char *event)
 	return FALSE;	
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Parse device name and enable/disable/toggle & init/uninit it according
+ * to action.  Return FALSE if name parsing failed, TRUE otherwise
+ */
+static bool Control_DeviceAction(const char *name, action_t action)
+{
+	/* Note: e.g. RTC would require restarting emulation
+	 * and HD-boot setting emulation reboot.  Devices
+	 * listed here work just with init/uninit.
+	 */
+	struct {
+		const char *name;
+		bool *pvalue;
+		void(*init)(void);
+		void(*uninit)(void);
+	} item[] = {
+		{ "printer", &ConfigureParams.Printer.bEnablePrinting, Printer_Init, Printer_UnInit },
+		{ "rs232",   &ConfigureParams.RS232.bEnableRS232, RS232_Init, RS232_UnInit },
+		{ "midi",    &ConfigureParams.Midi.bEnableMidi, Midi_Init, Midi_UnInit },
+		{ NULL, NULL, NULL, NULL }
+	};
+	int i;
+	bool value;
+	for (i = 0; item[i].name; i++)
+	{
+		if (strcmp(name, item[i].name) == 0)
+		{
+			switch (action) {
+			case DO_TOGGLE:
+				value = !*(item[i].pvalue);
+				break;
+			case DO_ENABLE:
+				value = TRUE;
+				break;
+			case DO_DISABLE:
+			default:
+				value = FALSE;
+				break;
+			}
+			*(item[i].pvalue) = value;
+			if (value) {
+				item[i].init();
+			} else {
+				item[i].uninit();
+			}
+			fprintf(stderr, "%s: %s\n", name, value?"ON":"OFF");
+			return TRUE;
+		}
+	}
+	fprintf(stderr, "WARNING: unknown device '%s'\n\n", name);
+	fprintf(stderr, "Accepted devices are:\n");
+	for (i = 0; item[i].name; i++)
+	{
+		fprintf(stderr, "- %s\n", item[i].name);
+	}
+	return FALSE;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
- * Parse Hatari option/shortcut/event command buffer.
+ * Parse path type name and set the path to given value.
+ * Return FALSE if name parsing failed, TRUE otherwise
+ */
+static bool Control_SetPath(char *name)
+{
+	struct {
+		const char *name;
+		char *path;
+	} item[] = {
+		{ "memauto",  ConfigureParams.Memory.szAutoSaveFileName },
+		{ "memsave",  ConfigureParams.Memory.szMemoryCaptureFileName },
+		{ "midiout",  ConfigureParams.Midi.szMidiOutFileName },
+		{ "printout", ConfigureParams.Printer.szPrintToFileName },
+		{ "soundout", ConfigureParams.Sound.szYMCaptureFileName },
+		{ "rs232in",  ConfigureParams.RS232.szInFileName },
+		{ "rs232out", ConfigureParams.RS232.szOutFileName },
+		{ NULL, NULL }
+	};
+	int i;
+	char *arg;
+	const char *value;
+	
+	/* argument? */
+	arg = strchr(name, ' ');
+	if (arg) {
+		*arg = '\0';
+		value = Str_Trim(arg+1);
+	} else {
+		return FALSE;
+	}
+	
+	for (i = 0; item[i].name; i++)
+	{
+		if (strcmp(name, item[i].name) == 0)
+		{
+			fprintf(stderr, "%s: %s -> %s\n", name, item[i].path, value);
+			strncpy(item[i].path, value, FILENAME_MAX-1);
+			return TRUE;
+		}
+	}
+	fprintf(stderr, "WARNING: unknown path type '%s'\n\n", name);
+	fprintf(stderr, "Accepted paths types are:\n");
+	for (i = 0; item[i].name; i++)
+	{
+		fprintf(stderr, "- %s\n", item[i].name);
+	}
+	return FALSE;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Show Hatari remote usage info and return FALSE
+ */
+static bool Control_Usage(const char *cmd)
+{
+	fprintf(stderr, "ERROR: unrecognized hatari command: '%s'", cmd);
+	fprintf(stderr,
+		"Supported commands are:\n"
+		"- hatari-debug <Debug UI command>\n"
+		"- hatari-event <event to simulate>\n"
+		"- hatari-option <command line options>\n"
+		"- hatari-enable/disable/toggle <device name>\n"
+		"- hatari-path <config name> <new path>\n"
+		"- hatari-shortcut <shortcut name>\n"
+		"- hatari-embed-info\n"
+		"- hatari-stop\n"
+		"- hatari-cont\n"
+		"The last two can be used to stop and continue the Hatari emulation.\n"
+		"All commands need to be separated by newlines.\n"
+		);
+	return FALSE;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Parse Hatari debug/event/option/toggle/path/shortcut command buffer.
  * Given buffer is modified in-place.
  * 
  * Returns TRUE until it's OK to return back to emulation
@@ -128,7 +270,7 @@ static bool Control_InsertEvent(const char *event)
 static bool Control_ProcessBuffer(char *buffer)
 {
 	static bool paused;
-	char *cmd, *cmdend;
+	char *cmd, *cmdend, *arg;
 	int ok = TRUE;
 	
 	cmd = buffer;
@@ -138,42 +280,49 @@ static bool Control_ProcessBuffer(char *buffer)
 		if (cmdend) {
 			*cmdend = '\0';
 		}
-		/* process... */
-		if (strncmp(cmd, "hatari-debug ", 13) == 0) {
-			fprintf(stderr, "%s\n", cmd);
-			ok = DebugUI_ParseCommand(Str_Trim(cmd+13));
-		} else if (strncmp(cmd, "hatari-event ", 13) == 0) {
-			ok = Control_InsertEvent(Str_Trim(cmd+13));
-		} else if (strncmp(cmd, "hatari-option ", 14) == 0) {
-			ok = Change_ApplyCommandline(cmd+14);
-		} else if (strncmp(cmd, "hatari-shortcut ", 16) == 0) {
-			ok = Shortcut_Invoke(Str_Trim(cmd+16));
-		} else if (strcmp(cmd, "hatari-embed-info") == 0) {
-			fprintf(stderr, "Embedded window ID change messages = ON\n");
-			ControlSendEmbedInfo = TRUE;
-		} else if (strcmp(cmd, "hatari-stop") == 0) {
-			if (!paused) {
-				fprintf(stderr, "Hatari emulation stopped\n");
-				paused = TRUE;
-			}
-		} else if (strcmp(cmd, "hatari-cont") == 0) {
-			if (paused) {
-				fprintf(stderr, "Hatari emulation continued\n");
-				paused = FALSE;
+		/* arguments? */
+		arg = strchr(cmd, ' ');
+		if (arg) {
+			*arg = '\0';
+			arg = Str_Trim(arg+1);
+		}
+		if (arg) {
+			if (strcmp(cmd, "hatari-option") == 0) {
+				ok = Change_ApplyCommandline(arg);
+			} else if (strcmp(cmd, "hatari-debug") == 0) {
+				ok = DebugUI_ParseCommand(arg);
+			} else if (strcmp(cmd, "hatari-shortcut") == 0) {
+				ok = Shortcut_Invoke(arg);
+			} else if (strcmp(cmd, "hatari-event") == 0) {
+				ok = Control_InsertEvent(arg);
+			} else if (strcmp(cmd, "hatari-path") == 0) {
+				ok = Control_SetPath(arg);
+			} else if (strcmp(cmd, "hatari-enable") == 0) {
+				ok = Control_DeviceAction(arg, DO_ENABLE);
+			} else if (strcmp(cmd, "hatari-disable") == 0) {
+				ok = Control_DeviceAction(arg, DO_DISABLE);
+			} else if (strcmp(cmd, "hatari-toggle") == 0) {
+				ok = Control_DeviceAction(arg, DO_TOGGLE);
+			} else {
+				ok = Control_Usage(cmd);
 			}
 		} else {
-			fprintf(stderr, "ERROR: unrecognized hatari command: '%s'\n", cmd);
-			fprintf(stderr, "Supported commands are:\n");
-			fprintf(stderr, "- hatari-debug <Debug UI command>\n");
-			fprintf(stderr, "- hatari-event <event to simulate>\n");
-			fprintf(stderr, "- hatari-option <command line options>\n");
-			fprintf(stderr, "- hatari-shortcut <shortcut name>\n");
-			fprintf(stderr, "- hatari-embed-info\n");
-			fprintf(stderr, "- hatari-stop\n");
-			fprintf(stderr, "- hatari-cont\n");
-			fprintf(stderr, "The last two can be used to stop and continue the Hatari emulation.\n");
-			fprintf(stderr, "All commands need to be separated by newlines.\n");
-			ok = FALSE;
+			if (strcmp(cmd, "hatari-embed-info") == 0) {
+				fprintf(stderr, "Embedded window ID change messages = ON\n");
+				ControlSendEmbedInfo = TRUE;
+			} else if (strcmp(cmd, "hatari-stop") == 0) {
+				if (!paused) {
+					fprintf(stderr, "Hatari emulation stopped\n");
+					paused = TRUE;
+				}
+			} else if (strcmp(cmd, "hatari-cont") == 0) {
+				if (paused) {
+					fprintf(stderr, "Hatari emulation continued\n");
+					paused = FALSE;
+				}
+			} else {
+				ok = Control_Usage(cmd);
+			}
 		}
 		if (cmdend) {
 			cmd = cmdend + 1;
@@ -201,8 +350,6 @@ void Control_CheckUpdates(void)
 	/* socket of file? */
 	if (ControlSocket) {
 		sock = ControlSocket;
-	} else if (ControlFile) {
-		sock = fileno(ControlFile);
 	} else {
 		return;
 	}
@@ -235,12 +382,8 @@ void Control_CheckUpdates(void)
 		}
 		if (bytes == 0) {
 			/* closed */
-			if (ControlSocket) {
-				close(ControlSocket);
-				ControlSocket = 0;
-			} else {
-				ControlFile = NULL;
-			}
+			close(ControlSocket);
+			ControlSocket = 0;
 			return;
 		}
 		buffer[bytes] = '\0';
@@ -252,19 +395,13 @@ void Control_CheckUpdates(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Open given control socket.  "stdin" is opened as file.
+ * Open given control socket.
  * Return NULL for success, otherwise an error string
  */
 const char *Control_SetSocket(const char *socketpath)
 {
 	struct sockaddr_un address;
 	int newsock;
-
-	if (strcmp(socketpath, "stdin") == 0)
-	{
-		ControlFile = stdin;
-		return NULL;
-	}
 	
 	newsock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (newsock < 0)
@@ -349,7 +486,6 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 		XMapWindow(display, wm_win);
 	} else {
 		char buffer[12];  /* 32-bits in hex (+ '\r') + '\n' + '\0' */
-		int sock;
 
 		/* hide WM window for Hatari */
 		XUnmapWindow(display, wm_win);
@@ -357,21 +493,11 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 		XReparentWindow(display, sdl_win, parent_win, 0, 0);
 
 		/* whether to send new window size */
-		if (ControlSendEmbedInfo) {
-			/* socket or file? */
-			if (ControlSocket) {
-				sock = ControlSocket;
-			} else if (ControlFile) {
-				sock = fileno(ControlFile);
-			} else {
-				sock = 0;
-			}
-			if (sock) {
-				fprintf(stderr, "New %dx%d SDL window with ID: %x\n",
-					width, height, (int)sdl_win);
-				sprintf(buffer, "%dx%d", width, height);
-				write(sock, buffer, strlen(buffer));
-			}
+		if (ControlSendEmbedInfo && ControlSocket) {
+			fprintf(stderr, "New %dx%d SDL window with ID: %lx\n",
+				width, height, sdl_win);
+			sprintf(buffer, "%dx%d", width, height);
+			write(ControlSocket, buffer, strlen(buffer));
 		}
 	}
 	info.info.x11.unlock_func();
