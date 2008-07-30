@@ -62,7 +62,7 @@ Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
 <ul>
   <li><a href="#Introduction">Introduction</a>
   <ul>
-    <li><a href="#Notes">Notes</a>
+    <li><a href="#Notes">Compatibility notes</a>
   </ul>
   <li><a href="#ST">ST software compatibility list</a>
   <ul>
@@ -95,194 +95,186 @@ Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
 
 <a name="Introduction"></a><h2>Introduction</h2>
 
-<p>This is a little compilation of what Atari software does work in
-Hatari. It is by no means finished.</p>
+<p>Here are lists of Atari software that have been tested with
+different Hatari versions and configurations.  <em>The lists concentrate
+mainly on software that has (historically had) problems working in
+Hatari or provide good regression test-cases for some specific
+technical emulation issues</em>, but some well known other programs
+are also listed.</p>
 
-<p>First is listed software (games, demos and applications) that work
-on normal STs, after them is listed STE only software that has been
-tested with the current STE hardware emulation.
-Then there are a few TT-only games and demos, and finally a list of
-somewhat working Falcon games, demos and applications.</p>
+<p>First is listed software (games, demos and applications) for normal
+STs, after them is listed STE software.  Then there are a few TT-only
+games and demos, and finally a list of somewhat working Falcon games,
+demos and applications.</p>
+
+<p>If something that works on the real hardware, doesn't work properly
+in Hatari and is missing from these lists, please mail hatari-devel mailin
+g list so that we can add it here.  Current issues in the software are
+<em>highlighted</em> in the lists below.</p>
 
 
-<a name="Notes"></a><h3>Notes</h3>
+<a name="Notes"></a><h3>Compatibility notes</h3>
 
-<p>If something listed here doesn't work as expected, please
-check that you have enabled the "Slower but more compatible CPU"
-Hatari system option (and that the machine type is correct).</p>
+<p>Before reporting something not working as expected, please
+check few issues:
+<ul>
 
-<p>Some games and demos may not work if you have specified too little
-or too much memory.  For ST, 1MB memory size is usually fairly safe.</p>
+<li>That you have enabled the "Slower but more compatible CPU"
+Hatari system option and that the machine type (ST/STe/TT/Falcon)
+is correct.</li>
 
-<p>Especially ST demos and games may require some specific TOS version
-and not work at all with others. If you notice that this information
-is missing for some listed game or demo, please send mail to the
-hatari-devel mailing list about it so that we can update the list.</p>
+<li>Amount of memory. Some games and demos may not work if you have
+specified too little or too much memory.  For ST, 1MB memory size
+is usually fairly safe.</li>
 
-<p>Most of the (ST/e) games and almost any of the (ST/e) demos do
-NOT work with EmuTOS.  Main reason for this is its missing Line-A
-emulation.</p>
+<li>TOS version.  ST demos and games may require some specific TOS
+version and not work at all with others. If you notice that this
+information is missing for some listed game or demo, please send mail
+to the hatari-devel mailing list.
+<ul>
+<li>Note that only few of the games and almost none of the demos
+work with the free EmuTOS TOS, especially for ST/e.  Main reason 
+for this is the missing Line-A emulation in EmuTOS.</li>
+</ul>
+</li>
+
+</ul>
 
 
 <a name="ST"></a><h2>ST software compatibility list</h2>
 
-<p>Almost all ST games work with the emulation except for some quality
-issues with the sound emulation. MIDI input is missing for music
-applications (and for few midi-networked games). Some very rare demos
-would need more cycle accurate emulation and better IKBD emulation.
-By default everything that works on a real ST should work also in
-Hatari.</p>
+<p>There may be minor sound quality issues in some games and demos.
+Hatari also lacks support for MIDI input (output is supported) without
+which sequencing software (and few midi-networked games) isn't very
+useful. Otherwise
+<b>everything that works on a real ST should work also in Hatari</b>.
+</p>
 
 <a name="ST games"></a><h4>ST games</h4>
 
 <table border="1" cellpadding="3">
-  <caption align="bottom">tested games</caption>
+  <caption align="bottom">Tested ST games</caption>
   <tbody>
     <tr class="backdropped">
       <td align="center">Game</td>
-      <td align="center">Working</td>
-      <td align="center">Sound</td>
-      <td align="center">Comment</td>
+      <td align="center">Hatari version</td>
+      <td align="center">Notes</td>
     </tr>
     <tr>
       <td>Eliminator</td>
-      <td>yes</td>
-      <td>perfect</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Speedball</td>
-      <td>yes</td>
-      <td>perfect</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Xenon</td>
-      <td>yes</td>
-      <td>music ok - bullets and explosions sound wierd</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
+      <td><em>Bullets and explosions sound wierd</em></td>
     </tr>
     <tr>
       <td>Bubble Bobble</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>F15 Strike Eagle 2</td>
-      <td>yes</td>
-      <td>ok</td>
-      <td>keyboard emulation seems to be dodgy</td>
+      <td>before 1.0</td>
+      <td><em>Keyboard emulation seems to be dodgy</em></td>
     </tr>
     <tr>
       <td>Rick Dangerous</td>
-      <td>yes</td>
-      <td>perfect</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Slayer</td>
-      <td>yes</td>
-      <td>ok</td>
-      <td>raster fx at highscore entry dodgy</td>
-    </tr>
-    <tr>
-      <td>Lethal Xcess</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
-      <td>Needs Hatari v1.0 or later to work. Uses sync-scrolling in ST mode and STE HW scrolling in STE mode.</td>
+      <td>before 1.0</td>
+      <td><em>Raster fx at highscore entry dodgy</em></td>
     </tr>
     <tr>
       <td>Star Goose</td>
-      <td>yes</td>
-      <td>music ok - bullets and explosions sound dodgy</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
+      <td><em>Bullets and explosions sound dodgy</em></td>
     </tr>
     <tr>
       <td>Xenon 2 - Megablast</td>
-      <td>yes</td>
-      <td>nearly perfect (including sampled intro)</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Metal Mutant</td>
-      <td>yes</td>
-      <td>seems ok</td>
-      <td>some color effects in the lower screen seem buggy</td>
+      <td>before 1.0</td>
+      <td><em>Some color effects in the lower screen seem buggy</em></td>
     </tr>
     <tr>
       <td>Defenders Of The Earth</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Nebulus</td>
-      <td>yes</td>
-      <td>music ok - trapdoors sound dodgy</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
+      <td><em>Trapdoors sound dodgy</em></td>
     </tr>
     <tr>
       <td>Leander</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Navy Seals</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Armalyte</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
-      <td>&nbsp;</td>
-    </tr>
-    <tr>
-      <td>Wings Of Death</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
-      <td>works in STE mode too</td>
     </tr>
     <tr>
       <td>Toki</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Alien World</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Leisure Suit Larry 2</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Everything works, even Roland-MT32 MIDI music</td>
     </tr>
     <tr>
       <td>Pirates!</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Game also supports <a href="#midinotes">MIDI music</a></td>
     </tr>
     <tr>
       <td>Skweek</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Does not work with cartridge / HD emulation</td>
     </tr>
     <tr>
+      <td>Wings Of Death</td>
+      <td>1.0</td>
+      <td>works in STE mode too</td>
+    </tr>
+    <tr>
+      <td>Lethal Xcess</td>
+      <td>1.0</td>
+      <td>Uses sync-scrolling in ST mode and STE HW scrolling in STE mode.</td>
+    </tr>
+    <tr>
       <td>Enchanted Land</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>1.0</td>
       <td>
-        Some version do not load at all, others work fine
-        (with Hatari v1.0 or later).
+        <em>Some versions do not load at all</em>, others work fine.<br>
         This game heavily uses sync-scrolling techniques!
       </td>
     </tr>
@@ -291,147 +283,117 @@ Hatari.</p>
 
 <a name="ST demos"></a><h4>ST demos</h4>
 
+<p>Some (very) rare demos try to install IKBD code.  Hatari doesn't have full
+6301 emulator, but has specific code to handle these particular demos.
+They are marked with '*'.</p>
+
 <table border="1" cellpadding="3">
-  <caption align="bottom">tested demos</caption>
+  <caption align="bottom">Tested ST demos</caption>
   <tbody>
     <tr class="backdropped">
       <td align="center">Demo</td>
-      <td align="center">Working</td>
-      <td align="center">Sound</td>
-      <td align="center">Comment</td>
+      <td align="center">Hatari version</td>
+      <td align="center">Notes</td>
     </tr>
     <tr>
       <td>Fantasia (by Dune/Sector1)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Oddstuff (by Dune/Sector1)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Flickers with ST (not with STe) emulation</td>
     </tr>
     <tr>
       <td>If pigs could fly (by Syndicate)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>LongScreen (by X-Troll)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Overdose (by Aggression)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Does not work with cartridge / HD emulation</td>
     </tr>
     <tr>
       <td>Virtual Escape (by Equinox)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Posh (by Checkpoint)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Flipo (by Oxygene)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Syntax Terror (by DeltaForce)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Hallucinations (by Reservoir Gods)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Sweety (by DHS)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Does not work with HD emulation</td>
     </tr>
     <tr>
       <td>Popstars (chiptunes by YmRockerz)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Sound works only with Hatari version 0.80 and later</td>
     </tr>
     <tr>
       <td>B.I.G-demo (musicdemo by Exceptions)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>SoWatt (by CareBears)</td>
-      <td>Yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Works fully with Hatari version 0.92 and later</td>
     </tr>
     <tr>
       <td>Punish your machine</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Works fully with Hatari version 0.92 and later</td>
     </tr>
     <tr>
-      <td>Froggies over the Fence</td>
-      <td>partially</td>
+      <td>Froggies over the Fence*</td>
+      <td>1.0</td>
       <td>&nbsp;</td>
-      <td>
-        Needs TOS 1.02 and Hatari v1.0 or later to work.
-        Mouse/keyboard does not work (demo tries to install
-        IKBD code, so it needs a full 6301 emulator)
-      </td>
     </tr>
     <tr>
       <td>Oh no more Froggies</td>
-      <td>yes</td>
-      <td>partially</td>
-      <td>Needs Hatari v1.0 or later to work, no more music after a while</td>
+      <td>1.0</td>
+      <td><em>No more music after a while</em></td>
     </tr>
     <tr>
-      <td>Dragonnels</td>
-      <td>partially</td>
+      <td>Dragonnels*</td>
+      <td>1.0</td>
       <td>&nbsp;</td>
-      <td>
-        Keyboard does not work (demo tries to install
-        IKBD code, so it needs a full 6301 emulator)
-      </td>
     </tr>
     <tr>
-      <td>Transbeauce II</td>
-      <td>partially</td>
+      <td>Transbeauce II*</td>
+      <td>1.0</td>
       <td>&nbsp;</td>
-      <td>
-        Crashes before main menu (demo tries to install
-        IKBD code, so it needs a full 6301 emulator)
-      </td>
     </tr>
     <tr>
       <td>Dark Side of the Spoon (by ULM)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
-      <td>
-        Needs TOS 1.02 and Hatari v1.0 or later to work.
-        Lots of fullscreens and sync-scrolling
-      </td>
+      <td>1.0</td>
+      <td>Needs TOS 1.02. Lots of fullscreens and sync-scrolling</td>
     </tr>
   </tbody>
 </table>
@@ -442,47 +404,46 @@ Hatari.</p>
 configuration or data files are not writable.</p>
 
 <table border="1" cellpadding="3">
-  <caption align="bottom">tested applications</caption>
+  <caption align="bottom">Tested applications</caption>
   <tbody>
     <tr class="backdropped">
       <td align="center">Application</td>
-      <td align="center">Working</td>
-      <td align="center">Comment</td>
+      <td align="center">Hatari version</td>
+      <td align="center">Notes</td>
     </tr>
     <tr class="backdropped">
       <td colspan="3" align="right"><i>Programming</i></td>
     </tr>
     <tr>
       <td>DevPac 2.2</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>MonST crashy</td>
     </tr>
     <tr>
       <td>Turbo Assembler</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>
-        Due to a bug you need to have a proper disk image inserted into drive
-        A:. Works otherwise!
+        Due to a bug you need to have a proper disk image inserted into drive A.
       </td>
     </tr>
     <tr>
       <td>GFABASIC 3.6TT</td>
-      <td>yes</td>
-      <td>MENU.PRG does not like harddisks. Use diskimages for compiling.</td>
+      <td>before 1.0</td>
+      <td>MENU.PRG does not like harddisks. Use disk images for compiling.</td>
     </tr>
     <tr>
       <td>ST Basic</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Gulam shell</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Orcs Resource editor</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
@@ -490,7 +451,7 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Crackart</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>
         Harddisk access does not work with GEMDOS emulation
          - fine with disk images
@@ -498,27 +459,27 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>ImCon</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Mgif</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Neochrome</td>
-      <td>yes</td>
-      <td>rasters sometimes unstable</td>
+      <td>before 1.0</td>
+      <td><em>Rasters sometimes unstable</em></td>
     </tr>
     <tr>
       <td>OCR</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>Didn't try scanning</td>
     </tr>
     <tr>
       <td>Speed Of Light</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
@@ -526,42 +487,42 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>MusicMon 2</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Noise Tracker</td>
-      <td>yes</td>
-      <td>Sound is very noisy, and didn't work with v0.80 (and earlier?)</td>
+      <td>before 1.0</td>
+      <td><em>Sound is very noisy</em></td>
     </tr>
     <tr>
       <td>Protracker</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Quartet</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>SidSound Designer</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Accompanist<br>(Henry Cosh Sequencer)</td>
-      <td>partially</td>
+      <td>before 1.0</td>
       <td><a href="#midinotes">MIDI output</a> works, input doesn't</td>
     </tr>
     <tr>
       <td>Cubase Lite</td>
-      <td>partially</td>
+      <td>before 1.0</td>
       <td><a href="#midinotes">MIDI output</a> works, input doesn't</td>
     </tr>
     <tr>
       <td>Sequencer One</td>
-      <td>partially</td>
+      <td>before 1.0</td>
       <td>Both <a href="#midinotes">MIDI output</a> and sound work, MIDI input doesn't</td>
     </tr>
     <tr class="backdropped">
@@ -569,17 +530,17 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Tempus</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Qed editor</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Everest editor</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
@@ -587,28 +548,28 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Opus spreadsheet</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>SBase database</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Sheet spreadsheet</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Calamus SL (demo)</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>Nice with Hatari 32Mhz 68020+FPU STE emulation at 1024x768x1
       resolution...</td>
     </tr>
     <tr>
       <td>Outline Art 3 (demo)</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
@@ -616,17 +577,17 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>CAB browser</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Connect</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Kivi QWK Reader</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
@@ -634,12 +595,12 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Teradesk desktop</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Thing desktop</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
@@ -647,17 +608,17 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Euler</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Minidraft</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Molsys</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
@@ -665,37 +626,37 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Revenge Document Displayer</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>ST-Guide</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>ST-Zip</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>STCat</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Lharc Shell</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>TwoInOne</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Sagrotan viruskiller</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr class="backdropped">
@@ -703,7 +664,7 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>ZX Spectrum emulator</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>Installer needs to be run from a floppy image and (HD)
       install directory needs to be already present. After installing,
       use unzip to get zero byte sized files from the original
@@ -725,11 +686,10 @@ supports ALSA). For instructions, see alsa-midi.txt file.</p>
 
 <a name="STE"></a><h2>STE software compatibility list</h2>
 
-<p>By default everything should work with the STE emulation.
-If it doesn't and is missing from these lists, please mail
-hatari-devel so that we can add it here. In addition to compatibility
-issues with the ST emulation, for some STe demos, an additional
-generic issue is the accuracy of Blitter emulation timings.</p>
+<p>By default everything should work with the STE emulation.  The lists
+below contain nearly all the STE specific software that the developers
+could get their hands on...</p>
+
 
 <a name="STE games"></a><h4>STE games</h4>
 
@@ -737,206 +697,174 @@ generic issue is the accuracy of Blitter emulation timings.</p>
 in Hatari.  Most of these games work only on STE, but here are also some
 games which work (or have a version that works) also on ST, i.e. they
 are just STE enhanced.  These are marked with '*'.</p>
+
 <table border="1" cellpadding="3">
-  <caption align="bottom">tested STE games</caption>
+  <caption align="bottom">Tested STE games</caption>
   <tbody>
     <tr class="backdropped">
       <td align="center">Title</td>
-      <td align="center">Working</td>
-      <td align="center">Sound</td>
-      <td align="center">Comment</td>
+      <td align="center">Hatari version</td>
+      <td align="center">Notes</td>
     </tr>
     <tr>
       <td>Alien Blast</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Astrodia*</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Blitter support doesn't work with EmuTOS, only real STE TOS</td>
     </tr>
     <tr>
       <td>Battletris+</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Blat!</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Bombaman</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Breakdance</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
-      <td><em>THE</em> ultimate scene game</td>
+      <td>before 1.0</td>
+      <td>THE ultimate scene game</td>
     </tr>
     <tr>
       <td>Chronicles of Omega*</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Chaos Engine (demo)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>ChuChu Rocket</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>needs to be run from disk image</td>
     </tr>
     <tr>
       <td>Dynabusters+</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>H.E.R.O. 2</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Requires 4MB RAM</td>
     </tr>
     <tr>
       <td>Leavin' Teramis*</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Works <em>only</em> in STE mode</td>
     </tr>
     <tr>
       <td>Manga Puzzle</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>No Limit II</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Obsession (demo)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Opens top, left (with STE shifter bug) and bottom borders</td>
     </tr>
     <tr>
       <td>Operation Garfield</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Pacman on E</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Penta*</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Blitter, DMA audio and STE fadings do work properly</td>
     </tr>
     <tr>
       <td>Pooz*</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Uses STE DMA, blitter and palette</td>
     </tr>
     <tr>
       <td>Power Up*</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
-      <td>Problems with music, but DMA sound effects work</td>
+      <td>before 1.0</td>
+      <td><em>Problems with music</em>, but DMA sound effects work</td>
     </tr>
     <tr>
       <td>Roger</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>1.0</td>
       <td>Hatari version &gt; v1.0.1 needed for correct blitter timings.
           Needs to be run from a disk image</td>
     </tr>
     <tr>
       <td>Skulls</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Opens right border</td>
     </tr>
     <tr>
       <td>Starball*</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Uses DMA sound</td>
     </tr>
     <tr>
       <td>Stardust (tunnel demo)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>STrEet Fighter 2</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Uses blitter, HW scrolling and DMA sound</td>
     </tr>
     <tr>
       <td>Stupid Balloon game</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Substation (demo)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>TomTar</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Utopos (v1.5 demo)</td>
-      <td>partially</td>
-      <td>&nbsp;</td>
-      <td>Screen flickers and joysticks don't work properly</td>
+      <td>1.0</td>
+      <td><em>Screen flickers and joysticks don't work properly</em></td>
     </tr>
     <tr>
       <td>Ultimate Arena</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Wolfenstein 3D*</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
-      <td>v0.8 needs to be run from a disk image, STE DMA sound</td>
+      <td>before 1.0</td>
+      <td>v0.8 needs to be run from a disk image, uses DMA sound on STE</td>
     </tr>
     <tr>
       <td>Zool (demo)</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>1.0</td>
       <td>&nbsp;</td>
     </tr>
   </tbody>
@@ -944,181 +872,154 @@ are just STE enhanced.  These are marked with '*'.</p>
 
 <a name="STE demos"></a><h4>STE demos</h4>
 
-<p>Some tested STE demos and intros</p>
+<p>Blitter emulation cycle-accuracy is an issue for some demos.</p>
+
 <table border="1" cellpadding="3">
-  <caption align="bottom">tested STE demos</caption>
+  <caption align="bottom">Tested STE demos</caption>
   <tbody>
     <tr class="backdropped">
-      <td align="center">Title</td>
-      <td align="center">Working</td>
-      <td align="center">Sound</td>
-      <td align="center">Comment</td>
+      <td align="center">Demo</td>
+      <td align="center">Hatari version</td>
+      <td align="center">Notes</td>
     </tr>
     <tr>
       <td>DHS 20 years (collection)*</td>
-      <td>Yes</td>
-      <td>&nbsp;</td>
-      <td>Needs Hatari v1.0, you may need to reset between screens</td>
+      <td>1.0</td>
+      <td>You may need to reset between screens</td>
     </tr>
     <tr>
       <td>Aggression: Braindamage</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
-      <td>The labyrinth screen (bottom lines) does not show up correctly yet,
-        maybe due to bad blitter timing emulation.</td>
+      <td>1.0</td>
+      <td><em>The labyrinth screen (bottom lines) does not show up correctly yet,
+        maybe due to bad blitter timing emulation.</em></td>
     </tr>
     <tr>
       <td>Armada: Armada is Dead</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>1.0</td>
       <td>Hatari 1.0 needed for lower border to show correctly</td>
     </tr>
     <tr>
       <td>T. Barker: Fantasia</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>For any other than TOS 1.6, you need to use fantfix.prg first</td>
     </tr>
     <tr>
       <td>T. Barker: TT-Wars STE</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>DHS: Tyranny &amp; Massacre</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>GGN: Alive</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Ice: Extacy</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Imagina: 1992 X-mas demo</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
-      <td>flickers without frameskip</td>
+      <td>before 1.0</td>
+      <td>Flickers without frameskip</td>
     </tr>
     <tr>
       <td>MJJ-Prod: 1st Step</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>New Core: Beyond Deadline</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>N.L.C: Techno Drugs</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Omega: Grotesque</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Paradox: X-mas 1994 demo</td>
-      <td>Partially</td>
-      <td>&nbsp;</td>
-      <td>Fullscreen scroller doesn't work</td>
+      <td>before 1.0</td>
+      <td><em>Fullscreen scroller doesn't work</em></td>
     </tr>
     <tr>
       <td>Paradox: Pacemaker</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>1.0</td>
       <td>
-        Some garbage in the end screen when the demo has been started from
-        hard disk. End screen currently also fails to open the borders properly.
+        <em>Some garbage in the end screen when the demo has been started from
+        hard disk. End screen currently also fails to open the borders properly.</em>
         Stops in the middle with EmuTOS.</td>
     </tr>
     <tr>
       <td>Paradox: HighResMode</td>
-      <td>no</td>
-      <td>&nbsp;</td>
-      <td>Screen is out of sync.  This mode is not supported by Hatari.</td>
+      <td>1.0</td>
+      <td><em>Screen is out of sync.  This mode is not supported by Hatari.</em></td>
     </tr>
     <tr>
       <td>Reservoir Gods: Mind Rewind</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Opens all borders, heavily abuses horizontal STE HW scrolling</td>
     </tr>
     <tr>
       <td>Reservoir Gods: Grimey</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Syntax: Reanimation</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>MJJ-Prod: Tribute To Rainbow Tos</td>
-      <td>partially</td>
-      <td>&nbsp;</td>
-      <td>screen corrupted, Blittermania does not work but the code
-          does not crash nor lockup</td>
+      <td>before 1.0</td>
+      <td><em>screen corrupted, Blittermania does not work but the code
+          does not crash nor lockup</em></td>
     </tr>
     <tr>
       <td>MJJ-Prod: Badger Badger</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Armada: RGBRuler demo</td>
-      <td>partially</td>
-      <td>&nbsp;</td>
-      <td>doesn't look right</td>
+      <td>1.0</td>
+      <td><em>Doesn't look right</em></td>
     </tr>
     <tr>
       <td>New Core: Core Flakes</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>1.0</td>
       <td>Some garbage on first overscan line in text zoomer, otherwise OK</td>
     </tr>
     <tr>
       <td>Percy of Light: VGA slideshow</td>
-      <td>partially</td>
-      <td>&nbsp;</td>
-      <td>doesn't look right</td>
+      <td>1.0</td>
+      <td><em>Doesn't look right</em></td>
     </tr>
     <tr>
       <td>Unit 17: EPSS</td>
-      <td>partially</td>
-      <td>&nbsp;</td>
-      <td>Fails to open the borders due to bad blitter timing emulation</td>
+      <td>before 1.0</td>
+      <td><em>Fails to open the borders due to bad blitter timing emulation</em></td>
     </tr>
     <tr>
       <td>Light: E605</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr>
     <tr>
       <td>GGN: The Sierpinski overdose 4K</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>1.0</td>
       <td>Uses blitter, requires med-rez</td>
     </tr>
   </tbody>
@@ -1131,33 +1032,28 @@ are just STE enhanced.  These are marked with '*'.</p>
   <caption align="bottom">tested STE applications</caption>
   <tbody>
     <tr class="backdropped">
-      <td align="center">Title</td>
-      <td align="center">Working</td>
-      <td align="center">Sound</td>
-      <td align="center">Comment</td>
+      <td align="center">Application</td>
+      <td align="center">Hatari version</td>
+      <td align="center">Notes</td>
     </tr>
     <tr>
       <td>MaxYMiser DMA</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>&nbsp;</td>
     </tr> 
     <tr>
       <td>Octalyzer</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>opens right and bottom borders, doesn't work with EmuTOS</td>
     </tr>
     <tr>
       <td>Protracker STE</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
-      <td>garbage at screen bottom, 50KHz replay duff</td>
+      <td>before 1.0</td>
+      <td>Garbage at screen bottom, 50KHz replay duff</td>
     </tr> 
     <tr>
       <td>Stretch</td>
-      <td>yes</td>
-      <td>&nbsp;</td>
+      <td>before 1.0</td>
       <td>Screen extender (like the famous Bigscreen). One of the few programs
           which uses STE hardware scrolling also in monochrome mode</td>
     </tr> 
@@ -1177,15 +1073,13 @@ this section lists only TT-specific games and demos.</p>
   <caption align="bottom">TT games</caption>
   <tbody>
     <tr class="backdropped">
-      <td align="center">Title</td>
-      <td align="center">Working</td>
-      <td align="center">Sound</td>
-      <td align="center">Comment</td>
+      <td align="center">Game</td>
+      <td align="center">Hatari version</td>
+      <td align="center">Notes</td>
     </tr>
     <tr>
       <td>Oxyd 2 TT</td>
-      <td>yes</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>Oxyd 2 in color</td>
     </tr>
   </tbody>
@@ -1197,21 +1091,18 @@ this section lists only TT-specific games and demos.</p>
   <caption align="bottom">TT demos</caption>
   <tbody>
     <tr class="backdropped">
-      <td align="center">Title</td>
-      <td align="center">Working</td>
-      <td align="center">Sound</td>
-      <td align="center">Comment</td>
+      <td align="center">Demo</td>
+      <td align="center">Hatari version</td>
+      <td align="center">Notes</td>
     </tr>
     <tr>
       <td>Beams demo TT-version</td>
-      <td>no</td>
-      <td>&nbsp;</td>
-      <td>Stops at startup screen</td>
+      <td>before 1.0</td>
+      <td><em>Doesn't work, stops at startup screen!</em></td>
     </tr>
     <tr>
       <td>TT-Wars</td>
-      <td>yes</td>
-      <td>yes</td>
+      <td>before 1.0</td>
       <td>Star Wars demo</td>
     </tr>
   </tbody>
@@ -1225,12 +1116,10 @@ DSP emulation (and even of the programs working, many would use DSP
 for music).  You can select between three different DSP emulation
 modes with the "--dsp" option:
 <ul>
-  <li><b>none</b>:  Most programs work best with this</li>
+  <li><b>none</b>:  Most programs work best with this.</li>
   <li><b>dummy</b>: Faked DSP response to DSP commands,
-      makes some demos to work</li>
-  <li><b>emu</b>:   Experimental DSP emulation. So far it just
-      makes programs to <i>stop</i> working. No program works better
-      with it, so by default it's not enabled when Hatari is built</li>
+      makes some demos to work.</li>
+  <li><b>emu</b>:   Experimental DSP emulation.</li>
 </ul>
 
 <p>The "dsp" column in tables below tells which DSP emulation
@@ -2085,7 +1974,7 @@ otherwise "-".</p>
 
 <a name="Falcon applications"></a><h4>Falcon applications</h4>
 
-<p>Here are listed some <i>Falcon specific</i> applications:</p>
+<p>Here are listed some <em>Falcon specific</em> applications:</p>
 <table border="1" cellpadding="3">
   <caption align="bottom">Falcon applications</caption>
   <tbody>
