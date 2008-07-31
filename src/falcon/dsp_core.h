@@ -23,6 +23,7 @@
 #define DSP_CORE_H
 
 #include <SDL.h>
+#include <SDL_thread.h>
 
 #ifdef __cplusplus
 extern "C" {
