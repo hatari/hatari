@@ -19,14 +19,14 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "araglue.h"
-#include "sysdeps.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <string.h>
 #include "math.h"
 #include "dsp_core.h"
 #include "dsp_cpu.h"
-
-#include <SDL.h>
-#include <SDL_thread.h>
 
 #ifndef M_PI
 #define M_PI	3.141592653589793238462643383279502
@@ -40,7 +40,7 @@
 #define DSP_DISASM_STATE 0		/* State changes */
 
 /* Execute DSP instructions till the DSP waits for a read/write */
-#define DSP_HOST_FORCEEXEC 0
+#define DSP_HOST_FORCEEXEC 1
 
 /* Init DSP emulation */
 void dsp_core_init(dsp_core_t *dsp_core)
@@ -52,35 +52,29 @@ void dsp_core_init(dsp_core_t *dsp_core)
 	memset(dsp_core->hostport, 0,sizeof(dsp_core->hostport));
 
 	/* Initialize Y:rom[0x0100-0x01ff] with a sin table */
-	{
-		float src;
-		int32 dest;
-
-		for (i=0;i<256;i++) {
-			src = (((float) i)*M_PI)/128.0;
-			dest = (int32) (sin(src) * 8388608.0); /* 1<<23 */
-			if (dest>8388607) {
-				dest = 8388607;
-			} else if (dest<-8388608) {
-				dest = -8388608;
-			}
-			dsp_core->rom[DSP_SPACE_Y][0x100+i]=dest & 0x00ffffff;
+	for (i=0;i<256;i++) {
+		float src = (((float) i)*M_PI)/128.0;
+		Sint32 dest = (Sint32) (sin(src) * 8388608.0); /* 1<<23 */
+		if (dest>8388607) {
+			dest = 8388607;
+		} else if (dest<-8388608) {
+			dest = -8388608;
 		}
+		dsp_core->rom[DSP_SPACE_Y][0x100+i]=dest & 0x00ffffff;
 	}
 
 	/* Initialize X:rom[0x0100-0x017f] with a mu-law table */
 	{
-		const uint16 mulaw_base[8]={
+		const Uint16 mulaw_base[8]={
 			0x7d7c, 0x3e7c, 0x1efc, 0x0f3c, 0x075c, 0x036c, 0x0174, 0x0078
 		};
 
-		uint32 value, offset, position;
-		int j;
+		Uint32 position = 0x0100;
+		Uint32 offset = 0x040000;
 
-		position = 0x0100;
-		offset = 0x040000;
 		for(i=0;i<8;i++) {
-			value = mulaw_base[i]<<8;
+			int j;
+			Uint32 value = mulaw_base[i]<<8;
 
 			for (j=0;j<16;j++) {
 				dsp_core->rom[DSP_SPACE_X][position++]=value;
@@ -93,26 +87,26 @@ void dsp_core_init(dsp_core_t *dsp_core)
 
 	/* Initialize X:rom[0x0180-0x01ff] with a a-law table */
 	{
-		const int32 multiply_base[8]={
+		const Sint32 multiply_base[8]={
 			0x1580, 0x0ac0, 0x5600, 0x2b00,
 			0x1580, 0x0058, 0x0560, 0x02b0
 		};
-		const int32 multiply_col[4]={0x10, 0x01, 0x04, 0x02};
-		const int32 multiply_line[4]={0x40, 0x04, 0x10, 0x08};
-		const int32 base_values[4]={0, -1, 2, 1};
-		uint32 pos=0x0180;
+		const Sint32 multiply_col[4]={0x10, 0x01, 0x04, 0x02};
+		const Sint32 multiply_line[4]={0x40, 0x04, 0x10, 0x08};
+		const Sint32 base_values[4]={0, -1, 2, 1};
+		Uint32 pos=0x0180;
 		
 		for (i=0;i<8;i++) {
-			int32 alawbase, j;
+			Sint32 alawbase, j;
 
 			alawbase = multiply_base[i]<<8;
 			for (j=0;j<4;j++) {
-				int32 alawbase1, k;
+				Sint32 alawbase1, k;
 				
 				alawbase1 = alawbase + ((base_values[j]*multiply_line[i & 3])<<12);
 
 				for (k=0;k<4;k++) {
-					int32 alawbase2;
+					Sint32 alawbase2;
 
 					alawbase2 = alawbase1 + ((base_values[k]*multiply_col[i & 3])<<12);
 
@@ -221,12 +215,12 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 }
 
 /* Change state of DSP emulation thread */
-void dsp_core_set_state(dsp_core_t *dsp_core, uint8 new_state)
+void dsp_core_set_state(dsp_core_t *dsp_core, int new_state)
 {
 	dsp_core_set_state_sem(dsp_core, new_state, 0);
 }
 
-void dsp_core_set_state_sem(dsp_core_t *dsp_core, uint8 new_state, int use_semaphore)
+void dsp_core_set_state_sem(dsp_core_t *dsp_core, int new_state, int use_semaphore)
 {
 	if (dsp_core->state == new_state) {
 		return;
@@ -293,9 +287,11 @@ static void dsp_core_force_exec(dsp_core_t *dsp_core)
 {
 	Uint32 start = SDL_GetTicks();
 
-	while ((dsp_core->state == DSP_RUNNING) && (SDL_GetTicks()-start<1000)) {
+	SDL_UnlockMutex(dsp_core->mutex);
+	while ((dsp_core->state == DSP_RUNNING) && (SDL_GetTicks()-start<100)) {
 		SDL_Delay(1);
 	}
+	SDL_LockMutex(dsp_core->mutex);
 }
 #endif
 
@@ -311,7 +307,7 @@ static void dsp_core_hostport_update_trdy(dsp_core_t *dsp_core)
 }
 
 /* Host port transfer ? (dsp->host) */
-void dsp_core_dsp2host(dsp_core_t *dsp_core)
+static void dsp_core_dsp2host(dsp_core_t *dsp_core)
 {
 	if (dsp_core->hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_RXDF)) {
 		return;
@@ -341,7 +337,7 @@ void dsp_core_dsp2host(dsp_core_t *dsp_core)
 }
 
 /* Host port transfer ? (host->dsp) */
-void dsp_core_host2dsp(dsp_core_t *dsp_core)
+static void dsp_core_host2dsp(dsp_core_t *dsp_core)
 {
 	if (dsp_core->hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_TXDE)) {
 		return;
@@ -374,8 +370,6 @@ void dsp_core_host2dsp(dsp_core_t *dsp_core)
 
 void dsp_core_hostport_dspread(dsp_core_t *dsp_core)
 {
-	SDL_LockMutex(dsp_core->mutex);
-
 	/* Clear HRDF bit to say that DSP has read */
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff-(1<<DSP_HOST_HSR_HRDF);
 #if DSP_DISASM_HOSTREAD
@@ -383,14 +377,10 @@ void dsp_core_hostport_dspread(dsp_core_t *dsp_core)
 #endif
 	dsp_core_hostport_update_trdy(dsp_core);
 	dsp_core_host2dsp(dsp_core);
-
-	SDL_UnlockMutex(dsp_core->mutex);
 }
 
 void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core)
 {
-	SDL_LockMutex(dsp_core->mutex);
-
 	/* Clear HTDE bit to say that DSP has written */
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff-(1<<DSP_HOST_HSR_HTDE);
 #if DSP_DISASM_HOSTWRITE
@@ -398,28 +388,20 @@ void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core)
 #endif
 
 	dsp_core_dsp2host(dsp_core);
-
-	SDL_UnlockMutex(dsp_core->mutex);
 }
 
 static void dsp_core_hostport_cpuread(dsp_core_t *dsp_core)
 {
-	SDL_LockMutex(dsp_core->mutex);
-
 	/* Clear RXDF bit to say that CPU has read */
 	dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
 #if DSP_DISASM_HOSTWRITE
 	fprintf(stderr, "Dsp: (D->H): Host RXDF cleared\n");
 #endif
 	dsp_core_dsp2host(dsp_core);
-
-	SDL_UnlockMutex(dsp_core->mutex);
 }
 
 static void dsp_core_hostport_cpuwrite(dsp_core_t *dsp_core)
 {
-	SDL_LockMutex(dsp_core->mutex);
-
 	/* Clear TXDE to say that CPU has written */
 	dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_TXDE);
 #if DSP_DISASM_HOSTREAD
@@ -428,16 +410,15 @@ static void dsp_core_hostport_cpuwrite(dsp_core_t *dsp_core)
 
 	dsp_core_hostport_update_trdy(dsp_core);
 	dsp_core_host2dsp(dsp_core);
-
-	SDL_UnlockMutex(dsp_core->mutex);
 }
 
 /* Read/writes on host port */
 
-uint8 dsp_core_read_host(dsp_core_t *dsp_core, uint8 addr)
+Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr)
 {
-	uint8 value = 0;
+	Uint8 value = 0;
 
+	SDL_LockMutex(dsp_core->mutex);
 	switch(addr) {
 		case CPU_HOST_ICR:
 		case CPU_HOST_CVR:
@@ -470,12 +451,14 @@ uint8 dsp_core_read_host(dsp_core_t *dsp_core, uint8 addr)
 
 			break;
 	}
+	SDL_UnlockMutex(dsp_core->mutex);
 
 	return value;
 }
 
-void dsp_core_write_host(dsp_core_t *dsp_core, uint8 addr, uint8 value)
+void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 {
+	SDL_LockMutex(dsp_core->mutex);
 	switch(addr) {
 		case CPU_HOST_ICR:
 			dsp_core->hostport[CPU_HOST_ICR]=value & 0xfb;
@@ -502,16 +485,11 @@ void dsp_core_write_host(dsp_core_t *dsp_core, uint8 addr, uint8 value)
 			/* Read only */
 			break;
 		case CPU_HOST_TXH:
-#if DSP_HOST_FORCEEXEC
-			dsp_core_force_exec(dsp_core);
-#endif
-			dsp_core->hostport[CPU_HOST_TXH]=value;
-			break;
 		case CPU_HOST_TXM:
 #if DSP_HOST_FORCEEXEC
 			dsp_core_force_exec(dsp_core);
 #endif
-			dsp_core->hostport[CPU_HOST_TXM]=value;
+			dsp_core->hostport[addr]=value;
 			break;
 		case CPU_HOST_TXL:
 #if DSP_HOST_FORCEEXEC
@@ -532,7 +510,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, uint8 addr, uint8 value)
 #if DEBUG
 					fprintf(stderr, "Dsp: bootstrap p:0x%04x = 0x%06x",
 						dsp_core->bootstrap_pos,
-						dsp_core->ramint[DSP_SPACE_P][dsp_core->bootstrap_pos]));
+						dsp_core->ramint[DSP_SPACE_P][dsp_core->bootstrap_pos]);
 #endif
 					if (++dsp_core->bootstrap_pos == 0x200) {
 						dsp_core_set_state(dsp_core, DSP_RUNNING);
@@ -546,6 +524,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, uint8 addr, uint8 value)
 
 			break;
 	}
+	SDL_UnlockMutex(dsp_core->mutex);
 }
 
 /*
