@@ -21,4 +21,6 @@
 #define D(x)
 #endif
 
+#include <string.h>
+
 #endif /* ARAGLUE_H */
