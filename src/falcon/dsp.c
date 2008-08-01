@@ -63,9 +63,9 @@ void DSP_Reset(void)
  *	Hardware address read/write by CPU
  **********************************/
 
-static uint8 DSP_handleRead(Uint32 addr)
+static Uint8 DSP_handleRead(Uint32 addr)
 {
-	uint8 value;
+	Uint8 value;
 #if DSP_EMULATION
 	value = dsp_core_read_host(&dsp_core, addr-DSP_HW_OFFSET);
 #else
@@ -89,7 +89,7 @@ void DSP_HandleReadAccess(void)
 }
 
 
-static void DSP_handleWrite(Uint32 addr, uint8 value)
+static void DSP_handleWrite(Uint32 addr, Uint8 value)
 {
 	D(bug("HWput_b(0x%08x,0x%02x) at 0x%08x", addr, value, showPC()));
 #if DSP_EMULATION
