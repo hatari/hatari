@@ -62,7 +62,7 @@ Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
 <ul>
   <li><a href="#Introduction">Introduction</a>
   <ul>
-    <li><a href="#Notes">Compatibility notes</a>
+    <li><a href="#Reporting">Reporting compatibility issues</a>
   </ul>
   <li><a href="#ST">ST software compatibility list</a>
   <ul>
@@ -107,18 +107,22 @@ STs, after them is listed STE software.  Then there are a few TT-only
 games and demos, and finally a list of somewhat working Falcon games,
 demos and applications.</p>
 
-<p>Issues in the software (with the Hatari version it was tested with)
-are described and <em>highlighted</em> in the list Notes column.  If
-something that works on the real hardware doesn't work properly in
-Hatari (or something has started working in latest Hatari version)
+<p>Technical details and any known issues in the software are described
+in the "Notes" column of the lists.  Software having issues has different
+"Hatari version" column background color; <font color="orange">orange</font>
+for minor and <font color="red">red</font> for major issues.  The Hatari
+version is the version of Hatari with which the co. software was tested.</p>
+
+
+<a name="Reporting"></a><h3>Reporting compatibility issues</h3>
+
+<p>If something that works on the real hardware doesn't work properly
+in Hatari (or something has started working in latest Hatari version)
 and this information is missing from these lists, please mail
 hatari-devel mailing list so that we can update the list.</p>
 
-
-<a name="Notes"></a><h3>Compatibility notes</h3>
-
 <p>Before reporting something not working as expected, please
-check few issues:
+check few things:
 <ul>
 
 <li>That you have enabled the "Slower but more compatible CPU"
@@ -147,8 +151,8 @@ for this is the missing Line-A emulation in EmuTOS.</li>
 
 <p>There may be minor sound quality issues in some games and demos.
 Hatari also lacks support for MIDI input (output is supported) without
-which sequencing software (and few midi-networked games) isn't very
-useful. Otherwise
+which MIDI sequencing (and few midi-networked games) software isn't
+very useful. Otherwise
 <b>everything that works on a real ST should work also in Hatari</b>.
 </p>
 
@@ -174,8 +178,8 @@ useful. Otherwise
     </tr>
     <tr>
       <td>Xenon</td>
-      <td>before 1.0</td>
-      <td><em>Bullets and explosions sound wierd</em></td>
+      <td bgcolor="orange">before 1.0</td>
+      <td>Bullets and explosions sound wierd</td>
     </tr>
     <tr>
       <td>Bubble Bobble</td>
@@ -184,8 +188,8 @@ useful. Otherwise
     </tr>
     <tr>
       <td>F15 Strike Eagle 2</td>
-      <td>before 1.0</td>
-      <td><em>Keyboard emulation seems to be dodgy</em></td>
+      <td bgcolor="orange">before 1.0</td>
+      <td>Keyboard emulation seems to be dodgy</td>
     </tr>
     <tr>
       <td>Rick Dangerous</td>
@@ -194,13 +198,13 @@ useful. Otherwise
     </tr>
     <tr>
       <td>Slayer</td>
-      <td>before 1.0</td>
-      <td><em>Raster fx at highscore entry dodgy</em></td>
+      <td bgcolor="orange">before 1.0</td>
+      <td>Raster fx at highscore entry dodgy</td>
     </tr>
     <tr>
       <td>Star Goose</td>
-      <td>before 1.0</td>
-      <td><em>Bullets and explosions sound dodgy</em></td>
+      <td bgcolor="orange">before 1.0</td>
+      <td>Bullets and explosions sound dodgy</td>
     </tr>
     <tr>
       <td>Xenon 2 - Megablast</td>
@@ -209,8 +213,8 @@ useful. Otherwise
     </tr>
     <tr>
       <td>Metal Mutant</td>
-      <td>before 1.0</td>
-      <td><em>Some color effects in the lower screen seem buggy</em></td>
+      <td bgcolor="orange">before 1.0</td>
+      <td>Some color effects in the lower screen seem buggy</td>
     </tr>
     <tr>
       <td>Defenders Of The Earth</td>
@@ -219,8 +223,8 @@ useful. Otherwise
     </tr>
     <tr>
       <td>Nebulus</td>
-      <td>before 1.0</td>
-      <td><em>Trapdoors sound dodgy</em></td>
+      <td bgcolor="orange">before 1.0</td>
+      <td>Trapdoors sound dodgy</td>
     </tr>
     <tr>
       <td>Leander</td>
@@ -274,9 +278,9 @@ useful. Otherwise
     </tr>
     <tr>
       <td>Enchanted Land</td>
-      <td>1.0</td>
+      <td bgcolor="orange">1.0</td>
       <td>
-        <em>Some versions do not load at all</em>, others work fine.<br>
+        Some versions do not load at all, others work fine.<br>
         This game heavily uses sync-scrolling techniques!
       </td>
     </tr>
@@ -382,12 +386,12 @@ They are marked with '*'.</p>
     </tr>
     <tr>
       <td>Oh no more Froggies</td>
-      <td>1.0</td>
-      <td><em>No more music after a while</em></td>
+      <td bgcolor="orange">1.0</td>
+      <td>No more music after a while</td>
     </tr>
     <tr>
       <td>Dragonnels*</td>
-      <td>TBD w/ 1.1</td>
+      <td bgcolor="orange">TBD w/ 1.1</td>
       <td>
         Uses its own IKBD 6301 routine (which Hatari can fake).
         (The &quot;Unlimited Bobs&quot; screen is very sensitive to proper
@@ -487,8 +491,8 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Neochrome</td>
-      <td>before 1.0</td>
-      <td><em>Rasters sometimes unstable</em></td>
+      <td bgcolor="orange">before 1.0</td>
+      <td>Rasters sometimes unstable</td>
     </tr>
     <tr>
       <td>OCR</td>
@@ -510,8 +514,8 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Noise Tracker</td>
-      <td>before 1.0</td>
-      <td><em>Sound is very noisy</em></td>
+      <td bgcolor="orange">before 1.0</td>
+      <td>Sound is very noisy</td>
     </tr>
     <tr>
       <td>Protracker</td>
@@ -530,17 +534,17 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Accompanist<br>(Henry Cosh Sequencer)</td>
-      <td>before 1.0</td>
+      <td bgcolor="orange">before 1.0</td>
       <td><a href="#midinotes">MIDI output</a> works, input doesn't</td>
     </tr>
     <tr>
       <td>Cubase Lite</td>
-      <td>before 1.0</td>
+      <td bgcolor="orange">before 1.0</td>
       <td><a href="#midinotes">MIDI output</a> works, input doesn't</td>
     </tr>
     <tr>
       <td>Sequencer One</td>
-      <td>before 1.0</td>
+      <td bgcolor="orange">before 1.0</td>
       <td>Both <a href="#midinotes">MIDI output</a> and sound work, MIDI input doesn't</td>
     </tr>
     <tr class="backdropped">
@@ -821,8 +825,8 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Power Up*</td>
-      <td>before 1.0</td>
-      <td><em>Problems with music</em>, but DMA sound effects work</td>
+      <td bgcolor="orange">before 1.0</td>
+      <td>Problems with music, but DMA sound effects work</td>
     </tr>
     <tr>
       <td>Roger</td>
@@ -867,8 +871,8 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Utopos (v1.5 demo)</td>
-      <td>1.0</td>
-      <td><em>Screen flickers and joysticks don't work properly</em></td>
+      <td bgcolor="red">1.0</td>
+      <td>Screen flickers and joysticks don't work properly</td>
     </tr>
     <tr>
       <td>Ultimate Arena</td>
@@ -907,9 +911,9 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Aggression: Braindamage</td>
-      <td>1.0</td>
-      <td><em>The labyrinth screen has a small dark rectangle in bottom left
-      corner which doesn't show up in videos from real STe.</em></td>
+      <td bgcolor="orange">1.0</td>
+      <td>The labyrinth screen has a small dark rectangle in bottom left
+      corner which doesn't show up in videos from real STe.</td>
     </tr>
     <tr>
       <td>Armada: Armada is Dead</td>
@@ -968,21 +972,21 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Paradox: X-mas 1994 demo</td>
-      <td>1.0</td>
-      <td><em>Fullscreen scroller doesn't show</em></td>
+      <td bgcolor="red">1.0</td>
+      <td>Fullscreen scroller doesn't show</td>
     </tr>
     <tr>
       <td>Paradox: Pacemaker</td>
-      <td>1.0</td>
+      <td bgcolor="orange">1.0</td>
       <td>
-        <em>Some garbage in the end screen when the demo has been started from
-        hard disk. End screen currently also fails to open the borders properly.</em>
+        Some garbage in the end screen when the demo has been started from
+        hard disk. End screen currently also fails to open the borders properly.
         Stops in the middle with EmuTOS.</td>
     </tr>
     <tr>
       <td>Paradox: HighResMode</td>
-      <td>1.0</td>
-      <td><em>Screen is out of sync.  This mode is not supported by Hatari.</em></td>
+      <td bgcolor="red">1.0</td>
+      <td>Screen is out of sync.  This mode is not supported by Hatari.</td>
     </tr>
     <tr>
       <td>Reservoir Gods: Mind Rewind</td>
@@ -1001,9 +1005,9 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>MJJ-Prod: Tribute To Rainbow Tos</td>
-      <td>before 1.0</td>
-      <td><em>screen corrupted, Blittermania does not work but the code
-          does not crash nor lockup</em></td>
+      <td bgcolor="red">before 1.0</td>
+      <td>screen corrupted, Blittermania does not work but the code
+          does not crash nor lockup</td>
     </tr>
     <tr>
       <td>MJJ-Prod: Badger Badger</td>
@@ -1012,8 +1016,8 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Armada: RGBRuler demo</td>
-      <td>1.0</td>
-      <td><em>Doesn't look right</em></td>
+      <td bgcolor="red">1.0</td>
+      <td>Doesn't look right</td>
     </tr>
     <tr>
       <td>New Core: Core Flakes</td>
@@ -1022,13 +1026,13 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Percy of Light: VGA slideshow</td>
-      <td>1.0</td>
-      <td><em>Doesn't look right</em></td>
+      <td bgcolor="red">1.0</td>
+      <td>Doesn't look right</td>
     </tr>
     <tr>
       <td>Unit 17: EPSS</td>
-      <td>before 1.0</td>
-      <td><em>Fails to open the borders due to bad blitter timing emulation</em></td>
+      <td bgcolor="orange">before 1.0</td>
+      <td>Fails to open the borders due to bad blitter timing emulation</td>
     </tr>
     <tr>
       <td>Light: E605</td>
@@ -1042,10 +1046,8 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Songs of the unexpected</td>
-      <td>TBD w/ 1.1</td>
-      <td>
-        <em>Keyboard sometimes does not work. Sound is sometimes distorted.</em>
-      </td>
+      <td bgcolor="orange">TBD w/ 1.1</td>
+      <td>Keyboard sometimes does not work. Sound is sometimes distorted.</td>
     </tr>
   </tbody>
 </table>
@@ -1073,8 +1075,8 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Protracker STE</td>
-      <td>1.0</td>
-      <td><i>50KHz replay duff</i></td>
+      <td bgcolor="orange">1.0</td>
+      <td>50KHz replay duff</td>
     </tr> 
     <tr>
       <td>Stretch</td>
@@ -1121,9 +1123,15 @@ this section lists only TT-specific games and demos.</p>
       <td align="center">Notes</td>
     </tr>
     <tr>
+      <td>256mbrot, Bragg256, Glasstro, Orion-B, Yabt</td>
+      <td>before 1.0</td>
+      <td>TT/Falcon intros by
+          <a href="http://www.tscc.de/waitsite.html">ray//.tSCc</a></td>
+    </tr>
+    <tr>
       <td>Beams demo TT-version</td>
-      <td>1.0</td>
-      <td><em>Doesn't work, stops at startup screen!</em></td>
+      <td bgcolor="red">1.0</td>
+      <td>Doesn't work, stops at startup screen!</td>
     </tr>
     <tr>
       <td>TT-Wars</td>
@@ -1139,7 +1147,7 @@ this section lists only TT-specific games and demos.</p>
 <p>The main thing preventing Falcon programs from working is missing
 DSP emulation (and even of the programs working, many would use DSP
 for music).  You can select between three different DSP emulation
-modes with the "--dsp" option:
+modes with the Hatari "--dsp" option:
 <ul>
   <li><b>none</b>:  Most programs work best with this.</li>
   <li><b>dummy</b>: Faked DSP response to DSP commands,
@@ -1735,13 +1743,6 @@ otherwise "-".</p>
       <td>Some screens don't work</td>
     </tr>
     <tr>
-      <td>256mbrot, Bragg256, Glasstro, Orion-B, Yabt</td>
-      <td>yes</td>
-      <td>-</td>
-      <td>-</td>
-      <td>TT intros by ray//.tSCc</td>
-    </tr>
-    <tr>
       <td>Ascii, SnowStorm, HongTron</td>
       <td>yes</td>
       <td>-</td>
@@ -1956,7 +1957,7 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td><em>50fps plasma screen flickers badly</em></td>
+      <td>50fps plasma screen flickers badly</td>
     </tr>
     <tr>
       <td>Virtual City</td>
