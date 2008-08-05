@@ -31,14 +31,6 @@ extern "C" {
 
 #define DSP_RAMSIZE 32768
 
-/* Dsp State */
-#define DSP_BOOTING			0	/* Dsp loads bootstrap code */
-#define DSP_RUNNING			1	/* Execute instructions */
-#define DSP_WAITHOSTWRITE	2	/* Dsp waits for host to write data */
-#define DSP_WAITHOSTREAD	3	/* Dsp waits for host to read data */
-#define DSP_HALT			4	/* Dsp is halted */
-#define DSP_STOPTHREAD		5	/* Stop emulation thread */
-
 /* Host port, CPU side */
 #define CPU_HOST_ICR	0x00
 #define CPU_HOST_CVR	0x01
@@ -109,8 +101,8 @@ typedef struct {
 	SDL_sem		*semaphore;	/* Semaphore used to pause/unpause thread */
 	SDL_mutex	*mutex;		/* Mutex for read/writes through host port */
 
-	/* DSP state */
-	int	state;
+	/* DSP executing instructions ? */
+	volatile int running;
 
 	/* Registers */
 	Uint16	pc;
@@ -129,10 +121,10 @@ typedef struct {
 	Uint32	ramint[3][512];
 
 	/* peripheral space, [x|y]:0xffc0-0xffff */
-	Uint32	periph[2][64];
+	volatile Uint32	periph[2][64];
 
 	/* host port, CPU side */
-	Uint8 hostport[8];
+	volatile Uint8 hostport[8];
 
 	/* Misc */
 	Uint32 loop_rep;		/* executing rep ? */
