@@ -25,6 +25,10 @@
 	h4 { font-size:13pt; }
 
 	td { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:12pt; }
+	td.minor { background-color:#ffa060 }
+	td.major { background-color:#ff4040 }
+	a.minor { background-color:#ffa060 }
+	a.major { background-color:#ff4040 }
 
 	a:link { color:#000099; background-color:#ffffff; text-decoration:none; }
 	a:visited { color:#cc0000; background-color:#ffffff; text-decoration:none;}
@@ -109,8 +113,8 @@ demos and applications.</p>
 
 <p>Technical details and any known issues in the software are described
 in the "Notes" column of the lists.  Software having issues has different
-"Hatari version" column background color; <font color="orange">orange</font>
-for minor and <font color="red">red</font> for major issues.  The Hatari
+"Hatari version" column background color; <a class="minor">orange</a>
+for minor and <a class="major">red</a> for major issues.  The Hatari
 version is the version of Hatari with which the co. software was tested.</p>
 
 
@@ -193,14 +197,14 @@ very useful. Otherwise
     </tr>
     <tr>
       <td>Enchanted Land</td>
-      <td bgcolor="orange">1.0</td>
+      <td class="minor">1.0</td>
       <td>
         Some versions do not load at all, others work fine.<br>
         This game uses heavily sync-scrolling techniques!
       </td>
     <tr>
       <td>F15 Strike Eagle 2</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td>Keyboard emulation seems to be dodgy</td>
     </tr>
     <tr>
@@ -220,7 +224,7 @@ very useful. Otherwise
     </tr>
     <tr>
       <td>Metal Mutant</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td>Some color effects in the lower screen seem buggy</td>
     </tr>
     <tr>
@@ -230,7 +234,7 @@ very useful. Otherwise
     </tr>
     <tr>
       <td>Nebulus</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td>Trapdoors sound dodgy</td>
     </tr>
     <tr>
@@ -250,7 +254,7 @@ very useful. Otherwise
     </tr>
     <tr>
       <td>Slayer</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td>Raster fx at highscore entry dodgy</td>
     </tr>
     <tr>
@@ -260,7 +264,7 @@ very useful. Otherwise
     </tr>
     <tr>
       <td>Star Goose</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td>Bullets and explosions sound dodgy</td>
     </tr>
     <tr>
@@ -275,7 +279,7 @@ very useful. Otherwise
     </tr>
     <tr>
       <td>Xenon</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td>Bullets and explosions sound wierd</td>
     </tr>
     <tr>
@@ -386,12 +390,12 @@ They are marked with '*'.</p>
     </tr>
     <tr>
       <td>Oh no more Froggies</td>
-      <td bgcolor="orange">1.0</td>
+      <td class="minor">1.0</td>
       <td>No more music after a while</td>
     </tr>
     <tr>
       <td>Dragonnels*</td>
-      <td bgcolor="orange">TBD w/ 1.1</td>
+      <td class="minor">TBD w/ 1.1</td>
       <td>
         Uses its own IKBD 6301 routine (which Hatari can fake).
         (The &quot;Unlimited Bobs&quot; screen is very sensitive to proper
@@ -491,7 +495,7 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Neochrome</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td>Rasters sometimes unstable</td>
     </tr>
     <tr>
@@ -514,7 +518,7 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Noise Tracker</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td>Sound is very noisy</td>
     </tr>
     <tr>
@@ -534,17 +538,17 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Accompanist<br>(Henry Cosh Sequencer)</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td><a href="#midinotes">MIDI output</a> works, input doesn't</td>
     </tr>
     <tr>
       <td>Cubase Lite</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td><a href="#midinotes">MIDI output</a> works, input doesn't</td>
     </tr>
     <tr>
       <td>Sequencer One</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td>Both <a href="#midinotes">MIDI output</a> and sound work, MIDI input doesn't</td>
     </tr>
     <tr class="backdropped">
@@ -825,7 +829,7 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Power Up*</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td>Problems with music, but DMA sound effects work</td>
     </tr>
     <tr>
@@ -871,7 +875,7 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Utopos (v1.5 demo)</td>
-      <td bgcolor="red">1.0</td>
+      <td class="major">1.0</td>
       <td>Screen flickers and joysticks don't work properly</td>
     </tr>
     <tr>
@@ -911,7 +915,7 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Aggression: Braindamage</td>
-      <td bgcolor="orange">1.0</td>
+      <td class="minor">1.0</td>
       <td>The labyrinth screen has a small dark rectangle in bottom left
       corner which doesn't show up in videos from real STe.</td>
     </tr>
@@ -972,12 +976,12 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Paradox: X-mas 1994 demo</td>
-      <td bgcolor="red">1.0</td>
+      <td class="major">1.0</td>
       <td>Fullscreen scroller doesn't show</td>
     </tr>
     <tr>
       <td>Paradox: Pacemaker</td>
-      <td bgcolor="orange">1.0</td>
+      <td class="minor">1.0</td>
       <td>
         Some garbage in the end screen when the demo has been started from
         hard disk. End screen currently also fails to open the borders properly.
@@ -985,7 +989,7 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Paradox: HighResMode</td>
-      <td bgcolor="red">1.0</td>
+      <td class="major">1.0</td>
       <td>Screen is out of sync.  This mode is not supported by Hatari.</td>
     </tr>
     <tr>
@@ -1005,7 +1009,7 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>MJJ-Prod: Tribute To Rainbow Tos</td>
-      <td bgcolor="red">before 1.0</td>
+      <td class="major">before 1.0</td>
       <td>screen corrupted, Blittermania does not work but the code
           does not crash nor lockup</td>
     </tr>
@@ -1016,7 +1020,7 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Armada: RGBRuler demo</td>
-      <td bgcolor="red">1.0</td>
+      <td class="major">1.0</td>
       <td>Doesn't look right</td>
     </tr>
     <tr>
@@ -1026,12 +1030,12 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Percy of Light: VGA slideshow</td>
-      <td bgcolor="red">1.0</td>
+      <td class="major">1.0</td>
       <td>Doesn't look right</td>
     </tr>
     <tr>
       <td>Unit 17: EPSS</td>
-      <td bgcolor="orange">before 1.0</td>
+      <td class="minor">before 1.0</td>
       <td>Fails to open the borders due to bad blitter timing emulation</td>
     </tr>
     <tr>
@@ -1046,7 +1050,7 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Songs of the unexpected</td>
-      <td bgcolor="orange">TBD w/ 1.1</td>
+      <td class="minor">TBD w/ 1.1</td>
       <td>Keyboard sometimes does not work. Sound is sometimes distorted.</td>
     </tr>
   </tbody>
@@ -1075,7 +1079,7 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Protracker STE</td>
-      <td bgcolor="orange">1.0</td>
+      <td class="minor">1.0</td>
       <td>50KHz replay duff</td>
     </tr> 
     <tr>
@@ -1130,7 +1134,7 @@ this section lists only TT-specific games and demos.</p>
     </tr>
     <tr>
       <td>Beams demo TT-version</td>
-      <td bgcolor="red">1.0</td>
+      <td class="major">1.0</td>
       <td>Doesn't work, stops at startup screen!</td>
     </tr>
     <tr>
