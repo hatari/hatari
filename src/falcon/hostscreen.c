@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.15 2008-06-23 20:56:58 eerot Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.16 2008-08-05 23:26:47 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -51,13 +51,13 @@ static SDL_Surface *surf;               // pointer to actual surface
 
 
 static SDL_mutex   *screenLock;
-static uint32 sdl_videoparams;
-static uint32 hs_width, hs_height, hs_bpp;
+static Uint32 sdl_videoparams;
+static Uint32 hs_width, hs_height, hs_bpp;
 static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
 
 static struct { // TOS palette (bpp < 16) to SDL color mapping
 	SDL_Color	standard[256];
-	uint32		native[256];
+	Uint32		native[256];
 } palette;
 
 
@@ -68,8 +68,8 @@ static const unsigned long default_palette[] = {
     RGB_LTBLUE, RGB_LTMAGENTA, RGB_LTCYAN, RGB_BLACK
 };
 
-static int HostScreen_selectVideoMode(SDL_Rect **modes, uint32 *width, uint32 *height);
-static void HostScreen_searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp );
+static int HostScreen_selectVideoMode(SDL_Rect **modes, Uint32 *width, Uint32 *height);
+static void HostScreen_searchVideoMode( Uint32 *width, Uint32 *height, Uint32 *bpp );
 
 
 void HostScreen_Init(void) {
@@ -133,7 +133,7 @@ void HostScreen_toggleFullScreen(void)
 	}
 }
 
-static int HostScreen_selectVideoMode(SDL_Rect **modes, uint32 *width, uint32 *height)
+static int HostScreen_selectVideoMode(SDL_Rect **modes, Uint32 *width, Uint32 *height)
 {
 	int i, bestw, besth;
 
@@ -156,7 +156,7 @@ static int HostScreen_selectVideoMode(SDL_Rect **modes, uint32 *width, uint32 *h
 	return 1;
 }
 
-static void HostScreen_searchVideoMode( uint32 *width, uint32 *height, uint32 *bpp )
+static void HostScreen_searchVideoMode( Uint32 *width, Uint32 *height, Uint32 *bpp )
 {
 	SDL_Rect **modes;
 	SDL_PixelFormat pixelformat;
@@ -210,7 +210,7 @@ static void HostScreen_searchVideoMode( uint32 *width, uint32 *height, uint32 *b
 	Dprintf(("hostscreen: video mode selected: %dx%dx%d\n",*width,*height,*bpp));
 }
 
-void HostScreen_setWindowSize( uint32 width, uint32 height, uint32 bpp )
+void HostScreen_setWindowSize( Uint32 width, Uint32 height, Uint32 bpp )
 {
 	nScreenZoomX = 1;
 	nScreenZoomY = 1;
@@ -282,7 +282,7 @@ void HostScreen_setWindowSize( uint32 width, uint32 height, uint32 bpp )
 }
 
 
-static void HostScreen_update5(int32 x, int32 y, int32 w, int32 h, bool forced)
+static void HostScreen_update5(Sint32 x, Sint32 y, Sint32 w, Sint32 h, bool forced)
 {
 	if ( !forced && !doUpdate ) // the HW surface is available
 		return;
@@ -303,14 +303,14 @@ void HostScreen_update0()
 }
 
 
-uint32 HostScreen_getBitsPerPixel(void)
+Uint32 HostScreen_getBitsPerPixel(void)
 {
 	return surf->format->BitsPerPixel;
 }
 
 
 #if 0
-void HostScreen_gfxFastPixelColorNolock(int16 x, int16 y, uint32 color)
+void HostScreen_gfxFastPixelColorNolock(int16 x, int16 y, Uint32 color)
 {
 	int bpp;
 	uint8 *p;
@@ -323,20 +323,20 @@ void HostScreen_gfxFastPixelColorNolock(int16 x, int16 y, uint32 color)
 			*p = color;
 			break;
 		case 2:
-			*(uint16 *)p = color;
+			*(Uint16 *)p = color;
 			break;
 		case 3:
 			putBpp24Pixel( p, color );
 			break;
 		case 4:
-			*(uint32 *)p = color;
+			*(Uint32 *)p = color;
 			break;
 	} /* switch */
 }
 #endif
 
 #if 0
-uint32 HostScreen_gfxGetPixel( int16 x, int16 y )
+Uint32 HostScreen_gfxGetPixel( int16 x, int16 y )
 {
 	int bpp;
 	uint8 *p;
@@ -348,39 +348,39 @@ uint32 HostScreen_gfxGetPixel( int16 x, int16 y )
 		case 1:
 			return (uint32)(*(uint8 *)p);
 		case 2:
-			return (uint32)(*(uint16 *)p);
+			return (uint32)(*(Uint16 *)p);
 		case 3:
 			// FIXME maybe some & problems? and endian
 			return getBpp24Pixel( p );
 		case 4:
-			return *(uint32 *)p;
+			return *(Uint32 *)p;
 	} /* switch */
 	return 0;	// should never happen
 }
 #endif
 
-uint32 HostScreen_getBpp()
+Uint32 HostScreen_getBpp()
 {
 	return surf->format->BytesPerPixel;
 }
 
-uint32 HostScreen_getPitch() {
+Uint32 HostScreen_getPitch() {
 	return surf->pitch;
 }
 
-uint32 HostScreen_getWidth() {
+Uint32 HostScreen_getWidth() {
 	return hs_width;
 }
 
-uint32 HostScreen_getHeight() {
+Uint32 HostScreen_getHeight() {
 	return hs_height;
 }
 
-uint8 *HostScreen_getVideoramAddress() {
+Uint8 *HostScreen_getVideoramAddress() {
 	return surf->pixels;	/* FIXME maybe this should be mainSurface? */
 }
 
-void HostScreen_setPaletteColor( uint8 idx, uint32 red, uint32 green, uint32 blue ) {
+void HostScreen_setPaletteColor(Uint8 idx, Uint32 red, Uint32 green, Uint32 blue ) {
 	// set the SDL standard RGB palette settings
 	palette.standard[idx].r = red;
 	palette.standard[idx].g = green;
@@ -389,15 +389,15 @@ void HostScreen_setPaletteColor( uint8 idx, uint32 red, uint32 green, uint32 blu
 	palette.native[idx] = SDL_MapRGB( surf->format, red, green, blue );
 }
 
-uint32 HostScreen_getPaletteColor( uint8 idx ) {
+Uint32 HostScreen_getPaletteColor(Uint8 idx) {
 	return palette.native[idx];
 }
 
-void HostScreen_updatePalette( uint16 colorCount ) {
+void HostScreen_updatePalette( Uint16 colorCount ) {
 	SDL_SetColors( surf, palette.standard, 0, colorCount );
 }
 
-uint32 HostScreen_getColor( uint32 red, uint32 green, uint32 blue ) {
+Uint32 HostScreen_getColor( Uint32 red, Uint32 green, Uint32 blue ) {
 	return SDL_MapRGB( surf->format, red, green, blue );
 }
 
@@ -439,9 +439,9 @@ void HostScreen_renderEnd() {
  * Performs conversion from the TOS's bitplane word order (big endian) data
  * into the native chunky color index.
  */
-void HostScreen_bitplaneToChunky( uint16 *atariBitplaneData, uint16 bpp, uint8 colorValues[16] )
+void HostScreen_bitplaneToChunky(Uint16 *atariBitplaneData, Uint16 bpp, Uint8 colorValues[16] )
 {
-	uint32 a, b, c, d, x;
+	Uint32 a, b, c, d, x;
 
 	/* Obviously the different cases can be broken out in various
 	 * ways to lessen the amount of work needed for <8 bit modes.
@@ -453,18 +453,18 @@ void HostScreen_bitplaneToChunky( uint16 *atariBitplaneData, uint16 bpp, uint8 c
 	 * this code, though, so it would be nice to do something about it.
 	 */
 	if (bpp >= 4) {
-		d = *(uint32 *)&atariBitplaneData[0];
-		c = *(uint32 *)&atariBitplaneData[2];
+		d = *(Uint32 *)&atariBitplaneData[0];
+		c = *(Uint32 *)&atariBitplaneData[2];
 		if (bpp == 4) {
 			a = b = 0;
 		} else {
-			b = *(uint32 *)&atariBitplaneData[4];
-			a = *(uint32 *)&atariBitplaneData[6];
+			b = *(Uint32 *)&atariBitplaneData[4];
+			a = *(Uint32 *)&atariBitplaneData[6];
 		}
 	} else {
 		a = b = c = 0;
 		if (bpp == 2) {
-			d = *(uint32 *)&atariBitplaneData[0];
+			d = *(Uint32 *)&atariBitplaneData[0];
 		} else {
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 			d = atariBitplaneData[0]<<16;

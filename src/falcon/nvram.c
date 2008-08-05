@@ -27,7 +27,7 @@
 
   All other cells are reserved / unused.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.7 2008-05-19 21:00:16 thothy Exp $";
+const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.8 2008-08-05 23:26:47 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -54,7 +54,7 @@ const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.7 2008-05-19 21:00:16 thothy
 #define NVRAM_START  14
 #define NVRAM_LEN    50
 
-static uint8 nvram[64] = { 48,255,21,255,23,255,1,25,3,33,42,14,112,128,
+static Uint8 nvram[64] = { 48,255,21,255,23,255,1,25,3,33,42,14,112,128,
 	0,0,0,0,0,0,0,0,17,46,32,1,255,0,1,10,135,0,0,0,0,0,0,0,
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
 
@@ -84,7 +84,7 @@ static bool NvRam_Load(void)
 	FILE *f = fopen(nvram_filename, "rb");
 	if (f != NULL)
 	{
-		uint8 fnvram[NVRAM_LEN];
+		Uint8 fnvram[NVRAM_LEN];
 		if (fread(fnvram, 1, NVRAM_LEN, f) == NVRAM_LEN)
 		{
 			memcpy(nvram+NVRAM_START, fnvram, NVRAM_LEN);
@@ -222,7 +222,7 @@ void NvRam_Select_WriteByte(void)
  */
 void NvRam_Data_ReadByte(void)
 {
-	uint8 value = 0;
+	Uint8 value = 0;
 
 	if (nvram_index == NVRAM_SECONDS || nvram_index == NVRAM_MINUTES || nvram_index == NVRAM_HOURS
 	    || (nvram_index >=NVRAM_DAY && nvram_index <=NVRAM_YEAR) )

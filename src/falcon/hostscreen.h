@@ -25,7 +25,7 @@
 }
 
 #define getBpp24Pixel( address ) \
-    ( ((uint32)(address)[0] << 16) | ((uint32)(address)[1] << 8) | (uint32)(address)[2] )
+    ( ((Uint32)(address)[0] << 16) | ((Uint32)(address)[1] << 8) | (Uint32)(address)[2] )
 
 #else
 
@@ -37,7 +37,7 @@
 }
 
 #define getBpp24Pixel( address ) \
-    ( ((uint32)(address)[2] << 16) | ((uint32)(address)[1] << 8) | (uint32)(address)[0] )
+    ( ((Uint32)(address)[2] << 16) | ((Uint32)(address)[1] << 8) | (Uint32)(address)[0] )
 
 #endif
 
@@ -49,17 +49,17 @@ extern bool HostScreen_renderBegin(void);
 extern void HostScreen_renderEnd(void);
 extern void HostScreen_update1(bool forced);
 extern void HostScreen_update0(void);
-extern uint32 HostScreen_getBpp(void);	/* Bytes per pixel */
-extern uint32 HostScreen_getBitsPerPixel(void);
-extern uint32 HostScreen_getPitch(void);
-extern uint32 HostScreen_getWidth(void);
-extern uint32 HostScreen_getHeight(void);
-extern uint8 * HostScreen_getVideoramAddress(void);
-extern void HostScreen_setPaletteColor( uint8 idx, uint32 red, uint32 green, uint32 blue );
-extern uint32 HostScreen_getPaletteColor( uint8 idx );
-extern void HostScreen_updatePalette( uint16 colorCount );
-extern uint32 HostScreen_getColor( uint32 red, uint32 green, uint32 blue );
-extern void HostScreen_setWindowSize(uint32 width, uint32 height, uint32 bpp);
-extern void HostScreen_bitplaneToChunky(uint16 *atariBitplaneData, uint16 bpp, uint8 colorValues[16]);
+extern Uint32 HostScreen_getBpp(void);	/* Bytes per pixel */
+extern Uint32 HostScreen_getBitsPerPixel(void);
+extern Uint32 HostScreen_getPitch(void);
+extern Uint32 HostScreen_getWidth(void);
+extern Uint32 HostScreen_getHeight(void);
+extern Uint8 * HostScreen_getVideoramAddress(void);
+extern void HostScreen_setPaletteColor(Uint8 idx, Uint32 red, Uint32 green, Uint32 blue);
+extern Uint32 HostScreen_getPaletteColor(Uint8 idx);
+extern void HostScreen_updatePalette(Uint16 colorCount);
+extern Uint32 HostScreen_getColor(Uint32 red, Uint32 green, Uint32 blue);
+extern void HostScreen_setWindowSize(Uint32 width, Uint32 height, Uint32 bpp);
+extern void HostScreen_bitplaneToChunky(Uint16 *atariBitplaneData, Uint16 bpp, Uint8 colorValues[16]);
 
 #endif
