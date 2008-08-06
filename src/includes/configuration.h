@@ -8,6 +8,9 @@
 #ifndef HATARI_CONFIGURATION_H
 #define HATARI_CONFIGURATION_H
 
+#include <stdio.h>  /* for FILENAME_MAX */
+#include "main.h"   /* for bool */
+
 /* Logging */
 typedef struct
 {
@@ -208,6 +211,7 @@ typedef struct
   int nVdiColors;
   int nVdiWidth;
   int nVdiHeight;
+  bool bShowLeds;
   bool bCaptureChange;
   int nFramesPerSecond;
   int nWindowBorderPixelsLeft;
