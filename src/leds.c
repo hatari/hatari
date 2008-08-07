@@ -6,7 +6,7 @@
 
   This code draws indicators like the floppy light on top of the Hatari screen
 */
-const char leds_rcsid[] = "$Id: leds.c,v 1.1 2008-08-07 18:04:41 eerot Exp $";
+const char leds_rcsid[] = "$Id: leds.c,v 1.2 2008-08-07 19:41:53 eerot Exp $";
 
 #include <assert.h>
 #include "configuration.h"
@@ -108,17 +108,6 @@ void Leds_ReInit(SDL_Surface *surf)
 SDL_Rect* Leds_Show(void)
 {
 	int ok;
-	
-	/* TODO: dummy floppy led blinking; 4 frames on, 4 frames off,
-	 * should be set appropriately from fdc.c & psg.c instead
-	 */
-	static int floppylight = 0;
-	floppylight = (floppylight+1) % 8;
-	if (floppylight < 4) {
-		bFloppyLight = FALSE;
-	} else {
-		bFloppyLight = TRUE;
-	}
 
 	if (!ConfigureParams.Screen.bShowLeds) {
 		return NULL;

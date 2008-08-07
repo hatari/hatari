@@ -27,7 +27,7 @@
 /*			lines when displaying 47 lines (Digiwolrd 2 by ICE, Tyranny by DHS).	*/
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.87 2008-08-07 18:16:27 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.88 2008-08-07 19:41:53 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -933,7 +933,7 @@ static void Screen_SwapSTBuffers(void)
  * Note that our source image includes all borders so
  * if have them disabled simply blit a smaller source rectangle!
  */
-static void Screen_Blit(SDL_Rect *rect)
+static void Screen_Blit(bool bFullscreen, SDL_Rect *rect)
 {
 	unsigned char *pTmpScreen;
 
@@ -947,10 +947,10 @@ static void Screen_Blit(SDL_Rect *rect)
 	else
 	{
 		/* Blit image */
-		if (rect)
-			SDL_UpdateRects(sdlscrn, 1, rect);
-		else
+		if (bFullscreen)
 			SDL_UpdateRect(sdlscrn, 0,0,0,0);
+		else
+			SDL_UpdateRects(sdlscrn, 1, rect);
 	}
 
 	/* Swap copy/raster buffers in screen. */
@@ -981,12 +981,13 @@ static void Screen_DrawFrame(bool bForceFlip)
 	if (pFrameBuffer->bFullUpdate)
 		Screen_SetFullUpdateMask();
 
-	bScreenContentsChanged = FALSE;      /* Did change (ie needs blit?) */
 	led_rect = Leds_Hide();
 
 	/* Lock screen ready for drawing */
 	if (Screen_Lock())
 	{
+		bScreenContentsChanged = FALSE;      /* Did change (ie needs blit?) */
+
 		/* Set details */
 		Screen_SetConvertDetails();
 		
@@ -1043,8 +1044,10 @@ static void Screen_DrawFrame(bool bForceFlip)
 
 		/* And show to user */
 		if (bScreenContentsChanged || led_rect || bForceFlip)
-			Screen_Blit(led_rect);
-
+		{
+			bool bFullscreen = bScreenContentsChanged | bForceFlip;
+			Screen_Blit(bFullscreen, led_rect);
+		}
 		/* Grab any animation */
 		if (bRecordingAnimation)
 			ScreenSnapShot_RecordFrame(bScreenContentsChanged);
