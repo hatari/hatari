@@ -27,7 +27,7 @@
 /*			lines when displaying 47 lines (Digiwolrd 2 by ICE, Tyranny by DHS).	*/
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.86 2008-07-29 21:38:06 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.87 2008-08-07 18:16:27 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -41,6 +41,7 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.86 2008-07-29 21:38:06 eer
 #include "screen.h"
 #include "control.h"
 #include "convert/routines.h"
+#include "leds.h"
 #include "screenSnapShot.h"
 #include "sound.h"
 #include "spec512.h"
@@ -346,6 +347,12 @@ static void Screen_SetResolution(void)
 	else
 	{
 		BitCount = ConfigureParams.Screen.nForceBpp;
+		/* We do not support 24 bpp (yet) */
+		if (BitCount == 24)
+		{
+			fprintf(stderr, "Unsupported color depth 24, using 32 bpp instead...\n");
+			BitCount = 32;
+		}
 	}
 
 	/* Set zoom factors, used for scaling mouse motions */
@@ -393,18 +400,6 @@ static void Screen_SetResolution(void)
 		sdlscrn = SDL_SetVideoMode(Width, Height, BitCount, sdlVideoFlags);
 		//fprintf(stderr,"Got video mode %i %i %i\n", sdlscrn->w, sdlscrn->h, sdlscrn->format->BitsPerPixel);
 
-		if (!bInFullScreen)
-		{
-			/* re-embed the new Hatari SDL window */
-			Control_ReparentWindow(Width, Height, bInFullScreen);
-		}
-		
-		/* We do not support 24 bpp (yet) */
-		if (sdlscrn && sdlscrn->format->BitsPerPixel == 24)
-		{
-			fprintf(stderr, "Unsupported color depth 24, trying 32 bpp instead...\n");
-			sdlscrn = SDL_SetVideoMode(Width, Height, 32, sdlVideoFlags);
-		}
 		/* Exit if we can not open a screen */
 		if (!sdlscrn)
 		{
@@ -413,11 +408,20 @@ static void Screen_SetResolution(void)
 			exit(-2);
 		}
 
+		if (!bInFullScreen)
+		{
+			/* re-embed the new Hatari SDL window */
+			Control_ReparentWindow(Width, Height, bInFullScreen);
+		}
+		
 		/* Re-init screen palette: */
 		if (sdlscrn->format->BitsPerPixel == 8)
 			Screen_Handle8BitPalettes();    /* Initialize new 8 bit palette */
 		else
 			Screen_SetupRGBTable();         /* Create color convertion table */
+
+		/* Re-init led surfaces */
+		Leds_ReInit(sdlscrn);
 
 		/* Un-grab mouse pointer in windowed mode: */
 		if (!bGrabMouse)
@@ -926,9 +930,10 @@ static void Screen_SwapSTBuffers(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Blit our converted ST screen to window/full-screen
- * Note that our source image includes all borders so if have them disabled simply blit a smaller source rectangle!
+ * Note that our source image includes all borders so
+ * if have them disabled simply blit a smaller source rectangle!
  */
-static void Screen_Blit(bool bSwapScreen)
+static void Screen_Blit(SDL_Rect *rect)
 {
 	unsigned char *pTmpScreen;
 
@@ -937,13 +942,15 @@ static void Screen_Blit(bool bSwapScreen)
 	{
 		Screen_SwapSTBuffers();
 		/* Swap screen */
-		if (bSwapScreen)
-			SDL_Flip(sdlscrn);
+		SDL_Flip(sdlscrn);
 	}
 	else
 	{
 		/* Blit image */
-		SDL_UpdateRect(sdlscrn, 0,0,0,0);
+		if (rect)
+			SDL_UpdateRects(sdlscrn, 1, rect);
+		else
+			SDL_UpdateRect(sdlscrn, 0,0,0,0);
 	}
 
 	/* Swap copy/raster buffers in screen. */
@@ -962,6 +969,7 @@ static void Screen_DrawFrame(bool bForceFlip)
 	int new_res;
 	void (*pDrawFunction)(void);
 	static bool bPrevFrameWasSpec512 = FALSE;
+	SDL_Rect *led_rect;
 
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
 	new_res = Screen_ComparePaletteMask(STRes);
@@ -973,15 +981,19 @@ static void Screen_DrawFrame(bool bForceFlip)
 	if (pFrameBuffer->bFullUpdate)
 		Screen_SetFullUpdateMask();
 
+	bScreenContentsChanged = FALSE;      /* Did change (ie needs blit?) */
+	led_rect = Leds_Hide();
+
 	/* Lock screen ready for drawing */
 	if (Screen_Lock())
 	{
-		bScreenContentsChanged = FALSE;      /* Did change (ie needs blit?) */
 		/* Set details */
 		Screen_SetConvertDetails();
+		
 		/* Clear screen on full update to clear out borders and also interleaved lines */
 		if (pFrameBuffer->bFullUpdate && !bUseVDIRes)
 			Screen_ClearScreen();
+		
 		/* Call drawing for full-screen */
 		if (bUseVDIRes)
 		{
@@ -1020,13 +1032,18 @@ static void Screen_DrawFrame(bool bForceFlip)
 		/* Unlock screen */
 		Screen_UnLock();
 
+		if (led_rect)
+			Leds_Show();
+		else
+			led_rect = Leds_Show();
+		
 		/* Clear flags, remember type of overscan as if change need screen full update */
 		pFrameBuffer->bFullUpdate = FALSE;
 		pFrameBuffer->OverscanModeCopy = OverscanMode;
 
 		/* And show to user */
-		if (bScreenContentsChanged || bForceFlip)
-			Screen_Blit(TRUE);
+		if (bScreenContentsChanged || led_rect || bForceFlip)
+			Screen_Blit(led_rect);
 
 		/* Grab any animation */
 		if (bRecordingAnimation)
