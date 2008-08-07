@@ -8,9 +8,6 @@
 #ifndef HATARI_CONFIGURATION_H
 #define HATARI_CONFIGURATION_H
 
-#include <stdio.h>  /* for FILENAME_MAX */
-#include "main.h"   /* for bool */
-
 /* Logging */
 typedef struct
 {

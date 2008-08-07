@@ -6,9 +6,10 @@
 
   This code draws indicators like the floppy light on top of the Hatari screen
 */
-const char leds_rcsid[] = "$Id: leds.c,v 1.2 2008-08-07 19:41:53 eerot Exp $";
+const char leds_rcsid[] = "$Id: leds.c,v 1.3 2008-08-07 20:18:43 eerot Exp $";
 
 #include <assert.h>
+#include "main.h"
 #include "configuration.h"
 #include "leds.h"
 
