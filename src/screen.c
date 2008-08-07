@@ -27,7 +27,7 @@
 /*			lines when displaying 47 lines (Digiwolrd 2 by ICE, Tyranny by DHS).	*/
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.88 2008-08-07 19:41:53 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.89 2008-08-07 21:19:49 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -347,12 +347,6 @@ static void Screen_SetResolution(void)
 	else
 	{
 		BitCount = ConfigureParams.Screen.nForceBpp;
-		/* We do not support 24 bpp (yet) */
-		if (BitCount == 24)
-		{
-			fprintf(stderr, "Unsupported color depth 24, using 32 bpp instead...\n");
-			BitCount = 32;
-		}
 	}
 
 	/* Set zoom factors, used for scaling mouse motions */
@@ -399,6 +393,17 @@ static void Screen_SetResolution(void)
 		//fprintf(stderr,"Requesting video mode %i %i %i\n", Width, Height, BitCount);
 		sdlscrn = SDL_SetVideoMode(Width, Height, BitCount, sdlVideoFlags);
 		//fprintf(stderr,"Got video mode %i %i %i\n", sdlscrn->w, sdlscrn->h, sdlscrn->format->BitsPerPixel);
+
+		/* By default ConfigureParams.Screen.nForceBpp and therefore
+		 * BitCount is zero which means "SDL color depth autodetection".
+		 * In this case the SDL_SetVideoMode() call might return
+		 * a 24 bpp resolution
+		 */
+		if (sdlscrn && sdlscrn->format->BitsPerPixel == 24)
+		{
+			fprintf(stderr, "Unsupported color depth 24, trying 32 bpp instead...\n");
+			sdlscrn = SDL_SetVideoMode(Width, Height, 32, sdlVideoFlags);
+		}
 
 		/* Exit if we can not open a screen */
 		if (!sdlscrn)
@@ -930,10 +935,11 @@ static void Screen_SwapSTBuffers(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Blit our converted ST screen to window/full-screen
- * Note that our source image includes all borders so
- * if have them disabled simply blit a smaller source rectangle!
+ * 
+ * If bWholeScreen is set, whole SDL buffer needs to be blitted,
+ * otherwise it's enough to blit just UpdateRect
  */
-static void Screen_Blit(bool bFullscreen, SDL_Rect *rect)
+static void Screen_Blit(bool bWholeScreen, SDL_Rect *UpdateRect)
 {
 	unsigned char *pTmpScreen;
 
@@ -947,10 +953,10 @@ static void Screen_Blit(bool bFullscreen, SDL_Rect *rect)
 	else
 	{
 		/* Blit image */
-		if (bFullscreen)
+		if (bWholeScreen)
 			SDL_UpdateRect(sdlscrn, 0,0,0,0);
 		else
-			SDL_UpdateRects(sdlscrn, 1, rect);
+			SDL_UpdateRects(sdlscrn, 1, UpdateRect);
 	}
 
 	/* Swap copy/raster buffers in screen. */
@@ -969,7 +975,7 @@ static void Screen_DrawFrame(bool bForceFlip)
 	int new_res;
 	void (*pDrawFunction)(void);
 	static bool bPrevFrameWasSpec512 = FALSE;
-	SDL_Rect *led_rect;
+	SDL_Rect *LedUpdateRect;
 
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
 	new_res = Screen_ComparePaletteMask(STRes);
@@ -981,7 +987,10 @@ static void Screen_DrawFrame(bool bForceFlip)
 	if (pFrameBuffer->bFullUpdate)
 		Screen_SetFullUpdateMask();
 
-	led_rect = Leds_Hide();
+	/* whether and what part of screen needs to be updated because
+	 * the area below leds was restored?
+	 */
+	LedUpdateRect = Leds_Hide();
 
 	/* Lock screen ready for drawing */
 	if (Screen_Lock())
@@ -1033,20 +1042,23 @@ static void Screen_DrawFrame(bool bForceFlip)
 		/* Unlock screen */
 		Screen_UnLock();
 
-		if (led_rect)
+		/* draw leds if needed */
+		if (LedUpdateRect)
+			/* LedUpdateRect is already set, don't clear it */
 			Leds_Show();
 		else
-			led_rect = Leds_Show();
+			/* get LedUpdateRect if something was updated */
+			LedUpdateRect = Leds_Show();
 		
 		/* Clear flags, remember type of overscan as if change need screen full update */
 		pFrameBuffer->bFullUpdate = FALSE;
 		pFrameBuffer->OverscanModeCopy = OverscanMode;
 
 		/* And show to user */
-		if (bScreenContentsChanged || led_rect || bForceFlip)
+		if (bScreenContentsChanged || LedUpdateRect || bForceFlip)
 		{
-			bool bFullscreen = bScreenContentsChanged | bForceFlip;
-			Screen_Blit(bFullscreen, led_rect);
+			bool bWholeScreen = bScreenContentsChanged | bForceFlip;
+			Screen_Blit(bWholeScreen, LedUpdateRect);
 		}
 		/* Grab any animation */
 		if (bRecordingAnimation)
