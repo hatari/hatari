@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.16 2008-08-05 23:26:47 thothy Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.17 2008-08-07 18:07:21 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -18,6 +18,7 @@ const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.16 2008-08-05 23:2
 #include "ioMem.h"
 #include "hostscreen.h"
 #include "screen.h"
+#include "leds.h"
 
 #define VIDEL_DEBUG 0
 
@@ -117,6 +118,7 @@ void HostScreen_toggleFullScreen(void)
 		if (mainSurface->format->BitsPerPixel <= 8)
 			SDL_SetColors(mainSurface, temp->format->palette->colors, 0,
 			              temp->format->palette->ncolors);
+		Leds_ReInit(mainSurface);
 #endif
 
 		if (SDL_BlitSurface(temp, NULL, mainSurface, NULL) != 0)
@@ -255,6 +257,8 @@ void HostScreen_setWindowSize( Uint32 width, Uint32 height, Uint32 bpp )
 
 	// update the surface's palette
 	HostScreen_updatePalette( 256 );
+
+	Leds_ReInit(mainSurface);
 
 	Dprintf(("Surface Pitch = %d, width = %d, height = %d\n", surf->pitch, surf->w, surf->h));
 	Dprintf(("Must Lock? %s\n", SDL_MUSTLOCK(surf) ? "YES" : "NO"));
@@ -419,6 +423,7 @@ void HostScreen_unlock(void) {
 
 bool HostScreen_renderBegin(void)
 {
+	Leds_Hide();
 	if (SDL_MUSTLOCK(surf))
 		if (SDL_LockSurface(surf) < 0) {
 			printf("Couldn't lock surface to refresh!\n");
@@ -431,6 +436,7 @@ bool HostScreen_renderBegin(void)
 void HostScreen_renderEnd() {
 	if (SDL_MUSTLOCK(surf))
 		SDL_UnlockSurface(surf);
+	Leds_Show();
 }
 
 
