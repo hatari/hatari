@@ -33,9 +33,13 @@
 /*			all writes to the sound rendering functions. This allows to	*/
 /*			have sound.c independant of psg.c (to ease replacement of	*/
 /*			sound.c	by another rendering method).				*/
+/* 2008/08/02	[NP]	Initial convert of Ym2149Ex.cpp from C++ to C.			*/
+/*			Remove unused part of the code (StSound specific).		*/
+/* 2008/08/09	[NP]	Complete integration of StSound routines into sound.c		*/
+/*			Set EnvPer=3 if EnvPer<3 (ESwat buggy replay).			*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.35 2008-08-10 10:39:20 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.36 2008-08-10 14:32:28 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -52,6 +56,10 @@ const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.35 2008-08-10 10:39:20 npoma
 #include "video.h"
 #include "wavFormat.h"
 #include "ymFormat.h"
+
+
+#ifdef OLD_SOUND
+
 
 #define LONGLONG Uint64
 
@@ -473,7 +481,7 @@ static void Sound_GenerateChannel(int *pBuffer, unsigned char ToneFine, unsigned
 	if (TonePeriod==0)
 //		TonePeriod = 1;					/* per=0 sounds like per=1 */
 		ToneFreqDelta = 0;				/* Handle div by zero */
-        else
+	else
 		ToneFreqDelta = (((LONGLONG)YM_FREQ)<<TONEFREQ_SHIFT) / TonePeriod;    /* 4.28 fixed point */
 	Amp = LogTable16[(Amplitude&0x0f)];
 	Mix = (MixerControl>>MixMask)&9;                      /* Read I/O Mixer */
@@ -702,3 +710,723 @@ bool Sound_AreWeRecording(void)
 {
 	return (bRecordingYM || bRecordingWav);
 }
+
+
+#else	/* OLD_SOUND */
+
+/*--------------------------------------------------------------*/
+/* Possible YM1249 enveloppe shapes				*/
+/*--------------------------------------------------------------*/
+
+int		Env00xx[8]={ 1,0,0,0,0,0,0,0 };
+int		Env01xx[8]={ 0,1,0,0,0,0,0,0 };
+int		Env1000[8]={ 1,0,1,0,1,0,1,0 };
+int		Env1001[8]={ 1,0,0,0,0,0,0,0 };
+int		Env1010[8]={ 1,0,0,1,1,0,0,1 };
+int		Env1011[8]={ 1,0,1,1,1,1,1,1 };
+int		Env1100[8]={ 0,1,0,1,0,1,0,1 };
+int		Env1101[8]={ 0,1,1,1,1,1,1,1 };
+int		Env1110[8]={ 0,1,1,0,0,1,1,0 };
+int		Env1111[8]={ 0,1,0,0,0,0,0,0 };
+int		*EnvWave[16] = {	Env00xx,Env00xx,Env00xx,Env00xx,
+					Env01xx,Env01xx,Env01xx,Env01xx,
+					Env1000,Env1001,Env1010,Env1011,
+					Env1100,Env1101,Env1110,Env1111};
+
+static int	YmVolumeTable[16] = {62,161,265,377,580,774,1155,1575,2260,3088,4570,6233,9330,13187,21220,32767};
+
+
+/* Variables for the YM2149 emulator */
+Uint8		SoundRegs[14];
+
+/* Number of generated samples per frame (eg. 44Khz=882) : */
+#define SAMPLES_PER_FRAME  ((SoundPlayBackFrequencies[OutputAudioFreqIndex]+35)/nScreenRefreshRate)
+
+int		YmReplayFrequency = 44100;			/* replay freq on the PC (usually 44.1 kHz) */
+ymu32		YmInternalClock = YM_ATARI_CLOCK;		/* 2 MHz on the ST */
+
+ymu8		envData[16][2][16*2];
+
+ymu32		stepA , stepB , stepC;
+ymu32		posA , posB , posC;
+ymu32		mixerTA , mixerTB , mixerTC;
+ymu32		mixerNA , mixerNB , mixerNC;
+
+ymu32		noiseStep;
+ymu32		noisePos;
+ymu32		currentNoise;
+
+ymu32		envStep;
+ymu32		envPos;
+int		envPhase;
+int		envShape;
+
+int		volA , volB , volC , volE;
+int		*pVolA , *pVolB , *pVolC;
+
+ymu32		RndRack;				/* current random seed */
+
+
+/* Variables for the DC adjuster / Low Pass Filter */
+int		dc_buffer[DC_ADJUST_BUFFERLEN];
+int		dc_pos;
+int		dc_sum;
+int		m_lowPassFilter[2];
+
+
+/* global variables */
+bool		UseLowPassFilter = FALSE;
+bool		bEnvelopeFreqFlag;			/* Cleared each frame for YM saving */
+Sint8		MixBuffer[MIXBUFFER_SIZE];
+int		nGeneratedSamples;			/* Generated samples since audio buffer update */
+int		nSamplesToGenerate;			/* How many samples are needed for this time-frame */
+static int	ActiveSndBufIdx;			/* Current working index into above mix buffer */
+
+
+/* Local functions */
+static void	DcAdjuster_Reset(void);
+static void	DcAdjuster_AddSample(int sample);
+static int	DcAdjuster_GetDcLevel(void);
+static void	LowPassFilter_Reset(void);
+static int	LowPassFilter(int in);
+
+static ymu8	*Ym2149_EnvInit(ymu8 *pEnv , int a , int b);
+static void	Ym2149_Init(ymu32 masterClock , ymu32 playRate);
+static void	Ym2149_Reset(void);
+
+static ymu32	YM2149_RndCompute(void);
+static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow);
+static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise);
+static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow);
+static ymsample	YM2149_NextSample(void);
+
+static void	Sound_SetSamplesPassed(void);
+static void	Sound_GenerateSamples(void);
+
+
+
+/*--------------------------------------------------------------*/
+/* DC Adjuster / Low Pass Filter routines.			*/
+/*--------------------------------------------------------------*/
+
+static void	DcAdjuster_Reset(void)
+{
+	int	i;
+	
+	for (i=0 ; i<DC_ADJUST_BUFFERLEN ; i++)
+		dc_buffer[i] = 0;
+
+	dc_pos = 0;
+	dc_sum = 0;
+}
+
+
+static void	DcAdjuster_AddSample(int sample)
+{
+	dc_sum -= dc_buffer[dc_pos];
+	dc_sum += sample;
+
+	dc_buffer[dc_pos] = sample;
+	dc_pos = (dc_pos+1)&(DC_ADJUST_BUFFERLEN-1);
+}
+
+
+static int	DcAdjuster_GetDcLevel(void)
+{
+	return dc_sum / DC_ADJUST_BUFFERLEN;
+}
+
+
+static void	LowPassFilter_Reset(void)
+{
+	m_lowPassFilter[0] = 0;
+	m_lowPassFilter[1] = 0;
+}
+
+
+static int	LowPassFilter(int in)
+{
+	int	out;
+ 
+	out = (m_lowPassFilter[0]>>2) + (m_lowPassFilter[1]>>1) + (in>>2);
+	m_lowPassFilter[0] = m_lowPassFilter[1];
+	m_lowPassFilter[1] = in;
+	return out;
+}
+
+
+
+/*--------------------------------------------------------------*/
+/* Various initialisations.					*/
+/*--------------------------------------------------------------*/
+
+static ymu8	*Ym2149_EnvInit(ymu8 *pEnv , int a , int b)
+{
+	int	i;
+	int	d;
+
+	d = b-a;
+	a *= 15;
+	for ( i=0 ; i<16 ; i++ )
+	{
+		*pEnv++ = (ymu8)a;
+		a += d;
+	}
+	return pEnv;
+}
+
+
+static void	Ym2149_Init(ymu32 masterClock , ymu32 playRate)
+{
+	int	i , env;
+	ymu8	*pEnv;
+
+	/* Adjust volumes */
+	if ( YmVolumeTable[15] == 32767 )		/* not already initialized ? */
+	{
+		for ( i=0 ; i<16 ; i++ )
+		{
+			YmVolumeTable[i] = (YmVolumeTable[i]*2) / 6;
+		}
+	}
+
+	/* Build the 16 enveloppe shapes */
+	pEnv = &envData[0][0][0];
+	for ( env=0 ; env<16 ; env++ )
+	{
+		int	*pse;
+		int	phase;
+
+		pse = EnvWave[env];
+		for ( phase=0 ; phase<4 ; phase++ )
+		{
+			pEnv = Ym2149_EnvInit ( pEnv , pse[phase*2+0] , pse[phase*2+1] );
+		}
+	}
+
+	/* Init internal variables */
+	YmInternalClock = masterClock;			/* 2 Mhz on ST */
+	YmReplayFrequency = playRate;			/* usually 44.1Khz on PC */
+
+	/* Set volume voice pointers */
+	pVolA = &volA;
+	pVolB = &volB;
+	pVolC = &volC;
+
+	/* Reset YM2149 internal states */
+	Ym2149_Reset();
+}
+
+
+static void	Ym2149_Reset(void)
+{
+	int	i;
+	
+	for ( i=0 ; i<14 ; i++ )
+		Sound_WriteReg ( i , 0);
+
+	Sound_WriteReg ( 7 , 0xff );
+
+	currentNoise = 0xffff;
+	
+	RndRack = 1;
+	
+	envShape = 0;
+	envPhase = 0;
+	envPos = 0;
+
+	DcAdjuster_Reset ();
+	LowPassFilter_Reset ();
+}
+
+
+
+/*--------------------------------------------------------------*/
+/* Returns a pseudo random value, used to generate white noise.	*/
+/*--------------------------------------------------------------*/
+
+static ymu32	YM2149_RndCompute(void)
+{
+	int	bit;
+		
+	bit = (RndRack&1) ^ ((RndRack>>2)&1);
+	RndRack = (RndRack>>1) | (bit<<16);
+	return (bit ? 0 : 0xffff);
+}
+
+
+
+/*--------------------------------------------------------------*/
+/* Compute step for tone, noise and env, based on the input	*/
+/* period.							*/
+/*--------------------------------------------------------------*/
+
+static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
+{
+	int	per;
+
+	per = rHigh&15;
+	per = (per<<8)+rLow;
+	if (per<=5) 
+		return 0;
+
+#ifdef YM_INTEGER_ONLY
+	yms64 step = YmInternalClock;
+	step <<= (15+16-3);
+	step /= (per * YmReplayFrequency);
+#else
+	ymfloat step = YmInternalClock;
+	step /= ((ymfloat)per*8.0 * (ymfloat)YmReplayFrequency);
+	step *= 32768.0*65536.0;
+#endif
+
+	return (ymu32)step;
+}
+
+
+static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
+{
+	int	per;
+
+	per = (rNoise&0x1f);
+	if (per<3)
+		return 0;
+
+#ifdef YM_INTEGER_ONLY
+	yms64 step = YmInternalClock;
+	step <<= (16-1-3);
+	step /= (per * YmReplayFrequency);
+#else
+	ymfloat step = YmInternalClock;
+	step /= ((ymfloat)per*8.0 * (ymfloat)YmReplayFrequency);
+	step *= 65536.0/2.0;
+#endif
+
+	return (ymu32)step;
+}
+
+
+static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
+{
+	int	per;
+
+	per = rHigh;
+	per = (per<<8)+rLow;
+	if (per<3)
+		per=3;					/* needed for e-swat buggy replay */
+//		return 0;
+
+#ifdef YM_INTEGER_ONLY
+	yms64 step = YmInternalClock;
+	step <<= (16+16-9);
+	step /= (per * YmReplayFrequency);
+#else
+	ymfloat step = YmInternalClock;
+	step /= ((ymfloat)per*512.0 * (ymfloat)YmReplayFrequency);
+	step *= 65536.0*65536.0;
+#endif
+
+	return (ymu32)step;
+}
+
+
+
+/*--------------------------------------------------------------*/
+/* Main function : compute the value of the next sample.	*/
+/* Mixes all 3 voices with tone+noise+env and apply low pass	*/
+/* filter if needed.						*/
+/*--------------------------------------------------------------*/
+
+static ymsample	YM2149_NextSample(void)
+{
+	int	vol;
+	int	bt,bn;
+
+
+	/* Noise value : 0 or 0xffff */
+	if ( noisePos&0xffff0000 )
+	{
+		currentNoise ^= YM2149_RndCompute();
+		noisePos &= 0xffff;
+	}
+	bn = currentNoise;
+
+	/* Volume to apply if enveloppe is used */
+	volE = YmVolumeTable[ envData[envShape][envPhase][envPos>>(32-5)] ];
+
+
+	/* Tone+noise+env+DAC for three voices */
+	bt = ((((yms32)posA)>>31) | mixerTA) & (bn | mixerNA);
+	vol  = (*pVolA)&bt;
+	bt = ((((yms32)posB)>>31) | mixerTB) & (bn | mixerNB);
+	vol += (*pVolB)&bt;
+	bt = ((((yms32)posC)>>31) | mixerTC) & (bn | mixerNC);
+	vol += (*pVolC)&bt;
+
+
+	/* Increment positions */
+	posA += stepA;
+	posB += stepB;
+	posC += stepC;
+	noisePos += noiseStep;
+	envPos += envStep;
+	if ( envPhase == 0 )
+	{
+		if ( envPos < envStep )
+		{
+			envPhase = 1;
+		}
+	}
+
+
+	/* Apply low pass filter ? */
+	if ( UseLowPassFilter )
+	{
+		DcAdjuster_AddSample ( vol );			/* normalize sound level */
+		vol = LowPassFilter ( vol - DcAdjuster_GetDcLevel() );
+	}
+
+	return vol;
+}
+
+
+
+void	Sound_WriteReg( int reg , Uint8 data )
+{
+	switch (reg)
+	{
+		case 0:
+			SoundRegs[0] = data&255;
+			stepA = Ym2149_ToneStepCompute ( SoundRegs[1] , SoundRegs[0] );
+			if (!stepA) posA = (1<<31);		// Assume output always 1 if 0 period (for Digi-sample !)
+			break;
+
+		case 2:
+			SoundRegs[2] = data&255;
+			stepB = Ym2149_ToneStepCompute ( SoundRegs[3] , SoundRegs[2] );
+			if (!stepB) posB = (1<<31);		// Assume output always 1 if 0 period (for Digi-sample !)
+			break;
+
+		case 4:
+			SoundRegs[4] = data&255;
+			stepC = Ym2149_ToneStepCompute ( SoundRegs[5] , SoundRegs[4] );
+			if (!stepC) posC = (1<<31);		// Assume output always 1 if 0 period (for Digi-sample !)
+			break;
+
+		case 1:
+			SoundRegs[1] = data&15;
+			stepA = Ym2149_ToneStepCompute ( SoundRegs[1] , SoundRegs[0] );
+			if (!stepA) posA = (1<<31);		// Assume output always 1 if 0 period (for Digi-sample !)
+			break;
+
+		case 3:
+			SoundRegs[3] = data&15;
+			stepB = Ym2149_ToneStepCompute ( SoundRegs[3] , SoundRegs[2] );
+			if (!stepB) posB = (1<<31);		// Assume output always 1 if 0 period (for Digi-sample !)
+			break;
+
+		case 5:
+			SoundRegs[5] = data&15;
+			stepC = Ym2149_ToneStepCompute ( SoundRegs[5] , SoundRegs[4] );
+			if (!stepC) posC = (1<<31);		// Assume output always 1 if 0 period (for Digi-sample !)
+			break;
+
+		case 6:
+			SoundRegs[6] = data&0x1f;
+			noiseStep = Ym2149_NoiseStepCompute ( SoundRegs[6] );
+			if (!noiseStep)
+			{
+				noisePos = 0;
+				currentNoise = 0xffff;
+			}
+			break;
+
+		case 7:
+			SoundRegs[7] = data&255;
+			mixerTA = (data&(1<<0)) ? 0xffff : 0;
+			mixerTB = (data&(1<<1)) ? 0xffff : 0;
+			mixerTC = (data&(1<<2)) ? 0xffff : 0;
+			mixerNA = (data&(1<<3)) ? 0xffff : 0;
+			mixerNB = (data&(1<<4)) ? 0xffff : 0;
+			mixerNC = (data&(1<<5)) ? 0xffff : 0;
+			break;
+
+		case 8:
+			SoundRegs[8] = data&31;
+			volA = YmVolumeTable[data&15];
+			if (data&0x10)
+				pVolA = &volE;
+			else
+				pVolA = &volA;
+			break;
+		
+		case 9:
+			SoundRegs[9] = data&31;
+			volB = YmVolumeTable[data&15];
+			if (data&0x10)
+				pVolB = &volE;
+			else
+				pVolB = &volB;
+			break;
+		
+		case 10:
+			SoundRegs[10] = data&31;
+			volC = YmVolumeTable[data&15];
+			if (data&0x10)
+				pVolC = &volE;
+			else
+				pVolC = &volC;
+			break;
+
+		case 11:
+			SoundRegs[11] = data&255;
+			envStep = Ym2149_EnvStepCompute ( SoundRegs[12] , SoundRegs[11] );
+			break;
+
+		case 12:
+			SoundRegs[12] = data&255;
+			envStep = Ym2149_EnvStepCompute ( SoundRegs[12] , SoundRegs[11] );
+			break;
+
+		case 13:
+			SoundRegs[13] = data&0xf;
+			envPos = 0;
+			envPhase = 0;
+			envShape = data&0xf;
+			bEnvelopeFreqFlag = TRUE;	/* used for YmFormat saving */
+			break;
+
+	}
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Init random generator, sound tables and envelopes
+ */
+void Sound_Init(void)
+{
+	Ym2149_Init ( YM_ATARI_CLOCK , SoundPlayBackFrequencies[OutputAudioFreqIndex] );
+
+	Sound_Reset();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Reset the sound emulation
+ */
+void Sound_Reset(void)
+{
+	/* Lock audio system before accessing variables which are used by the
+	 * callback function, too! */
+	Audio_Lock();
+
+	/* Clear sound mixing buffer: */
+	memset(MixBuffer, 0, MIXBUFFER_SIZE);
+
+	/* Clear cycle counts, buffer index and register '13' flags */
+	Cycles_SetCounter(CYCLES_COUNTER_SOUND, 0);
+	bEnvelopeFreqFlag = FALSE;
+	
+	CompleteSndBufIdx = 0;
+	/* We do not start with 0 here to fake some initial samples: */
+	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
+	ActiveSndBufIdx = nGeneratedSamples % MIXBUFFER_SIZE;
+
+	Ym2149_Reset();
+
+	Audio_Unlock();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Reset the sound buffer index variables.
+ */
+void Sound_ResetBufferIndex(void)
+{
+	Audio_Lock();
+	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
+	ActiveSndBufIdx =  (CompleteSndBufIdx + nGeneratedSamples) % MIXBUFFER_SIZE;
+	Audio_Unlock();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Save/Restore snapshot of local variables('MemorySnapShot_Store' handles type)
+ */
+void Sound_MemorySnapShot_Capture(bool bSave)
+{
+	Uint32	dummy;
+	/* Save/Restore details */
+//	MemorySnapShot_Store(ChannelFreq, sizeof(ChannelFreq));
+//	MemorySnapShot_Store(&EnvelopeFreq, sizeof(EnvelopeFreq));
+//	MemorySnapShot_Store(&NoiseFreq, sizeof(NoiseFreq));
+	
+	MemorySnapShot_Store(&dummy, sizeof(dummy));
+	MemorySnapShot_Store(&dummy, sizeof(dummy));
+	MemorySnapShot_Store(&dummy, sizeof(dummy));
+	MemorySnapShot_Store(&dummy, sizeof(dummy));
+	MemorySnapShot_Store(&dummy, sizeof(dummy));
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Find how many samples to generate and store in 'nSamplesToGenerate'
+ * Also update sound cycles counter to store how many we actually did
+ * so generates set amount each frame.
+ */
+static void Sound_SetSamplesPassed(void)
+{
+	int nSampleCycles;
+	int nSamplesPerFrame;
+	int nSoundCycles;
+
+	nSoundCycles = Cycles_GetCounter(CYCLES_COUNTER_SOUND);
+
+	/* 160256 cycles per VBL, 44Khz = 882 samples per VBL */
+	/* 882/160256 samples per clock cycle */
+	nSamplesPerFrame = SAMPLES_PER_FRAME;
+
+	nSamplesToGenerate = nSoundCycles * nSamplesPerFrame / CYCLES_PER_FRAME;
+	if (nSamplesToGenerate > nSamplesPerFrame)
+		nSamplesToGenerate = nSamplesPerFrame;
+
+	nSampleCycles = nSamplesToGenerate * CYCLES_PER_FRAME / nSamplesPerFrame;
+	nSoundCycles -= nSampleCycles;
+	Cycles_SetCounter(CYCLES_COUNTER_SOUND, nSoundCycles);
+
+	if (nSamplesToGenerate > MIXBUFFER_SIZE - nGeneratedSamples)
+	{
+		nSamplesToGenerate = MIXBUFFER_SIZE - nGeneratedSamples;
+		if (nSamplesToGenerate < 0)
+			nSamplesToGenerate = 0;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Generate samples for all channels during this time-frame
+ */
+static void Sound_GenerateSamples(void)
+{
+	int	nb;
+	int	i = 0;
+	
+	nb = nSamplesToGenerate;
+	if ( nb > 0 )
+	{
+		do
+		{
+			MixBuffer[(i+ActiveSndBufIdx)%MIXBUFFER_SIZE] = YM2149_NextSample() >> 8;
+			i++;		
+		}
+		while (--nb);
+	
+		DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
+
+		ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
+		nGeneratedSamples += nSamplesToGenerate;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * This is called to built samples up until this clock cycle
+ */
+void Sound_Update(void)
+{
+	int OldSndBufIdx = ActiveSndBufIdx;
+
+	/* Make sure that we don't interfere with the audio callback function */
+	Audio_Lock();
+
+	/* Find how many to generate */
+	Sound_SetSamplesPassed();
+	/* And generate */
+	Sound_GenerateSamples();
+
+	/* Allow audio callback function to occur again */
+	Audio_Unlock();
+
+	/* Save to WAV file, if open */
+	if (bRecordingWav)
+		WAVFormat_Update(MixBuffer, OldSndBufIdx, nSamplesToGenerate);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * On each VBL (50fps) complete samples.
+ */
+void Sound_Update_VBL(void)
+{
+	Sound_Update();
+
+	/* Clear write to register '13', used for YM file saving */
+	bEnvelopeFreqFlag = FALSE;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Start recording sound, as .YM or .WAV output
+ */
+bool Sound_BeginRecording(char *pszCaptureFileName)
+{
+	bool bRet;
+
+	if (!pszCaptureFileName || strlen(pszCaptureFileName) <= 3)
+	{
+		Log_Printf(LOG_ERROR, "Illegal sound recording file name!\n");
+		return FALSE;
+	}
+
+	/* Did specify .YM or .WAV? If neither report error */
+	if (File_DoesFileExtensionMatch(pszCaptureFileName,".ym"))
+		bRet = YMFormat_BeginRecording(pszCaptureFileName);
+	else if (File_DoesFileExtensionMatch(pszCaptureFileName,".wav"))
+		bRet = WAVFormat_OpenFile(pszCaptureFileName);
+	else
+	{
+		Log_AlertDlg(LOG_ERROR, "Unknown Sound Recording format.\n"
+		             "Please specify a .YM or .WAV output file.");
+		bRet = FALSE;
+	}
+
+	return bRet;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * End sound recording
+ */
+void Sound_EndRecording(void)
+{
+	/* Stop sound recording and close files */
+	if (bRecordingYM)
+		YMFormat_EndRecording();
+	if (bRecordingWav)
+		WAVFormat_CloseFile();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Are we recording sound data?
+ */
+bool Sound_AreWeRecording(void)
+{
+	return (bRecordingYM || bRecordingWav);
+}
+
+
+#endif	/* OLD_SOUND */
+
