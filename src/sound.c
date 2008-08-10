@@ -35,7 +35,7 @@
 /*			sound.c	by another rendering method).				*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.34 2008-07-27 18:26:19 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.35 2008-08-10 10:39:20 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -471,9 +471,10 @@ static void Sound_GenerateChannel(int *pBuffer, unsigned char ToneFine, unsigned
 	TonePeriod = TONE_PERIOD((Uint32)ToneFine, (Uint32)ToneCoarse);
 	/* Find frequency of channel */
 	if (TonePeriod==0)
-		TonePeriod = 1;					/* per=0 sounds like per=1 */
-
-	ToneFreqDelta = (((LONGLONG)YM_FREQ)<<TONEFREQ_SHIFT) / TonePeriod;    /* 4.28 fixed point */
+//		TonePeriod = 1;					/* per=0 sounds like per=1 */
+		ToneFreqDelta = 0;				/* Handle div by zero */
+        else
+		ToneFreqDelta = (((LONGLONG)YM_FREQ)<<TONEFREQ_SHIFT) / TonePeriod;    /* 4.28 fixed point */
 	Amp = LogTable16[(Amplitude&0x0f)];
 	Mix = (MixerControl>>MixMask)&9;                      /* Read I/O Mixer */
 
