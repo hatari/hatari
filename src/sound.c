@@ -39,7 +39,7 @@
 /*			Set EnvPer=3 if EnvPer<3 (ESwat buggy replay).			*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.36 2008-08-10 14:32:28 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.37 2008-08-12 19:00:30 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -742,8 +742,11 @@ Uint8		SoundRegs[14];
 /* Number of generated samples per frame (eg. 44Khz=882) : */
 #define SAMPLES_PER_FRAME  ((SoundPlayBackFrequencies[OutputAudioFreqIndex]+35)/nScreenRefreshRate)
 
-int		YmReplayFrequency = 44100;			/* replay freq on the PC (usually 44.1 kHz) */
-ymu32		YmInternalClock = YM_ATARI_CLOCK;		/* 2 MHz on the ST */
+/* Current sound replay freq (usually 44100 Hz) */
+#define YM_REPLAY_FREQ   (SoundPlayBackFrequencies[OutputAudioFreqIndex])
+
+/* YM-2149 clock on Atari ST is 2 MHz */
+#define YM_ATARI_CLOCK                 2000000
 
 ymu8		envData[16][2][16*2];
 
@@ -768,6 +771,8 @@ ymu32		RndRack;				/* current random seed */
 
 
 /* Variables for the DC adjuster / Low Pass Filter */
+#define DC_ADJUST_BUFFERLEN		512		/* must be a power of 2 */
+
 int		dc_buffer[DC_ADJUST_BUFFERLEN];
 int		dc_pos;
 int		dc_sum;
@@ -791,7 +796,7 @@ static void	LowPassFilter_Reset(void);
 static int	LowPassFilter(int in);
 
 static ymu8	*Ym2149_EnvInit(ymu8 *pEnv , int a , int b);
-static void	Ym2149_Init(ymu32 masterClock , ymu32 playRate);
+static void	Ym2149_Init(void);
 static void	Ym2149_Reset(void);
 
 static ymu32	YM2149_RndCompute(void);
@@ -876,7 +881,7 @@ static ymu8	*Ym2149_EnvInit(ymu8 *pEnv , int a , int b)
 }
 
 
-static void	Ym2149_Init(ymu32 masterClock , ymu32 playRate)
+static void	Ym2149_Init(void)
 {
 	int	i , env;
 	ymu8	*pEnv;
@@ -903,10 +908,6 @@ static void	Ym2149_Init(ymu32 masterClock , ymu32 playRate)
 			pEnv = Ym2149_EnvInit ( pEnv , pse[phase*2+0] , pse[phase*2+1] );
 		}
 	}
-
-	/* Init internal variables */
-	YmInternalClock = masterClock;			/* 2 Mhz on ST */
-	YmReplayFrequency = playRate;			/* usually 44.1Khz on PC */
 
 	/* Set volume voice pointers */
 	pVolA = &volA;
@@ -971,12 +972,12 @@ static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 		return 0;
 
 #ifdef YM_INTEGER_ONLY
-	yms64 step = YmInternalClock;
+	yms64 step = YM_ATARI_CLOCK;
 	step <<= (15+16-3);
-	step /= (per * YmReplayFrequency);
+	step /= (per * YM_REPLAY_FREQ);
 #else
-	ymfloat step = YmInternalClock;
-	step /= ((ymfloat)per*8.0 * (ymfloat)YmReplayFrequency);
+	ymfloat step = YM_ATARI_CLOCK;
+	step /= ((ymfloat)per*8.0 * (ymfloat)YM_REPLAY_FREQ);
 	step *= 32768.0*65536.0;
 #endif
 
@@ -993,12 +994,12 @@ static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
 		return 0;
 
 #ifdef YM_INTEGER_ONLY
-	yms64 step = YmInternalClock;
+	yms64 step = YM_ATARI_CLOCK;
 	step <<= (16-1-3);
-	step /= (per * YmReplayFrequency);
+	step /= (per * YM_REPLAY_FREQ);
 #else
-	ymfloat step = YmInternalClock;
-	step /= ((ymfloat)per*8.0 * (ymfloat)YmReplayFrequency);
+	ymfloat step = YM_ATARI_CLOCK;
+	step /= ((ymfloat)per*8.0 * (ymfloat)YM_REPLAY_FREQ);
 	step *= 65536.0/2.0;
 #endif
 
@@ -1017,12 +1018,12 @@ static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
 //		return 0;
 
 #ifdef YM_INTEGER_ONLY
-	yms64 step = YmInternalClock;
+	yms64 step = YM_ATARI_CLOCK;
 	step <<= (16+16-9);
-	step /= (per * YmReplayFrequency);
+	step /= (per * YM_REPLAY_FREQ);
 #else
-	ymfloat step = YmInternalClock;
-	step /= ((ymfloat)per*512.0 * (ymfloat)YmReplayFrequency);
+	ymfloat step = YM_ATARI_CLOCK;
+	step /= ((ymfloat)per*512.0 * (ymfloat)YM_REPLAY_FREQ);
 	step *= 65536.0*65536.0;
 #endif
 
@@ -1207,7 +1208,7 @@ void	Sound_WriteReg( int reg , Uint8 data )
  */
 void Sound_Init(void)
 {
-	Ym2149_Init ( YM_ATARI_CLOCK , SoundPlayBackFrequencies[OutputAudioFreqIndex] );
+	Ym2149_Init();
 
 	Sound_Reset();
 }

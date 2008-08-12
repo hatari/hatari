@@ -57,11 +57,6 @@ typedef		Uint32			ymu32;
 typedef		yms16			ymsample;	/* StSound emulator renders mono 16bits signed PCM samples */
 
 
-
-#define YM_ATARI_CLOCK			2000000L
-
-#define DC_ADJUST_BUFFERLEN		512		/* must be a power of 2 */
-
 #define MIXBUFFER_SIZE    8192				/* Size of circular buffer to store sample to (44Khz) */
 
 extern bool	UseLowPassFilter;
