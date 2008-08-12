@@ -62,6 +62,8 @@ typedef struct
 extern int SDLGui_Init(void);
 extern int SDLGui_UnInit(void);
 extern int SDLGui_SetScreen(SDL_Surface *pScrn);
+extern void SDLGui_GetFontSize(int *width, int *height);
+extern void SDLGui_Text(int x, int y, const char *txt);
 extern void SDLGui_DrawDialog(const SGOBJ *dlg);
 extern int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut);
 extern void SDLGui_CenterDlg(SGOBJ *dlg);

@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.18 2008-02-29 20:24:21 thothy Exp $";
+const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.19 2008-08-12 19:36:39 eerot Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -78,6 +78,12 @@ static SDL_Surface *SDLGui_LoadXBM(int w, int h, const Uint8 *pXbmBits)
 int SDLGui_Init(void)
 {
 	SDL_Color blackWhiteColors[2] = {{255, 255, 255, 0}, {0, 0, 0, 0}};
+
+	if (pSmallFontGfx && pBigFontGfx)
+	{
+		/* already initialized */
+		return 0;
+	}
 
 	/* Initialize the font graphics: */
 	pSmallFontGfx = SDLGui_LoadXBM(font5x8_width, font5x8_height, font5x8_bits);
@@ -154,6 +160,15 @@ int SDLGui_SetScreen(SDL_Surface *pScrn)
 	return 0;
 }
 
+/*-----------------------------------------------------------------------*/
+/*
+  Return character size for current font in given arguments.
+*/
+void SDLGui_GetFontSize(int *width, int *height)
+{
+	*width = fontwidth;
+	*height = fontheight;
+}
 
 /*-----------------------------------------------------------------------*/
 /*
@@ -172,7 +187,7 @@ void SDLGui_CenterDlg(SGOBJ *dlg)
 /*
   Draw a text string.
 */
-static void SDLGui_Text(int x, int y, const char *txt)
+void SDLGui_Text(int x, int y, const char *txt)
 {
 	int i;
 	char c;
