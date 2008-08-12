@@ -37,9 +37,12 @@
 /*			Remove unused part of the code (StSound specific).		*/
 /* 2008/08/09	[NP]	Complete integration of StSound routines into sound.c		*/
 /*			Set EnvPer=3 if EnvPer<3 (ESwat buggy replay).			*/
+/* 2008/08/13	[NP]	StSound was generating samples in the range 0-32767, instead	*/
+/*			of really signed samples between -32768 and 32767, which could	*/
+/*			give incorrect results in many case.				*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.37 2008-08-12 19:00:30 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.38 2008-08-12 22:14:23 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -1057,13 +1060,25 @@ static ymsample	YM2149_NextSample(void)
 
 
 	/* Tone+noise+env+DAC for three voices */
+#if 0
 	bt = ((((yms32)posA)>>31) | mixerTA) & (bn | mixerNA);
 	vol  = (*pVolA)&bt;
 	bt = ((((yms32)posB)>>31) | mixerTB) & (bn | mixerNB);
 	vol += (*pVolB)&bt;
 	bt = ((((yms32)posC)>>31) | mixerTC) & (bn | mixerNC);
 	vol += (*pVolC)&bt;
-
+#endif
+	bt = ((((yms32)posA)>>31) | mixerTA) & (bn | mixerNA);
+	if ( bt )		vol = *pVolA;
+	else			vol = -*pVolA;
+	
+	bt = ((((yms32)posB)>>31) | mixerTB) & (bn | mixerNB);
+	if ( bt )		vol = vol + *pVolB;
+	else			vol = vol - *pVolB;
+	
+	bt = ((((yms32)posC)>>31) | mixerTC) & (bn | mixerNC);
+	if ( bt )		vol = vol + *pVolC;
+	else			vol = vol - *pVolC;
 
 	/* Increment positions */
 	posA += stepA;
