@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.17 2008-08-07 18:07:21 eerot Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.18 2008-08-12 19:40:43 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -18,7 +18,7 @@ const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.17 2008-08-07 18:0
 #include "ioMem.h"
 #include "hostscreen.h"
 #include "screen.h"
-#include "leds.h"
+#include "statusbar.h"
 
 #define VIDEL_DEBUG 0
 
@@ -118,7 +118,6 @@ void HostScreen_toggleFullScreen(void)
 		if (mainSurface->format->BitsPerPixel <= 8)
 			SDL_SetColors(mainSurface, temp->format->palette->colors, 0,
 			              temp->format->palette->ncolors);
-		Leds_ReInit(mainSurface);
 #endif
 
 		if (SDL_BlitSurface(temp, NULL, mainSurface, NULL) != 0)
@@ -214,6 +213,8 @@ static void HostScreen_searchVideoMode( Uint32 *width, Uint32 *height, Uint32 *b
 
 void HostScreen_setWindowSize( Uint32 width, Uint32 height, Uint32 bpp )
 {
+	Uint32 screenheight;
+	
 	nScreenZoomX = 1;
 	nScreenZoomY = 1;
 	if (ConfigureParams.Screen.bZoomLowRes)
@@ -231,34 +232,35 @@ void HostScreen_setWindowSize( Uint32 width, Uint32 height, Uint32 bpp )
 			height *= nScreenZoomY;
 		}
 	}
+	screenheight = height + Statusbar_SetHeight(height, bInFullScreen);
 
 	// Select a correct video mode
-	HostScreen_searchVideoMode(&width, &height, &bpp);	
+	HostScreen_searchVideoMode(&width, &screenheight, &bpp);
 
-	hs_width	 = width;
+	hs_width = width;
 	hs_height = height;
 	hs_bpp = bpp;
 
 	// SelectVideoMode();
 	if (bInFullScreen) {
 		/* un-embed the Hatari WM window for fullscreen */
-		Control_ReparentWindow(width, height, bInFullScreen);
+		Control_ReparentWindow(width, screenheight, bInFullScreen);
 
 		sdl_videoparams = SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN;
 	} else {
 		sdl_videoparams = SDL_SWSURFACE|SDL_HWPALETTE;
 	}
-	mainSurface = SDL_SetVideoMode(width, height, bpp, sdl_videoparams);
+	mainSurface = SDL_SetVideoMode(width, screenheight, bpp, sdl_videoparams);
 	if (!bInFullScreen) {
 		/* re-embed the new Hatari SDL window */
-		Control_ReparentWindow(width, height, bInFullScreen);
+		Control_ReparentWindow(width, screenheight, bInFullScreen);
 	}
 	sdlscrn = surf = mainSurface;
 
 	// update the surface's palette
 	HostScreen_updatePalette( 256 );
 
-	Leds_ReInit(mainSurface);
+	Statusbar_Init(mainSurface);
 
 	Dprintf(("Surface Pitch = %d, width = %d, height = %d\n", surf->pitch, surf->w, surf->h));
 	Dprintf(("Must Lock? %s\n", SDL_MUSTLOCK(surf) ? "YES" : "NO"));
@@ -423,7 +425,6 @@ void HostScreen_unlock(void) {
 
 bool HostScreen_renderBegin(void)
 {
-	Leds_Hide();
 	if (SDL_MUSTLOCK(surf))
 		if (SDL_LockSurface(surf) < 0) {
 			printf("Couldn't lock surface to refresh!\n");
@@ -434,9 +435,9 @@ bool HostScreen_renderBegin(void)
 }
 
 void HostScreen_renderEnd() {
+	Statusbar_Update(surf);
 	if (SDL_MUSTLOCK(surf))
 		SDL_UnlockSurface(surf);
-	Leds_Show();
 }
 
 

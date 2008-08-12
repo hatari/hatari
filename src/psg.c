@@ -28,7 +28,7 @@
 /*			all writes to the sound rendering functions. This allows to	*/
 /*			have sound.c independant of psg.c (to ease replacement of	*/
 /*			sound.c	by another rendering method).				*/
-/* 2008/08/07	[NP]	Set bFloppyLight=TRUE is drive A is ON.				*/
+/* 2008/08/11	[NP]	Set drive leds.							*/
 
 
 
@@ -71,7 +71,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.27 2008-08-07 18:39:43 npomarede Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.28 2008-08-12 19:40:43 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -87,7 +87,7 @@ const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.27 2008-08-07 18:39:43 npomarede
 #include "falcon/dsp.h"
 #endif
 #include "video.h"
-#include "leds.h"
+#include "statusbar.h"
 
 
 Uint8 PSGRegisterSelect;        /* 0xff8800 (read/write) */
@@ -249,10 +249,14 @@ void PSG_DataRegister_WriteByte(void)
 		}
 
 		/* Bit 0-2 : side and drive select */
-		bFloppyLight = FALSE;					/* led off by default */
-		if ( (PSGRegisters[PSG_REG_IO_PORTA]&(1<<1)) == 0 )	/* is drive A ON ? */
+		if ( (PSGRegisters[PSG_REG_IO_PORTA]&(1<<1)) == 0 )
 		{
-			bFloppyLight = TRUE;
+			/* floppy drive A is ON */
+			Statusbar_SetDriveLed(0, TRUE);
+		}
+		else
+		{
+			Statusbar_SetDriveLed(0, FALSE);
 		}
 
 		/* Bit 3 - Centronics as input */

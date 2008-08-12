@@ -208,7 +208,7 @@ typedef struct
   int nVdiColors;
   int nVdiWidth;
   int nVdiHeight;
-  bool bShowLeds;
+  bool bShowStatusbar;
   bool bCaptureChange;
   int nFramesPerSecond;
   int nWindowBorderPixelsLeft;

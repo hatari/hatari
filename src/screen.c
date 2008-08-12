@@ -20,14 +20,19 @@
   processed.
 */
 
-/* 2008/06/01	[NP]	Although it seems possible to display 47 lines in the bottom border	*/
-/*			with a second 60/50 Hz switch, most programs consider there're 45	*/
-/*			visible lines in the bottom border, which gives a total of 274 lines	*/
-/*			for a screen. This fixes garbages that could appear in the last two	*/
-/*			lines when displaying 47 lines (Digiwolrd 2 by ICE, Tyranny by DHS).	*/
+/*
+ Changes:
+  - 2008/06/01	[NP]
+    Although it seems possible to display 47 lines in the bottom border
+    with a second 60/50 Hz switch, most programs consider there are 45
+    visible lines in the bottom border, which gives a total of 274 lines
+    for a screen. This fixes garbage that could appear in the last two
+    lines when displaying 47 lines (Digiworld 2 by ICE, Tyranny by DHS).
+  - 2008/08/09 [ET] Add statusbar
+*/
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.89 2008-08-07 21:19:49 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.90 2008-08-12 19:40:43 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -41,10 +46,10 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.89 2008-08-07 21:19:49 eer
 #include "screen.h"
 #include "control.h"
 #include "convert/routines.h"
-#include "leds.h"
 #include "screenSnapShot.h"
 #include "sound.h"
 #include "spec512.h"
+#include "statusbar.h"
 #include "vdi.h"
 #include "video.h"
 #include "falcon/videl.h"
@@ -77,6 +82,7 @@ static Uint8 *pPCScreenDest;                       /* Destination PC buffer */
 static int STScreenEndHorizLine;                   /* End lines to be converted */
 static int PCScreenBytesPerLine;
 static int STScreenWidthBytes;
+static SDL_Rect STScreenRect;                      /* screen size without statusbar */
 
 static int STScreenLineOffset[NUM_VISIBLE_LINES];  /* Offsets for ST screen lines eg, 0,160,320... */
 static Uint16 HBLPalette[16], PrevHBLPalette[16];  /* Current palette for line, also copy of first line */
@@ -377,6 +383,7 @@ static void Screen_SetResolution(void)
 	{
 		sdlVideoFlags  = SDL_SWSURFACE|SDL_HWPALETTE;
 	}
+	Height += Statusbar_SetHeight(Height, bInFullScreen);
 
 	/* Check if we really have to change the video mode: */
 	if (!sdlscrn || sdlscrn->w != Width || sdlscrn->h != Height
@@ -425,9 +432,14 @@ static void Screen_SetResolution(void)
 		else
 			Screen_SetupRGBTable();         /* Create color convertion table */
 
-		/* Re-init led surfaces */
-		Leds_ReInit(sdlscrn);
-
+		Statusbar_Init(sdlscrn);
+		
+		/* screen area without the statusbar */
+		STScreenRect.x = 0;
+		STScreenRect.y = 0;
+		STScreenRect.w = sdlscrn->w;
+		STScreenRect.h = sdlscrn->h - Statusbar_GetHeight();
+		
 		/* Un-grab mouse pointer in windowed mode: */
 		if (!bGrabMouse)
 			SDL_WM_GrabInput(SDL_GRAB_OFF);
@@ -559,7 +571,7 @@ void Screen_SetFullUpdate(void)
  */
 static void Screen_ClearScreen(void)
 {
-	SDL_FillRect(sdlscrn,NULL, SDL_MapRGB(sdlscrn->format, 0, 0, 0) );
+	SDL_FillRect(sdlscrn, &STScreenRect, SDL_MapRGB(sdlscrn->format, 0, 0, 0));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -939,7 +951,7 @@ static void Screen_SwapSTBuffers(void)
  * If bWholeScreen is set, whole SDL buffer needs to be blitted,
  * otherwise it's enough to blit just UpdateRect
  */
-static void Screen_Blit(bool bWholeScreen, SDL_Rect *UpdateRect)
+static void Screen_Blit(bool bWholeScreen, SDL_Rect *StatusbarRect)
 {
 	unsigned char *pTmpScreen;
 
@@ -952,11 +964,17 @@ static void Screen_Blit(bool bWholeScreen, SDL_Rect *UpdateRect)
 	}
 	else
 	{
-		/* Blit image */
+		/* Blit whole image */
 		if (bWholeScreen)
-			SDL_UpdateRect(sdlscrn, 0,0,0,0);
+		{
+			/* including statusbar */
+			if (StatusbarRect)
+				SDL_UpdateRect(sdlscrn, 0,0,0,0);
+			else
+				SDL_UpdateRects(sdlscrn, 1, &STScreenRect);
+		}
 		else
-			SDL_UpdateRects(sdlscrn, 1, UpdateRect);
+			SDL_UpdateRects(sdlscrn, 1, StatusbarRect);
 	}
 
 	/* Swap copy/raster buffers in screen. */
@@ -975,7 +993,7 @@ static void Screen_DrawFrame(bool bForceFlip)
 	int new_res;
 	void (*pDrawFunction)(void);
 	static bool bPrevFrameWasSpec512 = FALSE;
-	SDL_Rect *LedUpdateRect;
+	SDL_Rect *StatusbarRect;
 
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
 	new_res = Screen_ComparePaletteMask(STRes);
@@ -986,11 +1004,6 @@ static void Screen_DrawFrame(bool bForceFlip)
 	/* Is need full-update, tag as such */
 	if (pFrameBuffer->bFullUpdate)
 		Screen_SetFullUpdateMask();
-
-	/* whether and what part of screen needs to be updated because
-	 * the area below leds was restored?
-	 */
-	LedUpdateRect = Leds_Hide();
 
 	/* Lock screen ready for drawing */
 	if (Screen_Lock())
@@ -1039,26 +1052,20 @@ static void Screen_DrawFrame(bool bForceFlip)
 		if (pDrawFunction)
 			CALL_VAR(pDrawFunction);
 
+		StatusbarRect = Statusbar_Update(sdlscrn);
+
 		/* Unlock screen */
 		Screen_UnLock();
-
-		/* draw leds if needed */
-		if (LedUpdateRect)
-			/* LedUpdateRect is already set, don't clear it */
-			Leds_Show();
-		else
-			/* get LedUpdateRect if something was updated */
-			LedUpdateRect = Leds_Show();
 		
 		/* Clear flags, remember type of overscan as if change need screen full update */
 		pFrameBuffer->bFullUpdate = FALSE;
 		pFrameBuffer->OverscanModeCopy = OverscanMode;
 
 		/* And show to user */
-		if (bScreenContentsChanged || LedUpdateRect || bForceFlip)
+		if (bScreenContentsChanged || StatusbarRect || bForceFlip)
 		{
 			bool bWholeScreen = bScreenContentsChanged | bForceFlip;
-			Screen_Blit(bWholeScreen, LedUpdateRect);
+			Screen_Blit(bWholeScreen, StatusbarRect);
 		}
 		/* Grab any animation */
 		if (bRecordingAnimation)

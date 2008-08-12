@@ -18,10 +18,10 @@
   2008-06-08   [ET]    Add disk image options and refactor their handling
   2008-06-10   [ET]    Add --vdi and joystick<port> <type> options
   2008-07-30   [ET]    Shorter & more consistent option descriptions
-  2008-08-06   [ET]    Add --leds option
+  2008-08-09   [ET]    Add --statusbar option
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.68 2008-08-07 18:05:54 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.69 2008-08-12 19:40:43 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -64,7 +64,7 @@ enum {
 	OPT_ZOOM,
 	OPT_FRAMESKIPS,
 	OPT_BORDERS,
-	OPT_SHOWLEDS,
+	OPT_STATUSBAR,
 	OPT_SPEC512,
 	OPT_FORCEBPP,
 	OPT_VDI,		/* VDI options */
@@ -149,8 +149,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Skip <x> frames after each shown frame (0 <= x <= 8)" },
 	{ OPT_BORDERS, NULL, "--borders",
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
-	{ OPT_SHOWLEDS, NULL, "--leds",
-	  "<bool>", "Show leds (for floppy access etc)" },
+	{ OPT_STATUSBAR, NULL, "--statusbar",
+	  "<bool>", "Show statusbar (floppy leds etc)" },
 	{ OPT_SPEC512, NULL, "--spec512",
 	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
@@ -752,8 +752,8 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			ok = Opt_Bool(argv[++i], OPT_BORDERS, &ConfigureParams.Screen.bAllowOverscan);
 			break;
 			
-		case OPT_SHOWLEDS:
-			ok = Opt_Bool(argv[++i], OPT_SHOWLEDS, &ConfigureParams.Screen.bShowLeds);
+		case OPT_STATUSBAR:
+			ok = Opt_Bool(argv[++i], OPT_STATUSBAR, &ConfigureParams.Screen.bShowStatusbar);
 			break;
 			
 		case OPT_SPEC512:
