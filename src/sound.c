@@ -42,7 +42,7 @@
 /*			give incorrect results in many case.				*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.38 2008-08-12 22:14:23 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.39 2008-08-13 22:01:58 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -927,7 +927,7 @@ static void	Ym2149_Reset(void)
 	int	i;
 	
 	for ( i=0 ; i<14 ; i++ )
-		Sound_WriteReg ( i , 0);
+		Sound_WriteReg ( i , 0 );
 
 	Sound_WriteReg ( 7 , 0xff );
 
@@ -951,11 +951,11 @@ static void	Ym2149_Reset(void)
 
 static ymu32	YM2149_RndCompute(void)
 {
-	int	bit;
+	ymu32	bit;
 		
 	bit = (RndRack&1) ^ ((RndRack>>2)&1);
 	RndRack = (RndRack>>1) | (bit<<16);
-	return (bit ? 0 : 0xffff);
+	return (ymu32)(bit ? 0 : 0xffff);
 }
 
 
@@ -1044,7 +1044,8 @@ static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
 static ymsample	YM2149_NextSample(void)
 {
 	int	vol;
-	int	bt,bn;
+	int	bt;
+	ymu32	bn;
 
 
 	/* Noise value : 0 or 0xffff */
@@ -1102,7 +1103,7 @@ static ymsample	YM2149_NextSample(void)
 		vol = LowPassFilter ( vol - DcAdjuster_GetDcLevel() );
 	}
 
-	return vol;
+	return (ymsample)vol;
 }
 
 
@@ -1114,37 +1115,37 @@ void	Sound_WriteReg( int reg , Uint8 data )
 		case 0:
 			SoundRegs[0] = data&255;
 			stepA = Ym2149_ToneStepCompute ( SoundRegs[1] , SoundRegs[0] );
-			if (!stepA) posA = (1<<31);		// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepA) posA = (ymu32)(1<<31);	// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 2:
 			SoundRegs[2] = data&255;
 			stepB = Ym2149_ToneStepCompute ( SoundRegs[3] , SoundRegs[2] );
-			if (!stepB) posB = (1<<31);		// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepB) posB = (ymu32)(1<<31);	// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 4:
 			SoundRegs[4] = data&255;
 			stepC = Ym2149_ToneStepCompute ( SoundRegs[5] , SoundRegs[4] );
-			if (!stepC) posC = (1<<31);		// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepC) posC = (ymu32)(1<<31);	// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 1:
 			SoundRegs[1] = data&15;
 			stepA = Ym2149_ToneStepCompute ( SoundRegs[1] , SoundRegs[0] );
-			if (!stepA) posA = (1<<31);		// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepA) posA = (ymu32)(1<<31);	// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 3:
 			SoundRegs[3] = data&15;
 			stepB = Ym2149_ToneStepCompute ( SoundRegs[3] , SoundRegs[2] );
-			if (!stepB) posB = (1<<31);		// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepB) posB = (ymu32)(1<<31);	// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 5:
 			SoundRegs[5] = data&15;
 			stepC = Ym2149_ToneStepCompute ( SoundRegs[5] , SoundRegs[4] );
-			if (!stepC) posC = (1<<31);		// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepC) posC = (ymu32)(1<<31);	// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 6:
@@ -1339,7 +1340,7 @@ static void Sound_GenerateSamples(void)
 	{
 		do
 		{
-			MixBuffer[(i+ActiveSndBufIdx)%MIXBUFFER_SIZE] = YM2149_NextSample() >> 8;
+			MixBuffer[(i+ActiveSndBufIdx)%MIXBUFFER_SIZE] = (Sint8)(YM2149_NextSample() >> 8);
 			i++;		
 		}
 		while (--nb);
