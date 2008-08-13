@@ -42,7 +42,7 @@
 /*			give incorrect results in many case.				*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.39 2008-08-13 22:01:58 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.40 2008-08-13 22:26:50 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -1115,37 +1115,37 @@ void	Sound_WriteReg( int reg , Uint8 data )
 		case 0:
 			SoundRegs[0] = data&255;
 			stepA = Ym2149_ToneStepCompute ( SoundRegs[1] , SoundRegs[0] );
-			if (!stepA) posA = (ymu32)(1<<31);	// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepA) posA = ((ymu32)1)<<31;	// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 2:
 			SoundRegs[2] = data&255;
 			stepB = Ym2149_ToneStepCompute ( SoundRegs[3] , SoundRegs[2] );
-			if (!stepB) posB = (ymu32)(1<<31);	// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepB) posB = ((ymu32)1)<<31;	// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 4:
 			SoundRegs[4] = data&255;
 			stepC = Ym2149_ToneStepCompute ( SoundRegs[5] , SoundRegs[4] );
-			if (!stepC) posC = (ymu32)(1<<31);	// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepC) posC = ((ymu32)1)<<31;	// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 1:
 			SoundRegs[1] = data&15;
 			stepA = Ym2149_ToneStepCompute ( SoundRegs[1] , SoundRegs[0] );
-			if (!stepA) posA = (ymu32)(1<<31);	// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepA) posA = ((ymu32)1)<<31;	// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 3:
 			SoundRegs[3] = data&15;
 			stepB = Ym2149_ToneStepCompute ( SoundRegs[3] , SoundRegs[2] );
-			if (!stepB) posB = (ymu32)(1<<31);	// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepB) posB = ((ymu32)1)<<31;	// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 5:
 			SoundRegs[5] = data&15;
 			stepC = Ym2149_ToneStepCompute ( SoundRegs[5] , SoundRegs[4] );
-			if (!stepC) posC = (ymu32)(1<<31);	// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepC) posC = ((ymu32)1)<<31;	// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 6:
