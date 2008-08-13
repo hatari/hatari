@@ -16,15 +16,13 @@
   - Whenever screen is redrawn, call Statusbar_Update() to
     draw the updated information to the statusbar
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.1 2008-08-12 19:40:43 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.2 2008-08-13 18:44:02 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
 #include "configuration.h"
 #include "sdlgui.h"
 #include "statusbar.h"
-
-#define MAX_DRIVE_LEDS 3
 
 /* whether drive leds should be ON and their previous shown state */
 struct {
@@ -84,7 +82,7 @@ int Statusbar_GetHeight(void)
 /**
  * Return height of statusbar set with Statusbar_SetHeight()
  */
-void Statusbar_SetDriveLed(int drive, bool state)
+void Statusbar_SetDriveLed(drive_index_t drive, bool state)
 {
 	assert(drive < MAX_DRIVE_LEDS);
 	Led[drive].state = state;
@@ -154,6 +152,13 @@ void Statusbar_Init(SDL_Surface *surf)
 		SDL_FillRect(surf, &LedRect, LedColorOff);
 		Led[i].oldstate = FALSE;
 	}
+
+	/* TODO:
+	 * - box for red wav/ym recording indicator
+	 * - TOS Version
+	 * - frameskip...
+	 * ?
+	 */
 	
 	/* draw led box labels */
 	y = LedRect.y - 2;
