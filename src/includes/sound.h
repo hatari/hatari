@@ -3,23 +3,27 @@
 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
+  
+  Matthias Arndt 2008-08-15
+    - cleanup to have definitions and declarations for both sound cores in one place
 */
 
 #ifndef HATARI_SOUND_H
 #define HATARI_SOUND_H
 
-//#define OLD_SOUND
+#undef OLD_SOUND  /* default is to use STSound core - define to revert to old Hatari sound renderer */
 
-#ifdef OLD_SOUND
+/* definitions common for all sound rendering engines */
 
 #define MIXBUFFER_SIZE    8192          /* Size of circular buffer to store sample to (44Khz) */
 
-
-extern bool bEnvelopeFreqFlag;
+extern Uint8	SoundRegs[ 14 ];			/* store YM regs 0 to 13 */
+extern int	nGeneratedSamples;
+extern bool	bEnvelopeFreqFlag;
 extern Sint8 MixBuffer[MIXBUFFER_SIZE];
-extern int nGeneratedSamples;
 
-extern Uint8 SoundRegs[ 14 ];		/* store YM regs 0 to 13 */
+#ifdef OLD_SOUND
+/* Original Hatari sound renderer active */
 
 extern void Sound_Init(void);
 extern void Sound_Reset(void);
@@ -33,7 +37,7 @@ extern void Sound_EndRecording(void);
 extern bool Sound_AreWeRecording(void);
 
 #else	/* OLD_SOUND */
-
+/* STSound sound renderer active */
 #include <SDL_types.h>
 
 
@@ -57,15 +61,7 @@ typedef		Uint32			ymu32;
 typedef		yms16			ymsample;	/* StSound emulator renders mono 16bits signed PCM samples */
 
 
-#define MIXBUFFER_SIZE    8192				/* Size of circular buffer to store sample to (44Khz) */
-
 extern bool	UseLowPassFilter;
-extern bool	bEnvelopeFreqFlag;
-extern Sint8	MixBuffer[MIXBUFFER_SIZE];
-extern int	nGeneratedSamples;
-
-extern Uint8	SoundRegs[ 14 ];			/* store YM regs 0 to 13 */
-
 
 extern void Sound_Init(void);
 extern void Sound_Reset(void);
