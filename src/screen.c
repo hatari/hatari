@@ -32,7 +32,7 @@
 */
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.90 2008-08-12 19:40:43 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.91 2008-08-16 15:49:45 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -947,11 +947,8 @@ static void Screen_SwapSTBuffers(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Blit our converted ST screen to window/full-screen
- * 
- * If bWholeScreen is set, whole SDL buffer needs to be blitted,
- * otherwise it's enough to blit just UpdateRect
  */
-static void Screen_Blit(bool bWholeScreen, SDL_Rect *StatusbarRect)
+static void Screen_Blit(void)
 {
 	unsigned char *pTmpScreen;
 
@@ -964,17 +961,7 @@ static void Screen_Blit(bool bWholeScreen, SDL_Rect *StatusbarRect)
 	}
 	else
 	{
-		/* Blit whole image */
-		if (bWholeScreen)
-		{
-			/* including statusbar */
-			if (StatusbarRect)
-				SDL_UpdateRect(sdlscrn, 0,0,0,0);
-			else
-				SDL_UpdateRects(sdlscrn, 1, &STScreenRect);
-		}
-		else
-			SDL_UpdateRects(sdlscrn, 1, StatusbarRect);
+		SDL_UpdateRects(sdlscrn, 1, &STScreenRect);
 	}
 
 	/* Swap copy/raster buffers in screen. */
@@ -993,7 +980,6 @@ static void Screen_DrawFrame(bool bForceFlip)
 	int new_res;
 	void (*pDrawFunction)(void);
 	static bool bPrevFrameWasSpec512 = FALSE;
-	SDL_Rect *StatusbarRect;
 
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
 	new_res = Screen_ComparePaletteMask(STRes);
@@ -1052,20 +1038,20 @@ static void Screen_DrawFrame(bool bForceFlip)
 		if (pDrawFunction)
 			CALL_VAR(pDrawFunction);
 
-		StatusbarRect = Statusbar_Update(sdlscrn);
-
 		/* Unlock screen */
 		Screen_UnLock();
+
+		/* draw statusbar or overlay led(s) after unlock */
+		Statusbar_Update(sdlscrn);
 		
 		/* Clear flags, remember type of overscan as if change need screen full update */
 		pFrameBuffer->bFullUpdate = FALSE;
 		pFrameBuffer->OverscanModeCopy = OverscanMode;
 
 		/* And show to user */
-		if (bScreenContentsChanged || StatusbarRect || bForceFlip)
+		if (bScreenContentsChanged || bForceFlip)
 		{
-			bool bWholeScreen = bScreenContentsChanged | bForceFlip;
-			Screen_Blit(bWholeScreen, StatusbarRect);
+			Screen_Blit();
 		}
 		/* Grab any animation */
 		if (bRecordingAnimation)

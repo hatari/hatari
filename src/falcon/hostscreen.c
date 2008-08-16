@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.18 2008-08-12 19:40:43 eerot Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.19 2008-08-16 15:49:45 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -435,9 +435,9 @@ bool HostScreen_renderBegin(void)
 }
 
 void HostScreen_renderEnd() {
-	Statusbar_Update(surf);
 	if (SDL_MUSTLOCK(surf))
 		SDL_UnlockSurface(surf);
+	Statusbar_Update(surf);
 }
 
 

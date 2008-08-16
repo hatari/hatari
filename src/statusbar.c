@@ -16,7 +16,7 @@
   - Whenever screen is redrawn, call Statusbar_Update() to
     draw the updated information to the statusbar
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.2 2008-08-13 18:44:02 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.3 2008-08-16 15:49:45 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -174,31 +174,29 @@ void Statusbar_Init(SDL_Surface *surf)
 /*-----------------------------------------------------------------------*/
 /**
  * Update statusbar information (leds etc) if/when needed.
- * Return SDL_Rect* of the updated area or NULL if nothing is drawn
+ * 
+ * May not be called when screen is locked (SDL limitation).
  */
-SDL_Rect* Statusbar_Update(SDL_Surface *surf)
+void Statusbar_Update(SDL_Surface *surf)
 {
-	static SDL_Rect rect;
+	SDL_Rect rect;
 	Uint32 color;
-	bool changes;
 	int i;
 
 	if (!(StatusbarHeight && ConfigureParams.Screen.bShowStatusbar)) {
 		/* not enabled (anymore) */
-		return NULL;
+		return;
 	}
 	assert(surf);
 	/* Statusbar_SetHeight() not called before this? */
 	assert(surf->h == ScreenHeight + StatusbarHeight);
 
 	rect = LedRect;
-	changes = FALSE;
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
 		if (Led[i].state == Led[i].oldstate) {
 			continue;
 		}
 		Led[i].oldstate = Led[i].state;
-		
 		if (Led[i].state) {
 			color = LedColorOn;
 		} else {
@@ -206,15 +204,6 @@ SDL_Rect* Statusbar_Update(SDL_Surface *surf)
 		}
 		rect.x = Led[i].offset;
 		SDL_FillRect(surf, &rect, color);
-		changes = TRUE;
+		SDL_UpdateRects(surf, 1, &rect);
 	}
-	
-	if (changes) {
-		/* update area */
-		rect.x = 0;
-		rect.w = surf->w;
-		return &rect;
-	}
-	/* no changes */
-	return NULL;
 }
