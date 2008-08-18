@@ -4,7 +4,8 @@
 # Lines starting with a '#' or with a ';' are comments.
 # All other lines should contain exactly two numbers separated by a comma.
 # The first number is the symbolic PC key code (see the SDL_keysym.h file
-# from the SDL library header files usually in /usr/share/SDL/).
+# from the SDL library header files which can usually be found in the
+# folder /usr/include/SDL/).
 # The corresponding key will be mapped to the ST key which is specified by
 # second number - the ST scan code of the key (see src/keymap.c in the Hatari
 # sources).
