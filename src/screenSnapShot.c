@@ -6,22 +6,22 @@
 
   Screen Snapshots.
 */
-const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.16 2008-08-18 18:35:48 eerot Exp $";
+const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.17 2008-08-18 19:13:45 eerot Exp $";
 
 #include <SDL.h>
 #include <dirent.h>
 #include <string.h>
-#ifdef HAVE_LIBPNG
-# include <png.h>
-# include <assert.h>
-#endif
-
 #include "main.h"
 #include "log.h"
 #include "paths.h"
 #include "screen.h"
 #include "screenSnapShot.h"
 #include "video.h"
+/* after above that bring in config.h */
+#if HAVE_LIBPNG
+# include <png.h>
+# include <assert.h>
+#endif
 
 
 bool bRecordingAnimation = FALSE;           /* Recording animation? */
@@ -70,7 +70,7 @@ static void ScreenSnapShot_GetNum(void)
 }
 
 
-#ifdef HAVE_LIBPNG
+#if HAVE_LIBPNG
 /*-----------------------------------------------------------------------*/
 /**
  * Unpack 8-bit data with RGB palette to 24-bit RGB pixels
@@ -234,7 +234,7 @@ void ScreenSnapShot_SaveScreen(void)
 	ScreenSnapShot_GetNum();
 	/* Create our filename */
 	nScreenShots++;
-#ifdef HAVE_LIBPNG
+#if HAVE_LIBPNG
 	/* try first PNG */
 	sprintf(szFileName,"%s/grab%4.4d.png", Paths_GetWorkingDir(), nScreenShots);
 	if (ScreenSnapShot_SavePNG(sdlscrn, szFileName) == 0)
