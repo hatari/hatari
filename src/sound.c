@@ -42,7 +42,7 @@
 /*			give incorrect results in many case.				*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.40 2008-08-13 22:26:50 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.41 2008-08-18 18:16:58 thothy Exp $";
 
 #include <SDL_types.h>
 
@@ -1059,6 +1059,11 @@ static ymsample	YM2149_NextSample(void)
 	/* Volume to apply if enveloppe is used */
 	volE = YmVolumeTable[ envData[envShape][envPhase][envPos>>(32-5)] ];
 
+#if __GNUC__ == 4 && __GNUC_MINOR__ == 2
+	/* Workaround for GCC 4.2  which seems to optimize away the changes to
+	 * volE for some strange reasons (maybe a compiler bug?). */
+	asm volatile("\n" ::: "memory");    /* memory has been clobbered */
+#endif
 
 	/* Tone+noise+env+DAC for three voices */
 #if 0
