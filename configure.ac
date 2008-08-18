@@ -75,6 +75,17 @@ dnl Check for zlib
 AC_CHECK_LIB(z, gzopen, ,
   AC_MSG_ERROR([You need the zlib to compile this program!]))
 
+dnl Check for libpng
+AC_CHECK_LIB(png, png_create_info_struct,
+      [AC_CHECK_HEADER(png.h, png_ok=yes, png_ok=no)],
+      png_ok=no, -lz -lm)
+if test "x${png_ok}" = "xyes"; then
+  AC_DEFINE(HAVE_LIBPNG, 1, [Whether libpng is present on the system])
+  LIBS="${LIBS} -lpng"
+else
+  AC_MSG_WARN([*** Saving PNG screenshots will not be supported! ***])
+fi
+
 dnl Check for SDL
 SDL_VERSION=1.2.0
 AM_PATH_SDL($SDL_VERSION, :,
