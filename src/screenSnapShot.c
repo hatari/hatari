@@ -6,11 +6,15 @@
 
   Screen Snapshots.
 */
-const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.15 2008-05-25 19:58:56 thothy Exp $";
+const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.16 2008-08-18 18:35:48 eerot Exp $";
 
 #include <SDL.h>
 #include <dirent.h>
 #include <string.h>
+#ifdef HAVE_LIBPNG
+# include <png.h>
+# include <assert.h>
+#endif
 
 #include "main.h"
 #include "log.h"
@@ -66,9 +70,160 @@ static void ScreenSnapShot_GetNum(void)
 }
 
 
+#ifdef HAVE_LIBPNG
 /*-----------------------------------------------------------------------*/
 /**
- * Save screen shot out .BMP file with filename 'grab0000.bmp','grab0001.bmp'....
+ * Unpack 8-bit data with RGB palette to 24-bit RGB pixels
+ */
+static inline void ScreenSnapShot_8to24Bits(Uint8 *dst, Uint8 *src, int w, SDL_Color *colors)
+{
+	int x;
+	for (x = 0; x < w; x++, src++) {
+		*dst++ = colors[*src].r;
+		*dst++ = colors[*src].g;
+		*dst++ = colors[*src].b;
+	}
+}
+
+/**
+ * Unpack 16-bit RGB pixels to 24-bit RGB pixels
+ */
+static inline void ScreenSnapShot_16to24Bits(Uint8 *dst, Uint16 *src, int w, SDL_PixelFormat *fmt)
+{
+	int x;
+	for (x = 0; x < w; x++, src++) {
+		*dst++ = (((*src & fmt->Rmask) >> fmt->Rshift) << fmt->Rloss);
+		*dst++ = (((*src & fmt->Gmask) >> fmt->Gshift) << fmt->Gloss);
+		*dst++ = (((*src & fmt->Bmask) >> fmt->Bshift) << fmt->Bloss);
+	}
+}
+
+/**
+ *  unpack 32-bit RGBA pixels to 24-bit RGB pixels
+ */
+static inline void ScreenSnapShot_32to24Bits(Uint8 *dst, Uint8 *src, int w)
+{
+	int x;
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	src += 1;
+#endif
+	for (x = 0; x < w; x++, src++) {
+		*dst++ = *src++;
+		*dst++ = *src++;
+		*dst++ = *src++;
+	}
+}
+
+/**
+ * Save given SDL surface as PNG. Return zero for success.
+ */
+static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
+{
+	int y, ret = -1;
+	int w = surface->w;
+	int h = surface->h;
+	Uint8 *src_ptr, *row_ptr;
+	Uint8 rowbuf[3*surface->w];
+	SDL_PixelFormat *fmt = surface->format;
+	png_colorp palette_ptr = NULL;
+	png_infop info_ptr = NULL;
+	png_structp png_ptr;
+	png_text pngtext;
+	char key[] = "Title";
+	char text[] = "Hatari screenshot";
+	FILE *fp = NULL;
+	
+	/* Create and initialize the png_struct with error handler functions. */
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if (!png_ptr) 
+	{
+		return ret;
+	}
+	
+	/* Allocate/initialize the image information data. */
+	info_ptr = png_create_info_struct(png_ptr);
+	if (!info_ptr)
+		goto png_cleanup;
+
+	/* libpng ugliness: Set error handling when not supplying own
+	 * error handling functions in the png_create_write_struct() call.
+	 */
+	if (setjmp(png_jmpbuf(png_ptr)))
+		goto png_cleanup;
+
+	fp = fopen(filename, "wb");
+	if (!fp)
+		goto png_cleanup;
+
+	/* initialize the png structure */
+	png_init_io(png_ptr, fp);
+
+	/* image data properties */
+	png_set_IHDR(png_ptr, info_ptr, w, h, 8, PNG_COLOR_TYPE_RGB,
+		     PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
+		     PNG_FILTER_TYPE_DEFAULT);
+	
+	/* image info */
+	pngtext.key = key;
+	pngtext.text = text;
+	pngtext.compression = PNG_TEXT_COMPRESSION_NONE;
+#ifdef PNG_iTXt_SUPPORTED
+	pngtext.lang = NULL;
+#endif
+	png_set_text(png_ptr, info_ptr, &pngtext, 1);
+
+	/* write the file header information */
+	png_write_info(png_ptr, info_ptr);
+
+	/* write surface data row at the time */
+	src_ptr = surface->pixels;
+	for (y = 0; y < h; y++) {
+		switch (fmt->BytesPerPixel) {
+		case 1:
+			/* unpack 8-bit data with RGB palette */
+			row_ptr = rowbuf;
+			ScreenSnapShot_8to24Bits(row_ptr, src_ptr, w, fmt->palette->colors);
+			break;
+		case 2:
+			/* unpack 16-bit RGB pixels */
+			row_ptr = rowbuf;
+			ScreenSnapShot_16to24Bits(row_ptr, (Uint16*)src_ptr, w, fmt);
+			break;
+		case 3:
+			/* PNG can handle 24-bits */
+			row_ptr = src_ptr;
+			break;
+		case 4:
+			/* unpack 32-bit RGBA pixels */
+			row_ptr = rowbuf;
+			ScreenSnapShot_32to24Bits(row_ptr, src_ptr, w);
+			break;
+		}
+		src_ptr += surface->pitch;
+		SDL_UnlockSurface(surface);
+		png_write_row(png_ptr, rowbuf);
+	}
+	
+	/* write the additional chuncks to the PNG file */
+	png_write_end(png_ptr, info_ptr);
+
+	ret = 0;
+png_cleanup:
+	if (fp)
+		fclose(fp);
+	if (palette_ptr)
+		free(palette_ptr);
+	if (png_ptr)
+		png_destroy_write_struct(&png_ptr, NULL);
+	return ret;
+}
+#endif
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Save screen shot file with filename 'grab0000.<ext>','grab0001.<ext>'...
+ * Whether screen shots are saved as BMP or PNG depends on Hatari configuration.
  */
 void ScreenSnapShot_SaveScreen(void)
 {
@@ -79,6 +234,16 @@ void ScreenSnapShot_SaveScreen(void)
 	ScreenSnapShot_GetNum();
 	/* Create our filename */
 	nScreenShots++;
+#ifdef HAVE_LIBPNG
+	/* try first PNG */
+	sprintf(szFileName,"%s/grab%4.4d.png", Paths_GetWorkingDir(), nScreenShots);
+	if (ScreenSnapShot_SavePNG(sdlscrn, szFileName) == 0)
+	{
+		fprintf(stderr, "Screen dump saved to: %s\n", szFileName);
+		free(szFileName);
+		return;
+	}
+#endif
 	sprintf(szFileName,"%s/grab%4.4d.bmp", Paths_GetWorkingDir(), nScreenShots);
 	if (SDL_SaveBMP(sdlscrn, szFileName))
 		fprintf(stderr, "Screen dump failed!\n");
