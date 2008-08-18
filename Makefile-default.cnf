@@ -44,6 +44,13 @@ HOSTLDFLAGS =
 SDL_CFLAGS := $(shell sdl-config --cflags)
 SDL_LIBS := $(shell sdl-config --libs)
 
+# libpng configuration
+LIBPNG_CFLAGS = $(shell pkg-config --cflags libpng)
+LIBPNG_LIBS = $(shell pkg-config --libs libpng)
+ifneq ($(LIBPNG_LIBS),)
+CFLAGS += $(LIBPNG_CFLAGS) -DHAVE_LIBPNG=1
+LIBS += $(LIBPNG_LIBS)
+endif
 
 # Here you can define the default data directory for Hatari.
 # The emulator looks there for the default TOS image etc.
