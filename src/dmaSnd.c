@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.16 2008-05-19 20:34:09 thothy Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.17 2008-08-19 00:09:59 thothy Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -216,8 +216,10 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[nBufIdx] = ((int)MixBuffer[nBufIdx] + (int)pFrameStart[((int)FrameCounter)&~1]
-			                      + (int)pFrameStart[(((int)FrameCounter)&~1)+2]) / 3;
+			MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
+			                        + (int)(*(Sint16*)&pFrameStart[((int)FrameCounter)&~1])) / 2;
+			MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
+			                        + (int)(*(Sint16*)&pFrameStart[(((int)FrameCounter)&~1)+2])) / 2;
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
@@ -229,7 +231,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[nBufIdx] = ((int)MixBuffer[nBufIdx] + (int)pFrameStart[(int)FrameCounter]) / 2;
+			MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][1] =
+				((int)MixBuffer[nBufIdx][0] + (((int)pFrameStart[(int)FrameCounter]) << 8)) / 2;
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
@@ -242,8 +245,10 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[nBufIdx] = ((int)MixBuffer[nBufIdx] + (int)pFrameStart[((int)FrameCounter)&~1]
-			                      + (int)pFrameStart[(((int)FrameCounter)&~1)+1]) / 3;
+			MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
+			                        + (((int)pFrameStart[((int)FrameCounter)&~1]) << 8)) / 2;
+			MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
+			                        + (((int)pFrameStart[(((int)FrameCounter)&~1)+1]) << 8)) / 2;
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;

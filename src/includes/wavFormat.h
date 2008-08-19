@@ -12,6 +12,6 @@ extern bool bRecordingWav;
 
 extern bool WAVFormat_OpenFile(char *pszWavFileName);
 extern void WAVFormat_CloseFile(void);
-extern void WAVFormat_Update(Sint8 *pSamples, int Index, int Length);
+extern void WAVFormat_Update(Sint16 pSamples[][2], int Index, int Length);
 
 #endif

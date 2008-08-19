@@ -33,7 +33,7 @@
     4 - 7  Length Of Data To Follow
     8 - end  Data (Samples)
 */
-const char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.15 2008-05-03 18:58:22 thothy Exp $";
+const char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.16 2008-08-19 00:09:59 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -59,8 +59,10 @@ bool WAVFormat_OpenFile(char *pszWavFileName)
 {
 	const Uint32 Blank = 0;
 	const Uint32 FmtLength = SDL_SwapLE32(0x10);
-	const Uint16 SOne = SDL_SwapLE16(0x01);
-	const Uint32 BitsPerSample = SDL_SwapLE32(8);
+	const Uint16 LeOne = SDL_SwapLE16(0x01);
+	const Uint16 LeTwo = SDL_SwapLE16(0x02);
+	const Uint16 LeFour = SDL_SwapLE16(0x04);
+	const Uint32 BitsPerSample = SDL_SwapLE32(16);
 	Uint32 SampleLength;
 
 	/* Set frequency (11Khz, 22Khz or 44Khz) */
@@ -79,11 +81,11 @@ bool WAVFormat_OpenFile(char *pszWavFileName)
 		/* Create 'FORMAT' chunk */
 		fwrite("fmt ", 1, 4, WavFileHndl);                      /* "fmt_" (ASCII Characters) */
 		fwrite(&FmtLength, sizeof(Uint32), 1, WavFileHndl);     /* Length Of FORMAT Chunk (Binary, always 0x10) */
-		fwrite(&SOne, sizeof(Uint16), 1, WavFileHndl);          /* Always 0x01 */
-		fwrite(&SOne, sizeof(Uint16), 1, WavFileHndl);          /* Channel Numbers (Always 0x01=Mono, 0x02=Stereo) */
+		fwrite(&LeOne, sizeof(Uint16), 1, WavFileHndl);         /* Always 0x01 */
+		fwrite(&LeTwo, sizeof(Uint16), 1, WavFileHndl);         /* Channel Numbers (0x01=Mono, 0x02=Stereo) */
 		fwrite(&SampleLength, sizeof(Uint32), 1, WavFileHndl);  /* Sample Rate (Binary, in Hz) */
 		fwrite(&SampleLength, sizeof(Uint32), 1, WavFileHndl);  /* Bytes Per Second */
-		fwrite(&SOne, sizeof(Uint16), 1, WavFileHndl);          /* Bytes Per Sample: 1=8 bit Mono, 2=8 bit Stereo or 16 bit Mono, 4=16 bit Stereo */
+		fwrite(&LeFour, sizeof(Uint16), 1, WavFileHndl);        /* Bytes Per Sample: 1=8 bit Mono, 2=8 bit Stereo or 16 bit Mono, 4=16 bit Stereo */
 		fwrite(&BitsPerSample, sizeof(Uint16), 1, WavFileHndl); /* Bits Per Sample */
 
 		/* Create 'DATA' chunk */
@@ -139,9 +141,9 @@ void WAVFormat_CloseFile(void)
 /**
  *
  */
-void WAVFormat_Update(Sint8 *pSamples, int Index, int Length)
+void WAVFormat_Update(Sint16 pSamples[][2], int Index, int Length)
 {
-	Sint8 sample;
+	Sint16 sample[2];
 	int i;
 
 	if (bRecordingWav)
@@ -149,13 +151,14 @@ void WAVFormat_Update(Sint8 *pSamples, int Index, int Length)
 		/* Output, better if did in two section if wrap */
 		for(i = 0; i < Length; i++)
 		{
-			/* Convert sample to 'signed' byte */
-			sample = pSamples[(Index+i)%MIXBUFFER_SIZE] ^ 128;
+			/* Convert sample to little endian */
+			sample[0] = SDL_SwapLE16(pSamples[(Index+i)%MIXBUFFER_SIZE][0]);
+			sample[1] = SDL_SwapLE16(pSamples[(Index+i)%MIXBUFFER_SIZE][1]);
 			/* And store */
-			fwrite(&sample, sizeof(Sint8), 1, WavFileHndl);
+			fwrite(&sample, sizeof(sample), 1, WavFileHndl);
 		}
 
 		/* Add samples to wav file */
-		nWavOutputBytes += Length;
+		nWavOutputBytes += Length * 4;
 	}
 }

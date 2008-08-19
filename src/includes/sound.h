@@ -20,7 +20,7 @@
 extern Uint8	SoundRegs[ 14 ];			/* store YM regs 0 to 13 */
 extern int	nGeneratedSamples;
 extern bool	bEnvelopeFreqFlag;
-extern Sint8 MixBuffer[MIXBUFFER_SIZE];
+extern Sint16	MixBuffer[MIXBUFFER_SIZE][2];
 
 #ifdef OLD_SOUND
 /* Original Hatari sound renderer active */

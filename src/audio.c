@@ -6,7 +6,7 @@
 
   This file contains the routines which pass the audio data to the SDL library.
 */
-const char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.28 2008-05-03 18:58:22 thothy Exp $";
+const char Audio_rcsid[] = "Hatari $Id: audio.c,v 1.29 2008-08-19 00:09:59 thothy Exp $";
 
 #include <SDL.h>
 
@@ -40,10 +40,11 @@ int CompleteSndBufIdx;                    /* Replay-index into MixBuffer */
  */
 static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 {
-	Uint8 *pBuffer;
+	Sint16 *pBuffer;
 	int i;
 
-	pBuffer = stream;
+	pBuffer = (Sint16 *)stream;
+	len = len / 4;  // Use length in samples (16 bit stereo), not in bytes
 
 	if (nGeneratedSamples >= len)
 	{
@@ -52,7 +53,8 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 		 * 'signed' to 'unsigned' */
 		for (i = 0; i < len; i++)
 		{
-			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE] ^ 128;
+			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][0];
+			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][1];
 		}
 		CompleteSndBufIdx += len;
 		nGeneratedSamples -= len;
@@ -61,14 +63,15 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 	{
 		for (i = 0; i < nGeneratedSamples; i++)
 		{
-			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE] ^ 128;
+			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][0];
+			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][1];
 		}
 		/* If the buffer is filled more than 50%, mirror sample buffer to fake the
 		 * missing samples */
 		if (nGeneratedSamples >= len/2)
 		{
 			int remaining = len - nGeneratedSamples;
-			memcpy(pBuffer, stream+nGeneratedSamples-remaining, remaining);
+			memcpy(pBuffer, stream+(nGeneratedSamples-remaining)*4, remaining*4);
 		}
 		CompleteSndBufIdx += nGeneratedSamples;
 		nGeneratedSamples = 0;
@@ -110,8 +113,8 @@ void Audio_Init(void)
 
 	/* Set up SDL audio: */
 	desiredAudioSpec.freq = SoundPlayBackFrequencies[OutputAudioFreqIndex];
-	desiredAudioSpec.format = AUDIO_U8;           /* 8 Bit unsigned */
-	desiredAudioSpec.channels = 1;                /* Mono */
+	desiredAudioSpec.format = AUDIO_S16SYS;       /* 16-Bit signed */
+	desiredAudioSpec.channels = 2;                /* stereo */
 	desiredAudioSpec.samples = 1024;              /* Buffer size */
 	desiredAudioSpec.callback = Audio_CallBack;
 	desiredAudioSpec.userdata = NULL;
