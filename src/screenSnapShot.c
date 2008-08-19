@@ -6,7 +6,7 @@
 
   Screen Snapshots.
 */
-const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.17 2008-08-18 19:13:45 eerot Exp $";
+const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.18 2008-08-19 20:53:50 eerot Exp $";
 
 #include <SDL.h>
 #include <dirent.h>
@@ -104,13 +104,16 @@ static inline void ScreenSnapShot_16to24Bits(Uint8 *dst, Uint16 *src, int w, SDL
 static inline void ScreenSnapShot_32to24Bits(Uint8 *dst, Uint8 *src, int w)
 {
 	int x;
+	for (x = 0; x < w; x++, src += 4) {
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-	src += 1;
+		*dst++ = src[1];
+		*dst++ = src[2];
+		*dst++ = src[3];
+#else
+		*dst++ = src[2];
+		*dst++ = src[1];
+		*dst++ = src[0];
 #endif
-	for (x = 0; x < w; x++, src++) {
-		*dst++ = *src++;
-		*dst++ = *src++;
-		*dst++ = *src++;
 	}
 }
 
