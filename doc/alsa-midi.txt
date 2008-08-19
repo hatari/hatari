@@ -62,8 +62,8 @@ sound volume etc:
 And if you don't like the FluidSynth shell, use:
   --no-shell --server
 
-FYI: Current (v1.0.7a) FluidSynth has buffer overruns, but they
-will  be fixed in the next release (hopefully coming soon).
+FYI: FluidSynth v1.0.7a (in Debian Etch & Ubuntu Hardy) has buffer
+overruns, but they're fixed in v1.0.8 (in Debian Lenny etc).
 
 
 Making it all to work with Hatari
@@ -74,7 +74,7 @@ ALSA directly.  To get the software synth ALSA devices to appear
 as HW midi devices, run following as *root*:
   modprobe snd-virmidi
 
-When you you list your ALSA output devices with:
+When you list your ALSA output devices with:
   aconnect -o
 You should see in addition to Timidity also 4 virtual hardware
 devices.
@@ -83,7 +83,7 @@ Then connect (either with aconnect or kaconnect) the first virtual
 HW port to the same Timidity port where you connected the virtual
 midi keyboard.
 
-Now check which number your new virtual midi card got from ALSA:
+Check which number was assigned by ALSA to the new virtual midi card:
   cat /proc/asound/cards
 
 And give to Hatari the corresponding ALSA midi device.  In my case
