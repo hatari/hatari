@@ -105,9 +105,12 @@
 #define RESTART_VIDEO_COUNTER_CYCLE_STF	( (MAX_SCANLINES_PER_FRAME-3) * CYCLES_PER_LINE_50HZ + 48 )
 #define RESTART_VIDEO_COUNTER_CYCLE_STE	( (MAX_SCANLINES_PER_FRAME-3) * CYCLES_PER_LINE_50HZ + 48 + 4 )	/* 4 cycles later than STF */
 
+/* anything above 4 uses automatic frameskip */
+#define AUTO_FRAMESKIP_LIMIT	5
 
 extern int STRes;
 extern int TTRes;
+extern int nFrameSkips;
 extern bool bUseSTShifter;
 extern bool bUseHighRes;
 extern int nVBLs;

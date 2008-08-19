@@ -21,7 +21,7 @@
   2008-08-09   [ET]    Add --statusbar option
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.69 2008-08-12 19:40:43 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.70 2008-08-19 19:15:32 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -146,7 +146,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Double ST low resolution (1=no, 2=yes)" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
-	  "<x>", "Skip <x> frames after each shown frame (0 <= x <= 8)" },
+	  "<x>", "Skip <x> frames after each shown frame (0=off, >4=auto/max)" },
 	{ OPT_BORDERS, NULL, "--borders",
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
 	{ OPT_STATUSBAR, NULL, "--statusbar",

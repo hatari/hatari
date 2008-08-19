@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.19 2008-06-08 16:07:42 eerot Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.20 2008-08-19 19:15:38 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -13,6 +13,7 @@ const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.19 2008-06-08 16:07:
 #include "screen.h"
 #include "screenSnapShot.h"
 #include "vdi.h"
+#include "video.h"
 
 
 #define DLGSCRN_FULLSCRN   3
@@ -47,7 +48,7 @@ const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.19 2008-06-08 16:07:
 #define ITEMS_IN_ARRAY(a) (sizeof(a)/sizeof(a[0]))
 
 /* needs to match Frame skip values in screendlg[]! */
-static const int skip_frames[] = { 0, 1, 2, 4, 8 };
+static const int skip_frames[] = { 0, 1, 2, 4, AUTO_FRAMESKIP_LIMIT };
 
 /* Strings for VDI resolution width and height */
 static char sVdiWidth[5];
@@ -69,7 +70,7 @@ static SGOBJ screendlg[] =
 	{ SGRADIOBUT, 0, 0, 24,6, 3,1, "1" },
 	{ SGRADIOBUT, 0, 0, 29,6, 3,1, "2" },
 	{ SGRADIOBUT, 0, 0, 35,6, 3,1, "4" },
-	{ SGRADIOBUT, 0, 0, 40,6, 3,1, "8" },
+	{ SGRADIOBUT, 0, 0, 40,6, 3,1, "Auto" },
 	{ SGTEXT, 0, 0, 4,7, 8,1, "Monitor:" },
 	{ SGRADIOBUT, 0, 0, 14,7, 6,1, "Mono" },
 	{ SGRADIOBUT, 0, 0, 22,7, 5,1, "RGB" },

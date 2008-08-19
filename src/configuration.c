@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.93 2008-08-12 19:40:43 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.94 2008-08-19 19:15:32 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -423,7 +423,7 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for Screen */
 	ConfigureParams.Screen.bFullScreen = FALSE;
-	ConfigureParams.Screen.nFrameSkips = 0;
+	ConfigureParams.Screen.nFrameSkips = AUTO_FRAMESKIP_LIMIT;
 	ConfigureParams.Screen.bAllowOverscan = TRUE;
 	ConfigureParams.Screen.nSpec512Threshold = 16;
 	ConfigureParams.Screen.nForceBpp = 0;
@@ -504,11 +504,15 @@ void Configuration_Apply(bool bReset)
 			                  ConfigureParams.Screen.nVdiHeight);
 		}
 	}
-
+	if (ConfigureParams.Screen.nFrameSkips < AUTO_FRAMESKIP_LIMIT)
+	{
+		nFrameSkips = ConfigureParams.Screen.nFrameSkips;
+	}
 	/* Set playback frequency */
 	if (ConfigureParams.Sound.bEnableSound)
+	{
 		Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackQuality);
-
+	}
 	/* CPU settings */
 	if (ConfigureParams.System.nCpuFreq < 12)
 	{

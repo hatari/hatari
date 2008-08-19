@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.137 2008-07-14 17:42:30 thothy Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.138 2008-08-19 19:15:32 eerot Exp $";
 
 #include "config.h"
 
@@ -171,9 +171,24 @@ void Main_WaitOnVbl(void)
 	if (ConfigureParams.System.bFastForward == TRUE
 	        || nDelay < -4*nFrameDuration)
 	{
+		if (nFrameSkips < ConfigureParams.Screen.nFrameSkips)
+		{
+			nFrameSkips += 1;
+			printf("Increased frameskip to %d\n", nFrameSkips);
+		}
 		/* Only update nDestMilliTicks for next VBL */
 		nDestMilliTicks = nCurrentMilliTicks + nFrameDuration;
 		return;
+	}
+	/* If automatic frameskip is enabled and delay's more than twice
+	 * the effect of single frameskip, decrease frameskip
+	 */
+	if (nFrameSkips > 0
+	    && ConfigureParams.Screen.nFrameSkips >= AUTO_FRAMESKIP_LIMIT
+	    && 2*nDelay > nFrameDuration/nFrameSkips)
+	{
+		nFrameSkips -= 1;
+		printf("Decreased frameskip to %d\n", nFrameSkips);
 	}
 
 	if (bAccurateDelays)

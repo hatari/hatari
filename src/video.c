@@ -184,7 +184,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.119 2008-07-19 13:51:12 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.120 2008-08-19 19:15:33 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -241,6 +241,7 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.119 2008-07-19 13:51:12 npom
 
 int STRes = ST_LOW_RES;                         /* current ST resolution */
 int TTRes;                                      /* TT shifter resolution mode */
+int nFrameSkips;                                /* speed up by skipping video frames */
 
 bool bUseSTShifter;                             /* Falcon: whether to use ST palette */
 bool bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
@@ -1742,7 +1743,7 @@ static void Video_RenderTTScreen(void)
 static void Video_DrawScreen(void)
 {
 	/* Skip frame if need to */
-	if (nVBLs % (ConfigureParams.Screen.nFrameSkips+1))
+	if (nVBLs % (nFrameSkips+1))
 		return;
 
 	/* Use extended VDI resolution?
