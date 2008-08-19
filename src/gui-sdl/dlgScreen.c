@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.21 2008-08-19 19:43:30 eerot Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.22 2008-08-19 20:05:45 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -19,7 +19,7 @@ const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.21 2008-08-19 19:43:
 #define DLGSCRN_FULLSCRN   3
 #define DLGSCRN_OVERSCAN   4
 #define DLGSCRN_ZOOMLOWRES 5
-#define DLGSCRN_8BPP       6
+#define DLGSCRN_STATUSBAR  6
 #define DLGSCRN_SKIP0      8
 #define DLGSCRN_SKIP1      9
 #define DLGSCRN_SKIP2      10
@@ -63,8 +63,8 @@ static SGOBJ screendlg[] =
 	{ SGTEXT, 0, 0, 18,1, 14,1, "Screen options" },
 	{ SGCHECKBOX, 0, 0, 4,3, 12,1, "Fullscreen" },
 	{ SGCHECKBOX, 0, 0, 4,4, 13,1, "Use borders" },
-	{ SGCHECKBOX, 0, 0, 25,3, 18,1, "Zoom ST-low res." },
-	{ SGCHECKBOX, 0, 0, 25,4, 13,1, "Force 8 bpp" },
+	{ SGCHECKBOX, 0, 0, 22,3, 18,1, "Zoom ST-low res." },
+	{ SGCHECKBOX, 0, 0, 22,4, 13,1, "Statusbar + floppy LED" },
 	{ SGTEXT, 0, 0, 4,6, 9,1, "Frame skip:" },
 	{ SGRADIOBUT, 0, 0, 17,6, 5,1, "Off" },
 	{ SGRADIOBUT, 0, 0, 24,6, 3,1, "1" },
@@ -162,10 +162,10 @@ void Dialog_ScreenDlg(void)
 	else
 		screendlg[DLGSCRN_OVERSCAN].state &= ~SG_SELECTED;
 
-	if (ConfigureParams.Screen.nForceBpp == 8)
-		screendlg[DLGSCRN_8BPP].state |= SG_SELECTED;
+	if (ConfigureParams.Screen.bShowStatusbar)
+		screendlg[DLGSCRN_STATUSBAR].state |= SG_SELECTED;
 	else
-		screendlg[DLGSCRN_8BPP].state &= ~SG_SELECTED;
+		screendlg[DLGSCRN_STATUSBAR].state &= ~SG_SELECTED;
 
 	if (ConfigureParams.Screen.bZoomLowRes)
 		screendlg[DLGSCRN_ZOOMLOWRES].state |= SG_SELECTED;
@@ -281,11 +281,16 @@ void Dialog_ScreenDlg(void)
 	ConfigureParams.Screen.bFullScreen = (screendlg[DLGSCRN_FULLSCRN].state & SG_SELECTED);
 	ConfigureParams.Screen.bAllowOverscan = (screendlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
 
-	if (screendlg[DLGSCRN_8BPP].state & SG_SELECTED)
-		ConfigureParams.Screen.nForceBpp = 8;
+	if (screendlg[DLGSCRN_STATUSBAR].state & SG_SELECTED)
+	{
+		ConfigureParams.Screen.bShowStatusbar = TRUE;
+		ConfigureParams.Screen.bShowDriveLed = TRUE;
+	}
 	else
-		/* TODO: disables this setting if it's != 8 */
-		ConfigureParams.Screen.nForceBpp = 0;
+	{
+		ConfigureParams.Screen.bShowStatusbar = FALSE;
+		ConfigureParams.Screen.bShowDriveLed = FALSE;
+	}
 
 	if (screendlg[DLGSCRN_ZOOMLOWRES].state & SG_SELECTED)
 		ConfigureParams.Screen.bZoomLowRes = TRUE;

@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.13 2008-06-23 20:56:58 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.14 2008-08-19 20:05:45 eerot Exp $";
 
 #include <ctype.h>
 #include "main.h"
@@ -42,7 +42,7 @@ const char change_rcsid[] = "Hatari $Id: change.c,v 1.13 2008-06-23 20:56:58 eer
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check if need to warn user that changes will take place after reset.
+ * Check if user needs to be warned that changes will take place after reset.
  * Return TRUE if wants to reset.
  */
 bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
@@ -103,18 +103,20 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	bool bFloppyInsert[MAX_FLOPPYDRIVES];
 	int i;
 
-	/* Do we need to warn user of that changes will only take effect after reset? */
+	/* Do we need to warn user that changes will only take effect after reset? */
 	if (bForceReset)
 		NeedReset = bForceReset;
 	else
 		NeedReset = Change_DoNeedReset(current, changed);
 
-	/* Do need to change resolution? Need if change display/overscan settings */
-	/*(if switch between Colour/Mono cause reset later) */
+	/* Do need to change resolution? Need if change display/overscan settings
+	 * (if switch between Colour/Mono cause reset later) or toggle statusbar
+	 */
 	if (!NeedReset &&
 	    (changed->Screen.nForceBpp != current->Screen.nForceBpp
 	     || changed->Screen.bZoomLowRes != current->Screen.bZoomLowRes
-	     || changed->Screen.bAllowOverscan != current->Screen.bAllowOverscan))
+	     || changed->Screen.bAllowOverscan != current->Screen.bAllowOverscan
+	     || changed->Screen.bShowStatusbar != current->Screen.bShowStatusbar))
 	{
 		bScreenModeChange = TRUE;
 	}
