@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.20 2008-08-19 19:15:38 eerot Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.21 2008-08-19 19:43:30 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -78,8 +78,8 @@ static SGOBJ screendlg[] =
 	{ SGRADIOBUT, 0, 0, 36,7, 4,1, "TV" },
 
 	{ SGBOX, 0, 0, 1,9, 48,6, NULL },
-	{ SGCHECKBOX, 0, 0, 2,10, 33,1, "Use extended GEM VDI resolution" },
-	{ SGTEXT, 0, 0, 2,12, 11,1, "Resolution:" },
+	{ SGCHECKBOX, 0, 0, 4,10, 33,1, "Use extended GEM VDI resolution" },
+	{ SGTEXT, 0, 0, 4,12, 11,1, "Resolution:" },
 	{ SGBUTTON, 0, 0, 18,12, 1,1, "\x04" },     /* Arrow left */
 	{ SGTEXT, 0, 0, 20,12, 4,1, sVdiWidth },
 	{ SGBUTTON, 0, 0, 25,12, 1,1, "\x03" },     /* Arrow right */
@@ -88,7 +88,7 @@ static SGOBJ screendlg[] =
 	{ SGTEXT, 0, 0, 33,12, 4,1, sVdiHeight },
 	{ SGBUTTON, 0, 0, 38,12, 1,1, "\x03" },     /* Arrow right */
 
-	{ SGTEXT, 0, 0, 2,13, 12,1, "Color Depth:" },
+	{ SGTEXT, 0, 0, 4,13, 12,1, "Color Depth:" },
 	{ SGRADIOBUT, SG_EXIT, 0, 17,13, 7,1, "1 bpp" },
 	{ SGRADIOBUT, SG_EXIT, 0, 26,13, 7,1, "2 bpp" },
 	{ SGRADIOBUT, SG_EXIT, 0, 35,13, 7,1, "4 bpp" },
