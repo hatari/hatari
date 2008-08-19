@@ -209,6 +209,7 @@ typedef struct
   int nVdiWidth;
   int nVdiHeight;
   bool bShowStatusbar;
+  bool bShowDriveLed;
   bool bCaptureChange;
   int nFramesPerSecond;
   int nWindowBorderPixelsLeft;

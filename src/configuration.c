@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.94 2008-08-19 19:15:32 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.95 2008-08-19 19:47:29 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -59,6 +59,7 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nVdiHeight", Int_Tag, &ConfigureParams.Screen.nVdiHeight },
 	{ "nVdiColors", Int_Tag, &ConfigureParams.Screen.nVdiColors },
 	{ "bShowStatusbar", Bool_Tag, &ConfigureParams.Screen.bShowStatusbar },
+	{ "bShowDriveLed", Bool_Tag, &ConfigureParams.Screen.bShowDriveLed },
 	{ "bCaptureChange", Bool_Tag, &ConfigureParams.Screen.bCaptureChange },
 	{ "nFramesPerSecond", Int_Tag, &ConfigureParams.Screen.nFramesPerSecond },
 	{ "nWindowBorderPixelsLeft", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsLeft },
@@ -433,7 +434,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nVdiWidth = 640;
 	ConfigureParams.Screen.nVdiHeight = 480;
 	ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
-	ConfigureParams.Screen.bShowStatusbar = FALSE;
+	ConfigureParams.Screen.bShowStatusbar = TRUE;
+	ConfigureParams.Screen.bShowDriveLed = TRUE;
 	ConfigureParams.Screen.bCaptureChange = FALSE;
 	ConfigureParams.Screen.nFramesPerSecond = 25;
 	ConfigureParams.Screen.nWindowBorderPixelsLeft = 48;

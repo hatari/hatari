@@ -23,6 +23,8 @@ extern int Statusbar_SetHeight(int ScreenHeight, bool FullScreen);
 extern int Statusbar_GetHeight(void);
 
 extern void Statusbar_Init(SDL_Surface *screen);
+extern void Statusbar_OverlayBackup(SDL_Surface *screen);
 extern void Statusbar_Update(SDL_Surface *screen);
+extern void Statusbar_OverlayRestore(SDL_Surface *screen);
 
 #endif /* HATARI_STATUSBAR_H */

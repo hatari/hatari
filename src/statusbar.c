@@ -14,9 +14,15 @@
     to re-initialize / re-draw the statusbar
   - Call Statusbar_SetDriveLed() to set drive led ON or OFF
   - Whenever screen is redrawn, call Statusbar_Update() to
-    draw the updated information to the statusbar
+    draw the updated information to the statusbar (outside
+    of screen locking)
+  - If screen redraws may be partial, Statusbar_OverlayRestore()
+    needs to be called before locking the screen for drawing and
+    Statusbar_OverlayBackup() called after screen unlocking but
+    before calling Statusbar_Update().  This is needed for
+    hiding the overlay drive led when drive led is disabled.
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.3 2008-08-16 15:49:45 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.4 2008-08-19 19:47:29 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -32,11 +38,23 @@ struct {
 	int offset;
 } Led[MAX_DRIVE_LEDS];
 
-/* led size & y-pos on the screen */
+/* drive leds size & y-pos */
 static SDL_Rect LedRect;
 
+/* overlay led size & pos */
+static SDL_Rect OverlayLedRect;
+
+/* screen contents left under overlay led */
+static SDL_Surface *OverlayUnderside;
+
+static enum {
+	OVERLAY_NONE,
+	OVERLAY_DRAWN,
+	OVERLAY_RESTORED
+} bOverlayState;
+
 /* led colors */
-Uint32 LedColorOn, LedColorOff;
+Uint32 LedColorOn, LedColorOff, LedColorBg;
 
 /* screen height above statusbar and height of statusbar below screen */
 static int ScreenHeight;
@@ -90,20 +108,53 @@ void Statusbar_SetDriveLed(drive_index_t drive, bool state)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Set overlay led size/pos on given screen to internal Rect
+ * and free previous resources.
+ */
+static void Statusbar_OverlayInit(const SDL_Surface *surf)
+{
+	int h;
+	/* led size/pos needs to be re-calculated in case screen changed */
+	h = surf->h / 50;
+	OverlayLedRect.w = 2*h;
+	OverlayLedRect.h = h;
+	OverlayLedRect.x = surf->w - 5*h/2;
+	OverlayLedRect.y = h/2;
+	/* free previous restore surface if it's incompatible */
+	if (OverlayUnderside &&
+	    OverlayUnderside->w == OverlayLedRect.w &&
+	    OverlayUnderside->h == OverlayLedRect.h &&
+	    OverlayUnderside->format->BitsPerPixel == surf->format->BitsPerPixel) {
+		SDL_FreeSurface(OverlayUnderside);
+		OverlayUnderside = NULL;
+	}
+	bOverlayState = OVERLAY_NONE;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * (re-)initialize statusbar internal variables for given screen surface
  * (sizes need to be re-calculated in case screen size changes).
  */
 void Statusbar_Init(SDL_Surface *surf)
 {
-	Uint32 gray, black;
+	Uint32 gray;
 	SDL_Rect ledbox, sbarbox;
 	int i, y, fw, fh, distance, offset;
 	char text[] = "A:";
 
+	assert(surf);
+
+	/* dark green and light green for leds themselves */
+	LedColorOff = SDL_MapRGB(surf->format, 0x00, 0x40, 0x00);
+	LedColorOn  = SDL_MapRGB(surf->format, 0x00, 0xe0, 0x00);
+	LedColorBg  = SDL_MapRGB(surf->format, 0x00, 0x00, 0x00);
+
+	Statusbar_OverlayInit(surf);
 	if (!StatusbarHeight) {
 		return;
 	}
-	assert(surf);
+
 	/* Statusbar_SetHeight() not called before this? */
 	assert(surf->h == ScreenHeight + StatusbarHeight);
 
@@ -134,11 +185,6 @@ void Statusbar_Init(SDL_Surface *surf)
 	ledbox.y -= 1;
 	ledbox.w += 2;
 	ledbox.h += 2;
-	black = SDL_MapRGB(surf->format, 0x00, 0x00, 0x00);
-
-	/* dark green and light green for leds themselves */
-	LedColorOff = SDL_MapRGB(surf->format, 0x00, 0x40, 0x00);
-	LedColorOn  = SDL_MapRGB(surf->format, 0x00, 0xf0, 0x00);
 
 	/* set led members and draw their boxes */
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
@@ -146,7 +192,7 @@ void Statusbar_Init(SDL_Surface *surf)
 		Led[i].offset = offset;
 
 		ledbox.x = offset - 1;
-		SDL_FillRect(surf, &ledbox, black);
+		SDL_FillRect(surf, &ledbox, LedColorBg);
 
 		LedRect.x = offset;
 		SDL_FillRect(surf, &LedRect, LedColorOff);
@@ -173,6 +219,86 @@ void Statusbar_Init(SDL_Surface *surf)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Restore the area left under overlay led
+ */
+void Statusbar_OverlayRestore(SDL_Surface *surf)
+{
+	if (StatusbarHeight && ConfigureParams.Screen.bShowStatusbar) {
+		/* overlay not used with statusbar */
+		return;
+	}
+	if (bOverlayState == OVERLAY_DRAWN && OverlayUnderside) {
+		assert(surf);
+		SDL_BlitSurface(OverlayUnderside, NULL, surf, &OverlayLedRect);
+		/* update to screen happens in the draw function with this */
+		bOverlayState = OVERLAY_RESTORED;
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Save the area that will be left under overlay led
+ */
+void Statusbar_OverlayBackup(SDL_Surface *surf)
+{
+	if (StatusbarHeight && ConfigureParams.Screen.bShowStatusbar) {
+		/* overlay not used with statusbar */
+		return;
+	}
+	assert(surf);
+	if (!OverlayUnderside) {
+		SDL_Surface *bak;
+		SDL_PixelFormat *fmt = surf->format;
+		bak = SDL_CreateRGBSurface(surf->flags,
+					   OverlayLedRect.w, OverlayLedRect.h,
+					   fmt->BitsPerPixel,
+					   fmt->Rmask, fmt->Gmask, fmt->Bmask,
+					   fmt->Amask);
+		assert(bak);
+		OverlayUnderside = bak;
+	}
+	SDL_BlitSurface(surf, &OverlayLedRect, OverlayUnderside, NULL);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Draw overlay led onto screen surface if drives are enabled.
+ */
+static void Statusbar_OverlayDraw(SDL_Surface *surf)
+{
+	int i;
+	assert(surf);
+	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
+		if (Led[i].state) {
+			/* enabled led with border */
+			SDL_Rect rect = OverlayLedRect;
+			rect.x += 1;
+			rect.y += 1;
+			rect.w -= 2;
+			rect.h -= 2;
+			SDL_FillRect(surf, &OverlayLedRect, LedColorBg);
+			SDL_FillRect(surf, &rect, LedColorOn);
+			bOverlayState = OVERLAY_DRAWN;
+			break;
+		}
+	}
+	/* possible state transitions:
+	 *   NONE -> DRAWN -> RESTORED -> DRAWN -> RESTORED -> NONE
+	 * Other than NONE state needs to be updated on screen
+	 */
+	switch (bOverlayState) {
+	case OVERLAY_RESTORED:
+		bOverlayState = OVERLAY_NONE;
+	case OVERLAY_DRAWN:
+		SDL_UpdateRects(surf, 1, &OverlayLedRect);
+		break;
+	case OVERLAY_NONE:
+		break;
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Update statusbar information (leds etc) if/when needed.
  * 
  * May not be called when screen is locked (SDL limitation).
@@ -184,7 +310,10 @@ void Statusbar_Update(SDL_Surface *surf)
 	int i;
 
 	if (!(StatusbarHeight && ConfigureParams.Screen.bShowStatusbar)) {
-		/* not enabled (anymore) */
+		/* not enabled (anymore), show overlay led instead? */
+		if (ConfigureParams.Screen.bShowDriveLed) {
+			Statusbar_OverlayDraw(surf);
+		}
 		return;
 	}
 	assert(surf);

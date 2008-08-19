@@ -32,7 +32,7 @@
 */
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.91 2008-08-16 15:49:45 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.92 2008-08-19 19:47:29 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -991,6 +991,11 @@ static void Screen_DrawFrame(bool bForceFlip)
 	if (pFrameBuffer->bFullUpdate)
 		Screen_SetFullUpdateMask();
 
+	/* restore area potentially left under overlay led
+	 * and saved by Statusbar_OverlayBackup()
+	 */
+	Statusbar_OverlayRestore(sdlscrn);
+	
 	/* Lock screen ready for drawing */
 	if (Screen_Lock())
 	{
@@ -1042,6 +1047,7 @@ static void Screen_DrawFrame(bool bForceFlip)
 		Screen_UnLock();
 
 		/* draw statusbar or overlay led(s) after unlock */
+		Statusbar_OverlayBackup(sdlscrn);
 		Statusbar_Update(sdlscrn);
 		
 		/* Clear flags, remember type of overscan as if change need screen full update */

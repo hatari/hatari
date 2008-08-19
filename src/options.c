@@ -18,10 +18,10 @@
   2008-06-08   [ET]    Add disk image options and refactor their handling
   2008-06-10   [ET]    Add --vdi and joystick<port> <type> options
   2008-07-30   [ET]    Shorter & more consistent option descriptions
-  2008-08-09   [ET]    Add --statusbar option
+  2008-08-19   [ET]    Add --statusbar and --drive-led options
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.70 2008-08-19 19:15:32 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: options.c,v 1.71 2008-08-19 19:47:29 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -65,6 +65,7 @@ enum {
 	OPT_FRAMESKIPS,
 	OPT_BORDERS,
 	OPT_STATUSBAR,
+	OPT_DRIVE_LED,
 	OPT_SPEC512,
 	OPT_FORCEBPP,
 	OPT_VDI,		/* VDI options */
@@ -151,6 +152,8 @@ static const opt_t HatariOptions[] = {
 	  "<bool>", "Show screen borders (for overscan demos etc)" },
 	{ OPT_STATUSBAR, NULL, "--statusbar",
 	  "<bool>", "Show statusbar (floppy leds etc)" },
+	{ OPT_DRIVE_LED,   NULL, "--drive-led",
+	  "<bool>", "Show overlay drive led when statusbar isn't shown" },
 	{ OPT_SPEC512, NULL, "--spec512",
 	  "<x>", "Spec512 palette threshold (0 <= x <= 512, 0=disable)" },
 	{ OPT_FORCEBPP, NULL, "--bpp",
@@ -754,6 +757,10 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			
 		case OPT_STATUSBAR:
 			ok = Opt_Bool(argv[++i], OPT_STATUSBAR, &ConfigureParams.Screen.bShowStatusbar);
+			break;
+			
+		case OPT_DRIVE_LED:
+			ok = Opt_Bool(argv[++i], OPT_DRIVE_LED, &ConfigureParams.Screen.bShowDriveLed);
 			break;
 			
 		case OPT_SPEC512:
