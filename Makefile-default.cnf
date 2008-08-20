@@ -44,12 +44,20 @@ HOSTLDFLAGS =
 SDL_CFLAGS := $(shell sdl-config --cflags)
 SDL_LIBS := $(shell sdl-config --libs)
 
-# libpng configuration
-LIBPNG_CFLAGS = $(shell pkg-config --cflags libpng)
-LIBPNG_LIBS = $(shell pkg-config --libs libpng)
+# libpng configuration (for screenshots)
+LIBPNG_LIBS := $(shell pkg-config --libs libpng)
 ifneq ($(LIBPNG_LIBS),)
+LIBPNG_CFLAGS := $(shell pkg-config --cflags libpng)
 CFLAGS += $(LIBPNG_CFLAGS) -DHAVE_LIBPNG=1
 LIBS += $(LIBPNG_LIBS)
+endif
+
+# X11 configuration (for SDL window embedding)
+X11_LIBS := $(shell pkg-config --libs x11)
+ifneq ($(X11_LIBS),)
+X11_CFLAGS := $(shell pkg-config --cflags x11)
+CFLAGS += $(X11_CFLAGS) -DHAVE_X11=1
+LIBS += $(X11_LIBS)
 endif
 
 # Here you can define the default data directory for Hatari.
