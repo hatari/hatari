@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.44 2008-07-28 20:38:47 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.45 2008-08-21 16:05:55 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -1981,8 +1981,11 @@ void IKBD_KeyboardControl_ReadByte(void)
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
 	M68000_WaitState(8);
 
-	/* For our emulation send is immediate so acknowledge buffer is empty */
-	IoMem[0xfffc00] = ACIAStatusRegister | ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
+	IoMem[0xfffc00] = ACIAStatusRegister;
+
+	/* For our emulation send is immediate, so let's set the acknowledge
+	 * buffer empty bit for the next time the program polls the register */
+	ACIAStatusRegister |= ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD_ACIA ) )
 	{
@@ -2063,6 +2066,12 @@ void IKBD_KeyboardData_WriteByte(void)
 	}
 
 	IKBD_SendByteToKeyboardProcessor(IoMem[0xfffc02]);  /* Pass our byte to the keyboard processor */
+
+	/* Some games like USS John Young / FOF54 actually check whether the
+	 * transmit-buffer-empty bit is really cleared after writing a data
+	 * byte to the IKBD, so we have to temporarily clear this bit, too,
+	 * although the byte is send immediately to our virtual IKBD. */
+	ACIAStatusRegister &= ~ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
 }
 
 
