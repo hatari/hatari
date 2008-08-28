@@ -1,17 +1,16 @@
 2008-07
-- First properly working with menus and toolbars instead
-  of buttons and Makefile for installation
+- First properly working with menus and toolbars instead of buttons
+- Makefile for installation
 - Can adapt properly also to Hatari window getting smaller
-  (on desktop, still issues with maemo/Matchbox WM)
+  (works on desktop, maemo/Matchbox WM have still issues)
 2008-06
 - Fairly usable version with configurable buttons
 - Can adapt to Hatari window size changes
 2008-05
 - Loading & saving Hatari configuration and checking
-  changes against saved one works
+  changes against saved configuration works
 2008-04
 - First version with debugger UI
 2008-02
-- First version that can embed Hatari window
-  (needed quite a lot of testing to find method
-  that works well enough)
+- First version that can embed Hatari window (needed quite
+  a lot of testing to find method that works well enough)
