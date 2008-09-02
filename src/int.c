@@ -65,7 +65,7 @@
 
 
 
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.24 2008-07-22 20:55:05 thothy Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.25 2008-09-02 10:09:25 thothy Exp $";
 
 #include "main.h"
 #include "blitter.h"
@@ -330,28 +330,11 @@ void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler
 
 /*-----------------------------------------------------------------------*/
 /**
- * Add interrupt to occur from now
- * 'AddInternalCycle' can be used to add another delay to the resulting
- * number of internal cycles (should be 0 most of the time, except in
- * the MFP emulation to start timers precisely based on the number of
- * cycles of the current instruction).
+ * Add interrupt to occur from now.
  */
-void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler, int AddInternalCycle)
+void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 {
-	/* Update list cycle counts before adding a new one, */
-	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
-	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
-		Int_UpdateInterrupt();
-
-	InterruptHandlers[Handler].bUsed = TRUE;
-	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL ( CycleTime , CycleType );
-	InterruptHandlers[Handler].Cycles += AddInternalCycle;
-
-	/* Set new */
-	Int_SetNewInterrupt();
-
-	HATARI_TRACE ( HATARI_TRACE_INT , "int add rel video_cyc=%d handler=%d handler_cyc=%d pending_count=%d\n",
-	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
+	Int_AddRelativeInterruptWithOffset(CycleTime, CycleType, Handler, 0);
 }
 
 
@@ -380,8 +363,12 @@ void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id
 
 /*-----------------------------------------------------------------------*/
 /**
- * Add interrupt to occur after CycleTime/CycleType + CycleOffset
- * This allows to restart an MFP timer just after it expired
+ * Add interrupt to occur after CycleTime/CycleType + CycleOffset.
+ * CycleOffset can be used to add another delay to the resulting
+ * number of internal cycles (should be 0 most of the time, except in
+ * the MFP emulation to start timers precisely based on the number of
+ * cycles of the current instruction).
+ * This allows to restart an MFP timer just after it expired.
  */
 void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset)
 {

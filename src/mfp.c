@@ -80,7 +80,7 @@
 /*			Fence (although this routine is in fact buggy)).		*/
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.44 2008-07-12 13:17:26 npomarede Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.45 2008-09-02 10:09:25 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -471,7 +471,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler,
 
 				/* Start timer from now? If not continue timer using PendingCycleOver */
 				if (bFirstTimer)
-					Int_AddRelativeInterrupt(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles);
+					Int_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles);
 				else
 				{
 					int	TimerClockCyclesInternal = INT_CONVERT_TO_INTERNAL ( TimerClockCycles , INT_MFP_CYCLE );
@@ -558,7 +558,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, int Handler,
 
 				/* Start timer from now? If not continue timer using PendingCycleOver */
 				if (bFirstTimer)
-					Int_AddRelativeInterrupt(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles);
+					Int_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, AddCurCycles);
 				else
 				{
 					int	TimerClockCyclesInternal = INT_CONVERT_TO_INTERNAL ( TimerClockCycles , INT_MFP_CYCLE );

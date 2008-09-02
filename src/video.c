@@ -184,7 +184,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.121 2008-09-02 09:53:30 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.122 2008-09-02 10:09:25 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -795,8 +795,8 @@ void Video_Sync_WriteByte(void)
 		else if ( nLineCycles2 < LineEndCycle )			/* freq changed before the end of the line */
 		{
 			LineTimerBCycle = LineEndCycle + TIMERB_VIDEO_CYCLE_OFFSET;
-			Int_AddRelativeInterrupt ( LineTimerBCycle - nLineCycles2 ,
-						INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+			Int_AddRelativeInterrupt(LineTimerBCycle - nLineCycles2,
+						 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
 		}
 
 		else							/* freq changed after the end of the line */
@@ -807,8 +807,8 @@ void Video_Sync_WriteByte(void)
 			else				/* 60 Hz, pos 372+28 */
 				LineTimerBCycle = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
 
-			Int_AddRelativeInterrupt ( LineTimerBCycle - nLineCycles2 + nCyclesPerLine ,
-						INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+			Int_AddRelativeInterrupt(LineTimerBCycle - nLineCycles2 + nCyclesPerLine,
+						 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
 		}
 	}
 
@@ -1439,8 +1439,8 @@ void Video_InterruptHandler_EndLine(void)
 		else				/* 60 Hz, pos 372+28 */
 			LineTimerBCycle = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
 
-		Int_AddRelativeInterrupt ( LineTimerBCycle - nLineCycles + nCyclesPerLine ,
-					INT_CPU_CYCLE , INTERRUPT_VIDEO_ENDLINE , 0 );
+		Int_AddRelativeInterrupt(LineTimerBCycle - nLineCycles + nCyclesPerLine,
+					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
 	}
 
 	/* Is this a good place to send the keyboard packets? Done once per frame */

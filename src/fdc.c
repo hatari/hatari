@@ -28,7 +28,7 @@
 /*			the command takes more time than a real ST to complete.		*/
 
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.42 2008-09-02 09:53:30 thothy Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.43 2008-09-02 10:09:25 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -438,7 +438,7 @@ void FDC_GpipRead(void)
 		{
 			/* Restart FDC update interrupt to occur right after a few cycles */
 			Int_RemovePendingInterrupt(INTERRUPT_FDC);
-			Int_AddRelativeInterrupt(4, INT_CPU_CYCLE, INTERRUPT_FDC, 0);
+			Int_AddRelativeInterrupt(4, INT_CPU_CYCLE, INTERRUPT_FDC);
 		}
 	}
 	else

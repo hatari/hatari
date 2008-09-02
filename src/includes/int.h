@@ -58,7 +58,7 @@ extern void Int_Reset(void);
 extern void Int_MemorySnapShot_Capture(bool bSave);
 extern void Int_AcknowledgeInterrupt(void);
 extern void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
-extern void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler, int AddInternalCycle);
+extern void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler);
 extern void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler);
 extern void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset);
 extern void Int_RemovePendingInterrupt(interrupt_id Handler);

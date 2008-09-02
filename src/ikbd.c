@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.46 2008-09-02 09:53:30 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.47 2008-09-02 10:09:25 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -1002,9 +1002,9 @@ static void IKBD_Cmd_Reset(void)
 
 		/* Start timer - some commands are send during this time they may be ignored (see real ST!) */
 		if (!KeyboardProcessor.bReset)
-			Int_AddRelativeInterrupt(IKBD_INIT_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER, 0);
+			Int_AddRelativeInterrupt(IKBD_INIT_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER);
 		else
-			Int_AddRelativeInterrupt(IKBD_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER, 0);
+			Int_AddRelativeInterrupt(IKBD_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER);
 
 		/* Set this 'critical' flag, gets reset when timer expires */
 		bDuringResetCriticalTime = TRUE;
@@ -1858,7 +1858,7 @@ void IKBD_InterruptHandler_ACIA(void)
 	 * interrupt is triggered - for example the "V8 music system" demo
 	 * depends on this behaviour. To emulate this, we simply start another
 	 * Int which triggers the MFP interrupt later: */
-	Int_AddRelativeInterrupt(18, INT_CPU_CYCLE, INTERRUPT_IKBD_MFP, 0);
+	Int_AddRelativeInterrupt(18, INT_CPU_CYCLE, INTERRUPT_IKBD_MFP);
 }
 
 
@@ -1895,7 +1895,7 @@ static void IKBD_SendByteToACIA(int nAciaCycles)
 	if (!bByteInTransitToACIA)
 	{
 		/* Send byte to ACIA */
-		Int_AddRelativeInterrupt(nAciaCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA, 0);
+		Int_AddRelativeInterrupt(nAciaCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
 		/* Set flag so only transmit one byte at a time */
 		bByteInTransitToACIA = TRUE;
 	}

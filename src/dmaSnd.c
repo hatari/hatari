@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.18 2008-09-02 09:53:30 thothy Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.19 2008-09-02 10:09:25 thothy Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -157,7 +157,7 @@ static void DmaSnd_StartNewFrame(void)
 	nCyclesForFrame = nFrameLen * (8013000.0 / DmaSnd_DetectSampleRate());
 	if (!(nDmaSoundMode & DMASNDMODE_MONO))  /* Is it stereo? */
 		nCyclesForFrame = nCyclesForFrame / 2;
-	Int_AddRelativeInterrupt(nCyclesForFrame, INT_CPU_CYCLE, INTERRUPT_DMASOUND, 0);
+	Int_AddRelativeInterrupt(nCyclesForFrame, INT_CPU_CYCLE, INTERRUPT_DMASOUND);
 }
 
 
