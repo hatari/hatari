@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.17 2008-08-19 00:09:59 thothy Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.18 2008-09-02 09:53:30 thothy Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -145,7 +145,7 @@ static double DmaSnd_DetectSampleRate(void)
 static void DmaSnd_StartNewFrame(void)
 {
 	int nCyclesForFrame;
-	
+
 	nFrameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
 	nFrameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
 
@@ -381,11 +381,11 @@ void DmaSnd_SoundMode_WriteWord(void)
 	/* Falcon has meaning in almost all bits of SND_SMC */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
-		
+
 		nDmaSoundMode = IoMem_ReadWord(0xff8920);
 		/* FIXME: add code here to evaluate Falcon specific settings */
-		
-		
+
+
 	} else {
 		/* STE or TT - hopefully STFM emulation never gets here :)
 		 * we maskout the Falcon only bits so we only hit bits that exist on a real STE

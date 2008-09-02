@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.45 2008-08-21 16:05:55 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.46 2008-09-02 09:53:30 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -359,7 +359,7 @@ void IKBD_Reset_ExeMode ( void )
 	pIKBD_CustomCodeHandler_Read = NULL;
 	pIKBD_CustomCodeHandler_Write = NULL;
 	IKBD_ExeMode = FALSE;
-		
+
 	Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
 	bByteInTransitToACIA = FALSE;
 	IKBD_AddKeyToKeyboardBuffer(0xF0);		/* Assume OK, return correct code */
@@ -1522,7 +1522,7 @@ static void IKBD_Cmd_ReadMemory(void)
 static void IKBD_Cmd_Execute(void)
 {
 	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_Execute\n");
-	
+
 	if ( pIKBD_CustomCodeHandler_Write )
 	{
 		HATARI_TRACE ( HATARI_TRACE_IKBD_EXEC, "ikbd execute addr 0x%x using custom handler\n" ,
@@ -1962,10 +1962,10 @@ static void IKBD_AddKeyToKeyboardBuffer_Real(Uint8 Data, int nAciaCycles)
  */
 void IKBD_PressSTKey(Uint8 ScanCode, bool bPress)
 {
-	/* Store the state of each ST scancode : 1=pressed 0=released */	
+	/* Store the state of each ST scancode : 1=pressed 0=released */
 	if ( bPress )		ScanCodeState[ ScanCode & 0x7f ] = 1;
-	else			ScanCodeState[ ScanCode & 0x7f ] = 0;	
-	
+	else			ScanCodeState[ ScanCode & 0x7f ] = 0;
+
 	if (!bPress)
 		ScanCode |= 0x80;    /* Set top bit if released key */
 	IKBD_AddKeyToKeyboardBuffer(ScanCode);  /* And send to keyboard processor */
@@ -2192,7 +2192,7 @@ static void IKBD_CustomCodeHandler_CommonBoot ( Uint8 aciabyte )
 
 		pIKBD_CustomCodeHandler_Read = CustomCodeDefinitions[ i ].ExeMainHandler_Read;
 		pIKBD_CustomCodeHandler_Write = CustomCodeDefinitions[ i ].ExeMainHandler_Write;
-		
+
 		Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
 		(*pIKBD_CustomCodeHandler_Read) ();		/* initialize ACIAByte */
 	}
@@ -2212,7 +2212,7 @@ static void IKBD_CustomCodeHandler_FroggiesMenu_Read ( void )
 {
 	Uint8		res1 = 0;
 	Uint8		res2 = 0;
-	
+
 	if ( KeyboardProcessor.Mouse.DeltaX < 0 )	res1 = 0x7a;	/* mouse left */
 	if ( KeyboardProcessor.Mouse.DeltaX > 0 )	res1 = 0x06;	/* mouse right */
 	if ( KeyboardProcessor.Mouse.DeltaY < 0 )	res2 = 0x7a;	/* mouse up */
@@ -2258,7 +2258,7 @@ static void IKBD_CustomCodeHandler_Transbeauce2Menu_Read ( void )
 
 	/* joystick emulation (bit mapping is same as cursor above, with bit 7 = fire button */
 	res |= ( Joy_GetStickData(1) & 0x8f ) ;			/* keep bits 0-3 and 7 */
-	
+
 	IKBD_AddKeyToKeyboardBuffer_Real(res, ACIA_CYCLES);
 }
 
@@ -2277,7 +2277,7 @@ static void IKBD_CustomCodeHandler_Transbeauce2Menu_Write ( Uint8 aciabyte )
 static void IKBD_CustomCodeHandler_DragonnelsMenu_Read ( void )
 {
 	Uint8		res = 0;
-	
+
 	if ( KeyboardProcessor.Mouse.DeltaY < 0 )	res = 0xfc;	/* mouse up */
 	if ( KeyboardProcessor.Mouse.DeltaY > 0 )	res = 0x04;	/* mouse down */
 

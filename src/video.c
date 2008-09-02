@@ -184,7 +184,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.120 2008-08-19 19:15:33 eerot Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.121 2008-09-02 09:53:30 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -1030,7 +1030,7 @@ static void Video_CopyScreenLineColor(void)
 
 	/* A 60 Hz line with only the left border removed is 26+158 bytes instead */
 	/* of 26+160 in 50 Hz */
-	if ( ( LineBorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MID ) ) 
+	if ( ( LineBorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MID ) )
 	  && ( LineEndCycle == LINE_END_CYCLE_60 ) )
 	  LineBorderMask |= BORDERMASK_RIGHT_MINUS_2;
 
@@ -1045,7 +1045,7 @@ static void Video_CopyScreenLineColor(void)
 	else
 	{
 		/* Does have left border? If not, clear to color '0' */
-		if ( LineBorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MID ) ) 
+		if ( LineBorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MID ) )
 		{
 			/* The "-2" in the following line is needed so that the offset is a multiple of 8 */
 			pVideoRaster += BORDERBYTES_LEFT-SCREENBYTES_LEFT+VideoOffset;
@@ -1184,7 +1184,7 @@ static void Video_CopyScreenLineColor(void)
 					do_put_mem_word(pScrollAdj+3, (do_get_mem_word(pScrollAdj+3) << HWScrollCount)
 					                | (do_get_mem_word(pVideoRaster+6) >> nNegScrollCnt));
 				}
-				
+
 				/* Depending on whether $ff8264 or $ff8265 was used to scroll, */
 				/* we prefetched 16 pixel (8 bytes) */
 				if ( HWScrollPrefetch == 1 )		/* $ff8265 prefetches 16 pixels */
@@ -2300,10 +2300,10 @@ void Video_HorScroll_Write(void)
 	{
 		Prefetch = 0;				/* scroll without prefetch */
 		LastCycleScroll8264 = nFrameCycles;
-	
+
 		if ( ( ScrollCount == 0 ) && ( LastVal8265 > 0 ) && ( LastCycleScroll8265 >= 0 )
 			&& ( LastCycleScroll8264 - LastCycleScroll8265 <= 40 ) )
-		{	                        
+		{
 			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect ste left+16 pixels\n" );
 			Add16px = TRUE;
 		}

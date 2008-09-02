@@ -10,7 +10,7 @@
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.31 2008-06-29 21:33:12 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.32 2008-09-02 09:53:30 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -60,7 +60,7 @@ static Uint16 halftone_ram[16];
 static Uint16 end_mask_1, end_mask_2, end_mask_3;
 static Uint16 x_count, x_count_max, y_count;
 static Uint8 hop, op, blit_control, skewreg;
-static Uint8 NFSR, FXSR; 
+static Uint8 NFSR, FXSR;
 static Uint32 dest_addr, source_addr;
 static int halftone_curroffset;
 static Uint32 source_buffer;
@@ -263,14 +263,14 @@ static inline void put_dst_data(Uint8 skew, Uint16 end_mask)
  * be able to abort and resume the blitting at any time.
  */
 static void Do_Blit(void)
-{ 
+{
 	Uint8 skew = skewreg & 15;
 	int source_x_inc, source_y_inc;
 	int dest_x_inc, dest_y_inc;
 	int halftone_direction;
 	int cyc_per_op;
 
-	/*if(address_space_24)*/ 
+	/*if(address_space_24)*/
 	{ source_addr &= 0x0fffffe; dest_addr &= 0x0fffffe; }
 
 	if (op == 0 || op == 15)
@@ -305,7 +305,7 @@ static void Do_Blit(void)
 		cyc_per_op = blit_cycles_tab[op][hop] * 4;  // 8 MHz Blitter on ST/STE
 
 	/* Now we enter the main blitting loop */
-	do 
+	do
 	{
 		/* First word of a line */
 		if (x_count == x_count_max)
@@ -342,7 +342,7 @@ static void Do_Blit(void)
 		{
 			dest_addr += dest_x_inc;
 			do_source_shift();
-			if ( (!NFSR) || ((~(0xffff>>skew)) > end_mask_3) ) 
+			if ( (!NFSR) || ((~(0xffff>>skew)) > end_mask_3) )
 			{
 				source_addr += source_x_inc;
 				get_source_data();
@@ -559,7 +559,7 @@ void Blitter_HalftoneOp_WriteByte(void)
  * Write to blitter logical operation register.
  */
 void Blitter_LogOp_WriteByte(void)
-{	
+{
 	/* h/ware reg masks out the top 4 bits! */
 	op = IoMem_ReadByte(REG_BLIT_LOP) & 15;
 }
@@ -590,7 +590,7 @@ void Blitter_Control_WriteByte(void)
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "blitter write ctrl=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , 
+		HATARI_TRACE_PRINT ( "blitter write ctrl=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
 				IoMem_ReadByte(REG_CONTROL) ,
 				nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
@@ -599,7 +599,7 @@ void Blitter_Control_WriteByte(void)
 
 	/* Remove old pending update interrupt */
 	Int_RemovePendingInterrupt(INTERRUPT_BLITTER);
-	
+
 	/* Busy bit set? */
 	if (blit_control & 0x80)
 	{

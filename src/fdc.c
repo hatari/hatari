@@ -28,7 +28,7 @@
 /*			the command takes more time than a real ST to complete.		*/
 
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.41 2008-05-19 20:34:09 thothy Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.42 2008-09-02 09:53:30 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -294,7 +294,7 @@ void FDC_ResetDMAStatus(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Set DMA Status (RD 0xff8606)
- * 
+ *
  * NOTE FDC Doc's are incorrect - Bit 0 is '0' on error (See TOS floprd, Ninja III etc...)
  * Look like Atari(yet again) connected the hardware up differently to the spec'
  *
@@ -339,7 +339,7 @@ void FDC_DmaStatus_ReadWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * 
+ *
  */
 static void FDC_UpdateDiskDrive(void)
 {
@@ -1230,7 +1230,7 @@ void FDC_DiskController_WriteWord(void)
 
 	/* filter hdc commands */
 	if ((DMAModeControl_ff8606wr & 0x0018) == 8)
-		return;	
+		return;
 
 	/* Are we trying to set the SectorCount? */
 	if (DMAModeControl_ff8606wr&0x10)         /* Bit 4 */
@@ -1441,7 +1441,7 @@ void FDC_DMADataFromFloppy(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Write word to 0xff8606 (DMA Mode Control)
- * 
+ *
  * Eg.
  * $80 - Selects command/status register
  * $82 - Selects track register
