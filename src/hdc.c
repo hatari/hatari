@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.19 2008-05-19 20:34:10 thothy Exp $";
+const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.20 2008-09-02 19:46:42 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -19,6 +19,8 @@ const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.19 2008-05-19 20:34:10 thothy Ex
 #include "mfp.h"
 #include "stMemory.h"
 #include "tos.h"
+#include "statusbar.h"
+
 
 /*
   ACSI emulation: 
@@ -443,6 +445,9 @@ void HDC_EmulateCommandPacket()
 		FDC_AcknowledgeInterrupt();
 		break;
 	}
+
+	/* Update the led each time a command is processed */
+	Statusbar_EnableHDLed();
 }
 
 
