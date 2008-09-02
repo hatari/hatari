@@ -13,12 +13,11 @@
 typedef enum {
 	DRIVE_LED_A,
 	DRIVE_LED_B,
-	DRIVE_LED_C
+	DRIVE_LED_HD
 } drive_index_t;
 
-#define MAX_DRIVE_LEDS (DRIVE_LED_C + 1)
-
-extern void Statusbar_SetDriveLed(drive_index_t drive, bool state);
+extern void Statusbar_EnableHDLed(void);
+extern void Statusbar_SetFloppyLed(drive_index_t drive, bool state);
 extern int Statusbar_SetHeight(int ScreenHeight, bool FullScreen);
 extern int Statusbar_GetHeight(void);
 

@@ -9,20 +9,21 @@
   Use like this:
   - Before screen surface is (re-)created Statusbar_SetHeight()
     has to be called with the new screen height. Add the returned
-    value to screen height
+    value to screen height.  After this Statusbar_GetHeight()
+    can be used to retrieve the statusbar size
   - After screen surface is (re-)created, call Statusbar_Init()
     to re-initialize / re-draw the statusbar
-  - Call Statusbar_SetDriveLed() to set drive led ON or OFF
-  - Whenever screen is redrawn, call Statusbar_Update() to
-    draw the updated information to the statusbar (outside
-    of screen locking)
+  - Call Statusbar_SetFloppyLed() to set floppy drive led ON/OFF,
+    or call Statusbar_EnableHDLed() to enabled HD led for a while
+  - Whenever screen is redrawn, call Statusbar_Update() to draw the
+    updated information to the statusbar (outside of screen locking)
   - If screen redraws may be partial, Statusbar_OverlayRestore()
     needs to be called before locking the screen for drawing and
-    Statusbar_OverlayBackup() called after screen unlocking but
-    before calling Statusbar_Update().  This is needed for
-    hiding the overlay drive led when drive led is disabled.
+    Statusbar_OverlayBackup() needs to be called after screen unlocking,
+    but before calling Statusbar_Update().  This is needed for
+    hiding the overlay drive led when drive leds are turned OFF.
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.4 2008-08-19 19:47:29 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.5 2008-09-02 18:56:49 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -30,12 +31,14 @@ const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.4 2008-08-19 19:47:29 eerot
 #include "sdlgui.h"
 #include "statusbar.h"
 
+#define MAX_DRIVE_LEDS (DRIVE_LED_HD + 1)
+
 /* whether drive leds should be ON and their previous shown state */
 struct {
 	bool state;
 	bool oldstate;
-	/* led x-pos on screen */
-	int offset;
+	Uint32 timeout;	/* when to disable led, valid only if >0 && state=TRUE */
+	int offset;	/* led x-pos on screen */
 } Led[MAX_DRIVE_LEDS];
 
 /* drive leds size & y-pos */
@@ -98,11 +101,23 @@ int Statusbar_GetHeight(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return height of statusbar set with Statusbar_SetHeight()
+ * Enable HD drive led, it will be automatically disabled after a while.
  */
-void Statusbar_SetDriveLed(drive_index_t drive, bool state)
+void Statusbar_EnableHDLed(void)
 {
-	assert(drive < MAX_DRIVE_LEDS);
+	/* leds are shown for 1/2 sec after enabling */
+	Led[DRIVE_LED_HD].timeout = SDL_GetTicks() + 1000/2;
+	Led[DRIVE_LED_HD].state = TRUE;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set given floppy drive led state, anything enabling led with this
+ * needs also to take care of disabling it.
+ */
+void Statusbar_SetFloppyLed(drive_index_t drive, bool state)
+{
+	assert(drive == DRIVE_LED_A || drive == DRIVE_LED_B);
 	Led[drive].state = state;
 }
 
@@ -141,7 +156,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	Uint32 gray;
 	SDL_Rect ledbox, sbarbox;
 	int i, y, fw, fh, distance, offset;
-	char text[] = "A:";
+	const char *text[MAX_DRIVE_LEDS] = { "A:", "B:", "HD:" };
 
 	assert(surf);
 
@@ -149,6 +164,12 @@ void Statusbar_Init(SDL_Surface *surf)
 	LedColorOff = SDL_MapRGB(surf->format, 0x00, 0x40, 0x00);
 	LedColorOn  = SDL_MapRGB(surf->format, 0x00, 0xe0, 0x00);
 	LedColorBg  = SDL_MapRGB(surf->format, 0x00, 0x00, 0x00);
+
+	/* disable leds */
+	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
+		Led[i].state = Led[i].oldstate = FALSE;
+		Led[i].timeout = 0;
+	}
 
 	Statusbar_OverlayInit(surf);
 	if (!StatusbarHeight) {
@@ -186,7 +207,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	ledbox.w += 2;
 	ledbox.h += 2;
 
-	/* set led members and draw their boxes */
+	/* calculate led offsets and draw their boxes */
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
 		offset = (i+1)*distance;
 		Led[i].offset = offset;
@@ -196,7 +217,6 @@ void Statusbar_Init(SDL_Surface *surf)
 
 		LedRect.x = offset;
 		SDL_FillRect(surf, &LedRect, LedColorOff);
-		Led[i].oldstate = FALSE;
 	}
 
 	/* TODO:
@@ -209,8 +229,8 @@ void Statusbar_Init(SDL_Surface *surf)
 	/* draw led box labels */
 	y = LedRect.y - 2;
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
-		text[0] = 'A' + i;
-		SDLGui_Text(Led[i].offset - 3*fw, y, text);
+		offset = Led[i].offset - (strlen(text[i]) + 1) * fw;
+		SDLGui_Text(offset, y, text[i]);
 	}
 
 	/* and blit statusbar on screen */
@@ -266,10 +286,16 @@ void Statusbar_OverlayBackup(SDL_Surface *surf)
  */
 static void Statusbar_OverlayDraw(SDL_Surface *surf)
 {
+	Uint32 currentticks = SDL_GetTicks();
 	int i;
+
 	assert(surf);
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
 		if (Led[i].state) {
+			if (Led[i].timeout && Led[i].timeout < currentticks) {
+				Led[i].state = FALSE;
+				continue;
+			}
 			/* enabled led with border */
 			SDL_Rect rect = OverlayLedRect;
 			rect.x += 1;
@@ -305,8 +331,8 @@ static void Statusbar_OverlayDraw(SDL_Surface *surf)
  */
 void Statusbar_Update(SDL_Surface *surf)
 {
+	Uint32 color, currentticks;
 	SDL_Rect rect;
-	Uint32 color;
 	int i;
 
 	if (!(StatusbarHeight && ConfigureParams.Screen.bShowStatusbar)) {
@@ -321,7 +347,11 @@ void Statusbar_Update(SDL_Surface *surf)
 	assert(surf->h == ScreenHeight + StatusbarHeight);
 
 	rect = LedRect;
+	currentticks = SDL_GetTicks();
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
+		if (Led[i].timeout && Led[i].timeout < currentticks) {
+			Led[i].state = FALSE;
+		}
 		if (Led[i].state == Led[i].oldstate) {
 			continue;
 		}

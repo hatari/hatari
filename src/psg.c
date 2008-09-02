@@ -71,7 +71,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.29 2008-08-13 18:44:02 eerot Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.30 2008-09-02 18:56:49 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -252,20 +252,20 @@ void PSG_DataRegister_WriteByte(void)
 		if ( (PSGRegisters[PSG_REG_IO_PORTA]&(1<<1)) == 0 )
 		{
 			/* floppy drive A is ON */
-			Statusbar_SetDriveLed(DRIVE_LED_A, TRUE);
+			Statusbar_SetFloppyLed(DRIVE_LED_A, TRUE);
 		}
 		else
 		{
-			Statusbar_SetDriveLed(DRIVE_LED_A, FALSE);
+			Statusbar_SetFloppyLed(DRIVE_LED_A, FALSE);
 		}
 		if ( (PSGRegisters[PSG_REG_IO_PORTA]&(1<<2)) == 0 )
 		{
 			/* floppy drive B is ON */
-			Statusbar_SetDriveLed(DRIVE_LED_B, TRUE);
+			Statusbar_SetFloppyLed(DRIVE_LED_B, TRUE);
 		}
 		else
 		{
-			Statusbar_SetDriveLed(DRIVE_LED_B, FALSE);
+			Statusbar_SetFloppyLed(DRIVE_LED_B, FALSE);
 		}
 
 		/* Bit 3 - Centronics as input */

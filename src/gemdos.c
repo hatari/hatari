@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.76 2008-05-19 20:34:10 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.77 2008-09-02 18:56:49 eerot Exp $";
 
 #include <config.h>
 
@@ -46,6 +46,7 @@ const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.76 2008-05-19 20:34:10 tho
 #include "memorySnapShot.h"
 #include "printer.h"
 #include "rs232.h"
+#include "statusbar.h"
 #include "scandir.h"
 #include "stMemory.h"
 #include "str.h"
@@ -2146,13 +2147,36 @@ void GemDOS_OpCode(void)
 			RunOld = FALSE;
 		break;
 	}
-
+	
 	switch(RunOld)
 	{
-	 case FALSE:        /* skip over branch to pexec to RTE */
+	 case FALSE:
+		/* skip over branch to pexec to RTE */
 		SR |= SR_ZERO;
+		/* visualize GemDOS emu HD access? */
+		switch (GemDOSCall)
+		{
+		 case 0x36:
+		 case 0x39:
+		 case 0x3a:
+		 case 0x3b:
+		 case 0x3c:
+		 case 0x3d:
+		 case 0x3e:
+		 case 0x3f:
+		 case 0x40:
+		 case 0x41:
+		 case 0x42:
+		 case 0x43:
+		 case 0x47:
+		 case 0x4e:
+		 case 0x4f:
+		 case 0x56:
+			Statusbar_EnableHDLed();
+		}
 		break;
-	 case CALL_PEXEC_ROUTINE:   /* branch to pexec, then redirect to old gemdos. */
+	 case CALL_PEXEC_ROUTINE:
+		/* branch to pexec, then redirect to old gemdos. */
 		SR |= SR_OVERFLOW;
 		break;
 	}
