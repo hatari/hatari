@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.47 2008-09-02 10:09:25 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.48 2008-09-02 11:08:49 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -52,8 +52,7 @@ const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.47 2008-09-02 10:09:25 thothy 
 #define DBL_CLICK_HISTORY  0x07     /* Number of frames since last click to see if need to send one or two clicks */
 #define ACIA_CYCLES    7200         /* Cycles (Multiple of 4) between sent to ACIA from keyboard along serial line - 500Hz/64, (approx' 6920-7200cycles from test program) */
 
-#define IKBD_RESET_CYCLES  400000   /* Cycles after RESET before complete */
-#define IKBD_INIT_RESET_CYCLES 3000000  /* Cycles after a cold reset before IKBD starts */
+#define IKBD_RESET_CYCLES  223500   /* Cycles after RESET before complete */
 
 #define ABS_X_ONRESET    0          /* Initial XY for absolute mouse position after RESET command */
 #define ABS_Y_ONRESET    0
@@ -1001,10 +1000,7 @@ static void IKBD_Cmd_Reset(void)
 		IKBD_AddKeyToKeyboardBuffer(0xF1);		/* [NP] Dragonnels demo needs this */
 
 		/* Start timer - some commands are send during this time they may be ignored (see real ST!) */
-		if (!KeyboardProcessor.bReset)
-			Int_AddRelativeInterrupt(IKBD_INIT_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER);
-		else
-			Int_AddRelativeInterrupt(IKBD_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER);
+		Int_AddRelativeInterrupt(IKBD_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER);
 
 		/* Set this 'critical' flag, gets reset when timer expires */
 		bDuringResetCriticalTime = TRUE;

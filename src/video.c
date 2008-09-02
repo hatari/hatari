@@ -184,7 +184,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.122 2008-09-02 10:09:25 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.123 2008-09-02 11:08:49 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -1443,8 +1443,10 @@ void Video_InterruptHandler_EndLine(void)
 					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
 	}
 
-	/* Is this a good place to send the keyboard packets? Done once per frame */
-	if (nHBL == nStartHBL)
+	/* Is this a good place to send the keyboard packets? Done once per frame.
+	 * Note that we don't send keyboard data automatically within the first
+	 * few VBLs to avoid that TOS gets confused during its boot time */
+	if (nHBL == nStartHBL && nVBLs > 20)
 	{
 		/* On each VBL send automatic keyboard packets for mouse, joysticks etc... */
 		IKBD_SendAutoKeyboardCommands();
