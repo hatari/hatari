@@ -65,7 +65,7 @@
 
 
 
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.25 2008-09-02 10:09:25 thothy Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.26 2008-09-02 11:10:35 thothy Exp $";
 
 #include "main.h"
 #include "blitter.h"
@@ -227,7 +227,7 @@ void Int_MemorySnapShot_Capture(bool bSave)
  */
 static void Int_SetNewInterrupt(void)
 {
-	int LowestCycleCount=0x7fffffff, LowestInterrupt=0;
+	int LowestCycleCount = INT_MAX, LowestInterrupt=0;
 	int i;
 
 
@@ -311,6 +311,9 @@ void Int_AcknowledgeInterrupt(void)
  */
 void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 {
+	assert((CycleType == INT_CPU_CYCLE && CycleTime <= INT_MAX / INT_CPU_TO_INTERNAL)
+	       || (CycleType == INT_MFP_CYCLE && CycleTime <= INT_MAX / INT_MFP_TO_INTERNAL));
+
 	/* Update list cycle counts before adding a new one, */
 	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
 	/* [NP] FIXME : not necessary ? */
@@ -344,6 +347,9 @@ void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler
  */
 void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler)
 {
+	assert((CycleType == INT_CPU_CYCLE && CycleTime <= INT_MAX / INT_CPU_TO_INTERNAL)
+	       || (CycleType == INT_MFP_CYCLE && CycleTime <= INT_MAX / INT_MFP_TO_INTERNAL));
+
 	/* Update list cycle counts before adding a new one, */
 	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
 	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
@@ -372,6 +378,9 @@ void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id
  */
 void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset)
 {
+	assert((CycleType == INT_CPU_CYCLE && CycleTime <= INT_MAX / INT_CPU_TO_INTERNAL)
+	       || (CycleType == INT_MFP_CYCLE && CycleTime <= INT_MAX / INT_MFP_TO_INTERNAL));
+
 	/* Update list cycle counts before adding a new one, */
 	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
 	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
