@@ -33,10 +33,12 @@
 #define  MFP_RCVBUFFULL_BIT   0x10
 #define  MFP_TRNBUFEMPTY_BIT  0x04
 #define  MFP_TIMER_B_BIT      0x01
+
 #define  MFP_FDCHDC_BIT       0x80
 #define  MFP_ACIA_BIT         0x40
 #define  MFP_TIMER_C_BIT      0x20
 #define  MFP_TIMER_D_BIT      0x10
+#define  MFP_GPU_DONE_BIT     0x08
 
 /* MFP Registers */
 extern Uint8 MFP_GPIP;

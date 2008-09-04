@@ -10,7 +10,7 @@
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.33 2008-09-02 10:09:25 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.34 2008-09-04 21:18:23 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -22,6 +22,7 @@ const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.33 2008-09-02 10:09:25 t
 #include "dmaSnd.h"
 #include "ioMem.h"
 #include "m68000.h"
+#include "mfp.h"
 #include "memorySnapShot.h"
 #include "stMemory.h"
 #include "video.h"
@@ -673,6 +674,9 @@ void Blitter_InterruptHandler(void)
 	{
 		/* We're done, clear busy bit */
 		blit_control &= ~0x80;
+
+		/* Blitter done interrupt */
+		MFP_InputOnChannel(MFP_GPU_DONE_BIT, MFP_IERB, &MFP_IPRB);
 	}
 	else
 	{

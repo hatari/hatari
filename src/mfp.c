@@ -80,7 +80,7 @@
 /*			Fence (although this routine is in fact buggy)).		*/
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.45 2008-09-02 10:09:25 thothy Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.46 2008-09-04 21:18:23 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -339,12 +339,13 @@ static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
  */
 void MFP_CheckPendingInterrupts(void)
 {
-	if ((MFP_IPRA & 0xb5) == 0 && (MFP_IPRB & 0xf0) == 0)
+	if ((MFP_IPRA & 0xb5) == 0 && (MFP_IPRB & 0xf8) == 0)
 	{
 		/* Should never get here, but if do just clear flag (see 'MFP_UpdateFlags') */
 		M68000_UnsetSpecial(SPCFLAG_MFP);
 		return;
 	}
+
 
 	if (MFP_IPRA & MFP_TIMER_GPIP7_BIT)   /* Check MFP GPIP7 interrupt (bit 7) */
 		MFP_InterruptRequest(MFP_EXCEPT_GPIP7, MFP_TIMER_GPIP7_BIT, &MFP_IPRA, MFP_IMRA, 0x80, 0x00, &MFP_ISRA);
@@ -361,6 +362,7 @@ void MFP_CheckPendingInterrupts(void)
 	if (MFP_IPRA & MFP_TIMER_B_BIT)       /* Check Timer B (bit 0) */
 		MFP_InterruptRequest(MFP_EXCEPT_TIMERB, MFP_TIMER_B_BIT, &MFP_IPRA, MFP_IMRA, 0xff, 0x00, &MFP_ISRA);
 
+
 	if (MFP_IPRB & MFP_FDCHDC_BIT)        /* Check FDC (bit 7) */
 		MFP_InterruptRequest(MFP_EXCEPT_GPIP5, MFP_FDCHDC_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0x80, &MFP_ISRB);
 
@@ -372,6 +374,9 @@ void MFP_CheckPendingInterrupts(void)
 
 	if (MFP_IPRB & MFP_TIMER_D_BIT)       /* Check Timer D (bit 4) */
 		MFP_InterruptRequest(MFP_EXCEPT_TIMERD, MFP_TIMER_D_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0xf0, &MFP_ISRB);
+
+	if (MFP_IPRB & MFP_GPU_DONE_BIT)      /* Check GPU done (bit 3) */
+		MFP_InterruptRequest(MFP_EXCEPT_GPIP3, MFP_GPU_DONE_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0xf8, &MFP_ISRB);
 }
 
 
