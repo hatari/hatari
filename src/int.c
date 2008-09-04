@@ -65,8 +65,9 @@
 
 
 
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.26 2008-09-02 11:10:35 thothy Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.27 2008-09-04 10:41:25 thothy Exp $";
 
+#include <stdint.h>
 #include "main.h"
 #include "blitter.h"
 #include "dmaSnd.h"
@@ -110,7 +111,7 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 typedef struct
 {
 	bool bUsed;                   /* Is interrupt active? */
-	int Cycles;
+	Sint64 Cycles;
 	void (*pFunction)(void);
 } INTERRUPTHANDLER;
 
@@ -223,13 +224,20 @@ void Int_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Find next interrupt to occur, and store to global variables for decrement in instruction decode loop
+ * Find next interrupt to occur, and store to global variables for decrement
+ * in instruction decode loop.
+ * Note: Although InterruptHandlers.Cycles and LowestCycleCount are 64 bit
+ * variables to get all the cycle counters right (e.g. the DMA sound counter
+ * can get very high), PendingInterruptCount is still a 32 bit variable for
+ * performance reasons (it's decremented after each CPU instruction).
+ * So we have to initialize LowestCycleCount with INT_MAX, not with INT64_MAX!
+ * Since there is always a VBL or HBL counter pending which fits fine into the
+ * 32 bit variable, we can be sure that we don't run into problems here.
  */
 static void Int_SetNewInterrupt(void)
 {
-	int LowestCycleCount = INT_MAX, LowestInterrupt=0;
-	int i;
-
+	Sint64 LowestCycleCount = INT_MAX;
+	interrupt_id LowestInterrupt = 0, i;
 
 	HATARI_TRACE ( HATARI_TRACE_INT , "int set new in video_cyc=%d active_int=%d pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), ActiveInterrupt, PendingInterruptCount );
@@ -264,13 +272,13 @@ static void Int_SetNewInterrupt(void)
  */
 static void Int_UpdateInterrupt(void)
 {
-	int CycleSubtract;
+	Sint64 CycleSubtract;
 	int i;
 
 	/* Find out how many cycles we went over (<=0) */
 	nCyclesOver = PendingInterruptCount;
 	/* Calculate how many cycles have passed, included time we went over */
-	CycleSubtract = InterruptHandlers[ActiveInterrupt].Cycles-nCyclesOver;
+	CycleSubtract = InterruptHandlers[ActiveInterrupt].Cycles - nCyclesOver;
 
 	/* Adjust table */
 	for (i = 0; i < MAX_INTERRUPTS; i++)
@@ -301,7 +309,7 @@ void Int_AcknowledgeInterrupt(void)
 	Int_SetNewInterrupt();
 
 	HATARI_TRACE ( HATARI_TRACE_INT , "int ack video_cyc=%d active_int=%d active_cyc=%d pending_count=%d\n",
-	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), ActiveInterrupt, InterruptHandlers[ActiveInterrupt].Cycles, PendingInterruptCount );
+	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), ActiveInterrupt, (int)InterruptHandlers[ActiveInterrupt].Cycles, PendingInterruptCount );
 }
 
 
@@ -309,10 +317,10 @@ void Int_AcknowledgeInterrupt(void)
 /**
  * Add interrupt from time last one occurred.
  */
-void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
+void Int_AddAbsoluteInterrupt(Sint64 CycleTime, int CycleType, interrupt_id Handler)
 {
-	assert((CycleType == INT_CPU_CYCLE && CycleTime <= INT_MAX / INT_CPU_TO_INTERNAL)
-	       || (CycleType == INT_MFP_CYCLE && CycleTime <= INT_MAX / INT_MFP_TO_INTERNAL));
+	assert((CycleType == INT_CPU_CYCLE && CycleTime <= INT64_MAX / INT_CPU_TO_INTERNAL)
+	       || (CycleType == INT_MFP_CYCLE && CycleTime <= INT64_MAX / INT_MFP_TO_INTERNAL));
 
 	/* Update list cycle counts before adding a new one, */
 	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
@@ -326,7 +334,7 @@ void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler
 	/* Set new */
 	Int_SetNewInterrupt();
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int add abs video_cyc=%d handler=%d handler_cyc=%d pending_count=%d\n",
+	HATARI_TRACE ( HATARI_TRACE_INT , "int add abs video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
@@ -335,7 +343,7 @@ void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler
 /**
  * Add interrupt to occur from now.
  */
-void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
+void Int_AddRelativeInterrupt(Sint64 CycleTime, int CycleType, interrupt_id Handler)
 {
 	Int_AddRelativeInterruptWithOffset(CycleTime, CycleType, Handler, 0);
 }
@@ -345,10 +353,10 @@ void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler
 /**
  * Add interrupt to occur from now without offset
  */
-void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler)
+void Int_AddRelativeInterruptNoOffset(Sint64 CycleTime, int CycleType, interrupt_id Handler)
 {
-	assert((CycleType == INT_CPU_CYCLE && CycleTime <= INT_MAX / INT_CPU_TO_INTERNAL)
-	       || (CycleType == INT_MFP_CYCLE && CycleTime <= INT_MAX / INT_MFP_TO_INTERNAL));
+	assert((CycleType == INT_CPU_CYCLE && CycleTime <= INT64_MAX / INT_CPU_TO_INTERNAL)
+	       || (CycleType == INT_MFP_CYCLE && CycleTime <= INT64_MAX / INT_MFP_TO_INTERNAL));
 
 	/* Update list cycle counts before adding a new one, */
 	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
@@ -362,7 +370,7 @@ void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id
 	/* Set new */
 	Int_SetNewInterrupt();
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int add rel no_off video_cyc=%d handler=%d handler_cyc=%d pending_count=%d\n",
+	HATARI_TRACE ( HATARI_TRACE_INT , "int add rel no_off video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
@@ -376,10 +384,10 @@ void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id
  * cycles of the current instruction).
  * This allows to restart an MFP timer just after it expired.
  */
-void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset)
+void Int_AddRelativeInterruptWithOffset(Sint64 CycleTime, int CycleType, interrupt_id Handler, int CycleOffset)
 {
-	assert((CycleType == INT_CPU_CYCLE && CycleTime <= INT_MAX / INT_CPU_TO_INTERNAL)
-	       || (CycleType == INT_MFP_CYCLE && CycleTime <= INT_MAX / INT_MFP_TO_INTERNAL));
+	assert((CycleType == INT_CPU_CYCLE && CycleTime <= INT64_MAX / INT_CPU_TO_INTERNAL)
+	       || (CycleType == INT_MFP_CYCLE && CycleTime <= INT64_MAX / INT_MFP_TO_INTERNAL));
 
 	/* Update list cycle counts before adding a new one, */
 	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
@@ -392,7 +400,7 @@ void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_
 	/* Set new */
 	Int_SetNewInterrupt();
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int add rel offset video_cyc=%d handler=%d handler_cyc=%d offset_cyc=%d pending_count=%d\n",
+	HATARI_TRACE ( HATARI_TRACE_INT , "int add rel offset video_cyc=%d handler=%d handler_cyc=%lld offset_cyc=%d pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, CycleOffset, PendingInterruptCount );
 }
 
@@ -413,7 +421,7 @@ void Int_RemovePendingInterrupt(interrupt_id Handler)
 	/* Set new */
 	Int_SetNewInterrupt();
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int remove pending video_cyc=%d handler=%d handler_cyc=%d pending_count=%d\n",
+	HATARI_TRACE ( HATARI_TRACE_INT , "int remove pending video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
@@ -432,7 +440,7 @@ void Int_ResumeStoppedInterrupt(interrupt_id Handler)
 	/* Set new */
 	Int_SetNewInterrupt();
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int resume stopped video_cyc=%d handler=%d handler_cyc=%d pending_count=%d\n",
+	HATARI_TRACE ( HATARI_TRACE_INT , "int resume stopped video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
@@ -457,7 +465,7 @@ bool Int_InterruptActive(interrupt_id Handler)
  */
 int Int_FindCyclesPassed(interrupt_id Handler, int CycleType)
 {
-	int CyclesPassed, CyclesFromLastInterrupt;
+	Sint64 CyclesPassed, CyclesFromLastInterrupt;
 
 	CyclesFromLastInterrupt = InterruptHandlers[ActiveInterrupt].Cycles - PendingInterruptCount;
 	CyclesPassed = InterruptHandlers[Handler].Cycles - CyclesFromLastInterrupt;
