@@ -80,7 +80,7 @@
 /*			Fence (although this routine is in fact buggy)).		*/
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.46 2008-09-04 21:18:23 thothy Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.47 2008-09-04 21:26:53 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -357,7 +357,7 @@ void MFP_CheckPendingInterrupts(void)
 		MFP_InterruptRequest(MFP_EXCEPT_RECBUFFULL, MFP_RCVBUFFULL_BIT, &MFP_IPRA, MFP_IMRA, 0xf0, 0x00, &MFP_ISRA);
 
 	if (MFP_IPRA & MFP_TRNBUFEMPTY_BIT)   /* Check transmit buffer empty (bit 2) */
-		MFP_InterruptRequest(MFP_EXCEPT_TRANSBUFFEMPTY, MFP_TRNBUFEMPTY_BIT, &MFP_IPRA, MFP_IMRA, 0xfb, 0x00, &MFP_ISRA);
+		MFP_InterruptRequest(MFP_EXCEPT_TRANSBUFFEMPTY, MFP_TRNBUFEMPTY_BIT, &MFP_IPRA, MFP_IMRA, 0xfc, 0x00, &MFP_ISRA);
 
 	if (MFP_IPRA & MFP_TIMER_B_BIT)       /* Check Timer B (bit 0) */
 		MFP_InterruptRequest(MFP_EXCEPT_TIMERB, MFP_TIMER_B_BIT, &MFP_IPRA, MFP_IMRA, 0xff, 0x00, &MFP_ISRA);
