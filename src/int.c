@@ -65,7 +65,7 @@
 
 
 
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.28 2008-09-04 10:53:01 thothy Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.29 2008-09-04 17:52:11 thothy Exp $";
 
 #include <stdint.h>
 #include "main.h"
@@ -318,11 +318,8 @@ void Int_AcknowledgeInterrupt(void)
 /**
  * Add interrupt from time last one occurred.
  */
-void Int_AddAbsoluteInterrupt(Sint64 CycleTime, int CycleType, interrupt_id Handler)
+void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 {
-	assert((CycleType == INT_CPU_CYCLE && CycleTime <= INT64_MAX / INT_CPU_TO_INTERNAL)
-	       || (CycleType == INT_MFP_CYCLE && CycleTime <= INT64_MAX / INT_MFP_TO_INTERNAL));
-
 	/* Update list cycle counts before adding a new one, */
 	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
 	/* [NP] FIXME : not necessary ? */
@@ -330,7 +327,7 @@ void Int_AddAbsoluteInterrupt(Sint64 CycleTime, int CycleType, interrupt_id Hand
 //    Int_UpdateInterrupt();
 
 	InterruptHandlers[Handler].bUsed = TRUE;
-	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL ( CycleTime , CycleType ) + nCyclesOver;
+	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + nCyclesOver;
 
 	/* Set new */
 	Int_SetNewInterrupt();
@@ -344,7 +341,7 @@ void Int_AddAbsoluteInterrupt(Sint64 CycleTime, int CycleType, interrupt_id Hand
 /**
  * Add interrupt to occur from now.
  */
-void Int_AddRelativeInterrupt(Sint64 CycleTime, int CycleType, interrupt_id Handler)
+void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 {
 	Int_AddRelativeInterruptWithOffset(CycleTime, CycleType, Handler, 0);
 }
@@ -354,11 +351,8 @@ void Int_AddRelativeInterrupt(Sint64 CycleTime, int CycleType, interrupt_id Hand
 /**
  * Add interrupt to occur from now without offset
  */
-void Int_AddRelativeInterruptNoOffset(Sint64 CycleTime, int CycleType, interrupt_id Handler)
+void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler)
 {
-	assert((CycleType == INT_CPU_CYCLE && CycleTime <= INT64_MAX / INT_CPU_TO_INTERNAL)
-	       || (CycleType == INT_MFP_CYCLE && CycleTime <= INT64_MAX / INT_MFP_TO_INTERNAL));
-
 	/* Update list cycle counts before adding a new one, */
 	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
 	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
@@ -366,7 +360,7 @@ void Int_AddRelativeInterruptNoOffset(Sint64 CycleTime, int CycleType, interrupt
 
 //  nCyclesOver = 0;
 	InterruptHandlers[Handler].bUsed = TRUE;
-	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL ( CycleTime , CycleType ) + PendingInterruptCount;
+	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + PendingInterruptCount;
 
 	/* Set new */
 	Int_SetNewInterrupt();
@@ -385,18 +379,15 @@ void Int_AddRelativeInterruptNoOffset(Sint64 CycleTime, int CycleType, interrupt
  * cycles of the current instruction).
  * This allows to restart an MFP timer just after it expired.
  */
-void Int_AddRelativeInterruptWithOffset(Sint64 CycleTime, int CycleType, interrupt_id Handler, int CycleOffset)
+void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset)
 {
-	assert((CycleType == INT_CPU_CYCLE && CycleTime <= INT64_MAX / INT_CPU_TO_INTERNAL)
-	       || (CycleType == INT_MFP_CYCLE && CycleTime <= INT64_MAX / INT_MFP_TO_INTERNAL));
-
 	/* Update list cycle counts before adding a new one, */
 	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
 	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
 		Int_UpdateInterrupt();
 
 	InterruptHandlers[Handler].bUsed = TRUE;
-	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL ( CycleTime , CycleType ) + CycleOffset;
+	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + CycleOffset;
 
 	/* Set new */
 	Int_SetNewInterrupt();
