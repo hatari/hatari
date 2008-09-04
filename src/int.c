@@ -65,7 +65,7 @@
 
 
 
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.27 2008-09-04 10:41:25 thothy Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.28 2008-09-04 10:53:01 thothy Exp $";
 
 #include <stdint.h>
 #include "main.h"
@@ -137,6 +137,7 @@ void Int_Reset(void)
 	for (i=0; i<MAX_INTERRUPTS; i++)
 	{
 		InterruptHandlers[i].bUsed = FALSE;
+		InterruptHandlers[i].Cycles = INT_MAX;
 		InterruptHandlers[i].pFunction = pIntHandlerFunctions[i];
 	}
 }
