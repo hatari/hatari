@@ -9,8 +9,8 @@
   Use like this:
   - Before screen surface is (re-)created Statusbar_SetHeight()
     has to be called with the new screen height. Add the returned
-    value to screen height.  After this Statusbar_GetHeight()
-    can be used to retrieve the statusbar size
+    value to screen height (zero means no statusbar).  After this,
+    Statusbar_GetHeight() can be used to retrieve the statusbar size
   - After screen surface is (re-)created, call Statusbar_Init()
     to re-initialize / re-draw the statusbar
   - Call Statusbar_SetFloppyLed() to set floppy drive led ON/OFF,
@@ -20,7 +20,7 @@
   - If screen redraws may be partial, Statusbar_OverlayRestore()
     needs to be called before locking the screen for drawing and
     Statusbar_OverlayBackup() needs to be called after screen unlocking,
-    but before calling Statusbar_Update().  This is needed for
+    but before calling Statusbar_Update().  These are needed for
     hiding the overlay drive led when drive leds are turned OFF.
   - If other information shown by Statusbar (TOS version etc) changes,
     call Statusbar_UpdateInfo()
@@ -30,7 +30,7 @@
   - add red wav/ym recording indicator
   - add frameskip count
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.6 2008-09-05 21:29:01 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.7 2008-09-05 21:40:00 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -79,7 +79,7 @@ static Uint32 GrayBg, LedColorOn, LedColorOff, LedColorBg;
 typedef struct msg_item {
 	struct msg_item *next;
 	char msg[MAX_MESSAGE_LEN+1];
-	Uint32 timeout;	/* not shown: msecs, shown: tics, zero=no timeout */
+	Uint32 timeout;	/* not shown -> msecs, shown -> tics, zero=no timeout */
 	bool shown;
 } msg_item_t;
 
@@ -180,7 +180,7 @@ static void Statusbar_OverlayInit(const SDL_Surface *surf)
 /*-----------------------------------------------------------------------*/
 /**
  * (re-)initialize statusbar internal variables for given screen surface
- * (sizes need to be re-calculated in case screen size changes).
+ * (sizes need to be re-calculated in case screen size changes etc).
  */
 void Statusbar_Init(SDL_Surface *surf)
 {
@@ -269,7 +269,7 @@ void Statusbar_Init(SDL_Surface *surf)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Add new statusbar message 'msg' and show it for 'secs' seconds.
+ * Center given 'msg' string to given 'buffer'.
  * It's safe to have buffer and msg point to same address
  */
 static void Statusbar_CenterMessage(char *buffer, const char *msg)
@@ -291,7 +291,7 @@ static void Statusbar_CenterMessage(char *buffer, const char *msg)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Add new statusbar message 'msg' and show it for 'secs' seconds
+ * Qeueue new statusbar message 'msg' to be shown for 'secs' seconds
  */
 void Statusbar_AddMessage(const char *msg, Uint8 secs)
 {
@@ -399,8 +399,8 @@ static void Statusbar_DrawMessage(SDL_Surface *surf, const char *msg)
 
 /*-----------------------------------------------------------------------*/
 /**
- * If message and not show, show it.  If message timed out, remove
- * it and move to next.
+ * If message's not shown, show it.  If message's timed out,
+ * remove it and show next one.
  */
 static void Statusbar_ShowMessage(SDL_Surface *surf, Uint32 ticks)
 {
@@ -446,7 +446,7 @@ void Statusbar_OverlayRestore(SDL_Surface *surf)
 	if (bOverlayState == OVERLAY_DRAWN && OverlayUnderside) {
 		assert(surf);
 		SDL_BlitSurface(OverlayUnderside, NULL, surf, &OverlayLedRect);
-		/* update to screen happens in the draw function with this */
+		/* this will make the draw function to update this the screen */
 		bOverlayState = OVERLAY_RESTORED;
 	}
 }
@@ -478,7 +478,7 @@ void Statusbar_OverlayBackup(SDL_Surface *surf)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Draw overlay led onto screen surface if drives are enabled.
+ * Draw overlay led onto screen surface if any drives are enabled.
  */
 static void Statusbar_OverlayDraw(SDL_Surface *surf)
 {
