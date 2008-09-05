@@ -181,10 +181,12 @@
 /*			instead of 26+160 bytes in 50 Hz (HigResMode demo by Paradox).		*/
 /* 2008/07/19	[NP]	If $ff8260==3 (which is not a valid resolution mode), we use 0 instead	*/
 /*			(low res) (fix Omegakul screen in old Omega Demo from 1988).		*/
+/* 2008/09/05	[NP]	No need to test 60/50 switch if HblCounterVideo < nStartHBL (display	*/
+/*			has not started yet).							*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.123 2008-09-02 11:08:49 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.124 2008-09-05 18:39:44 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -678,8 +680,9 @@ void Video_Sync_WriteByte(void)
 	if ( Byte == nLastByte )
 		return;						/* do nothing */
 
-	if ( ( nLastByte == 0x00 ) && ( Byte == 0x02 )/* switched from 60 Hz to 50 Hz? */
-	        && ( nLastVBL == nVBLs ) )			/* switched during the same VBL */
+	if ( ( nLastByte == 0x00 ) && ( Byte == 0x02 )		/* switched from 60 Hz to 50 Hz? */
+	        && ( nLastVBL == nVBLs )			/* switched during the same VBL */
+	        && ( HblCounterVideo >= nStartHBL ) )		/* only if display is on */
 	{
 		/* Add 2 bytes to left border */
 //		if ( nFrameCycles-nLastFrameCycles <= 24
