@@ -65,7 +65,7 @@
 
 
 
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.29 2008-09-04 17:52:11 thothy Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.30 2008-09-05 21:10:33 eerot Exp $";
 
 #include <stdint.h>
 #include "main.h"
@@ -288,7 +288,7 @@ static void Int_UpdateInterrupt(void)
 			InterruptHandlers[i].Cycles -= CycleSubtract;
 	}
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int upd video_cyc=%d cycle_over=%d cycle_sub=%d\n",
+	HATARI_TRACE ( HATARI_TRACE_INT , "int upd video_cyc=%d cycle_over=%d cycle_sub=%lld\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), nCyclesOver, CycleSubtract );
 }
 
@@ -462,7 +462,7 @@ int Int_FindCyclesPassed(interrupt_id Handler, int CycleType)
 	CyclesFromLastInterrupt = InterruptHandlers[ActiveInterrupt].Cycles - PendingInterruptCount;
 	CyclesPassed = InterruptHandlers[Handler].Cycles - CyclesFromLastInterrupt;
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int find passed cyc video_cyc=%d handler=%d last_cyc=%d passed_cyc=%d\n",
+	HATARI_TRACE ( HATARI_TRACE_INT , "int find passed cyc video_cyc=%d handler=%d last_cyc=%lld passed_cyc=%lld\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, CyclesFromLastInterrupt, CyclesPassed );
 
 	return INT_CONVERT_FROM_INTERNAL ( CyclesPassed , CycleType ) ;
