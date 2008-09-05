@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.138 2008-08-19 19:15:32 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.139 2008-09-05 21:29:01 eerot Exp $";
 
 #include "config.h"
 
@@ -41,6 +41,7 @@ const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.138 2008-08-19 19:15:32 eerot E
 #include "sdlgui.h"
 #include "shortcut.h"
 #include "sound.h"
+#include "statusbar.h"
 #include "stMemory.h"
 #include "tos.h"
 #include "vdi.h"
@@ -534,9 +535,17 @@ int main(int argc, char *argv[])
 	setenv("SDL_VIDEO_X11_WMCLASS", "hatari", 1);
 #endif
 
+	/* queue a message for user */
+	if (ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] == SDLK_F12) {
+		Statusbar_AddMessage("Press F12 for Options", 8);
+	}
+
 	/* Init emulator system */
 	Main_Init();
 
+	/* update TOS information etc loaded by Main_Init() */
+	Statusbar_UpdateInfo();
+	
 	/* Check if SDL_Delay is accurate */
 	Main_CheckForAccurateDelays();
 

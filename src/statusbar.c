@@ -22,19 +22,34 @@
     Statusbar_OverlayBackup() needs to be called after screen unlocking,
     but before calling Statusbar_Update().  This is needed for
     hiding the overlay drive led when drive leds are turned OFF.
+  - If other information shown by Statusbar (TOS version etc) changes,
+    call Statusbar_UpdateInfo()
+
+  TODO:
+  - call Statusbar_AddMessage() from log.c?
+  - add red wav/ym recording indicator
+  - add frameskip count
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.5 2008-09-02 18:56:49 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.6 2008-09-05 21:29:01 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
 #include "configuration.h"
 #include "sdlgui.h"
 #include "statusbar.h"
+#include "tos.h"
+
+#define DEBUG 0
+#if DEBUG
+#define DEBUGPRINT(x) printf x
+#else
+#define DEBUGPRINT(x)
+#endif
 
 #define MAX_DRIVE_LEDS (DRIVE_LED_HD + 1)
 
 /* whether drive leds should be ON and their previous shown state */
-struct {
+static struct {
 	bool state;
 	bool oldstate;
 	Uint32 timeout;	/* when to disable led, valid only if >0 && state=TRUE */
@@ -57,7 +72,21 @@ static enum {
 } bOverlayState;
 
 /* led colors */
-Uint32 LedColorOn, LedColorOff, LedColorBg;
+static Uint32 GrayBg, LedColorOn, LedColorOff, LedColorBg;
+
+
+#define MAX_MESSAGE_LEN 23
+typedef struct msg_item {
+	struct msg_item *next;
+	char msg[MAX_MESSAGE_LEN+1];
+	Uint32 timeout;	/* not shown: msecs, shown: tics, zero=no timeout */
+	bool shown;
+} msg_item_t;
+
+static msg_item_t DefaultMessage;
+static msg_item_t *MessageList = &DefaultMessage;
+static SDL_Rect MessageRect;
+
 
 /* screen height above statusbar and height of statusbar below screen */
 static int ScreenHeight;
@@ -99,6 +128,7 @@ int Statusbar_GetHeight(void)
 	return StatusbarHeight;
 }
 
+
 /*-----------------------------------------------------------------------*/
 /**
  * Enable HD drive led, it will be automatically disabled after a while.
@@ -120,6 +150,7 @@ void Statusbar_SetFloppyLed(drive_index_t drive, bool state)
 	assert(drive == DRIVE_LED_A || drive == DRIVE_LED_B);
 	Led[drive].state = state;
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -153,9 +184,9 @@ static void Statusbar_OverlayInit(const SDL_Surface *surf)
  */
 void Statusbar_Init(SDL_Surface *surf)
 {
-	Uint32 gray;
+	msg_item_t *item;
 	SDL_Rect ledbox, sbarbox;
-	int i, y, fw, fh, distance, offset;
+	int i, fontw, fonth, offset;
 	const char *text[MAX_DRIVE_LEDS] = { "A:", "B:", "HD:" };
 
 	assert(surf);
@@ -164,6 +195,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	LedColorOff = SDL_MapRGB(surf->format, 0x00, 0x40, 0x00);
 	LedColorOn  = SDL_MapRGB(surf->format, 0x00, 0xe0, 0x00);
 	LedColorBg  = SDL_MapRGB(surf->format, 0x00, 0x00, 0x00);
+	GrayBg      = SDL_MapRGB(surf->format, 0xc0, 0xc0, 0xc0);
 
 	/* disable leds */
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
@@ -182,23 +214,19 @@ void Statusbar_Init(SDL_Surface *surf)
 	/* prepare fonts */
 	SDLGui_Init();
 	SDLGui_SetScreen(surf);
-	SDLGui_GetFontSize(&fw, &fh);
-	assert(fh+2 < StatusbarHeight);
+	SDLGui_GetFontSize(&fontw, &fonth);
+	assert(fonth+2 < StatusbarHeight);
 
 	/* draw statusbar background gray so that text shows */
 	sbarbox.x = 0;
 	sbarbox.y = surf->h - StatusbarHeight;
 	sbarbox.w = surf->w;
 	sbarbox.h = StatusbarHeight;
-	gray = SDL_MapRGB(surf->format, 0xc0, 0xc0, 0xc0);
-	SDL_FillRect(surf, &sbarbox, gray);
-
-	/* distance between leds */
-	distance = surf->w / (MAX_DRIVE_LEDS + 1);
+	SDL_FillRect(surf, &sbarbox, GrayBg);
 
 	/* led size */
-	LedRect.w = 2*fh;
-	LedRect.h = fh - 4;
+	LedRect.w = 2*fonth;
+	LedRect.h = fonth - 4;
 	LedRect.y = ScreenHeight + StatusbarHeight/2 - LedRect.h/2;
 	
 	/* black box for the leds */
@@ -207,35 +235,203 @@ void Statusbar_Init(SDL_Surface *surf)
 	ledbox.w += 2;
 	ledbox.h += 2;
 
-	/* calculate led offsets and draw their boxes */
+	offset = fontw;
+	MessageRect.y = LedRect.y - 2;
+	/* draw led texts and boxes + calculate box offsets */
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
-		offset = (i+1)*distance;
-		Led[i].offset = offset;
+		SDLGui_Text(offset, MessageRect.y, text[i]);
+		offset += strlen(text[i]) * fontw;
+		offset += fontw/2;
 
 		ledbox.x = offset - 1;
 		SDL_FillRect(surf, &ledbox, LedColorBg);
 
 		LedRect.x = offset;
 		SDL_FillRect(surf, &LedRect, LedColorOff);
-	}
 
-	/* TODO:
-	 * - box for red wav/ym recording indicator
-	 * - TOS Version
-	 * - frameskip...
-	 * ?
-	 */
+		Led[i].offset = offset;
+		offset += LedRect.w + 2*fontw;
+	}
 	
-	/* draw led box labels */
-	y = LedRect.y - 2;
-	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
-		offset = Led[i].offset - (strlen(text[i]) + 1) * fw;
-		SDLGui_Text(offset, y, text[i]);
+	/* intialize messages */
+	MessageRect.x = offset;
+	MessageRect.w = MAX_MESSAGE_LEN * fontw;
+	MessageRect.h = fonth;
+	for (item = MessageList; item; item = item->next) {
+		item->shown = FALSE;
 	}
-
+	
 	/* and blit statusbar on screen */
 	SDL_UpdateRects(surf, 1, &sbarbox);
+	DEBUGPRINT(("Draw statusbar\n"));
 }
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Add new statusbar message 'msg' and show it for 'secs' seconds.
+ * It's safe to have buffer and msg point to same address
+ */
+static void Statusbar_CenterMessage(char *buffer, const char *msg)
+{
+	int len, offset;
+
+	len = strlen(msg);
+	if (len < MAX_MESSAGE_LEN) {
+		offset = (MAX_MESSAGE_LEN - len)/2;
+		memmove(buffer + offset, msg, len);
+		memset(buffer, ' ', offset);
+		buffer[offset+len] = '\0';
+	} else {
+		memmove(buffer, msg, MAX_MESSAGE_LEN);
+		buffer[MAX_MESSAGE_LEN] = '\0';
+	}
+	DEBUGPRINT(("Set message: '%s'\n", buffer));
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Add new statusbar message 'msg' and show it for 'secs' seconds
+ */
+void Statusbar_AddMessage(const char *msg, Uint8 secs)
+{
+	msg_item_t *item;
+
+	if (!ConfigureParams.Screen.bShowStatusbar) {
+		/* no sense in queuing messages */
+		return;
+	}
+	item = malloc(sizeof(msg_item_t));
+	assert(item);
+
+	item->next = MessageList;
+	MessageList = item;
+	Statusbar_CenterMessage(item->msg, msg);
+
+	if (secs) {
+		item->timeout = secs * 1000;
+	} else {
+		/* show items by default for 2.5 secs */
+		item->timeout = 2500;
+	}
+	item->shown = FALSE;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write given 'more' string to 'buffer' and return new end of 'buffer'
+ */
+static char *Statusbar_AddString(char *buffer, const char *more)
+{
+	while(*more) {
+		*buffer++ = *more++;
+	}
+	return buffer;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Retrieve/update default statusbar information
+ */
+void Statusbar_UpdateInfo(void)
+{
+	char *end = DefaultMessage.msg;
+
+	/* amount of memory */
+	if (ConfigureParams.Memory.nMemorySize > 9) {
+		*end++ = '1';
+		*end++ = '0' + ConfigureParams.Memory.nMemorySize % 10;
+	} else {
+		if (ConfigureParams.Memory.nMemorySize) {
+			*end++ = '0' + ConfigureParams.Memory.nMemorySize;
+		} else {
+			end = Statusbar_AddString(end, "1/2");
+		}
+	}
+	end = Statusbar_AddString(end, "MB ");
+	
+	/* machine type */
+	switch (ConfigureParams.System.nMachineType) {
+	case MACHINE_ST:
+		end = Statusbar_AddString(end, "ST");
+		break;
+	case MACHINE_STE:
+		end = Statusbar_AddString(end, "STE");
+		break;
+	case MACHINE_TT:
+		end = Statusbar_AddString(end, "TT");
+		break;
+	case MACHINE_FALCON:
+		end = Statusbar_AddString(end, "Falcon");
+		break;
+	default:
+		end = Statusbar_AddString(end, "???");
+		break;
+	}
+
+	/* TOS type/version */
+	if (bIsEmuTOS) {
+		end = Statusbar_AddString(end, ", EmuTOS");
+	} else {
+		end = Statusbar_AddString(end, ", TOS v");
+		*end++ = '0' + ((TosVersion & 0xf00) >> 8);
+		*end++ = '.';
+		*end++ = '0' + ((TosVersion & 0xf0) >> 6);
+		*end++ = '0' + (TosVersion & 0xf);
+	}
+	*end = '\0';
+	assert(end - DefaultMessage.msg < MAX_MESSAGE_LEN);
+	Statusbar_CenterMessage(DefaultMessage.msg, DefaultMessage.msg);
+	DefaultMessage.shown = FALSE;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Draw message
+ */
+static void Statusbar_DrawMessage(SDL_Surface *surf, const char *msg)
+{
+	SDL_FillRect(surf, &MessageRect, GrayBg);
+	SDLGui_Text(MessageRect.x, MessageRect.y, msg);
+	SDL_UpdateRects(surf, 1, &MessageRect);
+	DEBUGPRINT(("Draw message: '%s'\n", msg));
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * If message and not show, show it.  If message timed out, remove
+ * it and move to next.
+ */
+static void Statusbar_ShowMessage(SDL_Surface *surf, Uint32 ticks)
+{
+	msg_item_t *next;
+
+	if (MessageList->shown) {
+		if (!MessageList->timeout) {
+			/* last/default message */
+			return;
+		}
+		if (MessageList->timeout > ticks) {
+			/* not timed out yet */
+			return;
+		}
+		assert(MessageList->next); /* last message shouldn't end here */
+		next = MessageList->next;
+		free(MessageList);
+		MessageList = next;
+	}
+	if (!MessageList->shown) {
+		/* not shown yet, show */
+		Statusbar_DrawMessage(surf,  MessageList->msg);
+		if (MessageList->timeout) {
+			MessageList->timeout += ticks;
+			/* last message doesn't have timeout */
+			DefaultMessage.shown = FALSE;
+		}
+		MessageList->shown = TRUE;
+	}
+}
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -304,6 +500,7 @@ static void Statusbar_OverlayDraw(SDL_Surface *surf)
 			rect.h -= 2;
 			SDL_FillRect(surf, &OverlayLedRect, LedColorBg);
 			SDL_FillRect(surf, &rect, LedColorOn);
+			DEBUGPRINT(("Overlay led ON\n"));
 			bOverlayState = OVERLAY_DRAWN;
 			break;
 		}
@@ -322,6 +519,7 @@ static void Statusbar_OverlayDraw(SDL_Surface *surf)
 		break;
 	}
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -364,5 +562,7 @@ void Statusbar_Update(SDL_Surface *surf)
 		rect.x = Led[i].offset;
 		SDL_FillRect(surf, &rect, color);
 		SDL_UpdateRects(surf, 1, &rect);
+		DEBUGPRINT(("LED[%d] = %s\n", i, Led[i].state?"ON":"OFF"));
 	}
+	Statusbar_ShowMessage(surf, currentticks);
 }

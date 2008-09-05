@@ -15,7 +15,7 @@
   on boot-up which (correctly) cause a bus-error on Hatari as they would in a
   real STfm. If a user tries to select any of these images we bring up an error.
 */
-const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.57 2008-06-26 21:33:20 thothy Exp $";
+const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.58 2008-09-05 21:29:01 eerot Exp $";
 
 #include <SDL_endian.h>
 
@@ -33,7 +33,8 @@ const char TOS_rcsid[] = "Hatari $Id: tos.c,v 1.57 2008-06-26 21:33:20 thothy Ex
 #include "vdi.h"
 
 
-Uint16 TosVersion;                      /* eg, 0x0100, 0x0102 */
+bool bIsEmuTOS;
+Uint16 TosVersion;                      /* eg. 0x0100, 0x0102 */
 Uint32 TosAddress, TosSize;             /* Address in ST memory and size of TOS image */
 bool bTosImageLoaded = FALSE;           /* Successfully loaded a TOS image? */
 bool bRamTosImage;                      /* TRUE if we loaded a RAM TOS image */
@@ -319,7 +320,6 @@ int TOS_LoadImage(void)
 {
 	Uint8 *pTosFile = NULL;
 	long nFileSize;
-	bool bIsEmuTOS;
 
 	bTosImageLoaded = FALSE;
 

@@ -16,12 +16,14 @@ typedef enum {
 	DRIVE_LED_HD
 } drive_index_t;
 
-extern void Statusbar_EnableHDLed(void);
-extern void Statusbar_SetFloppyLed(drive_index_t drive, bool state);
 extern int Statusbar_SetHeight(int ScreenHeight, bool FullScreen);
 extern int Statusbar_GetHeight(void);
+extern void Statusbar_EnableHDLed(void);
+extern void Statusbar_SetFloppyLed(drive_index_t drive, bool state);
 
 extern void Statusbar_Init(SDL_Surface *screen);
+extern void Statusbar_UpdateInfo(void);
+extern void Statusbar_AddMessage(const char *msg, Uint8 secs);
 extern void Statusbar_OverlayBackup(SDL_Surface *screen);
 extern void Statusbar_Update(SDL_Surface *screen);
 extern void Statusbar_OverlayRestore(SDL_Surface *screen);

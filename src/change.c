@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.14 2008-08-19 20:05:45 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.15 2008-09-05 21:29:01 eerot Exp $";
 
 #include <ctype.h>
 #include "main.h"
@@ -31,6 +31,7 @@ const char change_rcsid[] = "Hatari $Id: change.c,v 1.14 2008-08-19 20:05:45 eer
 #include "rs232.h"
 #include "screen.h"
 #include "sound.h"
+#include "statusbar.h"
 #include "tos.h"
 #include "vdi.h"
 #include "video.h"
@@ -268,6 +269,8 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	if (NeedReset)
 	{
 		Reset_Cold();
+		/* reset needing changes may affect also info shown in statusbar */
+		Statusbar_UpdateInfo();
 	}
 
 	/* Go into/return from full screen if flagged */
