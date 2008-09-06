@@ -30,7 +30,7 @@
   - add red wav/ym recording indicator
   - add frameskip count
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.7 2008-09-05 21:40:00 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.8 2008-09-06 19:14:52 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -38,6 +38,7 @@ const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.7 2008-09-05 21:40:00 eerot
 #include "sdlgui.h"
 #include "statusbar.h"
 #include "tos.h"
+#include "video.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -87,6 +88,8 @@ static msg_item_t DefaultMessage;
 static msg_item_t *MessageList = &DefaultMessage;
 static SDL_Rect MessageRect;
 
+static SDL_Rect FrameSkipsRect;
+static int nOldFrameSkips;
 
 /* screen height above statusbar and height of statusbar below screen */
 static int ScreenHeight;
@@ -260,34 +263,21 @@ void Statusbar_Init(SDL_Surface *surf)
 	for (item = MessageList; item; item = item->next) {
 		item->shown = FALSE;
 	}
+
+	/* draw frameskip */
+	FrameSkipsRect.x = MessageRect.x + MessageRect.w + fontw;
+	FrameSkipsRect.y = MessageRect.y;
+	FrameSkipsRect.w = 5 * fontw;
+	FrameSkipsRect.h = fonth;
+	SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "FS: 0");
+	FrameSkipsRect.x += 4 * fontw;
+	nOldFrameSkips = 0;
 	
 	/* and blit statusbar on screen */
 	SDL_UpdateRects(surf, 1, &sbarbox);
 	DEBUGPRINT(("Draw statusbar\n"));
 }
 
-
-/*-----------------------------------------------------------------------*/
-/**
- * Center given 'msg' string to given 'buffer'.
- * It's safe to have buffer and msg point to same address
- */
-static void Statusbar_CenterMessage(char *buffer, const char *msg)
-{
-	int len, offset;
-
-	len = strlen(msg);
-	if (len < MAX_MESSAGE_LEN) {
-		offset = (MAX_MESSAGE_LEN - len)/2;
-		memmove(buffer + offset, msg, len);
-		memset(buffer, ' ', offset);
-		buffer[offset+len] = '\0';
-	} else {
-		memmove(buffer, msg, MAX_MESSAGE_LEN);
-		buffer[MAX_MESSAGE_LEN] = '\0';
-	}
-	DEBUGPRINT(("Set message: '%s'\n", buffer));
-}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -306,7 +296,10 @@ void Statusbar_AddMessage(const char *msg, Uint8 secs)
 
 	item->next = MessageList;
 	MessageList = item;
-	Statusbar_CenterMessage(item->msg, msg);
+
+	strncpy(item->msg, msg, MAX_MESSAGE_LEN);
+	item->msg[MAX_MESSAGE_LEN] = '\0';
+	DEBUGPRINT(("Add message: '%s'\n", item->msg));
 
 	if (secs) {
 		item->timeout = secs * 1000;
@@ -381,18 +374,23 @@ void Statusbar_UpdateInfo(void)
 	}
 	*end = '\0';
 	assert(end - DefaultMessage.msg < MAX_MESSAGE_LEN);
-	Statusbar_CenterMessage(DefaultMessage.msg, DefaultMessage.msg);
+	DEBUGPRINT(("Set default message: '%s'\n", DefaultMessage.msg));
 	DefaultMessage.shown = FALSE;
 }
 
 /*-----------------------------------------------------------------------*/
 /**
- * Draw message
+ * Draw 'msg' centered to the message area
  */
 static void Statusbar_DrawMessage(SDL_Surface *surf, const char *msg)
 {
+	int fontw, fonth, offset;
 	SDL_FillRect(surf, &MessageRect, GrayBg);
-	SDLGui_Text(MessageRect.x, MessageRect.y, msg);
+	if (*msg) {
+		SDLGui_GetFontSize(&fontw, &fonth);
+		offset = (MessageRect.w - strlen(msg) * fontw) / 2;
+		SDLGui_Text(MessageRect.x + offset, MessageRect.y, msg);
+	}
 	SDL_UpdateRects(surf, 1, &MessageRect);
 	DEBUGPRINT(("Draw message: '%s'\n", msg));
 }
@@ -565,4 +563,12 @@ void Statusbar_Update(SDL_Surface *surf)
 		DEBUGPRINT(("LED[%d] = %s\n", i, Led[i].state?"ON":"OFF"));
 	}
 	Statusbar_ShowMessage(surf, currentticks);
+
+	if (nFrameSkips != nOldFrameSkips) {
+		char fscount[2] = { '0' + nFrameSkips, '\0' };
+		SDL_FillRect(surf, &FrameSkipsRect, GrayBg);
+		SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, fscount);
+		SDL_UpdateRects(surf, 1, &FrameSkipsRect);
+		nOldFrameSkips = nFrameSkips;
+	}
 }
