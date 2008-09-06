@@ -27,18 +27,19 @@
 
   TODO:
   - call Statusbar_AddMessage() from log.c?
-  - add red wav/ym recording indicator
-  - add frameskip count
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.8 2008-09-06 19:14:52 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.9 2008-09-06 21:08:13 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
 #include "configuration.h"
+#include "screenSnapShot.h"
 #include "sdlgui.h"
 #include "statusbar.h"
 #include "tos.h"
 #include "video.h"
+#include "wavFormat.h"
+#include "ymFormat.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -72,8 +73,12 @@ static enum {
 	OVERLAY_RESTORED
 } bOverlayState;
 
+static SDL_Rect RecLedRect;
+static bool bOldRecording;
+
 /* led colors */
-static Uint32 GrayBg, LedColorOn, LedColorOff, LedColorBg;
+static Uint32 LedColorOn, LedColorOff, RecColorOn, RecColorOff;
+static Uint32 GrayBg, LedColorBg;
 
 
 #define MAX_MESSAGE_LEN 23
@@ -90,6 +95,7 @@ static SDL_Rect MessageRect;
 
 static SDL_Rect FrameSkipsRect;
 static int nOldFrameSkips;
+
 
 /* screen height above statusbar and height of statusbar below screen */
 static int ScreenHeight;
@@ -198,6 +204,8 @@ void Statusbar_Init(SDL_Surface *surf)
 	LedColorOff = SDL_MapRGB(surf->format, 0x00, 0x40, 0x00);
 	LedColorOn  = SDL_MapRGB(surf->format, 0x00, 0xe0, 0x00);
 	LedColorBg  = SDL_MapRGB(surf->format, 0x00, 0x00, 0x00);
+	RecColorOff = SDL_MapRGB(surf->format, 0x40, 0x00, 0x00);
+	RecColorOn  = SDL_MapRGB(surf->format, 0xe0, 0x00, 0x00);
 	GrayBg      = SDL_MapRGB(surf->format, 0xc0, 0xc0, 0xc0);
 
 	/* disable leds */
@@ -267,12 +275,22 @@ void Statusbar_Init(SDL_Surface *surf)
 	/* draw frameskip */
 	FrameSkipsRect.x = MessageRect.x + MessageRect.w + fontw;
 	FrameSkipsRect.y = MessageRect.y;
-	FrameSkipsRect.w = 5 * fontw;
+	SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "FS:");
+	FrameSkipsRect.x += 3 * fontw + fontw/2;
+	FrameSkipsRect.w = fontw;
 	FrameSkipsRect.h = fonth;
-	SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "FS: 0");
-	FrameSkipsRect.x += 4 * fontw;
+	SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "0");
 	nOldFrameSkips = 0;
-	
+
+	/* draw recording led box */
+	RecLedRect = LedRect;
+	RecLedRect.x = surf->w - fontw - RecLedRect.w;
+	ledbox.x = RecLedRect.x - 1;
+	SDLGui_Text(ledbox.x - 4*fontw - fontw/2, MessageRect.y, "REC:");
+	SDL_FillRect(surf, &ledbox, LedColorBg);
+	SDL_FillRect(surf, &RecLedRect, RecColorOff);
+	bOldRecording = FALSE;
+
 	/* and blit statusbar on screen */
 	SDL_UpdateRects(surf, 1, &sbarbox);
 	DEBUGPRINT(("Draw statusbar\n"));
@@ -433,24 +451,6 @@ static void Statusbar_ShowMessage(SDL_Surface *surf, Uint32 ticks)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Restore the area left under overlay led
- */
-void Statusbar_OverlayRestore(SDL_Surface *surf)
-{
-	if (StatusbarHeight && ConfigureParams.Screen.bShowStatusbar) {
-		/* overlay not used with statusbar */
-		return;
-	}
-	if (bOverlayState == OVERLAY_DRAWN && OverlayUnderside) {
-		assert(surf);
-		SDL_BlitSurface(OverlayUnderside, NULL, surf, &OverlayLedRect);
-		/* this will make the draw function to update this the screen */
-		bOverlayState = OVERLAY_RESTORED;
-	}
-}
-
-/*-----------------------------------------------------------------------*/
-/**
  * Save the area that will be left under overlay led
  */
 void Statusbar_OverlayBackup(SDL_Surface *surf)
@@ -476,6 +476,48 @@ void Statusbar_OverlayBackup(SDL_Surface *surf)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Restore the area left under overlay led
+ */
+void Statusbar_OverlayRestore(SDL_Surface *surf)
+{
+	if (StatusbarHeight && ConfigureParams.Screen.bShowStatusbar) {
+		/* overlay not used with statusbar */
+		return;
+	}
+	if (bOverlayState == OVERLAY_DRAWN && OverlayUnderside) {
+		assert(surf);
+		SDL_BlitSurface(OverlayUnderside, NULL, surf, &OverlayLedRect);
+		/* this will make the draw function to update this the screen */
+		bOverlayState = OVERLAY_RESTORED;
+	}
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Draw overlay led
+ */
+static void Statusbar_OverlayDrawLed(SDL_Surface *surf, Uint32 color)
+{
+	SDL_Rect rect;
+	if (bOverlayState == OVERLAY_DRAWN) {
+		/* some led already drawn */
+		return;
+	}
+	bOverlayState = OVERLAY_DRAWN;
+
+	/* enabled led with border */
+	rect = OverlayLedRect;
+	rect.x += 1;
+	rect.y += 1;
+	rect.w -= 2;
+	rect.h -= 2;
+	SDL_FillRect(surf, &OverlayLedRect, LedColorBg);
+	SDL_FillRect(surf, &rect, color);
+	DEBUGPRINT(("Overlay led ON\n"));
+}
+
+/*-----------------------------------------------------------------------*/
+/**
  * Draw overlay led onto screen surface if any drives are enabled.
  */
 static void Statusbar_OverlayDraw(SDL_Surface *surf)
@@ -484,22 +526,16 @@ static void Statusbar_OverlayDraw(SDL_Surface *surf)
 	int i;
 
 	assert(surf);
+	if (bRecordingYM || bRecordingWav || bRecordingAnimation) {
+		Statusbar_OverlayDrawLed(surf, RecColorOn);
+	}
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
 		if (Led[i].state) {
 			if (Led[i].timeout && Led[i].timeout < currentticks) {
 				Led[i].state = FALSE;
 				continue;
 			}
-			/* enabled led with border */
-			SDL_Rect rect = OverlayLedRect;
-			rect.x += 1;
-			rect.y += 1;
-			rect.w -= 2;
-			rect.h -= 2;
-			SDL_FillRect(surf, &OverlayLedRect, LedColorBg);
-			SDL_FillRect(surf, &rect, LedColorOn);
-			DEBUGPRINT(("Overlay led ON\n"));
-			bOverlayState = OVERLAY_DRAWN;
+			Statusbar_OverlayDrawLed(surf, LedColorOn);
 			break;
 		}
 	}
@@ -570,5 +606,18 @@ void Statusbar_Update(SDL_Surface *surf)
 		SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, fscount);
 		SDL_UpdateRects(surf, 1, &FrameSkipsRect);
 		nOldFrameSkips = nFrameSkips;
+	}
+
+	if ((bRecordingYM || bRecordingWav || bRecordingAnimation)
+	    != bOldRecording) {
+		bOldRecording = !bOldRecording;
+		if (bOldRecording) {
+			color = RecColorOn;
+		} else {
+			color = RecColorOff;
+		}
+		SDL_FillRect(surf, &RecLedRect, color);
+		SDL_UpdateRects(surf, 1, &RecLedRect);
+		DEBUGPRINT(("REC = ON\n"));
 	}
 }
