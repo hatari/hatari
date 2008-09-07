@@ -28,7 +28,7 @@
   TODO:
   - call Statusbar_AddMessage() from log.c?
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.9 2008-09-06 21:08:13 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.10 2008-09-07 19:24:05 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -263,17 +263,9 @@ void Statusbar_Init(SDL_Surface *surf)
 		Led[i].offset = offset;
 		offset += LedRect.w + 2*fontw;
 	}
-	
-	/* intialize messages */
-	MessageRect.x = offset;
-	MessageRect.w = MAX_MESSAGE_LEN * fontw;
-	MessageRect.h = fonth;
-	for (item = MessageList; item; item = item->next) {
-		item->shown = FALSE;
-	}
 
 	/* draw frameskip */
-	FrameSkipsRect.x = MessageRect.x + MessageRect.w + fontw;
+	FrameSkipsRect.x = offset;
 	FrameSkipsRect.y = MessageRect.y;
 	SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "FS:");
 	FrameSkipsRect.x += 3 * fontw + fontw/2;
@@ -281,6 +273,14 @@ void Statusbar_Init(SDL_Surface *surf)
 	FrameSkipsRect.h = fonth;
 	SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, "0");
 	nOldFrameSkips = 0;
+	
+	/* intialize messages */
+	MessageRect.x = FrameSkipsRect.x + 2 * fontw;
+	MessageRect.w = MAX_MESSAGE_LEN * fontw;
+	MessageRect.h = fonth;
+	for (item = MessageList; item; item = item->next) {
+		item->shown = FALSE;
+	}
 
 	/* draw recording led box */
 	RecLedRect = LedRect;
@@ -387,7 +387,7 @@ void Statusbar_UpdateInfo(void)
 		end = Statusbar_AddString(end, ", TOS v");
 		*end++ = '0' + ((TosVersion & 0xf00) >> 8);
 		*end++ = '.';
-		*end++ = '0' + ((TosVersion & 0xf0) >> 6);
+		*end++ = '0' + ((TosVersion & 0xf0) >> 4);
 		*end++ = '0' + (TosVersion & 0xf);
 	}
 	*end = '\0';
