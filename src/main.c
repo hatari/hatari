@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.139 2008-09-05 21:29:01 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: main.c,v 1.140 2008-09-11 20:33:34 thothy Exp $";
 
 #include "config.h"
 
@@ -497,6 +497,33 @@ static void Main_UnInit(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Load initial configuration file(s)
+ */
+static void Main_LoadInitialConfig(void)
+{
+	char *psGlobalConfig;
+
+	psGlobalConfig = malloc(FILENAME_MAX);
+	if (psGlobalConfig)
+	{
+#if defined(__AMIGAOS4__)
+		strncpy(psGlobalConfig, CONFDIR"hatari.cfg", FILENAME_MAX);
+#else
+		snprintf(psGlobalConfig, FILENAME_MAX, CONFDIR"%chatari.cfg", PATHSEP);
+#endif
+		/* Try to load the global configuration file */
+		Configuration_Load(psGlobalConfig);
+
+		free(psGlobalConfig);
+	}
+
+	/* Now try the users configuration file */
+	Configuration_Load(NULL);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Main
  * 
  * Note: 'argv' cannot be declared const, MinGW would then fail to link.
@@ -513,8 +540,7 @@ int main(int argc, char *argv[])
 	Configuration_SetDefault();
 
 	/* Now load the values from the configuration file */
-	Configuration_Load(CONFDIR"/hatari.cfg");     /* Try the global configuration file first */
-	Configuration_Load(NULL);                     /* Now try the users configuration file */
+	Main_LoadInitialConfig();
 
 	/* Check for any passed parameters */
 	if (!Opt_ParseParameters(argc, (const char**)argv))
