@@ -14,7 +14,7 @@ Hatari and EmuTOS
 =================
 
 To run the emulator a TOS ROM image is needed.  EmuTOS, a free
-implementation of TOS, is shipped with the official realeases of
+implementation of TOS, is shipped with the official releases of
 Hatari.
 
 The official Hatari releases are shipped with a tos.img ROM image that
@@ -24,15 +24,15 @@ other versions or the source code of EmuTOS, please visit the EmuTOS
 website.
 
 EmuTOS allows also using ACSI disk images with Hatari Falcon
-emulation, whereas TOS 4.04 supports only IDE disks (which Hatari
-doesn't currently support).  Hard disk images are needed by MiNT and
-some other programs.
+emulation, whereas (original Falcon) TOS 4.04 supports only IDE disks
+(which Hatari doesn't currently support).  Hard disk images are needed
+for running MiNT and some other programs.
 
 
 What is EmuTOS
 ==============
 
-EmuTOS is a single-user single-tasking operating system for the 32 bit
+EmuTOS is a single-user single-tasking operating system for the 32-bit
 Atari computers and emulators.  It can be used as a replacement for
 the TOS images typically needed today for using emulators and it is
 also running on some real hardware, like the Atari Mega STE.  All the
@@ -50,7 +50,7 @@ EmuTOS usage
 There are two main user groups for EmuTOS:
 
 * Users who want to continue using Atari compatible operating systems.
-  They typically use EmuTOS as kind of a "bootloader" to start their
+  They typically use EmuTOS just as kind of a "bootloader" to start their
   FreeMiNT + XaAES + fVDI systems for the Aranym emulator:
 	http://www.aranym.org/
 
@@ -108,7 +108,7 @@ EmuTOS compatibility of free games and demos.
 
 There are so many freely available color games and demos that from
 those only the ones found working with EmuTOS are listed. Often the
-non-working ones "PANIC" EmuTOS.
+non-working ones "Panic" EmuTOS.
 
 Games that are considered good quality & fun, are marked with "*". All
 the listed demos are quite OK and unless otherwise stated, full demo
@@ -260,21 +260,49 @@ Mono games:
 - Lokomotive
 
 
-Working free/shareware Atari STE games and demos
-------------------------------------------------
+Working free/shareware Atari STE programs
+-----------------------------------------
 
 Additional issue for EmuTOS with STE games and demos is that it
-doesn't support the Blitter or DMA calls.  Programs using them
-directly (=most) work fine, but if they try to use them through
-OS services, they don't work.
+doesn't support the Blitter or Sound DMA calls.  Blitter isn't really
+an issue, almost all programs use it directly, but the Sound DMA is
+more of a problem.  Many STE tracker programs & music demos (even some
+games like Tomtar and Blat) refuse to work without EmuTOS support for
+Sound DMA.
+
+Following are STE specific demos, games and apps that work (mostly)
+fine though.
 
 Demos:
 - 20 years megademo, not all screens work
 - Pacemaker (by Paradox), demo stops at middle
+TODO...
 
 Color:
+- Alien Blast (demo)
 - Battletris+
 - Dynaplus*
 - No Limit II (shareware pinball)
+- Obsession* (demo of commercial pinball)
+- Operation Garfield
+- Pacman on E
+- Power Up
+- Skulls (shareware "minesweeper")
+- Stardust* (tunnel sequence demo)
+- STEtris
+- STrEet Fighter II (incomplete)
+- Stupid balloon game
+- Substation* (demo)
+- Wolfenstein3D* v0.5 (titlescreen colors are not right)
 
-TODO...
+Working STE applications
+------------------------
+
+There are not that many applications that would be STE specific
+(or even STE enhanced*), mainly they are sound releated:
+    http://atari-ste.anvil-soft.com/html/archivapps.htm
+
+And the ones working with EmuTOS:
+- Art4Kids (demo)
+- MaxYMizer*
+- Sirius Player
