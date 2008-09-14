@@ -60,10 +60,13 @@
 /*			of PendingInterruptCount is <= 0 (else the int could happen a few cycles earlier*/
 /*			than expected in some rare cases (reading $fffa21 in BIG Demo Screen 1)).	*/
 /* 2008/09/14	[NP]	Add the value of the new PC in the exception's log.				*/
+/* 2008/09/14	[NP]	Correct cycles for TRAP are 34 not 38 (4 more cycles were counted because cpuemu*/
+/*			returns 4 and Exception() adds 34) (Phaleon / Illusion Demo by Next).		*/
+/*			FIXME : Others exception cycles may be wrong too.				*/
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.56 2008-09-14 10:43:38 npomarede Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.57 2008-09-14 19:33:45 npomarede Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -911,7 +914,7 @@ void Exception(int nr, uaecptr oldpc)
     }
     else if(nr >= 32 && nr <= 47)
     {
-      M68000_AddCycles(34);			/* Trap */
+      M68000_AddCycles(34-4);			/* Trap (total is 34, but cpuemu.c already adds 4) */
     }
     else switch(nr)
     {
