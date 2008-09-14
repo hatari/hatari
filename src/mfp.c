@@ -78,9 +78,12 @@
 /*			with a counter of 256 ! (fix timer saving routine used by	*/
 /*			ST Cnx in the Punish Your Machine and the Froggies Over The	*/
 /*			Fence (although this routine is in fact buggy)).		*/
+/* 2008/09/13	[NP]	Add some traces when stopping a timer and changing data reg.	*/
+/*			Don't apply timer D patch if timer D ctrl reg is 0.		*/
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.47 2008-09-04 21:26:53 thothy Exp $";
+
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.48 2008-09-14 11:01:28 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -266,7 +269,7 @@ static void MFP_Exception(int Interrupt)
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_EXCEPTION ) )
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
 		HATARI_TRACE_PRINT ( "mfp excep int=%d vec=0x%x new_pc=0x%x video_cyc=%d %d@%d\n" ,
 			Interrupt, Vec, STMemory_ReadLong ( Vec ), nFrameCycles, nLineCycles, nHBL );
@@ -491,8 +494,23 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler,
 				*pTimerCanResume = TRUE;		/* timer was set, resume is possible if stop/start it later */
 			}
 		}
+
+		else	/* Ctrl was 0 -> timer is stopped */
+		{
+			/* do nothing, only print some traces */
+			if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_START ) )
+			{
+				int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+				int nLineCycles = nFrameCycles % nCyclesPerLine;
+				HATARI_TRACE_PRINT ( "mfp stop AB handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n" ,
+			                     Handler, TimerData, TimerControl, TimerClockCycles, PendingCyclesOver,
+			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
+			                     bFirstTimer?"true":"false" , *pTimerCanResume?"true":"false" );
+			}
+		}
 	}
-	else
+
+	else	/* timer control > 7 */
 	{
 		/* Make sure no outstanding interrupts in list if channel is disabled */
 		Int_RemovePendingInterrupt(Handler);
@@ -579,8 +597,19 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, int Handler,
 			}
 		}
 	}
-	else
+
+	else	/* timer control is 0 */
 	{
+		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_START ) )
+		{
+			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+			int nLineCycles = nFrameCycles % nCyclesPerLine;
+			HATARI_TRACE_PRINT ( "mfp stop CD handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n" ,
+			                     Handler, TimerData, TimerControl, TimerClockCycles, PendingCyclesOver,
+			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
+			                     bFirstTimer?"true":"false" , *pTimerCanResume?"true":"false" );
+		}
+
 		/* Make sure no outstanding interrupts in list if channel is disabled */
 		Int_RemovePendingInterrupt(Handler);
 	}
@@ -1326,9 +1355,9 @@ void MFP_VectorReg_WriteByte(void)
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_WRITE ) )
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "mfp write vector reg fa17=%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		HATARI_TRACE_PRINT ( "mfp write vector reg fa17=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 			MFP_VR, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 
@@ -1399,8 +1428,9 @@ void MFP_TimerCDCtrl_WriteByte(void)
 
 	new_tcdcr = IoMem[0xfffa1d];
 	old_tcdcr = MFP_TCDCR;
+//fprintf ( stderr , "write fa1d new %x old %x\n" , IoMem[0xfffa1d] , MFP_TCDCR );
 
-	if ((old_tcdcr & 0x70) != (new_tcdcr & 0x70))	/* Timer control changed */
+	if ((old_tcdcr & 0x70) != (new_tcdcr & 0x70))	/* Timer C control changed */
 	{
 		/* If we stop a timer which was in delay mode, we need to store
 		 * the current value of the counter to be able to read it or to
@@ -1409,11 +1439,11 @@ void MFP_TimerCDCtrl_WriteByte(void)
 		if ((new_tcdcr & 0x70) == 0)
 			MFP_ReadTimerC(TRUE);		/* Store result in 'MFP_TC_MAINCOUNTER' */
 
-		MFP_TCDCR = ( new_tcdcr & 0x70 ) | ( old_tcdcr & 0x07 );	/* we set TCCR and keep old TDDR */
+		MFP_TCDCR = ( new_tcdcr & 0x70 ) | ( old_tcdcr & 0x07 );	/* we set TCCR and keep old TDDR in case we need to read it below */
 		MFP_StartTimerC();			/* start/stop timer depending on control reg */
 	}
 
-	if ((old_tcdcr & 0x07) != (new_tcdcr & 0x07))	/* Timer control changed */
+	if ((old_tcdcr & 0x07) != (new_tcdcr & 0x07))	/* Timer D control changed */
 	{
 		Uint32 pc = M68000_GetPC();
 
@@ -1436,9 +1466,11 @@ void MFP_TimerCDCtrl_WriteByte(void)
 			 * (eg Paradroid, Speedball I) so we simply intercept the Timer-D
 			 * setup code in TOS and fix the numbers with more 'laid-back'
 			 * values. This still keeps 100% compatibility */
-			// FIXME [NP] : this seems wrong, this can set TDCR to 7 even if it was 0 !
-			new_tcdcr = IoMem[0xfffa1d] = (IoMem[0xfffa1d] & 0xf0) | 7;
-			bAppliedTimerDPatch = TRUE;
+			if ( new_tcdcr & 0x07 )			/* apply patch only if timer D is being started */
+			{
+				new_tcdcr = IoMem[0xfffa1d] = (IoMem[0xfffa1d] & 0xf0) | 7;
+				bAppliedTimerDPatch = TRUE;
+			}
 		}
 
 		/* If we stop a timer which was in delay mode, we need to store the current value */
@@ -1467,6 +1499,14 @@ void MFP_TimerAData_WriteByte(void)
 		MFP_TA_MAINCOUNTER = MFP_TADR;  /* Timer is off, store to main counter */
 		TimerACanResume = FALSE;        /* we need to set a new int when timer start */
 	}
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_WRITE ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "mfp write data reg A fa1f=0x%x new counter=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+			MFP_TADR, MFP_TA_MAINCOUNTER, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1484,6 +1524,14 @@ void MFP_TimerBData_WriteByte(void)
 		MFP_TB_MAINCOUNTER = MFP_TBDR;  /* Timer is off, store to main counter */
 		TimerBCanResume = FALSE;        /* we need to set a new int when timer start */
 	}
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_WRITE ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "mfp write data reg B fa21=0x%x new counter=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+			MFP_TBDR, MFP_TB_MAINCOUNTER, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
 }
 
 /*-----------------------------------------------------------------------*/
@@ -1500,6 +1548,14 @@ void MFP_TimerCData_WriteByte(void)
 	{
 		MFP_TC_MAINCOUNTER = MFP_TCDR;  /* Timer is off, store to main counter */
 		TimerCCanResume = FALSE;        /* we need to set a new int when timer start */
+	}
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_WRITE ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "mfp write data reg C fa23=0x%x new counter=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+			MFP_TCDR, MFP_TC_MAINCOUNTER, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 }
 
@@ -1531,5 +1587,13 @@ void MFP_TimerDData_WriteByte(void)
 	{
 		MFP_TD_MAINCOUNTER = MFP_TDDR;  /* Timer is off, store to main counter */
 		TimerDCanResume = FALSE;        /* we need to set a new int when timer start */
+	}
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_WRITE ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "mfp write data reg D fa25=0x%x new counter=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+			MFP_TDDR, MFP_TD_MAINCOUNTER, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 }
