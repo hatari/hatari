@@ -41,6 +41,7 @@
 
 /* Define to 1 if you have the `cfmakeraw' function. */
 #if defined(__BEOS__) || (defined(__sun) && defined(__SVR4)) \
+    || defined(__CYGWIN__) \
     || defined(__AMIGAOS4__) || defined(__riscos) || defined(__CEGCC__)
 # undef  HAVE_CFMAKERAW
 #else

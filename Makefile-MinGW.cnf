@@ -39,8 +39,8 @@ HOSTLDFLAGS =
 
 # SDL-Library configuration (compiler flags and linker options) - you normally
 # don't have to change this if you have correctly installed the SDL library!
-SDL_CFLAGS = -I/mingw/include/SDL
-SDL_LIBS = -lmingw32 -lSDLmain -lSDL
+SDL_CFLAGS ?= -I/mingw/include/SDL
+SDL_LIBS ?= -lmingw32 -lSDLmain -lSDL
 
 
 # Here you can define the default data directory for Hatari.

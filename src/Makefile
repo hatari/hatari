@@ -50,10 +50,11 @@ ALLOBJS = $(OBJS) $(GUIOBJS) $(CPUDIR)/cpu68k.a $(FALCOBJS)
 
 ifeq ($(SYS_WINDOWS),1)
   ALLOBJS += $(GUIWINOBJS)
-endif
+else
 ifneq ($(strip $(shell gcc -v 2>&1 |grep "cygwin")),)
   ALLOBJS += $(GUIWINOBJS)
 endif 
+endif
 
 
 all: hatari
