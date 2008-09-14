@@ -59,10 +59,11 @@
 /* 2008/04/17	[NP]	In m68k_run_1/m68k_run_2, add the wait state cycles before testing if content	*/
 /*			of PendingInterruptCount is <= 0 (else the int could happen a few cycles earlier*/
 /*			than expected in some rare cases (reading $fffa21 in BIG Demo Screen 1)).	*/
+/* 2008/09/14	[NP]	Add the value of the new PC in the exception's log.				*/
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.55 2008-04-19 08:04:26 npomarede Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.56 2008-09-14 10:43:38 npomarede Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -837,8 +838,8 @@ void Exception(int nr, uaecptr oldpc)
     m68k_areg(regs, 7) -= 2;
     put_word (m68k_areg(regs, 7), regs.sr);
 
-    HATARI_TRACE ( HATARI_TRACE_CPU_EXCEPTION , "cpu exception %d currpc %x buspc %x fault_e3 %x op_e3 %hx addr_e3 %x\n" ,
-	nr, currpc, BusErrorPC, last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3 );
+    HATARI_TRACE ( HATARI_TRACE_CPU_EXCEPTION , "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x\n" ,
+	nr, currpc, BusErrorPC, get_long (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3 );
 
     /* 68000 bus/address errors: */
     if (currprefs.cpu_level==0 && (nr==2 || nr==3)) {
