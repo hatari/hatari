@@ -2204,7 +2204,7 @@ static void dsp_lua(void)
 	dstreg = cur_inst & BITMASK(3);
 	
 	if (cur_inst & (1<<3)) {
-		dsp_core->registers[DSP_REG_N0+dstreg] = dsp_core->registers[DSP_REG_N0+srcreg];
+		dsp_core->registers[DSP_REG_N0+dstreg] = srcnew;
 	} else {
 		dsp_core->registers[DSP_REG_R0+dstreg] = srcnew;
 	}
@@ -2977,17 +2977,10 @@ static void dsp_pm_2_2(void)
 		tmp_parmove_src[0][2]= 0x000000;
 
 	if ((srcreg == DSP_REG_A) || (srcreg == DSP_REG_B)) {
-		if ((dstreg == DSP_REG_A) || (dstreg == DSP_REG_B)) {
-			/* Accu to accu: full 56 bits */
-			tmp_parmove_src[0][0]=dsp_core->registers[DSP_REG_A2+(srcreg & 1)] & BITMASK(8);
-			tmp_parmove_src[0][1]=dsp_core->registers[DSP_REG_A1+(srcreg & 1)] & BITMASK(24);
-			tmp_parmove_src[0][2]=dsp_core->registers[DSP_REG_A0+(srcreg & 1)] & BITMASK(24);
-		} else {
-			/* Accu to register: limited 24 bits */
-			dsp_pm_read_accu24(srcreg, &tmp_parmove_src[0][1]); 
-			if (tmp_parmove_src[0][1] & (1<<23)) {
-				tmp_parmove_src[0][0]=0x0000ff;
-			}
+		/* Accu to register or accu: limited 24 bits */
+		dsp_pm_read_accu24(srcreg, &tmp_parmove_src[0][1]); 
+		if (tmp_parmove_src[0][1] & (1<<23)) {
+			tmp_parmove_src[0][0]=0x0000ff;
 		}
 	} else {
 		if ((dstreg == DSP_REG_A) || (dstreg == DSP_REG_B)) {
