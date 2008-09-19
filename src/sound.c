@@ -46,9 +46,14 @@
 /*			biggest amplitude possible.					*/
 /*			Faster mixing routines for tone+volume+enveloppe (don't use	*/
 /*			StSound's version anymore, it gave problem with some GCC).	*/
+/* 2008/09/17	[NP]	Add ym_normalise_5bit_table to normalise the 32*32*32 table and	*/
+/*			to optionally center 16 bit signed sample.			*/
+/*			Possibility to mix volumes using a table measured on ST or a	*/
+/*			linear mean of the 3 channels' volume.				*/
+/*			Default mixing set to YM_LINEAR_MIXING.				*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.43 2008-09-06 22:18:47 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.44 2008-09-19 18:55:26 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -748,17 +753,33 @@ int		*EnvWave[16] = {	Env00xx,Env00xx,Env00xx,Env00xx,
 
 static int	YmVolumeTable[16] = {62,161,265,377,580,774,1155,1575,2260,3088,4570,6233,9330,13187,21220,32767};
 
+
+/* Table of unsigned 5 bit D/A output level for 1 channels as measured on a real ST (expanded from 4 bits to 5 bits) */
+static ymu16 ymout1c5bit[32] =
+{
+  310,  369,  438,  521,  619,  735,  874, 1039,
+ 1234, 1467, 1744, 2072, 2463, 2927, 3479, 4135,
+ 4914, 5841, 6942, 8250, 9806,11654,13851,16462,
+19565,23253,27636,32845,39037,46395,55141,65535
+};
+
 /* Table of unsigned 4 bit D/A output level for 3 channels as measured on a real ST */
-static const ymu16 volumetable_original[16 * 16 * 16] =
+static ymu16 volumetable_original[16 * 16 * 16] =
 #include "ym2149_fixed_vol.h"
 
 /* Corresponding table interpolated to 5 bit D/A output level (16 bits unsigned) */
 static ymu16 ymout5_u16[32*32*32];
 
-/* Same table, after conversion to signed result (same pointer, with different type) */
+/* Same table, after conversion to signed results (same pointer, with different type) */
 static yms16 *ymout5 = (yms16 *)ymout5_u16;
 
-#define	YM_OUTPUT_LEVEL			0xafff	/* amplitude of the final signal (0..65535) */
+#define	YM_OUTPUT_LEVEL			0x7fff	/* amplitude of the final signal (0..65535 if centered, 0..32767 if not) */
+#define YM_OUTPUT_CENTERED		FALSE
+
+#define YM_LINEAR_MIXING		1	/* Use ymout1c5bit[] to build ymout5[] */
+#define YM_TABLE_MIXING			2	/* Use volumetable_original to build ymout5[] */
+
+int	YmVolumeMixing = YM_LINEAR_MIXING;
 
 
 /* Variables for the YM2149 emulator */
@@ -894,7 +915,7 @@ static int	LowPassFilter(int in)
 
 /*--------------------------------------------------------------*/
 /* Build the volume conversion table used to simulate the	*/
-/* behaviour of the YM2149 in the atari ST.			*/
+/* behaviour of DAC used with the YM2149 in the atari ST.	*/
 /* The final 32*32*32 table is built using a 16*16*16 table	*/
 /* of all possible fixed volume combinations on a ST.		*/
 /*--------------------------------------------------------------*/
@@ -961,11 +982,11 @@ static void	interpolate_volumetable(ymu16 *out)
 	* more than one voice with the envelope, and this is rare.
 	*/
 
-	for (i = 0; i < 16; i += 1)
+	for (i = 0; i < 16; i++)
 	{
-		for (j = 0; j < 16; j += 1)
+		for (j = 0; j < 16; j++)
 		{
-			for (k = 0; k < 16; k += 1)
+			for (k = 0; k < 16; k++)
 			{
 				i1 = volumetable_get(i, j, k);
 				/* copy value unchanged to new position */
@@ -1003,35 +1024,63 @@ static void	interpolate_volumetable(ymu16 *out)
 	}
 }
 
-/* Create a 3 channels, 5 bit per channels DAC table.		*/
-/* The result is normalised using 'level' and centered to give	*/
-/* a signed 16 bit value.					*/
 
-static void ym_create_5bit_atarist_table(ymu16 *out_5bit , yms16 *out, unsigned int level)
+
+
+/* Build a linear version of the conversion table.		*/
+/* We use the mean of the 3 volumes converted to 16 bit values	*/
+/* (each value of ymout1c5bit is in [0,65535])			*/
+
+static void	build_linear_volumetable(ymu16 *out)
 {
-	interpolate_volumetable(out_5bit);
-	
-	/* After creating the 16 bits unsigned table, we normalise it */
-	/* to 16 bits signed. */
-	if (level)
+	int	i, j, k;
+	int	res;
+
+	for (i = 0; i < 32; i++)
+		for (j = 0; j < 32; j++)
+			for (k = 0; k < 32; k++)
+			{
+				res = ( ymout1c5bit[ i ] + ymout1c5bit[ j ] + ymout1c5bit[ k ] ) / 3;
+				volumetable_set ( out, i, j, k, res );
+			}
+}
+
+
+
+
+/* Normalise and optionally center the volume table used to	*/
+/* convert the 3 volumes to a final signed 16 bit sample.	*/
+/* This allows to adapt the amplitude/volume of the samples and	*/
+/* to convert unsigned values to signed values.			*/
+/* - in_5bit contains 32*32*32 unsigned values in the range	*/
+/*	[0,65535].						*/
+/* - out_5bit will contain signed values			*/
+/* Possible values are :					*/
+/*	Level=65535 and DoCenter=TRUE -> [-32768,32767]		*/
+/*	Level=32767 and DoCenter=FALSE -> [0,32767]		*/
+
+static void	ym_normalise_5bit_table(ymu16 *in_5bit , yms16 *out_5bit, unsigned int Level, bool DoCenter)
+{
+	if ( Level )
 	{
    		int h;
-		int min = out_5bit[0x0000];
-		int max = out_5bit[0x7fff];
-		int div = max-min;
-		int center = (min+level)>>1;
-//fprintf ( stderr , "level %d min %d max %d div %d center %d\n" , level, min, max, div, center );		
+		int Max = in_5bit[0x7fff];
+		int Center = Level>>1;
+//fprintf ( stderr , "level %d max %d center %d\n" , Level, Max, Center );
 		
-		/* Change the amplitude of the signal to 'level' : [min,max] -> [min,min+level] */
-		/* Then center the signal around (min+level)/2 */
-		/* This means we go from sthg like [0,65535] to [-32768, 32767] if min=0 and level=65535 */
-		if (div>0) for (h=0; h<32*32*32; ++h)
+		/* Change the amplitude of the signal to 'level' : [0,max] -> [0,level] */
+		/* Then optionally center the signal around Level/2 */
+		/* This means we go from sthg like [0,65535] to [-32768, 32767] if Level=65535 and DoCenter=TRUE */
+		for (h=0; h<32*32*32; h++)
 		{
-			int tmp = out_5bit[h], res;
-			res = (tmp-min) * level / div + min;
-			res -= center;
-			out[h] = res;
-//fprintf ( stderr , "h %d in %d out %d\n" , h , tmp , res );		
+			int tmp = in_5bit[h], res;
+			res = tmp * Level / Max;
+			
+			if ( DoCenter )
+				res -= Center;
+
+			out_5bit[h] = res;
+//fprintf ( stderr , "h %d in %d out %d\n" , h , tmp , res );	
 		}
 	}
 }
@@ -1252,6 +1301,20 @@ static ymsample	YM2149_NextSample(void)
 	/* D/A conversion of the 3 volumes into a sample */
 	sample = ymout5[ Tone3Voices ];			/* 16 bits signed value */
 
+/*
+sample=volumetable_original [
+	  ( ( ( Tone3Voices >> 11 ) & 0xf ) << 8 )
+	+ ( ( ( Tone3Voices >> 6 ) & 0xf ) << 4 )
+	+ ( ( Tone3Voices >> 1 ) & 0xf )
+ ] - YM_OUTPUT_LEVEL/2;
+*/
+
+/*
+sample = YmVolumeTable[ ( ( Tone3Voices >> 11 ) & 0xf ) ]
+	+ YmVolumeTable[ ( ( Tone3Voices >> 6 ) & 0xf ) ]
+	+ YmVolumeTable[ ( ( Tone3Voices >> 1 ) & 0xf ) ];
+*/
+
 
 	/* Increment positions */
 	posA += stepA;
@@ -1417,7 +1480,15 @@ void Sound_Init(void)
 {
 	Ym2149_Init();
 	
-	ym_create_5bit_atarist_table( ymout5_u16 , ymout5 , YM_OUTPUT_LEVEL );
+	/* Depending on the volume mixing method, we use a table based on real measures */
+	/* or a table based on a linear volume mixing. */
+	if ( YmVolumeMixing == YM_TABLE_MIXING )
+		interpolate_volumetable(ymout5_u16);	/* expand the 16*16*16 values in volumetable_original to 32*32*32 */
+	else
+		build_linear_volumetable(ymout5_u16);	/* combines the 32 possibles volumes */
+
+	/* Normalise/center the values (convert from u16 to s16) */
+	ym_normalise_5bit_table ( ymout5_u16 , ymout5 , YM_OUTPUT_LEVEL , YM_OUTPUT_CENTERED );
 
 	Sound_Reset();
 }
