@@ -1,4 +1,4 @@
-# Makefile for MSA
+# Makefile for Hatari MSA
 
 HMSA_OBJS = hmsa.o floppy.o
 HATARI_OBJS = msa.o dim.o st.o file.o unzip.o zip.o
@@ -16,3 +16,6 @@ hmsa: $(OBJS)
 
 clean:
 	$(RM) *.o hmsa
+
+distclean: clean
+	$(RM) *~ *.bak
