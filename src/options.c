@@ -21,7 +21,7 @@
   2008-08-19   [ET]    Add --statusbar and --drive-led options
 */
 
-const char Main_rcsid[] = "Hatari $Id: options.c,v 1.71 2008-08-19 19:47:29 eerot Exp $";
+const char Opt_rcsid[] = "Hatari $Id: options.c,v 1.72 2008-09-20 12:01:08 thothy Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
