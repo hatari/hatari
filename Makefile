@@ -9,6 +9,7 @@
 
 all: Makefile.cnf config.h
 	$(MAKE) -C src/
+	$(MAKE) -C tools/hmsa/
 
 # Makefile.cnf doesn't exist or is older than Makefile.default.cnf?
 Makefile.cnf: Makefile-default.cnf
@@ -36,9 +37,11 @@ hatari.1.gz: doc/hatari.1
 
 clean:
 	$(MAKE) -C src/ clean
+	$(MAKE) -C tools/hmsa/ clean
 
 distclean:
 	$(MAKE) -C src/ distclean
+	$(MAKE) -C tools/hmsa/ distclean
 	$(RM) config.cache config.log Makefile.cnf config.h
 	$(RM) hatari.1.gz
 
