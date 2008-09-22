@@ -5,9 +5,9 @@ Contents:
 - EmuTOS usage
 - EmuTOS compatibility
 - EmuTOS compatibility lists
-  - Working free/shareware Atari ST games and demos
+  - Working free/shareware Atari ST demos and games
   - Non-working free/shareware GEM/mono Atari ST games
-  - Working free/shareware Atari STE games and demos
+  - Working free/shareware Atari STE programs
 
 
 Hatari and EmuTOS
@@ -23,10 +23,10 @@ available at this SourceForge website of EmuTOS.  For downloading
 other versions or the source code of EmuTOS, please visit the EmuTOS
 website.
 
-EmuTOS allows also using ACSI disk images with Hatari Falcon
-emulation, whereas (original Falcon) TOS 4.04 supports only IDE disks
-(which Hatari doesn't currently support).  Hard disk images are needed
-for running MiNT and some other programs.
+EmuTOS allows also using ACSI disk images with Hatari TT/Falcon
+emulation, whereas TOS 3 & 4 support only(?) IDE disks (which Hatari
+doesn't currently support).  Hard disk images are needed for running
+MiNT and some other programs.
 
 
 What is EmuTOS
@@ -64,11 +64,11 @@ There are two main user groups for EmuTOS:
 EmuTOS compatibility
 ====================
 
-Many commercial games and applications work fine with EmuTOS. Games
-(like Bombjack, Nebulus, Oids, Super Hang-On, Turrican, Xenon...)
-use directly the hardware (which Hatari emulates just fine) and
-applications use the correct higher level APIs (AES/VDI) for which
-EmuTOS has proper implemented.
+Many commercial games and applications work fine with EmuTOS. This is
+because games (like Bombjack, Nebulus, Oids, Super Hang-On, Turrican,
+Xenon...) use directly the hardware which Hatari emulates just fine
+and applications use the correct higher level APIs (AES/VDI) for which
+EmuTOS has proper implementation.
 
 EmuTOS AES support is somewhat buggy (mouse dragging and window &
 dialog background drawing in larger 4-bit modes) and VDI support is
@@ -82,11 +82,6 @@ problem with the tools that they've been done with (for example older
 STOS and GFA basic version liked to use Line-A for graphics). There
 are also many demos which use it for convenience.
 
-Joystick doesn't work in some (STOS) games that access it through some
-other means than XBIOS function Kbdvbase() or by hooking into the IKBD
-interrupt vector.   They probably uses some unofficial system variables
-which location depends on the TOS version.
-
 [1] EmuTOS has some old partial implementations for some of the Line-A
     functionality, but these are so buggy that they aren't enabled in
     EmuTOS releases except for mouse on/off functionality.
@@ -95,39 +90,40 @@ To debug which Line-A functions games would like to use, start Hatari
 with "--midi /dev/stderr". You will then see EmuTOS output about calls
 to missing Line-A functions.
 
+Joystick doesn't work in some (STOS) games that access it through some
+other means than XBIOS function Kbdvbase() or by hooking into the IKBD
+interrupt vector.   They probably uses some unofficial system variables
+which location depends on the TOS version.
+
 
 EmuTOS compatibility lists
 ==========================
 
 The compatibility lists below cater for users who don't have Atari HW
 and therefore won't have (legal) version of commercial Atari software
-either and most likely lack motivation to investigate applications
-very deeply (Linux offers better alternatives nowadays for most of
-that).  I.e. the list skips commercial software and concentrates on
-EmuTOS compatibility of free games and demos.
-
-There are so many freely available color games and demos that from
-those only the ones found working with EmuTOS are listed. Often the
-non-working ones "Panic" EmuTOS.
+and most likely lack motivation to investigate applications very
+deeply (Linux offers better alternatives nowadays for most of that).
+I.e. the list skips commercial software and concentrates on EmuTOS
+compatibility of freely available games and demos.
 
 Games that are considered good quality & fun, are marked with "*". All
 the listed demos are quite OK and unless otherwise stated, full demo
 disks. Demos can be downloaded from http://pouet.net/ .
 
-The number of (even remotely fun) free GEM or monochrome games and
-demos is so low that also some non-working ones are listed.  Unless
-otherwise stated, the issues in them are assumed to be Line-A related
-(graphics don't show because they use Line-A drawing functions etc).
-
 First are listed ST demos and games, then STE.
 
 
-Working free/shareware Atari ST games and demos
+Working free/shareware Atari ST demos and games
 -----------------------------------------------
+
+There are so many freely available color games and demos that from
+those only the ones found working with EmuTOS are listed. Often the
+non-working ones "Panic" EmuTOS.
 
 Demos:
 - 4getful (by gwEm, 4KB intro)
 - 4kker (by Checkpoint, 4KB intro)
+- Darktrip (by Legend, doesn't work with >2MB of RAM)
 - Dark Side of the Spoon (by ULM)
 - Death of the Clock Cycles (by Aggression)
 - Dimensio (by Condemned)
@@ -142,7 +138,7 @@ Demos:
 - Two in One (by DHS)
 - YmRockerz musicdisks such as Popstars etc.
 
-Color:
+Color games:
 - Archon 4KB
 - Alien Blockade
 - Bellum*
@@ -150,6 +146,7 @@ Color:
 - ChuChu Rocket*
 - Clogged Up
 - Crapman*
+- Dave Munsie games (shareware)
 - Entombed
 - Flip'em* (4KB puzzle)
 - Grav*
@@ -173,7 +170,7 @@ Color:
 - Teserae*
 - Yak (4KB gridrunner)
 
-GEM:
+GEM games:
 - Ballerburg*
 - Daleks*
 - DBWH
@@ -194,7 +191,7 @@ GEM:
 - Isola
 - Mars (corewars)
 
-Monochrome:
+Monochrome games:
 - MiniGolf (GFA basic)*
 - Monkey Business
 - Mr Dash
@@ -208,7 +205,7 @@ Monochrome:
 - Punssi
 - Pyro
 
-Text:
+Text games:
 - Advent (Colossal Cave)
 - Hack
 - Larn
@@ -217,6 +214,12 @@ Text:
 
 Non-working free/shareware GEM/mono Atari ST games
 --------------------------------------------------
+
+Although there are plenty of color demos and games, the number of
+(even remotely fun) free GEM or monochrome games and demos is so low
+that for those I list here non-working ones.  Unless otherwise stated,
+the issues in them are assumed to be Line-A related (graphics don't
+show because they use Line-A drawing functions etc).
 
 GEM games:
 - Awele
@@ -263,22 +266,20 @@ Mono games:
 Working free/shareware Atari STE programs
 -----------------------------------------
 
-Additional issue for EmuTOS with STE games and demos is that it
-doesn't support the Blitter or Sound DMA calls.  Blitter isn't really
-an issue, almost all programs use it directly, but the Sound DMA is
-more of a problem.  Many STE tracker programs & music demos (even some
-games like Tomtar and Blat) refuse to work without EmuTOS support for
-Sound DMA.
+There are not that many freely available or even commercial programs
+that would be STE specific (or even STE enhanced*):
+    http://atari-ste.anvil-soft.com/html/archivapps.htm
 
 Following are STE specific demos, games and apps that work (mostly)
-fine though.
+fine with EmuTOS.
 
 Demos:
 - 20 years megademo, not all screens work
+- Dynamite
 - Pacemaker (by Paradox), demo stops at middle
 TODO...
 
-Color:
+Color games:
 - Alien Blast (demo)
 - Battletris+
 - Dynaplus*
@@ -293,16 +294,14 @@ Color:
 - STrEet Fighter II (incomplete)
 - Stupid balloon game
 - Substation* (demo)
+- Tomtar
 - Wolfenstein3D* v0.5 (titlescreen colors are not right)
 
-Working STE applications
-------------------------
-
-There are not that many applications that would be STE specific
-(or even STE enhanced*), mainly they are sound releated:
-    http://atari-ste.anvil-soft.com/html/archivapps.htm
-
-And the ones working with EmuTOS:
+Applications (mainly music):
 - Art4Kids (demo)
+- Blipp Blopper*
 - MaxYMizer*
 - Sirius Player
+
+
+	- Eero
