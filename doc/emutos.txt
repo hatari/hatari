@@ -270,14 +270,44 @@ There are not that many freely available or even commercial programs
 that would be STE specific (or even STE enhanced*):
     http://atari-ste.anvil-soft.com/html/archivapps.htm
 
-Following are STE specific demos, games and apps that work (mostly)
-fine with EmuTOS.
+Missing blitter support in EmuTOS (XBios function etc) is an additional
+reason why some programs (such as Blittermania) don't work with it.
+But following STE specific demos, games and apps work (mostly) fine
+with EmuTOS.
 
 Demos:
-- 20 years megademo, not all screens work
-- Dynamite
+- 1st Step (by Tobe/Mjjprod)
+- 20 years megademo (by DHS), some screen don't work
+- Again (by Paradox)
+- Armada is dead (by Aggression)
+- Azed/Jungle demo (by Atari)
+- Beat Demo (by Frontline)
+- Birdie (by Zeal)
+- CD-player (by Light)
+- Core Flakes (by New Core)
+- Dynamite (by Unit 17)
+- E605 (by Light)
+- Extacy (by ICE), breaks at the end
+- French Kiss (by DHS)
+- Illusion (by Next), many screen draw artefacts on Hatari
+- Gobi Toons (by Dune)
+- Grimey (by Reservoir Gods)
+- Kick my assembler (by Orion), start doesn't look right
+- Madness (by Cream)
+- Mathematica (by Aura)
+- Maxymizer compo 2006 (by gwem)
+- Meshake (by Spice Boys)
+- Mind Rewind (by Reservoir Gods)
+- MovieSTE (by Tony Barker)
+- New Year -94 Intro (by Extream)
 - Pacemaker (by Paradox), demo stops at middle
-TODO...
+- Paracon 6 & 7 remindtros (by Paradox)
+- Powerrise (by Light)
+- Reanimation (by Syntax)
+- Sinfull Sinuses (by Chronicle)
+- STE slideshow (by DHS)
+- STE Wars (by Tony Barker)
+- Vision (by POV)
 
 Color games:
 - Alien Blast (demo)
