@@ -183,10 +183,15 @@
 /*			(low res) (fix Omegakul screen in old Omega Demo from 1988).		*/
 /* 2008/09/05	[NP]	No need to test 60/50 switch if HblCounterVideo < nStartHBL (display	*/
 /*			has not started yet).							*/
+/* 2008/09/25	[NP]	Use nLastVisibleHbl to store the number of the last hbl line that should*/
+/*			be copied to the emulator's screen buffer.				*/
+/*			On STE, allow to change immediatly video address, hw scroll and		*/
+/*			linewidth when nHBL>=nLastVisibleHbl instead of nHBL>=nEndHBL		*/
+/*			(fix Power Rise / Xtrem D demo).					*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.124 2008-09-05 18:39:44 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.125 2008-09-25 22:23:36 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -261,7 +266,8 @@ int nStartHBL;                                  /* Start HBL for visible screen 
 int nEndHBL;                                    /* End HBL for visible screen */
 int nScanlinesPerFrame = 313;                   /* Number of scan lines per frame */
 int nCyclesPerLine = 512;                       /* Cycles per horizontal line scan */
-static int nFirstVisibleHbl = 34;               /* The first line of the ST screen that is copied to the PC screen buffer */
+static int nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;			/* The first line of the ST screen that is copied to the PC screen buffer */
+static int nLastVisibleHbl = FIRST_VISIBLE_HBL_50HZ+NUM_VISIBLE_LINES;	/* The last line of the ST screen that is copied to the PC screen buffer */
 
 static Uint8 HWScrollCount;			/* HW scroll pixel offset, STE only (0...15) */
 static int NewHWScrollCount = -1;		/* Used in STE mode when writing to the scrolling registers $ff8264/65 */
@@ -1359,11 +1365,11 @@ static void Video_EndHBL(void)
 		if (bUseHighRes)
 		{
 			/* Copy for hi-res (no overscan) */
-			if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+VIDEO_HEIGHT_HBL_MONO)
+			if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
 				Video_CopyScreenLineMono();
 		}
 		/* Are we in possible visible color display (including borders)? */
-		else if (nHBL >= nFirstVisibleHbl && nHBL < nFirstVisibleHbl+NUM_VISIBLE_LINES)
+		else if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
 		{
 			/* Copy line of screen to buffer to simulate TV raster trace
 			 * - required for mouse cursor display/game updates
@@ -1545,6 +1551,7 @@ static void Video_ResetShifterTimings(void)
 		nCyclesPerLine = CYCLES_PER_LINE_71HZ;
 		nStartHBL = VIDEO_START_HBL_71HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_71HZ;
+		nLastVisibleHbl = FIRST_VISIBLE_HBL_71HZ + VIDEO_HEIGHT_HBL_MONO;
 		LineTimerBCycle = LINE_END_CYCLE_70 + TIMERB_VIDEO_CYCLE_OFFSET;
 	}
 	else if (nSyncByte & 2)  /* Check if running in 50 Hz or in 60 Hz */
@@ -1555,6 +1562,7 @@ static void Video_ResetShifterTimings(void)
 		nCyclesPerLine = CYCLES_PER_LINE_50HZ;
 		nStartHBL = VIDEO_START_HBL_50HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;
+		nLastVisibleHbl = FIRST_VISIBLE_HBL_50HZ + NUM_VISIBLE_LINES;
 		LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
 	}
 	else
@@ -1565,6 +1573,7 @@ static void Video_ResetShifterTimings(void)
 		nCyclesPerLine = CYCLES_PER_LINE_60HZ;
 		nStartHBL = VIDEO_START_HBL_60HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_60HZ;
+		nLastVisibleHbl = FIRST_VISIBLE_HBL_60HZ + NUM_VISIBLE_LINES;
 		LineTimerBCycle = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
 	}
 
@@ -1770,8 +1779,8 @@ static void Video_DrawScreen(void)
 		/* Before drawing the screen, ensure all unused lines are cleared to color 0 */
 		/* (this can happen in 60 Hz when hatari is displaying the screen's border) */
 		/* pSTScreen was set during Video_CopyScreenLineColor */
-		if ( nHBL < nFirstVisibleHbl+NUM_VISIBLE_LINES )
-			memset(pSTScreen, 0, SCREENBYTES_LINE * ( nFirstVisibleHbl+NUM_VISIBLE_LINES - nHBL ) );
+		if ( nHBL < nLastVisibleHbl )
+			memset(pSTScreen, 0, SCREENBYTES_LINE * ( nLastVisibleHbl - nHBL ) );
 
 		Screen_Draw();
 	}
@@ -1948,7 +1957,7 @@ void Video_ScreenCounter_WriteByte(void)
 	/* If display has not started, we can still modify pVideoRaster */
 	/* We must also check the write does not overlap the end of the line */
 	if ( ( ( nLineCycles <= LINE_START_CYCLE_50 ) && ( nHBL == HblCounterVideo ) )
-		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
+		|| ( nHBL < nStartHBL ) || ( nHBL >= nLastVisibleHbl ) )
 	{
 		addr = Video_CalculateAddress();		/* get current video address */
 		if ( IoAccessCurrentAddress == 0xff8205 )
@@ -2059,8 +2068,11 @@ void Video_LineWidth_WriteByte(void)
 
 	/* We must also check the write does not overlap the end of the line */
 	if ( ( ( nLineCycles <= LineEndCycle ) && ( nHBL == HblCounterVideo ) )
-		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
+		|| ( nHBL < nStartHBL ) || ( nHBL >= nLastVisibleHbl ) )
+	{
 		LineWidth = NewWidth;		/* display is on, we can still change */
+		NewLineWidth = -1;		/* cancel 'pending' change */
+	}
 	else
 		NewLineWidth = NewWidth;	/* display is off, can't change LineWidth once in right border */
 
@@ -2327,11 +2339,12 @@ void Video_HorScroll_Write(void)
 	/* for line n+1. */
 	/* We must also check the write does not overlap the end of the line */
 	if ( ( ( nLineCycles <= LINE_START_CYCLE_50 ) && ( nHBL == HblCounterVideo ) )
-		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
+		|| ( nHBL < nStartHBL ) || ( nHBL >= nLastVisibleHbl ) )
 	{
 		HWScrollCount = ScrollCount;		/* display has not started, we can still change */
 		HWScrollPrefetch = Prefetch;
 		bSteBorderFlag = Add16px;
+		NewHWScrollCount = -1;			/* cancel 'pending' change */
 	}
 	else
 	{
