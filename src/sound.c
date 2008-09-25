@@ -53,7 +53,7 @@
 /*			Default mixing set to YM_LINEAR_MIXING.				*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.44 2008-09-19 18:55:26 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.45 2008-09-25 18:36:50 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -296,6 +296,12 @@ void Sound_Reset(void)
 	/* We do not start with 0 here to fake some initial samples: */
 	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
 	ActiveSndBufIdx = nGeneratedSamples % MIXBUFFER_SIZE;
+
+	/* Stop all voices and set volumes to 0 */
+	Sound_WriteReg ( 7 , 0xff );
+	Sound_WriteReg ( 8 , 0 );
+	Sound_WriteReg ( 9 , 0 );
+	Sound_WriteReg ( 10 , 0 );
 
 	/* Clear frequency counter */
 	for (i = 0; i < 3; i++)
