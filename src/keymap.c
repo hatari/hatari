@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.39 2008-06-02 20:07:01 eerot Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.40 2008-09-25 20:05:48 thothy Exp $";
 
 #include <ctype.h>
 #include "main.h"
@@ -232,7 +232,7 @@ static const char SymbolicKeyToSTScanCode[SDLK_LAST] =
 	/* End of ASCII mapped keysyms */
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 128-143*/
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 144-159*/
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 160-175*/
+	0x0d, 0x0c, 0x1a, 0x28, 0x27, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 160-175*/
 	-1, -1, -1, -1, 0x0D, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 176-191*/
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /* 192-207*/
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0x0C, /* 208-223*/
@@ -255,7 +255,7 @@ static const char SymbolicKeyToSTScanCode[SDLK_LAST] =
 	0x4A,    /* SDLK_KP_MINUS = 269 */
 	0x4E,    /* SDLK_KP_PLUS = 270 */
 	0x72,    /* SDLK_KP_ENTER = 271 */
-	-1,      /* SDLK_KP_EQUALS = 272 */
+	0x61,    /* SDLK_KP_EQUALS = 272 */
 	/* Arrows + Home/End pad */
 	0x48,    /* SDLK_UP = 273 */
 	0x50,    /* SDLK_DOWN = 274 */
@@ -279,7 +279,7 @@ static const char SymbolicKeyToSTScanCode[SDLK_LAST] =
 	0x44,    /* SDLK_F10 = 291 */
 	-1,      /* SDLK_F11 = 292 */
 	-1,      /* SDLK_F12 = 293 */
-	-1,      /* SDLK_F13 = 294 */
+	0x62,    /* SDLK_F13 = 294 */
 	-1,      /* SDLK_F14 = 295 */
 	-1,      /* SDLK_F15 = 296 */
 	-1,      /* 297 */
