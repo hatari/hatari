@@ -4,6 +4,7 @@ Contents:
 - What is EmuTOS
 - EmuTOS usage
 - EmuTOS compatibility
+- Debugging issues with EmuTOS
 - EmuTOS compatibility lists
   - Working free/shareware Atari ST demos and games
   - Non-working free/shareware GEM/mono Atari ST games
@@ -68,7 +69,7 @@ Many commercial games and applications work fine with EmuTOS. This is
 because games (like Bombjack, Nebulus, Oids, Super Hang-On, Turrican,
 Xenon...) use directly the hardware which Hatari emulates just fine
 and applications use the correct higher level APIs (AES/VDI) for which
-EmuTOS has proper implementation.
+EmuTOS has implementations.
 
 EmuTOS AES support is somewhat buggy (mouse dragging and window &
 dialog background drawing in larger 4-bit modes) and VDI support is
@@ -86,14 +87,23 @@ are also many demos which use it for convenience.
     functionality, but these are so buggy that they aren't enabled in
     EmuTOS releases except for mouse on/off functionality.
 
-To debug which Line-A functions games would like to use, start Hatari
-with "--midi /dev/stderr". You will then see EmuTOS output about calls
-to missing Line-A functions.
-
 Joystick doesn't work in some (STOS) games that access it through some
 other means than XBIOS function Kbdvbase() or by hooking into the IKBD
 interrupt vector.   They probably uses some unofficial system variables
 which location depends on the TOS version.
+
+
+Debugging issues with EmuTOS
+============================
+
+To debug which Line-A functions programs try to use, start Hatari
+with "--midi /dev/stderr". You will then see EmuTOS output about calls
+to missing Line-A functions.
+
+To debug EmuTOS panics, you need to compile EmuTOS yourself and create
+a disassembly of the ROM image.  You can then look up the program
+counter value given in panic message from the disassembly to see
+where the crash happens.
 
 
 EmuTOS compatibility lists
