@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.19 2008-08-16 15:49:45 eerot Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.20 2008-09-26 16:39:29 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -314,56 +314,6 @@ Uint32 HostScreen_getBitsPerPixel(void)
 	return surf->format->BitsPerPixel;
 }
 
-
-#if 0
-void HostScreen_gfxFastPixelColorNolock(int16 x, int16 y, Uint32 color)
-{
-	int bpp;
-	uint8 *p;
-
-	/* Get destination format */
-	bpp = surf->format->BytesPerPixel;
-	p = (uint8 *)surf->pixels + y * surf->pitch + x * bpp;
-	switch(bpp) {
-		case 1:
-			*p = color;
-			break;
-		case 2:
-			*(Uint16 *)p = color;
-			break;
-		case 3:
-			putBpp24Pixel( p, color );
-			break;
-		case 4:
-			*(Uint32 *)p = color;
-			break;
-	} /* switch */
-}
-#endif
-
-#if 0
-Uint32 HostScreen_gfxGetPixel( int16 x, int16 y )
-{
-	int bpp;
-	uint8 *p;
-
-	/* Get destination format */
-	bpp = surf->format->BytesPerPixel;
-	p = (uint8 *)surf->pixels + y * surf->pitch + x * bpp;
-	switch(bpp) {
-		case 1:
-			return (uint32)(*(uint8 *)p);
-		case 2:
-			return (uint32)(*(Uint16 *)p);
-		case 3:
-			// FIXME maybe some & problems? and endian
-			return getBpp24Pixel( p );
-		case 4:
-			return *(Uint32 *)p;
-	} /* switch */
-	return 0;	// should never happen
-}
-#endif
 
 Uint32 HostScreen_getBpp()
 {
