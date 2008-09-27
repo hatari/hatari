@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.77 2008-09-02 18:56:49 eerot Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.78 2008-09-27 14:43:25 thothy Exp $";
 
 #include <config.h>
 
@@ -854,6 +854,19 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 					snprintf(pszDestName, nDestNameLen, "%s%c%s",
 					         globbuf.gl_pathv[j], PATHSEP, s+1);
 					j = globbuf.gl_pathc;
+					found = 1;
+				}
+				/* Here comes a work-around for a bug in the file selector
+				 * of TOS 1.02: When a folder name has exactly 8 characters,
+				 * it appends a '.' at the end of the name... */
+				else if (base_len == 8 && pszDestName[len-1] == '.' &&
+						 !strncasecmp(globbuf.gl_pathv[j],pszDestName,len-1))
+				{
+					/* we found a matching name... */
+					snprintf(pszDestName, nDestNameLen, "%s%c%s",
+					         globbuf.gl_pathv[j], PATHSEP, s+1);
+					s -= 1;
+					j = globbuf.gl_pathc;  /* break */
 					found = 1;
 				}
 			}
