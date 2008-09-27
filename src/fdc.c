@@ -28,7 +28,7 @@
 /*			the command takes more time than a real ST to complete.		*/
 
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.43 2008-09-02 10:09:25 thothy Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.44 2008-09-27 13:36:26 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -285,8 +285,9 @@ void FDC_ResetDMAStatus(void)
 	FDCSectorCountRegister = 0;
 	FDC_SetDMAStatus(FALSE);          /* Set no error */
 
+	/* Reset HDC command status */
 	HDCSectorCount = 0;
-	HDCCommand.byteCount = 0;         /* Reset HDC command status */
+	/*HDCCommand.byteCount = 0;*/  /* Not done on real ST? */
 	HDCCommand.returnCode = 0;
 }
 
