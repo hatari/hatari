@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.20 2008-09-02 19:46:42 npomarede Exp $";
+const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.21 2008-09-27 13:21:17 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -339,6 +339,8 @@ static void HDC_Cmd_WriteSector(void)
 		fwrite(&STRam[FDC_ReadDMAAddress()], 512, HD_SECTORCOUNT(HDCCommand),
 		       hd_image_file);
 #endif
+		/* Update DMA counter */
+		FDC_WriteDMAAddress(FDC_ReadDMAAddress() + 512*HD_SECTORCOUNT(HDCCommand));
 	}
 
 	FDC_SetDMAStatus(FALSE);              /* no DMA error */
@@ -373,6 +375,9 @@ static void HDC_Cmd_ReadSector(void)
 		      hd_image_file);
 		HDCCommand.returnCode = HD_STATUS_OK;
 		nLastError = HD_REQSENS_OK;
+
+		/* Update DMA counter */
+		FDC_WriteDMAAddress(FDC_ReadDMAAddress() + 512*HD_SECTORCOUNT(HDCCommand));
 	}
 
 	FDC_SetDMAStatus(FALSE);              /* no DMA error */
