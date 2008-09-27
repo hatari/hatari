@@ -195,6 +195,7 @@
 		E99613BA0E6DC6900047F6A0 /* statusbar.c in Sources */ = {isa = PBXBuildFile; fileRef = E99613B90E6DC6900047F6A0 /* statusbar.c */; };
 		E99613BD0E6DC6C50047F6A0 /* statusbar.h in Headers */ = {isa = PBXBuildFile; fileRef = E99613BB0E6DC6C50047F6A0 /* statusbar.h */; };
 		E99613BE0E6DC6C50047F6A0 /* utils.h in Headers */ = {isa = PBXBuildFile; fileRef = E99613BC0E6DC6C50047F6A0 /* utils.h */; };
+		E9D75D5A0E8C1BB1000E76DE /* ym2149_fixed_vol.h in Headers */ = {isa = PBXBuildFile; fileRef = E9D75D590E8C1BB1000E76DE /* ym2149_fixed_vol.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -430,6 +431,7 @@
 		E9987A66075134AA007DC37B /* cpuemu.c */ = {isa = PBXFileReference; fileEncoding = 30; includeInIndex = 0; lastKnownFileType = sourcecode.c.c; path = cpuemu.c; sourceTree = "<group>"; };
 		E9987A7B075135D6007DC37B /* cpudefs.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = cpudefs.c; sourceTree = "<group>"; };
 		E9987A7C075135D6007DC37B /* cpustbl.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = cpustbl.c; sourceTree = "<group>"; };
+		E9D75D590E8C1BB1000E76DE /* ym2149_fixed_vol.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = ym2149_fixed_vol.h; path = src/includes/ym2149_fixed_vol.h; sourceTree = SOURCE_ROOT; };
 		F5A47A9D01A0482F01D3D55B /* SDLMain.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = SDLMain.h; sourceTree = "<group>"; };
 		F5A47A9E01A0483001D3D55B /* SDLMain.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = SDLMain.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -717,6 +719,7 @@
 				E9283ECE07512EA200DA6B24 /* video.h */,
 				E9283ECF07512EA200DA6B24 /* wavFormat.h */,
 				E9283ED007512EA200DA6B24 /* xbios.h */,
+				E9D75D590E8C1BB1000E76DE /* ym2149_fixed_vol.h */,
 				E9283ED107512EA200DA6B24 /* ymFormat.h */,
 				E9283ED207512EA200DA6B24 /* zip.h */,
 			);
@@ -846,6 +849,7 @@
 				4E5138500DE5515200605B70 /* routines.h in Headers */,
 				E99613BD0E6DC6C50047F6A0 /* statusbar.h in Headers */,
 				E99613BE0E6DC6C50047F6A0 /* utils.h in Headers */,
+				E9D75D5A0E8C1BB1000E76DE /* ym2149_fixed_vol.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
