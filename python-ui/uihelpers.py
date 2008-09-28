@@ -119,11 +119,11 @@ def create_toggle(label, cb, data = None):
 # -----------------------------
 # Table dialog helper functions
 
-def create_table_dialog(parent, title, rows):
+def create_table_dialog(parent, title, rows, oktext = gtk.STOCK_APPLY):
     "create_table_dialog(parent,title,rows) -> (table,dialog)"
     dialog = gtk.Dialog(title, parent,
         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-        (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
+        (oktext,  gtk.RESPONSE_APPLY,
         gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
 
     table = gtk.Table(rows, 2) # rows, cols

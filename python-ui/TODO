@@ -20,9 +20,7 @@ sources.
   Note that reset requiring settings like TOS image,
   harddisk dir & image are different matter
 
-* Support for RTC in machine dialog and remove support for multiple
-  setups now that config loading works (there can be different configs
-  for ST games & apps, STE demos, TT apps, Falcon demos and apps etc)
+* Support for RTC in machine dialog
 
 * Add autofire support to joystick settings,
   other disk image options to disk settings

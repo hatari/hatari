@@ -320,47 +320,54 @@ class DisplayDialog(HatariUIDialog):
     def _create_dialog(self, config):
         tips = gtk.Tooltips()
 
-        skip = gtk.HScale()
-        skip.set_digits(0)
-        skip.set_range(0, 8)
-        skip.set_size_request(8*8, -1)
-        skip.set_value(config.get_frameskips())
-        tips.set_tip(skip, "Increase/decrease screen frame skip")
-        
-        hbox1 = gtk.HBox()
-        hbox1.pack_start(gtk.Label("Frameskip:"), False, False, 0)
-        hbox1.add(skip)
-        self.skip = skip
-
-        spec512 = gtk.CheckButton("Spec512")
-        spec512.set_active(config.get_spec512threshold())
-        tips.set_tip(spec512, "Whether to support Spec512 (>16 colors at the same time)")
-
-        borders = gtk.CheckButton("Borders")
-        borders.set_active(config.get_borders())
-        tips.set_tip(borders, "Whether to show overscan borders in low/mid-rez")
+        skip = gtk.combo_box_new_text()
+        for text in config.get_frameskip_names():
+            skip.append_text(text)
+        skip.set_active(config.get_frameskip())
+        tips.set_tip(skip, "Set how many frames are skipped")
 
         zoom = gtk.CheckButton("Zoom ST-low")
         zoom.set_active(config.get_zoom())
         tips.set_tip(zoom, "Whether to double ST-low resolution")
 
-        hbox2 = gtk.HBox()
-        hbox2.add(spec512)
-        hbox2.add(borders)
-        hbox2.add(zoom)
-        self.zoom = zoom
-        self.borders = borders
-        self.spec512 = spec512
+        borders = gtk.CheckButton("Borders")
+        borders.set_active(config.get_borders())
+        tips.set_tip(borders, "Whether to show overscan borders in low/mid-rez")
+
+        spec512 = gtk.CheckButton("Spec512")
+        spec512.set_active(config.get_spec512threshold())
+        tips.set_tip(spec512, "Whether to support Spec512 (>16 colors at the same time)")
+
+        statusbar = gtk.CheckButton("Statusbar")
+        statusbar.set_active(config.get_statusbar())
+        tips.set_tip(statusbar, "Whether to show statusbar with floppy leds etc")
+
+        led = gtk.CheckButton("Overlay led")
+        led.set_active(config.get_led())
+        tips.set_tip(led, "Whether to show overlay drive led when statusbar isn't visible")
 
         dialog = gtk.Dialog("Display settings", self.parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
              gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL))
-        dialog.vbox.add(hbox1)
-        dialog.vbox.add(hbox2)
-        dialog.vbox.show_all()
-        self.dialog = dialog
 
+        dialog.vbox.add(gtk.Label("Frameskip:"))
+        dialog.vbox.add(skip)
+        dialog.vbox.add(zoom)
+        dialog.vbox.add(borders)
+        dialog.vbox.add(spec512)
+        dialog.vbox.add(statusbar)
+        dialog.vbox.add(led)
+        dialog.vbox.show_all()
+
+        self.dialog = dialog
+        self.skip = skip
+        self.zoom = zoom
+        self.borders = borders
+        self.spec512 = spec512
+        self.statusbar = statusbar
+        self.led = led
+ 
     def run(self, config):
         "run(config), show display dialog"
         if not self.dialog:
@@ -369,10 +376,12 @@ class DisplayDialog(HatariUIDialog):
         self.dialog.hide()
         if response == gtk.RESPONSE_APPLY:
             config.lock_updates()
-            config.set_frameskips(self.skip.get_value())
-            config.set_spec512threshold(self.spec512.get_active())
-            config.set_borders(self.borders.get_active())
+            config.set_frameskip(self.skip.get_active())
             config.set_zoom(self.zoom.get_active())
+            config.set_borders(self.borders.get_active())
+            config.set_spec512threshold(self.spec512.get_active())
+            config.set_statusbar(self.statusbar.get_active())
+            config.set_led(self.led.get_active())
             config.flush_updates()
 
 
@@ -591,137 +600,14 @@ class TraceDialog(HatariUIDialog):
                 return self.savedpoints
 
 
-# ----------------------------------------
+# ------------------------------------------
 # Machine dialog for settings needing reboot
 
 class MachineDialog(HatariUIDialog):
-    def __init__(self, parent):
-        self.setups = []
-        self.parent = parent
-        self.editdialog = None
-        self.dialog = None
-
     def _create_dialog(self, config):
-        dialog = gtk.Dialog("Machine configurations", self.parent,
-            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-            ("Set and reboot",  gtk.RESPONSE_APPLY,
-             gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
-        self.editdialog = EditMachineDialog(dialog)
-
-        box1 = gtk.HBox()
-        box1.add(create_button("Add", self._add_setup, config))
-        box1.add(create_button("Edit", self._edit_setup, config))
-        box1.add(create_button("Remove", self._remove_setup))
-        dialog.vbox.add(box1)
-
-        box2 = gtk.HBox()
-        self.combo = gtk.combo_box_new_text()
-        self.combo.connect("changed", self._show_setup, config)
-        box2.pack_start(gtk.Label("Machine setup:"), False, False)
-        box2.add(self.combo)
-        dialog.vbox.add(box2)
-
-        dialog.vbox.add(gtk.HSeparator())
-        self.label = gtk.Label()
-        dialog.vbox.add(self.label)
-
-        dialog.vbox.show_all()
-        self.dialog = dialog
-
-        self.setups.append({
-            "machine": config.get_machine(),
-            "monitor": config.get_monitor(),
-            "memory": config.get_memory(),
-            "tos": config.get_tos(),
-            "harddisk": config.get_harddisk(),
-            "usehd": config.get_use_harddisk(),
-            "compatible": config.get_compatible(),
-            "name": "Default"
-        })
-        self.combo.append_text("Default")
-        self.combo.set_active(0)
-        
-    def _add_setup(self, widget, config):
-        current = self.combo.get_active()
-        setup = self.setups[current].copy()
-        setup["name"] = "NEW"
-        setup = self.editdialog.run(config, setup)
-        if setup:
-            self.setups.append(setup)
-            self.combo.append_text(setup["name"])
-            self.combo.set_active(current + 1)
-
-    def _edit_setup(self, widget, config):
-        current = self.combo.get_active()
-        if not current:
-            return ErrorDialog(self.parent).run("Cannot edit default setup")
-        setup = self.setups[current].copy()
-        setup = self.editdialog.run(config, setup)
-        if setup:
-            self.setups[current] = setup
-            self._show_setup(self.combo, config)
-            self.combo.remove_text(current)
-            self.combo.insert_text(current, setup["name"])
-            self.combo.set_active(current)
-
-    def _remove_setup(self, widget):
-        current = self.combo.get_active()
-        if not current:
-            return ErrorDialog(self.parent).run("Cannot delete default setup")
-        name = self.setups[current]["name"]
-        self.combo.set_active(current - 1)
-        self.combo.remove_text(current)
-        del(self.setups[current])
-        NoteDialog(self.parent).run("Current '%s' setup deleted" % name)
-
-    def _apply_setup(self, config):
-        setup = self.setups[self.combo.get_active()]
-        config.lock_updates()
-        config.set_machine(setup["machine"])
-        config.set_monitor(setup["monitor"])
-        config.set_memory(setup["memory"])
-        config.set_tos(setup["tos"])
-        # usehd has to be before before harddisk
-        config.set_use_harddisk(setup["usehd"])
-        config.set_harddisk(setup["harddisk"])
-        config.set_compatible(setup["compatible"])
-        config.flush_updates()
-    
-    def _show_setup(self, combo, config):
-        setup = self.setups[combo.get_active()]
-        info = []
-        info.append("Machine type: %s" % config.get_machine_types()[setup["machine"]])
-        info.append("Monitor type: %s" % config.get_monitor_types()[setup["monitor"]])
-        info.append("Memory size: %s" % config.get_memory_sizes()[setup["memory"]])
-        info.append("TOS image: %s" % os.path.basename(setup["tos"]))
-        info.append("Harddisk dir: %s" % setup["harddisk"])
-        info.append("Use harddisk: %s" % str(setup["usehd"]))
-        info.append("Compatible CPU: %s" % str(setup["compatible"]))
-        self.label.set_text("\n".join(info))
-
-    def run(self, config):
-        "run(config) -> bool, whether to reboot"
-        if not self.dialog:
-            self._create_dialog(config)
-
-        response = self.dialog.run()
-        self.dialog.hide()
-        if response == gtk.RESPONSE_APPLY:
-            self._apply_setup(config)
-            return True
-        return False
-
-# ----------------------------------------------
-# Dialog for adding/editing setup configurations
-
-class EditMachineDialog(HatariUIDialog):
-    def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Add/edit setup", 9)
+        table, self.dialog = create_table_dialog(self.parent, "Machine configuration", 9, "Set and reboot")
 
         row = 0
-        self.name = table_add_entry_row(table, row, "Setup name:")
-        row += 1
-        
         combo = gtk.combo_box_new_text()
         for text in config.get_machine_types():
             combo.append_text(text)
@@ -735,7 +621,7 @@ class EditMachineDialog(HatariUIDialog):
         row += 1
         
         combo = gtk.combo_box_new_text()
-        for text in config.get_memory_sizes():
+        for text in config.get_memory_names():
             combo.append_text(text)
         self.memory = table_add_widget_row(table, row, "Memory size:", combo)
         row += 1
@@ -767,34 +653,43 @@ class EditMachineDialog(HatariUIDialog):
         fsel.set_width_chars(12)
         fsel.set_action(action)
         return fsel
+    
+    def _get_config(self, config):
+        self.machine.set_active(config.get_machine())
+        self.monitor.set_active(config.get_monitor())
+        self.memory.set_active(config.get_memory())
+        tos = config.get_tos()
+        hd = config.get_harddisk()
+        usehd = config.get_use_harddisk()
+        if tos:
+            self.tos.set_filename(tos)
+        if hd:
+            self.harddisk.set_filename(hd)
+        if usehd:
+            self.usehd.set_active(usehd)
+        self.compatible.set_active(config.get_compatible())
 
-    def run(self, config, setup):
+    def _set_config(self, config):
+        config.lock_updates()
+        config.set_machine(self.machine.get_active())
+        config.set_monitor(self.monitor.get_active())
+        config.set_memory(self.memory.get_active())
+        config.set_tos(self.tos.get_filename())
+        # usehd has to be before before harddisk
+        config.set_use_harddisk(self.usehd.get_active())
+        config.set_harddisk(self.harddisk.get_filename())
+        config.set_compatible(self.compatible.get_active())
+        config.flush_updates()
+
+    def run(self, config):
+        "run(config) -> bool, whether to reboot"
         if not self.dialog:
             self._create_dialog(config)
 
-        self.name.set_text(setup["name"])
-        self.machine.set_active(setup["machine"])
-        self.monitor.set_active(setup["monitor"])
-        self.memory.set_active(setup["memory"])
-        if setup["tos"]:
-            self.tos.set_filename(setup["tos"])
-        if setup["harddisk"]:
-            self.harddisk.set_filename(setup["harddisk"])
-        if setup["usehd"]:
-            self.usehd.set_active(setup["usehd"])
-        self.compatible.set_active(setup["compatible"])
-
+        self._get_config(config)
         response = self.dialog.run()
         self.dialog.hide()
-        if response == gtk.RESPONSE_CANCEL:
-            return None
-        
-        setup["name"] = self.name.get_text()
-        setup["machine"] = self.machine.get_active()
-        setup["monitor"] = self.monitor.get_active()
-        setup["memory"] = self.memory.get_active()
-        setup["tos"] = self.tos.get_filename()
-        setup["harddisk"] = self.harddisk.get_filename()
-        setup["usehd"] = self.usehd.get_active()
-        setup["compatible"] = self.compatible.get_active()
-        return setup
+        if response == gtk.RESPONSE_APPLY:
+            self._set_config(config)
+            return True
+        return False

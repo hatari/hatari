@@ -234,7 +234,6 @@ class Hatari:
 # - config file, memstate load/save, autosave
 # - log file and levels, bios intercept
 # - rtc, timer-D patching, slow FDC
-# - sound / screen recording
 #
 # By default this doesn't allow setting any other configuration
 # variables than the ones that were read from the configuration
@@ -246,7 +245,6 @@ class Hatari:
 # this cannot just do these according to some mapping table, but
 # it needs actual method for (each) setting.
 class HatariConfigMapping(ConfigStore):
-    _memory = ("512kB", "1MB", "2MB", None, "4MB", None, None, None, "8MB", None, None, None, "14MB")
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
         ConfigStore.__init__(self, "hatari.cfg")
@@ -385,25 +383,25 @@ class HatariConfigMapping(ConfigStore):
         self._change_option("--tos %s" % filename)
 
     # ------------ memory ---------------
-    def get_memory_sizes(self):
+    def get_memory_names(self):
         # empty item in list shouldn't be shown, filter them out
-        return [x for x in self._memory if x]
+        return ("512kB", "1MB", "2MB", "4MB", "8MB", "14MB")
 
     def get_memory(self):
-        size = self.get("[Memory]", "nMemorySize")
-        while not self._memory[size]:
-            size -= 1
-        return size
+        "return index to what get_memory_names() returns"
+        sizemap = (0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5)
+        memsize = self.get("[Memory]", "nMemorySize")
+        if memsize >= 0 and memsize < len(sizemap):
+            return sizemap[memsize]
+        return 1 # default = 1BM
 
     def set_memory(self, idx):
         # map memory item index to memory size
-        memsize = 0
-        for mem in self._memory:
-            if not idx:
-                break
-            if mem:
-                idx -= 1
-            memsize += 1            
+        sizemap = (0, 1, 2, 4, 8, 14)
+        if idx >= 0 and idx < len(sizemap):
+            memsize = sizemap[idx]
+        else:
+            memsize = 1
         self.set("[Memory]", "nMemorySize", memsize)
         self._change_option("--memsize %d" % memsize)
 
@@ -418,11 +416,25 @@ class HatariConfigMapping(ConfigStore):
         self.set("[Screen]", "nMonitorType", value)
         self._change_option("--monitor %s" % ("mono", "rgb", "vga", "tv")[value])
 
-    # ------------ frameskips ---------------
-    def get_frameskips(self):
-        return self.get("[Screen]", "nFrameSkips")
+    # ------------ frameskip ---------------
+    def get_frameskip_names(self):
+        return (
+            "Disabled",
+            "1 frame",
+            "2 frames",
+            "3 frames",
+            "4 frames",
+            "Automatic"
+        )
     
-    def set_frameskips(self, value):
+    def get_frameskip(self):
+        fs = self.get("[Screen]", "nFrameSkips")
+        print "Frameskip", fs
+        if fs < 0 or fs > 5:
+            return 5
+        return fs
+    
+    def set_frameskip(self, value):
         value = int(value) # guarantee correct type
         self.set("[Screen]", "nFrameSkips", value)
         self._change_option("--frameskips %d" % value)
@@ -443,6 +455,22 @@ class HatariConfigMapping(ConfigStore):
     def set_borders(self, value):
         self.set("[Screen]", "bAllowOverscan", value)
         self._change_option("--borders %s" % str(value))
+
+    # ------------ show statusbar ---------------
+    def get_statusbar(self):
+        return self.get("[Screen]", "bShowStatusbar")
+    
+    def set_statusbar(self, value):
+        self.set("[Screen]", "bShowStatusbar", value)
+        self._change_option("--statusbar %s" % str(value))
+
+    # ------------ show led ---------------
+    def get_led(self):
+        return self.get("[Screen]", "bShowDriveLed")
+    
+    def set_led(self, value):
+        self.set("[Screen]", "bShowDriveLed", value)
+        self._change_option("--drive-led %s" % str(value))
 
     # ------------ use zoom ---------------
     def get_zoom(self):
@@ -466,7 +494,7 @@ class HatariConfigMapping(ConfigStore):
             width = self.get("[Screen]", "nVdiWidth")
             height = self.get("[Screen]", "nVdiHeight")
             return (width, height)
-            
+        
         # window sizes for other than ST & STE can differ
         if self.get("[System]", "nMachineType") not in (0, 1):
             print "WARNING: neither ST nor STE machine, window size inaccurate!"
@@ -484,6 +512,9 @@ class HatariConfigMapping(ConfigStore):
             width += self.get("[Screen]", "nWindowBorderPixelsLeft")
             width += self.get("[Screen]", "nWindowBorderPixelsRight")
             height = 29 + 200 + self.get("[Screen]", "nWindowBorderPixelsBottom")
+        # statusbar?
+        if self.get("[Screen]", "bShowStatusbar"):
+            height += 10
         # zoomed?
         if self.get("[Screen]", "bZoomLowRes"):
             width *= 2

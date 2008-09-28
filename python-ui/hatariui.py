@@ -409,7 +409,7 @@ class UIActions:
         ("sound", gtk.STOCK_PROPERTIES, "Sound...", "<Ctrl>O", "Sound settings", cb.sound),
 
         ("path", gtk.STOCK_DIRECTORY, "Paths...", None, "Device & save file paths", cb.path),
-        ("lconfig", gtk.STOCK_OPEN, "Load config...", None, "Load configuration", self.config_load),
+        ("lconfig", gtk.STOCK_OPEN, "Load config...", "<Ctrl>C", "Load configuration", self.config_load),
         ("sconfig", gtk.STOCK_SAVE_AS, "Save config as...", None, "Save configuration", cb.config_save),
         
         ("debug", gtk.STOCK_FIND, "Debugger...", "<Ctrl>B", "Activate Hatari debugger", cb.debugger),
