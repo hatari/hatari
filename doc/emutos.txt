@@ -287,7 +287,7 @@ with EmuTOS.
 
 Demos:
 - 1st Step (by Tobe/Mjjprod)
-- 20 years megademo (by DHS), some screen don't work
+- 20 years megademo (by DHS), display issues in some screens
 - Again (by Paradox)
 - Armada is dead (by Aggression)
 - Azed/Jungle demo (by Atari)
@@ -299,7 +299,7 @@ Demos:
 - E605 (by Light)
 - Extacy (by ICE), breaks at the end
 - French Kiss (by DHS)
-- Illusion (by Next), many screen draw artefacts on Hatari
+- Illusion (by Next)
 - Gobi Toons (by Dune)
 - Grimey (by Reservoir Gods)
 - Kick my assembler (by Orion), start doesn't look right
@@ -310,7 +310,7 @@ Demos:
 - Mind Rewind (by Reservoir Gods)
 - MovieSTE (by Tony Barker)
 - New Year -94 Intro (by Extream)
-- Pacemaker (by Paradox), demo stops at middle
+- Pacemaker (by Paradox), stops at end-part
 - Paracon 6 & 7 remindtros (by Paradox)
 - Powerrise (by Light)
 - Reanimation (by Syntax)
@@ -341,6 +341,7 @@ Applications (mainly music):
 - Art4Kids (demo)
 - Blipp Blopper*
 - MaxYMizer*
+- Octalyzer*
 - Sirius Player
 
 
