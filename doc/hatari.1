@@ -2,22 +2,22 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH "HATARI" "1" "2008-03-14" "Hatari" ""
+.TH "HATARI" "1" "2008-09-28" "Hatari" ""
 .\" Please adjust this date whenever revising the manpage.
 
 .SH "NAME"
-hatari \- Atari ST(e) emulator
+hatari \- Atari ST/STE/TT/Falcon emulator
 .SH "SYNOPSIS"
 .B hatari
 .RI  [options]
 .RI  [diskimage]
 .SH "DESCRIPTION"
-Hatari is an Atari ST(e) emulator for Linux, FreeBSD, BeOS and other
-Systems which are supported by the SDL library.
+Hatari is an Atari ST/STE/TT/Falcon emulator for Linux, FreeBSD, BeOS and
+other Systems which are supported by the SDL library.
 .PP
 With hatari one can run games, demos or applications written for Atari
-ST or Atari STE. It supports the commonly used *.st and *.msa disk
-images and hard disk emulation.
+ST or Atari STE.  TT and Falcon support is experimental.  Hatari supports
+the commonly used *.st and *.msa disk images and hard disk emulation.
 .PP
 To run the emulator a TOS ROM image is needed. EmuTOS, a free
 implementation of TOS is shipped with hatari. Since it is not yet
@@ -38,7 +38,10 @@ Print version information and terminate
 Whether Hatari confirms quitting
 .TP 
 .B \-c, \-\-configfile <filename>
-use the mentioned file as configuration file instead of ~/.hatari.cfg
+use the given file as configuration file instead of ~/.hatari.cfg
+.TP 
+.B \-\-fast-forward <bool>
+On fast machine helps skipping (fast forwarding) Hatari output
 .SH "Display options"
 .TP 
 .B \-m, \-\-mono
@@ -58,10 +61,16 @@ Zoom low resolution (1=no, 2=yes)
 .TP 
 .B \-\-frameskips <x>
 Skip <x> frames after each displayed frame to accelerate emulation
-(0 <= x <= 8)
+(0=disabled, >4 uses automatic frameskip with given value as maximum)
 .TP 
 .B \-\-borders <bool>
-Show screen borders (for overscan demos etc)
+Show screen borders (for overscan demos, ST(e) color mode specific etc)
+.TP 
+.B \-\-statusbar <bool>
+Show statusbar (with floppy leds etc etc)
+.TP 
+.B \-\-drive-led <bool>
+Show overlay drive led when statusbar isn't shown
 .TP
 .B \-\-spec512 <x>
 Hatari uses this threshold to decide when to render a screen with
@@ -69,9 +78,11 @@ the slower but more accurate Spectrum512 screen conversion functions
 (0 <= x <= 512, 0=disable)
 .TP
 .B \-\-bpp <bool>
-Force given internal bitdepth (x=8/16/32, x=0 for autodetection).
-8-bit color depth may be useful for older host computers
+Force internal bitdepth (x = 8/15/16/32, 0=disable)
 .SH "VDI options"
+.TP 
+.B \-\-vdi <bool>
+Whether to use VDI screen mode
 .TP 
 .B \-\-vdi\-planes <x>
 Use extended VDI resolution with bit depth <x> (x = 1, 2 or 4)
@@ -86,18 +97,27 @@ Use extended VDI resolution with height <h> (200 < h <= 768)
 .B \-j, \-\-joystick <port>
 Emulate joystick with cursor keys in given port (0-5)
 .TP 
+.B \-\-joy<port> <type>
+Set joystick type (none/keys/real) for given port
+.TP 
 .B \-\-printer <file>
 Enable printer support and write data to <file>
 .TP 
 .B \-\-midi <filename>
-Enable experimental MIDI output to the mentioned file
+Enable midi support and write midi data to <file>
 .TP 
 .B \-\-rs232 <filename>
-Enable experimental RS232 emulation via the mentioned file/device
+Enable serial port support and use <file> as the device
 .SH "Disk options"
+.TP
+.B \-\-disk-a <file>
+Set disk image for floppy drive A
+.TP
+.B \-\-disk-b <file>
+Set disk image for floppy drive B
 .TP 
 .B \-d, \-\-harddrive <dir>
-Use <dir> as an emulated hard disk
+Emulate an ST harddrive (<dir> = root directory)
 .TP 
 .B \-\-acsi <file>
 Emulate ACSI hard disk with an image <file>
@@ -134,10 +154,10 @@ Use a more compatible but slower 68000 CPU mode
 select machine type (x = st, ste, tt or falcon)
 .TP 
 .B \-\-blitter <bool>
-Enable blitter emulation
+Enable blitter emulation (ST only)
 .TP 
 .B \-\-dsp <x>
-Falcon DSP emulation (x = none, dummy or emu)
+Falcon DSP emulation (x = none, dummy or emu, Falcon only)
 .TP 
 .B \-\-sound <x>
 Sound quality (off/low/med/hi (off=faster))
@@ -147,13 +167,25 @@ load keyboard mapping from <file>
 .SH "Debug options"
 .TP 
 .B \-D, \-\-debug <bool>
-activate the simple builtin debugger
-.TP
-.B \-\-log <file>
-Save log to <file> (can also be "stdout" or "stderr")
+Enable Hatari debugger console interface
+.TP 
+.B \-\-bios-intercept
+Enable Bios/XBios interception
 .TP
 .B \-\-trace <trace1,...>
 Activate debug traces, see \-\-trace help for tracing options
+.TP
+.B \-\-control-socket <file>
+Hatari reads options from given socket at run-time
+.TP
+.B \-\-log-file <file>
+Save log output to <file> (default=stderr)
+.TP
+.B \-\-log-level <x>
+Log output level (x=debug/todo/info/warn/error/fatal)
+.TP
+.B \-\-alert-level <x>
+Show dialog for log messages above given level
 .SH "COMMANDS"
 The shortcut keys can be configured in the configuration file.
 The default settings are:
@@ -174,10 +206,10 @@ activate joystick emulation via cursor keys
 (un-)lock the mouse into the window
 .TP
 .B AltGr + r
-(warm) reset the ST
+warm reset the ST (same as the reset button)
 .TP
 .B AltGr + c
-coldreset the ST (same as the original power switch)
+cold reset the ST (same as the power switch)
 .TP
 .B AltGr + s
 enable/disable sound
@@ -201,7 +233,7 @@ load memory snapshot
 toggle between fullscreen and windowed mode
 .TP
 .B F12 
-activate the hatari command GUI
+activate the hatari options GUI
 .br
 You may need to hold SHIFT down while in windowed mode.
 .TP
@@ -242,21 +274,37 @@ joystick emulation via keyboard has been turned off.
 .SH "SEE ALSO"
 The main program documentation, usually in /usr/share/doc/.
 .PP
-The homepage of hatari: http://hatari.sourceforge.net
+The homepage of hatari: http://hatari.sourceforge.net/
 
-.SH "FILES"
+.SH "FILES AND DIRECTORIES"
 .TP
 /etc/hatari.cfg (or /usr/local/etc/hatari.cfg)
-the global configuration file of Hatari
+The global configuration file of Hatari.
 .TP
-~/.hatari.cfg
-the user's personal Hatari configuration file
+~/.hatari/
+The (default) directory for user's personal Hatari files;
+.B hatari.cfg
+(configuration file),
+.B hatari.nvram
+(NVRAM content file),
+.B hatari.sav
+(Hatari memory state snapshot file which Hatari can load/save automatically
+when it starts/exits),
+.B hatari.prn
+(printer output file),
+.B hatari.wav
+(recorded sound output in WAV format),
+.B hatari.ym
+(recorded sound output in YM format).
+.TP
+/usr/share/hatari/ (or /usr/local/share/hatari/)
+The global data directory of Hatari.
 .TP
 tos.img
 The TOS ROM image will be loaded from the data directory of Hatari unless it
 is specified on the command line or the configuration file.
 
 .SH "AUTHOR"
-This manual page was written by Marco Herrn <marco@mherrn.de>, for the
-Debian project and later modified by Thomas Huth to suit the latest
-version of Hatari.
+This manual page was written by Marco Herrn <marco@mherrn.de> for the
+Debian project and later modified by Thomas Huth and Eero Tamminen to
+suit the latest version of Hatari.
