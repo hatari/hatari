@@ -6,24 +6,11 @@ sources.
 
 * Support for enabling printer, serial, midi
   ("hatari-enable/disable/toggle <device>")  
+  - command line options cannot be used for this as they allow
+    only enabling these
 
-* Support to Hatari UI ("Paths...") for specifying file names
-  ("hatari-path <item> <path>") for:
-  - memstate auto save file
-  - memstate save file
-  - sound output
-    - needs to check that file name ends either in .ym or .wav
-  - printer output
-  - midi output
-  - rs232 in/out
-
-  Note that reset requiring settings like TOS image,
-  harddisk dir & image are different matter
-
-* Support for RTC in machine dialog
-
-* Add autofire support to joystick settings,
-  other disk image options to disk settings
+* Paths support needs to check that sound output file name ends
+  either in .ym or .wav
 
 * Hatari UI specific configuration which stores:
   - disk image dir (uses Hatari config value as default)
@@ -43,3 +30,17 @@ sources.
 * Put all configuration stuff into single notebook dialog?
 
 * Translation support for the UI
+
+* Supporting other configurable things in Hatari:
+  - toggling disk-b autoinsertion and write protection
+  - separate A/B disk paths for images within ZIP archives
+  - specifying hard disk image, whether to use HD dir or image
+  - joystick autofire toggling, defining the keys for joyemu
+  - keyboard repeat, key mapping type and file
+  - CPU level and clock, ST blitter, Falcon DSP
+  - toggling RTC support, timer-D patching, slow FDC
+  - vdi planes and size, SDL bpp forcing, frames-per-sec
+  - border sizes in windowed and fullscreen mode
+  - cartridge image (where? it has many limitations)
+  - log file and levels, bios intercept
+  (several of these aren't supported by the internal Hatari UI either)

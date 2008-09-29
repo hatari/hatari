@@ -192,9 +192,47 @@ def get_save_filename(title, parent, path = None):
     fsel.set_do_overwrite_confirmation(True)
     if path:
         fsel.set_filename(path)
+        if not os.path.exists(path):
+            # above set only folder, this is needed to set
+            # the file name when the file doesn't exist
+            fsel.set_current_name(os.path.basename(path))
     if fsel.run() == gtk.RESPONSE_OK:
         filename = fsel.get_filename()
     else:
         filename = None
     fsel.destroy()
     return filename
+
+# Gtk is braindead, there's no way to set a default filename
+# for file chooser button unless it already exists
+# - set_filename() works only for files that already exist
+# - set_current_name() works only for SAVE action,
+#   but file chooser button doesn't support that
+# i.e. I had to do my own (less nice) container widget...
+class FselEntry():
+    def __init__(self, parent):
+        self._parent = parent
+        entry = gtk.Entry()
+        entry.set_width_chars(12)
+        entry.set_editable(False)
+        hbox = gtk.HBox()
+        hbox.add(entry)
+        button = create_button("Select...", self._select_file_cb)
+        hbox.pack_start(button, False, False)
+        self._entry = entry
+        self._hbox = hbox
+    
+    def _select_file_cb(self, widget):
+        fname = self._entry.get_text()
+        fname = get_save_filename("Select file", self._parent, fname)
+        if fname:
+            self._entry.set_text(fname)
+    
+    def set_filename(self, fname):
+        self._entry.set_text(fname)
+        
+    def get_filename(self):
+        return self._entry.get_text()
+
+    def get_container(self):
+        return self._hbox

@@ -24,7 +24,7 @@ import pango
 from config import ConfigStore
 from uihelpers import UInfo, create_button, create_toggle, \
      create_table_dialog, table_add_entry_row, table_add_widget_row, \
-     get_save_filename
+     get_save_filename, FselEntry
 from dialogs import TodoDialog, ErrorDialog, AskDialog, KillDialog
 
 
@@ -37,26 +37,13 @@ def dialog_apply_cb(widget, dialog):
 
 class SaveDialog:
     def __init__(self, parent):
-        entry = gtk.Entry()
-        entry.set_width_chars(12)
-        entry.set_editable(False)
-        hbox = gtk.HBox()
-        hbox.add(entry)
-        self.file = entry
-        button = create_button("Select...", self._select_file_cb)
-        hbox.pack_start(button, False, False)
-
         table, self.dialog = create_table_dialog(parent, "Save from memory", 3)
-        table_add_widget_row(table, 0, "File name:", hbox)
+        self.file = FselEntry(self.dialog)
+        table_add_widget_row(table, 0, "File name:", self.file.get_container())
         self.address = table_add_entry_row(table, 1, "Save address:", 6)
         self.address.connect("activate", dialog_apply_cb, self.dialog)
         self.length = table_add_entry_row(table, 2, "Number of bytes:", 6)
         self.length.connect("activate", dialog_apply_cb, self.dialog)
-    
-    def _select_file_cb(self, widget):
-        filename = get_save_filename("Select save file", self.dialog)
-        if filename:
-            self.file.set_text(filename)
     
     def run(self, address):
         "run(address) -> (filename,address,length), all as strings"
@@ -67,7 +54,7 @@ class SaveDialog:
         while 1:
             response = self.dialog.run()
             if response == gtk.RESPONSE_APPLY:
-                filename = self.file.get_text()
+                filename = self.file.get_filename()
                 address_txt = self.address.get_text()
                 length_txt = self.length.get_text()
                 if filename and address_txt and length_txt:

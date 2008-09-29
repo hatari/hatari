@@ -74,6 +74,10 @@ class Hatari:
     def change_option(self, option):
         "change_option(option), changes given Hatari cli option"
         return self._send_message("hatari-option %s\n" % option)
+        
+    def set_path(self, key, path):
+        "set_path(key, path), sets path with given key"
+        return self._send_message("hatari-path %s %s\n" % (key, path))
 
     def trigger_shortcut(self, shortcut):
         "trigger_shortcut(shortcut), triggers given Hatari (keyboard) shortcut"
@@ -223,18 +227,6 @@ class Hatari:
 # Mapping of requested values both to Hatari configuration
 # and command line options.
 #
-# Following configuration variables/options aren't (yet) mapped:
-# - disk-b autoinsertion, disk zip path, write protection
-# - hard disk image, whether to use HD dir or image
-# - joystick autofire, defining the keys for emu
-# - keyboard repeat, key mapping type and file
-# - CPU level and clock, ST blitter, Falcon DSP
-# - vdi planes and size, SDL bpp forcing, FPS
-# - printer, serial, midi, cartridge image
-# - config file, memstate load/save, autosave
-# - log file and levels, bios intercept
-# - rtc, timer-D patching, slow FDC
-#
 # By default this doesn't allow setting any other configuration
 # variables than the ones that were read from the configuration
 # file i.e. you get an exception if configuration variables
@@ -245,6 +237,15 @@ class Hatari:
 # this cannot just do these according to some mapping table, but
 # it needs actual method for (each) setting.
 class HatariConfigMapping(ConfigStore):
+    _paths = {
+        "memauto": ("[Memory]", "szAutoSaveFileName", "Automatic memory snapshot"),
+        "memsave": ("[Memory]", "szMemoryCaptureFileName", "Manual memory snapshot"),
+        "midiout": ("[Midi]", "szMidiOutFileName", "Midi output"),
+        "rs232in": ("[RS232]", "szInFileName", "RS232 I/O input"),
+        "rs232out": ("[RS232]", "szOutFileName", "RS232 I/O output"),
+        "printout": ("[Printer]", "szPrintToFileName", "Printer output"),
+        "soundout": ("[Sound]", "szYMCaptureFileName", "Sound output")
+    }
     "access methods to Hatari configuration file variables and command line options"
     def __init__(self, hatari):
         ConfigStore.__init__(self, "hatari.cfg")
@@ -269,6 +270,20 @@ class HatariConfigMapping(ConfigStore):
             return
         self._hatari.change_option(" ".join(self._options))
         self._options = []
+
+    # ------------ paths ---------------
+    def get_paths(self):
+        paths = []
+        for key, item in self._paths.items():
+            paths.append((key, self.get(item[0], item[1]), item[2]))
+        return paths
+    
+    def set_paths(self, paths):
+        self.lock_updates()
+        for key, path in paths:
+            self.set(self._paths[key][0], self._paths[key][1], path)
+            self._hatari.set_path(key, path)
+        self.flush_updates()
 
     # ------------ machine ---------------
     def get_machine_types(self):

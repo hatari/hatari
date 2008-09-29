@@ -23,7 +23,7 @@ import pango
 
 from uihelpers import UInfo, HatariTextInsert, create_table_dialog, \
      table_add_entry_row, table_add_widget_row, table_add_separator, \
-     create_button
+     create_button, FselEntry
 
 
 # -----------------
@@ -445,8 +445,17 @@ class PeripheralDialog(HatariUIDialog):
 
 class PathDialog(HatariUIDialog):
     def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Path settings", 2)
-        print "TODO: get path stuff"
+        paths = config.get_paths()
+        table, self.dialog = create_table_dialog(self.parent, "File path settings", len(paths))
+        paths.sort()
+        row = 0
+        self.paths = []
+        for (key, path, label) in paths:
+            fsel = FselEntry(self.dialog)
+            fsel.set_filename(path)
+            self.paths.append((key, fsel))
+            table_add_widget_row(table, row, label, fsel.get_container())
+            row += 1
         table.show_all()
     
     def run(self, config):
@@ -457,7 +466,10 @@ class PathDialog(HatariUIDialog):
         self.dialog.hide()
         
         if response == gtk.RESPONSE_APPLY:
-            print "TODO: set path stuff"
+            paths = []
+            for key, fsel in self.paths:
+                paths.append((key, fsel.get_filename()))
+            config.set_paths(paths)
 
 
 # ---------------------------
