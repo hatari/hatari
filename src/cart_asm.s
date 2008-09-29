@@ -60,9 +60,7 @@ p_ok:
 	; Simulate pexec mode 0
 	move.l	a6,-(sp)
 	move.l	a0,a6
-	move.l	a6,-(sp)	;new
 	bsr.s	find_prog
-	move.l	(sp)+,a6	;new
 	bsr		pexec5
 	bsr		reloc
 	clr.l	2(a6)
