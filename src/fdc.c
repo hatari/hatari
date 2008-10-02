@@ -26,9 +26,14 @@
 /*			some programs from working (eg Super Monaco GP on Superior 65)	*/
 /*			because intrq bit 5 in $fffa01 seems to be cleared too late,	*/
 /*			the command takes more time than a real ST to complete.		*/
+/* 2008/10/02	[NP]	FDCTrackRegister, FDCSectorRegister and FDCDataRegister are	*/
+/*			stored on 8 bits in the WD 1772. When writing to $ff8604 to	*/
+/*			access these registers, we must keep only the lower 8 bits.	*/
+/*			(fix High Fidelity Dreams by Aura, writes $fb07 in sector reg).*/
+/*			TODO : FDCxxxxRegister should use Uint8, not Sint16/Uint16.	*/
 
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.44 2008-09-27 13:36:26 thothy Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.45 2008-10-02 22:01:52 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -1177,7 +1182,7 @@ static void FDC_WriteTrackRegister(void)
 	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 track=0x%x VBL=%d video_cyc=%d pc=%x\n" ,
 		DiskControllerWord_ff8604wr , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , M68000_GetPC() );
 
-	FDCTrackRegister = DiskControllerWord_ff8604wr;    /* 0...79 */
+	FDCTrackRegister = DiskControllerWord_ff8604wr & 0xff;	/* 0...79 */
 }
 
 
@@ -1190,7 +1195,7 @@ static void FDC_WriteSectorRegister(void)
 	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 sector=0x%x VBL=%d video_cyc=%d pc=%x\n" ,
 		DiskControllerWord_ff8604wr , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , M68000_GetPC() );
 
-	FDCSectorRegister = DiskControllerWord_ff8604wr;  /* 1,2,3..... */
+	FDCSectorRegister = DiskControllerWord_ff8604wr & 0xff;	/* 1,2,3..... */
 }
 
 
@@ -1203,7 +1208,7 @@ static void FDC_WriteDataRegister(void)
 	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write 8604 data=0x%x VBL=%d video_cyc=%d pc=%x\n" ,
 		DiskControllerWord_ff8604wr , nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , M68000_GetPC() );
 
-	FDCDataRegister = DiskControllerWord_ff8604wr;
+	FDCDataRegister = DiskControllerWord_ff8604wr & 0xff;
 }
 
 
@@ -1369,8 +1374,8 @@ void FDC_WriteDMAAddress(Uint32 Address)
  */
 bool FDC_ReadSectorFromFloppy(void)
 {
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc read sector dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d pc=%x\n" ,
-		nReadWriteDev, nReadWriteSector, nReadWriteTrack, nReadWriteSide, nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , M68000_GetPC() );
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc read sector addr=0x%x dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d pc=%x\n" ,
+		FDC_ReadDMAAddress(), nReadWriteDev, nReadWriteSector, nReadWriteTrack, nReadWriteSide, nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , M68000_GetPC() );
 
 	/* Copy in 1 sector to our workspace */
 	if (Floppy_ReadSectors(nReadWriteDev, DMASectorWorkSpace, nReadWriteSector, nReadWriteTrack, nReadWriteSide, 1, NULL))
@@ -1403,7 +1408,7 @@ bool FDC_WriteSectorFromFloppy(void)
 	/* Get DMA address */
 	Address = FDC_ReadDMAAddress();
 
-	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write sector addr=%x dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d pc=%x\n" ,
+	HATARI_TRACE ( HATARI_TRACE_FDC , "fdc write sector addr=0x%x dev=%d sect=%d track=%d side=%d VBL=%d video_cyc=%d pc=%x\n" ,
 		Address, nReadWriteDev, nReadWriteSector, nReadWriteTrack, nReadWriteSide, nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , M68000_GetPC() );
 
 	/* Write out 1 sector from our workspace */
