@@ -80,10 +80,15 @@
 /*			Fence (although this routine is in fact buggy)).		*/
 /* 2008/09/13	[NP]	Add some traces when stopping a timer and changing data reg.	*/
 /*			Don't apply timer D patch if timer D ctrl reg is 0.		*/
+/* 2008/10/04	[NP]	In MFP_TimerBData_ReadByte, test for overlap only when nHBL	*/
+/*			is between nStartHBL and nEndHBL (fix Wolfenstein 3D intro).	*/
+/*			In event count mode for timer A and B, set data reg to 255 when	*/
+/*			data reg was 0 (which in fact means 256).			*/
 
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.48 2008-09-14 11:01:28 npomarede Exp $";
+
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.49 2008-10-04 11:41:15 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -404,15 +409,19 @@ void MFP_InputOnChannel(Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg)
  */
 void MFP_TimerA_EventCount_Interrupt(void)
 {
-	if (MFP_TA_MAINCOUNTER == 1)            /* Timer expired? If so, generate interrupt */
+	if (MFP_TA_MAINCOUNTER == 1)			/* Timer expired? If so, generate interrupt */
 	{
-		MFP_TA_MAINCOUNTER = MFP_TADR;      /* Reload timer from data register */
+		MFP_TA_MAINCOUNTER = MFP_TADR;		/* Reload timer from data register */
 
 		/* Acknowledge in MFP circuit, pass bit,enable,pending */
 		MFP_InputOnChannel(MFP_TIMER_A_BIT,MFP_IERA,&MFP_IPRA);
 	}
 	else
-		MFP_TA_MAINCOUNTER--;               /* Subtract timer main counter */
+	{
+		MFP_TA_MAINCOUNTER--;			/* Decrement timer main counter */
+		if ( MFP_TA_MAINCOUNTER < 0 )
+			MFP_TA_MAINCOUNTER = 255;	/* data reg = 0 means 256 in fact */
+	}
 }
 
 
@@ -422,15 +431,19 @@ void MFP_TimerA_EventCount_Interrupt(void)
  */
 void MFP_TimerB_EventCount_Interrupt(void)
 {
-	if (MFP_TB_MAINCOUNTER == 1)            /* Timer expired? If so, generate interrupt */
+	if (MFP_TB_MAINCOUNTER == 1)			/* Timer expired? If so, generate interrupt */
 	{
-		MFP_TB_MAINCOUNTER = MFP_TBDR;      /* Reload timer from data register */
+		MFP_TB_MAINCOUNTER = MFP_TBDR;		/* Reload timer from data register */
 
 		/* Acknowledge in MFP circuit, pass bit,enable,pending */
 		MFP_InputOnChannel(MFP_TIMER_B_BIT,MFP_IERA,&MFP_IPRA);
 	}
 	else
-		MFP_TB_MAINCOUNTER--;               /* Subtract timer main counter */
+	{
+		MFP_TB_MAINCOUNTER--;			/* Decrement timer main counter */
+		if ( MFP_TB_MAINCOUNTER < 0 )
+			MFP_TB_MAINCOUNTER = 255;	/* data reg = 0 means 256 in fact */
+	}
 }
 
 
@@ -1137,14 +1150,17 @@ void MFP_TimerBData_ReadByte(void)
 
 		/* If Timer B's change happens before the read cycle of the current instruction, we must return */
 		/* the current value - 1 (because MFP_TimerB_EventCount_Interrupt was not called yet) */
-		if ( ( LineTimerBCycle > pos_start ) && ( LineTimerBCycle < pos_read ) )
+		if ( (nHBL >= nStartHBL ) && ( nHBL < nEndHBL )	/* ensure display is ON and timer B can happen */
+			&& ( LineTimerBCycle > pos_start ) && ( LineTimerBCycle < pos_read ) )
 		{
 			HATARI_TRACE ( HATARI_TRACE_MFP_READ , "mfp read TB overlaps pos_start=%d TB_pos=%d pos_read=%d nHBL=%d \n",
 					pos_start, LineTimerBCycle, pos_read , nHBL );
 
 			TB_count--;
-			if ( TB_count == 0 )
+			if ( TB_count == 0 )			/* going from 1 to 0 : timer restart, reload data reg */
 				TB_count = MFP_TBDR;
+			else if ( TB_count < 0 )		/* going from 0 to -1 : data reg is in fact going from 256 to 255 */
+				TB_count = 255;
 		}
 
 		HATARI_TRACE ( HATARI_TRACE_MFP_READ , "mfp read TB data=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
