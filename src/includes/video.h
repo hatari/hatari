@@ -116,6 +116,7 @@ extern bool bUseHighRes;
 extern int nVBLs;
 extern int nHBL;
 extern int nStartHBL;
+extern int nEndHBL;
 extern int OverscanMode;
 extern Uint16 HBLPalettes[];
 extern Uint16 *pHBLPalettes;
