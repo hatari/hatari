@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.95 2008-08-19 19:47:29 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.96 2008-10-05 19:55:32 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -374,7 +374,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Joysticks.Joy[0].nJoyId = 1;
 
 	/* Set defaults for Keyboard */
-	ConfigureParams.Keyboard.bDisableKeyRepeat = TRUE;
+	ConfigureParams.Keyboard.bDisableKeyRepeat = FALSE;
 	ConfigureParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
 	strcpy(ConfigureParams.Keyboard.szMappingFileName, "");
   
