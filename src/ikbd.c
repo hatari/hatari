@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.48 2008-09-02 11:08:49 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.49 2008-10-05 20:42:33 npomarede Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -1985,7 +1985,7 @@ void IKBD_KeyboardControl_ReadByte(void)
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD_ACIA ) )
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
 		HATARI_TRACE_PRINT ( "ikbd read fffc00 ctrl=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		                     IoMem[0xfffc00], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
@@ -2012,7 +2012,7 @@ void IKBD_KeyboardData_ReadByte(void)
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD_ACIA ) )
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
 		HATARI_TRACE_PRINT ( "ikbd read fffc02 data=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		                     IoMem[0xfffc02], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
@@ -2031,7 +2031,7 @@ void IKBD_KeyboardControl_WriteByte(void)
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD_ACIA ) )
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
 		HATARI_TRACE_PRINT ( "ikbd write fffc00 ctrl=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		                     IoMem[0xfffc00], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
@@ -2055,7 +2055,7 @@ void IKBD_KeyboardData_WriteByte(void)
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_IKBD_ACIA ) )
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
 		HATARI_TRACE_PRINT ( "ikbd write fffc02 data=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		                     IoMem[0xfffc02], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
