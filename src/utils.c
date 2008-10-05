@@ -7,8 +7,10 @@
  * Utils functions :
  *	- CRC32
  *
- * This file contain various utility functions used by different part of Hatari.
+ * This file contains various utility functions used by different parts of Hatari.
  */
+const char Utils_rcsid[] = "Hatari $Id: utils.c,v 1.2 2008-10-05 20:41:50 npomarede Exp $";
+
 
 /* 2008/07/08	[NP]	File creation, CRC32 functions.				*/
 
