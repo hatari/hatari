@@ -19,6 +19,13 @@
 #include "memory.h"
 
 
+/* Possible exceptions sources for M68000_Exception() and Exception() */
+#define M68000_EXCEPTION_SRC_CPU	1	/* exception is a direct CPU exception */
+#define M68000_EXCEPTION_SRC_INT_MFP	2	/* exception caused by an MFP interrupt */
+#define M68000_EXCEPTION_SRC_INT_VIDEO	3	/* exception caused by a video interrupt */
+
+
+
 /* Special flags */
 #define SPCFLAG_STOP 2
 #define SPCFLAG_BUSERROR 4
@@ -288,7 +295,7 @@ extern uae_s32 ShowEA (FILE *, int reg, amodes mode, wordsizes size, char *buf);
 
 extern void MakeSR (void);
 extern void MakeFromSR (void);
-extern void Exception (int, uaecptr);
+extern void Exception (int, uaecptr, int);
 extern void dump_counts (void);
 extern int m68k_move2c (int, uae_u32 *);
 extern int m68k_movec2 (int, uae_u32 *);
