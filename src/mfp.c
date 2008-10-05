@@ -88,7 +88,7 @@
 
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.49 2008-10-04 11:41:15 npomarede Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.50 2008-10-05 17:55:31 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -280,7 +280,7 @@ static void MFP_Exception(int Interrupt)
 			Interrupt, Vec, STMemory_ReadLong ( Vec ), nFrameCycles, nLineCycles, nHBL );
 	}
 
-	M68000_Exception ( Vec , M68000_INT_MFP );
+	M68000_Exception ( Vec , M68000_EXCEPTION_SRC_INT_MFP );
 }
 
 

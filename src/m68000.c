@@ -35,7 +35,7 @@
 /*			to correctly process the exception. For example, if vector base is set to $10	*/
 /*			then MFP Timer A will call vector stored at address $74, which would be wrongly	*/
 /*			interpreted as a level 5 int (which doesn't exist on Atari and will cause an	*/
-/*			assert to fail in intlevel()). We use InterruptType to correctly recognize the	*/
+/*			assert to fail in intlevel()). We use InterruptSource to correctly recognize the*/
 /*			MFP interrupts (fix 'Toki' end part fullscreen which sets vector base to $10).	*/
 /* 2008/04/14	[NP]	Add pairing for BTST/Bcc (eg btst #7,d0 + bne.s label  (with branch taken)).	*/
 /* 2008/04/15	[NP]	As tested on a real STF :							*/
@@ -50,10 +50,11 @@
 /*			(fixes lsr.w #4,d4 + add.b $f0(a4,d4),d7 used in Zoolook part of ULM New Year).	*/
 /* 2008/07/08	[NP]	Add pairing between bit shift instr and ADDX/SUBX/ABCD/SBCD (fixes lsl.l #1,d0	*/
 /*			+ abcd d1,d1 used in Dragonnels - Rainbow Wall).				*/
+/* 2008/10/05	[NP]	Pass the 'ExceptionSource' parameter to Exception() in uae-cpu/newcpu.c		*/
 
 
 
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.60 2008-07-08 20:26:22 npomarede Exp $";
+const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.61 2008-10-05 17:55:31 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -367,11 +368,11 @@ void M68000_BusError(Uint32 addr, bool bReadWrite)
 /**
  * Exception handler
  */
-void M68000_Exception(Uint32 ExceptionVector , int InterruptType)
+void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource)
 {
 	int exceptionNr = ExceptionVector/4;
 
-	if ( ( InterruptType == M68000_INT_VIDEO )
+	if ( ( ExceptionSource == M68000_EXCEPTION_SRC_INT_VIDEO )
 		&& (exceptionNr>24 && exceptionNr<32) )	/* 68k autovector interrupt? */
 	{
 		/* Handle autovector interrupts the UAE's way
@@ -381,7 +382,8 @@ void M68000_Exception(Uint32 ExceptionVector , int InterruptType)
 		pendingInterrupts |= (1 << intnr);
 		M68000_SetSpecial(SPCFLAG_INT);
 	}
-	else
+
+	else							/* MFP or direct CPU exceptions */
 	{
 		Uint16 SR;
 
@@ -394,7 +396,7 @@ void M68000_Exception(Uint32 ExceptionVector , int InterruptType)
 
 		/* 68k exceptions are handled by Exception() of the UAE CPU core */
 #ifdef UAE_NEWCPU_H
-		Exception(exceptionNr, m68k_getpc());
+		Exception(exceptionNr, m68k_getpc(), ExceptionSource);
 #else
 		Exception(exceptionNr, &regs, m68k_getpc(&regs));
 #endif

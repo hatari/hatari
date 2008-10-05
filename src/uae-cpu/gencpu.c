@@ -62,7 +62,7 @@
 
 
 
-const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.16 2008-04-27 11:22:38 npomarede Exp $";
+const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.17 2008-10-05 17:55:31 npomarede Exp $";
 
 #include <ctype.h>
 #include <string.h>
@@ -421,7 +421,7 @@ static void genamode (amodes mode, char *reg, wordsizes size, char *name, int ge
 	printf ("\t\tlast_fault_for_exception_3 = %sa;\n", name);
 	printf ("\t\tlast_op_for_exception_3 = opcode;\n");
 	printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + %d;\n", m68k_pc_offset);
-	printf ("\t\tException(3, 0);\n");
+	printf ("\t\tException(3, 0, M68000_EXCEPTION_SRC_CPU);\n");
 	printf ("\t\tgoto %s;\n", endlabelstr);
 	printf ("\t}\n");
 	need_endlabel = 1;
@@ -936,14 +936,14 @@ static void gen_opcode (unsigned long int opcode)
 
 	/* fall through */
     case 2: /* priviledged */
-	printf ("if (!regs.s) { Exception(8,0); goto %s; }\n", endlabelstr);
+	printf ("if (!regs.s) { Exception(8,0,M68000_EXCEPTION_SRC_CPU); goto %s; }\n", endlabelstr);
 	need_endlabel = 1;
 	start_brace ();
 	break;
     case 3: /* privileged if size == word */
 	if (curi->size == sz_byte)
 	    break;
-	printf ("if (!regs.s) { Exception(8,0); goto %s; }\n", endlabelstr);
+	printf ("if (!regs.s) { Exception(8,0,M68000_EXCEPTION_SRC_CPU); goto %s; }\n", endlabelstr);
 	need_endlabel = 1;
 	start_brace ();
 	break;
@@ -1367,7 +1367,7 @@ static void gen_opcode (unsigned long int opcode)
     case i_TRAP:
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
 	sync_m68k_pc ();
-	printf ("\tException(src+32,0);\n");
+	printf ("\tException(src+32,0,M68000_EXCEPTION_SRC_CPU);\n");
 	m68k_pc_offset = 0;
 	break;
     case i_MVR2USP:
@@ -1414,7 +1414,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\telse if ((format & 0xF000) == 0x9000) { m68k_areg(regs, 7) += 12; break; }\n");
 	    printf ("\telse if ((format & 0xF000) == 0xa000) { m68k_areg(regs, 7) += 24; break; }\n");
 	    printf ("\telse if ((format & 0xF000) == 0xb000) { m68k_areg(regs, 7) += 84; break; }\n");
-	    printf ("\telse { Exception(14,0); goto %s; }\n", endlabelstr);
+	    printf ("\telse { Exception(14,0,M68000_EXCEPTION_SRC_CPU); goto %s; }\n", endlabelstr);
 	    printf ("\tregs.sr = newsr; MakeFromSR();\n}\n");
 	    pop_braces (old_brace_level);
 	    printf ("\tregs.sr = newsr; MakeFromSR();\n");
@@ -1457,7 +1457,7 @@ static void gen_opcode (unsigned long int opcode)
 	break;
     case i_TRAPV:
 	sync_m68k_pc ();
-	printf ("\tif (GET_VFLG) { Exception(7,m68k_getpc()); goto %s; }\n", endlabelstr);
+	printf ("\tif (GET_VFLG) { Exception(7,m68k_getpc(),M68000_EXCEPTION_SRC_CPU); goto %s; }\n", endlabelstr);
 	need_endlabel = 1;
 	break;
     case i_RTR:
@@ -1510,7 +1510,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\tif (src & 1) {\n");
 	    printf ("\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");	// [NP] FIXME should be +4, not +2 (same as DBcc) ?
 	    printf ("\t\tlast_fault_for_exception_3 = m68k_getpc() + s;\n");
-	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0); goto %s;\n", endlabelstr);
+	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXCEPTION_SRC_CPU); goto %s;\n", endlabelstr);
 	    printf ("\t}\n");
 	    need_endlabel = 1;
 	}
@@ -1526,7 +1526,7 @@ static void gen_opcode (unsigned long int opcode)
 		printf ("\tif (!cctrue(%d)) goto %s;\n", curi->cc, endlabelstr);
 		printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");
 		printf ("\t\tlast_fault_for_exception_3 = m68k_getpc() + 1;\n");
-		printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0); goto %s;\n", endlabelstr);
+		printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXCEPTION_SRC_CPU); goto %s;\n", endlabelstr);
 		need_endlabel = 1;
 	    } else {
 		if (next_cpu_level < 1)
@@ -1539,7 +1539,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\tif (src & 1) {\n");
 	    printf ("\t\tlast_addr_for_exception_3 = m68k_getpc() + 2;\n");	// [NP] FIXME should be +4, not +2 (same as DBcc) ?
 	    printf ("\t\tlast_fault_for_exception_3 = m68k_getpc() + 2 + (uae_s32)src;\n");
-	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0); goto %s;\n", endlabelstr);
+	    printf ("\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXCEPTION_SRC_CPU); goto %s;\n", endlabelstr);
 	    printf ("\t}\n");
 	    need_endlabel = 1;
 	}
@@ -1591,7 +1591,7 @@ static void gen_opcode (unsigned long int opcode)
 	    printf ("\t\t\tif (offs & 1) {\n");
 	    printf ("\t\t\tlast_addr_for_exception_3 = m68k_getpc() + 2 + 2;\n");	// [NP] last_addr is pc+4, not pc+2
 	    printf ("\t\t\tlast_fault_for_exception_3 = m68k_getpc() + 2 + (uae_s32)offs + 2;\n");
-	    printf ("\t\t\tlast_op_for_exception_3 = opcode; Exception(3,0); goto %s;\n", endlabelstr);
+	    printf ("\t\t\tlast_op_for_exception_3 = opcode; Exception(3,0,M68000_EXCEPTION_SRC_CPU); goto %s;\n", endlabelstr);
 	    printf ("\t\t}\n");
 	    need_endlabel = 1;
 	}
@@ -1628,7 +1628,7 @@ static void gen_opcode (unsigned long int opcode)
 	sync_m68k_pc ();
 	/* Clear V flag when dividing by zero - Alcatraz Odyssey demo depends
 	 * on this (actually, it's doing a DIVS).  */
-	printf ("\tif (src == 0) { SET_VFLG (0); Exception (5, oldpc); goto %s; } else {\n", endlabelstr);
+	printf ("\tif (src == 0) { SET_VFLG (0); Exception (5, oldpc,M68000_EXCEPTION_SRC_CPU); goto %s; } else {\n", endlabelstr);
 	printf ("\tuae_u32 newv = (uae_u32)dst / (uae_u32)(uae_u16)src;\n");
 	printf ("\tuae_u32 rem = (uae_u32)dst %% (uae_u32)(uae_u16)src;\n");
 	/* The N flag appears to be set each time there is an overflow.
@@ -1649,7 +1649,7 @@ static void gen_opcode (unsigned long int opcode)
 	genamode (curi->smode, "srcreg", sz_word, "src", 1, 0);
 	genamode (curi->dmode, "dstreg", sz_long, "dst", 1, 0);
 	sync_m68k_pc ();
-	printf ("\tif (src == 0) { SET_VFLG (0); Exception(5,oldpc); goto %s; } else {\n", endlabelstr);
+	printf ("\tif (src == 0) { SET_VFLG (0); Exception(5,oldpc,M68000_EXCEPTION_SRC_CPU); goto %s; } else {\n", endlabelstr);
 	printf ("\tuae_s32 newv = (uae_s32)dst / (uae_s32)(uae_s16)src;\n");
 	printf ("\tuae_u16 rem = (uae_s32)dst %% (uae_s32)(uae_s16)src;\n");
 	printf ("\tif ((newv & 0xffff8000) != 0 && (newv & 0xffff8000) != 0xffff8000) { SET_VFLG (1); SET_NFLG (1); SET_CFLG (0); } else\n\t{\n");
@@ -1695,8 +1695,8 @@ static void gen_opcode (unsigned long int opcode)
 	genamode (curi->smode, "srcreg", curi->size, "src", 1, 0);
 	genamode (curi->dmode, "dstreg", curi->size, "dst", 1, 0);
 	sync_m68k_pc ();
-	printf ("\tif ((uae_s32)dst < 0) { SET_NFLG (1); Exception(6,oldpc); goto %s; }\n", endlabelstr);
-	printf ("\telse if (dst > src) { SET_NFLG (0); Exception(6,oldpc); goto %s; }\n", endlabelstr);
+	printf ("\tif ((uae_s32)dst < 0) { SET_NFLG (1); Exception(6,oldpc,M68000_EXCEPTION_SRC_CPU); goto %s; }\n", endlabelstr);
+	printf ("\telse if (dst > src) { SET_NFLG (0); Exception(6,oldpc,M68000_EXCEPTION_SRC_CPU); goto %s; }\n", endlabelstr);
 	need_endlabel = 1;
         insn_n_cycles += 6;
 	break;
@@ -1724,7 +1724,7 @@ static void gen_opcode (unsigned long int opcode)
 	printf ("\tSET_ZFLG (upper == reg || lower == reg);\n");
 	printf ("\tSET_CFLG (lower <= upper ? reg < lower || reg > upper : reg > upper || reg < lower);\n");
 	sync_m68k_pc ();
-	printf ("\tif ((extra & 0x800) && GET_CFLG) { Exception(6,oldpc); goto %s; }\n}\n", endlabelstr);
+	printf ("\tif ((extra & 0x800) && GET_CFLG) { Exception(6,oldpc,M68000_EXCEPTION_SRC_CPU); goto %s; }\n}\n", endlabelstr);
 	need_endlabel = 1;
 	break;
 
@@ -2260,7 +2260,7 @@ static void gen_opcode (unsigned long int opcode)
     case i_TRAPcc:
 	if (curi->smode != am_unknown && curi->smode != am_illg)
 	    genamode (curi->smode, "srcreg", curi->size, "dummy", 1, 0);
-	printf ("\tif (cctrue(%d)) { Exception(7,m68k_getpc()); goto %s; }\n", curi->cc, endlabelstr);
+	printf ("\tif (cctrue(%d)) { Exception(7,m68k_getpc(),M68000_EXCEPTION_SRC_CPU); goto %s; }\n", curi->cc, endlabelstr);
 	need_endlabel = 1;
 	break;
     case i_DIVL:

@@ -56,6 +56,7 @@
 /*			an MFP exception could be wrong if the MFP VR was set to another value than the	*/
 /*			default $40 (this could be a problem with programs requiring a precise cycles	*/
 /*			calculation while changing VR, but no such programs were encountered so far).	*/
+/*			-> FIXED, see 2008/10/05							*/
 /* 2008/04/17	[NP]	In m68k_run_1/m68k_run_2, add the wait state cycles before testing if content	*/
 /*			of PendingInterruptCount is <= 0 (else the int could happen a few cycles earlier*/
 /*			than expected in some rare cases (reading $fffa21 in BIG Demo Screen 1)).	*/
@@ -63,10 +64,18 @@
 /* 2008/09/14	[NP]	Correct cycles for TRAP are 34 not 38 (4 more cycles were counted because cpuemu*/
 /*			returns 4 and Exception() adds 34) (Phaleon / Illusion Demo by Next).		*/
 /*			FIXME : Others exception cycles may be wrong too.				*/
+/* 2008/10/05	[NP]	Add a parameter 'ExceptionSource' to Exception(). This allows to know the source*/
+/*			of the exception (video, mfp, cpu) and properly handle MFP interrupts. Since	*/
+/*			it's possible to change the vector base in $fffa17, MFP int vectors can overlap	*/
+/*			the 'normal' 68000 ones and the exception number is not enough to decide.	*/
+/*			We need ExceptionSource to remove the ambiguity.				*/
+/*			Fix High Fidelity Dreams by Aura which sets MFP vector base to $c0 instead of	*/
+/*			$100. In that case, timer B int becomes exception nr 56 and conflicts with the	*/
+/*			'MMU config error' exception, which takes 4 cycles instead of 56 cycles for MFP.*/
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.57 2008-09-14 19:33:45 npomarede Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.58 2008-10-05 17:55:31 npomarede Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -754,39 +763,45 @@ static void exception_trace (int nr)
 }
 
 
-void Exception(int nr, uaecptr oldpc)
+/* Handle exceptions. We need a special case to handle MFP exceptions */
+/* on Atari ST, because it's possible to change the MFP's vector base */
+/* and get a conflict with 'normal' cpu exceptions. */
+void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 {
     uae_u32 currpc = m68k_getpc ();
 
     /*if( nr>=2 && nr<10 )  fprintf(stderr,"Exception (-> %i bombs)!\n",nr);*/
 
     /* Intercept VDI exception (Trap #2 with D0 = 0x73) */
-    if(bUseVDIRes && nr == 0x22 && regs.regs[0] == 0x73)
-    {
-      if(!VDI())
+    if ( ExceptionSource != M68000_EXCEPTION_SRC_INT_MFP )
       {
-        /* Set 'PC' as address of 'VDI_OPCODE' illegal instruction
-         * This will call OpCode_VDI after completion of Trap call!
-         * Use to modify return structure from VDI */
-        VDI_OldPC = currpc;
-        currpc = CART_VDI_OPCODE_ADDR;
+        if(bUseVDIRes && nr == 0x22 && regs.regs[0] == 0x73)
+        {
+          if(!VDI())
+          {
+            /* Set 'PC' as address of 'VDI_OPCODE' illegal instruction
+             * This will call OpCode_VDI after completion of Trap call!
+             * Use to modify return structure from VDI */
+            VDI_OldPC = currpc;
+            currpc = CART_VDI_OPCODE_ADDR;
+          }
+        }
+    
+        if (bBiosIntercept)
+        {
+          /* Intercept BIOS or XBIOS trap (Trap #13 or #14) */
+          if (nr == 0x2d)
+          {
+            /* Intercept BIOS calls */
+            if (Bios())  return;
+          }
+          else if (nr == 0x2e)
+          {
+            /* Intercept XBIOS calls */
+            if (XBios())  return;
+          }
+        }
       }
-    }
-
-    if (bBiosIntercept)
-    {
-      /* Intercept BIOS or XBIOS trap (Trap #13 or #14) */
-      if (nr == 0x2d)
-      {
-        /* Intercept BIOS calls */
-        if (Bios())  return;
-      }
-      else if (nr == 0x2e)
-      {
-        /* Intercept XBIOS calls */
-        if (XBios())  return;
-      }
-    }
 
     MakeSR();
 
@@ -801,7 +816,7 @@ void Exception(int nr, uaecptr oldpc)
     }
 
     /* Build additional exception stack frame for 68010 and higher */
-    if (currprefs.cpu_level > 0) {
+    if ((currprefs.cpu_level > 0) && (ExceptionSource != M68000_EXCEPTION_SRC_INT_MFP)) {
 	if (nr == 2 || nr == 3) {
 	    int i;
 	    /* @@@ this is probably wrong (?) */
@@ -845,7 +860,7 @@ void Exception(int nr, uaecptr oldpc)
 	nr, currpc, BusErrorPC, get_long (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3 );
 
     /* 68000 bus/address errors: */
-    if (currprefs.cpu_level==0 && (nr==2 || nr==3)) {
+    if (currprefs.cpu_level==0 && (nr==2 || nr==3) && (ExceptionSource != M68000_EXCEPTION_SRC_INT_MFP) ) {
 	uae_u16 specialstatus = 1;
 
 	/* Special status word emulation isn't perfect yet... :-( */
@@ -904,8 +919,12 @@ void Exception(int nr, uaecptr oldpc)
     /* Handle trace flags depending on current state */
     exception_trace (nr);
 
-    /* Handle exception cycles */
-    if(nr >= 24 && nr <= 31)
+    /* Handle exception cycles (special case for MFP) */
+    if ( ExceptionSource == M68000_EXCEPTION_SRC_INT_MFP ) 
+    {
+      M68000_AddCycles(44+12);			/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+    }
+    else if (nr >= 24 && nr <= 31)
     {
       if ( ( nr == 26 ) || ( nr == 28 ) )	/* HBL or VBL */
         M68000_AddCycles(44+12);		/* Video Interrupt */
@@ -933,7 +952,7 @@ void Exception(int nr, uaecptr oldpc)
         if(nr < 64)
           M68000_AddCycles(4);			/* Coprocessor and unassigned exceptions (???) */
         else
-          M68000_AddCycles(44+12);		/* Must be a MFP interrupt */
+          M68000_AddCycles(44+12);		/* Must be a MFP interrupt, should be processed above */
         break;
     }
 }
@@ -944,7 +963,11 @@ static void Interrupt(int nr)
     assert(nr < 8 && nr >= 0);
     /*lastint_regs = regs;*/
     /*lastint_no = nr;*/
-    Exception(nr+24, 0);
+
+    /* [NP] On Hatari, only video ints are using SPCFLAG_INT (see m68000.c) */
+    /* TODO : to be really precise, we should use a global variable to store the last ExceptionSource */
+    /* passed to M68000_Exception, instead of hardcoding M68000_EXCEPTION_SRC_INT_VIDEO here */
+    Exception(nr+24, 0, M68000_EXCEPTION_SRC_INT_VIDEO);
 
     regs.intmask = nr;
     set_special (SPCFLAG_INT);
@@ -1073,7 +1096,7 @@ void m68k_divl (uae_u32 opcode, uae_u32 src, uae_u16 extra, uaecptr oldpc)
 {
 #if defined(uae_s64)
     if (src == 0) {
-	Exception (5, oldpc);
+	Exception (5, oldpc,M68000_EXCEPTION_SRC_CPU);
 	return;
     }
     if (extra & 0x800) {
@@ -1128,7 +1151,7 @@ void m68k_divl (uae_u32 opcode, uae_u32 src, uae_u16 extra, uaecptr oldpc)
     }
 #else
     if (src == 0) {
-	Exception (5, oldpc);
+	Exception (5, oldpc,M68000_EXCEPTION_SRC_CPU);
 	return;
     }
     if (extra & 0x800) {
@@ -1326,17 +1349,17 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
     uaecptr pc = m68k_getpc ();
 #endif
     if ((opcode & 0xF000) == 0xF000) {
-	Exception(0xB,0);
+	Exception(0xB,0,M68000_EXCEPTION_SRC_CPU);
 	return 4;
     }
     if ((opcode & 0xF000) == 0xA000) {
-	Exception(0xA,0);
+	Exception(0xA,0,M68000_EXCEPTION_SRC_CPU);
 	return 4;
     }
 #if 0
     write_log ("Illegal instruction: %04x at %08lx\n", opcode, (long)pc);
 #endif
-    Exception (4,0);
+    Exception (4,0,M68000_EXCEPTION_SRC_CPU);
     return 4;
 }
 
@@ -1403,7 +1426,7 @@ static int do_specialties (void)
 	 * functions since the PC should point to the address of the next
 	 * instruction, so we're executing the bus errors here: */
 	unset_special(SPCFLAG_BUSERROR);
-	Exception(2,0);
+	Exception(2,0,M68000_EXCEPTION_SRC_CPU);
     }
 
     if(regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
@@ -1414,7 +1437,7 @@ static int do_specialties (void)
     }
 
     if (regs.spcflags & SPCFLAG_DOTRACE) {
-	Exception (9,last_trace_ad);
+	Exception (9,last_trace_ad,M68000_EXCEPTION_SRC_CPU);
     }
 
     while (regs.spcflags & SPCFLAG_STOP) {
@@ -1632,13 +1655,13 @@ static void m68k_verify (uaecptr addr, uaecptr *nextpc)
 
     if (dp->suse) {
 	if (!verify_ea (dp->sreg, dp->smode, dp->size, &val)) {
-	    Exception (3, 0);
+	    Exception (3, 0,M68000_EXCEPTION_SRC_CPU);
 	    return;
 	}
     }
     if (dp->duse) {
 	if (!verify_ea (dp->dreg, dp->dmode, dp->size, &val)) {
-	    Exception (3, 0);
+	    Exception (3, 0,M68000_EXCEPTION_SRC_CPU);
 	    return;
 	}
     }

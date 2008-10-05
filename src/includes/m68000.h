@@ -148,10 +148,6 @@ static inline void M68000_SetSR(Uint16 v)
 #define BUS_ERROR_READ 1
 
 
-/* interrupt type used in M68000_Exception() */
-#define	M68000_INT_MFP		1		/* exception is an MFP interrupt */
-#define	M68000_INT_VIDEO	2		/* exception is a video interrupt */
-
 extern Uint32 BusErrorAddress;
 extern Uint32 BusErrorPC;
 extern bool bBusErrorReadWrite;
@@ -242,7 +238,7 @@ extern void M68000_Start(void);
 extern void M68000_CheckCpuLevel(void);
 extern void M68000_MemorySnapShot_Capture(bool bSave);
 extern void M68000_BusError(Uint32 addr, bool bReadWrite);
-extern void M68000_Exception(Uint32 ExceptionVector , int InterruptType);
+extern void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource);
 extern void M68000_WaitState(int nCycles);
 
 #endif

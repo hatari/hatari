@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.9 2008-02-09 11:15:16 thothy Exp $";
+const char FPP_rcsid[] = "Hatari $Id: fpp.c,v 1.10 2008-10-05 17:55:31 npomarede Exp $";
 
 
 #define __USE_ISOC9X  /* We might be able to pick up a NaN */
@@ -658,7 +658,7 @@ void ftrapcc_opp (uae_u32 opcode, uaecptr oldpc)
 	op_illg (opcode);
     }
     if (cc)
-	Exception (7, oldpc - 2);
+	Exception (7, oldpc - 2, M68000_EXCEPTION_SRC_CPU);
 }
 
 void fbcc_opp (uae_u32 opcode, uaecptr pc, uae_u32 extra)
