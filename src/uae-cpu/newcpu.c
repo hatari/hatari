@@ -75,7 +75,7 @@
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.58 2008-10-05 17:55:31 npomarede Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.59 2008-10-08 22:34:53 npomarede Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -816,8 +816,13 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     }
 
     /* Build additional exception stack frame for 68010 and higher */
-    if ((currprefs.cpu_level > 0) && (ExceptionSource != M68000_EXCEPTION_SRC_INT_MFP)) {
-	if (nr == 2 || nr == 3) {
+    /* (special case for MFP) */
+    if (currprefs.cpu_level > 0) {
+        if (ExceptionSource == M68000_EXCEPTION_SRC_INT_MFP) {
+	    m68k_areg(regs, 7) -= 2;
+	    put_word (m68k_areg(regs, 7), nr * 4);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
+        }
+        else if (nr == 2 || nr == 3) {
 	    int i;
 	    /* @@@ this is probably wrong (?) */
 	    for (i = 0 ; i < 12 ; i++) {
