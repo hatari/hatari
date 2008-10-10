@@ -746,9 +746,7 @@ static void dsp_postexecute_update_pc(void)
 	if (dsp_core->registers[DSP_REG_SR] & (1<<DSP_SR_LF)) {
 
 		/* Did we execute the last instruction in loop ? */
-		if (dsp_core->last_loop_inst) {		
-			dsp_core->last_loop_inst = 0;
-
+		if (dsp_core->pc == dsp_core->registers[DSP_REG_LA]+1) {		
 			--dsp_core->registers[DSP_REG_LC];
 			dsp_core->registers[DSP_REG_LC] &= BITMASK(16);
 
@@ -765,11 +763,6 @@ static void dsp_postexecute_update_pc(void)
 #ifdef DSP_DISASM
 			dsp56k_disasm_force_reg_changed(DSP_REG_LC);
 #endif
-		}
-
-		if (dsp_core->pc == dsp_core->registers[DSP_REG_LA]) {
-			/* We are executing the last loop instruction */
-			dsp_core->last_loop_inst = 1;
 		}
 	}
 }
@@ -1580,7 +1573,7 @@ static void dsp_bchg(void)
 
 static void dsp_bclr(void)
 {
-	Uint32 memspace, addr, value, numreg, newcarry, numbit;
+	Uint32 memspace, addr, value, numreg, newcarry, numbit, srcreg;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -1617,7 +1610,7 @@ static void dsp_bclr(void)
 			break;
 		case 3:
 			/* bclr #n,R */
-			numreg = value;
+			srcreg = numreg = value;
 			if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
 				numreg = DSP_REG_A1+(numreg & 1);
 			}
@@ -1625,8 +1618,8 @@ static void dsp_bclr(void)
 			newcarry = (value>>numbit) & 1;
 			value &= 0xffffffff-(1<<numbit);
 			dsp_core->registers[numreg] = value;
-			if (((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) && (numbit==23)) {
-				dsp_core->registers[DSP_REG_A2+(numreg & 1)]=0x00;
+			if (((srcreg==DSP_REG_A) || (srcreg==DSP_REG_B)) && (numbit==23)) {
+				dsp_core->registers[DSP_REG_A2+(srcreg & 1)]=0x00;
 			}
 			break;
 	}
@@ -1638,7 +1631,7 @@ static void dsp_bclr(void)
 
 static void dsp_bset(void)
 {
-	Uint32 memspace, addr, value, numreg, newcarry, numbit;
+	Uint32 memspace, addr, value, numreg, newcarry, numbit, srcreg;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -1675,7 +1668,7 @@ static void dsp_bset(void)
 			break;
 		case 3:
 			/* bset #n,R */
-			numreg = value;
+			srcreg = numreg = value;
 			if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
 				numreg = DSP_REG_A1+(numreg & 1);
 			}
@@ -1683,8 +1676,8 @@ static void dsp_bset(void)
 			newcarry = (value>>numbit) & 1;
 			value |= (1<<numbit);
 			dsp_core->registers[numreg] = value;
-			if (((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) && (numbit==23)) {
-				dsp_core->registers[DSP_REG_A2+(numreg & 1)]=0xff;
+			if (((srcreg==DSP_REG_A) || (srcreg==DSP_REG_B)) && (numbit==23)) {
+				dsp_core->registers[DSP_REG_A2+(srcreg & 1)]=0xff;
 			}
 			break;
 	}
@@ -3434,32 +3427,11 @@ static Uint16 dsp_asr56(Uint32 *dest)
 static Uint16 dsp_add56(Uint32 *source, Uint32 *dest)
 {
 	Uint16 overflow, carry;
-	Uint32 src;
 
 	/* Add source to dest: D = D+S */
-	/*dest[2] &= BITMASK(24);
-	dest[1] &= BITMASK(24);
-	dest[0] &= BITMASK(8);*/
-
-	/*if (dest[0] & (1<<7)) {
-		dest[0] |= 0xffffff00;
-	}*/
-
-	dest[2] += source[2] & BITMASK(24);
-
-	dest[1] += source[1] & BITMASK(24);
-	if ((dest[2]>>24) & BITMASK(8)) {
-		dest[1]++;
-	}
-
-	src = source[0] & BITMASK(8);
-	/*if (src & (1<<7)) {
-		src |= 0xffffff00;
-	}*/
-	dest[0] += src;
-	if ((dest[1]>>24) & BITMASK(8)) {
-		dest[0]++;
-	}
+	dest[2] += source[2];
+	dest[1] += source[1]+((dest[2]>>24) & 1);
+	dest[0] += source[0]+((dest[1]>>24) & 1);
 
 	/* overflow if we go below -256.0 or above +256.0 */
 	overflow = (((dest[0] & 0xffffff00)!=0) && ((dest[0] & 0xffffff00)!=0xffffff00));
@@ -3477,41 +3449,17 @@ static Uint16 dsp_add56(Uint32 *source, Uint32 *dest)
 static Uint16 dsp_sub56(Uint32 *source, Uint32 *dest)
 {
 	Uint16 overflow, carry;
-	Uint32 src;
 
 	/* Substract source from dest: D = D-S */
-
-	/*dest[2] &= BITMASK(24);
-	dest[1] &= BITMASK(24);
-	dest[0] &= BITMASK(8);*/
-
-	/*if (dest[0] & (1<<7)) {
-		dest[0] |= 0xffffff00;
-	}*/
-
-	dest[2] -= source[2] & BITMASK(24);
-
-	dest[1] -= source[1] & BITMASK(24);
-	if ((dest[2]>>24) & BITMASK(8)) {
-		dest[1]--;
-	}
-
-	src = source[0] & BITMASK(8);
-	/*if (src & (1<<7)) {
-		src |= 0xffffff00;
-	}*/
-	dest[0] -= src;
-	if ((dest[1]>>24) & BITMASK(8)) {
-		dest[0]--;
-	}
+	dest[2] -= source[2];
+	dest[1] -= source[1]+((dest[2]>>24) & 1);
+	dest[0] -= source[0]+((dest[1]>>24) & 1);
 
 	/* overflow if we go below -256.0 or above +256.0 */
 	overflow = (((dest[0] & 0xffffff00)!=0) && ((dest[0] & 0xffffff00)!=0xffffff00));
 
 	/* set carry from the virtual 56th bit */
 	carry = (dest[0]>>8) & 1;
-
-	//fprintf(stderr,"sub56: 0x%08x:%08x:%08x\n", dest[0],dest[1],dest[2]);	
 
 	dest[2] &= BITMASK(24);
 	dest[1] &= BITMASK(24);

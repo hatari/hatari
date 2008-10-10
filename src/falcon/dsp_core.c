@@ -198,7 +198,6 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 
 	/* Misc */
 	dsp_core->loop_rep = 0;
-	dsp_core->last_loop_inst = 0;
 
 #if DEBUG
 	fprintf(stderr, "Dsp: reset done\n");
