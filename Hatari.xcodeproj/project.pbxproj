@@ -247,9 +247,9 @@
 		4EE4B5E90DD8E0DD00DF27A2 /* change.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = change.c; path = src/change.c; sourceTree = "<group>"; };
 		4EE4B5EA0DD8E0DD00DF27A2 /* control.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = control.c; path = src/control.c; sourceTree = "<group>"; };
 		4EE4B5EB0DD8E0DD00DF27A2 /* str.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = str.c; path = src/str.c; sourceTree = "<group>"; };
-		4EE4B6040DD8E15C00DF27A2 /* change.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = change.h; path = src/includes/change.h; sourceTree = "<group>"; };
-		4EE4B6050DD8E15C00DF27A2 /* control.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = control.h; path = src/includes/control.h; sourceTree = "<group>"; };
-		4EE4B6060DD8E15C00DF27A2 /* str.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = str.h; path = src/includes/str.h; sourceTree = "<group>"; };
+		4EE4B6040DD8E15C00DF27A2 /* change.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = change.h; sourceTree = "<group>"; };
+		4EE4B6050DD8E15C00DF27A2 /* control.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = control.h; sourceTree = "<group>"; };
+		4EE4B6060DD8E15C00DF27A2 /* str.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = str.h; sourceTree = "<group>"; };
 		961322D30B5BCDB900007C3E /* config-default.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "config-default.h"; sourceTree = "<group>"; };
 		961322E60B5BCFBB00007C3E /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		961322EF0B5BD0B800007C3E /* araglue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = araglue.h; path = src/falcon/araglue.h; sourceTree = "<group>"; };
@@ -267,7 +267,7 @@
 		961323080B5BD14B00007C3E /* ioMemTabST.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ioMemTabST.c; path = src/ioMemTabST.c; sourceTree = "<group>"; };
 		961323090B5BD14B00007C3E /* ioMemTabSTE.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ioMemTabSTE.c; path = src/ioMemTabSTE.c; sourceTree = "<group>"; };
 		9613230A0B5BD14B00007C3E /* ioMemTabTT.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ioMemTabTT.c; path = src/ioMemTabTT.c; sourceTree = "<group>"; };
-		961323110B5BD17700007C3E /* ide.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ide.h; path = src/includes/ide.h; sourceTree = "<group>"; };
+		961323110B5BD17700007C3E /* ide.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ide.h; sourceTree = "<group>"; };
 		9613232F0B5BD66600007C3E /* ide.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ide.c; path = src/ide.c; sourceTree = "<group>"; };
 		962F64E909A922B20054BE9B /* PrefsController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrefsController.h; sourceTree = "<group>"; };
 		962F64EA09A922B20054BE9B /* PrefsController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PrefsController.m; sourceTree = "<group>"; };
@@ -276,7 +276,7 @@
 		96635B750BF86FDF00518B3B /* nvram.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = nvram.c; path = src/falcon/nvram.c; sourceTree = "<group>"; };
 		96635B760BF86FDF00518B3B /* nvram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nvram.h; path = src/falcon/nvram.h; sourceTree = "<group>"; };
 		9670E1B00A5FA132009A73E0 /* Info-Hatari.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "Info-Hatari.plist"; sourceTree = "<group>"; };
-		9670E1B10A5FA132009A73E0 /* Hatari.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hatari.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9670E1B10A5FA132009A73E0 /* Hatari.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Hatari.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9670E1C10A5FA25A009A73E0 /* SDL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL.framework; path = /Library/Frameworks/SDL.framework; sourceTree = "<absolute>"; };
 		968B50EE0D83704D00C21920 /* dlgDisk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dlgDisk.c; sourceTree = "<group>"; };
 		968B50EF0D83704D00C21920 /* dlgNewDisk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dlgNewDisk.c; sourceTree = "<group>"; };
@@ -478,7 +478,6 @@
 		29B97314FDCFA39411CA2CEA /* Hatari */ = {
 			isa = PBXGroup;
 			children = (
-				9613232F0B5BD66600007C3E /* ide.c */,
 				961322E60B5BCFBB00007C3E /* config.h */,
 				961322D30B5BCDB900007C3E /* config-default.h */,
 				96D6324C0A4E9A4300FBFA27 /* gui-osx */,
@@ -513,9 +512,6 @@
 				4E5138420DE5515200605B70 /* vdi2.c */,
 				4E5138430DE5515200605B70 /* vdi4.c */,
 				4E5138440DE5515200605B70 /* vdi16.c */,
-				4EE4B6040DD8E15C00DF27A2 /* change.h */,
-				4EE4B6050DD8E15C00DF27A2 /* control.h */,
-				4EE4B6060DD8E15C00DF27A2 /* str.h */,
 				4EE4B5E80DD8E0DD00DF27A2 /* cartData.c */,
 				4EE4B5E90DD8E0DD00DF27A2 /* change.c */,
 				4EE4B5EA0DD8E0DD00DF27A2 /* control.c */,
@@ -523,7 +519,6 @@
 				96B15D580D836FC0000326A2 /* paths.c */,
 				96635B750BF86FDF00518B3B /* nvram.c */,
 				96635B760BF86FDF00518B3B /* nvram.h */,
-				961323110B5BD17700007C3E /* ide.h */,
 				961323070B5BD14B00007C3E /* ioMemTabFalcon.c */,
 				961323080B5BD14B00007C3E /* ioMemTabST.c */,
 				961323090B5BD14B00007C3E /* ioMemTabSTE.c */,
@@ -560,6 +555,7 @@
 				E9283E8407512EA200DA6B24 /* gemdos.c */,
 				E9283E8507512EA200DA6B24 /* gui-sdl */,
 				E9283E9B07512EA200DA6B24 /* hdc.c */,
+				9613232F0B5BD66600007C3E /* ide.c */,
 				E9283E9C07512EA200DA6B24 /* ikbd.c */,
 				E9283E9D07512EA200DA6B24 /* includes */,
 				E9283ED307512EA200DA6B24 /* int.c */,
@@ -671,6 +667,9 @@
 				9652821F0998136500BE6A34 /* cycles.h */,
 				E930274608EC5CA5000FB60E /* dmaSnd.h */,
 				E9283E9E07512EA200DA6B24 /* audio.h */,
+				4EE4B6040DD8E15C00DF27A2 /* change.h */,
+				4EE4B6050DD8E15C00DF27A2 /* control.h */,
+				4EE4B6060DD8E15C00DF27A2 /* str.h */,
 				E9283E9F07512EA200DA6B24 /* bios.h */,
 				E9283EA007512EA200DA6B24 /* blitter.h */,
 				E9283EA107512EA200DA6B24 /* cart.h */,
@@ -685,6 +684,7 @@
 				E9283EAC07512EA200DA6B24 /* floppy.h */,
 				E9283EAD07512EA200DA6B24 /* gemdos.h */,
 				E9283EAE07512EA200DA6B24 /* hdc.h */,
+				961323110B5BD17700007C3E /* ide.h */,
 				E9283EAF07512EA200DA6B24 /* ikbd.h */,
 				E99035AD07E8C8D6000E7CD7 /* ioMem.h */,
 				E99035AE07E8C8D6000E7CD7 /* ioMemTables.h */,
