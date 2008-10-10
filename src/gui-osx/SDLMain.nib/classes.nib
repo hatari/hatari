@@ -13,6 +13,7 @@
             SUPERCLASS = NSObject; 
         }, 
         {CLASS = FirstResponder; LANGUAGE = ObjC; SUPERCLASS = NSObject; }, 
+        {CLASS = NSPanel; LANGUAGE = ObjC; SUPERCLASS = NSWindow; }, 
         {
             ACTIONS = {
                 changeViewedJoystick = id; 
@@ -34,8 +35,8 @@
                 ejectGemdosImage = id; 
                 ejectHdImage = id; 
                 loadConfig = id; 
+                loadConfigFrom = id; 
                 loadPrefs = id; 
-                myAction = id; 
                 saveConfig = id; 
                 updateEnabledStates = id; 
             }; 
@@ -49,11 +50,13 @@
                 cartridgeImage = NSTextField; 
                 colorDepth = NSMatrix; 
                 compatibleCpu = NSButton; 
+                configFile = NSTextField; 
                 cpuClock = NSMatrix; 
                 cpuType = NSMatrix; 
                 currentJoystick = NSPopUpButton; 
                 defaultImagesLocation = NSTextField; 
                 enableAutoFire = NSButton; 
+                enableDSP = NSPopUpButton; 
                 enableMidi = NSButton; 
                 enablePrinter = NSButton; 
                 enableRS232 = NSButton; 
@@ -74,6 +77,7 @@
                 keyboardMappingFile = NSTextField; 
                 machineType = NSMatrix; 
                 monitor = NSMatrix; 
+                nSpec512Treshold = NSSlider; 
                 patchTimerD = NSButton; 
                 playbackQuality = NSMatrix; 
                 printToFile = NSTextField; 
@@ -82,6 +86,7 @@
                 realJoystick = NSPopUpButton; 
                 realTime = NSButton; 
                 resolution = NSMatrix; 
+                showStatusBar = NSButton; 
                 slowFDC = NSButton; 
                 tosImage = NSTextField; 
                 useBorders = NSButton; 
@@ -114,10 +119,10 @@
             CLASS = SDLMain; 
             LANGUAGE = ObjC; 
             OUTLETS = {
-                beginCaptureAnim = id; 
-                beginCaptureSound = id; 
-                endCaptureAnim = id; 
-                endCaptureSound = id; 
+                beginCaptureAnim = NSMenuItem; 
+                beginCaptureSound = NSMenuItem; 
+                endCaptureAnim = NSMenuItem; 
+                endCaptureSound = NSMenuItem; 
             }; 
             SUPERCLASS = NSObject; 
         }

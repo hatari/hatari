@@ -31,10 +31,14 @@
 #define EXPORT_SWITCH(nsbutton, target) target = ([(nsbutton) state] == NSOnState)
 #define EXPORT_RADIO(nsmatrix, target) target = [[(nsmatrix) selectedCell] tag]
 #define EXPORT_DROPDOWN(nspopupbutton, target) target = [[(nspopupbutton) selectedItem] tag]
+#define EXPORT_SLIDER(nsslider, target) target = [(nsslider) intValue]
+
 #define IMPORT_TEXTFIELD(nstextfield, source) [(nstextfield) setStringValue:[[NSString stringWithCString:(source)] stringByAbbreviatingWithTildeInPath]]
 #define IMPORT_SWITCH(nsbutton, source) [(nsbutton) setState:((source))? NSOnState : NSOffState]
 #define IMPORT_RADIO(nsmatrix, source) [(nsmatrix) selectCellWithTag:(source)]
 #define IMPORT_DROPDOWN(nspopupbutton, source) [(nspopupbutton) selectItemAtIndex:[(nspopupbutton) indexOfItemWithTag:(source)]]
+#define IMPORT_SLIDER(nsslider,source) [(nsslider) setIntValue:source]
+
 
 // Back up of the current configuration parameters
 CNF_PARAMS CurrentParams;
@@ -368,6 +372,26 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	[self setAllControls];
 }
 
+//JV 08/2008: Load Setting from a file.
+
+- (IBAction)loadConfigFrom:(id)sender
+{
+	if([self choosePathForControl:configFile chooseDirectories:FALSE defaultInitialDir:@"~"])
+	{
+		NSString *path = [[configFile stringValue] stringByExpandingTildeInPath];
+		const char* constSzPath = [path cString];
+		size_t cbPath = strlen(constSzPath) + 1;
+		char szPath[cbPath];
+		strncpy(szPath, constSzPath, cbPath);
+		
+		// Load the config into ConfigureParams
+		Configuration_Load(szPath);
+		strcpy(sConfigFileName,szPath);
+		// Refresh all the controls to match ConfigureParams
+		[self setAllControls];
+	}
+}
+
 - (IBAction)saveConfig:(id)sender
 {
 	// Update the ConfigureParams from the controls
@@ -540,6 +564,11 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	IMPORT_RADIO(writeProtection, ConfigureParams.DiskImage.nWriteProtection);
     IMPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
     IMPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
+	//JV 08/2008
+	IMPORT_SWITCH(showStatusBar, ConfigureParams.Screen.bShowStatusbar);
+	IMPORT_DROPDOWN(enableDSP,ConfigureParams.System.nDSPType);
+	IMPORT_SLIDER(nSpec512Treshold,ConfigureParams.Screen.nSpec512Threshold);
+	IMPORT_TEXTFIELD(configFile, sConfigFileName);
 
 	[(force8bpp) setState:((ConfigureParams.Screen.nForceBpp==8))? NSOnState : NSOffState];
 
@@ -699,7 +728,11 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     EXPORT_TEXTFIELD(writeMidiToFile, ConfigureParams.Midi.szMidiOutFileName);
 	EXPORT_RADIO(writeProtection, ConfigureParams.DiskImage.nWriteProtection);
     EXPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
-    EXPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);	
+    EXPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
+	//JV 082008
+	EXPORT_SWITCH(showStatusBar,ConfigureParams.Screen.bShowStatusbar);
+	EXPORT_DROPDOWN(enableDSP,ConfigureParams.System.nDSPType);
+	EXPORT_SLIDER(nSpec512Treshold,ConfigureParams.Screen.nSpec512Threshold);
 
 	ConfigureParams.Screen.nForceBpp = ([force8bpp state] == NSOnState) ? 8 : 16;
 

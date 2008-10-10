@@ -29,6 +29,7 @@
     IBOutlet NSTextField *floppyImageA;
     IBOutlet NSTextField *floppyImageB;
     IBOutlet NSButton *force8bpp;
+    IBOutlet NSButton *showStatusBar;
     IBOutlet NSPopUpButton *frameSkip;
     IBOutlet NSTextField *gemdosImage;
     IBOutlet NSTextField *hdImage;
@@ -44,6 +45,7 @@
     IBOutlet NSMatrix *machineType;
     IBOutlet NSMatrix *monitor;
     IBOutlet NSButton *patchTimerD;
+    IBOutlet NSPopUpButton *enableDSP;
     IBOutlet NSMatrix *playbackQuality;
     IBOutlet NSTextField *printToFile;
     IBOutlet NSMatrix *ramSize;
@@ -59,6 +61,10 @@
     IBOutlet NSMatrix *writeProtection;
     IBOutlet NSTextField *writeRS232ToFile;
     IBOutlet NSButton *zoomSTLowRes;
+    IBOutlet NSSlider *nSpec512Treshold;
+
+    IBOutlet NSTextField *configFile;
+
 	BOOL bInitialized;
 	int cRealJoysticks;
 	int nCurrentJoystick;
@@ -84,6 +90,7 @@
 - (IBAction)loadConfig:(id)sender;
 - (IBAction)loadPrefs:(id)sender;
 - (IBAction)saveConfig:(id)sender;
+- (IBAction)loadConfigFrom:(id)sender;
 - (void)setAllControls;
 - (void)saveAllControls;
 - (void)insertFloppyImageIntoDrive:(int)drive forTextField:(NSTextField*)floppyTextField;

@@ -3,15 +3,18 @@
 <plist version="1.0">
 <dict>
 	<key>IBDocumentLocation</key>
-	<string>427 72 463 256 0 0 1440 878 </string>
-	<key>IBEditorPositions</key>
-	<dict>
-		<key>29</key>
-		<string>557 665 304 44 0 0 1440 878 </string>
-	</dict>
+	<string>745 7 503 374 0 0 1680 1028 </string>
 	<key>IBFramework Version</key>
-	<string>446.1</string>
+	<string>489.0</string>
+	<key>IBLastKnownRelativeProjectPath</key>
+	<string>../../Hatari.xcodeproj</string>
+	<key>IBOldestOS</key>
+	<integer>3</integer>
 	<key>IBSystem Version</key>
-	<string>8L127</string>
+	<string>8S165</string>
+	<key>IBUsesTextArchiving</key>
+	<true/>
+	<key>targetFramework</key>
+	<string>IBCocoaFramework</string>
 </dict>
 </plist>
