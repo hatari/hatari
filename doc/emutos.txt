@@ -96,9 +96,11 @@ which location depends on the TOS version.
 Debugging issues with EmuTOS
 ============================
 
-To debug which Line-A functions programs try to use, start Hatari
-with "--midi /dev/stderr". You will then see EmuTOS output about calls
-to missing Line-A functions.
+To debug which Line-A functions programs try to use, start Hatari with
+"--midi /dev/stderr". You will then see EmuTOS output about calls to
+missing Line-A functions.  On other emulators than Hatari, EmuTOS can
+use either "native print" (STonX) or "native features" (Aranym) for
+debug output.
 
 To debug EmuTOS panics, you need to compile EmuTOS yourself and create
 a disassembly of the ROM image.  You can then look up the program
@@ -281,7 +283,7 @@ that would be STE specific (or even STE enhanced*):
     http://atari-ste.anvil-soft.com/html/archivapps.htm
 
 Missing blitter support in EmuTOS (XBios function etc) is an additional
-reason why some programs (such as Blittermania) don't work with it.
+reason why some programs/demos (such as Blittermania) don't work with it.
 But following STE specific demos, games and apps work (mostly) fine
 with EmuTOS.
 
@@ -318,11 +320,14 @@ Demos:
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
 - Vision (by POV)
+- Wolfenstein3D* v0.5 (titlescreen colors are not right)
+  - the playable v0.8 doesn't work at all
 
 Color games:
 - Alien Blast (demo)
 - Battletris+
 - Dynaplus*
+- Frantick
 - No Limit II (shareware pinball)
 - Obsession* (demo of commercial pinball)
 - Operation Garfield
@@ -335,14 +340,29 @@ Color games:
 - Stupid balloon game
 - Substation* (demo)
 - Tomtar
-- Wolfenstein3D* v0.5 (titlescreen colors are not right)
 
-Applications (mainly music):
-- Art4Kids (demo)
-- Blipp Blopper*
-- MaxYMizer*
-- Octalyzer*
+Music Applications:
+- Blipp Blopper
+- Desktracker
+- MaxYMizer
+- Octalyzer
+- Paula
 - Sirius Player
+
+
+"Almost" working color STE games
+--------------------------------
+
+There are some STE games that would appear otherwise to work perfectly,
+but some part of the graphics just don't show.  They are listed in case
+someone, someday, starts to fix the EmuTOS line-A things (which I
+think are preventing these from working properly).
+
+- Atari Scene Card Battle (card images don't show)
+- Blat (main graphics don't show)
+- Breakdance (another scene game, game freezes when playing)
+- Mr Boomer (all graphics don't show)
+- Pooz (all graphics don't show)
 
 
 	- Eero
