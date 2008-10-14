@@ -24,10 +24,10 @@
   speed, users will have to turn off the sound - that's it.
 */
 
-/* 2008/05/05	[NP]	Fix case where period is 0 for noise, sound or enveloppe.	*/
+/* 2008/05/05	[NP]	Fix case where period is 0 for noise, sound or envelope.	*/
 /*			In that case, a real ST sounds as if period was in fact 1.	*/
 /*			(fix buggy sound replay in ESwat that set volume<0 and trigger	*/
-/*			a badly initialised enveloppe with envper=0).			*/
+/*			a badly initialised envelope with envper=0).			*/
 /* 2008/07/27	[NP]	Better separation between accesses to the YM hardware registers	*/
 /*			and the sound rendering routines. Use Sound_WriteReg() to pass	*/
 /*			all writes to the sound rendering functions. This allows to	*/
@@ -44,16 +44,23 @@
 /*			All volumes are converted to 5 bits and the table contains	*/
 /*			32*32*32 values. Samples are signed and centered to get the	*/
 /*			biggest amplitude possible.					*/
-/*			Faster mixing routines for tone+volume+enveloppe (don't use	*/
+/*			Faster mixing routines for tone+volume+envelope (don't use	*/
 /*			StSound's version anymore, it gave problem with some GCC).	*/
 /* 2008/09/17	[NP]	Add ym_normalise_5bit_table to normalise the 32*32*32 table and	*/
 /*			to optionally center 16 bit signed sample.			*/
 /*			Possibility to mix volumes using a table measured on ST or a	*/
 /*			linear mean of the 3 channels' volume.				*/
 /*			Default mixing set to YM_LINEAR_MIXING.				*/
+/* 2008/10/14	[NP]	Full support for 5 bits volumes : envelopes are generated with	*/
+/*			32 volumes per pattern as on a real YM-2149. Fixed volumes	*/
+/*			on 4 bits are converted to their 5 bits equivalent. This should	*/
+/*			give the maximum accuracy possible when computing volumes.	*/
+/*			New version of Ym2149_EnvStepCompute to handle 5 bits volumes.	*/
+/*			Function YM2149_EnvBuild to compute the 96 volumes that define	*/
+/*			a single envelope (32 initial volumes, then 64 repeated values).*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.45 2008-09-25 18:36:50 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.46 2008-10-14 21:34:14 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -739,7 +746,7 @@ bool Sound_AreWeRecording(void)
 #else	/* OLD_SOUND */
 
 /*--------------------------------------------------------------*/
-/* Possible YM1249 enveloppe shapes				*/
+/* Possible YM1249 envelope shapes (using 5 bits)		*/
 /*--------------------------------------------------------------*/
 
 int		Env00xx[8]={ 1,0,0,0,0,0,0,0 };
@@ -757,11 +764,41 @@ int		*EnvWave[16] = {	Env00xx,Env00xx,Env00xx,Env00xx,
 					Env1000,Env1001,Env1010,Env1011,
 					Env1100,Env1101,Env1110,Env1111};
 
+
+#define	ENV_GODOWN	0		/* 31 ->  0 */
+#define	ENV_GOUP	1		/*  0 -> 31 */
+#define	ENV_DOWN	2		/*  0 ->  0 */
+#define	ENV_UP		3		/* 31 -> 31 */
+
+/* To generate an envelope, we first use block 0, then we repeat blocks 1 and 2 */
+static const int YmEnvDef[ 16 ][ 3 ] = {
+	{ ENV_GODOWN,	ENV_DOWN, ENV_DOWN } ,		/* 0 \___ */
+	{ ENV_GODOWN,	ENV_DOWN, ENV_DOWN } ,		/* 1 \___ */
+	{ ENV_GODOWN,	ENV_DOWN, ENV_DOWN } ,		/* 2 \___ */
+	{ ENV_GODOWN,	ENV_DOWN, ENV_DOWN } ,		/* 3 \___ */
+	{ ENV_GOUP,	ENV_DOWN, ENV_DOWN } ,		/* 4 /___ */
+	{ ENV_GOUP,	ENV_DOWN, ENV_DOWN } ,		/* 5 /___ */
+	{ ENV_GOUP,	ENV_DOWN, ENV_DOWN } ,		/* 6 /___ */
+	{ ENV_GOUP,	ENV_DOWN, ENV_DOWN } ,		/* 7 /___ */
+	{ ENV_GODOWN,	ENV_GODOWN, ENV_GODOWN } ,	/* 8 \\\\ */
+	{ ENV_GODOWN,	ENV_DOWN, ENV_DOWN } ,		/* 9 \___ */
+	{ ENV_GODOWN,	ENV_GOUP, ENV_GODOWN } ,	/* A \/\/ */
+	{ ENV_GODOWN,	ENV_UP, ENV_UP } ,		/* B \--- */
+	{ ENV_GOUP,	ENV_GOUP, ENV_GOUP } ,		/* C //// */
+	{ ENV_GOUP,	ENV_UP, ENV_UP } ,		/* D /--- */
+	{ ENV_GOUP,	ENV_GODOWN, ENV_GOUP } ,	/* E /\/\ */
+	{ ENV_GOUP,	ENV_DOWN, ENV_DOWN } ,		/* F /___ */
+	};
+
+
+static ymu16	YmEnvWaves[ 16 ][ 32 * 3 ];		/* 16 envelopes with 3 blocks of 32 volumes */
+
+
 static int	YmVolumeTable[16] = {62,161,265,377,580,774,1155,1575,2260,3088,4570,6233,9330,13187,21220,32767};
 
 
 /* Table of unsigned 5 bit D/A output level for 1 channels as measured on a real ST (expanded from 4 bits to 5 bits) */
-static ymu16 ymout1c5bit[32] =
+static const ymu16 ymout1c5bit[ 32 ] =
 {
   310,  369,  438,  521,  619,  735,  874, 1039,
  1234, 1467, 1744, 2072, 2463, 2927, 3479, 4135,
@@ -769,12 +806,18 @@ static ymu16 ymout1c5bit[32] =
 19565,23253,27636,32845,39037,46395,55141,65535
 };
 
+/* Convert a constant 4 bits volume to the internal 5 bits value : */
+/* volume5=volume4*2+1, except for volumes 0 and 1 which become 0 and 2, */
+/* in order to map [0,15] into [0,31] (O must remain 0, and 15 must give 31) */
+static const ymu16 YmVolume4to5[ 16 ] = { 0,2,5,7,9,11,13,15,17,19,21,23,25,27,29,31 };
+
+
 /* Table of unsigned 4 bit D/A output level for 3 channels as measured on a real ST */
-static ymu16 volumetable_original[16 * 16 * 16] =
+static ymu16 volumetable_original[ 16 * 16 * 16 ] =
 #include "ym2149_fixed_vol.h"
 
 /* Corresponding table interpolated to 5 bit D/A output level (16 bits unsigned) */
-static ymu16 ymout5_u16[32*32*32];
+static ymu16 ymout5_u16[ 32 * 32 * 32 ];
 
 /* Same table, after conversion to signed results (same pointer, with different type) */
 static yms16 *ymout5 = (yms16 *)ymout5_u16;
@@ -785,11 +828,8 @@ static yms16 *ymout5 = (yms16 *)ymout5_u16;
 #define YM_LINEAR_MIXING		1	/* Use ymout1c5bit[] to build ymout5[] */
 #define YM_TABLE_MIXING			2	/* Use volumetable_original to build ymout5[] */
 
-int	YmVolumeMixing = YM_LINEAR_MIXING;
-
 
 /* Variables for the YM2149 emulator */
-Uint8		SoundRegs[14];
 
 /* Number of generated samples per frame (eg. 44Khz=882) : */
 #define SAMPLES_PER_FRAME  ((SoundPlayBackFrequencies[OutputAudioFreqIndex]+35)/nScreenRefreshRate)
@@ -802,19 +842,20 @@ Uint8		SoundRegs[14];
 
 ymu8		envData[16][2][16*2];
 
-ymu32		stepA , stepB , stepC;
-ymu32		posA , posB , posC;
-ymu32		mixerTA , mixerTB , mixerTC;
-ymu32		mixerNA , mixerNB , mixerNC;
+static ymu32	stepA , stepB , stepC;
+static ymu32	posA , posB , posC;
+static ymu32	mixerTA , mixerTB , mixerTC;
+static ymu32	mixerNA , mixerNB , mixerNC;
 
-ymu32		noiseStep;
-ymu32		noisePos;
-ymu32		currentNoise;
+static ymu32	noiseStep;
+static ymu32	noisePos;
+static ymu32	currentNoise;
 
-ymu32		envStep;
-ymu32		envPos;
-int		envPhase;
-int		envShape;
+static ymu32	envStep;
+static ymu32	envPos;
+static int	envPhase;
+static int	envShape;
+
 
 #define	YM_MERGE_VOICE(C,B,A)	( (C)<<10 | (B)<<5 | A )
 #define	YM_MASK_1VOICE		0x1f
@@ -822,24 +863,28 @@ int		envShape;
 #define YM_MASK_B		(0x1f<<5)
 #define YM_MASK_C		(0x1f<<10)
 
-ymu16		EnvMask3Voices;
-ymu16		Vol3Voices;
+static ymu16	EnvMask3Voices;
+static ymu16	Vol3Voices;
 
-ymu32		RndRack;				/* current random seed */
+static ymu32	RndRack;				/* current random seed */
 
 
 /* Variables for the DC adjuster / Low Pass Filter */
 #define DC_ADJUST_BUFFERLEN		512		/* must be a power of 2 */
 
-int		dc_buffer[DC_ADJUST_BUFFERLEN];
-int		dc_pos;
-int		dc_sum;
-int		m_lowPassFilter[2];
+static ymsample	dc_buffer[DC_ADJUST_BUFFERLEN];
+static int	dc_pos;
+static int	dc_sum;
+static ymsample	m_lowPassFilter[2];
 
 
-/* global variables */
+/* Global variables */
+Uint8		SoundRegs[ 14 ];
+int		YmVolumeMixing = YM_LINEAR_MIXING;
 bool		UseLowPassFilter = FALSE;
+
 bool		bEnvelopeFreqFlag;			/* Cleared each frame for YM saving */
+
 Sint16		MixBuffer[MIXBUFFER_SIZE][2];
 int		nGeneratedSamples;			/* Generated samples since audio buffer update */
 int		nSamplesToGenerate;			/* How many samples are needed for this time-frame */
@@ -847,24 +892,24 @@ static int	ActiveSndBufIdx;			/* Current working index into above mix buffer */
 
 
 /* Local functions */
-static void	DcAdjuster_Reset(void);
-static void	DcAdjuster_AddSample(int sample);
-static int	DcAdjuster_GetDcLevel(void);
-static void	LowPassFilter_Reset(void);
-static int	LowPassFilter(int in);
+static void	DcAdjuster_Reset	(void);
+static void	DcAdjuster_AddSample	(ymsample sample);
+static ymsample	DcAdjuster_GetDcLevel	(void);
+static void	LowPassFilter_Reset	(void);
+static ymsample	LowPassFilter		(ymsample in);
 
-static ymu8	*Ym2149_EnvInit(ymu8 *pEnv , int a , int b);
-static void	Ym2149_Init(void);
-static void	Ym2149_Reset(void);
+static ymu8	*Ym2149_EnvInit		(ymu8 *pEnv , int a , int b);
+static void	Ym2149_Init		(void);
+static void	Ym2149_Reset		(void);
 
-static ymu32	YM2149_RndCompute(void);
-static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow);
-static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise);
-static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow);
-static ymsample	YM2149_NextSample(void);
+static ymu32	YM2149_RndCompute	(void);
+static ymu32	Ym2149_ToneStepCompute	(ymu8 rHigh , ymu8 rLow);
+static ymu32	Ym2149_NoiseStepCompute	(ymu8 rNoise);
+static ymu32	Ym2149_EnvStepCompute	(ymu8 rHigh , ymu8 rLow);
+static ymsample	YM2149_NextSample	(void);
 
-static void	Sound_SetSamplesPassed(void);
-static void	Sound_GenerateSamples(void);
+static void	Sound_SetSamplesPassed	(void);
+static void	Sound_GenerateSamples	(void);
 
 
 
@@ -884,7 +929,7 @@ static void	DcAdjuster_Reset(void)
 }
 
 
-static void	DcAdjuster_AddSample(int sample)
+static void	DcAdjuster_AddSample(ymsample sample)
 {
 	dc_sum -= dc_buffer[dc_pos];
 	dc_sum += sample;
@@ -894,7 +939,7 @@ static void	DcAdjuster_AddSample(int sample)
 }
 
 
-static int	DcAdjuster_GetDcLevel(void)
+static ymsample	DcAdjuster_GetDcLevel(void)
 {
 	return dc_sum / DC_ADJUST_BUFFERLEN;
 }
@@ -907,9 +952,9 @@ static void	LowPassFilter_Reset(void)
 }
 
 
-static int	LowPassFilter(int in)
+static ymsample	LowPassFilter(ymsample in)
 {
-	int	out;
+	ymsample	out;
  
 	out = (m_lowPassFilter[0]>>2) + (m_lowPassFilter[1]>>1) + (in>>2);
 	m_lowPassFilter[0] = m_lowPassFilter[1];
@@ -1098,6 +1143,34 @@ static void	ym_normalise_5bit_table(ymu16 *in_5bit , yms16 *out_5bit, unsigned i
 /* Various initialisations.					*/
 /*--------------------------------------------------------------*/
 
+
+static void	YM2149_EnvBuild ( void )
+{
+	int	env;
+	int	block;
+	int	vol , inc;
+	int	i;
+
+
+	for ( env=0 ; env<16 ; env++ )				/* 16 possible envelopes */
+		for ( block=0 ; block<3 ; block++ )		/* 3 blocks to define an envelope */
+		{
+			switch ( YmEnvDef[ env ][ block ] ) {
+				case ENV_GODOWN :	vol=31 ; inc=-1 ; break;
+				case ENV_GOUP :		vol=0  ; inc=1 ; break;
+				case ENV_DOWN :		vol=0  ; inc=0 ; break;
+				case ENV_UP :		vol=31 ; inc=0 ; break;
+			}			
+			
+			for ( i=0 ; i<32 ; i++ )		/* 32 volumes per block */
+			{
+				YmEnvWaves[ env ][ block*32 + i ] = YM_MERGE_VOICE ( vol , vol , vol );
+				vol += inc;
+			}
+		}
+}
+
+
 static ymu8	*Ym2149_EnvInit(ymu8 *pEnv , int a , int b)
 {
 	int	i;
@@ -1128,7 +1201,9 @@ static void	Ym2149_Init(void)
 		}
 	}
 
-	/* Build the 16 enveloppe shapes */
+	/* Build the 16 envelope shapes */
+	YM2149_EnvBuild();
+
 	pEnv = &envData[0][0][0];
 	for ( env=0 ; env<16 ; env++ )
 	{
@@ -1180,7 +1255,7 @@ static ymu32	YM2149_RndCompute(void)
 		
 	bit = (RndRack&1) ^ ((RndRack>>2)&1);
 	RndRack = (RndRack>>1) | (bit<<16);
-	return (ymu32)(bit ? 0 : 0xffff);
+	return (bit ? 0 : 0xffff);
 }
 
 
@@ -1209,7 +1284,7 @@ static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 	step *= 32768.0*65536.0;
 #endif
 
-	return (ymu32)step;
+	return step;
 }
 
 
@@ -1231,31 +1306,53 @@ static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
 	step *= 65536.0/2.0;
 #endif
 
-	return (ymu32)step;
+	return step;
 }
 
 
+
+/* Compute envelope's step. The envelope is made of different patterns	*/
+/* of 32 volumes. In each pattern, the volume is changed at frequency	*/
+/* Fe = MasterClock / ( 8 * EnvPer ).					*/
+/* In our case, we use a lower replay freq ; between 2 consecutive calls*/
+/* to envelope's generation, the internal counter will advance 'step'	*/
+/* units, where step = MasterClock / ( 8 * EnvPer * YM_REPLAY_FREQ )	*/
+/* As 'step' requires floating point to be stored, we use left shifting	*/
+/* to multiply 'step' by a fixed amount. All operations are made with	*/
+/* shifted values ; to get the final value, we must right shift the	*/
+/* result. We use '<<24', which gives 8 bits for the integer part, and	*/
+/* the equivalent of 24 bits for the fractional part.			*/
+
 static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
 {
-	int	per;
+	yms64	per;
 
 	per = rHigh;
 	per = (per<<8)+rLow;
-	if (per<3)
-		per=3;					/* needed for e-swat buggy replay */
-//		return 0;
 
 #ifdef YM_INTEGER_ONLY
+#ifdef OLD_ENV
+	if (per<3)
+		per=3;					/* needed for e-swat buggy replay */
+	
 	yms64 step = YM_ATARI_CLOCK;
 	step <<= (16+16-9);
 	step /= (per * YM_REPLAY_FREQ);
+#else
+	yms64 step = YM_ATARI_CLOCK;
+	step <<= 24;
+	if ( per > 0 )
+		step /= (8 * per * YM_REPLAY_FREQ);	/* 0x5ab < step < 0x5ab3f46 at 44.1 kHz */
+	else
+		step /= (8 * 1/2 * YM_REPLAY_FREQ);	/* result for Per=0 is half the result for Per=1 */
+#endif
 #else
 	ymfloat step = YM_ATARI_CLOCK;
 	step /= ((ymfloat)per*512.0 * (ymfloat)YM_REPLAY_FREQ);
 	step *= 65536.0*65536.0;
 #endif
 
-	return (ymu32)step;
+	return step;
 }
 
 
@@ -1268,12 +1365,12 @@ static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
 
 static ymsample	YM2149_NextSample(void)
 {
-	int	sample;
-	int	bt;
-	ymu32	bn;
-	ymu16	Env3Voices;
-	ymu16	Tone3Voices;
-	int	volE;
+	ymsample	sample;
+	int		bt;
+	ymu32		bn;
+	ymu16		Env3Voices;
+	ymu16		Tone3Voices;
+	int		volE;
 
 
 	/* Noise value : 0 or 0xffff */
@@ -1284,13 +1381,20 @@ static ymsample	YM2149_NextSample(void)
 	}
 	bn = currentNoise;				/* 0 or 0xffff */
 
-	/* Get the 5 bits volume corresponding to the current enveloppe's position */
+	/* Get the 5 bits volume corresponding to the current envelope's position */
+#ifdef OLD_ENV
 	volE = envData[envShape][envPhase][envPos>>(32-5)]*2 + 1;	/* 0-15 -> 1-31 */
 	
-	/* Env3Voices contains the current enveloppe volume for all 3 voices */
+	/* Env3Voices contains the current envelope volume for all 3 voices */
 	/* If voice has a fixed volume, env is 0, else env is a 5 bits value */
 	Env3Voices = YM_MERGE_VOICE ( volE , volE , volE );
-	Env3Voices &= EnvMask3Voices;			/* only keep volume for voices using enveloppe */
+#else
+//	Env3Voices = YmEnvWaves[ envShape ][ envPhase + (envPos>>24) ];
+	Env3Voices = YmEnvWaves[ envShape ][ envPos>>24 ];
+#endif
+	Env3Voices &= EnvMask3Voices;			/* only keep volume for voices using envelope */
+
+//fprintf ( stderr , "env %x %x %x\n" , Env3Voices , envStep , envPos );
 	
 	/* Tone3Voices contains the output state of each voice : 0 or 0x1f */
 	bt = ((((yms32)posA)>>31) | mixerTA) & (bn | mixerNA);	/* 0 or 0xffff */
@@ -1300,7 +1404,7 @@ static ymsample	YM2149_NextSample(void)
 	bt = ((((yms32)posC)>>31) | mixerTC) & (bn | mixerNC);
 	Tone3Voices |= ( bt & YM_MASK_1VOICE ) << 10;
 
-	/* Combine fixed volumes and enveloppe volumes and keep the resulting */
+	/* Combine fixed volumes and envelope volumes and keep the resulting */
 	/* volumes depending on the output state of each voice (0 or 0x1f) */
 	Tone3Voices &= ( Env3Voices | Vol3Voices );
 
@@ -1328,6 +1432,7 @@ sample = YmVolumeTable[ ( ( Tone3Voices >> 11 ) & 0xf ) ]
 	posC += stepC;
 	noisePos += noiseStep;
 	envPos += envStep;
+#ifdef OLD_ENV
 	if ( envPhase == 0 )
 	{
 		if ( envPos < envStep )
@@ -1335,7 +1440,14 @@ sample = YmVolumeTable[ ( ( Tone3Voices >> 11 ) & 0xf ) ]
 			envPhase = 1;
 		}
 	}
+#else
+//	if ( ( envPhase == 0 ) && ( envPos >= (2*32) << 24 ) )
+//		envPhase = 2*32;
+//	envPos &= ( 0x40<<24 ) - 1;			/* 0 <= envPos <= 0x3f */
 
+	if ( envPos >= (3*32) << 24 )			/* blocks 0, 1 and 2 were used (envPos 0 to 95) */
+		envPos -= (2*32) << 24;			/* replay/loop blocks 1 and 2 (envPos 32 to 95) */
+#endif
 
 	/* Apply low pass filter ? */
 	if ( UseLowPassFilter )
@@ -1344,7 +1456,7 @@ sample = YmVolumeTable[ ( ( Tone3Voices >> 11 ) & 0xf ) ]
 		sample = LowPassFilter ( sample - DcAdjuster_GetDcLevel() );
 	}
 
-	return (ymsample)sample;
+	return sample;
 }
 
 
@@ -1356,37 +1468,37 @@ void	Sound_WriteReg( int reg , Uint8 data )
 		case 0:
 			SoundRegs[0] = data&255;
 			stepA = Ym2149_ToneStepCompute ( SoundRegs[1] , SoundRegs[0] );
-			if (!stepA) posA = ((ymu32)1)<<31;	// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepA) posA = 1u<<31;		// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 2:
 			SoundRegs[2] = data&255;
 			stepB = Ym2149_ToneStepCompute ( SoundRegs[3] , SoundRegs[2] );
-			if (!stepB) posB = ((ymu32)1)<<31;	// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepB) posB = 1u<<31;		// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 4:
 			SoundRegs[4] = data&255;
 			stepC = Ym2149_ToneStepCompute ( SoundRegs[5] , SoundRegs[4] );
-			if (!stepC) posC = ((ymu32)1)<<31;	// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepC) posC = 1u<<31;		// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 1:
 			SoundRegs[1] = data&15;
 			stepA = Ym2149_ToneStepCompute ( SoundRegs[1] , SoundRegs[0] );
-			if (!stepA) posA = ((ymu32)1)<<31;	// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepA) posA = 1u<<31;		// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 3:
 			SoundRegs[3] = data&15;
 			stepB = Ym2149_ToneStepCompute ( SoundRegs[3] , SoundRegs[2] );
-			if (!stepB) posB = ((ymu32)1)<<31;	// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepB) posB = 1u<<31;		// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 5:
 			SoundRegs[5] = data&15;
 			stepC = Ym2149_ToneStepCompute ( SoundRegs[5] , SoundRegs[4] );
-			if (!stepC) posC = ((ymu32)1)<<31;	// Assume output always 1 if 0 period (for Digi-sample !)
+			if (!stepC) posC = 1u<<31;		// Assume output always 1 if 0 period (for Digi-sample !)
 			break;
 
 		case 6:
@@ -1420,7 +1532,7 @@ void	Sound_WriteReg( int reg , Uint8 data )
 			{
 				EnvMask3Voices &= ~YM_MASK_A;		/* env OFF */
 				Vol3Voices &= ~YM_MASK_A;		/* clear previous vol */
-				Vol3Voices |= SoundRegs[8] * 2 + 1;	/* fixed vol ON */
+				Vol3Voices |= YmVolume4to5[ SoundRegs[8] ];	/* fixed vol ON */
 			}
 			break;
 		
@@ -1435,7 +1547,7 @@ void	Sound_WriteReg( int reg , Uint8 data )
 			{
 				EnvMask3Voices &= ~YM_MASK_B;		/* env OFF */
 				Vol3Voices &= ~YM_MASK_B;		/* clear previous vol */
-				Vol3Voices |= ( SoundRegs[9] * 2 + 1 ) << 5;	/* fixed vol ON */
+				Vol3Voices |= ( YmVolume4to5[ SoundRegs[9] ] ) << 5;	/* fixed vol ON */
 			}
 			break;
 		
@@ -1450,7 +1562,7 @@ void	Sound_WriteReg( int reg , Uint8 data )
 			{
 				EnvMask3Voices &= ~YM_MASK_C;		/* env OFF */
 				Vol3Voices &= ~YM_MASK_C;		/* clear previous vol */
-				Vol3Voices |= ( SoundRegs[10] * 2 + 1 ) << 10;	/* fixed vol ON */
+				Vol3Voices |= ( YmVolume4to5[ SoundRegs[10] ] ) << 10;	/* fixed vol ON */
 			}
 			break;
 
@@ -1479,7 +1591,7 @@ void	Sound_WriteReg( int reg , Uint8 data )
 
 /*-----------------------------------------------------------------------*/
 /**
- * Init random generator, sound tables and enveloppes
+ * Init random generator, sound tables and envelopes
  * (called only once when Hatari starts)
  */
 void Sound_Init(void)
@@ -1602,26 +1714,22 @@ static void Sound_SetSamplesPassed(void)
  */
 static void Sound_GenerateSamples(void)
 {
-	int	nb;
-	int	i = 0;
+	int	i;
 	int	idx;
 	
-	nb = nSamplesToGenerate;
-	if ( nb > 0 )
-	{
-		do
-		{
-			idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
-			MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample();
-			i++;
-		}
-		while (--nb);
+	if (nSamplesToGenerate <= 0)
+		return;
 	
-		DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
-
-		ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
-		nGeneratedSamples += nSamplesToGenerate;
+	for (i = 0; i < nSamplesToGenerate; i++)
+	{
+		idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
+		MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample();
 	}
+	
+	DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
+
+	ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
+	nGeneratedSamples += nSamplesToGenerate;
 }
 
 
