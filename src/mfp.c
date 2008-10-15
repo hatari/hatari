@@ -84,11 +84,14 @@
 /*			is between nStartHBL and nEndHBL (fix Wolfenstein 3D intro).	*/
 /*			In event count mode for timer A and B, set data reg to 255 when	*/
 /*			data reg was 0 (which in fact means 256).			*/
+/* 2008/10/16	[NP]	No need to set data reg to 255 when decrementing a data reg that*/
+/*			was 0, this is already what is implicitly done, because data	*/
+/*			reg for timer A/B is Uint8 (revert 2008/10/04 changes).		*/
 
 
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.50 2008-10-05 17:55:31 npomarede Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.51 2008-10-15 22:14:08 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -419,8 +422,12 @@ void MFP_TimerA_EventCount_Interrupt(void)
 	else
 	{
 		MFP_TA_MAINCOUNTER--;			/* Decrement timer main counter */
-		if ( MFP_TA_MAINCOUNTER < 0 )
-			MFP_TA_MAINCOUNTER = 255;	/* data reg = 0 means 256 in fact */
+		/* As MFP_TA_MAINCOUNTER is Uint8, when we decrement MFP_TA_MAINCOUNTER=0 */
+		/* we go to MFP_TA_MAINCOUNTER=255, which is the wanted behaviour because */
+		/* data reg = 0 means 256 in fact. So, the next 2 lines are redundant. */
+/*		if ( MFP_TA_MAINCOUNTER < 0 )
+			MFP_TA_MAINCOUNTER = 255;
+*/
 	}
 }
 
@@ -441,8 +448,12 @@ void MFP_TimerB_EventCount_Interrupt(void)
 	else
 	{
 		MFP_TB_MAINCOUNTER--;			/* Decrement timer main counter */
-		if ( MFP_TB_MAINCOUNTER < 0 )
-			MFP_TB_MAINCOUNTER = 255;	/* data reg = 0 means 256 in fact */
+		/* As MFP_TB_MAINCOUNTER is Uint8, when we decrement MFP_TB_MAINCOUNTER=0 */
+		/* we go to MFP_TB_MAINCOUNTER=255, which is the wanted behaviour because */
+		/* data reg = 0 means 256 in fact. So, the next 2 lines are redundant. */
+/*		if ( MFP_TB_MAINCOUNTER < 0 )
+			MFP_TB_MAINCOUNTER = 255;
+*/
 	}
 }
 
@@ -1159,8 +1170,11 @@ void MFP_TimerBData_ReadByte(void)
 			TB_count--;
 			if ( TB_count == 0 )			/* going from 1 to 0 : timer restart, reload data reg */
 				TB_count = MFP_TBDR;
-			else if ( TB_count < 0 )		/* going from 0 to -1 : data reg is in fact going from 256 to 255 */
+			/* Going from 0 to -1 : data reg is in fact going from 256 to 255. As TB_count is Uint8, */
+			/* this is already what we get when we decrement TB_count=0. So, the next 2 lines are redundant. */
+/*			else if ( TB_count < 0 )
 				TB_count = 255;
+*/
 		}
 
 		HATARI_TRACE ( HATARI_TRACE_MFP_READ , "mfp read TB data=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
