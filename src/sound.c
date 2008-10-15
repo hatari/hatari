@@ -60,7 +60,7 @@
 /*			a single envelope (32 initial volumes, then 64 repeated values).*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.46 2008-10-14 21:34:14 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.47 2008-10-15 21:06:52 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -797,10 +797,12 @@ static ymu16	YmEnvWaves[ 16 ][ 32 * 3 ];		/* 16 envelopes with 3 blocks of 32 vo
 static int	YmVolumeTable[16] = {62,161,265,377,580,774,1155,1575,2260,3088,4570,6233,9330,13187,21220,32767};
 
 
-/* Table of unsigned 5 bit D/A output level for 1 channels as measured on a real ST (expanded from 4 bits to 5 bits) */
+/* Table of unsigned 5 bit D/A output level for 1 channel as measured on a real ST (expanded from 4 bits to 5 bits) */
+/* Vol 0 should be 310 when measuread as a voltage, but we set it to 0 in order to have a volume=0 matching */
+/* the 0 of a 16 bits unsigned sample (no sound output) */
 static const ymu16 ymout1c5bit[ 32 ] =
 {
-  310,  369,  438,  521,  619,  735,  874, 1039,
+  0 /*310*/,  369,  438,  521,  619,  735,  874, 1039,
  1234, 1467, 1744, 2072, 2463, 2927, 3479, 4135,
  4914, 5841, 6942, 8250, 9806,11654,13851,16462,
 19565,23253,27636,32845,39037,46395,55141,65535
@@ -1370,7 +1372,6 @@ static ymsample	YM2149_NextSample(void)
 	ymu32		bn;
 	ymu16		Env3Voices;
 	ymu16		Tone3Voices;
-	int		volE;
 
 
 	/* Noise value : 0 or 0xffff */
@@ -1383,6 +1384,7 @@ static ymsample	YM2149_NextSample(void)
 
 	/* Get the 5 bits volume corresponding to the current envelope's position */
 #ifdef OLD_ENV
+	int		volE;
 	volE = envData[envShape][envPhase][envPos>>(32-5)]*2 + 1;	/* 0-15 -> 1-31 */
 	
 	/* Env3Voices contains the current envelope volume for all 3 voices */
