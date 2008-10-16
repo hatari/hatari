@@ -60,7 +60,7 @@
 /*			a single envelope (32 initial volumes, then 64 repeated values).*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.47 2008-10-15 21:06:52 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.48 2008-10-16 18:25:38 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -1150,7 +1150,7 @@ static void	YM2149_EnvBuild ( void )
 {
 	int	env;
 	int	block;
-	int	vol , inc;
+	int	vol=0 , inc=0;
 	int	i;
 
 
