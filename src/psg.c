@@ -29,6 +29,13 @@
 /*			have sound.c independant of psg.c (to ease replacement of	*/
 /*			sound.c	by another rendering method).				*/
 /* 2008/08/11	[NP]	Set drive leds.							*/
+/* 2008/10/16	[NP]	When writing to $ff8800, register select should not be masked	*/
+/*			with 0xf, it's a real 8 bits register where all bits are	*/
+/*			significant. This means only value <16 should be considered as	*/
+/*			valid register selection. When reg select is >= 16, all writes	*/
+/*			and reads in $ff8802 should be ignored.				*/
+/*			(fix European Demo Intro, which sets addr reg to 0x10 when	*/
+/*			sample playback is disabled).					*/
 
 
 
@@ -71,7 +78,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.30 2008-09-02 18:56:49 eerot Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.31 2008-10-16 21:30:11 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -131,15 +138,18 @@ void PSG_SelectRegister_WriteByte(void)
 //	M68000_WaitState(4);
 	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
 
-	/* Store register to select (value in bits 0-3). Use IoAccessCurrentAddress
-	 * to be able to handle the PSG mirror registers, too. */
-	PSGRegisterSelect = IoMem[IoAccessCurrentAddress] & 0x0f;
+	/* Store register used to read/write in $ff8802. This register */
+	/* is 8 bits on the YM2149, this means it should not be masked */
+	/* with 0xf. Instead, we keep the 8 bits, but we must ignore */
+	/* read/write to ff8802 when PSGRegisterSelect >= 16 */
+	/* Use IoAccessCurrentAddress to be able to handle the PSG mirror registers, too. */
+	PSGRegisterSelect = IoMem[IoAccessCurrentAddress];
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_REG ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "write ym sel reg=%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+	    HATARI_TRACE_PRINT ( "write ym sel reg=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		PSGRegisterSelect, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	  }
 }
@@ -152,6 +162,10 @@ void PSG_SelectRegister_WriteByte(void)
 void PSG_SelectRegister_ReadByte(void)
 {
 	M68000_WaitState(4);
+
+	/* Is a valid PSG register currently selected ? */
+	if ( PSGRegisterSelect >= 16 )
+		return;					/* not valid, ignore read and do nothing */
 
 	if (PSGRegisterSelect == 14)
 	{
@@ -193,6 +207,18 @@ void PSG_DataRegister_WriteByte(void)
 //	M68000_WaitState(4);
 	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
 
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_DATA ) )
+	  {
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nLineCycles = nFrameCycles % nCyclesPerLine;
+	    HATARI_TRACE_PRINT ( "write ym data reg=0x%x val=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		PSGRegisterSelect, IoMem[IoAccessCurrentAddress], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	  }
+
+	/* Is a valid PSG register currently selected ? */
+	if ( PSGRegisterSelect >= 16 )
+		return;					/* not valid, ignore write and do nothing */
+
 	/* Create samples up until this point with current values */
 	Sound_Update();
 
@@ -209,14 +235,6 @@ void PSG_DataRegister_WriteByte(void)
 		|| ( PSGRegisterSelect == PSG_REG_CHANNEL_C_AMP ) || ( PSGRegisterSelect == PSG_REG_NOISE_GENERATOR ) )
 	  PSGRegisters[PSGRegisterSelect] &= 0x1f;	/* only keep bits 0 - 4 */
 
-
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_DATA ) )
-	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
-	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "write ym data reg=%x val=%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-		PSGRegisterSelect, PSGRegisters[PSGRegisterSelect], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-	  }
 
 
 	if ( PSGRegisterSelect < NUM_PSG_SOUND_REGISTERS )
