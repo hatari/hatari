@@ -1763,7 +1763,8 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>none!</td>
-      <td>Game freezes with DSP emu enabled</td>
+      <td>Game freezes if DSP emu's enabled. Both 1st and 2nd preview
+          versions work, but 1st one has display issues</td>
     </tr>
     <tr>
       <td>Wotanoid</td>
@@ -1851,6 +1852,13 @@ otherwise "-".</p>
       <td>-</td>
       <td>-</td>
       <td>A simple FLE animation player</td>
+    </tr>
+    <tr>
+      <td>Blue & Flu, 4K</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Very nice 4K demos from New Beat</td>
     </tr>
     <tr>
       <td>Bugs from Outer Space</td>
@@ -1987,11 +1995,26 @@ otherwise "-".</p>
       <td>Only music works</td>
     </tr>
     <tr>
+      <td>Maggie 24 intro</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>none!</td>
+      <td>Freezes with DSP "emu" mode, with "none", has awful color flicker</td>
+    </tr>
+    <tr>
       <td>Mahabharata</td>
       <td>partially</td>
       <td>-</td>
       <td>-</td>
       <td>Very slow and misses stuff</td>
+    </tr>
+    <tr>
+      <td>Motion</td>
+      <td>Partially</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>Unfinished Aggression demo with source code.
+          Realtime handwriting screens work with the current DSP emu.</td>
     </tr>
     <tr>
       <td>Mouse</td>
@@ -2071,6 +2094,21 @@ otherwise "-".</p>
       <td>After showing a picture, doesn't do anything else</td>
     </tr>
     <tr>
+      <td>Whirlpool 128k</td>
+      <td>-</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>Just white screen</td>
+    </tr>
+    <tr>
+      <td>Wildfire 4K</td>
+      <td>-</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>With "emu" setting freezes after drawing first Julia fractal, with "dummy"
+          DSP setting just changes colors, but finishes fine</td>
+    </tr>
+    <tr>
       <td>Yepyha</td>
       <td>partially</td>
       <td>-</td>
@@ -2100,6 +2138,21 @@ otherwise "-".</p>
       <td align="center">Sound</td>
       <td align="center">DSP</td>
       <td align="center">Comment</td>
+    </tr>
+    <tr>
+      <td>AceMidi (demo)</td>
+      <td>partially</td>
+      <td>-</td>
+      <td>dummy</td>
+      <td>Freezes with DSP "emu" mode, with "dummy" mode complains about DSP init</td>
+    </tr>
+    <tr>
+      <td>AceTracker</td>
+      <td>-</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>About freezes with "emu" mode, quits with any other DSP
+          mode. Files need to be writable.</td>
     </tr>
     <tr>
       <td>Animator</td>
@@ -2148,16 +2201,23 @@ otherwise "-".</p>
       <td>FalcAMP</td>
       <td>partially</td>
       <td>-</td>
-      <td>-</td>
+      <td>emu</td>
       <td>Freezes when it starts to play MODs, MP3s complain about
-          internal error, needs DSP</td>
+          internal error</td>
     </tr>
     <tr>
       <td>FlaySID</td>
       <td>partially</td>
       <td>-</td>
+      <td>emu</td>
+      <td>Freezes when it starts to play</td>
+    </tr>
+    <tr>
+      <td>FlexTrax</td>
       <td>-</td>
-      <td>Freezes when it starts to play, needs DSP</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>Freezes after startup. Despite docs, graphics look OK only in VGA mode.</td>
     </tr>
     <tr>
       <td>Godpaint</td>
@@ -2202,7 +2262,7 @@ otherwise "-".</p>
  border="0" height="31" width="88"></a></td>
       <td align="right">
       <address><a href="mailto:hatari-devel@sourceforge.net">Hatari
-      developers</a>, September 2008</address>
+      developers</a>, October 2008</address>
       </td>
     </tr>
   </tbody>
