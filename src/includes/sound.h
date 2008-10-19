@@ -42,13 +42,8 @@ extern bool Sound_AreWeRecording(void);
 
 
 /* StSound's internal data types */
-#define YM_INTEGER_ONLY
 
-#ifdef YM_INTEGER_ONLY
 typedef         Sint64			yms64;
-#else
-typedef         float			ymfloat;
-#endif
 
 typedef		Sint8			yms8;
 typedef		Sint16			yms16;

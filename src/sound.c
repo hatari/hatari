@@ -60,7 +60,7 @@
 /*			a single envelope (32 initial volumes, then 64 repeated values).*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.48 2008-10-16 18:25:38 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.49 2008-10-19 13:06:35 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -1276,15 +1276,9 @@ static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 	if (per<=5) 
 		return 0;
 
-#ifdef YM_INTEGER_ONLY
 	yms64 step = YM_ATARI_CLOCK;
 	step <<= (15+16-3);
 	step /= (per * YM_REPLAY_FREQ);
-#else
-	ymfloat step = YM_ATARI_CLOCK;
-	step /= ((ymfloat)per*8.0 * (ymfloat)YM_REPLAY_FREQ);
-	step *= 32768.0*65536.0;
-#endif
 
 	return step;
 }
@@ -1298,15 +1292,9 @@ static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
 	if (per<3)
 		return 0;
 
-#ifdef YM_INTEGER_ONLY
 	yms64 step = YM_ATARI_CLOCK;
 	step <<= (16-1-3);
 	step /= (per * YM_REPLAY_FREQ);
-#else
-	ymfloat step = YM_ATARI_CLOCK;
-	step /= ((ymfloat)per*8.0 * (ymfloat)YM_REPLAY_FREQ);
-	step *= 65536.0/2.0;
-#endif
 
 	return step;
 }
@@ -1332,7 +1320,6 @@ static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
 	per = rHigh;
 	per = (per<<8)+rLow;
 
-#ifdef YM_INTEGER_ONLY
 #ifdef OLD_ENV
 	if (per<3)
 		per=3;					/* needed for e-swat buggy replay */
@@ -1347,11 +1334,6 @@ static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
 		step /= (8 * per * YM_REPLAY_FREQ);	/* 0x5ab < step < 0x5ab3f46 at 44.1 kHz */
 	else
 		step /= (8 * 1/2 * YM_REPLAY_FREQ);	/* result for Per=0 is half the result for Per=1 */
-#endif
-#else
-	ymfloat step = YM_ATARI_CLOCK;
-	step /= ((ymfloat)per*512.0 * (ymfloat)YM_REPLAY_FREQ);
-	step *= 65536.0*65536.0;
 #endif
 
 	return step;
