@@ -4,13 +4,7 @@ TODO
 This lists potential TODO items that aren't listed in the Hatari/UI
 sources.
 
-* Support for enabling printer, serial, midi
-  ("hatari-enable/disable/toggle <device>")  
-  - command line options cannot be used for this as they allow
-    only enabling these
-
-* Paths support needs to check that sound output file name ends
-  either in .ym or .wav
+* Specifying hard disk image and whether to use HD dir or image
 
 * Hatari UI specific configuration which stores:
   - disk image dir (uses Hatari config value as default)
@@ -18,14 +12,16 @@ sources.
     - remove dialog specific load/save stuff
   - list of memory snapshots (10?)
   - screenshot name
-    - needs support also in screenSnapShot.c
+    - needs support also to Hatari src/screenSnapShot.c
 
 * Features for Help menu:
   - README/TODO/Changelog viewer
   - Create empty floppy images
   - MSA converter
 
-* Work on the debug UI (multiple views to memory)
+* Work on the debug UI:
+  - multiple views to memory
+  - trace & debug log viewers
 
 * Put all configuration stuff into single notebook dialog?
 
@@ -34,7 +30,6 @@ sources.
 * Supporting other configurable things in Hatari:
   - toggling disk-b autoinsertion and write protection
   - separate A/B disk paths for images within ZIP archives
-  - specifying hard disk image, whether to use HD dir or image
   - joystick autofire toggling, defining the keys for joyemu
   - keyboard repeat, key mapping type and file
   - CPU level and clock, ST blitter, Falcon DSP

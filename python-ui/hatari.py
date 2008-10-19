@@ -79,6 +79,14 @@ class Hatari:
         "set_path(key, path), sets path with given key"
         return self._send_message("hatari-path %s %s\n" % (key, path))
 
+    def set_device(self, device, enabled):
+        # needed because CLI options cannot disable devices, only enable
+        "set_path(device, enabled), sets whether given device is enabled or not"
+        if enabled:
+            return self._send_message("hatari-enable %s\n" % device)
+        else:
+            return self._send_message("hatari-disable %s\n" % device)
+        
     def trigger_shortcut(self, shortcut):
         "trigger_shortcut(shortcut), triggers given Hatari (keyboard) shortcut"
         return self._send_message("hatari-shortcut %s\n" % shortcut)
@@ -279,11 +287,33 @@ class HatariConfigMapping(ConfigStore):
         return paths
     
     def set_paths(self, paths):
-        self.lock_updates()
         for key, path in paths:
             self.set(self._paths[key][0], self._paths[key][1], path)
             self._hatari.set_path(key, path)
-        self.flush_updates()
+
+    # ------------ midi ---------------
+    def get_midi(self):
+        return self.get("[Midi]", "bEnableMidi")
+
+    def set_midi(self, value):
+        self.set("[Midi]", "bEnableMidi", value)
+        self._hatari.set_device("midi", value)
+
+    # ------------ printer ---------------
+    def get_printer(self):
+        return self.get("[Printer]", "bEnablePrinting")
+
+    def set_printer(self, value):
+        self.set("[Printer]", "bEnablePrinting", value)
+        self._hatari.set_device("printer", value)
+
+    # ------------ RS232 ---------------
+    def get_rs232(self):
+        return self.get("[RS232]", "bEnableRS232")
+
+    def set_rs232(self, value):
+        self.set("[RS232]", "bEnableRS232", value)
+        self._hatari.set_device("rs232", value)
 
     # ------------ machine ---------------
     def get_machine_types(self):

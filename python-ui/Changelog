@@ -1,4 +1,11 @@
+2008-10
+- Support paths & peripherals settings
+2008-09
+- Support for auto frameskip, statusbar and overlay led
+- Remove support for multiple machine setups
+  (now that run-time Hatari config/saving loading works)
 2008-07
+- Support recanim/sound, config load/save and memory snapshot load/save
 - First properly working with menus and toolbars instead of buttons
 - Makefile for installation
 - Can adapt properly also to Hatari window getting smaller

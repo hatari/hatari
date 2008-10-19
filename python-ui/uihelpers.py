@@ -34,7 +34,7 @@ import gobject
 class UInfo:
     """singleton constants for the UI windows,
     one instance is needed to initialize these properly"""
-    version = "v0.8"
+    version = "v0.9"
     name = "Hatari UI"
     logo = "hatari.png"
     icon = "hatari-icon.png"
@@ -210,8 +210,10 @@ def get_save_filename(title, parent, path = None):
 #   but file chooser button doesn't support that
 # i.e. I had to do my own (less nice) container widget...
 class FselEntry():
-    def __init__(self, parent):
+    def __init__(self, parent, validate = None, data = None):
         self._parent = parent
+        self._validate = validate
+        self._validate_data = data
         entry = gtk.Entry()
         entry.set_width_chars(12)
         entry.set_editable(False)
@@ -224,9 +226,17 @@ class FselEntry():
     
     def _select_file_cb(self, widget):
         fname = self._entry.get_text()
-        fname = get_save_filename("Select file", self._parent, fname)
-        if fname:
+        while True:
+            fname = get_save_filename("Select file", self._parent, fname)
+            if not fname:
+                # assume cancel
+                return
+            if self._validate:
+                # filename needs validation and is valid?
+                if not self._validate(self._validate_data, fname):
+                    continue
             self._entry.set_text(fname)
+            return
     
     def set_filename(self, fname):
         self._entry.set_text(fname)

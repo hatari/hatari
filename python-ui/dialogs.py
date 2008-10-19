@@ -264,11 +264,11 @@ class ResetDialog(HatariUIDialog):
 
 
 # ----------------------------------
-# Disk image dialog
+# Floppy image dialog
 
 class DiskDialog(HatariUIDialog):
     def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Disk image settings", 9)
+        table, self.dialog = create_table_dialog(self.parent, "Floppy images", 9)
         
         row = 0
         self.floppy = []
@@ -425,9 +425,28 @@ class JoystickDialog(HatariUIDialog):
 
 class PeripheralDialog(HatariUIDialog):
     def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Peripheral settings", 9)
-        print "TODO: get midi/printer/rs232 stuff"
-        table.show_all()
+        midi = gtk.CheckButton("Enable midi output")
+        midi.set_active(config.get_midi())
+
+        printer = gtk.CheckButton("Enable printer output")
+        printer.set_active(config.get_printer())
+
+        rs232 = gtk.CheckButton("Enable RS232")
+        rs232.set_active(config.get_rs232())
+
+        dialog = gtk.Dialog("Peripherals", self.parent,
+            gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+            (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
+             gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL))
+        dialog.vbox.add(midi)
+        dialog.vbox.add(printer)
+        dialog.vbox.add(rs232)
+        dialog.vbox.show_all()
+
+        self.dialog = dialog
+        self.printer = printer
+        self.rs232 = rs232
+        self.midi = midi
     
     def run(self, config):
         "run(config), show peripherals dialog"
@@ -437,7 +456,11 @@ class PeripheralDialog(HatariUIDialog):
         self.dialog.hide()
         
         if response == gtk.RESPONSE_APPLY:
-            print "TODO: set midi/printer/rs232 stuff"
+            config.lock_updates()
+            config.set_midi(self.midi.get_active())
+            config.set_printer(self.printer.get_active())
+            config.set_rs232(self.rs232.get_active())
+            config.flush_updates()
 
 
 # ---------------------------------------
@@ -451,12 +474,20 @@ class PathDialog(HatariUIDialog):
         row = 0
         self.paths = []
         for (key, path, label) in paths:
-            fsel = FselEntry(self.dialog)
+            fsel = FselEntry(self.dialog, self._validate_fname, key)
             fsel.set_filename(path)
             self.paths.append((key, fsel))
             table_add_widget_row(table, row, label, fsel.get_container())
             row += 1
         table.show_all()
+    
+    def _validate_fname(self, key, fname):
+        if key != "soundout":
+            return True
+        if fname.rsplit(".", 1)[-1].lower() in ("ym", "wav"):
+            return True
+        ErrorDialog(self.dialog).run("Sound output file name:\n\t%s\nneeds to end with '.ym' or '.wav'." % fname)
+        return False
     
     def run(self, config):
         "run(config), show paths dialog"
@@ -464,7 +495,7 @@ class PathDialog(HatariUIDialog):
             self._create_dialog(config)
         response = self.dialog.run()
         self.dialog.hide()
-        
+
         if response == gtk.RESPONSE_APPLY:
             paths = []
             for key, fsel in self.paths:

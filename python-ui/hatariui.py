@@ -401,8 +401,8 @@ class UIActions:
         ("input", gtk.STOCK_SPELL_CHECK, "Inputs...", "<Ctrl>N", "Simulate text input and mouse clicks", cb.inputs),
         ("reset", gtk.STOCK_REFRESH, "Reset...", "<Ctrl>E", "Warm or cold reset Hatari", cb.reset),
         
-        ("disk", gtk.STOCK_FLOPPY, "Disks...", "<Ctrl>D", "Floppy settings", cb.disk),
         ("display", gtk.STOCK_PREFERENCES, "Display...", "<Ctrl>Y", "Display settings", cb.display),
+        ("floppy", gtk.STOCK_FLOPPY, "Floppies...", "<Ctrl>D", "Floppy images", cb.disk),
         ("joystick", gtk.STOCK_CONNECT, "Joysticks...", "<Ctrl>J", "Joystick settings", cb.joystick),
         ("machine", gtk.STOCK_HARDDISK, "Machine...", "<Ctrl>M", "Hatari st/e/tt/falcon configuration", cb.machine),
         ("device", gtk.STOCK_PRINT, "Peripherals...", "<Ctrl>V", "Toggle Midi, Printer, RS232 peripherals", cb.peripheral),
@@ -583,7 +583,7 @@ class UIActions:
         allmenus = (
         ("File", ("load", "save", None, "shot", "recanim", "recsound", None, "quit")),
         ("Emulation", ("run", "pause", "forward", None, "full", None, "input", None, "reset")),
-        ("Devices", ("disk", "display", "joystick", "machine", "device", "sound")),
+        ("Devices", ("display", "floppy", "joystick", "machine", "device", "sound")),
         ("Configuration", ("path", None, "lconfig", "sconfig")),
         ("Debug", ("debug", "trace")),
         ("Help", ("about",))
