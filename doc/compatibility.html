@@ -1203,17 +1203,17 @@ DSP emulation (and even of the programs working, many would use DSP
 for music).  You can select between three different DSP emulation
 modes with the Hatari "--dsp" option:
 <ul>
-  <li><b>none</b>:  Most programs work best with this.</li>
-  <li><b>dummy</b>: Faked DSP response to DSP commands,
-      makes some demos to work.</li>
-  <li><b>emu</b>:   Experimental DSP emulation.</li>
+  <li><b>none</b>: No emulation.
+      Most programs work best with this.</li>
+  <li><b>dummy</b>: Faked DSP response to DSP commands.
+      There're some rare programs that work only with this mode.</li>
+  <li><b>emu</b>: Experimental DSP emulation.
+      (Only) some programs work better with this.</li>
 </ul>
 
 <p>The "dsp" column in tables below tells which DSP emulation
 mode needs to be used for the given program to work.  If it
-doesn't matter, the column contains "-".  Most programs work
-both with "none" and "dummy" setting, if they've been tested
-not to work with others, the value is followed with "!".</p>
+doesn't matter, the column contains "-".</p>
 
 <p>The column for whether the program works and whether
 it has (working) sound have "yes" when this is true and
@@ -1320,14 +1320,14 @@ otherwise "-".</p>
       <td>Columns by Deadheart (demo)</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Nice.  Input doesn't work if DSP emu enabled</td>
     </tr>
     <tr>
       <td>Corsair</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Black screen if DSP emu enabled</td>
     </tr> 
     <tr>
@@ -1391,7 +1391,7 @@ otherwise "-".</p>
       <td>H2O</td>
       <td>-</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Stops when the game starts, with DSP emu enabled, stops earlier</td>
     </tr>
     <tr>
@@ -1412,7 +1412,7 @@ otherwise "-".</p>
       <td>Impulse</td>
       <td>-</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Breakout clone.  Decrunching phase freezes if DSP emu enabled</td>
     </tr>
     <tr>
@@ -1426,7 +1426,7 @@ otherwise "-".</p>
       <td>Lamemine</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy!</td>
+      <td>dummy</td>
       <td></td>
     </tr> 
     <tr>
@@ -1517,7 +1517,7 @@ otherwise "-".</p>
       <td>Painium Disaster</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Some display problems. Stops at first screen if DSP emu enabled</td>
     </tr>
     <tr>
@@ -1538,7 +1538,7 @@ otherwise "-".</p>
       <td>Pong 2K (demo)</td>
       <td>partially</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Stops at first screen if DSP enabled</td>
     </tr>
     <tr>
@@ -1552,7 +1552,7 @@ otherwise "-".</p>
       <td>Push It</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Black screen at startup if DSP emu enabled</td>
     </tr>
     <tr>
@@ -1580,7 +1580,7 @@ otherwise "-".</p>
       <td>Rave</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy!</td>
+      <td>dummy</td>
       <td></td>
     </tr>
     <tr>
@@ -1622,7 +1622,7 @@ otherwise "-".</p>
       <td>Slippery Sam</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Stops at startup if DSP emu enabled</td>
     </tr>
     <tr>
@@ -1657,14 +1657,14 @@ otherwise "-".</p>
       <td>Stbruch</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Stops at startup if DSP emu enabled</td>
     </tr>
     <tr>
       <td>Switch</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Stops at startup if DSP emu enabled</td>
     </tr>
     <tr>
@@ -1720,7 +1720,7 @@ otherwise "-".</p>
       <td>Tron2</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Stops at startup if DSP emu enabled</td>
     </tr>
     <tr>
@@ -1762,7 +1762,7 @@ otherwise "-".</p>
       <td>Willie Adventurer</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Game freezes if DSP emu's enabled. Both 1st and 2nd preview
           versions work, but 1st one has display issues</td>
     </tr>
@@ -1786,7 +1786,7 @@ otherwise "-".</p>
 
 <a name="Falcon demos"></a><h4>Falcon demos</h4>
 
-<p>TODO: Here are listed some Falcon demos:</p>
+<p>Here are listed some Falcon demos:</p>
 <table border="1" cellpadding="3">
   <caption align="bottom">Falcon demos</caption>
   <tbody>
@@ -1864,14 +1864,14 @@ otherwise "-".</p>
       <td>Bugs from Outer Space</td>
       <td>yes</td>
       <td>yes</td>
-      <td>none!</td>
+      <td>none</td>
       <td>When DSP emu enabled, black screen after into</td>
     </tr>
     <tr>
       <td>Built-in Obsolescence</td>
       <td>-</td>
       <td>yes</td>
-      <td>dummy!</td>
+      <td>dummy</td>
       <td>With DSP emu freezes with bg music, with dummy emulation,
           shows also "something" (while generating bus errors)</td>
     </tr>
@@ -1963,21 +1963,21 @@ otherwise "-".</p>
       <td>Ice</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>With DSP emu enabled, freezes at startup</td>
     </tr>
     <tr>
       <td>Illness</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>With DSP emu enabled, freezes at startup</td>
     </tr>
     <tr>
       <td>Illusion 64</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>With DSP emu enabled, freezes at startup</td>
     </tr>
     <tr>
@@ -2005,7 +2005,7 @@ otherwise "-".</p>
       <td>Maggie 24 intro</td>
       <td>yes</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>Freezes with DSP "emu" mode, with "none", has awful color flicker</td>
     </tr>
     <tr>
@@ -2034,7 +2034,7 @@ otherwise "-".</p>
       <td>Oergs by Lazer</td>
       <td>-</td>
       <td>-</td>
-      <td>dummy!</td>
+      <td>dummy</td>
       <td>With "dummy" DSP emu shows "something", otherwise only black screen</td>
     </tr>
     <tr>
@@ -2062,7 +2062,7 @@ otherwise "-".</p>
       <td>Schlumpf by Lazer</td>
       <td>partially</td>
       <td>-</td>
-      <td>dummy!</td>
+      <td>dummy</td>
       <td>Problems with colors etc.  Freezes with other than "dummy" DSP emu setting</td>
     </tr>
     <tr>
@@ -2083,14 +2083,14 @@ otherwise "-".</p>
       <td>Virtual City</td>
       <td>yes</td>
       <td>-</td>
-      <td>emu!</td>
+      <td>emu</td>
       <td>HiColor only, drawing the city requires DSP emulation</td>
     </tr>
     <tr>
       <td>Warum by Lazer</td>
       <td>yes</td>
       <td>-</td>
-      <td>dummy!</td>
+      <td>dummy</td>
       <td>Works fine with "dummy", freezes at startup any other DSP emu setting</td>
     </tr>
     <tr>
@@ -2251,7 +2251,7 @@ otherwise "-".</p>
       <td>Whip</td>
       <td>partially</td>
       <td>-</td>
-      <td>none!</td>
+      <td>none</td>
       <td>UI works, the effects don't.  To see cursor, disable DSP emu.</td>
     </tr>
   </tbody>
