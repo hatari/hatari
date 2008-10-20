@@ -9,10 +9,8 @@
   direct the output to this. These bytes are buffered up (to improve speed) and
   this also allow us to detect when the stream goes into idle - at which point
   we close the file/printer.
-  NOTE - Tab's are converted to spaces as the PC 'Tab' setting differs to that
-  of the ST.
 */
-const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.24 2008-05-25 19:58:56 thothy Exp $";
+const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.25 2008-10-20 20:23:57 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -24,14 +22,12 @@ const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.24 2008-05-25 19:58:56 t
 
 #define PRINTER_FILENAME "hatari.prn"
 
-#define PRINTER_TAB_SETTING  8          /* A 'Tab' on the ST is 8 spaces */
 #define PRINTER_IDLE_CLOSE   (4*50)     /* After 4 seconds, close printer */
 
 #define PRINTER_BUFFER_SIZE  2048       /* 2k buffer which when full will be written to printer/file */
 
 static Uint8 PrinterBuffer[PRINTER_BUFFER_SIZE];   /* Buffer to store character before output */
 static size_t nPrinterBufferChars;      /* # characters in above buffer */
-static int nPrinterBufferCharsOnLine;
 static bool bConnectedPrinter;
 static int nIdleCount;
 
@@ -41,11 +37,8 @@ static FILE *pPrinterHandle;
 /* internal functions */
 static void Printer_EmptyFile(void);
 static void Printer_ResetInternalBuffer(void);
-static void Printer_ResetCharsOnLine(void);
 static bool Printer_EmptyInternalBuffer(void);
-static bool Printer_ValidByte(Uint8 Byte);
 static void Printer_AddByteToInternalBuffer(Uint8 Byte);
-static void Printer_AddTabToInternalBuffer(void);
 
 
 /*-----------------------------------------------------------------------*/
@@ -128,16 +121,6 @@ static void Printer_ResetInternalBuffer(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Reset character line
- */
-static void Printer_ResetCharsOnLine(void)
-{
-	nPrinterBufferCharsOnLine = 0;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Empty to file on disk.
  */
 static void Printer_EmptyFile(void)
@@ -178,25 +161,6 @@ static bool Printer_EmptyInternalBuffer(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return TRUE if byte is standard ASCII character which is OK to output
- */
-static bool Printer_ValidByte(Uint8 Byte)
-{
-	/* Return/New line? */
-	if ((Byte == 0x0d) || (Byte == 0x0a))
-		return TRUE;
-	/* Normal character? */
-	if ((Byte >= 32) && (Byte < 127))
-		return TRUE;
-	/* Tab */
-	if (Byte == '\t')
-		return TRUE;
-	return FALSE;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Add byte to our internal buffer, and when full write out - needed to speed
  */
 static void Printer_AddByteToInternalBuffer(Uint8 Byte)
@@ -206,30 +170,6 @@ static void Printer_AddByteToInternalBuffer(Uint8 Byte)
 		Printer_EmptyInternalBuffer();
 	/* Add character */
 	PrinterBuffer[nPrinterBufferChars++] = Byte;
-	/* Add count of character on line */
-	if (!((Byte == 0xd) || (Byte == 0xa)))
-		nPrinterBufferCharsOnLine++;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Add 'Tab' to internal buffer
- */
-static void Printer_AddTabToInternalBuffer(void)
-{
-	int i,NumSpaces;
-
-	/* Is buffer full? If so empty */
-	if (nPrinterBufferChars >= (PRINTER_BUFFER_SIZE-PRINTER_TAB_SETTING))
-		Printer_EmptyInternalBuffer();
-	/* Add tab - convert to 'PRINTER_TAB_SETTING' space */
-	NumSpaces = PRINTER_TAB_SETTING-(nPrinterBufferCharsOnLine%PRINTER_TAB_SETTING);
-	for(i = 0; i < NumSpaces; i++)
-	{
-		PrinterBuffer[nPrinterBufferChars++] = ' ';
-		nPrinterBufferCharsOnLine++;
-	}
 }
 
 
@@ -254,23 +194,13 @@ bool Printer_TransferByteTo(Uint8 Byte)
 
 		/* Reset the printer */
 		Printer_ResetInternalBuffer();
-		Printer_ResetCharsOnLine();
 	}
 
 	/* Is all OK? */
 	if (bConnectedPrinter)
 	{
-		/* Add byte to our buffer, if is useable character */
-		if (Printer_ValidByte(Byte))
-		{
-			if (Byte == '\t')
-				Printer_AddTabToInternalBuffer();
-			else
-				Printer_AddByteToInternalBuffer(Byte);
-			if (Byte == 0xd)
-				nPrinterBufferCharsOnLine = 0;
-		}
-
+		/* Add byte to our buffer. */
+		Printer_AddByteToInternalBuffer(Byte);
 		return TRUE;    /* OK */
 	}
 	else

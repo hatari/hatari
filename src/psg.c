@@ -78,7 +78,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.31 2008-10-16 21:30:11 npomarede Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.32 2008-10-20 20:23:57 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -95,13 +95,13 @@ const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.31 2008-10-16 21:30:11 npomarede
 #endif
 #include "video.h"
 #include "statusbar.h"
+#include "mfp.h"
 
 
 Uint8 PSGRegisterSelect;        /* 0xff8800 (read/write) */
 Uint8 PSGRegisters[16];         /* Register in PSG, see PSG_REG_xxxx */
 
-static bool bLastWriteToIOB;    /* boolean flag: did the last write to the PSG go to IOB? */
-
+static unsigned int LastStrobe=0; /* Falling edge of Strobe used for printer */
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -111,7 +111,7 @@ void PSG_Reset(void)
 {
 	PSGRegisterSelect = 0;
 	memset(PSGRegisters, 0, sizeof(PSGRegisters));
-	bLastWriteToIOB = FALSE;
+	LastStrobe=0;
 }
 
 
@@ -124,7 +124,6 @@ void PSG_MemorySnapShot_Capture(bool bSave)
 	/* Save/Restore details */
 	MemorySnapShot_Store(&PSGRegisterSelect, sizeof(PSGRegisterSelect));
 	MemorySnapShot_Store(PSGRegisters, sizeof(PSGRegisters));
-	MemorySnapShot_Store(&bLastWriteToIOB, sizeof(bLastWriteToIOB));
 }
 
 
@@ -250,21 +249,23 @@ void PSG_DataRegister_WriteByte(void)
 	 * Port B (Printer port) - writing here needs to be dispatched to the printer
 	 * STROBE (Port A bit5) does a short LOW and back to HIGH when the char is valid
 	 * To print you need to write the character byte to IOB and you need to toggle STROBE
-	 * (like EmuTOS does)....therefore we print when STROBE gets low and last write access to
-	 * the PSG was to IOB
+	 * (like EmuTOS does).
 	 */
 		/* Printer dispatching only when printing is activated */
 		if (ConfigureParams.Printer.bEnablePrinting)
 		{
-			/* Bit 5 - Centronics strobe? If STROBE is low and the last write did go to IOB then
-			 * there is data in PORTB to print/transfer to the emulated Centronics port
+			/* Bit 5 - Centronics strobe? If STROBE is low and the LastStrobe was high,
+					then print/transfer to the emulated Centronics port.
 			 */
-			if ((((PSGRegisters[PSG_REG_IO_PORTA]&(1<<5))==0) && bLastWriteToIOB))
+			if (LastStrobe && ( (PSGRegisters[PSG_REG_IO_PORTA]&(1<<5)) == 0 ))
 			{
 				/* Seems like we want to print something... */
-				Printer_TransferByteTo((unsigned char) PSGRegisters[PSG_REG_IO_PORTB]);
+				Printer_TransferByteTo(PSGRegisters[PSG_REG_IO_PORTB]);
+				/* Initiate a possible GPIP0 Printer BUSY interrupt */
+				MFP_InputOnChannel(MFP_GPIP_0_BIT,MFP_IERB,&MFP_IPRB);
 			}
 		}
+		LastStrobe = PSGRegisters[PSG_REG_IO_PORTA]&(1<<5);
 
 		/* Bit 0-2 : side and drive select */
 		if ( (PSGRegisters[PSG_REG_IO_PORTA]&(1<<1)) == 0 )
@@ -320,13 +321,11 @@ void PSG_DataRegister_WriteByte(void)
 		}
 	
 	}
-
+/*
 	else if ( PSGRegisterSelect == PSG_REG_IO_PORTB )
 	{
-		/* Remember if we wrote to IO Port B */
-		bLastWriteToIOB = TRUE;
 	}
-
+*/
 }
 
 
