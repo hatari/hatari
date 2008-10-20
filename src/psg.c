@@ -78,7 +78,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.32 2008-10-20 20:23:57 thothy Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.33 2008-10-20 20:31:29 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -103,6 +103,7 @@ Uint8 PSGRegisters[16];         /* Register in PSG, see PSG_REG_xxxx */
 
 static unsigned int LastStrobe=0; /* Falling edge of Strobe used for printer */
 
+
 /*-----------------------------------------------------------------------*/
 /**
  * Reset variables used in PSG
@@ -124,6 +125,7 @@ void PSG_MemorySnapShot_Capture(bool bSave)
 	/* Save/Restore details */
 	MemorySnapShot_Store(&PSGRegisterSelect, sizeof(PSGRegisterSelect));
 	MemorySnapShot_Store(PSGRegisters, sizeof(PSGRegisters));
+	MemorySnapShot_Store(&LastStrobe, sizeof(LastStrobe));
 }
 
 
@@ -321,11 +323,6 @@ void PSG_DataRegister_WriteByte(void)
 		}
 	
 	}
-/*
-	else if ( PSGRegisterSelect == PSG_REG_IO_PORTB )
-	{
-	}
-*/
 }
 
 
