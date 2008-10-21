@@ -28,7 +28,7 @@
   TODO:
   - call Statusbar_AddMessage() from log.c?
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.10 2008-09-07 19:24:05 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.11 2008-10-21 19:04:56 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -513,7 +513,6 @@ static void Statusbar_OverlayDrawLed(SDL_Surface *surf, Uint32 color)
 	rect.h -= 2;
 	SDL_FillRect(surf, &OverlayLedRect, LedColorBg);
 	SDL_FillRect(surf, &rect, color);
-	DEBUGPRINT(("Overlay led ON\n"));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -548,6 +547,7 @@ static void Statusbar_OverlayDraw(SDL_Surface *surf)
 		bOverlayState = OVERLAY_NONE;
 	case OVERLAY_DRAWN:
 		SDL_UpdateRects(surf, 1, &OverlayLedRect);
+		DEBUGPRINT(("Overlay LED = %s\n", bOverlayState==OVERLAY_DRAWN?"ON":"OFF"));
 		break;
 	case OVERLAY_NONE:
 		break;
@@ -605,6 +605,7 @@ void Statusbar_Update(SDL_Surface *surf)
 		SDL_FillRect(surf, &FrameSkipsRect, GrayBg);
 		SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, fscount);
 		SDL_UpdateRects(surf, 1, &FrameSkipsRect);
+		DEBUGPRINT(("FS = %s\n", fscount));
 		nOldFrameSkips = nFrameSkips;
 	}
 
