@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.20 2008-09-26 16:39:29 thothy Exp $";
+const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.21 2008-10-21 21:15:09 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -232,7 +232,7 @@ void HostScreen_setWindowSize( Uint32 width, Uint32 height, Uint32 bpp )
 			height *= nScreenZoomY;
 		}
 	}
-	screenheight = height + Statusbar_SetHeight(height, bInFullScreen);
+	screenheight = height + Statusbar_SetHeight(width, height);
 
 	// Select a correct video mode
 	HostScreen_searchVideoMode(&width, &screenheight, &bpp);

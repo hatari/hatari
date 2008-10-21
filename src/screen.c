@@ -32,7 +32,7 @@
 */
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.92 2008-08-19 19:47:29 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.93 2008-10-21 21:15:09 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -383,7 +383,7 @@ static void Screen_SetResolution(void)
 	{
 		sdlVideoFlags  = SDL_SWSURFACE|SDL_HWPALETTE;
 	}
-	Height += Statusbar_SetHeight(Height, bInFullScreen);
+	Height += Statusbar_SetHeight(Width, Height);
 
 	/* Check if we really have to change the video mode: */
 	if (!sdlscrn || sdlscrn->w != Width || sdlscrn->h != Height

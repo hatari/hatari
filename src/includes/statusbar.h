@@ -16,7 +16,7 @@ typedef enum {
 	DRIVE_LED_HD
 } drive_index_t;
 
-extern int Statusbar_SetHeight(int ScreenHeight, bool FullScreen);
+extern int Statusbar_SetHeight(int ScreenWidth, int ScreenHeight);
 extern int Statusbar_GetHeight(void);
 extern void Statusbar_EnableHDLed(void);
 extern void Statusbar_SetFloppyLed(drive_index_t drive, bool state);

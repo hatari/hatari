@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.22 2008-08-19 20:05:45 eerot Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.23 2008-10-21 21:15:09 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -64,7 +64,7 @@ static SGOBJ screendlg[] =
 	{ SGCHECKBOX, 0, 0, 4,3, 12,1, "Fullscreen" },
 	{ SGCHECKBOX, 0, 0, 4,4, 13,1, "Use borders" },
 	{ SGCHECKBOX, 0, 0, 22,3, 18,1, "Zoom ST-low res." },
-	{ SGCHECKBOX, 0, 0, 22,4, 13,1, "Statusbar + floppy LED" },
+	{ SGCHECKBOX, 0, 0, 22,4, 13,1, "Statusbar" },
 	{ SGTEXT, 0, 0, 4,6, 9,1, "Frame skip:" },
 	{ SGRADIOBUT, 0, 0, 17,6, 5,1, "Off" },
 	{ SGRADIOBUT, 0, 0, 24,6, 3,1, "1" },
@@ -282,15 +282,9 @@ void Dialog_ScreenDlg(void)
 	ConfigureParams.Screen.bAllowOverscan = (screendlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
 
 	if (screendlg[DLGSCRN_STATUSBAR].state & SG_SELECTED)
-	{
 		ConfigureParams.Screen.bShowStatusbar = TRUE;
-		ConfigureParams.Screen.bShowDriveLed = TRUE;
-	}
 	else
-	{
 		ConfigureParams.Screen.bShowStatusbar = FALSE;
-		ConfigureParams.Screen.bShowDriveLed = FALSE;
-	}
 
 	if (screendlg[DLGSCRN_ZOOMLOWRES].state & SG_SELECTED)
 		ConfigureParams.Screen.bZoomLowRes = TRUE;

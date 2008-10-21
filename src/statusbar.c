@@ -28,7 +28,7 @@
   TODO:
   - call Statusbar_AddMessage() from log.c?
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.11 2008-10-21 19:04:56 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.12 2008-10-21 21:15:09 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -110,14 +110,14 @@ static int StatusbarHeight;
  * height when screen is (re-)created, or zero if statusbar will
  * not be shown
  */
-int Statusbar_SetHeight(int height, bool fullscreen)
+int Statusbar_SetHeight(int width, int height)
 {
 	ScreenHeight = height;
-	if (ConfigureParams.Screen.bShowStatusbar && !fullscreen) {
-		/* make an assumption about the font size
-		 * that fits into the statusbar
+	if (ConfigureParams.Screen.bShowStatusbar) {
+		/* Should check the same thing as SDLGui_SetScreen()
+		 * does to decide the font size.
 		 */
-		if (height >= 400) {
+		if (width >= 640 && height >= 400) {
 			StatusbarHeight = 24;
 		} else {
 			StatusbarHeight = 12;
