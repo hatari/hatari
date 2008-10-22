@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.78 2008-09-27 14:43:25 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.79 2008-10-22 18:56:43 thothy Exp $";
 
 #include <config.h>
 
@@ -134,6 +134,7 @@ static int DTAIndex;        /* Circular index into above */
 static DTA *pDTA;           /* Our GEMDOS hard drive Disk Transfer Address structure */
 static Uint16 CurrentDrive; /* Current drive (0=A,1=B,2=C etc...) */
 static Uint32 act_pd;       /* Used to get a pointer to the current basepage */
+static Uint16 nAttrSFirst;  /* File attribute for SFirst/Snext */
 
 
 #ifdef HATARI_TRACE_ACTIVATED
@@ -362,32 +363,40 @@ static unsigned char GemDOS_ConvertAttribute(mode_t mode)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Populate the DTA buffer with file info
+ * Populate the DTA buffer with file info.
+ * @return   0 if entry is ok, 1 if entry should be skipped, < 0 for errors.
  */
-static bool PopulateDTA(char *path, struct dirent *file)
+static int PopulateDTA(char *path, struct dirent *file)
 {
 	char tempstr[MAX_GEMDOS_PATH];
 	struct stat filestat;
 	int n;
+	int nFileAttr;
 
 	snprintf(tempstr, sizeof(tempstr), "%s%c%s", path, PATHSEP, file->d_name);
 	n = stat(tempstr, &filestat);
 	if (n != 0)
 	{
 		perror(tempstr);
-		return FALSE;   /* return on error */
+		return -1;   /* return on error */
 	}
 
 	if (!pDTA)
-		return FALSE;   /* no DTA pointer set */
+		return -2;   /* no DTA pointer set */
+
+	/* Check file attributes (check is done according to the Profibuch */
+	nFileAttr = GemDOS_ConvertAttribute(filestat.st_mode);
+	if (nFileAttr != 0 && !((nAttrSFirst|0x21) & nFileAttr))
+		return 1;
+
 	Str_ToUpper(file->d_name);    /* convert to atari-style uppercase */
 	strncpy(pDTA->dta_name,file->d_name,TOS_NAMELEN); /* FIXME: better handling of long file names */
 	do_put_mem_long(pDTA->dta_size, filestat.st_size);
 	do_put_mem_word(pDTA->dta_time, GemDOS_Time2dos(filestat.st_mtime));
 	do_put_mem_word(pDTA->dta_date, GemDOS_Date2dos(filestat.st_mtime));
-	pDTA->dta_attrib = GemDOS_ConvertAttribute(filestat.st_mode);
+	pDTA->dta_attrib = nFileAttr;
 
-	return TRUE;
+	return 0;
 }
 
 
@@ -1773,8 +1782,8 @@ static int GemDOS_Pexec(Uint32 Params)
  */
 static bool GemDOS_SNext(void)
 {
-	struct dirent **temp;
 	int Index;
+	int ret;
 
 	/* Refresh pDTA pointer (from the current basepage) */
 	pDTA = (DTA *)STRAM_ADDR(STMemory_ReadLong(STMemory_ReadLong(act_pd)+32));
@@ -1782,20 +1791,34 @@ static bool GemDOS_SNext(void)
 	/* Was DTA ours or TOS? */
 	if (do_get_mem_long(pDTA->magic) == DTA_MAGIC_NUMBER)
 	{
+		struct dirent **temp;
 
 		/* Find index into our list of structures */
 		Index = do_get_mem_word(pDTA->index) & (MAX_DTAS_FILES-1);
 
-		if (InternalDTAs[Index].centry >= InternalDTAs[Index].nentries)
+		if (nAttrSFirst == 8)
 		{
 			Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
 			return TRUE;
 		}
 
 		temp = InternalDTAs[Index].found;
-		if (PopulateDTA(InternalDTAs[Index].path, temp[InternalDTAs[Index].centry++]) == FALSE)
+		do
+		{
+			if (InternalDTAs[Index].centry >= InternalDTAs[Index].nentries)
+			{
+				Regs[REG_D0] = GEMDOS_ENMFIL;    /* No more files */
+				return TRUE;
+			}
+
+			ret = PopulateDTA(InternalDTAs[Index].path,
+					  temp[InternalDTAs[Index].centry++]);
+		} while (ret == 1);
+
+		if (ret < 0)
 		{
 			Log_Printf(LOG_WARN, "GemDOS_SNext: Error setting DTA.\n");
+			Regs[REG_D0] = GEMDOS_EINTRN;
 			return TRUE;
 		}
 
@@ -1818,14 +1841,13 @@ static bool GemDOS_SFirst(Uint32 Params)
 	char tempstr[MAX_GEMDOS_PATH];
 	char *pszFileName;
 	struct dirent **files;
-	Uint16 Attr;
 	int Drive;
 	DIR *fsdir;
 	int i,j,count;
 
 	/* Find filename to search for */
 	pszFileName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
-	Attr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
+	nAttrSFirst = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
 
 	/* Refresh pDTA pointer (from the current basepage) */
 	pDTA = (DTA *)STRAM_ADDR(STMemory_ReadLong(STMemory_ReadLong(act_pd)+32));
@@ -1848,7 +1870,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 		InternalDTAs[DTAIndex].bUsed = TRUE;
 
 		/* Were we looking for the volume label? */
-		if (Attr == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
+		if (nAttrSFirst == GEMDOS_FILE_ATTRIB_VOLUME_LABEL)
 		{
 			/* Volume name */
 			strcpy(pDTA->dta_name,"EMULATED.001");
@@ -1883,6 +1905,7 @@ static bool GemDOS_SFirst(Uint32 Params)
 		/* count & copy the entries that match our mask and discard the rest */
 		j = 0;
 		for (i=0; i < count; i++)
+		{
 			if (match(tempstr, files[i]->d_name))
 			{
 				InternalDTAs[DTAIndex].found[j] = files[i];
@@ -1891,7 +1914,9 @@ static bool GemDOS_SFirst(Uint32 Params)
 			else
 			{
 				free(files[i]);
+				files[i] = NULL;
 			}
+		}
 		InternalDTAs[DTAIndex].nentries = j; /* set number of legal entries */
 
 		/* No files of that match, return error code */
