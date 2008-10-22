@@ -9,6 +9,8 @@ Contents:
   - Working free/shareware Atari ST demos and games
   - Non-working free/shareware GEM/mono Atari ST games
   - Working free/shareware Atari STE programs
+  - "Almost" working color STE games
+  - Working free/shareware Falcon demos, games and applications
 
 
 Hatari and EmuTOS
@@ -349,6 +351,9 @@ Music Applications:
 - Paula
 - Sirius Player
 
+Most of the non-GEM ST tracker & chip music composer programs
+work also with EmuTOS too (not just STe ones).
+
 
 "Almost" working color STE games
 --------------------------------
@@ -363,6 +368,32 @@ think are preventing these from working properly).
 - Breakdance (another scene game, game freezes when playing)
 - Mr Boomer (all graphics don't show)
 - Pooz (all graphics don't show)
+
+
+Working free/shareware Falcon demos, games and applications
+-----------------------------------------------------------
+
+Missing Videl support in EmuTOS is probably the reason why many
+of the demos and games get wrong video made and their graphics
+look completely broken under EmuTOS.  Following Falcon only
+demos, games and apps work (mostly) fine though.
+
+Demos:
+- Alive (by Fun Industries)
+- Ascii (by Reservoir Gods)
+- ATS (by DHS)
+- Birdshow
+- Blue & Flu 4k (by New Beat)
+- Illusion 64 (by Paranoia)
+- Game of Life 4k (by Aggression)
+- Snowstorm (by Reservoir Gods)
+
+Mostly working applications:
+- AceMidi (sound needs DSP)
+- FlaySID (sound needs DSP)
+- Fractal Playground (parameter input doesn't work)
+- Kronos (benchmark)
+- Whip! (virtual light machine)
 
 
 	- Eero
