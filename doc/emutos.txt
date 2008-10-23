@@ -387,13 +387,43 @@ Demos:
 - Illusion 64 (by Paranoia)
 - Game of Life 4k (by Aggression)
 - Snowstorm (by Reservoir Gods)
+- ZZ 9 Plural Z Alpha (by .tssc)
+
+Games:
+- Blum
+- Columns by Deadheart (demo)
+- Corsair
+- DB 4K
+- Dry Egg (needs >4MB RAM)
+- FalcTron
+- Impurse (nice Breakout clone)
+- Lamemine (needs "dummy" DSP mode in Hatari)
+- Madtris
+- Radical Race (demo)
+- Rave (needs "dummy" DSP mode in Hatari)
+- SBM v0.8 (nice Bomberman clone)
+- Spice (nice Defender clone)
+- Static
+- Steinbruch
+- Tank Blaster
+- Toy Man
+- Vertical Mayhem (nice Columns clone)
+- Willie's Adventure (preview)
+
 
 Mostly working applications:
-- AceMidi (sound needs DSP)
+- AceMidi demo (softsynth sounds needs DSP)
 - FlaySID (sound needs DSP)
 - Fractal Playground (parameter input doesn't work)
 - Kronos (benchmark)
 - Whip! (virtual light machine)
+
+Almost working demos & games:
+- Heretic (screen is messed, slow)
+- Nibe (screen is messed)
+- Bugger, Bunion, SkyFall, Switch, Sworm games by Resorvoir Gods
+  have issues with keyboard input in the main menus
+- Virtual City (needs DSP, city is invisible with EmuTOS)
 
 
 	- Eero
