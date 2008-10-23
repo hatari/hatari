@@ -173,7 +173,7 @@ static void dsp_movep_2(void);
 static void dsp_parmove_read(void);
 static void dsp_parmove_write(void);
 
-static void dsp_pm_read_accu24(int numreg, Uint32 *dest);
+static int dsp_pm_read_accu24(int numreg, Uint32 *dest);
 static void dsp_pm_writereg(int numreg, int position);
 
 static void dsp_pm_0(void);
@@ -1495,7 +1495,7 @@ static void dsp_andi(void)
 
 static void dsp_bchg(void)
 {
-	Uint32 memspace, addr, value, numreg, newcarry, numbit;
+	Uint32 memspace, addr, value, numreg, newcarry, numbit, srcreg;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -1544,7 +1544,7 @@ static void dsp_bchg(void)
 			break;
 		case 3:
 			/* bchg #n,R */
-			numreg = value;
+			srcreg = numreg = value;
 			if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
 				numreg = DSP_REG_A1+(numreg & 1);
 			}
@@ -1556,12 +1556,8 @@ static void dsp_bchg(void)
 				value += (1<<numbit);
 			}
 			dsp_core->registers[numreg] = value;
-			if (((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) && (numbit==23)) {
-				if (newcarry) {
-					dsp_core->registers[DSP_REG_A2+(numreg & 1)]=0x00;
-				} else  {
-					dsp_core->registers[DSP_REG_A2+(numreg & 1)]=0xff;
-				}
+			if (((srcreg==DSP_REG_A) || (srcreg==DSP_REG_B)) && (numbit==23)) {
+				dsp_core->registers[DSP_REG_A2+(srcreg & 1)]= (newcarry ? 0x00 : 0xff);
 			}
 			break;
 	}
@@ -2730,9 +2726,10 @@ static void dsp_parmove_write(void)
 	}
 }
 
-static void dsp_pm_read_accu24(int numreg, Uint32 *dest)
+static int dsp_pm_read_accu24(int numreg, Uint32 *dest)
 {
 	Uint32 scaling, value, numbits;
+	int got_limited=0;
 
 	/* Read an accumulator, stores it limited */
 
@@ -2763,11 +2760,15 @@ static void dsp_pm_read_accu24(int numreg, Uint32 *dest)
 		/* Limited to maximum negative value */
 		*dest=0x00800000;
 		dsp_core->registers[DSP_REG_SR] |= (1<<DSP_SR_L);
+		got_limited=1;
 	} else {
 		/* Limited to maximal positive value */
 		*dest=0x007fffff;
 		dsp_core->registers[DSP_REG_SR] |= (1<<DSP_SR_L);
+		got_limited=1;
 	}	
+
+	return got_limited;
 }
 
 static void dsp_pm_writereg(int numreg, int position)
@@ -3074,93 +3075,58 @@ static void dsp_pm_4x(int immediat, Uint32 l_addr)
 	if (cur_inst & (1<<15)) {
 		/* Write D */
 
-		/* S1 */
+		/* Sources */
 		value = read_memory(DSP_SPACE_X,l_addr);
-		tmp_parmove_src[0][0] = 0x000000;
-		if (value & (1<<23)) {
-			tmp_parmove_src[0][0] = 0x0000ff;
-		}
+		tmp_parmove_src[0][0] = (value & (1<<23) ? 0xff : 0);
 		tmp_parmove_src[0][1] = value & BITMASK(registers_mask[registers_lmove[numreg][0]]);
 		tmp_parmove_src[0][2] = 0x000000;
-
-		/* S2 */
 		value = read_memory(DSP_SPACE_Y,l_addr);
-		tmp_parmove_src[1][0] = 0x000000;
-		if (value & (1<<23)) {
-			tmp_parmove_src[1][0] = 0x0000ff;
-		}
-		tmp_parmove_src[1][1] = value & BITMASK(registers_mask[registers_lmove[numreg][1]]);
-		tmp_parmove_src[1][2] = 0x000000;
 
-		/* D1 */
-		tmp_parmove_dest[0][0].host_pointer = NULL;
-		tmp_parmove_start[0]=1;
-		tmp_parmove_len[0]=1;
-		if (numreg >= 4) {
-			tmp_parmove_dest[0][0].host_pointer = &dsp_core->registers[DSP_REG_A2+(numreg & 1)];
-			tmp_parmove_start[0]=0;
-			tmp_parmove_len[0]=2;
-		}
-		numreg2 = registers_lmove[numreg][0];
-		if ((numreg2 == DSP_REG_A) || (numreg2 == DSP_REG_B)) {
-			tmp_parmove_dest[0][1].host_pointer = &dsp_core->registers[DSP_REG_A1+(numreg2 & 1)];
+		if (registers_lmove[numreg][0]==registers_lmove[numreg][1]) {
+			/* Write to 56bit accumulator, setup a single transfer as 56 bit */
+			tmp_parmove_src[0][2] = value & BITMASK(registers_mask[registers_lmove[numreg][1]]);
 		} else {
-			tmp_parmove_dest[0][1].host_pointer = &dsp_core->registers[numreg2];
-		}
-		if (numreg >= 6) {
-			tmp_parmove_dest[0][2].host_pointer = &dsp_core->registers[DSP_REG_A0+(numreg & 1)];
-			tmp_parmove_start[0]=0;
-			tmp_parmove_len[0]=3;
+			/* Writes to 24bit registers, setup second 24 bit transfer */
+			tmp_parmove_src[1][0] = (value & (1<<23) ? 0xff : 0);
+			tmp_parmove_src[1][1] = value & BITMASK(registers_mask[registers_lmove[numreg][1]]);
+			tmp_parmove_src[1][2] = 0x000000;
 		}
 
+		/* Destinations */
+		dsp_pm_writereg(registers_lmove[numreg][0], 0);
 		tmp_parmove_type[0]=0;
 
-		/* D2 */
-		tmp_parmove_dest[1][0].host_pointer = NULL;
-		tmp_parmove_start[1]=1;
-		tmp_parmove_len[1]=1;
-		if (numreg >= 4) {
-			tmp_parmove_dest[1][0].host_pointer = &dsp_core->registers[DSP_REG_A2+(numreg & 1)];
-			tmp_parmove_start[1]=0;
-			tmp_parmove_len[1]=2;
+		if (registers_lmove[numreg][0]!=registers_lmove[numreg][1]) {
+			/* Two 24 or 56 bits registers */
+			dsp_pm_writereg(registers_lmove[numreg][1], 1);
+			tmp_parmove_type[1]=0;
 		}
-		numreg2 = registers_lmove[numreg][1];
-		if ((numreg2 == DSP_REG_A) || (numreg2 == DSP_REG_B)) {
-			tmp_parmove_dest[1][1].host_pointer = &dsp_core->registers[DSP_REG_A1+(numreg2 & 1)];
-		} else {
-			tmp_parmove_dest[1][1].host_pointer = &dsp_core->registers[numreg2];
-		}
-		if (numreg >= 6) {
-			tmp_parmove_dest[1][2].host_pointer = &dsp_core->registers[DSP_REG_A0+(numreg & 1)];
-			tmp_parmove_start[1]=0;
-			tmp_parmove_len[1]=3;
-		}
-
-		tmp_parmove_type[1]=0;
 	} else {
 		/* Read S */
 
-		/* S1 */
-		numreg2 = registers_lmove[numreg][0];
-		if (numreg>=4) {
-			/* A, B, AB, BA */
-			dsp_pm_read_accu24(numreg2, &tmp_parmove_src[0][1]); 
+		/* Sources */
+		if (numreg<4) {
+			/* Two 24 bits tranfers */
+			tmp_parmove_src[0][1] = dsp_core->registers[registers_lmove[numreg][0]];
+			tmp_parmove_src[1][1] = dsp_core->registers[registers_lmove[numreg][1]];
+		} else if (numreg<6) {
+			/* Single accumulator transfer */
+			numreg2 = registers_lmove[numreg][0];
+			if (dsp_pm_read_accu24(numreg2, &tmp_parmove_src[0][1])) {
+				/* Was limited, set lower part */
+				tmp_parmove_src[1][1] = (tmp_parmove_src[0][1] & (1<<23) ? 0 : 0xffffff);
+			} else {
+				/* Not limited */
+				tmp_parmove_src[1][1] = dsp_core->registers[DSP_REG_A0+(numreg2 & 1)];
+			}
 		} else {
-			tmp_parmove_src[0][1] = dsp_core->registers[numreg2];
+			/* Two accumulators tranfers */
+			dsp_pm_read_accu24(registers_lmove[numreg][0], &tmp_parmove_src[0][1]); 
+			dsp_pm_read_accu24(registers_lmove[numreg][1], &tmp_parmove_src[1][1]); 
 		}
-		
-		/* S2 */
-		numreg2 = registers_lmove[numreg][1];
-		if (numreg>=4) {
-			/* A, B, AB, BA */
-			dsp_pm_read_accu24(numreg2, &tmp_parmove_src[1][1]); 
-		} else {
-			tmp_parmove_src[1][1] = dsp_core->registers[numreg2];
-		}
-		
+				
 		/* D1 */
 		tmp_parmove_dest[0][1].dsp_address=l_addr;
-
 		tmp_parmove_start[0]=1;
 		tmp_parmove_len[0]=1;
 		
@@ -3169,7 +3135,6 @@ static void dsp_pm_4x(int immediat, Uint32 l_addr)
 
 		/* D2 */
 		tmp_parmove_dest[1][1].dsp_address=l_addr;
-
 		tmp_parmove_start[1]=1;
 		tmp_parmove_len[1]=1;
 
@@ -4052,8 +4017,8 @@ static void dsp_lsl(void)
 
 	newcarry = (dsp_core->registers[DSP_REG_A1+numreg]>>23) & 1;
 
-	dsp_core->registers[DSP_REG_A1+numreg] &= BITMASK(24);
 	dsp_core->registers[DSP_REG_A1+numreg] <<= 1;
+	dsp_core->registers[DSP_REG_A1+numreg] &= BITMASK(24);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_C)|(1<<DSP_SR_N)|(1<<DSP_SR_Z)|(1<<DSP_SR_V));
 	dsp_core->registers[DSP_REG_SR] |= newcarry;
@@ -4069,8 +4034,8 @@ static void dsp_lsr(void)
 
 	newcarry = dsp_core->registers[DSP_REG_A1+numreg] & 1;
 
-	dsp_core->registers[DSP_REG_A1+numreg] &= BITMASK(24);
 	dsp_core->registers[DSP_REG_A1+numreg] >>= 1;
+	/*dsp_core->registers[DSP_REG_A1+numreg] &= BITMASK(24);*/
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_C)|(1<<DSP_SR_N)|(1<<DSP_SR_Z)|(1<<DSP_SR_V));
 	dsp_core->registers[DSP_REG_SR] |= newcarry;
