@@ -8,7 +8,7 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.25 2008-05-09 22:37:54 eerot Exp $";
+const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.26 2008-10-25 22:32:15 eerot Exp $";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -164,7 +164,7 @@ static void DebugUI_SaveBin(char *args)
 
 	if (sscanf(args, "%s%s%lx%lx", dummy, filename, &address, &bytes) != 4)
 	{
-		fprintf(stderr, "  Invalid arguments!");
+		fprintf(stderr, "  Invalid arguments!\n");
 		return;
 	}
 	address &= 0x00FFFFFF;
