@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.36 2008-06-15 12:02:15 eerot Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.37 2008-10-25 20:19:44 eerot Exp $";
 
 #include <SDL.h>
 
@@ -180,9 +180,9 @@ static void ShortCut_BossKey(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Shorcut to debug interface
+ * Shorcut to pause or debug interface
  */
-static void ShortCut_Debug(void)
+static void ShortCut_Pause(void)
 {
 	if (bEnableDebug)
 	{
@@ -190,6 +190,11 @@ static void ShortCut_Debug(void)
 		if (bInFullScreen)
 			Screen_ReturnFromFullScreen();
 		DebugUI();
+	}
+	else
+	{
+		if (!Main_UnPauseEmulation())
+			Main_PauseEmulation();
 	}
 }
 
@@ -240,8 +245,8 @@ void ShortCut_ActKey(void)
 	 case SHORTCUT_SOUND:
 		ShortCut_SoundOnOff();         /* Enable/disable sound */
 		break;
-	 case SHORTCUT_DEBUG:
-		ShortCut_Debug();              /* Invoke Debug UI */
+	 case SHORTCUT_PAUSE:
+		ShortCut_Pause();              /* Invoke Pause or Debug UI */
 		break;
 	 case SHORTCUT_QUIT:
 		Main_RequestQuit();

@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Main_rcsid[] = "Hatari $Id: main.c,v 1.143 2008-09-20 11:28:57 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: main.c,v 1.144 2008-10-25 20:19:44 eerot Exp $";
 
 #include <time.h>
 #include <SDL.h>
@@ -53,6 +53,7 @@ const char Main_rcsid[] = "Hatari $Id: main.c,v 1.143 2008-09-20 11:28:57 thothy
 
 bool bQuitProgram = FALSE;                /* Flag to quit program cleanly */
 bool bEnableDebug = FALSE;                /* Enable debug UI? */
+
 static bool bEmulationActive = TRUE;      /* Run emulation when started */
 static bool bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
 static bool bIgnoreNextMouseMotion = FALSE;  /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
@@ -87,30 +88,41 @@ void Main_MemorySnapShot_Capture(bool bSave)
 /*-----------------------------------------------------------------------*/
 /**
  * Pause emulation, stop sound
+ * 
+ * Return FALSE if already paused
  */
-void Main_PauseEmulation(void)
+bool Main_PauseEmulation(void)
 {
-	if ( bEmulationActive )
-	{
-		Audio_EnableAudio(FALSE);
-		bEmulationActive = FALSE;
-	}
+	if ( !bEmulationActive )
+		return FALSE;
+
+	Audio_EnableAudio(FALSE);
+	bEmulationActive = FALSE;
+	
+	Statusbar_AddMessage("Emulation paused", 1);
+	/* make sure msg gets shown */
+	Screen_Draw();
+	return TRUE;
 }
 
 /*-----------------------------------------------------------------------*/
 /**
- * Start emulation
+ * Start/continue emulation
+ * 
+ * Return FALSE if already running
  */
-void Main_UnPauseEmulation(void)
+bool Main_UnPauseEmulation(void)
 {
-	if ( !bEmulationActive )
-	{
-		Sound_ResetBufferIndex();
-		Audio_EnableAudio(ConfigureParams.Sound.bEnableSound);
-		Screen_SetFullUpdate();       /* Cause full screen update (to clear all) */
+	if ( bEmulationActive )
+		return FALSE;
 
-		bEmulationActive = TRUE;
-	}
+	Sound_ResetBufferIndex();
+	Audio_EnableAudio(ConfigureParams.Sound.bEnableSound);
+	Screen_SetFullUpdate();       /* Cause full screen update (to clear all) */
+	
+	bEmulationActive = TRUE;
+	fprintf(stderr, "Emulation continued\n");
+	return TRUE;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -300,12 +312,29 @@ static void Main_HandleMouseMotion(SDL_Event *pEvent)
 void Main_EventHandler(void)
 {
 	SDL_Event event;
-
-	/* check remote process control */
-	Control_CheckUpdates();
+	int ok;
 	
-	if (SDL_PollEvent(&event))
+	do
 	{
+		/* check remote process control */
+		Control_CheckUpdates();
+
+		if ( bEmulationActive )
+		{
+			ok = SDL_PollEvent(&event);
+		}
+		else
+		{
+			ShortCut_ActKey();
+			/* last (shortcut) event unpaused? */
+			if ( bEmulationActive )
+				break;
+			ok = SDL_WaitEvent(&event);
+		}
+		if (!ok)
+		{
+			continue;
+		}
 		switch (event.type)
 		{
 
@@ -373,7 +402,7 @@ void Main_EventHandler(void)
 			Keymap_KeyUp(&event.key.keysym);
 			break;
 		}
-	}
+	} while (!(bEmulationActive || bQuitProgram));
 }
 
 
@@ -386,7 +415,7 @@ static void Main_Init(void)
 	/* Open debug log file */
 	if (!Log_Init())
 	{
-		fprintf(stderr, "Logging/tracing initialization failed");
+		fprintf(stderr, "Logging/tracing initialization failed\n");
 		exit(-1);
 	}
 	Log_Printf(LOG_INFO, PROG_NAME ", compiled on:  " __DATE__ ", " __TIME__ "\n");
@@ -555,14 +584,13 @@ int main(int argc, char *argv[])
 	setenv("SDL_VIDEO_X11_WMCLASS", "hatari", 1);
 #endif
 
-	/* queue a message for user */
-	if (ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] == SDLK_F12) {
-		Statusbar_AddMessage("Press F12 for Options", 8);
-	}
-
 	/* Init emulator system */
 	Main_Init();
 
+	/* queue a message for user */
+	if (ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] == SDLK_F12) {
+		Statusbar_AddMessage("Press F12 for Options", 6);
+	}
 	/* update TOS information etc loaded by Main_Init() */
 	Statusbar_UpdateInfo();
 	

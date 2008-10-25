@@ -47,8 +47,8 @@ extern bool bQuitProgram;
 extern bool bEnableDebug;
 
 extern void Main_MemorySnapShot_Capture(bool bSave);
-extern void Main_PauseEmulation(void);
-extern void Main_UnPauseEmulation(void);
+extern bool Main_PauseEmulation(void);
+extern bool Main_UnPauseEmulation(void);
 extern void Main_RequestQuit(void);
 extern void Main_WaitOnVbl(void);
 extern void Main_WarpMouse(int x, int y);
