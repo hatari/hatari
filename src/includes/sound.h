@@ -41,7 +41,7 @@ extern bool Sound_AreWeRecording(void);
 #include <SDL_types.h>
 
 
-/* StSound's internal data types */
+/* Internal data types */
 
 typedef         Sint64			yms64;
 
@@ -53,9 +53,13 @@ typedef		Uint8			ymu8;
 typedef		Uint16			ymu16;
 typedef		Uint32			ymu32;
 
-typedef		yms16			ymsample;	/* StSound emulator renders mono 16bits signed PCM samples */
+typedef		yms16			ymsample;	/* Output samples are mono 16bits signed PCM */
 
 
+#define YM_LINEAR_MIXING		1		/* Use ymout1c5bit[] to build ymout5[] */
+#define YM_TABLE_MIXING			2		/* Use volumetable_original to build ymout5[] */
+
+extern int	YmVolumeMixing;
 extern bool	UseLowPassFilter;
 
 extern void Sound_Init(void);
