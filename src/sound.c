@@ -58,9 +58,11 @@
 /*			New version of Ym2149_EnvStepCompute to handle 5 bits volumes.	*/
 /*			Function YM2149_EnvBuild to compute the 96 volumes that define	*/
 /*			a single envelope (32 initial volumes, then 64 repeated values).*/
+/* 2008/10/26	[NP]	Correctly save/restore all necessary variables in		*/
+/*			Sound_MemorySnapShot_Capture.					*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.51 2008-10-25 21:25:26 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.52 2008-10-25 22:34:01 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -1599,20 +1601,37 @@ void Sound_ResetBufferIndex(void)
  */
 void Sound_MemorySnapShot_Capture(bool bSave)
 {
-	Uint32	dummy;
 	/* Save/Restore details */
-//	MemorySnapShot_Store(ChannelFreq, sizeof(ChannelFreq));
-//	MemorySnapShot_Store(&EnvelopeFreq, sizeof(EnvelopeFreq));
-//	MemorySnapShot_Store(&NoiseFreq, sizeof(NoiseFreq));
-	
-	
-/* TODO : save SoundRegs/step/pos/Vol3Voices/EnvMask3Voices */
+	MemorySnapShot_Store(&stepA, sizeof(stepA));
+	MemorySnapShot_Store(&stepB, sizeof(stepB));
+	MemorySnapShot_Store(&stepC, sizeof(stepC));
+	MemorySnapShot_Store(&posA, sizeof(posA));
+	MemorySnapShot_Store(&posB, sizeof(posB));
+	MemorySnapShot_Store(&posC, sizeof(posC));
 
-	MemorySnapShot_Store(&dummy, sizeof(dummy));
-	MemorySnapShot_Store(&dummy, sizeof(dummy));
-	MemorySnapShot_Store(&dummy, sizeof(dummy));
-	MemorySnapShot_Store(&dummy, sizeof(dummy));
-	MemorySnapShot_Store(&dummy, sizeof(dummy));
+	MemorySnapShot_Store(&mixerTA, sizeof(mixerTA));
+	MemorySnapShot_Store(&mixerTB, sizeof(mixerTB));
+	MemorySnapShot_Store(&mixerTC, sizeof(mixerTC));
+	MemorySnapShot_Store(&mixerNA, sizeof(mixerNA));
+	MemorySnapShot_Store(&mixerNB, sizeof(mixerNB));
+	MemorySnapShot_Store(&mixerNC, sizeof(mixerNC));
+
+	MemorySnapShot_Store(&noiseStep, sizeof(noiseStep));
+	MemorySnapShot_Store(&noisePos, sizeof(noisePos));
+	MemorySnapShot_Store(&currentNoise, sizeof(currentNoise));
+	MemorySnapShot_Store(&RndRack, sizeof(RndRack));
+	
+	MemorySnapShot_Store(&envStep, sizeof(envStep));
+	MemorySnapShot_Store(&envPos, sizeof(envPos));
+	MemorySnapShot_Store(&envShape, sizeof(envShape));
+	
+	MemorySnapShot_Store(&EnvMask3Voices, sizeof(EnvMask3Voices));
+	MemorySnapShot_Store(&Vol3Voices, sizeof(Vol3Voices));
+	
+	MemorySnapShot_Store(SoundRegs, sizeof(SoundRegs));
+
+	MemorySnapShot_Store(&YmVolumeMixing, sizeof(YmVolumeMixing));
+	MemorySnapShot_Store(&UseLowPassFilter, sizeof(UseLowPassFilter));
 }
 
 
