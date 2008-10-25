@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Main_rcsid[] = "Hatari $Id: main.c,v 1.144 2008-10-25 20:19:44 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: main.c,v 1.145 2008-10-25 20:31:56 eerot Exp $";
 
 #include <time.h>
 #include <SDL.h>
@@ -89,7 +89,7 @@ void Main_MemorySnapShot_Capture(bool bSave)
 /**
  * Pause emulation, stop sound
  * 
- * Return FALSE if already paused
+ * Return TRUE if paused now, FALSE if was already paused
  */
 bool Main_PauseEmulation(void)
 {
@@ -109,7 +109,7 @@ bool Main_PauseEmulation(void)
 /**
  * Start/continue emulation
  * 
- * Return FALSE if already running
+ * Return TRUE if continued, FALSE if was already running
  */
 bool Main_UnPauseEmulation(void)
 {

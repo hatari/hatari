@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.37 2008-10-25 20:19:44 eerot Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.38 2008-10-25 20:31:56 eerot Exp $";
 
 #include <SDL.h>
 
@@ -186,10 +186,16 @@ static void ShortCut_Pause(void)
 {
 	if (bEnableDebug)
 	{
-		/* Call the debugger */
+		int running;
+		
 		if (bInFullScreen)
 			Screen_ReturnFromFullScreen();
+
+		/* Call the debugger */
+		running = Main_PauseEmulation();
 		DebugUI();
+		if (running)
+			Main_UnPauseEmulation();
 	}
 	else
 	{
