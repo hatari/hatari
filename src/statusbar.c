@@ -25,10 +25,17 @@
   - If other information shown by Statusbar (TOS version etc) changes,
     call Statusbar_UpdateInfo()
 
+  CHANGES
+  2008-10-26:
+  - In fullscreen video mode may not match the requested size.
+    Disable statusbar if smaller, re-calculate vars if larger.
+
   TODO:
+  - re-calculate colors on each update to make sure they're
+    correct in Falcon & TT 8-bit palette modes?
   - call Statusbar_AddMessage() from log.c?
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.12 2008-10-21 21:15:09 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.13 2008-10-25 22:20:28 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -189,7 +196,8 @@ static void Statusbar_OverlayInit(const SDL_Surface *surf)
 /*-----------------------------------------------------------------------*/
 /**
  * (re-)initialize statusbar internal variables for given screen surface
- * (sizes need to be re-calculated in case screen size changes etc).
+ * (sizes&colors may need to be re-calculated for the new SDL surface)
+ * and draw the statusbar background.
  */
 void Statusbar_Init(SDL_Surface *surf)
 {
@@ -213,20 +221,29 @@ void Statusbar_Init(SDL_Surface *surf)
 		Led[i].state = Led[i].oldstate = FALSE;
 		Led[i].timeout = 0;
 	}
-
 	Statusbar_OverlayInit(surf);
+	
+	/* disable statusbar if it doesn't fit to video mode */
+	if (surf->h < ScreenHeight + StatusbarHeight) {
+		StatusbarHeight = 0;
+	}
 	if (!StatusbarHeight) {
 		return;
 	}
-
-	/* Statusbar_SetHeight() not called before this? */
-	assert(surf->h == ScreenHeight + StatusbarHeight);
 
 	/* prepare fonts */
 	SDLGui_Init();
 	SDLGui_SetScreen(surf);
 	SDLGui_GetFontSize(&fontw, &fonth);
-	assert(fonth+2 < StatusbarHeight);
+
+	/* video mode didn't match, need to recalculate sizes */
+	if (surf->h > ScreenHeight + StatusbarHeight) {
+		StatusbarHeight = fonth + 2;
+		/* actually statusbar vertical offset */
+		ScreenHeight = surf->h - StatusbarHeight;
+	} else {
+		assert(fonth+2 < StatusbarHeight);
+	}
 
 	/* draw statusbar background gray so that text shows */
 	sbarbox.x = 0;
@@ -575,7 +592,7 @@ void Statusbar_Update(SDL_Surface *surf)
 		return;
 	}
 	assert(surf);
-	/* Statusbar_SetHeight() not called before this? */
+	/* Statusbar_Init() not called before this? */
 	assert(surf->h == ScreenHeight + StatusbarHeight);
 
 	rect = LedRect;
