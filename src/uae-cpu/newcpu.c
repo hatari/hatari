@@ -75,7 +75,7 @@
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.59 2008-10-08 22:34:53 npomarede Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.60 2008-10-25 22:31:54 eerot Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -916,8 +916,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     /* Set PC and flags */
     if (bEnableDebug && get_long (regs.vbr + 4*nr) == 0) {
         write_log("Uninitialized exception handler #%i!\n", nr);
-	if (bEnableDebug)
-	      DebugUI();
+	DebugUI();
     }
     m68k_setpc (get_long (regs.vbr + 4*nr));
     fill_prefetch_0 ();
