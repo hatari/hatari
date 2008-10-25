@@ -6,7 +6,7 @@
 
   This code processes commands from the Hatari control socket
 */
-const char control_rcsid[] = "Hatari $Id: control.c,v 1.5 2008-07-30 16:48:33 eerot Exp $";
+const char control_rcsid[] = "Hatari $Id: control.c,v 1.6 2008-10-25 20:55:50 eerot Exp $";
 
 #include "config.h"
 #if HAVE_UNIX_DOMAIN_SOCKETS
@@ -43,7 +43,11 @@ typedef enum {
 /* socket from which control command line options are read */
 static int ControlSocket;
 /* Whether to send embedded window info */
-static bool ControlSendEmbedInfo;
+static bool bSendEmbedInfo;
+
+/* pre-declared local functions */
+static int Control_GetUISocket(void);
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -309,17 +313,13 @@ static bool Control_ProcessBuffer(char *buffer)
 		} else {
 			if (strcmp(cmd, "hatari-embed-info") == 0) {
 				fprintf(stderr, "Embedded window ID change messages = ON\n");
-				ControlSendEmbedInfo = TRUE;
+				bSendEmbedInfo = TRUE;
 			} else if (strcmp(cmd, "hatari-stop") == 0) {
-				if (!paused) {
-					fprintf(stderr, "Hatari emulation stopped\n");
-					paused = TRUE;
-				}
+				Main_PauseEmulation();
+				paused = TRUE;
 			} else if (strcmp(cmd, "hatari-cont") == 0) {
-				if (paused) {
-					fprintf(stderr, "Hatari emulation continued\n");
-					paused = FALSE;
-				}
+				Main_UnPauseEmulation();
+				paused = FALSE;
 			} else {
 				ok = Control_Usage(cmd);
 			}
@@ -361,7 +361,17 @@ void Control_CheckUpdates(void)
 		FD_ZERO(&readfds);
 		FD_SET(sock, &readfds);
 		if (paused) {
-			status = select(sock+1, &readfds, NULL, NULL, NULL);
+			/* return only when there're UI events (redraws etc)
+			 * to save battery as SDL constantly busyloops
+			 */
+			int uisock = Control_GetUISocket();
+			if (uisock) {
+				FD_SET(uisock, &readfds);
+				if (uisock < sock) {
+					uisock = sock;
+				}
+			}
+			status = select(uisock+1, &readfds, NULL, NULL, NULL);
 		} else {
 			status = select(sock+1, &readfds, NULL, NULL, &tv);
 		}
@@ -369,7 +379,11 @@ void Control_CheckUpdates(void)
 			perror("Control socket select() error");
 			return;
 		}
+		/* nothing to process here */
 		if (status == 0) {
+			return;
+		}
+		if (!FD_ISSET(sock, &readfds)) {
 			return;
 		}
 		
@@ -493,7 +507,7 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 		XReparentWindow(display, sdl_win, parent_win, 0, 0);
 
 		/* whether to send new window size */
-		if (ControlSendEmbedInfo && ControlSocket) {
+		if (bSendEmbedInfo && ControlSocket) {
 			fprintf(stderr, "New %dx%d SDL window with ID: %lx\n",
 				width, height, sdl_win);
 			sprintf(buffer, "%dx%d", width, height);
@@ -503,7 +517,25 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 	info.info.x11.unlock_func();
 }
 
+/**
+ * Return the X connection socket or zero
+ */
+static int Control_GetUISocket(void)
+{
+	SDL_SysWMinfo info;
+	SDL_VERSION(&info.version);
+	if (!SDL_GetWMInfo(&info)) {
+		Log_Printf(LOG_WARN, "Failed to get SDL_GetWMInfo()\n");
+		return 0;
+	}
+	return ConnectionNumber(info.info.x11.display);
+}
+
 #else
+static int Control_GetUISocket(void)
+{
+	return 0;
+}
 void Control_ReparentWindow(int width, int height, bool noembed)
 {
 	/* TODO: implement the Windows part.  SDL sources offer example */
