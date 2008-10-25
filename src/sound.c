@@ -60,7 +60,7 @@
 /*			a single envelope (32 initial volumes, then 64 repeated values).*/
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.50 2008-10-25 17:42:05 npomarede Exp $";
+const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.51 2008-10-25 21:25:26 npomarede Exp $";
 
 #include <SDL_types.h>
 
@@ -1090,11 +1090,12 @@ static void	interpolate_volumetable(ymu16 *out)
 
 
 
-/*--------------------------------------------------------------*/
-/* Build a linear version of the conversion table.		*/
-/* We use the mean of the 3 volumes converted to 16 bit values	*/
-/* (each value of ymout1c5bit is in [0,65535])			*/
-/*--------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/**
+ * Build a linear version of the conversion table.
+ * We use the mean of the 3 volumes converted to 16 bit values
+ * (each value of ymout1c5bit is in [0,65535])
+ */
 
 static void	YM2149_BuildLinearVolumeTable(ymu16 *out)
 {
@@ -1113,18 +1114,19 @@ static void	YM2149_BuildLinearVolumeTable(ymu16 *out)
 
 
 
-/*--------------------------------------------------------------*/
-/* Normalise and optionally center the volume table used to	*/
-/* convert the 3 volumes to a final signed 16 bit sample.	*/
-/* This allows to adapt the amplitude/volume of the samples and	*/
-/* to convert unsigned values to signed values.			*/
-/* - in_5bit contains 32*32*32 unsigned values in the range	*/
-/*	[0,65535].						*/
-/* - out_5bit will contain signed values			*/
-/* Possible values are :					*/
-/*	Level=65535 and DoCenter=TRUE -> [-32768,32767]		*/
-/*	Level=32767 and DoCenter=FALSE -> [0,32767]		*/
-/*--------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/**
+ * Normalise and optionally center the volume table used to
+ * convert the 3 volumes to a final signed 16 bit sample.
+ * This allows to adapt the amplitude/volume of the samples and
+ * to convert unsigned values to signed values.
+ * - in_5bit contains 32*32*32 unsigned values in the range
+ *	[0,65535].
+ * - out_5bit will contain signed values
+ * Possible values are :
+ *	Level=65535 and DoCenter=TRUE -> [-32768,32767]
+ *	Level=32767 and DoCenter=FALSE -> [0,32767]
+ */
 
 static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsigned int Level, bool DoCenter)
 {
@@ -1155,9 +1157,11 @@ static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsign
 
 
 
-/*--------------------------------------------------------------*/
-/* Various initialisations.					*/
-/*--------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/**
+ * Precompute all 16 possible envelopes.
+ * Each envelope is made of 3 blocks of 32 volumes.
+ */
 
 static void	YM2149_EnvBuild ( void )
 {
@@ -1187,10 +1191,11 @@ static void	YM2149_EnvBuild ( void )
 
 
 
-/*--------------------------------------------------------------*/
-/* Init some internal tables for faster results (env, volume)	*/
-/* and reset the internal states.				*/
-/*--------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/**
+ * Init some internal tables for faster results (env, volume)
+ * and reset the internal states.
+ */
 
 static void	Ym2149_Init(void)
 {
@@ -1213,9 +1218,10 @@ static void	Ym2149_Init(void)
 
 
 
-/*--------------------------------------------------------------*/
-/* Reset all ym registers as well as the internal varaibles	*/
-/*--------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/**
+ * Reset all ym registers as well as the internal varaibles
+ */
 
 static void	Ym2149_Reset(void)
 {
@@ -1239,9 +1245,10 @@ static void	Ym2149_Reset(void)
 
 
 
-/*--------------------------------------------------------------*/
-/* Returns a pseudo random value, used to generate white noise.	*/
-/*--------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/**
+ * Returns a pseudo random value, used to generate white noise.
+ */
 
 static ymu32	YM2149_RndCompute(void)
 {
@@ -1254,10 +1261,11 @@ static ymu32	YM2149_RndCompute(void)
 
 
 
-/*--------------------------------------------------------------*/
-/* Compute steps for tone, noise and env, based on the input	*/
-/* period.							*/
-/*--------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/**
+ * Compute steps for tone, noise and env, based on the input
+ * period.
+ */
 
 static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 {
@@ -1292,21 +1300,22 @@ static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
 }
 
 
-/*----------------------------------------------------------------------*/
-/* Compute envelope's step. The envelope is made of different patterns	*/
-/* of 32 volumes. In each pattern, the volume is changed at frequency	*/
-/* Fe = MasterClock / ( 8 * EnvPer ).					*/
-/* In our case, we use a lower replay freq ; between 2 consecutive calls*/
-/* to envelope's generation, the internal counter will advance 'step'	*/
-/* units, where step = MasterClock / ( 8 * EnvPer * YM_REPLAY_FREQ )	*/
-/* As 'step' requires floating point to be stored, we use left shifting	*/
-/* to multiply 'step' by a fixed amount. All operations are made with	*/
-/* shifted values ; to get the final value, we must right shift the	*/
-/* result. We use '<<24', which gives 8 bits for the integer part, and	*/
-/* the equivalent of 24 bits for the fractional part.			*/
-/* Since we're using large numbers, we temporarily use 64 bits integer	*/
-/* to avoid overflow and keep largest precision possible.		*/
-/*----------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/**
+ * Compute envelope's step. The envelope is made of different patterns
+ * of 32 volumes. In each pattern, the volume is changed at frequency
+ * Fe = MasterClock / ( 8 * EnvPer ).
+ * In our case, we use a lower replay freq ; between 2 consecutive calls
+ * to envelope's generation, the internal counter will advance 'step'
+ * units, where step = MasterClock / ( 8 * EnvPer * YM_REPLAY_FREQ )
+ * As 'step' requires floating point to be stored, we use left shifting
+ * to multiply 'step' by a fixed amount. All operations are made with
+ * shifted values ; to get the final value, we must right shift the
+ * result. We use '<<24', which gives 8 bits for the integer part, and
+ * the equivalent of 24 bits for the fractional part.
+ * Since we're using large numbers, we temporarily use 64 bits integer
+ * to avoid overflow and keep largest precision possible.
+ */
 
 static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
 {
@@ -1327,11 +1336,12 @@ static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
 
 
 
-/*--------------------------------------------------------------*/
-/* Main function : compute the value of the next sample.	*/
-/* Mixes all 3 voices with tone+noise+env and apply low pass	*/
-/* filter if needed.						*/
-/*--------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/**
+ * Main function : compute the value of the next sample.
+ * Mixes all 3 voices with tone+noise+env and apply low pass
+ * filter if needed.
+ */
 
 static ymsample	YM2149_NextSample(void)
 {
@@ -1395,10 +1405,11 @@ static ymsample	YM2149_NextSample(void)
 
 
 
-/*--------------------------------------------------------------*/
-/* Update internal variables (steps, volume masks, ...) each	*/
-/* time an YM register is changed.				*/
-/*--------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/**
+ * Update internal variables (steps, volume masks, ...) each
+ * time an YM register is changed.
+ */
 
 void	Sound_WriteReg( int reg , Uint8 data )
 {
