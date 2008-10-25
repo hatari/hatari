@@ -29,13 +29,15 @@
   2008-10-26:
   - In fullscreen video mode may not match the requested size.
     Disable statusbar if smaller, re-calculate vars if larger.
+  2008-10-27:
+  - Fix message expire
 
   TODO:
   - re-calculate colors on each update to make sure they're
     correct in Falcon & TT 8-bit palette modes?
   - call Statusbar_AddMessage() from log.c?
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.13 2008-10-25 22:20:28 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.14 2008-10-25 23:29:56 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -61,7 +63,7 @@ const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.13 2008-10-25 22:20:28 eero
 static struct {
 	bool state;
 	bool oldstate;
-	Uint32 timeout;	/* when to disable led, valid only if >0 && state=TRUE */
+	Uint32 expire;	/* when to disable led, valid only if >0 && state=TRUE */
 	int offset;	/* led x-pos on screen */
 } Led[MAX_DRIVE_LEDS];
 
@@ -92,7 +94,8 @@ static Uint32 GrayBg, LedColorBg;
 typedef struct msg_item {
 	struct msg_item *next;
 	char msg[MAX_MESSAGE_LEN+1];
-	Uint32 timeout;	/* not shown -> msecs, shown -> tics, zero=no timeout */
+	Uint32 timeout;	/* msecs, zero=no timeout */
+	Uint32 expire;  /* when to expire message */
 	bool shown;
 } msg_item_t;
 
@@ -152,7 +155,7 @@ int Statusbar_GetHeight(void)
 void Statusbar_EnableHDLed(void)
 {
 	/* leds are shown for 1/2 sec after enabling */
-	Led[DRIVE_LED_HD].timeout = SDL_GetTicks() + 1000/2;
+	Led[DRIVE_LED_HD].expire = SDL_GetTicks() + 1000/2;
 	Led[DRIVE_LED_HD].state = TRUE;
 }
 
@@ -219,7 +222,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	/* disable leds */
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
 		Led[i].state = Led[i].oldstate = FALSE;
-		Led[i].timeout = 0;
+		Led[i].expire = 0;
 	}
 	Statusbar_OverlayInit(surf);
 	
@@ -326,7 +329,7 @@ void Statusbar_AddMessage(const char *msg, Uint8 secs)
 		/* no sense in queuing messages */
 		return;
 	}
-	item = malloc(sizeof(msg_item_t));
+	item = calloc(1, sizeof(msg_item_t));
 	assert(item);
 
 	item->next = MessageList;
@@ -440,11 +443,11 @@ static void Statusbar_ShowMessage(SDL_Surface *surf, Uint32 ticks)
 	msg_item_t *next;
 
 	if (MessageList->shown) {
-		if (!MessageList->timeout) {
+		if (!MessageList->expire) {
 			/* last/default message */
 			return;
 		}
-		if (MessageList->timeout > ticks) {
+		if (MessageList->expire > ticks) {
 			/* not timed out yet */
 			return;
 		}
@@ -452,14 +455,14 @@ static void Statusbar_ShowMessage(SDL_Surface *surf, Uint32 ticks)
 		next = MessageList->next;
 		free(MessageList);
 		MessageList = next;
+		/* make sure next message gets shown */
+		MessageList->shown = FALSE;
 	}
 	if (!MessageList->shown) {
 		/* not shown yet, show */
 		Statusbar_DrawMessage(surf,  MessageList->msg);
-		if (MessageList->timeout) {
-			MessageList->timeout += ticks;
-			/* last message doesn't have timeout */
-			DefaultMessage.shown = FALSE;
+		if (MessageList->timeout && !MessageList->expire) {
+			MessageList->expire = ticks + MessageList->timeout;
 		}
 		MessageList->shown = TRUE;
 	}
@@ -547,7 +550,7 @@ static void Statusbar_OverlayDraw(SDL_Surface *surf)
 	}
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
 		if (Led[i].state) {
-			if (Led[i].timeout && Led[i].timeout < currentticks) {
+			if (Led[i].expire && Led[i].expire < currentticks) {
 				Led[i].state = FALSE;
 				continue;
 			}
@@ -598,7 +601,7 @@ void Statusbar_Update(SDL_Surface *surf)
 	rect = LedRect;
 	currentticks = SDL_GetTicks();
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
-		if (Led[i].timeout && Led[i].timeout < currentticks) {
+		if (Led[i].expire && Led[i].expire < currentticks) {
 			Led[i].state = FALSE;
 		}
 		if (Led[i].state == Led[i].oldstate) {
