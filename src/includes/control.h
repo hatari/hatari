@@ -12,7 +12,7 @@
 
 /* supported only on BSD compatible / POSIX compliant systems */
 #if HAVE_UNIX_DOMAIN_SOCKETS
-extern void Control_CheckUpdates(void);
+extern bool Control_CheckUpdates(void);
 extern const char* Control_SetSocket(const char *socketpath);
 extern void Control_ReparentWindow(int width, int height, bool noembed);
 #else

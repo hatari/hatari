@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Main_rcsid[] = "Hatari $Id: main.c,v 1.145 2008-10-25 20:31:56 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: main.c,v 1.146 2008-10-26 19:15:56 eerot Exp $";
 
 #include <time.h>
 #include <SDL.h>
@@ -317,16 +317,16 @@ void Main_EventHandler(void)
 	do
 	{
 		/* check remote process control */
-		Control_CheckUpdates();
+		int remotepause = Control_CheckUpdates();
 
-		if ( bEmulationActive )
+		if ( bEmulationActive || remotepause )
 		{
 			ok = SDL_PollEvent(&event);
 		}
 		else
 		{
 			ShortCut_ActKey();
-			/* last (shortcut) event unpaused? */
+			/* last (shortcut) event activated emulation? */
 			if ( bEmulationActive )
 				break;
 			ok = SDL_WaitEvent(&event);

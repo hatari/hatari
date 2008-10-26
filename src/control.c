@@ -6,7 +6,7 @@
 
   This code processes commands from the Hatari control socket
 */
-const char control_rcsid[] = "Hatari $Id: control.c,v 1.7 2008-10-26 11:06:30 eerot Exp $";
+const char control_rcsid[] = "Hatari $Id: control.c,v 1.8 2008-10-26 19:15:56 eerot Exp $";
 
 #include "config.h"
 #if HAVE_UNIX_DOMAIN_SOCKETS
@@ -44,6 +44,8 @@ typedef enum {
 static int ControlSocket;
 /* Whether to send embedded window info */
 static bool bSendEmbedInfo;
+/* Pausing triggered remotely (battery save pause) */
+static bool bRemotePaused;
 
 /* pre-declared local functions */
 static int Control_GetUISocket(void);
@@ -268,12 +270,9 @@ static bool Control_Usage(const char *cmd)
 /**
  * Parse Hatari debug/event/option/toggle/path/shortcut command buffer.
  * Given buffer is modified in-place.
- * 
- * Returns TRUE until it's OK to return back to emulation
  */
-static bool Control_ProcessBuffer(char *buffer)
+static void Control_ProcessBuffer(char *buffer)
 {
-	static bool paused;
 	char *cmd, *cmdend, *arg;
 	int ok = TRUE;
 	
@@ -316,10 +315,10 @@ static bool Control_ProcessBuffer(char *buffer)
 				bSendEmbedInfo = TRUE;
 			} else if (strcmp(cmd, "hatari-stop") == 0) {
 				Main_PauseEmulation();
-				paused = TRUE;
+				bRemotePaused = TRUE;
 			} else if (strcmp(cmd, "hatari-cont") == 0) {
 				Main_UnPauseEmulation();
-				paused = FALSE;
+				bRemotePaused = FALSE;
 			} else {
 				ok = Control_Usage(cmd);
 			}
@@ -328,7 +327,6 @@ static bool Control_ProcessBuffer(char *buffer)
 			cmd = cmdend + 1;
 		}
 	} while (ok && cmdend && *cmd);
-	return paused;
 }
 
 
@@ -336,8 +334,10 @@ static bool Control_ProcessBuffer(char *buffer)
 /**
  * Check ControlSocket for new commands and execute them.
  * Commands should be separated by newlines.
+ * 
+ * Return TRUE if remote pause ON (and connected), FALSE otherwise
  */
-void Control_CheckUpdates(void)
+bool Control_CheckUpdates(void)
 {
 	/* just using all trace options with +/- are about 300 chars */
 	char buffer[400];
@@ -345,22 +345,20 @@ void Control_CheckUpdates(void)
 	fd_set readfds;
 	ssize_t bytes;
 	int status, sock;
-	bool paused;
 
 	/* socket of file? */
 	if (ControlSocket) {
 		sock = ControlSocket;
 	} else {
-		return;
+		return FALSE;
 	}
 	
 	/* ready for reading? */
-	paused = FALSE;
 	tv.tv_usec = tv.tv_sec = 0;
 	do {
 		FD_ZERO(&readfds);
 		FD_SET(sock, &readfds);
-		if (paused) {
+		if (bRemotePaused) {
 			/* return only when there're UI events
 			 * (redraws etc) to save battery:
 			 *   http://bugzilla.libsdl.org/show_bug.cgi?id=323
@@ -378,14 +376,14 @@ void Control_CheckUpdates(void)
 		}
 		if (status < 0) {
 			perror("Control socket select() error");
-			return;
+			return FALSE;
 		}
 		/* nothing to process here */
 		if (status == 0) {
-			return;
+			return bRemotePaused;
 		}
 		if (!FD_ISSET(sock, &readfds)) {
-			return;
+			return bRemotePaused;
 		}
 		
 		/* assume whole command can be read in one go */
@@ -393,18 +391,20 @@ void Control_CheckUpdates(void)
 		if (bytes < 0)
 		{
 			perror("Control socket read");
-			return;
+			return FALSE;
 		}
 		if (bytes == 0) {
 			/* closed */
 			close(ControlSocket);
 			ControlSocket = 0;
-			return;
+			return FALSE;
 		}
 		buffer[bytes] = '\0';
-		paused = Control_ProcessBuffer(buffer);
+		Control_ProcessBuffer(buffer);
 
-	} while (paused);
+	} while (bRemotePaused);
+	
+	return FALSE;
 }
 
 
