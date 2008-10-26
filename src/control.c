@@ -6,7 +6,7 @@
 
   This code processes commands from the Hatari control socket
 */
-const char control_rcsid[] = "Hatari $Id: control.c,v 1.6 2008-10-25 20:55:50 eerot Exp $";
+const char control_rcsid[] = "Hatari $Id: control.c,v 1.7 2008-10-26 11:06:30 eerot Exp $";
 
 #include "config.h"
 #if HAVE_UNIX_DOMAIN_SOCKETS
@@ -361,8 +361,9 @@ void Control_CheckUpdates(void)
 		FD_ZERO(&readfds);
 		FD_SET(sock, &readfds);
 		if (paused) {
-			/* return only when there're UI events (redraws etc)
-			 * to save battery as SDL constantly busyloops
+			/* return only when there're UI events
+			 * (redraws etc) to save battery:
+			 *   http://bugzilla.libsdl.org/show_bug.cgi?id=323
 			 */
 			int uisock = Control_GetUISocket();
 			if (uisock) {
