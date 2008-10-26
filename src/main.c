@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Main_rcsid[] = "Hatari $Id: main.c,v 1.146 2008-10-26 19:15:56 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: main.c,v 1.147 2008-10-26 22:39:50 eerot Exp $";
 
 #include <time.h>
 #include <SDL.h>
@@ -87,21 +87,24 @@ void Main_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Pause emulation, stop sound
+ * Pause emulation, stop sound.  'visualize' should be set TRUE,
+ * unless unpause will be called immediately afterwards.
  * 
  * Return TRUE if paused now, FALSE if was already paused
  */
-bool Main_PauseEmulation(void)
+bool Main_PauseEmulation(bool visualize)
 {
 	if ( !bEmulationActive )
 		return FALSE;
 
 	Audio_EnableAudio(FALSE);
 	bEmulationActive = FALSE;
-	
-	Statusbar_AddMessage("Emulation paused", 1);
-	/* make sure msg gets shown */
-	Screen_Draw();
+	if (visualize)
+	{
+		Statusbar_AddMessage("Emulation paused", 100);
+		/* make sure msg gets shown */
+		Screen_Draw();
+	}
 	return TRUE;
 }
 
@@ -118,10 +121,10 @@ bool Main_UnPauseEmulation(void)
 
 	Sound_ResetBufferIndex();
 	Audio_EnableAudio(ConfigureParams.Sound.bEnableSound);
-	Screen_SetFullUpdate();       /* Cause full screen update (to clear all) */
-	
 	bEmulationActive = TRUE;
-	fprintf(stderr, "Emulation continued\n");
+
+	/* Cause full screen update (to clear all) */
+	Screen_SetFullUpdate();
 	return TRUE;
 }
 
@@ -589,7 +592,7 @@ int main(int argc, char *argv[])
 
 	/* queue a message for user */
 	if (ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] == SDLK_F12) {
-		Statusbar_AddMessage("Press F12 for Options", 6);
+		Statusbar_AddMessage("Press F12 for Options", 6000);
 	}
 	/* update TOS information etc loaded by Main_Init() */
 	Statusbar_UpdateInfo();

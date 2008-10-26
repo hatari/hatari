@@ -32,7 +32,7 @@
 */
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.93 2008-10-21 21:15:09 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.94 2008-10-26 22:39:50 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -582,7 +582,7 @@ void Screen_EnterFullScreen(void)
 {
 	if (!bInFullScreen)
 	{
-		Main_PauseEmulation();         /* Hold things... */
+		Main_PauseEmulation(FALSE);         /* Hold things... */
 		bInFullScreen = TRUE;
 
 		if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
@@ -612,7 +612,7 @@ void Screen_ReturnFromFullScreen(void)
 {
 	if (bInFullScreen)
 	{
-		Main_PauseEmulation();        /* Hold things... */
+		Main_PauseEmulation(FALSE);        /* Hold things... */
 		bInFullScreen = FALSE;
 
 		if ((ConfigureParams.System.nMachineType == MACHINE_FALCON

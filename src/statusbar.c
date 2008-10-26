@@ -26,18 +26,18 @@
     call Statusbar_UpdateInfo()
 
   CHANGES
-  2008-10-26:
+  2008-10-25:
   - In fullscreen video mode may not match the requested size.
     Disable statusbar if smaller, re-calculate vars if larger.
-  2008-10-27:
-  - Fix message expire
+  2008-10-26:
+  - Fix message expire & timings
 
   TODO:
   - re-calculate colors on each update to make sure they're
     correct in Falcon & TT 8-bit palette modes?
   - call Statusbar_AddMessage() from log.c?
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.14 2008-10-25 23:29:56 eerot Exp $";
+const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.15 2008-10-26 22:39:50 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -319,14 +319,14 @@ void Statusbar_Init(SDL_Surface *surf)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Qeueue new statusbar message 'msg' to be shown for 'secs' seconds
+ * Qeueue new statusbar message 'msg' to be shown for 'msecs' milliseconds
  */
-void Statusbar_AddMessage(const char *msg, Uint8 secs)
+void Statusbar_AddMessage(const char *msg, Uint32 msecs)
 {
 	msg_item_t *item;
 
 	if (!ConfigureParams.Screen.bShowStatusbar) {
-		/* no sense in queuing messages */
+		/* no sense in queuing messages that aren't shown */
 		return;
 	}
 	item = calloc(1, sizeof(msg_item_t));
@@ -339,8 +339,8 @@ void Statusbar_AddMessage(const char *msg, Uint8 secs)
 	item->msg[MAX_MESSAGE_LEN] = '\0';
 	DEBUGPRINT(("Add message: '%s'\n", item->msg));
 
-	if (secs) {
-		item->timeout = secs * 1000;
+	if (msecs) {
+		item->timeout = msecs;
 	} else {
 		/* show items by default for 2.5 secs */
 		item->timeout = 2500;

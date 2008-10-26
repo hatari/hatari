@@ -6,7 +6,7 @@
 
   This code processes commands from the Hatari control socket
 */
-const char control_rcsid[] = "Hatari $Id: control.c,v 1.8 2008-10-26 19:15:56 eerot Exp $";
+const char control_rcsid[] = "Hatari $Id: control.c,v 1.9 2008-10-26 22:39:50 eerot Exp $";
 
 #include "config.h"
 #if HAVE_UNIX_DOMAIN_SOCKETS
@@ -314,7 +314,7 @@ static void Control_ProcessBuffer(char *buffer)
 				fprintf(stderr, "Embedded window ID change messages = ON\n");
 				bSendEmbedInfo = TRUE;
 			} else if (strcmp(cmd, "hatari-stop") == 0) {
-				Main_PauseEmulation();
+				Main_PauseEmulation(TRUE);
 				bRemotePaused = TRUE;
 			} else if (strcmp(cmd, "hatari-cont") == 0) {
 				Main_UnPauseEmulation();

@@ -23,7 +23,7 @@ extern void Statusbar_SetFloppyLed(drive_index_t drive, bool state);
 
 extern void Statusbar_Init(SDL_Surface *screen);
 extern void Statusbar_UpdateInfo(void);
-extern void Statusbar_AddMessage(const char *msg, Uint8 secs);
+extern void Statusbar_AddMessage(const char *msg, Uint32 msecs);
 extern void Statusbar_OverlayBackup(SDL_Surface *screen);
 extern void Statusbar_Update(SDL_Surface *screen);
 extern void Statusbar_OverlayRestore(SDL_Surface *screen);

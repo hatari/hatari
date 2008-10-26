@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.15 2008-09-05 21:29:01 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.16 2008-10-26 22:39:50 eerot Exp $";
 
 #include <ctype.h>
 #include "main.h"
@@ -291,7 +291,7 @@ static bool Change_Options(int argc, const char *argv[])
 	bool bOK;
 	CNF_PARAMS current;
 
-	Main_PauseEmulation();
+	Main_PauseEmulation(FALSE);
 
 	/* get configuration changes */
 	current = ConfigureParams;

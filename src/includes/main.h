@@ -47,7 +47,7 @@ extern bool bQuitProgram;
 extern bool bEnableDebug;
 
 extern void Main_MemorySnapShot_Capture(bool bSave);
-extern bool Main_PauseEmulation(void);
+extern bool Main_PauseEmulation(bool visualize);
 extern bool Main_UnPauseEmulation(void);
 extern void Main_RequestQuit(void);
 extern void Main_WaitOnVbl(void);
