@@ -1,11 +1,12 @@
 
-                                    Hatari
-                                   --------
-                                  TO-DO list
+Hatari TO-DO list
+=================
 
+If you think that you can help with one of the TO-DO list items, please get
+in touch with us.
 
-If you think that you can help with one of the TO-DO list items, please get in
-touch with us:
+Emulation improvements
+----------------------
 
 - Improve FDC emulation (e.g. read-track and write-track commands do not work
   right yet).
@@ -15,19 +16,11 @@ touch with us:
   - Add support for Pasti .STX images (See http://pasti.fxatari.com/).
   - Support .DIM images created with the "Get sectors: used" option.
 
-- Add the possibility to disable HBLs in VDI mode to speed up the emulation.
-
-- Improve PSG sound emulation (it sounds not very accurate with some games
-  and demos compared to a real ST).
-  Check if one of the other open-source PSG emulators could be used as a
-  good replacement (STSoundLibrary by Leonard, STonX, Castaway CE, SC68,
-  STsndplay or psgplay by NoCrew, ...).
-
 - Fix IKBD emulation (e.g. some games like "Big Run" have problems with the
   joystick fire button).
 
-- Add real HD 6301 (keyboard processor of the ST) emulation - this is needed
-  for some demos like Froggies over Fence, Transbeauce II or Dragonells.
+- Real HD 6301 (keyboard processor of the ST) emulation?
+  (Current special casing is enough for all known demos using 6301)
 
 - Upgrade the CPU core of Hatari to the latest WinUAE or E-UAE CPU core.
 
@@ -37,9 +30,24 @@ touch with us:
 
 - Improve TT and/or Falcon emulation
 
-- Add proper Blitter timing emulation.
+- Improve Blitter timing emulation.
 
-- Check if Blitter can generate an interrupt and if so add its emulation.
+- Extend the GEMDOS HD emulation to support more than one drive.
+
+- Add IDE and/or SCSI hard disk emulation for Falcon/TT mode.
+
+- Add SCC serial port emulation for Falcon/TT mode.
+
+
+Other Hatari functionality improvements
+---------------------------------------
+
+- Screen snapshot interval should take into account:
+  - 60 & 71Hz screen update frequencies in addition to 50Hz
+  - VDI/TT/Falcon modes (screen recording isn't called for these)
+  - Frameskip (recording will skip additional frames with it)
+
+- Add the possibility to disable HBLs in VDI mode to speed up the emulation.
 
 - Add x3 and x4 zooming routines for ST-Low resolution.
 
@@ -48,10 +56,11 @@ touch with us:
 - Add support for hardware accelerated zooming with SDL YUV overlays or
   OpenGL.
 
-- Improve the built-in debugger.
+- Improve the built-in debugger (single stepping etc).
 
-- Extend the GEMDOS HD emulation to support more than one drive.
-
-- Add IDE and/or SCSI hard disk emulation for Falcon/TT mode.
-
-- Add SCC serial port emulation for Falcon/TT mode.
+- Improve directory handling.  By default the directory config values
+  should be empty in which case the code will at run-time decide to use
+  current directory, but not modify the path config setting.  Currently
+  screenshots & anim go to current dir (cannot be configured), whereas
+  memsave, sound recording, printer & midi & serial & output and log
+  output go to file specified in config file.

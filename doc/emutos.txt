@@ -396,7 +396,7 @@ Games:
 - DB 4K
 - Dry Egg (needs >4MB RAM)
 - FalcTron
-- Impurse (nice Breakout clone)
+- Impulse (nice Breakout clone)
 - Lamemine (needs "dummy" DSP mode in Hatari)
 - Madtris
 - Radical Race (demo)
@@ -409,7 +409,6 @@ Games:
 - Toy Man
 - Vertical Mayhem (nice Columns clone)
 - Willie's Adventure (preview)
-
 
 Mostly working applications:
 - AceMidi demo (softsynth sounds needs DSP)
