@@ -9,13 +9,20 @@
 # Set the C compiler (e.g. gcc)
 CC = gcc
 
+OPTFLAGS = -O2
+
+# Architecture specific optimizations
+# 
+# Omap2/ARMv6:
+# OPTFLAGS += -mfpu=vfp -mfloat-abi=softfp -march=armv6 -finline-limit=64
+
 # What warnings to use
 WARNFLAGS = -Wmissing-prototypes -Wstrict-prototypes -Wsign-compare \
   -Wbad-function-cast -Wcast-qual  -Wpointer-arith \
   -Wall -Wwrite-strings # -Wshadow -Wcast-align -Werror
 
 # Set flags passed to the compiler (e.g. optimization flags)
-CFLAGS := -g -O2 $(WARNFLAGS)
+CFLAGS := -g $(WARNFLAGS) $(OPTFLAGS)
 
 # Set flags passed to the preprocessor (e.g. -I<include dir>)
 CPPFLAGS ?=
