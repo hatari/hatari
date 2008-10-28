@@ -6,7 +6,7 @@
 
   Code to handle our options dialog.
 */
-const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.72 2008-06-23 20:56:58 eerot Exp $";
+const char Dialog_rcsid[] = "Hatari $Id: dialog.c,v 1.73 2008-10-28 20:37:09 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -34,7 +34,7 @@ bool Dialog_DoProperty(void)
 	bool bForceReset;
 	CNF_PARAMS current;
 
-	Main_PauseEmulation();
+	Main_PauseEmulation(TRUE);
 	bForceReset = FALSE;
 
 	/* Copy details (this is so can restore if 'Cancel' dialog) */
