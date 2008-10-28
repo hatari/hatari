@@ -1,10 +1,8 @@
 # Main Makefile for Hatari.
 
-# Set ENABLE_DSP_EMU to 1 to enable experimental DSP emulation code
-# (there are currently no known programs which this would help,
-# but it will make many of the Falcon programs not to work).
-# If you change this, do "make clean"
-ENABLE_DSP_EMU = 1
+# Use "export ENABLE_DSP_EMU=0" & "make clean"
+# to disable experimental DSP emulation code.
+ENABLE_DSP_EMU ?= 1
 
 # Select CPU directory:
 CPUDIR = uae-cpu
