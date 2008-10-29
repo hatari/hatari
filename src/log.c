@@ -13,7 +13,7 @@
  * of HatariTraceFlags. Multiple trace levels can be set at once, by setting
  * the corresponding bits in HatariTraceFlags
  */
-const char Log_rcsid[] = "Hatari $Id: log.c,v 1.18 2008-07-16 21:12:12 thothy Exp $";
+const char Log_rcsid[] = "Hatari $Id: log.c,v 1.19 2008-10-29 20:12:17 eerot Exp $";
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -241,7 +241,7 @@ bool Log_SetTraceOptions (const char *OptionsStr)
 
 #ifndef HATARI_TRACE_ACTIVATED
 	fprintf(stderr, "\nError: Trace option has not been activated during compile time.\n");
-	exit(1);
+	return FALSE;
 #endif
 	
 	HatariTraceFlags = HATARI_TRACE_NONE;
