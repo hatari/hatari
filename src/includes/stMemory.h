@@ -25,8 +25,14 @@ extern Uint8 STRam[16*1024*1024];
 extern Uint32 STRamEnd;
 
 /* Offset ST address to PC pointer: */
-#define STRAM_ADDR(Var)  ((unsigned long)STRam+((Uint32)(Var) & 0x00ffffff))
-
+#if ENABLE_SMALL_MEM
+# define STRAM_ADDR(Var) \
+	(((Var)>= 0xe00000) \
+		 ? ((unsigned long)RomMem+((Uint32)(Var) & 0x00ffffff)) \
+		 : ((unsigned long)STRam+((Uint32)(Var) & 0x00ffffff)))
+#else
+# define STRAM_ADDR(Var)  ((unsigned long)STRam+((Uint32)(Var) & 0x00ffffff))
+#endif
 
 /*-----------------------------------------------------------------------*/
 /*
