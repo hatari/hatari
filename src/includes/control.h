@@ -16,7 +16,7 @@ extern bool Control_CheckUpdates(void);
 extern const char* Control_SetSocket(const char *socketpath);
 extern void Control_ReparentWindow(int width, int height, bool noembed);
 #else
-#define Control_CheckUpdates()
+#define Control_CheckUpdates() FALSE
 #define Control_SetSocket(path) "Control socket is not supported on this platform."
 #define Control_ReparentWindow(width, height, noembed);
 #endif /* HAVE_UNIX_DOMAIN_SOCKETS */
