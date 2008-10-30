@@ -74,8 +74,8 @@ and applications use the correct higher level APIs (AES/VDI) for which
 EmuTOS has implementations.
 
 EmuTOS AES support is somewhat buggy (mouse dragging and window &
-dialog background drawing in larger 4-bit modes) and VDI support is
-slow though. Anybody wanting proper AES/VDI support should install
+dialog background drawing in larger 4-bit modes) and VDI support
+is slowish. Anybody wanting proper AES/VDI support should install
 replacement for these, either the free XaAES + fVDI, or the earlier
 commercial solutions like NVDI.
 
@@ -120,11 +120,12 @@ deeply (Linux offers better alternatives nowadays for most of that).
 I.e. the list skips commercial software and concentrates on EmuTOS
 compatibility of freely available games and demos.
 
-Games that are considered good quality & fun, are marked with "*". All
-the listed demos are quite OK and unless otherwise stated, full demo
-disks. Demos can be downloaded from http://pouet.net/ .
+Games that are considered good quality & fun, are marked with "*".
+All the listed demos are quite OK. Most demos can be downloaded from
+http://pouet.net/ .
 
-First are listed ST demos and games, then STE.
+First are listed ST demos and games, then STE demos, games and music
+applications and last Falcon demos, games and (music) applications.
 
 
 Working free/shareware Atari ST demos and games
@@ -281,7 +282,7 @@ Working free/shareware Atari STE programs
 -----------------------------------------
 
 There are not that many freely available or even commercial programs
-that would be STE specific (or even STE enhanced*):
+that would be STE specific (or even STE enhanced):
     http://atari-ste.anvil-soft.com/html/archivapps.htm
 
 Missing blitter support in EmuTOS (XBios function etc) is an additional
@@ -309,6 +310,7 @@ Demos:
 - Kick my assembler (by Orion), start doesn't look right
 - Madness (by Cream)
 - Mathematica (by Aura)
+- More or Less Zero (by DHS)
 - Maxymizer compo 2006 (by gwem)
 - Meshake (by Spice Boys)
 - Mind Rewind (by Reservoir Gods)
@@ -322,7 +324,7 @@ Demos:
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
 - Vision (by POV)
-- Wolfenstein3D* v0.5 (titlescreen colors are not right)
+- Wolfenstein3D v0.5 (titlescreen colors are not right)
   - the playable v0.8 doesn't work at all
 
 Color games:
@@ -391,24 +393,24 @@ Demos:
 
 Games:
 - Blum
-- Columns by Deadheart (demo)
+- Columns by Deadheart (demo)*
 - Corsair
 - DB 4K
 - Dry Egg (needs >4MB RAM)
 - FalcTron
-- Impulse (nice Breakout clone)
+- Impulse (Breakout clone)*
 - Lamemine (needs "dummy" DSP mode in Hatari)
 - Madtris
-- Radical Race (demo)
+- Radical Race (demo)*
 - Rave (needs "dummy" DSP mode in Hatari)
-- SBM v0.8 (nice Bomberman clone)
-- Spice (nice Defender clone)
+- SBM v0.8 (Bomberman clone)*
+- Spice (Defender clone)*
 - Static
 - Steinbruch
 - Tank Blaster
 - Toy Man
-- Vertical Mayhem (nice Columns clone)
-- Willie's Adventure (preview)
+- Vertical Mayhem (Columns clone)*
+- Willie's Adventure (preview)*
 
 Mostly working applications:
 - AceMidi demo (softsynth sounds needs DSP)
@@ -418,11 +420,11 @@ Mostly working applications:
 - Whip! (virtual light machine)
 
 Almost working demos & games:
-- Heretic (screen is messed, slow)
-- Nibe (screen is messed)
-- Bugger, Bunion, SkyFall, Switch, Sworm games by Resorvoir Gods
+- Bugger, Bunion, SkyFall, Switch, Sworm games* by Resorvoir Gods:
   have issues with keyboard input in the main menus
-- Virtual City (needs DSP, city is invisible with EmuTOS)
+- Heretic: screen is messed
+- Nibe: screen is messed
+- Virtual City (needs DSP): city is invisible with EmuTOS
 
 
 	- Eero
