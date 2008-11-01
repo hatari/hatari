@@ -44,10 +44,15 @@
 /*			(readme.prg by TEX (in 1987))						*/
 /* 2008/01/24	[NP]	In Spec512_StartScanLine, use different values for LineStartCycle when	*/
 /*			running in 50 Hz or 60 Hz (TEX Spectrum Slideshow in 60 Hz).		*/
+/* 2008/11/01	[NP]	Remove a long standing bug in Spec512_StartFrame : STRGBPalette[] was	*/
+/*			filled with the content of the 1st visible HBLPalettes, which was wrong.*/
+/*			We should keep STRGBPalette unchanged as it was at the end of the	*/
+/*			previous frame (else colors that were changed at the end of the 1st	*/
+/*			visible line were applied at the start of the 1st visible line)		*/
+/*			(fix Intro Text Zoomer in Core Flakes by New Core).			*/
 
 
-
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.27 2008-05-25 19:58:56 thothy Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.28 2008-11-01 15:25:51 npomarede Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -216,17 +221,6 @@ void Spec512_StartFrame(void)
 	{
 		pCyclePalette = &CyclePalettes[ (i*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[i] ];
 		pCyclePalette->LineCycles = -1;          /* Term */
-	}
-
-	/* Copy first line palette, kept in 'HBLPalettes' and store to 'STRGBPalette' */
-	for (i = 0; i < 16; i++)
-	{
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		STRGBPalette[STRGBPalEndianTable[i]] = ST2RGB[pHBLPalettes[i]];
-#else
-		STRGBPalette[i] = ST2RGB[pHBLPalettes[i]];
-#endif
-
 	}
 
 	/* Ready for first call to 'Spec512_ScanLine' */
