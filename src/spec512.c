@@ -52,7 +52,7 @@
 /*			(fix Intro Text Zoomer in Core Flakes by New Core).			*/
 
 
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.28 2008-11-01 15:25:51 npomarede Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.29 2008-11-01 16:53:09 npomarede Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -222,6 +222,19 @@ void Spec512_StartFrame(void)
 		pCyclePalette = &CyclePalettes[ (i*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[i] ];
 		pCyclePalette->LineCycles = -1;          /* Term */
 	}
+
+#if 1
+       /* Copy first line palette, kept in 'HBLPalettes' and store to 'STRGBPalette' */
+       for (i = 0; i < 16; i++)
+       {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+               STRGBPalette[STRGBPalEndianTable[i]] = ST2RGB[pHBLPalettes[i]];
+#else
+               STRGBPalette[i] = ST2RGB[pHBLPalettes[i]];
+#endif
+//fprintf ( stderr , "spec start %d %x\n" , i , pHBLPalettes[i] );
+       }
+#endif
 
 	/* Ready for first call to 'Spec512_ScanLine' */
 	nScanLine = 0;
