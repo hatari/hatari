@@ -142,9 +142,8 @@ version and not work at all with others. If you notice that this
 information is missing for some listed game or demo, please send mail
 to the hatari-devel mailing list.
 <ul>
-<li>Note that only few of the games and almost none of the demos
-work with the free EmuTOS TOS, especially for ST/e. For more
-information, see emutos.txt.</li>
+<li>Note that only few of the games and demos work with the free
+EmuTOS TOS, especially for ST/e. For more information, see emutos.txt.</li>
 </ul>
 </li>
 
@@ -153,8 +152,7 @@ information, see emutos.txt.</li>
 
 <a name="ST"></a><h2>ST software compatibility list</h2>
 
-<p>There may be minor sound quality issues in some games and demos.
-Hatari also lacks support for MIDI input (output is supported) without
+<p>Hatari lacks support for MIDI input (output is supported) without
 which MIDI sequencing (and few midi-networked games) software isn't
 very useful. Otherwise
 <b>everything that works on a real ST should work also in Hatari</b>.
@@ -952,7 +950,12 @@ are just STE enhanced.  These are marked with '*'.</p>
     <tr>
       <td>DHS: More or Less Zero</td>
       <td class="minor">1.0</td>
-      <td>First screen (tunnel sequence) doesn't show properly</td>
+      <td>Initial texts + first (tunnel) screen messed up and
+          screen sync issues in diffraction pattern screen,
+	  audio waveform block effect gfx not quite correct,
+	  audio not synched properly with gfx after spec-4096 pic,
+	  lmc1992 emulation missing for endpart modplayer.
+	  (works better than STeem though)</td>
     </tr>
     <tr>
       <td>DHS: Tyranny &amp; Massacre</td>
@@ -1203,7 +1206,7 @@ this section lists only TT-specific games and demos.</p>
 
 <a name="Falcon"></a><h2>Falcon software compatibility list</h2>
 
-<p>The main thing preventing Falcon programs from working is missing
+<p>The main thing preventing Falcon programs from working is incomplete
 DSP emulation (and even of the programs working, many would use DSP
 for music).  You can select between three different DSP emulation
 modes with the Hatari "--dsp" option:
