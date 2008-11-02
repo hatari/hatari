@@ -62,6 +62,7 @@ install: all hatari.1.gz
 	$(INSTALL) -d $(DESTDIR)$(DOCDIR)
 	$(INSTALL) -d $(DESTDIR)$(DOCDIR)/images
 	$(INSTALL_PROGRAM) src/hatari $(DESTDIR)$(BINDIR)/hatari
+	$(INSTALL_PROGRAM) tools/hmsa/hmsa $(DESTDIR)$(BINDIR)/hmsa
 	$(INSTALL_DATA) src/hatari-icon.bmp $(DESTDIR)$(DATADIR)/hatari-icon.bmp
 	if test -f src/tos.img -a \! -f $(DESTDIR)$(DATADIR)/tos.img ; then \
 	  $(INSTALL_DATA) src/tos.img $(DESTDIR)$(DATADIR)/tos.img ; \
