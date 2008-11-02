@@ -27,11 +27,11 @@
 #define SCREENBYTES_MONOLINE 80         /* Byte per line in ST-high resolution */
 
 /* Overscan values */
-#define OVERSCAN_TOP        29
-#define OVERSCAN_BOTTOM     45			/* number of bottom lines to display on screen */
+#define OVERSCAN_TOP         29
+#define MAX_OVERSCAN_BOTTOM  47 	/* number of bottom lines to display on screen */
 
 /* Number of visible screen lines including top/bottom borders */
-#define NUM_VISIBLE_LINES  (OVERSCAN_TOP+200+OVERSCAN_BOTTOM)
+#define NUM_VISIBLE_LINES  (OVERSCAN_TOP+200+MAX_OVERSCAN_BOTTOM)
 
 
 /* Frame buffer, used to store details in screen conversion */
