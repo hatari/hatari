@@ -32,7 +32,7 @@
 */
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.94 2008-10-26 22:39:50 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.95 2008-11-02 15:19:33 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -882,7 +882,7 @@ static void Screen_SetConvertDetails(void)
 			else
 			{
 				STScreenWidthBytes = SCREENBYTES_LINE;  /* Number of horizontal bytes in our ST screen */
-				STScreenEndHorizLine = NUM_VISIBLE_LINES;
+				STScreenEndHorizLine = OVERSCAN_TOP + 200 + nBorderPixelsBottom;
 			}
 		}
 		else
