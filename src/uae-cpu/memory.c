@@ -10,7 +10,7 @@
   * This file is distributed under the GNU Public License, version 2 or at
   * your option any later version. Read the file gpl.txt for details.
   */
-const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.24 2007-12-30 20:02:04 thothy Exp $";
+const char Memory_rcsid[] = "Hatari $Id: memory.c,v 1.25 2008-11-02 22:18:58 thothy Exp $";
 
 #include "config.h"
 #include "sysdeps.h"
@@ -85,6 +85,7 @@ __inline__ void byteput (uaecptr addr, uae_u32 b)
 
 
 /* Some prototypes: */
+extern void SDL_Quit(void);
 static int STmem_check (uaecptr addr, uae_u32 size) REGPARAM;
 static uae_u8 *STmem_xlate (uaecptr addr) REGPARAM;
 
@@ -681,6 +682,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     ROMmemory = malloc(2*1024*1024);
     if (!ROMmemory) {
 	fprintf(stderr, "Out of memory (ROM/IO mem)!\n");
+	SDL_Quit();
 	exit(1);
     }
     IdeMemory = ROMmemory + 0x100000;
@@ -696,6 +698,7 @@ void memory_init(uae_u32 nNewSTMemSize, uae_u32 nNewTTMemSize, uae_u32 nNewRomMe
     }
     if (!STmemory) {
 	write_log ("virtual memory exhausted (STmemory)!\n");
+	SDL_Quit();
 	exit(1);
     }
 
