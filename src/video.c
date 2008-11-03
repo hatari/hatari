@@ -191,7 +191,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.126 2008-10-05 17:55:31 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.127 2008-11-03 19:34:13 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -1354,7 +1354,7 @@ static void Video_EndHBL(void)
 	}
 
 	/* Store palette for very first line on screen - HBLPalettes[0] */
-	if (nHBL == nFirstVisibleHbl)
+	if (nHBL == nFirstVisibleHbl-1)
 	{
 		/* Store ALL palette for this line into raster table for datum */
 		Video_StoreFirstLinePalette();
