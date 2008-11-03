@@ -91,7 +91,7 @@
 
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.52 2008-10-20 20:23:57 thothy Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.53 2008-11-03 20:46:05 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -350,7 +350,7 @@ static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
  */
 void MFP_CheckPendingInterrupts(void)
 {
-	if ((MFP_IPRA & 0xb5) == 0 && (MFP_IPRB & 0xf9) == 0)
+	if ((MFP_IPRA & 0xb5) == 0 && (MFP_IPRB & 0xfb) == 0)
 	{
 		/* Should never get here, but if do just clear flag (see 'MFP_UpdateFlags') */
 		M68000_UnsetSpecial(SPCFLAG_MFP);
@@ -388,6 +388,9 @@ void MFP_CheckPendingInterrupts(void)
 
 	if (MFP_IPRB & MFP_GPU_DONE_BIT)      /* Check GPU done (bit 3) */
 		MFP_InterruptRequest(MFP_EXCEPT_GPIP3, MFP_GPU_DONE_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0xf8, &MFP_ISRB);
+
+	if (MFP_IPRB & MFP_GPIP_1_BIT)        /* Check (Falcon) Centronics ACK / (ST) RS232 DCD (bit 1) */
+		MFP_InterruptRequest(MFP_EXCEPT_GPIP1, MFP_GPIP_1_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0xfe, &MFP_ISRB);
 
 	if (MFP_IPRB & MFP_GPIP_0_BIT)        /* Check Centronics BUSY (bit 0) */
 		MFP_InterruptRequest(MFP_EXCEPT_GPIP0, MFP_GPIP_0_BIT, &MFP_IPRB, MFP_IMRB, 0xff, 0xff, &MFP_ISRB);

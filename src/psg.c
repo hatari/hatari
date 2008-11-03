@@ -78,7 +78,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.33 2008-10-20 20:31:29 thothy Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.34 2008-11-03 20:46:05 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -265,6 +265,9 @@ void PSG_DataRegister_WriteByte(void)
 				Printer_TransferByteTo(PSGRegisters[PSG_REG_IO_PORTB]);
 				/* Initiate a possible GPIP0 Printer BUSY interrupt */
 				MFP_InputOnChannel(MFP_GPIP_0_BIT,MFP_IERB,&MFP_IPRB);
+				/* Initiate a possible GPIP1 Falcon ACK interrupt */
+				if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+					MFP_InputOnChannel(MFP_GPIP_1_BIT,MFP_IERB,&MFP_IPRB);
 			}
 		}
 		LastStrobe = PSGRegisters[PSG_REG_IO_PORTA]&(1<<5);

@@ -39,6 +39,7 @@
 #define  MFP_TIMER_C_BIT      0x20
 #define  MFP_TIMER_D_BIT      0x10
 #define  MFP_GPU_DONE_BIT     0x08
+#define  MFP_GPIP_1_BIT       0x02
 #define  MFP_GPIP_0_BIT       0x01
 
 /* MFP Registers */
