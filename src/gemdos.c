@@ -18,7 +18,7 @@
   * rmdir routine, can't remove dir with files in it. (another tos/unix difference)
   * Fix bugs, there are probably a few lurking around in here..
 */
-const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.79 2008-10-22 18:56:43 thothy Exp $";
+const char Gemdos_rcsid[] = "Hatari $Id: gemdos.c,v 1.80 2008-11-03 20:48:43 thothy Exp $";
 
 #include <config.h>
 
@@ -1008,6 +1008,7 @@ static bool GemDOS_Cauxout(Uint32 Params)
  * GEMDOS Cprnout
  * Call 0x5
  */
+#if 0
 static bool GemDOS_Cprnout(Uint32 Params)
 {
 	unsigned char c;
@@ -1019,6 +1020,7 @@ static bool GemDOS_Cprnout(Uint32 Params)
 
 	return TRUE;
 }
+#endif
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -1039,9 +1041,10 @@ static bool GemDOS_SetDrv(Uint32 Params)
  * GEMDOS Cprnos
  * Call 0x11
  */
+#if 0
 static bool GemDOS_Cprnos(Uint32 Params)
 {
-	/* pritner status depends if printing is enabled or not... */
+	/* printer status depends if printing is enabled or not... */
 	if (ConfigureParams.Printer.bEnablePrinting)
 		Regs[REG_D0] = -1;              /* Printer OK */
 	else
@@ -1049,6 +1052,7 @@ static bool GemDOS_Cprnos(Uint32 Params)
 
 	return TRUE;
 }
+#endif
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -2084,18 +2088,24 @@ void GemDOS_OpCode(void)
 			RunOld = FALSE;
 		break;
 	 */
-	 case 0x5:          /* direct printing via GEMDOS */
+	 /* direct printing via GEMDOS */
+	 /*
+	 case 0x5:
 		if (GemDOS_Cprnout(Params))
 			RunOld = FALSE;
 		break;
+	 */
 	 case 0xe:
 		if (GemDOS_SetDrv(Params))
 			RunOld = FALSE;
 		break;
-	 case 0x11:         /* Printer status  */
+	 /* Printer status  */
+	 /*
+	 case 0x11:
 		if (GemDOS_Cprnos(Params))
 			RunOld = FALSE;
 		break;
+	 */
 	 /*
 	 case 0x12:
 		if (GemDOS_Cauxis(Params))
