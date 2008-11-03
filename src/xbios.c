@@ -9,7 +9,7 @@
   We intercept and direct some XBios calls to handle the RS-232 etc. and help
   with floppy debugging.
 */
-const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.17 2008-05-25 19:58:56 thothy Exp $";
+const char XBios_rcsid[] = "Hatari $Id: xbios.c,v 1.18 2008-11-03 20:24:25 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -161,20 +161,6 @@ static bool XBios_Scrdmp(Uint32 Params)
 }
 
 
-/*----------------------------------------------------------------------- */
-/**
- * XBIOS Prtblk
- * Call 36
- */
-static bool XBios_Prtblk(Uint32 Params)
-{
-	/* Correct return code? */
-	Regs[REG_D0] = 0;
-
-	return TRUE;
-}
-
-
 /*-----------------------------------------------------------------------*/
 /**
  * Check if we need to re-direct XBios call to our own routines
@@ -202,9 +188,6 @@ bool XBios(void)
 	 case 20:
 		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS Scrdmp()\n" );
 		return XBios_Scrdmp(Params);
-	 case 36:
-		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS Prtblk()\n" );
-		return XBios_Prtblk(Params);
 
 	 default:  /* Call as normal! */
 		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS %d\n", XBiosCall );

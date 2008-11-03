@@ -6,10 +6,9 @@
 
   Bios Handler (Trap #13)
 
-  We intercept and direct some Bios calls to handle input/output to RS-232
-  or the printer etc...
+  We intercept some Bios calls for debugging
 */
-const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.13 2008-05-19 20:34:07 thothy Exp $";
+const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.14 2008-11-03 20:24:25 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -20,9 +19,6 @@ const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.13 2008-05-19 20:34:07 thothy 
 #include "rs232.h"
 #include "stMemory.h"
 #include "bios.h"
-
-
-#define BIOS_DEBUG 0	/* for floppy r/w */
 
 
 /*-----------------------------------------------------------------------*/
@@ -36,34 +32,7 @@ static bool Bios_Bconstat(Uint32 Params)
 
 	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 
-	switch(Dev)
-	{
-	 case 0:                            /* PRT: Centronics */
-		if (ConfigureParams.Printer.bEnablePrinting)
-		{
-			Regs[REG_D0] = 0;               /* No characters ready (cannot read from printer) */
-			return TRUE;
-		}
-		else
-		{
-			return FALSE;
-		}
-		break;
-	 case 1:                            /* AUX: RS-232 */
-		if (ConfigureParams.RS232.bEnableRS232)
-		{
-			if (RS232_GetStatus())
-				Regs[REG_D0] = -1;      /* Chars waiting */
-			else
-				Regs[REG_D0] = 0;
-			return TRUE;
-		}
-		else
-		{
-			return FALSE;
-		}
-		break;
-	}
+	HATARI_TRACE(HATARI_TRACE_OS_BIOS, "BIOS Bconstat(%i)\n", Dev);
 
 	return FALSE;
 }
@@ -77,36 +46,10 @@ static bool Bios_Bconstat(Uint32 Params)
 static bool Bios_Bconin(Uint32 Params)
 {
 	Uint16 Dev;
-	unsigned char Char;
 
 	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 
-	switch(Dev)
-	{
-	 case 0:                            /* PRT: Centronics */
-		if (ConfigureParams.Printer.bEnablePrinting)
-		{
-			Regs[REG_D0] = 0;           /* Force NULL character (cannot read from printer) */
-			return TRUE;
-		}
-		else
-		{
-			return FALSE;
-		}
-		break;
-	 case 1:                            /* AUX: RS-232 */
-		if (ConfigureParams.RS232.bEnableRS232)
-		{
-			RS232_ReadBytes(&Char, 1);
-			Regs[REG_D0] = Char;
-			return TRUE;
-		}
-		else
-		{
-			return FALSE;
-		}
-		break;
-	}
+	HATARI_TRACE(HATARI_TRACE_OS_BIOS, "BIOS Bconin(%i)\n", Dev);
 
 	return FALSE;
 }
@@ -125,31 +68,7 @@ static bool Bios_Bconout(Uint32 Params)
 	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 	Char = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
 
-	switch(Dev)
-	{
-	 case 0:                            /* PRT: Centronics */
-		if (ConfigureParams.Printer.bEnablePrinting)
-		{
-			Printer_TransferByteTo(Char);
-			return TRUE;
-		}
-		else
-		{
-			return FALSE;
-		}
-		break;
-	 case 1:                            /* AUX: RS-232 */
-		if (ConfigureParams.RS232.bEnableRS232)
-		{
-			RS232_TransferBytesTo(&Char, 1);
-			return TRUE;
-		}
-		else
-		{
-			return FALSE;
-		}
-		break;
-	}
+	HATARI_TRACE(HATARI_TRACE_OS_BIOS, "BIOS Bconout(%i, 0x%02x)\n", Dev, Char);
 
 	return FALSE;
 }
@@ -162,7 +81,6 @@ static bool Bios_Bconout(Uint32 Params)
  */
 static bool Bios_RWabs(Uint32 Params)
 {
-#if BIOS_DEBUG
 	Uint32 pBuffer;
 	Uint16 RWFlag, Number, RecNo, Dev;
 
@@ -173,8 +91,8 @@ static bool Bios_RWabs(Uint32 Params)
 	RecNo = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 
-	Log_Printf(LOG_DEBUG, "RWABS %s,%d,0x%X,%d,%d\n", EmulationDrives[Dev].szFileName,RWFlag, (char *)STRAM_ADDR(pBuffer), RecNo, Number);
-#endif
+	HATARI_TRACE(HATARI_TRACE_OS_BIOS, "BIOS RWabs %i,%d,0x%lX,%d,%d\n",
+			Dev, RWFlag, STRAM_ADDR(pBuffer), RecNo, Number);
 
 	return FALSE;
 }
@@ -191,31 +109,7 @@ static bool Bios_Bcostat(Uint32 Params)
 
 	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 
-	switch(Dev)
-	{
-	 case 0:                            /* PRT: Centronics */
-		if (ConfigureParams.Printer.bEnablePrinting)
-		{
-			Regs[REG_D0] = -1;          /* Device ready */
-			return TRUE;
-		}
-		else
-		{
-			return FALSE;
-		}
-		break;
-	 case 1:                            /* AUX: RS-232 */
-		if (ConfigureParams.RS232.bEnableRS232)
-		{
-			Regs[REG_D0] = -1;          /* Device ready */
-			return TRUE;
-		}
-		else
-		{
-			return FALSE;
-		}
-		break;
-	}
+	HATARI_TRACE(HATARI_TRACE_OS_BIOS, "BIOS Bcostat(%i)\n", Dev);
 
 	return FALSE;
 }
@@ -239,19 +133,14 @@ bool Bios(void)
 	switch(BiosCall)
 	{
 	 case 0x1:
-		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS Bconstat()\n" );
 		return Bios_Bconstat(Params);
 	 case 0x2:
-		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS Bconin()\n" );
 		return Bios_Bconin(Params);
 	 case 0x3:
-		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS Bconout()\n" );
 		return Bios_Bconout(Params);
 	 case 0x4:
-		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS RWabs()\n" );
 		return Bios_RWabs(Params);
 	 case 0x8:
-		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS Bcostat()\n" );
 		return Bios_Bcostat(Params);
 	 default:           /* Call as normal! */
 		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS %d\n", BiosCall );
