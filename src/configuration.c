@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.98 2008-11-02 15:28:06 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.99 2008-11-04 21:05:47 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -62,9 +62,11 @@ static const struct Config_Tag configs_Screen[] =
 	{ "bShowDriveLed", Bool_Tag, &ConfigureParams.Screen.bShowDriveLed },
 	{ "bCaptureChange", Bool_Tag, &ConfigureParams.Screen.bCaptureChange },
 	{ "nFramesPerSecond", Int_Tag, &ConfigureParams.Screen.nFramesPerSecond },
+	{ "nWindowBorderPixelsTop", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsTop },
 	{ "nWindowBorderPixelsLeft", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsLeft },
 	{ "nWindowBorderPixelsRight", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsRight },
 	{ "nWindowBorderPixelsBottom", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsBottom },
+	{ "nFullScreenBorderPixelsTop", Int_Tag, &ConfigureParams.Screen.nFullScreenBorderPixelsTop },
 	{ "nFullScreenBorderPixelsLeft", Int_Tag, &ConfigureParams.Screen.nFullScreenBorderPixelsLeft },
 	{ "nFullScreenBorderPixelsRight", Int_Tag, &ConfigureParams.Screen.nFullScreenBorderPixelsRight },
 	{ "nFullScreenBorderPixelsBottom", Int_Tag, &ConfigureParams.Screen.nFullScreenBorderPixelsBottom },
@@ -438,9 +440,11 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bShowDriveLed = TRUE;
 	ConfigureParams.Screen.bCaptureChange = FALSE;
 	ConfigureParams.Screen.nFramesPerSecond = 25;
+	ConfigureParams.Screen.nWindowBorderPixelsTop = OVERSCAN_TOP;
 	ConfigureParams.Screen.nWindowBorderPixelsLeft = 48;
 	ConfigureParams.Screen.nWindowBorderPixelsRight = 48;
 	ConfigureParams.Screen.nWindowBorderPixelsBottom = MAX_OVERSCAN_BOTTOM-2;
+	ConfigureParams.Screen.nFullScreenBorderPixelsTop = OVERSCAN_TOP;
 	ConfigureParams.Screen.nFullScreenBorderPixelsLeft = 32;
 	ConfigureParams.Screen.nFullScreenBorderPixelsRight = 32;
 	ConfigureParams.Screen.nFullScreenBorderPixelsBottom = MAX_OVERSCAN_BOTTOM-2;

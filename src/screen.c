@@ -32,7 +32,7 @@
 */
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.95 2008-11-02 15:19:33 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.96 2008-11-04 21:05:47 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -60,7 +60,7 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.95 2008-11-02 15:19:33 tho
 SDL_Surface *sdlscrn = NULL;                /* The SDL screen surface */
 int nScreenZoomX, nScreenZoomY;             /* Zooming factors, used for scaling mouse motions */
 int nBorderPixelsLeft, nBorderPixelsRight;  /* Pixels in left and right border */
-int nBorderPixelsBottom;                    /* Lines in bottom border */
+int nBorderPixelsTop, nBorderPixelsBottom;  /* Lines in top and bottom border */
 
 /* extern for shortcuts and falcon/hostscreen.c */
 bool bGrabMouse = FALSE;      /* Grab the mouse cursor in the window */
@@ -286,16 +286,27 @@ static void Screen_SetSTScreenOffsets(void)
 	/* Determine border pixels */
 	if (bInFullScreen)
 	{
+		nBorderPixelsTop = ConfigureParams.Screen.nFullScreenBorderPixelsTop;
 		nBorderPixelsLeft = ConfigureParams.Screen.nFullScreenBorderPixelsLeft;
 		nBorderPixelsRight = ConfigureParams.Screen.nFullScreenBorderPixelsRight;
 		nBorderPixelsBottom = ConfigureParams.Screen.nFullScreenBorderPixelsBottom;
 	}
 	else
 	{
+		nBorderPixelsTop = ConfigureParams.Screen.nWindowBorderPixelsTop;
 		nBorderPixelsLeft = ConfigureParams.Screen.nWindowBorderPixelsLeft;
 		nBorderPixelsRight = ConfigureParams.Screen.nWindowBorderPixelsRight;
 		nBorderPixelsBottom = ConfigureParams.Screen.nWindowBorderPixelsBottom;
 	}
+	/* All screen widths need to be aligned to 16-bits.
+	 * 
+	 * TODO: Change VDI_Limit() to generic function and check
+	 * the limits when config values are set or changed (after 1.1).
+	 */
+	nBorderPixelsTop = VDI_Limit(nBorderPixelsTop, 1, 0, OVERSCAN_TOP);
+	nBorderPixelsLeft = VDI_Limit(nBorderPixelsLeft, 16, 0, 48);
+	nBorderPixelsRight = VDI_Limit(nBorderPixelsRight, 16, 0, 48);
+	nBorderPixelsBottom = VDI_Limit(nBorderPixelsBottom, 1, 0, MAX_OVERSCAN_BOTTOM);
 
 	/* Store offset to each horizontal line */
 	for (i = 0; i < NUM_VISIBLE_LINES; i++)
@@ -341,7 +352,7 @@ static void Screen_SetResolution(void)
 			int nZoom = ((Width == 640) ? 2 : 1);
 			/* Add in overscan borders (if 640x200 bitmap is double on Y) */
 			Width += (nBorderPixelsLeft+nBorderPixelsRight) * nZoom;
-			Height += (OVERSCAN_TOP+nBorderPixelsBottom) * nZoom;
+			Height += (nBorderPixelsTop+nBorderPixelsBottom) * nZoom;
 		}
 	}
 
@@ -872,16 +883,17 @@ static void Screen_SetConvertDetails(void)
 		{
 			/* Always draw to WHOLE screen including ALL borders */
 			STScreenLeftSkipBytes = 0;              /* Number of bytes to skip on ST screen for left (border) */
-			STScreenStartHorizLine = 0;             /* Full height */
 
 			if (bUseHighRes)
 			{
 				pFrameBuffer->OverscanModeCopy = OverscanMode = OVERSCANMODE_NONE;
+				STScreenStartHorizLine = 0;
 				STScreenEndHorizLine = 400;
 			}
 			else
 			{
 				STScreenWidthBytes = SCREENBYTES_LINE;  /* Number of horizontal bytes in our ST screen */
+				STScreenStartHorizLine = OVERSCAN_TOP - nBorderPixelsTop;
 				STScreenEndHorizLine = OVERSCAN_TOP + 200 + nBorderPixelsBottom;
 			}
 		}

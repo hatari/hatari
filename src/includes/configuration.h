@@ -212,9 +212,11 @@ typedef struct
   bool bShowDriveLed;
   bool bCaptureChange;
   int nFramesPerSecond;
+  int nWindowBorderPixelsTop;
   int nWindowBorderPixelsLeft;
   int nWindowBorderPixelsRight;
   int nWindowBorderPixelsBottom;
+  int nFullScreenBorderPixelsTop;
   int nFullScreenBorderPixelsLeft;
   int nFullScreenBorderPixelsRight;
   int nFullScreenBorderPixelsBottom;
