@@ -8,16 +8,15 @@
 - Matthias Arndt <marndt@asmsoftware.de> : Maintains the Hatari user manual,
   fixed the printer emulation functions.
 
-- Eero Tamminen <eerot@users.sourceforge.net> : Many speed improvements, code
-  cleanup, parts of the STE emulation and many other patches.
-
-- Marco Herrn <marco@mherrn.de> : Wrote the initial version of the "man" page
-  of Hatari and maintains the Hatari Debian packages.
+- Eero Tamminen <eerot@users.sourceforge.net> : Speed improvements & code
+  cleanup, parts of the STE emulation, Hatari embedding & remote control,
+  pause & auto frameskip support, statusbar & overlay led, PNG saving and
+  other patches.
 
 - Sébastien Molines <clafou@gmail.com> : Maintains the Mac OS X GUI of Hatari.
 
-- Nicolas Pomarede <npomarede@corp.free.fr> : Improvements of CPU and video
-  emulation.
+- Nicolas Pomarede <npomarede@corp.free.fr> : Many improvements to CPU and video
+  emulation, new sound engine, fake IKBD emulation.
 
 
  Contributors:
@@ -26,6 +25,9 @@
 Following people contributed code or patches to this projects and/or helped to
 find bugs in Hatari (listed in random order - and if someone is missing here,
 please remind me!):
+
+- Marco Herrn <marco@mherrn.de> : Wrote the initial version of the "man" page
+  of Hatari and maintained the Hatari Debian packages.
 
 - Sven de Marothy : Wrote the screenshot functions, the built-in debugger,
   the ACSI emulation and added support for ZIPed and GZIPed disk images.
@@ -74,6 +76,10 @@ please remind me!):
   in the PSG shadow register emulation.
 
 - Laurent Sallafranque: Fixed bugs in the DSP emulation code.
+
+- Volker Seebode: Fix to ASCI emulation to get other than AHDI drivers working.
+
+- David Savinkoff: More accurate printer emulation.
 
 
  Code from other projects

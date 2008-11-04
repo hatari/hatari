@@ -154,7 +154,7 @@ EmuTOS TOS, especially for ST/e. For more information, see emutos.txt.</li>
 
 <p>Hatari lacks support for MIDI input (output is supported) without
 which MIDI sequencing (and few midi-networked games) software isn't
-very useful. Otherwise
+very useful.  By default
 <b>everything that works on a real ST should work also in Hatari</b>.
 </p>
 
@@ -236,9 +236,25 @@ very useful. Otherwise
       <td>Trapdoors sound dodgy</td>
     </tr>
     <tr>
+      <td>Robocop II</td>
+      <td class="major">1.?</td>
+      <td>Crash at start of level 1, maybe FDC related</td>
+    </tr>
+    <tr>
+      <td>Subbuteo</td>
+      <td class="major">1.?</td>
+      <td>Because of incorrect 68000 prefech for the 'ADD' opcode,
+          the protection  will not pass</td>
+    </tr>
+    <tr>
       <td>Super Hang-On</td>
       <td class="minor">1.0</td>
-      <td>Minor screen sync issues.</td>
+      <td>Minor screen sync issues</td>
+    </tr>
+    <tr>
+      <td>Super Monaco GP</td>
+      <td class="major">1.?</td>
+      <td>Bad FDC timings prevents the game from starting</td>
     </tr>
     <tr>
       <td>Pirates!</td>
@@ -296,9 +312,11 @@ very useful. Otherwise
 
 <a name="ST demos"></a><h4>ST demos</h4>
 
-<p>Some (very) rare demos try to install IKBD code.  Hatari doesn't have full
-6301 emulator, but has specific code to handle these particular demos.
-They are marked with '*'.</p>
+<p>Some (very) rare demos try to install IKBD code.  Hatari doesn't have
+full 6301 emulator, but has specific code to handle these particular demos.
+They are marked with '*'.  Few remaining screen sync issues are related to
+hi/lo frequency switching or switching to 60 Hz for too long (used
+for border removal).</p>
 
 <table border="1" cellpadding="3">
   <caption align="bottom">Tested ST demos</caption>
@@ -350,8 +368,9 @@ They are marked with '*'.</p>
     </tr>
     <tr>
       <td>Syntax Terror (by DeltaForce)</td>
-      <td>before 1.0</td>
-      <td>&nbsp;</td>
+      <td>1.?</td>
+      <td>In TCB and Tex screens, planes are shifted
+          (the shifter stays in 60 Hz for too long)</td>
     </tr>
     <tr>
       <td>Hallucinations (by Reservoir Gods)</td>
@@ -376,7 +395,8 @@ They are marked with '*'.</p>
     <tr>
       <td>Phaleon Gigademo</td>
       <td>1.0</td>
-      <td>4 disks.  Some overscan screens have small sync issues</td>
+      <td>4 disks.  Some overscan screens have small sync issues
+          (in Future Minds screen, planes are shifted in the lower part)</td>
     </tr>
     <tr>
       <td>SoWatt (by CareBears)</td>
@@ -390,37 +410,32 @@ They are marked with '*'.</p>
     </tr>
     <tr>
       <td>Froggies over the Fence*</td>
-      <td>TBD w/ 1.1</td>
-      <td>
-        Needs TOS 1.02.
-        Uses its own IKBD 6301 routine (which Hatari can fake).
-      </td>
+      <td>1.?</td>
+      <td>Uses its own IKBD 6301 routine</td>
     </tr>
     <tr>
       <td>Oh no more Froggies</td>
-      <td class="minor">1.0</td>
-      <td>No more music after a while</td>
+      <td>1.0</td>
+      <td>Demo doesn't support SID sound with timers during
+          the overscan parts, so it stops music (it's not a bug).</td>
     </tr>
     <tr>
       <td>Dragonnels*</td>
-      <td class="minor">TBD w/ 1.1</td>
+      <td>1.?</td>
       <td>
-        Uses its own IKBD 6301 routine (which Hatari can fake).
-        (The &quot;Unlimited Bobs&quot; screen is very sensitive to proper
-         IKBD timings).
+        Uses its own IKBD 6301 routine. The &quot;Unlimited Bobs&quot;
+	screen is very sensitive to proper IKBD timings.
       </td>
     </tr>
     <tr>
       <td>Transbeauce II*</td>
-      <td>TBD w/ 1.1</td>
-      <td>
-        Uses its own IKBD 6301 routine (which Hatari can fake).
-      </td>
+      <td>1.?</td>
+      <td>Uses its own IKBD 6301 routine. Does not work with HD emulation.</td>
     </tr>
     <tr>
       <td>Dark Side of the Spoon (by ULM)</td>
       <td>1.0</td>
-      <td>Needs TOS 1.02. Lots of fullscreens and sync-scrolling</td>
+      <td>Lots of fullscreens and sync-scrolling</td>
     </tr>
     <tr>
       <td>V8 music system</td>
@@ -1025,13 +1040,13 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>New Core: Core Flakes</td>
-      <td>1.0</td>
-      <td>First overscan scanline has some garbage pixels in text zoomer</td>
+      <td>1.?</td>
+      <td>&nbsp;</td>
     </tr>
     <tr>
       <td>Next: Illusion</td>
-      <td class="minor">1.0</td>
-      <td>Screen sync issues on some lines</td>
+      <td class="minor">1.?</td>
+      <td>Blitter timings issues on some lines</td>
     </tr>
     <tr>
       <td>N.L.C: Techno Drugs</td>
@@ -1055,16 +1070,16 @@ are just STE enhanced.  These are marked with '*'.</p>
     </tr>
     <tr>
       <td>Paradox: Pacemaker</td>
-      <td class="minor">1.0</td>
+      <td>1.?</td>
       <td>
         Some garbage in the end screen when the demo has been started from
-        hard disk. End screen currently also fails to open the borders properly.
+        hard disk.
       </td>
     </tr>
     <tr>
       <td>Paradox: HighResMode</td>
-      <td class="major">1.0</td>
-      <td>Screen is out of sync.  This mode is not supported by Hatari.</td>
+      <td class="major">1.?</td>
+      <td>Spec512 in med-rez is not (yet) supported by Hatari</td>
     </tr>
     <tr>
       <td>Reservoir Gods: Mind Rewind</td>
