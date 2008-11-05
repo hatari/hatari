@@ -8,7 +8,7 @@
 
   NOTE: The ST uses the joystick port 1 as the default controller.
 */
-const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.16 2008-05-25 19:58:56 thothy Exp $";
+const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.17 2008-11-05 18:23:21 thothy Exp $";
 
 #include <SDL.h>
 
@@ -299,22 +299,26 @@ bool Joy_KeyDown(int symkey, int modkey)
 		{
 			if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeUp)
 			{
-				nJoyKeyEmu[i] |= 1;
+				nJoyKeyEmu[i] &= ~2;   /* Disable down */
+				nJoyKeyEmu[i] |= 1;    /* Enable up */
 				return TRUE;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeDown)
 			{
-				nJoyKeyEmu[i] |= 2; 
+				nJoyKeyEmu[i] &= ~1;   /* Disable up */
+				nJoyKeyEmu[i] |= 2;    /* Enable down */ 
 				return TRUE;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeLeft)
 			{
-				nJoyKeyEmu[i] |= 4;
+				nJoyKeyEmu[i] &= ~8;   /* Disable right */
+				nJoyKeyEmu[i] |= 4;    /* Enable left */
 				return TRUE;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeRight)
 			{
-				nJoyKeyEmu[i] |= 8;
+				nJoyKeyEmu[i] &= ~4;   /* Disable left */
+				nJoyKeyEmu[i] |= 8;    /* Enable right */
 				return TRUE;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeFire)
