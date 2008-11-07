@@ -155,20 +155,37 @@ pexecerr:
 reloc:
 	movem.l	a3-a5/d6-d7,-(sp)
 	move.l	d0,a5
-	clr		-(sp)
+	clr 	-(sp)
 	move.l	2(a6),-(sp)
 	move	#$3d,-(sp)	; Fopen
 	trap	#1		; Gemdos
 	addq	#8,sp
+
 	move.l	d0,d6
 	move.l	a5,-(sp)
 	add.l	#228,(sp)
-	pea		$1c.w
+	pea 	$1c.w
 	move	d6,-(sp)
 	move	#$3f,-(sp)	; Fread
 	trap	#1		; Gemdos
-	lea		12(sp),sp
-; check size!!
+	lea 	12(sp),sp
+
+	cmp.w	#$601a,228(a5)  ; Check program header magic
+	beq.s	magic_ok
+	move	d6,-(sp)
+	move	#$3e,-(sp)	; Fclose
+	trap	#1		; Gemdos
+	addq	#4,sp
+	move.l	a5,-(sp)
+	move.w	#$49,-(sp)	; Mfree
+	trap	#1		; Release "pexeced" memory
+	addq.l	#6,sp
+	move.l	#-66,d0         ; Error code: Invalid PRG format
+	movem.l	(sp)+,a3-a5/d6-d7
+	addq	#4,sp           ; Drop return address
+	bra	gohome          ; Abort
+magic_ok:
+	; TODO: check size!!
 	move.l	a5,-(sp)
 	add.l	#256,(sp)
 	pea		$7fffffff
