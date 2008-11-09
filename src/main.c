@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Main_rcsid[] = "Hatari $Id: main.c,v 1.148 2008-11-09 20:04:29 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: main.c,v 1.149 2008-11-09 20:20:55 eerot Exp $";
 
 #include <time.h>
 #include <SDL.h>
@@ -554,12 +554,17 @@ static void Main_LoadInitialConfig(void)
  */
 static void Main_StatusbarSetup(void)
 {
-	const char *name;
-	char *keyname;
-	char message[24];
+	const char *name = NULL;
+	SDLKey key;
 
-	name = SDL_GetKeyName(ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS]);
-	if (name) {
+	key = ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS];
+	if (!key)
+		key = ConfigureParams.Shortcut.withModifier[SHORTCUT_OPTIONS];
+	if (key)
+		name = SDL_GetKeyName(key);
+	if (name)
+	{
+		char message[24], *keyname;
 		keyname = Str_ToUpper(strdup(name));
 		snprintf(message, sizeof(message), "Press %s for Options", keyname);
 		free(keyname);
