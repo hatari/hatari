@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Main_rcsid[] = "Hatari $Id: main.c,v 1.149 2008-11-09 20:20:55 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: main.c,v 1.150 2008-11-09 23:25:30 thothy Exp $";
 
 #include <time.h>
 #include <SDL.h>
@@ -104,7 +104,7 @@ bool Main_PauseEmulation(bool visualize)
 	{
 		Statusbar_AddMessage("Emulation paused", 100);
 		/* make sure msg gets shown */
-		Screen_Draw();
+		Statusbar_Update(sdlscrn);
 	}
 	return TRUE;
 }
