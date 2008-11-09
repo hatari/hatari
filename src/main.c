@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Main_rcsid[] = "Hatari $Id: main.c,v 1.147 2008-10-26 22:39:50 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: main.c,v 1.148 2008-11-09 20:04:29 eerot Exp $";
 
 #include <time.h>
 #include <SDL.h>
@@ -40,6 +40,7 @@ const char Main_rcsid[] = "Hatari $Id: main.c,v 1.147 2008-10-26 22:39:50 eerot 
 #include "sound.h"
 #include "statusbar.h"
 #include "stMemory.h"
+#include "str.h"
 #include "tos.h"
 #include "video.h"
 
@@ -547,6 +548,27 @@ static void Main_LoadInitialConfig(void)
 	Configuration_Load(NULL);
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Set TOS etc information and initial help message
+ */
+static void Main_StatusbarSetup(void)
+{
+	const char *name;
+	char *keyname;
+	char message[24];
+
+	name = SDL_GetKeyName(ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS]);
+	if (name) {
+		keyname = Str_ToUpper(strdup(name));
+		snprintf(message, sizeof(message), "Press %s for Options", keyname);
+		free(keyname);
+
+		Statusbar_AddMessage(message, 6000);
+	}
+	/* update information loaded by Main_Init() */
+	Statusbar_UpdateInfo();
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -590,12 +612,8 @@ int main(int argc, char *argv[])
 	/* Init emulator system */
 	Main_Init();
 
-	/* queue a message for user */
-	if (ConfigureParams.Shortcut.withoutModifier[SHORTCUT_OPTIONS] == SDLK_F12) {
-		Statusbar_AddMessage("Press F12 for Options", 6000);
-	}
-	/* update TOS information etc loaded by Main_Init() */
-	Statusbar_UpdateInfo();
+	/* Set initial Statusbar information */
+	Main_StatusbarSetup();
 	
 	/* Check if SDL_Delay is accurate */
 	Main_CheckForAccurateDelays();
