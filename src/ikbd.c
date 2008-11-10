@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.49 2008-10-05 20:42:33 npomarede Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.50 2008-11-10 00:13:36 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -1285,6 +1285,10 @@ static void IKBD_Cmd_ReturnJoystickAuto(void)
 		KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
 		bBothMouseAndJoy = TRUE;
 	}
+
+	/* Required for the game "Utopos":
+	 * This command resets the internally previously stored joystick states */
+	KeyboardProcessor.Joy.PrevJoyData[0] = KeyboardProcessor.Joy.PrevJoyData[1] = 0;
 
 	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystickAuto\n");
 }
