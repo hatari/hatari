@@ -23,7 +23,7 @@
 /*			PendingCyclesOver is the value of  PendingInterruptCount when	*/
 /*			the timer expired.						*/
 /*			- MFP_ReadTimer_AB/CD was wrong (returned the elapsed counter	*/
-/*			changes since start, instead of the remainging counter value).	*/
+/*			changes since start, instead of the remaining counter value).	*/
 /*			(ULM DSOTS Demos and Overscan Demos).				*/
 /* 2007/09/25	[NP]	Replace printf by calls to HATARI_TRACE.			*/
 /* 2007/10/21	[NP]	Use 'Int_AddRelativeInterruptWithOffset' when an MFP timer is	*/
@@ -91,7 +91,7 @@
 
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.53 2008-11-03 20:46:05 thothy Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.54 2008-11-10 19:23:13 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
