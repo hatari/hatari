@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.22 2008-05-25 19:58:56 thothy Exp $";
+const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.23 2008-11-12 22:08:06 eerot Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -356,6 +356,8 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	zipdir = pStringMem + 2 * FILENAME_MAX;
 	zipfilename = pStringMem + 3 * FILENAME_MAX;
 	zipfilename[0] = 0;
+	fname[0] = 0;
+	path[0] = 0;
 
 	SDLGui_CenterDlg(fsdlg);
 	if (bAllowNew)
@@ -375,21 +377,19 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 		strncpy(path, path_and_name, FILENAME_MAX);
 		path[FILENAME_MAX-1] = '\0';
 	}
-	else
+	if (path[0] && stat(path, &filestat) == 0)
 	{
-		if (!getcwd(path, FILENAME_MAX))
-		{
-			perror("SDLGui_FileSelect");
-			return NULL;
-		}
+		if (S_ISDIR(filestat.st_mode))
+			File_AddSlashToEndFileName(path);
+		else
+			File_SplitPath(path, path, fname, NULL);
 	}
-	if (stat(path, &filestat) == 0 && S_ISDIR(filestat.st_mode))
+	else if (!getcwd(path, FILENAME_MAX))
 	{
-		File_AddSlashToEndFileName(path);
-		fname[0] = 0;
+		perror("SDLGui_FileSelect");
+		return NULL;
 	}
-	else
-		File_SplitPath(path, path, fname, NULL);
+
 	File_MakeAbsoluteName(path);
 	File_MakeValidPathName(path);
 	File_ShrinkName(dlgpath, path, DLGPATH_SIZE);
@@ -426,7 +426,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 			{
 				fprintf(stderr, "SDLGui_FileSelect: Path not found.\n");
 				free(pStringMem);
-				return FALSE;
+				return NULL;
 			}
 
 			/* reload always implies refresh */
@@ -440,7 +440,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 			if (!DlgFileSelect_RefreshEntries(files, path, browsingzip))
 			{
 				free(pStringMem);
-				return FALSE;
+				return NULL;
 			}
 			refreshentries = FALSE;
 		}
@@ -458,7 +458,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 			{
 				perror("Error while allocating temporary memory in SDLGui_FileSelect()");
 				free(pStringMem);
-				return FALSE;
+				return NULL;
 			}
 
 			if (browsingzip == TRUE)
@@ -468,7 +468,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 				{
 					fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
 					free(pStringMem);
-					return FALSE;
+					return NULL;
 				}
 				/* directory? */
 				if (File_DoesFileNameEndWithSlash(tempstr))
@@ -523,7 +523,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 				{
 					fprintf(stderr, "SDLGui_FileSelect: Path name too long!\n");
 					free(pStringMem);
-					return FALSE;
+					return NULL;
 				}
 				if (stat(tempstr, &filestat) == 0 && S_ISDIR(filestat.st_mode))
 				{
