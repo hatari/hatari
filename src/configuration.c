@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.99 2008-11-04 21:05:47 eerot Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.100 2008-11-12 22:06:11 eerot Exp $";
 
 #include <SDL_keysym.h>
 
@@ -644,7 +644,7 @@ void Configuration_Save(void)
 {
 	if (Configuration_SaveSection(sConfigFileName, configs_Log, "[Log]") < 0)
 	{
-		fprintf(stderr, "Error saving config file.\n");
+		Log_AlertDlg(LOG_ERROR, "Error saving config file.");
 		return;
 	}
 	Configuration_SaveSection(sConfigFileName, configs_Screen, "[Screen]");
