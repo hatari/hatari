@@ -6,7 +6,7 @@
 
   String functions.
 */
-const char Str_rcsid[] = "Hatari $Id: str.c,v 1.4 2008-11-09 20:02:34 eerot Exp $";
+const char Str_rcsid[] = "Hatari $Id: str.c,v 1.5 2008-11-12 20:36:01 eerot Exp $";
 
 #include <ctype.h>
 #include <stdbool.h>
@@ -55,42 +55,50 @@ char *Str_Trim(char *buffer)
 /**
  * Convert a string to uppercase in place.
  */
-char *Str_ToUpper(char *str)
+char *Str_ToUpper(char *pString)
 {
-	int i;
-	for (i = 0; str[i]; i++)
-		str[i] = toupper(str[i]);
-	return str;
+	char *str = pString;
+	while (*str)
+	{
+		*str = toupper(*str);
+		str++;
+	}
+	return pString;
 }
 
 
 /**
  * Convert string to lowercase
  */
-char *Str_ToLower(char *str)
+char *Str_ToLower(char *pString)
 {
-	int i;
-	for (i = 0; str[i]; i++)
-		str[i] = tolower(str[i]);
-	return str;
+	char *str = pString;
+	while (*str)
+	{
+		*str = tolower(*str);
+		str++;
+	}
+	return pString;
 }
 
 
 /**
  * truncate string at first unprintable char (e.g. newline)
  */
-char *Str_Trunc(char *str)
+char *Str_Trunc(char *pString)
 {
-	int i;
-	for (i = 0; str[i]; i++)
+	int i = 0;
+	char *str = pString;
+	while (str[i] != '\0')
 	{
 		if (!isprint((unsigned)str[i]))
 		{
 			str[i] = '\0';
 			break;
 		}
+		i++;
 	}
-	return str;
+	return pString;
 }
 
 
@@ -99,11 +107,12 @@ char *Str_Trunc(char *str)
  */
 bool Str_IsHex(const char *str)
 {
-	int i;
-	for (i = 0; str[i] != '\0' && str[i] != ' '; i++)
+	int i = 0;
+	while (str[i] != '\0' && str[i] != ' ')
 	{
 		if (!isxdigit((unsigned)str[i]))
 			return false;
+		i++;
 	}
 	return true;
 }
