@@ -1,0 +1,33 @@
+
+Hatari on constrained devices
+-----------------------------
+
+Note: Comments in the toplevel Makefile-default.cnf file suggest
+suitable compilation options for different platforms.
+
+In this directory are Hatari configurations files for mobile etc
+devices on which the builtin Hatari defaults aren't appropriate.
+Just copy suitable config file to the device /etc/ directory (or
+to /usr/local/etc directory if Hatari is installed under /usr/local)
+as 'hatari.cfg'.
+
+If these don't provide sufficient performance, use of an earlier
+Hatari version such as v0.95 (or even earlier) should be considered.
+Their emulation wasn't as accurate as in latest Hatari versions and
+therefore they're somewhat faster.
+
+
+n810.cfg
+--------
+
+Configuration file for the Nokia 770/N800/N810 TI Omap2 based devices:
+- Shortcut keys adapted for the device keys:
+  - Menu, Increase, Decrease, Fullscreen, Joystick keyemu fire
+- Smaller border values to prevent Hatari aborting when enabling
+  borders in fullscreen (note: enabling borders slows down things)
+- Options that are more suitable for the device performance:
+  - Non-compatible CPU mode (works fine with most things)
+  - No Falcon DSP emulation
+  - Automatic frameskip
+  - No spec512 support
+  - 11kHz sound
