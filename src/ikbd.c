@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.50 2008-11-10 00:13:36 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.51 2008-11-13 22:14:39 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -682,6 +682,23 @@ static void IKBD_SendRelMousePacket(void)
 }
 
 
+/**
+ * Get joystick data
+ */
+static void IKBD_GetJoystickData(void)
+{
+	/* Joystick 1 */
+	KeyboardProcessor.Joy.JoyData[1] = Joy_GetStickData(1);
+
+	/* If mouse is on, joystick 0 is not connected */
+	if (KeyboardProcessor.MouseMode==AUTOMODE_OFF
+	        || (bBothMouseAndJoy && KeyboardProcessor.MouseMode==AUTOMODE_MOUSEREL))
+		KeyboardProcessor.Joy.JoyData[0] = Joy_GetStickData(0);
+	else
+		KeyboardProcessor.Joy.JoyData[0] = 0x00;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Send 'joysticks' bit masks
@@ -866,13 +883,7 @@ void IKBD_SendAutoKeyboardCommands(void)
 		return;
 
 	/* Read joysticks for this frame */
-	KeyboardProcessor.Joy.JoyData[1] = Joy_GetStickData(1);
-	/* If mouse is on, joystick 0 is not connected */
-	if (KeyboardProcessor.MouseMode==AUTOMODE_OFF
-	        || (bBothMouseAndJoy && KeyboardProcessor.MouseMode==AUTOMODE_MOUSEREL))
-		KeyboardProcessor.Joy.JoyData[0] = Joy_GetStickData(0);
-	else
-		KeyboardProcessor.Joy.JoyData[0] = 0x00;
+	IKBD_GetJoystickData();
 
 	/* Check for double-clicks in maximum speed mode */
 	IKBD_CheckForDoubleClicks();
@@ -1286,11 +1297,16 @@ static void IKBD_Cmd_ReturnJoystickAuto(void)
 		bBothMouseAndJoy = TRUE;
 	}
 
-	/* Required for the game "Utopos":
-	 * This command resets the internally previously stored joystick states */
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystickAuto\n");
+
+	/* This command resets the internally previously stored joystick states */
 	KeyboardProcessor.Joy.PrevJoyData[0] = KeyboardProcessor.Joy.PrevJoyData[1] = 0;
 
-	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystickAuto\n");
+	/* This is a hack for the game Utopos (v1.5 and v1.61). It expects the
+	 * joystick data to be sent within a certain amount of time after this
+	 * command, without checking the ACIA control register first */
+	IKBD_GetJoystickData();
+	IKBD_SelAutoJoysticks();
 }
 
 
