@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.19 2008-09-02 10:09:25 thothy Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.20 2008-11-13 21:16:04 thothy Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -409,8 +409,8 @@ void DmaSnd_MicrowireData_ReadWord(void)
 	 * so this is not very accurate yet. */
 	if (nMwTransferSteps > 0)
 	{
-		IoMem_WriteWord(0xff8922, IoMem_ReadWord(0xff8922)<<2);
-		nMwTransferSteps -= 2;
+		IoMem_WriteWord(0xff8922, nMicrowireData<<(16-nMwTransferSteps));
+		nMwTransferSteps -= 1;
 	}
 	else
 	{
@@ -425,8 +425,12 @@ void DmaSnd_MicrowireData_ReadWord(void)
  */
 void DmaSnd_MicrowireData_WriteWord(void)
 {
-	nMicrowireData = IoMem_ReadWord(0xff8922);
-	nMwTransferSteps = 16;      /* To simulate a microwire transfer */
+	/* Only update, if no shift is in progress */
+	if (!nMwTransferSteps)
+	{
+		nMicrowireData = IoMem_ReadWord(0xff8922);
+		nMwTransferSteps = 16;   /* To simulate a microwire transfer */
+	}
 }
 
 
@@ -439,14 +443,14 @@ void DmaSnd_MicrowireMask_ReadWord(void)
 	/* Same as with data register, but mask register is rotated, not  shifted. */
 	if (nMwTransferSteps > 0)
 	{
-		IoMem_WriteWord(0xff8924, (IoMem_ReadWord(0xff8924)<<2)|(IoMem_ReadWord(0xff8924)>>14));
-		nMwTransferSteps -= 2;
+		IoMem_WriteWord(0xff8924, (nMicrowireMask<<(16-nMwTransferSteps))
+		                          |(nMicrowireMask>>nMwTransferSteps));
+		nMwTransferSteps -= 1;
 	}
 	else
 	{
 		IoMem_WriteWord(0xff8924, nMicrowireMask);
 	}
-
 }
 
 
@@ -457,4 +461,8 @@ void DmaSnd_MicrowireMask_ReadWord(void)
 void DmaSnd_MicrowireMask_WriteWord(void)
 {
 	nMicrowireMask = IoMem_ReadWord(0xff8924);
+
+	/* Assume a new program is writing the mask register,
+	 * so let's reset the shifting... */
+	nMwTransferSteps = 0;
 }
