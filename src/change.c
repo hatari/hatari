@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.17 2008-11-15 09:42:54 thothy Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.18 2008-11-15 19:04:09 thothy Exp $";
 
 #include <ctype.h>
 #include "main.h"
@@ -159,7 +159,9 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 			   changed->DiskImage.szDiskFileName[i]);
 		 */
 		if (strcmp(changed->DiskImage.szDiskFileName[i],
-			   current->DiskImage.szDiskFileName[i]))
+			   current->DiskImage.szDiskFileName[i])
+		    || strcmp(changed->DiskImage.szDiskZipPath[i],
+			      current->DiskImage.szDiskZipPath[i]))
 			bFloppyInsert[i] = TRUE;
 		else
 			bFloppyInsert[i] = FALSE;
