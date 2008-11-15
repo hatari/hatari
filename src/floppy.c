@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.41 2008-06-17 21:17:40 eerot Exp $";
+const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.42 2008-11-15 18:55:53 thothy Exp $";
 
 #include <sys/stat.h>
 #include <assert.h>
@@ -110,7 +110,6 @@ void Floppy_MemorySnapShot_Capture(bool bSave)
 		}
 		if (EmulationDrives[i].pBuffer)
 			MemorySnapShot_Store(EmulationDrives[i].pBuffer, EmulationDrives[i].nImageBytes);
-		MemorySnapShot_Store(EmulationDrives[i].szFileName, sizeof(EmulationDrives[i].szFileName));
 		MemorySnapShot_Store(&EmulationDrives[i].bMediaChanged,sizeof(EmulationDrives[i].bMediaChanged));
 		MemorySnapShot_Store(&EmulationDrives[i].bContentsChanged,sizeof(EmulationDrives[i].bContentsChanged));
 		MemorySnapShot_Store(&EmulationDrives[i].bOKToSave,sizeof(EmulationDrives[i].bOKToSave));
@@ -152,7 +151,8 @@ bool Floppy_IsWriteProtected(int Drive)
 	{
 		struct stat FloppyStat;
 		/* Check whether disk is writable */
-		if (stat(EmulationDrives[Drive].szFileName, &FloppyStat) == 0 && (FloppyStat.st_mode & S_IWUSR))
+		if (stat(ConfigureParams.DiskImage.szDiskFileName[Drive], &FloppyStat) == 0
+		    && (FloppyStat.st_mode & S_IWUSR))
 			return FALSE;
 		else
 			return TRUE;
@@ -355,7 +355,6 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		return FALSE;
 	}
 	/* Store image filename, size and set drive states */
-	strcpy(EmulationDrives[Drive].szFileName, filename);
 	EmulationDrives[Drive].nImageBytes = nImageBytes;
 	EmulationDrives[Drive].bDiskInserted = TRUE;
 	EmulationDrives[Drive].bContentsChanged = FALSE;
@@ -380,6 +379,8 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 	/* Does our drive have a disk in? */
 	if (EmulationDrives[Drive].bDiskInserted)
 	{
+		char *psFileName = ConfigureParams.DiskImage.szDiskFileName[Drive];
+
 		/* OK, has contents changed? If so, need to save */
 		if (EmulationDrives[Drive].bContentsChanged)
 		{
@@ -387,19 +388,21 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 			if (EmulationDrives[Drive].bOKToSave && !Floppy_IsWriteProtected(Drive))
 			{
 				/* Save as .MSA or .ST image? */
-				if (MSA_FileNameIsMSA(EmulationDrives[Drive].szFileName, TRUE))
-					MSA_WriteDisk(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
-				else if (ST_FileNameIsST(EmulationDrives[Drive].szFileName, TRUE))
-					ST_WriteDisk(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
-				else if (DIM_FileNameIsDIM(EmulationDrives[Drive].szFileName, TRUE))
-					DIM_WriteDisk(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
-				else if (ZIP_FileNameIsZIP(EmulationDrives[Drive].szFileName))
-					ZIP_WriteDisk(EmulationDrives[Drive].szFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+				if (MSA_FileNameIsMSA(psFileName, TRUE))
+					MSA_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+				else if (ST_FileNameIsST(psFileName, TRUE))
+					ST_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+				else if (DIM_FileNameIsDIM(psFileName, TRUE))
+					DIM_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+				else if (ZIP_FileNameIsZIP(psFileName))
+					ZIP_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 			}
 		}
+
 		/* Inform user that disk has been ejected! */
-		Log_Printf(LOG_INFO, "Disk '%s' has been removed from drive %c:.",
-			   EmulationDrives[Drive].szFileName, 'A'+Drive);
+		Log_Printf(LOG_INFO, "Floppy %c: has been removed from drive.",
+			   'A'+Drive);
+
 		bEjected = TRUE;
 	}
 
@@ -409,11 +412,12 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 		free(EmulationDrives[Drive].pBuffer);
 		EmulationDrives[Drive].pBuffer = NULL;
 	}
-	EmulationDrives[Drive].szFileName[0] = '\0';
+
 	EmulationDrives[Drive].nImageBytes = 0;
 	EmulationDrives[Drive].bDiskInserted = FALSE;
 	EmulationDrives[Drive].bContentsChanged = FALSE;
 	EmulationDrives[Drive].bOKToSave = FALSE;
+
 	return bEjected;
 }
 

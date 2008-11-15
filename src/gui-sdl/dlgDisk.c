@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.6 2008-06-08 20:04:08 eerot Exp $";
+const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.7 2008-11-15 18:55:53 thothy Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -162,7 +162,7 @@ void Dialog_DiskDlg(void)
 
 	/* Disk name A: */
 	if (EmulationDrives[0].bDiskInserted)
-		File_ShrinkName(dlgname[0], EmulationDrives[0].szFileName,
+		File_ShrinkName(dlgname[0], ConfigureParams.DiskImage.szDiskFileName[0],
 		                diskdlg[DISKDLG_DISKA].w);
 	else
 		dlgname[0][0] = '\0';
@@ -170,7 +170,7 @@ void Dialog_DiskDlg(void)
 
 	/* Disk name B: */
 	if (EmulationDrives[1].bDiskInserted)
-		File_ShrinkName(dlgname[1], EmulationDrives[1].szFileName,
+		File_ShrinkName(dlgname[1], ConfigureParams.DiskImage.szDiskFileName[1],
 		                diskdlg[DISKDLG_DISKB].w);
 	else
 		dlgname[1][0] = '\0';

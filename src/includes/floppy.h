@@ -14,7 +14,6 @@
 typedef struct
 {
   Uint8 *pBuffer;
-  char szFileName[FILENAME_MAX];
   int nImageBytes;
   bool bDiskInserted;
   bool bMediaChanged;
