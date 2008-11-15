@@ -190,10 +190,14 @@
 /*			(fix Power Rise / Xtrem D demo).					*/
 /* 2008/11/15	[NP]	For STE registers, add in the TRACE call if the write is delayed or	*/
 /*			not (linewidth, hwscroll, video address).				*/
+/*			On STE, allow to change linewdith, hwscroll and video address with no	*/
+/*			delay as soon as nHBL >= nEndHBL (revert previous changes). Power Rise	*/
+/*			is still working due to NewHWScrollCount=-1 when setting immediate	*/
+/*			hwscroll. Fix regression in Braindamage.				*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.128 2008-11-15 13:58:07 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.129 2008-11-15 15:37:51 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -1907,7 +1911,7 @@ void Video_Reset(void)
 void Video_ScreenBaseSTE_WriteByte(void)
 {
 	if ( ( IoAccessCurrentAddress == 0xff8201 ) || ( IoAccessCurrentAddress == 0xff8203 ) )
-		IoMem[0xff820d] = 0;          /* Reset screen base low register ([NP] : FIXME is this really sure ?) */
+		IoMem[0xff820d] = 0;          /* Reset screen base low register */
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_STE ) )
 	{
@@ -1962,7 +1966,7 @@ void Video_ScreenCounter_WriteByte(void)
 	/* If display has not started, we can still modify pVideoRaster */
 	/* We must also check the write does not overlap the end of the line */
 	if ( ( ( nLineCycles <= LINE_START_CYCLE_50 ) && ( nHBL == HblCounterVideo ) )
-		|| ( nHBL < nStartHBL ) || ( nHBL >= nLastVisibleHbl ) )
+		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
 	{
 		addr = Video_CalculateAddress();		/* get current video address */
 		if ( IoAccessCurrentAddress == 0xff8205 )
@@ -2076,7 +2080,7 @@ void Video_LineWidth_WriteByte(void)
 
 	/* We must also check the write does not overlap the end of the line */
 	if ( ( ( nLineCycles <= LineEndCycle ) && ( nHBL == HblCounterVideo ) )
-		|| ( nHBL < nStartHBL ) || ( nHBL >= nLastVisibleHbl ) )
+		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
 	{
 		LineWidth = NewWidth;		/* display is on, we can still change */
 		NewLineWidth = -1;		/* cancel 'pending' change */
@@ -2349,7 +2353,7 @@ void Video_HorScroll_Write(void)
 	/* for line n+1. */
 	/* We must also check the write does not overlap the end of the line */
 	if ( ( ( nLineCycles <= LINE_START_CYCLE_50 ) && ( nHBL == HblCounterVideo ) )
-		|| ( nHBL < nStartHBL ) || ( nHBL >= nLastVisibleHbl ) )
+		|| ( nHBL < nStartHBL ) || ( nHBL >= nEndHBL ) )
 	{
 		HWScrollCount = ScrollCount;		/* display has not started, we can still change */
 		HWScrollPrefetch = Prefetch;
