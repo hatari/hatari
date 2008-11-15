@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.51 2008-11-13 22:14:39 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.52 2008-11-15 21:02:31 thothy Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -604,16 +604,16 @@ static bool IKBD_ButtonsEqual(int Button1,int Button2)
 
 /*-----------------------------------------------------------------------*/
 /**
- * According to if the mouse if enabled or not the joystick 1 fire button/right mouse button
- * will become the same button, ie pressing one will also press the other and vise-versa
+ * According to if the mouse is enabled or not the joystick 1 fire
+ * button/right mouse button will become the same button. That means
+ * pressing one will also press the other and vice-versa.
+ * If both mouse and joystick are enabled, report it as a mouse button
+ * (needed by the game Big Run for example).
  */
 static void IKBD_DuplicateMouseFireButtons(void)
 {
-	/* Don't duplicate fire button when program tries to use both! */
-	if (bBothMouseAndJoy)  return;
-
 	/* If mouse is off then joystick fire button goes to joystick */
-	if (KeyboardProcessor.MouseMode==AUTOMODE_OFF)
+	if (!bBothMouseAndJoy && KeyboardProcessor.MouseMode==AUTOMODE_OFF)
 	{
 		/* If pressed right mouse button, should go to joystick 1 */
 		if (Keyboard.bRButtonDown&BUTTON_MOUSE)
@@ -622,7 +622,7 @@ static void IKBD_DuplicateMouseFireButtons(void)
 		if (Keyboard.bLButtonDown&BUTTON_MOUSE)
 			KeyboardProcessor.Joy.JoyData[0] |= 0x80;
 	}
-	/* If mouse if on, joystick 1 fire button goes to mouse not to the joystick */
+	/* If mouse is on, joystick 1 fire button goes to the mouse instead */
 	else
 	{
 		/* Is fire button pressed? */
