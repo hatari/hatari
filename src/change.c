@@ -10,7 +10,7 @@
   the changes are done, these are compared to see whether emulator
    needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.16 2008-10-26 22:39:50 eerot Exp $";
+const char change_rcsid[] = "Hatari $Id: change.c,v 1.17 2008-11-15 09:42:54 thothy Exp $";
 
 #include <ctype.h>
 #include "main.h"
@@ -84,6 +84,10 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 
 	/* Did change machine type? */
 	if (changed->System.nMachineType != current->System.nMachineType)
+		return TRUE;
+
+	/* Did change size of memory? */
+	if (current->Memory.nMemorySize != changed->Memory.nMemorySize)
 		return TRUE;
 
 	return FALSE;
