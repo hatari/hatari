@@ -10,7 +10,7 @@
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.34 2008-09-04 21:18:23 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.35 2008-11-15 10:00:06 thothy Exp $";
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -56,6 +56,11 @@ const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.34 2008-09-04 21:18:23 t
 #define REG_CONTROL 	0xff8a3c
 #define REG_SKEW	0xff8a3d
 
+#define SRC_READ_NOPS	0x1
+#define DST_READ_NOPS	0x2
+#define DST_WRITE_NOPS	0x4
+#define DST_ALL_NOPS	0x6
+#define ALL_NOPS    	0x7
 
 static Uint16 halftone_ram[16];
 static Uint16 end_mask_1, end_mask_2, end_mask_3;
@@ -68,34 +73,80 @@ static Uint32 source_buffer;
 static int nCurrentCycles;
 
 
-/**
- * Blitter timings - taken from the "Atari ST Internals" document.
- *
- * All timing figures are given in nops per word
- * of transfer. Ie. a value of 2 would take the
- * equivilent time of 2 nops to transfer 1 word
- * of data.
+/*
+ * Blitter timings - read write method.
+ * To perform an operation on a single word, the blitter might need to:
+ * - Read source memory
+ * - Read destination memory
+ * - Write destination memory
+ * Each of this actions takes one nop
  */
-static int blit_cycles_tab[16][4] =
+
+/* source reading nop for each ops */
+static int blit_src_read[16][4] =
 {
-	{ 1, 1, 1, 1 },
-	{ 2, 2, 3, 3 },
-	{ 2, 2, 3, 3 },
-	{ 1, 1, 2, 2 },
-	{ 2, 2, 3, 3 },
-	{ 2, 2, 2, 2 },
-	{ 2, 2, 3, 3 },
-	{ 2, 2, 3, 3 },
-	{ 2, 2, 3, 3 },
-	{ 2, 2, 3, 3 },
-	{ 2, 2, 2, 2 },
-	{ 2, 2, 3, 3 },
-	{ 1, 1, 2, 2 },
-	{ 2, 2, 3, 3 },
-	{ 2, 2, 3, 3 },
-	{ 1, 1, 1, 1 }
+	/* All ones | Halftone | Source | Source AND Halftone */
+	{     0,          0,        0,        0 }, // All zeros
+	{     0,          0,        1,        1 }, // Source AND destination
+	{     0,          0,        1,        1 }, // Source AND NOT destination
+	{     0,          0,        1,        1 }, // Source
+	{     0,          0,        1,        1 }, // NOT source AND destination
+	{     0,          0,        0,        0 }, // Destination
+	{     0,          0,        1,        1 }, // Source XOR destination
+	{     0,          0,        1,        1 }, // Source OR destination
+	{     0,          0,        1,        1 }, // NOT source AND NOT destination
+	{     0,          0,        1,        1 }, // NOT source XOR destination
+	{     0,          0,        0,        0 }, // NOT destination
+	{     0,          0,        1,        1 }, // Source OR NOT destination
+	{     0,          0,        1,        1 }, // NOT source
+	{     0,          0,        1,        1 }, // NOT source OR destination
+	{     0,          0,        1,        1 }, // NOT source OR NOT destination
+	{     0,          0,        0,        0 }  // All ones
 };
 
+/* source reading nop for each smudge ops */
+static int blit_src_read_smudge[16][4] =
+{
+	/* All ones | Halftone | Source | Source AND Halftone */
+	{     0,          0,        0,        0 }, // All zeros
+	{     1,          1,        1,        1 }, // Source AND destination
+	{     1,          1,        1,        1 }, // Source AND NOT destination
+	{     1,          1,        1,        1 }, // Source
+	{     1,          1,        1,        1 }, // NOT source AND destination
+	{     0,          0,        0,        0 }, // Destination
+	{     1,          1,        1,        1 }, // Source XOR destination
+	{     1,          1,        1,        1 }, // Source OR destination
+	{     1,          1,        1,        1 }, // NOT source AND NOT destination
+	{     1,          1,        1,        1 }, // NOT source XOR destination
+	{     0,          0,        0,        0 }, // NOT destination
+	{     1,          1,        1,        1 }, // Source OR NOT destination
+	{     1,          1,        1,        1 }, // NOT source
+	{     1,          1,        1,        1 }, // NOT source OR destination
+	{     1,          1,        1,        1 }, // NOT source OR NOT destination
+	{     0,          0,        0,        0 }  // All ones
+};
+
+/* destination reading nop for each ops */
+static int blit_dst_read[16][4] =
+{
+	/* All ones | Halftone | Source | Source AND Halftone */
+	{     0,          0,        0,        0 }, // All zeros
+	{     1,          1,        1,        1 }, // Source AND destination
+	{     1,          1,        1,        1 }, // Source AND NOT destination
+	{     0,          0,        0,        0 }, // Source
+	{     1,          1,        1,        1 }, // NOT source AND destination
+	{     1,          1,        1,        1 }, // Destination
+	{     1,          1,        1,        1 }, // Source XOR destination
+	{     1,          1,        1,        1 }, // Source OR destination
+	{     1,          1,        1,        1 }, // NOT source AND NOT destination
+	{     1,          1,        1,        1 }, // NOT source XOR destination
+	{     1,          1,        1,        1 }, // NOT destination
+	{     1,          1,        1,        1 }, // Source OR NOT destination
+	{     0,          0,        0,        0 }, // NOT source
+	{     1,          1,        1,        1 }, // NOT source OR destination
+	{     1,          1,        1,        1 }, // NOT source OR NOT destination
+	{     0,          0,        0,        0 }  // All ones
+};
 
 #if DEBUG
 static void show_params(void)
@@ -166,6 +217,34 @@ static void load_halftone_ram(void)
 #endif
 }
 
+static int Blitter_GetNops(int flag, Uint16 mask)
+{
+	int nops = 0;
+
+	if (flag & SRC_READ_NOPS)
+	{
+		/* nop for reading source */
+		nops += ((blit_control & 0x20)
+					? blit_src_read_smudge[op][hop]
+					: blit_src_read[op][hop]);
+	}
+
+	if (flag & DST_READ_NOPS)
+	{
+		/* nop for reading destination
+		 * note that when mask != 0xFFFF a read is always performed
+		 * in order to compute the final word */
+		nops += (((mask != 0xFFFF) ? 1 : blit_dst_read[op][hop]));
+	}
+
+	if (flag & DST_WRITE_NOPS)
+	{
+		/* nop for writing destination */
+		nops += 1;
+	}
+
+	return nops;
+}
 
 /**
  * Count blitter cycles
@@ -269,7 +348,7 @@ static void Do_Blit(void)
 	int source_x_inc, source_y_inc;
 	int dest_x_inc, dest_y_inc;
 	int halftone_direction;
-	int cyc_per_op;
+	int cyc_per_nop;
 
 	/*if(address_space_24)*/
 	{ source_addr &= 0x0fffffe; dest_addr &= 0x0fffffe; }
@@ -300,10 +379,11 @@ static void Do_Blit(void)
 
 	/* Set up variables for cycle counting */
 	nCurrentCycles = 0;
+
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
-		cyc_per_op = blit_cycles_tab[op][hop] * 2;  // 16 MHz Blitter on Falcon
+		cyc_per_nop = 2;  // 16 MHz Blitter on Falcon
 	else
-		cyc_per_op = blit_cycles_tab[op][hop] * 4;  // 8 MHz Blitter on ST/STE
+		cyc_per_nop = 4;  // 8 MHz Blitter on ST/STE
 
 	/* Now we enter the main blitting loop */
 	do
@@ -316,13 +396,13 @@ static void Do_Blit(void)
 				do_source_shift();
 				get_source_data();
 				source_addr += source_x_inc;
-				Blitter_AddCycles(4);
+				Blitter_AddCycles(Blitter_GetNops(SRC_READ_NOPS,0) * cyc_per_nop);
 			}
 
 			do_source_shift();
 			get_source_data();
 			put_dst_data(skew, end_mask_1);
-			Blitter_AddCycles(cyc_per_op);
+			Blitter_AddCycles(Blitter_GetNops(ALL_NOPS,end_mask_1) * cyc_per_nop);
 		}
 
 		/* Middle words of a line */
@@ -334,7 +414,7 @@ static void Do_Blit(void)
 			do_source_shift();
 			get_source_data();
 			put_dst_data(skew, end_mask_2);
-			Blitter_AddCycles(cyc_per_op);
+			Blitter_AddCycles(Blitter_GetNops(ALL_NOPS,end_mask_2) * cyc_per_nop);
 		}
 
 		/* Last word of a line */
@@ -347,13 +427,14 @@ static void Do_Blit(void)
 			{
 				source_addr += source_x_inc;
 				get_source_data();
-				Blitter_AddCycles(cyc_per_op - 4);
+				put_dst_data(skew, end_mask_3);
+				Blitter_AddCycles(Blitter_GetNops(ALL_NOPS,end_mask_3) * cyc_per_nop);
 			}
 			else
 			{
-				Blitter_AddCycles(cyc_per_op);
+				put_dst_data(skew, end_mask_3);
+				Blitter_AddCycles(Blitter_GetNops(DST_ALL_NOPS,end_mask_3) * cyc_per_nop);
 			}
-			put_dst_data(skew, end_mask_3);
 		}
 
 		/* Line done? */
