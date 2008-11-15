@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.12 2008-06-08 16:07:40 eerot Exp $";
+const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.13 2008-11-15 20:03:05 thothy Exp $";
 
 #include <unistd.h>
 
@@ -21,22 +21,24 @@ const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.12 2008-06-08 16
 #define DLGKEY_FROMFILE  5
 #define DLGKEY_MAPNAME   7
 #define DLGKEY_MAPBROWSE 8
-#define DLGKEY_EXIT      9
+#define DLGKEY_DISREPEAT 9
+#define DLGKEY_EXIT      10
 
 
 /* The keyboard dialog: */
 static SGOBJ keyboarddlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 40,12, NULL },
-	{ SGTEXT, 0, 0, 13,1, 14,1, "Keyboard setup" },
+	{ SGBOX, 0, 0, 0,0, 46,14, NULL },
+	{ SGTEXT, 0, 0, 16,1, 14,1, "Keyboard setup" },
 	{ SGTEXT, 0, 0, 2,3, 17,1, "Keyboard mapping:" },
-	{ SGRADIOBUT, 0, 0, 3,5, 10,1, "Symbolic" },
-	{ SGRADIOBUT, 0, 0, 15,5, 10,1, "Scancode" },
-	{ SGRADIOBUT, 0, 0, 27,5, 11,1, "From file" },
+	{ SGRADIOBUT, 0, 0, 4,5, 10,1, "Symbolic" },
+	{ SGRADIOBUT, 0, 0, 17,5, 10,1, "Scancode" },
+	{ SGRADIOBUT, 0, 0, 30,5, 11,1, "From file" },
 	{ SGTEXT, 0, 0, 2,7, 13,1, "Mapping file:" },
-	{ SGTEXT, 0, 0, 2,8, 36,1, NULL },
-	{ SGBUTTON, 0, 0, 32,7, 6,1, "Browse" },
-	{ SGBUTTON, SG_DEFAULT, 0, 10,10, 20,1, "Back to main menu" },
+	{ SGTEXT, 0, 0, 2,8, 42,1, NULL },
+	{ SGBUTTON, 0, 0, 36,7, 8,1, "Browse" },
+	{ SGCHECKBOX, 0, 0, 2,10, 41,1, "Disable key repeat in fast forward mode" },
+	{ SGBUTTON, SG_DEFAULT, 0, 13,12, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -48,7 +50,7 @@ static SGOBJ keyboarddlg[] =
 void Dialog_KeyboardDlg(void)
 {
 	int i, but;
-	char dlgmapfile[40];
+	char dlgmapfile[44];
 
 	SDLGui_CenterDlg(keyboarddlg);
 
@@ -62,6 +64,11 @@ void Dialog_KeyboardDlg(void)
 	File_ShrinkName(dlgmapfile, ConfigureParams.Keyboard.szMappingFileName,
 	                keyboarddlg[DLGKEY_MAPNAME].w);
 	keyboarddlg[DLGKEY_MAPNAME].txt = dlgmapfile;
+
+	if (ConfigureParams.Keyboard.bDisableKeyRepeat)
+		keyboarddlg[DLGKEY_DISREPEAT].state |= SG_SELECTED;
+	else
+		keyboarddlg[DLGKEY_DISREPEAT].state &= ~SG_SELECTED;
 
 	/* Show the dialog: */
 	do
@@ -85,4 +92,6 @@ void Dialog_KeyboardDlg(void)
 		ConfigureParams.Keyboard.nKeymapType = KEYMAP_SCANCODE;
 	else
 		ConfigureParams.Keyboard.nKeymapType = KEYMAP_LOADED;
+
+	ConfigureParams.Keyboard.bDisableKeyRepeat = (keyboarddlg[DLGKEY_DISREPEAT].state & SG_SELECTED);
 }
