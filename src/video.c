@@ -188,10 +188,12 @@
 /*			On STE, allow to change immediatly video address, hw scroll and		*/
 /*			linewidth when nHBL>=nLastVisibleHbl instead of nHBL>=nEndHBL		*/
 /*			(fix Power Rise / Xtrem D demo).					*/
+/* 2008/11/15	[NP]	For STE registers, add in the TRACE call if the write is delayed or	*/
+/*			not (linewidth, hwscroll, video address).				*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.127 2008-11-03 19:34:13 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.128 2008-11-15 13:58:07 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -1898,20 +1900,22 @@ void Video_Reset(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to video address base high and med register (0xff8201 and 0xff8203).
- * When a program writes to these registers, some other video registers
- * are reset to zero.
+ * Write to video address base high, med and low register (0xff8201/03/0d).
+ * On STE, when a program writes to high or med registers, base low register
+ * is reset to zero.
  */
 void Video_ScreenBaseSTE_WriteByte(void)
 {
-	IoMem[0xff820d] = 0;          /* Reset screen base low register */
+	if ( ( IoAccessCurrentAddress == 0xff8201 ) || ( IoAccessCurrentAddress == 0xff8203 ) )
+		IoMem[0xff820d] = 0;          /* Reset screen base low register ([NP] : FIXME is this really sure ?) */
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_STE ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "write ste video base=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , (IoMem[0xff8201]<<16)+(IoMem[0xff8203]<<8) ,
-		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+		HATARI_TRACE_PRINT ( "write ste video base=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
+			(IoMem[0xff8201]<<16)+(IoMem[0xff8203]<<8)+IoMem[0xff820d] ,
+			nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 }
 
@@ -1945,6 +1949,7 @@ void Video_ScreenCounter_WriteByte(void)
 	int nFrameCycles;
 	int nLineCycles;
 	int HblCounterVideo;
+	int Delayed;
 
 	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 	nLineCycles = nFrameCycles % nCyclesPerLine;
@@ -1968,6 +1973,7 @@ void Video_ScreenCounter_WriteByte(void)
 			addr = ( addr & 0xffff00 ) | ( AddrByte );
 
 		pVideoRaster = &STRam[addr & ~1];		/* set new video address */
+		Delayed = FALSE;
 	}
 
 	/* Can't change pVideoRaster now, store the modified byte for Video_CopyScreenLineColor */
@@ -1979,10 +1985,11 @@ void Video_ScreenCounter_WriteByte(void)
 			NewVideoMed = AddrByte;
 		else if ( IoAccessCurrentAddress == 0xff8209 )
 			NewVideoLo = AddrByte;
+		Delayed = TRUE;
 	}
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste video %x val=0x%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
-				IoAccessCurrentAddress, AddrByte,
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste video %x val=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
+				IoAccessCurrentAddress, AddrByte, Delayed ? "yes" : "no" ,
 				nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }
 
@@ -2057,6 +2064,7 @@ void Video_LineWidth_WriteByte(void)
 	int nFrameCycles;
 	int nLineCycles;
 	int HblCounterVideo;
+	int Delayed;
 
 	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 	nLineCycles = nFrameCycles % nCyclesPerLine;
@@ -2072,11 +2080,16 @@ void Video_LineWidth_WriteByte(void)
 	{
 		LineWidth = NewWidth;		/* display is on, we can still change */
 		NewLineWidth = -1;		/* cancel 'pending' change */
+		Delayed = FALSE;
 	}
 	else
+	{
 		NewLineWidth = NewWidth;	/* display is off, can't change LineWidth once in right border */
+		Delayed = TRUE;
+	}
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste linewidth=0x%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" , NewWidth,
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste linewidth=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+					NewWidth, Delayed ? "yes" : "no" ,
 					nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }
 
@@ -2297,6 +2310,7 @@ void Video_HorScroll_Write(void)
 	int HblCounterVideo;
 	bool Add16px = FALSE;
 	static Uint8 LastVal8265 = 0;
+	int Delayed;
 
 
 	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
@@ -2308,10 +2322,6 @@ void Video_HorScroll_Write(void)
 	RegAddr = IoAccessCurrentAddress;		/* 0xff8264 or 0xff8265 */
 	ScrollCount = IoMem[ RegAddr ];
 	ScrollCount &= 0x0f;
-
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste %x hwscroll=%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
-		RegAddr , ScrollCount,
-		nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
 	if ( RegAddr == 0xff8264 )
 	{
@@ -2345,6 +2355,7 @@ void Video_HorScroll_Write(void)
 		HWScrollPrefetch = Prefetch;
 		bSteBorderFlag = Add16px;
 		NewHWScrollCount = -1;			/* cancel 'pending' change */
+		Delayed = FALSE;
 	}
 	else
 	{
@@ -2354,7 +2365,12 @@ void Video_HorScroll_Write(void)
 			NewSteBorderFlag = 1;
 		else
 			NewSteBorderFlag = 0;
+		Delayed = TRUE;
 	}
+
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste %x hwscroll=%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
+		RegAddr , ScrollCount, Delayed ? "yes" : "no" ,
+		nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }
 
 /*-----------------------------------------------------------------------*/
