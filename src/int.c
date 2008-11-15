@@ -65,7 +65,7 @@
 
 
 
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.30 2008-09-05 21:10:33 eerot Exp $";
+const char Int_rcsid[] = "Hatari $Id: int.c,v 1.31 2008-11-15 14:17:29 thothy Exp $";
 
 #include <stdint.h>
 #include "main.h"
@@ -102,6 +102,7 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	IKBD_InterruptHandler_ACIA,
 	IKBD_InterruptHandler_MFP,
 	DmaSnd_InterruptHandler,
+	DmaSnd_InterruptHandler_Microwire,
 	FDC_InterruptHandler_Update,
 	Blitter_InterruptHandler
 };

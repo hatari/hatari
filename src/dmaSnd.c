@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.20 2008-11-13 21:16:04 thothy Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.21 2008-11-15 14:17:29 thothy Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -99,6 +99,8 @@ void DmaSnd_Reset(bool bCold)
 	{
 		nDmaSoundMode = 0;
 	}
+
+	nMwTransferSteps = 0;
 }
 
 
@@ -269,9 +271,6 @@ void DmaSnd_InterruptHandler(void)
 
 	/* Update sound */
 	Sound_Update();
-
-	/* Make sure that emulated microwire isn't busy forever */
-	nMwTransferSteps = 0;
 }
 
 
@@ -307,8 +306,9 @@ void DmaSnd_SoundControl_ReadWord(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Write word to sound control register (0xff8900).
+ *
+ * FIXME: add Falcon specific handler here...
  */
-/* FIXME: add Falcon specific handler here... */
 void DmaSnd_SoundControl_WriteWord(void)
 {
 	Uint16 nNewSndCtrl;
@@ -400,26 +400,50 @@ void DmaSnd_SoundMode_WriteWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read word from microwire data register (0xff8922).
+ * Handle the shifting/rotating of the microwire registers
+ * The microwire regs should be done after 16 usec = 32 NOPs = 128 cycles.
+ * That means we have to shift 16 times with a delay of 8 cycles.
  */
-void DmaSnd_MicrowireData_ReadWord(void)
+void DmaSnd_InterruptHandler_Microwire(void)
 {
-	/* The Microwire shifts the data register bit by bit until it is zero
-	 * within 16 usec. We don't emulate the time, only the shift on read access,
-	 * so this is not very accurate yet. */
-	if (nMwTransferSteps > 0)
+	/* Remove this interrupt from list and re-order */
+	Int_AcknowledgeInterrupt();
+
+	if (nMwTransferSteps > 2)
 	{
 		IoMem_WriteWord(0xff8922, nMicrowireData<<(16-nMwTransferSteps));
-		nMwTransferSteps -= 1;
+		IoMem_WriteWord(0xff8924, (nMicrowireMask<<(16-nMwTransferSteps))
+		                          |(nMicrowireMask>>nMwTransferSteps));
 	}
 	else
 	{
+		/* Paradox XMAS 2004 demo continuesly writes to th data
+		 * register, but still expects to read a zero inbetween,
+		 * so we have to output a zero before we're really done
+		 * with the transfer. */
 		IoMem_WriteWord(0xff8922, 0);
+		IoMem_WriteWord(0xff8924, (nMicrowireMask<<(16-nMwTransferSteps))
+		                          |(nMicrowireMask>>nMwTransferSteps));
+	}
+
+	if (nMwTransferSteps > 0)
+	{
+		--nMwTransferSteps;
+		Int_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Read word from microwire data register (0xff8922).
+ */
+void DmaSnd_MicrowireData_ReadWord(void)
+{
+	/* Shifting is done in DmaSnd_InterruptHandler_Microwire! */
+	//fprintf(stderr, "MW data read: 0x%x\n", IoMem_ReadWord(0xff8922));
+}
+
+
 /**
  * Write word to microwire data register (0xff8922).
  */
@@ -429,40 +453,35 @@ void DmaSnd_MicrowireData_WriteWord(void)
 	if (!nMwTransferSteps)
 	{
 		nMicrowireData = IoMem_ReadWord(0xff8922);
-		nMwTransferSteps = 16;   /* To simulate a microwire transfer */
+		/* Start shifting events to simulate a microwire transfer */
+		nMwTransferSteps = 16;
+		Int_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}
+
+	//fprintf(stderr, "MW data write: 0x%x\n", IoMem_ReadWord(0xff8922));
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Read word from microwire mask register (0xff8924).
  */
 void DmaSnd_MicrowireMask_ReadWord(void)
 {
-	/* Same as with data register, but mask register is rotated, not  shifted. */
-	if (nMwTransferSteps > 0)
-	{
-		IoMem_WriteWord(0xff8924, (nMicrowireMask<<(16-nMwTransferSteps))
-		                          |(nMicrowireMask>>nMwTransferSteps));
-		nMwTransferSteps -= 1;
-	}
-	else
-	{
-		IoMem_WriteWord(0xff8924, nMicrowireMask);
-	}
+	/* Same as with data register, but mask is rotated, not shifted. */
+	//fprintf(stderr, "MW mask read: 0x%x\n", IoMem_ReadWord(0xff8924));
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Write word to microwire mask register (0xff8924).
  */
 void DmaSnd_MicrowireMask_WriteWord(void)
 {
-	nMicrowireMask = IoMem_ReadWord(0xff8924);
+	/* Only update, if no shift is in progress */
+	if (!nMwTransferSteps)
+	{
+		nMicrowireMask = IoMem_ReadWord(0xff8924);
+	}
 
-	/* Assume a new program is writing the mask register,
-	 * so let's reset the shifting... */
-	nMwTransferSteps = 0;
+	//fprintf(stderr, "MW mask write: 0x%x\n", IoMem_ReadWord(0xff8924));
 }
