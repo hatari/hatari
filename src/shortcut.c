@@ -6,13 +6,15 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.39 2008-10-26 22:39:50 eerot Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.40 2008-11-15 21:53:33 thothy Exp $";
 
 #include <SDL.h>
 
 #include "main.h"
 #include "dialog.h"
 #include "audio.h"
+#include "file.h"
+#include "floppy.h"
 #include "joy.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
@@ -23,6 +25,7 @@ const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.39 2008-10-26 22:39:50
 #include "shortcut.h"
 #include "debugui.h"
 #include "sound.h"
+#include "sdlgui.h"
 
 static SHORTCUTKEYIDX ShortCutKey = SHORTCUT_NONE;  /* current shortcut key */
 
@@ -204,6 +207,43 @@ static void ShortCut_Pause(void)
 	}
 }
 
+
+/**
+ * Shorcut to load a disk image
+ */
+static void ShortCut_InsertDisk(int drive)
+{
+	char *selname, *zip_path = NULL;
+	const char *tmpname;
+
+	if (SDLGui_SetScreen(sdlscrn))
+		return;
+
+	if (ConfigureParams.DiskImage.szDiskFileName[drive][0])
+		tmpname = ConfigureParams.DiskImage.szDiskFileName[drive];
+	else
+		tmpname = ConfigureParams.DiskImage.szDiskImageDirectory;
+
+	selname = SDLGui_FileSelect(tmpname, &zip_path, FALSE);
+	if (selname)
+	{
+		if (!File_DoesFileNameEndWithSlash(selname) && File_Exists(selname))
+		{
+			const char *realname;
+			realname = Floppy_SetDiskFileName(drive, selname, zip_path);
+			if (zip_path)
+				free(zip_path);
+		}
+		else
+		{
+			Floppy_SetDiskFileNameNone(drive);
+		}
+		Floppy_InsertDiskIntoDrive(0);
+		free(selname);
+	}
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Check to see if pressed any shortcut keys, and call handling function
@@ -262,6 +302,9 @@ void ShortCut_ActKey(void)
 		break;
 	 case SHORTCUT_SAVEMEM:
 		MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName, TRUE);
+		break;
+	 case SHORTCUT_INSERTDISKA:
+		ShortCut_InsertDisk(0);
 		break;
 	 case SHORTCUT_KEYS:
 	 case SHORTCUT_NONE:
