@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.101 2008-11-15 21:53:33 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.102 2008-11-16 09:42:12 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -61,7 +61,6 @@ static const struct Config_Tag configs_Screen[] =
 	{ "bShowStatusbar", Bool_Tag, &ConfigureParams.Screen.bShowStatusbar },
 	{ "bShowDriveLed", Bool_Tag, &ConfigureParams.Screen.bShowDriveLed },
 	{ "bCaptureChange", Bool_Tag, &ConfigureParams.Screen.bCaptureChange },
-	{ "nFramesPerSecond", Int_Tag, &ConfigureParams.Screen.nFramesPerSecond },
 	{ "nWindowBorderPixelsTop", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsTop },
 	{ "nWindowBorderPixelsLeft", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsLeft },
 	{ "nWindowBorderPixelsRight", Int_Tag, &ConfigureParams.Screen.nWindowBorderPixelsRight },
@@ -442,7 +441,6 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bShowStatusbar = TRUE;
 	ConfigureParams.Screen.bShowDriveLed = TRUE;
 	ConfigureParams.Screen.bCaptureChange = FALSE;
-	ConfigureParams.Screen.nFramesPerSecond = 25;
 	ConfigureParams.Screen.nWindowBorderPixelsTop = OVERSCAN_TOP;
 	ConfigureParams.Screen.nWindowBorderPixelsLeft = 48;
 	ConfigureParams.Screen.nWindowBorderPixelsRight = 48;

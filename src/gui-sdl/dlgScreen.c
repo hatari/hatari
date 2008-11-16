@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.23 2008-10-21 21:15:09 eerot Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.24 2008-11-16 09:42:12 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -268,7 +268,7 @@ void Dialog_ScreenDlg(void)
 			{
 				screendlg[DLGSCRN_RECANIM].txt = "Stop recording";
 				ConfigureParams.Screen.bCaptureChange = (screendlg[DLGSCRN_ONCHANGE].state & SG_SELECTED);
-				ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange, 25);
+				ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange);
 			}
 			break;
 		}

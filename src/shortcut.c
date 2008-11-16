@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.40 2008-11-15 21:53:33 thothy Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.41 2008-11-16 09:42:12 thothy Exp $";
 
 #include <SDL.h>
 
@@ -109,8 +109,7 @@ static void ShortCut_RecordAnimation(void)
 	else
 	{
 		/* Start animation */
-		ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange,
-		                              ConfigureParams.Screen.nFramesPerSecond);
+		ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange);
 	}
 }
 

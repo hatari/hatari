@@ -212,7 +212,6 @@ typedef struct
   bool bShowStatusbar;
   bool bShowDriveLed;
   bool bCaptureChange;
-  int nFramesPerSecond;
   int nWindowBorderPixelsTop;
   int nWindowBorderPixelsLeft;
   int nWindowBorderPixelsRight;

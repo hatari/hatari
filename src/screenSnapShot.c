@@ -6,7 +6,7 @@
 
   Screen Snapshots.
 */
-const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.18 2008-08-19 20:53:50 eerot Exp $";
+const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.19 2008-11-16 09:42:12 thothy Exp $";
 
 #include <SDL.h>
 #include <dirent.h>
@@ -27,7 +27,6 @@ const char ScreenSnapShot_rcsid[] = "Hatari $Id: screenSnapShot.c,v 1.18 2008-08
 bool bRecordingAnimation = FALSE;           /* Recording animation? */
 static int nScreenShots = 0;                /* Number of screen shots saved */
 static bool bGrabWhenChange;
-static int GrabFrameCounter, GrabFrameLatch;
 
 
 /*-----------------------------------------------------------------------*/
@@ -271,13 +270,11 @@ bool ScreenSnapShot_AreWeRecording(void)
 /**
  * Start recording animation
  */
-void ScreenSnapShot_BeginRecording(bool bCaptureChange, int nFramesPerSecond)
+void ScreenSnapShot_BeginRecording(bool bCaptureChange)
 {
 	/* Set in globals */
 	bGrabWhenChange = bCaptureChange;
-	/* Set animation timer rate */
-	GrabFrameCounter = 0;
-	GrabFrameLatch = (int)(50.0f/(float)nFramesPerSecond);
+
 	/* Start animation */
 	bRecordingAnimation = TRUE;
 
@@ -310,25 +307,9 @@ void ScreenSnapShot_EndRecording()
  */
 void ScreenSnapShot_RecordFrame(bool bFrameChanged)
 {
-	/* As we recording? */
-	if (bRecordingAnimation)
+	/* As we recording and do we really want to save this frame? */
+	if (bRecordingAnimation && (!bGrabWhenChange || bFrameChanged))
 	{
-		/* Yes, but on a change basis or a timer? */
-		if (bGrabWhenChange)
-		{
-			/* On change, so did change this frame? */
-			if (bFrameChanged)
-				ScreenSnapShot_SaveScreen();
-		}
-		else
-		{
-			/* On timer, check for latch and save */
-			GrabFrameCounter++;
-			if (GrabFrameCounter>=GrabFrameLatch)
-			{
-				ScreenSnapShot_SaveScreen();
-				GrabFrameCounter = 0;
-			}
-		}
+		ScreenSnapShot_SaveScreen();
 	}
 }
