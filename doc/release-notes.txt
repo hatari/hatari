@@ -4,18 +4,24 @@
                                 Release Notes
 
 
+ Version 1.1 (2008-??-??):
+ -------------------------
 
+Emulation:
 - Falcon DSP emulation good enough to improve some games/demos
   (most still work better with emulation disabled)
 - New sound engine that fixes all problems with the old one
 - 16-bit stereo sound (instead of 8-bit mono)
 - Improved blitter emulation
 - Improved printer emulation
-- Improved support for demos using IKBD
+- Improved STE microwire emulation
+- Improved support for games&demos using IKBD
 - ACSI emulation fix to get HDDriver working
 - Some other minor bugfixes to ST/STe emulation (FDC, MFP, PSG, RS-232)
+
+Emulator:
 - Statusbar and overlay led features
-- Screenshots in PNG format with libpng
+- Screenshots work also in VDI/TT/Falcon mode and are saved as PNGs
 - Support for automatic frameskip and pausing emulation
 - Support for embedding Hatari window (on X11) and control socket
 

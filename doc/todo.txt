@@ -16,9 +16,6 @@ Emulation improvements
   - Add support for Pasti .STX images (See http://pasti.fxatari.com/).
   - Support .DIM images created with the "Get sectors: used" option.
 
-- Fix IKBD emulation (e.g. some games like "Big Run" have problems with the
-  joystick fire button).
-
 - Real HD 6301 (keyboard processor of the ST) emulation?
   (Current special casing is enough for all known demos using 6301)
 
@@ -41,11 +38,6 @@ Emulation improvements
 
 Other Hatari functionality improvements
 ---------------------------------------
-
-- Screen snapshot interval should take into account:
-  - 60 & 71Hz screen update frequencies in addition to 50Hz
-  - VDI/TT/Falcon modes (screen recording isn't called for these)
-  - Frameskip (recording will skip additional frames with it)
 
 - Add the possibility to disable HBLs in VDI mode to speed up the emulation.
 
