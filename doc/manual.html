@@ -349,220 +349,814 @@ to toggle windowed and fullscreen mode. </p>
  hatari [options] [disk image name]
 </pre>
 
-<p>The command line options are following
-(the long version is in parenthesis): </p>
-<table border="1" cellpadding="3">
-  <tbody>
+<p>Hatari command line options are split into several categories:</p>
 
-    <tr class="backdropped">
-      <th align="center">General options</th>
-      <th>Description</th>
-    </tr>
-    <tr>
-      <td align="center">-h (--help)</td>
-      <td>Prints command line options and terminates</td>
-    </tr>
-    <tr>
-      <td align="center">-v (--version)</td>
-      <td>Prints version information and terminates</td>
-    </tr>
-    <tr>
-      <td align="center">--confirm-quit &lt;x&gt;</td>
-      <td>Confirm Hatari quitting (x = y/n)</td>
-    </tr>
-    <tr>
-      <td align="center">-c &lt;file&gt;<br>(--configfile &lt;file&gt;)</td>
-      <td>Use the given file as configuration file
-        instead of ~/.hatari/hatari.cfg</td>
-    </tr>
+<!--
+Generated from hatari.1 options section by changing subheaders to h3
+and removing extra paragraphs:
+  groff -man -Thtml hatari.1 | awk '
+  /OPTIONS<\/h/ { out = 1; next }
+  /INDENTATION/ { next }
+  /COMMANDS/ { out = 0; next }
+  { if(out) print }' | sed -e 's/h2/h3/g' -e 's/<\/*p>//g'
+-->
 
-    <tr class="backdropped">
-      <th align="center">Display options</th>
-      <th>Description</th>
-    </tr>
-    <tr>
-      <td align="center">-m (--mono)</td>
-      <td>Starts the emulated Atari ST in monochrome
-        resolution (deprecated)</td>
-    </tr>
-    <tr>
-      <td align="center">--monitor &lt;x&gt;</td>
-      <td>Select monitor type (x = mono/rgb/vga/tv)</td>
-    </tr>
-    <tr>
-      <td align="center">-f (--fullscreen)</td>
-      <td>Start in fullscreen mode</td>
-    </tr>
-    <tr>
-      <td align="center">--window</td>
-      <td>Forces Hatari to use a windowed mode</td>
-    </tr>
-    <tr>
-      <td align="center">-z &lt;x&gt;<br>(--zoom &lt;x&gt;)</td>
-      <td>Doubles ST low resolution (1=no, 2=yes)</td>
-    </tr>
-    <tr>
-      <td align="center">--frameskips &lt;x&gt;</td>
-      <td>Shows only every &lt;x&gt; frame (speeds up emulation!)</td>
-    </tr>
-    <tr>
-      <td align="center">--borders &lt;bool&gt;</td>
-      <td>Show screen borders (for overscan demos etc.)</td>
-    </tr>
-    <tr>
-      <td align="center">--spec512 &lt;x&gt;</td>
-      <td>Use threshold x to decide when to render a screen with the slower
-         but more<br> accurate Spectrum512 screen conversion functions
-         (0 <= x <= 512, 0=disable)</td>
-    </tr>
-    <tr>
-      <td align="center">--bpp &lt;x&gt;</td>
-      <td>Force color bitdepth (x=8/16/32, 0=autodetection)</td>
-    </tr>
-
-    <tr class="backdropped">
-      <th align="center">VDI options</th>
-      <th>Description</th>
-    </tr>
-    <tr>
-      <td align="center">--vdi-planes</td>
-      <td>Specify extended VDI resolution bit-depth, x = 1/2/4</td>
-    </tr>
-    <tr>
-      <td align="center">--vdi-width &lt;w&gt;</td>
-      <td>Specify extended VDI resolution width
-      (320 &lt; w &lt;= 1024, multiple of 128)</td>
-    </tr>
-    <tr>
-      <td align="center">--vdi-height &lt;h&gt;</td>
-      <td>Specify extended VDI resolution height
-      (200 &lt; h &lt;= 768, multiple of text height)</td>
-    </tr>
-
-    <tr class="backdropped">
-      <th align="center">Device options</th>
-      <th>Description</th>
-    </tr>
-    <tr>
-      <td align="center">-j &lt;port&gt;<br>(--joystick &lt;port&gt;)</td>
-      <td>Activates joystick emulation via cursor keys
-         for given joystick "port"<br>(0-5, see joystick dialog)</td>
-    </tr>
-    <tr>
-      <td align="center">--printer &lt;file&gt;</td>
-      <td>Enable printer support and write data to the specified file</td>
-    </tr>
-    <tr>
-      <td align="center">--midi &lt;file&gt;</td>
-      <td>Enable MIDI output and write midi data to the specified file</td>
-    </tr>
-    <tr>
-      <td align="center">--rs232 &lt;file&gt;</td>
-      <td>Enable RS232 communication via the specified file</td>
-    </tr>
-
-    <tr class="backdropped">
-      <th align="center">Disk options</th>
-      <th>Description</th>
-    </tr>
-    <tr>
-      <td align="center">-d &lt;dir&gt;<br>(--harddrive &lt;dir&gt;)</td>
-      <td>Emulates a hard disk at the GEMDOS level
-         (&lt;dir&gt; = root directory)</td>
-    </tr>
-    <tr>
-      <td align="center">--acsi &lt;imagefile&gt;</td>
-      <td>Emulate an ACSI hard disk with an image file</td>
-    </tr>
-    <tr>
-      <td align="center">--slowfdc &lt;bool&gt;</td>
-      <td>Slow down FDC emulation (deprecated)</td>
-    </tr>
-
-    <tr class="backdropped">
-      <th align="center">Memory options</th>
-      <th>Description</th>
-    </tr>
-    <tr>
-      <td align="center">-s &lt;x&gt;<br>(--memsize &lt;x&gt;)</td>
-      <td>set amount of emulated RAM upto 14MB<br>
-        x=0 for 512K, x=1,x=2 or x=4 for 1, 2 or 4 MB</td>
-    </tr>
-    <tr>
-      <td align="center">--tos &lt;imagefile&gt;</td>
-      <td>Specify TOS ROM image to use</td>
-    </tr>
-    <tr>
-      <td align="center">--cartridge &lt;file&gt;</td>
-      <td>Use file as the cartridge on the ROM port.<br>
-        This currently does not work together with GEMDOS hard disk emulation!</td>
-    </tr>
-    <tr>
-      <td align="center">--memstate &lt;file&gt;</td>
-      <td>Load memory snap-shot file</td>
-    </tr>
-
-    <tr class="backdropped">
-      <th align="center">CPU options</th>
-      <th>Description</th>
-    </tr>
-    <tr>
-      <td align="center">--cpulevel &lt;x&gt;</td>
-      <td>Set the CPU type (x =&gt; 680x0) &mdash;
-         works with EmuTOS / TOS 2.06 only!</td>
-    </tr>
-    <tr>
-      <td align="center">--cpuclock &lt;x&gt;</td>
-      <td>Set the CPU frequency in MHz (8, 16 or 32)</td>
-    </tr>
-    <tr>
-      <td align="center">--compatible &lt;bool&gt;</td>
-      <td>Use a more compatible but slower 68000 CPU mode</td>
-    </tr>
-
-    <tr class="backdropped">
-      <th align="center">Misc system options</th>
-      <th>Description</th>
-    </tr>
-    <tr>
-      <td align="center">--machine &lt;x&gt;</td>
-      <td>Select machine type (x = st/ste/tt/falcon)</td>
-    </tr>
-    <tr>
-      <td align="center">--blitter &lt;bool&gt;</td>
-      <td>Use blitter emulation (for ST only)</td>
-    </tr>
-    <tr>
-      <td align="center">--dsp &lt;x&gt;</td>
-      <td>Select DSP type (Falcon only, x = none/dummy(/emu))</td>
-    </tr>
-    <tr>
-      <td align="center">--sound &lt;x&gt;</td>
-      <td>Sound quality (x = off/low/med/hi)</td>
-    </tr>
-    <tr>
-      <td align="center">-k &lt;file&gt;<br>(--keymap &lt;file&gt;)</td>
-      <td>Read (additional) keyboard mapping from file</td>
-    </tr>
-
-    <tr class="backdropped">
-      <th align="center">Debug options</th>
-      <th>Description</th>
-    </tr>
-    <tr>
-      <td align="center">-D (--debug)</td>
-      <td>Activates the simple builtin debugger</td>
-    </tr>
-    <tr>
-      <td align="center">--log &lt;file&gt;</td>
-      <td>Direct log output to the specified file</td>
-    </tr>
-    <tr>
-      <td align="center">--trace &lt;type1,...&gt;</td>
-      <td>Activate debug traces, use --trace help to see the options</td>
-    </tr>
-  </tbody>
+<a name="General options"></a>
+<h3>General options</h3>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;h, &minus;&minus;help</b></td>
 </table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Print command line options and terminate
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;v, &minus;&minus;version</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Print version information and terminate
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;confirm-quit &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Whether Hatari confirms quitting
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;c, &minus;&minus;configfile
+&lt;filename&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+use the given file as configuration file instead of
+~/.hatari/hatari.cfg
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;fast-forward &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+On fast machine helps skipping (fast forwarding) Hatari
+output
+</td>
+</table>
+<a name="Display options"></a>
+<h3>Display options</h3>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;m, &minus;&minus;mono</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Start in monochrome mode instead of color
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;monitor &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Select monitor type (x = mono/rgb/vga/tv)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;f, &minus;&minus;fullscreen</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Start the emulator in fullscreen mode
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;w, &minus;&minus;window</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Start the emulator in window mode
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;z, &minus;&minus;zoom &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Zoom low resolution (1=no, 2=yes)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;frameskips &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Skip &lt;x&gt; frames after each displayed frame to
+accelerate emulation (0=disabled, &gt;4 uses automatic
+frameskip with given value as maximum)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;borders &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Show screen borders (for overscan demos, ST(e) color mode
+specific etc)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;statusbar &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Show statusbar (with floppy leds etc etc)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;drive-led &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Show overlay drive led when statusbar isn&rsquo;t
+shown
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;spec512 &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Hatari uses this threshold to decide when to render a
+screen with the slower but more accurate Spectrum512 screen
+conversion functions (0 &lt;= x &lt;= 512, 0=disable)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;bpp &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Force internal bitdepth (x = 8/15/16/32, 0=disable)
+</td>
+</table>
+<a name="VDI options"></a>
+<h3>VDI options</h3>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;vdi &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Whether to use VDI screen mode
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;vdi&minus;planes &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Use extended VDI resolution with bit depth &lt;x&gt; (x =
+1, 2 or 4)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;vdi&minus;width &lt;w&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Use extended VDI resolution with width &lt;w&gt; (384
+&lt;= w &lt;= 1024)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;vdi&minus;height &lt;h&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Use extended VDI resolution with height &lt;h&gt; (200
+&lt; h &lt;= 768)
+</td>
+</table>
+<a name="Devices options"></a>
+<h3>Devices options</h3>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;j, &minus;&minus;joystick
+&lt;port&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Emulate joystick with cursor keys in given port (0-5)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;joy&lt;port&gt;
+&lt;type&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Set joystick type (none/keys/real) for given port
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;printer &lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Enable printer support and write data to &lt;file&gt;
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;midi &lt;filename&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Enable midi support and write midi data to
+&lt;file&gt;
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;rs232 &lt;filename&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Enable serial port support and use &lt;file&gt; as the
+device
+</td>
+</table>
+<a name="Disk options"></a>
+<h3>Disk options</h3>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;disk-a &lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Set disk image for floppy drive A
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;disk-b &lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Set disk image for floppy drive B
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;d, &minus;&minus;harddrive
+&lt;dir&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Emulate an ST harddrive (&lt;dir&gt; = root
+directory)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;acsi &lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Emulate an ACSI hard disk with an image &lt;file&gt;
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;ide &lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Emulate an IDE hard disk with an image &lt;file&gt; (not
+working yet)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;slowfdc &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+slow down FDC emulation (deprecated)
+</td>
+</table>
+<a name="Memory options"></a>
+<h3>Memory options</h3>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;s, &minus;&minus;memsize &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Set amount of emulated RAM, x = 1 to 14 MiB, or 0 for 512
+KiB
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;t, &minus;&minus;tos
+&lt;imagefile&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Specify TOS ROM image to use
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;cartridge &lt;imagefile&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Use ROM cartridge image &lt;file&gt; (only works if
+GEMDOS HD emulation and extended VDI resolution are
+disabled)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;memstate &lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Load memory snap-shot &lt;file&gt;
+</td>
+</table>
+<a name="CPU options"></a>
+<h3>CPU options</h3>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;cpulevel &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Specify CPU (680x0) to use (use x &gt;= 1 with EmuTOS or
+TOS &gt;= 2.06 only!)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;cpuclock &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Set the CPU clock (8, 16 or 32 Mhz)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;compatible &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Use a more compatible but slower 68000 CPU mode
+</td>
+</table>
+<a name="Misc system options"></a>
+<h3>Misc system options</h3>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;machine &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+select machine type (x = st, ste, tt or falcon)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;blitter &lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Enable blitter emulation (ST only)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;dsp &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Falcon DSP emulation (x = none, dummy or emu, Falcon
+only)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;sound &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Sound quality (off/low/med/hi, off=faster)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;k, &minus;&minus;keymap
+&lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+load keyboard mapping from &lt;file&gt;
+</td>
+</table>
+<a name="Debug options"></a>
+<h3>Debug options</h3>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;D, &minus;&minus;debug
+&lt;bool&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Enable Hatari debugger console interface
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;bios-intercept</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Enable Bios/XBios interception
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;trace &lt;trace1,...&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Activate debug traces, see
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;control-socket &lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Hatari reads options from given socket at run-time
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;log-file &lt;file&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Save log output to &lt;file&gt; (default=stderr)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;log-level &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Log output level (x=debug/todo/info/warn/error/fatal)
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;alert-level &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cols="2" cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Show dialog for log messages above given level
+</td>
+</table>
+
 
 <p>Type <span class="commandline">hatari --help</span> to list all
 the command line options supported by a given version of Hatari.</p>
@@ -1024,6 +1618,10 @@ between port 0, port 1 and being off from those ports</td>
 switch)</td>
     </tr>
     <tr>
+      <td align="center"><span class="key">ALTGR+d</span></td>
+      <td align="center">open dialog to select/change disk A</td>
+    </tr>
+    <tr>
       <td align="center"><span class="key">ALTGR+s</span></td>
       <td align="center">enable/disable sound</td>
     </tr>
@@ -1057,8 +1655,8 @@ switch)</td>
     </tr>
     <tr>
       <td align="center"><span class="key">PAUSE</span></td>
-      <td align="center">will go to the debugger if Hatari was started with
-	    the -D option</td>
+      <td align="center">pause emulation or go to the debugger
+          if Hatari was started with the -D option</td>
     </tr>
   </tbody>
 </table>

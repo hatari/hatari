@@ -120,10 +120,13 @@ Set disk image for floppy drive B
 Emulate an ST harddrive (<dir> = root directory)
 .TP 
 .B \-\-acsi <file>
-Emulate ACSI hard disk with an image <file>
+Emulate an ACSI hard disk with an image <file>
+.TP 
+.B \-\-ide <file>
+Emulate an IDE hard disk with an image <file> (not working yet)
 .TP 
 .B \-\-slowfdc <bool>
-slow down FDC emulation (needed to make some games and demos work)
+slow down FDC emulation (deprecated)
 .SH "Memory options"
 .TP 
 .B \-s, \-\-memsize <x>
@@ -160,9 +163,9 @@ Enable blitter emulation (ST only)
 Falcon DSP emulation (x = none, dummy or emu, Falcon only)
 .TP 
 .B \-\-sound <x>
-Sound quality (off/low/med/hi (off=faster))
+Sound quality (off/low/med/hi, off=faster)
 .TP 
-.B \-\-keymap <file>
+.B \-k, \-\-keymap <file>
 load keyboard mapping from <file>
 .SH "Debug options"
 .TP 
@@ -173,7 +176,7 @@ Enable Hatari debugger console interface
 Enable Bios/XBios interception
 .TP
 .B \-\-trace <trace1,...>
-Activate debug traces, see \-\-trace help for tracing options
+Activate debug traces, see \"\-\-trace help\" for tracing options
 .TP
 .B \-\-control-socket <file>
 Hatari reads options from given socket at run-time
@@ -211,6 +214,9 @@ warm reset the ST (same as the reset button)
 .B AltGr + c
 cold reset the ST (same as the power switch)
 .TP
+.B AltGr + d
+open dialog to select/change disk A
+.TP
 .B AltGr + s
 enable/disable sound
 .TP
@@ -238,7 +244,8 @@ activate the hatari options GUI
 You may need to hold SHIFT down while in windowed mode.
 .TP
 .B Pause
-will go to the debugger if it was activated with the \-\-debug option
+will go to the debugger if it was activated with the \-\-debug option.
+Otherwise pauses the emulation.
 
 .SH Emulated Atari ST keyboard
 All other keys on the keyboard act as the normal Atari ST keys so
