@@ -17,7 +17,7 @@
   its own registers if more than one byte is queued up. This value was found by
   a test program on a real ST and has correctly emulated the behaviour.
 */
-const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.52 2008-11-15 21:02:31 thothy Exp $";
+const char IKBD_rcsid[] = "Hatari $Id: ikbd.c,v 1.53 2008-11-16 16:27:28 eerot Exp $";
 
 /* 2007/09/29	[NP]	Use the new int.c to add interrupts with INT_CPU_CYCLE / INT_MFP_CYCLE.		*/
 /* 2007/12/09	[NP]	If reset is written to ACIA control register, we must call ACIA_Reset to reset	*/
@@ -1302,9 +1302,11 @@ static void IKBD_Cmd_ReturnJoystickAuto(void)
 	/* This command resets the internally previously stored joystick states */
 	KeyboardProcessor.Joy.PrevJoyData[0] = KeyboardProcessor.Joy.PrevJoyData[1] = 0;
 
-	/* This is a hack for the game Utopos (v1.5 and v1.61). It expects the
-	 * joystick data to be sent within a certain amount of time after this
-	 * command, without checking the ACIA control register first */
+	/* This is a hack for the STE Utopos (=> v1.50) and Falcon Double Bubble
+	 * 2000 games. They expect the joystick data to be sent within a certain
+	 * amount of time after this command, without checking the ACIA control
+	 * register first.
+	 */
 	IKBD_GetJoystickData();
 	IKBD_SelAutoJoysticks();
 }
