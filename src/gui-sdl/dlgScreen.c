@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.24 2008-11-16 09:42:12 thothy Exp $";
+const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.25 2008-11-16 10:23:44 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -40,10 +40,9 @@ const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.24 2008-11-16 09:42:
 #define DLGSCRN_BPP2       30
 #define DLGSCRN_BPP4       31
 #define DLGSCRN_ONCHANGE   34
-#define DLGSCRN_FPSPOPUP   36
-#define DLGSCRN_CAPTURE    37
-#define DLGSCRN_RECANIM    38
-#define DLGSCRN_EXIT       39
+#define DLGSCRN_CAPTURE    35
+#define DLGSCRN_RECANIM    36
+#define DLGSCRN_EXIT       37
 
 #define ITEMS_IN_ARRAY(a) (sizeof(a)/sizeof(a[0]))
 
@@ -96,8 +95,6 @@ static SGOBJ screendlg[] =
 	{ SGBOX, 0, 0, 1,16, 48,6, NULL },
 	{ SGTEXT, 0, 0, 18,16, 14,1, "Screen capture" },
 	{ SGCHECKBOX, 0, 0, 4,18, 39,1, "Capture only when display changes" },
-	{ SGTEXT, 0, 0, 31,19, 4,1, ""/*"FPS:"*/ },
-	{ SGTEXT/*SGPOPUP*/, 0, 0, 36,19, 3,1, ""/*"25"*/ },
 	{ SGBUTTON, 0, 0, 6,20, 16,1, "Capture screen" },
 	{ SGBUTTON, 0, 0, 26,20, 18,1, NULL },
 
@@ -215,10 +212,6 @@ void Dialog_ScreenDlg(void)
 		but = SDLGui_DoDialog(screendlg, NULL);
 		switch (but)
 		{
-		 case DLGSCRN_FPSPOPUP:
-			//fprintf(stderr,"Sorry, popup menus don't work yet\n");
-			break;
-
 		 case DLGSCRN_WIDTHLESS:
 			ConfigureParams.Screen.nVdiWidth = VDI_Limit(ConfigureParams.Screen.nVdiWidth - nVdiStepX,
 			                                nVdiStepX, MIN_VDI_WIDTH, MAX_VDI_WIDTH);
