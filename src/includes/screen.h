@@ -118,6 +118,6 @@ extern void Screen_SetFullUpdate(void);
 extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);
 extern void Screen_ModeChanged(void);
-extern void Screen_Draw(void);
+extern bool Screen_Draw(void);
 
 #endif  /* ifndef HATARI_SCREEN_H */

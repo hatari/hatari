@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.19 2008-08-05 23:26:47 thothy Exp $";
+const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.20 2008-11-16 10:19:40 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -201,7 +201,7 @@ void VIDEL_ZoomModeChanged(void)
 }
 
 
-void VIDEL_renderScreen(void)
+bool VIDEL_renderScreen(void)
 {
 	int vw	 = VIDEL_getScreenWidth();
 	int vh	 = VIDEL_getScreenHeight();
@@ -229,11 +229,11 @@ void VIDEL_renderScreen(void)
 	}
 	if (since_last_change < 4) {
 		since_last_change++;
-		return;
+		return false;
 	}
 
 	if (!HostScreen_renderBegin())
-		return;
+		return false;
 
 	if (ConfigureParams.Screen.bZoomLowRes) {
 		VIDEL_renderScreenZoom();
@@ -244,6 +244,8 @@ void VIDEL_renderScreen(void)
 	HostScreen_renderEnd();
 
 	HostScreen_update1( FALSE );
+
+	return true;
 }
 
 

@@ -197,7 +197,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.129 2008-11-15 15:37:51 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.130 2008-11-16 10:19:40 thothy Exp $";
 
 #include <SDL_endian.h>
 
@@ -214,6 +214,7 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.129 2008-11-15 15:37:51 npom
 #include "mfp.h"
 #include "printer.h"
 #include "screen.h"
+#include "screenSnapShot.h"
 #include "shortcut.h"
 #include "sound.h"
 #include "spec512.h"
@@ -1721,9 +1722,10 @@ static void Video_UpdateTTPalette(int bpp)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Update TT palette and blit TT screen using VIDEL code
+ * Update TT palette and blit TT screen using VIDEL code.
+ * @return  true if the screen contents changed
  */
-static void Video_RenderTTScreen(void)
+static bool Video_RenderTTScreen(void)
 {
 	static int nPrevTTRes = -1;
 	int width, height, bpp;
@@ -1745,13 +1747,15 @@ static void Video_RenderTTScreen(void)
 
 	/* Yes, we are abusing the Videl routines for rendering the TT modes! */
 	if (!HostScreen_renderBegin())
-		return;
+		return false;
 	if (ConfigureParams.Screen.bZoomLowRes)
 		VIDEL_ConvertScreenZoom(width, height, bpp, width * bpp / 16);
 	else
 		VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);
 	HostScreen_renderEnd();
 	HostScreen_update1(FALSE);
+
+	return true;
 }
 
 
@@ -1762,6 +1766,8 @@ static void Video_RenderTTScreen(void)
  */
 static void Video_DrawScreen(void)
 {
+	bool bScreenChanged;
+
 	/* Skip frame if need to */
 	if (nVBLs % (nFrameSkips+1))
 		return;
@@ -1774,11 +1780,11 @@ static void Video_DrawScreen(void)
 	/* Now draw the screen! */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
 	{
-		VIDEL_renderScreen();
+		bScreenChanged = VIDEL_renderScreen();
 	}
 	else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
 	{
-		Video_RenderTTScreen();
+		bScreenChanged = Video_RenderTTScreen();
 	}
 	else
 	{
@@ -1788,8 +1794,12 @@ static void Video_DrawScreen(void)
 		if ( nHBL < nLastVisibleHbl )
 			memset(pSTScreen, 0, SCREENBYTES_LINE * ( nLastVisibleHbl - nHBL ) );
 
-		Screen_Draw();
+		bScreenChanged = Screen_Draw();
 	}
+
+	/* Grab any animation */
+	if (bRecordingAnimation)
+		ScreenSnapShot_RecordFrame(bScreenChanged);
 }
 
 

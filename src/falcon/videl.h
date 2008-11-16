@@ -8,7 +8,7 @@
 #ifndef HATARI_VIDEL_H
 #define HATARI_VIDEL_H
 
-extern void VIDEL_renderScreen(void);
+extern bool VIDEL_renderScreen(void);
 extern void VIDEL_reset(void);
 extern void VIDEL_ColorRegsWrite(void);
 extern void VIDEL_ShiftModeWriteWord(void);

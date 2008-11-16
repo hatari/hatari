@@ -32,7 +32,7 @@
 */
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.96 2008-11-04 21:05:47 eerot Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.97 2008-11-16 10:19:40 thothy Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -46,7 +46,6 @@ const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.96 2008-11-04 21:05:47 eer
 #include "screen.h"
 #include "control.h"
 #include "convert/routines.h"
-#include "screenSnapShot.h"
 #include "sound.h"
 #include "spec512.h"
 #include "statusbar.h"
@@ -986,8 +985,10 @@ static void Screen_Blit(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Draw ST screen to window/full-screen framebuffer
+ * @param  bForceFlip  Force screen update, even if contents did not change
+ * @return  TRUE if screen contents changed
  */
-static void Screen_DrawFrame(bool bForceFlip)
+static bool Screen_DrawFrame(bool bForceFlip)
 {
 	int new_res;
 	void (*pDrawFunction)(void);
@@ -1071,10 +1072,11 @@ static void Screen_DrawFrame(bool bForceFlip)
 		{
 			Screen_Blit();
 		}
-		/* Grab any animation */
-		if (bRecordingAnimation)
-			ScreenSnapShot_RecordFrame(bScreenContentsChanged);
+
+		return bScreenContentsChanged;
 	}
+
+	return false;
 }
 
 
@@ -1082,13 +1084,15 @@ static void Screen_DrawFrame(bool bForceFlip)
 /**
  * Draw ST screen to window/full-screen
  */
-void Screen_Draw(void)
+bool Screen_Draw(void)
 {
 	if (!bQuitProgram && VideoBase)
 	{
 		/* And draw (if screen contents changed) */
-		Screen_DrawFrame(FALSE);
+		return Screen_DrawFrame(false);
 	}
+
+	return false;
 }
 
 
