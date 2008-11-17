@@ -72,10 +72,17 @@
 /*			Fix High Fidelity Dreams by Aura which sets MFP vector base to $c0 instead of	*/
 /*			$100. In that case, timer B int becomes exception nr 56 and conflicts with the	*/
 /*			'MMU config error' exception, which takes 4 cycles instead of 56 cycles for MFP.*/
+/* 2008/11/18	[NP]	In 'do_specialties()', when the cpu is in the STOP state, we must test all	*/
+/*			possible int handlers while PendingInterruptCount <= 0 without increasing the	*/
+/*			cpu cycle counter. In the case where both an MFP int and an HBL occur at the	*/
+/*			same time for example, the HBL was delayed by 4 bytes if no MFP exception	*/
+/*			was triggered, which was wrong (this happened mainly with the TOS timer D that	*/
+/*			expires very often). Such precision is required for very recent hardscroll	*/
+/*			techniques that use 'stop' to stay in sync with the video shifter.		*/
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.60 2008-10-25 22:31:54 eerot Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.61 2008-11-17 23:13:01 npomarede Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -1450,20 +1457,27 @@ static int do_specialties (void)
 	    Main_EventHandler();
 	    if (regs.spcflags & SPCFLAG_BRK)  return 1;
 	}
+
 	M68000_AddCycles(4);
-	if (PendingInterruptCount<=0 && PendingInterruptFunction) {
+
+        /* It is possible one or more ints happen at the same time */
+        /* We must process them during the same cpu cycle until the special INT flag is set */
+	while (PendingInterruptCount<=0 && PendingInterruptFunction) {
+            /* 1st, we call the interrupt handler */
 	    CALL_VAR(PendingInterruptFunction);
-	}
-	if (regs.spcflags & SPCFLAG_MFP) {
-	    MFP_CheckPendingInterrupts();
-	}
-	if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
-	    int intr = intlev ();
-	    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-	    if (intr != -1 && intr > regs.intmask) {
-		Interrupt (intr);
-		regs.stopped = 0;
-		unset_special (SPCFLAG_STOP);
+            /* Then we check if this handler triggered an MFP int to process */
+	    if (regs.spcflags & SPCFLAG_MFP)
+	        MFP_CheckPendingInterrupts();
+
+	    if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
+	        int intr = intlev ();
+	        unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
+	        if (intr != -1 && intr > regs.intmask) {
+		    Interrupt (intr);
+		    regs.stopped = 0;
+		    unset_special (SPCFLAG_STOP);
+                    break;
+	        }
 	    }
 	}
     }
