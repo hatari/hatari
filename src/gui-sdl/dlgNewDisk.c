@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgNewDisk_rcsid[] = "Hatari $Id: dlgNewDisk.c,v 1.2 2008-06-08 16:07:40 eerot Exp $";
+const char DlgNewDisk_rcsid[] = "Hatari $Id: dlgNewDisk.c,v 1.3 2008-11-18 20:12:03 eerot Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -64,14 +64,9 @@ void DlgNewDisk_Main(void)
  	SDLGui_CenterDlg(newdiskdlg);
 
 	/* Initialize disk image name: */
-	szNewDiskName = malloc(strlen(ConfigureParams.DiskImage.szDiskImageDirectory) + strlen(DEFAULT_DISK_NAME) + 1);
+	szNewDiskName = File_MakePath(ConfigureParams.DiskImage.szDiskImageDirectory, "new_disk.st", NULL);
 	if (!szNewDiskName)
-	{
-		perror("DlgNewDisk_Main");
 		return;
-	}
-	strcpy(szNewDiskName, ConfigureParams.DiskImage.szDiskImageDirectory);
-	strcat(szNewDiskName, "new_disk.st");
 
 	/* Draw and process the dialog */
 	do
@@ -93,7 +88,8 @@ void DlgNewDisk_Main(void)
 			tmpname = SDLGui_FileSelect(szNewDiskName, NULL, TRUE);
 			if (tmpname)
 			{
-				if (!File_DoesFileNameEndWithSlash(tmpname))
+				/* (potentially non-existing) filename? */
+				if (!File_DirExists(tmpname))
 				{
 					int nSectors, nSides;
 
