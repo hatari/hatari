@@ -12,6 +12,7 @@ extern void File_CleanFileName(char *pszFileName);
 extern void File_AddSlashToEndFileName(char *pszFileName);
 extern bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension);
 extern const char *File_RemoveFileNameDrive(const char *pszFileName);
+extern bool File_DirExists(const char *path);
 extern bool File_DoesFileNameEndWithSlash(char *pszFileName);
 extern Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const ppszExts[]);
 extern bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool bQueryOverwrite);

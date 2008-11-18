@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.52 2008-05-03 18:58:22 thothy Exp $";
+const char File_rcsid[] = "Hatari $Id: file.c,v 1.53 2008-11-18 19:57:39 eerot Exp $";
 
 #include <config.h>
 
@@ -120,6 +120,19 @@ const char *File_RemoveFileNameDrive(const char *pszFileName)
 		return pszFileName;
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Check if given filename is an existing directory
+ * 
+ * Return TRUE if directory, else give FALSE
+ */
+bool File_DirExists(const char *path)
+{
+	struct stat filestat;
+	return (stat(path, &filestat) == 0 && S_ISDIR(filestat.st_mode));
+}
+	
 
 /*-----------------------------------------------------------------------*/
 /**
