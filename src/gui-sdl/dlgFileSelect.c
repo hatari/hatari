@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.24 2008-11-16 15:48:08 thothy Exp $";
+const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.25 2008-11-18 20:10:14 eerot Exp $";
 
 #include <SDL.h>
 #include <sys/stat.h>
@@ -343,7 +343,6 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 	bool browsingzip = FALSE;           /* Are we browsing an archive? */
 	zip_dir *zipfiles = NULL;
 	SDL_Event sdlEvent;
-	struct stat filestat;
 
 	ypos = 0;
 	refreshentries = TRUE;
@@ -377,17 +376,14 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 		strncpy(path, path_and_name, FILENAME_MAX);
 		path[FILENAME_MAX-1] = '\0';
 	}
-	if (path[0] && stat(path, &filestat) == 0)
+	if (!File_DirExists(path))
 	{
-		if (S_ISDIR(filestat.st_mode))
-			File_AddSlashToEndFileName(path);
-		else
-			File_SplitPath(path, path, fname, NULL);
-	}
-	else if (!getcwd(path, FILENAME_MAX))
-	{
-		perror("SDLGui_FileSelect");
-		return NULL;
+		File_SplitPath(path, path, fname, NULL);
+		if (!(File_DirExists(path) || getcwd(path, FILENAME_MAX)))
+		{
+			perror("SDLGui_FileSelect: non-existing path and CWD failed");
+			return NULL;
+		}
 	}
 
 	File_MakeAbsoluteName(path);
@@ -525,7 +521,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 					free(pStringMem);
 					return NULL;
 				}
-				if (stat(tempstr, &filestat) == 0 && S_ISDIR(filestat.st_mode))
+				if (File_DirExists(tempstr))
 				{
 					File_HandleDotDirs(tempstr);
 					File_AddSlashToEndFileName(tempstr);
