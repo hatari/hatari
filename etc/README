@@ -11,10 +11,10 @@ Just copy suitable config file to the device /etc/ directory (or
 to /usr/local/etc directory if Hatari is installed under /usr/local)
 as 'hatari.cfg'.
 
-If these don't provide sufficient performance, use of an earlier
-Hatari version such as v0.95 (or even earlier) should be considered.
-Their emulation wasn't as accurate as in latest Hatari versions and
-therefore they're somewhat faster.
+If these configuration settings don't provide sufficient performance,
+use of an earlier Hatari version such as v0.95 (or even earlier)
+should be considered. Their emulation wasn't as accurate as in latest
+Hatari versions and therefore they're somewhat faster.
 
 
 n810.cfg
@@ -31,3 +31,4 @@ Configuration file for the Nokia 770/N800/N810 TI Omap2 based devices:
   - Automatic frameskip
   - No spec512 support
   - 11kHz sound
+  
