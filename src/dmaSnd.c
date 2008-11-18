@@ -32,7 +32,7 @@
     $FF8922 (byte) : Microwire Data Register
     $FF8924 (byte) : Microwire Mask Register
 */
-const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.21 2008-11-15 14:17:29 thothy Exp $";
+const char DmaSnd_rcsid[] = "Hatari $Id: dmaSnd.c,v 1.22 2008-11-18 23:17:05 thothy Exp $";
 
 #include "main.h"
 #include "audio.h"
@@ -409,26 +409,28 @@ void DmaSnd_InterruptHandler_Microwire(void)
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
 
-	if (nMwTransferSteps > 2)
+	--nMwTransferSteps;
+
+	/* Shift data register until it becomes zero. */
+	if (nMwTransferSteps > 1)
 	{
 		IoMem_WriteWord(0xff8922, nMicrowireData<<(16-nMwTransferSteps));
-		IoMem_WriteWord(0xff8924, (nMicrowireMask<<(16-nMwTransferSteps))
-		                          |(nMicrowireMask>>nMwTransferSteps));
 	}
 	else
 	{
-		/* Paradox XMAS 2004 demo continuesly writes to th data
+		/* Paradox XMAS 2004 demo continuesly writes to the data
 		 * register, but still expects to read a zero inbetween,
 		 * so we have to output a zero before we're really done
 		 * with the transfer. */
 		IoMem_WriteWord(0xff8922, 0);
-		IoMem_WriteWord(0xff8924, (nMicrowireMask<<(16-nMwTransferSteps))
-		                          |(nMicrowireMask>>nMwTransferSteps));
 	}
+
+	/* Rotate mask register */
+	IoMem_WriteWord(0xff8924, (nMicrowireMask<<(16-nMwTransferSteps))
+	                          |(nMicrowireMask>>nMwTransferSteps));
 
 	if (nMwTransferSteps > 0)
 	{
-		--nMwTransferSteps;
 		Int_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}
 }
