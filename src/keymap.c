@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.40 2008-09-25 20:05:48 thothy Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.41 2008-11-18 19:56:44 eerot Exp $";
 
 #include <ctype.h>
 #include "main.h"
@@ -600,40 +600,41 @@ void Keymap_LoadRemapFile(char *pszFileName)
 	memcpy(LoadedKeyToSTScanCode, SymbolicKeyToSTScanCode, sizeof(LoadedKeyToSTScanCode));
 
 	/* Attempt to load file */
-	if (strlen(pszFileName) > 0 && !File_DoesFileNameEndWithSlash(pszFileName))
+	if (!File_Exists(pszFileName))
 	{
-		/* Open file */
-		in = fopen(pszFileName, "r");
-		if (!in)
-		{
-			Log_Printf(LOG_DEBUG, "Keymap_LoadRemapFile: failed to "
-				      " open keymap file '%s'\n", pszFileName);
-			return;
-		}
-
-		while (!feof(in))
-		{
-			/* Read line from file */
-			if (fgets(szString, sizeof(szString), in) == NULL)
-				break;
-			/* Remove white-space from start of line */
-			Str_Trim(szString);
-			if (strlen(szString)>0)
-			{
-				/* Is a comment? */
-				if ( (szString[0]==';') || (szString[0]=='#') )
-					continue;
-				/* Read values */
-				sscanf(szString, "%d,%d", &PCKeyCode, &STScanCode);
-				/* Store into remap table, check both value within range */
-				if ( (PCKeyCode>=0) && (PCKeyCode<SDLK_LAST) &&
-				        (STScanCode>=0) && (STScanCode<256) )
-					LoadedKeyToSTScanCode[PCKeyCode] = STScanCode;
-			}
-		}
-
-		fclose(in);
+		Log_Printf(LOG_DEBUG, "Keymap_LoadRemapFile: '%s' not a file\n", pszFileName);
+		return;
 	}
+	in = fopen(pszFileName, "r");
+	if (!in)
+	{
+		Log_Printf(LOG_DEBUG, "Keymap_LoadRemapFile: failed to "
+			   " open keymap file '%s'\n", pszFileName);
+		return;
+	}
+	
+	while (!feof(in))
+	{
+		/* Read line from file */
+		if (fgets(szString, sizeof(szString), in) == NULL)
+			break;
+		/* Remove white-space from start of line */
+		Str_Trim(szString);
+		if (strlen(szString)>0)
+		{
+			/* Is a comment? */
+			if ( (szString[0]==';') || (szString[0]=='#') )
+				continue;
+			/* Read values */
+			sscanf(szString, "%d,%d", &PCKeyCode, &STScanCode);
+			/* Store into remap table, check both value within range */
+			if ( (PCKeyCode>=0) && (PCKeyCode<SDLK_LAST) &&
+			     (STScanCode>=0) && (STScanCode<256) )
+				LoadedKeyToSTScanCode[PCKeyCode] = STScanCode;
+		}
+	}
+	
+	fclose(in);
 }
 
 
