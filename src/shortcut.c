@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.41 2008-11-16 09:42:12 thothy Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.42 2008-11-18 19:53:29 eerot Exp $";
 
 #include <SDL.h>
 
@@ -226,7 +226,7 @@ static void ShortCut_InsertDisk(int drive)
 	selname = SDLGui_FileSelect(tmpname, &zip_path, FALSE);
 	if (selname)
 	{
-		if (!File_DoesFileNameEndWithSlash(selname) && File_Exists(selname))
+		if (File_Exists(selname))
 		{
 			const char *realname;
 			realname = Floppy_SetDiskFileName(drive, selname, zip_path);

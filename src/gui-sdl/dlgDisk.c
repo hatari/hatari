@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.7 2008-11-15 18:55:53 thothy Exp $";
+const char DlgDisk_rcsid[] = "Hatari $Id: dlgDisk.c,v 1.8 2008-11-18 19:53:29 eerot Exp $";
 
 #include <assert.h>
 #include "main.h"
@@ -98,7 +98,7 @@ static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 	selname = SDLGui_FileSelect(tmpname, &zip_path, FALSE);
 	if (selname)
 	{
-		if (!File_DoesFileNameEndWithSlash(selname) && File_Exists(selname))
+		if (File_Exists(selname))
 		{
 			const char *realname;
 			realname = Floppy_SetDiskFileName(drive, selname, zip_path);
