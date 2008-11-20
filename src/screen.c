@@ -29,10 +29,11 @@
     for a screen. This fixes garbage that could appear in the last two
     lines when displaying 47 lines (Digiworld 2 by ICE, Tyranny by DHS).
   - 2008/08/09 [ET] Add statusbar
+  - 2008-11-20 [ET] Move event selection to main.c
 */
 
 
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.97 2008-11-16 10:19:40 thothy Exp $";
+const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.98 2008-11-20 21:46:08 eerot Exp $";
 
 #include <SDL.h>
 #include <SDL_endian.h>
@@ -507,9 +508,6 @@ void Screen_Init(void)
 
 	/* Configure some SDL stuff: */
 	SDL_WM_SetCaption(PROG_NAME, "Hatari");
-	SDL_EventState(SDL_MOUSEMOTION, SDL_ENABLE);
-	SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_ENABLE);
-	SDL_EventState(SDL_MOUSEBUTTONUP, SDL_ENABLE);
 	SDL_ShowCursor(SDL_DISABLE);
 }
 

@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Main_rcsid[] = "Hatari $Id: main.c,v 1.150 2008-11-09 23:25:30 thothy Exp $";
+const char Main_rcsid[] = "Hatari $Id: main.c,v 1.151 2008-11-20 21:46:08 eerot Exp $";
 
 #include <time.h>
 #include <SDL.h>
@@ -410,6 +410,31 @@ void Main_EventHandler(void)
 }
 
 
+/* ----------------------------------------------------------------------- */
+/**
+ * SDL event selection
+ * Set which Hatari window input events SDL should pass to Hatari,
+ */
+static void Main_SetEvents(void)
+{
+	int event;
+	Uint8 events[SDL_USEREVENT];
+
+	memset(events, SDL_IGNORE, sizeof(events));
+	events[SDL_MOUSEBUTTONDOWN] = SDL_ENABLE;
+	events[SDL_MOUSEBUTTONUP] = SDL_ENABLE;
+	events[SDL_MOUSEMOTION] = SDL_ENABLE;
+	events[SDL_KEYDOWN] = SDL_ENABLE;
+	events[SDL_KEYUP] = SDL_ENABLE;
+	events[SDL_QUIT] = SDL_ENABLE;
+	
+	for (event = 0; event < SDL_USEREVENT; event++)
+	{
+		SDL_EventState(event, events[event]);
+	}
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Initialise emulation
@@ -437,6 +462,7 @@ static void Main_Init(void)
 	RS232_Init();
 	Midi_Init();
 	Screen_Init();
+	Main_SetEvents();
 	HostScreen_Init();
 #if ENABLE_DSP_EMU
 	if (ConfigureParams.System.nDSPType == DSP_TYPE_EMU)
