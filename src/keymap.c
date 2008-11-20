@@ -6,7 +6,7 @@
 
   Here we process a key press and the remapping of the scancodes.
 */
-const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.41 2008-11-18 19:56:44 eerot Exp $";
+const char Keymap_rcsid[] = "Hatari $Id: keymap.c,v 1.42 2008-11-20 21:34:49 eerot Exp $";
 
 #include <ctype.h>
 #include "main.h"
@@ -599,6 +599,9 @@ void Keymap_LoadRemapFile(char *pszFileName)
 	/* Initialize table with default values */
 	memcpy(LoadedKeyToSTScanCode, SymbolicKeyToSTScanCode, sizeof(LoadedKeyToSTScanCode));
 
+	if (!*pszFileName)
+		return;
+	
 	/* Attempt to load file */
 	if (!File_Exists(pszFileName))
 	{
