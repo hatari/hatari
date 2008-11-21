@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.19 2008-08-12 19:36:39 eerot Exp $";
+const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.20 2008-11-21 18:28:24 eerot Exp $";
 
 #include <SDL.h>
 #include <ctype.h>
@@ -811,6 +811,9 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 				}
 				break;
 
+			 case SDL_JOYAXISMOTION:
+			 case SDL_JOYBALLMOTION:
+			 case SDL_JOYHATMOTION:
 			 case SDL_MOUSEMOTION:
 				break;
 
