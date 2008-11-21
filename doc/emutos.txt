@@ -138,12 +138,15 @@ non-working ones "Panic" EmuTOS.
 Demos:
 - 4getful (by gwEm, 4KB intro)
 - 4kker (by Checkpoint, 4KB intro)
+- Anomaly (by MMJ-Prod)
+- Breath (by Mystic Bytes)
 - Darktrip (by Legend, doesn't work with >2MB of RAM)
 - Dark Side of the Spoon (by ULM)
 - Death of the Clock Cycles (by Aggression)
 - Dimensio (by Condemned)
 - Flashback (by Carebears)
 - Frenchies (by Frenchies, 96KB intro)
+- Hallucinations (by Reservoir Gods)
 - Overdose (by Aggression)
 - Paradise (Dune Design)
 - Phaleon Gigademo
