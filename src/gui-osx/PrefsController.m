@@ -526,9 +526,8 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 - (void)setAllControls
 {
 	// Import the floppy paths into their controls.
-	// Note: Floppy images are exposed in the prefs dialog, however they aren't stored with the prefs and won't need to be saved on exit.
-	IMPORT_TEXTFIELD(floppyImageA, EmulationDrives[0].szFileName); 
-	IMPORT_TEXTFIELD(floppyImageB, EmulationDrives[1].szFileName); 
+	IMPORT_TEXTFIELD(floppyImageA, ConfigureParams.DiskImage.szDiskFileName[0]); 
+	IMPORT_TEXTFIELD(floppyImageB, ConfigureParams.DiskImage.szDiskFileName[1]); 
 	
 	// Import all the preferences into their controls
 	IMPORT_SWITCH(autoInsertB, ConfigureParams.DiskImage.bAutoInsertDiskB);

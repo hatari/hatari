@@ -73,7 +73,7 @@ void GuiOsx_ExportPathString(NSString* path, char* szTarget, size_t cchTarget)
 void GuiOsx_PauseAndSwitchToCocoaUI()
 {
 	// Pause emulation
-	Main_PauseEmulation();
+	Main_PauseEmulation(FALSE);
 	
 	// Enable the alert hooks, so that any messages are shown in Cocoa alerts instead of SDL alerts
 #ifdef ALERT_HOOKS
