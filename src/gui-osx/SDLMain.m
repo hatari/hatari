@@ -163,7 +163,7 @@ static BOOL   gFinderLaunch;
 - (IBAction)captureAnimation:(id)sender
 {
 	GuiOsx_PauseAndSwitchToCocoaUI();
-	ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange, 25);
+	ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange);
 	GuiOsx_ResumeFromCocoaUI();
 }
 
