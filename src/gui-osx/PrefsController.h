@@ -87,9 +87,8 @@
 - (IBAction)ejectFloppyB:(id)sender;
 - (IBAction)ejectGemdosImage:(id)sender;
 - (IBAction)ejectHdImage:(id)sender;
-- (IBAction)loadConfig:(id)sender;
 - (IBAction)loadPrefs:(id)sender;
-- (IBAction)saveConfig:(id)sender;
+- (IBAction)saveConfigAs:(id)sender;
 - (IBAction)loadConfigFrom:(id)sender;
 - (void)setAllControls;
 - (void)saveAllControls;

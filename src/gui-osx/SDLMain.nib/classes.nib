@@ -34,10 +34,10 @@
                 ejectFloppyB = id; 
                 ejectGemdosImage = id; 
                 ejectHdImage = id; 
-                loadConfig = id; 
                 loadConfigFrom = id; 
                 loadPrefs = id; 
-                saveConfig = id; 
+                myAction = id; 
+                saveConfigAs = id; 
                 updateEnabledStates = id; 
             }; 
             CLASS = PrefsController; 
@@ -50,7 +50,6 @@
                 cartridgeImage = NSTextField; 
                 colorDepth = NSMatrix; 
                 compatibleCpu = NSButton; 
-                configFile = NSTextField; 
                 cpuClock = NSMatrix; 
                 cpuType = NSMatrix; 
                 currentJoystick = NSPopUpButton; 
@@ -77,7 +76,6 @@
                 keyboardMappingFile = NSTextField; 
                 machineType = NSMatrix; 
                 monitor = NSMatrix; 
-                nSpec512Treshold = NSSlider; 
                 patchTimerD = NSButton; 
                 playbackQuality = NSMatrix; 
                 printToFile = NSTextField; 

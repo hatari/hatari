@@ -360,30 +360,32 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 
 
 /*-----------------------------------------------------------------------*/
-/*
-  Methods for the "Load Config" and "Save Config" buttons
-*/
-- (IBAction)loadConfig:(id)sender
-{
-	// Load the config into ConfigureParams
-	Configuration_Load(NULL);
-	
-	// Refresh all the controls to match ConfigureParams
-	[self setAllControls];
-}
-
-//JV 08/2008: Load Setting from a file.
+/**
+ * Methods for the "Load Config" button
+ */
 
 - (IBAction)loadConfigFrom:(id)sender
 {
-	if([self choosePathForControl:configFile chooseDirectories:FALSE defaultInitialDir:@"~"])
+    NSString *ConfigFile = [NSString stringWithCString:(sConfigFileName)];
+    NSOpenPanel *openPanel = [ NSOpenPanel openPanel ];
+    
+    if ( [ openPanel runModalForDirectory:nil file:ConfigFile types:nil ] )
 	{
-		NSString *path = [[configFile stringValue] stringByExpandingTildeInPath];
-		const char* constSzPath = [path cString];
+        ConfigFile = [ [ openPanel filenames ] objectAtIndex:0 ];
+    }
+	else
+	{
+		ConfigFile = nil;
+	}
+
+	if (ConfigFile != nil)
+	{
+		// Make a non-const C string out of it
+		const char* constSzPath = [ConfigFile cString];
 		size_t cbPath = strlen(constSzPath) + 1;
 		char szPath[cbPath];
-		strncpy(szPath, constSzPath, cbPath);
-		
+		strncpy(szPath, constSzPath, cbPath);	
+
 		// Load the config into ConfigureParams
 		Configuration_Load(szPath);
 		strcpy(sConfigFileName,szPath);
@@ -392,13 +394,42 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	}
 }
 
-- (IBAction)saveConfig:(id)sender
+/**
+ * Methods for the "Load Config" button
+ */
+- (IBAction)saveConfigAs:(id)sender
 {
+	char splitpath[FILENAME_MAX], splitname[FILENAME_MAX];
+
 	// Update the ConfigureParams from the controls
 	[self saveAllControls];
 
-	// Save the ConfigureParams to the config file
-	Configuration_Save();
+	File_SplitPath(sConfigFileName, splitpath, splitname, NULL);
+
+    NSSavePanel *savePanel = [ NSSavePanel savePanel ];
+
+	NSString* defaultDir = [NSString stringWithCString:splitpath];
+    NSString *ConfigFile = [NSString stringWithCString:splitname];
+    
+    if ( ![ savePanel runModalForDirectory:defaultDir file:ConfigFile ] )
+	{
+		return;
+	}
+
+    ConfigFile = [ savePanel filename ];
+    
+	if (ConfigFile != nil)
+	{
+		// Make a non-const C string out of it
+		const char* constSzPath = [ConfigFile cString];
+		size_t cbPath = strlen(constSzPath) + 1;
+		char szPath[cbPath];
+		strncpy(szPath, constSzPath, cbPath);	
+
+		// Save the config from ConfigureParams
+		strcpy(sConfigFileName, szPath);
+		Configuration_Save();
+	}
 }
 
 
@@ -563,10 +594,8 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	IMPORT_RADIO(writeProtection, ConfigureParams.DiskImage.nWriteProtection);
     IMPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
     IMPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
-	//JV 08/2008
 	IMPORT_SWITCH(showStatusBar, ConfigureParams.Screen.bShowStatusbar);
 	IMPORT_DROPDOWN(enableDSP,ConfigureParams.System.nDSPType);
-	IMPORT_SLIDER(nSpec512Treshold,ConfigureParams.Screen.nSpec512Threshold);
 	IMPORT_TEXTFIELD(configFile, sConfigFileName);
 
 	[(force8bpp) setState:((ConfigureParams.Screen.nForceBpp==8))? NSOnState : NSOffState];
@@ -728,10 +757,8 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	EXPORT_RADIO(writeProtection, ConfigureParams.DiskImage.nWriteProtection);
     EXPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
     EXPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
-	//JV 082008
 	EXPORT_SWITCH(showStatusBar,ConfigureParams.Screen.bShowStatusbar);
 	EXPORT_DROPDOWN(enableDSP,ConfigureParams.System.nDSPType);
-	EXPORT_SLIDER(nSpec512Treshold,ConfigureParams.Screen.nSpec512Threshold);
 
 	ConfigureParams.Screen.nForceBpp = ([force8bpp state] == NSOnState) ? 8 : 16;
 
