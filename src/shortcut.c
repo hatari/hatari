@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.42 2008-11-18 19:53:29 eerot Exp $";
+const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.43 2008-11-22 18:21:33 eerot Exp $";
 
 #include <SDL.h>
 
@@ -174,6 +174,7 @@ static void ShortCut_BossKey(void)
 		SDL_WM_GrabInput(SDL_GRAB_OFF);
 		bGrabMouse = FALSE;
 	}
+	Main_PauseEmulation(TRUE);
 
 	/* Minimize Window and give up processing to next one! */
 	SDL_WM_IconifyWindow();
@@ -223,6 +224,7 @@ static void ShortCut_InsertDisk(int drive)
 	else
 		tmpname = ConfigureParams.DiskImage.szDiskImageDirectory;
 
+	Main_PauseEmulation(TRUE);
 	selname = SDLGui_FileSelect(tmpname, &zip_path, FALSE);
 	if (selname)
 	{
@@ -240,6 +242,7 @@ static void ShortCut_InsertDisk(int drive)
 		Floppy_InsertDiskIntoDrive(0);
 		free(selname);
 	}
+	Main_UnPauseEmulation();
 }
 
 
@@ -264,9 +267,11 @@ void ShortCut_ActKey(void)
 		ShortCut_MouseMode();          /* Toggle mouse mode */
 		break;
 	 case SHORTCUT_COLDRESET:
+		Main_UnPauseEmulation();
 		Reset_Cold();                  /* Reset emulator with 'cold' (clear all) */
 		break;
 	 case SHORTCUT_WARMRESET:
+		Main_UnPauseEmulation();
 		Reset_Warm();                  /* Emulator 'warm' reset */
 		break;
 	 case SHORTCUT_SCREENSHOT:
