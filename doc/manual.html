@@ -16,25 +16,23 @@
 		color:#000000;
 		margin-left:10px;
 		margin-right:10px;
-		font-family:Verdana,Arial,Helvetica,sans-serif; font-size:12pt;
+		font-family:Verdana,Arial,Helvetica,sans-serif;
 		}
 
-	h1 { font-size:28pt; }
-	h2 { font-size:22pt; border-bottom:solid thin black;}
-	h3 { font-size:16pt; }
-	h4 { font-size:13pt; }
+	h2 { border-bottom:solid thin black;}
+	h4.gui { clear:right }
 
-	td { font-family:Verdana,Arial,Helvetica,sans-serif; font-size:12pt; }
+	td { font-family:Verdana,Arial,Helvetica,sans-serif; }
 
 	a:link { color:#000099; background-color:#ffffff; text-decoration:none; }
 	a:visited { color:#cc0000; background-color:#ffffff; text-decoration:none;}
 	a:hover { color:#0000ff; background-color:#ffffff; text-decoration:none; }
 	a:active { color:#993399; background-color:#ffffff; text-decoration:none; }
 
-	*.commandline { font-family:Fixed,Courier,monospace; font-size:11pt; }
+	*.commandline { font-family:Fixed,Courier,monospace; font-size:90% }
 	*.file { color: #000088;}
 	*.button { color: #468E64;}
-	*.key { color:#550000; font-family:Fixed,Courier,monospace; font-size:11pt; }
+	*.key { color:#550000; font-family:Fixed,Courier,monospace; font-size:90% }
 	*.backdropped { background-color:#ffffee; }
 	*.image {margin-left: 5px; margin-right: 5px; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:center; }
 	*.floatimage { clear:right; float:right; margin-left:0.5cm; border-width:2px; border-style:solid; border-color:#eeeeff; padding:0.5cm; }
@@ -142,7 +140,6 @@ Recent versions of Hatari even feature basic STE, TT and Falcon emulation.
 <a name="Features"></a><h3>Features</h3>
 <ul>
   <li>68000 - 68040 emulation via the UAE CPU core (no PMMU support though)</li>
-  <li>support for all known TOS versions (including EmuTOS)</li>
   <li>ST RAM size variable (from 512kiB up to 14MiB are possible)</li>
   <li>optional cartridge images for the ST ROM port</li>
   <li>most of the ST specific hardware</li>
@@ -150,12 +147,12 @@ Recent versions of Hatari even feature basic STE, TT and Falcon emulation.
     overscan effects for all borders in color resolutions</li>
   <li>512 color ST palette</li>
   <li>many raster effects </li>
-  <li>scaling of ST-low resolution by factor two</li>
+  <li>scaling of low resolutions by factor two</li>
   <li>interleaved lines rendering of ST-medium and (scaled) ST-low
     resolutions for the TV "monitor type"</li>
-  <li>Blitter chip emulation (not very accurate)</li>
+  <li>Blitter chip emulation</li>
   <li>PSG YM2149 emulation (soundchip) including STFM samples</li>
-  <li>Printer emulation on GEMDOS and Hardware level (print to file)</li>
+  <li>Printer port emulation on hardware level (print to file)</li>
   <li>experimental support for RS232</li>
   <li>experimental MIDI output support (no MIDI input/through support)</li>
   <li>Mega ST real time clock</li>
@@ -174,7 +171,7 @@ Recent versions of Hatari even feature basic STE, TT and Falcon emulation.
   <li>recording of sound as .WAV and .YM files</li>
   <li>screenshots in PNG or BMP format</li>
   <li>animation capturing</li>
-  <li>TOS versions 1.00, 1.02, 1.04 and 2.06 can be used in ST mode.</li>
+  <li>TOS versions 1.00, 1.02, 1.04 and 2.06 (and EmuTOS) can be used in ST mode.</li>
 </ul>
 
 <a name="STE hardware emulation"></a>
@@ -184,11 +181,11 @@ there is support for most of the enhanced/additional STE features:
 <ul>
   <li>horizontal and vertical hardware fine scrolling</li>
   <li>split screen techniques / in-screen video address manipulations</li>
-  <li>(STE specific) right border opening</li>
+  <li>(STE specific) left border opening</li>
   <li>4096 colors STE palette</li>
-  <li>DMA sample sound ("microwire" audio balance support missing)</li>
+  <li>Stereo DMA sample sound ("microwire" audio balance support missing)</li>
   <li>STE joypads</li>
-  <li>TOS versions 1.06, 1.62, 2.05 and 2.06 can be used in STE mode.</li>
+  <li>TOS versions 1.06, 1.62, 2.05 and 2.06 (and EmuTOS) can be used in STE mode.</li>
 </ul>
 
 <a name="Very experimental TT hardware emulation"></a>
@@ -198,7 +195,7 @@ There is support for following additional TT features:
   <li>TT low/med/high resolution support</li>
   <li>ST/TT palette switching and video shifter</li>
   <li>RAM upto 14MiB (ST-RAM only, there is no support for TT-RAM yet)</li>
-  <li>Only TOS version 3.06 can be used in TT mode.</li>
+  <li>Only TOS version 3.06 (and EmuTOS) can be used in TT mode.</li>
 </ul>
 
 <a name="Very experimental Falcon hardware emulation"></a>
@@ -210,11 +207,12 @@ There is support for following additional Falcon features:
   <li>Mono/RGB/VGA/TV monitor types</li>
   <li>Some few parts of the Falcon sound system are emulated
       (e.g. the additional sample rates of the DMA sound)</li>
-  <li>TOS versions 4.00, 4.02, 4.04 and 4.92 can be used in Falcon mode.</li>
+  <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and EmuTOS) can be used in Falcon mode.</li>
 </ul>
 
-<p>DSP is not emulated, but there's a dummy mode with which some
-additional demos work.
+<p>
+DSP emulation is still very experimental and unstable, but there's a dummy mode,
+too, which helps to get some demos and games running.
 </p>
 
 
@@ -235,10 +233,8 @@ Certain versions of Hatari have successfully been tested by various people on
 the following systems:
 </p>
 <ul>
-  <li>Linux/i86 with Kernel 2.6.6, AMD Athlon 600MHz</li>
-  <li>Linux/i86 with Kernel 2.4.x, AMD Athlon 600MHz </li>
-  <li>Linux/i86 with Kernel 2.2.18, Pentium MMX 200MHz </li>
-  <li>Linux/PPC with Kernel 2.4.x </li>
+  <li>Linux/i86 with Kernel 2.4.x and 2.6.x</li>
+  <li>Linux/PPC with Kernel 2.4.x and 2.6.x</li>
   <li>BeOS/i86 </li>
   <li>Apple PowerMac with Mac OS X </li>
   <li>NetBSD 1.6 </li>
@@ -1177,7 +1173,7 @@ an allmost complete Atari ST computer system. </p>
 with the mouse.
 The GUI is rather self explanatory.</p>
 
-<a name="The Main Menu"></a><h4>The Main Menu</h4>
+<a name="The Main Menu"></a><h4 class="gui">The Main Menu</h4>
 
 <div class="floatimage">
 <img src="images/main.png" width="360" height="352" alt="Hatari's GUI - the main menu">
@@ -1202,7 +1198,7 @@ return to the host OS.</p>
 <p>Click <span class="button">Cancel</span> to abandon any changes
 that you have made.</p>
 
-<a name="The System Dialog"></a><h4>The System Dialog</h4>
+<a name="The System Dialog"></a><h4 class="gui">The System Dialog</h4>
 
 <div class="floatimage">
 <img src="images/system.png" width="360" height="368" alt="Hatari's GUI - the system dialog">
@@ -1274,13 +1270,16 @@ that you have made.</p>
  value slows down the emulation. The patch gives you a better performance.
  It is normally safe to enable the patch, but if you encounter a program that
  does not work, you can try to disable the patch to see if it works then.</p>
-<p>Select if you want to use slow FDC emulation. Slow is more compatible esp.
- with games and demos that use custom loaders.</p>
+<p>
+ Select if you want to use slow FDC emulation. &quot;Slow down FDC&quot; is
+ normally not required, except for some few slideshows / intros which run too
+ fast without this option.
+</p>
 <p><em>NOTE:</em> These parameters are very sensitive to the emulated
 ST and it is strongly recommended to
 reset the emulated ST after changing these options.</p>
 
-<a name="The Disks Dialog"></a><h4>The Disks Dialog</h4>
+<a name="The Disks Dialog"></a><h4 class="gui">The Disks Dialog</h4>
 
 <div class="image" align="center">
 <img src="images/discs.png" width="640" height="399" alt="Hatari's GUI - the disks dialog">
@@ -1345,7 +1344,7 @@ on the harddrive.
 This option is checked by default if you specify a harddrive image or a
 directory via the command line.</p>
 
-<a name="The Memory Dialog"></a><h4>The Memory Dialog</h4>
+<a name="The Memory Dialog"></a><h4 class="gui">The Memory Dialog</h4>
 
 <div class="floatimage">
 <img src="images/memory.png" width="398" height="349" alt="Hatari's GUI - the memory dialog">
@@ -1367,7 +1366,7 @@ different versions of Hatari. E.q. if you compile a newer Hatari, you
 cannot load your old memory snapshots back.</p>
 
 
-<a name="The ROM Dialog"></a><h4>The ROM Dialog</h4>
+<a name="The ROM Dialog"></a><h4 class="gui">The ROM Dialog</h4>
 
 <div class="floatimage">
 <img src="images/tos.png" width="519" height="367" alt="Hatari's GUI - the ROM dialog">
@@ -1400,7 +1399,8 @@ advised to reset the emulated ST
 when changing one of these option.
 </p>
 
-<a name="The Joystick Dialog"></a><h4>The Joystick Dialog</h4>
+
+<a name="The Joystick Dialog"></a><h4 class="gui">The Joystick Dialog</h4>
 
 <div class="floatimage">
 <img src="images/joystick.png" width="320" height="288" alt="Hatari's GUI - the joystick dialog">
@@ -1432,7 +1432,8 @@ on the fire button in shoot'em-up games. However, this option only works with
 certain games. In some other games, it gets worse if you enable this option.</p>
 <p>See also the chapter "Emulated Joystick" for details.</p>
 
-<a name="The Screen Dialog"></a><h4>The Screen Dialog</h4>
+
+<a name="The Screen Dialog"></a><h4 class="gui">The Screen Dialog</h4>
 
 <div class="floatimage">
 <img src="images/screen.png" width="498" height="399" alt="Hatari's GUI - the screen dialog">
@@ -1507,7 +1508,8 @@ screenshots. You can opt to only record new movie frames when the
 screen content really changed.
 </p>
 
-<a name="The Keyboard Dialog"></a><h4>The Keyboard Dialog</h4>
+
+<a name="The Keyboard Dialog"></a><h4 class="gui">The Keyboard Dialog</h4>
 
 <div class="floatimage">
 <img src="images/keyboard.png" width="459" height="223" alt="Hatari's GUI - the keyboard dialog">
@@ -1538,9 +1540,10 @@ screen content really changed.
  disable the key repetition in fast forward mode here.
 </p>
 
-<a name="The Sound Dialog"></a><h4>The Sound Dialog</h4>
 
-<div class="image">
+<a name="The Sound Dialog"></a><h4 class="gui">The Sound Dialog</h4>
+
+<div class="floatimage">
 <img src="images/sound.png" width="379" height="383" alt="Hatari's GUI - the sound dialog">
 </div>
 
@@ -1556,7 +1559,8 @@ is recorded in.  The record button is a toggle so you will need to
 return to the GUI to switch sound recording off again
 (or to use the keyboard shortcut for that).</p>
 
-<a name="The Devices Dialog"></a><h4>The Devices Dialog</h4>
+
+<a name="The Devices Dialog"></a><h4 class="gui">The Devices Dialog</h4>
 
 <div class="floatimage">
 <img src="images/devices.png" width="519" height="351" alt="Hatari's GUI - the device dialog">
@@ -1568,12 +1572,6 @@ the chapter "Emulated printer" for details.</p>
 <p>As Hatari currently only supports printing to file, click on <span
  class="button">Select</span> to select the file to print to. You can
 enter a new filename as well.</p>
-<p><em>NOTE:</em> As the printer emulation is not perfect yet,
-activated printer support may interfere with the emulated sound.
-This is due to the fact that the Atari ST uses some general I/O ports
-of the soundchip for the printer port. The Hatari team suggests to
-disable printing while using games and demos.
-</p>
 <p>Check the second checkmark if you want to enable experimental RS232
 support. The RS232 device is configured according to the settings of
 the emulated RS232 of the Atari ST. This means Hatari will
@@ -1592,7 +1590,8 @@ MIDI device file for output.</p>
 Don't enable them unless you really need them!
 </p>
 
-<a name="Keyboard shortcuts"></a><h3>Keyboard shortcuts</h3>
+
+<a name="Keyboard shortcuts"></a><h3 style="clear:both;">Keyboard shortcuts</h3>
 
 <p> While the emulator is running, you can activate or toggle various
 features via Hatari keyboard shortcuts. Below are listed the default
@@ -1769,15 +1768,13 @@ joystick options.</p>
 
 <a name="Emulated video"></a><h3>Emulated video</h3>
 
-<p>Hatari by default only handles ST modes, ST-LOW, ST-MED and ST-HIGH.</p>
-<p>Overscan effects and so called "Border Removal" are possible too.</p>
-<p>Due to the fact that these effects are achieved by using quirks and
-glitches in the original chips to do things beyond their specification
-emulation is a bit tricky for these and not all ST applications
-utilizing these techniques will work properly in Hatari.
-Especially so called "Sync Scrolling", a special technique to emulate
-the low byte of the video address, currently does not work properly in
-Hatari.
+<p>Hatari emulates all screen modes of the original machine.</p>
+<p>
+ST/STE shifter overscan effects are emulated, too.
+But due to the fact that these effects are achieved by using quirks and
+glitches in the original chips to do things beyond their specification,
+emulation is a bit tricky for these effects and not all games and demos
+which use these techniques will work properly in Hatari.
 </p>
 <p>Beside that you can setup extended VDI modes. These only work with
 GEM-compliant applications and they are equal to fitting a videocard
@@ -1900,9 +1897,8 @@ while the emulator is running.
 To use the ACSI hard disk emulation, you need a hard disk image file
 with a pre-installed HD driver in it. So either try to image your old
 ST hard disk or grab one from the internet (e.g. from the Hatari website).
-Please note that AHDI 5.0 is the <em>only</em> hard disk driver that
-is currently working and supported. Other hard disk drivers likely will not
-work.
+Please note that AHDI 5.0 is currently the <em>only</em> hard disk driver
+that is officially supported. Other hard disk drivers might not work.
 </p>
 <p>
 To create a new ACSI hard disk image, you can start with an empty image that
@@ -2014,7 +2010,7 @@ parts of the emulated system is much trickier.
  src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
  border="0" height="31" width="88"></a></td>
       <td align="right">
-      November 16th 2008
+      November 23rd 2008
       </td>
     </tr>
   </tbody>
