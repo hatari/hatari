@@ -13,6 +13,7 @@ Emulation:
 - New sound engine that fixes all problems with the old one
 - 16-bit stereo sound (instead of 8-bit mono)
 - Improved blitter emulation
+- Improved STE support for some video registers (hscroll, linewidth, ...)
 - Improved printer emulation
 - Improved STE microwire emulation
 - Improved support for games&demos using IKBD
