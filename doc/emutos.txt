@@ -190,38 +190,39 @@ Color games:
 
 GEM games:
 - Ballerburg*
+- Biglife*
 - Daleks*
 - DBWH
 - Drachen
-- Shanghai
-- Megaroid*
-- Mathmaze
-- ST Concentration*
-- Nethack*
-- Thrust
-- Pacman
-- Kensington
-- Orb
-- Biglife*
-- Worm farm
-- Wator (slow)
 - Gem_mind
 - Isola
+- Kensington
 - Mars (corewars)
+- Megaroid*
+- Mathmaze
+- Nethack*
+- Orb
+- Pacman
+- Shanghai
+- ST Concentration*
+- Sudoku*
+- Thrust
+- Worm farm
+- Wator (slow)
 
 Monochrome games:
+- Balloons
+- Delta patrol
+- Eliza
 - MiniGolf (GFA basic)*
 - Monkey Business
 - Mr Dash
-- Delta patrol
-- Balloons
+- Punssi
+- Pyro
 - Qix
 - Sbreak*
 - Wallball
 - Mandala
-- Eliza
-- Punssi
-- Pyro
 
 Text games:
 - Advent (Colossal Cave)
@@ -245,40 +246,40 @@ GEM games:
 - Checkers
 - Dte (mouse gets stuck)
 - Emperor
+- Fishes
 - Fs
-- Othello
 - Gemamigo*
 - Gnuchess
 - Invaders*
 - Mines
+- Othello
 - Patience (dragging doesn't work)
 - Risk (dragging doesn't work)*
+- Robugs*
 - Solitair
 - Stello*
-- Yokon*
-- Robugs*
-- Fishes
 - Tricky yahoo
 - Verrueck
+- Yokon*
 
 Mono games:
-- Go UP (stops at hi-score)
-- Poolmono (mouse gets stuck)*
-- Midimaze (joystick doesn't work)*
-- Sherlock*
-- Lasermon
 - Bounce
+- Columns*
 - Crystal Caves*
 - Domino
 - Fun Face
+- Go UP (stops at hi-score)
+- Lasermon
+- Lokomotive
 - MacPan*
+- Midimaze (joystick doesn't work)*
 - MineFeld
-- Columns*
 - Pipeline*
 - Pling II
+- Poolmono (mouse gets stuck)*
 - Roll X
+- Sherlock*
 - Space war*
-- Lokomotive
 
 
 Working free/shareware Atari STE programs
