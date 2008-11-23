@@ -4,7 +4,7 @@
   <title>Hatari User's Manual</title>
   <meta name="description"
  content="User's manual for the Atari ST emulator Hatari">
-  <meta name="author" content="Matthias Arndt &lt;marndt@asmsoftware.de&gt;">
+  <meta name="author" content="Hatari development team">
   <meta name="keywords" content="hatari, documentation, manual, linux">
   <meta name="resource-type" content="document">
   <meta name="distribution" content="global">
@@ -48,12 +48,11 @@
 <h1 align="center">Hatari User's Manual</h1>
 
 <p align="center">
-Version 1.0
+Version 1.1
 </p>
 <p align="center">
-Project initiator and main developer of Hatari: <strong>Thomas Huth</strong>
-<br>
-Manual written by: <strong>Matthias Arndt</strong>
+Manual written by: <strong>Thomas Huth</strong>, <strong>Matthias Arndt</strong>
+ &amp; <strong>Eero Tamminen</strong>  
 </p>
 <p align="center">
 Hatari on the WWW: <strong><a href="http://hatari.sourceforge.net/"
@@ -1457,14 +1456,20 @@ certain games. In some other games, it gets worse if you enable this option.</p>
  enabled on slow computers.
 </p>
 <p>
- &quot;Force 8Bpp&quot; will force Hatari to use an 8bit video mode.
- You don't need this for modern video cards.
+ &quot;Statusbar&quot; toggles the statusbar at the bottom of the screen.
+ The statusbar shows the floppy drive LEDs, the current frameskip value,
+ the machine type including TOS version and memory size, and whether
+ recording is currently active.
 </p>
 <p>
  The &quot;Frame Skip&quot; option can be set to speed up the emulator
- if it is running too slow on your system. 1 to 8 frames will be dropped
- after each frame that has been drawn. Disable frame-skip if you have a
- fast computer.
+ if it is running too slow on your system. Disable frame-skip if you have a
+ fast computer. 1 to 4 frames can be always dropped after each frame that
+ has been drawn, if you select the corresponding number.
+ Select &quot;Auto&quot; if you want the emulator to decide whether frames
+ should be dropped or not.<br>
+ <em>Note:</em> The frameskip option also affects the frame rate of the
+ screen animation recording!
 </p>
 <p>
  You can select which sort of monitor to use. This option depends on the
@@ -1522,6 +1527,12 @@ screen content really changed.
  mapping for all keys that are not defined by your map file. Have a look
  at the supplied example mapfile (keymap-sample.txt) to see how to create
  your own keyboard mapping.</p>
+<p>
+ When the emulator runs in fast forward mode, and you want to type a text,
+ it can be annoying that the emulated system detects multiple key events
+ due to the key repetition of the emulated system. Therefor you can also
+ disable the key repetition in fast forward mode here.
+</p>
 
 <a name="The Sound Dialog"></a><h4>The Sound Dialog</h4>
 
@@ -1869,8 +1880,13 @@ a zipped disk image.</p>
 
 <a name="Hard disk support"></a><h2>Hard disk support</h2>
 
-<p>Hatari supports two ways of emulating a ST hard drive: The low-level
-ACSI hard disk emulation and a GEMDOS based drive emulation. </p>
+<p>
+Hatari supports two ways of emulating a ST hard drive: The low-level
+ACSI hard disk emulation and a GEMDOS based drive emulation. Please
+note that changing the HD-image or the GEMDOS HD-folder will reset
+the emulated Atari since it is not possible to switch the hard disk
+while the emulator is running.
+</p>
 
 <a name="ACSI hard disk emulation"></a><h3>ACSI hard disk emulation</h3>
 <p>
@@ -1906,23 +1922,19 @@ don't want to rename all files to get capital letters, it is also
 possible to store that folder on a FAT filesystem since those
 filesystems are case-insensitive. </p>
 <p>GEMDOS drive emulation is an easy way to share files between the
-host system and the emulated Atari, but it is known to be incomplete
-and
+host system and the emulated Atari, but it is known to be incomplete and
 a little bit unstable, especially if you use it together with the ACSI
 hard disk emulation. So if your programs complain that they could not
 find/read/write files on the GEMDOS HD drive, you should try to copy
 them to a floppy disk image or a real hard disk image!</p>
-<p>Due to the way the GEMDOS drive emulation is implemented at the
-moment, it is not possible to use a cartridge image together with
-GEMDOS drive emulation. </p>
-<p> Note that changing the HD-image or the GEMDOS HD-folder will reset
-the emulated Atari since it is not possible to switch the hard disk
-while the emulator is running. </p>
-
 <p>
-That's all for the moment.
-May the fun without the price to be with you ;-) !
+There are also some known limitations which are due to the way the GEMDOS
+drive emulation is implemented: First, it is not possible to use a cartridge
+image together with GEMDOS drive emulation at the same time.
+Second, the GEMDOS HD emulation does not work very well with TOS 1.00 and 1.02.
+So you should use at least TOS 1.04 if you want to use the GEMDOS HD emulation.
 </p>
+
 
 <a name="Appendix"></a><h2>Appendix</h2>
 
