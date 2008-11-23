@@ -11,7 +11,6 @@
 #ifndef HATARI_SOUND_H
 #define HATARI_SOUND_H
 
-#undef OLD_SOUND  /* default is to use STSound core - define to revert to old Hatari sound renderer */
 
 /* definitions common for all sound rendering engines */
 
@@ -22,21 +21,6 @@ extern int	nGeneratedSamples;
 extern bool	bEnvelopeFreqFlag;
 extern Sint16	MixBuffer[MIXBUFFER_SIZE][2];
 
-#ifdef OLD_SOUND
-/* Original Hatari sound renderer active */
-
-extern void Sound_Init(void);
-extern void Sound_Reset(void);
-extern void Sound_ResetBufferIndex(void);
-extern void Sound_MemorySnapShot_Capture(bool bSave);
-extern void Sound_Update(void);
-extern void Sound_Update_VBL(void);
-extern void Sound_WriteReg( int Reg , Uint8 Val );
-extern bool Sound_BeginRecording(char *pszCaptureFileName);
-extern void Sound_EndRecording(void);
-extern bool Sound_AreWeRecording(void);
-
-#else	/* OLD_SOUND */
 /* STSound sound renderer active */
 #include <SDL_types.h>
 
@@ -72,9 +56,6 @@ extern void Sound_WriteReg( int reg , Uint8 data );
 extern bool Sound_BeginRecording(char *pszCaptureFileName);
 extern void Sound_EndRecording(void);
 extern bool Sound_AreWeRecording(void);
-
-#endif	/* OLD_SOUND */
-
 
 
 #endif  /* HATARI_SOUND_H */
