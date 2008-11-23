@@ -6,7 +6,7 @@
 
   Main initialization and event handling routines.
 */
-const char Main_rcsid[] = "Hatari $Id: main.c,v 1.152 2008-11-22 17:04:44 eerot Exp $";
+const char Main_rcsid[] = "Hatari $Id: main.c,v 1.153 2008-11-23 10:27:13 thothy Exp $";
 
 #include <time.h>
 #include <SDL.h>
@@ -185,7 +185,7 @@ void Main_WaitOnVbl(void)
 		if (nFrameSkips < ConfigureParams.Screen.nFrameSkips)
 		{
 			nFrameSkips += 1;
-			printf("Increased frameskip to %d\n", nFrameSkips);
+			Log_Printf(LOG_DEBUG, "Increased frameskip to %d\n", nFrameSkips);
 		}
 		/* Only update nDestMilliTicks for next VBL */
 		nDestMilliTicks = nCurrentMilliTicks + nFrameDuration;
@@ -199,7 +199,7 @@ void Main_WaitOnVbl(void)
 	    && 2*nDelay > nFrameDuration/nFrameSkips)
 	{
 		nFrameSkips -= 1;
-		printf("Decreased frameskip to %d\n", nFrameSkips);
+		Log_Printf(LOG_DEBUG, "Decreased frameskip to %d\n", nFrameSkips);
 	}
 
 	if (bAccurateDelays)

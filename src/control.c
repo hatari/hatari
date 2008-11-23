@@ -6,7 +6,7 @@
 
   This code processes commands from the Hatari control socket
 */
-const char control_rcsid[] = "Hatari $Id: control.c,v 1.9 2008-10-26 22:39:50 eerot Exp $";
+const char control_rcsid[] = "Hatari $Id: control.c,v 1.10 2008-11-23 10:27:14 thothy Exp $";
 
 #include "config.h"
 #if HAVE_UNIX_DOMAIN_SOCKETS
@@ -540,7 +540,7 @@ static int Control_GetUISocket(void)
 void Control_ReparentWindow(int width, int height, bool noembed)
 {
 	/* TODO: implement the Windows part.  SDL sources offer example */
-	Log_Printf(LOG_INFO, "Support for Hatari window reparenting not built in\n");
+	Log_Printf(LOG_TODO, "Support for Hatari window reparenting not built in\n");
 }
 #endif /* HAVE_X11 */
 
