@@ -172,7 +172,7 @@ Recent versions of Hatari even feature basic STE, TT and Falcon emulation.
   <li>support for memory snapshots (save whole system state)</li>
   <li>driver for extended VDI resolutions</li>
   <li>recording of sound as .WAV and .YM files</li>
-  <li>screenshots in .BMP format</li>
+  <li>screenshots in PNG or BMP format</li>
   <li>animation capturing</li>
   <li>TOS versions 1.00, 1.02, 1.04 and 2.06 can be used in ST mode.</li>
 </ul>
@@ -243,12 +243,11 @@ the following systems:
   <li>Apple PowerMac with Mac OS X </li>
   <li>NetBSD 1.6 </li>
   <li>NetBSD on a Digital Alpha</li>
-  <li>FreeBSD 4.1 on an i486 computer, FreeBSD 4.8 on a Pentium 4 and
-FreeBSD 5.1 </li>
+  <li>FreeBSD 4.1 on an i486, FreeBSD 4.8 on a Pentium 4 and FreeBSD 5.1</li>
   <li>OpenBSD 3.5 </li>
   <li>Solaris 8 on a SUN UltraSparc 1</li>
-  <li>Zaurus SL-C760 PDA</li>
-  <li>Nokia 770 and N800 Internet Tablets</li>
+  <li>Linux/ARM (oabi) on Sharp Zaurus SL-C760 PDA</li>
+  <li>Linux/ARM (eabi) on Nokia 770, N800 and N810 Internet Tablets</li>
 </ul>
 
 <a name="Compiling and running"></a><h2>Compiling and running</h2>
@@ -268,12 +267,18 @@ most cases. Make sure to have the header files
 for it installed as well.
 </p>
 <p>
+For optional features like PNG format screenshots and Hatari window
+embedding, you need to have the header files for libpng and libX11.
+</p>
+<p>
 Of course, you need the GNU C compiler and (GNU) Make, too!
 </p>
-<p> Change to the hatari/ directory and adapt the configuration file
-<span class="file">Makefile.cnf</span> to suite your system.
-Alternatively, you can use the supplied configure script to auto-detect
-all parameters (type " <span class="commandline">./configure --help</span>"
+<p> Change to the <span class="file">hatari/</span> directory, copy
+<span class="file">Makefile-default.cnf</span> to
+<span class="file">Makefile.cnf</span> and adapt the configuration file
+to suite your system. Alternatively, you can use the supplied configure
+script to auto-detect all parameters (type
+"<span class="commandline">./configure --help</span>"
 to see the options of the script).
 Don't forget to use some good CFLAGS for the compiler optimizations, e.g.
 run <span class="commandline">configure</span> in the following way:
@@ -313,7 +318,8 @@ release versions of Hatari. EmuTOS is an open-source TOS clone. You can find
 it at:
 <a href="http://emutos.sourceforge.net/">http://emutos.sourceforge.net/</a>.
 It is not the best solution for playing games or running other old software
-due to compatibility issues, but it's free and compatible with Hatari. </p>
+due to compatibility issues (see emutos.txt for more details), but it's
+free and compatible with Hatari.</p>
 <p>If you do not specify a TOS image on the commandline nor can Hatari
 find a suitable TOS image in the default dir, you'll get the chance to
 select a TOS image file from the GUI. </p>
@@ -1092,7 +1098,7 @@ Enable Bios/XBios interception
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Activate debug traces, see
+Activate debug traces, see <b>--trace help</b> for available tracing options
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1235,8 +1241,8 @@ that you have made.</p>
  work with an STE, it's normally safe to always work in STE mode.
  <br>
  TT and Falcon are more advanced, but they are not as compatible to the ST as
- the STE was. So many old games and demos do not work with these machine types
- anymore. There were only very few programs that were made for the TT
+ the STE was. Therefore many old games and demos do not work with these machine
+ types anymore. There were only very few programs that were made for the TT
  exclusively, while there were some interesting games and demos specially made
  for the Falcon.
  <em>Note:</em> TT and Falcon emulation are very incomplete. They may not work
@@ -1277,21 +1283,18 @@ reset the emulated ST after changing these options.</p>
 <a name="The Disks Dialog"></a><h4>The Disks Dialog</h4>
 
 <div class="image" align="center">
-<img src="images/discs.png" width="768" height="534" alt="Hatari's GUI - the disks dialog">
+<img src="images/discs.png" width="640" height="399" alt="Hatari's GUI - the disks dialog">
 </div>
 
 <p>Use the upper dialog to choose which floppy disks should be emulated
 in the disk drives.</p>
 
-<p>You can use most standard Atari ST disk image files. See the chapter
-"Floppy disk images"
+<p>You can use most standard Atari ST disk image files. You may select
+and browse also zipped disk images. See the chapter "Floppy disk images"
 for details.</p>
-<p>Click on the button <span class="button">Browse</span> next to the
-A: and B: option to go to the fileselector.
-You may select and browse zipped disk images as well.</p>
 
-<p>
-The fileselector looks like this:
+<p>Click on the button <span class="button">Browse</span> next to the
+A: and B: option to go to the fileselector:
 </p>
 
 <div class="image" align="center">
@@ -1344,8 +1347,8 @@ directory via the command line.</p>
 
 <a name="The Memory Dialog"></a><h4>The Memory Dialog</h4>
 
-<div class="image" align="center">
-<img src="images/memory.png" width="768" height="534" alt="Hatari's GUI - the memory dialog">
+<div class="floatimage">
+<img src="images/memory.png" width="398" height="349" alt="Hatari's GUI - the memory dialog">
 </div>
 
 <p>You can select the amount of RAM for the emulated ST here. Only
@@ -1363,10 +1366,11 @@ restored.</p>
 different versions of Hatari. E.q. if you compile a newer Hatari, you
 cannot load your old memory snapshots back.</p>
 
+
 <a name="The ROM Dialog"></a><h4>The ROM Dialog</h4>
 
-<div class="image" align="center">
-<img src="images/tos.png" width="768" height="534" alt="Hatari's GUI - the ROM dialog">
+<div class="floatimage">
+<img src="images/tos.png" width="519" height="367" alt="Hatari's GUI - the ROM dialog">
 </div>
 
 <p>Here you can select the TOS image to use. Click on <span
@@ -1463,11 +1467,11 @@ certain games. In some other games, it gets worse if you enable this option.</p>
 </p>
 <p>
  The &quot;Frame Skip&quot; option can be set to speed up the emulator
- if it is running too slow on your system. Disable frame-skip if you have a
- fast computer. 1 to 4 frames can be always dropped after each frame that
- has been drawn, if you select the corresponding number.
- Select &quot;Auto&quot; if you want the emulator to decide whether frames
- should be dropped or not.<br>
+ if it is running too slow on your system. Disable frame-skip if you have
+ a fast computer. When selecting 1, 2 or 4, drawing of corresponding number
+ of frames will be skipped after each frame actually shown by Hatari.
+ Select &quot;Auto&quot; to let the emulator to decide whether, and
+ how many frames will be skipped.<br>
  <em>Note:</em> The frameskip option also affects the frame rate of the
  screen animation recording!
 </p>
@@ -1497,8 +1501,8 @@ conformant applications. 99% of all games and demos will not run if you
 activate any extended resolution here.
 </p>
 <p>Click <span class="button">Capture Screen</span> to create a
-screenshot in .BMP format to the current working directory or click <span
- class="button">Record Animation</span> to record a sequence of single
+screenshot in PNG (or BMP) format to the current working directory or click
+<span class="button">Record Animation</span> to record a sequence of single
 screenshots. You can opt to only record new movie frames when the
 screen content really changed.
 </p>
@@ -1528,16 +1532,16 @@ screen content really changed.
  at the supplied example mapfile (keymap-sample.txt) to see how to create
  your own keyboard mapping.</p>
 <p>
- When the emulator runs in fast forward mode, and you want to type a text,
+ When the emulator runs in fast forward mode, and you want to type text,
  it can be annoying that the emulated system detects multiple key events
- due to the key repetition of the emulated system. Therefor you can also
+ due to the key repetition of the emulated system. To avoid this you can
  disable the key repetition in fast forward mode here.
 </p>
 
 <a name="The Sound Dialog"></a><h4>The Sound Dialog</h4>
 
-<div class="image" align="center">
-<img src="images/sound.png" width="768" height="534" alt="Hatari's GUI - the sound dialog">
+<div class="image">
+<img src="images/sound.png" width="379" height="383" alt="Hatari's GUI - the sound dialog">
 </div>
 
 <p>Here you can control the sound subsystem.</p>
@@ -1546,18 +1550,20 @@ sound emulation is turned off.</p>
 <p>3 frequencies from low to high quality are available. Experiment a
 little bit to find out which fits best for your setup.
 Medium quality will work ok in most cases.</p>
-<p>You can select to record a piece of sound here. Check which format
-to use and click the button. It is a toggle button so
-you will need to return to the GUI to switch sound recording off again.</p>
+<p>You can select to record a piece of sound here. The file name
+extension you use (.WAV or .YM), determines in which format the sound
+is recorded in.  The record button is a toggle so you will need to
+return to the GUI to switch sound recording off again
+(or to use the keyboard shortcut for that).</p>
 
 <a name="The Devices Dialog"></a><h4>The Devices Dialog</h4>
 
+<div class="floatimage">
+<img src="images/devices.png" width="519" height="351" alt="Hatari's GUI - the device dialog">
+</div>
+
 <p>Check here if you want to enable experimental printer support. See
 the chapter "Emulated printer" for details.</p>
-
-<div class="image" align="center">
-<img src="images/devices.png" width="768" height="534" alt="Hatari's GUI - the device dialog">
-</div>
 
 <p>As Hatari currently only supports printing to file, click on <span
  class="button">Select</span> to select the file to print to. You can
@@ -1603,21 +1609,21 @@ shortcut key bindings:</p>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+g</span></td>
-      <td align="center">grabs a screenshot</td>
+      <td align="center">grab a screenshot</td>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+i</span></td>
-      <td align="center">boss key: leave full screen mode and iconify
-window</td>
+      <td align="center">boss key: leave full screen mode, pause Hatari
+and iconify its window</td>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+j</span></td>
-      <td align="center">toggles joystick emulation via cursor keys
-between port 0, port 1 and being off from those ports</td>
+      <td align="center">toggle joystick emulation via cursor keys
+on/off between ports 0 and 1</td>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+m</span></td>
-      <td align="center">(un-)locks the mouse into the window</td>
+      <td align="center">(un-)lock the mouse into the window</td>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+r</span></td>
@@ -1658,11 +1664,11 @@ switch)</td>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+f or F11</span></td>
-      <td align="center">toggles fullscreen and windowed mode</td>
+      <td align="center">toggle between fullscreen and windowed mode</td>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+o or F12</span></td>
-      <td align="center">activate the GUI</td>
+      <td align="center">activate the options GUI</td>
     </tr>
     <tr>
       <td align="center"><span class="key">PAUSE</span></td>
@@ -1674,7 +1680,7 @@ switch)</td>
 
 <p>You can change the key bindings from the Hatari configuration file.
 The required key values you can see from the SDL_keysym.h include file
-(usually in /usr/include/SDL/).
+(usually in /usr/include/SDL/).</p>
 
 
 <a name="Emulated Atari ST keyboard"></a><h3>Emulated Atari ST keyboard</h3>
@@ -1758,7 +1764,8 @@ cursor keys. Just activate it in the GUI. Then the cursor keys will act
 as the joystick directions, the right CTRL key will act as the
 firebutton. You can still use the cursor keys as the ST's
 cursorkeys in this mode as long as you press <span class="key">SHIFT</span>
-along with the cursorkeys. </p>
+along with the cursorkeys.  You can also configure these keys from the
+joystick options.</p>
 
 <a name="Emulated video"></a><h3>Emulated video</h3>
 
@@ -1931,8 +1938,9 @@ them to a floppy disk image or a real hard disk image!</p>
 There are also some known limitations which are due to the way the GEMDOS
 drive emulation is implemented: First, it is not possible to use a cartridge
 image together with GEMDOS drive emulation at the same time.
-Second, the GEMDOS HD emulation does not work very well with TOS 1.00 and 1.02.
-So you should use at least TOS 1.04 if you want to use the GEMDOS HD emulation.
+Second, <em>the GEMDOS HD emulation does not work very well with TOS
+1.00 and 1.02</em>.  So you should use at least TOS 1.04 if you want
+to use the GEMDOS HD emulation.
 </p>
 
 
