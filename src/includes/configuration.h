@@ -294,7 +294,6 @@ typedef struct
 } CNF_PARAMS;
 
 
-extern bool bFirstTimeInstall;
 extern CNF_PARAMS ConfigureParams;
 extern char sConfigFileName[FILENAME_MAX];
 

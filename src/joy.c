@@ -8,7 +8,7 @@
 
   NOTE: The ST uses the joystick port 1 as the default controller.
 */
-const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.17 2008-11-05 18:23:21 thothy Exp $";
+const char Joy_rcsid[] = "Hatari $Id: joy.c,v 1.18 2008-11-25 20:51:34 thothy Exp $";
 
 #include <SDL.h>
 
@@ -66,14 +66,6 @@ void Joy_Init(void)
 			bJoystickWorking[i] = TRUE;
 			Log_Printf(LOG_DEBUG, "Joystick %i: %s\n", i, SDL_JoystickName(i));
 		}
-	}
-
-	/* OK, do we have any working joysticks? */
-	if (!bJoystickWorking[0])
-	{
-		/* No, so if first time install need to set cursor emulation */
-		if (bFirstTimeInstall)
-			ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_KEYBOARD;
 	}
 
 	JoystickSpaceBar = FALSE;

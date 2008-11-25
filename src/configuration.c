@@ -9,7 +9,7 @@
   The configuration file is now stored in an ASCII format to allow the user
   to edit the file manually.
 */
-const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.102 2008-11-16 09:42:12 thothy Exp $";
+const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.103 2008-11-25 20:51:34 thothy Exp $";
 
 #include <SDL_keysym.h>
 
@@ -27,7 +27,6 @@ const char Configuration_rcsid[] = "Hatari $Id: configuration.c,v 1.102 2008-11-
 #include "video.h"
 
 
-bool bFirstTimeInstall = FALSE;             /* Has been run before? Used to set default joysticks etc... */
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
 char sConfigFileName[FILENAME_MAX];         /* Stores the name of the configuration file */
 
@@ -323,9 +322,6 @@ void Configuration_SetDefault(void)
 	psHomeDir = Paths_GetHatariHome();
 	psWorkingDir = Paths_GetWorkingDir();
 
-	/* Assume first-time install */
-	bFirstTimeInstall = TRUE;
-
 	/* Clear parameters */
 	memset(&ConfigureParams, 0, sizeof(CNF_PARAMS));
 
@@ -375,6 +371,7 @@ void Configuration_SetDefault(void)
 	}
 	ConfigureParams.Joysticks.Joy[1].nJoyId = 0;    /* ST Joystick #1 is default joystick */
 	ConfigureParams.Joysticks.Joy[0].nJoyId = 1;
+	ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_REALSTICK;
 
 	/* Set defaults for Keyboard */
 	ConfigureParams.Keyboard.bDisableKeyRepeat = FALSE;
@@ -594,8 +591,6 @@ void Configuration_Load(const char *psFileName)
 		fprintf(stderr, "Configuration file %s not found.\n", psFileName);
 		return;
 	}
-
-	bFirstTimeInstall = FALSE;
 
 	Configuration_LoadSection(psFileName, configs_Log, "[Log]");
 	Configuration_LoadSection(psFileName, configs_Screen, "[Screen]");
