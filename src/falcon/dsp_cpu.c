@@ -4022,8 +4022,8 @@ static void dsp_lsl(void)
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_C)|(1<<DSP_SR_N)|(1<<DSP_SR_Z)|(1<<DSP_SR_V));
 	dsp_core->registers[DSP_REG_SR] |= newcarry;
-	dsp_core->registers[DSP_REG_SR] |= ((dsp_core->registers[numreg]>>23) & 1)<<DSP_SR_N;
-	dsp_core->registers[DSP_REG_SR] |= (dsp_core->registers[numreg]==0)<<DSP_SR_Z;
+	dsp_core->registers[DSP_REG_SR] |= ((dsp_core->registers[DSP_REG_A1+numreg]>>23) & 1)<<DSP_SR_N;
+	dsp_core->registers[DSP_REG_SR] |= (dsp_core->registers[DSP_REG_A1+numreg]==0)<<DSP_SR_Z;
 }
 
 static void dsp_lsr(void)
@@ -4039,7 +4039,7 @@ static void dsp_lsr(void)
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_C)|(1<<DSP_SR_N)|(1<<DSP_SR_Z)|(1<<DSP_SR_V));
 	dsp_core->registers[DSP_REG_SR] |= newcarry;
-	dsp_core->registers[DSP_REG_SR] |= (dsp_core->registers[numreg]==0)<<DSP_SR_Z;
+	dsp_core->registers[DSP_REG_SR] |= (dsp_core->registers[DSP_REG_A1+numreg]==0)<<DSP_SR_Z;
 }
 
 static void dsp_mac(void)
