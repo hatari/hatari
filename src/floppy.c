@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.42 2008-11-15 18:55:53 thothy Exp $";
+const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.43 2008-11-28 17:54:14 thothy Exp $";
 
 #include <sys/stat.h>
 #include <assert.h>
@@ -199,13 +199,13 @@ static bool Floppy_IsBootSectorOK(int Drive)
 /**
  * Try to create disk B filename, eg 'auto_100a' becomes 'auto_100b'
  * Return new filename if think we should try, otherwise NULL
- * 
+ *
  * TODO: doesn't work with images in ZIP archives
  */
 static char* Floppy_CreateDiskBFileName(const char *pSrcFileName)
 {
 	char *szDir, *szName, *szExt;
-	
+
 	/* Allocate temporary memory for strings: */
 	szDir = malloc(3 * FILENAME_MAX);
 	if (!szDir)
@@ -284,7 +284,7 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 		Log_AlertDlg(LOG_INFO, "Image '%s' not found", pszFileName);
 		return NULL;
 	}
-	
+
 	/* If we insert a disk into Drive A, should we try to put disk 2 into drive B? */
 	if (Drive == 0 && ConfigureParams.DiskImage.bAutoInsertDiskB)
 	{
@@ -297,7 +297,7 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 			free(szDiskBFileName);
 		}
 	}
-	
+
 	/* do the changes */
 	assert(Drive >= 0 && Drive < MAX_FLOPPYDRIVES);
 	if (pszZipPath)
@@ -336,7 +336,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		Log_AlertDlg(LOG_INFO, "Image '%s' not found", filename);
 		return FALSE;
 	}
-	
+
 	/* Check disk image type and read the file: */
 	if (MSA_FileNameIsMSA(filename, TRUE))
 		EmulationDrives[Drive].pBuffer = MSA_ReadDisk(filename, &nImageBytes);
@@ -375,7 +375,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 bool Floppy_EjectDiskFromDrive(int Drive)
 {
 	bool bEjected = FALSE;
-	
+
 	/* Does our drive have a disk in? */
 	if (EmulationDrives[Drive].bDiskInserted)
 	{
@@ -429,9 +429,13 @@ bool Floppy_EjectDiskFromDrive(int Drive)
  */
 bool Floppy_EjectBothDrives(void)
 {
+	bool bEjectedA, bEjectedB;
+
 	/* Eject disk images from drives 'A' and 'B' */
-	return (Floppy_EjectDiskFromDrive(0) ||
-		Floppy_EjectDiskFromDrive(1));
+	bEjectedA = Floppy_EjectDiskFromDrive(0);
+	bEjectedB = Floppy_EjectDiskFromDrive(1);
+
+	return bEjectedA || bEjectedB;
 }
 
 
