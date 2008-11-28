@@ -31,4 +31,16 @@ Configuration file for the Nokia 770/N800/N810 TI Omap2 based devices:
   - Automatic frameskip
   - No spec512 support
   - 11kHz sound
-  
+
+
+win-ce.cfg
+----------
+
+Configuration file for Windows Mobile based devices:
+- Start in fullscreen mode
+- Smaller border values / screen size limited to 320x240 resolution
+- Options that are more suitable for the device performance:
+  - Non-compatible (but faster) CPU mode
+  - Frameskip enabled
+  - High spec512 threshold
+  - 11kHz sound
