@@ -20,16 +20,10 @@ To run the emulator a TOS ROM image is needed.  EmuTOS, a free
 implementation of TOS, is shipped with the official releases of
 Hatari.
 
-The official Hatari releases are shipped with a tos.img ROM image that
-is identical to the official binary package of EmuTOS, which is
-available at this SourceForge website of EmuTOS.  For downloading
-other versions or the source code of EmuTOS, please visit the EmuTOS
-website.
-
-EmuTOS allows also using ACSI disk images with Hatari TT/Falcon
-emulation, whereas TOS 3 & 4 support only(?) IDE disks (which Hatari
-doesn't currently support).  Hard disk images are needed for running
-MiNT and some other programs.
+This tos.img ROM image is identical to the official binary package of
+EmuTOS, which is available at the SourceForge website of EmuTOS.  For
+downloading other versions or the source code of EmuTOS, please visit
+the EmuTOS website.
 
 
 What is EmuTOS
@@ -50,18 +44,24 @@ EmuTOS has its home at SourceForge:
 EmuTOS usage
 ============
 
-There are two main user groups for EmuTOS:
-
-* Users who want to continue using Atari compatible operating systems.
-  They typically use EmuTOS just as kind of a "bootloader" to start their
-  FreeMiNT + XaAES + fVDI systems for the Aranym emulator:
-	http://www.aranym.org/
+There are various reasons for using EmuTOS instead of a real TOS ROM
+image:
 
 * Users who don't have Atari HW or other legal means to obtain the
   original Atari TOS ROMs (for all of the Hatari supported Atari
   versions: ST/STE/TT/Falcon), but would like to try out Hatari and
-  see what kind of software Atari has.  EmuTOS gives them a way to
+  see what kind of software Atari ST had.  EmuTOS gives them a way to
   test Hatari with free demos, games etc.
+
+* Users who want to continue using Atari compatible operating systems
+  and need a open source replacement of TOS for modifications. Beside
+  EmuTOS they typically alse use FreeMiNT, XaAES and fVDI as operating
+  system replacements/improvements.
+
+* EmuTOS allows also using ACSI disk images with Hatari TT/Falcon
+  emulation, whereas TOS 3 & 4 support only IDE and SCSI disks (which
+  Hatari doesn't currently support).  Hard disk images are needed for
+  running MiNT and some other programs.
 
 
 EmuTOS compatibility
@@ -98,16 +98,14 @@ which location depends on the TOS version.
 Debugging issues with EmuTOS
 ============================
 
-To debug which Line-A functions programs try to use, start Hatari with
-"--midi /dev/stderr". You will then see EmuTOS output about calls to
-missing Line-A functions.  On other emulators than Hatari, EmuTOS can
-use either "native print" (STonX) or "native features" (Aranym) for
-debug output.
+To debug problems with EmuTOS, you have to download its source code and
+recompile it. Enable the MIDI debug output in the config.h header file,
+then you can start Hatari with the "--midi /dev/stderr" option. You will
+then see the EmuTOS debug output like calls to missing Line-A functions.
 
-To debug EmuTOS panics, you need to compile EmuTOS yourself and create
-a disassembly of the ROM image.  You can then look up the program
-counter value given in panic message from the disassembly to see
-where the crash happens.
+To debug EmuTOS panics, you need to compile EmuTOS and create a disassembly
+of the ROM image.  You can then look up the program counter value given in
+panic message from the disassembly to see where the crash happens.
 
 
 EmuTOS compatibility lists
