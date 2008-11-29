@@ -12,7 +12,7 @@ URL:          http://hatari.sourceforge.net/
 License:      GPL
 Group:        System/Emulators/Other
 Autoreqprov:  on
-Version:      1.0.1
+Version:      1.1.0
 Release:      1
 Summary:      an Atari ST emulator suitable for playing games
 Source:       %{name}-%{version}.tar.gz
@@ -58,6 +58,9 @@ rm -rf $RPM_BUILD_ROOT
 %_docdir/%{name}/images/*.png
 
 %changelog -n hatari
+
+* Sat Nov 29 2008 - thothy@users.sourceforge.net
+- Hatari version 1.1.0
 
 * Wed Jan 02 2008 - thothy@users.sourceforge.net
 - Adapted RPM to the latest source code level (aiming at version 1.0.0)

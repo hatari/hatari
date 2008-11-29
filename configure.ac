@@ -5,7 +5,7 @@
 #   aclocal && autoheader && automake --add-missing --copy && autoconf
 # Later on you can use "autoreconf -i" after updating this file.
 
-AC_INIT(hatari, 1.0.1)
+AC_INIT(hatari, 1.1.0)
 AC_CONFIG_SRCDIR([src/main.c])
 AC_PREREQ(2.60)
 
@@ -190,7 +190,7 @@ AC_COMPILE_IFELSE([
 int main() { return socket(AF_UNIX, SOCK_STREAM, 0); } ],
   [AC_MSG_RESULT([yes]) AC_DEFINE([HAVE_UNIX_DOMAIN_SOCKETS], [1],
                              [Define to 1 if you have unix domain sockets])],
-  [AC_MSG_RESULT([no])])			     
+  [AC_MSG_RESULT([no])])
 
 
 dnl Output

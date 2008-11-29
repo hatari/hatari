@@ -16,7 +16,7 @@
   reduce redundancy and the function 'MemorySnapShot_Store' decides if it
   should save or restore the data.
 */
-const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.42 2008-05-25 19:58:56 thothy Exp $";
+const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.43 2008-11-29 11:29:50 thothy Exp $";
 
 #include <config.h>
 
@@ -50,7 +50,7 @@ const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.42 2008-05
 #include "video.h"
 
 
-#define VERSION_STRING      " CVS "   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "1.1.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 
