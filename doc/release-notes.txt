@@ -4,27 +4,33 @@
                                 Release Notes
 
 
- Version 1.1 (2008-??-??):
- -------------------------
+ Version 1.1.0 (2008-11-29):
+ ---------------------------
 
 Emulation:
-- Falcon DSP emulation good enough to improve some games/demos
-  (most still work better with emulation disabled)
+- Falcon DSP emulation good enough to improve some few games/demos, e.g.
+  Virtual City. (most still work better with emulation disabled, though)
 - New sound engine that fixes all problems with the old one
 - 16-bit stereo sound (instead of 8-bit mono)
-- Improved blitter emulation
+- Improved blitter emulation (blitter cycles emulation, blitter interrupt)
 - Improved STE support for some video registers (hscroll, linewidth, ...)
 - Improved printer emulation
 - Improved STE microwire emulation
-- Improved support for games&demos using IKBD
+- Improved support for games & demos which are accessing IKBD directly
+  (including a fake 6301 emulation for the known IKBD programs)
 - ACSI emulation fix to get HDDriver working
 - Some other minor bugfixes to ST/STe emulation (FDC, MFP, PSG, RS-232)
+- Improved MFP emulation
+- Improved 68k emulation (move.b Ax,(Ay) and extb.l)
+- Fixed bugs in the GEMDOS HD emulation (Pexec() etc.)
 
 Emulator:
 - Statusbar and overlay led features
 - Screenshots work also in VDI/TT/Falcon mode and are saved as PNGs
 - Support for automatic frameskip and pausing emulation
 - Support for embedding Hatari window (on X11) and control socket
+- Improved memory snapshot function
+- Improved the "trace" debug function
 
 
  Version 1.0.1 (2008-03-30):
@@ -266,7 +272,7 @@ Emulator:
 - Full screen resolution for ST-Low can now be selected from the screen setup
   dialog.
 - The IKBD emulation does not longer duplicate joystick fire buttons when
-  a game tries to use both, joystick and mouse 
+  a game tries to use both, joystick and mouse
 - Improved audio timer function - the code should now be a little bit faster.
 - Resynced Hatari's UAE CPU core with UAE 0.8.22 - this fixes some bugs in 68k
   instructions like ABCD and SBCD.
