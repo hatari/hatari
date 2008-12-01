@@ -192,6 +192,9 @@
 		9691912A0AA205D60008B3A0 /* scandir.h in Headers */ = {isa = PBXBuildFile; fileRef = 969191290AA205D60008B3A0 /* scandir.h */; };
 		96B15D550D836F8F000326A2 /* paths.h in Headers */ = {isa = PBXBuildFile; fileRef = 96B15D540D836F8F000326A2 /* paths.h */; };
 		96B15D5A0D836FC0000326A2 /* paths.c in Sources */ = {isa = PBXBuildFile; fileRef = 96B15D580D836FC0000326A2 /* paths.c */; };
+		E916E10A0EE4995200F42ED2 /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = E916E1090EE4995200F42ED2 /* utils.c */; };
+		E916E10D0EE4997600F42ED2 /* dsp_core.c in Sources */ = {isa = PBXBuildFile; fileRef = E916E10B0EE4997600F42ED2 /* dsp_core.c */; };
+		E916E10E0EE4997600F42ED2 /* dsp_core.h in Headers */ = {isa = PBXBuildFile; fileRef = E916E10C0EE4997600F42ED2 /* dsp_core.h */; };
 		E99613BA0E6DC6900047F6A0 /* statusbar.c in Sources */ = {isa = PBXBuildFile; fileRef = E99613B90E6DC6900047F6A0 /* statusbar.c */; };
 		E99613BD0E6DC6C50047F6A0 /* statusbar.h in Headers */ = {isa = PBXBuildFile; fileRef = E99613BB0E6DC6C50047F6A0 /* statusbar.h */; };
 		E99613BE0E6DC6C50047F6A0 /* utils.h in Headers */ = {isa = PBXBuildFile; fileRef = E99613BC0E6DC6C50047F6A0 /* utils.h */; };
@@ -296,6 +299,9 @@
 		96D632670A4E9B9D00FBFA27 /* SDLMain.nib */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; path = SDLMain.nib; sourceTree = "<group>"; };
 		96ECC69309B9907A00C5C54F /* CreateFloppyController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CreateFloppyController.h; sourceTree = "<group>"; };
 		96ECC69409B9907A00C5C54F /* CreateFloppyController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CreateFloppyController.m; sourceTree = "<group>"; };
+		E916E1090EE4995200F42ED2 /* utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = utils.c; path = src/utils.c; sourceTree = SOURCE_ROOT; };
+		E916E10B0EE4997600F42ED2 /* dsp_core.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dsp_core.c; path = src/falcon/dsp_core.c; sourceTree = SOURCE_ROOT; };
+		E916E10C0EE4997600F42ED2 /* dsp_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dsp_core.h; path = src/falcon/dsp_core.h; sourceTree = SOURCE_ROOT; };
 		E9283E7307512EA200DA6B24 /* audio.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; name = audio.c; path = src/audio.c; sourceTree = "<group>"; };
 		E9283E7407512EA200DA6B24 /* bios.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; name = bios.c; path = src/bios.c; sourceTree = "<group>"; };
 		E9283E7507512EA200DA6B24 /* blitter.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; name = blitter.c; path = src/blitter.c; sourceTree = "<group>"; };
@@ -555,6 +561,7 @@
 				E9283EEC07512EA200DA6B24 /* tos.c */,
 				E9283EED07512EA200DA6B24 /* uae-cpu */,
 				E9283F0107512EA200DA6B24 /* unzip.c */,
+				E916E1090EE4995200F42ED2 /* utils.c */,
 				E9283F0207512EA200DA6B24 /* vdi.c */,
 				E9283F0307512EA200DA6B24 /* video.c */,
 				E9283F0407512EA200DA6B24 /* wavFormat.c */,
@@ -634,6 +641,8 @@
 				961322EF0B5BD0B800007C3E /* araglue.h */,
 				961322F40B5BD0B800007C3E /* dsp.c */,
 				961322F50B5BD0B800007C3E /* dsp.h */,
+				E916E10B0EE4997600F42ED2 /* dsp_core.c */,
+				E916E10C0EE4997600F42ED2 /* dsp_core.h */,
 				961322F00B5BD0B800007C3E /* dsp_cpu.c */,
 				961322F10B5BD0B800007C3E /* dsp_cpu.h */,
 				961322F20B5BD0B800007C3E /* dsp_disasm.c */,
@@ -866,6 +875,7 @@
 				E99613BD0E6DC6C50047F6A0 /* statusbar.h in Headers */,
 				E99613BE0E6DC6C50047F6A0 /* utils.h in Headers */,
 				E9D75D5A0E8C1BB1000E76DE /* ym2149_fixed_vol.h in Headers */,
+				E916E10E0EE4997600F42ED2 /* dsp_core.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1041,6 +1051,8 @@
 				4EE4B5EE0DD8E0DD00DF27A2 /* control.c in Sources */,
 				4EE4B5EF0DD8E0DD00DF27A2 /* str.c in Sources */,
 				E99613BA0E6DC6900047F6A0 /* statusbar.c in Sources */,
+				E916E10A0EE4995200F42ED2 /* utils.c in Sources */,
+				E916E10D0EE4997600F42ED2 /* dsp_core.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1081,7 +1093,7 @@
 					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_2)",
 					ALERT_HOOKS,
 				);
-				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_1 = "BIN2DATADIR=\\\".\\\"";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_1 = "BIN2DATADIR=\\\"../..\\\"";
 				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_2 = "CONFDIR=\\\".\\\"";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
@@ -1117,7 +1129,7 @@
 					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_2)",
 					ALERT_HOOKS,
 				);
-				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_1 = "DATADIR=\\\".\\\"";
+				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_1 = "BIN2DATADIR=\\\"../..\\\"";
 				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_2 = "CONFDIR=\\\".\\\"";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
