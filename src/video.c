@@ -200,10 +200,16 @@
 /*			have their own pattern. See InterruptAddJitter() in uae-cpu/newcpu.c	*/
 /*			(fix Fullscreen tunnel in Suretrip 49% by Checkpoint and digi sound in	*/
 /*			Swedish New Year's TCB screen).						*/
+/* 2008/12/10	[NP]	Enhance support for 0 byte line. The 60/50 Hz switch can happen at	*/
+/*			cycles 56/64, but also at 58/66 (because access to $ff820a doesn't	*/
+/*			require to be on a 4 cycles boundary). As hatari doesn't handle		*/
+/*			multiple of 2 cycles, we allow cycles 56/64 and 60/68 (fix nosync.tos	*/
+/*			that uses the STOP instruction to produce a 0 byte line on the first	*/
+/*			displayed line (found on atari-forum.com)).				*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.131 2008-12-10 18:37:42 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.132 2008-12-10 22:42:25 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -729,7 +735,8 @@ void Video_Sync_WriteByte(void)
 
 		/* Empty line switching freq */
 		else if ( ( nFrameCycles-nLastFrameCycles <= 24 )
-		          && ( nLastCycles == LINE_START_CYCLE_50 ) && ( nLineCycles > LINE_START_CYCLE_50 ) )
+			&& ( ( nLastCycles == LINE_START_CYCLE_50 ) || ( nLastCycles == LINE_START_CYCLE_50+4 ) )
+			&& ( nLineCycles > LINE_START_CYCLE_50 ) )
 		{
 			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line freq\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
