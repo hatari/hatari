@@ -194,10 +194,16 @@
 /*			delay as soon as nHBL >= nEndHBL (revert previous changes). Power Rise	*/
 /*			is still working due to NewHWScrollCount=-1 when setting immediate	*/
 /*			hwscroll. Fix regression in Braindamage.				*/
+/* 2008/11/29	[NP]	Increment jitter's index for HBL and VBL each time a possible interrupt	*/
+/*			occurs. Each interrupt can have a jitter between 0, 4 and 8 cycles ; the*/
+/*			jitter follows a predefined pattern of 5 values. The HBL and the VBL	*/
+/*			have their own pattern. See InterruptAddJitter() in uae-cpu/newcpu.c	*/
+/*			(fix Fullscreen tunnel in Suretrip 49% by Checkpoint and digi sound in	*/
+/*			Swedish New Year's TCB screen).						*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.130 2008-11-16 10:19:40 thothy Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.131 2008-12-10 18:37:42 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -307,6 +313,15 @@ int	LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
 int	RestartVideoCounterCycle = RESTART_VIDEO_COUNTER_CYCLE_STF;
 int	VblVideoCycleOffset = VBL_VIDEO_CYCLE_OFFSET_STF;
 
+#define HBL_JITTER_MAX_POS 5
+int	HblJitterIndex = 0;
+int	HblJitterArray[] = 		{ 8,4,4,0,0 };		/* measured on STF */
+int	HblJitterArrayPending[] =	{ 4,4,4,4,4 };	// { 8,8,12,8,12 };	/* measured on STF, not always accurate */
+#define VBL_JITTER_MAX_POS 5
+int	VblJitterIndex = 0;
+int	VblJitterArray[] = 		{ 8,0,4,0,4 };		/* measured on STF */
+int	VblJitterArrayPending[] =	{ 8,8,12,8,12 };	/* not verified on STF, use the same as HBL */
+
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -334,6 +349,8 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&nCyclesPerLine, sizeof(nCyclesPerLine));
 	MemorySnapShot_Store(&nFirstVisibleHbl, sizeof(nFirstVisibleHbl));
 	MemorySnapShot_Store(&bSteBorderFlag, sizeof(bSteBorderFlag));
+	MemorySnapShot_Store(&HblJitterIndex, sizeof(HblJitterIndex));
+	MemorySnapShot_Store(&VblJitterIndex, sizeof(VblJitterIndex));
 }
 
 
@@ -1402,11 +1419,21 @@ static void Video_EndHBL(void)
  */
 void Video_InterruptHandler_HBL(void)
 {
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_int_cnt=%d\n" ,
-	               nHBL , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE ) );
+	int PendingCyclesOver;
+
+	/* How many cycle was this HBL delayed (>= 0) */
+	PendingCyclesOver = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
 
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
+
+	/* Increment the hbl jitter index */
+	HblJitterIndex++;
+	if ( HblJitterIndex == HBL_JITTER_MAX_POS )
+		HblJitterIndex = 0;
+	
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
+	               nHBL , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , HblJitterArray[ HblJitterIndex ] );
 
 	/* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
 	if (nHBL < nScanlinesPerFrame-1)
@@ -1833,6 +1860,11 @@ void Video_InterruptHandler_VBL(void)
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
 
+	/* Increment the vbl jitter index */
+	VblJitterIndex++;
+	if ( VblJitterIndex == VBL_JITTER_MAX_POS )
+		VblJitterIndex = 0;
+	
 	/* Start VBL & HBL interrupts */
 	Video_StartInterrupts();
 
@@ -1858,8 +1890,8 @@ void Video_InterruptHandler_VBL(void)
 	/* Generate 1/50th second of sound sample data, to be played by sound thread */
 	Sound_Update_VBL();
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d\n" ,
-	               nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver );
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
+	               nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
 
 	M68000_Exception ( EXCEPTION_VBLANK , M68000_EXCEPTION_SRC_INT_VIDEO );	/* Vertical blank interrupt, level 4! */
 
@@ -1899,13 +1931,18 @@ void Video_Reset(void)
 	nVBLs = 0;
 	/* Reset addresses */
 	VideoBase = 0L;
-	/* Reset STe screen variables */
+
+	/* Reset STE screen variables */
 	LineWidth = 0;
 	HWScrollCount = 0;
 	bSteBorderFlag = FALSE;
 
 	NewLineWidth = -1;			/* cancel pending modifications set before the reset */
 	NewHWScrollCount = -1;
+
+	/* Reset jitter indexes */
+	HblJitterIndex = 0;
+	VblJitterIndex = 0;
 
 	/* Clear ready for new VBL */
 	Video_ClearOnVBL();

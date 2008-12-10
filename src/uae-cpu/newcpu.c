@@ -75,14 +75,30 @@
 /* 2008/11/18	[NP]	In 'do_specialties()', when the cpu is in the STOP state, we must test all	*/
 /*			possible int handlers while PendingInterruptCount <= 0 without increasing the	*/
 /*			cpu cycle counter. In the case where both an MFP int and an HBL occur at the	*/
-/*			same time for example, the HBL was delayed by 4 bytes if no MFP exception	*/
+/*			same time for example, the HBL was delayed by 4 cycles if no MFP exception	*/
 /*			was triggered, which was wrong (this happened mainly with the TOS timer D that	*/
 /*			expires very often). Such precision is required for very recent hardscroll	*/
 /*			techniques that use 'stop' to stay in sync with the video shifter.		*/
+/* 2008/11/23	[NP]	In 'do_specialties()', when in STOP state, we must first test for a pending	*/
+/*			interrupt that would exit the STOP state immediatly, without doing a 'while'	*/
+/*			loop until 'SPCFLAG_INT' or 'SPCFLAG_DOINT' are set.				*/
+/* 2008/11/29	[NP]	Call 'InterruptAddJitter()' when a video interrupt happens to precisely emulate */
+/*			the jitter happening on the Atari (see video.c for the jitter patterns).	*/
+/*			FIXME : Pattern is not always correct when handling pending interrupt in STOP	*/
+/*			state, but this should be harmless as no program has been found using this.	*/
+/* 2008/12/05	[NP]	On Atari it takes 56 cycles to process an interrupt. During that time, a higher	*/
+/*			level interrupt could happen and we must execute it before the previous int	*/
+/*			(see m68k_run_1()).								*/
+/*			This is the case for the VBL which can interrupt the last HBL of a screen	*/
+/*			(end of line 312) at various point (from 0 to 8 cycles).			*/
+/*			This fixes the fullscreen tunnel in Suretrip 49% by Checkpoint, which uses a	*/
+/*			really buggy vbl/hbl combination, even on a real ST. Also fixes sample sound	*/
+/*			in Swedish New Year's TCB screen.						*/
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.61 2008-11-17 23:13:01 npomarede Exp $";
+
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.62 2008-12-10 18:37:42 npomarede Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -770,6 +786,37 @@ static void exception_trace (int nr)
 }
 
 
+/*
+ * Compute the number of jitter cycles to add when a video interrupt occurs
+ * (this is specific to the Atari ST)
+ */
+static void InterruptAddJitter (int Level , int Pending)
+{
+    int cycles = 0;
+
+    if ( Level == 2 )				/* HBL */
+      {
+        if ( Pending )
+	  cycles = HblJitterArrayPending[ HblJitterIndex ];
+	else
+	  cycles = HblJitterArray[ HblJitterIndex ];
+      }
+    
+    else if ( Level == 4 )			/* VBL */
+      {
+        if ( Pending )
+	  cycles = VblJitterArrayPending[ VblJitterIndex ];
+	else
+	  cycles = VblJitterArray[ VblJitterIndex ];
+      }
+
+//fprintf ( stderr , "jitter %d\n" , cycles );
+//cycles=0;
+    if ( cycles > 0 )				/* no need to call M68000_AddCycles if cycles == 0 */
+      M68000_AddCycles ( cycles );
+}
+
+
 /* Handle exceptions. We need a special case to handle MFP exceptions */
 /* on Atari ST, because it's possible to change the MFP's vector base */
 /* and get a conflict with 'normal' cpu exceptions. */
@@ -966,10 +1013,11 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
           M68000_AddCycles(44+12);		/* Must be a MFP interrupt, should be processed above */
         break;
     }
+
 }
 
 
-static void Interrupt(int nr)
+static void Interrupt(int nr , int Pending)
 {
     assert(nr < 8 && nr >= 0);
     /*lastint_regs = regs;*/
@@ -982,6 +1030,9 @@ static void Interrupt(int nr)
 
     regs.intmask = nr;
     set_special (SPCFLAG_INT);
+
+    /* Handle Atari ST's specific jitter for hbl/vbl */
+    InterruptAddJitter ( nr , Pending );
 }
 
 
@@ -1451,50 +1502,72 @@ static int do_specialties (void)
 	Exception (9,last_trace_ad,M68000_EXCEPTION_SRC_CPU);
     }
 
-    while (regs.spcflags & SPCFLAG_STOP) {
-	if (regs.intmask > 5) {
-	    /* We still have to care about events when IPL==7 ! */
-	    Main_EventHandler();
-	    if (regs.spcflags & SPCFLAG_BRK)  return 1;
+
+    /* Handle the STOP instruction */
+    if ( regs.spcflags & SPCFLAG_STOP) {
+        /* We first test if there's a pending interrupt that would */
+        /* allow to immediatly leave the STOP state */
+	if (regs.spcflags & SPCFLAG_MFP)			/* MFP int */
+	    MFP_CheckPendingInterrupts();
+	
+	if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {	/* VBL/HBL ints */
+	    int intr = intlev ();
+	    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
+	    if (intr != -1 && intr > regs.intmask) {
+	        Interrupt (intr , TRUE);		/* process the interrupt and add pending jitter */
+		regs.stopped = 0;
+		unset_special (SPCFLAG_STOP);
+	    }
 	}
 
-	M68000_AddCycles(4);
-
-        /* It is possible one or more ints happen at the same time */
-        /* We must process them during the same cpu cycle until the special INT flag is set */
-	while (PendingInterruptCount<=0 && PendingInterruptFunction) {
-            /* 1st, we call the interrupt handler */
-	    CALL_VAR(PendingInterruptFunction);
-            /* Then we check if this handler triggered an MFP int to process */
-	    if (regs.spcflags & SPCFLAG_MFP)
-	        MFP_CheckPendingInterrupts();
-
-	    if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
-	        int intr = intlev ();
-	        unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
-	        if (intr != -1 && intr > regs.intmask) {
-		    Interrupt (intr);
-		    regs.stopped = 0;
-		    unset_special (SPCFLAG_STOP);
-                    break;
-	        }
+	/* No pending int, we have to wait for the next matching int */
+	while (regs.spcflags & SPCFLAG_STOP) {
+	    if (regs.intmask > 5) {
+		/* We still have to care about events when IPL==7 ! */
+		Main_EventHandler();
+		if (regs.spcflags & SPCFLAG_BRK)  return 1;
+	    }
+	
+	    M68000_AddCycles(4);
+	
+	    /* It is possible one or more ints happen at the same time */
+	    /* We must process them during the same cpu cycle until the special INT flag is set */
+	    while (PendingInterruptCount<=0 && PendingInterruptFunction) {
+		/* 1st, we call the interrupt handler */
+		CALL_VAR(PendingInterruptFunction);
+		/* Then we check if this handler triggered an MFP int to process */
+		if (regs.spcflags & SPCFLAG_MFP)
+		    MFP_CheckPendingInterrupts();
+	
+		if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
+		    int intr = intlev ();
+		    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
+		    if (intr != -1 && intr > regs.intmask) {
+			Interrupt (intr , FALSE);	/* process the interrupt and add non pending jitter */
+			regs.stopped = 0;
+			unset_special (SPCFLAG_STOP);
+			break;
+		    }
+		}
 	    }
 	}
     }
+
 
     if (regs.spcflags & SPCFLAG_TRACE)
 	do_trace ();
 
 //    if (regs.spcflags & SPCFLAG_DOINT) {
     /* [NP] pending int should be processed now, not after the current instr */
+    /* so we check for (SPCFLAG_INT | SPCFLAG_DOINT), not just for SPCFLAG_DOINT */
     if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
 	int intr = intlev ();
 	/* SPCFLAG_DOINT will be enabled again in MakeFromSR to handle pending interrupts! */
 //	unset_special (SPCFLAG_DOINT);
 	unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
 	if (intr != -1 && intr > regs.intmask) {
-	    Interrupt (intr);
-	    regs.stopped = 0;
+	    Interrupt (intr , FALSE);		/* call Interrupt() with Pending=FALSE, not necessarily true but harmless */
+	    regs.stopped = 0;			/* [NP] useless ? */
 	}
     }
     if (regs.spcflags & SPCFLAG_INT) {
@@ -1578,13 +1651,31 @@ static void m68k_run_1 (void)
 	  nWaitStateCycles = 0;
 	}
 
- 	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
+#if 0
+	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
 	  CALL_VAR(PendingInterruptFunction);
 
 	if (regs.spcflags) {
 	    if (do_specialties ())
 		return;
 	}
+#else
+	/* We can have several interrupt at the same time before the next CPU instruction */
+	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
+	{
+	  CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+	  if (regs.spcflags) {
+	    if (do_specialties ())			/* check if this latest int has higher priority */
+		return;
+	  }
+	}
+
+	if (regs.spcflags) {
+	    if (do_specialties ())
+		return;
+	}
+#endif
+
     }
 }
 

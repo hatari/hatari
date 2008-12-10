@@ -95,10 +95,10 @@
 #define CYCLES_PER_FRAME    (nScanlinesPerFrame*nCyclesPerLine)  /* Cycles per VBL @ 50fps = 160256 */
 
 
-#define VBL_VIDEO_CYCLE_OFFSET_STF	64
+#define VBL_VIDEO_CYCLE_OFFSET_STF	64			/* value of cycle counter when VBL signal is sent */
 #define VBL_VIDEO_CYCLE_OFFSET_STE	(64+4)			/* 4 cycles difference on STE */
 
-#define HBL_VIDEO_CYCLE_OFFSET		(12-12)			/* cycles after end of current line */
+#define HBL_VIDEO_CYCLE_OFFSET		0			/* cycles after end of current line (ie on every 512 cycles in 50 Hz) */
 #define TIMERB_VIDEO_CYCLE_OFFSET	28			/* cycles after last displayed pixels : 376+28 in 50 Hz or 372+28 in 60 Hz */
 
 /* This is when ff8205/07/09 are reloaded with the content of ff8201/03 (on line 310 in 50 Hz) */
@@ -128,6 +128,13 @@ extern int nScreenRefreshRate;
 extern int nScanlinesPerFrame;
 extern int nCyclesPerLine;
 extern int LineTimerBCycle;
+
+extern int HblJitterIndex;
+extern int HblJitterArray[];
+extern int HblJitterArrayPending[];
+extern int VblJitterIndex;
+extern int VblJitterArray[];
+extern int VblJitterArrayPending[];
 
 
 extern void Video_SetSystemTimings(void);
