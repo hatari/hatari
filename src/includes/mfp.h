@@ -51,7 +51,7 @@ extern Uint8 MFP_VR;
 
 extern void MFP_Reset(void);
 extern void MFP_MemorySnapShot_Capture(bool bSave);
-extern void MFP_CheckPendingInterrupts(void);
+extern bool MFP_CheckPendingInterrupts(void);
 extern void MFP_InputOnChannel(Uint8 Bit, Uint8 EnableBit, Uint8 *pPendingReg);
 extern void MFP_TimerA_EventCount_Interrupt(void);
 extern void MFP_TimerB_EventCount_Interrupt(void);

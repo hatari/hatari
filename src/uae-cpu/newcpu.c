@@ -94,11 +94,16 @@
 /*			This fixes the fullscreen tunnel in Suretrip 49% by Checkpoint, which uses a	*/
 /*			really buggy vbl/hbl combination, even on a real ST. Also fixes sample sound	*/
 /*			in Swedish New Year's TCB screen.						*/
+/* 2008/12/11	[NP]	Extract interrupt handling from do_specialties() in do_specialties_interrupt()	*/
+/*			and factorize some code. In m68k_run_1 when testing for multiple interrupts at	*/
+/*			the same time, call do_specialties_interrupt() to check only the special flags	*/
+/*			related to interrupts (MFP and video) (else, this caused problem when the TRACE	*/
+/*			flag was set).									*/
 
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.62 2008-12-10 18:37:42 npomarede Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.63 2008-12-11 22:14:16 npomarede Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -1481,6 +1486,31 @@ static void do_trace (void)
 /*
  * Handle special flags
  */
+
+static bool do_specialties_interrupt (int Pending)
+{
+    /* Check for MFP ints first (level 6) */
+    if (regs.spcflags & SPCFLAG_MFP) {
+       if ( MFP_CheckPendingInterrupts() == TRUE )
+         return TRUE;					/* MFP exception was generated, no higher interrupt can happen */
+    }
+
+    /* No MFP int, check for VBL/HBL ints (levels 4/2) */
+    if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
+	int intr = intlev ();
+	/* SPCFLAG_DOINT will be enabled again in MakeFromSR to handle pending interrupts! */
+//	unset_special (SPCFLAG_DOINT);
+	unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
+	if (intr != -1 && intr > regs.intmask) {
+	    Interrupt (intr , Pending);			/* process the interrupt and add pending jitter if necessary */
+	    return TRUE;
+	}
+    }
+
+    return FALSE;					/* no interrupt was found */
+}
+
+
 static int do_specialties (void)
 {
     if(regs.spcflags & SPCFLAG_BUSERROR) {
@@ -1507,6 +1537,11 @@ static int do_specialties (void)
     if ( regs.spcflags & SPCFLAG_STOP) {
         /* We first test if there's a pending interrupt that would */
         /* allow to immediatly leave the STOP state */
+        if ( do_specialties_interrupt ( TRUE ) ) {		/* test if there's an interrupt and add pending jitter */
+            regs.stopped = 0;
+            unset_special (SPCFLAG_STOP);
+        }
+#if 0
 	if (regs.spcflags & SPCFLAG_MFP)			/* MFP int */
 	    MFP_CheckPendingInterrupts();
 	
@@ -1519,6 +1554,7 @@ static int do_specialties (void)
 		unset_special (SPCFLAG_STOP);
 	    }
 	}
+#endif
 
 	/* No pending int, we have to wait for the next matching int */
 	while (regs.spcflags & SPCFLAG_STOP) {
@@ -1535,6 +1571,14 @@ static int do_specialties (void)
 	    while (PendingInterruptCount<=0 && PendingInterruptFunction) {
 		/* 1st, we call the interrupt handler */
 		CALL_VAR(PendingInterruptFunction);
+		
+		/* Then we check if this handler triggered an interrupt to process */
+	        if ( do_specialties_interrupt ( FALSE ) ) {	/* test if there's an interrupt and add non pending jitter */
+		    regs.stopped = 0;
+		    unset_special (SPCFLAG_STOP);
+		    break;
+		}
+#if 0		
 		/* Then we check if this handler triggered an MFP int to process */
 		if (regs.spcflags & SPCFLAG_MFP)
 		    MFP_CheckPendingInterrupts();
@@ -1549,6 +1593,7 @@ static int do_specialties (void)
 			break;
 		    }
 		}
+#endif
 	    }
 	}
     }
@@ -1560,6 +1605,15 @@ static int do_specialties (void)
 //    if (regs.spcflags & SPCFLAG_DOINT) {
     /* [NP] pending int should be processed now, not after the current instr */
     /* so we check for (SPCFLAG_INT | SPCFLAG_DOINT), not just for SPCFLAG_DOINT */
+	        
+    if ( do_specialties_interrupt ( FALSE ) ) {	/* test if there's an interrupt and add non pending jitter */
+        regs.stopped = 0;			/* [NP] useless ? */
+    }
+    if (regs.spcflags & SPCFLAG_INT) {
+	unset_special (SPCFLAG_INT);
+	set_special (SPCFLAG_DOINT);
+    }
+#if 0
     if (regs.spcflags & (SPCFLAG_INT | SPCFLAG_DOINT)) {
 	int intr = intlev ();
 	/* SPCFLAG_DOINT will be enabled again in MakeFromSR to handle pending interrupts! */
@@ -1578,6 +1632,7 @@ static int do_specialties (void)
     if (regs.spcflags & SPCFLAG_MFP) {          /* Check for MFP interrupts */
 	MFP_CheckPendingInterrupts();
     }
+#endif
 
     if (regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE)) {
 	unset_special(SPCFLAG_MODE_CHANGE);
@@ -1664,10 +1719,13 @@ static void m68k_run_1 (void)
 	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
 	{
 	  CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-	  if (regs.spcflags) {
+	  do_specialties_interrupt ( FALSE );		/* test if there's an mfp/video interrupt and add pending jitter */
+#if 0
+	  if ( regs.spcflags & ( SPCFLAG_MFP | SPCFLAG_INT ) ) {	/* only check mfp/video interrupts */
 	    if (do_specialties ())			/* check if this latest int has higher priority */
 		return;
 	  }
+#endif
 	}
 
 	if (regs.spcflags) {
