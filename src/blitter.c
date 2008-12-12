@@ -10,7 +10,13 @@
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
  */
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.35 2008-11-15 10:00:06 thothy Exp $";
+
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.36 2008-12-12 21:52:01 thothy Exp $";
+
+/* TODO:
+ * - restart with lines == 0, does it takes some cycles ?
+ * - strange end mask condition ((~(0xffff>>skew)) > end_mask_1))
+ */
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -27,14 +33,11 @@ const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.35 2008-11-15 10:00:06 t
 #include "stMemory.h"
 #include "video.h"
 
+/* Cycles to run for in non-hog mode */
+#define NONHOG_CYCLES	(64*4)
 
-#define DEBUG 0
-
-#define NONHOG_CYCLES (64*4)    /* Cycles to run for in non-hog mode */
-
-
-/* BLiTTER registers, counts and incs are signed, others unsigned */
-#define REG_HT_RAM	0xff8a00	/* - 0xff8a1e */
+/* BLiTTER registers, incs are signed, others unsigned */
+#define REG_HT_RAM		0xff8a00	/* - 0xff8a1e */
 
 #define REG_SRC_X_INC	0xff8a20
 #define REG_SRC_Y_INC	0xff8a22
@@ -54,286 +57,378 @@ const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.35 2008-11-15 10:00:06 t
 #define REG_BLIT_HOP	0xff8a3a	/* halftone blit operation byte */
 #define REG_BLIT_LOP	0xff8a3b	/* logical blit operation byte */
 #define REG_CONTROL 	0xff8a3c
-#define REG_SKEW	0xff8a3d
+#define REG_SKEW		0xff8a3d
 
-#define SRC_READ_NOPS	0x1
-#define DST_READ_NOPS	0x2
-#define DST_WRITE_NOPS	0x4
-#define DST_ALL_NOPS	0x6
-#define ALL_NOPS    	0x7
-
-static Uint16 halftone_ram[16];
-static Uint16 end_mask_1, end_mask_2, end_mask_3;
-static Uint16 x_count, x_count_max, y_count;
-static Uint8 hop, op, blit_control, skewreg;
-static Uint8 NFSR, FXSR;
-static Uint32 dest_addr, source_addr;
-static int halftone_curroffset;
-static Uint32 source_buffer;
-static int nCurrentCycles;
-
-
-/*
- * Blitter timings - read write method.
- * To perform an operation on a single word, the blitter might need to:
- * - Read source memory
- * - Read destination memory
- * - Write destination memory
- * Each of this actions takes one nop
- */
-
-/* source reading nop for each ops */
-static int blit_src_read[16][4] =
+/* Blitter registers */
+typedef struct
 {
-	/* All ones | Halftone | Source | Source AND Halftone */
-	{     0,          0,        0,        0 }, // All zeros
-	{     0,          0,        1,        1 }, // Source AND destination
-	{     0,          0,        1,        1 }, // Source AND NOT destination
-	{     0,          0,        1,        1 }, // Source
-	{     0,          0,        1,        1 }, // NOT source AND destination
-	{     0,          0,        0,        0 }, // Destination
-	{     0,          0,        1,        1 }, // Source XOR destination
-	{     0,          0,        1,        1 }, // Source OR destination
-	{     0,          0,        1,        1 }, // NOT source AND NOT destination
-	{     0,          0,        1,        1 }, // NOT source XOR destination
-	{     0,          0,        0,        0 }, // NOT destination
-	{     0,          0,        1,        1 }, // Source OR NOT destination
-	{     0,          0,        1,        1 }, // NOT source
-	{     0,          0,        1,        1 }, // NOT source OR destination
-	{     0,          0,        1,        1 }, // NOT source OR NOT destination
-	{     0,          0,        0,        0 }  // All ones
-};
+	Uint32	src_addr;
+	Uint32	dst_addr;
+	Uint32	words;
+	Uint32	lines;
+	short	src_x_incr;
+	short	src_y_incr;
+	short	dst_x_incr;
+	short	dst_y_incr;
+	Uint16	end_mask_1;
+	Uint16	end_mask_2;
+	Uint16	end_mask_3;
+	Uint8	hop;
+	Uint8	lop;
+	Uint8	ctrl;
+	Uint8	skew;
+} BLITTERREGS;
 
-/* source reading nop for each smudge ops */
-static int blit_src_read_smudge[16][4] =
+/* Blitter vars */
+typedef struct
 {
-	/* All ones | Halftone | Source | Source AND Halftone */
-	{     0,          0,        0,        0 }, // All zeros
-	{     1,          1,        1,        1 }, // Source AND destination
-	{     1,          1,        1,        1 }, // Source AND NOT destination
-	{     1,          1,        1,        1 }, // Source
-	{     1,          1,        1,        1 }, // NOT source AND destination
-	{     0,          0,        0,        0 }, // Destination
-	{     1,          1,        1,        1 }, // Source XOR destination
-	{     1,          1,        1,        1 }, // Source OR destination
-	{     1,          1,        1,        1 }, // NOT source AND NOT destination
-	{     1,          1,        1,        1 }, // NOT source XOR destination
-	{     0,          0,        0,        0 }, // NOT destination
-	{     1,          1,        1,        1 }, // Source OR NOT destination
-	{     1,          1,        1,        1 }, // NOT source
-	{     1,          1,        1,        1 }, // NOT source OR destination
-	{     1,          1,        1,        1 }, // NOT source OR NOT destination
-	{     0,          0,        0,        0 }  // All ones
-};
+	int		cycles;
+	Uint32	buffer;
+	Uint32	src_words_reset;
+	Uint32	dst_words_reset;
+	Uint32	src_words;
+	Uint8	hog;
+	Uint8	smudge;
+	Uint8	line;
+	Uint8	fxsr;
+	Uint8	nfsr;
+	Uint8	skew;
+} BLITTERVARS;
 
-/* destination reading nop for each ops */
-static int blit_dst_read[16][4] =
+/* Blitter state */
+typedef struct
 {
-	/* All ones | Halftone | Source | Source AND Halftone */
-	{     0,          0,        0,        0 }, // All zeros
-	{     1,          1,        1,        1 }, // Source AND destination
-	{     1,          1,        1,        1 }, // Source AND NOT destination
-	{     0,          0,        0,        0 }, // Source
-	{     1,          1,        1,        1 }, // NOT source AND destination
-	{     1,          1,        1,        1 }, // Destination
-	{     1,          1,        1,        1 }, // Source XOR destination
-	{     1,          1,        1,        1 }, // Source OR destination
-	{     1,          1,        1,        1 }, // NOT source AND NOT destination
-	{     1,          1,        1,        1 }, // NOT source XOR destination
-	{     1,          1,        1,        1 }, // NOT destination
-	{     1,          1,        1,        1 }, // Source OR NOT destination
-	{     0,          0,        0,        0 }, // NOT source
-	{     1,          1,        1,        1 }, // NOT source OR destination
-	{     1,          1,        1,        1 }, // NOT source OR NOT destination
-	{     0,          0,        0,        0 }  // All ones
-};
+	int		cycles;
+	Uint16	src_word;
+	Uint16	dst_word;
+	Uint16	end_mask;
+	Uint8	have_src;
+	Uint8	have_dst;
+	Uint8	fxsr;
+	Uint8	nfsr;
+} BLITTERSTATE;
 
-#if DEBUG
-static void show_params(void)
-{
-	fprintf(stderr, "Source Address:%X\n", source_addr);
-	fprintf(stderr, "  Dest Address:%X\n", dest_addr);
-	fprintf(stderr, "       X count:%X\n", x_count);
-	fprintf(stderr, "       Y count:%X\n", y_count);
-	fprintf(stderr, "  Source X inc:%X\n", IoMem_ReadWord(REG_SRC_X_INC));
-	fprintf(stderr, "    Dest X inc:%X\n", IoMem_ReadWord(REG_DST_X_INC));
-	fprintf(stderr, "  Source Y inc:%X\n", IoMem_ReadWord(REG_SRC_Y_INC));
-	fprintf(stderr, "    Dest Y inc:%X\n", IoMem_ReadWord(REG_DST_Y_INC));
-	fprintf(stderr, "HOP:%2X    OP:%X\n", hop, op);
-	fprintf(stderr, "   source SKEW:%X\n", skewreg);
-	fprintf(stderr, "     endmask 1:%X\n", end_mask_1);
-	fprintf(stderr, "     endmask 2:%X\n", end_mask_2);
-	fprintf(stderr, "     endmask 3:%X\n", end_mask_3);
-	fprintf(stderr, "  blit control:%X\n", blit_control);
-	if (NFSR) fprintf(stderr, "NFSR is Set!\n");
-	if (FXSR) fprintf(stderr, "FXSR is Set!\n");
-}
+static BLITTERREGS	BlitterRegs;
+static BLITTERVARS	BlitterVars;
+static BLITTERSTATE	BlitterState;
+static Uint16		BlitterHalftone[16];
 
-static void show_halftones(void)
-{
-	int i, j;
-	fprintf(stderr, "Halftone registers:\n");
-	for (i = 0; i < 2; i++)
-	{
-		for (j = 0; j < 8; j++)
-		{
-			fprintf(stderr,"%4X, ", halftone_ram[i*8+j]);
-		}
-		fprintf(stderr, "\n");
-	}
-}
-#endif
-
-
-/* called only before halftone operations, for HOP modes 01 and 11 */
-static void load_halftone_ram(void)
-{
-	halftone_ram[0]  = IoMem_ReadWord(REG_HT_RAM);
-	halftone_ram[1]  = IoMem_ReadWord(REG_HT_RAM+2);
-	halftone_ram[2]  = IoMem_ReadWord(REG_HT_RAM+4);
-	halftone_ram[3]  = IoMem_ReadWord(REG_HT_RAM+6);
-	halftone_ram[4]  = IoMem_ReadWord(REG_HT_RAM+8);
-	halftone_ram[5]  = IoMem_ReadWord(REG_HT_RAM+10);
-	halftone_ram[6]  = IoMem_ReadWord(REG_HT_RAM+12);
-	halftone_ram[7]  = IoMem_ReadWord(REG_HT_RAM+14);
-	halftone_ram[8]  = IoMem_ReadWord(REG_HT_RAM+16);
-	halftone_ram[9]  = IoMem_ReadWord(REG_HT_RAM+18);
-	halftone_ram[10] = IoMem_ReadWord(REG_HT_RAM+20);
-	halftone_ram[11] = IoMem_ReadWord(REG_HT_RAM+22);
-	halftone_ram[12] = IoMem_ReadWord(REG_HT_RAM+24);
-	halftone_ram[13] = IoMem_ReadWord(REG_HT_RAM+26);
-	halftone_ram[14] = IoMem_ReadWord(REG_HT_RAM+28);
-	halftone_ram[15] = IoMem_ReadWord(REG_HT_RAM+30);
-
-	if (!(blit_control & 0x20))
-	{
-		/* No smudge mode: Get halftone offset from control register */
-		halftone_curroffset = blit_control & 15;
-	}
-
-#if DEBUG
-	show_params();
-	show_halftones();
-#endif
-}
-
-static int Blitter_GetNops(int flag, Uint16 mask)
-{
-	int nops = 0;
-
-	if (flag & SRC_READ_NOPS)
-	{
-		/* nop for reading source */
-		nops += ((blit_control & 0x20)
-					? blit_src_read_smudge[op][hop]
-					: blit_src_read[op][hop]);
-	}
-
-	if (flag & DST_READ_NOPS)
-	{
-		/* nop for reading destination
-		 * note that when mask != 0xFFFF a read is always performed
-		 * in order to compute the final word */
-		nops += (((mask != 0xFFFF) ? 1 : blit_dst_read[op][hop]));
-	}
-
-	if (flag & DST_WRITE_NOPS)
-	{
-		/* nop for writing destination */
-		nops += 1;
-	}
-
-	return nops;
-}
-
+/*-----------------------------------------------------------------------*/
 /**
  * Count blitter cycles
  */
+
 static void Blitter_AddCycles(int cycles)
 {
-	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cycles, INT_CPU_CYCLE);
-	nCyclesMainCounter += cycles;
-	nCurrentCycles += cycles;
-
-	/* We've got to update pending int functions regularly to make sure
-	 * that other effects are not delayed too much. (Needed for "Obsession",
-	 * "Braindamage", and Doughnut screen in "Just Musix 2") */
-	if (PendingInterruptCount <= 0 && PendingInterruptFunction)
-	{
-	    CALL_VAR(PendingInterruptFunction);
-	}
+	BlitterState.cycles += cycles;
 }
 
-
-#define do_source_shift() \
-	if (((short)IoMem_ReadWord(REG_SRC_X_INC)) < 0) \
-		source_buffer >>= 16; \
-	else \
-		source_buffer <<= 16
-
-
-#define get_source_data() \
-	if (hop >= 2) \
-	{ \
-		if (((short)IoMem_ReadWord(REG_SRC_X_INC)) < 0) \
-			source_buffer |= ((Uint32) STMemory_ReadWord(source_addr) << 16); \
-		else \
-			source_buffer |= ((Uint32) STMemory_ReadWord(source_addr));  \
-	}
-
-
-/* In smudge mode, the halftone offset is determined by the lowest 4 bits of
- * the first source word, after it has been skewed */
-#define HALFTONE_OFFSET  ((blit_control & 0x20) ? \
-	((STMemory_ReadWord(source_addr) >> skew) & 15) : halftone_curroffset)
-
-
-static inline void put_dst_data(Uint8 skew, Uint16 end_mask)
+static void Blitter_FlushCycles(void)
 {
-	Uint16 dst_data, opd_data;
+	int cpu_cycles = BlitterState.cycles >> nCpuFreqShift;
 
-	dst_data = STMemory_ReadWord(dest_addr);
+	nCyclesMainCounter += cpu_cycles;
 
-	switch (hop)
-	{
-	 default:
-	 case 0: opd_data = 0xffff; break;
-	 case 1: opd_data = halftone_ram[HALFTONE_OFFSET]; break;
-	 case 2: opd_data = (source_buffer >> skew); break;
-	 case 3: opd_data = (source_buffer >> skew)
-	                    & halftone_ram[HALFTONE_OFFSET];  break;
-	}
+	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cpu_cycles, INT_CPU_CYCLE);
+	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
+		CALL_VAR(PendingInterruptFunction);
 
-	switch (op)
-	{
-	 default:
-	 case  0: opd_data = 0; break;
-	 case  1: opd_data = opd_data & dst_data; break;
-	 case  2: opd_data = opd_data & ~dst_data; break;
-	 case  3: opd_data = opd_data; break;
-	 case  4: opd_data = ~opd_data & dst_data; break;
-	 case  5: opd_data = dst_data; break;
-	 case  6: opd_data = opd_data ^ dst_data; break;
-	 case  7: opd_data = opd_data | dst_data; break;
-	 case  8: opd_data = ~opd_data & ~dst_data; break;
-	 case  9: opd_data = ~opd_data ^ dst_data; break;
-	 case 10: opd_data = ~dst_data; break;
-	 case 11: opd_data = opd_data | ~dst_data; break;
-	 case 12: opd_data = ~opd_data; break;
-	 case 13: opd_data = ~opd_data | dst_data; break;
-	 case 14: opd_data = ~opd_data | ~dst_data; break;
-	 case 15: opd_data = 0xffff; break;
-	}
-
-	opd_data = (dst_data & ~end_mask) | (opd_data & end_mask);
-	if (dest_addr < 0x00ff8000)
-		STMemory_WriteWord(dest_addr, opd_data);
-	else
-		IoMem_wput(dest_addr, opd_data);
-
-	--x_count;
+	BlitterVars.cycles += BlitterState.cycles;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Read & Write operations
+ */
+static Uint16 Blitter_ReadWord(Uint32 addr)
+{
+	Uint16 value;
+
+	if (addr < 0x00ff8000)
+		value = STMemory_ReadWord(addr);
+	else
+		value = (Uint16)(IoMem_wget(addr) & 0xFFFF);
+
+	Blitter_AddCycles(4);
+
+	return value;
+}
+
+static void Blitter_WriteWord(Uint32 addr, Uint16 value)
+{
+	if (addr < 0x00ff8000)
+		STMemory_WriteWord(addr, value);
+	else
+		IoMem_wput(addr, (Uint32)(value));
+
+	Blitter_AddCycles(4);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Blitter emulation - level 1
+ */
+
+static void Blitter_BeginLine(void)
+{
+	BlitterVars.src_words = BlitterVars.src_words_reset;
+}
+
+static void Blitter_SetState(Uint8 fxsr, Uint8 nfsr, Uint16 end_mask)
+{
+	BlitterState.cycles = 0;
+	BlitterState.end_mask = end_mask;
+	BlitterState.have_src = false;
+	BlitterState.have_dst = false;
+	BlitterState.fxsr = fxsr;
+	BlitterState.nfsr = nfsr;
+}
+
+static void Blitter_SourceShift(void)
+{
+	if (BlitterRegs.src_x_incr < 0)
+		BlitterVars.buffer >>= 16;
+	else
+		BlitterVars.buffer <<= 16;
+}
+
+static void Blitter_SourceFetch(void)
+{
+	Uint32 src_word = (Uint32)Blitter_ReadWord(BlitterRegs.src_addr);
+
+	if (BlitterRegs.src_x_incr < 0)
+		BlitterVars.buffer |= src_word << 16;
+	else
+		BlitterVars.buffer |= src_word;
+
+	if (BlitterVars.src_words == 1)
+	{
+		BlitterRegs.src_addr += BlitterRegs.src_y_incr;
+	}
+	else
+	{
+		--BlitterVars.src_words;
+		BlitterRegs.src_addr += BlitterRegs.src_x_incr;
+	}
+}
+
+static Uint16 Blitter_SourceRead(void)
+{
+	if (!BlitterState.have_src)
+	{
+		if (BlitterState.fxsr)
+		{
+			Blitter_SourceShift(); // needed ?
+			Blitter_SourceFetch();
+		}
+
+		Blitter_SourceShift();
+
+		if (!BlitterState.nfsr)
+		{
+			Blitter_SourceFetch();
+		}
+
+		BlitterState.src_word = (Uint16)(BlitterVars.buffer >> BlitterVars.skew);
+		BlitterState.have_src = true;
+	}
+
+	return BlitterState.src_word;
+}
+
+static Uint16 Blitter_GetHalftoneWord(void)
+{
+	if (BlitterVars.smudge)
+		return BlitterHalftone[Blitter_SourceRead() & 15];
+	else
+		return BlitterHalftone[BlitterVars.line];
+}
+
+static Uint16 Blitter_ComputeHOP(void)
+{
+	Uint16 hop_data;
+
+	switch (BlitterRegs.hop)
+	{
+	default:
+	case 0:
+		hop_data = 0xFFFF;
+		break;
+	case 1:
+		hop_data = Blitter_GetHalftoneWord();
+		break;
+	case 2:
+		hop_data = Blitter_SourceRead();
+		break;
+	case 3:
+		hop_data = Blitter_SourceRead() & Blitter_GetHalftoneWord();
+		break;
+	}
+
+	return hop_data;
+}
+
+static Uint16 Blitter_DestRead(void)
+{
+	if (!BlitterState.have_dst)
+	{
+		BlitterState.dst_word = Blitter_ReadWord(BlitterRegs.dst_addr);
+		BlitterState.have_dst = true;
+	}
+
+	return BlitterState.dst_word;
+}
+
+static Uint16 Blitter_ComputeLOP(void)
+{
+	Uint16 op_data;
+
+	switch (BlitterRegs.lop)
+	{
+	default:
+	case 0:
+		op_data = 0;
+		break;
+	case 1:
+		op_data = Blitter_ComputeHOP() & Blitter_DestRead();
+		break;
+	case 2:
+		op_data = Blitter_ComputeHOP() & ~Blitter_DestRead();
+		break;
+	case 3:
+		op_data = Blitter_ComputeHOP();
+		break;
+	case 4:
+		op_data = ~Blitter_ComputeHOP() & Blitter_DestRead();
+		break;
+	case 5:
+		op_data = Blitter_DestRead();
+		break;
+	case 6:
+		op_data = Blitter_ComputeHOP() ^ Blitter_DestRead();
+		break;
+	case 7:
+		op_data = Blitter_ComputeHOP() | Blitter_DestRead();
+		break;
+	case 8:
+		op_data = ~Blitter_ComputeHOP() & ~Blitter_DestRead();
+		break;
+	case 9:
+		op_data = ~Blitter_ComputeHOP() ^ Blitter_DestRead();
+		break;
+	case 10:
+		op_data = ~Blitter_DestRead();
+		break;
+	case 11:
+		op_data = Blitter_ComputeHOP() | ~Blitter_DestRead();
+		break;
+	case 12:
+		op_data = ~Blitter_ComputeHOP();
+		break;
+	case 13:
+		op_data = ~Blitter_ComputeHOP() | Blitter_DestRead();
+		break;
+	case 14:
+		op_data = ~Blitter_ComputeHOP() | ~Blitter_DestRead();
+		break;
+	case 15:
+		op_data = 0xFFFF;
+		break;
+	}
+
+	return op_data;
+}
+
+static Uint16 Blitter_ComputeMask(void)
+{
+	return (Blitter_ComputeLOP() & BlitterState.end_mask) |
+			(Blitter_DestRead() & ~BlitterState.end_mask);
+}
+
+static void Blitter_ProcessWord(void)
+{
+	Uint16 dst_data = (BlitterState.end_mask != 0xFFFF
+							? Blitter_ComputeMask()
+							: Blitter_ComputeLOP());
+
+	Blitter_WriteWord(BlitterRegs.dst_addr, dst_data);
+
+	if (BlitterRegs.words == 1)
+	{
+		BlitterRegs.dst_addr += BlitterRegs.dst_y_incr;
+	}
+	else
+	{
+		--BlitterRegs.words;
+		BlitterRegs.dst_addr += BlitterRegs.dst_x_incr;
+	}
+}
+
+static void Blitter_EndLine(void)
+{
+	--BlitterRegs.lines;
+	BlitterRegs.words = BlitterVars.dst_words_reset;
+
+	if (BlitterRegs.dst_y_incr >= 0)
+		BlitterVars.line = (BlitterVars.line+1) & 15;
+	else
+		BlitterVars.line = (BlitterVars.line-1) & 15;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Blitter emulation - level 2
+ */
+
+static void Blitter_SingleWord(void)
+{
+	Blitter_BeginLine();
+	Blitter_SetState(BlitterVars.fxsr, BlitterVars.nfsr, BlitterRegs.end_mask_1);
+	Blitter_ProcessWord();
+	Blitter_EndLine();
+}
+
+static void Blitter_FirstWord(void)
+{
+	Blitter_BeginLine();
+	Blitter_SetState(BlitterVars.fxsr, 0, BlitterRegs.end_mask_1);
+	Blitter_ProcessWord();
+}
+
+static void Blitter_MiddleWord(void)
+{
+	Blitter_SetState(0, 0, BlitterRegs.end_mask_2);
+	Blitter_ProcessWord();
+}
+
+static void Blitter_LastWord(void)
+{
+	Blitter_SetState(0, BlitterVars.nfsr, BlitterRegs.end_mask_3);
+	Blitter_ProcessWord();
+	Blitter_EndLine();
+}
+
+static void Blitter_Step(void)
+{
+	if (BlitterVars.dst_words_reset == 1)
+	{
+		Blitter_SingleWord();
+	}
+	else if (BlitterRegs.words == BlitterVars.dst_words_reset)
+	{
+		Blitter_FirstWord();
+	}
+	else if (BlitterRegs.words == 1)
+	{
+		Blitter_LastWord();
+	}
+	else
+	{
+		Blitter_MiddleWord();
+	}
+
+	Blitter_FlushCycles();
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -342,125 +437,85 @@ static inline void put_dst_data(Uint8 skew, Uint16 end_mask)
  * before giving the bus back to the CPU. Due to this mode, this function must
  * be able to abort and resume the blitting at any time.
  */
-static void Do_Blit(void)
+static void Blitter_Start(void)
 {
-	Uint8 skew = skewreg & 15;
-	int source_x_inc, source_y_inc;
-	int dest_x_inc, dest_y_inc;
-	int halftone_direction;
-	int cyc_per_nop;
-
-	/*if(address_space_24)*/
-	{ source_addr &= 0x0fffffe; dest_addr &= 0x0fffffe; }
-
-	if (op == 0 || op == 15)
-	{
-		/* Do not increment source address for OP 0 and 15  */
-		/* (needed for Grotesque demo by Omega for example) */
-		source_x_inc = 0;
-		source_y_inc = 0;
-	}
-	else
-	{
-		source_x_inc = (short) IoMem_ReadWord(REG_SRC_X_INC);
-		source_y_inc = (short) IoMem_ReadWord(REG_SRC_Y_INC);
-	}
-	dest_x_inc   = (short) IoMem_ReadWord(REG_DST_X_INC);
-	dest_y_inc   = (short) IoMem_ReadWord(REG_DST_Y_INC);
-
-	/* Set up halftone ram */
-	if (hop & 1)
-		load_halftone_ram();
-
-	if (dest_y_inc >= 0)
-		halftone_direction = 1;
-	else
-		halftone_direction = -1;
-
-	/* Set up variables for cycle counting */
-	nCurrentCycles = 0;
-
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
-		cyc_per_nop = 2;  // 16 MHz Blitter on Falcon
-	else
-		cyc_per_nop = 4;  // 8 MHz Blitter on ST/STE
+	/* setup vars */
+	BlitterVars.cycles = 0;
+	BlitterVars.src_words_reset = BlitterVars.dst_words_reset +
+									BlitterVars.fxsr - BlitterVars.nfsr;
 
 	/* Now we enter the main blitting loop */
 	do
 	{
-		/* First word of a line */
-		if (x_count == x_count_max)
-		{
-			if (FXSR)
-			{
-				do_source_shift();
-				get_source_data();
-				source_addr += source_x_inc;
-				Blitter_AddCycles(Blitter_GetNops(SRC_READ_NOPS,0) * cyc_per_nop);
-			}
-
-			do_source_shift();
-			get_source_data();
-			put_dst_data(skew, end_mask_1);
-			Blitter_AddCycles(Blitter_GetNops(ALL_NOPS,end_mask_1) * cyc_per_nop);
-		}
-
-		/* Middle words of a line */
-		while (x_count > 1
-		       && ((blit_control & 0x40) || nCurrentCycles < NONHOG_CYCLES))
-		{
-			source_addr += source_x_inc;
-			dest_addr += dest_x_inc;
-			do_source_shift();
-			get_source_data();
-			put_dst_data(skew, end_mask_2);
-			Blitter_AddCycles(Blitter_GetNops(ALL_NOPS,end_mask_2) * cyc_per_nop);
-		}
-
-		/* Last word of a line */
-		if (x_count == 1
-		    && ((blit_control & 0x40) || nCurrentCycles < NONHOG_CYCLES))
-		{
-			dest_addr += dest_x_inc;
-			do_source_shift();
-			if ( (!NFSR) || ((~(0xffff>>skew)) > end_mask_3) )
-			{
-				source_addr += source_x_inc;
-				get_source_data();
-				put_dst_data(skew, end_mask_3);
-				Blitter_AddCycles(Blitter_GetNops(ALL_NOPS,end_mask_3) * cyc_per_nop);
-			}
-			else
-			{
-				put_dst_data(skew, end_mask_3);
-				Blitter_AddCycles(Blitter_GetNops(DST_ALL_NOPS,end_mask_3) * cyc_per_nop);
-			}
-		}
-
-		/* Line done? */
-		if (x_count == 0)
-		{
-			--y_count;
-			x_count = x_count_max;
-
-			source_addr += source_y_inc;
-			dest_addr += dest_y_inc;
-
-			/* Do halftone increment */
-			if (hop & 1)
-				halftone_curroffset = (halftone_curroffset+halftone_direction) & 15;
-		}
+		Blitter_Step();
 	}
-	while (y_count > 0
-	       && ((blit_control & 0x40) || nCurrentCycles < NONHOG_CYCLES));
+	while (BlitterRegs.lines > 0
+	       && (BlitterVars.hog || BlitterVars.cycles < NONHOG_CYCLES));
 
-	if (!(blit_control & 0x20))
+	/* Must have something to do with bus arbitration */
+	BlitterState.cycles = 8;
+	Blitter_FlushCycles();
+
+	BlitterRegs.ctrl = (BlitterRegs.ctrl & 0xF0) | BlitterVars.line;
+
+	if (BlitterRegs.lines == 0)
 	{
-		/* Not smudge mode: put halftone offset back into control register */
-		blit_control = (blit_control & 0xf0) | halftone_curroffset;
+		/* We're done, clear busy bit */
+		BlitterRegs.ctrl &= ~0x80;
+
+		/* Blitter done interrupt */
+		MFP_InputOnChannel(MFP_GPU_DONE_BIT, MFP_IERB, &MFP_IPRB);
+	}
+	else
+	{
+		/* Continue blitting later */
+		Int_AddRelativeInterrupt(NONHOG_CYCLES+8, INT_CPU_CYCLE, INTERRUPT_BLITTER);
 	}
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Read blitter halftone ram.
+ */
+static void Blitter_Halftone_ReadWord(int index)
+{
+	IoMem_WriteWord(REG_HT_RAM + index + index, BlitterHalftone[index]);
+}
+
+void Blitter_Halftone00_ReadWord(void) { Blitter_Halftone_ReadWord(0); }
+void Blitter_Halftone01_ReadWord(void) { Blitter_Halftone_ReadWord(1); }
+void Blitter_Halftone02_ReadWord(void) { Blitter_Halftone_ReadWord(2); }
+void Blitter_Halftone03_ReadWord(void) { Blitter_Halftone_ReadWord(3); }
+void Blitter_Halftone04_ReadWord(void) { Blitter_Halftone_ReadWord(4); }
+void Blitter_Halftone05_ReadWord(void) { Blitter_Halftone_ReadWord(5); }
+void Blitter_Halftone06_ReadWord(void) { Blitter_Halftone_ReadWord(6); }
+void Blitter_Halftone07_ReadWord(void) { Blitter_Halftone_ReadWord(7); }
+void Blitter_Halftone08_ReadWord(void) { Blitter_Halftone_ReadWord(8); }
+void Blitter_Halftone09_ReadWord(void) { Blitter_Halftone_ReadWord(9); }
+void Blitter_Halftone10_ReadWord(void) { Blitter_Halftone_ReadWord(10); }
+void Blitter_Halftone11_ReadWord(void) { Blitter_Halftone_ReadWord(11); }
+void Blitter_Halftone12_ReadWord(void) { Blitter_Halftone_ReadWord(12); }
+void Blitter_Halftone13_ReadWord(void) { Blitter_Halftone_ReadWord(13); }
+void Blitter_Halftone14_ReadWord(void) { Blitter_Halftone_ReadWord(14); }
+void Blitter_Halftone15_ReadWord(void) { Blitter_Halftone_ReadWord(15); }
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read blitter source x increment (0xff8a20).
+ */
+void Blitter_SourceXInc_ReadWord(void)
+{
+	IoMem_WriteWord(REG_SRC_X_INC, (Uint16)(BlitterRegs.src_x_incr));
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read blitter source y increment (0xff8a22).
+ */
+void Blitter_SourceYInc_ReadWord(void)
+{
+	IoMem_WriteWord(REG_SRC_Y_INC, (Uint16)(BlitterRegs.src_y_incr));
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -468,7 +523,7 @@ static void Do_Blit(void)
  */
 void Blitter_SourceAddr_ReadLong(void)
 {
-	IoMem_WriteLong(REG_SRC_ADDR, source_addr);
+	IoMem_WriteLong(REG_SRC_ADDR, BlitterRegs.src_addr);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -477,7 +532,7 @@ void Blitter_SourceAddr_ReadLong(void)
  */
 void Blitter_Endmask1_ReadWord(void)
 {
-	IoMem_WriteWord(REG_END_MASK1, end_mask_1);
+	IoMem_WriteWord(REG_END_MASK1, BlitterRegs.end_mask_1);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -486,7 +541,7 @@ void Blitter_Endmask1_ReadWord(void)
  */
 void Blitter_Endmask2_ReadWord(void)
 {
-	IoMem_WriteWord(REG_END_MASK2, end_mask_2);
+	IoMem_WriteWord(REG_END_MASK2, BlitterRegs.end_mask_2);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -495,7 +550,25 @@ void Blitter_Endmask2_ReadWord(void)
  */
 void Blitter_Endmask3_ReadWord(void)
 {
-	IoMem_WriteWord(REG_END_MASK3, end_mask_3);
+	IoMem_WriteWord(REG_END_MASK3, BlitterRegs.end_mask_3);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read blitter destination x increment (0xff8a2E).
+ */
+void Blitter_DestXInc_ReadWord(void)
+{
+	IoMem_WriteWord(REG_DST_X_INC, (Uint16)(BlitterRegs.dst_x_incr));
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read blitter destination y increment (0xff8a30).
+ */
+void Blitter_DestYInc_ReadWord(void)
+{
+	IoMem_WriteWord(REG_DST_Y_INC, (Uint16)(BlitterRegs.dst_y_incr));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -504,7 +577,7 @@ void Blitter_Endmask3_ReadWord(void)
  */
 void Blitter_DestAddr_ReadLong(void)
 {
-	IoMem_WriteLong(REG_DST_ADDR, dest_addr);
+	IoMem_WriteLong(REG_DST_ADDR, BlitterRegs.dst_addr);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -513,7 +586,7 @@ void Blitter_DestAddr_ReadLong(void)
  */
 void Blitter_WordsPerLine_ReadWord(void)
 {
-	IoMem_WriteWord(REG_X_COUNT, x_count);
+	IoMem_WriteWord(REG_X_COUNT, (Uint16)(BlitterRegs.words & 0xFFFF));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -522,7 +595,7 @@ void Blitter_WordsPerLine_ReadWord(void)
  */
 void Blitter_LinesPerBitblock_ReadWord(void)
 {
-	IoMem_WriteWord(REG_Y_COUNT, y_count);
+	IoMem_WriteWord(REG_Y_COUNT, (Uint16)(BlitterRegs.lines & 0xFFFF));
 }
 
 /*-----------------------------------------------------------------------*/
@@ -531,7 +604,7 @@ void Blitter_LinesPerBitblock_ReadWord(void)
  */
 void Blitter_HalftoneOp_ReadByte(void)
 {
-	IoMem_WriteByte(REG_BLIT_HOP, hop);
+	IoMem_WriteByte(REG_BLIT_HOP, BlitterRegs.hop);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -540,7 +613,7 @@ void Blitter_HalftoneOp_ReadByte(void)
  */
 void Blitter_LogOp_ReadByte(void)
 {
-	IoMem_WriteByte(REG_BLIT_LOP, op);
+	IoMem_WriteByte(REG_BLIT_LOP, BlitterRegs.lop);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -550,7 +623,7 @@ void Blitter_LogOp_ReadByte(void)
 void Blitter_Control_ReadByte(void)
 {
 	/* busy, hog/blit, smudge, n/a, 4bits for line number */
-	IoMem_WriteByte(REG_CONTROL, blit_control);
+	IoMem_WriteByte(REG_CONTROL, BlitterRegs.ctrl);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -559,9 +632,53 @@ void Blitter_Control_ReadByte(void)
  */
 void Blitter_Skew_ReadByte(void)
 {
-	IoMem_WriteByte(REG_SKEW, skewreg);
+	IoMem_WriteByte(REG_SKEW, BlitterRegs.skew);
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to blitter halftone ram.
+ */
+static void Blitter_Halftone_WriteWord(int index)
+{
+	BlitterHalftone[index] = IoMem_ReadWord(REG_HT_RAM + index + index);
+}
+
+void Blitter_Halftone00_WriteWord(void) { Blitter_Halftone_WriteWord(0); }
+void Blitter_Halftone01_WriteWord(void) { Blitter_Halftone_WriteWord(1); }
+void Blitter_Halftone02_WriteWord(void) { Blitter_Halftone_WriteWord(2); }
+void Blitter_Halftone03_WriteWord(void) { Blitter_Halftone_WriteWord(3); }
+void Blitter_Halftone04_WriteWord(void) { Blitter_Halftone_WriteWord(4); }
+void Blitter_Halftone05_WriteWord(void) { Blitter_Halftone_WriteWord(5); }
+void Blitter_Halftone06_WriteWord(void) { Blitter_Halftone_WriteWord(6); }
+void Blitter_Halftone07_WriteWord(void) { Blitter_Halftone_WriteWord(7); }
+void Blitter_Halftone08_WriteWord(void) { Blitter_Halftone_WriteWord(8); }
+void Blitter_Halftone09_WriteWord(void) { Blitter_Halftone_WriteWord(9); }
+void Blitter_Halftone10_WriteWord(void) { Blitter_Halftone_WriteWord(10); }
+void Blitter_Halftone11_WriteWord(void) { Blitter_Halftone_WriteWord(11); }
+void Blitter_Halftone12_WriteWord(void) { Blitter_Halftone_WriteWord(12); }
+void Blitter_Halftone13_WriteWord(void) { Blitter_Halftone_WriteWord(13); }
+void Blitter_Halftone14_WriteWord(void) { Blitter_Halftone_WriteWord(14); }
+void Blitter_Halftone15_WriteWord(void) { Blitter_Halftone_WriteWord(15); }
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to blitter source x increment.
+ */
+void Blitter_SourceXInc_WriteWord(void)
+{
+	BlitterRegs.src_x_incr = (short)(IoMem_ReadWord(REG_SRC_X_INC) & 0xFFFE);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to blitter source y increment.
+ */
+void Blitter_SourceYInc_WriteWord(void)
+{
+	BlitterRegs.src_y_incr = (short)(IoMem_ReadWord(REG_SRC_Y_INC) & 0xFFFE);
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -569,7 +686,7 @@ void Blitter_Skew_ReadByte(void)
  */
 void Blitter_SourceAddr_WriteLong(void)
 {
-	source_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0x0fffffe;
+	BlitterRegs.src_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0xFFFFFE;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -578,7 +695,7 @@ void Blitter_SourceAddr_WriteLong(void)
  */
 void Blitter_Endmask1_WriteWord(void)
 {
-	end_mask_1 = IoMem_ReadWord(REG_END_MASK1);
+	BlitterRegs.end_mask_1 = IoMem_ReadWord(REG_END_MASK1);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -587,7 +704,7 @@ void Blitter_Endmask1_WriteWord(void)
  */
 void Blitter_Endmask2_WriteWord(void)
 {
-	end_mask_2 = IoMem_ReadWord(REG_END_MASK2);
+	BlitterRegs.end_mask_2 = IoMem_ReadWord(REG_END_MASK2);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -596,7 +713,25 @@ void Blitter_Endmask2_WriteWord(void)
  */
 void Blitter_Endmask3_WriteWord(void)
 {
-	end_mask_3 = IoMem_ReadWord(REG_END_MASK3);
+	BlitterRegs.end_mask_3 = IoMem_ReadWord(REG_END_MASK3);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to blitter destination x increment.
+ */
+void Blitter_DestXInc_WriteWord(void)
+{
+	BlitterRegs.dst_x_incr = (short)(IoMem_ReadWord(REG_DST_X_INC) & 0xFFFE);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write to blitter source y increment.
+ */
+void Blitter_DestYInc_WriteWord(void)
+{
+	BlitterRegs.dst_y_incr = (short)(IoMem_ReadWord(REG_DST_Y_INC) & 0xFFFE);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -605,7 +740,7 @@ void Blitter_Endmask3_WriteWord(void)
  */
 void Blitter_DestAddr_WriteLong(void)
 {
-	dest_addr = IoMem_ReadLong(REG_DST_ADDR) & 0x0fffffe;
+	BlitterRegs.dst_addr = IoMem_ReadLong(REG_DST_ADDR) & 0xFFFFFE;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -614,16 +749,27 @@ void Blitter_DestAddr_WriteLong(void)
  */
 void Blitter_WordsPerLine_WriteWord(void)
 {
-	x_count = x_count_max = IoMem_ReadWord(REG_X_COUNT);
+	Uint32 words = (Uint32)IoMem_ReadWord(REG_X_COUNT);
+
+	if (words == 0)
+		words = 65536;
+
+	BlitterRegs.words = words;
+	BlitterVars.dst_words_reset = words;
 }
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to blitter words-per-bitblock register.
+ * Write to blitter lines-per-bitblock register.
  */
 void Blitter_LinesPerBitblock_WriteWord(void)
 {
-	y_count = IoMem_ReadWord(REG_Y_COUNT);
+	Uint32 lines = (Uint32)IoMem_ReadWord(REG_Y_COUNT);
+
+	if (lines == 0)
+		lines = 65536;
+
+	BlitterRegs.lines = lines;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -633,7 +779,7 @@ void Blitter_LinesPerBitblock_WriteWord(void)
 void Blitter_HalftoneOp_WriteByte(void)
 {
 	/* h/ware reg masks out the top 6 bits! */
-	hop = IoMem_ReadByte(REG_BLIT_HOP) & 3;
+	BlitterRegs.hop = IoMem_ReadByte(REG_BLIT_HOP) & 3;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -643,7 +789,7 @@ void Blitter_HalftoneOp_WriteByte(void)
 void Blitter_LogOp_WriteByte(void)
 {
 	/* h/ware reg masks out the top 4 bits! */
-	op = IoMem_ReadByte(REG_BLIT_LOP) & 15;
+	BlitterRegs.lop = IoMem_ReadByte(REG_BLIT_LOP) & 0xF;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -677,24 +823,28 @@ void Blitter_Control_WriteByte(void)
 				nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 
-	blit_control = IoMem_ReadByte(REG_CONTROL) & 0xef;
+	BlitterRegs.ctrl = IoMem_ReadByte(REG_CONTROL) & 0xEF;
+
+	BlitterVars.hog = BlitterRegs.ctrl & 0x40;
+	BlitterVars.smudge = BlitterRegs.ctrl & 0x20;
+	BlitterVars.line = BlitterRegs.ctrl & 0xF;
 
 	/* Remove old pending update interrupt */
 	Int_RemovePendingInterrupt(INTERRUPT_BLITTER);
 
 	/* Busy bit set? */
-	if (blit_control & 0x80)
+	if (BlitterRegs.ctrl & 0x80)
 	{
-		if (y_count == 0)
+		if (BlitterRegs.lines == 0)
 		{
 			/* We're done, clear busy bit */
-			blit_control &= ~0x80;
+			BlitterRegs.ctrl &= ~0x80;
 		}
 		else
 		{
 			/* Start blitting after some CPU cycles */
 			Int_AddRelativeInterrupt((CurrentInstrCycles+nWaitStateCycles)>>nCpuFreqShift,
-			                         INT_CPU_CYCLE, INTERRUPT_BLITTER);
+									 INT_CPU_CYCLE, INTERRUPT_BLITTER);
 		}
 	}
 }
@@ -705,12 +855,26 @@ void Blitter_Control_WriteByte(void)
  */
 void Blitter_Skew_WriteByte(void)
 {
-	Uint8 v = IoMem_ReadByte(REG_SKEW);
-	NFSR = (v & 0x40) != 0;
-	FXSR = (v & 0x80) != 0;
-	skewreg = v & 0xcf;        /* h/ware reg mask %11001111 !*/
+	BlitterRegs.skew = IoMem_ReadByte(REG_SKEW);
+	BlitterVars.fxsr = (BlitterRegs.skew & 0x80)?1:0;
+	BlitterVars.nfsr = (BlitterRegs.skew & 0x40)?1:0;
+	BlitterVars.skew = BlitterRegs.skew & 0xF;
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Handler which continues blitting after 64 bus cycles.
+ */
+void Blitter_InterruptHandler(void)
+{
+	Int_AcknowledgeInterrupt();
+
+	if (BlitterRegs.ctrl & 0x80)
+	{
+		Blitter_Start();
+	}
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -719,49 +883,7 @@ void Blitter_Skew_WriteByte(void)
 void Blitter_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
-	MemorySnapShot_Store(halftone_ram, sizeof(halftone_ram));
-	MemorySnapShot_Store(&source_addr, sizeof(source_addr));
-	MemorySnapShot_Store(&end_mask_1, sizeof(end_mask_1));
-	MemorySnapShot_Store(&end_mask_2, sizeof(end_mask_2));
-	MemorySnapShot_Store(&end_mask_3, sizeof(end_mask_3));
-	MemorySnapShot_Store(&NFSR, sizeof(NFSR));
-	MemorySnapShot_Store(&FXSR, sizeof(FXSR));
-	MemorySnapShot_Store(&x_count, sizeof(x_count));
-	MemorySnapShot_Store(&x_count_max, sizeof(x_count_max));
-	MemorySnapShot_Store(&y_count, sizeof(y_count));
-	MemorySnapShot_Store(&hop, sizeof(hop));
-	MemorySnapShot_Store(&op, sizeof(op));
-	MemorySnapShot_Store(&blit_control, sizeof(blit_control));
-	MemorySnapShot_Store(&skewreg, sizeof(skewreg));
-	MemorySnapShot_Store(&dest_addr, sizeof(dest_addr));
-	MemorySnapShot_Store(&halftone_curroffset, sizeof(halftone_curroffset));
-	MemorySnapShot_Store(&source_buffer, sizeof(source_buffer));
-}
-
-
-/**
- * Handler which continues blitting after 64 bus cycles.
- */
-void Blitter_InterruptHandler(void)
-{
-	Int_AcknowledgeInterrupt();
-
-	if((y_count !=0) && (blit_control & 0x80))
-	{
-		Do_Blit();
-	}
-
-	if (y_count == 0)
-	{
-		/* We're done, clear busy bit */
-		blit_control &= ~0x80;
-
-		/* Blitter done interrupt */
-		MFP_InputOnChannel(MFP_GPU_DONE_BIT, MFP_IERB, &MFP_IPRB);
-	}
-	else
-	{
-		/* Continue blitting later */
-		Int_AddRelativeInterrupt(NONHOG_CYCLES+8, INT_CPU_CYCLE, INTERRUPT_BLITTER);
-	}
+	MemorySnapShot_Store(&BlitterRegs, sizeof(BlitterRegs));
+	MemorySnapShot_Store(&BlitterVars, sizeof(BlitterVars));
+	MemorySnapShot_Store(&BlitterHalftone, sizeof(BlitterHalftone));
 }

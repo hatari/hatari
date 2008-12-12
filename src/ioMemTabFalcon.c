@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the Falcon.
 */
-const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.18 2008-11-15 14:00:46 npomarede Exp $";
+const char IoMemTabFalc_rcsid[] = "Hatari $Id: ioMemTabFalcon.c,v 1.19 2008-12-12 21:52:01 thothy Exp $";
 
 #include "main.h"
 #include "dmaSnd.h"
@@ -183,15 +183,30 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8962, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8963, SIZE_BYTE, NvRam_Data_ReadByte, NvRam_Data_WriteByte },                     /* NVRAM/RTC chip */
 
-	{ 0xff8a00, 32,        IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter halftone RAM */
-	{ 0xff8a20, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter source x increment */
-	{ 0xff8a22, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter source y increment */
+	{ 0xff8a00, SIZE_WORD, Blitter_Halftone00_ReadWord, Blitter_Halftone00_WriteWord }, /* Blitter halftone RAM 0 */
+	{ 0xff8a02, SIZE_WORD, Blitter_Halftone01_ReadWord, Blitter_Halftone01_WriteWord }, /* Blitter halftone RAM 1 */
+	{ 0xff8a04, SIZE_WORD, Blitter_Halftone02_ReadWord, Blitter_Halftone02_WriteWord }, /* Blitter halftone RAM 2 */
+	{ 0xff8a06, SIZE_WORD, Blitter_Halftone03_ReadWord, Blitter_Halftone03_WriteWord }, /* Blitter halftone RAM 3 */
+	{ 0xff8a08, SIZE_WORD, Blitter_Halftone04_ReadWord, Blitter_Halftone04_WriteWord }, /* Blitter halftone RAM 4 */
+	{ 0xff8a0a, SIZE_WORD, Blitter_Halftone05_ReadWord, Blitter_Halftone05_WriteWord }, /* Blitter halftone RAM 5 */
+	{ 0xff8a0c, SIZE_WORD, Blitter_Halftone06_ReadWord, Blitter_Halftone06_WriteWord }, /* Blitter halftone RAM 6 */
+	{ 0xff8a0e, SIZE_WORD, Blitter_Halftone07_ReadWord, Blitter_Halftone07_WriteWord }, /* Blitter halftone RAM 7 */
+	{ 0xff8a10, SIZE_WORD, Blitter_Halftone08_ReadWord, Blitter_Halftone08_WriteWord }, /* Blitter halftone RAM 8 */
+	{ 0xff8a12, SIZE_WORD, Blitter_Halftone09_ReadWord, Blitter_Halftone09_WriteWord }, /* Blitter halftone RAM 9 */
+	{ 0xff8a14, SIZE_WORD, Blitter_Halftone10_ReadWord, Blitter_Halftone10_WriteWord }, /* Blitter halftone RAM 10 */
+	{ 0xff8a16, SIZE_WORD, Blitter_Halftone11_ReadWord, Blitter_Halftone11_WriteWord }, /* Blitter halftone RAM 11 */
+	{ 0xff8a18, SIZE_WORD, Blitter_Halftone12_ReadWord, Blitter_Halftone12_WriteWord }, /* Blitter halftone RAM 12 */
+	{ 0xff8a1a, SIZE_WORD, Blitter_Halftone13_ReadWord, Blitter_Halftone13_WriteWord }, /* Blitter halftone RAM 13 */
+	{ 0xff8a1c, SIZE_WORD, Blitter_Halftone14_ReadWord, Blitter_Halftone14_WriteWord }, /* Blitter halftone RAM 14 */
+	{ 0xff8a1e, SIZE_WORD, Blitter_Halftone15_ReadWord, Blitter_Halftone15_WriteWord }, /* Blitter halftone RAM 15 */
+	{ 0xff8a20, SIZE_WORD, Blitter_SourceXInc_ReadWord, Blitter_SourceXInc_WriteWord }, /* Blitter source x increment */
+	{ 0xff8a22, SIZE_WORD, Blitter_SourceYInc_ReadWord, Blitter_SourceYInc_WriteWord }, /* Blitter source y increment */
 	{ 0xff8a24, SIZE_LONG, Blitter_SourceAddr_ReadLong, Blitter_SourceAddr_WriteLong },     /* Blitter source address */
 	{ 0xff8a28, SIZE_WORD, Blitter_Endmask1_ReadWord, Blitter_Endmask1_WriteWord },
 	{ 0xff8a2a, SIZE_WORD, Blitter_Endmask2_ReadWord, Blitter_Endmask2_WriteWord },
 	{ 0xff8a2c, SIZE_WORD, Blitter_Endmask3_ReadWord, Blitter_Endmask3_WriteWord },
-	{ 0xff8a2e, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter dest. x increment */
-	{ 0xff8a30, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* Blitter dest. y increment */
+	{ 0xff8a2e, SIZE_WORD, Blitter_DestXInc_ReadWord, Blitter_DestXInc_WriteWord }, /* Blitter dest. x increment */
+	{ 0xff8a30, SIZE_WORD, Blitter_DestYInc_ReadWord, Blitter_DestYInc_WriteWord }, /* Blitter dest. y increment */
 	{ 0xff8a32, SIZE_LONG, Blitter_DestAddr_ReadLong, Blitter_DestAddr_WriteLong },
 	{ 0xff8a36, SIZE_WORD, Blitter_WordsPerLine_ReadWord, Blitter_WordsPerLine_WriteWord },
 	{ 0xff8a38, SIZE_WORD, Blitter_LinesPerBitblock_ReadWord, Blitter_LinesPerBitblock_WriteWord },
