@@ -326,8 +326,6 @@ Demos:
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
 - Vision (by POV)
-- Wolfenstein3D v0.5 (titlescreen colors are not right)
-  - the playable v0.8 doesn't work at all
 
 Color games:
 - Alien Blast (demo)
@@ -346,6 +344,7 @@ Color games:
 - Stupid balloon game
 - Substation* (demo)
 - Tomtar
+- Wolfenstein3D v0.8a (a bit unstable)
 
 Music Applications:
 - Blipp Blopper
