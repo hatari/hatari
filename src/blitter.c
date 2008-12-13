@@ -11,11 +11,20 @@
  * modified for better maintainability and higher compatibility.
  */
 
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.36 2008-12-12 21:52:01 thothy Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.37 2008-12-13 18:42:07 npomarede Exp $";
 
-/* TODO:
- * - restart with lines == 0, does it takes some cycles ?
- * - strange end mask condition ((~(0xffff>>skew)) > end_mask_1))
+/* NOTES:
+ * ----------------------------------------------------------------------------
+ * Strange end mask condition ((~(0xffff>>skew)) > end_mask_1)
+ *
+ * """Similarly the  NFSR (aka  post-flush) bit, when set, will prevent the last
+ * source read of the  line. This read  may not  be necessary  with certain
+ * combinations of end masks and skews."""
+ *     - doesn't mean the blitter will skip source read by itself, just a hint
+ *       for developers as far as i understand it.
+ * ----------------------------------------------------------------------------
+ * Does smudge mode change the line register ?
+ * ----------------------------------------------------------------------------
  */
 
 #include <SDL_types.h>
@@ -134,6 +143,7 @@ static void Blitter_FlushCycles(void)
 		CALL_VAR(PendingInterruptFunction);
 
 	BlitterVars.cycles += BlitterState.cycles;
+	BlitterState.cycles = 0;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -218,7 +228,7 @@ static Uint16 Blitter_SourceRead(void)
 	{
 		if (BlitterState.fxsr)
 		{
-			Blitter_SourceShift(); // needed ?
+			Blitter_SourceShift();
 			Blitter_SourceFetch();
 		}
 
@@ -347,7 +357,8 @@ static Uint16 Blitter_ComputeMask(void)
 
 static void Blitter_ProcessWord(void)
 {
-	Uint16 dst_data = (BlitterState.end_mask != 0xFFFF
+	/* when NFSR, a read-modify-write is always performed */
+	Uint16 dst_data = ((BlitterState.nfsr || BlitterState.end_mask != 0xFFFF)
 							? Blitter_ComputeMask()
 							: Blitter_ComputeLOP());
 
@@ -453,7 +464,7 @@ static void Blitter_Start(void)
 	       && (BlitterVars.hog || BlitterVars.cycles < NONHOG_CYCLES));
 
 	/* Must have something to do with bus arbitration */
-	BlitterState.cycles = 8;
+	Blitter_AddCycles(8);
 	Blitter_FlushCycles();
 
 	BlitterRegs.ctrl = (BlitterRegs.ctrl & 0xF0) | BlitterVars.line;
