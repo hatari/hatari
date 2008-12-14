@@ -209,7 +209,7 @@
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.132 2008-12-10 22:42:25 npomarede Exp $";
+const char Video_rcsid[] = "Hatari $Id: video.c,v 1.133 2008-12-14 16:11:41 npomarede Exp $";
 
 #include <SDL_endian.h>
 
@@ -238,11 +238,6 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.132 2008-12-10 22:42:25 npom
 #include "falcon/hostscreen.h"
 
 
-#define BORDERMASK_NONE    0x00                 /* Borders masks */
-#define BORDERMASK_LEFT    0x01
-#define BORDERMASK_RIGHT   0x02
-#define BORDERMASK_MIDDLE  0x04
-
 /* The border's mask allows to keep track of all the border tricks		*/
 /* applied to one video line. The masks for all lines are stored in the array	*/
 /* ScreenBorderMask[].								*/
@@ -254,6 +249,7 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.132 2008-12-10 22:42:25 npom
 /*   depending on when the switch to mid res is done after removing the left	*/
 /*   border).									*/
 
+#define BORDERMASK_NONE			0x00	/* no effect on this line */
 #define BORDERMASK_LEFT_OFF		0x01	/* removal of left border with hi/lo res switch -> +26 bytes */
 #define BORDERMASK_LEFT_PLUS_2		0x02	/* line starts earlier in 60 Hz -> +2 bytes */
 #define BORDERMASK_STOP_MIDDLE		0x04	/* line ends in hires at cycle 160 -> -106 bytes */
@@ -296,7 +292,6 @@ static Uint8 LineWidth;				/* Scan line width add, STe only (words, minus 1) */
 static int NewLineWidth = -1;			/* Used in STE mode when writing to the line width register $ff820f */
 static Uint8 *pVideoRaster;			/* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 static Uint8 VideoShifterByte;			/* VideoShifter (0xff8260) value store in video chip */
-static int LeftRightBorder;			/* BORDERMASK_xxxx used to simulate left/right border removal */
 static int LineStartCycle;			/* Cycle where display starts for the current line */
 static int LineEndCycle;			/* Cycle where display ends for the current line */
 static bool bSteBorderFlag;			/* TRUE when screen width has been switched to 336 (e.g. in Obsession) */
@@ -573,7 +568,6 @@ static void Video_WriteToShifter(Uint8 Byte)
 	        && nFrameCycles-nLastFrameCycles <= 30)
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove left\n" );
-		LeftRightBorder |= BORDERMASK_LEFT;
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_LEFT_OFF;
 		LineStartCycle = LINE_START_CYCLE_70;
 	}
@@ -583,7 +577,6 @@ static void Video_WriteToShifter(Uint8 Byte)
 	        && nFrameCycles-nLastFrameCycles <= 30)
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove left mid\n" );
-		LeftRightBorder |= BORDERMASK_LEFT;
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_LEFT_OFF_MID;	/* a later switch to low res might gives right scrolling */
 		/* By default, this line will be in mid res, except if we detect hardware scrolling later */
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_OVERSCAN_MID_RES | ( 2 << 20 );
@@ -622,7 +615,6 @@ static void Video_WriteToShifter(Uint8 Byte)
 	        && nLastCycles == LINE_END_CYCLE_50_2 )
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove right full\n" );
-		LeftRightBorder |= BORDERMASK_RIGHT;    /* Program tries to open right border */
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_OFF_FULL;
 		ScreenBorderMask[ HblCounterVideo+1 ] |= BORDERMASK_LEFT_OFF;	/* no left border on next line */
 		LineEndCycle = LINE_END_CYCLE_FULL;
@@ -753,7 +745,6 @@ void Video_Sync_WriteByte(void)
 		        && ( ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_STOP_MIDDLE ) == 0 ) )
 		{
 			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
-			LeftRightBorder |= BORDERMASK_MIDDLE;   /* Program tries to shorten line by 2 bytes */
 			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_MINUS_2;
 			LineEndCycle = LINE_END_CYCLE_60;
 		}
@@ -769,7 +760,6 @@ void Video_Sync_WriteByte(void)
 		        && ( ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_STOP_MIDDLE ) == 0 ) )
 		{
 			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove right\n" );
-			LeftRightBorder |= BORDERMASK_RIGHT;    /* Program tries to open right border */
 			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_OFF;
 			LineEndCycle = LINE_END_CYCLE_NO_RIGHT;
 		}
@@ -867,8 +857,6 @@ void Video_Sync_WriteByte(void)
 static void Video_StartHBL(void)
 {
 	int nSyncByte;
-
-	LeftRightBorder = BORDERMASK_NONE;
 
 	nSyncByte = IoMem_ReadByte(0xff820a);
 	if (nSyncByte & 2)				/* 50 Hz */
@@ -1051,7 +1039,7 @@ static void Video_CopyScreenLineColor(void)
 		VideoOffset = - ( ( LineBorderMask >> 20 ) & 0x0f );		/* No Cooper=0  PYM=-2 in mid res overscan */
 
 	else if ( LineBorderMask & BORDERMASK_LEFT_OFF )
-		VideoOffset = -2;							/* always 2 bytes in low res overscan */
+		VideoOffset = -2;						/* always 2 bytes in low res overscan */
 
 	/* Handle 4 pixels hardware scrolling ('ST Cnx' demo in 'Punish Your Machine') */
 	/* Depending on the number of pixels, we need to compensate for some skipped words */
@@ -1378,7 +1366,6 @@ static void Video_EndHBL(void)
 		if (LastCycleSync60 <= (VIDEO_END_HBL_50HZ-1) * nCyclesPerLine + LINE_END_CYCLE_60)
 		{
 			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
-			LeftRightBorder |= BORDERMASK_MIDDLE;		/* Program tries to shorten line by 2 bytes */
 			ScreenBorderMask[ nHBL ] |= BORDERMASK_RIGHT_MINUS_2;
 			LineEndCycle = LINE_END_CYCLE_60;
 		}
