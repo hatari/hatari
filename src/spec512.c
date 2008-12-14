@@ -44,9 +44,16 @@
 /*			(readme.prg by TEX (in 1987))						*/
 /* 2008/01/24	[NP]	In Spec512_StartScanLine, use different values for LineStartCycle when	*/
 /*			running in 50 Hz or 60 Hz (TEX Spectrum Slideshow in 60 Hz).		*/
+/* 2008/12/14	[NP]	In Spec512_StoreCyclePalette, instead of approximating write position	*/
+/*			by Cycles_GetCounter+8, we use different cases for movem, .l acces and	*/
+/*			.w acces (similar to cycles.c). This gives correct results when using	*/
+/*			"move.w d0,(a0) or move.w (a0)+,(a1)+" for example, which were shifted	*/
+/*			8 or 4 pixels too late. Calibration was made using a custom program to	*/
+/*			compare the results with a real STF in different cases (fix Froggies	*/
+/*			Over The Fence Main Menu).						*/
 
 
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.30 2008-11-03 22:29:56 npomarede Exp $";
+const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.31 2008-12-14 18:02:03 npomarede Exp $";
 
 #include <SDL_byteorder.h>
 
@@ -54,6 +61,7 @@ const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.30 2008-11-03 22:29:56 n
 #include "cycles.h"
 #include "int.h"
 #include "m68000.h"
+#include "ioMem.h"
 #include "screen.h"
 #include "spec512.h"
 #include "video.h"
@@ -144,7 +152,19 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	/* To correct this, assume a delay of 8 cycles (should give a good approximation */
 	/* of a move.w or movem.l for example) */
 	//  FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+#ifdef OLD_CYC_PAL
 	FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
+#else
+	if ( OpcodeFamily == i_MVMLE )
+	{
+		FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
+	}
+
+	else if ( nIoMemAccessSize == SIZE_LONG )		/* long access */
+		FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + CurrentInstrCycles - 8;
+	else							/* word/byte access */
+		FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + CurrentInstrCycles - 4;
+#endif
 
 
 	/* Find scan line we are currently on and get index into cycle-palette table */
@@ -278,7 +298,11 @@ void Spec512_StartScanLine(void)
 	/* Update palette entries until we reach start of displayed screen */
 	ScanLineCycleCount = 0;
 //	for(i=0; i<((SCREEN_START_CYCLE-16)/4); i++)  /* This '16' is as we've already added in the 'move' instruction timing */
+#ifdef OLD_CYC_PAL
 	for (i=0; i<((LineStartCycle-SCREENBYTES_LEFT*2)/4 + 6); i++)	/* [NP] '6' is required to align pixels and colors */
+#else
+	for (i=0; i<((LineStartCycle-SCREENBYTES_LEFT*2)/4 + 7); i++)	/* [NP] '7' is required to align pixels and colors */
+#endif
 		Spec512_UpdatePaletteSpan();              /* Update palette for this 4-cycle period */
 
 	/* And skip for left border is not using overscan display to user */
