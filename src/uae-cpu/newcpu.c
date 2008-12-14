@@ -99,11 +99,17 @@
 /*			the same time, call do_specialties_interrupt() to check only the special flags	*/
 /*			related to interrupts (MFP and video) (else, this caused problem when the TRACE	*/
 /*			flag was set).									*/
+/* 2008/12/14	[NP]	In m68k_run_1(), we should check for simultaneous ints only if the cpu is not	*/
+/*			in the STOP state after the last instruction was executed. Else, the call to	*/
+/*			do_specialties_interrupt() could acknowledge the interrupt and we would never	*/
+/*			exit the STOP state in do_specialties() just after (the problem can happen if	*/
+/*			the TOS timer D expires just at the same time as the STOP instruction).		*/
+/*			Fix regression since 2008/12/11 in the hidden screen from ULM in Oh Crickey...	*/
 
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.63 2008-12-11 22:14:16 npomarede Exp $";
+const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.64 2008-12-14 15:19:27 npomarede Exp $";
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -1534,7 +1540,7 @@ static int do_specialties (void)
 
 
     /* Handle the STOP instruction */
-    if ( regs.spcflags & SPCFLAG_STOP) {
+    if ( regs.spcflags & SPCFLAG_STOP ) {
         /* We first test if there's a pending interrupt that would */
         /* allow to immediatly leave the STOP state */
         if ( do_specialties_interrupt ( TRUE ) ) {		/* test if there's an interrupt and add pending jitter */
@@ -1715,18 +1721,22 @@ static void m68k_run_1 (void)
 		return;
 	}
 #else
-	/* We can have several interrupt at the same time before the next CPU instruction */
-	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
-	{
-	  CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-	  do_specialties_interrupt ( FALSE );		/* test if there's an mfp/video interrupt and add pending jitter */
+	/* We can have several interrupts at the same time before the next CPU instruction */
+	/* We must check for pending interrupt and call do_specialties_interrupt() only */
+	/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
+	/* and prevent exiting the STOP state when calling do_specialties() after. */
+	if ( ( regs.spcflags & SPCFLAG_STOP ) == 0 )
+	    while (PendingInterruptCount <= 0 && PendingInterruptFunction)
+		{
+		  CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+		  do_specialties_interrupt ( FALSE );		/* test if there's an mfp/video interrupt and add non pending jitter */
 #if 0
-	  if ( regs.spcflags & ( SPCFLAG_MFP | SPCFLAG_INT ) ) {	/* only check mfp/video interrupts */
-	    if (do_specialties ())			/* check if this latest int has higher priority */
-		return;
-	  }
+		  if ( regs.spcflags & ( SPCFLAG_MFP | SPCFLAG_INT ) ) {	/* only check mfp/video interrupts */
+		    if (do_specialties ())			/* check if this latest int has higher priority */
+			return;
+		  }
 #endif
-	}
+		}
 
 	if (regs.spcflags) {
 	    if (do_specialties ())
