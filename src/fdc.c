@@ -29,11 +29,17 @@
 /* 2008/10/02	[NP]	FDCTrackRegister, FDCSectorRegister and FDCDataRegister are	*/
 /*			stored on 8 bits in the WD 1772. When writing to $ff8604 to	*/
 /*			access these registers, we must keep only the lower 8 bits.	*/
-/*			(fix High Fidelity Dreams by Aura, writes $fb07 in sector reg).*/
+/*			(fix High Fidelity Dreams by Aura, writes $fb07 in sector reg).	*/
 /*			TODO : FDCxxxxRegister should use Uint8, not Sint16/Uint16.	*/
+/* 2008/12/15	[NP]	Although the Read Address command is not supported yet, add a	*/
+/*			function FDC_UpdateReadAddressCmd that does nothing, but	*/
+/*			completes with no DMA error and clear bit 6 of $fffa01 (fixes	*/
+/*			loader routine used in various Pompey Pirates compilations (23,	*/
+/*			27, ...) that uses the read address command only to update the	*/
+/*			status register and get the state of the write protection).	*/
 
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.45 2008-10-02 22:01:52 npomarede Exp $";
+const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.46 2008-12-15 20:04:20 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -508,6 +514,10 @@ void FDC_InterruptHandler_Update(void)
 		 case FDCEMU_CMD_WRITEMULTIPLESECTORS:
 			FDC_UpdateWriteSectorsCmd();
 			break;
+
+		 case FDCEMU_CMD_READADDRESS:
+			FDC_UpdateReadAddressCmd();
+			break;
 		}
 
 		/* Set disk controller status (RD 0xff8604) */
@@ -783,6 +793,33 @@ void FDC_UpdateWriteSectorsCmd(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Run 'READ ADDRESS' command
+ */
+void FDC_UpdateReadAddressCmd(void)
+{
+	/* Which command is running? */
+	switch (FDCEmulationRunning)
+	{
+	 case FDCEMU_RUN_READADDRESS:
+		/* not implemented, just return with no error */
+		FDCEmulationRunning = FDCEMU_RUN_READADDRESS_COMPLETE;
+		break;
+	 case FDCEMU_RUN_READADDRESS_COMPLETE:
+		/* Acknowledge interrupt, move along there's nothing more to see */
+		FDC_AcknowledgeInterrupt();
+		/* Set error */
+		FDC_SetDMAStatus(FALSE);            /* No DMA error */
+		/* Done */
+		FDCEmulationCommand = FDCEMU_CMD_NULL;
+		/* Turn motor off */
+		FDC_TurnMotorOff();
+		break;
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Type I Commands
  *
  * Restore, Seek, Step, Step-In and Step-Out
@@ -948,6 +985,12 @@ static void FDC_TypeIII_ReadAddress(void)
 		nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , M68000_GetPC() );
 
 	Log_Printf(LOG_TODO, "FDC type III command 'read address' is not implemented yet!\n");
+
+	/* Set emulation to seek to track zero */
+	FDCEmulationCommand = FDCEMU_CMD_READADDRESS;
+	FDCEmulationRunning = FDCEMU_RUN_READADDRESS;
+
+	FDC_SetDiskControllerStatus();
 }
 
 

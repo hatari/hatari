@@ -23,7 +23,9 @@ enum
 	FDCEMU_CMD_READSECTORS,
 	FDCEMU_CMD_READMULTIPLESECTORS,
 	FDCEMU_CMD_WRITESECTORS,
-	FDCEMU_CMD_WRITEMULTIPLESECTORS
+	FDCEMU_CMD_WRITEMULTIPLESECTORS,
+	/* Type III */
+	FDCEMU_CMD_READADDRESS,
 };
 
 /* FDC Emulation commands */
@@ -78,6 +80,13 @@ enum
 	FDCEMU_RUN_WRITESECTORS_COMPLETE
 };
 
+/* FDC Running Read Address commands */
+enum
+{
+	FDCEMU_RUN_READADDRESS,
+	FDCEMU_RUN_READADDRESS_COMPLETE
+};
+
 
 /* Commands are taking the equivalent of FDC_HBL_DELAY hbl's to execute */
 /* to try to simulate the speed of a real ST floppy drive */
@@ -106,6 +115,7 @@ extern void FDC_UpdateStepInCmd(void);
 extern void FDC_UpdateStepOutCmd(void);
 extern void FDC_UpdateReadSectorsCmd(void);
 extern void FDC_UpdateWriteSectorsCmd(void);
+extern void FDC_UpdateReadAddressCmd(void);
 extern Uint32 FDC_ReadDMAAddress(void);
 extern void FDC_WriteDMAAddress(Uint32 Address);
 extern bool FDC_ReadSectorFromFloppy(void);
