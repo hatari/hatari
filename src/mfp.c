@@ -94,7 +94,7 @@
 
 
 
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.55 2008-12-11 22:14:16 npomarede Exp $";
+const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.56 2008-12-15 18:55:11 npomarede Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -974,6 +974,14 @@ void MFP_GPIP_ReadByte(void)
 	FDC_GpipRead();
 
 	IoMem[0xfffa01] = MFP_GPIP;
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_READ ) )
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		HATARI_TRACE_PRINT ( "mfp read gpip fa01=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+			MFP_GPIP, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
 }
 
 /*-----------------------------------------------------------------------*/
