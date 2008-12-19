@@ -4,7 +4,7 @@
 
                                  Version 1.1.0
 
-                        http://hatari.sourceforge.net/
+                          http://hatari.berlios.de/
 
 
 
@@ -83,7 +83,7 @@ Pressing ALTGR-q will quit the emulator.
 If you want to contact the authors of Hatari, please have a look at the file
 doc/authors.txt for the e-mail addresses or use the Hatari mailing list.
 
-Visit the project pages of Hatari on SourceForge.net for more details:
+Visit the project pages of Hatari on Berlios.de for more details:
 
- http://sourceforge.net/projects/hatari/
+ http://developer.berlios.de/projects/hatari/
 
