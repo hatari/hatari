@@ -78,7 +78,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.34 2008-11-03 20:46:05 thothy Exp $";
+const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.34 2008/11/03 20:46:05 thothy Exp $";
 
 #include "main.h"
 #include "configuration.h"
@@ -146,11 +146,11 @@ void PSG_SelectRegister_WriteByte(void)
 	/* Use IoAccessCurrentAddress to be able to handle the PSG mirror registers, too. */
 	PSGRegisterSelect = IoMem[IoAccessCurrentAddress];
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_REG ) )
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "write ym sel reg=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+	    HATARI_TRACE_PRINT ( "ym write sel reg=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		PSGRegisterSelect, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	  }
 }
@@ -208,11 +208,11 @@ void PSG_DataRegister_WriteByte(void)
 //	M68000_WaitState(4);
 	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_DATA ) )
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "write ym data reg=0x%x val=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+	    HATARI_TRACE_PRINT ( "ym write data reg=0x%x val=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		PSGRegisterSelect, IoMem[IoAccessCurrentAddress], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	  }
 
@@ -355,11 +355,11 @@ void PSG_Void_WriteByte(void)
 	if ( nWaitStateCycles == 0 )
 	  M68000_WaitState(1);
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE_DATA ) )
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "write ym 8801/03 video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+	    HATARI_TRACE_PRINT ( "ym write 8801/03 video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	  }
 }
