@@ -1,7 +1,7 @@
 
  Hatari tool: Magic Shadow (Un-)Archiver
  Version 0.2.0
- Written by: Thomas Huth  <thothy@users.sourceforge.net>
+ Written by: Thomas Huth <huth@users.berlios.de>
 
 
 This little program converts Atari MSA disk images into ST disk images and
