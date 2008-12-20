@@ -2,8 +2,7 @@
  Active Hatari developers:
  -------------------------
 
-- Thomas Huth <thothy@users.sourceforge.net> : Project initiator and main
-  developer.
+- Thomas Huth <huth@users.berlios.de> : Project initiator and main developer.
 
 - Eero Tamminen <eerot@users.sourceforge.net> : Speed improvements & code
   cleanup, parts of the STE emulation, Hatari embedding & remote control,

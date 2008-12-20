@@ -327,12 +327,7 @@ static BOOL   gFinderLaunch;
 
 - (IBAction)help:(id)sender
 {
-	[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://hatari.sourceforge.net/"]];
-	/*
-	NSRunAlertPanel (@"Help", 
-			@"Sorry, there is no built-in help available.\n\nPlease visit http://hatari.sourceforge.net/ for more information.\n\n",
-			@"OK", nil, nil);
-	*/
+	[[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"http://hatari.berlios.de/"]];
 }
 
 
