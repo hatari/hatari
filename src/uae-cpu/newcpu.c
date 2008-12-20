@@ -107,7 +107,7 @@
 /*			Fix regression since 2008/12/11 in the hidden screen from ULM in Oh Crickey...	*/
 /* 2008/12/20	[NP]	In m68k_run_1(), when checking interrupts and STOP mode, we should test		*/
 /*			PendingInterruptCount before regs.spcflags to have a faster evaluation of the	*/
-/*			'while' condition (PendingInterruptCount <= 0 is true less often than STOP!=0)	*/
+/*			'while' condition (PendingInterruptCount <= 0 is true less often than STOP==0)	*/
 
 
 
