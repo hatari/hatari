@@ -105,6 +105,9 @@
 /*			exit the STOP state in do_specialties() just after (the problem can happen if	*/
 /*			the TOS timer D expires just at the same time as the STOP instruction).		*/
 /*			Fix regression since 2008/12/11 in the hidden screen from ULM in Oh Crickey...	*/
+/* 2008/12/20	[NP]	In m68k_run_1(), when checking interrupts and STOP mode, we should test		*/
+/*			PendingInterruptCount before regs.spcflags to have a faster evaluation of the	*/
+/*			'while' condition (PendingInterruptCount <= 0 is true less often than STOP!=0)	*/
 
 
 
@@ -1725,18 +1728,18 @@ static void m68k_run_1 (void)
 	/* We must check for pending interrupt and call do_specialties_interrupt() only */
 	/* if the cpu is not in the STOP state. Else, the int could be acknowledged now */
 	/* and prevent exiting the STOP state when calling do_specialties() after. */
-	if ( ( regs.spcflags & SPCFLAG_STOP ) == 0 )
-	    while (PendingInterruptCount <= 0 && PendingInterruptFunction)
-		{
-		  CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-		  do_specialties_interrupt ( FALSE );		/* test if there's an mfp/video interrupt and add non pending jitter */
+	/* For performance, we first test PendingInterruptCount, then regs.spcflags */
+	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
+	  {
+	    CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
+	    do_specialties_interrupt ( FALSE );		/* test if there's an mfp/video interrupt and add non pending jitter */
 #if 0
 		  if ( regs.spcflags & ( SPCFLAG_MFP | SPCFLAG_INT ) ) {	/* only check mfp/video interrupts */
 		    if (do_specialties ())			/* check if this latest int has higher priority */
 			return;
 		  }
 #endif
-		}
+	  }
 
 	if (regs.spcflags) {
 	    if (do_specialties ())
