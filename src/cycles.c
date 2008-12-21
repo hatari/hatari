@@ -17,6 +17,9 @@
 /*			(this should work correctly with 'move' instruction).		*/
 /* 2008/04/14	[NP]	Take nWaitStateCycles into account when computing the value of	*/
 /*			Cycles_GetCounterOnReadAccess and Cycles_GetCounterOnWriteAccess*/
+/* 2008/12/21	[NP]	Use BusMode to adjust Cycles_GetCounterOnReadAccess and		*/
+/*			Cycles_GetCounterOnWriteAccess depending on who is owning the	*/
+/*			bus (cpu, blitter).						*/
 
 
 
@@ -91,9 +94,17 @@ int Cycles_GetCounterOnReadAccess(int nId)
 	/* Update counters first so we read an up-to-date value */
 	Cycles_UpdateCounters();
 
-	/* TODO: Find proper cycles count depending on the type of the current instruction */
-	/* (e.g. movem is not correctly handled) */
-	nAddCycles = CurrentInstrCycles + nWaitStateCycles;	/* read is effective at the end of the instr ? */
+	if ( BusMode == BUS_MODE_BLITTER )
+	{
+		/* FIXME : adjust nAddCycles depending on how many words were already accessed by the blitter */
+		nAddCycles = CurrentInstrCycles + nWaitStateCycles;
+	}
+	else							/* BUS_MODE_CPU */
+	{
+		/* TODO: Find proper cycles count depending on the type of the current instruction */
+		/* (e.g. movem is not correctly handled) */
+		nAddCycles = CurrentInstrCycles + nWaitStateCycles;	/* read is effective at the end of the instr ? */
+	}
 
 	return nCyclesCounter[nId] + nAddCycles;
 }
@@ -111,14 +122,22 @@ int Cycles_GetCounterOnWriteAccess(int nId)
 	/* Update counters first so we read an up-to-date value */
 	Cycles_UpdateCounters();
 
-	/* TODO: Find proper cycles count depending on the type of the current instruction */
-	/* (e.g. movem is not correctly handled) */
-	nAddCycles = CurrentInstrCycles + nWaitStateCycles;
+	if ( BusMode == BUS_MODE_BLITTER )
+	{
+		/* FIXME : adjust nAddCycles depending on how many words were already accessed by the blitter */
+		nAddCycles = CurrentInstrCycles + nWaitStateCycles;
+	}
+	else							/* BUS_MODE_CPU */
+	{
+		/* TODO: Find proper cycles count depending on the type of the current instruction */
+		/* (e.g. movem is not correctly handled) */
+		nAddCycles = CurrentInstrCycles + nWaitStateCycles;
 
-	/* assume the behaviour of a 'move' (since this is the most */
-	/* common instr used when requiring cycle precise writes) */
-	if ( nAddCycles >= 8 )
-	  nAddCycles -= 4;				/* last 4 cycles are for prefetch */
+		/* assume the behaviour of a 'move' (since this is the most */
+		/* common instr used when requiring cycle precise writes) */
+		if ( nAddCycles >= 8 )
+			nAddCycles -= 4;			/* last 4 cycles are for prefetch */
+	}
 
 	return nCyclesCounter[nId] + nAddCycles;
 }

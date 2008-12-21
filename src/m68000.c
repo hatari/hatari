@@ -75,6 +75,7 @@ Uint32 BusErrorPC;              /* Value of the PC when bus error occurs */
 bool bBusErrorReadWrite;        /* 0 for write error, 1 for read error */
 int nCpuFreqShift;              /* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
 int nWaitStateCycles;           /* Used to emulate the wait state cycles of certain IO registers */
+int BusMode = BUS_MODE_CPU;	/* Used to tell which part is owning the bus (cpu, blitter, ...) */
 
 int LastOpcodeFamily = -1;      /* see the enum in readcpu.h i_XXX */
 int LastInstrCycles = -1;       /* number of cycles for previous instr. (not rounded to 4) */
@@ -198,6 +199,8 @@ void M68000_Reset(bool bCold)
 
 	/* Init the pairing matrix */
 	M68000_InitPairing();
+
+	BusMode = BUS_MODE_CPU;
 }
 
 

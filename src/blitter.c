@@ -11,6 +11,12 @@
  * modified for better maintainability and higher compatibility.
  */
 
+
+/* 2008/12/21	[NP]	Set BusMode to BUS_MODE_BLITTER while in Blitter_Start(). Allow	*/
+/*			to adjust timings when reading/writing IO mem (see video.c).	*/
+
+
+
 const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.37 2008-12-13 18:42:07 npomarede Exp $";
 
 /* NOTES:
@@ -456,6 +462,7 @@ static void Blitter_Start(void)
 									BlitterVars.fxsr - BlitterVars.nfsr;
 
 	/* Now we enter the main blitting loop */
+	BusMode = BUS_MODE_BLITTER;				/* bus is now owned by the blitter */
 	do
 	{
 		Blitter_Step();
@@ -466,6 +473,7 @@ static void Blitter_Start(void)
 	/* Must have something to do with bus arbitration */
 	Blitter_AddCycles(8);
 	Blitter_FlushCycles();
+	BusMode = BUS_MODE_CPU;					/* bus is now owned by the cpu again */
 
 	BlitterRegs.ctrl = (BlitterRegs.ctrl & 0xF0) | BlitterVars.line;
 

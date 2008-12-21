@@ -51,6 +51,9 @@
 /*			8 or 4 pixels too late. Calibration was made using a custom program to	*/
 /*			compare the results with a real STF in different cases (fix Froggies	*/
 /*			Over The Fence Main Menu).						*/
+/* 2008/12/21	[NP]	Use BusMode to adjust Cycles_GetCounterOnReadAccess and		*/
+/*			Cycles_GetCounterOnWriteAccess depending on who is owning the	*/
+/*			bus (cpu, blitter).						*/
 
 
 const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.31 2008-12-14 18:02:03 npomarede Exp $";
@@ -152,19 +155,27 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	/* To correct this, assume a delay of 8 cycles (should give a good approximation */
 	/* of a move.w or movem.l for example) */
 	//  FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
-#ifdef OLD_CYC_PAL
-	FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
-#else
-	if ( OpcodeFamily == i_MVMLE )
+	if ( BusMode == BUS_MODE_BLITTER )
 	{
+		/* FIXME : adjust FrameCycles depending on how many words were already accessed by the blitter */
 		FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
 	}
+	else							/* BUS_MODE_CPU */
+	{
+#ifdef OLD_CYC_PAL
+		FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
+#else
+		if ( OpcodeFamily == i_MVMLE )
+		{
+			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
+		}
 
-	else if ( nIoMemAccessSize == SIZE_LONG )		/* long access */
-		FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + CurrentInstrCycles - 8;
-	else							/* word/byte access */
-		FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + CurrentInstrCycles - 4;
+		else if ( nIoMemAccessSize == SIZE_LONG )	/* long access */
+			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + CurrentInstrCycles - 8;
+		else						/* word/byte access */
+			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + CurrentInstrCycles - 4;
 #endif
+	}
 
 
 	/* Find scan line we are currently on and get index into cycle-palette table */
