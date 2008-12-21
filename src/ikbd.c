@@ -613,7 +613,7 @@ static bool IKBD_ButtonsEqual(int Button1,int Button2)
 static void IKBD_DuplicateMouseFireButtons(void)
 {
 	/* If mouse is off then joystick fire button goes to joystick */
-	if (!bBothMouseAndJoy && KeyboardProcessor.MouseMode==AUTOMODE_OFF)
+	if (KeyboardProcessor.MouseMode == AUTOMODE_OFF)
 	{
 		/* If pressed right mouse button, should go to joystick 1 */
 		if (Keyboard.bRButtonDown&BUTTON_MOUSE)
@@ -992,11 +992,11 @@ void IKBD_InterruptHandler_ResetTimer(void)
  */
 static void IKBD_Cmd_Reset(void)
 {
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_Reset\n");
+
 	/* Check for error series of bytes, eg 0x80,0x01 */
 	if (Keyboard.InputBuffer[1] == 0x01)
 	{
-		HATARI_TRACE(HATARI_TRACE_IKBD_ALL, "KEYBOARD ON\n");
-
 		/* Set defaults */
 		KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
 		KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
@@ -1017,9 +1017,10 @@ static void IKBD_Cmd_Reset(void)
 		bDuringResetCriticalTime = TRUE;
 		bMouseDisabled = bJoystickDisabled = FALSE;
 		bBothMouseAndJoy = FALSE;
+
+		HATARI_TRACE(HATARI_TRACE_IKBD_ALL, "IKBD reset done.\n");
 	}
 	/* else if not 0x80,0x01 just ignore */
-	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_Reset\n");
 }
 
 
@@ -1287,17 +1288,20 @@ static void IKBD_Cmd_StopKeyboardTransfer(void)
  */
 static void IKBD_Cmd_ReturnJoystickAuto(void)
 {
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystickAuto\n");
+
 	KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
 	KeyboardProcessor.MouseMode = AUTOMODE_OFF;
 
-	/* Again, if try to disable mouse within time of a reset it isn't disabled! */
+	/* If trying to disable mouse within time of a reset it isn't disabled!
+	 * (Used by the game Barbarian 1 by Psygnosis for example) */
 	if (bDuringResetCriticalTime)
 	{
 		KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
 		bBothMouseAndJoy = TRUE;
+		HATARI_TRACE(HATARI_TRACE_IKBD_ALL, "IKBD joystick enabled "
+		             "during RESET. Mouse not disabled!\n");
 	}
-
-	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_ReturnJoystickAuto\n");
 
 	/* This command resets the internally previously stored joystick states */
 	KeyboardProcessor.Joy.PrevJoyData[0] = KeyboardProcessor.Joy.PrevJoyData[1] = 0;
