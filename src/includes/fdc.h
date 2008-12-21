@@ -88,7 +88,7 @@ enum
 };
 
 
-/* Commands are taking the equivalent of FDC_HBL_DELAY hbl's to execute */
+/* Commands are taking the equivalent of FDC_DELAY_CYCLES cpu cycles to execute */
 /* to try to simulate the speed of a real ST floppy drive */
 #define FDC_DELAY_CYCLES		92160
 //#define FDC_DELAY_CYCLES		1536	// 'Just Bugging Demo' by ACF requires a very fast delay (bug in the loader)
