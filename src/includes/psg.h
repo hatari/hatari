@@ -35,11 +35,16 @@ extern Uint8 PSGRegisters[16];
 
 extern void PSG_Reset(void);
 extern void PSG_MemorySnapShot_Capture(bool bSave);
-extern void PSG_SelectRegister_WriteByte(void);
-extern void PSG_SelectRegister_ReadByte(void);
-extern void PSG_DataRegister_WriteByte(void);
-extern void PSG_DataRegister_ReadByte(void);
-extern void PSG_Void_WriteByte(void);
-extern void PSG_Void_ReadByte(void);
+
+extern void PSG_Set_SelectRegister(Uint8 val);
+extern Uint8 PSG_Get_DataRegister(void);
+extern void PSG_Set_DataRegister(Uint8 val);
+
+extern void PSG_ff8800_ReadByte(void);
+extern void PSG_ff880x_ReadByte(void);
+extern void PSG_ff8800_WriteByte(void);
+extern void PSG_ff8801_WriteByte(void);
+extern void PSG_ff8802_WriteByte(void);
+extern void PSG_ff8803_WriteByte(void);
 
 #endif  /* HATARI_PSG_H */

@@ -12,6 +12,8 @@
 /*			give some wait states (e.g. move.l d0,ff8800). 			*/
 /* 2007/12/16	[NP]	0xff820d/0xff820f are only available on STE, not on ST. We call	*/
 /*			IoMem_VoidRead and IoMem_VoidWrite for these addresses.		*/
+/* 2008/12/21	[NP]	Change functions used to access 0xff88xx (see psg.c)		*/
+
 
 const char IoMemTabST_rcsid[] = "Hatari $Id: ioMemTabST.c,v 1.5 2008-12-12 21:52:01 thothy Exp $";
 
@@ -74,10 +76,10 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_ST[] =
 	{ 0xff860d, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA base and counter low byte  */
 	{ 0xff860f, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 
-	{ 0xff8800, SIZE_BYTE, PSG_SelectRegister_ReadByte, PSG_SelectRegister_WriteByte },
-	{ 0xff8801, SIZE_BYTE, PSG_Void_ReadByte, PSG_Void_WriteByte },
-	{ 0xff8802, SIZE_BYTE, PSG_DataRegister_ReadByte, PSG_DataRegister_WriteByte },
-	{ 0xff8803, SIZE_BYTE, PSG_Void_ReadByte, PSG_Void_WriteByte },
+	{ 0xff8800, SIZE_BYTE, PSG_ff8800_ReadByte, PSG_ff8800_WriteByte },
+	{ 0xff8801, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8801_WriteByte },
+	{ 0xff8802, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8802_WriteByte },
+	{ 0xff8803, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8803_WriteByte },
 
 	{ 0xff8a00, SIZE_WORD, Blitter_Halftone00_ReadWord, Blitter_Halftone00_WriteWord }, /* Blitter halftone RAM 0 */
 	{ 0xff8a02, SIZE_WORD, Blitter_Halftone01_ReadWord, Blitter_Halftone01_WriteWord }, /* Blitter halftone RAM 1 */

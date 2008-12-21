@@ -36,7 +36,26 @@
 /*			and reads in $ff8802 should be ignored.				*/
 /*			(fix European Demo Intro, which sets addr reg to 0x10 when	*/
 /*			sample playback is disabled).					*/
-
+/* 2008/12/21	[NP]	After testing different cases on a real STF, rewrite registers	*/
+/*			handling. As only pins BC1 and BDIR are used in an Atari to	*/
+/*			address the YM2149, this means only 1 bit is necessary to access*/
+/*			select/data registers. Other variations of the $ff88xx addresses*/
+/*			will point to either $ff8800 or $ff8802. Only bit 1 of $ff88xx	*/
+/*			is useful to know which register is accessed in the YM2149.	*/
+/*			So, it's possible to access the YM2149 with $ff8801 and $ff8803	*/
+/*			but under conditions : the write to a shadow address (bit 0=1)	*/
+/*			can't be made by an instruction that writes to the same address	*/
+/*			with bit 0=0 at the same time (.W or .L access).		*/
+/*			In that case, only the address with bit 0=0 is taken into	*/
+/*			account. This means a write to $ff8801/03 will succeed only if	*/
+/*			the access size is .B (byte) or the opcode is a movep (because	*/
+/*			in that case we won't access the same register with 2 different	*/
+/*			addresses) (fix the game X-Out, which uses movep.w to write to	*/
+/*			$ff8801/03).							*/
+/*			Refactorize some code for cleaner handling of these accesses.	*/
+/*			Only reads to $ff8800 will return a data, reads to $ff8801/02/03*/
+/*			always return 0xff (tested on STF).				*/
+/*			When PSGRegisterSelect > 15, reads to $ff8800 also return 0xff.	*/
 
 
 /* Emulating wait states when accessing $ff8800/01/02/03 with different 'move' variants	*/
@@ -71,10 +90,15 @@
 /*	movem.l d1-d7,(a1)      ; 80 64+4+4+4+4						*/
 /*	movem.l d0-d7,(a1)      ; 88 72+4+4+4+4						*/
 /*											*/
+/*	movep.w	d0,(a3)				(X-Out)					*/
+/*											*/
 /* This gives the following "model" :							*/
 /*	- each access to $ff8800 or $ff8802 add 1 cycle wait state			*/
-/*	- access to $ff8801 or $ff8803 give 0 wait state, except if this is the only	*/
-/*	  register accessed (move.b for example).					*/
+/*	- accesses to $ff8801 or $ff8803 are considered "valid" only if we don't access	*/
+/*	  the corresponding "non shadow" addresses $ff8800/02 at the same time.		*/
+/*	  This means only .B size (move.b for example) or movep opcode will work.	*/
+/*	  If the access is valid, add 1 cycle wait state, else ignore the write and	*/
+/*	  don't add any cycle.								*/
 
 
 
@@ -131,26 +155,22 @@ void PSG_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write byte to 0xff8800, this is used as a selector for when we read/write
- * to address 0xff8802
+ * Write byte to the YM address register (usually 0xff8800). This is used
+ * as a selector for when we read/write the YM data register (0xff8802).
  */
-void PSG_SelectRegister_WriteByte(void)
+void PSG_Set_SelectRegister(Uint8 val)
 {
-//	M68000_WaitState(4);
-	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
-
 	/* Store register used to read/write in $ff8802. This register */
 	/* is 8 bits on the YM2149, this means it should not be masked */
 	/* with 0xf. Instead, we keep the 8 bits, but we must ignore */
 	/* read/write to ff8802 when PSGRegisterSelect >= 16 */
-	/* Use IoAccessCurrentAddress to be able to handle the PSG mirror registers, too. */
-	PSGRegisterSelect = IoMem[IoAccessCurrentAddress];
+	PSGRegisterSelect = val;
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "ym write sel reg=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+	    HATARI_TRACE_PRINT ( "ym write reg=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		PSGRegisterSelect, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	  }
 }
@@ -158,15 +178,15 @@ void PSG_SelectRegister_WriteByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read byte from 0xff8800, returns PSG data
+ * Read byte from 0xff8800, return PSG data
  */
-void PSG_SelectRegister_ReadByte(void)
+Uint8 PSG_Get_DataRegister(void)
 {
 	M68000_WaitState(4);
 
 	/* Is a valid PSG register currently selected ? */
 	if ( PSGRegisterSelect >= 16 )
-		return;					/* not valid, ignore read and do nothing */
+		return 0xff;				/* not valid, return 0xff */
 
 	if (PSGRegisterSelect == 14)
 	{
@@ -195,25 +215,22 @@ void PSG_SelectRegister_ReadByte(void)
 	}
 
 	/* Read data last selected by register */
-	IoMem[IoAccessCurrentAddress] = PSGRegisters[PSGRegisterSelect];
+	return PSGRegisters[PSGRegisterSelect];
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write byte to 0xff8802, stores according to PSG select register (write 0xff8800)
+ * Write byte to YM's register (0xff8802), store according to PSG select register (0xff8800)
  */
-void PSG_DataRegister_WriteByte(void)
+void PSG_Set_DataRegister(Uint8 val)
 {
-//	M68000_WaitState(4);
-	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
-
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
 	    HATARI_TRACE_PRINT ( "ym write data reg=0x%x val=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-		PSGRegisterSelect, IoMem[IoAccessCurrentAddress], nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+		PSGRegisterSelect, val, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	  }
 
 	/* Is a valid PSG register currently selected ? */
@@ -223,9 +240,8 @@ void PSG_DataRegister_WriteByte(void)
 	/* Create samples up until this point with current values */
 	Sound_Update();
 
-	/* Copy value to PSGRegisters[]. Use IoAccessCurrentAddress to be able
-	 * to handle the PSG mirror registers, too. */
-	PSGRegisters[PSGRegisterSelect] = IoMem[IoAccessCurrentAddress];
+	/* Copy value to PSGRegisters[] */
+	PSGRegisters[PSGRegisterSelect] = val;
 
 	/* Clear unused bits for some regs */
 	if ( ( PSGRegisterSelect == PSG_REG_CHANNEL_A_COARSE ) || ( PSGRegisterSelect == PSG_REG_CHANNEL_B_COARSE )
@@ -331,35 +347,41 @@ void PSG_DataRegister_WriteByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read byte from 0xff8802, returns 0xff
+ * Read byte from 0xff8800. Return current content of data register
  */
-void PSG_DataRegister_ReadByte(void)
+void PSG_ff8800_ReadByte(void)
 {
-	M68000_WaitState(4);
+	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
 
-	IoMem[IoAccessCurrentAddress] = 0xff;
+	IoMem[IoAccessCurrentAddress] = PSG_Get_DataRegister();
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_READ ) )
+	  {
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nLineCycles = nFrameCycles % nCyclesPerLine;
+	    HATARI_TRACE_PRINT ( "ym read data %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
+		nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	  }
 }
-
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write byte to 0xff8801/03. Do nothing, but add some wait states if needed.
+ * Read byte from 0xff8801/02/03. Return 0xff.
  */
-void PSG_Void_WriteByte(void)
+void PSG_ff880x_ReadByte(void)
 {
-	/* [NP] FIXME If no wait states were added so far, it's possible we're accessing */
-	/* 8801/8803 through a .B instruction, so we need to add a wait state */
-	/* Else, the wait states will be added when writing to 8800/8802 */
-	/* This works so far, but this model is certainly not 100% accurate */
-	if ( nWaitStateCycles == 0 )
-	  M68000_WaitState(1);
+	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
+	IoMem[IoAccessCurrentAddress] = 0xff;
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_READ ) )
 	  {
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "ym write 8801/03 video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+	    HATARI_TRACE_PRINT ( "ym read void %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
 		nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	  }
 }
@@ -368,10 +390,128 @@ void PSG_Void_WriteByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read byte from 0xff8801/03. Do nothing, but add some wait states.
+ * Write byte to 0xff8800. Set content of YM's address register.
  */
-void PSG_Void_ReadByte(void)
+void PSG_ff8800_WriteByte(void)
 {
-	M68000_WaitState(1);
+//	M68000_WaitState(4);
+	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
+	  {
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nLineCycles = nFrameCycles % nCyclesPerLine;
+	    HATARI_TRACE_PRINT ( "ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
+		nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	  }
+
+	PSG_Set_SelectRegister ( IoMem[IoAccessCurrentAddress] );
 }
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write byte to 0xff8801. Set content of YM's address register under conditions.
+ * Address 0xff8801 is a shadow version of 0xff8800, so both addresses can't be written
+ * at the same time by the same instruction. This means only a .B access or
+ * a movep will have a valid effect, other accesses are ignored.
+ */
+void PSG_ff8801_WriteByte(void)
+{
+	if ( ( OpcodeFamily == i_MVPRM )
+	  || ( nIoMemAccessSize == SIZE_BYTE ) )
+	{	
+		M68000_WaitState(1);			/* [NP] FIXME not 100% accurate, but gives good results */
+	
+		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
+		  {
+		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		    int nLineCycles = nFrameCycles % nCyclesPerLine;
+		    HATARI_TRACE_PRINT ( "ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+			IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
+			nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+		  }
+	
+		PSG_Set_SelectRegister ( IoMem[IoAccessCurrentAddress] );
+	}
+
+	else
+	{						/* do nothing, just a trace if needed */
+		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
+		  {
+		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		    int nLineCycles = nFrameCycles % nCyclesPerLine;
+		    HATARI_TRACE_PRINT ( "ym write ignored %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+			IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
+			nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+		  }
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write byte to 0xff8802. Set content of YM's data register.
+ */
+void PSG_ff8802_WriteByte(void)
+{
+//	M68000_WaitState(4);
+	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
+
+	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
+	  {
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nLineCycles = nFrameCycles % nCyclesPerLine;
+	    HATARI_TRACE_PRINT ( "ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
+		nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	  }
+
+	PSG_Set_DataRegister ( IoMem[IoAccessCurrentAddress] );
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write byte to 0xff8803. Set content of YM's data register under conditions.
+ * Address 0xff8803 is a shadow version of 0xff8802, so both addresses can't be written
+ * at the same time by the same instruction. This means only a .B access or
+ * a movep will have a valid effect, other accesses are ignored.
+ */
+void PSG_ff8803_WriteByte(void)
+{
+	if ( ( OpcodeFamily == i_MVPRM )
+	  || ( nIoMemAccessSize == SIZE_BYTE ) )
+	{	
+		M68000_WaitState(1);			/* [NP] FIXME not 100% accurate, but gives good results */
+	
+		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
+		  {
+		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		    int nLineCycles = nFrameCycles % nCyclesPerLine;
+		    HATARI_TRACE_PRINT ( "ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+			IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
+			nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+		  }
+		
+		PSG_Set_DataRegister ( IoMem[IoAccessCurrentAddress] );
+	}
+
+	else
+	{						/* do nothing, just a trace if needed */
+		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
+		  {
+		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		    int nLineCycles = nFrameCycles % nCyclesPerLine;
+		    HATARI_TRACE_PRINT ( "ym write ignored %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+			IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
+			nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+		  }
+	}
+}
+
+
+
+
 

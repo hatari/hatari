@@ -75,10 +75,10 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_TT[] =
 
 	{ 0xff8780, 16, IoMem_VoidRead, IoMem_WriteWithoutInterception },        /* TT SCSI controller */
 
-	{ 0xff8800, SIZE_BYTE, PSG_SelectRegister_ReadByte, PSG_SelectRegister_WriteByte },
-	{ 0xff8801, SIZE_BYTE, PSG_Void_ReadByte, PSG_Void_WriteByte },
-	{ 0xff8802, SIZE_BYTE, PSG_DataRegister_ReadByte, PSG_DataRegister_WriteByte },
-	{ 0xff8803, SIZE_BYTE, PSG_Void_ReadByte, PSG_Void_WriteByte },
+        { 0xff8800, SIZE_BYTE, PSG_ff8800_ReadByte, PSG_ff8800_WriteByte },
+        { 0xff8801, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8801_WriteByte },
+        { 0xff8802, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8802_WriteByte },
+        { 0xff8803, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8803_WriteByte },
 
 	{ 0xff8900, SIZE_WORD, DmaSnd_SoundControl_ReadWord, DmaSnd_SoundControl_WriteWord },   /* DMA sound control */
 	{ 0xff8902, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
