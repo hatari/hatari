@@ -2,10 +2,27 @@
 syntax: glob
 
 Makefile.cnf
+aclocal.m4
+autom4te.cache
+config.cache
+config.guess
+config.log
+config.status
+config.sub
+config.h.in
 config.h
+configure
+install-sh
+hatari.1.gz
+
 src/*.o
 src/Makefile.dep
 src/hatari
+src/tos.img
+
+src/*/*.o
+src/*/Makefile.dep
+
 src/uae-cpu/build68k
 src/uae-cpu/cpu68k.a
 src/uae-cpu/cpudefs.c
@@ -13,11 +30,9 @@ src/uae-cpu/cpuemu.c
 src/uae-cpu/cpustbl.c
 src/uae-cpu/cputbl.h
 src/uae-cpu/gencpu
-src/*/*.o
-src/*/Makefile.dep
+
 tools/hmsa/hmsa
 tools/hmsa/*.o
-
 
 # switch to regexp syntax.
 syntax: regexp
