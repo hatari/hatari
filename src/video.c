@@ -206,7 +206,8 @@
 /*			multiple of 2 cycles, we allow cycles 56/64 and 60/68 (fix nosync.tos	*/
 /*			that uses the STOP instruction to produce a 0 byte line on the first	*/
 /*			displayed line (found on atari-forum.com)).				*/
-
+/* 2008/12/26	[NP]	When reading $ff8260 on ST/STE, set unused bits to 1 instead of 0	*/
+/*			(fix wrong TOS resolution in Awesome Menu Disk 16).			*/
 
 
 const char Video_rcsid[] = "Hatari $Id: video.c,v 1.133 2008-12-14 16:11:41 npomarede Exp $";
@@ -2082,9 +2083,12 @@ void Video_LineWidth_ReadByte(void)
 void Video_ShifterMode_ReadByte(void)
 {
 	if (bUseHighRes)
-		IoMem[0xff8260] = 2;                  /* If mono monitor, force to high resolution */
+		IoMem[0xff8260] = 2;			/* If mono monitor, force to high resolution */
 	else
-		IoMem[0xff8260] = VideoShifterByte;   /* Read shifter register */
+		IoMem[0xff8260] = VideoShifterByte;	/* Read shifter register, set unused bits to 1 */
+
+	if ( (ConfigureParams.System.nMachineType == MACHINE_ST) || (ConfigureParams.System.nMachineType == MACHINE_STE) )
+		IoMem[0xff8260] |= 0xfc;		/* set unused bits 2-7 to 1 */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -2095,7 +2099,6 @@ void Video_HorScroll_Read(void)
 {
 	IoMem[0xff8265] = HWScrollCount;
 }
-
 
 /*-----------------------------------------------------------------------*/
 /**
