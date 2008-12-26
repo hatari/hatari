@@ -208,6 +208,7 @@
 /*			displayed line (found on atari-forum.com)).				*/
 /* 2008/12/26	[NP]	When reading $ff8260 on ST/STE, set unused bits to 1 instead of 0	*/
 /*			(fix wrong TOS resolution in Awesome Menu Disk 16).			*/
+/*			Set unused bit to 1 when reading $ff820a too.				*/
 
 
 const char Video_rcsid[] = "Hatari $Id: video.c,v 1.133 2008-12-14 16:11:41 npomarede Exp $";
@@ -2045,7 +2046,8 @@ void Video_ScreenCounter_WriteByte(void)
  */
 void Video_Sync_ReadByte(void)
 {
-	/* Nothing... */
+	if ( (ConfigureParams.System.nMachineType == MACHINE_ST) || (ConfigureParams.System.nMachineType == MACHINE_STE) )
+		IoMem[0xff820a] |= 0xfc;		/* set unused bits 2-7 to 1 */
 }
 
 /*-----------------------------------------------------------------------*/
