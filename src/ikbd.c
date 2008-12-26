@@ -77,6 +77,7 @@ static const uint8_t DoubleClickPattern[] =
 
 static bool bMouseDisabled, bJoystickDisabled;
 static bool bDuringResetCriticalTime, bBothMouseAndJoy;
+static bool bMouseEnabledDuringReset;
 
 /* ACIA */
 static Uint8 ACIAControlRegister = 0;
@@ -416,6 +417,7 @@ void IKBD_Reset(bool bCold)
 	/* do emulate hardware 'quirk' where if disable both with 'x' time
 	 * of a RESET command they are ignored! */
 	bDuringResetCriticalTime = bBothMouseAndJoy = FALSE;
+	bMouseEnabledDuringReset = FALSE;
 
 	/* Remove any custom handlers used to emulate code loaded to the 6301's RAM */
 	IKBD_Reset_ExeMode ();
@@ -442,6 +444,7 @@ void IKBD_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&bJoystickDisabled, sizeof(bJoystickDisabled));
 	MemorySnapShot_Store(&bDuringResetCriticalTime, sizeof(bDuringResetCriticalTime));
 	MemorySnapShot_Store(&bBothMouseAndJoy, sizeof(bBothMouseAndJoy));
+	MemorySnapShot_Store(&bMouseEnabledDuringReset, sizeof(bMouseEnabledDuringReset));
 
 	/* restore custom 6301 program if needed */
 	MemorySnapShot_Store(&IKBD_ExeMode, sizeof(IKBD_ExeMode));
@@ -970,6 +973,7 @@ void IKBD_InterruptHandler_ResetTimer(void)
 
 	/* Critical timer is over */
 	bDuringResetCriticalTime = FALSE;
+	bMouseEnabledDuringReset = FALSE;
 }
 
 
@@ -1017,6 +1021,7 @@ static void IKBD_Cmd_Reset(void)
 		bDuringResetCriticalTime = TRUE;
 		bMouseDisabled = bJoystickDisabled = FALSE;
 		bBothMouseAndJoy = FALSE;
+		bMouseEnabledDuringReset = FALSE;
 
 		HATARI_TRACE(HATARI_TRACE_IKBD_ALL, "IKBD reset done.\n");
 	}
@@ -1056,6 +1061,13 @@ static void IKBD_Cmd_MouseAction(void)
 static void IKBD_Cmd_RelMouseMode(void)
 {
 	KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
+
+	/* Some games (like Barbarian by Psygnosis) enable both, mouse and
+	 * joystick directly after a reset. This causes the IKBD to send both
+	 * type of packets. To emulate this feature, we've got to remember
+	 * that the mouse has been enabled during reset. */
+	if (bDuringResetCriticalTime)
+		bMouseEnabledDuringReset = TRUE;
 
 	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_RelMouseMode\n");
 }
@@ -1293,14 +1305,14 @@ static void IKBD_Cmd_ReturnJoystickAuto(void)
 	KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
 	KeyboardProcessor.MouseMode = AUTOMODE_OFF;
 
-	/* If trying to disable mouse within time of a reset it isn't disabled!
+	/* If mouse was also enabled within time of a reset it isn't disabled now!
 	 * (Used by the game Barbarian 1 by Psygnosis for example) */
-	if (bDuringResetCriticalTime)
+	if (bMouseEnabledDuringReset)
 	{
 		KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
 		bBothMouseAndJoy = TRUE;
-		HATARI_TRACE(HATARI_TRACE_IKBD_ALL, "IKBD joystick enabled "
-		             "during RESET. Mouse not disabled!\n");
+		HATARI_TRACE(HATARI_TRACE_IKBD_ALL, "IKBD joystick and mouse "
+		             "enabled during RESET. Mouse not disabled!\n");
 	}
 
 	/* This command resets the internally previously stored joystick states */
