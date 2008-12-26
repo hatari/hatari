@@ -1,3 +1,26 @@
-(^|/)CVS($|/)
+# use glob syntax.
+syntax: glob
+
+Makefile.cnf
+config.h
+src/*.o
+src/Makefile.dep
+src/hatari
+src/uae-cpu/build68k
+src/uae-cpu/cpu68k.a
+src/uae-cpu/cpudefs.c
+src/uae-cpu/cpuemu.c
+src/uae-cpu/cpustbl.c
+src/uae-cpu/cputbl.h
+src/uae-cpu/gencpu
+src/*/*.o
+src/*/Makefile.dep
+tools/hmsa/hmsa
+tools/hmsa/*.o
+
+
+# switch to regexp syntax.
+syntax: regexp
+
 (^|/)\.hg($|/)
 (^|/)\.hgtags($|/)
