@@ -112,6 +112,7 @@ const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.56 2008-12-15 18:55:11 npomarede
 #include "sound.h"
 #include "stMemory.h"
 #include "tos.h"
+#include "vdi.h"
 #include "video.h"
 
 
@@ -1162,9 +1163,18 @@ void MFP_TimerBData_ReadByte(void)
 
 	M68000_WaitState(4);
 
-	if (MFP_TBCR != 8)			/* Is event count? Need to re-calculate counter */
-		MFP_ReadTimerB(FALSE);		/* Stores result in 'MFP_TB_MAINCOUNTER' */
-
+	/* Is it event count mode or not? */
+	if (MFP_TBCR != 8)
+	{
+		/* Not event count mode, so handle as normal timer
+		 * and store result in 'MFP_TB_MAINCOUNTER' */
+		MFP_ReadTimerB(FALSE);
+	}
+	else if (bUseVDIRes)
+	{
+		/* HBLs are disabled in VDI mode, but TOS expects to read a 1. */
+		MFP_TB_MAINCOUNTER = 1;
+	}
 	/* Special case when reading $fffa21, we need to test if the current read instruction */
 	/* overlaps the horizontal video position where $fffa21 is changed */
 	else

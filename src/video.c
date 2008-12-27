@@ -1380,25 +1380,22 @@ static void Video_EndHBL(void)
 		Video_StoreFirstLinePalette();
 	}
 
-	if (!bUseVDIRes)
+	if (bUseHighRes)
 	{
-		if (bUseHighRes)
-		{
-			/* Copy for hi-res (no overscan) */
-			if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
-				Video_CopyScreenLineMono();
-		}
-		/* Are we in possible visible color display (including borders)? */
-		else if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
-		{
-			/* Copy line of screen to buffer to simulate TV raster trace
-			 * - required for mouse cursor display/game updates
-			 * Eg, Lemmings and The Killing Game Show are good examples */
-			Video_CopyScreenLineColor();
+		/* Copy for hi-res (no overscan) */
+		if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
+			Video_CopyScreenLineMono();
+	}
+	/* Are we in possible visible color display (including borders)? */
+	else if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
+	{
+		/* Copy line of screen to buffer to simulate TV raster trace
+		 * - required for mouse cursor display/game updates
+		 * Eg, Lemmings and The Killing Game Show are good examples */
+		Video_CopyScreenLineColor();
 
-			/* Store resolution for every line so can check for mix low/med screens */
-			Video_StoreResolution(nHBL-nFirstVisibleHbl);
-		}
+		/* Store resolution for every line so can check for mix low/med screens */
+		Video_StoreResolution(nHBL-nFirstVisibleHbl);
 	}
 
 	/* Finally increase HBL count */
@@ -1462,6 +1459,11 @@ void Video_InterruptHandler_EndLine(void)
 
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
+
+	/* Ignore HBLs in VDI mode */
+	if (bUseVDIRes)
+		return;
+
 	/* Generate new Endline, if need to - there are 313 HBLs per frame */
 	if (nHBL < nScanlinesPerFrame-1)
 	{
@@ -1814,7 +1816,7 @@ static void Video_DrawScreen(void)
 		/* Before drawing the screen, ensure all unused lines are cleared to color 0 */
 		/* (this can happen in 60 Hz when hatari is displaying the screen's border) */
 		/* pSTScreen was set during Video_CopyScreenLineColor */
-		if ( nHBL < nLastVisibleHbl )
+		if (!bUseVDIRes && nHBL < nLastVisibleHbl)
 			memset(pSTScreen, 0, SCREENBYTES_LINE * ( nLastVisibleHbl - nHBL ) );
 
 		bScreenChanged = Screen_Draw();
@@ -1832,12 +1834,17 @@ static void Video_DrawScreen(void)
  */
 void Video_StartInterrupts(void)
 {
-	/* Set int to cycle 376+28 or 372+28 because nCyclesPerLine is 512 or 508 */
-	/* (this also means int is set to 512-108 or 508-108 depending on the current freq) */
-	Int_AddAbsoluteInterrupt(nCyclesPerLine - ( CYCLES_PER_LINE_50HZ - LINE_END_CYCLE_50 ) + TIMERB_VIDEO_CYCLE_OFFSET - VblVideoCycleOffset,
-	                         INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
-	Int_AddAbsoluteInterrupt(nCyclesPerLine + HBL_VIDEO_CYCLE_OFFSET - VblVideoCycleOffset,
-	                         INT_CPU_CYCLE, INTERRUPT_VIDEO_HBL);
+	/* HBLs are not emulated in VDI mode */
+	if (!bUseVDIRes)
+	{
+		/* Set int to cycle 376+28 or 372+28 because nCyclesPerLine is 512 or 508 */
+		/* (this also means int is set to 512-108 or 508-108 depending on the current freq) */
+		Int_AddAbsoluteInterrupt(nCyclesPerLine - ( CYCLES_PER_LINE_50HZ - LINE_END_CYCLE_50 )
+		                         + TIMERB_VIDEO_CYCLE_OFFSET - VblVideoCycleOffset,
+		                         INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
+		Int_AddAbsoluteInterrupt(nCyclesPerLine + HBL_VIDEO_CYCLE_OFFSET - VblVideoCycleOffset,
+		                         INT_CPU_CYCLE, INTERRUPT_VIDEO_HBL);
+	}
 	Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
 }
 
@@ -1890,6 +1897,13 @@ void Video_InterruptHandler_VBL(void)
 	               nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
 
 	M68000_Exception ( EXCEPTION_VBLANK , M68000_EXCEPTION_SRC_INT_VIDEO );	/* Vertical blank interrupt, level 4! */
+
+	/* Since in VDI mode we do not use HBLs (where we normally send IKBD
+	 * commands), we've got to do this during the VBL here, too */
+	if (bUseVDIRes)
+	{
+		IKBD_SendAutoKeyboardCommands();
+	}
 
 	/* And handle any messages, check for quit message */
 	Main_EventHandler();         /* Process messages, set 'bQuitProgram' if user tries to quit */
