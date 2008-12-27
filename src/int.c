@@ -101,6 +101,7 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	IKBD_InterruptHandler_ResetTimer,
 	IKBD_InterruptHandler_ACIA,
 	IKBD_InterruptHandler_MFP,
+	IKBD_InterruptHandler_AutoSend,
 	DmaSnd_InterruptHandler,
 	DmaSnd_InterruptHandler_Microwire,
 	FDC_InterruptHandler_Update,

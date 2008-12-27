@@ -92,10 +92,10 @@ extern void ACIA_Reset(void);
 extern void IKBD_Reset_ExeMode ( void );
 extern void IKBD_Reset(bool bCold);
 extern void IKBD_MemorySnapShot_Capture(bool bSave);
-extern void IKBD_SendAutoKeyboardCommands(void);
 extern void IKBD_InterruptHandler_ResetTimer(void);
 extern void IKBD_InterruptHandler_ACIA(void);
 extern void IKBD_InterruptHandler_MFP(void);
+extern void IKBD_InterruptHandler_AutoSend(void);
 
 extern void IKBD_PressSTKey(Uint8 ScanCode, bool bPress);
 extern void IKBD_KeyboardControl_ReadByte(void);

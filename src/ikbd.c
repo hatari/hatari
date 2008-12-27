@@ -421,6 +421,9 @@ void IKBD_Reset(bool bCold)
 
 	/* Remove any custom handlers used to emulate code loaded to the 6301's RAM */
 	IKBD_Reset_ExeMode ();
+
+	/* Add auto-update function to the queue */
+	Int_AddRelativeInterrupt(80000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
 }
 
 
@@ -879,7 +882,7 @@ static void IKBD_SendCursorMousePacket(void)
 /**
  * Return packets from keyboard for auto, rel mouse, joystick etc...
  */
-void IKBD_SendAutoKeyboardCommands(void)
+static void IKBD_SendAutoKeyboardCommands(void)
 {
 	/* Don't do anything until processor is first reset */
 	if (!KeyboardProcessor.bReset)
@@ -928,6 +931,42 @@ void IKBD_SendAutoKeyboardCommands(void)
 			IKBD_PressSTKey(57,FALSE);        /* Release */
 			JoystickSpaceBar = FALSE;         /* Complete */
 		}
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * This function is called regularly to automatically send keyboard, mouse
+ * and joystick updates.
+ */
+void IKBD_InterruptHandler_AutoSend(void)
+{
+	/* Remove this interrupt from list and re-order */
+	Int_AcknowledgeInterrupt();
+
+	/* Handle user events and other messages, (like quit message) */
+	Main_EventHandler();
+
+	/* Did user try to quit? */
+	if (bQuitProgram)
+	{
+		/* Pass NULL interrupt function to quit cleanly */
+		Int_AddAbsoluteInterrupt(4, INT_CPU_CYCLE, INTERRUPT_NULL);
+		/* Assure that CPU core shuts down */
+		M68000_SetSpecial(SPCFLAG_BRK);
+		return;
+	}
+
+	/* Trigger this auto-update function again after a while */
+	Int_AddRelativeInterrupt(60000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
+
+	/* We don't send keyboard data automatically within the first few
+	 * VBLs to avoid that TOS gets confused during its boot time */
+	if (nVBLs > 20)
+	{
+		/* Send automatic keyboard packets for mouse, joysticks etc... */
+		IKBD_SendAutoKeyboardCommands();
 	}
 }
 

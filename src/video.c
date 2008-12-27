@@ -220,7 +220,6 @@ const char Video_rcsid[] = "Hatari $Id: video.c,v 1.133 2008-12-14 16:11:41 npom
 #include "cycles.h"
 #include "fdc.h"
 #include "int.h"
-#include "ikbd.h"
 #include "ioMem.h"
 #include "keymap.h"
 #include "m68000.h"
@@ -1484,27 +1483,12 @@ void Video_InterruptHandler_EndLine(void)
 					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
 	}
 
-	/* Is this a good place to send the keyboard packets? Done once per frame.
-	 * Note that we don't send keyboard data automatically within the first
-	 * few VBLs to avoid that TOS gets confused during its boot time */
-	if (nHBL == nStartHBL && nVBLs > 20)
-	{
-		/* On each VBL send automatic keyboard packets for mouse, joysticks etc... */
-		IKBD_SendAutoKeyboardCommands();
-	}
-
 	/* Timer B occurs at END of first visible screen line in Event Count mode */
 	if (nHBL >= nStartHBL && nHBL < nEndHBL)
 	{
 		/* Handle Timer B when using Event Count mode */
 		if (MFP_TBCR == 0x08)      /* Is timer in Event Count mode? */
 			MFP_TimerB_EventCount_Interrupt();
-	}
-
-	/* If we don't often pump data into the event queue, the SDL misses events... grr... */
-	if (!(nHBL & 63))
-	{
-		Main_EventHandler();
 	}
 }
 
@@ -1897,22 +1881,6 @@ void Video_InterruptHandler_VBL(void)
 	               nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
 
 	M68000_Exception ( EXCEPTION_VBLANK , M68000_EXCEPTION_SRC_INT_VIDEO );	/* Vertical blank interrupt, level 4! */
-
-	/* Since in VDI mode we do not use HBLs (where we normally send IKBD
-	 * commands), we've got to do this during the VBL here, too */
-	if (bUseVDIRes)
-	{
-		IKBD_SendAutoKeyboardCommands();
-	}
-
-	/* And handle any messages, check for quit message */
-	Main_EventHandler();         /* Process messages, set 'bQuitProgram' if user tries to quit */
-	if (bQuitProgram)
-	{
-		/* Pass NULL interrupt function to quit cleanly */
-		Int_AddAbsoluteInterrupt(4, INT_CPU_CYCLE, INTERRUPT_NULL);
-		M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
-	}
 
 	Main_WaitOnVbl();
 }
