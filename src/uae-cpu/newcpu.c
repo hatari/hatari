@@ -1567,11 +1567,10 @@ static int do_specialties (void)
 
 	/* No pending int, we have to wait for the next matching int */
 	while (regs.spcflags & SPCFLAG_STOP) {
-	    if (regs.intmask > 5) {
-		/* We still have to care about events when IPL==7 ! */
-		Main_EventHandler();
-		if (regs.spcflags & SPCFLAG_BRK)  return 1;
-	    }
+
+	    /* Take care of quit event if needed */
+	    if (regs.spcflags & SPCFLAG_BRK)
+		return 1;
 	
 	    M68000_AddCycles(4);
 	
