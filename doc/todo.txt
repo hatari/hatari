@@ -39,8 +39,6 @@ Emulation improvements
 Other Hatari functionality improvements
 ---------------------------------------
 
-- Add the possibility to disable HBLs in VDI mode to speed up the emulation.
-
 - Add x3 and x4 zooming routines for ST-Low resolution.
 
 - Include some fancy zooming routines like 2xSaI or Super-Eagle.
