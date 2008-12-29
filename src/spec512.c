@@ -157,8 +157,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	//  FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 	if ( BusMode == BUS_MODE_BLITTER )
 	{
-		/* FIXME : adjust FrameCycles depending on how many words were already accessed by the blitter */
-		FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
+		FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 	}
 	else							/* BUS_MODE_CPU */
 	{

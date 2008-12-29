@@ -96,8 +96,7 @@ int Cycles_GetCounterOnReadAccess(int nId)
 
 	if ( BusMode == BUS_MODE_BLITTER )
 	{
-		/* FIXME : adjust nAddCycles depending on how many words were already accessed by the blitter */
-		nAddCycles = CurrentInstrCycles + nWaitStateCycles;
+		nAddCycles = 4 + nWaitStateCycles;
 	}
 	else							/* BUS_MODE_CPU */
 	{
@@ -124,8 +123,7 @@ int Cycles_GetCounterOnWriteAccess(int nId)
 
 	if ( BusMode == BUS_MODE_BLITTER )
 	{
-		/* FIXME : adjust nAddCycles depending on how many words were already accessed by the blitter */
-		nAddCycles = CurrentInstrCycles + nWaitStateCycles;
+		nAddCycles = 4 + nWaitStateCycles;
 	}
 	else							/* BUS_MODE_CPU */
 	{

@@ -113,7 +113,6 @@ typedef struct
 /* Blitter state */
 typedef struct
 {
-	int		cycles;
 	Uint16	src_word;
 	Uint16	dst_word;
 	Uint16	end_mask;
@@ -135,21 +134,17 @@ static Uint16		BlitterHalftone[16];
 
 static void Blitter_AddCycles(int cycles)
 {
-	BlitterState.cycles += cycles;
-}
+	int all_cycles = cycles + nWaitStateCycles;
+	int cpu_cycles = all_cycles >> nCpuFreqShift;
 
-static void Blitter_FlushCycles(void)
-{
-	int cpu_cycles = BlitterState.cycles >> nCpuFreqShift;
-
+	BlitterVars.cycles += all_cycles;
 	nCyclesMainCounter += cpu_cycles;
+
+	nWaitStateCycles = 0;
 
 	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cpu_cycles, INT_CPU_CYCLE);
 	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
 		CALL_VAR(PendingInterruptFunction);
-
-	BlitterVars.cycles += BlitterState.cycles;
-	BlitterState.cycles = 0;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -192,7 +187,6 @@ static void Blitter_BeginLine(void)
 
 static void Blitter_SetState(Uint8 fxsr, Uint8 nfsr, Uint16 end_mask)
 {
-	BlitterState.cycles = 0;
 	BlitterState.end_mask = end_mask;
 	BlitterState.have_src = false;
 	BlitterState.have_dst = false;
@@ -443,8 +437,6 @@ static void Blitter_Step(void)
 	{
 		Blitter_MiddleWord();
 	}
-
-	Blitter_FlushCycles();
 }
 
 /*-----------------------------------------------------------------------*/
@@ -461,8 +453,11 @@ static void Blitter_Start(void)
 	BlitterVars.src_words_reset = BlitterVars.dst_words_reset +
 									BlitterVars.fxsr - BlitterVars.nfsr;
 
+	/* bus arbitration */
+	BusMode = BUS_MODE_BLITTER;		/* bus is now owned by the blitter */
+	Blitter_AddCycles(4);
+
 	/* Now we enter the main blitting loop */
-	BusMode = BUS_MODE_BLITTER;				/* bus is now owned by the blitter */
 	do
 	{
 		Blitter_Step();
@@ -470,10 +465,9 @@ static void Blitter_Start(void)
 	while (BlitterRegs.lines > 0
 	       && (BlitterVars.hog || BlitterVars.cycles < NONHOG_CYCLES));
 
-	/* Must have something to do with bus arbitration */
-	Blitter_AddCycles(8);
-	Blitter_FlushCycles();
-	BusMode = BUS_MODE_CPU;					/* bus is now owned by the cpu again */
+	/* bus arbitration */
+	Blitter_AddCycles(4);
+	BusMode = BUS_MODE_CPU;			/* bus is now owned by the cpu again */
 
 	BlitterRegs.ctrl = (BlitterRegs.ctrl & 0xF0) | BlitterVars.line;
 
