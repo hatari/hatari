@@ -2,14 +2,14 @@
  Active Hatari developers:
  -------------------------
 
-- Thomas Huth <huth@users.berlios.de> : Project initiator and main developer.
+- Thomas Huth <huth at users.berlios.de> : Project initiator and main developer.
 
-- Eero Tamminen <eerot@users.sourceforge.net> : Speed improvements & code
+- Eero Tamminen <eerot at users.sourceforge.net> : Speed improvements & code
   cleanup, parts of the STE emulation, Hatari embedding & remote control,
   pause & auto frameskip support, statusbar & overlay led, PNG saving and
   other patches.
 
-- Nicolas Pomarede <npomarede@corp.free.fr> : Many improvements to CPU and video
+- Nicolas Pomarede <npomarede at corp.free.fr> : Many improvements to CPU and video
   emulation, new sound engine, fake IKBD emulation.
 
 
@@ -20,22 +20,22 @@ Following people contributed code or patches to this projects and/or helped to
 find bugs in Hatari (listed in random order - and if someone is missing here,
 please remind me!):
 
-- Matthias Arndt <marndt@asmsoftware.de> : Wrote the original version of the
+- Matthias Arndt <marndt at asmsoftware.de> : Wrote the original version of the
   Hatari user manual, fixed the printer emulation functions.
 
-- Sébastien Molines <clafou@gmail.com> : Wrote the main part of the Mac OS X
+- Sébastien Molines <clafou at gmail.com> : Wrote the main part of the Mac OS X
   GUI of Hatari.
 
-- Marco Herrn <marco@mherrn.de> : Wrote the initial version of the "man" page
+- Marco Herrn <marco at mherrn.de> : Wrote the initial version of the "man" page
   of Hatari and maintained the Hatari Debian packages.
 
 - Sven de Marothy : Wrote the screenshot functions, the built-in debugger,
   the ACSI emulation and added support for ZIPed and GZIPed disk images.
 
-- Emmanuel Anne <emanne@absysteme.fr> : Contributed lots of patches,
+- Emmanuel Anne <emanne at absysteme.fr> : Contributed lots of patches,
   RTC emulation.
 
-- Tuduri Benoît <skweek@users.sourceforge.net> : French man-page, support
+- Tuduri Benoît <skweek at users.sourceforge.net> : French man-page, support
   for Doxygen.
 
 - Markus Oberhumer : A patch that fixed a problem with ZIPed disk images;
@@ -62,12 +62,12 @@ please remind me!):
 
 - "Jo" (?) : Patches for compiling Hatari on a 64-bit Alpha machine.
 
-- Stefan Berndtsson <stefan@nocrew.org> : Patches to get Hatari running on
+- Stefan Berndtsson <stefan at nocrew.org> : Patches to get Hatari running on
   big endian machines.
 
 - Anatol Paruntik (?) : Patches for compiling Hatari on QNX.
 
-- Claus Windeler <goodoldgames@beemulated.net> : BeOS adaption of Hatari.
+- Claus Windeler <goodoldgames at beemulated.net> : BeOS adaption of Hatari.
 
 - James Lampard : Adapted Hatari to Acorn RISC OS machines.
 
