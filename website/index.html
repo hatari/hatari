@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<title>Hatari</title>
+<link rel="stylesheet" type="text/css" href="hatari.css" />
+<link rel="shortcut icon" href="favicon.ico" />
+<meta name="keywords" content="atari, st, ste, tt, falcon, emulator, hatari, linux, unix, freebsd, netbsd, bsd, mac, os x, 68000" />
+<meta name="description" content="Hatari is an Atari ST emulator for Linux and other systems that are supported by the SDL library." />
+<meta name="author" content="Thomas Huth" />
+<meta name="copyright" content="Thomas Huth" />
+<meta name="robots" content="index,follow" />
+<meta name="date" content="2008-12-29" />
+</head>
+
+<body>
+
+<!-- The main menu -->
+<div class="menu">
+ <div class="menutitle"><img src="hatari-small.png" width="128" height="34" alt="Hatari" /></div>
+ <div class="menuentry">About</div>
+ <a class="menuentry" href="news.shtml">News</a>
+ <a class="menuentry" href="http://developer.berlios.de/projects/hatari/">Project page</a>
+ <a class="menuentry" href="scrshots.html">Screenshots</a>
+ <a class="menuentry" href="download.html">Download</a>
+ <a class="menuentry" href="docs.html">Documentation</a>
+ <a class="menuentry" href="contact.html">Contact</a>
+ <a class="menuentry" href="links.html">Links</a>
+ <div class="menusponsor">Hosted by:<br />
+  <a href="http://developer.berlios.de"><img
+    src="http://developer.berlios.de/bslogo.php?group_id=10436" width="124"
+    height="32" style="border-style:none" alt="BerliOS" title="BerliOS" /></a>
+ </div>
+</div>
+
+
+<h1>
+ <img src="hatari.png" width="600" height="160" alt="Hatari" />
+</h1>
+
+<h2>About:</h2>
+<p>
+Welcome to the Hatari web site!
+<br />
+Hatari is an Atari ST and STE emulator for GNU/Linux, BSD, BeOS, Mac OS X and other
+systems that are supported by the
+<a href="http://www.libsdl.org/">SDL library</a>.
+The Atari ST was a 16/32 bit computer system which was first released by Atari
+in 1985. Using the Motorola 68000 CPU, it was a very popular computer having
+quite a lot of CPU power at that time.
+Unlike many other Atari ST emulators which try to give you a good
+environment for running GEM applications, Hatari tries to emulate the hardware
+of a ST as close as possible so that it is able to run most of the old ST games
+and demos.
+Hatari is open source software and is distributed under the terms of the
+GNU General Public License (GPL).
+<br />
+The project page is available at:
+<a href="http://developer.berlios.de/projects/hatari/">http://developer.berlios.de/projects/hatari/</a>
+</p>
+
+<h2>Features:</h2>
+<p>
+Hatari supports the emulation of most of the ST and STE hardware, including some
+special tricks like raster interrupts, border effects and PSG sample sound.
+A joystick can be emulated with the cursor keys or with a real PC joystick.
+Hatari also features the possibility to &quot;mount&quot; a directory of the
+host system as a ST drive, or to use hard disk images with its ACSI emulation.
+<br />
+Note that Hatari mainly emulates the original ST and STE hardware &ndash;
+the emulation of the additional hardware of the TT or Falcon machines is
+currently in development and highly experimental.
+</p>
+
+<h2>System requirements:</h2>
+<p>
+First you need a fast (500MHz or more) machine running a Unix compatible OS
+(preferably GNU/Linux) which is supported by the SDL library.
+There are also some ports to other operating systems like BeOS, please see
+the <a href="links.html">links page</a> for more information.
+Non-Linux systems like FreeBSD etc. are rarely tested, so if you run into
+problems while compiling Hatari on such platforms, please let us know!
+</p>
+<p>
+Have a look at the <a href="download.html">downloads page</a> for details
+about the required libraries and available packages.
+Some binary packages are now available, too, but not for all architectures.
+So you might need to also have GNU C on your system to recompile the source
+code of Hatari.
+</p>
+<p>
+Before you can finally run the emulator, you also need a TOS image file.
+TOS is the built-in operating system of the Atari 16/32 bit computers.
+Since it is not possible to ship one of these image files with Hatari,
+you either have to create your own image from your Atari or you have to
+you <a href="http://emutos.sourceforge.net/en/">EmuTOS</a>, a free TOS
+replacement.
+</p>
+<p>
+Certain versions of Hatari have successfully been tested by various people on
+the following systems:
+</p>
+<ul>
+<li>Linux 2.6.x is the prefered platform (most developers use this OS)</li>
+<li>Apple PowerMac with Mac OS X</li>
+<li>NetBSD 1.6</li>
+<li>NetBSD on a Digital Alpha</li>
+<li>FreeBSD 4.1 on a i486 computer, FreeBSD 4.8 on a Pentium 4
+    and FreeBSD 5.1</li>
+<li>OpenBSD 3.5</li>
+<li>Solaris 8 on a SUN UltraSparc 1 (64-bit mode)</li>
+<li>Sharp Zaurus SL-C760 PDA running Linux</li>
+<li>Nokia N770 / N800 internet tablet</li>
+<li>Acorn RISC OS machines</li>
+<li>Amiga OS 4</li>
+<li>FreeMiNT on Aranym</li>
+<li>Windows XP</li>
+<li>BeOS/i86</li>
+</ul>
+
+
+</body>
+</html>

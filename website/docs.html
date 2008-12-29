@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<title>Hatari documentation</title>
+<link rel="stylesheet" type="text/css" href="hatari.css" />
+<link rel="shortcut icon" href="favicon.ico" />
+<meta name="keywords" content="unix, linux, atari, emulator, hatari, winston, 68000, uae, cpu, help" />
+<meta name="description" content="Hatari is an Atari ST emulator for Linux. Here you can find its documentation." />
+<meta name="author" content="Thomas Huth" />
+<meta name="copyright" content="Thomas Huth" />
+<meta name="robots" content="index,follow" />
+<meta name="date" content="2008-12-29" />
+<style type="text/css">
+  .question { font-style:italic; }
+</style>
+</head>
+
+<body>
+
+<!-- The main menu -->
+<div class="menu">
+ <div class="menutitle"><img src="hatari-small.png" width="128" height="34" alt="Hatari" /></div>
+ <a class="menuentry" href="index.html">About</a>
+ <a class="menuentry" href="news.shtml">News</a>
+ <a class="menuentry" href="http://developer.berlios.de/projects/hatari/">Project page</a>
+ <a class="menuentry" href="scrshots.html">Screenshots</a>
+ <a class="menuentry" href="download.html">Download</a>
+ <div class="menuentry">Documentation</div>
+ <a class="menuentry" href="contact.html">Contact</a>
+ <a class="menuentry" href="links.html">Links</a>
+ <div class="menusponsor">Hosted by:<br />
+  <a href="http://developer.berlios.de"><img
+    src="http://developer.berlios.de/bslogo.php?group_id=10436" width="124"
+    height="32" style="border-style:none" alt="BerliOS" title="BerliOS" /></a>
+ </div>
+</div>
+
+
+<h1>Documentation</h1>
+
+<h2>The documentation files of Hatari:</h2>
+
+<ul>
+ <li><a href="http://hg.berlios.de/repos/hatari/raw-file/tip/doc/manual.html">The manual</a></li>
+ <li><a href="http://hg.berlios.de/repos/hatari/raw-file/tip/doc/compatibility.html">Compatibility list</a></li>
+ <li><a href="http://hg.berlios.de/repos/hatari/raw-file/tip/doc/alsa-midi.txt">How to use MIDI with ALSA on Linux</a></li>
+ <li><a href="http://hg.berlios.de/repos/hatari/raw-file/tip/doc/release-notes.txt">The release notes</a></li>
+ <li><a href="http://hg.berlios.de/repos/hatari/raw-file/tip/doc/authors.txt">The authors</a></li>
+</ul>
+
+
+<h2>Frequently asked questions:</h2>
+
+<p>
+<span class="question">Q: I can't compile Hatari!?</span>
+<br />
+A: You should check if you have installed all needed tools for compiling Hatari:
+The GNU C compiler (GCC), GNU make (sometimes also called &quot;gmake&quot;,
+other versions of make might not work), the SDL library and the ZLib
+compression library.
+</p>
+
+<p>
+<span class="question">Q: Why is Hatari so slow? Are there any possibilities to speed it up?</span>
+<br />
+A: You should not enable sound when running Hatari (or at least switch to 11kHz),
+this will increase the speed of the emulator.
+<br />
+There is also the possibility to skip screen updates (since screen rendering
+can take a lot of CPU time).
+You can enable it by passing the &quot;--frameskips&quot; option to Hatari or
+by using the screen configuration dialog.
+<br />
+Note that you should also not enable the screen zoom mode for the ST Low
+resolution since this will slow down the emulator, too. If you still want
+to have a nice fullscreen mode, you should rather add the right resolution
+mode-lines (e.g. "320x200") to your xorg.conf file.
+<br />
+By the way, Hatari currently runs best in 16 or 32 bits per pixel
+color depth mode, so try to avoid 24 bits per pixel modes if possible.
+<br />
+If Hatari is still too slow, you probably have not enough CPU power.
+You should have a 500 Mhz CPU at least (for ST/STE mode &mdash; Falcon
+mode might require even more).
+</p>
+
+<p>
+<span class="question">Q: Game XY does not work, what can I do?</span>
+<br />
+A: Many ST games often need a certain TOS version to run right. Old games
+often only work with TOS 1.00 or TOS 1.02, so you should try these TOS versions
+first. If the game still does not work, you should also try TOS 1.04 and 2.06.
+Some games also either need a NTSC (US American) or a PAL (European) TOS,
+so it might be useful to test these different types, too.
+<br />
+You should also try different RAM sizes, for example some games do not work
+with 4 MB memory size!
+<br />
+And finally, try to enable the &quot;Slower but more compatible CPU&quot; and/or
+the blitter chip emulation in the system options dialog, this might help, too.
+</p>
+
+
+</body>
+</html>
