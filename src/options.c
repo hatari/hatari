@@ -190,7 +190,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_PRINTER,   NULL, "--printer",
 	  "<file>", "Enable printer support and write data to <file>" },
 	{ OPT_MIDI,      NULL, "--midi",
-	  "<file>", "Enable midi support and write midi data to <file>" },
+	  "<file>", "Enable midi support and use <file> as the device" },
 	{ OPT_RS232,     NULL, "--rs232",
 	  "<file>", "Enable serial port support and use <file> as the device" },
 	
@@ -878,9 +878,10 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			
 		case OPT_MIDI:
 			i += 1;
-			ok = Opt_StrCpy(OPT_MIDI, FALSE, ConfigureParams.Midi.szMidiOutFileName,
-					argv[i], sizeof(ConfigureParams.Midi.szMidiOutFileName),
+			ok = Opt_StrCpy(OPT_MIDI, FALSE, ConfigureParams.Midi.sMidiOutFileName,
+					argv[i], sizeof(ConfigureParams.Midi.sMidiOutFileName),
 					&ConfigureParams.Midi.bEnableMidi);
+			strcpy(ConfigureParams.Midi.sMidiInFileName, ConfigureParams.Midi.sMidiOutFileName);
 			break;
       
 		case OPT_RS232:

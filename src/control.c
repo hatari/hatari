@@ -204,7 +204,8 @@ static bool Control_SetPath(char *name)
 	} item[] = {
 		{ "memauto",  ConfigureParams.Memory.szAutoSaveFileName },
 		{ "memsave",  ConfigureParams.Memory.szMemoryCaptureFileName },
-		{ "midiout",  ConfigureParams.Midi.szMidiOutFileName },
+		{ "midiin",   ConfigureParams.Midi.sMidiInFileName },
+		{ "midiout",  ConfigureParams.Midi.sMidiOutFileName },
 		{ "printout", ConfigureParams.Printer.szPrintToFileName },
 		{ "soundout", ConfigureParams.Sound.szYMCaptureFileName },
 		{ "rs232in",  ConfigureParams.RS232.szInFileName },

@@ -34,6 +34,8 @@ const char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.9 2007-02-25 21:20:10 eerot Ex
 
 
 #define ACIA_SR_INTERRUPT_REQUEST  0x80
+#define ACIA_SR_TX_FULL            0x02
+#define ACIA_SR_RX_FULL            0x01
 
 #define MIDI_DEBUG 0
 #if MIDI_DEBUG
@@ -43,12 +45,13 @@ const char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.9 2007-02-25 21:20:10 eerot Ex
 #endif
 
 
-static FILE *pMidiOutFileHandle = NULL;         /* Used for Midi output */
+static FILE *pMidiFhIn  = NULL;        /* File handle used for Midi input */
+static FILE *pMidiFhOut = NULL;        /* File handle used for Midi output */
 static Uint8 MidiControlRegister;
 static Uint8 MidiStatusRegister;
+static Uint8 nRxDataByte;
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Initialization: Open MIDI device.
  */
@@ -59,28 +62,59 @@ void Midi_Init(void)
 	if (!ConfigureParams.Midi.bEnableMidi)
 		return;
 
-	/* Open MIDI file... */
-	pMidiOutFileHandle = File_Open(ConfigureParams.Midi.szMidiOutFileName, "wb");
-	if (!pMidiOutFileHandle)
+	/* Open MIDI output file */
+	pMidiFhOut = File_Open(ConfigureParams.Midi.sMidiOutFileName, "wb");
+	if (!pMidiFhOut)
 	{
 		ConfigureParams.Midi.bEnableMidi = FALSE;
 		return;
 	}
-	Dprintf(("Opened midi file '%s'.\n", ConfigureParams.Midi.szMidiOutFileName));
+	setvbuf(pMidiFhOut, NULL, _IONBF, 0);    /* No output buffering! */
+
+	/* Open MIDI input file */
+	pMidiFhIn = File_Open(ConfigureParams.Midi.sMidiInFileName, "rb");
+	if (!pMidiFhIn)
+	{
+		pMidiFhOut = File_Close(pMidiFhOut);
+		ConfigureParams.Midi.bEnableMidi = FALSE;
+		return;
+	}
+	setvbuf(pMidiFhIn, NULL, _IONBF, 0);    /* No input buffering! */
+
+	Dprintf(("Opened midi file '%s' for input and '%s' for output.\n",
+	         ConfigureParams.Midi.sMidiInFileName,
+	         ConfigureParams.Midi.sMidiOutFileName));
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Close MIDI device.
  */
 void Midi_UnInit(void)
 {
-	pMidiOutFileHandle = File_Close(pMidiOutFileHandle);
+	pMidiFhIn = File_Close(pMidiFhIn);
+	pMidiFhOut = File_Close(pMidiFhOut);
+
+	Int_RemovePendingInterrupt(INTERRUPT_MIDI);
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Reset MIDI emulation.
+ */
+void Midi_Reset(void)
+{
+	MidiControlRegister = 0;
+	MidiStatusRegister = 0;
+	nRxDataByte = 1;
+
+	if (ConfigureParams.Midi.bEnableMidi)
+	{
+		Int_AddRelativeInterrupt(2050, INT_CPU_CYCLE, INTERRUPT_MIDI);
+	}
+}
+
+
 /**
  * Read MIDI status register ($FFFC04).
  */
@@ -95,24 +129,6 @@ void Midi_Control_ReadByte(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Read MIDI data register ($FFFC06).
- */
-void Midi_Data_ReadByte(void)
-{
-	Dprintf(("Midi_ReadData : $%x.\n", 1));
-
-	/* ACIA registers need wait states - but the value seems to vary in certain cases */
-	M68000_WaitState(8);
-
-	MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
-
-	IoMem[0xfffc06] = 1;        /* Should be this? */
-}
-
-
-/*-----------------------------------------------------------------------*/
 /**
  * Write to MIDI control register ($FFFC04).
  */
@@ -138,32 +154,47 @@ void Midi_Control_WriteByte(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Read MIDI data register ($FFFC06).
+ */
+void Midi_Data_ReadByte(void)
+{
+	Dprintf(("Midi_ReadData : $%x.\n", 1));
+
+	/* ACIA registers need wait states (value seems to vary in certain cases) */
+	M68000_WaitState(8);
+
+	MidiStatusRegister &= ~(ACIA_SR_INTERRUPT_REQUEST|ACIA_SR_RX_FULL);
+
+	IoMem[0xfffc06] = nRxDataByte;
+}
+
+
 /**
  * Write to MIDI data register ($FFFC06).
  */
 void Midi_Data_WriteByte(void)
 {
-	Uint8 dataByte;
+	Uint8 nTxDataByte;
 
-	/* ACIA registers need wait states - but the value seems to vary in certain cases */
+	/* ACIA registers need wait states (value seems to vary in certain cases) */
 	M68000_WaitState(8);
 
-	dataByte = IoMem[0xfffc06];
+	nTxDataByte = IoMem[0xfffc06];
 
-	Dprintf(("Midi_WriteData($%x)\n", dataByte));
+	Dprintf(("Midi_WriteData($%x)\n", nTxDataByte));
 
 	MidiStatusRegister &= ~ACIA_SR_INTERRUPT_REQUEST;
 
 	if (!ConfigureParams.Midi.bEnableMidi)
 		return;
 
-	if (pMidiOutFileHandle)
+	if (pMidiFhOut)
 	{
 		int ret;
-		
+
 		/* Write the character to the output file: */
-		ret = fputc(dataByte, pMidiOutFileHandle);
+		ret = fputc(nTxDataByte, pMidiFhOut);
 		
 		/* If there was an error then stop the midi emulation */
 		if (ret == EOF)
@@ -171,19 +202,65 @@ void Midi_Data_WriteByte(void)
 			Midi_UnInit();
 			return;
 		}
-
-		/* Do not queue the midi data! */
-		fflush(pMidiOutFileHandle);
 	}
 
-	/* Do we need to generate a transfer interrupt? */
-	if ((MidiControlRegister & 0xA0) == 0xA0)
+	MidiStatusRegister |= ACIA_SR_TX_FULL;
+}
+
+
+/**
+ * Read and write MIDI interface data regularly
+ */
+void Midi_InterruptHandler_Update(void)
+{
+	int nInChar;
+
+	/* Remove this interrupt from list and re-order */
+	Int_AcknowledgeInterrupt();
+
+	/* Flush outgoing data */
+	if ((MidiStatusRegister & ACIA_SR_TX_FULL))
 	{
-		Dprintf(("WriteData: Transfer interrupt!\n"));
+		/* Do we need to generate a transfer interrupt? */
+		if ((MidiControlRegister & 0xA0) == 0xA0)
+		{
+			Dprintf(("WriteData: Transfer interrupt!\n"));
+			/* Acknowledge in MFP circuit, pass bit,enable,pending */
+			MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
+			MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
+		}
 
-		/* Acknowledge in MFP circuit, pass bit,enable,pending */
-		MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
+		// if (pMidiFhOut)
+		//	fflush(pMidiFhOut);
 
-		MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
+		MidiStatusRegister &= ~ACIA_SR_TX_FULL;
 	}
+
+	/* Read the bytes in, if we have any */
+	if (File_InputAvailable(pMidiFhIn))
+	{
+		nInChar = fgetc(pMidiFhIn);
+		if (nInChar != EOF)
+		{
+			Dprintf(("Midi: Read character $%x\n", nInChar));
+			/* Copy into our internal queue */
+			nRxDataByte = nInChar;
+			/* Do we need to generate a receive interrupt? */
+			if ((MidiControlRegister & 0x80) == 0x80)
+			{
+				Dprintf(("WriteData: Receive interrupt!\n"));
+				/* Acknowledge in MFP circuit */
+				MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
+				MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
+			}
+			MidiStatusRegister |= ACIA_SR_RX_FULL;
+		}
+		else
+		{
+			fprintf(stderr, "Midi: error during read!\n");
+			clearerr(pMidiFhIn);
+		}
+	}
+
+	Int_AddRelativeInterrupt(2050/3, INT_CPU_CYCLE, INTERRUPT_MIDI);
 }

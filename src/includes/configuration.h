@@ -236,7 +236,8 @@ typedef struct
 typedef struct
 {
   bool bEnableMidi;
-  char szMidiOutFileName[FILENAME_MAX];
+  char sMidiInFileName[FILENAME_MAX];
+  char sMidiOutFileName[FILENAME_MAX];
 } CNF_MIDI;
 
 

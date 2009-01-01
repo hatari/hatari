@@ -75,8 +75,9 @@ const char Int_rcsid[] = "Hatari $Id: int.c,v 1.31 2008-11-15 14:17:29 thothy Ex
 #include "ikbd.h"
 #include "int.h"
 #include "m68000.h"
-#include "memorySnapShot.h"
 #include "mfp.h"
+#include "midi.h"
+#include "memorySnapShot.h"
 #include "sound.h"
 #include "video.h"
 
@@ -105,7 +106,8 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	DmaSnd_InterruptHandler,
 	DmaSnd_InterruptHandler_Microwire,
 	FDC_InterruptHandler_Update,
-	Blitter_InterruptHandler
+	Blitter_InterruptHandler,
+	Midi_InterruptHandler_Update
 };
 
 /* Event timer structure - keeps next timer to occur in structure so don't need

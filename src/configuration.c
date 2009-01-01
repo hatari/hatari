@@ -288,7 +288,8 @@ static const struct Config_Tag configs_Printer[] =
 static const struct Config_Tag configs_Midi[] =
 {
 	{ "bEnableMidi", Bool_Tag, &ConfigureParams.Midi.bEnableMidi },
-	{ "szMidiOutFileName", String_Tag, ConfigureParams.Midi.szMidiOutFileName },
+	{ "sMidiInFileName", String_Tag, ConfigureParams.Midi.sMidiInFileName },
+	{ "sMidiOutFileName", String_Tag, ConfigureParams.Midi.sMidiOutFileName },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -421,7 +422,8 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for MIDI */
 	ConfigureParams.Midi.bEnableMidi = FALSE;
-	strcpy(ConfigureParams.Midi.szMidiOutFileName, "/dev/midi00");
+	strcpy(ConfigureParams.Midi.sMidiInFileName, "/dev/snd/midiC1D0");
+	strcpy(ConfigureParams.Midi.sMidiOutFileName, "/dev/snd/midiC1D0");
 
 	/* Set defaults for Screen */
 	ConfigureParams.Screen.bFullScreen = FALSE;
@@ -553,7 +555,8 @@ void Configuration_Apply(bool bReset)
 	/* make path names absolute, but handle special file names */
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sLogFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sTraceFileName);
-	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.szMidiOutFileName);
+	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiInFileName);
+	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiOutFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Printer.szPrintToFileName);
 }
 

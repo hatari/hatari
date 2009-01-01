@@ -69,6 +69,8 @@ static int Reset_ST(bool bCold)
 		Screen_Reset();               /* Reset screen */
 	M68000_Reset(bCold);          /* Reset CPU */
 
+	Midi_Reset();
+
 	/* Start HBL and VBL interrupts */
 	Video_StartInterrupts();
 
