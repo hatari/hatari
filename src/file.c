@@ -578,6 +578,38 @@ FILE *File_Close(FILE *fp)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Check if input is available at the specified file descriptor.
+ */
+bool File_InputAvailable(FILE *fp)
+{
+	fd_set rfds;
+	struct timeval tv;
+	int fh;
+	int ret;
+
+	if (!fp || (fh = fileno(fp)) == -1)
+		return false;
+
+	/* Add the file handle to the file descriptor set */
+	FD_ZERO(&rfds);
+	FD_SET(fh, &rfds);
+
+	/* Return immediately */
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
+
+	/* Check if file descriptor is ready for a read */
+	ret = select(fh+1, &rfds, NULL, NULL, &tv);
+
+	if (ret > 0)
+		return true;    /* Data available */
+
+	return false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Wrapper for File_MakeAbsoluteName() which special-cases stdin/out/err
  * named files.  The given buffer should be opened with File_Open()
  * and closed with File_Close() if this function is used!
