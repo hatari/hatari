@@ -25,21 +25,24 @@ const char DlgDevice_rcsid[] = "Hatari $Id: dlgDevice.c,v 1.13 2008-06-08 16:07:
 #define DEVDLG_RS232INBROWSE   13
 #define DEVDLG_RS232INNAME     14
 #define DEVDLG_MIDIENABLE      16
-#define DEVDLG_MIDIBROWSE      18
-#define DEVDLG_MIDIOUTNAME     19
-#define DEVDLG_EXIT            20
+#define DEVDLG_MIDIINBROWSE    18
+#define DEVDLG_MIDIINNAME      19
+#define DEVDLG_MIDIOUTBROWSE   21
+#define DEVDLG_MIDIOUTNAME     22
+#define DEVDLG_EXIT            23
 
 
 #define MAX_DLG_FILENAME 46+1
 static char dlgPrinterName[MAX_DLG_FILENAME];
 static char dlgRs232OutName[MAX_DLG_FILENAME];
 static char dlgRs232InName[MAX_DLG_FILENAME];
+static char dlgMidiInName[MAX_DLG_FILENAME];
 static char dlgMidiOutName[MAX_DLG_FILENAME];
 
 /* The devices dialog: */
 static SGOBJ devicedlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 52,22, NULL },
+	{ SGBOX, 0, 0, 0,0, 52,24, NULL },
 	{ SGTEXT, 0, 0, 20,1, 13,1, "Devices setup" },
 
 	{ SGBOX, 0, 0, 1,3, 50,4, NULL },
@@ -57,13 +60,16 @@ static SGOBJ devicedlg[] =
  	{ SGBUTTON, 0, 0, 42,12, 8,1, "Browse" },
  	{ SGTEXT, 0, 0, 3,13, 46,1, dlgRs232InName },
 
-	{ SGBOX, 0, 0, 1,15, 50,4, NULL },
+	{ SGBOX, 0, 0, 1,15, 50,6, NULL },
  	{ SGCHECKBOX, 0, 0, 2,15, 28,1, "Enable MIDI emulation" },
- 	{ SGTEXT, 0, 0, 2,17, 10,1, "Write MIDI output to file:" },
+ 	{ SGTEXT, 0, 0, 2,17, 26,1, "Read MIDI input from file:" },
  	{ SGBUTTON, 0, 0, 42,17, 8,1, "Browse" },
- 	{ SGTEXT, 0, 0, 3,18, 46,1, dlgMidiOutName },
+ 	{ SGTEXT, 0, 0, 3,18, 46,1, dlgMidiInName },
+ 	{ SGTEXT, 0, 0, 2,19, 26,1, "Write MIDI output to file:" },
+ 	{ SGBUTTON, 0, 0, 42,19, 8,1, "Browse" },
+ 	{ SGTEXT, 0, 0, 3,20, 46,1, dlgMidiOutName },
 
- 	{ SGBUTTON, SG_DEFAULT, 0, 16,20, 20,1, "Back to main menu" },
+ 	{ SGBUTTON, SG_DEFAULT, 0, 16,22, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -97,7 +103,8 @@ void Dialog_DeviceDlg(void)
 		devicedlg[DEVDLG_MIDIENABLE].state |= SG_SELECTED;
 	else
 		devicedlg[DEVDLG_MIDIENABLE].state &= ~SG_SELECTED;
-	File_ShrinkName(dlgMidiOutName, ConfigureParams.Midi.szMidiOutFileName, devicedlg[DEVDLG_MIDIOUTNAME].w);
+	File_ShrinkName(dlgMidiInName, ConfigureParams.Midi.sMidiInFileName, devicedlg[DEVDLG_MIDIINNAME].w);
+	File_ShrinkName(dlgMidiOutName, ConfigureParams.Midi.sMidiOutFileName, devicedlg[DEVDLG_MIDIOUTNAME].w);
 
 	/* The devices dialog main loop */
 	do
@@ -124,9 +131,15 @@ void Dialog_DeviceDlg(void)
                                               devicedlg[DEVDLG_RS232INNAME].w,
                                               TRUE);
 			break;
-		 case DEVDLG_MIDIBROWSE:                /* Choose a new MIDI file */
+		 case DEVDLG_MIDIINBROWSE:              /* Choose a new MIDI file */
+			SDLGui_FileConfSelect(dlgMidiInName,
+                                              ConfigureParams.Midi.sMidiInFileName,
+                                              devicedlg[DEVDLG_MIDIINNAME].w,
+                                              TRUE);
+			break;
+		 case DEVDLG_MIDIOUTBROWSE:             /* Choose a new MIDI file */
 			SDLGui_FileConfSelect(dlgMidiOutName,
-                                              ConfigureParams.Midi.szMidiOutFileName,
+                                              ConfigureParams.Midi.sMidiOutFileName,
                                               devicedlg[DEVDLG_MIDIOUTNAME].w,
                                               TRUE);
 			break;
