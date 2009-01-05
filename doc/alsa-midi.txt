@@ -2,11 +2,12 @@
 Getting (Linux) ALSA midi support to work with Hatari
 =====================================================
 
-If you don't have a real MIDI sequencer, you can use the MIDI synthesizer of
-your sound card (if available) or use a software synthetizer.
-For links to software referenced in this text, see end of the text.
-Most of the distros should have in their repositories packages at
-least for some of them though.
+If you don't have a real MIDI sequencer, you can use the MIDI synthesizer
+of your sound card (if available) or use a software synthetizer.
+
+For (Debian) package names and links to software referenced in this
+text, see end of the text. Most of the distros should have in their
+repositories packages at least for some of them though.
 
 There are also some notes about midi networking.
 
@@ -21,9 +22,8 @@ connect a virtual midi device, so that Hatari can access it through a
 /dev/snd/midiC*D* device file (see instructions below).
 
 Please note that you might also have to load instrument patches into your sound
-card first, for example with the program "sfxload" of the "awesfx" package for
-AWE64 based sound cards, or with the program "sbiload" for OPL3 based sound
-cards.
+card first, for example with the program "sfxload" for AWE64 based sound cards,
+or with the program "sbiload" for OPL3 based sound cards.
 
 
 Making MIDI soft-synthetizer to work with ALSA
@@ -135,10 +135,22 @@ midi-networking between (emulated) Ataris:
     hatari --midi redirect.pipe --log stderr
 
 
-Links
------
+Software
+--------
 
-Software:
+In Debian, the tools mentioned above come from following packages:
+- alsa-utils (aconnect, aplaymidi)
+- alsa-tools (sbiload)
+- awesfx (sfxload)
+- pmidi
+- vkeybd
+- fluidsynth
+- fluid-soundfont-* (soundfonts)
+- timidity
+- socat
+See http://packages.debian.org/ for more details on them.
+
+Below are upstream links to some of these tools.
 
 Vkeybd:
   http://alsa.opensrc.org/Vkeybd
@@ -155,6 +167,9 @@ Soundfonts:
 List of some soft-synthetizers:
   http://alsa.opensrc.org/SoftSynths
 
+Kaconnect:
+  http://alsamodular.sourceforge.net/
+
 socat:
   http://www.dest-unreach.org/socat/
 
@@ -162,7 +177,8 @@ MidiMaze:
   http://en.wikipedia.org/wiki/MIDI_Maze
 
 
-Overviews:
+Overviews
+---------
 
 ALSA midi overview:
   http://alsa.opensrc.org/AlsaMidiOverview
