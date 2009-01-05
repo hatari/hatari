@@ -549,12 +549,12 @@ void Configuration_Apply(bool bReset)
 	File_MakeAbsoluteName(ConfigureParams.Sound.szYMCaptureFileName);
 	if (strlen(ConfigureParams.Keyboard.szMappingFileName) > 0)
 		File_MakeAbsoluteName(ConfigureParams.Keyboard.szMappingFileName);
-	File_MakeAbsoluteName(ConfigureParams.RS232.szOutFileName);
-	File_MakeAbsoluteName(ConfigureParams.RS232.szInFileName);
 	
 	/* make path names absolute, but handle special file names */
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sLogFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sTraceFileName);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.szInFileName);
+	File_MakeAbsoluteSpecialName(ConfigureParams.RS232.szOutFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiInFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiOutFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Printer.szPrintToFileName);
