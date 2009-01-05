@@ -59,28 +59,34 @@
 <br />
 A: You should check if you have installed all needed tools for compiling Hatari:
 The GNU C compiler (GCC), GNU make (sometimes also called &quot;gmake&quot;,
-other versions of make might not work), the SDL library and the ZLib
-compression library.
+other versions of make might not work), development files for the SDL library
+and the ZLib compression library.  Also, if you want screenshots in PNG
+format, you'll need development files for libpng.
 </p>
 
 <p>
 <span class="question">Q: Why is Hatari so slow? Are there any possibilities to speed it up?</span>
 <br />
-A: You should not enable sound when running Hatari (or at least switch to 11kHz),
-this will increase the speed of the emulator.
-<br />
-There is also the possibility to skip screen updates (since screen rendering
-can take a lot of CPU time).
-You can enable it by passing the &quot;--frameskips&quot; option to Hatari or
-by using the screen configuration dialog.
+A: Screen rendering can take a lot of CPU time, so it's best to skip rendering
+some frames. You can enable this with the &quot;--frameskips&quot; command
+line option or by using the screen configuration dialog.  If the default
+"auto" mode works well for you, use that.
 <br />
 Note that you should also not enable the screen zoom mode for the ST Low
 resolution since this will slow down the emulator, too. If you still want
 to have a nice fullscreen mode, you should rather add the right resolution
-mode-lines (e.g. "320x200") to your xorg.conf file.
+mode-lines (e.g. "320x200") to your xorg.conf file.  If you're using
+frame skipping, zooming has less effect.
 <br />
 By the way, Hatari currently runs best in 16 or 32 bits per pixel
 color depth mode, so try to avoid 24 bits per pixel modes if possible.
+<br />
+If the programs you're interested about work well enough when the
+"Slower but more compatible CPU" option is disabled, disable that.
+<br />
+You should not enable sound when running Hatari (or at least switch
+to 11kHz), this will increase the speed of the emulator.  Disabling
+e.g. the music in the emulated program can also help.
 <br />
 If Hatari is still too slow, you probably have not enough CPU power.
 You should have a 500 Mhz CPU at least (for ST/STE mode &mdash; Falcon
