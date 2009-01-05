@@ -6,7 +6,6 @@
 
   Main initialization and event handling routines.
 */
-const char Main_rcsid[] = "Hatari $Id: main.c,v 1.153 2008-11-23 10:27:13 thothy Exp $";
 
 #include <time.h>
 #include <SDL.h>
@@ -22,6 +21,7 @@ const char Main_rcsid[] = "Hatari $Id: main.c,v 1.153 2008-11-23 10:27:13 thothy
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
+#include "ide.h"
 #include "ikbd.h"
 #include "ioMem.h"
 #include "keymap.h"
@@ -458,6 +458,7 @@ static void Main_Init(void)
 		else
 			printf("Couldn't open HD file: %s, or no partitions\n", szHardDiskImage);
 	}
+	Ide_Init();
 	GemDOS_Init();
 	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
@@ -499,6 +500,7 @@ static void Main_UnInit(void)
 	IoMem_UnInit();
 	NvRam_UnInit();
 	GemDOS_UnInitDrives();
+	Ide_UnInit();
 	Joy_UnInit();
 	if (Sound_AreWeRecording())
 		Sound_EndRecording();
