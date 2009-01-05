@@ -22,6 +22,9 @@ echo
 echo "1) Unzipping..."
 unzip $ZIPFILE -d $TEMPDIR || exit 2
 
+# .zip files created with STZip sometimes have wrong access rights...
+chmod -R u+rw $TEMPDIR/*
+
 WORKINGDIR=`pwd`
 
 echo
