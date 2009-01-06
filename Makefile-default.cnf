@@ -88,6 +88,7 @@ CONFDIR ?= /etc
 
 # Program used for "make install"
 #INSTALL = install -c
-#INSTALL_PROGRAM = $(INSTALL) -s
+#INSTALL_PROGRAM = $(INSTALL) -s -m 755
+#INSTALL_SCRIPT = $(INSTALL) -m 755
 #INSTALL_DATA = $(INSTALL) -m 644
 
