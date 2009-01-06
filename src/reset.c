@@ -19,6 +19,7 @@ const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.29 2008-05-25 19:58:56 thoth
 #include "int.h"
 #include "m68000.h"
 #include "mfp.h"
+#include "midi.h"
 #include "psg.h"
 #include "reset.h"
 #include "screen.h"
