@@ -542,16 +542,21 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 
 static int bdrv_open(BlockDriverState *bs, const char *filename, int flags)
 {
-	bs->read_only = 0;
-
 	fprintf(stderr,"Opening %s\n", filename);
 
 	strncpy(bs->filename, filename, sizeof(bs->filename));
 
+	bs->read_only = 0;
+
 	bs->fhndl = fopen(filename, "rb+");
 
-	if (!bs->fhndl)
-		perror("bdrv_open");
+	if (!bs->fhndl) {
+		/* Maybe the file is read-only? */
+		bs->fhndl = fopen(filename, "rb");
+		if (!bs->fhndl)
+			perror("bdrv_open");
+		bs->read_only = 1;
+	}
 
 	/* call the change callback */
 	bs->media_changed = 1;
