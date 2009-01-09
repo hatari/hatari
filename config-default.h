@@ -63,7 +63,9 @@
 #endif
 
 /* Relative path from bindir to datadir */
-#define BIN2DATADIR "."
+#ifndef BIN2DATADIR
+# define BIN2DATADIR "."
+#endif
 
 /* Define to 1 to use less memory - at the expense of emulation speed */
 #if defined(__CEGCC__)
