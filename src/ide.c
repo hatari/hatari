@@ -9,12 +9,14 @@
 
 #include <SDL_endian.h>
 #include <errno.h>
+#include <malloc.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include "main.h"
+#include "config.h"
 #include "configuration.h"
 #include "debugui.h"
 #include "file.h"
@@ -378,17 +380,17 @@ static inline void cpu_to_be16wu(uint16_t *p, uint16_t v)
 
 static void *qemu_memalign(size_t alignment, size_t size)
 {
-#if defined(_POSIX_C_SOURCE)
+#if HAVE_POSIX_MEMALIGN
 	int ret;
 	void *ptr;
 	ret = posix_memalign(&ptr, alignment, size);
 	if (ret != 0)
 		return NULL;
 	return ptr;
-#elif defined(_BSD)
-	return valloc(size);
-#else
+#elif HAVE_MEMALIGN
 	return memalign(alignment, size);
+#else
+	return valloc(size);
 #endif
 }
 
