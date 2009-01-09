@@ -9,12 +9,14 @@
 
 #include <SDL_endian.h>
 #include <errno.h>
+#include <malloc.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include "main.h"
+#include "config.h"
 #include "configuration.h"
 #include "debugui.h"
 #include "file.h"
@@ -328,6 +330,10 @@ void Ide_Mem_lput(uaecptr addr, uae_u32 val)
 #define BIOS_ATA_TRANSLATION_LARGE  3
 #define BIOS_ATA_TRANSLATION_RECHS  4
 
+#ifndef ENOMEDIUM           // It's not defined on Mac OS X for example
+#define ENOMEDIUM ENODEV
+#endif
+
 
 typedef struct BlockDriverState BlockDriverState;
 
@@ -374,17 +380,17 @@ static inline void cpu_to_be16wu(uint16_t *p, uint16_t v)
 
 static void *qemu_memalign(size_t alignment, size_t size)
 {
-#if defined(_POSIX_C_SOURCE)
+#if HAVE_POSIX_MEMALIGN
 	int ret;
 	void *ptr;
 	ret = posix_memalign(&ptr, alignment, size);
 	if (ret != 0)
 		return NULL;
 	return ptr;
-#elif defined(_BSD)
-	return valloc(size);
-#else
+#elif HAVE_MEMALIGN
 	return memalign(alignment, size);
+#else
+	return valloc(size);
 #endif
 }
 
@@ -542,16 +548,21 @@ static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
 
 static int bdrv_open(BlockDriverState *bs, const char *filename, int flags)
 {
-	bs->read_only = 0;
-
 	fprintf(stderr,"Opening %s\n", filename);
 
 	strncpy(bs->filename, filename, sizeof(bs->filename));
 
+	bs->read_only = 0;
+
 	bs->fhndl = fopen(filename, "rb+");
 
-	if (!bs->fhndl)
-		perror("bdrv_open");
+	if (!bs->fhndl) {
+		/* Maybe the file is read-only? */
+		bs->fhndl = fopen(filename, "rb");
+		if (!bs->fhndl)
+			perror("bdrv_open");
+		bs->read_only = 1;
+	}
 
 	/* call the change callback */
 	bs->media_changed = 1;
