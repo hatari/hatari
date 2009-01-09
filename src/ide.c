@@ -328,6 +328,10 @@ void Ide_Mem_lput(uaecptr addr, uae_u32 val)
 #define BIOS_ATA_TRANSLATION_LARGE  3
 #define BIOS_ATA_TRANSLATION_RECHS  4
 
+#ifndef ENOMEDIUM           // It's not defined on Mac OS X for example
+#define ENOMEDIUM ENODEV
+#endif
+
 
 typedef struct BlockDriverState BlockDriverState;
 
