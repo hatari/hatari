@@ -590,7 +590,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     IMPORT_TEXTFIELD(tosImage, ConfigureParams.Rom.szTosImageFileName);
     IMPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
     IMPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);
-    IMPORT_TEXTFIELD(writeMidiToFile, ConfigureParams.Midi.szMidiOutFileName);
+    IMPORT_TEXTFIELD(writeMidiToFile, ConfigureParams.Midi.sMidiOutFileName);
 	IMPORT_RADIO(writeProtection, ConfigureParams.DiskImage.nWriteProtection);
     IMPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
     IMPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
@@ -753,7 +753,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     EXPORT_TEXTFIELD(tosImage, ConfigureParams.Rom.szTosImageFileName);
     EXPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
     EXPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);
-    EXPORT_TEXTFIELD(writeMidiToFile, ConfigureParams.Midi.szMidiOutFileName);
+    EXPORT_TEXTFIELD(writeMidiToFile, ConfigureParams.Midi.sMidiOutFileName);
 	EXPORT_RADIO(writeProtection, ConfigureParams.DiskImage.nWriteProtection);
     EXPORT_TEXTFIELD(writeRS232ToFile, ConfigureParams.RS232.szOutFileName);
     EXPORT_SWITCH(zoomSTLowRes, ConfigureParams.Screen.bZoomLowRes);
