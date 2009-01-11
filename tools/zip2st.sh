@@ -1,25 +1,59 @@
 #!/bin/sh
+# Script for converting .ZIP archives to Atari .ST disk images
+# (for the Hatari emulator).
 
-ZIPFILE=$1
-STFILE=$2
-TEMPDIR=`mktemp -d`
+# tools are present?
+if [ -z "$(which unzip)" ]; then
+	echo "ERROR: 'unzip' missing."
+	exit 2
+fi
+if [ -z "$(which rename)" ]; then
+	echo "ERROR: 'rename' script (from 'util-linux' package) missing."
+	exit 2
+fi
+if [ -z "$(which mformat)" ] || [ -z "$(which mcopy)" ]; then
+	echo "ERROR: 'mformat' or 'mcopy' (from 'mtools' package) missing."
+	exit 2
+fi
 
-if [ x"$ZIPFILE" = x ]; then
+# one ZIPFILE given?
+if [ $# -lt 1 ] || [ -z "$1" ] || [ $# -gt 2 ]; then
+	name=${0##*/}
 	echo "Convert .ZIP files to .ST disk images."
 	echo "This script requires the mtools package."
+	echo
 	echo "Usage:"
-	echo " $0 srcname.zip [destname.st]"
+	echo " $name srcname.zip [destname.st]"
+	echo
+	echo "Example:"
+	echo " for zip in *.zip; do $name \$zip; done"
+	echo
+	echo "ERROR: wrong number of argument(s)."
 	exit 1
 fi
 
-if [ x"$STFILE" = x ]; then
-	STFILE=$ZIPFILE.st
+ZIPFILE=$1
+STFILE=$2
+if [ -z "$STFILE" ]; then
+	# if no STFILE path given, save it to current dir (remove path)
+	# and use the ZIPFILE name with the extension removed.
+	# (done with POSIX shell parameter expansion)
+	BASENAME=${ZIPFILE##*/}
+	BASENAME=${BASENAME%.zip}
+	BASENAME=${BASENAME%.ZIP}
+	STFILE=$BASENAME.st
+fi
+if [ -f "$STFILE" ]; then
+	echo "ERROR: ST file '$STFILE' already exists, remove it first. Aborting..."
+	exit 1
 fi
 
+TEMPDIR=`mktemp -d` || exit 2
 echo "Converting" $ZIPFILE "->" $TEMPDIR "->" $STFILE
 
 echo
-echo "1) Unzipping..."
+step=1
+echo "$step) Unzipping..."
 unzip $ZIPFILE -d $TEMPDIR || exit 2
 
 # .zip files created with STZip sometimes have wrong access rights...
@@ -28,7 +62,8 @@ chmod -R u+rw $TEMPDIR/*
 WORKINGDIR=`pwd`
 
 echo
-echo "2) Changing file names to upper case..."
+step=$(($step+1))
+echo "$step) Changing file names to upper case..."
 for i in `find $TEMPDIR/* -depth` ; do
 	cd `dirname $i`
 	rename -v 'y/a-z/A-Z/' `basename $i`
@@ -36,20 +71,40 @@ done
 
 cd $WORKINGDIR
 
-echo
-echo "3) Creating disk image..."
-dd if=/dev/zero of=$STFILE bs=1024 count=720
+# size of reserved sectors, FATs & root dir + zip content size
+size=$((24 + $(du -ks $TEMPDIR|awk '{print $1}')))
+
+# find a suitable disk size supported by mformat
+disksize=0
+for i in 180 320 360 720 1200 1440 2880; do
+	if [ $i -gt $size ]; then
+		disksize=$i
+		break
+	fi
+done
+
+if [ $disksize -gt 0 ]; then
+	echo
+	step=$(($step+1))
+	echo "$step) Creating $disksize KB disk image..."
+	dd if=/dev/zero of=$STFILE bs=1024 count=$disksize
+	
+	echo
+	step=$(($step+1))
+	echo "$step) Formating disk image..."
+	mformat -i $STFILE -f $disksize -a ::
+	
+	echo
+	step=$(($step+1))
+	echo "$step) Copying data to disk image..."
+	mcopy -i $STFILE -spmv $TEMPDIR/* ::
+else
+	echo "ERROR: zip contents don't fit to a floppy image ($size > 2880 KB)."
+fi
 
 echo
-echo "4) Formating disk image..."
-mformat -i $STFILE -f 720 -a ::
-
-echo
-echo "5) Copying data to disk image..."
-mcopy -i $STFILE -spmv $TEMPDIR/* ::
-
-echo
-echo "6) Cleaning up temporary files..."
+step=$(($step+1))
+echo "$step) Cleaning up temporary files..."
 rm -rv $TEMPDIR
 
 echo "Done."
