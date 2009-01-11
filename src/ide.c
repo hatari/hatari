@@ -9,7 +9,6 @@
 
 #include <SDL_endian.h>
 #include <errno.h>
-#include <malloc.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -25,6 +24,10 @@
 #include "mfp.h"
 #include "stMemory.h"
 #include "sysdeps.h"
+
+#if HAVE_MALLOC_H
+# include <malloc.h>
+#endif
 
 
 struct IDEState;

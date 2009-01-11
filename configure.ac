@@ -125,7 +125,7 @@ AC_HEADER_DIRENT
 
 AC_CHECK_HEADERS([unistd.h zlib.h], ,
   AC_MSG_ERROR([header file not found!]))
-AC_CHECK_HEADERS([termios.h glob.h])
+AC_CHECK_HEADERS([termios.h glob.h malloc.h])
 
 dnl Checks for types.
 AC_TYPE_MODE_T
