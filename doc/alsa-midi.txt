@@ -43,10 +43,9 @@ Make vkeybd (virtual midi keyboard app) into an ALSA input device with:
 View the resulting (software) ALSA input and output devices:
   aconnect -i -o
 
-Then connect the vkeybd input to timidity output with:
-  kaconnect
-or if you don't have this UI program, just use 'aconnect' directly:
-  aconnect <sender port> <receiver port>
+Then connect the vkeybd output port to the timidity input port with:
+  aconnect <vkeybd port> <timidity port>
+Or use one of the GUI programs for this like kaconnect, aconnectgui etc.
 
 Now you can use the virtual midi keyboard for testing the sound
 synthesis.
@@ -78,6 +77,9 @@ sound volume etc:
 And if you don't like the FluidSynth shell, use:
   --no-shell --server
 
+Qsynth provides a GUI for above:
+  qsynth <soundfont>
+
 FYI: FluidSynth v1.0.7a (in Debian Etch & Ubuntu Hardy) has buffer
 overruns, but they're fixed in v1.0.8 (in Debian Lenny etc).
 
@@ -95,7 +97,7 @@ When you list your ALSA output devices with:
 You should see in addition to Timidity also 4 virtual hardware
 devices.
 
-Then connect (either with aconnect or kaconnect) the first virtual
+Then connect (with aconnect or one of the GUIs) the first virtual
 HW port to the same Timidity port where you connected the virtual
 midi keyboard.
 
@@ -107,10 +109,10 @@ VirMidi was Card 1 and as the port used above was first one, I give
 Hatari the following midi device:
   hatari --midi /dev/snd/midiC1D0
 
-Note: I also needed --nosound option because Hatari wanted exclusive
-access to the PCM (sound) device and Timidity was already connected
-to it.  This may not be the case if you've compiled Hatari with another
-/ newer SDL_mixer library versions.
+FYI: SDL_mixer (at least in Ubuntu Feisty) takes exclusive access to
+the PCM (sound) device, but as the soft synthetizer was already
+connected to it, I neded to use --nosound option to get MIDI sound
+working. This isn't a problem anymore in Debian Lenny.
 
 
 Sending the midi data over network
@@ -144,6 +146,8 @@ In Debian, the tools mentioned above come from following packages:
 - awesfx (sfxload)
 - pmidi
 - vkeybd
+- aconnectgui
+- qsynth
 - fluidsynth
 - fluid-soundfont-* (soundfonts)
 - timidity

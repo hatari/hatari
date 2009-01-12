@@ -37,7 +37,7 @@ const char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.9 2007-02-25 21:20:10 eerot Ex
 #define ACIA_SR_TX_FULL            0x02
 #define ACIA_SR_RX_FULL            0x01
 
-#define MIDI_DEBUG 0
+#define MIDI_DEBUG 1
 #if MIDI_DEBUG
 #define Dprintf(a) printf a
 #else
