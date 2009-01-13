@@ -21,8 +21,6 @@ Emulation improvements
 
 - Upgrade the CPU core of Hatari to the latest WinUAE or E-UAE CPU core.
 
-- Improve MIDI emulation (MIDI-Input ...).
-
 - Get the games/demos working that are marked as non-working in the manual.
 
 - Improve TT and/or Falcon emulation

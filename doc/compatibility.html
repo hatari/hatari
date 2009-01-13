@@ -155,11 +155,8 @@ EmuTOS TOS, especially for ST/e. For more information, see emutos.txt.</li>
 
 <a name="ST"></a><h2>ST software compatibility list</h2>
 
-<p>Hatari lacks support for MIDI input (output is supported) without
-which MIDI sequencing (and few midi-networked games) software isn't
-very useful.  By default
-<b>everything that works on a real ST should work also in Hatari</b>.
-</p>
+<p>By default <b>everything that works on a real ST should work
+also in Hatari</b>.</p>
 
 <a name="ST games"></a><h4>ST games</h4>
 
@@ -675,18 +672,19 @@ configuration or data files are not writable.</p>
     </tr>
     <tr>
       <td>Accompanist<br>(Henry Cosh Sequencer)</td>
-      <td class="minor">before 1.0</td>
-      <td><a href="#midinotes">MIDI output</a> works, input doesn't</td>
+      <td>devel</td>
+      <td><a href="#midinotes">MIDI input/output</a> works</td>
     </tr>
     <tr>
       <td>Cubase Lite</td>
-      <td class="minor">before 1.0</td>
-      <td><a href="#midinotes">MIDI output</a> works, input doesn't</td>
+      <td>devel</td>
+      <td><a href="#midinotes">MIDI input/output</a> works</td>
     </tr>
     <tr>
       <td>Sequencer One</td>
-      <td class="minor">before 1.0</td>
-      <td>Both <a href="#midinotes">MIDI output</a> and sound work, MIDI input doesn't</td>
+      <td>devel</td>
+      <td>Both <a href="#midinotes">MIDI input/output</a>
+          and sampled sound work</td>
     </tr>
     <tr class="backdropped">
       <td colspan="3" align="right"><i>Text Editors</i></td>
@@ -838,9 +836,6 @@ configuration or data files are not writable.</p>
 </table>
 
 <a name="midinotes"></a><h4>Midi setup</h4>
-
-<p>At the moment Hatari doesn't emulate MIDI input, it has only
-simple MIDI output emulation.</p>
 
 <p>If you don't have a MIDI sequencer, on Linux you can use
 a softsynth like Timidity or FluidSynth instead (if your distribution
@@ -1630,7 +1625,7 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td>2-4 player "Dungeon Master". 4 players would need midi in working.</td>
+      <td>2-4 player "Dungeon Master". 4 players needs MIDI.</td>
     </tr>
     <tr>
       <td>Men at War</td>

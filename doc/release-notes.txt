@@ -4,6 +4,14 @@
                                 Release Notes
 
 
+
+ Version in development
+ ----------------------
+
+Emulation:
+- MIDI input supported in addition to output
+
+
  Version 1.1.0 (2008-11-29):
  ---------------------------
 
