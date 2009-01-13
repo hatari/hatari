@@ -10,17 +10,13 @@
   system.
 
   TODO:
-   - Midi input (??)
-   - No exact timing yet: Sending MIDI data should probably rather be done
-     with an "interrupt" from int.c (just like it is done by the code in
-     ikbd.c).
    - Most bits in the ACIA's status + control registers are currently ignored.
    - Check when we have to clear the ACIA_SR_INTERRUPT_REQUEST bit in the
      ACIA status register (it is currently done when reading or writing to
      the data register, but probably it should rather be done when reading the
      status register?).
 */
-const char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.9 2007-02-25 21:20:10 eerot Exp $";
+const char Midi_fileid[] = "Hatari midi.c : " __DATE__ " " __TIME__;
 
 #include <SDL_types.h>
 
@@ -34,10 +30,10 @@ const char Midi_rcsid[] = "Hatari $Id: midi.c,v 1.9 2007-02-25 21:20:10 eerot Ex
 
 
 #define ACIA_SR_INTERRUPT_REQUEST  0x80
-#define ACIA_SR_TX_FULL            0x02
+#define ACIA_SR_TX_EMPTY           0x02
 #define ACIA_SR_RX_FULL            0x01
 
-#define MIDI_DEBUG 1
+#define MIDI_DEBUG 0
 #if MIDI_DEBUG
 #define Dprintf(a) printf a
 #else
@@ -57,8 +53,6 @@ static Uint8 nRxDataByte;
  */
 void Midi_Init(void)
 {
-	MidiStatusRegister = 2;
-
 	if (!ConfigureParams.Midi.bEnableMidi)
 		return;
 
@@ -105,7 +99,7 @@ void Midi_UnInit(void)
 void Midi_Reset(void)
 {
 	MidiControlRegister = 0;
-	MidiStatusRegister = 0;
+	MidiStatusRegister = ACIA_SR_TX_EMPTY;
 	nRxDataByte = 1;
 
 	if (ConfigureParams.Midi.bEnableMidi)
@@ -120,7 +114,7 @@ void Midi_Reset(void)
  */
 void Midi_Control_ReadByte(void)
 {
-	/* Dprintf(("Midi_ReadControl : $%x.\n", MidiStatusRegister)); */
+	Dprintf(("Midi_ReadControl : $%x.\n", MidiStatusRegister));
 
 	/* ACIA registers need wait states - but the value seems to vary in certain cases */
 	M68000_WaitState(8);
@@ -204,7 +198,7 @@ void Midi_Data_WriteByte(void)
 		}
 	}
 
-	MidiStatusRegister |= ACIA_SR_TX_FULL;
+	MidiStatusRegister &= ~ACIA_SR_TX_EMPTY;
 }
 
 
@@ -219,7 +213,7 @@ void Midi_InterruptHandler_Update(void)
 	Int_AcknowledgeInterrupt();
 
 	/* Flush outgoing data */
-	if ((MidiStatusRegister & ACIA_SR_TX_FULL))
+	if (!(MidiStatusRegister & ACIA_SR_TX_EMPTY))
 	{
 		/* Do we need to generate a transfer interrupt? */
 		if ((MidiControlRegister & 0xA0) == 0xA0)
@@ -233,7 +227,7 @@ void Midi_InterruptHandler_Update(void)
 		// if (pMidiFhOut)
 		//	fflush(pMidiFhOut);
 
-		MidiStatusRegister &= ~ACIA_SR_TX_FULL;
+		MidiStatusRegister |= ACIA_SR_TX_EMPTY;
 	}
 
 	/* Read the bytes in, if we have any */
