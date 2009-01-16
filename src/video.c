@@ -209,6 +209,7 @@
 /* 2008/12/26	[NP]	When reading $ff8260 on ST/STE, set unused bits to 1 instead of 0	*/
 /*			(fix wrong TOS resolution in Awesome Menu Disk 16).			*/
 /*			Set unused bit to 1 when reading $ff820a too.				*/
+/* 2009/01/16	[NP]	Handle special case when writing only in upper byte of a color reg.	*/
 
 
 const char Video_rcsid[] = "Hatari $Id: video.c,v 1.133 2008-12-14 16:11:41 npomarede Exp $";
@@ -2128,6 +2129,14 @@ void Video_LineWidth_WriteByte(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Write to video shifter palette registers (0xff8240-0xff825e)
+ *
+ * Note that there's a special "strange" case when writing only to the upper byte
+ * of the color reg (instead of writing 16 bits at once with .W/.L).
+ * In that case, the byte written to address x is automatically written
+ * to address x+1 too.
+ * So :	move.w #0,$ff8240	-> color 0 is now $000
+ *	move.b #7,$ff8240	-> color 0 is now $707 !
+ *	move.b #$55,$ff8241	-> color 0 is now $755 ($ff8240 remains unchanged)
  */
 static void Video_ColorReg_WriteWord(Uint32 addr)
 {
@@ -2137,6 +2146,11 @@ static void Video_ColorReg_WriteWord(Uint32 addr)
 		Uint16 col;
 		Video_SetHBLPaletteMaskPointers();     /* Set 'pHBLPalettes' etc.. according cycles into frame */
 		col = IoMem_ReadWord(addr);
+
+		/* Handle special case when writing only to the upper byte of the color reg */
+		if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 0 ) )
+			col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy upper byte into lower byte */
+
 		if (ConfigureParams.System.nMachineType == MACHINE_ST)
 			col &= 0x777;                      /* Mask off to ST 512 palette */
 		else
@@ -2279,13 +2293,13 @@ void Video_ShifterMode_WriteByte(void)
  * Handle horizontal scrolling to the left.
  * On STE, there're 2 registers that can scroll the line :
  *  - $ff8264 : scroll without prefetch
- *  - $ff8265 : scrol with prefetch
+ *  - $ff8265 : scroll with prefetch
  * Both registers will scroll the line to the left by skipping the amount
  * of pixels in $ff8264 or $ff8265 (from 0 to 15).
  * As some pixels will be skipped, this means the shifter needs to read
  * 16 other pixels in advance in some internal registers to have an uninterrupted flow of pixels.
  *
- * This 16 pixels can be prefetched before the display starts (on cycle 56 for example) when using
+ * These 16 pixels can be prefetched before the display starts (on cycle 56 for example) when using
  * $ff8265 to scroll the line. In that case 8 more bytes per line (low res) will be read. Most programs
  * are using $ff8265 to scroll the line.
  *
