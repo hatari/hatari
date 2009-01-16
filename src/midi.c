@@ -160,6 +160,10 @@ void Midi_Data_ReadByte(void)
 
 	MidiStatusRegister &= ~(ACIA_SR_INTERRUPT_REQUEST|ACIA_SR_RX_FULL);
 
+	/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt,
+	 * becomes high(1) again after data has been read. */
+	MFP_GPIP |= 0x10;
+
 	IoMem[0xfffc06] = nRxDataByte;
 }
 
@@ -189,7 +193,7 @@ void Midi_Data_WriteByte(void)
 
 		/* Write the character to the output file: */
 		ret = fputc(nTxDataByte, pMidiFhOut);
-		
+
 		/* If there was an error then stop the midi emulation */
 		if (ret == EOF)
 		{
@@ -248,13 +252,16 @@ void Midi_InterruptHandler_Update(void)
 				MidiStatusRegister |= ACIA_SR_INTERRUPT_REQUEST;
 			}
 			MidiStatusRegister |= ACIA_SR_RX_FULL;
+			/* GPIP I4 - General Purpose Pin Keyboard/MIDI interrupt:
+			 * It will remain low(0) until data is read from $fffc06. */
+			MFP_GPIP &= ~0x10;
 		}
 		else
 		{
-			fprintf(stderr, "Midi: error during read!\n");
+			Dprintf(("Midi: error during read!\n"));
 			clearerr(pMidiFhIn);
 		}
 	}
 
-	Int_AddRelativeInterrupt(2050/3, INT_CPU_CYCLE, INTERRUPT_MIDI);
+	Int_AddRelativeInterrupt(2050, INT_CPU_CYCLE, INTERRUPT_MIDI);
 }
