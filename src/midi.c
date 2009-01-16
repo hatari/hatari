@@ -64,20 +64,17 @@ void Midi_Init(void)
 		return;
 	}
 	setvbuf(pMidiFhOut, NULL, _IONBF, 0);    /* No output buffering! */
-
-	/* Open MIDI input file */
-	pMidiFhIn = File_Open(ConfigureParams.Midi.sMidiInFileName, "rb");
-	if (!pMidiFhIn)
-	{
-		pMidiFhOut = File_Close(pMidiFhOut);
-		ConfigureParams.Midi.bEnableMidi = FALSE;
-		return;
-	}
-	setvbuf(pMidiFhIn, NULL, _IONBF, 0);    /* No input buffering! */
-
-	Dprintf(("Opened midi file '%s' for input and '%s' for output.\n",
-	         ConfigureParams.Midi.sMidiInFileName,
+	Dprintf(("Opened file '%s' for MIDI output.\n",
 	         ConfigureParams.Midi.sMidiOutFileName));
+
+	/* Try to open MIDI input file (but do not consider a failure as fatal) */
+	pMidiFhIn = File_Open(ConfigureParams.Midi.sMidiInFileName, "rb");
+	if (pMidiFhIn)
+	{
+		setvbuf(pMidiFhIn, NULL, _IONBF, 0);    /* No input buffering! */
+		Dprintf(("Opened file '%s' for MIDI input.\n",
+		         ConfigureParams.Midi.sMidiInFileName));
+	}
 }
 
 
@@ -235,7 +232,7 @@ void Midi_InterruptHandler_Update(void)
 	}
 
 	/* Read the bytes in, if we have any */
-	if (File_InputAvailable(pMidiFhIn))
+	if (pMidiFhIn && File_InputAvailable(pMidiFhIn))
 	{
 		nInChar = fgetc(pMidiFhIn);
 		if (nInChar != EOF)
