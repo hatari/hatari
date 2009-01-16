@@ -8,9 +8,9 @@
   configuration details in a structure called 'ConfigureParams'.  Before
   doing he changes, a backup copy is done of this structure. When
   the changes are done, these are compared to see whether emulator
-   needs to be rebooted
+  needs to be rebooted
 */
-const char change_rcsid[] = "Hatari $Id: change.c,v 1.18 2008-11-15 19:04:09 thothy Exp $";
+const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 
 #include <ctype.h>
 #include "main.h"
@@ -25,6 +25,7 @@ const char change_rcsid[] = "Hatari $Id: change.c,v 1.18 2008-11-15 19:04:09 tho
 #include "joy.h"
 #include "keymap.h"
 #include "m68000.h"
+#include "midi.h"
 #include "options.h"
 #include "printer.h"
 #include "reset.h"
@@ -105,6 +106,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	bool bReInitAcsiEmu = FALSE;
 	bool bReInitIoMem = FALSE;
 	bool bScreenModeChange = FALSE;
+	bool bReInitMidi = FALSE;
 	bool bFloppyInsert[MAX_FLOPPYDRIVES];
 	int i;
 
@@ -206,6 +208,16 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	}
 #endif
 
+	/* Did change MIDI settings? */
+	if (current->Midi.bEnableMidi != changed->Midi.bEnableMidi
+	    || ((strcmp(changed->Midi.sMidiOutFileName, current->Midi.sMidiOutFileName)
+	         || strcmp(changed->Midi.sMidiInFileName, current->Midi.sMidiInFileName))
+	        && changed->Midi.bEnableMidi))
+	{
+		Midi_UnInit();
+		bReInitMidi = true;
+	}
+
 	/* Copy details to configuration,
 	 * so it can be saved out or set on reset
 	 */
@@ -263,6 +275,12 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	if (bReInitIoMem)
 	{
 		IoMem_Init();
+	}
+
+	/* Re-init MIDI emulation? */
+	if (bReInitMidi)
+	{
+		Midi_Init();
 	}
 
 	/* Force things associated with screen change */
