@@ -41,7 +41,7 @@ struct IDEState;
 #define Dprintf(a)
 #endif
 
-struct IDEState *opaque_ide_if;
+static struct IDEState *opaque_ide_if;
 
 static void ide_ioport_write(void *opaque, uint32_t addr, uint32_t val);
 static uint32_t ide_ioport_read(void *opaque, uint32_t addr1);
@@ -153,8 +153,6 @@ uae_u32 Ide_Mem_wget(uaecptr addr)
 		retval = 0xFFFF;
 	}
 
-	// retval = SDL_SwapLE16(retval);
-
 	Dprintf(("IdeMem_wget($%x) = $%04x\n", addr, retval));
 
 
@@ -188,8 +186,6 @@ uae_u32 Ide_Mem_lget(uaecptr addr)
 	{
 		retval = 0xFFFFFFFF;
 	}
-
-	// retval = SDL_SwapLE32(retval);
 
 	/* word swap for long access to data register */
 	retval = ((retval >> 16) & 0x0000ffff) | ((retval & 0x0000ffff) << 16);
@@ -255,8 +251,6 @@ void Ide_Mem_wput(uaecptr addr, uae_u32 val)
 		return;
 	}
 
-	// val = SDL_SwapLE16(val);
-
 	if (addr == 0xf00000)
 	{
 		ide_data_writew(opaque_ide_if, 0, val);
@@ -280,8 +274,6 @@ void Ide_Mem_lput(uaecptr addr, uae_u32 val)
 		//fprintf(stderr, "Illegal IDE IO memory access: IdeMem_lput($%x)\n", addr);
 		return;
 	}
-
-	// val = SDL_SwapLE32(val);
 
 	/* word swap for long access to data register */
 	val = ((val >> 16) & 0x0000ffff) | ((val & 0x0000ffff) << 16);
@@ -2569,7 +2561,6 @@ static void ide_init2(IDEState *ide_state, BlockDriverState *hd0,
 		{
 			bdrv_get_geometry(s->bs, &nb_sectors);
 			s->nb_sectors = nb_sectors;
-			fprintf(stderr,"bdrv_get_geometry=%lli\n",nb_sectors);
 			/* if a geometry hint is available, use it */
 			bdrv_get_geometry_hint(s->bs, &cylinders, &heads, &secs);
 			translation = bdrv_get_translation_hint(s->bs);
@@ -2649,7 +2640,7 @@ default_geometry:
 /*----------------------------------------------------------------------------*/
 
 
-BlockDriverState *hd_table[2];
+static BlockDriverState *hd_table[2];
 
 
 /**
@@ -2657,6 +2648,9 @@ BlockDriverState *hd_table[2];
  */
 void Ide_Init(void)
 {
+	if (!ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+		return;
+
 	opaque_ide_if = malloc(sizeof(IDEState) * 2);
 	hd_table[0] = malloc(sizeof(BlockDriverState));
 	hd_table[1] = malloc(sizeof(BlockDriverState));
@@ -2672,10 +2666,7 @@ void Ide_Init(void)
 	memset(hd_table[0], 0, sizeof(BlockDriverState));
 	memset(hd_table[1], 0, sizeof(BlockDriverState));
 
-	if (ConfigureParams.HardDisk.bUseIdeHardDiskImage)
-	{
-		bdrv_open(hd_table[0], ConfigureParams.HardDisk.szIdeHardDiskImage, 0);
-	}
+	bdrv_open(hd_table[0], ConfigureParams.HardDisk.szIdeHardDiskImage, 0);
 
 	ide_init2(&opaque_ide_if[0], hd_table[0], NULL /*hd_table[1]*/);
 }
@@ -2686,17 +2677,22 @@ void Ide_Init(void)
  */
 void Ide_UnInit(void)
 {
-	if (ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	int i;
+
+	for (i = 0; i < 2; i++)
 	{
-		bdrv_close(hd_table[0]);
+		if (hd_table[i])
+		{
+			if (bdrv_is_inserted(hd_table[i]))
+			{
+				bdrv_close(hd_table[i]);
+			}
+			free(hd_table[i]);
+			hd_table[i] = NULL;
+		}
 	}
 
-	free(opaque_ide_if);
+	if (opaque_ide_if)
+		free(opaque_ide_if);
 	opaque_ide_if = NULL;
-
-	free(hd_table[0]);
-	hd_table[0] = NULL;
-
-	free(hd_table[1]);
-	hd_table[1] = NULL;
 }
