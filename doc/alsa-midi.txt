@@ -115,26 +115,40 @@ connected to it, I neded to use --nosound option to get MIDI sound
 working. This isn't a problem anymore in Debian Lenny.
 
 
-Sending the midi data over network
-----------------------------------
+MIDI and networking
+-------------------
 
-If you direct the data to stdout, you can use e.g. ssh to pipe
-it over network:
+If you direct the MIDI data to stdout, you can use just ssh to
+forward the MIDI output over network:
   hatari --midi /dev/stdout --log /dev/stderr |\
     ssh user@remote.site "cat>/dev/snd/midiC1D0"
 
-Note that logging is re-directed to stderr so that it doesn't
-mess the midi output.
+(Note that logging is re-directed to stderr so that it doesn't
+mess the midi output to standard output.)
 
 Same can be done with socat so that the connections are bi-directional.
-Once Hatari supports midi input, you can use socat like this to do
-midi-networking between (emulated) Ataris:
+You can use socat like this to do midi-networking between two (emulated)
+local Ataris:
+  socat -b1 PTY,raw,echo=0,link=/tmp/midi1 PTY,raw,echo=0,link=/tmp/midi2 &
+  hatari --midi /tmp/midi1 &
+  hatari --midi /tmp/midi2 &
+
+Buffer size (-b) is set to one just in case (by default socat buffer
+size is 8K, but all the MIDI communication is done byte at the time).
+
+This is how MIDI networking can be done over network:
   @remote.site:
-    socat PIPE:redirect.pipe TCP4-LISTEN:www
-    hatari --midi redirect.pipe --log stderr
+    socat -b1 PTY,raw,echo=0,link=/tmp/midi1 TCP4-LISTEN:33333 &
+    hatari --midi /tmp/midi1 &
   @local.site:
-    socat PIPE:redirect.pipe TCP4:remote.site:www
-    hatari --midi redirect.pipe --log stderr
+    socat -b1 PTY,raw,echo=0,link=/tmp/midi2 TCP4:remote.site:33333 &
+    hatari --midi /tmp/midi2 &
+
+You may need to open a hole into your firewall for the given port
+(here 33333).  Usually there's a hole for the www-traffic in firewalls,
+but the port for that (80) is below 1000, so if you use "www" as
+the port, most likely you need to run "socat" as root.  To test this
+with a single machine, use "localhost" as the "remote.site".
 
 
 Software
@@ -187,7 +201,7 @@ Overviews
 ALSA midi overview:
   http://alsa.opensrc.org/AlsaMidiOverview
 
-How to set up soundcards with hardware MIDI synthesis capability (AWE & OPL3)
+How to set up soundcards with hardware MIDI synthesis capability (AWE & OPL3):
   https://help.ubuntu.com/community/Midi/HardwareSynthesisSetup
 
 Virtual midi hardware setup:
@@ -201,3 +215,6 @@ Midi with ALSA (old):
 
 Midi on Linux:
   http://www.linuxjournal.com/article/7773
+
+MIDI, Musical Instrument Digital Interface protocol:
+  http://en.wikipedia.org/wiki/Midi
