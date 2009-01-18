@@ -74,9 +74,9 @@ cd $WORKINGDIR
 # size of reserved sectors, FATs & root dir + zip content size
 size=$((24 + $(du -ks $TEMPDIR|awk '{print $1}')))
 
-# find a suitable disk size supported by mformat
+# find a suitable disk size supported by mformat and Atari ST
 disksize=0
-for i in 180 320 360 720 1200 1440 2880; do
+for i in 360 400 720 800 1440 2880; do
 	if [ $i -gt $size ]; then
 		disksize=$i
 		break
@@ -92,7 +92,12 @@ if [ $disksize -gt 0 ]; then
 	echo
 	step=$(($step+1))
 	echo "$step) Formating disk image..."
-	mformat -i $STFILE -f $disksize -a ::
+	case $disksize in
+		360) mformat -i $STFILE -t 80 -h 1 -n 9 -a :: ;;
+		400) mformat -i $STFILE -t 80 -h 1 -n 10 -a :: ;;
+		800) mformat -i $STFILE -t 80 -h 2 -n 10 -a :: ;;
+		*) mformat -i $STFILE -f $disksize -a :: ;;
+	esac
 	
 	echo
 	step=$(($step+1))
