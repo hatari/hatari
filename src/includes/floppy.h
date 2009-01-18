@@ -13,12 +13,13 @@
 /* Structure for each drive connected as emulation */
 typedef struct
 {
-  Uint8 *pBuffer;
-  int nImageBytes;
-  bool bDiskInserted;
-  bool bMediaChanged;
-  bool bContentsChanged;
-  bool bOKToSave;
+	Uint8 *pBuffer;
+	char sFileName[FILENAME_MAX];
+	int nImageBytes;
+	bool bDiskInserted;
+	bool bMediaChanged;
+	bool bContentsChanged;
+	bool bOKToSave;
 } EMULATION_DRIVE;
 
 #define MAX_FLOPPYDRIVES    2     /* A:, B: */

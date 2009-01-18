@@ -21,7 +21,7 @@
   (PaCifiST will, however, read/write to these images as it does not perform
   FDC access as on a real ST)
 */
-const char Floppy_rcsid[] = "Hatari $Id: floppy.c,v 1.43 2008-11-28 17:54:14 thothy Exp $";
+const char Floppy_fileid[] = "Hatari floppy.c : " __DATE__ " " __TIME__;
 
 #include <sys/stat.h>
 #include <assert.h>
@@ -110,6 +110,7 @@ void Floppy_MemorySnapShot_Capture(bool bSave)
 		}
 		if (EmulationDrives[i].pBuffer)
 			MemorySnapShot_Store(EmulationDrives[i].pBuffer, EmulationDrives[i].nImageBytes);
+		MemorySnapShot_Store(EmulationDrives[i].sFileName, sizeof(EmulationDrives[i].sFileName));
 		MemorySnapShot_Store(&EmulationDrives[i].bMediaChanged,sizeof(EmulationDrives[i].bMediaChanged));
 		MemorySnapShot_Store(&EmulationDrives[i].bContentsChanged,sizeof(EmulationDrives[i].bContentsChanged));
 		MemorySnapShot_Store(&EmulationDrives[i].bOKToSave,sizeof(EmulationDrives[i].bOKToSave));
@@ -151,7 +152,7 @@ bool Floppy_IsWriteProtected(int Drive)
 	{
 		struct stat FloppyStat;
 		/* Check whether disk is writable */
-		if (stat(ConfigureParams.DiskImage.szDiskFileName[Drive], &FloppyStat) == 0
+		if (stat(EmulationDrives[Drive].sFileName, &FloppyStat) == 0
 		    && (FloppyStat.st_mode & S_IWUSR))
 			return FALSE;
 		else
@@ -354,7 +355,11 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 	{
 		return FALSE;
 	}
-	/* Store image filename, size and set drive states */
+
+	/* Store image filename (required for ejecting the disk later!) */
+	strcpy(EmulationDrives[Drive].sFileName, filename);
+
+	/* Store size and set drive states */
 	EmulationDrives[Drive].nImageBytes = nImageBytes;
 	EmulationDrives[Drive].bDiskInserted = TRUE;
 	EmulationDrives[Drive].bContentsChanged = FALSE;
@@ -379,7 +384,7 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 	/* Does our drive have a disk in? */
 	if (EmulationDrives[Drive].bDiskInserted)
 	{
-		char *psFileName = ConfigureParams.DiskImage.szDiskFileName[Drive];
+		char *psFileName = EmulationDrives[Drive].sFileName;
 
 		/* OK, has contents changed? If so, need to save */
 		if (EmulationDrives[Drive].bContentsChanged)
@@ -413,6 +418,7 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 		EmulationDrives[Drive].pBuffer = NULL;
 	}
 
+	EmulationDrives[Drive].sFileName[0] = '\0';
 	EmulationDrives[Drive].nImageBytes = 0;
 	EmulationDrives[Drive].bDiskInserted = FALSE;
 	EmulationDrives[Drive].bContentsChanged = FALSE;
