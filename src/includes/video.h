@@ -139,6 +139,7 @@ extern int VblJitterArrayPending[];
 
 extern void Video_SetSystemTimings(void);
 extern void Video_Reset(void);
+extern void Video_Reset_Glue(void);
 extern void Video_MemorySnapShot_Capture(bool bSave);
 extern void Video_GetTTRes(int *width, int *height, int *bpp);
 extern void Video_StartInterrupts(void);

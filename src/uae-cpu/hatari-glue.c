@@ -47,6 +47,9 @@ void customreset(void)
   /* In case the 6301 was executing a custom program from its RAM */
   /* we must turn it back to the 'normal' mode. */
   IKBD_Reset_ExeMode ();
+
+  /* Reseting the GLUE video chip should also set freq/res register to 0 */
+  Video_Reset_Glue ();
 }
 
 

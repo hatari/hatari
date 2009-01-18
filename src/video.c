@@ -1930,6 +1930,19 @@ void Video_Reset(void)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Reset the GLUE chip responsible for generating the H/V sync signals.
+ * When the 68000 RESET instruction is called, frequency and resolution
+ * should be reset to 0.
+ */
+void Video_Reset_Glue(void)
+{
+	IoMem_WriteByte(0xff820a,0);		/* video freq */
+	IoMem_WriteByte(0xff8260,0);		/* video res */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Write to video address base high, med and low register (0xff8201/03/0d).
  * On STE, when a program writes to high or med registers, base low register
  * is reset to zero.
