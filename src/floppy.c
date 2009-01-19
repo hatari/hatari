@@ -56,6 +56,10 @@ static const char * const pszDiskImageNameExts[] =
 };
 
 
+/* local functions */
+static bool Floppy_EjectBothDrives(void);
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Initialize emulation floppy drives
@@ -392,6 +396,7 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 			/* Is OK to save image (if boot-sector is bad, don't allow a save) */
 			if (EmulationDrives[Drive].bOKToSave && !Floppy_IsWriteProtected(Drive))
 			{
+				Log_Printf(LOG_INFO, "Flush contents to floppy image '%s'.", psFileName);
 				/* Save as .MSA or .ST image? */
 				if (MSA_FileNameIsMSA(psFileName, TRUE))
 					MSA_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
@@ -433,7 +438,7 @@ bool Floppy_EjectDiskFromDrive(int Drive)
  * Eject all disk image from floppy drives - call when quit.
  * Return TRUE if there was something to eject.
  */
-bool Floppy_EjectBothDrives(void)
+static bool Floppy_EjectBothDrives(void)
 {
 	bool bEjectedA, bEjectedB;
 

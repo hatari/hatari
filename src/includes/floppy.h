@@ -37,11 +37,8 @@ extern const char* Floppy_SetDiskFileNameNone(int Drive);
 extern const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const char *pszZipPath);
 extern bool Floppy_InsertDiskIntoDrive(int Drive);
 extern bool Floppy_EjectDiskFromDrive(int Drive);
-extern bool Floppy_EjectBothDrives(void);
 extern void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes, Uint16 *pnSectorsPerTrack, Uint16 *pnSides);
 extern bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector, Uint16 Track, Uint16 Side, short Count, int *pnSectorsPerTrack);
 extern bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, Uint16 Sector, Uint16 Track, Uint16 Side, short Count, int *pnSectorsPerTrack);
-extern int Floppy_GetPhysicalSectorsPerTrack(int Drive);
-extern bool Floppy_ReadPhysicalSector(int Drive,char *pBuffer, Uint16 Sector, Uint16 Track, Uint16 Side, short Count);
 
 #endif
