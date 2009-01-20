@@ -56,24 +56,33 @@ void Midi_Init(void)
 	if (!ConfigureParams.Midi.bEnableMidi)
 		return;
 
-	/* Open MIDI output file */
-	pMidiFhOut = File_Open(ConfigureParams.Midi.sMidiOutFileName, "wb");
-	if (!pMidiFhOut)
+	if (ConfigureParams.Midi.sMidiOutFileName[0])
 	{
-		ConfigureParams.Midi.bEnableMidi = FALSE;
-		return;
+		/* Open MIDI output file */
+		pMidiFhOut = File_Open(ConfigureParams.Midi.sMidiOutFileName, "wb");
+		if (!pMidiFhOut)
+		{
+			Log_AlertDlg(LOG_ERROR, "MIDI output file open failed. MIDI support disabled.");
+			ConfigureParams.Midi.bEnableMidi = FALSE;
+			return;
+		}
+		setvbuf(pMidiFhOut, NULL, _IONBF, 0);    /* No output buffering! */
+		Dprintf(("Opened file '%s' for MIDI output.\n",
+			 ConfigureParams.Midi.sMidiOutFileName));
 	}
-	setvbuf(pMidiFhOut, NULL, _IONBF, 0);    /* No output buffering! */
-	Dprintf(("Opened file '%s' for MIDI output.\n",
-	         ConfigureParams.Midi.sMidiOutFileName));
-
-	/* Try to open MIDI input file (but do not consider a failure as fatal) */
-	pMidiFhIn = File_Open(ConfigureParams.Midi.sMidiInFileName, "rb");
-	if (pMidiFhIn)
+	if (ConfigureParams.Midi.sMidiInFileName[0])
 	{
+		/* Try to open MIDI input file */
+		pMidiFhIn = File_Open(ConfigureParams.Midi.sMidiInFileName, "rb");
+		if (!pMidiFhIn)
+		{
+			Log_AlertDlg(LOG_ERROR, "MIDI input file open failed. MIDI support disabled.");
+			ConfigureParams.Midi.bEnableMidi = FALSE;
+			return;
+		}
 		setvbuf(pMidiFhIn, NULL, _IONBF, 0);    /* No input buffering! */
 		Dprintf(("Opened file '%s' for MIDI input.\n",
-		         ConfigureParams.Midi.sMidiInFileName));
+			 ConfigureParams.Midi.sMidiInFileName));
 	}
 }
 
