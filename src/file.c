@@ -530,6 +530,10 @@ FILE *File_Open(const char *path, const char *mode)
 	int wr = 0, rd = 0;
 	FILE *fp;
 
+	/* empty name signifies file that shouldn't be opened/enabled */
+	if (!*path)
+		return NULL;
+	
 	/* special "stdout" and "stderr" files can be used
 	 * for files which are written or appended
 	 */
@@ -611,13 +615,14 @@ bool File_InputAvailable(FILE *fp)
 /*-----------------------------------------------------------------------*/
 /**
  * Wrapper for File_MakeAbsoluteName() which special-cases stdin/out/err
- * named files.  The given buffer should be opened with File_Open()
- * and closed with File_Close() if this function is used!
+ * named files and empty file name.  The given buffer should be opened
+ * with File_Open() and closed with File_Close() if this function is used!
  * (On Linux one can use /dev/stdout etc, this is intended for other OSes)
  */
 void File_MakeAbsoluteSpecialName(char *path)
 {
-	if (strcmp(path, "stdin")  != 0 &&
+	if (path[0] &&
+	    strcmp(path, "stdin")  != 0 &&
 	    strcmp(path, "stdout") != 0 &&
 	    strcmp(path, "stderr") != 0)
 		File_MakeAbsoluteName(path);
