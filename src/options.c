@@ -10,18 +10,9 @@
   - Add option ID to the enum
   - Add the option information to HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
-
-  2007-09-27   [NP]    Add parsing for the '--trace' option.
-  2008-03-01   [ET]    Add option sections and <bool> support.
-  2008-04-07   [ET]    Add bios/xbios intercept support
-  2008-04-16   [ET]    Return FALSE instead of exiting on errors
-  2008-06-08   [ET]    Add disk image options and refactor their handling
-  2008-06-10   [ET]    Add --vdi and joystick<port> <type> options
-  2008-07-30   [ET]    Shorter & more consistent option descriptions
-  2008-08-19   [ET]    Add --statusbar and --drive-led options
 */
 
-const char Opt_rcsid[] = "Hatari $Id: options.c,v 1.72 2008-09-20 12:01:08 thothy Exp $";
+const char Options_fileid[] = "Hatari floppy.c : " __DATE__ " " __TIME__;
 
 #include <ctype.h>
 #include <stdio.h>
@@ -80,8 +71,10 @@ enum {
 	OPT_JOYSTICK4,
 	OPT_JOYSTICK5,
 	OPT_PRINTER,
-	OPT_MIDI,
-	OPT_RS232,
+	OPT_MIDI_IN,
+	OPT_MIDI_OUT,
+	OPT_RS232_IN,
+	OPT_RS232_OUT,
 	OPT_DISKA,		/* disk options */
 	OPT_DISKB,
 	OPT_HARDDRIVE,
@@ -189,10 +182,14 @@ static const opt_t HatariOptions[] = {
 	  "<type>", "Set joystick type (none/keys/real) for given port" },
 	{ OPT_PRINTER,   NULL, "--printer",
 	  "<file>", "Enable printer support and write data to <file>" },
-	{ OPT_MIDI,      NULL, "--midi",
-	  "<file>", "Enable midi support and use <file> as the device" },
-	{ OPT_RS232,     NULL, "--rs232",
-	  "<file>", "Enable serial port support and use <file> as the device" },
+	{ OPT_MIDI_IN,   NULL, "--midi-in",
+	  "<file>", "Enable MIDI and use <file> as the input device" },
+	{ OPT_MIDI_OUT,  NULL, "--midi-out",
+	  "<file>", "Enable MIDI and use <file> as the output device" },
+	{ OPT_RS232_IN,  NULL, "--rs232-in",
+	  "<file>", "Enable serial port and use <file> as the input device" },
+	{ OPT_RS232_OUT, NULL, "--rs232-out",
+	  "<file>", "Enable serial port and use <file> as the output device" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Disk" },
 	{ OPT_DISKA, NULL, "--disk-a",
@@ -876,24 +873,33 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 					&ConfigureParams.Printer.bEnablePrinting);
 			break;
 			
-		case OPT_MIDI:
+		case OPT_MIDI_IN:
 			i += 1;
-			ok = Opt_StrCpy(OPT_MIDI, FALSE, ConfigureParams.Midi.sMidiOutFileName,
+			/* FALSE: "" can be used to disable midi input */
+			ok = Opt_StrCpy(OPT_MIDI_IN, FALSE, ConfigureParams.Midi.sMidiInFileName,
+					argv[i], sizeof(ConfigureParams.Midi.sMidiInFileName),
+					&ConfigureParams.Midi.bEnableMidi);
+			break;
+			
+		case OPT_MIDI_OUT:
+			i += 1;
+			ok = Opt_StrCpy(OPT_MIDI_OUT, TRUE, ConfigureParams.Midi.sMidiOutFileName,
 					argv[i], sizeof(ConfigureParams.Midi.sMidiOutFileName),
 					&ConfigureParams.Midi.bEnableMidi);
-			strcpy(ConfigureParams.Midi.sMidiInFileName, ConfigureParams.Midi.sMidiOutFileName);
 			break;
       
-		case OPT_RS232:
+		case OPT_RS232_IN:
 			i += 1;
-			ok = Opt_StrCpy(OPT_RS232, TRUE, ConfigureParams.RS232.szInFileName,
+			ok = Opt_StrCpy(OPT_RS232_IN, TRUE, ConfigureParams.RS232.szInFileName,
 					argv[i], sizeof(ConfigureParams.RS232.szInFileName),
 					&ConfigureParams.RS232.bEnableRS232);
-			if (ok && ConfigureParams.RS232.bEnableRS232)
-			{
-				strncpy(ConfigureParams.RS232.szOutFileName, argv[i],
-					sizeof(ConfigureParams.RS232.szOutFileName));
-			}
+			break;
+      
+		case OPT_RS232_OUT:
+			i += 1;
+			ok = Opt_StrCpy(OPT_RS232_OUT, TRUE, ConfigureParams.RS232.szOutFileName,
+					argv[i], sizeof(ConfigureParams.RS232.szOutFileName),
+					&ConfigureParams.RS232.bEnableRS232);
 			break;
 
 			/* disk options */
