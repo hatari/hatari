@@ -120,35 +120,40 @@ MIDI and networking
 
 If you direct the MIDI data to stdout, you can use just ssh to
 forward the MIDI output over network:
-  hatari --midi /dev/stdout --log /dev/stderr |\
+  hatari --midi-in "" --midi-out /dev/stdout --log /dev/stderr |\
     ssh user@remote.site "cat>/dev/snd/midiC1D0"
 
 (Note that logging is re-directed to stderr so that it doesn't
-mess the midi output to standard output.)
+mess the MIDI output to standard output and --midi-in is set
+empty in case you don't have MIDI input device locally.)
 
-Same can be done with socat so that the connections are bi-directional.
-You can use socat like this to do midi-networking between two (emulated)
-local Ataris:
-  socat -b1 PTY,raw,echo=0,link=/tmp/midi1 PTY,raw,echo=0,link=/tmp/midi2 &
-  hatari --midi /tmp/midi1 &
-  hatari --midi /tmp/midi2 &
+
+MIDI-networking two Hatari emulators can be most easily done with socat.
+
+MIDI networking over normal TCP/IP network:
+  @remote.site:
+    socat -b1 PTY,raw,echo=0,link=/tmp/midi1 TCP4-LISTEN:33333 &
+    hatari --midi-in /tmp/midi1 --midi-out /tmp/midi1 &
+  @local.site:
+    socat -b1 PTY,raw,echo=0,link=/tmp/midi2 TCP4:remote.site:33333 &
+    hatari --midi-in /tmp/midi2 --midi-out /tmp/midi2 &
 
 Buffer size (-b) is set to one just in case (by default socat buffer
 size is 8K, but all the MIDI communication is done byte at the time).
-
-This is how MIDI networking can be done over network:
-  @remote.site:
-    socat -b1 PTY,raw,echo=0,link=/tmp/midi1 TCP4-LISTEN:33333 &
-    hatari --midi /tmp/midi1 &
-  @local.site:
-    socat -b1 PTY,raw,echo=0,link=/tmp/midi2 TCP4:remote.site:33333 &
-    hatari --midi /tmp/midi2 &
 
 You may need to open a hole into your firewall for the given port
 (here 33333).  Usually there's a hole for the www-traffic in firewalls,
 but the port for that (80) is below 1000, so if you use "www" as
 the port, most likely you need to run "socat" as root.  To test this
 with a single machine, use "localhost" as the "remote.site".
+
+Local MIDI network:
+  socat -b1 PTY,raw,echo=0,link=/tmp/midi1 PTY,raw,echo=0,link=/tmp/midi2 &
+  hatari --midi-in /tmp/midi1 --midi-out /tmp/midi1 &
+  hatari --midi-in /tmp/midi2 --midi-out /tmp/midi2 &
+
+If you don't have "socat" installed, local-midi-ring.sh script shows how
+to join several (local) Hatari emulators into a MIDI ring using fifos.
 
 
 Software
