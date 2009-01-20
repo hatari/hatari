@@ -15,11 +15,14 @@
 #include "file.h"
 #include "msa.h"
 
+/* prototypes for dummy log/alert functions below */
+#include "dialog.h"
+#include "log.h"
 
 /**
  * Output string to log file
  */
-void Log_Printf(int nType, const char *psFormat, ...)
+extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 {
 	va_list argptr;
 

@@ -1,18 +1,21 @@
 # Makefile for Hatari MSA
 
+# Include settings
+include ../../Makefile.cnf
+
 HMSA_OBJS = hmsa.o floppy.o
 HATARI_OBJS = msa.o dim.o st.o file.o unzip.o zip.o
 OBJS = $(HMSA_OBJS) $(HATARI_OBJS:%.o=../../src/%.o)
 
-CFLAGS = -g -O -Wall -I../.. -I../../src/includes -I../../src/uae-cpu \
-	$(shell sdl-config --cflags)
+# Additional include directories:
+CPPFLAGS += $(SDL_CFLAGS) -I../.. -I../../src/includes -I../../src/uae-cpu
 
 LIBS = -lz
 
 all: hmsa
 
 hmsa: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o hmsa
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(OBJS) $(LIBS) -o hmsa
 
 clean:
 	$(RM) *.o hmsa
