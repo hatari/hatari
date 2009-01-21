@@ -107,14 +107,14 @@ static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 			{
 				File_ShrinkName(dlgname, realname, diskdlg[diskid].w);
 			}
-			if (zip_path)
-				free(zip_path);
 		}
 		else
 		{
 			Floppy_SetDiskFileNameNone(drive);
 			dlgname[0] = '\0';
 		}
+		if (zip_path)
+			free(zip_path);
 		free(selname);
 		return TRUE;
 	}

@@ -229,18 +229,15 @@ static void ShortCut_InsertDisk(int drive)
 	if (selname)
 	{
 		if (File_Exists(selname))
-		{
-			const char *realname;
-			realname = Floppy_SetDiskFileName(drive, selname, zip_path);
-			if (zip_path)
-				free(zip_path);
-		}
+			Floppy_SetDiskFileName(drive, selname, zip_path);
 		else
-		{
 			Floppy_SetDiskFileNameNone(drive);
-		}
-		Floppy_InsertDiskIntoDrive(0);
+
+		if (zip_path)
+			free(zip_path);
 		free(selname);
+		
+		Floppy_InsertDiskIntoDrive(0);
 	}
 	Main_UnPauseEmulation();
 }
