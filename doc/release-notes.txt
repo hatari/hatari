@@ -10,6 +10,15 @@
 
 Emulation:
 - MIDI input supported in addition to output
+- Support for STE hardware horizontal scrolling in medium res
+- Make the FDC Read Address command always return success, even if
+  we don't really return the correct bytes for now (fixes a few game loaders)
+- Improved shadow register when writing to the YM2149 (fixes X-Out music)
+- Cleaner blitter code with improved timings
+- Emulation of interrupts jitter for HBL and VBL + improved timing accuracy
+- Improve color alignment with the shifter (for spectrum512 like images)
+- Fix to the fire button detection reported in some games
+- Added IDE hard disk emulation
 
 
  Version 1.1.0 (2008-11-29):
