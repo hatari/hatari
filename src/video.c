@@ -2146,10 +2146,11 @@ void Video_LineWidth_WriteByte(void)
  * Note that there's a special "strange" case when writing only to the upper byte
  * of the color reg (instead of writing 16 bits at once with .W/.L).
  * In that case, the byte written to address x is automatically written
- * to address x+1 too.
+ * to address x+1 too (but we shouldn't copy x in x+1 after masking x ; we apply the mask at the end)
  * So :	move.w #0,$ff8240	-> color 0 is now $000
  *	move.b #7,$ff8240	-> color 0 is now $707 !
  *	move.b #$55,$ff8241	-> color 0 is now $755 ($ff8240 remains unchanged)
+ *	move.b #$71,$ff8240	-> color 0 is now $171 (bytes are first copied, then masked)
  */
 static void Video_ColorReg_WriteWord(Uint32 addr)
 {
