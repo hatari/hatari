@@ -211,6 +211,8 @@
 /*			Set unused bit to 1 when reading $ff820a too.				*/
 /* 2009/01/16	[NP]	Handle special case when writing only in upper byte of a color reg.	*/
 /* 2009/01/21	[NP]	Implement STE horizontal scroll for medium res (fixes cool_ste.prg).	*/
+/*			Take the current res into account in Video_CopyScreenLineColor to	*/
+/*			allow mixing low/mid res with horizontal scroll on STE.			*/	
 
 
 
@@ -1034,6 +1036,11 @@ static void Video_CopyScreenLineColor(void)
 	int VideoOffset = 0;
 	int STF_PixelScroll = 0;
 	Uint32 addr;
+	int LineRes;
+
+
+        /* Get resolution for this line (in case of mixed low/mid screen) */
+	LineRes = ( HBLPaletteMasks[nHBL-nFirstVisibleHbl] >> 16 ) & 1;		/* 0=low res  1=mid res */
 
 	//fprintf(stderr , "copy line %d start %d end %d %d %x\n" , nHBL, nStartHBL, nEndHBL, LineBorderMask, pVideoRaster - STRam);
 
@@ -1174,7 +1181,7 @@ static void Video_CopyScreenLineColor(void)
 			else
 				pScrollEndAddr = (Uint16 *)(pSTScreen + SCREENBYTES_LEFT + SCREENBYTES_MIDDLE - 8);
 
-			if (STRes == ST_MEDIUM_RES)
+			if ( LineRes == 1 )			/* mid res */
 			{
 				/* in mid res, 16 pixels are 4 bytes, not 8 as in low res, so only the last 4 bytes need a special case */
 				pScrollEndAddr += 2;				/* 2 Uint16 -> 4 bytes */
@@ -1223,7 +1230,7 @@ static void Video_CopyScreenLineColor(void)
 				}
 			}
 
-			else			/* ST_LOW_RES */
+			else					/* low res */
 			{
 				/* Shift the whole line to the left by the given scroll count */
 				while (pScrollAdj < pScrollEndAddr)
@@ -1433,13 +1440,13 @@ static void Video_EndHBL(void)
 	/* Are we in possible visible color display (including borders)? */
 	else if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
 	{
+		/* Store resolution for every line so can check for mix low/med screens */
+		Video_StoreResolution(nHBL-nFirstVisibleHbl);
+
 		/* Copy line of screen to buffer to simulate TV raster trace
 		 * - required for mouse cursor display/game updates
 		 * Eg, Lemmings and The Killing Game Show are good examples */
 		Video_CopyScreenLineColor();
-
-		/* Store resolution for every line so can check for mix low/med screens */
-		Video_StoreResolution(nHBL-nFirstVisibleHbl);
 	}
 
 	/* Finally increase HBL count */
