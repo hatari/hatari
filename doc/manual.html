@@ -46,7 +46,7 @@
 <h1 align="center">Hatari User's Manual</h1>
 
 <p align="center">
-Version 1.1
+Version 1.3
 </p>
 <p align="center">
 Manual written by: <strong>Thomas Huth</strong>, <strong>Matthias Arndt</strong>
@@ -734,15 +734,14 @@ Enable printer support and write data to &lt;file&gt;
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
-<b>&minus;&minus;midi &lt;filename&gt;</b></td>
+<b>&minus;&minus;midi&minus;in &lt;filename&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Enable midi support and write midi data to
-&lt;file&gt;
+Enable MIDI support and write MIDI data to &lt;file&gt;
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -750,15 +749,44 @@ Enable midi support and write midi data to
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
-<b>&minus;&minus;rs232 &lt;filename&gt;</b></td>
+<b>&minus;&minus;midi&minus;out &lt;filename&gt;</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Enable serial port support and use &lt;file&gt; as the
-device
+Enable MIDI support and read MIDI data from &lt;file&gt;
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;rs232&minus;in &lt;filename&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Enable serial port support and use &lt;file&gt; as the input device
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;rs232&minus;out &lt;filename&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Enable serial port support and use &lt;file&gt; as the output device
 </td>
 </table>
 <a name="Disk options"></a>
@@ -837,8 +865,7 @@ Emulate an ACSI hard disk with an image &lt;file&gt;
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Emulate an IDE hard disk with an image &lt;file&gt; (not
-working yet)
+Emulate an IDE hard disk with an image &lt;file&gt;
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"

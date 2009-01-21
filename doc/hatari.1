@@ -103,11 +103,17 @@ Set joystick type (none/keys/real) for given port
 .B \-\-printer <file>
 Enable printer support and write data to <file>
 .TP 
-.B \-\-midi <filename>
-Enable midi support and write midi data to <file>
+.B \-\-midi-in <filename>
+Enable MIDI support and write MIDI data to <file>
 .TP 
-.B \-\-rs232 <filename>
-Enable serial port support and use <file> as the device
+.B \-\-midi-out <filename>
+Enable MIDI support and read MIDI data from <file>
+.TP 
+.B \-\-rs232-in <filename>
+Enable serial port support and use <file> as the input device
+.TP 
+.B \-\-rs232-out <filename>
+Enable serial port support and use <file> as the output device
 .SH "Disk options"
 .TP
 .B \-\-disk-a <file>
@@ -123,7 +129,7 @@ Emulate an ST harddrive (<dir> = root directory)
 Emulate an ACSI hard disk with an image <file>
 .TP 
 .B \-\-ide <file>
-Emulate an IDE hard disk with an image <file> (not working yet)
+Emulate an IDE hard disk with an image <file>
 .TP 
 .B \-\-slowfdc <bool>
 slow down FDC emulation (deprecated)
