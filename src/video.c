@@ -210,6 +210,8 @@
 /*			(fix wrong TOS resolution in Awesome Menu Disk 16).			*/
 /*			Set unused bit to 1 when reading $ff820a too.				*/
 /* 2009/01/16	[NP]	Handle special case when writing only in upper byte of a color reg.	*/
+/* 2009/01/21	[NP]	Implement STE horizontal scroll for medium res (fixes cool_ste.prg).	*/
+
 
 
 const char Video_rcsid[] = "Hatari $Id: video.c,v 1.133 2008-12-14 16:11:41 npomarede Exp $";
@@ -1174,12 +1176,54 @@ static void Video_CopyScreenLineColor(void)
 
 			if (STRes == ST_MEDIUM_RES)
 			{
-				/* TODO: Implement fine scrolling for medium resolution, too */
-				/* HW scrolling might prefetch 16 pixels */
+				/* in mid res, 16 pixels are 4 bytes, not 8 as in low res, so only the last 4 bytes need a special case */
+				pScrollEndAddr += 2;				/* 2 Uint16 -> 4 bytes */
+
+				/* Shift the whole line to the left by the given scroll count */
+				while (pScrollAdj < pScrollEndAddr)
+				{
+					do_put_mem_word(pScrollAdj, (do_get_mem_word(pScrollAdj) << HWScrollCount)
+					                | (do_get_mem_word(pScrollAdj+2) >> nNegScrollCnt));
+					++pScrollAdj;
+				}
+				/* Handle the last 16 pixels of the line */
+				if (LineBorderMask & BORDERMASK_RIGHT_OFF)	/* FIXME : mid + right off should be tested on a real STE */
+				{
+					Uint16 *pVideoLineEnd = (Uint16 *)(pVideoRaster - (46 - SCREENBYTES_RIGHT));
+					do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
+					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
+					do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
+					                | (do_get_mem_word(pVideoLineEnd++) >> nNegScrollCnt));
+				}
+				else
+				{
+					do_put_mem_word(pScrollAdj+0, (do_get_mem_word(pScrollAdj+0) << HWScrollCount)
+					                | (do_get_mem_word(pVideoRaster+0) >> nNegScrollCnt));
+					do_put_mem_word(pScrollAdj+1, (do_get_mem_word(pScrollAdj+1) << HWScrollCount)
+					                | (do_get_mem_word(pVideoRaster+2) >> nNegScrollCnt));
+				}
+
+				/* Depending on whether $ff8264 or $ff8265 was used to scroll, */
+				/* we prefetched 16 pixel (4 bytes) */
 				if ( HWScrollPrefetch == 1 )		/* $ff8265 prefetches 16 pixels */
 					pVideoRaster += 2 * 2;		/* 2 bitplans */
+
+				/* If scrolling with $ff8264, there's no prefetch, which means display starts */
+				/* 16 pixels later but still stops at the normal point (eg we display */
+				/* (320-16) pixels in low res). We shift the whole line 4 bytes to the right to */
+				/* get the correct result (using memmove, as src/dest are overlapping). */
+				else
+				{
+					if (LineBorderMask & BORDERMASK_RIGHT_OFF)
+						memmove ( pSTScreen+4 , pSTScreen , SCREENBYTES_LINE - 4 );
+					else
+						memmove ( pSTScreen+4 , pSTScreen , SCREENBYTES_LEFT + SCREENBYTES_MIDDLE - 4 );
+
+					memset ( pSTScreen , 0 , 4 );	/* first 16 pixels are color '0' */
+				}
 			}
-			else
+
+			else			/* ST_LOW_RES */
 			{
 				/* Shift the whole line to the left by the given scroll count */
 				while (pScrollAdj < pScrollEndAddr)
