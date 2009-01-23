@@ -9,7 +9,8 @@
  ----------------------
 
 Emulation:
-- MIDI input supported in addition to output
+- MIDI input supported in addition to output; --midi option is now
+  replaced with separate --midi-in and --midi-out options
 - Support for STE hardware horizontal scrolling in medium res
 - Make the FDC Read Address command always return success, even if
   we don't really return the correct bytes for now (fixes a few game loaders)
