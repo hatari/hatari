@@ -25,11 +25,9 @@ Emulation improvements
 
 - Improve TT and/or Falcon emulation
 
-- Improve Blitter timing emulation.
-
 - Extend the GEMDOS HD emulation to support more than one drive.
 
-- Add IDE and/or SCSI hard disk emulation for Falcon/TT mode.
+- Add SCSI hard disk emulation for Falcon/TT mode.
 
 - Add SCC serial port emulation for Falcon/TT mode.
 
