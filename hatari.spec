@@ -12,7 +12,7 @@ URL:          http://hatari.berlios.de/
 License:      GPL
 Group:        System/Emulators/Other
 Autoreqprov:  on
-Version:      1.1.0
+Version:      1.2.0
 Release:      1
 Summary:      an Atari ST emulator suitable for playing games
 Source:       %{name}-%{version}.tar.gz
@@ -59,17 +59,20 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog -n hatari
 
-* Sat Nov 29 2008 - thothy@users.sourceforge.net
+* Sat Jan 24 2008 - Thomas Huth
+- Hatari version 1.2.0
+
+* Sat Nov 29 2008 - Thomas Huth
 - Hatari version 1.1.0
 
-* Wed Jan 02 2008 - thothy@users.sourceforge.net
+* Wed Jan 02 2008 - Thomas Huth
 - Adapted RPM to the latest source code level (aiming at version 1.0.0)
 
-* Sun May 06 2007 - thothy@users.sourceforge.net
+* Sun May 06 2007 - Thomas Huth
 - Adapted spec file to be able to build Hatari with RedHat, too
 
-* Sun Aug 27 2006 - thothy@users.sourceforge.net
+* Sun Aug 27 2006 - Thomas Huth
 - Upgraded to version 0.90
 
-* Tue Oct 18 2005 - thothy@users.sourceforge.net
+* Tue Oct 18 2005 - Thomas Huth
 - initial package

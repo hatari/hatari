@@ -50,7 +50,7 @@ const char MemorySnapShot_rcsid[] = "Hatari $Id: memorySnapShot.c,v 1.44 2008-12
 #include "video.h"
 
 
-#define VERSION_STRING      "devel"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "1.2.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 
