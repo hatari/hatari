@@ -2,8 +2,10 @@
 
 # argument checks
 if [ $# -lt 1 ] || [ $1 -lt 2 ] || [ $1 -gt 16 ]; then
-	echo "$# $1"
-	echo "usage: ${0##*/} <MIDI ring Hataris, 2-16> [extra Hatari args]"
+	echo "Usage: ${0##*/} <Hatari instances, 2-16> [extra Hatari args]"
+	echo
+	echo "Example of running 4 Hatari instances in a MIDI ring, each using midi/ as HD:"
+	echo "    ${0##*/} 4 -d midi/"
 	exit 1
 fi
 count=$1
