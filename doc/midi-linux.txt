@@ -1,6 +1,6 @@
 
-Getting (Linux) ALSA midi support to work with Hatari
-=====================================================
+Getting (Linux) ALSA midi support and MIDI networking working with Hatari
+=========================================================================
 
 If you don't have a real MIDI sequencer, you can use the MIDI synthesizer
 of your sound card (if available) or use a software synthetizer.
@@ -9,7 +9,14 @@ For (Debian) package names and links to software referenced in this
 text, see end of the text. Most of the distros should have in their
 repositories packages at least for some of them though.
 
-There are also some notes about midi networking.
+Contents:
+- Using a soundcard with built-in MIDI synthesis capability 
+- Making MIDI soft-synthetizer to work with ALSA
+- Using FluidSynth instead of Timidity
+- Making it all to work with Hatari
+- MIDI and networking
+- Software
+- Additional documentation
 
 
 Using a soundcard with built-in MIDI synthesis capability 
@@ -200,8 +207,8 @@ MidiMaze:
   http://en.wikipedia.org/wiki/MIDI_Maze
 
 
-Overviews
----------
+Additional documentation
+------------------------
 
 ALSA midi overview:
   http://alsa.opensrc.org/AlsaMidiOverview
