@@ -6,7 +6,7 @@
 
   This code processes commands from the Hatari control socket
 */
-const char control_rcsid[] = "Hatari $Id: control.c,v 1.10 2008-11-23 10:27:14 thothy Exp $";
+const char Control_fileid[] = "Hatari control.c : " __DATE__ " " __TIME__;
 
 #include "config.h"
 #if HAVE_UNIX_DOMAIN_SOCKETS

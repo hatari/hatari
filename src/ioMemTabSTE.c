@@ -6,7 +6,7 @@
 
   Table with hardware IO handlers for the STE.
 */
-const char IoMemTabSTE_rcsid[] = "Hatari $Id: ioMemTabSTE.c,v 1.7 2008-12-12 21:52:01 thothy Exp $";
+const char IoMemTabSTE_fileid[] = "Hatari ioMemTabSTE.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "dmaSnd.h"

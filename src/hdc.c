@@ -6,7 +6,7 @@
 
   Low-level hard drive emulation
 */
-const char HDC_rcsid[] = "Hatari $Id: hdc.c,v 1.21 2008-09-27 13:21:17 thothy Exp $";
+const char HDC_fileid[] = "Hatari hdc.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"

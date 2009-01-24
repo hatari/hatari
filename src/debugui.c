@@ -8,7 +8,7 @@
   pressed, the emulator is (hopefully) halted and this little CLI can be used
   (in the terminal box) for debugging tasks like memory and register dumps.
 */
-const char DebugUI_rcsid[] = "Hatari $Id: debugui.c,v 1.26 2008-10-25 22:32:15 eerot Exp $";
+const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 
 #include <ctype.h>
 #include <stdio.h>

@@ -22,9 +22,7 @@
 /*			bus (cpu, blitter).						*/
 
 
-
-
-const char Cycles_rcsid[] = "Hatari $Id: cycles.c,v 1.6 2008-04-18 20:31:59 npomarede Exp $";
+const char Cycles_fileid[] = "Hatari cycles.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "m68000.h"

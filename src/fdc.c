@@ -39,7 +39,7 @@
 /*			status register and get the state of the write protection).	*/
 
 
-const char FDC_rcsid[] = "Hatari $Id: fdc.c,v 1.46 2008-12-15 20:04:20 npomarede Exp $";
+const char FDC_fileid[] = "Hatari fdc.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"

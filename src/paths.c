@@ -6,6 +6,7 @@
 
   Set up the various path strings.
 */
+const char Paths_fileid[] = "Hatari paths.c : " __DATE__ " " __TIME__;
 
 #include <unistd.h>
 #include <sys/stat.h>

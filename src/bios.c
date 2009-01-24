@@ -8,7 +8,7 @@
 
   We intercept some Bios calls for debugging
 */
-const char Bios_rcsid[] = "Hatari $Id: bios.c,v 1.14 2008-11-03 20:24:25 thothy Exp $";
+const char Bios__fileid[] = "Hatari bios.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"

@@ -64,8 +64,7 @@
 /*			the snapshot to set ActiveInterrupt to the correct value.		*/
 
 
-
-const char Int_rcsid[] = "Hatari $Id: int.c,v 1.31 2008-11-15 14:17:29 thothy Exp $";
+const char Int_fileid[] = "Hatari int.c : " __DATE__ " " __TIME__;
 
 #include <stdint.h>
 #include "main.h"

@@ -6,7 +6,7 @@
 
   Common file access functions.
 */
-const char File_rcsid[] = "Hatari $Id: file.c,v 1.53 2008-11-18 19:57:39 eerot Exp $";
+const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
 
 #include <config.h>
 

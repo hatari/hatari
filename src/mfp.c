@@ -92,9 +92,7 @@
 /*			allowed or not.							*/
 
 
-
-
-const char MFP_rcsid[] = "Hatari $Id: mfp.c,v 1.56 2008-12-15 18:55:11 npomarede Exp $";
+const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"

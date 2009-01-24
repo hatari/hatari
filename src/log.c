@@ -13,7 +13,7 @@
  * of HatariTraceFlags. Multiple trace levels can be set at once, by setting
  * the corresponding bits in HatariTraceFlags
  */
-const char Log_rcsid[] = "Hatari $Id: log.c,v 1.19 2008/10/29 20:12:17 eerot Exp $";
+const char Log_fileid[] = "Hatari log.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include <stdarg.h>

@@ -11,8 +11,7 @@
   - Add the option information to HatariOptions[]
   - Add required actions for that ID to switch in Opt_ParseParameters()
 */
-
-const char Options_fileid[] = "Hatari floppy.c : " __DATE__ " " __TIME__;
+const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 
 #include <ctype.h>
 #include <stdio.h>

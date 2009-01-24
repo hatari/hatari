@@ -9,17 +9,8 @@
  *
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
- */
-
-
-/* 2008/12/21	[NP]	Set BusMode to BUS_MODE_BLITTER while in Blitter_Start(). Allow	*/
-/*			to adjust timings when reading/writing IO mem (see video.c).	*/
-
-
-
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.37 2008-12-13 18:42:07 npomarede Exp $";
-
-/* NOTES:
+ *
+ * NOTES:
  * ----------------------------------------------------------------------------
  * Strange end mask condition ((~(0xffff>>skew)) > end_mask_1)
  *
@@ -32,6 +23,7 @@ const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.37 2008-12-13 18:42:07 n
  * Does smudge mode change the line register ?
  * ----------------------------------------------------------------------------
  */
+const char Blitter_fileid[] = "Hatari blitter.c : " __DATE__ " " __TIME__;
 
 #include <SDL_types.h>
 #include <stdio.h>

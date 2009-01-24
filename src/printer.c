@@ -10,7 +10,7 @@
   this also allow us to detect when the stream goes into idle - at which point
   we close the file/printer.
 */
-const char Printer_rcsid[] = "Hatari $Id: printer.c,v 1.25 2008-10-20 20:23:57 thothy Exp $";
+const char Printer_fileid[] = "Hatari printer.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"

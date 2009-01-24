@@ -15,7 +15,7 @@
 /* 2008/12/21	[NP]	Change functions used to access 0xff88xx (see psg.c)		*/
 
 
-const char IoMemTabST_rcsid[] = "Hatari $Id: ioMemTabST.c,v 1.5 2008-12-12 21:52:01 thothy Exp $";
+const char IoMemTabST_fileid[] = "Hatari ioMemTabST.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "dmaSnd.h"

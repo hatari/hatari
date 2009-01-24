@@ -53,8 +53,7 @@
 /* 2008/10/05	[NP]	Pass the 'ExceptionSource' parameter to Exception() in uae-cpu/newcpu.c		*/
 
 
-
-const char M68000_rcsid[] = "Hatari $Id: m68000.c,v 1.61 2008-10-05 17:55:31 npomarede Exp $";
+const char M68000_fileid[] = "Hatari m68000.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"
