@@ -12,6 +12,9 @@
 - Nicolas Pomarede <npomarede at corp.free.fr> : Many improvements to CPU and video
   emulation, new sound engine, fake IKBD emulation.
 
+- Jean-Baptiste Berlioz <tobe at freemind-tobe.com> : Cycle accurate Blitter
+  emulation.
+
 
  Contributors:
  -------------
