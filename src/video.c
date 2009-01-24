@@ -213,6 +213,9 @@
 /* 2009/01/21	[NP]	Implement STE horizontal scroll for medium res (fixes cool_ste.prg).	*/
 /*			Take the current res into account in Video_CopyScreenLineColor to	*/
 /*			allow mixing low/mid res with horizontal scroll on STE.			*/	
+/* 2009/01/24	[NP]	Better detection of 'right-2' when freq is changed to 60 Hz and 	*/
+/*			restored to 50 after the end of the current line (fixes games menu on	*/
+/*			BBC compil 10).								*/
 
 
 
@@ -754,6 +757,36 @@ void Video_Sync_WriteByte(void)
 			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_MINUS_2;
 			LineEndCycle = LINE_END_CYCLE_60;
 		}
+
+		/* Other case when the switch back to 50 Hz occurs just at the same time as the HBL */
+		/* which means nHBL+1 == HblCounterVideo */
+		else if ( ( ( nLastCycles > LINE_START_CYCLE_60 ) && ( nLastCycles <= LINE_END_CYCLE_60 ) )
+		        && ( nLastHBL == nHBL ) && ( nHBL+1 == HblCounterVideo )
+		        && ( ( ScreenBorderMask[ nHBL ] & BORDERMASK_STOP_MIDDLE ) == 0 ) )
+		{
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
+			ScreenBorderMask[ nHBL ] |= BORDERMASK_RIGHT_MINUS_2;
+			LineEndCycle = LINE_END_CYCLE_60;
+		}
+
+
+
+
+#if 0
+		/* Remove 2 bytes to the right */
+		/* If the line started in 50 Hz, continued in 60 Hz until the end */
+		/* and was finally restored to 50 Hz when display was not active, */
+		/* then we must remove 2 bytes to the right */
+		if ( ( LineStartCycle != LINE_START_CYCLE_60 )
+		        && ( nLastHBL == HblCounterVideo )
+			&& ( LineEndCycle == LINE_END_CYCLE_60 )
+			&& ( nLineCycles > LINE_END_CYCLE_60 ) )
+		{
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
+			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_MINUS_2;
+			LineEndCycle = LINE_END_CYCLE_60;
+		}
+#endif
 	}
 
 	/* special case for right border : some programs don't switch back to */
@@ -1423,6 +1456,16 @@ static void Video_EndHBL(void)
 			LineEndCycle = LINE_END_CYCLE_60;
 		}
 	}
+
+	/* Special case when the line was not started in 60 Hz, then switched to 60 Hz */
+	/* and was not restored to 50 Hz before the end of the line. In that case, the */
+	/* line ends 2 bytes earlier on the right */
+	if ( ( LineStartCycle != LINE_START_CYCLE_60 ) && ( LineEndCycle == LINE_END_CYCLE_60 ) ) 
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
+		ScreenBorderMask[ nHBL ] |= BORDERMASK_RIGHT_MINUS_2;
+	}
+
 
 	/* Store palette for very first line on screen - HBLPalettes[0] */
 	if (nHBL == nFirstVisibleHbl-1)
