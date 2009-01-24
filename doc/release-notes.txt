@@ -5,8 +5,14 @@
 
 
 
- Version in development
- ----------------------
+ Version 1.2.0 (2009-01-24):
+ ---------------------------
+
+- The Hatari project has been moved from hatari.sourceforge.net to
+  http://hatari.berlios.de. Please update all bookmarks!
+- New zip2st.sh shell script for converting .ZIP files into .ST disk images
+- Fixed a bug that could write data to the wrong disk image (resulting
+  in data loss)
 
 Emulation:
 - MIDI input supported in addition to output; --midi option is now
