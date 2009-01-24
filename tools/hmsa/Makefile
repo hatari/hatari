@@ -10,8 +10,6 @@ OBJS = $(HMSA_OBJS) $(HATARI_OBJS:%.o=../../src/%.o)
 # Additional include directories:
 CPPFLAGS += $(SDL_CFLAGS) -I../.. -I../../src/includes -I../../src/uae-cpu
 
-LIBS = -lz
-
 all: hmsa
 
 hmsa: $(OBJS)
