@@ -23,6 +23,10 @@ const char File_rcsid[] = "Hatari $Id: file.c,v 1.53 2008-11-18 19:57:39 eerot E
 #include <strings.h>
 #endif
 
+#ifdef WIN32
+#include <winsock2.h>
+#endif
+
 #include "main.h"
 #include "dialog.h"
 #include "file.h"
