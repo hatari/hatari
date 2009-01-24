@@ -768,25 +768,6 @@ void Video_Sync_WriteByte(void)
 			ScreenBorderMask[ nHBL ] |= BORDERMASK_RIGHT_MINUS_2;
 			LineEndCycle = LINE_END_CYCLE_60;
 		}
-
-
-
-
-#if 0
-		/* Remove 2 bytes to the right */
-		/* If the line started in 50 Hz, continued in 60 Hz until the end */
-		/* and was finally restored to 50 Hz when display was not active, */
-		/* then we must remove 2 bytes to the right */
-		if ( ( LineStartCycle != LINE_START_CYCLE_60 )
-		        && ( nLastHBL == HblCounterVideo )
-			&& ( LineEndCycle == LINE_END_CYCLE_60 )
-			&& ( nLineCycles > LINE_END_CYCLE_60 ) )
-		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
-			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_MINUS_2;
-			LineEndCycle = LINE_END_CYCLE_60;
-		}
-#endif
 	}
 
 	/* special case for right border : some programs don't switch back to */
