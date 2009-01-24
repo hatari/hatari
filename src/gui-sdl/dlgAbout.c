@@ -6,7 +6,7 @@
 
   Show information about the program and its license.
 */
-const char DlgAbout_rcsid[] = "Hatari $Id: dlgAbout.c,v 1.8 2007-03-10 17:46:11 thothy Exp $";
+const char DlgAbout_fileid[] = "Hatari dlgAbout.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "dialog.h"
@@ -17,8 +17,8 @@ const char DlgAbout_rcsid[] = "Hatari $Id: dlgAbout.c,v 1.8 2007-03-10 17:46:11 
 static SGOBJ aboutdlg[] =
 {
 	{ SGBOX, 0, 0, 0,0, 40,25, NULL },
-	{ SGTEXT, 0, 0, 14,1, 12,1, PROG_NAME },
-	{ SGTEXT, 0, 0, 14,2, 12,1, "============" },
+	{ SGTEXT, 0, 0, 13,1, 12,1, PROG_NAME },
+	{ SGTEXT, 0, 0, 13,2, 12,1, "=============" },
 	{ SGTEXT, 0, 0, 1,4, 38,1, "Written by Thomas Huth and many other" },
 	{ SGTEXT, 0, 0, 1,5, 38,1, "people around the world." },
 	{ SGTEXT, 0, 0, 2,7, 34,1, "Please see the docs for more info!" },
