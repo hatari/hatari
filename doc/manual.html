@@ -1590,31 +1590,33 @@ return to the GUI to switch sound recording off again
 <a name="The Devices Dialog"></a><h4 class="gui">The Devices Dialog</h4>
 
 <div class="floatimage">
-<img src="images/devices.png" width="519" height="351" alt="Hatari's GUI - the device dialog">
+<img src="images/devices.png" width="520" height="383" alt="Hatari's GUI - the device dialog">
 </div>
 
-<p>Check here if you want to enable experimental printer support. See
-the chapter "Emulated printer" for details.</p>
+<p>Check the first checkmark to enable experimental printer support.
+See the <a href="#Emulated printer">Emulated printer</a> section for
+details.</p>
 
 <p>As Hatari currently only supports printing to file, click on <span
- class="button">Select</span> to select the file to print to. You can
+ class="button">Browse</span> to select the file to print to. You can
 enter a new filename as well.</p>
-<p>Check the second checkmark if you want to enable experimental RS232
-support. The RS232 device is configured according to the settings of
+<p>Check the second checkmark to enable experimental RS232 support.
+The RS232 device is configured according to the settings of
 the emulated RS232 of the Atari ST. This means Hatari will
 automatically use baudrate and handshaking as configured for the
 emulated ST.</p>
-<p>Select a suitable device file for input and output. Click on <span
- class="button">Browse</span> to select.
-A good choice is /dev/ttyS0 or /dev/ttyS1.
+<p>Click on <span class="button">Browse</span> to select suitable
+device files for serial input and output.  On Linux a good choice is
+/dev/ttyS0 or /dev/ttyS1.
 </p>
-<p>You can enable MIDI as well. This currently works for outputting
-MIDI data only. A good choice is /dev/midi00.</p>
-<p>Click on <span class="button">Browse</span> to select a suitable
-MIDI device file for output.</p>
-<p>Your sound driver must support MIDI to make this work.</p>
-<p><em>NOTE:</em> RS232 and MIDI emulation are very experimental, too.
-Don't enable them unless you really need them!
+<p>Check the third checkmark to enable experimental MIDI support.
+Click on <span class="button">Browse</span> to select a suitable
+MIDI device files for MIDI input and output.</p>
+<p><span class="file">midi-linux.txt</span> file explains how to
+select the correct MIDI device file, how to set up softare sound
+synthetizing on Linux (using Alsa), if your sound card/driver doesn't
+support MIDI, and how to set up MIDI networking between multiple
+Hatari instances.
 </p>
 
 
