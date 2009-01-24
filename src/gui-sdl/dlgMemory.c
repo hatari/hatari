@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgMemory_rcsid[] = "Hatari $Id: dlgMemory.c,v 1.15 2008-06-08 16:07:40 eerot Exp $";
+const char DlgMemory_fileid[] = "Hatari dlgMemory.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "dialog.h"
@@ -58,11 +58,12 @@ static SGOBJ memorydlg[] =
 };
 
 
-/*-----------------------------------------------------------------------*/
-/*
-  Show and process the memory dialog.
-*/
-void Dialog_MemDlg(void)
+
+/**
+ * Show and process the memory dialog.
+ * @return  true if a memory snapshot has been loaded, false otherwise
+ */
+bool Dialog_MemDlg(void)
 {
 	int i;
 	int but;
@@ -113,14 +114,19 @@ void Dialog_MemDlg(void)
 		 case DLGMEM_SAVE:              /* Save memory snap-shot */
 			if (SDLGui_FileConfSelect(dlgSnapShotName,
 			                          ConfigureParams.Memory.szMemoryCaptureFileName,
-			                          memorydlg[DLGMEM_FILENAME].w, TRUE))
-				MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName, TRUE);
+			                          memorydlg[DLGMEM_FILENAME].w, true))
+			{
+				MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName, true);
+			}
 			break;
 		 case DLGMEM_RESTORE:           /* Load memory snap-shot */
 			if (SDLGui_FileConfSelect(dlgSnapShotName,
 			                          ConfigureParams.Memory.szMemoryCaptureFileName,
-			                          memorydlg[DLGMEM_FILENAME].w, FALSE))
-				MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, TRUE);
+			                          memorydlg[DLGMEM_FILENAME].w, false))
+			{
+				MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, true);
+				return true;
+			}
 			break;
 		}
 	}
@@ -143,4 +149,6 @@ void Dialog_MemDlg(void)
 		ConfigureParams.Memory.nMemorySize = 14;
 
 	ConfigureParams.Memory.bAutoSave = (memorydlg[DLGMEM_AUTOSAVE].state & SG_SELECTED);
+
+	return false;
 }

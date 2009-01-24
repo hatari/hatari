@@ -15,6 +15,7 @@ const char Dialog_fileid[] = "Hatari dialog.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "sdlgui.h"
 #include "screen.h"
+#include "statusbar.h"
 
 
 /*-----------------------------------------------------------------------*/
@@ -32,6 +33,7 @@ bool Dialog_DoProperty(void)
 {
 	bool bOKDialog;  /* Did user 'OK' dialog? */
 	bool bForceReset;
+	bool bLoadedSnapshot;
 	CNF_PARAMS current;
 
 	Main_PauseEmulation(TRUE);
@@ -40,7 +42,16 @@ bool Dialog_DoProperty(void)
 	/* Copy details (this is so can restore if 'Cancel' dialog) */
 	current = ConfigureParams;
 	ConfigureParams.Screen.bFullScreen = bInFullScreen;
-	bOKDialog = Dialog_MainDlg(&bForceReset);
+	bOKDialog = Dialog_MainDlg(&bForceReset, &bLoadedSnapshot);
+
+	/* If a memory snapshot has been loaded, no further changes are required */
+	if (bLoadedSnapshot)
+	{
+		/* changes from new memory snapshot may affect also info shown in statusbar */
+		Statusbar_UpdateInfo();
+		Main_UnPauseEmulation();
+		return true;
+	}
 
 	/* Check if reset is required and ask user if he really wants to continue then */
 	if (bOKDialog && !bForceReset

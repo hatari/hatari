@@ -6,7 +6,7 @@
 
   The main dialog.
 */
-const char DlgMain_rcsid[] = "Hatari $Id: dlgMain.c,v 1.16 2008-06-08 16:07:40 eerot Exp $";
+const char DlgMain_fileid[] = "Hatari dlgMain.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"
@@ -64,14 +64,17 @@ static SGOBJ maindlg[] =
 /*
   This functions sets up the actual font and then displays the main dialog.
 */
-int Dialog_MainDlg(bool *bReset)
+int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 {
 	int retbut;
 	bool bOldMouseVisibility;
 	int nOldMouseX, nOldMouseY;
 
+	*bReset = false;
+	*bLoadedSnapshot = false;
+
 	if (SDLGui_SetScreen(sdlscrn))
-		return FALSE;
+		return false;
 
 	SDL_GetMouseState(&nOldMouseX, &nOldMouseY);
 	bOldMouseVisibility = SDL_ShowCursor(SDL_QUERY);
@@ -106,7 +109,12 @@ int Dialog_MainDlg(bool *bReset)
 			Dialog_SystemDlg();
 			break;
 		 case MAINDLG_MEMORY:
-			Dialog_MemDlg();
+			if (Dialog_MemDlg())
+			{
+				/* Memory snapshot has been loaded - leave GUI immediately */
+				*bLoadedSnapshot = true;
+				return true;
+			}
 			break;
 		 case MAINDLG_JOY:
 			Dialog_JoyDlg();
@@ -124,7 +132,7 @@ int Dialog_MainDlg(bool *bReset)
 			Configuration_Save();
 			break;
 		 case MAINDLG_QUIT:
-			bQuitProgram = TRUE;
+			bQuitProgram = true;
 			break;
 		}
 	}
@@ -133,9 +141,7 @@ int Dialog_MainDlg(bool *bReset)
 
 
 	if (maindlg[MAINDLG_RESET].state & SG_SELECTED)
-		*bReset = TRUE;
-	else
-		*bReset = FALSE;
+		*bReset = true;
 
 	SDL_ShowCursor(bOldMouseVisibility);
 	Main_WarpMouse(nOldMouseX, nOldMouseY);
