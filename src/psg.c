@@ -56,6 +56,7 @@
 /*			Only reads to $ff8800 will return a data, reads to $ff8801/02/03*/
 /*			always return 0xff (tested on STF).				*/
 /*			When PSGRegisterSelect > 15, reads to $ff8800 also return 0xff.	*/
+/* 2009/01/24	[NP]	Remove redundant test, as movep implies SIZE_BYTE access.	*/
 
 
 /* Emulating wait states when accessing $ff8800/01/02/03 with different 'move' variants	*/
@@ -419,8 +420,7 @@ void PSG_ff8800_WriteByte(void)
  */
 void PSG_ff8801_WriteByte(void)
 {
-	if ( ( OpcodeFamily == i_MVPRM )
-	  || ( nIoMemAccessSize == SIZE_BYTE ) )
+	if ( nIoMemAccessSize == SIZE_BYTE )		/* byte access or movep */
 	{	
 		M68000_WaitState(1);			/* [NP] FIXME not 100% accurate, but gives good results */
 	
@@ -481,8 +481,7 @@ void PSG_ff8802_WriteByte(void)
  */
 void PSG_ff8803_WriteByte(void)
 {
-	if ( ( OpcodeFamily == i_MVPRM )
-	  || ( nIoMemAccessSize == SIZE_BYTE ) )
+	if ( nIoMemAccessSize == SIZE_BYTE )		/* byte access or movep */
 	{	
 		M68000_WaitState(1);			/* [NP] FIXME not 100% accurate, but gives good results */
 	
