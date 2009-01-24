@@ -373,6 +373,22 @@ static inline void cpu_to_be16wu(uint16_t *p, uint16_t v)
 }
 
 
+#if defined(WIN32)
+
+#include <windows.h>
+
+static void *qemu_memalign(size_t alignment, size_t size)
+{
+    return VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE);
+}
+
+static void qemu_free(void *ptr)
+{
+    VirtualFree(ptr, 0, MEM_RELEASE);
+}
+
+#else
+
 static void *qemu_memalign(size_t alignment, size_t size)
 {
 #if HAVE_POSIX_MEMALIGN
@@ -390,6 +406,9 @@ static void *qemu_memalign(size_t alignment, size_t size)
 }
 
 #define qemu_free free
+
+#endif
+
 
 #define le32_to_cpu SDL_SwapLE32
 #define le16_to_cpu SDL_SwapLE16
