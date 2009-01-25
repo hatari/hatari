@@ -451,8 +451,8 @@ const char *Control_SetSocket(const char *socketpath)
  * 
  * SDL_syswm.h automatically includes everything else needed.
  */
-#if HAVE_X11
-
+#include <SDL_config.h>
+#if HAVE_X11 && SDL_VIDEO_DRIVER_X11
 #include <SDL_syswm.h>
 
 /**
