@@ -315,17 +315,20 @@ static void Main_HandleMouseMotion(SDL_Event *pEvent)
  */
 void Main_EventHandler(void)
 {
+	bool bContinueProcessing;
 	SDL_Event event;
-	int ok;
+	int events;
 	
 	do
 	{
+		bContinueProcessing = false;
+
 		/* check remote process control */
 		int remotepause = Control_CheckUpdates();
 
 		if ( bEmulationActive || remotepause )
 		{
-			ok = SDL_PollEvent(&event);
+			events = SDL_PollEvent(&event);
 		}
 		else
 		{
@@ -333,10 +336,13 @@ void Main_EventHandler(void)
 			/* last (shortcut) event activated emulation? */
 			if ( bEmulationActive )
 				break;
-			ok = SDL_WaitEvent(&event);
+			events = SDL_WaitEvent(&event);
 		}
-		if (!ok)
+		if (!events)
 		{
+			/* no events -> if emulation is active or
+			 * user is quitting -> return from function.
+			 */
 			continue;
 		}
 		switch (event.type)
@@ -346,8 +352,15 @@ void Main_EventHandler(void)
 			Main_RequestQuit();
 			break;
 
+		case SDL_JOYAXISMOTION:
+		case SDL_JOYBALLMOTION:
+		case SDL_JOYHATMOTION:
+			bContinueProcessing = true;
+			break;
+			
 		 case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */
 			Main_HandleMouseMotion(&event);
+			bContinueProcessing = true;
 			break;
 
 		 case SDL_MOUSEBUTTONDOWN:
@@ -406,7 +419,7 @@ void Main_EventHandler(void)
 			Keymap_KeyUp(&event.key.keysym);
 			break;
 		}
-	} while (!(bEmulationActive || bQuitProgram));
+	} while (bContinueProcessing || !(bEmulationActive || bQuitProgram));
 }
 
 
