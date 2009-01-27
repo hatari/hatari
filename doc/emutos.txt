@@ -338,6 +338,7 @@ Color games:
 - Pacman on E
 - Power Up
 - Skulls (shareware "minesweeper")
+- Spy 4k
 - Stardust* (tunnel sequence demo)
 - STEtris
 - STrEet Fighter II (incomplete)
