@@ -9,8 +9,17 @@
  *
  * This file has originally been taken from STonX, but it has been completely
  * modified for better maintainability and higher compatibility.
- *
- * NOTES:
+ */
+
+
+/* 2008/12/21	[NP]	Set BusMode to BUS_MODE_BLITTER while in Blitter_Start(). Allow	*/
+/*			to adjust timings when reading/writing IO mem (see video.c).	*/
+
+
+
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.37 2008-12-13 18:42:07 npomarede Exp $";
+
+/* NOTES:
  * ----------------------------------------------------------------------------
  * Strange end mask condition ((~(0xffff>>skew)) > end_mask_1)
  *
@@ -23,7 +32,6 @@
  * Does smudge mode change the line register ?
  * ----------------------------------------------------------------------------
  */
-const char Blitter_fileid[] = "Hatari blitter.c : " __DATE__ " " __TIME__;
 
 #include <SDL_types.h>
 #include <stdio.h>
@@ -89,7 +97,8 @@ typedef struct
 /* Blitter vars */
 typedef struct
 {
-	int		cycles;
+	int		pass_cycles;
+	int		op_cycles;
 	Uint32	buffer;
 	Uint32	src_words_reset;
 	Uint32	dst_words_reset;
@@ -114,10 +123,16 @@ typedef struct
 	Uint8	nfsr;
 } BLITTERSTATE;
 
+/* Blitter logical op func */
+typedef Uint16 (*BLITTER_OP_FUNC)(void);
+
 static BLITTERREGS	BlitterRegs;
 static BLITTERVARS	BlitterVars;
 static BLITTERSTATE	BlitterState;
 static Uint16		BlitterHalftone[16];
+
+static BLITTER_OP_FUNC Blitter_ComputeHOP;
+static BLITTER_OP_FUNC Blitter_ComputeLOP;
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -127,14 +142,21 @@ static Uint16		BlitterHalftone[16];
 static void Blitter_AddCycles(int cycles)
 {
 	int all_cycles = cycles + nWaitStateCycles;
-	int cpu_cycles = all_cycles >> nCpuFreqShift;
 
-	BlitterVars.cycles += all_cycles;
-	nCyclesMainCounter += cpu_cycles;
+	BlitterVars.op_cycles += all_cycles;
 
+	nCyclesMainCounter += all_cycles >> nCpuFreqShift;
 	nWaitStateCycles = 0;
+}
 
-	PendingInterruptCount -= INT_CONVERT_TO_INTERNAL(cpu_cycles, INT_CPU_CYCLE);
+static void Blitter_FlushCycles(void)
+{
+	int op_cycles = INT_CONVERT_TO_INTERNAL(BlitterVars.op_cycles, INT_CPU_CYCLE);
+
+	BlitterVars.pass_cycles += BlitterVars.op_cycles;
+	BlitterVars.op_cycles = 0;
+
+	PendingInterruptCount -= op_cycles;
 	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
 		CALL_VAR(PendingInterruptFunction);
 }
@@ -150,7 +172,7 @@ static Uint16 Blitter_ReadWord(Uint32 addr)
 	if (addr < 0x00ff8000)
 		value = STMemory_ReadWord(addr);
 	else
-		value = (Uint16)(IoMem_wget(addr) & 0xFFFF);
+		value = (Uint16)(IoMem_wget(addr));
 
 	Blitter_AddCycles(4);
 
@@ -246,29 +268,42 @@ static Uint16 Blitter_GetHalftoneWord(void)
 		return BlitterHalftone[BlitterVars.line];
 }
 
-static Uint16 Blitter_ComputeHOP(void)
+/* HOP */
+
+static Uint16 Blitter_HOP_0(void)
 {
-	Uint16 hop_data;
-
-	switch (BlitterRegs.hop)
-	{
-	default:
-	case 0:
-		hop_data = 0xFFFF;
-		break;
-	case 1:
-		hop_data = Blitter_GetHalftoneWord();
-		break;
-	case 2:
-		hop_data = Blitter_SourceRead();
-		break;
-	case 3:
-		hop_data = Blitter_SourceRead() & Blitter_GetHalftoneWord();
-		break;
-	}
-
-	return hop_data;
+	return 0xFFFF;
 }
+
+static Uint16 Blitter_HOP_1(void)
+{
+	return Blitter_GetHalftoneWord();
+}
+
+static Uint16 Blitter_HOP_2(void)
+{
+	return Blitter_SourceRead();
+}
+
+static Uint16 Blitter_HOP_3(void)
+{
+	return Blitter_SourceRead() & Blitter_GetHalftoneWord();
+}
+
+static BLITTER_OP_FUNC Blitter_HOP_Table [4] =
+{
+	Blitter_HOP_0,
+	Blitter_HOP_1,
+	Blitter_HOP_2,
+	Blitter_HOP_3
+};
+
+static void Blitter_Select_HOP(void)
+{
+	Blitter_ComputeHOP = Blitter_HOP_Table[BlitterRegs.hop];
+}
+
+/* end HOP */
 
 static Uint16 Blitter_DestRead(void)
 {
@@ -281,65 +316,114 @@ static Uint16 Blitter_DestRead(void)
 	return BlitterState.dst_word;
 }
 
-static Uint16 Blitter_ComputeLOP(void)
+/* LOP */
+
+static Uint16 Blitter_LOP_0(void)
 {
-	Uint16 op_data;
-
-	switch (BlitterRegs.lop)
-	{
-	default:
-	case 0:
-		op_data = 0;
-		break;
-	case 1:
-		op_data = Blitter_ComputeHOP() & Blitter_DestRead();
-		break;
-	case 2:
-		op_data = Blitter_ComputeHOP() & ~Blitter_DestRead();
-		break;
-	case 3:
-		op_data = Blitter_ComputeHOP();
-		break;
-	case 4:
-		op_data = ~Blitter_ComputeHOP() & Blitter_DestRead();
-		break;
-	case 5:
-		op_data = Blitter_DestRead();
-		break;
-	case 6:
-		op_data = Blitter_ComputeHOP() ^ Blitter_DestRead();
-		break;
-	case 7:
-		op_data = Blitter_ComputeHOP() | Blitter_DestRead();
-		break;
-	case 8:
-		op_data = ~Blitter_ComputeHOP() & ~Blitter_DestRead();
-		break;
-	case 9:
-		op_data = ~Blitter_ComputeHOP() ^ Blitter_DestRead();
-		break;
-	case 10:
-		op_data = ~Blitter_DestRead();
-		break;
-	case 11:
-		op_data = Blitter_ComputeHOP() | ~Blitter_DestRead();
-		break;
-	case 12:
-		op_data = ~Blitter_ComputeHOP();
-		break;
-	case 13:
-		op_data = ~Blitter_ComputeHOP() | Blitter_DestRead();
-		break;
-	case 14:
-		op_data = ~Blitter_ComputeHOP() | ~Blitter_DestRead();
-		break;
-	case 15:
-		op_data = 0xFFFF;
-		break;
-	}
-
-	return op_data;
+	return 0;
 }
+
+static Uint16 Blitter_LOP_1(void)
+{
+	return Blitter_ComputeHOP() & Blitter_DestRead();
+}
+
+static Uint16 Blitter_LOP_2(void)
+{
+	return Blitter_ComputeHOP() & ~Blitter_DestRead();
+}
+
+static Uint16 Blitter_LOP_3(void)
+{
+	return Blitter_ComputeHOP();
+}
+
+static Uint16 Blitter_LOP_4(void)
+{
+	return ~Blitter_ComputeHOP() & Blitter_DestRead();
+}
+
+static Uint16 Blitter_LOP_5(void)
+{
+	return Blitter_DestRead();
+}
+
+static Uint16 Blitter_LOP_6(void)
+{
+	return Blitter_ComputeHOP() ^ Blitter_DestRead();
+}
+
+static Uint16 Blitter_LOP_7(void)
+{
+	return Blitter_ComputeHOP() | Blitter_DestRead();
+}
+
+static Uint16 Blitter_LOP_8(void)
+{
+	return ~Blitter_ComputeHOP() & ~Blitter_DestRead();
+}
+
+static Uint16 Blitter_LOP_9(void)
+{
+	return ~Blitter_ComputeHOP() ^ Blitter_DestRead();
+}
+
+static Uint16 Blitter_LOP_A(void)
+{
+	return ~Blitter_DestRead();
+}
+
+static Uint16 Blitter_LOP_B(void)
+{
+	return Blitter_ComputeHOP() | ~Blitter_DestRead();
+}
+
+static Uint16 Blitter_LOP_C(void)
+{
+	return ~Blitter_ComputeHOP();
+}
+
+static Uint16 Blitter_LOP_D(void)
+{
+	return ~Blitter_ComputeHOP() | Blitter_DestRead();
+}
+
+static Uint16 Blitter_LOP_E(void)
+{
+	return ~Blitter_ComputeHOP() | ~Blitter_DestRead();
+}
+
+static Uint16 Blitter_LOP_F(void)
+{
+	return 0xFFFF;
+}
+
+static BLITTER_OP_FUNC Blitter_LOP_Table [16] =
+{
+	Blitter_LOP_0,
+	Blitter_LOP_1,
+	Blitter_LOP_2,
+	Blitter_LOP_3,
+	Blitter_LOP_4,
+	Blitter_LOP_5,
+	Blitter_LOP_6,
+	Blitter_LOP_7,
+	Blitter_LOP_8,
+	Blitter_LOP_9,
+	Blitter_LOP_A,
+	Blitter_LOP_B,
+	Blitter_LOP_C,
+	Blitter_LOP_D,
+	Blitter_LOP_E,
+	Blitter_LOP_F
+};
+
+static void Blitter_Select_LOP(void)
+{
+	Blitter_ComputeLOP = Blitter_LOP_Table[BlitterRegs.lop];
+}
+
+/* end LOP */
 
 static Uint16 Blitter_ComputeMask(void)
 {
@@ -440,25 +524,33 @@ static void Blitter_Step(void)
  */
 static void Blitter_Start(void)
 {
+	/* select HOP & LOP funcs */
+	Blitter_Select_HOP();
+	Blitter_Select_LOP();
+
 	/* setup vars */
-	BlitterVars.cycles = 0;
+	BlitterVars.pass_cycles = 0;
+	BlitterVars.op_cycles = 0;
 	BlitterVars.src_words_reset = BlitterVars.dst_words_reset +
 									BlitterVars.fxsr - BlitterVars.nfsr;
 
 	/* bus arbitration */
 	BusMode = BUS_MODE_BLITTER;		/* bus is now owned by the blitter */
 	Blitter_AddCycles(4);
+	Blitter_FlushCycles();
 
 	/* Now we enter the main blitting loop */
 	do
 	{
 		Blitter_Step();
+		Blitter_FlushCycles();
 	}
 	while (BlitterRegs.lines > 0
-	       && (BlitterVars.hog || BlitterVars.cycles < NONHOG_CYCLES));
+	       && (BlitterVars.hog || BlitterVars.pass_cycles < NONHOG_CYCLES));
 
 	/* bus arbitration */
 	Blitter_AddCycles(4);
+	Blitter_FlushCycles();
 	BusMode = BUS_MODE_CPU;			/* bus is now owned by the cpu again */
 
 	BlitterRegs.ctrl = (BlitterRegs.ctrl & 0xF0) | BlitterVars.line;
@@ -474,7 +566,7 @@ static void Blitter_Start(void)
 	else
 	{
 		/* Continue blitting later */
-		Int_AddRelativeInterrupt(NONHOG_CYCLES+8, INT_CPU_CYCLE, INTERRUPT_BLITTER);
+		Int_AddRelativeInterrupt(NONHOG_CYCLES, INT_CPU_CYCLE, INTERRUPT_BLITTER);
 	}
 }
 
