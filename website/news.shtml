@@ -1,12 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<html>
 
 <head>
 <title>Hatari news</title>
 <link rel="stylesheet" type="text/css" href="hatari.css" />
-<meta name="keywords" content="unix, linux, freebsd, bsd, beos, atari, emulator, hatari, winston, 68000, news" />
+<meta name="keywords" content="hatari, linux, bsd, atari, emulator, 68000, news" />
 <meta name="description" content="Hatari is a new Atari ST emulator. Here you can find the latest news" />
 <meta name="author" content="Thomas Huth" />
 <meta name="copyright" content="Thomas Huth" />
@@ -39,9 +36,12 @@
 
 <h1>Hatari news</h1>
 
+<!--#exec cmd="wget -O - 'http://developer.berlios.de/export/projnews.php?group_id=10436&limit=20&flat=0&show_summaries=1'" -->
 
-<!--#exec cmd="wget -O - http://sourceforge.net/export/projnews.php\?group_id=28326\&limit=10\&flat=0\&show_summaries=1" -->
 
+<h2>Older news</h2>
+
+<!--#exec cmd="wget -O - 'http://sourceforge.net/export/projnews.php?group_id=28326&limit=20&flat=0&show_summaries=1'" -->
 
 </body>
 </html>
