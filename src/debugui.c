@@ -714,7 +714,11 @@ static int DebugUI_GetCommand(void)
 	if (!input)
 		return DEBUG_QUIT;
 	input[0] = '\0';
-	fgets(input, 256, stdin);
+	if (fgets(input, 256, stdin) == NULL)
+	{
+		free(input);
+		return DEBUG_QUIT;
+	}
 #endif
 	retval = DebugUI_ParseCommand(input);
 

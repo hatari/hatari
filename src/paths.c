@@ -225,7 +225,11 @@ void Paths_Init(const char *argv0)
 	char *psExecDir;  /* Path string where the hatari executable can be found */
 
 	/* Init working directory string */
-	getcwd(sWorkingDir, FILENAME_MAX);
+	if (getcwd(sWorkingDir, FILENAME_MAX) == NULL)
+	{
+		/* This should never happen... just in case... */
+		strcpy(sWorkingDir, ".");
+	}
 
 	/* Init the user's home directory string */
 	Paths_InitHomeDirs();
