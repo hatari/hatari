@@ -17,7 +17,7 @@
 
 
 
-const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.37 2008-12-13 18:42:07 npomarede Exp $";
+const char Blitter_rcsid[] = "Hatari $Id: blitter.c,v 1.38 2009-01-28 21:11:00 jbberlioz Exp $";
 
 /* NOTES:
  * ----------------------------------------------------------------------------
