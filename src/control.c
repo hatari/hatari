@@ -451,8 +451,10 @@ const char *Control_SetSocket(const char *socketpath)
  * 
  * SDL_syswm.h automatically includes everything else needed.
  */
+#if HAVE_X11
+/* In addition to X11 headers, SDL needs to support X11 */
 #include <SDL_config.h>
-#if HAVE_X11 && SDL_VIDEO_DRIVER_X11
+#if SDL_VIDEO_DRIVER_X11
 #include <SDL_syswm.h>
 
 /**
@@ -533,7 +535,9 @@ static int Control_GetUISocket(void)
 	return ConnectionNumber(info.info.x11.display);
 }
 
-#else
+#endif	/* SDL_VIDEO_DRIVER_X11 */
+#else	/* HAVE_X11 */
+
 static int Control_GetUISocket(void)
 {
 	return 0;
@@ -543,7 +547,7 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 	/* TODO: implement the Windows part.  SDL sources offer example */
 	Log_Printf(LOG_TODO, "Support for Hatari window reparenting not built in\n");
 }
-#endif /* HAVE_X11 */
 
+#endif /* HAVE_X11 */
 
 #endif /* HAVE_UNIX_DOMAIN_SOCKETS */
