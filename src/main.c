@@ -351,12 +351,6 @@ void Main_EventHandler(void)
 		 case SDL_QUIT:
 			Main_RequestQuit();
 			break;
-
-		case SDL_JOYAXISMOTION:
-		case SDL_JOYBALLMOTION:
-		case SDL_JOYHATMOTION:
-			bContinueProcessing = true;
-			break;
 			
 		 case SDL_MOUSEMOTION:               /* Read/Update internal mouse position */
 			Main_HandleMouseMotion(&event);
@@ -417,6 +411,11 @@ void Main_EventHandler(void)
 
 		 case SDL_KEYUP:
 			Keymap_KeyUp(&event.key.keysym);
+			break;
+
+		default:
+			/* don't let unknown events delay event processing */
+			bContinueProcessing = true;
 			break;
 		}
 	} while (bContinueProcessing || !(bEmulationActive || bQuitProgram));
