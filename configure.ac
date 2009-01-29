@@ -126,6 +126,8 @@ AC_HEADER_DIRENT
 AC_CHECK_HEADERS([unistd.h zlib.h], ,
   AC_MSG_ERROR([header file not found!]))
 AC_CHECK_HEADERS([termios.h glob.h malloc.h])
+dnl If present, used to check SDL configuration
+AC_CHECK_HEADERS([SDL/SDL_config.h])
 
 dnl Checks for types.
 AC_TYPE_MODE_T
