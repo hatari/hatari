@@ -1294,7 +1294,7 @@ static void dsp_jclr(void)
 			break;
 		case 3:
 			/* jclr #n,R,p:xx */
-			sprintf(srcname, registers_name[value]);
+			strcpy(srcname, registers_name[value]);
 			break;
 	}
 
@@ -1383,7 +1383,7 @@ static void dsp_jsclr(void)
 			break;
 		case 3:
 			/* jsclr #n,R,p:xx */
-			sprintf(srcname, registers_name[value]);
+			strcpy(srcname, registers_name[value]);
 			break;
 	}
 
@@ -1436,7 +1436,7 @@ static void dsp_jset(void)
 			break;
 		case 3:
 			/* jset #n,R,p:xx */
-			sprintf(srcname, registers_name[value]);
+			strcpy(srcname, registers_name[value]);
 			break;
 	}
 
@@ -1502,7 +1502,7 @@ static void dsp_jsset(void)
 			break;
 		case 3:
 			/* jsset #n,R,p:xx */
-			sprintf(srcname, registers_name[value]);
+			strcpy(srcname, registers_name[value]);
 			break;
 	}
 
