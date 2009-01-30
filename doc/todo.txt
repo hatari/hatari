@@ -32,6 +32,27 @@ Emulation improvements
 - Add SCC serial port emulation for Falcon/TT mode.
 
 
+DSP emulation
+-------------
+
+- Run the DSP at exactly 32 Mhz
+
+- Calculate the real cpu time used by each instruction
+
+- Code a real Host interface module (DMA mode, Interrupt mode, ...)
+
+- Add all the interruptions into the DSP
+
+- Add the Port C (SSI) functions
+
+- Add a direct sound entrance (to be able to use programs like "Audio 
+  Fun Machine")
+
+- Add the sound matrix and connect the DSP to it
+
+- Add direct 2 disk
+
+
 Other Hatari functionality improvements
 ---------------------------------------
 
