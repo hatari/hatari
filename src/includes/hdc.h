@@ -48,11 +48,13 @@
 #define HD_STATUS_BUSY     0x08
 
 /* Error codes for REQUEST SENSE: */
-#define HD_REQSENS_OK      0x00               /* OK return status */
-#define HD_REQSENS_OPCODE  0x20               /* Opcode not supported */
-#define HD_REQSENS_INVADDR 0x21               /* Invalid block address */
-#define HD_REQSENS_INVARG  0x24               /* Invalid argument */
-#define HD_REQSENS_NODRIVE 0x25               /* Invalid drive */
+#define HD_REQSENS_OK       0x00              /* OK return status */
+#define HD_REQSENS_NOSECTOR 0x01              /* No index or sector */
+#define HD_REQSENS_WRITEERR 0x03              /* Write fault */
+#define HD_REQSENS_OPCODE   0x20              /* Opcode not supported */
+#define HD_REQSENS_INVADDR  0x21              /* Invalid block address */
+#define HD_REQSENS_INVARG   0x24              /* Invalid argument */
+#define HD_REQSENS_NODRIVE  0x25              /* Invalid drive */
 
 #define ACSI_EMU_ON        bAcsiEmuOn         /* Do we have HDC emulation? */
 

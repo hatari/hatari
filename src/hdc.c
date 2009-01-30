@@ -321,6 +321,8 @@ static void HDC_Cmd_FormatDrive(void)
  */
 static void HDC_Cmd_WriteSector(void)
 {
+	int n = 0;
+
 	nLastBlockAddr = HDC_GetOffset();
 
 	/* seek to the position */
@@ -331,16 +333,24 @@ static void HDC_Cmd_WriteSector(void)
 	}
 	else
 	{
-		HDCCommand.returnCode = HD_STATUS_OK;
-		nLastError = HD_REQSENS_OK;
-
 		/* write - if allowed */
 #ifndef DISALLOW_HDC_WRITE
-		fwrite(&STRam[FDC_ReadDMAAddress()], 512, HD_SECTORCOUNT(HDCCommand),
-		       hd_image_file);
+		n = fwrite(&STRam[FDC_ReadDMAAddress()], 512,
+		           HD_SECTORCOUNT(HDCCommand), hd_image_file);
 #endif
+		if (n == HD_SECTORCOUNT(HDCCommand))
+		{
+			HDCCommand.returnCode = HD_STATUS_OK;
+			nLastError = HD_REQSENS_OK;
+		}
+		else
+		{
+			HDCCommand.returnCode = HD_STATUS_ERROR;
+			nLastError = HD_REQSENS_WRITEERR;
+		}
+
 		/* Update DMA counter */
-		FDC_WriteDMAAddress(FDC_ReadDMAAddress() + 512*HD_SECTORCOUNT(HDCCommand));
+		FDC_WriteDMAAddress(FDC_ReadDMAAddress() + 512*n);
 	}
 
 	FDC_SetDMAStatus(FALSE);              /* no DMA error */
@@ -356,6 +366,8 @@ static void HDC_Cmd_WriteSector(void)
  */
 static void HDC_Cmd_ReadSector(void)
 {
+	int n;
+
 	nLastBlockAddr = HDC_GetOffset();
 
 #ifdef HDC_VERBOSE
@@ -371,13 +383,21 @@ static void HDC_Cmd_ReadSector(void)
 	}
 	else
 	{
-		fread(&STRam[FDC_ReadDMAAddress()], 512, HD_SECTORCOUNT(HDCCommand),
-		      hd_image_file);
-		HDCCommand.returnCode = HD_STATUS_OK;
-		nLastError = HD_REQSENS_OK;
+		n = fread(&STRam[FDC_ReadDMAAddress()], 512,
+		          HD_SECTORCOUNT(HDCCommand), hd_image_file);
+		if (n == HD_SECTORCOUNT(HDCCommand))
+		{
+			HDCCommand.returnCode = HD_STATUS_OK;
+			nLastError = HD_REQSENS_OK;
+		}
+		else
+		{
+			HDCCommand.returnCode = HD_STATUS_ERROR;
+			nLastError = HD_REQSENS_NOSECTOR;
+		}
 
 		/* Update DMA counter */
-		FDC_WriteDMAAddress(FDC_ReadDMAAddress() + 512*HD_SECTORCOUNT(HDCCommand));
+		FDC_WriteDMAAddress(FDC_ReadDMAAddress() + 512*n);
 	}
 
 	FDC_SetDMAStatus(FALSE);              /* no DMA error */
@@ -550,7 +570,11 @@ static void HDC_GetInfo(void)
 	offset = ftell(hd_image_file);
 
 	fseek(hd_image_file, HD_PARTITIONTABLE_OFFSET, 0);
-	fread(hdinfo, HD_PARTITIONTABLE_SIZE, 1, hd_image_file);
+	if (fread(hdinfo, HD_PARTITIONTABLE_SIZE, 1, hd_image_file) != 1)
+	{
+		perror("HDC_GetInfo");
+		return;
+	}
 
 #ifdef HDC_VERBOSE
 	size = (((unsigned long) hdinfo[0] << 24)
