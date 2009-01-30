@@ -33,7 +33,7 @@
     4 - 7  Length Of Data To Follow
     8 - end  Data (Samples)
 */
-const char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.16 2008-08-19 00:09:59 thothy Exp $";
+const char WAVFormat_fileid[] = "Hatari wavFormat.c : " __DATE__ " " __TIME__;
 
 #include <SDL_endian.h>
 
@@ -48,67 +48,86 @@ const char WAVFormat_rcsid[] = "Hatari $Id: wavFormat.c,v 1.16 2008-08-19 00:09:
 
 static FILE *WavFileHndl;
 static int nWavOutputBytes;             /* Number of samples bytes saved */
-bool bRecordingWav = FALSE;             /* Is a WAV file open and recording? */
+bool bRecordingWav = false;             /* Is a WAV file open and recording? */
 
 
-/*-----------------------------------------------------------------------*/
+static Uint8 WavHeader[] =
+{
+	/* RIFF chunk */
+	'R', 'I', 'F', 'F',      /* "RIFF" (ASCII Characters) */
+	0, 0, 0, 0,              /* Total Length Of Package To Follow (patched when file is closed) */
+	'W', 'A', 'V', 'E',      /* "WAVE" (ASCII Characters) */
+	/* Format chunk */
+	'f', 'm', 't', ' ',      /* "fmt_" (ASCII Characters) */
+	0x10, 0, 0, 0,           /* Length Of FORMAT Chunk (always 0x10) */
+	0x01, 0,                 /* Always 0x01 */
+	0x02, 0,                 /* Number of channels (2 for stereo) */
+	0, 0, 0, 0,              /* Sample rate (patched when file header is written) */
+	0, 0, 0, 0,              /* Bytes per second (patched when file header is written) */
+	0x04, 0,                 /* Bytes per sample (4 = 16 bit stereo) */
+	0x10, 0,                 /* Bits per sample (16 bit) */
+	/* Data chunk */
+	'd', 'a', 't', 'a',
+	0, 0, 0, 0,              /* Length of data to follow (will be patched when file is closed) */
+};
+
+
 /**
- *
+ * Open WAV output file and write header.
  */
 bool WAVFormat_OpenFile(char *pszWavFileName)
 {
-	const Uint32 Blank = 0;
-	const Uint32 FmtLength = SDL_SwapLE32(0x10);
-	const Uint16 LeOne = SDL_SwapLE16(0x01);
-	const Uint16 LeTwo = SDL_SwapLE16(0x02);
-	const Uint16 LeFour = SDL_SwapLE16(0x04);
-	const Uint32 BitsPerSample = SDL_SwapLE32(16);
-	Uint32 SampleLength;
+
+	Uint32 nSampleFreq, nBytesPerSec;
+
+	bRecordingWav = false;
+	nWavOutputBytes = 0;
 
 	/* Set frequency (11Khz, 22Khz or 44Khz) */
-	SampleLength = SDL_SwapLE32(SoundPlayBackFrequencies[ConfigureParams.Sound.nPlaybackQuality]);
+	nSampleFreq = SoundPlayBackFrequencies[ConfigureParams.Sound.nPlaybackQuality];
+	/* multiply by 4 for 16 bit stereo */
+	nBytesPerSec = nSampleFreq * 4;
 
 	/* Create our file */
 	WavFileHndl = fopen(pszWavFileName, "wb");
-
-	if (WavFileHndl != NULL)
+	if (!WavFileHndl)
 	{
-		/* Create 'RIFF' chunk */
-		fwrite("RIFF", 1, 4, WavFileHndl);                /* "RIFF" (ASCII Characters) */
-		fwrite(&Blank, sizeof(Uint32), 1, WavFileHndl);   /* Total Length Of Package To Follow (Binary, little endian) */
-		fwrite("WAVE", 1, 4, WavFileHndl);                /* "WAVE" (ASCII Characters) */
+		perror("WAVFormat_OpenFile");
+		Log_AlertDlg(LOG_ERROR, "WAV recording: Failed to open file!");
+		return false;
+	}
 
-		/* Create 'FORMAT' chunk */
-		fwrite("fmt ", 1, 4, WavFileHndl);                      /* "fmt_" (ASCII Characters) */
-		fwrite(&FmtLength, sizeof(Uint32), 1, WavFileHndl);     /* Length Of FORMAT Chunk (Binary, always 0x10) */
-		fwrite(&LeOne, sizeof(Uint16), 1, WavFileHndl);         /* Always 0x01 */
-		fwrite(&LeTwo, sizeof(Uint16), 1, WavFileHndl);         /* Channel Numbers (0x01=Mono, 0x02=Stereo) */
-		fwrite(&SampleLength, sizeof(Uint32), 1, WavFileHndl);  /* Sample Rate (Binary, in Hz) */
-		fwrite(&SampleLength, sizeof(Uint32), 1, WavFileHndl);  /* Bytes Per Second */
-		fwrite(&LeFour, sizeof(Uint16), 1, WavFileHndl);        /* Bytes Per Sample: 1=8 bit Mono, 2=8 bit Stereo or 16 bit Mono, 4=16 bit Stereo */
-		fwrite(&BitsPerSample, sizeof(Uint16), 1, WavFileHndl); /* Bits Per Sample */
+	/* Patch sample frequency in header structure */
+	WavHeader[24] = (Uint8)nSampleFreq;
+	WavHeader[25] = (Uint8)(nSampleFreq >> 8);
+	WavHeader[26] = (Uint8)(nSampleFreq >> 16);
+	WavHeader[27] = (Uint8)(nSampleFreq >> 24);
 
-		/* Create 'DATA' chunk */
-		fwrite("data", 1, 4, WavFileHndl);                /* "data" (ASCII Characters) */
-		fwrite(&Blank, sizeof(Uint32), 1, WavFileHndl);   /* Length Of Data To Follow */
+	/* Patch bytes per second in header structure */
+	WavHeader[28] = (Uint8)nBytesPerSec;
+	WavHeader[29] = (Uint8)(nBytesPerSec >> 8);
+	WavHeader[30] = (Uint8)(nBytesPerSec >> 16);
+	WavHeader[31] = (Uint8)(nBytesPerSec >> 24);
 
-		nWavOutputBytes = 0;
-		bRecordingWav = TRUE;
-
-		/* And inform user */
+	/* Write header to file */
+	if (fwrite(&WavHeader, sizeof(WavHeader), 1, WavFileHndl) == 1)
+	{
+		bRecordingWav = true;
 		Log_AlertDlg(LOG_INFO, "WAV sound data recording has been started.");
 	}
 	else
-		bRecordingWav = FALSE;
+	{
+		perror("WAVFormat_OpenFile");
+		Log_AlertDlg(LOG_ERROR, "WAV recording: Failed to write header!");
+	}
 
 	/* Ok, or failed? */
 	return bRecordingWav;
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
- * 
+ * Write sizes to WAV header, then close the WAV file.
  */
 void WAVFormat_CloseFile(void)
 {
@@ -117,19 +136,31 @@ void WAVFormat_CloseFile(void)
 		Uint32 nWavFileBytes;
 		Uint32 nWavLEOutBytes;
 
+		bRecordingWav = false;
+
 		/* Update headers with sizes */
 		nWavFileBytes = SDL_SwapLE32((12+24+8+nWavOutputBytes)-8);  /* File length, less 8 bytes for 'RIFF' and length */
 		fseek(WavFileHndl, 4, SEEK_SET);                            /* 'Total Length Of Package' element */
-		fwrite(&nWavFileBytes, sizeof(Uint32), 1, WavFileHndl);     /* Total Length Of Package in 'RIFF' chunk */
+		/* Write total length of package in 'RIFF' chunk */
+		if (fwrite(&nWavFileBytes, sizeof(Uint32), 1, WavFileHndl) != 1)
+		{
+			perror("WAVFormat_CloseFile");
+			fclose(WavFileHndl);
+			WavFileHndl = NULL;
+			return;
+		}
 
 		fseek(WavFileHndl, 12+24+4, SEEK_SET);                      /* 'Length' element */
 		nWavLEOutBytes = SDL_SwapLE32(nWavOutputBytes);
-		fwrite(&nWavLEOutBytes, sizeof(Uint32), 1, WavFileHndl);    /* Length Of Data in 'DATA' chunk */
+		/* Write length of data in 'DATA' chunk */
+		if (fwrite(&nWavLEOutBytes, sizeof(Uint32), 1, WavFileHndl) != 1)
+		{
+			perror("WAVFormat_CloseFile");
+		}
 
 		/* Close file */
 		fclose(WavFileHndl);
 		WavFileHndl = NULL;
-		bRecordingWav = FALSE;
 
 		/* And inform user */
 		Log_AlertDlg(LOG_INFO, "WAV Sound data recording has been stopped.");
@@ -137,9 +168,8 @@ void WAVFormat_CloseFile(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
- *
+ * Update WAV file with current samples
  */
 void WAVFormat_Update(Sint16 pSamples[][2], int Index, int Length)
 {
@@ -155,10 +185,15 @@ void WAVFormat_Update(Sint16 pSamples[][2], int Index, int Length)
 			sample[0] = SDL_SwapLE16(pSamples[(Index+i)%MIXBUFFER_SIZE][0]);
 			sample[1] = SDL_SwapLE16(pSamples[(Index+i)%MIXBUFFER_SIZE][1]);
 			/* And store */
-			fwrite(&sample, sizeof(sample), 1, WavFileHndl);
+			if (fwrite(&sample, sizeof(sample), 1, WavFileHndl) != 1)
+			{
+				perror("WAVFormat_Update");
+				WAVFormat_CloseFile();
+				return;
+			}
 		}
 
-		/* Add samples to wav file */
+		/* Add samples to wav file length counter */
 		nWavOutputBytes += Length * 4;
 	}
 }
