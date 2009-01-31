@@ -216,10 +216,14 @@
 /* 2009/01/24	[NP]	Better detection of 'right-2' when freq is changed to 60 Hz and 	*/
 /*			restored to 50 after the end of the current line (fixes games menu on	*/
 /*			BBC compil 10).								*/
+/* 2009/01/31	[NP]	Handle a rare case where 'move.b #8,$fffa1f' to start the timer B is	*/
+/*			done just a few cycles before the actual signal for end of line. In that*/
+/*			we must ensure that the write was really effective before the end of	*/
+/*			line (else no interrupt should be made) (fix Pompey Pirate Menu #57).	*/
 
 
 
-const char Video_rcsid[] = "Hatari $Id: video.c,v 1.133 2008-12-14 16:11:41 npomarede Exp $";
+const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 
 #include <SDL_endian.h>
 
@@ -316,7 +320,9 @@ int	LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess last time 
 int	NewVideoHi = -1;			/* new value for $ff8205 on STE */
 int	NewVideoMed = -1;			/* new value for $ff8207 on STE */
 int	NewVideoLo = -1;			/* new value for $ff8209 on STE */
+
 int	LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;	/* position of the Timer B interrupt on active lines */
+int	TimerBEventCountCycleStart = -1;	/* value of Cycles_GetCounterOnWriteAccess last time timer B was started for the current VBL */
 
 int	LineRemoveTopCycle = LINE_REMOVE_TOP_CYCLE_STF;
 int	LineRemoveBottomCycle = LINE_REMOVE_BOTTOM_CYCLE_STF;
@@ -1528,9 +1534,10 @@ void Video_InterruptHandler_EndLine(void)
 	Uint8 SyncByte = IoMem_ReadByte(0xff820a) & 2;	/* only keep bit 1 (50/60 Hz) */
 	int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	int nLineCycles = nFrameCycles % nCyclesPerLine;
+	int PendingCycles = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
 
 	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "EndLine TB %d video_cyc=%d line_cyc=%d pending_int_cnt=%d\n" ,
-	               nHBL , nFrameCycles , nLineCycles , -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE ) );
+	               nHBL , nFrameCycles , nLineCycles , PendingCycles );
 
 	/* Remove this interrupt from list and re-order */
 	Int_AcknowledgeInterrupt();
@@ -1563,8 +1570,14 @@ void Video_InterruptHandler_EndLine(void)
 	if (nHBL >= nStartHBL && nHBL < nEndHBL)
 	{
 		/* Handle Timer B when using Event Count mode */
-		if (MFP_TBCR == 0x08)      /* Is timer in Event Count mode? */
-			MFP_TimerB_EventCount_Interrupt();
+		/* We must ensure that the write to fffa1b to activate timer B was */
+		/* completed before the point where the end of line signal was generated */
+		/* (in the case of a move.b #8,$fffa1b that would happen 4 cycles */
+		/* before end of line, the interrupt should not be generated) */
+		if ( (MFP_TBCR == 0x08)						/* Is timer in Event Count mode? */
+			&& ( ( TimerBEventCountCycleStart == -1 )		/* timer B was started during a previous VBL */
+			  || ( TimerBEventCountCycleStart < nFrameCycles-PendingCycles ) ) )	/* timer B was started before this possible interrupt */
+			MFP_TimerB_EventCount_Interrupt();			/* wa have a valid timer B interrupt */
 	}
 }
 
@@ -1683,6 +1696,8 @@ static void Video_ResetShifterTimings(void)
 	LastCycleSync60 = -1;
 	LastCycleScroll8264 = -1;
 	LastCycleScroll8265 = -1;
+
+	TimerBEventCountCycleStart = -1;		/* reset timer B activation cycle for this VBL */
 }
 
 

@@ -558,7 +558,11 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler,
 
 	if (TimerControl == 8 )				/* event count mode */
 	{
-		/* do nothing, only print some traces */
+		if ( Handler == INTERRUPT_MFP_TIMERB )		/* we're starting timer B event count mode */
+		{
+			/* Store start cycle for handling interrupt in video.c */
+			TimerBEventCountCycleStart = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+		}
 
 		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_START ) )
 		{

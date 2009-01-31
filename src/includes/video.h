@@ -127,7 +127,9 @@ extern int nScreenRefreshRate;
 
 extern int nScanlinesPerFrame;
 extern int nCyclesPerLine;
+
 extern int LineTimerBCycle;
+extern int TimerBEventCountCycleStart;
 
 extern int HblJitterIndex;
 extern int HblJitterArray[];

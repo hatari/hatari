@@ -5,6 +5,14 @@
 
 
 
+ Devel version :
+ ---------------
+
+
+Emulation:
+- Improve Timer B accuracy when starting it in a rare case
+
+
  Version 1.2.0 (2009-01-24):
  ---------------------------
 
