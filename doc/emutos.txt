@@ -59,9 +59,8 @@ image:
   system replacements/improvements.
 
 * EmuTOS allows also using ACSI disk images with Hatari TT/Falcon
-  emulation, whereas TOS 3 & 4 support only IDE and SCSI disks (which
-  Hatari doesn't currently support).  Hard disk images are needed for
-  running MiNT and some other programs.
+  emulation, whereas TOS 3 & 4 support only IDE and SCSI disks.
+  Hard disk images are needed mainly for running MiNT.
 
 
 EmuTOS compatibility
@@ -83,15 +82,15 @@ Free games have the issue that they often use the Line-A functionality
 which is not supported by EmuTOS[1] unlike AES/VDI.  This is partly a
 problem with the tools that they've been done with (for example older
 STOS and GFA basic version liked to use Line-A for graphics). There
-are also many demos which use it for convenience.
+are also many old demos which use it for convenience.
 
-[1] EmuTOS has some old partial implementations for some of the Line-A
+[1] EmuTOS has some old/partial implementations for some of the Line-A
     functionality, but these are so buggy that they aren't enabled in
     EmuTOS releases except for mouse on/off functionality.
 
-Joystick doesn't work in some (STOS) games that access it through some
+Joystick doesn't work in some (STOS) games that access it through
 other means than XBIOS function Kbdvbase() or by hooking into the IKBD
-interrupt vector.   They probably uses some unofficial system variables
+interrupt vector.  They probably use some unofficial system variables
 which location depends on the TOS version.
 
 
@@ -100,8 +99,9 @@ Debugging issues with EmuTOS
 
 To debug problems with EmuTOS, you have to download its source code and
 recompile it. Enable the MIDI debug output in the config.h header file,
-then you can start Hatari with the "--midi /dev/stderr" option. You will
-then see the EmuTOS debug output like calls to missing Line-A functions.
+then you can start Hatari with the "--midi-out /dev/stderr" option. You
+will then see the EmuTOS debug output like calls to missing Line-A
+functions.
 
 To debug EmuTOS panics, you need to compile EmuTOS and create a disassembly
 of the ROM image.  You can then look up the program counter value given in
