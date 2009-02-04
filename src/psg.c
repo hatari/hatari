@@ -169,7 +169,7 @@ void PSG_Set_SelectRegister(Uint8 val)
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
 	    HATARI_TRACE_PRINT ( "ym write reg=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		PSGRegisterSelect, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
@@ -228,7 +228,7 @@ void PSG_Set_DataRegister(Uint8 val)
 {
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
 	    HATARI_TRACE_PRINT ( "ym write data reg=0x%x val=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		PSGRegisterSelect, val, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
@@ -358,7 +358,7 @@ void PSG_ff8800_ReadByte(void)
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_READ ) )
 	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
 	    HATARI_TRACE_PRINT ( "ym read data %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
@@ -379,7 +379,7 @@ void PSG_ff880x_ReadByte(void)
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_READ ) )
 	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
 	    HATARI_TRACE_PRINT ( "ym read void %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
@@ -400,7 +400,7 @@ void PSG_ff8800_WriteByte(void)
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
 	    HATARI_TRACE_PRINT ( "ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
@@ -426,7 +426,7 @@ void PSG_ff8801_WriteByte(void)
 	
 		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 		  {
-		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		    int nLineCycles = nFrameCycles % nCyclesPerLine;
 		    HATARI_TRACE_PRINT ( "ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 			IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
@@ -440,7 +440,7 @@ void PSG_ff8801_WriteByte(void)
 	{						/* do nothing, just a trace if needed */
 		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 		  {
-		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		    int nLineCycles = nFrameCycles % nCyclesPerLine;
 		    HATARI_TRACE_PRINT ( "ym write ignored %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 			IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
@@ -461,7 +461,7 @@ void PSG_ff8802_WriteByte(void)
 
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
 	    HATARI_TRACE_PRINT ( "ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 		IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
@@ -487,7 +487,7 @@ void PSG_ff8803_WriteByte(void)
 	
 		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 		  {
-		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		    int nLineCycles = nFrameCycles % nCyclesPerLine;
 		    HATARI_TRACE_PRINT ( "ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 			IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
@@ -501,7 +501,7 @@ void PSG_ff8803_WriteByte(void)
 	{						/* do nothing, just a trace if needed */
 		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
 		  {
-		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		    int nLineCycles = nFrameCycles % nCyclesPerLine;
 		    HATARI_TRACE_PRINT ( "ym write ignored %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 			IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,

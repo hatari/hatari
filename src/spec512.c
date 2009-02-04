@@ -210,7 +210,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 
 	if ( 0 && HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_COLOR ) )
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
 		HATARI_TRACE_PRINT ( "spec store col line %d cyc=%d col=%x idx=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , ScanLine , nHorPos , CycleColour , CycleColourIndex ,
 		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );

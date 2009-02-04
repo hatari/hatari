@@ -1677,7 +1677,7 @@ static void m68k_run_1 (void)
 	/*m68k_dumpstate(stderr, NULL);*/
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_CPU_DISASM ) )
 	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
 	    HATARI_TRACE_PRINT ( "video_cyc=%6d %3d@%3d : " , nFrameCycles, nLineCycles, nHBL );
 	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
@@ -1760,7 +1760,7 @@ static void m68k_run_2 (void)
 	/*m68k_dumpstate(stderr, NULL);*/
 	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_CPU_DISASM ) )
 	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);;
+	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
 	    HATARI_TRACE_PRINT ( "video_cyc=%6d %3d@%3d : " , nFrameCycles, nLineCycles, nHBL );
 	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
