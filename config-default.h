@@ -1,5 +1,11 @@
 /* Default config.h for Hatari */
 
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#if defined(_MSC_VER)
+# define inline __inline
+#endif
+
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'. */
 #define HAVE_DIRENT_H 1
 
