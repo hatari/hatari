@@ -8,10 +8,9 @@
 #ifndef HATARI_STMEMORY_H
 #define HATARI_STMEMORY_H
 
-#include "config.h"
+#include "main.h"
 #include "sysdeps.h"
 #include "maccess.h"
-#include "main.h"
 
 #if ENABLE_SMALL_MEM
 extern Uint8 *STRam;

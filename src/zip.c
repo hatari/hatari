@@ -6,21 +6,14 @@
 
   Zipped disk support, uses zlib
 */
-const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.29 2008-05-25 19:58:56 thothy Exp $";
-
-#include <config.h>
+const char ZIP_fileid[] = "Hatari zip.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/types.h>
 #include <zlib.h>
-
-#if HAVE_STRINGS_H
-#include <strings.h>
-#endif
 
 #include "main.h"
 #include "dim.h"
@@ -29,6 +22,7 @@ const char ZIP_rcsid[] = "Hatari $Id: zip.c,v 1.29 2008-05-25 19:58:56 thothy Ex
 #include "log.h"
 #include "msa.h"
 #include "st.h"
+#include "str.h"
 #include "unzip.h"
 #include "zip.h"
 

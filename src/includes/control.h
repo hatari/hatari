@@ -7,7 +7,6 @@
 #ifndef HATARI_CONTROL_H
 #define HATARI_CONTROL_H
 
-#include "config.h"
 #include "main.h"
 
 /* supported only on BSD compatible / POSIX compliant systems */

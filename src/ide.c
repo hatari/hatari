@@ -15,7 +15,6 @@
 #include <unistd.h>
 
 #include "main.h"
-#include "config.h"
 #include "configuration.h"
 #include "debugui.h"
 #include "file.h"

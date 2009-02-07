@@ -6,9 +6,7 @@
 
   ST Memory access functions.
 */
-const char STMemory_rcsid[] = "Hatari $Id: stMemory.c,v 1.20 2008-03-31 17:28:51 eerot Exp $";
-
-#include "config.h"
+const char STMemory_fileid[] = "Hatari stMemory.c : " __DATE__ " " __TIME__;
 
 #include "stMemory.h"
 #include "configuration.h"

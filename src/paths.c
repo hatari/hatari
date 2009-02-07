@@ -12,7 +12,6 @@ const char Paths_fileid[] = "Hatari paths.c : " __DATE__ " " __TIME__;
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "config.h"
 #include "main.h"
 #include "file.h"
 #include "paths.h"

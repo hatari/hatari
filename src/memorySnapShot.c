@@ -18,15 +18,8 @@
 */
 const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " __TIME__;
 
-#include <config.h>
-
 #include <SDL_types.h>
-#include <string.h>
 #include <errno.h>
-
-#if HAVE_STRINGS_H
-#include <strings.h>
-#endif
 
 #include "main.h"
 #include "blitter.h"
@@ -46,6 +39,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "psg.h"
 #include "reset.h"
 #include "sound.h"
+#include "str.h"
 #include "tos.h"
 #include "video.h"
 
