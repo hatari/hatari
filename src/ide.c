@@ -106,20 +106,19 @@ uae_u32 Ide_Mem_bget(uaecptr addr)
 
 	ideport = fcha2io(addr);
 
-	switch (ideport)
+	if (ideport >= 1 && ideport <= 7)
 	{
-	case 1 ... 7:
 		retval = ide_ioport_read(opaque_ide_if, ideport);
-		break;
-	case 8:
-	case 22:
+	}
+	else if (ideport == 8 || ideport == 22)
+	{
 		retval = ide_status_read(opaque_ide_if, 0);
 		if ((retval & 1))
 			DebugUI();
-		break;
-	default:
+	}
+	else
+	{
 		retval = 0xFF;
-		break;
 	}
 
 	return retval;
@@ -218,17 +217,13 @@ void Ide_Mem_bput(uaecptr addr, uae_u32 val)
 
 	ideport = fcha2io(addr);
 
-	switch (ideport)
+	if (ideport >= 1 && ideport <= 7)
 	{
-	case 1 ... 7:
 		ide_ioport_write(opaque_ide_if, ideport, val);
-		break;
-	case 8:
-	case 22:
+	}
+	else if (ideport == 8 || ideport == 22)
+	{
 		ide_cmd_write(opaque_ide_if, 0, val);
-		break;
-	default:
-		break;
 	}
 }
 
@@ -505,10 +500,11 @@ static void bdrv_set_locked(BlockDriverState *bs, int locked)
 static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
                      uint8_t *buf, int nb_sectors)
 {
+	int ret, len;
+
 	if (!bs->fhndl)
 		return -ENOMEDIUM;
 
-	int ret, len;
 	len = nb_sectors * 512;
 
 	fseek(bs->fhndl, sector_num*512, SEEK_SET);
@@ -536,12 +532,13 @@ static int bdrv_read(BlockDriverState *bs, int64_t sector_num,
 static int bdrv_write(BlockDriverState *bs, int64_t sector_num,
                       const uint8_t *buf, int nb_sectors)
 {
+	int ret, len;
+
 	if (!bs->fhndl)
 		return -ENOMEDIUM;
 	if (bs->read_only)
 		return -EACCES;
 
-	int ret, len;
 	len = nb_sectors * 512;
 
 	fseek(bs->fhndl, sector_num*512, SEEK_SET);

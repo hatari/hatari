@@ -132,7 +132,9 @@ extern Uint32 HatariTraceFlags;
 
 #else		/* HATARI_TRACE_ACTIVATED */
 
+#ifndef _VCWIN_
 #define HATARI_TRACE( level, args... )	{}
+#endif
 #define HATARI_TRACE_LEVEL( level )	(0)
 
 #endif		/* HATARI_TRACE_ACTIVATED */
@@ -141,6 +143,9 @@ extern Uint32 HatariTraceFlags;
  * In code it's used in such a way that it will be optimized away when tracing
  * is disabled.
  */
+#ifndef _VCWIN_
 #define HATARI_TRACE_PRINT( args... )	fprintf ( TraceFile , args )
+#endif
+
 
 #endif		/* HATARI_LOG_H */

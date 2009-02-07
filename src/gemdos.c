@@ -61,8 +61,7 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
  * on some systems. We should probably use something different for this
  * case, but at the moment it we simply define it as 0... */
 #ifndef GLOB_ONLYDIR
-#warning GLOB_ONLYDIR was not defined.
-#define GLOB_ONLYDIR 0
+# define GLOB_ONLYDIR 0
 #endif
 
 /* Maximum supported length of a GEMDOS path: */
@@ -236,7 +235,6 @@ static const char *pszGemDOSNames[] =
 
 /* Poor Windows (and maybe other systems) do not have a glob() function... */
 #if !HAVE_GLOB_H
-#warning sorry, no glob function available
 
 typedef struct
 {
@@ -264,7 +262,7 @@ static void globfree(glob_t *pglob)
 #endif  /* HAVE_GLOB_H */
 
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(mkdir)
 #define mkdir(name,mode) mkdir(name)
 #endif  /* WIN32 */
 

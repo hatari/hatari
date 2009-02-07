@@ -54,7 +54,7 @@ void dsp_core_init(dsp_core_t *dsp_core)
 
 	memset(dsp_core->ram, 0,sizeof(dsp_core->ram));
 	memset(dsp_core->ramint, 0,sizeof(dsp_core->ramint));
-	memset(dsp_core->hostport, 0,sizeof(dsp_core->hostport));
+	memset((void*)dsp_core->hostport, 0,sizeof(dsp_core->hostport));
 
 	/* Initialize Y:rom[0x0100-0x01ff] with a sin table */
 	for (i=0;i<256;i++) {
@@ -171,7 +171,7 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	dsp_core_shutdown(dsp_core);
 
 	/* Memory */
-	memset(dsp_core->periph, 0,sizeof(dsp_core->periph));
+	memset((void*)dsp_core->periph, 0,sizeof(dsp_core->periph));
 	memset(dsp_core->stack, 0,sizeof(dsp_core->stack));
 	memset(dsp_core->registers, 0,sizeof(dsp_core->registers));
 
@@ -354,6 +354,8 @@ static void dsp_core_hostport_cpuwrite(dsp_core_t *dsp_core)
 
 Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr)
 {
+	Uint8 value;
+
 #if 0 /* DSP_HOST_FORCEEXEC */
 	switch(addr) {
 		case CPU_HOST_RXH:
@@ -365,7 +367,7 @@ Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr)
 #endif
 
 	SDL_LockMutex(dsp_core->mutex);
-	Uint8 value = dsp_core->hostport[addr];
+	value = dsp_core->hostport[addr];
 	if (addr == CPU_HOST_RXL) {
 		dsp_core_hostport_cpuread(dsp_core);
 

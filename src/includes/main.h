@@ -13,6 +13,7 @@
 //#define PROG_NAME "Hatari devel (" __DATE__ ")"
 #define PROG_NAME "Hatari v1.2.0"
 
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>

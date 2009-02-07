@@ -3,8 +3,11 @@
 #ifndef ARAGLUE_H
 #define ARAGLUE_H
 
-#define bug(args...) printf(args);printf("\n")
-#define DUNUSED(x)
+#if defined(_VCWIN_)
+# define bug(args) printf(args);printf("\n")
+#else
+# define bug(args...) printf(args);printf("\n")
+#endif
 
 #if DEBUG
 #define D(x) x

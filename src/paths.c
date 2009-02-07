@@ -17,7 +17,7 @@ const char Paths_fileid[] = "Hatari paths.c : " __DATE__ " " __TIME__;
 #include "file.h"
 #include "paths.h"
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(mkdir)
 #define mkdir(name,mode) mkdir(name)
 #endif  /* WIN32 */
 

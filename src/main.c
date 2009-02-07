@@ -10,7 +10,6 @@
 #include <time.h>
 #include <SDL.h>
 
-#include "config.h"
 #include "main.h"
 #include "configuration.h"
 #include "control.h"
@@ -318,13 +317,14 @@ void Main_EventHandler(void)
 	bool bContinueProcessing;
 	SDL_Event event;
 	int events;
-	
+	int remotepause;
+
 	do
 	{
 		bContinueProcessing = false;
 
 		/* check remote process control */
-		int remotepause = Control_CheckUpdates();
+		remotepause = Control_CheckUpdates();
 
 		if ( bEmulationActive || remotepause )
 		{
@@ -646,3 +646,10 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+#ifdef _VCWIN_
+int launch(int argc, char *argv[])
+{
+	return main(argc,argv);
+}
+#endif

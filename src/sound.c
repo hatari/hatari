@@ -610,13 +610,14 @@ static ymu32	YM2149_RndCompute(void)
 static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 {
 	int	per;
+	yms64	step;
 
 	per = rHigh&15;
 	per = (per<<8)+rLow;
 	if (per<=5) 
 		return 0;
 
-	yms64 step = YM_ATARI_CLOCK;
+	step = YM_ATARI_CLOCK;
 	step <<= (15+16-3);
 	step /= (per * YM_REPLAY_FREQ);
 
@@ -627,12 +628,13 @@ static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
 {
 	int	per;
+	yms64	step;
 
 	per = (rNoise&0x1f);
 	if (per<3)
 		return 0;
 
-	yms64 step = YM_ATARI_CLOCK;
+	step = YM_ATARI_CLOCK;
 	step <<= (16-1-3);
 	step /= (per * YM_REPLAY_FREQ);
 
@@ -660,11 +662,12 @@ static ymu32	Ym2149_NoiseStepCompute(ymu8 rNoise)
 static ymu32	Ym2149_EnvStepCompute(ymu8 rHigh , ymu8 rLow)
 {
 	yms64	per;
+	yms64	step;
 
 	per = rHigh;
 	per = (per<<8)+rLow;
 
-	yms64 step = YM_ATARI_CLOCK;
+	step = YM_ATARI_CLOCK;
 	step <<= 24;
 	if ( per > 0 )
 		step /= (8 * per * YM_REPLAY_FREQ);	/* 0x5ab < step < 0x5ab3f46 at 44.1 kHz */
