@@ -27,7 +27,9 @@
 
   All other cells are reserved / unused.
 */
-const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.8 2008-08-05 23:26:47 thothy Exp $";
+const char NvRam_fileid[] = "Hatari nvram.c : " __DATE__ " " __TIME__;
+
+#define DEBUG 0
 
 #include "main.h"
 #include "configuration.h"
@@ -37,13 +39,6 @@ const char NvRam_rcsid[] = "Hatari $Id: nvram.c,v 1.8 2008-08-05 23:26:47 thothy
 #include "paths.h"
 #include "araglue.h"
 
-#define DEBUG 0
-
-#if DEBUG
-#define D(x) x
-#else
-#define D(x)
-#endif
 
 // Defs for checksum
 #define CKS_RANGE_START	14
