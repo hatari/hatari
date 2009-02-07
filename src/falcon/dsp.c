@@ -73,7 +73,7 @@ static Uint8 DSP_handleRead(Uint32 addr)
 	value = 0xff;
 #endif
 
-	D(bug("HWget_b(0x%08x)=0x%02x at 0x%08x", addr, value, showPC()));
+	D(bug("HWget_b(0x%08x)=0x%02x at 0x%08x", addr, value, m68k_getpc()));
 	return value;
 }
 
@@ -91,7 +91,7 @@ void DSP_HandleReadAccess(void)
 
 static void DSP_handleWrite(Uint32 addr, Uint8 value)
 {
-	D(bug("HWput_b(0x%08x,0x%02x) at 0x%08x", addr, value, showPC()));
+	D(bug("HWput_b(0x%08x,0x%02x) at 0x%08x", addr, value, m68k_getpc()));
 #if DSP_EMULATION
 	dsp_core_write_host(&dsp_core, addr-DSP_HW_OFFSET, value);
 #endif
