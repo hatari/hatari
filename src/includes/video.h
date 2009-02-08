@@ -131,6 +131,8 @@ extern int nCyclesPerLine;
 extern int LineTimerBCycle;
 extern int TimerBEventCountCycleStart;
 
+extern int LastCycleHblException;
+
 extern int HblJitterIndex;
 extern int HblJitterArray[];
 extern int HblJitterArrayPending[];

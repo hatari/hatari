@@ -112,7 +112,7 @@
 
 
 
-const char NewCpu_rcsid[] = "Hatari $Id: newcpu.c,v 1.64 2008-12-14 15:19:27 npomarede Exp $";
+const char NnewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -998,7 +998,13 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     }
     else if (nr >= 24 && nr <= 31)
     {
-      if ( ( nr == 26 ) || ( nr == 28 ) )	/* HBL or VBL */
+      if ( nr == 26 )				/* HBL */
+      {
+        /* store current cycle pos when then interrupt was received (see video.c) */
+        LastCycleHblException = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+        M68000_AddCycles(44+12);		/* Video Interrupt */
+      }
+      else if ( nr == 28 ) 			/* VBL */
         M68000_AddCycles(44+12);		/* Video Interrupt */
       else
         M68000_AddCycles(44+4);			/* Other Interrupts */

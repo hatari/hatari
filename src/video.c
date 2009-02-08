@@ -220,6 +220,8 @@
 /*			done just a few cycles before the actual signal for end of line. In that*/
 /*			we must ensure that the write was really effective before the end of	*/
 /*			line (else no interrupt should be made) (fix Pompey Pirate Menu #57).	*/
+/* 2009/02/08	[NP]	Handle special case for simultaneous HBL exceptions (fixes flickering in*/
+/*			Monster	Business and Super Monaco GP).					*/
 
 
 
@@ -316,6 +318,8 @@ int	LastCycleSync50;			/* value of Cycles_GetCounterOnWriteAccess last time ff82
 int	LastCycleSync60;			/* value of Cycles_GetCounterOnWriteAccess last time ff820a was set to 0x00 for the current VBL */
 int	LastCycleScroll8264;			/* value of Cycles_GetCounterOnWriteAccess last time ff8264 was set for the current VBL */
 int	LastCycleScroll8265;			/* value of Cycles_GetCounterOnWriteAccess last time ff8265 was set for the current VBL */
+
+int	LastCycleHblException;			/* value of Cycles_GetCounter last time a level 2 interrupt was executed by the CPU */
 
 int	NewVideoHi = -1;			/* new value for $ff8205 on STE */
 int	NewVideoMed = -1;			/* new value for $ff8207 on STE */
@@ -1493,6 +1497,7 @@ static void Video_EndHBL(void)
  */
 void Video_InterruptHandler_HBL(void)
 {
+	int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	int PendingCyclesOver;
 
 	/* How many cycle was this HBL delayed (>= 0) */
@@ -1507,13 +1512,33 @@ void Video_InterruptHandler_HBL(void)
 		HblJitterIndex = 0;
 	
 	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
-	               nHBL , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , HblJitterArray[ HblJitterIndex ] );
+	               nHBL , nFrameCycles , PendingCyclesOver , HblJitterArray[ HblJitterIndex ] );
 
 	/* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
 	if (nHBL < nScanlinesPerFrame-1)
 		Int_AddAbsoluteInterrupt(nCyclesPerLine, INT_CPU_CYCLE, INTERRUPT_VIDEO_HBL);
 
-	M68000_Exception ( EXCEPTION_HBLANK , M68000_EXCEPTION_SRC_INT_VIDEO );	/* Horizontal blank interrupt, level 2! */
+
+	/* We must handle a very special case : if we had a pending HBL that becomes active */
+	/* because SR is now <= $2100, then we must process an exception for this pending HBL. */
+	/* But if a "real" (non pending) HBL occurs during the first 56 cycles needed by the */
+	/* CPU to prepare the exception, we must ignore this HBL signal (instead of considering */
+	/* this new HBL should be put in pending state to be processed later) */
+        /* -> any HBL occuring between LastCycleHblException and LastCycleHblException+56 should be ignored */
+	if ( ( LastCycleHblException != -1 )
+	  && ( ( nFrameCycles - PendingCyclesOver - HblJitterArray[ HblJitterIndex ] ) - LastCycleHblException <= 56 ) )
+	{
+		/* simultaneous case, don't call M68000_Exception */
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d signal ignored during pending hbl exception at cycle %d\n" ,
+			nHBL , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , LastCycleHblException );
+		LastCycleHblException = -1;
+	}
+	else
+	{
+		/* "normal" case, this HBL doesn't occur during the processing of a pending HBL */
+		M68000_Exception ( EXCEPTION_HBLANK , M68000_EXCEPTION_SRC_INT_VIDEO );	/* Horizontal blank interrupt, level 2! */
+	}
+
 
 	Video_EndHBL();              /* Increase HBL count, copy line to display buffer and do any video trickery */
 }
@@ -1698,6 +1723,8 @@ static void Video_ResetShifterTimings(void)
 	LastCycleScroll8265 = -1;
 
 	TimerBEventCountCycleStart = -1;		/* reset timer B activation cycle for this VBL */
+
+	LastCycleHblException = -1;
 }
 
 
