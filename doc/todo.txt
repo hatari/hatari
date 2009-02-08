@@ -31,6 +31,9 @@ Emulation improvements
 
 - Add SCC serial port emulation for Falcon/TT mode.
 
+- Add support for spec512 mode in med res too (needed by 'No Cooper - Greetings',
+  'Punish your machine - Best part of the creation', 'Higres mode by Paradox')
+
 
 DSP emulation
 -------------
