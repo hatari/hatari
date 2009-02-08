@@ -168,11 +168,15 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 		{
 			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
 		}
-
-		else if ( nIoMemAccessSize == SIZE_LONG )	/* long access */
-			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + CurrentInstrCycles - 8;
-		else						/* word/byte access */
-			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + CurrentInstrCycles - 4;
+		else
+		{
+			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO)
+			              + (CurrentInstrCycles & ~3);
+			if (nIoMemAccessSize == SIZE_LONG)	/* long access */
+				FrameCycles -= 8;
+			else					/* word/byte access */
+				FrameCycles -= 4;
+		}
 #endif
 	}
 
