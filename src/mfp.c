@@ -478,7 +478,7 @@ void MFP_TimerB_EventCount_Interrupt(void)
 /**
  * Start Timer A or B - EventCount mode is done in HBL handler to time correctly
  */
-static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler,
+static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id Handler,
                              bool bFirstTimer, bool *pTimerCanResume)
 {
 	int TimerClockCycles = 0;
@@ -585,7 +585,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, int Handler,
 /**
  * Start Timer C or D
  */
-static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, int Handler,
+static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id Handler,
                              bool bFirstTimer, bool *pTimerCanResume)
 {
 	int TimerClockCycles = 0;
@@ -666,7 +666,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, int Handler,
 /**
  * Read Timer A or B - If in EventCount MainCounter already has correct value
  */
-static Uint8 MFP_ReadTimer_AB(Uint8 TimerControl, Uint8 MainCounter, int TimerCycles, int Handler, bool TimerIsStopping)
+static Uint8 MFP_ReadTimer_AB(Uint8 TimerControl, Uint8 MainCounter, int TimerCycles, interrupt_id Handler, bool TimerIsStopping)
 {
 //	int TimerCyclesPassed;
 
@@ -710,7 +710,7 @@ static Uint8 MFP_ReadTimer_AB(Uint8 TimerControl, Uint8 MainCounter, int TimerCy
 /**
  * Read Timer C or D
  */
-static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCounter, int TimerCycles, int Handler, bool TimerIsStopping)
+static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCounter, int TimerCycles, interrupt_id Handler, bool TimerIsStopping)
 {
 //	int TimerCyclesPassed;
 
