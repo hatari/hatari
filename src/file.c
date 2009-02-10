@@ -160,7 +160,7 @@ bool File_DoesFileNameEndWithSlash(char *pszFileName)
 Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const ppszExts[])
 {
 	char *filepath = NULL;
-	void *pFile = NULL;
+	Uint8 *pFile = NULL;
 	long FileSize = 0;
 
 	/* Does the file exist? If not, see if can scan for other extensions and try these */
