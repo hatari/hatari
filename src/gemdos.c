@@ -470,21 +470,16 @@ static void fsfirst_dirname(char *string, char *newstr)
 
 	strcpy(newstr, string);
 
-	/* convert to front slashes. */
-	i=0;
+	/* convert to front slashes and go to end of string. */
 	while (newstr[i] != '\0')
 	{
 		if (newstr[i] == '\\')
 			newstr[i] = PATHSEP;
 		i++;
 	}
-	while (string[i] != '\0')
-	{
-		newstr[i] = string[i];
-		i++;
-	} /* find end of string */
-	while (newstr[i] != PATHSEP)
-		i--; /* find last slash */
+	/* find last slash and terminate string */
+	while (i && newstr[i] != PATHSEP)
+		i--;
 	newstr[i] = '\0';
 }
 
@@ -495,16 +490,17 @@ static void fsfirst_dirname(char *string, char *newstr)
  */
 static void fsfirst_dirmask(char *string, char *newstr)
 {
-	int i=0, j=0;
+	int i=0;
 
 	while (string[i] != '\0')
 		i++;   /* go to end of string */
-	while (string[i] != PATHSEP)
+	while (i && string[i] != PATHSEP)
 		i--;   /* find last slash */
-	i++;
+	if (string[i] == PATHSEP)
+		i++;
 	while (string[i] != '\0')
-		newstr[j++] = string[i++]; /* go to end of string */
-	newstr[j++] = '\0';
+		*newstr++ = string[i++]; /* go to end of string */
+	*newstr = '\0';
 }
 
 
