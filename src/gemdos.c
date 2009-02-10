@@ -55,8 +55,6 @@ const char Gemdos_fileid[] = "Hatari gemdos.c : " __DATE__ " " __TIME__;
 
 #define ENABLE_SAVING             /* Turn on saving stuff */
 
-#define INVALID_HANDLE_VALUE -1
-
 /* GLOB_ONLYDIR is a GNU extension for the glob() function and not defined
  * on some systems. We should probably use something different for this
  * case, but at the moment it we simply define it as 0... */
@@ -339,7 +337,7 @@ static bool GemDOS_GetFileInformation(char *name, DATETIME *DateTime)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Covert from FindFirstFile/FindNextFile attribute to GemDOS format
+ * Convert from FindFirstFile/FindNextFile attribute to GemDOS format
  */
 static unsigned char GemDOS_ConvertAttribute(mode_t mode)
 {

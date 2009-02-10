@@ -139,6 +139,10 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 #include <windows.h>
 #include <wchar.h>
 
+#ifndef INVALID_HANDLE_VALUE
+# define INVALID_HANDLE_VALUE -1
+#endif
+
 /*-----------------------------------------------------------------------*/
 /**
  * Alphabetic order comparison routine.
