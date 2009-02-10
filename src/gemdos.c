@@ -464,28 +464,28 @@ static int match (char *pat, char *name)
  * Parse directory from sfirst mask
  * - e.g.: input:  "hdemudir/auto/mask*.*" outputs: "hdemudir/auto"
  */
-static void fsfirst_dirname(char *string, char *new)
+static void fsfirst_dirname(char *string, char *newstr)
 {
 	int i=0;
 
-	strcpy(new, string);
+	strcpy(newstr, string);
 
 	/* convert to front slashes. */
 	i=0;
-	while (new[i] != '\0')
+	while (newstr[i] != '\0')
 	{
-		if (new[i] == '\\')
-			new[i] = PATHSEP;
+		if (newstr[i] == '\\')
+			newstr[i] = PATHSEP;
 		i++;
 	}
 	while (string[i] != '\0')
 	{
-		new[i] = string[i];
+		newstr[i] = string[i];
 		i++;
 	} /* find end of string */
-	while (new[i] != PATHSEP)
+	while (newstr[i] != PATHSEP)
 		i--; /* find last slash */
-	new[i] = '\0';
+	newstr[i] = '\0';
 }
 
 
@@ -493,7 +493,7 @@ static void fsfirst_dirname(char *string, char *new)
 /**
  * Parse directory mask, e.g. "*.*"
  */
-static void fsfirst_dirmask(char *string, char *new)
+static void fsfirst_dirmask(char *string, char *newstr)
 {
 	int i=0, j=0;
 
@@ -503,8 +503,8 @@ static void fsfirst_dirmask(char *string, char *new)
 		i--;   /* find last slash */
 	i++;
 	while (string[i] != '\0')
-		new[j++] = string[i++]; /* go to end of string */
-	new[j++] = '\0';
+		newstr[j++] = string[i++]; /* go to end of string */
+	newstr[j++] = '\0';
 }
 
 
