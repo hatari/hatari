@@ -243,9 +243,9 @@ Uint8 *MSA_ReadDisk(char *pszFileName, long *pImageSize)
  * Return number of bytes of the same byte in the passed buffer
  * If we return '0' this means no run (or end of buffer)
  */
-static int MSA_FindRunOfBytes(unsigned char *pBuffer, int nBytesInBuffer)
+static int MSA_FindRunOfBytes(Uint8 *pBuffer, int nBytesInBuffer)
 {
-	unsigned char ScannedByte;
+	Uint8 ScannedByte;
 	int nTotalRun;
 	bool bMarker;
 	int i;
@@ -293,7 +293,7 @@ bool MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 	MSAHEADERSTRUCT *pMSAHeader;
 	unsigned short int *pMSADataLength;
 	Uint8 *pMSAImageBuffer, *pMSABuffer, *pImageBuffer;
-	unsigned short int nSectorsPerTrack, nSides, nCompressedBytes, nBytesPerTrack;
+	Uint16 nSectorsPerTrack, nSides, nCompressedBytes, nBytesPerTrack;
 	bool nRet;
 	int nTracks,nBytesToGo,nBytesRun;
 	int Track,Side;
