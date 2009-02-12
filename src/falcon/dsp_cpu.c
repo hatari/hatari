@@ -64,13 +64,11 @@
 static Uint32 cur_inst_len;	/* =0:jump, >0:increment */
 
 /* Current instruction */
-static Uint32 cur_inst;		
+static Uint32 cur_inst;
 
-static Uint32 saved_time;		
-static Uint32 go_debug_mode=0;		
-
-
-static Uint32 Dump_memory=0;		
+#ifdef DSP_DISASM
+static Uint32 go_debug_mode=0;
+#endif
 
 /* Parallel move temp data */
 typedef union {
@@ -621,10 +619,12 @@ void dsp_execute_instruction(void *th_dsp_core)
 	cur_inst = read_memory(DSP_SPACE_P, dsp_core->pc);
 	cur_inst_len = 1;
 
+#ifdef DSP_DISASM
 	if (go_debug_mode==1){
 		dsp56k_disasm_reg_read();
 		dsp56k_disasm();
 	}
+#endif
 
 	value = (cur_inst >> 16) & BITMASK(8);
 	if (value< 0x10) {
@@ -738,7 +738,7 @@ static void dsp_postexecute_update_pc(void)
 
 static void dsp_postexecute_interrupts(void)
 {
-	Uint32 ipl, ipl_to_raise, ipl_hi, ipl_ssi, ipl_sci, value, instr1, instr2;
+	Uint32 ipl, ipl_to_raise, ipl_hi, ipl_ssi, ipl_sci, instr1, instr2;
 	Uint32 ipl_order[3], i;
 
 	/* REP is not interruptible */

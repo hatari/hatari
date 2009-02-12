@@ -295,8 +295,6 @@ void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core)
 Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr)
 {
 	Uint8 value;
-	Uint32 start_time = SDL_GetTicks();
-	Uint32 cur_time;
 
 	value = dsp_core->hostport[addr];
 	if (addr == CPU_HOST_RXL) {
@@ -311,9 +309,6 @@ Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr)
 
 void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 {
-	Uint32 start_time = SDL_GetTicks();
-	Uint32 cur_time;
-
 	switch(addr) {
 		case CPU_HOST_ICR:
 			dsp_core->hostport[CPU_HOST_ICR]=value & 0xfb;
