@@ -107,6 +107,7 @@ extern "C" {
 
 /* Functions */
 int dsp56k_do_execute(void *);
+void dsp_execute_instruction(void *dsp_core);
 
 #ifdef __cplusplus
 }

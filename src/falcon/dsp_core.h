@@ -24,6 +24,7 @@
 
 #include <SDL.h>
 #include <SDL_thread.h>
+#include "dsp_cpu.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,10 +71,10 @@ extern "C" {
 #define DSP_PCDDR		0x23	/* Port C data direction register */
 #define DSP_PBD			0x24	/* Port B data register */
 #define DSP_PCD			0x25	/* Port C data register */
-#define DSP_HOST_HCR	0x28	/* Host control register */
-#define DSP_HOST_HSR	0x29	/* Host status register */
-#define DSP_HOST_HRX	0x2b	/* Host receive register */
-#define DSP_HOST_HTX	0x2b	/* Host transmit register */
+#define DSP_HOST_HCR		0x28	/* Host control register */
+#define DSP_HOST_HSR		0x29	/* Host status register */
+#define DSP_HOST_HRX		0x2b	/* Host receive register */
+#define DSP_HOST_HTX		0x2b	/* Host transmit register */
 #define DSP_SSI_CRA		0x2c	/* Ssi control register A */
 #define DSP_SSI_CRB		0x2d	/* Ssi control register B */
 #define DSP_SSI_SR		0x2e	/* Ssi status register */
@@ -96,10 +97,19 @@ extern "C" {
 #define DSP_HOST_HSR_HF1	0x04
 #define DSP_HOST_HSR_DMA	0x07
 
+#define DSP_SSI_CRB_TIE		0xe
+#define DSP_SSI_CRB_RIE		0xf
+
+#define DSP_SSI_SR_TUE		0x4
+#define DSP_SSI_SR_ROE		0x5
+#define DSP_SSI_SR_TDF		0x6
+#define DSP_SSI_SR_RDF		0x7
+
+#define DSP_INTERRUPT_NONE      0x0
+#define DSP_INTERRUPT_FAST      0x1
+#define DSP_INTERRUPT_LONG      0x2
+
 typedef struct {
-	SDL_Thread	*thread;	/* Thread in which DSP emulation runs */
-	SDL_sem		*semaphore;	/* Semaphore used to pause/unpause thread */
-	SDL_mutex	*mutex;		/* Mutex for read/writes through host port */
 
 	/* DSP executing instructions ? */
 	volatile int running;
@@ -128,27 +138,35 @@ typedef struct {
 
 	/* Misc */
 	Uint32 loop_rep;		/* executing rep ? */
+	Uint32 swi_inter;		/* SWI interruption ? */
 
 	/* For bootstrap routine */
 	Uint16	bootstrap_pos;
+
+	/* Interruptions */
+	Uint16	interrupt_state;
+	Uint32  interrupt_instr_fetch;
+	Uint32  interrupt_save_pc;
+	
 } dsp_core_t;
 
 /* Emulator call these to init/stop/reset DSP emulation */
 void dsp_core_init(dsp_core_t *dsp_core);
 void dsp_core_shutdown(dsp_core_t *dsp_core);
 void dsp_core_reset(dsp_core_t *dsp_core);
+void dsp_core_run_1_instr(dsp_core_t *dsp_core);
 
 /* host port read/write by emulator, addr is 0-7, not 0xffa200-0xffa207 */
 Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr);
 void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value);
 
-/* dsp_cpu call these to signal state change */
-void dsp_core_set_state(dsp_core_t *dsp_core, int new_state);
-void dsp_core_set_state_sem(dsp_core_t *dsp_core, int new_state, int use_semaphore);
-
 /* dsp_cpu call these to read/write host port */
 void dsp_core_hostport_dspread(dsp_core_t *dsp_core);
 void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
+
+/* HI transferts */
+void dsp_core_dsp2host(dsp_core_t *dsp_core);
+void dsp_core_host2dsp(dsp_core_t *dsp_core);
 
 #ifdef __cplusplus
 }

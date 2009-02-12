@@ -59,6 +59,14 @@ void DSP_Reset(void)
 #endif
 }
 
+/* Other functions to init/shutdown dsp emulation */
+void DSP_run_1_instr(void)
+{
+#if DSP_EMULATION
+	dsp_core_run_1_instr(&dsp_core);
+#endif
+}
+
 /**********************************
  *	Hardware address read/write by CPU
  **********************************/

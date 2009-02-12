@@ -47,6 +47,10 @@
 /* Current instruction */
 static Uint32 cur_inst;
 
+/* precedent Instruction */
+static Uint32 prec_instr_pc;
+static Uint32 prec_number=0;
+
 static dsp_core_t *dsp_core;
 
 void dsp56k_disasm_init(dsp_core_t *my_dsp_core)
@@ -142,7 +146,7 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_SR:
 			case DSP_REG_LA:
 			case DSP_REG_LC:
-				fprintf(stderr,"Dsp: Reg: %s: 0x%04x -> 0x%04x\n", registers_name[i], registers_save[i] & BITMASK(16), dsp_core->registers[i]  & BITMASK(16));
+				fprintf(stderr,"Dsp: Reg: %s: 0x%06x -> 0x%06x\n", registers_name[i], registers_save[i] & BITMASK(16), dsp_core->registers[i]  & BITMASK(16));
 				break;
 			case DSP_REG_A2:
 			case DSP_REG_B2:
@@ -668,6 +672,15 @@ void dsp56k_disasm(void)
 {
 	Uint32 value;
 
+	if (prec_instr_pc == dsp_core->pc){
+		prec_number++;
+		return;
+	}
+	else if (prec_number > 0) {
+		fprintf(stderr,"           Repeated : %d times\n", prec_number);
+		prec_number = 0;
+	}
+
 	cur_inst = read_memory(dsp_core->pc);
 
 	strcpy(parallelmove_name, "");
@@ -688,6 +701,7 @@ void dsp56k_disasm(void)
 			opcodes_alu80ff[value]();
 		}
 	}
+	prec_instr_pc = dsp_core->pc;
 }
 
 void dsp56k_disasm_force_reg_changed(int num_dsp_reg)

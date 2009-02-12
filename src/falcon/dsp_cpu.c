@@ -29,16 +29,16 @@
 #include "dsp_disasm.h"
 #endif
 
-#define DEBUG 0
+#define DEBUG 1
 
 /* More disasm infos, if wanted */
 #define DSP_DISASM_INST 0	/* Instructions */
 #define DSP_DISASM_REG 0	/* Registers changes */
 #define DSP_DISASM_MEM 0	/* Memory changes */
 #define DSP_DISASM_INTER 0	/* Interrupts */
-#define DSP_DISASM_STATE 0	/* State change */
+#define DSP_DISASM_STATE 1	/* State change */
 
-#define DSP_COUNT_IPS 0		/* Count instruction per seconds */
+#define DSP_COUNT_IPS 1		/* Count instruction per seconds */
 
 #if defined(DSP_DISASM) && (DSP_DISASM_MEM==1)
 # define write_memory(x,y,z) write_memory_disasm(x,y,z)
@@ -52,6 +52,10 @@
 
 #define BITMASK(x)	((1<<(x))-1)
 
+#define INTERRUPT_HI		0x0
+#define INTERRUPT_SSI		0x1
+#define INTERRUPT_SCI		0x2
+
 /**********************************
  *	Variables
  **********************************/
@@ -61,6 +65,12 @@ static Uint32 cur_inst_len;	/* =0:jump, >0:increment */
 
 /* Current instruction */
 static Uint32 cur_inst;		
+
+static Uint32 saved_time;		
+static Uint32 go_debug_mode=0;		
+
+
+static Uint32 Dump_memory=0;		
 
 /* Parallel move temp data */
 typedef union {
@@ -84,9 +94,12 @@ static Uint32 pc_on_rep;
 
 typedef void (*dsp_emul_t)(void);
 
-static void dsp_execute_instruction(void);
+void dsp_execute_instruction(void *th_dsp_core);
 static void dsp_postexecute_update_pc(void);
 static void dsp_postexecute_interrupts(void);
+static Uint32 dsp_hi_interrupts(void);
+static Uint32 dsp_ssi_interrupts(void);
+static Uint32 dsp_sci_interrupts(void);
 
 static void dsp_ccr_extension(Uint32 *reg0, Uint32 *reg1);
 static void dsp_ccr_unnormalized(Uint32 *reg0, Uint32 *reg1);
@@ -586,46 +599,16 @@ static dsp_core_t *dsp_core;
 
 int dsp56k_do_execute(void *th_dsp_core)
 {
-	Uint32 start_time, num_inst;
-
-	dsp_core = th_dsp_core;
-#ifdef DSP_DISASM
-	dsp56k_disasm_init(dsp_core);
-#endif
-
-#if DSP_DISASM_STATE
-	fprintf(stderr, "Dsp: WAIT_BOOTSTRAP\n");
-#endif
-	SDL_SemWait(dsp_core->semaphore);
-
-	start_time = SDL_GetTicks();
-	num_inst = 0;
-	while(dsp_core->running) {
-		dsp_execute_instruction();
-#if DSP_COUNT_IPS
-		++num_inst;
-		if ((num_inst & 63) == 0) {
-			/* Evaluate time after <N> instructions have been executed to avoid asking too frequently */
-			Uint32 cur_time = SDL_GetTicks();
-			if (cur_time-start_time>1000) {
-				fprintf(stderr, "Dsp: %d i/s\n", (num_inst*1000)/(cur_time-start_time));
-				start_time=cur_time;
-				num_inst=0;
-			}
-		}
-#endif
-	}
-
-#if DSP_DISASM_STATE
-	fprintf(stderr, "Dsp: SHUTDOWN\n");
-#endif
 	return 0;
 }
 
-static void dsp_execute_instruction(void)
+void dsp_execute_instruction(void *th_dsp_core)
 {
 	Uint32 value;
 
+	dsp_core = th_dsp_core;
+
+	
 #ifdef DSP_DISASM
 #if DSP_DISASM_REG
 	dsp56k_disasm_reg_read();
@@ -634,10 +617,14 @@ static void dsp_execute_instruction(void)
 	dsp56k_disasm();
 #endif
 #endif
-
 	/* Decode and execute current instruction */
 	cur_inst = read_memory(DSP_SPACE_P, dsp_core->pc);
 	cur_inst_len = 1;
+
+	if (go_debug_mode==1){
+		dsp56k_disasm_reg_read();
+		dsp56k_disasm();
+	}
 
 	value = (cur_inst >> 16) & BITMASK(8);
 	if (value< 0x10) {
@@ -665,6 +652,14 @@ static void dsp_execute_instruction(void)
 	/* Interrupts ? */
 	dsp_postexecute_interrupts();
 
+	/* Host Interface (HI) update */
+	dsp_core_host2dsp(dsp_core);
+	dsp_core_dsp2host(dsp_core);
+
+
+/*	if (go_debug_mode==1){
+		dsp56k_disasm_reg_compare();
+	}*/
 #ifdef DSP_DISASM
 #if DSP_DISASM_REG
 	dsp56k_disasm_reg_compare();
@@ -743,55 +738,336 @@ static void dsp_postexecute_update_pc(void)
 
 static void dsp_postexecute_interrupts(void)
 {
-	Uint32 ipl, ipl_hi;
-	
-	ipl = (dsp_core->registers[DSP_REG_SR]>>DSP_SR_I0) & BITMASK(2);
-	ipl_hi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>10) & BITMASK(2);
+	Uint32 ipl, ipl_to_raise, ipl_hi, ipl_ssi, ipl_sci, value, instr1, instr2;
+	Uint32 ipl_order[3], i;
 
-	/* Trace, level 3 */
+	/* REP is not interruptible */
+	if (dsp_core->loop_rep) { 
+		return;
+	}
+
+	/* A fast interruption can't be interrupted. */
+	if (dsp_core->interrupt_state == DSP_INTERRUPT_FAST){
+		//Did we execute the 2 interruption instructions of the vector ?
+		if (dsp_core->pc >= dsp_core->interrupt_instr_fetch+2){
+			dsp_core->interrupt_instr_fetch = -1;
+			dsp_core->interrupt_state = DSP_INTERRUPT_NONE;
+			dsp_core->pc = dsp_core->interrupt_save_pc;
+			dsp_core->interrupt_save_pc = -1;
+		}
+		return;
+	}
+
+	ipl_to_raise = 99;
+
+	/* Level 3 interruptions */
+
+	/* Trace Interruption ? */
 	if (dsp_core->registers[DSP_REG_SR] & (1<<DSP_SR_T)) {
 		/* Raise interrupt p:0x0004 */
+		dsp_core->interrupt_instr_fetch = 0x0004;
+		ipl_to_raise = 3;
 #if DSP_DISASM_INTER
 		fprintf(stderr, "Dsp: Interrupt: Trace\n");
 #endif
 	}
-
-	/* Host interface interrupts */
-	if ((ipl_hi>0) && ((ipl_hi-1)>=ipl)) {
-
-		/* Host transmit */
-		if (
-			(dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HTIE)) &&
-			((dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HTDE))==0)
-			) {
-			/* Raise interrupt p:0x0022 */
-#if DSP_DISASM_INTER
-			fprintf(stderr, "Dsp: Interrupt: Host transmit\n");
-#endif
-		}
-
-		/* Host receive */
-		if (
-			(dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) &&
-			((dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HRDF)))
-			) {
-			/* Raise interrupt p:0x0020 */
-#if DSP_DISASM_INTER
-			fprintf(stderr, "Dsp: Interrupt: Host receive\n");
-#endif
-		}
-
-		/* Host command */
-		if (
-			(dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HCIE)) &&
-			(dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HCP))
-			) {
-			/* Raise interrupt p:((hostport[CPU_HOST_CVR] & 31)<<1) */
-#if DSP_DISASM_INTER
-			fprintf(stderr, "Dsp: Interrupt: Host command\n");
-#endif
-		}
+	
+	/* SWI Interruption ? */
+	else if (dsp_core->swi_inter==1){
+		/* Raise interrupt p:0x0006 */
+		dsp_core->swi_inter=0;
+		dsp_core->interrupt_instr_fetch = 0x0006;
+		ipl_to_raise = 3;
 	}
+
+	/* Level 2 and above interruptions */
+	else {
+		ipl = (dsp_core->registers[DSP_REG_SR]>>DSP_SR_I0) & BITMASK(2);
+
+		/* if current ipl level=3, peripheral interruptions are masked */
+//		if (ipl==3){
+//			return;
+//		}
+	
+		/* Determine the order of the peripheral interrupt to test . 
+		   If 2 or more peripharal have the same interrupt level,
+		   the order is (high priority : HI, SSI, SCI, LOW priority */
+		ipl_hi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>10) & BITMASK(2);
+		ipl_ssi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>12) & BITMASK(2);
+		ipl_sci = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>14) & BITMASK(2);
+
+		// Sort the 3 ipls in priority order 
+		// Sort(Tab[0],Tab[1]); trier(Tab[1],Tab[2]); trier(Tab[0],Tab[1]); 
+		if (ipl_hi >= ipl_ssi) {
+			if (ipl_ssi >= ipl_sci) {
+				ipl_order[0] = INTERRUPT_HI;
+				ipl_order[1] = INTERRUPT_SSI;
+				ipl_order[2] = INTERRUPT_SCI;
+			}
+			else{
+				if (ipl_hi >= ipl_sci){
+					ipl_order[0] = INTERRUPT_HI;
+					ipl_order[1] = INTERRUPT_SCI;
+					ipl_order[2] = INTERRUPT_SSI;
+				}
+				else{
+					ipl_order[0] = INTERRUPT_SCI;
+					ipl_order[1] = INTERRUPT_HI;
+					ipl_order[2] = INTERRUPT_SSI;
+				}
+			}
+		}
+		else{
+			if (ipl_hi >= ipl_sci) {
+				ipl_order[0] = INTERRUPT_SSI;
+				ipl_order[1] = INTERRUPT_HI;
+				ipl_order[2] = INTERRUPT_SCI;
+			}
+			else{
+				if (ipl_ssi >= ipl_sci){
+					ipl_order[0] = INTERRUPT_SSI;
+					ipl_order[1] = INTERRUPT_SCI;
+					ipl_order[2] = INTERRUPT_HI;
+				}
+				else{
+					ipl_order[0] = INTERRUPT_SCI;
+					ipl_order[1] = INTERRUPT_SSI;
+					ipl_order[2] = INTERRUPT_HI;
+				}
+			}
+		}
+
+		for (i=0; i<3; i++){
+			switch (ipl_order[i]) {
+				case INTERRUPT_HI: 
+					if (ipl_hi>=ipl) {
+						ipl_to_raise=dsp_hi_interrupts();
+					}
+					break;
+				case INTERRUPT_SSI:
+					if (ipl_ssi>=ipl) {
+						ipl_to_raise=dsp_ssi_interrupts();
+					}
+					break;
+				case INTERRUPT_SCI:
+					if (ipl_sci>=ipl) {
+						ipl_to_raise=dsp_sci_interrupts();
+					}
+					break;
+			}
+			if (ipl_to_raise != 99) { 
+				break;
+			}
+		}
+
+	}
+
+	/* Do we have to execute an interruption ? */
+	if (ipl_to_raise != 99) {
+
+		/* Read the 2 vectored instructions to search a "JSR" (long interrupt) or not (fast interrupt) */
+		instr1 = read_memory(DSP_SPACE_P, dsp_core->interrupt_instr_fetch);
+		instr2 = read_memory(DSP_SPACE_P, dsp_core->interrupt_instr_fetch+1);
+		dsp_core->interrupt_state = DSP_INTERRUPT_FAST;
+
+		if ( ((instr1 & 0xfff000) == 0x0d0000) || ((instr1 & 0xffc0ff) == 0x0bc080) ){
+			dsp_core->interrupt_state = DSP_INTERRUPT_LONG;
+		}
+
+		else if ( ((instr2 & 0xfff000) == 0x0d0000) || ((instr2 & 0xffc0ff) == 0x0bc080) ){
+			dsp_core->interrupt_state = DSP_INTERRUPT_LONG;
+		}
+
+		if (dsp_core->interrupt_state == DSP_INTERRUPT_FAST){
+			//execute a fast interrupt
+			dsp_core->interrupt_save_pc = dsp_core->pc;
+			dsp_core->pc = dsp_core->interrupt_instr_fetch;
+#if DSP_DISASM_INTER
+			fprintf(stderr, "Dsp: Fast Interrupt: %06x\n", dsp_core->pc);
+#endif
+		}
+		else {
+			//execute a long interrupt
+			dsp_stack_push(dsp_core->pc, dsp_core->registers[DSP_REG_SR]); 
+			dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_LF)|(1<<DSP_SR_T)  |
+									(1<<DSP_SR_S1)|(1<<DSP_SR_S0) |
+									(1<<DSP_SR_I0)|(1<<DSP_SR_I1));
+			dsp_core->registers[DSP_REG_SR] |= ipl_to_raise<<DSP_SR_I0;
+			dsp_core->pc = dsp_core->interrupt_instr_fetch;
+			dsp_core->interrupt_instr_fetch = -1;
+			dsp_core->interrupt_save_pc = -1;
+#if DSP_DISASM_INTER
+			fprintf(stderr, "Dsp: Long Interrupt: %06x\n", dsp_core->pc);
+#endif
+		}	
+	}
+}
+
+/* Host Interface Interrupts */
+static Uint32 dsp_hi_interrupts(void)
+{
+	Uint32 ipl_to_raise = 99;
+	Uint32 ipl_hi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>10) & BITMASK(2);
+
+	/* Host Command Interrupt*/
+      	if ( 
+		/* Raise interrupt p:0x0024 */
+		(dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HCIE)) &&
+		(dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HCP))
+		) {
+		//Clear HC and HCP interrupt
+		dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff - (1<<DSP_HOST_HSR_HCP);
+		dsp_core->hostport[CPU_HOST_CVR] &= 0xff - (1<<CPU_HOST_CVR_HC);  
+		dsp_core->interrupt_instr_fetch = dsp_core->hostport[CPU_HOST_CVR] & BITMASK(5);
+		dsp_core->interrupt_instr_fetch *= 2;	
+		ipl_to_raise = ipl_hi;
+
+#if DSP_DISASM_INTER
+		fprintf(stderr, "Dsp: Interrupt: Host command %06x\n", dsp_core->interrupt_instr_fetch);
+#endif
+	}
+
+	/* Host Receive Data Interrupt */
+	else if (
+		(dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) &&
+		((dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HRDF)))
+		) {
+		/* Raise interrupt p:0x0020 */
+		dsp_core->interrupt_instr_fetch = 0x0020;
+		ipl_to_raise = ipl_hi;
+#if DSP_DISASM_INTER
+		fprintf(stderr, "Dsp: Interrupt: Host receive\n");
+#endif
+	}
+
+	/* Host Transmit Data Interrupt */
+	else if (
+		(dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HTIE)) &&
+		((dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HTDE))==0)
+		) {
+		/* Raise interrupt p:0x0022 */
+		dsp_core->interrupt_instr_fetch = 0x0022;
+		ipl_to_raise = ipl_hi;
+#if DSP_DISASM_INTER
+		fprintf(stderr, "Dsp: Interrupt: more Host transmit\n");
+#endif
+	}
+
+	return ipl_to_raise;
+}
+
+/* SSI Interrupts */
+static Uint32 dsp_ssi_interrupts(void)
+{
+	Uint32 ipl_to_raise = 99;
+	Uint32 ipl_ssi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>12) & BITMASK(2);
+
+	/* SSI RX Data with Exception Interrupt */
+      	if (
+		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RIE)) &&
+		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]  & (1<<DSP_SSI_SR_RDF))  &&
+		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]  & (1<<DSP_SSI_SR_ROE))
+		) {
+		/* Raise interrupt p:0x000e */
+		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_ROE);
+		//TODO : read RX to clear pending interrupt
+		dsp_core->interrupt_instr_fetch = 0x000e;
+		ipl_to_raise = ipl_ssi;
+
+#if DSP_DISASM_INTER
+		fprintf(stderr, "Dsp: Interrupt: SSI RX data with exception\n");
+#endif
+	}
+
+	/* SSI RX Data Interrupt */
+      	else if (
+		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RIE)) &&
+		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]  & (1<<DSP_SSI_SR_RDF))  &&
+		((dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_ROE)) == 0)
+		) {
+		/* Raise interrupt p:0x000c */
+		//TODO : read RX to clear pending interrupt
+		dsp_core->interrupt_instr_fetch = 0x000c;
+		ipl_to_raise = ipl_ssi;
+#if DSP_DISASM_INTER
+		fprintf(stderr, "Dsp: Interrupt: SSI RX data\n");
+#endif
+	}
+
+	/* SSI TX Data with Exception Interrupt */
+      	else if (
+		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_TIE)) &&
+		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]  & (1<<DSP_SSI_SR_TDF))  &&
+		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]  & (1<<DSP_SSI_SR_TUE)) 
+		) {
+		/* Raise interrupt p:0x0012 */
+		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TUE);
+		//TODO : write to TX or TSR to clear pending interrupt
+		dsp_core->interrupt_instr_fetch = 0x0012;
+		ipl_to_raise = ipl_ssi;
+#if DSP_DISASM_INTER
+		fprintf(stderr, "Dsp: Interrupt: SSI TX data with exception\n");
+#endif
+	}
+
+	/* SSI TX Data Interrupt */
+      	else if (
+		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_TIE)) &&
+		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]  & (1<<DSP_SSI_SR_TDF))  &&
+		((dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_TUE)) == 0)
+		) {
+		/* Raise interrupt p:0x0010 */
+		//TODO : write to TX or TSR to clear pending interrupt
+		dsp_core->interrupt_instr_fetch = 0x0010;
+		ipl_to_raise = ipl_ssi;
+	}
+
+	return ipl_to_raise;
+}
+
+/* SCI Interrupts */
+static Uint32 dsp_sci_interrupts(void)
+{
+	Uint32 ipl_to_raise = 99;
+	Uint32 ipl_sci = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>14) & BITMASK(2);
+	
+	/* SCI RX Data with Exception Interrupt */
+	if (1){
+		/* Raise interrupt p:0x0016 */
+		dsp_core->interrupt_instr_fetch = 0x0016;
+		ipl_to_raise = ipl_sci;	
+	}
+
+	/* SCI RX Data Interrupt */
+	else if (1){
+		/* Raise interrupt p:0x0014 */
+		dsp_core->interrupt_instr_fetch = 0x0014;
+		ipl_to_raise = ipl_sci;	
+	}
+
+	/* SSI TX Data Interrupt */
+	else if (1){
+		/* Raise interrupt p:0x0018 */
+		dsp_core->interrupt_instr_fetch = 0x0018;
+		ipl_to_raise = ipl_sci;	
+	}
+
+	/* SSI Idle Line Interrupt */
+	else if (1){
+		/* Raise interrupt p:0x001a */
+		dsp_core->interrupt_instr_fetch = 0x001a;
+		ipl_to_raise = ipl_sci;	
+	}
+
+	/* SSI Timer Interrupt */
+	else if (1){
+		/* Raise interrupt p:0x001c */
+		dsp_core->interrupt_instr_fetch = 0x0016;
+		ipl_to_raise = ipl_sci;
+	}
+
+	return 99;
+//	return ipl_to_raise;
 }
 
 /**********************************
@@ -945,17 +1221,14 @@ static Uint32 read_memory(int space, Uint16 address)
 				(address<0x200)) {
 				return dsp_core->rom[space][address] & BITMASK(24);
 			}
-			/* Peripheral address ? */
+			/* Peripheral address ? */  
 			if (address >= 0xffc0) {
 				Uint32 value;
+				value = dsp_core->periph[space][address-0xffc0] & BITMASK(24);
 
-				SDL_LockMutex(dsp_core->mutex);
 				if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_HOST_HRX)) {
 					dsp_core_hostport_dspread(dsp_core);
 				}
-				value = dsp_core->periph[space][address-0xffc0] & BITMASK(24);
-				SDL_UnlockMutex(dsp_core->mutex);
-
 				return value;
 			}
 			/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
@@ -998,18 +1271,15 @@ static void write_memory_raw(int space, Uint32 address, Uint32 value)
 			}
 			/* Peripheral space ? */
 			if ((address >= 0xffc0) && (address <= 0xffff)) {
-				SDL_LockMutex(dsp_core->mutex);
 				switch(address-0xffc0) {
 					case DSP_HOST_HTX:
 						dsp_core->periph[space][DSP_HOST_HTX] = value;
-
 						dsp_core_hostport_dspwrite(dsp_core);
 						break;
 					case DSP_HOST_HCR:
-						dsp_core->periph[space][DSP_HOST_HCR] = value;
+						dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] = value;
 						/* Set HF3 and HF2 accordingly on the host side */
-						dsp_core->hostport[CPU_HOST_ISR] &=
-							BITMASK(8)-((1<<CPU_HOST_ISR_HF3)|(1<<CPU_HOST_ISR_HF2));
+						dsp_core->hostport[CPU_HOST_ISR] &= BITMASK(8)-((1<<CPU_HOST_ISR_HF3)|(1<<CPU_HOST_ISR_HF2));
 						dsp_core->hostport[CPU_HOST_ISR] |=
 							dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & ((1<<CPU_HOST_ISR_HF3)|(1<<CPU_HOST_ISR_HF2));
 						break;
@@ -1017,10 +1287,9 @@ static void write_memory_raw(int space, Uint32 address, Uint32 value)
 						/* Read only */
 						break;
 					default:
-						dsp_core->periph[space][address-0xffc0] = value;
+						dsp_core->periph[DSP_SPACE_X][address-0xffc0] = value;
 						break;
 				}
-				SDL_UnlockMutex(dsp_core->mutex);
 				return;
 			}
 			/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
@@ -1098,7 +1367,6 @@ static void dsp_stack_push(Uint32 curpc, Uint32 cursr)
 #if DSP_DISASM_STATE
 		fprintf(stderr, "Dsp: Stack error (overflow)\n");
 #endif
-		SDL_SemWait(dsp_core->semaphore);
 		return;
 	}
 
@@ -1117,7 +1385,6 @@ static void dsp_stack_pop(Uint32 *newpc, Uint32 *newsr)
 #if DSP_DISASM_STATE
 		fprintf(stderr, "Dsp: Stack error (underflow)\n");
 #endif
-		SDL_SemWait(dsp_core->semaphore);
 		return;
 	}
 
@@ -1900,49 +2167,7 @@ static void dsp_jclr(void)
 	++cur_inst_len;
 
 	if ((value & (1<<numbit))==0) {
-		int pollingLoop, i;
-
 		newpc = read_memory(DSP_SPACE_P, dsp_core->pc+1);
-
-		/* Polling loop if jump to same PC as current JCLR instruction */
-		pollingLoop = (newpc == dsp_core->pc);
-		if (!pollingLoop && (newpc<dsp_core->pc)) {
-			/* or if only NOPs from jump address to current JCLR instruction */
-			pollingLoop = 1;
-			for (i=newpc; i<dsp_core->pc; i++) {
-				if (read_memory(DSP_SPACE_P, i) != 0) {
-					pollingLoop=0;
-					break;
-				}			
-			}
-		}
-		if (!pollingLoop && (newpc+2 == dsp_core->pc)) {
-			/* or programs that re-set host port operation (Papa was a bladerunner/Eko) */
-			pollingLoop = (read_memory(DSP_SPACE_P, newpc) == 0x08f4a0)	/* movep #0x000001,x:0xffe0 */
-				&& (read_memory(DSP_SPACE_P, newpc+1) == 0x000001);
-		}
-
-		if (pollingLoop) {
-			/* Are we waiting for host port ? */
-			if ((memspace==DSP_SPACE_X) && (addr==0xffc0+DSP_HOST_HSR)) {
-				/* Wait for host to write */
-				if (numbit==DSP_HOST_HSR_HRDF) {
-#if DSP_DISASM_STATE
-					fprintf(stderr, "Dsp: WAIT_HOSTWRITE\n");
-#endif
-					SDL_SemWait(dsp_core->semaphore);
-				}
-
-				/* Wait for host to read */
-				if (numbit==DSP_HOST_HSR_HTDE) {
-#if DSP_DISASM_STATE
-					fprintf(stderr, "Dsp: WAIT_HOSTREAD\n");
-#endif
-					SDL_SemWait(dsp_core->semaphore);
-				}
-			}
-		}
-
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 		return;
@@ -1963,16 +2188,6 @@ static void dsp_jmp(void)
 	}
 
 	cur_inst_len = 0;
-
-	/* Infinite loop ? */
-	if (newpc == dsp_core->pc) {
-#if DSP_DISASM_STATE
-		fprintf(stderr, "Dsp: JMP instruction, infinite loop\n");
-#endif
-		SDL_SemWait(dsp_core->semaphore);
-		return;
-	}
-
 	dsp_core->pc = newpc;
 }
 
@@ -2098,7 +2313,12 @@ static void dsp_jsr(void)
 		dsp_calc_ea((cur_inst>>8) & BITMASK(6),&newpc);
 	}
 
-	dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+	if (dsp_core->interrupt_state != DSP_INTERRUPT_LONG){
+		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+	}
+	else {
+		dsp_core->interrupt_state = DSP_INTERRUPT_NONE;
+	}
 
 	dsp_core->pc = newpc;
 	cur_inst_len = 0;
@@ -2589,10 +2809,8 @@ static void dsp_rti(void)
 	Uint32 newpc = 0, newsr = 0;
 
 	dsp_stack_pop(&newpc, &newsr);
-
 	dsp_core->pc = newpc;
 	dsp_core->registers[DSP_REG_SR] = newsr;
-
 	cur_inst_len = 0;
 }
 
@@ -2611,12 +2829,12 @@ static void dsp_stop(void)
 #if DSP_DISASM_STATE
 	fprintf(stderr, "Dsp: STOP instruction\n");
 #endif
-	SDL_SemWait(dsp_core->semaphore);
 }
 
 static void dsp_swi(void)
 {
 	/* Raise interrupt p:0x0006 */
+	dsp_core->swi_inter = 1;
 #if DSP_DISASM_INTER
 	fprintf(stderr, "Dsp: Interrupt: Swi\n");
 #endif
@@ -2668,7 +2886,6 @@ static void dsp_wait(void)
 #if DSP_DISASM_STATE
 	fprintf(stderr, "Dsp: WAIT instruction\n");
 #endif
-	SDL_SemWait(dsp_core->semaphore);
 }
 
 /**********************************
@@ -3205,7 +3422,7 @@ static void dsp_pm_8(void)
 	Uint32 numreg1, numreg2;
 	Uint32 value, dummy1, dummy2;
 /*
-	1wmm eeff WrrM MRRR x:ea,D1		y:ea,D2	
+	1wmm eeff WrrM MRRR 			x:ea,D1		y:ea,D2	
 						x:ea,D1		S2,y:ea
 						S1,x:ea		y:ea,D2
 						S1,x:ea		S2,y:ea
@@ -3382,47 +3599,88 @@ static Uint16 dsp_asr56(Uint32 *dest)
 
 static Uint16 dsp_add56(Uint32 *source, Uint32 *dest)
 {
-	Uint16 overflow, carry;
+   Uint16 overflow, carry, flg_s, flg_d, flg_r;
+   Uint32 not_dest[3];           flg_s = (source[0]>>7) & 1;
+   flg_d = (dest[0]>>7) & 1;
 
-	/* Add source to dest: D = D+S */
-	dest[2] += source[2];
-	dest[1] += source[1]+((dest[2]>>24) & 1);
-	dest[0] += source[0]+((dest[1]>>24) & 1);
+   not_dest[2] = ((Uint32)(~dest[2])) & BITMASK(24);
+   not_dest[1] = ((Uint32)(~dest[1])) & BITMASK(24);
+   not_dest[0] = ((Uint32)(~dest[0])) & BITMASK(8);
+            /* Add source to dest: D = D+S */
+   dest[2] += source[2];
+   dest[1] += source[1]+((dest[2]>>24) & 1);
+   dest[0] += source[0]+((dest[1]>>24) & 1);
 
-	/* overflow if we go below -256.0 or above +256.0 */
-	overflow = (((dest[0] & 0xff)!=0) && ((dest[0] & 0xff)!=0xff));
+   dest[2] &= BITMASK(24);
+   dest[1] &= BITMASK(24);
+   dest[0] &= BITMASK(8);
 
-	/* set carry from the virtual 56th bit */
-	carry = (dest[0]>>8) & 1;
+   flg_r = (dest[0]>>7) & 1;
 
-	dest[2] &= BITMASK(24);
-	dest[1] &= BITMASK(24);
-	dest[0] &= BITMASK(8);
+   /*set overflow*/
+   overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
 
-	return (overflow<<DSP_SR_L)|(overflow<<DSP_SR_V)|(carry<<DSP_SR_C);
+   /* set carry :    carry (for a add) = ~dest < source */
+
+   carry = 0;
+
+   if (not_dest[0] < source[0]){
+       carry = 1;
+   }
+   else if (not_dest[0] == source[0]){
+       if (not_dest[1] < source[1]){
+           carry = 1;
+       }
+       else if (not_dest[1] == source[1]){
+           if (not_dest[2] < source[2]){
+               carry = 1;
+           }
+       }
+   }
+
+   return (overflow<<DSP_SR_L)|(overflow<<DSP_SR_V)|(carry<<DSP_SR_C);
 }
 
 static Uint16 dsp_sub56(Uint32 *source, Uint32 *dest)
 {
-	Uint16 overflow, carry;
+   Uint16 overflow, carry, flg_s, flg_d, flg_r;
+   Uint32 dest_save[3];           dest_save[0] = dest[0];
+   dest_save[1] = dest[1];
+   dest_save[2] = dest[2];
+            /* Substract source from dest: D = D-S */
+   dest[2] -= source[2];
+   dest[1] -= source[1]+((dest[2]>>24) & 1);
+   dest[0] -= source[0]+((dest[1]>>24) & 1);
 
-	/* Substract source from dest: D = D-S */
-	dest[2] -= source[2];
-	dest[1] -= source[1]+((dest[2]>>24) & 1);
-	dest[0] -= source[0]+((dest[1]>>24) & 1);
+   dest[2] &= BITMASK(24);
+   dest[1] &= BITMASK(24);
+   dest[0] &= BITMASK(8);
 
-	/* overflow if we go below -256.0 or above +256.0 */
-	overflow = (((dest[0] & 0xff)!=0) && ((dest[0] & 0xff)!=0xff));
+   flg_s = (source[0]>>7) & 1;
+   flg_d = (dest_save[0]>>7) & 1;
+   flg_r = (dest[0]>>7) & 1;
+            /*set overflow*/
+   overflow = (flg_s ^ flg_d) & (flg_r ^ flg_d);
 
-	/* set carry from the virtual 56th bit */
-	carry = (dest[0]>>8) & 1;
+   /* set carry :    carry (for a sub) = dest < source */
 
-	dest[2] &= BITMASK(24);
-	dest[1] &= BITMASK(24);
-	dest[0] &= BITMASK(8);
+   carry = 0;
 
-	return (overflow<<DSP_SR_L)|(overflow<<DSP_SR_V)|(carry<<DSP_SR_C);
-}
+   if (dest_save[0] < source[0]){
+       carry = 1;
+   }
+   else if (dest_save[0] == source[0]){
+       if (dest_save[1] < source[1]){
+           carry = 1;
+       }
+       else if (dest_save[1] == source[1]){
+           if (dest_save[2] < source[2]){
+               carry = 1;
+           }
+       }
+   }
+   return (overflow<<DSP_SR_L)|(overflow<<DSP_SR_V)|(carry<<DSP_SR_C);
+} 
 
 static void dsp_mul56(Uint32 source1, Uint32 source2, Uint32 *dest)
 {
