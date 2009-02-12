@@ -546,6 +546,9 @@ void RS232_SetBaudRateFromTimerD(void)
 	if (!nTimerD_CR)
 		return;
 
+	if ( nTimerD_DR == 0 )
+		nTimerD_DR = 256;		/* In MFP, a data register=0 is in fact 256 */
+
 	/* Calculate baud rate: (MFP/Timer-D is supplied with 2.4576 MHz) */
 	nBaudRate = 2457600 / nTimerD_DR / 2;
 
