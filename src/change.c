@@ -350,7 +350,7 @@ static bool Change_Options(int argc, const char *argv[])
 bool Change_ApplyCommandline(char *cmdline)
 {
 	int i, argc, inarg;
-	char **argv;
+	const char **argv;
 	bool ret;
 
 	/* count args */
@@ -409,7 +409,7 @@ bool Change_ApplyCommandline(char *cmdline)
 	argv[argc] = NULL;
 	
 	/* do args */
-	ret = Change_Options(argc, (const char**)argv);
-	free(argv);
+	ret = Change_Options(argc, argv);
+	free((void *)argv);
 	return ret;
 }
