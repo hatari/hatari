@@ -185,6 +185,40 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 }
 
 
+/* Process Host Interface peripheral code */
+void dsp_core_process_host_interface(dsp_core_t *dsp_core)
+{
+	Uint8 dma_mode, hreq;
+
+	/* DMA mode : 	00: Interrupt mode (DMA mode off)
+			01: 24 bits DMA mode
+			02: 16 bits DMA mode
+			03;  8 bits DMA mode */
+	dma_mode = dsp_core->hostport[CPU_HOST_ICR] & (0x3<<CPU_HOST_ICR_HM0); 
+
+	/* TODO: DMA mode */
+	dsp_core_host2dsp(dsp_core);
+	dsp_core_dsp2host(dsp_core);
+
+	/* Update ISR Host Request HREQ bit (interrupt mode only) */
+	if (dma_mode == 0){
+		hreq = (dsp_core->hostport[CPU_HOST_ICR] & 0x3) & (dsp_core->hostport[CPU_HOST_ISR] & 0x3);
+		dsp_core->hostport[CPU_HOST_ISR] &= 0x7f; 
+		dsp_core->hostport[CPU_HOST_ISR] |= (hreq?1:0) << CPU_HOST_ISR_HREQ; 
+	}
+}
+
+/* Process SSI peripheral code */
+void dsp_core_process_ssi_interface(dsp_core_t *dsp_core)
+{
+}
+
+/* Process SCI peripheral code */
+void dsp_core_process_sci_interface(dsp_core_t *dsp_core)
+{
+}
+
+
 static void dsp_core_hostport_update_trdy(dsp_core_t *dsp_core)
 {
 	int trdy;
@@ -199,12 +233,12 @@ static void dsp_core_hostport_update_trdy(dsp_core_t *dsp_core)
 /* Host port transfer ? (dsp->host) */
 void dsp_core_dsp2host(dsp_core_t *dsp_core)
 {
-	//RXDF = 1 ==> host hasn't read the last value yet 
+	/* RXDF = 1 ==> host hasn't read the last value yet */
 	if (dsp_core->hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_RXDF)) {
 		return;
 	}
 
-	//HTDE = 1 ==> nothing to tranfert from DSP port
+	/* HTDE = 1 ==> nothing to tranfert from DSP port */
 	if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HTDE)) {
 		return;
 	}
@@ -231,12 +265,12 @@ void dsp_core_dsp2host(dsp_core_t *dsp_core)
 /* Host port transfer ? (host->dsp) */
 void dsp_core_host2dsp(dsp_core_t *dsp_core)
 {
-	//TXDE = 1 ==> nothing to tranfert from host port
+	/* TXDE = 1 ==> nothing to tranfert from host port */
 	if (dsp_core->hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_TXDE)) {
 		return;
 	}
 	
-	//HRDF = 1 ==> DSP hasn't read the last value yet 
+	/* HRDF = 1 ==> DSP hasn't read the last value yet */
 	if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HRDF)) {
 		return;
 	}
@@ -351,7 +385,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 				}		
 			} else {
 
-				//If TRDY is set, the tranfert is direct to DSP (Burst mode)
+				/* If TRDY is set, the tranfert is direct to DSP (Burst mode) */
 				if (dsp_core->hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_TRDY)){
 					dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] = dsp_core->hostport[CPU_HOST_TXL];
 					dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_core->hostport[CPU_HOST_TXM]<<8;

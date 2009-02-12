@@ -163,7 +163,12 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value);
 void dsp_core_hostport_dspread(dsp_core_t *dsp_core);
 void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
 
-/* HI transferts */
+/* Process peripheral code */
+void dsp_core_process_host_interface(dsp_core_t *dsp_core);	/* HI */
+void dsp_core_process_ssi_interface(dsp_core_t *dsp_core);	/* SSI */
+void dsp_core_process_sci_interface(dsp_core_t *dsp_core);	/* SCI */
+
+/* Host interface code */
 void dsp_core_dsp2host(dsp_core_t *dsp_core);
 void dsp_core_host2dsp(dsp_core_t *dsp_core);
 
