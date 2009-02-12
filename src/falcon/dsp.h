@@ -27,11 +27,13 @@
 # include "dsp_core.h"
 #endif
 
+extern bool bDspEnabled;
+
 extern void DSP_Init(void);
 extern void DSP_UnInit(void);
 
 extern void DSP_Reset(void);
-extern void DSP_run_1_instr(void);
+extern void DSP_Run(int nHostCycles);
 
 extern void DSP_HandleReadAccess(void);
 extern void DSP_HandleWriteAccess(void);

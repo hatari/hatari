@@ -154,7 +154,6 @@ typedef struct {
 void dsp_core_init(dsp_core_t *dsp_core);
 void dsp_core_shutdown(dsp_core_t *dsp_core);
 void dsp_core_reset(dsp_core_t *dsp_core);
-void dsp_core_run_1_instr(dsp_core_t *dsp_core);
 
 /* host port read/write by emulator, addr is 0-7, not 0xffa200-0xffa207 */
 Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr);

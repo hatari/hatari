@@ -30,17 +30,20 @@
 #define DEBUG 0
 #include "araglue.h"
 
+#define DSP_HW_OFFSET  0xFFA200
+
 #if DSP_EMULATION
 static dsp_core_t dsp_core;
 #endif
 
-#define DSP_HW_OFFSET  0xFFA200
+bool bDspEnabled = false;
 
 
 void DSP_Init(void)
 {
 #if DSP_EMULATION
 	dsp_core_init(&dsp_core);
+	bDspEnabled = true;
 #endif
 }
 
@@ -48,6 +51,7 @@ void DSP_UnInit(void)
 {
 #if DSP_EMULATION
 	dsp_core_shutdown(&dsp_core);
+	bDspEnabled = false;
 #endif
 }
 
@@ -60,10 +64,17 @@ void DSP_Reset(void)
 }
 
 /* Other functions to init/shutdown dsp emulation */
-void DSP_run_1_instr(void)
+void DSP_Run(int nHostCycles)
 {
 #if DSP_EMULATION
-	dsp_core_run_1_instr(&dsp_core);
+	/* Cycles emulation is just a rough approximation by now.
+	 * (to be tuned ...) */
+	int i = nHostCycles / 2;
+
+	while (dsp_core.running == 1 && i-- > 0)
+	{
+		dsp_execute_instruction(&dsp_core);
+	}
 #endif
 }
 

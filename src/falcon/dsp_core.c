@@ -184,13 +184,6 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 
 }
 
-void dsp_core_run_1_instr(dsp_core_t *dsp_core)
-{
-	if (dsp_core->running == 1) {
-		dsp_execute_instruction(dsp_core);
-	}
-}
-
 
 static void dsp_core_hostport_update_trdy(dsp_core_t *dsp_core)
 {

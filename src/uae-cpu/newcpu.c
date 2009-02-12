@@ -110,9 +110,7 @@
 /*			'while' condition (PendingInterruptCount <= 0 is true less often than STOP==0)	*/
 
 
-
-
-const char NnewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
+const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 
 #include "sysdeps.h"
 #include "hatari-glue.h"
@@ -132,6 +130,7 @@ const char NnewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "../includes/xbios.h"
 #include "../includes/video.h"
 #include "../includes/options.h"
+#include "../falcon/dsp.h"
 
 //#define DEBUG_PREFETCH
 
@@ -1723,11 +1722,6 @@ static void m68k_run_1 (void)
 #if 0
 	while (PendingInterruptCount <= 0 && PendingInterruptFunction)
 	  CALL_VAR(PendingInterruptFunction);
-
-	if (regs.spcflags) {
-	    if (do_specialties ())
-		return;
-	}
 #else
 	/* We can have several interrupts at the same time before the next CPU instruction */
 	/* We must check for pending interrupt and call do_specialties_interrupt() only */
@@ -1745,13 +1739,17 @@ static void m68k_run_1 (void)
 		  }
 #endif
 	  }
+#endif
 
 	if (regs.spcflags) {
 	    if (do_specialties ())
 		return;
 	}
-#endif
 
+	/* Run DSP 56k code if necessary */
+	if (bDspEnabled) {
+	    DSP_Run(cycles);
+	}
     }
 }
 
@@ -1797,6 +1795,11 @@ static void m68k_run_2 (void)
 	if (regs.spcflags) {
 	    if (do_specialties ())
 		return;
+	}
+
+	/* Run DSP 56k code if necessary */
+	if (bDspEnabled) {
+	    DSP_Run(cycles);
 	}
     }
 }
