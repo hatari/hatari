@@ -69,7 +69,7 @@ void DSP_Run(int nHostCycles)
 #if DSP_EMULATION
 	/* Cycles emulation is just a rough approximation by now.
 	 * (to be tuned ...) */
-	int i = nHostCycles / 2;
+	int i = 7; // nHostCycles / 2;
 
 	while (dsp_core.running == 1 && i-- > 0)
 	{
