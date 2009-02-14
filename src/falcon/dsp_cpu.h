@@ -106,8 +106,11 @@ extern "C" {
 #define DSP_SPACE_P	0x02
 
 /* Functions */
-int dsp56k_do_execute(void *);
-void dsp_execute_instruction(void *dsp_core);
+void dsp56k_init_cpu(void *th_dsp_core);	/* Set dsp_core to use */
+
+int dsp56k_exec_thread(void *th_dsp_core);	/* Thread execution */
+
+void dsp56k_execute_instruction(void);		/* Execute 1 instruction */
 
 #ifdef __cplusplus
 }

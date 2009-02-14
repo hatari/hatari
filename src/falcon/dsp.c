@@ -26,6 +26,7 @@
 #include "newcpu.h"
 #include "ioMem.h"
 #include "dsp.h"
+#include "dsp_cpu.h"
 
 #define DEBUG 0
 #include "araglue.h"
@@ -42,7 +43,7 @@ bool bDspEnabled = false;
 void DSP_Init(void)
 {
 #if DSP_EMULATION
-	dsp_core_init(&dsp_core);
+	dsp_core_init(&dsp_core, false);
 	bDspEnabled = true;
 #endif
 }
@@ -73,7 +74,7 @@ void DSP_Run(int nHostCycles)
 
 	while (dsp_core.running == 1 && i-- > 0)
 	{
-		dsp_execute_instruction(&dsp_core);
+		dsp56k_execute_instruction();
 	}
 #endif
 }

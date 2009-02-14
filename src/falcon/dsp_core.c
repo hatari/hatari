@@ -29,6 +29,8 @@
 #include "dsp_core.h"
 #include "dsp_cpu.h"
 
+/*--- Defines ---*/
+
 #ifndef M_PI
 #define M_PI	3.141592653589793238462643383279502
 #endif
@@ -40,8 +42,20 @@
 #define DSP_DISASM_HOSTWRITE 0	/* Host->Dsp transfer */
 #define DSP_DISASM_STATE 0	/* State changes */
 
+/* Execute DSP instructions till the DSP waits for a read/write */
+#define DSP_HOST_FORCEEXEC 0
+
+/*--- Functions prototypes ---*/
+
+static void lockMutexNull(dsp_core_t *dsp_core);
+static void lockMutexThread(dsp_core_t *dsp_core);
+static void unlockMutexNull(dsp_core_t *dsp_core);
+static void unlockMutexThread(dsp_core_t *dsp_core);
+
+/*--- Functions ---*/
+
 /* Init DSP emulation */
-void dsp_core_init(dsp_core_t *dsp_core)
+void dsp_core_init(dsp_core_t *dsp_core, int use_thread)
 {
 	int i;
 
@@ -49,9 +63,7 @@ void dsp_core_init(dsp_core_t *dsp_core)
 	fprintf(stderr, "Dsp: core init\n");
 #endif
 
-	memset(dsp_core->ram, 0,sizeof(dsp_core->ram));
-	memset(dsp_core->ramint, 0,sizeof(dsp_core->ramint));
-	memset((void*)dsp_core->hostport, 0,sizeof(dsp_core->hostport));
+	memset(dsp_core, 0, sizeof(dsp_core_t));
 
 	/* Initialize Y:rom[0x0100-0x01ff] with a sin table */
 	for (i=0;i<256;i++) {
@@ -117,8 +129,15 @@ void dsp_core_init(dsp_core_t *dsp_core)
 			}
 		}
 	}
-
-	dsp_core->running = 0;
+	
+	dsp_core->use_thread = use_thread;
+	if (use_thread) {
+		dsp_core->unlockMutex = unlockMutexThread;
+		dsp_core->lockMutex = lockMutexThread;
+	} else {
+		dsp_core->unlockMutex = unlockMutexNull;
+		dsp_core->lockMutex = lockMutexNull;
+	}
 }
 
 /* Shutdown DSP emulation */
@@ -129,6 +148,26 @@ void dsp_core_shutdown(dsp_core_t *dsp_core)
 #endif
 
 	dsp_core->running = 0;
+
+	if (dsp_core->thread) {
+		if (SDL_SemValue(dsp_core->semaphore)==0) {
+			SDL_SemPost(dsp_core->semaphore);
+		}
+		SDL_WaitThread(dsp_core->thread, NULL);
+		dsp_core->thread = NULL;
+	}
+
+	/* Destroy the semaphore */
+	if (dsp_core->semaphore) {
+		SDL_DestroySemaphore(dsp_core->semaphore);
+		dsp_core->semaphore = NULL;
+	}
+
+	/* Destroy mutex */
+	if (dsp_core->mutex) {
+		SDL_DestroyMutex(dsp_core->mutex);
+		dsp_core->mutex = NULL;
+	}
 }
 
 /* Reset */
@@ -182,7 +221,62 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	fprintf(stderr, "Dsp: reset done\n");
 #endif
 
+	/* Create thread, semaphore, mutex if needed */
+	if (dsp_core->use_thread) {
+		if (dsp_core->semaphore == NULL) {
+			dsp_core->semaphore = SDL_CreateSemaphore(0);
+		}
+		if (dsp_core->mutex == NULL) {
+			dsp_core->mutex = SDL_CreateMutex();
+		}
+		if (dsp_core->thread == NULL) {
+			dsp_core->thread = SDL_CreateThread(dsp56k_exec_thread, dsp_core);
+		}
+	} else {
+		dsp56k_init_cpu(dsp_core);
+	}
 }
+
+/* Lock/unlock mutex functions */
+static void lockMutexNull(dsp_core_t *dsp_core)
+{
+}
+
+static void lockMutexThread(dsp_core_t *dsp_core)
+{
+	SDL_LockMutex(dsp_core->mutex);
+}
+
+static void unlockMutexNull(dsp_core_t *dsp_core)
+{
+}
+
+static void unlockMutexThread(dsp_core_t *dsp_core)
+{
+	SDL_UnlockMutex(dsp_core->mutex);
+}
+
+/* Force execution of DSP instructions, till cpu has read/written host port
+	Should not be needed at all, as it slows down host cpu emulation
+*/
+
+#if DSP_HOST_FORCEEXEC
+static void dsp_core_force_exec(dsp_core_t *dsp_core)
+{
+	Uint32 start = SDL_GetTicks();
+
+	if (!dsp_core->use_thread) {
+		return;
+	}
+
+	while (dsp_core->running						/* DSP thread running */
+		&& (SDL_SemValue(dsp_core->semaphore)!=0)	/* and executing instructions */
+		&& (SDL_GetTicks()-start<200))
+	{
+		SDL_Delay(1);
+	}
+}
+#endif
 
 
 /* Process Host Interface peripheral code */
@@ -243,22 +337,18 @@ void dsp_core_dsp2host(dsp_core_t *dsp_core)
 		return;
 	}
 
-	dsp_core->hostport[CPU_HOST_RXL] =  (Uint8)(dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX] & 0xff);
-	dsp_core->hostport[CPU_HOST_RXM] = (Uint8)((dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]>>8)  & 0xff);
-	dsp_core->hostport[CPU_HOST_RXH] = (Uint8)((dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]>>16) & 0xff);
-#if DSP_DISASM_HOSTWRITE
-	fprintf(stderr, "Dsp: (D->H): Transfer 0x%06x\n", dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]);
-#endif
+	dsp_core->hostport[CPU_HOST_RXL] = dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX];
+	dsp_core->hostport[CPU_HOST_RXM] = dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]>>8;
+	dsp_core->hostport[CPU_HOST_RXH] = dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]>>16;
+
 	/* Set HTDE bit to say that DSP can write */
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HTDE;
-#if DSP_DISASM_HOSTWRITE
-	fprintf(stderr, "Dsp: (D->H): Dsp HTDE set\n");
-#endif
 
 	/* Set RXDF bit to say that host can read */
 	dsp_core->hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_RXDF;
+
 #if DSP_DISASM_HOSTWRITE
-	fprintf(stderr, "Dsp: (D->H): Host RXDF set\n");
+	fprintf(stderr, "Dsp: (D->H): Transfer 0x%06x, Dsp HTDE=1, Host RXDF=1\n", dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]);
 #endif
 }
 
@@ -278,21 +368,16 @@ void dsp_core_host2dsp(dsp_core_t *dsp_core)
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] = dsp_core->hostport[CPU_HOST_TXL];
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_core->hostport[CPU_HOST_TXM]<<8;
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_core->hostport[CPU_HOST_TXH]<<16;
-#if DSP_DISASM_HOSTREAD
-	fprintf(stderr, "Dsp: (H->D): Transfer 0x%06x\n", dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX]);
-#endif
 
 	/* Set HRDF bit to say that DSP can read */
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HRDF;
-#if DSP_DISASM_HOSTREAD
-	fprintf(stderr, "Dsp: (H->D): Dsp HRDF set\n");
-#endif
 
 	/* Set TXDE bit to say that host can write */
 	dsp_core->hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_TXDE;
-# if DSP_DISASM_HOSTREAD
-	fprintf(stderr, "Dsp: (H->D): Host TXDE set\n");
-# endif
+
+#if DSP_DISASM_HOSTREAD
+	fprintf(stderr, "Dsp: (H->D): Transfer 0x%06x, Dsp HRDF=1, Host TXDE=1\n", dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX]);
+#endif
 
 	dsp_core_hostport_update_trdy(dsp_core);
 }
@@ -305,6 +390,7 @@ void dsp_core_hostport_dspread(dsp_core_t *dsp_core)
 	fprintf(stderr, "Dsp: (H->D): Dsp HRDF cleared\n");
 #endif
 	dsp_core_hostport_update_trdy(dsp_core);
+	// dsp_core_host2dsp(dsp_core);
 }
 
 void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core)
@@ -314,8 +400,31 @@ void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core)
 #if DSP_DISASM_HOSTWRITE
 	fprintf(stderr, "Dsp: (D->H): Dsp HTDE cleared\n");
 #endif
+	// dsp_core_dsp2host(dsp_core);
 }
 
+static void dsp_core_hostport_cpuread(dsp_core_t *dsp_core)
+{
+	/* Clear RXDF bit to say that CPU has read */
+	dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
+#if DSP_DISASM_HOSTWRITE
+	fprintf(stderr, "Dsp: (D->H): Host RXDF=0\n");
+#endif
+	// dsp_core_dsp2host(dsp_core);
+}
+
+#if 0
+static void dsp_core_hostport_cpuwrite(dsp_core_t *dsp_core)
+{
+	/* Clear TXDE to say that CPU has written */
+	dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_TXDE);
+#if DSP_DISASM_HOSTREAD
+	fprintf(stderr, "Dsp: (H->D): Host TXDE=0\n");
+#endif
+	dsp_core_hostport_update_trdy(dsp_core);
+	dsp_core_host2dsp(dsp_core);
+}
+#endif
 
 /* Read/writes on host port */
 
@@ -323,19 +432,46 @@ Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr)
 {
 	Uint8 value;
 
+#if DSP_HOST_FORCEEXEC
+	switch(addr) {
+		case CPU_HOST_RXH:
+		case CPU_HOST_RXM:
+		case CPU_HOST_RXL:
+			dsp_core_force_exec(dsp_core);
+			break;
+	}
+#endif
+
+	dsp_core->lockMutex(dsp_core);
 	value = dsp_core->hostport[addr];
 	if (addr == CPU_HOST_RXL) {
-		/* Clear RXDF bit to say that CPU has read */
-		dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
-#if DSP_DISASM_HOSTWRITE
-		fprintf(stderr, "Dsp: (D->H): Host RXDF cleared\n");
-#endif
+		dsp_core_hostport_cpuread(dsp_core);
+
+		/* Wake up DSP if it was waiting our read */
+		if (dsp_core->use_thread) {
+			if (SDL_SemValue(dsp_core->semaphore)==0) {
+				SDL_SemPost(dsp_core->semaphore);
+			}
+		}
 	}
+	dsp_core->unlockMutex(dsp_core);
+
 	return value;
 }
 
 void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 {
+#if DSP_HOST_FORCEEXEC
+	switch(addr) {
+		case CPU_HOST_TXH:
+		case CPU_HOST_TXM:
+		case CPU_HOST_TXL:
+			dsp_core_force_exec(dsp_core);
+			break;
+	}
+#endif
+
+	dsp_core->lockMutex(dsp_core);
 	switch(addr) {
 		case CPU_HOST_ICR:
 			dsp_core->hostport[CPU_HOST_ICR]=value & 0xfb;
@@ -350,6 +486,12 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 			/* if bit 7=1, host command . HSR(bit HCP) is set*/
 			if (value & (1<<7)) {
 				dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |= (1<<DSP_HOST_HSR_HCP);
+				/* Wake up DSP if needed */
+				if (dsp_core->use_thread) {
+					if (SDL_SemValue(dsp_core->semaphore)==0) {
+						SDL_SemPost(dsp_core->semaphore);
+					}
+				}
 			}
 			else{
 				dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff - (1<<DSP_HOST_HSR_HCP);
@@ -365,13 +507,13 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 			dsp_core->hostport[addr]=value;
 			break;
 		case CPU_HOST_TXL:
-			dsp_core->hostport[addr]=value;
+			dsp_core->hostport[CPU_HOST_TXL]=value;
 
 			if (!dsp_core->running) {
 				dsp_core->ramint[DSP_SPACE_P][dsp_core->bootstrap_pos] =
 					(dsp_core->hostport[CPU_HOST_TXH]<<16) |
 					(dsp_core->hostport[CPU_HOST_TXM]<<8) |
-					 dsp_core->hostport[CPU_HOST_TXL];
+					dsp_core->hostport[CPU_HOST_TXL];
 #if DEBUG
 				fprintf(stderr, "Dsp: bootstrap p:0x%04x = 0x%06x\n",
 					dsp_core->bootstrap_pos,
@@ -382,6 +524,11 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 					fprintf(stderr, "Dsp: WAIT_BOOTSTRAP done\n");
 #endif
 					dsp_core->running = 1;
+					if (dsp_core->use_thread) {
+						if (SDL_SemValue(dsp_core->semaphore)==0) {
+							SDL_SemPost(dsp_core->semaphore);
+						}
+					}
 				}		
 			} else {
 
@@ -411,6 +558,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 			}
 			break;
 	}
+	dsp_core->unlockMutex(dsp_core);
 }
 
 /*
