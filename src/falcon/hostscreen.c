@@ -8,7 +8,7 @@
   has been thoroughly reworked for Hatari. However, integration with the rest
   of the Hatari source code is still bad and needs a lot of improvement...
 */
-const char HostScreen_rcsid[] = "Hatari $Id: hostscreen.c,v 1.21 2008-10-21 21:15:09 eerot Exp $";
+const char HostScreen_fileid[] = "Hatari hostscreen.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"
@@ -221,12 +221,12 @@ void HostScreen_setWindowSize( Uint32 width, Uint32 height, Uint32 bpp )
 	{
 		/* Ugly: 400x300 threshold is currently hard-coded. */
 		/* Should rather be selectable by the user! */	
-		if (width <= 400)
+		if (width && width <= 400)
 		{
 			nScreenZoomX = (800/width);
 			width *= nScreenZoomX; 
 		}
-		if (height <= 300)
+		if (height && height <= 300)
 		{
 			nScreenZoomY = (550/height);
 			height *= nScreenZoomY;

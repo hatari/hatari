@@ -12,7 +12,7 @@
   modified to work for Hatari (but the kudos for the great Videl emulation
   code goes to the people from the Aranym project of course).
 */
-const char VIDEL_rcsid[] = "Hatari $Id: videl.c,v 1.20 2008-11-16 10:19:40 thothy Exp $";
+const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"
@@ -126,7 +126,15 @@ static int VIDEL_getScreenBpp(void)
 
 static int VIDEL_getScreenWidth(void)
 {
-	return handleReadW(HW + 0x10) * 16 / VIDEL_getScreenBpp();
+	int w = handleReadW(HW + 0x10) * 16 / VIDEL_getScreenBpp();
+
+	/* Limit width to sane values */
+	if (w < 16)
+		w = 16;
+	else if (w > 1280)
+		w = 1280;
+
+	return w;
 }
 
 static int VIDEL_getScreenHeight(void)
@@ -145,6 +153,12 @@ static int VIDEL_getScreenHeight(void)
 		yres >>= 1;
 	if (vmode & 0x01)			// double
 		yres >>= 1;
+
+	/* Limit height to sane values */
+	if (yres < 16)
+		yres = 16;
+	else if (yres > 1024)
+		yres = 1024;
 
 	return yres;
 }
