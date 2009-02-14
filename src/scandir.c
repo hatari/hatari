@@ -139,11 +139,6 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 #include <windows.h>
 #include <wchar.h>
 
-/* TODO: VC6 already defines this.  Doesn't Windows header for
- * FindFirstFile() get this defined?
- */
-#define INVALID_HANDLE_VALUE -1
-
 /*-----------------------------------------------------------------------*/
 /**
  * Alphabetic order comparison routine.
