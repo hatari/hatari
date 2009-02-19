@@ -36,6 +36,12 @@ enum
 #define JOYRANGE_LEFT_VALUE   -16384
 #define JOYRANGE_RIGHT_VALUE   16383
 
+#define ATARIJOY_BITMASK_UP    0x01
+#define ATARIJOY_BITMASK_DOWN  0x02
+#define ATARIJOY_BITMASK_LEFT  0x04
+#define ATARIJOY_BITMASK_RIGHT 0x08
+#define ATARIJOY_BITMASK_FIRE  0x80
+
 extern int JoystickSpaceBar;
 
 extern void Joy_Init(void);
