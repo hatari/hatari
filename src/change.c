@@ -202,7 +202,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 #if ENABLE_DSP_EMU
 	/* Disabled DSP? */
 	if (current->System.nDSPType == DSP_TYPE_EMU &&
-	    (changed->System.nDSPType != current->System.nDSPType))
+	    changed->System.nDSPType != DSP_TYPE_EMU)
 	{
 		DSP_UnInit();
 	}
@@ -230,8 +230,8 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	Configuration_Apply(NeedReset);
 
 #if ENABLE_DSP_EMU
-	if (current->System.nDSPType != DSP_TYPE_EMU
-	    && changed->System.nDSPType == DSP_TYPE_EMU)
+	if (current->System.nDSPType != DSP_TYPE_EMU &&
+	    changed->System.nDSPType == DSP_TYPE_EMU)
 	{
 		DSP_Init();
 	}
