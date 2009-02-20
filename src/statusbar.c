@@ -127,7 +127,7 @@ int Statusbar_SetHeight(int width, int height)
 		/* Should check the same thing as SDLGui_SetScreen()
 		 * does to decide the font size.
 		 */
-		if (width >= 640 && height >= 400) {
+		if (width >= 640 && height >= (400-24)) {
 			StatusbarHeight = 24;
 		} else {
 			StatusbarHeight = 12;
