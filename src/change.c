@@ -21,6 +21,7 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
+#include "ide.h"
 #include "ioMem.h"
 #include "joy.h"
 #include "keymap.h"
@@ -104,6 +105,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	bool NeedReset;
 	bool bReInitGemdosDrive = FALSE;
 	bool bReInitAcsiEmu = FALSE;
+	bool bReInitIDEEmu = FALSE;
 	bool bReInitIoMem = FALSE;
 	bool bScreenModeChange = FALSE;
 	bool bReInitMidi = FALSE;
@@ -186,6 +188,15 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		HDC_UnInit();
 		bReInitAcsiEmu = TRUE;
 	}
+	
+	/* Did change IDE HD image? */
+	if (changed->HardDisk.bUseIdeHardDiskImage != current->HardDisk.bUseIdeHardDiskImage
+	    || (strcmp(changed->HardDisk.szIdeHardDiskImage, current->HardDisk.szIdeHardDiskImage)
+	        && changed->HardDisk.bUseIdeHardDiskImage))
+	{
+		Ide_UnInit();
+		bReInitIDEEmu = TRUE;
+	}
 
 	/* Did change blitter, rtc or system type? */
 	if (changed->System.bBlitter != current->System.bBlitter
@@ -245,6 +256,12 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	if (bReInitAcsiEmu && ConfigureParams.HardDisk.bUseHardDiskImage)
 	{
 		HDC_Init(ConfigureParams.HardDisk.szHardDiskImage);
+	}
+
+	/* Mount a new IDE HD image: */
+	if (bReInitIDEEmu && ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	{
+		Ide_Init();
 	}
 
 	/* Insert floppies? */
