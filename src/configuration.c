@@ -261,6 +261,8 @@ static const struct Config_Tag configs_HardDisk[] =
 	/*{ "szHardDiskDirF", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_F] },*/
 	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskImage },
 	{ "szHardDiskImage", String_Tag, ConfigureParams.HardDisk.szHardDiskImage },
+	{ "bUseIdeHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeHardDiskImage },
+	{ "szIdeHardDiskImage", String_Tag, ConfigureParams.HardDisk.szIdeHardDiskImage },
 	{ NULL , Error_Tag, NULL }
 };
 
