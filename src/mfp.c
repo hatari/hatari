@@ -454,6 +454,8 @@ void MFP_TimerA_EventCount_Interrupt(void)
  */
 void MFP_TimerB_EventCount_Interrupt(void)
 {
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "mfp/video timer B new event count %d\n" , MFP_TB_MAINCOUNTER-1 );
+
 	if (MFP_TB_MAINCOUNTER == 1)			/* Timer expired? If so, generate interrupt */
 	{
 		MFP_TB_MAINCOUNTER = MFP_TBDR;		/* Reload timer from data register */

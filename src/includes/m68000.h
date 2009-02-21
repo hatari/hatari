@@ -198,7 +198,7 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 	{
 		Pairing = 1;
 		HATARI_TRACE( HATARI_TRACE_CPU_PAIRING ,
-		              "pairing detected pc=%x family %s/%s cycles %d/%d\n" ,
+		              "cpu pairing detected pc=%x family %s/%s cycles %d/%d\n" ,
 		              m68k_getpc(), OpcodeName[LastOpcodeFamily] ,
 		              OpcodeName[OpcodeFamily], LastInstrCycles, cycles );
 	}
@@ -210,7 +210,7 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 		&& ( ( cycles & 3 ) == 2 ) && ( ( LastInstrCycles & 3 ) == 2 ) )
 	{
 		HATARI_TRACE( HATARI_TRACE_CPU_PAIRING ,
-		              "could pair pc=%x family %s/%s cycles %d/%d\n" ,
+		              "cpu could pair pc=%x family %s/%s cycles %d/%d\n" ,
 		              m68k_getpc(), OpcodeName[LastOpcodeFamily] ,
 		              OpcodeName[OpcodeFamily], LastInstrCycles, cycles );
 	}
