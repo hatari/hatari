@@ -383,23 +383,29 @@ look completely broken under EmuTOS.  Following Falcon only
 demos, games and apps work (mostly) fine though.
 
 Demos:
+- A Rh Positive 4k (by tSSc)
 - Alive (by Fun Industries)
 - Ascii (by Reservoir Gods)
 - ATS (by DHS)
 - Birdshow
 - Blue & Flu 4k (by New Beat)
+- DBA Magazine 14 intro (by Lazer)
 - Illusion 64 (by Paranoia)
 - Game of Life 4k (by Aggression)
 - Snowstorm (by Reservoir Gods)
-- ZZ 9 Plural Z Alpha (by .tssc)
+- Terrorize Your Soul (by tSSc)
+  - fonts and colors aren't right on all screens
+- ZZ 9 Plural Z Alpha (by tSSc)
 
 Games:
+- Aces High (preview)
 - Blum
 - Columns by Deadheart (demo)*
 - Corsair
 - DB 4K
 - Dry Egg (needs >4MB RAM)
 - FalcTron
+- Heretic (lower part of screen flickers, I think EmuTOS screen is too high)
 - Impulse (Breakout clone)*
 - Lamemine (needs "dummy" DSP mode in Hatari)
 - Madtris
@@ -423,9 +429,12 @@ Mostly working applications:
 
 Almost working demos & games:
 - Bugger, Bunion, SkyFall, Switch, Sworm games* by Resorvoir Gods:
-  have issues with keyboard input in the main menus
-- Heretic: screen is messed
-- Nibe: screen is messed
+  - have issues with keyboard input in the main menus, doesn't get input
+    or input freezes the game
+- Motion (unfinished demo by Aggression)
+  - only writer screens work
+- Nibe:
+  - screen is messed, I suspect EmuTOS is missing resolution change function
 - Virtual City (needs DSP): city is invisible with EmuTOS
 
 
