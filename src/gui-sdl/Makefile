@@ -19,7 +19,12 @@ DLGSRCS = dlgAbout.c dlgAlert.c dlgDevice.c dlgDisk.c dlgJoystick.c \
 DLGOBJS = $(DLGSRCS:.c=.o)
 
 
-all: $(DLGOBJS)
+all: gui-sdl.a
+
+gui-sdl.a: $(DLGOBJS)
+	$(AR) cru $@ $^
+	$(RANLIB) $@
+
 
 font5x8.h: font5x8.bmp
 	convert font5x8.bmp xbm:font5x8.h

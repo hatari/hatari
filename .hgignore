@@ -21,10 +21,10 @@ src/hatari
 src/tos.img
 
 src/*/*.o
+src/*/*.a
 src/*/Makefile.dep
 
 src/uae-cpu/build68k
-src/uae-cpu/cpu68k.a
 src/uae-cpu/cpudefs.c
 src/uae-cpu/cpuemu.c
 src/uae-cpu/cpustbl.c

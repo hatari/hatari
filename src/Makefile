@@ -18,20 +18,6 @@ ifeq ($(ENABLE_DSP_EMU),1)
 CPPFLAGS += -DENABLE_DSP_EMU=1
 endif
 
-GUIOBJS = ./gui-sdl/dlgAbout.o ./gui-sdl/dlgAlert.o ./gui-sdl/dlgDevice.o \
-  ./gui-sdl/dlgDisk.o ./gui-sdl/dlgJoystick.o ./gui-sdl/dlgKeyboard.o \
-  ./gui-sdl/dlgMain.o ./gui-sdl/dlgMemory.o ./gui-sdl/dlgNewDisk.o \
-  ./gui-sdl/dlgRom.o ./gui-sdl/dlgScreen.o ./gui-sdl/dlgSound.o  \
-  ./gui-sdl/dlgSystem.o ./gui-sdl/dlgFileSelect.o ./gui-sdl/sdlgui.o
-
-GUIWINOBJS = ./gui-win/hatari-winicon.o ./gui-win/opencon.o
-
-FALCOBJS = ./falcon/videl.o ./falcon/hostscreen.o ./falcon/nvram.o
-ifeq ($(ENABLE_DSP_EMU),1)
-FALCOBJS += ./falcon/dsp.o ./falcon/dsp_core.o \
-            ./falcon/dsp_cpu.o ./falcon/dsp_disasm.o
-endif
-
 SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c options.c \
   createBlankImage.c change.c control.c cycles.c debugui.c dialog.c dim.c \
   dmaSnd.c fdc.c file.c floppy.c gemdos.c hdc.c ide.c ikbd.c int.c ioMem.c \
@@ -43,16 +29,17 @@ SRCS = audio.c bios.c blitter.c cart.c cfgopts.c configuration.c options.c \
 
 OBJS = $(SRCS:.c=.o)
 
-
-ALLOBJS = $(OBJS) $(GUIOBJS) $(CPUDIR)/cpu68k.a $(FALCOBJS)
+SUBDIRLIBS = $(CPUDIR)/cpu68k.a falcon/falcon.a gui-sdl/gui-sdl.a
 
 ifeq ($(SYS_WINDOWS),1)
-  ALLOBJS += $(GUIWINOBJS)
+  ALLOBJS += gui-win/gui-win.a
 else
 ifneq ($(strip $(shell gcc -v 2>&1 |grep "cygwin")),)
-  ALLOBJS += $(GUIWINOBJS)
+  ALLOBJS += gui-win/gui-win.a
 endif 
 endif
+
+ALLOBJS = $(OBJS) $(SUBDIRLIBS)
 
 
 all: hatari
@@ -61,18 +48,9 @@ hatari: $(ALLOBJS)
 	$(CC) $(LDFLAGS) $(ALLOBJS) $(SDL_LIBS) $(LIBS) -o hatari
 
 # Sub-folder dependencies:
-.PHONY : $(CPUDIR)/cpu68k.a
-$(CPUDIR)/cpu68k.a:
-	$(MAKE) -C $(CPUDIR)
-
-gui-sdl/%.o: gui-sdl/%.c
-	$(MAKE) ENABLE_DSP_EMU=$(ENABLE_DSP_EMU) -C gui-sdl/ all
-
-gui-win/%.o:
-	$(MAKE) ENABLE_DSP_EMU=$(ENABLE_DSP_EMU) -C gui-win/ all
-
-falcon/%.o: falcon/%.c
-	$(MAKE) ENABLE_DSP_EMU=$(ENABLE_DSP_EMU) CPUDIR=$(CPUDIR) -C falcon/
+.PHONY : $(SUBDIRLIBS)
+$(SUBDIRLIBS):
+	$(MAKE) ENABLE_DSP_EMU=$(ENABLE_DSP_EMU) CPUDIR=$(CPUDIR) -C $(dir $@)
 
 
 clean:

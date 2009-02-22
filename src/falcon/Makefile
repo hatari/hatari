@@ -26,7 +26,11 @@ endif
 FALCOBJS = $(FALCSRCS:.c=.o)
 
 
-all: $(FALCOBJS)
+all: falcon.a
+
+falcon.a: $(FALCOBJS)
+	$(AR) cru $@ $^
+	$(RANLIB) $@
 
 
 clean:
