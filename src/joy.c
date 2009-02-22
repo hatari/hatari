@@ -149,34 +149,34 @@ Uint8 Joy_GetStickData(int nStJoyId)
 
 		/* Directions */
 		if (JoyReading.YPos <= JOYRANGE_UP_VALUE)
-                        nData |= ATARIJOY_BITMASK_UP;
+			nData |= ATARIJOY_BITMASK_UP;
 		else if (JoyReading.YPos >= JOYRANGE_DOWN_VALUE)
-                        nData |= ATARIJOY_BITMASK_DOWN;
+			nData |= ATARIJOY_BITMASK_DOWN;
 		if (JoyReading.XPos <= JOYRANGE_LEFT_VALUE)
-                        nData |= ATARIJOY_BITMASK_LEFT;
+			nData |= ATARIJOY_BITMASK_LEFT;
 		else if (JoyReading.XPos >= JOYRANGE_RIGHT_VALUE)
-                        nData |= ATARIJOY_BITMASK_RIGHT;
+			nData |= ATARIJOY_BITMASK_RIGHT;
 
 		/* PC Joystick button 1 is set as ST joystick button */
 		if (JoyReading.Buttons & JOY_BUTTON1)
-                        nData |= ATARIJOY_BITMASK_FIRE;
+			nData |= ATARIJOY_BITMASK_FIRE;
 
 		/* Enable PC Joystick button 2 to mimick space bar (For XenonII, Flying Shark etc...) */
 		if (nStJoyId == JOYID_JOYSTICK1 && (JoyReading.Buttons & JOY_BUTTON2))
 		{
-                        if (ConfigureParams.Joysticks.Joy[nStJoyId].bEnableJumpOnFire2)
-                        {
-                                /* If "Jump on Button 2" is enabled, PC Joystick button 2 acts as "ST Joystick up" */
-                                nData |= ATARIJOY_BITMASK_UP;
-                        } else {
-                                /* If "Jump on Button 2" is not enabled, PC Joystick button 2 acts as pressing SPACE on the ST keyboard */
+			if (ConfigureParams.Joysticks.Joy[nStJoyId].bEnableJumpOnFire2)
+			{
+				/* If "Jump on Button 2" is enabled, PC Joystick button 2 acts as "ST Joystick up" */
+				nData |= ATARIJOY_BITMASK_UP;
+			} else {
+				/* If "Jump on Button 2" is not enabled, PC Joystick button 2 acts as pressing SPACE on the ST keyboard */
 				/* Only press 'space bar' if not in NULL state */
 				if (!JoystickSpaceBar)
 				{
 					/* Press, ikbd will send packets and de-press */
 					JoystickSpaceBar = JOYSTICK_SPACE_DOWN;
 				}
-                        }
+			}
 		}
 	}
 
@@ -298,31 +298,31 @@ bool Joy_KeyDown(int symkey, int modkey)
 		{
 			if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeUp)
 			{
-                                nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_DOWN;   /* Disable down */
-                                nJoyKeyEmu[i] |= ATARIJOY_BITMASK_UP;    /* Enable up */
+				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_DOWN;   /* Disable down */
+				nJoyKeyEmu[i] |= ATARIJOY_BITMASK_UP;    /* Enable up */
 				return TRUE;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeDown)
 			{
-                                nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_UP;   /* Disable up */
-                                nJoyKeyEmu[i] |= ATARIJOY_BITMASK_DOWN;    /* Enable down */
+				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_UP;   /* Disable up */
+				nJoyKeyEmu[i] |= ATARIJOY_BITMASK_DOWN;    /* Enable down */
 				return TRUE;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeLeft)
 			{
-                                nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_RIGHT;   /* Disable right */
-                                nJoyKeyEmu[i] |= ATARIJOY_BITMASK_LEFT;    /* Enable left */
+				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_RIGHT;   /* Disable right */
+				nJoyKeyEmu[i] |= ATARIJOY_BITMASK_LEFT;    /* Enable left */
 				return TRUE;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeRight)
 			{
-                                nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_LEFT;   /* Disable left */
-                                nJoyKeyEmu[i] |= ATARIJOY_BITMASK_RIGHT;    /* Enable right */
+				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_LEFT;   /* Disable left */
+				nJoyKeyEmu[i] |= ATARIJOY_BITMASK_RIGHT;    /* Enable right */
 				return TRUE;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeFire)
 			{
-                          nJoyKeyEmu[i] |= ATARIJOY_BITMASK_FIRE;
+				nJoyKeyEmu[i] |= ATARIJOY_BITMASK_FIRE;
 				return TRUE;
 			}
 		}
@@ -348,27 +348,27 @@ bool Joy_KeyUp(int symkey, int modkey)
 		{
 			if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeUp)
 			{
-                                nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_UP;
+				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_UP;
 				return TRUE;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeDown)
 			{
-                                nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_DOWN;
+				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_DOWN;
 				return TRUE;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeLeft)
 			{
-                                nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_LEFT;
+				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_LEFT;
 				return TRUE;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeRight)
 			{
-                                nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_RIGHT;
+				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_RIGHT;
 				return TRUE;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeFire)
 			{
-                                nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_FIRE;
+				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_FIRE;
 				return TRUE;
 			}
 		}
