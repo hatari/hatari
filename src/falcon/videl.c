@@ -126,21 +126,13 @@ static int VIDEL_getScreenBpp(void)
 
 static int VIDEL_getScreenWidth(void)
 {
-	int w = handleReadW(HW + 0x10) * 16 / VIDEL_getScreenBpp();
-
-	/* Limit width to sane values */
-	if (w < 16)
-		w = 16;
-	else if (w > 1280)
-		w = 1280;
-
-	return w;
+	return (handleReadW(HW + 0x10) & 0x03ff) * 16 / VIDEL_getScreenBpp();
 }
 
 static int VIDEL_getScreenHeight(void)
 {
-	int vdb = handleReadW(HW + 0xa8);
-	int vde = handleReadW(HW + 0xaa);
+	int vdb = handleReadW(HW + 0xa8) & 0x07ff;
+	int vde = handleReadW(HW + 0xaa) & 0x07ff;
 	int vmode = handleReadW(HW + 0xc2);
 
 	/* visible y resolution:
@@ -151,14 +143,8 @@ static int VIDEL_getScreenHeight(void)
 	int yres = vde - vdb;
 	if (!(vmode & 0x02))		// interlace
 		yres >>= 1;
-	if (vmode & 0x01)			// double
+	if (vmode & 0x01)		// double
 		yres >>= 1;
-
-	/* Limit height to sane values */
-	if (yres < 16)
-		yres = 16;
-	else if (yres > 1024)
-		yres = 1024;
 
 	return yres;
 }
