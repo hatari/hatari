@@ -312,12 +312,6 @@ void dsp_core_process_ssi_interface(dsp_core_t *dsp_core)
 {
 }
 
-/* Process SCI peripheral code */
-void dsp_core_process_sci_interface(dsp_core_t *dsp_core)
-{
-}
-
-
 static void dsp_core_hostport_update_trdy(dsp_core_t *dsp_core)
 {
 	int trdy;

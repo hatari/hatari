@@ -680,7 +680,6 @@ void dsp56k_execute_instruction(void)
 	/* process peripherals On Chip components */
 	dsp_core_process_host_interface(dsp_core);
 	dsp_core_process_ssi_interface(dsp_core);
-	dsp_core_process_sci_interface(dsp_core);
 
 #ifdef DSP_DISASM
 #if DSP_DISASM_REG
@@ -760,7 +759,7 @@ static void dsp_postexecute_update_pc(void)
 
 static void dsp_postexecute_interrupts(void)
 {
-	Uint32 ipl, ipl_to_raise, ipl_hi, ipl_ssi, ipl_sci, instr1, instr2;
+	Uint32 ipl, ipl_to_raise, ipl_hi, ipl_ssi, instr1, instr2;
 	Uint32 ipl_order[3], i;
 
 	/* REP is not interruptible */
@@ -819,67 +818,26 @@ static void dsp_postexecute_interrupts(void)
 		   the order is (high priority : HI, SSI, SCI, LOW priority */
 		ipl_hi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>10) & BITMASK(2);
 		ipl_ssi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>12) & BITMASK(2);
-		ipl_sci = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>14) & BITMASK(2);
 
-		/* Sort the 3 ipls in priority order */
-		/* Sort(Tab[0],Tab[1]); trier(Tab[1],Tab[2]); trier(Tab[0],Tab[1]); */
 		if (ipl_hi >= ipl_ssi) {
-			if (ipl_ssi >= ipl_sci) {
-				ipl_order[0] = INTERRUPT_HI;
-				ipl_order[1] = INTERRUPT_SSI;
-				ipl_order[2] = INTERRUPT_SCI;
-			} else {
-				if (ipl_hi >= ipl_sci){
-					ipl_order[0] = INTERRUPT_HI;
-					ipl_order[1] = INTERRUPT_SCI;
-					ipl_order[2] = INTERRUPT_SSI;
-				} else {
-					ipl_order[0] = INTERRUPT_SCI;
-					ipl_order[1] = INTERRUPT_HI;
-					ipl_order[2] = INTERRUPT_SSI;
+			if (ipl_hi>=ipl) {
+				ipl_to_raise=dsp_hi_interrupts();
+			}
+			if (ipl_to_raise == 99) {
+				if (ipl_ssi>=ipl) {
+					ipl_to_raise=dsp_ssi_interrupts();
 				}
 			}
 		} else {
-			if (ipl_hi >= ipl_sci) {
-				ipl_order[0] = INTERRUPT_SSI;
-				ipl_order[1] = INTERRUPT_HI;
-				ipl_order[2] = INTERRUPT_SCI;
-			} else {
-				if (ipl_ssi >= ipl_sci){
-					ipl_order[0] = INTERRUPT_SSI;
-					ipl_order[1] = INTERRUPT_SCI;
-					ipl_order[2] = INTERRUPT_HI;
-				} else {
-					ipl_order[0] = INTERRUPT_SCI;
-					ipl_order[1] = INTERRUPT_SSI;
-					ipl_order[2] = INTERRUPT_HI;
+			if (ipl_ssi>=ipl) {
+				ipl_to_raise=dsp_ssi_interrupts();
+			}
+			if (ipl_to_raise == 99) {
+				if (ipl_hi>=ipl) {
+					ipl_to_raise=dsp_hi_interrupts();
 				}
 			}
 		}
-
-		for (i=0; i<3; i++){
-			switch (ipl_order[i]) {
-				case INTERRUPT_HI: 
-					if (ipl_hi>ipl) {
-						ipl_to_raise=dsp_hi_interrupts();
-					}
-					break;
-				case INTERRUPT_SSI:
-					if (ipl_ssi>ipl) {
-						ipl_to_raise=dsp_ssi_interrupts();
-					}
-					break;
-				case INTERRUPT_SCI:
-					if (ipl_sci>ipl) {
-						ipl_to_raise=dsp_sci_interrupts();
-					}
-					break;
-			}
-			if (ipl_to_raise != 99) {
-				break;
-			}
-		}
-
 	}
 
 	/* Do we have to execute an interruption ? */
@@ -1040,51 +998,6 @@ static Uint32 dsp_ssi_interrupts(void)
 	}
 
 	return ipl_to_raise;
-}
-
-/* SCI interface interrupts */
-static Uint32 dsp_sci_interrupts(void)
-{
-	Uint32 ipl_to_raise = 99;
-	Uint32 ipl_sci = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>14) & BITMASK(2);
-	
-	/* SCI RX Data with Exception Interrupt */
-	if (0){
-		/* Raise interrupt p:0x0016 */
-		dsp_core->interrupt_instr_fetch = 0x0016;
-		ipl_to_raise = ipl_sci;	
-	}
-
-	/* SCI RX Data Interrupt */
-	else if (0){
-		/* Raise interrupt p:0x0014 */
-		dsp_core->interrupt_instr_fetch = 0x0014;
-		ipl_to_raise = ipl_sci;	
-	}
-
-	/* SSI TX Data Interrupt */
-	else if (0){
-		/* Raise interrupt p:0x0018 */
-		dsp_core->interrupt_instr_fetch = 0x0018;
-		ipl_to_raise = ipl_sci;	
-	}
-
-	/* SSI Idle Line Interrupt */
-	else if (0){
-		/* Raise interrupt p:0x001a */
-		dsp_core->interrupt_instr_fetch = 0x001a;
-		ipl_to_raise = ipl_sci;	
-	}
-
-	/* SSI Timer Interrupt */
-	else if (0){
-		/* Raise interrupt p:0x001c */
-		dsp_core->interrupt_instr_fetch = 0x0016;
-		ipl_to_raise = ipl_sci;
-	}
-
-	return 99;
-/*	return ipl_to_raise; */
 }
 
 /**********************************

@@ -183,7 +183,6 @@ void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
 /* Process peripheral code */
 void dsp_core_process_host_interface(dsp_core_t *dsp_core);	/* HI */
 void dsp_core_process_ssi_interface(dsp_core_t *dsp_core);	/* SSI */
-void dsp_core_process_sci_interface(dsp_core_t *dsp_core);	/* SCI */
 
 /* Host interface code */
 void dsp_core_dsp2host(dsp_core_t *dsp_core);
