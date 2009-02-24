@@ -92,7 +92,6 @@ static void dsp_postexecute_update_pc(void);
 static void dsp_postexecute_interrupts(void);
 static Uint32 dsp_hi_interrupts(void);
 static Uint32 dsp_ssi_interrupts(void);
-static Uint32 dsp_sci_interrupts(void);
 
 static void dsp_ccr_extension(Uint32 *reg0, Uint32 *reg1);
 static void dsp_ccr_unnormalized(Uint32 *reg0, Uint32 *reg1);
@@ -504,8 +503,8 @@ static dsp_emul_t opcodes_movec[8]={
 	dsp_movec_reg,
 
 	dsp_movec_aa,
-	dsp_movec_imm,
 	dsp_movec_ea,
+	dsp_movec_imm,
 	dsp_movec_imm
 };
 
@@ -760,7 +759,6 @@ static void dsp_postexecute_update_pc(void)
 static void dsp_postexecute_interrupts(void)
 {
 	Uint32 ipl, ipl_to_raise, ipl_hi, ipl_ssi, instr1, instr2;
-	Uint32 ipl_order[3], i;
 
 	/* REP is not interruptible */
 	if (dsp_core->loop_rep) {
@@ -2387,9 +2385,8 @@ static void dsp_movec(void)
 {
 	Uint32 value;
 
-	value = ((cur_inst>>16) & 1)<<2;
-	value |= ((cur_inst>>14) & 1)<<1;
-	value |= (cur_inst>>7) & 1;
+	value = (cur_inst>>14) & 0x05;     // Keep bit 14 and 16
+	value |= (cur_inst>>6) & (1<<1);   // Add bit 7
 
 	opcodes_movec[value]();
 }
