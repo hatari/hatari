@@ -184,10 +184,6 @@ void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
 void dsp_core_process_host_interface(dsp_core_t *dsp_core);	/* HI */
 void dsp_core_process_ssi_interface(dsp_core_t *dsp_core);	/* SSI */
 
-/* Host interface code */
-void dsp_core_dsp2host(dsp_core_t *dsp_core);
-void dsp_core_host2dsp(dsp_core_t *dsp_core);
-
 #ifdef __cplusplus
 }
 #endif

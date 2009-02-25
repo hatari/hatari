@@ -44,6 +44,9 @@
 
 /*--- Functions prototypes ---*/
 
+static void dsp_core_dsp2host(dsp_core_t *dsp_core);
+static void dsp_core_host2dsp(dsp_core_t *dsp_core);
+
 static void lockMutexNull(dsp_core_t *dsp_core);
 static void lockMutexThread(dsp_core_t *dsp_core);
 static void unlockMutexNull(dsp_core_t *dsp_core);
@@ -324,7 +327,7 @@ static void dsp_core_hostport_update_trdy(dsp_core_t *dsp_core)
 }
 
 /* Host port transfer ? (dsp->host) */
-void dsp_core_dsp2host(dsp_core_t *dsp_core)
+static void dsp_core_dsp2host(dsp_core_t *dsp_core)
 {
 	/* RXDF = 1 ==> host hasn't read the last value yet */
 	if (dsp_core->hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_RXDF)) {
@@ -352,7 +355,7 @@ void dsp_core_dsp2host(dsp_core_t *dsp_core)
 }
 
 /* Host port transfer ? (host->dsp) */
-void dsp_core_host2dsp(dsp_core_t *dsp_core)
+static void dsp_core_host2dsp(dsp_core_t *dsp_core)
 {
 	/* TXDE = 1 ==> nothing to tranfert from host port */
 	if (dsp_core->hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_TXDE)) {
