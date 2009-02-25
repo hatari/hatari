@@ -818,7 +818,7 @@ static void dsp_postexecute_interrupts(void)
 		ipl_ssi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>12) & BITMASK(2);
 
 		if (ipl_hi >= ipl_ssi) {
-			if (ipl_hi>=ipl) {
+			if (ipl_hi >= ipl) {
 				ipl_to_raise=dsp_hi_interrupts();
 			}
 			if (ipl_to_raise == 99) {
@@ -1206,7 +1206,8 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 					case DSP_HOST_HCR:
 						dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] = value;
 						/* Set HF3 and HF2 accordingly on the host side */
-						dsp_core->hostport[CPU_HOST_ISR] &= BITMASK(8)-((1<<CPU_HOST_ISR_HF3)|(1<<CPU_HOST_ISR_HF2));
+						dsp_core->hostport[CPU_HOST_ISR] &=
+							BITMASK(8)-((1<<CPU_HOST_ISR_HF3)|(1<<CPU_HOST_ISR_HF2));
 						dsp_core->hostport[CPU_HOST_ISR] |=
 							dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & ((1<<CPU_HOST_ISR_HF3)|(1<<CPU_HOST_ISR_HF2));
 						break;
@@ -2399,7 +2400,7 @@ static void dsp_movec_reg(void)
 	/* S2,D1 */
 
 	numreg2 = (cur_inst>>8) & BITMASK(6);
-	numreg1 = (cur_inst & BITMASK(5))|0x20;
+	numreg1 = cur_inst & BITMASK(6);
 
 	if (cur_inst & (1<<15)) {
 		/* Write D1 */
@@ -2437,7 +2438,7 @@ static void dsp_movec_aa(void)
 	/* y:aa,D1 */
 	/* S1,y:aa */
 
-	numreg = (cur_inst & BITMASK(5))|0x20;
+	numreg = cur_inst & BITMASK(6);
 	addr = (cur_inst>>8) & BITMASK(6);
 	memspace = (cur_inst>>6) & 1;
 
@@ -2459,7 +2460,7 @@ static void dsp_movec_imm(void)
 
 	/* #xx,D1 */
 
-	numreg = (cur_inst & BITMASK(5))|0x20;
+	numreg = cur_inst & BITMASK(6);
 	dsp_core->registers[numreg] = (cur_inst>>8) & BITMASK(8);
 }
 
@@ -2474,7 +2475,7 @@ static void dsp_movec_ea(void)
 	/* S1,y:ea */
 	/* #xxxx,D1 */
 
-	numreg = (cur_inst & BITMASK(5))|0x20;
+	numreg = cur_inst & BITMASK(6);
 	ea_mode = (cur_inst>>8) & BITMASK(6);
 	memspace = (cur_inst>>6) & 1;
 
