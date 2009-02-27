@@ -226,6 +226,8 @@
 /*			of the line with a hi/lo switch. Correct missing end of line timer B	*/
 /*			interrupt in that case (fix flickering Dragon Ball part in Blood disk 2	*/
 /*			by Holocaust).								*/
+/* 2008/02/02	[NP]	Added 0 byte line detection in STE mode when switching hi/lo res	*/
+/*			at position 32 (Lemmings screen in Nostalgic-o-demo).			*/
 
 
 
@@ -606,9 +608,21 @@ static void Video_WriteToShifter(Uint8 Byte)
 		LineStartCycle = LINE_START_CYCLE_70;
 	}
 
-	/* Empty line switching res */
+	/* Empty line switching res on STF */
 	else if ( ( nFrameCycles-nLastFrameCycles <= 16 )
-	          && ( nLastCycles == LINE_EMPTY_CYCLE_70 ) )
+	          && ( nLastCycles == LINE_EMPTY_CYCLE_70_STF )
+		  && ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
+		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
+		LineStartCycle = 0;
+		LineEndCycle = 0;
+	}
+
+	/* Empty line switching res on STE (switch is 4 cycle later than on STF) */
+	else if ( ( nFrameCycles-nLastFrameCycles <= 16 )
+	          && ( nLastCycles == LINE_EMPTY_CYCLE_70_STE )
+		  && ( ConfigureParams.System.nMachineType == MACHINE_STE ) )
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
