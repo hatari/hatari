@@ -1,5 +1,8 @@
  /*
-  * KVK - Fix for compliation using Visual Studio 6
+  * Hatari - Fix for compliation using Visual Studio 6
+  *
+  * This file is distributed under the GNU Public License, version 2 or at
+  * your option any later version. Read the file gpl.txt for details.
   *
   * This file tells Visual Studio to ignore a number of relatively minor "warnings" that have found their
   * way into the HAtari source. None of the "warnings" will hamper the running or compliation or HAtari 

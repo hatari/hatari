@@ -1,3 +1,10 @@
+ /*
+  * Hatari - Fix for compliation using Visual Studio 6
+  *
+  * This file is distributed under the GNU Public License, version 2 or at
+  * your option any later version. Read the file gpl.txt for details.
+  */
+
 #if defined(_VCWIN_)
 #pragma comment(lib, ".\\SDL\\lib\\sdl.lib")			// sdl.lib	
 #pragma comment(lib, ".\\zlib\\win32\\zlib1.lib")		// zlib1.lib 
