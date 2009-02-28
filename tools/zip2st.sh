@@ -61,13 +61,13 @@ chmod -R u+rw $TEMPDIR/*
 
 WORKINGDIR=`pwd`
 
-echo
-step=$(($step+1))
-echo "$step) Changing file names to upper case..."
-for i in `find $TEMPDIR/* -depth` ; do
-	cd `dirname $i`
-	rename -v 'y/a-z/A-Z/' `basename $i`
-done
+# echo
+# step=$(($step+1))
+# echo "$step) Changing file names to upper case..."
+# for i in `find $TEMPDIR/* -depth` ; do
+# 	cd `dirname $i`
+# 	rename -v 'y/a-z/A-Z/' `basename $i`
+# done
 
 cd $WORKINGDIR
 
@@ -102,7 +102,7 @@ if [ $disksize -gt 0 ]; then
 	echo
 	step=$(($step+1))
 	echo "$step) Copying data to disk image..."
-	mcopy -i $STFILE -spmv $TEMPDIR/* ::
+	MTOOLS_NO_VFAT=1 mcopy -i $STFILE -spmv $TEMPDIR/* ::
 else
 	echo "ERROR: zip contents don't fit to a floppy image ($size > 2880 KB)."
 fi
