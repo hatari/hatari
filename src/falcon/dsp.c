@@ -44,6 +44,7 @@ void DSP_Init(void)
 {
 #if DSP_EMULATION
 	dsp_core_init(&dsp_core, false);
+	dsp56k_init_cpu(&dsp_core);
 	bDspEnabled = true;
 #endif
 }
