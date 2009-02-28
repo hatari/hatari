@@ -48,3 +48,20 @@ extern	FILE *TraceFile;
 	#endif
 
 #endif
+
+
+#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+
+// Windows Header Files:
+#include <windows.h>
+
+extern "C" 
+{
+	int SDL_main(int argc, char *argv[]);
+}
+
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+                     LPSTR lpCmdLine, int nCmdShow)
+{
+	return SDL_main(1,&lpCmdLine);
+}
