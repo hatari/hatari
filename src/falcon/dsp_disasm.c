@@ -47,9 +47,8 @@
 /* Current instruction */
 static Uint32 cur_inst;
 
-/* precedent Instruction */
-static Uint32 prec_instr_pc;
-static Uint32 prec_number=0;
+/* Previous instruction */
+static Uint32 prev_inst_pc = 0x10000;	/* Init to an invalid value */
 
 static dsp_core_t *dsp_core;
 
@@ -634,6 +633,17 @@ static const char *registers_lmove[8]={
 	"ba"
 };
 
+static int disasm_registers_lmove[8][2]={
+	{DSP_REG_A1,DSP_REG_A0},	/* A10 */
+	{DSP_REG_B1,DSP_REG_B0},	/* B10 */
+	{DSP_REG_X1,DSP_REG_X0},	/* X */
+	{DSP_REG_Y1,DSP_REG_Y0},	/* Y */
+	{DSP_REG_A,DSP_REG_A},		/* A */
+	{DSP_REG_B,DSP_REG_B},		/* B */
+	{DSP_REG_A,DSP_REG_B},		/* AB */
+	{DSP_REG_B,DSP_REG_A}		/* BA */
+};
+
 static const char *ea_names[9]={
 	"(r%d)-n%d",	/* 000xxx */
 	"(r%d)+n%d",	/* 001xxx */
@@ -672,14 +682,10 @@ void dsp56k_disasm(void)
 {
 	Uint32 value;
 
-	if (prec_instr_pc == dsp_core->pc){
-		prec_number++;
+	if (prev_inst_pc == dsp_core->pc){
 		return;
 	}
-	else if (prec_number > 0) {
-		fprintf(stderr,"           Repeated : %d times\n", prec_number);
-		prec_number = 0;
-	}
+	prev_inst_pc = dsp_core->pc;
 
 	cur_inst = read_memory(dsp_core->pc);
 
@@ -701,7 +707,6 @@ void dsp56k_disasm(void)
 			opcodes_alu80ff[value]();
 		}
 	}
-	prec_instr_pc = dsp_core->pc;
 }
 
 void dsp56k_disasm_force_reg_changed(int num_dsp_reg)
@@ -2246,7 +2251,8 @@ static void dsp_pm_4(void)
 		if (cur_inst & (1<<15)) {
 			/* Write D */
 
-			registers_changed[value]=1;
+			registers_changed[disasm_registers_lmove[value][0]]=1;
+			registers_changed[disasm_registers_lmove[value][1]]=1;
 			if (retour) {
 				sprintf(parallelmove_name, "#%s,%s", addr_name, registers_lmove[value]);
 			} else {

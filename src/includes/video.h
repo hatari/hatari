@@ -83,7 +83,8 @@
 #define LINE_SCROLL_1_CYCLE_50	32	/*  1 pixels right "hardware" scrolling */
 #define LINE_LEFT_MID_CYCLE_1	20	/* mid res overscan, shifts display by 0 byte */
 #define LINE_LEFT_MID_CYCLE_2	28	/* mid res overscan, shifts display by 2 bytes */
-#define	LINE_EMPTY_CYCLE_70	28	/* switch to hi/lo will create an empty line */
+#define	LINE_EMPTY_CYCLE_70_STF	28	/* on STF switch to hi/lo will create an empty line */
+#define	LINE_EMPTY_CYCLE_70_STE	(28+4)	/* on STE switch to hi/lo will create an empty line */
 
 /* Bytes for opened left and right border: */
 #define BORDERBYTES_NORMAL	160	/* size of a "normal" line */

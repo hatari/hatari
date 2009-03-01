@@ -222,6 +222,12 @@
 /*			line (else no interrupt should be made) (fix Pompey Pirate Menu #57).	*/
 /* 2009/02/08	[NP]	Handle special case for simultaneous HBL exceptions (fixes flickering in*/
 /*			Monster	Business and Super Monaco GP).					*/
+/* 2009/02/25	[NP]	Ignore other 50/60 Hz switches after display was stopped in the middle	*/
+/*			of the line with a hi/lo switch. Correct missing end of line timer B	*/
+/*			interrupt in that case (fix flickering Dragon Ball part in Blood disk 2	*/
+/*			by Holocaust).								*/
+/* 2008/02/02	[NP]	Added 0 byte line detection in STE mode when switching hi/lo res	*/
+/*			at position 32 (Lemmings screen in Nostalgic-o-demo).			*/
 
 
 
@@ -602,9 +608,21 @@ static void Video_WriteToShifter(Uint8 Byte)
 		LineStartCycle = LINE_START_CYCLE_70;
 	}
 
-	/* Empty line switching res */
+	/* Empty line switching res on STF */
 	else if ( ( nFrameCycles-nLastFrameCycles <= 16 )
-	          && ( nLastCycles == LINE_EMPTY_CYCLE_70 ) )
+	          && ( nLastCycles == LINE_EMPTY_CYCLE_70_STF )
+		  && ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
+		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
+		LineStartCycle = 0;
+		LineEndCycle = 0;
+	}
+
+	/* Empty line switching res on STE (switch is 4 cycle later than on STF) */
+	else if ( ( nFrameCycles-nLastFrameCycles <= 16 )
+	          && ( nLastCycles == LINE_EMPTY_CYCLE_70_STE )
+		  && ( ConfigureParams.System.nMachineType == MACHINE_STE ) )
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
@@ -851,6 +869,11 @@ void Video_Sync_WriteByte(void)
 			/* right border was removed. Keep timer B at pos 460+28 */
 		}
 
+		else if ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_STOP_MIDDLE )
+		{
+			/* Ignore all other 50/60 Hz switches that could occur on this line after */
+			/* display was stopped in the middle of the line. Keep timer B at pos 376+28 */
+		}
 
 		else if ( nLineCycles2 < LineEndCycle )			/* freq changed before the end of the line */
 		{

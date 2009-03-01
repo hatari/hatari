@@ -80,6 +80,11 @@
 # undef ENABLE_SMALL_MEM
 #endif
 
+/* Additional configuration for Visual-C */
+#if defined(_MSC_VER)
+# include "Visual.Studio/VisualStudioFix.h"
+#endif
+
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "hatari"
 
