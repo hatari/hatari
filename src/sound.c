@@ -272,7 +272,7 @@ static void	Sound_GenerateSamples	(void);
 static void	DcAdjuster_Reset(void)
 {
 	int	i;
-	
+
 	for (i=0 ; i<DC_ADJUST_BUFFERLEN ; i++)
 		dc_buffer[i] = 0;
 
@@ -332,7 +332,7 @@ static int	volumetable_get(int i, int j, int k)
 		j = 15;
 	if (k == 16)
 		k = 15;
-  
+
 	return volumetable_original[i + 16 * j + 16 * 16 * k];
 }
 
@@ -394,15 +394,15 @@ static void	interpolate_volumetable(ymu16 *out)
 				i1 = volumetable_get(i, j, k);
 				/* copy value unchanged to new position */
 				volumetable_set(out,i*2, j*2, k*2, i1);
-                
+ 
 				/* interpolate in i direction */
 				i2 = volumetable_get(i + 1, j, k);
 				volumetable_set(out,i*2 + 1, j*2, k*2, volumetable_interpolate(i1, i2));
-                
+
 				/* interpolate in j direction */
 				i2 = volumetable_get(i, j+1, k);
 				volumetable_set(out,i*2, j*2 + 1, k*2, volumetable_interpolate(i1, i2));
-                
+
 				/* interpolate in k direction */
 				i2 = volumetable_get(i, j, k+1);
 				volumetable_set(out,i*2, j*2, k*2+1, volumetable_interpolate(i1, i2));
@@ -410,11 +410,11 @@ static void	interpolate_volumetable(ymu16 *out)
 				/* interpolate in i + j direction */
 				i2 = volumetable_get(i + 1, j + 1, k);
 				volumetable_set(out,i*2 + 1, j*2 + 1, k*2, volumetable_interpolate(i1, i2));
-                
+
 				/* interpolate in i + k direction */
 				i2 = volumetable_get(i + 1, j, k + 1);
 				volumetable_set(out,i*2 + 1, j*2, k*2 + 1, volumetable_interpolate(i1, i2));
-                
+
 				/* interpolate in j + k direction */
 				i2 = volumetable_get(i, j + 1, k + 1);
 				volumetable_set(out,i*2, j*2 + 1, k*2 + 1, volumetable_interpolate(i1, i2));
@@ -472,11 +472,11 @@ static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsign
 {
 	if ( Level )
 	{
-   		int h;
+		int h;
 		int Max = in_5bit[0x7fff];
 		int Center = Level>>1;
-//fprintf ( stderr , "level %d max %d center %d\n" , Level, Max, Center );
-		
+		//fprintf ( stderr , "level %d max %d center %d\n" , Level, Max, Center );
+
 		/* Change the amplitude of the signal to 'level' : [0,max] -> [0,level] */
 		/* Then optionally center the signal around Level/2 */
 		/* This means we go from sthg like [0,65535] to [-32768, 32767] if Level=65535 and DoCenter=TRUE */
@@ -484,12 +484,12 @@ static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsign
 		{
 			int tmp = in_5bit[h], res;
 			res = tmp * Level / Max;
-			
+
 			if ( DoCenter )
 				res -= Center;
 
 			out_5bit[h] = res;
-//fprintf ( stderr , "h %d in %d out %d\n" , h , tmp , res );	
+			//fprintf ( stderr , "h %d in %d out %d\n" , h , tmp , res );
 		}
 	}
 }
@@ -514,13 +514,14 @@ static void	YM2149_EnvBuild ( void )
 	for ( env=0 ; env<16 ; env++ )				/* 16 possible envelopes */
 		for ( block=0 ; block<3 ; block++ )		/* 3 blocks to define an envelope */
 		{
-			switch ( YmEnvDef[ env ][ block ] ) {
+			switch ( YmEnvDef[ env ][ block ] )
+			{
 				case ENV_GODOWN :	vol=31 ; inc=-1 ; break;
 				case ENV_GOUP :		vol=0  ; inc=1 ; break;
 				case ENV_DOWN :		vol=0  ; inc=0 ; break;
 				case ENV_UP :		vol=31 ; inc=0 ; break;
-			}			
-			
+			}
+
 			for ( i=0 ; i<32 ; i++ )		/* 32 volumes per block */
 			{
 				YmEnvWaves[ env ][ block*32 + i ] = YM_MERGE_VOICE ( vol , vol , vol );
@@ -566,16 +567,16 @@ static void	Ym2149_Init(void)
 static void	Ym2149_Reset(void)
 {
 	int	i;
-	
+
 	for ( i=0 ; i<14 ; i++ )
 		Sound_WriteReg ( i , 0 );
 
 	Sound_WriteReg ( 7 , 0xff );
 
 	currentNoise = 0xffff;
-	
+
 	RndRack = 1;
-	
+
 	envShape = 0;
 	envPos = 0;
 
@@ -593,7 +594,7 @@ static void	Ym2149_Reset(void)
 static ymu32	YM2149_RndCompute(void)
 {
 	ymu32	bit;
-		
+
 	bit = (RndRack&1) ^ ((RndRack>>2)&1);
 	RndRack = (RndRack>>1) | (bit<<16);
 	return (bit ? 0 : 0xffff);
@@ -614,7 +615,7 @@ static ymu32	Ym2149_ToneStepCompute(ymu8 rHigh , ymu8 rLow)
 
 	per = rHigh&15;
 	per = (per<<8)+rLow;
-	if (per<=5) 
+	if (per <= 5)
 		return 0;
 
 	step = YM_ATARI_CLOCK;
@@ -730,7 +731,7 @@ static ymsample	YM2149_NextSample(void)
 	posB += stepB;
 	posC += stepC;
 	noisePos += noiseStep;
-	
+
 	envPos += envStep;
 	if ( envPos >= (3*32) << 24 )			/* blocks 0, 1 and 2 were used (envPos 0 to 95) */
 		envPos -= (2*32) << 24;			/* replay/loop blocks 1 and 2 (envPos 32 to 95) */
@@ -828,7 +829,7 @@ void	Sound_WriteReg( int reg , Uint8 data )
 				Vol3Voices |= YmVolume4to5[ SoundRegs[8] ];	/* fixed vol ON */
 			}
 			break;
-		
+
 		case 9:
 			SoundRegs[9] = data & 0x1f;
 			if ( data & 0x10 )
@@ -843,7 +844,7 @@ void	Sound_WriteReg( int reg , Uint8 data )
 				Vol3Voices |= ( YmVolume4to5[ SoundRegs[9] ] ) << 5;	/* fixed vol ON */
 			}
 			break;
-		
+
 		case 10:
 			SoundRegs[10] = data & 0x1f;
 			if ( data & 0x10 )
@@ -890,7 +891,7 @@ void Sound_Init(void)
 {
 	/* Build volume/env tables, ... */
 	Ym2149_Init();
-	
+
 	Sound_Reset();
 }
 
@@ -911,7 +912,7 @@ void Sound_Reset(void)
 	/* Clear cycle counts, buffer index and register '13' flags */
 	Cycles_SetCounter(CYCLES_COUNTER_SOUND, 0);
 	bEnvelopeFreqFlag = FALSE;
-	
+
 	CompleteSndBufIdx = 0;
 	/* We do not start with 0 here to fake some initial samples: */
 	nGeneratedSamples = SoundBufferSize + SAMPLES_PER_FRAME;
@@ -965,10 +966,10 @@ void Sound_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&envStep, sizeof(envStep));
 	MemorySnapShot_Store(&envPos, sizeof(envPos));
 	MemorySnapShot_Store(&envShape, sizeof(envShape));
-	
+
 	MemorySnapShot_Store(&EnvMask3Voices, sizeof(EnvMask3Voices));
 	MemorySnapShot_Store(&Vol3Voices, sizeof(Vol3Voices));
-	
+
 	MemorySnapShot_Store(SoundRegs, sizeof(SoundRegs));
 
 	MemorySnapShot_Store(&YmVolumeMixing, sizeof(YmVolumeMixing));
@@ -1019,16 +1020,16 @@ static void Sound_GenerateSamples(void)
 {
 	int	i;
 	int	idx;
-	
+
 	if (nSamplesToGenerate <= 0)
 		return;
-	
+
 	for (i = 0; i < nSamplesToGenerate; i++)
 	{
 		idx = (ActiveSndBufIdx + i) % MIXBUFFER_SIZE;
 		MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample();
 	}
-	
+
 	DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
 
 	ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
