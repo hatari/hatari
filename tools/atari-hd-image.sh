@@ -44,51 +44,73 @@ if [ \! -z $4 ]; then
 	contentdir=$4
 fi
 
-# temporary files
-tmppart=$diskfile.part
-
-# no leftovers from previous runs?
+# don't overwrite files by accident
 if [ -f $diskfile ]; then
-	toremove="$diskfile"
-else
-	toremove=""
-fi
-if [ -f $tmppart ]; then
-	toremove="$toremove $tmppart"
-fi
-if [ \! -z "$toremove" ]; then
-	echo "ERROR: Files from a previous run detected. To proceed, do:"
-	echo "  rm $toremove"
+	echo "ERROR: given harddisk image already exits. Give another name or remove it:"
+	echo "  rm $diskfile"
 	exit 1
 fi
 
+# temporary files
+tmppart=$diskfile.part
+
+# script exit/error handling
+function exit_cleanup
+{
+	if [ $? -eq 0 ]; then
+		echo "$step) Cleaning up..."
+	else
+		echo
+		echo "ERROR, cleaning up..."
+		echo "rm -f $diskfile"
+		rm -f $diskfile
+	fi
+	echo "rm -f $tmppart"
+	rm -f $tmppart
+	echo "Done."
+}
+trap exit_cleanup EXIT
+
+echo
+step=1
 # create disk image
-echo "Creating disk image..."
+echo "$step) Creating disk image..."
+echo "dd if=/dev/zero of=$diskfile bs=1M count=$disksize"
 dd if=/dev/zero of=$diskfile bs=1M count=$disksize
 
-# create DOS partition table/partition to image
-echo "Creating partition table to disk image..."
-parted $diskfile mklabel msdos
-# create fat16 primary partition and mark it bootable
-parted $diskfile mkpart primary fat16 0 $disksize
-parted $diskfile set 1 boot on
+echo
+step=$(($step+1))
+# create DOS partition table and a bootable primary FAT16 partition to image
+echo "$step) Creating partition table + primary partition to the disk image..."
+echo "parted $diskfile mktable msdos mkpart primary fat16 0 $disksize set 1 boot on"
+parted $diskfile mktable msdos mkpart primary fat16 0 $disksize set 1 boot on
 
+echo
+step=$(($step+1))
 # create an Atari compatible DOS partition that fits to disk
 # size is in sectors, mkdosfs takes in kilobytes
-echo "Creating Atari partition..."
+echo "$step) Creating Atari partition..."
 size=$(parted $diskfile unit s print | awk '/ 1 /{print $4}' | tr -d s)
+echo "mkdosfs -A -n $partname -C $tmppart $(($size/2))"
 mkdosfs -A -n $partname -C $tmppart $(($size/2))
 
 if [ \! -z $contentdir ]; then
+	echo
+	step=$(($step+1))
 	# copy contents of given directory to the new partition
-	echo "Copying the initial content to the partition..."
+	echo "$step) Copying the initial content to the partition..."
+	echo "MTOOLS_NO_VFAT=1 mcopy -i $tmppart -spmv $contentdir/* ::"
 	MTOOLS_NO_VFAT=1 mcopy -i $tmppart -spmv $contentdir/* ::
 fi
 
+echo
+step=$(($step+1))
 # copy the partition into disk
-echo "Copying the partition to disk image..."
+echo "$step) Copying the partition to disk image..."
 start=$(parted $diskfile unit s print | awk '/ 1 /{print $2}' | tr -d s)
+echo "dd if=$tmppart of=$diskfile bs=512 seek=$start count=$size"
 dd if=$tmppart of=$diskfile bs=512 seek=$start count=$size
-rm $tmppart
 
-echo "Done."
+echo
+step=$(($step+1))
+# cleanup is done by the exit_handler

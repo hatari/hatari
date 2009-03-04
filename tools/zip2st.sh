@@ -48,15 +48,33 @@ if [ -f "$STFILE" ]; then
 	exit 1
 fi
 
+step=0
 TEMPDIR=`mktemp -d` || exit 2
 echo "Converting" $ZIPFILE "->" $TEMPDIR "->" $STFILE
 
+# script exit/error handling
+function exit_cleanup
+{
+	if [ $? -eq 0 ]; then
+		echo "$step) Cleaning up temporary files..."
+	else
+		echo
+		echo "ERROR, cleaning up..."
+	fi
+	echo "rm -rv $TEMPDIR"
+	rm -rv $TEMPDIR
+	echo "Done."
+}
+trap exit_cleanup EXIT
+
 echo
-step=1
+step=$(($step+1))
 echo "$step) Unzipping..."
+echo "unzip $ZIPFILE -d $TEMPDIR"
 unzip $ZIPFILE -d $TEMPDIR || exit 2
 
 # .zip files created with STZip sometimes have wrong access rights...
+echo "chmod -R u+rw $TEMPDIR/*"
 chmod -R u+rw $TEMPDIR/*
 
 WORKINGDIR=`pwd`
@@ -87,21 +105,25 @@ if [ $disksize -gt 0 ]; then
 	echo
 	step=$(($step+1))
 	echo "$step) Creating $disksize KB disk image..."
+	echo "dd if=/dev/zero of=$STFILE bs=1024 count=$disksize"
 	dd if=/dev/zero of=$STFILE bs=1024 count=$disksize
 	
 	echo
 	step=$(($step+1))
 	echo "$step) Formating disk image..."
 	case $disksize in
-		360) mformat -i $STFILE -t 80 -h 1 -n 9 -a :: ;;
-		400) mformat -i $STFILE -t 80 -h 1 -n 10 -a :: ;;
-		800) mformat -i $STFILE -t 80 -h 2 -n 10 -a :: ;;
-		*) mformat -i $STFILE -f $disksize -a :: ;;
+		360) format="-t 80 -h 1 -n 9" ;;
+		400) format="-t 80 -h 1 -n 10" ;;
+		800) format="-t 80 -h 2 -n 10" ;;
+		*)   format="-f $disksize" ;;
 	esac
+	echo "mformat -a $format -i $STFILE ::"
+	mformat -a $format -i $STFILE ::
 	
 	echo
 	step=$(($step+1))
 	echo "$step) Copying data to disk image..."
+	echo "MTOOLS_NO_VFAT=1 mcopy -i $STFILE -spmv $TEMPDIR/* ::"
 	MTOOLS_NO_VFAT=1 mcopy -i $STFILE -spmv $TEMPDIR/* ::
 else
 	echo "ERROR: zip contents don't fit to a floppy image ($size > 2880 KB)."
@@ -109,7 +131,4 @@ fi
 
 echo
 step=$(($step+1))
-echo "$step) Cleaning up temporary files..."
-rm -rv $TEMPDIR
-
-echo "Done."
+# do cleanup in exit handler
