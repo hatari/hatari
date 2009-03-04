@@ -55,13 +55,24 @@ extern	FILE *TraceFile;
 // Windows Header Files:
 #include <windows.h>
 
-extern "C" 
+#ifdef __cplusplus
+extern "C"
 {
-	int SDL_main(int argc, char *argv[]);
-}
+#endif
+
+extern int SDL_main(int argc, char *argv[]);
+
+int main(int argc, char *argv[])
+{
+	return SDL_main(argc,argv);
+}	
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                      LPSTR lpCmdLine, int nCmdShow)
 {
 	return SDL_main(1,&lpCmdLine);
 }
+
+#ifdef __cplusplus
+}
+#endif
