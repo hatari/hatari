@@ -10,6 +10,7 @@ Contents:
   - Non-working free/shareware GEM/mono Atari ST games
   - Working free/shareware Atari STE programs
   - "Almost" working color STE games
+  - Working TT specific demos
   - Working free/shareware Falcon demos, games and applications
 
 
@@ -304,7 +305,7 @@ Demos:
 - Core Flakes (by New Core)
 - Dynamite (by Unit 17)
 - E605 (by Light)
-- Extacy (by ICE), breaks at the end
+- Ecstacy A (by ICE), breaks at the end
 - French Kiss (by DHS)
 - Illusion (by Next)
 - Gobi Toons (by Dune)
@@ -313,7 +314,7 @@ Demos:
 - Madness (by Cream)
 - Mathematica (by Aura)
 - More or Less Zero (by DHS)
-- Maxymizer compo 2006 (by gwem)
+- Maxymizer compo 2006 (by gwEm)
 - Meshake (by Spice Boys)
 - Mind Rewind (by Reservoir Gods)
 - MovieSTE (by Tony Barker)
@@ -326,6 +327,7 @@ Demos:
 - STE slideshow (by DHS)
 - STE Wars (by Tony Barker)
 - Vision (by POV)
+- XiTEC Presentation (by Omega)
 
 Color games:
 - Alien Blast (demo)
@@ -374,11 +376,21 @@ think are preventing these from working properly).
 - Pooz (all graphics don't show)
 
 
+Working TT specific demos
+-------------------------
+
+- 256mbrot, Glasstro, Orion-B, Yabt (TT/Falcon intros by ray//.tSCc)
+- 4getful (by gwEm, 4KB intro TT-version)
+- Adebug 3DTT demo (by Brainstorm)
+- TT highres slideshow (by .tSCc)
+- XiTEC presentation (by Omega)
+
+
 Working free/shareware Falcon demos, games and applications
 -----------------------------------------------------------
 
-Missing Videl support in EmuTOS is probably the reason why many
-of the demos and games get wrong video made and their graphics
+Missing Videl and DSP support in EmuTOS is probably the reason why
+many of the demos and games get wrong video made and their graphics
 look completely broken under EmuTOS.  Following Falcon only
 demos, games and apps work (mostly) fine though.
 
