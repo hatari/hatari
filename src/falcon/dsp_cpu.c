@@ -1096,84 +1096,84 @@ static void dsp_ccr_zero(Uint32 *reg0, Uint32 *reg1, Uint32 *reg2)
 #if defined(DSP_DISASM) && (DSP_DISASM_MEM==1)
 static Uint32 read_memory_disasm(int space, Uint16 address)
 {
-	switch(space) {
-		case DSP_SPACE_X:
-		case DSP_SPACE_Y:
-			/* Internal RAM? */
-			if (address<0x100) {
-				return dsp_core->ramint[space][address] & BITMASK(24);
-			}
-			/* Internal ROM? */
-			if ((dsp_core->registers[DSP_REG_OMR] & (1<<DSP_OMR_DE)) &&
-				(address<0x200)) {
-				return dsp_core->rom[space][address] & BITMASK(24);
-			}
-			/* Peripheral address ? */
-			if (address >= 0xffc0) {
-				return dsp_core->periph[space][address-0xffc0] & BITMASK(24);
-			}
-			/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
-			if (space == DSP_SPACE_X) {
-				address += DSP_RAMSIZE>>1;
-			}
-			/* Falcon: External RAM, map X,Y to P */
-			space = DSP_SPACE_P;
-			break;
-		case DSP_SPACE_P:
-			/* Internal RAM? */
-			if (address<0x200) {
-				return dsp_core->ramint[DSP_SPACE_P][address] & BITMASK(24);
-			}
-			break;
+	/* Internal RAM ? */
+	if (address<0x100) {
+		return dsp_core->ramint[space][address] & BITMASK(24);
 	}
 
-	/* External RAM, mask address to available ram size */
-	return dsp_core->ram[space][address & (DSP_RAMSIZE-1)] & BITMASK(24);
+	if (space==DSP_SPACE_P) {
+		return read_memory_p(address);
+	}
+
+	/* Internal ROM? */
+	if ((dsp_core->registers[DSP_REG_OMR] & (1<<DSP_OMR_DE)) &&
+		(address<0x200)) {
+		return dsp_core->rom[space][address] & BITMASK(24);
+	}
+
+	/* Peripheral address ? */
+	if (address >= 0xffc0) {
+		return dsp_core->periph[space][address-0xffc0] & BITMASK(24);
+	}
+
+	/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
+	if (space == DSP_SPACE_X) {
+		address += DSP_RAMSIZE>>1;
+	}
+
+	/* Falcon: External RAM, finally map X,Y to P */
+	return dsp_core->ram[DSP_SPACE_P][address & (DSP_RAMSIZE-1)] & BITMASK(24);
 }
 #endif
 
 static inline Uint32 read_memory_p(Uint16 address)
 {
-	/* Internal RAM */
+	/* Internal RAM ? */
 	if (address<0x200) {
 		return dsp_core->ramint[DSP_SPACE_P][address] & BITMASK(24);
 	}
+
 	/* External RAM, mask address to available ram size */
 	return dsp_core->ram[DSP_SPACE_P][address & (DSP_RAMSIZE-1)] & BITMASK(24);
 }
 
 static Uint32 read_memory(int space, Uint16 address)
 {
-	if (space == DSP_SPACE_P) {
-		return read_memory_p(address);
-	}
-	/* Internal RAM ?*/
+	/* Internal RAM ? */
 	if (address<0x100) {
 		return dsp_core->ramint[space][address] & BITMASK(24);
 	}
+
+	if (space==DSP_SPACE_P) {
+		return read_memory_p(address);
+	}
+
 	/* Internal ROM ?*/
 	if ((dsp_core->registers[DSP_REG_OMR] & (1<<DSP_OMR_DE)) &&
-	    (address<0x200)) {
+		(address<0x200)) {
 		return dsp_core->rom[space][address] & BITMASK(24);
 	}
+
 	/* Peripheral address ? */
 	if (address >= 0xffc0) {
 		Uint32 value;
-		
+
 		dsp_core->lockMutex(dsp_core);
-		value = dsp_core->periph[space][address-0xffc0] & BITMASK(24);
 		if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_HOST_HRX)) {
 			dsp_core_hostport_dspread(dsp_core);
 		}
+		value = dsp_core->periph[space][address-0xffc0] & BITMASK(24);
 		dsp_core->unlockMutex(dsp_core);
-		
+
 		return value;
 	}
+
 	/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
 	if (space == DSP_SPACE_X) {
 		address += DSP_RAMSIZE>>1;
 	}
-	/* Falcon: External RAM, map X,Y to P */
+
+	/* Falcon: External RAM, finally map X,Y to P */
 	return dsp_core->ram[DSP_SPACE_P][address & (DSP_RAMSIZE-1)] & BITMASK(24);
 }
 
@@ -1182,13 +1182,14 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 {
 	value &= BITMASK(24);
 
+	/* Internal RAM ? */
+	if (address<0x100) {
+		dsp_core->ramint[space][address] = value;
+		return;
+	}
+
 	switch(space) {
 		case DSP_SPACE_X:
-			/* Internal RAM ? */
-			if (address<0x100) {
-				dsp_core->ramint[DSP_SPACE_X][address] = value;
-				return;
-			}
 			/* Internal ROM ?*/
 			if ((dsp_core->registers[DSP_REG_OMR] & (1<<DSP_OMR_DE)) &&
 				(address<0x200)) {
@@ -1201,6 +1202,7 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 				switch(address-0xffc0) {
 					case DSP_HOST_HTX:
 						dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX] = value;
+
 						dsp_core_hostport_dspwrite(dsp_core);
 						break;
 					case DSP_HOST_HCR:
@@ -1222,17 +1224,9 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 				return;
 			}
 			/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
-			if (space == DSP_SPACE_X) {
-				address += DSP_RAMSIZE>>1;
-			}
-			/* Falcon: External RAM, map X to P */
+			address += DSP_RAMSIZE>>1;
 			break;
 		case DSP_SPACE_Y:
-			/* Internal RAM ? */
-			if (address<0x100) {
-				dsp_core->ramint[DSP_SPACE_Y][address] = value;
-				return;
-			}
 			/* Internal ROM ?*/
 			if ((dsp_core->registers[DSP_REG_OMR] & (1<<DSP_OMR_DE)) &&
 				(address<0x200)) {
@@ -1244,10 +1238,9 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 				dsp_core->periph[DSP_SPACE_Y][address-0xffc0] = value;
 				return;
 			}
-			/* Falcon: External RAM, map Y to P */
 			break;
 		case DSP_SPACE_P:
-			/* Internal RAM ?*/
+			/* Internal RAM ? */
 			if (address<0x200) {
 				dsp_core->ramint[DSP_SPACE_P][address] = value;
 				return;
@@ -1255,7 +1248,7 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 			break;
 	}
 
-	/* External RAM, mask address to available ram size */
+	/* Falcon: External RAM, map X,Y to P */
 	dsp_core->ram[DSP_SPACE_P][address & (DSP_RAMSIZE-1)] = value;
 }
 
