@@ -881,14 +881,14 @@ static void dsp_postexecute_interrupts(void)
 /* Host interface interrupts */
 static Uint32 dsp_hi_interrupts(void)
 {
-	Uint32 ipl_to_raise = 99;
+	Uint32 host_hcr = dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR];
+	Uint32 host_hsr = dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR];
 	Uint32 ipl_hi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>10) & BITMASK(2);
 
-	/* Host command interrupt */
-	if ( (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HCIE)) &&
-	     (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HCP)))
+	/* Host command, interrupt p:((hostport[CPU_HOST_CVR] & 31)<<1) */
+	if ((host_hcr & (1<<DSP_HOST_HCR_HCIE)) &&
+	    (host_hsr & (1<<DSP_HOST_HSR_HCP)))
 	{
-		/* Raise interrupt p:0x0024 */
 		/* Clear HC and HCP interrupt */
 		dsp_core->lockMutex(dsp_core);
 		dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff - (1<<DSP_HOST_HSR_HCP);
@@ -897,106 +897,110 @@ static Uint32 dsp_hi_interrupts(void)
 
 		dsp_core->interrupt_instr_fetch = dsp_core->hostport[CPU_HOST_CVR] & BITMASK(5);
 		dsp_core->interrupt_instr_fetch *= 2;	
-		ipl_to_raise = ipl_hi;
 #if DSP_DISASM_INTER
 		fprintf(stderr, "Dsp: Interrupt: Host command %06x\n", dsp_core->interrupt_instr_fetch);
 #endif
+		return ipl_hi;
 	}
 
-	/* Host Receive Data Interrupt */
-	else if ( (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) &&
-		  (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HRDF)))
+	/* Host receive, interrupt p:0x0020 */
+	if ((host_hcr & (1<<DSP_HOST_HCR_HRIE)) &&
+	    (host_hsr & (1<<DSP_HOST_HSR_HRDF)))
 	{
-		/* Raise interrupt p:0x0020 */
+		dsp_core->lockMutex(dsp_core);
+		dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff-(1<<DSP_HOST_HSR_HRDF);
+		dsp_core->unlockMutex(dsp_core);
+
 		dsp_core->interrupt_instr_fetch = 0x0020;
-		ipl_to_raise = ipl_hi;
 #if DSP_DISASM_INTER
 		fprintf(stderr, "Dsp: Interrupt: Host receive\n");
 #endif
+		return ipl_hi;
 	}
 
-	/* Host Transmit Data Interrupt */
-	else if ( (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HTIE)) &&
-		  ((dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] & (1<<DSP_HOST_HSR_HTDE))==0))
+	/* Host transmit, interrupt p:0x0022 */
+	if ((host_hcr & (1<<DSP_HOST_HCR_HTIE)) &&
+	    ((host_hsr & (1<<DSP_HOST_HSR_HTDE))==0))
 	{
-		/* Raise interrupt p:0x0022 */
+		dsp_core->lockMutex(dsp_core);
+		dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff-(1<<DSP_HOST_HSR_HTDE);
+		dsp_core->unlockMutex(dsp_core);
+
 		dsp_core->interrupt_instr_fetch = 0x0022;
-		ipl_to_raise = ipl_hi;
 #if DSP_DISASM_INTER
 		fprintf(stderr, "Dsp: Interrupt: more Host transmit\n");
 #endif
+		return ipl_hi;
 	}
 
-	return ipl_to_raise;
+	return 99;
 }
 
 /* SSI interface interrupts */
 static Uint32 dsp_ssi_interrupts(void)
 {
-	Uint32 ipl_to_raise = 99;
-	Uint32 ipl_ssi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>12) & BITMASK(2);
-
+	Uint32 ssi_crb = dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB];
+	Uint32 ssi_sr  = dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR];
+  	Uint32 ipl_ssi = (dsp_core->periph[DSP_SPACE_X][DSP_IPR]>>12) & BITMASK(2);
+	const Uint32 ssi_sr_rdf_roe_mask = (1<<DSP_SSI_SR_RDF)|(1<<DSP_SSI_SR_ROE);
+	const Uint32 ssi_sr_rdf1_roe1 = (1<<DSP_SSI_SR_RDF)|(1<<DSP_SSI_SR_ROE);
+	const Uint32 ssi_sr_rdf1_roe0 = (1<<DSP_SSI_SR_RDF)|(0<<DSP_SSI_SR_ROE);
+	const Uint32 ssi_sr_tdf_tue_mask = (1<<DSP_SSI_SR_TDF)|(1<<DSP_SSI_SR_TUE);
+	const Uint32 ssi_sr_tdf1_tue1 = (1<<DSP_SSI_SR_TDF)|(1<<DSP_SSI_SR_TUE);
+	const Uint32 ssi_sr_tdf1_tue0 = (1<<DSP_SSI_SR_TDF)|(0<<DSP_SSI_SR_TUE);
+  
 	/* SSI RX Data with Exception Interrupt */
-      	if (
-		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RIE)) &&
-		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]  & (1<<DSP_SSI_SR_RDF))  &&
-		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]  & (1<<DSP_SSI_SR_ROE))
-		) {
+    	if ((ssi_crb & (1<<DSP_SSI_CRB_RIE)) &&
+	    ((ssi_sr & ssi_sr_rdf_roe_mask) == ssi_sr_rdf1_roe1))
+	{
 		/* Raise interrupt p:0x000e */
 		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_ROE);
 		/* TODO : read RX to clear pending interrupt ? */
 		dsp_core->interrupt_instr_fetch = 0x000e;
-		ipl_to_raise = ipl_ssi;
-
 #if DSP_DISASM_INTER
 		fprintf(stderr, "Dsp: Interrupt: SSI RX data with exception\n");
 #endif
+		return ipl_ssi;
 	}
 
 	/* SSI RX Data Interrupt */
-      	else if (
-		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RIE)) &&
-		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]  & (1<<DSP_SSI_SR_RDF))  &&
-		((dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_ROE)) == 0)
-		) {
+	if ((ssi_crb & (1<<DSP_SSI_CRB_RIE)) &&
+	    ((ssi_sr & ssi_sr_rdf_roe_mask) == ssi_sr_rdf1_roe0))
+	{
 		/* Raise interrupt p:0x000c */
 		/* TODO : read RX to clear pending interrupt ? */
 		dsp_core->interrupt_instr_fetch = 0x000c;
-		ipl_to_raise = ipl_ssi;
 #if DSP_DISASM_INTER
 		fprintf(stderr, "Dsp: Interrupt: SSI RX data\n");
 #endif
+		return ipl_ssi;
 	}
 
 	/* SSI TX Data with Exception Interrupt */
-      	else if (
-		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_TIE)) &&
-		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]  & (1<<DSP_SSI_SR_TDF))  &&
-		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]  & (1<<DSP_SSI_SR_TUE)) 
-		) {
+	if ((ssi_crb & (1<<DSP_SSI_CRB_TIE)) &&
+	    ((ssi_sr & ssi_sr_tdf_tue_mask) == ssi_sr_tdf1_tue1))
+	{
 		/* Raise interrupt p:0x0012 */
 		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TUE);
 		/* TODO : write to TX or TSR to clear pending interrupt ? */
 		dsp_core->interrupt_instr_fetch = 0x0012;
-		ipl_to_raise = ipl_ssi;
 #if DSP_DISASM_INTER
 		fprintf(stderr, "Dsp: Interrupt: SSI TX data with exception\n");
 #endif
+		return ipl_ssi;
 	}
 
 	/* SSI TX Data Interrupt */
-      	else if (
-		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_TIE)) &&
-		(dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]  & (1<<DSP_SSI_SR_TDF))  &&
-		((dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_TUE)) == 0)
-		) {
+	if ((ssi_crb & (1<<DSP_SSI_CRB_TIE)) &&
+	    ((ssi_sr & ssi_sr_tdf_tue_mask) == ssi_sr_tdf1_tue0))
+	{
 		/* Raise interrupt p:0x0010 */
 		/* TODO : write to TX or TSR to clear pending interrupt ? */
 		dsp_core->interrupt_instr_fetch = 0x0010;
-		ipl_to_raise = ipl_ssi;
+		return ipl_ssi;
 	}
 
-	return ipl_to_raise;
+	return 99; /* ipl_to_raise */
 }
 
 /**********************************
