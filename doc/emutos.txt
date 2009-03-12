@@ -188,6 +188,7 @@ Color games:
 - Yak (4KB gridrunner)
 
 GEM games:
+- 4 Gewinnt (Connect four)*
 - Ballerburg*
 - Biglife*
 - Daleks*
