@@ -6,7 +6,7 @@
 
   Reset emulation state.
 */
-const char Reset_rcsid[] = "Hatari $Id: reset.c,v 1.29 2008-05-25 19:58:56 thothy Exp $";
+const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"

@@ -21,7 +21,7 @@
   TRACK 2, SIDE 0
   TRACK 2, SIDE 1
 */
-const char ST_rcsid[] = "Hatari $Id: st.c,v 1.10 2008-05-03 18:58:22 thothy Exp $";
+const char ST_fileid[] = "Hatari st.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "file.h"

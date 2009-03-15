@@ -6,7 +6,7 @@
  
   A file selection dialog for the graphical user interface for Hatari.
 */
-const char DlgFileSelect_rcsid[] = "Hatari $Id: dlgFileSelect.c,v 1.25 2008-11-18 20:10:14 eerot Exp $";
+const char DlgFileSelect_fileid[] = "Hatari dlgFileSelect.c : " __DATE__ " " __TIME__;
 
 #include <SDL.h>
 #include <sys/stat.h>

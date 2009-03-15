@@ -103,7 +103,7 @@
 
 
 
-const char PSG_rcsid[] = "Hatari $Id: psg.c,v 1.34 2008/11/03 20:46:05 thothy Exp $";
+const char PSG_fileid[] = "Hatari psg.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"

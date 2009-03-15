@@ -16,8 +16,7 @@
 /*			(e.g. move.b a1,(a0) ($1089)) (fix Blood Money on Superior 65)			*/
 
 
-
-const char ReadCpu_rcsid[] = "Hatari $Id: readcpu.c,v 1.9 2008-04-27 11:22:38 npomarede Exp $";
+const char ReadCpu_fileid[] = "Hatari readcpu.c : " __DATE__ " " __TIME__;
 
 #include <ctype.h>
 #include <string.h>

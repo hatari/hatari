@@ -6,7 +6,7 @@
 
   YM File output, for use with STSound etc...
 */
-const char YMFormat_rcsid[] = "Hatari $Id: ymFormat.c,v 1.21 2008-07-27 18:26:19 npomarede Exp $";
+const char YMFormat_fileid[] = "Hatari ymFormat.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"

@@ -6,7 +6,7 @@
 
   scandir function for BEOS, SunOS etc..
 */
-const char ScanDir_rcsid[] = "Hatari $Id: scandir.c,v 1.9 2008-05-04 20:03:34 thothy Exp $";
+const char ScanDir_fileid[] = "Hatari scandir.c : " __DATE__ " " __TIME__;
 
 #include <string.h>
 #include <stdio.h>

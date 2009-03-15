@@ -5,7 +5,7 @@
   your option any later version. Read the file gpl.txt for details.
 
   Code to draw statusbar area, floppy leds etc.
-  
+
   Use like this:
   - Before screen surface is (re-)created Statusbar_SetHeight()
     has to be called with the new screen height. Add the returned
@@ -25,19 +25,12 @@
   - If other information shown by Statusbar (TOS version etc) changes,
     call Statusbar_UpdateInfo()
 
-  CHANGES
-  2008-10-25:
-  - In fullscreen video mode may not match the requested size.
-    Disable statusbar if smaller, re-calculate vars if larger.
-  2008-10-26:
-  - Fix message expire & timings
-
   TODO:
   - re-calculate colors on each update to make sure they're
     correct in Falcon & TT 8-bit palette modes?
   - call Statusbar_AddMessage() from log.c?
 */
-const char statusbar_rcsid[] = "$Id: statusbar.c,v 1.15 2008-10-26 22:39:50 eerot Exp $";
+const char Statusbar_fileid[] = "Hatari statusbar.c : " __DATE__ " " __TIME__;
 
 #include <assert.h>
 #include "main.h"

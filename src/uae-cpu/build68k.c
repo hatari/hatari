@@ -10,7 +10,7 @@
  * This file is distributed under the GNU Public License, version 2 or at
  * your option any later version. Read the file gpl.txt for details.
  */
-const char Build68k_rcsid[] = "Hatari $Id: build68k.c,v 1.7 2007-12-23 18:54:50 thothy Exp $";
+const char Build68k_fileid[] = "Hatari build68k.c : " __DATE__ " " __TIME__;
 
 #include <assert.h>
 #include <ctype.h>

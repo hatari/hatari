@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgRom_rcsid[] = "Hatari $Id: dlgRom.c,v 1.10 2008-06-08 16:07:40 eerot Exp $";
+const char DlgRom_fileid[] = "Hatari dlgRom.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"

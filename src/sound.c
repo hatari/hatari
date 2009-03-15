@@ -65,7 +65,7 @@
 
 
 
-const char Sound_rcsid[] = "Hatari $Id: sound.c,v 1.53 2008-11-23 11:49:03 npomarede Exp $";
+const char Sound_fileid[] = "Hatari sound.c : " __DATE__ " " __TIME__;
 
 #include <SDL_types.h>
 

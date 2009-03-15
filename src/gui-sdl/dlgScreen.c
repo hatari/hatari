@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgScreen_rcsid[] = "Hatari $Id: dlgScreen.c,v 1.25 2008-11-16 10:23:44 thothy Exp $";
+const char DlgScreen_fileid[] = "Hatari dlgScreen.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"

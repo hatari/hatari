@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgKeyboard_rcsid[] = "Hatari $Id: dlgKeyboard.c,v 1.13 2008-11-15 20:03:05 thothy Exp $";
+const char DlgKeyboard_fileid[] = "Hatari dlgKeyboard.c : " __DATE__ " " __TIME__;
 
 #include <unistd.h>
 

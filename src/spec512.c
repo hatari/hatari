@@ -56,7 +56,7 @@
 /*			bus (cpu, blitter).						*/
 
 
-const char Spec512_rcsid[] = "Hatari $Id: spec512.c,v 1.31 2008-12-14 18:02:03 npomarede Exp $";
+const char Spec512_fileid[] = "Hatari spec512.c : " __DATE__ " " __TIME__;
 
 #include <SDL_byteorder.h>
 

@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 */
-const char DlgNewDisk_rcsid[] = "Hatari $Id: dlgNewDisk.c,v 1.3 2008-11-18 20:12:03 eerot Exp $";
+const char DlgNewDisk_fileid[] = "Hatari dlgNewDisk.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"

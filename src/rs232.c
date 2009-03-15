@@ -13,7 +13,7 @@
   the bytes into an input buffer. This method fits in with the internet code
   which also reads data into a buffer.
 */
-const char RS232_rcsid[] = "Hatari $Id: rs232.c,v 1.33 2008-06-16 19:22:37 thothy Exp $";
+const char RS232_fileid[] = "Hatari rs232.c : " __DATE__ " " __TIME__;
 
 #include <config.h>
 
