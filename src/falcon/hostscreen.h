@@ -48,9 +48,7 @@ extern void HostScreen_toggleFullScreen(void);
 extern bool HostScreen_renderBegin(void);
 extern void HostScreen_renderEnd(void);
 extern void HostScreen_update1(bool forced);
-extern void HostScreen_update0(void);
 extern Uint32 HostScreen_getBpp(void);	/* Bytes per pixel */
-extern Uint32 HostScreen_getBitsPerPixel(void);
 extern Uint32 HostScreen_getPitch(void);
 extern Uint32 HostScreen_getWidth(void);
 extern Uint32 HostScreen_getHeight(void);
