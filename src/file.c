@@ -102,6 +102,15 @@ static bool File_IsRootFileName(const char *pszFileName)
 		return TRUE;
 #endif
 
+#ifdef GEKKO
+	if (strlen(pszFileName) > 2 && pszFileName[2] == ':')	// sd:
+		return TRUE;
+	if (strlen(pszFileName) > 3 && pszFileName[3] == ':')	// fat:
+		return TRUE;
+	if (strlen(pszFileName) > 4 && pszFileName[4] == ':')	// fat3:
+		return TRUE;
+#endif
+
 	return FALSE;
 }
 
