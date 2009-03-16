@@ -14,6 +14,7 @@ config.h
 configure
 install-sh
 hatari.1.gz
+missing
 
 src/*.o
 src/Makefile.dep
