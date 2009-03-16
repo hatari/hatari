@@ -183,7 +183,7 @@ AC_FUNC_STAT
 AC_CHECK_FUNCS([getcwd memmove memset mkdir rmdir strcasecmp \
   strchr strerror strncasecmp strrchr strstr],,
   [AC_MSG_ERROR([A necessary function could not be found.])])
-AC_CHECK_FUNCS([cfmakeraw setenv])
+AC_CHECK_FUNCS([cfmakeraw setenv select])
 AC_CHECK_FUNCS([posix_memalign memalign valloc])
 
 AC_MSG_CHECKING([for unix domain sockets])

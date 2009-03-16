@@ -61,6 +61,13 @@
 # define HAVE_SETENV 1
 #endif
 
+/* Define to 1 if you have the `select' function. */
+#if defined(GEKKO)
+# undef HAVE_SELECT
+#else
+# define HAVE_SELECT 1
+#endif
+
 /* Define to 1 if you have unix domain sockets */
 #if defined(WIN32) || defined(__CEGCC__)
 # undef  HAVE_UNIX_DOMAIN_SOCKETS

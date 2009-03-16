@@ -593,6 +593,7 @@ FILE *File_Close(FILE *fp)
  */
 bool File_InputAvailable(FILE *fp)
 {
+#if HAVE_SELECT
 	fd_set rfds;
 	struct timeval tv;
 	int fh;
@@ -614,6 +615,7 @@ bool File_InputAvailable(FILE *fp)
 
 	if (ret > 0)
 		return true;    /* Data available */
+#endif
 
 	return false;
 }
