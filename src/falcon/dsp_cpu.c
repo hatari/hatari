@@ -54,7 +54,6 @@
 
 #define INTERRUPT_HI		0x0
 #define INTERRUPT_SSI		0x1
-#define INTERRUPT_SCI		0x2
 
 /**********************************
  *	Variables
@@ -637,9 +636,6 @@ void dsp56k_execute_instruction(void)
 {
 	Uint32 value;
 
-	/* bad hack : SSI simulate */
-	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<2);
-
 #ifdef DSP_DISASM
 #if DSP_DISASM_REG
 	dsp56k_disasm_reg_read();
@@ -768,7 +764,7 @@ static void dsp_postexecute_interrupts(void)
 
 	/* A fast interrupt can not be interrupted. */
 	if (dsp_core->interrupt_state == DSP_INTERRUPT_FAST) {
-		/* Did we execute the 2 interruption instructions of the vector ? */
+		/* Did we execute the 2-inst interrupt of the vector ? */
 		if (dsp_core->pc >= dsp_core->interrupt_instr_fetch+2) {
 			dsp_core->interrupt_instr_fetch = -1;
 			dsp_core->interrupt_state = DSP_INTERRUPT_NONE;
@@ -810,7 +806,7 @@ static void dsp_postexecute_interrupts(void)
 
 		/* If current ipl level=3, peripheral interruptions are masked */
 /*
-		if (ipl==3){
+		if (ipl==3) {
 			return;
 		}
 */
@@ -1397,34 +1393,40 @@ static void dsp_update_rn_bitreverse(Uint32 numreg)
 static void dsp_update_rn_modulo(Uint32 numreg, Sint16 modifier)
 {
 	Uint16 bufsize, modulo, lobound, hibound, bufmask;
-	Sint16 r_reg;
+	Sint16 r_reg, orig_modifier=modifier;
 
-	modulo = (dsp_core->registers[DSP_REG_M0+numreg]+1) & BITMASK(16);
+	modulo = dsp_core->registers[DSP_REG_M0+numreg]+1;
 	bufsize = 1;
 	bufmask = BITMASK(16);
 	while (bufsize < modulo) {
 		bufsize <<= 1;
 		bufmask <<= 1;
 	}
-	bufmask &= BITMASK(16);
 	
 	lobound = dsp_core->registers[DSP_REG_R0+numreg] & bufmask;
 	hibound = lobound + modulo - 1;
 
-	r_reg = (Sint16) (dsp_core->registers[DSP_REG_R0+numreg] & BITMASK(16));
-	while (modifier>=bufsize) {
-		r_reg += bufsize;
-		modifier -= bufsize;
+	r_reg = (Sint16) dsp_core->registers[DSP_REG_R0+numreg];
+
+	if (orig_modifier>modulo) {
+		while (modifier>bufsize) {
+			r_reg += bufsize;
+			modifier -= bufsize;
+		}
+		while (modifier<-bufsize) {
+			r_reg -= bufsize;
+			modifier += bufsize;
+		}
 	}
-	while (modifier<=-bufsize) {
-		r_reg -= bufsize;
-		modifier += bufsize;
-	}
+
 	r_reg += modifier;
-	if (r_reg>hibound) {
-		r_reg -= modulo;
-	} else if (r_reg<lobound) {
-		r_reg += modulo;
+
+	if (orig_modifier!=modulo) {
+		if (r_reg>hibound) {
+			r_reg -= modulo;
+		} else if (r_reg<lobound) {
+			r_reg += modulo;
+		}	
 	}
 
 	dsp_core->registers[DSP_REG_R0+numreg] = ((Uint32) r_reg) & BITMASK(16);
@@ -2383,8 +2385,8 @@ static void dsp_movec(void)
 {
 	Uint32 value;
 
-	value = (cur_inst>>14) & 0x05;     // Keep bit 14 and 16
-	value |= (cur_inst>>6) & (1<<1);   // Add bit 7
+	value = (cur_inst>>14) & 0x05;     
+	value |= (cur_inst>>6) & (1<<1);
 
 	opcodes_movec[value]();
 }
@@ -3647,7 +3649,7 @@ static Uint16 dsp_sub56(Uint32 *source, Uint32 *dest)
 	flg_d = (dest_save[0]>>7) & 1;
 	flg_r = (dest[0]>>7) & 1;
 
-	/*set overflow*/
+	/* set overflow */
 	overflow = (flg_s ^ flg_d) & (flg_r ^ flg_d);
 
 	/* set carry :    carry (for a sub) = dest < source */
