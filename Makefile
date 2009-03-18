@@ -15,7 +15,8 @@ all: Makefile.cnf config.h
 Makefile.cnf: Makefile-default.cnf
 	@echo "Trying to use the default Makefile configuration..."
 	@if [ -f Makefile.cnf ]; then \
-		echo "ERROR: Makefile.cnf exists already and is older (remove if unchanged)"; \
+		echo "ERROR: Makefile.cnf exists already, but is older than the default"; \
+		echo "(just remove it if you haven't changed it)."; \
 		exit 1; \
 	else \
 		cp -v Makefile-default.cnf Makefile.cnf; \
@@ -25,7 +26,8 @@ Makefile.cnf: Makefile-default.cnf
 config.h: config-default.h
 	@echo "Trying to use the default config.h configuration..."
 	@if [ -f config.h ]; then \
-		echo "ERROR: config.h exists already and is older (remove if unchanged)"; \
+		echo "ERROR: config.h exists already and is older than the default"; \
+		echo "(just remove it if you haven't changed it, or re-run configure)."; \
 		exit 1; \
 	else \
 		cp -v config-default.h config.h; \
@@ -53,7 +55,7 @@ depend:
 install: all hatari.1.gz
 	@if [ "x$(INSTALL)" = "x" ]; then \
 		echo; \
-		echo "*** Hatari was not configured for installation. ***"; \
+		echo "ERROR: Hatari isn't yet configured for installation."; \
 		exit 1; \
 	fi
 	$(INSTALL) -d $(DESTDIR)$(BINDIR)
