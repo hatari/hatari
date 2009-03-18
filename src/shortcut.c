@@ -6,7 +6,7 @@
 
   Shortcut keys
 */
-const char ShortCut_rcsid[] = "Hatari $Id: shortcut.c,v 1.43 2008-11-22 18:21:33 eerot Exp $";
+const char ShortCut_fileid[] = "Hatari shortcut.c : " __DATE__ " " __TIME__;
 
 #include <SDL.h>
 

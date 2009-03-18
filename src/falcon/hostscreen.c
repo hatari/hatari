@@ -51,7 +51,6 @@ static SDL_Surface *mainSurface;        // The main window surface
 static SDL_Surface *surf;               // pointer to actual surface
 
 
-static SDL_mutex   *screenLock;
 static Uint32 sdl_videoparams;
 static Uint32 hs_width, hs_height, hs_bpp;
 static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
@@ -73,7 +72,8 @@ static int HostScreen_selectVideoMode(SDL_Rect **modes, Uint32 *width, Uint32 *h
 static void HostScreen_searchVideoMode( Uint32 *width, Uint32 *height, Uint32 *bpp );
 
 
-void HostScreen_Init(void) {
+void HostScreen_Init(void)
+{
 	int i;
 	for(i=0; i<256; i++) {
 		unsigned long color = default_palette[i%16];
@@ -82,13 +82,11 @@ void HostScreen_Init(void) {
 		palette.standard[i].b = color & 0xff;
 	}
 
-	screenLock = SDL_CreateMutex();
-
 	mainSurface=NULL;
 }
 
-void HostScreen_UnInit(void) {
-	SDL_DestroyMutex(screenLock);
+void HostScreen_UnInit(void)
+{
 }
 
 
@@ -293,8 +291,6 @@ static void HostScreen_update5(Sint32 x, Sint32 y, Sint32 w, Sint32 h, bool forc
 	if ( !forced && !doUpdate ) // the HW surface is available
 		return;
 
-	//	SDL_UpdateRect(SDL_GetVideoSurface(), 0, 0, width, height);
-	// SDL_UpdateRect(surf, x, y, w, h);
 	SDL_UpdateRect(mainSurface, x, y, w, h);
 }
 
@@ -303,40 +299,34 @@ void HostScreen_update1(bool forced)
 	HostScreen_update5( 0, 0, hs_width, hs_height, forced );
 }
 
-void HostScreen_update0()
-{
-	HostScreen_update5( 0, 0, hs_width, hs_height, FALSE );
-}
 
-
-Uint32 HostScreen_getBitsPerPixel(void)
-{
-	return surf->format->BitsPerPixel;
-}
-
-
-Uint32 HostScreen_getBpp()
+Uint32 HostScreen_getBpp(void)
 {
 	return surf->format->BytesPerPixel;
 }
 
-Uint32 HostScreen_getPitch() {
+Uint32 HostScreen_getPitch(void)
+{
 	return surf->pitch;
 }
 
-Uint32 HostScreen_getWidth() {
+Uint32 HostScreen_getWidth(void)
+{
 	return hs_width;
 }
 
-Uint32 HostScreen_getHeight() {
+Uint32 HostScreen_getHeight(void)
+{
 	return hs_height;
 }
 
-Uint8 *HostScreen_getVideoramAddress() {
+Uint8 *HostScreen_getVideoramAddress(void)
+{
 	return surf->pixels;	/* FIXME maybe this should be mainSurface? */
 }
 
-void HostScreen_setPaletteColor(Uint8 idx, Uint32 red, Uint32 green, Uint32 blue ) {
+void HostScreen_setPaletteColor(Uint8 idx, Uint32 red, Uint32 green, Uint32 blue)
+{
 	// set the SDL standard RGB palette settings
 	palette.standard[idx].r = red;
 	palette.standard[idx].g = green;
@@ -345,46 +335,35 @@ void HostScreen_setPaletteColor(Uint8 idx, Uint32 red, Uint32 green, Uint32 blue
 	palette.native[idx] = SDL_MapRGB( surf->format, red, green, blue );
 }
 
-Uint32 HostScreen_getPaletteColor(Uint8 idx) {
+Uint32 HostScreen_getPaletteColor(Uint8 idx)
+{
 	return palette.native[idx];
 }
 
-void HostScreen_updatePalette( Uint16 colorCount ) {
+void HostScreen_updatePalette(Uint16 colorCount)
+{
 	SDL_SetColors( surf, palette.standard, 0, colorCount );
 }
 
-Uint32 HostScreen_getColor( Uint32 red, Uint32 green, Uint32 blue ) {
+Uint32 HostScreen_getColor(Uint32 red, Uint32 green, Uint32 blue)
+{
 	return SDL_MapRGB( surf->format, red, green, blue );
 }
 
-#if 0
-void HostScreen_lock(void) {
-	while (SDL_mutexP(screenLock)==-1) {
-		SDL_Delay(20);
-		fprintf(stderr, "Couldn't lock mutex\n");
-	}
-}
-
-void HostScreen_unlock(void) {
-	while (SDL_mutexV(screenLock)==-1) {
-		SDL_Delay(20);
-		fprintf(stderr, "Couldn't unlock mutex\n");
-	}
-}
-#endif
 
 bool HostScreen_renderBegin(void)
 {
 	if (SDL_MUSTLOCK(surf))
 		if (SDL_LockSurface(surf) < 0) {
 			printf("Couldn't lock surface to refresh!\n");
-			return FALSE;
+			return false;
 		}
 
-	return TRUE;
+	return true;
 }
 
-void HostScreen_renderEnd() {
+void HostScreen_renderEnd(void)
+{
 	if (SDL_MUSTLOCK(surf))
 		SDL_UnlockSurface(surf);
 	Statusbar_Update(surf);

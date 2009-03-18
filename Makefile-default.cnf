@@ -11,10 +11,16 @@ CC = gcc
 
 OPTFLAGS = -O2
 
-# Architecture specific optimizations
-# 
+# Architecture specific settings
+#
 # Omap2/ARMv6:
 # OPTFLAGS += -mfpu=vfp -mfloat-abi=softfp -march=armv6 -finline-limit=64
+#
+# Wii/Gekko:
+# OPTFLAGS = -MMD -MP -MF -O3 -mrvl -mcpu=750 -meabi -mhard-float
+# CPPFLAGS = -DGEKKO -I$(DEVKITPRO)/libogc/include -I$(DEVKITPRO)/libogc/include/sdl
+# LDFLAGS = -L$(DEVKITPRO)/libogc/lib/wii -Wl,-Map,hatari.map
+# LIBS = -lz -lfat -lwiiuse -lbte -lasnd -logc -lm
 
 # What warnings to use
 WARNFLAGS = -Wmissing-prototypes -Wstrict-prototypes -Wsign-compare \

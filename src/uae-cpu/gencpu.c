@@ -61,8 +61,7 @@
 /*			on ST (fix Blood Money on Superior 65)						*/
 
 
-
-const char GenCpu_rcsid[] = "Hatari $Id: gencpu.c,v 1.17 2008-10-05 17:55:31 npomarede Exp $";
+const char GenCpu_fileid[] = "Hatari gencpu.c : " __DATE__ " " __TIME__;
 
 #include <ctype.h>
 #include <string.h>

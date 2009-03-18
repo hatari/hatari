@@ -42,7 +42,7 @@ endif
 ALLOBJS = $(OBJS) $(SUBDIRLIBS)
 
 
-all: hatari
+all: ../Makefile.cnf hatari
 
 hatari: $(ALLOBJS)
 	$(CC) $(LDFLAGS) $(ALLOBJS) $(SDL_LIBS) $(LIBS) -o hatari
@@ -71,14 +71,18 @@ distclean:
 
 
 # Use "make depend" to generate file dependencies:
-Makefile.dep: Makefile
+Makefile.dep: Makefile ../Makefile.cnf
 	$(CC) -M $(CPPFLAGS) $(SRCS) > Makefile.dep
 
-depend: cleandeps Makefile.dep
+.PHONY : depend
+depend:
+	$(MAKE) cleandeps
+	$(MAKE) Makefile.dep
 	$(MAKE) -C gui-sdl/ depend
 	$(MAKE) -C $(CPUDIR) depend
 	$(MAKE) -C falcon/ depend
 
+.PHONY : cleandeps
 cleandeps:
 	$(RM) Makefile.dep */Makefile.dep
 

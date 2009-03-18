@@ -6,7 +6,7 @@
 
   String functions.
 */
-const char Str_rcsid[] = "Hatari $Id: str.c,v 1.5 2008-11-12 20:36:01 eerot Exp $";
+const char Str_fileid[] = "Hatari str.c : " __DATE__ " " __TIME__;
 
 #include <ctype.h>
 #include <stdbool.h>

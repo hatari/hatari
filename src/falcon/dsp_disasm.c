@@ -145,7 +145,7 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_SR:
 			case DSP_REG_LA:
 			case DSP_REG_LC:
-				fprintf(stderr,"Dsp: Reg: %s: 0x%06x -> 0x%06x\n", registers_name[i], registers_save[i] & BITMASK(16), dsp_core->registers[i]  & BITMASK(16));
+				fprintf(stderr,"Dsp: Reg: %s: 0x%04x -> 0x%04x\n", registers_name[i], registers_save[i] & BITMASK(16), dsp_core->registers[i]  & BITMASK(16));
 				break;
 			case DSP_REG_A2:
 			case DSP_REG_B2:

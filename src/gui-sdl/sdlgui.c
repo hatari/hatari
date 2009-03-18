@@ -6,7 +6,7 @@
 
   A tiny graphical user interface for Hatari.
 */
-const char SDLGui_rcsid[] = "Hatari $Id: sdlgui.c,v 1.20 2008-11-21 18:28:24 eerot Exp $";
+const char SDLGui_fileid[] = "Hatari sdlgui.c : " __DATE__ " " __TIME__;
 
 #include <SDL.h>
 #include <ctype.h>

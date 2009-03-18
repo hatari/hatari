@@ -4,7 +4,7 @@
   This file is distributed under the GNU Public License, version 2 or at your
   option any later version. Read the file gpl.txt for details.
 
-  This code converts a 1/2/4 plane ST format screen to either 8 or 16-bit PC
+  This code converts a 1/2/4 plane ST format screen to either 8, 16 or 32-bit PC
   format. An awful lot of processing is needed to do this conversion - we
   cannot simply change palettes on  interrupts as it is possible with DOS.
   The main code processes the palette/resolution mask tables to find exactly
@@ -15,25 +15,16 @@
   includes the overscan border, usually set to colour zero) so they can be used
   for both window and full-screen mode.
   Note that in Hi-Resolution we have no overscan and just two colors so we can
-  optimise things further. Also when running in maximum speed we make sure we
-  only convert the screen every 50 times a second - inbetween frames are not
-  processed.
+  optimise things further.
+  In color mode it seems possible to display 47 lines in the bottom border
+  with a second 60/50 Hz switch, but most programs consider there are 45
+  visible lines in the bottom border only, which gives a total of 274 lines
+  for a screen. So not displaying the last two lines fixes garbage that could
+  appear in the last two lines when displaying 47 lines (Digiworld 2 by ICE,
+  Tyranny by DHS).
 */
 
-/*
- Changes:
-  - 2008/06/01	[NP]
-    Although it seems possible to display 47 lines in the bottom border
-    with a second 60/50 Hz switch, most programs consider there are 45
-    visible lines in the bottom border, which gives a total of 274 lines
-    for a screen. This fixes garbage that could appear in the last two
-    lines when displaying 47 lines (Digiworld 2 by ICE, Tyranny by DHS).
-  - 2008/08/09 [ET] Add statusbar
-  - 2008-11-20 [ET] Move event selection to main.c
-*/
-
-
-const char Screen_rcsid[] = "Hatari $Id: screen.c,v 1.98 2008-11-20 21:46:08 eerot Exp $";
+const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 
 #include <SDL.h>
 #include <SDL_endian.h>
