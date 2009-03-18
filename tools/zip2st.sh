@@ -53,7 +53,7 @@ TEMPDIR=`mktemp -d` || exit 2
 echo "Converting" $ZIPFILE "->" $TEMPDIR "->" $STFILE
 
 # script exit/error handling
-function exit_cleanup
+exit_cleanup ()
 {
 	if [ $? -eq 0 ]; then
 		echo "$step) Cleaning up temporary files..."

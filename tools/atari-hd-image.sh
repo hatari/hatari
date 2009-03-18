@@ -55,7 +55,7 @@ fi
 tmppart=$diskfile.part
 
 # script exit/error handling
-function exit_cleanup
+exit_cleanup ()
 {
 	if [ $? -eq 0 ]; then
 		echo "$step) Cleaning up..."
