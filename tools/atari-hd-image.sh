@@ -2,16 +2,27 @@
 # script for creating a compatible DOS HD image for Hatari
 # with a single FAT16 partition of given size
 
+# defaults for disk attributes
+diskfile=hd.img   # HD image filename
+partname=DOS      # partition name
+
 if [ $# -lt 1 ]; then
+	name=${0##*/}
 	echo
-	echo "usage: ${0##*/} <size> [filename] [partition name] [directory]"
+	echo "usage: $name <size> [filename] [partition name] [directory]"
 	echo
 	echo "Create an ACSI/IDE harddisk image for Hatari with a single Atari"
 	echo "compatible DOS partition.  Arguments are (defaults in parenthesis):"
-	echo "- size: harddisk image size"
-	echo "- filename: name for the harddisk image (hd.img)"
-	echo "- partition name: name for that single partition (DOS)"
+	echo "- size: harddisk image size in megabytes"
+	echo "- filename: name for the harddisk image ($diskfile)"
+	echo "- partition name: name for that single partition ($partname)"
 	echo "- directory: directory for initial content copied to the image"
+	echo
+	echo "For example:"
+	echo "- 16MB '$diskfile' HD image:"
+	echo "  $name 16"
+	echo "-  8MB image with 'TEST' partition having files from content/:"
+	echo "  $name 8 8mb-disk.img TEST content/"
 	echo
 	exit 1
 fi
@@ -25,10 +36,6 @@ if [ -z $(which parted) ] || [ -z $(which mkdosfs) ]; then
 	echo "ERROR: either parted or mkdosfs missing!"
 	exit 1
 fi
-
-# defaults for disk attributes
-diskfile=hd.img   # HD image filename
-partname=DOS      # partition name
 
 # check arguments
 if [ $1 -gt 0 ]; then
