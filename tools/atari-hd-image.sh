@@ -95,11 +95,16 @@ parted $diskfile mktable msdos mkpart primary fat16 0 $disksize set 1 boot on
 echo
 step=$(($step+1))
 # create an Atari compatible DOS partition that fits to disk
-# size is in sectors, mkdosfs takes in kilobytes
+# size is in 1/2KB sectors, mkdosfs takes in kilobytes
 echo "$step) Creating Atari partition..."
-size=$(parted $diskfile unit s print | awk '/ 1 /{print $4}' | tr -d s)
-echo "mkdosfs -A -n $partname -C $tmppart $(($size/2))"
-mkdosfs -A -n $partname -C $tmppart $(($size/2))
+sectors=$(parted $diskfile unit s print | awk '/ 1 /{print $4}' | tr -d s)
+kilobytes=$(($sectors/2))
+if [ $sectors -ne $((2*$kilobytes)) ]; then
+	echo "ERROR: parted created partition with odd size: $sectors"
+	exit 1
+fi
+echo "mkdosfs -A -n $partname -C $tmppart $kilobytes"
+mkdosfs -A -n $partname -C $tmppart $kilobytes
 
 if [ \! -z $contentdir ]; then
 	echo
@@ -115,8 +120,8 @@ step=$(($step+1))
 # copy the partition into disk
 echo "$step) Copying the partition to disk image..."
 start=$(parted $diskfile unit s print | awk '/ 1 /{print $2}' | tr -d s)
-echo "dd if=$tmppart of=$diskfile bs=512 seek=$start count=$size"
-dd if=$tmppart of=$diskfile bs=512 seek=$start count=$size
+echo "dd if=$tmppart of=$diskfile bs=512 seek=$start count=$sectors"
+dd if=$tmppart of=$diskfile bs=512 seek=$start count=$sectors
 
 echo
 step=$(($step+1))
