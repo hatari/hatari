@@ -90,7 +90,7 @@ step=$(($step+1))
 # create DOS partition table and a bootable primary FAT16 partition to image
 echo "$step) Creating partition table + primary partition to the disk image..."
 echo "parted $diskfile mktable msdos mkpart primary fat16 0 $disksize set 1 boot on"
-parted $diskfile mktable msdos mkpart primary fat16 0 $disksize set 1 boot on
+parted $diskfile mklabel msdos mkpart primary fat16 0 $disksize set 1 boot on || exit 2
 
 echo
 step=$(($step+1))
