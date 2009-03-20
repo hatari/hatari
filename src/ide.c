@@ -16,7 +16,6 @@
 
 #include "main.h"
 #include "configuration.h"
-#include "debugui.h"
 #include "file.h"
 #include "ide.h"
 #include "m68000.h"
@@ -112,8 +111,6 @@ uae_u32 Ide_Mem_bget(uaecptr addr)
 	else if (ideport == 8 || ideport == 22)
 	{
 		retval = ide_status_read(opaque_ide_if, 0);
-		if ((retval & 1))
-			DebugUI();
 	}
 	else
 	{
