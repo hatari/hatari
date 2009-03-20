@@ -7,10 +7,6 @@ if [ -z "$(which unzip)" ]; then
 	echo "ERROR: 'unzip' missing."
 	exit 2
 fi
-if [ -z "$(which rename)" ]; then
-	echo "ERROR: 'rename' script (from 'util-linux' package) missing."
-	exit 2
-fi
 if [ -z "$(which mformat)" ] || [ -z "$(which mcopy)" ]; then
 	echo "ERROR: 'mformat' or 'mcopy' (from 'mtools' package) missing."
 	exit 2
@@ -77,17 +73,6 @@ unzip $ZIPFILE -d $TEMPDIR || exit 2
 echo "chmod -R u+rw $TEMPDIR/*"
 chmod -R u+rw $TEMPDIR/*
 
-WORKINGDIR=`pwd`
-
-# echo
-# step=$(($step+1))
-# echo "$step) Changing file names to upper case..."
-# for i in `find $TEMPDIR/* -depth` ; do
-# 	cd `dirname $i`
-# 	rename -v 'y/a-z/A-Z/' `basename $i`
-# done
-
-cd $WORKINGDIR
 
 # size of reserved sectors, FATs & root dir + zip content size
 size=$((24 + $(du -ks $TEMPDIR|awk '{print $1}')))
