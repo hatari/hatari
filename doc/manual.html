@@ -102,9 +102,10 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
   <li><a href="#Floppy disk images">Floppy disk images</a>
   <li><a href="#Hard disk support">Hard disk support</a>
   <ul>
+    <li><a href="#GEMDOS based hard disk emulation">GEMDOS based hard disk emulation</a></li>
     <li><a href="#ACSI hard disk emulation">ACSI hard disk emulation</a></li>
     <li><a href="#IDE hard disk emulation">IDE hard disk emulation</a></li>
-    <li><a href="#GEMDOS based hard disk emulation">GEMDOS based hard disk emulation</a></li>
+    <li><a href="#Accessing disk image partitions outside of Hatari">Accessing disk image partitions outside of Hatari</a></li>
   </ul>
   <li><a href="#Appendix">Appendix</a>
   <ul>
@@ -1911,6 +1912,7 @@ so
 your highscores and savegames are lost if you load the game from such
 a zipped disk image.</p>
 
+
 <a name="Hard disk support"></a><h2>Hard disk support</h2>
 
 <p>
@@ -1924,6 +1926,34 @@ Please note that changing the HD-image or the GEMDOS HD-folder will reset
 the emulated Atari since it is not possible to switch the hard disk
 while the emulator is running.
 </p>
+
+
+<a name="GEMDOS based hard disk emulation"></a><h3>GEMDOS based hard disk emulation</h3>
+<p>With the GEMDOS based drive emulation, you can easily "mount" a
+folder from the host file system to a drive of the emulated Atari. To
+use the GEMDOS based drive emulation, you should use a folder on your
+hard disk that only contains files and folders with valid TOS
+filenames.
+That means that all files/folders should be written in capital letters
+and their length mustn't exceed the 8+3 file name length limit. If you
+don't want to rename all files to get capital letters, it is also
+possible to store that folder on a FAT filesystem since those
+filesystems are case-insensitive. </p>
+<p>GEMDOS drive emulation is an easy way to share files between the
+host system and the emulated Atari, but it is known to be incomplete and
+a little bit unstable, especially if you use it together with the ACSI
+hard disk emulation. So if your programs complain that they could not
+find/read/write files on the GEMDOS HD drive, you should try to copy
+them to a floppy disk image or a real hard disk image!</p>
+<p>
+There are also some known limitations which are due to the way the GEMDOS
+drive emulation is implemented: First, it is not possible to use a cartridge
+image together with GEMDOS drive emulation at the same time.
+Second, <em>the GEMDOS HD emulation does not work very well with TOS
+1.00 and 1.02</em>.  So you should use at least TOS 1.04 if you want
+to use the GEMDOS HD emulation.
+</p>
+
 
 <a name="ACSI hard disk emulation"></a><h3>ACSI hard disk emulation</h3>
 <p>
@@ -1976,40 +2006,73 @@ instructions).
 Then you can boot from your hard disk image by simply specifying it
 with the <span class="commandline">--ide</span> parameter.
 </p>
-<p>
-If you want to access the partitions also outside the emulation, this
-should be possible by using the Mtools utilities.  For more information,
-see <span class="commandline">info mtools</span> and search for "partition".
-On Linux a loopback device could be used for this too, see 
-<span class="commandline">man losetup</span> for more information.
-<!-- TODO: what's the correct offset to first partition? -->
-</p>
 
-<a name="GEMDOS based hard disk emulation"></a><h3>GEMDOS based hard disk emulation</h3>
-<p>With the GEMDOS based drive emulation, you can easily "mount" a
-folder from the host file system to a drive of the emulated Atari. To
-use the GEMDOS based drive emulation, you should use a folder on your
-hard disk that only contains files and folders with valid TOS
-filenames.
-That means that all files/folders should be written in capital letters
-and their length mustn't exceed the 8+3 file name length limit. If you
-don't want to rename all files to get capital letters, it is also
-possible to store that folder on a FAT filesystem since those
-filesystems are case-insensitive. </p>
-<p>GEMDOS drive emulation is an easy way to share files between the
-host system and the emulated Atari, but it is known to be incomplete and
-a little bit unstable, especially if you use it together with the ACSI
-hard disk emulation. So if your programs complain that they could not
-find/read/write files on the GEMDOS HD drive, you should try to copy
-them to a floppy disk image or a real hard disk image!</p>
+
+<a name="Accessing disk image partitions outside of Hatari"></a><h3>Accessing disk image partitions outside of Hatari</h3>
 <p>
-There are also some known limitations which are due to the way the GEMDOS
-drive emulation is implemented: First, it is not possible to use a cartridge
-image together with GEMDOS drive emulation at the same time.
-Second, <em>the GEMDOS HD emulation does not work very well with TOS
-1.00 and 1.02</em>.  So you should use at least TOS 1.04 if you want
-to use the GEMDOS HD emulation.
+If you want to access the partitions also outside the emulation,
+the disk image needs to have a DOS partition table.  The
+<span class="commandline">atari-hd-image</span> script included
+with Hatari can be used to create such an image.
 </p>
+<p>
+EmuTOS can access the partitions on such hard disk directly without
+a driver software. That's fortunate as only
+<a href="http://www.seimet.de/atari/en/hddriver.html">HD Driver
+from Uwe Seimet</a> seems to work fine with such hard disk, e.g.
+Cecile and CBHD drivers don't.  Note that EmuTOS works only when
+the image is access using the ACSI emulation and HD Driver when
+it's accessed using the IDE emulation.
+</p>
+<p>
+To access the content of the partitions on Linux, there are two
+possibilities:
+<ul>
+<li>Using Mtools.  For this you need to add an entry for the hard disk
+    image to your <span class="commandline">~/.mtoolsrc</span> and
+    specify which partition you want to access from the image.
+    For an image created with the above mentioned script, the line
+    in the configuration file should look something like this:
+<pre>
+MTOOLS_NO_VFAT=1
+drive c: file="/home/user/hatari/hd.img" partition=1
+</pre>
+    Note that Mtools is instructed use FAT compatibility mode because
+    EmuTOS cannot deal properly with VFAT file information.  If you
+    don't want this setting for all your Mtools drives, you can set
+    it also via the environment like this:
+<pre>
+MTOOLS_NO_VFAT=1 mcopy foobar.txt c:
+</pre>
+</li>
+<li>Using a loopback device.  This is recommended even by Mtools
+documentation, but it's less convenient as it requires root rights.
+First you need to "loop" mount the image:
+<pre>
+$ su
+# image="hd.img"; mountdir="hd"
+# start=$(parted $image unit s print | awk '/ 1 /{print $2}' | tr -d s)
+# losetup -f $image -o $((512*$start))
+# loop=$(losetup -a | tail -1 | cut -d: -f1)
+# mkdir -p $mountdir
+# mount -t msdos $loop $mountdir
+</pre>
+
+<p>Tthis uses <span class="commandline">parted</span> to find out the first
+partition offset in sectors and then tells <span class="commandline">losetup</span>
+to bind the first free loop device to a corresponding offset from
+the <span class="commandline">hd.img</span> image.  Mount is then used to
+mount the file system from the loop device on top of the "hd" directory.</p>
+
+<p>After you've copied the relevant files to the "hd" directory, you need
+unmount the file system and remove the loop device binding before using
+the disk image from Hatari:
+<pre>
+# umount $mountdir
+# losetup -d $loop
+</pre>
+</li>
+</ul>
 
 
 <a name="Appendix"></a><h2>Appendix</h2>
@@ -2082,7 +2145,7 @@ parts of the emulated system is much trickier.
  src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
  border="0" height="31" width="88"></a></td>
       <td align="right">
-      November 23rd 2008
+      March 22rd 2009
       </td>
     </tr>
   </tbody>
