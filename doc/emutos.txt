@@ -191,6 +191,7 @@ GEM games:
 - 4 Gewinnt (Connect four)*
 - Ballerburg*
 - Biglife*
+- Clicks*
 - Daleks*
 - DBWH
 - Drachen
@@ -209,6 +210,7 @@ GEM games:
 - Thrust
 - Worm farm
 - Wator (slow)
+- zSudoku
 
 Monochrome games:
 - Balloons
