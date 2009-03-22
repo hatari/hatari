@@ -424,6 +424,7 @@ Games:
 - Impulse (Breakout clone)*
 - Lamemine (needs "dummy" DSP mode in Hatari)
 - Madtris
+- Running*
 - Radical Race (demo)*
 - Rave (needs "dummy" DSP mode in Hatari)
 - SBM v0.8 (Bomberman clone)*
