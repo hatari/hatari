@@ -2021,7 +2021,7 @@ a driver software. That's fortunate as only
 <a href="http://www.seimet.de/atari/en/hddriver.html">HD Driver
 from Uwe Seimet</a> seems to work fine with such hard disk, e.g.
 Cecile and CBHD drivers don't.  Note that EmuTOS works only when
-the image is access using the ACSI emulation and HD Driver when
+the image is accessed using the ACSI emulation and HD Driver when
 it's accessed using the IDE emulation.
 </p>
 <p>
@@ -2037,7 +2037,7 @@ possibilities:
 MTOOLS_NO_VFAT=1
 drive c: file="/home/user/hatari/hd.img" partition=1
 </pre>
-    Note that Mtools is instructed use FAT compatibility mode because
+    Note that Mtools is instructed to use FAT compatibility mode because
     EmuTOS cannot deal properly with VFAT file information.  If you
     don't want this setting for all your Mtools drives, you can set
     it also via the environment like this:
@@ -2058,11 +2058,12 @@ $ su
 # mount -t msdos $loop $mountdir
 </pre>
 
-<p>Tthis uses <span class="commandline">parted</span> to find out the first
+<p>This uses <span class="commandline">parted</span> to find out the first
 partition offset in sectors and then tells <span class="commandline">losetup</span>
 to bind the first free loop device to a corresponding offset from
-the <span class="commandline">hd.img</span> image.  Mount is then used to
-mount the file system from the loop device on top of the "hd" directory.</p>
+the <span class="commandline">hd.img</span> image.
+<span class="commandline">mount</span> is then used to mount the file system
+from the loop device on top of the "hd" directory.</p>
 
 <p>After you've copied the relevant files to the "hd" directory, you need
 unmount the file system and remove the loop device binding before using
