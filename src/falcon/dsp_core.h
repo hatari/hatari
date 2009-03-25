@@ -108,6 +108,20 @@ extern "C" {
 #define DSP_INTERRUPT_FAST      0x1
 #define DSP_INTERRUPT_LONG      0x2
 
+#define DSP_INTER_RESET			0x0
+#define DSP_INTER_ILLEGAL		0x1
+#define DSP_INTER_STACK_ERROR		0x2
+#define DSP_INTER_TRACE			0x3
+#define DSP_INTER_SWI			0x4
+#define DSP_INTER_HOST_COMMAND		0x5
+#define DSP_INTER_HOST_RCV_DATA		0x6
+#define DSP_INTER_HOST_TRX_DATA		0x7
+#define DSP_INTER_SSI_RCV_DATA_E	0x9
+#define DSP_INTER_SSI_RCV_DATA		0xa
+#define DSP_INTER_SSI_TRX_DATA_E	0xb
+#define DSP_INTER_SSI_TRX_DATA		0xc
+
+
 typedef struct dsp_core_s dsp_core_t;
 
 struct dsp_core_s {
@@ -144,7 +158,6 @@ struct dsp_core_s {
 
 	/* Misc */
 	Uint32 loop_rep;		/* executing rep ? */
-	Uint32 swi_inter;		/* SWI interruption ? */
 
 	/* For bootstrap routine */
 	Uint16	bootstrap_pos;
@@ -153,6 +166,8 @@ struct dsp_core_s {
 	Uint16	interrupt_state;
 	Uint32  interrupt_instr_fetch;
 	Uint32  interrupt_save_pc;
+	Uint16  interrupt_table[13];
+	Uint16  interrupt_counter;
 
 	/* Lock/unlock mutex */
 	void	(*lockMutex)(dsp_core_t *_this);
@@ -167,6 +182,9 @@ struct dsp_core_s {
 void dsp_core_init(dsp_core_t *dsp_core, int use_thread);
 void dsp_core_shutdown(dsp_core_t *dsp_core);
 void dsp_core_reset(dsp_core_t *dsp_core);
+
+/* Post a new interrupt to the interrupt table */
+void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint32 inter);
 
 /* host port read/write by emulator, addr is 0-7, not 0xffa200-0xffa207 */
 Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr);

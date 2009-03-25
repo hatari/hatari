@@ -193,6 +193,7 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	memset((void*)dsp_core->periph, 0,sizeof(dsp_core->periph));
 	memset(dsp_core->stack, 0,sizeof(dsp_core->stack));
 	memset(dsp_core->registers, 0,sizeof(dsp_core->registers));
+	memset(dsp_core->interrupt_table, 0,sizeof(dsp_core->interrupt_table));
 
 	dsp_core->bootstrap_pos = 0;
 	
@@ -207,7 +208,7 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	dsp_core->interrupt_state = DSP_INTERRUPT_NONE;
 	dsp_core->interrupt_instr_fetch = -1;
 	dsp_core->interrupt_save_pc = -1;
-	dsp_core->swi_inter = 0;
+	dsp_core->interrupt_counter = 0;
 
 	/* host port init, dsp side */
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR]=(1<<DSP_HOST_HSR_HTDE);
@@ -284,30 +285,29 @@ static void resumeThreadThread(dsp_core_t *dsp_core)
 	}
 }
 
+/* Post a new interrupt to the interrupt table */
+void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint32 inter)
+{
+	if (dsp_core->interrupt_table[inter] == 0) { 
+		dsp_core->interrupt_table[inter] = 1;
+		dsp_core->interrupt_counter ++;
+	}
+}
+
 /* CPU<->DSP Host interface transfers */
 
 
 /* Process Host Interface peripheral code */
 void dsp_core_process_host_interface(dsp_core_t *dsp_core)
 {
-	Uint8 dma_mode, hreq;
+	Uint8 hreq;
 
-	/* DMA mode : 	00: Interrupt mode (DMA mode off)
-			01: 24 bits DMA mode
-			02: 16 bits DMA mode
-			03;  8 bits DMA mode */
-	dma_mode = dsp_core->hostport[CPU_HOST_ICR] & (0x3<<CPU_HOST_ICR_HM0); 
-
-	/* TODO: DMA mode */
 	dsp_core_host2dsp(dsp_core);
 	dsp_core_dsp2host(dsp_core);
 
-	/* Update ISR Host Request HREQ bit (interrupt mode only) */
-	if (dma_mode == 0){
-		hreq = (dsp_core->hostport[CPU_HOST_ICR] & 0x3) & (dsp_core->hostport[CPU_HOST_ISR] & 0x3);
-		dsp_core->hostport[CPU_HOST_ISR] &= 0x7f; 
-		dsp_core->hostport[CPU_HOST_ISR] |= (hreq?1:0) << CPU_HOST_ISR_HREQ; 
-	}
+	hreq = (dsp_core->hostport[CPU_HOST_ICR] & 0x3) & (dsp_core->hostport[CPU_HOST_ISR] & 0x3);
+	dsp_core->hostport[CPU_HOST_ISR] &= 0x7f; 
+	dsp_core->hostport[CPU_HOST_ISR] |= (hreq?1:0) << CPU_HOST_ISR_HREQ; 
 }
 
 /* Process SSI peripheral code */
@@ -346,6 +346,11 @@ static void dsp_core_dsp2host(dsp_core_t *dsp_core)
 	/* Set HTDE bit to say that DSP can write */
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HTDE;
 
+	/* Is there an interrupt to send ? */
+	if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HTIE)) {
+		dsp_core_add_interrupt(dsp_core, DSP_INTER_HOST_TRX_DATA);
+	}
+
 	/* Set RXDF bit to say that host can read */
 	dsp_core->hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_RXDF;
 
@@ -373,6 +378,11 @@ static void dsp_core_host2dsp(dsp_core_t *dsp_core)
 
 	/* Set HRDF bit to say that DSP can read */
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HRDF;
+
+	/* Is there an interrupt to send ? */
+	if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) {
+		dsp_core_add_interrupt(dsp_core, DSP_INTER_HOST_RCV_DATA);
+	}
 
 	/* Set TXDE bit to say that host can write */
 	dsp_core->hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_TXDE;
@@ -464,6 +474,10 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 			/* if bit 7=1, host command . HSR(bit HCP) is set*/
 			if (value & (1<<7)) {
 				dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |= (1<<DSP_HOST_HSR_HCP);
+				/* Is there an interrupt to send ? */
+				if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HCIE)) {
+					dsp_core_add_interrupt(dsp_core, DSP_INTER_HOST_COMMAND);
+				}
 				/* Wake up DSP if needed */
 				dsp_core->resumeThread(dsp_core);
 			}
@@ -513,6 +527,11 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 
 					/* Set HRDF bit to say that DSP can read */
 					dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HRDF;
+
+					/* Is there an interrupt to send ? */
+					if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) {
+						dsp_core_add_interrupt(dsp_core, DSP_INTER_HOST_RCV_DATA);
+					}
 #if DSP_DISASM_HOSTREAD
 					fprintf(stderr, "Dsp: (H->D): Dsp HRDF set\n");
 #endif
