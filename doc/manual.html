@@ -2016,38 +2016,52 @@ the disk image needs to have a DOS partition table.  The
 with Hatari can be used to create such an image.
 </p>
 <p>
-EmuTOS can access the partitions on such hard disk directly without
-a driver software. That's fortunate as only
+Inside the Hatari emulator, EmuTOS can access partition(s) on these
+kind of images directly without any driver software.  Of the Atari HD
+drivers, Centek's Cecile (mentioned above) and Uwe Seimet's
 <a href="http://www.seimet.de/atari/en/hddriver.html">HD Driver
-from Uwe Seimet</a> seems to work fine with such hard disk, e.g.
-Cecile and CBHD drivers don't.  Note that EmuTOS works only when
-the image is accessed using the ACSI emulation and HD Driver when
-it's accessed using the IDE emulation.
+(demo)</a> work fine with them.  E.g. AHDI and CBHD don't.
 </p>
 <p>
-To access the content of the partitions on Linux, there are two
+Note also that plain EmuTOS supports only ACSI and the drivers support
+only IDE (emulation). Cecile needs TT or Falcon and HD driver doesn't
+work with EmuTOS or TOS4.  To summarise; if ASCI emulation and EmuTOS
+are enough, use those. Otherwise, if you want to use TT or Falcon
+emulation, use Cecile (or full HD Driver version if you have it),
+otherwise use HD driver (demo).
+</p>
+<p>
+To access the content of the partitions on Linux host, there are two
 possibilities:
-<ul>
-<li>Using Mtools.  For this you need to add an entry for the hard disk
-    image to your <span class="commandline">~/.mtoolsrc</span> and
-    specify which partition you want to access from the image.
-    For an image created with the above mentioned script, the line
-    in the configuration file should look something like this:
+
+<h4>Using Mtools</h4>
+<p>
+For this you need to add an entry for the hard disk
+image to your <span class="commandline">~/.mtoolsrc</span> and
+specify which partition you want to access from the image. For
+an image created with the above mentioned script, the line in
+the configuration file should look something like this:
+</p>
 <pre>
 MTOOLS_NO_VFAT=1
 drive c: file="/home/user/hatari/hd.img" partition=1
 </pre>
-    Note that Mtools is instructed to use FAT compatibility mode because
-    EmuTOS cannot deal properly with VFAT file information.  If you
-    don't want this setting for all your Mtools drives, you can set
-    it also via the environment like this:
+<p>
+Note that Mtools is instructed to use FAT compatibility mode because
+EmuTOS cannot deal properly with VFAT file information.  If you don't
+want this setting for all your Mtools drives, you can set it also via
+the environment like this:
+</p>
 <pre>
 MTOOLS_NO_VFAT=1 mcopy foobar.txt c:
 </pre>
-</li>
-<li>Using a loopback device.  This is recommended even by Mtools
-documentation, but it's less convenient as it requires root rights.
-First you need to "loop" mount the image:
+
+<h4>Using a loopback device</h4>
+<p>
+This is recommended even by Mtools documentation, but it's less
+convenient as it requires root rights. First you need to "loop"
+mount the image:
+</p>
 <pre>
 $ su
 # image="hd.img"; mountdir="hd"
@@ -2057,23 +2071,23 @@ $ su
 # mkdir -p $mountdir
 # mount -t msdos $loop $mountdir
 </pre>
-
-<p>This uses <span class="commandline">parted</span> to find out the first
+<p>
+This uses <span class="commandline">parted</span> to find out the first
 partition offset in sectors and then tells <span class="commandline">losetup</span>
 to bind the first free loop device to a corresponding offset from
 the <span class="commandline">hd.img</span> image.
 <span class="commandline">mount</span> is then used to mount the file system
-from the loop device on top of the "hd" directory.</p>
-
-<p>After you've copied the relevant files to the "hd" directory, you need
+from the loop device on top of the "hd" directory.
+</p>
+<p>
+After you've copied the relevant files to the "hd" directory, you need
 unmount the file system and remove the loop device binding before using
 the disk image from Hatari:
+</p>
 <pre>
 # umount $mountdir
 # losetup -d $loop
 </pre>
-</li>
-</ul>
 
 
 <a name="Appendix"></a><h2>Appendix</h2>
