@@ -33,4 +33,25 @@ extern void DmaSnd_MicrowireData_WriteWord(void);
 extern void DmaSnd_MicrowireMask_ReadWord(void);
 extern void DmaSnd_MicrowireMask_WriteWord(void);
 
+extern void DmaSnd_CrossbarSrc_ReadWord(void);
+extern void DmaSnd_CrossbarSrc_WriteWord(void);
+extern void DmaSnd_CrossbarDst_ReadWord(void);
+extern void DmaSnd_CrossbarDst_WriteWord(void);
+extern void DmaSnd_FreqDivExt_ReadByte(void);
+extern void DmaSnd_FreqDivExt_WriteByte(void);
+extern void DmaSnd_FreqDivInt_ReadByte(void);
+extern void DmaSnd_FreqDivInt_WriteByte(void);
+extern void DmaSnd_TrackRecCtrl_ReadByte(void);
+extern void DmaSnd_TrackRecCtrl_WriteByte(void);
+extern void DmaSnd_CodecInput_ReadByte(void);
+extern void DmaSnd_CodecInput_WriteByte(void);
+extern void DmaSnd_AdcInput_ReadByte(void);
+extern void DmaSnd_AdcInput_WriteByte(void);
+extern void DmaSnd_InputAmp_ReadByte(void);
+extern void DmaSnd_InputAmp_WriteByte(void);
+extern void DmaSnd_OutputReduct_ReadWord(void);
+extern void DmaSnd_OutputReduct_WriteWord(void);
+extern void DmaSnd_CodecStatus_ReadWord(void);
+extern void DmaSnd_CodecStatus_WriteWord(void);
+
 #endif /* HATARI_DMASND_H */

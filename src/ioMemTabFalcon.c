@@ -148,10 +148,10 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff860e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff860f, SIZE_BYTE, FDC_FloppyMode_ReadByte, FDC_FloppyMode_WriteByte },             /* Floppy mode (?) register */
 
-        { 0xff8800, SIZE_BYTE, PSG_ff8800_ReadByte, PSG_ff8800_WriteByte },
-        { 0xff8801, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8801_WriteByte },
-        { 0xff8802, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8802_WriteByte },
-        { 0xff8803, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8803_WriteByte },
+	{ 0xff8800, SIZE_BYTE, PSG_ff8800_ReadByte, PSG_ff8800_WriteByte },
+	{ 0xff8801, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8801_WriteByte },
+	{ 0xff8802, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8802_WriteByte },
+	{ 0xff8803, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8803_WriteByte },
 
 	{ 0xff8900, SIZE_WORD, DmaSnd_SoundControl_ReadWord, DmaSnd_SoundControl_WriteWord },   /* DMA sound control */
 	{ 0xff8902, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
@@ -176,7 +176,19 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8922, SIZE_WORD, DmaSnd_MicrowireData_ReadWord, DmaSnd_MicrowireData_WriteWord }, /* Microwire data */
 	{ 0xff8924, SIZE_WORD, DmaSnd_MicrowireMask_ReadWord, DmaSnd_MicrowireMask_WriteWord }, /* Microwire mask */
 
-	{ 0xff8930, 0x14, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception },      /* Falcon DMA sound / DSP */
+	{ 0xff8930, SIZE_WORD, DmaSnd_CrossbarSrc_ReadWord, DmaSnd_CrossbarSrc_WriteWord },     /* Sound crossbar source */
+	{ 0xff8932, SIZE_WORD, DmaSnd_CrossbarDst_ReadWord, DmaSnd_CrossbarDst_WriteWord },     /* Sound crossbar destination */
+	{ 0xff8934, SIZE_BYTE, DmaSnd_FreqDivExt_ReadByte, DmaSnd_FreqDivExt_WriteByte },       /* External clock divider */
+	{ 0xff8935, SIZE_BYTE, DmaSnd_FreqDivInt_ReadByte, DmaSnd_FreqDivInt_WriteByte },       /* Internal clock divider */
+	{ 0xff8936, SIZE_BYTE, DmaSnd_TrackRecCtrl_ReadByte, DmaSnd_TrackRecCtrl_WriteByte },   /* Track record control */
+	{ 0xff8937, SIZE_BYTE, DmaSnd_CodecInput_ReadByte, DmaSnd_CodecInput_WriteByte },       /* CODEC input */
+	{ 0xff8938, SIZE_BYTE, DmaSnd_AdcInput_ReadByte, DmaSnd_AdcInput_WriteByte },           /* A/D converter input */
+	{ 0xff8939, SIZE_BYTE, DmaSnd_InputAmp_ReadByte, DmaSnd_InputAmp_WriteByte },           /* Input amplifier */
+	{ 0xff893a, SIZE_WORD, DmaSnd_OutputReduct_ReadWord, DmaSnd_OutputReduct_WriteWord },   /* Output reduction */
+	{ 0xff893c, SIZE_WORD, DmaSnd_CodecStatus_ReadWord, DmaSnd_CodecStatus_WriteWord },     /* CODEC status */
+	{ 0xff893e, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* No bus error here */
+	{ 0xff8940, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* GPx direction */
+	{ 0xff8942, SIZE_WORD, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* GPx port */
 
 	{ 0xff8960, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8961, SIZE_BYTE, NvRam_Select_ReadByte, NvRam_Select_WriteByte },                 /* NVRAM/RTC chip */

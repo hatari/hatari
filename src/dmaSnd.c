@@ -487,3 +487,146 @@ void DmaSnd_MicrowireMask_WriteWord(void)
 
 	//fprintf(stderr, "MW mask write: 0x%x\n", IoMem_ReadWord(0xff8924));
 }
+
+
+/* ---------------------- Falcon sound subsystem ---------------------- */
+
+/**
+ * Read word from Falcon crossbar source register (0xff8930).
+ */
+void DmaSnd_CrossbarSrc_ReadWord(void)
+{
+}
+
+/**
+ * Write word to Falcon crossbar source register (0xff8930).
+ */
+void DmaSnd_CrossbarSrc_WriteWord(void)
+{
+}
+
+/**
+ * Read word from Falcon crossbar destination register (0xff8932).
+ */
+void DmaSnd_CrossbarDst_ReadWord(void)
+{
+}
+
+/**
+ * Write word to Falcon crossbar destination register (0xff8932).
+ */
+void DmaSnd_CrossbarDst_WriteWord(void)
+{
+}
+
+/**
+ * Read byte from external clock divider register (0xff8934).
+ */
+void DmaSnd_FreqDivExt_ReadByte(void)
+{
+}
+
+/**
+ * Write byte to external clock divider register (0xff8934).
+ */
+void DmaSnd_FreqDivExt_WriteByte(void)
+{
+}
+
+/**
+ * Write byte to internal clock divider register (0xff8935).
+ */
+void DmaSnd_FreqDivInt_ReadByte(void)
+{
+}
+
+/**
+ * Write byte to internal clock divider register (0xff8935).
+ */
+void DmaSnd_FreqDivInt_WriteByte(void)
+{
+}
+
+/**
+ * Read byte from track record control register (0xff8936).
+ */
+void DmaSnd_TrackRecCtrl_ReadByte(void)
+{
+}
+
+/**
+ * Write byte to track record control register (0xff8936).
+ */
+void DmaSnd_TrackRecCtrl_WriteByte(void)
+{
+}
+
+/**
+ * Read byte from CODEC input register (0xff8937).
+ */
+void DmaSnd_CodecInput_ReadByte(void)
+{
+}
+
+/**
+ * Write byte to CODEC input register (0xff8937).
+ */
+void DmaSnd_CodecInput_WriteByte(void)
+{
+}
+
+/**
+ * Read byte from A/D converter input register (0xff8938).
+ */
+void DmaSnd_AdcInput_ReadByte(void)
+{
+}
+
+/**
+ * Write byte to A/D converter input register (0xff8938).
+ */
+void DmaSnd_AdcInput_WriteByte(void)
+{
+}
+
+/**
+ * Read byte from input amplifier register (0xff8939).
+ */
+void DmaSnd_InputAmp_ReadByte(void)
+{
+}
+
+/**
+ * Write byte to input amplifier register (0xff8939).
+ */
+void DmaSnd_InputAmp_WriteByte(void)
+{
+}
+
+/**
+ * Read word from output reduction register (0xff893a).
+ */
+void DmaSnd_OutputReduct_ReadWord(void)
+{
+}
+
+/**
+ * Write word to output reduction register (0xff893a).
+ */
+void DmaSnd_OutputReduct_WriteWord(void)
+{
+}
+
+/**
+ * Read word from CODEC status register (0xff893c).
+ */
+void DmaSnd_CodecStatus_ReadWord(void)
+{
+}
+
+/**
+ * Write word to CODEC status register (0xff893c).
+ */
+void DmaSnd_CodecStatus_WriteWord(void)
+{
+}
