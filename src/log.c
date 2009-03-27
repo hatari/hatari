@@ -80,6 +80,8 @@ TraceOptions[] = {
 	{ HATARI_TRACE_IOMEM_RD 	, "io_read" } ,
 	{ HATARI_TRACE_IOMEM_WR 	, "io_write" } ,
 
+	{ HATARI_TRACE_DMASND		, "dmasound" } ,
+
 	{ HATARI_TRACE_ALL		, "all" }
 };
 

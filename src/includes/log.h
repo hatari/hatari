@@ -102,6 +102,8 @@ extern bool Log_SetTraceOptions(const char *OptionsStr);
 #define HATARI_TRACE_IOMEM_RD		(1<<28)
 #define HATARI_TRACE_IOMEM_WR		(1<<29)
 
+#define HATARI_TRACE_DMASND		(1<<30)
+
 #define	HATARI_TRACE_NONE		(0)
 #define	HATARI_TRACE_ALL		(~0)
 
