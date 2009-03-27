@@ -104,6 +104,7 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	IKBD_InterruptHandler_AutoSend,
 	DmaSnd_InterruptHandler,
 	DmaSnd_InterruptHandler_Microwire,
+	DmaSnd_InterruptHandler_DspXmit,
 	FDC_InterruptHandler_Update,
 	Blitter_InterruptHandler,
 	Midi_InterruptHandler_Update

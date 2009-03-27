@@ -33,6 +33,7 @@ extern void DmaSnd_MicrowireData_WriteWord(void);
 extern void DmaSnd_MicrowireMask_ReadWord(void);
 extern void DmaSnd_MicrowireMask_WriteWord(void);
 
+extern void DmaSnd_InterruptHandler_DspXmit(void);
 extern void DmaSnd_CrossbarSrc_ReadWord(void);
 extern void DmaSnd_CrossbarSrc_WriteWord(void);
 extern void DmaSnd_CrossbarDst_ReadWord(void);

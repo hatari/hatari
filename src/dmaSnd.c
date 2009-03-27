@@ -175,7 +175,7 @@ static inline int DmaSnd_CheckForEndOfFrame(int nFrameCounter)
 	if (nFrameCounter >= nFrameLen)
 	{
 		/* Raise end-of-frame interrupts (MFP-i7 and Time-A) */
-	    MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
+		MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
 		if (MFP_TACR == 0x08)       /* Is timer A in Event Count mode? */
 			MFP_TimerA_EventCount_Interrupt();
 
@@ -496,6 +496,47 @@ void DmaSnd_MicrowireMask_WriteWord(void)
 
 /* ---------------------- Falcon sound subsystem ---------------------- */
 
+
+static void DmaSnd_StartDspXmitHandler(void)
+{
+	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
+	int nFreq;
+	int nClkDiv;
+
+	/* Ignore when DSP XMIT is connected to external port */
+	if ((nCbSrc & 0x80) == 0x00)
+		return;
+
+	nClkDiv = 256 * ((IoMem_ReadByte(0xff8935) & 0x0f) + 1);
+
+	if ((nCbSrc & 0x60) == 0x00)
+	{
+		/* Internal 25.175 MHz clock */
+		nFreq = 25175000 / nClkDiv;
+		Int_AddRelativeInterrupt((8013000+nFreq/2)/nFreq, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
+	}
+	else if ((nCbSrc & 0x60) == 0x20)
+	{
+		/* Internal 32 MHz clock */
+		nFreq = 32000000 / nClkDiv;
+		Int_AddRelativeInterrupt((8013000+nFreq/2)/nFreq, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
+	}
+}
+
+
+void DmaSnd_InterruptHandler_DspXmit(void)
+{
+	/* Remove this interrupt from list and re-order */
+	Int_AcknowledgeInterrupt();
+
+	/* TODO: Trigger SSI transmit interrupt in the DSP and fetch the data,
+	 *       then distribute the data to the destinations */
+
+	/* Restart the Int event handler */
+	DmaSnd_StartDspXmitHandler();
+}
+
+
 /**
  * Read word from Falcon crossbar source register (0xff8930).
  */
@@ -509,7 +550,11 @@ void DmaSnd_CrossbarSrc_ReadWord(void)
  */
 void DmaSnd_CrossbarSrc_WriteWord(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd crossbar src write: 0x%04x\n", IoMem_ReadWord(0xff8930));
+	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
+
+	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd crossbar src write: 0x%04x\n", nCbSrc);
+
+	// DmaSnd_StartDspXmitHandler();
 }
 
 /**
