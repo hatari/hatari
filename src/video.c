@@ -228,6 +228,8 @@
 /*			by Holocaust).								*/
 /* 2008/02/02	[NP]	Added 0 byte line detection in STE mode when switching hi/lo res	*/
 /*			at position 32 (Lemmings screen in Nostalgic-o-demo).			*/
+/* 2009/03/28	[NP]	Depending on bit 3 of MFP's AER, timer B will count end of line events	*/
+/*			(bit=0) or start of line events (bit=1) (fix Seven Gates Of Jambala).	*/
 
 
 
@@ -1576,10 +1578,11 @@ void Video_InterruptHandler_HBL(void)
  * position 400 in 60 Hz. 50 Hz display ends at cycle 376 and 60 Hz displays
  * ends at cycle 372. This means the EndLine interrupt happens 28 cycles
  * after LineEndCycle.
+ * Note that if bit 3 of MFP AER is 1, then timer B will count start of line
+ * instead of end of line (at cycle 52+28 or 56+28)
  */
 void Video_InterruptHandler_EndLine(void)
 {
-	Uint8 SyncByte = IoMem_ReadByte(0xff820a) & 2;	/* only keep bit 1 (50/60 Hz) */
 	int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	int nLineCycles = nFrameCycles % nCyclesPerLine;
 	int PendingCycles = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
@@ -1597,18 +1600,24 @@ void Video_InterruptHandler_EndLine(void)
 	/* Generate new Endline, if need to - there are 313 HBLs per frame */
 	if (nHBL < nScanlinesPerFrame-1)
 	{
-		/* If EndLine int is delayed too much (more than 100 cycles), nLineCycles will */
-		/* be in the range 0..xxx instead of 400..512. In that case, we need to add */
-		/* nCyclesPerLine to be in the range 512..x+512 */
-		/* Maximum delay should be around 160 cycles (DIVS), we take LINE_END_CYCLE_60 to be sure */
-		if ( nLineCycles < LINE_END_CYCLE_60 )			/* int happened in fact on the next line nHBL+1 */
-			nLineCycles += nCyclesPerLine;
-
 		/* By default, next EndLine's int will be on line nHBL+1 at pos 376+28 or 372+28 */
-		if ( SyncByte == 0x02 )		/* 50 Hz, pos 376+28 */
-			LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
-		else				/* 60 Hz, pos 372+28 */
-			LineTimerBCycle = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
+		if ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) == 0 )		/* count end of line */
+		{
+			/* If EndLine int is delayed too much (more than 100 cycles), nLineCycles will */
+			/* be in the range 0..xxx instead of 400..512. In that case, we need to add */
+			/* nCyclesPerLine to be in the range 512..x+512 */
+			/* Maximum delay should be around 160 cycles (DIVS), we take LINE_END_CYCLE_60 to be sure */
+			/* FIXME this could be handled differently without reading fffa03 */
+			if ( nLineCycles < LINE_END_CYCLE_60 )		/* int happened in fact on the next line nHBL+1 */
+				nLineCycles += nCyclesPerLine;
+
+			LineTimerBCycle = Video_TimerB_GetPos();
+		}
+
+		else							/* count start of line */
+		{
+			LineTimerBCycle = Video_TimerB_GetPos();
+		}
 
 		Int_AddRelativeInterrupt(LineTimerBCycle - nLineCycles + nCyclesPerLine,
 					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
@@ -1627,6 +1636,48 @@ void Video_InterruptHandler_EndLine(void)
 			  || ( TimerBEventCountCycleStart < nFrameCycles-PendingCycles ) ) )	/* timer B was started before this possible interrupt */
 			MFP_TimerB_EventCount_Interrupt();			/* we have a valid timer B interrupt */
 	}
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Compute the cycle position where the timer B should happen on each
+ * visible line.
+ * The position depends on the start of line / end of line positions
+ * (which depend on the current frequency / border tricks) and
+ * on the value of the bit 3 in the MFP's AER. If bit is 0, timer B
+ * will count end of line events (usual case), but if bit is 1, timer B
+ * will count start of line events.
+ * TODO : we don't handle border tricks for now (need to update timer B
+ * when a new resolution implies a change in LineStart/End Cycle)
+ */
+int Video_TimerB_GetPos(void)
+{
+	Uint8 SyncByte = IoMem_ReadByte(0xff820a) & 2;  /* only keep bit 1 (50/60 Hz) */                                                                         	/* Are we counting end of line events ? */
+	int Pos;
+
+	/* Are we counting end of line events ? */
+	if ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) == 0 )
+	{
+		// Pos = LineEndCycle + TIMERB_VIDEO_CYCLE_OFFSET;
+		if ( SyncByte == 0x02 )         /* 50 Hz, pos 376+28 */
+			Pos = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
+		else                            /* 60 Hz, pos 372+28 */
+			Pos = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
+	}
+
+	/* Else, we're counting start of line events */
+	else
+	{
+		// Pos = LineStartCycle + TIMERB_VIDEO_CYCLE_OFFSET;
+		if ( SyncByte == 0x02 )         /* 50 Hz, pos 56+28 */
+			Pos = LINE_START_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
+		else                            /* 60 Hz, pos 52+28 */
+			Pos = LINE_START_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
+	}
+
+	return Pos;
 }
 
 
@@ -1705,7 +1756,9 @@ static void Video_ResetShifterTimings(void)
 		nStartHBL = VIDEO_START_HBL_71HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_71HZ;
 		nLastVisibleHbl = FIRST_VISIBLE_HBL_71HZ + VIDEO_HEIGHT_HBL_MONO;
-		LineTimerBCycle = LINE_END_CYCLE_70 + TIMERB_VIDEO_CYCLE_OFFSET;
+		LineStartCycle = LINE_START_CYCLE_70;
+		LineEndCycle = LINE_END_CYCLE_70;
+		LineTimerBCycle = Video_TimerB_GetPos();
 	}
 	else if (nSyncByte & 2)  /* Check if running in 50 Hz or in 60 Hz */
 	{
@@ -1716,7 +1769,9 @@ static void Video_ResetShifterTimings(void)
 		nStartHBL = VIDEO_START_HBL_50HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_50HZ;
 		nLastVisibleHbl = FIRST_VISIBLE_HBL_50HZ + NUM_VISIBLE_LINES;
-		LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
+		LineStartCycle = LINE_START_CYCLE_50;
+		LineEndCycle = LINE_END_CYCLE_50;
+		LineTimerBCycle = Video_TimerB_GetPos();
 	}
 	else
 	{
@@ -1727,7 +1782,9 @@ static void Video_ResetShifterTimings(void)
 		nStartHBL = VIDEO_START_HBL_60HZ;
 		nFirstVisibleHbl = FIRST_VISIBLE_HBL_60HZ;
 		nLastVisibleHbl = FIRST_VISIBLE_HBL_60HZ + NUM_VISIBLE_LINES;
-		LineTimerBCycle = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
+		LineStartCycle = LINE_START_CYCLE_60;
+		LineEndCycle = LINE_END_CYCLE_60;
+		LineTimerBCycle = Video_TimerB_GetPos();
 	}
 
 	if (bUseHighRes)
@@ -1962,11 +2019,19 @@ void Video_StartInterrupts(void)
 	/* HBLs are not emulated in VDI mode */
 	if (!bUseVDIRes)
 	{
-		/* Set int to cycle 376+28 or 372+28 because nCyclesPerLine is 512 or 508 */
+		/* Set Timer B interrupt to cycle 376+28 or 372+28 because nCyclesPerLine is 512 or 508 */
 		/* (this also means int is set to 512-108 or 508-108 depending on the current freq) */
-		Int_AddAbsoluteInterrupt(nCyclesPerLine - ( CYCLES_PER_LINE_50HZ - LINE_END_CYCLE_50 )
+		/* We check bit 3 of MFP AER to see if we count end of line or start of line events */
+		if ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) == 0 )		/* count end of line */
+			Int_AddAbsoluteInterrupt(nCyclesPerLine - ( CYCLES_PER_LINE_50HZ - LINE_END_CYCLE_50 )
 		                         + TIMERB_VIDEO_CYCLE_OFFSET - VblVideoCycleOffset,
 		                         INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
+		else							/* count start of line */
+			Int_AddAbsoluteInterrupt(nCyclesPerLine - ( CYCLES_PER_LINE_50HZ - LINE_START_CYCLE_50 )
+		                         + TIMERB_VIDEO_CYCLE_OFFSET - VblVideoCycleOffset,
+		                         INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
+
+		/* Set HBL interrupt */
 		Int_AddAbsoluteInterrupt(nCyclesPerLine + HBL_VIDEO_CYCLE_OFFSET - VblVideoCycleOffset,
 		                         INT_CPU_CYCLE, INTERRUPT_VIDEO_HBL);
 	}

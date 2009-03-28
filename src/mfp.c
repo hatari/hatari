@@ -90,6 +90,7 @@
 /* 2008/12/11	[NP]	In MFP_CheckPendingInterrupts(), returns TRUE or FALSE instead	*/
 /*			of void, depending on whether at least one MFP interrupt was	*/
 /*			allowed or not.							*/
+/* 2009/03/28	[NP]	Handle bit 3 of AER for timer B (fix Seven Gates Of Jambala).	*/
 
 
 const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
@@ -1276,11 +1277,49 @@ void MFP_GPIP_WriteByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Handle write to AER (0xfffa03).
+ * Handle write to AER (0xfffa03)
+ * Bit 3 of AER is linked to timer B in event count mode.
+ * If bit 3=0, timer B triggers on end of line when display goes off.
+ * If bit 3=1, timer B triggers on start of line when display goes on.
  */
 void MFP_ActiveEdge_WriteByte(void)
 {
+	int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+	int nLineCycles = nFrameCycles % nCyclesPerLine;
+	int LineTimerBCycle_old = LineTimerBCycle;
+
 	M68000_WaitState(4);
+
+	/* 0 -> 1, timer B is now counting start of line events (cycle 56+28) */
+	if ( ( ( MFP_AER & ( 1 << 3 ) ) == 0 ) && ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) != 1 ) )
+	{
+		LineTimerBCycle = Video_TimerB_GetPos();
+
+		HATARI_TRACE ( ( HATARI_TRACE_VIDEO_HBL | HATARI_TRACE_MFP_WRITE ) , "mfp/video AER bit 3 0->1, timer B triggers on start of line, old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
+					LineTimerBCycle_old , LineTimerBCycle ,
+					nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
+
+	/* 1 -> 0, timer B is now counting end of line events (cycle 376+28) */
+	else if ( ( ( MFP_AER & ( 1 << 3 ) ) != 0 ) && ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) == 0 ) )
+	{
+		LineTimerBCycle = Video_TimerB_GetPos();
+
+		HATARI_TRACE ( ( HATARI_TRACE_VIDEO_HBL | HATARI_TRACE_MFP_WRITE ) , "mfp/video AER bit 3 1->0, timer B triggers on end of line, old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
+					LineTimerBCycle_old , LineTimerBCycle ,
+					nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+	}
+
+	/* Timer B position changed, update the next interrupt */
+	if ( LineTimerBCycle_old != LineTimerBCycle )
+	{
+		if ( nLineCycles < LineTimerBCycle )		/* changed before the next timer B event on this line */
+			Int_AddRelativeInterrupt ( LineTimerBCycle - nLineCycles ,
+					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE );
+		else						/* next timer B event will be on next line */
+			Int_AddRelativeInterrupt ( LineTimerBCycle - nLineCycles + nCyclesPerLine,
+					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE );
+	}
 
 	MFP_AER = IoMem[0xfffa03];
 }

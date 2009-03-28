@@ -149,8 +149,9 @@ extern void Video_MemorySnapShot_Capture(bool bSave);
 extern void Video_GetTTRes(int *width, int *height, int *bpp);
 extern void Video_StartInterrupts(void);
 extern void Video_InterruptHandler_VBL(void);
-extern void Video_InterruptHandler_EndLine(void);
 extern void Video_InterruptHandler_HBL(void);
+extern void Video_InterruptHandler_EndLine(void);
+extern int Video_TimerB_GetPos(void);
 extern void Video_SetScreenRasters(void);
 
 extern void Video_ScreenCounter_ReadByte(void);

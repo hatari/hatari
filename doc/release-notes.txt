@@ -11,6 +11,8 @@
 
 Emulation:
 - Improve Timer B accuracy when starting it in a rare case
+- Handle end of line as well as start of line for Timer B
+  in event count mode (using MFP's AER) (fixes Seven Gates Of Jambala)
 
 
  Version 1.2.0 (2009-01-24):
