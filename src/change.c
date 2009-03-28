@@ -72,10 +72,15 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	if (strcmp(changed->Rom.szTosImageFileName, current->Rom.szTosImageFileName))
 		return TRUE;
 
-	/* Did change HD image? */
+	/* Did change ACSI hard disk image? */
 	if (changed->HardDisk.bUseHardDiskImage != current->HardDisk.bUseHardDiskImage
 	    || (strcmp(changed->HardDisk.szHardDiskImage, current->HardDisk.szHardDiskImage)
 	        && changed->HardDisk.bUseHardDiskImage))
+		return TRUE;
+
+	/* Did change IDE hard disk image? */
+	if (changed->HardDisk.bUseIdeHardDiskImage != current->HardDisk.bUseIdeHardDiskImage
+	    || strcmp(changed->HardDisk.szIdeHardDiskImage, current->HardDisk.szIdeHardDiskImage))
 		return TRUE;
 
 	/* Did change GEMDOS drive? */
