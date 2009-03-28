@@ -62,10 +62,9 @@ static SGOBJ maindlg[] =
 };
 
 
-/*-----------------------------------------------------------------------*/
-/*
-  This functions sets up the actual font and then displays the main dialog.
-*/
+/**
+ * This functions sets up the actual font and then displays the main dialog.
+ */
 int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 {
 	int retbut;
@@ -96,8 +95,10 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			Dialog_AboutDlg();
 			break;
 		 case MAINDLG_FLOPPYS:
+			DlgFloppy_Main();
+			break;
 		 case MAINDLG_HARDDISK:
-			Dialog_DiskDlg();
+			DlgHardDisk_Main();
 			break;
 		 case MAINDLG_ROM:
 			DlgRom_Main();
