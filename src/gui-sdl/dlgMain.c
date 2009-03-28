@@ -16,46 +16,48 @@ const char DlgMain_fileid[] = "Hatari dlgMain.c : " __DATE__ " " __TIME__;
 
 
 #define MAINDLG_ABOUT    2
-#define MAINDLG_DISKS    3
+#define MAINDLG_SYSTEM   3
 #define MAINDLG_ROM      4
-#define MAINDLG_SCREEN   5
-#define MAINDLG_SOUND    6
-#define MAINDLG_CPU      7
-#define MAINDLG_MEMORY   8
-#define MAINDLG_JOY      9
-#define MAINDLG_KEYBD    10
-#define MAINDLG_DEVICES  11
-#define MAINDLG_LOADCFG  12
-#define MAINDLG_SAVECFG  13
-#define MAINDLG_NORESET  14
-#define MAINDLG_RESET    15
-#define MAINDLG_OK       16
-#define MAINDLG_CANCEL   17
+#define MAINDLG_MEMORY   5
+#define MAINDLG_FLOPPYS  6
+#define MAINDLG_HARDDISK 7
+#define MAINDLG_SCREEN   8
+#define MAINDLG_SOUND    9
+#define MAINDLG_JOY      10
+#define MAINDLG_KEYBD    11
+#define MAINDLG_DEVICES  12
+#define MAINDLG_LOADCFG  13
+#define MAINDLG_SAVECFG  14
+#define MAINDLG_NORESET  15
+#define MAINDLG_RESET    16
+#define MAINDLG_OK       17
 #define MAINDLG_QUIT     18
+#define MAINDLG_CANCEL   19
 
 
 /* The main dialog: */
 static SGOBJ maindlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 36,22, NULL },
-	{ SGTEXT, 0, 0, 10,1, 16,1, "Hatari main menu" },
-	{ SGBUTTON, 0, 0, 4,4, 12,1, "About" },
-	{ SGBUTTON, 0, 0, 4,6, 12,1, "Disks" },
-	{ SGBUTTON, 0, 0, 4,8, 12,1, "ROM" },
-	{ SGBUTTON, 0, 0, 4,10, 12,1, "Screen" },
-	{ SGBUTTON, 0, 0, 4,12, 12,1, "Sound" },
-	{ SGBUTTON, 0, 0, 20,4, 12,1, "System" },
-	{ SGBUTTON, 0, 0, 20,6, 12,1, "Memory" },
-	{ SGBUTTON, 0, 0, 20,8, 12,1, "Joysticks" },
-	{ SGBUTTON, 0, 0, 20,10, 12,1, "Keyboard" },
-	{ SGBUTTON, 0, 0, 20,12, 12,1, "Devices" },
-	{ SGBUTTON, 0, 0, 3,15, 14,1, "Load config." },
-	{ SGBUTTON, 0, 0, 19,15, 14,1, "Save config." },
-	{ SGRADIOBUT, 0, 0, 2,18, 10,1, "No Reset" },
-	{ SGRADIOBUT, 0, 0, 2,20, 10,1, "Reset ST" },
-	{ SGBUTTON, SG_DEFAULT, 0, 14,18, 8,3, "Okay" },
-	{ SGBUTTON, SG_CANCEL, 0, 25,20, 8,1, "Cancel" },
-	{ SGBUTTON, 0, 0, 25,18, 8,1, "Quit" },
+	{ SGBOX, 0, 0, 0,0, 50,19, NULL },
+	{ SGTEXT, 0, 0, 17,1, 16,1, "Hatari main menu" },
+	{ SGBUTTON, 0, 0, 2,4, 14,1, "About" },
+	{ SGBUTTON, 0, 0, 2,6, 14,1, "System" },
+	{ SGBUTTON, 0, 0, 2,8, 14,1, "ROM" },
+	{ SGBUTTON, 0, 0, 2,10, 14,1, "Memory" },
+	{ SGBUTTON, 0, 0, 18,4, 14,1, "Floppy disks" },
+	{ SGBUTTON, 0, 0, 18,6, 14,1, "Hard disks" },
+	{ SGBUTTON, 0, 0, 18,8, 14,1, "Screen" },
+	{ SGBUTTON, 0, 0, 18,10, 14,1, "Sound" },
+	{ SGBUTTON, 0, 0, 34,4, 14,1, "Joysticks" },
+	{ SGBUTTON, 0, 0, 34,6, 14,1, "Keyboard" },
+	{ SGBUTTON, 0, 0, 34,8, 14,1, "Devices" },
+	{ SGBUTTON, 0, 0, 7,13, 16,1, "Load config." },
+	{ SGBUTTON, 0, 0, 27,13, 16,1, "Save config." },
+	{ SGRADIOBUT, 0, 0, 3,15, 10,1, "No Reset" },
+	{ SGRADIOBUT, 0, 0, 3,17, 10,1, "Reset machine" },
+	{ SGBUTTON, SG_DEFAULT, 0, 21,15, 8,3, "OK" },
+	{ SGBUTTON, 0, 0, 36,15, 10,1, "Quit" },
+	{ SGBUTTON, SG_CANCEL, 0, 36,17, 10,1, "Cancel" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -93,7 +95,8 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 		 case MAINDLG_ABOUT:
 			Dialog_AboutDlg();
 			break;
-		 case MAINDLG_DISKS:
+		 case MAINDLG_FLOPPYS:
+		 case MAINDLG_HARDDISK:
 			Dialog_DiskDlg();
 			break;
 		 case MAINDLG_ROM:
@@ -105,7 +108,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 		 case MAINDLG_SOUND:
 			Dialog_SoundDlg();
 			break;
-		 case MAINDLG_CPU:
+		 case MAINDLG_SYSTEM:
 			Dialog_SystemDlg();
 			break;
 		 case MAINDLG_MEMORY:
