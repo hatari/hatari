@@ -122,6 +122,8 @@ extern bool Log_SetTraceOptions(const char *OptionsStr);
 
 #define	HATARI_TRACE_OS_ALL		( HATARI_TRACE_OS_BIOS | HATARI_TRACE_OS_XBIOS | HATARI_TRACE_OS_GEMDOS | HATARI_TRACE_OS_VDI )
 
+#define	HATARI_TRACE_IOMEM_ALL		( HATARI_TRACE_IOMEM_RD | HATARI_TRACE_IOMEM_WR )
+
 
 extern FILE *TraceFile;
 extern Uint32 HatariTraceFlags;

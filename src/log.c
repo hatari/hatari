@@ -79,6 +79,7 @@ TraceOptions[] = {
 
 	{ HATARI_TRACE_IOMEM_RD 	, "io_read" } ,
 	{ HATARI_TRACE_IOMEM_WR 	, "io_write" } ,
+	{ HATARI_TRACE_IOMEM_ALL 	, "io_all" } ,
 
 	{ HATARI_TRACE_DMASND		, "dmasound" } ,
 
