@@ -42,6 +42,10 @@
 #define DSP_DISASM_HOSTWRITE 0	/* Host->Dsp transfer */
 #define DSP_DISASM_STATE 0	/* State changes */
 
+/* static structure */
+
+static dsp_core_ssi_t dsp_core_ssi;
+
 /*--- Functions prototypes ---*/
 
 static void dsp_core_dsp2host(dsp_core_t *dsp_core);
@@ -218,6 +222,9 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	dsp_core->hostport[CPU_HOST_ISR]=(1<<CPU_HOST_ISR_TRDY)|(1<<CPU_HOST_ISR_TXDE);
 	dsp_core->hostport[CPU_HOST_IVR]=0x0f;
 
+	/* SSI registers */
+	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]=0x40;
+	
 	/* Other hardware registers */
 	dsp_core->periph[DSP_SPACE_X][DSP_IPR]=0;
 	dsp_core->periph[DSP_SPACE_X][DSP_BCR]=0xffff;
@@ -294,9 +301,6 @@ void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint32 inter)
 	}
 }
 
-/* CPU<->DSP Host interface transfers */
-
-
 /* Process Host Interface peripheral code */
 void dsp_core_process_host_interface(dsp_core_t *dsp_core)
 {
@@ -313,6 +317,97 @@ void dsp_core_process_host_interface(dsp_core_t *dsp_core)
 /* Process SSI peripheral code */
 void dsp_core_process_ssi_interface(dsp_core_t *dsp_core)
 {
+}
+
+/* SSI receive data */
+void dsp_core_ssi_receive_data(Uint32 data)
+{
+	Uint32 i, temp=0;
+
+	/* adjust value to receive size word */
+	data &= dsp_core_ssi.cra_word_mask;
+
+	/* swap received data if bit SHFD in CRB is set */
+	if (dsp_core_ssi.crb_shifter) {
+		for (i=0; i<dsp_core_ssi.cra_word_size; i++) {
+			temp += data & 1;
+			temp <<= 1;
+			data >>= 1;
+		}
+		data = temp;
+	}
+
+	/* detect if SSI runs in normal or network mode */
+	if (dsp_core_ssi.crb_mode) {
+		/* TODO : SSI Network mode */
+
+		/* TODO : Set SSI bit (TSF) */
+
+	}
+	else {
+		/* SSI Normal mode */
+		/* in normal mode, TSF is always "1" */
+	}
+
+	/*	TODO : 
+	- test if interruptions
+	*/
+}
+
+/* SSI transmit data */
+void dsp_core_ssi_transmit_data(void)
+{
+}
+
+/* SSI receive data */
+void dsp_core_ssi_receive_serial_clock(void)
+{
+	
+}
+
+/* SSI SSI initialisations and state management */
+void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress)
+{
+	Uint32 crb;
+	
+	crb = dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB];
+
+	switch (adress) {
+		case DSP_SSI_CRA:
+			/* get word size for transfers */
+			switch ((dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRA]>>13) & 3) {
+				case 0:
+					dsp_core_ssi.cra_word_size = 8;
+					dsp_core_ssi.cra_word_mask = 0xff;
+					break;
+				case 1:
+					dsp_core_ssi.cra_word_size = 12;
+					dsp_core_ssi.cra_word_mask = 0xfff;
+					break;
+				case 2:
+					dsp_core_ssi.cra_word_size = 16;
+					dsp_core_ssi.cra_word_mask = 0xffff;
+					break;
+				case 3:
+					dsp_core_ssi.cra_word_size = 24;
+					dsp_core_ssi.cra_word_mask = 0xfffff;
+					break;
+			}
+			break;
+		case DSP_SSI_CRB:
+			dsp_core_ssi.crb_source_clock = (crb>>5) & 1;
+			dsp_core_ssi.crb_shifter = (crb>>6) & 1;
+			dsp_core_ssi.crb_synchro= (crb>>9) & 1;
+			dsp_core_ssi.crb_mode = (crb>>11) & 1;
+			dsp_core_ssi.crb_te=(crb>>12) & 1;
+			dsp_core_ssi.crb_re=(crb>>13) & 1;
+			dsp_core_ssi.crb_tie=(crb>>14) & 1;
+			dsp_core_ssi.crb_rie=(crb>>15) & 1;
+			break;
+		case DSP_SSI_SR:
+			/* TODO : save values to the ssi structure */
+			break;
+	}
 }
 
 static void dsp_core_hostport_update_trdy(dsp_core_t *dsp_core)

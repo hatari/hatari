@@ -96,9 +96,27 @@ extern "C" {
 #define DSP_HOST_HSR_HF1	0x04
 #define DSP_HOST_HSR_DMA	0x07
 
+#define DSP_SSI_CRB_OF0		0x0
+#define DSP_SSI_CRB_OF1		0x1
+#define DSP_SSI_CRB_SCD0	0x2
+#define DSP_SSI_CRB_SCD1	0x3
+#define DSP_SSI_CRB_SCD2	0x4
+#define DSP_SSI_CRB_SCKD	0x5
+#define DSP_SSI_CRB_SHFD	0x6
+#define DSP_SSI_CRB_FSL0	0x7
+#define DSP_SSI_CRB_FSL1	0x8
+#define DSP_SSI_CRB_SYN		0x9
+#define DSP_SSI_CRB_GCK		0xa
+#define DSP_SSI_CRB_MOD		0xb
+#define DSP_SSI_CRB_TE		0xc
+#define DSP_SSI_CRB_RE		0xd
 #define DSP_SSI_CRB_TIE		0xe
 #define DSP_SSI_CRB_RIE		0xf
 
+#define DSP_SSI_SR_IF0		0x0
+#define DSP_SSI_SR_IF1		0x1
+#define DSP_SSI_SR_TFS		0x2
+#define DSP_SSI_SR_RFS		0x3
 #define DSP_SSI_SR_TUE		0x4
 #define DSP_SSI_SR_ROE		0x5
 #define DSP_SSI_SR_TDF		0x6
@@ -178,6 +196,25 @@ struct dsp_core_s {
 	void	(*resumeThread)(dsp_core_t *_this);
 };
 
+typedef struct dsp_core_ssi_s dsp_core_ssi_t;
+
+struct dsp_core_ssi_s {
+	Uint32  cra_word_size;
+	Uint32  cra_word_mask;
+
+	Uint16	crb_source_clock;
+	Uint16	crb_shifter;
+	Uint16	crb_synchro;
+	Uint16	crb_mode;
+	Uint16	crb_te;
+	Uint16	crb_re;
+	Uint16	crb_tie;
+	Uint16	crb_rie;
+
+	Uint32  ssi_clock_send;
+	Uint32  ssi_clock_receive;
+};
+
 /* Emulator call these to init/stop/reset DSP emulation */
 void dsp_core_init(dsp_core_t *dsp_core, int use_thread);
 void dsp_core_shutdown(dsp_core_t *dsp_core);
@@ -197,6 +234,12 @@ void dsp_core_set_state_sem(dsp_core_t *dsp_core, int new_state, int use_semapho
 /* dsp_cpu call these to read/write host port */
 void dsp_core_hostport_dspread(dsp_core_t *dsp_core);
 void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
+
+/* dsp_cpu call these to read/write/configure SSI port */
+void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress);
+void dsp_core_ssi_receive_serial_clock(void);
+void dsp_core_ssi_transmit_data(void);
+void dsp_core_ssi_receive_data(Uint32 data);
 
 /* Process peripheral code */
 void dsp_core_process_host_interface(dsp_core_t *dsp_core);	/* HI */

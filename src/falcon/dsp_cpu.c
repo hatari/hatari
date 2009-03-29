@@ -1112,6 +1112,10 @@ static Uint32 read_memory(int space, Uint16 address)
 		if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_HOST_HRX)) {
 			dsp_core_hostport_dspread(dsp_core);
 		}
+		if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_SSI_RX)) {
+			/* Clear SSI receive interrupt */
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_RDF);
+		}
 		value = dsp_core->periph[space][address-0xffc0] & BITMASK(24);
 		dsp_core->unlockMutex(dsp_core);
 
@@ -1165,6 +1169,17 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 						break;
 					case DSP_HOST_HSR:
 						/* Read only */
+						break;
+					case DSP_SSI_CRA:
+					case DSP_SSI_CRB:
+					case DSP_SSI_SR:
+						dsp_core->periph[DSP_SPACE_X][address-0xffc0] = value;
+						dsp_core_ssi_configure(dsp_core, address-0xffc0);
+						break;
+					case DSP_SSI_TX:
+						dsp_core->periph[DSP_SPACE_X][DSP_SSI_TX] = value;
+						/* Clear SSI transmit interrupt */
+						dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDF);
 						break;
 					default:
 						dsp_core->periph[DSP_SPACE_X][address-0xffc0] = value;
