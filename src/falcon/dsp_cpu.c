@@ -370,104 +370,46 @@ static dsp_emul_t opcodes_parmove[16]={
 	dsp_pm_8
 };
 
-static dsp_emul_t opcodes_alu003f[64]={
-	/* 0x00 - 0x0f */
-	dsp_move,
-	dsp_tfr,
-	dsp_addr,
-	dsp_tst,
-	dsp_undefined,
-	dsp_cmp,
-	dsp_subr,
-	dsp_cmpm,
-	dsp_undefined,
-	dsp_tfr,
-	dsp_addr,
-	dsp_tst,
-	dsp_undefined,
-	dsp_cmp,
-	dsp_subr,
-	dsp_cmpm,
+static dsp_emul_t opcodes_alu[256]={
+	/* 0x00 - 0x3f */
+	dsp_move, dsp_tfr, dsp_addr, dsp_tst, dsp_undefined, dsp_cmp, dsp_subr, dsp_cmpm,
+	dsp_undefined, dsp_tfr, dsp_addr, dsp_tst, dsp_undefined, dsp_cmp, dsp_subr, dsp_cmpm,
+	dsp_add, dsp_rnd, dsp_addl, dsp_clr, dsp_sub, dsp_undefined, dsp_subl, dsp_not,
+	dsp_add, dsp_rnd, dsp_addl, dsp_clr, dsp_sub, dsp_undefined, dsp_subl, dsp_not,
+	dsp_add, dsp_adc, dsp_asr, dsp_lsr, dsp_sub, dsp_sbc, dsp_abs, dsp_ror,
+	dsp_add, dsp_adc, dsp_asr, dsp_lsr, dsp_sub, dsp_sbc, dsp_abs, dsp_ror,
+	dsp_add, dsp_adc, dsp_asl, dsp_lsl, dsp_sub, dsp_sbc, dsp_neg, dsp_rol,
+	dsp_add, dsp_adc, dsp_asl, dsp_lsl, dsp_sub, dsp_sbc, dsp_neg, dsp_rol,
+	
+	/* 0x40 - 0x7f */
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
 
-	/* 0x10 - 0x1f */
-	dsp_add,
-	dsp_rnd,
-	dsp_addl,
-	dsp_clr,
-	dsp_sub,
-	dsp_undefined,
-	dsp_subl,
-	dsp_not,
-	dsp_add,
-	dsp_rnd,
-	dsp_addl,
-	dsp_clr,
-	dsp_sub,
-	dsp_undefined,
-	dsp_subl,
-	dsp_not,
+	/* 0x80 - 0xbf */
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
 
-	/* 0x20 - 0x2f */
-	dsp_add,
-	dsp_adc,
-	dsp_asr,
-	dsp_lsr,
-	dsp_sub,
-	dsp_sbc,
-	dsp_abs,
-	dsp_ror,
-	dsp_add,
-	dsp_adc,
-	dsp_asr,
-	dsp_lsr,
-	dsp_sub,
-	dsp_sbc,
-	dsp_abs,
-	dsp_ror,
-
-	/* 0x30 - 0x3f */
-	dsp_add,
-	dsp_adc,
-	dsp_asl,
-	dsp_lsl,
-	dsp_sub,
-	dsp_sbc,
-	dsp_neg,
-	dsp_rol,
-	dsp_add,
-	dsp_adc,
-	dsp_asl,
-	dsp_lsl,
-	dsp_sub,
-	dsp_sbc,
-	dsp_neg,
-	dsp_rol
-};
-
-static dsp_emul_t opcodes_alu407f[16]={
-	dsp_add,
-	dsp_tfr,
-	dsp_or,
-	dsp_eor,
-	dsp_sub,
-	dsp_cmp,
-	dsp_and,
-	dsp_cmpm,
-	dsp_add,
-	dsp_tfr,
-	dsp_or,
-	dsp_eor,
-	dsp_sub,
-	dsp_cmp,
-	dsp_and,
-	dsp_cmpm
-};
-
-static dsp_emul_t opcodes_alu80ff[4]={
-	dsp_mpy,
-	dsp_mpyr,
-	dsp_mac,
-	dsp_macr
+	/* 0xc0 - 0xff */
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr
 };
 
 static dsp_emul_t opcodes_do[8]={
@@ -667,15 +609,7 @@ void dsp56k_execute_instruction(void)
 	} else {
 		dsp_parmove_read();
 		value = cur_inst & BITMASK(8);
-		if (value < 0x40) {
-			opcodes_alu003f[value]();
-		} else if (value < 0x80) {
-			value &= BITMASK(4);
-			opcodes_alu407f[value]();
-		} else {
-			value &= BITMASK(2);
-			opcodes_alu80ff[value]();
-		}
+		opcodes_alu[value]();
 		dsp_parmove_write();
 	}
 
