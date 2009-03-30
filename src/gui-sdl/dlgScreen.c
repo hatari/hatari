@@ -144,6 +144,7 @@ void Dialog_ScreenDlg(void)
 {
 	int but, skip = 0;
 	unsigned int i;
+	MONITORTYPE	mti;
 
 	SDLGui_CenterDlg(screendlg);
 
@@ -293,11 +294,11 @@ void Dialog_ScreenDlg(void)
 			break;
 		}
 	}
-	for (i = DLGSCRN_MONO; i <= DLGSCRN_TV; i++)
+	for (mti = MONITOR_TYPE_MONO; mti <= MONITOR_TYPE_TV; mti++)
 	{
-		if (screendlg[i].state & SG_SELECTED)
+		if (screendlg[mti + DLGSCRN_MONO].state & SG_SELECTED)
 		{
-			ConfigureParams.Screen.nMonitorType = i - DLGSCRN_MONO;
+			ConfigureParams.Screen.nMonitorType = mti;
 			break;
 		}
 	}

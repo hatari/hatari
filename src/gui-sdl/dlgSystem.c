@@ -76,6 +76,7 @@ static SGOBJ systemdlg[] =
 void Dialog_SystemDlg(void)
 {
 	int i;
+	MACHINETYPE	mti;
 
 	SDLGui_CenterDlg(systemdlg);
 
@@ -143,11 +144,11 @@ void Dialog_SystemDlg(void)
 		}
 	}
 
-	for (i = DLGSYS_ST; i <= DLGSYS_FALCON; i++)
+	for (mti = MACHINE_ST; mti <= MACHINE_FALCON; mti++)
 	{
-		if (systemdlg[i].state&SG_SELECTED)
+		if (systemdlg[mti + DLGSYS_ST].state&SG_SELECTED)
 		{
-			ConfigureParams.System.nMachineType = i-DLGSYS_ST;
+			ConfigureParams.System.nMachineType = mti;
 			break;
 		}
 	}

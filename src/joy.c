@@ -258,8 +258,9 @@ bool Joy_SetCursorEmulation(int port)
  */
 void Joy_ToggleCursorEmulation(void)
 {
-	static int saved[2] = { JOYSTICK_DISABLED, JOYSTICK_DISABLED };
-	int i, state, port = 2;
+	static JOYSTICKMODE saved[2] = { JOYSTICK_DISABLED, JOYSTICK_DISABLED };
+	JOYSTICKMODE state;
+	int i, port = 2;
 	for (i = 0; i < 2; i++) {
 		state = ConfigureParams.Joysticks.Joy[i].nJoystickMode;
 		if (state == JOYSTICK_KEYBOARD) {

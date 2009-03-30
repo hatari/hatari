@@ -177,12 +177,12 @@ static void DlgJoystick_ReadValuesFromConf(int nActJoy, int nMaxId)
 */
 static void DlgJoystick_WriteValuesToConf(int nActJoy)
 {
-	int i;
-	for (i = DLGJOY_DISABLED; i <= DLGJOY_USEKEYS; i++)
+	JOYSTICKMODE jmi;
+	for (jmi = JOYSTICK_DISABLED; jmi <= JOYSTICK_KEYBOARD; jmi++)
 	{
-		if (joydlg[i].state & SG_SELECTED)
+		if (joydlg[jmi + DLGJOY_DISABLED].state & SG_SELECTED)
 		{
-			ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode = i - DLGJOY_DISABLED;
+			ConfigureParams.Joysticks.Joy[nActJoy].nJoystickMode = jmi;
 			break;
 		}
 	}

@@ -374,7 +374,7 @@ bool Shortcut_Invoke(const char *shortcut)
 static SHORTCUTKEYIDX ShortCut_CheckKey(int symkey, int *keys)
 {
 	SHORTCUTKEYIDX key;
-	for (key = 0; key < SHORTCUT_KEYS; key++)
+	for (key = SHORTCUT_OPTIONS; key < SHORTCUT_KEYS; key++)
 	{
 		if (symkey == keys[key])
 			return key;

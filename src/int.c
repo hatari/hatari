@@ -242,13 +242,13 @@ void Int_MemorySnapShot_Capture(bool bSave)
 static void Int_SetNewInterrupt(void)
 {
 	Sint64 LowestCycleCount = INT_MAX;
-	interrupt_id LowestInterrupt = 0, i;
+	interrupt_id LowestInterrupt = INTERRUPT_NULL, i;
 
 	HATARI_TRACE ( HATARI_TRACE_INT , "int set new in video_cyc=%d active_int=%d pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), ActiveInterrupt, PendingInterruptCount );
 
 	/* Find next interrupt to go off */
-	for (i = 1; i < MAX_INTERRUPTS; i++)
+	for (i = INTERRUPT_NULL+1; i < MAX_INTERRUPTS; i++)
 	{
 		/* Is interrupt pending? */
 		if (InterruptHandlers[i].bUsed)
