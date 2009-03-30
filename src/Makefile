@@ -32,10 +32,10 @@ OBJS = $(SRCS:.c=.o)
 SUBDIRLIBS = $(CPUDIR)/cpu68k.a falcon/falcon.a gui-sdl/gui-sdl.a
 
 ifeq ($(SYS_WINDOWS),1)
-  ALLOBJS += gui-win/gui-win.a
+  SUBDIRLIBS += gui-win/gui-win.a
 else
 ifneq ($(strip $(shell gcc -v 2>&1 |grep "cygwin")),)
-  ALLOBJS += gui-win/gui-win.a
+  SUBDIRLIBS += gui-win/gui-win.a
 endif 
 endif
 
