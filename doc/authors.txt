@@ -4,7 +4,7 @@
 
 - Thomas Huth <huth at users.berlios.de> : Project initiator and main developer.
 
-- Eero Tamminen <eerot at users.sourceforge.net> : Speed improvements & code
+- Eero Tamminen <eerot at users.berlios.de> : Speed improvements & code
   cleanup, parts of the STE emulation, Hatari embedding & remote control,
   pause & auto frameskip support, statusbar & overlay led, PNG saving and
   other patches.
@@ -14,6 +14,8 @@
 
 - Jean-Baptiste Berlioz <tobe at freemind-tobe.com> : Cycle accurate Blitter
   emulation.
+
+- Laurent Sallafranque: Many fixes and speedups to DSP emulation.
 
 
  Contributors:
@@ -79,8 +81,6 @@ please remind me!):
 - Fredrik Noring : Tracked down a bug in the blitter emulation and a bug
   in the PSG shadow register emulation.
 
-- Laurent Sallafranque: Fixed a lot of bugs in the DSP emulation code.
-
 - Volker Seebode: Fix to ASCI emulation to get other than AHDI drivers working.
 
 - David Savinkoff: More accurate printer emulation.
@@ -89,6 +89,8 @@ please remind me!):
 
 - Jerome Vernet: Some updates to the OS X Xcode project file and OS X GUI,
   supplied a french keymapping file for OS X.
+
+- Kenneth Kaufman: MS VC6 and C++ compiler support patches.
 
 
  Code from other projects
