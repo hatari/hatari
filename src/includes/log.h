@@ -130,8 +130,10 @@ extern Uint32 HatariTraceFlags;
 
 #ifdef HATARI_TRACE_ACTIVATED
 
+#ifndef _VCWIN_
 #define	HATARI_TRACE( level, args... ) \
 	if ( HatariTraceFlags & level ) fprintf ( TraceFile , args )
+#endif
 #define HATARI_TRACE_LEVEL( level )	(HatariTraceFlags & level)
 
 #else		/* HATARI_TRACE_ACTIVATED */
