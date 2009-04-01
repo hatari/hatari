@@ -532,6 +532,8 @@ void DmaSnd_InterruptHandler_DspXmit(void)
 	/* TODO: Trigger SSI transmit interrupt in the DSP and fetch the data,
 	 *       then distribute the data to the destinations */
 
+	dsp_core_ssi_receive_serial_clock();
+
 	/* Restart the Int event handler */
 	DmaSnd_StartDspXmitHandler();
 }
@@ -554,7 +556,7 @@ void DmaSnd_CrossbarSrc_WriteWord(void)
 
 	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd crossbar src write: 0x%04x\n", nCbSrc);
 
-	// DmaSnd_StartDspXmitHandler();
+	DmaSnd_StartDspXmitHandler();
 }
 
 /**

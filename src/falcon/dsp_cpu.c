@@ -807,27 +807,9 @@ static void dsp_postexecute_interrupts(void)
 
 	dsp_core->lockMutex(dsp_core);
 
-	/* host transmit ? */
-	if (dsp_core->interrupt_instr_fetch == 0x22) {
-		dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff-(1<<DSP_HOST_HSR_HTDE);
-	}
-
-	/* host receive ? */
-	else if (dsp_core->interrupt_instr_fetch == 0x20) {
-		dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff-(1<<DSP_HOST_HSR_HRDF);
-	}
-
-	/* SSI receive data */
-	else if (dsp_core->interrupt_instr_fetch == 0xc) {
-	}
-
 	/* SSI receive data with exception */
-	else if (dsp_core->interrupt_instr_fetch == 0xe) {
+	if (dsp_core->interrupt_instr_fetch == 0xe) {
 		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_ROE);
-	}
-
-	/* SSI transmit data */
-	else if (dsp_core->interrupt_instr_fetch == 0x10) {
 	}
 
 	/* SSI transmit data with exception */
@@ -1111,9 +1093,7 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 						dsp_core_ssi_configure(dsp_core, address-0xffc0);
 						break;
 					case DSP_SSI_TX:
-						dsp_core->periph[DSP_SPACE_X][DSP_SSI_TX] = value;
-						/* Clear SSI transmit interrupt */
-						dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDF);
+						dsp_core_ssi_transmit_data(dsp_core, value);
 						break;
 					default:
 						dsp_core->periph[DSP_SPACE_X][address-0xffc0] = value;

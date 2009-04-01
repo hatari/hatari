@@ -96,6 +96,14 @@ extern "C" {
 #define DSP_HOST_HSR_HF1	0x04
 #define DSP_HOST_HSR_DMA	0x07
 
+#define DSP_SSI_CRA_DC0		0x8
+#define DSP_SSI_CRA_DC1		0x9
+#define DSP_SSI_CRA_DC2		0xa
+#define DSP_SSI_CRA_DC3		0xb
+#define DSP_SSI_CRA_DC4		0xc
+#define DSP_SSI_CRA_WL0		0xd
+#define DSP_SSI_CRA_WL1		0xe
+
 #define DSP_SSI_CRB_OF0		0x0
 #define DSP_SSI_CRB_OF1		0x1
 #define DSP_SSI_CRB_SCD0	0x2
@@ -199,17 +207,22 @@ struct dsp_core_s {
 typedef struct dsp_core_ssi_s dsp_core_ssi_t;
 
 struct dsp_core_ssi_s {
-	Uint32  cra_word_size;
+	Uint16  cra_word_length;
 	Uint32  cra_word_mask;
+	Uint16  cra_frame_rate_divider;
 
-	Uint16	crb_source_clock;
-	Uint16	crb_shifter;
-	Uint16	crb_synchro;
-	Uint16	crb_mode;
-	Uint16	crb_te;
-	Uint16	crb_re;
-	Uint16	crb_tie;
-	Uint16	crb_rie;
+	Uint16  crb_src_clock;
+	Uint16  crb_shifter;
+	Uint16  crb_synchro;
+	Uint16  crb_mode;
+	Uint16  crb_te;
+	Uint16  crb_re;
+	Uint16  crb_tie;
+	Uint16  crb_rie;
+
+	Uint16  slot_in_frame;
+	Uint16  new_frame;
+	Uint16  clock_received;
 
 	Uint32  ssi_clock_send;
 	Uint32  ssi_clock_receive;
@@ -238,7 +251,7 @@ void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
 /* dsp_cpu call these to read/write/configure SSI port */
 void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress);
 void dsp_core_ssi_receive_serial_clock(void);
-void dsp_core_ssi_transmit_data(void);
+void dsp_core_ssi_transmit_data(dsp_core_t *dsp_core, Uint32 value);
 void dsp_core_ssi_receive_data(Uint32 data);
 
 /* Process peripheral code */
