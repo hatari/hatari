@@ -16,6 +16,8 @@
 	#include <stdarg.h>
 #endif
 
+#include	"log.h"
+
 extern	FILE *TraceFile;
 
 #if defined(_VCWIN_)
@@ -23,11 +25,11 @@ extern	FILE *TraceFile;
 	#define _INC_HATARI_TRACE
 
 	#ifdef HATARI_TRACE_ACTIVATED
-		void	HATARI_TRACE( int level, ...)
+		void	HATARI_TRACE( int level, const char* format, ...)
 		{
 			va_list	x;
-			va_start(x,level);
-			if ( HatariTraceFlags & level ) _vftprintf(TraceFile,level, x);
+			va_start(x,format);
+			if ( HatariTraceFlags & level ) _vftprintf(TraceFile,format, x);
 			va_end	(x);
 		};
 	#else		/* HATARI_TRACE_ACTIVATED */
