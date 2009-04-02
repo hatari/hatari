@@ -230,6 +230,8 @@
 /*			at position 32 (Lemmings screen in Nostalgic-o-demo).			*/
 /* 2009/03/28	[NP]	Depending on bit 3 of MFP's AER, timer B will count end of line events	*/
 /*			(bit=0) or start of line events (bit=1) (fix Seven Gates Of Jambala).	*/
+/* 2009/04/02	[NP]	Add another method to obtain a 0 byte line, by switching to hi/lo res	*/
+/*			at position 500/508 (fix the game No Buddies Land).			*/
 
 
 
@@ -627,6 +629,15 @@ static void Video_WriteToShifter(Uint8 Byte)
 		  && ( ConfigureParams.System.nMachineType == MACHINE_STE ) )
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
+		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
+		LineStartCycle = 0;
+		LineEndCycle = 0;
+	}
+
+	/* Empty line switching res on STF (switch just before the HBL) */
+	else if ( ( nLastCycles == 500 ) && ( nLineCycles == 508 ) )
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res 2\n" );
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
 		LineStartCycle = 0;
 		LineEndCycle = 0;
