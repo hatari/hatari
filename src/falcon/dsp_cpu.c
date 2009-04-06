@@ -29,9 +29,8 @@
 #include "dsp_disasm.h"
 #endif
 
-#define DEBUG 0
-
 /* More disasm infos, if wanted */
+#define DSP_DISASM 0		/* Instructions */
 #define DSP_DISASM_INST 0	/* Instructions */
 #define DSP_DISASM_REG 0	/* Registers changes */
 #define DSP_DISASM_MEM 0	/* Memory changes */
@@ -107,12 +106,6 @@ static void dsp_stack_push(Uint32 curpc, Uint32 cursr);
 static void dsp_stack_pop(Uint32 *curpc, Uint32 *cursr);
 
 static void opcode8h_0(void);
-static void opcode8h_1(void);
-static void opcode8h_4(void);
-static void opcode8h_6(void);
-static void opcode8h_8(void);
-static void opcode8h_a(void);
-static void opcode8h_b(void);
 
 static void dsp_update_rn(Uint32 numreg, Sint16 modifier);
 static void dsp_update_rn_bitreverse(Uint32 numreg);
@@ -124,30 +117,55 @@ static void dsp_undefined(void);
 
 /* Instructions without parallel moves */
 static void dsp_andi(void);
-static void dsp_bchg(void);
-static void dsp_bclr(void);
-static void dsp_bset(void);
-static void dsp_btst(void);
+static void dsp_bchg_aa(void);
+static void dsp_bchg_ea(void);
+static void dsp_bchg_pp(void);
+static void dsp_bchg_reg(void);
+static void dsp_bclr_aa(void);
+static void dsp_bclr_ea(void);
+static void dsp_bclr_pp(void);
+static void dsp_bclr_reg(void);
+static void dsp_bset_aa(void);
+static void dsp_bset_ea(void);
+static void dsp_bset_pp(void);
+static void dsp_bset_reg(void);
+static void dsp_btst_aa(void);
+static void dsp_btst_ea(void);
+static void dsp_btst_pp(void);
+static void dsp_btst_reg(void);
 static void dsp_div(void);
-static void dsp_do(void);
 static void dsp_enddo(void);
 static void dsp_illegal(void);
-static void dsp_jcc(void);
-static void dsp_jclr(void);
-static void dsp_jmp(void);
-static void dsp_jscc(void);
-static void dsp_jsclr(void);
-static void dsp_jset(void);
-static void dsp_jsr(void);
-static void dsp_jsset(void);
+static void dsp_jcc_imm(void);
+static void dsp_jcc_ea(void);
+static void dsp_jclr_aa(void);
+static void dsp_jclr_ea(void);
+static void dsp_jclr_pp(void);
+static void dsp_jclr_reg(void);
+static void dsp_jmp_ea(void);
+static void dsp_jmp_imm(void);
+static void dsp_jscc_ea(void);
+static void dsp_jscc_imm(void);
+static void dsp_jsclr_aa(void);
+static void dsp_jsclr_ea(void);
+static void dsp_jsclr_pp(void);
+static void dsp_jsclr_reg(void);
+static void dsp_jset_aa(void);
+static void dsp_jset_ea(void);
+static void dsp_jset_pp(void);
+static void dsp_jset_reg(void);
+static void dsp_jsr_ea(void);
+static void dsp_jsr_imm(void);
+static void dsp_jsset_aa(void);
+static void dsp_jsset_ea(void);
+static void dsp_jsset_pp(void);
+static void dsp_jsset_reg(void);
 static void dsp_lua(void);
-static void dsp_movec(void);
-static void dsp_movem(void);
-static void dsp_movep(void);
+static void dsp_movem_ea(void);
+static void dsp_movem_aa(void);
 static void dsp_nop(void);
 static void dsp_norm(void);
 static void dsp_ori(void);
-static void dsp_rep(void);
 static void dsp_reset(void);
 static void dsp_rti(void);
 static void dsp_rts(void);
@@ -170,11 +188,12 @@ static void dsp_movec_imm(void);
 static void dsp_movec_reg(void);
 static void dsp_movep_0(void);
 static void dsp_movep_1(void);
-static void dsp_movep_2(void);
+static void dsp_movep_23(void);
 
 /* Parallel move analyzer */
 static void dsp_parmove_read(void);
 static void dsp_parmove_write(void);
+static void dsp_pm_class2(void);
 
 static int dsp_pm_read_accu24(int numreg, Uint32 *dest);
 static void dsp_pm_writereg(int numreg, int position);
@@ -231,123 +250,86 @@ static void dsp_subr(void);
 static void dsp_tfr(void);
 static void dsp_tst(void);
 
-static void dsp_move_pm(void);
+static dsp_emul_t opcodes8h[512]={
+	/* 0x00 - 0x3f */
+	opcode8h_0, dsp_undefined, dsp_undefined, dsp_undefined, opcode8h_0, dsp_andi, dsp_undefined, dsp_ori,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_andi, dsp_undefined, dsp_ori,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_andi, dsp_undefined, dsp_ori,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_andi, dsp_undefined, dsp_ori,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_undefined, dsp_undefined, dsp_div, dsp_div, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_norm, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	
+	/* 0x40 - 0x7f */
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
 
-static dsp_emul_t opcodes8h[16]={
-	opcode8h_0,
-	opcode8h_1,
-	dsp_tcc,
-	dsp_tcc,
-	opcode8h_4,
-	dsp_movec,
-	opcode8h_6,
-	dsp_movem,
-	opcode8h_8,
-	opcode8h_8,
-	opcode8h_a,
-	opcode8h_b,
-	dsp_jmp,
-	dsp_jsr,
-	dsp_jcc,
-	dsp_jscc
-};
+	/* 0x80 - 0xbf */
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_lua, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_movec_reg, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_movec_reg, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_movec_aa, dsp_undefined, dsp_movec_aa, dsp_undefined, dsp_movec_imm, dsp_undefined, dsp_undefined,
+	dsp_undefined, dsp_movec_ea, dsp_undefined, dsp_movec_ea, dsp_undefined, dsp_movec_imm, dsp_undefined, dsp_undefined,
+	dsp_undefined, dsp_movec_aa, dsp_undefined, dsp_movec_aa, dsp_undefined, dsp_movec_imm, dsp_undefined, dsp_undefined,
+	dsp_undefined, dsp_movec_ea, dsp_undefined, dsp_movec_ea, dsp_undefined, dsp_movec_imm, dsp_undefined, dsp_undefined,
+	
+	/* 0xc0 - 0xff */
+	dsp_do_aa, dsp_rep_aa, dsp_do_aa, dsp_rep_aa, dsp_do_imm, dsp_rep_imm, dsp_undefined, dsp_undefined, 
+	dsp_do_ea, dsp_rep_ea, dsp_do_ea, dsp_rep_ea, dsp_do_imm, dsp_rep_imm, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_do_imm, dsp_rep_imm, dsp_undefined, dsp_undefined, 
+	dsp_do_reg, dsp_rep_reg, dsp_undefined, dsp_undefined, dsp_do_imm, dsp_rep_imm, dsp_undefined, dsp_undefined, 
+	dsp_movem_aa, dsp_movem_aa, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_movem_ea, dsp_movem_ea, dsp_undefined, dsp_undefined, 
+	dsp_movem_aa, dsp_movem_aa, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_movem_ea, dsp_movem_ea, dsp_undefined, dsp_undefined, 
 
-static dsp_emul_t opcodes_0809[16]={
-	dsp_move_pm,
-	dsp_move_pm,
-	dsp_move_pm,
-	dsp_move_pm,
+	/* 0x100 - 0x13f */
+	dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2,
+	dsp_movep_0, dsp_movep_0, dsp_movep_1, dsp_movep_1, dsp_movep_23, dsp_movep_23, dsp_movep_23, dsp_movep_23,
+	dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2,
+	dsp_movep_0, dsp_movep_0, dsp_movep_1, dsp_movep_1, dsp_movep_23, dsp_movep_23, dsp_movep_23, dsp_movep_23,
+	dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2,
+	dsp_movep_0, dsp_movep_0, dsp_movep_1, dsp_movep_1, dsp_movep_23, dsp_movep_23, dsp_movep_23, dsp_movep_23,
+	dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2, dsp_pm_class2,
+	dsp_movep_0, dsp_movep_0, dsp_movep_1, dsp_movep_1, dsp_movep_23, dsp_movep_23, dsp_movep_23, dsp_movep_23,
 
-	dsp_movep,
-	dsp_movep,
-	dsp_movep,
-	dsp_movep,
+	/* 0x140 - 0x17f */
+	dsp_bclr_aa, dsp_bset_aa, dsp_bclr_aa, dsp_bset_aa, dsp_jclr_aa, dsp_jset_aa, dsp_jclr_aa, dsp_jset_aa,
+	dsp_bclr_ea, dsp_bset_ea, dsp_bclr_ea, dsp_bset_ea, dsp_jclr_ea, dsp_jset_ea, dsp_jclr_ea, dsp_jset_ea,
+	dsp_bclr_pp, dsp_bset_pp, dsp_bclr_pp, dsp_bset_pp, dsp_jclr_pp, dsp_jset_pp, dsp_jclr_pp, dsp_jset_pp,
+	dsp_jclr_reg, dsp_jset_reg, dsp_bclr_reg, dsp_bset_reg, dsp_jmp_ea, dsp_jcc_ea, dsp_undefined, dsp_undefined,
+	dsp_bchg_aa, dsp_btst_aa, dsp_bchg_aa, dsp_btst_aa, dsp_jsclr_aa, dsp_jsset_aa, dsp_jsclr_aa, dsp_jsset_aa,
+	dsp_bchg_ea, dsp_btst_ea, dsp_bchg_ea, dsp_btst_ea, dsp_jsclr_ea, dsp_jsset_ea, dsp_jsclr_ea, dsp_jsset_ea,
+	dsp_bchg_pp, dsp_btst_pp, dsp_bchg_pp, dsp_btst_pp, dsp_jsclr_pp, dsp_jsset_pp, dsp_jsclr_pp, dsp_jsset_pp,
+	dsp_jsclr_reg, dsp_jsset_reg, dsp_bchg_reg, dsp_btst_reg, dsp_jsr_ea, dsp_jscc_ea, dsp_undefined, dsp_undefined,
 
-	dsp_move_pm,
-	dsp_move_pm,
-	dsp_move_pm,
-	dsp_move_pm,
+	/* 0x180 - 0x1bf */
+	dsp_jmp_imm, dsp_jmp_imm, dsp_jmp_imm, dsp_jmp_imm, dsp_jmp_imm, dsp_jmp_imm, dsp_jmp_imm, dsp_jmp_imm,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_jsr_imm, dsp_jsr_imm, dsp_jsr_imm, dsp_jsr_imm, dsp_jsr_imm, dsp_jsr_imm, dsp_jsr_imm, dsp_jsr_imm, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
 
-	dsp_movep,
-	dsp_movep,
-	dsp_movep,
-	dsp_movep
-};
-
-static dsp_emul_t opcodes_0a[32]={
-	/* 00 000 */	dsp_bclr,
-	/* 00 001 */	dsp_bset,
-	/* 00 010 */	dsp_bclr,
-	/* 00 011 */	dsp_bset,
-	/* 00 100 */	dsp_jclr,
-	/* 00 101 */	dsp_jset,
-	/* 00 110 */	dsp_jclr,
-	/* 00 111 */	dsp_jset,
-
-	/* 01 000 */	dsp_bclr,
-	/* 01 001 */	dsp_bset,
-	/* 01 010 */	dsp_bclr,
-	/* 01 011 */	dsp_bset,
-	/* 01 100 */	dsp_jclr,
-	/* 01 101 */	dsp_jset,
-	/* 01 110 */	dsp_jclr,
-	/* 01 111 */	dsp_jset,
-
-	/* 10 000 */	dsp_bclr,
-	/* 10 001 */	dsp_bset,
-	/* 10 010 */	dsp_bclr,
-	/* 10 011 */	dsp_bset,
-	/* 10 100 */	dsp_jclr,
-	/* 10 101 */	dsp_jset,
-	/* 10 110 */	dsp_jclr,
-	/* 10 111 */	dsp_jset,
-
-	/* 11 000 */	dsp_jclr,
-	/* 11 001 */	dsp_jset,
-	/* 11 010 */	dsp_bclr,
-	/* 11 011 */	dsp_bset,
-	/* 11 100 */	dsp_jmp,
-	/* 11 101 */	dsp_jcc,
-	/* 11 110 */	dsp_undefined,
-	/* 11 111 */	dsp_undefined
-};
-
-static dsp_emul_t opcodes_0b[32]={
-	/* 00 000 */	dsp_bchg,
-	/* 00 001 */	dsp_btst,
-	/* 00 010 */	dsp_bchg,
-	/* 00 011 */	dsp_btst,
-	/* 00 100 */	dsp_jsclr,
-	/* 00 101 */	dsp_jsset,
-	/* 00 110 */	dsp_jsclr,
-	/* 00 111 */	dsp_jsset,
-
-	/* 01 000 */	dsp_bchg,
-	/* 01 001 */	dsp_btst,
-	/* 01 010 */	dsp_bchg,
-	/* 01 011 */	dsp_btst,
-	/* 01 100 */	dsp_jsclr,
-	/* 01 101 */	dsp_jsset,
-	/* 01 110 */	dsp_jsclr,
-	/* 01 111 */	dsp_jsset,
-
-	/* 10 000 */	dsp_bchg,
-	/* 10 001 */	dsp_btst,
-	/* 10 010 */	dsp_bchg,
-	/* 10 011 */	dsp_btst,
-	/* 10 100 */	dsp_jsclr,
-	/* 10 101 */	dsp_jsset,
-	/* 10 110 */	dsp_jsclr,
-	/* 10 111 */	dsp_jsset,
-
-	/* 11 000 */	dsp_jsclr,
-	/* 11 001 */	dsp_jsclr,
-	/* 11 010 */	dsp_bchg,
-	/* 11 011 */	dsp_btst,
-	/* 11 100 */	dsp_jsr,
-	/* 11 101 */	dsp_jscc,
-	/* 11 110 */	dsp_undefined,
-	/* 11 111 */	dsp_undefined
+	/* 0x1c0 - 0x1ff */
+	dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, 
+	dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, 
+	dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, 
+	dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, dsp_jcc_imm, 
+	dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, 
+	dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, 
+	dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, 
+	dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, dsp_jscc_imm, 
 };
 
 static dsp_emul_t opcodes_parmove[16]={
@@ -410,49 +392,6 @@ static dsp_emul_t opcodes_alu[256]={
 	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
 	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
 	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr
-};
-
-static dsp_emul_t opcodes_do[8]={
-	dsp_do_aa,
-	dsp_do_imm,
-	dsp_do_ea,
-	dsp_do_imm,
-
-	dsp_undefined,
-	dsp_do_imm,
-	dsp_do_reg,
-	dsp_do_imm
-};
-
-static dsp_emul_t opcodes_rep[8]={
-	dsp_rep_aa,
-	dsp_rep_imm,
-	dsp_rep_ea,
-	dsp_rep_imm,
-
-	dsp_undefined,
-	dsp_rep_imm,
-	dsp_rep_reg,
-	dsp_rep_imm
-};
-
-static dsp_emul_t opcodes_movec[8]={
-	dsp_undefined,
-	dsp_undefined,
-	dsp_undefined,
-	dsp_movec_reg,
-
-	dsp_movec_aa,
-	dsp_movec_ea,
-	dsp_movec_imm,
-	dsp_movec_imm
-};
-
-static dsp_emul_t opcodes_movep[4]={
-	dsp_movep_0,
-	dsp_movep_1,
-	dsp_movep_2,
-	dsp_movep_2
 };
 
 static int registers_lmove[8][2]={
@@ -546,6 +485,9 @@ static dsp_core_t *dsp_core;
 void dsp56k_init_cpu(void *th_dsp_core)
 {
 	dsp_core = th_dsp_core;
+#ifdef DSP_DISASM
+	dsp56k_disasm_init(dsp_core);
+#endif
 }
 
 int dsp56k_exec_thread(void *th_dsp_core)
@@ -603,8 +545,9 @@ void dsp56k_execute_instruction(void)
 	cur_inst = read_memory_p(dsp_core->pc);
 	cur_inst_len = 1;
 
-	value = (cur_inst >> 16) & BITMASK(8);
-	if ((value < 0x10) && ((cur_inst & 0xfe4000) != 0x080000)) {
+	if (cur_inst < 0x100000) {
+		value = (cur_inst >> 11) & (BITMASK(6) << 3);
+		value += (cur_inst >> 5) & BITMASK(3);
 		opcodes8h[value]();
 	} else {
 		dsp_parmove_read();
@@ -1028,7 +971,7 @@ static Uint32 read_memory(int space, Uint16 address)
 		if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_HOST_HRX)) {
 			dsp_core_hostport_dspread(dsp_core);
 		}
-		if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_SSI_RX)) {
+		else if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_SSI_RX)) {
 			/* Clear SSI receive interrupt */
 			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_RDF);
 		}
@@ -1209,7 +1152,7 @@ static void dsp_update_rn(Uint32 numreg, Sint16 modifier)
 	if (m_reg == 0) {
 		/* Bit reversed carry update */
 		dsp_update_rn_bitreverse(numreg);
-	} else if ((m_reg>=1) && (m_reg<=32767)) {
+	} else if (m_reg<=32767) {
 		/* Modulo update */
 		dsp_update_rn_modulo(numreg, modifier);
 	} else if (m_reg == 65535) {
@@ -1401,107 +1344,35 @@ static int dsp_calc_cc(Uint32 cc_code)
 
 static void opcode8h_0(void)
 {
-	if (cur_inst <= 0x00008c) {
-		switch(cur_inst) {
-			case 0x000000:
-				dsp_nop();
-				break;
-			case 0x000004:
-				dsp_rti();
-				break;
-			case 0x000005:
-				dsp_illegal();
-				break;
-			case 0x000006:
-				dsp_swi();
-				break;
-			case 0x00000c:
-				dsp_rts();
-				break;
-			case 0x000084:
-				dsp_reset();
-				break;
-			case 0x000086:
-				dsp_wait();
-				break;
-			case 0x000087:
-				dsp_stop();
-				break;
-			case 0x00008c:
-				dsp_enddo();
-				break;
-		}
-	} else {
-		switch (cur_inst & 0xf8) {
-			case 0x0000b8:
-				dsp_andi();
-				break;
-			case 0x0000f8:
-				dsp_ori();
-				break;
-		}
-	}
-}
-
-static void opcode8h_1(void)
-{
-	switch(cur_inst & 0xfff000) {
-		case 0x018000:
-			dsp_div();
+	switch(cur_inst) {
+		case 0x000000:
+			dsp_nop();
 			break;
-		case 0x01d000:
-			dsp_norm();
+		case 0x000004:
+			dsp_rti();
+			break;
+		case 0x000005:
+			dsp_illegal();
+			break;
+		case 0x000006:
+			dsp_swi();
+			break;
+		case 0x00000c:
+			dsp_rts();
+			break;
+		case 0x000084:
+			dsp_reset();
+			break;
+		case 0x000086:
+			dsp_wait();
+			break;
+		case 0x000087:
+			dsp_stop();
+			break;
+		case 0x00008c:
+			dsp_enddo();
 			break;
 	}
-}
-
-static void opcode8h_4(void)
-{
-	switch((cur_inst>>5) & BITMASK(3)) {
-		case 0:
-			dsp_lua();
-			break;
-		case 5:
-			dsp_movec();
-			break;
-	}
-}
-
-static void opcode8h_6(void)
-{
-	if (cur_inst & (1<<5)) {
-		dsp_rep();
-	} else {
-		dsp_do();
-	}
-}
-
-static void opcode8h_8(void)
-{
-	Uint32 value;
-
-	value = (cur_inst >> 12) & BITMASK(4);
-	opcodes_0809[value]();
-}
-
-static void opcode8h_a(void)
-{
-	Uint32 value;
-	
-	value = (cur_inst >> 11) & (BITMASK(2)<<3);
-	value |= (cur_inst >> 5) & BITMASK(3);
-
-	opcodes_0a[value]();
-}
-
-static void opcode8h_b(void)
-{
-	Uint32 value;
-	
-	value = (cur_inst >> 11) & (BITMASK(2)<<3);
-	value |= (cur_inst >> 5) & BITMASK(3);
-
-	opcodes_0b[value]();
 }
 
 /**********************************
@@ -1536,73 +1407,96 @@ static void dsp_andi(void)
 	}
 }
 
-static void dsp_bchg(void)
+static void dsp_bchg_aa(void)
 {
-	Uint32 memspace, addr, value, numreg, newcarry, numbit, srcreg;
+	Uint32 memspace, addr, value, newcarry, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-	newcarry = 0;
 
-	switch((cur_inst>>14) & BITMASK(2)) {
-		case 0:
-			/* bchg #n,x:aa */
-			/* bchg #n,y:aa */
-			addr = value;
-			value = read_memory(memspace, addr);
-			newcarry = (value>>numbit) & 1;
-			if (newcarry) {
-				value -= (1<<numbit);
-			} else {
-				value += (1<<numbit);
-			}
-			write_memory(memspace, addr, value);
-			break;
-		case 1:
-			/* bchg #n,x:ea */
-			/* bchg #n,y:ea */
-			dsp_calc_ea(value, &addr);
-			value = read_memory(memspace, addr);
-			newcarry = (value>>numbit) & 1;
-			if (newcarry) {
-				value -= (1<<numbit);
-			} else {
-				value += (1<<numbit);
-			}
-			write_memory(memspace, addr, value);
-			break;
-		case 2:
-			/* bchg #n,x:pp */
-			/* bchg #n,y:pp */
-			addr = 0xffc0 + value;
-			value = read_memory(memspace, addr);
-			newcarry = (value>>numbit) & 1;
-			if (newcarry) {
-				value -= (1<<numbit);
-			} else {
-				value += (1<<numbit);
-			}
-			write_memory(memspace, addr, value);
-			break;
-		case 3:
-			/* bchg #n,R */
-			srcreg = numreg = value;
-			if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
-				numreg = DSP_REG_A1+(numreg & 1);
-			}
-			value = dsp_core->registers[numreg];
-			newcarry = (value>>numbit) & 1;
-			if (newcarry) {
-				value -= (1<<numbit);
-			} else {
-				value += (1<<numbit);
-			}
-			dsp_core->registers[numreg] = value;
-			if (((srcreg==DSP_REG_A) || (srcreg==DSP_REG_B)) && (numbit==23)) {
-				dsp_core->registers[DSP_REG_A2+(srcreg & 1)]= (newcarry ? 0x00 : 0xff);
-			}
-			break;
+	addr = value;
+	value = read_memory(memspace, addr);
+	newcarry = (value>>numbit) & 1;
+	if (newcarry) {
+		value -= (1<<numbit);
+	} else {
+		value += (1<<numbit);
+	}
+	write_memory(memspace, addr, value);
+
+	/* Set carry */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
+	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+}
+
+static void dsp_bchg_ea(void)
+{
+	Uint32 memspace, addr, value, newcarry, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	dsp_calc_ea(value, &addr);
+	value = read_memory(memspace, addr);
+	newcarry = (value>>numbit) & 1;
+	if (newcarry) {
+		value -= (1<<numbit);
+	} else {
+		value += (1<<numbit);
+	}
+	write_memory(memspace, addr, value);
+
+	/* Set carry */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
+	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+}
+
+static void dsp_bchg_pp(void)
+{
+	Uint32 memspace, addr, value, newcarry, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	addr = 0xffc0 + value;
+	value = read_memory(memspace, addr);
+	newcarry = (value>>numbit) & 1;
+	if (newcarry) {
+		value -= (1<<numbit);
+	} else {
+		value += (1<<numbit);
+	}
+	write_memory(memspace, addr, value);
+
+	/* Set carry */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
+	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+}
+
+static void dsp_bchg_reg(void)
+{
+	Uint32 value, numreg, newcarry, numbit, srcreg;
+	
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	srcreg = numreg = value;
+	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
+		numreg = DSP_REG_A1+(numreg & 1);
+	}
+	value = dsp_core->registers[numreg];
+	newcarry = (value>>numbit) & 1;
+	if (newcarry) {
+		value -= (1<<numbit);
+	} else {
+		value += (1<<numbit);
+	}
+	dsp_core->registers[numreg] = value;
+	if (((srcreg==DSP_REG_A) || (srcreg==DSP_REG_B)) && (numbit==23)) {
+		dsp_core->registers[DSP_REG_A2+(srcreg & 1)]= (newcarry ? 0x00 : 0xff);
 	}
 
 	/* Set carry */
@@ -1610,57 +1504,79 @@ static void dsp_bchg(void)
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
 }
 
-static void dsp_bclr(void)
+static void dsp_bclr_aa(void)
 {
-	Uint32 memspace, addr, value, numreg, newcarry, numbit, srcreg;
+	Uint32 memspace, addr, value, newcarry, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	addr = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	value = read_memory(memspace, addr);
+	newcarry = (value>>numbit) & 1;
+	value &= 0xffffffff-(1<<numbit);
+	write_memory(memspace, addr, value);
+
+	/* Set carry */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
+	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+}
+
+static void dsp_bclr_ea(void)
+{
+	Uint32 memspace, addr, value, newcarry, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-	newcarry = 0;
 
-	switch((cur_inst>>14) & BITMASK(2)) {
-		case 0:
-			/* bclr #n,x:aa */
-			/* bclr #n,y:aa */
-			addr = value;
-			value = read_memory(memspace, addr);
-			newcarry = (value>>numbit) & 1;
-			value &= 0xffffffff-(1<<numbit);
-			write_memory(memspace, addr, value);
-			break;
-		case 1:
-			/* bclr #n,x:ea */
-			/* bclr #n,y:ea */
-			dsp_calc_ea(value, &addr);
-			value = read_memory(memspace, addr);
-			newcarry = (value>>numbit) & 1;
-			value &= 0xffffffff-(1<<numbit);
-			write_memory(memspace, addr, value);
-			break;
-		case 2:
-			/* bclr #n,x:pp */
-			/* bclr #n,y:pp */
-			addr = 0xffc0 + value;
-			value = read_memory(memspace, addr);
-			newcarry = (value>>numbit) & 1;
-			value &= 0xffffffff-(1<<numbit);
-			write_memory(memspace, addr, value);
-			break;
-		case 3:
-			/* bclr #n,R */
-			srcreg = numreg = value;
-			if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
-				numreg = DSP_REG_A1+(numreg & 1);
-			}
-			value = dsp_core->registers[numreg];
-			newcarry = (value>>numbit) & 1;
-			value &= 0xffffffff-(1<<numbit);
-			dsp_core->registers[numreg] = value;
-			if (((srcreg==DSP_REG_A) || (srcreg==DSP_REG_B)) && (numbit==23)) {
-				dsp_core->registers[DSP_REG_A2+(srcreg & 1)]=0x00;
-			}
-			break;
+	dsp_calc_ea(value, &addr);
+	value = read_memory(memspace, addr);
+	newcarry = (value>>numbit) & 1;
+	value &= 0xffffffff-(1<<numbit);
+	write_memory(memspace, addr, value);
+
+	/* Set carry */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
+	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+}
+
+static void dsp_bclr_pp(void)
+{
+	Uint32 memspace, addr, value, newcarry, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	addr = 0xffc0 + value;
+	value = read_memory(memspace, addr);
+	newcarry = (value>>numbit) & 1;
+	value &= 0xffffffff-(1<<numbit);
+	write_memory(memspace, addr, value);
+
+	/* Set carry */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
+	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+}
+
+static void dsp_bclr_reg(void)
+{
+	Uint32 value, numreg, newcarry, numbit, srcreg;
+	
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	srcreg = numreg = value;
+	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
+		numreg = DSP_REG_A1+(numreg & 1);
+	}
+	value = dsp_core->registers[numreg];
+	newcarry = (value>>numbit) & 1;
+	value &= 0xffffffff-(1<<numbit);
+	dsp_core->registers[numreg] = value;
+	if (((srcreg==DSP_REG_A) || (srcreg==DSP_REG_B)) && (numbit==23)) {
+		dsp_core->registers[DSP_REG_A2+(srcreg & 1)]=0x00;
 	}
 
 	/* Set carry */
@@ -1668,57 +1584,79 @@ static void dsp_bclr(void)
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
 }
 
-static void dsp_bset(void)
+static void dsp_bset_aa(void)
 {
-	Uint32 memspace, addr, value, numreg, newcarry, numbit, srcreg;
+	Uint32 memspace, addr, value, newcarry, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-	newcarry = 0;
 
-	switch((cur_inst>>14) & BITMASK(2)) {
-		case 0:
-			/* bset #n,x:aa */
-			/* bset #n,y:aa */
-			addr = value;
-			value = read_memory(memspace, addr);
-			newcarry = (value>>numbit) & 1;
-			value |= (1<<numbit);
-			write_memory(memspace, addr, value);
-			break;
-		case 1:
-			/* bset #n,x:ea */
-			/* bset #n,y:ea */
-			dsp_calc_ea(value, &addr);
-			value = read_memory(memspace, addr);
-			newcarry = (value>>numbit) & 1;
-			value |= (1<<numbit);
-			write_memory(memspace, addr, value);
-			break;
-		case 2:
-			/* bset #n,x:pp */
-			/* bset #n,y:pp */
-			addr = 0xffc0 + value;
-			value = read_memory(memspace, addr);
-			newcarry = (value>>numbit) & 1;
-			value |= (1<<numbit);
-			write_memory(memspace, addr, value);
-			break;
-		case 3:
-			/* bset #n,R */
-			srcreg = numreg = value;
-			if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
-				numreg = DSP_REG_A1+(numreg & 1);
-			}
-			value = dsp_core->registers[numreg];
-			newcarry = (value>>numbit) & 1;
-			value |= (1<<numbit);
-			dsp_core->registers[numreg] = value;
-			if (((srcreg==DSP_REG_A) || (srcreg==DSP_REG_B)) && (numbit==23)) {
-				dsp_core->registers[DSP_REG_A2+(srcreg & 1)]=0xff;
-			}
-			break;
+	addr = value;
+	value = read_memory(memspace, addr);
+	newcarry = (value>>numbit) & 1;
+	value |= (1<<numbit);
+	write_memory(memspace, addr, value);
+
+	/* Set carry */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
+	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+}
+
+static void dsp_bset_ea(void)
+{
+	Uint32 memspace, addr, value, newcarry, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	dsp_calc_ea(value, &addr);
+	value = read_memory(memspace, addr);
+	newcarry = (value>>numbit) & 1;
+	value |= (1<<numbit);
+	write_memory(memspace, addr, value);
+
+	/* Set carry */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
+	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+}
+
+static void dsp_bset_pp(void)
+{
+	Uint32 memspace, addr, value, newcarry, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+	addr = 0xffc0 + value;
+	value = read_memory(memspace, addr);
+	newcarry = (value>>numbit) & 1;
+	value |= (1<<numbit);
+	write_memory(memspace, addr, value);
+
+	/* Set carry */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
+	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+}
+
+static void dsp_bset_reg(void)
+{
+	Uint32 value, numreg, newcarry, numbit, srcreg;
+	
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	srcreg = numreg = value;
+	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
+		numreg = DSP_REG_A1+(numreg & 1);
+	}
+	value = dsp_core->registers[numreg];
+	newcarry = (value>>numbit) & 1;
+	value |= (1<<numbit);
+	dsp_core->registers[numreg] = value;
+	if (((srcreg==DSP_REG_A) || (srcreg==DSP_REG_B)) && (numbit==23)) {
+		dsp_core->registers[DSP_REG_A2+(srcreg & 1)]=0xff;
 	}
 
 	/* Set carry */
@@ -1726,47 +1664,70 @@ static void dsp_bset(void)
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
 }
 
-static void dsp_btst(void)
+static void dsp_btst_aa(void)
 {
-	Uint32 memspace, addr, value, numreg, newcarry, numbit;
+	Uint32 memspace, addr, value, newcarry, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-	newcarry = 0;
 
-	switch((cur_inst>>14) & BITMASK(2)) {
-		case 0:
-			/* btst #n,x:aa */
-			/* btst #n,y:aa */
-			addr = value;
-			value = read_memory(memspace, addr);
-			newcarry = (value>>numbit) & 1;
-			break;
-		case 1:
-			/* btst #n,x:ea */
-			/* btst #n,y:ea */
-			dsp_calc_ea(value, &addr);
-			value = read_memory(memspace, addr);
-			newcarry = (value>>numbit) & 1;
-			break;
-		case 2:
-			/* btst #n,x:pp */
-			/* btst #n,y:pp */
-			addr = 0xffc0 + value;
-			value = read_memory(memspace, addr);
-			newcarry = (value>>numbit) & 1;
-			break;
-		case 3:
-			/* btst #n,R */
-			numreg = value;
-			if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
-				numreg = DSP_REG_A1+(numreg & 1);
-			}
-			value = dsp_core->registers[numreg];
-			newcarry = (value>>numbit) & 1;
-			break;
+	addr = value;
+	value = read_memory(memspace, addr);
+	newcarry = (value>>numbit) & 1;
+
+	/* Set carry */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
+	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+}
+
+static void dsp_btst_ea(void)
+{
+	Uint32 memspace, addr, value, newcarry, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	dsp_calc_ea(value, &addr);
+	value = read_memory(memspace, addr);
+	newcarry = (value>>numbit) & 1;
+
+	/* Set carry */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
+	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+}
+
+static void dsp_btst_pp(void)
+{
+	Uint32 memspace, addr, value, newcarry, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	addr = 0xffc0 + value;
+	value = read_memory(memspace, addr);
+	newcarry = (value>>numbit) & 1;
+
+	/* Set carry */
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
+	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+}
+
+static void dsp_btst_reg(void)
+{
+	Uint32 value, numreg, newcarry, numbit;
+	
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	numreg = value;
+	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
+		numreg = DSP_REG_A1+(numreg & 1);
 	}
+	value = dsp_core->registers[numreg];
+	newcarry = (value>>numbit) & 1;
 
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
@@ -1829,31 +1790,18 @@ static void dsp_div(void)
 	xxxxxxxx 11xxxxxx 0xxxxxxx	reg
 */
 
-static void dsp_do(void)
-{
-	Uint32 value;
-
-	dsp_stack_push(dsp_core->registers[DSP_REG_LA], dsp_core->registers[DSP_REG_LC]);
-
-	dsp_core->registers[DSP_REG_LA] = read_memory_p(dsp_core->pc+1) & BITMASK(16);
-	cur_inst_len++;
-
-	dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
-
-	dsp_core->registers[DSP_REG_SR] |= (1<<DSP_SR_LF);
-
-	value = ((cur_inst>>14) & BITMASK(2))<<1;
-	value |= (cur_inst>>7) & 1;
-
-	opcodes_do[value]();
-}
-
 static void dsp_do_aa(void)
 {
 	Uint32 memspace, addr;
 
 	/* x:aa */
 	/* y:aa */
+
+	dsp_stack_push(dsp_core->registers[DSP_REG_LA], dsp_core->registers[DSP_REG_LC]);
+	dsp_core->registers[DSP_REG_LA] = read_memory_p(dsp_core->pc+1) & BITMASK(16);
+	cur_inst_len++;
+	dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+	dsp_core->registers[DSP_REG_SR] |= (1<<DSP_SR_LF);
 
 	memspace = (cur_inst>>6) & 1;
 	addr = (cur_inst>>8) & BITMASK(6);
@@ -1863,6 +1811,12 @@ static void dsp_do_aa(void)
 static void dsp_do_imm(void)
 {
 	/* #xx */
+
+	dsp_stack_push(dsp_core->registers[DSP_REG_LA], dsp_core->registers[DSP_REG_LC]);
+	dsp_core->registers[DSP_REG_LA] = read_memory_p(dsp_core->pc+1) & BITMASK(16);
+	cur_inst_len++;
+	dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+	dsp_core->registers[DSP_REG_SR] |= (1<<DSP_SR_LF);
 
 	dsp_core->registers[DSP_REG_LC] = ((cur_inst>>8) & BITMASK(8))
 		+ ((cur_inst & BITMASK(4))<<8);
@@ -1875,6 +1829,12 @@ static void dsp_do_ea(void)
 	/* x:ea */
 	/* y:ea */
 
+	dsp_stack_push(dsp_core->registers[DSP_REG_LA], dsp_core->registers[DSP_REG_LC]);
+	dsp_core->registers[DSP_REG_LA] = read_memory_p(dsp_core->pc+1) & BITMASK(16);
+	cur_inst_len++;
+	dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+	dsp_core->registers[DSP_REG_SR] |= (1<<DSP_SR_LF);
+
 	memspace = (cur_inst>>6) & 1;
 	ea_mode = (cur_inst>>8) & BITMASK(6);
 	dsp_calc_ea(ea_mode, &addr);
@@ -1886,6 +1846,12 @@ static void dsp_do_reg(void)
 	Uint32 numreg;
 
 	/* S */
+
+	dsp_stack_push(dsp_core->registers[DSP_REG_LA], dsp_core->registers[DSP_REG_LC]);
+	dsp_core->registers[DSP_REG_LA] = read_memory_p(dsp_core->pc+1) & BITMASK(16);
+	cur_inst_len++;
+	dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+	dsp_core->registers[DSP_REG_SR] |= (1<<DSP_SR_LF);
 
 	numreg = (cur_inst>>8) & BITMASK(6);
 	if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
@@ -1910,21 +1876,12 @@ static void dsp_illegal(void)
 	dsp_core_add_interrupt(dsp_core, DSP_INTER_ILLEGAL);
 }
 
-static void dsp_jcc(void)
+static void dsp_jcc_imm(void)
 {
 	Uint32 newpc, cc_code;
 
-	cc_code = 0;
-	switch((cur_inst >> 16) & BITMASK(8)) {
-		case 0x0a:
-			dsp_calc_ea((cur_inst >>8) & BITMASK(6), &newpc);
-			cc_code=cur_inst & BITMASK(4);
-			break;
-		case 0x0e:
-			newpc = cur_inst & BITMASK(12);
-			cc_code=(cur_inst>>12) & BITMASK(4);
-			break;
-	}
+	newpc = cur_inst & BITMASK(12);
+	cc_code=(cur_inst>>12) & BITMASK(4);
 
 	if (dsp_calc_cc(cc_code)) {
 		dsp_core->pc = newpc;
@@ -1932,43 +1889,66 @@ static void dsp_jcc(void)
 	}
 }
 
-static void dsp_jclr(void)
+static void dsp_jcc_ea(void)
 {
-	Uint32 memspace, addr, value, numreg, newpc, numbit;
+	Uint32 newpc, cc_code;
+
+	dsp_calc_ea((cur_inst >>8) & BITMASK(6), &newpc);
+	cc_code=cur_inst & BITMASK(4);
+
+	if (dsp_calc_cc(cc_code)) {
+		dsp_core->pc = newpc;
+		cur_inst_len = 0;
+	}
+}
+
+static void dsp_jclr_aa(void)
+{
+	Uint32 memspace, addr, value, newpc, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	addr = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+	value = read_memory(memspace, addr);
+
+	if ((value & (1<<numbit))==0) {
+		newpc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newpc;
+		cur_inst_len = 0;
+		return;
+	} 
+	++cur_inst_len;
+}
+
+static void dsp_jclr_ea(void)
+{
+	Uint32 memspace, addr, value, newpc, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	switch((cur_inst>>14) & BITMASK(2)) {
-		case 0:
-			/* jclr #n,x:aa,p:xx */
-			/* jclr #n,y:aa,p:xx */
-			addr = value;
-			value = read_memory(memspace, addr);
-			break;
-		case 1:
-			/* jclr #n,x:ea,p:xx */
-			/* jclr #n,y:ea,p:xx */
-			dsp_calc_ea(value, &addr);
-			value = read_memory(memspace, addr);
-			break;
-		case 2:
-			/* jclr #n,x:pp,p:xx */
-			/* jclr #n,y:pp,p:xx */
-			addr = 0xffc0 + value;
-			value = read_memory(memspace, addr);
-			break;
-		case 3:
-			/* jclr #n,R,p:xx */
-			numreg = value;
-			value = dsp_core->registers[numreg];
-			addr = 0xffff0000; /* invalid address */
-			memspace = 0xffff0000; /* invalid memspace */
-			break;
-	}
+	dsp_calc_ea(value, &addr);
+	value = read_memory(memspace, addr);
 
+	if ((value & (1<<numbit))==0) {
+		newpc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newpc;
+		cur_inst_len = 0;
+		return;
+	} 
 	++cur_inst_len;
+}
+
+static void dsp_jclr_pp(void)
+{
+	Uint32 memspace, addr, value, newpc, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+	addr = 0xffc0 + value;
+	value = read_memory(memspace, addr);
 
 	if ((value & (1<<numbit))==0) {
 		int pollingLoop, i;
@@ -2018,21 +1998,32 @@ static void dsp_jclr(void)
 		cur_inst_len = 0;
 		return;
 	} 
+	++cur_inst_len;
 }
 
-static void dsp_jmp(void)
+static void dsp_jclr_reg(void)
+{
+	Uint32 value, numreg, newpc, numbit;
+	
+	numreg = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	value = dsp_core->registers[numreg];
+
+	if ((value & (1<<numbit))==0) {
+		newpc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newpc;
+		cur_inst_len = 0;
+		return;
+	} 
+	++cur_inst_len;
+}
+
+static void dsp_jmp_ea(void)
 {
 	Uint32 newpc;
 
-	switch((cur_inst >> 16) & BITMASK(8)) {
-		case 0x0a:
-			dsp_calc_ea((cur_inst >>8) & BITMASK(6), &newpc);
-			break;
-		case 0x0c:
-			newpc = cur_inst & BITMASK(12);
-			break;
-	}
-
+	dsp_calc_ea((cur_inst >>8) & BITMASK(6), &newpc);
 	cur_inst_len = 0;
 
 	/* Infinite loop ? */
@@ -2047,21 +2038,31 @@ static void dsp_jmp(void)
 	dsp_core->pc = newpc;
 }
 
-static void dsp_jscc(void)
+static void dsp_jmp_imm(void)
+{
+	Uint32 newpc;
+
+	newpc = cur_inst & BITMASK(12);
+	cur_inst_len = 0;
+
+	/* Infinite loop ? */
+	if (newpc == dsp_core->pc) {
+#if DSP_DISASM_STATE
+		fprintf(stderr, "Dsp: JMP instruction, infinite loop\n");
+#endif
+		dsp_core->pauseThread(dsp_core);
+		return;
+	}
+
+	dsp_core->pc = newpc;
+}
+
+static void dsp_jscc_ea(void)
 {
 	Uint32 newpc, cc_code;
 
-	cc_code = 0;
-	switch((cur_inst >> 16) & BITMASK(8)) {
-		case 0x0b:
-			dsp_calc_ea((cur_inst >>8) & BITMASK(6), &newpc);
-			cc_code=cur_inst & BITMASK(4);
-			break;
-		case 0x0f:
-			newpc = cur_inst & BITMASK(12);
-			cc_code=(cur_inst>>12) & BITMASK(4);
-			break;
-	}
+	dsp_calc_ea((cur_inst >>8) & BITMASK(6), &newpc);
+	cc_code=cur_inst & BITMASK(4);
 
 	if (dsp_calc_cc(cc_code)) {
 		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
@@ -2071,103 +2072,191 @@ static void dsp_jscc(void)
 	} 
 }
 
-static void dsp_jsclr(void)
+static void dsp_jscc_imm(void)
 {
-	Uint32 memspace, addr, value, numreg, newpc, numbit;
+	Uint32 newpc, cc_code;
+
+	newpc = cur_inst & BITMASK(12);
+	cc_code=(cur_inst>>12) & BITMASK(4);
+
+	if (dsp_calc_cc(cc_code)) {
+		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+
+		dsp_core->pc = newpc;
+		cur_inst_len = 0;
+	} 
+}
+
+static void dsp_jsclr_aa(void)
+{
+	Uint32 memspace, addr, value, newpc, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
-	value = (cur_inst>>8) & BITMASK(6);
+	addr = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	switch((cur_inst>>14) & BITMASK(2)) {
-		case 0:
-			/* jsclr #n,x:aa,p:xx */
-			/* jsclr #n,y:aa,p:xx */
-			addr = value;
-			value = read_memory(memspace, addr);
-			break;
-		case 1:
-			/* jsclr #n,x:ea,p:xx */
-			/* jsclr #n,y:ea,p:xx */
-			dsp_calc_ea(value, &addr);
-			value = read_memory(memspace, addr);
-			break;
-		case 2:
-			/* jsclr #n,x:pp,p:xx */
-			/* jsclr #n,y:pp,p:xx */
-			addr = 0xffc0 + value;
-			value = read_memory(memspace, addr);
-			break;
-		case 3:
-			/* jsclr #n,R,p:xx */
-			numreg = value;
-			value = dsp_core->registers[numreg];
-			break;
-	}
+	value = read_memory(memspace, addr);
 
-	++cur_inst_len;
 	if ((value & (1<<numbit))==0) {
 		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
 
 		newpc = read_memory_p(dsp_core->pc+1);
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
+		return;
 	} 
+	++cur_inst_len;
 }
 
-static void dsp_jset(void)
+static void dsp_jsclr_ea(void)
 {
-	Uint32 memspace, addr, value, numreg, numbit;
-	Uint32 newpc;
+	Uint32 memspace, addr, value, newpc, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	switch((cur_inst>>14) & BITMASK(2)) {
-		case 0:
-			/* jset #n,x:aa,p:xx */
-			/* jset #n,y:aa,p:xx */
-			addr = value;
-			value = read_memory(memspace, addr);
-			break;
-		case 1:
-			/* jset #n,x:ea,p:xx */
-			/* jset #n,y:ea,p:xx */
-			dsp_calc_ea(value, &addr);
-			value = read_memory(memspace, addr);
-			break;
-		case 2:
-			/* jset #n,x:pp,p:xx */
-			/* jset #n,y:pp,p:xx */
-			addr = 0xffc0 + value;
-			value = read_memory(memspace, addr);
-			break;
-		case 3:
-			/* jset #n,R,p:xx */
-			numreg = value;
-			value = dsp_core->registers[numreg];
-			break;
-	}
+	dsp_calc_ea(value, &addr);
+	value = read_memory(memspace, addr);
 
+	if ((value & (1<<numbit))==0) {
+		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+
+		newpc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newpc;
+		cur_inst_len = 0;
+		return;
+	} 
 	++cur_inst_len;
+}
+
+static void dsp_jsclr_pp(void)
+{
+	Uint32 memspace, addr, value, newpc, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	addr = 0xffc0 + value;
+	value = read_memory(memspace, addr);
+
+	if ((value & (1<<numbit))==0) {
+		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+
+		newpc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newpc;
+		cur_inst_len = 0;
+		return;
+	} 
+	++cur_inst_len;
+}
+
+static void dsp_jsclr_reg(void)
+{
+	Uint32 value, numreg, newpc, numbit;
+	
+	numreg = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	value = dsp_core->registers[numreg];
+
+	if ((value & (1<<numbit))==0) {
+		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+
+		newpc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newpc;
+		cur_inst_len = 0;
+		return;
+	} 
+	++cur_inst_len;
+}
+
+static void dsp_jset_aa(void)
+{
+	Uint32 memspace, addr, value, numbit, newpc;
+	
+	memspace = (cur_inst>>6) & 1;
+	addr = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	value = read_memory(memspace, addr);
+
+	if (value & (1<<numbit)) {
+		newpc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newpc;
+		cur_inst_len=0;
+		return;
+	} 
+	++cur_inst_len;
+}
+
+static void dsp_jset_ea(void)
+{
+	Uint32 memspace, addr, value, numbit, newpc;
+	
+	memspace = (cur_inst>>6) & 1;
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	dsp_calc_ea(value, &addr);
+	value = read_memory(memspace, addr);
+
 	if (value & (1<<numbit)) {
 		newpc = read_memory_p(dsp_core->pc+1);
 
 		dsp_core->pc = newpc;
 		cur_inst_len=0;
+		return;
 	} 
+	++cur_inst_len;
 }
 
-static void dsp_jsr(void)
+static void dsp_jset_pp(void)
+{
+	Uint32 memspace, addr, value, numbit, newpc;
+	
+	memspace = (cur_inst>>6) & 1;
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	addr = 0xffc0 + value;
+	value = read_memory(memspace, addr);
+
+	if (value & (1<<numbit)) {
+		newpc = read_memory_p(dsp_core->pc+1);
+
+		dsp_core->pc = newpc;
+		cur_inst_len=0;
+		return;
+	} 
+	++cur_inst_len;
+}
+
+static void dsp_jset_reg(void)
+{
+	Uint32 value, numreg, numbit, newpc;
+	
+	numreg = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	value = dsp_core->registers[numreg];
+
+	if (value & (1<<numbit)) {
+		newpc = read_memory_p(dsp_core->pc+1);
+
+		dsp_core->pc = newpc;
+		cur_inst_len=0;
+		return;
+	} 
+	++cur_inst_len;
+}
+
+static void dsp_jsr_imm(void)
 {
 	Uint32 newpc;
 
-	if (((cur_inst>>12) & BITMASK(4))==0) {
-		newpc = cur_inst & BITMASK(12);
-	} else {
-		dsp_calc_ea((cur_inst>>8) & BITMASK(6),&newpc);
-	}
+	newpc = cur_inst & BITMASK(12);
 
 	if (dsp_core->interrupt_state != DSP_INTERRUPT_LONG){
 		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
@@ -2180,48 +2269,102 @@ static void dsp_jsr(void)
 	cur_inst_len = 0;
 }
 
-static void dsp_jsset(void)
+static void dsp_jsr_ea(void)
 {
-	Uint32 memspace, addr, value, numreg, newpc, numbit;
+	Uint32 newpc;
+
+	dsp_calc_ea((cur_inst>>8) & BITMASK(6),&newpc);
+
+	if (dsp_core->interrupt_state != DSP_INTERRUPT_LONG){
+		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+	}
+	else {
+		dsp_core->interrupt_state = DSP_INTERRUPT_NONE;
+	}
+
+	dsp_core->pc = newpc;
+	cur_inst_len = 0;
+}
+
+static void dsp_jsset_aa(void)
+{
+	Uint32 memspace, addr, value, newpc, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	addr = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	value = read_memory(memspace, addr);
+
+	if (value & (1<<numbit)) {
+		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+		newpc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newpc;
+		cur_inst_len = 0;
+		return;
+	} 
+	++cur_inst_len;
+}
+
+static void dsp_jsset_ea(void)
+{
+	Uint32 memspace, addr, value, newpc, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	switch((cur_inst>>14) & BITMASK(2)) {
-		case 0:
-			/* jsset #n,x:aa,p:xx */
-			/* jsset #n,y:aa,p:xx */
-			addr = value;
-			value = read_memory(memspace, addr);
-			break;
-		case 1:
-			/* jsset #n,x:ea,p:xx */
-			/* jsset #n,y:ea,p:xx */
-			dsp_calc_ea(value, &addr);
-			value = read_memory(memspace, addr);
-			break;
-		case 2:
-			/* jsset #n,x:pp,p:xx */
-			/* jsset #n,y:pp,p:xx */
-			addr = 0xffc0 + value;
-			value = read_memory(memspace, addr);
-			break;
-		case 3:
-			/* jsset #n,R,p:xx */
-			numreg = value;
-			value = dsp_core->registers[numreg];
-			break;
-	}
+	dsp_calc_ea(value, &addr);
+	value = read_memory(memspace, addr);
 
-	++cur_inst_len;
 	if (value & (1<<numbit)) {
 		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
-
 		newpc = read_memory_p(dsp_core->pc+1);
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
+		return;
 	} 
+	++cur_inst_len;
+}
+
+static void dsp_jsset_pp(void)
+{
+	Uint32 memspace, addr, value, newpc, numbit;
+	
+	memspace = (cur_inst>>6) & 1;
+	value = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	addr = 0xffc0 + value;
+	value = read_memory(memspace, addr);
+
+	if (value & (1<<numbit)) {
+		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+		newpc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newpc;
+		cur_inst_len = 0;
+		return;
+	} 
+	++cur_inst_len;
+}
+
+static void dsp_jsset_reg(void)
+{
+	Uint32 value, numreg, newpc, numbit;
+	
+	numreg = (cur_inst>>8) & BITMASK(6);
+	numbit = cur_inst & BITMASK(5);
+
+	value = dsp_core->registers[numreg];
+
+	if (value & (1<<numbit)) {
+		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+		newpc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newpc;
+		cur_inst_len = 0;
+		return;
+	} 
+	++cur_inst_len;
 }
 
 static void dsp_lua(void)
@@ -2242,24 +2385,6 @@ static void dsp_lua(void)
 	} else {
 		dsp_core->registers[DSP_REG_R0+dstreg] = srcnew;
 	}
-}
-
-/*
-	MOVEC instruction parameter encoding
-
-	xxxxxxx0 x1xxxxxx 1xxxxxxx	reg
-	xxxxxxx1 x0xxxxxx 0xxxxxxx	aa
-	xxxxxxx1 x1xxxxxx 0xxxxxxx	ea
-	xxxxxxx1 xYxxxxxx 1xxxxxxx	#xx
-*/
-static void dsp_movec(void)
-{
-	Uint32 value;
-
-	value = (cur_inst>>14) & 0x05;     
-	value |= (cur_inst>>6) & (1<<1);
-
-	opcodes_movec[value]();
 }
 
 static void dsp_movec_reg(void)
@@ -2368,28 +2493,15 @@ static void dsp_movec_ea(void)
 	}
 }
 
-static void dsp_movem(void)
+static void dsp_movem_aa(void)
 {
-	Uint32 numreg, addr, ea_mode, value;
+	Uint32 numreg, addr, value;
 
 	numreg = cur_inst & BITMASK(6);
-
-	if (cur_inst & (1<<14)) {
-		/* S,p:ea */
-		/* p:ea,D */
-
-		ea_mode = (cur_inst>>8) & BITMASK(6);
-		dsp_calc_ea(ea_mode, &addr);
-	} else {
-		/* S,p:aa */
-		/* p:aa,D */
-
-		addr = (cur_inst>>8) & BITMASK(6);
-	}
+	addr = (cur_inst>>8) & BITMASK(6);
 
 	if  (cur_inst & (1<<15)) {
 		/* Write D */
-
 		if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
 			value = read_memory_p(addr);
 			dsp_core->registers[DSP_REG_A2+(numreg & 1)] = 0;
@@ -2404,7 +2516,6 @@ static void dsp_movem(void)
 		}
 	} else {
 		/* Read S */
-
 		if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
 			dsp_pm_read_accu24(numreg, &value); 
 		} else {
@@ -2414,13 +2525,37 @@ static void dsp_movem(void)
 	}
 }
 
-static void dsp_movep(void)
+static void dsp_movem_ea(void)
 {
-	Uint32 value;
-	
-	value = (cur_inst>>6) & BITMASK(2);
+	Uint32 numreg, addr, ea_mode, value;
 
-	opcodes_movep[value]();
+	numreg = cur_inst & BITMASK(6);
+	ea_mode = (cur_inst>>8) & BITMASK(6);
+	dsp_calc_ea(ea_mode, &addr);
+
+	if  (cur_inst & (1<<15)) {
+		/* Write D */
+		if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
+			value = read_memory_p(addr);
+			dsp_core->registers[DSP_REG_A2+(numreg & 1)] = 0;
+			if (value & (1<<23)) {
+				dsp_core->registers[DSP_REG_A2+(numreg & 1)] = 0xff;
+			}
+			dsp_core->registers[DSP_REG_A1+(numreg & 1)] = value & BITMASK(24);
+			dsp_core->registers[DSP_REG_A0+(numreg & 1)] = 0;
+		} else {
+			dsp_core->registers[numreg] = read_memory_p(addr);
+			dsp_core->registers[numreg] &= BITMASK(registers_mask[numreg]);
+		}
+	} else {
+		/* Read S */
+		if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
+			dsp_pm_read_accu24(numreg, &value); 
+		} else {
+			value = dsp_core->registers[numreg];
+		}
+		write_memory(DSP_SPACE_P, addr, value);
+	}
 }
 
 static void dsp_movep_0(void)
@@ -2486,7 +2621,7 @@ static void dsp_movep_1(void)
 	}
 }
 
-static void dsp_movep_2(void)
+static void dsp_movep_23(void)
 {
 	/* x:ea,x:pp */
 	/* y:ea,x:pp */
@@ -2598,24 +2733,13 @@ static void dsp_ori(void)
 	xxxxxxxx 11xxxxxx 0xxxxxxx	reg
 */
 
-static void dsp_rep(void)
-{
-	Uint32 value;
-
-	dsp_core->registers[DSP_REG_LCSAVE] = dsp_core->registers[DSP_REG_LC];
-
-	value = ((cur_inst>>14) & BITMASK(2))<<1;
-	value |= (cur_inst>>7) & 1;
-
-	opcodes_rep[value]();
-	pc_on_rep = 1;		/* Not decrement LC at first time */
-	dsp_core->loop_rep = 1;	/* We are now running rep */
-}
-
 static void dsp_rep_aa(void)
 {
 	/* x:aa */
 	/* y:aa */
+	dsp_core->registers[DSP_REG_LCSAVE] = dsp_core->registers[DSP_REG_LC];
+	pc_on_rep = 1;		/* Not decrement LC at first time */
+	dsp_core->loop_rep = 1;	/* We are now running rep */
 
 	dsp_core->registers[DSP_REG_LC]=read_memory((cur_inst>>6) & 1,(cur_inst>>8) & BITMASK(6));
 }
@@ -2623,6 +2747,10 @@ static void dsp_rep_aa(void)
 static void dsp_rep_imm(void)
 {
 	/* #xxx */
+
+	dsp_core->registers[DSP_REG_LCSAVE] = dsp_core->registers[DSP_REG_LC];
+	pc_on_rep = 1;		/* Not decrement LC at first time */
+	dsp_core->loop_rep = 1;	/* We are now running rep */
 
 	dsp_core->registers[DSP_REG_LC] = ((cur_inst>>8) & BITMASK(8))
 		+ ((cur_inst & BITMASK(4))<<8);
@@ -2635,6 +2763,10 @@ static void dsp_rep_ea(void)
 	/* x:ea */
 	/* y:ea */
 
+	dsp_core->registers[DSP_REG_LCSAVE] = dsp_core->registers[DSP_REG_LC];
+	pc_on_rep = 1;		/* Not decrement LC at first time */
+	dsp_core->loop_rep = 1;	/* We are now running rep */
+
 	dsp_calc_ea((cur_inst>>8) & BITMASK(6),&value);
 	dsp_core->registers[DSP_REG_LC]= read_memory((cur_inst>>6) & 1, value);
 }
@@ -2644,6 +2776,10 @@ static void dsp_rep_reg(void)
 	Uint32 numreg;
 
 	/* R */
+
+	dsp_core->registers[DSP_REG_LCSAVE] = dsp_core->registers[DSP_REG_LC];
+	pc_on_rep = 1;		/* Not decrement LC at first time */
+	dsp_core->loop_rep = 1;	/* We are now running rep */
 
 	numreg = (cur_inst>>8) & BITMASK(6);
 	if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
@@ -2760,6 +2896,15 @@ static void dsp_parmove_read(void)
 	/* Do parallel move read */
 	opcodes_parmove[value]();
 }
+
+static void dsp_pm_class2(void) {
+	Uint32 value;
+
+	dsp_pm_0();
+	value = cur_inst & BITMASK(8);
+	opcodes_alu[value]();
+	dsp_parmove_write();
+} 
 
 static void dsp_parmove_write(void)
 {
@@ -4250,13 +4395,6 @@ static void dsp_move(void)
 {
 	/*	move instruction inside alu opcodes
 		taken care of by parallel move dispatcher */
-}
-
-static void dsp_move_pm(void)
-{
-	/* move instruction outside alu opcodes */
-	dsp_parmove_read();
-	dsp_parmove_write();
 }
 
 static void dsp_mpy(void)

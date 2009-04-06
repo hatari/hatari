@@ -304,14 +304,8 @@ void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint32 inter)
 /* Process Host Interface peripheral code */
 void dsp_core_process_host_interface(dsp_core_t *dsp_core)
 {
-	Uint8 hreq;
-
 	dsp_core_host2dsp(dsp_core);
 	dsp_core_dsp2host(dsp_core);
-
-	hreq = (dsp_core->hostport[CPU_HOST_ICR] & 0x3) & (dsp_core->hostport[CPU_HOST_ISR] & 0x3);
-	dsp_core->hostport[CPU_HOST_ISR] &= 0x7f; 
-	dsp_core->hostport[CPU_HOST_ISR] |= (hreq?1:0) << CPU_HOST_ISR_HREQ; 
 }
 
 /* Process SSI peripheral code */
@@ -457,6 +451,15 @@ static void dsp_core_hostport_update_trdy(dsp_core_t *dsp_core)
 	dsp_core->hostport[CPU_HOST_ISR] |= (trdy & 1)<< CPU_HOST_ISR_TRDY;
 }
 
+static void dsp_core_hostport_update_hreq(dsp_core_t *dsp_core)
+{
+	int hreq;
+
+	hreq = (dsp_core->hostport[CPU_HOST_ICR] & 0x3) & (dsp_core->hostport[CPU_HOST_ISR] & 0x3);
+	dsp_core->hostport[CPU_HOST_ISR] &= 0x7f;
+	dsp_core->hostport[CPU_HOST_ISR] |= (hreq?1:0) << CPU_HOST_ISR_HREQ;
+} 
+
 /* Host port transfer ? (dsp->host) */
 static void dsp_core_dsp2host(dsp_core_t *dsp_core)
 {
@@ -484,6 +487,7 @@ static void dsp_core_dsp2host(dsp_core_t *dsp_core)
 
 	/* Set RXDF bit to say that host can read */
 	dsp_core->hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_RXDF;
+	dsp_core_hostport_update_hreq(dsp_core);
 
 #if DSP_DISASM_HOSTWRITE
 	fprintf(stderr, "Dsp: (D->H): Transfer 0x%06x, Dsp HTDE=1, Host RXDF=1\n", dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]);
@@ -517,6 +521,7 @@ static void dsp_core_host2dsp(dsp_core_t *dsp_core)
 
 	/* Set TXDE bit to say that host can write */
 	dsp_core->hostport[CPU_HOST_ISR] |= 1<<CPU_HOST_ISR_TXDE;
+	dsp_core_hostport_update_hreq(dsp_core);
 
 #if DSP_DISASM_HOSTREAD
 	fprintf(stderr, "Dsp: (H->D): Transfer 0x%06x, Dsp HRDF=1, Host TXDE=1\n", dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX]);
@@ -550,6 +555,8 @@ static void dsp_core_hostport_cpuread(dsp_core_t *dsp_core)
 {
 	/* Clear RXDF bit to say that CPU has read */
 	dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
+	dsp_core_hostport_update_hreq(dsp_core);
+
 #if DSP_DISASM_HOSTWRITE
 	fprintf(stderr, "Dsp: (D->H): Host RXDF=0\n");
 #endif
@@ -599,6 +606,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 					0xff-((1<<DSP_HOST_HSR_HF1)|(1<<DSP_HOST_HSR_HF0));
 			dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |=
 					dsp_core->hostport[CPU_HOST_ICR] & ((1<<DSP_HOST_HSR_HF1)|(1<<DSP_HOST_HSR_HF0));
+			dsp_core_hostport_update_hreq(dsp_core);
 			break;
 		case CPU_HOST_CVR:
 			dsp_core->hostport[CPU_HOST_CVR]=value & 0x9f;
@@ -670,6 +678,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 				else{
 					/* Clear TXDE to say that CPU has written */
 					dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_TXDE);
+					dsp_core_hostport_update_hreq(dsp_core);
 #if DSP_DISASM_HOSTREAD
 					fprintf(stderr, "Dsp: (H->D): Host TXDE cleared\n");
 #endif

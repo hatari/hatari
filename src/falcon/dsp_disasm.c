@@ -187,12 +187,6 @@ static Uint32 read_memory(Uint32 currPc);
 typedef void (*dsp_emul_t)(void);
 
 static void opcode8h_0(void);
-static void opcode8h_1(void);
-static void opcode8h_4(void);
-static void opcode8h_6(void);
-static void opcode8h_8(void);
-static void opcode8h_a(void);
-static void opcode8h_b(void);
 
 static int dsp_calc_ea(Uint32 ea_mode, char *dest);
 static void dsp_calc_cc(Uint32 cc_mode, char *dest);
@@ -290,221 +284,129 @@ static void dsp_subr(void);
 static void dsp_tfr(void);
 static void dsp_tst(void);
 
-static dsp_emul_t opcodes8h[16]={
-	opcode8h_0,
-	opcode8h_1,
-	dsp_tcc,
-	dsp_tcc,
-	opcode8h_4,
-	dsp_movec,
-	opcode8h_6,
-	dsp_movem,
-	opcode8h_8,
-	opcode8h_8,
-	opcode8h_a,
-	opcode8h_b,
-	dsp_jmp,
-	dsp_jsr,
-	dsp_jcc,
-	dsp_jscc
+static dsp_emul_t opcodes8h[512]={
+	/* 0x00 - 0x3f */
+	opcode8h_0, dsp_undefined, dsp_undefined, dsp_undefined, opcode8h_0, dsp_andi, dsp_undefined, dsp_ori,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_andi, dsp_undefined, dsp_ori,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_andi, dsp_undefined, dsp_ori,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_andi, dsp_undefined, dsp_ori,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_undefined, dsp_undefined, dsp_div, dsp_div, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_norm, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	
+	/* 0x40 - 0x7f */
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_tcc, dsp_tcc, dsp_tcc, dsp_tcc, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+
+	/* 0x80 - 0xbf */
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_lua, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_movec, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_movec, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_movec, dsp_undefined, dsp_movec, dsp_undefined, dsp_movec, dsp_undefined, dsp_undefined,
+	dsp_undefined, dsp_movec, dsp_undefined, dsp_movec, dsp_undefined, dsp_movec, dsp_undefined, dsp_undefined,
+	dsp_undefined, dsp_movec, dsp_undefined, dsp_movec, dsp_undefined, dsp_movec, dsp_undefined, dsp_undefined,
+	dsp_undefined, dsp_movec, dsp_undefined, dsp_movec, dsp_undefined, dsp_movec, dsp_undefined, dsp_undefined,
+	
+	/* 0xc0 - 0xff */
+	dsp_do, dsp_rep, dsp_do, dsp_rep, dsp_do, dsp_rep, dsp_undefined, dsp_undefined, 
+	dsp_do, dsp_rep, dsp_do, dsp_rep, dsp_do, dsp_rep, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_do, dsp_rep, dsp_undefined, dsp_undefined, 
+	dsp_do, dsp_rep, dsp_undefined, dsp_undefined, dsp_do, dsp_rep, dsp_undefined, dsp_undefined, 
+
+	dsp_move_nopm, dsp_movem, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_move_nopm, dsp_movem, dsp_undefined, dsp_undefined, 
+	dsp_move_nopm, dsp_movem, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_move_nopm, dsp_movem, dsp_undefined, dsp_undefined, 
+
+	/* 0x100 - 0x13f */
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, dsp_movep, 
+
+	/* 0x140 - 0x17f */
+	dsp_bclr, dsp_bset, dsp_bclr, dsp_bset, dsp_jclr, dsp_jset, dsp_jclr, dsp_jset,
+	dsp_bclr, dsp_bset, dsp_bclr, dsp_bset, dsp_jclr, dsp_jset, dsp_jclr, dsp_jset,
+	dsp_bclr, dsp_bset, dsp_bclr, dsp_bset, dsp_jclr, dsp_jset, dsp_jclr, dsp_jset,
+	dsp_jclr, dsp_jset, dsp_bclr, dsp_bset, dsp_jmp, dsp_jcc, dsp_undefined, dsp_undefined,
+	dsp_bchg, dsp_btst, dsp_bchg, dsp_btst, dsp_jsclr, dsp_jsset, dsp_jsclr, dsp_jsset,
+	dsp_bchg, dsp_btst, dsp_bchg, dsp_btst, dsp_jsclr, dsp_jsset, dsp_jsclr, dsp_jsset,
+	dsp_bchg, dsp_btst, dsp_bchg, dsp_btst, dsp_jsclr, dsp_jsset, dsp_jsclr, dsp_jsset,
+	dsp_jsclr, dsp_jsclr, dsp_bchg, dsp_btst, dsp_jsr, dsp_jscc, dsp_undefined, dsp_undefined,
+
+	/* 0x180 - 0x1bf */
+	dsp_jmp, dsp_jmp, dsp_jmp, dsp_jmp, dsp_jmp, dsp_jmp, dsp_jmp, dsp_jmp,
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_jsr, dsp_jsr, dsp_jsr, dsp_jsr, dsp_jsr, dsp_jsr, dsp_jsr, dsp_jsr, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+	dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, dsp_undefined, 
+
+	/* 0x1c0 - 0x1ff */
+	dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, 
+	dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, 
+	dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, 
+	dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, dsp_jcc, 
+	dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, 
+	dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, 
+	dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, 
+	dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc, dsp_jscc
 };
 
-static dsp_emul_t opcodes_0809[16]={
-	dsp_move_nopm,
-	dsp_move_nopm,
-	dsp_move_nopm,
-	dsp_move_nopm,
+static dsp_emul_t opcodes_alu[256]={
+	/* 0x00 - 0x3f */
+	dsp_move, dsp_tfr, dsp_addr, dsp_tst, dsp_undefined, dsp_cmp, dsp_subr, dsp_cmpm,
+	dsp_undefined, dsp_tfr, dsp_addr, dsp_tst, dsp_undefined, dsp_cmp, dsp_subr, dsp_cmpm,
+	dsp_add, dsp_rnd, dsp_addl, dsp_clr, dsp_sub, dsp_undefined, dsp_subl, dsp_not,
+	dsp_add, dsp_rnd, dsp_addl, dsp_clr, dsp_sub, dsp_undefined, dsp_subl, dsp_not,
+	dsp_add, dsp_adc, dsp_asr, dsp_lsr, dsp_sub, dsp_sbc, dsp_abs, dsp_ror,
+	dsp_add, dsp_adc, dsp_asr, dsp_lsr, dsp_sub, dsp_sbc, dsp_abs, dsp_ror,
+	dsp_add, dsp_adc, dsp_asl, dsp_lsl, dsp_sub, dsp_sbc, dsp_neg, dsp_rol,
+	dsp_add, dsp_adc, dsp_asl, dsp_lsl, dsp_sub, dsp_sbc, dsp_neg, dsp_rol,
+	
+	/* 0x40 - 0x7f */
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
+	dsp_add, dsp_tfr, dsp_or, dsp_eor, dsp_sub, dsp_cmp, dsp_and, dsp_cmpm,
 
-	dsp_movep,
-	dsp_movep,
-	dsp_movep,
-	dsp_movep,
+	/* 0x80 - 0xbf */
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
 
-	dsp_move_nopm,
-	dsp_move_nopm,
-	dsp_move_nopm,
-	dsp_move_nopm,
-
-	dsp_movep,
-	dsp_movep,
-	dsp_movep,
-	dsp_movep
-};
-
-static dsp_emul_t opcodes_0a[32]={
-	dsp_bclr,
-	dsp_bset,
-	dsp_bclr,
-	dsp_bset,
-	dsp_jclr,
-	dsp_jset,
-	dsp_jclr,
-	dsp_jset,
-
-	dsp_bclr,
-	dsp_bset,
-	dsp_bclr,
-	dsp_bset,
-	dsp_jclr,
-	dsp_jset,
-	dsp_jclr,
-	dsp_jset,
-
-	dsp_bclr,
-	dsp_bset,
-	dsp_bclr,
-	dsp_bset,
-	dsp_jclr,
-	dsp_jset,
-	dsp_jclr,
-	dsp_jset,
-
-	dsp_jclr,
-	dsp_jset,
-	dsp_bclr,
-	dsp_bset,
-	dsp_jmp,
-	dsp_jcc,
-	dsp_undefined,
-	dsp_undefined
-};
-
-static dsp_emul_t opcodes_0b[32]={
-	dsp_bchg,
-	dsp_btst,
-	dsp_bchg,
-	dsp_btst,
-	dsp_jsclr,
-	dsp_jsset,
-	dsp_jsclr,
-	dsp_jsset,
-
-	dsp_bchg,
-	dsp_btst,
-	dsp_bchg,
-	dsp_btst,
-	dsp_jsclr,
-	dsp_jsset,
-	dsp_jsclr,
-	dsp_jsset,
-
-	dsp_bchg,
-	dsp_btst,
-	dsp_bchg,
-	dsp_btst,
-	dsp_jsclr,
-	dsp_jsset,
-	dsp_jsclr,
-	dsp_jsset,
-
-	dsp_jsclr,
-	dsp_jsclr,
-	dsp_bchg,
-	dsp_btst,
-	dsp_jsr,
-	dsp_jscc,
-	dsp_undefined,
-	dsp_undefined
-};
-
-static dsp_emul_t opcodes_alu003f[64]={
-	/* 0x00 - 0x0f */
-	dsp_move,
-	dsp_tfr,
-	dsp_addr,
-	dsp_tst,
-	dsp_undefined,
-	dsp_cmp,
-	dsp_subr,
-	dsp_cmpm,
-	dsp_undefined,
-	dsp_tfr,
-	dsp_addr,
-	dsp_tst,
-	dsp_undefined,
-	dsp_cmp,
-	dsp_subr,
-	dsp_cmpm,
-
-	/* 0x10 - 0x1f */
-	dsp_add,
-	dsp_rnd,
-	dsp_addl,
-	dsp_clr,
-	dsp_sub,
-	dsp_undefined,
-	dsp_subl,
-	dsp_not,
-	dsp_add,
-	dsp_rnd,
-	dsp_addl,
-	dsp_clr,
-	dsp_sub,
-	dsp_undefined,
-	dsp_subl,
-	dsp_not,
-
-	/* 0x20 - 0x2f */
-	dsp_add,
-	dsp_adc,
-	dsp_asr,
-	dsp_lsr,
-	dsp_sub,
-	dsp_sbc,
-	dsp_abs,
-	dsp_ror,
-	dsp_add,
-	dsp_adc,
-	dsp_asr,
-	dsp_lsr,
-	dsp_sub,
-	dsp_sbc,
-	dsp_abs,
-	dsp_ror,
-
-	/* 0x30 - 0x3f */
-	dsp_add,
-	dsp_adc,
-	dsp_asl,
-	dsp_lsl,
-	dsp_sub,
-	dsp_sbc,
-	dsp_neg,
-	dsp_rol,
-	dsp_add,
-	dsp_adc,
-	dsp_asl,
-	dsp_lsl,
-	dsp_sub,
-	dsp_sbc,
-	dsp_neg,
-	dsp_rol
-};
-
-static dsp_emul_t opcodes_alu407f[16]={
-	dsp_add,
-	dsp_tfr,
-	dsp_or,
-	dsp_eor,
-	dsp_sub,
-	dsp_cmp,
-	dsp_and,
-	dsp_cmpm,
-	dsp_add,
-	dsp_tfr,
-	dsp_or,
-	dsp_eor,
-	dsp_sub,
-	dsp_cmp,
-	dsp_and,
-	dsp_cmpm
-};
-
-static dsp_emul_t opcodes_alu80ff[4]={
-	dsp_mpy,
-	dsp_mpyr,
-	dsp_mac,
-	dsp_macr
+	/* 0xc0 - 0xff */
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr,
+	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr
 };
 
 static dsp_emul_t opcodes_do[16]={
@@ -691,21 +593,14 @@ void dsp56k_disasm(void)
 
 	strcpy(parallelmove_name, "");
 
-	value = (cur_inst >> 16) & BITMASK(8);
-	if ((value < 0x10) && ((cur_inst & 0xfe4000) != 0x080000)) {
+	if ((cur_inst < 0x100000) && ((cur_inst & 0xfe4000) != 0x080000)) {
+		value = (cur_inst >> 11) & (BITMASK(6) << 3);
+		value += (cur_inst >> 5) & BITMASK(3);
 		opcodes8h[value]();
 	} else {
 		dsp_pm();
 		value = cur_inst & BITMASK(8);
-		if (value < 0x40) {
-			opcodes_alu003f[value]();
-		} else if (value < 0x80) {
-			value &= BITMASK(4);
-			opcodes_alu407f[value]();
-		} else {
-			value &= BITMASK(2);
-			opcodes_alu80ff[value]();
-		}
+		opcodes_alu[value]();
 	}
 }
 
@@ -800,110 +695,35 @@ static int dsp_calc_ea(Uint32 ea_mode, char *dest)
 
 static void opcode8h_0(void)
 {
-	Uint32 value;
-
-	if (cur_inst <= 0x00008c) {
-		switch(cur_inst) {
-			case 0x000000:
-				dsp_nop();
-				break;
-			case 0x000004:
-				dsp_rti();
-				break;
-			case 0x000005:
-				dsp_illegal();
-				break;
-			case 0x000006:
-				dsp_swi();
-				break;
-			case 0x00000c:
-				dsp_rts();
-				break;
-			case 0x000084:
-				dsp_reset();
-				break;
-			case 0x000086:
-				dsp_wait();
-				break;
-			case 0x000087:
-				dsp_stop();
-				break;
-			case 0x00008c:
-				dsp_enddo();
-				break;
-		}
-	} else {
-		value = cur_inst & 0xf8;
-		switch (value) {
-			case 0x0000b8:
-				dsp_andi();
-				break;
-			case 0x0000f8:
-				dsp_ori();
-				break;
-		}
-	}
-}
-
-static void opcode8h_1(void)
-{
-	switch(cur_inst & 0xfff8c7) {
-		case 0x018040:
-			dsp_div();
+	switch(cur_inst) {
+		case 0x000000:
+			dsp_nop();
 			break;
-		case 0x01c805:
-			dsp_norm();
+		case 0x000004:
+			dsp_rti();
+			break;
+		case 0x000005:
+			dsp_illegal();
+			break;
+		case 0x000006:
+			dsp_swi();
+			break;
+		case 0x00000c:
+			dsp_rts();
+			break;
+		case 0x000084:
+			dsp_reset();
+			break;
+		case 0x000086:
+			dsp_wait();
+			break;
+		case 0x000087:
+			dsp_stop();
+			break;
+		case 0x00008c:
+			dsp_enddo();
 			break;
 	}
-}
-
-static void opcode8h_4(void)
-{
-	switch((cur_inst>>5) & BITMASK(3)) {
-		case 0:
-			dsp_lua();
-			break;
-		case 5:
-			dsp_movec();
-			break;
-	}
-}
-
-static void opcode8h_6(void)
-{
-	if (cur_inst & (1<<5)) {
-		dsp_rep();
-	} else {
-		dsp_do();
-	}
-}
-
-static void opcode8h_8(void)
-{
-	Uint32 value;
-
-	value = (cur_inst >> 12) & BITMASK(4);
-	opcodes_0809[value]();
-}
-
-static void opcode8h_a(void)
-{
-	Uint32 value;
-	
-	value = (cur_inst >> 11) & (BITMASK(2)<<3);
-	value |= (cur_inst >> 5) & BITMASK(3);
-
-	opcodes_0a[value]();
-}
-
-static void opcode8h_b(void)
-{
-	Uint32 value;
-	
-	value = (cur_inst >> 11) & (BITMASK(2)<<3);
-	value |= (cur_inst >> 5) & BITMASK(3);
-
-	opcodes_0b[value]();
 }
 
 /**********************************
@@ -1931,7 +1751,8 @@ static void dsp_rep_1(void)
 static void dsp_rep_3(void)
 {
 	/* #xxx */
-	fprintf(stderr,"Dsp: 0x%04x: rep #0x%02x\n",dsp_core->pc, (cur_inst>>8) & BITMASK(8));
+	fprintf(stderr,"Dsp: 0x%04x: rep #0x%02x\n",dsp_core->pc, ((cur_inst>>8) & BITMASK(8))
+		+ ((cur_inst & BITMASK(4))<<8));
 }
 
 static void dsp_rep_5(void)
