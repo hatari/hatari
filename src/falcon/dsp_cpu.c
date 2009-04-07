@@ -1878,13 +1878,11 @@ static void dsp_illegal(void)
 
 static void dsp_jcc_imm(void)
 {
-	Uint32 newpc, cc_code;
+	Uint32 cc_code;
 
-	newpc = cur_inst & BITMASK(12);
 	cc_code=(cur_inst>>12) & BITMASK(4);
-
 	if (dsp_calc_cc(cc_code)) {
-		dsp_core->pc = newpc;
+		dsp_core->pc = cur_inst & BITMASK(12);
 		cur_inst_len = 0;
 	}
 }
@@ -2066,7 +2064,6 @@ static void dsp_jscc_ea(void)
 
 	if (dsp_calc_cc(cc_code)) {
 		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
-
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 	} 
@@ -2074,15 +2071,12 @@ static void dsp_jscc_ea(void)
 
 static void dsp_jscc_imm(void)
 {
-	Uint32 newpc, cc_code;
+	Uint32 cc_code;
 
-	newpc = cur_inst & BITMASK(12);
 	cc_code=(cur_inst>>12) & BITMASK(4);
-
 	if (dsp_calc_cc(cc_code)) {
 		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
-
-		dsp_core->pc = newpc;
+		dsp_core->pc = cur_inst & BITMASK(12);
 		cur_inst_len = 0;
 	} 
 }
@@ -2098,8 +2092,7 @@ static void dsp_jsclr_aa(void)
 	value = read_memory(memspace, addr);
 
 	if ((value & (1<<numbit))==0) {
-		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
-
+		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
 		newpc = read_memory_p(dsp_core->pc+1);
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
@@ -2120,8 +2113,7 @@ static void dsp_jsclr_ea(void)
 	value = read_memory(memspace, addr);
 
 	if ((value & (1<<numbit))==0) {
-		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
-
+		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
 		newpc = read_memory_p(dsp_core->pc+1);
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
@@ -2142,7 +2134,7 @@ static void dsp_jsclr_pp(void)
 	value = read_memory(memspace, addr);
 
 	if ((value & (1<<numbit))==0) {
-		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
 
 		newpc = read_memory_p(dsp_core->pc+1);
 		dsp_core->pc = newpc;
@@ -2162,7 +2154,7 @@ static void dsp_jsclr_reg(void)
 	value = dsp_core->registers[numreg];
 
 	if ((value & (1<<numbit))==0) {
-		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
 
 		newpc = read_memory_p(dsp_core->pc+1);
 		dsp_core->pc = newpc;
@@ -2204,7 +2196,6 @@ static void dsp_jset_ea(void)
 
 	if (value & (1<<numbit)) {
 		newpc = read_memory_p(dsp_core->pc+1);
-
 		dsp_core->pc = newpc;
 		cur_inst_len=0;
 		return;
@@ -2225,7 +2216,6 @@ static void dsp_jset_pp(void)
 
 	if (value & (1<<numbit)) {
 		newpc = read_memory_p(dsp_core->pc+1);
-
 		dsp_core->pc = newpc;
 		cur_inst_len=0;
 		return;
@@ -2244,7 +2234,6 @@ static void dsp_jset_reg(void)
 
 	if (value & (1<<numbit)) {
 		newpc = read_memory_p(dsp_core->pc+1);
-
 		dsp_core->pc = newpc;
 		cur_inst_len=0;
 		return;
@@ -2297,7 +2286,7 @@ static void dsp_jsset_aa(void)
 	value = read_memory(memspace, addr);
 
 	if (value & (1<<numbit)) {
-		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
 		newpc = read_memory_p(dsp_core->pc+1);
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
@@ -2318,7 +2307,7 @@ static void dsp_jsset_ea(void)
 	value = read_memory(memspace, addr);
 
 	if (value & (1<<numbit)) {
-		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
 		newpc = read_memory_p(dsp_core->pc+1);
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
@@ -2339,7 +2328,7 @@ static void dsp_jsset_pp(void)
 	value = read_memory(memspace, addr);
 
 	if (value & (1<<numbit)) {
-		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
 		newpc = read_memory_p(dsp_core->pc+1);
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
@@ -2358,7 +2347,7 @@ static void dsp_jsset_reg(void)
 	value = dsp_core->registers[numreg];
 
 	if (value & (1<<numbit)) {
-		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
+		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
 		newpc = read_memory_p(dsp_core->pc+1);
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
@@ -2439,12 +2428,10 @@ static void dsp_movec_aa(void)
 
 	if (cur_inst & (1<<15)) {
 		/* Write D1 */
-
 		dsp_core->registers[numreg] = read_memory(memspace, addr);
 		dsp_core->registers[numreg] &= BITMASK(registers_mask[numreg]);
 	} else {
 		/* Read S1 */
-
 		write_memory(memspace, addr, dsp_core->registers[numreg]);
 	}
 }
@@ -2476,7 +2463,6 @@ static void dsp_movec_ea(void)
 
 	if (cur_inst & (1<<15)) {
 		/* Write D1 */
-
 		retour = dsp_calc_ea(ea_mode, &addr);
 		if (retour) {
 			dsp_core->registers[numreg] = addr;
@@ -2486,9 +2472,7 @@ static void dsp_movec_ea(void)
 		dsp_core->registers[numreg] &= BITMASK(registers_mask[numreg]);
 	} else {
 		/* Read S1 */
-
 		retour = dsp_calc_ea(ea_mode, &addr);
-
 		write_memory(memspace, addr, dsp_core->registers[numreg]);
 	}
 }
@@ -2573,7 +2557,6 @@ static void dsp_movep_0(void)
 
 	if  (cur_inst & (1<<15)) {
 		/* Write pp */
-
 		if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
 			dsp_pm_read_accu24(numreg, &value); 
 		} else {
@@ -2582,7 +2565,6 @@ static void dsp_movep_0(void)
 		write_memory(memspace, addr, value);
 	} else {
 		/* Read pp */
-
 		value = read_memory(memspace, addr);
 
 		if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {

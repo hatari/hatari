@@ -414,10 +414,7 @@ void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress)
 			}
 
 			/* Get the Frame rate divider ( 2 < value <32) */
-			dsp_core_ssi.cra_frame_rate_divider = (cra >> DSP_SSI_CRA_DC0) & 0x1f;
-			if (dsp_core_ssi.cra_frame_rate_divider < 2) {
-				dsp_core_ssi.cra_frame_rate_divider = 2;
-			}
+			dsp_core_ssi.cra_frame_rate_divider = ((cra >> DSP_SSI_CRA_DC0) & 0x1f)+1;
 			break;
 		case DSP_SSI_CRB:
 			dsp_core_ssi.crb_src_clock = (crb>>DSP_SSI_CRB_SCKD) & 1;
