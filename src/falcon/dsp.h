@@ -34,6 +34,7 @@ extern void DSP_UnInit(void);
 
 extern void DSP_Reset(void);
 extern void DSP_Run(int nHostCycles);
+extern Uint32 DSP_SsiReadTxValue(void);
 
 extern void DSP_HandleReadAccess(void);
 extern void DSP_HandleWriteAccess(void);

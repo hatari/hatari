@@ -357,8 +357,8 @@ void dsp_core_ssi_transmit_data(dsp_core_t *dsp_core, Uint32 value)
 	}
 
 	if (dsp_core_ssi.crb_te) {
-		/* TODO : send value to crossbar */
-		/* Dma_snd_receive_DSPValue(value); */
+		/* Send value to crossbar */
+		dsp_core->ssi_tx_value = value;
 	}
 }
 

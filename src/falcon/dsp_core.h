@@ -184,6 +184,7 @@ struct dsp_core_s {
 
 	/* Misc */
 	Uint32 loop_rep;		/* executing rep ? */
+	Uint32 ssi_tx_value;		/* SSI transmit value */
 
 	/* For bootstrap routine */
 	Uint16	bootstrap_pos;
