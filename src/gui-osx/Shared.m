@@ -26,13 +26,13 @@
 	[window setDelegate:self];
 
 	// Change emulation and UI state
-	GuiOsx_PauseAndSwitchToCocoaUI();
+	GuiOsx_Pause();
 	
 	// Run it as modal
 	[NSApp runModalForWindow:window];
 
 	// Restore emulation and UI state
-	GuiOsx_ResumeFromCocoaUI();
+	GuiOsx_Resume();
 }
 
 // On closure of the NSWindow, end the modal session
@@ -68,30 +68,20 @@ void GuiOsx_ExportPathString(NSString* path, char* szTarget, size_t cchTarget)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Pauses emulation and gets ready to use Cocoa UI
+  Pauses emulation
 */
-void GuiOsx_PauseAndSwitchToCocoaUI()
+void GuiOsx_Pause()
 {
 	// Pause emulation
 	Main_PauseEmulation(FALSE);
-	
-	// Enable the alert hooks, so that any messages are shown in Cocoa alerts instead of SDL alerts
-#ifdef ALERT_HOOKS
-	useAlertHooks = TRUE;
-#endif
 }
 
 /*-----------------------------------------------------------------------*/
 /*
-  Switches back to emulation mode and resume emulation
+  Switches back to emulation mode
 */
-void GuiOsx_ResumeFromCocoaUI()
+void GuiOsx_Resume()
 {
-	// Disable the alert hooks, so that SDL handle messages
-#ifdef ALERT_HOOKS
-	useAlertHooks = FALSE;
-#endif
-
 	// Resume emulation
 	Main_UnPauseEmulation();
 }

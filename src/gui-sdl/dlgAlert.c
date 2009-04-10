@@ -34,9 +34,6 @@ static char dlglines[MAX_LINES][50+1];
 	// The alert hook functions
 	extern int HookedAlertNotice(const char* szMessage);	// Must return TRUE if OK clicked, FALSE otherwise
 	extern int HookedAlertQuery(const char* szMessage);		// Must return TRUE if OK clicked, FALSE otherwise
-
-	// Runtime switch to activate/deactivate alert hooks
-	bool useAlertHooks = FALSE;
 #endif
 
 #define DLGALERT_OK       5
@@ -180,11 +177,7 @@ static int DlgAlert_ShowDlg(const char *text)
 int DlgAlert_Notice(const char *text)
 {
 #ifdef ALERT_HOOKS 
-	// If activated, used the hooked function instead
-	if (useAlertHooks)
-	{
-		return HookedAlertNotice(text);
-	}
+	return HookedAlertNotice(text);
 #endif
 
 	/* Hide "cancel" button: */
@@ -206,11 +199,7 @@ int DlgAlert_Notice(const char *text)
 int DlgAlert_Query(const char *text)
 {
 #ifdef ALERT_HOOKS
-	// If activated, used the hooked function instead
-	if (useAlertHooks)
-	{
-		return HookedAlertQuery(text);
-	}
+	return HookedAlertQuery(text);
 #endif
 
 	/* Show "cancel" button: */

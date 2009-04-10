@@ -155,28 +155,28 @@ static BOOL   gFinderLaunch;
 
 - (IBAction)captureScreen:(id)sender
 {
-	GuiOsx_PauseAndSwitchToCocoaUI();
+	GuiOsx_Pause();
 	ScreenSnapShot_SaveScreen();
-	GuiOsx_ResumeFromCocoaUI();
+	GuiOsx_Resume();
 }
 
 - (IBAction)captureAnimation:(id)sender
 {
-	GuiOsx_PauseAndSwitchToCocoaUI();
+	GuiOsx_Pause();
 	ScreenSnapShot_BeginRecording(ConfigureParams.Screen.bCaptureChange);
-	GuiOsx_ResumeFromCocoaUI();
+	GuiOsx_Resume();
 }
 
 - (IBAction)endCaptureAnimation:(id)sender
 {
-	GuiOsx_PauseAndSwitchToCocoaUI();
+	GuiOsx_Pause();
 	ScreenSnapShot_EndRecording();
-	GuiOsx_ResumeFromCocoaUI();
+	GuiOsx_Resume();
 }
 
 - (IBAction)captureSound:(id)sender
 {
-	GuiOsx_PauseAndSwitchToCocoaUI();
+	GuiOsx_Pause();
 
 	// Get the path from the user settings
 	NSString *preferredPath = [[NSString stringWithCString:(ConfigureParams.Sound.szYMCaptureFileName)] stringByAbbreviatingWithTildeInPath];
@@ -216,19 +216,19 @@ static BOOL   gFinderLaunch;
 		Sound_BeginRecording(ConfigureParams.Sound.szYMCaptureFileName);
     }	
 
-	GuiOsx_ResumeFromCocoaUI();
+	GuiOsx_Resume();
 }
 
 - (IBAction)endCaptureSound:(id)sender
 {
-	GuiOsx_PauseAndSwitchToCocoaUI();
+	GuiOsx_Pause();
 	Sound_EndRecording();
-	GuiOsx_ResumeFromCocoaUI();
+	GuiOsx_Resume();
 }
 
 - (IBAction)saveMemorySnap:(id)sender
 {
-	GuiOsx_PauseAndSwitchToCocoaUI();
+	GuiOsx_Pause();
 
 	// Get the path from the user settings
 	NSString *preferredPath = [[NSString stringWithCString:(ConfigureParams.Memory.szMemoryCaptureFileName)] stringByAbbreviatingWithTildeInPath];
@@ -266,12 +266,12 @@ static BOOL   gFinderLaunch;
 		MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName, TRUE);
     }	
 
-	GuiOsx_ResumeFromCocoaUI();
+	GuiOsx_Resume();
 }
 
 - (IBAction)restoreMemorySnap:(id)sender
 {
-	GuiOsx_PauseAndSwitchToCocoaUI();
+	GuiOsx_Pause();
 
 	// Create and configure an OpenPanel
     NSOpenPanel *openPanel = [NSOpenPanel openPanel];
@@ -306,7 +306,7 @@ static BOOL   gFinderLaunch;
 		MemorySnapShot_Restore([path cString], TRUE);
     }
 	
-	GuiOsx_ResumeFromCocoaUI();
+	GuiOsx_Resume();
 }
 
 - (IBAction)doFullScreen:(id)sender
