@@ -190,7 +190,7 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 	{
 		d[-1] = '*';
 	}
-	if ((len>1) && (d[-2]!='\\') && (d[-1]!='*'))
+	if ((len>1) && !(d[-2]=='\\' && d[-1]=='*') )
 	{
 		*d++ = '\\';
 		*d++ = '*';
@@ -251,7 +251,7 @@ int scandir(const char *dirname, struct dirent ***namelist, int (*sdfilter)(stru
 		{
 			free(selectDir);
 		}
-	
+
 #if defined(__CEGCC__)
 		ret = FindNextFileW(h, &find);
 #else
