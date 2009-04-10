@@ -100,8 +100,8 @@ typedef struct {
 #define  BASE_FILEHANDLE     64    /* Our emulation handles - MUST not be valid TOS ones, but MUST be <256 */
 #define  MAX_FILE_HANDLES    32    /* We can allow 32 files open at once */
 
-/* 
-   DateTime structure used by TOS call $57 f_dattime 
+/*
+   DateTime structure used by TOS call $57 f_dattime
    Changed to fix potential problem with alignment.
 */
 typedef struct {
@@ -281,7 +281,7 @@ static Uint16 GemDOS_Time2dos(time_t t)
 	struct tm *x;
 
 	x = localtime(&t);
-	
+
 	if (x == NULL)
 		return 0;
 
@@ -350,7 +350,7 @@ static unsigned char GemDOS_ConvertAttribute(mode_t mode)
 	/* Read-only attribute */
 	if (!(mode & S_IWUSR))
 		Attrib |= GEMDOS_FILE_ATTRIB_READONLY;
-	
+
 	/* TODO: Other attributes like GEMDOS_FILE_ATTRIB_HIDDEN ? */
 
 	return Attrib;
@@ -1308,7 +1308,7 @@ static bool GemDOS_Create(Uint32 Params)
 	else
 		rwflags = "wb+";
 	FileHandles[Index].FileHandle = fopen(szActualFileName, rwflags);
-	
+
 	if (FileHandles[Index].FileHandle != NULL)
 	{
 		/* Tag handle table entry as used and return handle */
@@ -1382,10 +1382,10 @@ static bool GemDOS_Open(Uint32 Params)
 	 *   of fopen() and FILE* pointers, but Windows doesn't support that
 	 */
 	FileHandles[Index].FileHandle =  fopen(szActualFileName, open_modes[Mode&0x03]);
-	
+
 	snprintf(FileHandles[Index].szActualName, sizeof(FileHandles[Index].szActualName),
 		 "%s", szActualFileName);
-	
+
 	if (FileHandles[Index].FileHandle != NULL)
 	{
 		/* Tag handle table entry as used and return handle */
@@ -1393,10 +1393,10 @@ static bool GemDOS_Open(Uint32 Params)
 		Regs[REG_D0] = Index+BASE_FILEHANDLE;  /* Return valid ST file handle from range 6 to 45! (ours start from 0) */
 		return TRUE;
 	}
-	
+
 	if (Mode != 1 && errno == EACCES)
 		HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "Missing permission to read file '%s'\n", szActualFileName );
-	
+
 	Regs[REG_D0] = GEMDOS_EFILNF;     /* File not found/ error opening */
 	return TRUE;
 }
@@ -2019,7 +2019,7 @@ static bool GemDOS_GSDToF(Uint32 Params)
  * Run GEMDos call, and re-direct if need to. Used to handle hard disk emulation etc...
  * This sets the condition codes (in SR), which are used in the 'cart_asm.s' program to
  * decide if we need to run old GEM vector, or PExec or nothing.
- * 
+ *
  * This method keeps the stack and other states consistant with the original ST which is very important
  * for the PExec call and maximum compatibility through-out
  */
@@ -2187,7 +2187,7 @@ void GemDOS_OpCode(void)
 			RunOld = FALSE;
 		break;
 	}
-	
+
 	switch(RunOld)
 	{
 	 case FALSE:
