@@ -83,7 +83,11 @@ void DSP_Run(int nHostCycles)
 /* Read SSI transmit value */
 Uint32 DSP_SsiReadTxValue(void)
 {
+#if DSP_EMULATION
 	return dsp_core.ssi_tx_value;
+#else
+	return 0;
+#endif
 }
 
 
