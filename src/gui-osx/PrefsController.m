@@ -295,6 +295,11 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	[self choosePathForControl: hdImage chooseDirectories:FALSE defaultInitialDir:@"~"];
 }
 
+- (IBAction)chooseIdeHdImage:(id)sender
+{
+	[self choosePathForControl: ideHdImage chooseDirectories:FALSE defaultInitialDir:@"~"];
+}
+
 - (IBAction)chooseKeyboardMappingFile:(id)sender
 {
 	[self choosePathForControl: keyboardMappingFile chooseDirectories:FALSE defaultInitialDir:@"~"];
@@ -356,6 +361,12 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 {
 	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly to signal this is ejected
 	[hdImage setStringValue:@""];
+}
+
+- (IBAction)ejectIdeHdImage:(id)sender
+{
+	// Clear the control. Later. saveAllControls will set the ConfigureParams accordingly to signal this is ejected
+	[ideHdImage setStringValue:@""];
 }
 
 
@@ -617,6 +628,16 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 		[hdImage setStringValue:@""];
 	}
 	
+	// If the IDE HD flag is set, load the IDE HD path, otherwise make it blank
+	if (ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	{
+		IMPORT_TEXTFIELD(ideHdImage, ConfigureParams.HardDisk.szIdeHardDiskImage);	
+	}
+	else
+	{
+		[ideHdImage setStringValue:@""];
+	}
+	
 	// If the Gemdos flag is set, load the Gemdos path, otherwise make it blank
 	if (ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
@@ -787,6 +808,17 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	else
 	{
 		ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
+	}
+	
+	// Define the IDE HD flag, and export the IDE HD path if one is selected
+	if ([[ideHdImage stringValue] length] > 0)
+	{
+		EXPORT_TEXTFIELD(ideHdImage, ConfigureParams.HardDisk.szIdeHardDiskImage);
+		ConfigureParams.HardDisk.bUseIdeHardDiskImage = TRUE;
+	}
+	else
+	{
+		ConfigureParams.HardDisk.bUseIdeHardDiskImage = FALSE;
 	}
 	
 	// Define the Gemdos flag, and export the Gemdos path if one is selected

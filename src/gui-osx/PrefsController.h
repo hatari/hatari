@@ -33,6 +33,7 @@
     IBOutlet NSPopUpButton *frameSkip;
     IBOutlet NSTextField *gemdosImage;
     IBOutlet NSTextField *hdImage;
+    IBOutlet NSTextField *ideHdImage;
     IBOutlet NSButton *interleaved;
     IBOutlet NSPopUpButton *joystickDown;
     IBOutlet NSPopUpButton *joystickFire;
@@ -76,6 +77,7 @@
 - (IBAction)chooseFloppyImageB:(id)sender;
 - (IBAction)chooseGemdosImage:(id)sender;
 - (IBAction)chooseHdImage:(id)sender;
+- (IBAction)chooseIdeHdImage:(id)sender;
 - (IBAction)chooseKeyboardMappingFile:(id)sender;
 - (IBAction)chooseMidiOutputFile:(id)sender;
 - (IBAction)choosePrintToFile:(id)sender;
@@ -87,6 +89,7 @@
 - (IBAction)ejectFloppyB:(id)sender;
 - (IBAction)ejectGemdosImage:(id)sender;
 - (IBAction)ejectHdImage:(id)sender;
+- (IBAction)ejectIdeHdImage:(id)sender;
 - (IBAction)loadPrefs:(id)sender;
 - (IBAction)saveConfigAs:(id)sender;
 - (IBAction)loadConfigFrom:(id)sender;

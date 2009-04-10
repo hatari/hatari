@@ -21,6 +21,8 @@
 				<string>id</string>
 				<key>chooseHdImage</key>
 				<string>id</string>
+				<key>chooseIdeHdImage</key>
+				<string>id</string>
 				<key>chooseKeyboardMappingFile</key>
 				<string>id</string>
 				<key>chooseMidiOutputFile</key>
@@ -42,6 +44,8 @@
 				<key>ejectGemdosImage</key>
 				<string>id</string>
 				<key>ejectHdImage</key>
+				<string>id</string>
+				<key>ejectIdeHdImage</key>
 				<string>id</string>
 				<key>loadConfigFrom</key>
 				<string>id</string>
@@ -107,6 +111,8 @@
 				<key>gemdosImage</key>
 				<string>NSTextField</string>
 				<key>hdImage</key>
+				<string>NSTextField</string>
+				<key>ideHdImage</key>
 				<string>NSTextField</string>
 				<key>interleaved</key>
 				<string>NSButton</string>
@@ -229,6 +235,14 @@
 			</dict>
 			<key>SUPERCLASS</key>
 			<string>NSObject</string>
+		</dict>
+		<dict>
+			<key>CLASS</key>
+			<string>NSButton</string>
+			<key>LANGUAGE</key>
+			<string>ObjC</string>
+			<key>SUPERCLASS</key>
+			<string>NSControl</string>
 		</dict>
 		<dict>
 			<key>ACTIONS</key>
