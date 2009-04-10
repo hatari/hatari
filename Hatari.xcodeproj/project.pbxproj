@@ -186,10 +186,11 @@
 		9670E1AA0A5FA132009A73E0 /* options.c in Sources */ = {isa = PBXBuildFile; fileRef = 968DE4D30A59B234007517A4 /* options.c */; };
 		9670E1AC0A5FA132009A73E0 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		9670E1C20A5FA25A009A73E0 /* SDL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9670E1C10A5FA25A009A73E0 /* SDL.framework */; };
-		968B50F00D83704D00C21920 /* dlgDisk.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B50EE0D83704D00C21920 /* dlgDisk.c */; };
 		968B50F10D83704D00C21920 /* dlgNewDisk.c in Sources */ = {isa = PBXBuildFile; fileRef = 968B50EF0D83704D00C21920 /* dlgNewDisk.c */; };
 		969191280AA205A80008B3A0 /* scandir.c in Sources */ = {isa = PBXBuildFile; fileRef = 969191270AA205A80008B3A0 /* scandir.c */; };
 		9691912A0AA205D60008B3A0 /* scandir.h in Headers */ = {isa = PBXBuildFile; fileRef = 969191290AA205D60008B3A0 /* scandir.h */; };
+		96A259050F8E4AAC007F5FD1 /* dlgFloppy.c in Sources */ = {isa = PBXBuildFile; fileRef = 96A259030F8E4AAC007F5FD1 /* dlgFloppy.c */; };
+		96A259060F8E4AAC007F5FD1 /* dlgHardDisk.c in Sources */ = {isa = PBXBuildFile; fileRef = 96A259040F8E4AAC007F5FD1 /* dlgHardDisk.c */; };
 		96B15D550D836F8F000326A2 /* paths.h in Headers */ = {isa = PBXBuildFile; fileRef = 96B15D540D836F8F000326A2 /* paths.h */; };
 		96B15D5A0D836FC0000326A2 /* paths.c in Sources */ = {isa = PBXBuildFile; fileRef = 96B15D580D836FC0000326A2 /* paths.c */; };
 		E916E10A0EE4995200F42ED2 /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = E916E1090EE4995200F42ED2 /* utils.c */; };
@@ -281,13 +282,14 @@
 		9670E1B00A5FA132009A73E0 /* Info-Hatari.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "Info-Hatari.plist"; sourceTree = "<group>"; };
 		9670E1B10A5FA132009A73E0 /* Hatari.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hatari.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9670E1C10A5FA25A009A73E0 /* SDL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL.framework; path = /Library/Frameworks/SDL.framework; sourceTree = "<absolute>"; };
-		968B50EE0D83704D00C21920 /* dlgDisk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dlgDisk.c; sourceTree = "<group>"; };
 		968B50EF0D83704D00C21920 /* dlgNewDisk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dlgNewDisk.c; sourceTree = "<group>"; };
 		968DE4CE0A59B1E8007517A4 /* gemdos_defines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gemdos_defines.h; sourceTree = "<group>"; };
 		968DE4CF0A59B1E8007517A4 /* options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = options.h; sourceTree = "<group>"; };
 		968DE4D30A59B234007517A4 /* options.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = options.c; path = src/options.c; sourceTree = "<group>"; };
 		969191270AA205A80008B3A0 /* scandir.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = scandir.c; path = src/scandir.c; sourceTree = "<group>"; };
 		969191290AA205D60008B3A0 /* scandir.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scandir.h; sourceTree = "<group>"; };
+		96A259030F8E4AAC007F5FD1 /* dlgFloppy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dlgFloppy.c; sourceTree = "<group>"; };
+		96A259040F8E4AAC007F5FD1 /* dlgHardDisk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dlgHardDisk.c; sourceTree = "<group>"; };
 		96B15D540D836F8F000326A2 /* paths.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = paths.h; sourceTree = "<group>"; };
 		96B15D580D836FC0000326A2 /* paths.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = paths.c; path = src/paths.c; sourceTree = "<group>"; };
 		96BEBB3F0A567AC0007ADA48 /* AlertHooks.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AlertHooks.h; sourceTree = "<group>"; };
@@ -660,7 +662,8 @@
 		E9283E8507512EA200DA6B24 /* gui-sdl */ = {
 			isa = PBXGroup;
 			children = (
-				968B50EE0D83704D00C21920 /* dlgDisk.c */,
+				96A259030F8E4AAC007F5FD1 /* dlgFloppy.c */,
+				96A259040F8E4AAC007F5FD1 /* dlgHardDisk.c */,
 				968B50EF0D83704D00C21920 /* dlgNewDisk.c */,
 				96CD27820A58443F008DE57F /* dlgRom.c */,
 				E9283E8707512EA200DA6B24 /* dlgAbout.c */,
@@ -1045,7 +1048,6 @@
 				961323300B5BD66600007C3E /* ide.c in Sources */,
 				96635B770BF86FDF00518B3B /* nvram.c in Sources */,
 				96B15D5A0D836FC0000326A2 /* paths.c in Sources */,
-				968B50F00D83704D00C21920 /* dlgDisk.c in Sources */,
 				968B50F10D83704D00C21920 /* dlgNewDisk.c in Sources */,
 				4EE4B5ED0DD8E0DD00DF27A2 /* change.c in Sources */,
 				4EE4B5EE0DD8E0DD00DF27A2 /* control.c in Sources */,
@@ -1053,6 +1055,8 @@
 				E99613BA0E6DC6900047F6A0 /* statusbar.c in Sources */,
 				E916E10A0EE4995200F42ED2 /* utils.c in Sources */,
 				E916E10D0EE4997600F42ED2 /* dsp_core.c in Sources */,
+				96A259050F8E4AAC007F5FD1 /* dlgFloppy.c in Sources */,
+				96A259060F8E4AAC007F5FD1 /* dlgHardDisk.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

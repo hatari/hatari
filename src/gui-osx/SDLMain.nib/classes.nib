@@ -1,129 +1,263 @@
-{
-    IBClasses = (
-        {
-            ACTIONS = {createFloppyImage = id; runModal = id; }; 
-            CLASS = CreateFloppyController; 
-            LANGUAGE = ObjC; 
-            OUTLETS = {
-                sectors = NSMatrix; 
-                sides = NSMatrix; 
-                tracks = NSPopUpButton; 
-                window = NSWindow; 
-            }; 
-            SUPERCLASS = NSObject; 
-        }, 
-        {CLASS = FirstResponder; LANGUAGE = ObjC; SUPERCLASS = NSObject; }, 
-        {CLASS = NSPanel; LANGUAGE = ObjC; SUPERCLASS = NSWindow; }, 
-        {
-            ACTIONS = {
-                changeViewedJoystick = id; 
-                chooseCartridgeImage = id; 
-                chooseDefaultImagesLocation = id; 
-                chooseFloppyImageA = id; 
-                chooseFloppyImageB = id; 
-                chooseGemdosImage = id; 
-                chooseHdImage = id; 
-                chooseKeyboardMappingFile = id; 
-                chooseMidiOutputFile = id; 
-                choosePrintToFile = id; 
-                chooseRS232InputFile = id; 
-                chooseRS232OutputFile = id; 
-                chooseTosImage = id; 
-                commitAndClose = id; 
-                ejectFloppyA = id; 
-                ejectFloppyB = id; 
-                ejectGemdosImage = id; 
-                ejectHdImage = id; 
-                loadConfigFrom = id; 
-                loadPrefs = id; 
-                myAction = id; 
-                saveConfigAs = id; 
-                updateEnabledStates = id; 
-            }; 
-            CLASS = PrefsController; 
-            LANGUAGE = ObjC; 
-            OUTLETS = {
-                autoInsertB = NSButton; 
-                blitter = NSButton; 
-                bootFromHD = NSButton; 
-                captureOnChange = NSButton; 
-                cartridgeImage = NSTextField; 
-                colorDepth = NSMatrix; 
-                compatibleCpu = NSButton; 
-                cpuClock = NSMatrix; 
-                cpuType = NSMatrix; 
-                currentJoystick = NSPopUpButton; 
-                defaultImagesLocation = NSTextField; 
-                enableAutoFire = NSButton; 
-                enableDSP = NSPopUpButton; 
-                enableMidi = NSButton; 
-                enablePrinter = NSButton; 
-                enableRS232 = NSButton; 
-                enableSound = NSButton; 
-                floppyImageA = NSTextField; 
-                floppyImageB = NSTextField; 
-                force8bpp = NSButton; 
-                frameSkip = NSPopUpButton; 
-                gemdosImage = NSTextField; 
-                hdImage = NSTextField; 
-                joystickDown = NSPopUpButton; 
-                joystickFire = NSPopUpButton; 
-                joystickLeft = NSPopUpButton; 
-                joystickMode = NSMatrix; 
-                joystickRight = NSPopUpButton; 
-                joystickUp = NSPopUpButton; 
-                keyboardMapping = NSMatrix; 
-                keyboardMappingFile = NSTextField; 
-                machineType = NSMatrix; 
-                monitor = NSMatrix; 
-                patchTimerD = NSButton; 
-                playbackQuality = NSMatrix; 
-                printToFile = NSTextField; 
-                ramSize = NSMatrix; 
-                readRS232FromFile = NSTextField; 
-                realJoystick = NSPopUpButton; 
-                realTime = NSButton; 
-                resolution = NSMatrix; 
-                showStatusBar = NSButton; 
-                slowFDC = NSButton; 
-                tosImage = NSTextField; 
-                useBorders = NSButton; 
-                useVDIResolution = NSButton; 
-                window = NSWindow; 
-                writeMidiToFile = NSTextField; 
-                writeProtection = NSMatrix; 
-                writeRS232ToFile = NSTextField; 
-                zoomSTLowRes = NSButton; 
-            }; 
-            SUPERCLASS = NSObject; 
-        }, 
-        {
-            ACTIONS = {
-                captureAnimation = id; 
-                captureScreen = id; 
-                captureSound = id; 
-                coldReset = id; 
-                doFullScreen = id; 
-                endCaptureAnimation = id; 
-                endCaptureSound = id; 
-                help = id; 
-                insertDiskA = id; 
-                insertDiskB = id; 
-                prefsMenu = id; 
-                restoreMemorySnap = id; 
-                saveMemorySnap = id; 
-                warmReset = id; 
-            }; 
-            CLASS = SDLMain; 
-            LANGUAGE = ObjC; 
-            OUTLETS = {
-                beginCaptureAnim = NSMenuItem; 
-                beginCaptureSound = NSMenuItem; 
-                endCaptureAnim = NSMenuItem; 
-                endCaptureSound = NSMenuItem; 
-            }; 
-            SUPERCLASS = NSObject; 
-        }
-    ); 
-    IBVersion = 1; 
-}
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IBClasses</key>
+	<array>
+		<dict>
+			<key>ACTIONS</key>
+			<dict>
+				<key>changeViewedJoystick</key>
+				<string>id</string>
+				<key>chooseCartridgeImage</key>
+				<string>id</string>
+				<key>chooseDefaultImagesLocation</key>
+				<string>id</string>
+				<key>chooseFloppyImageA</key>
+				<string>id</string>
+				<key>chooseFloppyImageB</key>
+				<string>id</string>
+				<key>chooseGemdosImage</key>
+				<string>id</string>
+				<key>chooseHdImage</key>
+				<string>id</string>
+				<key>chooseKeyboardMappingFile</key>
+				<string>id</string>
+				<key>chooseMidiOutputFile</key>
+				<string>id</string>
+				<key>choosePrintToFile</key>
+				<string>id</string>
+				<key>chooseRS232InputFile</key>
+				<string>id</string>
+				<key>chooseRS232OutputFile</key>
+				<string>id</string>
+				<key>chooseTosImage</key>
+				<string>id</string>
+				<key>commitAndClose</key>
+				<string>id</string>
+				<key>ejectFloppyA</key>
+				<string>id</string>
+				<key>ejectFloppyB</key>
+				<string>id</string>
+				<key>ejectGemdosImage</key>
+				<string>id</string>
+				<key>ejectHdImage</key>
+				<string>id</string>
+				<key>loadConfigFrom</key>
+				<string>id</string>
+				<key>loadPrefs</key>
+				<string>id</string>
+				<key>myAction</key>
+				<string>id</string>
+				<key>saveConfigAs</key>
+				<string>id</string>
+				<key>updateEnabledStates</key>
+				<string>id</string>
+			</dict>
+			<key>CLASS</key>
+			<string>PrefsController</string>
+			<key>LANGUAGE</key>
+			<string>ObjC</string>
+			<key>OUTLETS</key>
+			<dict>
+				<key>autoInsertB</key>
+				<string>NSButton</string>
+				<key>blitter</key>
+				<string>NSButton</string>
+				<key>bootFromHD</key>
+				<string>NSButton</string>
+				<key>captureOnChange</key>
+				<string>NSButton</string>
+				<key>cartridgeImage</key>
+				<string>NSTextField</string>
+				<key>colorDepth</key>
+				<string>NSMatrix</string>
+				<key>compatibleCpu</key>
+				<string>NSButton</string>
+				<key>configFile</key>
+				<string>NSTextField</string>
+				<key>cpuClock</key>
+				<string>NSMatrix</string>
+				<key>cpuType</key>
+				<string>NSMatrix</string>
+				<key>currentJoystick</key>
+				<string>NSPopUpButton</string>
+				<key>defaultImagesLocation</key>
+				<string>NSTextField</string>
+				<key>enableAutoFire</key>
+				<string>NSButton</string>
+				<key>enableDSP</key>
+				<string>NSPopUpButton</string>
+				<key>enableMidi</key>
+				<string>NSButton</string>
+				<key>enablePrinter</key>
+				<string>NSButton</string>
+				<key>enableRS232</key>
+				<string>NSButton</string>
+				<key>enableSound</key>
+				<string>NSButton</string>
+				<key>floppyImageA</key>
+				<string>NSTextField</string>
+				<key>floppyImageB</key>
+				<string>NSTextField</string>
+				<key>force8bpp</key>
+				<string>NSButton</string>
+				<key>frameSkip</key>
+				<string>NSPopUpButton</string>
+				<key>gemdosImage</key>
+				<string>NSTextField</string>
+				<key>hdImage</key>
+				<string>NSTextField</string>
+				<key>interleaved</key>
+				<string>NSButton</string>
+				<key>joystickDown</key>
+				<string>NSPopUpButton</string>
+				<key>joystickFire</key>
+				<string>NSPopUpButton</string>
+				<key>joystickLeft</key>
+				<string>NSPopUpButton</string>
+				<key>joystickMode</key>
+				<string>NSMatrix</string>
+				<key>joystickRight</key>
+				<string>NSPopUpButton</string>
+				<key>joystickUp</key>
+				<string>NSPopUpButton</string>
+				<key>keyboardMapping</key>
+				<string>NSMatrix</string>
+				<key>keyboardMappingFile</key>
+				<string>NSTextField</string>
+				<key>machineType</key>
+				<string>NSMatrix</string>
+				<key>monitor</key>
+				<string>NSMatrix</string>
+				<key>nSpec512Treshold</key>
+				<string>NSSlider</string>
+				<key>patchTimerD</key>
+				<string>NSButton</string>
+				<key>playbackQuality</key>
+				<string>NSMatrix</string>
+				<key>printToFile</key>
+				<string>NSTextField</string>
+				<key>ramSize</key>
+				<string>NSMatrix</string>
+				<key>readRS232FromFile</key>
+				<string>NSTextField</string>
+				<key>realJoystick</key>
+				<string>NSPopUpButton</string>
+				<key>realTime</key>
+				<string>NSButton</string>
+				<key>resolution</key>
+				<string>NSMatrix</string>
+				<key>showStatusBar</key>
+				<string>NSButton</string>
+				<key>slowFDC</key>
+				<string>NSButton</string>
+				<key>tosImage</key>
+				<string>NSTextField</string>
+				<key>useBorders</key>
+				<string>NSButton</string>
+				<key>useVDIResolution</key>
+				<string>NSButton</string>
+				<key>window</key>
+				<string>NSWindow</string>
+				<key>writeMidiToFile</key>
+				<string>NSTextField</string>
+				<key>writeProtection</key>
+				<string>NSMatrix</string>
+				<key>writeRS232ToFile</key>
+				<string>NSTextField</string>
+				<key>zoomSTLowRes</key>
+				<string>NSButton</string>
+			</dict>
+			<key>SUPERCLASS</key>
+			<string>NSObject</string>
+		</dict>
+		<dict>
+			<key>CLASS</key>
+			<string>FirstResponder</string>
+			<key>LANGUAGE</key>
+			<string>ObjC</string>
+			<key>SUPERCLASS</key>
+			<string>NSObject</string>
+		</dict>
+		<dict>
+			<key>ACTIONS</key>
+			<dict>
+				<key>captureAnimation</key>
+				<string>id</string>
+				<key>captureScreen</key>
+				<string>id</string>
+				<key>captureSound</key>
+				<string>id</string>
+				<key>coldReset</key>
+				<string>id</string>
+				<key>doFullScreen</key>
+				<string>id</string>
+				<key>endCaptureAnimation</key>
+				<string>id</string>
+				<key>endCaptureSound</key>
+				<string>id</string>
+				<key>help</key>
+				<string>id</string>
+				<key>insertDiskA</key>
+				<string>id</string>
+				<key>insertDiskB</key>
+				<string>id</string>
+				<key>prefsMenu</key>
+				<string>id</string>
+				<key>restoreMemorySnap</key>
+				<string>id</string>
+				<key>saveMemorySnap</key>
+				<string>id</string>
+				<key>warmReset</key>
+				<string>id</string>
+			</dict>
+			<key>CLASS</key>
+			<string>SDLMain</string>
+			<key>LANGUAGE</key>
+			<string>ObjC</string>
+			<key>OUTLETS</key>
+			<dict>
+				<key>beginCaptureAnim</key>
+				<string>NSMenuItem</string>
+				<key>beginCaptureSound</key>
+				<string>NSMenuItem</string>
+				<key>endCaptureAnim</key>
+				<string>NSMenuItem</string>
+				<key>endCaptureSound</key>
+				<string>NSMenuItem</string>
+			</dict>
+			<key>SUPERCLASS</key>
+			<string>NSObject</string>
+		</dict>
+		<dict>
+			<key>ACTIONS</key>
+			<dict>
+				<key>createFloppyImage</key>
+				<string>id</string>
+				<key>runModal</key>
+				<string>id</string>
+			</dict>
+			<key>CLASS</key>
+			<string>CreateFloppyController</string>
+			<key>LANGUAGE</key>
+			<string>ObjC</string>
+			<key>OUTLETS</key>
+			<dict>
+				<key>sectors</key>
+				<string>NSMatrix</string>
+				<key>sides</key>
+				<string>NSMatrix</string>
+				<key>tracks</key>
+				<string>NSPopUpButton</string>
+				<key>window</key>
+				<string>NSWindow</string>
+			</dict>
+			<key>SUPERCLASS</key>
+			<string>NSObject</string>
+		</dict>
+	</array>
+	<key>IBVersion</key>
+	<string>1</string>
+</dict>
+</plist>
