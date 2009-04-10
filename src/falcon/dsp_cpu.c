@@ -25,12 +25,11 @@
 
 #include "dsp_core.h"
 #include "dsp_cpu.h"
-#ifdef DSP_DISASM
 #include "dsp_disasm.h"
-#endif
+
 
 /* More disasm infos, if wanted */
-#define DSP_DISASM 0		/* Instructions */
+// #define DSP_DISASM 1		/* Main DSP disassembler switch */
 #define DSP_DISASM_INST 0	/* Instructions */
 #define DSP_DISASM_REG 0	/* Registers changes */
 #define DSP_DISASM_MEM 0	/* Memory changes */
