@@ -119,12 +119,14 @@ void check_prefs_changed_cpu(void)
 /*
   This function will be called at system init by the cartridge routine
   (after gemdos init, before booting floppies).
-  
+
   The GEMDOS vector (#$84) is setup and we also initialize the connected
   drive mask and Line-A  variables (for an extended VDI resolution) from here.
 */
 unsigned long OpCode_SysInit(uae_u32 opcode)
 {
+  /* Add any drives mapped by TOS in the interim */
+  ConnectedDriveMask |= STMemory_ReadLong(0x4c2);
   /* Initialize the connected drive mask */
   STMemory_WriteLong(0x4c2, ConnectedDriveMask);
 

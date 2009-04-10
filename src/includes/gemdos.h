@@ -9,9 +9,9 @@
 
 
 typedef struct {
-  char hd_emulation_dir[FILENAME_MAX];     /* hd emulation directory */
-  char fs_currpath[FILENAME_MAX];          /* current path */
-  int hd_letter;                           /* drive letter */
+  char hd_emulation_dir[FILENAME_MAX];     /* hd emulation directory (Host OS) */
+  char fs_currpath[FILENAME_MAX];          /* current path (Host OS) */
+  int hd_letter;                           /* drive letter (Atari) */
 } EMULATEDDRIVE;
 
 extern EMULATEDDRIVE **emudrives;

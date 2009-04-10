@@ -557,11 +557,59 @@ void GemDOS_Reset(void)
 	pDTA = NULL;
 }
 
+/*-----------------------------------------------------------------------*/
+/**
+ * Routine to check the Host OS HDD path for a Drive letter sub folder
+ */
+static bool GEMDOS_DoesHostDriveFolderExist(char* lpstrPath, int iDrive)
+{
+	bool bExist = FALSE;
+
+	if (access(lpstrPath, F_OK) != 0 )
+	{
+		/* Try lower case drive letter instead */
+		int	iIndex = strlen(lpstrPath)-1;
+		lpstrPath[iIndex] = tolower(lpstrPath[iIndex]);
+	}
+
+	/* Check the file/folder is accessible (security basis) */
+	if (access(lpstrPath, F_OK) == 0 )
+	{
+		 /* If its a HDD identifier (or other emulated device) */
+		if (iDrive > 1)
+		{
+			struct stat status;
+			stat( lpstrPath, &status );
+			if ( status.st_mode & S_IFDIR )
+				bExist = TRUE;
+		}
+	}
+
+	return bExist;
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Routine to check if any emulated drive is present
+ */
+#if 0
+static bool GEMDOS_IsHDDPresent(int iDrive)
+{
+	bool bPresent = FALSE;
+
+	if ((iDrive <= nNumDrives) && (iDrive > 1))
+		if (emudrives[iDrive-2])
+			bPresent = TRUE;
+
+	return bPresent;
+}
+#endif
+
 
 /*-----------------------------------------------------------------------*/
 /**
  * Initialize a GEMDOS drive.
- * Only 1 emulated drive allowed, as of yet.
+ * Supports up to MAX_HARDDRIVES HDD units.
  */
 void GemDOS_InitDrives(void)
 {
@@ -577,23 +625,56 @@ void GemDOS_InitDrives(void)
 
 	for(i=0; i<MAX_HARDDRIVES; i++)
 	{
+#if MAX_HARDDRIVES > 1
+		// Create the letter equivilent string identifier for this drive
+		char sDriveLetter[] = { PATHSEP, (char)('C' + i), '\0' };
+#endif
+
+		/* set drive number (C: = 2, D: = 3, etc.) */
+#if MAX_HARDDRIVES == 1
+		emudrives[i]->hd_letter = 2 + nPartitions + i;
+#else
+		emudrives[i]->hd_letter = 2 + i;
+#endif
+
 		/* set emulation directory string */
-		strcpy(emudrives[i]->hd_emulation_dir, ConfigureParams.HardDisk.szHardDiskDirectories[i]);
+		strcpy(emudrives[i]->hd_emulation_dir, ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 
 		/* remove trailing slash, if any in the directory name */
 		File_CleanFileName(emudrives[i]->hd_emulation_dir);
 
-		/* initialize current directory string, too (initially the same as hd_emulation_dir) */
-		strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
-		strcat(emudrives[i]->fs_currpath, "/");    /* Needs trailing slash! */
+#if MAX_HARDDRIVES > 1
+		/* Add Requisit Folder ID */
+		strcat(emudrives[i]->hd_emulation_dir, sDriveLetter);
+#endif
 
-		/* set drive to 2 + number of ACSI partitions */
-		emudrives[i]->hd_letter = 2 + nPartitions + i;
-
-		nNumDrives += 1;
-
-		fprintf(stderr, "Hard drive emulation, %c: <-> %s\n",
-				emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
+		// Check host file system to see if the drive folder for THIS
+		// drive letter/number exists...
+		if (GEMDOS_DoesHostDriveFolderExist(emudrives[i]->hd_emulation_dir,emudrives[i]->hd_letter))
+		{
+			/* initialize current directory string, too (initially the same as hd_emulation_dir) */
+			strcpy(emudrives[i]->fs_currpath, emudrives[i]->hd_emulation_dir);
+			File_AddSlashToEndFileName(emudrives[i]->fs_currpath);    /* Needs trailing slash! */
+			 /* If the GemDos Drive letter is free then */
+			if (i >= nPartitions)
+			{
+				Log_Printf(LOG_INFO, "Hard drive emulation, %c: <-> %s : \n\tStart Path = '%s'.\n",
+						emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir,emudrives[i]->fs_currpath);
+				nNumDrives = i + 3;
+			}
+			else	/* This letter has allready been allocated to the one supported physical disk image */
+			{
+				Log_Printf(LOG_INFO, "Drive Letter %c is already mapped to HDD image (cannot map GEM DOS drive) : <-> %s : \n\tStart Path = %s.\n",
+						emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir,emudrives[i]->fs_currpath);
+				goto FreeGemDosDrive;
+			}
+		}
+		else
+		{
+FreeGemDosDrive:
+			free(emudrives[i]);	// Deallocate Memory (save space)
+			emudrives[i] = NULL;
+		}
 	}
 }
 
@@ -612,8 +693,12 @@ void GemDOS_UnInitDrives(void)
 	{
 		for(i=0; i<MAX_HARDDRIVES; i++)
 		{
-			free(emudrives[i]);    /* Release memory */
-			nNumDrives -= 1;
+			if (emudrives[i])
+			{
+				free(emudrives[i]);    /* Release memory */
+				emudrives[i] = NULL;
+				nNumDrives -= 1;
+			}
 		}
 
 		free(emudrives);
@@ -753,12 +838,19 @@ static int GemDOS_IsFileNameAHardDrive(char *pszFileName)
 	{
 		/* Find drive letter (as number) */
 		DriveLetter = GemDOS_FindDriveNumber(pszFileName);
-		/* add support for multiple drives here.. */
-		for (n=0; n<MAX_HARDDRIVES; n++) {
-  		  if (DriveLetter == emudrives[n]->hd_letter)
-			return DriveLetter;
+
+		/* We've got support for multiple drives here... */
+		if (DriveLetter > 1)	// If it is not a Floppy Drive
+		{
+			for (n=0; n<MAX_HARDDRIVES; n++)
+			{
+				/* Check if drive letter matches */
+				if (emudrives[n] &&  DriveLetter == emudrives[n]->hd_letter)
+					return DriveLetter;
+			}
+		}
 	}
-	}
+
 	/* Not a high-level redirected drive, let TOS handle it */
 	return -1;
 }
@@ -801,22 +893,23 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 	if (pszFileName[1] == ':')
 	{
 		snprintf(pszDestName, nDestNameLen, "%s%s",
-		         emudrives[0]->hd_emulation_dir, File_RemoveFileNameDrive(pszFileName));
+		         emudrives[Drive-2]->hd_emulation_dir, File_RemoveFileNameDrive(pszFileName));
 	}
 	/* case referenced from root:  "\foo\bar" */
 	else if (pszFileName[0] == '\\')
 	{
 		snprintf(pszDestName, nDestNameLen, "%s%s",
-		         emudrives[0]->hd_emulation_dir, pszFileName);
+		         emudrives[Drive-2]->hd_emulation_dir, pszFileName);
 	}
 	/* case referenced from current directory */
 	else
 	{
 		snprintf(pszDestName, nDestNameLen, "%s%s",
-		         emudrives[0]->fs_currpath, pszFileName);
-		start = pszDestName + strlen(emudrives[0]->fs_currpath)-1;
+		         emudrives[Drive-2]->fs_currpath, pszFileName);
+		start = pszDestName + strlen(emudrives[Drive-2]->fs_currpath)-1;
 	}
 
+#ifndef _WIN32
 	/* convert to front slashes. */
 	while((s = strchr(s+1,'\\')))
 	{
@@ -843,6 +936,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 			len = strlen(pszDestName);
 			base_len = baselen(start);
 			found = 0;
+			// Handle long file names
 			for (j=0; j<globbuf.gl_pathc; j++)
 			{
 				/* If we search for a file of at least 8 characters, then it might
@@ -901,7 +995,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 		}
 		start = s;
 	}
-
+#endif
 	if (!start)
 		start = strrchr(pszDestName, PATHSEP); // path already converted ?
 
@@ -1232,6 +1326,10 @@ static bool GemDOS_ChDir(Uint32 Params)
 		}
 
 		GemDOS_CreateHardDriveFileName(Drive, pDirName, psTempDirPath, FILENAME_MAX);
+
+		// Remove trailing slashes (stat on Windows does not like that)
+		File_CleanFileName(psTempDirPath);
+
 		if (stat(psTempDirPath, &buf))
 		{
 			/* error */
@@ -1243,10 +1341,20 @@ static bool GemDOS_ChDir(Uint32 Params)
 		File_AddSlashToEndFileName(psTempDirPath);
 		File_MakeAbsoluteName(psTempDirPath);
 
-		strcpy(emudrives[0]->fs_currpath, psTempDirPath);
+		 /* Prevent '..' commands moving BELOW the root HDD folder */
+		 /* by double checking if path is valid */
+		if (strncmp(psTempDirPath, emudrives[Drive-2]->hd_emulation_dir,
+		    strlen(emudrives[Drive-2]->hd_emulation_dir)) == 0)
+		{
+			strcpy(emudrives[Drive-2]->fs_currpath, psTempDirPath);
+			Regs[REG_D0] = GEMDOS_EOK;
+		}
+		else
+		{
+			Regs[REG_D0] = GEMDOS_EPTHNF;
+		}
 		free(psTempDirPath);
 
-		Regs[REG_D0] = GEMDOS_EOK;
 		return TRUE;
 	}
 
@@ -1673,15 +1781,27 @@ static int GemDOS_GetDir(Uint32 Params)
 
 	Address = STMemory_ReadLong(Params+SIZE_WORD);
 	Drive = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
+	/* Note: Drive = 0 means current drive, 1 = A:, 2 = B:, 3 = C:, etc. */
+
 	/* is it our drive? */
-	if ((Drive == 0 && CurrentDrive >= 2) || Drive >= 3)
+	if ((Drive == 0 && CurrentDrive >= 2) || (Drive >= 3 /*&& Drive <= nNumDrives*/))
 	{
 		char path[MAX_GEMDOS_PATH];
 		int i,len,c;
 
-		Regs[REG_D0] = GEMDOS_EOK;          /* OK */
-		strcpy(path,&emudrives[0]->fs_currpath[strlen(emudrives[0]->hd_emulation_dir)]);
-		// convertit en path st (dos)
+		if (Drive == 0)
+			Drive = CurrentDrive;
+		else
+			Drive--;
+
+		if (emudrives[Drive-2] == NULL)
+		{
+			return false;
+		}
+
+		strcpy(path,&emudrives[Drive-2]->fs_currpath[strlen(emudrives[Drive-2]->hd_emulation_dir)]);
+
+		// convert it to ST path (DOS)
 		len = strlen(path)-1;
 		path[len] = 0;
 		for (i = 0; i <= len; i++)
@@ -1690,6 +1810,8 @@ static int GemDOS_GetDir(Uint32 Params)
 			STMemory_WriteByte(Address+i, (c==PATHSEP ? '\\' : c) );
 		}
 		HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "GemDOS_GetDir (%d) = %s\n", Drive, path );
+
+		Regs[REG_D0] = GEMDOS_EOK;          /* OK */
 
 		return TRUE;
 	}

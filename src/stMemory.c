@@ -12,7 +12,9 @@ const char STMemory_fileid[] = "Hatari stMemory.c : " __DATE__ " " __TIME__;
 #include "configuration.h"
 #include "floppy.h"
 #include "ioMem.h"
+#include "gemdos.h"
 #include "tos.h"
+#include "log.h"
 #include "vdi.h"
 #include "memory.h"
 
@@ -147,10 +149,15 @@ void STMemory_SetDefaultConfig(void)
 	STMemory_WriteWord(0x446, nBootDrive);          /* Boot up on A(0) or C(2) */
 
 	/* Create connected drives mask: */
-	ConnectedDriveMask = 0;
-	for (i = 0; i < nNumDrives; i++)
+	ConnectedDriveMask = STMemory_ReadLong(0x4c2);  // Get initial drive mask (see what TOS thinks)
+	ConnectedDriveMask |= 0x03;                     // Always use A: and B:
+	if (GEMDOS_EMU_ON)
 	{
-		ConnectedDriveMask |= (1 << i);
+		for (i = 0; i < MAX_HARDDRIVES; i++)
+		{
+			if (emudrives[i] != NULL)     // Is this GEMDOS drive enabled?
+				ConnectedDriveMask |= (1 << (i+2));  // FIXME: Use emudrives[...].hd_letter instead?
+		}
 	}
 	/* Set connected drives system variable.
 	 * NOTE: some TOS images overwrite this value, see 'OpCode_SysInit', too */
