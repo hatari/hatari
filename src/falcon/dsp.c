@@ -80,6 +80,13 @@ void DSP_Run(int nHostCycles)
 #endif
 }
 
+/* Read SSI transmit value */
+Uint32 DSP_SsiReadTxValue(void)
+{
+	return dsp_core.ssi_tx_value;
+}
+
+
 /**********************************
  *	Hardware address read/write by CPU
  **********************************/
