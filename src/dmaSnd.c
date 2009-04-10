@@ -45,7 +45,12 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 #include "mfp.h"
 #include "sound.h"
 #include "stMemory.h"
+#include "falcon/dsp.h"
+#include "falcon/dsp_core.h"
 
+
+Sint16 DspOutBuffer[MIXBUFFER_SIZE*2];
+int nDspOutRdPos, nDspOutWrPos, nDspBufSamples;
 
 Uint16 nDmaSoundControl;                /* Sound control register */
 
@@ -102,6 +107,8 @@ void DmaSnd_Reset(bool bCold)
 	}
 
 	nMwTransferSteps = 0;
+
+	nDspOutRdPos = nDspOutWrPos = 0;
 }
 
 
@@ -194,6 +201,42 @@ static inline int DmaSnd_CheckForEndOfFrame(int nFrameCounter)
 }
 
 
+/**
+ * Mix DSP sound sample with the normal PSG sound samples.
+ */
+static void DmaSnd_GenerateDspSamples(int nMixBufIdx, int nSamplesToGenerate)
+{
+	double FreqRatio, fDspBufSamples, fDspBufRdPos;
+	int i;
+	int nBufIdx;
+
+	FreqRatio = DmaSnd_DetectSampleRate() / (double)SoundPlayBackFrequencies[OutputAudioFreqIndex];
+	FreqRatio *= 2.0;  /* Stereo */
+
+	fDspBufSamples = (double)nDspBufSamples;
+	fDspBufRdPos = (double)nDspOutRdPos;
+
+	for (i = 0; i < nSamplesToGenerate &&  fDspBufSamples > 0.0; i++)
+	{
+		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+		nDspOutRdPos = (((int)fDspBufRdPos) & -2) % (MIXBUFFER_SIZE*2);
+
+		MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
+		                        + (int)(DspOutBuffer[nDspOutRdPos+0])) / 2;
+		MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
+		                        + (int)(DspOutBuffer[nDspOutRdPos+1])) / 2;
+
+		fDspBufRdPos += FreqRatio;
+		fDspBufSamples -= FreqRatio;
+	}
+
+	if (fDspBufSamples > 0.0)
+		nDspBufSamples = (int)fDspBufSamples;
+	else
+		nDspBufSamples = 0;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Mix DMA sound sample with the normal PSG sound samples.
@@ -204,6 +247,13 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	int i;
 	int nBufIdx;
 	Sint8 *pFrameStart;
+
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON
+	    && (IoMem_ReadWord(0xff8932) & 0x6000) == 0x2000)
+	{
+		DmaSnd_GenerateDspSamples(nMixBufIdx, nSamplesToGenerate);
+		return;
+	}
 
 	if (!(nDmaSoundControl & DMASNDCTRL_PLAY))
 		return;
@@ -513,14 +563,20 @@ static void DmaSnd_StartDspXmitHandler(void)
 	{
 		/* Internal 25.175 MHz clock */
 		nFreq = 25175000 / nClkDiv;
-		Int_AddRelativeInterrupt((8013000+nFreq/2)/nFreq, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
+		Int_AddRelativeInterrupt((8013000+nFreq/2)/nFreq/2, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 	}
 	else if ((nCbSrc & 0x60) == 0x20)
 	{
 		/* Internal 32 MHz clock */
 		nFreq = 32000000 / nClkDiv;
-		Int_AddRelativeInterrupt((8013000+nFreq/2)/nFreq, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
+		Int_AddRelativeInterrupt((8013000+nFreq/2)/nFreq/2, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 	}
+
+	/* Put last sample into buffer */
+	DspOutBuffer[nDspOutWrPos] = DSP_SsiReadTxValue();
+
+	nDspOutWrPos = (nDspOutWrPos + 1) % (MIXBUFFER_SIZE*2);
+	nDspBufSamples += 1;
 }
 
 
