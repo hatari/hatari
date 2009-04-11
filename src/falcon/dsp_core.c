@@ -344,6 +344,7 @@ void dsp_core_ssi_transmit_data(dsp_core_t *dsp_core, Uint32 value)
 	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDF);
 
 	/* adjust value to receive size word */
+	value >>= (24-dsp_core_ssi.cra_word_length);
 	value &= dsp_core_ssi.cra_word_mask;
 
 	/* swap received data if bit SHFD in CRB is set */
