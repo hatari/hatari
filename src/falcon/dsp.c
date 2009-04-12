@@ -23,6 +23,7 @@
 #include "main.h"
 #include "sysdeps.h"
 #include "newcpu.h"
+#include "memorySnapShot.h"
 #include "ioMem.h"
 #include "dsp.h"
 #include "dsp_cpu.h"
@@ -81,6 +82,24 @@ void DSP_Reset(void)
 
 
 /**
+ * Save/Restore snapshot of CPU variables ('MemorySnapShot_Store' handles type)
+ */
+void DSP_MemorySnapShot_Capture(bool bSave)
+{
+#if DSP_EMULATION
+	if (!bSave)
+		DSP_Reset();
+
+	MemorySnapShot_Store(&bDspEnabled, sizeof(bDspEnabled));
+	MemorySnapShot_Store(&dsp_core, sizeof(dsp_core));
+
+	if (!bSave)
+		dsp_core_set_threadfuncs(&dsp_core);
+#endif
+}
+
+
+/**
  * Run DSP for certain cycles
  */
 void DSP_Run(int nHostCycles)
@@ -107,6 +126,17 @@ Uint32 DSP_SsiReadTxValue(void)
 	return dsp_core.ssi_tx_value;
 #else
 	return 0;
+#endif
+}
+
+
+/**
+ * Signal SSI clock tick to DSP
+ */
+void DSP_SsiReceiveSerialClock(void)
+{
+#if DSP_EMULATION
+	dsp_core_ssi_receive_serial_clock(&dsp_core);
 #endif
 }
 

@@ -588,7 +588,7 @@ void DmaSnd_InterruptHandler_DspXmit(void)
 	/* TODO: Trigger SSI transmit interrupt in the DSP and fetch the data,
 	 *       then distribute the data to the destinations */
 
-	dsp_core_ssi_receive_serial_clock();
+	DSP_SsiReceiveSerialClock();
 
 	/* Restart the Int event handler */
 	DmaSnd_StartDspXmitHandler();

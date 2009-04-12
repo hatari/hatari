@@ -148,6 +148,31 @@ extern "C" {
 #define DSP_INTER_SSI_TRX_DATA		0xc
 
 
+typedef struct dsp_core_ssi_s dsp_core_ssi_t;
+
+struct dsp_core_ssi_s {
+	Uint16  cra_word_length;
+	Uint32  cra_word_mask;
+	Uint16  cra_frame_rate_divider;
+
+	Uint16  crb_src_clock;
+	Uint16  crb_shifter;
+	Uint16  crb_synchro;
+	Uint16  crb_mode;
+	Uint16  crb_te;
+	Uint16  crb_re;
+	Uint16  crb_tie;
+	Uint16  crb_rie;
+
+	Uint16  slot_in_frame;
+	Uint16  new_frame;
+	Uint16  clock_received;
+
+	Uint32  ssi_clock_send;
+	Uint32  ssi_clock_receive;
+};
+
+
 typedef struct dsp_core_s dsp_core_t;
 
 struct dsp_core_s {
@@ -182,9 +207,12 @@ struct dsp_core_s {
 	/* host port, CPU side */
 	volatile Uint8 hostport[8];
 
+	/* SSI */
+	dsp_core_ssi_t ssi;
+	Uint32 ssi_tx_value;		/* SSI transmit value */
+
 	/* Misc */
 	Uint32 loop_rep;		/* executing rep ? */
-	Uint32 ssi_tx_value;		/* SSI transmit value */
 
 	/* For bootstrap routine */
 	Uint16	bootstrap_pos;
@@ -205,32 +233,10 @@ struct dsp_core_s {
 	void	(*resumeThread)(dsp_core_t *_this);
 };
 
-typedef struct dsp_core_ssi_s dsp_core_ssi_t;
-
-struct dsp_core_ssi_s {
-	Uint16  cra_word_length;
-	Uint32  cra_word_mask;
-	Uint16  cra_frame_rate_divider;
-
-	Uint16  crb_src_clock;
-	Uint16  crb_shifter;
-	Uint16  crb_synchro;
-	Uint16  crb_mode;
-	Uint16  crb_te;
-	Uint16  crb_re;
-	Uint16  crb_tie;
-	Uint16  crb_rie;
-
-	Uint16  slot_in_frame;
-	Uint16  new_frame;
-	Uint16  clock_received;
-
-	Uint32  ssi_clock_send;
-	Uint32  ssi_clock_receive;
-};
 
 /* Emulator call these to init/stop/reset DSP emulation */
 void dsp_core_init(dsp_core_t *dsp_core, int use_thread);
+void dsp_core_set_threadfuncs(dsp_core_t *dsp_core);
 void dsp_core_shutdown(dsp_core_t *dsp_core);
 void dsp_core_reset(dsp_core_t *dsp_core);
 
@@ -251,7 +257,7 @@ void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
 
 /* dsp_cpu call these to read/write/configure SSI port */
 void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress);
-void dsp_core_ssi_receive_serial_clock(void);
+void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core);
 void dsp_core_ssi_transmit_data(dsp_core_t *dsp_core, Uint32 value);
 void dsp_core_ssi_receive_data(Uint32 data);
 
