@@ -40,6 +40,9 @@ static dsp_core_t dsp_core;
 bool bDspEnabled = false;
 
 
+/**
+ * Initialize the DSP emulation
+ */
 void DSP_Init(void)
 {
 #if DSP_EMULATION
@@ -49,6 +52,10 @@ void DSP_Init(void)
 #endif
 }
 
+
+/**
+ * Shut down the DSP emulation
+ */
 void DSP_UnInit(void)
 {
 #if DSP_EMULATION
@@ -57,7 +64,10 @@ void DSP_UnInit(void)
 #endif
 }
 
-/* Other functions to init/shutdown dsp emulation */
+
+/**
+ * Reset the DSP emulation
+ */
 void DSP_Reset(void)
 {
 #if DSP_EMULATION
@@ -65,7 +75,10 @@ void DSP_Reset(void)
 #endif
 }
 
-/* Other functions to init/shutdown dsp emulation */
+
+/**
+ * Run DSP for certain cycles
+ */
 void DSP_Run(int nHostCycles)
 {
 #if DSP_EMULATION
@@ -80,7 +93,10 @@ void DSP_Run(int nHostCycles)
 #endif
 }
 
-/* Read SSI transmit value */
+
+/**
+ * Read SSI transmit value
+ */
 Uint32 DSP_SsiReadTxValue(void)
 {
 #if DSP_EMULATION
@@ -91,10 +107,9 @@ Uint32 DSP_SsiReadTxValue(void)
 }
 
 
-/**********************************
- *	Hardware address read/write by CPU
- **********************************/
-
+/**
+ * Hardware IO address read by CPU
+ */
 static Uint8 DSP_handleRead(Uint32 addr)
 {
 	Uint8 value;
@@ -109,6 +124,9 @@ static Uint8 DSP_handleRead(Uint32 addr)
 	return value;
 }
 
+/**
+ * Read access wrapper for ioMemTabFalcon
+ */
 void DSP_HandleReadAccess(void)
 {
 	Uint32 a;
@@ -121,6 +139,9 @@ void DSP_HandleReadAccess(void)
 }
 
 
+/**
+ * Hardware IO address write by CPU
+ */
 static void DSP_handleWrite(Uint32 addr, Uint8 value)
 {
 	D(bug("HWput_b(0x%08x,0x%02x) at 0x%08x", addr, value, m68k_getpc()));
@@ -129,6 +150,9 @@ static void DSP_handleWrite(Uint32 addr, Uint8 value)
 #endif
 }
 
+/**
+ * Write access wrapper for ioMemTabFalcon
+ */
 void DSP_HandleWriteAccess(void)
 {
 	Uint32 a;
@@ -139,7 +163,3 @@ void DSP_HandleWriteAccess(void)
 		DSP_handleWrite(a,v);
 	}
 }
-
-/*
-vim:ts=4:sw=4:
-*/
