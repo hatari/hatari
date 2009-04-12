@@ -38,7 +38,7 @@
 
 #define DSP_HW_OFFSET  0xFFA200
 
-#if DSP_EMULATION
+#if ENABLE_DSP_EMU
 static dsp_core_t dsp_core;
 #endif
 
@@ -50,7 +50,7 @@ bool bDspEnabled = false;
  */
 void DSP_Init(void)
 {
-#if DSP_EMULATION
+#if ENABLE_DSP_EMU
 	dsp_core_init(&dsp_core, false);
 	dsp56k_init_cpu(&dsp_core);
 	bDspEnabled = true;
@@ -63,7 +63,7 @@ void DSP_Init(void)
  */
 void DSP_UnInit(void)
 {
-#if DSP_EMULATION
+#if ENABLE_DSP_EMU
 	dsp_core_shutdown(&dsp_core);
 	bDspEnabled = false;
 #endif
@@ -75,7 +75,7 @@ void DSP_UnInit(void)
  */
 void DSP_Reset(void)
 {
-#if DSP_EMULATION
+#if ENABLE_DSP_EMU
 	dsp_core_reset(&dsp_core);
 #endif
 }
@@ -86,7 +86,7 @@ void DSP_Reset(void)
  */
 void DSP_MemorySnapShot_Capture(bool bSave)
 {
-#if DSP_EMULATION
+#if ENABLE_DSP_EMU
 	if (!bSave)
 		DSP_Reset();
 
@@ -104,7 +104,7 @@ void DSP_MemorySnapShot_Capture(bool bSave)
  */
 void DSP_Run(int nHostCycles)
 {
-#if DSP_EMULATION
+#if ENABLE_DSP_EMU
 	/* Cycles emulation is just a rough approximation by now.
 	 * (to be tuned ...) */
 	int i = 7; // nHostCycles / 2;
@@ -122,7 +122,7 @@ void DSP_Run(int nHostCycles)
  */
 Uint32 DSP_SsiReadTxValue(void)
 {
-#if DSP_EMULATION
+#if ENABLE_DSP_EMU
 	return dsp_core.ssi_tx_value;
 #else
 	return 0;
@@ -135,7 +135,7 @@ Uint32 DSP_SsiReadTxValue(void)
  */
 void DSP_SsiReceiveSerialClock(void)
 {
-#if DSP_EMULATION
+#if ENABLE_DSP_EMU
 	dsp_core_ssi_receive_serial_clock(&dsp_core);
 #endif
 }
@@ -147,7 +147,7 @@ void DSP_SsiReceiveSerialClock(void)
 static Uint8 DSP_handleRead(Uint32 addr)
 {
 	Uint8 value;
-#if DSP_EMULATION
+#if ENABLE_DSP_EMU
 	value = dsp_core_read_host(&dsp_core, addr-DSP_HW_OFFSET);
 #else
 	/* this value prevents TOS from hanging in the DSP init code */
@@ -179,7 +179,7 @@ void DSP_HandleReadAccess(void)
 static void DSP_handleWrite(Uint32 addr, Uint8 value)
 {
 	Dprintf(("HWput_b(0x%08x,0x%02x) at 0x%08x\n", addr, value, m68k_getpc()));
-#if DSP_EMULATION
+#if ENABLE_DSP_EMU
 	dsp_core_write_host(&dsp_core, addr-DSP_HW_OFFSET, value);
 #endif
 }
