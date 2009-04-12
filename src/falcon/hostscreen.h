@@ -10,8 +10,6 @@
 
 #include <SDL.h>
 
-#include "araglue.h"
-
 /**
  * This macro handles the endianity for 24 bit per item data
  **/
