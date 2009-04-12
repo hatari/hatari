@@ -650,7 +650,7 @@ static int GemDOS_DetermineMaxPartitions(void)
 		}
 	}
 
-	if (count > MAX_HARDDRIVES)
+	if (nMaxDrives > MAX_HARDDRIVES)
 		nMaxDrives = MAX_HARDDRIVES;
 
 	/* Free file list */
