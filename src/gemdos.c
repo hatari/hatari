@@ -797,12 +797,27 @@ void GemDOS_MemorySnapShot_Capture(bool bSave)
 
 		for(i=0; i<MAX_HARDDRIVES; i++)
 		{
+			int bDummyDrive = false;
+			if (!emudrives[i])
+			{
+				/* Allocate a dummy drive */
+				emudrives[i] = malloc(sizeof(EMULATEDDRIVE));
+				if (!emudrives[i])
+					perror("GemDOS_MemorySnapShot_Capture");
+				memset(emudrives[i], 0, sizeof(EMULATEDDRIVE));
+				bDummyDrive = true;
+			}
 			MemorySnapShot_Store(emudrives[i]->hd_emulation_dir,
 			                     sizeof(emudrives[i]->hd_emulation_dir));
 			MemorySnapShot_Store(emudrives[i]->fs_currpath,
 			                     sizeof(emudrives[i]->fs_currpath));
 			MemorySnapShot_Store(&emudrives[i]->hd_letter,
 			                     sizeof(emudrives[i]->hd_letter));
+			if (bDummyDrive)
+			{
+				free(emudrives[i]);
+				emudrives[i] = NULL;
+			}
 		}
 	}
 
