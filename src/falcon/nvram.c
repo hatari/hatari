@@ -29,15 +29,19 @@
 */
 const char NvRam_fileid[] = "Hatari nvram.c : " __DATE__ " " __TIME__;
 
-#define DEBUG 0
-
 #include "main.h"
 #include "configuration.h"
 #include "ioMem.h"
 #include "log.h"
 #include "nvram.h"
 #include "paths.h"
-#include "araglue.h"
+
+#define DEBUG 0
+#if DEBUG
+#define Dprintf(a) printf a
+#else
+#define Dprintf(a)
+#endif
 
 
 // Defs for checksum
@@ -254,7 +258,7 @@ void NvRam_Data_ReadByte(void)
 	{
 		value = nvram[nvram_index];
 	}
-	D(bug("Reading NVRAM data at %d = %d ($%02x)", nvram_index, value, value));
+	Dprintf(("Reading NVRAM data at %d = %d ($%02x)\n", nvram_index, value, value));
 
 	IoMem_WriteByte(0xff8963, value);
 }
@@ -268,7 +272,6 @@ void NvRam_Data_ReadByte(void)
 void NvRam_Data_WriteByte(void)
 {
 	Uint8 value = IoMem_ReadByte(0xff8963);
-	D(bug("Writing NVRAM data at %d = %d ($%02x)", nvram_index, value, value));
+	Dprintf(("Writing NVRAM data at %d = %d ($%02x)\n", nvram_index, value, value));
 	nvram[nvram_index] = value;
 }
-

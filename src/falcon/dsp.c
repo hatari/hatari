@@ -20,7 +20,6 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "araglue.h"
 #include "main.h"
 #include "sysdeps.h"
 #include "newcpu.h"
@@ -29,7 +28,12 @@
 #include "dsp_cpu.h"
 
 #define DEBUG 0
-#include "araglue.h"
+#if DEBUG
+#define Dprintf(a) printf a
+#else
+#define Dprintf(a)
+#endif
+
 
 #define DSP_HW_OFFSET  0xFFA200
 
@@ -120,7 +124,7 @@ static Uint8 DSP_handleRead(Uint32 addr)
 	value = 0xff;
 #endif
 
-	D(bug("HWget_b(0x%08x)=0x%02x at 0x%08x", addr, value, m68k_getpc()));
+	Dprintf(("HWget_b(0x%08x)=0x%02x at 0x%08x\n", addr, value, m68k_getpc()));
 	return value;
 }
 
@@ -144,7 +148,7 @@ void DSP_HandleReadAccess(void)
  */
 static void DSP_handleWrite(Uint32 addr, Uint8 value)
 {
-	D(bug("HWput_b(0x%08x,0x%02x) at 0x%08x", addr, value, m68k_getpc()));
+	Dprintf(("HWput_b(0x%08x,0x%02x) at 0x%08x\n", addr, value, m68k_getpc()));
 #if DSP_EMULATION
 	dsp_core_write_host(&dsp_core, addr-DSP_HW_OFFSET, value);
 #endif
