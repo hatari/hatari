@@ -154,7 +154,7 @@ typedef struct
 
 
 /* Hard drives configuration */
-#define MAX_HARDDRIVES  1 /* 23 */
+#define MAX_HARDDRIVES  23
 
 typedef enum
 {
