@@ -105,21 +105,21 @@ void HostScreen_toggleFullScreen(void)
 		Dprintf(("toggleFullScreen: SDL_WM_ToggleFullScreen() not supported"
 		         " -> using SDL_SetVideoMode()"));
 		if (temp == NULL)
-			bug("toggleFullScreen: Unable to save screen content.");
+			Dprintf("toggleFullScreen: Unable to save screen content.");
 
 #if 1
 		HostScreen_setWindowSize(hs_width, hs_height, hs_bpp);
 #else
 		mainSurface = SDL_SetVideoMode(width, height, bpp, sdl_videoparams);
 		if (mainSurface == NULL)
-			bug("toggleFullScreen: Unable to set new video mode.");
+			Dprintf("toggleFullScreen: Unable to set new video mode.");
 		if (mainSurface->format->BitsPerPixel <= 8)
 			SDL_SetColors(mainSurface, temp->format->palette->colors, 0,
 			              temp->format->palette->ncolors);
 #endif
 
 		if (SDL_BlitSurface(temp, NULL, mainSurface, NULL) != 0)
-			bug("toggleFullScreen: Unable to restore screen content.");
+			Dprintf("toggleFullScreen: Unable to restore screen content.");
 		SDL_FreeSurface(temp);
 
 		/* refresh the screen */
