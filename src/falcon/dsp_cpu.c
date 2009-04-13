@@ -76,8 +76,6 @@ static Uint32 tmp_parmove_len[2];		/* How many to read/write */
 static Uint32 tmp_parmove_type[2];		/* 0=register, 1=memory */
 static Uint32 tmp_parmove_space[2];		/* Memory space to write to */
 
-/* PC on Rep instruction ? */
-static Uint32 pc_on_rep;
 
 /**********************************
  *	Functions
@@ -581,7 +579,7 @@ static void dsp_postexecute_update_pc(void)
 	/* When running a REP, PC must stay on the current instruction */
 	if (dsp_core->loop_rep) {
 		/* Is PC on the instruction to repeat ? */		
-		if (pc_on_rep==0) {
+		if (dsp_core->pc_on_rep==0) {
 			--dsp_core->registers[DSP_REG_LC];
 			dsp_core->registers[DSP_REG_LC] &= BITMASK(16);
 
@@ -602,7 +600,7 @@ static void dsp_postexecute_update_pc(void)
 				dsp56k_disasm_force_reg_changed(DSP_REG_LC);
 #endif
 			}
-			pc_on_rep = 0;
+			dsp_core->pc_on_rep = 0;
 		}
 	}
 
@@ -2719,8 +2717,8 @@ static void dsp_rep_aa(void)
 	/* x:aa */
 	/* y:aa */
 	dsp_core->registers[DSP_REG_LCSAVE] = dsp_core->registers[DSP_REG_LC];
-	pc_on_rep = 1;		/* Not decrement LC at first time */
-	dsp_core->loop_rep = 1;	/* We are now running rep */
+	dsp_core->pc_on_rep = 1;	/* Not decrement LC at first time */
+	dsp_core->loop_rep = 1; 	/* We are now running rep */
 
 	dsp_core->registers[DSP_REG_LC]=read_memory((cur_inst>>6) & 1,(cur_inst>>8) & BITMASK(6));
 }
@@ -2730,8 +2728,8 @@ static void dsp_rep_imm(void)
 	/* #xxx */
 
 	dsp_core->registers[DSP_REG_LCSAVE] = dsp_core->registers[DSP_REG_LC];
-	pc_on_rep = 1;		/* Not decrement LC at first time */
-	dsp_core->loop_rep = 1;	/* We are now running rep */
+	dsp_core->pc_on_rep = 1;	/* Not decrement LC at first time */
+	dsp_core->loop_rep = 1; 	/* We are now running rep */
 
 	dsp_core->registers[DSP_REG_LC] = ((cur_inst>>8) & BITMASK(8))
 		+ ((cur_inst & BITMASK(4))<<8);
@@ -2745,8 +2743,8 @@ static void dsp_rep_ea(void)
 	/* y:ea */
 
 	dsp_core->registers[DSP_REG_LCSAVE] = dsp_core->registers[DSP_REG_LC];
-	pc_on_rep = 1;		/* Not decrement LC at first time */
-	dsp_core->loop_rep = 1;	/* We are now running rep */
+	dsp_core->pc_on_rep = 1;	/* Not decrement LC at first time */
+	dsp_core->loop_rep = 1; 	/* We are now running rep */
 
 	dsp_calc_ea((cur_inst>>8) & BITMASK(6),&value);
 	dsp_core->registers[DSP_REG_LC]= read_memory((cur_inst>>6) & 1, value);
@@ -2759,8 +2757,8 @@ static void dsp_rep_reg(void)
 	/* R */
 
 	dsp_core->registers[DSP_REG_LCSAVE] = dsp_core->registers[DSP_REG_LC];
-	pc_on_rep = 1;		/* Not decrement LC at first time */
-	dsp_core->loop_rep = 1;	/* We are now running rep */
+	dsp_core->pc_on_rep = 1;	/* Not decrement LC at first time */
+	dsp_core->loop_rep = 1; 	/* We are now running rep */
 
 	numreg = (cur_inst>>8) & BITMASK(6);
 	if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {

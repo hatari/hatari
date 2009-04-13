@@ -213,6 +213,7 @@ struct dsp_core_s {
 
 	/* Misc */
 	Uint32 loop_rep;		/* executing rep ? */
+	Uint32 pc_on_rep;		/* True if PC is on REP instruction */
 
 	/* For bootstrap routine */
 	Uint16	bootstrap_pos;
