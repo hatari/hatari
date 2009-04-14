@@ -1,6 +1,6 @@
 /*
 	DSP M56001 emulation
-	Instructions interpreter, execution thread
+	Instructions interpreter
 
 	(C) 2003-2008 ARAnyM developer team
 
@@ -56,6 +56,10 @@
 /**********************************
  *	Variables
  **********************************/
+
+/* Instructions per second */
+static Uint32 start_time;
+static Uint32 num_inst;
 
 /* Length of current instruction */
 static Uint32 cur_inst_len;	/* =0:jump, >0:increment */
@@ -485,44 +489,8 @@ void dsp56k_init_cpu(void *th_dsp_core)
 #ifdef DSP_DISASM
 	dsp56k_disasm_init(dsp_core);
 #endif
-}
-
-int dsp56k_exec_thread(void *th_dsp_core)
-{
-	Uint32 start_time, num_inst;
-
-	dsp56k_init_cpu(th_dsp_core);
-#ifdef DSP_DISASM
-	dsp56k_disasm_init(dsp_core);
-#endif
-
-#if DSP_DISASM_STATE
-	fprintf(stderr, "Dsp: WAIT_BOOTSTRAP\n");
-#endif
-	dsp_core->pauseThread(dsp_core);
-
 	start_time = SDL_GetTicks();
 	num_inst = 0;
-	while(dsp_core->running) {
-		dsp56k_execute_instruction();
-#if DSP_COUNT_IPS
-		++num_inst;
-		if ((num_inst & 63) == 0) {
-			/* Evaluate time after <N> instructions have been executed to avoid asking too frequently */
-			Uint32 cur_time = SDL_GetTicks();
-			if (cur_time-start_time>1000) {
-				fprintf(stderr, "Dsp: %d i/s\n", (num_inst*1000)/(cur_time-start_time));
-				start_time=cur_time;
-				num_inst=0;
-			}
-		}
-#endif
-	}
-
-#if DSP_DISASM_STATE
-	fprintf(stderr, "Dsp: SHUTDOWN\n");
-#endif
-	return 0;
 }
 
 void dsp56k_execute_instruction(void)
@@ -537,7 +505,6 @@ void dsp56k_execute_instruction(void)
 	dsp56k_disasm();
 #endif
 #endif
-
 	/* Decode and execute current instruction */
 	cur_inst = read_memory_p(dsp_core->pc);
 	cur_inst_len = 1;
@@ -562,6 +529,19 @@ void dsp56k_execute_instruction(void)
 	/* process peripherals On Chip components */
 	dsp_core_process_host_interface(dsp_core);
 	dsp_core_process_ssi_interface(dsp_core);
+
+#if DSP_COUNT_IPS
+	++num_inst;
+	if ((num_inst & 63) == 0) {
+		/* Evaluate time after <N> instructions have been executed to avoid asking too frequently */
+		Uint32 cur_time = SDL_GetTicks();
+		if (cur_time-start_time>1000) {
+			fprintf(stderr, "Dsp: %d i/s\n", (num_inst*1000)/(cur_time-start_time));
+			start_time=cur_time;
+			num_inst=0;
+		}
+	}
+#endif
 
 #ifdef DSP_DISASM
 #if DSP_DISASM_REG
@@ -745,8 +725,6 @@ static void dsp_postexecute_interrupts(void)
 		return;
 	}
 
-	dsp_core->lockMutex(dsp_core);
-
 	/* SSI receive data with exception */
 	if (dsp_core->interrupt_instr_fetch == 0xe) {
 		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_ROE);
@@ -766,8 +744,6 @@ static void dsp_postexecute_interrupts(void)
 		dsp_core->interrupt_instr_fetch = dsp_core->hostport[CPU_HOST_CVR] & BITMASK(5);
 		dsp_core->interrupt_instr_fetch *= 2;	
 	}
-
-	dsp_core->unlockMutex(dsp_core);
 
 	/* Read the 2 vectored instructions to search a "JSR" (long interrupt) or not (fast interrupt) */
 	instr1 = read_memory_p(dsp_core->interrupt_instr_fetch);
@@ -964,7 +940,6 @@ static Uint32 read_memory(int space, Uint16 address)
 	if (address >= 0xffc0) {
 		Uint32 value;
 
-		dsp_core->lockMutex(dsp_core);
 		if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_HOST_HRX)) {
 			dsp_core_hostport_dspread(dsp_core);
 		}
@@ -973,7 +948,6 @@ static Uint32 read_memory(int space, Uint16 address)
 			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_RDF);
 		}
 		value = dsp_core->periph[space][address-0xffc0] & BITMASK(24);
-		dsp_core->unlockMutex(dsp_core);
 
 		return value;
 	}
@@ -1008,7 +982,6 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 			}
 			/* Peripheral space ? */
 			if (address >= 0xffc0) {
-				dsp_core->lockMutex(dsp_core);
 				switch(address-0xffc0) {
 					case DSP_HOST_HTX:
 						dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX] = value;
@@ -1039,7 +1012,6 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 						dsp_core->periph[DSP_SPACE_X][address-0xffc0] = value;
 						break;
 				}
-				dsp_core->unlockMutex(dsp_core);
 				return;
 			}
 			/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
@@ -1107,7 +1079,6 @@ static void dsp_stack_push(Uint32 curpc, Uint32 cursr)
 	if (dsp_core->registers[DSP_REG_SP]==0x0f) {
 		/* Stack full, raise interrupt */
 		dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR);
-		dsp_core->pauseThread(dsp_core);
 		return;
 	}
 
@@ -1124,7 +1095,6 @@ static void dsp_stack_pop(Uint32 *newpc, Uint32 *newsr)
 	if (dsp_core->registers[DSP_REG_SP]==0x00) {
 		/* Stack empty, raise interrupt */
 		dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR);
-		dsp_core->pauseThread(dsp_core);
 		return;
 	}
 
@@ -1899,7 +1869,7 @@ static void dsp_jcc_ea(void)
 
 static void dsp_jclr_aa(void)
 {
-	Uint32 memspace, addr, value, newpc, numbit;
+	Uint32 memspace, addr, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	addr = (cur_inst>>8) & BITMASK(6);
@@ -1907,8 +1877,7 @@ static void dsp_jclr_aa(void)
 	value = read_memory(memspace, addr);
 
 	if ((value & (1<<numbit))==0) {
-		newpc = read_memory_p(dsp_core->pc+1);
-		dsp_core->pc = newpc;
+		dsp_core->pc = read_memory_p(dsp_core->pc+1);
 		cur_inst_len = 0;
 		return;
 	} 
@@ -1917,7 +1886,7 @@ static void dsp_jclr_aa(void)
 
 static void dsp_jclr_ea(void)
 {
-	Uint32 memspace, addr, value, newpc, numbit;
+	Uint32 memspace, addr, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -1927,8 +1896,7 @@ static void dsp_jclr_ea(void)
 	value = read_memory(memspace, addr);
 
 	if ((value & (1<<numbit))==0) {
-		newpc = read_memory_p(dsp_core->pc+1);
-		dsp_core->pc = newpc;
+		dsp_core->pc = read_memory_p(dsp_core->pc+1);
 		cur_inst_len = 0;
 		return;
 	} 
@@ -1937,7 +1905,7 @@ static void dsp_jclr_ea(void)
 
 static void dsp_jclr_pp(void)
 {
-	Uint32 memspace, addr, value, newpc, numbit;
+	Uint32 memspace, addr, value, numbit;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
@@ -1946,50 +1914,7 @@ static void dsp_jclr_pp(void)
 	value = read_memory(memspace, addr);
 
 	if ((value & (1<<numbit))==0) {
-		int pollingLoop, i;
-
-		newpc = read_memory_p(dsp_core->pc+1);
-
-		/* Polling loop if jump to same PC as current JCLR instruction */
-		pollingLoop = (newpc == dsp_core->pc);
-		if (!pollingLoop && (newpc<dsp_core->pc)) {
-			/* or if only NOPs from jump address to current JCLR instruction */
-			pollingLoop = 1;
-			for (i=newpc; i<dsp_core->pc; i++) {
-				if (read_memory_p(i) != 0) {
-					pollingLoop=0;
-					break;
-				}			
-			}
-		}
-		if (!pollingLoop && (newpc+2 == dsp_core->pc)) {
-			/* or programs that re-set host port operation (Papa was a bladerunner/Eko) */
-			pollingLoop = (read_memory_p(newpc) == 0x08f4a0)	/* movep #0x000001,x:0xffe0 */
-				&& (read_memory_p(newpc+1) == 0x000001);
-		}
-
-		if (pollingLoop) {
-			/* Are we waiting for host port ? */
-			if ((memspace==DSP_SPACE_X) && (addr==0xffc0+DSP_HOST_HSR)) {
-				/* Wait for host to write */
-				if (numbit==DSP_HOST_HSR_HRDF) {
-#if DSP_DISASM_STATE
-					fprintf(stderr, "Dsp: WAIT_HOSTWRITE\n");
-#endif
-					dsp_core->pauseThread(dsp_core);
-				}
-
-				/* Wait for host to read */
-				if (numbit==DSP_HOST_HSR_HTDE) {
-#if DSP_DISASM_STATE
-					fprintf(stderr, "Dsp: WAIT_HOSTREAD\n");
-#endif
-					dsp_core->pauseThread(dsp_core);
-				}
-			}
-		}
-
-		dsp_core->pc = newpc;
+		dsp_core->pc = read_memory_p(dsp_core->pc+1);
 		cur_inst_len = 0;
 		return;
 	} 
@@ -1998,7 +1923,7 @@ static void dsp_jclr_pp(void)
 
 static void dsp_jclr_reg(void)
 {
-	Uint32 value, numreg, newpc, numbit;
+	Uint32 value, numreg, numbit;
 	
 	numreg = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -2006,8 +1931,7 @@ static void dsp_jclr_reg(void)
 	value = dsp_core->registers[numreg];
 
 	if ((value & (1<<numbit))==0) {
-		newpc = read_memory_p(dsp_core->pc+1);
-		dsp_core->pc = newpc;
+		dsp_core->pc = read_memory_p(dsp_core->pc+1);
 		cur_inst_len = 0;
 		return;
 	} 
@@ -2020,16 +1944,6 @@ static void dsp_jmp_ea(void)
 
 	dsp_calc_ea((cur_inst >>8) & BITMASK(6), &newpc);
 	cur_inst_len = 0;
-
-	/* Infinite loop ? */
-	if (newpc == dsp_core->pc) {
-#if DSP_DISASM_STATE
-		fprintf(stderr, "Dsp: JMP instruction, infinite loop\n");
-#endif
-		dsp_core->pauseThread(dsp_core);
-		return;
-	}
-
 	dsp_core->pc = newpc;
 }
 
@@ -2039,16 +1953,6 @@ static void dsp_jmp_imm(void)
 
 	newpc = cur_inst & BITMASK(12);
 	cur_inst_len = 0;
-
-	/* Infinite loop ? */
-	if (newpc == dsp_core->pc) {
-#if DSP_DISASM_STATE
-		fprintf(stderr, "Dsp: JMP instruction, infinite loop\n");
-#endif
-		dsp_core->pauseThread(dsp_core);
-		return;
-	}
-
 	dsp_core->pc = newpc;
 }
 
@@ -2801,7 +2705,6 @@ static void dsp_stop(void)
 #if DSP_DISASM_STATE
 	fprintf(stderr, "Dsp: STOP instruction\n");
 #endif
-	dsp_core->pauseThread(dsp_core);
 }
 
 static void dsp_swi(void)
@@ -2856,7 +2759,6 @@ static void dsp_wait(void)
 #if DSP_DISASM_STATE
 	fprintf(stderr, "Dsp: WAIT instruction\n");
 #endif
-	dsp_core->pauseThread(dsp_core);
 }
 
 /**********************************

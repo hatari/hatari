@@ -23,7 +23,6 @@
 #define DSP_CORE_H
 
 #include <SDL.h>
-#include <SDL_thread.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -176,11 +175,6 @@ struct dsp_core_ssi_s {
 typedef struct dsp_core_s dsp_core_t;
 
 struct dsp_core_s {
-	SDL_Thread	*thread;	/* Thread in which DSP emulation runs */
-	SDL_sem		*semaphore;	/* Semaphore used to pause/unpause thread */
-	SDL_mutex	*mutex;		/* Mutex for read/writes through host port */
-
-	int	use_thread;	/* Threaded emulation ? */
 
 	/* DSP executing instructions ? */
 	volatile int running;
@@ -224,20 +218,11 @@ struct dsp_core_s {
 	Uint32  interrupt_save_pc;
 	Uint16  interrupt_table[13];
 	Uint16  interrupt_counter;
-
-	/* Lock/unlock mutex */
-	void	(*lockMutex)(dsp_core_t *_this);
-	void	(*unlockMutex)(dsp_core_t *_this);
-
-	/* Pause/unpause thread */
-	void	(*pauseThread)(dsp_core_t *_this);
-	void	(*resumeThread)(dsp_core_t *_this);
 };
 
 
 /* Emulator call these to init/stop/reset DSP emulation */
-void dsp_core_init(dsp_core_t *dsp_core, int use_thread);
-void dsp_core_set_threadfuncs(dsp_core_t *dsp_core);
+void dsp_core_init(dsp_core_t *dsp_core);
 void dsp_core_shutdown(dsp_core_t *dsp_core);
 void dsp_core_reset(dsp_core_t *dsp_core);
 
@@ -247,10 +232,6 @@ void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint32 inter);
 /* host port read/write by emulator, addr is 0-7, not 0xffa200-0xffa207 */
 Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr);
 void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value);
-
-/* dsp_cpu call these to signal state change */
-void dsp_core_set_state(dsp_core_t *dsp_core, int new_state);
-void dsp_core_set_state_sem(dsp_core_t *dsp_core, int new_state, int use_semaphore);
 
 /* dsp_cpu call these to read/write host port */
 void dsp_core_hostport_dspread(dsp_core_t *dsp_core);

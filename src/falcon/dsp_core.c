@@ -44,24 +44,11 @@
 
 
 /*--- Functions prototypes ---*/
-
 static void dsp_core_dsp2host(dsp_core_t *dsp_core);
 static void dsp_core_host2dsp(dsp_core_t *dsp_core);
 
-static void lockMutexNull(dsp_core_t *dsp_core);
-static void lockMutexThread(dsp_core_t *dsp_core);
-static void unlockMutexNull(dsp_core_t *dsp_core);
-static void unlockMutexThread(dsp_core_t *dsp_core);
-
-static void pauseThreadNull(dsp_core_t *dsp_core);
-static void pauseThreadThread(dsp_core_t *dsp_core);
-static void resumeThreadNull(dsp_core_t *dsp_core);
-static void resumeThreadThread(dsp_core_t *dsp_core);
-
-/*--- Functions ---*/
-
 /* Init DSP emulation */
-void dsp_core_init(dsp_core_t *dsp_core, int use_thread)
+void dsp_core_init(dsp_core_t *dsp_core)
 {
 	int i;
 
@@ -135,53 +122,15 @@ void dsp_core_init(dsp_core_t *dsp_core, int use_thread)
 			}
 		}
 	}
-	
-	dsp_core->use_thread = use_thread;
-	dsp_core_set_threadfuncs(dsp_core);
 }
-
-void dsp_core_set_threadfuncs(dsp_core_t *dsp_core)
-{
-	if (dsp_core->use_thread) {
-		dsp_core->unlockMutex = unlockMutexThread;
-		dsp_core->lockMutex = lockMutexThread;
-		dsp_core->pauseThread = pauseThreadThread;
-		dsp_core->resumeThread = resumeThreadThread;
-	} else {
-		dsp_core->unlockMutex = unlockMutexNull;
-		dsp_core->lockMutex = lockMutexNull;
-		dsp_core->pauseThread = pauseThreadNull;
-		dsp_core->resumeThread = resumeThreadNull;
-	}
-}
-
 
 /* Shutdown DSP emulation */
 void dsp_core_shutdown(dsp_core_t *dsp_core)
 {
+	dsp_core->running = 0;
 #if DEBUG
 	fprintf(stderr, "Dsp: core shutdown\n");
 #endif
-
-	dsp_core->running = 0;
-
-	if (dsp_core->thread) {
-		dsp_core->resumeThread(dsp_core);
-		SDL_WaitThread(dsp_core->thread, NULL);
-		dsp_core->thread = NULL;
-	}
-
-	/* Destroy the semaphore */
-	if (dsp_core->semaphore) {
-		SDL_DestroySemaphore(dsp_core->semaphore);
-		dsp_core->semaphore = NULL;
-	}
-
-	/* Destroy mutex */
-	if (dsp_core->mutex) {
-		SDL_DestroyMutex(dsp_core->mutex);
-		dsp_core->mutex = NULL;
-	}
 }
 
 /* Reset */
@@ -192,8 +141,6 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 #if DEBUG
 	fprintf(stderr, "Dsp: core reset\n");
 #endif
-
-	/* Kill existing thread and semaphore */
 	dsp_core_shutdown(dsp_core);
 
 	/* Memory */
@@ -238,61 +185,7 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 #if DEBUG
 	fprintf(stderr, "Dsp: reset done\n");
 #endif
-
-	/* Create thread, semaphore, mutex if needed */
-	if (dsp_core->use_thread) {
-		if (dsp_core->semaphore == NULL) {
-			dsp_core->semaphore = SDL_CreateSemaphore(0);
-		}
-		if (dsp_core->mutex == NULL) {
-			dsp_core->mutex = SDL_CreateMutex();
-		}
-		if (dsp_core->thread == NULL) {
-			dsp_core->thread = SDL_CreateThread(dsp56k_exec_thread, dsp_core);
-		}
-	} else {
-		dsp56k_init_cpu(dsp_core);
-	}
-}
-
-/* Lock/unlock mutex functions */
-static void lockMutexNull(dsp_core_t *dsp_core)
-{
-}
-
-static void lockMutexThread(dsp_core_t *dsp_core)
-{
-	SDL_LockMutex(dsp_core->mutex);
-}
-
-static void unlockMutexNull(dsp_core_t *dsp_core)
-{
-}
-
-static void unlockMutexThread(dsp_core_t *dsp_core)
-{
-	SDL_UnlockMutex(dsp_core->mutex);
-}
-
-static void pauseThreadNull(dsp_core_t *dsp_core)
-{
-}
-
-static void pauseThreadThread(dsp_core_t *dsp_core)
-{
-	SDL_SemWait(dsp_core->semaphore);
-}
-
-static void resumeThreadNull(dsp_core_t *dsp_core)
-{
-}
-
-static void resumeThreadThread(dsp_core_t *dsp_core)
-{
-	/* TODO: maybe use a condition variable, to avoid the IF */
-	if (SDL_SemValue(dsp_core->semaphore)==0) {
-		SDL_SemPost(dsp_core->semaphore);
-	}
+	dsp56k_init_cpu(dsp_core);
 }
 
 /* Post a new interrupt to the interrupt table */
@@ -539,7 +432,6 @@ void dsp_core_hostport_dspread(dsp_core_t *dsp_core)
 	fprintf(stderr, "Dsp: (H->D): Dsp HRDF cleared\n");
 #endif
 	dsp_core_hostport_update_trdy(dsp_core);
-	// dsp_core_host2dsp(dsp_core);
 }
 
 void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core)
@@ -549,56 +441,27 @@ void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core)
 #if DSP_DISASM_HOSTWRITE
 	fprintf(stderr, "Dsp: (D->H): Dsp HTDE cleared\n");
 #endif
-	// dsp_core_dsp2host(dsp_core);
 }
-
-static void dsp_core_hostport_cpuread(dsp_core_t *dsp_core)
-{
-	/* Clear RXDF bit to say that CPU has read */
-	dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
-	dsp_core_hostport_update_hreq(dsp_core);
-
-#if DSP_DISASM_HOSTWRITE
-	fprintf(stderr, "Dsp: (D->H): Host RXDF=0\n");
-#endif
-	// dsp_core_dsp2host(dsp_core);
-}
-
-#if 0
-static void dsp_core_hostport_cpuwrite(dsp_core_t *dsp_core)
-{
-	/* Clear TXDE to say that CPU has written */
-	dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_TXDE);
-#if DSP_DISASM_HOSTREAD
-	fprintf(stderr, "Dsp: (H->D): Host TXDE=0\n");
-#endif
-	dsp_core_hostport_update_trdy(dsp_core);
-	dsp_core_host2dsp(dsp_core);
-}
-#endif
 
 /* Read/writes on host port */
-
 Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr)
 {
 	Uint8 value;
 
-	dsp_core->lockMutex(dsp_core);
 	value = dsp_core->hostport[addr];
 	if (addr == CPU_HOST_RXL) {
-		dsp_core_hostport_cpuread(dsp_core);
-
-		/* Wake up DSP if it was waiting our read */
-		dsp_core->resumeThread(dsp_core);
+		/* Clear RXDF bit to say that CPU has read */
+		dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
+		dsp_core_hostport_update_hreq(dsp_core);
+#if DSP_DISASM_HOSTWRITE
+		fprintf(stderr, "Dsp: (D->H): Host RXDF=0\n");
+#endif
 	}
-	dsp_core->unlockMutex(dsp_core);
-
 	return value;
 }
 
 void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 {
-	dsp_core->lockMutex(dsp_core);
 	switch(addr) {
 		case CPU_HOST_ICR:
 			dsp_core->hostport[CPU_HOST_ICR]=value & 0xfb;
@@ -618,8 +481,6 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 				if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HCIE)) {
 					dsp_core_add_interrupt(dsp_core, DSP_INTER_HOST_COMMAND);
 				}
-				/* Wake up DSP if needed */
-				dsp_core->resumeThread(dsp_core);
 			}
 			else{
 				dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff - (1<<DSP_HOST_HSR_HCP);
@@ -652,7 +513,6 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 					fprintf(stderr, "Dsp: WAIT_BOOTSTRAP done\n");
 #endif
 					dsp_core->running = 1;
-					dsp_core->resumeThread(dsp_core);
 				}
 			} else {
 
@@ -685,13 +545,9 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 #endif
 				}
 				dsp_core_hostport_update_trdy(dsp_core);
-
-				/* Wake up DSP if it was waiting our write */
-				dsp_core->resumeThread(dsp_core);
 			}
 			break;
 	}
-	dsp_core->unlockMutex(dsp_core);
 }
 
 /*

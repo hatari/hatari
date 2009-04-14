@@ -51,7 +51,7 @@ bool bDspEnabled = false;
 void DSP_Init(void)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_init(&dsp_core, false);
+	dsp_core_init(&dsp_core);
 	dsp56k_init_cpu(&dsp_core);
 	bDspEnabled = true;
 #endif
@@ -92,9 +92,6 @@ void DSP_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(&bDspEnabled, sizeof(bDspEnabled));
 	MemorySnapShot_Store(&dsp_core, sizeof(dsp_core));
-
-	if (!bSave)
-		dsp_core_set_threadfuncs(&dsp_core);
 #endif
 }
 
