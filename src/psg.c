@@ -183,8 +183,6 @@ void PSG_Set_SelectRegister(Uint8 val)
  */
 Uint8 PSG_Get_DataRegister(void)
 {
-	M68000_WaitState(4);
-
 	/* Is a valid PSG register currently selected ? */
 	if ( PSGRegisterSelect >= 16 )
 		return 0xff;				/* not valid, return 0xff */
