@@ -71,7 +71,7 @@ void VIDEL_reset(void)
 	// default resolution to boot with
 	width = 640;
 	height = 480;
-	HostScreen_setWindowSize( width, height, 8 );
+	HostScreen_setWindowSize(width, height, ConfigureParams.Screen.nForceBpp);
 }
 
 // monitor write access to Falcon and ST/E color palette registers
@@ -197,7 +197,7 @@ static void VIDEL_updateColors(void)
 void VIDEL_ZoomModeChanged(void)
 {
 	/* User selected another zoom mode, so set a new screen resolution now */
-	HostScreen_setWindowSize(width, height, bpp >= 8 ? bpp : 8);
+	HostScreen_setWindowSize(width, height, bpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
 }
 
 
@@ -225,7 +225,7 @@ bool VIDEL_renderScreen(void)
 		}
 	}
 	if (since_last_change == 3) {
-		HostScreen_setWindowSize( width, height, bpp >= 8 ? bpp : 8 );
+		HostScreen_setWindowSize(width, height, bpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
 	}
 	if (since_last_change < 4) {
 		since_last_change++;
