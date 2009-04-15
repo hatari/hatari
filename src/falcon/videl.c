@@ -495,17 +495,28 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 					for (h = 0; h < vh_clip; h++) {
 						Uint16 *fvram_column = fvram_line;
 						Uint16 *hvram_column = hvram_line;
-						int w;
+						int w, j;
 
-						for (w = 0; w < (vw_clip+15)>>4; w++) {
-							int j;
+						/* First 16 pixels: */
+						Videl_bitplaneToChunky(fvram_column, vbpp, color);
+						for (j = 0; j < 16 - hscrolloffset; j++) {
+							*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
+						}
+						fvram_column += vbpp;
+						/* Now the main part of the line: */
+						for (w = 1; w < (vw_clip+15)>>4; w++) {
 							Videl_bitplaneToChunky( fvram_column, vbpp, color );
-
 							for (j=0; j<16; j++) {
 								*hvram_column++ = HostScreen_getPaletteColor( color[j] );
 							}
-
 							fvram_column += vbpp;
+						}
+						/* Last pixels of the line for fine scrolling: */
+						if (hscrolloffset) {
+							Videl_bitplaneToChunky(fvram_column, vbpp, color);
+							for (j = 0; j < hscrolloffset; j++) {
+								*hvram_column++ = HostScreen_getPaletteColor(color[j]);
+							}
 						}
 
 						hvram_line += scrpitch>>1;
@@ -551,17 +562,28 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 					for (h = 0; h < vh_clip; h++) {
 						Uint16 *fvram_column = fvram_line;
 						Uint32 *hvram_column = hvram_line;
-						int w;
+						int w, j;
 
-						for (w = 0; w < (vw_clip+15)>>4; w++) {
-							int j;
+						/* First 16 pixels: */
+						Videl_bitplaneToChunky(fvram_column, vbpp, color);
+						for (j = 0; j < 16 - hscrolloffset; j++) {
+							*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
+						}
+						fvram_column += vbpp;
+						/* Now the main part of the line: */
+						for (w = 1; w < (vw_clip+15)>>4; w++) {
 							Videl_bitplaneToChunky( fvram_column, vbpp, color );
-
 							for (j=0; j<16; j++) {
 								*hvram_column++ = HostScreen_getPaletteColor( color[j] );
 							}
-
 							fvram_column += vbpp;
+						}
+						/* Last pixels of the line for fine scrolling: */
+						if (hscrolloffset) {
+							Videl_bitplaneToChunky(fvram_column, vbpp, color);
+							for (j = 0; j < hscrolloffset; j++) {
+								*hvram_column++ = HostScreen_getPaletteColor(color[j]);
+							}
 						}
 
 						hvram_line += scrpitch>>2;
@@ -847,17 +869,28 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 							Uint16 *fvram_column = fvram_line;
 							Uint16 *hvram_column = p2cline;
 
-							/* Convert a new line */
-							for (w=0; w < (vw+15)>>4; w++) {
+							/* First 16 pixels of a new line: */
+							Videl_bitplaneToChunky(fvram_column, vbpp, color);
+							for (j = 0; j < 16 - hscrolloffset; j++) {
+								*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
+							}
+							fvram_column += vbpp;
+							/* Convert the main part of the new line: */
+							for (w = 1; w < (vw+15)>>4; w++) {
 								Videl_bitplaneToChunky( fvram_column, vbpp, color );
-
 								for (j=0; j<16; j++) {
 									*hvram_column++ = HostScreen_getPaletteColor( color[j] );
 								}
-
 								fvram_column += vbpp;
 							}
-							
+							/* Last pixels of the new line for fine scrolling: */
+							if (hscrolloffset) {
+								Videl_bitplaneToChunky(fvram_column, vbpp, color);
+								for (j = 0; j < hscrolloffset; j++) {
+									*hvram_column++ = HostScreen_getPaletteColor(color[j]);
+								}
+							}
+
 							/* Zoom a new line */
 							for (w=0; w<scrwidth; w++) {
 								hvram_line[w] = p2cline[zoomxtable[w]];
@@ -935,17 +968,28 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 							Uint16 *fvram_column = fvram_line;
 							Uint32 *hvram_column = p2cline;
 
-							/* Convert a new line */
-							for (w=0; w < (vw+15)>>4; w++) {
+							/* First 16 pixels of a new line: */
+							Videl_bitplaneToChunky(fvram_column, vbpp, color);
+							for (j = 0; j < 16 - hscrolloffset; j++) {
+								*hvram_column++ = HostScreen_getPaletteColor(color[j+hscrolloffset]);
+							}
+							fvram_column += vbpp;
+							/* Convert the main part of the new line: */
+							for (w = 1; w < (vw+15)>>4; w++) {
 								Videl_bitplaneToChunky( fvram_column, vbpp, color );
-
 								for (j=0; j<16; j++) {
 									*hvram_column++ = HostScreen_getPaletteColor( color[j] );
 								}
-
 								fvram_column += vbpp;
 							}
-							
+							/* Last pixels of the new line for fine scrolling: */
+							if (hscrolloffset) {
+								Videl_bitplaneToChunky(fvram_column, vbpp, color);
+								for (j = 0; j < hscrolloffset; j++) {
+									*hvram_column++ = HostScreen_getPaletteColor(color[j]);
+								}
+							}
+
 							/* Zoom a new line */
 							for (w=0; w<scrwidth; w++) {
 								hvram_line[w] = p2cline[zoomxtable[w]];
