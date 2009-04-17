@@ -35,14 +35,17 @@ extern "C" {
 #define CPU_HOST_CVR	0x01
 #define CPU_HOST_ISR	0x02
 #define CPU_HOST_IVR	0x03
+#define CPU_HOST_TRX0	0x04
+#define CPU_HOST_TRXH	0x05
+#define CPU_HOST_TRXM	0x06
+#define CPU_HOST_TRXL	0x07
 #define CPU_HOST_RX0	0x04
 #define CPU_HOST_RXH	0x05
 #define CPU_HOST_RXM	0x06
 #define CPU_HOST_RXL	0x07
-#define CPU_HOST_TX0	0x04
-#define CPU_HOST_TXH	0x05
-#define CPU_HOST_TXM	0x06
-#define CPU_HOST_TXL	0x07
+#define CPU_HOST_TXH	0x09
+#define CPU_HOST_TXM	0x0a
+#define CPU_HOST_TXL	0x0b
 
 #define CPU_HOST_ICR_RREQ	0x00
 #define CPU_HOST_ICR_TREQ	0x01
@@ -197,9 +200,12 @@ struct dsp_core_s {
 
 	/* peripheral space, [x|y]:0xffc0-0xffff */
 	volatile Uint32	periph[2][64];
+	volatile Uint32	dsp_host_htx;
+	volatile Uint32	dsp_host_rtx;
+
 
 	/* host port, CPU side */
-	volatile Uint8 hostport[8];
+	volatile Uint8 hostport[12];
 
 	/* SSI */
 	dsp_core_ssi_t ssi;

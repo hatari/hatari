@@ -940,14 +940,15 @@ static Uint32 read_memory(int space, Uint16 address)
 	if (address >= 0xffc0) {
 		Uint32 value;
 
+		value = dsp_core->periph[space][address-0xffc0] & BITMASK(24);
 		if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_HOST_HRX)) {
+			value = dsp_core->dsp_host_rtx;
 			dsp_core_hostport_dspread(dsp_core);
 		}
 		else if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_SSI_RX)) {
 			/* Clear SSI receive interrupt */
 			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_RDF);
 		}
-		value = dsp_core->periph[space][address-0xffc0] & BITMASK(24);
 
 		return value;
 	}
@@ -984,8 +985,7 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 			if (address >= 0xffc0) {
 				switch(address-0xffc0) {
 					case DSP_HOST_HTX:
-						dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX] = value;
-
+						dsp_core->dsp_host_htx = value;
 						dsp_core_hostport_dspwrite(dsp_core);
 						break;
 					case DSP_HOST_HCR:
