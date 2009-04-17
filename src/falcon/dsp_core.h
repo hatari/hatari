@@ -169,9 +169,7 @@ struct dsp_core_ssi_s {
 	Uint16  slot_in_frame;
 	Uint16  new_frame;
 	Uint16  clock_received;
-
-	Uint32  ssi_clock_send;
-	Uint32  ssi_clock_receive;
+	Uint32  transmit_value;		/* DSP Transmit --> SSI */
 };
 
 
@@ -209,7 +207,6 @@ struct dsp_core_s {
 
 	/* SSI */
 	dsp_core_ssi_t ssi;
-	Uint32 ssi_tx_value;		/* SSI transmit value */
 
 	/* Misc */
 	Uint32 loop_rep;		/* executing rep ? */
