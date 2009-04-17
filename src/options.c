@@ -196,11 +196,11 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DISKB, NULL, "--disk-b",
 	  "<file>", "Set disk image for floppy drive B" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
-	  "<dir>", "Emulate an ST harddrive (<dir> = root directory)" },
+	  "<dir>", "Emulate harddrive (partitions) with <dir> contents" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
 	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
 	{ OPT_IDEHDIMAGE,   NULL, "--ide",
-	  "<file>", "Emulate an IDE harddrive using <file> (not working yet)" },
+	  "<file>", "Emulate an IDE harddrive with an image <file>" },
 	{ OPT_SLOWFDC,   NULL, "--slowfdc",
 	  "<bool>", "Slow down FDC emulation (deprecated)" },
 	
