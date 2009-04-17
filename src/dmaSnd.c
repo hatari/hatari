@@ -49,10 +49,10 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 #include "falcon/dsp_core.h"
 
 
-Sint16 DspOutBuffer[MIXBUFFER_SIZE*2];
-int nDspOutRdPos, nDspOutWrPos, nDspBufSamples;
-
 Uint16 nDmaSoundControl;                /* Sound control register */
+
+static Sint16 DspOutBuffer[MIXBUFFER_SIZE*2];
+static int nDspOutRdPos, nDspOutWrPos, nDspBufSamples;
 
 static Uint16 nDmaSoundMode;            /* Sound mode register */
 static Uint16 nMicrowireData;           /* Microwire Data register */
