@@ -148,6 +148,8 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	memset(dsp_core->stack, 0,sizeof(dsp_core->stack));
 	memset(dsp_core->registers, 0,sizeof(dsp_core->registers));
 	memset(dsp_core->interrupt_table, 0,sizeof(dsp_core->interrupt_table));
+	dsp_core->dsp_host_rtx = 0;
+	dsp_core->dsp_host_htx = 0;
 
 	dsp_core->bootstrap_pos = 0;
 	
@@ -255,7 +257,7 @@ void dsp_core_ssi_transmit_data(dsp_core_t *dsp_core, Uint32 value)
 
 	if (dsp_core->ssi.crb_te) {
 		/* Send value to crossbar */
-		dsp_core->ssi_tx_value = value;
+		dsp_core->ssi.transmit_value = value;
 	}
 }
 
@@ -367,9 +369,9 @@ static void dsp_core_dsp2host(dsp_core_t *dsp_core)
 		return;
 	}
 
-	dsp_core->hostport[CPU_HOST_RXL] = dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX];
-	dsp_core->hostport[CPU_HOST_RXM] = dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]>>8;
-	dsp_core->hostport[CPU_HOST_RXH] = dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]>>16;
+	dsp_core->hostport[CPU_HOST_RXL] = dsp_core->dsp_host_htx;
+	dsp_core->hostport[CPU_HOST_RXM] = dsp_core->dsp_host_htx>>8;
+	dsp_core->hostport[CPU_HOST_RXH] = dsp_core->dsp_host_htx>>16;
 
 	/* Set HTDE bit to say that DSP can write */
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HTDE;
@@ -384,7 +386,7 @@ static void dsp_core_dsp2host(dsp_core_t *dsp_core)
 	dsp_core_hostport_update_hreq(dsp_core);
 
 #if DSP_DISASM_HOSTWRITE
-	fprintf(stderr, "Dsp: (D->H): Transfer 0x%06x, Dsp HTDE=1, Host RXDF=1\n", dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]);
+	fprintf(stderr, "Dsp: (D->H): Transfer 0x%06x, Dsp HTDE=1, Host RXDF=1\n", dsp_core->dsp_host_htx);
 #endif
 }
 
@@ -401,9 +403,9 @@ static void dsp_core_host2dsp(dsp_core_t *dsp_core)
 		return;
 	}
 
-	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] = dsp_core->hostport[CPU_HOST_TXL];
-	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_core->hostport[CPU_HOST_TXM]<<8;
-	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_core->hostport[CPU_HOST_TXH]<<16;
+	dsp_core->dsp_host_rtx = dsp_core->hostport[CPU_HOST_TXL];
+	dsp_core->dsp_host_rtx |= dsp_core->hostport[CPU_HOST_TXM]<<8;
+	dsp_core->dsp_host_rtx |= dsp_core->hostport[CPU_HOST_TXH]<<16;
 
 	/* Set HRDF bit to say that DSP can read */
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HRDF;
@@ -418,7 +420,7 @@ static void dsp_core_host2dsp(dsp_core_t *dsp_core)
 	dsp_core_hostport_update_hreq(dsp_core);
 
 #if DSP_DISASM_HOSTREAD
-	fprintf(stderr, "Dsp: (H->D): Transfer 0x%06x, Dsp HRDF=1, Host TXDE=1\n", dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX]);
+	fprintf(stderr, "Dsp: (H->D): Transfer 0x%06x, Dsp HRDF=1, Host TXDE=1\n", dsp_core->dsp_host_rtx);
 #endif
 
 	dsp_core_hostport_update_trdy(dsp_core);
@@ -449,7 +451,7 @@ Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr)
 	Uint8 value;
 
 	value = dsp_core->hostport[addr];
-	if (addr == CPU_HOST_RXL) {
+	if (addr == CPU_HOST_TRXL) {
 		/* Clear RXDF bit to say that CPU has read */
 		dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
 		dsp_core_hostport_update_hreq(dsp_core);
@@ -487,22 +489,26 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 			}
 			break;
 		case CPU_HOST_ISR:
-		case CPU_HOST_TX0:
+		case CPU_HOST_TRX0:
 			/* Read only */
 			break;
 		case CPU_HOST_IVR:
-		case CPU_HOST_TXH:
-		case CPU_HOST_TXM:
-			dsp_core->hostport[addr]=value;
+			dsp_core->hostport[CPU_HOST_IVR]=value;
 			break;
-		case CPU_HOST_TXL:
+		case CPU_HOST_TRXH:
+			dsp_core->hostport[CPU_HOST_TXH]=value;
+			break;
+		case CPU_HOST_TRXM:
+			dsp_core->hostport[CPU_HOST_TXM]=value;
+			break;
+		case CPU_HOST_TRXL:
 			dsp_core->hostport[CPU_HOST_TXL]=value;
 
 			if (!dsp_core->running) {
 				dsp_core->ramint[DSP_SPACE_P][dsp_core->bootstrap_pos] =
 					(dsp_core->hostport[CPU_HOST_TXH]<<16) |
 					(dsp_core->hostport[CPU_HOST_TXM]<<8) |
-					dsp_core->hostport[CPU_HOST_TXL];
+					 dsp_core->hostport[CPU_HOST_TXL];
 #if DEBUG
 				fprintf(stderr, "Dsp: bootstrap p:0x%04x = 0x%06x\n",
 					dsp_core->bootstrap_pos,
@@ -518,11 +524,11 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 
 				/* If TRDY is set, the tranfert is direct to DSP (Burst mode) */
 				if (dsp_core->hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_TRDY)){
-					dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] = dsp_core->hostport[CPU_HOST_TXL];
-					dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_core->hostport[CPU_HOST_TXM]<<8;
-					dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_core->hostport[CPU_HOST_TXH]<<16;
+					dsp_core->dsp_host_rtx = dsp_core->hostport[CPU_HOST_TXL];
+					dsp_core->dsp_host_rtx |= dsp_core->hostport[CPU_HOST_TXM]<<8;
+					dsp_core->dsp_host_rtx |= dsp_core->hostport[CPU_HOST_TXH]<<16;
 #if DSP_DISASM_HOSTREAD
-					fprintf(stderr, "Dsp: (H->D): Direct Transfer 0x%06x\n", dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX]);
+					fprintf(stderr, "Dsp: (H->D): Direct Transfer 0x%06x\n", dsp_core->dsp_hi);
 #endif
 
 					/* Set HRDF bit to say that DSP can read */
