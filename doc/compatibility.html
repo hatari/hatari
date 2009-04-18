@@ -1418,6 +1418,12 @@ this section lists only TT-specific games and demos.</p>
       <td>Slideshow flickers badly + graphics and colors are wrong</td>
     </tr>
     <tr>
+      <td>YesCREW:
+      <a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
+      <td class="major">1.2</td>
+      <td>VGA 640x480x16 only. Bus error at startup</td>
+    </tr>
+    <tr>
       <td>Xanth FX:
       <a href="http://pouet.net/prod.php?which=18190">Shiny Bubbles TT</a></td>
       <td>1.2</td>
@@ -1435,11 +1441,11 @@ for music).  You can select between three different DSP emulation
 modes with the Hatari "--dsp" option:
 <ul>
   <li><b>none</b>: No emulation.
-      Most programs work best with this.</li>
+      Many programs work best with this.</li>
+  <li><b>emu</b>: Experimental DSP emulation.
+      Some programs work better with this. Slow.</li>
   <li><b>dummy</b>: Faked DSP response to DSP commands.
       There're some rare programs that work only with this mode.</li>
-  <li><b>emu</b>: Experimental DSP emulation.
-      (Only) some programs work better with this.</li>
 </ul>
 
 <p>The "dsp" column in tables below tells which DSP emulation
@@ -1465,17 +1471,17 @@ otherwise "-".</p>
     </tr>
     <tr>
       <td>Aces High preview</td>
-      <td>Yes</td>
+      <td>yes</td>
       <td>-</td>
       <td>-</td>
       <td></td>
     </tr>
     <tr>
       <td>Addsub</td>
-      <td>Yes</td>
+      <td>partially</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>Exits when joystick is used</td>
     </tr>
     <tr>
       <td>Bad Mood</td>
@@ -1487,23 +1493,23 @@ otherwise "-".</p>
     <tr>
       <td>Blackhole</td>
       <td>yes</td>
-      <td>-</td>
-      <td>-</td>
-      <td>256-color mode only</td>
-    </tr> 
-    <tr>
-      <td>Block Blizzard</td>
       <td>yes</td>
       <td>-</td>
+      <td>640x400@256 mode only</td>
+    </tr> 
+    <tr>
+      <td>Block Blizzard (preview)</td>
+      <td>yes</td>
       <td>-</td>
-      <td></td>
+      <td>none</td>
+      <td>Input doesn't work with DSP enabled</td>
     </tr>
     <tr>
       <td>Blum</td>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td>Disable sound</td>
+      <td>Music doesn't work</td>
     </tr>
     <tr>
       <td>Bomb Squad</td>
@@ -1517,7 +1523,7 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>Music doesn't work</td>
     </tr> 
     <tr>
       <td><a href="http://rg.atari.org/game.htm">Bunion</a></td>
@@ -1525,20 +1531,13 @@ otherwise "-".</p>
       <td>-</td>
       <td>-</td>
       <td></td>
-    </tr> 
-    <tr>
-      <td>Capy</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>VGA 640x480x16 only. Black screen at startup.</td>
     </tr>
     <tr>
       <td>Cavemania (demo)</td>
-      <td>Partially</td>
-      <td>Partially</td>
       <td>-</td>
-      <td>Some screens are black and music doesn't sound right</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Worked earlier to some extent</td>
     </tr>
     <tr>
       <td><a href="http://paradize.final-memory.org/games.shtml">ChainZ</a></td>
@@ -1550,7 +1549,7 @@ otherwise "-".</p>
     <tr>
       <td>Conquest of Elysium II</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td></td>
     </tr> 
@@ -1587,14 +1586,15 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td>Nice</td>
+      <td>Nice. Music doesn't work</td>
     </tr> 
     <tr>
-      <td>DryEgg</td>
+      <td>Dry Egg</td>
+      <td>yes</td>
       <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>Needs over 4MB</td>
+      <td>Needs over exactly 8MB RAM. bus errors otherwise.
+          Background music with DSP</td>
     </tr>
     <tr>
       <td>Evolution Dino Dudes<br>(aka. Humans)</td>
@@ -1609,7 +1609,7 @@ otherwise "-".</p>
       <td>yes</td>
       <td>yes</td>
       <td>-</td>
-      <td>Problems with scrolling</td>
+      <td>Parts of sprites get stuck to top of screen</td>
     </tr> 
     <tr>
       <td>FalcTron</td>
@@ -1640,6 +1640,13 @@ otherwise "-".</p>
       <td>Intros work, game doesn't</td>
     </tr>
     <tr>
+      <td>Great</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Atoms clone</td>
+    </tr>
+    <tr>
       <td>H2O</td>
       <td>yes</td>
       <td>-</td>
@@ -1649,16 +1656,16 @@ otherwise "-".</p>
     <tr>
       <td>Heretic</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td>Very slow</td>
     </tr> 
     <tr>
       <td>Hexogon</td>
-      <td>yes</td>
+      <td>-</td>
       <td>yes</td>
       <td>-</td>
-      <td></td>
+      <td>Worked earlier (before v1.0)?</td>
     </tr> 
     <tr>
       <td>Impulse</td>
@@ -1719,7 +1726,7 @@ otherwise "-".</p>
     <tr>
       <td>Madtris</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td></td>
     </tr>
@@ -1731,11 +1738,13 @@ otherwise "-".</p>
       <td>2-4 player "Dungeon Master". 4 players needs MIDI.</td>
     </tr>
     <tr>
-      <td>Men at War</td>
+      <td>Men at War (preview)</td>
       <td>yes</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Fire button doesn't work, intro has sync problems</td>
+      <td>yes</td>
+      <td>none</td>
+      <td>Has background music if DSP emu enabled. Separate intro gets
+          stuck with DSP, otherwise its scrolling has sync problems.
+	  Fire button doesn't work</td>
     </tr>
     <tr>
       <td>Milanopol</td>
@@ -1783,7 +1792,7 @@ otherwise "-".</p>
     <tr>
       <td>Neurobot.108</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td></td>
     </tr>
@@ -1825,31 +1834,31 @@ otherwise "-".</p>
     </tr>
     <tr>
       <td>Poker</td>
+      <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Complains that it doesn't work on this type of monitor</td>
+      <td>Works only in VGA</td>
     </tr>
     <tr>
       <td>Pong 2K (demo)</td>
-      <td>partially</td>
+      <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>May freeze if DSP is enabled</td>
+      <td>Background music with DSP. A bit unstable</td>
     </tr>
     <tr>
       <td>Pouspous</td>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td>HiColor only</td>
+      <td>Image puzzle. HiColor only</td>
     </tr>
     <tr>
       <td>Push It</td>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>DSP replay doesn't produce any sound</td>
     </tr>
     <tr>
       <td>Q-Blue</td>
@@ -1859,7 +1868,7 @@ otherwise "-".</p>
       <td>Hicolor / VGA only</td>
     </tr>
     <tr>
-      <td>Radical (demo)</td>
+      <td>Radical Race (demo)</td>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
@@ -1877,7 +1886,7 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>dummy</td>
-      <td></td>
+      <td>Freezes with black screen if DSP enabled</td>
     </tr>
     <tr>
       <td>Reeking Rubber</td>
@@ -1908,7 +1917,7 @@ otherwise "-".</p>
       <td>Newer SBM versions bomb out immediately at startup</td>
     </tr>
     <tr>
-      <td>Shangai preview</td>
+      <td>Shangai (demo)</td>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
@@ -1917,16 +1926,16 @@ otherwise "-".</p>
     <tr>
       <td>Snatch by FUN</td>
       <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>VGA 640x480x16 mode only</td>
+      <td>VGA 640x480x16 mode only. Background music with DSP</td>
     </tr>
     <tr>
       <td><a href="http://rg.atari.org/game.htm">Sky Fall</a></td>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>Music doesn't work</td>
     </tr>
     <tr>
       <td>Slippery Sam</td>
@@ -1982,12 +1991,12 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>Music doesn't work</td>
     </tr>
     <tr>
       <td>Tank Blaster</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td></td>
     </tr>
@@ -2002,8 +2011,8 @@ otherwise "-".</p>
       <td><a href="http://rg.atari.org/game.htm">Tautology II</a></td>
       <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>Nice Mahjongg variant, use STE joypad</td>
+      <td>none</td>
+      <td>Nice Mahjongg variant, use STE joypad. Menu doesn't work with DSP</td>
     </tr>
     <tr>
       <td>Tetrhex</td>
@@ -2024,13 +2033,13 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>Pacman</td>
     </tr>
     <tr>
       <td>Tron2</td>
       <td>yes</td>
       <td>yes</td>
-      <td>-</td>
+      <td>dummy</td>
       <td>Background music if DSP emu enabled</td>
     </tr>
     <tr>
@@ -2051,7 +2060,7 @@ otherwise "-".</p>
     <tr>
       <td>TUM</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td>GEM minesweeper</td>
     </tr>
@@ -2081,7 +2090,8 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td>Both 1st and 2nd preview versions work, but 1st one has display issues</td>
+      <td>Both 1st and 2nd preview versions work, but
+          1st one has scrolling/display issues</td>
     </tr>
     <tr>
       <td>Wotanoid</td>
@@ -2187,6 +2197,13 @@ otherwise "-".</p>
       <td>-</td>
       <td>-</td>
       <td>Sound is just noise. Needs 14MB RAM</td>
+    </tr>
+    <tr>
+      <td>DHS: GEM-demo</td>
+      <td>partially</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Demo effects don't show in the GEM window</td>
     </tr>
     <tr>
       <td>DHS:
@@ -2567,13 +2584,6 @@ otherwise "-".</p>
       <td>A simple FLE animation player</td>
     </tr>
     <tr>
-      <td>GEM-demo</td>
-      <td>partially</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Demo effects don't show in the GEM window</td>
-    </tr>
-    <tr>
       <td>Madness</td>
       <td>partially</td>
       <td>yes</td>
@@ -2690,6 +2700,14 @@ otherwise "-".</p>
       <td>-</td>
       <td>emu</td>
       <td>No sound. Graphics look OK only in VGA mode.</td>
+    </tr>
+    <tr>
+      <td><a href="http://deunstg.free.fr/sct1/falcamp/">GemPLAY</a></td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>MOD/SND/XMS playing works fine, AON/GT2 don't have sound or freeze.
+          Fileselector dir selection doesn't work for the latest 1.92 version</td>
     </tr>
     <tr>
       <td><a href="http://rg.atari.org/utils.htm">Godpaint</a></td>
