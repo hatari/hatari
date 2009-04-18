@@ -29,7 +29,7 @@
 
 
 /* More disasm infos, if wanted */
-// #define DSP_DISASM 1		/* Main DSP disassembler switch */
+#define DSP_DISASM 0		/* Main DSP disassembler switch */
 #define DSP_DISASM_INST 0	/* Instructions */
 #define DSP_DISASM_REG 0	/* Registers changes */
 #define DSP_DISASM_MEM 0	/* Memory changes */
@@ -1686,10 +1686,9 @@ static void dsp_btst_reg(void)
 {
 	Uint32 value, numreg, newcarry, numbit;
 	
-	value = (cur_inst>>8) & BITMASK(6);
+	numreg = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
-	numreg = value;
 	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
 		numreg = DSP_REG_A1+(numreg & 1);
 	}
@@ -1928,6 +1927,9 @@ static void dsp_jclr_reg(void)
 	numreg = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
+	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
+		numreg = DSP_REG_A1+(numreg & 1);
+	}
 	value = dsp_core->registers[numreg];
 
 	if ((value & (1<<numbit))==0) {
@@ -2052,6 +2054,9 @@ static void dsp_jsclr_reg(void)
 	numreg = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
+	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
+		numreg = DSP_REG_A1+(numreg & 1);
+	}
 	value = dsp_core->registers[numreg];
 
 	if ((value & (1<<numbit))==0) {
@@ -2131,6 +2136,9 @@ static void dsp_jset_reg(void)
 	numreg = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
+	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
+		numreg = DSP_REG_A1+(numreg & 1);
+	}
 	value = dsp_core->registers[numreg];
 
 	if (value & (1<<numbit)) {
@@ -2245,6 +2253,9 @@ static void dsp_jsset_reg(void)
 	numreg = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
+	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
+		numreg = DSP_REG_A1+(numreg & 1);
+	}
 	value = dsp_core->registers[numreg];
 
 	if (value & (1<<numbit)) {

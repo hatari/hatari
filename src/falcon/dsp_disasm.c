@@ -344,7 +344,7 @@ static dsp_emul_t opcodes8h[512]={
 	dsp_bchg, dsp_btst, dsp_bchg, dsp_btst, dsp_jsclr, dsp_jsset, dsp_jsclr, dsp_jsset,
 	dsp_bchg, dsp_btst, dsp_bchg, dsp_btst, dsp_jsclr, dsp_jsset, dsp_jsclr, dsp_jsset,
 	dsp_bchg, dsp_btst, dsp_bchg, dsp_btst, dsp_jsclr, dsp_jsset, dsp_jsclr, dsp_jsset,
-	dsp_jsclr, dsp_jsclr, dsp_bchg, dsp_btst, dsp_jsr, dsp_jscc, dsp_undefined, dsp_undefined,
+	dsp_jsclr, dsp_jsset, dsp_bchg, dsp_btst, dsp_jsr, dsp_jscc, dsp_undefined, dsp_undefined,
 
 	/* 0x180 - 0x1bf */
 	dsp_jmp, dsp_jmp, dsp_jmp, dsp_jmp, dsp_jmp, dsp_jmp, dsp_jmp, dsp_jmp,
