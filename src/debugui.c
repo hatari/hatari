@@ -183,6 +183,49 @@ static void DebugUI_SaveBin(char *args)
 }
 
 
+#if ENABLE_DSP_EMU
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Do a DSP register dump.
+ */
+static void DebugUI_DspRegDump(void)
+{
+	printf("TODO\n");
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set a DSP register: 
+ */
+static void DebugUI_DspRegSet(char *arg)
+{
+	printf("TODO, arg: %s\n", arg);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * DSP dissassemble - arg = starting address, or PC.
+ */
+static void DebugUI_DspDisAsm(char *arg, bool cont)
+{
+	printf("TODO, arg: %s, cont=%s\n", arg, cont?"TRUE":"FALSE");
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Do a DSP memory dump, args = starting address or range.
+ * <x|y|p><address>: dump from X, Y or P, starting from given address,
+ * e.g. "x200" or "p200-300"
+ */
+static void DebugUI_DspMemDump(char *arg, bool cont)
+{
+	printf("TODO, arg: %s, cont=%s\n", arg, cont?"TRUE":"FALSE");
+}
+
+#endif /* ENABLE_DSP_EMU */
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Do a register dump.
@@ -558,7 +601,12 @@ static void DebugUI_MemWrite(char *arg)
 static void DebugUI_Help(void)
 {
 	fprintf(stderr, "---- debug mode commands ----\n"
-	        " d [address]- disassemble from PC, or given address. \n"
+#if ENABLE_DSP_EMU
+	        " dd [address] - disassemble DSP from PC, or given address. \n"
+	        " dm <x|y|p>[address]- dump DSP memory at address, \n\tdm alone continues from previous address.\n"
+	        " dr [REG=value] - dump DSP register values/ set register to value \n"
+#endif
+	        " d [address] - disassemble from PC, or given address. \n"
 	        " r [REG=value] - dump register values/ set register to value \n"
 	        " m [address] - dump memory at address, \n\tm alone continues from previous address.\n"
 	        " w address bytes - write bytes to a memory address, bytes are space separated. \n"
@@ -582,12 +630,14 @@ static void DebugUI_Help(void)
 int DebugUI_ParseCommand(char *input)
 {
 	char command[255], arg[255];
-	static char lastcommand = 0;
+	static char lastcommand[2] = {0,0};
 	int i, retval;
+	bool noArgs;
 
-	/* Used for 'm' and 'd' to continue at last pos */
-	command[0] = lastcommand;
-	command[1] = 0;
+	/* Used for 'm', 'd' 'dm' and 'dd' to continue at last pos */
+	command[0] = lastcommand[0];
+	command[1] = lastcommand[1];
+	command[2] = 0;
 	arg[0] = 0;
 	i = sscanf(input, "%s%s", command, arg);
 	Str_ToLower(command);
@@ -598,8 +648,9 @@ int DebugUI_ParseCommand(char *input)
 		return DEBUG_CMD;
 	}
 
-	lastcommand = 0;
+	lastcommand[0] = lastcommand[1] = 0;
 	retval = DEBUG_CMD;                /* Default return value */
+	noArgs = (i < 2);
 
 	switch (command[0])
 	{
@@ -623,53 +674,69 @@ int DebugUI_ParseCommand(char *input)
 		break;
 
 	 case 'd':
-		if (i < 2)  /* no arg? */
-			DebugUI_DisAsm(arg, TRUE);    /* No arg - disassemble at PC */
-		else
-			DebugUI_DisAsm(arg, FALSE);   /* disasm at address. */
-		lastcommand = 'd';
+		switch (command[1])
+		{
+#if ENABLE_DSP_EMU
+			/* DSP debugging commands? */
+		case 'd':
+			/* No arg - disassemble at PC, otherwise at given address */
+			DebugUI_DspDisAsm(arg, noArgs);
+			break;
+		case 'm':
+			/* No arg - continue memdump, otherwise new memdump */
+			DebugUI_DspMemDump(arg, noArgs);
+			break;
+		case 'r':
+			if (noArgs)
+				DebugUI_DspRegDump();  /* no arg - dump regs */
+			else
+				DebugUI_DspRegSet(arg);
+			break;
+#endif
+		default:
+			/* No arg - disassemble at PC, otherwise at given address */
+			DebugUI_DisAsm(arg, noArgs);
+		}
+		lastcommand[0] = command[0];
+		lastcommand[1] = command[1];
 		break;
 
 	 case 'm':
-		if (i < 2)
-		{  /* no arg? */
-			DebugUI_MemDump(arg, TRUE);   /* No arg - continue memdump */
-		}
-		else
-			DebugUI_MemDump(arg, FALSE);  /* new memdump */
-		lastcommand = 'm';
+		/* No arg - continue memdump, otherwise new memdump */
+		DebugUI_MemDump(arg, noArgs);
+		lastcommand[0] = 'm';
 		break;
 
 	 case 'f':
-		if (i < 2)
+		if (noArgs)
 			DebugUI_SetLogDefault();
 		else
 			DebugUI_SetLogFile(arg);
 		break;
 
 	 case 'w':
-		if (i < 2)    /* not enough args? */
+		if (noArgs)    /* not enough args? */
 			fprintf(stderr, "  Usage: w address bytes\n");
 		else
 			DebugUI_MemWrite(input);
 		break;
 
 	 case 'r':
-		if (i < 2)
+		if (noArgs)
 			DebugUI_RegDump();  /* no arg - dump regs */
 		else
 			DebugUI_RegSet(arg);
 		break;
 
 	 case 'l':
-		if (i < 2)    /* not enough args? */
+		if (noArgs)    /* not enough args? */
 			fprintf(stderr,"  Usage: l filename address\n");
 		else
 			DebugUI_LoadBin(input);
 		break;
 
 	 case 's':
-		if (i < 2)    /* not enough args? */
+		if (noArgs)    /* not enough args? */
 			fprintf(stderr,"  Usage: s filename address bytes\n");
 		else
 			DebugUI_SaveBin(input);
