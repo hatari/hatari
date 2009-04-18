@@ -39,7 +39,6 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #define NON_PRINT_CHAR '.'     /* character to display for non-printables */
 #define DISASM_INSTS   5       /* disasm - number of instructions */
 
-static bool bMemDump;          /* has memdump been called? */
 static unsigned long memdump_addr; /* memdump address */
 static unsigned long disasm_addr;  /* disasm address */
 
@@ -238,10 +237,12 @@ static void DebugUI_DisAsm(char *arg, bool cont)
 			disasm_upper &= 0x00FFFFFF;
 		}
 	}
-	else /* continue*/
+	else
+	{
+		/* continue */
 		if(!disasm_addr)
 			disasm_addr = M68000_GetPC();
-
+	}
 	disasm_addr &= 0x00FFFFFF;
 
 	/* output a single block. */
@@ -409,7 +410,6 @@ static void DebugUI_MemDump(char *arg, bool cont)
 		{ /* single address, not a range */
 			if (!Str_IsHex(arg))
 			{
-				bMemDump = FALSE;
 				fprintf(stderr, "Invalid address!\n");
 				return;
 			}
@@ -417,7 +417,6 @@ static void DebugUI_MemDump(char *arg, bool cont)
 
 			if (i == 0)
 			{
-				bMemDump = FALSE;
 				fprintf(stderr, "Invalid address!\n");
 				return;
 			}
@@ -433,9 +432,7 @@ static void DebugUI_MemDump(char *arg, bool cont)
 			memdump_upper &= 0x00FFFFFF;
 		}
 	} /* continue */
-
 	memdump_addr &= 0x00FFFFFF;
-	bMemDump = TRUE;
 
 	if (isRange != TRUE)
 	{
@@ -600,9 +597,6 @@ int DebugUI_ParseCommand(char *input)
 		fprintf(stderr, "  Unknown command.\n");
 		return DEBUG_CMD;
 	}
-	if (!debugOutput) {
-		DebugUI_SetLogDefault();
-	}
 
 	lastcommand = 0;
 	retval = DEBUG_CMD;                /* Default return value */
@@ -639,10 +633,7 @@ int DebugUI_ParseCommand(char *input)
 	 case 'm':
 		if (i < 2)
 		{  /* no arg? */
-			if (bMemDump == FALSE)
-				fprintf(stderr,"  Usage: m address\n");
-			else
-				DebugUI_MemDump(arg, TRUE);   /* No arg - continue memdump */
+			DebugUI_MemDump(arg, TRUE);   /* No arg - continue memdump */
 		}
 		else
 			DebugUI_MemDump(arg, FALSE);  /* new memdump */
@@ -733,8 +724,26 @@ static int DebugUI_GetCommand(void)
  */
 void DebugUI(void)
 {
-	bMemDump = FALSE;
+	if (!debugOutput) {
+		DebugUI_SetLogDefault();
+	}
+
+	/* if you want disassembly or memdumping to start/continue from
+	 * specific address, you can set them here.  If disassembly
+	 * address is zero, disassembling starts from PC.
+	 */
+	memdump_addr = 0;
 	disasm_addr = 0;
+
+	/* If you want registers, disassembly or memdump to be output
+	 * whenever you invoke the debugger, enable suitable lines
+	 * from below.
+	 */
+#if 0
+	DebugUI_RegDump();
+	DebugUI_DisAsm(NULL, TRUE);
+	DebugUI_MemDump(NULL, TRUE);
+#endif
 
 	fprintf(stderr, "\nYou have entered debug mode. Type c to continue emulation, h for help."
 	                "\n----------------------------------------------------------------------\n");
