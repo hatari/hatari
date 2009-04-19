@@ -269,8 +269,7 @@ static void DebugUI_DspRegSet(char *arg)
 static void DebugUI_DspDisAsm(char *arg, bool cont)
 {
 	unsigned long lower, upper;
-	Uint16 dsp_disasm_upper;
-	bool isRange = FALSE;
+	Uint16 dsp_disasm_upper = 0;
 
 	if (!bDspEnabled)
 	{
@@ -295,8 +294,8 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 				fprintf(stderr,"Invalid address '%lx'!\n", upper);
 				return;
 			}
-			isRange = TRUE;
 			dsp_disasm_upper = upper;
+			break;
 		}
 		if (lower > 0xFFFF)
 		{
@@ -313,7 +312,7 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 	}
 
 	/* output a single block. */
-	if (isRange == FALSE)
+	if (!dsp_disasm_upper)
 	{
 		printf("TODO: DSP disasm from %hx\n", dsp_disasm_addr);
 	}
@@ -333,8 +332,7 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 static void DebugUI_DspMemDump(char *arg, bool cont)
 {
 	unsigned long lower, upper;
-	Uint16 dsp_memdump_upper;
-	bool isRange = FALSE;
+	Uint16 dsp_memdump_upper = 0;
 	char space;
 
 	if (!bDspEnabled)
@@ -371,8 +369,8 @@ static void DebugUI_DspMemDump(char *arg, bool cont)
 				fprintf(stderr,"Invalid address '%lx'!\n", upper);
 				return;
 			}
-			isRange = TRUE;
 			dsp_memdump_upper = upper;
+			break;
 		}
 		if (lower > 0xFFFF)
 		{
@@ -384,7 +382,7 @@ static void DebugUI_DspMemDump(char *arg, bool cont)
 	} /* continue */
 
 	/* output a single block. */
-	if (isRange == FALSE)
+	if (!dsp_memdump_upper)
 	{
 		printf("TODO: DSP memdump from %hx in '%c' address space\n",
 		       dsp_memdump_addr, dsp_mem_space);
@@ -418,9 +416,8 @@ static void DebugUI_RegDump(void)
  */
 static void DebugUI_DisAsm(char *arg, bool cont)
 {
-	unsigned long disasm_upper;
+	unsigned long disasm_upper = 0;
 	uaecptr nextpc;
-	bool isRange = FALSE;
 
 	if (cont != TRUE)
 	{
@@ -434,8 +431,8 @@ static void DebugUI_DisAsm(char *arg, bool cont)
 			break;
 		case 1:
 			/* range */
-			isRange = TRUE;
 			disasm_upper &= 0x00FFFFFF;
+			break;
 		}
 	}
 	else
@@ -447,7 +444,7 @@ static void DebugUI_DisAsm(char *arg, bool cont)
 	disasm_addr &= 0x00FFFFFF;
 
 	/* output a single block. */
-	if (isRange == FALSE)
+	if (!disasm_upper)
 	{
 		m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, DISASM_INSTS);
 		disasm_addr = nextpc;
@@ -600,8 +597,7 @@ static void DebugUI_MemDump(char *arg, bool cont)
 {
 	int i,j;
 	char c;
-	bool isRange = FALSE;
-	unsigned long memdump_upper;
+	unsigned long memdump_upper = 0;
 
 	if (cont != TRUE)
 	{
@@ -615,13 +611,13 @@ static void DebugUI_MemDump(char *arg, bool cont)
 			break;
 		case 1:
 			/* range */
-			isRange = TRUE;
 			memdump_upper &= 0x00FFFFFF;
+			break;
 		}
 	} /* continue */
 	memdump_addr &= 0x00FFFFFF;
 
-	if (isRange != TRUE)
+	if (!memdump_upper)
 	{
 		for (j=0;j<MEMDUMP_ROWS;j++)
 		{
@@ -959,7 +955,7 @@ void DebugUI(void)
 #if ENABLE_DSP_EMU
 	if (bDspEnabled)
 	{
-		DebugUI_DpsRegDump();
+		DebugUI_DspRegDump();
 		DebugUI_DspDisAsm(NULL, TRUE);
 		DebugUI_DspMemDump(NULL, TRUE);
 	}
