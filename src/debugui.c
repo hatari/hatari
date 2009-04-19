@@ -321,6 +321,7 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 		printf("TODO: DSP disasm range %hx-%hx\n",
 		       dsp_disasm_addr, dsp_disasm_upper);
 	}
+	/* TODO: dsp_disasm_addr = nextpc */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -392,6 +393,7 @@ static void DebugUI_DspMemDump(char *arg, bool cont)
 		printf("TODO: DSP memdump range %hx-%hx in '%c' address space\n",
 		       dsp_memdump_addr, dsp_memdump_upper, dsp_mem_space);
 	}
+	/* TODO: dsp_memdump_addr = dsp_memdump_upper+alignment */
 }
 
 #endif /* ENABLE_DSP_EMU */
