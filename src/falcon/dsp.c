@@ -115,6 +115,20 @@ void DSP_Run(int nHostCycles)
 
 
 /**
+ * Get DSP program counter (for disassembler)
+ */
+Uint16 DSP_GetPC(void)
+{
+#if ENABLE_DSP_EMU
+	if (bDspEnabled)
+		return dsp_core.pc;
+	else
+#endif
+	return 0;
+}
+
+
+/**
  * Read SSI transmit value
  */
 Uint32 DSP_SsiReadTxValue(void)

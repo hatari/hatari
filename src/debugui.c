@@ -81,6 +81,49 @@ static int getRange(char *str, unsigned long *lower, unsigned long *upper)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Parse a hex adress range, eg. "fa0000[-fa0100]" + show appropriate warnings
+ * returns:
+ * -1 if invalid address or range,
+ *  0 if single address,
+ * +1 if a range.
+ */
+static int parseRange(char *str, unsigned long *lower, unsigned long *upper)
+{
+	int i;
+
+	switch (getRange(str, lower, upper))
+	{
+	case 0:
+		return 1;
+	case -1:
+		/* single address, not a range */
+		if (!Str_IsHex(str))
+		{
+			fprintf(stderr,"Invalid address '%s'!\n", str);
+			return -1;
+		}
+		i = sscanf(str, "%lx", lower);
+		
+		if (i == 0)
+		{
+			fprintf(stderr,"Invalid address '%s'!\n", str);
+			return -1;
+		}
+		return 0;
+	case -2:
+		fprintf(stderr,"Invalid addresses '%s'!\n", str);
+		return -1;
+	case -3:
+		fprintf(stderr,"Invalid range (%lx > %lx)!\n", *lower, *upper);
+		return -1;
+	}
+	fprintf(stderr, "Unknown getRange() return value!\n");
+	return -1;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Open given log file.
  */
 static void DebugUI_SetLogFile(const char *logpath)
@@ -185,13 +228,24 @@ static void DebugUI_SaveBin(char *args)
 
 #if ENABLE_DSP_EMU
 
+#include "dsp.h"
+
+static Uint16 dsp_disasm_addr;  /* DSP disasm address */
+static Uint16 dsp_memdump_addr; /* DSP memdump address */
+static char dsp_mem_space;      /* X, Y, P */
+
 /*-----------------------------------------------------------------------*/
 /**
  * Do a DSP register dump.
  */
 static void DebugUI_DspRegDump(void)
 {
-	printf("TODO\n");
+	if (!bDspEnabled)
+	{
+		printf("DSP isn't present or initialized.\n");
+		return;
+	}
+	printf("TODO: DSP register dump\n");
 }
 
 /*-----------------------------------------------------------------------*/
@@ -200,7 +254,12 @@ static void DebugUI_DspRegDump(void)
  */
 static void DebugUI_DspRegSet(char *arg)
 {
-	printf("TODO, arg: %s\n", arg);
+	if (!bDspEnabled)
+	{
+		printf("DSP isn't present or initialized.\n");
+		return;
+	}
+	printf("TODO: set DSP register, arg: %s\n", arg);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -209,7 +268,60 @@ static void DebugUI_DspRegSet(char *arg)
  */
 static void DebugUI_DspDisAsm(char *arg, bool cont)
 {
-	printf("TODO, arg: %s, cont=%s\n", arg, cont?"TRUE":"FALSE");
+	unsigned long lower, upper;
+	Uint16 dsp_disasm_upper;
+	bool isRange = FALSE;
+
+	if (!bDspEnabled)
+	{
+		printf("DSP isn't present or initialized.\n");
+		return;
+	}
+
+	if (cont != TRUE)
+	{
+		switch (parseRange(arg, &lower, &upper))
+		{
+		case -1:
+			/* invalid value(s) */
+			return;
+		case 0:
+			/* single value */
+			break;
+		case 1:
+			/* range */
+			if (upper > 0xFFFF)
+			{
+				fprintf(stderr,"Invalid address '%lx'!\n", upper);
+				return;
+			}
+			isRange = TRUE;
+			dsp_disasm_upper = upper;
+		}
+		if (lower > 0xFFFF)
+		{
+			fprintf(stderr,"Invalid address '%lx'!\n", lower);
+			return;
+		}
+		dsp_disasm_addr = lower;
+	}
+	else
+	{
+		/* continue */
+		if(!dsp_disasm_addr)
+			dsp_disasm_addr = DSP_GetPC();
+	}
+
+	/* output a single block. */
+	if (isRange == FALSE)
+	{
+		printf("TODO: DSP disasm from %hx\n", dsp_disasm_addr);
+	}
+	else
+	{
+		printf("TODO: DSP disasm range %hx-%hx\n",
+		       dsp_disasm_addr, dsp_disasm_upper);
+	}
 }
 
 /*-----------------------------------------------------------------------*/
@@ -220,7 +332,68 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
  */
 static void DebugUI_DspMemDump(char *arg, bool cont)
 {
-	printf("TODO, arg: %s, cont=%s\n", arg, cont?"TRUE":"FALSE");
+	unsigned long lower, upper;
+	Uint16 dsp_memdump_upper;
+	bool isRange = FALSE;
+	char space;
+
+	if (!bDspEnabled)
+	{
+		printf("DSP isn't present or initialized.\n");
+		return;
+	}
+
+	if (cont != TRUE)
+	{
+		space = toupper(*arg++);
+		switch (space)
+		{
+		case 'X':
+		case 'Y':
+		case 'P':
+			break;
+		default:
+			fprintf(stderr,"Invalid DSP address space '%c'!\n", space);
+			return;
+		}
+		switch (parseRange(arg, &lower, &upper))
+		{
+		case -1:
+			/* invalid value(s) */
+			return;
+		case 0:
+			/* single value */
+			break;
+		case 1:
+			/* range */
+			if (upper > 0xFFFF)
+			{
+				fprintf(stderr,"Invalid address '%lx'!\n", upper);
+				return;
+			}
+			isRange = TRUE;
+			dsp_memdump_upper = upper;
+		}
+		if (lower > 0xFFFF)
+		{
+			fprintf(stderr,"Invalid address '%lx'!\n", lower);
+			return;
+		}
+		dsp_memdump_addr = lower;
+		dsp_mem_space = space;
+	} /* continue */
+
+	/* output a single block. */
+	if (isRange == FALSE)
+	{
+		printf("TODO: DSP memdump from %hx in '%c' address space\n",
+		       dsp_memdump_addr, dsp_mem_space);
+	}
+	else
+	{
+		printf("TODO: DSP memdump range %hx-%hx in '%c' address space\n",
+		       dsp_memdump_addr, dsp_memdump_upper, dsp_mem_space);
+	}
 }
 
 #endif /* ENABLE_DSP_EMU */
@@ -245,37 +418,22 @@ static void DebugUI_RegDump(void)
  */
 static void DebugUI_DisAsm(char *arg, bool cont)
 {
-	int i,j;
 	unsigned long disasm_upper;
 	uaecptr nextpc;
 	bool isRange = FALSE;
 
 	if (cont != TRUE)
 	{
-		j = getRange(arg, &disasm_addr, &disasm_upper);
-
-		if (j == -1)
-		{ /* single address, not a range */
-			if (!Str_IsHex(arg))
-			{
-				fprintf(stderr,"Invalid address!\n");
-				return;
-			}
-			i = sscanf(arg, "%lx", &disasm_addr);
-
-			if (i == 0)
-			{
-				fprintf(stderr,"Invalid address!\n");
-				return;
-			}
-		} /* single address */
-		else if (j == -2 || j == -3)
+		switch (parseRange(arg, &disasm_addr, &disasm_upper))
 		{
-			fprintf(stderr,"Invalid range!\n");
+		case -1:
+			/* invalid value(s) */
 			return;
-		}
-		else
-		{ /* range */
+		case 0:
+			/* single value */
+			break;
+		case 1:
+			/* range */
 			isRange = TRUE;
 			disasm_upper &= 0x00FFFFFF;
 		}
@@ -447,30 +605,16 @@ static void DebugUI_MemDump(char *arg, bool cont)
 
 	if (cont != TRUE)
 	{
-		j = getRange(arg, &memdump_addr, &memdump_upper);
-
-		if (j == -1)
-		{ /* single address, not a range */
-			if (!Str_IsHex(arg))
-			{
-				fprintf(stderr, "Invalid address!\n");
-				return;
-			}
-			i = sscanf(arg, "%lx", &memdump_addr);
-
-			if (i == 0)
-			{
-				fprintf(stderr, "Invalid address!\n");
-				return;
-			}
-		} /* single address */
-		else if (j == -2 || j == -3)
+		switch (parseRange(arg, &memdump_addr, &memdump_upper))
 		{
-			fprintf(stderr, "Invalid range!\n");
+		case -1:
+			/* invalid value(s) */
 			return;
-		}
-		else
-		{ /* range */
+		case 0:
+			/* single value */
+			break;
+		case 1:
+			/* range */
 			isRange = TRUE;
 			memdump_upper &= 0x00FFFFFF;
 		}
@@ -799,6 +943,11 @@ void DebugUI(void)
 	 * specific address, you can set them here.  If disassembly
 	 * address is zero, disassembling starts from PC.
 	 */
+#if ENABLE_DSP_EMU
+	dsp_disasm_addr = 0;
+	dsp_memdump_addr = 0;
+	dsp_mem_space = 'P';
+#endif
 	memdump_addr = 0;
 	disasm_addr = 0;
 
@@ -807,6 +956,14 @@ void DebugUI(void)
 	 * from below.
 	 */
 #if 0
+#if ENABLE_DSP_EMU
+	if (bDspEnabled)
+	{
+		DebugUI_DpsRegDump();
+		DebugUI_DspDisAsm(NULL, TRUE);
+		DebugUI_DspMemDump(NULL, TRUE);
+	}
+#endif
 	DebugUI_RegDump();
 	DebugUI_DisAsm(NULL, TRUE);
 	DebugUI_MemDump(NULL, TRUE);
