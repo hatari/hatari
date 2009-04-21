@@ -185,7 +185,7 @@ struct dsp_core_s {
 	Uint32	registers[64];
 
 	/* stack[0=ssh], stack[1=ssl] */
-	Uint16	stack[2][15];
+	Uint16	stack[2][16];
 
 	/* External ram[0] is x:, ram[1] is y:, ram[2] is p: */
 	Uint32	ram[3][DSP_RAMSIZE];

@@ -48,6 +48,9 @@ extern "C" {
 #define DSP_SR_T	0x0d
 #define DSP_SR_LF	0x0f
 
+#define DSP_SP_SE	0x04
+#define DSP_SP_UF	0x05
+
 /* Registers numbers in dsp.registers[] */
 #define DSP_REG_X0	0x04
 #define DSP_REG_X1	0x05
