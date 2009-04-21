@@ -600,9 +600,10 @@ static void dsp_postexecute_update_pc(void)
 
 			if (dsp_core->registers[DSP_REG_LC]==0) {
 				/* end of loop */
-				Uint32 newpc;
-				
-				dsp_stack_pop(&newpc, &dsp_core->registers[DSP_REG_SR]);
+				Uint32 newpc, newsr;
+
+				dsp_stack_pop(&newpc, &newsr);
+				dsp_core->registers[DSP_REG_SR] |= newsr & (1<<DSP_SR_LF);
 				dsp_stack_pop(&dsp_core->registers[DSP_REG_LA], &dsp_core->registers[DSP_REG_LC]);
 			} else {
 				/* Loop one more time */
@@ -1864,9 +1865,10 @@ static void dsp_do_reg(void)
 
 static void dsp_enddo(void)
 {
-	Uint32 newpc;
+	Uint32 newpc, newsr;
 
-	dsp_stack_pop(&newpc, &dsp_core->registers[DSP_REG_SR]);
+	dsp_stack_pop(&newpc, &newsr);
+	dsp_core->registers[DSP_REG_SR] |= newsr & (1<<DSP_SR_LF);
 	dsp_stack_pop(&dsp_core->registers[DSP_REG_LA], &dsp_core->registers[DSP_REG_LC]);
 }
 
