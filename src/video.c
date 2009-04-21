@@ -297,7 +297,7 @@ Uint16 HBLPalettes[(NUM_VISIBLE_LINES+1)*16];   /* 1x16 colour palette per scree
 Uint16 *pHBLPalettes;                           /* Pointer to current palette lists, one per HBL */
 Uint32 HBLPaletteMasks[NUM_VISIBLE_LINES+1];    /* Bit mask of palette colours changes, top bit set is resolution change */
 Uint32 *pHBLPaletteMasks;
-int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 70 Hz in mono */
+int nScreenRefreshRate = 50;                    /* 50 or 60 Hz in color, 71 Hz in mono */
 Uint32 VideoBase;                               /* Base address in ST Ram for screen (read on each VBL) */
 
 int nVBLs;                                      /* VBL Counter */
@@ -374,6 +374,7 @@ typedef struct
 typedef struct
 {
 	int	VBL;				/* VBL for this Pos (or -1 if Pos not defined) */
+	int	FrameCycles;			/* Number of cycle since this VBL */
 	int	HBL;				/* HBL in the VBL */
 	int	LineCycles;			/* cycles in the HBL */
 } SHIFTER_POS;
@@ -386,7 +387,8 @@ typedef struct
 
 	int	Freq;				/* value of ff820a & 2, or -1 if not set */
 	int	Res;				/* value of ff8260 & 3, or -1 if not set */
-	SHIFTER_POS	FreqPos;		/* position of latest freq change */
+	SHIFTER_POS	FreqPos50;		/* position of latest freq change to 50 Hz*/
+	SHIFTER_POS	FreqPos60;		/* position of latest freq change to 60 Hz*/
 	SHIFTER_POS	ResPos;			/* position of latest res change */
 
 	SHIFTER_LINE	ShifterLines[ MAX_SCANLINES_PER_FRAME ];
@@ -402,7 +404,10 @@ SHIFTER_FRAME	ShifterFrame;
 /*--------------------------------------------------------------*/
 
 static void Video_AddInterrupt (int Pos , interrupt_id Handler);
-
+static void Video_StoreFirstLinePalette(void);
+static void Video_StoreResolution(int y);
+static void Video_CopyScreenLineMono(void);
+static void Video_CopyScreenLineColor(void);
 
 
 /*-----------------------------------------------------------------------*/
@@ -475,7 +480,7 @@ void	Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles )
 	/* Get the position on the currently displayed line */
 	*pLineCycles = FrameCycles % nCyclesPerLine;
 
-
+/* TODO si *pLineCycles<0, utiliser nHBL-1 */
 	*pHBL = nHBL;
 	*pLineCycles = FrameCycles - ShifterFrame.ShifterLines[ nHBL ].StartCycle;
 	if ( *pLineCycles >= nCyclesPerLine )
@@ -708,8 +713,9 @@ static void Video_WriteToShifter(Uint8 Byte)
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove left\n" );
 //		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_LEFT_OFF;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF;
 		LineStartCycle = LINE_START_CYCLE_71;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
 	}
 
 	if (nLastByte == 0x02 && Byte == 0x01
@@ -721,8 +727,9 @@ static void Video_WriteToShifter(Uint8 Byte)
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF_MID;	/* a later switch to low res might gives right scrolling */
 		/* By default, this line will be in mid res, except if we detect hardware scrolling later */
 //		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_OVERSCAN_MID_RES | ( 2 << 20 );
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_OVERSCAN_MID_RES | ( 2 << 20 );
 		LineStartCycle = LINE_START_CYCLE_71;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_OVERSCAN_MID_RES | ( 2 << 20 );
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
 	}
 
 	/* Empty line switching res on STF */
@@ -732,9 +739,11 @@ static void Video_WriteToShifter(Uint8 Byte)
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
 //		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 		LineStartCycle = 0;
 		LineEndCycle = 0;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
 	}
 
 	/* Empty line switching res on STE (switch is 4 cycle later than on STF) */
@@ -744,9 +753,11 @@ static void Video_WriteToShifter(Uint8 Byte)
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
 //		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 		LineStartCycle = 0;
 		LineEndCycle = 0;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
 	}
 
 	/* Empty line switching res on STF (switch just before the HBL) */
@@ -754,9 +765,11 @@ static void Video_WriteToShifter(Uint8 Byte)
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res 2\n" );
 //		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 		LineStartCycle = 0;
 		LineEndCycle = 0;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
 	}
 
 	/* Start right border near middle of the line : -106 bytes */
@@ -770,8 +783,9 @@ static void Video_WriteToShifter(Uint8 Byte)
 	{
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect stop middle\n" );
 //		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_STOP_MIDDLE;
-		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_STOP_MIDDLE;
 		LineEndCycle = LINE_END_CYCLE_71;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_STOP_MIDDLE;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_71;
 	}
 
 	/* Remove right border a second time after removing it a first time : */
@@ -785,9 +799,10 @@ static void Video_WriteToShifter(Uint8 Byte)
 		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove right full\n" );
 //		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_OFF_FULL;
 //		ScreenBorderMask[ HblCounterVideo+1 ] |= BORDERMASK_LEFT_OFF;	/* no left border on next line */
+		LineEndCycle = LINE_END_CYCLE_FULL;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_OFF_FULL;
 		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_LEFT_OFF;	/* no left border on next line */
-		LineEndCycle = LINE_END_CYCLE_FULL;
+		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_FULL;
 	}
 
 	/* If left border is opened and we switch to medium resolution */
@@ -865,71 +880,127 @@ static void Video_WriteToShifter(Uint8 Byte)
  */
 void Video_Sync_WriteByte(void)
 {
-	static int nLastHBL = -1, nLastVBL = -1, nLastByte, nLastCycles, nLastFrameCycles;
-	int nFrameCycles, nLineCycles;
-	int HblCounterVideo;
-	Uint8 Byte;
+	static int nLastHBL = -1, nLastVBL = -1, nLastCycles, nLastFrameCycles;
+	int FrameCycles, HblCounterVideo, LineCycles;
+	Uint8 Freq;
 
-	/* We're only interested in lower 2 bits (50/60Hz) */
-	Byte = IoMem[0xff820a] & 2;			/* only keep bit 1 (50/60 Hz) */
+	/* We're only interested in bit 1 (50/60Hz) */
+	Freq = IoMem[0xff820a] & 2;
 
 #if 0
-	nFrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
+	FrameCycles = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 
 	/* We only care for cycle position in the actual screen line */
-	nLineCycles = nFrameCycles % nCyclesPerLine;
+	LineCycles = FrameCycles % nCyclesPerLine;
 
-	HblCounterVideo = nFrameCycles / nCyclesPerLine;
+	HblCounterVideo = FrameCycles / nCyclesPerLine;
 #else
-	Video_GetPosition_OnWriteAccess ( &nFrameCycles , &HblCounterVideo , &nLineCycles );
+	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
 #endif
 
 	HATARI_TRACE ( HATARI_TRACE_VIDEO_SYNC ,"sync=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
-	               Byte, nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
+	               Freq, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
+
 
 	/* Ignore consecutive writes of the same value */
-	if ( Byte == nLastByte )
+	if ( Freq == ShifterFrame.Freq )
 		return;						/* do nothing */
 
-	if ( ( nLastByte == 0x00 ) && ( Byte == 0x02 )		/* switched from 60 Hz to 50 Hz? */
-	        && ( nLastVBL == nVBLs )			/* switched during the same VBL */
+
+	/* Set some default values for DisplayStartCycle/DisplayEndCycle */
+	/* before checking for border removal (testing orders are important */
+	/* because the line can aleady have some borders changed) */
+	/* This is necessary as some freq changes can modify start/end */
+	/* even if they're not made at the exact borders' positions */
+	if ( Freq == 0x02 )					/* switch to 50 Hz */
+	{
+		if ( LineCycles < ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle )	/* start could be 0,52,56 */
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
+
+		if ( ( LineCycles < ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle )
+		  && ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle < LINE_END_CYCLE_50 ) )
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_50;
+	}
+
+	else							/* switch to 60 Hz */
+	{
+		if ( LineCycles < ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle )	/* start could be 0,52,56 */
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_60;
+
+		if ( ( LineCycles < ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle )
+		  && ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle == LINE_END_CYCLE_50 ) )
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_60;
+	}
+
+//fprintf ( stderr , "sync default pos %d %d\n", ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
+
+
+	if ( ( ShifterFrame.Freq == 0x00 ) && ( Freq == 0x02 )	/* switched from 60 Hz to 50 Hz ? */
+	        && ( ShifterFrame.FreqPos60.VBL == nVBLs )	/* switched during the same VBL */
 	        && ( HblCounterVideo >= nStartHBL ) )		/* only if display is on */
 	{
 		/* Add 2 bytes to left border */
-//		if ( nFrameCycles-nLastFrameCycles <= 24
-//		 && nLastCycles <= LINE_START_CYCLE_60 && nLineCycles >= LINE_START_CYCLE_50 )
+#if 0
 		if ( ( LastCycleSync60 <= HblCounterVideo * nCyclesPerLine + LINE_START_CYCLE_60 )
-		        && ( nLineCycles >= LINE_START_CYCLE_50 )	/* The line started in 60 Hz and continues in 50 Hz */
-		        && ( nLineCycles <= LINE_END_CYCLE_60 )		/* change when line is active */
+		        && ( LineCycles >= LINE_START_CYCLE_50 )	/* The line started in 60 Hz and continues in 50 Hz */
+		        && ( LineCycles <= LINE_END_CYCLE_60 )		/* change when line is active */
 //		        && ( ( ScreenBorderMask[ HblCounterVideo ] & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MID ) ) == 0 ) )
 		        && ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MID ) ) == 0 ) )
+#else
+		if ( ( ( ShifterFrame.FreqPos60.HBL < HblCounterVideo ) || ( ShifterFrame.FreqPos60.LineCycles <= LINE_START_CYCLE_60 ) )
+		        && ( LineCycles >= LINE_START_CYCLE_50 )	/* The line started in 60 Hz and continues in 50 Hz */
+		        && ( LineCycles <= ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle )	/* change when line is active */
+		        && ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MID ) ) == 0 ) )
+#endif
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect left+2\n" );
 //			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_LEFT_PLUS_2;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
 			LineStartCycle = LINE_START_CYCLE_60;
+
+			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_60;
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_50;
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect left+2 %d<->%d\n" ,
+				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 		}
 
-		/* Empty line switching freq */
-		else if ( ( nFrameCycles-nLastFrameCycles <= 24 )
+		/* Empty line switching freq : start the line in 50 Hz, change to 60 Hz at the exact place */
+		/* where display is enabled in 50 Hz, then go back to 50 Hz */
+#if 0
+		else if ( ( FrameCycles-nLastFrameCycles <= 24 )
 			&& ( ( nLastCycles == LINE_START_CYCLE_50 ) || ( nLastCycles == LINE_START_CYCLE_50+4 ) )
-			&& ( nLineCycles > LINE_START_CYCLE_50 ) )
+			&& ( LineCycles > LINE_START_CYCLE_50 ) )
+#else
+		else if ( ( FrameCycles - ShifterFrame.FreqPos60.FrameCycles <= 24 )
+			&& ( ( ShifterFrame.FreqPos60.LineCycles == LINE_START_CYCLE_50 ) || ( ShifterFrame.FreqPos60.LineCycles == LINE_START_CYCLE_50+4 ) )
+			&& ( LineCycles > LINE_START_CYCLE_50 ) )
+#endif
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line freq\n" );
 //			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
-			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 			LineStartCycle = 0;
 			LineEndCycle = 0;
+
+			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
+			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line freq %d<->%d\n" ,
+				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 		}
 
-		/* Remove 2 bytes to the right */
-//      else if ( nFrameCycles-nLastFrameCycles <= 128
-//	&& nLastCycles <= LINE_END_CYCLE_60 && nLineCycles > LINE_END_CYCLE_60
-		if ( ( nLineCycles > LINE_END_CYCLE_60 )
+		/* Remove 2 bytes to the right : start the line in 50 Hz, change to 60 Hz at the exact place */
+		/* where display is disabled in 60 Hz, then go back to 50 Hz */
+#if 0
+		if ( ( LineCycles > LINE_END_CYCLE_60 )
 		        && ( ( nLastCycles > LINE_START_CYCLE_60 ) && ( nLastCycles <= LINE_END_CYCLE_60 ) )
 		        && ( nLastHBL == HblCounterVideo )
 //		        && ( ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_STOP_MIDDLE ) == 0 ) )
 		        && ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_STOP_MIDDLE ) == 0 ) )
+#else
+		if ( ( LineCycles > LINE_END_CYCLE_60 )
+		        && ( ( ShifterFrame.FreqPos60.LineCycles > LINE_START_CYCLE_60 ) && ( ShifterFrame.FreqPos60.LineCycles <= LINE_END_CYCLE_60 ) )
+		        && ( ShifterFrame.FreqPos60.HBL == HblCounterVideo )
+		        && ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_STOP_MIDDLE ) == 0 ) )
+// TODO tester passage 50->60 et remplacer test stop_middle par test sur endcycle
+#endif
 		{
 			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
 //			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_MINUS_2;
@@ -954,10 +1025,10 @@ void Video_Sync_WriteByte(void)
 	/* special case for right border : some programs don't switch back to */
 	/* 50 Hz immediatly (sync screen in SNY II), so we just check if */
 	/* freq changes to 60 Hz at the position where line should end in 50 Hz */
-	if ( ( nLastByte == 0x02 && Byte == 0x00 )	/* switched from 50 Hz to 60 Hz? */
+	if ( ( ShifterFrame.Freq == 0x02 && Freq == 0x00 )	/* switched from 50 Hz to 60 Hz? */
 	        && ( HblCounterVideo >= nStartHBL ) )	/* only if display is on */
 	{
-		if ( ( nLineCycles == LINE_END_CYCLE_50 )
+		if ( ( LineCycles == LINE_END_CYCLE_50 )
 //		        && ( ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_STOP_MIDDLE ) == 0 ) )
 		        && ( ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_STOP_MIDDLE ) == 0 ) )
 		{
@@ -971,9 +1042,9 @@ void Video_Sync_WriteByte(void)
 
 	/* Store cycle position of freq 50/60 to check for top/bottom border removal in Video_EndHBL. */
 	/* Also update start/end line depending on the current value of nHBL */
-	if ( Byte == 0x02 )						/* switch to 50 Hz */
+	if ( Freq == 0x02 )						/* switch to 50 Hz */
 	{
-		LastCycleSync50 = nFrameCycles;
+		LastCycleSync50 = FrameCycles;
 
 		if ( ( HblCounterVideo < VIDEO_START_HBL_50HZ )		/* nStartHBL can change only if display is not ON yet */
 		        && ( OverscanMode & OVERSCANMODE_TOP ) == 0 )	/* update only if top was not removed */
@@ -984,16 +1055,16 @@ void Video_Sync_WriteByte(void)
 			nEndHBL = VIDEO_END_HBL_50HZ;				/* 263 */
 
 		if ( ( LineEndCycle == LINE_END_CYCLE_60 )		/* Freq is changed before the end of a 60 Hz line */
-			&& ( nLineCycles < LINE_END_CYCLE_60 ) )
+			&& ( LineCycles < LINE_END_CYCLE_60 ) )
 			LineEndCycle = LINE_END_CYCLE_50;
 
 	}
-	else if ( Byte == 0x00 )					/* switch to 60 Hz */
+	else if ( Freq == 0x00 )					/* switch to 60 Hz */
 	{
-		LastCycleSync60 = nFrameCycles;
+		LastCycleSync60 = FrameCycles;
 
 		if ( ( HblCounterVideo < VIDEO_START_HBL_60HZ-1 )	/* nStartHBL can change only if display is not ON yet */
-			|| ( ( HblCounterVideo == VIDEO_START_HBL_60HZ-1 ) && ( nLineCycles <= LineRemoveTopCycle ) ) )
+			|| ( ( HblCounterVideo == VIDEO_START_HBL_60HZ-1 ) && ( LineCycles <= LineRemoveTopCycle ) ) )
 			nStartHBL = VIDEO_START_HBL_60HZ;
 
 		if ( ( HblCounterVideo < VIDEO_END_HBL_60HZ )		/* nEndHBL can change only if display is not OFF yet */
@@ -1001,17 +1072,18 @@ void Video_Sync_WriteByte(void)
 			nEndHBL = VIDEO_END_HBL_60HZ;				/* 234 */
 
 		if ( ( LineEndCycle == LINE_END_CYCLE_50 )		/* Freq is changed before the end of a 50 Hz line */
-			&& ( nLineCycles < LINE_END_CYCLE_60 ) )	/* and before the end of a 60 Hz line */
+			&& ( LineCycles < LINE_END_CYCLE_60 ) )	/* and before the end of a 60 Hz line */
 			LineEndCycle = LINE_END_CYCLE_60;
 	}
+
 
 	/* If the frequence changed, we need to update the EndLine interrupt */
 	/* so that it happens 28 cycles after the current LineEndCycle.*/
 	/* We check if the change affects the current line or the next one. */
-	if ( Byte != nLastByte )
+	if ( Freq != ShifterFrame.Freq )
 	{
-		int nFrameCycles2 = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		int nLineCycles2 = nFrameCycles2 % nCyclesPerLine;
+		int FrameCycles2 = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int LineCycles2 = FrameCycles2 % nCyclesPerLine;
 
 		if ( ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask & BORDERMASK_RIGHT_MINUS_2 )		/* 60/50 Hz switch */
 		{
@@ -1030,43 +1102,454 @@ void Video_Sync_WriteByte(void)
 			/* display was stopped in the middle of the line. Keep timer B at pos 376+28 */
 		}
 
-		else if ( nLineCycles2 < LineEndCycle )			/* freq changed before the end of the line */
+		else if ( LineCycles2 < LineEndCycle )			/* freq changed before the end of the line */
 		{
 			LineTimerBCycle = LineEndCycle + TIMERB_VIDEO_CYCLE_OFFSET;
-			Int_AddRelativeInterrupt(LineTimerBCycle - nLineCycles2,
+			Int_AddRelativeInterrupt(LineTimerBCycle - LineCycles2,
 						 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
 		}
 
 		else							/* freq changed after the end of the line */
 		{
 			/* By default, next EndLine's int will be on line nHBL+1 at pos 376+28 or 372+28 */
-			if ( Byte == 0x02 )		/* 50 Hz, pos 376+28 */
+			if ( Freq == 0x02 )		/* 50 Hz, pos 376+28 */
 				LineTimerBCycle = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
 			else				/* 60 Hz, pos 372+28 */
 				LineTimerBCycle = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
 
-			Int_AddRelativeInterrupt(LineTimerBCycle - nLineCycles2 + nCyclesPerLine,
+			Int_AddRelativeInterrupt(LineTimerBCycle - LineCycles2 + nCyclesPerLine,
 						 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
 		}
 
 
 		/* Update HBL's position only if display has not started */
-		if ( nLineCycles < LINE_START_CYCLE_50 )
+		if ( LineCycles <= LINE_START_CYCLE_50 )
+		{
 			Video_AddInterruptHBL ( Video_HBL_GetPos() );
+#if 1
+			if ( Freq == 0x02 )
+				nCyclesPerLine = CYCLES_PER_LINE_50HZ;
+			else
+				nCyclesPerLine = CYCLES_PER_LINE_60HZ;
+#endif
+		}
 	}
 
-#if 0
-	if ( Byte == 0x02 )						/* switch to 50 Hz */
-		nCyclesPerLine = CYCLES_PER_LINE_50HZ;
+
+
+	ShifterFrame.Freq = Freq;
+	if ( Freq == 0x02 )					/* 50 Hz */
+	{
+		ShifterFrame.FreqPos50.VBL = nVBLs;
+		ShifterFrame.FreqPos50.FrameCycles = FrameCycles;
+		ShifterFrame.FreqPos50.HBL = HblCounterVideo;
+		ShifterFrame.FreqPos50.LineCycles = LineCycles;
+	}
 	else
-		nCyclesPerLine = CYCLES_PER_LINE_60HZ;
-#endif
+	{
+		ShifterFrame.FreqPos60.VBL = nVBLs;
+		ShifterFrame.FreqPos60.FrameCycles = FrameCycles;
+		ShifterFrame.FreqPos60.HBL = HblCounterVideo;
+		ShifterFrame.FreqPos60.LineCycles = LineCycles;
+	}
 
 	nLastVBL = nVBLs;
 	nLastHBL = HblCounterVideo;
-	nLastByte = Byte;
-	nLastCycles = nLineCycles;
-	nLastFrameCycles = nFrameCycles;
+	nLastCycles = LineCycles;
+	nLastFrameCycles = FrameCycles;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Check at end of each HBL to see if any Sync/Shifter hardware tricks have been attempted
+ * and copy the line to the screen buffer.
+ * This is the place to check if top/bottom border were removed.
+ * NOTE : the tests must be made with nHBL in ascending order.
+ */
+static void Video_EndHBL(void)
+{
+	Uint8 SyncByte = IoMem_ReadByte(0xff820a) & 2;	/* only keep bit 1 (50/60 Hz) */
+
+	// fprintf(stderr,"video_endhbl %d last60 %d last 50 %d\n", nHBL, LastCycleSync60, LastCycleSync50);
+
+	/* Remove top border if the switch to 60 Hz was made during this vbl before cycle	*/
+	/* LineRemoveTopCycle on line 33 and if the switch to 50 Hz has not yet occured or	*/
+	/* occured before the 60 Hz or occured after cycle LineRemoveTopCycle on line 33.	*/
+#if 0
+	if (( nHBL == VIDEO_START_HBL_60HZ-1)
+	    && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (VIDEO_START_HBL_60HZ-1) * nCyclesPerLine + LineRemoveTopCycle))
+	    && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (VIDEO_START_HBL_60HZ-1) * nCyclesPerLine + LineRemoveTopCycle)))
+#else
+	if ( ( nHBL == VIDEO_START_HBL_60HZ-1 )				/* last HBL before first line of a 60 Hz screen */
+		&& ( ShifterFrame.FreqPos60.VBL == nVBLs )		/* switch to 60 Hz during this VBL */
+		&& ( ( ShifterFrame.FreqPos60.HBL < nHBL ) || ( ShifterFrame.FreqPos60.LineCycles <= LineRemoveTopCycle ) )
+		&& (   ( ShifterFrame.FreqPos50.VBL < nVBLs )
+		    || ( ShifterFrame.FreqPos50.FrameCycles < ShifterFrame.FreqPos60.FrameCycles )
+		    || ( ShifterFrame.FreqPos50.HBL > nHBL )
+		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles > LineRemoveTopCycle ) ) ) )
+#endif
+	{
+		/* Top border */
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove top\n" );
+		OverscanMode |= OVERSCANMODE_TOP;	/* Set overscan bit */
+		nStartHBL = VIDEO_START_HBL_60HZ;	/* New start screen line */
+		pHBLPaletteMasks -= OVERSCAN_TOP;	// FIXME useless ?
+		pHBLPalettes -= OVERSCAN_TOP;	// FIXME useless ?
+	}
+
+	/* Remove bottom border for a 60 Hz screen (tests are similar to the ones for top border) */
+#if 0
+	else if ((nHBL == VIDEO_END_HBL_60HZ-1)		/* last displayed line in 60 Hz */
+	         && (SyncByte == 0x02)			/* current freq is 50 Hz */
+	         && (LastCycleSync50 >= 0)		/* change occurred during this VBL */
+	         && (nStartHBL == VIDEO_START_HBL_60HZ)	/* screen starts in 60 Hz */
+	         && ((OverscanMode & OVERSCANMODE_TOP) == 0))	/* and top border was not removed : this screen is only 60 Hz */
+#else
+	else if ( ( nHBL == VIDEO_END_HBL_60HZ-1 )			/* last displayed line in 60 Hz */
+		&& ( nStartHBL == VIDEO_START_HBL_60HZ )		/* screen started in 60 Hz */
+		&& ( ( OverscanMode & OVERSCANMODE_TOP ) == 0 )		/* and top border was not removed : this screen is only 60 Hz */
+		&& ( ShifterFrame.FreqPos50.VBL == nVBLs )		/* switch to 50 Hz during this VBL */
+		&& ( ( ShifterFrame.FreqPos50.HBL < nHBL ) || ( ShifterFrame.FreqPos50.LineCycles <= LineRemoveBottomCycle ) )
+		&& (   ( ShifterFrame.FreqPos60.VBL < nVBLs )
+		    || ( ShifterFrame.FreqPos60.FrameCycles < ShifterFrame.FreqPos50.FrameCycles )
+		    || ( ShifterFrame.FreqPos60.HBL > nHBL )
+		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles > LineRemoveBottomCycle ) ) ) )
+#endif
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
+		OverscanMode |= OVERSCANMODE_BOTTOM;
+		nEndHBL = SCANLINES_PER_FRAME_60HZ;	/* new end for a 60 Hz screen */
+	}
+
+	/* Remove bottom border for a 50 Hz screen (tests are similar to the ones for top border) */
+#if 0
+	else if ((nHBL == VIDEO_END_HBL_50HZ-1)		/* last displayed line in 50 Hz */
+	          && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (VIDEO_END_HBL_50HZ-1) * nCyclesPerLine + LineRemoveBottomCycle))
+	          && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (VIDEO_END_HBL_50HZ-1) * nCyclesPerLine + LineRemoveBottomCycle))
+	          && ((OverscanMode & OVERSCANMODE_BOTTOM) == 0))	/* border was not already removed at line VIDEO_END_HBL_60HZ */
+#else
+	else if ( ( nHBL == VIDEO_END_HBL_50HZ-1 )			/* last displayed line in 50 Hz */
+		&& ( ( OverscanMode & OVERSCANMODE_BOTTOM ) == 0 )	/* border was not already removed at line VIDEO_END_HBL_60HZ-1 */
+		&& ( ShifterFrame.FreqPos60.VBL == nVBLs )		/* switch to 60 Hz during this VBL */
+		&& ( ( ShifterFrame.FreqPos60.HBL < nHBL ) || ( ShifterFrame.FreqPos60.LineCycles <= LineRemoveBottomCycle ) )
+		&& (   ( ShifterFrame.FreqPos50.VBL < nVBLs )
+		    || ( ShifterFrame.FreqPos50.FrameCycles < ShifterFrame.FreqPos60.FrameCycles )
+		    || ( ShifterFrame.FreqPos50.HBL > nHBL )
+		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles > LineRemoveBottomCycle ) ) ) )
+#endif
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
+		OverscanMode |= OVERSCANMODE_BOTTOM;
+		nEndHBL = VIDEO_END_HBL_50HZ+VIDEO_HEIGHT_BOTTOM_50HZ;	/* new end for a 50 Hz screen */
+
+#if 0
+		/* Some programs turn to 60 Hz during the active display of the last line to */
+		/* remove the bottom border (FNIL by TNT), in that case, we should also remove */
+		/* 2 bytes to this line (this is wrong practice as it can distort the display on a real ST) */
+		if (LastCycleSync60 <= (VIDEO_END_HBL_50HZ-1) * nCyclesPerLine + LINE_END_CYCLE_60)
+		{
+			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
+			ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_RIGHT_MINUS_2;
+			LineEndCycle = LINE_END_CYCLE_60;
+		}
+#endif
+	}
+
+	/* Special case when the line was not started in 60 Hz, then switched to 60 Hz */
+	/* and was not restored to 50 Hz before the end of the line. In that case, the */
+	/* line ends 2 bytes earlier on the right */
+	/* Some programs also turn to 60 Hz during the active display of the last line to */
+	/* remove the bottom border (FNIL by TNT), in that case, we should also remove */
+	/* 2 bytes to this line (this is wrong practice as it can distort the display on a real ST) */
+	if ( ( ( ShifterFrame.ShifterLines[ nHBL ].BorderMask & BORDERMASK_RIGHT_MINUS_2 ) == 0 )
+	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle != LINE_START_CYCLE_60 )
+	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_60 ) )
+	{
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect late right-2\n" );
+		ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_RIGHT_MINUS_2;
+	}
+
+
+	/* Store palette for very first line on screen - HBLPalettes[0] */
+	if (nHBL == nFirstVisibleHbl-1)
+	{
+		/* Store ALL palette for this line into raster table for datum */
+		Video_StoreFirstLinePalette();
+	}
+
+	if (bUseHighRes)
+	{
+		/* Copy for hi-res (no overscan) */
+		if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
+			Video_CopyScreenLineMono();
+	}
+	/* Are we in possible visible color display (including borders)? */
+	else if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
+	{
+		/* Store resolution for every line so can check for mix low/med screens */
+		Video_StoreResolution(nHBL-nFirstVisibleHbl);
+
+		/* Copy line of screen to buffer to simulate TV raster trace
+		 * - required for mouse cursor display/game updates
+		 * Eg, Lemmings and The Killing Game Show are good examples */
+		Video_CopyScreenLineColor();
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Set default values for the start of the next HBL, depending on the
+ * current res/freq.
+ */
+static void Video_StartHBL(void)
+{
+	int nSyncByte;
+
+
+	if ( IoMem_ReadByte( 0xff8260 ) == 2 )			/* hi res */
+	{
+		LineStartCycle = LINE_START_CYCLE_71;
+		LineEndCycle = LINE_END_CYCLE_71;
+//		nCyclesPerLine = CYCLES_PER_LINE_71HZ;
+		ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = LINE_START_CYCLE_71;
+		ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = LINE_END_CYCLE_71;
+	}
+
+	else
+	{
+		nSyncByte = IoMem_ReadByte(0xff820a);
+		if (nSyncByte & 2)				/* 50 Hz */
+		{
+			LineStartCycle = LINE_START_CYCLE_50;
+			LineEndCycle = LINE_END_CYCLE_50;
+//			nCyclesPerLine = CYCLES_PER_LINE_50HZ;
+			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = LINE_START_CYCLE_50;
+			ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = LINE_END_CYCLE_50;
+		}
+		else						/* 60 Hz */
+		{
+			LineStartCycle = LINE_START_CYCLE_60;
+			LineEndCycle = LINE_END_CYCLE_60;
+//			nCyclesPerLine = CYCLES_PER_LINE_60HZ;
+			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle = LINE_START_CYCLE_60;
+			ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle = LINE_END_CYCLE_60;
+		}
+	}
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * HBL interrupt : this occurs at the end of every line, on cycle 512 (in 50 Hz)
+ * It takes 56 cycles to handle the 68000's exception.
+ */
+void Video_InterruptHandler_HBL(void)
+{
+	int FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+	int PendingCyclesOver;
+	int NewCyclesPerLine;
+
+	/* How many cycle was this HBL delayed (>= 0) */
+	PendingCyclesOver = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
+
+	/* Remove this interrupt from list and re-order */
+	Int_AcknowledgeInterrupt();
+
+	/* Increment the hbl jitter index */
+	HblJitterIndex++;
+	if ( HblJitterIndex == HBL_JITTER_MAX_POS )
+		HblJitterIndex = 0;
+	
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
+	               nHBL , FrameCycles , PendingCyclesOver , HblJitterArray[ HblJitterIndex ] );
+
+	/* Default number of cycle for next HBL */
+	if ( 0 && IoMem_ReadByte( 0xff8260 ) == 2 )			/* hi res */
+		NewCyclesPerLine = CYCLES_PER_LINE_71HZ;
+	else
+	{
+		if (IoMem_ReadByte(0xff820a) & 2)		/* 50 Hz */
+			NewCyclesPerLine = CYCLES_PER_LINE_50HZ;
+		else						/* 60 Hz */
+			NewCyclesPerLine = CYCLES_PER_LINE_60HZ;
+	}
+
+	/* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
+	if (nHBL < nScanlinesPerFrame-1)
+		Int_AddAbsoluteInterrupt(NewCyclesPerLine, INT_CPU_CYCLE, INTERRUPT_VIDEO_HBL);
+//		Video_AddInterruptHBL ( Video_HBL_GetPos() );
+
+
+	/* We must handle a very special case : if we had a pending HBL that becomes active */
+	/* because SR is now <= $2100, then we must process an exception for this pending HBL. */
+	/* But if a "real" (non pending) HBL occurs during the first 56 cycles needed by the */
+	/* CPU to prepare the exception, we must ignore this HBL signal (instead of considering */
+	/* this new HBL should be put in pending state to be processed later) */
+        /* -> any HBL occuring between LastCycleHblException and LastCycleHblException+56 should be ignored */
+	if ( ( LastCycleHblException != -1 )
+	  && ( ( FrameCycles - PendingCyclesOver - HblJitterArray[ HblJitterIndex ] ) - LastCycleHblException <= 56 ) )
+	{
+		/* simultaneous case, don't call M68000_Exception */
+		HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d signal ignored during pending hbl exception at cycle %d\n" ,
+			nHBL , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , LastCycleHblException );
+		LastCycleHblException = -1;
+	}
+	else
+	{
+		/* "normal" case, this HBL doesn't occur during the processing of a pending HBL */
+		M68000_Exception ( EXCEPTION_HBLANK , M68000_EXCEPTION_SRC_INT_VIDEO );	/* Horizontal blank interrupt, level 2! */
+	}
+
+
+	Video_EndHBL();					/* Copy line to display buffer and do any video trickery */
+
+	nHBL++;						/* Increase HBL count */
+
+	ShifterFrame.ShifterLines[ nHBL ].StartCycle = FrameCycles - PendingCyclesOver;
+HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d start=%d %x\n" , nHBL , ShifterFrame.ShifterLines[ nHBL ].StartCycle , ShifterFrame.ShifterLines[ nHBL ].StartCycle );
+
+	Video_StartHBL();				/* Setup next HBL */
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * End Of Line interrupt
+ *  As this occurs at the end of a line we cannot get timing for START of first
+ * line (as in Spectrum 512)
+ * This interrupt is started on cycle position 404 in 50 Hz and on cycle
+ * position 400 in 60 Hz. 50 Hz display ends at cycle 376 and 60 Hz displays
+ * ends at cycle 372. This means the EndLine interrupt happens 28 cycles
+ * after LineEndCycle.
+ * Note that if bit 3 of MFP AER is 1, then timer B will count start of line
+ * instead of end of line (at cycle 52+28 or 56+28)
+ */
+void Video_InterruptHandler_EndLine(void)
+{
+	int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+	int nLineCycles = nFrameCycles % nCyclesPerLine;
+	int PendingCycles = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
+
+	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "EndLine TB %d video_cyc=%d line_cyc=%d pending_int_cnt=%d\n" ,
+	               nHBL , nFrameCycles , nLineCycles , PendingCycles );
+
+	/* Remove this interrupt from list and re-order */
+	Int_AcknowledgeInterrupt();
+
+	/* Ignore HBLs in VDI mode */
+	if (bUseVDIRes)
+		return;
+
+	/* Generate new Endline, if need to - there are 313 HBLs per frame */
+	if (nHBL < nScanlinesPerFrame-1)
+	{
+		/* By default, next EndLine's int will be on line nHBL+1 at pos 376+28 or 372+28 */
+		if ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) == 0 )		/* count end of line */
+		{
+			/* If EndLine int is delayed too much (more than 100 cycles), nLineCycles will */
+			/* be in the range 0..xxx instead of 400..512. In that case, we need to add */
+			/* nCyclesPerLine to be in the range 512..x+512 */
+			/* Maximum delay should be around 160 cycles (DIVS), we take LINE_END_CYCLE_60 to be sure */
+			/* FIXME this could be handled differently without reading fffa03 */
+			if ( nLineCycles < LINE_END_CYCLE_60 )		/* int happened in fact on the next line nHBL+1 */
+				nLineCycles += nCyclesPerLine;
+
+			LineTimerBCycle = Video_TimerB_GetPos();
+		}
+
+		else							/* count start of line */
+		{
+			LineTimerBCycle = Video_TimerB_GetPos();
+		}
+
+		Int_AddRelativeInterrupt(LineTimerBCycle - nLineCycles + nCyclesPerLine,
+					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
+	}
+
+	/* Timer B occurs at END of first visible screen line in Event Count mode */
+	if (nHBL >= nStartHBL && nHBL < nEndHBL)
+	{
+		/* Handle Timer B when using Event Count mode */
+		/* We must ensure that the write to fffa1b to activate timer B was */
+		/* completed before the point where the end of line signal was generated */
+		/* (in the case of a move.b #8,$fffa1b that would happen 4 cycles */
+		/* before end of line, the interrupt should not be generated) */
+		if ( (MFP_TBCR == 0x08)						/* Is timer in Event Count mode? */
+			&& ( ( TimerBEventCountCycleStart == -1 )		/* timer B was started during a previous VBL */
+			  || ( TimerBEventCountCycleStart < nFrameCycles-PendingCycles ) ) )	/* timer B was started before this possible interrupt */
+			MFP_TimerB_EventCount_Interrupt();			/* we have a valid timer B interrupt */
+	}
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Compute the cycle position where the HBL should happen on each line.
+ * In low/mid res, the position depends on the video frequency (50/60 Hz)
+ * In high res, the position is always the same.
+ */
+int Video_HBL_GetPos(void)
+{
+	Uint8 SyncByte;
+	int Pos;
+
+	if ( IoMem_ReadByte( 0xff8260 ) == 2 )			/* hi res */
+		Pos = CYCLES_PER_LINE_71HZ;
+
+	else							/* low res or mid res */
+	{
+		SyncByte = IoMem_ReadByte(0xff820a) & 2;	/* only keep bit 1 (50/60 Hz) */                                                                         	/* Are we counting end of line events ? */
+		if ( SyncByte == 0x02 )        			/* 50 Hz, pos 512 */
+			Pos = CYCLES_PER_LINE_50HZ;
+		else                          			/* 60 Hz, pos 508 */
+			Pos = CYCLES_PER_LINE_60HZ;
+	}
+
+	return Pos;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Compute the cycle position where the timer B should happen on each
+ * visible line.
+ * The position depends on the start of line / end of line positions
+ * (which depend on the current frequency / border tricks) and
+ * on the value of the bit 3 in the MFP's AER. If bit is 0, timer B
+ * will count end of line events (usual case), but if bit is 1, timer B
+ * will count start of line events.
+ * TODO : we don't handle border tricks for now (need to update timer B
+ * when a new resolution implies a change in LineStart/End Cycle)
+ */
+int Video_TimerB_GetPos(void)
+{
+	Uint8 SyncByte = IoMem_ReadByte(0xff820a) & 2;  /* only keep bit 1 (50/60 Hz) */
+	int Pos;
+
+	/* Are we counting end of line events ? */
+	if ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) == 0 )
+	{
+		// Pos = LineEndCycle + TIMERB_VIDEO_CYCLE_OFFSET;
+		if ( SyncByte == 0x02 )         /* 50 Hz, pos 376+28 */
+			Pos = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
+		else                            /* 60 Hz, pos 372+28 */
+			Pos = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
+	}
+
+	/* Else, we're counting start of line events */
+	else
+	{
+		// Pos = LineStartCycle + TIMERB_VIDEO_CYCLE_OFFSET;
+		if ( SyncByte == 0x02 )         /* 50 Hz, pos 56+28 */
+			Pos = LINE_START_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
+		else                            /* 60 Hz, pos 52+28 */
+			Pos = LINE_START_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
+	}
+
+	return Pos;
 }
 
 
@@ -1553,352 +2036,6 @@ static void Video_CopyVDIScreen(void)
 {
 	/* Copy whole screen, don't care about being exact as for GEM only */
 	memcpy(pSTScreen, pVideoRaster, ((VDIWidth*VDIPlanes)/8)*VDIHeight);
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Check at end of each HBL to see if any Sync/Shifter hardware tricks have been attempted
- * and copy the line to the screen buffer.
- * This is the place to check if top/bottom border were removed.
- * NOTE : the tests must be made with nHBL in ascending order.
- */
-static void Video_EndHBL(void)
-{
-	Uint8 SyncByte = IoMem_ReadByte(0xff820a) & 2;	/* only keep bit 1 (50/60 Hz) */
-
-	// fprintf(stderr,"video_endhbl %d last60 %d last 50 %d\n", nHBL, LastCycleSync60, LastCycleSync50);
-
-	/* Remove top border if the switch to 60 Hz was made during this vbl before cycle	*/
-	/* 33*512+LineRemoveTopCycle and if the switch to 50 Hz has not yet occured or	*/
-	/* occured before the 60 Hz or occured after cycle 33*512+LineRemoveTopCycle.	*/
-	if (( nHBL == VIDEO_START_HBL_60HZ-1)
-	    && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (VIDEO_START_HBL_60HZ-1) * nCyclesPerLine + LineRemoveTopCycle))
-	    && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (VIDEO_START_HBL_60HZ-1) * nCyclesPerLine + LineRemoveTopCycle)))
-	{
-		/* Top border */
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove top\n" );
-		OverscanMode |= OVERSCANMODE_TOP;	/* Set overscan bit */
-		nStartHBL = VIDEO_START_HBL_60HZ;	/* New start screen line */
-		pHBLPaletteMasks -= OVERSCAN_TOP;	// FIXME useless ?
-		pHBLPalettes -= OVERSCAN_TOP;	// FIXME useless ?
-	}
-
-	/* Remove bottom border for a 60 Hz screen */
-	else if ((nHBL == VIDEO_END_HBL_60HZ-1)		/* last displayed line in 60 Hz */
-	         && (SyncByte == 0x02)			/* current freq is 50 Hz */
-	         && (LastCycleSync50 >= 0)		/* change occurred during this VBL */
-	         && (nStartHBL == VIDEO_START_HBL_60HZ)	/* screen starts in 60 Hz */
-	         && ((OverscanMode & OVERSCANMODE_TOP) == 0))	/* and top border was not removed : this screen is only 60 Hz */
-	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
-		OverscanMode |= OVERSCANMODE_BOTTOM;
-		nEndHBL = SCANLINES_PER_FRAME_60HZ;	/* new end for a 60 Hz screen */
-	}
-
-	/* Remove bottom border for a 50 Hz screen (similar method to the one for top border) */
-	else if ((nHBL == VIDEO_END_HBL_50HZ-1)		/* last displayed line in 50 Hz */
-	          && ((LastCycleSync60 >= 0) && (LastCycleSync60 <= (VIDEO_END_HBL_50HZ-1) * nCyclesPerLine + LineRemoveBottomCycle))
-	          && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (VIDEO_END_HBL_50HZ-1) * nCyclesPerLine + LineRemoveBottomCycle))
-	          && ((OverscanMode & OVERSCANMODE_BOTTOM) == 0))	/* border was not already removed at line VIDEO_END_HBL_60HZ */
-	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
-		OverscanMode |= OVERSCANMODE_BOTTOM;
-		nEndHBL = VIDEO_END_HBL_50HZ+VIDEO_HEIGHT_BOTTOM_50HZ;	/* new end for a 50 Hz screen */
-
-		/* Some programs turn to 60 Hz during the active display of the last line to */
-		/* remove the bottom border (FNIL by TNT), in that case, we should also remove */
-		/* 2 bytes to this line (this is wrong practice as it can distort the display on a real ST) */
-		if (LastCycleSync60 <= (VIDEO_END_HBL_50HZ-1) * nCyclesPerLine + LINE_END_CYCLE_60)
-		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
-			ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_RIGHT_MINUS_2;
-			LineEndCycle = LINE_END_CYCLE_60;
-		}
-	}
-
-	/* Special case when the line was not started in 60 Hz, then switched to 60 Hz */
-	/* and was not restored to 50 Hz before the end of the line. In that case, the */
-	/* line ends 2 bytes earlier on the right */
-	if ( ( LineStartCycle != LINE_START_CYCLE_60 ) && ( LineEndCycle == LINE_END_CYCLE_60 ) ) 
-	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
-		ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_RIGHT_MINUS_2;
-	}
-
-
-	/* Store palette for very first line on screen - HBLPalettes[0] */
-	if (nHBL == nFirstVisibleHbl-1)
-	{
-		/* Store ALL palette for this line into raster table for datum */
-		Video_StoreFirstLinePalette();
-	}
-
-	if (bUseHighRes)
-	{
-		/* Copy for hi-res (no overscan) */
-		if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
-			Video_CopyScreenLineMono();
-	}
-	/* Are we in possible visible color display (including borders)? */
-	else if (nHBL >= nFirstVisibleHbl && nHBL < nLastVisibleHbl)
-	{
-		/* Store resolution for every line so can check for mix low/med screens */
-		Video_StoreResolution(nHBL-nFirstVisibleHbl);
-
-		/* Copy line of screen to buffer to simulate TV raster trace
-		 * - required for mouse cursor display/game updates
-		 * Eg, Lemmings and The Killing Game Show are good examples */
-		Video_CopyScreenLineColor();
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Reset Sync/Shifter table at start of each HBL
- */
-static void Video_StartHBL(void)
-{
-	int nSyncByte;
-
-
-	if ( IoMem_ReadByte( 0xff8260 ) == 2 )			/* hi res */
-	{
-		LineStartCycle = LINE_START_CYCLE_71;
-		LineEndCycle = LINE_END_CYCLE_71;
-//		nCyclesPerLine = CYCLES_PER_LINE_71HZ;
-	}
-
-	else
-	{
-		nSyncByte = IoMem_ReadByte(0xff820a);
-		if (nSyncByte & 2)				/* 50 Hz */
-		{
-			LineStartCycle = LINE_START_CYCLE_50;
-			LineEndCycle = LINE_END_CYCLE_50;
-//			nCyclesPerLine = CYCLES_PER_LINE_50HZ;
-		}
-		else						/* 60 Hz */
-		{
-			LineStartCycle = LINE_START_CYCLE_60;
-			LineEndCycle = LINE_END_CYCLE_60;
-//			nCyclesPerLine = CYCLES_PER_LINE_60HZ;
-		}
-	}
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * HBL interrupt : this occurs at the end of every line, on cycle 512 (in 50 Hz)
- * It takes 56 cycles to handle the 68000's exception.
- */
-void Video_InterruptHandler_HBL(void)
-{
-	int FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-	int PendingCyclesOver;
-	int NewCyclesPerLine;
-
-	/* How many cycle was this HBL delayed (>= 0) */
-	PendingCyclesOver = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
-
-	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
-
-	/* Increment the hbl jitter index */
-	HblJitterIndex++;
-	if ( HblJitterIndex == HBL_JITTER_MAX_POS )
-		HblJitterIndex = 0;
-	
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
-	               nHBL , FrameCycles , PendingCyclesOver , HblJitterArray[ HblJitterIndex ] );
-
-	/* Default number of cycle for next HBL */
-	if ( 0 && IoMem_ReadByte( 0xff8260 ) == 2 )			/* hi res */
-		NewCyclesPerLine = CYCLES_PER_LINE_71HZ;
-	else
-	{
-		if (IoMem_ReadByte(0xff820a) & 2)		/* 50 Hz */
-			NewCyclesPerLine = CYCLES_PER_LINE_50HZ;
-		else						/* 60 Hz */
-			NewCyclesPerLine = CYCLES_PER_LINE_60HZ;
-	}
-
-	/* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
-	if (nHBL < nScanlinesPerFrame-1)
-		Int_AddAbsoluteInterrupt(NewCyclesPerLine, INT_CPU_CYCLE, INTERRUPT_VIDEO_HBL);
-//		Video_AddInterruptHBL ( Video_HBL_GetPos() );
-
-
-	/* We must handle a very special case : if we had a pending HBL that becomes active */
-	/* because SR is now <= $2100, then we must process an exception for this pending HBL. */
-	/* But if a "real" (non pending) HBL occurs during the first 56 cycles needed by the */
-	/* CPU to prepare the exception, we must ignore this HBL signal (instead of considering */
-	/* this new HBL should be put in pending state to be processed later) */
-        /* -> any HBL occuring between LastCycleHblException and LastCycleHblException+56 should be ignored */
-	if ( ( LastCycleHblException != -1 )
-	  && ( ( FrameCycles - PendingCyclesOver - HblJitterArray[ HblJitterIndex ] ) - LastCycleHblException <= 56 ) )
-	{
-		/* simultaneous case, don't call M68000_Exception */
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d signal ignored during pending hbl exception at cycle %d\n" ,
-			nHBL , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , LastCycleHblException );
-		LastCycleHblException = -1;
-	}
-	else
-	{
-		/* "normal" case, this HBL doesn't occur during the processing of a pending HBL */
-		M68000_Exception ( EXCEPTION_HBLANK , M68000_EXCEPTION_SRC_INT_VIDEO );	/* Horizontal blank interrupt, level 2! */
-	}
-
-
-	Video_EndHBL();					/* Copy line to display buffer and do any video trickery */
-
-	nHBL++;						/* Increase HBL count */
-
-	ShifterFrame.ShifterLines[ nHBL ].StartCycle = FrameCycles - PendingCyclesOver;
-HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d start=%d %x\n" , nHBL , ShifterFrame.ShifterLines[ nHBL ].StartCycle , ShifterFrame.ShifterLines[ nHBL ].StartCycle );
-
-	Video_StartHBL();				/* Setup next HBL */
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * End Of Line interrupt
- *  As this occurs at the end of a line we cannot get timing for START of first
- * line (as in Spectrum 512)
- * This interrupt is started on cycle position 404 in 50 Hz and on cycle
- * position 400 in 60 Hz. 50 Hz display ends at cycle 376 and 60 Hz displays
- * ends at cycle 372. This means the EndLine interrupt happens 28 cycles
- * after LineEndCycle.
- * Note that if bit 3 of MFP AER is 1, then timer B will count start of line
- * instead of end of line (at cycle 52+28 or 56+28)
- */
-void Video_InterruptHandler_EndLine(void)
-{
-	int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-	int nLineCycles = nFrameCycles % nCyclesPerLine;
-	int PendingCycles = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
-
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "EndLine TB %d video_cyc=%d line_cyc=%d pending_int_cnt=%d\n" ,
-	               nHBL , nFrameCycles , nLineCycles , PendingCycles );
-
-	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
-
-	/* Ignore HBLs in VDI mode */
-	if (bUseVDIRes)
-		return;
-
-	/* Generate new Endline, if need to - there are 313 HBLs per frame */
-	if (nHBL < nScanlinesPerFrame-1)
-	{
-		/* By default, next EndLine's int will be on line nHBL+1 at pos 376+28 or 372+28 */
-		if ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) == 0 )		/* count end of line */
-		{
-			/* If EndLine int is delayed too much (more than 100 cycles), nLineCycles will */
-			/* be in the range 0..xxx instead of 400..512. In that case, we need to add */
-			/* nCyclesPerLine to be in the range 512..x+512 */
-			/* Maximum delay should be around 160 cycles (DIVS), we take LINE_END_CYCLE_60 to be sure */
-			/* FIXME this could be handled differently without reading fffa03 */
-			if ( nLineCycles < LINE_END_CYCLE_60 )		/* int happened in fact on the next line nHBL+1 */
-				nLineCycles += nCyclesPerLine;
-
-			LineTimerBCycle = Video_TimerB_GetPos();
-		}
-
-		else							/* count start of line */
-		{
-			LineTimerBCycle = Video_TimerB_GetPos();
-		}
-
-		Int_AddRelativeInterrupt(LineTimerBCycle - nLineCycles + nCyclesPerLine,
-					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE);
-	}
-
-	/* Timer B occurs at END of first visible screen line in Event Count mode */
-	if (nHBL >= nStartHBL && nHBL < nEndHBL)
-	{
-		/* Handle Timer B when using Event Count mode */
-		/* We must ensure that the write to fffa1b to activate timer B was */
-		/* completed before the point where the end of line signal was generated */
-		/* (in the case of a move.b #8,$fffa1b that would happen 4 cycles */
-		/* before end of line, the interrupt should not be generated) */
-		if ( (MFP_TBCR == 0x08)						/* Is timer in Event Count mode? */
-			&& ( ( TimerBEventCountCycleStart == -1 )		/* timer B was started during a previous VBL */
-			  || ( TimerBEventCountCycleStart < nFrameCycles-PendingCycles ) ) )	/* timer B was started before this possible interrupt */
-			MFP_TimerB_EventCount_Interrupt();			/* we have a valid timer B interrupt */
-	}
-}
-
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Compute the cycle position where the HBL should happen on each line.
- * In low/mid res, the position depends on the video frequency (50/60 Hz)
- * In high res, the position is always the same.
- */
-int Video_HBL_GetPos(void)
-{
-	Uint8 SyncByte;
-	int Pos;
-
-	if ( IoMem_ReadByte( 0xff8260 ) == 2 )			/* hi res */
-		Pos = CYCLES_PER_LINE_71HZ;
-
-	else							/* low res or mid res */
-	{
-		SyncByte = IoMem_ReadByte(0xff820a) & 2;	/* only keep bit 1 (50/60 Hz) */                                                                         	/* Are we counting end of line events ? */
-		if ( SyncByte == 0x02 )        			/* 50 Hz, pos 512 */
-			Pos = CYCLES_PER_LINE_50HZ;
-		else                          			/* 60 Hz, pos 508 */
-			Pos = CYCLES_PER_LINE_60HZ;
-	}
-
-	return Pos;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
- * Compute the cycle position where the timer B should happen on each
- * visible line.
- * The position depends on the start of line / end of line positions
- * (which depend on the current frequency / border tricks) and
- * on the value of the bit 3 in the MFP's AER. If bit is 0, timer B
- * will count end of line events (usual case), but if bit is 1, timer B
- * will count start of line events.
- * TODO : we don't handle border tricks for now (need to update timer B
- * when a new resolution implies a change in LineStart/End Cycle)
- */
-int Video_TimerB_GetPos(void)
-{
-	Uint8 SyncByte = IoMem_ReadByte(0xff820a) & 2;  /* only keep bit 1 (50/60 Hz) */
-	int Pos;
-
-	/* Are we counting end of line events ? */
-	if ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) == 0 )
-	{
-		// Pos = LineEndCycle + TIMERB_VIDEO_CYCLE_OFFSET;
-		if ( SyncByte == 0x02 )         /* 50 Hz, pos 376+28 */
-			Pos = LINE_END_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
-		else                            /* 60 Hz, pos 372+28 */
-			Pos = LINE_END_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
-	}
-
-	/* Else, we're counting start of line events */
-	else
-	{
-		// Pos = LineStartCycle + TIMERB_VIDEO_CYCLE_OFFSET;
-		if ( SyncByte == 0x02 )         /* 50 Hz, pos 56+28 */
-			Pos = LINE_START_CYCLE_50 + TIMERB_VIDEO_CYCLE_OFFSET;
-		else                            /* 60 Hz, pos 52+28 */
-			Pos = LINE_START_CYCLE_60 + TIMERB_VIDEO_CYCLE_OFFSET;
-	}
-
-	return Pos;
 }
 
 

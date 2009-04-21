@@ -149,13 +149,17 @@ extern void Video_MemorySnapShot_Capture(bool bSave);
 extern void Video_GetTTRes(int *width, int *height, int *bpp);
 extern void Video_AddInterruptHBL (int Pos);
 extern void Video_AddInterruptTimerB (int Pos);
-extern void Video_StartInterrupts(void);
-extern void Video_InterruptHandler_VBL(void);
+extern void Video_StartInterrupts(void);extern void Video_InterruptHandler_VBL(void);
 extern void Video_InterruptHandler_HBL(void);
 extern void Video_InterruptHandler_EndLine(void);
 extern int Video_HBL_GetPos(void);
 extern int Video_TimerB_GetPos(void);
 extern void Video_SetScreenRasters(void);
+
+extern void    Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles );
+extern void    Video_GetPosition ( int *pFrameCycles , int *pHBL , int *pLineCycles );
+extern void    Video_GetPosition_OnWriteAccess ( int *pFrameCycles , int *pHBL , int *pLineCycles );
+extern void    Video_GetPosition_OnReadAccess ( int *pFrameCycles , int *pHBL , int *pLineCycles );
 
 extern void Video_ScreenCounter_ReadByte(void);
 extern void Video_Sync_ReadByte(void);

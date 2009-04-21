@@ -182,14 +182,17 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 
 
 	/* Find scan line we are currently on and get index into cycle-palette table */
+#if 0
 	ScanLine = FrameCycles / nCyclesPerLine;
-
+	nHorPos = FrameCycles % nCyclesPerLine;
+#else
+	Video_ConvertPosition ( FrameCycles , &ScanLine , &nHorPos );	
+#endif
 	if (ScanLine > MAX_SCANLINES_PER_FRAME)
 		return;
 
 	pTmpCyclePalette = &CyclePalettes[ (ScanLine*MAX_CYCLEPALETTES_PERLINE) + nCyclePalettes[ScanLine] ];
 
-	nHorPos = FrameCycles % nCyclesPerLine;
 
 	/* Do we have a previous entry at the same cycles? If so, 68000 have used a 'move.l' instruction so stagger writes */
 	if (nCyclePalettes[ScanLine] > 0)
