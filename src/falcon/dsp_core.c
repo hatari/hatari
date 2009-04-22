@@ -528,7 +528,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 					dsp_core->dsp_host_rtx |= dsp_core->hostport[CPU_HOST_TXM]<<8;
 					dsp_core->dsp_host_rtx |= dsp_core->hostport[CPU_HOST_TXH]<<16;
 #if DSP_DISASM_HOSTREAD
-					fprintf(stderr, "Dsp: (H->D): Direct Transfer 0x%06x\n", dsp_core->dsp_hi);
+					fprintf(stderr, "Dsp: (H->D): Direct Transfer 0x%06x\n", dsp_core->dsp_host_rtx);
 #endif
 
 					/* Set HRDF bit to say that DSP can read */
