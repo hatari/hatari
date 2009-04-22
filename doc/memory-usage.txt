@@ -1,34 +1,79 @@
 
 HATARI MEMORY USAGE
 
-Here are some stats on Hatari 0.81 memory usage (on Linux) and what
-could be done to decrease it for embedded devices.
-
+Here are some stats on Hatari v1.2+ memory usage (on Linux) and what
+could be done to decrease it.
 
 First the binary size from "size ./hatari":
    text    data      bss       dec
-1382406   10712 18255264  19648382
+1489120   12828 18799688  20301636
 
-I.e. the binary size is 1.3MB, it has 10KB of pre-defined arrays and
-18MB of non-initialized fixed size arrays.  The names of the arrays
-are listed at the bottom, but STRam is the one taking 16MB.
+I.e. the Hatari binary size is 1.4MB, it has 12KB of non-const/pre-defined
+arrays and 18MB of uninitialized (at build-time) fixed size arrays.
+The names of latter are listed below.
 
-Happily Hatari doesn't dirty (zero) all of STRam, just first 4MB
-(accessible as ST ram) and 2MB at the top (used as IO-memory,
-TOS and cartridge memory).  In next Hatari version Hatari will
-zero only part of the ST ram that user has configured
-(e.g. 0.5MB instead of 4MB -> 3.5MB private memory save).
+To decrease the binary size slightly, disable DSP from src/Makefile,
+don't enabled tracing in config.h (latter may have trivial improvement
+on speed too).  You may also try the gcc -OS and -finline-limit options,
+their effect depends on the architecture for which Hatari is being
+compiled.
+
+
+To see the objects in the Hatari 18MB BSS section, get the datadump
+script from here:
+     http://live.gnome.org/MemoryReduction_2fTools
+
+Compile Hatari without stripping, and use:
+     datadump.py -n -s .bss -r ./hatari
+
+As a result you see these array variables:
+16777216 STRam hatari
+  404400 dsp_core hatari
+  324048 CyclePalettes hatari
+  262144 mem_banks hatari
+  262144 cpufunctbl hatari
+  176612 ConfigureParams hatari
+  131072 pInterceptWriteTable hatari
+  131072 pInterceptReadTable hatari
+   69632 InternalDTAs hatari
+   65536 ymout5_u16 hatari
+   32768 MixBuffer hatari
+   32768 DspOutBuffer hatari
+   ...
+
+These empty arrays aren't an issue unless Hatari actually writes to
+them, but that will happen as Hatari uses them.  Here are some ways
+to minimize dirtying of the related memory i.e. use of the arrays
+in Hatari:
+
+* Enabling only required amount of memory for the emulation.
+  Hatari doesn't dirty (zero) all of STRam, just the part of the ST ram
+  that user has configured (accessible as ST ram, 0.5-14MB) and 2MB
+  at the top (used as IO-memory, TOS and cartridge memory).
+
+* Disabling DSP from build gets rid of dsp_core
+
+* Modifying Video_ClearOnVBL() and Video_ColorReg_WriteWord()
+  to call Spec512 functions only when nSpec512Threshold configuration
+  value is non-zero and run Hatari with spec512 support disabled.
+  This gets rid of CyclePalettes dirtying
+
+* ConfigureParams size can be decreased 22*4KB by setting
+  MAX_HARDDRIVES in configuration.h to one (or by removing
+  memset from Configuration_SetDefault() as static variables in .bss
+  are zeroed already by kernel, memset()ting them just makes them
+  dirty and Configuration_SetDefault() is called only at Hatari startup).
 
 
 When I profiled Hatari with Valgrind (valgrind.kde.org) Massif plugin,
-it tells that Hatari malloc()s about 3MB of memory. The allocations
-and how to make them smaller for embedded devices (no generic way
-unfortunately) are:
+it tells that Hatari does about 3MB of memory worth of dynamic
+allocations. The allocations and ways to make them smaller are:
 
 * In includes/vdi.h set MAX_VDI_WIDTH and MAX_VDI_HEIGHT from 1024 and
-  768 to 640 and 400 respectively. This decrease memory usage from 1.5MB
-  to 0.5MB (btw. for page flipping Allocation 2*2 framebuffers).
-  - Change list of VDI modes in Hatari dialog accordingly
+  768 to 640 and 400 respectively. This decreases memory usage from 1.5MB
+  to 0.5MB as Hatari allocates 2*2 framebuffers for page flipping in
+  Screen_Init().
+  - Change list of VDI modes in Hatari dialog accordingly!
 
 * Do not load bigfont in gui-sdl/sdlgui.c, especially if the device
   screen is smaller than VGA.  Both fonts together take about 1/3 MB.
@@ -47,8 +92,8 @@ unfortunately) are:
   On x86 it's slightly over 1MB.
 
 You can also Massif Hatari yourself, its allocation calltrees
-are very short, so it's easy to find these from the produced
-PostScript graph and txt/html calltree listing.
+are very short & the allocations are easy to find in the Hatari
+source code.
 
 
 From /proc/sysvipc/shm one can see how much shared memory Hatari/libSDL
@@ -57,52 +102,45 @@ has allocated and that it shares it with the X server:
 - ~200KB in lowrez with borders
 - ~500KB in monochrome or zoomed lowrez
 - >800KB in zoomed lowrez with borders
-I don't think these could be made smaller from the code. Besides
-user can just use a the smaller Hatari screen mode.
+
+I don't think these could be made smaller from the code. Besides,
+user can just use a the smaller Hatari screen mode in fullscreen and
+let the display scale it to fullscreen.
+
 
 According to Xrestop, Hatari doesn't keep any Pixmap resources
 at the X server side.
 
 
 Finally when looking at the Hatari process with "pmap", you can
-see that the binaries Hatari links don't use so much private
-(writable) memory:
-    map <Hatari PID>|grep /|grep w
+see that the libraries Hatari links don't use so much private
+(writable) memory, only couple of hundred KB:
+    pmap $(pidof hatari) | grep / | grep rw
 
-Rest of the 30MB Hatari VMSIZE you see in "top" (about 10MB), goes to
-shared library code (their .text sections with "r-x" rights) Hatari
-links.  That is memory mapped read-only / read in on-demand / pagable
-back to disk so it's not so much of a problem.
+To see how much from the memory pmap tells Hatari to have allocated is
+actually used/dirtied, take a peek at: /proc/$(pidof hatari/smaps.
+
+Of the rest of the 40MB Hatari VMSIZE you see in "top" (about 16MB),
+half is unused/clean 8MB memory (allocated by kernel for the SDL sound
+thread stack) and half goes to shared library code (their .text
+sections with "r-x" rights) that Hatari links against.  The libraries
+are most likely used also by other programs and even if they aren't,
+it's memory mapped read-only / read in on-demand pages & pagable back
+to disk so it's shouldn't be much of a problem either.
 
 
-Unmodified Hatari runs on (Linux) systems having about 20MB of free
-memory (e.g. according to /proc/meminfo free+buffers+cached fields).
+Unmodified Hatari runs on (Linux) systems having about 20MB of _free_
+memory (e.g. according to /proc/meminfo free+buffers+cached fields)
+and more RAM in total than the Hatari VMSIZE.
+
 Using low-rez without borders nor zooming, setting emulated ST memory
-amount to <=1MB, limiting the VDI screen size and removing bigfont
-(discussed with Massif findings above) should enable running Hatari
-well on a system with only 10MB free memory, if it's otherwise fast
-enough.
+amount to <=1MB, limiting the VDI screen size, disabling DSP and
+removing bigfont (discussed with Massif findings above) should enable
+running Hatari well on a system with only 10MB free memory, if it's
+otherwise fast enough.
 
 
 	- Eero Tamminen
 
-To see the objects in the binary BSS section, get the datadump script
-from here:
-     http://live.gnome.org/MemoryReduction_2fTools
-
-Compile Hatari without stripping, and use:
-     datadump.py -n -s .bss ./hatari
-
-As a result you see these array variables (larger ones):
-16777216 STRam hatari
-  321536 CyclePalettes hatari
-  262144 mem_banks hatari
-  262144 cpufunctbl hatari
-  131072 pInterceptWriteTable hatari
-  131072 pInterceptReadTable hatari
-   69632 InternalDTAs hatari
-   65536 EnvelopeShapeValues hatari
-   53588 DialogParams hatari
-   53588 ConfigureParams hatari
-   19976 FrameBuffers hatari
-   16384 ST2RGB hatari
+PS. Any device fast enough to run Hatari at reasonable speed
+should already have enough memory for it...
