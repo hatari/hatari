@@ -107,6 +107,7 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
     <li><a href="#IDE hard disk emulation">IDE hard disk emulation</a></li>
     <li><a href="#Accessing disk image partitions outside of Hatari">Accessing disk image partitions outside of Hatari</a></li>
   </ul>
+  <li><a href="#Performance measuring">Performance measuring</a>
   <li><a href="#Appendix">Appendix</a>
   <ul>
     <li><a href="#Copying">Copying</a>
@@ -1186,6 +1187,21 @@ Log output level (x=debug/todo/info/warn/error/fatal)
 Show dialog for log messages above given level
 </td>
 </table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;run-vbls &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Exit after X VBLs
+</td>
+</table>
 
 
 <p>Type <span class="commandline">hatari --help</span> to list all
@@ -2088,6 +2104,42 @@ the disk image from Hatari:
 # umount $mountdir
 # losetup -d $loop
 </pre>
+
+
+<a name="Performance measuring"></a><h2>Performance measuring</h2>
+
+<p>
+There are a couple of ways to monitor and measure Hatari performance.
+</p>
+<p>
+By default Hatari has Statusbar visible and automatic frameskip
+enabled. When Hatari has enough time that it can sleep a little each
+frame, the statusbar frame skip ("FS") value keeps at zero.  If Hatari
+is completely busy, it will increase to the maximum specified
+(automatic) frame skip value.
+</p>
+<p>
+Hatari has also a facility to measure FPS i.e. Frames Per Second
+(actually, how many VBLs it can achieve within a second).  Just enable
+the <span class="commandline">--fast-forward</span> option on command
+line (or use the corresponding keyboard shortcut), and after a while,
+press the "Pause" key.  Whenever Hatari emulation is paused, Hatari
+will show how many VBLs it could show per second along with some other
+numbers.  Note that the numbers can fluctuate quite a bit, so for
+(statistically) reliable numbers you need to do the measurement
+several times.
+</p>
+<p>
+For slightly more accurate measurements you could use also
+<span class="commandline">--run-vbls</span> option to specify how many
+VBLs Hatari should run in fast forward mode before it exits. It
+depends a bit what you want to measure, but usually it's best to give
+your test case as a memory snapshot that Hatari should load, disable
+sound and set the frame skip to the number of VBLs so that neither
+sound nor video overhead are included (video output can on some
+platforms do VSync which would limit Hatari speed to monitor refresh
+frequency).
+</p>
 
 
 <a name="Appendix"></a><h2>Appendix</h2>
