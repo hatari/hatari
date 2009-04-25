@@ -46,6 +46,7 @@
 
 extern bool bQuitProgram;
 extern bool bEnableDebug;
+extern Uint32 nRunVBLs;
 
 extern void Main_MemorySnapShot_Capture(bool bSave);
 extern bool Main_PauseEmulation(bool visualize);

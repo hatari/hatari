@@ -55,6 +55,10 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 bool bQuitProgram = FALSE;                /* Flag to quit program cleanly */
 bool bEnableDebug = FALSE;                /* Enable debug UI? */
 
+Uint32 nRunVBLs;                          /* Whether and how many VBLS to run before exit */
+static Uint32 nFirstMilliTick;            /* Ticks when VBL counting started */
+static Uint32 nVBLCount;                  /* Frame count */
+
 static bool bEmulationActive = TRUE;      /* Run emulation when started */
 static bool bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
 static bool bIgnoreNextMouseMotion = FALSE;  /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
@@ -102,6 +106,20 @@ bool Main_PauseEmulation(bool visualize)
 	bEmulationActive = FALSE;
 	if (visualize)
 	{
+		if (nFirstMilliTick)
+		{
+			int interval = SDL_GetTicks() - nFirstMilliTick;
+			static float previous;
+			float current;
+
+			current = (1000.0 * nVBLCount) / interval;
+			printf("SPEED: %.1f VBL/s (%d/%.1fs), diff=%.1f%%\n",
+			       current, nVBLCount, interval/1000.0,
+			       previous ? 100*(current-previous)/previous : 0.0);
+			nVBLCount = nFirstMilliTick = 0;
+			previous = current;
+		}
+		
 		Statusbar_AddMessage("Emulation paused", 100);
 		/* make sure msg gets shown */
 		Statusbar_Update(sdlscrn);
@@ -182,6 +200,18 @@ void Main_WaitOnVbl(void)
 	if (ConfigureParams.System.bFastForward == TRUE
 	        || nDelay < -4*nFrameDuration)
 	{
+		if (ConfigureParams.System.bFastForward == TRUE)
+		{
+			nVBLCount += 1;
+			if (!nFirstMilliTick)
+				nFirstMilliTick = SDL_GetTicks();
+			else if (nRunVBLs && nVBLCount >= nRunVBLs)
+			{
+				/* show VBLs/s */
+				Main_PauseEmulation(TRUE);
+				exit(0);
+			}
+		}
 		if (nFrameSkips < ConfigureParams.Screen.nFrameSkips)
 		{
 			nFrameSkips += 1;
