@@ -128,7 +128,7 @@ Uint16 DSP_GetPC(void)
 	return 0;
 }
 
-void DSP_Disasm_address(Uint16 lowerAdr, Uint16 UpperAdr)
+Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 {
 	Uint32 dsp_pc, save_curPC;
 	
@@ -138,8 +138,8 @@ void DSP_Disasm_address(Uint16 lowerAdr, Uint16 UpperAdr)
 		dsp_core.pc = dsp_pc;
 		dsp_pc += dsp56k_disasm() - 1;
 	}
-
 	dsp_core.pc = save_curPC;
+	return dsp_pc;
 }
 
 

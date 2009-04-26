@@ -35,7 +35,7 @@ extern void DSP_MemorySnapShot_Capture(bool bSave);
 
 extern void DSP_Reset(void);
 extern void DSP_Run(int nHostCycles);
-extern void DSP_Disasm_address(Uint16 lowerAdr, Uint16 UpperAdr);
+extern Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr);
 extern Uint16 DSP_GetPC(void);
 extern Uint32 DSP_SsiReadTxValue(void);
 extern void DSP_SsiReceiveSerialClock(void);

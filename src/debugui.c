@@ -264,7 +264,7 @@ static void DebugUI_DspRegSet(char *arg)
 
 /*-----------------------------------------------------------------------*/
 /**
- * DSP dissassemble - arg = starting address, or PC.
+ * DSP dissassemble - arg = starting address/range, or PC.
  */
 static void DebugUI_DspDisAsm(char *arg, bool cont)
 {
@@ -286,7 +286,6 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 				return;
 			case 0:
 				/* single value */
-				dsp_disasm_upper = 0xFFFF;
 				break;
 			case 1:
 				/* range */
@@ -309,16 +308,21 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 	else
 	{
 		/* continue */
-		if(!dsp_disasm_addr) {
+		if(!dsp_disasm_addr)
+		{
 			dsp_disasm_addr = DSP_GetPC();
 		}
-		dsp_disasm_upper = dsp_disasm_addr;
 	}
-
-	/* output a single block. */
-	DSP_Disasm_address(dsp_disasm_addr, dsp_disasm_upper);
-
-	/* TODO: dsp_disasm_addr = nextpc */
+	if (!dsp_disasm_upper)
+	{
+		if ( dsp_disasm_addr < (0xFFFF - 8))
+			dsp_disasm_upper = dsp_disasm_addr + 8;
+		else
+			dsp_disasm_upper = 0xFFFF;
+	}
+	printf("TODO: DSP disasm range %hx-%hx\n",
+	       dsp_disasm_addr, dsp_disasm_upper);
+	dsp_disasm_addr = DSP_DisasmAddress(dsp_disasm_addr, dsp_disasm_upper);
 }
 
 /*-----------------------------------------------------------------------*/
