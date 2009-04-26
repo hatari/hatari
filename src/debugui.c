@@ -316,7 +316,7 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 	}
 
 	/* output a single block. */
-	DSP_Disasm_addr(dsp_disasm_addr, dsp_disasm_upper);
+	DSP_Disasm_address(dsp_disasm_addr, dsp_disasm_upper);
 
 	/* TODO: dsp_disasm_addr = nextpc */
 }

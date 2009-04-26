@@ -27,6 +27,7 @@
 #include "ioMem.h"
 #include "dsp.h"
 #include "dsp_cpu.h"
+#include "dsp_disasm.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -125,6 +126,20 @@ Uint16 DSP_GetPC(void)
 	else
 #endif
 	return 0;
+}
+
+void DSP_Disasm_address(Uint16 lowerAdr, Uint16 UpperAdr)
+{
+	Uint32 dsp_pc, save_curPC;
+	
+	save_curPC = dsp_core.pc;
+
+	for (dsp_pc=lowerAdr; dsp_pc<=UpperAdr; dsp_pc++) {
+		dsp_core.pc = dsp_pc;
+		dsp56k_disasm();
+	}
+
+	dsp_core.pc = save_curPC;
 }
 
 

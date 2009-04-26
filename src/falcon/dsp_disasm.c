@@ -46,6 +46,7 @@
 
 /* Current instruction */
 static Uint32 cur_inst;
+static Uint32 disasm_cur_inst_len;
 
 /* Previous instruction */
 static Uint32 prev_inst_pc = 0x10000;	/* Init to an invalid value */
@@ -116,7 +117,7 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_A1:
 			case DSP_REG_B0:
 			case DSP_REG_B1:
-				fprintf(stderr,"Dsp: Reg: %s: 0x%06x -> 0x%06x\n", registers_name[i], registers_save[i] & BITMASK(24), dsp_core->registers[i]  & BITMASK(24));
+				fprintf(stderr," Reg: %s: 0x%06x -> 0x%06x\n", registers_name[i], registers_save[i] & BITMASK(24), dsp_core->registers[i]  & BITMASK(24));
 				break;
 			case DSP_REG_R0:
 			case DSP_REG_R1:
@@ -145,7 +146,7 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_SR:
 			case DSP_REG_LA:
 			case DSP_REG_LC:
-				fprintf(stderr,"Dsp: Reg: %s: 0x%04x -> 0x%04x\n", registers_name[i], registers_save[i] & BITMASK(16), dsp_core->registers[i]  & BITMASK(16));
+				fprintf(stderr," Reg: %s: 0x%04x -> 0x%04x\n", registers_name[i], registers_save[i] & BITMASK(16), dsp_core->registers[i]  & BITMASK(16));
 				break;
 			case DSP_REG_A2:
 			case DSP_REG_B2:
@@ -153,12 +154,12 @@ void dsp56k_disasm_reg_compare(void)
 			case DSP_REG_SP:
 			case DSP_REG_SSH:
 			case DSP_REG_SSL:
-				fprintf(stderr,"Dsp: Reg: %s: 0x%02x -> 0x%02x\n", registers_name[i], registers_save[i] & BITMASK(8), dsp_core->registers[i]  & BITMASK(8));
+				fprintf(stderr," Reg: %s: 0x%02x -> 0x%02x\n", registers_name[i], registers_save[i] & BITMASK(8), dsp_core->registers[i]  & BITMASK(8));
 				break;
 			case DSP_REG_A:
 			case DSP_REG_B:
 				{
-					fprintf(stderr,"Dsp: Reg: %s: 0x%02x:%06x:%06x -> 0x%02x:%06x:%06x\n",
+					fprintf(stderr," Reg: %s: 0x%02x:%06x:%06x -> 0x%02x:%06x:%06x\n",
 						registers_name[i],
 						registers_save[DSP_REG_A2+(i & 1)] & BITMASK(8),
 						registers_save[DSP_REG_A1+(i & 1)] & BITMASK(24),
@@ -173,7 +174,7 @@ void dsp56k_disasm_reg_compare(void)
 	}
 #if DSP_DISASM_REG_PC
 	if (pc_save != dsp_core->pc) {
-		fprintf(stderr,"Dsp: Reg: pc: 0x%04x -> 0x%04x\n", pc_save, dsp_core->pc);
+		fprintf(stderr," Reg: pc: 0x%04x -> 0x%04x\n", pc_save, dsp_core->pc);
 	}
 #endif
 }
@@ -541,7 +542,9 @@ void dsp56k_disasm(void)
 	prev_inst_pc = dsp_core->pc;
 
 	cur_inst = read_memory(dsp_core->pc);
+	disasm_cur_inst_len = 1;
 
+	fprintf(stderr, "Dsp: %06x  -  ", cur_inst);
 	strcpy(parallelmove_name, "");
 
 	if (cur_inst < 0x100000) {
@@ -636,6 +639,7 @@ static int dsp_calc_ea(Uint32 ea_mode, char *dest)
 			registers_changed[DSP_REG_R0+numreg]=1;
 			break;
 		case 6:
+			disasm_cur_inst_len++;
 			switch ((ea_mode >> 2) & 1) {
 				case 0:
 					/* Absolute address */
@@ -691,7 +695,7 @@ static void opcode8h_0(void)
 
 static void dsp_undefined(void)
 {
-	fprintf(stderr,"Dsp: 0x%04x: 0x%06x unknown instruction\n",dsp_core->pc, cur_inst);
+	fprintf(stderr," 0x%04x: 0x%06x unknown instruction\n",dsp_core->pc, cur_inst);
 }
 
 static void dsp_andi(void)
@@ -718,7 +722,7 @@ static void dsp_andi(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: andi #0x%02x,%s\n",
+	fprintf(stderr," 0x%04x: andi #0x%02x,%s\n",
 		dsp_core->pc,
 		(cur_inst>>8) & BITMASK(8),
 		regname
@@ -743,7 +747,7 @@ static void dsp_bchg_aa(void)
 	}
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: bchg #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: bchg #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_bchg_ea(void)
@@ -765,7 +769,7 @@ static void dsp_bchg_ea(void)
 	}
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: bchg #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: bchg #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_bchg_pp(void)
@@ -786,7 +790,7 @@ static void dsp_bchg_pp(void)
 	}
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: bchg #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: bchg #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_bchg_reg(void)
@@ -803,7 +807,7 @@ static void dsp_bchg_reg(void)
 	registers_changed[value]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: bchg #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: bchg #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_bclr_aa(void)
@@ -825,7 +829,7 @@ static void dsp_bclr_aa(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: bclr #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: bclr #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_bclr_ea(void)
@@ -848,7 +852,7 @@ static void dsp_bclr_ea(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: bclr #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: bclr #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_bclr_pp(void)
@@ -870,7 +874,7 @@ static void dsp_bclr_pp(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: bclr #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: bclr #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_bclr_reg(void)
@@ -888,7 +892,7 @@ static void dsp_bclr_reg(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: bclr #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: bclr #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_bset_aa(void)
@@ -910,7 +914,7 @@ static void dsp_bset_aa(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: bset #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: bset #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_bset_ea(void)
@@ -933,7 +937,7 @@ static void dsp_bset_ea(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: bset #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: bset #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_bset_pp(void)
@@ -955,7 +959,7 @@ static void dsp_bset_pp(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: bset #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: bset #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_bset_reg(void)
@@ -973,7 +977,7 @@ static void dsp_bset_reg(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: bset #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: bset #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_btst_aa(void)
@@ -995,7 +999,7 @@ static void dsp_btst_aa(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: btst #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: btst #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_btst_ea(void)
@@ -1018,7 +1022,7 @@ static void dsp_btst_ea(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: btst #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: btst #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_btst_pp(void)
@@ -1040,7 +1044,7 @@ static void dsp_btst_pp(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: btst #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: btst #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_btst_reg(void)
@@ -1058,7 +1062,7 @@ static void dsp_btst_reg(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: btst #%d,%s\n",dsp_core->pc, numbit, name);
+	fprintf(stderr," 0x%04x: btst #%d,%s\n",dsp_core->pc, numbit, name);
 }
 
 static void dsp_div(void)
@@ -1083,12 +1087,14 @@ static void dsp_div(void)
 	registers_changed[destreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: div %s,%s\n",dsp_core->pc, registers_name[srcreg],registers_name[destreg]);
+	fprintf(stderr," 0x%04x: div %s,%s\n",dsp_core->pc, registers_name[srcreg],registers_name[destreg]);
 }
 
 static void dsp_do_aa(void)
 {
 	char name[16];
+
+	disasm_cur_inst_len++;
 
 	if (cur_inst & (1<<6)) {
 		sprintf(name, "y:0x%04x", (cur_inst>>8) & BITMASK(6));
@@ -1096,7 +1102,7 @@ static void dsp_do_aa(void)
 		sprintf(name, "x:0x%04x", (cur_inst>>8) & BITMASK(6));
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: do %s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: do %s,p:0x%04x\n",
 		dsp_core->pc,
 		name,
 		read_memory(dsp_core->pc+1)
@@ -1107,7 +1113,9 @@ static void dsp_do_aa(void)
 
 static void dsp_do_imm(void)
 {
-	fprintf(stderr,"Dsp: 0x%04x: do #0x%04x,p:0x%04x\n",
+	disasm_cur_inst_len++;
+
+	fprintf(stderr," 0x%04x: do #0x%04x,p:0x%04x\n",
 		dsp_core->pc,
 		((cur_inst>>8) & BITMASK(8))|((cur_inst & BITMASK(4))<<8),
 		read_memory(dsp_core->pc+1)
@@ -1121,6 +1129,8 @@ static void dsp_do_ea(void)
 	char addr_name[16], name[16];
 	Uint32 ea_mode;
 	
+	disasm_cur_inst_len++;
+
 	ea_mode = (cur_inst>>8) & BITMASK(6);
 	dsp_calc_ea(ea_mode, addr_name);
 
@@ -1130,7 +1140,7 @@ static void dsp_do_ea(void)
 		sprintf(name, "x:%s", addr_name);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: do %s,p:0x%04x\n", 
+	fprintf(stderr," 0x%04x: do %s,p:0x%04x\n", 
 		dsp_core->pc,
 		name,
 		read_memory(dsp_core->pc+1)
@@ -1141,7 +1151,9 @@ static void dsp_do_ea(void)
 
 static void dsp_do_reg(void)
 {
-	fprintf(stderr,"Dsp: 0x%04x: do %s,p:0x%04x\n",
+	disasm_cur_inst_len++;
+
+	fprintf(stderr," 0x%04x: do %s,p:0x%04x\n",
 		dsp_core->pc,
 		registers_name[(cur_inst>>8) & BITMASK(6)],
 		read_memory(dsp_core->pc+1)
@@ -1152,12 +1164,12 @@ static void dsp_do_reg(void)
 
 static void dsp_enddo(void)
 {
-	fprintf(stderr,"Dsp: 0x%04x: enddo\n",dsp_core->pc);
+	fprintf(stderr," 0x%04x: enddo\n",dsp_core->pc);
 }
 
 static void dsp_illegal(void)
 {
-	fprintf(stderr,"Dsp: 0x%04x: illegal\n",dsp_core->pc);
+	fprintf(stderr," 0x%04x: illegal\n",dsp_core->pc);
 }
 
 static void dsp_jcc_ea(void)
@@ -1169,7 +1181,7 @@ static void dsp_jcc_ea(void)
 	cc_code=cur_inst & BITMASK(4);
 	dsp_calc_cc(cc_code, cond_name);	
 
-	fprintf(stderr,"Dsp: 0x%04x: j%s p:%s\n",dsp_core->pc, cond_name, addr_name);
+	fprintf(stderr," 0x%04x: j%s p:%s\n",dsp_core->pc, cond_name, addr_name);
 }
 
 static void dsp_jcc_imm(void)
@@ -1181,7 +1193,7 @@ static void dsp_jcc_imm(void)
 	cc_code=(cur_inst>>12) & BITMASK(4);
 	dsp_calc_cc(cc_code, cond_name);	
 
-	fprintf(stderr,"Dsp: 0x%04x: j%s p:%s\n",dsp_core->pc, cond_name, addr_name);
+	fprintf(stderr," 0x%04x: j%s p:%s\n",dsp_core->pc, cond_name, addr_name);
 }
 
 static void dsp_jclr_aa(void)
@@ -1191,6 +1203,8 @@ static void dsp_jclr_aa(void)
 	char srcname[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1201,7 +1215,7 @@ static void dsp_jclr_aa(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: jclr #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jclr #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1216,6 +1230,8 @@ static void dsp_jclr_ea(void)
 	char srcname[16], addr_name[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1227,7 +1243,7 @@ static void dsp_jclr_ea(void)
 		sprintf(srcname, "x:%s", addr_name);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: jclr #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jclr #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1242,6 +1258,8 @@ static void dsp_jclr_pp(void)
 	char srcname[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1253,7 +1271,7 @@ static void dsp_jclr_pp(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: jclr #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jclr #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1267,13 +1285,15 @@ static void dsp_jclr_reg(void)
 	char srcname[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
 	strcpy(srcname, registers_name[value]);
 
-	fprintf(stderr,"Dsp: 0x%04x: jclr #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jclr #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1287,7 +1307,7 @@ static void dsp_jmp_imm(void)
 
 	sprintf(dstname, "0x%04x", cur_inst & BITMASK(12));
 
-	fprintf(stderr,"Dsp: 0x%04x: jmp p:%s\n",dsp_core->pc, dstname);
+	fprintf(stderr," 0x%04x: jmp p:%s\n",dsp_core->pc, dstname);
 }
 
 static void dsp_jmp_ea(void)
@@ -1296,7 +1316,7 @@ static void dsp_jmp_ea(void)
 
 	dsp_calc_ea((cur_inst >>8) & BITMASK(6), dstname);
 
-	fprintf(stderr,"Dsp: 0x%04x: jmp p:%s\n",dsp_core->pc, dstname);
+	fprintf(stderr," 0x%04x: jmp p:%s\n",dsp_core->pc, dstname);
 }
 
 static void dsp_jscc_ea(void)
@@ -1308,7 +1328,7 @@ static void dsp_jscc_ea(void)
 	cc_code=cur_inst & BITMASK(4);
 	dsp_calc_cc(cc_code, cond_name);	
 
-	fprintf(stderr,"Dsp: 0x%04x: js%s p:%s\n",dsp_core->pc, cond_name, addr_name);
+	fprintf(stderr," 0x%04x: js%s p:%s\n",dsp_core->pc, cond_name, addr_name);
 }
 	
 static void dsp_jscc_imm(void)
@@ -1320,7 +1340,7 @@ static void dsp_jscc_imm(void)
 	cc_code=(cur_inst>>12) & BITMASK(4);
 	dsp_calc_cc(cc_code, cond_name);	
 
-	fprintf(stderr,"Dsp: 0x%04x: js%s p:%s\n",dsp_core->pc, cond_name, addr_name);
+	fprintf(stderr," 0x%04x: js%s p:%s\n",dsp_core->pc, cond_name, addr_name);
 }
 
 static void dsp_jsclr_aa(void)
@@ -1330,6 +1350,8 @@ static void dsp_jsclr_aa(void)
 	char srcname[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1340,7 +1362,7 @@ static void dsp_jsclr_aa(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: jsclr #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jsclr #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1355,6 +1377,8 @@ static void dsp_jsclr_ea(void)
 	char srcname[16], addr_name[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1366,7 +1390,7 @@ static void dsp_jsclr_ea(void)
 		sprintf(srcname, "x:%s", addr_name);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: jsclr #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jsclr #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1381,6 +1405,8 @@ static void dsp_jsclr_pp(void)
 	char srcname[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1392,7 +1418,7 @@ static void dsp_jsclr_pp(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: jsclr #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jsclr #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1406,13 +1432,15 @@ static void dsp_jsclr_reg(void)
 	char srcname[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
 	strcpy(srcname, registers_name[value]);
 
-	fprintf(stderr,"Dsp: 0x%04x: jsclr #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jsclr #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1427,6 +1455,8 @@ static void dsp_jset_aa(void)
 	char srcname[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1437,7 +1467,7 @@ static void dsp_jset_aa(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: jset #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jset #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1452,6 +1482,8 @@ static void dsp_jset_ea(void)
 	char srcname[16], addr_name[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1463,7 +1495,7 @@ static void dsp_jset_ea(void)
 		sprintf(srcname, "x:%s", addr_name);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: jset #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jset #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1478,6 +1510,8 @@ static void dsp_jset_pp(void)
 	char srcname[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1489,7 +1523,7 @@ static void dsp_jset_pp(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: jset #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jset #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1503,13 +1537,15 @@ static void dsp_jset_reg(void)
 	char srcname[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
 	strcpy(srcname, registers_name[value]);
 
-	fprintf(stderr,"Dsp: 0x%04x: jset #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jset #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1523,7 +1559,7 @@ static void dsp_jsr_imm(void)
 
 	sprintf(dstname, "0x%04x", cur_inst & BITMASK(12));
 
-	fprintf(stderr,"Dsp: 0x%04x: jsr p:%s\n",dsp_core->pc, dstname);
+	fprintf(stderr," 0x%04x: jsr p:%s\n",dsp_core->pc, dstname);
 }
 
 static void dsp_jsr_ea(void)
@@ -1532,7 +1568,7 @@ static void dsp_jsr_ea(void)
 
 	dsp_calc_ea((cur_inst>>8) & BITMASK(6),dstname);
 
-	fprintf(stderr,"Dsp: 0x%04x: jsr p:%s\n",dsp_core->pc, dstname);
+	fprintf(stderr," 0x%04x: jsr p:%s\n",dsp_core->pc, dstname);
 }
 
 static void dsp_jsset_aa(void)
@@ -1542,6 +1578,8 @@ static void dsp_jsset_aa(void)
 	char srcname[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1552,7 +1590,7 @@ static void dsp_jsset_aa(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: jsset #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jsset #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1567,6 +1605,8 @@ static void dsp_jsset_ea(void)
 	char srcname[16], addr_name[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1578,7 +1618,7 @@ static void dsp_jsset_ea(void)
 		sprintf(srcname, "x:%s", addr_name);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: jsset #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jsset #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1593,6 +1633,8 @@ static void dsp_jsset_pp(void)
 	char srcname[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
@@ -1604,7 +1646,7 @@ static void dsp_jsset_pp(void)
 		sprintf(srcname, "x:0x%04x", value);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: jsset #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jsset #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1618,13 +1660,15 @@ static void dsp_jsset_reg(void)
 	char srcname[16];
 	Uint32 memspace, value, numbit;
 	
+	disasm_cur_inst_len++;
+
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 
 	strcpy(srcname, registers_name[value]);
 
-	fprintf(stderr,"Dsp: 0x%04x: jsset #%d,%s,p:0x%04x\n",
+	fprintf(stderr," 0x%04x: jsset #%d,%s,p:0x%04x\n",
 		dsp_core->pc,
 		numbit,
 		srcname,
@@ -1640,7 +1684,7 @@ static void dsp_lua(void)
 	numreg = cur_inst & BITMASK(3);
 	registers_changed[DSP_REG_R0+numreg]=1;
 	
-	fprintf(stderr,"Dsp: 0x%04x: lua %s,r%d\n",dsp_core->pc, addr_name, numreg);
+	fprintf(stderr," 0x%04x: lua %s,r%d\n",dsp_core->pc, addr_name, numreg);
 }
 
 static void dsp_movec_reg(void)
@@ -1655,11 +1699,11 @@ static void dsp_movec_reg(void)
 
 	if (cur_inst & (1<<15)) {
 		/* Write D1 */
-		fprintf(stderr,"Dsp: 0x%04x: movec %s,%s\n",dsp_core->pc, registers_name[numreg2], registers_name[numreg1]);
+		fprintf(stderr," 0x%04x: movec %s,%s\n",dsp_core->pc, registers_name[numreg2], registers_name[numreg1]);
 		registers_changed[numreg1]=1;
 	} else {
 		/* Read S1 */
-		fprintf(stderr,"Dsp: 0x%04x: movec %s,%s\n",dsp_core->pc, registers_name[numreg1], registers_name[numreg2]);
+		fprintf(stderr," 0x%04x: movec %s,%s\n",dsp_core->pc, registers_name[numreg1], registers_name[numreg2]);
 		registers_changed[numreg2]=1;
 	}
 	registers_changed[DSP_REG_SR]=1;
@@ -1695,7 +1739,7 @@ static void dsp_movec_aa(void)
 		sprintf(dstname, "%s:0x%04x", spacename, addr);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: movec %s,%s\n",dsp_core->pc, srcname, dstname);
+	fprintf(stderr," 0x%04x: movec %s,%s\n",dsp_core->pc, srcname, dstname);
 	registers_changed[DSP_REG_SR]=1;
 }
 
@@ -1708,7 +1752,7 @@ static void dsp_movec_imm(void)
 	numreg = cur_inst & BITMASK(6);
 
 	registers_changed[numreg]=1;
-	fprintf(stderr,"Dsp: 0x%04x: movec #0x%02x,%s\n",dsp_core->pc, (cur_inst>>8) & BITMASK(8), registers_name[numreg]);
+	fprintf(stderr," 0x%04x: movec #0x%02x,%s\n",dsp_core->pc, (cur_inst>>8) & BITMASK(8), registers_name[numreg]);
 	registers_changed[DSP_REG_SR]=1;
 }
 
@@ -1750,7 +1794,7 @@ static void dsp_movec_ea(void)
 		sprintf(dstname, "%s:%s", spacename, addr_name);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: movec %s,%s\n",dsp_core->pc, srcname, dstname);
+	fprintf(stderr," 0x%04x: movec %s,%s\n",dsp_core->pc, srcname, dstname);
 	registers_changed[DSP_REG_SR]=1;
 }
 
@@ -1775,7 +1819,7 @@ static void dsp_movem_aa(void)
 	}
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: movem %s,%s\n",dsp_core->pc, srcname, dstname);
+	fprintf(stderr," 0x%04x: movem %s,%s\n",dsp_core->pc, srcname, dstname);
 }
 
 static void dsp_movem_ea(void)
@@ -1800,7 +1844,7 @@ static void dsp_movem_ea(void)
 	}
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: movem %s,%s\n",dsp_core->pc, srcname, dstname);
+	fprintf(stderr," 0x%04x: movem %s,%s\n",dsp_core->pc, srcname, dstname);
 }
 
 static void dsp_movep_0(void)
@@ -1840,7 +1884,7 @@ static void dsp_movep_0(void)
 		strcpy(dstname, registers_name[numreg]);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: movep %s,%s\n",dsp_core->pc, srcname, dstname);
+	fprintf(stderr," 0x%04x: movep %s,%s\n",dsp_core->pc, srcname, dstname);
 	registers_changed[DSP_REG_SR]=1;
 }
 
@@ -1880,7 +1924,7 @@ static void dsp_movep_1(void)
 		sprintf(dstname, "p:%s", name);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: movep %s,%s\n",dsp_core->pc, srcname, dstname);
+	fprintf(stderr," 0x%04x: movep %s,%s\n",dsp_core->pc, srcname, dstname);
 	registers_changed[DSP_REG_SR]=1;
 }
 
@@ -1940,13 +1984,13 @@ static void dsp_movep_23(void)
 		}
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: movep %s,%s\n",dsp_core->pc, srcname, dstname);
+	fprintf(stderr," 0x%04x: movep %s,%s\n",dsp_core->pc, srcname, dstname);
 	registers_changed[DSP_REG_SR]=1;
 }
 
 static void dsp_nop(void)
 {
-	fprintf(stderr,"Dsp: 0x%04x: nop\n",dsp_core->pc);
+	fprintf(stderr," 0x%04x: nop\n",dsp_core->pc);
 }
 
 static void dsp_norm(void)
@@ -1960,7 +2004,7 @@ static void dsp_norm(void)
 	registers_changed[destreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: norm %s,%s\n",dsp_core->pc, registers_name[srcreg], registers_name[destreg]);
+	fprintf(stderr," 0x%04x: norm %s,%s\n",dsp_core->pc, registers_name[srcreg], registers_name[destreg]);
 }
 
 static void dsp_ori(void)
@@ -1987,7 +2031,7 @@ static void dsp_ori(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: ori #0x%02x,%s\n",
+	fprintf(stderr," 0x%04x: ori #0x%02x,%s\n",
 		dsp_core->pc,
 		(cur_inst>>8) & BITMASK(8),
 		regname
@@ -2007,7 +2051,7 @@ static void dsp_rep_aa(void)
 		sprintf(name, "x:0x%04x",(cur_inst>>8) & BITMASK(6));
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: rep %s\n",dsp_core->pc, name);
+	fprintf(stderr," 0x%04x: rep %s\n",dsp_core->pc, name);
 	registers_changed[DSP_REG_LC]=1;
 	registers_changed[DSP_REG_SR]=1;
 }
@@ -2015,7 +2059,7 @@ static void dsp_rep_aa(void)
 static void dsp_rep_imm(void)
 {
 	/* #xxx */
-	fprintf(stderr,"Dsp: 0x%04x: rep #0x%02x\n",dsp_core->pc, ((cur_inst>>8) & BITMASK(8))
+	fprintf(stderr," 0x%04x: rep #0x%02x\n",dsp_core->pc, ((cur_inst>>8) & BITMASK(8))
 		+ ((cur_inst & BITMASK(4))<<8));
 	registers_changed[DSP_REG_LC]=1;
 	registers_changed[DSP_REG_SR]=1;
@@ -2035,7 +2079,7 @@ static void dsp_rep_ea(void)
 		sprintf(name, "x:%s",addr_name);
 	}
 
-	fprintf(stderr,"Dsp: 0x%04x: rep %s\n",dsp_core->pc, name);
+	fprintf(stderr," 0x%04x: rep %s\n",dsp_core->pc, name);
 	registers_changed[DSP_REG_LC]=1;
 	registers_changed[DSP_REG_SR]=1;
 }
@@ -2044,36 +2088,36 @@ static void dsp_rep_reg(void)
 {
 	/* R */
 
-	fprintf(stderr,"Dsp: 0x%04x: rep %s\n",dsp_core->pc, registers_name[(cur_inst>>8) & BITMASK(6)]);
+	fprintf(stderr," 0x%04x: rep %s\n",dsp_core->pc, registers_name[(cur_inst>>8) & BITMASK(6)]);
 	registers_changed[DSP_REG_LC]=1;
 	registers_changed[DSP_REG_SR]=1;
 }
 
 static void dsp_reset(void)
 {
-	fprintf(stderr,"Dsp: 0x%04x: reset\n",dsp_core->pc);
+	fprintf(stderr," 0x%04x: reset\n",dsp_core->pc);
 }
 
 static void dsp_rti(void)
 {
 	registers_changed[DSP_REG_SR]=1;
-	fprintf(stderr,"Dsp: 0x%04x: rti\n",dsp_core->pc);
+	fprintf(stderr," 0x%04x: rti\n",dsp_core->pc);
 }
 
 static void dsp_rts(void)
 {
 	registers_changed[DSP_REG_SR]=1;
-	fprintf(stderr,"Dsp: 0x%04x: rts\n",dsp_core->pc);
+	fprintf(stderr," 0x%04x: rts\n",dsp_core->pc);
 }
 
 static void dsp_stop(void)
 {
-	fprintf(stderr,"Dsp: 0x%04x: stop\n",dsp_core->pc);
+	fprintf(stderr," 0x%04x: stop\n",dsp_core->pc);
 }
 	
 static void dsp_swi(void)
 {
-	fprintf(stderr,"Dsp: 0x%04x: swi\n",dsp_core->pc);
+	fprintf(stderr," 0x%04x: swi\n",dsp_core->pc);
 }
 
 static void dsp_tcc(void)
@@ -2091,7 +2135,7 @@ static void dsp_tcc(void)
 		dst2reg = DSP_REG_R0+((cur_inst>>8) & BITMASK(3));
 
 		registers_changed[dst2reg]=1;
-		fprintf(stderr,"Dsp: 0x%04x: t%s %s,%s %s,%s\n",
+		fprintf(stderr," 0x%04x: t%s %s,%s %s,%s\n",
 			dsp_core->pc,
 			ccname,
 			registers_name[src1reg],
@@ -2100,7 +2144,7 @@ static void dsp_tcc(void)
 			registers_name[dst2reg]
 		);
 	} else {
-		fprintf(stderr,"Dsp: 0x%04x: t%s %s,%s\n",
+		fprintf(stderr," 0x%04x: t%s %s,%s\n",
 			dsp_core->pc,
 			ccname,
 			registers_name[src1reg],
@@ -2111,7 +2155,7 @@ static void dsp_tcc(void)
 
 static void dsp_wait(void)
 {
-	fprintf(stderr,"Dsp: 0x%04x: wait\n",dsp_core->pc);
+	fprintf(stderr," 0x%04x: wait\n",dsp_core->pc);
 }
 
 /**********************************
@@ -2496,7 +2540,7 @@ static void dsp_abs(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: abs %s %s\n",
+	fprintf(stderr," 0x%04x: abs %s %s\n",
 		dsp_core->pc,
 		registers_name[numreg],
 		parallelmove_name
@@ -2518,7 +2562,7 @@ static void dsp_adc(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: adc %s,%s %s\n",
+	fprintf(stderr," 0x%04x: adc %s,%s %s\n",
 		dsp_core->pc,
 		srcname,
 		registers_name[numreg],
@@ -2565,7 +2609,7 @@ static void dsp_add(void)
 	registers_changed[DSP_REG_A+dstreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: add %s,%s %s\n",
+	fprintf(stderr," 0x%04x: add %s,%s %s\n",
 		dsp_core->pc,
 		srcname,
 		registers_name[DSP_REG_A+dstreg],
@@ -2582,7 +2626,7 @@ static void dsp_addl(void)
 	registers_changed[DSP_REG_A+numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: addl %s,%s %s\n",
+	fprintf(stderr," 0x%04x: addl %s,%s %s\n",
 		dsp_core->pc,
 		registers_name[DSP_REG_A+(numreg ^ 1)],
 		registers_name[DSP_REG_A+numreg],
@@ -2599,7 +2643,7 @@ static void dsp_addr(void)
 	registers_changed[DSP_REG_A+numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: addr %s,%s %s\n",
+	fprintf(stderr," 0x%04x: addr %s,%s %s\n",
 		dsp_core->pc,
 		registers_name[DSP_REG_A+(numreg ^ 1)],
 		registers_name[DSP_REG_A+numreg],
@@ -2630,7 +2674,7 @@ static void dsp_and(void)
 	registers_changed[dstreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: and %s,%s %s\n",
+	fprintf(stderr," 0x%04x: and %s,%s %s\n",
 		dsp_core->pc,
 		registers_name[srcreg],
 		registers_name[dstreg],
@@ -2647,7 +2691,7 @@ static void dsp_asl(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: asl %s %s\n",
+	fprintf(stderr," 0x%04x: asl %s %s\n",
 		dsp_core->pc,
 		registers_name[numreg],
 		parallelmove_name
@@ -2663,7 +2707,7 @@ static void dsp_asr(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: asr %s %s\n",
+	fprintf(stderr," 0x%04x: asr %s %s\n",
 		dsp_core->pc,
 		registers_name[numreg],
 		parallelmove_name
@@ -2679,7 +2723,7 @@ static void dsp_clr(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: clr %s %s\n",
+	fprintf(stderr," 0x%04x: clr %s %s\n",
 		dsp_core->pc,
 		registers_name[numreg],
 		parallelmove_name
@@ -2713,7 +2757,7 @@ static void dsp_cmp(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: cmp %s,%s %s\n",
+	fprintf(stderr," 0x%04x: cmp %s,%s %s\n",
 		dsp_core->pc,
 		registers_name[srcreg],
 		registers_name[DSP_REG_A+dstreg],
@@ -2748,7 +2792,7 @@ static void dsp_cmpm(void)
 
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: cmpm %s,%s %s\n",
+	fprintf(stderr," 0x%04x: cmpm %s,%s %s\n",
 		dsp_core->pc,
 		registers_name[srcreg],
 		registers_name[DSP_REG_A+dstreg],
@@ -2779,7 +2823,7 @@ static void dsp_eor(void)
 	registers_changed[dstreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: eor %s,%s %s\n",
+	fprintf(stderr," 0x%04x: eor %s,%s %s\n",
 		dsp_core->pc,
 		registers_name[srcreg],
 		registers_name[dstreg],
@@ -2796,7 +2840,7 @@ static void dsp_lsl(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: lsl %s %s\n",
+	fprintf(stderr," 0x%04x: lsl %s %s\n",
 		dsp_core->pc,
 		registers_name[numreg],
 		parallelmove_name
@@ -2812,7 +2856,7 @@ static void dsp_lsr(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: lsr %s %s\n",
+	fprintf(stderr," 0x%04x: lsr %s %s\n",
 		dsp_core->pc,
 		registers_name[numreg],
 		parallelmove_name
@@ -2869,7 +2913,7 @@ static void dsp_mac(void)
 	registers_changed[DSP_REG_A+dstreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: mac %s%s,%s,%s %s\n",
+	fprintf(stderr," 0x%04x: mac %s%s,%s,%s %s\n",
 		dsp_core->pc,
 		sign_name,
 		registers_name[src1reg],
@@ -2929,7 +2973,7 @@ static void dsp_macr(void)
 	registers_changed[DSP_REG_A+dstreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: macr %s%s,%s,%s %s\n",
+	fprintf(stderr," 0x%04x: macr %s%s,%s,%s %s\n",
 		dsp_core->pc,
 		sign_name,
 		registers_name[src1reg],
@@ -2941,7 +2985,7 @@ static void dsp_macr(void)
 
 static void dsp_move(void)
 {
-	fprintf(stderr,"Dsp: 0x%04x: move %s\n",dsp_core->pc, parallelmove_name);
+	fprintf(stderr," 0x%04x: move %s\n",dsp_core->pc, parallelmove_name);
 }
 
 static void dsp_mpy(void)
@@ -2994,7 +3038,7 @@ static void dsp_mpy(void)
 	registers_changed[DSP_REG_A+dstreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: mpy %s%s,%s,%s %s\n",
+	fprintf(stderr," 0x%04x: mpy %s%s,%s,%s %s\n",
 		dsp_core->pc,
 		sign_name,
 		registers_name[src1reg],
@@ -3054,7 +3098,7 @@ static void dsp_mpyr(void)
 	registers_changed[DSP_REG_A+dstreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: mpyr %s%s,%s,%s %s\n",
+	fprintf(stderr," 0x%04x: mpyr %s%s,%s,%s %s\n",
 		dsp_core->pc,
 		sign_name,
 		registers_name[src1reg],
@@ -3073,7 +3117,7 @@ static void dsp_neg(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: neg %s %s\n",
+	fprintf(stderr," 0x%04x: neg %s %s\n",
 		dsp_core->pc,
 		registers_name[numreg],
 		parallelmove_name
@@ -3089,7 +3133,7 @@ static void dsp_not(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: not %s %s\n",
+	fprintf(stderr," 0x%04x: not %s %s\n",
 		dsp_core->pc,
 		registers_name[numreg],
 		parallelmove_name
@@ -3119,7 +3163,7 @@ static void dsp_or(void)
 	registers_changed[dstreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: or %s,%s %s\n",
+	fprintf(stderr," 0x%04x: or %s,%s %s\n",
 		dsp_core->pc,
 		registers_name[srcreg],
 		registers_name[dstreg],
@@ -3136,7 +3180,7 @@ static void dsp_rnd(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: rnd %s %s\n",
+	fprintf(stderr," 0x%04x: rnd %s %s\n",
 		dsp_core->pc,
 		registers_name[numreg],
 		parallelmove_name
@@ -3152,7 +3196,7 @@ static void dsp_rol(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: rol %s %s\n",
+	fprintf(stderr," 0x%04x: rol %s %s\n",
 		dsp_core->pc,
 		registers_name[numreg],
 		parallelmove_name
@@ -3168,7 +3212,7 @@ static void dsp_ror(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: ror %s %s\n",
+	fprintf(stderr," 0x%04x: ror %s %s\n",
 		dsp_core->pc,
 		registers_name[numreg],
 		parallelmove_name
@@ -3191,7 +3235,7 @@ static void dsp_sbc(void)
 	registers_changed[numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: sbc %s,%s %s\n",
+	fprintf(stderr," 0x%04x: sbc %s,%s %s\n",
 		dsp_core->pc,
 		srcname,
 		registers_name[numreg],
@@ -3238,7 +3282,7 @@ static void dsp_sub(void)
 	registers_changed[DSP_REG_A+dstreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: sub %s,%s %s\n",
+	fprintf(stderr," 0x%04x: sub %s,%s %s\n",
 		dsp_core->pc,
 		srcname,
 		registers_name[DSP_REG_A+dstreg],
@@ -3255,7 +3299,7 @@ static void dsp_subl(void)
 	registers_changed[DSP_REG_A+numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: subl %s,%s %s\n",
+	fprintf(stderr," 0x%04x: subl %s,%s %s\n",
 		dsp_core->pc,
 		registers_name[DSP_REG_A+(numreg ^ 1)],
 		registers_name[DSP_REG_A+numreg],
@@ -3272,7 +3316,7 @@ static void dsp_subr(void)
 	registers_changed[DSP_REG_A+numreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: subr %s,%s %s\n",
+	fprintf(stderr," 0x%04x: subr %s,%s %s\n",
 		dsp_core->pc,
 		registers_name[DSP_REG_A+(numreg ^ 1)],
 		registers_name[DSP_REG_A+numreg],
@@ -3309,7 +3353,7 @@ static void dsp_tfr(void)
 	registers_changed[DSP_REG_A+dstreg]=1;
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: tfr %s,%s %s\n",
+	fprintf(stderr," 0x%04x: tfr %s,%s %s\n",
 		dsp_core->pc,
 		registers_name[srcreg],
 		registers_name[DSP_REG_A+dstreg],
@@ -3321,7 +3365,7 @@ static void dsp_tst(void)
 {
 	registers_changed[DSP_REG_SR]=1;
 
-	fprintf(stderr,"Dsp: 0x%04x: tst %s %s\n",
+	fprintf(stderr," 0x%04x: tst %s %s\n",
 		dsp_core->pc,
 		registers_name[DSP_REG_A+((cur_inst>>3) & 1)],
 		parallelmove_name
