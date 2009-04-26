@@ -281,22 +281,24 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 	{
 		switch (parseRange(arg, &lower, &upper))
 		{
-		case -1:
-			/* invalid value(s) */
-			return;
-		case 0:
-			/* single value */
-			break;
-		case 1:
-			/* range */
-			if (upper > 0xFFFF)
-			{
-				fprintf(stderr,"Invalid address '%lx'!\n", upper);
+			case -1:
+				/* invalid value(s) */
 				return;
-			}
-			dsp_disasm_upper = upper;
-			break;
+			case 0:
+				/* single value */
+				dsp_disasm_upper = 0xFFFF;
+				break;
+			case 1:
+				/* range */
+				if (upper > 0xFFFF)
+				{
+					fprintf(stderr,"Invalid address '%lx'!\n", upper);
+					return;
+				}
+				dsp_disasm_upper = upper;
+				break;
 		}
+
 		if (lower > 0xFFFF)
 		{
 			fprintf(stderr,"Invalid address '%lx'!\n", lower);
@@ -307,20 +309,15 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 	else
 	{
 		/* continue */
-		if(!dsp_disasm_addr)
+		if(!dsp_disasm_addr) {
 			dsp_disasm_addr = DSP_GetPC();
+		}
+		dsp_disasm_upper = dsp_disasm_addr;
 	}
 
 	/* output a single block. */
-	if (!dsp_disasm_upper)
-	{
-		printf("TODO: DSP disasm from %hx\n", dsp_disasm_addr);
-	}
-	else
-	{
-		printf("TODO: DSP disasm range %hx-%hx\n",
-		       dsp_disasm_addr, dsp_disasm_upper);
-	}
+	DSP_Disasm_addr(dsp_disasm_addr, dsp_disasm_upper);
+
 	/* TODO: dsp_disasm_addr = nextpc */
 }
 
