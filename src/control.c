@@ -518,7 +518,8 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 			fprintf(stderr, "New %dx%d SDL window with ID: %lx\n",
 				width, height, sdl_win);
 			sprintf(buffer, "%dx%d", width, height);
-			write(ControlSocket, buffer, strlen(buffer));
+			if (write(ControlSocket, buffer, strlen(buffer)) < 0)
+				perror("Control_ReparentWindow write");
 		}
 	}
 	info.info.x11.unlock_func();
