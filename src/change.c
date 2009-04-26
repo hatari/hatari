@@ -152,7 +152,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	}
 
 	/* Did stop sound? Or change playback Hz. If so, also stop sound recording */
-	if (!changed->Sound.bEnableSound || changed->Sound.nPlaybackQuality != current->Sound.nPlaybackQuality)
+	if (!changed->Sound.bEnableSound || changed->Sound.nPlaybackFreq != current->Sound.nPlaybackFreq)
 	{
 		if (Sound_AreWeRecording())
 			Sound_EndRecording();

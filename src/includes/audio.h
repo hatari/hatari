@@ -8,17 +8,8 @@
 #ifndef HATARI_AUDIO_H
 #define HATARI_AUDIO_H
 
-/* Frequency index */
-enum
-{
-  FREQ_11Khz,
-  FREQ_22Khz,
-  FREQ_44Khz
-};
-
-extern const int SoundPlayBackFrequencies[];
+extern int nAudioFrequency;
 extern bool bSoundWorking;
-extern int OutputAudioFreqIndex;
 extern int SoundBufferSize;
 extern int CompleteSndBufIdx;
 

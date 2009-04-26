@@ -84,7 +84,7 @@ bool WAVFormat_OpenFile(char *pszWavFileName)
 	nWavOutputBytes = 0;
 
 	/* Set frequency (11Khz, 22Khz or 44Khz) */
-	nSampleFreq = SoundPlayBackFrequencies[ConfigureParams.Sound.nPlaybackQuality];
+	nSampleFreq = ConfigureParams.Sound.nPlaybackFreq;
 	/* multiply by 4 for 16 bit stereo */
 	nBytesPerSec = nSampleFreq * 4;
 

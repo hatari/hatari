@@ -221,7 +221,7 @@ static const struct Config_Tag configs_ShortCutWithoutMod[] =
 static const struct Config_Tag configs_Sound[] =
 {
 	{ "bEnableSound", Bool_Tag, &ConfigureParams.Sound.bEnableSound },
-	{ "nPlaybackQuality", Int_Tag, &ConfigureParams.Sound.nPlaybackQuality },
+	{ "nPlaybackFreq", Int_Tag, &ConfigureParams.Sound.nPlaybackFreq },
 	{ "szYMCaptureFileName", String_Tag, ConfigureParams.Sound.szYMCaptureFileName },
 	{ NULL , Error_Tag, NULL }
 };
@@ -460,7 +460,7 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableSound = TRUE;
-	ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
+	ConfigureParams.Sound.nPlaybackFreq = 44100;
 	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s%chatari.wav",
 	        psWorkingDir, PATHSEP);
 
@@ -526,7 +526,7 @@ void Configuration_Apply(bool bReset)
 	/* Set playback frequency */
 	if (ConfigureParams.Sound.bEnableSound)
 	{
-		Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackQuality);
+		Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackFreq);
 	}
 	/* CPU settings */
 	if (ConfigureParams.System.nCpuFreq < 12)

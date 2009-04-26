@@ -28,17 +28,10 @@ typedef struct
 
 
 /* Sound configuration */
-typedef enum
-{
-  PLAYBACK_LOW,
-  PLAYBACK_MEDIUM,
-  PLAYBACK_HIGH
-} SOUND_QUALITY;
-
 typedef struct
 {
   bool bEnableSound;
-  SOUND_QUALITY nPlaybackQuality;
+  int nPlaybackFreq;
   char szYMCaptureFileName[FILENAME_MAX];
 } CNF_SOUND;
 

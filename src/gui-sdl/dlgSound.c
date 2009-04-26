@@ -69,9 +69,9 @@ void Dialog_SoundDlg(void)
 	sounddlg[DLGSOUND_LOW].state &= ~SG_SELECTED;
 	sounddlg[DLGSOUND_MEDIUM].state &= ~SG_SELECTED;
 	sounddlg[DLGSOUND_HIGH].state &= ~SG_SELECTED;
-	if (ConfigureParams.Sound.nPlaybackQuality == PLAYBACK_LOW)
+	if (ConfigureParams.Sound.nPlaybackFreq <= 11025)
 		sounddlg[DLGSOUND_LOW].state |= SG_SELECTED;
-	else if (ConfigureParams.Sound.nPlaybackQuality == PLAYBACK_MEDIUM)
+	else if (ConfigureParams.Sound.nPlaybackFreq <= 22050)
 		sounddlg[DLGSOUND_MEDIUM].state |= SG_SELECTED;
 	else
 		sounddlg[DLGSOUND_HIGH].state |= SG_SELECTED;
@@ -120,9 +120,9 @@ void Dialog_SoundDlg(void)
 	/* Read values from dialog */
 	ConfigureParams.Sound.bEnableSound = (sounddlg[DLGSOUND_ENABLE].state & SG_SELECTED);
 	if (sounddlg[DLGSOUND_LOW].state & SG_SELECTED)
-		ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_LOW;
+		ConfigureParams.Sound.nPlaybackFreq = 11025;
 	else if (sounddlg[DLGSOUND_MEDIUM].state & SG_SELECTED)
-		ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
+		ConfigureParams.Sound.nPlaybackFreq = 22050;
 	else
-		ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
+		ConfigureParams.Sound.nPlaybackFreq = 44100;
 }

@@ -1120,17 +1120,17 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			}
 			else if (strcasecmp(argv[i], "low") == 0)
 			{
-				ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_LOW;
+				ConfigureParams.Sound.nPlaybackFreq = 11025;
 				ConfigureParams.Sound.bEnableSound = TRUE;
 			}
 			else if (strcasecmp(argv[i], "med") == 0)
 			{
-				ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
+				ConfigureParams.Sound.nPlaybackFreq = 22050;
 				ConfigureParams.Sound.bEnableSound = TRUE;
 			}
 			else if (strcasecmp(argv[i], "hi") == 0)
 			{
-				ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
+				ConfigureParams.Sound.nPlaybackFreq = 44100;
 				ConfigureParams.Sound.bEnableSound = TRUE;
 			}
 			else

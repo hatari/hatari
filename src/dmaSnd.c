@@ -210,7 +210,7 @@ static void DmaSnd_GenerateDspSamples(int nMixBufIdx, int nSamplesToGenerate)
 	int i;
 	int nBufIdx;
 
-	FreqRatio = DmaSnd_DetectSampleRate() / (double)SoundPlayBackFrequencies[OutputAudioFreqIndex];
+	FreqRatio = DmaSnd_DetectSampleRate() / (double)nAudioFrequency;
 	FreqRatio *= 2.0;  /* Stereo */
 
 	fDspBufSamples = (double)nDspBufSamples;
@@ -259,7 +259,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		return;
 
 	pFrameStart = (Sint8 *)&STRam[nFrameStartAddr];
-	FreqRatio = DmaSnd_DetectSampleRate() / (double)SoundPlayBackFrequencies[OutputAudioFreqIndex];
+	FreqRatio = DmaSnd_DetectSampleRate() / (double)nAudioFrequency;
 
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON
 	    && (nDmaSoundMode & DMASNDMODE_16BITSTEREO))
