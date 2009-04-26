@@ -532,12 +532,12 @@ static const char *cc_name[16]={
 
 static char parallelmove_name[64];
 
-void dsp56k_disasm(void)
+Uint16 dsp56k_disasm(void)
 {
 	Uint32 value;
 
 	if (prev_inst_pc == dsp_core->pc){
-		return;
+		return 0;
 	}
 	prev_inst_pc = dsp_core->pc;
 
@@ -556,6 +556,8 @@ void dsp56k_disasm(void)
 		value = cur_inst & BITMASK(8);
 		opcodes_alu[value]();
 	}
+
+	return disasm_cur_inst_len;
 }
 
 static void dsp_pm_class2(void) {

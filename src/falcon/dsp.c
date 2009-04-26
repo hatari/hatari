@@ -136,7 +136,7 @@ void DSP_Disasm_address(Uint16 lowerAdr, Uint16 UpperAdr)
 
 	for (dsp_pc=lowerAdr; dsp_pc<=UpperAdr; dsp_pc++) {
 		dsp_core.pc = dsp_pc;
-		dsp56k_disasm();
+		dsp_pc += dsp56k_disasm() - 1;
 	}
 
 	dsp_core.pc = save_curPC;
