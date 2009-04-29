@@ -40,7 +40,7 @@
 /* More disasm infos, if wanted */
 #define DSP_DISASM_HOSTREAD 0	/* Dsp->Host transfer */
 #define DSP_DISASM_HOSTWRITE 0	/* Host->Dsp transfer */
-#define DSP_DISASM_HOSTCVR 1	/* Host command */
+#define DSP_DISASM_HOSTCVR 0	/* Host command */
 #define DSP_DISASM_STATE 0	/* State changes */
 
 

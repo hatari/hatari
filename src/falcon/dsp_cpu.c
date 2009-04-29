@@ -1134,25 +1134,25 @@ static void dsp_stack_push(Uint32 curpc, Uint32 cursr)
 
 	if ((stack_error==0) && (stack & (1<<DSP_SP_SE))) {
 		/* Stack full, raise interrupt */
-		dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR);
+/*		dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR); */
 		fprintf(stderr,"Dsp: Stack Overflow\n");
 	}
 	
-	dsp_core->registers[DSP_REG_SP] = underflow | stack_error | stack;
+	dsp_core->registers[DSP_REG_SP] = (underflow | stack_error | stack) & BITMASK(6);
 	stack &= BITMASK(4);
 
-	if (stack) {
-		dsp_core->registers[DSP_REG_SSH] = curpc;
+/*	if (stack) {
+*/		dsp_core->registers[DSP_REG_SSH] = curpc;
 		dsp_core->registers[DSP_REG_SSL] = cursr;
 		dsp_core->stack[0][stack]=curpc;
 		dsp_core->stack[1][stack]=cursr;
-	} else {
+/*	} else {
 		dsp_core->registers[DSP_REG_SSH] = 0;
 		dsp_core->registers[DSP_REG_SSL] = 0;
 		dsp_core->stack[0][0]=0;
 		dsp_core->stack[1][0]=0;
 	}
-}
+*/}
 
 static void dsp_stack_pop(Uint32 *newpc, Uint32 *newsr)
 {
@@ -1164,23 +1164,23 @@ static void dsp_stack_pop(Uint32 *newpc, Uint32 *newsr)
 
 	if ((stack_error==0) && (stack & (1<<DSP_SP_SE))) {
 		/* Stack empty*/
-		dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR);
+/*		dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR); */
 		fprintf(stderr,"Dsp: Stack underflow\n");
 	}
 
-	dsp_core->registers[DSP_REG_SP] = underflow | stack_error | stack;
+	dsp_core->registers[DSP_REG_SP] = (underflow | stack_error | stack) & BITMASK(6);
 	stack &= BITMASK(4);
 	*newpc = dsp_core->registers[DSP_REG_SSH];
 	*newsr = dsp_core->registers[DSP_REG_SSL];
 
-	if (stack) {
-		dsp_core->registers[DSP_REG_SSH] = dsp_core->stack[0][stack];
+/*	if (stack) {
+*/		dsp_core->registers[DSP_REG_SSH] = dsp_core->stack[0][stack];
 		dsp_core->registers[DSP_REG_SSL] = dsp_core->stack[1][stack];
-	} else {
+/*	} else {
 		dsp_core->registers[DSP_REG_SSH] = 0;
 		dsp_core->registers[DSP_REG_SSL] = 0;
 	}
-}
+*/}
 
 static void dsp_compute_ssh_ssl(void)
 {
