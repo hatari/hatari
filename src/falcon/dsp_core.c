@@ -40,6 +40,7 @@
 /* More disasm infos, if wanted */
 #define DSP_DISASM_HOSTREAD 0	/* Dsp->Host transfer */
 #define DSP_DISASM_HOSTWRITE 0	/* Host->Dsp transfer */
+#define DSP_DISASM_HOSTCVR 1	/* Host command */
 #define DSP_DISASM_STATE 0	/* State changes */
 
 
@@ -455,7 +456,7 @@ Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr)
 		/* Clear RXDF bit to say that CPU has read */
 		dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
 		dsp_core_hostport_update_hreq(dsp_core);
-#if DSP_DISASM_HOSTWRITE
+#if DSP_DISASM_HOSTREAD
 		fprintf(stderr, "Dsp: (D->H): Host RXDF=0\n");
 #endif
 	}
@@ -487,6 +488,9 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 			else{
 				dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff - (1<<DSP_HOST_HSR_HCP);
 			}
+#if DSP_DISASM_HOSTCVR
+		fprintf(stderr, "Dsp: (D->H): Host command = %06x\n", value & 0x9f);
+#endif
 			break;
 		case CPU_HOST_ISR:
 		case CPU_HOST_TRX0:
@@ -527,7 +531,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 					dsp_core->dsp_host_rtx = dsp_core->hostport[CPU_HOST_TXL];
 					dsp_core->dsp_host_rtx |= dsp_core->hostport[CPU_HOST_TXM]<<8;
 					dsp_core->dsp_host_rtx |= dsp_core->hostport[CPU_HOST_TXH]<<16;
-#if DSP_DISASM_HOSTREAD
+#if DSP_DISASM_HOSTWRITE
 					fprintf(stderr, "Dsp: (H->D): Direct Transfer 0x%06x\n", dsp_core->dsp_host_rtx);
 #endif
 
@@ -538,7 +542,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 					if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) {
 						dsp_core_add_interrupt(dsp_core, DSP_INTER_HOST_RCV_DATA);
 					}
-#if DSP_DISASM_HOSTREAD
+#if DSP_DISASM_HOSTWRITE
 					fprintf(stderr, "Dsp: (H->D): Dsp HRDF set\n");
 #endif
 				}
@@ -546,7 +550,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 					/* Clear TXDE to say that CPU has written */
 					dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_TXDE);
 					dsp_core_hostport_update_hreq(dsp_core);
-#if DSP_DISASM_HOSTREAD
+#if DSP_DISASM_HOSTWRITE
 					fprintf(stderr, "Dsp: (H->D): Host TXDE cleared\n");
 #endif
 				}
