@@ -621,7 +621,7 @@ char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowN
 					zipfiles = NULL;
 					browsingzip = FALSE;
 				}
-				strcpy(path, "/");
+				path[0] = PATHSEP; path[1] = '\0';
 				strcpy(dlgpath, path);
 				reloaddir = TRUE;
 				break;
