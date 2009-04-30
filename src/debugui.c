@@ -245,7 +245,8 @@ static void DebugUI_DspRegDump(void)
 		printf("DSP isn't present or initialized.\n");
 		return;
 	}
-	printf("TODO: DSP register dump\n");
+
+	DSP_DisasmRegisters();
 }
 
 /*-----------------------------------------------------------------------*/
@@ -320,7 +321,8 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 		else
 			dsp_disasm_upper = 0xFFFF;
 	}
-	printf("DSP disasm %hx-%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
+	printf("TODO: DSP disasm range %hx-%hx\n",
+	       dsp_disasm_addr, dsp_disasm_upper);
 	dsp_disasm_addr = DSP_DisasmAddress(dsp_disasm_addr, dsp_disasm_upper);
 }
 

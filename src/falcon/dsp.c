@@ -26,10 +26,8 @@
 #include "memorySnapShot.h"
 #include "ioMem.h"
 #include "dsp.h"
-#if ENABLE_DSP_EMU
 #include "dsp_cpu.h"
 #include "dsp_disasm.h"
-#endif
 
 #define DEBUG 0
 #if DEBUG
@@ -132,7 +130,6 @@ Uint16 DSP_GetPC(void)
 
 Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 {
-#if ENABLE_DSP_EMU
 	Uint32 dsp_pc, save_curPC;
 	
 	save_curPC = dsp_core.pc;
@@ -143,11 +140,42 @@ Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 	}
 	dsp_core.pc = save_curPC;
 	return dsp_pc;
-#else
-	return 0;
-#endif
 }
 
+void DSP_DisasmRegisters(void)
+{
+	fprintf(stderr,"A: A2:%02x A1:%06x A0:%06x\n",
+		dsp_core.registers[DSP_REG_A2], dsp_core.registers[DSP_REG_A1], dsp_core.registers[DSP_REG_A0]);
+	fprintf(stderr,"B: B2:%02x B1:%06x B0:%06x\n",
+		dsp_core.registers[DSP_REG_B2], dsp_core.registers[DSP_REG_B1], dsp_core.registers[DSP_REG_B0]);
+	
+	fprintf(stderr,"X: X1:%06x X0:%06x\n", dsp_core.registers[DSP_REG_X1], dsp_core.registers[DSP_REG_X0]);
+	fprintf(stderr,"Y: Y1:%06x Y0:%06x\n", dsp_core.registers[DSP_REG_Y1], dsp_core.registers[DSP_REG_Y0]);
+
+	fprintf(stderr,"R0: %04x   N0: %04x   M0: %04x\n", 
+		dsp_core.registers[DSP_REG_R0], dsp_core.registers[DSP_REG_M0], dsp_core.registers[DSP_REG_N0]);
+	fprintf(stderr,"R1: %04x   N1: %04x   M1: %04x\n", 
+		dsp_core.registers[DSP_REG_R1], dsp_core.registers[DSP_REG_M1], dsp_core.registers[DSP_REG_N1]);
+	fprintf(stderr,"R2: %04x   N2: %04x   M2: %04x\n", 
+		dsp_core.registers[DSP_REG_R2], dsp_core.registers[DSP_REG_M2], dsp_core.registers[DSP_REG_N2]);
+	fprintf(stderr,"R3: %04x   N3: %04x   M3: %04x\n", 
+		dsp_core.registers[DSP_REG_R3], dsp_core.registers[DSP_REG_M3], dsp_core.registers[DSP_REG_N3]);
+	fprintf(stderr,"R4: %04x   N4: %04x   M4: %04x\n", 
+		dsp_core.registers[DSP_REG_R4], dsp_core.registers[DSP_REG_M4], dsp_core.registers[DSP_REG_N4]);
+	fprintf(stderr,"R5: %04x   N5: %04x   M5: %04x\n", 
+		dsp_core.registers[DSP_REG_R5], dsp_core.registers[DSP_REG_M5], dsp_core.registers[DSP_REG_N5]);
+	fprintf(stderr,"R6: %04x   N6: %04x   M6: %04x\n", 
+		dsp_core.registers[DSP_REG_R6], dsp_core.registers[DSP_REG_M6], dsp_core.registers[DSP_REG_N6]);
+	fprintf(stderr,"R7: %04x   N7: %04x   M7: %04x\n", 
+		dsp_core.registers[DSP_REG_R7], dsp_core.registers[DSP_REG_M7], dsp_core.registers[DSP_REG_N7]);
+
+	fprintf(stderr,"LA: %04x   LC: %04x\n", dsp_core.registers[DSP_REG_LA], dsp_core.registers[DSP_REG_LC]);
+
+	fprintf(stderr,"SR: %04x  OMR: %02x\n", dsp_core.registers[DSP_REG_SR], dsp_core.registers[DSP_REG_OMR]);
+
+	fprintf(stderr,"SP: %02x    SSH: %04x  SSL: %04x\n", 
+		dsp_core.registers[DSP_REG_SP], dsp_core.registers[DSP_REG_SSH], dsp_core.registers[DSP_REG_SSL]);
+}
 
 /**
  * Read SSI transmit value

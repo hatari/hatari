@@ -29,17 +29,25 @@
 
 extern bool bDspEnabled;
 
+/* Dsp commands */
 extern void DSP_Init(void);
 extern void DSP_UnInit(void);
-extern void DSP_MemorySnapShot_Capture(bool bSave);
-
 extern void DSP_Reset(void);
 extern void DSP_Run(int nHostCycles);
+
+/* Save Dsp state to snapshot */
+extern void DSP_MemorySnapShot_Capture(bool bSave);
+
+/* Dsp Debugger commands */
 extern Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr);
+extern void DSP_DisasmRegisters(void);
 extern Uint16 DSP_GetPC(void);
+
+/* Dsp SSI commands */
 extern Uint32 DSP_SsiReadTxValue(void);
 extern void DSP_SsiReceiveSerialClock(void);
 
+/* Dsp Host interface commands */
 extern void DSP_HandleReadAccess(void);
 extern void DSP_HandleWriteAccess(void);
 

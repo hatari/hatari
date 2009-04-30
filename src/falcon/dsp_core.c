@@ -489,7 +489,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 				dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff - (1<<DSP_HOST_HSR_HCP);
 			}
 #if DSP_DISASM_HOSTCVR
-		fprintf(stderr, "Dsp: (D->H): Host command = %06x\n", value & 0x9f);
+		fprintf(stderr, "Dsp: (H->D): Host command = %06x\n", value & 0x9f);
 #endif
 			break;
 		case CPU_HOST_ISR:
