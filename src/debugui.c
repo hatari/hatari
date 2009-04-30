@@ -321,8 +321,7 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 		else
 			dsp_disasm_upper = 0xFFFF;
 	}
-	printf("TODO: DSP disasm range %hx-%hx\n",
-	       dsp_disasm_addr, dsp_disasm_upper);
+	printf("DSP disasm %hx-%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
 	dsp_disasm_addr = DSP_DisasmAddress(dsp_disasm_addr, dsp_disasm_upper);
 }
 
