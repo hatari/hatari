@@ -26,8 +26,10 @@
 #include "memorySnapShot.h"
 #include "ioMem.h"
 #include "dsp.h"
+#if ENABLE_DSP_EMU
 #include "dsp_cpu.h"
 #include "dsp_disasm.h"
+#endif
 
 #define DEBUG 0
 #if DEBUG
@@ -130,6 +132,7 @@ Uint16 DSP_GetPC(void)
 
 Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 {
+#if ENABLE_DSP_EMU
 	Uint32 dsp_pc, save_curPC;
 	
 	save_curPC = dsp_core.pc;
@@ -140,6 +143,9 @@ Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 	}
 	dsp_core.pc = save_curPC;
 	return dsp_pc;
+#else
+	return 0;
+#endif
 }
 
 
