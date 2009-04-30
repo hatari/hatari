@@ -592,7 +592,6 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     IMPORT_RADIO(machineType, ConfigureParams.System.nMachineType);
     IMPORT_RADIO(monitor, ConfigureParams.Screen.nMonitorType);
     IMPORT_SWITCH(patchTimerD, ConfigureParams.System.bPatchTimerD);
-    IMPORT_RADIO(playbackQuality, ConfigureParams.Sound.nPlaybackQuality);
     IMPORT_TEXTFIELD(printToFile, ConfigureParams.Printer.szPrintToFileName);
     IMPORT_RADIO(ramSize, ConfigureParams.Memory.nMemorySize);
     IMPORT_TEXTFIELD(readRS232FromFile, ConfigureParams.RS232.szInFileName);
@@ -610,6 +609,13 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	IMPORT_TEXTFIELD(configFile, sConfigFileName);
 
 	[(force8bpp) setState:((ConfigureParams.Screen.nForceBpp==8))? NSOnState : NSOffState];
+
+	if (ConfigureParams.Sound.nPlaybackFreq >= 44100)
+		[playbackQuality selectCellWithTag:(2)];
+	else if (ConfigureParams.Sound.nPlaybackFreq >= 22050)
+		[playbackQuality selectCellWithTag:(1)];
+	else
+		[playbackQuality selectCellWithTag:(0)];
 
 	if (ConfigureParams.Screen.nVdiWidth >= 1024)
 		[resolution selectCellWithTag:(2)];
@@ -765,7 +771,6 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     EXPORT_RADIO(machineType, ConfigureParams.System.nMachineType);
     EXPORT_RADIO(monitor, ConfigureParams.Screen.nMonitorType);
     EXPORT_SWITCH(patchTimerD, ConfigureParams.System.bPatchTimerD);
-    EXPORT_RADIO(playbackQuality, ConfigureParams.Sound.nPlaybackQuality);
     EXPORT_TEXTFIELD(printToFile, ConfigureParams.Printer.szPrintToFileName);
     EXPORT_RADIO(ramSize, ConfigureParams.Memory.nMemorySize);
     EXPORT_TEXTFIELD(readRS232FromFile, ConfigureParams.RS232.szInFileName);
@@ -782,6 +787,19 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	EXPORT_DROPDOWN(enableDSP,ConfigureParams.System.nDSPType);
 
 	ConfigureParams.Screen.nForceBpp = ([force8bpp state] == NSOnState) ? 8 : 16;
+
+	switch ([[playbackQuality selectedCell] tag])
+	{
+	 case 0:
+		ConfigureParams.Sound.nPlaybackFreq = 11025;
+		break;
+	 case 1:
+		ConfigureParams.Sound.nPlaybackFreq = 22050;
+		break;
+	 case 2:
+		ConfigureParams.Sound.nPlaybackFreq = 44100;
+		break;
+	}
 
 	switch ([[resolution selectedCell] tag])
 	{
