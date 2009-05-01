@@ -523,11 +523,10 @@ void Configuration_Apply(bool bReset)
 	{
 		nFrameSkips = ConfigureParams.Screen.nFrameSkips;
 	}
+
 	/* Set playback frequency */
-	if (ConfigureParams.Sound.bEnableSound)
-	{
-		Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackFreq);
-	}
+	Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackFreq);
+
 	/* CPU settings */
 	if (ConfigureParams.System.nCpuFreq < 12)
 	{

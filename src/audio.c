@@ -17,7 +17,7 @@ const char Audio_fileid[] = "Hatari audio.c : " __DATE__ " " __TIME__;
 #include "sound.h"
 
 
-int nAudioFrequency;                      /* Sound playback frequency */
+int nAudioFrequency = 44100;              /* Sound playback frequency */
 bool bSoundWorking = FALSE;               /* Is sound OK */
 volatile bool bPlayingBuffer = FALSE;     /* Is playing buffer? */
 int SoundBufferSize = 1024;               /* Size of sound buffer */
@@ -179,7 +179,7 @@ void Audio_SetOutputAudioFreq(int nNewFrequency)
 	/* Do not reset sound system if nothing has changed! */
 	if (nNewFrequency != nAudioFrequency)
 	{
-		/* Set new frequency, index into SoundPlayBackFrequencies[] */
+		/* Set new frequency */
 		nAudioFrequency = nNewFrequency;
 
 		/* Re-open SDL audio interface if necessary: */
