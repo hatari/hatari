@@ -255,12 +255,59 @@ static void DebugUI_DspRegDump(void)
  */
 static void DebugUI_DspRegSet(char *arg)
 {
+	int i;
+	bool s = FALSE;
+	char reg[4];
+	long value;
+
 	if (!bDspEnabled)
 	{
 		printf("DSP isn't present or initialized.\n");
 		return;
 	}
-	printf("TODO: set DSP register, arg: %s\n", arg);
+
+
+	for (i=0;i<4;i++)
+		reg[i] = 0;
+	i=0;
+	while (arg[i] != '\0')
+	{
+		if(arg[i] == '=')
+		{
+			arg[i] = ' ';
+			s = TRUE;
+		}
+		i++;
+	}
+
+	if (s == FALSE)
+	{
+		fprintf(stderr,"\tError, usage: dr or dr xx=yyyy\n\t \
+				Where: xx=A0-A2, B0-B2, X0, X1, Y0, Y1, \n\t \
+				R0-R7, N0-N7, M0-M7, LA, LC, \n\t \
+				SR, SP, OMR, SSH, SSL \n\t \
+				and yyyy is a hex value.\n");
+		return;
+	}
+
+	if (sscanf(arg, "%s%lx", reg, &value) == 2)
+		s = TRUE;
+	else
+		s = FALSE;
+	if (s == FALSE)
+	{
+		fprintf(stderr,"\tError, usage: dr or dr xx=yyyy\n\t \
+				Where: xx=A0-A2, B0-B2, X0, X1, Y0, Y1, \n\t \
+				R0-R7, N0-N7, M0-M7, LA, LC, \n\t \
+				SR, SP, OMR, SSH, SSL \n\t \
+				and yyyy is a hex value.\n");
+		return;
+	}
+
+	for (i=0;i<4;i++)
+		reg[i] = toupper(reg[i]);
+
+	DSP_Disasm_SetRegister(reg, value);
 }
 
 /*-----------------------------------------------------------------------*/

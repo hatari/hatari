@@ -41,6 +41,7 @@ extern void DSP_MemorySnapShot_Capture(bool bSave);
 /* Dsp Debugger commands */
 extern Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr);
 extern void DSP_DisasmRegisters(void);
+extern void DSP_Disasm_SetRegister(char *arg, Uint32 value);
 extern Uint16 DSP_GetPC(void);
 
 /* Dsp SSI commands */

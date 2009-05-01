@@ -38,6 +38,7 @@
 #define Dprintf(a)
 #endif
 
+#define BITMASK(x)	((1<<(x))-1)
 
 #define DSP_HW_OFFSET  0xFFA200
 
@@ -151,6 +152,8 @@ Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 void DSP_DisasmRegisters(void)
 {
 #if ENABLE_DSP_EMU
+	Uint32 i;
+
 	fprintf(stderr,"A: A2:%02x A1:%06x A0:%06x\n",
 		dsp_core.registers[DSP_REG_A2], dsp_core.registers[DSP_REG_A1], dsp_core.registers[DSP_REG_A0]);
 	fprintf(stderr,"B: B2:%02x B1:%06x B0:%06x\n",
@@ -159,29 +162,152 @@ void DSP_DisasmRegisters(void)
 	fprintf(stderr,"X: X1:%06x X0:%06x\n", dsp_core.registers[DSP_REG_X1], dsp_core.registers[DSP_REG_X0]);
 	fprintf(stderr,"Y: Y1:%06x Y0:%06x\n", dsp_core.registers[DSP_REG_Y1], dsp_core.registers[DSP_REG_Y0]);
 
-	fprintf(stderr,"R0: %04x   N0: %04x   M0: %04x\n", 
-		dsp_core.registers[DSP_REG_R0], dsp_core.registers[DSP_REG_M0], dsp_core.registers[DSP_REG_N0]);
-	fprintf(stderr,"R1: %04x   N1: %04x   M1: %04x\n", 
-		dsp_core.registers[DSP_REG_R1], dsp_core.registers[DSP_REG_M1], dsp_core.registers[DSP_REG_N1]);
-	fprintf(stderr,"R2: %04x   N2: %04x   M2: %04x\n", 
-		dsp_core.registers[DSP_REG_R2], dsp_core.registers[DSP_REG_M2], dsp_core.registers[DSP_REG_N2]);
-	fprintf(stderr,"R3: %04x   N3: %04x   M3: %04x\n", 
-		dsp_core.registers[DSP_REG_R3], dsp_core.registers[DSP_REG_M3], dsp_core.registers[DSP_REG_N3]);
-	fprintf(stderr,"R4: %04x   N4: %04x   M4: %04x\n", 
-		dsp_core.registers[DSP_REG_R4], dsp_core.registers[DSP_REG_M4], dsp_core.registers[DSP_REG_N4]);
-	fprintf(stderr,"R5: %04x   N5: %04x   M5: %04x\n", 
-		dsp_core.registers[DSP_REG_R5], dsp_core.registers[DSP_REG_M5], dsp_core.registers[DSP_REG_N5]);
-	fprintf(stderr,"R6: %04x   N6: %04x   M6: %04x\n", 
-		dsp_core.registers[DSP_REG_R6], dsp_core.registers[DSP_REG_M6], dsp_core.registers[DSP_REG_N6]);
-	fprintf(stderr,"R7: %04x   N7: %04x   M7: %04x\n", 
-		dsp_core.registers[DSP_REG_R7], dsp_core.registers[DSP_REG_M7], dsp_core.registers[DSP_REG_N7]);
+	for (i=0; i<8; i++) {
+		fprintf(stderr,"R%01x: %04x   N%01x: %04x   M%01x: %04x\n", 
+			i, dsp_core.registers[DSP_REG_R0+i],
+			i, dsp_core.registers[DSP_REG_N0+i],
+			i, dsp_core.registers[DSP_REG_M0+i]);
+	}
 
 	fprintf(stderr,"LA: %04x   LC: %04x\n", dsp_core.registers[DSP_REG_LA], dsp_core.registers[DSP_REG_LC]);
-
 	fprintf(stderr,"SR: %04x  OMR: %02x\n", dsp_core.registers[DSP_REG_SR], dsp_core.registers[DSP_REG_OMR]);
-
 	fprintf(stderr,"SP: %02x    SSH: %04x  SSL: %04x\n", 
 		dsp_core.registers[DSP_REG_SP], dsp_core.registers[DSP_REG_SSH], dsp_core.registers[DSP_REG_SSL]);
+#endif
+}
+
+void DSP_Disasm_SetRegister(char *arg, Uint32 value)
+{
+#if ENABLE_DSP_EMU
+	Uint32 sp_value;
+
+	if (arg[0]=='A' || arg[0]=='a') {
+		if (arg[1]=='0') {
+			dsp_core.registers[DSP_REG_A0] = value & BITMASK(24);
+			return;
+		}
+		if (arg[1]=='1') {
+			dsp_core.registers[DSP_REG_A1] = value & BITMASK(24);
+			return;
+		}
+		if (arg[1]=='2') {
+			dsp_core.registers[DSP_REG_A2] = value & BITMASK(8);
+			return;
+		}
+	}
+
+	if (arg[0]=='B' || arg[0]=='b') {
+		if (arg[1]=='0') {
+			dsp_core.registers[DSP_REG_B0] = value & BITMASK(24);
+			return;
+		}
+		if (arg[1]=='1') {
+			dsp_core.registers[DSP_REG_B1] = value & BITMASK(24);
+			return;
+		}
+		if (arg[1]=='2') {
+			dsp_core.registers[DSP_REG_B2] = value & BITMASK(8);
+			return;
+		}
+	}
+
+	if (arg[0]=='X' || arg[0]=='x') {
+		if ((arg[1]>='0') && (arg[1] <= '1')) {
+			dsp_core.registers[DSP_REG_X0 + arg[1]-'0'] = value & BITMASK(24);
+			return;
+		}
+	}
+	
+	if (arg[0]=='Y' || arg[0]=='y') {
+		if ((arg[1]>='0') && (arg[1] <= '1')) {
+			dsp_core.registers[DSP_REG_Y0 + arg[1]-'0'] = value & BITMASK(24);
+			return;
+		}
+	}
+
+	if (arg[0]=='R' || arg[0]=='r') {
+		if ((arg[1]>='0') && (arg[1]<='7')) {
+			dsp_core.registers[DSP_REG_R0 + arg[1]-'0'] = value & BITMASK(16);
+			return;
+		}
+	}
+
+	if (arg[0]=='N' || arg[0]=='n') {
+		if ((arg[1]>='0') && (arg[1]<='7')) {
+			dsp_core.registers[DSP_REG_N0 + arg[1]-'0'] = value & BITMASK(16);
+			return;
+		}
+	}
+
+	if (arg[0]=='M' || arg[0]=='m') {
+		if ((arg[1]>='0') && (arg[1]<='7')) {
+			dsp_core.registers[DSP_REG_M0 + arg[1]-'0'] = value & BITMASK(16);
+			return;
+		}
+	}
+
+	if (arg[0]=='L' || arg[0]=='l') {
+		if (arg[1]=='A' || arg[1]=='a') {
+			dsp_core.registers[DSP_REG_LA] = value & BITMASK(16);
+			return;
+		}
+		if (arg[1]=='C' || arg[1]=='c') {
+			dsp_core.registers[DSP_REG_LC] = value & BITMASK(16);
+			return;
+		}
+	}
+
+	if (arg[0]=='O' || arg[0]=='o') {
+		if (arg[1]=='M' || arg[1]=='m') {
+			if (arg[2]=='R' || arg[2]=='r') {
+				dsp_core.registers[DSP_REG_OMR] = value & 0x5f;
+				return;
+			}
+		}
+	}
+
+	if (arg[0]=='S' || arg[0]=='s') {
+		if (arg[1]=='R' || arg[1]=='r') {
+			dsp_core.registers[DSP_REG_SR] = value & 0xefff;
+			return;
+		}
+		if (arg[1]=='P' || arg[1]=='p') {
+			dsp_core.registers[DSP_REG_SP] = value & BITMASK(6);
+			value &= BITMASK(4); 
+			dsp_core.registers[DSP_REG_SSH] = dsp_core.stack[0][value];
+			dsp_core.registers[DSP_REG_SSL] = dsp_core.stack[1][value];
+			return;
+		}
+		if (arg[1]=='S' || arg[1]=='s') {
+			sp_value = dsp_core.registers[DSP_REG_SP] & BITMASK(4);
+			if (arg[2]=='H' || arg[2]=='h') {
+				if (sp_value == 0) {
+					dsp_core.registers[DSP_REG_SSH] = 0;
+					dsp_core.stack[0][sp_value] = 0;
+				} else {
+					dsp_core.registers[DSP_REG_SSH] = value & BITMASK(16);
+					dsp_core.stack[0][sp_value] = value & BITMASK(16);
+				}
+				return;
+			}
+			if (arg[2]=='L' || arg[2]=='l') {
+				if (sp_value == 0) {
+					dsp_core.registers[DSP_REG_SSL] = 0;
+					dsp_core.stack[1][sp_value] = 0;
+				} else {
+					dsp_core.registers[DSP_REG_SSL] = value & BITMASK(16);
+					dsp_core.stack[1][sp_value] = value & BITMASK(16);
+				}
+				return;
+			}
+		}
+	}
+
+	fprintf(stderr,"\tError, usage:  reg=value  where: \n\t \
+			reg=A0-A2, B0-B2, X0, X1, Y0, Y1, \n\t \
+			R0-R7, N0-N7, M0-M7, LA, LC, \n\t \
+			SR, SP, OMR, SSH, SSL \n\t \
+			and value is a hex value.\n");
 #endif
 }
 
