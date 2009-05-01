@@ -17,7 +17,6 @@
 		4EE4B6090DD8E15C00DF27A2 /* str.h in Headers */ = {isa = PBXBuildFile; fileRef = 4EE4B6060DD8E15C00DF27A2 /* str.h */; };
 		961322D80B5BCDB900007C3E /* config-default.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322D30B5BCDB900007C3E /* config-default.h */; };
 		961322E70B5BCFBB00007C3E /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322E60B5BCFBB00007C3E /* config.h */; };
-		961322FB0B5BD0B800007C3E /* araglue.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322EF0B5BD0B800007C3E /* araglue.h */; };
 		961322FC0B5BD0B800007C3E /* dsp_cpu.c in Sources */ = {isa = PBXBuildFile; fileRef = 961322F00B5BD0B800007C3E /* dsp_cpu.c */; };
 		961322FD0B5BD0B800007C3E /* dsp_cpu.h in Headers */ = {isa = PBXBuildFile; fileRef = 961322F10B5BD0B800007C3E /* dsp_cpu.h */; };
 		961322FE0B5BD0B800007C3E /* dsp_disasm.c in Sources */ = {isa = PBXBuildFile; fileRef = 961322F20B5BD0B800007C3E /* dsp_disasm.c */; };
@@ -256,7 +255,6 @@
 		4EE4B6060DD8E15C00DF27A2 /* str.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = str.h; sourceTree = "<group>"; };
 		961322D30B5BCDB900007C3E /* config-default.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "config-default.h"; sourceTree = "<group>"; };
 		961322E60B5BCFBB00007C3E /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
-		961322EF0B5BD0B800007C3E /* araglue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = araglue.h; path = src/falcon/araglue.h; sourceTree = "<group>"; };
 		961322F00B5BD0B800007C3E /* dsp_cpu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dsp_cpu.c; path = src/falcon/dsp_cpu.c; sourceTree = "<group>"; };
 		961322F10B5BD0B800007C3E /* dsp_cpu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dsp_cpu.h; path = src/falcon/dsp_cpu.h; sourceTree = "<group>"; };
 		961322F20B5BD0B800007C3E /* dsp_disasm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dsp_disasm.c; path = src/falcon/dsp_disasm.c; sourceTree = "<group>"; };
@@ -640,7 +638,6 @@
 		E90ED0570ED8508200EB6257 /* falcon */ = {
 			isa = PBXGroup;
 			children = (
-				961322EF0B5BD0B800007C3E /* araglue.h */,
 				961322F40B5BD0B800007C3E /* dsp.c */,
 				961322F50B5BD0B800007C3E /* dsp.h */,
 				E916E10B0EE4997600F42ED2 /* dsp_core.c */,
@@ -861,7 +858,6 @@
 				9691912A0AA205D60008B3A0 /* scandir.h in Headers */,
 				961322D80B5BCDB900007C3E /* config-default.h in Headers */,
 				961322E70B5BCFBB00007C3E /* config.h in Headers */,
-				961322FB0B5BD0B800007C3E /* araglue.h in Headers */,
 				961322FD0B5BD0B800007C3E /* dsp_cpu.h in Headers */,
 				961322FF0B5BD0B800007C3E /* dsp_disasm.h in Headers */,
 				961323010B5BD0B800007C3E /* dsp.h in Headers */,
@@ -1132,6 +1128,7 @@
 					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_1)",
 					"$(GCC_PREPROCESSOR_DEFINITIONS_QUOTED_2)",
 					ALERT_HOOKS,
+					"ENABLE_DSP_EMU=1",
 				);
 				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_1 = "BIN2DATADIR=\\\"../..\\\"";
 				GCC_PREPROCESSOR_DEFINITIONS_QUOTED_2 = "CONFDIR=\\\".\\\"";
