@@ -24,16 +24,19 @@ const char DlgSystem_fileid[] = "Hatari dlgSystem.c : " __DATE__ " " __TIME__;
 #define DLGSYS_8MHZ     17
 #define DLGSYS_16MHZ    18
 #define DLGSYS_32MHZ    19
-#define DLGSYS_PREFETCH 20
-#define DLGSYS_BLITTER  21
-#define DLGSYS_RTC      22
-#define DLGSYS_TIMERD   23
+#define DLGSYS_DSPOFF   21
+#define DLGSYS_DSPDUMMY 22
+#define DLGSYS_DSPON    23
+#define DLGSYS_PREFETCH 24
+#define DLGSYS_BLITTER  25
+#define DLGSYS_RTC      26
+#define DLGSYS_TIMERD   27
 
 
 /* The "System" dialog: */
 static SGOBJ systemdlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 36,23, NULL },
+	{ SGBOX, 0, 0, 0,0, 36,24, NULL },
 	{ SGTEXT, 0, 0, 11,1, 14,1, "System options" },
 
 	{ SGBOX, 0, 0, 2,3, 16,9, NULL },
@@ -57,12 +60,17 @@ static SGOBJ systemdlg[] =
 	{ SGRADIOBUT, 0, 0, 24,13, 4,1, "16" },
 	{ SGRADIOBUT, 0, 0, 30,13, 4,1, "32" },
 
-	{ SGCHECKBOX, 0, 0, 2,15, 32,1, "Slower but more compatible CPU" },
-	{ SGCHECKBOX, 0, 0, 2,16, 20,1, "Blitter emulation" },
-	{ SGCHECKBOX, 0, 0, 2,17, 27,1, "Real time clock emulation" },
-	{ SGCHECKBOX, 0, 0, 2,18, 15,1, "Patch Timer-D" },
+	{ SGTEXT, 0, 0, 2,15, 11,1, "Falcon DSP:" },
+	{ SGRADIOBUT, 0, 0, 14,15, 5,1, "off" },
+	{ SGRADIOBUT, 0, 0, 21,15, 7,1, "dummy" },
+	{ SGRADIOBUT, 0, 0, 30,15, 4,1, "on" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 8,21, 20,1, "Back to main menu" },
+	{ SGCHECKBOX, 0, 0, 2,17, 32,1, "Slower but more compatible CPU" },
+	{ SGCHECKBOX, 0, 0, 2,18, 20,1, "Blitter emulation" },
+	{ SGCHECKBOX, 0, 0, 2,19, 27,1, "Real time clock emulation" },
+	{ SGCHECKBOX, 0, 0, 2,20, 15,1, "Patch Timer-D" },
+
+	{ SGBUTTON, SG_DEFAULT, 0, 8,22, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -92,16 +100,30 @@ void Dialog_SystemDlg(void)
 	}
 	systemdlg[DLGSYS_ST + ConfigureParams.System.nMachineType].state |= SG_SELECTED;
 
+	/* CPU frequency: */
 	for (i = DLGSYS_8MHZ; i <= DLGSYS_16MHZ; i++)
 	{
 		systemdlg[i].state &= ~SG_SELECTED;
 	}
 	if (ConfigureParams.System.nCpuFreq == 32)
-	  systemdlg[DLGSYS_32MHZ].state |= SG_SELECTED;
+		systemdlg[DLGSYS_32MHZ].state |= SG_SELECTED;
 	else if (ConfigureParams.System.nCpuFreq == 16)
-	  systemdlg[DLGSYS_16MHZ].state |= SG_SELECTED;
+		systemdlg[DLGSYS_16MHZ].state |= SG_SELECTED;
 	else
-	  systemdlg[DLGSYS_8MHZ].state |= SG_SELECTED;
+		systemdlg[DLGSYS_8MHZ].state |= SG_SELECTED;
+
+	/* DSP mode: */
+	for (i = DLGSYS_DSPOFF; i <= DLGSYS_DSPON; i++)
+	{
+		systemdlg[i].state &= ~SG_SELECTED;
+	}
+	if (ConfigureParams.System.nDSPType == DSP_TYPE_NONE)
+		systemdlg[DLGSYS_DSPOFF].state |= SG_SELECTED;
+	else if (ConfigureParams.System.nDSPType == DSP_TYPE_DUMMY)
+		systemdlg[DLGSYS_DSPDUMMY].state |= SG_SELECTED;
+	else
+		systemdlg[DLGSYS_DSPON].state |= SG_SELECTED;
+
 
 	if (ConfigureParams.System.bCompatibleCpu)
 		systemdlg[DLGSYS_PREFETCH].state |= SG_SELECTED;
@@ -152,6 +174,13 @@ void Dialog_SystemDlg(void)
 		ConfigureParams.System.nCpuFreq = 16;
 	else
 		ConfigureParams.System.nCpuFreq = 8;
+
+	if (systemdlg[DLGSYS_DSPOFF].state & SG_SELECTED)
+		ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
+	else if (systemdlg[DLGSYS_DSPDUMMY].state & SG_SELECTED)
+		ConfigureParams.System.nDSPType = DSP_TYPE_DUMMY;
+	else
+		ConfigureParams.System.nDSPType = DSP_TYPE_EMU;
 
 	ConfigureParams.System.bCompatibleCpu = (systemdlg[DLGSYS_PREFETCH].state & SG_SELECTED);
 	ConfigureParams.System.bBlitter = (systemdlg[DLGSYS_BLITTER].state & SG_SELECTED);
