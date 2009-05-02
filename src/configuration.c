@@ -241,6 +241,7 @@ static const struct Config_Tag configs_Memory[] =
 static const struct Config_Tag configs_Floppy[] =
 {
 	{ "bAutoInsertDiskB", Bool_Tag, &ConfigureParams.DiskImage.bAutoInsertDiskB },
+	{ "bSlowFloppy", Bool_Tag, &ConfigureParams.DiskImage.bSlowFloppy },
 	{ "nWriteProtection", Int_Tag, &ConfigureParams.DiskImage.nWriteProtection },
 	{ "szDiskAZipPath", String_Tag, ConfigureParams.DiskImage.szDiskZipPath[0] },
 	{ "szDiskAFileName", String_Tag, ConfigureParams.DiskImage.szDiskFileName[0] },
@@ -312,7 +313,6 @@ static const struct Config_Tag configs_System[] =
 	{ "nDSPType", Int_Tag, &ConfigureParams.System.nDSPType },
 	{ "bRealTimeClock", Bool_Tag, &ConfigureParams.System.bRealTimeClock },
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
-	{ "bSlowFDC", Bool_Tag, &ConfigureParams.System.bSlowFDC },
 	{ "bFastForward", Bool_Tag, &ConfigureParams.System.bFastForward },
 	{ NULL , Error_Tag, NULL }
 };
@@ -342,7 +342,8 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Log.bConfirmQuit = TRUE;
 
 	/* Set defaults for floppy disk images */
-	ConfigureParams.DiskImage.bAutoInsertDiskB = TRUE;
+	ConfigureParams.DiskImage.bAutoInsertDiskB = true;
+	ConfigureParams.DiskImage.bSlowFloppy = false;
 	ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_OFF;
 	for (i = 0; i < 2; i++)
 	{
@@ -480,7 +481,6 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bPatchTimerD = TRUE;
 	ConfigureParams.System.bRealTimeClock = TRUE;
 	ConfigureParams.System.bFastForward = FALSE;
-	ConfigureParams.System.bSlowFDC = FALSE;
 
 	/* Initialize the configuration file name */
 	if (strlen(psHomeDir) < sizeof(sConfigFileName)-13)
@@ -707,7 +707,7 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.System.nDSPType, sizeof(ConfigureParams.System.nDSPType));
 	MemorySnapShot_Store(&ConfigureParams.System.bRealTimeClock, sizeof(ConfigureParams.System.bRealTimeClock));
 	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
-	MemorySnapShot_Store(&ConfigureParams.System.bSlowFDC, sizeof(ConfigureParams.System.bSlowFDC));
+	MemorySnapShot_Store(&ConfigureParams.DiskImage.bSlowFloppy, sizeof(ConfigureParams.DiskImage.bSlowFloppy));
 
 	if (!bSave)
 		Configuration_Apply(TRUE);

@@ -28,7 +28,6 @@ const char DlgSystem_fileid[] = "Hatari dlgSystem.c : " __DATE__ " " __TIME__;
 #define DLGSYS_BLITTER  21
 #define DLGSYS_RTC      22
 #define DLGSYS_TIMERD   23
-#define DLGSYS_SLOWFDC  24
 
 
 /* The "System" dialog: */
@@ -62,7 +61,6 @@ static SGOBJ systemdlg[] =
 	{ SGCHECKBOX, 0, 0, 2,16, 20,1, "Blitter emulation" },
 	{ SGCHECKBOX, 0, 0, 2,17, 27,1, "Real time clock emulation" },
 	{ SGCHECKBOX, 0, 0, 2,18, 15,1, "Patch Timer-D" },
-	{ SGCHECKBOX, 0, 0, 2,19, 25,1, "Slow down FDC emulation" },
 
 	{ SGBUTTON, SG_DEFAULT, 0, 8,21, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
@@ -125,11 +123,6 @@ void Dialog_SystemDlg(void)
 	else
 		systemdlg[DLGSYS_TIMERD].state &= ~SG_SELECTED;
 
-	if (ConfigureParams.System.bSlowFDC)
-		systemdlg[DLGSYS_SLOWFDC].state |= SG_SELECTED;
-	else
-		systemdlg[DLGSYS_SLOWFDC].state &= ~SG_SELECTED;
-
 	/* Show the dialog: */
 	SDLGui_DoDialog(systemdlg, NULL);
 
@@ -164,5 +157,4 @@ void Dialog_SystemDlg(void)
 	ConfigureParams.System.bBlitter = (systemdlg[DLGSYS_BLITTER].state & SG_SELECTED);
 	ConfigureParams.System.bRealTimeClock = (systemdlg[DLGSYS_RTC].state & SG_SELECTED);
 	ConfigureParams.System.bPatchTimerD = (systemdlg[DLGSYS_TIMERD].state & SG_SELECTED);
-	ConfigureParams.System.bSlowFDC = (systemdlg[DLGSYS_SLOWFDC].state & SG_SELECTED);
 }

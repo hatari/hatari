@@ -139,6 +139,7 @@ typedef enum
 typedef struct
 {
   bool bAutoInsertDiskB;
+  bool bSlowFloppy;                  /* true to slow down FDC emulation */
   WRITEPROTECTION nWriteProtection;
   char szDiskZipPath[MAX_FLOPPYDRIVES][FILENAME_MAX];
   char szDiskFileName[MAX_FLOPPYDRIVES][FILENAME_MAX];
@@ -262,7 +263,6 @@ typedef struct
   DSPTYPE nDSPType;               /* how to "emulate" DSP */
   bool bRealTimeClock;
   bool bPatchTimerD;
-  bool bSlowFDC;                  /* TRUE to slow down FDC emulation */
   bool bFastForward;
 } CNF_SYSTEM;
 

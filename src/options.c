@@ -76,10 +76,10 @@ enum {
 	OPT_RS232_OUT,
 	OPT_DISKA,		/* disk options */
 	OPT_DISKB,
+	OPT_SLOWFLOPPY,
 	OPT_HARDDRIVE,
 	OPT_ACSIHDIMAGE,
 	OPT_IDEHDIMAGE,
-	OPT_SLOWFDC,
 	OPT_MEMSIZE,		/* memory options */
 	OPT_TOS,
 	OPT_CARTRIDGE,
@@ -196,14 +196,14 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Set disk image for floppy drive A" },
 	{ OPT_DISKB, NULL, "--disk-b",
 	  "<file>", "Set disk image for floppy drive B" },
+	{ OPT_SLOWFLOPPY,   NULL, "--slowfdc",
+	  "<bool>", "Slow down floppy disk access emulation" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
 	  "<dir>", "Emulate harddrive (partitions) with <dir> contents" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
 	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
 	{ OPT_IDEHDIMAGE,   NULL, "--ide",
 	  "<file>", "Emulate an IDE harddrive with an image <file>" },
-	{ OPT_SLOWFDC,   NULL, "--slowfdc",
-	  "<bool>", "Slow down FDC emulation (deprecated)" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
@@ -962,8 +962,8 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			}
 			break;
 			
-		case OPT_SLOWFDC:
-			ok = Opt_Bool(argv[++i], OPT_SLOWFDC, &ConfigureParams.System.bSlowFDC);
+		case OPT_SLOWFLOPPY:
+			ok = Opt_Bool(argv[++i], OPT_SLOWFLOPPY, &ConfigureParams.DiskImage.bSlowFloppy);
 			if (ok)
 			{
 				bLoadAutoSave = FALSE;

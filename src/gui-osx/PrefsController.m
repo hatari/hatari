@@ -596,7 +596,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     IMPORT_RADIO(ramSize, ConfigureParams.Memory.nMemorySize);
     IMPORT_TEXTFIELD(readRS232FromFile, ConfigureParams.RS232.szInFileName);
     IMPORT_SWITCH(realTime, ConfigureParams.System.bRealTimeClock);
-    IMPORT_SWITCH(slowFDC, ConfigureParams.System.bSlowFDC);
+    IMPORT_SWITCH(slowFDC, ConfigureParams.DiskImage.bSlowFloppy);
     IMPORT_TEXTFIELD(tosImage, ConfigureParams.Rom.szTosImageFileName);
     IMPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
     IMPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);
@@ -775,7 +775,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     EXPORT_RADIO(ramSize, ConfigureParams.Memory.nMemorySize);
     EXPORT_TEXTFIELD(readRS232FromFile, ConfigureParams.RS232.szInFileName);
     EXPORT_SWITCH(realTime, ConfigureParams.System.bRealTimeClock);
-    EXPORT_SWITCH(slowFDC, ConfigureParams.System.bSlowFDC);
+    EXPORT_SWITCH(slowFDC, onfigureParams.DiskImage.bSlowFloppy);
     EXPORT_TEXTFIELD(tosImage, ConfigureParams.Rom.szTosImageFileName);
     EXPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
     EXPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);

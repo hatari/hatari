@@ -446,7 +446,7 @@ void FDC_GpipRead(void)
 
 	if ((MFP_GPIP & 0x20) == nLastGpipBit)
 	{
-		if (!ConfigureParams.System.bSlowFDC)
+		if (!ConfigureParams.DiskImage.bSlowFloppy)
 		{
 			/* Restart FDC update interrupt to occur right after a few cycles */
 			Int_RemovePendingInterrupt(INTERRUPT_FDC);
