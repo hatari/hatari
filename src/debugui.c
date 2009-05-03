@@ -256,8 +256,7 @@ static void DebugUI_DspRegDump(void)
 static void DebugUI_DspRegSet(char *arg)
 {
 	int i;
-	bool s = FALSE;
-	char reg[4];
+	char reg[4], *assign;
 	long value;
 
 	if (!bDspEnabled)
@@ -266,48 +265,26 @@ static void DebugUI_DspRegSet(char *arg)
 		return;
 	}
 
+	assign = strchr(arg, '=');
+	/* has '=' and reg name is max. 3 letters that fit to string */
+	if (!assign || assign - arg > 3+1)
+		goto error_msg;
 
-	for (i=0;i<4;i++)
-		reg[i] = 0;
-	i=0;
-	while (arg[i] != '\0')
-	{
-		if(arg[i] == '=')
-		{
-			arg[i] = ' ';
-			s = TRUE;
-		}
-		i++;
-	}
+	*assign = ' ';
+	if (sscanf(arg, "%s%lx", reg, &value) != 2)
+		goto error_msg;
 
-	if (s == FALSE)
-	{
-		fprintf(stderr,"\tError, usage: dr or dr xx=yyyy\n\t \
-				Where: xx=A0-A2, B0-B2, X0, X1, Y0, Y1, \n\t \
-				R0-R7, N0-N7, M0-M7, LA, LC, \n\t \
-				SR, SP, OMR, SSH, SSL \n\t \
-				and yyyy is a hex value.\n");
-		return;
-	}
-
-	if (sscanf(arg, "%s%lx", reg, &value) == 2)
-		s = TRUE;
-	else
-		s = FALSE;
-	if (s == FALSE)
-	{
-		fprintf(stderr,"\tError, usage: dr or dr xx=yyyy\n\t \
-				Where: xx=A0-A2, B0-B2, X0, X1, Y0, Y1, \n\t \
-				R0-R7, N0-N7, M0-M7, LA, LC, \n\t \
-				SR, SP, OMR, SSH, SSL \n\t \
-				and yyyy is a hex value.\n");
-		return;
-	}
-
-	for (i=0;i<4;i++)
+	for (i = 0; i < 3; i++)
 		reg[i] = toupper(reg[i]);
 
 	DSP_Disasm_SetRegister(reg, value);
+	return;
+
+	error_msg:
+	fprintf(stderr,"\tError, usage: dr or dr xx=yyyy\n"
+		"\tWhere: xx=A0-A2, B0-B2, X0, X1, Y0, Y1, R0-R7,\n"
+		"\t       N0-N7, M0-M7, LA, LC, SR, SP, OMR, SSH, SSL\n"
+		"\tand yyyy is a hex value.\n");
 }
 
 /*-----------------------------------------------------------------------*/
@@ -519,40 +496,25 @@ static void DebugUI_DisAsm(char *arg, bool cont)
 static void DebugUI_RegSet(char *arg)
 {
 	int i;
-	bool s = FALSE;
-	char reg[4];
+	char reg[3], *assign;
 	long value;
 
-	for (i=0;i<4;i++)
-		reg[i] = 0;
-	i=0;
-	while (arg[i] != '\0')
-	{
-		if(arg[i] == '=')
-		{
-			arg[i] = ' ';
-			s = TRUE;
-		}
-		i++;
-	}
-
-	if (s == FALSE)
+	assign = strchr(arg, '=');
+	/* has '=' and reg name is max. 2 letters that fit to string */
+	if (!assign || assign - arg > 2+1)
 	{
 		fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR and yyyy is a hex value.\n");
 		return;
 	}
 
-	if (sscanf(arg, "%s%lx", reg, &value) == 2)
-		s = TRUE;
-	else
-		s = FALSE;
-	if (s == FALSE)
+	*assign = ' ';
+	if (sscanf(arg, "%s%lx", reg, &value) != 2)
 	{
 		fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR and yyyy is a hex value.\n");
 		return;
 	}
 
-	for (i=0;i<4;i++)
+	for (i = 0; i < 2; i++)
 		reg[i] = toupper(reg[i]);
 
 	/* set SR and update conditional flags for the UAE CPU core. */
