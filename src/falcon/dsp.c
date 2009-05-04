@@ -334,6 +334,10 @@ void DSP_SsiReceiveSerialClock(void)
 #endif
 }
 
+void DSP_SsiReceive_SC2(Uint32 FrameCounter)
+{
+	dsp_core_ssi_receive_SC2(&dsp_core, FrameCounter);
+}
 
 /**
  * Hardware IO address read by CPU

@@ -129,7 +129,7 @@ extern "C" {
 #define DSP_SSI_SR_RFS		0x3
 #define DSP_SSI_SR_TUE		0x4
 #define DSP_SSI_SR_ROE		0x5
-#define DSP_SSI_SR_TDF		0x6
+#define DSP_SSI_SR_TDE		0x6
 #define DSP_SSI_SR_RDF		0x7
 
 #define DSP_INTERRUPT_NONE      0x0
@@ -166,10 +166,12 @@ struct dsp_core_ssi_s {
 	Uint16  crb_tie;
 	Uint16  crb_rie;
 
-	Uint16  slot_in_frame;
-	Uint16  new_frame;
-	Uint16  clock_received;
+	Uint32  TX;
+	Uint32  RX;
 	Uint32  transmit_value;		/* DSP Transmit --> SSI */
+	Uint32  received_value;		/* DSP Receive  --> SSI */
+	Uint16  waitFrame;
+	Uint16  slot_in_frame;
 };
 
 
@@ -241,10 +243,15 @@ void dsp_core_hostport_dspread(dsp_core_t *dsp_core);
 void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
 
 /* dsp_cpu call these to read/write/configure SSI port */
-void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress);
+void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value);
 void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core);
-void dsp_core_ssi_transmit_data(dsp_core_t *dsp_core, Uint32 value);
-void dsp_core_ssi_receive_data(Uint32 data);
+void dsp_core_ssi_receive_data(dsp_core_t *dsp_core, Uint32 data);
+void dsp_core_ssi_receive_SC2(dsp_core_t *dsp_core, Uint32 value);
+void dsp_core_ssi_setTX(dsp_core_t *dsp_core, Uint32 value);
+Uint32 dsp_core_ssi_getRX(dsp_core_t *dsp_core);
+void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core);
+
+
 
 /* Process peripheral code */
 void dsp_core_process_host_interface(dsp_core_t *dsp_core);	/* HI */

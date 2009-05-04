@@ -47,6 +47,8 @@ extern Uint16 DSP_GetPC(void);
 /* Dsp SSI commands */
 extern Uint32 DSP_SsiReadTxValue(void);
 extern void DSP_SsiReceiveSerialClock(void);
+extern void DSP_SsiReceive_SC2(Uint32 FrameCounter);
+
 
 /* Dsp Host interface commands */
 extern void DSP_HandleReadAccess(void);
