@@ -956,7 +956,7 @@ static Uint32 read_memory(int space, Uint16 address)
 			dsp_core_hostport_dspread(dsp_core);
 		}
 		else if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_SSI_RX)) {
-			value = dsp_core_ssi_getRX(dsp_core);
+			value = dsp_core_ssi_readRX(dsp_core);
 		}
 
 		return value;
@@ -1010,11 +1010,13 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 						break;
 					case DSP_SSI_CRA:
 					case DSP_SSI_CRB:
-					case DSP_SSI_SR:
 						dsp_core_ssi_configure(dsp_core, address-0xffc0, value);
 						break;
+					case DSP_SSI_TSR:
+						dsp_core_ssi_writeTSR(dsp_core);
+						break;
 					case DSP_SSI_TX:
-						dsp_core_ssi_setTX(dsp_core, value);
+						dsp_core_ssi_writeTX(dsp_core, value);
 						break;
 					default:
 						dsp_core->periph[DSP_SPACE_X][address-0xffc0] = value;

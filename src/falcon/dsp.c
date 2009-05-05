@@ -336,7 +336,9 @@ void DSP_SsiReceiveSerialClock(void)
 
 void DSP_SsiReceive_SC2(Uint32 FrameCounter)
 {
+#if ENABLE_DSP_EMU
 	dsp_core_ssi_receive_SC2(&dsp_core, FrameCounter);
+#endif
 }
 
 /**

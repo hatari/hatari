@@ -176,8 +176,8 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	dsp_core->hostport[CPU_HOST_IVR]=0x0f;
 
 	/* SSI registers */
-	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]=0x40;
-	dsp_core->ssi.waitFrame = 0;
+	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]=1<<DSP_SSI_SR_TDE;
+	dsp_core->ssi.waitFrame = 1;
 	dsp_core->ssi.TX = 0;
 	dsp_core->ssi.RX = 0;
 	dsp_core->ssi.slot_in_frame = 0;
@@ -223,15 +223,22 @@ void dsp_core_ssi_receive_data(dsp_core_t *dsp_core, Uint32 data)
 }
 
 /* SSI set TX register */
-void dsp_core_ssi_setTX(dsp_core_t *dsp_core, Uint32 value)
+void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value)
 {
 	/* Clear SSI TDE bit */
 	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDE);
 	dsp_core->ssi.TX = value;
 }
 
+/* SSI set TX register */
+void dsp_core_ssi_writeTSR(dsp_core_t *dsp_core)
+{
+	/* Dummy write : Just clear SSI TDE bit */
+	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDE);
+}
+
 /* SSI get RX register */
-Uint32 dsp_core_ssi_getRX(dsp_core_t *dsp_core)
+Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core)
 {
 	/* Clear SSI receive interrupt */
 	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_RDF);
@@ -268,8 +275,8 @@ void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core)
 
 		/* generate interrupt ? */
 		if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_TIE)) {
-			if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] && (1<<DSP_SSI_SR_TDE)) {
-				dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_TRX_DATA_E);
+			if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_TDE)) {
+				dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_TRX_DATA);
 			} else {
 				dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_TRX_DATA);
 			}
@@ -286,7 +293,7 @@ void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core)
 
 	/* generate interrupt ? */
 	if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RIE)) {
-		if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] && (1<<DSP_SSI_SR_RDF)) {
+		if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_RDF)) {
 			dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA_E);
 		} else {
 			dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA);
@@ -294,11 +301,6 @@ void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core)
 	}
 	/* Set SSI receive */
 	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= 1<<DSP_SSI_SR_RDF;
-
-	/* if SSI runs in normal mode */
-	if (dsp_core->ssi.crb_mode == 0) {
-		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
-	}
 }
 
 /* SSI generate internal clock */
@@ -324,12 +326,23 @@ void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core)
 /* SSI receive SC2 bit : frame sync */
 void dsp_core_ssi_receive_SC2(dsp_core_t *dsp_core, Uint32 value)
 {
-	/* Detect Begin of a new frame */
-	if (value == 0) {
-		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
-		dsp_core->ssi.waitFrame = 0;
+	dsp_core->ssi.slot_in_frame ++;
+	if (dsp_core->ssi.slot_in_frame >= dsp_core->ssi.cra_frame_rate_divider) {
+		dsp_core->ssi.slot_in_frame = 0;
+	}
+
+	/* SSI runs in network mode ? */
+	if (dsp_core->ssi.crb_mode) {
+		/* Detect Begin of a new frame */
+		if (dsp_core->ssi.slot_in_frame == 0) {
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
+			dsp_core->ssi.waitFrame = 0;
+		}else{
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TFS);
+		}
 	}else{
-		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TFS);
+		/* SSI runs in normal mode */
+		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
 	}
 }
 
@@ -376,13 +389,10 @@ void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value)
 			dsp_core->ssi.crb_re        = (value>>DSP_SSI_CRB_RE) & 1;
 			dsp_core->ssi.crb_tie       = (value>>DSP_SSI_CRB_TIE) & 1;
 			dsp_core->ssi.crb_rie       = (value>>DSP_SSI_CRB_RIE) & 1;
+
 			if (crb_te == 0 && dsp_core->ssi.crb_te) {
 				dsp_core->ssi.waitFrame = 1;
 			}
-			break;
-		case DSP_SSI_TSR:
-			/* Dummy write : Just clear SSI TDE bit */
-			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDE);
 			break;
 	}
 }

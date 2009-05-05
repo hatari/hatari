@@ -247,8 +247,9 @@ void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value);
 void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core);
 void dsp_core_ssi_receive_data(dsp_core_t *dsp_core, Uint32 data);
 void dsp_core_ssi_receive_SC2(dsp_core_t *dsp_core, Uint32 value);
-void dsp_core_ssi_setTX(dsp_core_t *dsp_core, Uint32 value);
-Uint32 dsp_core_ssi_getRX(dsp_core_t *dsp_core);
+void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value);
+void dsp_core_ssi_writeTSR(dsp_core_t *dsp_core);
+Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core);
 void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core);
 
 
