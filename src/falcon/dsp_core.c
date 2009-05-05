@@ -216,12 +216,6 @@ void dsp_core_process_ssi_interface(dsp_core_t *dsp_core)
 {
 }
 
-/* SSI receive data from crossbar */
-void dsp_core_ssi_receive_data(dsp_core_t *dsp_core, Uint32 data)
-{
-	dsp_core->ssi.received_value = data & 0xffffff;
-}
-
 /* SSI set TX register */
 void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value)
 {

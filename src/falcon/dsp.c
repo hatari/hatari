@@ -323,6 +323,15 @@ Uint32 DSP_SsiReadTxValue(void)
 #endif
 }
 
+/**
+ * Write SSI receive value
+ */
+void DSP_SsiWriteRxValue(Uint32 value)
+{
+#if ENABLE_DSP_EMU
+	dsp_core.ssi.received_value = value & 0xffffff;
+#endif
+}
 
 /**
  * Signal SSI clock tick to DSP

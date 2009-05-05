@@ -245,7 +245,6 @@ void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
 /* dsp_cpu call these to read/write/configure SSI port */
 void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value);
 void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core);
-void dsp_core_ssi_receive_data(dsp_core_t *dsp_core, Uint32 data);
 void dsp_core_ssi_receive_SC2(dsp_core_t *dsp_core, Uint32 value);
 void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value);
 void dsp_core_ssi_writeTSR(dsp_core_t *dsp_core);
