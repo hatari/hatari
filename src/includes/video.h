@@ -74,15 +74,15 @@
 #define LINE_END_CYCLE_50	376		/* LINE_START_CYCLE_50 + 320 */
 #define LINE_END_CYCLE_60	372		/* LINE_START_CYCLE_60 + 320 */
 #define LINE_END_CYCLE_71	160
-#define LINE_END_CYCLE_NO_RIGHT	460
+#define LINE_END_CYCLE_NO_RIGHT	460		/* 372 + 44*2 */
 #define LINE_END_CYCLE_50_2	(LINE_END_CYCLE_50+44*2)	/* used in enchanted lands */
 #define LINE_END_CYCLE_FULL	512				/* used in enchanted lands */
 #define LINE_SCROLL_13_CYCLE_50	20	/* 13 pixels right "hardware" scrolling */
 #define LINE_SCROLL_9_CYCLE_50	24	/*  9 pixels right "hardware" scrolling */
 #define LINE_SCROLL_5_CYCLE_50	28	/*  5 pixels right "hardware" scrolling */
 #define LINE_SCROLL_1_CYCLE_50	32	/*  1 pixels right "hardware" scrolling */
-#define LINE_LEFT_MID_CYCLE_1	20	/* mid res overscan, shifts display by 0 byte */
-#define LINE_LEFT_MID_CYCLE_2	28	/* mid res overscan, shifts display by 2 bytes */
+#define LINE_LEFT_MED_CYCLE_1	20	/* med res overscan, shifts display by 0 byte */
+#define LINE_LEFT_MED_CYCLE_2	28	/* med res overscan, shifts display by 2 bytes */
 #define	LINE_EMPTY_CYCLE_71_STF	28	/* on STF switch to hi/lo will create an empty line */
 #define	LINE_EMPTY_CYCLE_71_STE	(28+4)	/* on STE switch to hi/lo will create an empty line */
 
