@@ -2183,26 +2183,38 @@ is completely busy, it will increase to the maximum specified
 (automatic) frame skip value.
 </p>
 <p>
-Hatari has also a facility to measure FPS i.e. Frames Per Second
-(actually, how many VBLs it can achieve within a second).  Just enable
-the <span class="commandline">--fast-forward</span> option on command
-line (or use the corresponding keyboard shortcut), and after a while,
-press the "Pause" key.  Whenever Hatari emulation is paused, Hatari
-will show how many VBLs it could show per second along with some other
-numbers.  Note that the numbers can fluctuate quite a bit, so for
-(statistically) reliable numbers you need to do the measurement
-several times.
+Hatari has also a facility to measure FPS i.e. Frames Per Second.
+Just enable the <span class="commandline">--fast-forward</span> option
+on command line (or use the corresponding keyboard shortcut), and
+after a while, press the "Pause" key.  Whenever Hatari emulation is
+paused, Hatari will show how many VBLs it could show per second along
+with some other numbers.
 </p>
 <p>
-For slightly more accurate measurements you could use also
+It depends on what you want to measure, but usually it's best to
+disable sound and set high frame skip like
+<span class="commandline">--sound off --frameskips 60</span> so that
+the associated external overheads are minimized.  E.g. video output
+can on some platforms do VSync and measurements would then show
+your monitor refresh frequency instead of actual Hatari performance.
+</p>
+<p>
+On Unix systems with <span class="commandline">times()</span> function
+call, only the time spent by the Hatari process itself is measured.
+On other systems much less accurate SDL "wall clock" timings are
+used.  To make latter more accurate you could use also
 <span class="commandline">--run-vbls</span> option to specify how many
-VBLs Hatari should run in fast forward mode before it exits. It
-depends a bit what you want to measure, but usually it's best to give
-your test case as a memory snapshot that Hatari should load, disable
-sound and set the frame skip to the number of VBLs so that neither
-sound nor video overhead are included (video output can on some
-platforms do VSync which would limit Hatari speed to monitor refresh
-frequency).
+VBLs Hatari should run in fast forward mode before it exits.  In this
+case it's best to either have the test-case run automatically from the
+AUTO-folder or given as memory snapshot to Hatari with the frame skip
+set equal to the VBL count.
+</p>
+<p>
+Note that especially when the SDL timings are used, the numbers can
+fluctuate quite a bit, so for (statistically) reliable numbers you may
+need to repeat the measurement several times.  You should of course
+make also sure that the system doesn't have any other activity at
+the same time you're making the measurements.
 </p>
 
 

@@ -92,6 +92,37 @@ void Main_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return current time as millisecond for performance measurements.
+ * 
+ * (On Unix only time spent by Hatari itself is counted, on other
+ * platforms less accurate SDL "wall clock".)
+ */
+#if HAVE_SYS_TIMES_H
+#include <unistd.h>
+#include <sys/times.h>
+static Uint32 Main_GetTicks(void)
+{
+	static unsigned int ticks_to_msec = 0;
+	struct tms fields;
+	if (!ticks_to_msec)
+	{
+		ticks_to_msec = sysconf(_SC_CLK_TCK);
+		printf("OS clock ticks / second: %d\n", ticks_to_msec);
+		/* Linux has 100Hz virtual clock so no accuracy loss there */
+		ticks_to_msec = 1000UL / ticks_to_msec;
+	}
+	/* return milliseconds (clock ticks) spent in this process
+	 */
+	times(&fields);
+	return ticks_to_msec * fields.tms_utime;
+}
+#else
+#define Main_GetTicks SDL_GetTicks
+#endif
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Pause emulation, stop sound.  'visualize' should be set TRUE,
  * unless unpause will be called immediately afterwards.
  * 
@@ -108,7 +139,7 @@ bool Main_PauseEmulation(bool visualize)
 	{
 		if (nFirstMilliTick)
 		{
-			int interval = SDL_GetTicks() - nFirstMilliTick;
+			int interval = Main_GetTicks() - nFirstMilliTick;
 			static float previous;
 			float current;
 
@@ -204,7 +235,7 @@ void Main_WaitOnVbl(void)
 		{
 			nVBLCount += 1;
 			if (!nFirstMilliTick)
-				nFirstMilliTick = SDL_GetTicks();
+				nFirstMilliTick = Main_GetTicks();
 			else if (nRunVBLs && nVBLCount >= nRunVBLs)
 			{
 				/* show VBLs/s */
