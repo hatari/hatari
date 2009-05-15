@@ -3160,6 +3160,7 @@ static void dsp_pm_2_2(void)
 	if ((srcreg == DSP_REG_A) || (srcreg == DSP_REG_B)) {
 		/* Accu to register or accu: limited 24 bits */
 		dsp_pm_read_accu24(srcreg, &tmp_parmove_src[0][1]); 
+		tmp_parmove_src[0][1] &= BITMASK(registers_mask[dstreg]);
 		if (tmp_parmove_src[0][1] & (1<<23)) {
 			tmp_parmove_src[0][0]=0x0000ff;
 		}
