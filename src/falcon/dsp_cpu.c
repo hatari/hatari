@@ -207,7 +207,7 @@ static void dsp_pm_2(void);
 static void dsp_pm_2_2(void);
 static void dsp_pm_3(void);
 static void dsp_pm_4(void);
-static void dsp_pm_4x(int immediat, Uint32 l_addr);
+static void dsp_pm_4x(void);
 static void dsp_pm_5(void);
 static void dsp_pm_8(void);
 
@@ -3216,53 +3216,46 @@ static void dsp_pm_3(void)
 
 static void dsp_pm_4(void)
 {
-	Uint32 l_addr, value;
-	int retour;
 /*
-	0100 l0ll w0aa aaaa l:aa,D
+	0100 l0ll w0aa aaaa 			l:aa,D
 						S,l:aa
-	0100 l0ll w1mm mrrr l:ea,D
+	0100 l0ll w1mm mrrr 			l:ea,D
 						S,l:ea
-	01dd 0ddd w0aa aaaa x:aa,D
+	01dd 0ddd w0aa aaaa 			x:aa,D
 						S,x:aa
-	01dd 0ddd w1mm mrrr x:ea,D
+	01dd 0ddd w1mm mrrr 			x:ea,D
 						S,x:ea
 						#xxxxxx,D
-	01dd 1ddd w0aa aaaa y:aa,D
+	01dd 1ddd w0aa aaaa 			y:aa,D
 						S,y:aa
-	01dd 1ddd w1mm mrrr y:ea,D
+	01dd 1ddd w1mm mrrr 			y:ea,D
 						S,y:ea
 						#xxxxxx,D
 */
-	value = (cur_inst>>16) & BITMASK(3);
-	value |= (cur_inst>>17) & (BITMASK(2)<<3);
-
-	if ((value>>2)==0) {
-		value = (cur_inst>>8) & BITMASK(6);
-		if (cur_inst & (1<<14)) {
-			retour = dsp_calc_ea(value, &l_addr);	
-		} else {
-			l_addr = value;
-			retour = 0;
-		}
-		dsp_pm_4x(retour, l_addr);
+	if ((cur_inst & 0xf40000)==0x400000) {
+		dsp_pm_4x();
 		return;
 	}
 
 	dsp_pm_5();
 }
 
-static void dsp_pm_4x(int immediat, Uint32 l_addr)
+static void dsp_pm_4x(void)
 {
-	Uint32 value, numreg, numreg2;
-	immediat = 0; /* UNUSED */
+	Uint32 value, numreg, numreg2, l_addr;
 /*
 	0100 l0ll w0aa aaaa l:aa,D
 						S,l:aa
 	0100 l0ll w1mm mrrr l:ea,D
 						S,l:ea
 */
-	l_addr &= BITMASK(16);
+	value = (cur_inst>>8) & BITMASK(6);
+	if (cur_inst & (1<<14)) {
+		dsp_calc_ea(value, &l_addr);	
+	} else {
+		l_addr = value & BITMASK(16);
+	}
+
 	numreg = (cur_inst>>16) & BITMASK(2);
 	numreg |= (cur_inst>>17) & (1<<2);
 
