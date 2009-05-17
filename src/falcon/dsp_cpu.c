@@ -1056,11 +1056,16 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 #if defined(DSP_DISASM) && (DSP_DISASM_MEM==1)
 static void write_memory_disasm(int space, Uint16 address, Uint32 value)
 {
+	Uint32 oldvalue, curvalue;
 	Uint8 space_c = 'p';
 
 	value &= BITMASK(24);
 
-	Uint32 curvalue = read_memory_disasm(space, address);
+	if ((address == 0xffeb) && (space == DSP_SPACE_X) ) {
+		oldvalue = dsp_core->dsp_host_htx;
+	} else {
+		oldvalue = read_memory_disasm(space, address);
+	}
 
 	write_memory_raw(space,address,value);
 
@@ -1075,8 +1080,13 @@ static void write_memory_disasm(int space, Uint16 address, Uint32 value)
 			break;
 	}
 
-	fprintf(stderr,"Dsp: Mem: %c:0x%04x:0x%06x -> 0x%06x\n", space_c,
-		address, curvalue, read_memory_disasm(space, address));
+	if ((address == 0xffeb) && (space == DSP_SPACE_X) ) {
+		curvalue = dsp_core->dsp_host_htx;
+	} else {
+		curvalue = read_memory_disasm(space, address);
+	}
+
+	fprintf(stderr,"Dsp: Mem: %c:0x%04x:0x%06x -> 0x%06x\n", space_c, address, oldvalue, curvalue);
 }
 #endif
 
