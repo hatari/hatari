@@ -2930,35 +2930,55 @@ static void dsp_parmove_write(void)
 
 static int dsp_pm_read_accu24(int numreg, Uint32 *dest)
 {
-	Uint32 scaling, value, numbits;
+	Uint32 scaling, value, reg;
 	int got_limited=0;
 
 	/* Read an accumulator, stores it limited */
 
 	scaling = (dsp_core->registers[DSP_REG_SR]>>DSP_SR_S0) & BITMASK(2);
-	numreg &= 1;
+	reg = numreg & 1;
 
-	/* scaling==1 */
-	value = dsp_core->registers[DSP_REG_A2+numreg] & 0xff;
-	numbits = 8;
+	value = (dsp_core->registers[DSP_REG_A2+reg]) << 24;
+	value += dsp_core->registers[DSP_REG_A1+reg];
 
 	switch(scaling) {
 		case 0:
-			value <<=1;
-			value |= (dsp_core->registers[DSP_REG_A1+numreg]>>23) & 1;
-			numbits=9;
+			/* No scaling */
+			break;
+		case 1:
+			/* scaling down */
+			value >>= 1;
 			break;
 		case 2:
-			value <<=2;
-			value |= (dsp_core->registers[DSP_REG_A1+numreg]>>22) & 3;
-			numbits=10;
+			/* scaling up */
+			value <<= 1;
+			value |= (dsp_core->registers[DSP_REG_A0+reg]>>23) & 1;
+			break;
+		/* indeterminate */
+		case 3:	
 			break;
 	}
 
-	if ((value==0) || (value==(Uint32)(BITMASK(numbits)))) {
-		/* No limiting */
-		*dest=dsp_core->registers[DSP_REG_A1+numreg];
-	} else if (dsp_core->registers[DSP_REG_A2+numreg] & (1<<7)) {
+	/* limiting ? */
+	value &= BITMASK(24);
+
+	if (dsp_core->registers[DSP_REG_A2+reg] == 0) {
+		if (value <= 0x007fffff) {
+			/* No limiting */
+			*dest=value;
+			return 0;
+		} 
+	}
+
+	if (dsp_core->registers[DSP_REG_A2+reg] == 0xff) {
+		if (value >= 0x00800000) {
+			/* No limiting */
+			*dest=value;
+			return 0;
+		} 
+	}
+
+	if (dsp_core->registers[DSP_REG_A2+reg] & (1<<7)) {
 		/* Limited to maximum negative value */
 		*dest=0x00800000;
 		dsp_core->registers[DSP_REG_SR] |= (1<<DSP_SR_L);
