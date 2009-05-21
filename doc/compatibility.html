@@ -95,6 +95,7 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
     <li><a href="#Falcon demos">Falcon demos</a>
     <li><a href="#Falcon games">Falcon applications</a>
   </ul>
+  <li><a href="#TT/Falcon utilities">TT/Falcon utilities</a>
 </ul>
 
 
@@ -864,7 +865,7 @@ configuration or data files are not writable.</p>
 
 <p>If you don't have a MIDI sequencer, on Linux you can use
 a softsynth like Timidity or FluidSynth instead (if your distribution
-supports ALSA). For instructions, see alsa-midi.txt file.</p>
+supports ALSA). For instructions, see midi-linux.txt file.</p>
 
 
 <a name="STE"></a><h2>STE software compatibility list</h2>
@@ -2326,10 +2327,10 @@ otherwise "-".</p>
     <tr>
       <td>Escape:
       <a href="http://pouet.net/prod.php?which=3192">Hmmm...</a></td>
-      <td>partially</td>
+      <td>yes</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Many visual glitches. Crashes before end</td>
+      <td>"Classic" from 2001</td>
     </tr> 
    <tr>
       <td>Escape:
@@ -2472,7 +2473,7 @@ otherwise "-".</p>
       <td>yes</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Graphical glitches?</td>
+      <td>Nice (+ almost half an hour long + includes sources)</td>
     </tr>
     <tr>
       <td>Lineout:
@@ -2489,6 +2490,14 @@ otherwise "-".</p>
       <td>yes</td>
       <td>emu</td>
       <td></td>
+    </tr>
+    <tr>
+      <td>Mystic bytes:
+      <a href="http://pouet.net/prod.php?which=14856">Moai 96kB</a></td>
+      <td>-</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>14MB RAM + FPU. Complains that it works only on 68030 or higher</td>
     </tr>
     <tr>
       <td>Mystic bytes:
@@ -2604,13 +2613,21 @@ otherwise "-".</p>
       <td>Some screens don't work</td>
     </tr>
     <tr>
+      <td>Trio:
+      <a href="http://www.pouet.net/prod.php?which=15974">X-tasie</a></td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Quits without doing anything (requires 030 MMU which AUE doesn't emulate?)</td>
+    </tr>
+    <tr>
       <td>tSCc:
       <a href="http://pouet.net/prod.php?which=1015">30L Coke</a> &amp;
       <a href="http://pouet.net/prod.php?which=1014">A Rh positive</a></td>
       <td>yes</td>
       <td>-</td>
       <td>emu</td>
-      <td>4K demos. Rh positive flickers a bit.</td>
+      <td>4K demos. Rh positive flickers a bit</td>
     </tr>
     <tr>
       <td>tSCc:
@@ -2667,13 +2684,6 @@ otherwise "-".</p>
       <td>-</td>
       <td>-</td>
       <td>A simple FLE animation player</td>
-    </tr>
-    <tr>
-      <td>Xtasie</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Might require 030 MMU which AUE core doesn't emulate</td>
     </tr>
   </tbody>
 </table>
@@ -2820,6 +2830,35 @@ otherwise "-".</p>
   </tbody>
 </table>
 
+
+<a name="TT/Falcon utilities"></a><h2>TT/Falcon utilities</h2>
+
+<p>Here are some utilities that require 68020 or better processor
+and work both on TT and Falcon.</p>
+
+<table border="1" cellpadding="3">
+  <caption align="bottom">TT/Falcon utilities</caption>
+  <tbody>
+    <tr class="backdropped">
+      <td align="center">Utility</td>
+      <td align="center">Hatari version</td>
+      <td align="center">Notes</td>
+    </tr>
+    <tr>
+      <td><a href="http://freemint.de/en/">FreeMiNT</a></td>
+      <td>1.2</td>
+      <td>Needs to be installed/booted from an ACSI or IDE HD image and
+      memory protection needs to be disabled (UAE core doesn't emulate MMU)</td>
+    </tr>
+    </tr>
+    <tr>
+      <td><a href="http://centek.free.fr/atari/softs/s_cecile.htm">Cecile</a></td>
+      <td>1.2</td>
+      <td>Hard disk driver.  Works only with IDE emulation</td>
+    </tr>
+    </tr>
+  </tbody>
+</table>
 
 <br>
 
