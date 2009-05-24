@@ -68,10 +68,14 @@ void VIDEL_reset(void)
 	zoomxtable=NULL;
 	zoomytable=NULL;
 
-	// default resolution to boot with
+	/* Default resolution to boot with */
 	width = 640;
 	height = 480;
 	HostScreen_setWindowSize(width, height, ConfigureParams.Screen.nForceBpp);
+
+	/* Reset IO register (some are not initialized by TOS) */
+	IoMem_WriteWord(0xff820e, 0);    /* Line offset */
+	IoMem_WriteWord(0xff8264, 0);    /* Horizontal scroll */
 }
 
 // monitor write access to Falcon and ST/E color palette registers
