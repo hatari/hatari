@@ -4,7 +4,13 @@ TODO
 This lists potential TODO items that aren't listed in the Hatari/UI
 sources.
 
-* Specifying hard disk image and whether to use HD dir or image
+* Supporting new sound frequencies
+  (needs Hatari cmd line options update first)
+
+* Supporting setting CPU level & clock and Falcon DSP type
+
+* Supporting ASCI / IDE hard disk image and whether to use these
+  or GEMDOS HD dir
 
 * Hatari UI specific configuration which stores:
   - disk image dir (uses Hatari config value as default)
@@ -28,14 +34,15 @@ sources.
 * Translation support for the UI
 
 * Supporting other configurable things in Hatari:
-  - toggling disk-b autoinsertion and write protection
+  - toggling disk-b autoinsertion, write protection and slow FDC
   - separate A/B disk paths for images within ZIP archives
   - joystick autofire toggling, defining the keys for joyemu
   - keyboard repeat, key mapping type and file
-  - CPU level and clock, ST blitter, Falcon DSP
-  - toggling RTC support, timer-D patching, slow FDC
-  - vdi planes and size, SDL bpp forcing, frames-per-sec
+  - multiple GEMDOS partition directories
+  - toggling blitter, RTC support, timer-D patching
+  - vdi planes and size, SDL bpp forcing, spec512 threshold, frames-per-sec
   - border sizes in windowed and fullscreen mode
+  - screen recording type (every frame vs. when changed)
   - cartridge image (where? it has many limitations)
   - log file and levels, bios intercept
   (several of these aren't supported by the internal Hatari UI either)

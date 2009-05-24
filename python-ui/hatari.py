@@ -248,7 +248,8 @@ class HatariConfigMapping(ConfigStore):
     _paths = {
         "memauto": ("[Memory]", "szAutoSaveFileName", "Automatic memory snapshot"),
         "memsave": ("[Memory]", "szMemoryCaptureFileName", "Manual memory snapshot"),
-        "midiout": ("[Midi]", "szMidiOutFileName", "Midi output"),
+        "midiin":  ("[Midi]", "sMidiInFileName", "Midi input"),
+        "midiout": ("[Midi]", "sMidiOutFileName", "Midi output"),
         "rs232in": ("[RS232]", "szInFileName", "RS232 I/O input"),
         "rs232out": ("[RS232]", "szOutFileName", "RS232 I/O output"),
         "printout": ("[Printer]", "szPrintToFileName", "Printer output"),

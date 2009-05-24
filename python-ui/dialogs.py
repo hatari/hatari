@@ -563,12 +563,17 @@ class TraceDialog(HatariUIDialog):
         "cpu_exception",
         "int",
         "fdc",
-        "ikbd",
+        "ikbd_cmds",
+        "ikbd_acia",
+        "ikbd_exec",
+        "blitter",
         "bios",
         "xbios",
         "gemdos",
         "vdi",
-        "blitter"
+        "io_read",
+        "io_write",
+        "dmasound"
     ]
     def __init__(self, parent):
         self.savedpoints = "none"
