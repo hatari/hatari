@@ -231,7 +231,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
 	{ OPT_SOUND,   NULL, "--sound",
-	  "<x>", "Sound quality (x = off/low/med/hi, off=faster)" },
+	  "<x>", "Sound frequency (x=off/3000-96000, off=fastest)" },
 	{ OPT_KEYMAPFILE, "-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	
@@ -628,7 +628,7 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
  */
 bool Opt_ParseParameters(int argc, const char *argv[])
 {
-	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port;
+	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq;
 	const char *errstr;
 	int i, ok = TRUE;
 
@@ -1118,24 +1118,15 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			{
 				ConfigureParams.Sound.bEnableSound = FALSE;
 			}
-			else if (strcasecmp(argv[i], "low") == 0)
-			{
-				ConfigureParams.Sound.nPlaybackFreq = 11025;
-				ConfigureParams.Sound.bEnableSound = TRUE;
-			}
-			else if (strcasecmp(argv[i], "med") == 0)
-			{
-				ConfigureParams.Sound.nPlaybackFreq = 22050;
-				ConfigureParams.Sound.bEnableSound = TRUE;
-			}
-			else if (strcasecmp(argv[i], "hi") == 0)
-			{
-				ConfigureParams.Sound.nPlaybackFreq = 44100;
-				ConfigureParams.Sound.bEnableSound = TRUE;
-			}
 			else
 			{
-				return Opt_ShowError(OPT_SOUND, argv[i], "Unsupported sound quality");
+				freq = atoi(argv[i]);
+				if (freq < 3000 || freq > 96000)
+				{
+					return Opt_ShowError(OPT_SOUND, argv[i], "Unsupported sound frequency");
+				}
+				ConfigureParams.Sound.nPlaybackFreq = freq;
+				ConfigureParams.Sound.bEnableSound = TRUE;
 			}
 			break;
 
