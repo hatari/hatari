@@ -190,7 +190,7 @@ struct dsp_core_s {
 	Uint16	stack[2][16];
 
 	/* External ram[0] is x:, ram[1] is y:, ram[2] is p: */
-	Uint32	ram[3][DSP_RAMSIZE];
+	Uint32	ramext[DSP_RAMSIZE];
 
 	/* rom[0] is x:, rom[1] is y: */
 	Uint32	rom[2][512];
