@@ -397,17 +397,6 @@ static dsp_emul_t opcodes_alu[256]={
 	dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr, dsp_mpy, dsp_mpyr, dsp_mac, dsp_macr
 };
 
-static int registers_lmove[8][2]={
-	{DSP_REG_A1,DSP_REG_A0},	/* A10 */
-	{DSP_REG_B1,DSP_REG_B0},	/* B10 */
-	{DSP_REG_X1,DSP_REG_X0},	/* X */
-	{DSP_REG_Y1,DSP_REG_Y0},	/* Y */
-	{DSP_REG_A,DSP_REG_A},		/* A */
-	{DSP_REG_B,DSP_REG_B},		/* B */
-	{DSP_REG_A,DSP_REG_B},		/* AB */
-	{DSP_REG_B,DSP_REG_A}		/* BA */
-};
-
 static int registers_tcc[16][2]={
 	{DSP_REG_B,DSP_REG_A},
 	{DSP_REG_A,DSP_REG_B},
@@ -909,12 +898,13 @@ static Uint32 read_memory_disasm(int space, Uint16 address)
 	}
 
 	/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
+	address &= (DSP_RAMSIZE>>1) - 1;
 	if (space == DSP_SPACE_X) {
 		address += DSP_RAMSIZE>>1;
 	}
 
 	/* Falcon: External RAM, finally map X,Y to P */
-	return dsp_core->ram[DSP_SPACE_P][address & (DSP_RAMSIZE-1)] & BITMASK(24);
+	return dsp_core->ramext[address & (DSP_RAMSIZE-1)] & BITMASK(24);
 }
 #endif
 
@@ -926,24 +916,25 @@ static inline Uint32 read_memory_p(Uint16 address)
 	}
 
 	/* External RAM, mask address to available ram size */
-	return dsp_core->ram[DSP_SPACE_P][address & (DSP_RAMSIZE-1)] & BITMASK(24);
+	return dsp_core->ramext[address & (DSP_RAMSIZE-1)] & BITMASK(24);
 }
 
 static Uint32 read_memory(int space, Uint16 address)
 {
 	/* Internal RAM ? */
-	if (address<0x100) {
+	if (address < 0x100) {
 		return dsp_core->ramint[space][address] & BITMASK(24);
 	}
 
-	if (space==DSP_SPACE_P) {
+	if (space == DSP_SPACE_P) {
 		return read_memory_p(address);
 	}
 
-	/* Internal ROM ?*/
-	if ((dsp_core->registers[DSP_REG_OMR] & (1<<DSP_OMR_DE)) &&
-		(address<0x200)) {
-		return dsp_core->rom[space][address] & BITMASK(24);
+	/* Internal ROM ? */
+	if (address < 0x200) {
+		if (dsp_core->registers[DSP_REG_OMR] & (1<<DSP_OMR_DE)) {
+			return dsp_core->rom[space][address] & BITMASK(24);
+		}
 	}
 
 	/* Peripheral address ? */
@@ -963,12 +954,14 @@ static Uint32 read_memory(int space, Uint16 address)
 	}
 
 	/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
+	address &= (DSP_RAMSIZE>>1) - 1;
+
 	if (space == DSP_SPACE_X) {
 		address += DSP_RAMSIZE>>1;
 	}
 
 	/* Falcon: External RAM, finally map X,Y to P */
-	return dsp_core->ram[DSP_SPACE_P][address & (DSP_RAMSIZE-1)] & BITMASK(24);
+	return dsp_core->ramext[address & (DSP_RAMSIZE-1)] & BITMASK(24);
 }
 
 /* Note: MACRO write_memory defined to either write_memory_raw or write_memory_disasm */
@@ -976,81 +969,79 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 {
 	value &= BITMASK(24);
 
+	/* Peripheral address ? */
+	if (address >= 0xffc0) {
+		if (space == DSP_SPACE_X) {
+			switch(address-0xffc0) {
+				case DSP_HOST_HTX:
+					dsp_core->dsp_host_htx = value;
+					dsp_core_hostport_dspwrite(dsp_core);
+					break;
+				case DSP_HOST_HCR:
+					dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] = value;
+					/* Set HF3 and HF2 accordingly on the host side */
+					dsp_core->hostport[CPU_HOST_ISR] &=
+						BITMASK(8)-((1<<CPU_HOST_ISR_HF3)|(1<<CPU_HOST_ISR_HF2));
+					dsp_core->hostport[CPU_HOST_ISR] |=
+						dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & ((1<<CPU_HOST_ISR_HF3)|(1<<CPU_HOST_ISR_HF2));
+					break;
+				case DSP_HOST_HSR:
+					/* Read only */
+					break;
+				case DSP_SSI_CRA:
+				case DSP_SSI_CRB:
+					dsp_core_ssi_configure(dsp_core, address-0xffc0, value);
+					break;
+				case DSP_SSI_TSR:
+					dsp_core_ssi_writeTSR(dsp_core);
+					break;
+				case DSP_SSI_TX:
+					dsp_core_ssi_writeTX(dsp_core, value);
+					break;
+				default:
+					dsp_core->periph[DSP_SPACE_X][address-0xffc0] = value;
+					break;
+			}
+			return;
+		} 
+		else if (space == DSP_SPACE_Y) {
+			dsp_core->periph[DSP_SPACE_Y][address-0xffc0] = value;
+			return;
+		}
+	}
+		
 	/* Internal RAM ? */
-	if (address<0x100) {
+	if (address < 0x100) {
 		dsp_core->ramint[space][address] = value;
 		return;
 	}
 
-	switch(space) {
-		case DSP_SPACE_X:
-			/* Internal ROM ?*/
-			if ((dsp_core->registers[DSP_REG_OMR] & (1<<DSP_OMR_DE)) &&
-				(address<0x200)) {
+	/* Internal ROM ? */
+	if (address < 0x200) {
+		if (space != DSP_SPACE_P) {
+			if (dsp_core->registers[DSP_REG_OMR] & (1<<DSP_OMR_DE)) {
 				/* Can not write to ROM space */
 				return;
 			}
-			/* Peripheral space ? */
-			if (address >= 0xffc0) {
-				switch(address-0xffc0) {
-					case DSP_HOST_HTX:
-						dsp_core->dsp_host_htx = value;
-						dsp_core_hostport_dspwrite(dsp_core);
-						break;
-					case DSP_HOST_HCR:
-						dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] = value;
-						/* Set HF3 and HF2 accordingly on the host side */
-						dsp_core->hostport[CPU_HOST_ISR] &=
-							BITMASK(8)-((1<<CPU_HOST_ISR_HF3)|(1<<CPU_HOST_ISR_HF2));
-						dsp_core->hostport[CPU_HOST_ISR] |=
-							dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & ((1<<CPU_HOST_ISR_HF3)|(1<<CPU_HOST_ISR_HF2));
-						break;
-					case DSP_HOST_HSR:
-						/* Read only */
-						break;
-					case DSP_SSI_CRA:
-					case DSP_SSI_CRB:
-						dsp_core_ssi_configure(dsp_core, address-0xffc0, value);
-						break;
-					case DSP_SSI_TSR:
-						dsp_core_ssi_writeTSR(dsp_core);
-						break;
-					case DSP_SSI_TX:
-						dsp_core_ssi_writeTX(dsp_core, value);
-						break;
-					default:
-						dsp_core->periph[DSP_SPACE_X][address-0xffc0] = value;
-						break;
-				}
-				return;
-			}
-			/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
-			address += DSP_RAMSIZE>>1;
-			break;
-		case DSP_SPACE_Y:
-			/* Internal ROM ?*/
-			if ((dsp_core->registers[DSP_REG_OMR] & (1<<DSP_OMR_DE)) &&
-				(address<0x200)) {
-				/* Can not write to ROM space */
-				return;
-			}
-			/* Peripheral space ? */
-			if (address >= 0xffc0) {
-				dsp_core->periph[DSP_SPACE_Y][address-0xffc0] = value;
-				return;
-			}
-			break;
-		case DSP_SPACE_P:
-			/* Internal RAM ? */
-			if (address<0x200) {
-				dsp_core->ramint[DSP_SPACE_P][address] = value;
-				return;
-			}
-			break;
+		}
+		else {
+			/* Space P RAM */
+			dsp_core->ramint[DSP_SPACE_P][address] = value;
+			return;
+		}
+	}
+
+	/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
+	if (space != DSP_SPACE_P) {
+		address &= (DSP_RAMSIZE>>1) - 1;
+	} 
+
+	if (space == DSP_SPACE_X) {
+		address += DSP_RAMSIZE>>1;
 	}
 
 	/* Falcon: External RAM, map X,Y to P */
-	dsp_core->ram[DSP_SPACE_P][address & (DSP_RAMSIZE-1)] = value;
+	dsp_core->ramext[address & (DSP_RAMSIZE-1)] = value;
 }
 
 #if defined(DSP_DISASM) && (DSP_DISASM_MEM==1)
@@ -1116,11 +1107,11 @@ static void dsp_write_reg(Uint32 numreg, Uint32 value)
 				dsp_compute_ssh_ssl();
 				break;
 			case DSP_REG_SSH:
-				reg = dsp_core->registers[DSP_REG_SR] & BITMASK(4);
+				reg = dsp_core->registers[DSP_REG_SP] & BITMASK(4);
 				dsp_core->stack[0][reg] = value;
 				break;
 			case DSP_REG_SSL:
-				reg = dsp_core->registers[DSP_REG_SR] & BITMASK(4);
+				reg = dsp_core->registers[DSP_REG_SP] & BITMASK(4);
 				dsp_core->stack[1][reg] = value;
 				break;
 			default:
@@ -3272,18 +3263,18 @@ static void dsp_pm_4(void)
 
 static void dsp_pm_4x(void)
 {
-	Uint32 value, numreg, numreg2, l_addr;
+	Uint32 value, numreg, l_addr;
 /*
-	0100 l0ll w0aa aaaa l:aa,D
-						S,l:aa
-	0100 l0ll w1mm mrrr l:ea,D
-						S,l:ea
+	0100 l0ll w0aa aaaa 		l:aa,D
+					S,l:aa
+	0100 l0ll w1mm mrrr 		l:ea,D
+					S,l:ea
 */
 	value = (cur_inst>>8) & BITMASK(6);
 	if (cur_inst & (1<<14)) {
 		dsp_calc_ea(value, &l_addr);	
 	} else {
-		l_addr = value & BITMASK(16);
+		l_addr = value;
 	}
 
 	numreg = (cur_inst>>16) & BITMASK(2);
@@ -3291,62 +3282,129 @@ static void dsp_pm_4x(void)
 
 	if (cur_inst & (1<<15)) {
 		/* Write D */
+		tmp_parmove_src[0][1] = read_memory(DSP_SPACE_X,l_addr);
 
-		/* Sources */
-		value = read_memory(DSP_SPACE_X,l_addr);
-		tmp_parmove_src[0][0] = (value & (1<<23) ? 0xff : 0);
-		tmp_parmove_src[0][1] = value & BITMASK(registers_mask[registers_lmove[numreg][0]]);
-		tmp_parmove_src[0][2] = 0x000000;
-		value = read_memory(DSP_SPACE_Y,l_addr);
-
-		if (registers_lmove[numreg][0]==registers_lmove[numreg][1]) {
-			/* Write to 56bit accumulator, setup a single transfer as 56 bit */
-			tmp_parmove_src[0][2] = value & BITMASK(registers_mask[registers_lmove[numreg][1]]);
-		} else {
-			/* Writes to 24bit registers, setup second 24 bit transfer */
-			tmp_parmove_src[1][0] = (value & (1<<23) ? 0xff : 0);
-			tmp_parmove_src[1][1] = value & BITMASK(registers_mask[registers_lmove[numreg][1]]);
-			tmp_parmove_src[1][2] = 0x000000;
+		switch(numreg) {
+			case 0:
+				/* A10 */
+				tmp_parmove_src[1][1] = read_memory(DSP_SPACE_Y,l_addr);
+				dsp_pm_writereg(DSP_REG_A1, 0);
+				dsp_pm_writereg(DSP_REG_A0, 1);
+				break;
+			case 1:
+				/* B10 */
+				tmp_parmove_src[1][1] = read_memory(DSP_SPACE_Y,l_addr);
+				dsp_pm_writereg(DSP_REG_B1, 0);
+				dsp_pm_writereg(DSP_REG_B0, 1);
+				break;
+			case 2:
+				/* X */
+				tmp_parmove_src[1][1] = read_memory(DSP_SPACE_Y,l_addr);
+				dsp_pm_writereg(DSP_REG_X1, 0);
+				dsp_pm_writereg(DSP_REG_X0, 1);
+				break;
+			case 3:
+				/* Y */
+				tmp_parmove_src[1][1] = read_memory(DSP_SPACE_Y,l_addr);
+				dsp_pm_writereg(DSP_REG_Y1, 0);
+				dsp_pm_writereg(DSP_REG_Y0, 1);
+				break;
+			case 4:
+				/* A */
+				tmp_parmove_src[0][0] = (tmp_parmove_src[0][1] & (1<<23) ? 0xff : 0);
+				tmp_parmove_src[0][2] = read_memory(DSP_SPACE_Y,l_addr);
+				dsp_pm_writereg(DSP_REG_A, 0);
+				break;
+			case 5:
+				/* B */
+				tmp_parmove_src[0][0] = (tmp_parmove_src[0][1] & (1<<23) ? 0xff : 0);
+				tmp_parmove_src[0][2] = read_memory(DSP_SPACE_Y,l_addr);
+				dsp_pm_writereg(DSP_REG_B, 0);
+				break;
+			case 6:
+				/* AB */
+				tmp_parmove_src[0][0] = (tmp_parmove_src[0][1] & (1<<23) ? 0xff : 0);
+				tmp_parmove_src[0][2] = 0;
+				tmp_parmove_src[1][1] = read_memory(DSP_SPACE_Y,l_addr);
+				tmp_parmove_src[1][0] = (tmp_parmove_src[1][1] & (1<<23) ? 0xff : 0);
+				tmp_parmove_src[1][2] = 0;
+				dsp_pm_writereg(DSP_REG_A, 0);
+				dsp_pm_writereg(DSP_REG_B, 1);
+				break;
+			case 7:
+				/* BA */
+				tmp_parmove_src[0][0] = (tmp_parmove_src[0][1] & (1<<23) ? 0xff : 0);
+				tmp_parmove_src[0][2] = 0;
+				tmp_parmove_src[1][1] = read_memory(DSP_SPACE_Y,l_addr);
+				tmp_parmove_src[1][0] = (tmp_parmove_src[1][1] & (1<<23) ? 0xff : 0);
+				tmp_parmove_src[1][2] = 0;
+				dsp_pm_writereg(DSP_REG_B, 0);
+				dsp_pm_writereg(DSP_REG_A, 1);
+				break;
 		}
 
-		/* Destinations */
-		dsp_pm_writereg(registers_lmove[numreg][0], 0);
 		tmp_parmove_type[0]=0;
-
-		if (registers_lmove[numreg][0]!=registers_lmove[numreg][1]) {
-			/* Two 24 or 56 bits registers */
-			dsp_pm_writereg(registers_lmove[numreg][1], 1);
-			tmp_parmove_type[1]=0;
-		}
+		tmp_parmove_type[1]=0;
 	} else {
 		/* Read S */
 
-		/* Sources */
-		if (numreg<4) {
-			/* Two 24 bits tranfers */
-			tmp_parmove_src[0][1] = dsp_core->registers[registers_lmove[numreg][0]];
-			tmp_parmove_src[1][1] = dsp_core->registers[registers_lmove[numreg][1]];
-		} else if (numreg<6) {
-			/* Single accumulator transfer */
-			numreg2 = registers_lmove[numreg][0];
-			if (dsp_pm_read_accu24(numreg2, &tmp_parmove_src[0][1])) {
-				/* Was limited, set lower part */
-				tmp_parmove_src[1][1] = (tmp_parmove_src[0][1] & (1<<23) ? 0 : 0xffffff);
-			} else {
-				/* Not limited */
-				tmp_parmove_src[1][1] = dsp_core->registers[DSP_REG_A0+(numreg2 & 1)];
-			}
-		} else {
-			/* Two accumulators tranfers */
-			dsp_pm_read_accu24(registers_lmove[numreg][0], &tmp_parmove_src[0][1]); 
-			dsp_pm_read_accu24(registers_lmove[numreg][1], &tmp_parmove_src[1][1]); 
+		switch(numreg) {
+			case 0:
+				/* A10 */
+				tmp_parmove_src[0][1] = dsp_core->registers[DSP_REG_A1];
+				tmp_parmove_src[1][1] = dsp_core->registers[DSP_REG_A0];
+				break;
+			case 1:
+				/* B10 */
+				tmp_parmove_src[0][1] = dsp_core->registers[DSP_REG_B1];
+				tmp_parmove_src[1][1] = dsp_core->registers[DSP_REG_B0];
+				break;
+			case 2:
+				/* X */
+				tmp_parmove_src[0][1] = dsp_core->registers[DSP_REG_X1];
+				tmp_parmove_src[1][1] = dsp_core->registers[DSP_REG_X0];
+				break;
+			case 3:
+				/* Y */
+				tmp_parmove_src[0][1] = dsp_core->registers[DSP_REG_Y1];
+				tmp_parmove_src[1][1] = dsp_core->registers[DSP_REG_Y0];
+				break;
+			case 4:
+				/* A */
+				if (dsp_pm_read_accu24(DSP_REG_A, &tmp_parmove_src[0][1])) {
+					/* Was limited, set lower part */
+					tmp_parmove_src[1][1] = (tmp_parmove_src[0][1] & (1<<23) ? 0 : 0xffffff);
+				} else {
+					/* Not limited */
+					tmp_parmove_src[1][1] = dsp_core->registers[DSP_REG_A0];
+				}
+				break;
+			case 5:
+				/* B */
+				if (dsp_pm_read_accu24(DSP_REG_B, &tmp_parmove_src[0][1])) {
+					/* Was limited, set lower part */
+					tmp_parmove_src[1][1] = (tmp_parmove_src[0][1] & (1<<23) ? 0 : 0xffffff);
+				} else {
+					/* Not limited */
+					tmp_parmove_src[1][1] = dsp_core->registers[DSP_REG_B0];
+				}
+				break;
+			case 6:
+				/* AB */
+				dsp_pm_read_accu24(DSP_REG_A, &tmp_parmove_src[0][1]); 
+				dsp_pm_read_accu24(DSP_REG_B, &tmp_parmove_src[1][1]); 
+				break;
+			case 7:
+				/* BA */
+				dsp_pm_read_accu24(DSP_REG_B, &tmp_parmove_src[0][1]); 
+				dsp_pm_read_accu24(DSP_REG_A, &tmp_parmove_src[1][1]); 
+				break;
 		}
 				
 		/* D1 */
 		tmp_parmove_dest[0][1].dsp_address=l_addr;
 		tmp_parmove_start[0]=1;
 		tmp_parmove_len[0]=1;
-		
 		tmp_parmove_type[0]=1;
 		tmp_parmove_space[0]=DSP_SPACE_X;
 
@@ -3354,7 +3412,6 @@ static void dsp_pm_4x(void)
 		tmp_parmove_dest[1][1].dsp_address=l_addr;
 		tmp_parmove_start[1]=1;
 		tmp_parmove_len[1]=1;
-
 		tmp_parmove_type[1]=1;
 		tmp_parmove_space[1]=DSP_SPACE_Y;
 	}
@@ -3364,14 +3421,14 @@ static void dsp_pm_5(void)
 {
 	Uint32 memspace, numreg, value, xy_addr, retour;
 /*
-	01dd 0ddd w0aa aaaa x:aa,D
+	01dd 0ddd w0aa aaaa 			x:aa,D
 						S,x:aa
-	01dd 0ddd w1mm mrrr x:ea,D
+	01dd 0ddd w1mm mrrr 			x:ea,D
 						S,x:ea
 						#xxxxxx,D
-	01dd 1ddd w0aa aaaa y:aa,D
+	01dd 1ddd w0aa aaaa 			y:aa,D
 						S,y:aa
-	01dd 1ddd w1mm mrrr y:ea,D
+	01dd 1ddd w1mm mrrr 			y:ea,D
 						S,y:ea
 						#xxxxxx,D
 */
@@ -3397,12 +3454,12 @@ static void dsp_pm_5(void)
 		} else {
 			value = read_memory(memspace, xy_addr);
 		}
+		tmp_parmove_src[0][1]= value & BITMASK(registers_mask[numreg]);
+		tmp_parmove_src[0][2]= 0x000000;
 		tmp_parmove_src[0][0]= 0x000000;
 		if (value & (1<<23)) {
 			tmp_parmove_src[0][0]= 0x0000ff;
 		}
-		tmp_parmove_src[0][1]= value & BITMASK(registers_mask[numreg]);
-		tmp_parmove_src[0][2]= 0x000000;
 
 		dsp_pm_writereg(numreg, 0);
 		tmp_parmove_type[0]=0;
@@ -4049,7 +4106,6 @@ static void dsp_and(void)
 	dstreg = DSP_REG_A1+((cur_inst>>3) & 1);
 
 	dsp_core->registers[dstreg] &= dsp_core->registers[srcreg];
-	dsp_core->registers[dstreg] &= BITMASK(24); /* FIXME: useless ? */
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_N)|(1<<DSP_SR_Z)|(1<<DSP_SR_V));
 	dsp_core->registers[DSP_REG_SR] |= ((dsp_core->registers[dstreg]>>23) & 1)<<DSP_SR_N;
