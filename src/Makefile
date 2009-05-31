@@ -39,18 +39,22 @@ ifneq ($(strip $(shell gcc -v 2>&1 |grep "cygwin")),)
 endif 
 endif
 
+SUBDIRS = $(dir $(SUBDIRLIBS))
 ALLOBJS = $(OBJS) $(SUBDIRLIBS)
 
 
-all: ../Makefile.cnf hatari
+.PHONY : all
+all: ../Makefile.cnf
+	$(MAKE) $(SUBDIRS)
+	$(MAKE) hatari
 
 hatari: $(ALLOBJS)
 	$(CC) $(LDFLAGS) $(ALLOBJS) $(SDL_LIBS) $(LIBS) -o hatari
 
 # Sub-folder dependencies:
-.PHONY : $(SUBDIRLIBS)
-$(SUBDIRLIBS):
-	$(MAKE) ENABLE_DSP_EMU=$(ENABLE_DSP_EMU) CPUDIR=$(CPUDIR) -C $(dir $@)
+.PHONY : $(SUBDIRS)
+$(SUBDIRS):
+	$(MAKE) ENABLE_DSP_EMU=$(ENABLE_DSP_EMU) CPUDIR=$(CPUDIR) -C $@
 
 
 clean:
