@@ -4,6 +4,9 @@
 # - install separate startup/.desktop script for maemo
 # - how to do byte-compile (*.pyc) and optimization (*.pyo)?
 
+# Include settings
+-include ../Makefile.cnf
+
 # overridable installation directory prefix
 DESTDIR ?= /usr/local
 
@@ -23,15 +26,15 @@ all:
 	@echo "Nothing to build, just do 'make install'"
 
 install:
-	install -d $(BINPATH)
-	install -m 755 hatari-console.py $(BINPATH)/
+	$(INSTALL) -d $(BINPATH)
+	$(INSTALL_SCRIPT) hatari-console.py $(BINPATH)/
 	sed "s%^path=.*$$%path=$(DATAPATH)%" hatariui > $(SCRIPT)
 	chmod 755 $(SCRIPT)
-	install -d $(DATAPATH)
-	install -m 755 hatariui.py debugui.py $(DATAPATH)/
-	install -m 644 config.py dialogs.py hatari.py uihelpers.py $(DATAPATH)/
-	install -m 644 README TODO Changelog *.png $(DATAPATH)/
-	install -d $(ICONPATH)
-	install -m 644 hatari-icon.png $(ICONPATH)/
-	install -d $(DESKPATH)
-	install -m 644 hatariui.desktop $(DESKPATH)/
+	$(INSTALL) -d $(DATAPATH)
+	$(INSTALL_SCRIPT) hatariui.py debugui.py $(DATAPATH)/
+	$(INSTALL_DATA) config.py dialogs.py hatari.py uihelpers.py $(DATAPATH)/
+	$(INSTALL_DATA) README TODO Changelog *.png $(DATAPATH)/
+	$(INSTALL) -d $(ICONPATH)
+	$(INSTALL_DATA) hatari-icon.png $(ICONPATH)/
+	$(INSTALL) -d $(DESKPATH)
+	$(INSTALL_DATA) hatariui.desktop $(DESKPATH)/
