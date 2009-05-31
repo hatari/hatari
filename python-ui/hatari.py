@@ -345,24 +345,32 @@ class HatariConfigMapping(ConfigStore):
         
     # ------------ sound ---------------
     def get_sound_values(self):
-        return ("Off", "11kHz", "22kHz", "44kHz")
+        return ("11025", "12517", "16000", "22050", "25033",
+                "32000", "44100", "48000", "50066")
     
     def get_sound(self):
-        # return index to get_sound_values() array
-        if self.get("[Sound]", "bEnableSound"):
-            return self.get("[Sound]", "nPlaybackQuality") + 1
-        return 0
+        enabled = self.get("[Sound]", "bEnableSound")
+        hz = str(self.get("[Sound]", "nPlaybackFreq"))
+        return (enabled, hz)
 
-    def set_sound(self, value):
+    def set_sound(self, enabled, hz):
         # map get_sound_values() index to Hatari config
-        if value:
-            self.set("[Sound]", "nPlaybackQuality", value - 1)
-            self.set("[Sound]", "bEnableSound", True)
-        else:
-            self.set("[Sound]", "bEnableSound", False)
+        try:
+            hz = int(hz)
+        except ValueError:
+            hz = 0
+        if hz < 3000 or hz > 96000:
+            hz = 44100
+        self.set("[Sound]", "nPlaybackFreq", hz)
+        self.set("[Sound]", "bEnableSound", enabled)
+        value = str(hz)
         # and to cli option
-        quality = { 0: "off", 1: "low", 2: "med", 3: "hi" }[value]
-        self._change_option("--sound %s" % quality)
+        if enabled:
+            self._change_option("--sound %s" % value)
+        else:
+            self._change_option("--sound off")
+        return value
+        
         
     # ----------- joystick --------------
     def get_joystick_types(self):

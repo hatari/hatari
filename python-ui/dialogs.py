@@ -509,19 +509,23 @@ class PathDialog(HatariUIDialog):
 class SoundDialog(HatariUIDialog):
 
     def _create_dialog(self, config):
-        combo = gtk.combo_box_new_text()
+        combo = gtk.combo_box_entry_new_text()
         for text in config.get_sound_values():
             combo.append_text(text)
-        combo.set_active(config.get_sound())
+        enabled, hz = config.get_sound()
+        self.enabled = gtk.CheckButton("Sound enabled")
+        self.enabled.set_active(enabled)
+        combo.child.set_text(hz)
         box = gtk.HBox()
-        box.pack_start(gtk.Label("Sound:"), False, False)
+        box.pack_start(gtk.Label("Sound frequency:"), False, False)
         box.add(combo)
-        self.sound = combo
+        self.sound = combo.child
 
         dialog = gtk.Dialog("Sound settings", self.parent,
             gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
             (gtk.STOCK_APPLY,  gtk.RESPONSE_APPLY,
              gtk.STOCK_CANCEL,  gtk.RESPONSE_CANCEL))
+        dialog.vbox.add(self.enabled)
         dialog.vbox.add(box)
         dialog.vbox.show_all()
         self.dialog = dialog
@@ -533,7 +537,11 @@ class SoundDialog(HatariUIDialog):
         response = self.dialog.run()
         self.dialog.hide()
         if response == gtk.RESPONSE_APPLY:
-            config.set_sound(self.sound.get_active())
+            enabled = self.enabled.get_active()
+            hz1 = self.sound.get_text()
+            hz2 = config.set_sound(enabled, hz1)
+            if hz2 != hz1:
+                self.sound.set_text(hz2)
         
 
 # ---------------------------
