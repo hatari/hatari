@@ -245,7 +245,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
 	double FreqRatio;
 	int i;
-	int nBufIdx;
+	int nBufIdx, nFramePos;
 	Sint8 *pFrameStart;
 
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON
@@ -269,10 +269,11 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+			nFramePos = ((int)FrameCounter) & ~3;
 			MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
-			                        + (int)(*(Sint16*)&pFrameStart[((int)FrameCounter)&~1])/2) / 2;
+			                        + (int)(*(Sint16*)&pFrameStart[nFramePos])/2) / 2;
 			MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
-			                        + (int)(*(Sint16*)&pFrameStart[(((int)FrameCounter)&~1)+2])/2) / 2;
+			                        + (int)(*(Sint16*)&pFrameStart[nFramePos+2])/2) / 2;
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
@@ -298,10 +299,11 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+			nFramePos = ((int)FrameCounter) & ~1;
 			MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
-			                        + (((int)pFrameStart[((int)FrameCounter)&~1]) << 7)) / 2;
+			                        + (((int)pFrameStart[nFramePos]) << 7)) / 2;
 			MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
-			                        + (((int)pFrameStart[(((int)FrameCounter)&~1)+1]) << 7)) / 2;
+			                        + (((int)pFrameStart[nFramePos+1]) << 7)) / 2;
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
