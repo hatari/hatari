@@ -599,6 +599,7 @@ class TraceDialog(HatariUIDialog):
         per_side = (len(self.tracepoints)+2)/3
         self.tracewidgets = {}
         for trace in self.tracepoints:
+            trace = trace.replace("_", "-")
             widget = gtk.CheckButton(trace)
             self.tracewidgets[trace] = widget
             vboxes[count/per_side].pack_start(widget, False, True)
