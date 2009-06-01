@@ -51,6 +51,7 @@ enum {
 	OPT_MONITOR,
 	OPT_FULLSCREEN,
 	OPT_WINDOW,
+	OPT_GRAB,
 	OPT_ZOOM,
 	OPT_FRAMESKIPS,
 	OPT_BORDERS,
@@ -137,6 +138,8 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Start emulator in fullscreen mode" },
 	{ OPT_WINDOW,    "-w", "--window",
 	  NULL, "Start emulator in window mode" },
+	{ OPT_GRAB, NULL, "--grab",
+	  NULL, "Grab mouse (also) in window mode" },
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Double ST low resolution (1=no, 2=yes)" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
@@ -721,6 +724,10 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			
 		case OPT_WINDOW:
 			ConfigureParams.Screen.bFullScreen = FALSE;
+			break;
+
+		case OPT_GRAB:
+			bGrabMouse = TRUE;
 			break;
 			
 		case OPT_ZOOM:
