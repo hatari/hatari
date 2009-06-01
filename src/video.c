@@ -2678,7 +2678,7 @@ void Video_TTColorRegs_WriteWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write to ST color register on TT (0xff8400)
+ * Write to ST color register on TT (0xff8240)
  */
 void Video_TTColorSTRegs_WriteWord(void)
 {
