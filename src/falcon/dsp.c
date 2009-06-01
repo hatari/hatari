@@ -169,7 +169,7 @@ void DSP_DisasmRegisters(void)
 			i, dsp_core.registers[DSP_REG_M0+i]);
 	}
 
-	fprintf(stderr,"LA: %04x   LC: %04x\n", dsp_core.registers[DSP_REG_LA], dsp_core.registers[DSP_REG_LC]);
+	fprintf(stderr,"LA: %04x   LC: %04x   PC:%04x\n", dsp_core.registers[DSP_REG_LA], dsp_core.registers[DSP_REG_LC], dsp_core.pc);
 	fprintf(stderr,"SR: %04x  OMR: %02x\n", dsp_core.registers[DSP_REG_SR], dsp_core.registers[DSP_REG_OMR]);
 	fprintf(stderr,"SP: %02x    SSH: %04x  SSL: %04x\n", 
 		dsp_core.registers[DSP_REG_SP], dsp_core.registers[DSP_REG_SSH], dsp_core.registers[DSP_REG_SSL]);
@@ -257,6 +257,13 @@ void DSP_Disasm_SetRegister(char *arg, Uint32 value)
 		}
 	}
 
+	if (arg[0]=='P' || arg[0]=='p') {
+		if (arg[1]=='C' || arg[1]=='c') {
+			dsp_core.pc = value & BITMASK(16);
+			return;
+		}
+	}
+
 	if (arg[0]=='O' || arg[0]=='o') {
 		if (arg[1]=='M' || arg[1]=='m') {
 			if (arg[2]=='R' || arg[2]=='r') {
@@ -305,7 +312,7 @@ void DSP_Disasm_SetRegister(char *arg, Uint32 value)
 
 	fprintf(stderr,"\tError, usage:  reg=value  where: \n\t \
 			reg=A0-A2, B0-B2, X0, X1, Y0, Y1, \n\t \
-			R0-R7, N0-N7, M0-M7, LA, LC, \n\t \
+			R0-R7, N0-N7, M0-M7, LA, LC, PC \n\t \
 			SR, SP, OMR, SSH, SSL \n\t \
 			and value is a hex value.\n");
 #endif
