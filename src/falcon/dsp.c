@@ -154,13 +154,13 @@ void DSP_DisasmRegisters(void)
 #if ENABLE_DSP_EMU
 	Uint32 i;
 
-	fprintf(stderr,"A: A2:%02x A1:%06x A0:%06x\n",
+	fprintf(stderr,"A: A2: %02x  A1: %06x  A0: %06x\n",
 		dsp_core.registers[DSP_REG_A2], dsp_core.registers[DSP_REG_A1], dsp_core.registers[DSP_REG_A0]);
-	fprintf(stderr,"B: B2:%02x B1:%06x B0:%06x\n",
+	fprintf(stderr,"B: B2: %02x  B1: %06x  B0: %06x\n",
 		dsp_core.registers[DSP_REG_B2], dsp_core.registers[DSP_REG_B1], dsp_core.registers[DSP_REG_B0]);
 	
-	fprintf(stderr,"X: X1:%06x X0:%06x\n", dsp_core.registers[DSP_REG_X1], dsp_core.registers[DSP_REG_X0]);
-	fprintf(stderr,"Y: Y1:%06x Y0:%06x\n", dsp_core.registers[DSP_REG_Y1], dsp_core.registers[DSP_REG_Y0]);
+	fprintf(stderr,"X: X1: %06x  X0: %06x\n", dsp_core.registers[DSP_REG_X1], dsp_core.registers[DSP_REG_X0]);
+	fprintf(stderr,"Y: Y1: %06x  Y0: %06x\n", dsp_core.registers[DSP_REG_Y1], dsp_core.registers[DSP_REG_Y0]);
 
 	for (i=0; i<8; i++) {
 		fprintf(stderr,"R%01x: %04x   N%01x: %04x   M%01x: %04x\n", 
@@ -169,7 +169,7 @@ void DSP_DisasmRegisters(void)
 			i, dsp_core.registers[DSP_REG_M0+i]);
 	}
 
-	fprintf(stderr,"LA: %04x   LC: %04x   PC:%04x\n", dsp_core.registers[DSP_REG_LA], dsp_core.registers[DSP_REG_LC], dsp_core.pc);
+	fprintf(stderr,"LA: %04x   LC: %04x   PC: %04x\n", dsp_core.registers[DSP_REG_LA], dsp_core.registers[DSP_REG_LC], dsp_core.pc);
 	fprintf(stderr,"SR: %04x  OMR: %02x\n", dsp_core.registers[DSP_REG_SR], dsp_core.registers[DSP_REG_OMR]);
 	fprintf(stderr,"SP: %02x    SSH: %04x  SSL: %04x\n", 
 		dsp_core.registers[DSP_REG_SP], dsp_core.registers[DSP_REG_SSH], dsp_core.registers[DSP_REG_SSL]);
