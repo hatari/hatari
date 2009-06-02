@@ -90,10 +90,7 @@ typedef void (*dsp_emul_t)(void);
 static void dsp_postexecute_update_pc(void);
 static void dsp_postexecute_interrupts(void);
 
-static void dsp_ccr_extension(Uint32 *reg0, Uint32 *reg1);
-static void dsp_ccr_unnormalized(Uint32 *reg0, Uint32 *reg1);
-static void dsp_ccr_negative(Uint32 *reg0);
-static void dsp_ccr_zero(Uint32 *reg0, Uint32 *reg1, Uint32 *reg2);
+static void dsp_ccr_update_e_u_n_z(Uint32 *reg0, Uint32 *reg1, Uint32 *reg2);
 
 static inline Uint32 read_memory_p(Uint16 address);
 static Uint32 read_memory(int space, Uint16 address);
@@ -782,86 +779,59 @@ static void dsp_postexecute_interrupts(void)
 /* reg1 has bits 47..24 */
 /* reg2 has bits 23..0 */
 
-static void dsp_ccr_extension(Uint32 *reg0, Uint32 *reg1)
-{
-	Uint32 scaling, value, numbits;
-	int sr_extension = 1<<DSP_SR_E;
+static void dsp_ccr_update_e_u_n_z(Uint32 *reg0, Uint32 *reg1, Uint32 *reg2) {
+	Uint32 scaling, value_e, value_u, numbits;
+
+	int sr_extension = 1 << DSP_SR_E;
+	int sr_unnormalized;
+	int sr_negative = (((*reg0)>>7) & 1) << DSP_SR_N;
+	int sr_zero = 1 << DSP_SR_Z;
 
 	scaling = (dsp_core->registers[DSP_REG_SR]>>DSP_SR_S0) & BITMASK(2);
-	value = (*reg0) & 0xff;
+	value_e = (*reg0) & 0xff;
 	numbits = 8;
+
 	switch(scaling) {
 		case 0:
-			value <<=1;
-			value |= ((*reg1)>>23) & 1;
+			value_e <<=1;
+			value_e |= ((*reg1)>>23) & 1;
 			numbits=9;
+			value_u = ((*reg1)>>22) & 3;
 			break;
 		case 1:
+			value_u = ((*reg0)<<1) & 2;
+			value_u |= ((*reg1)>>23) & 1;
 			break;
 		case 2:
-			value <<=2;
-			value |= ((*reg1)>>22) & 3;
+			value_e <<=2;
+			value_e |= ((*reg1)>>22) & 3;
 			numbits=10;
+			value_u = ((*reg1)>>21) & 3;
 			break;
 		default:
 			return;
 			break;
 	}
-	if ((value==0) || (value==(Uint32)BITMASK(numbits))) {
+
+	if ((value_e==0) || (value_e==(Uint32)BITMASK(numbits))) {
 		sr_extension = 0;
 	}
 
-	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_E);
-	dsp_core->registers[DSP_REG_SR] |= sr_extension;
-}
-
-static void dsp_ccr_unnormalized(Uint32 *reg0, Uint32 *reg1)
-{
-	Uint32 scaling, value;
-
-	scaling = (dsp_core->registers[DSP_REG_SR]>>DSP_SR_S0) & BITMASK(2);
-
-	switch(scaling) {
-		case 0:
-			value = ((*reg1)>>22) & 3;
-			break;
-		case 1:
-			value = ((*reg0)<<1) & 2;
-			value |= ((*reg1)>>23) & 1;
-			break;
-		case 2:
-			value = ((*reg1)>>21) & 3;
-			break;
-		default:
-			return;
-			break;
-	}
-
-	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_U);
-	dsp_core->registers[DSP_REG_SR] |= ((value==0) || (value==BITMASK(2)))<<DSP_SR_U;
-}
-
-static void dsp_ccr_negative(Uint32 *reg0)
-{
-	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_N);
-	dsp_core->registers[DSP_REG_SR] |= (((*reg0)>>7) & 1)<<DSP_SR_N;
-}
-
-static void dsp_ccr_zero(Uint32 *reg0, Uint32 *reg1, Uint32 *reg2)
-{
-	Uint32 zeroed;
-
-	zeroed=1;
+	sr_unnormalized = ((value_u==0) || (value_u==BITMASK(2))) << DSP_SR_U;
 	if (((*reg2) & BITMASK(24))!=0) {
-		zeroed=0;
+		sr_zero = 0;
 	} else if (((*reg1) & BITMASK(24))!=0) {
-		zeroed=0;
+		sr_zero = 0;
 	} else if (((*reg0) & BITMASK(8))!=0) {
-		zeroed=0;
+		sr_zero = 0;
 	}
 
-	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_Z);
-	dsp_core->registers[DSP_REG_SR] |= zeroed<<DSP_SR_Z;
+	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_E) | (1<<DSP_SR_U) | (1<<DSP_SR_N) | (1<<DSP_SR_Z));
+
+	dsp_core->registers[DSP_REG_SR] |= sr_extension;
+	dsp_core->registers[DSP_REG_SR] |= sr_unnormalized;
+	dsp_core->registers[DSP_REG_SR] |= sr_negative;
+	dsp_core->registers[DSP_REG_SR] |= sr_zero;
 }
 
 /**********************************
@@ -2685,10 +2655,7 @@ static void dsp_norm(void)
 	dsp_core->registers[DSP_REG_A1+numreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+numreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_V)|(1<<DSP_SR_C));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
@@ -3887,10 +3854,7 @@ static void dsp_abs(void)
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_V);
 	dsp_core->registers[DSP_REG_SR] |= (overflowed<<DSP_SR_L)|(overflowed<<DSP_SR_V);
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 }
 
 static void dsp_adc(void)
@@ -3936,10 +3900,7 @@ static void dsp_adc(void)
 	dsp_core->registers[DSP_REG_A1+destreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+destreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_V)|(1<<DSP_SR_C));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
@@ -4022,10 +3983,7 @@ static void dsp_add(void)
 	dsp_core->registers[DSP_REG_A1+destreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+destreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_V)|(1<<DSP_SR_C));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
@@ -4052,10 +4010,7 @@ static void dsp_addl(void)
 	dsp_core->registers[DSP_REG_A1+numreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+numreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_V)|(1<<DSP_SR_C));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
@@ -4082,10 +4037,7 @@ static void dsp_addr(void)
 	dsp_core->registers[DSP_REG_A1+numreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+numreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_V)|(1<<DSP_SR_C));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
@@ -4138,10 +4090,7 @@ static void dsp_asl(void)
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_C)|(1<<DSP_SR_V));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 }
 
 static void dsp_asr(void)
@@ -4163,10 +4112,7 @@ static void dsp_asr(void)
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_C)|(1<<DSP_SR_V));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 }
 
 static void dsp_clr(void)
@@ -4240,10 +4186,7 @@ static void dsp_cmp(void)
 
 	newsr = dsp_sub56(source, dest);
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_V)|(1<<DSP_SR_C));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
@@ -4308,10 +4251,7 @@ static void dsp_cmpm(void)
 	dsp_abs56(source);
 	newsr = dsp_sub56(source, dest);
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_V)|(1<<DSP_SR_C));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
@@ -4409,10 +4349,7 @@ static void dsp_mac(void)
 	dsp_core->registers[DSP_REG_A1+destreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+destreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_V);
 	dsp_core->registers[DSP_REG_SR] |= newsr & 0xfe;
@@ -4451,10 +4388,7 @@ static void dsp_macr(void)
 	dsp_core->registers[DSP_REG_A1+destreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+destreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_V);
 	dsp_core->registers[DSP_REG_SR] |= newsr & 0xfe;
@@ -4491,10 +4425,9 @@ static void dsp_mpy(void)
 		dsp_core->registers[DSP_REG_A0+destreg] = source[2];
 	}
 
-	dsp_ccr_extension(&dsp_core->registers[DSP_REG_A2+destreg], &dsp_core->registers[DSP_REG_A1+destreg]);
-	dsp_ccr_unnormalized(&dsp_core->registers[DSP_REG_A2+destreg], &dsp_core->registers[DSP_REG_A1+destreg]);
-	dsp_ccr_negative(&dsp_core->registers[DSP_REG_A2+destreg]);
-	dsp_ccr_zero(&dsp_core->registers[DSP_REG_A2+destreg], &dsp_core->registers[DSP_REG_A1+destreg], &dsp_core->registers[DSP_REG_A0+destreg]);
+	dsp_ccr_update_e_u_n_z(	&dsp_core->registers[DSP_REG_A2+destreg],
+				&dsp_core->registers[DSP_REG_A1+destreg],
+				&dsp_core->registers[DSP_REG_A0+destreg]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_V);
 }
@@ -4526,10 +4459,7 @@ static void dsp_mpyr(void)
 	dsp_core->registers[DSP_REG_A1+destreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+destreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_V);
 }
@@ -4556,10 +4486,7 @@ static void dsp_neg(void)
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_V);
 	dsp_core->registers[DSP_REG_SR] |= (overflowed<<DSP_SR_L)|(overflowed<<DSP_SR_V);
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 }
 
 static void dsp_nop(void)
@@ -4624,10 +4551,7 @@ static void dsp_rnd(void)
 	dsp_core->registers[DSP_REG_A1+numreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+numreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 }
 
 static void dsp_rol(void)
@@ -4709,10 +4633,7 @@ static void dsp_sbc(void)
 	dsp_core->registers[DSP_REG_A1+destreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+destreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_V)|(1<<DSP_SR_C));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
@@ -4795,10 +4716,7 @@ static void dsp_sub(void)
 	dsp_core->registers[DSP_REG_A1+destreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+destreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_V)|(1<<DSP_SR_C));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
@@ -4825,10 +4743,7 @@ static void dsp_subl(void)
 	dsp_core->registers[DSP_REG_A1+numreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+numreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_V)|(1<<DSP_SR_C));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
@@ -4855,10 +4770,7 @@ static void dsp_subr(void)
 	dsp_core->registers[DSP_REG_A1+numreg] = dest[1];
 	dsp_core->registers[DSP_REG_A0+numreg] = dest[2];
 
-	dsp_ccr_extension(&dest[0], &dest[1]);
-	dsp_ccr_unnormalized(&dest[0], &dest[1]);
-	dsp_ccr_negative(&dest[0]);
-	dsp_ccr_zero(&dest[0], &dest[1], &dest[2]);
+	dsp_ccr_update_e_u_n_z(&dest[0], &dest[1], &dest[2]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-((1<<DSP_SR_V)|(1<<DSP_SR_C));
 	dsp_core->registers[DSP_REG_SR] |= newsr;
@@ -4925,10 +4837,9 @@ static void dsp_tst(void)
 	
 	destreg = (cur_inst>>3) & 1;
 
-	dsp_ccr_extension(&dsp_core->registers[DSP_REG_A2+destreg], &dsp_core->registers[DSP_REG_A1+destreg]);
-	dsp_ccr_unnormalized(&dsp_core->registers[DSP_REG_A2+destreg], &dsp_core->registers[DSP_REG_A1+destreg]);
-	dsp_ccr_negative(&dsp_core->registers[DSP_REG_A2+destreg]);
-	dsp_ccr_zero(&dsp_core->registers[DSP_REG_A2+destreg], &dsp_core->registers[DSP_REG_A1+destreg], &dsp_core->registers[DSP_REG_A0+destreg]);
+	dsp_ccr_update_e_u_n_z(	&dsp_core->registers[DSP_REG_A2+destreg],
+				&dsp_core->registers[DSP_REG_A1+destreg],
+				&dsp_core->registers[DSP_REG_A0+destreg]);
 
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_V);
 }
