@@ -1094,27 +1094,29 @@ static void dsp_write_reg(Uint32 numreg, Uint32 value)
 			dsp_core->registers[DSP_REG_A2+reg]= 0xff;
 		}
 	} else {
-		dsp_core->registers[reg] = value; 
-		dsp_core->registers[reg] &= BITMASK(registers_mask[reg]);
 		switch (reg) {
 			case DSP_REG_OMR:
-				dsp_core->registers[DSP_REG_OMR] &= 0x5f; 
+				dsp_core->registers[reg] = value; 
+				dsp_core->registers[DSP_REG_OMR] &= 0xc7; 
 				break;
 			case DSP_REG_SR:
-				dsp_core->registers[DSP_REG_SR] &= 0xefff; 
+				dsp_core->registers[reg] = value; 
+				dsp_core->registers[DSP_REG_SR] &= 0xaf7f; 
 				break;
 			case DSP_REG_SP:
+				dsp_core->registers[reg] = value & BITMASK(6); 
 				dsp_compute_ssh_ssl();
 				break;
 			case DSP_REG_SSH:
-				reg = dsp_core->registers[DSP_REG_SP] & BITMASK(4);
-				dsp_core->stack[0][reg] = value;
+				dsp_stack_push(value, 0);
 				break;
 			case DSP_REG_SSL:
 				reg = dsp_core->registers[DSP_REG_SP] & BITMASK(4);
 				dsp_core->stack[1][reg] = value;
 				break;
 			default:
+				dsp_core->registers[reg] = value; 
+				dsp_core->registers[reg] &= BITMASK(registers_mask[reg]);
 				break;
 		}
 	}
@@ -1135,25 +1137,25 @@ static void dsp_stack_push(Uint32 curpc, Uint32 cursr)
 
 	if ((stack_error==0) && (stack & (1<<DSP_SP_SE))) {
 		/* Stack full, raise interrupt */
-/*		dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR); */
+		dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR);
 		fprintf(stderr,"Dsp: Stack Overflow\n");
 	}
 	
 	dsp_core->registers[DSP_REG_SP] = (underflow | stack_error | stack) & BITMASK(6);
 	stack &= BITMASK(4);
 
-/*	if (stack) {
-*/		dsp_core->registers[DSP_REG_SSH] = curpc;
+	if (stack) {
+		dsp_core->registers[DSP_REG_SSH] = curpc;
 		dsp_core->registers[DSP_REG_SSL] = cursr;
 		dsp_core->stack[0][stack]=curpc;
 		dsp_core->stack[1][stack]=cursr;
-/*	} else {
+	} else {
 		dsp_core->registers[DSP_REG_SSH] = 0;
 		dsp_core->registers[DSP_REG_SSL] = 0;
 		dsp_core->stack[0][0]=0;
 		dsp_core->stack[1][0]=0;
 	}
-*/}
+}
 
 static void dsp_stack_pop(Uint32 *newpc, Uint32 *newsr)
 {
@@ -1165,7 +1167,7 @@ static void dsp_stack_pop(Uint32 *newpc, Uint32 *newsr)
 
 	if ((stack_error==0) && (stack & (1<<DSP_SP_SE))) {
 		/* Stack empty*/
-/*		dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR); */
+		dsp_core_add_interrupt(dsp_core, DSP_INTER_STACK_ERROR);
 		fprintf(stderr,"Dsp: Stack underflow\n");
 	}
 
@@ -1174,14 +1176,14 @@ static void dsp_stack_pop(Uint32 *newpc, Uint32 *newsr)
 	*newpc = dsp_core->registers[DSP_REG_SSH];
 	*newsr = dsp_core->registers[DSP_REG_SSL];
 
-/*	if (stack) {
-*/		dsp_core->registers[DSP_REG_SSH] = dsp_core->stack[0][stack];
+	if (stack) {
+		dsp_core->registers[DSP_REG_SSH] = dsp_core->stack[0][stack];
 		dsp_core->registers[DSP_REG_SSL] = dsp_core->stack[1][stack];
-/*	} else {
+	} else {
 		dsp_core->registers[DSP_REG_SSH] = 0;
 		dsp_core->registers[DSP_REG_SSL] = 0;
 	}
-*/}
+}
 
 static void dsp_compute_ssh_ssl(void)
 {
@@ -2382,7 +2384,7 @@ static void dsp_lua(void)
 
 static void dsp_movec_reg(void)
 {
-	Uint32 numreg1, numreg2, value;
+	Uint32 numreg1, numreg2, value, dummy;
 
 	/* S1,D2 */
 	/* S2,D1 */
@@ -2394,16 +2396,22 @@ static void dsp_movec_reg(void)
 		/* Write D1 */
 
 		if ((numreg2 == DSP_REG_A) || (numreg2 == DSP_REG_B)) {
-			dsp_pm_read_accu24(numreg2, &dsp_core->registers[numreg1]); 
+			dsp_pm_read_accu24(numreg2, &value); 
 		} else {
-			dsp_core->registers[numreg1] = dsp_core->registers[numreg2];
+			value = dsp_core->registers[numreg2];
 		}
-		dsp_core->registers[numreg1] &= BITMASK(registers_mask[numreg1]);
+		value &= BITMASK(registers_mask[numreg1]);
+		dsp_write_reg(numreg1, value);
 	} else {
 		/* Read S1 */
+		if (numreg1 == DSP_REG_SSH) {
+			dsp_stack_pop(&value, &dummy);
+		} 
+		else {
+			value = dsp_core->registers[numreg1];
+		}
 
 		if ((numreg2 == DSP_REG_A) || (numreg2 == DSP_REG_B)) {
-			value = dsp_core->registers[numreg1];
 			dsp_core->registers[DSP_REG_A2+(numreg2 & 1)] = 0;
 			if (value & (1<<23)) {
 				dsp_core->registers[DSP_REG_A2+(numreg2 & 1)] = 0xff;
@@ -2411,15 +2419,14 @@ static void dsp_movec_reg(void)
 			dsp_core->registers[DSP_REG_A1+(numreg2 & 1)] = value & BITMASK(24);
 			dsp_core->registers[DSP_REG_A0+(numreg2 & 1)] = 0;
 		} else {
-			dsp_core->registers[numreg2] = dsp_core->registers[numreg1];
-			dsp_core->registers[numreg2] &= BITMASK(registers_mask[numreg2]);
+			dsp_core->registers[numreg2] = value & BITMASK(registers_mask[numreg2]);
 		}
 	}
 }
 
 static void dsp_movec_aa(void)
 {
-	Uint32 numreg, addr, memspace;
+	Uint32 numreg, addr, memspace, value, dummy;
 
 	/* x:aa,D1 */
 	/* S1,x:aa */
@@ -2432,27 +2439,35 @@ static void dsp_movec_aa(void)
 
 	if (cur_inst & (1<<15)) {
 		/* Write D1 */
-		dsp_core->registers[numreg] = read_memory(memspace, addr);
-		dsp_core->registers[numreg] &= BITMASK(registers_mask[numreg]);
+		value = read_memory(memspace, addr);
+		value &= BITMASK(registers_mask[numreg]);
+		dsp_write_reg(numreg, value);
 	} else {
 		/* Read S1 */
-		write_memory(memspace, addr, dsp_core->registers[numreg]);
+		if (numreg == DSP_REG_SSH) {
+			dsp_stack_pop(&value, &dummy);
+		} 
+		else {
+			value = dsp_core->registers[numreg];
+		}
+		write_memory(memspace, addr, value);
 	}
 }
 
 static void dsp_movec_imm(void)
 {
-	Uint32 numreg;
+	Uint32 numreg, value;
 
 	/* #xx,D1 */
-
 	numreg = cur_inst & BITMASK(6);
-	dsp_core->registers[numreg] = (cur_inst>>8) & BITMASK(8);
+	value = (cur_inst>>8) & BITMASK(8);
+	value &= BITMASK(registers_mask[numreg]);
+	dsp_write_reg(numreg, value);
 }
 
 static void dsp_movec_ea(void)
 {
-	Uint32 numreg, addr, memspace, ea_mode;
+	Uint32 numreg, addr, memspace, ea_mode, value, dummy;
 	int retour;
 
 	/* x:ea,D1 */
@@ -2469,44 +2484,46 @@ static void dsp_movec_ea(void)
 		/* Write D1 */
 		retour = dsp_calc_ea(ea_mode, &addr);
 		if (retour) {
-			dsp_core->registers[numreg] = addr;
+			value = addr;
 		} else {
-			dsp_core->registers[numreg] = read_memory(memspace, addr);
+			value = read_memory(memspace, addr);
 		}
-		dsp_core->registers[numreg] &= BITMASK(registers_mask[numreg]);
+		value &= BITMASK(registers_mask[numreg]);
+		dsp_write_reg(numreg, value);
 	} else {
 		/* Read S1 */
-		retour = dsp_calc_ea(ea_mode, &addr);
-		write_memory(memspace, addr, dsp_core->registers[numreg]);
+		dsp_calc_ea(ea_mode, &addr);
+		if (numreg == DSP_REG_SSH) {
+			dsp_stack_pop(&value, &dummy);
+		} 
+		else {
+			value = dsp_core->registers[numreg];
+		}
+		write_memory(memspace, addr, value);
 	}
 }
 
 static void dsp_movem_aa(void)
 {
-	Uint32 numreg, addr, value;
+	Uint32 numreg, addr, value, dummy;
 
 	numreg = cur_inst & BITMASK(6);
 	addr = (cur_inst>>8) & BITMASK(6);
 
 	if  (cur_inst & (1<<15)) {
 		/* Write D */
-		if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
-			value = read_memory_p(addr);
-			dsp_core->registers[DSP_REG_A2+(numreg & 1)] = 0;
-			if (value & (1<<23)) {
-				dsp_core->registers[DSP_REG_A2+(numreg & 1)] = 0xff;
-			}
-			dsp_core->registers[DSP_REG_A1+(numreg & 1)] = value & BITMASK(24);
-			dsp_core->registers[DSP_REG_A0+(numreg & 1)] = 0;
-		} else {
-			dsp_core->registers[numreg] = read_memory_p(addr);
-			dsp_core->registers[numreg] &= BITMASK(registers_mask[numreg]);
-		}
+		value = read_memory_p(addr);
+		value &= BITMASK(registers_mask[numreg]);
+		dsp_write_reg(numreg, value);
 	} else {
 		/* Read S */
-		if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
+		if (numreg == DSP_REG_SSH) {
+			dsp_stack_pop(&value, &dummy);
+		} 
+		else if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
 			dsp_pm_read_accu24(numreg, &value); 
-		} else {
+		} 
+		else {
 			value = dsp_core->registers[numreg];
 		}
 		write_memory(DSP_SPACE_P, addr, value);
@@ -2515,7 +2532,7 @@ static void dsp_movem_aa(void)
 
 static void dsp_movem_ea(void)
 {
-	Uint32 numreg, addr, ea_mode, value;
+	Uint32 numreg, addr, ea_mode, value, dummy;
 
 	numreg = cur_inst & BITMASK(6);
 	ea_mode = (cur_inst>>8) & BITMASK(6);
@@ -2523,23 +2540,18 @@ static void dsp_movem_ea(void)
 
 	if  (cur_inst & (1<<15)) {
 		/* Write D */
-		if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
-			value = read_memory_p(addr);
-			dsp_core->registers[DSP_REG_A2+(numreg & 1)] = 0;
-			if (value & (1<<23)) {
-				dsp_core->registers[DSP_REG_A2+(numreg & 1)] = 0xff;
-			}
-			dsp_core->registers[DSP_REG_A1+(numreg & 1)] = value & BITMASK(24);
-			dsp_core->registers[DSP_REG_A0+(numreg & 1)] = 0;
-		} else {
-			dsp_core->registers[numreg] = read_memory_p(addr);
-			dsp_core->registers[numreg] &= BITMASK(registers_mask[numreg]);
-		}
+		value = read_memory_p(addr);
+		value &= BITMASK(registers_mask[numreg]);
+		dsp_write_reg(numreg, value);
 	} else {
 		/* Read S */
-		if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
+		if (numreg == DSP_REG_SSH) {
+			dsp_stack_pop(&value, &dummy);
+		} 
+		else if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
 			dsp_pm_read_accu24(numreg, &value); 
-		} else {
+		} 
+		else {
 			value = dsp_core->registers[numreg];
 		}
 		write_memory(DSP_SPACE_P, addr, value);
@@ -2553,7 +2565,7 @@ static void dsp_movep_0(void)
 	/* S,y:pp */
 	/* y:pp,D */
 	
-	Uint32 addr, memspace, numreg, value;
+	Uint32 addr, memspace, numreg, value, dummy;
 
 	addr = 0xffc0 + (cur_inst & BITMASK(6));
 	memspace = (cur_inst>>16) & 1;
@@ -2563,25 +2575,19 @@ static void dsp_movep_0(void)
 		/* Write pp */
 		if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
 			dsp_pm_read_accu24(numreg, &value); 
-		} else {
+		}
+		else if (numreg == DSP_REG_SSH) {
+			dsp_stack_pop(&value, &dummy);
+		}
+		else {
 			value = dsp_core->registers[numreg];
 		}
 		write_memory(memspace, addr, value);
 	} else {
 		/* Read pp */
 		value = read_memory(memspace, addr);
-
-		if ((numreg == DSP_REG_A) || (numreg == DSP_REG_B)) {
-			dsp_core->registers[DSP_REG_A2+(numreg & 1)] = 0;
-			if (value & (1<<23)) {
-				dsp_core->registers[DSP_REG_A2+(numreg & 1)] = 0xff;
-			}
-			dsp_core->registers[DSP_REG_A1+(numreg & 1)] = value & BITMASK(24);
-			dsp_core->registers[DSP_REG_A0+(numreg & 1)] = 0;
-		} else {
-			dsp_core->registers[numreg] = value;
-			dsp_core->registers[numreg] &= BITMASK(registers_mask[numreg]);
-		}
+		value &= BITMASK(registers_mask[numreg]);
+		dsp_write_reg(numreg, value);
 	}
 }
 
