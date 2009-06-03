@@ -39,7 +39,6 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 
 #define HW	0xff8200
 #define VIDEL_COLOR_REGS_BEGIN	0xff9800
-#define VIDEL_COLOR_REGS_END	0xffa200
 
 
 static int width, height, bpp, since_last_change;
