@@ -39,6 +39,7 @@ extern void DSP_Run(int nHostCycles);
 extern void DSP_MemorySnapShot_Capture(bool bSave);
 
 /* Dsp Debugger commands */
+extern void DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, Uint16 space);
 extern Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr);
 extern void DSP_DisasmRegisters(void);
 extern void DSP_Disasm_SetRegister(char *arg, Uint32 value);

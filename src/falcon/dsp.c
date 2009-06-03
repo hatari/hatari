@@ -149,6 +149,84 @@ Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 #endif
 }
 
+void DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, Uint16 space)
+{
+#if ENABLE_DSP_EMU
+	Uint32 mem = dsp_memdump_addr, mem2;
+
+	switch (space) {
+		case 'X':
+			/* Space X */
+			for (; mem<=dsp_memdump_upper; mem++) {
+				if (mem < 0x100) {
+					/* X internal ram */
+					fprintf(stderr,"X ram:%04x  %06x\n", mem, dsp_core.ramint[DSP_SPACE_X][mem]);
+				}
+				else if ((mem < 0x200) && (dsp_core.registers[DSP_REG_OMR] & (1<<DSP_OMR_DE))) {
+					/* X internal rom */
+					fprintf(stderr,"X rom:%04x  %06x\n", mem, dsp_core.rom[DSP_SPACE_X][mem]);
+				}
+				else if (mem >= 0xffc0) {
+					/* X Peripheral memory */
+					if (mem == 0xffeb) {
+						fprintf(stderr,"X periph:%04x  HTX : %06x   RTX:%06x\n", 
+							mem, dsp_core.dsp_host_htx, dsp_core.dsp_host_rtx);
+					} 
+					else if (mem == 0xffef) {
+						fprintf(stderr,"X periph:%04x  SSI TX : %06x   SSI RX:%06x\n", 
+							mem, dsp_core.ssi.transmit_value, dsp_core.ssi.received_value);
+					}
+					else {
+						fprintf(stderr,"X periph:%04x  %06x\n", mem, dsp_core.periph[DSP_SPACE_X][mem-0xffc0]);
+					}
+				}
+				else {
+					mem2 = mem & ((DSP_RAMSIZE>>1)-1);
+					mem2 += (DSP_RAMSIZE>>1);
+					fprintf(stderr,"X:%04x (P:%04x): %06x\n", 
+						mem, mem2, dsp_core.ramext[mem & (DSP_RAMSIZE-1)]);
+				}
+			}
+			break;
+		case 'Y':
+			/* Space Y */
+			for (; mem<=dsp_memdump_upper; mem++) {
+				if (mem < 0x100) {
+					/* Y internal ram */
+					fprintf(stderr,"Y ram:%04x  %06x\n", mem, dsp_core.ramint[DSP_SPACE_Y][mem]);
+				}
+				else if ((mem < 0x200) && (dsp_core.registers[DSP_REG_OMR] & (1<<DSP_OMR_DE))) {
+					/* Y internal rom */
+					fprintf(stderr,"Y rom:%04x  %06x\n", mem, dsp_core.rom[DSP_SPACE_Y][mem]);
+				}
+				else if (mem >= 0xffc0) {
+					/* Y Peripheral memory */
+					fprintf(stderr,"Y periph:%04x  %06x\n", mem, dsp_core.periph[DSP_SPACE_Y][mem-0xffc0]);
+				}
+				else {
+					mem2 = mem & ((DSP_RAMSIZE>>1)-1);
+					fprintf(stderr,"Y:%04x (P:%04x):  %06x\n", 
+						mem, mem2, dsp_core.ramext[mem & (DSP_RAMSIZE-1)]);
+				}
+			}
+			break;
+		case 'P':
+			/* Space P */
+			for (; mem<=dsp_memdump_upper; mem++) {
+				if (mem < 0x200) {
+					/* P internal ram */
+					fprintf(stderr,"P ram:%04x  %06x\n", mem, dsp_core.ramint[DSP_SPACE_P][mem]);
+				}
+				else {
+					fprintf(stderr,"P ext memory:%04x  %06x\n", mem, dsp_core.ramext[mem & (DSP_RAMSIZE-1)]);
+				}
+			}
+			break;
+	}
+#endif
+}
+
+
 void DSP_DisasmRegisters(void)
 {
 #if ENABLE_DSP_EMU

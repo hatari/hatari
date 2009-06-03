@@ -283,7 +283,7 @@ static void DebugUI_DspRegSet(char *arg)
 	error_msg:
 	fprintf(stderr,"\tError, usage: dr or dr xx=yyyy\n"
 		"\tWhere: xx=A0-A2, B0-B2, X0, X1, Y0, Y1, R0-R7,\n"
-		"\t       N0-N7, M0-M7, LA, LC, SR, SP, OMR, SSH, SSL\n"
+		"\t       N0-N7, M0-M7, LA, LC, PC, SR, SP, OMR, SSH, SSL\n"
 		"\tand yyyy is a hex value.\n");
 }
 
@@ -407,18 +407,18 @@ static void DebugUI_DspMemDump(char *arg, bool cont)
 		dsp_mem_space = space;
 	} /* continue */
 
-	/* output a single block. */
 	if (!dsp_memdump_upper)
 	{
-		printf("TODO: DSP memdump from %hx in '%c' address space\n",
-		       dsp_memdump_addr, dsp_mem_space);
+		if ( dsp_memdump_addr < (0xFFFF - 7))
+			dsp_memdump_upper = dsp_memdump_addr + 7;
+		else
+			dsp_memdump_upper = 0xFFFF;
 	}
-	else
-	{
-		printf("TODO: DSP memdump range %hx-%hx in '%c' address space\n",
-		       dsp_memdump_addr, dsp_memdump_upper, dsp_mem_space);
-	}
-	/* TODO: dsp_memdump_addr = dsp_memdump_upper+alignment */
+
+
+	printf("DSP memdump from %hx in '%c' address space\n", dsp_memdump_addr, dsp_mem_space);
+	DSP_DisasmMemory(dsp_memdump_addr, dsp_memdump_upper, dsp_mem_space);
+	dsp_memdump_addr = dsp_memdump_upper + 1;
 }
 
 #endif /* ENABLE_DSP_EMU */
