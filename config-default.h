@@ -87,6 +87,9 @@
 # undef ENABLE_SMALL_MEM
 #endif
 
+/* Define to 1 to enable trace logs - undefine to slightly increase speed */
+#define ENABLE_TRACING 1
+
 /* Additional configuration for Visual-C */
 #if defined(_MSC_VER)
 # include "Visual.Studio/VisualStudioFix.h"

@@ -134,7 +134,7 @@ static Uint32 act_pd;       /* Used to get a pointer to the current basepage */
 static Uint16 nAttrSFirst;  /* File attribute for SFirst/Snext */
 
 
-#ifdef HATARI_TRACE_ACTIVATED
+#if ENABLE_TRACING
 /* List of GEMDos functions... */
 static const char *pszGemDOSNames[] =
 {
@@ -1115,7 +1115,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 					found = 1;
 				}
 			}
-#ifdef HATARI_TRACE_ACTIVATED
+#if ENABLE_TRACING
 			if (!found)
 			{
 				/* It's often normal, the gem uses this to test for existence */
@@ -2255,7 +2255,7 @@ void GemDOS_OpCode(void)
 	/* Find pointer to call parameters */
 	GemDOSCall = STMemory_ReadWord(Params);
 
-#ifdef HATARI_TRACE_ACTIVATED
+#if ENABLE_TRACING
 	if (GemDOSCall < (sizeof(pszGemDOSNames)/sizeof(pszGemDOSNames[0])))
 	{
 		HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "GemDOS 0x%X (%s)\n",

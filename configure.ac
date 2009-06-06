@@ -31,7 +31,7 @@ AC_ARG_ENABLE([tracing],
   [ enable_tracing="${enableval}" ],
   [ enable_tracing="yes" ])
 if test "${enable_tracing}" = "yes"; then
-  AC_DEFINE(HATARI_TRACE_ACTIVATED, 1, [Define to 1 to enable emulation tracing])
+  AC_DEFINE(ENABLE_TRACING, 1, [Define to 1 to enable emulation tracing])
 else
   AC_MSG_NOTICE([Tracing disabled])
 fi
