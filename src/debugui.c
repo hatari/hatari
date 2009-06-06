@@ -30,6 +30,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "sound.h"
 #include "tos.h"
+#include "options.h"
 #include "debugui.h"
 
 #include "hatari-glue.h"
@@ -44,9 +45,10 @@ static unsigned long disasm_addr;  /* disasm address */
 
 static FILE *debugOutput;
 
+static int DebugUI_Help(int nArgc, char *psArgv[]);
+static void DebugUI_PrintCmdHelp(const char *psCmd);
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Get a hex adress range, eg. "fa0000-fa0100" 
  * returns -1 if not a range,
@@ -79,7 +81,6 @@ static int getRange(char *str, unsigned long *lower, unsigned long *upper)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Parse a hex adress range, eg. "fa0000[-fa0100]" + show appropriate warnings
  * returns:
@@ -122,22 +123,6 @@ static int parseRange(char *str, unsigned long *lower, unsigned long *upper)
 }
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Open given log file.
- */
-static void DebugUI_SetLogFile(const char *logpath)
-{
-	File_Close(debugOutput);
-	debugOutput = File_Open(logpath, "w");
-	if (debugOutput)
-		fprintf(stderr, "Debug log '%s' opened\n", logpath);
-	else
-		debugOutput = stderr;
-}
-
-
-/*-----------------------------------------------------------------------*/
 /**
  * Close a log file if open, and set it to default stream.
  */
@@ -155,28 +140,53 @@ static void DebugUI_SetLogDefault(void)
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * Open (or close) given log file.
+ */
+static int DebugUI_SetLogFile(int nArgc, char *psArgs[])
+{
+	File_Close(debugOutput);
+	debugOutput = NULL;
+
+	if (nArgc > 1)
+		debugOutput = File_Open(psArgs[1], "w");
+
+	if (debugOutput)
+		fprintf(stderr, "Debug log '%s' opened.\n", psArgs[1]);
+	else
+		debugOutput = stderr;
+
+	return DEBUGGER_CMDDONE;
+}
+
+
 /**
  * Load a binary file to a memory address.
  */
-static void DebugUI_LoadBin(char *args)
+static int DebugUI_LoadBin(int nArgc, char *psArgs[])
 {
 	FILE *fp;
 	unsigned char c;
-	char dummy[100];
-	char filename[200];
 	unsigned long address;
 	int i=0;
 
-	if (sscanf(args, "%s%s%lx", dummy, filename, &address) != 3)
+	if (nArgc < 3)
 	{
-		fprintf(stderr, "Invalid arguments!\n");
-		return;
+		DebugUI_PrintCmdHelp(psArgs[0]);
+		return DEBUGGER_CMDDONE;
+	}
+
+	if (sscanf(psArgs[2], "%lx", &address) != 1)
+	{
+		fprintf(stderr, "Invalid address!\n");
+		return DEBUGGER_CMDDONE;
 	}
 	address &= 0x00FFFFFF;
-	if ((fp = fopen(filename, "rb")) == NULL)
+
+	if ((fp = fopen(psArgs[1], "rb")) == NULL)
 	{
-		fprintf(stderr,"Cannot open file!\n");
+		fprintf(stderr, "Cannot open file '%s'!\n", psArgs[1]);
+		return DEBUGGER_CMDDONE;
 	}
 
 	c = fgetc(fp);
@@ -188,31 +198,44 @@ static void DebugUI_LoadBin(char *args)
 	}
 	fprintf(stderr,"  Read 0x%x bytes.\n", i);
 	fclose(fp);
+
+	return DEBUGGER_CMDDONE;
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * Dump memory from an address to a binary file.
  */
-static void DebugUI_SaveBin(char *args)
+static int DebugUI_SaveBin(int nArgc, char *psArgs[])
 {
 	FILE *fp;
 	unsigned char c;
-	char filename[200];
-	char dummy[100];
 	unsigned long address;
 	unsigned long bytes, i=0;
 
-	if (sscanf(args, "%s%s%lx%lx", dummy, filename, &address, &bytes) != 4)
+	if (nArgc < 4)
 	{
-		fprintf(stderr, "  Invalid arguments!\n");
-		return;
+		DebugUI_PrintCmdHelp(psArgs[0]);
+		return DEBUGGER_CMDDONE;
+	}
+
+	if (sscanf(psArgs[2], "%lx", &address) != 1)
+	{
+		fprintf(stderr, "  Invalid address!\n");
+		return DEBUGGER_CMDDONE;
 	}
 	address &= 0x00FFFFFF;
-	if ((fp = fopen(filename, "wb")) == NULL)
+
+	if (sscanf(psArgs[3], "%lx", &bytes) != 1)
 	{
-		fprintf(stderr,"  Cannot open file!\n");
+		fprintf(stderr, "  Invalid length!\n");
+		return DEBUGGER_CMDDONE;
+	}
+
+	if ((fp = fopen(psArgs[1], "wb")) == NULL)
+	{
+		fprintf(stderr,"  Cannot open file '%s'!\n", psArgs[1]);
+		return DEBUGGER_CMDDONE;
 	}
 
 	while (i < bytes)
@@ -223,6 +246,8 @@ static void DebugUI_SaveBin(char *args)
 	}
 	fclose(fp);
 	fprintf(stderr, "  Wrote 0x%lx bytes.\n", bytes);
+
+	return DEBUGGER_CMDDONE;
 }
 
 
@@ -234,37 +259,31 @@ static Uint16 dsp_disasm_addr;  /* DSP disasm address */
 static Uint16 dsp_memdump_addr; /* DSP memdump address */
 static char dsp_mem_space;      /* X, Y, P */
 
-/*-----------------------------------------------------------------------*/
-/**
- * Do a DSP register dump.
- */
-static void DebugUI_DspRegDump(void)
-{
-	if (!bDspEnabled)
-	{
-		printf("DSP isn't present or initialized.\n");
-		return;
-	}
 
-	DSP_DisasmRegisters();
-}
-
-/*-----------------------------------------------------------------------*/
 /**
- * Set a DSP register: 
+ * Command: Dump or set a DSP register
  */
-static void DebugUI_DspRegSet(char *arg)
+static int DebugUI_DspRegister(int nArgc, char *psArgs[])
 {
 	int i;
 	char reg[4], *assign;
 	long value;
+	char *arg;
 
 	if (!bDspEnabled)
 	{
 		printf("DSP isn't present or initialized.\n");
-		return;
+		return DEBUGGER_CMDDONE;
 	}
 
+	if (nArgc == 1)
+	{
+		/* No parameter - dump all registers */
+		DSP_DisasmRegisters();
+		return DEBUGGER_CMDDONE;
+	}
+
+	arg = psArgs[1];
 	assign = strchr(arg, '=');
 	/* has '=' and reg name is max. 3 letters that fit to string */
 	if (!assign || assign - arg > 3+1)
@@ -278,20 +297,22 @@ static void DebugUI_DspRegSet(char *arg)
 		reg[i] = toupper(reg[i]);
 
 	DSP_Disasm_SetRegister(reg, value);
-	return;
+	return DEBUGGER_CMDDONE;
 
 	error_msg:
 	fprintf(stderr,"\tError, usage: dr or dr xx=yyyy\n"
 		"\tWhere: xx=A0-A2, B0-B2, X0, X1, Y0, Y1, R0-R7,\n"
 		"\t       N0-N7, M0-M7, LA, LC, PC, SR, SP, OMR, SSH, SSL\n"
 		"\tand yyyy is a hex value.\n");
+
+	return DEBUGGER_CMDDONE;
 }
 
-/*-----------------------------------------------------------------------*/
+
 /**
  * DSP dissassemble - arg = starting address/range, or PC.
  */
-static void DebugUI_DspDisAsm(char *arg, bool cont)
+static int DebugUI_DspDisAsm(int nArgc, char *psArgs[])
 {
 	unsigned long lower, upper;
 	Uint16 dsp_disasm_upper = 0;
@@ -299,16 +320,16 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 	if (!bDspEnabled)
 	{
 		printf("DSP isn't present or initialized.\n");
-		return;
+		return DEBUGGER_CMDDONE;
 	}
 
-	if (cont != TRUE)
+	if (nArgc > 1)
 	{
-		switch (parseRange(arg, &lower, &upper))
+		switch (parseRange(psArgs[1], &lower, &upper))
 		{
 			case -1:
 				/* invalid value(s) */
-				return;
+				return DEBUGGER_CMDDONE;
 			case 0:
 				/* single value */
 				break;
@@ -317,7 +338,7 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 				if (upper > 0xFFFF)
 				{
 					fprintf(stderr,"Invalid address '%lx'!\n", upper);
-					return;
+					return DEBUGGER_CMDDONE;
 				}
 				dsp_disasm_upper = upper;
 				break;
@@ -326,7 +347,7 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 		if (lower > 0xFFFF)
 		{
 			fprintf(stderr,"Invalid address '%lx'!\n", lower);
-			return;
+			return DEBUGGER_CMDDONE;
 		}
 		dsp_disasm_addr = lower;
 	}
@@ -347,15 +368,17 @@ static void DebugUI_DspDisAsm(char *arg, bool cont)
 	}
 	printf("DSP disasm %hx-%hx:\n", dsp_disasm_addr, dsp_disasm_upper);
 	dsp_disasm_addr = DSP_DisasmAddress(dsp_disasm_addr, dsp_disasm_upper);
+
+	return DEBUGGER_CMDCONT;
 }
 
-/*-----------------------------------------------------------------------*/
+
 /**
  * Do a DSP memory dump, args = starting address or range.
  * <x|y|p><address>: dump from X, Y or P, starting from given address,
  * e.g. "x200" or "p200-300"
  */
-static void DebugUI_DspMemDump(char *arg, bool cont)
+static int DebugUI_DspMemDump(int nArgc, char *psArgs[])
 {
 	unsigned long lower, upper;
 	Uint16 dsp_memdump_upper = 0;
@@ -364,11 +387,13 @@ static void DebugUI_DspMemDump(char *arg, bool cont)
 	if (!bDspEnabled)
 	{
 		printf("DSP isn't present or initialized.\n");
-		return;
+		return DEBUGGER_CMDDONE;
 	}
 
-	if (cont != TRUE)
+	if (nArgc > 1)
 	{
+		char *arg = psArgs[1];
+
 		space = toupper(*arg++);
 		switch (space)
 		{
@@ -378,13 +403,13 @@ static void DebugUI_DspMemDump(char *arg, bool cont)
 			break;
 		default:
 			fprintf(stderr,"Invalid DSP address space '%c'!\n", space);
-			return;
+			return DEBUGGER_CMDDONE;
 		}
 		switch (parseRange(arg, &lower, &upper))
 		{
 		case -1:
 			/* invalid value(s) */
-			return;
+			return DEBUGGER_CMDDONE;
 		case 0:
 			/* single value */
 			break;
@@ -393,7 +418,7 @@ static void DebugUI_DspMemDump(char *arg, bool cont)
 			if (upper > 0xFFFF)
 			{
 				fprintf(stderr,"Invalid address '%lx'!\n", upper);
-				return;
+				return DEBUGGER_CMDDONE;
 			}
 			dsp_memdump_upper = upper;
 			break;
@@ -401,7 +426,7 @@ static void DebugUI_DspMemDump(char *arg, bool cont)
 		if (lower > 0xFFFF)
 		{
 			fprintf(stderr,"Invalid address '%lx'!\n", lower);
-			return;
+			return DEBUGGER_CMDDONE;
 		}
 		dsp_memdump_addr = lower;
 		dsp_mem_space = space;
@@ -419,40 +444,29 @@ static void DebugUI_DspMemDump(char *arg, bool cont)
 	printf("DSP memdump from %hx in '%c' address space\n", dsp_memdump_addr, dsp_mem_space);
 	DSP_DisasmMemory(dsp_memdump_addr, dsp_memdump_upper, dsp_mem_space);
 	dsp_memdump_addr = dsp_memdump_upper + 1;
+
+	return DEBUGGER_CMDCONT;
 }
 
 #endif /* ENABLE_DSP_EMU */
 
 
-/*-----------------------------------------------------------------------*/
-/**
- * Do a register dump.
- */
-static void DebugUI_RegDump(void)
-{
-	uaecptr nextpc;
-	/* use the UAE function instead */
-	m68k_dumpstate(debugOutput, &nextpc);
-	fflush(debugOutput);
-}
 
-
-/*-----------------------------------------------------------------------*/
 /**
  * Dissassemble - arg = starting address, or PC.
  */
-static void DebugUI_DisAsm(char *arg, bool cont)
+static int DebugUI_DisAsm(int nArgc, char *psArgs[])
 {
 	unsigned long disasm_upper = 0;
 	uaecptr nextpc;
 
-	if (cont != TRUE)
+	if (nArgc > 1)
 	{
-		switch (parseRange(arg, &disasm_addr, &disasm_upper))
+		switch (parseRange(psArgs[1], &disasm_addr, &disasm_upper))
 		{
 		case -1:
 			/* invalid value(s) */
-			return;
+			return DEBUGGER_CMDDONE;
 		case 0:
 			/* single value */
 			break;
@@ -476,7 +490,7 @@ static void DebugUI_DisAsm(char *arg, bool cont)
 		m68k_disasm(debugOutput, (uaecptr)disasm_addr, &nextpc, DISASM_INSTS);
 		disasm_addr = nextpc;
 		fflush(debugOutput);
-		return;
+		return DEBUGGER_CMDCONT;
 	}
 
 	/* output a range */
@@ -486,32 +500,46 @@ static void DebugUI_DisAsm(char *arg, bool cont)
 		disasm_addr = nextpc;
 	}
 	fflush(debugOutput);
+
+	return DEBUGGER_CMDCONT;
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
- * Set a register: 
+ * Dump or set CPU registers
  */
-static void DebugUI_RegSet(char *arg)
+static int DebugUI_CpuRegister(int nArgc, char *psArgs[])
 {
 	int i;
 	char reg[3], *assign;
 	long value;
+	char *arg;
+
+	/* If no parameter has been given, simply dump all registers */
+	if (nArgc == 1)
+	{
+		uaecptr nextpc;
+		/* use the UAE function instead */
+		m68k_dumpstate(debugOutput, &nextpc);
+		fflush(debugOutput);
+		return DEBUGGER_CMDDONE;
+	}
+
+	arg =  psArgs[1];
 
 	assign = strchr(arg, '=');
 	/* has '=' and reg name is max. 2 letters that fit to string */
 	if (!assign || assign - arg > 2+1)
 	{
 		fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR and yyyy is a hex value.\n");
-		return;
+		return DEBUGGER_CMDDONE;
 	}
 
 	*assign = ' ';
 	if (sscanf(arg, "%s%lx", reg, &value) != 2)
 	{
 		fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR and yyyy is a hex value.\n");
-		return;
+		return DEBUGGER_CMDDONE;
 	}
 
 	for (i = 0; i < 2; i++)
@@ -598,26 +626,28 @@ static void DebugUI_RegSet(char *arg)
 	{
 		fprintf(stderr, "\t Bad register!\n");
 	}
+
+	return DEBUGGER_CMDDONE;
 }
 
 
-/*-----------------------------------------------------------------------*/
+
 /**
  * Do a memory dump, args = starting address.
  */
-static void DebugUI_MemDump(char *arg, bool cont)
+static int DebugUI_MemDump(int nArgc, char *psArgs[])
 {
 	int i,j;
 	char c;
 	unsigned long memdump_upper = 0;
 
-	if (cont != TRUE)
+	if (nArgc > 1)
 	{
-		switch (parseRange(arg, &memdump_addr, &memdump_upper))
+		switch (parseRange(psArgs[1], &memdump_addr, &memdump_upper))
 		{
 		case -1:
 			/* invalid value(s) */
-			return;
+			return DEBUGGER_CMDDONE;
 		case 0:
 			/* single value */
 			break;
@@ -647,7 +677,7 @@ static void DebugUI_MemDump(char *arg, bool cont)
 			fprintf(debugOutput, "\n");        /* newline */
 		}
 		fflush(debugOutput);
-		return;
+		return DEBUGGER_CMDCONT;
 	} /* not a range */
 
 	while (memdump_addr < memdump_upper)
@@ -666,283 +696,330 @@ static void DebugUI_MemDump(char *arg, bool cont)
 		fprintf(debugOutput, "\n");            /* newline */
 	} /* while */
 	fflush(debugOutput);
-} /* end of memdump */
+
+	return DEBUGGER_CMDCONT;
+}
 
 
-/*-----------------------------------------------------------------------*/
 /**
- * Do a memory write, arg = starting address, followed by bytes.
+ * Command: Write to memory, arg = starting address, followed by bytes.
  */
-static void DebugUI_MemWrite(char *arg)
+static int DebugUI_MemWrite(int nArgc, char *psArgs[])
 {
-	int i, j, numBytes;
+	int i, numBytes;
 	long write_addr;
-	unsigned char bytes[300]; /* store bytes */
-	char temp[15];
+	unsigned char bytes[256]; /* store bytes */
 	int d;
 
-	numBytes = 0;
-	i = 0;
 
-	Str_Trunc(arg);
-	while (arg[i] == ' ')
-		i++; /* skip spaces */
-	while (arg[i] != ' ')
-		i++; /* skip command */
-	while (arg[i] == ' ')
-		i++; /* skip spaces */
-
-	j = 0;
-	while (isxdigit((unsigned)arg[i]) && j < 14) /* get address */
-		temp[j++] = arg[i++];
-	temp[j] = '\0';
-	j = sscanf(temp, "%lx", &write_addr);
-
-	/* if next char is not valid, or it's not a valid address */
-	if ((arg[i] != '\0' && arg[i] != ' ') || (j == 0))
+	if (nArgc < 3)
 	{
-		fprintf(stderr, "Bad address!\n");
-		return;
+		DebugUI_PrintCmdHelp(psArgs[0]);
+		return DEBUGGER_CMDDONE;
+	}
+
+	/* Read address */
+	i = sscanf(psArgs[1], "%lx", &write_addr);
+	/* if next char is not valid, or it's not a valid address */
+	if (i != 1)
+	{
+		fprintf(stderr, "Bad address! (must be hexadecimal)\n");
+		return DEBUGGER_CMDDONE;
 	}
 
 	write_addr &= 0x00FFFFFF;
-
-	while (arg[i] == ' ')
-		i++; /* skip spaces */
+	numBytes = 0;
 
 	/* get bytes data */
-	while (arg[i] != '\0')
+	for (i = 2; i < nArgc; i++)
 	{
-		j = 0;
-		while(isxdigit((unsigned)arg[i]) && j < 14) /* get byte */
-			temp[j++] = arg[i++];
-		temp[j] = '\0';
-
-		/* if next char is not a null or a space - it's not valid. */
-		if (arg[i] != '\0' && arg[i] != ' ')
+		if (sscanf(psArgs[i], "%x", &d) != 1 || d > 255)
 		{
-			fprintf(stderr, "Bad byte argument: %c\n", arg[i]);
-			return;
+			fprintf(stderr, "Bad byte argument: '%s'!\n", psArgs[i]);
+			return DEBUGGER_CMDDONE;
 		}
 
-		if (temp[0] != '\0')
-		{
-			if (sscanf(temp,"%x", &d) != 1)
-			{
-				fprintf(stderr, "Bad byte argument!\n");
-				return;
-			}
-		}
-
-		bytes[numBytes] = (d&0x0FF);
+		bytes[numBytes] = d & 0x0FF;
 		numBytes++;
-		while (arg[i] == ' ')
-			i++; /* skip any spaces */
 	}
 
 	/* write the data */
 	for (i = 0; i < numBytes; i++)
 		STMemory_WriteByte(write_addr + i, bytes[i]);
+
+	return DEBUGGER_CMDDONE;
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
- * Print help.
+ * Command: Set options
  */
-static void DebugUI_Help(void)
+static int DebugUI_SetOptions(int argc, char *argv[])
 {
-	fprintf(stderr, "---- debug mode commands ----\n"
-#if ENABLE_DSP_EMU
-	        " dd [address] - disassemble DSP from PC, or given address. \n"
-	        " dm <x|y|p>[address]- dump DSP memory at address, \n\tdm alone continues from previous address.\n"
-	        " dr [REG=value] - dump DSP register values/ set register to value \n"
-#endif
-	        " d [address] - disassemble from PC, or given address. \n"
-	        " r [REG=value] - dump register values/ set register to value \n"
-	        " m [address] - dump memory at address, \n\tm alone continues from previous address.\n"
-	        " w address bytes - write bytes to a memory address, bytes are space separated. \n"
-	        " f [filename] - open log file, no argument closes the log file\n"
-	        "   Output of reg & mem dumps and disassembly will be written to the log\n"
-	        " l filename address - load a file into memory starting at address. \n"
-	        " s filename address length - dump length bytes from memory to a file. \n"
-	        " o [command line] - set Hatari command line options\n\n"
-	        " q - quit emulator\n"
-	        " c - continue emulation\n\n"
-	        " Adresses may be given as a range e.g. fc0000-fc0100\nAll values in hexadecimal.\n"
-	        "-----------------------------\n"
-	        "\n");
+	CNF_PARAMS current;
+
+	/* get configuration changes */
+	current = ConfigureParams;
+
+	/* Parse and apply options */
+	if (Opt_ParseParameters(argc, (const char**)argv))
+	{
+		ConfigureParams.Screen.bFullScreen = false;
+		Change_CopyChangedParamsToConfiguration(&current, &ConfigureParams, FALSE);
+	}
+	else
+	{
+		ConfigureParams = current;
+	}
+
+	return DEBUGGER_CMDDONE;
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
- * Parse and return debug command.
+ * Command: Continue emulation
+ */
+static int DebugUI_Continue(int nArgc, char *psArgv[])
+{
+	fprintf(stderr,"Returning to emulation...\n------------------------------\n\n");
+
+	return DEBUGGER_END;
+}
+
+
+/**
+ * Command: Quit emulator
+ */
+static int DebugUI_QuitEmu(int nArgc, char *psArgv[])
+{
+	bQuitProgram = TRUE;
+	M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
+	return DEBUGGER_END;
+}
+
+
+struct dbgcommand
+{
+	int (*pFunction)(int argc, char *argv[]);
+	const char *sLongName;
+	const char *sShortName;
+	const char *sShortDesc;
+	const char *sUsage;
+};
+
+struct dbgcommand commandtab[] =
+{
+#if ENABLE_DSP_EMU
+	{ DebugUI_DspDisAsm, "dspdisasm", "dspd",
+	  "disassemble DSP code",
+	  "[address]\n"
+	  "\tDisassemble from DSP-PC, otherwise at given address." },
+	{ DebugUI_DspMemDump, "dspmemdump", "dspm",
+	  "dump DSP memory",
+	  "<x|y|p>[address]\n"
+	  "\tdump DSP memory at address, or continue from previous address if not\n"
+	  "\tspecified." },
+	{ DebugUI_DspRegister, "dspreg", "dspr",
+	  "read/write DSP registers",
+	  "[REG=value]"
+	  "\tSet or dump contents of DSP registers." },
+#endif
+	{ DebugUI_DisAsm, "disasm", "d",
+	  "disassemble from PC, or given address",
+	  "[address]\n"
+	  "\tIf no address is given, this command disassembles from the last\n"
+	  "\tposition or from current PC if no last postition is available." },
+	{ DebugUI_CpuRegister, "cpureg", "r",
+	  "dump register values or set register to value",
+	  "[REG=value]\n"
+	  "\tSet CPU register to value or dumps all register if no parameter\n"
+	  "\thas been specified." },
+	{ DebugUI_MemDump, "memdump", "m",
+	  "dump memory",
+	  "[address]\n"
+	  "\tdump memory at address or continue dump from previous address." },
+	{ DebugUI_MemWrite, "memwrite", "w",
+	  "write bytes to memory",
+	  "address byte1 [byte2 ...]\n"
+	  "\tWrite bytes to a memory address, bytes are space separated." },
+	{ DebugUI_SetLogFile, "logfile", "f",
+	  "open or close log file",
+	  "[filename]\n"
+	  "\tOpen log file, no argument closes the log file. Output of\n"
+	  "\tregister & memory dumps and disassembly will be written to it." },
+	{ DebugUI_LoadBin, "loadbin", "l",
+	  "load a file into memory",
+	  "filename address\n"
+	  "\tLoad the file <filename> into memory starting at <address>." },
+	{ DebugUI_SaveBin, "savebin", "s",
+	  "save memory to a file",
+	  "filename address length\n"
+	  "\tSave the memory block at <address> with given <length> to\n"
+	  "\tthe file <filename>." },
+	{ DebugUI_SetOptions, "setopt", "o",
+	  "set Hatari command line options",
+	  "[command line parameters]\n"
+	  "\tSet options like command line parameters." },
+	{ DebugUI_Continue, "continue", "c",
+	  "continue emulation",
+	  "\n"
+	  "\tLeave debugger and continue emulation." },
+	{ DebugUI_QuitEmu, "quit", "q",
+	  "quit emulator",
+	  "\n"
+	  "\tLeave debugger and quit emulator." },
+	{ DebugUI_Help, "help", "h",
+	  "print help",
+	  "[command]"
+	  "\tPrint help text for available commands." },
+};
+
+
+/**
+ * Print help text for one command
+ */
+static void DebugUI_PrintCmdHelp(const char *psCmd)
+{
+	int i;
+
+	/* Search the command ... */
+	for (i = 0; i < ARRAYSIZE(commandtab); i++)
+	{
+		if (!strcmp(psCmd, commandtab[i].sLongName)
+		    || !strcmp(psCmd, commandtab[i].sShortName))
+		{
+			/* ... and print help text */
+			fprintf(stderr, "'%s' or '%s' - %s\n",
+				commandtab[i].sLongName, commandtab[i].sShortName,
+				commandtab[i].sShortDesc);
+			fprintf(stderr, "Usage:  %s %s\n", commandtab[i].sShortName,
+				commandtab[i].sUsage);
+			return;
+		}
+	}
+
+	fprintf(stderr, "Unknown command '%s'\n", psCmd);
+}
+
+
+/**
+ * Command: Print debugger help screen.
+ */
+static int DebugUI_Help(int nArgc, char *psArgs[])
+{
+	int i;
+
+	if (nArgc > 1)
+	{
+		DebugUI_PrintCmdHelp(psArgs[1]);
+		return DEBUGGER_CMDDONE;
+	}
+
+	fputs("Available commands:\n", stderr);
+	for (i = 0; i < ARRAYSIZE(commandtab); i++)
+	{
+		fprintf(stderr, " %12s : %s\n", commandtab[i].sLongName,
+			commandtab[i].sShortDesc);
+	}
+
+	fputs("Adresses may be given as a range e.g. fc0000-fc0100\n"
+	      "All values in hexadecimal.\n", stderr);
+	return DEBUGGER_CMDDONE;
+}
+
+
+/**
+ * Parse debug command and execute it.
  */
 int DebugUI_ParseCommand(char *input)
 {
-	char command[255], arg[255];
-	static char lastcommand[2] = {0,0};
+	char *psArgs[64];
+	static char sLastCmd[80] = { '\0' };
+	int nArgc;
 	int i, retval;
-	bool noArgs;
 
-	/* Used for 'm', 'd' 'dm' and 'dd' to continue at last pos */
-	command[0] = lastcommand[0];
-	command[1] = lastcommand[1];
-	command[2] = 0;
-	arg[0] = 0;
-	i = sscanf(input, "%s%s", command, arg);
-	Str_ToLower(command);
+	psArgs[0] = strtok(input, " \t");
 
-	if (i == 0)
+	if (psArgs[0] == NULL)
 	{
-		fprintf(stderr, "  Unknown command.\n");
-		return DEBUG_CMD;
+		if (strlen(sLastCmd) > 0)
+			psArgs[0] = sLastCmd;
+		else
+			return DEBUGGER_CMDDONE;
 	}
 
-	lastcommand[0] = lastcommand[1] = 0;
-	retval = DEBUG_CMD;                /* Default return value */
-	noArgs = (i < 2);
-
-	switch (command[0])
+	/* Separate arguments and put the pointers into psArgs */
+	for (nArgc = 1; nArgc < ARRAYSIZE(psArgs); nArgc++)
 	{
-	 case 'c':
-		retval = DEBUG_QUIT;
-		break;
+		psArgs[nArgc] = strtok(NULL, " \t");
+		if (psArgs[nArgc] == NULL)
+			break;
+	}
 
-	 case 'q':
-		bQuitProgram = TRUE;
-		M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
-		retval = DEBUG_QUIT;
-		break;
-
-	 case 'h':
-	 case '?':
-		DebugUI_Help(); /* get help */
-		break;
-
-	 case 'o':
-		Change_ApplyCommandline(input+1);
-		break;
-
-	 case 'd':
-		switch (command[1])
+	/* Search the command ... */
+	for (i = 0; i < ARRAYSIZE(commandtab); i++)
+	{
+		if (!strcmp(psArgs[0], commandtab[i].sLongName)
+		    || !strcmp(psArgs[0], commandtab[i].sShortName))
 		{
-#if ENABLE_DSP_EMU
-			/* DSP debugging commands? */
-		case 'd':
-			/* No arg - disassemble at PC, otherwise at given address */
-			DebugUI_DspDisAsm(arg, noArgs);
-			break;
-		case 'm':
-			/* No arg - continue memdump, otherwise new memdump */
-			DebugUI_DspMemDump(arg, noArgs);
-			break;
-		case 'r':
-			if (noArgs)
-				DebugUI_DspRegDump();  /* no arg - dump regs */
+			/* ... and execute the function */
+			retval = commandtab[i].pFunction(nArgc, psArgs);
+			/* Save commando string if it can be repeated */
+			if (retval == DEBUGGER_CMDCONT)
+				strncpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
 			else
-				DebugUI_DspRegSet(arg);
-			break;
-#endif
-		default:
-			/* No arg - disassemble at PC, otherwise at given address */
-			DebugUI_DisAsm(arg, noArgs);
+				sLastCmd[0] = '\0';
+			return retval;
 		}
-		lastcommand[0] = command[0];
-		lastcommand[1] = command[1];
-		break;
-
-	 case 'm':
-		/* No arg - continue memdump, otherwise new memdump */
-		DebugUI_MemDump(arg, noArgs);
-		lastcommand[0] = 'm';
-		break;
-
-	 case 'f':
-		if (noArgs)
-			DebugUI_SetLogDefault();
-		else
-			DebugUI_SetLogFile(arg);
-		break;
-
-	 case 'w':
-		if (noArgs)    /* not enough args? */
-			fprintf(stderr, "  Usage: w address bytes\n");
-		else
-			DebugUI_MemWrite(input);
-		break;
-
-	 case 'r':
-		if (noArgs)
-			DebugUI_RegDump();  /* no arg - dump regs */
-		else
-			DebugUI_RegSet(arg);
-		break;
-
-	 case 'l':
-		if (noArgs)    /* not enough args? */
-			fprintf(stderr,"  Usage: l filename address\n");
-		else
-			DebugUI_LoadBin(input);
-		break;
-
-	 case 's':
-		if (noArgs)    /* not enough args? */
-			fprintf(stderr,"  Usage: s filename address bytes\n");
-		else
-			DebugUI_SaveBin(input);
-		break;
-
-	 default:
-		if (command[0])
-			fprintf(stderr,"  Unknown command: '%s'\n", command);
-		break;
 	}
 
-	return retval;
+	fprintf(stderr, "Command '%s' not found.\n"
+	        "Use 'help' to view a list of available commands.\n",
+	        psArgs[0]);
+
+	return DEBUGGER_CMDDONE;
 }
 
-/*-----------------------------------------------------------------------*/
+
 /**
- * Get a UI command, parse and return it.
+ * Read a command line from the keyboard and return a pointer to the string.
+ * @return	Pointer to the string which should be deallocated free()
+ *              after use. Returns NULL when error occured.
  */
-static int DebugUI_GetCommand(void)
+static char *DebugUI_GetCommand(void)
 {
 	char *input;
-	int retval;
 
 #if HAVE_LIBREADLINE
 	input = readline("> ");
 	if (!input)
-		return DEBUG_QUIT;
+		return NULL;
 	if (input[0] != 0)
 		add_history(input);
 #else
 	fprintf(stderr, "> ");
 	input = malloc(256);
 	if (!input)
-		return DEBUG_QUIT;
+		return NULL;
 	input[0] = '\0';
 	if (fgets(input, 256, stdin) == NULL)
 	{
 		free(input);
-		return DEBUG_QUIT;
+		return NULL;
 	}
 #endif
-	retval = DebugUI_ParseCommand(input);
 
-	free(input);
-	return retval;
+	return input;
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
- * Debug UI
+ * Debugger user interface main function.
  */
 void DebugUI(void)
 {
+	int cmdret;
+
 	if (!debugOutput) {
 		DebugUI_SetLogDefault();
 	}
@@ -959,28 +1036,28 @@ void DebugUI(void)
 	memdump_addr = 0;
 	disasm_addr = 0;
 
-	/* If you want registers, disassembly or memdump to be output
-	 * whenever you invoke the debugger, enable suitable lines
-	 * from below.
-	 */
-#if 0
-#if ENABLE_DSP_EMU
-	if (bDspEnabled)
-	{
-		DebugUI_DspRegDump();
-		DebugUI_DspDisAsm(NULL, TRUE);
-		DebugUI_DspMemDump(NULL, TRUE);
-	}
-#endif
-	DebugUI_RegDump();
-	DebugUI_DisAsm(NULL, TRUE);
-	DebugUI_MemDump(NULL, TRUE);
-#endif
+	fprintf(stderr, "\n----------------------------------------------------------------------"
+	                "\nYou have entered debug mode. Type c to continue emulation, h for help.\n");
 
-	fprintf(stderr, "\nYou have entered debug mode. Type c to continue emulation, h for help."
-	                "\n----------------------------------------------------------------------\n");
-	while (DebugUI_GetCommand() != DEBUG_QUIT)
-		;
-	fprintf(stderr,"Returning to emulation...\n------------------------------\n\n");
+	do
+	{
+		char *psCmd;
+
+		/* Read command from the keyboard */
+		psCmd = DebugUI_GetCommand();
+
+		if (psCmd)
+		{
+			/* Parse and execute the command string */
+			cmdret = DebugUI_ParseCommand(psCmd);
+			free(psCmd);
+		}
+		else
+		{
+			cmdret = DEBUGGER_END;
+		}
+	}
+	while (cmdret != DEBUGGER_END);
+
 	DebugUI_SetLogDefault();
 }

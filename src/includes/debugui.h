@@ -10,8 +10,9 @@
 
 /* DebugUI_ParseCommand() return values */
 enum {
-	DEBUG_QUIT,
-	DEBUG_CMD
+	DEBUGGER_END,      // Leave debugger
+	DEBUGGER_CMDCONT,  // Command can continue
+	DEBUGGER_CMDDONE   // Command done
 };
 
 extern void DebugUI(void);
