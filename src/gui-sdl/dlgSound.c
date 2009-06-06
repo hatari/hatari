@@ -97,7 +97,7 @@ void Dialog_SoundDlg(void)
 	for (i = DLGSOUND_11KHZ; i <= DLGSOUND_50KHZ; i++)
 		sounddlg[i].state &= ~SG_SELECTED;
 
-	for (i = 0; i < sizeof(nSoundFreqs)/sizeof(nSoundFreqs[0]); i++)
+	for (i = 0; i < DLGSOUND_50KHZ-DLGSOUND_11KHZ; i++)
 	{
 		if (ConfigureParams.Sound.nPlaybackFreq > nSoundFreqs[i]-500
 		    && ConfigureParams.Sound.nPlaybackFreq < nSoundFreqs[i]+500)
