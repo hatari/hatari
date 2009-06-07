@@ -944,10 +944,10 @@ struct dbgcommand commandtab[] =
 	  "\tSet options like command line parameters. For example to"
 	  "\tenable CPU disasm tracing:  setopt --trace cpu_disasm" },
 	{ DebugUI_Continue, "continue", "c",
-	  "continue emulation",
+	  "continue emulation / single-stepping",
 	  "[steps]\n"
-	  "\tLeave debugger and continue emulation for <steps> instructions"
-	  "\tor forever is no steps have been specified." },
+	  "\tLeave debugger and continue emulation for <steps> instructions\n"
+	  "\tor forever if no steps have been specified." },
 	{ DebugUI_QuitEmu, "quit", "q",
 	  "quit emulator",
 	  "\n"
