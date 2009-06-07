@@ -34,6 +34,8 @@ struct {
 	const char *Name;
 }
 TraceOptions[] = {
+	{ HATARI_TRACE_NONE		, "none" },
+
 	{ HATARI_TRACE_VIDEO_SYNC	, "video_sync" } ,
 	{ HATARI_TRACE_VIDEO_RES	, "video_res" } ,
 	{ HATARI_TRACE_VIDEO_COLOR	, "video_color" } ,
