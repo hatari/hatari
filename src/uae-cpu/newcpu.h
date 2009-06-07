@@ -27,6 +27,7 @@
 
 
 /* Special flags */
+#define SPCFLAG_DEBUGGER 1
 #define SPCFLAG_STOP 2
 #define SPCFLAG_BUSERROR 4
 #define SPCFLAG_INT 8

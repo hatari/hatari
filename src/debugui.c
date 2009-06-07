@@ -32,8 +32,8 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "tos.h"
 #include "options.h"
 #include "debugui.h"
-
 #include "hatari-glue.h"
+
 
 #define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
 #define MEMDUMP_ROWS   4       /* memdump, number of rows */
@@ -44,6 +44,10 @@ static unsigned long memdump_addr; /* memdump address */
 static unsigned long disasm_addr;  /* disasm address */
 
 static FILE *debugOutput;
+
+static Uint32 CpuBreakPoint[16];  /* 68k breakpoints */
+static int nCpuActiveBPs = 0;     /* Amount of active breakpoints */
+static int nCpuSteps = 0;         /* Amount of steps for CPU single-stepping */
 
 static int DebugUI_Help(int nArgc, char *psArgv[]);
 static void DebugUI_PrintCmdHelp(const char *psCmd);
@@ -631,6 +635,70 @@ static int DebugUI_CpuRegister(int nArgc, char *psArgs[])
 }
 
 
+/**
+ * Toggle or list CPU breakpoints.
+ */
+static int DebugUI_CpuBreakPoint(int nArgc, char *psArgs[])
+{
+	int i;
+	uaecptr nextpc;
+	unsigned int nBreakPoint;
+
+	/* List breakpoints? */
+	if (nArgc == 1)
+	{
+		/* No arguments - so list available breakpoints */
+		if (!nCpuActiveBPs)
+		{
+			fputs("No breakpoints set.\n", stderr);
+			return DEBUGGER_CMDDONE;
+		}
+
+		fputs("Currently active breakpoints:\n", stderr);
+		for (i = 0; i < nCpuActiveBPs; i++)
+		{
+			m68k_disasm(stderr, (uaecptr)CpuBreakPoint[i], &nextpc, 1);
+		}
+
+		return DEBUGGER_CMDDONE;
+	}
+
+	/* Parse parameter as breakpoint value */
+	if (sscanf(psArgs[1], "%x", &nBreakPoint) != 1
+	    || (nBreakPoint > STRamEnd && nBreakPoint < 0xe00000)
+	    || nBreakPoint > 0xff0000)
+	{
+		fputs("Not a valid value for a breakpoint!\n", stderr);
+		return DEBUGGER_CMDDONE;
+	}
+
+	/* Is the breakpoint already in the list? Then disable it! */
+	for (i = 0; i < nCpuActiveBPs; i++)
+	{
+		if (nBreakPoint == CpuBreakPoint[i])
+		{
+			CpuBreakPoint[i] = CpuBreakPoint[nCpuActiveBPs-1];
+			nCpuActiveBPs -= 1;
+			fprintf(stderr, "Breakpoint %x deleted.\n", nBreakPoint);
+			return DEBUGGER_CMDDONE;
+		}
+	}
+
+	/* Is there at least one free slot available? */
+	if (nCpuActiveBPs == ARRAYSIZE(CpuBreakPoint))
+	{
+		fputs("No more available free breakpoints!\n", stderr);
+		return DEBUGGER_CMDDONE;
+	}
+
+	/* Add new breakpoint */
+	CpuBreakPoint[nCpuActiveBPs] = nBreakPoint;
+	nCpuActiveBPs += 1;
+	fprintf(stderr, "Breakpoint %x added.\n", nBreakPoint);
+
+	return DEBUGGER_CMDDONE;
+}
+
 
 /**
  * Do a memory dump, args = starting address.
@@ -781,7 +849,16 @@ static int DebugUI_SetOptions(int argc, char *argv[])
  */
 static int DebugUI_Continue(int nArgc, char *psArgv[])
 {
-	fprintf(stderr,"Returning to emulation...\n------------------------------\n\n");
+	if (nArgc == 1)
+	{
+		nCpuSteps = 0;
+		fprintf(stderr,"Returning to emulation...\n------------------------------\n\n");
+	}
+	else
+	{
+		nCpuSteps = atoi(psArgv[1]);
+		fprintf(stderr,"Returning to emulation for %i instructions...\n", nCpuSteps);
+	}
 
 	return DEBUGGER_END;
 }
@@ -834,6 +911,11 @@ struct dbgcommand commandtab[] =
 	  "[REG=value]\n"
 	  "\tSet CPU register to value or dumps all register if no parameter\n"
 	  "\thas been specified." },
+	{ DebugUI_CpuBreakPoint, "break", "b",
+	  "toggle or list CPU breakpoints",
+	  "[address]\n"
+	  "\tToggle breakpoint at <address> or list all breakpoints when\n"
+	  "\tno address is given." },
 	{ DebugUI_MemDump, "memdump", "m",
 	  "dump memory",
 	  "[address]\n"
@@ -859,11 +941,13 @@ struct dbgcommand commandtab[] =
 	{ DebugUI_SetOptions, "setopt", "o",
 	  "set Hatari command line options",
 	  "[command line parameters]\n"
-	  "\tSet options like command line parameters." },
+	  "\tSet options like command line parameters. For example to"
+	  "\tenable CPU disasm tracing:  setopt --trace cpu_disasm" },
 	{ DebugUI_Continue, "continue", "c",
 	  "continue emulation",
-	  "\n"
-	  "\tLeave debugger and continue emulation." },
+	  "[steps]\n"
+	  "\tLeave debugger and continue emulation for <steps> instructions"
+	  "\tor forever is no steps have been specified." },
 	{ DebugUI_QuitEmu, "quit", "q",
 	  "quit emulator",
 	  "\n"
@@ -1060,4 +1144,50 @@ void DebugUI(void)
 	while (cmdret != DEBUGGER_END);
 
 	DebugUI_SetLogDefault();
+
+	/* If "real-time" debugging like breakpoints has been set, we've
+	 * got to tell the CPU core to call us after each instruction! */
+	if (nCpuActiveBPs || nCpuSteps)
+		M68000_SetSpecial(SPCFLAG_DEBUGGER);
+	else
+		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);
+}
+
+
+/**
+ * Check if we hit a breakpoint
+ */
+static void DebugUI_CheckCpuBreakpoints(void)
+{
+	Uint32 pc = M68000_GetPC();
+	int i;
+
+	for (i = 0; i < nCpuActiveBPs; i++)
+	{
+		if (pc == CpuBreakPoint[i])
+		{
+			fprintf(stderr, "\nCPU breakpoint at %x ...", pc);
+			DebugUI();
+			break;
+		}
+	}
+}
+
+
+/**
+ * This function is called after each CPU instruction when debugging is enabled.
+ */
+void DebugUI_CpuCheck(void)
+{
+	if (nCpuActiveBPs)
+	{
+		DebugUI_CheckCpuBreakpoints();
+	}
+
+	if (nCpuSteps)
+	{
+		nCpuSteps -= 1;
+		if (nCpuSteps == 0)
+			DebugUI();
+	}
 }
