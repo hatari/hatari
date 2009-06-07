@@ -234,7 +234,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
 	{ OPT_SOUND,   NULL, "--sound",
-	  "<x>", "Sound frequency (x=off/3000-96000, off=fastest)" },
+	  "<x>", "Sound frequency (x=off/6000-50066, off=fastest)" },
 	{ OPT_KEYMAPFILE, "-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	
@@ -1128,7 +1128,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			else
 			{
 				freq = atoi(argv[i]);
-				if (freq < 3000 || freq > 96000)
+				if (freq < 6000 || freq > 50066)
 				{
 					return Opt_ShowError(OPT_SOUND, argv[i], "Unsupported sound frequency");
 				}

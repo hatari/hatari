@@ -345,8 +345,10 @@ class HatariConfigMapping(ConfigStore):
         
     # ------------ sound ---------------
     def get_sound_values(self):
-        return ("11025", "12517", "16000", "22050", "25033",
-                "32000", "44100", "48000", "50066")
+        # 48kHz, 44.1kHz and STE/TT/Falcon DMA 50066Hz divisable values
+        return ("6000", "6258", "8000", "11025", "12000", "12517",
+                "16000", "22050", "24000", "25033", "32000",
+                "48000", "44100", "50066")
     
     def get_sound(self):
         enabled = self.get("[Sound]", "bEnableSound")
@@ -359,7 +361,7 @@ class HatariConfigMapping(ConfigStore):
             hz = int(hz)
         except ValueError:
             hz = 0
-        if hz < 3000 or hz > 96000:
+        if hz < 6000 or hz > 50066:
             hz = 44100
         self.set("[Sound]", "nPlaybackFreq", hz)
         self.set("[Sound]", "bEnableSound", enabled)

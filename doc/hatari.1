@@ -172,8 +172,13 @@ Enable blitter emulation (ST only)
 Falcon DSP emulation (x = none, dummy or emu, Falcon only)
 .TP 
 .B \-\-sound <x>
-Sound frequency (off/3000-96000, off=faster)
-.TP 
+Sound frequency: 6000-50066. "off" disables the sound and speeds up
+the emulation. To prevent extra sound artifacts, the frequency should be
+selected so that it either matches evenly with the STE/TT/Falcon sound
+DMA (6258, 12517, 250033, 50066 Hz) or your sound card frequencies
+(11025, 22050, 44100 or 6000...48000 Hz).  Check what your sound card
+supports.
+.TP
 .B \-k, \-\-keymap <file>
 load keyboard mapping from <file>
 .SH "Debug options"

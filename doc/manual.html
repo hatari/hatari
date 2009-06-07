@@ -1077,7 +1077,12 @@ only)
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Sound frequency (off/3000-96000, off=faster)
+Sound frequency: 6000-50066. "off" disables the sound and speeds up
+the emulation. To prevent extra sound artifacts, the frequency should be
+selected so that it either matches evenly with the STE/TT/Falcon sound
+DMA (6258, 12517, 250033, 50066 Hz) or your sound card frequencies
+(11025, 22050, 44100 or 6000...48000 Hz).  Check what your sound card
+supports.
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1671,8 +1676,10 @@ sound emulation is turned off.</p>
 <p>
  Nine frequencies from low to high quality are available. Experiment a
  little bit to find out which fits best for your setup.
- For most modern computers, 44100 Hz or 48000 Hz should be fine. For older or
- slower host systems, you should use a lower frequency.
+ For most modern computers, 44100 Hz or 48000 Hz should be fine.
+ For older or slower host systems, you should use a lower frequency.
+ 12517, 250033 and 50066 Hz are frequencies supported by
+ the STE/TT/Falcon sound DMA.
 </p>
 <p>
  You can select to record a piece of sound here.
