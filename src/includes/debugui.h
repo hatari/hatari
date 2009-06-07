@@ -18,5 +18,6 @@ enum {
 extern void DebugUI(void);
 extern int DebugUI_ParseCommand(char *input);
 extern void DebugUI_CpuCheck(void);
+extern void DebugUI_DspCheck(void);
 
 #endif /* HATARI_DEBUGUI_H */

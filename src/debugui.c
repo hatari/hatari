@@ -49,6 +49,10 @@ static Uint32 CpuBreakPoint[16];  /* 68k breakpoints */
 static int nCpuActiveBPs = 0;     /* Amount of active breakpoints */
 static int nCpuSteps = 0;         /* Amount of steps for CPU single-stepping */
 
+static Uint16 DspBreakPoint[16];  /* DSP breakpoints */
+static int nDspActiveBPs = 0;     /* Amount of active breakpoints */
+static int nDspSteps = 0;         /* Amount of steps for DSP single-stepping */
+
 static int DebugUI_Help(int nArgc, char *psArgv[]);
 static void DebugUI_PrintCmdHelp(const char *psCmd);
 
@@ -452,6 +456,108 @@ static int DebugUI_DspMemDump(int nArgc, char *psArgs[])
 	return DEBUGGER_CMDCONT;
 }
 
+/**
+ * Toggle or list DSP breakpoints.
+ */
+static int DebugUI_DspBreakPoint(int nArgc, char *psArgs[])
+{
+	int i;
+	Uint16 addr;
+	unsigned int nBreakPoint;
+
+	/* List breakpoints? */
+	if (nArgc == 1)
+	{
+		/* No arguments - so list available breakpoints */
+		if (!nDspActiveBPs)
+		{
+			fputs("No DSP breakpoints set.\n", stderr);
+			return DEBUGGER_CMDDONE;
+		}
+
+		fputs("Currently active DSP breakpoints:\n", stderr);
+		for (i = 0; i < nDspActiveBPs; i++)
+		{
+			addr = DspBreakPoint[i];
+			DSP_DisasmAddress(addr, addr);
+		}
+
+		return DEBUGGER_CMDDONE;
+	}
+
+	/* Parse parameter as breakpoint value */
+	if (sscanf(psArgs[1], "%x", &nBreakPoint) != 1
+	    || nBreakPoint > 0xFFFF)
+	{
+		fputs("Not a valid value for a DSP breakpoint!\n", stderr);
+		return DEBUGGER_CMDDONE;
+	}
+
+	/* Is the breakpoint already in the list? Then disable it! */
+	for (i = 0; i < nDspActiveBPs; i++)
+	{
+		if (nBreakPoint == DspBreakPoint[i])
+		{
+			DspBreakPoint[i] = DspBreakPoint[nDspActiveBPs-1];
+			nDspActiveBPs -= 1;
+			fprintf(stderr, "DSP breakpoint at %x deleted.\n", nBreakPoint);
+			return DEBUGGER_CMDDONE;
+		}
+	}
+
+	/* Is there at least one free slot available? */
+	if (nDspActiveBPs == ARRAYSIZE(DspBreakPoint))
+	{
+		fputs("No more available free DSP breakpoints!\n", stderr);
+		return DEBUGGER_CMDDONE;
+	}
+
+	/* Add new breakpoint */
+	DspBreakPoint[nDspActiveBPs] = nBreakPoint;
+	nDspActiveBPs += 1;
+	fprintf(stderr, "DSP breakpoint added at %x.\n", nBreakPoint);
+
+	return DEBUGGER_CMDDONE;
+}
+
+/**
+ * Check if we hit a DSP breakpoint
+ */
+static void DebugUI_CheckDspBreakpoints(void)
+{
+	Uint16 pc = DSP_GetPC();
+	int i;
+
+	for (i = 0; i < nDspActiveBPs; i++)
+	{
+		if (pc == DspBreakPoint[i])
+		{
+			fprintf(stderr, "\nDSP breakpoint at %x ...", pc);
+			DebugUI();
+			break;
+		}
+	}
+}
+
+
+/**
+ * This function is called after each DSP instruction when debugging is enabled.
+ */
+void DebugUI_DspCheck(void)
+{
+	if (nDspActiveBPs)
+	{
+		DebugUI_CheckDspBreakpoints();
+	}
+
+	if (nDspSteps)
+	{
+		nDspSteps -= 1;
+		if (nDspSteps == 0)
+			DebugUI();
+	}
+}
+
 #endif /* ENABLE_DSP_EMU */
 
 
@@ -650,11 +756,11 @@ static int DebugUI_CpuBreakPoint(int nArgc, char *psArgs[])
 		/* No arguments - so list available breakpoints */
 		if (!nCpuActiveBPs)
 		{
-			fputs("No breakpoints set.\n", stderr);
+			fputs("No CPU breakpoints set.\n", stderr);
 			return DEBUGGER_CMDDONE;
 		}
 
-		fputs("Currently active breakpoints:\n", stderr);
+		fputs("Currently active CPU breakpoints:\n", stderr);
 		for (i = 0; i < nCpuActiveBPs; i++)
 		{
 			m68k_disasm(stderr, (uaecptr)CpuBreakPoint[i], &nextpc, 1);
@@ -668,7 +774,7 @@ static int DebugUI_CpuBreakPoint(int nArgc, char *psArgs[])
 	    || (nBreakPoint > STRamEnd && nBreakPoint < 0xe00000)
 	    || nBreakPoint > 0xff0000)
 	{
-		fputs("Not a valid value for a breakpoint!\n", stderr);
+		fputs("Not a valid value for a CPU breakpoint!\n", stderr);
 		return DEBUGGER_CMDDONE;
 	}
 
@@ -679,7 +785,7 @@ static int DebugUI_CpuBreakPoint(int nArgc, char *psArgs[])
 		{
 			CpuBreakPoint[i] = CpuBreakPoint[nCpuActiveBPs-1];
 			nCpuActiveBPs -= 1;
-			fprintf(stderr, "Breakpoint %x deleted.\n", nBreakPoint);
+			fprintf(stderr, "CPU breakpoint at %x deleted.\n", nBreakPoint);
 			return DEBUGGER_CMDDONE;
 		}
 	}
@@ -687,14 +793,14 @@ static int DebugUI_CpuBreakPoint(int nArgc, char *psArgs[])
 	/* Is there at least one free slot available? */
 	if (nCpuActiveBPs == ARRAYSIZE(CpuBreakPoint))
 	{
-		fputs("No more available free breakpoints!\n", stderr);
+		fputs("No more available free CPU breakpoints!\n", stderr);
 		return DEBUGGER_CMDDONE;
 	}
 
 	/* Add new breakpoint */
 	CpuBreakPoint[nCpuActiveBPs] = nBreakPoint;
 	nCpuActiveBPs += 1;
-	fprintf(stderr, "Breakpoint %x added.\n", nBreakPoint);
+	fprintf(stderr, "CPU breakpoint added at %x.\n", nBreakPoint);
 
 	return DEBUGGER_CMDDONE;
 }
@@ -845,22 +951,54 @@ static int DebugUI_SetOptions(int argc, char *argv[])
 
 
 /**
- * Command: Continue emulation
+ * Command: Continue emulation / single-stepping
  */
-static int DebugUI_Continue(int nArgc, char *psArgv[])
+static int DebugUI_Continue(int nArgc, char *psArgv[], bool bStepDsp)
 {
-	if (nArgc == 1)
+	const char *chip;
+	int steps = 0;
+	
+	if (nArgc > 1)
 	{
-		nCpuSteps = 0;
+		steps = atoi(psArgv[1]);
+	}
+	/* at most one should be active at the same time */
+	nDspSteps = 0;
+	nCpuSteps = 0;
+	if (steps <= 0)
+	{
 		fprintf(stderr,"Returning to emulation...\n------------------------------\n\n");
+		return DEBUGGER_END;
 	}
-	else
+	if (bStepDsp)
 	{
-		nCpuSteps = atoi(psArgv[1]);
-		fprintf(stderr,"Returning to emulation for %i instructions...\n", nCpuSteps);
+		nDspSteps = steps;
+#if ENABLE_DSP_EMU
+		chip = "DSP";
+#else
+		chip = "<NONE>";
+#endif
+	} else {
+		nCpuSteps = steps;
+		chip = "CPU";
 	}
-
+	fprintf(stderr,"Returning to emulation for %i %s instructions...\n", steps, chip);
 	return DEBUGGER_END;
+}
+
+/**
+ * Command: Continue emulation / single-stepping CPU wrapper
+ */
+static int DebugUI_CpuContinue(int nArgc, char *psArgv[])
+{
+	return DebugUI_Continue(nArgc, psArgv, false);
+}
+/**
+ * Command: Continue emulation / single-stepping DSP wrapper
+ */
+static int DebugUI_DspContinue(int nArgc, char *psArgv[])
+{
+	return DebugUI_Continue(nArgc, psArgv, true);
 }
 
 
@@ -875,31 +1013,41 @@ static int DebugUI_QuitEmu(int nArgc, char *psArgv[])
 }
 
 
-struct dbgcommand
+typedef struct
 {
 	int (*pFunction)(int argc, char *argv[]);
 	const char *sLongName;
 	const char *sShortName;
 	const char *sShortDesc;
 	const char *sUsage;
-};
+} dbgcommand_t;
 
-struct dbgcommand commandtab[] =
+dbgcommand_t commandtab[] =
 {
 #if ENABLE_DSP_EMU
-	{ DebugUI_DspDisAsm, "dspdisasm", "dspd",
+	{ DebugUI_DspBreakPoint, "dspbreak", "db",
+	  "toggle or list DSP breakpoints",
+	  "[address]\n"
+	  "\tToggle breakpoint at <address> or list all breakpoints when\n"
+	  "\tno address is given." },
+	{ DebugUI_DspDisAsm, "dspdisasm", "dd",
 	  "disassemble DSP code",
 	  "[address]\n"
 	  "\tDisassemble from DSP-PC, otherwise at given address." },
-	{ DebugUI_DspMemDump, "dspmemdump", "dspm",
+	{ DebugUI_DspMemDump, "dspmemdump", "dm",
 	  "dump DSP memory",
 	  "<x|y|p>[address]\n"
 	  "\tdump DSP memory at address, or continue from previous address if not\n"
 	  "\tspecified." },
-	{ DebugUI_DspRegister, "dspreg", "dspr",
+	{ DebugUI_DspRegister, "dspreg", "dr",
 	  "read/write DSP registers",
 	  "[REG=value]"
 	  "\tSet or dump contents of DSP registers." },
+	{ DebugUI_DspContinue, "dspcont", "dc",
+	  "continue emulation / DSP single-stepping",
+	  "[steps]\n"
+	  "\tLeave debugger and continue emulation for <steps> DSP instructions\n"
+	  "\tor forever if no steps have been specified." },
 #endif
 	{ DebugUI_DisAsm, "disasm", "d",
 	  "disassemble from PC, or given address",
@@ -943,10 +1091,10 @@ struct dbgcommand commandtab[] =
 	  "[command line parameters]\n"
 	  "\tSet options like command line parameters. For example to"
 	  "\tenable CPU disasm tracing:  setopt --trace cpu_disasm" },
-	{ DebugUI_Continue, "continue", "c",
-	  "continue emulation / single-stepping",
+	{ DebugUI_CpuContinue, "cont", "c",
+	  "continue emulation / CPU single-stepping",
 	  "[steps]\n"
-	  "\tLeave debugger and continue emulation for <steps> instructions\n"
+	  "\tLeave debugger and continue emulation for <steps> CPU instructions\n"
 	  "\tor forever if no steps have been specified." },
 	{ DebugUI_QuitEmu, "quit", "q",
 	  "quit emulator",
@@ -1002,8 +1150,8 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 	fputs("Available commands:\n", stderr);
 	for (i = 0; i < ARRAYSIZE(commandtab); i++)
 	{
-		fprintf(stderr, " %12s : %s\n", commandtab[i].sLongName,
-			commandtab[i].sShortDesc);
+		fprintf(stderr, " %12s (%2s) : %s\n", commandtab[i].sLongName,
+			commandtab[i].sShortName, commandtab[i].sShortDesc);
 	}
 
 	fputs("Adresses may be given as a range e.g. fc0000-fc0100\n"
@@ -1151,11 +1299,16 @@ void DebugUI(void)
 		M68000_SetSpecial(SPCFLAG_DEBUGGER);
 	else
 		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);
+	/* ...and DSP core */
+	if (nDspActiveBPs || nDspSteps)
+		DSP_SetDebugging(true);
+	else
+		DSP_SetDebugging(false);
 }
 
 
 /**
- * Check if we hit a breakpoint
+ * Check if we hit a CPU breakpoint
  */
 static void DebugUI_CheckCpuBreakpoints(void)
 {

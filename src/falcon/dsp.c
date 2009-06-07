@@ -27,6 +27,7 @@
 #include "ioMem.h"
 #include "dsp.h"
 #if ENABLE_DSP_EMU
+#include "debugui.h"
 #include "dsp_cpu.h"
 #include "dsp_disasm.h"
 #endif
@@ -45,6 +46,7 @@
 #if ENABLE_DSP_EMU
 static dsp_core_t dsp_core;
 #endif
+static bool bDspDebugging;
 
 bool bDspEnabled = false;
 
@@ -112,11 +114,20 @@ void DSP_Run(int nHostCycles)
 
 	while (dsp_core.running == 1 && i-- > 0)
 	{
+		if (unlikely(bDspDebugging))
+			DebugUI_DspCheck();
 		dsp56k_execute_instruction();
 	}
 #endif
 }
 
+/**
+ * Enable/disable DSP debugging mode
+ */
+void DSP_SetDebugging(bool enabled)
+{
+	bDspDebugging = enabled;
+}
 
 /**
  * Get DSP program counter (for disassembler)
