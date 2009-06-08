@@ -1239,6 +1239,7 @@ static char *DebugUI_GetCommand(void)
 		free(input);
 		return NULL;
 	}
+	input = Str_Trim(input);
 #endif
 
 	return input;
