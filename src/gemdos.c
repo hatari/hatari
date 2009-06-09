@@ -1763,7 +1763,10 @@ static bool GemDOS_FDelete(Uint32 Params)
 static bool GemDOS_LSeek(Uint32 Params)
 {
 	long Offset;
-	int Handle,Mode;
+	int Handle, Mode;
+	long nFileSize;
+	long nOldPos, nDestPos;
+	FILE *fhndl;
 
 	/* Read details from stack */
 	Offset = (long)STMemory_ReadLong(Params+SIZE_WORD);
@@ -1776,13 +1779,36 @@ static bool GemDOS_LSeek(Uint32 Params)
 		/* No assume was TOS */
 		return FALSE;
 	}
-	else
+
+	fhndl = FileHandles[Handle].FileHandle;
+
+	/* Save old position in file */
+	nOldPos = ftell(fhndl);
+
+	/* Determine the size of the file */
+	fseek(fhndl, 0L, SEEK_END);
+	nFileSize = ftell(fhndl);
+
+	switch (Mode)
 	{
-		/* Return offset from start of file */
-		fseek(FileHandles[Handle].FileHandle, Offset, Mode);
-		Regs[REG_D0] = ftell(FileHandles[Handle].FileHandle);
+	 case 0: nDestPos = Offset; break;
+	 case 1: nDestPos = nOldPos + Offset; break;
+	 case 2: nDestPos = nFileSize - Offset; break;
+	}
+
+	if (nDestPos < 0 || nDestPos > nFileSize)
+	{
+		/* Restore old position and return error */
+		fseek(fhndl, nOldPos, SEEK_SET);
+		Regs[REG_D0] = GEMDOS_ERANGE;
 		return TRUE;
 	}
+
+	/* Seek to new position and return offset from start of file */
+	fseek(fhndl, nDestPos, SEEK_SET);
+	Regs[REG_D0] = ftell(fhndl);
+
+	return TRUE;
 }
 
 
