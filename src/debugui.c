@@ -383,8 +383,8 @@ static int DebugUI_DspDisAsm(int nArgc, char *psArgs[])
 
 /**
  * Do a DSP memory dump, args = starting address or range.
- * <x|y|p><address>: dump from X, Y or P, starting from given address,
- * e.g. "x200" or "p200-300"
+ * <x|y|p> <address>: dump from X, Y or P, starting from given address,
+ * e.g. "x 200" or "p 200-300"
  */
 static int DebugUI_DspMemDump(int nArgc, char *psArgs[])
 {
@@ -397,12 +397,15 @@ static int DebugUI_DspMemDump(int nArgc, char *psArgs[])
 		printf("DSP isn't present or initialized.\n");
 		return DEBUGGER_CMDDONE;
 	}
-
-	if (nArgc > 1)
+	if (nArgc == 2)
 	{
-		char *arg = psArgs[1];
+		fprintf(stderr,"Memory space or address/range missing\n");
+		return DEBUGGER_CMDDONE;
+	}
 
-		space = toupper(*arg++);
+	if (nArgc == 3)
+	{
+		space = toupper(psArgs[1][0]);
 		switch (space)
 		{
 		case 'X':
@@ -413,7 +416,7 @@ static int DebugUI_DspMemDump(int nArgc, char *psArgs[])
 			fprintf(stderr,"Invalid DSP address space '%c'!\n", space);
 			return DEBUGGER_CMDDONE;
 		}
-		switch (parseRange(arg, &lower, &upper))
+		switch (parseRange(psArgs[2], &lower, &upper))
 		{
 		case -1:
 			/* invalid value(s) */
@@ -1036,7 +1039,7 @@ dbgcommand_t commandtab[] =
 	  "\tDisassemble from DSP-PC, otherwise at given address." },
 	{ DebugUI_DspMemDump, "dspmemdump", "dm",
 	  "dump DSP memory",
-	  "<x|y|p>[address]\n"
+	  "<x|y|p> [address]\n"
 	  "\tdump DSP memory at address, or continue from previous address if not\n"
 	  "\tspecified." },
 	{ DebugUI_DspRegister, "dspreg", "dr",
@@ -1154,8 +1157,9 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 			commandtab[i].sShortName, commandtab[i].sShortDesc);
 	}
 
-	fputs("Adresses may be given as a range e.g. fc0000-fc0100\n"
-	      "All values in hexadecimal.\n", stderr);
+	fputs("Adresses may be given as a range e.g. 'fc0000-fc0100'.\n"
+	      "All values in hexadecimal. 'h <command>' gives more help.\n",
+	      stderr);
 	return DEBUGGER_CMDDONE;
 }
 
