@@ -1,9 +1,6 @@
 /*
   Hatari - breakcond.c
 
-  Test building can be done in hatari/src/ with:
-  gcc -I.. -Iincludes -Iuae-cpu $(sdl-config --cflags) -O -Wall breakcond.c
-
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
@@ -28,7 +25,7 @@
   Example:
   	pc = $64543  &  ($ff820).w & 3 = (a0)  &  d0.l = 123
 */
-const char BreakPoint_fileid[] = "Hatari breakpoint.c : " __DATE__ " " __TIME__;
+const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -36,7 +33,8 @@ const char BreakPoint_fileid[] = "Hatari breakpoint.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "stMemory.h"
 
-#define TEST 1	/* TODO: remove this stuff once done testing */
+#define BC_MAX_CONDITION_BREAKPOINTS 16
+#define BC_MAX_CONDITIONS_PER_BREAKPOINT 4
 
 /* defines for how the value needs to be accessed: */
 typedef enum {
@@ -76,15 +74,18 @@ typedef struct {
 	bc_value_t lvalue;
 	bc_value_t rvalue;
 	char comparison;
-	bc_next_t next;
 } bc_condition_t;
 
-#define BC_MAX_COUNT 16
+typedef struct {
+	char *expression;
+	bc_condition_t conditions[BC_MAX_CONDITIONS_PER_BREAKPOINT];
+	int count;
+} bc_breakpoint_t;
 
-static bc_condition_t BreakConditionsCpu[BC_MAX_COUNT];
-static bc_condition_t BreakConditionsDsp[BC_MAX_COUNT];
-static int BreakConditionsCpuCount;
-static int BreakConditionsDspCount;
+static bc_breakpoint_t BreakPointsCpu[BC_MAX_CONDITION_BREAKPOINTS];
+static bc_breakpoint_t BreakPointsDsp[BC_MAX_CONDITION_BREAKPOINTS];
+static int BreakPointCpuCount;
+static int BreakPointDspCount;
 
 
 /* ------------- breakpoint condition checking, internals ------------- */
@@ -105,14 +106,12 @@ static Uint32 BreakCond_ReadDspMemory(Uint32 addr, bc_size_t size, char space)
 static Uint32 BreakCond_ReadSTMemory(Uint32 addr, bc_size_t size)
 {
 	switch (size) {
-#ifndef TEST
 	case BC_SIZE_LONG:
 		return STMemory_ReadLong(addr);
 	case BC_SIZE_WORD:
 		return STMemory_ReadWord(addr);
 	case BC_SIZE_BYTE:
 		return STMemory_ReadByte(addr);
-#endif
 	default:
 		fprintf(stderr, "ERROR: unknown ST addr value size %d!\n", size);
 		abort();
@@ -167,10 +166,10 @@ static Uint32 BreakCond_GetValue(const bc_value_t *bc_value)
 /**
  * Return true if any of the given breakpoint conditions match
  */
-static bool BreakCond_Match(bc_condition_t *condition, int count)
+static bool BreakCond_MatchConditions(bc_condition_t *condition, int count)
 {
 	Uint32 lvalue, rvalue;
-	bool hit;
+	bool hit = false;
 	int i;
 	
 	for (i = 0; i < count; condition++, i++) {
@@ -178,7 +177,6 @@ static bool BreakCond_Match(bc_condition_t *condition, int count)
 		lvalue = BreakCond_GetValue(&(condition->lvalue));
 		rvalue = BreakCond_GetValue(&(condition->rvalue));
 
-		hit = false;
 		switch (condition->comparison) {
 		case '<':
 			hit = (lvalue < rvalue);
@@ -197,17 +195,25 @@ static bool BreakCond_Match(bc_condition_t *condition, int count)
 				condition->comparison);
 			abort();
 		}
-		if (hit) {
-			if (condition->next == BC_NEXT_NEW) {
-				/* condition ends & breakpoint matches */
-				return true;
-			}
-			continue;
+		if (!hit) {
+			return false;
 		}
-		/* this breakpoint failed, try next one */
-		while (condition->next != BC_NEXT_NEW && i < count) {
-			condition++;
-			i++;
+	}
+	/* all conditions matched */
+	return true;
+}
+
+
+/**
+ * Return true if any of the given condition breakpoints match
+ */
+static bool BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count)
+{
+	int i;
+	
+	for (i = 0; i < count; bp++, i++) {
+		if (BreakCond_MatchConditions(bp->conditions, bp->count)) {
+			return true;
 		}
 	}
 	return false;
@@ -216,30 +222,30 @@ static bool BreakCond_Match(bc_condition_t *condition, int count)
 /* ------------- breakpoint condition checking, public API ------------- */
 
 /**
- * Return true if any of the CPU breakpoint conditions match
+ * Return true if any of the CPU breakpoint/conditions match
  */
 bool BreakCond_MatchCpu(void)
 {
-	return BreakCond_Match(BreakConditionsCpu, BreakConditionsCpuCount);
+	return BreakCond_MatchBreakPoints(BreakPointsCpu, BreakPointCpuCount);
 }
 
 /**
- * Return true if any of the DSP breakpoint conditions match
+ * Return true if any of the DSP breakpoint/conditions match
  */
 bool BreakCond_MatchDsp(void)
 {
-	return BreakCond_Match(BreakConditionsDsp, BreakConditionsDspCount);
+	return BreakCond_MatchBreakPoints(BreakPointsDsp, BreakPointDspCount);
 }
 
 /**
- * Return count of breakpoint conditions (i.e. whether there are any)
+ * Return number of condition breakpoints (i.e. whether there are any)
  */
-int BreakCond_ConditionCount(bool bForDsp)
+int BreakCond_BreakPointCount(bool bForDsp)
 {
 	if (bForDsp) {
-		return BreakConditionsDspCount;
+		return BreakPointDspCount;
 	} else {
-		return BreakConditionsCpuCount;
+		return BreakPointCpuCount;
 	}
 }
 
@@ -265,9 +271,9 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
 /**
  * If given address is valid (for DSP or CPU), return true.
  */
-static bool BreakCond_CheckAddress(Uint32 addr, bool bForDsp)
+static bool BreakCond_CheckAddress(Uint32 addr, bc_value_t *bc_value)
 {
-	if (bForDsp) {
+	if (bc_value->using_dsp) {
 		if (addr > 0xFFFF) {
 			return false;
 		}
@@ -280,86 +286,96 @@ static bool BreakCond_CheckAddress(Uint32 addr, bool bForDsp)
 }
 
 
+/* struct for passing around breakpoint conditions parsing state */
+typedef struct {
+	int arg;		/* current arg */
+	int argc;		/* arg count */
+	const char **args;	/* all args */
+	const char *error;	/* error from parsing args */
+} parser_state_t;
+
 /**
  * Parse a breakpoint condition value.
- * Modify number of parsed arguments given as pointer.
- * Return error message on error and NULL for success.
+ * Modify pstate according to parsing (arg index and error string).
+ * Return true for success and false for error.
  */
-static const char *
-BreakCond_ParseValue(int nArgc, const char *psArgs[],
-		     int *parsed, bc_value_t *bc_value)
+bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 {
-	int pos = 0, arg = 1;
-	const char *value;
 	Uint32 number;
-	
-	if (nArgc >= 3) {
-		if (strcmp(psArgs[0], "(") == 0 &&
-		    strcmp(psArgs[2], ")") == 0) {
+	const char *value;
+	const char **args = pstate->args;
+	int arg, skip = 1;
+
+	arg = pstate->arg;
+	if (pstate->argc - arg >= 3) {
+		if (strcmp(args[arg], "(") == 0 &&
+		    strcmp(args[arg+2], ")") == 0) {
 			bc_value->is_indirect = true;
-			pos = 1;
-			arg = 3;
+			arg += 1;
+			skip = 2;
 		}
 	}
-	value = psArgs[pos];
+	pstate->arg = arg;	/* update for error return */
 
+	value = args[arg];
 	if (isalpha(value[0])) {
 		if (BreakCond_ParseRegister(value, bc_value)) {
 			/* address of register */
 			bc_value->type = BC_TYPE_ADDRESS;
 		} else {
-			*parsed += arg;
-			return "invalid register name";
+			pstate->error = "invalid register name";
+			return false;
 		}
 	} else {
 		/* a number */
 		bc_value->type = BC_TYPE_NUMBER;
 		if (value[0] == '$') {
 			if (sscanf(value, "%x", &number) != 1) {
-				*parsed += arg;
-				return "invalid hexadecimal value";
+				pstate->error = "invalid hexadecimal value";
+				return false;
 			}
 		} else {
 			if (sscanf(value, "%d", &number) != 1) {
-				*parsed += arg;
-				return "invalid decimal value";
+				pstate->error = "invalid decimal value";
+				return false;
 			}
 		}
 		/* suitable as emulated memory address (indirect)? */
 		if (bc_value->is_indirect &&
-		    !BreakCond_CheckAddress(number, bc_value->using_dsp)) {
-			parsed += arg;
-			return "invalid address";
+		    !BreakCond_CheckAddress(number, bc_value)) {
+			pstate->error = "invalid address";
+			return false;
 		}
 	}
-	arg = pos;
+	arg += skip;
 	
 #warning "TODO: handle lvalue/rvalue width and mask settings"
 	fprintf(stderr, "TODO: handle lvalue/rvalue width and mask settings\n");
 	
-	*parsed += arg;
-	return NULL;
+	pstate->arg = arg;
+	return true;
 }
 
 
 /**
  * Parse given breakpoint conditions and append them to breakpoints.
- * Return error string if there was an error in parsing them, NULL on OK.
+ * Modify pstate according to parsing (arg index and error string).
+ * Return true for success and false for error.
  */
-static const char *
-BreakCond_ParseCondition(int nArgc, const char *psArgs[],
-			 int *parsed, bool bForDsp,
-			 int *count, bc_condition_t *conditions)
+bool BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
+			      bc_condition_t *conditions, int *ccount)
 {
 	bc_condition_t condition;
-	const char *error;
-	char comparison;
+	const char *comparison;
+	int arg;
 
-	if (!nArgc) {
-		return "condition missing";
+	if (pstate->arg >= pstate->argc) {
+		pstate->error = "condition(s) missing";
+		return false;
 	}
-	if (*count >= BC_MAX_COUNT) {
-		return "no free breakpoints/conditions left";
+	if (*ccount >= BC_MAX_CONDITIONS_PER_BREAKPOINT) {
+		pstate->error = "no free breakpoints/conditions left";
+		return false;
 	}
 
 	memset(&condition, 0, sizeof(bc_condition_t));
@@ -368,73 +384,73 @@ BreakCond_ParseCondition(int nArgc, const char *psArgs[],
 		condition.rvalue.using_dsp = true;
 	}
 	
-	error = BreakCond_ParseValue(nArgc, psArgs,
-				     parsed, &(condition.lvalue));
-	if (error) {
-		return error;
+	if (!BreakCond_ParseValue(pstate, &(condition.lvalue))) {
+		return false;
 	}
 
-	if (*parsed >= nArgc) {
+	arg = pstate->arg;
+	if (arg >= pstate->argc) {
 		return "breakpoint comparison missing";
 	}
-	comparison = psArgs[*parsed][0];
-	switch (comparison) {
+	comparison = pstate->args[arg];
+	switch (comparison[0]) {
 	case '<':
 	case '>':
 	case '=':
 	case '!':
-		condition.comparison = comparison;
+		condition.comparison = comparison[0];
 		break;
 	default:
-		return "invalid comparison character";
+		pstate->error = "invalid comparison character";
+		return false;
 	}
-	if (psArgs[*parsed][1]) {
-		return "trailing comparison characters";
-	}
-	
-	if (++*parsed >= nArgc) {
-		return "right side missing";
+	if (comparison[1]) {
+		pstate->error = "trailing comparison character(s)";
+		return false;
 	}
 
-	error = BreakCond_ParseValue(nArgc-*parsed, psArgs+*parsed,
-				     parsed, &(condition.rvalue));
-	if (error) {
-		return error;
+	arg += 1;
+	if (arg >= pstate->argc) {
+		pstate->error = "right side missing";
+		return false;
+	}
+
+	pstate->arg = arg;
+	if (!BreakCond_ParseValue(pstate, &(condition.rvalue))) {
+		return false;
 	}
 	
 	/* done? */
-	if (*parsed == nArgc) {
-		condition.next = BC_NEXT_NEW;
-		conditions[(*count)++] = condition;
-		return NULL;
+	arg = pstate->arg;
+	if (arg == pstate->argc) {
+		conditions[(*ccount)++] = condition;
+		return true;
 	}
-	if (strcmp(psArgs[*parsed], "&") != 0) {
-		return "trailing content for breakpoint condition";
+	if (strcmp(pstate->args[arg], "&") != 0) {
+		pstate->error = "trailing content for breakpoint condition";
+		return false;
 	}
 
-	/* continue condition parsing (applied in reverse order) */
-	error = BreakCond_ParseCondition(nArgc-*parsed, &(psArgs[*parsed]),
-					 parsed, bForDsp, count, conditions);
-	if (error) {
-		return error;
+	/* recurse conditions parsing (conditions applied in reverse order) */
+	if (!BreakCond_ParseCondition(pstate, bForDsp, conditions, ccount)) {
+		return false;
 	}
-	conditions[(*count)-1].next = BC_NEXT_AND;
-	condition.next = BC_NEXT_NEW;
-	conditions[(*count)++] = condition;
-	return NULL;
+	conditions[(*ccount)++] = condition;
+	return true;
 }
 
+
 /**
- * Parse given breakpoint expression and store it.
- * Return true for success and false for failure.
+ * Tokenize given breakpoint expression to given parser struct.
+ * Return a single string representation or NULL for an error.
+ * On error, pstate->error contains the error message.
  */
-bool BreakCond_Parse(const char *expression, bool bForDsp)
+static char *BreakCond_TokenizeExpression(const char *expression,
+					  parser_state_t *pstate)
 {
-	int parsed = 0, nArgs = 0;
-	const char **psArgs = NULL;
-	const char *error;
-#warning "TODO: BreakCond_Parse()"
-	/* TODO:
+#warning "TODO: BreakCond_TokenizeExpression()"
+	fprintf(stderr, "TODO: BreakCond_TokenizeExpression()\n");
+	/* TODO, do instead:
 	 * - count breakpoint condition separators in expression
 	 * - alloc space for separated output (strlen(expression) +
 	 *   tokens + pointer array to tokesn and store it to new breakpoint
@@ -443,35 +459,91 @@ bool BreakCond_Parse(const char *expression, bool bForDsp)
 	 *   + each separator is followed by terminating nil
 	 *   + each new token is added to args array
 	 */
-	if (bForDsp) {
-		error = BreakCond_ParseCondition(nArgs, psArgs,
-						 &parsed, bForDsp,
-						 &BreakConditionsDspCount,
-						 BreakConditionsDsp);
-	} else {
-		error = BreakCond_ParseCondition(nArgs, psArgs,
-						 &parsed, bForDsp,
-						 &BreakConditionsCpuCount,
-						 BreakConditionsCpu);
-	}
-	/* TODO:
-	 * - if there was an error:
-	 *   + show stored expression
-	 *   + underline the erronous token (based on parsed index)
-	 *   + show error
-	 */
-	return (!error);
+	memset(pstate, 0, sizeof(parser_state_t));
+	return NULL;
 }
 
-#ifdef TEST
+
+/* ------------- breakpoint condition parsing, public API ------------ */
+
+/**
+ * Parse given breakpoint expression and store it.
+ * Return true for success and false for failure.
+ */
+bool BreakCond_Parse(const char *expression, bool bForDsp)
+{
+	parser_state_t pstate;
+	bc_breakpoint_t *bp;
+	char *parsed;
+	bool ok;
+
+	if (bForDsp) {
+		bp = &(BreakPointsDsp[BreakPointDspCount]);
+	} else {
+		bp = &(BreakPointsCpu[BreakPointCpuCount]);
+	}
+	parsed = BreakCond_TokenizeExpression(expression, &pstate);
+	if (parsed) {
+		bp->expression = parsed;
+		ok = BreakCond_ParseCondition(&pstate, bForDsp,
+					      bp->conditions, &(bp->count));
+	} else {
+		bp->expression = (char *)expression;
+		ok = false;
+	}
+	if (ok) {
+		if (bForDsp) {
+			BreakPointDspCount++;
+		} else {
+			BreakPointCpuCount++;
+		}
+	} else {
+		fprintf(stderr, bp->expression);
+		/* TODO: underline the erronous pstate->arg token */
+		fprintf(stderr, pstate.error);
+	}
+	return ok;
+}
+
+
+/**
+ * List condition breakpoints
+ */
+void BreakCond_List(bool bForDsp)
+{
+}
+
+/**
+ * Remove condition breakpoint at given position
+ */
+void BreakCond_Remove(int position, bool bForDsp)
+{
+}
+
+
+/* ---------------------------- test code ---------------------------- */
+
+/* Test building can be done in hatari/src/ with:
+ * gcc -I.. -Iincludes -Iuae-cpu $(sdl-config --cflags) -O -Wall breakcond.c
+ * 
+ * TODO: remove test stuff once done testing
+ */
+#if 1
+Uint8 STRam[16*1024*1024];
+Uint32 STRamEnd = 4*1024*1024;
+
 int main(int argc, const char *argv[])
 {
+	const char dsptest[] = "($2000) = (d0) & pc = $fff";
+	fprintf(stderr, "Parsing '%s'\n", dsptest);
+	BreakCond_Parse(dsptest, true);
+
+	/* parse cmd line args as conditional CPU breakpoints */
 	while (--argc > 0) {
 		argv++;
 		fprintf(stderr, "Parsing '%s'\n", *argv);
 		BreakCond_Parse(*argv, false);
 	}
-	BreakCond_Parse("($2000) = (d0) & pc = $fff", true);
 	return 0;
 }
 #endif
