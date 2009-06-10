@@ -1,6 +1,8 @@
 /*
   Hatari - breakcond.c
 
+  Copyright (c) 2009 by Eero Tamminen
+
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
 
@@ -52,7 +54,7 @@ typedef enum {
 typedef struct {
 	bc_addressing_t type;
 	bool is_indirect;
-	bool using_dsp;
+	bool use_dsp;
 	char space;	/* DSP has P, X, Y address spaces */
 	bc_size_t size;
 	union {
@@ -79,7 +81,7 @@ typedef struct {
 typedef struct {
 	char *expression;
 	bc_condition_t conditions[BC_MAX_CONDITIONS_PER_BREAKPOINT];
-	int count;
+	int ccount;
 } bc_breakpoint_t;
 
 static bc_breakpoint_t BreakPointsCpu[BC_MAX_CONDITION_BREAKPOINTS];
@@ -153,7 +155,7 @@ static Uint32 BreakCond_GetValue(const bc_value_t *bc_value)
 		abort();
 	}
 	if (bc_value->is_indirect) {
-		if (bc_value->using_dsp) {
+		if (bc_value->use_dsp) {
 			value = BreakCond_ReadDspMemory(value, size, bc_value->space);
 		} else {
 			value = BreakCond_ReadSTMemory(value, size);
@@ -212,7 +214,7 @@ static bool BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count)
 	int i;
 	
 	for (i = 0; i < count; bp++, i++) {
-		if (BreakCond_MatchConditions(bp->conditions, bp->count)) {
+		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
 			return true;
 		}
 	}
@@ -260,7 +262,7 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
 {
 #warning "TODO: BreakCond_ParseRegister()"
 	fprintf(stderr, "TODO: BreakCond_ParseRegister()\n");
-	if (bc_value->using_dsp) {
+	if (bc_value->use_dsp) {
 		/* check DSP register names */
 		return false;
 	}
@@ -273,7 +275,7 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
  */
 static bool BreakCond_CheckAddress(Uint32 addr, bc_value_t *bc_value)
 {
-	if (bc_value->using_dsp) {
+	if (bc_value->use_dsp) {
 		if (addr > 0xFFFF) {
 			return false;
 		}
@@ -374,14 +376,14 @@ bool BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 		return false;
 	}
 	if (*ccount >= BC_MAX_CONDITIONS_PER_BREAKPOINT) {
-		pstate->error = "no free breakpoints/conditions left";
+		pstate->error = "no free breakpoint conditions left";
 		return false;
 	}
 
 	memset(&condition, 0, sizeof(bc_condition_t));
 	if (bForDsp) {
-		condition.lvalue.using_dsp = true;
-		condition.rvalue.using_dsp = true;
+		condition.lvalue.use_dsp = true;
+		condition.rvalue.use_dsp = true;
 	}
 	
 	if (!BreakCond_ParseValue(pstate, &(condition.lvalue))) {
@@ -442,25 +444,121 @@ bool BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 
 /**
  * Tokenize given breakpoint expression to given parser struct.
- * Return a single string representation or NULL for an error.
+ * Return normalized expression string that corresponds to tokenization.
  * On error, pstate->error contains the error message.
  */
 static char *BreakCond_TokenizeExpression(const char *expression,
 					  parser_state_t *pstate)
 {
-#warning "TODO: BreakCond_TokenizeExpression()"
-	fprintf(stderr, "TODO: BreakCond_TokenizeExpression()\n");
-	/* TODO, do instead:
-	 * - count breakpoint condition separators in expression
-	 * - alloc space for separated output (strlen(expression) +
-	 *   tokens + pointer array to tokesn and store it to new breakpoint
-	 * - copy expression to new breakpoint so that it's tokenized:
-	 *   + spaces are removed
-	 *   + each separator is followed by terminating nil
-	 *   + each new token is added to args array
-	 */
+	char separator[] = {
+		'=', '!', '<', '>',  /* comparison operators */
+		'(', ')', '.', '&',  /* other separators */
+		'\0'                 /* terminator */
+	};
+	bool is_separated, has_comparison;
+	int i, j, len, tokens, arraysize;
+	char *dst, *normalized;
+	const char *src;
+
+	/* count number of tokens / items in expressions */
+	tokens = 0;
+	has_comparison = false;
+	for (i = 0; expression[i]; i++) {
+		for (j = 0; separator[j]; j++) {
+			if (expression[i] == separator[j]) {
+				if (j < 4) {
+					has_comparison = true;
+				}
+				tokens++;
+				break;
+			}
+		}
+	}
+
+	/* first sanity check */
 	memset(pstate, 0, sizeof(parser_state_t));
-	return NULL;
+	if (!has_comparison) {
+		pstate->error = "condition comparison missing";
+		return NULL;
+	}
+
+	/* allocate enough space for tokenized string array
+	 * and normalized string
+	 */
+	len = strlen(expression)+1 + 2*tokens;
+	arraysize = 2*tokens*sizeof(char*);
+	pstate->args = malloc(arraysize + len);
+	if (!pstate->args) {
+		pstate->error = "alloc failed";
+		return NULL;
+	}
+	normalized = malloc(len);
+	if (!normalized) {
+		pstate->error = "alloc failed";
+		return NULL;
+	}
+
+	/* copy expression in a normalized form */
+	src = expression;
+	dst = normalized;
+	is_separated = false;
+	for (; *src; src++) {
+		/* discard white space in source */
+		if (isspace(*src)) {
+			continue;
+		}
+		/* separate tokens with single space in destination */
+		for (j = 0; separator[j]; j++) {
+			if (*src == separator[j]) {
+				if (!is_separated && dst > normalized) {
+					*dst++ = ' ';
+				}
+				*dst++ = *src;
+				*dst++ = ' ';
+				is_separated = true;
+				break;
+			}
+		}
+		if (!separator[j]) {
+			*dst++ = *src;
+			is_separated = false;
+		}
+	}
+	if (is_separated) {
+		dst--;
+	}
+	*dst = '\0';
+fprintf(stderr, "DEBUG: '%s' -> '%s'\n", expression, normalized);
+
+	/* copy normalized string to end of the args array and tokenize it */
+	dst = (char *)(pstate->args) + arraysize;
+	strcpy(dst, normalized);
+	pstate->args[0] = strtok(dst, " ");
+	for (i = 1; (pstate->args[i] = strtok(NULL, " ")); i++);
+	pstate->argc = i;
+
+	return normalized;
+}
+
+
+/**
+ * Helper to set corrent breakpoint list and type name to given variables.
+ * Return pointer to breakpoint list count
+ */
+static int* BreakCond_GetListInfo(bc_breakpoint_t **bp,
+				  const char **name, bool bForDsp)
+{
+	int *bcount;
+	if (bForDsp) {
+		bcount = &BreakPointDspCount;
+		*bp = BreakPointsDsp;
+		*name = "DSP";
+	} else {
+		bcount = &BreakPointCpuCount;
+		*bp = BreakPointsCpu;
+		*name = "CPU";
+	}
+	return bcount;
 }
 
 
@@ -474,33 +572,41 @@ bool BreakCond_Parse(const char *expression, bool bForDsp)
 {
 	parser_state_t pstate;
 	bc_breakpoint_t *bp;
-	char *parsed;
+	const char *name;
+	char *normalized;
+	int *bcount;
 	bool ok;
 
-	if (bForDsp) {
-		bp = &(BreakPointsDsp[BreakPointDspCount]);
-	} else {
-		bp = &(BreakPointsCpu[BreakPointCpuCount]);
+	bcount = BreakCond_GetListInfo(&bp, &name, bForDsp);
+	if (*bcount >= BC_MAX_CONDITION_BREAKPOINTS) {
+		fprintf(stderr, "ERROR: no free %s condition breakpoints left.\n", name);
+		return false;
 	}
-	parsed = BreakCond_TokenizeExpression(expression, &pstate);
-	if (parsed) {
-		bp->expression = parsed;
+	bp += *bcount;
+	
+	normalized = BreakCond_TokenizeExpression(expression, &pstate);
+	if (normalized) {
+		bp->expression = normalized;
 		ok = BreakCond_ParseCondition(&pstate, bForDsp,
-					      bp->conditions, &(bp->count));
+					      bp->conditions, &(bp->ccount));
 	} else {
 		bp->expression = (char *)expression;
 		ok = false;
 	}
+	if (pstate.args) {
+		free(pstate.args);
+	}
 	if (ok) {
-		if (bForDsp) {
-			BreakPointDspCount++;
-		} else {
-			BreakPointCpuCount++;
-		}
+		(*bcount)++;
+		fprintf(stderr, "%d. %s condition breakpoint added.\n",
+			*bcount, name);
 	} else {
-		fprintf(stderr, bp->expression);
+		if (normalized) {
+			free(normalized);
+		}
+		fprintf(stderr, "Condition:\n'%s'\n", bp->expression);
 		/* TODO: underline the erronous pstate->arg token */
-		fprintf(stderr, pstate.error);
+		fprintf(stderr, "ERROR: %s\n", pstate.error);
 	}
 	return ok;
 }
@@ -511,6 +617,20 @@ bool BreakCond_Parse(const char *expression, bool bForDsp)
  */
 void BreakCond_List(bool bForDsp)
 {
+	const char *name;
+	bc_breakpoint_t *bp;
+	int i, bcount;
+	
+	bcount = *BreakCond_GetListInfo(&bp, &name, bForDsp);
+	if (!bcount) {
+		fprintf(stderr, "No conditional %s breakpoints.\n", name);
+		return;
+	}
+
+	fprintf(stderr, "Conditional %s breakpoints:\n", name);
+	for (i = 1; i <= bcount; bp++, i++) {
+		fprintf(stderr, "%d: %s\n", i, bp->expression);
+	}
 }
 
 /**
@@ -518,13 +638,30 @@ void BreakCond_List(bool bForDsp)
  */
 void BreakCond_Remove(int position, bool bForDsp)
 {
+	const char *name;
+	bc_breakpoint_t *bp;
+	int *bcount;
+	
+	bcount = BreakCond_GetListInfo(&bp, &name, bForDsp);
+	if (position < 1 || position > *bcount) {
+		fprintf(stderr, "ERROR: No such %s breakpoint.\n", name);
+		return;
+	}
+	fprintf(stderr, "Removed %s breakpoint %d:\n  %s\n",
+		name, position, bp[position].expression);
+	free(bp[position].expression);
+	if (position < *bcount) {
+		memmove(bp+(position-1), bp+position,
+			(*bcount-position)*sizeof(bc_breakpoint_t));
+	}
+	(*bcount)--;
 }
 
 
 /* ---------------------------- test code ---------------------------- */
 
 /* Test building can be done in hatari/src/ with:
- * gcc -I.. -Iincludes -Iuae-cpu $(sdl-config --cflags) -O -Wall breakcond.c
+ * gcc -I.. -Iincludes -Iuae-cpu $(sdl-config --cflags) -O -Wall -g breakcond.c
  * 
  * TODO: remove test stuff once done testing
  */
@@ -534,16 +671,80 @@ Uint32 STRamEnd = 4*1024*1024;
 
 int main(int argc, const char *argv[])
 {
-	const char dsptest[] = "($2000) = (d0) & pc = $fff";
-	fprintf(stderr, "Parsing '%s'\n", dsptest);
-	BreakCond_Parse(dsptest, true);
+	const char *should_fail[] = {
+		"",
+		" = ",
+		" a0 d0 ",
+		"gggg=a0",
+		"=a=b=",
+		"a0=d0=20",
+		".w&3=2",
+		"foo().w=bar()",
+		"(a0.w=d0.l)",
+		"(a0&3)=20",
+		"20=(a0.w)",
+		"()&=d0",
+		"d0=().w",
+		NULL
+	};
+	const char *should_pass[] = {
+		" 200 = 200 ",
+		" ( 200 ) = ( 200 ) ",
+		"a0=d0",
+		"(a0)=(d0)",
+		"(d0).w=(a0).b",
+		"(a0).w&3=(d0) & d0=1",
+		" ( a 0 ) . w & 3 = ( d 0 ) & d 0 = 1 ",
+		"1=d0 & (d0)&2=(a0).w",
+		NULL
+	};
+	const char *test;
+	bool use_dsp = false;
+	int i, count;
+	
+	/* first automated tests... */
+	BreakCond_List(use_dsp);
+	fprintf(stderr, "Should FAIL:\n");
+	for (i = 0; (test = should_fail[i]); i++) {
+		fprintf(stderr, "- parsing '%s'\n", test);
+		if (BreakCond_Parse(test, use_dsp)) {
+			fprintf(stderr, "***ERROR***: should have failed, skipping rest...\n");
+			break;
+		}
+	}
+	BreakCond_List(use_dsp);
+	BreakCond_Remove(0, use_dsp);
+	BreakCond_Remove(1, use_dsp);
+	BreakCond_List(use_dsp);
+	fprintf(stderr, "Should PASS:\n");
+	for (i = 0; (test = should_pass[i]); i++) {
+		fprintf(stderr, "- parsing '%s'\n", test);
+		if (!BreakCond_Parse(test, use_dsp)) {
+			fprintf(stderr, "***ERROR***: should have passed, skipping rest...\n");
+			break;
+		}
+	}
+	BreakCond_List(use_dsp);
 
-	/* parse cmd line args as conditional CPU breakpoints */
+	/* try removing everything from alternate ends */
+	while ((count = BreakCond_BreakPointCount(use_dsp))) {
+		BreakCond_Remove(count, use_dsp);
+		BreakCond_Remove(1, use_dsp);
+	}
+	BreakCond_List(use_dsp);
+	return 0;
+
+	/* ...last parse cmd line args */
+	if (argc < 2) {
+		return 0;
+	}
+	fprintf(stderr, "Command line breakpoints:\n");
 	while (--argc > 0) {
 		argv++;
-		fprintf(stderr, "Parsing '%s'\n", *argv);
-		BreakCond_Parse(*argv, false);
+		fprintf(stderr, "- parsing '%s'\n", *argv);
+		BreakCond_Parse(*argv, use_dsp);
 	}
+	BreakCond_List(use_dsp);
 	return 0;
 }
 #endif
