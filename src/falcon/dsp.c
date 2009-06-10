@@ -195,7 +195,7 @@ void DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, Uint16 
 					mem2 = mem & ((DSP_RAMSIZE>>1)-1);
 					mem2 += (DSP_RAMSIZE>>1);
 					fprintf(stderr,"X:%04x (P:%04x): %06x\n", 
-						mem, mem2, dsp_core.ramext[mem & (DSP_RAMSIZE-1)]);
+						mem, mem2, dsp_core.ramext[mem2 & (DSP_RAMSIZE-1)]);
 				}
 			}
 			break;
@@ -217,7 +217,7 @@ void DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, Uint16 
 				else {
 					mem2 = mem & ((DSP_RAMSIZE>>1)-1);
 					fprintf(stderr,"Y:%04x (P:%04x):  %06x\n", 
-						mem, mem2, dsp_core.ramext[mem & (DSP_RAMSIZE-1)]);
+						mem, mem2, dsp_core.ramext[mem2 & (DSP_RAMSIZE-1)]);
 				}
 			}
 			break;
