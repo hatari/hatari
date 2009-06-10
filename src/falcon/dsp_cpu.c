@@ -50,9 +50,6 @@
 
 #define BITMASK(x)	((1<<(x))-1)
 
-#define INTERRUPT_HI		0x0
-#define INTERRUPT_SSI		0x1
-
 /**********************************
  *	Variables
  **********************************/
