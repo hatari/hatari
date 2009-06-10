@@ -1334,34 +1334,71 @@ static int dsp_calc_ea(Uint32 ea_mode, Uint32 *dst_addr)
  *	Condition code test
  **********************************/
 
-#define DSP_SR_NV	8	/* N xor V */
-#define DSP_SR_ZUE	9	/* Z or ((not U) and (not E)) */
-#define DSP_SR_ZNV	10	/* Z or (N xor V) */
-
-#define CCR_BIT(x,y) \
-	(((x) >> (y)) & 1)	
-
-static int cc_code_map[8]={
-	DSP_SR_C,
-	DSP_SR_NV,
-	DSP_SR_Z,
-	DSP_SR_N,
-	DSP_SR_ZUE,
-	DSP_SR_E,
-	DSP_SR_L,
-	DSP_SR_ZNV
-};
-
 static int dsp_calc_cc(Uint32 cc_code)
 {
-	Uint16 value;
+	Uint16 value1, value2, value3;
 
-	value = dsp_core->registers[DSP_REG_SR] & BITMASK(8);
-	value |= (CCR_BIT(value,DSP_SR_N) ^ CCR_BIT(value, DSP_SR_V))<<DSP_SR_NV;
-	value |= ((CCR_BIT(value,DSP_SR_Z) | ((~CCR_BIT(value,DSP_SR_U)) & (~CCR_BIT(value,DSP_SR_E)))) & 1)<<DSP_SR_ZUE;
-	value |= (CCR_BIT(value,DSP_SR_Z) | CCR_BIT(value, DSP_SR_NV))<<DSP_SR_ZNV;
-	
-	return (Uint32)(CCR_BIT(value,cc_code_map[cc_code & BITMASK(3)]))==((cc_code>>3) & 1);
+	switch (cc_code) {
+		case 0:  /* CC (HS) */
+			value1 = dsp_core->registers[DSP_REG_SR] & (1<<DSP_SR_C);
+			return (value1==0);
+		case 1: /* GE */
+			value1 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_N) & 1;
+			value2 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_V) & 1;
+			return ((value1 ^ value2) == 0);
+		case 2: /* NE */
+			value1 = dsp_core->registers[DSP_REG_SR] & (1<<DSP_SR_Z);
+			return (value1==0);
+		case 3: /* PL */
+			value1 = dsp_core->registers[DSP_REG_SR] & (1<<DSP_SR_N);
+			return (value1==0);
+		case 4: /* NN */
+			value1 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_Z) & 1;
+			value2 = (~(dsp_core->registers[DSP_REG_SR] >> DSP_SR_U)) & 1;
+			value3 = (~(dsp_core->registers[DSP_REG_SR] >> DSP_SR_E)) & 1;
+			return ((value1 | (value2 & value3)) == 0);
+		case 5: /* EC */
+			value1 = dsp_core->registers[DSP_REG_SR] & (1<<DSP_SR_E);
+			return (value1==0);
+		case 6: /* LC */
+			value1 = dsp_core->registers[DSP_REG_SR] & (1<<DSP_SR_L);
+			return (value1==0);
+		case 7: /* GT */ 
+			value1 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_N) & 1;
+			value2 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_V) & 1;
+			value3 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_Z) & 1;
+			return ((value3 | (value1 ^ value2)) == 0);
+		case 8: /* CS (LO) */
+			value1 = dsp_core->registers[DSP_REG_SR] & (1<<DSP_SR_C);
+			return (value1==1);
+		case 9: /* LT */
+			value1 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_N) & 1;
+			value2 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_V) & 1;
+			return ((value1 ^ value2) == 1);
+		case 10: /* EQ */
+			value1 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_Z) & 1;
+			return (value1==1);
+		case 11: /* MI */
+			value1 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_N) & 1;
+			return (value1==1);
+		case 12: /* NR */
+			value1 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_Z) & 1;
+			value2 = (~(dsp_core->registers[DSP_REG_SR] >> DSP_SR_U)) & 1;
+			value3 = (~(dsp_core->registers[DSP_REG_SR] >> DSP_SR_E)) & 1;
+			return ((value1 | (value2 & value3)) == 1);
+		case 13: /* ES */
+			value1 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_E) & 1;
+			return (value1==1);
+		case 14: /* LS */
+			value1 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_L) & 1;
+			return (value1==1);
+		case 15: /* LE */
+			value1 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_N) & 1;
+			value2 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_V) & 1;
+			value3 = (dsp_core->registers[DSP_REG_SR] >> DSP_SR_Z) & 1;
+			return ((value3 | (value1 ^ value2)) == 1);
+	}
+	return 0;
 }
 
 /**********************************
