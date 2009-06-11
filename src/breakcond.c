@@ -46,6 +46,7 @@ typedef enum {
 
 /* defines for register & address widths as they need different accessors: */
 typedef enum {
+	BC_SIZE_UNKNOWN,
 	BC_SIZE_BYTE,
 	BC_SIZE_WORD,
 	BC_SIZE_LONG
@@ -267,6 +268,14 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
 		return false;
 	}
 	/* check CPU register names */
+	if (strcmp(regname, "a0") == 0 || strcmp(regname, "d0") == 0) {
+		/* DUMMY */
+		extern Uint32 DummyRegister;
+		bc_value->value.addr32 = &DummyRegister;
+		bc_value->size = BC_SIZE_LONG;
+		bc_value->mask = 0xffffffff;
+		return true;
+	}
 	return false;
 }
 
@@ -292,9 +301,93 @@ static bool BreakCond_CheckAddress(Uint32 addr, bc_value_t *bc_value)
 typedef struct {
 	int arg;		/* current arg */
 	int argc;		/* arg count */
-	const char **args;	/* all args */
+	const char **argv;	/* all args */
 	const char *error;	/* error from parsing args */
 } parser_state_t;
+
+
+/**
+ * Parse a number, decimal unless prefixed with '$' which signifies hex.
+ * Modify pstate according to parsing (arg index and error string).
+ * Return true for success and false for error.
+ */
+static bool BreakCond_ParseNumber(parser_state_t *pstate, const char *value, Uint32 *number)
+{
+	if (value[0] == '$') {
+		if (sscanf(value, "%x", number) != 1) {
+			pstate->error = "invalid hexadecimal value";
+			return false;
+		}
+	} else {
+		if (sscanf(value, "%u", number) != 1) {
+			pstate->error = "invalid decimal value";
+			return false;
+		}
+	}
+	return true;
+}
+
+
+/**
+ * Check for and parse a condition value size.
+ * Modify pstate according to parsing (arg index and error string).
+ * Return true for no or successfully parsed size and false for error.
+ */
+static bool BreakCond_ParseSizeModifier(parser_state_t *pstate, bc_value_t *bc_value)
+{
+	const char **argv = pstate->argv;
+	int size, arg = pstate->arg;
+
+	if (strcmp(argv[arg], ".") != 0) {
+		return true;
+	}
+	switch (argv[++arg][0]) {
+	case 'l':
+		size = BC_SIZE_LONG;
+		break;
+	case 'w':
+		size = BC_SIZE_WORD;
+		break;
+	case 'b':
+		size = BC_SIZE_BYTE;
+		break;
+	default:
+		size = BC_SIZE_UNKNOWN;
+		return false;
+	}
+	if (argv[arg][1]) {
+		size = BC_SIZE_UNKNOWN;
+	}
+	if (size == BC_SIZE_UNKNOWN) {
+		pstate->arg = arg;
+		return false;
+	}
+	bc_value->size = size;
+	pstate->arg = arg+1;
+	return true;
+}
+
+
+/**
+ * Check for and parse a condition value mask.
+ * Modify pstate according to parsing (arg index and error string).
+ * Return true for no or successfully parsed mask and false for error.
+ */
+static bool BreakCond_ParseMaskModifier(parser_state_t *pstate, bc_value_t *bc_value)
+{
+	const char **argv = pstate->argv;
+	int arg = pstate->arg;
+
+	if (strcmp(argv[arg], "&") != 0) {
+		return true;
+	}
+	if (!BreakCond_ParseNumber(pstate, argv[++arg], &(bc_value->mask))) {
+		return false;
+	}
+	pstate->arg = arg+1;
+	return true;
+}
+
 
 /**
  * Parse a breakpoint condition value.
@@ -305,21 +398,27 @@ bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 {
 	Uint32 number;
 	const char *value;
-	const char **args = pstate->args;
+	const char **argv = pstate->argv;
 	int arg, skip = 1;
 
 	arg = pstate->arg;
+	/* parse indirection */
 	if (pstate->argc - arg >= 3) {
-		if (strcmp(args[arg], "(") == 0 &&
-		    strcmp(args[arg+2], ")") == 0) {
+		if (strcmp(argv[arg], "(") == 0 &&
+		    strcmp(argv[arg+2], ")") == 0) {
 			bc_value->is_indirect = true;
 			arg += 1;
 			skip = 2;
 		}
 	}
-	pstate->arg = arg;	/* update for error return */
+	
+	/* set default modifiers */
+	bc_value->size = BC_SIZE_LONG;
+	bc_value->mask = 0xffffffff;
 
-	value = args[arg];
+	pstate->arg = arg;	/* update for error return */
+	value = argv[arg];
+	/* parse direct or indirect value */
 	if (isalpha(value[0])) {
 		if (BreakCond_ParseRegister(value, bc_value)) {
 			/* address of register */
@@ -331,16 +430,8 @@ bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 	} else {
 		/* a number */
 		bc_value->type = BC_TYPE_NUMBER;
-		if (value[0] == '$') {
-			if (sscanf(value, "%x", &number) != 1) {
-				pstate->error = "invalid hexadecimal value";
-				return false;
-			}
-		} else {
-			if (sscanf(value, "%d", &number) != 1) {
-				pstate->error = "invalid decimal value";
-				return false;
-			}
+		if (!BreakCond_ParseNumber(pstate, value, &number)) {
+			return false;
 		}
 		/* suitable as emulated memory address (indirect)? */
 		if (bc_value->is_indirect &&
@@ -350,11 +441,20 @@ bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 		}
 	}
 	arg += skip;
-	
-#warning "TODO: handle lvalue/rvalue width and mask settings"
-	fprintf(stderr, "TODO: handle lvalue/rvalue width and mask settings\n");
-	
-	pstate->arg = arg;
+
+	/* no extra value modifiers? */
+	if (arg+2 >= pstate->argc) {
+		pstate->arg = arg;
+		return true;
+	}
+	if (!BreakCond_ParseSizeModifier(pstate, bc_value)) {
+		pstate->error = "invalid value size modifier";
+		return false;
+	}
+	if (!BreakCond_ParseMaskModifier(pstate, bc_value)) {
+		pstate->error = "invalid value mask";
+		return false;
+	}
 	return true;
 }
 
@@ -394,7 +494,7 @@ bool BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 	if (arg >= pstate->argc) {
 		return "breakpoint comparison missing";
 	}
-	comparison = pstate->args[arg];
+	comparison = pstate->argv[arg];
 	switch (comparison[0]) {
 	case '<':
 	case '>':
@@ -428,7 +528,7 @@ bool BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 		conditions[(*ccount)++] = condition;
 		return true;
 	}
-	if (strcmp(pstate->args[arg], "&&") != 0) {
+	if (strcmp(pstate->argv[arg], "&&") != 0) {
 		pstate->error = "trailing content for breakpoint condition";
 		return false;
 	}
@@ -498,8 +598,8 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 	 */
 	len = strlen(expression)+1 + 2*tokens;
 	arraysize = 2*tokens*sizeof(char*);
-	pstate->args = malloc(arraysize + len);
-	if (!pstate->args) {
+	pstate->argv = malloc(arraysize + len);
+	if (!pstate->argv) {
 		pstate->error = "alloc failed";
 		return NULL;
 	}
@@ -538,7 +638,7 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 			}
 		}
 		if (!sep) {
-			*dst++ = *src;
+			*dst++ = tolower(*src);
 			is_separated = false;
 		}
 	}
@@ -548,10 +648,10 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 	*dst = '\0';
 
 	/* copy normalized string to end of the args array and tokenize it */
-	dst = (char *)(pstate->args) + arraysize;
+	dst = (char *)(pstate->argv) + arraysize;
 	strcpy(dst, normalized);
-	pstate->args[0] = strtok(dst, " ");
-	for (i = 1; (pstate->args[i] = strtok(NULL, " ")); i++);
+	pstate->argv[0] = strtok(dst, " ");
+	for (i = 1; (pstate->argv[i] = strtok(NULL, " ")); i++);
 	pstate->argc = i;
 
 	return normalized;
@@ -607,8 +707,8 @@ bool BreakCond_Parse(const char *expression, bool bForDsp)
 		ok = BreakCond_ParseCondition(&pstate, bForDsp,
 					      bp->conditions, &(bp->ccount));
 	}
-	if (pstate.args) {
-		free(pstate.args);
+	if (pstate.argv) {
+		free(pstate.argv);
 	}
 	if (ok) {
 		(*bcount)++;
@@ -698,6 +798,8 @@ void BreakCond_Remove(int position, bool bForDsp)
 #if 1
 Uint8 STRam[16*1024*1024];
 Uint32 STRamEnd = 4*1024*1024;
+
+Uint32 DummyRegister;
 
 int main(int argc, const char *argv[])
 {
