@@ -10,7 +10,7 @@
   and memory values against each other, mask them etc. before deciding
   whether the breakpoint should be triggered.  The syntax is:
 
-  breakpoint = <expression> N*[ & <expression> ]
+  breakpoint = <expression> [ && <expression> [ && <expression> ] ... ]
   expression = <value>[.width] [& <number>] <condition> <value>[.width]
 
   where:
@@ -25,7 +25,7 @@
   decimal value.
 
   Example:
-  	pc = $64543  &  ($ff820).w & 3 = (a0)  &  d0.l = 123
+  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0.l = 123
 */
 const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 
@@ -428,7 +428,7 @@ bool BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 		conditions[(*ccount)++] = condition;
 		return true;
 	}
-	if (strcmp(pstate->args[arg], "&") != 0) {
+	if (strcmp(pstate->args[arg], "&&") != 0) {
 		pstate->error = "trailing content for breakpoint condition";
 		return false;
 	}
@@ -444,8 +444,10 @@ bool BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 
 /**
  * Tokenize given breakpoint expression to given parser struct.
- * Return normalized expression string that corresponds to tokenization.
- * On error, pstate->error contains the error message.
+ * Return normalized expression string that corresponds to tokenization
+ * or NULL on error. On error, pstate->error contains the error message
+ * and pstate->arg index to invalid character (instead of to token like
+ * after parsing).
  */
 static char *BreakCond_TokenizeExpression(const char *expression,
 					  parser_state_t *pstate)
@@ -457,15 +459,17 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 	};
 	bool is_separated, has_comparison;
 	int i, j, len, tokens, arraysize;
-	char *dst, *normalized;
+	char ex, sep, *dst, *normalized;
 	const char *src;
+
+	memset(pstate, 0, sizeof(parser_state_t));
 
 	/* count number of tokens / items in expressions */
 	tokens = 0;
 	has_comparison = false;
-	for (i = 0; expression[i]; i++) {
-		for (j = 0; separator[j]; j++) {
-			if (expression[i] == separator[j]) {
+	for (i = 0; (ex = expression[i]); i++) {
+		for (j = 0; (sep = separator[j]); j++) {
+			if (ex == sep) {
 				if (j < 4) {
 					has_comparison = true;
 				}
@@ -473,12 +477,19 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 				break;
 			}
 		}
+		if (!sep) {
+			if (!(isalnum(ex) || isblank(ex))) {
+				pstate->error = "invalid character";
+				pstate->arg = i;
+				return NULL;
+			}
+		}
 	}
 
 	/* first sanity check */
-	memset(pstate, 0, sizeof(parser_state_t));
 	if (!has_comparison) {
 		pstate->error = "condition comparison missing";
+		pstate->arg = strlen(expression)/2;
 		return NULL;
 	}
 
@@ -508,10 +519,17 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 			continue;
 		}
 		/* separate tokens with single space in destination */
-		for (j = 0; separator[j]; j++) {
-			if (*src == separator[j]) {
-				if (!is_separated && dst > normalized) {
-					*dst++ = ' ';
+		for (j = 0; (sep = separator[j]); j++) {
+			if (*src == sep) {
+				if (dst > normalized) {
+					/* don't separate boolean AND '&&' */
+					if (*src == '&' && *(src-1) == '&') {
+						dst--;
+					} else {
+						if (!is_separated) {
+							*dst++ = ' ';
+						}
+					}
 				}
 				*dst++ = *src;
 				*dst++ = ' ';
@@ -519,7 +537,7 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 				break;
 			}
 		}
-		if (!separator[j]) {
+		if (!sep) {
 			*dst++ = *src;
 			is_separated = false;
 		}
@@ -528,7 +546,6 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 		dst--;
 	}
 	*dst = '\0';
-fprintf(stderr, "DEBUG: '%s' -> '%s'\n", expression, normalized);
 
 	/* copy normalized string to end of the args array and tokenize it */
 	dst = (char *)(pstate->args) + arraysize;
@@ -610,11 +627,15 @@ bool BreakCond_Parse(const char *expression, bool bForDsp)
 			/* show tokenized string and point out
 			 * the token where the error was encountered
 			 */
-			fprintf(stderr, "ERROR in parsed string:\n  %s\n%*c-%s\n",
-				normalized, offset+3, '^', pstate.error);
+			fprintf(stderr, "ERROR in tokenized string:\n'%s'\n%*c-%s\n",
+				normalized, offset+2, '^', pstate.error);
 			free(normalized);
 		} else {
-			fprintf(stderr, "ERROR: %s\n", pstate.error);
+			/* show original string and point out the character
+			 * where the error was encountered
+			 */
+			fprintf(stderr, "ERROR in parsed string:\n'%s'\n%*c-%s\n",
+				expression, pstate.arg+2, '^', pstate.error);
 		}
 	}
 	return ok;
@@ -687,6 +708,8 @@ int main(int argc, const char *argv[])
 		"gggg=a0",
 		"=a=b=",
 		"a0=d0=20",
+		"a0=d || 0=20",
+		"a0=d & 0=20",
 		".w&3=2",
 		"foo().w=bar()",
 		"(a0.w=d0.l)",
@@ -702,40 +725,42 @@ int main(int argc, const char *argv[])
 		"a0=d0",
 		"(a0)=(d0)",
 		"(d0).w=(a0).b",
-		"(a0).w&3=(d0) & d0=1",
-		" ( a 0 ) . w & 3 = ( d 0 ) & d 0 = 1 ",
-		"1=d0 & (d0)&2=(a0).w",
+		"(a0).w&3=(d0)&&d0=1",
+		" ( a 0 ) . w  &&  3 = ( d 0 )  &&  d 0 = 1 ",
+		"1=d0 && (d0)&2=(a0).w",
 		NULL
 	};
 	const char *test;
 	bool use_dsp = false;
-	int i, count;
+	int i, count, tests = 0, errors = 0;
 	
 	/* first automated tests... */
-	fprintf(stderr, "Should FAIL:\n");
+	fprintf(stderr, "\nShould FAIL:\n");
 	for (i = 0; (test = should_fail[i]); i++) {
 		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
 		if (BreakCond_Parse(test, use_dsp)) {
-			fprintf(stderr, "***ERROR***: should have failed, skipping rest...\n");
-			break;
+			fprintf(stderr, "***ERROR***: should have failed\n");
+			errors++;
 		}
 	}
-	fprintf(stderr, "-----------------\n");
+	tests += i;
+	fprintf(stderr, "-----------------\n\n");
 	
 	BreakCond_List(use_dsp);
 	BreakCond_Remove(0, use_dsp);
 	BreakCond_Remove(1, use_dsp);
 	BreakCond_List(use_dsp);
 	
-	fprintf(stderr, "Should PASS:\n");
+	fprintf(stderr, "\nShould PASS:\n");
 	for (i = 0; (test = should_pass[i]); i++) {
 		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
 		if (!BreakCond_Parse(test, use_dsp)) {
-			fprintf(stderr, "***ERROR***: should have passed, skipping rest...\n");
-			break;
+			fprintf(stderr, "***ERROR***: should have passed\n");
+			errors++;
 		}
 	}
-	fprintf(stderr, "-----------------\n");
+	tests += i;
+	fprintf(stderr, "-----------------\n\n");
 
 	BreakCond_List(use_dsp);
 	/* try removing everything from alternate ends */
@@ -747,16 +772,19 @@ int main(int argc, const char *argv[])
 	fprintf(stderr, "-----------------\n");
 
 	/* ...last parse cmd line args */
-	if (argc < 2) {
-		return 0;
+	if (argc > 1) {
+		fprintf(stderr, "\nCommand line breakpoints:\n");
+		for (argv++; --argc > 0; argv++) {
+			fprintf(stderr, "-----------------\n- parsing '%s'\n", *argv);
+			BreakCond_Parse(*argv, use_dsp);
+		}
+		fprintf(stderr, "-----------------\n\n");
+		BreakCond_List(use_dsp);
 	}
-	fprintf(stderr, "Command line breakpoints:\n");
-	for (argv++; --argc > 0; argv++) {
-		fprintf(stderr, "-----------------\n- parsing '%s'\n", *argv);
-		BreakCond_Parse(*argv, use_dsp);
+	if (errors) {
+		fprintf(stderr, "\n***Detected %d ERRORs in %d automated tests!***\n\n",
+			errors, tests);
 	}
-	fprintf(stderr, "-----------------\n");
-	BreakCond_List(use_dsp);
 	return 0;
 }
 #endif
