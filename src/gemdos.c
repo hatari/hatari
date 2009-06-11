@@ -1794,6 +1794,11 @@ static bool GemDOS_LSeek(Uint32 Params)
 	 case 0: nDestPos = Offset; break;
 	 case 1: nDestPos = nOldPos + Offset; break;
 	 case 2: nDestPos = nFileSize - Offset; break;
+	 default:
+		/* Restore old position and return error */
+		fseek(fhndl, nOldPos, SEEK_SET);
+		Regs[REG_D0] = GEMDOS_EINVFN;
+		return TRUE;
 	}
 
 	if (nDestPos < 0 || nDestPos > nFileSize)
