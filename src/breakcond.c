@@ -575,7 +575,7 @@ bool BreakCond_Parse(const char *expression, bool bForDsp)
 	const char *name;
 	char *normalized;
 	int *bcount;
-	bool ok;
+	bool ok = false;
 
 	bcount = BreakCond_GetListInfo(&bp, &name, bForDsp);
 	if (*bcount >= BC_MAX_CONDITION_BREAKPOINTS) {
@@ -589,9 +589,6 @@ bool BreakCond_Parse(const char *expression, bool bForDsp)
 		bp->expression = normalized;
 		ok = BreakCond_ParseCondition(&pstate, bForDsp,
 					      bp->conditions, &(bp->ccount));
-	} else {
-		bp->expression = (char *)expression;
-		ok = false;
 	}
 	if (pstate.args) {
 		free(pstate.args);
@@ -602,11 +599,23 @@ bool BreakCond_Parse(const char *expression, bool bForDsp)
 			*bcount, name);
 	} else {
 		if (normalized) {
+			int offset, i = 0;
+			char *s = normalized;
+			while (*s && i < pstate.arg) {
+				if (*s++ == ' ') {
+					i++;
+				}
+			}
+			offset = s - normalized;
+			/* show tokenized string and point out
+			 * the token where the error was encountered
+			 */
+			fprintf(stderr, "ERROR in parsed string:\n  %s\n%*c-%s\n",
+				normalized, offset+3, '^', pstate.error);
 			free(normalized);
+		} else {
+			fprintf(stderr, "ERROR: %s\n", pstate.error);
 		}
-		fprintf(stderr, "Condition:\n'%s'\n", bp->expression);
-		/* TODO: underline the erronous pstate->arg token */
-		fprintf(stderr, "ERROR: %s\n", pstate.error);
 	}
 	return ok;
 }
@@ -703,47 +712,50 @@ int main(int argc, const char *argv[])
 	int i, count;
 	
 	/* first automated tests... */
-	BreakCond_List(use_dsp);
 	fprintf(stderr, "Should FAIL:\n");
 	for (i = 0; (test = should_fail[i]); i++) {
-		fprintf(stderr, "- parsing '%s'\n", test);
+		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
 		if (BreakCond_Parse(test, use_dsp)) {
 			fprintf(stderr, "***ERROR***: should have failed, skipping rest...\n");
 			break;
 		}
 	}
+	fprintf(stderr, "-----------------\n");
+	
 	BreakCond_List(use_dsp);
 	BreakCond_Remove(0, use_dsp);
 	BreakCond_Remove(1, use_dsp);
 	BreakCond_List(use_dsp);
+	
 	fprintf(stderr, "Should PASS:\n");
 	for (i = 0; (test = should_pass[i]); i++) {
-		fprintf(stderr, "- parsing '%s'\n", test);
+		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
 		if (!BreakCond_Parse(test, use_dsp)) {
 			fprintf(stderr, "***ERROR***: should have passed, skipping rest...\n");
 			break;
 		}
 	}
-	BreakCond_List(use_dsp);
+	fprintf(stderr, "-----------------\n");
 
+	BreakCond_List(use_dsp);
 	/* try removing everything from alternate ends */
 	while ((count = BreakCond_BreakPointCount(use_dsp))) {
 		BreakCond_Remove(count, use_dsp);
 		BreakCond_Remove(1, use_dsp);
 	}
 	BreakCond_List(use_dsp);
-	return 0;
+	fprintf(stderr, "-----------------\n");
 
 	/* ...last parse cmd line args */
 	if (argc < 2) {
 		return 0;
 	}
 	fprintf(stderr, "Command line breakpoints:\n");
-	while (--argc > 0) {
-		argv++;
-		fprintf(stderr, "- parsing '%s'\n", *argv);
+	for (argv++; --argc > 0; argv++) {
+		fprintf(stderr, "-----------------\n- parsing '%s'\n", *argv);
 		BreakCond_Parse(*argv, use_dsp);
 	}
+	fprintf(stderr, "-----------------\n");
 	BreakCond_List(use_dsp);
 	return 0;
 }
