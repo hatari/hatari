@@ -28,17 +28,10 @@ typedef struct
 
 
 /* Sound configuration */
-typedef enum
-{
-  PLAYBACK_LOW,
-  PLAYBACK_MEDIUM,
-  PLAYBACK_HIGH
-} SOUND_QUALITY;
-
 typedef struct
 {
   bool bEnableSound;
-  SOUND_QUALITY nPlaybackQuality;
+  int nPlaybackFreq;
   char szYMCaptureFileName[FILENAME_MAX];
 } CNF_SOUND;
 
@@ -146,6 +139,7 @@ typedef enum
 typedef struct
 {
   bool bAutoInsertDiskB;
+  bool bSlowFloppy;                  /* true to slow down FDC emulation */
   WRITEPROTECTION nWriteProtection;
   char szDiskZipPath[MAX_FLOPPYDRIVES][FILENAME_MAX];
   char szDiskFileName[MAX_FLOPPYDRIVES][FILENAME_MAX];
@@ -154,7 +148,7 @@ typedef struct
 
 
 /* Hard drives configuration */
-#define MAX_HARDDRIVES  1 /* 23 */
+#define MAX_HARDDRIVES  23
 
 typedef enum
 {
@@ -269,7 +263,6 @@ typedef struct
   DSPTYPE nDSPType;               /* how to "emulate" DSP */
   bool bRealTimeClock;
   bool bPatchTimerD;
-  bool bSlowFDC;                  /* TRUE to slow down FDC emulation */
   bool bFastForward;
 } CNF_SYSTEM;
 

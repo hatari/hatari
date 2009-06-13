@@ -28,7 +28,7 @@ extern "C" {
 
 /* Functions */
 void dsp56k_disasm_init(dsp_core_t *my_dsp_core);
-void dsp56k_disasm(void);
+Uint16 dsp56k_disasm(void);
 
 /* Registers change */
 void dsp56k_disasm_reg_read(void);

@@ -95,6 +95,7 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
     <li><a href="#Falcon demos">Falcon demos</a>
     <li><a href="#Falcon games">Falcon applications</a>
   </ul>
+  <li><a href="#TT/Falcon utilities">TT/Falcon utilities</a>
 </ul>
 
 
@@ -864,7 +865,7 @@ configuration or data files are not writable.</p>
 
 <p>If you don't have a MIDI sequencer, on Linux you can use
 a softsynth like Timidity or FluidSynth instead (if your distribution
-supports ALSA). For instructions, see alsa-midi.txt file.</p>
+supports ALSA). For instructions, see midi-linux.txt file.</p>
 
 
 <a name="STE"></a><h2>STE software compatibility list</h2>
@@ -1106,6 +1107,11 @@ are just STE enhanced.  These are marked with '*'.</p>
       <td>You may need to reset between screens</td>
     </tr>
     <tr>
+      <td>Cream: <a href="http://www.pouet.net/prod.php?which=1030">Madness</a></td>
+      <td>1.2</td>
+      <td>Music demo with Amiga Paula soundchip emulation + tunes</td>
+    </tr>
+    <tr>
       <td>DHS:
       <a href="http://www.pouet.net/prod.php?which=1001">Just Musix 2</a></td>
       <td>1.0</td>
@@ -1307,7 +1313,7 @@ are just STE enhanced.  These are marked with '*'.</p>
 
 <a name="STE applications"></a><h4>STE applications</h4>
 
-<p>Finally some STE only or STE enhanced applications</p>
+<p>Finally some STE only or STE enhanced applications.</p>
 <table border="1" cellpadding="3">
   <caption align="bottom">tested STE applications</caption>
   <tbody>
@@ -1413,9 +1419,23 @@ this section lists only TT-specific games and demos.</p>
     </tr>
     <tr>
       <td>tSCc:
+      <a href="http://freenet-homepage.de/ray.tscc/misc.htm#cryview">CrY image viewer</a></td>
+      <td class="major">1.2</td>
+      <td>Complains that allocation fails (support grayscale mode, needs fast RAM?)</td>
+    </tr>
+    <tr>
+      <td>tSCc:
       <a href="http://freenet-homepage.de/ray.tscc/misc.htm#tthires">TT-hires</a></td>
       <td class="major">1.2</td>
       <td>Slideshow flickers badly + graphics and colors are wrong</td>
+    </tr>
+    <tr>
+      <td>YesCREW:
+      <a href="http://yescrew.atari.org/eng/products.htm#capy">Capy</a></td>
+      <td class="major">1.2</td>
+      <td>TT-medium/VGA (640x480x16) only. Bus error at startup.
+      Some other version of the game works on TT, but freezes if menu is invoked.
+      On Falcon emulation the menu at the beginning freezes</td>
     </tr>
     <tr>
       <td>Xanth FX:
@@ -1435,11 +1455,11 @@ for music).  You can select between three different DSP emulation
 modes with the Hatari "--dsp" option:
 <ul>
   <li><b>none</b>: No emulation.
-      Most programs work best with this.</li>
+      Many programs work best with this.</li>
+  <li><b>emu</b>: Experimental DSP emulation.
+      Some programs work better with this. Slow.</li>
   <li><b>dummy</b>: Faked DSP response to DSP commands.
       There're some rare programs that work only with this mode.</li>
-  <li><b>emu</b>: Experimental DSP emulation.
-      (Only) some programs work better with this.</li>
 </ul>
 
 <p>The "dsp" column in tables below tells which DSP emulation
@@ -1464,46 +1484,53 @@ otherwise "-".</p>
       <td align="center">Comment</td>
     </tr>
     <tr>
-      <td>Aces High preview</td>
-      <td>Yes</td>
+      <td><a href="http://logitron.atari.online.fr/aazohm_english.htm">Aazohm Krypth</a></td>
+      <td>yes</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>Use joypad.  Black screen without DSP emu</td>
+    </tr>
+    <tr>
+      <td><a href="http://nature.atari.org/">Aces High preview</a></td>
+      <td>yes</td>
       <td>-</td>
       <td>-</td>
       <td></td>
     </tr>
     <tr>
       <td>Addsub</td>
-      <td>Yes</td>
+      <td>partially</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>Exits when joystick is used</td>
     </tr>
     <tr>
-      <td>Bad Mood</td>
+      <td><a href="http://www.klockars.net/bad_mood.html">Bad Mood</a></td>
       <td>yes</td>
       <td>-</td>
       <td>emu</td>
-      <td>All tested versions (v2.14a, v307a) work fine but are very slow.</td>
+      <td>All tested versions (v2.14a, v307a) work fine but are very slow</td>
     </tr>
     <tr>
       <td>Blackhole</td>
       <td>yes</td>
-      <td>-</td>
-      <td>-</td>
-      <td>256-color mode only</td>
-    </tr> 
-    <tr>
-      <td>Block Blizzard</td>
       <td>yes</td>
       <td>-</td>
+      <td>640x400@256 mode only</td>
+    </tr> 
+    <tr>
+      <td>Block Blizzard (preview)</td>
+      <td>yes</td>
       <td>-</td>
-      <td></td>
+      <td>none</td>
+      <td>Input doesn't work with DSP enabled</td>
     </tr>
     <tr>
       <td>Blum</td>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td>Disable sound</td>
+      <td>Music doesn't work</td>
     </tr>
     <tr>
       <td>Bomb Squad</td>
@@ -1513,11 +1540,18 @@ otherwise "-".</p>
       <td></td>
     </tr> 
     <tr>
+      <td><a href="http://pouet.net/prod.php?which=28910">Boom preview</a></td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td></td>
+    </tr> 
+    <tr>
       <td><a href="http://rg.atari.org/game.htm">Bugger</a></td>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>Music doesn't work</td>
     </tr> 
     <tr>
       <td><a href="http://rg.atari.org/game.htm">Bunion</a></td>
@@ -1525,55 +1559,49 @@ otherwise "-".</p>
       <td>-</td>
       <td>-</td>
       <td></td>
-    </tr> 
-    <tr>
-      <td>Capy</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>VGA 640x480x16 only. Black screen at startup.</td>
     </tr>
     <tr>
-      <td>Cavemania (demo)</td>
-      <td>Partially</td>
-      <td>Partially</td>
+      <td><a href="http://pouet.net/prod.php?which=29351">Cavemania (demo)</a></td>
+      <td>partially</td>
       <td>-</td>
-      <td>Some screens are black and music doesn't sound right</td>
+      <td>-</td>
+      <td>Sound is just noise and some menus are black (space gets through them)</td>
     </tr>
     <tr>
       <td><a href="http://paradize.final-memory.org/games.shtml">ChainZ</a></td>
       <td>yes</td>
       <td>-</td>
       <td>emu</td>
-      <td>Keep space pressed while game is starting to disable DSP music play</td>
+      <td>Keep space pressed while game is starting to disable
+          DSP music play. VGA only</td>
     </tr> 
     <tr>
       <td>Conquest of Elysium II</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td></td>
     </tr> 
     <tr>
       <td>Columns by Deadheart (demo)</td>
       <td>yes</td>
-      <td>-</td>
-      <td>none</td>
-      <td>Nice.  Input doesn't work if DSP emu enabled</td>
-    </tr>
-    <tr>
-      <td>Confusion (demo 2)</td>
       <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Black screen if DSP emu enabled (demo 1 requires "dummy" DSP)</td>
+      <td>Nice. Background music if DSP emu enabled</td>
+    </tr>
+    <tr>
+      <td>Confusion (demo)</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Background music if DSP emu enabled.  Both demos 1 & 2 work</td>
     </tr> 
     <tr>
       <td>Corsair</td>
       <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Black screen if DSP emu enabled</td>
+      <td>Background music if DSP emu enabled. Multiplayer</td>
     </tr> 
     <tr>
       <td>DB 4K</td>
@@ -1587,14 +1615,15 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td>Nice</td>
+      <td>Nice. Music doesn't work</td>
     </tr> 
     <tr>
-      <td>DryEgg</td>
+      <td>Dry Egg</td>
+      <td>yes</td>
       <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>Needs over 4MB</td>
+      <td>Needs exactly 8MB RAM, bus errors otherwise.
+          Background music with DSP</td>
     </tr>
     <tr>
       <td>Evolution Dino Dudes<br>(aka. Humans)</td>
@@ -1609,7 +1638,7 @@ otherwise "-".</p>
       <td>yes</td>
       <td>yes</td>
       <td>-</td>
-      <td>Problems with scrolling</td>
+      <td>Parts of sprites get stuck to top of screen</td>
     </tr> 
     <tr>
       <td>FalcTron</td>
@@ -1619,11 +1648,11 @@ otherwise "-".</p>
       <td></td>
     </tr> 
     <tr>
-      <td>Ganymed.pd</td>
+      <td><a href="http://www.martin-steen.de/hicolor/hicolor.html">Ganymed</a></td>
+      <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Game doesn't proceed from hiscore screen</td>
+      <td>Use F1 to start game. With DSP emu there's bg music</td>
     </tr>
     <tr>
       <td>Golden Island (demo)</td>
@@ -1640,32 +1669,39 @@ otherwise "-".</p>
       <td>Intros work, game doesn't</td>
     </tr>
     <tr>
+      <td>Great</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Atoms clone</td>
+    </tr>
+    <tr>
       <td>H2O</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>none</td>
-      <td>Stops when the game starts, with DSP emu enabled, stops earlier</td>
+      <td>emu</td>
+      <td>Nice.</td>
     </tr>
     <tr>
       <td>Heretic</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td>Very slow</td>
     </tr> 
     <tr>
       <td>Hexogon</td>
-      <td>yes</td>
+      <td>-</td>
       <td>yes</td>
       <td>-</td>
-      <td></td>
+      <td>Worked earlier (before v1.0)?</td>
     </tr> 
     <tr>
       <td>Impulse</td>
+      <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>none</td>
-      <td>Breakout clone.  Decrunching phase freezes if DSP emu enabled</td>
+      <td>Nice breakout clone.  Has background music if DSP emu enabled</td>
     </tr>
     <tr>
       <td><a href="http://paradize.final-memory.org/games.shtml">Jewelz</a></td>
@@ -1705,9 +1741,9 @@ otherwise "-".</p>
     <tr>
       <td>Les Dinosaures (demo)</td>
       <td>-</td>
-      <td>-</td>
+      <td>yes</td>
       <td>emu</td>
-      <td>Stops at startup.  Without DSP emu, bombs out.</td>
+      <td>Stops at startup.  With DSP emu, goes slightly further</td>
     </tr>
     <tr>
       <td><a href="http://www.llamasoft.co.uk/lc-16bit.php">Llamazap</a></td>
@@ -1719,7 +1755,7 @@ otherwise "-".</p>
     <tr>
       <td>Madtris</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td></td>
     </tr>
@@ -1731,11 +1767,13 @@ otherwise "-".</p>
       <td>2-4 player "Dungeon Master". 4 players needs MIDI.</td>
     </tr>
     <tr>
-      <td>Men at War</td>
+      <td><a href="http://pouet.net/prod.php?which=28903">Men at War (preview)</a></td>
       <td>yes</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Fire button doesn't work, intro has sync problems</td>
+      <td>yes</td>
+      <td>none</td>
+      <td>Has background music if DSP emu enabled. Separate intro gets
+          stuck with DSP, otherwise its scrolling has sync problems.
+	  Fire button doesn't work</td>
     </tr>
     <tr>
       <td>Milanopol</td>
@@ -1778,12 +1816,12 @@ otherwise "-".</p>
       <td>-</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>Some sounds when DSP enables, otherwise just white screen</td>
     </tr>
     <tr>
       <td>Neurobot.108</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td></td>
     </tr>
@@ -1796,13 +1834,20 @@ otherwise "-".</p>
     </tr>
     <tr>
       <td>Offworld</td>
+      <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Screen goes black at startup</td>
+      <td>Press fire in black screen to start game</td>
     </tr>
     <tr>
-      <td>Pac Them</td>
+      <td><a href="http://logitron.atari.online.fr/skuum_english.htm">Operation Skuum</a></td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><a href="http://www.martin-steen.de/hicolor/hicolor.html">Pac Them</a></td>
       <td>yes</td>
       <td>yes</td>
       <td>-</td>
@@ -1811,44 +1856,45 @@ otherwise "-".</p>
     <tr>
       <td>Painium Disaster</td>
       <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Some display problems. Stops at first screen if DSP emu enabled</td>
+      <td>Some display problems</td>
     </tr>
     <tr>
       <td>Pingo98</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Startup menu doesn't receive input, worked earlier with colors wrong</td>
+      <td>partially</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Colors wrong in classic version, TC version just exits.
+          Worked earlier without DSP emu</td>
     </tr>
     <tr>
       <td>Poker</td>
+      <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Complains that it doesn't work on this type of monitor</td>
+      <td>Works only in VGA</td>
     </tr>
     <tr>
       <td>Pong 2K (demo)</td>
-      <td>partially</td>
+      <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Stops at first screen if DSP enabled</td>
+      <td>Background music with DSP. A bit unstable</td>
     </tr>
     <tr>
       <td>Pouspous</td>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td>HiColor only</td>
+      <td>Image puzzle. HiColor only</td>
     </tr>
     <tr>
       <td>Push It</td>
       <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Black screen at startup if DSP emu enabled</td>
+      <td>-</td>
+      <td>DSP replay doesn't produce any sound</td>
     </tr>
     <tr>
       <td>Q-Blue</td>
@@ -1858,7 +1904,7 @@ otherwise "-".</p>
       <td>Hicolor / VGA only</td>
     </tr>
     <tr>
-      <td>Radical (demo)</td>
+      <td>Radical Race (demo)</td>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
@@ -1876,7 +1922,7 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>dummy</td>
-      <td></td>
+      <td>Freezes with black screen if DSP enabled</td>
     </tr>
     <tr>
       <td>Reeking Rubber</td>
@@ -1886,18 +1932,11 @@ otherwise "-".</p>
       <td>Doesn't do anything</td>
     </tr>
     <tr>
-      <td>Running (preview, 1996)</td>
+      <td>Running</td>
       <td>yes</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Preview of a Doom like game which works fine on normal Falcon.</td>
-    </tr>
-    <tr>
-      <td>Running (shareware, 1997)</td>
-      <td>-</td>
-      <td>-</td>
-      <td>emu</td>
-      <td>First black screen, then just strange pattern.</td>
+      <td>A Doom like game. Both the 1996 preview and 1997 shareware versions work fine</td>
     </tr>
     <tr>
       <td>SBM v0.8</td>
@@ -1914,39 +1953,46 @@ otherwise "-".</p>
       <td>Newer SBM versions bomb out immediately at startup</td>
     </tr>
     <tr>
-      <td>Shangai preview</td>
+      <td>Shangai (demo)</td>
       <td>yes</td>
       <td>-</td>
+      <td>-</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><a href="http://logitron.atari.online.fr/sheer_english.htm">Sheer Agony</a></td>
+      <td>yes</td>
+      <td>yes</td>
       <td>-</td>
       <td></td>
     </tr>
     <tr>
       <td>Snatch by FUN</td>
       <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>VGA 640x480x16 mode only</td>
+      <td>VGA 640x480x16 mode only. Background music with DSP</td>
     </tr>
     <tr>
       <td><a href="http://rg.atari.org/game.htm">Sky Fall</a></td>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>Music doesn't work</td>
     </tr>
     <tr>
-      <td>Slippery Sam</td>
+      <td><a href="http://pouet.net/prod.php?which=29341">Slippery Sam</a></td>
+      <td>yes</td>
       <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Stops at startup if DSP emu enabled</td>
+      <td>Background music if DSP emu enabled</td>
     </tr>
     <tr>
       <td>Sokoban by FUN</td>
       <td>-</td>
       <td>-</td>
-      <td>-</td>
-      <td>VGA 640x480x16, exits right after startup</td>
+      <td>emu</td>
+      <td>VGA 640x480x16 only, just black screen after loading data</td>
     </tr>
     <tr>
       <td>Space Taxi</td>
@@ -1956,7 +2002,7 @@ otherwise "-".</p>
       <td></td>
     </tr>
     <tr>
-      <td>Spice</td>
+      <td><a href="http://www.martin-steen.de/hicolor/hicolor.html">Spice</a></td>
       <td>yes</td>
       <td>yes</td>
       <td>-</td>
@@ -1972,28 +2018,28 @@ otherwise "-".</p>
     <tr>
       <td>Steinbruch</td>
       <td>yes</td>
-      <td>-</td>
-      <td>none</td>
-      <td>Use STE joypad. Stops at startup if DSP emu enabled</td>
-    </tr>
-    <tr>
-      <td>Switch</td>
       <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Stops at startup if DSP emu enabled</td>
+      <td>Use STE joypad. Background music if DSP emu enabled</td>
+    </tr>
+    <tr>
+      <td><a href="http://pouet.net/prod.php?which=52226">Switch</a></td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>-</td>
+      <td>Background music if DSP emu enabled</td>
     </tr>
     <tr>
       <td><a href="http://rg.atari.org/game.htm">Sworm</a></td>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>Music doesn't work</td>
     </tr>
     <tr>
       <td>Tank Blaster</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td></td>
     </tr>
@@ -2001,15 +2047,15 @@ otherwise "-".</p>
       <td>TeknoBalls</td>
       <td>-</td>
       <td>-</td>
-      <td>-</td>
+      <td>emu</td>
       <td>Black screen at startup</td>
     </tr>
     <tr>
       <td><a href="http://rg.atari.org/game.htm">Tautology II</a></td>
       <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>Nice Mahjongg variant, use STE joypad</td>
+      <td>none</td>
+      <td>Nice Mahjongg variant, use STE joypad. Menu doesn't work with DSP</td>
     </tr>
     <tr>
       <td>Tetrhex</td>
@@ -2022,7 +2068,7 @@ otherwise "-".</p>
       <td>Towers 2</td>
       <td>-</td>
       <td>-</td>
-      <td>-</td>
+      <td>emu</td>
       <td>Black screen at startup</td>
     </tr>
     <tr>
@@ -2030,14 +2076,14 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>-</td>
-      <td></td>
+      <td>Pacman</td>
     </tr>
     <tr>
-      <td>Tron2</td>
+      <td><a href="http://pouet.net/prod.php?which=28905">Tron 2</a></td>
       <td>yes</td>
-      <td>-</td>
-      <td>none</td>
-      <td>Stops at startup if DSP emu enabled</td>
+      <td>yes</td>
+      <td>dummy/dsp</td>
+      <td>Background music if DSP emu enabled. Doesn't always start</td>
     </tr>
     <tr>
       <td>Tron2001</td>
@@ -2049,23 +2095,24 @@ otherwise "-".</p>
     <tr>
       <td>TsccTron (preview)</td>
       <td>partially</td>
+      <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Works only occasionally, bottom screen black</td>
+      <td>Works only occasionally, bottom screen black.
+          Background music if DSP emu enabled</td>
     </tr>
     <tr>
       <td>TUM</td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>-</td>
       <td>GEM minesweeper</td>
     </tr>
     <tr>
       <td>Ufo War</td>
       <td>-</td>
+      <td>yes</td>
       <td>-</td>
-      <td>-</td>
-      <td>Screen scrambled</td>
+      <td>Screen scrambled. With DSP emu, bg music for a while</td>
     </tr>
     <tr>
       <td>Vertical Mayhem(+)</td>
@@ -2077,24 +2124,24 @@ otherwise "-".</p>
     <tr>
       <td>Watership</td>
       <td>-</td>
-      <td>-</td>
+      <td>yes</td>
       <td>emu</td>
-      <td>Shows a giant slowly morphing W</td>
+      <td>Shows a giant slowly morphing W with background noise</td>
     </tr>
     <tr>
       <td><a href="http://newbeat.atari.org/main.php?page=productions">Willie Adventurer</a></td>
       <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Game freezes if DSP emu's enabled. Both 1st and 2nd preview
-          versions work, but 1st one has display issues</td>
+      <td>-</td>
+      <td>Both 1st and 2nd preview versions work, but
+          1st one has scrolling/display issues</td>
     </tr>
     <tr>
       <td>Wotanoid</td>
       <td>-</td>
       <td>-</td>
       <td>-</td>
-      <td>Stops at startup</td>
+      <td>Stops at startup with garbled screen</td>
     </tr>
     <tr>
       <td>Zodiax (demo)</td>
@@ -2138,12 +2185,20 @@ otherwise "-".</p>
           Almost all screens work now, some have visual glitches.</td>
     </tr>
     <tr>
-      <td>Avena:
-      <a href="http://pouet.net/prod.php?which=1177">Sonolumineszenz<a></td>
+      <td>Aura:
+      <a href="http://pouet.net/prod.php?which=15730">E.X.Illusion<a></td>
       <td>-</td>
       <td>-</td>
       <td>emu</td>
-      <td>Skips to end without showing anything</td>
+      <td>Bus error on startup</td>
+    </tr>
+    <tr>
+      <td>Avena:
+      <a href="http://pouet.net/prod.php?which=1177">Sonolumineszenz<a></td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Nice</td>
     </tr>
     <tr>
       <td>Avena:
@@ -2171,10 +2226,26 @@ otherwise "-".</p>
       <td>AVR animation/music with Brainstorm player. Sound broken.</td>
     </tr>
     <tr>
+      <td>Cream:
+      <a href="http://jfhaslam.atari.org/downloads/bin_vga.zip">Binliner preview</a></td>
+      <td>partially</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>VGA only. Freaky screen works, Land & Worship screens bomb</td>
+    </tr>
+    <tr>
       <td>Cruor:
       <a href="http://www.pouet.net/prod.php?which=15453">96ktro</a></td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Cruor:
+      <a href="http://www.pouet.net/prod.php?which=15453">The mountains flight</a></td>
+      <td>yes</td>
+      <td>yes</td>
       <td>emu</td>
       <td></td>
     </tr>
@@ -2182,9 +2253,9 @@ otherwise "-".</p>
       <td>DHS:
       <a href="http://www.pouet.net/prod.php?which=985">A.T.S</a></td>
       <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Fast. If DSP enabled, Hatari freezes</td>
+      <td>Fast. Background music with DSP emu</td>
     </tr>
     <tr>
       <td>DHS:
@@ -2193,6 +2264,13 @@ otherwise "-".</p>
       <td>-</td>
       <td>-</td>
       <td>Sound is just noise. Needs 14MB RAM</td>
+    </tr>
+    <tr>
+      <td>DHS: GEM-demo</td>
+      <td>partially</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Demo effects don't show in the GEM window</td>
     </tr>
     <tr>
       <td>DHS:
@@ -2207,19 +2285,18 @@ otherwise "-".</p>
     <tr>
       <td>Digital Chaos:
       <a href="http://www.pouet.net/prod.php?which=17802">Built-in Obsolescence</a></td>
-      <td>-</td>
       <td>yes</td>
-      <td>dummy</td>
-      <td>With DSP emu freezes with bg music, with dummy emulation,
-          shows also "something" (while generating bus errors)</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Freezes after few screens, but music still plays</td>
     </tr>
     <tr>
       <td>DNT Crew:
       <a href="http://pouet.net/prod.php?which=16806">Agony</a></td>
       <td>partially</td>
       <td>-</td>
-      <td>none</td>
-      <td>After second screen, all colors black and bus errors</td>
+      <td>emu</td>
+      <td>After few screens freezes with black screen</td>
     </tr>
     <tr>
       <td>DNT Crew:
@@ -2247,20 +2324,27 @@ otherwise "-".</p>
     </tr>
     <tr>
       <td>Escape:
-      <a href="http://pouet.net/prod.php?which=3192">Hmmm...</a></td>
+      <a href="http://pouet.net/prod.php?which=15676">_</a></td>
       <td>partially</td>
-      <td>-</td>
+      <td>yes</td>
       <td>emu</td>
-      <td>Many visual glitches. Crashes before end.</td>
+      <td>Freezes after few screens</td>
     </tr>
     <tr>
       <td>Escape:
+      <a href="http://pouet.net/prod.php?which=3192">Hmmm...</a></td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>"Classic" from 2001</td>
+    </tr> 
+   <tr>
+      <td>Escape:
       <a href="http://www.pouet.net/prod.php?which=1169">Illness</a></td>
-      <td>partially</td>
-      <td>-</td>
-      <td>none</td>
-      <td>With DSP emu enabled, freezes at startup, without it freezes
-          after intro screen</td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td></td>
     </tr>
     <tr>
       <td>EXA:
@@ -2274,7 +2358,7 @@ otherwise "-".</p>
       <td>Extream:
       <a href="http://pouet.net/prod.php?which=13601">Whirlpool 128k</a></td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>emu</td>
       <td>Transitions look a bit strange</td>
     </tr>
@@ -2290,17 +2374,17 @@ otherwise "-".</p>
       <td>Fun Industries:
       <a href="http://www.pouet.net/prod.php?which=1173">Alive</a></td>
       <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Has strange screen size changes, stops if DSP is emulated</td>
+      <td>Background music with DSP emu</td>
     </tr>
     <tr>
       <td>Fun Industries:
       <a href="http://pouet.net/prod.php?which=1172">Fungle Beats</a></td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>none</td>
-      <td>Blue screen if DSP emu enabled</td>
+      <td>If DSP enabled, has background music, but freezes later on</td>
     </tr>
     <tr>
       <td>Gaston:
@@ -2314,9 +2398,9 @@ otherwise "-".</p>
       <td>ICE:
       <a href="http://www.pouet.net/prod.php?which=28712">Cooler than ever</a></td>
       <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>With DSP emu enabled, freezes at startup</td>
+      <td>Background music with DSP emu</td>
     </tr>
     <tr>
       <td>Impulse:
@@ -2328,11 +2412,19 @@ otherwise "-".</p>
     </tr>
     <tr>
       <td>Lazer:
+      <a href="http://pouet.net/prod.php?which=17782">Autowaschen Verboten</a></td>
+      <td>-</td>
+      <td>-</td>
+      <td>emu</td>
+      <td>Just white screen with noise</td>
+    </tr>
+    <tr>
+      <td>Lazer:
       <a href="http://www.pouet.net/prod.php?which=28745">DBA Magazine 14 intro</a></td>
       <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>With DSP emu enabled, freeze at startup with black screen</td>
+      <td>Background music with DSP emu</td>
     </tr>
     <tr>
       <td>Lazer:
@@ -2344,11 +2436,11 @@ otherwise "-".</p>
     </tr>
     <tr>
       <td>Lazer:
-      <a href="http://pouet.net/prod.php?which=5201">LostBlubb</a></td>
-      <td>-</td>
-      <td>-</td>
+      <a href="http://pouet.net/prod.php?which=5201">Lost Blubb</a></td>
+      <td>partially</td>
+      <td>yes</td>
       <td>emu</td>
-      <td>After startup screen, just flickering colors and then black screen</td>
+      <td>Freezes after startup and first screen</td>
     </tr>
     <tr>
       <td>Lazer:
@@ -2385,25 +2477,41 @@ otherwise "-".</p>
       <td>Lineout:
       <a href="http://www.pouet.net/prod.php?which=8514">Delta</a></td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>Nice (+ almost half an hour long + includes sources)</td>
+    </tr>
+    <tr>
+      <td>Lineout:
+      <a href="http://pouet.net/prod.php?which=30639">Hurry</a></td>
+      <td>yes</td>
+      <td>yes</td>
       <td>emu</td>
       <td></td>
     </tr>
     <tr>
       <td>Lineout:
       <a href="http://pouet.net/prod.php?which=11489">Out</a></td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Mystic bytes:
+      <a href="http://pouet.net/prod.php?which=14856">Moai 96kB</a></td>
       <td>-</td>
       <td>-</td>
       <td>emu</td>
-      <td>Stops at first Lineout screen</td>
+      <td>14MB RAM + FPU. Complains that it works only on 68030 or higher</td>
     </tr>
     <tr>
       <td>Mystic bytes:
       <a href="http://pouet.net/prod.php?which=17780">Time Out</a></td>
-      <td>-</td>
-      <td>-</td>
+      <td>partially</td>
+      <td>yes</td>
       <td>emu</td>
-      <td>Stops after saying "Initializing DSP - OK"</td>
+      <td>Black screen after first screen, music still plays though</td>
     </tr>
     <tr>
       <td>New Beat:
@@ -2416,10 +2524,10 @@ otherwise "-".</p>
     <tr>
       <td>New Beat:
       <a href="http://newbeat.atari.org/main.php?page=productions">Maggie 24 intro</a></td>
-      <td>partially</td>
+      <td>yes</td>
       <td>-</td>
       <td>emu</td>
-      <td>Freezes with DSP "emu" mode, with "none", has awful color flicker</td>
+      <td></td>
     </tr>
     <tr>
       <td>Opium:
@@ -2441,23 +2549,24 @@ otherwise "-".</p>
       <td>Paranoia:
       <a href="http://www.pouet.net/prod.php?which=6659">Illusion 64</a></td>
       <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>With DSP emu enabled, freezes at startup</td>
+      <td>Background music with DSP emu</td>
     </tr>
     <tr>
       <td>POV:
       <a href="http://www.pouet.net/prod.php?which=28794">JESTERday</a></td>
-      <td>Partially</td>
-      <td>Partially</td>
-      <td>-</td>
-      <td>Music demo, but music doesn't sound right (at all)</td>
+      <td>partially</td>
+      <td>partially</td>
+      <td>emu</td>
+      <td>DSP/MOD music demo, but music doesn't sound right (at all).
+          256 colors only</td>
     </tr>
     <tr>
       <td>Psychosis:
       <a href="http://pouet.net/prod.php?which=26607">FOG-intro</a></td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>emu</td>
       <td></td>
     </tr>
@@ -2465,7 +2574,7 @@ otherwise "-".</p>
       <td>Reservoir Gods:
       <a href="http://pouet.net/prod.php?which=23301">Are you sitting comfortably?</a></td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>emu</td>
       <td></td>
     </tr>
@@ -2481,9 +2590,9 @@ otherwise "-".</p>
       <td>Shadows:
       <a href="http://www.pouet.net/prod.php?which=17804">Firestarter</a></td>
       <td>yes</td>
+      <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Freezes with DSP emu enabled, slow even otherwise</td>
+      <td>Background music with DSP emu, slow otherwise</td>
     </tr>
     <tr>
       <td>STAX:
@@ -2510,13 +2619,21 @@ otherwise "-".</p>
       <td>Some screens don't work</td>
     </tr>
     <tr>
+      <td>Trio:
+      <a href="http://www.pouet.net/prod.php?which=15974">X-tasie</a></td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>Quits without doing anything (requires 030 MMU which AUE doesn't emulate?)</td>
+    </tr>
+    <tr>
       <td>tSCc:
       <a href="http://pouet.net/prod.php?which=1015">30L Coke</a> &amp;
       <a href="http://pouet.net/prod.php?which=1014">A Rh positive</a></td>
       <td>yes</td>
       <td>-</td>
       <td>emu</td>
-      <td>4K demos. Rh positive flickers a bit.</td>
+      <td>4K demos. Rh positive flickers a bit</td>
     </tr>
     <tr>
       <td>tSCc:
@@ -2539,7 +2656,7 @@ otherwise "-".</p>
       <td>tSCc:
       <a href="http://pouet.net/prod.php?which=1013">Terrorize your soul</a></td>
       <td>yes</td>
-      <td>-</td>
+      <td>yes</td>
       <td>emu</td>
       <td></td>
     </tr>
@@ -2557,7 +2674,7 @@ otherwise "-".</p>
       <td>partially</td>
       <td>-</td>
       <td>-</td>
-      <td>Stops in middle</td>
+      <td>Strange screen sizes, stops in middle. With DSP, stops earlier</td>
     </tr>
     <tr>
       <td>Wildfire:
@@ -2573,27 +2690,6 @@ otherwise "-".</p>
       <td>-</td>
       <td>-</td>
       <td>A simple FLE animation player</td>
-    </tr>
-    <tr>
-      <td>GEM-demo</td>
-      <td>partially</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Demo effects don't show in the GEM window</td>
-    </tr>
-    <tr>
-      <td>Madness</td>
-      <td>partially</td>
-      <td>yes</td>
-      <td>-</td>
-      <td>After loading only black screen and music</td>
-    </tr>
-    <tr>
-      <td>Xtasie</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>Might require 030 MMU which AUE core doesn't emulate</td>
     </tr>
   </tbody>
 </table>
@@ -2680,11 +2776,10 @@ otherwise "-".</p>
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/falcamp/">FalcAMP</a></td>
-      <td>partially</td>
-      <td>-</td>
+      <td>yes</td>
+      <td>yes</td>
       <td>emu</td>
-      <td>Freezes when it starts to play MODs, MP3s complain about
-          DSP timeout</td>
+      <td>MODs playing works fine, MP3s have no sound / complain about DSP timeout</td>
     </tr>
     <tr>
       <td><a href="http://deunstg.free.fr/sct1/flaysid/">FlaySID</a></td>
@@ -2699,6 +2794,14 @@ otherwise "-".</p>
       <td>-</td>
       <td>emu</td>
       <td>No sound. Graphics look OK only in VGA mode.</td>
+    </tr>
+    <tr>
+      <td><a href="http://deunstg.free.fr/sct1/falcamp/">GemPLAY</a></td>
+      <td>yes</td>
+      <td>yes</td>
+      <td>emu</td>
+      <td>MOD/SND/XMS playing works fine, AON/GT2 don't have sound or freeze.
+          Fileselector dir selection doesn't work for the latest 1.92 version</td>
     </tr>
     <tr>
       <td><a href="http://rg.atari.org/utils.htm">Godpaint</a></td>
@@ -2733,6 +2836,35 @@ otherwise "-".</p>
   </tbody>
 </table>
 
+
+<a name="TT/Falcon utilities"></a><h2>TT/Falcon utilities</h2>
+
+<p>Here are some utilities that require 68020 or better processor
+and work both on TT and Falcon.</p>
+
+<table border="1" cellpadding="3">
+  <caption align="bottom">TT/Falcon utilities</caption>
+  <tbody>
+    <tr class="backdropped">
+      <td align="center">Utility</td>
+      <td align="center">Hatari version</td>
+      <td align="center">Notes</td>
+    </tr>
+    <tr>
+      <td><a href="http://freemint.de/en/">FreeMiNT</a></td>
+      <td>1.2</td>
+      <td>Needs to be installed/booted from an ACSI or IDE HD image and
+      memory protection needs to be disabled (UAE core doesn't emulate MMU)</td>
+    </tr>
+    </tr>
+    <tr>
+      <td><a href="http://centek.free.fr/atari/softs/s_cecile.htm">Cecile</a></td>
+      <td>1.2</td>
+      <td>Hard disk driver.  Works only with IDE emulation</td>
+    </tr>
+    </tr>
+  </tbody>
+</table>
 
 <br>
 

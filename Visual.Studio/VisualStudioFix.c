@@ -24,7 +24,7 @@ extern	FILE *TraceFile;
 	#ifndef _INC_HATARI_TRACE
 	#define _INC_HATARI_TRACE
 
-	#ifdef HATARI_TRACE_ACTIVATED
+	#if ENABLE_TRACING
 		void	HATARI_TRACE( int level, const char* format, ...)
 		{
 			va_list	x;
@@ -32,12 +32,12 @@ extern	FILE *TraceFile;
 			if ( HatariTraceFlags & level ) _vftprintf(TraceFile,format, x);
 			va_end	(x);
 		};
-	#else		/* HATARI_TRACE_ACTIVATED */
+	#else		/* ENABLE_TRACING */
 		void	HATARI_TRACE( int level, ...)
 		{
 		}
 
-	#endif		/* HATARI_TRACE_ACTIVATED */
+	#endif		/* ENABLE_TRACING */
 
 	void HATARI_TRACE_PRINT(char*	strFirstString, ...)	
 	{

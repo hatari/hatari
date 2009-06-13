@@ -134,7 +134,7 @@ static Uint32 act_pd;       /* Used to get a pointer to the current basepage */
 static Uint16 nAttrSFirst;  /* File attribute for SFirst/Snext */
 
 
-#ifdef HATARI_TRACE_ACTIVATED
+#if ENABLE_TRACING
 /* List of GEMDos functions... */
 static const char *pszGemDOSNames[] =
 {
@@ -606,6 +606,61 @@ static bool GEMDOS_IsHDDPresent(int iDrive)
 #endif
 
 
+/**
+ * Determine upper limit of partitions that should be emulated
+ */
+static int GemDOS_DetermineMaxPartitions(void)
+{
+	struct dirent **files;
+	int nMaxDrives = 0, count, i;
+
+	/* Scan through the main directory to see whether there are just single
+	 * letter sub-folders there (then use multi-partition mode) or if
+	 * arbitrary sub-folders are there (then use single-partition mode */
+	count = scandir(ConfigureParams.HardDisk.szHardDiskDirectories[0], &files, 0, alphasort);
+	if (count < 0)
+	{
+		perror("GemDOS_DetermineMaxPartitions");
+		return 0;
+	}
+	else if (count <= 2)
+	{
+		/* Empty directory Only "." and ".."), assume single partition mode */
+		nMaxDrives = 1;
+	}
+	else
+	{
+		/* Check all files in the directory */
+		for (i = 0; i < count; i++)
+		{
+			if (strcmp(files[i]->d_name, ".") == 0 || strcmp(files[i]->d_name, "..") == 0)
+			{
+				/* Ignore "." and ".." */
+				--nMaxDrives;
+				continue;
+			}
+			if (strlen(files[i]->d_name) != 1 || !isalpha(files[i]->d_name[0]))
+			{
+				/* There is a folder with more than one letter...
+				 * ... so use single partition mode! */
+				nMaxDrives = 1;
+				break;
+			}
+			nMaxDrives = toupper(files[i]->d_name[0]) - 'C' + 1;
+		}
+	}
+
+	if (nMaxDrives > MAX_HARDDRIVES)
+		nMaxDrives = MAX_HARDDRIVES;
+
+	/* Free file list */
+	for (i = 0; i < count; i++)
+		free(files[i]);
+	free(files);
+
+	return nMaxDrives;
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Initialize a GEMDOS drive.
@@ -614,28 +669,40 @@ static bool GEMDOS_IsHDDPresent(int iDrive)
 void GemDOS_InitDrives(void)
 {
 	int i;
+	int nMaxDrives;
 
 	/* intialize data for harddrive emulation: */
 	if (!GEMDOS_EMU_ON)
 	{
-		emudrives = malloc( MAX_HARDDRIVES*sizeof(EMULATEDDRIVE *) );
-		for(i=0; i<MAX_HARDDRIVES; i++)
-			emudrives[i] = malloc( sizeof(EMULATEDDRIVE) );
+		emudrives = malloc(MAX_HARDDRIVES * sizeof(EMULATEDDRIVE *));
+		if (!emudrives)
+		{
+			perror("GemDOS_InitDrives");
+			return;
+		}
+		memset(emudrives, 0, MAX_HARDDRIVES * sizeof(EMULATEDDRIVE *));
 	}
 
-	for(i=0; i<MAX_HARDDRIVES; i++)
+	nMaxDrives = GemDOS_DetermineMaxPartitions();
+
+	/* Now initialize all available drives */
+	for(i = 0; i < nMaxDrives; i++)
 	{
-#if MAX_HARDDRIVES > 1
 		// Create the letter equivilent string identifier for this drive
 		char sDriveLetter[] = { PATHSEP, (char)('C' + i), '\0' };
-#endif
+
+		emudrives[i] = malloc(sizeof(EMULATEDDRIVE));
+		if (!emudrives[i])
+		{
+			perror("GemDOS_InitDrives");
+			continue;
+		}
 
 		/* set drive number (C: = 2, D: = 3, etc.) */
-#if MAX_HARDDRIVES == 1
-		emudrives[i]->hd_letter = 2 + nPartitions + i;
-#else
-		emudrives[i]->hd_letter = 2 + i;
-#endif
+		if (nMaxDrives == 1)
+			emudrives[i]->hd_letter = 2 + nPartitions + i;
+		else
+			emudrives[i]->hd_letter = 2 + i;
 
 		/* set emulation directory string */
 		strcpy(emudrives[i]->hd_emulation_dir, ConfigureParams.HardDisk.szHardDiskDirectories[0]);
@@ -643,10 +710,9 @@ void GemDOS_InitDrives(void)
 		/* remove trailing slash, if any in the directory name */
 		File_CleanFileName(emudrives[i]->hd_emulation_dir);
 
-#if MAX_HARDDRIVES > 1
 		/* Add Requisit Folder ID */
-		strcat(emudrives[i]->hd_emulation_dir, sDriveLetter);
-#endif
+		if (nMaxDrives > 1)
+			strcat(emudrives[i]->hd_emulation_dir, sDriveLetter);
 
 		// Check host file system to see if the drive folder for THIS
 		// drive letter/number exists...
@@ -658,20 +724,20 @@ void GemDOS_InitDrives(void)
 			 /* If the GemDos Drive letter is free then */
 			if (i >= nPartitions)
 			{
-				Log_Printf(LOG_INFO, "Hard drive emulation, %c: <-> %s : \n\tStart Path = '%s'.\n",
-						emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir,emudrives[i]->fs_currpath);
+				Log_Printf(LOG_INFO, "Hard drive emulation, %c: <-> %s.\n",
+						emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
 				nNumDrives = i + 3;
 			}
 			else	/* This letter has allready been allocated to the one supported physical disk image */
 			{
-				Log_Printf(LOG_INFO, "Drive Letter %c is already mapped to HDD image (cannot map GEM DOS drive) : <-> %s : \n\tStart Path = %s.\n",
-						emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir,emudrives[i]->fs_currpath);
-				goto FreeGemDosDrive;
+				Log_Printf(LOG_INFO, "Drive Letter %c is already mapped to HDD image (cannot map GEM DOS drive to %s).\n",
+						emudrives[i]->hd_letter + 'A', emudrives[i]->hd_emulation_dir);
+				free(emudrives[i]);
+				emudrives[i] = NULL;
 			}
 		}
 		else
 		{
-FreeGemDosDrive:
 			free(emudrives[i]);	// Deallocate Memory (save space)
 			emudrives[i] = NULL;
 		}
@@ -731,12 +797,27 @@ void GemDOS_MemorySnapShot_Capture(bool bSave)
 
 		for(i=0; i<MAX_HARDDRIVES; i++)
 		{
+			int bDummyDrive = false;
+			if (!emudrives[i])
+			{
+				/* Allocate a dummy drive */
+				emudrives[i] = malloc(sizeof(EMULATEDDRIVE));
+				if (!emudrives[i])
+					perror("GemDOS_MemorySnapShot_Capture");
+				memset(emudrives[i], 0, sizeof(EMULATEDDRIVE));
+				bDummyDrive = true;
+			}
 			MemorySnapShot_Store(emudrives[i]->hd_emulation_dir,
 			                     sizeof(emudrives[i]->hd_emulation_dir));
 			MemorySnapShot_Store(emudrives[i]->fs_currpath,
 			                     sizeof(emudrives[i]->fs_currpath));
 			MemorySnapShot_Store(&emudrives[i]->hd_letter,
 			                     sizeof(emudrives[i]->hd_letter));
+			if (bDummyDrive)
+			{
+				free(emudrives[i]);
+				emudrives[i] = NULL;
+			}
 		}
 	}
 
@@ -1034,7 +1115,7 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 					found = 1;
 				}
 			}
-#ifdef HATARI_TRACE_ACTIVATED
+#if ENABLE_TRACING
 			if (!found)
 			{
 				/* It's often normal, the gem uses this to test for existence */
@@ -1682,7 +1763,10 @@ static bool GemDOS_FDelete(Uint32 Params)
 static bool GemDOS_LSeek(Uint32 Params)
 {
 	long Offset;
-	int Handle,Mode;
+	int Handle, Mode;
+	long nFileSize;
+	long nOldPos, nDestPos;
+	FILE *fhndl;
 
 	/* Read details from stack */
 	Offset = (long)STMemory_ReadLong(Params+SIZE_WORD);
@@ -1695,13 +1779,41 @@ static bool GemDOS_LSeek(Uint32 Params)
 		/* No assume was TOS */
 		return FALSE;
 	}
-	else
+
+	fhndl = FileHandles[Handle].FileHandle;
+
+	/* Save old position in file */
+	nOldPos = ftell(fhndl);
+
+	/* Determine the size of the file */
+	fseek(fhndl, 0L, SEEK_END);
+	nFileSize = ftell(fhndl);
+
+	switch (Mode)
 	{
-		/* Return offset from start of file */
-		fseek(FileHandles[Handle].FileHandle, Offset, Mode);
-		Regs[REG_D0] = ftell(FileHandles[Handle].FileHandle);
+	 case 0: nDestPos = Offset; break;
+	 case 1: nDestPos = nOldPos + Offset; break;
+	 case 2: nDestPos = nFileSize - Offset; break;
+	 default:
+		/* Restore old position and return error */
+		fseek(fhndl, nOldPos, SEEK_SET);
+		Regs[REG_D0] = GEMDOS_EINVFN;
 		return TRUE;
 	}
+
+	if (nDestPos < 0 || nDestPos > nFileSize)
+	{
+		/* Restore old position and return error */
+		fseek(fhndl, nOldPos, SEEK_SET);
+		Regs[REG_D0] = GEMDOS_ERANGE;
+		return TRUE;
+	}
+
+	/* Seek to new position and return offset from start of file */
+	fseek(fhndl, nDestPos, SEEK_SET);
+	Regs[REG_D0] = ftell(fhndl);
+
+	return TRUE;
 }
 
 
@@ -2174,7 +2286,7 @@ void GemDOS_OpCode(void)
 	/* Find pointer to call parameters */
 	GemDOSCall = STMemory_ReadWord(Params);
 
-#ifdef HATARI_TRACE_ACTIVATED
+#if ENABLE_TRACING
 	if (GemDOSCall < (sizeof(pszGemDOSNames)/sizeof(pszGemDOSNames[0])))
 	{
 		HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "GemDOS 0x%X (%s)\n",

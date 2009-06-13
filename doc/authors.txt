@@ -15,7 +15,8 @@
 - Jean-Baptiste Berlioz <tobe at freemind-tobe.com> : Cycle accurate Blitter
   emulation.
 
-- Laurent Sallafranque: Many fixes and speedups to DSP emulation.
+- Laurent Sallafranque: Many fixes and speedups to DSP emulation,
+  DSP debugging support.
 
 
  Contributors:
@@ -90,7 +91,8 @@ please remind me!):
 - Jerome Vernet: Some updates to the OS X Xcode project file and OS X GUI,
   supplied a french keymapping file for OS X.
 
-- Kenneth Kaufman: MS VC6 and C++ compiler support patches.
+- Kenneth Kaufman: MS VC6 & C++ compiler and multiple GEMDOS HD partition
+  support patches.
 
 
  Code from other projects

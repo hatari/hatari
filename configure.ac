@@ -31,7 +31,7 @@ AC_ARG_ENABLE([tracing],
   [ enable_tracing="${enableval}" ],
   [ enable_tracing="yes" ])
 if test "${enable_tracing}" = "yes"; then
-  AC_DEFINE(HATARI_TRACE_ACTIVATED, 1, [Define to 1 to enable emulation tracing])
+  AC_DEFINE(ENABLE_TRACING, 1, [Define to 1 to enable emulation tracing])
 else
   AC_MSG_NOTICE([Tracing disabled])
 fi
@@ -128,6 +128,7 @@ AC_CHECK_HEADERS([unistd.h zlib.h], ,
 AC_CHECK_HEADERS([termios.h glob.h malloc.h])
 dnl If present, used to check SDL configuration
 AC_CHECK_HEADERS([SDL/SDL_config.h])
+AC_CHECK_HEADERS([sys/times.h])
 
 dnl Checks for types.
 AC_TYPE_MODE_T

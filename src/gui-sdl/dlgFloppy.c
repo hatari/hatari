@@ -24,17 +24,18 @@ const char DlgFloppy_fileid[] = "Hatari dlgFloppy.c : " __DATE__ " " __TIME__;
 #define FLOPPYDLG_IMGDIR      11
 #define FLOPPYDLG_BROWSEIMG   12
 #define FLOPPYDLG_AUTOB       13
-#define FLOPPYDLG_CREATEIMG   14
-#define FLOPPYDLG_PROTOFF     16
-#define FLOPPYDLG_PROTON      17
-#define FLOPPYDLG_PROTAUTO    18
-#define FLOPPYDLG_EXIT        19
+#define FLOPPYDLG_SLOWFLOPPY  14
+#define FLOPPYDLG_CREATEIMG   15
+#define FLOPPYDLG_PROTOFF     17
+#define FLOPPYDLG_PROTON      18
+#define FLOPPYDLG_PROTAUTO    19
+#define FLOPPYDLG_EXIT        20
 
 
 /* The floppy disks dialog: */
 static SGOBJ floppydlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 64,18, NULL },
+	{ SGBOX, 0, 0, 0,0, 64,20, NULL },
 	{ SGTEXT, 0, 0, 25,1, 12,1, "Floppy disks" },
 	{ SGTEXT, 0, 0, 2,3, 8,1, "Drive A:" },
 	{ SGBUTTON, 0, 0, 46,3, 7,1, "Eject" },
@@ -48,12 +49,13 @@ static SGOBJ floppydlg[] =
 	{ SGTEXT, 0, 0, 3,10, 58,1, NULL },
 	{ SGBUTTON, 0, 0, 54,9, 8,1, "Browse" },
 	{ SGCHECKBOX, 0, 0, 2,12, 16,1, "Auto insert B" },
-	{ SGBUTTON, 0, 0, 42,12, 20,1, "Create blank image" },
-	{ SGTEXT, 0, 0, 2,14, 17,1, "Write protection:" },
-	{ SGRADIOBUT, 0, 0, 21,14, 5,1, "Off" },
-	{ SGRADIOBUT, 0, 0, 28,14, 5,1, "On" },
-	{ SGRADIOBUT, 0, 0, 34,14, 6,1, "Auto" },
-	{ SGBUTTON, SG_DEFAULT, 0, 22,16, 20,1, "Back to main menu" },
+	{ SGCHECKBOX, 0, 0, 2,14, 21,1, "Slow floppy access" },
+	{ SGBUTTON, 0, 0, 42,14, 20,1, "Create blank image" },
+	{ SGTEXT, 0, 0, 2,16, 17,1, "Write protection:" },
+	{ SGRADIOBUT, 0, 0, 21,16, 5,1, "Off" },
+	{ SGRADIOBUT, 0, 0, 28,16, 5,1, "On" },
+	{ SGRADIOBUT, 0, 0, 34,16, 6,1, "Auto" },
+	{ SGBUTTON, SG_DEFAULT, 0, 22,18, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -171,6 +173,12 @@ void DlgFloppy_Main(void)
 	}
 	floppydlg[FLOPPYDLG_PROTOFF+ConfigureParams.DiskImage.nWriteProtection].state |= SG_SELECTED;
 
+	/* Slow floppy access */
+	if (ConfigureParams.DiskImage.bSlowFloppy)
+		floppydlg[FLOPPYDLG_SLOWFLOPPY].state |= SG_SELECTED;
+	else
+		floppydlg[FLOPPYDLG_SLOWFLOPPY].state &= ~SG_SELECTED;
+
 	/* Draw and process the dialog */
 	do
 	{
@@ -216,4 +224,5 @@ void DlgFloppy_Main(void)
 	}
 
 	ConfigureParams.DiskImage.bAutoInsertDiskB = (floppydlg[FLOPPYDLG_AUTOB].state & SG_SELECTED);
+	ConfigureParams.DiskImage.bSlowFloppy = (floppydlg[FLOPPYDLG_SLOWFLOPPY].state & SG_SELECTED);
 }

@@ -8,11 +8,28 @@
  Devel version :
  ---------------
 
-
 Emulation:
-- Improve Timer B accuracy when starting it in a rare case
+- Hugely improved DSP emulation:
+  - Many more DSP using games/demos/apps work now
+  - Sound (e.g. mp3 DSP playback) works
+  - Many speed improvements
+- Improved Timer B accuracy when starting it in a rare case
 - Handle end of line as well as start of line for Timer B
   in event count mode (using MFP's AER) (fixes Seven Gates Of Jambala)
+- Improved Blitter timings / cycles counting
+- GEMDOS emulation can emulate appropriately named host subdirectories
+  as separate partitions
+
+Emulator:
+- DSP changes:
+  - DSP state saved to memory snapshots
+  - Internal debugger can be used to debug DSP code
+  - Threading support removed from DSP emulation (makes it faster/simpler)
+- Support Videl horizontal fine scrolling for 16 bpp and 32 bpp
+- FPS measurement shown when emulation is paused & --run-vbls option
+- New atari-hd-image.sh script for creating HD image files
+- Support added for building Hatari with MS-VC6 and for Wii
+- Statusbar assert (bug #15512) fixed
 
 
  Version 1.2.0 (2009-01-24):

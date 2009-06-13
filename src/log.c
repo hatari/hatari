@@ -34,6 +34,8 @@ struct {
 	const char *Name;
 }
 TraceOptions[] = {
+	{ HATARI_TRACE_NONE		, "none" },
+
 	{ HATARI_TRACE_VIDEO_SYNC	, "video_sync" } ,
 	{ HATARI_TRACE_VIDEO_RES	, "video_res" } ,
 	{ HATARI_TRACE_VIDEO_COLOR	, "video_color" } ,
@@ -223,6 +225,8 @@ LOGTYPE Log_ParseOptions(const char *arg)
  */
 bool Log_SetTraceOptions (const char *OptionsStr)
 {
+#if ENABLE_TRACING
+
 	char *OptionsCopy;
 	char *cur, *sep;
 	int i;
@@ -244,11 +248,6 @@ bool Log_SetTraceOptions (const char *OptionsStr)
 		fprintf(stderr, "Giving just trace level 'none' disables all traces.\n\n");
 		return FALSE;
 	}
-
-#ifndef HATARI_TRACE_ACTIVATED
-	fprintf(stderr, "\nError: Trace option has not been activated during compile time.\n");
-	return FALSE;
-#endif
 	
 	HatariTraceFlags = HATARI_TRACE_NONE;
 	if (strcmp (OptionsStr, "none") == 0)
@@ -303,4 +302,11 @@ bool Log_SetTraceOptions (const char *OptionsStr)
 	
 	free (OptionsCopy);
 	return TRUE;
+
+#else	/* ENABLE_TRACING */
+
+	fprintf(stderr, "\nError: Trace option has not been activated during compile time.\n");
+	return FALSE;
+
+#endif
 }

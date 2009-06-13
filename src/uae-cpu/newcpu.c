@@ -1647,6 +1647,9 @@ static int do_specialties (void)
     }
 #endif
 
+    if (regs.spcflags & SPCFLAG_DEBUGGER)
+	DebugUI_CpuCheck();
+
     if (regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE)) {
 	unset_special(SPCFLAG_MODE_CHANGE);
 	return 1;

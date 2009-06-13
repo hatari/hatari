@@ -23,7 +23,6 @@
 #define DSP_CORE_H
 
 #include <SDL.h>
-#include <SDL_thread.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,14 +35,17 @@ extern "C" {
 #define CPU_HOST_CVR	0x01
 #define CPU_HOST_ISR	0x02
 #define CPU_HOST_IVR	0x03
+#define CPU_HOST_TRX0	0x04
+#define CPU_HOST_TRXH	0x05
+#define CPU_HOST_TRXM	0x06
+#define CPU_HOST_TRXL	0x07
 #define CPU_HOST_RX0	0x04
 #define CPU_HOST_RXH	0x05
 #define CPU_HOST_RXM	0x06
 #define CPU_HOST_RXL	0x07
-#define CPU_HOST_TX0	0x04
-#define CPU_HOST_TXH	0x05
-#define CPU_HOST_TXM	0x06
-#define CPU_HOST_TXL	0x07
+#define CPU_HOST_TXH	0x09
+#define CPU_HOST_TXM	0x0a
+#define CPU_HOST_TXL	0x0b
 
 #define CPU_HOST_ICR_RREQ	0x00
 #define CPU_HOST_ICR_TREQ	0x01
@@ -127,7 +129,7 @@ extern "C" {
 #define DSP_SSI_SR_RFS		0x3
 #define DSP_SSI_SR_TUE		0x4
 #define DSP_SSI_SR_ROE		0x5
-#define DSP_SSI_SR_TDF		0x6
+#define DSP_SSI_SR_TDE		0x6
 #define DSP_SSI_SR_RDF		0x7
 
 #define DSP_INTERRUPT_NONE      0x0
@@ -148,63 +150,6 @@ extern "C" {
 #define DSP_INTER_SSI_TRX_DATA		0xc
 
 
-typedef struct dsp_core_s dsp_core_t;
-
-struct dsp_core_s {
-	SDL_Thread	*thread;	/* Thread in which DSP emulation runs */
-	SDL_sem		*semaphore;	/* Semaphore used to pause/unpause thread */
-	SDL_mutex	*mutex;		/* Mutex for read/writes through host port */
-
-	int	use_thread;	/* Threaded emulation ? */
-
-	/* DSP executing instructions ? */
-	volatile int running;
-
-	/* Registers */
-	Uint16	pc;
-	Uint32	registers[64];
-
-	/* stack[0=ssh], stack[1=ssl] */
-	Uint16	stack[2][15];
-
-	/* External ram[0] is x:, ram[1] is y:, ram[2] is p: */
-	Uint32	ram[3][DSP_RAMSIZE];
-
-	/* rom[0] is x:, rom[1] is y: */
-	Uint32	rom[2][512];
-
-	/* Internal ram[0] is x:, ram[1] is y:, ram[2] is p: */
-	Uint32	ramint[3][512];
-
-	/* peripheral space, [x|y]:0xffc0-0xffff */
-	volatile Uint32	periph[2][64];
-
-	/* host port, CPU side */
-	volatile Uint8 hostport[8];
-
-	/* Misc */
-	Uint32 loop_rep;		/* executing rep ? */
-	Uint32 ssi_tx_value;		/* SSI transmit value */
-
-	/* For bootstrap routine */
-	Uint16	bootstrap_pos;
-
-	/* Interruptions */
-	Uint16	interrupt_state;
-	Uint32  interrupt_instr_fetch;
-	Uint32  interrupt_save_pc;
-	Uint16  interrupt_table[13];
-	Uint16  interrupt_counter;
-
-	/* Lock/unlock mutex */
-	void	(*lockMutex)(dsp_core_t *_this);
-	void	(*unlockMutex)(dsp_core_t *_this);
-
-	/* Pause/unpause thread */
-	void	(*pauseThread)(dsp_core_t *_this);
-	void	(*resumeThread)(dsp_core_t *_this);
-};
-
 typedef struct dsp_core_ssi_s dsp_core_ssi_t;
 
 struct dsp_core_ssi_s {
@@ -221,16 +166,68 @@ struct dsp_core_ssi_s {
 	Uint16  crb_tie;
 	Uint16  crb_rie;
 
+	Uint32  TX;
+	Uint32  RX;
+	Uint32  transmit_value;		/* DSP Transmit --> SSI */
+	Uint32  received_value;		/* DSP Receive  --> SSI */
+	Uint16  waitFrame;
 	Uint16  slot_in_frame;
-	Uint16  new_frame;
-	Uint16  clock_received;
-
-	Uint32  ssi_clock_send;
-	Uint32  ssi_clock_receive;
 };
 
+
+typedef struct dsp_core_s dsp_core_t;
+
+struct dsp_core_s {
+
+	/* DSP executing instructions ? */
+	volatile int running;
+
+	/* Registers */
+	Uint16	pc;
+	Uint32	registers[64];
+
+	/* stack[0=ssh], stack[1=ssl] */
+	Uint16	stack[2][16];
+
+	/* External ram[0] is x:, ram[1] is y:, ram[2] is p: */
+	Uint32	ramext[DSP_RAMSIZE];
+
+	/* rom[0] is x:, rom[1] is y: */
+	Uint32	rom[2][512];
+
+	/* Internal ram[0] is x:, ram[1] is y:, ram[2] is p: */
+	Uint32	ramint[3][512];
+
+	/* peripheral space, [x|y]:0xffc0-0xffff */
+	volatile Uint32	periph[2][64];
+	volatile Uint32	dsp_host_htx;
+	volatile Uint32	dsp_host_rtx;
+
+
+	/* host port, CPU side */
+	volatile Uint8 hostport[12];
+
+	/* SSI */
+	dsp_core_ssi_t ssi;
+
+	/* Misc */
+	Uint32 loop_rep;		/* executing rep ? */
+	Uint32 pc_on_rep;		/* True if PC is on REP instruction */
+
+	/* For bootstrap routine */
+	Uint16	bootstrap_pos;
+
+	/* Interruptions */
+	Uint16	interrupt_state;
+	Uint32  interrupt_instr_fetch;
+	Uint32  interrupt_save_pc;
+	Uint16  interrupt_table[13];
+	Uint16  interrupt_counter;
+};
+
+
 /* Emulator call these to init/stop/reset DSP emulation */
-void dsp_core_init(dsp_core_t *dsp_core, int use_thread);
+void dsp_core_init(dsp_core_t *dsp_core);
 void dsp_core_shutdown(dsp_core_t *dsp_core);
 void dsp_core_reset(dsp_core_t *dsp_core);
 
@@ -241,19 +238,20 @@ void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint32 inter);
 Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr);
 void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value);
 
-/* dsp_cpu call these to signal state change */
-void dsp_core_set_state(dsp_core_t *dsp_core, int new_state);
-void dsp_core_set_state_sem(dsp_core_t *dsp_core, int new_state, int use_semaphore);
-
 /* dsp_cpu call these to read/write host port */
 void dsp_core_hostport_dspread(dsp_core_t *dsp_core);
 void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
 
 /* dsp_cpu call these to read/write/configure SSI port */
-void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress);
-void dsp_core_ssi_receive_serial_clock(void);
-void dsp_core_ssi_transmit_data(dsp_core_t *dsp_core, Uint32 value);
-void dsp_core_ssi_receive_data(Uint32 data);
+void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value);
+void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core);
+void dsp_core_ssi_receive_SC2(dsp_core_t *dsp_core, Uint32 value);
+void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value);
+void dsp_core_ssi_writeTSR(dsp_core_t *dsp_core);
+Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core);
+void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core);
+
+
 
 /* Process peripheral code */
 void dsp_core_process_host_interface(dsp_core_t *dsp_core);	/* HI */

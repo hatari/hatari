@@ -10,11 +10,14 @@
 
 /* DebugUI_ParseCommand() return values */
 enum {
-	DEBUG_QUIT,
-	DEBUG_CMD
+	DEBUGGER_END,      // Leave debugger
+	DEBUGGER_CMDCONT,  // Command can continue
+	DEBUGGER_CMDDONE   // Command done
 };
 
 extern void DebugUI(void);
 extern int DebugUI_ParseCommand(char *input);
+extern void DebugUI_CpuCheck(void);
+extern void DebugUI_DspCheck(void);
 
 #endif /* HATARI_DEBUGUI_H */

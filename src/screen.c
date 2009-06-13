@@ -441,10 +441,6 @@ static void Screen_SetResolution(void)
 		STScreenRect.y = 0;
 		STScreenRect.w = sdlscrn->w;
 		STScreenRect.h = sdlscrn->h - Statusbar_GetHeight();
-		
-		/* Un-grab mouse pointer in windowed mode: */
-		if (!bGrabMouse)
-			SDL_WM_GrabInput(SDL_GRAB_OFF);
 	}
 
 	/* Set drawing functions */
@@ -494,6 +490,9 @@ void Screen_Init(void)
 	/* Set initial window resolution */
 	bInFullScreen = ConfigureParams.Screen.bFullScreen;
 	Screen_SetResolution();
+
+	if (bGrabMouse)
+		SDL_WM_GrabInput(SDL_GRAB_ON);
 
 	Video_SetScreenRasters();                       /* Set rasters ready for first screen */
 
@@ -618,8 +617,6 @@ void Screen_ReturnFromFullScreen(void)
 		     || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
 		{
 			HostScreen_toggleFullScreen();
-			if (!bGrabMouse)
-				SDL_WM_GrabInput(SDL_GRAB_OFF); /* Un-grab mouse pointer in windowed mode */
 		}
 		else
 		{
@@ -627,6 +624,10 @@ void Screen_ReturnFromFullScreen(void)
 		}
 		SDL_Delay(20);                /* To give monitor time to switch resolution */
 		Main_UnPauseEmulation();      /* And off we go... */
+
+		if (!bGrabMouse)
+			/* Un-grab mouse pointer in windowed mode */
+			SDL_WM_GrabInput(SDL_GRAB_OFF);
 	}
 }
 
@@ -666,18 +667,23 @@ void Screen_ModeChanged(void)
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
 	{
 		VIDEL_ZoomModeChanged();
-		return;
 	}
 	else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
 	{
 		int width, height, bpp;
 		Video_GetTTRes(&width, &height, &bpp);
 		HostScreen_setWindowSize(width, height, 8);
-		return;
 	}
-	/* Set new display mode, if differs from current */
-	Screen_SetResolution();
-	Screen_SetFullUpdate();
+	else
+	{
+		/* Set new display mode, if differs from current */
+		Screen_SetResolution();
+		Screen_SetFullUpdate();
+	}
+	if (bInFullScreen || bGrabMouse)
+		SDL_WM_GrabInput(SDL_GRAB_ON);
+	else
+		SDL_WM_GrabInput(SDL_GRAB_OFF);
 }
 
 

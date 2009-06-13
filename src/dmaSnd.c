@@ -49,10 +49,10 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 #include "falcon/dsp_core.h"
 
 
-Sint16 DspOutBuffer[MIXBUFFER_SIZE*2];
-int nDspOutRdPos, nDspOutWrPos, nDspBufSamples;
-
 Uint16 nDmaSoundControl;                /* Sound control register */
+
+static Sint16 DspOutBuffer[MIXBUFFER_SIZE*2];
+static int nDspOutRdPos, nDspOutWrPos, nDspBufSamples;
 
 static Uint16 nDmaSoundMode;            /* Sound mode register */
 static Uint16 nMicrowireData;           /* Microwire Data register */
@@ -210,7 +210,7 @@ static void DmaSnd_GenerateDspSamples(int nMixBufIdx, int nSamplesToGenerate)
 	int i;
 	int nBufIdx;
 
-	FreqRatio = DmaSnd_DetectSampleRate() / (double)SoundPlayBackFrequencies[OutputAudioFreqIndex];
+	FreqRatio = DmaSnd_DetectSampleRate() / (double)nAudioFrequency;
 	FreqRatio *= 2.0;  /* Stereo */
 
 	fDspBufSamples = (double)nDspBufSamples;
@@ -245,7 +245,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
 	double FreqRatio;
 	int i;
-	int nBufIdx;
+	int nBufIdx, nFramePos;
 	Sint8 *pFrameStart;
 
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON
@@ -259,7 +259,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		return;
 
 	pFrameStart = (Sint8 *)&STRam[nFrameStartAddr];
-	FreqRatio = DmaSnd_DetectSampleRate() / (double)SoundPlayBackFrequencies[OutputAudioFreqIndex];
+	FreqRatio = DmaSnd_DetectSampleRate() / (double)nAudioFrequency;
 
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON
 	    && (nDmaSoundMode & DMASNDMODE_16BITSTEREO))
@@ -269,10 +269,11 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+			nFramePos = ((int)FrameCounter) & ~3;
 			MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
-			                        + (int)(*(Sint16*)&pFrameStart[((int)FrameCounter)&~1])) / 2;
+			                        + (int)(*(Sint16*)&pFrameStart[nFramePos])/2) / 2;
 			MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
-			                        + (int)(*(Sint16*)&pFrameStart[(((int)FrameCounter)&~1)+2])) / 2;
+			                        + (int)(*(Sint16*)&pFrameStart[nFramePos+2])/2) / 2;
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
@@ -285,7 +286,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 			MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][1] =
-				((int)MixBuffer[nBufIdx][0] + (((int)pFrameStart[(int)FrameCounter]) << 8)) / 2;
+				((int)MixBuffer[nBufIdx][0] + (((int)pFrameStart[(int)FrameCounter]) << 7)) / 2;
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
@@ -298,10 +299,11 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		for (i = 0; i < nSamplesToGenerate; i++)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+			nFramePos = ((int)FrameCounter) & ~1;
 			MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
-			                        + (((int)pFrameStart[((int)FrameCounter)&~1]) << 8)) / 2;
+			                        + (((int)pFrameStart[nFramePos]) << 7)) / 2;
 			MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
-			                        + (((int)pFrameStart[(((int)FrameCounter)&~1)+1]) << 8)) / 2;
+			                        + (((int)pFrameStart[nFramePos+1]) << 7)) / 2;
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
@@ -588,10 +590,12 @@ void DmaSnd_InterruptHandler_DspXmit(void)
 	/* TODO: Trigger SSI transmit interrupt in the DSP and fetch the data,
 	 *       then distribute the data to the destinations */
 
-	dsp_core_ssi_receive_serial_clock();
+	DSP_SsiReceive_SC2(FrameCounter);
+	DSP_SsiReceiveSerialClock();
 
 	/* Restart the Int event handler */
 	DmaSnd_StartDspXmitHandler();
+
 }
 
 

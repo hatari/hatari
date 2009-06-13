@@ -31,7 +31,7 @@
 
 	*.commandline { font-family:Fixed,Courier,monospace; font-size:90% }
 	*.file { color: #000088;}
-	*.button { color: #468E64;}
+	*.button { color:#000000; background-color:#c0c0c0; border:outset thin grey; font-family:Fixed,Courier,monospace; padding-left:1em; padding-right:1em;}
 	*.key { color:#550000; font-family:Fixed,Courier,monospace; font-size:90% }
 	*.backdropped { background-color:#ffffee; }
 	*.image {margin-left: 5px; margin-right: 5px; border-width:2px; border-style:solid; border-color:#eeeeff; padding:1cm; text-align:center; }
@@ -81,8 +81,10 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
     <li><a href="#The GUI">The GUI</a>
     <ul>
       <li><a href="#The Main Menu">The Main Menu</a>
+      <li><a href="#The File Selector Dialog">The File Selector Dialog</a>
       <li><a href="#The System Dialog">The System Dialog</a>
-      <li><a href="#The Disks Dialog">The Disks Dialog</a>
+      <li><a href="#The Floppy Disks Dialog">The Floppy Disks Dialog</a>
+      <li><a href="#The Hard Disks Dialog">The Hard Disks Dialog</a>
       <li><a href="#The Memory Dialog">The Memory Dialog</a>
       <li><a href="#The ROM Dialog">The ROM Dialog</a>
       <li><a href="#The Joystick Dialog">The Joystick Dialog</a>
@@ -107,6 +109,7 @@ Hatari on the WWW: <strong><a href="http://hatari.berlios.de/"
     <li><a href="#IDE hard disk emulation">IDE hard disk emulation</a></li>
     <li><a href="#Accessing disk image partitions outside of Hatari">Accessing disk image partitions outside of Hatari</a></li>
   </ul>
+  <li><a href="#Performance measuring">Performance measuring</a>
   <li><a href="#Appendix">Appendix</a>
   <ul>
     <li><a href="#Copying">Copying</a>
@@ -504,6 +507,21 @@ Start the emulator in fullscreen mode
 <td width="21%"></td>
 <td width="77%">
 Start the emulator in window mode
+</td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;grab</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Grab mouse (also) in window mode
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1059,7 +1077,12 @@ only)
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Sound quality (off/low/med/hi, off=faster)
+Sound frequency: 6000-50066. "off" disables the sound and speeds up
+the emulation. To prevent extra sound artifacts, the frequency should be
+selected so that it either matches evenly with the STE/TT/Falcon sound
+DMA (6258, 12517, 250033, 50066 Hz) or your sound card frequencies
+(11025, 22050, 44100 or 6000...48000 Hz).  Check what your sound card
+supports.
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1186,6 +1209,21 @@ Log output level (x=debug/todo/info/warn/error/fatal)
 Show dialog for log messages above given level
 </td>
 </table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="10%"></td>
+<td width="89%">
+<b>&minus;&minus;run-vbls &lt;x&gt;</b></td>
+</table>
+<table width="100%" border=0 rules="none" frame="void"
+       cellspacing="0" cellpadding="0">
+<tr valign="top" align="left">
+<td width="21%"></td>
+<td width="77%">
+Exit after X VBLs
+</td>
+</table>
 
 
 <p>Type <span class="commandline">hatari --help</span> to list all
@@ -1205,7 +1243,7 @@ The GUI is rather self explanatory.</p>
 <a name="The Main Menu"></a><h4 class="gui">The Main Menu</h4>
 
 <div class="floatimage">
-<img src="images/main.png" width="360" height="352" alt="Hatari's GUI - the main menu">
+<img src="images/main.png" width="500" height="304" alt="Hatari's GUI - the main menu">
 </div>
 
 <p>From the main menu, you can reach the other setup dialogs by clicking on
@@ -1216,10 +1254,10 @@ on the <span class="button">Load config</span> button and you can save the
 current settings to a configuration file with the <span class="button">Save
 config</span> button.</p>
 
-<p>Click <span class="button">Okay</span> to go back to the emulated
+<p>Click <span class="button">OK</span> to go back to the emulated
 ST. All changed options will be applied.</p>
-<p>Check the <span class="button">Reset ST</span> option if you want
-the emulated ST to perform a cold reset. This is equal to
+<p>Check the <span class="button">Reset machine</span> button if you want
+the emulated machine to perform a cold reset. This is equal to
 switching the power off and on again on a real ST.
 </p>
 <p>Click <span class="button">Quit</span> to terminate Hatari and
@@ -1227,10 +1265,35 @@ return to the host OS.</p>
 <p>Click <span class="button">Cancel</span> to abandon any changes
 that you have made.</p>
 
+
+<a name="The File Selector Dialog"></a><h4 class="gui">The File Selector Dialog</h4>
+
+<div class="floatimage">
+<img src="images/fileselector.png" width="640" height="399" alt="Hatari's GUI - the fileselector">
+</div>
+
+<p>
+ The file selector dialog appears whenever you are prompted to choose a file
+ or folder.
+</p>
+<p>
+ To enter a folder or choose a file, simply click on the entry in the main box
+ of the dialog. You can use the arrows at the right, the cursor up and down
+ keys and the page up and down keys to navigate through the list.
+</p>
+<p>
+ You can use the three buttons in the upper right corner for additional folder
+ navigation. Use the <span class="button">..</span> button to go up one level
+ in the directory tree. Use the <span class="button">~</span> button to return
+ to your home directory. The <span class="button">/</span> button can be used
+ to go to the root directory of the file system.
+</p>
+
+
 <a name="The System Dialog"></a><h4 class="gui">The System Dialog</h4>
 
 <div class="floatimage">
-<img src="images/system.png" width="360" height="368" alt="Hatari's GUI - the system dialog">
+<img src="images/system.png" width="360" height="384" alt="Hatari's GUI - the system dialog">
 </div>
 
 <p>
@@ -1287,6 +1350,13 @@ that you have made.</p>
  the emulation of 68k address errors and the CPU prefetch buffer. This is needed
  for best compatibility, but it slows down emulation a little bit so you can
  disable it if you don't need it.</p>
+<p>
+ For Falcon mode, you can choose whether you want to enable DSP emulation,
+ fake it or completely disable it. Most Falcon programs only play sound or work
+ correctly when you enable the DSP emulation, but it needs a lot of host CPU
+ power (more than 2 GHz). So if you have a slow host CPU, you can try if your
+ Falcon program also runs with DSP disabled or in &quot;dummy&quot; mode.
+</p>
 <p>You can also enable/disable Blitter emulation here. The Blitter is a custom
  chip that accelerates some graphical operations. This switch only toggles the
  Blitter in plain ST mode. In STE mode, the Blitter is always enabled (since all
@@ -1299,36 +1369,28 @@ that you have made.</p>
  value slows down the emulation. The patch gives you a better performance.
  It is normally safe to enable the patch, but if you encounter a program that
  does not work, you can try to disable the patch to see if it works then.</p>
-<p>
- Select if you want to use slow FDC emulation. &quot;Slow down FDC&quot; is
- normally not required, except for some few slideshows / intros which run too
- fast without this option.
-</p>
 <p><em>NOTE:</em> These parameters are very sensitive to the emulated
 ST and it is strongly recommended to
 reset the emulated ST after changing these options.</p>
 
-<a name="The Disks Dialog"></a><h4 class="gui">The Disks Dialog</h4>
 
-<div class="image" align="center">
-<img src="images/discs.png" width="640" height="399" alt="Hatari's GUI - the disks dialog">
+<a name="The Floppy Disks Dialog"></a><h4 class="gui">The Floppy Disks Dialog</h4>
+
+<div class="floatimage">
+<img src="images/floppydisks.png" width="640" height="320" alt="Hatari's GUI - the floppy disks dialog">
 </div>
 
-<p>Use the upper dialog to choose which floppy disks should be emulated
-in the disk drives.</p>
-
-<p>You can use most standard Atari ST disk image files. You may select
-and browse also zipped disk images. See the chapter "Floppy disk images"
-for details.</p>
-
-<p>Click on the button <span class="button">Browse</span> next to the
-A: and B: option to go to the fileselector:
+<p>
+ This dialog can be used to choose which floppy disks should be emulated
+ in the disk drives. You can use most standard Atari ST disk image files.
+ You may select and browse also zipped disk images. See the chapter
+ <a href="#Floppy disk images">&quot;Floppy disk images&quot;</a> for details.
 </p>
-
-<div class="image" align="center">
-<img src="images/fileselector.png" width="640" height="399" alt="Hatari's GUI - the fileselector">
-</div>
-
+<p>
+ Click on the button <span class="button">Browse</span> next to the
+ A: and B: option to go to the fileselector to choose a disk image for the
+ corresponding drive.
+</p>
 <p>Click on <span class="button">Eject</span> to eject a disk image
 from the emulated drive. The emulated ST will act as if had no floppy
 disk in its drive.</p>
@@ -1345,33 +1407,65 @@ you have to insert the second disk in drive A: manually when prompted.
 first disks ends with an 'a' before the extension and the second disk name
 ends with a 'b'.
 </p>
-<p>If you need to create a new blank disk image, click on <span
- class="button">Create disk image</span>.
-Parameters for the new image can be set in the following dialog. Click
-on <span class="create">create</span> to create the image or on <span
- class="button">back</span> to get back to the
-disk dialog.
+<p>
+ Select if you want to use slow FDC (Floppy Disk Controller) emulation.
+ &quot;Slow floppy access&quot; is normally not required, except for some few
+ slideshows / intros which run too fast without this option.
 </p>
 <p>
-After clicking <span class="button">create</span>, a fileselector
-appears. You can browse the filesystem now. Select the target
-directory, click beside File:
-and type in a name for the new disk image. The name should terminate
-with .st or .msa.
+ You can choose if you want Hatari to write-protect your disks. Atari ST virii
+ can spread on disk images too so it might be a good idea to enable the write
+ protection option. However you can't save highscores or games to your disk
+ images in that case.
 </p>
-<p>Hatari can currently create plain .ST and .MSA disk images
-exclusively.</p>
-<p>You can choose if you want Hatari to writeprotect your disks. Atari ST virii can spread on disk images too so it is ok to
-enable the write protection option. However you can't save highscores or games to your disk images then.</p>
-<p>Use the lower dialog to change the harddisk settings.</p>
-<p>You can select a harddrive image for harddrive emulation via image
-file here or you may select
-a directory of your local filesystem to be emulated as the ST's
-harddrive.</p>
-<p>Check "Boot from HD" if you want Hatari to execute the AUTO folder
-on the harddrive.
-This option is checked by default if you specify a harddrive image or a
-directory via the command line.</p>
+
+<div class="floatimage">
+<img src="images/newfloppy.png" width="280" height="192" alt="Hatari's GUI - the new floppy dialog">
+</div>
+
+<p>
+ If you need to create a new blank disk image, click on
+ <span class="button">Create blank image</span>.
+ Parameters for the new image can be set in the following dialog.
+ Click on <span class="button">create</span> to save the new image or on
+ <span class="button">back</span> to return to the disk dialog.
+</p>
+<p>
+ After clicking <span class="button">create</span>, a fileselector
+ appears. You can browse the filesystem now. Select the target directory,
+ click beside &quot;File:&quot; and type in a name for the new disk image.
+ The name should terminate with .st or .msa.
+</p>
+<p>
+ Hatari can currently create plain .ST and .MSA disk images exclusively.
+</p>
+
+
+<a name="The Hard Disks Dialog"></a><h4 class="gui">The Hard Disks Dialog</h4>
+
+<div class="floatimage">
+<img src="images/harddisks.png" width="640" height="256" alt="Hatari's GUI - the hard disks dialog">
+</div>
+
+<p>
+ This dialog can be used to change the harddisk settings.
+</p>
+<p>
+ You can select a harddrive image for ACSI or IDE hard drive emulation via
+ image file here or you may select a directory of your local filesystem to be
+ emulated as the harddrive of the emulated system.
+</p>
+<p>
+ Check "Boot from HD" if you want Hatari to execute the AUTO folder
+ on the harddrive.
+ This option is checked by default if you specify a harddrive image or a
+ directory via the command line.
+</p>
+<p>
+ Note that for IDE hard disk emulation you also need a TOS version &gt;= 2.05.
+ And ACSI hard disk emulation does not work with TOS 4.0x in Falcon mode.
+</p>
+
 
 <a name="The Memory Dialog"></a><h4 class="gui">The Memory Dialog</h4>
 
@@ -1573,20 +1667,28 @@ screen content really changed.
 <a name="The Sound Dialog"></a><h4 class="gui">The Sound Dialog</h4>
 
 <div class="floatimage">
-<img src="images/sound.png" width="379" height="383" alt="Hatari's GUI - the sound dialog">
+<img src="images/sound.png" width="380" height="384" alt="Hatari's GUI - the sound dialog">
 </div>
 
 <p>Here you can control the sound subsystem.</p>
 <p>Check if you want emulated sound at all. Emulation is faster if
 sound emulation is turned off.</p>
-<p>3 frequencies from low to high quality are available. Experiment a
-little bit to find out which fits best for your setup.
-Medium quality will work ok in most cases.</p>
-<p>You can select to record a piece of sound here. The file name
-extension you use (.WAV or .YM), determines in which format the sound
-is recorded in.  The record button is a toggle so you will need to
-return to the GUI to switch sound recording off again
-(or to use the keyboard shortcut for that).</p>
+<p>
+ Nine frequencies from low to high quality are available. Experiment a
+ little bit to find out which fits best for your setup.
+ For most modern computers, 44100 Hz or 48000 Hz should be fine.
+ For older or slower host systems, you should use a lower frequency.
+ 12517, 250033 and 50066 Hz are frequencies supported by
+ the STE/TT/Falcon sound DMA.
+</p>
+<p>
+ You can select to record a piece of sound here.
+ Use the <span class="button">browse</span> button to choose a file.
+ The file name extension that you use (.WAV or .YM) determines in which format
+ the sound is recorded in. The <span class="button">record sound</span> button
+ is a toggle so you will need to return to the GUI to switch sound recording off
+ again (or to use the keyboard shortcut for that).
+</p>
 
 
 <a name="The Devices Dialog"></a><h4 class="gui">The Devices Dialog</h4>
@@ -1765,9 +1867,12 @@ the ST mouse pointer. </p>
 <p>However it is a little bit different in windowed mode. To make the
 mouse work there as expected you need to grab it first or lock it into
 the Hatari window. Do this by pressing the <span class="key">ALTGR+m</span>
-hotkey combination.
-Press it again to go back to normal mouse behaviour which allows you to
-work in other X11 windows while Hatari is up and running. </p>
+hotkey combination or starting Hatari with the
+<span class="commandline">--grab</span> command line option.
+Press the shortcut key (again) to go back to normal mouse behaviour
+which allows you to move mouse outside outside the Hatari window while
+Hatari is up and running. Note: pausing the emulation will also
+(temporarily) release the mouse grab.</p>
 <p>Mouse scrollwheel will act as cursor up and down keys. </p>
 
 <a name="Emulated joystick"></a><h3>Emulated joystick</h3>
@@ -2088,6 +2193,54 @@ the disk image from Hatari:
 # umount $mountdir
 # losetup -d $loop
 </pre>
+
+
+<a name="Performance measuring"></a><h2>Performance measuring</h2>
+
+<p>
+There are a couple of ways to monitor and measure Hatari performance.
+</p>
+<p>
+By default Hatari has Statusbar visible and automatic frameskip
+enabled. When Hatari has enough time that it can sleep a little each
+frame, the statusbar frame skip ("FS") value keeps at zero.  If Hatari
+is completely busy, it will increase to the maximum specified
+(automatic) frame skip value.
+</p>
+<p>
+Hatari has also a facility to measure FPS i.e. Frames Per Second.
+Just enable the <span class="commandline">--fast-forward</span> option
+on command line (or use the corresponding keyboard shortcut), and
+after a while, press the "Pause" key.  Whenever Hatari emulation is
+paused, Hatari will show how many VBLs it could show per second along
+with some other numbers.
+</p>
+<p>
+It depends on what you want to measure, but usually it's best to
+disable sound and set high frame skip like
+<span class="commandline">--sound off --frameskips 60</span> so that
+the associated external overheads are minimized.  E.g. video output
+can on some platforms do VSync and measurements would then show
+your monitor refresh frequency instead of actual Hatari performance.
+</p>
+<p>
+On Unix systems with <span class="commandline">times()</span> function
+call, only the time spent by the Hatari process itself is measured.
+On other systems much less accurate SDL "wall clock" timings are
+used.  To make latter more accurate you could use also
+<span class="commandline">--run-vbls</span> option to specify how many
+VBLs Hatari should run in fast forward mode before it exits.  In this
+case it's best to either have the test-case run automatically from the
+AUTO-folder or given as memory snapshot to Hatari with the frame skip
+set equal to the VBL count.
+</p>
+<p>
+Note that especially when the SDL timings are used, the numbers can
+fluctuate quite a bit, so for (statistically) reliable numbers you may
+need to repeat the measurement several times.  You should of course
+make also sure that the system doesn't have any other activity at
+the same time you're making the measurements.
+</p>
 
 
 <a name="Appendix"></a><h2>Appendix</h2>

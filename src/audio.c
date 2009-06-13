@@ -17,18 +17,9 @@ const char Audio_fileid[] = "Hatari audio.c : " __DATE__ " " __TIME__;
 #include "sound.h"
 
 
-/* 11Khz, 22Khz, 44Khz playback */
-int const SoundPlayBackFrequencies[] =
-{
-	11025,  /* PLAYBACK_LOW */
-	22050,  /* PLAYBACK_MEDIUM */
-	44100,  /* PLAYBACK_HIGH */
-};
-
-
+int nAudioFrequency = 44100;              /* Sound playback frequency */
 bool bSoundWorking = FALSE;               /* Is sound OK */
 volatile bool bPlayingBuffer = FALSE;     /* Is playing buffer? */
-int OutputAudioFreqIndex = FREQ_22Khz;    /* Playback rate (11Khz,22Khz or 44Khz) */
 int SoundBufferSize = 1024;               /* Size of sound buffer */
 int CompleteSndBufIdx;                    /* Replay-index into MixBuffer */
 
@@ -112,7 +103,7 @@ void Audio_Init(void)
 	}
 
 	/* Set up SDL audio: */
-	desiredAudioSpec.freq = SoundPlayBackFrequencies[OutputAudioFreqIndex];
+	desiredAudioSpec.freq = nAudioFrequency;
 	desiredAudioSpec.format = AUDIO_S16SYS;       /* 16-Bit signed */
 	desiredAudioSpec.channels = 2;                /* stereo */
 	desiredAudioSpec.samples = 1024;              /* Buffer size */
@@ -183,13 +174,13 @@ void Audio_Unlock(void)
 /**
  * Set audio playback frequency variable, pass as PLAYBACK_xxxx
  */
-void Audio_SetOutputAudioFreq(int Frequency)
+void Audio_SetOutputAudioFreq(int nNewFrequency)
 {
 	/* Do not reset sound system if nothing has changed! */
-	if (Frequency != OutputAudioFreqIndex)
+	if (nNewFrequency != nAudioFrequency)
 	{
-		/* Set new frequency, index into SoundPlayBackFrequencies[] */
-		OutputAudioFreqIndex = Frequency;
+		/* Set new frequency */
+		nAudioFrequency = nNewFrequency;
 
 		/* Re-open SDL audio interface if necessary: */
 		if (bSoundWorking)

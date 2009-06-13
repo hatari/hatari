@@ -40,31 +40,16 @@
 /* More disasm infos, if wanted */
 #define DSP_DISASM_HOSTREAD 0	/* Dsp->Host transfer */
 #define DSP_DISASM_HOSTWRITE 0	/* Host->Dsp transfer */
+#define DSP_DISASM_HOSTCVR 0	/* Host command */
 #define DSP_DISASM_STATE 0	/* State changes */
 
-/* static structure */
-
-static dsp_core_ssi_t dsp_core_ssi;
 
 /*--- Functions prototypes ---*/
-
 static void dsp_core_dsp2host(dsp_core_t *dsp_core);
 static void dsp_core_host2dsp(dsp_core_t *dsp_core);
 
-static void lockMutexNull(dsp_core_t *dsp_core);
-static void lockMutexThread(dsp_core_t *dsp_core);
-static void unlockMutexNull(dsp_core_t *dsp_core);
-static void unlockMutexThread(dsp_core_t *dsp_core);
-
-static void pauseThreadNull(dsp_core_t *dsp_core);
-static void pauseThreadThread(dsp_core_t *dsp_core);
-static void resumeThreadNull(dsp_core_t *dsp_core);
-static void resumeThreadThread(dsp_core_t *dsp_core);
-
-/*--- Functions ---*/
-
 /* Init DSP emulation */
-void dsp_core_init(dsp_core_t *dsp_core, int use_thread)
+void dsp_core_init(dsp_core_t *dsp_core)
 {
 	int i;
 
@@ -138,47 +123,15 @@ void dsp_core_init(dsp_core_t *dsp_core, int use_thread)
 			}
 		}
 	}
-	
-	dsp_core->use_thread = use_thread;
-	if (use_thread) {
-		dsp_core->unlockMutex = unlockMutexThread;
-		dsp_core->lockMutex = lockMutexThread;
-		dsp_core->pauseThread = pauseThreadThread;
-		dsp_core->resumeThread = resumeThreadThread;
-	} else {
-		dsp_core->unlockMutex = unlockMutexNull;
-		dsp_core->lockMutex = lockMutexNull;
-		dsp_core->pauseThread = pauseThreadNull;
-		dsp_core->resumeThread = resumeThreadNull;
-	}
 }
 
 /* Shutdown DSP emulation */
 void dsp_core_shutdown(dsp_core_t *dsp_core)
 {
+	dsp_core->running = 0;
 #if DEBUG
 	fprintf(stderr, "Dsp: core shutdown\n");
 #endif
-
-	dsp_core->running = 0;
-
-	if (dsp_core->thread) {
-		dsp_core->resumeThread(dsp_core);
-		SDL_WaitThread(dsp_core->thread, NULL);
-		dsp_core->thread = NULL;
-	}
-
-	/* Destroy the semaphore */
-	if (dsp_core->semaphore) {
-		SDL_DestroySemaphore(dsp_core->semaphore);
-		dsp_core->semaphore = NULL;
-	}
-
-	/* Destroy mutex */
-	if (dsp_core->mutex) {
-		SDL_DestroyMutex(dsp_core->mutex);
-		dsp_core->mutex = NULL;
-	}
 }
 
 /* Reset */
@@ -189,8 +142,6 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 #if DEBUG
 	fprintf(stderr, "Dsp: core reset\n");
 #endif
-
-	/* Kill existing thread and semaphore */
 	dsp_core_shutdown(dsp_core);
 
 	/* Memory */
@@ -198,6 +149,8 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	memset(dsp_core->stack, 0,sizeof(dsp_core->stack));
 	memset(dsp_core->registers, 0,sizeof(dsp_core->registers));
 	memset(dsp_core->interrupt_table, 0,sizeof(dsp_core->interrupt_table));
+	dsp_core->dsp_host_rtx = 0;
+	dsp_core->dsp_host_htx = 0;
 
 	dsp_core->bootstrap_pos = 0;
 	
@@ -223,7 +176,11 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 	dsp_core->hostport[CPU_HOST_IVR]=0x0f;
 
 	/* SSI registers */
-	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]=0x40;
+	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR]=1<<DSP_SSI_SR_TDE;
+	dsp_core->ssi.waitFrame = 1;
+	dsp_core->ssi.TX = 0;
+	dsp_core->ssi.RX = 0;
+	dsp_core->ssi.slot_in_frame = 0;
 	
 	/* Other hardware registers */
 	dsp_core->periph[DSP_SPACE_X][DSP_IPR]=0;
@@ -235,61 +192,7 @@ void dsp_core_reset(dsp_core_t *dsp_core)
 #if DEBUG
 	fprintf(stderr, "Dsp: reset done\n");
 #endif
-
-	/* Create thread, semaphore, mutex if needed */
-	if (dsp_core->use_thread) {
-		if (dsp_core->semaphore == NULL) {
-			dsp_core->semaphore = SDL_CreateSemaphore(0);
-		}
-		if (dsp_core->mutex == NULL) {
-			dsp_core->mutex = SDL_CreateMutex();
-		}
-		if (dsp_core->thread == NULL) {
-			dsp_core->thread = SDL_CreateThread(dsp56k_exec_thread, dsp_core);
-		}
-	} else {
-		dsp56k_init_cpu(dsp_core);
-	}
-}
-
-/* Lock/unlock mutex functions */
-static void lockMutexNull(dsp_core_t *dsp_core)
-{
-}
-
-static void lockMutexThread(dsp_core_t *dsp_core)
-{
-	SDL_LockMutex(dsp_core->mutex);
-}
-
-static void unlockMutexNull(dsp_core_t *dsp_core)
-{
-}
-
-static void unlockMutexThread(dsp_core_t *dsp_core)
-{
-	SDL_UnlockMutex(dsp_core->mutex);
-}
-
-static void pauseThreadNull(dsp_core_t *dsp_core)
-{
-}
-
-static void pauseThreadThread(dsp_core_t *dsp_core)
-{
-	SDL_SemWait(dsp_core->semaphore);
-}
-
-static void resumeThreadNull(dsp_core_t *dsp_core)
-{
-}
-
-static void resumeThreadThread(dsp_core_t *dsp_core)
-{
-	/* TODO: maybe use a condition variable, to avoid the IF */
-	if (SDL_SemValue(dsp_core->semaphore)==0) {
-		SDL_SemPost(dsp_core->semaphore);
-	}
+	dsp56k_init_cpu(dsp_core);
 }
 
 /* Post a new interrupt to the interrupt table */
@@ -311,44 +214,47 @@ void dsp_core_process_host_interface(dsp_core_t *dsp_core)
 /* Process SSI peripheral code */
 void dsp_core_process_ssi_interface(dsp_core_t *dsp_core)
 {
-	if (dsp_core_ssi.clock_received == 1) {
-		dsp_core_ssi.clock_received = 0;
-
-		if (dsp_core_ssi.new_frame) {
-			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
-		} else {
-			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TFS);
-		}
-
-		/* generate interrupt ? */
-		if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_TIE)) {
-			dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_TRX_DATA);
-		}
-	}
 }
 
-/* SSI receive data from crossbar */
-void dsp_core_ssi_receive_data(Uint32 data)
+/* SSI set TX register */
+void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value)
 {
-	/* TODO: everything :) */
+	/* Clear SSI TDE bit */
+	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDE);
+	dsp_core->ssi.TX = value;
 }
 
-/* SSI transmit data to crossbar */
-void dsp_core_ssi_transmit_data(dsp_core_t *dsp_core, Uint32 value)
+/* SSI set TX register */
+void dsp_core_ssi_writeTSR(dsp_core_t *dsp_core)
 {
-	Uint32 i, temp=0;
+	/* Dummy write : Just clear SSI TDE bit */
+	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDE);
+}
 
-	dsp_core->periph[DSP_SPACE_X][DSP_SSI_TX] = value;
+/* SSI get RX register */
+Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core)
+{
+	/* Clear SSI receive interrupt */
+	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_RDF);
 
-	/* Clear SSI transmit interrupt */
-	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TDF);
+	return dsp_core->ssi.RX;
+}
 
+/* SSI receive serial clock */
+void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core)
+{
+	Uint32 value, i, temp=0;
+
+	value = dsp_core->ssi.TX;
+
+	/* Transfer data */
 	/* adjust value to receive size word */
-	value &= dsp_core_ssi.cra_word_mask;
+	value >>= (24 - dsp_core->ssi.cra_word_length);
+	value &= dsp_core->ssi.cra_word_mask;
 
 	/* swap received data if bit SHFD in CRB is set */
-	if (dsp_core_ssi.crb_shifter) {
-		for (i=0; i<dsp_core_ssi.cra_word_length; i++) {
+	if (dsp_core->ssi.crb_shifter) {
+		for (i=0; i<dsp_core->ssi.cra_word_length; i++) {
 			temp += value & 1;
 			temp <<= 1;
 			value >>= 1;
@@ -356,85 +262,133 @@ void dsp_core_ssi_transmit_data(dsp_core_t *dsp_core, Uint32 value)
 		value = temp;
 	}
 
-	if (dsp_core_ssi.crb_te) {
+	/* Transmit value */
+	if (dsp_core->ssi.crb_te && dsp_core->ssi.waitFrame == 0) {
 		/* Send value to crossbar */
-		dsp_core->ssi_tx_value = value;
-	}
-}
+		dsp_core->ssi.transmit_value = value;
 
-/* SSI receive serial clock */
-void dsp_core_ssi_receive_serial_clock(void)
-{
-	dsp_core_ssi.clock_received = 1;
-	
-	/* detect if SSI runs in normal or network mode */
-	if (dsp_core_ssi.crb_mode) {
-		/* SSI Network mode */
-		dsp_core_ssi.slot_in_frame ++;
-		dsp_core_ssi.new_frame = 0;
-		if (dsp_core_ssi.slot_in_frame == dsp_core_ssi.cra_frame_rate_divider) {
-			dsp_core_ssi.slot_in_frame = 0;
-			dsp_core_ssi.new_frame = 1;
+		/* generate interrupt ? */
+		if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_TIE)) {
+			if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_TDE)) {
+				dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_TRX_DATA);
+			} else {
+				dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_TRX_DATA);
+			}
+		}
+	}else{
+		dsp_core->ssi.transmit_value = 0;
+	}
+
+	/* set TDE */
+	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TDE);
+
+	/* receive part */
+	dsp_core->ssi.RX = dsp_core->ssi.received_value;
+
+	/* generate interrupt ? */
+	if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RIE)) {
+		if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] & (1<<DSP_SSI_SR_RDF)) {
+			dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA_E);
+		} else {
+			dsp_core_add_interrupt(dsp_core, DSP_INTER_SSI_RCV_DATA);
 		}
 	}
-	else {
-		/* TODO : SSI Normal mode */
-		/* in normal mode, TFS is always "1" */
-	}	
+	/* Set SSI receive */
+	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= 1<<DSP_SSI_SR_RDF;
+}
+
+/* SSI generate internal clock */
+void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core)
+{
+//	Uint32 new_frame;
+	/* TODO : write an internal timer */
+		/* SSI Network mode */
+//		dsp_core->ssi.slot_in_frame ++;
+//		dsp_core->ssi.new_frame = 0;
+
+		/* detect if new frame */
+//		if (dsp_core->ssi.slot_in_frame == dsp_core->ssi.cra_frame_rate_divider) {
+//			dsp_core->ssi.slot_in_frame = 0;
+//			dsp_core->ssi.new_frame = 1;  // send 1 to SC2 pin (generated frame sync)
+//			dsp_core->ssi.waitFrame = 0;
+//			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
+//		}else{
+//			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TFS);
+//		}
+}
+
+/* SSI receive SC2 bit : frame sync */
+void dsp_core_ssi_receive_SC2(dsp_core_t *dsp_core, Uint32 value)
+{
+	dsp_core->ssi.slot_in_frame ++;
+	if (dsp_core->ssi.slot_in_frame >= dsp_core->ssi.cra_frame_rate_divider) {
+		dsp_core->ssi.slot_in_frame = 0;
+	}
+
+	/* SSI runs in network mode ? */
+	if (dsp_core->ssi.crb_mode) {
+		/* Detect Begin of a new frame */
+		if (dsp_core->ssi.slot_in_frame == 0) {
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
+			dsp_core->ssi.waitFrame = 0;
+		}else{
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TFS);
+		}
+	}else{
+		/* SSI runs in normal mode */
+		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
+	}
 }
 
 /* SSI SSI initialisations and state management */
-void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress)
+void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value)
 {
-	Uint32 cra, crb;
-
-	cra = dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRA];
-	crb = dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB];
+	Uint32 crb_te;
 
 	switch (adress) {
 		case DSP_SSI_CRA:
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRA] = value;
 			/* get word size for transfers */
-			switch ((cra>>DSP_SSI_CRA_WL0) & 3) {
+			switch ((value>>DSP_SSI_CRA_WL0) & 3) {
 				case 0:
-					dsp_core_ssi.cra_word_length = 8;
-					dsp_core_ssi.cra_word_mask = 0xff;
+					dsp_core->ssi.cra_word_length = 8;
+					dsp_core->ssi.cra_word_mask = 0xff;
 					break;
 				case 1:
-					dsp_core_ssi.cra_word_length = 12;
-					dsp_core_ssi.cra_word_mask = 0xfff;
+					dsp_core->ssi.cra_word_length = 12;
+					dsp_core->ssi.cra_word_mask = 0xfff;
 					break;
 				case 2:
-					dsp_core_ssi.cra_word_length = 16;
-					dsp_core_ssi.cra_word_mask = 0xffff;
+					dsp_core->ssi.cra_word_length = 16;
+					dsp_core->ssi.cra_word_mask = 0xffff;
 					break;
 				case 3:
-					dsp_core_ssi.cra_word_length = 24;
-					dsp_core_ssi.cra_word_mask = 0xfffff;
+					dsp_core->ssi.cra_word_length = 24;
+					dsp_core->ssi.cra_word_mask = 0xfffff;
 					break;
 			}
 
 			/* Get the Frame rate divider ( 2 < value <32) */
-			dsp_core_ssi.cra_frame_rate_divider = ((cra >> DSP_SSI_CRA_DC0) & 0x1f)+1;
+			dsp_core->ssi.cra_frame_rate_divider = ((value >> DSP_SSI_CRA_DC0) & 0x1f)+1;
 			break;
 		case DSP_SSI_CRB:
-			dsp_core_ssi.crb_src_clock = (crb>>DSP_SSI_CRB_SCKD) & 1;
-			dsp_core_ssi.crb_shifter   = (crb>>DSP_SSI_CRB_SHFD) & 1;
-			dsp_core_ssi.crb_synchro   = (crb>>DSP_SSI_CRB_SYN) & 1;
-			dsp_core_ssi.crb_mode      = (crb>>DSP_SSI_CRB_MOD) & 1;
-			dsp_core_ssi.crb_te        = (crb>>DSP_SSI_CRB_TE) & 1;
-			dsp_core_ssi.crb_re        = (crb>>DSP_SSI_CRB_RE) & 1;
-			dsp_core_ssi.crb_tie       = (crb>>DSP_SSI_CRB_TIE) & 1;
-			dsp_core_ssi.crb_rie       = (crb>>DSP_SSI_CRB_RIE) & 1;
-			break;
-		case DSP_SSI_SR:
-			/* TODO : save values to the ssi structure */
+			crb_te = dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_TE);
+			dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] = value;
+	
+			dsp_core->ssi.crb_src_clock = (value>>DSP_SSI_CRB_SCKD) & 1;
+			dsp_core->ssi.crb_shifter   = (value>>DSP_SSI_CRB_SHFD) & 1;
+			dsp_core->ssi.crb_synchro   = (value>>DSP_SSI_CRB_SYN) & 1;
+			dsp_core->ssi.crb_mode      = (value>>DSP_SSI_CRB_MOD) & 1;
+			dsp_core->ssi.crb_te        = (value>>DSP_SSI_CRB_TE) & 1;
+			dsp_core->ssi.crb_re        = (value>>DSP_SSI_CRB_RE) & 1;
+			dsp_core->ssi.crb_tie       = (value>>DSP_SSI_CRB_TIE) & 1;
+			dsp_core->ssi.crb_rie       = (value>>DSP_SSI_CRB_RIE) & 1;
+
+			if (crb_te == 0 && dsp_core->ssi.crb_te) {
+				dsp_core->ssi.waitFrame = 1;
+			}
 			break;
 	}
-
-	/* general ssi inits */
-	dsp_core_ssi.slot_in_frame = 0;
-	dsp_core_ssi.new_frame = 1;
-	dsp_core_ssi.clock_received = 0;
 }
 
 static void dsp_core_hostport_update_trdy(dsp_core_t *dsp_core)
@@ -470,9 +424,9 @@ static void dsp_core_dsp2host(dsp_core_t *dsp_core)
 		return;
 	}
 
-	dsp_core->hostport[CPU_HOST_RXL] = dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX];
-	dsp_core->hostport[CPU_HOST_RXM] = dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]>>8;
-	dsp_core->hostport[CPU_HOST_RXH] = dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]>>16;
+	dsp_core->hostport[CPU_HOST_RXL] = dsp_core->dsp_host_htx;
+	dsp_core->hostport[CPU_HOST_RXM] = dsp_core->dsp_host_htx>>8;
+	dsp_core->hostport[CPU_HOST_RXH] = dsp_core->dsp_host_htx>>16;
 
 	/* Set HTDE bit to say that DSP can write */
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HTDE;
@@ -487,7 +441,7 @@ static void dsp_core_dsp2host(dsp_core_t *dsp_core)
 	dsp_core_hostport_update_hreq(dsp_core);
 
 #if DSP_DISASM_HOSTWRITE
-	fprintf(stderr, "Dsp: (D->H): Transfer 0x%06x, Dsp HTDE=1, Host RXDF=1\n", dsp_core->periph[DSP_SPACE_X][DSP_HOST_HTX]);
+	fprintf(stderr, "Dsp: (D->H): Transfer 0x%06x, Dsp HTDE=1, Host RXDF=1\n", dsp_core->dsp_host_htx);
 #endif
 }
 
@@ -504,9 +458,9 @@ static void dsp_core_host2dsp(dsp_core_t *dsp_core)
 		return;
 	}
 
-	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] = dsp_core->hostport[CPU_HOST_TXL];
-	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_core->hostport[CPU_HOST_TXM]<<8;
-	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_core->hostport[CPU_HOST_TXH]<<16;
+	dsp_core->dsp_host_rtx = dsp_core->hostport[CPU_HOST_TXL];
+	dsp_core->dsp_host_rtx |= dsp_core->hostport[CPU_HOST_TXM]<<8;
+	dsp_core->dsp_host_rtx |= dsp_core->hostport[CPU_HOST_TXH]<<16;
 
 	/* Set HRDF bit to say that DSP can read */
 	dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] |= 1<<DSP_HOST_HSR_HRDF;
@@ -521,7 +475,7 @@ static void dsp_core_host2dsp(dsp_core_t *dsp_core)
 	dsp_core_hostport_update_hreq(dsp_core);
 
 #if DSP_DISASM_HOSTREAD
-	fprintf(stderr, "Dsp: (H->D): Transfer 0x%06x, Dsp HRDF=1, Host TXDE=1\n", dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX]);
+	fprintf(stderr, "Dsp: (H->D): Transfer 0x%06x, Dsp HRDF=1, Host TXDE=1\n", dsp_core->dsp_host_rtx);
 #endif
 
 	dsp_core_hostport_update_trdy(dsp_core);
@@ -535,7 +489,6 @@ void dsp_core_hostport_dspread(dsp_core_t *dsp_core)
 	fprintf(stderr, "Dsp: (H->D): Dsp HRDF cleared\n");
 #endif
 	dsp_core_hostport_update_trdy(dsp_core);
-	// dsp_core_host2dsp(dsp_core);
 }
 
 void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core)
@@ -545,56 +498,27 @@ void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core)
 #if DSP_DISASM_HOSTWRITE
 	fprintf(stderr, "Dsp: (D->H): Dsp HTDE cleared\n");
 #endif
-	// dsp_core_dsp2host(dsp_core);
 }
-
-static void dsp_core_hostport_cpuread(dsp_core_t *dsp_core)
-{
-	/* Clear RXDF bit to say that CPU has read */
-	dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
-	dsp_core_hostport_update_hreq(dsp_core);
-
-#if DSP_DISASM_HOSTWRITE
-	fprintf(stderr, "Dsp: (D->H): Host RXDF=0\n");
-#endif
-	// dsp_core_dsp2host(dsp_core);
-}
-
-#if 0
-static void dsp_core_hostport_cpuwrite(dsp_core_t *dsp_core)
-{
-	/* Clear TXDE to say that CPU has written */
-	dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_TXDE);
-#if DSP_DISASM_HOSTREAD
-	fprintf(stderr, "Dsp: (H->D): Host TXDE=0\n");
-#endif
-	dsp_core_hostport_update_trdy(dsp_core);
-	dsp_core_host2dsp(dsp_core);
-}
-#endif
 
 /* Read/writes on host port */
-
 Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr)
 {
 	Uint8 value;
 
-	dsp_core->lockMutex(dsp_core);
 	value = dsp_core->hostport[addr];
-	if (addr == CPU_HOST_RXL) {
-		dsp_core_hostport_cpuread(dsp_core);
-
-		/* Wake up DSP if it was waiting our read */
-		dsp_core->resumeThread(dsp_core);
+	if (addr == CPU_HOST_TRXL) {
+		/* Clear RXDF bit to say that CPU has read */
+		dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_RXDF);
+		dsp_core_hostport_update_hreq(dsp_core);
+#if DSP_DISASM_HOSTREAD
+		fprintf(stderr, "Dsp: (D->H): Host RXDF=0\n");
+#endif
 	}
-	dsp_core->unlockMutex(dsp_core);
-
 	return value;
 }
 
 void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 {
-	dsp_core->lockMutex(dsp_core);
 	switch(addr) {
 		case CPU_HOST_ICR:
 			dsp_core->hostport[CPU_HOST_ICR]=value & 0xfb;
@@ -614,30 +538,35 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 				if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HCIE)) {
 					dsp_core_add_interrupt(dsp_core, DSP_INTER_HOST_COMMAND);
 				}
-				/* Wake up DSP if needed */
-				dsp_core->resumeThread(dsp_core);
 			}
 			else{
 				dsp_core->periph[DSP_SPACE_X][DSP_HOST_HSR] &= 0xff - (1<<DSP_HOST_HSR_HCP);
 			}
+#if DSP_DISASM_HOSTCVR
+		fprintf(stderr, "Dsp: (H->D): Host command = %06x\n", value & 0x9f);
+#endif
 			break;
 		case CPU_HOST_ISR:
-		case CPU_HOST_TX0:
+		case CPU_HOST_TRX0:
 			/* Read only */
 			break;
 		case CPU_HOST_IVR:
-		case CPU_HOST_TXH:
-		case CPU_HOST_TXM:
-			dsp_core->hostport[addr]=value;
+			dsp_core->hostport[CPU_HOST_IVR]=value;
 			break;
-		case CPU_HOST_TXL:
+		case CPU_HOST_TRXH:
+			dsp_core->hostport[CPU_HOST_TXH]=value;
+			break;
+		case CPU_HOST_TRXM:
+			dsp_core->hostport[CPU_HOST_TXM]=value;
+			break;
+		case CPU_HOST_TRXL:
 			dsp_core->hostport[CPU_HOST_TXL]=value;
 
 			if (!dsp_core->running) {
 				dsp_core->ramint[DSP_SPACE_P][dsp_core->bootstrap_pos] =
 					(dsp_core->hostport[CPU_HOST_TXH]<<16) |
 					(dsp_core->hostport[CPU_HOST_TXM]<<8) |
-					dsp_core->hostport[CPU_HOST_TXL];
+					 dsp_core->hostport[CPU_HOST_TXL];
 #if DEBUG
 				fprintf(stderr, "Dsp: bootstrap p:0x%04x = 0x%06x\n",
 					dsp_core->bootstrap_pos,
@@ -648,17 +577,16 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 					fprintf(stderr, "Dsp: WAIT_BOOTSTRAP done\n");
 #endif
 					dsp_core->running = 1;
-					dsp_core->resumeThread(dsp_core);
 				}
 			} else {
 
 				/* If TRDY is set, the tranfert is direct to DSP (Burst mode) */
 				if (dsp_core->hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_TRDY)){
-					dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] = dsp_core->hostport[CPU_HOST_TXL];
-					dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_core->hostport[CPU_HOST_TXM]<<8;
-					dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX] |= dsp_core->hostport[CPU_HOST_TXH]<<16;
-#if DSP_DISASM_HOSTREAD
-					fprintf(stderr, "Dsp: (H->D): Direct Transfer 0x%06x\n", dsp_core->periph[DSP_SPACE_X][DSP_HOST_HRX]);
+					dsp_core->dsp_host_rtx = dsp_core->hostport[CPU_HOST_TXL];
+					dsp_core->dsp_host_rtx |= dsp_core->hostport[CPU_HOST_TXM]<<8;
+					dsp_core->dsp_host_rtx |= dsp_core->hostport[CPU_HOST_TXH]<<16;
+#if DSP_DISASM_HOSTWRITE
+					fprintf(stderr, "Dsp: (H->D): Direct Transfer 0x%06x\n", dsp_core->dsp_host_rtx);
 #endif
 
 					/* Set HRDF bit to say that DSP can read */
@@ -668,7 +596,7 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 					if (dsp_core->periph[DSP_SPACE_X][DSP_HOST_HCR] & (1<<DSP_HOST_HCR_HRIE)) {
 						dsp_core_add_interrupt(dsp_core, DSP_INTER_HOST_RCV_DATA);
 					}
-#if DSP_DISASM_HOSTREAD
+#if DSP_DISASM_HOSTWRITE
 					fprintf(stderr, "Dsp: (H->D): Dsp HRDF set\n");
 #endif
 				}
@@ -676,18 +604,14 @@ void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value)
 					/* Clear TXDE to say that CPU has written */
 					dsp_core->hostport[CPU_HOST_ISR] &= 0xff-(1<<CPU_HOST_ISR_TXDE);
 					dsp_core_hostport_update_hreq(dsp_core);
-#if DSP_DISASM_HOSTREAD
+#if DSP_DISASM_HOSTWRITE
 					fprintf(stderr, "Dsp: (H->D): Host TXDE cleared\n");
 #endif
 				}
 				dsp_core_hostport_update_trdy(dsp_core);
-
-				/* Wake up DSP if it was waiting our write */
-				dsp_core->resumeThread(dsp_core);
 			}
 			break;
 	}
-	dsp_core->unlockMutex(dsp_core);
 }
 
 /*

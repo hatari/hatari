@@ -56,7 +56,7 @@ extern bool Log_SetTraceOptions(const char *OptionsStr);
  * just for the Hatari developers, tracing support is compiled in
  * by default.
  * 
- * Tracing can be enabled but defining HATARI_TRACE_ACTIVATED
+ * Tracing can be enabled but defining ENABLE_TRACING
  * in the top level config.h
  */
 #include "config.h"
@@ -128,7 +128,7 @@ extern bool Log_SetTraceOptions(const char *OptionsStr);
 extern FILE *TraceFile;
 extern Uint32 HatariTraceFlags;
 
-#ifdef HATARI_TRACE_ACTIVATED
+#if ENABLE_TRACING
 
 #ifndef _VCWIN_
 #define	HATARI_TRACE( level, args... ) \
@@ -136,14 +136,14 @@ extern Uint32 HatariTraceFlags;
 #endif
 #define HATARI_TRACE_LEVEL( level )	(HatariTraceFlags & level)
 
-#else		/* HATARI_TRACE_ACTIVATED */
+#else		/* ENABLE_TRACING */
 
 #ifndef _VCWIN_
 #define HATARI_TRACE( level, args... )	{}
 #endif
 #define HATARI_TRACE_LEVEL( level )	(0)
 
-#endif		/* HATARI_TRACE_ACTIVATED */
+#endif		/* ENABLE_TRACING */
 
 /* Always defined in full to avoid compiler warnings about unused variables.
  * In code it's used in such a way that it will be optimized away when tracing

@@ -120,12 +120,7 @@
 
 	typedef uae_u32 uaecptr;
 
-	#ifdef HATARI_TRACE_ACTIVATED
-		extern	void	HATARI_TRACE( int level, ...);
-	#else		/* HATARI_TRACE_ACTIVATED */
-		extern	void	HATARI_TRACE( int level, ...);
-	#endif		/* HATARI_TRACE_ACTIVATED */
-
+	extern	void HATARI_TRACE( int level, ...);
 	extern	void HATARI_TRACE_PRINT(char*	strFirstString, ...);
 
 	#ifdef JOY_BUTTON1

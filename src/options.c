@@ -51,6 +51,7 @@ enum {
 	OPT_MONITOR,
 	OPT_FULLSCREEN,
 	OPT_WINDOW,
+	OPT_GRAB,
 	OPT_ZOOM,
 	OPT_FRAMESKIPS,
 	OPT_BORDERS,
@@ -76,10 +77,10 @@ enum {
 	OPT_RS232_OUT,
 	OPT_DISKA,		/* disk options */
 	OPT_DISKB,
+	OPT_SLOWFLOPPY,
 	OPT_HARDDRIVE,
 	OPT_ACSIHDIMAGE,
 	OPT_IDEHDIMAGE,
-	OPT_SLOWFDC,
 	OPT_MEMSIZE,		/* memory options */
 	OPT_TOS,
 	OPT_CARTRIDGE,
@@ -100,6 +101,7 @@ enum {
 	OPT_LOGFILE,
 	OPT_LOGLEVEL,
 	OPT_ALERTLEVEL,
+	OPT_RUNVBLS,
 	OPT_ERROR,
 	OPT_CONTINUE
 };
@@ -136,6 +138,8 @@ static const opt_t HatariOptions[] = {
 	  NULL, "Start emulator in fullscreen mode" },
 	{ OPT_WINDOW,    "-w", "--window",
 	  NULL, "Start emulator in window mode" },
+	{ OPT_GRAB, NULL, "--grab",
+	  NULL, "Grab mouse (also) in window mode" },
 	{ OPT_ZOOM, "-z", "--zoom",
 	  "<x>", "Double ST low resolution (1=no, 2=yes)" },
 	{ OPT_FRAMESKIPS, NULL, "--frameskips",
@@ -195,14 +199,14 @@ static const opt_t HatariOptions[] = {
 	  "<file>", "Set disk image for floppy drive A" },
 	{ OPT_DISKB, NULL, "--disk-b",
 	  "<file>", "Set disk image for floppy drive B" },
+	{ OPT_SLOWFLOPPY,   NULL, "--slowfdc",
+	  "<bool>", "Slow down floppy disk access emulation" },
 	{ OPT_HARDDRIVE, "-d", "--harddrive",
-	  "<dir>", "Emulate an ST harddrive (<dir> = root directory)" },
+	  "<dir>", "Emulate harddrive (partitions) with <dir> contents" },
 	{ OPT_ACSIHDIMAGE,   NULL, "--acsi",
 	  "<file>", "Emulate an ACSI harddrive with an image <file>" },
 	{ OPT_IDEHDIMAGE,   NULL, "--ide",
-	  "<file>", "Emulate an IDE harddrive using <file> (not working yet)" },
-	{ OPT_SLOWFDC,   NULL, "--slowfdc",
-	  "<bool>", "Slow down FDC emulation (deprecated)" },
+	  "<file>", "Emulate an IDE harddrive with an image <file>" },
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Memory" },
 	{ OPT_MEMSIZE,   "-s", "--memsize",
@@ -230,7 +234,7 @@ static const opt_t HatariOptions[] = {
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
 	{ OPT_SOUND,   NULL, "--sound",
-	  "<x>", "Sound quality (x = off/low/med/hi, off=faster)" },
+	  "<x>", "Sound frequency (x=off/6000-50066, off=fastest)" },
 	{ OPT_KEYMAPFILE, "-k", "--keymap",
 	  "<file>", "Read (additional) keyboard mappings from <file>" },
 	
@@ -253,6 +257,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Log output level (x=debug/todo/info/warn/error/fatal)" },
 	{ OPT_ALERTLEVEL, NULL, "--alert-level",
 	  "<x>", "Show dialog for log messages above given level" },
+	{ OPT_RUNVBLS, NULL, "--run-vbls",
+	  "<x>", "Exit after x VBLs" },
 
 	{ OPT_ERROR, NULL, NULL, NULL, NULL }
 };
@@ -625,7 +631,7 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
  */
 bool Opt_ParseParameters(int argc, const char *argv[])
 {
-	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port;
+	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq;
 	const char *errstr;
 	int i, ok = TRUE;
 
@@ -719,6 +725,10 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 		case OPT_WINDOW:
 			ConfigureParams.Screen.bFullScreen = FALSE;
 			break;
+
+		case OPT_GRAB:
+			bGrabMouse = TRUE;
+			break;
 			
 		case OPT_ZOOM:
 			zoom = atoi(argv[++i]);
@@ -739,10 +749,14 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			
 		case OPT_FRAMESKIPS:
 			skips = atoi(argv[++i]);
-			if (skips < 0 || skips > 8)
+			if (skips < 0)
 			{
 				return Opt_ShowError(OPT_FRAMESKIPS, argv[i],
 						     "Invalid frame skip value");
+			}
+			else if (skips > 8)
+			{
+				Log_Printf(LOG_WARN, "Extravagant frame skip value %d!\n", skips);
 			}
 			ConfigureParams.Screen.nFrameSkips = skips;
 			break;
@@ -955,8 +969,8 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			}
 			break;
 			
-		case OPT_SLOWFDC:
-			ok = Opt_Bool(argv[++i], OPT_SLOWFDC, &ConfigureParams.System.bSlowFDC);
+		case OPT_SLOWFLOPPY:
+			ok = Opt_Bool(argv[++i], OPT_SLOWFLOPPY, &ConfigureParams.DiskImage.bSlowFloppy);
 			if (ok)
 			{
 				bLoadAutoSave = FALSE;
@@ -1111,24 +1125,15 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			{
 				ConfigureParams.Sound.bEnableSound = FALSE;
 			}
-			else if (strcasecmp(argv[i], "low") == 0)
-			{
-				ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_LOW;
-				ConfigureParams.Sound.bEnableSound = TRUE;
-			}
-			else if (strcasecmp(argv[i], "med") == 0)
-			{
-				ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
-				ConfigureParams.Sound.bEnableSound = TRUE;
-			}
-			else if (strcasecmp(argv[i], "hi") == 0)
-			{
-				ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
-				ConfigureParams.Sound.bEnableSound = TRUE;
-			}
 			else
 			{
-				return Opt_ShowError(OPT_SOUND, argv[i], "Unsupported sound quality");
+				freq = atoi(argv[i]);
+				if (freq < 6000 || freq > 50066)
+				{
+					return Opt_ShowError(OPT_SOUND, argv[i], "Unsupported sound frequency");
+				}
+				ConfigureParams.Sound.nPlaybackFreq = freq;
+				ConfigureParams.Sound.bEnableSound = TRUE;
 			}
 			break;
 
@@ -1208,6 +1213,10 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			{
 				return Opt_ShowError(OPT_ALERTLEVEL, argv[i], "Unknown alert level!");
 			}
+			break;
+
+		case OPT_RUNVBLS:
+			nRunVBLs = atol(argv[++i]);
 			break;
 		       
 		case OPT_ERROR:

@@ -42,9 +42,10 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "str.h"
 #include "tos.h"
 #include "video.h"
+#include "falcon/dsp.h"
 
 
-#define VERSION_STRING      "1.2.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "devel"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 
@@ -240,6 +241,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		Video_MemorySnapShot_Capture(TRUE);
 		Blitter_MemorySnapShot_Capture(TRUE);
 		DmaSnd_MemorySnapShot_Capture(TRUE);
+		DSP_MemorySnapShot_Capture(TRUE);
 
 		/* And close */
 		MemorySnapShot_CloseFile();
@@ -283,6 +285,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		Video_MemorySnapShot_Capture(FALSE);
 		Blitter_MemorySnapShot_Capture(FALSE);
 		DmaSnd_MemorySnapShot_Capture(FALSE);
+		DSP_MemorySnapShot_Capture(FALSE);
 
 		/* And close */
 		MemorySnapShot_CloseFile();

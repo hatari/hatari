@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+path=${0%/*}
+name=${0##*/}
+
+# example setup for Hatari UI
+$path/$name.py --right "about,|,run,pause,forward,|,reset,|,quit" --embed $*
+exit 0
+
+# test setup without embedding, dupplicate toggles
+$path/$name.py --top "about,run,pause,quit" \
+--panel "Testpanel,pause,>,close" \
+--bottom "sound,|,pause,|,fast,|,Testpanel" \
+$*
+exit 0
+
+# test setup with embedding and all available controls
+$path/$name.py --embed \
+--top "about,|,run,pause,|,reset,debug,|,quit" \
+--left "run,pause,reset,machine,about" \
+--panel "Keys,F1=59,F2=60,F3=61,F4=62,F5=63,F6=64,F7=65,F8=66,F9=67,F10=68,>,Macro=Test,Undo=97,Help=98,Enter=114,>,close" \
+--panel "Misc,fast,|,full,|,sound,>,shot,>,close" \
+--bottom "fast,full,Misc,Keys,input,devices,display,debug,trace" \
+--right "fast,full,Misc,Keys,input,devices,display,Help=98" \
+$*
+exit 0

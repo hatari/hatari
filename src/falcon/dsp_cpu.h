@@ -48,6 +48,9 @@ extern "C" {
 #define DSP_SR_T	0x0d
 #define DSP_SR_LF	0x0f
 
+#define DSP_SP_SE	0x04
+#define DSP_SP_UF	0x05
+
 /* Registers numbers in dsp.registers[] */
 #define DSP_REG_X0	0x04
 #define DSP_REG_X1	0x05
@@ -107,9 +110,6 @@ extern "C" {
 
 /* Functions */
 void dsp56k_init_cpu(void *th_dsp_core);	/* Set dsp_core to use */
-
-int dsp56k_exec_thread(void *th_dsp_core);	/* Thread execution */
-
 void dsp56k_execute_instruction(void);		/* Execute 1 instruction */
 
 #ifdef __cplusplus

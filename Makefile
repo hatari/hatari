@@ -73,3 +73,4 @@ install: all hatari.1.gz
 	$(INSTALL_DATA) hatari.1.gz $(DESTDIR)$(MANDIR)/
 	$(INSTALL_DATA) doc/*.txt doc/*.html $(DESTDIR)$(DOCDIR)/
 	$(INSTALL_DATA) doc/images/*.png $(DESTDIR)$(DOCDIR)/images/
+	$(MAKE) -C python-ui/ install

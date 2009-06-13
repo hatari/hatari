@@ -55,6 +55,10 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 bool bQuitProgram = FALSE;                /* Flag to quit program cleanly */
 bool bEnableDebug = FALSE;                /* Enable debug UI? */
 
+Uint32 nRunVBLs;                          /* Whether and how many VBLS to run before exit */
+static Uint32 nFirstMilliTick;            /* Ticks when VBL counting started */
+static Uint32 nVBLCount;                  /* Frame count */
+
 static bool bEmulationActive = TRUE;      /* Run emulation when started */
 static bool bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
 static bool bIgnoreNextMouseMotion = FALSE;  /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
@@ -88,6 +92,37 @@ void Main_MemorySnapShot_Capture(bool bSave)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Return current time as millisecond for performance measurements.
+ * 
+ * (On Unix only time spent by Hatari itself is counted, on other
+ * platforms less accurate SDL "wall clock".)
+ */
+#if HAVE_SYS_TIMES_H
+#include <unistd.h>
+#include <sys/times.h>
+static Uint32 Main_GetTicks(void)
+{
+	static unsigned int ticks_to_msec = 0;
+	struct tms fields;
+	if (!ticks_to_msec)
+	{
+		ticks_to_msec = sysconf(_SC_CLK_TCK);
+		printf("OS clock ticks / second: %d\n", ticks_to_msec);
+		/* Linux has 100Hz virtual clock so no accuracy loss there */
+		ticks_to_msec = 1000UL / ticks_to_msec;
+	}
+	/* return milliseconds (clock ticks) spent in this process
+	 */
+	times(&fields);
+	return ticks_to_msec * fields.tms_utime;
+}
+#else
+#define Main_GetTicks SDL_GetTicks
+#endif
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Pause emulation, stop sound.  'visualize' should be set TRUE,
  * unless unpause will be called immediately afterwards.
  * 
@@ -102,9 +137,27 @@ bool Main_PauseEmulation(bool visualize)
 	bEmulationActive = FALSE;
 	if (visualize)
 	{
+		if (nFirstMilliTick)
+		{
+			int interval = Main_GetTicks() - nFirstMilliTick;
+			static float previous;
+			float current;
+
+			current = (1000.0 * nVBLCount) / interval;
+			printf("SPEED: %.1f VBL/s (%d/%.1fs), diff=%.1f%%\n",
+			       current, nVBLCount, interval/1000.0,
+			       previous ? 100*(current-previous)/previous : 0.0);
+			nVBLCount = nFirstMilliTick = 0;
+			previous = current;
+		}
+		
 		Statusbar_AddMessage("Emulation paused", 100);
 		/* make sure msg gets shown */
 		Statusbar_Update(sdlscrn);
+
+		if (bGrabMouse && !bInFullScreen)
+			/* Un-grab mouse pointer in windowed mode */
+			SDL_WM_GrabInput(SDL_GRAB_OFF);
 	}
 	return TRUE;
 }
@@ -126,6 +179,10 @@ bool Main_UnPauseEmulation(void)
 
 	/* Cause full screen update (to clear all) */
 	Screen_SetFullUpdate();
+
+	if (bGrabMouse)
+		/* Grab mouse pointer again */
+		SDL_WM_GrabInput(SDL_GRAB_ON);
 	return TRUE;
 }
 
@@ -182,6 +239,18 @@ void Main_WaitOnVbl(void)
 	if (ConfigureParams.System.bFastForward == TRUE
 	        || nDelay < -4*nFrameDuration)
 	{
+		if (ConfigureParams.System.bFastForward == TRUE)
+		{
+			nVBLCount += 1;
+			if (!nFirstMilliTick)
+				nFirstMilliTick = Main_GetTicks();
+			else if (nRunVBLs && nVBLCount >= nRunVBLs)
+			{
+				/* show VBLs/s */
+				Main_PauseEmulation(TRUE);
+				exit(0);
+			}
+		}
 		if (nFrameSkips < ConfigureParams.Screen.nFrameSkips)
 		{
 			nFrameSkips += 1;

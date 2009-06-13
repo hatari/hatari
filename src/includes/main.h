@@ -24,6 +24,14 @@
 #include <SDL_types.h>
 #include <stdbool.h>
 
+#if __GNUC__ >= 3
+# define likely(x)      __builtin_expect (!!(x), 1)
+# define unlikely(x)    __builtin_expect (!!(x), 0)
+#else
+# define likely(x)      (x)
+# define unlikely(x)    (x)
+#endif
+
 #ifndef FALSE
 #define FALSE false
 #define TRUE  true
@@ -37,6 +45,7 @@
 
 #define CALL_VAR(func)  { ((void(*)(void))func)(); }
 
+#define ARRAYSIZE(x) (int)(sizeof(x)/sizeof(x[0]))
 
 /* 68000 operand sizes */
 #define SIZE_BYTE  1
@@ -46,6 +55,7 @@
 
 extern bool bQuitProgram;
 extern bool bEnableDebug;
+extern Uint32 nRunVBLs;
 
 extern void Main_MemorySnapShot_Capture(bool bSave);
 extern bool Main_PauseEmulation(bool visualize);

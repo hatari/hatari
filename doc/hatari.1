@@ -56,6 +56,9 @@ Start the emulator in fullscreen mode
 .B \-w, \-\-window
 Start the emulator in window mode
 .TP 
+.B \-\-grab
+Grab mouse (also) in window mode
+.TP 
 .B \-z, \-\-zoom <x>
 Zoom low resolution (1=no, 2=yes)
 .TP 
@@ -169,8 +172,13 @@ Enable blitter emulation (ST only)
 Falcon DSP emulation (x = none, dummy or emu, Falcon only)
 .TP 
 .B \-\-sound <x>
-Sound quality (off/low/med/hi, off=faster)
-.TP 
+Sound frequency: 6000-50066. "off" disables the sound and speeds up
+the emulation. To prevent extra sound artifacts, the frequency should be
+selected so that it either matches evenly with the STE/TT/Falcon sound
+DMA (6258, 12517, 250033, 50066 Hz) or your sound card frequencies
+(11025, 22050, 44100 or 6000...48000 Hz).  Check what your sound card
+supports.
+.TP
 .B \-k, \-\-keymap <file>
 load keyboard mapping from <file>
 .SH "Debug options"
@@ -197,6 +205,9 @@ Log output level (x=debug/todo/info/warn/error/fatal)
 .TP
 .B \-\-alert-level <x>
 Show dialog for log messages above given level
+.TP
+.B \-\-run-vbls <x>
+Exit after X VBLs
 .SH "COMMANDS"
 The shortcut keys can be configured in the configuration file.
 The default settings are:

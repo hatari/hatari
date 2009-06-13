@@ -15,13 +15,19 @@ const char DlgSound_fileid[] = "Hatari dlgSound.c : " __DATE__ " " __TIME__;
 
 
 #define DLGSOUND_ENABLE     3
-#define DLGSOUND_LOW        5
-#define DLGSOUND_MEDIUM     6
-#define DLGSOUND_HIGH       7
-#define DLGSOUND_RECNAME    11
-#define DLGSOUND_RECBROWSE  12
-#define DLGSOUND_RECORD     13
-#define DLGSOUND_EXIT       14
+#define DLGSOUND_11KHZ      5
+#define DLGSOUND_12KHZ      6
+#define DLGSOUND_16KHZ      7
+#define DLGSOUND_22KHZ      8
+#define DLGSOUND_25KHZ      9
+#define DLGSOUND_32KHZ      10
+#define DLGSOUND_44KHZ      11
+#define DLGSOUND_48KHZ      12
+#define DLGSOUND_50KHZ      13
+#define DLGSOUND_RECNAME    17
+#define DLGSOUND_RECBROWSE  18
+#define DLGSOUND_RECORD     19
+#define DLGSOUND_EXIT       20
 
 
 static char dlgRecordName[35];
@@ -34,10 +40,18 @@ static SGOBJ sounddlg[] =
 	{ SGBOX, 0, 0, 1,1, 36,11, NULL },
 	{ SGTEXT, 0, 0, 13,2, 13,1, "Sound options" },
 	{ SGCHECKBOX, 0, 0, 12,4, 14,1, "Enable sound" },
+
 	{ SGTEXT, 0, 0, 11,6, 14,1, "Playback quality:" },
-	{ SGRADIOBUT, 0, 0, 12,8, 15,1, "Low (11kHz)" },
-	{ SGRADIOBUT, 0, 0, 12,9, 19,1, "Medium (22kHz)" },
-	{ SGRADIOBUT, 0, 0, 12,10, 14,1, "High (44kHz)" },
+	{ SGRADIOBUT, 0, 0, 2,8, 10,1, "11025 Hz" },
+	{ SGRADIOBUT, 0, 0, 2,9, 10,1, "12517 Hz" },
+	{ SGRADIOBUT, 0, 0, 2,10, 10,1, "16000 Hz" },
+	{ SGRADIOBUT, 0, 0, 14,8, 10,1, "22050 Hz" },
+	{ SGRADIOBUT, 0, 0, 14,9, 10,1, "25033 Hz" },
+	{ SGRADIOBUT, 0, 0, 14,10, 10,1, "32000 Hz" },
+	{ SGRADIOBUT, 0, 0, 26,8, 10,1, "44100 Hz" },
+	{ SGRADIOBUT, 0, 0, 26,9, 10,1, "48000 Hz" },
+	{ SGRADIOBUT, 0, 0, 26,10, 10,1, "50066 Hz" },
+
 	{ SGBOX, 0, 0, 1,13, 36,8, NULL },
 	{ SGTEXT, 0, 0, 13,14, 14,1, "Capture YM/WAV" },
 	{ SGTEXT, 0, 0, 2,16, 26,1, "File name (*.wav or *.ym):" },
@@ -49,13 +63,27 @@ static SGOBJ sounddlg[] =
 };
 
 
+static const int nSoundFreqs[] =
+{
+	11025,
+	12517,
+	16000,
+	22050,
+	25033,
+	32000,
+	44100,
+	48000,
+	50066
+};
+
+
 /*-----------------------------------------------------------------------*/
 /*
   Show and process the sound dialog.
 */
 void Dialog_SoundDlg(void)
 {
-	int but;
+	int but, i;
 
 	SDLGui_CenterDlg(sounddlg);
 
@@ -66,15 +94,18 @@ void Dialog_SoundDlg(void)
 	else
 		sounddlg[DLGSOUND_ENABLE].state &= ~SG_SELECTED;
 
-	sounddlg[DLGSOUND_LOW].state &= ~SG_SELECTED;
-	sounddlg[DLGSOUND_MEDIUM].state &= ~SG_SELECTED;
-	sounddlg[DLGSOUND_HIGH].state &= ~SG_SELECTED;
-	if (ConfigureParams.Sound.nPlaybackQuality == PLAYBACK_LOW)
-		sounddlg[DLGSOUND_LOW].state |= SG_SELECTED;
-	else if (ConfigureParams.Sound.nPlaybackQuality == PLAYBACK_MEDIUM)
-		sounddlg[DLGSOUND_MEDIUM].state |= SG_SELECTED;
-	else
-		sounddlg[DLGSOUND_HIGH].state |= SG_SELECTED;
+	for (i = DLGSOUND_11KHZ; i <= DLGSOUND_50KHZ; i++)
+		sounddlg[i].state &= ~SG_SELECTED;
+
+	for (i = 0; i < DLGSOUND_50KHZ-DLGSOUND_11KHZ; i++)
+	{
+		if (ConfigureParams.Sound.nPlaybackFreq > nSoundFreqs[i]-500
+		    && ConfigureParams.Sound.nPlaybackFreq < nSoundFreqs[i]+500)
+		{
+			sounddlg[DLGSOUND_11KHZ + i].state |= SG_SELECTED;
+			break;
+		}
+	}
 
 	File_ShrinkName(dlgRecordName, ConfigureParams.Sound.szYMCaptureFileName, sounddlg[DLGSOUND_RECNAME].w);
 
@@ -119,10 +150,13 @@ void Dialog_SoundDlg(void)
 
 	/* Read values from dialog */
 	ConfigureParams.Sound.bEnableSound = (sounddlg[DLGSOUND_ENABLE].state & SG_SELECTED);
-	if (sounddlg[DLGSOUND_LOW].state & SG_SELECTED)
-		ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_LOW;
-	else if (sounddlg[DLGSOUND_MEDIUM].state & SG_SELECTED)
-		ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_MEDIUM;
-	else
-		ConfigureParams.Sound.nPlaybackQuality = PLAYBACK_HIGH;
+
+	for (i = DLGSOUND_11KHZ; i <= DLGSOUND_50KHZ; i++)
+	{
+		if (sounddlg[i].state & SG_SELECTED)
+		{
+			ConfigureParams.Sound.nPlaybackFreq = nSoundFreqs[i-DLGSOUND_11KHZ];
+			break;
+		}
+	}
 }

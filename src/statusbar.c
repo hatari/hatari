@@ -614,7 +614,11 @@ void Statusbar_Update(SDL_Surface *surf)
 	Statusbar_ShowMessage(surf, currentticks);
 
 	if (nFrameSkips != nOldFrameSkips) {
-		char fscount[2] = { '0' + nFrameSkips, '\0' };
+		char fscount[2] = { '\0', '\0' };
+		if (nFrameSkips < 10)
+			fscount[0] = '0' + nFrameSkips;
+		else
+			fscount[0] = 'X';
 		SDL_FillRect(surf, &FrameSkipsRect, GrayBg);
 		SDLGui_Text(FrameSkipsRect.x, FrameSkipsRect.y, fscount);
 		SDL_UpdateRects(surf, 1, &FrameSkipsRect);

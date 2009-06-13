@@ -362,7 +362,7 @@ void IKBD_Reset_ExeMode ( void )
 
 	Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
 	bByteInTransitToACIA = FALSE;
-	IKBD_AddKeyToKeyboardBuffer(0xF0);		/* Assume OK, return correct code */
+	// IKBD_AddKeyToKeyboardBuffer(0xF0);		/* Assume OK, return correct code */
 	IKBD_AddKeyToKeyboardBuffer(0xF1);		/* [NP] Dragonnels demo needs this */
 }
 
@@ -423,7 +423,7 @@ void IKBD_Reset(bool bCold)
 	IKBD_Reset_ExeMode ();
 
 	/* Add auto-update function to the queue */
-	Int_AddRelativeInterrupt(80000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
+	Int_AddRelativeInterrupt(150000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
 }
 
 
@@ -1030,12 +1030,13 @@ void IKBD_InterruptHandler_ResetTimer(void)
  * 0x80
  * 0x01
  *
- * Performs self test and checks for stuck (closed) keys, if OK returns 0xF0. Otherwise
- * returns break codes for keys
+ * Performs self test and checks for stuck (closed) keys, if OK returns 0xF0 or
+ * 0xF1. Otherwise returns break codes for keys (not emulated).
  */
 static void IKBD_Cmd_Reset(void)
 {
-	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_Reset\n");
+	HATARI_TRACE(HATARI_TRACE_IKBD_CMDS, "IKBD_Cmd_Reset. VBLs=%i framecyc=%i\n",
+	             nVBLs, Cycles_GetCounter(CYCLES_COUNTER_VIDEO));
 
 	/* Check for error series of bytes, eg 0x80,0x01 */
 	if (Keyboard.InputBuffer[1] == 0x01)
@@ -1049,9 +1050,18 @@ static void IKBD_Cmd_Reset(void)
 		KeyboardProcessor.Abs.MaxY = ABS_MAY_Y_ONRESET;
 		KeyboardProcessor.Abs.PrevReadAbsMouseButtons = ABS_PREVBUTTONS;
 
-		Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
-		IKBD_AddKeyToKeyboardBuffer(0xF0);		/* Assume OK, return correct code */
-		IKBD_AddKeyToKeyboardBuffer(0xF1);		/* [NP] Dragonnels demo needs this */
+		/* flush all queued bytes that would be read in $fffc02 */
+		Keyboard.BufferHead = Keyboard.BufferTail = 0;
+
+		/* This command returns either the byte 0xf0 or 0xf1 (depending
+		 * on the version of the IKBD ROM) when the reset has been
+		 * successful. Some notes:
+		 * - Dragonnels demo requires 0xf1 so we use only this value
+		 *   right now.
+		 * - Lotus Turbo Esprit 2 requires at least a delay of 50000
+		 *   cycles or it will crash during start up.
+		 */
+		IKBD_AddKeyToKeyboardBufferWithDelay(0xf1, 50000);
 
 		/* Start timer - some commands are send during this time they may be ignored (see real ST!) */
 		Int_AddRelativeInterrupt(IKBD_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER);
