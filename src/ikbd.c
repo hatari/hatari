@@ -959,7 +959,7 @@ void IKBD_InterruptHandler_AutoSend(void)
 	}
 
 	/* Trigger this auto-update function again after a while */
-	Int_AddRelativeInterrupt(60000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
+	Int_AddRelativeInterrupt(160000, INT_CPU_CYCLE, INTERRUPT_IKBD_AUTOSEND);
 
 	/* We don't send keyboard data automatically within the first few
 	 * VBLs to avoid that TOS gets confused during its boot time */
