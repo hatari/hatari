@@ -35,6 +35,9 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "stMemory.h"
 
+/* set to 1 to enable parsing function tracing / debug output */
+#define DEBUG 0
+
 #define BC_MAX_CONDITION_BREAKPOINTS 16
 #define BC_MAX_CONDITIONS_PER_BREAKPOINT 4
 
@@ -89,6 +92,26 @@ static bc_breakpoint_t BreakPointsCpu[BC_MAX_CONDITION_BREAKPOINTS];
 static bc_breakpoint_t BreakPointsDsp[BC_MAX_CONDITION_BREAKPOINTS];
 static int BreakPointCpuCount;
 static int BreakPointDspCount;
+
+
+/* --------------------- debugging code ------------------- */
+
+#if DEBUG
+/* see parsing code for usage examples */
+static int _traceIndent;
+static void _spaces(void)
+{
+	int spaces = _traceIndent;
+	while(spaces-- > 0) {
+		putchar(' ');	/* fputc(' ',stdout); */
+	}
+}
+#define ENTERFUNC(args) { _traceIndent += 2; _spaces(); printf args ; fflush(stdout); }
+#define EXITFUNC(args) { _spaces(); printf args ; fflush(stdout); _traceIndent -= 2; }
+#else
+#define ENTERFUNC(args)
+#define EXITFUNC(args)
+#endif
 
 
 /* ------------- breakpoint condition checking, internals ------------- */
@@ -262,9 +285,10 @@ int BreakCond_BreakPointCount(bool bForDsp)
 static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
 {
 #warning "TODO: BreakCond_ParseRegister()"
-	fprintf(stderr, "TODO: BreakCond_ParseRegister()\n");
+	ENTERFUNC(("BreakCond_ParseRegister('%s')\n", regname));
 	if (bc_value->use_dsp) {
 		/* check DSP register names */
+		EXITFUNC(("-> false (DSP TODO)\n"));
 		return false;
 	}
 	/* check CPU register names */
@@ -274,8 +298,10 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
 		bc_value->value.addr32 = &DummyRegister;
 		bc_value->size = BC_SIZE_LONG;
 		bc_value->mask = 0xffffffff;
+		EXITFUNC(("-> true (CPU TODO)\n"));
 		return true;
 	}
+	EXITFUNC(("-> false (CPU TODO)\n"));
 	return false;
 }
 
@@ -284,16 +310,21 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
  */
 static bool BreakCond_CheckAddress(Uint32 addr, bc_value_t *bc_value)
 {
+	ENTERFUNC(("BreakCond_CheckAddress(%x)\n", addr));
 	if (bc_value->use_dsp) {
 		if (addr > 0xFFFF) {
+			EXITFUNC(("-> false (DSP)\n"));
 			return false;
 		}
+		EXITFUNC(("-> true (DSP)\n"));
 		return true;
 	}
 	if ((addr > STRamEnd && addr < 0xe00000) || addr > 0xff0000) {
+		EXITFUNC(("-> false (CPU)\n"));
 		return false;
 	}
-	return false;
+	EXITFUNC(("-> true (CPU)\n"));
+	return true;
 }
 
 
@@ -313,17 +344,21 @@ typedef struct {
  */
 static bool BreakCond_ParseNumber(parser_state_t *pstate, const char *value, Uint32 *number)
 {
+	ENTERFUNC(("BreakCond_ParseNumber('%s'), arg:%d\n", value, pstate->arg));
 	if (value[0] == '$') {
-		if (sscanf(value, "%x", number) != 1) {
+		if (sscanf(value+1, "%x", number) != 1) {
 			pstate->error = "invalid hexadecimal value";
+			EXITFUNC(("-> false\n"));
 			return false;
 		}
 	} else {
 		if (sscanf(value, "%u", number) != 1) {
 			pstate->error = "invalid value";
+			EXITFUNC(("-> false\n"));
 			return false;
 		}
 	}
+	EXITFUNC(("-> number:%x, true\n", *number));
 	return true;
 }
 
@@ -337,7 +372,10 @@ static bool BreakCond_ParseSizeModifier(parser_state_t *pstate, bc_value_t *bc_v
 {
 	int size;
 
-	if (strcmp(pstate->argv[pstate->arg], ".") != 0) {
+	ENTERFUNC(("BreakCond_ParseSizeModifier()\n"));
+	if (pstate->arg+2 > pstate->argc ||
+	    strcmp(pstate->argv[pstate->arg], ".") != 0) {
+		EXITFUNC(("arg:%d -> true (missing)\n", pstate->arg));
 		return true;
 	}
 	pstate->arg++;
@@ -353,13 +391,17 @@ static bool BreakCond_ParseSizeModifier(parser_state_t *pstate, bc_value_t *bc_v
 		break;
 	default:
 		pstate->error = "invalid size modifier";
+		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
 	if (pstate->argv[pstate->arg][1]) {
 		pstate->error = "invalid size modifier";
+		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
 	bc_value->size = size;
+	EXITFUNC(("arg:%d -> size:%d, true\n", pstate->arg, size));
+	pstate->arg++;
 	return true;
 }
 
@@ -371,13 +413,19 @@ static bool BreakCond_ParseSizeModifier(parser_state_t *pstate, bc_value_t *bc_v
  */
 static bool BreakCond_ParseMaskModifier(parser_state_t *pstate, bc_value_t *bc_value)
 {
-	if (strcmp(pstate->argv[pstate->arg], "&") != 0) {
+	ENTERFUNC(("BreakCond_ParseMaskModifier()\n"));
+	if (pstate->arg+2 > pstate->argc ||
+	    strcmp(pstate->argv[pstate->arg], "&") != 0) {
+		EXITFUNC(("arg:%d -> true (missing)\n", pstate->arg));
 		return true;
 	}
 	pstate->arg++;
 	if (!BreakCond_ParseNumber(pstate, pstate->argv[pstate->arg], &(bc_value->mask))) {
+		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
+	EXITFUNC(("arg:%d -> true (%x)\n", pstate->arg, bc_value->mask));
+	pstate->arg++;
 	return true;
 }
 
@@ -393,6 +441,12 @@ bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 	const char *value;
 	int skip = 1;
 
+	ENTERFUNC(("BreakCond_Value()\n"));
+	if (pstate->arg >= pstate->argc) {
+		pstate->error = "value missing";
+		EXITFUNC(("arg:%d -> false\n", pstate->arg));
+		return false;
+	}
 	/* parse indirection */
 	if (pstate->arg+3 <= pstate->argc) {
 		if (strcmp(pstate->argv[pstate->arg+0], "(") == 0 &&
@@ -402,8 +456,8 @@ bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 			skip = 2;
 		}
 	}
-	
-	/* set default modifiers */
+
+	/* set default modifiers, register parsing can change them later */
 	bc_value->size = BC_SIZE_LONG;
 	bc_value->mask = 0xffffffff;
 
@@ -415,35 +469,39 @@ bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 			bc_value->type = BC_TYPE_ADDRESS;
 		} else {
 			pstate->error = "invalid register name";
+			EXITFUNC(("arg:%d -> false\n", pstate->arg));
 			return false;
 		}
 	} else {
 		/* a number */
 		bc_value->type = BC_TYPE_NUMBER;
 		if (!BreakCond_ParseNumber(pstate, value, &number)) {
+			EXITFUNC(("arg:%d -> false\n", pstate->arg));
 			return false;
 		}
 		/* suitable as emulated memory address (indirect)? */
 		if (bc_value->is_indirect &&
 		    !BreakCond_CheckAddress(number, bc_value)) {
 			pstate->error = "invalid address";
+			EXITFUNC(("arg:%d -> false\n", pstate->arg));
 			return false;
 		}
 	}
 	pstate->arg += skip;
 
-	/* no extra value modifiers? */
-	if (pstate->arg+2 >= pstate->argc) {
-		return true;
-	}
+	/* parse modifiers */
 	if (!BreakCond_ParseSizeModifier(pstate, bc_value)) {
 		pstate->error = "invalid value size modifier";
+		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
 	if (!BreakCond_ParseMaskModifier(pstate, bc_value)) {
 		pstate->error = "invalid value mask";
+		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
+	EXITFUNC(("arg:%d -> true (%s value)\n", pstate->arg,
+		  (bc_value->is_indirect ? "indirect" : "direct")));
 	return true;
 }
 
@@ -457,8 +515,10 @@ char BreakCond_ParseComparison(parser_state_t *pstate)
 {
 	const char *comparison;
 	
+	ENTERFUNC(("BreakCond_ParseComparison(), arg:%d\n", pstate->arg));
 	if (pstate->arg >= pstate->argc) {
 		pstate->error = "breakpoint comparison missing";
+		EXITFUNC(("-> false\n"));
 		return false;
 	}
 	comparison = pstate->argv[pstate->arg];
@@ -470,18 +530,22 @@ char BreakCond_ParseComparison(parser_state_t *pstate)
 		break;
 	default:
 		pstate->error = "invalid comparison character";
+		EXITFUNC(("-> false\n"));
 		return false;
 	}
 	if (comparison[1]) {
 		pstate->error = "trailing comparison character(s)";
+		EXITFUNC(("-> false\n"));
 		return false;
 	}
 
 	pstate->arg++;
 	if (pstate->arg >= pstate->argc) {
 		pstate->error = "right side missing";
+		EXITFUNC(("-> false\n"));
 		return false;
 	}
+	EXITFUNC(("-> '%c'\n", *comparison));
 	return *comparison;
 }
 
@@ -489,19 +553,17 @@ char BreakCond_ParseComparison(parser_state_t *pstate)
 /**
  * Parse given breakpoint conditions and append them to breakpoints.
  * Modify pstate according to parsing (arg index and error string).
- * Return true for success and false for error.
+ * Return number of added conditions or zero for failure.
  */
-bool BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
-			      bc_condition_t *conditions, int *ccount)
+int BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
+			     bc_condition_t *conditions, int ccount)
 {
 	bc_condition_t condition;
 
-	if (pstate->arg >= pstate->argc) {
-		pstate->error = "condition(s) missing";
-		return false;
-	}
-	if (*ccount >= BC_MAX_CONDITIONS_PER_BREAKPOINT) {
-		pstate->error = "no free breakpoint conditions left";
+	ENTERFUNC(("BreakCond_ParseCondition(...)\n"));
+	if (ccount >= BC_MAX_CONDITIONS_PER_BREAKPOINT) {
+		pstate->error = "max number of conditions exceeded";
+		EXITFUNC(("-> false (no conditions free)\n"));
 		return false;
 	}
 
@@ -514,32 +576,42 @@ bool BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 
 	/* parse condition */
 	if (!BreakCond_ParseValue(pstate, &(condition.lvalue))) {
+		EXITFUNC(("-> false\n"));
 		return false;
 	}
 	condition.comparison = BreakCond_ParseComparison(pstate);
 	if (!condition.comparison) {
+		EXITFUNC(("-> false\n"));
 		return false;
 	}
 	if (!BreakCond_ParseValue(pstate, &(condition.rvalue))) {
+		EXITFUNC(("-> false\n"));
 		return false;
 	}
 	
-	/* done? */
+	/* new condition */
+	conditions[ccount++] = condition;
+
+	/* continue with next condition? */
 	if (pstate->arg == pstate->argc) {
-		conditions[(*ccount)++] = condition;
+		EXITFUNC(("-> true (condition %d)\n", ccount-1));
 		return true;
 	}
 	if (strcmp(pstate->argv[pstate->arg], "&&") != 0) {
 		pstate->error = "trailing content for breakpoint condition";
+		EXITFUNC(("-> false\n"));
 		return false;
 	}
+	pstate->arg++;
 
-	/* recurse conditions parsing (conditions applied in reverse order) */
-	if (!BreakCond_ParseCondition(pstate, bForDsp, conditions, ccount)) {
+	/* recurse conditions parsing */
+	ccount = BreakCond_ParseCondition(pstate, bForDsp, conditions, ccount);
+	if (!ccount) {
+		EXITFUNC(("-> false\n"));
 		return false;
 	}
-	conditions[(*ccount)++] = condition;
-	return true;
+	EXITFUNC(("-> true (condition %d)\n", ccount-1));
+	return ccount;
 }
 
 
@@ -565,8 +637,8 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 
 	memset(pstate, 0, sizeof(parser_state_t));
 
-	/* make sure there's enough space also for normalization */
-	normalized = malloc(2*strlen(expression));
+	/* _minimum_ safe size for normalized expression is 2x+1 */
+	normalized = malloc(2*strlen(expression)+1);
 	if (!normalized) {
 		pstate->error = "alloc failed";
 		return NULL;
@@ -605,7 +677,7 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 		}
 		/* validate & copy other characters */
 		if (!sep) {
-			if (!(isalnum(*src) || isblank(*src))) {
+			if (!(isalnum(*src) || isblank(*src) || *src == '$')) {
 				pstate->error = "invalid character";
 				pstate->arg = src-expression;
 				free(normalized);
@@ -649,6 +721,13 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 	}
 	assert(i == tokens);
 	pstate->argc = tokens;
+#if DEBUG
+	fprintf(stderr, "args->");
+	for (i = 0; i < tokens; i++) {
+		fprintf(stderr, " %d: %s,", i, pstate->argv[i]);
+	}
+	fprintf(stderr, "\n");
+#endif
 	return normalized;
 }
 
@@ -687,7 +766,7 @@ bool BreakCond_Parse(const char *expression, bool bForDsp)
 	const char *name;
 	char *normalized;
 	int *bcount;
-	bool ok = false;
+	int ccount;
 
 	bcount = BreakCond_GetListInfo(&bp, &name, bForDsp);
 	if (*bcount >= BC_MAX_CONDITION_BREAKPOINTS) {
@@ -699,16 +778,19 @@ bool BreakCond_Parse(const char *expression, bool bForDsp)
 	normalized = BreakCond_TokenizeExpression(expression, &pstate);
 	if (normalized) {
 		bp->expression = normalized;
-		ok = BreakCond_ParseCondition(&pstate, bForDsp,
-					      bp->conditions, &(bp->ccount));
+		ccount = BreakCond_ParseCondition(&pstate, bForDsp,
+						  bp->conditions, 0);
+		bp->ccount = ccount;
+	} else {
+		ccount = 0;
 	}
 	if (pstate.argv) {
 		free(pstate.argv);
 	}
-	if (ok) {
+	if (ccount > 0) {
 		(*bcount)++;
-		fprintf(stderr, "%d. %s condition breakpoint added.\n",
-			*bcount, name);
+		fprintf(stderr, "%s condition breakpoint %d added.\n",
+			name, *bcount);
 	} else {
 		if (normalized) {
 			int offset, i = 0;
@@ -733,7 +815,7 @@ bool BreakCond_Parse(const char *expression, bool bForDsp)
 				expression, pstate.arg+2, '^', pstate.error);
 		}
 	}
-	return ok;
+	return (ccount > 0);
 }
 
 
@@ -815,17 +897,20 @@ int main(int argc, const char *argv[])
 		"20=(a0.w)",
 		"()&=d0",
 		"d0=().w",
+		"255 & 3 = (d0) & && 2 = 2",
+		/* more than BC_MAX_CONDITIONS_PER_BREAKPOINT conditions */
+		"1=1 && 2=2 && 3=3 && 4=4 && 5=5",
 		NULL
 	};
 	const char *should_pass[] = {
 		" 200 = 200 ",
-		" ( 200 ) = ( 200 ) ",
+		" ( 200 ) = ( $200 ) ",
 		"a0=d0",
 		"(a0)=(d0)",
 		"(d0).w=(a0).b",
 		"(a0).w&3=(d0)&&d0=1",
-		" ( a 0 ) . w  &&  3 = ( d 0 )  &&  d 0 = 1 ",
-		"1=d0 && (d0)&2=(a0).w",
+		" ( a 0 ) . w  &  1 = ( d 0 ) & 1 &&  d 0 = 3 ",
+		"a0=1 && (d0)&2=(a0).w && ($00ff00).w&1=1",
 		NULL
 	};
 	const char *test;
@@ -844,10 +929,6 @@ int main(int argc, const char *argv[])
 	}
 	tests += i;
 	fprintf(stderr, "-----------------\n\n");
-	
-	BreakCond_List(use_dsp);
-	BreakCond_Remove(0, use_dsp);
-	BreakCond_Remove(1, use_dsp);
 	BreakCond_List(use_dsp);
 	
 	fprintf(stderr, "\nShould PASS:\n");
@@ -860,8 +941,9 @@ int main(int argc, const char *argv[])
 	}
 	tests += i;
 	fprintf(stderr, "-----------------\n\n");
-
 	BreakCond_List(use_dsp);
+	fprintf(stderr, "\n");
+
 	/* try removing everything from alternate ends */
 	while ((count = BreakCond_BreakPointCount(use_dsp))) {
 		BreakCond_Remove(count, use_dsp);
