@@ -1284,40 +1284,41 @@ void MFP_GPIP_WriteByte(void)
  */
 void MFP_ActiveEdge_WriteByte(void)
 {
-	int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-	int nLineCycles = nFrameCycles % nCyclesPerLine;
+	int FrameCycles, HblCounterVideo, LineCycles;
 	int LineTimerBCycle_old = LineTimerBCycle;
+
+	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	M68000_WaitState(4);
 
 	/* 0 -> 1, timer B is now counting start of line events (cycle 56+28) */
 	if ( ( ( MFP_AER & ( 1 << 3 ) ) == 0 ) && ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) != 1 ) )
 	{
-		LineTimerBCycle = Video_TimerB_GetPos();
+		LineTimerBCycle = Video_TimerB_GetPos ( HblCounterVideo );
 
 		HATARI_TRACE ( ( HATARI_TRACE_VIDEO_HBL | HATARI_TRACE_MFP_WRITE ) , "mfp/video AER bit 3 0->1, timer B triggers on start of line, old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
 					LineTimerBCycle_old , LineTimerBCycle ,
-					nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+					FrameCycles, LineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 
 	/* 1 -> 0, timer B is now counting end of line events (cycle 376+28) */
 	else if ( ( ( MFP_AER & ( 1 << 3 ) ) != 0 ) && ( ( IoMem[0xfffa03] & ( 1 << 3 ) ) == 0 ) )
 	{
-		LineTimerBCycle = Video_TimerB_GetPos();
+		LineTimerBCycle = Video_TimerB_GetPos ( HblCounterVideo );
 
 		HATARI_TRACE ( ( HATARI_TRACE_VIDEO_HBL | HATARI_TRACE_MFP_WRITE ) , "mfp/video AER bit 3 1->0, timer B triggers on end of line, old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
 					LineTimerBCycle_old , LineTimerBCycle ,
-					nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+					FrameCycles, LineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 
 	/* Timer B position changed, update the next interrupt */
 	if ( LineTimerBCycle_old != LineTimerBCycle )
 	{
-		if ( nLineCycles < LineTimerBCycle )		/* changed before the next timer B event on this line */
-			Int_AddRelativeInterrupt ( LineTimerBCycle - nLineCycles ,
+		if ( LineCycles < LineTimerBCycle )		/* changed before the next timer B event on this line */
+			Int_AddRelativeInterrupt ( LineTimerBCycle - LineCycles ,
 					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE );
 		else						/* next timer B event will be on next line */
-			Int_AddRelativeInterrupt ( LineTimerBCycle - nLineCycles + nCyclesPerLine,
+			Int_AddRelativeInterrupt ( LineTimerBCycle - LineCycles + nCyclesPerLine,
 					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE );
 	}
 

@@ -142,35 +142,41 @@ extern int VblJitterArray[];
 extern int VblJitterArrayPending[];
 
 
-extern void Video_SetSystemTimings(void);
-extern void Video_Reset(void);
-extern void Video_Reset_Glue(void);
-extern void Video_MemorySnapShot_Capture(bool bSave);
-extern void Video_GetTTRes(int *width, int *height, int *bpp);
-extern void Video_AddInterruptHBL (int Pos);
-extern void Video_AddInterruptTimerB (int Pos);
-extern void Video_StartInterrupts(void);extern void Video_InterruptHandler_VBL(void);
-extern void Video_InterruptHandler_HBL(void);
-extern void Video_InterruptHandler_EndLine(void);
-extern int Video_HBL_GetPos(void);
-extern int Video_TimerB_GetPos(void);
-extern void Video_SetScreenRasters(void);
+/*--------------------------------------------------------------*/
+/* Functions prototypes						*/
+/*--------------------------------------------------------------*/
 
-extern void    Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles );
-extern void    Video_GetPosition ( int *pFrameCycles , int *pHBL , int *pLineCycles );
-extern void    Video_GetPosition_OnWriteAccess ( int *pFrameCycles , int *pHBL , int *pLineCycles );
-extern void    Video_GetPosition_OnReadAccess ( int *pFrameCycles , int *pHBL , int *pLineCycles );
+extern void	Video_MemorySnapShot_Capture(bool bSave);
 
+extern void 	Video_Reset(void);
+extern void	Video_Reset_Glue(void);
+
+extern void	Video_ConvertPosition( int FrameCycles , int *pHBL , int *pLineCycles );
+extern void	Video_GetPosition( int *pFrameCycles , int *pHBL , int *pLineCycles );
+extern void	Video_GetPosition_OnWriteAccess( int *pFrameCycles , int *pHBL , int *pLineCycles );
+extern void	Video_GetPosition_OnReadAccess( int *pFrameCycles , int *pHBL , int *pLineCycles );
+
+extern void 	Video_Sync_WriteByte(void);
+
+extern int	Video_TimerB_GetPos( int LineNumber );
+
+extern void	Video_InterruptHandler_HBL(void);
+extern void	Video_InterruptHandler_EndLine(void);
+
+extern void	Video_SetScreenRasters(void);
+extern void	Video_GetTTRes(int *width, int *height, int *bpp);
+
+extern void	Video_StartInterrupts(void);
+extern void	Video_InterruptHandler_VBL ( void );
+
+extern void Video_ScreenBaseSTE_WriteByte(void);
 extern void Video_ScreenCounter_ReadByte(void);
+extern void Video_ScreenCounter_WriteByte(void);
 extern void Video_Sync_ReadByte(void);
 extern void Video_BaseLow_ReadByte(void);
 extern void Video_LineWidth_ReadByte(void);
 extern void Video_ShifterMode_ReadByte(void);
 extern void Video_HorScroll_Read(void);
-
-extern void Video_ScreenBaseSTE_WriteByte(void);
-extern void Video_ScreenCounter_WriteByte(void);
-extern void Video_Sync_WriteByte(void);
 extern void Video_LineWidth_WriteByte(void);
 extern void Video_Color0_WriteWord(void);
 extern void Video_Color1_WriteWord(void);
