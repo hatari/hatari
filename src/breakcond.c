@@ -150,23 +150,22 @@ static Uint32 BreakCond_ReadSTMemory(Uint32 addr, bc_size_t size)
  */
 static Uint32 BreakCond_GetValue(const bc_value_t *bc_value)
 {
-	bc_addressing_t type = bc_value->type;
 	bc_size_t size = bc_value->size;
 	Uint32 value;
 	
-	switch (type) {
+	switch (bc_value->type) {
 	case BC_TYPE_NUMBER:
 		value = bc_value->value.number;
 		break;
 	case BC_TYPE_ADDRESS:
 		switch (size) {
-		case 4:
+		case BC_SIZE_LONG:
 			value = *(bc_value->value.addr32);
 			break;
-		case 2:
+		case BC_SIZE_WORD:
 			value = *(bc_value->value.addr16);
 			break;
-		case 1:
+		case BC_SIZE_BYTE:
 			value = *(bc_value->value.addr8);
 			break;
 		default:
@@ -239,6 +238,9 @@ static bool BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count)
 	
 	for (i = 0; i < count; bp++, i++) {
 		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
+#if DEBUG
+			fprintf(stderr, "Breakpoint '%s' matched.\n", bp->expression);
+#endif
 			return true;
 		}
 	}
@@ -903,8 +905,8 @@ int main(int argc, const char *argv[])
 		NULL
 	};
 	const char *should_pass[] = {
-		" 200 = 200 ",
-		" ( 200 ) = ( $200 ) ",
+		" 200 = ( $ 200 ) ",
+		" ( 200 ) = $200 ",
 		"a0=d0",
 		"(a0)=(d0)",
 		"(d0).w=(a0).b",
@@ -944,6 +946,11 @@ int main(int argc, const char *argv[])
 	BreakCond_List(use_dsp);
 	fprintf(stderr, "\n");
 
+	STRam[0] = 1; /* make indirect equality checks for zeroed RAM fail */
+	if (BreakCond_MatchCpu() || BreakCond_MatchDsp()) {
+		fprintf(stderr, "-> Breakpoints matched\n\n");
+	}
+
 	/* try removing everything from alternate ends */
 	while ((count = BreakCond_BreakPointCount(use_dsp))) {
 		BreakCond_Remove(count, use_dsp);
@@ -961,6 +968,10 @@ int main(int argc, const char *argv[])
 		}
 		fprintf(stderr, "-----------------\n\n");
 		BreakCond_List(use_dsp);
+
+		if (BreakCond_MatchCpu() || BreakCond_MatchDsp()) {
+			fprintf(stderr, "-> Breakpoints matched\n\n");
+		}
 	}
 	if (errors) {
 		fprintf(stderr, "\n***Detected %d ERRORs in %d automated tests!***\n\n",
