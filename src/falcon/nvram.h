@@ -39,12 +39,12 @@
 #define NVRAM_CHKSUM1	62
 #define NVRAM_CHKSUM2	63
 
-void NvRam_Reset(void);
-void NvRam_Init(void);
-void NvRam_UnInit(void);
-void NvRam_Select_ReadByte(void);
-void NvRam_Select_WriteByte(void);
-void NvRam_Data_ReadByte(void);
-void NvRam_Data_WriteByte(void);
+extern void NvRam_Reset(void);
+extern void NvRam_Init(void);
+extern void NvRam_UnInit(void);
+extern void NvRam_Select_ReadByte(void);
+extern void NvRam_Select_WriteByte(void);
+extern void NvRam_Data_ReadByte(void);
+extern void NvRam_Data_WriteByte(void);
 
 #endif /* HATARI_NVRAM_H */

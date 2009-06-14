@@ -5,10 +5,10 @@
   */
 
 
-void save_u32(uae_u32 data);
-void save_u16(uae_u16 data);
-uae_u32 restore_u32(void);
-uae_u16 restore_u16(void);
+extern void save_u32(uae_u32 data);
+extern void save_u16(uae_u16 data);
+extern uae_u32 restore_u32(void);
+extern uae_u16 restore_u16(void);
 
-void restore_fpu(void);
-void save_fpu(void);
+extern void restore_fpu(void);
+extern void save_fpu(void);
