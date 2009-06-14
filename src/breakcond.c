@@ -8,24 +8,8 @@
 
   breakcond.c - code for breakpoint conditions that can check variable
   and memory values against each other, mask them etc. before deciding
-  whether the breakpoint should be triggered.  The syntax is:
-
-  breakpoint = <expression> [ && <expression> [ && <expression> ] ... ]
-  expression = <value>[.width] [& <number>] <condition> <value>[.width]
-
-  where:
-  	value = [(] <register-name | number> [)]
-  	number = [$]<digits>
-  	condition = '<' | '>' | '=' | '!'
-  	width = 'b' | 'w' | 'l'
-
-  If the value is in parenthesis like in "($ff820)" or "(a0)", then
-  the used value will be read from the memory address pointed by it.
-  If value is prefixed with '$', it's a hexadecimal, otherwise it's
-  decimal value.
-
-  Example:
-  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0.l = 123
+  whether the breakpoint should be triggered.  See BreakCond_Help()
+  for the syntax.
 */
 const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 
@@ -33,7 +17,10 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include <stdlib.h>
 #include "config.h"
 #include "main.h"
+#include "dsp.h"
+#include "debugui.h"
 #include "stMemory.h"
+#include "breakcond.h"
 
 /* set to 1 to enable parsing function tracing / debug output */
 #define DEBUG 0
@@ -226,15 +213,13 @@ static bool BreakCond_MatchConditions(const bc_condition_t *condition, int count
 /**
  * Return true if any of the given condition breakpoints match
  */
-static bool BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count)
+static bool BreakCond_MatchBreakPoints(const bc_breakpoint_t *bp, int count)
 {
 	int i;
 	
 	for (i = 0; i < count; bp++, i++) {
 		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
-#if DEBUG
 			fprintf(stderr, "Breakpoint '%s' matched.\n", bp->expression);
-#endif
 			return true;
 		}
 	}
@@ -280,24 +265,33 @@ int BreakCond_BreakPointCount(bool bForDsp)
  */
 static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
 {
-#warning "TODO: BreakCond_ParseRegister()"
+	Uint32 *regaddr;
+
+#warning "TODO: BreakCond_ParseRegister(): support special registers?"
 	ENTERFUNC(("BreakCond_ParseRegister('%s')\n", regname));
 	if (bc_value->use_dsp) {
+		size_t bits;
+		bits = DSP_GetRegisterAddress(regname, &regaddr);
+		if (bits) {
+			bc_value->value.addr32 = regaddr;
+			bc_value->bits = bits;  /* TODO: or 32? */
+			bc_value->mask = BITMASK(bits);
+			EXITFUNC(("-> true (DSP)\n"));
+			return true;
+		}
 		/* check DSP register names */
-		EXITFUNC(("-> false (DSP TODO)\n"));
+		EXITFUNC(("-> false (unsupported DSP register?)\n"));
 		return false;
 	}
-	/* check CPU register names */
-	if (strcmp(regname, "a0") == 0 || strcmp(regname, "d0") == 0) {
-		/* DUMMY */
-		extern Uint32 DummyRegister;
-		bc_value->value.addr32 = &DummyRegister;
+	regaddr = DebugUI_GetCpuRegisterAddress(regname);
+	if (regaddr) {
+		bc_value->value.addr32 = regaddr;
 		bc_value->bits = 32;
 		bc_value->mask = 0xffffffff;
-		EXITFUNC(("-> true (CPU TODO)\n"));
+		EXITFUNC(("-> true (CPU)\n"));
 		return true;
 	}
-	EXITFUNC(("-> false (CPU TODO)\n"));
+	EXITFUNC(("-> false (unsupported 16-bit CPU SR register?)\n"));
 	return false;
 }
 
@@ -803,13 +797,11 @@ static int* BreakCond_GetListInfo(bc_breakpoint_t **bp,
 }
 
 
-/* ------------- breakpoint condition parsing, public API ------------ */
-
 /**
  * Parse given breakpoint expression and store it.
  * Return true for success and false for failure.
  */
-bool BreakCond_Parse(const char *expression, bool bForDsp)
+static bool BreakCond_Parse(const char *expression, bool bForDsp)
 {
 	parser_state_t pstate;
 	bc_breakpoint_t *bp;
@@ -872,7 +864,7 @@ bool BreakCond_Parse(const char *expression, bool bForDsp)
 /**
  * List condition breakpoints
  */
-void BreakCond_List(bool bForDsp)
+static void BreakCond_List(bool bForDsp)
 {
 	const char *name;
 	bc_breakpoint_t *bp;
@@ -886,14 +878,14 @@ void BreakCond_List(bool bForDsp)
 
 	fprintf(stderr, "Conditional %s breakpoints:\n", name);
 	for (i = 1; i <= bcount; bp++, i++) {
-		fprintf(stderr, "%d: %s\n", i, bp->expression);
+		fprintf(stderr, "%3d: %s\n", i, bp->expression);
 	}
 }
 
 /**
  * Remove condition breakpoint at given position
  */
-void BreakCond_Remove(int position, bool bForDsp)
+static bool BreakCond_Remove(int position, bool bForDsp)
 {
 	const char *name;
 	bc_breakpoint_t *bp;
@@ -902,7 +894,7 @@ void BreakCond_Remove(int position, bool bForDsp)
 	bcount = BreakCond_GetListInfo(&bp, &name, bForDsp);
 	if (position < 1 || position > *bcount) {
 		fprintf(stderr, "ERROR: No such %s breakpoint.\n", name);
-		return;
+		return false;
 	}
 	offset = position - 1;
 	fprintf(stderr, "Removed %s breakpoint %d:\n  %s\n",
@@ -913,25 +905,145 @@ void BreakCond_Remove(int position, bool bForDsp)
 			(*bcount-position)*sizeof(bc_breakpoint_t));
 	}
 	(*bcount)--;
+	return true;
+}
+
+
+/**
+ * help
+ */
+static void BreakCond_Help(void)
+{
+	fprintf(stderr,
+"  breakpoint = <expression> [ && <expression> [ && <expression> ] ... ]\n"
+"  expression = <value>[.width] [& <number>] <condition> <value>[.width]\n"
+"\n"
+"  where:\n"
+"  	value = [(] <register-name | number> [)]\n"
+"  	number = [$]<digits>\n"
+"  	condition = '<' | '>' | '=' | '!'\n"
+"  	width = 'b' | 'w' | 'l'\n"
+"\n"
+"  If the value is in parenthesis like in '($ff820)' or '(a0)', then\n"
+"  the used value will be read from the memory address pointed by it.\n"
+"  If value is prefixed with '$', it's a hexadecimal, otherwise it's\n"
+"  decimal value.\n"
+"\n"
+"  Example:\n"
+"  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0.l = 123\n\n");
+}
+
+
+/* ------------- breakpoint condition parsing, public API ------------ */
+
+/**
+ * Parse given DebugUI command for Dsp and act accordingly
+ */
+bool BreakCond_Command(const char *expression, bool bForDsp)
+{
+	unsigned int position;
+	const char *end;
+	
+	if (!expression) {
+		BreakCond_List(bForDsp);
+		return true;
+	}
+	while (*expression == ' ') {
+		expression++;
+	}
+	if (strncmp(expression, "help", 4) == 0) {
+		BreakCond_Help();
+		return true;
+	}
+	end = expression;
+	while (isdigit(*end)) {
+		end++;
+	}
+	if (end > expression && *end == '\0' &&
+	    sscanf(expression, "%u", &position) == 1) {
+		return BreakCond_Remove(position, bForDsp);
+	}
+	return BreakCond_Parse(expression, bForDsp);
 }
 
 
 /* ---------------------------- test code ---------------------------- */
 
 /* Test building can be done in hatari/src/ with:
- * gcc -I.. -Iincludes -Iuae-cpu $(sdl-config --cflags) -O -Wall -g breakcond.c
+ * gcc -DTEST -I.. -Iincludes -Iuae-cpu -Ifalcon $(sdl-config --cflags) -O -Wall -g breakcond.c
  * 
- * TODO: remove test stuff once done testing
+ * TODO: move test stuff elsewhere after code works fully
  */
-#if 1
+#if TEST
+
+/* fake RAM */
 Uint8 STRam[16*1024*1024];
 Uint32 STRamEnd = 4*1024*1024;
+/* fake registers */
+static struct {
+	Uint32 d0;
+	Uint32 d1;
+	Uint32 d2;
+	Uint32 d3;
+	Uint32 d4;
+	Uint32 d5;
+	Uint32 d6;
+	Uint32 d7;
+	Uint32 a0;
+	Uint32 a1;
+	Uint32 a2;
+	Uint32 a3;
+	Uint32 a4;
+	Uint32 a5;
+	Uint32 a6;
+	Uint32 a7;
+	Uint32 pc;
+	Uint16 sr;
+} CpuRegs;
 
-Uint32 DummyRegister;
+/* emulate DSP register accessor */
+size_t DSP_GetRegisterAddress(const char *regname, Uint32 **addr)
+{
+	const char *regnames[] = {
+		"a0", "a1", "a2", "b0", "b1", "b2", "la", "lc",
+		"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7",
+		"n0", "n1", "n2", "n3", "n4", "n5", "n6", "n7",
+		"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+		"x0", "x1", "y0", "y1" /* PC, SR, SP, OMR, SSH, SSL */
+	};
+	static Uint32 registers[40];
+	int i;
+	for (i = 0; i < ARRAYSIZE(regnames); i++) {
+		if (strcmp(regname, regnames[i]) == 0) {
+			*addr = &(registers[i]);
+			return 32;
+		}
+	}
+	return 0;
+}
+
+/* emulate AUE register accessor */
+Uint32 *DebugUI_GetCpuRegisterAddress(const char *regname)
+{
+	const char *regnames[] = {
+		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
+		"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
+		"pc" /* , "sr" */
+	};
+	int i;
+	for (i = 0; i < ARRAYSIZE(regnames); i++) {
+		if (strcmp(regname, regnames[i]) == 0) {
+			return (&CpuRegs.d0)+i;
+		}
+	}
+	return NULL;
+}
+
 
 int main(int argc, const char *argv[])
 {
 	const char *should_fail[] = {
+		/* syntax & register name errors */
 		"",
 		" = ",
 		" a0 d0 ",
@@ -980,7 +1092,7 @@ int main(int argc, const char *argv[])
 	fprintf(stderr, "\nShould FAIL:\n");
 	for (i = 0; (test = should_fail[i]); i++) {
 		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
-		if (BreakCond_Parse(test, use_dsp)) {
+		if (BreakCond_Command(test, use_dsp)) {
 			fprintf(stderr, "***ERROR***: should have failed\n");
 			errors++;
 		}
@@ -992,7 +1104,7 @@ int main(int argc, const char *argv[])
 	fprintf(stderr, "\nShould PASS:\n");
 	for (i = 0; (test = should_pass[i]); i++) {
 		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
-		if (!BreakCond_Parse(test, use_dsp)) {
+		if (!BreakCond_Command(test, use_dsp)) {
 			fprintf(stderr, "***ERROR***: should have passed\n");
 			errors++;
 		}
@@ -1002,9 +1114,19 @@ int main(int argc, const char *argv[])
 	BreakCond_List(use_dsp);
 	fprintf(stderr, "\n");
 
-	STRam[0] = 1; /* make indirect equality checks for zeroed RAM fail */
-	if (BreakCond_MatchCpu() || BreakCond_MatchDsp()) {
-		fprintf(stderr, "-> Breakpoints matched\n\n");
+	/* fail indirect equality checks with zerod regs */
+	memset(STRam, 0, sizeof(STRam));
+	STRam[0] = 1;
+	/* 200<($200) fail */
+	STRam[0x200] = 100;
+	STRam[200] = 0x20;
+	/* d0=d1 pass */
+	CpuRegs.d0 = 4;
+	CpuRegs.d1 = 4;
+	CpuRegs.a0 = 8;
+	while ((i = BreakCond_MatchCpu())) {
+		fprintf(stderr, "Removing matching breakpoint.\n");
+		BreakCond_Remove(i, use_dsp);
 	}
 
 	/* try removing everything from alternate ends */
@@ -1020,13 +1142,13 @@ int main(int argc, const char *argv[])
 		fprintf(stderr, "\nCommand line breakpoints:\n");
 		for (argv++; --argc > 0; argv++) {
 			fprintf(stderr, "-----------------\n- parsing '%s'\n", *argv);
-			BreakCond_Parse(*argv, use_dsp);
+			BreakCond_Command(*argv, use_dsp);
 		}
 		fprintf(stderr, "-----------------\n\n");
 		BreakCond_List(use_dsp);
 
 		if (BreakCond_MatchCpu() || BreakCond_MatchDsp()) {
-			fprintf(stderr, "-> Breakpoints matched\n\n");
+			fprintf(stderr, "-> CPU/DSP breakpoints matched\n\n");
 		}
 	}
 	if (errors) {
