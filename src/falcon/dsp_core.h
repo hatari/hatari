@@ -227,35 +227,35 @@ struct dsp_core_s {
 
 
 /* Emulator call these to init/stop/reset DSP emulation */
-void dsp_core_init(dsp_core_t *dsp_core);
-void dsp_core_shutdown(dsp_core_t *dsp_core);
-void dsp_core_reset(dsp_core_t *dsp_core);
+extern void dsp_core_init(dsp_core_t *dsp_core);
+extern void dsp_core_shutdown(dsp_core_t *dsp_core);
+extern void dsp_core_reset(dsp_core_t *dsp_core);
 
 /* Post a new interrupt to the interrupt table */
-void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint32 inter);
+extern void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint32 inter);
 
 /* host port read/write by emulator, addr is 0-7, not 0xffa200-0xffa207 */
-Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr);
-void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value);
+extern Uint8 dsp_core_read_host(dsp_core_t *dsp_core, int addr);
+extern void dsp_core_write_host(dsp_core_t *dsp_core, int addr, Uint8 value);
 
 /* dsp_cpu call these to read/write host port */
-void dsp_core_hostport_dspread(dsp_core_t *dsp_core);
-void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
+extern void dsp_core_hostport_dspread(dsp_core_t *dsp_core);
+extern void dsp_core_hostport_dspwrite(dsp_core_t *dsp_core);
 
 /* dsp_cpu call these to read/write/configure SSI port */
-void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value);
-void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core);
-void dsp_core_ssi_receive_SC2(dsp_core_t *dsp_core, Uint32 value);
-void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value);
-void dsp_core_ssi_writeTSR(dsp_core_t *dsp_core);
-Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core);
-void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core);
+extern void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value);
+extern void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core);
+extern void dsp_core_ssi_receive_SC2(dsp_core_t *dsp_core, Uint32 value);
+extern void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value);
+extern void dsp_core_ssi_writeTSR(dsp_core_t *dsp_core);
+extern Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core);
+extern void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core);
 
 
 
 /* Process peripheral code */
-void dsp_core_process_host_interface(dsp_core_t *dsp_core);	/* HI */
-void dsp_core_process_ssi_interface(dsp_core_t *dsp_core);	/* SSI */
+extern void dsp_core_process_host_interface(dsp_core_t *dsp_core);	/* HI */
+extern void dsp_core_process_ssi_interface(dsp_core_t *dsp_core);	/* SSI */
 
 #ifdef __cplusplus
 }
