@@ -32,6 +32,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "tos.h"
 #include "options.h"
 #include "debugui.h"
+#include "breakcond.h"
 #include "hatari-glue.h"
 
 
@@ -47,10 +48,12 @@ static FILE *debugOutput;
 
 static Uint32 CpuBreakPoint[16];  /* 68k breakpoints */
 static int nCpuActiveBPs = 0;     /* Amount of active breakpoints */
+static int nCpuActiveCBs = 0;     /* Amount of active conditional breakpoints */
 static int nCpuSteps = 0;         /* Amount of steps for CPU single-stepping */
 
 static Uint16 DspBreakPoint[16];  /* DSP breakpoints */
 static int nDspActiveBPs = 0;     /* Amount of active breakpoints */
+static int nDspActiveCBs = 0;     /* Amount of active conditional breakpoints */
 static int nDspSteps = 0;         /* Amount of steps for DSP single-stepping */
 
 static int DebugUI_Help(int nArgc, char *psArgv[]);
@@ -524,6 +527,16 @@ static int DebugUI_DspBreakPoint(int nArgc, char *psArgs[])
 }
 
 /**
+ * DSP wrapper for BreakCond_Command/BreakPointCount, returns DEBUGGER_END
+ */
+static int DebugUI_BreakCondDsp(int nArgc, char *psArgs[])
+{
+	BreakCond_Command((const char *)psArgs[1], true);
+	nDspActiveCBs = BreakCond_BreakPointCount(true);
+	return DEBUGGER_CMDDONE;
+}
+
+/**
  * Check if we hit a DSP breakpoint
  */
 static void DebugUI_CheckDspBreakpoints(void)
@@ -552,7 +565,11 @@ void DebugUI_DspCheck(void)
 	{
 		DebugUI_CheckDspBreakpoints();
 	}
-
+	if (nDspActiveCBs)
+	{
+		if (BreakCond_MatchDsp())
+			DebugUI();
+	}
 	if (nDspSteps)
 	{
 		nDspSteps -= 1;
@@ -822,6 +839,15 @@ static int DebugUI_CpuBreakPoint(int nArgc, char *psArgs[])
 	return DEBUGGER_CMDDONE;
 }
 
+/**
+ * CPU wrapper for BreakCond_Command/BreakPointCount, returns DEBUGGER_END
+ */
+static int DebugUI_BreakCondCpu(int nArgc, char *psArgs[])
+{
+	BreakCond_Command((const char*)psArgs[1], false);
+	nCpuActiveCBs = BreakCond_BreakPointCount(false);
+	return DEBUGGER_CMDDONE;
+}
 
 /**
  * Do a memory dump, args = starting address.
@@ -1037,90 +1063,122 @@ typedef struct
 	const char *sShortName;
 	const char *sShortDesc;
 	const char *sUsage;
+	bool bNoParsing;
 } dbgcommand_t;
 
 dbgcommand_t commandtab[] =
 {
 #if ENABLE_DSP_EMU
-	{ DebugUI_DspBreakPoint, "dspbreak", "db",
-	  "toggle or list DSP breakpoints",
+	{ DebugUI_DspBreakPoint, "dspaddress", "da",
+	  "toggle or list (traditional) DSP address breakpoints",
 	  "[address]\n"
 	  "\tToggle breakpoint at <address> or list all breakpoints when\n"
-	  "\tno address is given." },
+	  "\tno address is given.",
+	  false },
+	{ DebugUI_BreakCondDsp, "dspbreak", "db",
+	  "set/remove/list DSP register/RAM condition breakpoints",
+	  "[help | <breakpoint condition> | <breakpoint index>]\n"
+	  "\tSet breakpoint with given condition, remove breakpoint with\n"
+	  "\tgiven index or list all breakpoints when no args are given.\n"
+	  "\t'help' outputs breakpoint condition syntax help.",
+	  true },
 	{ DebugUI_DspDisAsm, "dspdisasm", "dd",
 	  "disassemble DSP code",
 	  "[address]\n"
-	  "\tDisassemble from DSP-PC, otherwise at given address." },
+	  "\tDisassemble from DSP-PC, otherwise at given address.",
+	  false },
 	{ DebugUI_DspMemDump, "dspmemdump", "dm",
 	  "dump DSP memory",
 	  "<x|y|p> [address]\n"
 	  "\tdump DSP memory at address, or continue from previous address if not\n"
-	  "\tspecified." },
+	  "\tspecified.",
+	  false },
 	{ DebugUI_DspRegister, "dspreg", "dr",
 	  "read/write DSP registers",
 	  "[REG=value]"
-	  "\tSet or dump contents of DSP registers." },
+	  "\tSet or dump contents of DSP registers.",
+	  false },
 	{ DebugUI_DspContinue, "dspcont", "dc",
 	  "continue emulation / DSP single-stepping",
 	  "[steps]\n"
 	  "\tLeave debugger and continue emulation for <steps> DSP instructions\n"
-	  "\tor forever if no steps have been specified." },
+	  "\tor forever if no steps have been specified.",
+	  false },
 #endif
+	{ DebugUI_CpuBreakPoint, "address", "a",
+	  "toggle or list (traditional) CPU address breakpoints",
+	  "[address]\n"
+	  "\tToggle breakpoint at <address> or list all breakpoints when\n"
+	  "\tno address is given.",
+	  false	},
+	{ DebugUI_BreakCondCpu, "breakpoint", "b",
+	  "set/remove/list register/RAM condition breakpoints",
+	  "[help | <breakpoint condition> | <breakpoint index>]\n"
+	  "\tSet breakpoint with given condition, remove breakpoint with\n"
+	  "\tgiven index or list all breakpoints when no args are given.\n"
+	  "\t'help' outputs breakpoint condition syntax help.",
+	  true },
 	{ DebugUI_DisAsm, "disasm", "d",
 	  "disassemble from PC, or given address",
 	  "[address]\n"
 	  "\tIf no address is given, this command disassembles from the last\n"
-	  "\tposition or from current PC if no last postition is available." },
+	  "\tposition or from current PC if no last postition is available.",
+	  false },
 	{ DebugUI_CpuRegister, "cpureg", "r",
 	  "dump register values or set register to value",
 	  "[REG=value]\n"
 	  "\tSet CPU register to value or dumps all register if no parameter\n"
-	  "\thas been specified." },
-	{ DebugUI_CpuBreakPoint, "break", "b",
-	  "toggle or list CPU breakpoints",
-	  "[address]\n"
-	  "\tToggle breakpoint at <address> or list all breakpoints when\n"
-	  "\tno address is given." },
+	  "\thas been specified.",
+	  false },
 	{ DebugUI_MemDump, "memdump", "m",
 	  "dump memory",
 	  "[address]\n"
-	  "\tdump memory at address or continue dump from previous address." },
+	  "\tdump memory at address or continue dump from previous address.",
+	  false },
 	{ DebugUI_MemWrite, "memwrite", "w",
 	  "write bytes to memory",
 	  "address byte1 [byte2 ...]\n"
-	  "\tWrite bytes to a memory address, bytes are space separated." },
+	  "\tWrite bytes to a memory address, bytes are space separated.",
+	  false },
 	{ DebugUI_SetLogFile, "logfile", "f",
 	  "open or close log file",
 	  "[filename]\n"
 	  "\tOpen log file, no argument closes the log file. Output of\n"
-	  "\tregister & memory dumps and disassembly will be written to it." },
+	  "\tregister & memory dumps and disassembly will be written to it.",
+	  false },
 	{ DebugUI_LoadBin, "loadbin", "l",
 	  "load a file into memory",
 	  "filename address\n"
-	  "\tLoad the file <filename> into memory starting at <address>." },
+	  "\tLoad the file <filename> into memory starting at <address>.",
+	  false },
 	{ DebugUI_SaveBin, "savebin", "s",
 	  "save memory to a file",
 	  "filename address length\n"
 	  "\tSave the memory block at <address> with given <length> to\n"
-	  "\tthe file <filename>." },
+	  "\tthe file <filename>.",
+	  false },
 	{ DebugUI_SetOptions, "setopt", "o",
 	  "set Hatari command line options",
 	  "[command line parameters]\n"
 	  "\tSet options like command line parameters. For example to"
-	  "\tenable CPU disasm tracing:  setopt --trace cpu_disasm" },
+	  "\tenable CPU disasm tracing:  setopt --trace cpu_disasm",
+	  false },
 	{ DebugUI_CpuContinue, "cont", "c",
 	  "continue emulation / CPU single-stepping",
 	  "[steps]\n"
 	  "\tLeave debugger and continue emulation for <steps> CPU instructions\n"
-	  "\tor forever if no steps have been specified." },
+	  "\tor forever if no steps have been specified.",
+	  false },
 	{ DebugUI_QuitEmu, "quit", "q",
 	  "quit emulator",
 	  "\n"
-	  "\tLeave debugger and quit emulator." },
+	  "\tLeave debugger and quit emulator.",
+	  false },
 	{ DebugUI_Help, "help", "h",
 	  "print help",
 	  "[command]"
-	  "\tPrint help text for available commands." },
+	  "\tPrint help text for available commands.",
+	  false },
 };
 
 
@@ -1184,8 +1242,9 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 int DebugUI_ParseCommand(char *input)
 {
 	char *psArgs[64];
+	const char *delim;
 	static char sLastCmd[80] = { '\0' };
-	int nArgc;
+	int nArgc, cmd = -1;
 	int i, retval;
 
 	psArgs[0] = strtok(input, " \t");
@@ -1198,36 +1257,45 @@ int DebugUI_ParseCommand(char *input)
 			return DEBUGGER_CMDDONE;
 	}
 
-	/* Separate arguments and put the pointers into psArgs */
-	for (nArgc = 1; nArgc < ARRAYSIZE(psArgs); nArgc++)
-	{
-		psArgs[nArgc] = strtok(NULL, " \t");
-		if (psArgs[nArgc] == NULL)
-			break;
-	}
-
 	/* Search the command ... */
 	for (i = 0; i < ARRAYSIZE(commandtab); i++)
 	{
 		if (!strcmp(psArgs[0], commandtab[i].sLongName)
 		    || !strcmp(psArgs[0], commandtab[i].sShortName))
 		{
-			/* ... and execute the function */
-			retval = commandtab[i].pFunction(nArgc, psArgs);
-			/* Save commando string if it can be repeated */
-			if (retval == DEBUGGER_CMDCONT)
-				strncpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
-			else
-				sLastCmd[0] = '\0';
-			return retval;
+			cmd = i;
+			break;
 		}
 	}
+	if (cmd == -1)
+	{
+		fprintf(stderr, "Command '%s' not found.\n"
+			"Use 'help' to view a list of available commands.\n",
+			psArgs[0]);
+		return DEBUGGER_CMDDONE;
+	}
 
-	fprintf(stderr, "Command '%s' not found.\n"
-	        "Use 'help' to view a list of available commands.\n",
-	        psArgs[0]);
+	if (commandtab[cmd].bNoParsing)
+		delim = "";
+	else
+		delim = " \t";
 
-	return DEBUGGER_CMDDONE;
+	/* Separate arguments and put the pointers into psArgs */
+	for (nArgc = 1; nArgc < ARRAYSIZE(psArgs); nArgc++)
+	{
+		psArgs[nArgc] = strtok(NULL, delim);
+		if (psArgs[nArgc] == NULL)
+			break;
+	}
+
+	/* ... and execute the function */
+	retval = commandtab[i].pFunction(nArgc, psArgs);
+	/* Save commando string if it can be repeated */
+	if (retval == DEBUGGER_CMDCONT)
+		strncpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
+	else
+		sLastCmd[0] = '\0';
+	return retval;
 }
 
 
@@ -1314,12 +1382,12 @@ void DebugUI(void)
 
 	/* If "real-time" debugging like breakpoints has been set, we've
 	 * got to tell the CPU core to call us after each instruction! */
-	if (nCpuActiveBPs || nCpuSteps)
+	if (nCpuActiveBPs || nCpuActiveCBs || nCpuSteps)
 		M68000_SetSpecial(SPCFLAG_DEBUGGER);
 	else
 		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);
 	/* ...and DSP core */
-	if (nDspActiveBPs || nDspSteps)
+	if (nDspActiveBPs || nDspActiveCBs || nDspSteps)
 		DSP_SetDebugging(true);
 	else
 		DSP_SetDebugging(false);
@@ -1355,7 +1423,11 @@ void DebugUI_CpuCheck(void)
 	{
 		DebugUI_CheckCpuBreakpoints();
 	}
-
+	if (nCpuActiveCBs)
+	{
+		if (BreakCond_MatchCpu())
+			DebugUI();
+	}
 	if (nCpuSteps)
 	{
 		nCpuSteps -= 1;
