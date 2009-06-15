@@ -636,73 +636,51 @@ static int DebugUI_DisAsm(int nArgc, char *psArgs[])
 
 
 /**
- * Return given CPU register address, or NULL for an error.
- * Handles D0-7, A0-7 and PC registers, but not SR as that's 16-bit.
- * Note also that writing PC & SR both need special handling.
+ * Set address of the named register to given argument.
+ * Return register size in bits or zero for uknown register name.
+ * Handles D0-7, A0-7 and also PC & SR registers, but note that both
+ * PC & SR would need special handling (using UAE accessors).
  */
-Uint32 *DebugUI_GetCpuRegisterAddress(const char *reg)
+int DebugUI_GetCpuRegisterAddress(const char *reg, Uint32 **addr)
 {
 	char r0, r1;
 	if (!reg[0] || !reg[1] || reg[2])
-		return NULL;
+		return 0;
 	
 	r0 = toupper(reg[0]);
 	r1 = toupper(reg[1]);
 
 	if (r0 == 'D')  /* Data regs? */
 	{
-		switch (r1)
+		if (r1 >= '0' && r1 <= '7')
 		{
-		 case '0':
-			return &Regs[REG_D0];
-		 case '1':
-			return &Regs[REG_D1];
-		 case '2':
-			return &Regs[REG_D2];
-		 case '3':
-			return &Regs[REG_D3];
-		 case '4':
-			return &Regs[REG_D4];
-		 case '5':
-			return &Regs[REG_D5];
-		 case '6':
-			return &Regs[REG_D6];
-		 case '7':
-			return &Regs[REG_D7];
+			*addr = &(Regs[REG_D0 + r1 - '0']);
+			return 32;
 		}
 		fprintf(stderr,"\tBad data register, valid values are 0-7\n");
-		return NULL;
+		return 0;
 	}
 	if(r0 == 'A')  /* Address regs? */
 	{
-		switch( r1 )
+		if (r1 >= '0' && r1 <= '7')
 		{
-		 case '0':
-			return &Regs[REG_A0];
-		 case '1':
-			return &Regs[REG_A1];
-		 case '2':
-			return &Regs[REG_A2];
-		 case '3':
-			return &Regs[REG_A3];
-		 case '4':
-			return &Regs[REG_A4];
-		 case '5':
-			return &Regs[REG_A5];
-		 case '6':
-			return &Regs[REG_A6];
-		 case '7':
-			return &Regs[REG_A7];
+			*addr = &(Regs[REG_A0 + r1 - '0']);
+			return 32;
 		}
 		fprintf(stderr,"\tBad address register, valid values are 0-7\n");
-		return NULL;
+		return 0;
 	}
 	if (r0 == 'P' && r1 == 'C')
-		return &regs.pc;
-
-	/* SR isn't supported by this as regs.sr is 16-bit reg */
-	
-	return NULL;
+	{
+		*addr = &regs.pc;
+		return 32;
+	}
+	if (r0 == 'S' && r1 == 'R')
+	{
+		*addr = (Uint32 *)&regs.sr;
+		return 16;
+	}
+	return 0;
 }
 
 
@@ -761,8 +739,7 @@ static int DebugUI_CpuRegister(int nArgc, char *psArgs[])
 	{
 		Uint32 *regaddr;
 		/* check&set data and address registers */
-		regaddr = DebugUI_GetCpuRegisterAddress(reg);
-		if (regaddr)
+		if (DebugUI_GetCpuRegisterAddress(reg, &regaddr))
 		{
 			*regaddr = value;
 		}

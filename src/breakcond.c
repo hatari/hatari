@@ -265,33 +265,28 @@ int BreakCond_BreakPointCount(bool bForDsp)
  */
 static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
 {
-	Uint32 *regaddr;
-
-#warning "TODO: BreakCond_ParseRegister(): support special registers?"
+	int bits;
 	ENTERFUNC(("BreakCond_ParseRegister('%s')\n", regname));
 	if (bc_value->use_dsp) {
-		size_t bits;
-		bits = DSP_GetRegisterAddress(regname, &regaddr);
+		bits = DSP_GetRegisterAddress(regname,
+					      &(bc_value->value.addr32),
+					      &(bc_value->mask));
 		if (bits) {
-			bc_value->value.addr32 = regaddr;
-			bc_value->bits = bits;  /* TODO: or 32? */
-			bc_value->mask = BITMASK(bits);
+			bc_value->bits = bits;
 			EXITFUNC(("-> true (DSP)\n"));
 			return true;
 		}
 		/* check DSP register names */
-		EXITFUNC(("-> false (unsupported DSP register?)\n"));
+		EXITFUNC(("-> false (DSP)\n"));
 		return false;
 	}
-	regaddr = DebugUI_GetCpuRegisterAddress(regname);
-	if (regaddr) {
-		bc_value->value.addr32 = regaddr;
-		bc_value->bits = 32;
-		bc_value->mask = 0xffffffff;
+	bits = DebugUI_GetCpuRegisterAddress(regname, &(bc_value->value.addr32));
+	if (bits) {
+		bc_value->bits = bits;
 		EXITFUNC(("-> true (CPU)\n"));
 		return true;
 	}
-	EXITFUNC(("-> false (unsupported 16-bit CPU SR register?)\n"));
+	EXITFUNC(("-> false (CPU)\n"));
 	return false;
 }
 
@@ -507,6 +502,13 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
+	if (bc_value->type == BC_TYPE_NUMBER && bc_value->is_indirect &&
+	    (bc_value->value.number & 1) && bc_value->bits > 8) {
+		pstate->error = "odd address requires byte (.b) access";
+		EXITFUNC(("arg:%d -> false\n", pstate->arg));
+		return false;
+	}
+
 	EXITFUNC(("arg:%d -> true (%s value)\n", pstate->arg,
 		  (bc_value->is_indirect ? "indirect" : "direct")));
 	return true;
@@ -974,69 +976,111 @@ bool BreakCond_Command(const char *expression, bool bForDsp)
  * 
  * TODO: move test stuff elsewhere after code works fully
  */
-#if TEST
+#ifdef TEST
 
-/* fake RAM */
+/* fake ST RAM */
 Uint8 STRam[16*1024*1024];
 Uint32 STRamEnd = 4*1024*1024;
-/* fake registers */
-static struct {
-	Uint32 d0;
-	Uint32 d1;
-	Uint32 d2;
-	Uint32 d3;
-	Uint32 d4;
-	Uint32 d5;
-	Uint32 d6;
-	Uint32 d7;
-	Uint32 a0;
-	Uint32 a1;
-	Uint32 a2;
-	Uint32 a3;
-	Uint32 a4;
-	Uint32 a5;
-	Uint32 a6;
-	Uint32 a7;
-	Uint32 pc;
-	Uint16 sr;
-} CpuRegs;
 
-/* emulate DSP register accessor */
-size_t DSP_GetRegisterAddress(const char *regname, Uint32 **addr)
+
+/* fake AUE register accessors */
+int DebugUI_GetCpuRegisterAddress(const char *regname, Uint32 **addr)
+{
+	const char *regnames[] = {
+		/* must be in same order as in struct above! */
+		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
+		"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
+		"pc", "sr"
+	};
+	static Uint32 registers[ARRAYSIZE(regnames)];
+	int i;
+	for (i = 0; i < ARRAYSIZE(regnames); i++) {
+		if (strcmp(regname, regnames[i]) == 0) {
+			*addr = &(registers[i]);
+			if (regname[0] == 's') {
+				/* SR is 16-bit */
+				return 16;
+			}
+			return 32;
+		}
+	}
+	fprintf(stderr, "ERROR: unrecognized CPU register '%s', valid ones one:\n", regname);
+	for (i = 0; i < ARRAYSIZE(regnames); i++) {
+		fprintf(stderr, "- %s\n", regnames[i]);
+	}
+	return 0;
+}
+
+static void SetCpuRegister(const char *regname, Uint32 value)
+{
+	Uint32 *addr;
+	
+	switch (DebugUI_GetCpuRegisterAddress(regname, &addr)) {
+	case 32:
+		*addr = value;
+		break;
+	case 16:
+		*(Uint16*)addr = value;
+		break;
+	}
+	return;
+}
+
+
+/* fake DSP register accessors */
+int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 {
 	const char *regnames[] = {
 		"a0", "a1", "a2", "b0", "b1", "b2", "la", "lc",
 		"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7",
 		"n0", "n1", "n2", "n3", "n4", "n5", "n6", "n7",
 		"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
-		"x0", "x1", "y0", "y1" /* PC, SR, SP, OMR, SSH, SSL */
+		"x0", "x1", "y0", "y1", "pc", "sr", "omr",
+		"sp", "ssh", "ssl"
 	};
-	static Uint32 registers[40];
+	static Uint32 registers[ARRAYSIZE(regnames)];
 	int i;
 	for (i = 0; i < ARRAYSIZE(regnames); i++) {
 		if (strcmp(regname, regnames[i]) == 0) {
 			*addr = &(registers[i]);
+			switch (regname[0]) {
+			case 'a':
+			case 'b':
+			case 'x':
+			case 'y':
+				*mask = 24;
+				break;
+			default:
+				*mask = 16;
+				break;
+			}
+			if (regname[0] == 'p') {
+				/* PC is 16-bit */
+				return 16;
+			}
 			return 32;
 		}
+	}
+	fprintf(stderr, "ERROR: unrecognized DSP register '%s', valid ones one:\n", regname);
+	for (i = 0; i < ARRAYSIZE(regnames); i++) {
+		fprintf(stderr, "- %s\n", regnames[i]);
 	}
 	return 0;
 }
 
-/* emulate AUE register accessor */
-Uint32 *DebugUI_GetCpuRegisterAddress(const char *regname)
+static void SetDspRegister(const char *regname, Uint32 value)
 {
-	const char *regnames[] = {
-		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
-		"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
-		"pc" /* , "sr" */
-	};
-	int i;
-	for (i = 0; i < ARRAYSIZE(regnames); i++) {
-		if (strcmp(regname, regnames[i]) == 0) {
-			return (&CpuRegs.d0)+i;
-		}
+	Uint32 *addr, mask;
+
+	switch (DSP_GetRegisterAddress(regname, &addr, &mask)) {
+	case 32:
+		*addr = value & mask;
+		break;
+	case 16:
+		*(Uint16*)addr = value & mask;
+		break;
 	}
-	return NULL;
+	return;
 }
 
 
@@ -1084,12 +1128,12 @@ int main(int argc, const char *argv[])
 		NULL
 	};
 	const char *test;
-	bool use_dsp = false;
 	int i, count, tests = 0, errors = 0;
+	bool use_dsp;
 
 	/* first automated tests... */
-	
-	fprintf(stderr, "\nShould FAIL:\n");
+	use_dsp = false;
+	fprintf(stderr, "\nShould FAIL for CPU:\n");
 	for (i = 0; (test = should_fail[i]); i++) {
 		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
 		if (BreakCond_Command(test, use_dsp)) {
@@ -1101,7 +1145,7 @@ int main(int argc, const char *argv[])
 	fprintf(stderr, "-----------------\n\n");
 	BreakCond_List(use_dsp);
 	
-	fprintf(stderr, "\nShould PASS:\n");
+	fprintf(stderr, "\nShould PASS for CPU:\n");
 	for (i = 0; (test = should_pass[i]); i++) {
 		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
 		if (!BreakCond_Command(test, use_dsp)) {
@@ -1121,11 +1165,11 @@ int main(int argc, const char *argv[])
 	STRam[0x200] = 100;
 	STRam[200] = 0x20;
 	/* d0=d1 pass */
-	CpuRegs.d0 = 4;
-	CpuRegs.d1 = 4;
-	CpuRegs.a0 = 8;
+	SetCpuRegister("d0", 4);
+	SetCpuRegister("d1", 4);
+	SetCpuRegister("a0", 8);
 	while ((i = BreakCond_MatchCpu())) {
-		fprintf(stderr, "Removing matching breakpoint.\n");
+		fprintf(stderr, "Removing matching CPU breakpoint.\n");
 		BreakCond_Remove(i, use_dsp);
 	}
 
@@ -1137,9 +1181,10 @@ int main(int argc, const char *argv[])
 	BreakCond_List(use_dsp);
 	fprintf(stderr, "-----------------\n");
 
-	/* ...last parse cmd line args */
+	/* ...last parse cmd line args as DSP breakpoints */
 	if (argc > 1) {
-		fprintf(stderr, "\nCommand line breakpoints:\n");
+		use_dsp = true;
+		fprintf(stderr, "\nCommand line DSP breakpoints:\n");
 		for (argv++; --argc > 0; argv++) {
 			fprintf(stderr, "-----------------\n- parsing '%s'\n", *argv);
 			BreakCond_Command(*argv, use_dsp);
@@ -1147,9 +1192,18 @@ int main(int argc, const char *argv[])
 		fprintf(stderr, "-----------------\n\n");
 		BreakCond_List(use_dsp);
 
-		if (BreakCond_MatchCpu() || BreakCond_MatchDsp()) {
-			fprintf(stderr, "-> CPU/DSP breakpoints matched\n\n");
+		while ((i = BreakCond_MatchDsp())) {
+			fprintf(stderr, "Removing matching DSP breakpoint.\n");
+			BreakCond_Remove(i, use_dsp);
 		}
+
+		/* try removing everything from alternate ends */
+		while ((count = BreakCond_BreakPointCount(use_dsp))) {
+			BreakCond_Remove(count, use_dsp);
+			BreakCond_Remove(1, use_dsp);
+		}
+		BreakCond_List(use_dsp);
+		fprintf(stderr, "-----------------\n");
 	}
 	if (errors) {
 		fprintf(stderr, "\n***Detected %d ERRORs in %d automated tests!***\n\n",
