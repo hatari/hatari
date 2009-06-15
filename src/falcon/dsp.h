@@ -43,12 +43,13 @@ extern void DSP_SetDebugging(bool enabled);
 extern void DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, Uint16 space);
 extern Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr);
 extern void DSP_DisasmRegisters(void);
+extern size_t DSP_GetRegisterAddress(const char *arg, Uint32 **addr);
 extern void DSP_Disasm_SetRegister(char *arg, Uint32 value);
 extern Uint16 DSP_GetPC(void);
 
 /* Dsp SSI commands */
 extern Uint32 DSP_SsiReadTxValue(void);
-void DSP_SsiWriteRxValue(Uint32 value);
+extern void DSP_SsiWriteRxValue(Uint32 value);
 extern void DSP_SsiReceiveSerialClock(void);
 extern void DSP_SsiReceive_SC2(Uint32 FrameCounter);
 
