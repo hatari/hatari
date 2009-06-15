@@ -619,6 +619,77 @@ static int DebugUI_DisAsm(int nArgc, char *psArgs[])
 
 
 /**
+ * Return given CPU register address, or NULL for an error.
+ * Handles D0-7, A0-7 and PC registers, but not SR as that's 16-bit.
+ * Note also that writing PC & SR both need special handling.
+ */
+Uint32 *DebugUI_GetCpuRegisterAddress(const char *reg)
+{
+	char r0, r1;
+	if (!reg[0] || !reg[1] || reg[2])
+		return NULL;
+	
+	r0 = toupper(reg[0]);
+	r1 = toupper(reg[1]);
+
+	if (r0 == 'D')  /* Data regs? */
+	{
+		switch (r1)
+		{
+		 case '0':
+			return &Regs[REG_D0];
+		 case '1':
+			return &Regs[REG_D1];
+		 case '2':
+			return &Regs[REG_D2];
+		 case '3':
+			return &Regs[REG_D3];
+		 case '4':
+			return &Regs[REG_D4];
+		 case '5':
+			return &Regs[REG_D5];
+		 case '6':
+			return &Regs[REG_D6];
+		 case '7':
+			return &Regs[REG_D7];
+		}
+		fprintf(stderr,"\tBad data register, valid values are 0-7\n");
+		return NULL;
+	}
+	if(r0 == 'A')  /* Address regs? */
+	{
+		switch( r1 )
+		{
+		 case '0':
+			return &Regs[REG_A0];
+		 case '1':
+			return &Regs[REG_A1];
+		 case '2':
+			return &Regs[REG_A2];
+		 case '3':
+			return &Regs[REG_A3];
+		 case '4':
+			return &Regs[REG_A4];
+		 case '5':
+			return &Regs[REG_A5];
+		 case '6':
+			return &Regs[REG_A6];
+		 case '7':
+			return &Regs[REG_A7];
+		}
+		fprintf(stderr,"\tBad address register, valid values are 0-7\n");
+		return NULL;
+	}
+	if (r0 == 'P' && r1 == 'C')
+		return &regs.pc;
+
+	/* SR isn't supported by this as regs.sr is 16-bit reg */
+	
+	return NULL;
+}
+
+
+/**
  * Dump or set CPU registers
  */
 static int DebugUI_CpuRegister(int nArgc, char *psArgs[])
@@ -654,10 +725,12 @@ static int DebugUI_CpuRegister(int nArgc, char *psArgs[])
 		fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR and yyyy is a hex value.\n");
 		return DEBUGGER_CMDDONE;
 	}
-
-	for (i = 0; i < 2; i++)
+	
+	for (i = 0; i < 2 && reg[i]; i++)
+	{
 		reg[i] = toupper(reg[i]);
-
+	}
+	
 	/* set SR and update conditional flags for the UAE CPU core. */
 	if (reg[0] == 'S' && reg[1] == 'R')
 	{
@@ -667,79 +740,20 @@ static int DebugUI_CpuRegister(int nArgc, char *psArgs[])
 	{
 		M68000_SetPC(value);
 	}
-	else if (reg[0] == 'D')  /* Data regs? */
-	{
-		switch (reg[1])
-		{
-		 case '0':
-			Regs[REG_D0] = value;
-			break;
-		 case '1':
-			Regs[REG_D1] = value;
-			break;
-		 case '2':
-			Regs[REG_D2] = value;
-			break;
-		 case '3':
-			Regs[REG_D3] = value;
-			break;
-		 case '4':
-			Regs[REG_D4] = value;
-			break;
-		 case '5':
-			Regs[REG_D5] = value;
-			break;
-		 case '6':
-			Regs[REG_D6] = value;
-			break;
-		 case '7':
-			Regs[REG_D7] = value;
-			break;
-
-		 default:
-			fprintf(stderr,"\tBad data register, valid values are 0-7\n");
-			break;
-		}
-	}
-	else if(reg[0] == 'A')  /* Address regs? */
-	{
-		switch( reg[1] )
-		{
-		 case '0':
-			Regs[REG_A0] = value;
-			break;
-		 case '1':
-			Regs[REG_A1] = value;
-			break;
-		 case '2':
-			Regs[REG_A2] = value;
-			break;
-		 case '3':
-			Regs[REG_A3] = value;
-			break;
-		 case '4':
-			Regs[REG_A4] = value;
-			break;
-		 case '5':
-			Regs[REG_A5] = value;
-			break;
-		 case '6':
-			Regs[REG_A6] = value;
-			break;
-		 case '7':
-			Regs[REG_A7] = value;
-			break;
-
-		 default:
-			fprintf(stderr,"\tBad address register, valid values are 0-7\n");
-			break;
-		}
-	}
 	else
 	{
-		fprintf(stderr, "\t Bad register!\n");
+		Uint32 *regaddr;
+		/* check&set data and address registers */
+		regaddr = DebugUI_GetCpuRegisterAddress(reg);
+		if (regaddr)
+		{
+			*regaddr = value;
+		}
+		else
+		{
+			fprintf(stderr, "\t Bad register!\n");
+		}
 	}
-
 	return DEBUGGER_CMDDONE;
 }
 
