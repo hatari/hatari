@@ -278,11 +278,11 @@ static void MFP_Exception(int Interrupt)
 	Vec = (unsigned int)(MFP_VR&0xf0)<<2;
 	Vec += Interrupt<<2;
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_EXCEPTION ) )
+	if (LOG_TRACE_LEVEL(TRACE_MFP_EXCEPTION))
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "mfp excep int=%d vec=0x%x new_pc=0x%x video_cyc=%d %d@%d\n" ,
+		LOG_TRACE_PRINT("mfp excep int=%d vec=0x%x new_pc=0x%x video_cyc=%d %d@%d\n" ,
 			Interrupt, Vec, STMemory_ReadLong ( Vec ), nFrameCycles, nLineCycles, nHBL );
 	}
 
@@ -455,7 +455,7 @@ void MFP_TimerA_EventCount_Interrupt(void)
  */
 void MFP_TimerB_EventCount_Interrupt(void)
 {
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "mfp/video timer B new event count %d\n" , MFP_TB_MAINCOUNTER-1 );
+	LOG_TRACE(TRACE_VIDEO_HBL , "mfp/video timer B new event count %d\n" , MFP_TB_MAINCOUNTER-1 );
 
 	if (MFP_TB_MAINCOUNTER == 1)			/* Timer expired? If so, generate interrupt */
 	{
@@ -497,14 +497,14 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 			TimerData = 256;
 		TimerClockCycles = MFP_REG_TO_CYCLES ( TimerData, TimerControl );
 
-		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_START ) )
+		if (LOG_TRACE_LEVEL(TRACE_MFP_START))
 		{
 			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 			int nLineCycles = nFrameCycles % nCyclesPerLine;
-			HATARI_TRACE_PRINT ( "mfp start AB handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n" ,
-			                     Handler, TimerData, TimerControl, TimerClockCycles, PendingCyclesOver,
-			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
-			                     bFirstTimer?"true":"false" , *pTimerCanResume?"true":"false" );
+			LOG_TRACE_PRINT("mfp start AB handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n",
+			                Handler, TimerData, TimerControl, TimerClockCycles, PendingCyclesOver,
+			                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
+			                bFirstTimer?"true":"false", *pTimerCanResume?"true":"false");
 		}
 
 		/* And add to our internal interrupt list, if timer cycles is zero
@@ -541,14 +541,14 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 		else	/* Ctrl was 0 -> timer is stopped */
 		{
 			/* do nothing, only print some traces */
-			if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_START ) )
+			if (LOG_TRACE_LEVEL(TRACE_MFP_START))
 			{
 				int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 				int nLineCycles = nFrameCycles % nCyclesPerLine;
-				HATARI_TRACE_PRINT ( "mfp stop AB handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n" ,
-			                     Handler, TimerData, TimerControl, TimerClockCycles, PendingCyclesOver,
-			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
-			                     bFirstTimer?"true":"false" , *pTimerCanResume?"true":"false" );
+				LOG_TRACE_PRINT("mfp stop AB handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n",
+				                Handler, TimerData, TimerControl, TimerClockCycles, PendingCyclesOver,
+				                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
+				                bFirstTimer?"true":"false", *pTimerCanResume?"true":"false");
 			}
 		}
 	}
@@ -567,14 +567,14 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 			TimerBEventCountCycleStart = Cycles_GetCounterOnWriteAccess(CYCLES_COUNTER_VIDEO);
 		}
 
-		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_START ) )
+		if (LOG_TRACE_LEVEL(TRACE_MFP_START))
 		{
 			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 			int nLineCycles = nFrameCycles % nCyclesPerLine;
-			HATARI_TRACE_PRINT ( "mfp start AB handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n" ,
-			                     Handler, TimerData, TimerControl, TimerClockCycles, PendingCyclesOver,
-			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
-			                     bFirstTimer?"true":"false" , *pTimerCanResume?"true":"false" );
+			LOG_TRACE_PRINT("mfp start AB handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n",
+			                Handler, TimerData, TimerControl, TimerClockCycles, PendingCyclesOver,
+			                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
+			                bFirstTimer?"true":"false", *pTimerCanResume?"true":"false");
 		}
 
 
@@ -603,11 +603,11 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 			TimerData = 256;
 		TimerClockCycles = MFP_REG_TO_CYCLES ( TimerData, TimerControl );
 
-		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_START ) )
+		if ( LOG_TRACE_LEVEL( TRACE_MFP_START ) )
 		{
 			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 			int nLineCycles = nFrameCycles % nCyclesPerLine;
-			HATARI_TRACE_PRINT ( "mfp start CD handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n" ,
+			LOG_TRACE_PRINT("mfp start CD handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n" ,
 			                     Handler, TimerData, TimerControl, TimerClockCycles, PendingCyclesOver,
 			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
 			                     bFirstTimer?"true":"false" , *pTimerCanResume?"true":"false" );
@@ -647,11 +647,11 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 
 	else	/* timer control is 0 */
 	{
-		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_START ) )
+		if ( LOG_TRACE_LEVEL( TRACE_MFP_START ) )
 		{
 			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 			int nLineCycles = nFrameCycles % nCyclesPerLine;
-			HATARI_TRACE_PRINT ( "mfp stop CD handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n" ,
+			LOG_TRACE_PRINT("mfp stop CD handler=%d data=%d ctrl=%d timer_cyc=%d pending_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d first=%s resume=%s\n" ,
 			                     Handler, TimerData, TimerControl, TimerClockCycles, PendingCyclesOver,
 			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles,
 			                     bFirstTimer?"true":"false" , *pTimerCanResume?"true":"false" );
@@ -691,16 +691,16 @@ static Uint8 MFP_ReadTimer_AB(Uint8 TimerControl, Uint8 MainCounter, int TimerCy
 		if ( Int_FindCyclesPassed ( Handler, INT_MFP_CYCLE ) < MFP_REG_TO_CYCLES ( 1 , TimerControl ) )
 		{
 			MainCounter = 0;			/* internal mfp counter becomes 0 (=256) */
-			HATARI_TRACE ( HATARI_TRACE_MFP_READ , "mfp read AB handler=%d stopping timer while data reg between 1 and 0 : forcing data to 256\n" ,
+			LOG_TRACE(TRACE_MFP_READ , "mfp read AB handler=%d stopping timer while data reg between 1 and 0 : forcing data to 256\n" ,
 					Handler );
 		}
 	}
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_READ ) )
+	if ( LOG_TRACE_LEVEL( TRACE_MFP_READ ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "mfp read AB handler=%d data=%d ctrl=%d timer_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
+		LOG_TRACE_PRINT("mfp read AB handler=%d data=%d ctrl=%d timer_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
 		                     Handler, MainCounter, TimerControl, TimerCycles,
 		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
@@ -735,16 +735,16 @@ static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCoun
 		if ( Int_FindCyclesPassed ( Handler, INT_MFP_CYCLE ) < MFP_REG_TO_CYCLES ( 1 , TimerControl ) )
 		{
 			MainCounter = 0;			/* internal mfp counter becomes 0 (=256) */
-			HATARI_TRACE ( HATARI_TRACE_MFP_READ , "mfp read CD handler=%d stopping timer while data reg between 1 and 0 : forcing data to 256\n" ,
+			LOG_TRACE(TRACE_MFP_READ , "mfp read CD handler=%d stopping timer while data reg between 1 and 0 : forcing data to 256\n" ,
 					Handler );
 		}
 	}
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_READ ) )
+	if ( LOG_TRACE_LEVEL( TRACE_MFP_READ ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "mfp read CD handler=%d data=%d ctrl=%d timer_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
+		LOG_TRACE_PRINT("mfp read CD handler=%d data=%d ctrl=%d timer_cyc=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
 		                     Handler, MainCounter, TimerControl, TimerCycles,
 		                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
@@ -981,11 +981,11 @@ void MFP_GPIP_ReadByte(void)
 
 	IoMem[0xfffa01] = MFP_GPIP;
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_READ ) )
+	if ( LOG_TRACE_LEVEL( TRACE_MFP_READ ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "mfp read gpip fa01=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		LOG_TRACE_PRINT("mfp read gpip fa01=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 			MFP_GPIP, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 }
@@ -1204,7 +1204,7 @@ void MFP_TimerBData_ReadByte(void)
 		if ( (nHBL >= nStartHBL ) && ( nHBL < nEndHBL )	/* ensure display is ON and timer B can happen */
 			&& ( LineTimerBCycle > pos_start ) && ( LineTimerBCycle < pos_read ) )
 		{
-			HATARI_TRACE ( HATARI_TRACE_MFP_READ , "mfp read TB overlaps pos_start=%d TB_pos=%d pos_read=%d nHBL=%d \n",
+			LOG_TRACE(TRACE_MFP_READ , "mfp read TB overlaps pos_start=%d TB_pos=%d pos_read=%d nHBL=%d \n",
 					pos_start, LineTimerBCycle, pos_read , nHBL );
 
 			TB_count--;
@@ -1217,7 +1217,7 @@ void MFP_TimerBData_ReadByte(void)
 */
 		}
 
-		HATARI_TRACE ( HATARI_TRACE_MFP_READ , "mfp read TB data=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
+		LOG_TRACE(TRACE_MFP_READ , "mfp read TB data=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
 					TB_count, nFrameCycles, pos_start, nHBL, M68000_GetPC(), CurrentInstrCycles );
 		IoMem[0xfffa21] = TB_count;
 		return;
@@ -1295,9 +1295,11 @@ void MFP_ActiveEdge_WriteByte(void)
 	{
 		LineTimerBCycle = Video_TimerB_GetPos();
 
-		HATARI_TRACE ( ( HATARI_TRACE_VIDEO_HBL | HATARI_TRACE_MFP_WRITE ) , "mfp/video AER bit 3 0->1, timer B triggers on start of line, old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
-					LineTimerBCycle_old , LineTimerBCycle ,
-					nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+		LOG_TRACE((TRACE_VIDEO_HBL | TRACE_MFP_WRITE),
+		          "mfp/video AER bit 3 0->1, timer B triggers on start of line,"
+			  " old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
+		          LineTimerBCycle_old, LineTimerBCycle, nFrameCycles,
+		          nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
 	}
 
 	/* 1 -> 0, timer B is now counting end of line events (cycle 376+28) */
@@ -1305,9 +1307,11 @@ void MFP_ActiveEdge_WriteByte(void)
 	{
 		LineTimerBCycle = Video_TimerB_GetPos();
 
-		HATARI_TRACE ( ( HATARI_TRACE_VIDEO_HBL | HATARI_TRACE_MFP_WRITE ) , "mfp/video AER bit 3 1->0, timer B triggers on end of line, old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
-					LineTimerBCycle_old , LineTimerBCycle ,
-					nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+		LOG_TRACE((TRACE_VIDEO_HBL | TRACE_MFP_WRITE),
+		          "mfp/video AER bit 3 1->0, timer B triggers on end of line,"
+			  " old_pos=%d new_pos=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
+		          LineTimerBCycle_old, LineTimerBCycle, nFrameCycles,
+		          nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
 	}
 
 	/* Timer B position changed, update the next interrupt */
@@ -1461,11 +1465,11 @@ void MFP_VectorReg_WriteByte(void)
 		}
 	}
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_WRITE ) )
+	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "mfp write vector reg fa17=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		LOG_TRACE_PRINT("mfp write vector reg fa17=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 			MFP_VR, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 
@@ -1608,11 +1612,11 @@ void MFP_TimerAData_WriteByte(void)
 		TimerACanResume = FALSE;        /* we need to set a new int when timer start */
 	}
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_WRITE ) )
+	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "mfp write data reg A fa1f=0x%x new counter=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		LOG_TRACE_PRINT("mfp write data reg A fa1f=0x%x new counter=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 			MFP_TADR, MFP_TA_MAINCOUNTER, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 }
@@ -1633,11 +1637,11 @@ void MFP_TimerBData_WriteByte(void)
 		TimerBCanResume = FALSE;        /* we need to set a new int when timer start */
 	}
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_WRITE ) )
+	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "mfp write data reg B fa21=0x%x new counter=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		LOG_TRACE_PRINT("mfp write data reg B fa21=0x%x new counter=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 			MFP_TBDR, MFP_TB_MAINCOUNTER, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 }
@@ -1658,11 +1662,11 @@ void MFP_TimerCData_WriteByte(void)
 		TimerCCanResume = FALSE;        /* we need to set a new int when timer start */
 	}
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_WRITE ) )
+	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "mfp write data reg C fa23=0x%x new counter=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		LOG_TRACE_PRINT("mfp write data reg C fa23=0x%x new counter=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 			MFP_TCDR, MFP_TC_MAINCOUNTER, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 }
@@ -1697,11 +1701,11 @@ void MFP_TimerDData_WriteByte(void)
 		TimerDCanResume = FALSE;        /* we need to set a new int when timer start */
 	}
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_MFP_WRITE ) )
+	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "mfp write data reg D fa25=0x%x new counter=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
+		LOG_TRACE_PRINT("mfp write data reg D fa25=0x%x new counter=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
 			MFP_TDDR, MFP_TD_MAINCOUNTER, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
 }

@@ -244,8 +244,8 @@ static void Int_SetNewInterrupt(void)
 	Sint64 LowestCycleCount = INT_MAX;
 	interrupt_id LowestInterrupt = INTERRUPT_NULL, i;
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int set new in video_cyc=%d active_int=%d pending_count=%d\n",
-	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), ActiveInterrupt, PendingInterruptCount );
+	LOG_TRACE(TRACE_INT, "int set new in video_cyc=%d active_int=%d pending_count=%d\n",
+	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), ActiveInterrupt, PendingInterruptCount);
 
 	/* Find next interrupt to go off */
 	for (i = INTERRUPT_NULL+1; i < MAX_INTERRUPTS; i++)
@@ -266,7 +266,7 @@ static void Int_SetNewInterrupt(void)
 	PendingInterruptFunction = InterruptHandlers[LowestInterrupt].pFunction;
 	ActiveInterrupt = LowestInterrupt;
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int set new out video_cyc=%d active_int=%d pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int set new out video_cyc=%d active_int=%d pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), ActiveInterrupt, PendingInterruptCount );
 }
 
@@ -292,7 +292,7 @@ static void Int_UpdateInterrupt(void)
 			InterruptHandlers[i].Cycles -= CycleSubtract;
 	}
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int upd video_cyc=%d cycle_over=%d cycle_sub=%lld\n",
+	LOG_TRACE(TRACE_INT, "int upd video_cyc=%d cycle_over=%d cycle_sub=%lld\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), nCyclesOver, CycleSubtract );
 }
 
@@ -313,7 +313,7 @@ void Int_AcknowledgeInterrupt(void)
 	/* Set new */
 	Int_SetNewInterrupt();
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int ack video_cyc=%d active_int=%d active_cyc=%d pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int ack video_cyc=%d active_int=%d active_cyc=%d pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), ActiveInterrupt, (int)InterruptHandlers[ActiveInterrupt].Cycles, PendingInterruptCount );
 }
 
@@ -336,7 +336,7 @@ void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler
 	/* Set new */
 	Int_SetNewInterrupt();
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int add abs video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int add abs video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
@@ -369,7 +369,7 @@ void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id
 	/* Set new */
 	Int_SetNewInterrupt();
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int add rel no_off video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int add rel no_off video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
@@ -396,7 +396,7 @@ void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_
 	/* Set new */
 	Int_SetNewInterrupt();
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int add rel offset video_cyc=%d handler=%d handler_cyc=%lld offset_cyc=%d pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int add rel offset video_cyc=%d handler=%d handler_cyc=%lld offset_cyc=%d pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, CycleOffset, PendingInterruptCount );
 }
 
@@ -417,7 +417,7 @@ void Int_RemovePendingInterrupt(interrupt_id Handler)
 	/* Set new */
 	Int_SetNewInterrupt();
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int remove pending video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int remove pending video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
@@ -436,7 +436,7 @@ void Int_ResumeStoppedInterrupt(interrupt_id Handler)
 	/* Set new */
 	Int_SetNewInterrupt();
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int resume stopped video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int resume stopped video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
@@ -466,7 +466,7 @@ int Int_FindCyclesPassed(interrupt_id Handler, int CycleType)
 	CyclesFromLastInterrupt = InterruptHandlers[ActiveInterrupt].Cycles - PendingInterruptCount;
 	CyclesPassed = InterruptHandlers[Handler].Cycles - CyclesFromLastInterrupt;
 
-	HATARI_TRACE ( HATARI_TRACE_INT , "int find passed cyc video_cyc=%d handler=%d last_cyc=%lld passed_cyc=%lld\n",
+	LOG_TRACE(TRACE_INT, "int find passed cyc video_cyc=%d handler=%d last_cyc=%lld passed_cyc=%lld\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, CyclesFromLastInterrupt, CyclesPassed );
 
 	return INT_CONVERT_FROM_INTERNAL ( CyclesPassed , CycleType ) ;

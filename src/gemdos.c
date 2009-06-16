@@ -1120,13 +1120,13 @@ void GemDOS_CreateHardDriveFileName(int Drive, const char *pszFileName,
 			{
 				/* It's often normal, the gem uses this to test for existence */
 				/* of desktop.inf or newdesk.inf for example. */
-				HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "didn't find filename %s\n", pszDestName );
+				LOG_TRACE(TRACE_OS_GEMDOS, "didn't find filename %s\n", pszDestName );
 			}
 #endif
 			globfree(&globbuf);
 		}
 	}
-	HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "conv %s -> %s\n", pszFileName, pszDestName );
+	LOG_TRACE(TRACE_OS_GEMDOS, "conv %s -> %s\n", pszFileName, pszDestName );
 }
 
 
@@ -1388,7 +1388,7 @@ static bool GemDOS_ChDir(Uint32 Params)
 	/* Find new directory */
 	pDirName = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
 
-	HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "Dsetpath(\"%s\")\n", pDirName );
+	LOG_TRACE(TRACE_OS_GEMDOS, "Dsetpath(\"%s\")\n", pDirName );
 
 	Drive = GemDOS_IsFileNameAHardDrive(pDirName);
 
@@ -1584,7 +1584,7 @@ static bool GemDOS_Open(Uint32 Params)
 	}
 
 	if (Mode != 1 && errno == EACCES)
-		HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "Missing permission to read file '%s'\n", szActualFileName );
+		LOG_TRACE(TRACE_OS_GEMDOS, "Missing permission to read file '%s'\n", szActualFileName );
 
 	Regs[REG_D0] = GEMDOS_EFILNF;     /* File not found/ error opening */
 	return TRUE;
@@ -1837,7 +1837,7 @@ static bool GemDOS_Fattrib(Uint32 Params)
 	nRwFlag = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG);
 	nAttrib = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 
-	HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "Fattrib('%s', %d, 0x%x)\n",
+	LOG_TRACE(TRACE_OS_GEMDOS, "Fattrib('%s', %d, 0x%x)\n",
 		       psFileName, nRwFlag, nAttrib );
 
 	if (!ISHARDDRIVE(nDrive))
@@ -1921,7 +1921,7 @@ static int GemDOS_GetDir(Uint32 Params)
 			c = path[i];
 			STMemory_WriteByte(Address+i, (c==PATHSEP ? '\\' : c) );
 		}
-		HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "GemDOS_GetDir (%d) = %s\n", Drive, path );
+		LOG_TRACE(TRACE_OS_GEMDOS, "GemDOS_GetDir (%d) = %s\n", Drive, path );
 
 		Regs[REG_D0] = GEMDOS_EOK;          /* OK */
 
@@ -2289,12 +2289,12 @@ void GemDOS_OpCode(void)
 #if ENABLE_TRACING
 	if (GemDOSCall < (sizeof(pszGemDOSNames)/sizeof(pszGemDOSNames[0])))
 	{
-		HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "GemDOS 0x%X (%s)\n",
+		LOG_TRACE(TRACE_OS_GEMDOS, "GemDOS 0x%X (%s)\n",
 			       GemDOSCall, pszGemDOSNames[GemDOSCall] );
 	}
 	else
 	{
-		HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "GemDOS 0x%X\n",
+		LOG_TRACE(TRACE_OS_GEMDOS, "GemDOS 0x%X\n",
 			       GemDOSCall );
 	}
 #endif
@@ -2469,7 +2469,7 @@ void GemDOS_Boot(void)
 {
 	bInitGemDOS = TRUE;
 
-	HATARI_TRACE ( HATARI_TRACE_OS_GEMDOS, "Gemdos_Boot()\n" );
+	LOG_TRACE(TRACE_OS_GEMDOS, "Gemdos_Boot()\n" );
 
 	/* install our gemdos handler, if -e or --harddrive option used */
 	if (GEMDOS_EMU_ON)

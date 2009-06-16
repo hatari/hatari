@@ -167,13 +167,14 @@ void PSG_Set_SelectRegister(Uint8 val)
 	/* read/write to ff8802 when PSGRegisterSelect >= 16 */
 	PSGRegisterSelect = val;
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
-	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "ym write reg=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-		PSGRegisterSelect, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-	  }
+	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		LOG_TRACE_PRINT("ym write reg=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+		                PSGRegisterSelect, nFrameCycles, nLineCycles, nHBL,
+		                M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 
@@ -226,13 +227,14 @@ Uint8 PSG_Get_DataRegister(void)
  */
 void PSG_Set_DataRegister(Uint8 val)
 {
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
-	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "ym write data reg=0x%x val=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-		PSGRegisterSelect, val, nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-	  }
+	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		LOG_TRACE_PRINT("ym write data reg=0x%x val=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+		                PSGRegisterSelect, val, nFrameCycles, nLineCycles,
+		                nHBL, M68000_GetPC(), CurrentInstrCycles);
+	}
 
 	/* Is a valid PSG register currently selected ? */
 	if ( PSGRegisterSelect >= 16 )
@@ -356,14 +358,14 @@ void PSG_ff8800_ReadByte(void)
 
 	IoMem[IoAccessCurrentAddress] = PSG_Get_DataRegister();
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_READ ) )
-	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "ym read data %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-		IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
-		nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-	  }
+	if (LOG_TRACE_LEVEL(TRACE_PSG_READ))
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		LOG_TRACE_PRINT("ym read data %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+		                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+		                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 
@@ -377,14 +379,14 @@ void PSG_ff880x_ReadByte(void)
 
 	IoMem[IoAccessCurrentAddress] = 0xff;
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_READ ) )
-	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "ym read void %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-		IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
-		nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-	  }
+	if (LOG_TRACE_LEVEL(TRACE_PSG_READ))
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		LOG_TRACE_PRINT("ym read void %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+		                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+		                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+	}
 }
 
 
@@ -398,14 +400,14 @@ void PSG_ff8800_WriteByte(void)
 //	M68000_WaitState(4);
 	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
-	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-		IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
-		nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-	  }
+	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		LOG_TRACE_PRINT("ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+		                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+		                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+	}
 
 	PSG_Set_SelectRegister ( IoMem[IoAccessCurrentAddress] );
 }
@@ -424,28 +426,28 @@ void PSG_ff8801_WriteByte(void)
 	{	
 		M68000_WaitState(1);			/* [NP] FIXME not 100% accurate, but gives good results */
 	
-		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
-		  {
-		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		    int nLineCycles = nFrameCycles % nCyclesPerLine;
-		    HATARI_TRACE_PRINT ( "ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-			IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
-			nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-		  }
+		if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
+		{
+			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+			int nLineCycles = nFrameCycles % nCyclesPerLine;
+			LOG_TRACE_PRINT("ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+			                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+		}
 	
 		PSG_Set_SelectRegister ( IoMem[IoAccessCurrentAddress] );
 	}
 
 	else
 	{						/* do nothing, just a trace if needed */
-		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
-		  {
-		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		    int nLineCycles = nFrameCycles % nCyclesPerLine;
-		    HATARI_TRACE_PRINT ( "ym write ignored %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-			IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
-			nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-		  }
+		if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
+		{
+			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+			int nLineCycles = nFrameCycles % nCyclesPerLine;
+			LOG_TRACE_PRINT("ym write ignored %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+			                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+		}
 	}
 }
 
@@ -459,14 +461,14 @@ void PSG_ff8802_WriteByte(void)
 //	M68000_WaitState(4);
 	M68000_WaitState(1);				/* [NP] FIXME not 100% accurate, but gives good results */
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
-	  {
-	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-		IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
-		nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-	  }
+	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
+	{
+		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		LOG_TRACE_PRINT("ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+		                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+		                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+	}
 
 	PSG_Set_DataRegister ( IoMem[IoAccessCurrentAddress] );
 }
@@ -485,32 +487,27 @@ void PSG_ff8803_WriteByte(void)
 	{	
 		M68000_WaitState(1);			/* [NP] FIXME not 100% accurate, but gives good results */
 	
-		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
-		  {
-		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		    int nLineCycles = nFrameCycles % nCyclesPerLine;
-		    HATARI_TRACE_PRINT ( "ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-			IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
-			nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-		  }
+		if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
+		{
+			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+			int nLineCycles = nFrameCycles % nCyclesPerLine;
+			LOG_TRACE_PRINT("ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+			                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+		}
 		
 		PSG_Set_DataRegister ( IoMem[IoAccessCurrentAddress] );
 	}
 
 	else
 	{						/* do nothing, just a trace if needed */
-		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_PSG_WRITE ) )
-		  {
-		    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		    int nLineCycles = nFrameCycles % nCyclesPerLine;
-		    HATARI_TRACE_PRINT ( "ym write ignored %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n" ,
-			IoAccessCurrentAddress , IoMem[IoAccessCurrentAddress] ,
-			nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
-		  }
+		if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
+		{
+			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
+			int nLineCycles = nFrameCycles % nCyclesPerLine;
+			LOG_TRACE_PRINT("ym write ignored %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
+			                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+			                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+		}
 	}
 }
-
-
-
-
-

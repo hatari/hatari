@@ -197,10 +197,10 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 	    && ( ( cycles & 3 ) == 2 ) && ( ( LastInstrCycles & 3 ) == 2 ) )
 	{
 		Pairing = 1;
-		HATARI_TRACE( HATARI_TRACE_CPU_PAIRING ,
-		              "cpu pairing detected pc=%x family %s/%s cycles %d/%d\n" ,
-		              m68k_getpc(), OpcodeName[LastOpcodeFamily] ,
-		              OpcodeName[OpcodeFamily], LastInstrCycles, cycles );
+		LOG_TRACE(TRACE_CPU_PAIRING,
+		          "cpu pairing detected pc=%x family %s/%s cycles %d/%d\n",
+		          m68k_getpc(), OpcodeName[LastOpcodeFamily],
+		          OpcodeName[OpcodeFamily], LastInstrCycles, cycles);
 	}
 
 	/* [NP] This part is only needed to track possible pairing instructions, */
@@ -209,10 +209,10 @@ static inline void M68000_AddCyclesWithPairing(int cycles)
 	if ( (LastOpcodeFamily!=OpcodeFamily) && ( Pairing == 0 )
 		&& ( ( cycles & 3 ) == 2 ) && ( ( LastInstrCycles & 3 ) == 2 ) )
 	{
-		HATARI_TRACE( HATARI_TRACE_CPU_PAIRING ,
-		              "cpu could pair pc=%x family %s/%s cycles %d/%d\n" ,
-		              m68k_getpc(), OpcodeName[LastOpcodeFamily] ,
-		              OpcodeName[OpcodeFamily], LastInstrCycles, cycles );
+		LOG_TRACE(TRACE_CPU_PAIRING,
+		          "cpu could pair pc=%x family %s/%s cycles %d/%d\n",
+		          m68k_getpc(), OpcodeName[LastOpcodeFamily],
+		          OpcodeName[OpcodeFamily], LastInstrCycles, cycles);
 	}
 #endif
 

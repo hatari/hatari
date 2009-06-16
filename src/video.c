@@ -557,7 +557,7 @@ static Uint32 Video_CalculateAddress(void)
 			VideoAddress += PrevSize + NbBytes;
 	}
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_ADDR , "video base=%x raster=%x addr=%x video_cyc=%d line_cyc=%d/X=%d @ nHBL=%d/video_hbl=%d %d<->%d pc=%x instr_cyc=%d\n",
+	LOG_TRACE(TRACE_VIDEO_ADDR , "video base=%x raster=%x addr=%x video_cyc=%d line_cyc=%d/X=%d @ nHBL=%d/video_hbl=%d %d<->%d pc=%x instr_cyc=%d\n",
 	               VideoBase, pVideoRaster - STRam, VideoAddress, Cycles_GetCounter(CYCLES_COUNTER_VIDEO),
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO) %  nCyclesPerLine, X,
 	               nHBL, HblCounterVideo, LineStartCycle, LineEndCycle, M68000_GetPC(), CurrentInstrCycles );
@@ -583,7 +583,7 @@ static void Video_WriteToShifter(Uint8 Byte)
 
 	HblCounterVideo = nFrameCycles / nCyclesPerLine;
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+	LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 	               Byte, nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
 	/* Ignore consecutive writes of the same value */
@@ -596,7 +596,7 @@ static void Video_WriteToShifter(Uint8 Byte)
 	        && nLineCycles <= (LINE_START_CYCLE_70+28)
 	        && nFrameCycles-nLastFrameCycles <= 30)
 	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove left\n" );
+		LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect remove left\n" );
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_LEFT_OFF;
 		LineStartCycle = LINE_START_CYCLE_70;
 	}
@@ -605,7 +605,7 @@ static void Video_WriteToShifter(Uint8 Byte)
 	        && nLineCycles <= (LINE_START_CYCLE_70+20)
 	        && nFrameCycles-nLastFrameCycles <= 30)
 	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove left mid\n" );
+		LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect remove left mid\n" );
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_LEFT_OFF_MID;	/* a later switch to low res might gives right scrolling */
 		/* By default, this line will be in mid res, except if we detect hardware scrolling later */
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_OVERSCAN_MID_RES | ( 2 << 20 );
@@ -617,7 +617,7 @@ static void Video_WriteToShifter(Uint8 Byte)
 	          && ( nLastCycles == LINE_EMPTY_CYCLE_70_STF )
 		  && ( ConfigureParams.System.nMachineType == MACHINE_ST ) )
 	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
+		LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
 		LineStartCycle = 0;
 		LineEndCycle = 0;
@@ -628,7 +628,7 @@ static void Video_WriteToShifter(Uint8 Byte)
 	          && ( nLastCycles == LINE_EMPTY_CYCLE_70_STE )
 		  && ( ConfigureParams.System.nMachineType == MACHINE_STE ) )
 	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
+		LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect empty line res\n" );
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
 		LineStartCycle = 0;
 		LineEndCycle = 0;
@@ -637,7 +637,7 @@ static void Video_WriteToShifter(Uint8 Byte)
 	/* Empty line switching res on STF (switch just before the HBL) */
 	else if ( ( nLastCycles == 500 ) && ( nLineCycles == 508 ) )
 	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res 2\n" );
+		LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect empty line res 2\n" );
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
 		LineStartCycle = 0;
 		LineEndCycle = 0;
@@ -652,7 +652,7 @@ static void Video_WriteToShifter(Uint8 Byte)
 	        && ( nLastCycles <= LINE_END_CYCLE_70+4 )		/* switch to hi res before cycle 164 */
 	        && ( nLineCycles >= LINE_END_CYCLE_70+4 ) )		/* switch to lo res after cycle 164 */
 	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect stop middle\n" );
+		LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect stop middle\n" );
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_STOP_MIDDLE;
 		LineEndCycle = LINE_END_CYCLE_70;
 	}
@@ -664,7 +664,7 @@ static void Video_WriteToShifter(Uint8 Byte)
 	        && nFrameCycles-nLastFrameCycles <= 20
 	        && nLastCycles == LINE_END_CYCLE_50_2 )
 	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove right full\n" );
+		LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect remove right full\n" );
 		ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_OFF_FULL;
 		ScreenBorderMask[ HblCounterVideo+1 ] |= BORDERMASK_LEFT_OFF;	/* no left border on next line */
 		LineEndCycle = LINE_END_CYCLE_FULL;
@@ -679,12 +679,12 @@ static void Video_WriteToShifter(Uint8 Byte)
 	{
 		if ( nLineCycles == LINE_LEFT_MID_CYCLE_1 )		/* 'No Cooper' timing */
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect midres overscan offset 0 byte\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect midres overscan offset 0 byte\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_OVERSCAN_MID_RES | ( 0 << 20 );
 		}
 		else if ( nLineCycles == LINE_LEFT_MID_CYCLE_2 )	/* 'Best Part Of The Creation / PYM' timing */
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect midres overscan offset 2 bytes\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect midres overscan offset 2 bytes\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_OVERSCAN_MID_RES | ( 2 << 20 );
 		}
 	}
@@ -702,22 +702,22 @@ static void Video_WriteToShifter(Uint8 Byte)
 
 		if ( nLineCycles == LINE_SCROLL_13_CYCLE_50 )		/* cycle 20 */
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect 13 pixels right scroll\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 13 pixels right scroll\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= ( 13 << 16 );
 		}
 		else if ( nLineCycles == LINE_SCROLL_9_CYCLE_50 )	/* cycle 24 */
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect 9 pixels right scroll\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 9 pixels right scroll\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= ( 9 << 16 );
 		}
 		else if ( nLineCycles == LINE_SCROLL_5_CYCLE_50 )	/* cycle 28 */
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect 5 pixels right scroll\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 5 pixels right scroll\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= ( 5 << 16 );
 		}
 		else if ( nLineCycles == LINE_SCROLL_1_CYCLE_50 )	/* cycle 32 */
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect 1 pixel right scroll\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 1 pixel right scroll\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= ( 1 << 16 );
 		}
 	}
@@ -751,7 +751,7 @@ void Video_Sync_WriteByte(void)
 
 	HblCounterVideo = nFrameCycles / nCyclesPerLine;
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_SYNC ,"sync=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+	LOG_TRACE(TRACE_VIDEO_SYNC ,"sync=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 	               Byte, nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
 	/* Ignore consecutive writes of the same value */
@@ -770,7 +770,7 @@ void Video_Sync_WriteByte(void)
 		        && ( nLineCycles <= LINE_END_CYCLE_60 )		/* change when line is active */
 		        && ( ( ScreenBorderMask[ HblCounterVideo ] & ( BORDERMASK_LEFT_OFF | BORDERMASK_LEFT_OFF_MID ) ) == 0 ) )
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect left+2\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect left+2\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_LEFT_PLUS_2;
 			LineStartCycle = LINE_START_CYCLE_60;
 		}
@@ -780,7 +780,7 @@ void Video_Sync_WriteByte(void)
 			&& ( ( nLastCycles == LINE_START_CYCLE_50 ) || ( nLastCycles == LINE_START_CYCLE_50+4 ) )
 			&& ( nLineCycles > LINE_START_CYCLE_50 ) )
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line freq\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect empty line freq\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_EMPTY_LINE;
 			LineStartCycle = 0;
 			LineEndCycle = 0;
@@ -794,7 +794,7 @@ void Video_Sync_WriteByte(void)
 		        && ( nLastHBL == HblCounterVideo )
 		        && ( ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_STOP_MIDDLE ) == 0 ) )
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect right-2\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_MINUS_2;
 			LineEndCycle = LINE_END_CYCLE_60;
 		}
@@ -805,7 +805,7 @@ void Video_Sync_WriteByte(void)
 		        && ( nLastHBL == nHBL ) && ( nHBL+1 == HblCounterVideo )
 		        && ( ( ScreenBorderMask[ nHBL ] & BORDERMASK_STOP_MIDDLE ) == 0 ) )
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect right-2\n" );
 			ScreenBorderMask[ nHBL ] |= BORDERMASK_RIGHT_MINUS_2;
 			LineEndCycle = LINE_END_CYCLE_60;
 		}
@@ -820,7 +820,7 @@ void Video_Sync_WriteByte(void)
 		if ( ( nLineCycles == LINE_END_CYCLE_50 )
 		        && ( ( ScreenBorderMask[ HblCounterVideo ] & BORDERMASK_STOP_MIDDLE ) == 0 ) )
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove right\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect remove right\n" );
 			ScreenBorderMask[ HblCounterVideo ] |= BORDERMASK_RIGHT_OFF;
 			LineEndCycle = LINE_END_CYCLE_NO_RIGHT;
 		}
@@ -1444,7 +1444,7 @@ static void Video_EndHBL(void)
 	    && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (VIDEO_START_HBL_60HZ-1) * nCyclesPerLine + LineRemoveTopCycle)))
 	{
 		/* Top border */
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove top\n" );
+		LOG_TRACE(TRACE_VIDEO_BORDER_V , "detect remove top\n" );
 		OverscanMode |= OVERSCANMODE_TOP;	/* Set overscan bit */
 		nStartHBL = VIDEO_START_HBL_60HZ;	/* New start screen line */
 		pHBLPaletteMasks -= OVERSCAN_TOP;	// FIXME useless ?
@@ -1458,7 +1458,7 @@ static void Video_EndHBL(void)
 	         && (nStartHBL == VIDEO_START_HBL_60HZ)	/* screen starts in 60 Hz */
 	         && ((OverscanMode & OVERSCANMODE_TOP) == 0))	/* and top border was not removed : this screen is only 60 Hz */
 	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
+		LOG_TRACE(TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
 		OverscanMode |= OVERSCANMODE_BOTTOM;
 		nEndHBL = SCANLINES_PER_FRAME_60HZ;	/* new end for a 60 Hz screen */
 	}
@@ -1469,7 +1469,7 @@ static void Video_EndHBL(void)
 	          && ((LastCycleSync50 < LastCycleSync60) || (LastCycleSync50 > (VIDEO_END_HBL_50HZ-1) * nCyclesPerLine + LineRemoveBottomCycle))
 	          && ((OverscanMode & OVERSCANMODE_BOTTOM) == 0))	/* border was not already removed at line VIDEO_END_HBL_60HZ */
 	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
+		LOG_TRACE(TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
 		OverscanMode |= OVERSCANMODE_BOTTOM;
 		nEndHBL = VIDEO_END_HBL_50HZ+VIDEO_HEIGHT_BOTTOM_50HZ;	/* new end for a 50 Hz screen */
 
@@ -1478,7 +1478,7 @@ static void Video_EndHBL(void)
 		/* 2 bytes to this line (this is wrong practice as it can distort the display on a real ST) */
 		if (LastCycleSync60 <= (VIDEO_END_HBL_50HZ-1) * nCyclesPerLine + LINE_END_CYCLE_60)
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect right-2\n" );
 			ScreenBorderMask[ nHBL ] |= BORDERMASK_RIGHT_MINUS_2;
 			LineEndCycle = LINE_END_CYCLE_60;
 		}
@@ -1489,7 +1489,7 @@ static void Video_EndHBL(void)
 	/* line ends 2 bytes earlier on the right */
 	if ( ( LineStartCycle != LINE_START_CYCLE_60 ) && ( LineEndCycle == LINE_END_CYCLE_60 ) ) 
 	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2\n" );
+		LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect right-2\n" );
 		ScreenBorderMask[ nHBL ] |= BORDERMASK_RIGHT_MINUS_2;
 	}
 
@@ -1547,7 +1547,7 @@ void Video_InterruptHandler_HBL(void)
 	if ( HblJitterIndex == HBL_JITTER_MAX_POS )
 		HblJitterIndex = 0;
 	
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
+	LOG_TRACE(TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
 	               nHBL , nFrameCycles , PendingCyclesOver , HblJitterArray[ HblJitterIndex ] );
 
 	/* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
@@ -1565,7 +1565,7 @@ void Video_InterruptHandler_HBL(void)
 	  && ( ( nFrameCycles - PendingCyclesOver - HblJitterArray[ HblJitterIndex ] ) - LastCycleHblException <= 56 ) )
 	{
 		/* simultaneous case, don't call M68000_Exception */
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d signal ignored during pending hbl exception at cycle %d\n" ,
+		LOG_TRACE(TRACE_VIDEO_HBL , "HBL %d video_cyc=%d signal ignored during pending hbl exception at cycle %d\n" ,
 			nHBL , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , LastCycleHblException );
 		LastCycleHblException = -1;
 	}
@@ -1598,7 +1598,7 @@ void Video_InterruptHandler_EndLine(void)
 	int nLineCycles = nFrameCycles % nCyclesPerLine;
 	int PendingCycles = -INT_CONVERT_FROM_INTERNAL ( PendingInterruptCount , INT_CPU_CYCLE );
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "EndLine TB %d video_cyc=%d line_cyc=%d pending_int_cnt=%d\n" ,
+	LOG_TRACE(TRACE_VIDEO_HBL , "EndLine TB %d video_cyc=%d line_cyc=%d pending_int_cnt=%d\n" ,
 	               nHBL , nFrameCycles , nLineCycles , PendingCycles );
 
 	/* Remove this interrupt from list and re-order */
@@ -2094,7 +2094,7 @@ void Video_InterruptHandler_VBL(void)
 	/* Generate 1/50th second of sound sample data, to be played by sound thread */
 	Sound_Update_VBL();
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
+	LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
 	               nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
 
 	M68000_Exception ( EXCEPTION_VBLANK , M68000_EXCEPTION_SRC_INT_VIDEO );	/* Vertical blank interrupt, level 4! */
@@ -2168,11 +2168,11 @@ void Video_ScreenBaseSTE_WriteByte(void)
 	if ( ( IoAccessCurrentAddress == 0xff8201 ) || ( IoAccessCurrentAddress == 0xff8203 ) )
 		IoMem[0xff820d] = 0;          /* Reset screen base low register */
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_STE ) )
+	if (LOG_TRACE_LEVEL(TRACE_VIDEO_STE))
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "write ste video base=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
+		LOG_TRACE_PRINT("write ste video base=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
 			(IoMem[0xff8201]<<16)+(IoMem[0xff8203]<<8)+IoMem[0xff820d] ,
 			nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}
@@ -2247,7 +2247,7 @@ void Video_ScreenCounter_WriteByte(void)
 		Delayed = TRUE;
 	}
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste video %x val=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
+	LOG_TRACE(TRACE_VIDEO_STE , "write ste video %x val=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
 				IoAccessCurrentAddress, AddrByte, Delayed ? "yes" : "no" ,
 				nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }
@@ -2350,7 +2350,7 @@ void Video_LineWidth_WriteByte(void)
 		Delayed = TRUE;
 	}
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste linewidth=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+	LOG_TRACE(TRACE_VIDEO_STE , "write ste linewidth=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 					NewWidth, Delayed ? "yes" : "no" ,
 					nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }
@@ -2391,12 +2391,13 @@ static void Video_ColorReg_WriteWord(Uint32 addr)
 		pHBLPalettes[idx] = col;               /* Set colour x */
 		*pHBLPaletteMasks |= 1 << idx;         /* And mask */
 
-		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_COLOR ) )
+		if (LOG_TRACE_LEVEL(TRACE_VIDEO_COLOR))
 		{
 			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 			int nLineCycles = nFrameCycles % nCyclesPerLine;
-			HATARI_TRACE_PRINT ( "write col addr=%x col=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" , addr, col,
-			                     nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+			LOG_TRACE_PRINT("write col addr=%x col=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
+			                addr, col, nFrameCycles, nLineCycles, nHBL,
+			                M68000_GetPC(), CurrentInstrCycles);
 		}
 
 	}
@@ -2607,7 +2608,7 @@ void Video_HorScroll_Write(void)
 		if ( ( ScrollCount == 0 ) && ( LastVal8265 > 0 ) && ( LastCycleScroll8265 >= 0 )
 			&& ( LastCycleScroll8264 - LastCycleScroll8265 <= 40 ) )
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect ste left+16 pixels\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect ste left+16 pixels\n" );
 			Add16px = TRUE;
 		}
 	}
@@ -2644,7 +2645,7 @@ void Video_HorScroll_Write(void)
 		Delayed = TRUE;
 	}
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste %x hwscroll=%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
+	LOG_TRACE(TRACE_VIDEO_STE , "write ste %x hwscroll=%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
 		RegAddr , ScrollCount, Delayed ? "yes" : "no" ,
 		nFrameCycles, nLineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }

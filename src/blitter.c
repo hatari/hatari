@@ -904,11 +904,11 @@ void Blitter_Control_WriteByte(void)
 	 * The lowest 4 bits contain the Halftone pattern line number
 	 */
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_BLITTER ) )
+	if (LOG_TRACE_LEVEL(TRACE_BLITTER))
 	{
 		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 		int nLineCycles = nFrameCycles % nCyclesPerLine;
-		HATARI_TRACE_PRINT ( "blitter write ctrl=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
+		LOG_TRACE_PRINT("blitter write ctrl=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
 				IoMem_ReadByte(REG_CONTROL) ,
 				nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
 	}

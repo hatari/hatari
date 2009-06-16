@@ -928,8 +928,8 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     m68k_areg(regs, 7) -= 2;
     put_word (m68k_areg(regs, 7), regs.sr);
 
-    HATARI_TRACE ( HATARI_TRACE_CPU_EXCEPTION , "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x\n" ,
-	nr, currpc, BusErrorPC, get_long (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3 );
+    LOG_TRACE(TRACE_CPU_EXCEPTION, "cpu exception %d currpc %x buspc %x newpc %x fault_e3 %x op_e3 %hx addr_e3 %x\n",
+	nr, currpc, BusErrorPC, get_long (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3);
 
     /* 68000 bus/address errors: */
     if (currprefs.cpu_level==0 && (nr==2 || nr==3) && (ExceptionSource != M68000_EXCEPTION_SRC_INT_MFP) ) {
@@ -1683,13 +1683,13 @@ static void m68k_run_1 (void)
 #endif
 
 	/*m68k_dumpstate(stderr, NULL);*/
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_CPU_DISASM ) )
-	  {
+	if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+	{
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , nFrameCycles, nLineCycles, nHBL );
+	    LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , nFrameCycles, nLineCycles, nHBL );
 	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
-	  }
+	}
 
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
 /*	regs_backup[backup_pointer = (backup_pointer + 1) % 16] = regs;*/
@@ -1765,13 +1765,13 @@ static void m68k_run_2 (void)
 	uae_u32 opcode = get_iword (0);
 
 	/*m68k_dumpstate(stderr, NULL);*/
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_CPU_DISASM ) )
-	  {
+	if (LOG_TRACE_LEVEL(TRACE_CPU_DISASM))
+	{
 	    int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
 	    int nLineCycles = nFrameCycles % nCyclesPerLine;
-	    HATARI_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , nFrameCycles, nLineCycles, nHBL );
+	    LOG_TRACE_PRINT("cpu video_cyc=%6d %3d@%3d : ", nFrameCycles, nLineCycles, nHBL);
 	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
-	  }
+	}
 
 	/* assert (!regs.stopped && !(regs.spcflags & SPCFLAG_STOP)); */
 /*	regs_backup[backup_pointer = (backup_pointer + 1) % 16] = regs;*/

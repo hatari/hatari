@@ -32,7 +32,7 @@ static bool Bios_Bconstat(Uint32 Params)
 
 	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 
-	HATARI_TRACE(HATARI_TRACE_OS_BIOS, "BIOS Bconstat(%i)\n", Dev);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bconstat(%i)\n", Dev);
 
 	return FALSE;
 }
@@ -49,7 +49,7 @@ static bool Bios_Bconin(Uint32 Params)
 
 	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 
-	HATARI_TRACE(HATARI_TRACE_OS_BIOS, "BIOS Bconin(%i)\n", Dev);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bconin(%i)\n", Dev);
 
 	return FALSE;
 }
@@ -68,7 +68,7 @@ static bool Bios_Bconout(Uint32 Params)
 	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 	Char = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD);
 
-	HATARI_TRACE(HATARI_TRACE_OS_BIOS, "BIOS Bconout(%i, 0x%02x)\n", Dev, Char);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bconout(%i, 0x%02x)\n", Dev, Char);
 
 	return FALSE;
 }
@@ -91,8 +91,8 @@ static bool Bios_RWabs(Uint32 Params)
 	RecNo = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 
-	HATARI_TRACE(HATARI_TRACE_OS_BIOS, "BIOS RWabs %i,%d,0x%lX,%d,%d\n",
-			Dev, RWFlag, STRAM_ADDR(pBuffer), RecNo, Number);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS RWabs %i,%d,0x%lX,%d,%d\n",
+	          Dev, RWFlag, STRAM_ADDR(pBuffer), RecNo, Number);
 
 	return FALSE;
 }
@@ -109,7 +109,7 @@ static bool Bios_Bcostat(Uint32 Params)
 
 	Dev = STMemory_ReadWord(Params+SIZE_WORD);
 
-	HATARI_TRACE(HATARI_TRACE_OS_BIOS, "BIOS Bcostat(%i)\n", Dev);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bcostat(%i)\n", Dev);
 
 	return FALSE;
 }
@@ -143,7 +143,7 @@ bool Bios(void)
 	 case 0x8:
 		return Bios_Bcostat(Params);
 	 default:           /* Call as normal! */
-		HATARI_TRACE ( HATARI_TRACE_OS_BIOS, "BIOS %d\n", BiosCall );
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS %d\n", BiosCall);
 		return FALSE;
 	}
 }

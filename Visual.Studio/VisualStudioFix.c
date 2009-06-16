@@ -25,7 +25,7 @@ extern	FILE *TraceFile;
 	#define _INC_HATARI_TRACE
 
 	#if ENABLE_TRACING
-		void	HATARI_TRACE( int level, const char* format, ...)
+		void LOG_TRACE(int level, const char* format, ...)
 		{
 			va_list	x;
 			va_start(x,format);
@@ -33,18 +33,18 @@ extern	FILE *TraceFile;
 			va_end	(x);
 		};
 	#else		/* ENABLE_TRACING */
-		void	HATARI_TRACE( int level, ...)
+		void LOG_TRACE(int level, ...)
 		{
 		}
 
 	#endif		/* ENABLE_TRACING */
 
-	void HATARI_TRACE_PRINT(char*	strFirstString, ...)	
+	void LOG_TRACE_PRINT(char* strFirstString, ...)
 	{
 		va_list	x;
 		va_start(x,strFirstString);
 		_vftprintf(TraceFile,strFirstString, x);
-		va_end	(x);				
+		va_end	(x);
 	};
 
 	#endif

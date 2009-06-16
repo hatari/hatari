@@ -283,7 +283,8 @@ void VDI_Complete(void)
 
 		VDI_LineA(LineABase, FontBase);  /* And modify Line-A structure accordingly */
 	}
-	HATARI_TRACE ( HATARI_TRACE_OS_VDI, "VDI opcode %hd completed\n", OpCode );
+
+	LOG_TRACE(TRACE_OS_VDI, "VDI opcode %hd completed\n", OpCode);
 }
 
 
