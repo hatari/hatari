@@ -25,8 +25,8 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 /* set to 1 to enable parsing function tracing / debug output */
 #define DEBUG 0
 
-/* this is in 3 dsp*.c files, maybe it should be in a common header? */
-#define BITMASK(x)      ((1<<(x))-1)
+/* needs to go through long long to handle x=32 */
+#define BITMASK(x)      ((Uint32)(((unsigned long long)1<<(x))-1))
 
 #define BC_MAX_CONDITION_BREAKPOINTS 16
 #define BC_MAX_CONDITIONS_PER_BREAKPOINT 4
@@ -411,11 +411,8 @@ static bool BreakCond_ParseMaskModifier(parser_state_t *pstate, bc_value_t *bc_v
 		EXITFUNC(("arg:%d -> true (missing)\n", pstate->arg));
 		return true;
 	}
-	/* if you really want to have mask on plain numbers, remove this check */
 	if (bc_value->type == BC_TYPE_NUMBER && !bc_value->is_indirect) {
-		pstate->error = "numbers shouldn't need masks";
-		EXITFUNC(("arg:%d -> false\n", pstate->arg));
-		return false;
+		fprintf(stderr, "WARNING: plain numbers shouldn't need masks\n");
 	}
 	pstate->arg++;
 	if (!BreakCond_ParseNumber(pstate, pstate->argv[pstate->arg], &(bc_value->mask))) {
@@ -502,11 +499,14 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
+	if ((BITMASK(bc_value->bits) & bc_value->mask) != bc_value->mask) {
+		fprintf(stderr, "WARNING: mask %x doesn't fit into %d address/register bits\n",
+			bc_value->mask, bc_value->bits);
+	}
 	if (bc_value->type == BC_TYPE_NUMBER && bc_value->is_indirect &&
 	    (bc_value->value.number & 1) && bc_value->bits > 8) {
-		pstate->error = "odd address requires byte (.b) access";
-		EXITFUNC(("arg:%d -> false\n", pstate->arg));
-		return false;
+		fprintf(stderr, "WARNING: odd address %x given without using byte (.b) width\n",
+			bc_value->value.number);
 	}
 
 	EXITFUNC(("arg:%d -> true (%s value)\n", pstate->arg,
@@ -567,9 +567,11 @@ static bool BreakCond_CrossCheckValues(parser_state_t *pstate,
 				       bc_value_t *bc_value1,
 				       bc_value_t *bc_value2)
 {
-	Uint32 mask;
+	Uint32 mask1, mask2;
 	ENTERFUNC(("BreakCond_CrossCheckValues()\n"));
-	if ((bc_value1->mask & bc_value2->mask) == 0) {
+	mask1 = BITMASK(bc_value1->bits) & bc_value1->mask;
+	mask2 = BITMASK(bc_value2->bits) & bc_value2->mask;
+	if ((mask1 & mask2) == 0) {
 		pstate->error = "values masks cancel each other";
 		EXITFUNC(("-> false\n"));
 		return false;
@@ -581,9 +583,8 @@ static bool BreakCond_CrossCheckValues(parser_state_t *pstate,
 		EXITFUNC(("-> true (no problematic direct types)\n"));
 		return true;
 	}
-	mask = BITMASK(bc_value1->bits) & bc_value1->mask;
-	if (bc_value2->value.number > mask) {
-		pstate->error = "number is larger than the address width/mask";
+	if ((bc_value2->value.number & mask1) != bc_value2->value.number) {
+		pstate->error = "number doesn't fit the other side address width & mask";
 		EXITFUNC(("-> false\n"));
 		return false;
 	}
