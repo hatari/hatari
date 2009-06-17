@@ -72,8 +72,8 @@ static int Reset_ST(bool bCold)
 
 	Midi_Reset();
 
-	/* Start HBL and VBL interrupts */
-	Video_StartInterrupts();
+	/* Start HBL, Timer B and VBL interrupts with a 0 cycle delay */
+	Video_StartInterrupts( 0 );
 
 	return 0;
 }

@@ -601,6 +601,7 @@ void	Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles )
 
 //if ( ( *pHBL != FrameCycles / nCyclesPerLine ) || ( *pLineCycles != FrameCycles % nCyclesPerLine ) )
 //  HATARI_TRACE ( HATARI_TRACE_VIDEO_ADDR , "conv pos %d %d - %d %d\n" , *pHBL , FrameCycles / nCyclesPerLine , *pLineCycles , FrameCycles % nCyclesPerLine );
+//  HATARI_TRACE ( HATARI_TRACE_VIDEO_ADDR , "conv pos %d %d %d\n" , FrameCycles , *pHBL , *pLineCycles );
 }
 
 
@@ -1402,8 +1403,8 @@ void Video_InterruptHandler_HBL ( void )
 
 	/* Generate new HBL, if need to - there are 313 HBLs per frame in 50 Hz */
 	if (nHBL < nScanlinesPerFrame-1)
-		Int_AddAbsoluteInterrupt ( NewHBLPos , INT_CPU_CYCLE , INTERRUPT_VIDEO_HBL );
-//		Video_AddInterruptHBL ( Video_HBL_GetPos() );
+//		Int_AddAbsoluteInterrupt ( NewHBLPos , INT_CPU_CYCLE , INTERRUPT_VIDEO_HBL );
+		Video_AddInterruptHBL ( NewHBLPos );
 
 
 	/* We must handle a very special case : if we had a pending HBL that becomes active */
@@ -2341,10 +2342,10 @@ static void Video_ClearOnVBL(void)
 	pVideoRaster = &STRam[VideoBase];
 	pSTScreen = pFrameBuffer->pSTScreen;
 
-	Video_StartHBL();
 	Video_SetScreenRasters();
 	Video_InitShifterLines();
 	Spec512_StartVBL();
+	Video_StartHBL();					/* Init ShifterFrame.ShifterLines[0] */
 }
 
 
@@ -2524,9 +2525,7 @@ static void Video_DrawScreen(void)
 
 static void Video_AddInterrupt ( int Pos , interrupt_id Handler )
 {
-	int FrameCycles;
-	int HblCounterVideo;
-	int LineCycles;
+	int FrameCycles , HblCounterVideo , LineCycles;
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
@@ -2553,9 +2552,12 @@ static void Video_AddInterruptTimerB ( int Pos )
 /**
  * Add some video interrupts to handle the first HBL and the first Timer B
  * in a new VBL. Also add an interrupt to trigger the next VBL.
+ * This function is called from the VBL, so we use PendingCycleOver to take into account
+ * the possible delay occurring when the VBL was executed.
  */
-void Video_StartInterrupts(void)
+void Video_StartInterrupts ( int PendingCyclesOver )
 {
+#if 0
 	/* HBL/Timer B are not emulated in VDI mode */
 	if (!bUseVDIRes)
 	{
@@ -2578,6 +2580,20 @@ void Video_StartInterrupts(void)
 
 
 	Int_AddAbsoluteInterrupt(CYCLES_PER_FRAME, INT_CPU_CYCLE, INTERRUPT_VIDEO_VBL);
+#else
+	/* HBL/Timer B are not emulated in VDI mode */
+	if (!bUseVDIRes)
+	{
+		/* Set Timer B interrupt for line 0*/
+		Video_AddInterruptTimerB ( Video_TimerB_GetPos ( 0 ) );
+
+		/* Set HBL interrupt */
+		Video_AddInterruptHBL ( Video_HBL_GetPos() );
+	}
+
+	/* TODO replace CYCLES_PER_FRAME */
+	Int_AddRelativeInterrupt ( CYCLES_PER_FRAME - PendingCyclesOver , INT_CPU_CYCLE , INTERRUPT_VIDEO_VBL );
+#endif
 }
 
 
@@ -2601,9 +2617,6 @@ void Video_InterruptHandler_VBL ( void )
 	if ( VblJitterIndex == VBL_JITTER_MAX_POS )
 		VblJitterIndex = 0;
 	
-	/* Start VBL, HBL and Timer B interrupts */
-	Video_StartInterrupts();
-
 	/* Set frame cycles, used for Video Address */
 	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, PendingCyclesOver + VblVideoCycleOffset);
 
@@ -2621,6 +2634,12 @@ void Video_InterruptHandler_VBL ( void )
 	nVBLs++;
 	/* Set video registers for frame */
 	Video_ClearOnVBL();
+
+	/* Start VBL, HBL and Timer B interrupts (this must be done after resetting video cycle counter */
+	/* setting default freq values in Video_ClearOnVBL) */
+	Video_StartInterrupts ( PendingCyclesOver );
+	
+	
 	/* Store off PSG registers for YM file, is enabled */
 	YMFormat_UpdateRecording();
 	/* Generate 1/50th second of sound sample data, to be played by sound thread */
