@@ -31,32 +31,21 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #define BC_MAX_CONDITION_BREAKPOINTS 16
 #define BC_MAX_CONDITIONS_PER_BREAKPOINT 4
 
-/* defines for how the value needs to be accessed: */
-typedef enum {
-	BC_TYPE_NUMBER,		/* use as-is */
-	BC_TYPE_ADDRESS		/* read from (Hatari) address as-is */
-} bc_addressing_t;
+#define BC_DEFAULT_DSP_SPACE 'P'
 
 typedef struct {
-	bc_addressing_t type;
 	bool is_indirect;
-	bool use_dsp;
-	char space;	/* TODO: DSP has P, X, Y address spaces */
-	int bits;
+	char dsp_space;	/* DSP has P, X, Y address spaces, zero if not DSP */
+	char regsize;	/* Hatari register variable size, zero if not reg */
 	union {
 		Uint32 number;
-		/* e.g. registers have different sizes */
-		Uint32 *addr32;
-		Uint16 *addr16;
-		Uint8 *addr8;
+		/* couple of Hatari registers are 16-bit instead of 32-bit */
+		Uint32 *reg32;
+		Uint16 *reg16;
 	} value;
+	Uint32 bits;	/* CPU has 8/16/32 bit address widths */
 	Uint32 mask;	/* <width mask> && <value mask> */
 } bc_value_t;
-
-typedef enum {
-	BC_NEXT_AND,	/* next condition is ANDed to current one */
-	BC_NEXT_NEW	/* next condition starts a new breakpoint */
-} bc_next_t;
 
 typedef struct {
 	bc_value_t lvalue;
@@ -133,33 +122,23 @@ static Uint32 BreakCond_ReadSTMemory(Uint32 addr, const bc_value_t *bc_value)
 static Uint32 BreakCond_GetValue(const bc_value_t *bc_value)
 {
 	Uint32 value;
-	
-	switch (bc_value->type) {
-	case BC_TYPE_NUMBER:
+
+	switch (bc_value->regsize) {
+	case 32:
+		value = *(bc_value->value.reg32);
+		break;
+	case 16:
+		value = *(bc_value->value.reg16);
+		break;
+	case 0:	/* not a register */
 		value = bc_value->value.number;
 		break;
-	case BC_TYPE_ADDRESS:
-		switch (bc_value->bits) {
-		case 32:
-			value = *(bc_value->value.addr32);
-			break;
-		case 16:
-			value = *(bc_value->value.addr16);
-			break;
-		case 8:
-			value = *(bc_value->value.addr8);
-			break;
-		default:
-			fprintf(stderr, "ERROR: unknown register size %d!\n", bc_value->bits);
-			abort();
-		}
-		break;
 	default:
-		fprintf(stderr, "ERROR: unknown breakpoint condition value type %d!\n", bc_value->type);
+		fprintf(stderr, "ERROR: unknown register size %d!\n", bc_value->regsize);
 		abort();
 	}
 	if (bc_value->is_indirect) {
-		if (bc_value->use_dsp) {
+		if (bc_value->dsp_space) {
 			value = BreakCond_ReadDspMemory(value, bc_value);
 		} else {
 			value = BreakCond_ReadSTMemory(value, bc_value);
@@ -259,33 +238,50 @@ int BreakCond_BreakPointCount(bool bForDsp)
 
 /* -------------- breakpoint condition parsing, internals ------------- */
 
+/* struct for passing around breakpoint conditions parsing state */
+typedef struct {
+	int arg;		/* current arg */
+	int argc;		/* arg count */
+	const char **argv;	/* arg pointer array (+ strings) */
+	const char *error;	/* error from parsing args */
+} parser_state_t;
+
+
 /**
  * If given string is register name (for DSP or CPU), set bc_value
  * fields accordingly and return true, otherwise return false.
  */
-static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
+static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, parser_state_t *pstate)
 {
 	int bits;
 	ENTERFUNC(("BreakCond_ParseRegister('%s')\n", regname));
-	if (bc_value->use_dsp) {
+	if (bc_value->dsp_space) {
 		bits = DSP_GetRegisterAddress(regname,
-					      &(bc_value->value.addr32),
+					      &(bc_value->value.reg32),
 					      &(bc_value->mask));
 		if (bits) {
-			bc_value->bits = bits;
+			if (bc_value->is_indirect && toupper(regname[0]) != 'R') {
+				pstate->error = "only R0-R7 registers can be used for indirect addressing";
+				EXITFUNC(("-> false (DSP)\n"));
+				return false;
+			}
+			bc_value->bits = 24;
+			bc_value->regsize = bits;
 			EXITFUNC(("-> true (DSP)\n"));
 			return true;
 		}
-		/* check DSP register names */
+		pstate->error = "invalid DSP register name";
 		EXITFUNC(("-> false (DSP)\n"));
 		return false;
 	}
-	bits = DebugUI_GetCpuRegisterAddress(regname, &(bc_value->value.addr32));
+	bits = DebugUI_GetCpuRegisterAddress(regname, &(bc_value->value.reg32));
 	if (bits) {
 		bc_value->bits = bits;
+		bc_value->regsize = bits;
 		EXITFUNC(("-> true (CPU)\n"));
 		return true;
 	}
+	pstate->error = "invalid CPU register name";
 	EXITFUNC(("-> false (CPU)\n"));
 	return false;
 }
@@ -297,7 +293,7 @@ static bool BreakCond_CheckAddress(bc_value_t *bc_value)
 {
 	Uint32 addr = bc_value->value.number;
 	ENTERFUNC(("BreakCond_CheckAddress(%x)\n", addr));
-	if (bc_value->use_dsp) {
+	if (bc_value->dsp_space) {
 		if (addr > 0xFFFF) {
 			EXITFUNC(("-> false (DSP)\n"));
 			return false;
@@ -312,15 +308,6 @@ static bool BreakCond_CheckAddress(bc_value_t *bc_value)
 	EXITFUNC(("-> true (CPU)\n"));
 	return true;
 }
-
-
-/* struct for passing around breakpoint conditions parsing state */
-typedef struct {
-	int arg;		/* current arg */
-	int argc;		/* arg count */
-	const char **argv;	/* arg pointer array (+ strings) */
-	const char *error;	/* error from parsing args */
-} parser_state_t;
 
 
 /**
@@ -351,48 +338,72 @@ static bool BreakCond_ParseNumber(parser_state_t *pstate, const char *value, Uin
 
 
 /**
- * Check for and parse a condition value size.
+ * Check for and parse a condition value address space/width modifier.
  * Modify pstate according to parsing (arg index and error string).
- * Return true for no or successfully parsed size and false for error.
+ * Return false for error and true for no or successfully parsed modifier.
  */
-static bool BreakCond_ParseSizeModifier(parser_state_t *pstate, bc_value_t *bc_value)
+static bool BreakCond_ParseAddressModifier(parser_state_t *pstate, bc_value_t *bc_value)
 {
-	int size;
+	char mode;
 
-	ENTERFUNC(("BreakCond_ParseSizeModifier()\n"));
+	ENTERFUNC(("BreakCond_ParseAddressModifier()\n"));
 	if (pstate->arg+2 > pstate->argc ||
 	    strcmp(pstate->argv[pstate->arg], ".") != 0) {
+		if (bc_value->dsp_space && bc_value->is_indirect) {
+			pstate->error = "DSP memory addresses need to specify address space";
+			EXITFUNC(("arg:%d -> false\n", pstate->arg));
+			return false;
+		}
 		EXITFUNC(("arg:%d -> true (missing)\n", pstate->arg));
 		return true;
 	}
-	pstate->arg++;
-	switch (pstate->argv[pstate->arg][0]) {
-	case 'l':
-		size = 32;
-		break;
-	case 'w':
-		size = 16;
-		break;
-	case 'b':
-		size = 8;
-		break;
-	default:
-		pstate->error = "invalid size modifier";
+	if (bc_value->regsize && !bc_value->is_indirect) {
+		pstate->error = "space/width modifier makes sense only for an address";
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
+	}
+	pstate->arg++;
+	if (bc_value->dsp_space) {
+		switch (pstate->argv[pstate->arg][0]) {
+		case 'p':
+		case 'x':
+		case 'y':
+			mode = toupper(pstate->argv[pstate->arg][0]);
+			break;
+		default:
+			pstate->error = "invalid address space modifier";
+			EXITFUNC(("arg:%d -> false\n", pstate->arg));
+			return false;
+		}
+	} else {
+		switch (pstate->argv[pstate->arg][0]) {
+		case 'l':
+			mode = 32;
+			break;
+		case 'w':
+			mode = 16;
+			break;
+		case 'b':
+			mode = 8;
+			break;
+		default:
+			pstate->error = "invalid address width modifier";
+			EXITFUNC(("arg:%d -> false\n", pstate->arg));
+			return false;
+		}
 	}
 	if (pstate->argv[pstate->arg][1]) {
-		pstate->error = "invalid size modifier";
+		pstate->error = "invalid address space/width modifier";
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
-	if (bc_value->type == BC_TYPE_NUMBER && !bc_value->is_indirect) {
-		pstate->error = "width modifier doesn't make sense for a number";
-		EXITFUNC(("arg:%d -> false\n", pstate->arg));
-		return false;
+	if (bc_value->dsp_space) {
+		bc_value->dsp_space = mode;
+		EXITFUNC(("arg:%d -> space:%c, true\n", pstate->arg, mode));
+	} else {
+		bc_value->bits = mode;
+		EXITFUNC(("arg:%d -> width:%d, true\n", pstate->arg, mode));
 	}
-	bc_value->bits = size;
-	EXITFUNC(("arg:%d -> size:%d, true\n", pstate->arg, size));
 	pstate->arg++;
 	return true;
 }
@@ -401,7 +412,7 @@ static bool BreakCond_ParseSizeModifier(parser_state_t *pstate, bc_value_t *bc_v
 /**
  * Check for and parse a condition value mask.
  * Modify pstate according to parsing (arg index and error string).
- * Return true for no or successfully parsed mask and false for error.
+ * Return false for error and true for no or successfully parsed modifier.
  */
 static bool BreakCond_ParseMaskModifier(parser_state_t *pstate, bc_value_t *bc_value)
 {
@@ -411,7 +422,7 @@ static bool BreakCond_ParseMaskModifier(parser_state_t *pstate, bc_value_t *bc_v
 		EXITFUNC(("arg:%d -> true (missing)\n", pstate->arg));
 		return true;
 	}
-	if (bc_value->type == BC_TYPE_NUMBER && !bc_value->is_indirect) {
+	if (!(bc_value->regsize || bc_value->is_indirect)) {
 		fprintf(stderr, "WARNING: plain numbers shouldn't need masks\n");
 	}
 	pstate->arg++;
@@ -420,7 +431,7 @@ static bool BreakCond_ParseMaskModifier(parser_state_t *pstate, bc_value_t *bc_v
 		return false;
 	}
 	if (bc_value->mask == 0 ||
-	    (bc_value->type == BC_TYPE_NUMBER && !bc_value->is_indirect &&
+	    (!(bc_value->regsize || bc_value->is_indirect) &&
 	     bc_value->value.number && !(bc_value->value.number & bc_value->mask))) {
 		pstate->error = "mask zeroes value";
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
@@ -459,23 +470,24 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 	}
 
 	/* set default modifiers, register parsing can change them later */
-	bc_value->bits = 32;
-	bc_value->mask = 0xffffffff;
-
+	if (bc_value->dsp_space) {
+		bc_value->bits = 24;
+		bc_value->mask = BITMASK(24);
+	} else {
+		bc_value->bits = 32;
+		bc_value->mask = BITMASK(32);
+	}
+	
 	str = pstate->argv[pstate->arg];
 	/* parse direct or indirect value */
 	if (isalpha(str[0])) {
-		if (BreakCond_ParseRegister(str, bc_value)) {
-			/* address of register */
-			bc_value->type = BC_TYPE_ADDRESS;
-		} else {
-			pstate->error = "invalid register name";
+		/* register */
+		if (!BreakCond_ParseRegister(str, bc_value, pstate)) {
 			EXITFUNC(("arg:%d -> false\n", pstate->arg));
 			return false;
 		}
 	} else {
 		/* a number */
-		bc_value->type = BC_TYPE_NUMBER;
 		if (!BreakCond_ParseNumber(pstate, str, &(bc_value->value.number))) {
 			EXITFUNC(("arg:%d -> false\n", pstate->arg));
 			return false;
@@ -491,7 +503,7 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 	pstate->arg += skip;
 
 	/* parse modifiers */
-	if (!BreakCond_ParseSizeModifier(pstate, bc_value)) {
+	if (!BreakCond_ParseAddressModifier(pstate, bc_value)) {
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
@@ -503,7 +515,7 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 		fprintf(stderr, "WARNING: mask %x doesn't fit into %d address/register bits\n",
 			bc_value->mask, bc_value->bits);
 	}
-	if (bc_value->type == BC_TYPE_NUMBER && bc_value->is_indirect &&
+	if (!bc_value->regsize && bc_value->is_indirect &&
 	    (bc_value->value.number & 1) && bc_value->bits > 8) {
 		fprintf(stderr, "WARNING: odd address %x given without using byte (.b) width\n",
 			bc_value->value.number);
@@ -569,6 +581,7 @@ static bool BreakCond_CrossCheckValues(parser_state_t *pstate,
 {
 	Uint32 mask1, mask2;
 	ENTERFUNC(("BreakCond_CrossCheckValues()\n"));
+
 	mask1 = BITMASK(bc_value1->bits) & bc_value1->mask;
 	mask2 = BITMASK(bc_value2->bits) & bc_value2->mask;
 	if ((mask1 & mask2) == 0) {
@@ -576,15 +589,14 @@ static bool BreakCond_CrossCheckValues(parser_state_t *pstate,
 		EXITFUNC(("-> false\n"));
 		return false;
 	}
-	if (bc_value1->bits == 32 ||
-	    bc_value2->type != BC_TYPE_NUMBER ||
+	if (bc_value2->regsize ||
 	    bc_value2->is_indirect ||
 	    bc_value2->value.number == 0) {
 		EXITFUNC(("-> true (no problematic direct types)\n"));
 		return true;
 	}
 	if ((bc_value2->value.number & mask1) != bc_value2->value.number) {
-		pstate->error = "number doesn't fit the other side address width & mask";
+		pstate->error = "number doesn't fit the other side address width&mask";
 		EXITFUNC(("-> false\n"));
 		return false;
 	}
@@ -613,8 +625,9 @@ static int BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 	/* setup condition */
 	memset(&condition, 0, sizeof(bc_condition_t));
 	if (bForDsp) {
-		condition.lvalue.use_dsp = true;
-		condition.rvalue.use_dsp = true;
+		/* used also for checking whether value is for DSP */
+		condition.lvalue.dsp_space = BC_DEFAULT_DSP_SPACE;
+		condition.rvalue.dsp_space = BC_DEFAULT_DSP_SPACE;
 	}
 
 	/* parse condition */
@@ -1049,10 +1062,10 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 			case 'b':
 			case 'x':
 			case 'y':
-				*mask = 24;
+				*mask = BITMASK(24);
 				break;
 			default:
-				*mask = 16;
+				*mask = BITMASK(16);
 				break;
 			}
 			if (regname[0] == 'p') {
@@ -1107,7 +1120,7 @@ int main(int argc, const char *argv[])
 		"255 & 3 = (d0) & && 2 = 2",
 		/* size and mask mismatches with numbers */
 		"d0.w = $ffff0",
-		"a0.b & 3 < 100",
+		"(a0).b & 3 < 100",
 		/* more than BC_MAX_CONDITIONS_PER_BREAKPOINT conditions */
 		"1=1 && 2=2 && 3=3 && 4=4 && 5=5",
 		NULL
