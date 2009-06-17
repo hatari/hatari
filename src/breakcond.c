@@ -317,15 +317,51 @@ static bool BreakCond_CheckAddress(bc_value_t *bc_value)
  */
 static bool BreakCond_ParseNumber(parser_state_t *pstate, const char *value, Uint32 *number)
 {
-#warning "TODO: BreakCond_ParseNumber(): support specifying DSP memory space?"
+	int i;
+	const char *str;
 	ENTERFUNC(("BreakCond_ParseNumber('%s'), arg:%d\n", value, pstate->arg));
-	if (value[0] == '$') {
+	switch (value[0]) {
+	case '$':	/* hexadecimal */
 		if (sscanf(value+1, "%x", number) != 1) {
 			pstate->error = "invalid hexadecimal value";
 			EXITFUNC(("-> false\n"));
 			return false;
 		}
-	} else {
+		break;
+	case '%':	/* binary */
+		for (str = value+1, i = 0; *str && i < 32; str++, i++) {
+			*number <<= 1;
+			switch (*str) {
+			case '0':
+				break;
+			case '1':
+				*number |= 1;
+				break;
+			default:
+				pstate->error = "invalid binary value character(s)";
+				EXITFUNC(("-> false\n"));
+				return false;
+			}
+		}
+		if (*str) {
+			pstate->error = "binary value has more than 32 bits";
+			EXITFUNC(("-> false\n"));
+			return false;
+		}
+		break;
+	case '"':	/* string */
+		*number = 0;
+		for (str = value+1, i= 0; *str && i < 4; str++, i++) {
+			*number *= 256;
+			*number += *str;
+		}
+		if (*str) {
+			pstate->error = "max string-as-value lenght = 4";
+			EXITFUNC(("-> false\n"));
+			return false;
+		}
+		break;
+	default:	/* decimal */
 		if (sscanf(value, "%u", number) != 1) {
 			pstate->error = "invalid value";
 			EXITFUNC(("-> false\n"));
@@ -737,7 +773,8 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 		}
 		/* validate & copy other characters */
 		if (!sep) {
-			if (!(isalnum(*src) || isblank(*src) || *src == '$')) {
+			if (!(isalnum(*src) || isblank(*src) ||
+			      *src == '$' || *src == '%' || *src == '"')) {
 				pstate->error = "invalid character";
 				pstate->arg = src-expression;
 				free(normalized);
@@ -1111,6 +1148,8 @@ int main(int argc, const char *argv[])
 		"a0=d || 0=20",
 		"a0=d & 0=20",
 		".w&3=2",
+		"d0 = %200",
+		"d0 = \"ICE!BAR",
 		"foo().w=bar()",
 		"(a0.w=d0.l)",
 		"(a0&3)=20",
