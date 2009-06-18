@@ -464,6 +464,7 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&bSteBorderFlag, sizeof(bSteBorderFlag));
 	MemorySnapShot_Store(&HblJitterIndex, sizeof(HblJitterIndex));
 	MemorySnapShot_Store(&VblJitterIndex, sizeof(VblJitterIndex));
+	MemorySnapShot_Store(&ShifterFrame, sizeof(ShifterFrame));
 }
 
 
