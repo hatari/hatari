@@ -601,8 +601,8 @@ void	Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles )
 
 
 //if ( ( *pHBL != FrameCycles / nCyclesPerLine ) || ( *pLineCycles != FrameCycles % nCyclesPerLine ) )
-//  HATARI_TRACE ( HATARI_TRACE_VIDEO_ADDR , "conv pos %d %d - %d %d\n" , *pHBL , FrameCycles / nCyclesPerLine , *pLineCycles , FrameCycles % nCyclesPerLine );
-//  HATARI_TRACE ( HATARI_TRACE_VIDEO_ADDR , "conv pos %d %d %d\n" , FrameCycles , *pHBL , *pLineCycles );
+//  LOG_TRACE ( TRACE_VIDEO_ADDR , "conv pos %d %d - %d %d\n" , *pHBL , FrameCycles / nCyclesPerLine , *pLineCycles , FrameCycles % nCyclesPerLine );
+//  LOG_TRACE ( TRACE_VIDEO_ADDR , "conv pos %d %d %d\n" , FrameCycles , *pHBL , *pLineCycles );
 }
 
 
@@ -1396,7 +1396,7 @@ void Video_InterruptHandler_HBL ( void )
 	if ( HblJitterIndex == HBL_JITTER_MAX_POS )
 		HblJitterIndex = 0;
 	
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
+	LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
 	               nHBL , FrameCycles , PendingCyclesOver , HblJitterArray[ HblJitterIndex ] );
 
 	/* Default cycle position for next HBL */
@@ -1418,7 +1418,7 @@ void Video_InterruptHandler_HBL ( void )
 	  && ( ( FrameCycles - PendingCyclesOver - HblJitterArray[ HblJitterIndex ] ) - LastCycleHblException <= 56 ) )
 	{
 		/* simultaneous case, don't call M68000_Exception */
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d video_cyc=%d signal ignored during pending hbl exception at cycle %d\n" ,
+		LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d video_cyc=%d signal ignored during pending hbl exception at cycle %d\n" ,
 			nHBL , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , LastCycleHblException );
 		LastCycleHblException = -1;
 	}
@@ -1435,7 +1435,7 @@ void Video_InterruptHandler_HBL ( void )
 
 	/* Update start cycle for next HBL */
 	ShifterFrame.ShifterLines[ nHBL ].StartCycle = FrameCycles - PendingCyclesOver;
-HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "HBL %d start=%d %x\n" , nHBL , ShifterFrame.ShifterLines[ nHBL ].StartCycle , ShifterFrame.ShifterLines[ nHBL ].StartCycle );
+LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d start=%d %x\n" , nHBL , ShifterFrame.ShifterLines[ nHBL ].StartCycle , ShifterFrame.ShifterLines[ nHBL ].StartCycle );
 
 	Video_StartHBL();				/* Setup next HBL */
 }
@@ -1467,7 +1467,7 @@ static void Video_EndHBL(void)
 		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles > LineRemoveTopCycle ) ) ) )
 	{
 		/* Top border */
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove top\n" );
+		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove top\n" );
 		OverscanMode |= OVERSCANMODE_TOP;	/* Set overscan bit */
 		nStartHBL = VIDEO_START_HBL_60HZ;	/* New start screen line */
 		pHBLPaletteMasks -= OVERSCAN_TOP;	// FIXME useless ?
@@ -1485,7 +1485,7 @@ static void Video_EndHBL(void)
 		    || ( ShifterFrame.FreqPos60.HBL > nHBL )
 		    || ( ( ShifterFrame.FreqPos60.HBL == nHBL ) && ( ShifterFrame.FreqPos60.LineCycles > LineRemoveBottomCycle ) ) ) )
 	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
+		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom 60Hz\n" );
 		OverscanMode |= OVERSCANMODE_BOTTOM;
 		nEndHBL = SCANLINES_PER_FRAME_60HZ;	/* new end for a 60 Hz screen */
 	}
@@ -1500,7 +1500,7 @@ static void Video_EndHBL(void)
 		    || ( ShifterFrame.FreqPos50.HBL > nHBL )
 		    || ( ( ShifterFrame.FreqPos50.HBL == nHBL ) && ( ShifterFrame.FreqPos50.LineCycles > LineRemoveBottomCycle ) ) ) )
 	{
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
+		LOG_TRACE ( TRACE_VIDEO_BORDER_V , "detect remove bottom\n" );
 		OverscanMode |= OVERSCANMODE_BOTTOM;
 		nEndHBL = VIDEO_END_HBL_50HZ+VIDEO_HEIGHT_BOTTOM_50HZ;	/* new end for a 50 Hz screen */
 	}
@@ -1523,7 +1523,7 @@ static void Video_EndHBL(void)
 	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_60 ) )
 	{
 		ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_RIGHT_MINUS_2;
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect late right-2 %d<->%d\n" ,
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect late right-2 %d<->%d\n" ,
 			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
 	}
 
@@ -1536,7 +1536,7 @@ static void Video_EndHBL(void)
 	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle != LINE_END_CYCLE_60 ) )		/* end could be 160, 372 or 460 */
 	{
 		ShifterFrame.ShifterLines[ nHBL ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect late left+2 %d<->%d\n" ,
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect late left+2 %d<->%d\n" ,
 			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
 	}
 
@@ -1547,7 +1547,7 @@ static void Video_EndHBL(void)
 	  && ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_60 ) )
 	{
 		ShifterFrame.ShifterLines[ nHBL ].BorderMask &= ~BORDERMASK_LEFT_PLUS_2;
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "cancel late left+2 %d<->%d\n" ,
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "cancel late left+2 %d<->%d\n" ,
 			ShifterFrame.ShifterLines[ nHBL ].DisplayStartCycle , ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle );
 	}
 
@@ -1632,7 +1632,7 @@ void Video_InterruptHandler_EndLine(void)
 
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_HBL , "EndLine TB %d video_cyc=%d line_cyc=%d pending_int_cnt=%d\n" ,
+	LOG_TRACE ( TRACE_VIDEO_HBL , "EndLine TB %d video_cyc=%d line_cyc=%d pending_int_cnt=%d\n" ,
 	               nHBL , FrameCycles , LineCycles , PendingCycles );
 
 	/* Remove this interrupt from list and re-order */
