@@ -207,8 +207,8 @@ void FDC_Reset(void)
 	FDCEmulationRunning = FDCEMU_RUN_NULL;        /* Running command under above */
 
 	FDCStepDirection = 1;                         /* +Track on 'Step' command */
-	bDMAWaiting = FALSE;                          /* No DMA waiting */
-	bMotorOn = FALSE;                             /* Motor off */
+	bDMAWaiting = false;                          /* No DMA waiting */
+	bMotorOn = false;                             /* Motor off */
 	MotorSlowingCount = 0;                        /* Counter for motor slowing down before stopping */
 }
 
@@ -251,7 +251,7 @@ void FDC_MemorySnapShot_Capture(bool bSave)
  */
 static void FDC_TurnMotorOn(void)
 {
-	bMotorOn = TRUE;                  /* Turn motor on */
+	bMotorOn = true;                  /* Turn motor on */
 	MotorSlowingCount = 0;
 }
 
@@ -278,7 +278,7 @@ static void FDC_UpdateMotor(void)
 		MotorSlowingCount--;
 
 		if (MotorSlowingCount==0)
-			bMotorOn = FALSE;         /* Motor finally stopped */
+			bMotorOn = false;         /* Motor finally stopped */
 	}
 }
 
@@ -294,7 +294,7 @@ void FDC_ResetDMAStatus(void)
 	DMAStatus_ff8606rd = 0;           /* Clear out */
 
 	FDCSectorCountRegister = 0;
-	FDC_SetDMAStatus(FALSE);          /* Set no error */
+	FDC_SetDMAStatus(false);          /* Set no error */
 
 	/* Reset HDC command status */
 	HDCSectorCount = 0;
@@ -478,7 +478,7 @@ void FDC_InterruptHandler_Update(void)
 		/* Yes, copy it */
 		FDC_DMADataFromFloppy();
 		/* Signal done */
-		bDMAWaiting = FALSE;
+		bDMAWaiting = false;
 	}
 
 	/* Update drive motor */
@@ -554,7 +554,7 @@ void FDC_UpdateRestoreCmd(void)
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
-		FDC_SetDMAStatus(FALSE);          /* No DMA error */
+		FDC_SetDMAStatus(false);          /* No DMA error */
 		/* Done */
 		FDCEmulationCommand = FDCEMU_CMD_NULL;
 		/* Turn motor off */
@@ -590,7 +590,7 @@ void FDC_UpdateSeekCmd(void)
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
-		FDC_SetDMAStatus(FALSE);          /* No DMA error */
+		FDC_SetDMAStatus(false);          /* No DMA error */
 		/* Done */
 		FDCEmulationCommand = FDCEMU_CMD_NULL;
 		/* Turn motor off */
@@ -621,7 +621,7 @@ void FDC_UpdateStepCmd(void)
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
-		FDC_SetDMAStatus(FALSE);            /* No DMA error */
+		FDC_SetDMAStatus(false);            /* No DMA error */
 		/* Done */
 		FDCEmulationCommand = FDCEMU_CMD_NULL;
 		/* Turn motor off */
@@ -649,7 +649,7 @@ void FDC_UpdateStepInCmd(void)
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
-		FDC_SetDMAStatus(FALSE);            /* No DMA error */
+		FDC_SetDMAStatus(false);            /* No DMA error */
 		/* Done */
 		FDCEmulationCommand = FDCEMU_CMD_NULL;
 		/* Turn motor off */
@@ -679,7 +679,7 @@ void FDC_UpdateStepOutCmd(void)
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
-		FDC_SetDMAStatus(FALSE);            /* No DMA error */
+		FDC_SetDMAStatus(false);            /* No DMA error */
 		/* Done */
 		FDCEmulationCommand = FDCEMU_CMD_NULL;
 		/* Turn motor off */
@@ -711,14 +711,14 @@ void FDC_UpdateReadSectorsCmd(void)
 			if (nReadWriteSectors<=0)
 				FDCEmulationRunning = FDCEMU_RUN_READSECTORS_COMPLETE;
 
-			bDMAWaiting = TRUE;
+			bDMAWaiting = true;
 		}
 		else
 		{
 			/* Acknowledge interrupt, move along there's nothing more to see */
 			FDC_AcknowledgeInterrupt();
 			/* Set error */
-			FDC_SetDMAStatus(TRUE);             /* DMA error */
+			FDC_SetDMAStatus(true);             /* DMA error */
 			/* Done */
 			FDCEmulationCommand = FDCEMU_CMD_NULL;
 			/* Turn motor off */
@@ -729,7 +729,7 @@ void FDC_UpdateReadSectorsCmd(void)
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
-		FDC_SetDMAStatus(FALSE);              /* No DMA error */
+		FDC_SetDMAStatus(false);              /* No DMA error */
 		/* Done */
 		FDCEmulationCommand = FDCEMU_CMD_NULL;
 		/* Turn motor off */
@@ -770,7 +770,7 @@ void FDC_UpdateWriteSectorsCmd(void)
 			/* Acknowledge interrupt, move along there's nothing more to see */
 			FDC_AcknowledgeInterrupt();
 			/* Set error */
-			FDC_SetDMAStatus(TRUE);             /* DMA error */
+			FDC_SetDMAStatus(true);             /* DMA error */
 			/* Done */
 			FDCEmulationCommand = FDCEMU_CMD_NULL;
 			/* Turn motor off */
@@ -781,7 +781,7 @@ void FDC_UpdateWriteSectorsCmd(void)
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
-		FDC_SetDMAStatus(FALSE);              /* No DMA error */
+		FDC_SetDMAStatus(false);              /* No DMA error */
 		/* Done */
 		FDCEmulationCommand = FDCEMU_CMD_NULL;
 		/* Turn motor off */
@@ -808,7 +808,7 @@ void FDC_UpdateReadAddressCmd(void)
 		/* Acknowledge interrupt, move along there's nothing more to see */
 		FDC_AcknowledgeInterrupt();
 		/* Set error */
-		FDC_SetDMAStatus(FALSE);            /* No DMA error */
+		FDC_SetDMAStatus(false);            /* No DMA error */
 		/* Done */
 		FDCEmulationCommand = FDCEMU_CMD_NULL;
 		/* Turn motor off */
@@ -1163,9 +1163,9 @@ static void FDC_ExecuteTypeIVCommands(void)
 
 	/* Check Type IV Command */
 	if ((FDCCommandRegister&0x0c) == 0)     /* I3 and I2 are clear? If so we don't need a CPU interrupt */
-		FDC_TypeIV_ForceInterrupt(FALSE);   /* Force Interrupt - no interrupt */
+		FDC_TypeIV_ForceInterrupt(false);   /* Force Interrupt - no interrupt */
 	else
-		FDC_TypeIV_ForceInterrupt(TRUE);    /* Force Interrupt */
+		FDC_TypeIV_ForceInterrupt(true);    /* Force Interrupt */
 }
 
 
@@ -1355,7 +1355,7 @@ void FDC_DiskControllerStatus_ReadWord(void)
 				 * exchange disks on a real ST). We now also simulate this behaviour
 				 * here, so that these games can continue with the other disk. */
 				DiskControllerByte ^= 0x40;
-				EmulationDrives[nReadWriteDev].bMediaChanged = FALSE;
+				EmulationDrives[nReadWriteDev].bMediaChanged = false;
 			}
 
 			/* Reset FDC GPIP */
@@ -1431,12 +1431,12 @@ bool FDC_ReadSectorFromFloppy(void)
 			nReadWriteSector = 1;
 			nReadWriteTrack++;
 		}
-		return TRUE;
+		return true;
 	}
 
 	/* Failed */
 	LOG_TRACE(TRACE_FDC, "fdc read sector failed\n" );
-	return FALSE;
+	return false;
 }
 
 
@@ -1465,12 +1465,12 @@ bool FDC_WriteSectorFromFloppy(void)
 			nReadWriteSector = 1;
 			nReadWriteTrack++;
 		}
-		return TRUE;
+		return true;
 	}
 
 	/* Failed */
 	LOG_TRACE(TRACE_FDC, "fdc write sector failed\n" );
-	return FALSE;
+	return false;
 }
 
 

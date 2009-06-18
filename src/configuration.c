@@ -339,7 +339,7 @@ void Configuration_SetDefault(void)
 	strcpy(ConfigureParams.Log.sTraceFileName, "stderr");
 	ConfigureParams.Log.nTextLogLevel = LOG_TODO;
 	ConfigureParams.Log.nAlertDlgLogLevel = LOG_ERROR;
-	ConfigureParams.Log.bConfirmQuit = TRUE;
+	ConfigureParams.Log.bConfirmQuit = true;
 
 	/* Set defaults for floppy disk images */
 	ConfigureParams.DiskImage.bAutoInsertDiskB = true;
@@ -354,25 +354,25 @@ void Configuration_SetDefault(void)
 	File_AddSlashToEndFileName(ConfigureParams.DiskImage.szDiskImageDirectory);
 
 	/* Set defaults for hard disks */
-	ConfigureParams.HardDisk.bBootFromHardDisk = FALSE;
+	ConfigureParams.HardDisk.bBootFromHardDisk = false;
 	ConfigureParams.HardDisk.nHardDiskDir = DRIVE_C;
-	ConfigureParams.HardDisk.bUseHardDiskDirectories = FALSE;
+	ConfigureParams.HardDisk.bUseHardDiskDirectories = false;
 	for (i = 0; i < MAX_HARDDRIVES; i++)
 	{
 		strcpy(ConfigureParams.HardDisk.szHardDiskDirectories[i], psWorkingDir);
 		File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[i]);
 	}
-	ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
+	ConfigureParams.HardDisk.bUseHardDiskImage = false;
 	strcpy(ConfigureParams.HardDisk.szHardDiskImage, psWorkingDir);
-	ConfigureParams.HardDisk.bUseIdeHardDiskImage = FALSE;
+	ConfigureParams.HardDisk.bUseIdeHardDiskImage = false;
 	strcpy(ConfigureParams.HardDisk.szIdeHardDiskImage, psWorkingDir);
 
 	/* Set defaults for Joysticks */
 	for (i = 0; i < JOYSTICK_COUNT; i++)
 	{
 		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
-		ConfigureParams.Joysticks.Joy[i].bEnableAutoFire = FALSE;
-		ConfigureParams.Joysticks.Joy[i].bEnableJumpOnFire2 = FALSE;
+		ConfigureParams.Joysticks.Joy[i].bEnableAutoFire = false;
+		ConfigureParams.Joysticks.Joy[i].bEnableJumpOnFire2 = false;
 		ConfigureParams.Joysticks.Joy[i].nJoyId = i;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeUp = SDLK_UP;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeDown = SDLK_DOWN;
@@ -385,7 +385,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_REALSTICK;
 
 	/* Set defaults for Keyboard */
-	ConfigureParams.Keyboard.bDisableKeyRepeat = FALSE;
+	ConfigureParams.Keyboard.bDisableKeyRepeat = false;
 	ConfigureParams.Keyboard.nKeymapType = KEYMAP_SYMBOLIC;
 	strcpy(ConfigureParams.Keyboard.szMappingFileName, "");
   
@@ -413,43 +413,43 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for Memory */
 	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */
-	ConfigureParams.Memory.bAutoSave = FALSE;
+	ConfigureParams.Memory.bAutoSave = false;
 	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s%chatari.sav",
 	        psHomeDir, PATHSEP);
 	sprintf(ConfigureParams.Memory.szAutoSaveFileName, "%s%cauto.sav",
 	        psHomeDir, PATHSEP);
 
 	/* Set defaults for Printer */
-	ConfigureParams.Printer.bEnablePrinting = FALSE;
-	ConfigureParams.Printer.bPrintToFile = TRUE;
+	ConfigureParams.Printer.bEnablePrinting = false;
+	ConfigureParams.Printer.bPrintToFile = true;
 	sprintf(ConfigureParams.Printer.szPrintToFileName, "%s%chatari.prn",
 	        psHomeDir, PATHSEP);
 
 	/* Set defaults for RS232 */
-	ConfigureParams.RS232.bEnableRS232 = FALSE;
+	ConfigureParams.RS232.bEnableRS232 = false;
 	strcpy(ConfigureParams.RS232.szOutFileName, "/dev/modem");
 	strcpy(ConfigureParams.RS232.szInFileName, "/dev/modem");
 
 	/* Set defaults for MIDI */
-	ConfigureParams.Midi.bEnableMidi = FALSE;
+	ConfigureParams.Midi.bEnableMidi = false;
 	strcpy(ConfigureParams.Midi.sMidiInFileName, "/dev/snd/midiC1D0");
 	strcpy(ConfigureParams.Midi.sMidiOutFileName, "/dev/snd/midiC1D0");
 
 	/* Set defaults for Screen */
-	ConfigureParams.Screen.bFullScreen = FALSE;
+	ConfigureParams.Screen.bFullScreen = false;
 	ConfigureParams.Screen.nFrameSkips = AUTO_FRAMESKIP_LIMIT;
-	ConfigureParams.Screen.bAllowOverscan = TRUE;
+	ConfigureParams.Screen.bAllowOverscan = true;
 	ConfigureParams.Screen.nSpec512Threshold = 16;
 	ConfigureParams.Screen.nForceBpp = 0;
-	ConfigureParams.Screen.bZoomLowRes = FALSE;
+	ConfigureParams.Screen.bZoomLowRes = false;
 	ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_RGB;
-	ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
+	ConfigureParams.Screen.bUseExtVdiResolutions = false;
 	ConfigureParams.Screen.nVdiWidth = 640;
 	ConfigureParams.Screen.nVdiHeight = 480;
 	ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
-	ConfigureParams.Screen.bShowStatusbar = TRUE;
-	ConfigureParams.Screen.bShowDriveLed = TRUE;
-	ConfigureParams.Screen.bCaptureChange = FALSE;
+	ConfigureParams.Screen.bShowStatusbar = true;
+	ConfigureParams.Screen.bShowDriveLed = true;
+	ConfigureParams.Screen.bCaptureChange = false;
 	ConfigureParams.Screen.nWindowBorderPixelsTop = OVERSCAN_TOP;
 	ConfigureParams.Screen.nWindowBorderPixelsLeft = 48;
 	ConfigureParams.Screen.nWindowBorderPixelsRight = 48;
@@ -460,7 +460,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nFullScreenBorderPixelsBottom = MAX_OVERSCAN_BOTTOM-2;
 
 	/* Set defaults for Sound */
-	ConfigureParams.Sound.bEnableSound = TRUE;
+	ConfigureParams.Sound.bEnableSound = true;
 	ConfigureParams.Sound.nPlaybackFreq = 44100;
 	sprintf(ConfigureParams.Sound.szYMCaptureFileName, "%s%chatari.wav",
 	        psWorkingDir, PATHSEP);
@@ -473,14 +473,14 @@ void Configuration_SetDefault(void)
 	/* Set defaults for System */
 	ConfigureParams.System.nCpuLevel = 0;
 	ConfigureParams.System.nCpuFreq = 8;
-	ConfigureParams.System.bCompatibleCpu = TRUE;
-	/*ConfigureParams.System.bAddressSpace24 = TRUE;*/
+	ConfigureParams.System.bCompatibleCpu = true;
+	/*ConfigureParams.System.bAddressSpace24 = true;*/
 	ConfigureParams.System.nMachineType = MACHINE_ST;
-	ConfigureParams.System.bBlitter = FALSE;
+	ConfigureParams.System.bBlitter = false;
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
-	ConfigureParams.System.bPatchTimerD = TRUE;
-	ConfigureParams.System.bRealTimeClock = TRUE;
-	ConfigureParams.System.bFastForward = FALSE;
+	ConfigureParams.System.bPatchTimerD = true;
+	ConfigureParams.System.bRealTimeClock = true;
+	ConfigureParams.System.bFastForward = false;
 
 	/* Initialize the configuration file name */
 	if (strlen(psHomeDir) < sizeof(sConfigFileName)-13)
@@ -710,6 +710,6 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.bSlowFloppy, sizeof(ConfigureParams.DiskImage.bSlowFloppy));
 
 	if (!bSave)
-		Configuration_Apply(TRUE);
+		Configuration_Apply(true);
 }
 

@@ -119,7 +119,7 @@ bool DIM_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 	if (!pDimFile)
 	{
 		perror("DIM_WriteDisk");
-		return FALSE;
+		return false;
 	}
 
 	/* Try to load the old header data to preserve the header fields that are unknown yet: */
@@ -149,7 +149,7 @@ bool DIM_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 	memcpy(pDimFile + 32, pBuffer, ImageSize);
 	
 	/* And finally save it: */
-	bRet = File_Save(pszFileName, pDimFile, ImageSize + 32, FALSE);
+	bRet = File_Save(pszFileName, pDimFile, ImageSize + 32, false);
 
 	free(pDimFile);
 
@@ -158,7 +158,7 @@ bool DIM_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 #else   /*SAVE_TO_ST_IMAGES*/
 
 	/* Oops, cannot save */
-	return FALSE;
+	return false;
 
 #endif  /*SAVE_TO_ST_IMAGES*/
 }

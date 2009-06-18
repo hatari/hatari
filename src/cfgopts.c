@@ -300,7 +300,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
  	{
 		/* tmpfile() failed, let's try a normal open */
 		tempfile = fopen(sTempCfgName, "w+");
-		bUseTempCfg = TRUE;
+		bUseTempCfg = true;
 	}
 	if (tempfile == NULL)
 	{
@@ -371,7 +371,7 @@ int update_config(const char *filename, const struct Config_Tag configs[], const
 						if (write_token(tempfile, ptr) == 0)
 						{
 							if (savedtokenflags)
-								savedtokenflags[i] = TRUE;
+								savedtokenflags[i] = true;
 							count += 1;
 						}
 					}

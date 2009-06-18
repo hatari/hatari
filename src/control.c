@@ -55,7 +55,7 @@ static int Control_GetUISocket(void);
 /**
  * Parse key command and synthetize key press/release
  * corresponding to given keycode or character.
- * Return FALSE if parsing failed, TRUE otherwise
+ * Return false if parsing failed, true otherwise
  * 
  * This can be used by external Hatari UI(s) for
  * string macros, or on devices which lack keyboard
@@ -67,14 +67,14 @@ static bool Control_InsertKey(const char *event)
 
 	if (strncmp(event, "keypress ", 9) == 0) {
 		key = &event[9];
-		press = TRUE;
+		press = true;
 	} else if (strncmp(event, "keyrelease ", 11) == 0) {
 		key = &event[11];
-		press = FALSE;
+		press = false;
 	}
 	if (!(key && key[0])) {
 		fprintf(stderr, "ERROR: event '%s' contains no key press/release\n", event);
-		return FALSE;
+		return false;
 	}
 	if (key[1]) {
 		char *endptr;
@@ -84,7 +84,7 @@ static bool Control_InsertKey(const char *event)
 		if (*endptr || keycode < 0 || keycode > 255) {
 			fprintf(stderr, "ERROR: '%s' is not valid key code, got %d\n",
 				key, keycode);
-			return FALSE;
+			return false;
 		}
 		IKBD_PressSTKey(keycode, press);
 	} else {
@@ -92,13 +92,13 @@ static bool Control_InsertKey(const char *event)
 	}
 	fprintf(stderr, "Simulated %s key %s\n",
 		key, (press?"press":"release"));
-	return TRUE;
+	return true;
 }
 
 /*-----------------------------------------------------------------------*/
 /**
  * Parse event name and synthetize corresponding event to emulation
- * Return FALSE if name parsing failed, TRUE otherwise
+ * Return false if name parsing failed, true otherwise
  * 
  * This can be used by external Hatari UI(s) on devices which input
  * methods differ from normal keyboard and mouse, such as high DPI
@@ -108,18 +108,18 @@ static bool Control_InsertEvent(const char *event)
 {
 	if (strcmp(event, "doubleclick") == 0) {
 		Keyboard.LButtonDblClk = 1;
-		return TRUE;
+		return true;
 	}
 	if (strcmp(event, "rightpress") == 0) {
 		Keyboard.bRButtonDown |= BUTTON_MOUSE;
-		return TRUE;
+		return true;
 	}
 	if (strcmp(event, "rightrelease") == 0) {
 		Keyboard.bRButtonDown &= ~BUTTON_MOUSE;
-		return TRUE;
+		return true;
 	}
 	if (Control_InsertKey(event)) {
-		return TRUE;
+		return true;
 	}
 	fprintf(stderr, "ERROR: unrecognized event: '%s'\n", event);
 	fprintf(stderr, "Supported events are:\n");
@@ -129,13 +129,13 @@ static bool Control_InsertEvent(const char *event)
 	fprintf(stderr, "- keypress <character>\n");
 	fprintf(stderr, "- keyrelease <character>\n");
 	fprintf(stderr, "<character> can be either a single ASCII char or keycode.\n");
-	return FALSE;	
+	return false;	
 }
 
 /*-----------------------------------------------------------------------*/
 /**
  * Parse device name and enable/disable/toggle & init/uninit it according
- * to action.  Return FALSE if name parsing failed, TRUE otherwise
+ * to action.  Return false if name parsing failed, true otherwise
  */
 static bool Control_DeviceAction(const char *name, action_t action)
 {
@@ -165,11 +165,11 @@ static bool Control_DeviceAction(const char *name, action_t action)
 				value = !*(item[i].pvalue);
 				break;
 			case DO_ENABLE:
-				value = TRUE;
+				value = true;
 				break;
 			case DO_DISABLE:
 			default:
-				value = FALSE;
+				value = false;
 				break;
 			}
 			*(item[i].pvalue) = value;
@@ -179,7 +179,7 @@ static bool Control_DeviceAction(const char *name, action_t action)
 				item[i].uninit();
 			}
 			fprintf(stderr, "%s: %s\n", name, value?"ON":"OFF");
-			return TRUE;
+			return true;
 		}
 	}
 	fprintf(stderr, "WARNING: unknown device '%s'\n\n", name);
@@ -188,13 +188,13 @@ static bool Control_DeviceAction(const char *name, action_t action)
 	{
 		fprintf(stderr, "- %s\n", item[i].name);
 	}
-	return FALSE;
+	return false;
 }
 
 /*-----------------------------------------------------------------------*/
 /**
  * Parse path type name and set the path to given value.
- * Return FALSE if name parsing failed, TRUE otherwise
+ * Return false if name parsing failed, true otherwise
  */
 static bool Control_SetPath(char *name)
 {
@@ -222,7 +222,7 @@ static bool Control_SetPath(char *name)
 		*arg = '\0';
 		value = Str_Trim(arg+1);
 	} else {
-		return FALSE;
+		return false;
 	}
 	
 	for (i = 0; item[i].name; i++)
@@ -231,7 +231,7 @@ static bool Control_SetPath(char *name)
 		{
 			fprintf(stderr, "%s: %s -> %s\n", name, item[i].path, value);
 			strncpy(item[i].path, value, FILENAME_MAX-1);
-			return TRUE;
+			return true;
 		}
 	}
 	fprintf(stderr, "WARNING: unknown path type '%s'\n\n", name);
@@ -240,12 +240,12 @@ static bool Control_SetPath(char *name)
 	{
 		fprintf(stderr, "- %s\n", item[i].name);
 	}
-	return FALSE;
+	return false;
 }
 
 /*-----------------------------------------------------------------------*/
 /**
- * Show Hatari remote usage info and return FALSE
+ * Show Hatari remote usage info and return false
  */
 static bool Control_Usage(const char *cmd)
 {
@@ -264,7 +264,7 @@ static bool Control_Usage(const char *cmd)
 		"The last two can be used to stop and continue the Hatari emulation.\n"
 		"All commands need to be separated by newlines.\n"
 		);
-	return FALSE;
+	return false;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -275,7 +275,7 @@ static bool Control_Usage(const char *cmd)
 static void Control_ProcessBuffer(char *buffer)
 {
 	char *cmd, *cmdend, *arg;
-	int ok = TRUE;
+	int ok = true;
 	
 	cmd = buffer;
 	do {
@@ -313,13 +313,13 @@ static void Control_ProcessBuffer(char *buffer)
 		} else {
 			if (strcmp(cmd, "hatari-embed-info") == 0) {
 				fprintf(stderr, "Embedded window ID change messages = ON\n");
-				bSendEmbedInfo = TRUE;
+				bSendEmbedInfo = true;
 			} else if (strcmp(cmd, "hatari-stop") == 0) {
-				Main_PauseEmulation(TRUE);
-				bRemotePaused = TRUE;
+				Main_PauseEmulation(true);
+				bRemotePaused = true;
 			} else if (strcmp(cmd, "hatari-cont") == 0) {
 				Main_UnPauseEmulation();
-				bRemotePaused = FALSE;
+				bRemotePaused = false;
 			} else {
 				ok = Control_Usage(cmd);
 			}
@@ -336,7 +336,7 @@ static void Control_ProcessBuffer(char *buffer)
  * Check ControlSocket for new commands and execute them.
  * Commands should be separated by newlines.
  * 
- * Return TRUE if remote pause ON (and connected), FALSE otherwise
+ * Return true if remote pause ON (and connected), false otherwise
  */
 bool Control_CheckUpdates(void)
 {
@@ -351,7 +351,7 @@ bool Control_CheckUpdates(void)
 	if (ControlSocket) {
 		sock = ControlSocket;
 	} else {
-		return FALSE;
+		return false;
 	}
 	
 	/* ready for reading? */
@@ -377,7 +377,7 @@ bool Control_CheckUpdates(void)
 		}
 		if (status < 0) {
 			perror("Control socket select() error");
-			return FALSE;
+			return false;
 		}
 		/* nothing to process here */
 		if (status == 0) {
@@ -392,20 +392,20 @@ bool Control_CheckUpdates(void)
 		if (bytes < 0)
 		{
 			perror("Control socket read");
-			return FALSE;
+			return false;
 		}
 		if (bytes == 0) {
 			/* closed */
 			close(ControlSocket);
 			ControlSocket = 0;
-			return FALSE;
+			return false;
 		}
 		buffer[bytes] = '\0';
 		Control_ProcessBuffer(buffer);
 
 	} while (bRemotePaused);
 	
-	return FALSE;
+	return false;
 }
 
 
@@ -472,8 +472,8 @@ const char *Control_SetSocket(const char *socketpath)
  * If the window is embedded (which means that SDL WM window needs
  * to be hidden) when SDL is asked to fullscreen, Hatari window just
  * disappears when returning back from fullscreen.  I.e. call this
- * with noembed=TRUE _before_ fullscreening and any other time with
- * noembed=FALSE after changing window size.  You can do this by
+ * with noembed=true _before_ fullscreening and any other time with
+ * noembed=false after changing window size.  You can do this by
  * giving bInFullscreen as the noembed value.
  */
 void Control_ReparentWindow(int width, int height, bool noembed)

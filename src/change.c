@@ -46,7 +46,7 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 /*-----------------------------------------------------------------------*/
 /**
  * Check if user needs to be warned that changes will take place after reset.
- * Return TRUE if wants to reset.
+ * Return true if wants to reset.
  */
 bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 {
@@ -55,49 +55,49 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	    && (changed->System.nMachineType == MACHINE_FALCON
 	        || current->Screen.nMonitorType == MONITOR_TYPE_MONO
 	        || changed->Screen.nMonitorType == MONITOR_TYPE_MONO))
-		return TRUE;
+		return true;
 
 	/* Did change to GEM VDI display? */
 	if (current->Screen.bUseExtVdiResolutions != changed->Screen.bUseExtVdiResolutions)
-		return TRUE;
+		return true;
 
 	/* Did change GEM resolution or color depth? */
 	if (changed->Screen.bUseExtVdiResolutions &&
 	    (current->Screen.nVdiWidth != changed->Screen.nVdiWidth
 	     || current->Screen.nVdiHeight != changed->Screen.nVdiHeight
 	     || current->Screen.nVdiColors != changed->Screen.nVdiColors))
-		return TRUE;
+		return true;
 
 	/* Did change TOS ROM image? */
 	if (strcmp(changed->Rom.szTosImageFileName, current->Rom.szTosImageFileName))
-		return TRUE;
+		return true;
 
 	/* Did change ACSI hard disk image? */
 	if (changed->HardDisk.bUseHardDiskImage != current->HardDisk.bUseHardDiskImage
 	    || (strcmp(changed->HardDisk.szHardDiskImage, current->HardDisk.szHardDiskImage)
 	        && changed->HardDisk.bUseHardDiskImage))
-		return TRUE;
+		return true;
 
 	/* Did change IDE hard disk image? */
 	if (changed->HardDisk.bUseIdeHardDiskImage != current->HardDisk.bUseIdeHardDiskImage
 	    || strcmp(changed->HardDisk.szIdeHardDiskImage, current->HardDisk.szIdeHardDiskImage))
-		return TRUE;
+		return true;
 
 	/* Did change GEMDOS drive? */
 	if (changed->HardDisk.bUseHardDiskDirectories != current->HardDisk.bUseHardDiskDirectories
 	    || (strcmp(changed->HardDisk.szHardDiskDirectories[0], current->HardDisk.szHardDiskDirectories[0])
 	        && changed->HardDisk.bUseHardDiskDirectories))
-		return TRUE;
+		return true;
 
 	/* Did change machine type? */
 	if (changed->System.nMachineType != current->System.nMachineType)
-		return TRUE;
+		return true;
 
 	/* Did change size of memory? */
 	if (current->Memory.nMemorySize != changed->Memory.nMemorySize)
-		return TRUE;
+		return true;
 
-	return FALSE;
+	return false;
 }
 
 
@@ -108,12 +108,12 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *changed, bool bForceReset)
 {
 	bool NeedReset;
-	bool bReInitGemdosDrive = FALSE;
-	bool bReInitAcsiEmu = FALSE;
-	bool bReInitIDEEmu = FALSE;
-	bool bReInitIoMem = FALSE;
-	bool bScreenModeChange = FALSE;
-	bool bReInitMidi = FALSE;
+	bool bReInitGemdosDrive = false;
+	bool bReInitAcsiEmu = false;
+	bool bReInitIDEEmu = false;
+	bool bReInitIoMem = false;
+	bool bScreenModeChange = false;
+	bool bReInitMidi = false;
 	bool bFloppyInsert[MAX_FLOPPYDRIVES];
 	int i;
 
@@ -132,7 +132,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	     || changed->Screen.bAllowOverscan != current->Screen.bAllowOverscan
 	     || changed->Screen.bShowStatusbar != current->Screen.bShowStatusbar))
 	{
-		bScreenModeChange = TRUE;
+		bScreenModeChange = true;
 	}
 
 	/* Did set new printer parameters? */
@@ -171,9 +171,9 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 			   current->DiskImage.szDiskFileName[i])
 		    || strcmp(changed->DiskImage.szDiskZipPath[i],
 			      current->DiskImage.szDiskZipPath[i]))
-			bFloppyInsert[i] = TRUE;
+			bFloppyInsert[i] = true;
 		else
-			bFloppyInsert[i] = FALSE;
+			bFloppyInsert[i] = false;
 	}
 
 	/* Did change GEMDOS drive? */
@@ -182,7 +182,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	        && changed->HardDisk.bUseHardDiskDirectories))
 	{
 		GemDOS_UnInitDrives();
-		bReInitGemdosDrive = TRUE;
+		bReInitGemdosDrive = true;
 	}
 
 	/* Did change HD image? */
@@ -191,7 +191,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	        && changed->HardDisk.bUseHardDiskImage))
 	{
 		HDC_UnInit();
-		bReInitAcsiEmu = TRUE;
+		bReInitAcsiEmu = true;
 	}
 	
 	/* Did change IDE HD image? */
@@ -200,7 +200,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	        && changed->HardDisk.bUseIdeHardDiskImage))
 	{
 		Ide_UnInit();
-		bReInitIDEEmu = TRUE;
+		bReInitIDEEmu = true;
 	}
 
 	/* Did change blitter, rtc or system type? */
@@ -212,7 +212,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    || changed->System.nMachineType != current->System.nMachineType)
 	{
 		IoMem_UnInit();
-		bReInitIoMem = TRUE;
+		bReInitIoMem = true;
 	}
 	
 #if ENABLE_DSP_EMU
@@ -331,14 +331,14 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 /*-----------------------------------------------------------------------*/
 /**
  * Change given Hatari options
- * Return FALSE if parsing failed, TRUE otherwise
+ * Return false if parsing failed, true otherwise
  */
 static bool Change_Options(int argc, const char *argv[])
 {
 	bool bOK;
 	CNF_PARAMS current;
 
-	Main_PauseEmulation(FALSE);
+	Main_PauseEmulation(false);
 
 	/* get configuration changes */
 	current = ConfigureParams;
@@ -355,7 +355,7 @@ static bool Change_Options(int argc, const char *argv[])
 	}
 	/* Copy details to configuration */
 	if (bOK) {
-		Change_CopyChangedParamsToConfiguration(&current, &ConfigureParams, FALSE);
+		Change_CopyChangedParamsToConfiguration(&current, &ConfigureParams, false);
 	} else {
 		ConfigureParams = current;
 	}
@@ -368,7 +368,7 @@ static bool Change_Options(int argc, const char *argv[])
 /*-----------------------------------------------------------------------*/
 /**
  * Parse given command line and change Hatari options accordingly
- * Return FALSE if parsing failed or there were no args, TRUE otherwise
+ * Return false if parsing failed or there were no args, true otherwise
  */
 bool Change_ApplyCommandline(char *cmdline)
 {
@@ -393,14 +393,14 @@ bool Change_ApplyCommandline(char *cmdline)
 	}
 	if (!argc)
 	{
-		return FALSE;
+		return false;
 	}
 	/* 2 = "hatari" + NULL */
 	argv = malloc((argc+2) * sizeof(char*));
 	if (!argv)
 	{
 		perror("command line alloc");
-		return FALSE;
+		return false;
 	}
 
 	/* parse them to array */

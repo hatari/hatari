@@ -142,11 +142,11 @@ void CreateBlankImage_CreateFile(char *pszFileName, int nTracks, int nSectors, i
 	if (File_QueryOverwrite(pszFileName))
 	{
 		/* Save image to file */
-		if (MSA_FileNameIsMSA(pszFileName, TRUE))
+		if (MSA_FileNameIsMSA(pszFileName, true))
 			bRet = MSA_WriteDisk(pszFileName, pDiskFile, nDiskSize);
-		else if (ST_FileNameIsST(pszFileName, TRUE))
+		else if (ST_FileNameIsST(pszFileName, true))
 			bRet = ST_WriteDisk(pszFileName, pDiskFile, nDiskSize);
-		else if (DIM_FileNameIsDIM(pszFileName, TRUE))
+		else if (DIM_FileNameIsDIM(pszFileName, true))
 			bRet = DIM_WriteDisk(pszFileName, pDiskFile, nDiskSize);
 
 		/* Did create successfully? */

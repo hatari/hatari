@@ -34,7 +34,7 @@ static bool Bios_Bconstat(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bconstat(%i)\n", Dev);
 
-	return FALSE;
+	return false;
 }
 
 
@@ -51,7 +51,7 @@ static bool Bios_Bconin(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bconin(%i)\n", Dev);
 
-	return FALSE;
+	return false;
 }
 
 
@@ -70,7 +70,7 @@ static bool Bios_Bconout(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bconout(%i, 0x%02x)\n", Dev, Char);
 
-	return FALSE;
+	return false;
 }
 
 
@@ -94,7 +94,7 @@ static bool Bios_RWabs(Uint32 Params)
 	LOG_TRACE(TRACE_OS_BIOS, "BIOS RWabs %i,%d,0x%lX,%d,%d\n",
 	          Dev, RWFlag, STRAM_ADDR(pBuffer), RecNo, Number);
 
-	return FALSE;
+	return false;
 }
 
 
@@ -111,14 +111,14 @@ static bool Bios_Bcostat(Uint32 Params)
 
 	LOG_TRACE(TRACE_OS_BIOS, "BIOS Bcostat(%i)\n", Dev);
 
-	return FALSE;
+	return false;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
  * Check Bios call and see if we need to re-direct to our own routines
- * Return TRUE if we've handled the exception, else return FALSE to let TOS attempt it
+ * Return true if we've handled the exception, else return false to let TOS attempt it
  */
 bool Bios(void)
 {
@@ -144,6 +144,6 @@ bool Bios(void)
 		return Bios_Bcostat(Params);
 	 default:           /* Call as normal! */
 		LOG_TRACE(TRACE_OS_BIOS, "BIOS %d\n", BiosCall);
-		return FALSE;
+		return false;
 	}
 }
