@@ -311,7 +311,8 @@ static bool BreakCond_CheckAddress(bc_value_t *bc_value)
 
 
 /**
- * Parse a number, decimal unless prefixed with '$' which signifies hex.
+ * Parse a number, decimal unless prefixed with '$' which signifies hex
+ * or prefixed with '%' which signifies binary value.
  * Modify pstate according to parsing (arg index and error string).
  * Return true for success and false for error.
  */
@@ -345,18 +346,6 @@ static bool BreakCond_ParseNumber(parser_state_t *pstate, const char *value, Uin
 		}
 		if (*str) {
 			pstate->error = "binary value has more than 32 bits";
-			EXITFUNC(("-> false\n"));
-			return false;
-		}
-		break;
-	case '"':	/* string */
-		*number = 0;
-		for (str = value+1, i= 0; *str && i < 4; str++, i++) {
-			*number *= 256;
-			*number += *str;
-		}
-		if (*str) {
-			pstate->error = "max string-as-value lenght = 4";
 			EXITFUNC(("-> false\n"));
 			return false;
 		}
@@ -774,7 +763,7 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 		/* validate & copy other characters */
 		if (!sep) {
 			if (!(isalnum(*src) || isblank(*src) ||
-			      *src == '$' || *src == '%' || *src == '"')) {
+			      *src == '$' || *src == '%')) {
 				pstate->error = "invalid character";
 				pstate->arg = src-expression;
 				free(normalized);
@@ -969,21 +958,28 @@ static void BreakCond_Help(void)
 {
 	fprintf(stderr,
 "  breakpoint = <expression> [ && <expression> [ && <expression> ] ... ]\n"
-"  expression = <value>[.width] [& <number>] <condition> <value>[.width]\n"
+"  expression = <value>[.mode] [& <number>] <condition> <value>[.mode]\n"
 "\n"
 "  where:\n"
 "  	value = [(] <register-name | number> [)]\n"
-"  	number = [$]<digits>\n"
+"  	number = [$|%%]<digits>\n"
 "  	condition = '<' | '>' | '=' | '!'\n"
-"  	width = 'b' | 'w' | 'l'\n"
+"  	addressing mode (width) = 'b' | 'w' | 'l'\n"
+"  	addressing mode (space) = 'p' | 'x' | 'y'\n"
 "\n"
 "  If the value is in parenthesis like in '($ff820)' or '(a0)', then\n"
 "  the used value will be read from the memory address pointed by it.\n"
-"  If value is prefixed with '$', it's a hexadecimal, otherwise it's\n"
-"  decimal value.\n"
 "\n"
-"  Example:\n"
-"  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0.l = 123\n\n");
+"  If value is prefixed with '$', it's hexadecimal, if with %%, it's\n"
+"  binary decimal, otherwise it's a normal decimal value.\n"
+"\n"
+"  M68k addresses can have byte (b), word (w) or long (l, default) width.\n"
+"  DSP addresses belong to different address spaces: P, X or Y. Note that\n"
+"  on DSP only R0-R7 registers can be used for relative addressing.\n"
+"\n"
+"  Examples:\n"
+"  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0.l = 123\n"
+"  	(r0).x = 1 && (r0).y = 2\n");
 }
 
 
