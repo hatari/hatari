@@ -177,20 +177,20 @@ bool XBios(void)
 	switch (XBiosCall)
 	{
 	 case 8:
-		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS Floprd()\n" );
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS Floprd()\n");
 		return XBios_Floprd(Params);
 	 case 9:
-		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS Flopwr()\n" );
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS Flopwr()\n");
 		return XBios_Flopwr(Params);
 	 case 15:
-		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS Rsconf()\n" );
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS Rsconf()\n");
 		return XBios_Rsconf(Params);
 	 case 20:
-		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS Scrdmp()\n" );
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS Scrdmp()\n");
 		return XBios_Scrdmp(Params);
 
 	 default:  /* Call as normal! */
-		HATARI_TRACE ( HATARI_TRACE_OS_XBIOS, "XBIOS %d\n", XBiosCall );
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %d\n", XBiosCall);
 		return FALSE;
 	}
 }

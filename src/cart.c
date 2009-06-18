@@ -97,7 +97,7 @@ static void Cart_LoadImage(void)
  */
 void Cart_ResetImage(void)
 {
-	int PatchIllegal = FALSE;
+	int PatchIllegal = false;
 
 	/* "Clear" cartridge ROM space */
 	memset(&RomMem[0xfa0000], 0xff, 0x20000);
@@ -117,7 +117,7 @@ void Cart_ResetImage(void)
 	{
 		/* Copy built-in cartrige data into the cartridge memory of the ST */
 		memcpy(&RomMem[0xfa0000], Cart_data, sizeof(Cart_data));
-		PatchIllegal = TRUE;
+		PatchIllegal = true;
 	}
 	else if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)
 	{
@@ -125,7 +125,7 @@ void Cart_ResetImage(void)
 		Cart_LoadImage();
 	}
 
-	if (PatchIllegal == TRUE)
+	if (PatchIllegal == true)
 	{
 		//fprintf ( stderr ," Cart_ResetImage patch\n" );
 		/* Hatari's specific illegal opcodes for HD emulation */

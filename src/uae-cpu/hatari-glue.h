@@ -14,15 +14,14 @@
 
 extern int pendingInterrupts;
 
-int Init680x0(void);
-void Exit680x0(void);
-void customreset(void);
-int intlev (void);
+extern int Init680x0(void);
+extern void Exit680x0(void);
+extern void customreset(void);
+extern int intlev (void);
 
-unsigned long OpCode_GemDos(uae_u32 opcode);
-unsigned long OpCode_SysInit(uae_u32 opcode);
-unsigned long OpCode_VDI(uae_u32 opcode);
-
+extern unsigned long OpCode_GemDos(uae_u32 opcode);
+extern unsigned long OpCode_SysInit(uae_u32 opcode);
+extern unsigned long OpCode_VDI(uae_u32 opcode);
 
 #define write_log printf
 

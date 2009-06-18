@@ -146,11 +146,11 @@ bool Floppy_IsWriteProtected(int Drive)
 {
 	if (ConfigureParams.DiskImage.nWriteProtection == WRITEPROT_OFF)
 	{
-		return FALSE;
+		return false;
 	}
 	else if (ConfigureParams.DiskImage.nWriteProtection == WRITEPROT_ON)
 	{
-		return TRUE;
+		return true;
 	}
 	else
 	{
@@ -158,9 +158,9 @@ bool Floppy_IsWriteProtected(int Drive)
 		/* Check whether disk is writable */
 		if (stat(EmulationDrives[Drive].sFileName, &FloppyStat) == 0
 		    && (FloppyStat.st_mode & S_IWUSR))
-			return FALSE;
+			return false;
 		else
-			return TRUE;
+			return true;
 	}
 }
 
@@ -187,7 +187,7 @@ static bool Floppy_IsBootSectorOK(int Drive)
 		 * won't be-able to read (nor will a real ST)! */
 		if (pDiskBuffer[13] != 0)
 		{
-			return TRUE;      /* Disk sector is OK! */
+			return true;      /* Disk sector is OK! */
 		}
 		else
 		{
@@ -196,7 +196,7 @@ static bool Floppy_IsBootSectorOK(int Drive)
 		}
 	}
 
-	return FALSE;         /* Bad sector */
+	return false;         /* Bad sector */
 }
 
 
@@ -216,7 +216,7 @@ static char* Floppy_CreateDiskBFileName(const char *pSrcFileName)
 	if (!szDir)
 	{
 		perror("Floppy_CreateDiskBFileName");
-		return FALSE;
+		return false;
 	}
 	szName = szDir + FILENAME_MAX;
 	szExt = szName + FILENAME_MAX;
@@ -334,20 +334,20 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 	filename = ConfigureParams.DiskImage.szDiskFileName[Drive];
 	if (!filename[0])
 	{
-		return TRUE; /* only do eject */
+		return true; /* only do eject */
 	}
 	if (!File_Exists(filename))
 	{
 		Log_AlertDlg(LOG_INFO, "Image '%s' not found", filename);
-		return FALSE;
+		return false;
 	}
 
 	/* Check disk image type and read the file: */
-	if (MSA_FileNameIsMSA(filename, TRUE))
+	if (MSA_FileNameIsMSA(filename, true))
 		EmulationDrives[Drive].pBuffer = MSA_ReadDisk(filename, &nImageBytes);
-	else if (ST_FileNameIsST(filename, TRUE))
+	else if (ST_FileNameIsST(filename, true))
 		EmulationDrives[Drive].pBuffer = ST_ReadDisk(filename, &nImageBytes);
-	else if (DIM_FileNameIsDIM(filename, TRUE))
+	else if (DIM_FileNameIsDIM(filename, true))
 		EmulationDrives[Drive].pBuffer = DIM_ReadDisk(filename, &nImageBytes);
 	else if (ZIP_FileNameIsZIP(filename))
 	{
@@ -357,7 +357,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 
 	if (EmulationDrives[Drive].pBuffer == NULL)
 	{
-		return FALSE;
+		return false;
 	}
 
 	/* Store image filename (required for ejecting the disk later!) */
@@ -365,13 +365,13 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 
 	/* Store size and set drive states */
 	EmulationDrives[Drive].nImageBytes = nImageBytes;
-	EmulationDrives[Drive].bDiskInserted = TRUE;
-	EmulationDrives[Drive].bContentsChanged = FALSE;
-	EmulationDrives[Drive].bMediaChanged = TRUE;
+	EmulationDrives[Drive].bDiskInserted = true;
+	EmulationDrives[Drive].bContentsChanged = false;
+	EmulationDrives[Drive].bMediaChanged = true;
 	EmulationDrives[Drive].bOKToSave = Floppy_IsBootSectorOK(Drive);
 	Log_Printf(LOG_INFO, "Inserted disk '%s' to drive %c:.",
 		   filename, 'A'+Drive);
-	return TRUE;
+	return true;
 }
 
 
@@ -379,11 +379,11 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 /**
  * Eject disk from floppy drive, save contents back to PCs hard-drive if
  * they have been changed.
- * Return TRUE if there was something to eject.
+ * Return true if there was something to eject.
  */
 bool Floppy_EjectDiskFromDrive(int Drive)
 {
-	bool bEjected = FALSE;
+	bool bEjected = false;
 
 	/* Does our drive have a disk in? */
 	if (EmulationDrives[Drive].bDiskInserted)
@@ -398,11 +398,11 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 			{
 				Log_Printf(LOG_INFO, "Flush contents to floppy image '%s'.", psFileName);
 				/* Save as .MSA or .ST image? */
-				if (MSA_FileNameIsMSA(psFileName, TRUE))
+				if (MSA_FileNameIsMSA(psFileName, true))
 					MSA_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
-				else if (ST_FileNameIsST(psFileName, TRUE))
+				else if (ST_FileNameIsST(psFileName, true))
 					ST_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
-				else if (DIM_FileNameIsDIM(psFileName, TRUE))
+				else if (DIM_FileNameIsDIM(psFileName, true))
 					DIM_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (ZIP_FileNameIsZIP(psFileName))
 					ZIP_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
@@ -413,7 +413,7 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 		Log_Printf(LOG_INFO, "Floppy %c: has been removed from drive.",
 			   'A'+Drive);
 
-		bEjected = TRUE;
+		bEjected = true;
 	}
 
 	/* Drive is now empty */
@@ -425,9 +425,9 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 
 	EmulationDrives[Drive].sFileName[0] = '\0';
 	EmulationDrives[Drive].nImageBytes = 0;
-	EmulationDrives[Drive].bDiskInserted = FALSE;
-	EmulationDrives[Drive].bContentsChanged = FALSE;
-	EmulationDrives[Drive].bOKToSave = FALSE;
+	EmulationDrives[Drive].bDiskInserted = false;
+	EmulationDrives[Drive].bContentsChanged = false;
+	EmulationDrives[Drive].bOKToSave = false;
 
 	return bEjected;
 }
@@ -436,7 +436,7 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 /*-----------------------------------------------------------------------*/
 /**
  * Eject all disk image from floppy drives - call when quit.
- * Return TRUE if there was something to eject.
+ * Return true if there was something to eject.
  */
 static bool Floppy_EjectBothDrives(void)
 {
@@ -565,7 +565,7 @@ bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
 		{
 			Log_Printf(LOG_DEBUG, "Floppy_ReadSectors: Program tries to read from side %i "
 			           "of a disk image with %i sides!\n", Side+1, nSides);
-			return FALSE;
+			return false;
 		}
 
 		/* Check if track number is in range */
@@ -573,7 +573,7 @@ bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
 		{
 			Log_Printf(LOG_DEBUG, "Floppy_ReadSectors: Program tries to read from track %i "
 			           "of a disk image with only %i tracks!\n", Track, nImageTracks);
-			return FALSE;
+			return false;
 		}
 
 		/* Check if sector number is in range */
@@ -581,7 +581,7 @@ bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
 		{
 			Log_Printf(LOG_DEBUG, "Floppy_ReadSectors: Program tries to read from sector %i "
 			           "of a disk image with %i sectors per track!\n", Sector, nSectorsPerTrack);
-			return FALSE;
+			return false;
 		}
 
 		/* Seek to sector */
@@ -593,10 +593,10 @@ bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
 		/* Read sectors (usually 512 bytes per sector) */
 		memcpy(pBuffer, pDiskBuffer+Offset, (int)Count*NUMBYTESPERSECTOR);
 
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
@@ -642,7 +642,7 @@ bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
 		{
 			Log_Printf(LOG_DEBUG, "Floppy_WriteSectors: Program tries to write to side %i "
 			           "of a disk image with %i sides!\n", Side+1, nSides);
-			return FALSE;
+			return false;
 		}
 
 		/* Check if track number is in range */
@@ -650,7 +650,7 @@ bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
 		{
 			Log_Printf(LOG_DEBUG, "Floppy_WriteSectors: Program tries to write to track %i "
 			           "of a disk image with only %i tracks!\n", Track, nImageTracks);
-			return FALSE;
+			return false;
 		}
 
 		/* Check if sector number is in range */
@@ -658,7 +658,7 @@ bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
 		{
 			Log_Printf(LOG_DEBUG, "Floppy_WriteSectors: Program tries to write to sector %i "
 			           "of a disk image with %i sectors per track!\n", Sector, nSectorsPerTrack);
-			return FALSE;
+			return false;
 		}
 
 		/* Seek to sector */
@@ -670,10 +670,10 @@ bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
 		/* Write sectors (usually 512 bytes per sector) */
 		memcpy(pDiskBuffer+Offset, pBuffer, (int)Count*NUMBYTESPERSECTOR);
 		/* And set 'changed' flag */
-		EmulationDrives[Drive].bContentsChanged = TRUE;
+		EmulationDrives[Drive].bContentsChanged = true;
 
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }

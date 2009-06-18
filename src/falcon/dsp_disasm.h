@@ -27,15 +27,15 @@ extern "C" {
 #endif
 
 /* Functions */
-void dsp56k_disasm_init(dsp_core_t *my_dsp_core);
-Uint16 dsp56k_disasm(void);
+extern void dsp56k_disasm_init(dsp_core_t *my_dsp_core);
+extern Uint16 dsp56k_disasm(void);
 
 /* Registers change */
-void dsp56k_disasm_reg_read(void);
-void dsp56k_disasm_reg_compare(void);
+extern void dsp56k_disasm_reg_read(void);
+extern void dsp56k_disasm_reg_compare(void);
 
 /* Function to mark register as changed */
-void dsp56k_disasm_force_reg_changed(int num_dsp_reg);
+extern void dsp56k_disasm_force_reg_changed(int num_dsp_reg);
 
 #ifdef __cplusplus
 }

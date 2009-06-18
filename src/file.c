@@ -73,13 +73,13 @@ void File_AddSlashToEndFileName(char *pszFileName)
 bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension)
 {
 	if (strlen(pszFileName) < strlen(pszExtension))
-		return FALSE;
+		return false;
 	/* Is matching extension? */
 	if (!strcasecmp(&pszFileName[strlen(pszFileName)-strlen(pszExtension)], pszExtension))
-		return TRUE;
+		return true;
 
 	/* No */
-	return FALSE;
+	return false;
 }
 
 
@@ -92,26 +92,26 @@ bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtensi
 static bool File_IsRootFileName(const char *pszFileName)
 {
 	if (pszFileName[0] == '\0')     /* If NULL string return! */
-		return FALSE;
+		return false;
 
 	if (pszFileName[0] == PATHSEP)
-		return TRUE;
+		return true;
 
 #ifdef WIN32
 	if (pszFileName[1] == ':')
-		return TRUE;
+		return true;
 #endif
 
 #ifdef GEKKO
 	if (strlen(pszFileName) > 2 && pszFileName[2] == ':')	// sd:
-		return TRUE;
+		return true;
 	if (strlen(pszFileName) > 3 && pszFileName[3] == ':')	// fat:
-		return TRUE;
+		return true;
 	if (strlen(pszFileName) > 4 && pszFileName[4] == ':')	// fat3:
-		return TRUE;
+		return true;
 #endif
 
-	return FALSE;
+	return false;
 }
 
 
@@ -150,13 +150,13 @@ bool File_DirExists(const char *path)
 bool File_DoesFileNameEndWithSlash(char *pszFileName)
 {
 	if (pszFileName[0] == '\0')    /* If NULL string return! */
-		return FALSE;
+		return false;
 	
 	/* Does string end in a '/'? */
 	if (pszFileName[strlen(pszFileName)-1] == PATHSEP)
-		return TRUE;
+		return true;
 	
-	return FALSE;
+	return false;
 }
 
 
@@ -246,14 +246,14 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
  */
 bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool bQueryOverwrite)
 {
-	bool bRet = FALSE;
+	bool bRet = false;
 
 	/* Check if need to ask user if to overwrite */
 	if (bQueryOverwrite)
 	{
 		/* If file exists, ask if OK to overwrite */
 		if (!File_QueryOverwrite(pszFileName))
-			return FALSE;
+			return false;
 	}
 
 	/* Normal file or gzipped file? */
@@ -266,7 +266,7 @@ bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool
 		{
 			/* Write data, set success flag */
 			if (gzwrite(hGzFile, pAddress, Size) == (int)Size)
-				bRet = TRUE;
+				bRet = true;
 
 			gzclose(hGzFile);
 		}
@@ -280,7 +280,7 @@ bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool
 		{
 			/* Write data, set success flag */
 			if (fwrite(pAddress, 1, Size, hDiskFile) == Size)
-				bRet = TRUE;
+				bRet = true;
 
 			fclose(hDiskFile);
 		}
@@ -325,9 +325,9 @@ bool File_Exists(const char *filename)
 	    (buf.st_mode & (S_IRUSR|S_IWUSR)) && !(buf.st_mode & S_IFDIR))
 	{
 		/* file points to user readable regular file */
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 
@@ -340,9 +340,9 @@ bool File_DirectoryExists(const char *psDirName)
 	struct stat buf;
 	if (stat(psDirName, &buf) == 0 && (buf.st_mode & S_IFDIR))
 	{
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 
@@ -354,7 +354,7 @@ bool File_QueryOverwrite(const char *pszFileName)
 {
 	const char *fmt;
 	char *szString;
-	bool ret = TRUE;
+	bool ret = true;
 
 	/* Try and find if file exists */
 	if (File_Exists(pszFileName))
@@ -387,7 +387,7 @@ char * File_FindPossibleExtFileName(const char *pszFileName, const char * const 
 	if (!szSrcDir)
 	{
 		perror("File_FindPossibleExtFileName");
-		return FALSE;
+		return false;
 	}
 	szSrcName = szSrcDir + FILENAME_MAX;
 	szSrcExt = szSrcName + FILENAME_MAX;

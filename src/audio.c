@@ -18,8 +18,8 @@ const char Audio_fileid[] = "Hatari audio.c : " __DATE__ " " __TIME__;
 
 
 int nAudioFrequency = 44100;              /* Sound playback frequency */
-bool bSoundWorking = FALSE;               /* Is sound OK */
-volatile bool bPlayingBuffer = FALSE;     /* Is playing buffer? */
+bool bSoundWorking = false;               /* Is sound OK */
+volatile bool bPlayingBuffer = false;     /* Is playing buffer? */
 int SoundBufferSize = 1024;               /* Size of sound buffer */
 int CompleteSndBufIdx;                    /* Replay-index into MixBuffer */
 
@@ -75,7 +75,7 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Initialize the audio subsystem. Return TRUE if all OK.
+ * Initialize the audio subsystem. Return true if all OK.
  * We use direct access to the sound buffer, set to a unsigned 8-bit mono stream.
  */
 void Audio_Init(void)
@@ -87,7 +87,7 @@ void Audio_Init(void)
 	{
 		/* Stop any sound access */
 		Log_Printf(LOG_DEBUG, "Sound: Disabled\n");
-		bSoundWorking = FALSE;
+		bSoundWorking = false;
 		return;
 	}
 
@@ -97,7 +97,7 @@ void Audio_Init(void)
 		if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0)
 		{
 			fprintf(stderr, "Could not init audio: %s\n", SDL_GetError() );
-			bSoundWorking = FALSE;
+			bSoundWorking = false;
 			return;
 		}
 	}
@@ -113,8 +113,8 @@ void Audio_Init(void)
 	if (SDL_OpenAudio(&desiredAudioSpec, NULL))   /* Open audio device */
 	{
 		fprintf(stderr, "Can't use audio: %s\n", SDL_GetError());
-		bSoundWorking = FALSE;
-		ConfigureParams.Sound.bEnableSound = FALSE;
+		bSoundWorking = false;
+		ConfigureParams.Sound.bEnableSound = false;
 		SDL_QuitSubSystem(SDL_INIT_AUDIO);
 		return;
 	}
@@ -126,9 +126,9 @@ void Audio_Init(void)
 	}
 
 	/* All OK */
-	bSoundWorking = TRUE;
+	bSoundWorking = true;
 	/* And begin */
-	Audio_EnableAudio(TRUE);
+	Audio_EnableAudio(true);
 }
 
 
@@ -141,11 +141,11 @@ void Audio_UnInit(void)
 	if (bSoundWorking)
 	{
 		/* Stop */
-		Audio_EnableAudio(FALSE);
+		Audio_EnableAudio(false);
 
 		SDL_CloseAudio();
 
-		bSoundWorking = FALSE;
+		bSoundWorking = false;
 	}
 }
 
@@ -201,13 +201,13 @@ void Audio_EnableAudio(bool bEnable)
 	if (bEnable && !bPlayingBuffer)
 	{
 		/* Start playing */
-		SDL_PauseAudio(FALSE);
-		bPlayingBuffer = TRUE;
+		SDL_PauseAudio(false);
+		bPlayingBuffer = true;
 	}
 	else if (!bEnable && bPlayingBuffer)
 	{
 		/* Stop from playing */
-		SDL_PauseAudio(TRUE);
-		bPlayingBuffer = FALSE;
+		SDL_PauseAudio(true);
+		bPlayingBuffer = false;
 	}
 }

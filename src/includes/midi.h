@@ -8,13 +8,13 @@
 #ifndef HATARI_MIDI_H
 #define HATARI_MIDI_H
 
-void Midi_Init(void);
-void Midi_UnInit(void);
-void Midi_Reset(void);
-void Midi_Control_ReadByte(void);
-void Midi_Data_ReadByte(void);
-void Midi_Control_WriteByte(void);
-void Midi_Data_WriteByte(void);
-void Midi_InterruptHandler_Update(void);
+extern void Midi_Init(void);
+extern void Midi_UnInit(void);
+extern void Midi_Reset(void);
+extern void Midi_Control_ReadByte(void);
+extern void Midi_Data_ReadByte(void);
+extern void Midi_Control_WriteByte(void);
+extern void Midi_Data_WriteByte(void);
+extern void Midi_InterruptHandler_Update(void);
 
 #endif

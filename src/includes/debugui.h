@@ -17,6 +17,7 @@ enum {
 
 extern void DebugUI(void);
 extern int DebugUI_ParseCommand(char *input);
+extern int DebugUI_GetCpuRegisterAddress(const char *reg, Uint32 **addr);
 extern void DebugUI_CpuCheck(void);
 extern void DebugUI_DspCheck(void);
 

@@ -10,8 +10,8 @@
  * to the error log file and/or displays them in alert dialog boxes.
  *
  * It can also dynamically output trace messages, based on the content
- * of HatariTraceFlags. Multiple trace levels can be set at once, by setting
- * the corresponding bits in HatariTraceFlags
+ * of LogTraceFlags. Multiple trace levels can be set at once, by setting
+ * the corresponding bits in LogTraceFlags.
  */
 const char Log_fileid[] = "Hatari log.c : " __DATE__ " " __TIME__;
 
@@ -34,62 +34,62 @@ struct {
 	const char *Name;
 }
 TraceOptions[] = {
-	{ HATARI_TRACE_NONE		, "none" },
+	{ TRACE_NONE		 , "none" },
 
-	{ HATARI_TRACE_VIDEO_SYNC	, "video_sync" } ,
-	{ HATARI_TRACE_VIDEO_RES	, "video_res" } ,
-	{ HATARI_TRACE_VIDEO_COLOR	, "video_color" } ,
-	{ HATARI_TRACE_VIDEO_BORDER_V	, "video_border_v" } ,
-	{ HATARI_TRACE_VIDEO_BORDER_H	, "video_border_h" } ,
-	{ HATARI_TRACE_VIDEO_ADDR	, "video_addr" } ,
-	{ HATARI_TRACE_VIDEO_HBL	, "video_hbl" } ,
-	{ HATARI_TRACE_VIDEO_VBL	, "video_vbl" } ,
-	{ HATARI_TRACE_VIDEO_STE	, "video_ste" } ,
-	{ HATARI_TRACE_VIDEO_ALL	, "video_all" } ,
+	{ TRACE_VIDEO_SYNC	 , "video_sync" } ,
+	{ TRACE_VIDEO_RES	 , "video_res" } ,
+	{ TRACE_VIDEO_COLOR	 , "video_color" } ,
+	{ TRACE_VIDEO_BORDER_V   , "video_border_v" } ,
+	{ TRACE_VIDEO_BORDER_H   , "video_border_h" } ,
+	{ TRACE_VIDEO_ADDR	 , "video_addr" } ,
+	{ TRACE_VIDEO_HBL	 , "video_hbl" } ,
+	{ TRACE_VIDEO_VBL	 , "video_vbl" } ,
+	{ TRACE_VIDEO_STE	 , "video_ste" } ,
+	{ TRACE_VIDEO_ALL	 , "video_all" } ,
 
-	{ HATARI_TRACE_MFP_EXCEPTION	, "mfp_exception" } ,
-	{ HATARI_TRACE_MFP_START	, "mfp_start" } ,
-	{ HATARI_TRACE_MFP_READ		, "mfp_read" } ,
-	{ HATARI_TRACE_MFP_WRITE	, "mfp_write" } ,
-	{ HATARI_TRACE_MFP_ALL		, "mfp_all" } ,
+	{ TRACE_MFP_EXCEPTION	 , "mfp_exception" } ,
+	{ TRACE_MFP_START	 , "mfp_start" } ,
+	{ TRACE_MFP_READ	 , "mfp_read" } ,
+	{ TRACE_MFP_WRITE	 , "mfp_write" } ,
+	{ TRACE_MFP_ALL 	 , "mfp_all" } ,
 
-	{ HATARI_TRACE_PSG_READ		, "psg_read" } ,
-	{ HATARI_TRACE_PSG_WRITE	, "psg_write" } ,
-	{ HATARI_TRACE_PSG_ALL		, "psg_all" } ,
+	{ TRACE_PSG_READ	 , "psg_read" } ,
+	{ TRACE_PSG_WRITE	 , "psg_write" } ,
+	{ TRACE_PSG_ALL 	 , "psg_all" } ,
 
-	{ HATARI_TRACE_CPU_PAIRING	, "cpu_pairing" } ,
-	{ HATARI_TRACE_CPU_DISASM	, "cpu_disasm" } ,
-	{ HATARI_TRACE_CPU_EXCEPTION	, "cpu_exception" } ,
-	{ HATARI_TRACE_CPU_ALL		, "cpu_all" } ,
+	{ TRACE_CPU_PAIRING	 , "cpu_pairing" } ,
+	{ TRACE_CPU_DISASM	 , "cpu_disasm" } ,
+	{ TRACE_CPU_EXCEPTION	 , "cpu_exception" } ,
+	{ TRACE_CPU_ALL 	 , "cpu_all" } ,
 
-	{ HATARI_TRACE_INT		, "int" } ,
+	{ TRACE_INT		 , "int" } ,
 
-	{ HATARI_TRACE_FDC		, "fdc" } ,
+	{ TRACE_FDC		 , "fdc" } ,
 
-	{ HATARI_TRACE_IKBD_CMDS	, "ikbd_cmds" } ,
-	{ HATARI_TRACE_IKBD_ACIA	, "ikbd_acia" } ,
-	{ HATARI_TRACE_IKBD_EXEC	, "ikbd_exec" } ,
-	{ HATARI_TRACE_IKBD_ALL		, "ikbd_all" } ,
+	{ TRACE_IKBD_CMDS	 , "ikbd_cmds" } ,
+	{ TRACE_IKBD_ACIA	 , "ikbd_acia" } ,
+	{ TRACE_IKBD_EXEC	 , "ikbd_exec" } ,
+	{ TRACE_IKBD_ALL	 , "ikbd_all" } ,
 
-	{ HATARI_TRACE_BLITTER		, "blitter" } ,
+	{ TRACE_BLITTER 	 , "blitter" } ,
 
-	{ HATARI_TRACE_OS_BIOS		, "bios" },
-	{ HATARI_TRACE_OS_XBIOS		, "xbios" },
-	{ HATARI_TRACE_OS_GEMDOS	, "gemdos" },
-	{ HATARI_TRACE_OS_VDI		, "vdi" },
-	{ HATARI_TRACE_OS_ALL		, "os_all" } ,
+	{ TRACE_OS_BIOS 	 , "bios" },
+	{ TRACE_OS_XBIOS	 , "xbios" },
+	{ TRACE_OS_GEMDOS	 , "gemdos" },
+	{ TRACE_OS_VDI  	 , "vdi" },
+	{ TRACE_OS_ALL  	 , "os_all" } ,
 
-	{ HATARI_TRACE_IOMEM_RD 	, "io_read" } ,
-	{ HATARI_TRACE_IOMEM_WR 	, "io_write" } ,
-	{ HATARI_TRACE_IOMEM_ALL 	, "io_all" } ,
+	{ TRACE_IOMEM_RD	 , "io_read" } ,
+	{ TRACE_IOMEM_WR	 , "io_write" } ,
+	{ TRACE_IOMEM_ALL	 , "io_all" } ,
 
-	{ HATARI_TRACE_DMASND		, "dmasound" } ,
+	{ TRACE_DMASND  	 , "dmasound" } ,
 
-	{ HATARI_TRACE_ALL		, "all" }
+	{ TRACE_ALL		 , "all" }
 };
 
 
-Uint32	HatariTraceFlags = HATARI_TRACE_NONE;
+Uint32	LogTraceFlags = TRACE_NONE;
 FILE *TraceFile = NULL;
 
 static FILE *hLogFile = NULL;
@@ -221,7 +221,7 @@ LOGTYPE Log_ParseOptions(const char *arg)
  * corresponding trace flag is turned on.
  * If the string is prefixed with a '-',
  * corresponding trace flag is turned off.
- * Result is stored in HatariTraceFlags.
+ * Result is stored in LogTraceFlags.
  */
 bool Log_SetTraceOptions (const char *OptionsStr)
 {
@@ -249,7 +249,7 @@ bool Log_SetTraceOptions (const char *OptionsStr)
 		return FALSE;
 	}
 	
-	HatariTraceFlags = HATARI_TRACE_NONE;
+	LogTraceFlags = TRACE_NONE;
 	if (strcmp (OptionsStr, "none") == 0)
 	{
 		return TRUE;
@@ -284,9 +284,9 @@ bool Log_SetTraceOptions (const char *OptionsStr)
 		if (i < MaxOptions)		/* option found */
 		{
 			if (Mode == 0)
-				HatariTraceFlags |= TraceOptions[i].Level;
+				LogTraceFlags |= TraceOptions[i].Level;
 			else
-				HatariTraceFlags &= (~TraceOptions[i].Level);
+				LogTraceFlags &= (~TraceOptions[i].Level);
 		}
 		else
 		{
@@ -298,7 +298,7 @@ bool Log_SetTraceOptions (const char *OptionsStr)
 		cur = sep;
 	}
 	
-	//fprintf(stderr, "trace parse <%x>\n", HatariTraceFlags);
+	//fprintf(stderr, "trace parse <%x>\n", LogTraceFlags);
 	
 	free (OptionsCopy);
 	return TRUE;

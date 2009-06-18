@@ -62,86 +62,86 @@ extern bool Log_SetTraceOptions(const char *OptionsStr);
 #include "config.h"
 
 /* Up to 32 levels when using Uint32 for HatariTraceFlags */
-#define	HATARI_TRACE_VIDEO_SYNC		(1<<0)
-#define	HATARI_TRACE_VIDEO_RES		(1<<1)
-#define	HATARI_TRACE_VIDEO_COLOR	(1<<2)
-#define	HATARI_TRACE_VIDEO_BORDER_V	(1<<3)
-#define	HATARI_TRACE_VIDEO_BORDER_H	(1<<4)
-#define	HATARI_TRACE_VIDEO_ADDR		(1<<5)
-#define	HATARI_TRACE_VIDEO_VBL		(1<<6)
-#define	HATARI_TRACE_VIDEO_HBL		(1<<7)
-#define	HATARI_TRACE_VIDEO_STE		(1<<8)
+#define	TRACE_VIDEO_SYNC	 (1<<0)
+#define	TRACE_VIDEO_RES 	 (1<<1)
+#define	TRACE_VIDEO_COLOR	 (1<<2)
+#define	TRACE_VIDEO_BORDER_V	 (1<<3)
+#define	TRACE_VIDEO_BORDER_H	 (1<<4)
+#define	TRACE_VIDEO_ADDR	 (1<<5)
+#define	TRACE_VIDEO_VBL 	 (1<<6)
+#define	TRACE_VIDEO_HBL 	 (1<<7)
+#define	TRACE_VIDEO_STE 	 (1<<8)
 
-#define	HATARI_TRACE_MFP_EXCEPTION	(1<<9)
-#define	HATARI_TRACE_MFP_START		(1<<10)
-#define	HATARI_TRACE_MFP_READ		(1<<11)
-#define	HATARI_TRACE_MFP_WRITE		(1<<12)
+#define	TRACE_MFP_EXCEPTION	 (1<<9)
+#define	TRACE_MFP_START 	 (1<<10)
+#define	TRACE_MFP_READ  	 (1<<11)
+#define	TRACE_MFP_WRITE 	 (1<<12)
 
-#define	HATARI_TRACE_PSG_READ		(1<<13)
-#define	HATARI_TRACE_PSG_WRITE		(1<<14)
+#define	TRACE_PSG_READ  	 (1<<13)
+#define	TRACE_PSG_WRITE 	 (1<<14)
 
-#define	HATARI_TRACE_CPU_PAIRING	(1<<15)
-#define	HATARI_TRACE_CPU_DISASM		(1<<16)
-#define	HATARI_TRACE_CPU_EXCEPTION	(1<<17)
+#define	TRACE_CPU_PAIRING	 (1<<15)
+#define	TRACE_CPU_DISASM	 (1<<16)
+#define	TRACE_CPU_EXCEPTION	 (1<<17)
 
-#define	HATARI_TRACE_INT		(1<<18)
+#define	TRACE_INT		 (1<<18)
 
-#define	HATARI_TRACE_FDC		(1<<19)
+#define	TRACE_FDC		 (1<<19)
 
-#define	HATARI_TRACE_IKBD_CMDS		(1<<20)
-#define	HATARI_TRACE_IKBD_ACIA		(1<<21)
-#define	HATARI_TRACE_IKBD_EXEC		(1<<22)
+#define	TRACE_IKBD_CMDS 	 (1<<20)
+#define	TRACE_IKBD_ACIA 	 (1<<21)
+#define	TRACE_IKBD_EXEC 	 (1<<22)
 
-#define HATARI_TRACE_BLITTER		(1<<23)
+#define TRACE_BLITTER		 (1<<23)
 
-#define HATARI_TRACE_OS_BIOS		(1<<24)
-#define HATARI_TRACE_OS_XBIOS		(1<<25)
-#define HATARI_TRACE_OS_GEMDOS		(1<<26)
-#define HATARI_TRACE_OS_VDI		(1<<27)
+#define TRACE_OS_BIOS		 (1<<24)
+#define TRACE_OS_XBIOS  	 (1<<25)
+#define TRACE_OS_GEMDOS 	 (1<<26)
+#define TRACE_OS_VDI		 (1<<27)
 
-#define HATARI_TRACE_IOMEM_RD		(1<<28)
-#define HATARI_TRACE_IOMEM_WR		(1<<29)
+#define TRACE_IOMEM_RD  	 (1<<28)
+#define TRACE_IOMEM_WR  	 (1<<29)
 
-#define HATARI_TRACE_DMASND		(1<<30)
+#define TRACE_DMASND		 (1<<30)
 
-#define	HATARI_TRACE_NONE		(0)
-#define	HATARI_TRACE_ALL		(~0)
+#define	TRACE_NONE		 (0)
+#define	TRACE_ALL		 (~0)
 
 
-#define	HATARI_TRACE_VIDEO_ALL		( HATARI_TRACE_VIDEO_SYNC | HATARI_TRACE_VIDEO_RES | HATARI_TRACE_VIDEO_COLOR \
-		| HATARI_TRACE_VIDEO_BORDER_V | HATARI_TRACE_VIDEO_BORDER_H | HATARI_TRACE_VIDEO_ADDR \
-		| HATARI_TRACE_VIDEO_VBL | HATARI_TRACE_VIDEO_HBL | HATARI_TRACE_VIDEO_STE )
+#define	TRACE_VIDEO_ALL		( TRACE_VIDEO_SYNC | TRACE_VIDEO_RES | TRACE_VIDEO_COLOR \
+		| TRACE_VIDEO_BORDER_V | TRACE_VIDEO_BORDER_H | TRACE_VIDEO_ADDR \
+		| TRACE_VIDEO_VBL | TRACE_VIDEO_HBL | TRACE_VIDEO_STE )
 
-#define HATARI_TRACE_MFP_ALL		( HATARI_TRACE_MFP_EXCEPTION | HATARI_TRACE_MFP_START | HATARI_TRACE_MFP_READ | HATARI_TRACE_MFP_WRITE )
+#define TRACE_MFP_ALL		( TRACE_MFP_EXCEPTION | TRACE_MFP_START | TRACE_MFP_READ | TRACE_MFP_WRITE )
 
-#define	HATARI_TRACE_PSG_ALL		( HATARI_TRACE_PSG_READ | HATARI_TRACE_PSG_WRITE )
+#define	TRACE_PSG_ALL		( TRACE_PSG_READ | TRACE_PSG_WRITE )
 
-#define	HATARI_TRACE_CPU_ALL		( HATARI_TRACE_CPU_PAIRING | HATARI_TRACE_CPU_DISASM | HATARI_TRACE_CPU_EXCEPTION )
+#define	TRACE_CPU_ALL		( TRACE_CPU_PAIRING | TRACE_CPU_DISASM | TRACE_CPU_EXCEPTION )
 
-#define	HATARI_TRACE_IKBD_ALL		( HATARI_TRACE_IKBD_CMDS | HATARI_TRACE_IKBD_ACIA | HATARI_TRACE_IKBD_EXEC | HATARI_TRACE_OS_VDI )
+#define	TRACE_IKBD_ALL		( TRACE_IKBD_CMDS | TRACE_IKBD_ACIA | TRACE_IKBD_EXEC | TRACE_OS_VDI )
 
-#define	HATARI_TRACE_OS_ALL		( HATARI_TRACE_OS_BIOS | HATARI_TRACE_OS_XBIOS | HATARI_TRACE_OS_GEMDOS | HATARI_TRACE_OS_VDI )
+#define	TRACE_OS_ALL		( TRACE_OS_BIOS | TRACE_OS_XBIOS | TRACE_OS_GEMDOS | TRACE_OS_VDI )
 
-#define	HATARI_TRACE_IOMEM_ALL		( HATARI_TRACE_IOMEM_RD | HATARI_TRACE_IOMEM_WR )
+#define	TRACE_IOMEM_ALL		( TRACE_IOMEM_RD | TRACE_IOMEM_WR )
 
 
 extern FILE *TraceFile;
-extern Uint32 HatariTraceFlags;
+extern Uint32 LogTraceFlags;
 
 #if ENABLE_TRACING
 
 #ifndef _VCWIN_
-#define	HATARI_TRACE( level, args... ) \
-	if ( HatariTraceFlags & level ) fprintf ( TraceFile , args )
+#define	LOG_TRACE(level, args...) \
+	if (LogTraceFlags & level) fprintf(TraceFile, args)
 #endif
-#define HATARI_TRACE_LEVEL( level )	(HatariTraceFlags & level)
+#define LOG_TRACE_LEVEL( level )	(LogTraceFlags & level)
 
 #else		/* ENABLE_TRACING */
 
 #ifndef _VCWIN_
-#define HATARI_TRACE( level, args... )	{}
+#define LOG_TRACE(level, args...)	{}
 #endif
-#define HATARI_TRACE_LEVEL( level )	(0)
+#define LOG_TRACE_LEVEL( level )	(0)
 
 #endif		/* ENABLE_TRACING */
 
@@ -150,7 +150,7 @@ extern Uint32 HatariTraceFlags;
  * is disabled.
  */
 #ifndef _VCWIN_
-#define HATARI_TRACE_PRINT( args... )	fprintf ( TraceFile , args )
+#define LOG_TRACE_PRINT(args...)	fprintf(TraceFile , args)
 #endif
 
 

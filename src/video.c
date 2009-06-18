@@ -789,7 +789,7 @@ static Uint32 Video_CalculateAddress ( void )
 			VideoAddress += PrevSize + NbBytes;
 	}
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_ADDR , "video base=%x raster=%x addr=%x video_cyc=%d line_cyc=%d/X=%d @ nHBL=%d/video_hbl=%d %d<->%d pc=%x instr_cyc=%d\n",
+	LOG_TRACE(TRACE_VIDEO_ADDR , "video base=%x raster=%x addr=%x video_cyc=%d line_cyc=%d/X=%d @ nHBL=%d/video_hbl=%d %d<->%d pc=%x instr_cyc=%d\n",
 	               VideoBase, pVideoRaster - STRam, VideoAddress, Cycles_GetCounter(CYCLES_COUNTER_VIDEO),
 	               LineCycles, X,
 	               nHBL, HblCounterVideo, LineStartCycle, LineEndCycle, M68000_GetPC(), CurrentInstrCycles );
@@ -808,7 +808,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+	LOG_TRACE(TRACE_VIDEO_RES ,"shifter=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 	               Res, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
 
@@ -841,7 +841,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 	{
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_OFF;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove left %d<->%d\n" ,
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left %d<->%d\n" ,
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 	}
 
@@ -853,7 +853,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 		/* By default, this line will be in med res, except if we detect hardware scrolling later */
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_OVERSCAN_MED_RES | ( 2 << 20 );
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_71;
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove left med %d<->%d\n" ,
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove left med %d<->%d\n" ,
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 	}
 
@@ -873,7 +873,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res %d<->%d\n" ,
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res %d<->%d\n" ,
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 	}
 
@@ -886,7 +886,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res %d<->%d\n" ,
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res %d<->%d\n" ,
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 	}
 
@@ -902,7 +902,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line res 2 %d<->%d\n" ,
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line res 2 %d<->%d\n" ,
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 	}
 
@@ -922,7 +922,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 	{
 		ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_STOP_MIDDLE;
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_71;
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect stop middle %d<->%d\n" ,
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect stop middle %d<->%d\n" ,
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 	}
 
@@ -945,7 +945,7 @@ static void Video_WriteToShifter ( Uint8 Res )
 		ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_FULL;
 		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].BorderMask |= BORDERMASK_LEFT_OFF;	/* no left border on next line */
 		ShifterFrame.ShifterLines[ HblCounterVideo+1 ].DisplayStartCycle = LINE_START_CYCLE_71;
-		HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove right full %d<->%d\n" ,
+		LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove right full %d<->%d\n" ,
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 	}
 
@@ -958,12 +958,12 @@ static void Video_WriteToShifter ( Uint8 Res )
 	{
 		if ( LineCycles == LINE_LEFT_MED_CYCLE_1 )		/* 'No Cooper' timing */
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect med res overscan offset 0 byte\n" );
+			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect med res overscan offset 0 byte\n" );
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_OVERSCAN_MED_RES | ( 0 << 20 );
 		}
 		else if ( LineCycles == LINE_LEFT_MED_CYCLE_2 )		/* 'Best Part Of The Creation / PYM' timing */
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect med res overscan offset 2 bytes\n" );
+			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect med res overscan offset 2 bytes\n" );
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_OVERSCAN_MED_RES | ( 2 << 20 );
 		}
 	}
@@ -980,22 +980,22 @@ static void Video_WriteToShifter ( Uint8 Res )
 
 		if ( LineCycles == LINE_SCROLL_13_CYCLE_50 )		/* cycle 20 */
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect 13 pixels right scroll\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 13 pixels right scroll\n" );
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 13;
 		}
 		else if ( LineCycles == LINE_SCROLL_9_CYCLE_50 )	/* cycle 24 */
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect 9 pixels right scroll\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 9 pixels right scroll\n" );
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 9;
 		}
 		else if ( LineCycles == LINE_SCROLL_5_CYCLE_50 )	/* cycle 28 */
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect 5 pixels right scroll\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 5 pixels right scroll\n" );
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 5;
 		}
 		else if ( LineCycles == LINE_SCROLL_1_CYCLE_50 )	/* cycle 32 */
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect 1 pixel right scroll\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect 1 pixel right scroll\n" );
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayPixelShift = 1;
 		}
 	}
@@ -1105,7 +1105,7 @@ void Video_Sync_WriteByte ( void )
 
 	Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_SYNC ,"sync=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+	LOG_TRACE(TRACE_VIDEO_SYNC ,"sync=0x%2.2X video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 	               Freq, FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 
 	/* Ignore consecutive writes of the same value */
@@ -1136,7 +1136,7 @@ void Video_Sync_WriteByte ( void )
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_LEFT_PLUS_2;
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_50;
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect left+2 %d<->%d\n" ,
+			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect left+2 %d<->%d\n" ,
 				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 		}
 
@@ -1150,7 +1150,7 @@ void Video_Sync_WriteByte ( void )
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_EMPTY_LINE;
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = 0;
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = 0;
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect empty line freq %d<->%d\n" ,
+			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect empty line freq %d<->%d\n" ,
 				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 		}
 
@@ -1161,7 +1161,7 @@ void Video_Sync_WriteByte ( void )
 			&& ( ShifterFrame.ShifterLines[ nHBL ].DisplayEndCycle == LINE_END_CYCLE_60 ) )
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_MINUS_2;
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" ,
+			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect right-2 %d<->%d\n" ,
 				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 		}
 
@@ -1180,7 +1180,7 @@ void Video_Sync_WriteByte ( void )
 		{
 			ShifterFrame.ShifterLines[ HblCounterVideo ].BorderMask |= BORDERMASK_RIGHT_OFF;
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_50;
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect remove right %d<->%d\n" ,
+			LOG_TRACE ( TRACE_VIDEO_BORDER_H , "detect remove right %d<->%d\n" ,
 				ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle , ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle );
 		}
 	}
@@ -2646,7 +2646,7 @@ void Video_InterruptHandler_VBL ( void )
 	/* Generate 1/50th second of sound sample data, to be played by sound thread */
 	Sound_Update_VBL();
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
+	LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
 	               nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
 
 	M68000_Exception ( EXCEPTION_VBLANK , M68000_EXCEPTION_SRC_INT_VIDEO );	/* Vertical blank interrupt, level 4! */
@@ -2666,13 +2666,13 @@ void Video_ScreenBaseSTE_WriteByte(void)
 	if ( ( IoAccessCurrentAddress == 0xff8201 ) || ( IoAccessCurrentAddress == 0xff8203 ) )
 		IoMem[0xff820d] = 0;          /* Reset screen base low register */
 
-	if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_STE ) )
+	if (LOG_TRACE_LEVEL(TRACE_VIDEO_STE))
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
 
 		Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		
-		HATARI_TRACE_PRINT ( "write ste video base=0x%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
+		LOG_TRACE_PRINT ( "write ste video base=0x%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
 			(IoMem[0xff8201]<<16)+(IoMem[0xff8203]<<8)+IoMem[0xff820d] ,
 			FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 	}
@@ -2748,7 +2748,7 @@ void Video_ScreenCounter_WriteByte(void)
 		Delayed = TRUE;
 	}
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste video %x val=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
+	LOG_TRACE(TRACE_VIDEO_STE , "write ste video %x val=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
 				IoAccessCurrentAddress, AddrByte, Delayed ? "yes" : "no" ,
 				FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }
@@ -2852,7 +2852,7 @@ void Video_LineWidth_WriteByte(void)
 		Delayed = TRUE;
 	}
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste linewidth=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
+	LOG_TRACE(TRACE_VIDEO_STE , "write ste linewidth=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
 					NewWidth, Delayed ? "yes" : "no" ,
 					FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }
@@ -2893,13 +2893,13 @@ static void Video_ColorReg_WriteWord(Uint32 addr)
 		pHBLPalettes[idx] = col;               /* Set colour x */
 		*pHBLPaletteMasks |= 1 << idx;         /* And mask */
 
-		if ( HATARI_TRACE_LEVEL ( HATARI_TRACE_VIDEO_COLOR ) )
+		if (LOG_TRACE_LEVEL(TRACE_VIDEO_COLOR))
 		{
 			int FrameCycles, HblCounterVideo, LineCycles;
 
 			Video_GetPosition_OnWriteAccess ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-			HATARI_TRACE_PRINT ( "write col addr=%x col=%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
+			LOG_TRACE_PRINT ( "write col addr=%x col=%x video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
 				addr, col,
 				FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 		}
@@ -3125,7 +3125,7 @@ void Video_HorScroll_Write(void)
 			&& ( ShifterFrame.Scroll8264Pos.FrameCycles - ShifterFrame.Scroll8265Pos.FrameCycles <= 40 ) )
 #endif
 		{
-			HATARI_TRACE ( HATARI_TRACE_VIDEO_BORDER_H , "detect ste left+16 pixels\n" );
+			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect ste left+16 pixels\n" );
 			Add16px = TRUE;
 		}
 	}
@@ -3168,7 +3168,7 @@ void Video_HorScroll_Write(void)
 		Delayed = TRUE;
 	}
 
-	HATARI_TRACE ( HATARI_TRACE_VIDEO_STE , "write ste %x hwscroll=%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
+	LOG_TRACE(TRACE_VIDEO_STE , "write ste %x hwscroll=%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
 		RegAddr , ScrollCount, Delayed ? "yes" : "no" ,
 		FrameCycles, LineCycles, nHBL, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 }

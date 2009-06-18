@@ -354,7 +354,7 @@ void DmaSnd_SoundControl_ReadWord(void)
 {
 	IoMem_WriteWord(0xff8900, nDmaSoundControl);
 
-	HATARI_TRACE(HATARI_TRACE_DMASND, "DMA snd control write: 0x%04x\n", nDmaSoundControl);
+	LOG_TRACE(TRACE_DMASND, "DMA snd control write: 0x%04x\n", nDmaSoundControl);
 }
 
 
@@ -368,7 +368,7 @@ void DmaSnd_SoundControl_WriteWord(void)
 {
 	Uint16 nNewSndCtrl;
 
-	HATARI_TRACE(HATARI_TRACE_DMASND, "DMA snd control write: 0x%04x\n", IoMem_ReadWord(0xff8900));
+	LOG_TRACE(TRACE_DMASND, "DMA snd control write: 0x%04x\n", IoMem_ReadWord(0xff8900));
 
 	nNewSndCtrl = IoMem_ReadWord(0xff8900) & 3;
 
@@ -424,7 +424,7 @@ void DmaSnd_SoundMode_ReadWord(void)
 {
 	IoMem_WriteWord(0xff8920, nDmaSoundMode);
 
-	HATARI_TRACE(HATARI_TRACE_DMASND, "DMA snd mode read: 0x%04x\n", nDmaSoundMode);
+	LOG_TRACE(TRACE_DMASND, "DMA snd mode read: 0x%04x\n", nDmaSoundMode);
 }
 
 
@@ -434,7 +434,7 @@ void DmaSnd_SoundMode_ReadWord(void)
  */
 void DmaSnd_SoundMode_WriteWord(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "DMA snd mode write: 0x%04x\n", IoMem_ReadWord(0xff8920));
+	LOG_TRACE(TRACE_DMASND, "DMA snd mode write: 0x%04x\n", IoMem_ReadWord(0xff8920));
 
 	/* Falcon has meaning in almost all bits of SND_SMC */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
@@ -499,7 +499,7 @@ void DmaSnd_InterruptHandler_Microwire(void)
 void DmaSnd_MicrowireData_ReadWord(void)
 {
 	/* Shifting is done in DmaSnd_InterruptHandler_Microwire! */
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Microwire data read: 0x%x\n", IoMem_ReadWord(0xff8922));
+	LOG_TRACE(TRACE_DMASND, "Microwire data read: 0x%x\n", IoMem_ReadWord(0xff8922));
 }
 
 
@@ -517,7 +517,7 @@ void DmaSnd_MicrowireData_WriteWord(void)
 		Int_AddRelativeInterrupt(8, INT_CPU_CYCLE, INTERRUPT_DMASOUND_MICROWIRE);
 	}
 
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Microwire data write: 0x%x\n", IoMem_ReadWord(0xff8922));
+	LOG_TRACE(TRACE_DMASND, "Microwire data write: 0x%x\n", IoMem_ReadWord(0xff8922));
 }
 
 
@@ -527,7 +527,7 @@ void DmaSnd_MicrowireData_WriteWord(void)
 void DmaSnd_MicrowireMask_ReadWord(void)
 {
 	/* Same as with data register, but mask is rotated, not shifted. */
-	HATARI_TRACE(HATARI_TRACE_DMASND,  "Microwire mask read: 0x%x\n", IoMem_ReadWord(0xff8924));
+	LOG_TRACE(TRACE_DMASND,  "Microwire mask read: 0x%x\n", IoMem_ReadWord(0xff8924));
 }
 
 
@@ -542,7 +542,7 @@ void DmaSnd_MicrowireMask_WriteWord(void)
 		nMicrowireMask = IoMem_ReadWord(0xff8924);
 	}
 
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Microwire mask write: 0x%x\n", IoMem_ReadWord(0xff8924));
+	LOG_TRACE(TRACE_DMASND, "Microwire mask write: 0x%x\n", IoMem_ReadWord(0xff8924));
 }
 
 
@@ -604,7 +604,7 @@ void DmaSnd_InterruptHandler_DspXmit(void)
  */
 void DmaSnd_CrossbarSrc_ReadWord(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd crossbar src read: 0x%04x\n", IoMem_ReadWord(0xff8930));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd crossbar src read: 0x%04x\n", IoMem_ReadWord(0xff8930));
 }
 
 /**
@@ -614,7 +614,7 @@ void DmaSnd_CrossbarSrc_WriteWord(void)
 {
 	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
 
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd crossbar src write: 0x%04x\n", nCbSrc);
+	LOG_TRACE(TRACE_DMASND, "Falcon snd crossbar src write: 0x%04x\n", nCbSrc);
 
 	DmaSnd_StartDspXmitHandler();
 }
@@ -624,7 +624,7 @@ void DmaSnd_CrossbarSrc_WriteWord(void)
  */
 void DmaSnd_CrossbarDst_ReadWord(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd crossbar dst read: 0x%04x\n", IoMem_ReadWord(0xff8932));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd crossbar dst read: 0x%04x\n", IoMem_ReadWord(0xff8932));
 }
 
 /**
@@ -632,7 +632,7 @@ void DmaSnd_CrossbarDst_ReadWord(void)
  */
 void DmaSnd_CrossbarDst_WriteWord(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd crossbar dst write: 0x%04x\n", IoMem_ReadWord(0xff8932));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd crossbar dst write: 0x%04x\n", IoMem_ReadWord(0xff8932));
 }
 
 /**
@@ -640,7 +640,7 @@ void DmaSnd_CrossbarDst_WriteWord(void)
  */
 void DmaSnd_FreqDivExt_ReadByte(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd ext. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8934));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd ext. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8934));
 }
 
 /**
@@ -648,7 +648,7 @@ void DmaSnd_FreqDivExt_ReadByte(void)
  */
 void DmaSnd_FreqDivExt_WriteByte(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd ext. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8934));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd ext. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8934));
 }
 
 /**
@@ -656,7 +656,7 @@ void DmaSnd_FreqDivExt_WriteByte(void)
  */
 void DmaSnd_FreqDivInt_ReadByte(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd int. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8935));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd int. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8935));
 }
 
 /**
@@ -664,7 +664,7 @@ void DmaSnd_FreqDivInt_ReadByte(void)
  */
 void DmaSnd_FreqDivInt_WriteByte(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd int. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8935));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd int. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8935));
 }
 
 /**
@@ -672,7 +672,7 @@ void DmaSnd_FreqDivInt_WriteByte(void)
  */
 void DmaSnd_TrackRecCtrl_ReadByte(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd track record control read: 0x%02x\n", IoMem_ReadByte(0xff8936));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd track record control read: 0x%02x\n", IoMem_ReadByte(0xff8936));
 }
 
 /**
@@ -680,7 +680,7 @@ void DmaSnd_TrackRecCtrl_ReadByte(void)
  */
 void DmaSnd_TrackRecCtrl_WriteByte(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd track record control write: 0x%02x\n", IoMem_ReadByte(0xff8936));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd track record control write: 0x%02x\n", IoMem_ReadByte(0xff8936));
 }
 
 /**
@@ -688,7 +688,7 @@ void DmaSnd_TrackRecCtrl_WriteByte(void)
  */
 void DmaSnd_CodecInput_ReadByte(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd CODEC input read: 0x%02x\n", IoMem_ReadByte(0xff8937));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC input read: 0x%02x\n", IoMem_ReadByte(0xff8937));
 }
 
 /**
@@ -696,7 +696,7 @@ void DmaSnd_CodecInput_ReadByte(void)
  */
 void DmaSnd_CodecInput_WriteByte(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd CODEC input write: 0x%02x\n", IoMem_ReadByte(0xff8937));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC input write: 0x%02x\n", IoMem_ReadByte(0xff8937));
 }
 
 /**
@@ -704,7 +704,7 @@ void DmaSnd_CodecInput_WriteByte(void)
  */
 void DmaSnd_AdcInput_ReadByte(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd ADC input read: 0x%02x\n", IoMem_ReadByte(0xff8938));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd ADC input read: 0x%02x\n", IoMem_ReadByte(0xff8938));
 }
 
 /**
@@ -712,7 +712,7 @@ void DmaSnd_AdcInput_ReadByte(void)
  */
 void DmaSnd_AdcInput_WriteByte(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd ADC input write: 0x%02x\n", IoMem_ReadByte(0xff8938));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd ADC input write: 0x%02x\n", IoMem_ReadByte(0xff8938));
 }
 
 /**
@@ -748,7 +748,7 @@ void DmaSnd_OutputReduct_WriteWord(void)
  */
 void DmaSnd_CodecStatus_ReadWord(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd CODEC status read: 0x%04x\n", IoMem_ReadWord(0xff893c));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC status read: 0x%04x\n", IoMem_ReadWord(0xff893c));
 }
 
 /**
@@ -756,5 +756,5 @@ void DmaSnd_CodecStatus_ReadWord(void)
  */
 void DmaSnd_CodecStatus_WriteWord(void)
 {
-	HATARI_TRACE(HATARI_TRACE_DMASND, "Falcon snd CODEC status write: 0x%04x\n", IoMem_ReadWord(0xff893c));
+	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC status write: 0x%04x\n", IoMem_ReadWord(0xff893c));
 }

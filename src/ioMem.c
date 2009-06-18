@@ -209,7 +209,7 @@ uae_u32 IoMem_bget(uaecptr addr)
 
 	val = IoMem[addr];
 
-	HATARI_TRACE(HATARI_TRACE_IOMEM_RD, "IO read.b $%06x = $%02x\n", addr, val);
+	LOG_TRACE(TRACE_IOMEM_RD, "IO read.b $%06x = $%02x\n", addr, val);
 
 	return val;
 }
@@ -261,7 +261,7 @@ uae_u32 IoMem_wget(uaecptr addr)
 
 	val = IoMem_ReadWord(addr);
 
-	HATARI_TRACE(HATARI_TRACE_IOMEM_RD, "IO read.w $%06x = $%04x\n", addr, val);
+	LOG_TRACE(TRACE_IOMEM_RD, "IO read.w $%06x = $%04x\n", addr, val);
 
 	return val;
 }
@@ -325,7 +325,7 @@ uae_u32 IoMem_lget(uaecptr addr)
 
 	val = IoMem_ReadLong(addr);
 
-	HATARI_TRACE(HATARI_TRACE_IOMEM_RD, "IO read.l $%06x = $%08x\n", addr, val);
+	LOG_TRACE(TRACE_IOMEM_RD, "IO read.l $%06x = $%08x\n", addr, val);
 
 	return val;
 }
@@ -339,7 +339,7 @@ void IoMem_bput(uaecptr addr, uae_u32 val)
 {
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	HATARI_TRACE(HATARI_TRACE_IOMEM_WR, "IO write.b $%06x = $%02x\n", addr, val&0x0ff);
+	LOG_TRACE(TRACE_IOMEM_WR, "IO write.b $%06x = $%02x\n", addr, val&0x0ff);
 
 	if (addr < 0xff8000 || !regs.s)
 	{
@@ -375,7 +375,7 @@ void IoMem_wput(uaecptr addr, uae_u32 val)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	HATARI_TRACE(HATARI_TRACE_IOMEM_WR, "IO write.w $%06x = $%04x\n", addr, val&0x0ffff);
+	LOG_TRACE(TRACE_IOMEM_WR, "IO write.w $%06x = $%04x\n", addr, val&0x0ffff);
 
 	if (addr < 0x00ff8000 || !regs.s)
 	{
@@ -423,7 +423,7 @@ void IoMem_lput(uaecptr addr, uae_u32 val)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	HATARI_TRACE(HATARI_TRACE_IOMEM_WR, "IO write.l $%06x = $%08x\n", addr, val);
+	LOG_TRACE(TRACE_IOMEM_WR, "IO write.l $%06x = $%08x\n", addr, val);
 
 	if (addr < 0xff8000 || !regs.s)
 	{
