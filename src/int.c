@@ -326,9 +326,8 @@ void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler
 {
 	/* Update list cycle counts before adding a new one, */
 	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
-	/* [NP] FIXME : not necessary ? */
-//  if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
-//    Int_UpdateInterrupt();
+	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
+		Int_UpdateInterrupt();
 
 	InterruptHandlers[Handler].bUsed = TRUE;
 	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + nCyclesOver;
