@@ -67,7 +67,7 @@ echo
 step=$(($step+1))
 echo "$step) Unzipping..."
 echo "unzip $ZIPFILE -d $TEMPDIR"
-unzip $ZIPFILE -d $TEMPDIR || exit 2
+unzip "$ZIPFILE" -d "$TEMPDIR" || exit 2
 
 # .zip files created with STZip sometimes have wrong access rights...
 echo "chmod -R u+rw $TEMPDIR/*"
@@ -91,7 +91,7 @@ if [ $disksize -gt 0 ]; then
 	step=$(($step+1))
 	echo "$step) Creating $disksize KB disk image..."
 	echo "dd if=/dev/zero of=$STFILE bs=1024 count=$disksize"
-	dd if=/dev/zero of=$STFILE bs=1024 count=$disksize
+	dd if=/dev/zero of="$STFILE" bs=1024 count=$disksize
 	
 	echo
 	step=$(($step+1))
@@ -103,13 +103,13 @@ if [ $disksize -gt 0 ]; then
 		*)   format="-f $disksize" ;;
 	esac
 	echo "mformat -a $format -i $STFILE ::"
-	mformat -a $format -i $STFILE ::
+	mformat -a $format -i "$STFILE" ::
 	
 	echo
 	step=$(($step+1))
 	echo "$step) Copying data to disk image..."
 	echo "MTOOLS_NO_VFAT=1 mcopy -i $STFILE -spmv $TEMPDIR/* ::"
-	MTOOLS_NO_VFAT=1 mcopy -i $STFILE -spmv $TEMPDIR/* ::
+	MTOOLS_NO_VFAT=1 mcopy -i "$STFILE" -spmv $TEMPDIR/* ::
 else
 	echo "ERROR: zip contents don't fit to a floppy image ($size > 2880 KB)."
 fi
