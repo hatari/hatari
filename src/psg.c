@@ -169,10 +169,10 @@ void PSG_Set_SelectRegister(Uint8 val)
 
 	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		int FrameCycles, HblCounterVideo, LineCycles;
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		LOG_TRACE_PRINT("ym write reg=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
-		                PSGRegisterSelect, nFrameCycles, nLineCycles, nHBL,
+		                PSGRegisterSelect, FrameCycles, LineCycles, HblCounterVideo,
 		                M68000_GetPC(), CurrentInstrCycles);
 	}
 }
@@ -227,11 +227,11 @@ void PSG_Set_DataRegister(Uint8 val)
 {
 	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		int FrameCycles, HblCounterVideo, LineCycles;
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		LOG_TRACE_PRINT("ym write data reg=0x%x val=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
-		                PSGRegisterSelect, val, nFrameCycles, nLineCycles,
-		                nHBL, M68000_GetPC(), CurrentInstrCycles);
+		                PSGRegisterSelect, val, FrameCycles, LineCycles,
+		                HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
 
 	/* Is a valid PSG register currently selected ? */
@@ -358,11 +358,11 @@ void PSG_ff8800_ReadByte(void)
 
 	if (LOG_TRACE_LEVEL(TRACE_PSG_READ))
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		int FrameCycles, HblCounterVideo, LineCycles;
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		LOG_TRACE_PRINT("ym read data %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
 		                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
-		                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+		                FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
 }
 
@@ -379,11 +379,11 @@ void PSG_ff880x_ReadByte(void)
 
 	if (LOG_TRACE_LEVEL(TRACE_PSG_READ))
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		int FrameCycles, HblCounterVideo, LineCycles;
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		LOG_TRACE_PRINT("ym read void %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
 		                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
-		                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+		                FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
 }
 
@@ -400,11 +400,11 @@ void PSG_ff8800_WriteByte(void)
 
 	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		int FrameCycles, HblCounterVideo, LineCycles;
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		LOG_TRACE_PRINT("ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
 		                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
-		                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+		                FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
 
 	PSG_Set_SelectRegister ( IoMem[IoAccessCurrentAddress] );
@@ -426,11 +426,11 @@ void PSG_ff8801_WriteByte(void)
 	
 		if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 		{
-			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-			int nLineCycles = nFrameCycles % nCyclesPerLine;
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 			LOG_TRACE_PRINT("ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
-			                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
-			                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+					IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+					FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 		}
 	
 		PSG_Set_SelectRegister ( IoMem[IoAccessCurrentAddress] );
@@ -440,11 +440,11 @@ void PSG_ff8801_WriteByte(void)
 	{						/* do nothing, just a trace if needed */
 		if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 		{
-			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-			int nLineCycles = nFrameCycles % nCyclesPerLine;
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 			LOG_TRACE_PRINT("ym write ignored %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
-			                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
-			                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+					IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+					FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 		}
 	}
 }
@@ -461,11 +461,11 @@ void PSG_ff8802_WriteByte(void)
 
 	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		int FrameCycles, HblCounterVideo, LineCycles;
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		LOG_TRACE_PRINT("ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
-		                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
-		                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+				IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+				FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
 
 	PSG_Set_DataRegister ( IoMem[IoAccessCurrentAddress] );
@@ -487,11 +487,11 @@ void PSG_ff8803_WriteByte(void)
 	
 		if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 		{
-			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-			int nLineCycles = nFrameCycles % nCyclesPerLine;
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 			LOG_TRACE_PRINT("ym write %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
-			                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
-			                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+					IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+					FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 		}
 		
 		PSG_Set_DataRegister ( IoMem[IoAccessCurrentAddress] );
@@ -501,11 +501,11 @@ void PSG_ff8803_WriteByte(void)
 	{						/* do nothing, just a trace if needed */
 		if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 		{
-			int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-			int nLineCycles = nFrameCycles % nCyclesPerLine;
+			int FrameCycles, HblCounterVideo, LineCycles;
+			Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 			LOG_TRACE_PRINT("ym write ignored %x=0x%x video_cyc=%d %d@%d pc=%x instr_cycle %d\n",
-			                IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
-			                nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+					IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
+					FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 		}
 	}
 }

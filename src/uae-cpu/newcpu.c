@@ -1689,7 +1689,7 @@ static void m68k_run_1 (void)
 
 	    Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	    LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, nHBL );
+	    LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
 	}
 
@@ -1773,7 +1773,7 @@ static void m68k_run_2 (void)
 
 	    Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
-	    LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, nHBL );
+	    LOG_TRACE_PRINT ( "cpu video_cyc=%6d %3d@%3d : " , FrameCycles, LineCycles, HblCounterVideo );
 	    m68k_disasm(stderr, m68k_getpc (), NULL, 1);
 	}
 

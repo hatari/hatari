@@ -906,11 +906,13 @@ void Blitter_Control_WriteByte(void)
 
 	if (LOG_TRACE_LEVEL(TRACE_BLITTER))
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		int FrameCycles, HblCounterVideo, LineCycles;
+
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
+
 		LOG_TRACE_PRINT("blitter write ctrl=%x video_cyc=%d %d@%d pc=%x instr_cyc=%d\n" ,
 				IoMem_ReadByte(REG_CONTROL) ,
-				nFrameCycles, nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles );
+				FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles );
 	}
 
 	BlitterRegs.ctrl = IoMem_ReadByte(REG_CONTROL) & 0xEF;

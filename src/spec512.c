@@ -217,11 +217,12 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 
 	if ( 0 && LOG_TRACE_LEVEL(TRACE_VIDEO_COLOR))
 	{
-		int nFrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO);
-		int nLineCycles = nFrameCycles % nCyclesPerLine;
+		int FrameCycles, HblCounterVideo, LineCycles;
+
+		Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 		LOG_TRACE_PRINT("spec store col line %d cyc=%d col=%x idx=%d video_cyc=%d %d@%d pc=%x instr_cyc=%d\n",
-		                ScanLine, nHorPos, CycleColour, CycleColourIndex, nFrameCycles,
-		                nLineCycles, nHBL, M68000_GetPC(), CurrentInstrCycles);
+				ScanLine, nHorPos, CycleColour, CycleColourIndex, FrameCycles,
+				LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 	}
 
 	/* Increment count (this can never overflow as you cannot write to the palette more than 'MAX_CYCLEPALETTES_PERLINE-1' times per scanline) */
