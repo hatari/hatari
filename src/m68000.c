@@ -351,10 +351,13 @@ void M68000_BusError(Uint32 addr, bool bReadWrite)
 	/* FIXME: In prefetch mode, m68k_getpc() seems already to point to the next instruction */
 	// BusErrorPC = M68000_GetPC();		/* [NP] We set BusErrorPC in m68k_run_1 */
 
-	if (BusErrorPC < TosAddress || BusErrorPC > TosAddress + TosSize)
+	/* Do not print message when TOS is testing for available HW or
+	 * when a program just checks for the floating point co-processor. */
+	if ((BusErrorPC < TosAddress || BusErrorPC > TosAddress + TosSize)
+	    && addr != 0xfffa42)
 	{
-		/* Print bus errors (except for TOS' hardware tests) */
-		fprintf(stderr, "M68000_BusError at address $%lx\n", (long)addr);
+		/* Print bus error message */
+		fprintf(stderr, "M68000 Bus Error at address $%x.\n", addr);
 	}
 
 	if ((regs.spcflags & SPCFLAG_BUSERROR) == 0)	/* [NP] Check that the opcode has not already generated a read bus error */
