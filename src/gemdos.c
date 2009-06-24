@@ -1474,7 +1474,7 @@ static bool GemDOS_Open(Uint32 Params)
 		{	/* convert atari modes to stdio modes */
 			"rb",	/* read only */
 			"rb+",	/* FIXME: should be write only, but "wb" truncates */
-			"rb+"	/* read/write */
+			"rb+",	/* read/write */
 			"rb"	/* read only */
 		};
 	int Drive,Index,Mode;
