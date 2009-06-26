@@ -775,7 +775,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
     EXPORT_RADIO(ramSize, ConfigureParams.Memory.nMemorySize);
     EXPORT_TEXTFIELD(readRS232FromFile, ConfigureParams.RS232.szInFileName);
     EXPORT_SWITCH(realTime, ConfigureParams.System.bRealTimeClock);
-    EXPORT_SWITCH(slowFDC, onfigureParams.DiskImage.bSlowFloppy);
+    EXPORT_SWITCH(slowFDC, ConfigureParams.DiskImage.bSlowFloppy);
     EXPORT_TEXTFIELD(tosImage, ConfigureParams.Rom.szTosImageFileName);
     EXPORT_SWITCH(useBorders, ConfigureParams.Screen.bAllowOverscan);
     EXPORT_SWITCH(useVDIResolution, ConfigureParams.Screen.bUseExtVdiResolutions);
