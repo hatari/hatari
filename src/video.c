@@ -517,6 +517,9 @@ void Video_Reset(void)
 	HblJitterIndex = 0;
 	VblJitterIndex = 0;
 
+	/* Clear framecycles counter */
+	Cycles_SetCounter(CYCLES_COUNTER_VIDEO, 0);
+
 	/* Clear ready for new VBL */
 	Video_ClearOnVBL();
 }
