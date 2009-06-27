@@ -204,12 +204,9 @@ void dsp_core_add_interrupt(dsp_core_t *dsp_core, Uint32 inter)
 	}
 }
 
-/* Process Host Interface peripheral code */
-void dsp_core_process_host_interface(dsp_core_t *dsp_core)
-{
-	dsp_core_host2dsp(dsp_core);
-	dsp_core_dsp2host(dsp_core);
-}
+/* 
+	SSI INTERFACE processing
+*/
 
 /* Process SSI peripheral code */
 void dsp_core_process_ssi_interface(dsp_core_t *dsp_core)
@@ -224,7 +221,7 @@ void dsp_core_ssi_writeTX(dsp_core_t *dsp_core, Uint32 value)
 	dsp_core->ssi.TX = value;
 }
 
-/* SSI set TX register */
+/* SSI set TDE register (dummy write) */
 void dsp_core_ssi_writeTSR(dsp_core_t *dsp_core)
 {
 	/* Dummy write : Just clear SSI TDE bit */
@@ -247,13 +244,14 @@ void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core)
 
 	value = dsp_core->ssi.TX;
 
-	/* Transfer data */
-	/* adjust value to receive size word */
+	/* Transfer data from SSI to crossbar*/
+
+	/* adjust value to trasnmit size word */
 	value >>= (24 - dsp_core->ssi.cra_word_length);
 	value &= dsp_core->ssi.cra_word_mask;
 
-	/* swap received data if bit SHFD in CRB is set */
-	if (dsp_core->ssi.crb_shifter) {
+	/* if bit SHFD in CRB is set, swap data to transmit */
+/*	if (dsp_core->ssi.crb_shifter) {
 		for (i=0; i<dsp_core->ssi.cra_word_length; i++) {
 			temp += value & 1;
 			temp <<= 1;
@@ -261,8 +259,8 @@ void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core)
 		}
 		value = temp;
 	}
-
-	/* Transmit value */
+*/
+	/* Transmit the data */
 	if (dsp_core->ssi.crb_te && dsp_core->ssi.waitFrame == 0) {
 		/* Send value to crossbar */
 		dsp_core->ssi.transmit_value = value;
@@ -282,8 +280,25 @@ void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core)
 	/* set TDE */
 	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TDE);
 
-	/* receive part */
-	dsp_core->ssi.RX = dsp_core->ssi.received_value;
+	/* Receive data from crossbar to SSI */
+
+	/* adjust value to receive size word */
+	value = dsp_core->ssi.received_value;
+	value <<= (24 - dsp_core->ssi.cra_word_length);
+	value &= 0xffffff;
+
+	/* if bit SHFD in CRB is set, swap received data */
+/*	if (dsp_core->ssi.crb_shifter) {
+		temp=0;
+		for (i=0; i<dsp_core->ssi.cra_word_length; i++) {
+			temp += value & 1;
+			temp <<= 1;
+			value >>= 1;
+		}
+		value = temp;
+	}
+*/
+	dsp_core->ssi.RX = value;
 
 	/* generate interrupt ? */
 	if (dsp_core->periph[DSP_SPACE_X][DSP_SSI_CRB] & (1<<DSP_SSI_CRB_RIE)) {
@@ -300,21 +315,7 @@ void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core)
 /* SSI generate internal clock */
 void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core)
 {
-//	Uint32 new_frame;
 	/* TODO : write an internal timer */
-		/* SSI Network mode */
-//		dsp_core->ssi.slot_in_frame ++;
-//		dsp_core->ssi.new_frame = 0;
-
-		/* detect if new frame */
-//		if (dsp_core->ssi.slot_in_frame == dsp_core->ssi.cra_frame_rate_divider) {
-//			dsp_core->ssi.slot_in_frame = 0;
-//			dsp_core->ssi.new_frame = 1;  // send 1 to SC2 pin (generated frame sync)
-//			dsp_core->ssi.waitFrame = 0;
-//			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
-//		}else{
-//			dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] &= 0xff-(1<<DSP_SSI_SR_TFS);
-//		}
 }
 
 /* SSI receive SC2 bit : frame sync */
@@ -364,7 +365,7 @@ void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value)
 					break;
 				case 3:
 					dsp_core->ssi.cra_word_length = 24;
-					dsp_core->ssi.cra_word_mask = 0xfffff;
+					dsp_core->ssi.cra_word_mask = 0xffffff;
 					break;
 			}
 
@@ -389,6 +390,17 @@ void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value)
 			}
 			break;
 	}
+}
+
+/* 
+	HOST INTERFACE processing
+*/
+
+/* Process Host Interface peripheral code */
+void dsp_core_process_host_interface(dsp_core_t *dsp_core)
+{
+	dsp_core_host2dsp(dsp_core);
+	dsp_core_dsp2host(dsp_core);
 }
 
 static void dsp_core_hostport_update_trdy(dsp_core_t *dsp_core)
