@@ -970,7 +970,7 @@ static void BreakCond_Help(void)
 "  If the value is in parenthesis like in '($ff820)' or '(a0)', then\n"
 "  the used value will be read from the memory address pointed by it.\n"
 "\n"
-"  If value is prefixed with '$', it's hexadecimal, if with %%, it's\n"
+"  If value is prefixed with '$', it's hexadecimal, if with '%%', it's\n"
 "  binary decimal, otherwise it's a normal decimal value.\n"
 "\n"
 "  M68k addresses can have byte (b), word (w) or long (l, default) width.\n"
