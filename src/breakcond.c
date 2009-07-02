@@ -102,6 +102,8 @@ static Uint32 BreakCond_ReadDspMemory(Uint32 addr, const bc_value_t *bc_value)
  */
 static Uint32 BreakCond_ReadSTMemory(Uint32 addr, const bc_value_t *bc_value)
 {
+	addr &= 0x00ffffff;				/* use a 24 bit address */
+
 	switch (bc_value->bits) {
 	case 32:
 		return STMemory_ReadLong(addr);
@@ -301,7 +303,9 @@ static bool BreakCond_CheckAddress(bc_value_t *bc_value)
 		EXITFUNC(("-> true (DSP)\n"));
 		return true;
 	}
-	if ((addr > STRamEnd && addr < 0xe00000) || addr > 0xff0000) {
+
+	addr &= 0x00ffffff;				/* use a 24 bit address */
+	if ((addr > STRamEnd && addr < 0xe00000) || (addr >= 0xff0000 && addr < 0xff8000)) {
 		EXITFUNC(("-> false (CPU)\n"));
 		return false;
 	}
@@ -1174,6 +1178,7 @@ int main(int argc, const char *argv[])
 		"(a0).w&3=(d0)&&d0=1",
 		" ( a 0 ) . w  &  1 = ( d 0 ) & 1 &&  d 0 = 3 ",
 		"a0=1 && (d0)&2=(a0).w && ($00ff00).w&1=1",
+		" ($ff820a).b = 2",
 		NULL
 	};
 	const char *test;
