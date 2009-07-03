@@ -4,9 +4,6 @@ TODO
 This lists potential TODO items that aren't listed in the Hatari/UI
 sources.
 
-* Supporting new sound frequencies
-  (needs Hatari cmd line options update first)
-
 * Supporting setting CPU level & clock and Falcon DSP type
 
 * Supporting ASCI / IDE hard disk image and whether to use these
@@ -22,10 +19,12 @@ sources.
 
 * Features for Help menu:
   - README/TODO/Changelog viewer
-  - Create empty floppy images
+  - Create empty floppy images (+ convert directories to hard disks?)
   - MSA converter
 
 * Work on the debug UI:
+  - DSP support
+  - breakpoint support
   - multiple views to memory
   - trace & debug log viewers
 
@@ -35,14 +34,15 @@ sources.
 
 * Supporting other configurable things in Hatari:
   - toggling disk-b autoinsertion, write protection and slow FDC
-  - separate A/B disk paths for images within ZIP archives
+  - separate A/B disk paths for images that are within ZIP archives
   - joystick autofire toggling, defining the keys for joyemu
   - keyboard repeat, key mapping type and file
   - multiple GEMDOS partition directories
-  - toggling blitter, RTC support, timer-D patching
+  - toggling ST blitter, RTC support, timer-D patching
   - vdi planes and size, SDL bpp forcing, spec512 threshold, frames-per-sec
-  - border sizes in windowed and fullscreen mode
+  - border sizes in windowed and fullscreen mode, mouse grabbing
   - screen recording type (every frame vs. when changed)
   - cartridge image (where? it has many limitations)
-  - log file and levels, bios intercept
-  (several of these aren't supported by the internal Hatari UI either)
+  - log file and levels, bios intercept, run-VBLs
+(Several of these aren't supported by the internal Hatari UI either
+and will require support on the Hatari control.c side too.)
