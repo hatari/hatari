@@ -1,0 +1,21 @@
+Code:
+- config.py	- Hatari configuration INI file handling
+- debugui.py	- Debugger UI (works also as standalone)
+- dialogs.py	- Different dialogs shown by Hatari UI
+- hatari.py	- Communication with Hatari and config option handling
+- hatariui	- Wrapper script for hatariui.py with suitable default options
+- hatariui.py	- Hatari UI main: option handling, main window etc
+- Makefile	- Rules for installing
+- uihelpers.py	- Misc helpers for Hatari UI
+- hatari-console.py	- Standalone out-of-process console UI for Hatari
+
+Data files:
+- hatari-icon.png	- Window icon
+- hatari.png		- About dialog image
+- hatariui.desktop	- Hatari UI .desktop file for application launchers
+
+Documentation:
+- Changelog	- Code changes
+- FILES		- This file
+- README	- Hatari UI intro / description
+- TODO		- missing features etc
