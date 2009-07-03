@@ -68,3 +68,6 @@ If UI is started without the embedding option, the actions
 (in menus and toolbars) have also shortcuts.  They cannot
 be used when Hatari window is embedded because then those
 shortcuts couldn't be used with Hatari.
+
+
+URL: http://koti.mbnet.fi/tammat/hatari/hatari-ui.shtml
