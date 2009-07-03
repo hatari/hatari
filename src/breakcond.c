@@ -499,15 +499,6 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 			skip = 2;
 		}
 	}
-
-	/* set default modifiers, register parsing can change them later */
-	if (bc_value->dsp_space) {
-		bc_value->bits = 24;
-		bc_value->mask = BITMASK(24);
-	} else {
-		bc_value->bits = 32;
-		bc_value->mask = BITMASK(32);
-	}
 	
 	str = pstate->argv[pstate->arg];
 	/* parse direct or indirect value */
@@ -542,17 +533,6 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
-	if ((BITMASK(bc_value->bits) & bc_value->mask) != bc_value->mask) {
-		fprintf(stderr, "WARNING: mask %x doesn't fit into %d address/register bits\n",
-			bc_value->mask, bc_value->bits);
-	}
-	if (!bc_value->dsp_space &&
-	    !bc_value->regsize && bc_value->is_indirect &&
-	    (bc_value->value.number & 1) && bc_value->bits > 8) {
-		fprintf(stderr, "WARNING: odd CPU address %x given without using byte (.b) width\n",
-			bc_value->value.number);
-	}
-
 	EXITFUNC(("arg:%d -> true (%s value)\n", pstate->arg,
 		  (bc_value->is_indirect ? "indirect" : "direct")));
 	return true;
@@ -604,18 +584,59 @@ static char BreakCond_ParseComparison(parser_state_t *pstate)
 
 
 /**
- * Check that masks and address sizes allow comparison with the other side.
+ * If no value, use the other value, if that also missing, use default
+ */
+static void BreakCond_InheritDefault(Uint32 *value1, Uint32 value2, Uint32 defvalue)
+{
+	if (!*value1) {
+		if (value2) {
+			*value1 = value2;
+		} else {
+			*value1 = defvalue;
+		}
+	}
+}
+
+/**
+ * Check & ensure that the masks and address sizes are sane
+ * and allow comparison with the other side.
  * If yes, return true, otherwise false.
  */
 static bool BreakCond_CrossCheckValues(parser_state_t *pstate,
 				       bc_value_t *bc_value1,
 				       bc_value_t *bc_value2)
 {
-	Uint32 mask1, mask2;
+	Uint32 mask1, mask2, defbits;
 	ENTERFUNC(("BreakCond_CrossCheckValues()\n"));
 
+	/* make sure there're valid bit widths and that masks have some value */
+	if (bc_value1->dsp_space) {
+		defbits = 24;
+	} else {
+		defbits = 32;
+	}
+	BreakCond_InheritDefault(&(bc_value1->bits), bc_value2->bits, defbits);
+	BreakCond_InheritDefault(&(bc_value2->bits), bc_value1->bits, defbits);
+	BreakCond_InheritDefault(&(bc_value1->mask), bc_value2->mask, BITMASK(bc_value1->bits));
+	BreakCond_InheritDefault(&(bc_value2->mask), bc_value1->mask, BITMASK(bc_value2->bits));
+
+	/* check first value mask & bit width */
 	mask1 = BITMASK(bc_value1->bits) & bc_value1->mask;
+	
+	if (mask1 != bc_value1->mask) {
+		fprintf(stderr, "WARNING: mask %x doesn't fit into %d address/register bits\n",
+			bc_value1->mask, bc_value1->bits);
+	}
+	if (!bc_value1->dsp_space &&
+	    !bc_value1->regsize && bc_value1->is_indirect &&
+	    (bc_value1->value.number & 1) && bc_value1->bits > 8) {
+		fprintf(stderr, "WARNING: odd CPU address %x given without using byte (.b) width\n",
+			bc_value1->value.number);
+	}
+	
+	/* cross-check both values masks */
 	mask2 = BITMASK(bc_value2->bits) & bc_value2->mask;
+
 	if ((mask1 & mask2) == 0) {
 		pstate->error = "values masks cancel each other";
 		EXITFUNC(("-> false\n"));
