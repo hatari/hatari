@@ -269,6 +269,7 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, p
 				EXITFUNC(("-> false (DSP)\n"));
 				return false;
 			}
+			/* all DSP memory values are 24-bits */
 			bc_value->bits = 24;
 			bc_value->regsize = bits;
 			EXITFUNC(("-> true (DSP)\n"));
@@ -1156,6 +1157,12 @@ static void SetDspRegister(const char *regname, Uint32 value)
 		break;
 	}
 	return;
+}
+
+Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str)
+{
+	/* dummy */
+	return 0;
 }
 
 
