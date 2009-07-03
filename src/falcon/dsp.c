@@ -142,6 +142,10 @@ Uint16 DSP_GetPC(void)
 	return 0;
 }
 
+
+/**
+ * Disassemble DSP code between given addresses
+ */
 Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 {
 #if ENABLE_DSP_EMU
@@ -319,7 +323,7 @@ void DSP_DisasmRegisters(void)
  * Get given DSP register address and required bit mask.
  * Works for A0-2, B0-2, LA, LC, M0-7, N0-7, R0-7, X0-1, Y0-1, PC, SR, SP,
  * OMR, SSH & SSL registers, but note that the SP, SSH & SSL registers
- * need special handling (in DSP_SetRegister()) when they are set.
+ * need special handling (in DSP*SetRegister()) when they are set.
  * Return the register width in bits or zero for an error.
  */
 int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
@@ -332,19 +336,24 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 		Uint32 mask;
 	} reg_addr_t;
 	
+	/* sorted by name so that this can be bisected */
 	static const reg_addr_t registers[] = {
-		/* sorted by name so that this can be bisected */
+
+		/* 56-bit A register */
 		{ "A0",  &dsp_core.registers[DSP_REG_A0],  32, BITMASK(24) },
 		{ "A1",  &dsp_core.registers[DSP_REG_A1],  32, BITMASK(24) },
 		{ "A2",  &dsp_core.registers[DSP_REG_A2],  32, BITMASK(8) },
 
+		/* 56-bit B register */
 		{ "B0",  &dsp_core.registers[DSP_REG_B0],  32, BITMASK(24) },
 		{ "B1",  &dsp_core.registers[DSP_REG_B1],  32, BITMASK(24) },
 		{ "B2",  &dsp_core.registers[DSP_REG_B2],  32, BITMASK(8) },
 
+		/* 16-bit LA & LC registers */
 		{ "LA",  &dsp_core.registers[DSP_REG_LA],  32, BITMASK(16) },
 		{ "LC",  &dsp_core.registers[DSP_REG_LC],  32, BITMASK(16) },
 
+		/* 16-bit M registers */
 		{ "M0",  &dsp_core.registers[DSP_REG_M0],  32, BITMASK(16) },
 		{ "M1",  &dsp_core.registers[DSP_REG_M1],  32, BITMASK(16) },
 		{ "M2",  &dsp_core.registers[DSP_REG_M2],  32, BITMASK(16) },
@@ -354,6 +363,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 		{ "M6",  &dsp_core.registers[DSP_REG_M6],  32, BITMASK(16) },
 		{ "M7",  &dsp_core.registers[DSP_REG_M7],  32, BITMASK(16) },
 
+		/* 16-bit N registers */
 		{ "N0",  &dsp_core.registers[DSP_REG_N0],  32, BITMASK(16) },
 		{ "N1",  &dsp_core.registers[DSP_REG_N1],  32, BITMASK(16) },
 		{ "N2",  &dsp_core.registers[DSP_REG_N2],  32, BITMASK(16) },
@@ -365,6 +375,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 
 		{ "OMR", &dsp_core.registers[DSP_REG_OMR], 32, 0x5f },
 
+		/* 16-bit DSP R (address) registers */
 		{ "R0",  &dsp_core.registers[DSP_REG_R0],  32, BITMASK(16) },
 		{ "R1",  &dsp_core.registers[DSP_REG_R1],  32, BITMASK(16) },
 		{ "R2",  &dsp_core.registers[DSP_REG_R2],  32, BITMASK(16) },
@@ -378,11 +389,14 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 		{ "SSL", &dsp_core.registers[DSP_REG_SP],  32, BITMASK(16) },
 		{ "SP",  &dsp_core.registers[DSP_REG_SP],  32, BITMASK(6) },
 
+		/* 16-bit status register */
 		{ "SR",  &dsp_core.registers[DSP_REG_SR],  32, 0xefff },
 
+		/* 48-bit X register */
 		{ "X0",  &dsp_core.registers[DSP_REG_X0],  32, BITMASK(24) },
 		{ "X1",  &dsp_core.registers[DSP_REG_X1],  32, BITMASK(24) },
 
+		/* 48-bit Y register */
 		{ "Y0",  &dsp_core.registers[DSP_REG_Y0],  32, BITMASK(24) },
 		{ "Y1",  &dsp_core.registers[DSP_REG_Y1],  32, BITMASK(24) }
 	};
@@ -426,6 +440,9 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 }
 
 
+/**
+ * Set given DSP register value
+ */
 void DSP_Disasm_SetRegister(char *arg, Uint32 value)
 {
 #if ENABLE_DSP_EMU
