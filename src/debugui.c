@@ -1265,6 +1265,11 @@ int DebugUI_ParseCommand(char *input)
 			break;
 	}
 
+	if (!debugOutput) {
+		/* make sure also calls from control.c work */
+		DebugUI_SetLogDefault();
+	}
+
 	/* ... and execute the function */
 	retval = commandtab[i].pFunction(nArgc, psArgs);
 	/* Save commando string if it can be repeated */
@@ -1302,8 +1307,8 @@ static char *DebugUI_GetCommand(void)
 		free(input);
 		return NULL;
 	}
-	input = Str_Trim(input);
 #endif
+	input = Str_Trim(input);
 
 	return input;
 }
@@ -1315,10 +1320,6 @@ static char *DebugUI_GetCommand(void)
 void DebugUI(void)
 {
 	int cmdret;
-
-	if (!debugOutput) {
-		DebugUI_SetLogDefault();
-	}
 
 	/* if you want disassembly or memdumping to start/continue from
 	 * specific address, you can set them here.  If disassembly
