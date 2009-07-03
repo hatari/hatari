@@ -92,9 +92,8 @@ static void _spaces(void)
  */
 static Uint32 BreakCond_ReadDspMemory(Uint32 addr, const bc_value_t *bc_value)
 {
-#warning "TODO: BreakCond_ReadDspMemory()"
-	fprintf(stderr, "TODO: BreakCond_ReadDspMemory()\n");
-	return 0;
+	const char *dummy;
+	return DSP_ReadMemory(addr, bc_value->dsp_space, &dummy) & BITMASK(24);
 }
 
 /**
@@ -544,9 +543,10 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 		fprintf(stderr, "WARNING: mask %x doesn't fit into %d address/register bits\n",
 			bc_value->mask, bc_value->bits);
 	}
-	if (!bc_value->regsize && bc_value->is_indirect &&
+	if (!bc_value->dsp_space &&
+	    !bc_value->regsize && bc_value->is_indirect &&
 	    (bc_value->value.number & 1) && bc_value->bits > 8) {
-		fprintf(stderr, "WARNING: odd address %x given without using byte (.b) width\n",
+		fprintf(stderr, "WARNING: odd CPU address %x given without using byte (.b) width\n",
 			bc_value->value.number);
 	}
 

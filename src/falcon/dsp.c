@@ -160,79 +160,128 @@ Uint32 DSP_DisasmAddress(Uint16 lowerAdr, Uint16 UpperAdr)
 #endif
 }
 
-void DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, Uint16 space)
+
+/**
+ * Get the value from the given (16-bit) DSP memory address / space
+ * exactly the same way as in dsp_cpu.c::read_memory() (except for
+ * the host/transmit peripheral register values which access has
+ * side-effects). Set the mem_str to suitable string for that
+ * address / space.
+ * Return the value at given address. For valid values AND the return
+ * value with BITMASK(24).
+ */
+Uint32 DSP_ReadMemory(Uint16 address, char space_id, const char **mem_str)
 {
 #if ENABLE_DSP_EMU
-	Uint32 mem = dsp_memdump_addr, mem2;
+	static const char *spaces[3][4] = {
+		{ "X ram", "X rom", "X", "X periph" },
+		{ "Y ram", "Y rom", "Y", "Y periph" },
+		{ "P ram", "P ram", "P ext memory", "P ext memory" }
+	};
+	int idx, space;
 
-	switch (space) {
-		case 'X':
-			/* Space X */
-			for (; mem<=dsp_memdump_upper; mem++) {
-				if (mem < 0x100) {
-					/* X internal ram */
-					fprintf(stderr,"X ram:%04x  %06x\n", mem, dsp_core.ramint[DSP_SPACE_X][mem]);
-				}
-				else if ((mem < 0x200) && (dsp_core.registers[DSP_REG_OMR] & (1<<DSP_OMR_DE))) {
-					/* X internal rom */
-					fprintf(stderr,"X rom:%04x  %06x\n", mem, dsp_core.rom[DSP_SPACE_X][mem]);
-				}
-				else if (mem >= 0xffc0) {
-					/* X Peripheral memory */
-					if (mem == 0xffeb) {
-						fprintf(stderr,"X periph:%04x  HTX : %06x   RTX:%06x\n", 
-							mem, dsp_core.dsp_host_htx, dsp_core.dsp_host_rtx);
-					} 
-					else if (mem == 0xffef) {
-						fprintf(stderr,"X periph:%04x  SSI TX : %06x   SSI RX:%06x\n", 
-							mem, dsp_core.ssi.transmit_value, dsp_core.ssi.received_value);
-					}
-					else {
-						fprintf(stderr,"X periph:%04x  %06x\n", mem, dsp_core.periph[DSP_SPACE_X][mem-0xffc0]);
-					}
-				}
-				else {
-					mem2 = mem & ((DSP_RAMSIZE>>1)-1);
-					mem2 += (DSP_RAMSIZE>>1);
-					fprintf(stderr,"X:%04x (P:%04x): %06x\n", 
-						mem, mem2, dsp_core.ramext[mem2 & (DSP_RAMSIZE-1)]);
-				}
+	switch (space_id) {
+	case 'X':
+		space = DSP_SPACE_X;
+		idx = 0;
+		break;
+	case 'Y':
+		space = DSP_SPACE_Y;
+		idx = 1;
+		break;
+	case 'P':
+		space = DSP_SPACE_P;
+		idx = 2;
+		break;
+	default:
+		space = DSP_SPACE_X;
+		idx = 0;
+	}
+	address &= 0xFFFF;
+
+	/* Internal RAM ? */
+	if (address < 0x100) {
+		*mem_str = spaces[idx][0];
+		return dsp_core.ramint[space][address];
+	}
+
+	if (space == DSP_SPACE_P) {
+		/* Internal RAM ? */
+		if (address < 0x200) {
+			*mem_str = spaces[idx][0];
+			return dsp_core.ramint[DSP_SPACE_P][address];
+		}
+		/* External RAM, mask address to available ram size */
+		*mem_str = spaces[idx][2];
+		return dsp_core.ramext[address & (DSP_RAMSIZE-1)];
+	}
+
+	/* Internal ROM ? */
+	if (address < 0x200) {
+		if (dsp_core.registers[DSP_REG_OMR] & (1<<DSP_OMR_DE)) {
+			*mem_str = spaces[idx][1];
+			return dsp_core.rom[space][address];
+		}
+	}
+
+	/* Peripheral address ? */
+	if (address >= 0xffc0) {
+		*mem_str = spaces[idx][3];
+		/* reading host/transmit regs has side-effects,
+		 * so just give the memory value.
+		 */
+		return dsp_core.periph[space][address-0xffc0];
+	}
+
+	/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
+	address &= (DSP_RAMSIZE>>1) - 1;
+	if (space == DSP_SPACE_X) {
+		address += DSP_RAMSIZE>>1;
+	}
+
+	/* Falcon: External RAM, finally map X,Y to P */
+	*mem_str = spaces[idx][2];
+	return dsp_core.ramext[address & (DSP_RAMSIZE-1)];
+#endif
+	return 0;
+}
+
+
+/**
+ * Output memory values between given addresses in given DSP address space.
+ */
+void DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char space)
+{
+#if ENABLE_DSP_EMU
+	Uint32 mem, mem2, value;
+	const char *mem_str;
+
+	for (mem = dsp_memdump_addr; mem <= dsp_memdump_upper; mem++) {
+		/* special printing of host communication/transmit registers */
+		if (space == 'X' && (mem == 0xffeb || mem == 0xffef)) {
+			if (mem == 0xffeb) {
+				fprintf(stderr,"X periph:%04x  HTX : %06x   RTX:%06x\n", 
+					mem, dsp_core.dsp_host_htx, dsp_core.dsp_host_rtx);
 			}
-			break;
-		case 'Y':
-			/* Space Y */
-			for (; mem<=dsp_memdump_upper; mem++) {
-				if (mem < 0x100) {
-					/* Y internal ram */
-					fprintf(stderr,"Y ram:%04x  %06x\n", mem, dsp_core.ramint[DSP_SPACE_Y][mem]);
-				}
-				else if ((mem < 0x200) && (dsp_core.registers[DSP_REG_OMR] & (1<<DSP_OMR_DE))) {
-					/* Y internal rom */
-					fprintf(stderr,"Y rom:%04x  %06x\n", mem, dsp_core.rom[DSP_SPACE_Y][mem]);
-				}
-				else if (mem >= 0xffc0) {
-					/* Y Peripheral memory */
-					fprintf(stderr,"Y periph:%04x  %06x\n", mem, dsp_core.periph[DSP_SPACE_Y][mem-0xffc0]);
-				}
-				else {
-					mem2 = mem & ((DSP_RAMSIZE>>1)-1);
-					fprintf(stderr,"Y:%04x (P:%04x):  %06x\n", 
-						mem, mem2, dsp_core.ramext[mem2 & (DSP_RAMSIZE-1)]);
-				}
+			else if (mem == 0xffef) {
+				fprintf(stderr,"X periph:%04x  SSI TX : %06x   SSI RX:%06x\n", 
+					mem, dsp_core.ssi.transmit_value, dsp_core.ssi.received_value);
 			}
-			break;
-		case 'P':
-			/* Space P */
-			for (; mem<=dsp_memdump_upper; mem++) {
-				if (mem < 0x200) {
-					/* P internal ram */
-					fprintf(stderr,"P ram:%04x  %06x\n", mem, dsp_core.ramint[DSP_SPACE_P][mem]);
-				}
-				else {
-					fprintf(stderr,"P ext memory:%04x  %06x\n", mem, dsp_core.ramext[mem & (DSP_RAMSIZE-1)]);
-				}
+			continue;
+		}
+		/* special printing of X & Y external RAM values */
+		if ((space == 'X' || space == 'Y') &&
+		    mem >= 0x200 && mem < 0xffc0) {
+			mem2 = mem & ((DSP_RAMSIZE>>1)-1);
+			if (space == 'X') {
+				mem2 += (DSP_RAMSIZE>>1);
 			}
-			break;
+			fprintf(stderr,"%c:%04x (P:%04x): %06x\n", space,
+				mem, mem2, dsp_core.ramext[mem2 & (DSP_RAMSIZE-1)]);
+			continue;
+		}
+		value = DSP_ReadMemory(mem, space, &mem_str);
+		fprintf(stderr,"%s:%04x  %06x\n", mem_str, mem, value);
 	}
 #endif
 }
