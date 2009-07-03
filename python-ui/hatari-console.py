@@ -5,7 +5,7 @@
 # devices and changing Hatari command line options (even for things you
 # cannot change from the UI) from the console while Hatari is running.
 #
-# Copyright (C) 2008 by Eero Tamminen <eerot@sf.net>
+# Copyright (C) 2008-2009 by Eero Tamminen <eerot at berlios>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 import os
 import sys
+import time
 import signal
 import socket
 import readline
@@ -85,7 +86,10 @@ class Hatari:
 
     def send_message(self, msg):
         if self.control:
-            self.control.send(msg + "\n")
+            print "->", msg
+            self.control.sendall(msg + "\n")
+            # KLUDGE: wait so that Hatari output comes before next prompt
+            time.sleep(0.2)
             return True
         else:
             print "ERROR: no Hatari (control socket)"
@@ -163,24 +167,30 @@ option_tokens = [
     "--monitor",
     "--fullscreen",
     "--window",
+    "--grab",
     "--zoom",
     "--frameskips",
     "--borders",
+    "--statusbar",
+    "--drive-led",
     "--spec512",
     "--bpp",
+    "--vdi",
     "--vdi-planes",
     "--vdi-width",
     "--vdi-height",
     "--joystick",
     "--printer",
-    "--midi",
-    "--rs232",
+    "--midi-in",
+    "--midi-out",
+    "--rs232-in",
+    "--rs232-out",
     "--disk-a",
     "--disk-b",
+    "--slowfdc",
     "--harddrive",
     "--acsi",
     "--ide",
-    "--slowfdc",
     "--memsize",
     "--tos",
     "--cartridge",
@@ -199,7 +209,8 @@ option_tokens = [
     "--trace-file",
     "--log-file",
     "--log-level",
-    "--alert-level"
+    "--alert-level",
+    "--run-vbls"
 ]
 shortcut_tokens = [
     "mousemode",
@@ -232,15 +243,26 @@ path_tokens = [
     "rs232in",
     "rs232out"
 ]
+# use the long variants of the commands for clarity
 debugger_tokens = [
-    "r",
-    "d",
-    "m",
-    "f",
-    "w",
-    "l",
-    "s",
-    "h"
+    "address",
+    "breakpoint",
+    "cont",
+    "cpureg",
+    "disasm",
+    "dspaddress",
+    "dspbreak",
+    "dspcont",
+    "dspdisasm",
+    "dspmemdump",
+    "dspreg",
+    "help",
+    "loadbin",
+    "logfile",
+    "memdump",
+    "memwrite",
+    "savebin",
+    "setopt"
 ]
 
 
@@ -283,7 +305,7 @@ def main():
     print "************************************************************"
     print "* Use the TAB key to see all the available Hatari commands *"
     print "************************************************************"
-    tokens = ["help"]
+    tokens = ["console-help"]
     for items in [option_tokens, shortcut_tokens, event_tokens,
             debugger_tokens, device_tokens, path_tokens,
             process_tokens.keys()]:
@@ -318,7 +340,7 @@ def main():
             hatari.trigger_shortcut(line)
         elif line in process_tokens:
             process_tokens[line]()
-        elif line == "help":
+        elif line == "console-help":
             show_help()
         else:
             print "ERROR: unknown hatari-console command:", line
