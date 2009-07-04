@@ -42,8 +42,8 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #define NON_PRINT_CHAR '.'     /* character to display for non-printables */
 #define DISASM_INSTS   5       /* disasm - number of instructions */
 
-static unsigned long memdump_addr; /* memdump address */
-static unsigned long disasm_addr;  /* disasm address */
+static Uint32 disasm_addr;        /* disasm address */
+static Uint32 memdump_addr;       /* memdump address */
 
 static Uint16 dsp_disasm_addr;    /* DSP disasm address */
 static Uint16 dsp_memdump_addr;   /* DSP memdump address */
@@ -93,7 +93,7 @@ void DebugUI_MemorySnapShot_Capture(bool bSave)
  * -2 if a range, but not a valid one.
  * 0 if OK.
  */
-static int getRange(char *str, unsigned long *lower, unsigned long *upper)
+static int getRange(char *str, Uint32 *lower, Uint32 *upper)
 {
 	bool fDash = FALSE;
 	int i=0;
@@ -110,7 +110,7 @@ static int getRange(char *str, unsigned long *lower, unsigned long *upper)
 	if (fDash == FALSE)
 		return -1;
 
-	i = sscanf(str, "%lx%lx", lower, upper);
+	i = sscanf(str, "%x%x", lower, upper);
 	if (i != 2)
 		return -2;
 	if (*lower > *upper)
@@ -126,7 +126,7 @@ static int getRange(char *str, unsigned long *lower, unsigned long *upper)
  *  0 if single address,
  * +1 if a range.
  */
-static int parseRange(char *str, unsigned long *lower, unsigned long *upper)
+static int parseRange(char *str, Uint32 *lower, Uint32 *upper)
 {
 	int i;
 
@@ -141,7 +141,7 @@ static int parseRange(char *str, unsigned long *lower, unsigned long *upper)
 			fprintf(stderr,"Invalid address '%s'!\n", str);
 			return -1;
 		}
-		i = sscanf(str, "%lx", lower);
+		i = sscanf(str, "%x", lower);
 		
 		if (i == 0)
 		{
@@ -153,7 +153,7 @@ static int parseRange(char *str, unsigned long *lower, unsigned long *upper)
 		fprintf(stderr,"Invalid addresses '%s'!\n", str);
 		return -1;
 	case -3:
-		fprintf(stderr,"Invalid range (%lx > %lx)!\n", *lower, *upper);
+		fprintf(stderr,"Invalid range (%x > %x)!\n", *lower, *upper);
 		return -1;
 	}
 	fprintf(stderr, "Unknown getRange() return value!\n");
@@ -347,7 +347,7 @@ static int DebugUI_DspRegister(int nArgc, char *psArgs[])
  */
 static int DebugUI_DspDisAsm(int nArgc, char *psArgs[])
 {
-	unsigned long lower, upper;
+	Uint32 lower, upper;
 	Uint16 dsp_disasm_upper = 0;
 
 	if (!bDspEnabled)
@@ -370,7 +370,7 @@ static int DebugUI_DspDisAsm(int nArgc, char *psArgs[])
 				/* range */
 				if (upper > 0xFFFF)
 				{
-					fprintf(stderr,"Invalid address '%lx'!\n", upper);
+					fprintf(stderr,"Invalid address '%x'!\n", upper);
 					return DEBUGGER_CMDDONE;
 				}
 				dsp_disasm_upper = upper;
@@ -379,7 +379,7 @@ static int DebugUI_DspDisAsm(int nArgc, char *psArgs[])
 
 		if (lower > 0xFFFF)
 		{
-			fprintf(stderr,"Invalid address '%lx'!\n", lower);
+			fprintf(stderr,"Invalid address '%x'!\n", lower);
 			return DEBUGGER_CMDDONE;
 		}
 		dsp_disasm_addr = lower;
@@ -413,7 +413,7 @@ static int DebugUI_DspDisAsm(int nArgc, char *psArgs[])
  */
 static int DebugUI_DspMemDump(int nArgc, char *psArgs[])
 {
-	unsigned long lower, upper;
+	Uint32 lower, upper;
 	Uint16 dsp_memdump_upper = 0;
 	char space;
 
@@ -453,7 +453,7 @@ static int DebugUI_DspMemDump(int nArgc, char *psArgs[])
 			/* range */
 			if (upper > 0xFFFF)
 			{
-				fprintf(stderr,"Invalid address '%lx'!\n", upper);
+				fprintf(stderr,"Invalid address '%x'!\n", upper);
 				return DEBUGGER_CMDDONE;
 			}
 			dsp_memdump_upper = upper;
@@ -461,7 +461,7 @@ static int DebugUI_DspMemDump(int nArgc, char *psArgs[])
 		}
 		if (lower > 0xFFFF)
 		{
-			fprintf(stderr,"Invalid address '%lx'!\n", lower);
+			fprintf(stderr,"Invalid address '%x'!\n", lower);
 			return DEBUGGER_CMDDONE;
 		}
 		dsp_memdump_addr = lower;
@@ -609,7 +609,7 @@ void DebugUI_DspCheck(void)
  */
 static int DebugUI_DisAsm(int nArgc, char *psArgs[])
 {
-	unsigned long disasm_upper = 0;
+	Uint32 disasm_upper = 0;
 	uaecptr nextpc;
 
 	if (nArgc > 1)
@@ -855,7 +855,7 @@ static int DebugUI_MemDump(int nArgc, char *psArgs[])
 {
 	int i,j;
 	char c;
-	unsigned long memdump_upper = 0;
+	Uint32 memdump_upper = 0;
 
 	if (nArgc > 1)
 	{
@@ -879,7 +879,7 @@ static int DebugUI_MemDump(int nArgc, char *psArgs[])
 	{
 		for (j=0;j<MEMDUMP_ROWS;j++)
 		{
-			fprintf(debugOutput, "%6.6lX: ", memdump_addr); /* print address */
+			fprintf(debugOutput, "%6.6X: ", memdump_addr); /* print address */
 			for (i = 0; i < MEMDUMP_COLS; i++)               /* print hex data */
 				fprintf(debugOutput, "%2.2x ", STMemory_ReadByte(memdump_addr++));
 			fprintf(debugOutput, "  ");                     /* print ASCII data */
@@ -898,7 +898,7 @@ static int DebugUI_MemDump(int nArgc, char *psArgs[])
 
 	while (memdump_addr < memdump_upper)
 	{
-		fprintf(debugOutput, "%6.6lX: ", memdump_addr); /* print address */
+		fprintf(debugOutput, "%6.6X: ", memdump_addr); /* print address */
 		for (i = 0; i < MEMDUMP_COLS; i++)               /* print hex data */
 			fprintf(debugOutput, "%2.2x ", STMemory_ReadByte(memdump_addr++));
 		fprintf(debugOutput, "  ");                     /* print ASCII data */
