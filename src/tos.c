@@ -36,8 +36,8 @@ const char TOS_fileid[] = "Hatari tos.c : " __DATE__ " " __TIME__;
 bool bIsEmuTOS;
 Uint16 TosVersion;                      /* eg. 0x0100, 0x0102 */
 Uint32 TosAddress, TosSize;             /* Address in ST memory and size of TOS image */
-bool bTosImageLoaded = FALSE;           /* Successfully loaded a TOS image? */
-bool bRamTosImage;                      /* TRUE if we loaded a RAM TOS image */
+bool bTosImageLoaded = false;           /* Successfully loaded a TOS image? */
+bool bRamTosImage;                      /* true if we loaded a RAM TOS image */
 unsigned int ConnectedDriveMask = 0x03; /* Bit mask of connected drives, eg 0x7 is A,B,C */
 int nNumDrives = 2;                     /* Number of drives, default is 2 for A: and B: - Strictly, this is the highest mapped drive letter, in-between drives may not be allocated */
 
@@ -321,7 +321,7 @@ int TOS_LoadImage(void)
 	Uint8 *pTosFile = NULL;
 	long nFileSize;
 
-	bTosImageLoaded = FALSE;
+	bTosImageLoaded = false;
 
 	/* Load TOS image into memory so we can check it's vesion */
 	TosVersion = 0;
@@ -349,11 +349,11 @@ int TOS_LoadImage(void)
 			nRamTosLoaderSize = 0x100;
 		TosSize -= nRamTosLoaderSize;
 		memmove(pTosFile, pTosFile + nRamTosLoaderSize, TosSize);
-		bRamTosImage = TRUE;
+		bRamTosImage = true;
 	}
 	else
 	{
-		bRamTosImage = FALSE;
+		bRamTosImage = false;
 	}
 
 	/* Check for EmuTOS ... (0x45544F53 = 'ETOS') */
@@ -405,7 +405,7 @@ int TOS_LoadImage(void)
 		/* Warn user */
 		Log_AlertDlg(LOG_ERROR, "To use GEM extended resolutions, you must select a TOS >= 1.02.");
 		/* And select non VDI */
-		bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = FALSE;
+		bUseVDIRes = ConfigureParams.Screen.bUseExtVdiResolutions = false;
 	}
 
 	/* Fix TOS image, modify code for emulation */
@@ -418,7 +418,7 @@ int TOS_LoadImage(void)
 	/* and free loaded image */
 	free(pTosFile);
 
-	bTosImageLoaded = TRUE;
+	bTosImageLoaded = true;
 
 	return 0;
 }

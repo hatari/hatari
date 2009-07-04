@@ -121,7 +121,7 @@ static void ShortCut_RecordAnimation(void)
 static void ShortCut_SoundOnOff(void)
 {
 	/* Toggle sound on/off */
-	ConfigureParams.Sound.bEnableSound ^= TRUE;
+	ConfigureParams.Sound.bEnableSound ^= true;
 
 	/* And start/stop if need to */
 	if (!ConfigureParams.Sound.bEnableSound)
@@ -144,10 +144,10 @@ static void ShortCut_SoundOnOff(void)
 static void ShortCut_FastForward(void)
 {
 	/* If already on max speed, switch back to normal */
-	if (ConfigureParams.System.bFastForward == TRUE)
+	if (ConfigureParams.System.bFastForward == true)
 	{
 		/* Restore */
-		ConfigureParams.System.bFastForward = FALSE;
+		ConfigureParams.System.bFastForward = false;
 
 		/* Reset the sound emulation variables: */
 		Sound_ResetBufferIndex();
@@ -155,7 +155,7 @@ static void ShortCut_FastForward(void)
 	else
 	{
 		/* Set maximum speed */
-		ConfigureParams.System.bFastForward = TRUE;
+		ConfigureParams.System.bFastForward = true;
 	}
 }
 
@@ -172,9 +172,9 @@ static void ShortCut_BossKey(void)
 	if (bGrabMouse)
 	{
 		SDL_WM_GrabInput(SDL_GRAB_OFF);
-		bGrabMouse = FALSE;
+		bGrabMouse = false;
 	}
-	Main_PauseEmulation(TRUE);
+	Main_PauseEmulation(true);
 
 	/* Minimize Window and give up processing to next one! */
 	SDL_WM_IconifyWindow();
@@ -195,7 +195,7 @@ static void ShortCut_Pause(void)
 			Screen_ReturnFromFullScreen();
 
 		/* Call the debugger */
-		running = Main_PauseEmulation(TRUE);
+		running = Main_PauseEmulation(true);
 		DebugUI();
 		if (running)
 			Main_UnPauseEmulation();
@@ -203,7 +203,7 @@ static void ShortCut_Pause(void)
 	else
 	{
 		if (!Main_UnPauseEmulation())
-			Main_PauseEmulation(TRUE);
+			Main_PauseEmulation(true);
 	}
 }
 
@@ -224,8 +224,8 @@ static void ShortCut_InsertDisk(int drive)
 	else
 		tmpname = ConfigureParams.DiskImage.szDiskImageDirectory;
 
-	Main_PauseEmulation(TRUE);
-	selname = SDLGui_FileSelect(tmpname, &zip_path, FALSE);
+	Main_PauseEmulation(true);
+	selname = SDLGui_FileSelect(tmpname, &zip_path, false);
 	if (selname)
 	{
 		if (File_Exists(selname))
@@ -299,10 +299,10 @@ void ShortCut_ActKey(void)
 		Main_RequestQuit();
 		break;
 	 case SHORTCUT_LOADMEM:
-		MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, TRUE);
+		MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, true);
 		break;
 	 case SHORTCUT_SAVEMEM:
-		MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName, TRUE);
+		MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName, true);
 		break;
 	 case SHORTCUT_INSERTDISKA:
 		ShortCut_InsertDisk(0);
@@ -344,7 +344,7 @@ bool Shortcut_Invoke(const char *shortcut)
 	if (ShortCutKey != SHORTCUT_NONE)
 	{
 		fprintf(stderr, "Shortcut invocation failed, shortcut already active\n");
-		return FALSE;
+		return false;
 	}
 	for (i = 0; shortcuts[i].name; i++)
 	{
@@ -353,7 +353,7 @@ bool Shortcut_Invoke(const char *shortcut)
 			ShortCutKey = shortcuts[i].id;
 			ShortCut_ActKey();
 			ShortCutKey = SHORTCUT_NONE;
-			return TRUE;
+			return true;
 		}
 	}
 	fprintf(stderr, "WARNING: unknown shortcut '%s'\n\n", shortcut);
@@ -362,7 +362,7 @@ bool Shortcut_Invoke(const char *shortcut)
 	{
 		fprintf(stderr, "- %s\n", shortcuts[i].name);
 	}
-	return FALSE;
+	return false;
 }
 
 

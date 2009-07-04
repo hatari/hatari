@@ -149,7 +149,7 @@ void Statusbar_EnableHDLed(void)
 {
 	/* leds are shown for 1/2 sec after enabling */
 	Led[DRIVE_LED_HD].expire = SDL_GetTicks() + 1000/2;
-	Led[DRIVE_LED_HD].state = TRUE;
+	Led[DRIVE_LED_HD].state = true;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -214,7 +214,7 @@ void Statusbar_Init(SDL_Surface *surf)
 
 	/* disable leds */
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
-		Led[i].state = Led[i].oldstate = FALSE;
+		Led[i].state = Led[i].oldstate = false;
 		Led[i].expire = 0;
 	}
 	Statusbar_OverlayInit(surf);
@@ -292,7 +292,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	MessageRect.w = MAX_MESSAGE_LEN * fontw;
 	MessageRect.h = fonth;
 	for (item = MessageList; item; item = item->next) {
-		item->shown = FALSE;
+		item->shown = false;
 	}
 
 	/* draw recording led box */
@@ -302,7 +302,7 @@ void Statusbar_Init(SDL_Surface *surf)
 	SDLGui_Text(ledbox.x - 4*fontw - fontw/2, MessageRect.y, "REC:");
 	SDL_FillRect(surf, &ledbox, LedColorBg);
 	SDL_FillRect(surf, &RecLedRect, RecColorOff);
-	bOldRecording = FALSE;
+	bOldRecording = false;
 
 	/* and blit statusbar on screen */
 	SDL_UpdateRects(surf, 1, &sbarbox);
@@ -338,7 +338,7 @@ void Statusbar_AddMessage(const char *msg, Uint32 msecs)
 		/* show items by default for 2.5 secs */
 		item->timeout = 2500;
 	}
-	item->shown = FALSE;
+	item->shown = false;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -406,7 +406,7 @@ void Statusbar_UpdateInfo(void)
 	*end = '\0';
 	assert(end - DefaultMessage.msg < MAX_MESSAGE_LEN);
 	DEBUGPRINT(("Set default message: '%s'\n", DefaultMessage.msg));
-	DefaultMessage.shown = FALSE;
+	DefaultMessage.shown = false;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -449,7 +449,7 @@ static void Statusbar_ShowMessage(SDL_Surface *surf, Uint32 ticks)
 		free(MessageList);
 		MessageList = next;
 		/* make sure next message gets shown */
-		MessageList->shown = FALSE;
+		MessageList->shown = false;
 	}
 	if (!MessageList->shown) {
 		/* not shown yet, show */
@@ -457,7 +457,7 @@ static void Statusbar_ShowMessage(SDL_Surface *surf, Uint32 ticks)
 		if (MessageList->timeout && !MessageList->expire) {
 			MessageList->expire = ticks + MessageList->timeout;
 		}
-		MessageList->shown = TRUE;
+		MessageList->shown = true;
 	}
 }
 
@@ -544,7 +544,7 @@ static void Statusbar_OverlayDraw(SDL_Surface *surf)
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
 		if (Led[i].state) {
 			if (Led[i].expire && Led[i].expire < currentticks) {
-				Led[i].state = FALSE;
+				Led[i].state = false;
 				continue;
 			}
 			Statusbar_OverlayDrawLed(surf, LedColorOn);
@@ -595,7 +595,7 @@ void Statusbar_Update(SDL_Surface *surf)
 	currentticks = SDL_GetTicks();
 	for (i = 0; i < MAX_DRIVE_LEDS; i++) {
 		if (Led[i].expire && Led[i].expire < currentticks) {
-			Led[i].state = FALSE;
+			Led[i].state = false;
 		}
 		if (Led[i].state == Led[i].oldstate) {
 			continue;

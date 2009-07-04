@@ -319,7 +319,7 @@ static Uint8 LineWidth;				/* Scan line width add, STe only (words, minus 1) */
 static int NewLineWidth = -1;			/* Used in STE mode when writing to the line width register $ff820f */
 static Uint8 *pVideoRaster;			/* Pointer to Video raster, after VideoBase in PC address space. Use to copy data on HBL */
 static Uint8 VideoShifterByte;			/* VideoShifter (0xff8260) value store in video chip */
-static bool bSteBorderFlag;			/* TRUE when screen width has been switched to 336 (e.g. in Obsession) */
+static bool bSteBorderFlag;			/* true when screen width has been switched to 336 (e.g. in Obsession) */
 static int NewSteBorderFlag = -1;		/* New value for next line */
 static bool bTTColorsSync, bTTColorsSTSync;	/* whether TT colors need convertion to SDL */
 
@@ -508,7 +508,7 @@ void Video_Reset(void)
 	/* Reset STE screen variables */
 	LineWidth = 0;
 	HWScrollCount = 0;
-	bSteBorderFlag = FALSE;
+	bSteBorderFlag = false;
 
 	NewLineWidth = -1;			/* cancel pending modifications set before the reset */
 	NewHWScrollCount = -1;
@@ -2150,9 +2150,9 @@ static void Video_CopyScreenLineColor(void)
 		if ( NewSteBorderFlag >= 0 )
 		{
 			if ( NewSteBorderFlag == 0 )
-				bSteBorderFlag = FALSE;
+				bSteBorderFlag = false;
 			else
-				bSteBorderFlag = TRUE;
+				bSteBorderFlag = true;
 			NewSteBorderFlag = -1;
 		}
 
@@ -2404,7 +2404,7 @@ static void Video_UpdateTTPalette(int bpp)
 			src += SIZE_WORD;
 			dst += SIZE_WORD;
 		}
-		bTTColorsSTSync = TRUE;
+		bTTColorsSTSync = true;
 	}
 
 	colors = 1 << bpp;
@@ -2429,7 +2429,7 @@ static void Video_UpdateTTPalette(int bpp)
 	}
 
 	HostScreen_updatePalette(colors);
-	bTTColorsSync = TRUE;
+	bTTColorsSync = true;
 }
 
 
@@ -2449,7 +2449,7 @@ static bool Video_RenderTTScreen(void)
 		HostScreen_setWindowSize(width, height, 8);
 		nPrevTTRes = TTRes;
 		if (bpp == 1)   /* Assert that mono palette will be used in mono mode */
-			bTTColorsSync = FALSE;
+			bTTColorsSync = false;
 	}
 
 	/* colors need synching? */
@@ -2466,7 +2466,7 @@ static bool Video_RenderTTScreen(void)
 	else
 		VIDEL_ConvertScreenNoZoom(width, height, bpp, width * bpp / 16);
 	HostScreen_renderEnd();
-	HostScreen_update1(FALSE);
+	HostScreen_update1(false);
 
 	return true;
 }
@@ -2736,7 +2736,7 @@ void Video_ScreenCounter_WriteByte(void)
 			addr = ( addr & 0xffff00 ) | ( AddrByte );
 
 		pVideoRaster = &STRam[addr & ~1];		/* set new video address */
-		Delayed = FALSE;
+		Delayed = false;
 	}
 
 	/* Can't change pVideoRaster now, store the modified byte for Video_CopyScreenLineColor */
@@ -2748,7 +2748,7 @@ void Video_ScreenCounter_WriteByte(void)
 			NewVideoMed = AddrByte;
 		else if ( IoAccessCurrentAddress == 0xff8209 )
 			NewVideoLo = AddrByte;
-		Delayed = TRUE;
+		Delayed = true;
 	}
 
 	LOG_TRACE(TRACE_VIDEO_STE , "write ste video %x val=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
@@ -2847,12 +2847,12 @@ void Video_LineWidth_WriteByte(void)
 	{
 		LineWidth = NewWidth;		/* display is on, we can still change */
 		NewLineWidth = -1;		/* cancel 'pending' change */
-		Delayed = FALSE;
+		Delayed = false;
 	}
 	else
 	{
 		NewLineWidth = NewWidth;	/* display is off, can't change LineWidth once in right border */
-		Delayed = TRUE;
+		Delayed = true;
 	}
 
 	LOG_TRACE(TRACE_VIDEO_STE , "write ste linewidth=0x%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n",
@@ -3008,7 +3008,7 @@ void Video_ShifterMode_WriteByte(void)
 		 * - TODO: set line width ($8210)
 		 * - TODO: sets paramaters in $82c2 (double lines/interlace & cycles/pixel)
 		 */
-		bUseSTShifter = TRUE;
+		bUseSTShifter = true;
 	}
 //	if (!bUseHighRes && !bUseVDIRes)                    /* Don't store if hi-res and don't store if VDI resolution */
 	if (!bUseVDIRes)                    /* Don't store if hi-res and don't store if VDI resolution */
@@ -3091,7 +3091,7 @@ void Video_HorScroll_Write(void)
 	Uint8 ScrollCount;
 	Uint8 Prefetch;
 	int FrameCycles, HblCounterVideo, LineCycles;
-	bool Add16px = FALSE;
+	bool Add16px = false;
 	static Uint8 LastVal8265 = 0;
 	int Delayed;
 
@@ -3129,7 +3129,7 @@ void Video_HorScroll_Write(void)
 #endif
 		{
 			LOG_TRACE(TRACE_VIDEO_BORDER_H , "detect ste left+16 pixels\n" );
-			Add16px = TRUE;
+			Add16px = true;
 		}
 	}
 	else
@@ -3143,7 +3143,7 @@ void Video_HorScroll_Write(void)
 		ShifterFrame.Scroll8265Pos.LineCycles = LineCycles;
 
 		LastVal8265 = ScrollCount;
-		Add16px = FALSE;
+		Add16px = false;
 	}
 
 
@@ -3158,7 +3158,7 @@ void Video_HorScroll_Write(void)
 		HWScrollPrefetch = Prefetch;
 		bSteBorderFlag = Add16px;
 		NewHWScrollCount = -1;			/* cancel 'pending' change */
-		Delayed = FALSE;
+		Delayed = false;
 	}
 	else
 	{
@@ -3168,7 +3168,7 @@ void Video_HorScroll_Write(void)
 			NewSteBorderFlag = 1;
 		else
 			NewSteBorderFlag = 0;
-		Delayed = TRUE;
+		Delayed = true;
 	}
 
 	LOG_TRACE(TRACE_VIDEO_STE , "write ste %x hwscroll=%x delayed=%s video_cyc_w=%d line_cyc_w=%d @ nHBL=%d/video_hbl_w=%d pc=%x instr_cyc=%d\n" ,
@@ -3200,7 +3200,7 @@ void Video_TTShiftMode_WriteWord(void)
  */
 void Video_TTColorRegs_WriteWord(void)
 {
-	bTTColorsSync = FALSE;
+	bTTColorsSync = false;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -3209,5 +3209,5 @@ void Video_TTColorRegs_WriteWord(void)
  */
 void Video_TTColorSTRegs_WriteWord(void)
 {
-	bTTColorsSTSync = FALSE;
+	bTTColorsSTSync = false;
 }

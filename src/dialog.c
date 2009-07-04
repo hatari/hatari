@@ -27,7 +27,7 @@ const char Dialog_fileid[] = "Hatari dialog.c : " __DATE__ " " __TIME__;
  * of this structure. When the user finally clicks on 'OK',
  * we can compare and makes the necessary changes.
  * 
- * Return TRUE if user chooses OK, or FALSE if cancel!
+ * Return true if user chooses OK, or false if cancel!
  */
 bool Dialog_DoProperty(void)
 {
@@ -36,8 +36,8 @@ bool Dialog_DoProperty(void)
 	bool bLoadedSnapshot;
 	CNF_PARAMS current;
 
-	Main_PauseEmulation(TRUE);
-	bForceReset = FALSE;
+	Main_PauseEmulation(true);
+	bForceReset = false;
 
 	/* Copy details (this is so can restore if 'Cancel' dialog) */
 	current = ConfigureParams;

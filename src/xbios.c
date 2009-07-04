@@ -70,7 +70,7 @@ static bool XBios_Floprd(Uint32 Params)
 	           Side, Track, Sector, Count, M68000_GetPC());
 #endif
 
-	return FALSE;
+	return false;
 }
 
 
@@ -97,7 +97,7 @@ static bool XBios_Flopwr(Uint32 Params)
 	           Side, Track, Sector, Count, M68000_GetPC());
 #endif
 
-	return FALSE;
+	return false;
 }
 
 
@@ -138,10 +138,10 @@ static bool XBios_Rsconf(Uint32 Params)
 			RS232_SetFlowControl(Ctrl);
 		}
 
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 
@@ -157,7 +157,7 @@ static bool XBios_Scrdmp(Uint32 Params)
 	/* Correct return code? */
 	Regs[REG_D0] = 0;
 
-	return TRUE;
+	return true;
 }
 
 
@@ -191,6 +191,6 @@ bool XBios(void)
 
 	 default:  /* Call as normal! */
 		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %d\n", XBiosCall);
-		return FALSE;
+		return false;
 	}
 }

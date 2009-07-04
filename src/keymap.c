@@ -644,14 +644,14 @@ void Keymap_LoadRemapFile(char *pszFileName)
 /*-----------------------------------------------------------------------*/
 /**
  * Scan list of keys to NOT de-bounce when running in maximum speed, eg ALT,SHIFT,CTRL etc...
- * Return TRUE if key requires de-bouncing
+ * @return true if key requires de-bouncing
  */
 static bool Keymap_DebounceSTKey(char STScanCode)
 {
 	int i=0;
 
 	/* Are we in fast forward, and have disabled key repeat? */
-	if ((ConfigureParams.System.bFastForward == TRUE)
+	if ((ConfigureParams.System.bFastForward == true)
 	    && (ConfigureParams.Keyboard.bDisableKeyRepeat))
 	{
 		/* We should de-bounce all non extended keys,
@@ -659,16 +659,16 @@ static bool Keymap_DebounceSTKey(char STScanCode)
 		while (DebounceExtendedKeys[i])
 		{
 			if (STScanCode == DebounceExtendedKeys[i])
-				return(FALSE);
+				return false;
 			i++;
 		}
 
 		/* De-bounce key */
-		return TRUE;
+		return true;
 	}
 
 	/* Do not de-bounce key */
-	return FALSE;
+	return false;
 }
 
 
@@ -685,7 +685,7 @@ void Keymap_DebounceAllKeys(void)
 	SDL_keysym tmpKeySym;
 
 	/* Return if we aren't in fast forward or have not disabled key repeat */
-	if ((ConfigureParams.System.bFastForward == FALSE)
+	if ((ConfigureParams.System.bFastForward == false)
 	        || (!ConfigureParams.Keyboard.bDisableKeyRepeat))
 	{
 		return;
@@ -747,13 +747,13 @@ void Keymap_KeyDown(SDL_keysym *sdlkey)
 
 	/* Set down */
 	bPreviousKeyState = Keyboard.KeyStates[symkey];
-	Keyboard.KeyStates[symkey] = TRUE;
+	Keyboard.KeyStates[symkey] = true;
 
 	STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
 	if (STScanCode != (char)-1)
 	{
 		if (!bPreviousKeyState)
-			IKBD_PressSTKey(STScanCode, TRUE);
+			IKBD_PressSTKey(STScanCode, true);
 	}
 }
 
@@ -790,7 +790,7 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
 	else if (symkey == SDLK_CAPSLOCK)
 	{
 		/* Simulate another capslock key press */
-		IKBD_PressSTKey(0x3A, TRUE);
+		IKBD_PressSTKey(0x3A, true);
 	}
 
 	/* Release key (only if was pressed) */
@@ -799,11 +799,11 @@ void Keymap_KeyUp(SDL_keysym *sdlkey)
 		STScanCode = Keymap_RemapKeyToSTScanCode(sdlkey);
 		if (STScanCode != (char)-1)
 		{
-			IKBD_PressSTKey(STScanCode,FALSE);
+			IKBD_PressSTKey(STScanCode, false);
 		}
 	}
 
-	Keyboard.KeyStates[symkey] = FALSE;
+	Keyboard.KeyStates[symkey] = false;
 }
 
 /*-----------------------------------------------------------------------*/

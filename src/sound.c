@@ -177,7 +177,7 @@ static yms16 *ymout5 = (yms16 *)ymout5_u16;
 
 /* Constants for YM2149_Normalise_5bit_Table */
 #define	YM_OUTPUT_LEVEL			0x7fff		/* amplitude of the final signal (0..65535 if centered, 0..32767 if not) */
-#define YM_OUTPUT_CENTERED		FALSE
+#define YM_OUTPUT_CENTERED		false
 
 
 
@@ -221,7 +221,7 @@ static ymu16	Vol3Voices = 0;				/* volume 0-0x1f for voices having a constant vo
 Uint8		SoundRegs[ 14 ];
 
 int		YmVolumeMixing = YM_LINEAR_MIXING;
-bool		UseLowPassFilter = FALSE;
+bool		UseLowPassFilter = false;
 
 bool		bEnvelopeFreqFlag;			/* Cleared each frame for YM saving */
 
@@ -465,7 +465,7 @@ static void	YM2149_BuildLinearVolumeTable(ymu16 *out)
  * - out_5bit will contain signed values
  * Possible values are :
  *	Level=65535 and DoCenter=TRUE -> [-32768,32767]
- *	Level=32767 and DoCenter=FALSE -> [0,32767]
+ *	Level=32767 and DoCenter=false -> [0,32767]
  */
 
 static void	YM2149_Normalise_5bit_Table(ymu16 *in_5bit , yms16 *out_5bit, unsigned int Level, bool DoCenter)
@@ -874,7 +874,7 @@ void	Sound_WriteReg( int reg , Uint8 data )
 			SoundRegs[13] = data & 0xf;
 			envPos = 0;					/* when writing to EnvShape, we must reset the EnvPos */
 			envShape = SoundRegs[13];
-			bEnvelopeFreqFlag = TRUE;			/* used for YmFormat saving */
+			bEnvelopeFreqFlag = true;			/* used for YmFormat saving */
 			break;
 
 	}
@@ -911,7 +911,7 @@ void Sound_Reset(void)
 
 	/* Clear cycle counts, buffer index and register '13' flags */
 	Cycles_SetCounter(CYCLES_COUNTER_SOUND, 0);
-	bEnvelopeFreqFlag = FALSE;
+	bEnvelopeFreqFlag = false;
 
 	CompleteSndBufIdx = 0;
 	/* We do not start with 0 here to fake some initial samples: */
@@ -1071,7 +1071,7 @@ void Sound_Update_VBL(void)
 	Sound_Update();
 
 	/* Clear write to register '13', used for YM file saving */
-	bEnvelopeFreqFlag = FALSE;
+	bEnvelopeFreqFlag = false;
 }
 
 
@@ -1086,7 +1086,7 @@ bool Sound_BeginRecording(char *pszCaptureFileName)
 	if (!pszCaptureFileName || strlen(pszCaptureFileName) <= 3)
 	{
 		Log_Printf(LOG_ERROR, "Illegal sound recording file name!\n");
-		return FALSE;
+		return false;
 	}
 
 	/* Did specify .YM or .WAV? If neither report error */
@@ -1098,7 +1098,7 @@ bool Sound_BeginRecording(char *pszCaptureFileName)
 	{
 		Log_AlertDlg(LOG_ERROR, "Unknown Sound Recording format.\n"
 		             "Please specify a .YM or .WAV output file.");
-		bRet = FALSE;
+		bRet = false;
 	}
 
 	return bRet;

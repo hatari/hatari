@@ -20,7 +20,7 @@ const char YMFormat_fileid[] = "Hatari ymFormat.c : " __DATE__ " " __TIME__;
 #define YM_MAX_VBLS    (50*60*8)            /* 50=1 second, 50*60=1 minute, 50*60*8=8 minutes, or 24000 */
 #define YM_RECORDSIZE  (4+(YM_MAX_VBLS*NUM_PSG_SOUND_REGISTERS))  /* ~330k for 8 minutes */
 
-bool bRecordingYM = FALSE;
+bool bRecordingYM = false;
 static int nYMVBLS = 0;
 static Uint8 *pYMData, *pYMWorkspace = NULL;
 static char *pszYMFileName = NULL;
@@ -32,18 +32,18 @@ static char *pszYMFileName = NULL;
 bool YMFormat_BeginRecording(const char *filename)
 {
 	/* Free any previous data, don't save */
-	bRecordingYM = FALSE;
+	bRecordingYM = false;
 	YMFormat_EndRecording();
 
 	/* Make sure we have a proper filename to use */
 	if (!filename || strlen(filename) <= 0)
 	{
-		return FALSE;
+		return false;
 	}
 	pszYMFileName = strdup(filename);
 	if (!pszYMFileName)
 	{
-		return FALSE;
+		return false;
 	}
 
 	/* Create YM workspace */
@@ -54,7 +54,7 @@ bool YMFormat_BeginRecording(const char *filename)
 		/* Failed to allocate memory, cannot record */
 		free(pszYMFileName);
 		pszYMFileName = NULL;
-		return FALSE;
+		return false;
 	}
 
 	/* Get workspace pointer and store 4 byte header */
@@ -64,13 +64,13 @@ bool YMFormat_BeginRecording(const char *filename)
 	*pYMData++ = '3';
 	*pYMData++ = '!';
 
-	bRecordingYM = TRUE;          /* Ready to record */
+	bRecordingYM = true;          /* Ready to record */
 	nYMVBLS = 0;                  /* Number of VBLs of information */
 
 	/* And inform user */
 	Log_AlertDlg(LOG_INFO, "YM sound data recording has been started.");
 
-	return TRUE;
+	return true;
 }
 
 
@@ -84,7 +84,7 @@ bool YMFormat_BeginRecording(const char *filename)
  * BUT
  *   We need data in a register stream, eg Reg 0, VBL 1, VBL 2, VBL n and then next register...
  * 
- * Convert to new workspace and return TRUE if all OK
+ * Convert to new workspace and return true if all OK.
  */
 static bool YMFormat_ConvertToStreams(void)
 {
@@ -124,9 +124,9 @@ static bool YMFormat_ConvertToStreams(void)
 		free(pYMWorkspace);
 		pYMWorkspace = pNewYMWorkspace;
 
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 
@@ -143,7 +143,7 @@ void YMFormat_EndRecording(void)
 		if (YMFormat_ConvertToStreams())
 		{
 			/* Save YM File */
-			File_Save(pszYMFileName, pYMWorkspace,(size_t)(nYMVBLS*NUM_PSG_SOUND_REGISTERS)+4, FALSE);
+			File_Save(pszYMFileName, pYMWorkspace,(size_t)(nYMVBLS*NUM_PSG_SOUND_REGISTERS)+4, false);
 			/* And inform user */
 			Log_AlertDlg(LOG_INFO, "YM sound data recording has been stopped.");
 		}
@@ -163,7 +163,7 @@ void YMFormat_EndRecording(void)
 		pszYMFileName = NULL;
 	}
 	/* Stop recording */
-	bRecordingYM = FALSE;
+	bRecordingYM = false;
 }
 
 

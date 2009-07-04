@@ -50,7 +50,7 @@ HDCOMMAND HDCCommand;
 FILE *hd_image_file = NULL;
 int nPartitions = 0;
 short int HDCSectorCount;
-bool bAcsiEmuOn = FALSE;
+bool bAcsiEmuOn = false;
 
 static Uint32 nLastBlockAddr;
 static bool bSetLastBlockAddr;
@@ -118,9 +118,9 @@ static void HDC_Cmd_Seek(void)
 		nLastError = HD_REQSENS_INVADDR;
 	}
 
-	FDC_SetDMAStatus(FALSE);              /* no DMA error */
+	FDC_SetDMAStatus(false);              /* no DMA error */
 	FDC_AcknowledgeInterrupt();
-	bSetLastBlockAddr = TRUE;
+	bSetLastBlockAddr = true;
 	//FDCSectorCountRegister = 0;
 }
 
@@ -139,11 +139,11 @@ static void HDC_Cmd_Inquiry(void)
 	memcpy(&STRam[FDC_ReadDMAAddress()], inquiry_bytes,
 	       HD_SECTORCOUNT(HDCCommand));
 
-	FDC_SetDMAStatus(FALSE);              /* no DMA error */
+	FDC_SetDMAStatus(false);              /* no DMA error */
 	FDC_AcknowledgeInterrupt();
 	HDCCommand.returnCode = HD_STATUS_OK;
 	nLastError = HD_REQSENS_OK;
-	bSetLastBlockAddr = FALSE;
+	bSetLastBlockAddr = false;
 	//FDCSectorCountRegister = 0;
 }
 
@@ -229,7 +229,7 @@ static void HDC_Cmd_RequestSense(void)
 
 	memcpy(&STRam[nDmaAddr], retbuf, nRetLen);
 
-	FDC_SetDMAStatus(FALSE);            /* no DMA error */
+	FDC_SetDMAStatus(false);            /* no DMA error */
 	FDC_AcknowledgeInterrupt();
 	HDCCommand.returnCode = HD_STATUS_OK;
 	//FDCSectorCountRegister = 0;
@@ -287,9 +287,9 @@ static void HDC_Cmd_ModeSense(void)
 		nLastError = HD_REQSENS_INVARG;
 	}
 
-	FDC_SetDMAStatus(FALSE);            /* no DMA error */
+	FDC_SetDMAStatus(false);            /* no DMA error */
 	FDC_AcknowledgeInterrupt();
-	bSetLastBlockAddr = FALSE;
+	bSetLastBlockAddr = false;
 	//FDCSectorCountRegister = 0;
 }
 
@@ -306,11 +306,11 @@ static void HDC_Cmd_FormatDrive(void)
 
 	/* Should erase the whole image file here... */
 
-	FDC_SetDMAStatus(FALSE);            /* no DMA error */
+	FDC_SetDMAStatus(false);            /* no DMA error */
 	FDC_AcknowledgeInterrupt();
 	HDCCommand.returnCode = HD_STATUS_OK;
 	nLastError = HD_REQSENS_OK;
-	bSetLastBlockAddr = FALSE;
+	bSetLastBlockAddr = false;
 	//FDCSectorCountRegister = 0;
 }
 
@@ -353,9 +353,9 @@ static void HDC_Cmd_WriteSector(void)
 		FDC_WriteDMAAddress(FDC_ReadDMAAddress() + 512*n);
 	}
 
-	FDC_SetDMAStatus(FALSE);              /* no DMA error */
+	FDC_SetDMAStatus(false);              /* no DMA error */
 	FDC_AcknowledgeInterrupt();
-	bSetLastBlockAddr = TRUE;
+	bSetLastBlockAddr = true;
 	//FDCSectorCountRegister = 0;
 }
 
@@ -400,9 +400,9 @@ static void HDC_Cmd_ReadSector(void)
 		FDC_WriteDMAAddress(FDC_ReadDMAAddress() + 512*n);
 	}
 
-	FDC_SetDMAStatus(FALSE);              /* no DMA error */
+	FDC_SetDMAStatus(false);              /* no DMA error */
 	FDC_AcknowledgeInterrupt();
-	bSetLastBlockAddr = TRUE;
+	bSetLastBlockAddr = true;
 	//FDCSectorCountRegister = 0;
 }
 
@@ -445,8 +445,8 @@ void HDC_EmulateCommandPacket()
 		Log_Printf(LOG_TODO, "HDC: MODE SELECT call not implemented yet.\n");
 		HDCCommand.returnCode = HD_STATUS_OK;
 		nLastError = HD_REQSENS_OK;
-		bSetLastBlockAddr = FALSE;
-		FDC_SetDMAStatus(FALSE);
+		bSetLastBlockAddr = false;
+		FDC_SetDMAStatus(false);
 		FDC_AcknowledgeInterrupt();
 		break;
 
@@ -466,7 +466,7 @@ void HDC_EmulateCommandPacket()
 	 default:
 		HDCCommand.returnCode = HD_STATUS_ERROR;
 		nLastError = HD_REQSENS_OPCODE;
-		bSetLastBlockAddr = FALSE;
+		bSetLastBlockAddr = false;
 		FDC_AcknowledgeInterrupt();
 		break;
 	}
@@ -604,20 +604,20 @@ static void HDC_GetInfo(void)
  */
 bool HDC_Init(char *filename)
 {
-	bAcsiEmuOn = FALSE;
+	bAcsiEmuOn = false;
 
 	/* Sanity check - is file length a multiple of 512? */
 	if (File_Length(filename) & 0x1ff)
 	{
 		Log_Printf(LOG_ERROR, "HD file '%s' has strange size!\n", filename);
-		return FALSE;
+		return false;
 	}
 
 
 	if ((hd_image_file = fopen(filename, "rb+")) == NULL)
 	{
 		Log_Printf(LOG_ERROR, "Can not open HD file '%s'!\n", filename);
-		return FALSE;
+		return false;
 	}
 
 	HDC_GetInfo();
@@ -625,9 +625,9 @@ bool HDC_Init(char *filename)
 	/* set number of partitions */
 	nNumDrives += nPartitions;
 
-	bAcsiEmuOn = TRUE;
+	bAcsiEmuOn = true;
 
-	return TRUE;
+	return true;
 }
 
 
@@ -646,7 +646,7 @@ void HDC_UnInit(void)
 
 	nNumDrives -= nPartitions;
 	nPartitions = 0;
-	bAcsiEmuOn = FALSE;
+	bAcsiEmuOn = false;
 }
 
 
@@ -687,7 +687,7 @@ void HDC_WriteCommandPacket(void)
 		else
 		{
 			/* No drive/controller */
-			FDC_SetDMAStatus(TRUE);
+			FDC_SetDMAStatus(true);
 			//FDC_AcknowledgeInterrupt();
 			HDCCommand.returnCode = HD_STATUS_ERROR;
 			//FDCSectorCountRegister = 0;
@@ -701,7 +701,7 @@ void HDC_WriteCommandPacket(void)
 		if (HD_CONTROLLER(HDCCommand) == 0)
 		{
 			FDC_AcknowledgeInterrupt();
-			FDC_SetDMAStatus(FALSE);
+			FDC_SetDMAStatus(false);
 			HDCCommand.returnCode = HD_STATUS_OK;
 		}
 		else

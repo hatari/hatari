@@ -54,8 +54,8 @@ int nBorderPixelsLeft, nBorderPixelsRight;  /* Pixels in left and right border *
 int nBorderPixelsTop, nBorderPixelsBottom;  /* Lines in top and bottom border */
 
 /* extern for shortcuts and falcon/hostscreen.c */
-bool bGrabMouse = FALSE;      /* Grab the mouse cursor in the window */
-bool bInFullScreen = FALSE;   /* TRUE if in full screen */
+bool bGrabMouse = false;      /* Grab the mouse cursor in the window */
+bool bInFullScreen = false;   /* true if in full screen */
 
 /* extern for spec512.c */
 int STScreenLeftSkipBytes;
@@ -86,8 +86,8 @@ static void (*ScreenDrawFunctionsVDI[3])(void) =
 	ConvertVDIRes_2Colour
 };
 
-static bool bScreenContentsChanged;     /* TRUE if buffer changed and requires blitting */
-static bool bScrDoubleY;                /* TRUE if double on Y */
+static bool bScreenContentsChanged;     /* true if buffer changed and requires blitting */
+static bool bScrDoubleY;                /* true if double on Y */
 static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 
 
@@ -191,7 +191,7 @@ static void Screen_CreatePalette(void)
  */
 static void Screen_Handle8BitPalettes(void)
 {
-	bool bPaletteChanged=FALSE;
+	bool bPaletteChanged = false;
 	int i;
 
 	/* Do need to check for 8-Bit palette change? Ie, update whole screen */
@@ -206,7 +206,7 @@ static void Screen_Handle8BitPalettes(void)
 			{
 				/* Check with first line palette (stored in 'Screen_ComparePaletteMask') */
 				if (HBLPalettes[i] != PrevHBLPalette[i])
-					bPaletteChanged = TRUE;
+					bPaletteChanged = true;
 			}
 		}
 
@@ -216,7 +216,7 @@ static void Screen_Handle8BitPalettes(void)
 			/* Create palette, for Full-Screen of Window */
 			Screen_CreatePalette();
 			/* Make sure update whole screen */
-			pFrameBuffer->bFullUpdate = TRUE;
+			pFrameBuffer->bFullUpdate = true;
 		}
 	}
 
@@ -559,7 +559,7 @@ void Screen_SetFullUpdate(void)
 
 	/* Update frame buffers */
 	for (i = 0; i < NUM_FRAMEBUFFERS; i++)
-		FrameBuffers[i].bFullUpdate = TRUE;
+		FrameBuffers[i].bFullUpdate = true;
 }
 
 
@@ -580,8 +580,8 @@ void Screen_EnterFullScreen(void)
 {
 	if (!bInFullScreen)
 	{
-		Main_PauseEmulation(FALSE);         /* Hold things... */
-		bInFullScreen = TRUE;
+		Main_PauseEmulation(false);         /* Hold things... */
+		bInFullScreen = true;
 
 		if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
 		     || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
@@ -610,8 +610,8 @@ void Screen_ReturnFromFullScreen(void)
 {
 	if (bInFullScreen)
 	{
-		Main_PauseEmulation(FALSE);        /* Hold things... */
-		bInFullScreen = FALSE;
+		Main_PauseEmulation(false);        /* Hold things... */
+		bInFullScreen = false;
 
 		if ((ConfigureParams.System.nMachineType == MACHINE_FALCON
 		     || ConfigureParams.System.nMachineType == MACHINE_TT) && !bUseVDIRes)
@@ -647,7 +647,7 @@ static void Screen_DidResolutionChange(int new_res)
 	{
 		/* Did change overscan mode? Causes full update */
 		if (pFrameBuffer->OverscanModeCopy != OverscanMode)
-			pFrameBuffer->bFullUpdate = TRUE;
+			pFrameBuffer->bFullUpdate = true;
 	}
 }
 
@@ -706,7 +706,7 @@ static bool Screen_CompareResolution(int y, int *pUpdateLine, int oldres)
 		/* Have used any low/medium res mix? */
 		return (newres != (oldres&ST_MEDIUM_RES_BIT));
 	}
-	return FALSE;
+	return false;
 }
 
 
@@ -716,7 +716,7 @@ static bool Screen_CompareResolution(int y, int *pUpdateLine, int oldres)
  */
 static void Screen_ComparePalette(int y, int *pUpdateLine)
 {
-	bool bPaletteChanged = FALSE;
+	bool bPaletteChanged = false;
 	int i;
 
 	/* Did write to palette in this or previous frame? */
@@ -732,7 +732,7 @@ static void Screen_ComparePalette(int y, int *pUpdateLine)
 		for (i = 0; (i < 16) && (!bPaletteChanged); i++)
 		{
 			if (HBLPalette[i]!=pFrameBuffer->HBLPalettes[(y*16)+i])
-				bPaletteChanged = TRUE;
+				bPaletteChanged = true;
 		}
 		if (bPaletteChanged)
 			*pUpdateLine |= PALETTEMASK_UPDATEPAL;
@@ -752,7 +752,7 @@ static void Screen_ComparePalette(int y, int *pUpdateLine)
  */
 static int Screen_ComparePaletteMask(int res)
 {
-	bool bLowMedMix = FALSE;
+	bool bLowMedMix = false;
 	int LineUpdate = 0;
 	int y;
 
@@ -775,7 +775,7 @@ static int Screen_ComparePaletteMask(int res)
 
 		/* Colors changed? */
 		if (HBLPalettes[0] != PrevHBLPalette[0])
-			pFrameBuffer->bFullUpdate = TRUE;
+			pFrameBuffer->bFullUpdate = true;
 
 		/* Set bit to flag 'full update' */
 		if (pFrameBuffer->bFullUpdate)
@@ -792,7 +792,7 @@ static int Screen_ComparePaletteMask(int res)
 
 		/* Colors changed? */
 		if (HBLPalettes[0] != PrevHBLPalette[0])
-			pFrameBuffer->bFullUpdate = TRUE;
+			pFrameBuffer->bFullUpdate = true;
 
 		/* Set bit to flag 'full update' */
 		if (pFrameBuffer->bFullUpdate)
@@ -914,11 +914,11 @@ static bool Screen_Lock(void)
 		if (SDL_LockSurface(sdlscrn))
 		{
 			Screen_ReturnFromFullScreen();   /* All OK? If not need to jump back to a window */
-			return(FALSE);
+			return false;
 		}
 	}
 
-	return TRUE;
+	return true;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -981,13 +981,13 @@ static void Screen_Blit(void)
 /**
  * Draw ST screen to window/full-screen framebuffer
  * @param  bForceFlip  Force screen update, even if contents did not change
- * @return  TRUE if screen contents changed
+ * @return  true if screen contents changed
  */
 static bool Screen_DrawFrame(bool bForceFlip)
 {
 	int new_res;
 	void (*pDrawFunction)(void);
-	static bool bPrevFrameWasSpec512 = FALSE;
+	static bool bPrevFrameWasSpec512 = false;
 
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
 	new_res = Screen_ComparePaletteMask(STRes);
@@ -1007,7 +1007,7 @@ static bool Screen_DrawFrame(bool bForceFlip)
 	/* Lock screen ready for drawing */
 	if (Screen_Lock())
 	{
-		bScreenContentsChanged = FALSE;      /* Did change (ie needs blit?) */
+		bScreenContentsChanged = false;      /* Did change (ie needs blit?) */
 
 		/* Set details */
 		Screen_SetConvertDetails();
@@ -1027,7 +1027,7 @@ static bool Screen_DrawFrame(bool bForceFlip)
 			/* Check if is Spec512 image */
 			if (Spec512_IsImage())
 			{
-				bPrevFrameWasSpec512 = TRUE;
+				bPrevFrameWasSpec512 = true;
 				/* What mode were we in? Keep to 320xH or 640xH */
 				if (pDrawFunction==ConvertLowRes_320x16Bit)
 					pDrawFunction = ConvertSpec512_320x16Bit;
@@ -1044,7 +1044,7 @@ static bool Screen_DrawFrame(bool bForceFlip)
 				 * screen rendering, we have to make sure to do
 				 * a full update of the screen. */
 				Screen_SetFullUpdateMask();
-				bPrevFrameWasSpec512 = FALSE;
+				bPrevFrameWasSpec512 = false;
 			}
 		}
 
@@ -1059,7 +1059,7 @@ static bool Screen_DrawFrame(bool bForceFlip)
 		Statusbar_Update(sdlscrn);
 		
 		/* Clear flags, remember type of overscan as if change need screen full update */
-		pFrameBuffer->bFullUpdate = FALSE;
+		pFrameBuffer->bFullUpdate = false;
 		pFrameBuffer->OverscanModeCopy = OverscanMode;
 
 		/* And show to user */

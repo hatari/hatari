@@ -26,7 +26,7 @@ const char VDI_fileid[] = "Hatari vdi.c : " __DATE__ " " __TIME__;
 
 Uint32 VDI_OldPC;                  /* When call Trap#2, store off PC */
 
-bool bUseVDIRes = FALSE;           /* Set to TRUE (if want VDI), or FALSE (ie for games) */
+bool bUseVDIRes = false;           /* Set to true (if want VDI), or false (ie for games) */
 /* defaults */
 int VDIRes = 0;                    /* 0,1 or 2 (low, medium, high) */
 int VDIWidth = 640;                /* 640x480, 800x600 or 1024x768 */
@@ -205,10 +205,11 @@ void VDI_SetResolution(int GEMColor, int WidthRequest, int HeightRequest)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Check VDI call and see if we need to re-direct to our own routines
- * Return TRUE if we've handled the exception, else return FALSE
+ * Check VDI call and see if we need to re-direct to our own routines.
+ * Return true if we've handled the exception, else return false.
  *
- * We enter here with Trap #2, so D1 is pointer to VDI vectors, ie Control, Intin, Ptsin etc...
+ * We enter here with Trap #2, so D1 is pointer to VDI vectors, i.e. Control,
+ * Intin, Ptsin etc...
  */
 bool VDI(void)
 {
@@ -228,12 +229,12 @@ bool VDI(void)
 	// 8 - Text Font
 	if (OpCode==9)
 	{
-		return TRUE;
+		return true;
 	}
 	*/
 
 	/* Call as normal! */
-	return FALSE;
+	return false;
 }
 
 
@@ -295,7 +296,7 @@ void VDI_Complete(void)
 static void VDI_SaveDesktopInf(char *pszFileName, const Uint8 *Script, long ScriptSize)
 {
 	/* Just save file */
-	File_Save(pszFileName, Script, ScriptSize, FALSE);
+	File_Save(pszFileName, Script, ScriptSize, false);
 }
 
 
@@ -328,7 +329,7 @@ static void VDI_ModifyDesktopInf(char *pszFileName)
 		}
 
 		/* And save */
-		File_Save(pszFileName, pInfData, InfSize, FALSE);
+		File_Save(pszFileName, pInfData, InfSize, false);
 		/* Free */
 		free(pInfData);
 	}

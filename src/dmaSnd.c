@@ -174,7 +174,7 @@ static void DmaSnd_StartNewFrame(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Check if end-of-frame has been reached and raise interrupts if needed.
- * Returns TRUE if DMA sound processing should be stopped now and FALSE
+ * Returns true if DMA sound processing should be stopped now and false
  * if it continues.
  */
 static inline int DmaSnd_CheckForEndOfFrame(int nFrameCounter)
@@ -193,11 +193,11 @@ static inline int DmaSnd_CheckForEndOfFrame(int nFrameCounter)
 		else
 		{
 			nDmaSoundControl &= ~DMASNDCTRL_PLAY;
-			return TRUE;
+			return true;
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 

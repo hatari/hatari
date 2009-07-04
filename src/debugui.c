@@ -95,7 +95,7 @@ void DebugUI_MemorySnapShot_Capture(bool bSave)
  */
 static int getRange(char *str, Uint32 *lower, Uint32 *upper)
 {
-	bool fDash = FALSE;
+	bool fDash = false;
 	int i=0;
 
 	while (str[i] != '\0')
@@ -103,11 +103,11 @@ static int getRange(char *str, Uint32 *lower, Uint32 *upper)
 		if (str[i] == '-')
 		{
 			str[i] = ' ';
-			fDash = TRUE;
+			fDash = true;
 		}
 		i++;
 	}
-	if (fDash == FALSE)
+	if (fDash == false)
 		return -1;
 
 	i = sscanf(str, "%x%x", lower, upper);
@@ -981,7 +981,7 @@ static int DebugUI_SetOptions(int argc, char *argv[])
 	if (Opt_ParseParameters(argc, (const char**)argv))
 	{
 		ConfigureParams.Screen.bFullScreen = false;
-		Change_CopyChangedParamsToConfiguration(&current, &ConfigureParams, FALSE);
+		Change_CopyChangedParamsToConfiguration(&current, &ConfigureParams, false);
 	}
 	else
 	{
@@ -1049,7 +1049,7 @@ static int DebugUI_DspContinue(int nArgc, char *psArgv[])
  */
 static int DebugUI_QuitEmu(int nArgc, char *psArgv[])
 {
-	bQuitProgram = TRUE;
+	bQuitProgram = true;
 	M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
 	return DEBUGGER_END;
 }

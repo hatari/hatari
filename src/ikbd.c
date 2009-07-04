@@ -83,7 +83,7 @@ static bool bMouseEnabledDuringReset;
 static Uint8 ACIAControlRegister = 0;
 static Uint8 ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;  /* Pass when read 0xfffc00 */
 static Uint8 ACIAByte;				/* When a byte has arrived at the ACIA (from the keyboard) it is stored here */
-static bool bByteInTransitToACIA = FALSE;	/* Is a byte being sent to the ACIA from the keyboard? */
+static bool bByteInTransitToACIA = false;	/* Is a byte being sent to the ACIA from the keyboard? */
 
 /*
   6850 ACIA (Asynchronous Communications Inferface Apdater)
@@ -277,11 +277,11 @@ static void IKBD_CustomCodeHandler_DragonnelsMenu_Write ( Uint8 aciabyte );
 int	MemoryLoadNbBytesTotal = 0;			/* total number of bytes to send with the command 0x20 */
 int	MemoryLoadNbBytesLeft = 0;			/* number of bytes that remain to be sent  */
 Uint32	MemoryLoadCrc = 0xffffffff;			/* CRC of the bytes sent to the ikbd */
-int	MemoryExeNbBytes = 0;				/* current number of bytes sent to the ikbd when IKBD_ExeMode is TRUE */
+int	MemoryExeNbBytes = 0;				/* current number of bytes sent to the ikbd when IKBD_ExeMode is true */
 
 void	(*pIKBD_CustomCodeHandler_Read) ( void );
 void	(*pIKBD_CustomCodeHandler_Write) ( Uint8 );
-bool	IKBD_ExeMode = FALSE;
+bool	IKBD_ExeMode = false;
 
 Uint8	ScanCodeState[ 128 ];				/* state of each key : 0=released 1=pressed */
 
@@ -335,7 +335,7 @@ CustomCodeDefinitions[] =
  */
 void ACIA_Reset(void)
 {
-	bByteInTransitToACIA = FALSE;
+	bByteInTransitToACIA = false;
 	ACIAControlRegister = 0;
 	ACIAStatusRegister = ACIA_STATUS_REGISTER__TX_BUFFER_EMPTY;
 }
@@ -358,10 +358,10 @@ void IKBD_Reset_ExeMode ( void )
 	MemoryLoadNbBytesLeft = 0;
 	pIKBD_CustomCodeHandler_Read = NULL;
 	pIKBD_CustomCodeHandler_Write = NULL;
-	IKBD_ExeMode = FALSE;
+	IKBD_ExeMode = false;
 
 	Keyboard.BufferHead = Keyboard.BufferTail = 0;	/* flush all queued bytes that would be read in $fffc02 */
-	bByteInTransitToACIA = FALSE;
+	bByteInTransitToACIA = false;
 	// IKBD_AddKeyToKeyboardBuffer(0xF0);		/* Assume OK, return correct code */
 	IKBD_AddKeyToKeyboardBuffer(0xF1);		/* [NP] Dragonnels demo needs this */
 }
@@ -375,7 +375,7 @@ void IKBD_Reset(bool bCold)
 	/* Reset internal keyboard processor details */
 	if (bCold)
 	{
-		KeyboardProcessor.bReset = FALSE;
+		KeyboardProcessor.bReset = false;
 		if (Int_InterruptActive(INTERRUPT_IKBD_RESETTIMER))
 			Int_RemovePendingInterrupt(INTERRUPT_IKBD_RESETTIMER);
 	}
@@ -413,11 +413,11 @@ void IKBD_Reset(bool bCold)
 	Keyboard.LButtonHistory = Keyboard.RButtonHistory = 0;
 
 	/* Store bool for when disable mouse or joystick */
-	bMouseDisabled = bJoystickDisabled = FALSE;
+	bMouseDisabled = bJoystickDisabled = false;
 	/* do emulate hardware 'quirk' where if disable both with 'x' time
 	 * of a RESET command they are ignored! */
-	bDuringResetCriticalTime = bBothMouseAndJoy = FALSE;
-	bMouseEnabledDuringReset = FALSE;
+	bDuringResetCriticalTime = bBothMouseAndJoy = false;
+	bMouseEnabledDuringReset = false;
 
 	/* Remove any custom handlers used to emulate code loaded to the 6301's RAM */
 	IKBD_Reset_ExeMode ();
@@ -452,7 +452,7 @@ void IKBD_MemorySnapShot_Capture(bool bSave)
 	/* restore custom 6301 program if needed */
 	MemorySnapShot_Store(&IKBD_ExeMode, sizeof(IKBD_ExeMode));
 	MemorySnapShot_Store(&MemoryLoadCrc, sizeof(MemoryLoadCrc));
-	if ( ( bSave == FALSE ) && ( IKBD_ExeMode == TRUE ) )	/* restoring a snapshot with active 6301 emulation */
+	if ((bSave == false) && (IKBD_ExeMode == true)) 	/* restoring a snapshot with active 6301 emulation */
 	{
 		for ( i = 0 ; i < sizeof ( CustomCodeDefinitions ) / sizeof ( CustomCodeDefinitions[0] ); i++ )
 			if ( CustomCodeDefinitions[ i ].MainProgCrc == MemoryLoadCrc )
@@ -466,7 +466,7 @@ void IKBD_MemorySnapShot_Capture(bool bSave)
 			}
 
 		if ( i >= sizeof ( CustomCodeDefinitions ) / sizeof ( CustomCodeDefinitions[0] ) )	/* not found (should not happen) */
-			IKBD_ExeMode = FALSE;			/* turn off exe mode */
+			IKBD_ExeMode = false;			/* turn off exe mode */
 	}
 }
 
@@ -544,7 +544,7 @@ static void IKBD_CheckForDoubleClicks(void)
 		if (Keyboard.LButtonDblClk >= 13)             /* Check for end of sequence */
 		{
 			Keyboard.LButtonDblClk = 0;
-			Keyboard.bLButtonDown = FALSE;
+			Keyboard.bLButtonDown = false;
 		}
 	}
 	if (Keyboard.RButtonDblClk)
@@ -570,7 +570,7 @@ static void IKBD_CheckForDoubleClicks(void)
 		if (Keyboard.RButtonDblClk >= 13)             /* Check for end of sequence */
 		{
 			Keyboard.RButtonDblClk = 0;
-			Keyboard.bRButtonDown = FALSE;
+			Keyboard.bRButtonDown = false;
 		}
 	}
 
@@ -592,14 +592,14 @@ static bool IKBD_ButtonBool(int Button)
 {
 	/* Button pressed? */
 	if (Button)
-		return TRUE;
-	return FALSE;
+		return true;
+	return false;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return TRUE if buttons match, use this as buttons are a mask and not boolean
+ * Return true if buttons match, use this as buttons are a mask and not boolean
  */
 static bool IKBD_ButtonsEqual(int Button1,int Button2)
 {
@@ -656,7 +656,7 @@ static void IKBD_SendRelMousePacket(void)
 	        || (!IKBD_ButtonsEqual(Keyboard.bOldLButtonDown,Keyboard.bLButtonDown)) || (!IKBD_ButtonsEqual(Keyboard.bOldRButtonDown,Keyboard.bRButtonDown)) )
 	{
 		/* Send packet to keyboard process */
-		while (TRUE)
+		while (true)
 		{
 			ByteRelX = KeyboardProcessor.Mouse.DeltaX;
 			if (ByteRelX>127)  ByteRelX = 127;
@@ -741,7 +741,7 @@ static void IKBD_SelAutoJoysticks(void)
  */
 static void IKBD_SendOnMouseAction(void)
 {
-	bool bReportPosition = FALSE;
+	bool bReportPosition = false;
 
 	/* Report buttons as keys? Do in relative/absolute mode */
 	if (KeyboardProcessor.Mouse.Action&0x4)
@@ -771,13 +771,13 @@ static void IKBD_SendOnMouseAction(void)
 			/* Did 'press' mouse buttons? */
 			if ( (IKBD_ButtonBool(Keyboard.bLButtonDown) && (!IKBD_ButtonBool(Keyboard.bOldLButtonDown))) )
 			{
-				bReportPosition = TRUE;
+				bReportPosition = true;
 				KeyboardProcessor.Abs.PrevReadAbsMouseButtons &= ~0x04;
 				KeyboardProcessor.Abs.PrevReadAbsMouseButtons |= 0x02;
 			}
 			if ( (IKBD_ButtonBool(Keyboard.bRButtonDown) && (!IKBD_ButtonBool(Keyboard.bOldRButtonDown))) )
 			{
-				bReportPosition = TRUE;
+				bReportPosition = true;
 				KeyboardProcessor.Abs.PrevReadAbsMouseButtons &= ~0x01;
 				KeyboardProcessor.Abs.PrevReadAbsMouseButtons |= 0x08;
 			}
@@ -788,13 +788,13 @@ static void IKBD_SendOnMouseAction(void)
 			/* Did 'release' mouse buttons? */
 			if ( (IKBD_ButtonBool(Keyboard.bOldLButtonDown) && (!IKBD_ButtonBool(Keyboard.bLButtonDown))) )
 			{
-				bReportPosition = TRUE;
+				bReportPosition = true;
 				KeyboardProcessor.Abs.PrevReadAbsMouseButtons &= ~0x08;
 				KeyboardProcessor.Abs.PrevReadAbsMouseButtons |= 0x01;
 			}
 			if ( (IKBD_ButtonBool(Keyboard.bOldRButtonDown) && (!IKBD_ButtonBool(Keyboard.bRButtonDown))) )
 			{
-				bReportPosition = TRUE;
+				bReportPosition = true;
 				KeyboardProcessor.Abs.PrevReadAbsMouseButtons &= ~0x02;
 				KeyboardProcessor.Abs.PrevReadAbsMouseButtons |= 0x04;
 			}
@@ -923,13 +923,13 @@ static void IKBD_SendAutoKeyboardCommands(void)
 		/* As we simulating space bar? */
 		if (JoystickSpaceBar==JOYSTICK_SPACE_DOWN)
 		{
-			IKBD_PressSTKey(57,TRUE);         /* Press */
+			IKBD_PressSTKey(57, true);         /* Press */
 			JoystickSpaceBar = JOYSTICK_SPACE_UP;
 		}
 		else   //if (JoystickSpaceBar==JOYSTICK_SPACE_UP) {
 		{
-			IKBD_PressSTKey(57,FALSE);        /* Release */
-			JoystickSpaceBar = FALSE;         /* Complete */
+			IKBD_PressSTKey(57, false);       /* Release */
+			JoystickSpaceBar = false;         /* Complete */
 		}
 	}
 }
@@ -988,7 +988,7 @@ static void IKBD_CheckResetDisableBug(void)
 			/* Emulate relative mouse and joystick reports being turned back on */
 			KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
 			KeyboardProcessor.JoystickMode = AUTOMODE_JOYSTICK;
-			bBothMouseAndJoy = TRUE;
+			bBothMouseAndJoy = true;
 
 			LOG_TRACE(TRACE_IKBD_ALL, "IKBD Mouse+Joystick disabled "
 			          "during RESET. Revert.\n");
@@ -1008,11 +1008,11 @@ void IKBD_InterruptHandler_ResetTimer(void)
 	Int_AcknowledgeInterrupt();
 
 	/* Turn processor on; can now process commands */
-	KeyboardProcessor.bReset = TRUE;
+	KeyboardProcessor.bReset = true;
 
 	/* Critical timer is over */
-	bDuringResetCriticalTime = FALSE;
-	bMouseEnabledDuringReset = FALSE;
+	bDuringResetCriticalTime = false;
+	bMouseEnabledDuringReset = false;
 }
 
 
@@ -1067,10 +1067,10 @@ static void IKBD_Cmd_Reset(void)
 		Int_AddRelativeInterrupt(IKBD_RESET_CYCLES, INT_CPU_CYCLE, INTERRUPT_IKBD_RESETTIMER);
 
 		/* Set this 'critical' flag, gets reset when timer expires */
-		bDuringResetCriticalTime = TRUE;
-		bMouseDisabled = bJoystickDisabled = FALSE;
-		bBothMouseAndJoy = FALSE;
-		bMouseEnabledDuringReset = FALSE;
+		bDuringResetCriticalTime = true;
+		bMouseDisabled = bJoystickDisabled = false;
+		bBothMouseAndJoy = false;
+		bMouseEnabledDuringReset = false;
 
 		LOG_TRACE(TRACE_IKBD_ALL, "IKBD reset done.\n");
 	}
@@ -1116,7 +1116,7 @@ static void IKBD_Cmd_RelMouseMode(void)
 	 * type of packets. To emulate this feature, we've got to remember
 	 * that the mouse has been enabled during reset. */
 	if (bDuringResetCriticalTime)
-		bMouseEnabledDuringReset = TRUE;
+		bMouseEnabledDuringReset = true;
 
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_RelMouseMode\n");
 }
@@ -1321,7 +1321,7 @@ static void IKBD_Cmd_StartKeyboardTransfer(void)
 static void IKBD_Cmd_TurnMouseOff(void)
 {
 	KeyboardProcessor.MouseMode = AUTOMODE_OFF;
-	bMouseDisabled = TRUE;
+	bMouseDisabled = true;
 
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_TurnMouseOff\n");
 
@@ -1359,7 +1359,7 @@ static void IKBD_Cmd_ReturnJoystickAuto(void)
 	if (bMouseEnabledDuringReset)
 	{
 		KeyboardProcessor.MouseMode = AUTOMODE_MOUSEREL;
-		bBothMouseAndJoy = TRUE;
+		bBothMouseAndJoy = true;
 		LOG_TRACE(TRACE_IKBD_ALL, "IKBD joystick and mouse "
 		          "enabled during RESET. Mouse not disabled!\n");
 	}
@@ -1476,7 +1476,7 @@ static void IKBD_Cmd_SetCursorForJoystick(void)
 static void IKBD_Cmd_DisableJoysticks(void)
 {
 	KeyboardProcessor.JoystickMode = AUTOMODE_OFF;
-	bJoystickDisabled = TRUE;
+	bJoystickDisabled = true;
 
 	LOG_TRACE(TRACE_IKBD_CMDS, "IKBD_Cmd_DisableJoysticks\n");
 
@@ -1611,7 +1611,7 @@ static void IKBD_Cmd_Execute(void)
 		LOG_TRACE(TRACE_IKBD_EXEC, "ikbd execute addr 0x%x using custom handler\n",
 			  (Keyboard.InputBuffer[1] << 8) + Keyboard.InputBuffer[2]);
 
-		IKBD_ExeMode = TRUE;				/* turn 6301's custom mode ON */
+		IKBD_ExeMode = true;				/* turn 6301's custom mode ON */
 	}
 	else							/* unknown code uploaded to ikbd RAM */
 	{
@@ -1957,7 +1957,7 @@ void IKBD_InterruptHandler_MFP(void)
 	MFP_InputOnChannel(MFP_ACIA_BIT, MFP_IERB, &MFP_IPRB);
 
 	/* Clear flag so can allow another byte to be sent along serial line */
-	bByteInTransitToACIA = FALSE;
+	bByteInTransitToACIA = false;
 
 	/* If another key is waiting, start sending from keyboard processor now */
 	if (Keyboard.BufferHead!=Keyboard.BufferTail)
@@ -1980,7 +1980,7 @@ static void IKBD_SendByteToACIA(int nAciaCycles)
 		/* Send byte to ACIA */
 		Int_AddRelativeInterrupt(nAciaCycles, INT_CPU_CYCLE, INTERRUPT_IKBD_ACIA);
 		/* Set flag so only transmit one byte at a time */
-		bByteInTransitToACIA = TRUE;
+		bByteInTransitToACIA = true;
 	}
 }
 
@@ -2184,7 +2184,7 @@ void IKBD_KeyboardData_WriteByte(void)
  * for reading/writing to $fffc02 with ExeMainHandler_Read / ExeMainHandler_Write
  * (once the Execute command 0x22 is received).
  *
- * When using custom program (ExeMode==TRUE), we must ignore all keyboard/mouse/joystick
+ * When using custom program (ExeMode==true), we must ignore all keyboard/mouse/joystick
  * events sent to IKBD_AddKeyToKeyboardBuffer. Only our functions can add bytes
  * to the keyboard buffer.
  *

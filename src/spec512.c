@@ -103,33 +103,35 @@ static const int STRGBPalEndianTable[16] =
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return TRUE if this frame is a Spectrum 512 style image(MUST be low res/non-mix)
+ * Return true if this frame is a Spectrum 512 style image (MUST be low
+ * res/non-mix).
  */
 bool Spec512_IsImage(void)
 {
 	/* Normal Low res screen? */
 	if (STRes == ST_LOW_RES && bIsSpec512Display)
-		return TRUE;
+		return true;
 
-	return FALSE;
+	return false;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * We store every palette access in a table to perform Spectrum 512 colour effects
- * This is cleared on each VBL
+ * We store every palette access in a table to perform Spectrum 512 color
+ * effects. This is cleared on each VBL.
  */
 void Spec512_StartVBL(void)
 {
 	/* Clear number of cycle palettes on each frame */
 	memset(nCyclePalettes, 0x0, sizeof(nCyclePalettes));
 
-	/* Clear number of times accessed on entry in palette (used to check if is true Spectrum 512 image) */
+	/* Clear number of times accessed on entry in palette (used to check if
+	 * it is true Spectrum 512 image) */
 	nPalettesAccesses = 0;
 
 	/* Set as not Spectrum 512 displayed image */
-	bIsSpec512Display = FALSE;
+	bIsSpec512Display = false;
 }
 
 
@@ -233,7 +235,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 	nPalettesAccesses++;
 	if (nPalettesAccesses >= ConfigureParams.Screen.nSpec512Threshold)
 	{
-		bIsSpec512Display = TRUE;
+		bIsSpec512Display = true;
 	}
 }
 

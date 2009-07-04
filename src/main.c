@@ -52,16 +52,16 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #endif
 
 
-bool bQuitProgram = FALSE;                /* Flag to quit program cleanly */
-bool bEnableDebug = FALSE;                /* Enable debug UI? */
+bool bQuitProgram = false;                /* Flag to quit program cleanly */
+bool bEnableDebug = false;                /* Enable debug UI? */
 
 Uint32 nRunVBLs;                          /* Whether and how many VBLS to run before exit */
 static Uint32 nFirstMilliTick;            /* Ticks when VBL counting started */
 static Uint32 nVBLCount;                  /* Frame count */
 
-static bool bEmulationActive = TRUE;      /* Run emulation when started */
+static bool bEmulationActive = true;      /* Run emulation when started */
 static bool bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
-static bool bIgnoreNextMouseMotion = FALSE;  /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
+static bool bIgnoreNextMouseMotion = false;  /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
 
 
 /*-----------------------------------------------------------------------*/
@@ -123,18 +123,18 @@ static Uint32 Main_GetTicks(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Pause emulation, stop sound.  'visualize' should be set TRUE,
+ * Pause emulation, stop sound.  'visualize' should be set true,
  * unless unpause will be called immediately afterwards.
  * 
- * Return TRUE if paused now, FALSE if was already paused
+ * @return true if paused now, false if was already paused
  */
 bool Main_PauseEmulation(bool visualize)
 {
 	if ( !bEmulationActive )
-		return FALSE;
+		return false;
 
-	Audio_EnableAudio(FALSE);
-	bEmulationActive = FALSE;
+	Audio_EnableAudio(false);
+	bEmulationActive = false;
 	if (visualize)
 	{
 		if (nFirstMilliTick)
@@ -159,23 +159,23 @@ bool Main_PauseEmulation(bool visualize)
 			/* Un-grab mouse pointer in windowed mode */
 			SDL_WM_GrabInput(SDL_GRAB_OFF);
 	}
-	return TRUE;
+	return true;
 }
 
 /*-----------------------------------------------------------------------*/
 /**
  * Start/continue emulation
  * 
- * Return TRUE if continued, FALSE if was already running
+ * @return true if continued, false if was already running
  */
 bool Main_UnPauseEmulation(void)
 {
 	if ( bEmulationActive )
-		return FALSE;
+		return false;
 
 	Sound_ResetBufferIndex();
 	Audio_EnableAudio(ConfigureParams.Sound.bEnableSound);
-	bEmulationActive = TRUE;
+	bEmulationActive = true;
 
 	/* Cause full screen update (to clear all) */
 	Screen_SetFullUpdate();
@@ -183,7 +183,7 @@ bool Main_UnPauseEmulation(void)
 	if (bGrabMouse)
 		/* Grab mouse pointer again */
 		SDL_WM_GrabInput(SDL_GRAB_ON);
-	return TRUE;
+	return true;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -194,17 +194,17 @@ void Main_RequestQuit(void)
 {
 	if (ConfigureParams.Memory.bAutoSave)
 	{
-		bQuitProgram = TRUE;
-		MemorySnapShot_Capture(ConfigureParams.Memory.szAutoSaveFileName, FALSE);
+		bQuitProgram = true;
+		MemorySnapShot_Capture(ConfigureParams.Memory.szAutoSaveFileName, false);
 	}
 	else if (ConfigureParams.Log.bConfirmQuit)
 	{
-		bQuitProgram = FALSE;	/* if set TRUE, dialog exits */
+		bQuitProgram = false;	/* if set true, dialog exits */
 		bQuitProgram = DlgAlert_Query("All unsaved data will be lost.\nDo you really want to quit?");
 	}
 	else
 	{
-		bQuitProgram = TRUE;
+		bQuitProgram = true;
 	}
 
 	if (bQuitProgram)
@@ -236,10 +236,10 @@ void Main_WaitOnVbl(void)
 	nDelay = nDestMilliTicks - nCurrentMilliTicks;
 
 	/* Do not wait if we are in fast forward mode or if we are totally out of sync */
-	if (ConfigureParams.System.bFastForward == TRUE
+	if (ConfigureParams.System.bFastForward == true
 	        || nDelay < -4*nFrameDuration)
 	{
-		if (ConfigureParams.System.bFastForward == TRUE)
+		if (ConfigureParams.System.bFastForward == true)
 		{
 			nVBLCount += 1;
 			if (!nFirstMilliTick)
@@ -247,7 +247,7 @@ void Main_WaitOnVbl(void)
 			else if (nRunVBLs && nVBLCount >= nRunVBLs)
 			{
 				/* show VBLs/s */
-				Main_PauseEmulation(TRUE);
+				Main_PauseEmulation(true);
 				exit(0);
 			}
 		}
@@ -330,7 +330,7 @@ static void Main_CheckForAccurateDelays(void)
 void Main_WarpMouse(int x, int y)
 {
 	SDL_WarpMouse(x, y);                  /* Set mouse pointer to new position */
-	bIgnoreNextMouseMotion = TRUE;        /* Ignore mouse motion event from SDL_WarpMouse */
+	bIgnoreNextMouseMotion = true;        /* Ignore mouse motion event from SDL_WarpMouse */
 }
 
 
@@ -346,7 +346,7 @@ static void Main_HandleMouseMotion(SDL_Event *pEvent)
 
 	if (bIgnoreNextMouseMotion)
 	{
-		bIgnoreNextMouseMotion = FALSE;
+		bIgnoreNextMouseMotion = false;
 		return;
 	}
 
@@ -445,12 +445,12 @@ void Main_EventHandler(void)
 			else if (event.button.button == SDL_BUTTON_WHEELDOWN)
 			{
 				/* Simulate pressing the "cursor down" key */
-				IKBD_PressSTKey(0x50, TRUE);
+				IKBD_PressSTKey(0x50, true);
 			}
 			else if (event.button.button == SDL_BUTTON_WHEELUP)
 			{
 				/* Simulate pressing the "cursor up" key */
-				IKBD_PressSTKey(0x48, TRUE);
+				IKBD_PressSTKey(0x48, true);
 			}
 			break;
 
@@ -466,12 +466,12 @@ void Main_EventHandler(void)
 			else if (event.button.button == SDL_BUTTON_WHEELDOWN)
 			{
 				/* Simulate releasing the "cursor down" key */
-				IKBD_PressSTKey(0x50, FALSE);
+				IKBD_PressSTKey(0x50, false);
 			}
 			else if (event.button.button == SDL_BUTTON_WHEELUP)
 			{
 				/* Simulate releasing the "cursor up" key */
-				IKBD_PressSTKey(0x48, FALSE);
+				IKBD_PressSTKey(0x48, false);
 			}
 			break;
 
@@ -684,8 +684,8 @@ int main(int argc, char *argv[])
 	{
 		return 1;
 	}
-	/* monitor type option might require "reset" -> TRUE */
-	Configuration_Apply(TRUE);
+	/* monitor type option might require "reset" -> true */
+	Configuration_Apply(true);
 
 #ifdef WIN32
 	Win_OpenCon();

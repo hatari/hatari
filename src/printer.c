@@ -105,7 +105,7 @@ void Printer_CloseAllConnections(void)
 	pPrinterHandle = File_Close(pPrinterHandle);
 
 	/* Signal finished with printing */
-	bConnectedPrinter = FALSE;
+	bConnectedPrinter = false;
 }
 
 
@@ -152,10 +152,10 @@ static bool Printer_EmptyInternalBuffer(void)
 		if (pPrinterHandle)
 			Printer_EmptyFile();
 
-		return TRUE;
+		return true;
 	}
 	/* Nothing to do */
-	return FALSE;
+	return false;
 }
 
 
@@ -176,14 +176,14 @@ static void Printer_AddByteToInternalBuffer(Uint8 Byte)
 /*-----------------------------------------------------------------------*/
 /**
  * Pass byte from emulator to printer.  Opens the printer file appending
- * if it isn't already open. Returns FALSE if connection to "printer"
+ * if it isn't already open. Returns false if connection to "printer"
  * failed
  */
 bool Printer_TransferByteTo(Uint8 Byte)
 {
 	/* Do we want to output to a printer/file? */
 	if (!ConfigureParams.Printer.bEnablePrinting)
-		return FALSE;   /* Failed if printing disabled */
+		return false;   /* Failed if printing disabled */
 
 	/* Have we made a connection to our printer/file? */
 	if (!bConnectedPrinter)
@@ -201,10 +201,10 @@ bool Printer_TransferByteTo(Uint8 Byte)
 	{
 		/* Add byte to our buffer. */
 		Printer_AddByteToInternalBuffer(Byte);
-		return TRUE;    /* OK */
+		return true;    /* OK */
 	}
 	else
-		return FALSE;   /* Failed */
+		return false;   /* Failed */
 }
 
 

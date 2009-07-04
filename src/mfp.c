@@ -87,7 +87,7 @@
 /* 2008/10/16	[NP]	No need to set data reg to 255 when decrementing a data reg that*/
 /*			was 0, this is already what is implicitly done, because data	*/
 /*			reg for timer A/B is Uint8 (revert 2008/10/04 changes).		*/
-/* 2008/12/11	[NP]	In MFP_CheckPendingInterrupts(), returns TRUE or FALSE instead	*/
+/* 2008/12/11	[NP]	In MFP_CheckPendingInterrupts(), returns true or false instead	*/
 /*			of void, depending on whether at least one MFP interrupt was	*/
 /*			allowed or not.							*/
 /* 2009/03/28	[NP]	Handle bit 3 of AER for timer B (fix Seven Gates Of Jambala).	*/
@@ -162,12 +162,12 @@ static int TimerDClockCycles=0;
 /* If a timer is stopped then restarted later without writing to the data register, */
 /* we must resume the timer from where we left in the interrupts table, instead of */
 /* computing a new number of clock cycles to restart the interrupt. */
-static bool TimerACanResume = FALSE;
-static bool TimerBCanResume = FALSE;
-static bool TimerCCanResume = FALSE;
-static bool TimerDCanResume = FALSE;
+static bool TimerACanResume = false;
+static bool TimerBCanResume = false;
+static bool TimerCCanResume = false;
+static bool TimerDCanResume = false;
 
-bool bAppliedTimerDPatch;           /* TRUE if the Timer-D patch has been applied */
+bool bAppliedTimerDPatch;           /* true if the Timer-D patch has been applied */
 static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer-D patch */
 
 static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when data counter reaches 0 */
@@ -200,7 +200,7 @@ void MFP_Reset(void)
 {
 	/* Reset MFP internal variables */
 
-	bAppliedTimerDPatch = FALSE;
+	bAppliedTimerDPatch = false;
 
 	MFP_GPIP = 0xff;
 	MFP_AER = MFP_DDR = 0;
@@ -312,7 +312,8 @@ static void MFP_UpdateFlags(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Test interrupt request to see if can cause exception,return TRUE if pass vector
+ * Test interrupt request to see if can cause exception.
+ * @return true if pass vector
  */
 static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingReg, Uint8 MaskRegister,
                                  Uint8 PriorityMaskLow, Uint8 PriorityMaskHigh, Uint8 *pInServiceReg)
@@ -337,12 +338,12 @@ static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
 
 				/* Call interrupt, adds in base (default 0x100) */
 				MFP_Exception(nMfpException);
-				return TRUE;
+				return true;
 			}
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 
@@ -350,7 +351,7 @@ static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
 /**
  * Check 'pending' registers to see if any MFP interrupts need servicing.
  * Request interrupt if necessary.
- * Return TRUE if at least one MFP interrupt was allowed, else return FALSE.
+ * @return true if at least one MFP interrupt was allowed, else return false.
  */
 bool MFP_CheckPendingInterrupts(void)
 {
@@ -361,11 +362,11 @@ bool MFP_CheckPendingInterrupts(void)
 	{
 		/* Should never get here, but if do just clear flag (see 'MFP_UpdateFlags') */
 		M68000_UnsetSpecial(SPCFLAG_MFP);
-		return FALSE;
+		return false;
 	}
 
 
-	InterruptPossible = FALSE;
+	InterruptPossible = false;
 
 	if (MFP_IPRA & MFP_TIMER_GPIP7_BIT)   /* Check MFP GPIP7 interrupt (bit 7) */
 		InterruptPossible |= MFP_InterruptRequest(MFP_EXCEPT_GPIP7, MFP_TIMER_GPIP7_BIT, &MFP_IPRA, MFP_IMRA, 0x80, 0x00, &MFP_ISRA);
@@ -512,7 +513,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 		Int_RemovePendingInterrupt(Handler);
 		if (TimerClockCycles)
 		{
-			if ( ( *pTimerCanResume == TRUE ) && ( bFirstTimer == TRUE ) )	/* we can't resume if the timer is auto restarting after an interrupt */
+			if ((*pTimerCanResume == true) && (bFirstTimer == true))	/* we can't resume if the timer is auto restarting after an interrupt */
 			{
 				Int_ResumeStoppedInterrupt ( Handler );
 			}
@@ -534,7 +535,7 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 					Int_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
 				}
 
-				*pTimerCanResume = TRUE;		/* timer was set, resume is possible if stop/start it later */
+				*pTimerCanResume = true;		/* timer was set, resume is possible if stop/start it later */
 			}
 		}
 
@@ -618,7 +619,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 		Int_RemovePendingInterrupt(Handler);
 		if (TimerClockCycles)
 		{
-			if ( ( *pTimerCanResume == TRUE ) && ( bFirstTimer == TRUE ) )	/* we can't resume if the timer is auto restarting after an interrupt */
+			if ((*pTimerCanResume == true) && (bFirstTimer == true))	/* we can't resume if the timer is auto restarting after an interrupt */
 			{
 				Int_ResumeStoppedInterrupt ( Handler );
 			}
@@ -640,7 +641,7 @@ static int MFP_StartTimer_CD(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 					Int_AddRelativeInterruptWithOffset(TimerClockCycles, INT_MFP_CYCLE, Handler, -PendingCyclesOver);
 				}
 
-				*pTimerCanResume = TRUE;		/* timer was set, resume is possible if stop/start it later */
+				*pTimerCanResume = true;		/* timer was set, resume is possible if stop/start it later */
 			}
 		}
 	}
@@ -760,7 +761,7 @@ static Uint8 MFP_ReadTimerCD(Uint8 TimerControl, Uint8 TimerData, Uint8 MainCoun
 static void MFP_StartTimerA(void)
 {
 	TimerAClockCycles = MFP_StartTimer_AB(MFP_TACR, MFP_TA_MAINCOUNTER,
-	                                      INTERRUPT_MFP_TIMERA, TRUE, &TimerACanResume);
+	                                      INTERRUPT_MFP_TIMERA, true, &TimerACanResume);
 }
 
 
@@ -784,7 +785,7 @@ static void MFP_ReadTimerA(bool TimerIsStopping)
 static void MFP_StartTimerB(void)
 {
 	TimerBClockCycles = MFP_StartTimer_AB(MFP_TBCR, MFP_TB_MAINCOUNTER,
-	                                      INTERRUPT_MFP_TIMERB, TRUE, &TimerBCanResume);
+	                                      INTERRUPT_MFP_TIMERB, true, &TimerBCanResume);
 }
 
 
@@ -806,7 +807,7 @@ static void MFP_ReadTimerB(bool TimerIsStopping)
 static void MFP_StartTimerC(void)
 {
 	TimerCClockCycles = MFP_StartTimer_CD((MFP_TCDCR>>4)&7, MFP_TC_MAINCOUNTER,
-	                                      INTERRUPT_MFP_TIMERC , TRUE, &TimerCCanResume);
+	                                      INTERRUPT_MFP_TIMERC , true, &TimerCCanResume);
 }
 
 
@@ -828,7 +829,7 @@ static void MFP_ReadTimerC(bool TimerIsStopping)
 static void MFP_StartTimerD(void)
 {
 	TimerDClockCycles = MFP_StartTimer_CD(MFP_TCDCR&7, MFP_TD_MAINCOUNTER,
-	                                      INTERRUPT_MFP_TIMERD, TRUE, &TimerDCanResume);
+	                                      INTERRUPT_MFP_TIMERD, true, &TimerDCanResume);
 }
 
 
@@ -861,7 +862,7 @@ void MFP_InterruptHandler_TimerA(void)
 		MFP_InputOnChannel(MFP_TIMER_A_BIT, MFP_IERA, &MFP_IPRA);
 
 	/* Start next interrupt, if need one - from current cycle count */
-	TimerAClockCycles = MFP_StartTimer_AB(MFP_TACR, MFP_TADR, INTERRUPT_MFP_TIMERA, FALSE, &TimerACanResume);
+	TimerAClockCycles = MFP_StartTimer_AB(MFP_TACR, MFP_TADR, INTERRUPT_MFP_TIMERA, false, &TimerACanResume);
 }
 
 
@@ -883,7 +884,7 @@ void MFP_InterruptHandler_TimerB(void)
 		MFP_InputOnChannel(MFP_TIMER_B_BIT, MFP_IERA, &MFP_IPRA);
 
 	/* Start next interrupt, if need one - from current cycle count */
-	TimerBClockCycles = MFP_StartTimer_AB(MFP_TBCR, MFP_TBDR, INTERRUPT_MFP_TIMERB, FALSE, &TimerBCanResume);
+	TimerBClockCycles = MFP_StartTimer_AB(MFP_TBCR, MFP_TBDR, INTERRUPT_MFP_TIMERB, false, &TimerBCanResume);
 }
 
 
@@ -905,7 +906,7 @@ void MFP_InterruptHandler_TimerC(void)
 		MFP_InputOnChannel(MFP_TIMER_C_BIT, MFP_IERB, &MFP_IPRB);
 
 	/* Start next interrupt, if need one - from current cycle count */
-	TimerCClockCycles = MFP_StartTimer_CD((MFP_TCDCR>>4)&7, MFP_TCDR, INTERRUPT_MFP_TIMERC, FALSE, &TimerCCanResume);
+	TimerCClockCycles = MFP_StartTimer_CD((MFP_TCDCR>>4)&7, MFP_TCDR, INTERRUPT_MFP_TIMERC, false, &TimerCCanResume);
 }
 
 
@@ -927,7 +928,7 @@ void MFP_InterruptHandler_TimerD(void)
 		MFP_InputOnChannel(MFP_TIMER_D_BIT, MFP_IERB, &MFP_IPRB);
 
 	/* Start next interrupt, if need one - from current cycle count */
-	TimerDClockCycles = MFP_StartTimer_CD(MFP_TCDCR&7, MFP_TDDR, INTERRUPT_MFP_TIMERD, FALSE, &TimerDCanResume);
+	TimerDClockCycles = MFP_StartTimer_CD(MFP_TCDCR&7, MFP_TDDR, INTERRUPT_MFP_TIMERD, false, &TimerDCanResume);
 }
 
 
@@ -1153,7 +1154,7 @@ void MFP_TimerAData_ReadByte(void)
 	M68000_WaitState(4);
 
 	if (MFP_TACR != 8)          		/* Is event count? Need to re-calculate counter */
-		MFP_ReadTimerA(FALSE);		/* Stores result in 'MFP_TA_MAINCOUNTER' */
+		MFP_ReadTimerA(false);		/* Stores result in 'MFP_TA_MAINCOUNTER' */
 
 	IoMem[0xfffa1f] = MFP_TA_MAINCOUNTER;
 }
@@ -1173,7 +1174,7 @@ void MFP_TimerBData_ReadByte(void)
 	{
 		/* Not event count mode, so handle as normal timer
 		 * and store result in 'MFP_TB_MAINCOUNTER' */
-		MFP_ReadTimerB(FALSE);
+		MFP_ReadTimerB(false);
 	}
 	else if (bUseVDIRes)
 	{
@@ -1235,7 +1236,7 @@ void MFP_TimerCData_ReadByte(void)
 {
 	M68000_WaitState(4);
 
-	MFP_ReadTimerC(FALSE);		/* Stores result in 'MFP_TC_MAINCOUNTER' */
+	MFP_ReadTimerC(false);		/* Stores result in 'MFP_TC_MAINCOUNTER' */
 
 	IoMem[0xfffa23] = MFP_TC_MAINCOUNTER;
 }
@@ -1257,7 +1258,7 @@ void MFP_TimerDData_ReadByte(void)
 	}
 	else
 	{
-		MFP_ReadTimerD(FALSE);	/* Stores result in 'MFP_TD_MAINCOUNTER' */
+		MFP_ReadTimerD(false);	/* Stores result in 'MFP_TD_MAINCOUNTER' */
 		IoMem[0xfffa25] = MFP_TD_MAINCOUNTER;
 	}
 }
@@ -1496,7 +1497,7 @@ void MFP_TimerACtrl_WriteByte(void)
 		 * continue from where we left if the timer is restarted later
 		 * without writing to the data register. */
 		if ((new_tacr == 0) && (MFP_TACR >=1) && (MFP_TACR <= 7))
-			MFP_ReadTimerA(TRUE);	/* Store result in 'MFP_TA_MAINCOUNTER' */
+			MFP_ReadTimerA(true);	/* Store result in 'MFP_TA_MAINCOUNTER' */
 
 		MFP_TACR = new_tacr;            /* set to new value before calling MFP_StartTimer */
 		MFP_StartTimerA();              /* start/stop timer depending on control reg */
@@ -1522,7 +1523,7 @@ void MFP_TimerBCtrl_WriteByte(void)
 		 * continue from where we left if the timer is restarted later
 		 * without writing to the data register. */
 		if ((new_tbcr == 0) && (MFP_TBCR >= 1) && (MFP_TBCR <= 7))
-			MFP_ReadTimerB(TRUE);	/* Store result in 'MFP_TB_MAINCOUNTER' */
+			MFP_ReadTimerB(true);	/* Store result in 'MFP_TB_MAINCOUNTER' */
 
 		MFP_TBCR = new_tbcr;            /* set to new value before calling MFP_StartTimer */
 		MFP_StartTimerB();              /* start/stop timer depending on control reg */
@@ -1551,7 +1552,7 @@ void MFP_TimerCDCtrl_WriteByte(void)
 		 * continue from where we left if the timer is restarted later
 		 * without writing to the data register. */
 		if ((new_tcdcr & 0x70) == 0)
-			MFP_ReadTimerC(TRUE);		/* Store result in 'MFP_TC_MAINCOUNTER' */
+			MFP_ReadTimerC(true);		/* Store result in 'MFP_TC_MAINCOUNTER' */
 
 		MFP_TCDCR = ( new_tcdcr & 0x70 ) | ( old_tcdcr & 0x07 );	/* we set TCCR and keep old TDDR in case we need to read it below */
 		MFP_StartTimerC();			/* start/stop timer depending on control reg */
@@ -1583,7 +1584,7 @@ void MFP_TimerCDCtrl_WriteByte(void)
 			if ( new_tcdcr & 0x07 )			/* apply patch only if timer D is being started */
 			{
 				new_tcdcr = IoMem[0xfffa1d] = (IoMem[0xfffa1d] & 0xf0) | 7;
-				bAppliedTimerDPatch = TRUE;
+				bAppliedTimerDPatch = true;
 			}
 		}
 
@@ -1591,7 +1592,7 @@ void MFP_TimerCDCtrl_WriteByte(void)
 		/* of the counter to be able to read it or to continue from where we left if the timer is */
 		/* restarted later without writing to the data register. */
 		if ((new_tcdcr & 0x07) == 0)
-			MFP_ReadTimerD(TRUE);	/* Stores result in 'MFP_TD_MAINCOUNTER' */
+			MFP_ReadTimerD(true);	/* Stores result in 'MFP_TD_MAINCOUNTER' */
 
 		MFP_TCDCR = new_tcdcr;		/* set to new value before calling MFP_StartTimer */
 		MFP_StartTimerD();		/* start/stop timer depending on control reg */
@@ -1611,7 +1612,7 @@ void MFP_TimerAData_WriteByte(void)
 	if (MFP_TACR == 0)                  /* Now check if timer is running - if so do not set */
 	{
 		MFP_TA_MAINCOUNTER = MFP_TADR;  /* Timer is off, store to main counter */
-		TimerACanResume = FALSE;        /* we need to set a new int when timer start */
+		TimerACanResume = false;        /* we need to set a new int when timer start */
 	}
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
@@ -1636,7 +1637,7 @@ void MFP_TimerBData_WriteByte(void)
 	if (MFP_TBCR == 0)                  /* Now check if timer is running - if so do not set */
 	{
 		MFP_TB_MAINCOUNTER = MFP_TBDR;  /* Timer is off, store to main counter */
-		TimerBCanResume = FALSE;        /* we need to set a new int when timer start */
+		TimerBCanResume = false;        /* we need to set a new int when timer start */
 	}
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
@@ -1661,7 +1662,7 @@ void MFP_TimerCData_WriteByte(void)
 	if ((MFP_TCDCR&0x70) == 0)          /* Now check if timer is running - if so do not set */
 	{
 		MFP_TC_MAINCOUNTER = MFP_TCDR;  /* Timer is off, store to main counter */
-		TimerCCanResume = FALSE;        /* we need to set a new int when timer start */
+		TimerCCanResume = false;        /* we need to set a new int when timer start */
 	}
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )
@@ -1700,7 +1701,7 @@ void MFP_TimerDData_WriteByte(void)
 	if ((MFP_TCDCR&0x07) == 0)          /* Now check if timer is running - if so do not set */
 	{
 		MFP_TD_MAINCOUNTER = MFP_TDDR;  /* Timer is off, store to main counter */
-		TimerDCanResume = FALSE;        /* we need to set a new int when timer start */
+		TimerDCanResume = false;        /* we need to set a new int when timer start */
 	}
 
 	if ( LOG_TRACE_LEVEL( TRACE_MFP_WRITE ) )

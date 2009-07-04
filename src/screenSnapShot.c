@@ -24,7 +24,7 @@ const char ScreenSnapShot_fileid[] = "Hatari screenSnapShot.c : " __DATE__ " " _
 #endif
 
 
-bool bRecordingAnimation = FALSE;           /* Recording animation? */
+bool bRecordingAnimation = false;           /* Recording animation? */
 static int nScreenShots = 0;                /* Number of screen shots saved */
 static bool bGrabWhenChange;
 
@@ -276,7 +276,7 @@ void ScreenSnapShot_BeginRecording(bool bCaptureChange)
 	bGrabWhenChange = bCaptureChange;
 
 	/* Start animation */
-	bRecordingAnimation = TRUE;
+	bRecordingAnimation = true;
 
 	/* And inform user */
 	Log_AlertDlg(LOG_INFO, "Screenshot recording started.");
@@ -293,7 +293,7 @@ void ScreenSnapShot_EndRecording()
 	if (bRecordingAnimation)
 	{
 		/* Stop animation */
-		bRecordingAnimation = FALSE;
+		bRecordingAnimation = false;
 
 		/* And inform user */
 		Log_AlertDlg(LOG_INFO, "Screenshot recording stopped.");

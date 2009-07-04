@@ -40,7 +40,7 @@ int __feature_imagefs_is_file = 1;
 
 /*-----------------------------------------------------------------------*/
 /**
- * Does filename end with a .ST extension? If so, return TRUE
+ * Does filename end with a .ST extension? If so, return true.
  */
 bool ST_FileNameIsST(char *pszFileName, bool bAllowGZ)
 {
@@ -71,19 +71,19 @@ Uint8 *ST_ReadDisk(char *pszFileName, long *pImageSize)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Save .ST file from memory buffer. Returns TRUE is all OK
+ * Save .ST file from memory buffer. Returns true is all OK.
  */
 bool ST_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
 #ifdef SAVE_TO_ST_IMAGES
 
 	/* Just save buffer directly to file */
-	return( File_Save(pszFileName, pBuffer, ImageSize, FALSE) );
+	return File_Save(pszFileName, pBuffer, ImageSize, false);
 
 #else   /*SAVE_TO_ST_IMAGES*/
 
 	/* Oops, cannot save */
-	return FALSE;
+	return false;
 
 #endif  /*SAVE_TO_ST_IMAGES*/
 }

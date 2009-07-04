@@ -140,7 +140,7 @@ void Int_Reset(void)
 	/* Reset interrupt table */
 	for (i=0; i<MAX_INTERRUPTS; i++)
 	{
-		InterruptHandlers[i].bUsed = FALSE;
+		InterruptHandlers[i].bUsed = false;
 		InterruptHandlers[i].Cycles = INT_MAX;
 		InterruptHandlers[i].pFunction = pIntHandlerFunctions[i];
 	}
@@ -308,7 +308,7 @@ void Int_AcknowledgeInterrupt(void)
 	Int_UpdateInterrupt();
 
 	/* Disable interrupt entry which has just occured */
-	InterruptHandlers[ActiveInterrupt].bUsed = FALSE;
+	InterruptHandlers[ActiveInterrupt].bUsed = false;
 
 	/* Set new */
 	Int_SetNewInterrupt();
@@ -329,7 +329,7 @@ void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler
 	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
 		Int_UpdateInterrupt();
 
-	InterruptHandlers[Handler].bUsed = TRUE;
+	InterruptHandlers[Handler].bUsed = true;
 	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + nCyclesOver;
 
 	/* Set new */
@@ -362,7 +362,7 @@ void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id
 		Int_UpdateInterrupt();
 
 //  nCyclesOver = 0;
-	InterruptHandlers[Handler].bUsed = TRUE;
+	InterruptHandlers[Handler].bUsed = true;
 	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + PendingInterruptCount;
 
 	/* Set new */
@@ -389,7 +389,7 @@ void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_
 	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
 		Int_UpdateInterrupt();
 
-	InterruptHandlers[Handler].bUsed = TRUE;
+	InterruptHandlers[Handler].bUsed = true;
 	InterruptHandlers[Handler].Cycles = INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType) + CycleOffset;
 
 	/* Set new */
@@ -411,7 +411,7 @@ void Int_RemovePendingInterrupt(interrupt_id Handler)
 	Int_UpdateInterrupt();
 
 	/* Stop interrupt after Int_UpdateInterrupt, for Int_ResumeStoppedInterrupt */
-	InterruptHandlers[Handler].bUsed = FALSE;
+	InterruptHandlers[Handler].bUsed = false;
 
 	/* Set new */
 	Int_SetNewInterrupt();
@@ -428,7 +428,7 @@ void Int_RemovePendingInterrupt(interrupt_id Handler)
 void Int_ResumeStoppedInterrupt(interrupt_id Handler)
 {
 	/* Restart interrupt */
-	InterruptHandlers[Handler].bUsed = TRUE;
+	InterruptHandlers[Handler].bUsed = true;
 
 	/* Update list cycle counts */
 	Int_UpdateInterrupt();
@@ -442,15 +442,15 @@ void Int_ResumeStoppedInterrupt(interrupt_id Handler)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return TRUE if interrupt is active in list
+ * Return true if interrupt is active in list
  */
 bool Int_InterruptActive(interrupt_id Handler)
 {
 	/* Is timer active? */
 	if (InterruptHandlers[Handler].bUsed)
-		return TRUE;
+		return true;
 
-	return FALSE;
+	return false;
 }
 
 

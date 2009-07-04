@@ -134,7 +134,7 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 	char VersionString[VERSION_STRING_SIZE];
 
 	/* Set error */
-	bCaptureError = FALSE;
+	bCaptureError = false;
 
 	/* Open file, set flag so 'MemorySnapShot_Store' can load to/save from file */
 	if (bSave)
@@ -145,10 +145,10 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 		{
 			fprintf(stderr, "Failed to open save file '%s': %s\n",
 			        pszFileName, strerror(errno));
-			bCaptureError = TRUE;
-			return(FALSE);
+			bCaptureError = true;
+			return false;
 		}
-		bCaptureSave = TRUE;
+		bCaptureSave = true;
 		/* Store version string */
 		strcpy(VersionString, VERSION_STRING);
 		MemorySnapShot_Store(VersionString, VERSION_STRING_SIZE);
@@ -161,10 +161,10 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 		{
 			fprintf(stderr, "Failed to open file '%s': %s\n",
 			        pszFileName, strerror(errno));
-			bCaptureError = TRUE;
-			return(FALSE);
+			bCaptureError = true;
+			return false;
 		}
-		bCaptureSave = FALSE;
+		bCaptureSave = false;
 		/* Restore version string */
 		MemorySnapShot_Store(VersionString, VERSION_STRING_SIZE);
 		/* Does match current version? */
@@ -173,13 +173,13 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 			/* No, inform user and error */
 			Log_AlertDlg(LOG_ERROR, "Unable to Restore Memory State.\nFile is "
 			                       "only compatible with Hatari v%s", VersionString);
-			bCaptureError = TRUE;
-			return(FALSE);
+			bCaptureError = true;
+			return false;
 		}
 	}
 
 	/* All OK */
-	return(TRUE);
+	return true;
 }
 
 
@@ -212,7 +212,7 @@ void MemorySnapShot_Store(void *pData, int Size)
 
 		/* Did save OK? */
 		if (nBytes != Size)
-			bCaptureError = TRUE;
+			bCaptureError = true;
 	}
 }
 
@@ -224,26 +224,26 @@ void MemorySnapShot_Store(void *pData, int Size)
 void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 {
 	/* Set to 'saving' */
-	if (MemorySnapShot_OpenFile(pszFileName,TRUE))
+	if (MemorySnapShot_OpenFile(pszFileName, true))
 	{
 		/* Capture each files details */
-		Configuration_MemorySnapShot_Capture(TRUE);
-		TOS_MemorySnapShot_Capture(TRUE);
-		Main_MemorySnapShot_Capture(TRUE);
-		FDC_MemorySnapShot_Capture(TRUE);
-		Floppy_MemorySnapShot_Capture(TRUE);
-		GemDOS_MemorySnapShot_Capture(TRUE);
-		IKBD_MemorySnapShot_Capture(TRUE);
-		Int_MemorySnapShot_Capture(TRUE);
-		M68000_MemorySnapShot_Capture(TRUE);
-		MFP_MemorySnapShot_Capture(TRUE);
-		PSG_MemorySnapShot_Capture(TRUE);
-		Sound_MemorySnapShot_Capture(TRUE);
-		Video_MemorySnapShot_Capture(TRUE);
-		Blitter_MemorySnapShot_Capture(TRUE);
-		DmaSnd_MemorySnapShot_Capture(TRUE);
-		DSP_MemorySnapShot_Capture(TRUE);
-		DebugUI_MemorySnapShot_Capture(TRUE);
+		Configuration_MemorySnapShot_Capture(true);
+		TOS_MemorySnapShot_Capture(true);
+		Main_MemorySnapShot_Capture(true);
+		FDC_MemorySnapShot_Capture(true);
+		Floppy_MemorySnapShot_Capture(true);
+		GemDOS_MemorySnapShot_Capture(true);
+		IKBD_MemorySnapShot_Capture(true);
+		Int_MemorySnapShot_Capture(true);
+		M68000_MemorySnapShot_Capture(true);
+		MFP_MemorySnapShot_Capture(true);
+		PSG_MemorySnapShot_Capture(true);
+		Sound_MemorySnapShot_Capture(true);
+		Video_MemorySnapShot_Capture(true);
+		Blitter_MemorySnapShot_Capture(true);
+		DmaSnd_MemorySnapShot_Capture(true);
+		DSP_MemorySnapShot_Capture(true);
+		DebugUI_MemorySnapShot_Capture(true);
 
 		/* And close */
 		MemorySnapShot_CloseFile();
@@ -264,31 +264,31 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 {
 	/* Set to 'restore' */
-	if (MemorySnapShot_OpenFile(pszFileName,FALSE))
+	if (MemorySnapShot_OpenFile(pszFileName, false))
 	{
-		Configuration_MemorySnapShot_Capture(FALSE);
-		TOS_MemorySnapShot_Capture(FALSE);
+		Configuration_MemorySnapShot_Capture(false);
+		TOS_MemorySnapShot_Capture(false);
 
 		/* Reset emulator to get things running */
 		IoMem_UnInit();  IoMem_Init();
 		Reset_Cold();
 
 		/* Capture each files details */
-		Main_MemorySnapShot_Capture(FALSE);
-		FDC_MemorySnapShot_Capture(FALSE);
-		Floppy_MemorySnapShot_Capture(FALSE);
-		GemDOS_MemorySnapShot_Capture(FALSE);
-		IKBD_MemorySnapShot_Capture(FALSE);
-		Int_MemorySnapShot_Capture(FALSE);
-		M68000_MemorySnapShot_Capture(FALSE);
-		MFP_MemorySnapShot_Capture(FALSE);
-		PSG_MemorySnapShot_Capture(FALSE);
-		Sound_MemorySnapShot_Capture(FALSE);
-		Video_MemorySnapShot_Capture(FALSE);
-		Blitter_MemorySnapShot_Capture(FALSE);
-		DmaSnd_MemorySnapShot_Capture(FALSE);
-		DSP_MemorySnapShot_Capture(FALSE);
-		DebugUI_MemorySnapShot_Capture(FALSE);
+		Main_MemorySnapShot_Capture(false);
+		FDC_MemorySnapShot_Capture(false);
+		Floppy_MemorySnapShot_Capture(false);
+		GemDOS_MemorySnapShot_Capture(false);
+		IKBD_MemorySnapShot_Capture(false);
+		Int_MemorySnapShot_Capture(false);
+		M68000_MemorySnapShot_Capture(false);
+		MFP_MemorySnapShot_Capture(false);
+		PSG_MemorySnapShot_Capture(false);
+		Sound_MemorySnapShot_Capture(false);
+		Video_MemorySnapShot_Capture(false);
+		Blitter_MemorySnapShot_Capture(false);
+		DmaSnd_MemorySnapShot_Capture(false);
+		DSP_MemorySnapShot_Capture(false);
+		DebugUI_MemorySnapShot_Capture(false);
 
 		/* And close */
 		MemorySnapShot_CloseFile();

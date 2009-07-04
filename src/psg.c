@@ -293,20 +293,20 @@ void PSG_Set_DataRegister(Uint8 val)
 		if ( (PSGRegisters[PSG_REG_IO_PORTA]&(1<<1)) == 0 )
 		{
 			/* floppy drive A is ON */
-			Statusbar_SetFloppyLed(DRIVE_LED_A, TRUE);
+			Statusbar_SetFloppyLed(DRIVE_LED_A, true);
 		}
 		else
 		{
-			Statusbar_SetFloppyLed(DRIVE_LED_A, FALSE);
+			Statusbar_SetFloppyLed(DRIVE_LED_A, false);
 		}
 		if ( (PSGRegisters[PSG_REG_IO_PORTA]&(1<<2)) == 0 )
 		{
 			/* floppy drive B is ON */
-			Statusbar_SetFloppyLed(DRIVE_LED_B, TRUE);
+			Statusbar_SetFloppyLed(DRIVE_LED_B, true);
 		}
 		else
 		{
-			Statusbar_SetFloppyLed(DRIVE_LED_B, FALSE);
+			Statusbar_SetFloppyLed(DRIVE_LED_B, false);
 		}
 
 		/* Bit 3 - Centronics as input */

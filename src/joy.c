@@ -30,10 +30,10 @@ static SDL_Joystick *sdlJoystick[6] =   /* SDL's joystick structures */
 
 static bool bJoystickWorking[6] =       /* Is joystick plugged in and working? */
 {
-	FALSE, FALSE, FALSE, FALSE, FALSE, FALSE
+	false, false, false, false, false, false
 }; 
 
-int JoystickSpaceBar = FALSE;           /* State of space-bar on joystick button 2 */
+int JoystickSpaceBar = false;           /* State of space-bar on joystick button 2 */
 static Uint8 nJoyKeyEmu[6];
 static Uint16 nSteJoySelect;
 
@@ -63,12 +63,12 @@ void Joy_Init(void)
 		if (sdlJoystick[i] != NULL)
 		{
 			/* Set as working */
-			bJoystickWorking[i] = TRUE;
+			bJoystickWorking[i] = true;
 			Log_Printf(LOG_DEBUG, "Joystick %i: %s\n", i, SDL_JoystickName(i));
 		}
 	}
 
-	JoystickSpaceBar = FALSE;
+	JoystickSpaceBar = false;
 }
 
 
@@ -84,7 +84,7 @@ void Joy_UnInit(void)
 
 	for (i = 0; i < nPadsConnected && i < 6; i++)
 	{
-		if (bJoystickWorking[i] == TRUE)
+		if (bJoystickWorking[i] == true)
 		{
 			SDL_JoystickClose(sdlJoystick[i]);
 		}
@@ -108,7 +108,7 @@ static bool Joy_ReadJoystick(int nSdlJoyID, JOYREADING *pJoyReading)
 	if (SDL_JoystickGetButton(sdlJoystick[nSdlJoyID], 1))
 		pJoyReading->Buttons |= JOY_BUTTON2;
 
-	return TRUE;
+	return true;
 }
 
 
@@ -143,7 +143,7 @@ Uint8 Joy_GetStickData(int nStJoyId)
 		if (!Joy_ReadJoystick(nSdlJoyId, &JoyReading))
 		{
 			/* Something is wrong, we cannot read the joystick */
-			bJoystickWorking[nSdlJoyId] = FALSE;
+			bJoystickWorking[nSdlJoyId] = false;
 			return 0;
 		}
 
@@ -301,35 +301,35 @@ bool Joy_KeyDown(int symkey, int modkey)
 			{
 				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_DOWN;   /* Disable down */
 				nJoyKeyEmu[i] |= ATARIJOY_BITMASK_UP;    /* Enable up */
-				return TRUE;
+				return true;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeDown)
 			{
 				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_UP;   /* Disable up */
 				nJoyKeyEmu[i] |= ATARIJOY_BITMASK_DOWN;    /* Enable down */
-				return TRUE;
+				return true;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeLeft)
 			{
 				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_RIGHT;   /* Disable right */
 				nJoyKeyEmu[i] |= ATARIJOY_BITMASK_LEFT;    /* Enable left */
-				return TRUE;
+				return true;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeRight)
 			{
 				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_LEFT;   /* Disable left */
 				nJoyKeyEmu[i] |= ATARIJOY_BITMASK_RIGHT;    /* Enable right */
-				return TRUE;
+				return true;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeFire)
 			{
 				nJoyKeyEmu[i] |= ATARIJOY_BITMASK_FIRE;
-				return TRUE;
+				return true;
 			}
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 
@@ -350,32 +350,32 @@ bool Joy_KeyUp(int symkey, int modkey)
 			if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeUp)
 			{
 				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_UP;
-				return TRUE;
+				return true;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeDown)
 			{
 				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_DOWN;
-				return TRUE;
+				return true;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeLeft)
 			{
 				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_LEFT;
-				return TRUE;
+				return true;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeRight)
 			{
 				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_RIGHT;
-				return TRUE;
+				return true;
 			}
 			else if (symkey == ConfigureParams.Joysticks.Joy[i].nKeyCodeFire)
 			{
 				nJoyKeyEmu[i] &= ~ATARIJOY_BITMASK_FIRE;
-				return TRUE;
+				return true;
 			}
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 

@@ -52,7 +52,7 @@ static const char * const pszDiskNameExts[] =
 
 /*-----------------------------------------------------------------------*/
 /**
- * Does filename end with a .ZIP extension? If so, return TRUE
+ * Does filename end with a .ZIP extension? If so, return true.
  */
 bool ZIP_FileNameIsZIP(const char *pszFileName)
 {
@@ -240,13 +240,13 @@ struct dirent **ZIP_GetFilesDir(const zip_dir *zip, const char *dir, int *entrie
 					if ((slash=Zip_FileNameHasSlash(temp)) > 0)
 					{
 						/* file is in a subdirectory, add this subdirectory if it doesn't exist in the list */
-						flag = FALSE;
+						flag = false;
 						for (j = files->nfiles-1; j > 0; j--)
 						{
 							if (strncasecmp(temp, files->names[j], slash+1) == 0)
-								flag=TRUE;
+								flag = true;
 						}
-						if (flag == FALSE)
+						if (flag == false)
 						{
 							files->names[files->nfiles] = (char *)malloc(slash+2);
 							if (!files->names[files->nfiles])
@@ -324,19 +324,19 @@ static long ZIP_CheckImageFile(unzFile uf, char *filename, int namelen, int *pDi
 	}
 
 	/* check for a .msa or .st extention */
-	if (MSA_FileNameIsMSA(filename, FALSE))
+	if (MSA_FileNameIsMSA(filename, false))
 	{
 		*pDiskType = ZIP_FILE_MSA;
 		return file_info.uncompressed_size;
 	}
 
-	if (ST_FileNameIsST(filename, FALSE))
+	if (ST_FileNameIsST(filename, false))
 	{
 		*pDiskType = ZIP_FILE_ST;
 		return file_info.uncompressed_size;
 	}
 
-	if (DIM_FileNameIsDIM(filename, FALSE))
+	if (DIM_FileNameIsDIM(filename, false))
 	{
 		*pDiskType = ZIP_FILE_DIM;
 		return file_info.uncompressed_size;
@@ -553,13 +553,13 @@ Uint8 *ZIP_ReadDisk(const char *pszFileName, const char *pszZipPath, long *pImag
 
 /*-----------------------------------------------------------------------*/
 /**
- * Save .ZIP file from memory buffer. Returns TRUE is all OK
+ * Save .ZIP file from memory buffer. Returns true if all is OK.
  *
  * Not yet implemented.
  */
 bool ZIP_WriteDisk(const char *pszFileName,unsigned char *pBuffer,int ImageSize)
 {
-	return FALSE;
+	return false;
 }
 
 

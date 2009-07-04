@@ -43,7 +43,7 @@ const char RS232_fileid[] = "Hatari rs232.c : " __DATE__ " " __TIME__;
 #endif
 
 
-bool bConnectedRS232 = FALSE;      /* Connection to RS232? */
+bool bConnectedRS232 = false;      /* Connection to RS232? */
 static FILE *hComIn = NULL;        /* Handle to file for reading */
 static FILE *hComOut = NULL;       /* Handle to file for writing */
 
@@ -113,17 +113,17 @@ static bool RS232_SetRawMode(FILE *fhndl)
 	if (isatty(fd))
 	{
 		if (tcgetattr(fd, &termmode) != 0)
-			return FALSE;
+			return false;
 
 		/* Set "raw" mode: */
 		termmode.c_cc[VMIN] = 1;
 		termmode.c_cc[VTIME] = 0;
 		cfmakeraw(&termmode);
 		if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
-			return FALSE;
+			return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -144,7 +144,7 @@ static bool RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, bool bUseP
 		if (tcgetattr(fd, &termmode) != 0)
 		{
 			Dprintf(("RS232_SetBitsConfig: tcgetattr failed.\n"));
-			return FALSE;
+			return false;
 		}
 
 		/* Set the character size: */
@@ -178,11 +178,11 @@ static bool RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, bool bUseP
 		if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
 		{
 			Dprintf(("RS232_SetBitsConfig: tcsetattr failed.\n"));
-			return FALSE;
+			return false;
 		}
 	}
 
-	return TRUE;
+	return true;
 }
 
 #endif /* HAVE_TERMIOS_H */
@@ -194,7 +194,7 @@ static bool RS232_SetBitsConfig(int fd, int nCharSize, int nStopBits, bool bUseP
  */
 static bool RS232_OpenCOMPort(void)
 {
-	bConnectedRS232 = FALSE;
+	bConnectedRS232 = false;
 
 	/* Create our COM file for output */
 	hComOut = fopen(ConfigureParams.RS232.szOutFileName, "wb");
@@ -202,7 +202,7 @@ static bool RS232_OpenCOMPort(void)
 	{
 		Dprintf(("RS232: Failed to open output file %s\n",
 		         ConfigureParams.RS232.szOutFileName));
-		return FALSE;
+		return false;
 	}
 	setvbuf(hComOut, NULL, _IONBF, 0);
 
@@ -213,7 +213,7 @@ static bool RS232_OpenCOMPort(void)
 		Dprintf(("RS232: Failed to open input file %s\n",
 		         ConfigureParams.RS232.szInFileName));
 		fclose(hComOut); hComOut = NULL;
-		return FALSE;
+		return false;
 	}
 	setvbuf(hComIn, NULL, _IONBF, 0);
 
@@ -234,11 +234,11 @@ static bool RS232_OpenCOMPort(void)
 #endif
 
 	/* Set all OK */
-	bConnectedRS232 = TRUE;
+	bConnectedRS232 = true;
 
 	Dprintf(("Successfully opened RS232 files.\n"));
 
-	return TRUE;
+	return true;
 }
 
 
@@ -251,7 +251,7 @@ static void RS232_CloseCOMPort(void)
 	/* Do have file open? */
 	if (bConnectedRS232)
 	{
-		bConnectedRS232 = FALSE;
+		bConnectedRS232 = false;
 
 		/* Close */
 		fclose(hComIn);
@@ -298,7 +298,7 @@ static int RS232_ThreadFunc(void *pData)
 	unsigned char cInChar;
 
 	/* Check for any RS-232 incoming data */
-	while (TRUE)
+	while (true)
 	{
 		if (hComIn)
 		{
@@ -330,7 +330,7 @@ static int RS232_ThreadFunc(void *pData)
 		}
 	}
 
-	return(TRUE);
+	return true;
 }
 
 
@@ -489,7 +489,7 @@ bool RS232_SetBaudRate(int nBaud)
 	if (baudtype == (speed_t)-1)
 	{
 		Dprintf(("RS232_SetBaudRate: Unsupported baud rate %i.\n", nBaud));
-		return FALSE;
+		return false;
 	}
 
 	/* Set ouput speed: */
@@ -500,12 +500,12 @@ bool RS232_SetBaudRate(int nBaud)
 		if (isatty(fd))
 		{
 			if (tcgetattr(fd, &termmode) != 0)
-				return FALSE;
+				return false;
 
 			cfsetospeed(&termmode, baudtype);
 
 			if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
-				return FALSE;
+				return false;
 		}
 	}
 
@@ -517,17 +517,17 @@ bool RS232_SetBaudRate(int nBaud)
 		if (isatty(fd))
 		{
 			if (tcgetattr(fd, &termmode) != 0)
-				return FALSE;
+				return false;
 
 			cfsetispeed(&termmode, baudtype);
 
 			if (tcsetattr(fd, TCSADRAIN, &termmode) != 0)
-				return FALSE;
+				return false;
 		}
 	}
 #endif /* HAVE_TERMIOS_H */
 
-	return TRUE;
+	return true;
 }
 
 
@@ -615,11 +615,11 @@ bool RS232_TransferBytesTo(unsigned char *pBytes, int nBytes)
 			Dprintf(("RS232: Sent %i bytes ($%x ...)\n", nBytes, *pBytes));
 			MFP_InputOnChannel(MFP_TRNBUFEMPTY_BIT, MFP_IERA, &MFP_IPRA);
 
-			return(TRUE);   /* OK */
+			return true;   /* OK */
 		}
 	}
 
-	return(FALSE);  /* Failed */
+	return false;  /* Failed */
 }
 
 
@@ -641,16 +641,16 @@ bool RS232_ReadBytes(unsigned char *pBytes, int nBytes)
 			InputBuffer_Head = (InputBuffer_Head+1) % MAX_RS232INPUT_BUFFER;
 			SDL_SemPost(pSemFreeBuf);    /* Signal free space */
 		}
-		return(TRUE);
+		return true;
 	}
 
-	return(FALSE);
+	return false;
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Return TRUE if bytes waiting!
+ * Return true if bytes waiting!
  */
 bool RS232_GetStatus(void)
 {
@@ -659,11 +659,11 @@ bool RS232_GetStatus(void)
 	{
 		/* Do we have bytes in the input buffer? */
 		if (InputBuffer_Head != InputBuffer_Tail)
-			return(TRUE);
+			return true;
 	}
 
 	/* No, none */
-	return(FALSE);
+	return false;
 }
 
 

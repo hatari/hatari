@@ -246,20 +246,20 @@ bool Log_SetTraceOptions (const char *OptionsStr)
 		fprintf(stderr, "Multiple trace levels can be separated by ','\n");
 		fprintf(stderr, "Levels can be prefixed by '+' or '-' to be mixed.\n");
 		fprintf(stderr, "Giving just trace level 'none' disables all traces.\n\n");
-		return FALSE;
+		return false;
 	}
 	
 	LogTraceFlags = TRACE_NONE;
 	if (strcmp (OptionsStr, "none") == 0)
 	{
-		return TRUE;
+		return true;
 	}
 	
 	OptionsCopy = strdup(OptionsStr);
 	if (!OptionsCopy)
 	{
 		fprintf(stderr, "strdup error in ParseTraceOptions\n");
-		return FALSE;
+		return false;
 	}
 	
 	cur = OptionsCopy;
@@ -292,7 +292,7 @@ bool Log_SetTraceOptions (const char *OptionsStr)
 		{
 			fprintf(stderr, "unknown trace option %s\n", cur);
 			free(OptionsCopy);
-			return FALSE;
+			return false;
 		}
 		
 		cur = sep;
@@ -301,12 +301,12 @@ bool Log_SetTraceOptions (const char *OptionsStr)
 	//fprintf(stderr, "trace parse <%x>\n", LogTraceFlags);
 	
 	free (OptionsCopy);
-	return TRUE;
+	return true;
 
 #else	/* ENABLE_TRACING */
 
 	fprintf(stderr, "\nError: Trace option has not been activated during compile time.\n");
-	return FALSE;
+	return false;
 
 #endif
 }

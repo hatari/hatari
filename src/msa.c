@@ -104,7 +104,7 @@ typedef struct
 
 /*-----------------------------------------------------------------------*/
 /**
- * Does filename end with a .MSA extension? If so, return TRUE
+ * Does filename end with a .MSA extension? If so, return true
  */
 bool MSA_FileNameIsMSA(char *pszFileName, bool bAllowGZ)
 {
@@ -284,7 +284,7 @@ static int MSA_FindRunOfBytes(Uint8 *pBuffer, int nBytesInBuffer)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Save compressed .MSA file from memory buffer. Returns TRUE is all OK
+ * Save compressed .MSA file from memory buffer. Returns true is all OK
  */
 bool MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 {
@@ -303,7 +303,7 @@ bool MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 	if (!pMSAImageBuffer)
 	{
 		perror("MSA_WriteDisk");
-		return FALSE;
+		return false;
 	}
 
 	/* Store header */
@@ -375,7 +375,7 @@ bool MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 	}
 
 	/* And save to file! */
-	nRet = File_Save(pszFileName,pMSAImageBuffer, pMSABuffer-pMSAImageBuffer, FALSE);
+	nRet = File_Save(pszFileName,pMSAImageBuffer, pMSABuffer-pMSAImageBuffer, false);
 
 	/* Free workspace */
 	free(pMSAImageBuffer);
@@ -385,7 +385,7 @@ bool MSA_WriteDisk(char *pszFileName, Uint8 *pBuffer, int ImageSize)
 #else   /*SAVE_TO_MSA_IMAGES*/
 
 	/* Oops, cannot save */
-	return FALSE;
+	return false;
 
 #endif  /*SAVE_TO_MSA_IMAGES*/
 }

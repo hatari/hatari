@@ -63,7 +63,7 @@ void Midi_Init(void)
 		if (!pMidiFhOut)
 		{
 			Log_AlertDlg(LOG_ERROR, "MIDI output file open failed. MIDI support disabled.");
-			ConfigureParams.Midi.bEnableMidi = FALSE;
+			ConfigureParams.Midi.bEnableMidi = false;
 			return;
 		}
 		setvbuf(pMidiFhOut, NULL, _IONBF, 0);    /* No output buffering! */
@@ -77,7 +77,7 @@ void Midi_Init(void)
 		if (!pMidiFhIn)
 		{
 			Log_AlertDlg(LOG_ERROR, "MIDI input file open failed. MIDI support disabled.");
-			ConfigureParams.Midi.bEnableMidi = FALSE;
+			ConfigureParams.Midi.bEnableMidi = false;
 			return;
 		}
 		setvbuf(pMidiFhIn, NULL, _IONBF, 0);    /* No input buffering! */

@@ -214,14 +214,14 @@ void M68000_Start(void)
 	/* Load initial memory snapshot */
 	if (bLoadMemorySave)
 	{
-		MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, FALSE);
+		MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, false);
 	}
 	else if (bLoadAutoSave)
 	{
-		MemorySnapShot_Restore(ConfigureParams.Memory.szAutoSaveFileName, FALSE);
+		MemorySnapShot_Restore(ConfigureParams.Memory.szAutoSaveFileName, false);
 	}
 
-	m68k_go(TRUE);
+	m68k_go(true);
 }
 
 

@@ -403,7 +403,7 @@ static void Opt_ShowHelp(void)
  * If 'error' given, show that error message.
  * If 'optid' != OPT_ERROR, tells for which option the error is,
  * otherwise 'value' is show as the option user gave.
- * Return FALSE if error string was given, otherwise TRUE
+ * Return false if error string was given, otherwise true
  */
 static bool Opt_ShowError(unsigned int optid, const char *value, const char *error)
 {
@@ -437,17 +437,17 @@ static bool Opt_ShowError(unsigned int optid, const char *value, const char *err
 			}
 			Opt_ShowOption(opt, 0);
 		}
-		return FALSE;
+		return false;
 	}
-	return TRUE;
+	return true;
 }
 
 
 /**
  * If 'conf' given, set it:
- * - TRUE if given option 'arg' is y/yes/on/true/1
- * - FALSE if given option 'arg' is n/no/off/false/0
- * Return FALSE for any other value, otherwise TRUE
+ * - true if given option 'arg' is y/yes/on/true/1
+ * - false if given option 'arg' is n/no/off/false/0
+ * Return false for any other value, otherwise true
  */
 static bool Opt_Bool(const char *arg, int optid, bool *conf)
 {
@@ -469,9 +469,9 @@ static bool Opt_Bool(const char *arg, int optid, bool *conf)
 			free(input);
 			if (conf)
 			{
-				*conf = TRUE;
+				*conf = true;
 			}
-			return TRUE;
+			return true;
 		}
 	}
 	for (bool_str = disablers; *bool_str; bool_str++)
@@ -481,9 +481,9 @@ static bool Opt_Bool(const char *arg, int optid, bool *conf)
 			free(input);
 			if (conf)
 			{
-				*conf = FALSE;
+				*conf = false;
 			}
-			return TRUE;
+			return true;
 		}
 	}
 	free(input);
@@ -590,13 +590,13 @@ static int Opt_WhichOption(int argc, const char *argv[], int idx)
 
 
 /**
- * If 'checkexits' is TRUE, assume 'src' is a file and check whether it
+ * If 'checkexits' is true, assume 'src' is a file and check whether it
  * exists before copying 'src' to 'dst'. Otherwise just copy option src
  * string to dst.
- * If a pointer to (bool) 'option' is given, set that option to TRUE.
- * - However, if src is "none", leave dst unmodified & set option to FALSE.
+ * If a pointer to (bool) 'option' is given, set that option to true.
+ * - However, if src is "none", leave dst unmodified & set option to false.
  *   ("none" is used to disable options related to file arguments)
- * Return FALSE if there were errors, otherwise TRUE
+ * Return false if there were errors, otherwise true
  */
 static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, size_t dstlen, bool *option)
 {
@@ -612,31 +612,31 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
 	{
 		if(strcmp(src, "none") == 0)
 		{
-			*option = FALSE;
-			return TRUE;
+			*option = false;
+			return true;
 		}
 		else
 		{
-			*option = TRUE;
+			*option = true;
 		}
 	}
 	strcpy(dst, src);
-	return TRUE;
+	return true;
 }
 
 
 /**
  * parse all Hatari command line options and set Hatari state accordingly.
- * Returns TRUE if everything was OK, FALSE otherwise.
+ * Returns true if everything was OK, false otherwise.
  */
 bool Opt_ParseParameters(int argc, const char *argv[])
 {
 	int ncpu, skips, zoom, planes, cpuclock, threshold, memsize, port, freq;
 	const char *errstr;
-	int i, ok = TRUE;
+	int i, ok = true;
 
 	/* Defaults for loading initial memory snap-shots */
-	bLoadMemorySave = FALSE;
+	bLoadMemorySave = false;
 	bLoadAutoSave = ConfigureParams.Memory.bAutoSave;
 
 	for(i = 1; i < argc; i++)
@@ -645,8 +645,8 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 		{
 			if (Floppy_SetDiskFileName(0, argv[i], NULL))
 			{
-				ConfigureParams.HardDisk.bBootFromHardDisk = FALSE;
-				bLoadAutoSave = FALSE;
+				ConfigureParams.HardDisk.bBootFromHardDisk = false;
+				bLoadAutoSave = false;
 			}
 			else
 				return Opt_ShowError(OPT_ERROR, argv[i], "Not an option nor disk image");
@@ -662,11 +662,11 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			/* general options */
 		case OPT_HELP:
 			Opt_ShowHelp();
-			return FALSE;
+			return false;
 			
 		case OPT_VERSION:
 			Opt_ShowVersion();
-			return FALSE;
+			return false;
 
 		case OPT_CONFIRMQUIT:
 			ok = Opt_Bool(argv[++i], OPT_CONFIRMQUIT, &ConfigureParams.Log.bConfirmQuit);
@@ -678,7 +678,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			
 		case OPT_CONFIGFILE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_CONFIGFILE, TRUE, sConfigFileName,
+			ok = Opt_StrCpy(OPT_CONFIGFILE, true, sConfigFileName,
 					argv[i], sizeof(sConfigFileName), NULL);
 			if (ok)
 			{
@@ -690,7 +690,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			/* display options */
 		case OPT_MONO:
 			ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_MONO;
-			bLoadAutoSave = FALSE;
+			bLoadAutoSave = false;
 			break;
 
 		case OPT_MONITOR:
@@ -715,19 +715,19 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			{
 				return Opt_ShowError(OPT_MONITOR, argv[i], "Unknown monitor type");
 			}
-			bLoadAutoSave = FALSE;
+			bLoadAutoSave = false;
 			break;
 			
 		case OPT_FULLSCREEN:
-			ConfigureParams.Screen.bFullScreen = TRUE;
+			ConfigureParams.Screen.bFullScreen = true;
 			break;
 			
 		case OPT_WINDOW:
-			ConfigureParams.Screen.bFullScreen = FALSE;
+			ConfigureParams.Screen.bFullScreen = false;
 			break;
 
 		case OPT_GRAB:
-			bGrabMouse = TRUE;
+			bGrabMouse = true;
 			break;
 			
 		case OPT_ZOOM:
@@ -739,11 +739,11 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			if (zoom > 1)
 			{
 				/* TODO: only doubling supported for now */
-				ConfigureParams.Screen.bZoomLowRes = TRUE;
+				ConfigureParams.Screen.bZoomLowRes = true;
 			}
 			else
 			{
-				ConfigureParams.Screen.bZoomLowRes = FALSE;
+				ConfigureParams.Screen.bZoomLowRes = false;
 			}
 			break;
 			
@@ -806,7 +806,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			ok = Opt_Bool(argv[++i], OPT_VDI, &ConfigureParams.Screen.bUseExtVdiResolutions);
 			if (ok)
 			{
-				bLoadAutoSave = FALSE;
+				bLoadAutoSave = false;
 			}
 			break;
 
@@ -826,20 +826,20 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			 default:
 				return Opt_ShowError(OPT_VDI_PLANES, argv[i], "Unsupported VDI bit-depth");
 			}
-			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
-			bLoadAutoSave = FALSE;
+			ConfigureParams.Screen.bUseExtVdiResolutions = true;
+			bLoadAutoSave = false;
 			break;
 
 		case OPT_VDI_WIDTH:
 			ConfigureParams.Screen.nVdiWidth = atoi(argv[++i]);
-			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
-			bLoadAutoSave = FALSE;
+			ConfigureParams.Screen.bUseExtVdiResolutions = true;
+			bLoadAutoSave = false;
 			break;
 
 		case OPT_VDI_HEIGHT:
 			ConfigureParams.Screen.nVdiHeight = atoi(argv[++i]);
-			ConfigureParams.Screen.bUseExtVdiResolutions = TRUE;
-			bLoadAutoSave = FALSE;
+			ConfigureParams.Screen.bUseExtVdiResolutions = true;
+			bLoadAutoSave = false;
 			break;
 		
 			/* devices options */
@@ -881,36 +881,36 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			
 		case OPT_PRINTER:
 			i += 1;
-			ok = Opt_StrCpy(OPT_PRINTER, FALSE, ConfigureParams.Printer.szPrintToFileName,
+			ok = Opt_StrCpy(OPT_PRINTER, false, ConfigureParams.Printer.szPrintToFileName,
 					argv[i], sizeof(ConfigureParams.Printer.szPrintToFileName),
 					&ConfigureParams.Printer.bEnablePrinting);
 			break;
 			
 		case OPT_MIDI_IN:
 			i += 1;
-			/* FALSE: "" can be used to disable midi input */
-			ok = Opt_StrCpy(OPT_MIDI_IN, FALSE, ConfigureParams.Midi.sMidiInFileName,
+			/* false: "" can be used to disable midi input */
+			ok = Opt_StrCpy(OPT_MIDI_IN, false, ConfigureParams.Midi.sMidiInFileName,
 					argv[i], sizeof(ConfigureParams.Midi.sMidiInFileName),
 					&ConfigureParams.Midi.bEnableMidi);
 			break;
 			
 		case OPT_MIDI_OUT:
 			i += 1;
-			ok = Opt_StrCpy(OPT_MIDI_OUT, TRUE, ConfigureParams.Midi.sMidiOutFileName,
+			ok = Opt_StrCpy(OPT_MIDI_OUT, true, ConfigureParams.Midi.sMidiOutFileName,
 					argv[i], sizeof(ConfigureParams.Midi.sMidiOutFileName),
 					&ConfigureParams.Midi.bEnableMidi);
 			break;
       
 		case OPT_RS232_IN:
 			i += 1;
-			ok = Opt_StrCpy(OPT_RS232_IN, TRUE, ConfigureParams.RS232.szInFileName,
+			ok = Opt_StrCpy(OPT_RS232_IN, true, ConfigureParams.RS232.szInFileName,
 					argv[i], sizeof(ConfigureParams.RS232.szInFileName),
 					&ConfigureParams.RS232.bEnableRS232);
 			break;
       
 		case OPT_RS232_OUT:
 			i += 1;
-			ok = Opt_StrCpy(OPT_RS232_OUT, TRUE, ConfigureParams.RS232.szOutFileName,
+			ok = Opt_StrCpy(OPT_RS232_OUT, true, ConfigureParams.RS232.szOutFileName,
 					argv[i], sizeof(ConfigureParams.RS232.szOutFileName),
 					&ConfigureParams.RS232.bEnableRS232);
 			break;
@@ -920,8 +920,8 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			i += 1;
 			if (Floppy_SetDiskFileName(0, argv[i], NULL))
 			{
-				ConfigureParams.HardDisk.bBootFromHardDisk = FALSE;
-				bLoadAutoSave = FALSE;
+				ConfigureParams.HardDisk.bBootFromHardDisk = false;
+				bLoadAutoSave = false;
 			}
 			else
 				return Opt_ShowError(OPT_ERROR, argv[i], "Not a disk image");
@@ -930,42 +930,42 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 		case OPT_DISKB:
 			i += 1;
 			if (Floppy_SetDiskFileName(1, argv[i], NULL))
-				bLoadAutoSave = FALSE;
+				bLoadAutoSave = false;
 			else
 				return Opt_ShowError(OPT_ERROR, argv[i], "Not a disk image");
 			break;
 
 		case OPT_HARDDRIVE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_HARDDRIVE, FALSE, ConfigureParams.HardDisk.szHardDiskDirectories[0],
+			ok = Opt_StrCpy(OPT_HARDDRIVE, false, ConfigureParams.HardDisk.szHardDiskDirectories[0],
 					argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[0]),
 					&ConfigureParams.HardDisk.bUseHardDiskDirectories);
 			if (ok && ConfigureParams.HardDisk.bUseHardDiskDirectories)
 			{
-				ConfigureParams.HardDisk.bBootFromHardDisk = TRUE;
+				ConfigureParams.HardDisk.bBootFromHardDisk = true;
 			}
-			bLoadAutoSave = FALSE;
+			bLoadAutoSave = false;
 			break;
 
 		case OPT_ACSIHDIMAGE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_ACSIHDIMAGE, TRUE, ConfigureParams.HardDisk.szHardDiskImage,
+			ok = Opt_StrCpy(OPT_ACSIHDIMAGE, true, ConfigureParams.HardDisk.szHardDiskImage,
 					argv[i], sizeof(ConfigureParams.HardDisk.szHardDiskImage),
 					&ConfigureParams.HardDisk.bUseHardDiskImage);
 			if (ok)
 			{
-				bLoadAutoSave = FALSE;
+				bLoadAutoSave = false;
 			}
 			break;
 			
 		case OPT_IDEHDIMAGE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_IDEHDIMAGE, TRUE, ConfigureParams.HardDisk.szIdeHardDiskImage,
+			ok = Opt_StrCpy(OPT_IDEHDIMAGE, true, ConfigureParams.HardDisk.szIdeHardDiskImage,
 					argv[i], sizeof(ConfigureParams.HardDisk.szIdeHardDiskImage),
 					&ConfigureParams.HardDisk.bUseIdeHardDiskImage);
 			if (ok)
 			{
-				bLoadAutoSave = FALSE;
+				bLoadAutoSave = false;
 			}
 			break;
 			
@@ -973,7 +973,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			ok = Opt_Bool(argv[++i], OPT_SLOWFLOPPY, &ConfigureParams.DiskImage.bSlowFloppy);
 			if (ok)
 			{
-				bLoadAutoSave = FALSE;
+				bLoadAutoSave = false;
 			}
 			break;
 			
@@ -985,40 +985,40 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				return Opt_ShowError(OPT_MEMSIZE, argv[i], "Invalid memory size");
 			}
 			ConfigureParams.Memory.nMemorySize = memsize;
-			bLoadAutoSave = FALSE;
+			bLoadAutoSave = false;
 			break;
       
 		case OPT_TOS:
 			i += 1;
-			ok = Opt_StrCpy(OPT_TOS, TRUE, ConfigureParams.Rom.szTosImageFileName,
+			ok = Opt_StrCpy(OPT_TOS, true, ConfigureParams.Rom.szTosImageFileName,
 					argv[i], sizeof(ConfigureParams.Rom.szTosImageFileName),
 					NULL);
 			if (ok)
 			{
-				bLoadAutoSave = FALSE;
+				bLoadAutoSave = false;
 			}
 			break;
 			
 		case OPT_CARTRIDGE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_CARTRIDGE, TRUE, ConfigureParams.Rom.szCartridgeImageFileName,
+			ok = Opt_StrCpy(OPT_CARTRIDGE, true, ConfigureParams.Rom.szCartridgeImageFileName,
 					argv[i], sizeof(ConfigureParams.Rom.szCartridgeImageFileName),
 					NULL);
 			if (ok)
 			{
-				bLoadAutoSave = FALSE;
+				bLoadAutoSave = false;
 			}
 			break;
 
 		case OPT_MEMSTATE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_MEMSTATE, TRUE, ConfigureParams.Memory.szMemoryCaptureFileName,
+			ok = Opt_StrCpy(OPT_MEMSTATE, true, ConfigureParams.Memory.szMemoryCaptureFileName,
 					argv[i], sizeof(ConfigureParams.Memory.szMemoryCaptureFileName),
 					NULL);
 			if (ok)
 			{
-				bLoadMemorySave = TRUE;
-				bLoadAutoSave = FALSE;
+				bLoadMemorySave = true;
+				bLoadAutoSave = false;
 			}
 			break;
 			
@@ -1031,7 +1031,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				return Opt_ShowError(OPT_CPULEVEL, argv[i], "Invalid CPU level");
 			}
 			ConfigureParams.System.nCpuLevel = ncpu;
-			bLoadAutoSave = FALSE;
+			bLoadAutoSave = false;
 			break;
 			
 		case OPT_CPUCLOCK:
@@ -1041,14 +1041,14 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				return Opt_ShowError(OPT_CPUCLOCK, argv[i], "Invalid CPU clock");
 			}
 			ConfigureParams.System.nCpuFreq = cpuclock;
-			bLoadAutoSave = FALSE;
+			bLoadAutoSave = false;
 			break;
 			
 		case OPT_COMPATIBLE:
 			ok = Opt_Bool(argv[++i], OPT_COMPATIBLE, &ConfigureParams.System.bCompatibleCpu);
 			if (ok)
 			{
-				bLoadAutoSave = FALSE;
+				bLoadAutoSave = false;
 			}
 			break;
 
@@ -1083,14 +1083,14 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			{
 				return Opt_ShowError(OPT_MACHINE, argv[i], "Unknown machine type");
 			}
-			bLoadAutoSave = FALSE;
+			bLoadAutoSave = false;
 			break;
 			
 		case OPT_BLITTER:
 			ok = Opt_Bool(argv[++i], OPT_BLITTER, &ConfigureParams.System.bBlitter);
 			if (ok)
 			{
-				bLoadAutoSave = FALSE;
+				bLoadAutoSave = false;
 			}
 			break;			
 
@@ -1116,14 +1116,14 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			{
 				return Opt_ShowError(OPT_DSP, argv[i], "Unknown DSP type");
 			}
-			bLoadAutoSave = FALSE;
+			bLoadAutoSave = false;
 			break;
 			
 		case OPT_SOUND:
 			i += 1;
 			if (strcasecmp(argv[i], "off") == 0)
 			{
-				ConfigureParams.Sound.bEnableSound = FALSE;
+				ConfigureParams.Sound.bEnableSound = false;
 			}
 			else
 			{
@@ -1133,13 +1133,13 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 					return Opt_ShowError(OPT_SOUND, argv[i], "Unsupported sound frequency");
 				}
 				ConfigureParams.Sound.nPlaybackFreq = freq;
-				ConfigureParams.Sound.bEnableSound = TRUE;
+				ConfigureParams.Sound.bEnableSound = true;
 			}
 			break;
 
 		case OPT_KEYMAPFILE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_KEYMAPFILE, TRUE, ConfigureParams.Keyboard.szMappingFileName,
+			ok = Opt_StrCpy(OPT_KEYMAPFILE, true, ConfigureParams.Keyboard.szMappingFileName,
 					argv[i], sizeof(ConfigureParams.Keyboard.szMappingFileName),
 					NULL);
 			if (ok)
@@ -1154,16 +1154,16 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			{
 				/* called at run time (e.g. from debugger) */
 				fprintf(stderr, "Debug mode disabled.\n");
-				bEnableDebug = FALSE;
+				bEnableDebug = false;
 			}
 			else
 			{
-				bEnableDebug = TRUE;
+				bEnableDebug = true;
 			}
 			break;
 
 		case OPT_BIOSINTERCEPT:
-			bBiosIntercept = TRUE;
+			bBiosIntercept = true;
 			break;
 			
 		case OPT_TRACE:
@@ -1176,7 +1176,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 
 		case OPT_TRACEFILE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_TRACEFILE, FALSE, ConfigureParams.Log.sTraceFileName,
+			ok = Opt_StrCpy(OPT_TRACEFILE, false, ConfigureParams.Log.sTraceFileName,
 					argv[i], sizeof(ConfigureParams.Log.sTraceFileName),
 					NULL);
 			break;
@@ -1192,7 +1192,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 
 		case OPT_LOGFILE:
 			i += 1;
-			ok = Opt_StrCpy(OPT_LOGFILE, FALSE, ConfigureParams.Log.sLogFileName,
+			ok = Opt_StrCpy(OPT_LOGFILE, false, ConfigureParams.Log.sLogFileName,
 					argv[i], sizeof(ConfigureParams.Log.sLogFileName),
 					NULL);
 			break;
@@ -1221,7 +1221,7 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 		       
 		case OPT_ERROR:
 			/* unknown option or missing option parameter */
-			return FALSE;
+			return false;
 
 		default:
 			return Opt_ShowError(OPT_ERROR, argv[i], "Internal Hatari error, unhandled option");
@@ -1229,9 +1229,9 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 		if (!ok)
 		{
 			/* Opt_Bool() or Opt_StrCpy() failed */
-			return FALSE;
+			return false;
 		}
 	}
 
-	return TRUE;
+	return true;
 }
