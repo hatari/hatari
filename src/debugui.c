@@ -23,6 +23,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "change.h"
 #include "configuration.h"
+#include "memorySnapShot.h"
 #include "file.h"
 #include "reset.h"
 #include "m68000.h"
@@ -44,6 +45,10 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 static unsigned long memdump_addr; /* memdump address */
 static unsigned long disasm_addr;  /* disasm address */
 
+static Uint16 dsp_disasm_addr;    /* DSP disasm address */
+static Uint16 dsp_memdump_addr;   /* DSP memdump address */
+static char dsp_mem_space = 'P';  /* X, Y, P */
+
 static FILE *debugOutput;
 
 static Uint32 CpuBreakPoint[16];  /* 68k breakpoints */
@@ -58,6 +63,28 @@ static int nDspSteps = 0;         /* Amount of steps for DSP single-stepping */
 
 static int DebugUI_Help(int nArgc, char *psArgv[]);
 static void DebugUI_PrintCmdHelp(const char *psCmd);
+
+
+/**
+ * Save/Restore snapshot of debugging session variables
+ */
+void DebugUI_MemorySnapShot_Capture(bool bSave)
+{
+	MemorySnapShot_Store(&disasm_addr, sizeof(disasm_addr));
+	MemorySnapShot_Store(&memdump_addr, sizeof(memdump_addr));
+	MemorySnapShot_Store(&dsp_disasm_addr, sizeof(dsp_disasm_addr));
+	MemorySnapShot_Store(&dsp_memdump_addr, sizeof(dsp_memdump_addr));
+	MemorySnapShot_Store(&dsp_mem_space, sizeof(dsp_mem_space));
+	
+	MemorySnapShot_Store(&CpuBreakPoint, sizeof(CpuBreakPoint));
+	MemorySnapShot_Store(&nCpuActiveBPs, sizeof(nCpuActiveBPs));
+	MemorySnapShot_Store(&nCpuActiveCBs, sizeof(nCpuActiveCBs));
+	MemorySnapShot_Store(&DspBreakPoint, sizeof(DspBreakPoint));
+	MemorySnapShot_Store(&nDspActiveBPs, sizeof(nDspActiveBPs));
+	MemorySnapShot_Store(&nDspActiveCBs, sizeof(nDspActiveCBs));
+	
+	BreakCond_MemorySnapShot_Capture(bSave);
+}
 
 
 /**
@@ -265,11 +292,6 @@ static int DebugUI_SaveBin(int nArgc, char *psArgs[])
 #if ENABLE_DSP_EMU
 
 #include "dsp.h"
-
-static Uint16 dsp_disasm_addr;  /* DSP disasm address */
-static Uint16 dsp_memdump_addr; /* DSP memdump address */
-static char dsp_mem_space;      /* X, Y, P */
-
 
 /**
  * Command: Dump or set a DSP register

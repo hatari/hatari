@@ -20,5 +20,6 @@ extern int DebugUI_ParseCommand(char *input);
 extern int DebugUI_GetCpuRegisterAddress(const char *reg, Uint32 **addr);
 extern void DebugUI_CpuCheck(void);
 extern void DebugUI_DspCheck(void);
+extern void DebugUI_MemorySnapShot_Capture(bool bSave);
 
 #endif /* HATARI_DEBUGUI_H */

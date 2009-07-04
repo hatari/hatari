@@ -17,6 +17,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include <stdlib.h>
 #include "config.h"
 #include "main.h"
+#include "memorySnapShot.h"
 #include "dsp.h"
 #include "debugui.h"
 #include "stMemory.h"
@@ -64,6 +65,61 @@ static bc_breakpoint_t BreakPointsDsp[BC_MAX_CONDITION_BREAKPOINTS];
 static int BreakPointCpuCount;
 static int BreakPointDspCount;
 
+/* --------------------- memory snapshot ------------------- */
+
+/**
+ * Save/Restore snapshot of local breakpoint variables
+ */
+void BreakCond_MemorySnapShot_Capture(bool bSave)
+{
+	char tmp[256], **str;
+	int i, idx, count;
+
+	if (!bSave) {
+		/* free current data before restore */
+		for (i = 0; i < BreakPointCpuCount; i++) {
+			free(BreakPointsCpu[i].expression);
+		}
+		for (i = 0; i < BreakPointDspCount; i++) {
+			free(BreakPointsDsp[i].expression);
+		}
+	}
+	
+	/* save/restore arrays & counts */
+	MemorySnapShot_Store(&BreakPointCpuCount, sizeof(BreakPointCpuCount));
+	MemorySnapShot_Store(&BreakPointDspCount, sizeof(BreakPointDspCount));
+	MemorySnapShot_Store(&BreakPointsCpu, sizeof(BreakPointsCpu));
+	MemorySnapShot_Store(&BreakPointsDsp, sizeof(BreakPointsDsp));
+
+	/* save/restore dynamically allocated strings */
+	for (i = 0; i < 2*BC_MAX_CONDITION_BREAKPOINTS; i++) {
+		if (i >= BC_MAX_CONDITION_BREAKPOINTS) {
+			idx = i-BC_MAX_CONDITION_BREAKPOINTS;
+			str = &(BreakPointsDsp[idx].expression);
+			count = BreakPointDspCount;
+		} else {
+			idx = i;
+			str = &(BreakPointsCpu[idx].expression);
+			count = BreakPointCpuCount;
+		}
+		if (bSave) {
+			/* clean + zero-terminate, copy & save */
+			memset(tmp, 0, sizeof(tmp));
+			if (idx < count) {
+				strncpy(tmp, *str, sizeof(tmp)-1);
+			}
+			MemorySnapShot_Store(&tmp, sizeof(tmp));
+		} else {
+			MemorySnapShot_Store(&tmp, sizeof(tmp));
+			if (idx < count) {
+				*str = strdup(tmp);
+				assert(*str);
+			} else {
+				*str = NULL;
+			}
+		}
+	}
+}
 
 /* --------------------- debugging code ------------------- */
 
@@ -920,6 +976,7 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp)
 			fprintf(stderr, "ERROR in tokenized string:\n'%s'\n%*c-%s\n",
 				normalized, offset+2, '^', pstate.error);
 			free(normalized);
+			bp->expression = NULL;
 		} else {
 			/* show original string and point out the character
 			 * where the error was encountered
@@ -971,6 +1028,7 @@ static bool BreakCond_Remove(int position, bool bForDsp)
 	fprintf(stderr, "Removed %s breakpoint %d:\n  %s\n",
 		name, position, bp[offset].expression);
 	free(bp[offset].expression);
+	bp[offset].expression = NULL;
 	if (position < *bcount) {
 		memmove(bp+offset, bp+position,
 			(*bcount-position)*sizeof(bc_breakpoint_t));

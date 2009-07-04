@@ -24,6 +24,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "main.h"
 #include "blitter.h"
 #include "configuration.h"
+#include "debugui.h"
 #include "dmaSnd.h"
 #include "fdc.h"
 #include "file.h"
@@ -242,6 +243,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		Blitter_MemorySnapShot_Capture(TRUE);
 		DmaSnd_MemorySnapShot_Capture(TRUE);
 		DSP_MemorySnapShot_Capture(TRUE);
+		DebugUI_MemorySnapShot_Capture(TRUE);
 
 		/* And close */
 		MemorySnapShot_CloseFile();
@@ -286,6 +288,7 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		Blitter_MemorySnapShot_Capture(FALSE);
 		DmaSnd_MemorySnapShot_Capture(FALSE);
 		DSP_MemorySnapShot_Capture(FALSE);
+		DebugUI_MemorySnapShot_Capture(FALSE);
 
 		/* And close */
 		MemorySnapShot_CloseFile();
