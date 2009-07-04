@@ -95,7 +95,7 @@ void HostScreen_toggleFullScreen(void)
 	sdl_videoparams ^= SDL_FULLSCREEN;
 	if (sdl_videoparams & SDL_FULLSCREEN) {
 		/* un-embed the Hatari WM window for fullscreen */
-		Control_ReparentWindow(hs_width, hs_height, TRUE);
+		Control_ReparentWindow(hs_width, hs_height, true);
 	}
 	if(SDL_WM_ToggleFullScreen(mainSurface) == 0) {
 		// SDL_WM_ToggleFullScreen() did not work.
@@ -123,11 +123,11 @@ void HostScreen_toggleFullScreen(void)
 		SDL_FreeSurface(temp);
 
 		/* refresh the screen */
-		HostScreen_update1(TRUE);
+		HostScreen_update1(true);
 	} else {
 		if (!(sdl_videoparams & SDL_FULLSCREEN)) {
 			/* re-embed the new Hatari SDL window */
-			Control_ReparentWindow(hs_width, hs_height, FALSE);
+			Control_ReparentWindow(hs_width, hs_height, false);
 		}
 	}
 }

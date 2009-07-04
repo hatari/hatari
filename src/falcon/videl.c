@@ -59,7 +59,7 @@ void VIDEL_reset(void)
 {
 	since_last_change = 0;
 
-	hostColorsSync = FALSE;
+	hostColorsSync = false;
 
 	/* Autozoom */
 	zoomwidth=prev_scrwidth=0;
@@ -80,13 +80,13 @@ void VIDEL_reset(void)
 // monitor write access to Falcon and ST/E color palette registers
 void VIDEL_ColorRegsWrite(void)
 {
-	hostColorsSync = FALSE;
+	hostColorsSync = false;
 }
 
 void VIDEL_ShiftModeWriteWord(void)
 {
 	Dprintf(("VIDEL f_shift: %06x = 0x%x\n", IoAccessBaseAddress, handleReadW(HW+0x66)));
-	bUseSTShifter = FALSE;
+	bUseSTShifter = false;
 }
 
 static long VIDEL_getVideoramAddress(void)
@@ -193,7 +193,7 @@ static void VIDEL_updateColors(void)
 		HostScreen_updatePalette(colors);
 	}
 
-	hostColorsSync = TRUE;
+	hostColorsSync = true;
 }
 
 
@@ -246,7 +246,7 @@ bool VIDEL_renderScreen(void)
 
 	HostScreen_renderEnd();
 
-	HostScreen_update1( FALSE );
+	HostScreen_update1(false);
 
 	return true;
 }

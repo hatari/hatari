@@ -79,7 +79,7 @@ void NvRam_Reset(void)
  */
 static bool NvRam_Load(void)
 {
-	bool ret = FALSE;
+	bool ret = false;
 	FILE *f = fopen(nvram_filename, "rb");
 	if (f != NULL)
 	{
@@ -87,7 +87,7 @@ static bool NvRam_Load(void)
 		if (fread(fnvram, 1, NVRAM_LEN, f) == NVRAM_LEN)
 		{
 			memcpy(nvram+NVRAM_START, fnvram, NVRAM_LEN);
-			ret = TRUE;
+			ret = true;
 		}
 		fclose(f);
 		Log_Printf(LOG_DEBUG, "NVRAM loaded from '%s'\n", nvram_filename);
@@ -107,13 +107,13 @@ static bool NvRam_Load(void)
  */
 static bool NvRam_Save(void)
 {
-	bool ret = FALSE;
+	bool ret = false;
 	FILE *f = fopen(nvram_filename, "wb");
 	if (f != NULL)
 	{
 		if (fwrite(nvram+NVRAM_START, 1, NVRAM_LEN, f) == NVRAM_LEN)
 		{
-			ret = TRUE;
+			ret = true;
 		}
 		fclose(f);
 	}
