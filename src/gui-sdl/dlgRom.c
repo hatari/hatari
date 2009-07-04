@@ -70,7 +70,7 @@ void DlgRom_Main(void)
 			SDLGui_FileConfSelect(szDlgTosName,
 					      ConfigureParams.Rom.szTosImageFileName,
 					      sizeof(szDlgTosName)-1,
-					      FALSE);
+					      false);
 			break;
 
 		 case DLGROM_CARTEJECT:
@@ -83,7 +83,7 @@ void DlgRom_Main(void)
 			SDLGui_FileConfSelect(szDlgCartName,
 					      ConfigureParams.Rom.szCartridgeImageFileName,
 					       sizeof(szDlgCartName)-1,
-					      FALSE);
+					      false);
 			break;
 		}
 	}

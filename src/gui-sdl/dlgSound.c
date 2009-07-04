@@ -124,7 +124,7 @@ void Dialog_SoundDlg(void)
 			SDLGui_FileConfSelect(dlgRecordName,
 			                      ConfigureParams.Sound.szYMCaptureFileName,
 			                      sounddlg[DLGSOUND_RECNAME].w,
-			                      TRUE);
+			                      true);
 			break;
 		 case  DLGSOUND_RECORD:
 			if (Sound_AreWeRecording())

@@ -79,7 +79,7 @@ void Dialog_KeyboardDlg(void)
 		{
 			SDLGui_FileConfSelect(dlgmapfile,
 			                      ConfigureParams.Keyboard.szMappingFileName,
-			                      keyboarddlg[DLGKEY_MAPNAME].w, FALSE);
+			                      keyboarddlg[DLGKEY_MAPNAME].w, false);
 		}
 	}
 	while (but != DLGKEY_EXIT && but != SDLGUI_QUIT

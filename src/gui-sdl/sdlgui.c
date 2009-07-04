@@ -418,7 +418,7 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 {
 	size_t cursorPos;                   /* Position of the cursor in the edit field */
 	int blinkState = 0;                 /* Used for cursor blinking */
-	int bStopEditing = FALSE;           /* TRUE if user wants to exit the edit field */
+	int bStopEditing = false;           /* true if user wants to exit the edit field */
 	char *txt;                          /* Shortcut for dlg[objnum].txt */
 	SDL_Rect rect;
 	Uint32 grey, cursorCol;
@@ -426,7 +426,7 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 	int nOldUnicodeMode;
 
 	/* Enable unicode translation to get proper characters with SDL_PollEvent */
-	nOldUnicodeMode = SDL_EnableUNICODE(TRUE);
+	nOldUnicodeMode = SDL_EnableUNICODE(true);
 
 	grey = SDL_MapRGB(pSdlGuiScrn->format, 192, 192, 192);
 	cursorCol = SDL_MapRGB(pSdlGuiScrn->format, 128, 128, 128);
@@ -456,18 +456,18 @@ static void SDLGui_EditField(SGOBJ *dlg, int objnum)
 				switch (event.type)
 				{
 				 case SDL_QUIT:                     /* User wants to quit */
-					bQuitProgram = TRUE;
-					bStopEditing = TRUE;
+					bQuitProgram = true;
+					bStopEditing = true;
 					break;
 				 case SDL_MOUSEBUTTONDOWN:          /* Mouse pressed -> stop editing */
-					bStopEditing = TRUE;
+					bStopEditing = true;
 					break;
 				 case SDL_KEYDOWN:                  /* Key pressed */
 					switch (event.key.keysym.sym)
 					{
 					 case SDLK_RETURN:
 					 case SDLK_KP_ENTER:
-						bStopEditing = TRUE;
+						bStopEditing = true;
 						break;
 					 case SDLK_LEFT:
 						if (cursorPos > 0)
@@ -852,7 +852,7 @@ int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut)
 		memcpy(pEventOut, &sdlEvent, sizeof(SDL_Event));
 
 	if (retbutton == SDLGUI_QUIT)
-		bQuitProgram = TRUE;
+		bQuitProgram = true;
 
 	return retbutton;
 }

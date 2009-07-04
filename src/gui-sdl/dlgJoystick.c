@@ -110,7 +110,7 @@ static void DlgJoystick_DefineOneKey(char *pType, int *pKey)
 		}
 		else if (sdlEvent.type == SDL_QUIT)
 		{
-			bQuitProgram = TRUE;
+			bQuitProgram = true;
 			return;
 		}
 	} while (sdlEvent.type != SDL_KEYUP);

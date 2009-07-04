@@ -85,7 +85,7 @@ void DlgNewDisk_Main(void)
 			sprintf(szTracks, "%i", nTracks);
 			break;
 		 case DLGNEWDISK_SAVE:
-			tmpname = SDLGui_FileSelect(szNewDiskName, NULL, TRUE);
+			tmpname = SDLGui_FileSelect(szNewDiskName, NULL, true);
 			if (tmpname)
 			{
 				/* (potentially non-existing) filename? */

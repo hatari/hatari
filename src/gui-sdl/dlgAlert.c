@@ -32,8 +32,8 @@ static char dlglines[MAX_LINES][50+1];
 
 #ifdef ALERT_HOOKS 
 	// The alert hook functions
-	extern int HookedAlertNotice(const char* szMessage);	// Must return TRUE if OK clicked, FALSE otherwise
-	extern int HookedAlertQuery(const char* szMessage);		// Must return TRUE if OK clicked, FALSE otherwise
+	extern int HookedAlertNotice(const char* szMessage);	// Must return true if OK clicked, false otherwise
+	extern int HookedAlertQuery(const char* szMessage);		// Must return true if OK clicked, false otherwise
 #endif
 
 #define DLGALERT_OK       5
@@ -120,7 +120,7 @@ static int DlgAlert_FormatTextToBox(char *text, int max_width, int *text_width)
 
 /*-----------------------------------------------------------------------*/
 /*
-  Show the "alert" dialog. Return TRUE if user pressed "OK".
+  Show the "alert" dialog. Return true if user pressed "OK".
 */
 static int DlgAlert_ShowDlg(const char *text)
 {
@@ -153,7 +153,7 @@ static int DlgAlert_ShowDlg(const char *text)
 	free(orig_t);
 
 	if (SDLGui_SetScreen(sdlscrn))
-		return FALSE;
+		return false;
 	SDLGui_CenterDlg(alertdlg);
 
 	SDL_GetMouseState(&nOldMouseX, &nOldMouseY);

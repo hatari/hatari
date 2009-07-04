@@ -62,7 +62,7 @@ static SGOBJ floppydlg[] =
 
 /**
  * Let user browse given disk, insert disk if one selected.
- * return FALSE if no disk selected, otherwise return TRUE.
+ * return false if no disk selected, otherwise return true.
  */
 static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 {
@@ -75,7 +75,7 @@ static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 	else
 		tmpname = ConfigureParams.DiskImage.szDiskImageDirectory;
 
-	selname = SDLGui_FileSelect(tmpname, &zip_path, FALSE);
+	selname = SDLGui_FileSelect(tmpname, &zip_path, false);
 	if (selname)
 	{
 		if (File_Exists(selname))
@@ -96,21 +96,21 @@ static bool DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 		if (zip_path)
 			free(zip_path);
 		free(selname);
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 
 /**
  * Let user browse given directory, set directory if one selected.
- * return FALSE if none selected, otherwise return TRUE.
+ * return false if none selected, otherwise return true.
  */
 static bool DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 {
 	char *str, *selname;
 
-	selname = SDLGui_FileSelect(confname, NULL, FALSE);
+	selname = SDLGui_FileSelect(confname, NULL, false);
 	if (selname)
 	{
 		strcpy(confname, selname);
@@ -121,9 +121,9 @@ static bool DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 			str[1] = 0;
 		File_CleanFileName(confname);
 		File_ShrinkName(dlgname, confname, maxlen);
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 

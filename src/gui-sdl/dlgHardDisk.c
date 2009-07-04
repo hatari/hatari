@@ -56,13 +56,13 @@ static SGOBJ diskdlg[] =
 
 /**
  * Let user browse given directory, set directory if one selected.
- * return FALSE if none selected, otherwise return TRUE.
+ * return false if none selected, otherwise return true.
  */
 static bool DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 {
 	char *str, *selname;
 
-	selname = SDLGui_FileSelect(confname, NULL, FALSE);
+	selname = SDLGui_FileSelect(confname, NULL, false);
 	if (selname)
 	{
 		strcpy(confname, selname);
@@ -73,9 +73,9 @@ static bool DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 			str[1] = 0;
 		File_CleanFileName(confname);
 		File_ShrinkName(dlgname, confname, maxlen);
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 
@@ -128,34 +128,34 @@ void DlgHardDisk_Main(void)
 		switch (but)
 		{
 		 case DISKDLG_ACSIEJECT:
-			ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
+			ConfigureParams.HardDisk.bUseHardDiskImage = false;
 			dlgname_acsi[0] = '\0';
 			break;
 		 case DISKDLG_ACSIBROWSE:
 			if (SDLGui_FileConfSelect(dlgname_acsi,
 			                          ConfigureParams.HardDisk.szHardDiskImage,
-			                          diskdlg[DISKDLG_ACSINAME].w, FALSE))
-				ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
+			                          diskdlg[DISKDLG_ACSINAME].w, false))
+				ConfigureParams.HardDisk.bUseHardDiskImage = true;
 			break;
 		 case DISKDLG_IDEEJECT:
-			ConfigureParams.HardDisk.bUseIdeHardDiskImage = FALSE;
+			ConfigureParams.HardDisk.bUseIdeHardDiskImage = false;
 			dlgname_ide[0] = '\0';
 			break;
 		 case DISKDLG_IDEBROWSE:
 			if (SDLGui_FileConfSelect(dlgname_ide,
 			                          ConfigureParams.HardDisk.szIdeHardDiskImage,
-			                          diskdlg[DISKDLG_IDENAME].w, FALSE))
-				ConfigureParams.HardDisk.bUseIdeHardDiskImage = TRUE;
+			                          diskdlg[DISKDLG_IDENAME].w, false))
+				ConfigureParams.HardDisk.bUseIdeHardDiskImage = true;
 			break;
 		 case DISKDLG_GEMDOSEJECT:
-			ConfigureParams.HardDisk.bUseHardDiskDirectories = FALSE;
+			ConfigureParams.HardDisk.bUseHardDiskDirectories = false;
 			dlgname_gdos[0] = '\0';
 			break;
 		 case DISKDLG_GEMDOSBROWSE:
 			if (DlgDisk_BrowseDir(dlgname_gdos,
 			                     ConfigureParams.HardDisk.szHardDiskDirectories[0],
 			                     diskdlg[DISKDLG_GEMDOSNAME].w))
-				ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
+				ConfigureParams.HardDisk.bUseHardDiskDirectories = true;
 			break;
 		}
 	}

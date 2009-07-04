@@ -117,31 +117,31 @@ void Dialog_DeviceDlg(void)
 			SDLGui_FileConfSelect(dlgPrinterName,
                                               ConfigureParams.Printer.szPrintToFileName,
                                               devicedlg[DEVDLG_PRNFILENAME].w,
-                                              TRUE);
+                                              true);
 			break;
 		 case DEVDLG_RS232OUTBROWSE:            /* Choose a new RS232 output file */
 			SDLGui_FileConfSelect(dlgRs232OutName,
                                               ConfigureParams.RS232.szOutFileName,
                                               devicedlg[DEVDLG_RS232OUTNAME].w,
-                                              TRUE);
+                                              true);
 			break;
 		 case DEVDLG_RS232INBROWSE:             /* Choose a new RS232 input file */
 			SDLGui_FileConfSelect(dlgRs232InName,
                                               ConfigureParams.RS232.szInFileName,
                                               devicedlg[DEVDLG_RS232INNAME].w,
-                                              TRUE);
+                                              true);
 			break;
 		 case DEVDLG_MIDIINBROWSE:              /* Choose a new MIDI file */
 			SDLGui_FileConfSelect(dlgMidiInName,
                                               ConfigureParams.Midi.sMidiInFileName,
                                               devicedlg[DEVDLG_MIDIINNAME].w,
-                                              TRUE);
+                                              true);
 			break;
 		 case DEVDLG_MIDIOUTBROWSE:             /* Choose a new MIDI file */
 			SDLGui_FileConfSelect(dlgMidiOutName,
                                               ConfigureParams.Midi.sMidiOutFileName,
                                               devicedlg[DEVDLG_MIDIOUTNAME].w,
-                                              TRUE);
+                                              true);
 			break;
 		}
 	}

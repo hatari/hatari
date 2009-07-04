@@ -276,14 +276,14 @@ void Dialog_ScreenDlg(void)
 	ConfigureParams.Screen.bAllowOverscan = (screendlg[DLGSCRN_OVERSCAN].state & SG_SELECTED);
 
 	if (screendlg[DLGSCRN_STATUSBAR].state & SG_SELECTED)
-		ConfigureParams.Screen.bShowStatusbar = TRUE;
+		ConfigureParams.Screen.bShowStatusbar = true;
 	else
-		ConfigureParams.Screen.bShowStatusbar = FALSE;
+		ConfigureParams.Screen.bShowStatusbar = false;
 
 	if (screendlg[DLGSCRN_ZOOMLOWRES].state & SG_SELECTED)
-		ConfigureParams.Screen.bZoomLowRes = TRUE;
+		ConfigureParams.Screen.bZoomLowRes = true;
 	else
-		ConfigureParams.Screen.bZoomLowRes = FALSE;
+		ConfigureParams.Screen.bZoomLowRes = false;
 
 	ConfigureParams.Screen.bUseExtVdiResolutions = (screendlg[DLGSCRN_USEVDIRES].state & SG_SELECTED);
 	for (i = DLGSCRN_SKIP0; i <= DLGSCRN_SKIP4; i++)
