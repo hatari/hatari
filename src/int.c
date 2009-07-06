@@ -354,6 +354,7 @@ void Int_AddRelativeInterrupt(int CycleTime, int CycleType, interrupt_id Handler
 /**
  * Add interrupt to occur from now without offset
  */
+#if 0
 void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id Handler)
 {
 	/* Update list cycle counts before adding a new one, */
@@ -371,6 +372,7 @@ void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id
 	LOG_TRACE(TRACE_INT, "int add rel no_off video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
+#endif
 
 
 /*-----------------------------------------------------------------------*/
