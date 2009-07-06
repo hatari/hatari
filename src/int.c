@@ -67,6 +67,7 @@
 const char Int_fileid[] = "Hatari int.c : " __DATE__ " " __TIME__;
 
 #include <stdint.h>
+#include <assert.h>
 #include "main.h"
 #include "blitter.h"
 #include "dmaSnd.h"
@@ -324,6 +325,8 @@ void Int_AcknowledgeInterrupt(void)
  */
 void Int_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
 {
+	assert(CycleTime >= 0);
+
 	/* Update list cycle counts before adding a new one, */
 	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
 	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
@@ -386,6 +389,8 @@ void Int_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt_id
  */
 void Int_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interrupt_id Handler, int CycleOffset)
 {
+	assert(CycleTime >= 0);
+
 	/* Update list cycle counts before adding a new one, */
 	/* since Int_SetNewInterrupt can change the active int / PendingInterruptCount */
 	if ( ( ActiveInterrupt > 0 ) && ( PendingInterruptCount > 0 ) )
