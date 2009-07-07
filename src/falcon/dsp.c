@@ -110,13 +110,16 @@ void DSP_Run(int nHostCycles)
 #if ENABLE_DSP_EMU
 	/* Cycles emulation is just a rough approximation by now.
 	 * (to be tuned ...) */
-	int i = 7; // nHostCycles / 2;
+	int i = nHostCycles * 2 + 2;
+	int dsp_cycle = 0;
 
-	while (dsp_core.running == 1 && i-- > 0)
+	while (dsp_core.running == 1 && i >= dsp_cycle)
 	{
 		if (unlikely(bDspDebugging))
 			DebugUI_DspCheck();
+
 		dsp56k_execute_instruction();
+		dsp_cycle += dsp_core.instr_cycle;
 	}
 #endif
 }

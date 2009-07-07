@@ -50,6 +50,12 @@
 
 #define BITMASK(x)	((1<<(x))-1)
 
+/* cycle counter wait state time when access to external memory  */
+#define XY_WAITSTATE 1
+#define P_WAITSTATE 1
+#define XP_WAITSTATE 1   /* X Peripheral WaitState */
+#define YP_WAITSTATE 1   /* Y Peripheral WaitState */
+
 /**********************************
  *	Variables
  **********************************/
@@ -493,6 +499,9 @@ void dsp56k_execute_instruction(void)
 	/* Decode and execute current instruction */
 	cur_inst = read_memory_p(dsp_core->pc);
 	cur_inst_len = 1;
+	
+	/* Initialize instruction cycle counter */
+	dsp_core->instr_cycle = 2;
 
 	if (cur_inst < 0x100000) {
 		value = (cur_inst >> 11) & (BITMASK(6) << 3);
@@ -883,12 +892,15 @@ static inline Uint32 read_memory_p(Uint16 address)
 	}
 
 	/* External RAM, mask address to available ram size */
+//	dsp_core->instr_cycle += P_WAITSTATE;
 	return dsp_core->ramext[address & (DSP_RAMSIZE-1)] & BITMASK(24);
 }
 
 static Uint32 read_memory(int space, Uint16 address)
 {
-	/* Internal RAM ? */
+	Uint32 value;
+
+		/* Internal RAM ? */
 	if (address < 0x100) {
 		return dsp_core->ramint[space][address] & BITMASK(24);
 	}
@@ -906,20 +918,26 @@ static Uint32 read_memory(int space, Uint16 address)
 
 	/* Peripheral address ? */
 	if (address >= 0xffc0) {
-		Uint32 value;
-
 		value = dsp_core->periph[space][address-0xffc0] & BITMASK(24);
-		if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_HOST_HRX)) {
-			value = dsp_core->dsp_host_rtx;
-			dsp_core_hostport_dspread(dsp_core);
+		if (space == DSP_SPACE_X) {
+			if (address == 0xffc0+DSP_HOST_HRX) {
+				value = dsp_core->dsp_host_rtx;
+				dsp_core_hostport_dspread(dsp_core);
+			}	
+			else if (address == 0xffc0+DSP_SSI_RX) {
+				value = dsp_core_ssi_readRX(dsp_core);
+			}
+			dsp_core->instr_cycle += XP_WAITSTATE;
 		}
-		else if ((space==DSP_SPACE_X) && (address==0xffc0+DSP_SSI_RX)) {
-			value = dsp_core_ssi_readRX(dsp_core);
+		else {
+			dsp_core->instr_cycle += YP_WAITSTATE;
 		}
-
 		return value;
 	}
 
+	/* 1 more cycle for external RAM access */
+	dsp_core->instr_cycle += XY_WAITSTATE;
+	
 	/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
 	address &= (DSP_RAMSIZE>>1) - 1;
 
@@ -969,10 +987,12 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 					dsp_core->periph[DSP_SPACE_X][address-0xffc0] = value;
 					break;
 			}
+			dsp_core->instr_cycle += XP_WAITSTATE;
 			return;
 		} 
 		else if (space == DSP_SPACE_Y) {
 			dsp_core->periph[DSP_SPACE_Y][address-0xffc0] = value;
+			dsp_core->instr_cycle += YP_WAITSTATE;
 			return;
 		}
 	}
@@ -997,6 +1017,9 @@ static void write_memory_raw(int space, Uint16 address, Uint32 value)
 			return;
 		}
 	}
+
+	/* 1 more cycle for external RAM access */
+	dsp_core->instr_cycle += XY_WAITSTATE;
 
 	/* Falcon: External RAM, map X to upper 16K of matching space in Y,P */
 	if (space != DSP_SPACE_P) {
@@ -1304,6 +1327,7 @@ static int dsp_calc_ea(Uint32 ea_mode, Uint32 *dst_addr)
 			break;
 		case 5:
 			/* (Rx+Nx) */
+			dsp_core->instr_cycle += 2;
 			curreg = dsp_core->registers[DSP_REG_R0+numreg];
 			dsp_update_rn(numreg, dsp_core->registers[DSP_REG_N0+numreg]);
 			*dst_addr = dsp_core->registers[DSP_REG_R0+numreg];
@@ -1311,6 +1335,7 @@ static int dsp_calc_ea(Uint32 ea_mode, Uint32 *dst_addr)
 			break;
 		case 6:
 			/* aa */
+			dsp_core->instr_cycle += 2;
 			*dst_addr = read_memory_p(dsp_core->pc+1);
 			cur_inst_len++;
 			if (numreg != 0) {
@@ -1319,6 +1344,7 @@ static int dsp_calc_ea(Uint32 ea_mode, Uint32 *dst_addr)
 			break;
 		case 7:
 			/* -(Rx) */
+			dsp_core->instr_cycle += 2;
 			dsp_update_rn(numreg, -1);
 			*dst_addr = dsp_core->registers[DSP_REG_R0+numreg];
 			break;
@@ -1488,6 +1514,11 @@ static void dsp_bchg_aa(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
+	if (addr>=0x200) {
+		dsp_core->instr_cycle += XY_WAITSTATE;
+	}
 }
 
 static void dsp_bchg_ea(void)
@@ -1511,6 +1542,11 @@ static void dsp_bchg_ea(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
+	if (addr>=0x200) {
+		dsp_core->instr_cycle += XY_WAITSTATE;
+	}
 }
 
 static void dsp_bchg_pp(void)
@@ -1534,6 +1570,13 @@ static void dsp_bchg_pp(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
+	if (memspace == DSP_SPACE_X) {
+		dsp_core->instr_cycle += XP_WAITSTATE;
+	} else {
+		dsp_core->instr_cycle += YP_WAITSTATE;
+	}
 }
 
 static void dsp_bchg_reg(void)
@@ -1561,6 +1604,8 @@ static void dsp_bchg_reg(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_bclr_aa(void)
@@ -1579,6 +1624,11 @@ static void dsp_bclr_aa(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
+	if (addr>=0x200) {
+		dsp_core->instr_cycle += XY_WAITSTATE;
+	}
 }
 
 static void dsp_bclr_ea(void)
@@ -1598,6 +1648,11 @@ static void dsp_bclr_ea(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
+	if (addr>=0x200) {
+		dsp_core->instr_cycle += XY_WAITSTATE;
+	}
 }
 
 static void dsp_bclr_pp(void)
@@ -1617,6 +1672,13 @@ static void dsp_bclr_pp(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
+	if (memspace == DSP_SPACE_X) {
+		dsp_core->instr_cycle += XP_WAITSTATE;
+	} else {
+		dsp_core->instr_cycle += YP_WAITSTATE;
+	}	
 }
 
 static void dsp_bclr_reg(void)
@@ -1640,6 +1702,8 @@ static void dsp_bclr_reg(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_bset_aa(void)
@@ -1659,6 +1723,11 @@ static void dsp_bset_aa(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
+	if (addr>=0x200) {
+		dsp_core->instr_cycle += XY_WAITSTATE;
+	}
 }
 
 static void dsp_bset_ea(void)
@@ -1678,6 +1747,11 @@ static void dsp_bset_ea(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
+	if (addr>=0x200) {
+		dsp_core->instr_cycle += XY_WAITSTATE;
+	}
 }
 
 static void dsp_bset_pp(void)
@@ -1696,6 +1770,13 @@ static void dsp_bset_pp(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
+	if (memspace == DSP_SPACE_X) {
+		dsp_core->instr_cycle += XP_WAITSTATE;
+	} else {
+		dsp_core->instr_cycle += YP_WAITSTATE;
+	}
 }
 
 static void dsp_bset_reg(void)
@@ -1719,6 +1800,8 @@ static void dsp_bset_reg(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_btst_aa(void)
@@ -1736,6 +1819,8 @@ static void dsp_btst_aa(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_btst_ea(void)
@@ -1753,6 +1838,8 @@ static void dsp_btst_ea(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_btst_pp(void)
@@ -1770,6 +1857,8 @@ static void dsp_btst_pp(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_btst_reg(void)
@@ -1790,6 +1879,8 @@ static void dsp_btst_reg(void)
 	/* Set carry */
 	dsp_core->registers[DSP_REG_SR] &= BITMASK(16)-(1<<DSP_SR_C);
 	dsp_core->registers[DSP_REG_SR] |= newcarry<<DSP_SR_C;
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_div(void)
@@ -1864,6 +1955,8 @@ static void dsp_do_aa(void)
 	memspace = (cur_inst>>6) & 1;
 	addr = (cur_inst>>8) & BITMASK(6);
 	dsp_core->registers[DSP_REG_LC] = read_memory(memspace, addr) & BITMASK(16);
+
+	dsp_core->instr_cycle += 4;
 }
 
 static void dsp_do_imm(void)
@@ -1878,6 +1971,8 @@ static void dsp_do_imm(void)
 
 	dsp_core->registers[DSP_REG_LC] = ((cur_inst>>8) & BITMASK(8))
 		+ ((cur_inst & BITMASK(4))<<8);
+
+	dsp_core->instr_cycle += 4;
 }
 
 static void dsp_do_ea(void)
@@ -1897,6 +1992,8 @@ static void dsp_do_ea(void)
 	ea_mode = (cur_inst>>8) & BITMASK(6);
 	dsp_calc_ea(ea_mode, &addr);
 	dsp_core->registers[DSP_REG_LC] = read_memory(memspace, addr) & BITMASK(16);
+
+	dsp_core->instr_cycle += 4;
 }
 
 static void dsp_do_reg(void)
@@ -1919,6 +2016,8 @@ static void dsp_do_reg(void)
 
 	dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
 	dsp_core->registers[DSP_REG_SR] |= (1<<DSP_SR_LF);
+
+	dsp_core->instr_cycle += 4;
 }
 
 static void dsp_enddo(void)
@@ -1939,12 +2038,18 @@ static void dsp_illegal(void)
 
 static void dsp_jcc_imm(void)
 {
-	Uint32 cc_code;
+	Uint32 cc_code, newpc;
 
+	newpc = cur_inst & BITMASK(12);
 	cc_code=(cur_inst>>12) & BITMASK(4);
 	if (dsp_calc_cc(cc_code)) {
-		dsp_core->pc = cur_inst & BITMASK(12);
+		dsp_core->pc = newpc;
 		cur_inst_len = 0;
+	}
+
+	dsp_core->instr_cycle += 2;
+	if (newpc >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
 	}
 }
 
@@ -1959,19 +2064,30 @@ static void dsp_jcc_ea(void)
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 	}
+
+	dsp_core->instr_cycle += 2;
+	if (newpc >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 }
 
 static void dsp_jclr_aa(void)
 {
-	Uint32 memspace, addr, value, numbit;
+	Uint32 memspace, addr, value, numbit, newaddr;
 	
 	memspace = (cur_inst>>6) & 1;
 	addr = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 	value = read_memory(memspace, addr);
+	newaddr = read_memory_p(dsp_core->pc+1);
+
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 
 	if ((value & (1<<numbit))==0) {
-		dsp_core->pc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newaddr;
 		cur_inst_len = 0;
 		return;
 	} 
@@ -1980,17 +2096,23 @@ static void dsp_jclr_aa(void)
 
 static void dsp_jclr_ea(void)
 {
-	Uint32 memspace, addr, value, numbit;
+	Uint32 memspace, addr, value, numbit, newaddr;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-
+	newaddr = read_memory_p(dsp_core->pc+1);
+	
 	dsp_calc_ea(value, &addr);
 	value = read_memory(memspace, addr);
 
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
+
 	if ((value & (1<<numbit))==0) {
-		dsp_core->pc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newaddr;
 		cur_inst_len = 0;
 		return;
 	} 
@@ -1999,16 +2121,22 @@ static void dsp_jclr_ea(void)
 
 static void dsp_jclr_pp(void)
 {
-	Uint32 memspace, addr, value, numbit;
+	Uint32 memspace, addr, value, numbit, newaddr;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
 	addr = 0xffc0 + value;
 	value = read_memory(memspace, addr);
+	newaddr = read_memory_p(dsp_core->pc+1);
+
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 
 	if ((value & (1<<numbit))==0) {
-		dsp_core->pc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newaddr;
 		cur_inst_len = 0;
 		return;
 	} 
@@ -2017,10 +2145,11 @@ static void dsp_jclr_pp(void)
 
 static void dsp_jclr_reg(void)
 {
-	Uint32 value, numreg, numbit;
+	Uint32 value, numreg, numbit, newaddr;
 	
 	numreg = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
+	newaddr = read_memory_p(dsp_core->pc+1);
 
 	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
 		dsp_pm_read_accu24(numreg, &value);
@@ -2028,8 +2157,13 @@ static void dsp_jclr_reg(void)
 		value = dsp_core->registers[numreg];
 	}
 
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
+
 	if ((value & (1<<numbit))==0) {
-		dsp_core->pc = read_memory_p(dsp_core->pc+1);
+		dsp_core->pc = newaddr;
 		cur_inst_len = 0;
 		return;
 	} 
@@ -2040,9 +2174,14 @@ static void dsp_jmp_ea(void)
 {
 	Uint32 newpc;
 
-	dsp_calc_ea((cur_inst >>8) & BITMASK(6), &newpc);
+	dsp_calc_ea((cur_inst>>8) & BITMASK(6), &newpc);
 	cur_inst_len = 0;
 	dsp_core->pc = newpc;
+
+	dsp_core->instr_cycle += 2;
+	if (newpc >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 }
 
 static void dsp_jmp_imm(void)
@@ -2052,6 +2191,11 @@ static void dsp_jmp_imm(void)
 	newpc = cur_inst & BITMASK(12);
 	cur_inst_len = 0;
 	dsp_core->pc = newpc;
+
+	dsp_core->instr_cycle += 2;
+	if (newpc >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 }
 
 static void dsp_jscc_ea(void)
@@ -2066,33 +2210,49 @@ static void dsp_jscc_ea(void)
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 	} 
+
+	dsp_core->instr_cycle += 2;
+	if (newpc >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 }
 
 static void dsp_jscc_imm(void)
 {
-	Uint32 cc_code;
+	Uint32 cc_code, newpc;
 
+	newpc = cur_inst & BITMASK(12);
 	cc_code=(cur_inst>>12) & BITMASK(4);
 	if (dsp_calc_cc(cc_code)) {
 		dsp_stack_push(dsp_core->pc+cur_inst_len, dsp_core->registers[DSP_REG_SR]);
-		dsp_core->pc = cur_inst & BITMASK(12);
+		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 	} 
+
+	dsp_core->instr_cycle += 2;
+	if (newpc >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 }
 
 static void dsp_jsclr_aa(void)
 {
-	Uint32 memspace, addr, value, newpc, numbit;
+	Uint32 memspace, addr, value, newpc, numbit, newaddr;
 	
 	memspace = (cur_inst>>6) & 1;
 	addr = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-
 	value = read_memory(memspace, addr);
-
+	newaddr = read_memory_p(dsp_core->pc+1);
+	
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
+	
 	if ((value & (1<<numbit))==0) {
 		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
-		newpc = read_memory_p(dsp_core->pc+1);
+		newpc = newaddr;
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 		return;
@@ -2102,18 +2262,23 @@ static void dsp_jsclr_aa(void)
 
 static void dsp_jsclr_ea(void)
 {
-	Uint32 memspace, addr, value, newpc, numbit;
+	Uint32 memspace, addr, value, newpc, numbit, newaddr;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-
 	dsp_calc_ea(value, &addr);
 	value = read_memory(memspace, addr);
+	newaddr = read_memory_p(dsp_core->pc+1);
 
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
+	
 	if ((value & (1<<numbit))==0) {
 		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
-		newpc = read_memory_p(dsp_core->pc+1);
+		newpc = newaddr;
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 		return;
@@ -2123,19 +2288,23 @@ static void dsp_jsclr_ea(void)
 
 static void dsp_jsclr_pp(void)
 {
-	Uint32 memspace, addr, value, newpc, numbit;
+	Uint32 memspace, addr, value, newpc, numbit, newaddr;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-
 	addr = 0xffc0 + value;
 	value = read_memory(memspace, addr);
+	newaddr = read_memory_p(dsp_core->pc+1);
 
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
+	
 	if ((value & (1<<numbit))==0) {
 		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
-
-		newpc = read_memory_p(dsp_core->pc+1);
+		newpc = newaddr;
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 		return;
@@ -2145,10 +2314,11 @@ static void dsp_jsclr_pp(void)
 
 static void dsp_jsclr_reg(void)
 {
-	Uint32 value, numreg, newpc, numbit;
+	Uint32 value, numreg, newpc, numbit, newaddr;
 	
 	numreg = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
+	newaddr = read_memory_p(dsp_core->pc+1);
 
 	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
 		dsp_pm_read_accu24(numreg, &value);
@@ -2156,9 +2326,14 @@ static void dsp_jsclr_reg(void)
 		value = dsp_core->registers[numreg];
 	}
 
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
+	
 	if ((value & (1<<numbit))==0) {
 		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
-		newpc = read_memory_p(dsp_core->pc+1);
+		newpc = newaddr;
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 		return;
@@ -2168,16 +2343,21 @@ static void dsp_jsclr_reg(void)
 
 static void dsp_jset_aa(void)
 {
-	Uint32 memspace, addr, value, numbit, newpc;
+	Uint32 memspace, addr, value, numbit, newpc, newaddr;
 	
 	memspace = (cur_inst>>6) & 1;
 	addr = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-
 	value = read_memory(memspace, addr);
+	newaddr = read_memory_p(dsp_core->pc+1);
 
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
+	
 	if (value & (1<<numbit)) {
-		newpc = read_memory_p(dsp_core->pc+1);
+		newpc = newaddr;
 		dsp_core->pc = newpc;
 		cur_inst_len=0;
 		return;
@@ -2187,17 +2367,22 @@ static void dsp_jset_aa(void)
 
 static void dsp_jset_ea(void)
 {
-	Uint32 memspace, addr, value, numbit, newpc;
+	Uint32 memspace, addr, value, numbit, newpc, newaddr;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-
 	dsp_calc_ea(value, &addr);
 	value = read_memory(memspace, addr);
+	newaddr = read_memory_p(dsp_core->pc+1);
 
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
+	
 	if (value & (1<<numbit)) {
-		newpc = read_memory_p(dsp_core->pc+1);
+		newpc = newaddr;
 		dsp_core->pc = newpc;
 		cur_inst_len=0;
 		return;
@@ -2207,17 +2392,22 @@ static void dsp_jset_ea(void)
 
 static void dsp_jset_pp(void)
 {
-	Uint32 memspace, addr, value, numbit, newpc;
+	Uint32 memspace, addr, value, numbit, newpc, newaddr;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-
 	addr = 0xffc0 + value;
 	value = read_memory(memspace, addr);
+	newaddr = read_memory_p(dsp_core->pc+1);
 
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
+	
 	if (value & (1<<numbit)) {
-		newpc = read_memory_p(dsp_core->pc+1);
+		newpc = newaddr;
 		dsp_core->pc = newpc;
 		cur_inst_len=0;
 		return;
@@ -2227,19 +2417,25 @@ static void dsp_jset_pp(void)
 
 static void dsp_jset_reg(void)
 {
-	Uint32 value, numreg, numbit, newpc;
+	Uint32 value, numreg, numbit, newpc, newaddr;
 	
 	numreg = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-
+	newaddr = read_memory_p(dsp_core->pc+1);
+	
 	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
 		dsp_pm_read_accu24(numreg, &value);
 	} else {
 		value = dsp_core->registers[numreg];
 	}
 
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
+	
 	if (value & (1<<numbit)) {
-		newpc = read_memory_p(dsp_core->pc+1);
+		newpc = newaddr;
 		dsp_core->pc = newpc;
 		cur_inst_len=0;
 		return;
@@ -2262,6 +2458,11 @@ static void dsp_jsr_imm(void)
 
 	dsp_core->pc = newpc;
 	cur_inst_len = 0;
+
+	dsp_core->instr_cycle += 2;
+	if (newpc >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 }
 
 static void dsp_jsr_ea(void)
@@ -2279,21 +2480,31 @@ static void dsp_jsr_ea(void)
 
 	dsp_core->pc = newpc;
 	cur_inst_len = 0;
+
+	dsp_core->instr_cycle += 2;
+	if (newpc >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 }
 
 static void dsp_jsset_aa(void)
 {
-	Uint32 memspace, addr, value, newpc, numbit;
+	Uint32 memspace, addr, value, newpc, numbit, newaddr;
 	
 	memspace = (cur_inst>>6) & 1;
 	addr = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-
 	value = read_memory(memspace, addr);
+	newaddr = read_memory_p(dsp_core->pc+1);
+	
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 
 	if (value & (1<<numbit)) {
 		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
-		newpc = read_memory_p(dsp_core->pc+1);
+		newpc = newaddr;
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 		return;
@@ -2303,18 +2514,23 @@ static void dsp_jsset_aa(void)
 
 static void dsp_jsset_ea(void)
 {
-	Uint32 memspace, addr, value, newpc, numbit;
+	Uint32 memspace, addr, value, newpc, numbit, newaddr;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-
 	dsp_calc_ea(value, &addr);
 	value = read_memory(memspace, addr);
+	newaddr = read_memory_p(dsp_core->pc+1);
+	
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 
 	if (value & (1<<numbit)) {
 		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
-		newpc = read_memory_p(dsp_core->pc+1);
+		newpc = newaddr;
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 		return;
@@ -2324,18 +2540,23 @@ static void dsp_jsset_ea(void)
 
 static void dsp_jsset_pp(void)
 {
-	Uint32 memspace, addr, value, newpc, numbit;
+	Uint32 memspace, addr, value, newpc, numbit, newaddr;
 	
 	memspace = (cur_inst>>6) & 1;
 	value = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-
 	addr = 0xffc0 + value;
 	value = read_memory(memspace, addr);
+	newaddr = read_memory_p(dsp_core->pc+1);
+
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 
 	if (value & (1<<numbit)) {
 		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
-		newpc = read_memory_p(dsp_core->pc+1);
+		newpc = newaddr;
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 		return;
@@ -2345,20 +2566,26 @@ static void dsp_jsset_pp(void)
 
 static void dsp_jsset_reg(void)
 {
-	Uint32 value, numreg, newpc, numbit;
+	Uint32 value, numreg, newpc, numbit, newaddr;
 	
 	numreg = (cur_inst>>8) & BITMASK(6);
 	numbit = cur_inst & BITMASK(5);
-
+	newaddr = read_memory_p(dsp_core->pc+1);
+	
 	if ((numreg==DSP_REG_A) || (numreg==DSP_REG_B)) {
 		dsp_pm_read_accu24(numreg, &value);
 	} else {
 		value = dsp_core->registers[numreg];
 	}
 
+	dsp_core->instr_cycle += 4;
+	if (newaddr >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
+
 	if (value & (1<<numbit)) {
 		dsp_stack_push(dsp_core->pc+2, dsp_core->registers[DSP_REG_SR]);
-		newpc = read_memory_p(dsp_core->pc+1);
+		newpc = newaddr;
 		dsp_core->pc = newpc;
 		cur_inst_len = 0;
 		return;
@@ -2384,6 +2611,8 @@ static void dsp_lua(void)
 	} else {
 		dsp_core->registers[DSP_REG_R0+dstreg] = srcnew;
 	}
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_movec_reg(void)
@@ -2532,6 +2761,11 @@ static void dsp_movem_aa(void)
 		}
 		write_memory(DSP_SPACE_P, addr, value);
 	}
+
+	dsp_core->instr_cycle += 4;
+	if (addr>=0x200) {
+		dsp_core->instr_cycle += P_WAITSTATE;
+	}
 }
 
 static void dsp_movem_ea(void)
@@ -2559,6 +2793,11 @@ static void dsp_movem_ea(void)
 			value = dsp_core->registers[numreg];
 		}
 		write_memory(DSP_SPACE_P, addr, value);
+	}
+
+	dsp_core->instr_cycle += 4;
+	if (addr>=0x200) {
+		dsp_core->instr_cycle += P_WAITSTATE;
 	}
 }
 
@@ -2593,6 +2832,8 @@ static void dsp_movep_0(void)
 		value &= BITMASK(registers_mask[numreg]);
 		dsp_write_reg(numreg, value);
 	}
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_movep_1(void)
@@ -2615,6 +2856,8 @@ static void dsp_movep_1(void)
 		/* Read pp */
 		write_memory(DSP_SPACE_P, paddr, read_memory(memspace, xyaddr));
 	}
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_movep_23(void)
@@ -2646,13 +2889,20 @@ static void dsp_movep_23(void)
 		if (retour) {
 			write_memory(perspace, peraddr, addr);
 		} else {
+			if (peraddr>=0x200) {
+				dsp_core->instr_cycle += P_WAITSTATE;
+			}
 			write_memory(perspace, peraddr, read_memory(easpace, addr));
 		}
 	} else {
 		/* Read pp */
-
+		if (peraddr>=0x200) {
+			dsp_core->instr_cycle += P_WAITSTATE;
+		}
 		write_memory(easpace, addr, read_memory(perspace, peraddr));
 	}
+
+	dsp_core->instr_cycle += 4;
 }
 
 static void dsp_norm(void)
@@ -2735,6 +2985,8 @@ static void dsp_rep_aa(void)
 	dsp_core->loop_rep = 1; 	/* We are now running rep */
 
 	dsp_core->registers[DSP_REG_LC]=read_memory((cur_inst>>6) & 1,(cur_inst>>8) & BITMASK(6));
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_rep_imm(void)
@@ -2747,6 +2999,8 @@ static void dsp_rep_imm(void)
 
 	dsp_core->registers[DSP_REG_LC] = ((cur_inst>>8) & BITMASK(8))
 		+ ((cur_inst & BITMASK(4))<<8);
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_rep_ea(void)
@@ -2762,6 +3016,8 @@ static void dsp_rep_ea(void)
 
 	dsp_calc_ea((cur_inst>>8) & BITMASK(6),&value);
 	dsp_core->registers[DSP_REG_LC]= read_memory((cur_inst>>6) & 1, value);
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_rep_reg(void)
@@ -2781,11 +3037,14 @@ static void dsp_rep_reg(void)
 		dsp_core->registers[DSP_REG_LC] = dsp_core->registers[numreg];
 	}
 	dsp_core->registers[DSP_REG_LC] &= BITMASK(16);
+
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_reset(void)
 {
 	/* Reset external peripherals */
+	dsp_core->instr_cycle += 2;
 }
 
 static void dsp_rti(void)
@@ -2793,11 +3052,14 @@ static void dsp_rti(void)
 	Uint32 newpc = 0, newsr = 0;
 
 	dsp_stack_pop(&newpc, &newsr);
-
 	dsp_core->pc = newpc;
 	dsp_core->registers[DSP_REG_SR] = newsr;
-
 	cur_inst_len = 0;
+
+	dsp_core->instr_cycle += 2;
+	if (newpc >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 }
 
 static void dsp_rts(void)
@@ -2805,9 +3067,13 @@ static void dsp_rts(void)
 	Uint32 newpc = 0, newsr;
 
 	dsp_stack_pop(&newpc, &newsr);
-
 	dsp_core->pc = newpc;
 	cur_inst_len = 0;
+
+	dsp_core->instr_cycle += 2;
+	if (newpc >= 0x200) {
+		dsp_core->instr_cycle += 2*P_WAITSTATE;
+	}
 }
 
 static void dsp_stop(void)
@@ -2821,6 +3087,8 @@ static void dsp_swi(void)
 {
 	/* Raise interrupt p:0x0006 */
 	dsp_core_add_interrupt(dsp_core, DSP_INTER_SWI);
+
+	dsp_core->instr_cycle += 6;
 }
 
 static void dsp_tcc(void)
@@ -3287,6 +3555,11 @@ static void dsp_pm_4x(void)
 	numreg = (cur_inst>>16) & BITMASK(2);
 	numreg |= (cur_inst>>17) & (1<<2);
 
+	/* 2 more cycles are needed if address is in external memory */
+	if (l_addr>=0x200) {
+		dsp_core->instr_cycle += 2;
+	}
+	
 	if (cur_inst & (1<<15)) {
 		/* Write D */
 		tmp_parmove_src[0][1] = read_memory(DSP_SPACE_X,l_addr);
@@ -3493,7 +3766,7 @@ static void dsp_pm_8(void)
 {
 	Uint32 ea1, ea2;
 	Uint32 numreg1, numreg2;
-	Uint32 value, dummy1, dummy2;
+	Uint32 value, x_addr, y_addr;
 /*
 	1wmm eeff WrrM MRRR 			x:ea,D1		y:ea,D2	
 						x:ea,D1		S2,y:ea
@@ -3515,8 +3788,13 @@ static void dsp_pm_8(void)
 		ea2 |= (1<<5);
 	}
 
-	dsp_calc_ea(ea1, &dummy1);
-	dsp_calc_ea(ea2, &dummy2);
+	dsp_calc_ea(ea1, &x_addr);
+	dsp_calc_ea(ea2, &y_addr);
+
+	/* 2 more cycles are needed if X:address1 and Y:address2 are both in external memory */
+	if ((x_addr>=0x200) && (y_addr>=0x200)) {
+		dsp_core->instr_cycle += 2;
+	}
 
 	switch((cur_inst>>18) & BITMASK(2)) {
 		case 0:	numreg1=DSP_REG_X0;	break;
@@ -3534,14 +3812,13 @@ static void dsp_pm_8(void)
 	if (cur_inst & (1<<15)) {
 		/* Write D1 */
 
-		value = read_memory(DSP_SPACE_X, dummy1);
+		value = read_memory(DSP_SPACE_X, x_addr);
 		tmp_parmove_src[0][0]= 0x000000;
 		if (value & (1<<23)) {
 			tmp_parmove_src[0][0]= 0x0000ff;
 		}
 		tmp_parmove_src[0][1]= value & BITMASK(registers_mask[numreg1]);
 		tmp_parmove_src[0][2]= 0x000000;
-
 		dsp_pm_writereg(numreg1, 0);
 		tmp_parmove_type[0]=0;
 	} else {
@@ -3552,12 +3829,9 @@ static void dsp_pm_8(void)
 		} else {
 			tmp_parmove_src[0][1]=dsp_core->registers[numreg1];
 		}
-
-		tmp_parmove_dest[0][1].dsp_address=dummy1;
-
+		tmp_parmove_dest[0][1].dsp_address=x_addr;
 		tmp_parmove_start[0]=1;
 		tmp_parmove_len[0]=1;
-
 		tmp_parmove_type[0]=1;
 		tmp_parmove_space[0]=DSP_SPACE_X;
 	}
@@ -3565,14 +3839,13 @@ static void dsp_pm_8(void)
 	if (cur_inst & (1<<22)) {
 		/* Write D2 */
 
-		value = read_memory(DSP_SPACE_Y, dummy2);
+		value = read_memory(DSP_SPACE_Y, y_addr);
 		tmp_parmove_src[1][0]= 0x000000;
 		if (value & (1<<23)) {
 			tmp_parmove_src[1][0]= 0x0000ff;
 		}
 		tmp_parmove_src[1][1]= value & BITMASK(registers_mask[numreg2]);
 		tmp_parmove_src[1][2]= 0x000000;
-
 		dsp_pm_writereg(numreg2, 1);
 		tmp_parmove_type[1]=0;
 	} else {
@@ -3583,11 +3856,9 @@ static void dsp_pm_8(void)
 			tmp_parmove_src[1][1]=dsp_core->registers[numreg2];
 		}
 
-		tmp_parmove_dest[1][1].dsp_address=dummy2;
-
+		tmp_parmove_dest[1][1].dsp_address=y_addr;
 		tmp_parmove_start[1]=1;
 		tmp_parmove_len[1]=1;
-
 		tmp_parmove_type[1]=1;
 		tmp_parmove_space[1]=DSP_SPACE_Y;
 	}

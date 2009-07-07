@@ -181,6 +181,9 @@ struct dsp_core_s {
 
 	/* DSP executing instructions ? */
 	volatile int running;
+	
+	/* DSP instruction Cycle counter */
+	Uint16	instr_cycle;
 
 	/* Registers */
 	Uint16	pc;
