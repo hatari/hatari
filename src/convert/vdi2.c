@@ -33,7 +33,7 @@ static void ConvertVDIRes_2Colour(void)
 
 			if (update || ebx != *ebp)  /* Does differ? */
 			{
-				bScreenContentsChanged = TRUE;
+				bScreenContentsChanged = true;
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 				/* Plot in 'right-order' on big endian systems */

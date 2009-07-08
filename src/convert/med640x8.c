@@ -53,7 +53,7 @@ static void Line_ConvertMediumRes_640x8Bit(Uint32 *edi, Uint32 *ebp, Uint32 *esi
 		{
 			/* copy word */
 
-			bScreenContentsChanged = TRUE;
+			bScreenContentsChanged = true;
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 			/* Plot in 'right-order' on big endian systems */

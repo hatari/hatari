@@ -42,7 +42,7 @@ static void ConvertLowRes_320x8Bit(void)
 			{
 				/* copy word */
 
-				bScreenContentsChanged = TRUE;
+				bScreenContentsChanged = true;
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 				/* Plot pixels */

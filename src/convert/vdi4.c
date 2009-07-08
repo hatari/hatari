@@ -34,7 +34,7 @@ static void ConvertVDIRes_4Colour(void)
 
 			if (update || ebx != *ebp)  /* Update? */
 			{
-				bScreenContentsChanged = TRUE;
+				bScreenContentsChanged = true;
 
 				/* Plot pixels */
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN

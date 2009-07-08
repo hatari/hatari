@@ -40,7 +40,7 @@ static void ConvertVDIRes_16Colour(void)
 			/* Full update? or just test changes? */
 			if (update || ebx != *ebp || ecx != *(ebp+1))   /* Does differ? */
 			{
-				bScreenContentsChanged = TRUE;
+				bScreenContentsChanged = true;
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 				/* Plot pixels */

@@ -117,5 +117,5 @@ static void ConvertSpec512_640x16Bit(void)
 		pPCScreenDest = (((Uint8 *)pPCScreenDest)+2*PCScreenBytesPerLine);
 	}
 
-	bScreenContentsChanged = TRUE;
+	bScreenContentsChanged = true;
 }
