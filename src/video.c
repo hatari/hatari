@@ -2626,8 +2626,6 @@ void Video_InterruptHandler_VBL ( void )
 
 	/* Clear any key presses which are due to be de-bounced (held for one ST frame) */
 	Keymap_DebounceAllKeys();
-	/* Act on shortcut keys */
-	ShortCut_ActKey();
 
 	Video_DrawScreen();
 
@@ -2639,11 +2637,13 @@ void Video_InterruptHandler_VBL ( void )
 	/* Set video registers for frame */
 	Video_ClearOnVBL();
 
-	/* Start VBL, HBL and Timer B interrupts (this must be done after resetting video cycle counter */
-	/* setting default freq values in Video_ClearOnVBL) */
-	Video_StartInterrupts ( PendingCyclesOver );
-	
-	
+	/* Start VBL, HBL and Timer B interrupts (this must be done after resetting
+         * video cycle counter setting default freq values in Video_ClearOnVBL) */
+	Video_StartInterrupts(PendingCyclesOver);
+
+	/* Act on shortcut keys */
+	ShortCut_ActKey();
+
 	/* Store off PSG registers for YM file, is enabled */
 	YMFormat_UpdateRecording();
 	/* Generate 1/50th second of sound sample data, to be played by sound thread */
