@@ -970,7 +970,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	      if (bEnableDebug)
 	        DebugUI();
 	      regs.intmask = 7;
-	      m68k_setstopped(TRUE);
+	      m68k_setstopped(true);
 	      return;
 	    }
 	    if (bEnableDebug && BusErrorAddress!=0xff8a00) {
@@ -1505,8 +1505,8 @@ static bool do_specialties_interrupt (int Pending)
 {
     /* Check for MFP ints first (level 6) */
     if (regs.spcflags & SPCFLAG_MFP) {
-       if ( MFP_CheckPendingInterrupts() == TRUE )
-         return TRUE;					/* MFP exception was generated, no higher interrupt can happen */
+       if (MFP_CheckPendingInterrupts() == true)
+         return true;					/* MFP exception was generated, no higher interrupt can happen */
     }
 
     /* No MFP int, check for VBL/HBL ints (levels 4/2) */
@@ -1517,11 +1517,11 @@ static bool do_specialties_interrupt (int Pending)
 	unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
 	if (intr != -1 && intr > regs.intmask) {
 	    Interrupt (intr , Pending);			/* process the interrupt and add pending jitter if necessary */
-	    return TRUE;
+	    return true;
 	}
     }
 
-    return FALSE;					/* no interrupt was found */
+    return false;					/* no interrupt was found */
 }
 
 
@@ -1551,7 +1551,7 @@ static int do_specialties (void)
     if ( regs.spcflags & SPCFLAG_STOP ) {
         /* We first test if there's a pending interrupt that would */
         /* allow to immediatly leave the STOP state */
-        if ( do_specialties_interrupt ( TRUE ) ) {		/* test if there's an interrupt and add pending jitter */
+        if ( do_specialties_interrupt(true) ) {		/* test if there's an interrupt and add pending jitter */
             regs.stopped = 0;
             unset_special (SPCFLAG_STOP);
         }
@@ -1563,7 +1563,7 @@ static int do_specialties (void)
 	    int intr = intlev ();
 	    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
 	    if (intr != -1 && intr > regs.intmask) {
-	        Interrupt (intr , TRUE);		/* process the interrupt and add pending jitter */
+	        Interrupt (intr , true);		/* process the interrupt and add pending jitter */
 		regs.stopped = 0;
 		unset_special (SPCFLAG_STOP);
 	    }
@@ -1586,7 +1586,7 @@ static int do_specialties (void)
 		CALL_VAR(PendingInterruptFunction);
 		
 		/* Then we check if this handler triggered an interrupt to process */
-	        if ( do_specialties_interrupt ( FALSE ) ) {	/* test if there's an interrupt and add non pending jitter */
+	        if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
 		    regs.stopped = 0;
 		    unset_special (SPCFLAG_STOP);
 		    break;
@@ -1600,7 +1600,7 @@ static int do_specialties (void)
 		    int intr = intlev ();
 		    unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
 		    if (intr != -1 && intr > regs.intmask) {
-			Interrupt (intr , FALSE);	/* process the interrupt and add non pending jitter */
+			Interrupt (intr , false);	/* process the interrupt and add non pending jitter */
 			regs.stopped = 0;
 			unset_special (SPCFLAG_STOP);
 			break;
@@ -1618,8 +1618,8 @@ static int do_specialties (void)
 //    if (regs.spcflags & SPCFLAG_DOINT) {
     /* [NP] pending int should be processed now, not after the current instr */
     /* so we check for (SPCFLAG_INT | SPCFLAG_DOINT), not just for SPCFLAG_DOINT */
-	        
-    if ( do_specialties_interrupt ( FALSE ) ) {	/* test if there's an interrupt and add non pending jitter */
+
+    if ( do_specialties_interrupt(false) ) {	/* test if there's an interrupt and add non pending jitter */
         regs.stopped = 0;			/* [NP] useless ? */
     }
     if (regs.spcflags & SPCFLAG_INT) {
@@ -1633,7 +1633,7 @@ static int do_specialties (void)
 //	unset_special (SPCFLAG_DOINT);
 	unset_special (SPCFLAG_INT | SPCFLAG_DOINT);
 	if (intr != -1 && intr > regs.intmask) {
-	    Interrupt (intr , FALSE);		/* call Interrupt() with Pending=FALSE, not necessarily true but harmless */
+	    Interrupt (intr , false);		/* call Interrupt() with Pending=false, not necessarily true but harmless */
 	    regs.stopped = 0;			/* [NP] useless ? */
 	}
     }
@@ -1736,7 +1736,7 @@ static void m68k_run_1 (void)
 	while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 	  {
 	    CALL_VAR(PendingInterruptFunction);		/* call the interrupt handler */
-	    do_specialties_interrupt ( FALSE );		/* test if there's an mfp/video interrupt and add non pending jitter */
+	    do_specialties_interrupt(false);		/* test if there's an mfp/video interrupt and add non pending jitter */
 #if 0
 		  if ( regs.spcflags & ( SPCFLAG_MFP | SPCFLAG_INT ) ) {	/* only check mfp/video interrupts */
 		    if (do_specialties ())			/* check if this latest int has higher priority */
