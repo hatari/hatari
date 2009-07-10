@@ -157,8 +157,8 @@ static Uint32 BreakCond_ReadDspMemory(Uint32 addr, const bc_value_t *bc_value)
  */
 static Uint32 BreakCond_ReadSTMemory(Uint32 addr, const bc_value_t *bc_value)
 {
-	/* Mask to a 24 bit address, with this e.g. $ffff820a is also
-	 * recognized as IO mem $ff820a which is the same in the 68000.
+	/* Mask to a 24 bit address. With this e.g. $ffff820a is also
+	 * recognized as IO mem $ff820a (which is the same in the 68000).
 	 */
 	addr &= 0x00ffffff;
 
@@ -352,7 +352,8 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, p
  */
 static bool BreakCond_CheckAddress(bc_value_t *bc_value)
 {
-	Uint32 addr = bc_value->value.number;
+	Uint32 highbyte, bit23, addr = bc_value->value.number;
+
 	ENTERFUNC(("BreakCond_CheckAddress(%x)\n", addr));
 	if (bc_value->dsp_space) {
 		if (addr > 0xFFFF) {
@@ -363,8 +364,16 @@ static bool BreakCond_CheckAddress(bc_value_t *bc_value)
 		return true;
 	}
 
-	addr &= 0x00ffffff;				/* use a 24 bit address */
-	if ((addr > STRamEnd && addr < 0xe00000) || (addr >= 0xff0000 && addr < 0xff8000)) {
+	bit23 = (addr >> 23) & 1;
+	highbyte = (addr >> 24) & 0xff;
+	if ((bit23 == 0 && highbyte != 0) ||
+	    (bit23 == 1 && highbyte != 0xff)) {
+		fprintf(stderr, "WARNING: address 0x%x 23th bit isn't extended to bits 24-31.\n", addr);
+	}
+	/* use a 24-bit address */
+	addr &= 0x00ffffff;
+	if ((addr > STRamEnd && addr < 0xe00000) ||
+	    (addr >= 0xff0000 && addr < 0xff8000)) {
 		EXITFUNC(("-> false (CPU)\n"));
 		return false;
 	}
@@ -511,7 +520,7 @@ static bool BreakCond_ParseMaskModifier(parser_state_t *pstate, bc_value_t *bc_v
 		return true;
 	}
 	if (!(bc_value->regsize || bc_value->is_indirect)) {
-		fprintf(stderr, "WARNING: plain numbers shouldn't need masks\n");
+		fprintf(stderr, "WARNING: plain numbers shouldn't need masks.\n");
 	}
 	pstate->arg++;
 	if (!BreakCond_ParseNumber(pstate, pstate->argv[pstate->arg], &(bc_value->mask))) {
@@ -681,13 +690,13 @@ static bool BreakCond_CrossCheckValues(parser_state_t *pstate,
 	mask1 = BITMASK(bc_value1->bits) & bc_value1->mask;
 	
 	if (mask1 != bc_value1->mask) {
-		fprintf(stderr, "WARNING: mask %x doesn't fit into %d address/register bits\n",
+		fprintf(stderr, "WARNING: mask 0x%x doesn't fit into %d address/register bits.\n",
 			bc_value1->mask, bc_value1->bits);
 	}
 	if (!bc_value1->dsp_space &&
 	    !bc_value1->regsize && bc_value1->is_indirect &&
 	    (bc_value1->value.number & 1) && bc_value1->bits > 8) {
-		fprintf(stderr, "WARNING: odd CPU address %x given without using byte (.b) width\n",
+		fprintf(stderr, "WARNING: odd CPU address 0x%x given without using byte (.b) width.\n",
 			bc_value1->value.number);
 	}
 	
@@ -1138,7 +1147,7 @@ int DebugUI_GetCpuRegisterAddress(const char *regname, Uint32 **addr)
 			return 32;
 		}
 	}
-	fprintf(stderr, "ERROR: unrecognized CPU register '%s', valid ones one:\n", regname);
+	fprintf(stderr, "ERROR: unrecognized CPU register '%s', valid ones are:\n", regname);
 	for (i = 0; i < ARRAYSIZE(regnames); i++) {
 		fprintf(stderr, "- %s\n", regnames[i]);
 	}
@@ -1195,7 +1204,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 			return 32;
 		}
 	}
-	fprintf(stderr, "ERROR: unrecognized DSP register '%s', valid ones one:\n", regname);
+	fprintf(stderr, "ERROR: unrecognized DSP register '%s', valid ones are:\n", regname);
 	for (i = 0; i < ARRAYSIZE(regnames); i++) {
 		fprintf(stderr, "- %s\n", regnames[i]);
 	}
