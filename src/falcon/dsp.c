@@ -378,6 +378,9 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 
 		{ "OMR", &dsp_core.registers[DSP_REG_OMR], 32, 0x5f },
 
+		/* 16-bit program counter */
+		{ "PC",  (Uint32*)(&dsp_core.pc),  16, BITMASK(16) },
+
 		/* 16-bit DSP R (address) registers */
 		{ "R0",  &dsp_core.registers[DSP_REG_R0],  32, BITMASK(16) },
 		{ "R1",  &dsp_core.registers[DSP_REG_R1],  32, BITMASK(16) },
@@ -388,8 +391,8 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 		{ "R6",  &dsp_core.registers[DSP_REG_R6],  32, BITMASK(16) },
 		{ "R7",  &dsp_core.registers[DSP_REG_R7],  32, BITMASK(16) },
 
-		{ "SSH", &dsp_core.registers[DSP_REG_SP],  32, BITMASK(16) },
-		{ "SSL", &dsp_core.registers[DSP_REG_SP],  32, BITMASK(16) },
+		{ "SSH", &dsp_core.registers[DSP_REG_SSH], 32, BITMASK(16) },
+		{ "SSL", &dsp_core.registers[DSP_REG_SSL], 32, BITMASK(16) },
 		{ "SP",  &dsp_core.registers[DSP_REG_SP],  32, BITMASK(6) },
 
 		/* 16-bit status register */
