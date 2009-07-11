@@ -1467,17 +1467,19 @@ this section lists only TT-specific games and demos.</p>
 
 <a name="Falcon"></a><h2>Falcon software compatibility list</h2>
 
-<p>The main thing preventing Falcon programs from working is incomplete
-DSP emulation (and even of the programs working, many would use DSP
-for music).  You can select between three different DSP emulation
-modes with the Hatari "--dsp" option:
+<p>The main things preventing Falcon programs from working properly
+are incomplete VIDEL and DSP emulation.  You can select between three
+different DSP emulation modes with the Hatari "--dsp" option:
 <ul>
   <li><b>none</b>: No emulation.
-      Many programs work best with this.</li>
+      If program doesn't need/use DSP, this is the best option.
+      There may also still be some rare program that doesn't
+      work with the Hatari DSP emulation.</li>
   <li><b>emu</b>: Experimental DSP emulation.
-      Some programs work better with this. Slow.</li>
+      Needed if program requires DSP. Slow.</li>
   <li><b>dummy</b>: Faked DSP response to DSP commands.
-      There're some rare programs that work only with this mode.</li>
+      Some rare programs that need DSP only a little may work
+      with faked DSP.  This is much faster than the real DSP emulation.</li>
 </ul>
 
 <p>The "dsp" column in tables below tells which DSP emulation
@@ -1527,7 +1529,7 @@ otherwise "-".</p>
       <td>yes</td>
       <td>-</td>
       <td>emu</td>
-      <td>All tested versions (v2.14a, v307a) work fine but are very slow</td>
+      <td>All tested versions (v2.14a, v307a) work fine but are slow</td>
     </tr>
     <tr>
       <td>Blackhole</td>
@@ -1540,8 +1542,8 @@ otherwise "-".</p>
       <td>Block Blizzard (preview)</td>
       <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Input doesn't work with DSP enabled</td>
+      <td>-</td>
+      <td></td>
     </tr>
     <tr>
       <td>Blum</td>
@@ -1708,7 +1710,7 @@ otherwise "-".</p>
       <td>Very slow</td>
     </tr> 
     <tr>
-      <td>Hexogon</td>
+      <td>Hexogan</td>
       <td>-</td>
       <td>yes</td>
       <td>-</td>
@@ -1739,8 +1741,8 @@ otherwise "-".</p>
       <td>Kwiks.pd</td>
       <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Nice Quix clone.  With DSP has sound, but doesn't work otherwise.</td>
+      <td>-</td>
+      <td>Nice Quix clone.</td>
     </tr>
     <tr>
       <td>Lamemine</td>
@@ -1788,10 +1790,9 @@ otherwise "-".</p>
       <td><a href="http://pouet.net/prod.php?which=28903">Men at War (preview)</a></td>
       <td>yes</td>
       <td>yes</td>
-      <td>none</td>
-      <td>Has background music if DSP emu enabled. Separate intro gets
-          stuck with DSP, otherwise its scrolling has sync problems.
-	  Fire button doesn't work</td>
+      <td>-</td>
+      <td>Has background music if DSP emu enabled.
+          Separate intro has sync problems.</td>
     </tr>
     <tr>
       <td>Milanopol</td>
@@ -2010,7 +2011,7 @@ otherwise "-".</p>
       <td>-</td>
       <td>-</td>
       <td>emu</td>
-      <td>VGA 640x480x16 only, just black screen after loading data</td>
+      <td>VGA 640x480x16 only, exits after loading data</td>
     </tr>
     <tr>
       <td>Space Taxi</td>
@@ -2072,8 +2073,8 @@ otherwise "-".</p>
       <td><a href="http://rg.atari.org/game.htm">Tautology II</a></td>
       <td>yes</td>
       <td>-</td>
-      <td>none</td>
-      <td>Nice Mahjongg variant, use STE joypad. Menu doesn't work with DSP</td>
+      <td>-</td>
+      <td>Nice Mahjongg variant. Need to use STE joypad</td>
     </tr>
     <tr>
       <td>Tetrhex</td>
@@ -2084,10 +2085,10 @@ otherwise "-".</p>
     </tr>
     <tr>
       <td>Towers 2</td>
-      <td>-</td>
-      <td>-</td>
+      <td>yes</td>
+      <td>yes</td>
       <td>emu</td>
-      <td>Black screen at startup</td>
+      <td></td>
     </tr>
     <tr>
       <td>ToyMan</td>
@@ -2345,7 +2346,7 @@ otherwise "-".</p>
       <td>partially</td>
       <td>yes</td>
       <td>emu</td>
-      <td>Freezes after few screens</td>
+      <td>Freezes or exits after few screens</td>
     </tr>
     <tr>
       <td>Escape:
@@ -2847,7 +2848,7 @@ otherwise "-".</p>
       <td>Whip</td>
       <td>yes</td>
       <td>-</td>
-      <td>none</td>
+      <td>none/dummy</td>
       <td>Several of the effects don't work (correctly).
           Pointer freezes if started with DSP "emu" mode.</td>
     </tr>
