@@ -12,6 +12,7 @@ Emulation:
 - Hugely improved DSP emulation:
   - Many more DSP using games/demos/apps work now
   - Sound (e.g. mp3 DSP playback) works
+  - Cycle counting / accuracy
   - Many speed improvements
 - Improved Timer B accuracy when starting it in a rare case
 - Handle end of line as well as start of line for Timer B
@@ -23,13 +24,23 @@ Emulation:
 Emulator:
 - DSP changes:
   - DSP state saved to memory snapshots
-  - Internal debugger can be used to debug DSP code
   - Threading support removed from DSP emulation (makes it faster/simpler)
+- Debugger:
+  - Internal debugger can be used to debug also DSP code
+  - Support for (PC) address breakpoints and conditional breakpoints
+    (watchpoints), both on CPU and DSP
+  - Support for stepping CPU and DSP code
 - Support Videl horizontal fine scrolling for 16 bpp and 32 bpp
+- Process successive motion events before returning from event handler
+  (to fix analog joystick jitter slowing Hatari input processing)
 - FPS measurement shown when emulation is paused & --run-vbls option
-- New atari-hd-image.sh script for creating HD image files
+- Mouse grab option (--grab)
 - Support added for building Hatari with MS-VC6 and for Wii
 - Statusbar assert (bug #15512) fixed
+
+Utilities:
+- New atari-hd-image.sh script for creating HD image files
+- External Python GUI and CLI interfaces for Hatari in main repo
 
 
  Version 1.2.0 (2009-01-24):
@@ -53,6 +64,9 @@ Emulation:
 - Improve color alignment with the shifter (for spectrum512 like images)
 - Fix to the fire button detection reported in some games
 - Added IDE hard disk emulation
+
+Emulator:
+- Pause/unpause shortcut
 
 
  Version 1.1.0 (2008-11-29):

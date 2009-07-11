@@ -6,8 +6,8 @@
 
 - Eero Tamminen <eerot at users.berlios.de> : Speed improvements & code
   cleanup, parts of the STE emulation, Hatari embedding & remote control,
-  pause & auto frameskip support, statusbar & overlay led, PNG saving and
-  other patches.
+  pause & auto frameskip support, statusbar & overlay led, conditional
+  breakpoints, PNG saving and other patches.
 
 - Nicolas Pomarede <npomarede at corp.free.fr> : Many improvements to CPU and video
   emulation, new sound engine, fake IKBD emulation.
