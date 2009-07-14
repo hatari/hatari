@@ -971,13 +971,9 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				bLoadAutoSave = false;
 			}
 			break;
-			
+
 		case OPT_SLOWFLOPPY:
 			ok = Opt_Bool(argv[++i], OPT_SLOWFLOPPY, &ConfigureParams.DiskImage.bSlowFloppy);
-			if (ok)
-			{
-				bLoadAutoSave = false;
-			}
 			break;
 			
 			/* Memory options */
