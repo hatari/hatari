@@ -701,6 +701,10 @@ class MachineDialog(HatariUIDialog):
         self.compatible = table_add_widget_row(table, row, None, widget)
         row += 1
 
+        widget = gtk.CheckButton("Patch Timer-D")
+        self.timerd = table_add_widget_row(table, row, None, widget)
+        row += 1
+
         table.show_all()
 
     def _fsel(self, label, action):
@@ -725,6 +729,7 @@ class MachineDialog(HatariUIDialog):
         if usehd:
             self.usehd.set_active(usehd)
         self.compatible.set_active(config.get_compatible())
+        self.timerd.set_active(config.get_timerd())
 
     def _set_config(self, config):
         config.lock_updates()
@@ -736,6 +741,7 @@ class MachineDialog(HatariUIDialog):
         config.set_use_harddisk(self.usehd.get_active())
         config.set_harddisk(self.harddisk.get_filename())
         config.set_compatible(self.compatible.get_active())
+        config.set_timerd(self.timerd.get_active())
         config.flush_updates()
 
     def run(self, config):

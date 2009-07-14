@@ -32,17 +32,18 @@ sources.
 
 * Translation support for the UI
 
-* Supporting other configurable things in Hatari:
+* Supporting other, less important Hatari configuration options:
   - toggling disk-b autoinsertion, write protection and slow FDC
   - separate A/B disk paths for images that are within ZIP archives
   - joystick autofire toggling, defining the keys for joyemu
   - keyboard repeat, key mapping type and file
   - multiple GEMDOS partition directories
-  - toggling ST blitter, RTC support, timer-D patching
+  - toggling ST blitter, RTC support
   - vdi planes and size, SDL bpp forcing, spec512 threshold, frames-per-sec
   - border sizes in windowed and fullscreen mode, mouse grabbing
   - screen recording type (every frame vs. when changed)
   - cartridge image (where? it has many limitations)
   - log file and levels, bios intercept, run-VBLs
 (Several of these aren't supported by the internal Hatari UI either
-and will require support on the Hatari control.c side too.)
+or do have command line options so they will require support on
+the Hatari control.c side too.)

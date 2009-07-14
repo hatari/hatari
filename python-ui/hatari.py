@@ -335,6 +335,14 @@ class HatariConfigMapping(ConfigStore):
         self.set("[System]", "bCompatibleCpu", value)
         self._change_option("--compatible %s" % str(value))
 
+    # ------------ Timer-D ---------------
+    def get_timerd(self):
+        return self.get("[System]", "bPatchTimerD")
+
+    def set_timerd(self, value):
+        self.set("[System]", "bPatchTimerD", value)
+        self._change_option("--timer-d %s" % str(value))
+
     # ------------ fastforward ---------------
     def get_fastforward(self):
         return self.get("[System]", "bFastForward")

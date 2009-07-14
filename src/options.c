@@ -90,6 +90,7 @@ enum {
 	OPT_COMPATIBLE,
 	OPT_MACHINE,		/* system options */
 	OPT_BLITTER,
+	OPT_TIMERD,
 	OPT_DSP,
 	OPT_SOUND,
 	OPT_KEYMAPFILE,
@@ -231,6 +232,8 @@ static const opt_t HatariOptions[] = {
 	  "<x>", "Select machine type (x = st/ste/tt/falcon)" },
 	{ OPT_BLITTER,   NULL, "--blitter",
 	  "<bool>", "Use blitter emulation (ST only)" },
+	{ OPT_TIMERD,    NULL, "--timer-d",
+	  "<bool>", "Patch Timer-D (about doubles Hatari speed)" },
 	{ OPT_DSP,       NULL, "--dsp",
 	  "<x>", "DSP emulation (x = none/dummy/emu, Falcon only)" },
 	{ OPT_SOUND,   NULL, "--sound",
@@ -1092,6 +1095,10 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			{
 				bLoadAutoSave = false;
 			}
+			break;			
+			
+		case OPT_TIMERD:
+			ok = Opt_Bool(argv[++i], OPT_TIMERD, &ConfigureParams.System.bPatchTimerD);
 			break;			
 
 		case OPT_DSP:

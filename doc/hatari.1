@@ -168,6 +168,10 @@ select machine type (x = st, ste, tt or falcon)
 .B \-\-blitter <bool>
 Enable blitter emulation (ST only)
 .TP 
+.B \-\-timer-d <bool>
+Patch redundantly high Timer-D frequency set by TOS.  This about doubles
+Hatari speed as the original Timer-D frequency causes most of the interrupts.
+.TP 
 .B \-\-dsp <x>
 Falcon DSP emulation (x = none, dummy or emu, Falcon only)
 .TP 
