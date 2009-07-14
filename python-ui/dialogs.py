@@ -425,7 +425,7 @@ class JoystickDialog(HatariUIDialog):
 
 class PeripheralDialog(HatariUIDialog):
     def _create_dialog(self, config):
-        midi = gtk.CheckButton("Enable midi output")
+        midi = gtk.CheckButton("Enable MIDI")
         midi.set_active(config.get_midi())
 
         printer = gtk.CheckButton("Enable printer output")

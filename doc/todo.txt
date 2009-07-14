@@ -23,9 +23,7 @@ Emulation improvements
 
 - Get the games/demos working that are marked as non-working in the manual.
 
-- Improve TT and/or Falcon emulation
-
-- Extend the GEMDOS HD emulation to support more than one drive.
+- Improve TT and/or Falcon emulation, especially VIDEL
 
 - Add SCSI hard disk emulation for Falcon/TT mode.
 
@@ -66,7 +64,8 @@ Other Hatari functionality improvements
 - Add support for hardware accelerated zooming with SDL YUV overlays or
   OpenGL.
 
-- Improve the built-in debugger (single stepping etc).
+- Better handling of screen resolutions.  If first attempt fails,
+  try e.g. without zooming, no borders or smaller borders etc.
 
 - Improve directory handling.  By default the directory config values
   should be empty in which case the code will at run-time decide to use
