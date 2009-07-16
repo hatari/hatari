@@ -236,6 +236,9 @@
 /*			when mixing 50/60 Hz lines and reading $ff8209, better emulation of	*/
 /*			HBL and Timer B position when changing freq/res, better emulation of	*/
 /*			freq changes for top/bottom/right borders.				*/
+/* 2009/07/16	[NP]	In Video_SetHBLPaletteMaskPointers, if LineCycle>460 we consider the	*/
+/*			color's change should be applied to next line (used when spec512 mode	*/
+/*			if off).								*/
 
 
 
@@ -2225,8 +2228,8 @@ static void Video_SetHBLPaletteMaskPointers(void)
 	/* we consider the palette should be modified on the next line. This is quite */
 	/* a hack, we should handle all color changes through spec512.c to have cycle */
 	/* accuracy all the time. */
-//	if ( Cycle >= LINE_END_CYCLE_NO_RIGHT-8 );
-//		Line++;
+	if ( LineCycles >= LINE_END_CYCLE_NO_RIGHT )
+		Line++;
 
 	if (Line < 0)        /* Limit to top/bottom of possible visible screen */
 		Line = 0;
