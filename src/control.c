@@ -272,7 +272,7 @@ static bool Control_Usage(const char *cmd)
  * Parse Hatari debug/event/option/toggle/path/shortcut command buffer.
  * Given buffer is modified in-place.
  */
-static void Control_ProcessBuffer(char *buffer)
+void Control_ProcessBuffer(char *buffer)
 {
 	char *cmd, *cmdend, *arg;
 	int ok = true;

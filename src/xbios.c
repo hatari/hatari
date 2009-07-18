@@ -13,6 +13,7 @@ const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"
+#include "control.h"
 #include "floppy.h"
 #include "log.h"
 #include "m68000.h"
@@ -47,7 +48,6 @@ static const int BaudRates[] =
 };
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * XBIOS Floppy Read
  * Call 8
@@ -74,7 +74,6 @@ static bool XBios_Floprd(Uint32 Params)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * XBIOS Floppy Write
  * Call 9
@@ -101,7 +100,6 @@ static bool XBios_Flopwr(Uint32 Params)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * XBIOS RsConf
  * Call 15
@@ -145,7 +143,6 @@ static bool XBios_Rsconf(Uint32 Params)
 }
 
 
-/*-----------------------------------------------------------------------*/
 /**
  * XBIOS Scrdmp
  * Call 20
@@ -161,7 +158,21 @@ static bool XBios_Scrdmp(Uint32 Params)
 }
 
 
-/*-----------------------------------------------------------------------*/
+/**
+ * XBIOS remote control interface for Hatari
+ * Call 255
+ */
+static bool XBios_HatariControl(Uint32 Params)
+{
+	char *pText;
+
+	pText = (char *)STRAM_ADDR(STMemory_ReadLong(Params+SIZE_WORD));
+	Control_ProcessBuffer(pText);
+	Regs[REG_D0] = 0;
+	return true;
+}
+
+
 /**
  * Check if we need to re-direct XBios call to our own routines
  */
@@ -188,6 +199,9 @@ bool XBios(void)
 	 case 20:
 		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS Scrdmp()\n");
 		return XBios_Scrdmp(Params);
+	 case 255:
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS HatariControl()\n");
+		return XBios_HatariControl(Params);
 
 	 default:  /* Call as normal! */
 		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS %d\n", XBiosCall);

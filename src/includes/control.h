@@ -9,6 +9,8 @@
 
 #include "main.h"
 
+extern void Control_ProcessBuffer(char *buffer);
+
 /* supported only on BSD compatible / POSIX compliant systems */
 #if HAVE_UNIX_DOMAIN_SOCKETS
 extern bool Control_CheckUpdates(void);
