@@ -254,7 +254,7 @@ void Main_WaitOnVbl(void)
 		if (nFrameSkips < ConfigureParams.Screen.nFrameSkips)
 		{
 			nFrameSkips += 1;
-			Log_Printf(LOG_DEBUG, "Increased frameskip to %d\n", nFrameSkips);
+			// Log_Printf(LOG_DEBUG, "Increased frameskip to %d\n", nFrameSkips);
 		}
 		/* Only update nDestMilliTicks for next VBL */
 		nDestMilliTicks = nCurrentMilliTicks + nFrameDuration;
@@ -268,7 +268,7 @@ void Main_WaitOnVbl(void)
 	    && 2*nDelay > nFrameDuration/nFrameSkips)
 	{
 		nFrameSkips -= 1;
-		Log_Printf(LOG_DEBUG, "Decreased frameskip to %d\n", nFrameSkips);
+		// Log_Printf(LOG_DEBUG, "Decreased frameskip to %d\n", nFrameSkips);
 	}
 
 	if (bAccurateDelays)
@@ -343,8 +343,9 @@ static void Main_HandleMouseMotion(SDL_Event *pEvent)
 	int dx, dy;
 	static int ax = 0, ay = 0;
 
-
-	if (bIgnoreNextMouseMotion)
+	/* Ignore motion when position has changed right after a reset or TOS
+	 * (especially version 4.04) might get confused and play key clicks */
+	if (bIgnoreNextMouseMotion || nVBLs < 10)
 	{
 		bIgnoreNextMouseMotion = false;
 		return;
