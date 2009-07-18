@@ -162,6 +162,13 @@ static void DmaSnd_StartNewFrame(void)
 	FrameCounter = 0;
 	nFrameLen = nFrameEndAddr - nFrameStartAddr;
 
+	if (nFrameLen <= 0)
+	{
+		Log_Printf(LOG_WARN, "DMA snd: Illegal buffer size (from 0x%x to 0x%x)\n",
+		          nFrameStartAddr, nFrameEndAddr);
+		return;
+	}
+
 	/* To get smooth sound, set an "interrupt" for the end of the frame that
 	 * updates the sound mix buffer. */
 	nCyclesForFrame = nFrameLen * (8013000.0 / DmaSnd_DetectSampleRate());
