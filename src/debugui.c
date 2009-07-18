@@ -1076,7 +1076,7 @@ dbgcommand_t commandtab[] =
 	  false },
 	{ DebugUI_BreakCondDsp, "dspbreak", "db",
 	  "set/remove/list DSP register/RAM condition breakpoints",
-	  "[help | all | <breakpoint index> | <breakpoint condition>]\n"
+	  "[help | all | <breakpoint index> | <breakpoint condition>]\n"
 	  "\tSet breakpoint with given condition, remove breakpoint with\n"
 	  "\tgiven index or list all breakpoints when no args are given.\n"
 	  "\t'help' outputs breakpoint condition syntax help, 'all' removes\n"
@@ -1113,7 +1113,7 @@ dbgcommand_t commandtab[] =
 	  false	},
 	{ DebugUI_BreakCondCpu, "breakpoint", "b",
 	  "set/remove/list register/RAM condition breakpoints",
-	  "[help | all | <breakpoint index> | <breakpoint condition>]\n"
+	  "[help | all | <breakpoint index> | <breakpoint condition>]\n"
 	  "\tSet breakpoint with given condition, remove breakpoint with\n"
 	  "\tgiven index or list all breakpoints when no args are given.\n"
 	  "\t'help' outputs breakpoint condition syntax help, 'all' removes\n"
