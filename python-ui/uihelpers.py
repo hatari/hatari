@@ -34,10 +34,11 @@ import gobject
 class UInfo:
     """singleton constants for the UI windows,
     one instance is needed to initialize these properly"""
-    version = "v0.9"
+    version = "v0.9.2"
     name = "Hatari UI"
     logo = "hatari.png"
     icon = "hatari-icon.png"
+    
     # path to the directory where the called script resides
     path = os.path.dirname(sys.argv[0])
     
@@ -55,6 +56,102 @@ class UInfo:
         testpath = "%s%s%s" % (self.path, sep, filename)
         if os.path.exists(testpath):
             return testpath
+
+
+# --------------------------------------------------------
+# functions for showing HTML files
+
+class UIHelp:
+    def __init__(self):
+        """determine HTML viewer and where docs are"""
+        self._view = self.get_html_viewer()
+        self._path = self.get_doc_path()
+
+    def get_html_viewer(self):
+        """return name of html viewer or None"""
+        path = self.get_binary_path("xdg-open")
+        if path:
+            return path
+        path = self.get_binary_path("firefox")
+        if path:
+            return path
+        return None
+        
+    def get_binary_path(self, name):
+        """return true if given binary is in path"""
+        # could also try running the binary with "--version" arg
+        # and check the exec return value
+        if os.sys.platform == "win32":
+            for i in os.environ['PATH'].split(';'):
+                fname = os.path.join(i, name)
+                if os.access(fname, os.X_OK) and not os.path.isdir(fname):
+                    return fname
+        else:
+            for i in os.environ['PATH'].split(':'):
+                fname = os.path.join(i, name)
+                if os.access(fname, os.X_OK) and not os.path.isdir(fname):
+                    return fname
+        return None
+
+    def get_doc_path(self):
+        """return path or URL to Hatari docs or None"""
+        # first try whether there are local Hatari docs in standard place
+        # for this Hatari/UI version
+        sep = os.sep
+        path = self.get_binary_path("hatari")
+        path = sep.join(path.split(sep)[:-2]) # remove "bin/hatari"
+        path = path + sep + "share" + sep + "doc" + sep + "hatari" + sep
+        if os.path.exists(path + "manual.html"):
+            return path
+        # if not, point to latest Hatari HG version docs
+        print "WARNING: Hatari manual not found at:", path + "manual.html"
+        return "http://hg.berlios.de/repos/hatari/raw-file/tip/doc/"
+
+    def set_mainwin(self, widget):
+        self.mainwin = widget
+
+    def view_url(self, url, name):
+        """view given URL or file path, or error use 'name' as its name"""
+        if self._view and "://" in url or os.path.exists(url):
+            print "RUN: '%s' '%s'" % (self._view, url)
+            os.spawnlp(os.P_NOWAIT, self._view, self._view, url)
+            return
+        if not self._view:
+            msg = "Cannot view %s, HTML viewer missing" % name
+        else:
+            msg = "Cannot view %s,\n'%s' file is missing" % (name, url)
+        from dialogs import ErrorDialog
+        ErrorDialog(self.mainwin).run(msg)
+
+    def view_hatari_manual(self, dummy=None):
+        self.view_url(self._path + "manual.html", "Hatari manual")
+
+    def view_hatari_compatibility(self, dummy=None):
+        self.view_url(self._path + "compatibility.html", "Hatari compatibility list")
+
+    def view_hatari_releasenotes(self, dummy=None):
+        self.view_url(self._path + "release-notes.txt", "Hatari release notes")
+
+    def view_hatari_todo(self, dummy=None):
+        self.view_url(self._path + "todo.txt", "Hatari TODO items")
+
+    def view_hatari_bugs(self, dummy=None):
+        self.view_url("http://developer.berlios.de/bugs/?group_id=10436", "Hatari bug tracker")
+
+    def view_hatari_mails(self, dummy=None):
+        self.view_url("http://developer.berlios.de/mail/?group_id=10436", "Hatari mailing lists")
+
+    def view_hatari_repository(self, dummy=None):
+        self.view_url("http://hg.berlios.de/repos/hatari", "latest Hatari changes")
+
+    def view_hatari_authors(self, dummy=None):
+        self.view_url(self._path + "authors.txt", "Hatari authors")
+
+    def view_hatari_page(self, dummy=None):
+        self.view_url("http://hatari.berlios.de/", "Hatari home page")
+
+    def view_hatariui_page(self, dummy=None):
+        self.view_url("http://koti.mbnet.fi/tammat/hatari/hatari-ui.shtml", "Hatari UI home page")
 
 
 # --------------------------------------------------------

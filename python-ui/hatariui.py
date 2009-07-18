@@ -28,8 +28,8 @@ import gobject
 
 from debugui import HatariDebugUI
 from hatari import Hatari, HatariConfigMapping
-from uihelpers import UInfo, create_button, create_toolbutton, create_toggle, \
-     HatariTextInsert, get_open_filename, get_save_filename
+from uihelpers import UInfo, UIHelp, create_button, create_toolbutton, \
+     create_toggle, HatariTextInsert, get_open_filename, get_save_filename
 from dialogs import AboutDialog, TodoDialog, ErrorDialog, InputDialog, \
      KillDialog, QuitSaveDialog, ResetDialog, TraceDialog, DiskDialog, \
      DisplayDialog, JoystickDialog, MachineDialog, PeripheralDialog, \
@@ -77,7 +77,7 @@ class UICallbacks:
         self.peripheraldialog = None
         self.sounddialog = None
         self.pathdialog = None
-
+        
         # used by run()
         self.memstate = None
         self.floppy = None
@@ -377,6 +377,8 @@ class UICallbacks:
 class UIActions:
     def __init__(self):
         cb = self.callbacks = UICallbacks()
+
+        self.help = UIHelp()
         
         self.actions = gtk.ActionGroup("All")
         
@@ -415,7 +417,17 @@ class UIActions:
         ("debug", gtk.STOCK_FIND, "Debugger...", "<Ctrl>B", "Activate Hatari debugger", cb.debugger),
         ("trace", gtk.STOCK_EXECUTE, "Trace settings...", "<Ctrl>T", "Hatari tracing setup", cb.trace),
         
-        ("about", gtk.STOCK_INFO, "About", "<Ctrl>I", "Hatari UI information", cb.about)
+        ("manual", None, "Hatari manual", None, None, self.help.view_hatari_manual),
+        ("compatibility", None, "Hatari compatibility list", None, None, self.help.view_hatari_compatibility),
+        ("release", None, "Hatari release notes", None, None, self.help.view_hatari_releasenotes),
+        ("todo", None, "Hatari TODO", None, None, self.help.view_hatari_todo),
+        ("bugs", None, "Report a bug", None, None, self.help.view_hatari_bugs),
+        ("mails", None, "Hatari mailing lists", None, None, self.help.view_hatari_mails),
+        ("changes", None, "Latest Hatari changes", None, None, self.help.view_hatari_repository),
+        ("authors", None, "Hatari authors", None, None, self.help.view_hatari_authors),
+        ("hatari", None, "Hatari home page", None, None, self.help.view_hatari_page),
+        ("hatariui", None, "Hatari UI home page", None, None, self.help.view_hatariui_page),
+        ("about", gtk.STOCK_INFO, "Hatari UI info", "<Ctrl>I", "Hatari UI information", cb.about)
         ))
         self.action_names = [x.get_name() for x in self.actions.list_actions()]
 
@@ -586,7 +598,7 @@ class UIActions:
         ("Devices", ("display", "floppy", "joystick", "machine", "device", "sound")),
         ("Configuration", ("path", None, "lconfig", "sconfig")),
         ("Debug", ("debug", "trace")),
-        ("Help", ("about",))
+        ("Help", ("manual", "compatibility", "release", "todo", None, "bugs", "mails", "changes", None, "authors", "hatari", "hatariui", "about",))
         )
         bar = gtk.MenuBar()
 
@@ -622,6 +634,7 @@ class UIActions:
                 toolbars[side] = self._get_container(self.toolbars[side], True)
 
         self.callbacks.create_ui(accelgroup, menu, toolbars, fullscreen, embed)
+        self.help.set_mainwin(self.callbacks.mainwin)
         self.callbacks.set_floppy(floppy)
 
         # ugly, Hatari socket window ID can be gotten only
