@@ -9,8 +9,8 @@
 #define HATARI_BREAKCOND_H
 
 extern void BreakCond_MemorySnapShot_Capture(bool bSave);
-extern bool BreakCond_MatchCpu(void);
-extern bool BreakCond_MatchDsp(void);
+extern int BreakCond_MatchCpu(void);
+extern int BreakCond_MatchDsp(void);
 extern int BreakCond_BreakPointCount(bool bForDsp);
 extern bool BreakCond_Command(const char *expression, bool bForDsp);
 

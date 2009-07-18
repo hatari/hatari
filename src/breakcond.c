@@ -209,7 +209,7 @@ static Uint32 BreakCond_GetValue(const bc_value_t *bc_value)
 
 
 /**
- * Return true if any of the given breakpoint conditions match
+ * Return true if all of the given breakpoint's conditions match
  */
 static bool BreakCond_MatchConditions(const bc_condition_t *condition, int count)
 {
@@ -250,19 +250,21 @@ static bool BreakCond_MatchConditions(const bc_condition_t *condition, int count
 
 
 /**
- * Return true if any of the given condition breakpoints match
+ * Return which of the given condition breakpoints match
+ * or zero if none matched
  */
-static bool BreakCond_MatchBreakPoints(const bc_breakpoint_t *bp, int count)
+static int BreakCond_MatchBreakPoints(const bc_breakpoint_t *bp, int count)
 {
 	int i;
 	
 	for (i = 0; i < count; bp++, i++) {
 		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
-			fprintf(stderr, "Breakpoint '%s' matched.\n", bp->expression);
-			return true;
+			fprintf(stderr, "Breakpoint '%s' conditions matched.\n", bp->expression);
+			/* indexes for BreakCond_Remove() start from 1 */
+			return i + 1;
 		}
 	}
-	return false;
+	return 0;
 }
 
 /* ------------- breakpoint condition checking, public API ------------- */
@@ -270,7 +272,7 @@ static bool BreakCond_MatchBreakPoints(const bc_breakpoint_t *bp, int count)
 /**
  * Return true if any of the CPU breakpoint/conditions match
  */
-bool BreakCond_MatchCpu(void)
+int BreakCond_MatchCpu(void)
 {
 	return BreakCond_MatchBreakPoints(BreakPointsCpu, BreakPointCpuCount);
 }
@@ -278,7 +280,7 @@ bool BreakCond_MatchCpu(void)
 /**
  * Return true if any of the DSP breakpoint/conditions match
  */
-bool BreakCond_MatchDsp(void)
+int BreakCond_MatchDsp(void)
 {
 	return BreakCond_MatchBreakPoints(BreakPointsDsp, BreakPointDspCount);
 }
@@ -737,8 +739,8 @@ static int BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 	ENTERFUNC(("BreakCond_ParseCondition(...)\n"));
 	if (ccount >= BC_MAX_CONDITIONS_PER_BREAKPOINT) {
 		pstate->error = "max number of conditions exceeded";
-		EXITFUNC(("-> false (no conditions free)\n"));
-		return false;
+		EXITFUNC(("-> 0 (no conditions free)\n"));
+		return 0;
 	}
 
 	/* setup condition */
@@ -751,45 +753,45 @@ static int BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 
 	/* parse condition */
 	if (!BreakCond_ParseValue(pstate, &(condition.lvalue))) {
-		EXITFUNC(("-> false\n"));
-		return false;
+		EXITFUNC(("-> 0\n"));
+		return 0;
 	}
 	condition.comparison = BreakCond_ParseComparison(pstate);
 	if (!condition.comparison) {
-		EXITFUNC(("-> false\n"));
-		return false;
+		EXITFUNC(("-> 0\n"));
+		return 0;
 	}
 	if (!BreakCond_ParseValue(pstate, &(condition.rvalue))) {
-		EXITFUNC(("-> false\n"));
-		return false;
+		EXITFUNC(("-> 0\n"));
+		return 0;
 	}
 	if (!(BreakCond_CrossCheckValues(pstate, &(condition.lvalue), &(condition.rvalue)) &&
 	      BreakCond_CrossCheckValues(pstate, &(condition.rvalue), &(condition.lvalue)))) {
-		EXITFUNC(("-> false\n"));
-		return false;
+		EXITFUNC(("-> 0\n"));
+		return 0;
 	}
 	/* new condition */
 	conditions[ccount++] = condition;
 
 	/* continue with next condition? */
 	if (pstate->arg == pstate->argc) {
-		EXITFUNC(("-> true (condition %d)\n", ccount-1));
-		return true;
+		EXITFUNC(("-> %d (conditions)\n", ccount-1));
+		return ccount;
 	}
 	if (strcmp(pstate->argv[pstate->arg], "&&") != 0) {
 		pstate->error = "trailing content for breakpoint condition";
-		EXITFUNC(("-> false\n"));
-		return false;
+		EXITFUNC(("-> 0\n"));
+		return 0;
 	}
 	pstate->arg++;
 
 	/* recurse conditions parsing */
 	ccount = BreakCond_ParseCondition(pstate, bForDsp, conditions, ccount);
 	if (!ccount) {
-		EXITFUNC(("-> false\n"));
-		return false;
+		EXITFUNC(("-> 0\n"));
+		return 0;
 	}
-	EXITFUNC(("-> true (condition %d)\n", ccount-1));
+	EXITFUNC(("-> %d (conditions)\n", ccount-1));
 	return ccount;
 }
 
@@ -967,8 +969,8 @@ static bool BreakCond_Parse(const char *expression, bool bForDsp)
 	}
 	if (ccount > 0) {
 		(*bcount)++;
-		fprintf(stderr, "%s condition breakpoint %d added.\n",
-			name, *bcount);
+		fprintf(stderr, "%s condition breakpoint %d with %d condition(s) added.\n",
+			name, *bcount, ccount);
 	} else {
 		if (normalized) {
 			int offset, i = 0;
@@ -1013,7 +1015,7 @@ static void BreakCond_List(bool bForDsp)
 		return;
 	}
 
-	fprintf(stderr, "Conditional %s breakpoints:\n", name);
+	fprintf(stderr, "%d conditional %s breakpoints:\n", bcount, name);
 	for (i = 1; i <= bcount; bp++, i++) {
 		fprintf(stderr, "%3d: %s\n", i, bp->expression);
 	}
@@ -1029,6 +1031,10 @@ static bool BreakCond_Remove(int position, bool bForDsp)
 	int *bcount, offset;
 	
 	bcount = BreakCond_GetListInfo(&bp, &name, bForDsp);
+	if (!*bcount) {
+		fprintf(stderr, "No (more) breakpoints to remove.\n");
+		return false;
+	}
 	if (position < 1 || position > *bcount) {
 		fprintf(stderr, "ERROR: No such %s breakpoint.\n", name);
 		return false;
@@ -1044,6 +1050,17 @@ static bool BreakCond_Remove(int position, bool bForDsp)
 	}
 	(*bcount)--;
 	return true;
+}
+
+
+/**
+ * Remove all condition breakpoints
+ */
+static void BreakCond_RemoveAll(bool bForDsp)
+{
+	/* try removing everything from alternate ends */
+	while (BreakCond_Remove(1, bForDsp))
+		;
 }
 
 
@@ -1100,6 +1117,10 @@ bool BreakCond_Command(const char *expression, bool bForDsp)
 		BreakCond_Help();
 		return true;
 	}
+	if (strcmp(expression, "all") == 0) {
+		BreakCond_RemoveAll(bForDsp);
+		return true;
+	}
 	end = expression;
 	while (isdigit(*end)) {
 		end++;
@@ -1115,7 +1136,8 @@ bool BreakCond_Command(const char *expression, bool bForDsp)
 /* ---------------------------- test code ---------------------------- */
 
 /* Test building can be done in hatari/src/ with:
- * gcc -DTEST -I.. -Iincludes -Iuae-cpu -Ifalcon $(sdl-config --cflags) -O -Wall -g breakcond.c
+ * gcc -DTEST -I.. -Iincludes -Iuae-cpu -Ifalcon $(sdl-config --cflags) \
+ *   -O -Wall -g breakcond.c
  * 
  * TODO: move test stuff elsewhere after code works fully
  */
@@ -1232,10 +1254,14 @@ Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str)
 	return 0;
 }
 
+void MemorySnapShot_Store(void *pData, int Size)
+{
+	/* dummy */
+}
 
 int main(int argc, const char *argv[])
 {
-	const char *should_fail[] = {
+	const char *parser_fail[] = {
 		/* syntax & register name errors */
 		"",
 		" = ",
@@ -1262,7 +1288,7 @@ int main(int argc, const char *argv[])
 		"1=1 && 2=2 && 3=3 && 4=4 && 5=5",
 		NULL
 	};
-	const char *should_pass[] = {
+	const char *parser_pass[] = {
 		" ($200).w > 200 ",
 		" ($200).w < 200 ",
 		" (200).w = $200 ",
@@ -1279,14 +1305,27 @@ int main(int argc, const char *argv[])
 		" ($ff820a).b = 2",
 		NULL
 	};
+	const char *match_tests[] = {
+		"a0 = d0",
+		"( $200 ) . b > 200", /* byte access to avoid endianess */
+		"pc < $50000 && pc > $60000",
+		"pc > $50000 && pc < $54000",
+#define FAILING_BC_TEST_MATCHES 4
+		"pc > $50000 && pc < $60000",
+		"( $200 ) . b > ( 200 ) . b",
+		"d0 = d1",
+		"a0 = pc",
+		NULL
+	};
 	const char *test;
-	int i, count, tests = 0, errors = 0;
+	int i, j, tests = 0, errors = 0;
+	int remaining_matches;
 	bool use_dsp;
 
 	/* first automated tests... */
 	use_dsp = false;
 	fprintf(stderr, "\nShould FAIL for CPU:\n");
-	for (i = 0; (test = should_fail[i]); i++) {
+	for (i = 0; (test = parser_fail[i]); i++) {
 		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
 		if (BreakCond_Command(test, use_dsp)) {
 			fprintf(stderr, "***ERROR***: should have failed\n");
@@ -1298,7 +1337,7 @@ int main(int argc, const char *argv[])
 	BreakCond_List(use_dsp);
 	
 	fprintf(stderr, "\nShould PASS for CPU:\n");
-	for (i = 0; (test = should_pass[i]); i++) {
+	for (i = 0; (test = parser_pass[i]); i++) {
 		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
 		if (!BreakCond_Command(test, use_dsp)) {
 			fprintf(stderr, "***ERROR***: should have passed\n");
@@ -1309,27 +1348,74 @@ int main(int argc, const char *argv[])
 	fprintf(stderr, "-----------------\n\n");
 	BreakCond_List(use_dsp);
 	fprintf(stderr, "\n");
+	BreakCond_RemoveAll(use_dsp);
+	BreakCond_List(use_dsp);
+	fprintf(stderr, "-----------------\n");
+
+	/* add conditions */
+	fprintf(stderr, "\nLast one(s) should match, first one(s) shouldn't:\n");
+	for (i = 0; (test = match_tests[i]); i++) {
+		fprintf(stderr, "-----------------\n- parsing '%s'\n", test);
+		if (!BreakCond_Command(test, use_dsp)) {
+			fprintf(stderr, "***ERROR***: should have passed\n");
+			errors++;
+		}
+	}
+	tests += i;
+	BreakCond_List(use_dsp);
+	fprintf(stderr, "\n");
+	
+	/* set up registers etc */
 
 	/* fail indirect equality checks with zerod regs */
 	memset(STRam, 0, sizeof(STRam));
 	STRam[0] = 1;
-	/* 200<($200) fail */
+	/* !match: "( $200 ) > 200"
+	 *  match: "( $200 ) . w > ( 200 ) . b"
+	 */
 	STRam[0x200] = 100;
 	STRam[200] = 0x20;
-	/* d0=d1 pass */
+	/*  match: "d0 = d1" */
 	SetCpuRegister("d0", 4);
 	SetCpuRegister("d1", 4);
-	SetCpuRegister("a0", 8);
+	/* !match: "pc < $50000  &&  pc > $60000"
+	 * !match: "pc < $50000  &&  pc > $54000"
+	 *  match: "pc > $50000  &&  pc < $60000"
+	 */
+	SetCpuRegister("pc", 0x58000);
+	/* !match: "d0 = a0"
+	 *  match: "pc = a0"
+	 */
+	SetCpuRegister("a0", 0x58000);
+	
+	/* check matches */
 	while ((i = BreakCond_MatchCpu())) {
-		fprintf(stderr, "Removing matching CPU breakpoint.\n");
+		fprintf(stderr, "Removing matching CPU breakpoint %d...\n", i);
+		for (j = 0; (test = match_tests[j]); j++) {
+			if (strcmp(test, BreakPointsCpu[i-1].expression) == 0) {
+				break;
+			}
+		}
+		if (test) {
+			if (j < FAILING_BC_TEST_MATCHES) {
+				fprintf(stderr, "ERROR: breakpoint should not have matched!\n");
+				errors++;
+			}
+		} else {
+			fprintf(stderr, "WARNING: canonized breakpoint form didn't match\n");
+			errors++;
+		}
 		BreakCond_Remove(i, use_dsp);
 	}
-
-	/* try removing everything from alternate ends */
-	while ((count = BreakCond_BreakPointCount(use_dsp))) {
-		BreakCond_Remove(count, use_dsp);
-		BreakCond_Remove(1, use_dsp);
+	remaining_matches = BreakCond_BreakPointCount(use_dsp);
+	if (remaining_matches != FAILING_BC_TEST_MATCHES) {
+		fprintf(stderr, "ERROR: wrong number of breakpoints left (%d instead of %d)!\n",
+			remaining_matches, FAILING_BC_TEST_MATCHES);
+		errors++;
 	}
+
+	fprintf(stderr, "\nOther breakpoints didn't match, removing the rest...\n");
+	BreakCond_RemoveAll(use_dsp);
 	BreakCond_List(use_dsp);
 	fprintf(stderr, "-----------------\n");
 
@@ -1349,17 +1435,15 @@ int main(int argc, const char *argv[])
 			BreakCond_Remove(i, use_dsp);
 		}
 
-		/* try removing everything from alternate ends */
-		while ((count = BreakCond_BreakPointCount(use_dsp))) {
-			BreakCond_Remove(count, use_dsp);
-			BreakCond_Remove(1, use_dsp);
-		}
+		BreakCond_RemoveAll(use_dsp);
 		BreakCond_List(use_dsp);
 		fprintf(stderr, "-----------------\n");
 	}
 	if (errors) {
 		fprintf(stderr, "\n***Detected %d ERRORs in %d automated tests!***\n\n",
 			errors, tests);
+	} else {
+		fprintf(stderr, "\nFinished without any errors!\n\n");
 	}
 	return 0;
 }
