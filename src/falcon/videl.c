@@ -527,35 +527,6 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 					}
 				}
 				break;
-			case 3:
-				{
-					Uint16 *fvram_line = fvram;
-					Uint8 *hvram_line = hvram;
-					int h;
-
-					for (h = 0; h < vh_clip; h++) {
-						Uint16 *fvram_column = fvram_line;
-						Uint8 *hvram_column = hvram_line;
-						int w;
-
-						for (w = 0; w < (vw_clip+15)>>4; w++) {
-							int j;
-							Videl_bitplaneToChunky( fvram_column, vbpp, color );
-
-							for (j=0; j<16; j++) {
-								Uint32 tmpColor = HostScreen_getPaletteColor( color[j] );
-								putBpp24Pixel( hvram_column, tmpColor );
-								hvram_column += 3;
-							}
-
-							fvram_column += vbpp;
-						}
-
-						hvram_line += scrpitch;
-						fvram_line += nextline;
-					}
-				}
-				break;
 			case 4:
 				{
 					Uint16 *fvram_line = fvram;
@@ -652,37 +623,6 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 #endif // SDL_BYTEORDER == SDL_BIG_ENDIAN
 
 						hvram_line += scrpitch>>1;
-						fvram_line += nextline;
-					}
-				}
-				break;
-			case 3:
-				{
-					Uint16 *fvram_line = fvram;
-					Uint8 *hvram_line = hvram;
-					int h;
-
-					for (h = 0; h < vh_clip; h++) {
-						Uint16 *fvram_column = fvram_line;
-						Uint8 *hvram_column = hvram_line;
-						int w;
-
-						for (w = 0; w < vw_clip; w++) {
-							int data = *fvram_column++;
-
-							Uint32 tmpColor =
-								HostScreen_getColor(
-									(Uint8) (data & 0xf8),
-									(Uint8) ( ((data & 0x07) << 5) |
-											  ((data >> 11) & 0x3c)),
-									(Uint8) ((data >> 5) & 0xf8));
-							
-							putBpp24Pixel( hvram_column, tmpColor );
-
-							hvram_column += 3;
-						}
-
-						hvram_line += scrpitch;
 						fvram_line += nextline;
 					}
 				}
@@ -907,52 +847,6 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 					free(p2cline);
 				}
 				break;
-			case 3:
-				{
-					/* One complete planar 2 chunky line */
-					Uint8 *p2cline = malloc(sizeof(Uint8)*vw*3);
-
-					Uint16 *fvram_line;
-					Uint8 *hvram_line = hvram;
-
-					for (h = 0; h < scrheight; h++) {
-						fvram_line = fvram + (zoomytable[h] * nextline);
-
-						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-scrpitch, scrwidth*scrbpp);
-						} else {
-							Uint16 *fvram_column = fvram_line;
-							Uint8 *hvram_column = p2cline;
-
-							/* Convert a new line */
-							for (w=0; w < (vw+15)>>4; w++) {
-								Videl_bitplaneToChunky( fvram_column, vbpp, color );
-
-								for (j=0; j<16; j++) {
-									Uint32 tmpColor = HostScreen_getPaletteColor( color[j] );
-									putBpp24Pixel( hvram_column, tmpColor );
-									hvram_column += 3;
-								}
-
-								fvram_column += vbpp;
-							}
-							
-							/* Zoom a new line */
-							for (w=0; w<scrwidth; w++) {
-								hvram_line[w*3] = p2cline[zoomxtable[w]*3];
-								hvram_line[w*3+1] = p2cline[zoomxtable[w]*3+1];
-								hvram_line[w*3+2] = p2cline[zoomxtable[w]*3+2];
-							}
-						}
-
-						hvram_line += scrpitch;
-						cursrcline = zoomytable[h];
-					}
-
-					free(p2cline);
-				}
-				break;
 			case 4:
 				{
 					/* One complete planar 2 chunky line */
@@ -1008,7 +902,7 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 				break;
 		}
 	} else {
-		/* Falcon TrueColour mode */
+		/* Falcon high-color (16-bit) mode */
 
 		switch(scrbpp) {
 			case 1:
@@ -1074,45 +968,6 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 						}
 
 						hvram_line += scrpitch>>1;
-						cursrcline = zoomytable[h];
-					}
-				}
-				break;
-			case 3:
-				{
-					Uint16 *fvram_line;
-					Uint8 *hvram_line = hvram;
-
-					for (h = 0; h < scrheight; h++) {
-						Uint16 *fvram_column;
-						Uint8 *hvram_column;
-
-						fvram_line = fvram + (zoomytable[h] * nextline);
-						fvram_column = fvram_line;
-						hvram_column = hvram_line;
-
-						/* Recopy the same line ? */
-						if (zoomytable[h] == cursrcline) {
-							memcpy(hvram_line, hvram_line-scrpitch, scrwidth*scrbpp);
-						} else {
-							for (w = 0; w < scrwidth; w++) {
-								Uint16 srcword;
-								Uint32 dstlong;
-							
-								srcword = fvram_column[zoomxtable[w]];
-
-								dstlong = HostScreen_getColor(
-										(Uint8) (srcword & 0xf8),
-										(Uint8) ( ((srcword & 0x07) << 5) |
-											  ((srcword >> 11) & 0x3c)),
-										(Uint8) ((srcword >> 5) & 0xf8));
-
-								putBpp24Pixel( hvram_column, dstlong );
-								hvram_column += 3;
-							}
-						}
-
-						hvram_line += scrpitch;
 						cursrcline = zoomytable[h];
 					}
 				}

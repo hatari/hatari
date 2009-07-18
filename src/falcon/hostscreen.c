@@ -212,7 +212,10 @@ static void HostScreen_searchVideoMode( Uint32 *width, Uint32 *height, Uint32 *b
 void HostScreen_setWindowSize( Uint32 width, Uint32 height, Uint32 bpp )
 {
 	Uint32 screenheight;
-	
+
+	if (bpp == 24)
+		bpp = 32;
+
 	nScreenZoomX = 1;
 	nScreenZoomY = 1;
 	if (ConfigureParams.Screen.bZoomLowRes)
