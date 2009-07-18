@@ -12,9 +12,9 @@
 <meta name="author" content="Thomas Huth" />
 <meta name="copyright" content="Thomas Huth" />
 <meta name="robots" content="index,follow" />
-<meta name="date" content="2008-12-29" />
+<meta name="date" content="2009-07-18" />
 <style type="text/css">
-  .question { font-style:italic; }
+  .question { font-style:italic; font-size:120%; color:#FFFFC0; }
 </style>
 </head>
 
@@ -54,9 +54,8 @@
 
 <h2>Frequently asked questions:</h2>
 
+<h3 class="question">Q: I can't compile Hatari!?</h3>
 <p>
-<span class="question">Q: I can't compile Hatari!?</span>
-<br />
 A: You should check if you have installed all needed tools for compiling Hatari:
 The GNU C compiler (GCC), GNU make (sometimes also called &quot;gmake&quot;,
 other versions of make might not work), development files for the SDL library
@@ -64,51 +63,59 @@ and the ZLib compression library.  Also, if you want screenshots in PNG
 format, you'll need development files for libpng.
 </p>
 
+<h3 class="question">Q: Why is Hatari so slow? Are there any possibilities
+  to speed it up?</h3>
 <p>
-<span class="question">Q: Why is Hatari so slow? Are there any possibilities to speed it up?</span>
-<br />
-A: Screen rendering can take a lot of CPU time, so it's best to skip rendering
-some frames. You can enable this with the &quot;--frameskips&quot; command
-line option or by using the screen configuration dialog.  If the default
-"auto" mode works well for you, use that.
-<br />
-Note that you should also not enable the screen zoom mode for the ST Low
-resolution since this will slow down the emulator, too. If you still want
-to have a nice fullscreen mode, you should rather add the right resolution
-mode-lines (e.g. "320x200") to your xorg.conf file.  If you're using
-frame skipping, zooming has less effect.
-<br />
-By the way, Hatari currently runs best in 16 or 32 bits per pixel
-color depth mode, so try to avoid 24 bits per pixel modes if possible.
-<br />
-If the programs you're interested about work well enough when the
-"Slower but more compatible CPU" option is disabled, disable that.
-<br />
-You should not enable sound when running Hatari (or at least switch
-to 11kHz), this will increase the speed of the emulator.  Disabling
-e.g. the music in the emulated program can also help.
-<br />
-If Hatari is still too slow, you probably have not enough CPU power.
-You should have a 500 Mhz CPU at least (for ST/STE mode &mdash; Falcon
-mode might require even more).
+A: Have a look at the
+<a href="http://hg.berlios.de/repos/hatari/raw-file/tip/doc/manual.html#Performance">Performance
+section</a> of the manual.
 </p>
 
+<h3 class="question">Q: Game XY does not work, what can I do?</h3>
 <p>
-<span class="question">Q: Game XY does not work, what can I do?</span>
-<br />
-A: Many ST games often need a certain TOS version to run right. Old games
-often only work with TOS 1.00 or TOS 1.02, so you should try these TOS versions
-first. If the game still does not work, you should also try TOS 1.04 and 2.06.
-Some games also either need a NTSC (US American) or a PAL (European) TOS,
-so it might be useful to test these different types, too.
-<br />
-You should also try different RAM sizes, for example some games do not work
-with 4 MB memory size!
-<br />
-And finally, try to enable the &quot;Slower but more compatible CPU&quot; and/or
-the blitter chip emulation in the system options dialog, this might help, too.
+A: There can be many reasons why a game does not work immediately. Changing one of the
+following configuration settings often helps:
+</p>
+<ul>
+<li>
+ Many ST games often need a certain TOS version to run right. Old games
+ often only work with TOS 1.00 or TOS 1.02, so you should try these TOS versions
+ first. If the game still does not work, you should also try TOS 1.04 and 2.06.
+ Some games also either need a NTSC (US American) or a PAL (European) TOS,
+ so it might be useful to test these different types, too.
+</li>
+<li>
+ There are also some games which do not work in STE mode - but there
+ are also some few games which only work in STE mode and not in ST mode.
+ So changing the machine type might be worth a try, too.
+</li>
+<li>
+ Some games also need certain RAM sizes, for example some games do not work
+ with 4 MB memory size!
+</li>
+<li>
+ And finally, try to enable the &quot;Slower but more compatible CPU&quot; and/or
+ disable the &quot;Patch Timer-D&quot; in the system options dialog. This slightly
+ increases compatibility with the real ST. In some few cases you also have to enable
+ the &quot;Slow floppy access&quot; option in the floppy options dialog to mimic
+ the speed of the original floppy disk drive.
+</li>
+</ul>
+
+<h3 class="question">Q: How can I use MIDI on Mac OS X or Windows?</h3>
+<p>
+ A: MIDI currently only works on Linux (and maybe some *BSD systems) where Hatari
+ can write the MIDI output to a device file in the /dev file system.
+ On all other systems, MIDI is not supported.
 </p>
 
+<h3 class="question">Q: Why is the 68k CPU speed limited to so few MHz?</h3>
+<p>
+ A: The development goal of Hatari is to provide a good emulator for running
+ old games and demos, so we focus on a cycle accurate emulator.
+ If you rather want to run GEM applications as fast as possible, you should
+ better use another emulator that better suits this goal.
+</p>
 
 </body>
 </html>
