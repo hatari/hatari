@@ -73,7 +73,7 @@ void GuiOsx_ExportPathString(NSString* path, char* szTarget, size_t cchTarget)
 void GuiOsx_Pause()
 {
 	// Pause emulation
-	Main_PauseEmulation(FALSE);
+	Main_PauseEmulation(false);
 }
 
 /*-----------------------------------------------------------------------*/

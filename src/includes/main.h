@@ -32,11 +32,6 @@
 # define unlikely(x)    (x)
 #endif
 
-#ifndef FALSE
-#define FALSE false
-#define TRUE  true
-#endif
-
 #ifdef WIN32
 #define PATHSEP '\\'
 #else

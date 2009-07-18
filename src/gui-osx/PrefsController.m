@@ -229,7 +229,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 		[textField setStringValue:[path stringByAbbreviatingWithTildeInPath]];
 		
 		// Signal completion
-		return TRUE;
+		return true;
     }
 	
 	// Signal that the selection was aborted
@@ -450,7 +450,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 */
 - (IBAction)commitAndClose:(id)sender
 {
-	BOOL applyChanges = TRUE;
+	BOOL applyChanges = true;
 
 	// The user clicked OK
 	[self saveAllControls];
@@ -466,7 +466,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	// Commit the new configuration
 	if (applyChanges)
 	{
-		Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, FALSE);
+		Change_CopyChangedParamsToConfiguration(&CurrentParams, &ConfigureParams, false);
 	}
 	else
 	{
@@ -529,7 +529,7 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 			[realJoystick setEnabled:FALSE];
 		}
 		
-		bInitialized = TRUE;
+		bInitialized = true;
 	}
 
 
@@ -821,33 +821,33 @@ size_t Preferences_cKeysForJoysticks = sizeof(Preferences_KeysForJoysticks) / si
 	if ([[hdImage stringValue] length] > 0)
 	{
 		EXPORT_TEXTFIELD(hdImage, ConfigureParams.HardDisk.szHardDiskImage);
-		ConfigureParams.HardDisk.bUseHardDiskImage = TRUE;
+		ConfigureParams.HardDisk.bUseHardDiskImage = true;
 	}
 	else
 	{
-		ConfigureParams.HardDisk.bUseHardDiskImage = FALSE;
+		ConfigureParams.HardDisk.bUseHardDiskImage = false;
 	}
 	
 	// Define the IDE HD flag, and export the IDE HD path if one is selected
 	if ([[ideHdImage stringValue] length] > 0)
 	{
 		EXPORT_TEXTFIELD(ideHdImage, ConfigureParams.HardDisk.szIdeHardDiskImage);
-		ConfigureParams.HardDisk.bUseIdeHardDiskImage = TRUE;
+		ConfigureParams.HardDisk.bUseIdeHardDiskImage = true;
 	}
 	else
 	{
-		ConfigureParams.HardDisk.bUseIdeHardDiskImage = FALSE;
+		ConfigureParams.HardDisk.bUseIdeHardDiskImage = false;
 	}
 	
 	// Define the Gemdos flag, and export the Gemdos path if one is selected
 	if ([[gemdosImage stringValue] length] > 0)
 	{
 		EXPORT_TEXTFIELD(gemdosImage, ConfigureParams.HardDisk.szHardDiskDirectories[0]);
-		ConfigureParams.HardDisk.bUseHardDiskDirectories = TRUE;
+		ConfigureParams.HardDisk.bUseHardDiskDirectories = true;
 	}
 	else
 	{
-		ConfigureParams.HardDisk.bUseHardDiskDirectories = FALSE;
+		ConfigureParams.HardDisk.bUseHardDiskDirectories = false;
 	}
 	
 	// Save the per-joystick controls		
