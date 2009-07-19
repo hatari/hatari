@@ -88,80 +88,6 @@ void DebugUI_MemorySnapShot_Capture(bool bSave)
 
 
 /**
- * Get a hex adress range, eg. "fa0000-fa0100" 
- * returns -1 if not a range,
- * -2 if a range, but not a valid one.
- * 0 if OK.
- */
-static int getRange(char *str, Uint32 *lower, Uint32 *upper)
-{
-	bool fDash = false;
-	int i=0;
-
-	while (str[i] != '\0')
-	{
-		if (str[i] == '-')
-		{
-			str[i] = ' ';
-			fDash = true;
-		}
-		i++;
-	}
-	if (fDash == false)
-		return -1;
-
-	i = sscanf(str, "%x%x", lower, upper);
-	if (i != 2)
-		return -2;
-	if (*lower > *upper)
-		return -3;
-	return 0;
-}
-
-
-/**
- * Parse a hex adress range, eg. "fa0000[-fa0100]" + show appropriate warnings
- * returns:
- * -1 if invalid address or range,
- *  0 if single address,
- * +1 if a range.
- */
-static int parseRange(char *str, Uint32 *lower, Uint32 *upper)
-{
-	int i;
-
-	switch (getRange(str, lower, upper))
-	{
-	case 0:
-		return 1;
-	case -1:
-		/* single address, not a range */
-		if (!Str_IsHex(str))
-		{
-			fprintf(stderr,"Invalid address '%s'!\n", str);
-			return -1;
-		}
-		i = sscanf(str, "%x", lower);
-		
-		if (i == 0)
-		{
-			fprintf(stderr,"Invalid address '%s'!\n", str);
-			return -1;
-		}
-		return 0;
-	case -2:
-		fprintf(stderr,"Invalid addresses '%s'!\n", str);
-		return -1;
-	case -3:
-		fprintf(stderr,"Invalid range (%x > %x)!\n", *lower, *upper);
-		return -1;
-	}
-	fprintf(stderr, "Unknown getRange() return value!\n");
-	return -1;
-}
-
-
-/**
  * Close a log file if open, and set it to default stream.
  */
 static void DebugUI_SetLogDefault(void)
@@ -205,7 +131,7 @@ static int DebugUI_LoadBin(int nArgc, char *psArgs[])
 {
 	FILE *fp;
 	unsigned char c;
-	unsigned long address;
+	Uint32 address;
 	int i=0;
 
 	if (nArgc < 3)
@@ -214,7 +140,7 @@ static int DebugUI_LoadBin(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	if (sscanf(psArgs[2], "%lx", &address) != 1)
+	if (!Str_GetNumber(psArgs[2], &address))
 	{
 		fprintf(stderr, "Invalid address!\n");
 		return DEBUGGER_CMDDONE;
@@ -248,8 +174,8 @@ static int DebugUI_SaveBin(int nArgc, char *psArgs[])
 {
 	FILE *fp;
 	unsigned char c;
-	unsigned long address;
-	unsigned long bytes, i=0;
+	Uint32 address;
+	Uint32 bytes, i = 0;
 
 	if (nArgc < 4)
 	{
@@ -257,14 +183,14 @@ static int DebugUI_SaveBin(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	if (sscanf(psArgs[2], "%lx", &address) != 1)
+	if (!Str_GetNumber(psArgs[2], &address))
 	{
 		fprintf(stderr, "  Invalid address!\n");
 		return DEBUGGER_CMDDONE;
 	}
 	address &= 0x00FFFFFF;
 
-	if (sscanf(psArgs[3], "%lx", &bytes) != 1)
+	if (!Str_GetNumber(psArgs[3], &bytes))
 	{
 		fprintf(stderr, "  Invalid length!\n");
 		return DEBUGGER_CMDDONE;
@@ -283,7 +209,7 @@ static int DebugUI_SaveBin(int nArgc, char *psArgs[])
 		i++;
 	}
 	fclose(fp);
-	fprintf(stderr, "  Wrote 0x%lx bytes.\n", bytes);
+	fprintf(stderr, "  Wrote 0x%x bytes.\n", bytes);
 
 	return DEBUGGER_CMDDONE;
 }
@@ -300,7 +226,7 @@ static int DebugUI_DspRegister(int nArgc, char *psArgs[])
 {
 	int i;
 	char reg[4], *assign;
-	long value;
+	Uint32 value;
 	char *arg;
 
 	if (!bDspEnabled)
@@ -322,12 +248,12 @@ static int DebugUI_DspRegister(int nArgc, char *psArgs[])
 	if (!assign || assign - arg > 3+1)
 		goto error_msg;
 
-	*assign = ' ';
-	if (sscanf(arg, "%s%lx", reg, &value) != 2)
+	*assign++ = '\0';
+	if (!Str_GetNumber(assign, &value))
 		goto error_msg;
 
-	for (i = 0; i < 3; i++)
-		reg[i] = toupper(reg[i]);
+	for (i = 0; i < 3 && arg[i]; i++)
+		reg[i] = toupper(arg[i]);
 
 	DSP_Disasm_SetRegister(reg, value);
 	return DEBUGGER_CMDDONE;
@@ -358,7 +284,7 @@ static int DebugUI_DspDisAsm(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		switch (parseRange(psArgs[1], &lower, &upper))
+		switch (Str_ParseRange(psArgs[1], &lower, &upper))
 		{
 			case -1:
 				/* invalid value(s) */
@@ -441,7 +367,7 @@ static int DebugUI_DspMemDump(int nArgc, char *psArgs[])
 			fprintf(stderr,"Invalid DSP address space '%c'!\n", space);
 			return DEBUGGER_CMDDONE;
 		}
-		switch (parseRange(psArgs[2], &lower, &upper))
+		switch (Str_ParseRange(psArgs[2], &lower, &upper))
 		{
 		case -1:
 			/* invalid value(s) */
@@ -491,7 +417,7 @@ static int DebugUI_DspBreakPoint(int nArgc, char *psArgs[])
 {
 	int i;
 	Uint16 addr;
-	unsigned int nBreakPoint;
+	Uint32 BreakAddr;
 
 	/* List breakpoints? */
 	if (nArgc == 1)
@@ -514,8 +440,7 @@ static int DebugUI_DspBreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Parse parameter as breakpoint value */
-	if (sscanf(psArgs[1], "%x", &nBreakPoint) != 1
-	    || nBreakPoint > 0xFFFF)
+	if (!Str_GetNumber(psArgs[1], &BreakAddr) || BreakAddr > 0xFFFF)
 	{
 		fputs("Not a valid value for a DSP breakpoint!\n", stderr);
 		return DEBUGGER_CMDDONE;
@@ -524,11 +449,11 @@ static int DebugUI_DspBreakPoint(int nArgc, char *psArgs[])
 	/* Is the breakpoint already in the list? Then disable it! */
 	for (i = 0; i < nDspActiveBPs; i++)
 	{
-		if (nBreakPoint == DspBreakPoint[i])
+		if (BreakAddr == DspBreakPoint[i])
 		{
 			DspBreakPoint[i] = DspBreakPoint[nDspActiveBPs-1];
 			nDspActiveBPs -= 1;
-			fprintf(stderr, "DSP breakpoint at %x deleted.\n", nBreakPoint);
+			fprintf(stderr, "DSP breakpoint at %x deleted.\n", BreakAddr);
 			return DEBUGGER_CMDDONE;
 		}
 	}
@@ -541,9 +466,9 @@ static int DebugUI_DspBreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Add new breakpoint */
-	DspBreakPoint[nDspActiveBPs] = nBreakPoint;
+	DspBreakPoint[nDspActiveBPs] = BreakAddr;
 	nDspActiveBPs += 1;
-	fprintf(stderr, "DSP breakpoint added at %x.\n", nBreakPoint);
+	fprintf(stderr, "DSP breakpoint added at %x.\n", BreakAddr);
 
 	return DEBUGGER_CMDDONE;
 }
@@ -614,7 +539,7 @@ static int DebugUI_DisAsm(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		switch (parseRange(psArgs[1], &disasm_addr, &disasm_upper))
+		switch (Str_ParseRange(psArgs[1], &disasm_addr, &disasm_upper))
 		{
 		case -1:
 			/* invalid value(s) */
@@ -713,7 +638,7 @@ static int DebugUI_CpuRegister(int nArgc, char *psArgs[])
 {
 	int i;
 	char reg[3], *assign;
-	long value;
+	Uint32 value;
 	char *arg;
 
 	/* If no parameter has been given, simply dump all registers */
@@ -736,16 +661,16 @@ static int DebugUI_CpuRegister(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	*assign = ' ';
-	if (sscanf(arg, "%s%lx", reg, &value) != 2)
+	*assign++ = '\0';
+	if (!Str_GetNumber(assign, &value))
 	{
 		fprintf(stderr,"\tError, usage: r or r xx=yyyy\n\tWhere: xx=A0-A7, D0-D7, PC or SR and yyyy is a hex value.\n");
 		return DEBUGGER_CMDDONE;
 	}
 	
-	for (i = 0; i < 2 && reg[i]; i++)
+	for (i = 0; i < 2 && arg[i]; i++)
 	{
-		reg[i] = toupper(reg[i]);
+		reg[i] = toupper(arg[i]);
 	}
 	
 	/* set SR and update conditional flags for the UAE CPU core. */
@@ -781,7 +706,7 @@ static int DebugUI_CpuBreakPoint(int nArgc, char *psArgs[])
 {
 	int i;
 	uaecptr nextpc;
-	unsigned int nBreakPoint;
+	Uint32 BreakAddr;
 
 	/* List breakpoints? */
 	if (nArgc == 1)
@@ -803,9 +728,9 @@ static int DebugUI_CpuBreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Parse parameter as breakpoint value */
-	if (sscanf(psArgs[1], "%x", &nBreakPoint) != 1
-	    || (nBreakPoint > STRamEnd && nBreakPoint < 0xe00000)
-	    || nBreakPoint > 0xff0000)
+	if (!Str_GetNumber(psArgs[1], &BreakAddr)
+	    || (BreakAddr > STRamEnd && BreakAddr < 0xe00000)
+	    || BreakAddr > 0xff0000)
 	{
 		fputs("Not a valid value for a CPU breakpoint!\n", stderr);
 		return DEBUGGER_CMDDONE;
@@ -814,11 +739,11 @@ static int DebugUI_CpuBreakPoint(int nArgc, char *psArgs[])
 	/* Is the breakpoint already in the list? Then disable it! */
 	for (i = 0; i < nCpuActiveBPs; i++)
 	{
-		if (nBreakPoint == CpuBreakPoint[i])
+		if (BreakAddr == CpuBreakPoint[i])
 		{
 			CpuBreakPoint[i] = CpuBreakPoint[nCpuActiveBPs-1];
 			nCpuActiveBPs -= 1;
-			fprintf(stderr, "CPU breakpoint at %x deleted.\n", nBreakPoint);
+			fprintf(stderr, "CPU breakpoint at %x deleted.\n", BreakAddr);
 			return DEBUGGER_CMDDONE;
 		}
 	}
@@ -831,9 +756,9 @@ static int DebugUI_CpuBreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Add new breakpoint */
-	CpuBreakPoint[nCpuActiveBPs] = nBreakPoint;
+	CpuBreakPoint[nCpuActiveBPs] = BreakAddr;
 	nCpuActiveBPs += 1;
-	fprintf(stderr, "CPU breakpoint added at %x.\n", nBreakPoint);
+	fprintf(stderr, "CPU breakpoint added at %x.\n", BreakAddr);
 
 	return DEBUGGER_CMDDONE;
 }
@@ -859,7 +784,7 @@ static int DebugUI_MemDump(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		switch (parseRange(psArgs[1], &memdump_addr, &memdump_upper))
+		switch (Str_ParseRange(psArgs[1], &memdump_addr, &memdump_upper))
 		{
 		case -1:
 			/* invalid value(s) */
@@ -923,7 +848,7 @@ static int DebugUI_MemDump(int nArgc, char *psArgs[])
 static int DebugUI_MemWrite(int nArgc, char *psArgs[])
 {
 	int i, numBytes;
-	long write_addr;
+	Uint32 write_addr;
 	unsigned char bytes[256]; /* store bytes */
 	int d;
 
@@ -935,11 +860,9 @@ static int DebugUI_MemWrite(int nArgc, char *psArgs[])
 	}
 
 	/* Read address */
-	i = sscanf(psArgs[1], "%lx", &write_addr);
-	/* if next char is not valid, or it's not a valid address */
-	if (i != 1)
+	if (!Str_GetNumber(psArgs[1], &write_addr))
 	{
-		fprintf(stderr, "Bad address! (must be hexadecimal)\n");
+		fprintf(stderr, "Bad address!\n");
 		return DEBUGGER_CMDDONE;
 	}
 
@@ -1139,7 +1062,8 @@ dbgcommand_t commandtab[] =
 	{ DebugUI_MemWrite, "memwrite", "w",
 	  "write bytes to memory",
 	  "address byte1 [byte2 ...]\n"
-	  "\tWrite bytes to a memory address, bytes are space separated.",
+	  "\tWrite bytes to a memory address, bytes are space separated\n"
+	  "\thexadecimals.",
 	  false },
 	{ DebugUI_SetLogFile, "logfile", "f",
 	  "open or close log file",
@@ -1230,8 +1154,10 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 			commandtab[i].sShortName, commandtab[i].sShortDesc);
 	}
 
-	fputs("Adresses may be given as a range e.g. 'fc0000-fc0100'.\n"
-	      "All values in hexadecimal. 'h <command>' gives more help.\n",
+	fputs("If value is prefixed with '$', it's hexadecimal, if with '%',\n"
+	      "it's binary decimal, otherwise it's a normal decimal value.\n"
+	      "Adresses may be given as a range like '$fc0000-$fc0100'.\n"
+	      "'h <command>' gives more help.\n",
 	      stderr);
 	return DEBUGGER_CMDDONE;
 }
