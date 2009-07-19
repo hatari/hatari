@@ -2284,6 +2284,14 @@ emulation options, but they don't affect the emulated programs at all,
 just the quality of the emulation "output". These options can also
 be toggled at run-time without rebooting the emulation.</p>
 <dl>
+<dd><b>Sound</b></dd>
+<dt>Internal Hatari sound handling and the SDL_mixer sound thread
+libALSA sound processing can account up to 1/3 of the Hatari CPU usage
+(depending on other options you're using). Disabling sound will get
+rid of that.  Using low sound frequency or one matching your sound
+card may also help.  Best is if you disable also background music
+from the programs you run in Hatari as this can significantly reduce
+the number of generated interrupts.</dt>
 <dd><b>Frame skipping</b></dd>
 <dt>Screen rendering can take noticeable amount of CPU time. The default
 Hatari "auto" frame skipping should be used unless there's a good
@@ -2303,14 +2311,17 @@ noticeable improvement on performance.  If you still want to have a
 nice fullscreen mode, you should rather add the right resolution
 mode-lines (e.g. "320x200") to your xorg.conf file.  If you still
 want to use zooming, disabling borders may help a bit.</dt>
-<dd><b>Sound</b></dd>
-<dt>Internal Hatari sound handling and the SDL_mixer sound thread
-libALSA sound processing can account up to 1/3 of the Hatari CPU usage
-(depending on other options you're using). Disabling sound will get
-rid of that.  Using low sound frequency or one matching your sound
-card may also help.  Best is if you disable also background music
-from the programs you run in Hatari as this can significantly reduce
-the number of generated interrupts.</dt>
+<dd><b>Spec512 color handling</b></dd>
+<dt>Handling Spec512 color modes which change the ST/e palette constantly
+takes some extra CPU.  If you have problems with CPU usage in such
+screens and you care more e.g. from the sound quality than visuals, you
+can disable the Spec512 mode handling by zeroing the threshold for that
+with the <span class="commandline">--spec512 0</span> option.</dt>
+<dd><b>Statusbar and drive LED</b></dd>
+<dt>If your version of libSDL uses VSync to synchronize the screen
+output, drawing of the statusbar or the drive LED (when statusbar is
+disabled) may have some minor impact on performance too.  Normally
+they shouldn't.</dt>
 </dl>
 
 <p>
