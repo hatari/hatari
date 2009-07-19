@@ -889,6 +889,39 @@ static int DebugUI_MemWrite(int nArgc, char *psArgs[])
 	return DEBUGGER_CMDDONE;
 }
 
+/**
+ * Command: Show given value in bin/dec/hex number bases
+ */
+static int DebugUI_ShowValue(int argc, char *argv[])
+{
+	bool one, ones;
+	Uint32 value;
+	int bit;
+	
+	if (argc < 2)
+	{
+		DebugUI_PrintCmdHelp(argv[0]);
+		return DEBUGGER_CMDDONE;
+	}
+	if (!Str_GetNumber(argv[1], &value))
+		return DEBUGGER_CMDDONE;
+	fprintf(stderr, "Value '%s' is in the supported number bases:\n"
+		"- bin: %%", argv[1]);
+	ones = false;
+	for (bit = 31; bit >= 0; bit--)
+	{
+		one = value & (1<<bit);
+		if (one || ones)
+		{
+			fputc(one ? '1':'0', stderr);
+			ones = true;
+		}
+	}
+	fprintf(stderr, "\n- dec: %u", value);
+	fprintf(stderr, "\n- hex: $%x\n", value);
+	return DEBUGGER_CMDDONE;
+}
+
 
 /**
  * Command: Set options
@@ -1087,6 +1120,11 @@ dbgcommand_t commandtab[] =
 	  "[command line parameters]\n"
 	  "\tSet options like command line parameters. For example to"
 	  "\tenable CPU disasm tracing:  setopt --trace cpu_disasm",
+	  false },
+	{ DebugUI_ShowValue, "value", "v",
+	  "show given value in bin/dec/hex number bases",
+	  "<value>\n"
+	  "\tHelper to show given value in supported number bases.",
 	  false },
 	{ DebugUI_CpuContinue, "cont", "c",
 	  "continue emulation / CPU single-stepping",
