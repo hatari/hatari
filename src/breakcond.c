@@ -21,6 +21,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 #include "debugui.h"
 #include "stMemory.h"
+#include "str.h"
 #include "breakcond.h"
 
 /* set to 1 to enable parsing function tracing / debug output */
@@ -385,58 +386,6 @@ static bool BreakCond_CheckAddress(bc_value_t *bc_value)
 
 
 /**
- * Parse a number, decimal unless prefixed with '$' which signifies hex
- * or prefixed with '%' which signifies binary value.
- * Modify pstate according to parsing (arg index and error string).
- * Return true for success and false for error.
- */
-static bool BreakCond_ParseNumber(parser_state_t *pstate, const char *value, Uint32 *number)
-{
-	int i;
-	const char *str;
-	ENTERFUNC(("BreakCond_ParseNumber('%s'), arg:%d\n", value, pstate->arg));
-	switch (value[0]) {
-	case '$':	/* hexadecimal */
-		if (sscanf(value+1, "%x", number) != 1) {
-			pstate->error = "invalid hexadecimal value";
-			EXITFUNC(("-> false\n"));
-			return false;
-		}
-		break;
-	case '%':	/* binary */
-		for (str = value+1, i = 0; *str && i < 32; str++, i++) {
-			*number <<= 1;
-			switch (*str) {
-			case '0':
-				break;
-			case '1':
-				*number |= 1;
-				break;
-			default:
-				pstate->error = "invalid binary value character(s)";
-				EXITFUNC(("-> false\n"));
-				return false;
-			}
-		}
-		if (*str) {
-			pstate->error = "binary value has more than 32 bits";
-			EXITFUNC(("-> false\n"));
-			return false;
-		}
-		break;
-	default:	/* decimal */
-		if (sscanf(value, "%u", number) != 1) {
-			pstate->error = "invalid value";
-			EXITFUNC(("-> false\n"));
-			return false;
-		}
-	}
-	EXITFUNC(("-> number:%x, true\n", *number));
-	return true;
-}
-
-
-/**
  * Check for and parse a condition value address space/width modifier.
  * Modify pstate according to parsing (arg index and error string).
  * Return false for error and true for no or successfully parsed modifier.
@@ -525,7 +474,8 @@ static bool BreakCond_ParseMaskModifier(parser_state_t *pstate, bc_value_t *bc_v
 		fprintf(stderr, "WARNING: plain numbers shouldn't need masks.\n");
 	}
 	pstate->arg++;
-	if (!BreakCond_ParseNumber(pstate, pstate->argv[pstate->arg], &(bc_value->mask))) {
+	if (!Str_GetNumber(pstate->argv[pstate->arg], &(bc_value->mask))) {
+		pstate->error = "invalid dec/hex/bin value";
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
@@ -578,7 +528,8 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 		}
 	} else {
 		/* a number */
-		if (!BreakCond_ParseNumber(pstate, str, &(bc_value->value.number))) {
+		if (!Str_GetNumber(str, &(bc_value->value.number))) {
+			pstate->error = "invalid dec/hex/bin value";
 			EXITFUNC(("arg:%d -> false\n", pstate->arg));
 			return false;
 		}
@@ -1069,13 +1020,13 @@ static void BreakCond_RemoveAll(bool bForDsp)
  */
 static void BreakCond_Help(void)
 {
-	fprintf(stderr,
+	fputs(
 "  breakpoint = <expression> [ && <expression> [ && <expression> ] ... ]\n"
 "  expression = <value>[.mode] [& <number>] <condition> <value>[.mode]\n"
 "\n"
 "  where:\n"
 "  	value = [(] <register-name | number> [)]\n"
-"  	number = [$|%%]<digits>\n"
+"  	number = [$|%]<digits>\n"
 "  	condition = '<' | '>' | '=' | '!'\n"
 "  	addressing mode (width) = 'b' | 'w' | 'l'\n"
 "  	addressing mode (space) = 'p' | 'x' | 'y'\n"
@@ -1083,16 +1034,13 @@ static void BreakCond_Help(void)
 "  If the value is in parenthesis like in '($ff820)' or '(a0)', then\n"
 "  the used value will be read from the memory address pointed by it.\n"
 "\n"
-"  If value is prefixed with '$', it's hexadecimal, if with '%%', it's\n"
-"  binary decimal, otherwise it's a normal decimal value.\n"
-"\n"
 "  M68k addresses can have byte (b), word (w) or long (l, default) width.\n"
 "  DSP addresses belong to different address spaces: P, X or Y. Note that\n"
-"  on DSP only R0-R7 registers can be used for relative addressing.\n"
+"  on DSP only R0-R7 registers can be used for memory addressing.\n"
 "\n"
 "  Examples:\n"
-"  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0.l = 123\n"
-"  	(r0).x = 1 && (r0).y = 2\n");
+"  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0 = %1100\n"
+"  	(r0).x = 1 && (r0).y = 2\n", stderr);
 }
 
 
