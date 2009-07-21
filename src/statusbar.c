@@ -468,7 +468,8 @@ static void Statusbar_ShowMessage(SDL_Surface *surf, Uint32 ticks)
  */
 void Statusbar_OverlayBackup(SDL_Surface *surf)
 {
-	if (StatusbarHeight && ConfigureParams.Screen.bShowStatusbar) {
+	if ((StatusbarHeight && ConfigureParams.Screen.bShowStatusbar)
+	    || !ConfigureParams.Screen.bShowDriveLed) {
 		/* overlay not used with statusbar */
 		return;
 	}
@@ -493,7 +494,8 @@ void Statusbar_OverlayBackup(SDL_Surface *surf)
  */
 void Statusbar_OverlayRestore(SDL_Surface *surf)
 {
-	if (StatusbarHeight && ConfigureParams.Screen.bShowStatusbar) {
+	if ((StatusbarHeight && ConfigureParams.Screen.bShowStatusbar)
+	    || !ConfigureParams.Screen.bShowDriveLed) {
 		/* overlay not used with statusbar */
 		return;
 	}
