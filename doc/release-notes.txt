@@ -26,6 +26,8 @@ Emulator:
   - DSP state saved to memory snapshots
   - Threading support removed from DSP emulation (makes it faster/simpler)
 - Debugger:
+  - $-prefix needed for hexadecimal and %-prefix for binary values,
+    by default values are normal decimal values
   - Internal debugger can be used to debug also DSP code
   - Support for (PC) address breakpoints and conditional breakpoints
     (watchpoints), both on CPU and DSP
