@@ -596,7 +596,7 @@ void	Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles )
 	if ( *pLineCycles < 0 )					/* reading from the previous video line */
 	{
 		*pHBL = nHBL-1;
-		*pLineCycles = FrameCycles - ShifterFrame.ShifterLines[ nHBL ].StartCycle;
+		*pLineCycles = FrameCycles - ShifterFrame.ShifterLines[ nHBL-1 ].StartCycle;
 	}
 	
 	else if ( *pLineCycles >= nCyclesPerLine )		/* reading on the next line, but HBL int was delayed */
@@ -605,6 +605,9 @@ void	Video_ConvertPosition ( int FrameCycles , int *pHBL , int *pLineCycles )
 		*pLineCycles -= nCyclesPerLine;
 	}
 
+
+if ( *pLineCycles < 0 )
+	fprintf ( stderr , "bug nHBL=%d %d %d\n" , nHBL , *pHBL , *pLineCycles );
 
 //if ( ( *pHBL != FrameCycles / nCyclesPerLine ) || ( *pLineCycles != FrameCycles % nCyclesPerLine ) )
 //  LOG_TRACE ( TRACE_VIDEO_ADDR , "conv pos %d %d - %d %d\n" , *pHBL , FrameCycles / nCyclesPerLine , *pLineCycles , FrameCycles % nCyclesPerLine );
