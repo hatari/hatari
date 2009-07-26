@@ -9,10 +9,11 @@
 const char Control_fileid[] = "Hatari control.c : " __DATE__ " " __TIME__;
 
 #include "config.h"
-#if HAVE_UNIX_DOMAIN_SOCKETS
 
+#if HAVE_UNIX_DOMAIN_SOCKETS
 # include <sys/socket.h>
-#include <sys/un.h>
+# include <sys/un.h>
+#endif
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -40,15 +41,10 @@ typedef enum {
 	DO_TOGGLE
 } action_t;
 
-/* socket from which control command line options are read */
-static int ControlSocket;
 /* Whether to send embedded window info */
 static bool bSendEmbedInfo;
 /* Pausing triggered remotely (battery save pause) */
 static bool bRemotePaused;
-
-/* pre-declared local functions */
-static int Control_GetUISocket(void);
 
 
 /*-----------------------------------------------------------------------*/
@@ -329,6 +325,15 @@ void Control_ProcessBuffer(char *buffer)
 		}
 	} while (ok && cmdend && *cmd);
 }
+
+
+#if HAVE_UNIX_DOMAIN_SOCKETS
+
+/* socket from which control command line options are read */
+static int ControlSocket;
+
+/* pre-declared local functions */
+static int Control_GetUISocket(void);
 
 
 /*-----------------------------------------------------------------------*/
