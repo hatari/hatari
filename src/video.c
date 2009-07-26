@@ -293,7 +293,7 @@ const char Video_fileid[] = "Hatari video.c : " __DATE__ " " __TIME__;
 
 int STRes = ST_LOW_RES;                         /* current ST resolution */
 int TTRes;                                      /* TT shifter resolution mode */
-int nFrameSkips = 0;				/* speed up by skipping video frames */
+int nFrameSkips;                                /* speed up by skipping video frames */
 
 bool bUseSTShifter;                             /* Falcon: whether to use ST palette */
 bool bUseHighRes;                               /* Use hi-res (ie Mono monitor) */
@@ -1442,11 +1442,16 @@ void Video_InterruptHandler_HBL ( void )
 
 	nHBL++;						/* Increase HBL count */
 
-	/* Update start cycle for next HBL */
-	ShifterFrame.ShifterLines[ nHBL ].StartCycle = FrameCycles - PendingCyclesOver;
-LOG_TRACE ( TRACE_VIDEO_HBL , "HBL %d start=%d %x\n" , nHBL , ShifterFrame.ShifterLines[ nHBL ].StartCycle , ShifterFrame.ShifterLines[ nHBL ].StartCycle );
+	if (nHBL < nScanlinesPerFrame)
+	{
+		/* Update start cycle for next HBL */
+		ShifterFrame.ShifterLines[ nHBL ].StartCycle = FrameCycles - PendingCyclesOver;
+		LOG_TRACE(TRACE_VIDEO_HBL, "HBL %d start=%d %x\n", nHBL,
+		          ShifterFrame.ShifterLines[nHBL].StartCycle, ShifterFrame.ShifterLines[nHBL].StartCycle);
 
-	Video_StartHBL();				/* Setup next HBL */
+		/* Setup next HBL */
+		Video_StartHBL();
+	}
 }
 
 
