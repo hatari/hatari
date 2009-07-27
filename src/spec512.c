@@ -51,9 +51,10 @@
 /*			8 or 4 pixels too late. Calibration was made using a custom program to	*/
 /*			compare the results with a real STF in different cases (fix Froggies	*/
 /*			Over The Fence Main Menu).						*/
-/* 2008/12/21	[NP]	Use BusMode to adjust Cycles_GetCounterOnReadAccess and		*/
-/*			Cycles_GetCounterOnWriteAccess depending on who is owning the	*/
-/*			bus (cpu, blitter).						*/
+/* 2008/12/21	[NP]	Use BusMode to adjust Cycles_GetCounterOnReadAccess and			*/
+/*			Cycles_GetCounterOnWriteAccess depending on who is owning the		*/
+/*			bus (cpu, blitter).							*/
+/* 2009/07/28	[NP]	Use different timings for movem.l and movem.w				*/
 
 
 const char Spec512_fileid[] = "Hatari spec512.c : " __DATE__ " " __TIME__;
@@ -168,7 +169,13 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 #else
 		if ( OpcodeFamily == i_MVMLE )
 		{
-			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
+//			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO) + 8;
+			FrameCycles = Cycles_GetCounter(CYCLES_COUNTER_VIDEO)
+			              + (CurrentInstrCycles & ~3);
+			if (nIoMemAccessSize == SIZE_LONG)	/* long access */
+				FrameCycles -= 0;
+			else					/* word/byte access */
+				FrameCycles -= 4;
 		}
 		else
 		{
