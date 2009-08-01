@@ -174,7 +174,7 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 			              + (CurrentInstrCycles & ~3);
 			if (nIoMemAccessSize == SIZE_LONG)	/* long access */
 				FrameCycles -= 0;
-			else					/* word/byte access */
+			else					/* word access */
 				FrameCycles -= 4;
 		}
 		else
@@ -191,12 +191,8 @@ void Spec512_StoreCyclePalette(Uint16 col, Uint32 addr)
 
 
 	/* Find scan line we are currently on and get index into cycle-palette table */
-#if 0
-	ScanLine = FrameCycles / nCyclesPerLine;
-	nHorPos = FrameCycles % nCyclesPerLine;
-#else
 	Video_ConvertPosition ( FrameCycles , &ScanLine , &nHorPos );	
-#endif
+
 	if (ScanLine > MAX_SCANLINES_PER_FRAME)
 		return;
 
