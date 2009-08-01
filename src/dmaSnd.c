@@ -278,9 +278,9 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 			nFramePos = ((int)FrameCounter) & ~3;
 			MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
-			                        + (int)(*(Sint16*)&pFrameStart[nFramePos])/2) / 2;
+				+ (int)(Sint16)do_get_mem_word(&pFrameStart[nFramePos])/2) / 2;
 			MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
-			                        + (int)(*(Sint16*)&pFrameStart[nFramePos+2])/2) / 2;
+				+ (int)(Sint16)do_get_mem_word(&pFrameStart[nFramePos+2])/2) / 2;
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
