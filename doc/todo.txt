@@ -27,11 +27,19 @@ Emulation improvements
 
 - Add SCSI hard disk emulation for Falcon/TT mode.
 
+- ACSI emulation seems to be broken in TT mode.
+
 - Add SCC serial port emulation for Falcon/TT mode.
 
 - Add support for spec512 mode in med res too
   (needed by 'No Cooper - Greetings', 'Punish your machine - Best part of the
    creation', 'Higres mode by Paradox')
+
+- Some Falcon games/demos only work with 32 MHz CPU emulation (might be due to
+  the fact that we don't emulate the 68030 cache yet?)
+
+- It's possible to insert the same disk image into both drives A: and B:
+  ==> should be rejected or at least one of them should be mounted read-only.
 
 
 DSP emulation / Falcon sound matrix
