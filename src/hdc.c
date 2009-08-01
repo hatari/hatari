@@ -657,10 +657,6 @@ void HDC_UnInit(void)
  */
 void HDC_WriteCommandPacket(void)
 {
-	/* check status byte */
-	if ((DMAModeControl_ff8606wr & 0x0018) != 8)
-		return;
-
 	/* is HDC emulation enabled? */
 	if (!bAcsiEmuOn)
 		return;

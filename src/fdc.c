@@ -1352,11 +1352,13 @@ void FDC_DiskController_WriteWord(void)
 	LOG_TRACE(TRACE_FDC, "fdc write 8604 data=0x%x VBL=%d video_cyc=%d %d@%d pc=%x\n" ,
 		DiskControllerWord_ff8604wr , nVBLs , FrameCycles, LineCycles, HblCounterVideo , M68000_GetPC() );
 
-	HDC_WriteCommandPacket();                 /*  Handle HDC functions */
-
-	/* filter hdc commands */
+	/* Is it an ASCII HD command? */
 	if ((DMAModeControl_ff8606wr & 0x0018) == 8)
+	{
+		/*  Handle HDC functions */
+		HDC_WriteCommandPacket();
 		return;
+	}
 
 	/* Are we trying to set the SectorCount? */
 	if (DMAModeControl_ff8606wr&0x10)         /* Bit 4 */
