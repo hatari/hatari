@@ -332,8 +332,9 @@ void DSP_DisasmRegisters(void)
 int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 {
 #if ENABLE_DSP_EMU
+#define MAX_REGNAME_LEN 4
 	typedef struct {
-		const char name[4];
+		const char name[MAX_REGNAME_LEN];
 		Uint32 *addr;
 		size_t bits;
 		Uint32 mask;
@@ -409,13 +410,13 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 	/* left, right, middle, direction */
         int l, r, m, dir;
 	unsigned int i;
-	char reg[4];
+	char reg[MAX_REGNAME_LEN];
 
 	for (i = 0; i < sizeof(reg) && regname[i]; i++) {
 		reg[i] = toupper(regname[i]);
 	}
-	if (i < 2 || (i > 2 && regname[4])) {
-		/* not 2-3 chars + '\0' long... */
+	if (i < 2 || regname[i]) {
+		/* too short or longer than any of the names */
 		return 0;
 	}
 
@@ -424,7 +425,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 	r = sizeof (registers) / sizeof (*registers) - 1;
 	do {
 		m = (l+r) >> 1;
-		for (i = 0; i < 3; i++) {
+		for (i = 0; i < sizeof(reg); i++) {
 			dir = (int)reg[i] - registers[m].name[i];
 			if (dir) {
 				break;
@@ -441,6 +442,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 			l = m+1;
 		}
 	} while (l <= r);
+#undef MAX_REGNAME_LEN
 #endif
 	return 0;
 }
