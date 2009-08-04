@@ -1022,7 +1022,7 @@ static void	Video_Sync_SetDefaultStartEnd ( Uint8 Freq , int HblCounterVideo , i
 		  && ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle == LINE_START_CYCLE_60 ) )
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayStartCycle = LINE_START_CYCLE_50;
 
-		if ( ( LineCycles < ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle )	/* end could be 160,372,376,460 */
+		if ( ( LineCycles <= ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle )	/* end could be 160,372,376,460 */
 		  && ( ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle < LINE_END_CYCLE_50 ) )
 			ShifterFrame.ShifterLines[ HblCounterVideo ].DisplayEndCycle = LINE_END_CYCLE_50;
 	}
