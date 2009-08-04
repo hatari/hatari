@@ -22,7 +22,9 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "debugui.h"
 #include "stMemory.h"
 #include "str.h"
+#include "video.h"	/* for Hatari video variable addresses */
 #include "breakcond.h"
+
 
 /* set to 1 to enable parsing function tracing / debug output */
 #define DEBUG 0
@@ -260,7 +262,8 @@ static int BreakCond_MatchBreakPoints(const bc_breakpoint_t *bp, int count)
 	
 	for (i = 0; i < count; bp++, i++) {
 		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
-			fprintf(stderr, "Breakpoint '%s' conditions matched.\n", bp->expression);
+			fprintf(stderr, "%d. breakpoint '%s' conditions matched.\n",
+				i+1, bp->expression);
 			/* indexes for BreakCond_Remove() start from 1 */
 			return i + 1;
 		}
@@ -309,6 +312,68 @@ typedef struct {
 	const char *error;	/* error from parsing args */
 } parser_state_t;
 
+
+/* Hatari variable name & address array items */
+#define MAX_HATARI_VAR_NAME_LEN 4
+typedef struct {
+	const char name[MAX_HATARI_VAR_NAME_LEN];
+	Uint32 *addr;
+	size_t bits;
+} var_addr_t;
+
+/* sorted by variable name so that this can be bisected */
+static const var_addr_t hatari_vars[] = {
+	{ "HBL", (Uint32*)&nHBL,  sizeof(nHBL)*8 },
+	{ "VBL", (Uint32*)&nVBLs, sizeof(nVBLs)*8 }
+};
+
+/**
+ * If given string is a Hatari variable name, set bc_value
+ * fields accordingly and return true, otherwise return false.
+ */
+static bool BreakCond_ParseVariable(const char *name, bc_value_t *bc_value)
+{
+	char varname[MAX_HATARI_VAR_NAME_LEN];
+	/* left, right, middle, direction */
+        int l, r, m, dir;
+	unsigned int i;
+
+	ENTERFUNC(("BreakCond_ParseVariable('%s')\n", name));
+	for (i = 0; i < sizeof(varname) && name[i]; i++) {
+		varname[i] = toupper(name[i]);
+	}
+	if (name[i]) {
+		/* longer than any of the variables */
+		return 0;
+	}
+
+	/* bisect */
+	l = 0;
+	r = sizeof (hatari_vars) / sizeof (*hatari_vars) - 1;
+	do {
+		m = (l+r) >> 1;
+		for (i = 0; i < sizeof(varname); i++) {
+			dir = (int)varname[i] - hatari_vars[m].name[i];
+			if (dir) {
+				break;
+			}
+		}
+		if (dir == 0) {
+			bc_value->value.reg32 = hatari_vars[m].addr;
+			bc_value->regsize = hatari_vars[m].bits;
+			bc_value->bits = bc_value->regsize;
+			EXITFUNC(("-> true\n"));
+			return true;
+		}
+		if (dir < 0) {
+			r = m-1;
+		} else {
+			l = m+1;
+		}
+	} while (l <= r);
+	EXITFUNC(("-> false\n"));
+	return false;
+}
 
 /**
  * If given string is register name (for DSP or CPU), set bc_value
@@ -521,10 +586,20 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 	str = pstate->argv[pstate->arg];
 	/* parse direct or indirect value */
 	if (isalpha(str[0])) {
-		/* register */
-		if (!BreakCond_ParseRegister(str, bc_value, pstate)) {
-			EXITFUNC(("arg:%d -> false\n", pstate->arg));
-			return false;
+		if (bc_value->is_indirect) {
+			/* a valid register name? */
+			if (!BreakCond_ParseRegister(str, bc_value, pstate)) {
+				EXITFUNC(("arg:%d -> false\n", pstate->arg));
+				return false;
+			}
+		} else {
+			/* a valid Hatari variable or register name? */
+			if (!BreakCond_ParseVariable(str, bc_value) &&
+			    !BreakCond_ParseRegister(str, bc_value, pstate)) {
+				pstate->error = "invalid variable/register name";
+				EXITFUNC(("arg:%d -> false\n", pstate->arg));
+				return false;
+			}
 		}
 	} else {
 		/* a number */
@@ -1020,12 +1095,13 @@ static void BreakCond_RemoveAll(bool bForDsp)
  */
 static void BreakCond_Help(void)
 {
+	int i;
 	fputs(
 "  breakpoint = <expression> [ && <expression> [ && <expression> ] ... ]\n"
 "  expression = <value>[.mode] [& <number>] <condition> <value>[.mode]\n"
 "\n"
 "  where:\n"
-"  	value = [(] <register-name | number> [)]\n"
+"  	value = [(] <register-name | hatari-variable | number> [)]\n"
 "  	number = [$|%]<digits>\n"
 "  	condition = '<' | '>' | '=' | '!'\n"
 "  	addressing mode (width) = 'b' | 'w' | 'l'\n"
@@ -1037,6 +1113,13 @@ static void BreakCond_Help(void)
 "  M68k addresses can have byte (b), word (w) or long (l, default) width.\n"
 "  DSP addresses belong to different address spaces: P, X or Y. Note that\n"
 "  on DSP only R0-R7 registers can be used for memory addressing.\n"
+"\n"
+"  Valid Hatari variable names (and their current values) are:\n", stderr);
+	for (i = 0; i < ARRAYSIZE(hatari_vars); i++) {
+		fprintf(stderr, "  - %s (%d)\n",
+			hatari_vars[i].name, *(hatari_vars[i].addr));
+	}
+	fputs(
 "\n"
 "  Examples:\n"
 "  	pc = $64543  &&  ($ff820).w & 3 = (a0)  &&  d0 = %1100\n"

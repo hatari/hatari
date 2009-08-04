@@ -46,9 +46,20 @@ DSP emulation / Falcon sound matrix
 -----------------------------------
 
 - Finish the Port C (SSI) emulation
+	- Receive data
+	- Handshake mode
+	- Dsp SSI internal clock
 
-- Add a direct sound entrance (to be able to use programs like "Audio 
-  Fun Machine")
+- Improve DSP instructions cycle count, especially with external RAM
+
+- Display DSP instruction timing values in debug mode (in cycles)
+
+- Optimize DSP interrupts
+   - Take into account the instruction pipeline in interrupt mode
+   - Avoid interrupt of a LONG_INTERRUPT if not 6 (or 7) instructions were executed
+   - Take into account the precise cycles for an interrupt
+
+- Add a direct sound entrance (to be able to use programs like "Audio Fun Machine")
 
 - Add Sound matrix -> DSP SSI data path
 
