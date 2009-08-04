@@ -35,6 +35,10 @@ src/uae-cpu/gencpu
 tools/hmsa/hmsa
 tools/hmsa/*.o
 
+python-ui/*.pyc
+
+website/screens
+
 # switch to regexp syntax.
 syntax: regexp
 
