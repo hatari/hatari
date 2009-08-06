@@ -2393,6 +2393,9 @@ static void Video_AddInterrupt ( int Pos , interrupt_id Handler )
 {
 	int FrameCycles , HblCounterVideo , LineCycles;
 
+	if ( nHBL >= nScanlinesPerFrame )
+	  return;				/* don't set a new hbl/timer B if we're on the last line, as the vbl will happen first */
+	
 	Video_GetPosition ( &FrameCycles , &HblCounterVideo , &LineCycles );
 
 	if ( LineCycles < Pos )			/* changed before reaching the new Pos on the current line */
@@ -2426,7 +2429,7 @@ void Video_StartInterrupts ( int PendingCyclesOver )
 	/* HBL/Timer B are not emulated in VDI mode */
 	if (!bUseVDIRes)
 	{
-		/* Set Timer B interrupt for line 0*/
+		/* Set Timer B interrupt for line 0 */
 		Video_AddInterruptTimerB ( Video_TimerB_GetPos ( 0 ) );
 
 		/* Set HBL interrupt */
