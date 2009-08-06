@@ -14,9 +14,19 @@ Emulation:
   - Sound (e.g. mp3 DSP playback) works
   - Cycle counting / accuracy
   - Many speed improvements
-- Improved Timer B accuracy when starting it in a rare case
-- Handle end of line as well as start of line for Timer B
-  in event count mode (using MFP's AER) (fixes Seven Gates Of Jambala)
+- Major rewrite of the internal work/structures of video.c :
+  - Allow to mix 50/60 Hz lines of 508/512 cycles and to keep correct
+    video/cpu sync (fixes TCB in SNY, DI in MindBomb, TEX in Syntax Terror).
+    This also adds support for dynamic calculation of HBL/Timer B positions
+    when freq/res are changed (fixes shforstv.exe)
+  - Add support for 512 cycles 60 Hz line (fixes Paulo Simoes 4 lines
+    hardscroll in shforstv.exe)
+  - Improved Timer B accuracy when starting it in a rare case
+  - Handle end of line as well as start of line for Timer B
+    in event count mode (using MFP's AER) (fixes Seven Gates Of Jambala)
+  - Add another 'O byte' line method (fixes No Buddies Land)
+  - Some more color alignment with the shifter when using movem.w/movem.l
+    (for spectrum512 like images)
 - Improved Blitter timings / cycles counting
 - GEMDOS emulation can emulate appropriately named host subdirectories
   as separate partitions

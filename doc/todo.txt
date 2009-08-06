@@ -33,7 +33,7 @@ Emulation improvements
 
 - Add support for spec512 mode in med res too
   (needed by 'No Cooper - Greetings', 'Punish your machine - Best part of the
-   creation', 'Higres mode by Paradox')
+   creation', 'Highres mode by Paradox')
 
 - Some Falcon games/demos only work with 32 MHz CPU emulation (might be due to
   the fact that we don't emulate the 68030 cache yet?)
