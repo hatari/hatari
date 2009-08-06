@@ -87,3 +87,7 @@ Other Hatari functionality improvements
   screenshots & anim go to current dir (cannot be configured), whereas
   memsave, sound recording, printer & midi & serial & output and log
   output go to file specified in config file.
+
+- Add support for directly recording audio/video output in some kind
+  of avi file (instead of merging the png snapshots)
+
