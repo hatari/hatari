@@ -41,7 +41,7 @@ extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	__attribute__ ((format (printf, 2, 3)));
 extern LOGTYPE Log_ParseOptions(const char *OptionStr);
-extern bool Log_SetTraceOptions(const char *OptionsStr);
+extern const char* Log_SetTraceOptions(const char *OptionsStr);
 
 #ifndef __GNUC__
 #undef __attribute__
@@ -56,7 +56,7 @@ extern bool Log_SetTraceOptions(const char *OptionsStr);
  * just for the Hatari developers, tracing support is compiled in
  * by default.
  * 
- * Tracing can be enabled but defining ENABLE_TRACING
+ * Tracing can be enabled by defining ENABLE_TRACING
  * in the top level config.h
  */
 #include "config.h"

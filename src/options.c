@@ -431,13 +431,15 @@ static bool Opt_ShowError(unsigned int optid, const char *value, const char *err
 			}
 			if (value != NULL)
 			{
-				fprintf(stderr, "\nError while parsing parameter for %s:\n"
-					" %s (%s)\n", opt->str, error, value);
+				fprintf(stderr,
+					"\nError while parsing argument \"%s\" for option \"%s\":\n"
+					"  %s\n", value, opt->str, error);
 			}
 			else
 			{
 				fprintf(stderr, "\nError (%s): %s\n", opt->str, error);
 			}
+			fprintf(stderr, "\nOption usage:\n");
 			Opt_ShowOption(opt, 0);
 		}
 		return false;
@@ -1171,9 +1173,10 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			
 		case OPT_TRACE:
 			i += 1;
-			if (Log_SetTraceOptions(argv[i]) == 0)
+			errstr = Log_SetTraceOptions(argv[i]);
+			if (errstr)
 			{
-				return Opt_ShowError(OPT_TRACE, argv[i], "Error parsing trace options (use --trace help for available list)!");
+				return Opt_ShowError(OPT_TRACE, argv[i], errstr);
 			}
 			break;
 

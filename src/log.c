@@ -222,8 +222,9 @@ LOGTYPE Log_ParseOptions(const char *arg)
  * If the string is prefixed with a '-',
  * corresponding trace flag is turned off.
  * Result is stored in LogTraceFlags.
+ * Return error string or NULL for success.
  */
-bool Log_SetTraceOptions (const char *OptionsStr)
+const char* Log_SetTraceOptions (const char *OptionsStr)
 {
 #if ENABLE_TRACING
 
@@ -246,20 +247,19 @@ bool Log_SetTraceOptions (const char *OptionsStr)
 		fprintf(stderr, "Multiple trace levels can be separated by ','\n");
 		fprintf(stderr, "Levels can be prefixed by '+' or '-' to be mixed.\n");
 		fprintf(stderr, "Giving just trace level 'none' disables all traces.\n\n");
-		return false;
+		return NULL;
 	}
 	
 	LogTraceFlags = TRACE_NONE;
 	if (strcmp (OptionsStr, "none") == 0)
 	{
-		return true;
+		return NULL;
 	}
 	
 	OptionsCopy = strdup(OptionsStr);
 	if (!OptionsCopy)
 	{
-		fprintf(stderr, "strdup error in ParseTraceOptions\n");
-		return false;
+		return "strdup error in ParseTraceOptions";
 	}
 	
 	cur = OptionsCopy;
@@ -290,9 +290,9 @@ bool Log_SetTraceOptions (const char *OptionsStr)
 		}
 		else
 		{
-			fprintf(stderr, "unknown trace option %s\n", cur);
+			fprintf(stderr, "Unknown trace type '%s'\n", cur);
 			free(OptionsCopy);
-			return false;
+			return "Unknown trace type.";
 		}
 		
 		cur = sep;
@@ -301,12 +301,9 @@ bool Log_SetTraceOptions (const char *OptionsStr)
 	//fprintf(stderr, "trace parse <%x>\n", LogTraceFlags);
 	
 	free (OptionsCopy);
-	return true;
+	return NULL;
 
 #else	/* ENABLE_TRACING */
-
-	fprintf(stderr, "\nError: Trace option has not been activated during compile time.\n");
-	return false;
-
+	return "Hatari has been compiled without ENABLE_TRACING!";
 #endif
 }
