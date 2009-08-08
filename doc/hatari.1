@@ -187,8 +187,9 @@ supports.
 load keyboard mapping from <file>
 .SH "Debug options"
 .TP 
-.B \-D, \-\-debug <bool>
-Enable Hatari debugger console interface
+.B \-D, \-\-debug
+Toggle whether CPU exceptions invoke the debugger and which of the Pause
+and Debugger keys needs AltGr
 .TP 
 .B \-\-bios-intercept
 Enable Bios/XBios interception
@@ -267,8 +268,13 @@ activate the hatari options GUI
 You may need to hold SHIFT down while in windowed mode.
 .TP
 .B Pause
-will go to the debugger if it was activated with the \-\-debug option.
-Otherwise pauses the emulation.
+Pauses the emulation
+.TP
+.B AltGr + Pause
+Invokes the internal Hatari debugger
+.PP
+Using the -D option changes which of the Pause key functions will be
+invoked when the AltGr modifier is used.
 
 .SH Emulated Atari ST keyboard
 All other keys on the keyboard act as the normal Atari ST keys so

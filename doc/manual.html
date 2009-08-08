@@ -1133,15 +1133,15 @@ load keyboard mapping from &lt;file&gt;
 <tr valign="top" align="left">
 <td width="10%"></td>
 <td width="89%">
-<b>&minus;D, &minus;&minus;debug
-&lt;bool&gt;</b></td>
+<b>&minus;D, &minus;&minus;debug</b></td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
        cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Enable Hatari debugger console interface
+Toggle whether CPU exceptions invoke the debugger and which of the Pause
+and Debugger keys needs AltGr
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1829,11 +1829,17 @@ switch)</td>
     </tr>
     <tr>
       <td align="center"><span class="key">PAUSE</span></td>
-      <td align="center">pause emulation or go to the debugger
-          if Hatari was started with the -D option</td>
+      <td align="center">pause emulation</td>
+    </tr>
+    <tr>
+      <td align="center"><span class="key">AltGr+PAUSE</span></td>
+      <td align="center">invoke the internal Hatari debugger</td>
     </tr>
   </tbody>
 </table>
+
+<p>Using the -D option changes which of the Pause key functions will be
+invoked when the AltGr modifier is used.</p>
 
 <p>You can change the key bindings from the Hatari configuration file.
 The required key values you can see from the SDL_keysym.h include file

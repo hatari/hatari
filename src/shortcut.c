@@ -183,30 +183,32 @@ static void ShortCut_BossKey(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Shorcut to pause or debug interface
+ * Shorcut to debug interface
+ */
+static void ShortCut_Debug(void)
+{
+	int running;
+	
+	if (bInFullScreen)
+		Screen_ReturnFromFullScreen();
+	
+	/* Call the debugger */
+	running = Main_PauseEmulation(true);
+	DebugUI();
+	if (running)
+		Main_UnPauseEmulation();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Shorcut to pausing
  */
 static void ShortCut_Pause(void)
 {
-	if (bEnableDebug)
-	{
-		int running;
-		
-		if (bInFullScreen)
-			Screen_ReturnFromFullScreen();
-
-		/* Call the debugger */
-		running = Main_PauseEmulation(true);
-		DebugUI();
-		if (running)
-			Main_UnPauseEmulation();
-	}
-	else
-	{
-		if (!Main_UnPauseEmulation())
-			Main_PauseEmulation(true);
-	}
+	if (!Main_UnPauseEmulation())
+		Main_PauseEmulation(true);
 }
-
 
 /**
  * Shorcut to load a disk image
@@ -292,8 +294,11 @@ void ShortCut_ActKey(void)
 	 case SHORTCUT_SOUND:
 		ShortCut_SoundOnOff();         /* Enable/disable sound */
 		break;
+	 case SHORTCUT_DEBUG:
+		ShortCut_Debug();              /* Invoke the Debug UI */
+		break;
 	 case SHORTCUT_PAUSE:
-		ShortCut_Pause();              /* Invoke Pause or Debug UI */
+		ShortCut_Pause();              /* Invoke Pause */
 		break;
 	 case SHORTCUT_QUIT:
 		Main_RequestQuit();
@@ -320,7 +325,7 @@ void ShortCut_ActKey(void)
 /**
  * Invoke shortcut identified by name. This supports only keys for
  * functionality that cannot be invoked with command line options
- * (for remote GUIs etc).
+ * or otherwise for remote GUIs etc.
  */
 bool Shortcut_Invoke(const char *shortcut)
 {

@@ -53,7 +53,6 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 
 
 bool bQuitProgram = false;                /* Flag to quit program cleanly */
-bool bEnableDebug = false;                /* Enable debug UI? */
 
 Uint32 nRunVBLs;                          /* Whether and how many VBLS to run before exit */
 static Uint32 nFirstMilliTick;            /* Ticks when VBL counting started */

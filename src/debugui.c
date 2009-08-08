@@ -35,7 +35,10 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "debugui.h"
 #include "breakcond.h"
 #include "hatari-glue.h"
+#include "screen.h"
+#include "statusbar.h"
 
+int bExceptionDebugging;
 
 #define MEMDUMP_COLS   16      /* memdump, number of bytes per row */
 #define MEMDUMP_ROWS   4       /* memdump, number of rows */
@@ -1323,6 +1326,12 @@ void DebugUI(void)
 
 	fprintf(stderr, "\n----------------------------------------------------------------------"
 	                "\nYou have entered debug mode. Type c to continue emulation, h for help.\n");
+
+	/* override paused message so that user knows to look into console
+	 * on how to continue in case he invoked the debugger by accident.
+	 */
+	Statusbar_AddMessage("Console Debugger", 100);
+	Statusbar_Update(sdlscrn);
 
 	do
 	{

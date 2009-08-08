@@ -23,6 +23,7 @@ const char Options_fileid[] = "Hatari options.c : " __DATE__ " " __TIME__;
 #include "options.h"
 #include "configuration.h"
 #include "control.h"
+#include "debugui.h"
 #include "file.h"
 #include "floppy.h"
 #include "screen.h"
@@ -243,7 +244,7 @@ static const opt_t HatariOptions[] = {
 	
 	{ OPT_HEADER, NULL, NULL, NULL, "Debug" },
 	{ OPT_DEBUG,     "-D", "--debug",
-	  NULL, "Enable Hatari debugger console interface" },
+	  NULL, "Toggle whether CPU exceptions invoke debugger" },
 	{ OPT_BIOSINTERCEPT, NULL, "--bios-intercept",
 	  NULL, "Enable Bios/XBios interception (experimental)" },
 	{ OPT_TRACE,   NULL, "--trace",
@@ -629,6 +630,15 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
 	return true;
 }
 
+/**
+ * Swap given int values
+ */
+static void Opt_SwapValues(int *a, int *b)
+{
+	int tmp = *a;
+	*a = *b;
+	*b = tmp;
+}
 
 /**
  * parse all Hatari command line options and set Hatari state accordingly.
@@ -1155,16 +1165,21 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			
 			/* debug options */
 		case OPT_DEBUG:
-			if (bEnableDebug)
+			if (bExceptionDebugging)
 			{
-				/* called at run time (e.g. from debugger) */
-				fprintf(stderr, "Debug mode disabled.\n");
-				bEnableDebug = false;
+				fprintf(stderr, "Exception debugging disabled.\n");
+				bExceptionDebugging = false;
 			}
 			else
 			{
-				bEnableDebug = true;
+				fprintf(stderr, "Exception debugging enabled.\n");
+				bExceptionDebugging = true;
 			}
+			/* switch whether Pause and Debugger keys need AltGr */
+			Opt_SwapValues(&(ConfigureParams.Shortcut.withModifier[SHORTCUT_PAUSE]),
+				       &(ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAUSE]));
+			Opt_SwapValues(&(ConfigureParams.Shortcut.withModifier[SHORTCUT_DEBUG]),
+				       &(ConfigureParams.Shortcut.withoutModifier[SHORTCUT_DEBUG]));
 			break;
 
 		case OPT_BIOSINTERCEPT:

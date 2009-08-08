@@ -945,7 +945,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    put_long (m68k_areg(regs, 7)+2, last_fault_for_exception_3);
 	    put_word (m68k_areg(regs, 7)+6, last_op_for_exception_3);
 	    put_long (m68k_areg(regs, 7)+10, last_addr_for_exception_3);
-	    if (bEnableDebug) {
+	    if (bExceptionDebugging) {
 	      fprintf(stderr,"Address Error at address $%x, PC=$%x\n",last_fault_for_exception_3,currpc);
 	      DebugUI();
 	    }
@@ -967,13 +967,13 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	      fprintf(stderr, "Detected double bus error at address $%x, PC=$%lx => CPU halted!\n",
 	              BusErrorAddress, (long)currpc);
 	      unset_special(SPCFLAG_BUSERROR);
-	      if (bEnableDebug)
+	      if (bExceptionDebugging)
 	        DebugUI();
 	      regs.intmask = 7;
 	      m68k_setstopped(true);
 	      return;
 	    }
-	    if (bEnableDebug && BusErrorAddress!=0xff8a00) {
+	    if (bExceptionDebugging && BusErrorAddress!=0xff8a00) {
 	      fprintf(stderr,"Bus Error at address $%x, PC=$%lx\n", BusErrorAddress, (long)currpc);
 	      DebugUI();
 	    }
@@ -981,7 +981,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     }
 
     /* Set PC and flags */
-    if (bEnableDebug && get_long (regs.vbr + 4*nr) == 0) {
+    if (bExceptionDebugging && get_long (regs.vbr + 4*nr) == 0) {
         write_log("Uninitialized exception handler #%i!\n", nr);
 	DebugUI();
     }
