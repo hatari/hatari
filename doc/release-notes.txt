@@ -11,8 +11,8 @@
 Emulation:
 - Hugely improved DSP emulation:
   - Many more DSP using games/demos/apps work now
-  - Sound (e.g. mp3 DSP playback) works
-  - Cycle counting / accuracy
+  - Preliminary sound support (e.g. mp3 DSP playback works)
+  - Better cycle counting / accuracy
   - Many speed improvements
 - Major rewrite of the internal work/structures of video.c :
   - Allow to mix 50/60 Hz lines of 508/512 cycles and to keep correct
@@ -35,13 +35,23 @@ Emulator:
 - DSP changes:
   - DSP state saved to memory snapshots
   - Threading support removed from DSP emulation (makes it faster/simpler)
-- Debugger:
-  - $-prefix needed for hexadecimal and %-prefix for binary values,
-    by default values are normal decimal values
+- keyDebug config file setting was renamed to keyPause
+- Major debugger improvements:
+  - Invoked with Shift+Pause. New keyDebugger config file setting can
+    be used to change this
+  - Support multiple number bases. By default values are expected in
+    decimals; $-prefix is needed for hexadecimal and %-prefix for binary
+    values.  Default number base can be changed
   - Internal debugger can be used to debug also DSP code
   - Support for (PC) address breakpoints and conditional breakpoints
-    (watchpoints), both on CPU and DSP
+    (watchpoints), both on CPU and DSP. Watchpoints support multiple
+    conditions, register & memory values and some internal Hatari
+    variables like VBL, HBL, LineCycles, FrameCycles
   - Support for stepping CPU and DSP code
+- Emulated programs can now change Hatari options like --fast-forward,
+  --trace etc. by giving a suitable Hatari command line string to
+  XBios call 255.  This is enabled when Hatari is started with
+  the --bios-intercept enabled
 - Support Videl horizontal fine scrolling for 16 bpp and 32 bpp
 - Process successive motion events before returning from event handler
   (to fix analog joystick jitter slowing Hatari input processing)
@@ -53,6 +63,9 @@ Emulator:
 Utilities:
 - New atari-hd-image.sh script for creating HD image files
 - External Python GUI and CLI interfaces for Hatari in main repo
+
+Documentation:
+- Debugging and performance sections added to manual
 
 
  Version 1.2.0 (2009-01-24):
