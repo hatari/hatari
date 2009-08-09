@@ -68,18 +68,28 @@ DSP emulation / Falcon sound matrix
 - Figure out how the sound matrix "tracks" are exactly working and emulate them
 
 
-Other Hatari functionality improvements
----------------------------------------
+Other potential Hatari functionality improvements
+-------------------------------------------------
 
-- Add x3 and x4 zooming routines for ST-Low resolution.
+- Debugger improvements:
+  - Support negative values and signed comparisons in conditional
+    breakpoints
+  - Allow use of variable/register names instead of addresses
+    everywhere in the debugger
+  - Readline command & variable name completion
 
-- Include some fancy zooming routines like 2xSaI or Super-Eagle.
-
-- Add support for hardware accelerated zooming with SDL YUV overlays or
-  OpenGL.
-
-- Better handling of screen resolutions.  If first attempt fails,
-  try e.g. without zooming, no borders or smaller borders etc.
+- Improved screen handling:
+  - Direct 16-bit & 32-bit support for monochrome and VDI modes
+    (currently they're converted through 8-bit surface)
+  - Line based screen change detection/checks:
+    - blit only changed lines
+    - simpler / faster (LED) overlay handling
+  - x3 and x4 zooming routines for ST-Low resolution
+  - Include some fancy zooming routines like 2xSaI or Super-Eagle.
+  - Add support for hardware accelerated zooming with SDL YUV overlays
+    or OpenGL
+  - Better handling of screen resolutions.  If first attempt fails,
+    try e.g. without zooming, no borders or smaller borders etc.
 
 - Improve directory handling.  By default the directory config values
   should be empty in which case the code will at run-time decide to use
@@ -90,4 +100,3 @@ Other Hatari functionality improvements
 
 - Add support for directly recording audio/video output in some kind
   of avi file (instead of merging the png snapshots)
-
