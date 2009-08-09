@@ -1319,14 +1319,7 @@ void MFP_ActiveEdge_WriteByte(void)
 
 	/* Timer B position changed, update the next interrupt */
 	if ( LineTimerBCycle_old != LineTimerBCycle )
-	{
-		if ( LineCycles < LineTimerBCycle )		/* changed before the next timer B event on this line */
-			Int_AddRelativeInterrupt ( LineTimerBCycle - LineCycles ,
-					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE );
-		else						/* next timer B event will be on next line */
-			Int_AddRelativeInterrupt ( LineTimerBCycle - LineCycles + nCyclesPerLine,
-					 INT_CPU_CYCLE, INTERRUPT_VIDEO_ENDLINE );
-	}
+		Video_AddInterruptTimerB ( LineTimerBCycle );
 
 	MFP_AER = IoMem[0xfffa03];
 }

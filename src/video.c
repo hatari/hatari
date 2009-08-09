@@ -434,7 +434,6 @@ static void	Video_ClearOnVBL(void);
 
 static void	Video_AddInterrupt ( int Pos , interrupt_id Handler );
 static void	Video_AddInterruptHBL ( int Pos );
-static void	Video_AddInterruptTimerB ( int Pos );
 
 static void	Video_ColorReg_WriteWord(Uint32 addr);
 
@@ -2413,7 +2412,7 @@ static void Video_AddInterruptHBL ( int Pos )
 }
 
 
-static void Video_AddInterruptTimerB ( int Pos )
+void Video_AddInterruptTimerB ( int Pos )
 {
 	if ( !bUseVDIRes )
 		Video_AddInterrupt ( Pos , INTERRUPT_VIDEO_ENDLINE );
