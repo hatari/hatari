@@ -37,15 +37,31 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 
 #define BC_DEFAULT_DSP_SPACE 'P'
 
+enum {
+	VALUE_TYPE_NUMBER   = 0,     /* plain number */
+	VALUE_TYPE_FUNCTION = 1,     /* function to call to get value */
+	VALUE_TYPE_VAR32    = 2,     /* internal Hatari value variable */
+
+	/* size must match register size used in BreakCond_ParseRegister() */
+	VALUE_TYPE_REG16    = 16,
+	VALUE_TYPE_REG32    = 32
+} typedef value_t;
+
+static inline bool is_register_type(value_t vtype) {
+	/* type used for CPU/DSP registers */
+	return (vtype == VALUE_TYPE_REG16 || vtype == VALUE_TYPE_REG32);
+}
+
 typedef struct {
 	bool is_indirect;
 	char dsp_space;	/* DSP has P, X, Y address spaces, zero if not DSP */
-	char regsize;	/* Hatari register variable size, zero if not reg */
+	value_t valuetype;	/* Hatari value variable type */
 	union {
 		Uint32 number;
+		Uint32 (*func)(void);
 		/* couple of Hatari registers are 16-bit instead of 32-bit */
-		Uint32 *reg32;
 		Uint16 *reg16;
+		Uint32 *reg32;
 	} value;
 	Uint32 bits;	/* CPU has 8/16/32 bit address widths */
 	Uint32 mask;	/* <width mask> && <value mask> */
@@ -186,18 +202,22 @@ static Uint32 BreakCond_GetValue(const bc_value_t *bc_value)
 {
 	Uint32 value;
 
-	switch (bc_value->regsize) {
-	case 32:
+	switch (bc_value->valuetype) {
+	case VALUE_TYPE_VAR32:
+	case VALUE_TYPE_REG32:
 		value = *(bc_value->value.reg32);
 		break;
-	case 16:
+	case VALUE_TYPE_REG16:
 		value = *(bc_value->value.reg16);
 		break;
-	case 0:	/* not a register */
+	case VALUE_TYPE_FUNCTION:
+		value = bc_value->value.func();
+		break;
+	case VALUE_TYPE_NUMBER:
 		value = bc_value->value.number;
 		break;
 	default:
-		fprintf(stderr, "ERROR: unknown register size %d!\n", bc_value->regsize);
+		fprintf(stderr, "ERROR: unknown condition value size/type %d!\n", bc_value->valuetype);
 		abort();
 	}
 	if (bc_value->is_indirect) {
@@ -314,18 +334,35 @@ typedef struct {
 
 
 /* Hatari variable name & address array items */
-#define MAX_HATARI_VAR_NAME_LEN 4
 typedef struct {
-	const char name[MAX_HATARI_VAR_NAME_LEN];
+	const char *name;
 	Uint32 *addr;
+	value_t vtype;
 	size_t bits;
 } var_addr_t;
 
+/* Accessor functions for calculated Hatari values */
+static Uint32 GetLineCycles(void)
+{
+	int dummy1, dummy2, lcycles;
+	Video_GetPosition(&dummy1, &dummy2 , &lcycles);
+	return lcycles;
+}
+static Uint32 GetFrameCycles(void)
+{
+	int dummy1, dummy2, fcycles;
+	Video_GetPosition(&fcycles, &dummy1, &dummy2);
+	return fcycles;
+}
+
 /* sorted by variable name so that this can be bisected */
 static const var_addr_t hatari_vars[] = {
-	{ "HBL", (Uint32*)&nHBL,  sizeof(nHBL)*8 },
-	{ "VBL", (Uint32*)&nVBLs, sizeof(nVBLs)*8 }
+	{ "FrameCycles", (Uint32*)GetFrameCycles, VALUE_TYPE_FUNCTION, 0 },
+	{ "HBL", (Uint32*)&nHBL, VALUE_TYPE_VAR32, sizeof(nHBL)*8 },
+	{ "LineCycles", (Uint32*)GetLineCycles, VALUE_TYPE_FUNCTION, 0 },
+	{ "VBL", (Uint32*)&nVBLs, VALUE_TYPE_VAR32, sizeof(nVBLs)*8 }
 };
+
 
 /**
  * If given string is a Hatari variable name, set bc_value
@@ -333,35 +370,21 @@ static const var_addr_t hatari_vars[] = {
  */
 static bool BreakCond_ParseVariable(const char *name, bc_value_t *bc_value)
 {
-	char varname[MAX_HATARI_VAR_NAME_LEN];
 	/* left, right, middle, direction */
         int l, r, m, dir;
-	unsigned int i;
 
 	ENTERFUNC(("BreakCond_ParseVariable('%s')\n", name));
-	for (i = 0; i < sizeof(varname) && name[i]; i++) {
-		varname[i] = toupper(name[i]);
-	}
-	if (name[i]) {
-		/* longer than any of the variables */
-		return 0;
-	}
-
 	/* bisect */
 	l = 0;
 	r = sizeof (hatari_vars) / sizeof (*hatari_vars) - 1;
 	do {
 		m = (l+r) >> 1;
-		for (i = 0; i < sizeof(varname); i++) {
-			dir = (int)varname[i] - hatari_vars[m].name[i];
-			if (dir) {
-				break;
-			}
-		}
+		dir = strcasecmp(name, hatari_vars[m].name);
 		if (dir == 0) {
 			bc_value->value.reg32 = hatari_vars[m].addr;
-			bc_value->regsize = hatari_vars[m].bits;
-			bc_value->bits = bc_value->regsize;
+			bc_value->valuetype = hatari_vars[m].vtype;
+			bc_value->bits = hatari_vars[m].bits;
+			assert(bc_value->bits == 32 || bc_value->valuetype !=  VALUE_TYPE_VAR32);
 			EXITFUNC(("-> true\n"));
 			return true;
 		}
@@ -381,13 +404,13 @@ static bool BreakCond_ParseVariable(const char *name, bc_value_t *bc_value)
  */
 static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, parser_state_t *pstate)
 {
-	int bits;
+	int regsize;
 	ENTERFUNC(("BreakCond_ParseRegister('%s')\n", regname));
 	if (bc_value->dsp_space) {
-		bits = DSP_GetRegisterAddress(regname,
+		regsize = DSP_GetRegisterAddress(regname,
 					      &(bc_value->value.reg32),
 					      &(bc_value->mask));
-		if (bits) {
+		if (regsize) {
 			if (bc_value->is_indirect && toupper(regname[0]) != 'R') {
 				pstate->error = "only R0-R7 registers can be used for indirect addressing";
 				EXITFUNC(("-> false (DSP)\n"));
@@ -395,7 +418,7 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, p
 			}
 			/* all DSP memory values are 24-bits */
 			bc_value->bits = 24;
-			bc_value->regsize = bits;
+			bc_value->valuetype = regsize;
 			EXITFUNC(("-> true (DSP)\n"));
 			return true;
 		}
@@ -403,10 +426,10 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, p
 		EXITFUNC(("-> false (DSP)\n"));
 		return false;
 	}
-	bits = DebugUI_GetCpuRegisterAddress(regname, &(bc_value->value.reg32));
-	if (bits) {
-		bc_value->bits = bits;
-		bc_value->regsize = bits;
+	regsize = DebugUI_GetCpuRegisterAddress(regname, &(bc_value->value.reg32));
+	if (regsize) {
+		bc_value->bits = regsize;
+		bc_value->valuetype = regsize;
 		EXITFUNC(("-> true (CPU)\n"));
 		return true;
 	}
@@ -470,8 +493,8 @@ static bool BreakCond_ParseAddressModifier(parser_state_t *pstate, bc_value_t *b
 		EXITFUNC(("arg:%d -> true (missing)\n", pstate->arg));
 		return true;
 	}
-	if (bc_value->regsize && !bc_value->is_indirect) {
-		pstate->error = "space/width modifier makes sense only for an address";
+	if (!bc_value->is_indirect) {
+		pstate->error = "space/width modifier makes sense only for an address (register)";
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
 		return false;
 	}
@@ -535,7 +558,8 @@ static bool BreakCond_ParseMaskModifier(parser_state_t *pstate, bc_value_t *bc_v
 		EXITFUNC(("arg:%d -> true (missing)\n", pstate->arg));
 		return true;
 	}
-	if (!(bc_value->regsize || bc_value->is_indirect)) {
+	if (bc_value->valuetype == VALUE_TYPE_NUMBER &&
+	    !bc_value->is_indirect) {
 		fprintf(stderr, "WARNING: plain numbers shouldn't need masks.\n");
 	}
 	pstate->arg++;
@@ -545,7 +569,7 @@ static bool BreakCond_ParseMaskModifier(parser_state_t *pstate, bc_value_t *bc_v
 		return false;
 	}
 	if (bc_value->mask == 0 ||
-	    (!(bc_value->regsize || bc_value->is_indirect) &&
+	    (bc_value->valuetype == VALUE_TYPE_NUMBER && !bc_value->is_indirect &&
 	     bc_value->value.number && !(bc_value->value.number & bc_value->mask))) {
 		pstate->error = "mask zeroes value";
 		EXITFUNC(("arg:%d -> false\n", pstate->arg));
@@ -593,7 +617,9 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 				return false;
 			}
 		} else {
-			/* a valid Hatari variable or register name? */
+			/* a valid Hatari variable or register name?
+			 * variables cannot be used for ST memory indirection.
+			 */
 			if (!BreakCond_ParseVariable(str, bc_value) &&
 			    !BreakCond_ParseRegister(str, bc_value, pstate)) {
 				pstate->error = "invalid variable/register name";
@@ -610,6 +636,7 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 		}
 		/* suitable as emulated memory address (indirect)? */
 		if (bc_value->is_indirect &&
+		    bc_value->valuetype == VALUE_TYPE_NUMBER &&
 		    !BreakCond_CheckAddress(bc_value)) {
 			pstate->error = "invalid address";
 			EXITFUNC(("arg:%d -> false\n", pstate->arg));
@@ -722,7 +749,7 @@ static bool BreakCond_CrossCheckValues(parser_state_t *pstate,
 			bc_value1->mask, bc_value1->bits);
 	}
 	if (!bc_value1->dsp_space &&
-	    !bc_value1->regsize && bc_value1->is_indirect &&
+	    bc_value1->is_indirect &&
 	    (bc_value1->value.number & 1) && bc_value1->bits > 8) {
 		fprintf(stderr, "WARNING: odd CPU address 0x%x given without using byte (.b) width.\n",
 			bc_value1->value.number);
@@ -736,9 +763,9 @@ static bool BreakCond_CrossCheckValues(parser_state_t *pstate,
 		EXITFUNC(("-> false\n"));
 		return false;
 	}
-	if (bc_value2->regsize ||
-	    bc_value2->is_indirect ||
-	    bc_value2->value.number == 0) {
+	if (bc_value2->is_indirect ||
+	    bc_value2->value.number == 0 ||
+	    bc_value2->valuetype != VALUE_TYPE_NUMBER) {
 		EXITFUNC(("-> true (no problematic direct types)\n"));
 		return true;
 	}
@@ -1095,14 +1122,15 @@ static void BreakCond_RemoveAll(bool bForDsp)
  */
 static void BreakCond_Help(void)
 {
+	Uint32 value;
 	int i;
 	fputs(
 "  breakpoint = <expression> [ && <expression> [ && <expression> ] ... ]\n"
 "  expression = <value>[.mode] [& <number>] <condition> <value>[.mode]\n"
 "\n"
 "  where:\n"
-"  	value = [(] <register-name | hatari-variable | number> [)]\n"
-"  	number = [$|%]<digits>\n"
+"  	value = [(] <register-name | hatari-variable | number> [)]\n"
+"  	number = [#|$|%]<digits>\n"
 "  	condition = '<' | '>' | '=' | '!'\n"
 "  	addressing mode (width) = 'b' | 'w' | 'l'\n"
 "  	addressing mode (space) = 'p' | 'x' | 'y'\n"
@@ -1116,8 +1144,19 @@ static void BreakCond_Help(void)
 "\n"
 "  Valid Hatari variable names (and their current values) are:\n", stderr);
 	for (i = 0; i < ARRAYSIZE(hatari_vars); i++) {
-		fprintf(stderr, "  - %s (%d)\n",
-			hatari_vars[i].name, *(hatari_vars[i].addr));
+		switch (hatari_vars[i].vtype) {
+		case VALUE_TYPE_FUNCTION:
+			value = ((Uint32(*)(void))(hatari_vars[i].addr))();
+			break;
+		case VALUE_TYPE_VAR32:
+			value = *(hatari_vars[i].addr);
+			break;
+		default:
+			fprintf(stderr, "ERROR: variable '%s' has unsupported type '%d'\n",
+				hatari_vars[i].name, hatari_vars[i].vtype);
+			continue;
+		}
+		fprintf(stderr, "  - %s (%d)\n", hatari_vars[i].name, value);
 	}
 	fputs(
 "\n"
@@ -1168,16 +1207,32 @@ bool BreakCond_Command(const char *expression, bool bForDsp)
 
 /* Test building can be done in hatari/src/ with:
  * gcc -DTEST -I.. -Iincludes -Iuae-cpu -Ifalcon $(sdl-config --cflags) \
- *   -O -Wall -g breakcond.c
+ *   -O -Wall -g breakcond.c str.c
  * 
- * TODO: move test stuff elsewhere after code works fully
+ * TODO: Move test stuff to a separate file and add Valgrinding
+ * and --fstack-protector Make test targets for it
  */
 #ifdef TEST
+
+/* fake Hatari configuration variables for str.c */
+#include "configuration.h"
+CNF_PARAMS ConfigureParams;
 
 /* fake ST RAM */
 Uint8 STRam[16*1024*1024];
 Uint32 STRamEnd = 4*1024*1024;
 
+/* fake Hatari variables */
+int nHBL = 20;
+int nVBLs = 71;
+
+/* fake video variables accessor */
+void Video_GetPosition(int *pFrameCycles, int *pHBL, int *pLineCycles)
+{
+	*pFrameCycles = 2048;
+	*pHBL = nHBL;
+	*pFrameCycles = 508;
+}
 
 /* fake AUE register accessors */
 int DebugUI_GetCpuRegisterAddress(const char *regname, Uint32 **addr)
@@ -1334,6 +1389,7 @@ int main(int argc, const char *argv[])
 		" ( a 0 ) . w  &  1 = ( d 0 ) & 1 &&  d 0 = 3 ",
 		"a0=1 && (d0)&2=(a0).w && ($00ff00).w&1=1",
 		" ($ff820a).b = 2",
+		"hbl > 0 && vbl < 2000 && linecycles = 508",
 		NULL
 	};
 	const char *match_tests[] = {
