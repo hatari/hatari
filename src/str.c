@@ -12,6 +12,7 @@ const char Str_fileid[] = "Hatari str.c : " __DATE__ " " __TIME__;
 #include <ctype.h>
 #include <stdbool.h>
 #include <SDL_types.h>
+#include "configuration.h"
 #include "str.h"
 
 
@@ -121,17 +122,38 @@ bool Str_IsHex(const char *str)
 
 
 /**
- * Parse a number, decimal unless prefixed with '$' which signifies hex
- * or prefixed with '%' which signifies binary value.
+ * Parse a number assuming it's in the configured default number base
+ * unless prefixed. '$' prefix means hexadecimal, '#' decimal, and '%'
+ * binary.  For range parsing and DebugUI, the value needs to be unsiged.
  * Return true for success and false for error.
  */
 bool Str_GetNumber(const char *value, Uint32 *number)
 {
-	int i;
 	const char *str;
-	switch (value[0]) {
+	char prefix;
+	int i;
+
+	if (isxdigit(value[0]))
+	{
+		switch (ConfigureParams.Log.nNumberBase) {
+		case 16:
+			prefix = '$';
+			break;
+		case 2:
+			prefix = '%';
+			break;
+		case 10:
+		default:
+			prefix = '#';
+			break;
+		}
+	}
+	else
+		prefix = *value++;
+
+	switch (prefix) {
 	case '$':	/* hexadecimal */
-		if (sscanf(value+1, "%x", number) != 1)
+		if (sscanf(value, "%x", number) != 1)
 		{
 			fprintf(stderr, "Invalid hexadecimal value '%s'!\n", value);
 			return false;
@@ -139,7 +161,7 @@ bool Str_GetNumber(const char *value, Uint32 *number)
 		break;
 	case '%':	/* binary */
 		*number = 0;
-		for (str = value+1, i = 0; *str && i < 32; str++, i++)
+		for (str = value, i = 0; *str && i < 32; str++, i++)
 		{
 			*number <<= 1;
 			switch (*str) {
@@ -159,6 +181,7 @@ bool Str_GetNumber(const char *value, Uint32 *number)
 			return false;
 		}
 		break;
+	case '#':
 	default:	/* decimal */
 		if (sscanf(value, "%u", number) != 1)
 		{

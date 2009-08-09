@@ -38,6 +38,7 @@ static const struct Config_Tag configs_Log[] =
 	{ "sTraceFileName", String_Tag, ConfigureParams.Log.sTraceFileName },
 	{ "nTextLogLevel", Int_Tag, &ConfigureParams.Log.nTextLogLevel },
 	{ "nAlertDlgLogLevel", Int_Tag, &ConfigureParams.Log.nAlertDlgLogLevel },
+	{ "nNumberBase", Int_Tag, &ConfigureParams.Log.nNumberBase },
 	{ "bConfirmQuit", Bool_Tag, &ConfigureParams.Log.bConfirmQuit },
 	{ NULL , Error_Tag, NULL }
 };
@@ -336,11 +337,12 @@ void Configuration_SetDefault(void)
 	/* Clear parameters */
 	memset(&ConfigureParams, 0, sizeof(CNF_PARAMS));
 
-	/* Set defaults for logging */
+	/* Set defaults for logging and debugging */
 	strcpy(ConfigureParams.Log.sLogFileName, "stderr");
 	strcpy(ConfigureParams.Log.sTraceFileName, "stderr");
 	ConfigureParams.Log.nTextLogLevel = LOG_TODO;
 	ConfigureParams.Log.nAlertDlgLogLevel = LOG_ERROR;
+	ConfigureParams.Log.nNumberBase = 10;
 	ConfigureParams.Log.bConfirmQuit = true;
 
 	/* Set defaults for floppy disk images */
@@ -606,7 +608,7 @@ void Configuration_Load(const char *psFileName)
 		return;
 	}
 
-	Configuration_LoadSection(psFileName, configs_Log, "[Log]");
+	Configuration_LoadSection(psFileName, configs_Log, "[LogDebug]");
 	Configuration_LoadSection(psFileName, configs_Screen, "[Screen]");
 	Configuration_LoadSection(psFileName, configs_Joystick0, "[Joystick0]");
 	Configuration_LoadSection(psFileName, configs_Joystick1, "[Joystick1]");
@@ -652,7 +654,7 @@ static int Configuration_SaveSection(const char *pFilename, const struct Config_
  */
 void Configuration_Save(void)
 {
-	if (Configuration_SaveSection(sConfigFileName, configs_Log, "[Log]") < 0)
+	if (Configuration_SaveSection(sConfigFileName, configs_Log, "[LogDebug]") < 0)
 	{
 		Log_AlertDlg(LOG_ERROR, "Error saving config file.");
 		return;

@@ -851,10 +851,8 @@ static int DebugUI_MemDump(int nArgc, char *psArgs[])
 static int DebugUI_MemWrite(int nArgc, char *psArgs[])
 {
 	int i, numBytes;
-	Uint32 write_addr;
+	Uint32 write_addr, d;
 	unsigned char bytes[256]; /* store bytes */
-	int d;
-
 
 	if (nArgc < 3)
 	{
@@ -875,7 +873,7 @@ static int DebugUI_MemWrite(int nArgc, char *psArgs[])
 	/* get bytes data */
 	for (i = 2; i < nArgc; i++)
 	{
-		if (sscanf(psArgs[i], "%x", &d) != 1 || d > 255)
+		if (!Str_GetNumber(psArgs[i], &d) || d > 255)
 		{
 			fprintf(stderr, "Bad byte argument: '%s'!\n", psArgs[i]);
 			return DEBUGGER_CMDDONE;
@@ -893,19 +891,45 @@ static int DebugUI_MemWrite(int nArgc, char *psArgs[])
 }
 
 /**
- * Command: Show given value in bin/dec/hex number bases
+ * Command: Show given value in bin/dec/hex number bases or change number base
  */
 static int DebugUI_ShowValue(int argc, char *argv[])
 {
+	static const struct {
+		const char name[4];
+		int base;
+	} bases[] = {
+		{ "bin", 2 },
+		{ "dec", 10 },
+		{ "hex", 16 }
+	};
 	bool one, ones;
 	Uint32 value;
-	int bit;
+	int bit, i;
 	
 	if (argc < 2)
 	{
 		DebugUI_PrintCmdHelp(argv[0]);
 		return DEBUGGER_CMDDONE;
 	}
+	
+	for (i = 0; i < ARRAYSIZE(bases); i++)
+	{
+		if (strcasecmp(bases[i].name, argv[1]) == 0)
+		{
+			if (ConfigureParams.Log.nNumberBase != bases[i].base)
+			{
+				fprintf(stderr, "Switched default number base from %d to %d-based (%s) values\n",
+					ConfigureParams.Log.nNumberBase,
+					bases[i].base, bases[i].name);
+				ConfigureParams.Log.nNumberBase = bases[i].base;
+			} else {
+				fprintf(stderr, "Already in '%s' mode\n", bases[i].name);
+			}
+			return DEBUGGER_CMDDONE;
+		}
+	}
+	
 	if (!Str_GetNumber(argv[1], &value))
 		return DEBUGGER_CMDDONE;
 	fprintf(stderr, "Value '%s' is in the supported number bases:\n"
@@ -920,7 +944,7 @@ static int DebugUI_ShowValue(int argc, char *argv[])
 			ones = true;
 		}
 	}
-	fprintf(stderr, "\n- dec: %u", value);
+	fprintf(stderr, "\n- dec: #%u", value);
 	fprintf(stderr, "\n- hex: $%x\n", value);
 	return DEBUGGER_CMDDONE;
 }
@@ -1125,9 +1149,10 @@ dbgcommand_t commandtab[] =
 	  "\tenable CPU disasm tracing:  setopt --trace cpu_disasm",
 	  false },
 	{ DebugUI_ShowValue, "value", "v",
-	  "show given value in bin/dec/hex number bases",
-	  "<value>\n"
-	  "\tHelper to show given value in supported number bases.",
+	  "set number base / show value in other number bases",
+	  "<bin|dec|hex|value>\n"
+	  "\tHelper to change the default number base and to see given values\n"
+	  "\tin all the supported bin/dec/hex number bases.",
 	  false },
 	{ DebugUI_CpuContinue, "cont", "c",
 	  "continue emulation / CPU single-stepping",
@@ -1195,11 +1220,12 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 			commandtab[i].sShortName, commandtab[i].sShortDesc);
 	}
 
-	fputs("If value is prefixed with '$', it's hexadecimal, if with '%',\n"
-	      "it's binary decimal, otherwise it's a normal decimal value.\n"
-	      "Adresses may be given as a range like '$fc0000-$fc0100'.\n"
-	      "'h <command>' gives more help.\n",
-	      stderr);
+	fprintf(stderr,
+		"If value is prefixed with '$', it's a hexadecimal, if with '#', it's\n"
+		"a normal decimal, if with '%%', it's a binary decimal. Prefix can\n"
+		"be skipped for numbers in the default number base (currently %d).\n"
+		"Adresses may be given as a range like '$fc0000-$fc0100'.\n"
+		"'h <command>' gives more help.\n", ConfigureParams.Log.nNumberBase);
 	return DEBUGGER_CMDDONE;
 }
 

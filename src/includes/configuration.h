@@ -8,13 +8,14 @@
 #ifndef HATARI_CONFIGURATION_H
 #define HATARI_CONFIGURATION_H
 
-/* Logging */
+/* Logging and debugging */
 typedef struct
 {
   char sLogFileName[FILENAME_MAX];
   char sTraceFileName[FILENAME_MAX];
   int nTextLogLevel;
   int nAlertDlgLogLevel;
+  int nNumberBase;
   bool bConfirmQuit;
 } CNF_LOG;
 
