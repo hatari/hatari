@@ -23,6 +23,13 @@
 	h4.gui { clear:right }
 	h5 { margin-bottom:2px; margin-left:1em; }
 
+	pre {	color: black;
+		background-color: #eeeeee;
+		margin: 0px 20px 8px 20px;
+		padding: 2px 8px 1px 8px;
+		border: solid thin #ccaa88;
+		}
+
 	td { font-family:Verdana,Arial,Helvetica,sans-serif; }
 
 	a:link { color:#000099; background-color:#ffffff; text-decoration:none; }
@@ -292,9 +299,9 @@ to see the options of the script).
 Don't forget to use some good CFLAGS for the compiler optimizations, e.g.
 run <span class="commandline">configure</span> in the following way:
 </p>
-<p>
- <kbd> CFLAGS="-O3 -fomit-frame-pointer" ./configure</kbd>
-</p>
+<pre>
+CFLAGS="-O3 -fomit-frame-pointer" ./configure
+</pre>
 <p>
 Then compile Hatari by typing <span class="commandline">make</span>.
 If all
@@ -1257,7 +1264,7 @@ the command line options supported by a given version of Hatari.</p>
 <a name="Using the emulated system"></a><h2>Using the emulated system</h2>
 
 <p> Once you've started Hatari succesfully, you can use the emulator as
-an allmost complete Atari ST computer system. </p>
+an almost complete Atari ST computer system. </p>
 
 <a name="The GUI"></a><h3>The GUI</h3>
 
@@ -1805,7 +1812,7 @@ switch)</td>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+x</span></td>
-      <td align="center">toggle normal/max speed</td>
+      <td align="center">toggle normal speed/fast forward</td>
     </tr>
     <tr>
       <td align="center"><span class="key">ALTGR+y</span></td>
@@ -2228,40 +2235,152 @@ the disk image from Hatari:
 <a name="The debugger"></a><h2>The debugger</h2>
 
 <p>
-Hatari has a built-in debugging interface which can be used for analyzing the
-program that runs in the emulated system.
-The debugger uses Hatari's parent console window, so make sure to run
-Hatari from the command line when you want to use the debugger.
-To enable the debugger, Hatari must be started with the &quot;-D&quot; command
-line option. Then you can enter the debugger by pressing the
-<span class="key">PAUSE</span> key.
+Hatari has a built-in debugging interface which can be used for
+analyzing the program that runs in the emulated system. The debugger
+uses Hatari's parent console window, so make sure to run Hatari from
+the command line when you want to use the debugger.  To invoke
+the debugger, press the <span class="key">AltGr + Pause</span> key
+combination.
+<p>
+
+<p>
+If you start Hatari with the &quot;-D&quot; command line option,
+m68k exceptions will automatically invoke the debugger and you don't
+need <span class="key">AltGr</span> key to invoke the debugger.
+You can toggle these also later from the debugger with the &quot;setopt
+-D&quot; command.
 </p>
 
 <p>
-At the debugger prompt, type &quot;help&quot; to get a list of the available
-commands. In the beginning, the probably most interesting commands are
-&quot;m&quot; and &quot;d&quot; for dumping and disassembling memory regions.
-Hexadecimal values must be prefixed with &quot;$&quot;, and binary values with
-&quot;%&quot;.
+When entering values to the debugger in other number bases than the
+default/selected one, they need to be prefixed with a character
+indicating this.  For decimals it's &quot;#&quot; (#15), for
+hexadecimals &quot;$&quot; ($F), and for binary values it's
+&quot;%&quot; (%1111).  By default the debugger expects all values
+without a prefix to be decimals, but you can change the default number
+base with the &quot;value&quot; command.
 </p>
 
 <p>
-Hatari has two different kind of breakpoints. First, there are the fast and
+At the debugger prompt, type &quot;help&quot; to get a list of all
+the available commands and their shortcuts:
+</p>
+<pre>
+Available commands:
+   dspaddress (da) : toggle or list (traditional) DSP address breakpoints
+     dspbreak (db) : set/remove/list DSP register/RAM condition breakpoints
+    dspdisasm (dd) : disassemble DSP code
+   dspmemdump (dm) : dump DSP memory
+       dspreg (dr) : read/write DSP registers
+      dspcont (dc) : continue emulation / DSP single-stepping
+      address ( a) : toggle or list (traditional) CPU address breakpoints
+   breakpoint ( b) : set/remove/list register/RAM condition breakpoints
+       disasm ( d) : disassemble from PC, or given address
+       cpureg ( r) : dump register values or set register to value
+      memdump ( m) : dump memory
+     memwrite ( w) : write bytes to memory
+      logfile ( f) : open or close log file
+      loadbin ( l) : load a file into memory
+      savebin ( s) : save memory to a file
+       setopt ( o) : set Hatari command line options
+        value ( v) : set number base / show value in other number bases
+         cont ( c) : continue emulation / CPU single-stepping
+         quit ( q) : quit emulator
+         help ( h) : print help
+</pre>
+
+<p>
+In the beginning, probably the most interesting commands are
+&quot;m&quot; and &quot;d&quot; for dumping and disassembling memory
+regions.
+</p>
+<pre>
+&gt; help memdump
+'memdump' or 'm' - dump memory
+Usage:  m [address]
+        dump memory at address or continue dump from previous address.
+</pre>
+<pre>
+&gt; help disasm
+'disasm' or 'd' - disassemble from PC, or given address
+Usage:  d [address]
+        If no address is given, this command disassembles from the last
+        position or from current PC if no last postition is available.
+</pre>
+<pre>
+&gt; d
+0000aa6e: 2f08 0241 0fff 207c 00fe MOVE.L A0,-(A7)
+0000aa70: 0241 0fff 207c 00fe 78c0 AND.W #$0fff,D1
+0000aa74: 207c 00fe 78c0 2070 1000 MOVEA.L #$00fe78c0,A0
+0000aa7a: 2070 1000 4ed0 0241 0ffe MOVEA.L (A0, D1.W*1, $00) == $00fe34ae,A0
+0000aa7e: 4ed0 0241 0ffe 6712 e549 JMP.L (A0)
+</pre>
+
+<p>
+Hatari has two kinds of breakpoints. First, there are the fast and
 simple address breakpoints which trigger when the CPU (or DSP) program counter
 hits a given address. Use &quot;a&quot; (or &quot;da&quot; for the DSP) to
 manage them. Then there are the conditional breakpoints which are a little bit
 slower but can handle more complex break conditions. Use &quot;b&quot; (or
-&quot;db&quot; for the DSP) to manage them.
+&quot;db&quot; for the DSP) to manage them. &quot;b help&quot; explains
+the syntax:
 </p>
+
+<pre>
+breakpoint = &lt;expression&gt; [ &amp;&amp; &lt;expression&gt; [ &amp;&amp; &lt;expression&gt; ] ... ]
+expression = &lt;value&gt;[.mode] [&amp; &lt;number&gt;] &lt;condition&gt; &lt;value&gt;[.mode]
+
+where:
+      value = [(] &lt;register-name | hatari-variable | number&gt; [)]
+      number = [#|$|%]&lt;digits&gt;
+      condition = '&lt;' | '&gt;' | '=' | '!'
+      addressing mode (width) = 'b' | 'w' | 'l'
+      addressing mode (space) = 'p' | 'x' | 'y'
+</pre>
+
+<p>
+If the value is in parenthesis like in '($ff820)' or '(a0)', then the
+used value will be read from the memory address pointed by it.
+</p>
+<p>
+M68k addresses can have byte (&quot;b&quot;), word (&quot;w&quot;) or
+long (&quot;l&quot;, default) width. DSP addresses belong to different
+address spaces: &quot;P&quot;, &quot;X&quot; or &quot;Y&quot;. Note
+that on DSP only R0-R7 registers can be used for memory addressing.
+</p>
+
+<p>Examples:</p>
+<pre>
+pc = $64543  &amp;&amp;  ($ff820).w &amp; 3 = (a0)  &amp;&amp;  d0 = %1100
+(r0).x = 1 &amp;&amp; (r0).y = 2
+</pre>			      
 
 <p>
 After analyzing and/or setting new breakpoints, you can continue the emulation
 with the &quot;c&quot; command. You can continue for a given number of
 instructions or you can continue forever (until a breakpoint triggers) by
 not supplying any parameters to the &quot;c&quot; command.
-By the way, if you want to continue with real-time disassembling, you can enable
-it by typing &quot;setopt --trace cpu_disasm&quot; at the debugger prompt.
 </p>
+
+<p>
+By the way, if you want to continue with real-time disassembling, you
+can enable it by typing &quot;setopt --trace cpu_disasm&quot; at the
+debugger prompt.  Disable it with &quot;setopt --trace none&quot; when
+you enter the debugger again. &quot;--trace help&quot; can be used to
+list all the supported trace points. (Similar things can be done even
+from a program within the emulation if you enable Hatari
+&quot;--bios-intercept&quot; option and call XBios 255 from
+the program with a suitable command line string.)
+</p>
+
+<p>
+Lastly, the debugger is much nicer to use with the command line
+editing support. If you're building Hatari yourself, please make sure
+that you have the GNU readline development files installed (on Debian
+/ Ubuntu these come from the libreadline5-dev package).  Otherwise
+this doesn't get enabled when you configure Hatari.
+</p>
+
 
 <a name="Performance"></a><h2>Performance</h2>
 <a name="Improving Hatari performance"></a><h3>Improving Hatari performance</h3>
@@ -2392,8 +2511,8 @@ mode, so try to avoid 24 bits per pixel display modes if possible.
 </p>
 <p>
 If nothing else helps, try an earlier Hatari version.  More accurate
-emulation or emulator output in newer Hatari versions mostly means
-that they are slower.
+emulation or emulator output in newer Hatari versions means that they
+can be slower despite optimizations.
 </p>
 
 
