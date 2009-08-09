@@ -2408,13 +2408,15 @@ static void Video_AddInterrupt ( int Pos , interrupt_id Handler )
 static void Video_AddInterruptHBL ( int Pos )
 {
 //fprintf ( stderr , "add hbl %d\n" , Pos );
-	Video_AddInterrupt ( Pos , INTERRUPT_VIDEO_HBL );
+	if ( !bUseVDIRes )
+		Video_AddInterrupt ( Pos , INTERRUPT_VIDEO_HBL );
 }
 
 
 static void Video_AddInterruptTimerB ( int Pos )
 {
-	Video_AddInterrupt ( Pos , INTERRUPT_VIDEO_ENDLINE );
+	if ( !bUseVDIRes )
+		Video_AddInterrupt ( Pos , INTERRUPT_VIDEO_ENDLINE );
 }
 
 
