@@ -5,6 +5,7 @@ Hatari TO-DO list
 If you think that you can help with one of the TO-DO list items, please get
 in touch with us.
 
+
 Emulation improvements
 ----------------------
 
@@ -12,9 +13,11 @@ Emulation improvements
   right yet).
 
 - Improve disk image formats support:
-  - Add support for .STT images (created with the STEEM disk image program).
-  - Add support for Pasti .STX images (See http://pasti.fxatari.com/).
-  - Support .DIM images created with the "Get sectors: used" option.
+	- Add support for .STT images
+	  (created with the STEEM disk image program)
+	- Add support for Pasti .STX images
+	  (See http://pasti.fxatari.com/)
+	- Support .DIM images created with the "Get sectors: used" option
 
 - Real HD 6301 (keyboard processor of the ST) emulation?
   (Current special casing is enough for all known demos using 6301)
@@ -55,41 +58,44 @@ DSP emulation / Falcon sound matrix
 - Display DSP instruction timing values in debug mode (in cycles)
 
 - Optimize DSP interrupts
-   - Take into account the instruction pipeline in interrupt mode
-   - Avoid interrupt of a LONG_INTERRUPT if not 6 (or 7) instructions were executed
-   - Take into account the precise cycles for an interrupt
+	- Take into account the instruction pipeline in interrupt mode
+	- Avoid interrupt of a LONG_INTERRUPT if not 6 (or 7)
+	  instructions were executed
+	- Take into account the precise cycles for an interrupt
 
-- Add a direct sound entrance (to be able to use programs like "Audio Fun Machine")
+- Add a direct sound entrance
+  (to be able to use programs like "Audio Fun Machine")
 
 - Add Sound matrix -> DSP SSI data path
 
 - Add sound matrix DMA recording
 
-- Figure out how the sound matrix "tracks" are exactly working and emulate them
+- Figure out how the sound matrix "tracks" are exactly working and
+  emulate them
 
 
 Other potential Hatari functionality improvements
 -------------------------------------------------
 
 - Debugger improvements:
-  - Support negative values and signed comparisons in conditional
-    breakpoints
-  - Allow use of variable/register names instead of addresses
-    everywhere in the debugger
-  - Readline command & variable name completion
+	- Support negative values and signed comparisons in conditional
+	  breakpoints
+	- Allow use of variable/register names instead of addresses
+	  everywhere in the debugger
+	- Readline command & variable name completion
 
 - Improved screen handling:
-  - Direct 16-bit & 32-bit support for monochrome and VDI modes
-    (currently they're converted through 8-bit surface)
-  - Line based screen change detection/checks:
-    - blit only changed lines
-    - simpler / faster (LED) overlay handling
-  - x3 and x4 zooming routines for ST-Low resolution
-  - Include some fancy zooming routines like 2xSaI or Super-Eagle.
-  - Add support for hardware accelerated zooming with SDL YUV overlays
-    or OpenGL
-  - Better handling of screen resolutions.  If first attempt fails,
-    try e.g. without zooming, no borders or smaller borders etc.
+	- Direct 16-bit & 32-bit support for monochrome and VDI modes
+	  (currently they're converted through 8-bit surface)
+	- Line based screen change detection/checks:
+	- blit only changed lines
+	- simpler / faster (LED) overlay handling
+	- x3 and x4 zooming routines for ST-Low resolution
+	- Include some fancy zooming routines like 2xSaI or Super-Eagle
+	- Add support for hardware accelerated zooming with
+	  SDL YUV overlays or OpenGL
+	- Better handling of screen resolutions.  If first attempt fails,
+	  try e.g. without zooming, no borders or smaller borders etc.
 
 - Improve directory handling.  By default the directory config values
   should be empty in which case the code will at run-time decide to use
