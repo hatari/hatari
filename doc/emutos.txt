@@ -150,6 +150,7 @@ Demos:
 - Paradise (by Dune Design)
 - Phaleon Gigademo
 - Posh (by Checkpoint)
+- Rebirth (by MMJ production)
 - Soundtracker (by Equinox)
 - Sweety (by DHS)
 - Tut! (by Wildfire)
