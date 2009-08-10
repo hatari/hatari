@@ -14,9 +14,9 @@ The names of latter are listed below.
 
 To decrease the binary size slightly, disable DSP from src/Makefile,
 don't enabled tracing in config.h (latter may have trivial improvement
-on speed too).  You may also try the gcc -OS and -finline-limit options,
-their effect depends on the architecture for which Hatari is being
-compiled.
+on speed too).  You may also try the gcc "-Os" or "-O3 -finline-limit=..."
+options, their effect depends on the architecture for which Hatari is
+being compiled.
 
 
 To see the objects in the Hatari 18MB BSS section, get the datadump
@@ -118,7 +118,7 @@ see that the libraries Hatari links don't use so much private
     pmap $(pidof hatari) | grep / | grep rw
 
 To see how much from the memory pmap tells Hatari to have allocated is
-actually used/dirtied, take a peek at: /proc/$(pidof hatari/smaps.
+actually used/dirtied, take a peek at: /proc/$(pidof hatari)/smaps.
 
 Of the rest of the 40MB Hatari VMSIZE you see in "top" (about 16MB),
 half is unused/clean 8MB memory (allocated by kernel for the SDL sound
