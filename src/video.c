@@ -1049,6 +1049,11 @@ void Video_Sync_WriteByte ( void )
 	int FrameCycles, HblCounterVideo, LineCycles;
 	Uint8 Freq;
 
+
+	if ( bUseVDIRes )
+		return;						/* no 50/60 Hz freq in VDI mode */
+
+
 	/* We're only interested in bit 1 (50/60Hz) */
 	Freq = IoMem[0xff820a] & 2;
 
