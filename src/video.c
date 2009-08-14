@@ -2483,6 +2483,11 @@ void Video_InterruptHandler_VBL ( void )
 	/* Set video registers for frame */
 	Video_ClearOnVBL();
 
+	/* Since we don't execute HBL functions in VDI mode, we've got to
+	 * initialize the first HBL palette here when VDI mode is enabled. */
+	if (bUseVDIRes)
+		Video_StoreFirstLinePalette();
+
 	/* Start VBL, HBL and Timer B interrupts (this must be done after resetting
          * video cycle counter setting default freq values in Video_ClearOnVBL) */
 	Video_StartInterrupts(PendingCyclesOver);
@@ -2707,7 +2712,7 @@ void Video_LineWidth_WriteByte(void)
  */
 static void Video_ColorReg_WriteWord(Uint32 addr)
 {
-	if (!bUseHighRes)                          /* Don't store if hi-res */
+	if (!bUseHighRes && !bUseVDIRes)               /* Don't store if hi-res or VDI resolution */
 	{
 		int idx;
 		Uint16 col;
@@ -2842,8 +2847,8 @@ void Video_ShifterMode_WriteByte(void)
 		 */
 		bUseSTShifter = true;
 	}
-//	if (!bUseHighRes && !bUseVDIRes)                    /* Don't store if hi-res and don't store if VDI resolution */
-	if (!bUseVDIRes)                    /* Don't store if hi-res and don't store if VDI resolution */
+
+	if (/*!bUseHighRes &&*/ !bUseVDIRes)                /* Don't store if hi-res and don't store if VDI resolution */
 	{
 		VideoShifterByte = IoMem[0xff8260] & 3;		/* We only care for lower 2-bits */
 		if ( VideoShifterByte == 3 )			/* 3 is not a valid resolution, use low res instead */
