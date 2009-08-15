@@ -1,6 +1,8 @@
 
 include ../../Makefile.cnf
 
+CFLAGS += -I../includes $(SDL_CFLAGS)
+
 GUIWINOBJS = hatari-winicon.o opencon.o
 
 all: gui-win.a

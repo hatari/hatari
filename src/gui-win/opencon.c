@@ -11,15 +11,17 @@
 */
 
 #include <windows.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <SDL_types.h>
 
 #include "opencon.h"
+#include "debugui.h"
 
-extern int bEnableDebug;
 
 void Win_OpenCon(void)
 {
-	if (!bEnableDebug)
+	if (!bExceptionDebugging)
 		return;
 
 	AllocConsole();
