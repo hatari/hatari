@@ -44,6 +44,11 @@ Emulation improvements
 - It's possible to insert the same disk image into both drives A: and B:
   ==> should be rejected or at least one of them should be mounted read-only.
 
+- Fix STE DMA sound emulation - there might be some problems with proper
+  interrupt timings left (e.g. 50kHz replay in ProTracker)
+
+- Add full STE Microwire/LMC1992 emulation.
+
 
 DSP emulation / Falcon sound matrix
 -----------------------------------
