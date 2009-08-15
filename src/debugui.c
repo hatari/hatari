@@ -37,6 +37,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "hatari-glue.h"
 #include "screen.h"
 #include "statusbar.h"
+#include "video.h"
 
 int bExceptionDebugging;
 
@@ -922,8 +923,8 @@ static int DebugUI_ShowValue(int argc, char *argv[])
 	
 	if (!Str_GetNumber(argv[1], &value))
 		return DEBUGGER_CMDDONE;
-	fprintf(stderr, "Value '%s' is in the supported number bases:\n"
-		"- bin: %%", argv[1]);
+
+	fprintf(stderr, "'%s' = %%", argv[1]);
 	ones = false;
 	for (bit = 31; bit >= 0; bit--)
 	{
@@ -934,8 +935,9 @@ static int DebugUI_ShowValue(int argc, char *argv[])
 			ones = true;
 		}
 	}
-	fprintf(stderr, "\n- dec: #%u", value);
-	fprintf(stderr, "\n- hex: $%x\n", value);
+	if (!ones)
+		fputc('0', stderr);
+	fprintf(stderr, " (bin), #%u (dec), $%x (hex)\n", value, value);
 	return DEBUGGER_CMDDONE;
 }
 
@@ -1322,6 +1324,30 @@ static char *DebugUI_GetCommand(void)
 
 
 /**
+ * Texts shown when entering the debugger on first and successive times
+ */
+static void DebugUI_WelcomeText(void)
+{
+	int hbl, fcycles, lcycles;
+	static const char *welcome =
+		"\n----------------------------------------------------------------------"
+		"\nYou have entered debug mode. Type c to continue emulation, h for help.\n";
+	if (welcome)
+	{
+		fprintf(stderr, welcome);
+		welcome = NULL;
+	}
+	Video_GetPosition(&fcycles, &hbl, &lcycles);
+	fprintf(stderr, "\nCPU=$%x, VBL=%d, FrameCycles=%d, HBL=%d, LineCycles=%d, DSP=",
+		M68000_GetPC(), nVBLs, fcycles, hbl, lcycles);
+	if (bDspEnabled)
+		fprintf(stderr, "$%x\n", DSP_GetPC());
+	else
+		fprintf(stderr, "N/A\n");
+}
+
+
+/**
  * Debugger user interface main function.
  */
 void DebugUI(void)
@@ -1343,9 +1369,8 @@ void DebugUI(void)
 	if (bInFullScreen)
 		Screen_ReturnFromFullScreen();
 
-	fprintf(stderr, "\n----------------------------------------------------------------------"
-	                "\nYou have entered debug mode. Type c to continue emulation, h for help.\n");
-
+	DebugUI_WelcomeText();
+	
 	/* override paused message so that user knows to look into console
 	 * on how to continue in case he invoked the debugger by accident.
 	 */
