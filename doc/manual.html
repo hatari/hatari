@@ -2351,6 +2351,13 @@ pc = $64543  &amp;&amp;  ($ff820).w &amp; 3 = (a0)  &amp;&amp;  d0 = %1100
 </pre>			      
 
 <p>
+The debugger supports also setting breakpoints on values of some
+internal Hatari variables (listed by &quot;b help&quot;). For example
+if you want to stop at a specific cycle within a frame (that is, PC
+relative to the current VBL/HBL in cycles), set breakpoints to specific
+&quot;HBL&quot; and &quot;LineCycles&quot; variable values.
+
+<p>
 After analyzing and/or setting new breakpoints, you can continue the emulation
 with the &quot;c&quot; command. You can continue for a given number of
 instructions or you can continue forever (until a breakpoint triggers) by
