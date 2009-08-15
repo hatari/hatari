@@ -126,6 +126,7 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "../includes/vdi.h"
 #include "../includes/cart.h"
 #include "../includes/debugui.h"
+#include "../includes/dialog.h"
 #include "../includes/bios.h"
 #include "../includes/xbios.h"
 #include "../includes/video.h"
@@ -969,6 +970,8 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	      unset_special(SPCFLAG_BUSERROR);
 	      if (bExceptionDebugging)
 	        DebugUI();
+	      else
+		DlgAlert_Notice("Detected double bus error => CPU halted!\nEmulation needs to be reseted.\n");
 	      regs.intmask = 7;
 	      m68k_setstopped(true);
 	      return;
