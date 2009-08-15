@@ -191,10 +191,12 @@ Color games:
 
 GEM games:
 - 4 Gewinnt (Connect four)*
+- Abalone
 - Ballerburg*
 - Biglife*
 - Clicks*
 - Daleks*
+- Dame
 - DBWH
 - Drachen
 - Gem_mind
@@ -203,12 +205,15 @@ GEM games:
 - Mars (corewars)
 - Megaroid*
 - Mathmaze
+- Mines*
 - Nethack*
 - Orb
 - Pacman
 - Shanghai
+- Snake
 - ST Concentration*
 - Sudoku*
+- Tartan* (chess)
 - Thrust
 - Worm farm
 - Wator (slow)
@@ -217,7 +222,7 @@ GEM games:
 Monochrome games:
 - Balloons
 - Delta patrol
-- Eliza
+- HASCS
 - MiniGolf (GFA basic)*
 - Monkey Business
 - Mr Dash
@@ -230,6 +235,7 @@ Monochrome games:
 
 Text games:
 - Advent (Colossal Cave)
+- Eliza
 - Hack
 - Larn
 - Omega
