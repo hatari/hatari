@@ -608,7 +608,7 @@ void Configuration_Load(const char *psFileName)
 		return;
 	}
 
-	Configuration_LoadSection(psFileName, configs_Log, "[LogDebug]");
+	Configuration_LoadSection(psFileName, configs_Log, "[Log]");
 	Configuration_LoadSection(psFileName, configs_Screen, "[Screen]");
 	Configuration_LoadSection(psFileName, configs_Joystick0, "[Joystick0]");
 	Configuration_LoadSection(psFileName, configs_Joystick1, "[Joystick1]");
@@ -654,7 +654,7 @@ static int Configuration_SaveSection(const char *pFilename, const struct Config_
  */
 void Configuration_Save(void)
 {
-	if (Configuration_SaveSection(sConfigFileName, configs_Log, "[LogDebug]") < 0)
+	if (Configuration_SaveSection(sConfigFileName, configs_Log, "[Log]") < 0)
 	{
 		Log_AlertDlg(LOG_ERROR, "Error saving config file.");
 		return;
