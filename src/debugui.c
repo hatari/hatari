@@ -588,8 +588,8 @@ static int DebugUI_DisAsm(int nArgc, char *psArgs[])
 /**
  * Set address of the named register to given argument.
  * Return register size in bits or zero for uknown register name.
- * Handles D0-7, A0-7 and also PC & SR registers, but note that both
- * PC & SR would need special handling (using UAE accessors).
+ * Handles D0-7 data and A0-7 address registers, but not PC & SR
+ * registers as they need to be accessed using UAE accessors.
  */
 int DebugUI_GetCpuRegisterAddress(const char *reg, Uint32 **addr)
 {
@@ -619,16 +619,6 @@ int DebugUI_GetCpuRegisterAddress(const char *reg, Uint32 **addr)
 		}
 		fprintf(stderr,"\tBad address register, valid values are 0-7\n");
 		return 0;
-	}
-	if (r0 == 'P' && r1 == 'C')
-	{
-		*addr = &regs.pc;
-		return 32;
-	}
-	if (r0 == 'S' && r1 == 'R')
-	{
-		*addr = (Uint32 *)&regs.sr;
-		return 16;
 	}
 	return 0;
 }
