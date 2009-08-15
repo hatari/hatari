@@ -39,6 +39,7 @@ Emulator:
 - Major debugger improvements:
   - Invoked with Shift+Pause. New keyDebugger config file setting can
     be used to change this
+  - Show PC/HBL/VBL/cycles when entering debugger
   - Support multiple number bases. By default values are expected in
     decimals; $-prefix is needed for hexadecimal and %-prefix for binary
     values.  Default number base can be changed
