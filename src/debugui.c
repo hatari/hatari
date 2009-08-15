@@ -1334,7 +1334,7 @@ static void DebugUI_WelcomeText(void)
 		"\nYou have entered debug mode. Type c to continue emulation, h for help.\n";
 	if (welcome)
 	{
-		fprintf(stderr, welcome);
+		fputs(welcome, stderr);
 		welcome = NULL;
 	}
 	Video_GetPosition(&fcycles, &hbl, &lcycles);
