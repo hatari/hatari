@@ -630,15 +630,6 @@ static bool Opt_StrCpy(int optid, bool checkexist, char *dst, const char *src, s
 	return true;
 }
 
-/**
- * Swap given int values
- */
-static void Opt_SwapValues(int *a, int *b)
-{
-	int tmp = *a;
-	*a = *b;
-	*b = tmp;
-}
 
 /**
  * parse all Hatari command line options and set Hatari state accordingly.
@@ -1175,11 +1166,6 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 				fprintf(stderr, "Exception debugging enabled.\n");
 				bExceptionDebugging = true;
 			}
-			/* switch whether Pause and Debugger keys need AltGr */
-			Opt_SwapValues(&(ConfigureParams.Shortcut.withModifier[SHORTCUT_PAUSE]),
-				       &(ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAUSE]));
-			Opt_SwapValues(&(ConfigureParams.Shortcut.withModifier[SHORTCUT_DEBUG]),
-				       &(ConfigureParams.Shortcut.withoutModifier[SHORTCUT_DEBUG]));
 			break;
 
 		case OPT_BIOSINTERCEPT:

@@ -1147,8 +1147,7 @@ load keyboard mapping from &lt;file&gt;
 <tr valign="top" align="left">
 <td width="21%"></td>
 <td width="77%">
-Toggle whether CPU exceptions invoke the debugger and which of the Pause
-and Debugger keys needs AltGr
+Toggle whether CPU exceptions invoke the debugger
 </td>
 </table>
 <table width="100%" border=0 rules="none" frame="void"
@@ -1845,11 +1844,8 @@ switch)</td>
   </tbody>
 </table>
 
-<p>Using the -D option changes which of the Pause key functions will be
-invoked when the AltGr modifier is used.</p>
-
 <p>You can change the key bindings from the Hatari configuration file.
-The required key values you can see from the SDL_keysym.h include file
+The required key values can be seen in the SDL_keysym.h include file
 (usually in /usr/include/SDL/).</p>
 
 
@@ -2237,18 +2233,17 @@ the disk image from Hatari:
 <p>
 Hatari has a built-in debugging interface which can be used for
 analyzing the program that runs in the emulated system. The debugger
-uses Hatari's parent console window, so make sure to run Hatari from
+uses Hatari's parent console window, so make sure you run Hatari from
 the command line when you want to use the debugger.  To invoke
 the debugger, press the <span class="key">AltGr + Pause</span> key
 combination.
 <p>
 
 <p>
-If you start Hatari with the &quot;-D&quot; command line option,
-m68k exceptions will automatically invoke the debugger and you don't
-need <span class="key">AltGr</span> key to invoke the debugger.
-You can toggle these also later from the debugger with the &quot;setopt
--D&quot; command.
+If you start Hatari with the &quot;-D&quot; command line option, m68k
+exceptions will automatically invoke the debugger. You can toggle
+this also later from the debugger with the &quot;setopt -D&quot;
+command.
 </p>
 
 <p>
