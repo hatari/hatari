@@ -188,10 +188,7 @@ static void ShortCut_BossKey(void)
 static void ShortCut_Debug(void)
 {
 	int running;
-	
-	if (bInFullScreen)
-		Screen_ReturnFromFullScreen();
-	
+
 	/* Call the debugger */
 	running = Main_PauseEmulation(true);
 	DebugUI();

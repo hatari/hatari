@@ -1350,6 +1350,9 @@ void DebugUI(void)
 	memdump_addr = 0;
 	disasm_addr = 0;
 
+	if (bInFullScreen)
+		Screen_ReturnFromFullScreen();
+
 	fprintf(stderr, "\n----------------------------------------------------------------------"
 	                "\nYou have entered debug mode. Type c to continue emulation, h for help.\n");
 
