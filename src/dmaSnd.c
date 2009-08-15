@@ -247,6 +247,9 @@ static void DmaSnd_GenerateDspSamples(int nMixBufIdx, int nSamplesToGenerate)
 /*-----------------------------------------------------------------------*/
 /**
  * Mix DMA sound sample with the normal PSG sound samples.
+ * Note: We adjust the volume level of the 8-bit DMA samples to factor
+ * 181/256 = 0.707 compared to the PSG sound samples, this seems to be
+ * quite similar to a real STE.
  */
 void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
@@ -293,7 +296,7 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 			MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][1] =
-				((int)MixBuffer[nBufIdx][0] + (((int)pFrameStart[(int)FrameCounter]) << 7)) / 2;
+				((int)MixBuffer[nBufIdx][0] + (181*(int)pFrameStart[(int)FrameCounter])) / 2;
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
@@ -308,9 +311,9 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 			nFramePos = ((int)FrameCounter) & ~1;
 			MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
-			                        + (((int)pFrameStart[nFramePos]) << 7)) / 2;
+			                        + (181*(int)pFrameStart[nFramePos])) / 2;
 			MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
-			                        + (((int)pFrameStart[nFramePos+1]) << 7)) / 2;
+			                        + (181*(int)pFrameStart[nFramePos+1])) / 2;
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
