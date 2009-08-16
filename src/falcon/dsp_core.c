@@ -240,7 +240,7 @@ Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core)
 /* SSI receive serial clock */
 void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core)
 {
-	Uint32 value, i, temp=0;
+	Uint32 value; // i, temp=0;
 
 	value = dsp_core->ssi.TX;
 
