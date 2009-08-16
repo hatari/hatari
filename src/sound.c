@@ -973,8 +973,8 @@ void Sound_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(SoundRegs, sizeof(SoundRegs));
 
-	MemorySnapShot_Store(&YmVolumeMixing, sizeof(YmVolumeMixing));
-	MemorySnapShot_Store(&UseLowPassFilter, sizeof(UseLowPassFilter));
+	// MemorySnapShot_Store(&YmVolumeMixing, sizeof(YmVolumeMixing));
+	// MemorySnapShot_Store(&UseLowPassFilter, sizeof(UseLowPassFilter));
 }
 
 
