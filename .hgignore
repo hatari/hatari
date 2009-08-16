@@ -39,6 +39,8 @@ python-ui/*.pyc
 
 website/screens
 
+doc/doxygen/html
+
 # switch to regexp syntax.
 syntax: regexp
 
