@@ -736,12 +736,13 @@ static ymsample	YM2149_NextSample(void)
 	if ( envPos >= (3*32) << 24 )			/* blocks 0, 1 and 2 were used (envPos 0 to 95) */
 		envPos -= (2*32) << 24;			/* replay/loop blocks 1 and 2 (envPos 32 to 95) */
 
+	DcAdjuster_AddSample(sample);			/* Calculate DC level */
+	sample = sample - DcAdjuster_GetDcLevel();	/* normalize sound level */
 
 	/* Apply low pass filter ? */
 	if ( UseLowPassFilter )
 	{
-		DcAdjuster_AddSample ( sample );	/* normalize sound level */
-		sample = LowPassFilter ( sample - DcAdjuster_GetDcLevel() );
+		sample = LowPassFilter(sample);
 	}
 
 	return sample;
