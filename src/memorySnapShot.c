@@ -46,7 +46,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "falcon/dsp.h"
 
 
-#define VERSION_STRING      "devel"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING      "1.3.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define VERSION_STRING_SIZE    6      /* Size of above (inc' NULL) */
 
 
