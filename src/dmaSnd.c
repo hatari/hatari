@@ -248,8 +248,10 @@ static void DmaSnd_GenerateDspSamples(int nMixBufIdx, int nSamplesToGenerate)
 /**
  * Mix DMA sound sample with the normal PSG sound samples.
  * Note: We adjust the volume level of the 8-bit DMA samples to factor
- * 181/256 = 0.707 compared to the PSG sound samples, this seems to be
- * quite similar to a real STE.
+ * 0.5 compared to the PSG sound samples, this seems to be quite similar
+ * to a real STE (and since we got to divide it by 2 again for adding them
+ * to the YM samples and multiply by 256 to get to 16-bit, we simply multiply
+ * them by 64 in total).
  */
 void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
@@ -280,10 +282,10 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 			nFramePos = ((int)FrameCounter) & ~3;
-			MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
-				+ (int)(Sint16)do_get_mem_word(&pFrameStart[nFramePos])/2) / 2;
-			MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
-				+ (int)(Sint16)do_get_mem_word(&pFrameStart[nFramePos+2])/2) / 2;
+			MixBuffer[nBufIdx][0] = (int)MixBuffer[nBufIdx][0]
+				+ ((int)(Sint16)do_get_mem_word(&pFrameStart[nFramePos]))/2;
+			MixBuffer[nBufIdx][1] = (int)MixBuffer[nBufIdx][1]
+				+ ((int)(Sint16)do_get_mem_word(&pFrameStart[nFramePos+2]))/2;
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
@@ -296,7 +298,8 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 			MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][1] =
-				((int)MixBuffer[nBufIdx][0] + (181*(int)pFrameStart[(int)FrameCounter])) / 2;
+				(int)MixBuffer[nBufIdx][0]
+				+ 64 * (int)pFrameStart[(int)FrameCounter];
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
@@ -310,10 +313,10 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		{
 			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 			nFramePos = ((int)FrameCounter) & ~1;
-			MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
-			                        + (181*(int)pFrameStart[nFramePos])) / 2;
-			MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
-			                        + (181*(int)pFrameStart[nFramePos+1])) / 2;
+			MixBuffer[nBufIdx][0] = (int)MixBuffer[nBufIdx][0]
+			                        + 64 * (int)pFrameStart[nFramePos];
+			MixBuffer[nBufIdx][1] = (int)MixBuffer[nBufIdx][1]
+			                        + 64 * (int)pFrameStart[nFramePos+1];
 			FrameCounter += FreqRatio;
 			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
 				break;
