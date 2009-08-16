@@ -5,22 +5,20 @@
 
 
 
- Devel version :
- ---------------
+ Version 1.3.0 (2009-08-16):
+ ---------------------------
 
 Emulation:
 - Hugely improved DSP emulation:
   - Many more DSP using games/demos/apps work now
-  - Preliminary sound support (e.g. mp3 DSP playback works)
+  - Preliminary sound support (e.g. most DSP based .MOD-playback works)
   - Better cycle counting / accuracy
   - Many speed improvements
 - Major rewrite of the internal work/structures of video.c :
   - Allow to mix 50/60 Hz lines of 508/512 cycles and to keep correct
     video/cpu sync (fixes TCB in SNY, DI in MindBomb, TEX in Syntax Terror).
     This also adds support for dynamic calculation of HBL/Timer B positions
-    when freq/res are changed (fixes shforstv.exe)
-  - Add support for 512 cycles 60 Hz line (fixes Paulo Simoes 4 lines
-    hardscroll in shforstv.exe)
+    when freq/res are changed (fixes SHFORSTV by Paulo Simoes)
   - Improved Timer B accuracy when starting it in a rare case
   - Handle end of line as well as start of line for Timer B
     in event count mode (using MFP's AER) (fixes Seven Gates Of Jambala)
@@ -30,14 +28,15 @@ Emulation:
 - Improved Blitter timings / cycles counting
 - GEMDOS emulation can emulate appropriately named host subdirectories
   as separate partitions
+- Bug fixes for GEMDOS HD emulation Fopen and Fseek calls
 
 Emulator:
 - DSP changes:
   - DSP state saved to memory snapshots
-  - Threading support removed from DSP emulation (makes it faster/simpler)
-- keyDebug config file setting was renamed to keyPause
+  - Threading support removed from DSP emulation (for better synchronization)
+- "keyDebug" configuration file setting was renamed to "keyPause"
 - Major debugger improvements:
-  - Invoked with Shift+Pause. New keyDebugger config file setting can
+  - Invoked with AltGR+Pause. New "keyDebugger" configuration file setting can
     be used to change this
   - Show PC/HBL/VBL/cycles when entering debugger
   - Support multiple number bases. By default values are expected in
@@ -53,13 +52,15 @@ Emulator:
   --trace etc. by giving a suitable Hatari command line string to
   XBios call 255.  This is enabled when Hatari is started with
   the --bios-intercept enabled
-- Support Videl horizontal fine scrolling for 16 bpp and 32 bpp
+- Support Videl horizontal fine scrolling for 16 bpp and 32 bpp host screens
 - Process successive motion events before returning from event handler
   (to fix analog joystick jitter slowing Hatari input processing)
 - FPS measurement shown when emulation is paused & --run-vbls option
 - Mouse grab option (--grab)
-- Support added for building Hatari with MS-VC6 and for Wii
+- Some fixes for building Hatari with MS-VC6 and for the Wii
 - Statusbar assert (bug #15512) fixed
+- Reworked the main dialog of the GUI and split the disk dialog into two
+  separate dialogs, one for floppy setup and one for hard disk setup
 
 Utilities:
 - New atari-hd-image.sh script for creating HD image files
