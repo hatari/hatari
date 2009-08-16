@@ -1279,35 +1279,32 @@ void Video_GetPosition(int *pFrameCycles, int *pHBL, int *pLineCycles)
 	*pFrameCycles = 508;
 }
 
+/* fake UAE core registers */
+struct regstruct regs;
+
+/* dummy UAE SR register tuning function */
+void MakeSR(void) { }
+
 /* fake AUE register accessors */
 int DebugUI_GetCpuRegisterAddress(const char *regname, Uint32 **addr)
 {
 	const char *regnames[] = {
 		/* must be in same order as in struct above! */
-		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
 		"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
-		"pc", "sr"
+		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7"
 	};
 	static Uint32 registers[ARRAYSIZE(regnames)];
 	int i;
 	for (i = 0; i < ARRAYSIZE(regnames); i++) {
 		if (strcmp(regname, regnames[i]) == 0) {
 			*addr = &(registers[i]);
-			if (regname[0] == 's') {
-				/* SR is 16-bit */
-				return 16;
-			}
 			return 32;
 		}
-	}
-	fprintf(stderr, "ERROR: unrecognized CPU register '%s', valid ones are:\n", regname);
-	for (i = 0; i < ARRAYSIZE(regnames); i++) {
-		fprintf(stderr, "- %s\n", regnames[i]);
 	}
 	return 0;
 }
 
-static void SetCpuRegister(const char *regname, Uint32 value)
+static bool SetCpuRegister(const char *regname, Uint32 value)
 {
 	Uint32 *addr;
 	
@@ -1318,8 +1315,11 @@ static void SetCpuRegister(const char *regname, Uint32 value)
 	case 16:
 		*(Uint16*)addr = value;
 		break;
+	default:
+		fprintf(stderr, "SETUP ERROR: Register '%s' to set (to %x) is unrecognized!\n", regname, value);
+		return false;
 	}
-	return;
+	return true;
 }
 
 
@@ -1364,7 +1364,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 	return 0;
 }
 
-static void SetDspRegister(const char *regname, Uint32 value)
+static bool SetDspRegister(const char *regname, Uint32 value)
 {
 	Uint32 *addr, mask;
 
@@ -1375,8 +1375,10 @@ static void SetDspRegister(const char *regname, Uint32 value)
 	case 16:
 		*(Uint16*)addr = value & mask;
 		break;
+	default:
+		return false;
 	}
-	return;
+	return true;
 }
 
 Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str)
@@ -1514,7 +1516,7 @@ int main(int argc, const char *argv[])
 	 * !match: "pc < $50000  &&  pc > $54000"
 	 *  match: "pc > $50000  &&  pc < $60000"
 	 */
-	SetCpuRegister("pc", 0x58000);
+	regs.pc = 0x58000;
 	/* !match: "d0 = a0"
 	 *  match: "pc = a0"
 	 */
