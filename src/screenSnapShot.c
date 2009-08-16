@@ -224,8 +224,9 @@ png_cleanup:
 
 /*-----------------------------------------------------------------------*/
 /**
- * Save screen shot file with filename 'grab0000.<ext>','grab0001.<ext>'...
- * Whether screen shots are saved as BMP or PNG depends on Hatari configuration.
+ * Save screen shot file with filename like 'grab0000.[png|bmp]',
+ * 'grab0001.[png|bmp]', etc... Whether screen shots are saved as BMP
+ * or PNG depends on Hatari configuration.
  */
 void ScreenSnapShot_SaveScreen(void)
 {
