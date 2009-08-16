@@ -5,22 +5,15 @@
 # - how to do byte-compile (*.pyc) and optimization (*.pyo)?
 
 # Include settings
--include ../Makefile.cnf
+include ../Makefile.cnf
 
-# overridable installation directory prefix
-DESTDIR ?= /usr/local
+prefix ?= /usr
 
-# Debian wants to give DESTDIR as the root.
-# add usr/ to paths unless it's /usr/local
-# 
-ifneq ($(DESTDIR),/usr/local)
-	DESTDIR=$(DESTDIR)/usr
-endif
-BINPATH  = $(DESTDIR)/bin
+BINPATH  = $(DESTDIR)$(BINDIR)
 SCRIPT   = $(BINPATH)/hatariui
-DATAPATH = $(DESTDIR)/share/hatariui
-ICONPATH = $(DESTDIR)/share/icons/hicolor/32x32/apps
-DESKPATH = $(DESTDIR)/share/applications
+DATAPATH = $(DESTDIR)$(DATADIR)/hatariui
+ICONPATH = $(prefix)/share/icons/hicolor/32x32/apps
+DESKPATH = $(prefix)/share/applications
 
 all:
 	@echo "Nothing to build, just do 'make install'"
