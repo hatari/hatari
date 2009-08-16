@@ -85,7 +85,7 @@ class AboutDialog(HatariUIDialog):
         dialog.set_transient_for(parent)
         dialog.set_name(UInfo.name)
         dialog.set_version(UInfo.version)
-        dialog.set_website("http://hatari.sourceforge.net/")
+        dialog.set_website("http://hatari.berlios.de/")
         dialog.set_website_label("Hatari emulator www-site")
         dialog.set_authors(["Eero Tamminen"])
         dialog.set_artists(["The logo is from Hatari"])
