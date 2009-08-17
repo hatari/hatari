@@ -34,6 +34,7 @@ SUBDIRLIBS = $(CPUDIR)/cpu68k.a falcon/falcon.a gui-sdl/gui-sdl.a
 
 ifeq ($(SYS_WINDOWS),1)
   SUBDIRLIBS += gui-win/gui-win.a
+  OBJS += gui-win/hatari-winicon.o
 else
 ifneq ($(strip $(shell gcc -v 2>&1 |grep "cygwin")),)
   SUBDIRLIBS += gui-win/gui-win.a

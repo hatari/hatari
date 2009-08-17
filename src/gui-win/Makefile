@@ -3,9 +3,9 @@ include ../../Makefile.cnf
 
 CFLAGS += -I../includes $(SDL_CFLAGS)
 
-GUIWINOBJS = hatari-winicon.o opencon.o
+GUIWINOBJS = opencon.o
 
-all: gui-win.a
+all: gui-win.a hatari-winicon.o
 
 gui-win.a: $(GUIWINOBJS)
 	$(AR) cru $@ $^
