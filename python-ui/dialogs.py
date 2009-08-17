@@ -91,9 +91,9 @@ class AboutDialog(HatariUIDialog):
         dialog.set_artists(["The logo is from Hatari"])
         dialog.set_logo(gtk.gdk.pixbuf_new_from_file(UInfo.logo))
         dialog.set_translator_credits("translator-credits")
-        dialog.set_copyright("UI copyright (C) 2008 by Eero Tamminen")
+        dialog.set_copyright("UI copyright (C) 2008-2009 by Eero Tamminen")
         dialog.set_license("""
-This software is licenced under GPL v2.
+This software is licenced under GPL v2 or later.
 
 You can see the whole license at:
     http://www.gnu.org/licenses/info/GPLv2.html""")
@@ -599,8 +599,8 @@ class TraceDialog(HatariUIDialog):
         per_side = (len(self.tracepoints)+2)/3
         self.tracewidgets = {}
         for trace in self.tracepoints:
-            trace = trace.replace("_", "-")
-            widget = gtk.CheckButton(trace)
+            name = trace.replace("_", "-")
+            widget = gtk.CheckButton(name)
             self.tracewidgets[trace] = widget
             vboxes[count/per_side].pack_start(widget, False, True)
             count += 1
