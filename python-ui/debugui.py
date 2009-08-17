@@ -272,7 +272,7 @@ class MemoryAddress:
         else:
             address += offset
         self._set_clamped(address, address+screenful)
-        self.hatari.debug_command("m %06x-%06x" % (self.first, self.last))
+        self.hatari.debug_command("m $%06x-$%06x" % (self.first, self.last))
         # get & set debugger command results
         output = self.hatari.get_lines(self.debug_output)
         self.second = address + linewidth
@@ -302,7 +302,7 @@ class MemoryAddress:
             else:
                 address += offset
         self._set_clamped(address, address+screenful)
-        self.hatari.debug_command("d %06x-%06x" % (self.first, self.last))
+        self.hatari.debug_command("d $%06x-$%06x" % (self.first, self.last))
         # get & set debugger command results
         output = self.hatari.get_lines(self.debug_output)
         # cut output to desired length and check new addresses
@@ -462,14 +462,14 @@ class HatariDebugUI:
             self.dialog_load = LoadDialog(self.window)
         (filename, address) = self.dialog_load.run(self.address.get())
         if filename and address:
-            self.hatari.debug_command("l %s %06x" % (filename, address))
+            self.hatari.debug_command("l %s $%06x" % (filename, address))
 
     def memsave_cb(self, widget):
         if not self.dialog_save:
             self.dialog_save = SaveDialog(self.window)
         (filename, address, length) = self.dialog_save.run(self.address.get())
         if filename and address and length:
-            self.hatari.debug_command("s %s %06x %06x" % (filename, address, length))
+            self.hatari.debug_command("s %s $%06x $%06x" % (filename, address, length))
         
     def options_cb(self, widget):
         if not self.dialog_options:
