@@ -984,7 +984,7 @@ static int DebugUI_Continue(int nArgc, char *psArgv[], bool bStepDsp)
 	nCpuSteps = 0;
 	if (steps <= 0)
 	{
-		fprintf(stderr,"Returning to emulation...\n------------------------------\n\n");
+		fprintf(stderr,"Returning to emulation...\n");
 		return DEBUGGER_END;
 	}
 	if (bStepDsp)
