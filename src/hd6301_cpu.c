@@ -1,0 +1,2923 @@
+/*
+  Hatari - hd6301_cpu.c
+  Copyright Laurent Sallafranque 2009
+
+  This file is distributed under the GNU Public License, version 2 or at
+  your option any later version. Read the file gpl.txt for details.
+
+  hd6301_cpu.c - this is the cpu core emulation for hd 6301 processor
+*/
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <string.h>
+#include <SDL.h>
+
+#include "hd6301_cpu.h"
+
+
+/**********************************
+ *	Defines
+ **********************************/
+#define HD_6301_DEBUG 0
+
+/**********************************
+ *	Functions
+ **********************************/
+
+static Uint8 hd6301_read_memory(Uint16 addr);
+static void hd6301_write_memory (Uint16 addr, Uint8 value);
+static Uint16 hd6301_get_memory_ext(void);
+
+static void hd6301_undefined(void);
+static void hd6301_nop(void);
+static void hd6301_lsrd(void);
+static void hd6301_asld(void);
+static void hd6301_tap(void);
+static void hd6301_tpa(void);
+static void hd6301_inx(void);
+static void hd6301_dex(void);
+static void hd6301_clv(void);
+static void hd6301_sev(void);
+static void hd6301_clc(void);
+static void hd6301_sec(void);
+static void hd6301_cli(void);
+static void hd6301_sei(void);
+static void hd6301_sba(void);
+static void hd6301_cba(void);
+static void hd6301_tab(void);
+static void hd6301_tba(void);
+static void hd6301_xgdx(void);
+static void hd6301_daa(void);
+static void hd6301_slp(void);
+static void hd6301_aba(void);
+static void hd6301_bra(void);
+static void hd6301_brn(void);
+static void hd6301_bhi(void);
+static void hd6301_bls(void);
+static void hd6301_bcc(void);
+static void hd6301_bcs(void);
+static void hd6301_bne(void);
+static void hd6301_beq(void);
+static void hd6301_bvc(void);
+static void hd6301_bvs(void);
+static void hd6301_bpl(void);
+static void hd6301_bmi(void);
+static void hd6301_bge(void);
+static void hd6301_blt(void);
+static void hd6301_bgt(void);
+static void hd6301_ble(void);
+static void hd6301_tsx(void);
+static void hd6301_ins(void);
+static void hd6301_pula(void);
+static void hd6301_pulb(void);
+static void hd6301_des(void);
+static void hd6301_txs(void);
+static void hd6301_psha(void);
+static void hd6301_pshb(void);
+static void hd6301_pulx(void);
+static void hd6301_rts(void);
+static void hd6301_abx(void);
+static void hd6301_rti(void);
+static void hd6301_pshx(void);
+static void hd6301_mul(void);
+static void hd6301_wai(void);
+static void hd6301_swi(void);
+static void hd6301_nega(void);
+static void hd6301_coma(void);
+static void hd6301_lsra(void);
+static void hd6301_rora(void);
+static void hd6301_asra(void);
+static void hd6301_asla(void);
+static void hd6301_rola(void);
+static void hd6301_deca(void);
+static void hd6301_inca(void);
+static void hd6301_tsta(void);
+static void hd6301_clra(void);
+static void hd6301_negb(void);
+static void hd6301_comb(void);
+static void hd6301_lsrb(void);
+static void hd6301_rorb(void);
+static void hd6301_asrb(void);
+static void hd6301_aslb(void);
+static void hd6301_rolb(void);
+static void hd6301_decb(void);
+static void hd6301_incb(void);
+static void hd6301_tstb(void);
+static void hd6301_clrb(void);
+static void hd6301_neg_ind(void);
+static void hd6301_aim_ind(void);
+static void hd6301_oim_ind(void);
+static void hd6301_com_ind(void);
+static void hd6301_lsr_ind(void);
+static void hd6301_eim_ind(void);
+static void hd6301_ror_ind(void);
+static void hd6301_asr_ind(void);
+static void hd6301_asl_ind(void);
+static void hd6301_rol_ind(void);
+static void hd6301_dec_ind(void);
+static void hd6301_tim_ind(void);
+static void hd6301_inc_ind(void);
+static void hd6301_tst_ind(void);
+static void hd6301_jmp_ind(void);
+static void hd6301_clr_ind(void);
+static void hd6301_neg_ext(void);
+static void hd6301_aim_dir(void);
+static void hd6301_oim_dir(void);
+static void hd6301_com_ext(void);
+static void hd6301_lsr_ext(void);
+static void hd6301_eim_dir(void);
+static void hd6301_ror_ext(void);
+static void hd6301_asr_ext(void);
+static void hd6301_asl_ext(void);
+static void hd6301_rol_ext(void);
+static void hd6301_dec_ext(void);
+static void hd6301_tim_dir(void);
+static void hd6301_inc_ext(void);
+static void hd6301_tst_ext(void);
+static void hd6301_jmp_ext(void);
+static void hd6301_clr_ext(void);
+static void hd6301_suba_imm(void);
+static void hd6301_cmpa_imm(void);
+static void hd6301_sbca_imm(void);
+static void hd6301_subd_imm(void);
+static void hd6301_anda_imm(void);
+static void hd6301_bita_imm(void);
+static void hd6301_ldaa_imm(void);
+static void hd6301_eora_imm(void);
+static void hd6301_adca_imm(void);
+static void hd6301_oraa_imm(void);
+static void hd6301_adda_imm(void);
+static void hd6301_cpx_imm(void);
+static void hd6301_bsr(void);
+static void hd6301_lds_imm(void);
+static void hd6301_suba_dir(void);
+static void hd6301_cmpa_dir(void);
+static void hd6301_sbca_dir(void);
+static void hd6301_subd_dir(void);
+static void hd6301_anda_dir(void);
+static void hd6301_bita_dir(void);
+static void hd6301_ldaa_dir(void);
+static void hd6301_staa_dir(void);
+static void hd6301_eora_dir(void);
+static void hd6301_adca_dir(void);
+static void hd6301_oraa_dir(void);
+static void hd6301_adda_dir(void);
+static void hd6301_cpx_dir(void);
+static void hd6301_jsr_dir(void);
+static void hd6301_lds_dir(void);
+static void hd6301_sts_dir(void);
+static void hd6301_suba_ind(void);
+static void hd6301_cmpa_ind(void);
+static void hd6301_sbca_ind(void);
+static void hd6301_subd_ind(void);
+static void hd6301_anda_ind(void);
+static void hd6301_bita_ind(void);
+static void hd6301_ldaa_ind(void);
+static void hd6301_staa_ind(void);
+static void hd6301_eora_ind(void);
+static void hd6301_adca_ind(void);
+static void hd6301_oraa_ind(void);
+static void hd6301_adda_ind(void);
+static void hd6301_cpx_ind(void);
+static void hd6301_jsr_ind(void);
+static void hd6301_lds_ind(void);
+static void hd6301_sts_ind(void);
+static void hd6301_suba_ext(void);
+static void hd6301_cmpa_ext(void);
+static void hd6301_sbca_ext(void);
+static void hd6301_subd_ext(void);
+static void hd6301_anda_ext(void);
+static void hd6301_bita_ext(void);
+static void hd6301_ldaa_ext(void);
+static void hd6301_staa_ext(void);
+static void hd6301_eora_ext(void);
+static void hd6301_adca_ext(void);
+static void hd6301_oraa_ext(void);
+static void hd6301_adda_ext(void);
+static void hd6301_cpx_ext(void);
+static void hd6301_jsr_ext(void);
+static void hd6301_lds_ext(void);
+static void hd6301_sts_ext(void);
+static void hd6301_subb_imm(void);
+static void hd6301_cmpb_imm(void);
+static void hd6301_sbcb_imm(void);
+static void hd6301_addd_imm(void);
+static void hd6301_andb_imm(void);
+static void hd6301_bitb_imm(void);
+static void hd6301_ldab_imm(void);
+static void hd6301_eorb_imm(void);
+static void hd6301_adcb_imm(void);
+static void hd6301_orab_imm(void);
+static void hd6301_addb_imm(void);
+static void hd6301_ldd_imm(void);
+static void hd6301_ldx_imm(void);
+static void hd6301_subb_dir(void);
+static void hd6301_cmpb_dir(void);
+static void hd6301_sbcb_dir(void);
+static void hd6301_addd_dir(void);
+static void hd6301_andb_dir(void);
+static void hd6301_bitb_dir(void);
+static void hd6301_ldab_dir(void);
+static void hd6301_stab_dir(void);
+static void hd6301_eorb_dir(void);
+static void hd6301_adcb_dir(void);
+static void hd6301_orab_dir(void);
+static void hd6301_addb_dir(void);
+static void hd6301_ldd_dir(void);
+static void hd6301_std_dir(void);
+static void hd6301_ldx_dir(void);
+static void hd6301_stx_dir(void);
+static void hd6301_subb_ind(void);
+static void hd6301_cmpb_ind(void);
+static void hd6301_sbcb_ind(void);
+static void hd6301_addd_ind(void);
+static void hd6301_andb_ind(void);
+static void hd6301_bitb_ind(void);
+static void hd6301_ldab_ind(void);
+static void hd6301_stab_ind(void);
+static void hd6301_eorb_ind(void);
+static void hd6301_adcb_ind(void);
+static void hd6301_orab_ind(void);
+static void hd6301_addb_ind(void);
+static void hd6301_ldd_ind(void);
+static void hd6301_std_ind(void);
+static void hd6301_ldx_ind(void);
+static void hd6301_stx_ind(void);
+static void hd6301_subb_ext(void);
+static void hd6301_cmpb_ext(void);
+static void hd6301_sbcb_ext(void);
+static void hd6301_addd_ext(void);
+static void hd6301_andb_ext(void);
+static void hd6301_bitb_ext(void);
+static void hd6301_ldab_ext(void);
+static void hd6301_stab_ext(void);
+static void hd6301_eorb_ext(void);
+static void hd6301_adcb_ext(void);
+static void hd6301_orab_ext(void);
+static void hd6301_addb_ext(void);
+static void hd6301_ldd_ext(void);
+static void hd6301_std_ext(void);
+static void hd6301_ldx_ext(void);
+static void hd6301_stx_ext(void);
+
+/* HF6301 Disasm and debug code */
+static void hd6301_disasm_undefined(void);
+static void hd6301_disasm_none(void);
+static void hd6301_disasm_memory8(void);
+static void hd6301_disasm_memory16(void);
+static void hd6301_disasm_xim(void);
+
+/**********************************
+ *	Variables
+ **********************************/
+static char hd6301_str_instr[50];
+
+static struct hd6301_opcode_t hd6301_opcode;
+
+static struct hd6301_opcode_t hd6301_opcode_table[256] = {
+
+	{0x00, 0, hd6301_undefined,	0,	"", 				hd6301_disasm_undefined},
+	{0x01, 1, hd6301_nop,		1,	"nop", 				hd6301_disasm_none},
+	{0x02, 0, hd6301_undefined,	0,	"", 				hd6301_disasm_undefined},
+	{0x03, 0, hd6301_undefined,	0,	"", 				hd6301_disasm_undefined},
+	{0x04, 1, hd6301_lsrd,		1,	"lsrd",				hd6301_disasm_none},
+	{0x05, 1, hd6301_asld,		1,	"asld",				hd6301_disasm_none},
+	{0x06, 1, hd6301_tap,		1,	"tap",				hd6301_disasm_none},
+	{0x07, 1, hd6301_tpa,		1,	"tpa",				hd6301_disasm_none},
+	{0x08, 1, hd6301_inx,		1,	"inx",				hd6301_disasm_none},
+	{0x09, 1, hd6301_dex,		1,	"dex",				hd6301_disasm_none},
+	{0x0a, 1, hd6301_clv,		1,	"clv",				hd6301_disasm_none},
+	{0x0b, 1, hd6301_sev,		1,	"sev",				hd6301_disasm_none},
+	{0x0c, 1, hd6301_clc,		1,	"clc",				hd6301_disasm_none},
+	{0x0d, 1, hd6301_sec,		1,	"sec",				hd6301_disasm_none},
+	{0x0e, 1, hd6301_cli,		1,	"cli",				hd6301_disasm_none},
+	{0x0f, 1, hd6301_sei,		1,	"sei",				hd6301_disasm_none},
+
+	{0x10, 1, hd6301_sba,		1,	"sba",				hd6301_disasm_none},
+	{0x11, 1, hd6301_cba,		1,	"cba",				hd6301_disasm_none},
+ 	{0x12, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+ 	{0x13, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+ 	{0x14, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+ 	{0x15, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0x16, 1, hd6301_tab,		1,	"tab",				hd6301_disasm_none},
+	{0x17, 1, hd6301_tba,		1,	"tba",				hd6301_disasm_none},
+ 	{0x18, 1, hd6301_xgdx,		2,	"xgdx",				hd6301_disasm_none},
+	{0x19, 1, hd6301_daa,		2,	"daa",				hd6301_disasm_none},
+ 	{0x1a, 1, hd6301_slp,		4,	"slp",				hd6301_disasm_none},
+	{0x1b, 1, hd6301_aba,		1,	"aba",				hd6301_disasm_none},
+ 	{0x1c, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+ 	{0x1d, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+ 	{0x1e, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+ 	{0x1f, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+
+	{0x20, 0, hd6301_bra,		3,	"bra  $%02x",			hd6301_disasm_memory8},
+	{0x21, 0, hd6301_brn,		3,	"brn  $%02x",			hd6301_disasm_memory8},
+	{0x22, 0, hd6301_bhi,		3,	"bhi  $%02x",			hd6301_disasm_memory8},
+	{0x23, 0, hd6301_bls,		3,	"bls  $%02x",			hd6301_disasm_memory8},
+	{0x24, 0, hd6301_bcc,		3,	"bcc  $%02x",			hd6301_disasm_memory8},
+	{0x25, 0, hd6301_bcs,		3,	"bcs  $%02x",			hd6301_disasm_memory8},
+	{0x26, 0, hd6301_bne,		3,	"bne  $%02x",			hd6301_disasm_memory8},
+	{0x27, 0, hd6301_beq,		3,	"beq  $%02x",			hd6301_disasm_memory8},
+	{0x28, 0, hd6301_bvc,		3,	"bvc  $%02x",			hd6301_disasm_memory8},
+	{0x29, 0, hd6301_bvs,		3,	"bvs  $%02x",			hd6301_disasm_memory8},
+	{0x2a, 0, hd6301_bpl,		3,	"bpl  $%02x",			hd6301_disasm_memory8},
+	{0x2b, 0, hd6301_bmi,		3,	"bmi  $%02x",			hd6301_disasm_memory8},
+	{0x2c, 0, hd6301_bge,		3,	"bge  $%02x",			hd6301_disasm_memory8},
+	{0x2d, 0, hd6301_blt,		3,	"blt  $%02x",			hd6301_disasm_memory8},
+	{0x2e, 0, hd6301_bgt,		3,	"bgt  $%02x",			hd6301_disasm_memory8},
+	{0x2f, 0, hd6301_ble,		3,	"ble  $%02x",			hd6301_disasm_memory8},
+
+	{0x30, 1, hd6301_tsx,		1,	"tsx",				hd6301_disasm_none},
+	{0x31, 1, hd6301_ins,		1,	"ins",				hd6301_disasm_none},
+	{0x32, 1, hd6301_pula,		3,	"pula",				hd6301_disasm_none},
+	{0x33, 1, hd6301_pulb,		3,	"pulb",				hd6301_disasm_none},
+	{0x34, 1, hd6301_des,		1,	"des",				hd6301_disasm_none},
+	{0x35, 1, hd6301_txs,		1,	"txs",				hd6301_disasm_none},
+	{0x36, 1, hd6301_psha,		4,	"psha",				hd6301_disasm_none},
+	{0x37, 1, hd6301_pshb,		4,	"pshb",				hd6301_disasm_none},
+	{0x38, 1, hd6301_pulx,		4,	"pulx",				hd6301_disasm_none},
+	{0x39, 0, hd6301_rts,		5,	"rts",				hd6301_disasm_none},
+	{0x3a, 1, hd6301_abx,		1,	"abx",				hd6301_disasm_none},
+	{0x3b, 0, hd6301_rti,		10,	"rti",				hd6301_disasm_none},
+	{0x3c, 1, hd6301_pshx,		5 ,	"pshx",				hd6301_disasm_none},
+	{0x3d, 1, hd6301_mul,		7,	"mul",				hd6301_disasm_none},
+	{0x3e, 0, hd6301_wai,		9,	"wai",				hd6301_disasm_none},
+	{0x3f, 0, hd6301_swi,		12,	"swi",				hd6301_disasm_none},
+	
+	{0x40, 1, hd6301_nega,		1,	"nega",				hd6301_disasm_none},
+	{0x41, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0x42, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0x43, 1, hd6301_coma,		1,	"coma",				hd6301_disasm_none},
+	{0x44, 1, hd6301_lsra,		1,	"lsra",				hd6301_disasm_none},
+	{0x45, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0x46, 1, hd6301_rora,		1,	"rora",				hd6301_disasm_none},
+	{0x47, 1, hd6301_asra,		1,	"asra",				hd6301_disasm_none},
+	{0x48, 1, hd6301_asla,		1,	"lsla",				hd6301_disasm_none},
+	{0x49, 1, hd6301_rola,		1,	"rola",				hd6301_disasm_none},
+	{0x4a, 1, hd6301_deca,		1,	"deca",				hd6301_disasm_none},
+	{0x4b, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0x4c, 1, hd6301_inca,		1,	"inca",				hd6301_disasm_none},
+	{0x4d, 1, hd6301_tsta,		1,	"tsta",				hd6301_disasm_none},
+	{0x4e, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0x4f, 1, hd6301_clra,		1,	"clra",				hd6301_disasm_none},
+
+	{0x50, 1, hd6301_negb,		1,	"negb",				hd6301_disasm_none},
+	{0x51, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0x52, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0x53, 1, hd6301_comb,		1,	"comb",				hd6301_disasm_none},
+	{0x54, 1, hd6301_lsrb,		1,	"lsrb",				hd6301_disasm_none},
+	{0x55, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0x56, 1, hd6301_rorb,		1,	"rorb",				hd6301_disasm_none},
+	{0x57, 1, hd6301_asrb,		1,	"asrb",				hd6301_disasm_none},
+	{0x58, 1, hd6301_aslb,		1,	"lslb",				hd6301_disasm_none},
+	{0x59, 1, hd6301_rolb,		1,	"rolb",				hd6301_disasm_none},
+	{0x5a, 1, hd6301_decb,		1,	"decb",				hd6301_disasm_none},
+	{0x5b, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0x5c, 1, hd6301_incb,		1,	"incb",				hd6301_disasm_none},
+	{0x5d, 1, hd6301_tstb,		1,	"tstb",				hd6301_disasm_none},
+	{0x5e, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0x5f, 1, hd6301_clrb,		1,	"clrb",				hd6301_disasm_none},
+
+	{0x60, 2, hd6301_neg_ind,	6,	"neg $%02x,x",			hd6301_disasm_memory8},
+ 	{0x61, 3, hd6301_aim_ind,	7,	"aim #$%02x,$%02x x",		hd6301_disasm_xim},
+ 	{0x62, 3, hd6301_oim_ind,	7,	"oim #$%02x,$%02x x",		hd6301_disasm_xim},
+	{0x63, 2, hd6301_com_ind,	6,	"com $%02x,x",			hd6301_disasm_memory8},
+	{0x64, 2, hd6301_lsr_ind,	6,	"lsr $%02x,x",			hd6301_disasm_memory8},
+ 	{0x65, 3, hd6301_eim_ind,	7,	"eim #$%02x,$%02x x",		hd6301_disasm_xim},
+	{0x66, 2, hd6301_ror_ind,	6,	"ror $%02x,x",			hd6301_disasm_memory8},
+	{0x67, 2, hd6301_asr_ind,	6,	"asr $%02x,x",			hd6301_disasm_memory8},
+	{0x68, 2, hd6301_asl_ind,	6,	"lsl $%02x,x",			hd6301_disasm_memory8},
+	{0x69, 2, hd6301_rol_ind,	6,	"rol $%02x,x",			hd6301_disasm_memory8},
+	{0x6a, 2, hd6301_dec_ind,	6,	"dec $%02x,x",			hd6301_disasm_memory8},
+ 	{0x6b, 3, hd6301_tim_ind,	5,	"tim #$%02x,$%02x x",		hd6301_disasm_xim},
+	{0x6c, 2, hd6301_inc_ind,	6,	"inc $%02x,x",			hd6301_disasm_memory8},
+	{0x6d, 2, hd6301_tst_ind,	4,	"tst $%02x,x",			hd6301_disasm_memory8},
+	{0x6e, 0, hd6301_jmp_ind,	3,	"jmp $%02x,x",			hd6301_disasm_memory8},
+	{0x6f, 2, hd6301_clr_ind,	5,	"clr $%02x,x",			hd6301_disasm_memory8},
+
+	{0x70, 3, hd6301_neg_ext,	6,	"neg $%04x",			hd6301_disasm_memory16},
+ 	{0x71, 3, hd6301_aim_dir,	6,	"aim #$%02x,$%02x",		hd6301_disasm_xim},
+ 	{0x72, 3, hd6301_oim_dir,	6,	"oim #$%02x,$%02x",		hd6301_disasm_xim},
+	{0x73, 3, hd6301_com_ext,	6,	"com $%04x",			hd6301_disasm_memory16},
+	{0x74, 3, hd6301_lsr_ext,	6,	"lsr $%04x",			hd6301_disasm_memory16},
+ 	{0x75, 3, hd6301_eim_dir,	6,	"eim #$%02x,$%02x",		hd6301_disasm_xim},
+	{0x76, 3, hd6301_ror_ext,	6,	"ror $%04x",			hd6301_disasm_memory16},
+	{0x77, 3, hd6301_asr_ext,	6,	"asr $%04x",			hd6301_disasm_memory16},
+	{0x78, 3, hd6301_asl_ext,	6,	"lsl $%04x",			hd6301_disasm_memory16},
+	{0x79, 3, hd6301_rol_ext,	6,	"rol $%04x",			hd6301_disasm_memory16},
+	{0x7a, 3, hd6301_dec_ext,	6,	"dec $%04x",			hd6301_disasm_memory16},
+ 	{0x7b, 3, hd6301_tim_dir,	4,	"tim #$%02x,$%02x",		hd6301_disasm_xim},
+	{0x7c, 3, hd6301_inc_ext,	6,	"inc $%04x",			hd6301_disasm_memory16},
+	{0x7d, 3, hd6301_tst_ext,	4,	"tst $%04x",			hd6301_disasm_memory16},
+	{0x7e, 0, hd6301_jmp_ext,	3,	"jmp $%04x",			hd6301_disasm_memory16},
+	{0x7f, 3, hd6301_clr_ext,	5,	"clr $%04x",			hd6301_disasm_memory16},
+	
+	{0x80, 2, hd6301_suba_imm,	2,	"suba #$%02x",			hd6301_disasm_memory8},
+	{0x81, 2, hd6301_cmpa_imm,	2,	"cmpa #$%02x",			hd6301_disasm_memory8},
+	{0x82, 2, hd6301_sbca_imm,	2,	"sbca #$%02x",			hd6301_disasm_memory8},
+	{0x83, 3, hd6301_subd_imm,	3,	"subd #$%04x",			hd6301_disasm_memory16},
+	{0x84, 2, hd6301_anda_imm,	2,	"anda #$%02x",			hd6301_disasm_memory8},
+	{0x85, 2, hd6301_bita_imm,	2,	"bita #$%02x",			hd6301_disasm_memory8},
+	{0x86, 2, hd6301_ldaa_imm,	2,	"ldaa #$%02x",			hd6301_disasm_memory8},
+	{0x87, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0x88, 2, hd6301_eora_imm,	2,	"eora #$%02x",			hd6301_disasm_memory8},
+	{0x89, 2, hd6301_adca_imm,	2,	"adca #$%02x",			hd6301_disasm_memory8},
+	{0x8a, 2, hd6301_oraa_imm,	2,	"oraa #$%02x",			hd6301_disasm_memory8},
+	{0x8b, 2, hd6301_adda_imm,	2,	"adda #$%02x",			hd6301_disasm_memory8},
+	{0x8c, 3, hd6301_cpx_imm,	3,	"cpx  #$%04x",			hd6301_disasm_memory16},
+	{0x8d, 0, hd6301_bsr,		5,	"bsr  %$02x",			hd6301_disasm_memory8},
+	{0x8e, 3, hd6301_lds_imm,	3,	"lds  #$%04x",			hd6301_disasm_memory16},
+ 	{0x8f, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+
+	{0x90, 2, hd6301_suba_dir,	3,	"suba $%02x",			hd6301_disasm_memory8},
+	{0x91, 2, hd6301_cmpa_dir,	3,	"cmpa $%02x",			hd6301_disasm_memory8},
+	{0x92, 2, hd6301_sbca_dir,	3,	"sbca $%02x",			hd6301_disasm_memory8},
+	{0x93, 2, hd6301_subd_dir,	4,	"subd $%02x",			hd6301_disasm_memory8},
+	{0x94, 2, hd6301_anda_dir,	3,	"anda $%02x",			hd6301_disasm_memory8},
+	{0x95, 2, hd6301_bita_dir,	3,	"bita $%02x",			hd6301_disasm_memory8},
+	{0x96, 2, hd6301_ldaa_dir,	3,	"ldaa $%02x",			hd6301_disasm_memory8},
+	{0x97, 2, hd6301_staa_dir,	3,	"staa $%02x",			hd6301_disasm_memory8},
+	{0x98, 2, hd6301_eora_dir,	3,	"eora $%02x",			hd6301_disasm_memory8},
+	{0x99, 2, hd6301_adca_dir,	3,	"adca $%02x",			hd6301_disasm_memory8},
+	{0x9a, 2, hd6301_oraa_dir,	3,	"oraa $%02x",			hd6301_disasm_memory8},
+	{0x9b, 2, hd6301_adda_dir,	3,	"adda $%02x",			hd6301_disasm_memory8},
+	{0x9c, 2, hd6301_cpx_dir,	4,	"cpx  $%02x",			hd6301_disasm_memory8},
+	{0x9d, 0, hd6301_jsr_dir,	5,	"jsr  $%02x",			hd6301_disasm_memory8},
+	{0x9e, 2, hd6301_lds_dir,	4,	"lds  $%02x",			hd6301_disasm_memory8},
+	{0x9f, 2, hd6301_sts_dir,	4,	"sts  $%02x",			hd6301_disasm_memory8},
+
+	{0xa0, 2, hd6301_suba_ind,	4,	"suba $%02x,x",			hd6301_disasm_memory8},
+	{0xa1, 2, hd6301_cmpa_ind,	4,	"cmpa $%02x,x",			hd6301_disasm_memory8},
+	{0xa2, 2, hd6301_sbca_ind,	4,	"sbca $%02x,x",			hd6301_disasm_memory8},
+	{0xa3, 2, hd6301_subd_ind,	5,	"subd $%02x,x",			hd6301_disasm_memory8},
+	{0xa4, 2, hd6301_anda_ind,	4,	"anda $%02x,x",			hd6301_disasm_memory8},
+	{0xa5, 2, hd6301_bita_ind,	4,	"bita $%02x,x",			hd6301_disasm_memory8},
+	{0xa6, 2, hd6301_ldaa_ind,	4,	"ldaa $%02x,x",			hd6301_disasm_memory8},
+	{0xa7, 2, hd6301_staa_ind,	4,	"staa $%02x,x",			hd6301_disasm_memory8},
+	{0xa8, 2, hd6301_eora_ind,	4,	"eora $%02x,x",			hd6301_disasm_memory8},
+	{0xa9, 2, hd6301_adca_ind,	4,	"adca $%02x,x",			hd6301_disasm_memory8},
+	{0xaa, 2, hd6301_oraa_ind,	4,	"oraa $%02x,x",			hd6301_disasm_memory8},
+	{0xab, 2, hd6301_adda_ind,	4,	"adda $%02x,x",			hd6301_disasm_memory8},
+	{0xac, 2, hd6301_cpx_ind,	5,	"cpx  $%02x,x",			hd6301_disasm_memory8},
+	{0xad, 0, hd6301_jsr_ind,	5,	"jsr  $%02x,x",			hd6301_disasm_memory8},
+	{0xae, 2, hd6301_lds_ind,	5,	"lds  $%02x,x",			hd6301_disasm_memory8},
+	{0xaf, 2, hd6301_sts_ind,	5,	"sts  $%02x,x",			hd6301_disasm_memory8},
+
+	{0xb0, 3, hd6301_suba_ext,	4,	"suba $%04x",			hd6301_disasm_memory16},
+	{0xb1, 3, hd6301_cmpa_ext,	4,	"cmpa $%04x",			hd6301_disasm_memory16},
+	{0xb2, 3, hd6301_sbca_ext,	4,	"sbca $%04x",			hd6301_disasm_memory16},
+	{0xb3, 3, hd6301_subd_ext,	5,	"subd $%04x",			hd6301_disasm_memory16},
+	{0xb4, 3, hd6301_anda_ext,	4,	"anda $%04x",			hd6301_disasm_memory16},
+	{0xb5, 3, hd6301_bita_ext,	4,	"bita $%04x",			hd6301_disasm_memory16},
+	{0xb6, 3, hd6301_ldaa_ext,	4,	"ldaa $%04x",			hd6301_disasm_memory16},
+	{0xb7, 3, hd6301_staa_ext,	4,	"staa $%04x",			hd6301_disasm_memory16},
+	{0xb8, 3, hd6301_eora_ext,	4,	"eora $%04x",			hd6301_disasm_memory16},
+	{0xb9, 3, hd6301_adca_ext,	4,	"adca $%04x",			hd6301_disasm_memory16},
+	{0xba, 3, hd6301_oraa_ext,	4,	"oraa $%04x",			hd6301_disasm_memory16},
+	{0xbb, 3, hd6301_adda_ext,	4,	"adda $%04x",			hd6301_disasm_memory16},
+	{0xbc, 3, hd6301_cpx_ext,	5,	"cpx  $%04x",			hd6301_disasm_memory16},
+	{0xbd, 0, hd6301_jsr_ext,	6,	"jsr  $%04x",			hd6301_disasm_memory16},
+	{0xbe, 3, hd6301_lds_ext,	5,	"lds  $%04x",			hd6301_disasm_memory16},
+	{0xbf, 3, hd6301_sts_ext,	5,	"sts  $%04x",			hd6301_disasm_memory16},
+
+	{0xc0, 2, hd6301_subb_imm,	2,	"subb #$%02x",			hd6301_disasm_memory8},
+	{0xc1, 2, hd6301_cmpb_imm,	2,	"cmpb #$%02x",			hd6301_disasm_memory8},
+	{0xc2, 2, hd6301_sbcb_imm,	2,	"sbcb #$%02x",			hd6301_disasm_memory8},
+	{0xc3, 3, hd6301_addd_imm,	3,	"addd #$%04x",			hd6301_disasm_memory16},
+	{0xc4, 2, hd6301_andb_imm,	2,	"andb #$%02x",			hd6301_disasm_memory8},
+	{0xc5, 2, hd6301_bitb_imm,	2,	"bitb #$%02x",			hd6301_disasm_memory8},
+	{0xc6, 2, hd6301_ldab_imm,	2,	"ldab #$%02x",			hd6301_disasm_memory8},
+	{0xc7, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0xc8, 2, hd6301_eorb_imm,	2,	"eorb #$%02x",			hd6301_disasm_memory8},
+	{0xc9, 2, hd6301_adcb_imm,	2,	"adcb #$%02x",			hd6301_disasm_memory8},
+	{0xca, 2, hd6301_orab_imm,	2,	"orab #$%02x",			hd6301_disasm_memory8},
+	{0xcb, 2, hd6301_addb_imm,	2,	"addb #$%02x",			hd6301_disasm_memory8},
+	{0xcc, 3, hd6301_ldd_imm,	3,	"ldd  #$%04x",			hd6301_disasm_memory16},
+	{0xcd, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+	{0xce, 3, hd6301_ldx_imm,	3,	"ldx  #$%04x",			hd6301_disasm_memory8},
+	{0xcf, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
+		
+	{0xd0, 2, hd6301_subb_dir,	3,	"subb $%02x",			hd6301_disasm_memory8},
+	{0xd1, 2, hd6301_cmpb_dir,	3,	"cmpb $%02x",			hd6301_disasm_memory8},
+	{0xd2, 2, hd6301_sbcb_dir,	3,	"sbcb $%02x",			hd6301_disasm_memory8},
+	{0xd3, 2, hd6301_addd_dir,	4,	"addd $%02x",			hd6301_disasm_memory8},
+	{0xd4, 2, hd6301_andb_dir,	3,	"andb $%02x",			hd6301_disasm_memory8},
+	{0xd5, 2, hd6301_bitb_dir,	3,	"bitb $%02x",			hd6301_disasm_memory8},
+	{0xd6, 2, hd6301_ldab_dir,	3,	"ldab $%02x",			hd6301_disasm_memory8},
+	{0xd7, 2, hd6301_stab_dir,	3,	"stab $%02x",			hd6301_disasm_memory8},
+	{0xd8, 2, hd6301_eorb_dir,	3,	"eorb $%02x",			hd6301_disasm_memory8},
+	{0xd9, 2, hd6301_adcb_dir,	3,	"adcb $%02x",			hd6301_disasm_memory8},
+	{0xda, 2, hd6301_orab_dir,	3,	"orab $%02x",			hd6301_disasm_memory8},
+	{0xdb, 2, hd6301_addb_dir,	3,	"addb $%02x",			hd6301_disasm_memory8},
+	{0xdc, 2, hd6301_ldd_dir,	4,	"ldd  $%02x",			hd6301_disasm_memory8},
+	{0xdd, 2, hd6301_std_dir,	4,	"std  $%02x",			hd6301_disasm_memory8},
+	{0xde, 2, hd6301_ldx_dir,	4,	"ldx  $%02x",			hd6301_disasm_memory8},
+	{0xdf, 2, hd6301_stx_dir,	4,	"stx  $%02x",			hd6301_disasm_memory8},
+	
+	{0xe0, 2, hd6301_subb_ind,	4,	"subb $%02x,x",			hd6301_disasm_memory8},
+	{0xe1, 2, hd6301_cmpb_ind,	4,	"cmpb $%02x,x",			hd6301_disasm_memory8},
+	{0xe2, 2, hd6301_sbcb_ind,	4,	"sbcb $%02x,x",			hd6301_disasm_memory8},
+	{0xe3, 2, hd6301_addd_ind,	5,	"addd $%02x,x",			hd6301_disasm_memory8},
+	{0xe4, 2, hd6301_andb_ind,	4,	"andb $%02x,x",			hd6301_disasm_memory8},
+	{0xe5, 2, hd6301_bitb_ind,	4,	"bitb $%02x,x",			hd6301_disasm_memory8},
+	{0xe6, 2, hd6301_ldab_ind,	4,	"ldab $%02x,x",			hd6301_disasm_memory8},
+	{0xe7, 2, hd6301_stab_ind,	4,	"stab $%02x,x",			hd6301_disasm_memory8},
+	{0xe8, 2, hd6301_eorb_ind,	4,	"eorb $%02x,x",			hd6301_disasm_memory8},
+	{0xe9, 2, hd6301_adcb_ind,	4,	"adcb $%02x,x",			hd6301_disasm_memory8},
+	{0xea, 2, hd6301_orab_ind,	4,	"orab $%02x,x",			hd6301_disasm_memory8},
+	{0xeb, 2, hd6301_addb_ind,	4,	"addb $%02x,x",			hd6301_disasm_memory8},
+	{0xec, 2, hd6301_ldd_ind,	5,	"ldd  $%02x,x",			hd6301_disasm_memory8},
+	{0xed, 2, hd6301_std_ind,	5,	"std  $%02x,x",			hd6301_disasm_memory8},
+	{0xee, 2, hd6301_ldx_ind,	5,	"ldx  $%02x,x",			hd6301_disasm_memory8},
+	{0xef, 2, hd6301_stx_ind,	5,	"stx  $%02x,x",			hd6301_disasm_memory8},
+
+	{0xf0, 3, hd6301_subb_ext,	4,	"subb $%04x",			hd6301_disasm_memory16},
+	{0xf1, 3, hd6301_cmpb_ext,	4,	"cmpb $%04x",			hd6301_disasm_memory16},
+	{0xf2, 3, hd6301_sbcb_ext,	4,	"sbcb $%04x",			hd6301_disasm_memory16},
+	{0xf3, 3, hd6301_addd_ext,	5,	"addd $%04x",			hd6301_disasm_memory16},
+	{0xf4, 3, hd6301_andb_ext,	4,	"andb $%04x",			hd6301_disasm_memory16},
+	{0xf5, 3, hd6301_bitb_ext,	4,	"bitb $%04x",			hd6301_disasm_memory16},
+	{0xf6, 3, hd6301_ldab_ext,	4,	"ldab $%04x",			hd6301_disasm_memory16},
+	{0xf7, 3, hd6301_stab_ext,	4,	"stab $%04x",			hd6301_disasm_memory16},
+	{0xf8, 3, hd6301_eorb_ext,	4,	"eorb $%04x",			hd6301_disasm_memory16},
+	{0xf9, 3, hd6301_adcb_ext,	4,	"adcb $%04x",			hd6301_disasm_memory16},
+	{0xfa, 3, hd6301_orab_ext,	4,	"orab $%04x",			hd6301_disasm_memory16},
+	{0xfb, 3, hd6301_addb_ext,	4,	"addb $%04x",			hd6301_disasm_memory16},
+	{0xfc, 3, hd6301_ldd_ext,	5,	"ldd  $%04x",			hd6301_disasm_memory16},
+	{0xfd, 3, hd6301_std_ext,	5,	"std  $%04x",			hd6301_disasm_memory16},
+	{0xfe, 3, hd6301_ldx_ext,	5,	"ldx  $%04x",			hd6301_disasm_memory16},
+	{0xff, 3, hd6301_stx_ext,	5,	"stx  $%04x",			hd6301_disasm_memory16}
+};
+
+
+/**********************************
+ *	Emulator kernel
+ **********************************/
+ 
+/**
+ * Initialise hd6301 cpu
+ */
+void hd6301_init_cpu(void)
+{
+	hd6301_reg_CCR = 0xc0;
+}
+
+/**
+ * Execute 1 hd6301 instruction
+ */
+void hd6301_execute_one_instruction(void)
+{
+	hd6301_cur_inst = hd6301_read_memory(hd6301_reg_PC);
+
+	/* Get opcode to execute */
+	hd6301_opcode = hd6301_opcode_table[hd6301_cur_inst];
+
+	/* disasm opcode ? */
+#ifdef HD_6301_DEBUG
+	hd6301_disasm();
+#endif
+	
+	/* execute opcode  */
+	hd6301_opcode.op_func();
+	
+	/* Increment instruction cycles */
+	hd6301_cycles += hd6301_opcode.op_n_cycles;
+
+	/* Increment PC register */
+	hd6301_reg_PC += hd6301_opcode.op_bytes;
+	
+	/* post process interrupts */
+
+	/* post process timers */
+
+	/* post process SCI */
+}
+
+/**
+ * Read hd6301 memory (Ram, Rom, Internal registers)
+ */
+static Uint8 hd6301_read_memory(Uint16 addr)
+{
+	/* Internal registers */
+	if (addr <= 0x1f) {
+		return hd6301_intREG[addr];
+	}
+	
+	/* Internal RAM */
+	if ((addr >= 0x80) && (addr <= 0xff)) {
+		return hd6301_intRAM[addr-0x80];
+	}
+
+	/* Internal ROM */
+	if (addr >= 0xf000) {
+		return hd6301_intROM[addr-0xf000];
+	}
+	
+	fprintf(stderr, "hd6301: 0x%04x: 0x%04x illegal memory address\n", hd6301_reg_PC, addr);
+	exit(-1);
+}
+
+/**
+ * Write hd6301 memory (Ram, Internal registers)
+ */
+static void hd6301_write_memory (Uint16 addr, Uint8 value)
+{
+	/* Internal registers */
+	if (addr <= 0x1f) {
+		hd6301_intREG[addr] = value;
+	}
+	
+	/* Internal RAM */
+	else if ((addr >= 0x80) && (addr <= 0xff)) {
+		hd6301_intRAM[addr-0x80] = value;
+	}
+
+	/* Internal ROM */
+	else if (addr >= 0xf000) {
+		fprintf(stderr, "hd6301: 0x%04x: attempt to write to rom\n", addr);
+	}
+	
+	/* Illegal address */
+	else {
+		fprintf(stderr, "hd6301: 0x%04x: write to illegal address\n", addr);
+		exit(-1);
+	}
+}
+
+/**
+ * Get extended memory (16 bits)
+ */
+static Uint16 hd6301_get_memory_ext(void)
+{
+	Uint16 addr;
+	
+	addr = hd6301_read_memory(hd6301_reg_PC+1)<<8;
+	addr += hd6301_read_memory(hd6301_reg_PC+2);
+	return addr;
+}
+
+/**
+ * Undefined opcode
+ */
+static void hd6301_undefined(void)
+{
+	fprintf(stderr, "hd6301: 0x%04x: 0x%02x unknown instruction\n", hd6301_reg_PC, hd6301_cur_inst);
+	exit(-1);  /* TODO: Trap the error correctly */
+}
+
+/**
+ * NOP : no operation
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_nop(void)
+{
+}
+
+/**
+ * LSRD : logical Shift Right, accumulator D : D=D>>1
+ *
+ * HINZVC
+ * ..0***
+ */
+static void hd6301_lsrd(void)
+{
+	Uint16 regD;
+	Uint8  carry, bitZ;
+	
+	regD = (hd6301_reg_A<<8) + hd6301_reg_B;
+	carry = regD & 1;
+	regD >>= 1;
+	
+	hd6301_reg_A = regD >> 8;
+	hd6301_reg_B = regD & 0xff;
+	
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry;
+	bitZ = (regD == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= bitZ;
+	hd6301_reg_CCR |= ((bitZ ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+/**
+ * ASLD : arythmetic Shift left, accumulator D : D=D<<1
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_asld(void)
+{	
+	Uint16 regD;
+	Uint8  carry, bitZ;
+	
+	regD = (hd6301_reg_A<<8) + hd6301_reg_B;
+	carry = (regD >> 15) & 1;
+	regD <<= 1;
+	
+	hd6301_reg_A = regD >> 8;
+	hd6301_reg_B = regD & 0xff;
+	
+	hd6301_reg_CCR &= 0xf0;	
+	hd6301_reg_CCR |= carry;
+	bitZ = (regD == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= bitZ;
+	hd6301_reg_CCR |= ((bitZ ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+
+/**
+ * TAP : transfer accumulator A into register CCR : CCR=A
+ *
+ * HINZVC
+ * ******
+ */
+static void hd6301_tap(void)
+{
+	hd6301_reg_CCR = hd6301_reg_A;
+	hd6301_reg_CCR |= 0xc0; 
+}
+
+/**
+ * TPA : transfer register CCR into accumulator A : A=CCR
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_tpa(void)
+{
+	hd6301_reg_A = hd6301_reg_CCR;
+}
+
+/**
+ * INX : increment register X : X=X+1
+ *
+ * HINZVC
+ * ...*..
+ */
+static void hd6301_inx(void)
+{	
+	hd6301_reg_X ++; 
+	
+	hd6301_reg_CCR &= 0xff - (1<<hd6301_REG_CCR_Z);
+	hd6301_reg_CCR |= (hd6301_reg_X == 0) << hd6301_REG_CCR_Z;
+}
+
+/**
+ * DEX : decrement register X : X=X-1
+ *
+ * HINZVC
+ * ...*..
+ */
+static void hd6301_dex(void)
+{
+	hd6301_reg_X --; 
+	
+	hd6301_reg_CCR &= 0xff - (1<<hd6301_REG_CCR_Z);
+	hd6301_reg_CCR |= (hd6301_reg_X == 0) << hd6301_REG_CCR_Z;
+}
+
+/**
+ * CLV : clear register CCR bit V : V=0
+ *
+ * HINZVC
+ * ....0.
+ */
+static void hd6301_clv(void)
+{
+	hd6301_reg_CCR &= 0xff - (1<<hd6301_REG_CCR_V);
+}
+
+/**
+ * SEV : set register CCR bit V : V=1
+ *
+ * HINZVC
+ * ....1.
+ */
+static void hd6301_sev(void)
+{
+	hd6301_reg_CCR |= 1<<hd6301_REG_CCR_V;
+}
+
+/**
+ * CLC : clear register CCR bit C : C=0
+ *
+ * HINZVC
+ * .....0
+ */
+static void hd6301_clc(void)
+{	
+	hd6301_reg_CCR &= 0xff - (1<<hd6301_REG_CCR_C);
+}
+
+/**
+ * SEC : set register CCR bit C : C=1
+ *
+ * HINZVC
+ * .....1
+ */
+static void hd6301_sec(void)
+{
+	hd6301_reg_CCR |= 1<<hd6301_REG_CCR_C;
+}
+
+/**
+ * CLI : clear register CCR bit I : I=0
+ *
+ * HINZVC
+ * .0....
+ */
+static void hd6301_cli(void)
+{
+	hd6301_reg_CCR &= 0xff - (1<<hd6301_REG_CCR_I);
+}
+
+/**
+ * SEI : set register CCR bit I : I=1
+ *
+ * HINZVC
+ * .1....
+ */
+static void hd6301_sei(void)
+{
+	hd6301_reg_CCR |= 1<<hd6301_REG_CCR_I;
+}
+
+/**
+ * SBA : substract accumulator B from accumulator A : A=A-B
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_sba(void)
+{
+	Uint8  flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 result;
+
+	result = hd6301_reg_A - hd6301_reg_B;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = hd6301_reg_B >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+	
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+}
+
+/**
+ * CBA : compare accumulator A and accumulator B : A-B
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_cba(void)
+{
+	Uint8  flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 result;
+
+	result = hd6301_reg_A - hd6301_reg_B;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = hd6301_reg_B >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+	
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+}
+
+/**
+ * TAB : transfer accumulator A into accumulator B : B=A
+ *
+ * HINZVC
+ * ..**0.
+ */
+static void hd6301_tab(void)
+{
+	hd6301_reg_B = hd6301_reg_A;
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_B == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
+}
+
+/**
+ * TBA : transfer accumulator B into accumulator A : A=B
+ *
+ * HINZVC
+ * ..**0.
+ */
+static void hd6301_tba(void)
+{
+	hd6301_reg_A = hd6301_reg_B;
+	
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+}
+
+/**
+ * XGDX : exchange register X and accumulator D : X<->D
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_xgdx(void)
+{
+	Uint16 temp;
+	
+	temp = hd6301_reg_X;
+	hd6301_reg_X = (hd6301_reg_A << 8) + hd6301_reg_B;
+	hd6301_reg_A = temp >> 8;
+	hd6301_reg_B = temp & 0xff;
+}
+
+/**
+ * DAA : converts binary add of BCD characters into BCD format : A=BCD(A)
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_daa(void)
+{
+	/* Todo : */
+}
+
+/**
+ * SLP : sleep
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_slp(void)
+{
+}
+
+/**
+ * ABA : add accumulator A and accumulator B into accumulator A : A=A+B
+ *
+ * HINZVC
+ * *.****
+ */
+static void hd6301_aba(void)
+{
+}
+
+/**
+ * BRA : branch always
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_bra(void)
+{
+	Sint8 addr;
+	
+	addr = hd6301_read_memory(hd6301_reg_PC + 1);
+	hd6301_reg_PC += addr;
+}
+
+/**
+ * BRN : branch never
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_brn(void)
+{
+	hd6301_reg_PC += 2;
+}
+
+/**
+ * BHI : branch if higher : C|Z=0
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_bhi(void)
+{
+	Sint8 addr;
+	Uint8 bitC, bitZ;
+	
+	bitC = (hd6301_reg_CCR >> hd6301_REG_CCR_C) & 1;
+	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
+	if ((bitC | bitZ) == 0) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BLS : branch if lower or same : C|Z=1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_bls(void)
+{
+	Sint8 addr;
+	Uint8 bitC, bitZ;
+	
+	bitC = (hd6301_reg_CCR >> hd6301_REG_CCR_C) & 1;
+	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
+	if ((bitC | bitZ) == 1) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BCC : branch if carry clear : C=0
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_bcc(void)
+{
+	Sint8 addr;
+	Uint8 bitC;
+	
+	bitC = (hd6301_reg_CCR >> hd6301_REG_CCR_C) & 1;
+	if (bitC == 0) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BCS : branch if carry set : C=1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_bcs(void)
+{
+	Sint8 addr;
+	Uint8 bitC;
+	
+	bitC = (hd6301_reg_CCR >> hd6301_REG_CCR_C) & 1;
+	if (bitC == 1) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BNE : branch if not equal 0 : Z=0
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_bne(void)
+{
+	Sint8 addr;
+	Uint8 bitZ;
+	
+	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
+	if (bitZ == 0) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BEQ : branch if equal 0 : Z=1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_beq(void)
+{
+	Sint8 addr;
+	Uint8 bitZ;
+	
+	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
+	if (bitZ == 1) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BVC : branch if overflow clear : V=0
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_bvc(void)
+{
+	Sint8 addr;
+	Uint8 bitV;
+	
+	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
+	if (bitV == 0) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BVS : branch if overflow set : V=1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_bvs(void)
+{
+	Sint8 addr;
+	Uint8 bitV;
+	
+	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
+	if (bitV == 1) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BPL : branch if plus : N=0
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_bpl(void)
+{
+	Sint8 addr;
+	Uint8 bitN;
+	
+	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
+	if (bitN == 0) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BMI : branch if minus : N=1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_bmi(void)
+{
+	Sint8 addr;
+	Uint8 bitN;
+	
+	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
+	if (bitN == 1) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BGE : branch if greater or equal to zero : N^V=0
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_bge(void)
+{
+	Sint8 addr;
+	Uint8 bitN, bitV;
+	
+	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
+	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
+	if ((bitN ^ bitV) == 0) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BLT : branch if lower to zero : N^V=1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_blt(void)
+{
+	Sint8 addr;
+	Uint8 bitN, bitV;
+	
+	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
+	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
+	if ((bitN ^ bitV) == 1) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BGT : branch if greater to zero : Z|(N^V)=0
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_bgt(void)
+{
+	Sint8 addr;
+	Uint8 bitN, bitV, bitZ;
+	
+	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
+	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
+	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
+	if ((bitZ | (bitN ^ bitV)) == 0) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * BLE : branch if lower or equal to zero : Z|(N^V)=1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_ble(void)
+{
+	Sint8 addr;
+	Uint8 bitN, bitV, bitZ;
+	
+	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
+	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
+	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
+	if ((bitZ | (bitN ^ bitV)) == 1) {
+		addr = hd6301_read_memory(hd6301_reg_PC + 1);
+		hd6301_reg_PC += addr;
+	} else {
+		hd6301_reg_PC += 2;
+	}
+}
+
+/**
+ * TSX : transfer stack pointer to register X : X=SP+1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_tsx(void)
+{
+	hd6301_reg_X = hd6301_reg_SP + 1;
+}
+
+/**
+ * INS : increment stack pointer : SP=SP+1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_ins(void)
+{
+	++hd6301_reg_SP;
+}
+	
+/**
+ * PULA : pull accumulator A from stack : SP=SP+1 ; A=(SP)
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_pula(void)
+{
+}
+
+/**
+ * PULB : pull accumulator B from stack : SP=SP+1 ; B=(SP)
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_pulb(void)
+{
+}
+
+/**
+ * DES : decrement stack pointer : SP=SP-1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_des(void)
+{
+	--hd6301_reg_SP;
+}
+
+/**
+ * TXS : transfer register X to stack pointer : SP=X-1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_txs(void)
+{
+	hd6301_reg_SP = hd6301_reg_X - 1;
+}
+
+/**
+ * PSHA : push accumulator A to stack : (SP)=A ; SP=SP-1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_psha(void)
+{
+}
+
+/**
+ * PSHB : push accumulator B to stack : (SP)=B ; SP=SP-1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_pshb(void)
+{
+}
+
+/**
+ * PULX : pull register x from stack : SP=SP+1 ; X=(SP)
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_pulx(void)
+{
+}
+
+/**
+ * RTS : return from subroutine
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_rts(void)
+{
+}
+
+/**
+ * ABX : add accumulator B to register X : X=X+B
+ *
+ * HINZVC
+ * ......
+ */static void hd6301_abx(void)
+{
+	hd6301_reg_X += hd6301_reg_B;
+}
+
+/**
+ * RTI : return from interrupt
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_rti(void)
+{
+}
+
+/**
+ * PSHX : push register X to stack : (SP)=X ; SP=SP-1
+ *
+ * HINZVC
+ * ......
+ */
+static void hd6301_pshx(void)
+{
+}
+
+/**
+ * MUL : multiply uinsigned : D=A*B
+ *
+ * HINZVC
+ * .....*
+ */
+static void hd6301_mul(void)
+{
+	Uint16 regD;
+	
+	regD = hd6301_reg_B * hd6301_reg_A;
+	hd6301_reg_A = regD >> 8;
+	hd6301_reg_B = regD & 0xff;
+	
+	hd6301_reg_CCR &= 0xff - (1<<hd6301_REG_CCR_C);
+	hd6301_reg_CCR |= hd6301_reg_B >> 7;
+}
+
+/**
+ * WAI : wait for interrupt
+ *
+ * HINZVC
+ * .*....
+ */
+static void hd6301_wai(void)
+{
+}
+
+/**
+ * SWI : software interrupt
+ *
+ * HINZVC
+ * .1....
+ */
+static void hd6301_swi(void)
+{
+}
+
+/**
+ * NEGA : negate accumulator A : A=0-A
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_nega(void)
+{
+	Uint8 value;
+	
+	value = -hd6301_reg_A;
+	hd6301_reg_A = value;	
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (value != 0x0);
+	hd6301_reg_CCR |= (value == 0x80) << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+	
+/**
+ * COMA : complement 1 accumulator A : A=~A
+ *
+ * HINZVC
+ * ..**01
+ */
+static void hd6301_coma(void)
+{
+	hd6301_reg_A = ~hd6301_reg_A;
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+}
+
+/**
+ * LSRA : logical Shift Right, accumulator A : A=A>>1
+ *
+ * HINZVC
+ * ..0***
+ */
+static void hd6301_lsra(void)
+{
+	Uint8  carry, bitZ;
+	
+	carry = hd6301_reg_A & 1;
+	hd6301_reg_A >>= 1;
+		
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	bitZ = (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= bitZ;
+	hd6301_reg_CCR |= ((bitZ ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+/**
+ * RORA : rotate Right, accumulator A : A=A>>1 + carry<<8
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_rora(void)
+{
+	Uint8  carry, result, bitZ;
+	
+	result = (hd6301_reg_CCR & 1) << 7;
+	carry = hd6301_reg_A & 1;
+	result += hd6301_reg_A >> 1;
+	hd6301_reg_A = result;
+			
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+	bitZ = (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= bitZ;
+	hd6301_reg_CCR |= ((bitZ ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+/**
+ * ASRA : arithmetic shift right, accumulator A : A=A>>1
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_asra(void)
+{
+	Uint8  carry;
+	
+	carry = hd6301_reg_A & 1;
+	hd6301_reg_A >>= 1;
+	hd6301_reg_A |= (hd6301_reg_A & 0x40) << 1;
+		
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+/**
+ * ASLA : arithmetic shift left, accumulator A : A=A<<1
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_asla(void)
+{
+	Uint8  carry;
+	
+	carry = (hd6301_reg_A & 0X80) >> 7;
+	hd6301_reg_A <<= 1;
+		
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+/**
+ * ROLA : rotate left, accumulator A : A=A<<1 +C
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_rola(void)
+{
+	Uint8  carry, result;
+	
+	result = hd6301_reg_CCR & 1;
+	carry = (hd6301_reg_A & 0x80) >> 7;
+	result += hd6301_reg_A << 1;
+	hd6301_reg_A  = result;
+			
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+/**
+ * DECA : decrement accumulator A : A=A-1
+ *
+ * HINZVC
+ * ..***.
+ */
+static void hd6301_deca(void)
+{
+	Uint8 overflow;
+	
+	overflow = (hd6301_reg_A == 0x80) << hd6301_REG_CCR_Z;
+	--hd6301_reg_A;
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= overflow;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+}
+
+/**
+ * INCA : increment accumulator A : A=A+1
+ *
+ * HINZVC
+ * ..***.
+ */
+static void hd6301_inca(void)
+{
+	Uint8 overflow;
+	
+	overflow = (hd6301_reg_A == 0x7f) << hd6301_REG_CCR_Z;
+	hd6301_reg_A ++;
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= overflow;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+}
+
+/**
+ * TSTA : test zero or minus, accumulator A : A-0
+ *
+ * HINZVC
+ * ..**00
+ */
+static void hd6301_tsta(void)
+{
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+}
+
+/**
+ * CLRA : clear accumulator A : A=0
+ *
+ * HINZVC
+ * ..0100
+ */
+static void hd6301_clra(void)
+{
+	hd6301_reg_A = 0;
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_Z;
+}
+
+/**
+ * NEGB : negate accumulator B : B=0-B
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_negb(void)
+{
+	Uint8 value;
+	
+	value = -hd6301_reg_B;
+	hd6301_reg_B = value;	
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (value != 0x0);
+	hd6301_reg_CCR |= (value == 0x80) << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+/**
+ * COMB : complement 1 accumulator B : B=~B
+ *
+ * HINZVC
+ * ..**01
+ */
+static void hd6301_comb(void)
+{
+	hd6301_reg_B = ~hd6301_reg_B;
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (hd6301_reg_B == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
+}
+
+/**
+ * LSRB : logical Shift Right, accumulator B : B=B>>1
+ *
+ * HINZVC
+ * ..0***
+ */
+static void hd6301_lsrb(void)
+{
+	Uint8  carry;
+	
+	carry = hd6301_reg_B & 1;
+	hd6301_reg_B >>= 1;
+		
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (hd6301_reg_B == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+/**
+ * RORB : rotate Right, accumulator B : B=B>>1 + carry<<8
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_rorb(void)
+{
+	Uint8  carry, result;
+	
+	result = (hd6301_reg_CCR & 1) << 7;
+	carry = hd6301_reg_B & 1;
+	result += hd6301_reg_B >> 1;
+	hd6301_reg_B = result;
+	
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (hd6301_reg_B == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+/**
+ * ASRB : arithmetic shift Right, accumulator B : B=B>>1
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_asrb(void)
+{
+	Uint8  carry;
+	
+	carry = hd6301_reg_B & 1;
+	hd6301_reg_B >>= 1;
+	hd6301_reg_B |= (hd6301_reg_B & 0x40) << 1;
+		
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (hd6301_reg_B == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+/**
+ * ASLB : arithmetic shift left, accumulator B : B=B<<1
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_aslb(void)
+{
+	Uint8  carry;
+	
+	carry = (hd6301_reg_B & 0X80) >> 7;
+	hd6301_reg_B <<= 1;
+		
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (hd6301_reg_B == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+/**
+ * ROLB : rotate left, accumulator B : B=B<<1 +C
+ *
+ * HINZVC
+ * ..****
+ */
+static void hd6301_rolb(void)
+{
+	Uint8  carry, result;
+	
+	result = hd6301_reg_CCR & 1;
+	carry = (hd6301_reg_B & 0x80) >> 7;
+	result += hd6301_reg_B << 1;
+	hd6301_reg_B  = result;
+			
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (hd6301_reg_B == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+/**
+ * DECB : decrement accumulator B : B=B-1
+ *
+ * HINZVC
+ * ..***.
+ */
+static void hd6301_decb(void)
+{
+	Uint8 overflow;
+	
+	overflow = (hd6301_reg_B == 0x80) << hd6301_REG_CCR_Z;
+	--hd6301_reg_B;
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= overflow;
+	hd6301_reg_CCR |= (hd6301_reg_B == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
+}
+
+/**
+ * INCB : increment accumulator B : B=B+1
+ *
+ * HINZVC
+ * ..***.
+ */
+static void hd6301_incb(void)
+{
+	Uint8 overflow;
+	
+	overflow = (hd6301_reg_B == 0x7f) << hd6301_REG_CCR_Z;
+	hd6301_reg_B ++;
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= overflow;
+	hd6301_reg_CCR |= (hd6301_reg_B == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
+}
+
+/**
+ * TSTB : test zero or minus, accumulator B : B-0
+ *
+ * HINZVC
+ * ..**00
+ */
+static void hd6301_tstb(void)
+{
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (hd6301_reg_B == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
+}
+
+/**
+ * CLRB : clear accumulator B : B=0
+ *
+ * HINZVC
+ * ..0100
+ */
+static void hd6301_clrb(void)
+{
+	hd6301_reg_B = 0;
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_Z;
+}
+
+static void hd6301_neg_ind(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = -hd6301_read_memory(addr);
+	hd6301_write_memory(addr, value);
+	
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (value != 0x0);
+	hd6301_reg_CCR |= (value == 0x80) << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_aim_ind(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+2);
+	value &= hd6301_read_memory(addr);
+	hd6301_write_memory(addr, value);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_oim_ind(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+2);
+	value |= hd6301_read_memory(addr);
+	hd6301_write_memory(addr, value);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_com_ind(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = ~hd6301_read_memory(addr);
+	hd6301_write_memory(addr, value);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_lsr_ind(void)
+{
+	Uint8  value, carry, bitZ;
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	
+	carry = value & 1;
+	value >>= 1;
+	hd6301_write_memory(addr, value);
+		
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry;
+	bitZ = (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= bitZ;
+	hd6301_reg_CCR |= ((bitZ ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+static void hd6301_eim_ind(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+2);
+	value ^= hd6301_read_memory(addr);
+	hd6301_write_memory(addr, value);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_ror_ind(void)
+{
+	Uint8  value, carry, result, bitZ;
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+
+	result = (hd6301_reg_CCR & 1) << 7;
+	carry = value & 1;
+	result += value >> 1;
+	hd6301_write_memory(addr, result);
+			
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	bitZ = (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= bitZ;
+	hd6301_reg_CCR |= ((bitZ ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+static void hd6301_asr_ind(void)
+{
+	Uint8  value, carry;
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	
+	carry = value & 1;
+	value >>= 1;
+	value |= (value & 0x40) << 1;
+	hd6301_write_memory(addr, value);
+		
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+static void hd6301_asl_ind(void)
+{
+	Uint8  value, carry;
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+
+	carry = (value & 0X80) >> 7;
+	value <<= 1;
+	hd6301_write_memory(addr, value);
+		
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+static void hd6301_rol_ind(void)
+{
+	Uint8  value, carry, result;
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	
+	result = hd6301_reg_CCR & 1;
+	carry = (value & 0x80) >> 7;
+	result += value << 1;
+	hd6301_write_memory(addr, result);
+			
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+static void hd6301_dec_ind(void)
+{
+	Uint8  value, overflow;
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	
+	overflow = (value == 0x80) << hd6301_REG_CCR_Z;
+	--value;
+	hd6301_write_memory(addr, value);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= overflow;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_tim_ind(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+2);
+	value &= hd6301_read_memory(addr);
+	hd6301_write_memory(addr, value);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_inc_ind(void)
+{
+	Uint8  value, overflow;
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+
+	overflow = (value == 0x7f) << hd6301_REG_CCR_Z;
+	value ++;
+	hd6301_write_memory(addr, value);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= overflow;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_tst_ind(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_jmp_ind(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	hd6301_reg_PC = value;
+}
+
+static void hd6301_clr_ind(void)
+{
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_write_memory(addr, 0);
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_Z;
+}
+
+static void hd6301_neg_ext(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	value = -hd6301_read_memory(addr);
+	hd6301_write_memory(addr, value);
+	
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (value != 0x0);
+	hd6301_reg_CCR |= (value == 0x80) << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_aim_dir(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	addr = hd6301_read_memory(hd6301_reg_PC+2);
+	value &= hd6301_read_memory(addr);
+	hd6301_write_memory(addr, value);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_oim_dir(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	addr = hd6301_read_memory(hd6301_reg_PC+2);
+	value |= hd6301_read_memory(addr);
+	hd6301_write_memory(addr, value);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_com_ext(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	value = ~hd6301_read_memory(addr);
+	hd6301_write_memory(addr, value);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_lsr_ext(void)
+{
+	Uint8  value, carry, bitZ;
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+	
+	carry = value & 1;
+	value >>= 1;
+	hd6301_write_memory(addr, value);
+		
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry;
+	bitZ = (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= bitZ;
+	hd6301_reg_CCR |= ((bitZ ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+static void hd6301_eim_dir(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	addr = hd6301_read_memory(hd6301_reg_PC+2);
+	value ^= hd6301_read_memory(addr);
+	hd6301_write_memory(addr, value);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_ror_ext(void)
+{
+	Uint8  value, carry, result, bitZ;
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+
+	result = (hd6301_reg_CCR & 1) << 7;
+	carry = value & 1;
+	result += value >> 1;
+	hd6301_write_memory(addr, result);
+			
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	bitZ = (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= bitZ;
+	hd6301_reg_CCR |= ((bitZ ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+static void hd6301_asr_ext(void)
+{
+	Uint8  value, carry;
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+	
+	carry = value & 1;
+	value >>= 1;
+	value |= (value & 0x40) << 1;
+	hd6301_write_memory(addr, value);
+		
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+static void hd6301_asl_ext(void)
+{
+	Uint8  value, carry;
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+
+	carry = (value & 0X80) >> 7;
+	value <<= 1;
+	hd6301_write_memory(addr, value);
+		
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+static void hd6301_rol_ext(void)
+{
+	Uint8  value, carry, result;
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+	
+	result = hd6301_reg_CCR & 1;
+	carry = (value & 0x80) >> 7;
+	result += value << 1;
+	hd6301_write_memory(addr, result);
+			
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
+}
+
+static void hd6301_dec_ext(void)
+{
+	Uint8  value, overflow;
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+	
+	overflow = (value == 0x80) << hd6301_REG_CCR_Z;
+	--value;
+	hd6301_write_memory(addr, value);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= overflow;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_tim_dir(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	addr = hd6301_read_memory(hd6301_reg_PC+2);
+	value &= hd6301_read_memory(addr);
+	hd6301_write_memory(addr, value);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_inc_ext(void)
+{
+	Uint8  value, overflow;
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+	
+	overflow = (value == 0x7f) << hd6301_REG_CCR_Z;
+	value ++;
+	hd6301_write_memory(addr, value);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= overflow;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_tst_ext(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
+}
+
+static void hd6301_jmp_ext(void)
+{
+	Uint8  value;
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+	
+	hd6301_reg_PC = value;
+}
+
+static void hd6301_clr_ext(void)
+{
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	hd6301_write_memory(addr, 0);
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_Z;
+}
+
+static void hd6301_suba_imm(void)
+{
+}
+
+static void hd6301_cmpa_imm(void)
+{
+}
+
+static void hd6301_sbca_imm(void)
+{
+}
+
+static void hd6301_subd_imm(void)
+{
+}
+
+static void hd6301_anda_imm(void)
+{
+}
+
+static void hd6301_bita_imm(void)
+{
+}
+
+static void hd6301_ldaa_imm(void)
+{
+}
+
+static void hd6301_eora_imm(void)
+{
+}
+
+static void hd6301_adca_imm(void)
+{
+}
+
+static void hd6301_oraa_imm(void)
+{
+}
+
+static void hd6301_adda_imm(void)
+{
+}
+
+static void hd6301_cpx_imm(void)
+{
+}
+
+static void hd6301_bsr(void)
+{
+}
+
+static void hd6301_lds_imm(void)
+{
+}
+
+static void hd6301_suba_dir(void)
+{
+}
+
+static void hd6301_cmpa_dir(void)
+{
+}
+
+static void hd6301_sbca_dir(void)
+{
+}
+
+static void hd6301_subd_dir(void)
+{
+}
+
+static void hd6301_anda_dir(void)
+{
+}
+
+static void hd6301_bita_dir(void)
+{
+}
+
+static void hd6301_ldaa_dir(void)
+{
+}
+
+static void hd6301_staa_dir(void)
+{
+}
+
+static void hd6301_eora_dir(void)
+{
+}
+
+static void hd6301_adca_dir(void)
+{
+}
+
+static void hd6301_oraa_dir(void)
+{
+}
+
+static void hd6301_adda_dir(void)
+{
+}
+
+static void hd6301_cpx_dir(void)
+{
+}
+
+static void hd6301_jsr_dir(void)
+{
+}
+
+static void hd6301_lds_dir(void)
+{
+}
+
+static void hd6301_sts_dir(void)
+{
+}
+
+static void hd6301_suba_ind(void)
+{
+}
+
+static void hd6301_cmpa_ind(void)
+{
+}
+
+static void hd6301_sbca_ind(void)
+{
+}
+
+static void hd6301_subd_ind(void)
+{
+}
+
+static void hd6301_anda_ind(void)
+{
+}
+
+static void hd6301_bita_ind(void)
+{
+}
+
+static void hd6301_ldaa_ind(void)
+{
+}
+
+static void hd6301_staa_ind(void)
+{
+}
+
+static void hd6301_eora_ind(void)
+{
+}
+
+static void hd6301_adca_ind(void)
+{
+}
+
+static void hd6301_oraa_ind(void)
+{
+}
+
+static void hd6301_adda_ind(void)
+{
+}
+
+static void hd6301_cpx_ind(void)
+{
+}
+
+static void hd6301_jsr_ind(void)
+{
+}
+
+static void hd6301_lds_ind(void)
+{
+}
+
+static void hd6301_sts_ind(void)
+{
+}
+
+static void hd6301_suba_ext(void)
+{
+}
+
+static void hd6301_cmpa_ext(void)
+{
+}
+
+static void hd6301_sbca_ext(void)
+{
+}
+
+static void hd6301_subd_ext(void)
+{
+}
+
+static void hd6301_anda_ext(void)
+{
+}
+
+static void hd6301_bita_ext(void)
+{
+}
+
+static void hd6301_ldaa_ext(void)
+{
+}
+
+static void hd6301_staa_ext(void)
+{
+}
+
+static void hd6301_eora_ext(void)
+{
+}
+
+static void hd6301_adca_ext(void)
+{
+}
+
+static void hd6301_oraa_ext(void)
+{
+}
+
+static void hd6301_adda_ext(void)
+{
+}
+
+static void hd6301_cpx_ext(void)
+{
+}
+
+static void hd6301_jsr_ext(void)
+{
+}
+
+static void hd6301_lds_ext(void)
+{
+}
+
+static void hd6301_sts_ext(void)
+{
+}
+
+static void hd6301_subb_imm(void)
+{
+}
+
+static void hd6301_cmpb_imm(void)
+{
+}
+
+static void hd6301_sbcb_imm(void)
+{
+}
+
+static void hd6301_addd_imm(void)
+{
+}
+
+static void hd6301_andb_imm(void)
+{
+}
+
+static void hd6301_bitb_imm(void)
+{
+}
+
+static void hd6301_ldab_imm(void)
+{
+}
+
+static void hd6301_eorb_imm(void)
+{
+}
+
+static void hd6301_adcb_imm(void)
+{
+}
+
+static void hd6301_orab_imm(void)
+{
+}
+
+static void hd6301_addb_imm(void)
+{
+}
+
+static void hd6301_ldd_imm(void)
+{
+}
+
+static void hd6301_ldx_imm(void)
+{
+}
+
+static void hd6301_subb_dir(void)
+{
+}
+
+static void hd6301_cmpb_dir(void)
+{
+}
+
+static void hd6301_sbcb_dir(void)
+{
+}
+
+static void hd6301_addd_dir(void)
+{
+}
+
+static void hd6301_andb_dir(void)
+{
+}
+
+static void hd6301_bitb_dir(void)
+{
+}
+
+static void hd6301_ldab_dir(void)
+{
+}
+
+static void hd6301_stab_dir(void)
+{
+}
+
+static void hd6301_eorb_dir(void)
+{
+}
+
+static void hd6301_adcb_dir(void)
+{
+}
+
+static void hd6301_orab_dir(void)
+{
+}
+
+static void hd6301_addb_dir(void)
+{
+}
+
+static void hd6301_ldd_dir(void)
+{
+}
+
+static void hd6301_std_dir(void)
+{
+}
+
+static void hd6301_ldx_dir(void)
+{
+}
+
+static void hd6301_stx_dir(void)
+{
+}
+
+static void hd6301_subb_ind(void)
+{
+}
+
+static void hd6301_cmpb_ind(void)
+{
+}
+
+static void hd6301_sbcb_ind(void)
+{
+}
+
+static void hd6301_addd_ind(void)
+{
+}
+
+static void hd6301_andb_ind(void)
+{
+}
+
+static void hd6301_bitb_ind(void)
+{
+}
+
+static void hd6301_ldab_ind(void)
+{
+}
+
+static void hd6301_stab_ind(void)
+{
+}
+
+static void hd6301_eorb_ind(void)
+{
+}
+
+static void hd6301_adcb_ind(void)
+{
+}
+
+static void hd6301_orab_ind(void)
+{
+}
+
+static void hd6301_addb_ind(void)
+{
+}
+
+static void hd6301_ldd_ind(void)
+{
+}
+
+static void hd6301_std_ind(void)
+{
+}
+
+static void hd6301_ldx_ind(void)
+{
+}
+
+static void hd6301_stx_ind(void)
+{
+}
+
+static void hd6301_subb_ext(void)
+{
+}
+
+static void hd6301_cmpb_ext(void)
+{
+}
+
+static void hd6301_sbcb_ext(void)
+{
+}
+
+static void hd6301_addd_ext(void)
+{
+}
+
+static void hd6301_andb_ext(void)
+{
+}
+
+static void hd6301_bitb_ext(void)
+{
+}
+
+static void hd6301_ldab_ext(void)
+{
+}
+
+static void hd6301_stab_ext(void)
+{
+}
+
+static void hd6301_eorb_ext(void)
+{
+}
+
+static void hd6301_adcb_ext(void)
+{
+}
+
+static void hd6301_orab_ext(void)
+{
+}
+
+static void hd6301_addb_ext(void)
+{
+}
+
+static void hd6301_ldd_ext(void)
+{
+}
+
+static void hd6301_std_ext(void)
+{
+}
+
+static void hd6301_ldx_ext(void)
+{
+}
+
+static void hd6301_stx_ext(void)
+{
+}
+
+
+/* 
+	HF6301 Disasm and debug code
+*/
+
+void hd6301_disasm(void)
+{
+	hd6301_opcode.op_func_disasm();
+	fprintf(stderr, "%02x: %s\n", hd6301_reg_PC, hd6301_str_instr);
+}
+
+static void hd6301_disasm_undefined(void)
+{
+	sprintf(hd6301_str_instr, "0x%02x : unknown instruction", hd6301_cur_inst);
+}
+
+static void hd6301_disasm_none(void)
+{
+	sprintf(hd6301_str_instr, hd6301_opcode.op_mnemonic, 0);
+}
+
+static void hd6301_disasm_memory8(void)
+{
+	sprintf(hd6301_str_instr, hd6301_opcode.op_mnemonic, hd6301_read_memory(hd6301_reg_PC+1));
+}
+
+static void hd6301_disasm_memory16(void)
+{
+	sprintf(hd6301_str_instr, hd6301_opcode.op_mnemonic, hd6301_get_memory_ext());
+}
+
+static void hd6301_disasm_xim(void)
+{
+	sprintf(hd6301_str_instr, hd6301_opcode.op_mnemonic, 
+			hd6301_read_memory(hd6301_reg_PC+1), 
+			hd6301_read_memory(hd6301_reg_PC+2));
+}
