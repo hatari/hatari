@@ -346,7 +346,7 @@ static struct hd6301_opcode_t hd6301_opcode_table[256] = {
 	{0x3d, 1, hd6301_mul,		7,	"mul",				hd6301_disasm_none},
 	{0x3e, 0, hd6301_wai,		9,	"wai",				hd6301_disasm_none},
 	{0x3f, 0, hd6301_swi,		12,	"swi",				hd6301_disasm_none},
-	
+
 	{0x40, 1, hd6301_nega,		1,	"nega",				hd6301_disasm_none},
 	{0x41, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
 	{0x42, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
@@ -414,7 +414,7 @@ static struct hd6301_opcode_t hd6301_opcode_table[256] = {
 	{0x7d, 3, hd6301_tst_ext,	4,	"tst $%04x",			hd6301_disasm_memory16},
 	{0x7e, 0, hd6301_jmp_ext,	3,	"jmp $%04x",			hd6301_disasm_memory16},
 	{0x7f, 3, hd6301_clr_ext,	5,	"clr $%04x",			hd6301_disasm_memory16},
-	
+
 	{0x80, 2, hd6301_suba_imm,	2,	"suba #$%02x",			hd6301_disasm_memory8},
 	{0x81, 2, hd6301_cmpa_imm,	2,	"cmpa #$%02x",			hd6301_disasm_memory8},
 	{0x82, 2, hd6301_sbca_imm,	2,	"sbca #$%02x",			hd6301_disasm_memory8},
@@ -499,7 +499,7 @@ static struct hd6301_opcode_t hd6301_opcode_table[256] = {
 	{0xcd, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
 	{0xce, 3, hd6301_ldx_imm,	3,	"ldx  #$%04x",			hd6301_disasm_memory8},
 	{0xcf, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
-		
+
 	{0xd0, 2, hd6301_subb_dir,	3,	"subb $%02x",			hd6301_disasm_memory8},
 	{0xd1, 2, hd6301_cmpb_dir,	3,	"cmpb $%02x",			hd6301_disasm_memory8},
 	{0xd2, 2, hd6301_sbcb_dir,	3,	"sbcb $%02x",			hd6301_disasm_memory8},
@@ -556,7 +556,7 @@ static struct hd6301_opcode_t hd6301_opcode_table[256] = {
 /**********************************
  *	Emulator kernel
  **********************************/
- 
+
 /**
  * Initialise hd6301 cpu
  */
@@ -582,13 +582,13 @@ void hd6301_execute_one_instruction(void)
 	
 	/* execute opcode  */
 	hd6301_opcode.op_func();
-	
+
 	/* Increment instruction cycles */
 	hd6301_cycles += hd6301_opcode.op_n_cycles;
 
 	/* Increment PC register */
 	hd6301_reg_PC += hd6301_opcode.op_bytes;
-	
+
 	/* post process interrupts */
 
 	/* post process timers */
@@ -605,7 +605,7 @@ static Uint8 hd6301_read_memory(Uint16 addr)
 	if (addr <= 0x1f) {
 		return hd6301_intREG[addr];
 	}
-	
+
 	/* Internal RAM */
 	if ((addr >= 0x80) && (addr <= 0xff)) {
 		return hd6301_intRAM[addr-0x80];
@@ -615,7 +615,7 @@ static Uint8 hd6301_read_memory(Uint16 addr)
 	if (addr >= 0xf000) {
 		return hd6301_intROM[addr-0xf000];
 	}
-	
+
 	fprintf(stderr, "hd6301: 0x%04x: 0x%04x illegal memory address\n", hd6301_reg_PC, addr);
 	exit(-1);
 }
@@ -629,7 +629,7 @@ static void hd6301_write_memory (Uint16 addr, Uint8 value)
 	if (addr <= 0x1f) {
 		hd6301_intREG[addr] = value;
 	}
-	
+
 	/* Internal RAM */
 	else if ((addr >= 0x80) && (addr <= 0xff)) {
 		hd6301_intRAM[addr-0x80] = value;
@@ -639,7 +639,7 @@ static void hd6301_write_memory (Uint16 addr, Uint8 value)
 	else if (addr >= 0xf000) {
 		fprintf(stderr, "hd6301: 0x%04x: attempt to write to rom\n", addr);
 	}
-	
+
 	/* Illegal address */
 	else {
 		fprintf(stderr, "hd6301: 0x%04x: write to illegal address\n", addr);
@@ -653,7 +653,7 @@ static void hd6301_write_memory (Uint16 addr, Uint8 value)
 static Uint16 hd6301_get_memory_ext(void)
 {
 	Uint16 addr;
-	
+
 	addr = hd6301_read_memory(hd6301_reg_PC+1)<<8;
 	addr += hd6301_read_memory(hd6301_reg_PC+2);
 	return addr;
@@ -688,14 +688,14 @@ static void hd6301_lsrd(void)
 {
 	Uint16 regD;
 	Uint8  carry, bitZ;
-	
+
 	regD = (hd6301_reg_A<<8) + hd6301_reg_B;
 	carry = regD & 1;
 	regD >>= 1;
-	
+
 	hd6301_reg_A = regD >> 8;
 	hd6301_reg_B = regD & 0xff;
-	
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry;
 	bitZ = (regD == 0) << hd6301_REG_CCR_Z;
@@ -710,18 +710,18 @@ static void hd6301_lsrd(void)
  * ..****
  */
 static void hd6301_asld(void)
-{	
+{
 	Uint16 regD;
 	Uint8  carry, bitZ;
-	
+
 	regD = (hd6301_reg_A<<8) + hd6301_reg_B;
 	carry = (regD >> 15) & 1;
 	regD <<= 1;
-	
+
 	hd6301_reg_A = regD >> 8;
 	hd6301_reg_B = regD & 0xff;
-	
-	hd6301_reg_CCR &= 0xf0;	
+
+	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry;
 	bitZ = (regD == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= bitZ;
@@ -738,7 +738,7 @@ static void hd6301_asld(void)
 static void hd6301_tap(void)
 {
 	hd6301_reg_CCR = hd6301_reg_A;
-	hd6301_reg_CCR |= 0xc0; 
+	hd6301_reg_CCR |= 0xc0;
 }
 
 /**
@@ -759,9 +759,9 @@ static void hd6301_tpa(void)
  * ...*..
  */
 static void hd6301_inx(void)
-{	
-	hd6301_reg_X ++; 
-	
+{
+	hd6301_reg_X ++;
+
 	hd6301_reg_CCR &= 0xff - (1<<hd6301_REG_CCR_Z);
 	hd6301_reg_CCR |= (hd6301_reg_X == 0) << hd6301_REG_CCR_Z;
 }
@@ -774,8 +774,8 @@ static void hd6301_inx(void)
  */
 static void hd6301_dex(void)
 {
-	hd6301_reg_X --; 
-	
+	hd6301_reg_X --;
+
 	hd6301_reg_CCR &= 0xff - (1<<hd6301_REG_CCR_Z);
 	hd6301_reg_CCR |= (hd6301_reg_X == 0) << hd6301_REG_CCR_Z;
 }
@@ -809,7 +809,7 @@ static void hd6301_sev(void)
  * .....0
  */
 static void hd6301_clc(void)
-{	
+{
 	hd6301_reg_CCR &= 0xff - (1<<hd6301_REG_CCR_C);
 }
 
@@ -864,7 +864,7 @@ static void hd6301_sba(void)
 
 	carry = (result & 0x100) >> 8;
 	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
-	
+
 	hd6301_reg_A = result;
 
 	hd6301_reg_CCR &= 0xf0;
@@ -892,7 +892,7 @@ static void hd6301_cba(void)
 
 	carry = (result & 0x100) >> 8;
 	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
-	
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
@@ -909,7 +909,7 @@ static void hd6301_cba(void)
 static void hd6301_tab(void)
 {
 	hd6301_reg_B = hd6301_reg_A;
-	
+
 	hd6301_reg_CCR &= 0xf1;
 	hd6301_reg_CCR |= (hd6301_reg_B == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
@@ -924,7 +924,7 @@ static void hd6301_tab(void)
 static void hd6301_tba(void)
 {
 	hd6301_reg_A = hd6301_reg_B;
-	
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
@@ -939,7 +939,7 @@ static void hd6301_tba(void)
 static void hd6301_xgdx(void)
 {
 	Uint16 temp;
-	
+
 	temp = hd6301_reg_X;
 	hd6301_reg_X = (hd6301_reg_A << 8) + hd6301_reg_B;
 	hd6301_reg_A = temp >> 8;
@@ -954,7 +954,7 @@ static void hd6301_xgdx(void)
  */
 static void hd6301_daa(void)
 {
-	/* Todo : */
+	/* Todo */
 }
 
 /**
@@ -965,6 +965,7 @@ static void hd6301_daa(void)
  */
 static void hd6301_slp(void)
 {
+	/* Todo */
 }
 
 /**
@@ -975,6 +976,7 @@ static void hd6301_slp(void)
  */
 static void hd6301_aba(void)
 {
+	/* Todo */
 }
 
 /**
@@ -986,7 +988,7 @@ static void hd6301_aba(void)
 static void hd6301_bra(void)
 {
 	Sint8 addr;
-	
+
 	addr = hd6301_read_memory(hd6301_reg_PC + 1);
 	hd6301_reg_PC += addr;
 }
@@ -1012,7 +1014,7 @@ static void hd6301_bhi(void)
 {
 	Sint8 addr;
 	Uint8 bitC, bitZ;
-	
+
 	bitC = (hd6301_reg_CCR >> hd6301_REG_CCR_C) & 1;
 	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
 	if ((bitC | bitZ) == 0) {
@@ -1033,7 +1035,7 @@ static void hd6301_bls(void)
 {
 	Sint8 addr;
 	Uint8 bitC, bitZ;
-	
+
 	bitC = (hd6301_reg_CCR >> hd6301_REG_CCR_C) & 1;
 	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
 	if ((bitC | bitZ) == 1) {
@@ -1054,7 +1056,7 @@ static void hd6301_bcc(void)
 {
 	Sint8 addr;
 	Uint8 bitC;
-	
+
 	bitC = (hd6301_reg_CCR >> hd6301_REG_CCR_C) & 1;
 	if (bitC == 0) {
 		addr = hd6301_read_memory(hd6301_reg_PC + 1);
@@ -1074,7 +1076,7 @@ static void hd6301_bcs(void)
 {
 	Sint8 addr;
 	Uint8 bitC;
-	
+
 	bitC = (hd6301_reg_CCR >> hd6301_REG_CCR_C) & 1;
 	if (bitC == 1) {
 		addr = hd6301_read_memory(hd6301_reg_PC + 1);
@@ -1094,7 +1096,7 @@ static void hd6301_bne(void)
 {
 	Sint8 addr;
 	Uint8 bitZ;
-	
+
 	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
 	if (bitZ == 0) {
 		addr = hd6301_read_memory(hd6301_reg_PC + 1);
@@ -1114,7 +1116,7 @@ static void hd6301_beq(void)
 {
 	Sint8 addr;
 	Uint8 bitZ;
-	
+
 	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
 	if (bitZ == 1) {
 		addr = hd6301_read_memory(hd6301_reg_PC + 1);
@@ -1134,7 +1136,7 @@ static void hd6301_bvc(void)
 {
 	Sint8 addr;
 	Uint8 bitV;
-	
+
 	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
 	if (bitV == 0) {
 		addr = hd6301_read_memory(hd6301_reg_PC + 1);
@@ -1154,7 +1156,7 @@ static void hd6301_bvs(void)
 {
 	Sint8 addr;
 	Uint8 bitV;
-	
+
 	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
 	if (bitV == 1) {
 		addr = hd6301_read_memory(hd6301_reg_PC + 1);
@@ -1174,7 +1176,7 @@ static void hd6301_bpl(void)
 {
 	Sint8 addr;
 	Uint8 bitN;
-	
+
 	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
 	if (bitN == 0) {
 		addr = hd6301_read_memory(hd6301_reg_PC + 1);
@@ -1194,7 +1196,7 @@ static void hd6301_bmi(void)
 {
 	Sint8 addr;
 	Uint8 bitN;
-	
+
 	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
 	if (bitN == 1) {
 		addr = hd6301_read_memory(hd6301_reg_PC + 1);
@@ -1214,7 +1216,7 @@ static void hd6301_bge(void)
 {
 	Sint8 addr;
 	Uint8 bitN, bitV;
-	
+
 	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
 	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
 	if ((bitN ^ bitV) == 0) {
@@ -1235,7 +1237,7 @@ static void hd6301_blt(void)
 {
 	Sint8 addr;
 	Uint8 bitN, bitV;
-	
+
 	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
 	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
 	if ((bitN ^ bitV) == 1) {
@@ -1256,7 +1258,7 @@ static void hd6301_bgt(void)
 {
 	Sint8 addr;
 	Uint8 bitN, bitV, bitZ;
-	
+
 	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
 	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
 	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
@@ -1278,7 +1280,7 @@ static void hd6301_ble(void)
 {
 	Sint8 addr;
 	Uint8 bitN, bitV, bitZ;
-	
+
 	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
 	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
 	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
@@ -1311,7 +1313,7 @@ static void hd6301_ins(void)
 {
 	++hd6301_reg_SP;
 }
-	
+
 /**
  * PULA : pull accumulator A from stack : SP=SP+1 ; A=(SP)
  *
@@ -1320,6 +1322,7 @@ static void hd6301_ins(void)
  */
 static void hd6301_pula(void)
 {
+	/* Todo */
 }
 
 /**
@@ -1330,6 +1333,7 @@ static void hd6301_pula(void)
  */
 static void hd6301_pulb(void)
 {
+	/* Todo */
 }
 
 /**
@@ -1362,6 +1366,7 @@ static void hd6301_txs(void)
  */
 static void hd6301_psha(void)
 {
+	/* Todo */
 }
 
 /**
@@ -1372,16 +1377,18 @@ static void hd6301_psha(void)
  */
 static void hd6301_pshb(void)
 {
+	/* Todo */
 }
 
 /**
- * PULX : pull register x from stack : SP=SP+1 ; X=(SP)
+ * PULX : pull register X from stack : SP=SP+1 ; X=(SP)
  *
  * HINZVC
  * ......
  */
 static void hd6301_pulx(void)
 {
+	/* Todo */
 }
 
 /**
@@ -1392,6 +1399,7 @@ static void hd6301_pulx(void)
  */
 static void hd6301_rts(void)
 {
+	/* Todo */
 }
 
 /**
@@ -1399,7 +1407,8 @@ static void hd6301_rts(void)
  *
  * HINZVC
  * ......
- */static void hd6301_abx(void)
+ */
+static void hd6301_abx(void)
 {
 	hd6301_reg_X += hd6301_reg_B;
 }
@@ -1412,6 +1421,7 @@ static void hd6301_rts(void)
  */
 static void hd6301_rti(void)
 {
+	/* Todo */
 }
 
 /**
@@ -1422,10 +1432,11 @@ static void hd6301_rti(void)
  */
 static void hd6301_pshx(void)
 {
+	/* Todo */
 }
 
 /**
- * MUL : multiply uinsigned : D=A*B
+ * MUL : multiply unsigned : D=A*B
  *
  * HINZVC
  * .....*
@@ -1433,11 +1444,11 @@ static void hd6301_pshx(void)
 static void hd6301_mul(void)
 {
 	Uint16 regD;
-	
+
 	regD = hd6301_reg_B * hd6301_reg_A;
 	hd6301_reg_A = regD >> 8;
 	hd6301_reg_B = regD & 0xff;
-	
+
 	hd6301_reg_CCR &= 0xff - (1<<hd6301_REG_CCR_C);
 	hd6301_reg_CCR |= hd6301_reg_B >> 7;
 }
@@ -1450,6 +1461,7 @@ static void hd6301_mul(void)
  */
 static void hd6301_wai(void)
 {
+	/* Todo */
 }
 
 /**
@@ -1460,6 +1472,7 @@ static void hd6301_wai(void)
  */
 static void hd6301_swi(void)
 {
+	/* Todo */
 }
 
 /**
@@ -1471,9 +1484,9 @@ static void hd6301_swi(void)
 static void hd6301_nega(void)
 {
 	Uint8 value;
-	
+
 	value = -hd6301_reg_A;
-	hd6301_reg_A = value;	
+	hd6301_reg_A = value;
 
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (value != 0x0);
@@ -1481,7 +1494,7 @@ static void hd6301_nega(void)
 	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
-	
+
 /**
  * COMA : complement 1 accumulator A : A=~A
  *
@@ -1491,7 +1504,7 @@ static void hd6301_nega(void)
 static void hd6301_coma(void)
 {
 	hd6301_reg_A = ~hd6301_reg_A;
-	
+
 	hd6301_reg_CCR &= 0xf1;
 	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
@@ -1499,7 +1512,7 @@ static void hd6301_coma(void)
 }
 
 /**
- * LSRA : logical Shift Right, accumulator A : A=A>>1
+ * LSRA : logical shift right, accumulator A : A=A>>1
  *
  * HINZVC
  * ..0***
@@ -1507,10 +1520,10 @@ static void hd6301_coma(void)
 static void hd6301_lsra(void)
 {
 	Uint8  carry, bitZ;
-	
+
 	carry = hd6301_reg_A & 1;
 	hd6301_reg_A >>= 1;
-		
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	bitZ = (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
@@ -1519,7 +1532,7 @@ static void hd6301_lsra(void)
 }
 
 /**
- * RORA : rotate Right, accumulator A : A=A>>1 + carry<<8
+ * RORA : rotate right, accumulator A : A=A>>1 + carry<<8
  *
  * HINZVC
  * ..****
@@ -1527,12 +1540,12 @@ static void hd6301_lsra(void)
 static void hd6301_rora(void)
 {
 	Uint8  carry, result, bitZ;
-	
+
 	result = (hd6301_reg_CCR & 1) << 7;
 	carry = hd6301_reg_A & 1;
 	result += hd6301_reg_A >> 1;
 	hd6301_reg_A = result;
-			
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
@@ -1550,11 +1563,11 @@ static void hd6301_rora(void)
 static void hd6301_asra(void)
 {
 	Uint8  carry;
-	
+
 	carry = hd6301_reg_A & 1;
 	hd6301_reg_A >>= 1;
 	hd6301_reg_A |= (hd6301_reg_A & 0x40) << 1;
-		
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
@@ -1571,10 +1584,10 @@ static void hd6301_asra(void)
 static void hd6301_asla(void)
 {
 	Uint8  carry;
-	
+
 	carry = (hd6301_reg_A & 0X80) >> 7;
 	hd6301_reg_A <<= 1;
-		
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
@@ -1591,12 +1604,12 @@ static void hd6301_asla(void)
 static void hd6301_rola(void)
 {
 	Uint8  carry, result;
-	
+
 	result = hd6301_reg_CCR & 1;
 	carry = (hd6301_reg_A & 0x80) >> 7;
 	result += hd6301_reg_A << 1;
 	hd6301_reg_A  = result;
-			
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
@@ -1613,7 +1626,7 @@ static void hd6301_rola(void)
 static void hd6301_deca(void)
 {
 	Uint8 overflow;
-	
+
 	overflow = (hd6301_reg_A == 0x80) << hd6301_REG_CCR_Z;
 	--hd6301_reg_A;
 
@@ -1632,7 +1645,7 @@ static void hd6301_deca(void)
 static void hd6301_inca(void)
 {
 	Uint8 overflow;
-	
+
 	overflow = (hd6301_reg_A == 0x7f) << hd6301_REG_CCR_Z;
 	hd6301_reg_A ++;
 
@@ -1677,9 +1690,9 @@ static void hd6301_clra(void)
 static void hd6301_negb(void)
 {
 	Uint8 value;
-	
+
 	value = -hd6301_reg_B;
-	hd6301_reg_B = value;	
+	hd6301_reg_B = value;
 
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (value != 0x0);
@@ -1704,7 +1717,7 @@ static void hd6301_comb(void)
 }
 
 /**
- * LSRB : logical Shift Right, accumulator B : B=B>>1
+ * LSRB : logical shift right, accumulator B : B=B>>1
  *
  * HINZVC
  * ..0***
@@ -1712,10 +1725,10 @@ static void hd6301_comb(void)
 static void hd6301_lsrb(void)
 {
 	Uint8  carry;
-	
+
 	carry = hd6301_reg_B & 1;
 	hd6301_reg_B >>= 1;
-		
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (hd6301_reg_B == 0) << hd6301_REG_CCR_Z;
@@ -1723,7 +1736,7 @@ static void hd6301_lsrb(void)
 }
 
 /**
- * RORB : rotate Right, accumulator B : B=B>>1 + carry<<8
+ * RORB : rotate right, accumulator B : B=B>>1 + carry<<8
  *
  * HINZVC
  * ..****
@@ -1731,12 +1744,12 @@ static void hd6301_lsrb(void)
 static void hd6301_rorb(void)
 {
 	Uint8  carry, result;
-	
+
 	result = (hd6301_reg_CCR & 1) << 7;
 	carry = hd6301_reg_B & 1;
 	result += hd6301_reg_B >> 1;
 	hd6301_reg_B = result;
-	
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
@@ -1745,7 +1758,7 @@ static void hd6301_rorb(void)
 }
 
 /**
- * ASRB : arithmetic shift Right, accumulator B : B=B>>1
+ * ASRB : arithmetic shift right, accumulator B : B=B>>1
  *
  * HINZVC
  * ..****
@@ -1753,11 +1766,11 @@ static void hd6301_rorb(void)
 static void hd6301_asrb(void)
 {
 	Uint8  carry;
-	
+
 	carry = hd6301_reg_B & 1;
 	hd6301_reg_B >>= 1;
 	hd6301_reg_B |= (hd6301_reg_B & 0x40) << 1;
-		
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
@@ -1774,10 +1787,10 @@ static void hd6301_asrb(void)
 static void hd6301_aslb(void)
 {
 	Uint8  carry;
-	
+
 	carry = (hd6301_reg_B & 0X80) >> 7;
 	hd6301_reg_B <<= 1;
-		
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
@@ -1794,12 +1807,12 @@ static void hd6301_aslb(void)
 static void hd6301_rolb(void)
 {
 	Uint8  carry, result;
-	
+
 	result = hd6301_reg_CCR & 1;
 	carry = (hd6301_reg_B & 0x80) >> 7;
 	result += hd6301_reg_B << 1;
 	hd6301_reg_B  = result;
-			
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (hd6301_reg_B >> 7) << hd6301_REG_CCR_N;
@@ -1816,7 +1829,7 @@ static void hd6301_rolb(void)
 static void hd6301_decb(void)
 {
 	Uint8 overflow;
-	
+
 	overflow = (hd6301_reg_B == 0x80) << hd6301_REG_CCR_Z;
 	--hd6301_reg_B;
 
@@ -1835,7 +1848,7 @@ static void hd6301_decb(void)
 static void hd6301_incb(void)
 {
 	Uint8 overflow;
-	
+
 	overflow = (hd6301_reg_B == 0x7f) << hd6301_REG_CCR_Z;
 	hd6301_reg_B ++;
 
@@ -1871,15 +1884,21 @@ static void hd6301_clrb(void)
 	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_Z;
 }
 
+/**
+ * NEG_IND : negate indexed memory : M=0-M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_neg_ind(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
 	value = -hd6301_read_memory(addr);
 	hd6301_write_memory(addr, value);
-	
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (value != 0x0);
 	hd6301_reg_CCR |= (value == 0x80) << hd6301_REG_CCR_V;
@@ -1887,63 +1906,87 @@ static void hd6301_neg_ind(void)
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * AIM_IND : and immediate indexed memory : M=M&IMM
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_aim_ind(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	value = hd6301_read_memory(hd6301_reg_PC+1);
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+2);
 	value &= hd6301_read_memory(addr);
 	hd6301_write_memory(addr, value);
-	
+
 	hd6301_reg_CCR &= 0xf1;
 	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * OIM_IND : or immediate indexed memory : M=M|IMM
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_oim_ind(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	value = hd6301_read_memory(hd6301_reg_PC+1);
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+2);
 	value |= hd6301_read_memory(addr);
 	hd6301_write_memory(addr, value);
-	
+
 	hd6301_reg_CCR &= 0xf1;
 	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * COM_IND : complement 1 indexed memory : M=~M
+ *
+ * HINZVC
+ * ..**01
+ */
 static void hd6301_com_ind(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
 	value = ~hd6301_read_memory(addr);
 	hd6301_write_memory(addr, value);
-	
+
 	hd6301_reg_CCR &= 0xf1;
 	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * LSR_IND : logical shift right indexed memory : M=M>>1
+ *
+ * HINZVC
+ * ..0***
+ */
 static void hd6301_lsr_ind(void)
 {
 	Uint8  value, carry, bitZ;
 	Uint16 addr;
-	
+
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
 	value = hd6301_read_memory(addr);
-	
+
 	carry = value & 1;
 	value >>= 1;
 	hd6301_write_memory(addr, value);
-		
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry;
 	bitZ = (value == 0) << hd6301_REG_CCR_Z;
@@ -1951,26 +1994,38 @@ static void hd6301_lsr_ind(void)
 	hd6301_reg_CCR |= ((bitZ ^ carry) == 1) << hd6301_REG_CCR_V;
 }
 
+/**
+ * EIM_IND : eor immediate indexed memory : M=M^IMM
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_eim_ind(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	value = hd6301_read_memory(hd6301_reg_PC+1);
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+2);
 	value ^= hd6301_read_memory(addr);
 	hd6301_write_memory(addr, value);
-	
+
 	hd6301_reg_CCR &= 0xf1;
 	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * ROR_IND : rotate right indexed memory : M=M>>1 + carry<<8
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_ror_ind(void)
 {
 	Uint8  value, carry, result, bitZ;
 	Uint16 addr;
-	
+
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
 	value = hd6301_read_memory(addr);
 
@@ -1978,7 +2033,7 @@ static void hd6301_ror_ind(void)
 	carry = value & 1;
 	result += value >> 1;
 	hd6301_write_memory(addr, result);
-			
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -1987,19 +2042,25 @@ static void hd6301_ror_ind(void)
 	hd6301_reg_CCR |= ((bitZ ^ carry) == 1) << hd6301_REG_CCR_V;
 }
 
+/**
+ * ASR_IND : arithmetic shift right indexed memory : M=M>>1
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_asr_ind(void)
 {
 	Uint8  value, carry;
 	Uint16 addr;
-	
+
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
 	value = hd6301_read_memory(addr);
-	
+
 	carry = value & 1;
 	value >>= 1;
 	value |= (value & 0x40) << 1;
 	hd6301_write_memory(addr, value);
-		
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
@@ -2007,18 +2068,24 @@ static void hd6301_asr_ind(void)
 	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
 }
 
+/**
+ * ASL_IND : arithmetic shift left indexed memory : M=M<<1
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_asl_ind(void)
 {
 	Uint8  value, carry;
 	Uint16 addr;
-	
+
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
 	value = hd6301_read_memory(addr);
 
 	carry = (value & 0X80) >> 7;
 	value <<= 1;
 	hd6301_write_memory(addr, value);
-		
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
@@ -2026,19 +2093,25 @@ static void hd6301_asl_ind(void)
 	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
 }
 
+/**
+ * ROL_IND : rotate left indexed memory : M=M<<1 + carry
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_rol_ind(void)
 {
 	Uint8  value, carry, result;
 	Uint16 addr;
-	
+
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
 	value = hd6301_read_memory(addr);
-	
+
 	result = hd6301_reg_CCR & 1;
 	carry = (value & 0x80) >> 7;
 	result += value << 1;
 	hd6301_write_memory(addr, result);
-			
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -2046,14 +2119,20 @@ static void hd6301_rol_ind(void)
 	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
 }
 
+/**
+ * DEC_IND : decrement indexed memory : M=M-1
+ *
+ * HINZVC
+ * ..***.
+ */
 static void hd6301_dec_ind(void)
 {
 	Uint8  value, overflow;
 	Uint16 addr;
-	
+
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
 	value = hd6301_read_memory(addr);
-	
+
 	overflow = (value == 0x80) << hd6301_REG_CCR_Z;
 	--value;
 	hd6301_write_memory(addr, value);
@@ -2064,26 +2143,38 @@ static void hd6301_dec_ind(void)
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * TIM_IND : test immediate indexed memory : M&IMM
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_tim_ind(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	value = hd6301_read_memory(hd6301_reg_PC+1);
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+2);
 	value &= hd6301_read_memory(addr);
 	hd6301_write_memory(addr, value);
-	
+
 	hd6301_reg_CCR &= 0xf1;
 	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * INC_IND : increment indexed memory : M=M+1
+ *
+ * HINZVC
+ * ..***.
+ */
 static void hd6301_inc_ind(void)
 {
 	Uint8  value, overflow;
 	Uint16 addr;
-	
+
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
 	value = hd6301_read_memory(addr);
 
@@ -2097,11 +2188,17 @@ static void hd6301_inc_ind(void)
 	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * TST_IND : test indexed memory : M-0
+ *
+ * HINZVC
+ * ..**00
+ */
 static void hd6301_tst_ind(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
 	value = hd6301_read_memory(addr);
 
@@ -2110,20 +2207,32 @@ static void hd6301_tst_ind(void)
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * JMP_IND : jump to indexed memory address : PC=M
+ *
+ * HINZVC
+ * ......
+ */
 static void hd6301_jmp_ind(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
 	value = hd6301_read_memory(addr);
 	hd6301_reg_PC = value;
 }
 
+/**
+ * CLR_IND : clear indexed memory : M=0
+ *
+ * HINZVC
+ * ..0100
+ */
 static void hd6301_clr_ind(void)
 {
 	Uint16 addr;
-	
+
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
 	hd6301_write_memory(addr, 0);
 
@@ -2131,15 +2240,21 @@ static void hd6301_clr_ind(void)
 	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_Z;
 }
 
+/**
+ * NEG_EXT : negate extended memory : M=0-M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_neg_ext(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	addr = hd6301_get_memory_ext();
 	value = -hd6301_read_memory(addr);
 	hd6301_write_memory(addr, value);
-	
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (value != 0x0);
 	hd6301_reg_CCR |= (value == 0x80) << hd6301_REG_CCR_V;
@@ -2147,63 +2262,87 @@ static void hd6301_neg_ext(void)
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * AIM_DIR : and immediate direct memory : M=M&IMM
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_aim_dir(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	value = hd6301_read_memory(hd6301_reg_PC+1);
 	addr = hd6301_read_memory(hd6301_reg_PC+2);
 	value &= hd6301_read_memory(addr);
 	hd6301_write_memory(addr, value);
-	
+
 	hd6301_reg_CCR &= 0xf1;
 	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * OIM_DIR : or immediate direct memory : M=M|IMM
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_oim_dir(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	value = hd6301_read_memory(hd6301_reg_PC+1);
 	addr = hd6301_read_memory(hd6301_reg_PC+2);
 	value |= hd6301_read_memory(addr);
 	hd6301_write_memory(addr, value);
-	
+
 	hd6301_reg_CCR &= 0xf1;
 	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * COM_EXT : complement 1 extended memory : M=~M
+ *
+ * HINZVC
+ * ..**01
+ */
 static void hd6301_com_ext(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	addr = hd6301_get_memory_ext();
 	value = ~hd6301_read_memory(addr);
 	hd6301_write_memory(addr, value);
-	
+
 	hd6301_reg_CCR &= 0xf1;
 	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * LSR_EXT : logical shift right extended memory : M=M>>1
+ *
+ * HINZVC
+ * ..0***
+ */
 static void hd6301_lsr_ext(void)
 {
 	Uint8  value, carry, bitZ;
 	Uint16 addr;
-	
+
 	addr = hd6301_get_memory_ext();
 	value = hd6301_read_memory(addr);
-	
+
 	carry = value & 1;
 	value >>= 1;
 	hd6301_write_memory(addr, value);
-		
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry;
 	bitZ = (value == 0) << hd6301_REG_CCR_Z;
@@ -2211,26 +2350,38 @@ static void hd6301_lsr_ext(void)
 	hd6301_reg_CCR |= ((bitZ ^ carry) == 1) << hd6301_REG_CCR_V;
 }
 
+/**
+ * EIM_DIR : eor immediate direct memory : M=M^IMM
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_eim_dir(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	value = hd6301_read_memory(hd6301_reg_PC+1);
 	addr = hd6301_read_memory(hd6301_reg_PC+2);
 	value ^= hd6301_read_memory(addr);
 	hd6301_write_memory(addr, value);
-	
+
 	hd6301_reg_CCR &= 0xf1;
 	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * ROR_EXT : rotate right extended memory : M=M>>1 + carry<<8
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_ror_ext(void)
 {
 	Uint8  value, carry, result, bitZ;
 	Uint16 addr;
-	
+
 	addr = hd6301_get_memory_ext();
 	value = hd6301_read_memory(addr);
 
@@ -2238,7 +2389,7 @@ static void hd6301_ror_ext(void)
 	carry = value & 1;
 	result += value >> 1;
 	hd6301_write_memory(addr, result);
-			
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -2247,19 +2398,25 @@ static void hd6301_ror_ext(void)
 	hd6301_reg_CCR |= ((bitZ ^ carry) == 1) << hd6301_REG_CCR_V;
 }
 
+/**
+ * ASR_EXT : arithmetic shift right extended memory : M=M>>1
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_asr_ext(void)
 {
 	Uint8  value, carry;
 	Uint16 addr;
-	
+
 	addr = hd6301_get_memory_ext();
 	value = hd6301_read_memory(addr);
-	
+
 	carry = value & 1;
 	value >>= 1;
 	value |= (value & 0x40) << 1;
 	hd6301_write_memory(addr, value);
-		
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
@@ -2267,18 +2424,24 @@ static void hd6301_asr_ext(void)
 	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
 }
 
+/**
+ * ASL_EXT : arithmetic shift left extended memory : M=M<<1
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_asl_ext(void)
 {
 	Uint8  value, carry;
 	Uint16 addr;
-	
+
 	addr = hd6301_get_memory_ext();
 	value = hd6301_read_memory(addr);
 
 	carry = (value & 0X80) >> 7;
 	value <<= 1;
 	hd6301_write_memory(addr, value);
-		
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
@@ -2286,19 +2449,25 @@ static void hd6301_asl_ext(void)
 	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
 }
 
+/**
+ * ROL_EXT : rotate left extended memory : M=M<<1 + carry
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_rol_ext(void)
 {
 	Uint8  value, carry, result;
 	Uint16 addr;
-	
+
 	addr = hd6301_get_memory_ext();
 	value = hd6301_read_memory(addr);
-	
+
 	result = hd6301_reg_CCR & 1;
 	carry = (value & 0x80) >> 7;
 	result += value << 1;
 	hd6301_write_memory(addr, result);
-			
+
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -2306,14 +2475,20 @@ static void hd6301_rol_ext(void)
 	hd6301_reg_CCR |= (((hd6301_reg_CCR & (1<<hd6301_REG_CCR_Z)) ^ carry) == 1) << hd6301_REG_CCR_V;
 }
 
+/**
+ * DEC_EXT : decrement extended memory : M=M-1
+ *
+ * HINZVC
+ * ..***.
+ */
 static void hd6301_dec_ext(void)
 {
 	Uint8  value, overflow;
 	Uint16 addr;
-	
+
 	addr = hd6301_get_memory_ext();
 	value = hd6301_read_memory(addr);
-	
+
 	overflow = (value == 0x80) << hd6301_REG_CCR_Z;
 	--value;
 	hd6301_write_memory(addr, value);
@@ -2324,29 +2499,41 @@ static void hd6301_dec_ext(void)
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * TIM_DIR : test immediate direct memory : M&IMM
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_tim_dir(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	value = hd6301_read_memory(hd6301_reg_PC+1);
 	addr = hd6301_read_memory(hd6301_reg_PC+2);
 	value &= hd6301_read_memory(addr);
 	hd6301_write_memory(addr, value);
-	
+
 	hd6301_reg_CCR &= 0xf1;
 	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * INC_EXT : increment extended memory : M=M+1
+ *
+ * HINZVC
+ * ..***.
+ */
 static void hd6301_inc_ext(void)
 {
 	Uint8  value, overflow;
 	Uint16 addr;
-	
+
 	addr = hd6301_get_memory_ext();
 	value = hd6301_read_memory(addr);
-	
+
 	overflow = (value == 0x7f) << hd6301_REG_CCR_Z;
 	value ++;
 	hd6301_write_memory(addr, value);
@@ -2357,11 +2544,17 @@ static void hd6301_inc_ext(void)
 	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * TST_EXT : test extended memory : M-0
+ *
+ * HINZVC
+ * ..**00
+ */
 static void hd6301_tst_ext(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	addr = hd6301_get_memory_ext();
 	value = hd6301_read_memory(addr);
 
@@ -2370,21 +2563,33 @@ static void hd6301_tst_ext(void)
 	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * JMP_EXT : jump to extended memory address : PC=M
+ *
+ * HINZVC
+ * ......
+ */
 static void hd6301_jmp_ext(void)
 {
 	Uint8  value;
 	Uint16 addr;
-	
+
 	addr = hd6301_get_memory_ext();
 	value = hd6301_read_memory(addr);
-	
+
 	hd6301_reg_PC = value;
 }
 
+/**
+ * CLR_EXT : clear extended memory : M=0
+ *
+ * HINZVC
+ * ..0100
+ */
 static void hd6301_clr_ext(void)
 {
 	Uint16 addr;
-	
+
 	addr = hd6301_get_memory_ext();
 	hd6301_write_memory(addr, 0);
 
@@ -2917,7 +3122,7 @@ static void hd6301_disasm_memory16(void)
 
 static void hd6301_disasm_xim(void)
 {
-	sprintf(hd6301_str_instr, hd6301_opcode.op_mnemonic, 
-			hd6301_read_memory(hd6301_reg_PC+1), 
+	sprintf(hd6301_str_instr, hd6301_opcode.op_mnemonic,
+			hd6301_read_memory(hd6301_reg_PC+1),
 			hd6301_read_memory(hd6301_reg_PC+2));
 }
