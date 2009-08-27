@@ -62,17 +62,3 @@ void hd6301_disasm(void);
 #endif
 
 #endif	/* HD6301_CPU_H */
-
---
-Ce message et  toutes les pieces jointes (ci-apres  le "message") sont
-confidentiels et etablis a l'intention exclusive de ses destinataires.
-Toute  utilisation ou  diffusion  non autorisee  est interdite.   Tout
-message  etant  susceptible  d'alteration,  l'emetteur  decline  toute
-responsabilite au titre de  ce message  s'il a  ete altere, deforme ou
-falsifie.
-                -----------------------------------
-This message and any  attachments (the "message") are confidential and
-intended  solely   for  the   addressees.  Any  unauthorised   use  or
-dissemination is prohibited. As e-mails are susceptible to alteration,
-the issuer shall  not be  liable for  the  message if altered, changed
-or falsified.
