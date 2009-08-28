@@ -497,7 +497,7 @@ static struct hd6301_opcode_t hd6301_opcode_table[256] = {
 	{0xcb, 2, hd6301_addb_imm,	2,	"addb #$%02x",			hd6301_disasm_memory8},
 	{0xcc, 3, hd6301_ldd_imm,	3,	"ldd  #$%04x",			hd6301_disasm_memory16},
 	{0xcd, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
-	{0xce, 3, hd6301_ldx_imm,	3,	"ldx  #$%04x",			hd6301_disasm_memory8},
+	{0xce, 3, hd6301_ldx_imm,	3,	"ldx  #$%04x",			hd6301_disasm_memory16},
 	{0xcf, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
 
 	{0xd0, 2, hd6301_subb_dir,	3,	"subb $%02x",			hd6301_disasm_memory8},
@@ -2263,7 +2263,7 @@ static void hd6301_neg_ext(void)
 }
 
 /**
- * AIM_DIR : and immediate direct memory : M=M&IMM
+ * AIM_DIR : and immediate direct memory address : M=M&IMM
  *
  * HINZVC
  * ..**0.
@@ -2284,7 +2284,7 @@ static void hd6301_aim_dir(void)
 }
 
 /**
- * OIM_DIR : or immediate direct memory : M=M|IMM
+ * OIM_DIR : or immediate direct memory address : M=M|IMM
  *
  * HINZVC
  * ..**0.
@@ -2351,7 +2351,7 @@ static void hd6301_lsr_ext(void)
 }
 
 /**
- * EIM_DIR : eor immediate direct memory : M=M^IMM
+ * EIM_DIR : eor immediate direct memory address : M=M^IMM
  *
  * HINZVC
  * ..**0.
@@ -2500,7 +2500,7 @@ static void hd6301_dec_ext(void)
 }
 
 /**
- * TIM_DIR : test immediate direct memory : M&IMM
+ * TIM_DIR : test direct memory address value : M&IMM
  *
  * HINZVC
  * ..**0.
@@ -2597,252 +2597,1434 @@ static void hd6301_clr_ext(void)
 	hd6301_reg_CCR |= 1 << hd6301_REG_CCR_Z;
 }
 
+/**
+ * SUBA_IMM : substract immediate value from accumulator A : A=A-M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_suba_imm(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 result;
+
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	result = hd6301_reg_A - value;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * CMPA_IMM : compare immediate value to accumulator A : A-M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_cmpa_imm(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 result;
+
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	result = hd6301_reg_A - value;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * SBCA_IMM : substract with carry immediate value from accumulator A : A=A-M-C
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_sbca_imm(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 result;
+
+	carry = hd6301_REG_CCR_C & 1;
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	result = hd6301_reg_A - value - carry;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * SUBD_IMM : substract immediate value from accumulator D : D=D-MM
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_subd_imm(void)
 {
+	Uint8  flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 value, regD;
+	Uint32 result;
+
+	value = hd6301_read_memory(hd6301_reg_PC+1) << 8;
+	value += hd6301_read_memory(hd6301_reg_PC+2);
+	regD = (hd6301_reg_A << 8) + hd6301_reg_B;
+	result = regD - value;
+	flg_s = regD >> 15;
+	flg_d = value >> 15;
+	flg_r = (result >> 15) & 1;
+
+	carry = (result & 0x10000) >> 16;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = (result >> 8) & 0xff;
+	hd6301_reg_B = result & 0xff;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= ((result&0xffff) == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 15) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * ANDA_IMM : and immediate value with accumulator A : A=A&M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_anda_imm(void)
 {
+	hd6301_reg_A &= hd6301_read_memory(hd6301_reg_PC+1);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * BITA_IMM : bit test immediate value with accumulator A : A&M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_bita_imm(void)
 {
+	Uint8 value;
+	
+	value = hd6301_reg_A & hd6301_read_memory(hd6301_reg_PC+1);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * LDAA_IMM : load accumulator A with immediate value : A=M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_ldaa_imm(void)
 {
+	hd6301_reg_A = hd6301_read_memory(hd6301_reg_PC+1);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * EORA_IMM : exclusive or immediate value with accumulator A : A=A^M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_eora_imm(void)
 {
+	hd6301_reg_A ^= hd6301_read_memory(hd6301_reg_PC+1);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * ADCA_IMM : add with carry immediate value to accumulator A : A=A+M+C
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_adca_imm(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 result;
+
+	carry = hd6301_REG_CCR_C & 1;
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	result = hd6301_reg_A + value + carry;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * ORAA_IMM : inclusive or accumulator A with immediate value : A=A|M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_oraa_imm(void)
 {
+	hd6301_reg_A |= hd6301_read_memory(hd6301_reg_PC+1);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * ADDA_IMM : add immediate value with accumulator A : A=A+M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_adda_imm(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 result;
+
+	value = hd6301_read_memory(hd6301_reg_PC+1);
+	result = hd6301_reg_A + value;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * CPX_IMM : compare index register with immediate value : X-MM
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_cpx_imm(void)
 {
+	Uint8  flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 value;
+	Uint32 result;
+
+	value = hd6301_read_memory(hd6301_reg_PC+1) << 8;
+	value += hd6301_read_memory(hd6301_reg_PC+2);
+	result = hd6301_reg_X - value;
+	flg_s = hd6301_reg_X >> 15;
+	flg_d = value >> 15;
+	flg_r = (result >> 15) & 1;
+
+	carry = (result & 0x10000) >> 16;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= ((result&0xffff) == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 15) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * BSR : branch to subroutine
+ *
+ * HINZVC
+ * ......
+ */
 static void hd6301_bsr(void)
 {
+	/* Todo : */
 }
 
+/**
+ * LDS_IMM : load stack pointer with immediate value : SP=MM
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_lds_imm(void)
 {
+	Uint16 value;
+	
+	value = hd6301_read_memory(hd6301_reg_PC+1) << 8;
+	value += hd6301_read_memory(hd6301_reg_PC+2);
+	hd6301_reg_SP = value;
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 15) << hd6301_REG_CCR_N;
 }
 
+/**
+ * SUBA_DIR : substract direct memory address value from accumulator A : A=A-M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_suba_dir(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 result, addr;
+
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A - value;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * CMPA_DIR : compare direct memory address value to accumulator A : A-M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_cmpa_dir(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, result;
+
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A - value;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * SBCA_DIR : substract with carry direct memory address value from accumulator A : A=A-M-C
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_sbca_dir(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, result;
+
+	carry = hd6301_REG_CCR_C & 1;
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A - value - carry;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * SUBD_DIR : substract direct memory address value from accumulator D : D=D-MM
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_subd_dir(void)
 {
+	Uint8  flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, value, regD;
+	Uint32 result;
+
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr) << 8;
+	value += hd6301_read_memory(addr+1);
+	regD = (hd6301_reg_A << 8) + hd6301_reg_B;
+	result = regD - value;
+	flg_s = regD >> 15;
+	flg_d = value >> 15;
+	flg_r = (result >> 15) & 1;
+
+	carry = (result & 0x10000) >> 16;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = (result >> 8) & 0xff;
+	hd6301_reg_B = result & 0xff;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= ((result&0xffff) == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 15) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * ANDA_DIR : and direct memory address value with accumulator A : A=A&M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_anda_dir(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_reg_A &= hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * BITA_DIR : bit test direct memory address value with accumulator A : A&M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_bita_dir(void)
 {
+	Uint8 value;
+	Uint16 addr;
+	
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_reg_A & hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * LDAA_DIR : load accumulator A with direct memory address value : A=M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_ldaa_dir(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_reg_A = hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * STAA_DIR : store accumulator A into direct memory address value : M=A
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_staa_dir(void)
 {
+	Uint16 addr;
+
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_write_memory(addr, hd6301_reg_A);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * EORA_DIR : exclusive or direct memory address value with accumulator A : A=A^M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_eora_dir(void)
 {
+	Uint16 addr;
+
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_reg_A ^= hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * ADCA_DIR : add with carry direct memory address value to accumulator A : A=A+M+C
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_adca_dir(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, result;
+
+	carry = hd6301_REG_CCR_C & 1;
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A + value + carry;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * ORAA_DIR : inclusive or accumulator A with direct memory address value : A=A|M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_oraa_dir(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_reg_A |= hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * ADDA_DIR : add direct memory address value with accumulator A : A=A+M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_adda_dir(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, result;
+
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A + value;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * CPX_DIR : compare index register with direct memory address value : X-MM
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_cpx_dir(void)
 {
+	Uint8  flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, value;
+	Uint32 result;
+
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr) << 8;
+	value += hd6301_read_memory(addr+1);
+	result = hd6301_reg_X - value;
+	flg_s = hd6301_reg_X >> 15;
+	flg_d = value >> 15;
+	flg_r = (result >> 15) & 1;
+
+	carry = (result & 0x10000) >> 16;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= ((result&0xffff) == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 15) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * JSR_DIR : jump to subroutine at direct memory address
+ *
+ * HINZVC
+ * ......
+ */
 static void hd6301_jsr_dir(void)
 {
+	/* Todo : */
 }
 
+/**
+ * LDS_DIR : load stack pointer with direct memory address value : SP=MM
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_lds_dir(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_reg_SP = hd6301_read_memory(addr) << 8;
+	hd6301_reg_SP += hd6301_read_memory(addr+1);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_SP == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_SP >> 15) << hd6301_REG_CCR_N;
 }
 
+/**
+ * STS_DIR : store stack pointer into direct memory address value : MM=SP
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_sts_dir(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_write_memory(addr, hd6301_reg_SP >> 8);
+	hd6301_write_memory(addr+1, hd6301_reg_SP & 8);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_SP == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_SP >> 15) << hd6301_REG_CCR_N;
 }
 
+/**
+ * SUBA_IND : substract indexed memory address value from accumulator A : A=A-M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_suba_ind(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 result, addr;
+
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A - value;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * CMPA_IND : compare indexed memory address value to accumulator A : A-M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_cmpa_ind(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, result;
+
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A - value;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * SBCA_IND : substract with carry indexed memory address value from accumulator A : A=A-M-C
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_sbca_ind(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, result;
+
+	carry = hd6301_REG_CCR_C & 1;
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A - value - carry;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * SUBD_IND : substract indexed memory address value from accumulator D : D=D-MM
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_subd_ind(void)
 {
+	Uint8  flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, value, regD;
+	Uint32 result;
+
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr) << 8;
+	value += hd6301_read_memory(addr+1);
+	regD = (hd6301_reg_A << 8) + hd6301_reg_B;
+	result = regD - value;
+	flg_s = regD >> 15;
+	flg_d = value >> 15;
+	flg_r = (result >> 15) & 1;
+
+	carry = (result & 0x10000) >> 16;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = (result >> 8) & 0xff;
+	hd6301_reg_B = result & 0xff;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= ((result&0xffff) == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 15) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * ANDA_IND : and indexed memory address value with accumulator A : A=A&M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_anda_ind(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_reg_A &= hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * BITA_IND : bit test indexed memory address value with accumulator A : A&M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_bita_ind(void)
 {
+	Uint8 value;
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_reg_A & hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * LDAA_IND : load accumulator A with indexed memory address value : A=M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_ldaa_ind(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_reg_A = hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * STAA_IND : store accumulator A into indexed memory address value : M=A
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_staa_ind(void)
 {
+	Uint16 addr;
+
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_write_memory(addr, hd6301_reg_A);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * EORA_IND : exclusive or indexed memory address value with accumulator A : A=A^M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_eora_ind(void)
 {
+	Uint16 addr;
+
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_reg_A ^= hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * ADCA_IND : add with carry indexed memory address value to accumulator A : A=A+M+C
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_adca_ind(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, result;
+
+	carry = hd6301_REG_CCR_C & 1;
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A + value + carry;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * ORAA_IND : inclusive or accumulator A with indexed memory address value : A=A|M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_oraa_ind(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_reg_A |= hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * ADDA_IND : add indexed memory address value with accumulator A : A=A+M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_adda_ind(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, result;
+
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A + value;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * CPX_IND : compare index register with indexed memory address value : X-MM
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_cpx_ind(void)
 {
+	Uint8  flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, value;
+	Uint32 result;
+
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	value = hd6301_read_memory(addr) << 8;
+	value += hd6301_read_memory(addr+1);
+	result = hd6301_reg_X - value;
+	flg_s = hd6301_reg_X >> 15;
+	flg_d = value >> 15;
+	flg_r = (result >> 15) & 1;
+
+	carry = (result & 0x10000) >> 16;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= ((result&0xffff) == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 15) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * JSR_IND : jump to subroutine at indexed address
+ *
+ * HINZVC
+ * ......
+ */
 static void hd6301_jsr_ind(void)
 {
+	/* Todo : */
 }
 
+/**
+ * LDS_IND : load stack pointer with indexed memory address value : SP=MM
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_lds_ind(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_reg_SP = hd6301_read_memory(addr) << 8;
+	hd6301_reg_SP += hd6301_read_memory(addr+1);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_SP == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_SP >> 15) << hd6301_REG_CCR_N;
 }
 
+/**
+ * STS_IND : store stack pointer into indexed memory address value : MM=SP
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_sts_ind(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_write_memory(addr, hd6301_reg_SP >> 8);
+	hd6301_write_memory(addr+1, hd6301_reg_SP & 8);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_SP == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_SP >> 15) << hd6301_REG_CCR_N;
 }
 
+/**
+ * SUBA_EXT : substract extented memory address value from accumulator A : A=A-M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_suba_ext(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 result, addr;
+
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A - value;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * CMPA_EXT : compare extented memory address value to accumulator A : A-M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_cmpa_ext(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, result;
+
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A - value;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * SBCA_EXT : substract with carry extented memory address value from accumulator A : A=A-M-C
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_sbca_ext(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, result;
+
+	carry = hd6301_REG_CCR_C & 1;
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A - value - carry;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * SUBD_EXT : substract extented memory address value from accumulator D : D=D-MM
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_subd_ext(void)
 {
+	Uint8  flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, value, regD;
+	Uint32 result;
+
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr) << 8;
+	value += hd6301_read_memory(addr+1);
+	regD = (hd6301_reg_A << 8) + hd6301_reg_B;
+	result = regD - value;
+	flg_s = regD >> 15;
+	flg_d = value >> 15;
+	flg_r = (result >> 15) & 1;
+
+	carry = (result & 0x10000) >> 16;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = (result >> 8) & 0xff;
+	hd6301_reg_B = result & 0xff;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= ((result&0xffff) == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 15) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * ANDA_EXT : and extented memory address value with accumulator A : A=A&M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_anda_ext(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	hd6301_reg_A &= hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * BITA_EXT : bit test extented memory address value with accumulator A : A&M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_bita_ext(void)
 {
+	Uint8 value;
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	value = hd6301_reg_A & hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (value == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (value >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * LDAA_EXT : load accumulator A with extented memory address value : A=M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_ldaa_ext(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	hd6301_reg_A = hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * STAA_EXT : store accumulator A into extented memory address value : M=A
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_staa_ext(void)
 {
+	Uint16 addr;
+
+	addr = hd6301_get_memory_ext();
+	hd6301_write_memory(addr, hd6301_reg_A);
+	
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * EORA_EXT : exclusive or extented memory address value with accumulator A : A=A^M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_eora_ext(void)
 {
+	Uint16 addr;
+
+	addr = hd6301_get_memory_ext();
+	hd6301_reg_A ^= hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * ADCA_EXT : add with carry extented memory address value to accumulator A : A=A+M+C
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_adca_ext(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, result;
+
+	carry = hd6301_REG_CCR_C & 1;
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A + value + carry;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * ORAA_EXT : inclusive or accumulator A with extented memory address value : A=A|M
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_oraa_ext(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	hd6301_reg_A |= hd6301_read_memory(addr);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_A == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_A >> 7) << hd6301_REG_CCR_N;
 }
 
+/**
+ * ADDA_EXT : add extented memory address value with accumulator A : A=A+M
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_adda_ext(void)
 {
+	Uint8  value, flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, result;
+
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr);
+	result = hd6301_reg_A + value;
+	flg_s = hd6301_reg_A >> 7;
+	flg_d = value >> 7;
+	flg_r = (result >> 7) & 1;
+
+	carry = (result & 0x100) >> 8;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_A = result;
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * CPX_EXT : compare index register with extented memory address value : X-MM
+ *
+ * HINZVC
+ * ..****
+ */
 static void hd6301_cpx_ext(void)
 {
+	Uint8  flg_s, flg_d, flg_r, carry, overflow;
+	Uint16 addr, value;
+	Uint32 result;
+
+	addr = hd6301_get_memory_ext();
+	value = hd6301_read_memory(addr) << 8;
+	value += hd6301_read_memory(addr+1);
+	result = hd6301_reg_X - value;
+	flg_s = hd6301_reg_X >> 15;
+	flg_d = value >> 15;
+	flg_r = (result >> 15) & 1;
+
+	carry = (result & 0x10000) >> 16;
+	overflow = (flg_s ^ flg_r) & (flg_d ^ flg_r);
+
+	hd6301_reg_CCR &= 0xf0;
+	hd6301_reg_CCR |= ((result&0xffff) == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (result >> 15) << hd6301_REG_CCR_N;
+	hd6301_reg_CCR |= overflow << hd6301_REG_CCR_V;
+	hd6301_reg_CCR |= carry << hd6301_REG_CCR_C;
 }
 
+/**
+ * JSR_EXT : jump to subroutine at extented address
+ *
+ * HINZVC
+ * ......
+ */
 static void hd6301_jsr_ext(void)
 {
+	/* Todo : */
 }
 
+/**
+ * LDS_EXT : load stack pointer with extented memory address value : SP=MM
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_lds_ext(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	hd6301_reg_SP = hd6301_read_memory(addr) << 8;
+	hd6301_reg_SP += hd6301_read_memory(addr+1);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_SP == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_SP >> 15) << hd6301_REG_CCR_N;
 }
 
+/**
+ * STS_EXT : store stack pointer into extented memory address value : MM=SP
+ *
+ * HINZVC
+ * ..**0.
+ */
 static void hd6301_sts_ext(void)
 {
+	Uint16 addr;
+	
+	addr = hd6301_get_memory_ext();
+	hd6301_write_memory(addr, hd6301_reg_SP >> 8);
+	hd6301_write_memory(addr+1, hd6301_reg_SP & 8);
+
+	hd6301_reg_CCR &= 0xf1;
+	hd6301_reg_CCR |= (hd6301_reg_SP == 0) << hd6301_REG_CCR_Z;
+	hd6301_reg_CCR |= (hd6301_reg_SP >> 15) << hd6301_REG_CCR_N;
 }
 
 static void hd6301_subb_imm(void)
