@@ -27,10 +27,12 @@
  *	Functions
  **********************************/
 
+/* HD6301 internal functions */
 static Uint8 hd6301_read_memory(Uint16 addr);
 static void hd6301_write_memory (Uint16 addr, Uint8 value);
 static Uint16 hd6301_get_memory_ext(void);
 
+/* HD6301 opcodes functions */
 static void hd6301_undefined(void);
 static void hd6301_nop(void);
 static void hd6301_lsrd(void);
@@ -263,7 +265,7 @@ static void hd6301_std_ext(void);
 static void hd6301_ldx_ext(void);
 static void hd6301_stx_ext(void);
 
-/* HF6301 Disasm and debug code */
+/* HD6301 Disasm and debug code */
 static void hd6301_disasm_undefined(void);
 static void hd6301_disasm_none(void);
 static void hd6301_disasm_memory8(void);
@@ -1322,7 +1324,8 @@ static void hd6301_ins(void)
  */
 static void hd6301_pula(void)
 {
-	/* Todo */
+	++hd6301_reg_SP;
+	hd6301_reg_A = hd6301_read_memory(hd6301_reg_SP);
 }
 
 /**
@@ -1333,7 +1336,8 @@ static void hd6301_pula(void)
  */
 static void hd6301_pulb(void)
 {
-	/* Todo */
+	++hd6301_reg_SP;
+	hd6301_reg_B = hd6301_read_memory(hd6301_reg_SP);
 }
 
 /**
@@ -1366,7 +1370,8 @@ static void hd6301_txs(void)
  */
 static void hd6301_psha(void)
 {
-	/* Todo */
+	hd6301_write_memory(hd6301_reg_SP, hd6301_reg_A);
+	--hd6301_reg_SP;
 }
 
 /**
@@ -1377,7 +1382,8 @@ static void hd6301_psha(void)
  */
 static void hd6301_pshb(void)
 {
-	/* Todo */
+	hd6301_write_memory(hd6301_reg_SP, hd6301_reg_B);
+	--hd6301_reg_SP;
 }
 
 /**
@@ -1388,7 +1394,8 @@ static void hd6301_pshb(void)
  */
 static void hd6301_pulx(void)
 {
-	/* Todo */
+	hd6301_reg_X = hd6301_read_memory(++hd6301_reg_SP)<<8;
+	hd6301_reg_X += hd6301_read_memory(++hd6301_reg_SP);
 }
 
 /**
@@ -1432,7 +1439,8 @@ static void hd6301_rti(void)
  */
 static void hd6301_pshx(void)
 {
-	/* Todo */
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_X && 0xff);
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_X >> 8);
 }
 
 /**
@@ -2801,6 +2809,7 @@ static void hd6301_adca_imm(void)
 
 	hd6301_reg_A = result;
 
+	/* Todo : take care of CCR H bit */
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -2845,6 +2854,7 @@ static void hd6301_adda_imm(void)
 
 	hd6301_reg_A = result;
 
+	/* Todo : take care of CCR H bit */
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -3197,6 +3207,7 @@ static void hd6301_adda_dir(void)
 
 	hd6301_reg_A = result;
 
+	/* Todo : take care of CCR H bit */
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -3569,6 +3580,7 @@ static void hd6301_adda_ind(void)
 
 	hd6301_reg_A = result;
 
+	/* Todo : take care of CCR H bit */
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -3941,6 +3953,7 @@ static void hd6301_adda_ext(void)
 
 	hd6301_reg_A = result;
 
+	/* Todo : take care of CCR H bit */
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -4231,6 +4244,7 @@ static void hd6301_adcb_imm(void)
 
 	hd6301_reg_B = result;
 
+	/* Todo : take care of CCR H bit */
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -4275,6 +4289,7 @@ static void hd6301_addb_imm(void)
 
 	hd6301_reg_B = result;
 
+	/* Todo : take care of CCR H bit */
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -4603,6 +4618,7 @@ static void hd6301_addb_dir(void)
 
 	hd6301_reg_B = result;
 
+	/* Todo : take care of CCR H bit */
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -4976,6 +4992,7 @@ static void hd6301_addb_ind(void)
 
 	hd6301_reg_B = result;
 
+	/* Todo : take care of CCR H bit */
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
@@ -5349,6 +5366,7 @@ static void hd6301_addb_ext(void)
 
 	hd6301_reg_B = result;
 
+	/* Todo : take care of CCR H bit */
 	hd6301_reg_CCR &= 0xf0;
 	hd6301_reg_CCR |= (result == 0) << hd6301_REG_CCR_Z;
 	hd6301_reg_CCR |= (result >> 7) << hd6301_REG_CCR_N;
