@@ -1406,7 +1406,8 @@ static void hd6301_pulx(void)
  */
 static void hd6301_rts(void)
 {
-	/* Todo */
+	hd6301_reg_PC = hd6301_read_memory(++hd6301_reg_SP)<<8;
+	hd6301_reg_PC += hd6301_read_memory(++hd6301_reg_SP);
 }
 
 /**
@@ -1424,11 +1425,17 @@ static void hd6301_abx(void)
  * RTI : return from interrupt
  *
  * HINZVC
- * ......
+ * ******
  */
 static void hd6301_rti(void)
 {
-	/* Todo */
+	hd6301_reg_CCR = hd6301_read_memory(++hd6301_reg_SP);
+	hd6301_reg_B = hd6301_read_memory(++hd6301_reg_SP);
+	hd6301_reg_A = hd6301_read_memory(++hd6301_reg_SP);
+	hd6301_reg_X = hd6301_read_memory(++hd6301_reg_SP)<<8;
+	hd6301_reg_X += hd6301_read_memory(++hd6301_reg_SP);
+	hd6301_reg_PC = hd6301_read_memory(++hd6301_reg_SP)<<8;
+	hd6301_reg_PC += hd6301_read_memory(++hd6301_reg_SP);
 }
 
 /**
@@ -1439,7 +1446,7 @@ static void hd6301_rti(void)
  */
 static void hd6301_pshx(void)
 {
-	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_X && 0xff);
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_X & 0xff);
 	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_X >> 8);
 }
 
@@ -1480,7 +1487,18 @@ static void hd6301_wai(void)
  */
 static void hd6301_swi(void)
 {
-	/* Todo */
+	hd6301_write_memory(hd6301_reg_SP--, (hd6301_reg_PC+1) & 0xff);
+	hd6301_write_memory(hd6301_reg_SP--, (hd6301_reg_PC+1) >> 8);
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_X & 0xff);
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_X >> 8);
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_A);
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_B);
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_CCR);
+
+	hd6301_reg_PC = hd6301_read_memory(0xfffa) << 8;
+	hd6301_reg_PC += hd6301_read_memory(0xfffb);
+
+	hd6301_reg_CCR |= (1 << hd6301_REG_CCR_I);
 }
 
 /**
@@ -2899,7 +2917,13 @@ static void hd6301_cpx_imm(void)
  */
 static void hd6301_bsr(void)
 {
-	/* Todo : */
+	Sint8 addr;
+
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC & 0xff);
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC >> 8);
+
+	addr = hd6301_read_memory(hd6301_reg_PC + 1);
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -3253,7 +3277,13 @@ static void hd6301_cpx_dir(void)
  */
 static void hd6301_jsr_dir(void)
 {
-	/* Todo : */
+	Uint16 addr;
+
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC & 0xff);
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC >> 8);
+
+	addr = hd6301_read_memory(hd6301_reg_PC + 1);
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -3626,7 +3656,13 @@ static void hd6301_cpx_ind(void)
  */
 static void hd6301_jsr_ind(void)
 {
-	/* Todo : */
+	Uint16 addr;
+
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC & 0xff);
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC >> 8);
+
+	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -3999,7 +4035,13 @@ static void hd6301_cpx_ext(void)
  */
 static void hd6301_jsr_ext(void)
 {
-	/* Todo : */
+	Uint16 addr;
+
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC & 0xff);
+	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC >> 8);
+
+	addr = hd6301_get_memory_ext();
+	hd6301_reg_PC += addr;
 }
 
 /**
