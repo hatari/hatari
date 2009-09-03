@@ -511,12 +511,17 @@ static bool GEMDOS_IsHDDPresent(int iDrive)
 
 
 /**
- * Determine upper limit of partitions that should be emulated
+ * Determine upper limit of partitions that should be emulated.
+ *
+ * @return true if multiple GEMDOS partitions should be emulated, false otherwise
  */
-static int GemDOS_DetermineMaxPartitions(void)
+static bool GemDOS_DetermineMaxPartitions(int *pnMaxDrives)
 {
 	struct dirent **files;
-	int nMaxDrives = 0, count, i;
+	int count, i;
+	bool bMultiPartitions;
+
+	*pnMaxDrives = 0;
 
 	/* Scan through the main directory to see whether there are just single
 	 * letter sub-folders there (then use multi-partition mode) or if
@@ -525,44 +530,46 @@ static int GemDOS_DetermineMaxPartitions(void)
 	if (count < 0)
 	{
 		perror("GemDOS_DetermineMaxPartitions");
-		return 0;
+		return false;
 	}
 	else if (count <= 2)
 	{
 		/* Empty directory Only "." and ".."), assume single partition mode */
-		nMaxDrives = 1;
+		*pnMaxDrives = 1;
+		bMultiPartitions = false;
 	}
 	else
 	{
+		bMultiPartitions = true;
 		/* Check all files in the directory */
 		for (i = 0; i < count; i++)
 		{
 			if (strcmp(files[i]->d_name, ".") == 0 || strcmp(files[i]->d_name, "..") == 0)
 			{
 				/* Ignore "." and ".." */
-				--nMaxDrives;
 				continue;
 			}
 			if (strlen(files[i]->d_name) != 1 || !isalpha(files[i]->d_name[0]))
 			{
 				/* There is a folder with more than one letter...
 				 * ... so use single partition mode! */
-				nMaxDrives = 1;
+				*pnMaxDrives = 1;
+				bMultiPartitions = false;
 				break;
 			}
-			nMaxDrives = toupper(files[i]->d_name[0]) - 'C' + 1;
+			*pnMaxDrives = toupper(files[i]->d_name[0]) - 'C' + 1;
 		}
 	}
 
-	if (nMaxDrives > MAX_HARDDRIVES)
-		nMaxDrives = MAX_HARDDRIVES;
+	if (*pnMaxDrives > MAX_HARDDRIVES)
+		*pnMaxDrives = MAX_HARDDRIVES;
 
 	/* Free file list */
 	for (i = 0; i < count; i++)
 		free(files[i]);
 	free(files);
 
-	return nMaxDrives;
+	return bMultiPartitions;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -574,6 +581,7 @@ void GemDOS_InitDrives(void)
 {
 	int i;
 	int nMaxDrives;
+	bool bMultiPartitions;
 
 	/* intialize data for harddrive emulation: */
 	if (!GEMDOS_EMU_ON)
@@ -587,7 +595,7 @@ void GemDOS_InitDrives(void)
 		memset(emudrives, 0, MAX_HARDDRIVES * sizeof(EMULATEDDRIVE *));
 	}
 
-	nMaxDrives = GemDOS_DetermineMaxPartitions();
+	bMultiPartitions = GemDOS_DetermineMaxPartitions(&nMaxDrives);
 
 	/* Now initialize all available drives */
 	for(i = 0; i < nMaxDrives; i++)
@@ -595,6 +603,11 @@ void GemDOS_InitDrives(void)
 		// Create the letter equivilent string identifier for this drive
 		char sDriveLetter[] = { PATHSEP, (char)('C' + i), '\0' };
 
+		/* If single partition mode, skip to the right entry */
+		if (!bMultiPartitions)
+			i += nPartitions;
+
+		/* Allocate emudrives entry for this drive */
 		emudrives[i] = malloc(sizeof(EMULATEDDRIVE));
 		if (!emudrives[i])
 		{
@@ -603,10 +616,7 @@ void GemDOS_InitDrives(void)
 		}
 
 		/* set drive number (C: = 2, D: = 3, etc.) */
-		if (nMaxDrives == 1)
-			emudrives[i]->hd_letter = 2 + nPartitions + i;
-		else
-			emudrives[i]->hd_letter = 2 + i;
+		emudrives[i]->hd_letter = 2 + i;
 
 		/* set emulation directory string */
 		strcpy(emudrives[i]->hd_emulation_dir, ConfigureParams.HardDisk.szHardDiskDirectories[0]);
@@ -615,7 +625,7 @@ void GemDOS_InitDrives(void)
 		File_CleanFileName(emudrives[i]->hd_emulation_dir);
 
 		/* Add Requisit Folder ID */
-		if (nMaxDrives > 1)
+		if (bMultiPartitions)
 			strcat(emudrives[i]->hd_emulation_dir, sDriveLetter);
 
 		// Check host file system to see if the drive folder for THIS
