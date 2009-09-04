@@ -156,7 +156,7 @@ void STMemory_SetDefaultConfig(void)
 		for (i = 0; i < MAX_HARDDRIVES; i++)
 		{
 			if (emudrives[i] != NULL)     // Is this GEMDOS drive enabled?
-				ConnectedDriveMask |= (1 << (i+2));  // FIXME: Use emudrives[...].hd_letter instead?
+				ConnectedDriveMask |= (1 << emudrives[i]->hd_letter);
 		}
 	}
 	/* Set connected drives system variable.

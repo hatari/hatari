@@ -5,7 +5,7 @@
 #   aclocal && autoheader && automake --add-missing --copy && autoconf
 # Later on you can use "autoreconf -i" after updating this file.
 
-AC_INIT(hatari, 1.3.0)
+AC_INIT(hatari, 1.3.1)
 AC_CONFIG_SRCDIR([src/main.c])
 AC_PREREQ(2.60)
 

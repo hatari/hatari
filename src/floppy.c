@@ -128,11 +128,29 @@ void Floppy_MemorySnapShot_Capture(bool bSave)
  */
 void Floppy_GetBootDrive(void)
 {
-	/* Boot from hard drive if user wants this and HD emulation is turned on */
-	if ((ACSI_EMU_ON || GEMDOS_EMU_ON) && ConfigureParams.HardDisk.bBootFromHardDisk)
+	/* Default to drive A: */
+	nBootDrive = 0;
+
+	/* Boot only from hard drive if user wants this */
+	if (!ConfigureParams.HardDisk.bBootFromHardDisk)
+		return;
+
+	if (ACSI_EMU_ON || ConfigureParams.HardDisk.bUseIdeHardDiskImage)
+	{
 		nBootDrive = 2;  /* Drive C */
-	else
-		nBootDrive = 0;  /* Drive A */
+	}
+	else if (GEMDOS_EMU_ON)
+	{
+		int i;
+		for (i = 0; i < MAX_HARDDRIVES; i++)
+		{
+			if (emudrives[i])
+			{
+				nBootDrive = emudrives[i]->hd_letter;
+				break;
+			}
+		}
+	}
 }
 
 
