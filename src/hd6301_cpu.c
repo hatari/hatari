@@ -21,7 +21,8 @@
 /**********************************
  *	Defines
  **********************************/
-#define HD_6301_DEBUG 0
+#define HD6301_DISASM 		1
+#define HD6301_DISPLAY_REGS	1
 
 /**********************************
  *	Functions
@@ -430,7 +431,7 @@ static struct hd6301_opcode_t hd6301_opcode_table[256] = {
 	{0x8a, 2, hd6301_oraa_imm,	2,	"oraa #$%02x",			hd6301_disasm_memory8},
 	{0x8b, 2, hd6301_adda_imm,	2,	"adda #$%02x",			hd6301_disasm_memory8},
 	{0x8c, 3, hd6301_cpx_imm,	3,	"cpx  #$%04x",			hd6301_disasm_memory16},
-	{0x8d, 0, hd6301_bsr,		5,	"bsr  %$02x",			hd6301_disasm_memory8},
+	{0x8d, 0, hd6301_bsr,		5,	"bsr  $%02x",			hd6301_disasm_memory8},
 	{0x8e, 3, hd6301_lds_imm,	3,	"lds  #$%04x",			hd6301_disasm_memory16},
  	{0x8f, 0, hd6301_undefined,	0,	"",				hd6301_disasm_undefined},
 
@@ -578,12 +579,15 @@ void hd6301_execute_one_instruction(void)
 	hd6301_opcode = hd6301_opcode_table[hd6301_cur_inst];
 
 	/* disasm opcode ? */
-#ifdef HD_6301_DEBUG
+#ifdef HD6301_DISASM
 	hd6301_disasm();
 #endif
-	
 	/* execute opcode  */
 	hd6301_opcode.op_func();
+
+#ifdef HD6301_DISPLAY_REGS
+	hd6301_display_registers();
+#endif
 
 	/* Increment instruction cycles */
 	hd6301_cycles += hd6301_opcode.op_n_cycles;
@@ -992,7 +996,7 @@ static void hd6301_bra(void)
 	Sint8 addr;
 
 	addr = hd6301_read_memory(hd6301_reg_PC + 1);
-	hd6301_reg_PC += addr;
+	hd6301_reg_PC += addr + 2;
 }
 
 /**
@@ -1019,12 +1023,11 @@ static void hd6301_bhi(void)
 
 	bitC = (hd6301_reg_CCR >> hd6301_REG_CCR_C) & 1;
 	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
+	addr = 2;
 	if ((bitC | bitZ) == 0) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1040,12 +1043,11 @@ static void hd6301_bls(void)
 
 	bitC = (hd6301_reg_CCR >> hd6301_REG_CCR_C) & 1;
 	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
+	addr = 2;
 	if ((bitC | bitZ) == 1) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1060,12 +1062,11 @@ static void hd6301_bcc(void)
 	Uint8 bitC;
 
 	bitC = (hd6301_reg_CCR >> hd6301_REG_CCR_C) & 1;
+	addr = 2;
 	if (bitC == 0) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1080,12 +1081,11 @@ static void hd6301_bcs(void)
 	Uint8 bitC;
 
 	bitC = (hd6301_reg_CCR >> hd6301_REG_CCR_C) & 1;
+	addr = 2;
 	if (bitC == 1) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1100,12 +1100,11 @@ static void hd6301_bne(void)
 	Uint8 bitZ;
 
 	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
+	addr = 2;
 	if (bitZ == 0) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1120,12 +1119,11 @@ static void hd6301_beq(void)
 	Uint8 bitZ;
 
 	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
+	addr = 2;
 	if (bitZ == 1) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1140,12 +1138,11 @@ static void hd6301_bvc(void)
 	Uint8 bitV;
 
 	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
+	addr = 2;
 	if (bitV == 0) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1160,12 +1157,11 @@ static void hd6301_bvs(void)
 	Uint8 bitV;
 
 	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
+	addr = 2;
 	if (bitV == 1) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1180,12 +1176,11 @@ static void hd6301_bpl(void)
 	Uint8 bitN;
 
 	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
+	addr = 2;
 	if (bitN == 0) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1200,12 +1195,11 @@ static void hd6301_bmi(void)
 	Uint8 bitN;
 
 	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
+	addr = 2;
 	if (bitN == 1) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1221,12 +1215,11 @@ static void hd6301_bge(void)
 
 	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
 	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
+	addr = 2;
 	if ((bitN ^ bitV) == 0) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1242,12 +1235,11 @@ static void hd6301_blt(void)
 
 	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
 	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
+	addr = 2;
 	if ((bitN ^ bitV) == 1) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1264,12 +1256,11 @@ static void hd6301_bgt(void)
 	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
 	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
 	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
+	addr = 2;
 	if ((bitZ | (bitN ^ bitV)) == 0) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -1286,12 +1277,11 @@ static void hd6301_ble(void)
 	bitN = (hd6301_reg_CCR >> hd6301_REG_CCR_N) & 1;
 	bitV = (hd6301_reg_CCR >> hd6301_REG_CCR_V) & 1;
 	bitZ = (hd6301_reg_CCR >> hd6301_REG_CCR_Z) & 1;
+	addr = 2;
 	if ((bitZ | (bitN ^ bitV)) == 1) {
-		addr = hd6301_read_memory(hd6301_reg_PC + 1);
-		hd6301_reg_PC += addr;
-	} else {
-		hd6301_reg_PC += 2;
+		addr += hd6301_read_memory(hd6301_reg_PC + 1);
 	}
+	hd6301_reg_PC += addr;
 }
 
 /**
@@ -2919,11 +2909,11 @@ static void hd6301_bsr(void)
 {
 	Sint8 addr;
 
-	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC & 0xff);
-	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC >> 8);
+	hd6301_write_memory(hd6301_reg_SP--, (hd6301_reg_PC + 2) & 0xff);
+	hd6301_write_memory(hd6301_reg_SP--, (hd6301_reg_PC + 2) >> 8);
 
 	addr = hd6301_read_memory(hd6301_reg_PC + 1);
-	hd6301_reg_PC += addr;
+	hd6301_reg_PC += addr + 2;
 }
 
 /**
@@ -3279,11 +3269,11 @@ static void hd6301_jsr_dir(void)
 {
 	Uint16 addr;
 
-	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC & 0xff);
-	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC >> 8);
+	hd6301_write_memory(hd6301_reg_SP--, (hd6301_reg_PC + 2) & 0xff);
+	hd6301_write_memory(hd6301_reg_SP--, (hd6301_reg_PC + 2) >> 8);
 
 	addr = hd6301_read_memory(hd6301_reg_PC + 1);
-	hd6301_reg_PC += addr;
+	hd6301_reg_PC += addr + 2;
 }
 
 /**
@@ -3658,11 +3648,11 @@ static void hd6301_jsr_ind(void)
 {
 	Uint16 addr;
 
-	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC & 0xff);
-	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC >> 8);
+	hd6301_write_memory(hd6301_reg_SP--, (hd6301_reg_PC + 2) & 0xff);
+	hd6301_write_memory(hd6301_reg_SP--, (hd6301_reg_PC + 2) >> 8);
 
 	addr = hd6301_reg_X + hd6301_read_memory(hd6301_reg_PC+1);
-	hd6301_reg_PC += addr;
+	hd6301_reg_PC += addr + 2;
 }
 
 /**
@@ -4037,11 +4027,11 @@ static void hd6301_jsr_ext(void)
 {
 	Uint16 addr;
 
-	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC & 0xff);
-	hd6301_write_memory(hd6301_reg_SP--, hd6301_reg_PC >> 8);
+	hd6301_write_memory(hd6301_reg_SP--, (hd6301_reg_PC + 2) & 0xff);
+	hd6301_write_memory(hd6301_reg_SP--, (hd6301_reg_PC + 2) >> 8);
 
 	addr = hd6301_get_memory_ext();
-	hd6301_reg_PC += addr;
+	hd6301_reg_PC += addr + 2;
 }
 
 /**
@@ -5532,4 +5522,11 @@ static void hd6301_disasm_xim(void)
 	sprintf(hd6301_str_instr, hd6301_opcode.op_mnemonic,
 			hd6301_read_memory(hd6301_reg_PC+1),
 			hd6301_read_memory(hd6301_reg_PC+2));
+}
+
+void hd6301_display_registers(void)
+{
+	fprintf(stderr, "A:  %02x       B: %02x\n", hd6301_reg_A, hd6301_reg_B);
+	fprintf(stderr, "X:  %04x   CCR: %02x\n", hd6301_reg_X, hd6301_reg_CCR);
+	fprintf(stderr, "SP: %04x    PC:  %04x\n", hd6301_reg_SP, hd6301_reg_PC);
 }

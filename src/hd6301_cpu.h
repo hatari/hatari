@@ -52,6 +52,7 @@ struct hd6301_opcode_t {
 /* Functions */
 void hd6301_init_cpu(void);
 void hd6301_execute_one_instruction(void);
+void hd6301_display_registers(void);
 
 /* HF6301 Disasm and debug code */
 void hd6301_disasm(void);
