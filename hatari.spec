@@ -12,7 +12,7 @@ URL:          http://hatari.berlios.de/
 License:      GPL
 Group:        System/Emulators/Other
 Autoreqprov:  on
-Version:      1.3.0
+Version:      1.3.1
 Release:      1
 Summary:      an Atari ST emulator suitable for playing games
 Source:       %{name}-%{version}.tar.gz
@@ -58,6 +58,9 @@ rm -rf $RPM_BUILD_ROOT
 %_docdir/%{name}/images/*.png
 
 %changelog -n hatari
+
+* Sat Sep 05 2009 - Thomas Huth
+- Hatari version 1.3.1
 
 * Sun Aug 16 2009 - Thomas Huth
 - Hatari version 1.3.0
