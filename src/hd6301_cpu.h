@@ -41,21 +41,21 @@ static Uint8	hd6301_intRAM[128];
 static Uint8	hd6301_intROM[4096];
 
 struct hd6301_opcode_t {
-	Uint8	op_value;			/* Opcode value */
-	Uint8	op_bytes;			/* Total opcode bytes */
-	void	(*op_func)(void);		/* Function that "executes" opcode */
-	Uint8	op_n_cycles;			/* Number of clock cycles */
-	const char *op_mnemonic;		/* Printout format string */
-	void	(*op_func_disasm)(void);	/* Function that "executes" disasm opcode */
+	Uint8	op_value;		/* Opcode value */
+	Uint8	op_bytes;		/* Total opcode bytes */
+	void	(*op_func)(void);	/* Function that "executes" opcode */
+	Uint8	op_n_cycles;		/* Number of clock cycles */
+	const char *op_mnemonic;	/* Printout format string */
+	Uint8	op_disasm;		/* For instructions disasm */
 };
 
 /* Functions */
-void hd6301_init_cpu(void);
-void hd6301_execute_one_instruction(void);
-void hd6301_display_registers(void);
+extern void hd6301_init_cpu(void);
+extern void hd6301_execute_one_instruction(void);
 
 /* HF6301 Disasm and debug code */
-void hd6301_disasm(void);
+extern void hd6301_disasm(void);
+extern void hd6301_display_registers(void);
 
 
 #ifdef __cplusplus
