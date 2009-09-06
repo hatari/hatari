@@ -1416,7 +1416,7 @@ void m68k_reset (void)
     SET_CFLG (0);
     SET_VFLG (0);
     SET_NFLG (0);
-    regs.spcflags &= SPCFLAG_MODE_CHANGE;   /* Clear specialflags except mode-change */
+    regs.spcflags &= ( SPCFLAG_MODE_CHANGE | SPCFLAG_DEBUGGER );	/* Clear specialflags except mode-change and debugger */
     regs.intmask = 7;
     regs.vbr = regs.sfc = regs.dfc = 0;
     regs.fpcr = regs.fpsr = regs.fpiar = 0;
