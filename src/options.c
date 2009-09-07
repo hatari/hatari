@@ -1177,6 +1177,10 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 			errstr = Log_SetTraceOptions(argv[i]);
 			if (errstr)
 			{
+				if (!errstr[0]) {
+					/* silent parsing termination */
+					return false;
+				}
 				return Opt_ShowError(OPT_TRACE, argv[i], errstr);
 			}
 			break;

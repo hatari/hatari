@@ -222,7 +222,7 @@ LOGTYPE Log_ParseOptions(const char *arg)
  * If the string is prefixed with a '-',
  * corresponding trace flag is turned off.
  * Result is stored in LogTraceFlags.
- * Return error string or NULL for success.
+ * Return error string (""=silent 'error') or NULL for success.
  */
 const char* Log_SetTraceOptions (const char *OptionsStr)
 {
@@ -247,7 +247,7 @@ const char* Log_SetTraceOptions (const char *OptionsStr)
 		fprintf(stderr, "Multiple trace levels can be separated by ','\n");
 		fprintf(stderr, "Levels can be prefixed by '+' or '-' to be mixed.\n");
 		fprintf(stderr, "Giving just trace level 'none' disables all traces.\n\n");
-		return NULL;
+		return "";
 	}
 	
 	LogTraceFlags = TRACE_NONE;
