@@ -1291,6 +1291,47 @@ int DebugUI_ParseCommand(char *input)
 
 
 /**
+ * Readline match callback for long command name completion.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+static char *DebugUI_CommandMatch(const char *text, int state)
+{
+	static int i, len;
+	const char *name;
+	
+	if (!state)
+	{
+		/* first match */
+		len = strlen(text);
+		i = 0;
+	}
+	/* next match */
+	while (i < ARRAYSIZE(commandtab))
+	{
+		name = commandtab[i++].sLongName;
+		if (strncmp(name, text, len) == 0)
+			return (strdup(name));
+	}
+	return NULL;
+}
+
+
+/**
+ * Readline completion callback. Returns matches.
+ */
+static char **DebugUI_Completion(const char *text, int start, int end)
+{
+	/* If this word is at the start of the line, then it is a command
+	 * to complete, otherwise let readline to do its own completion.
+	 */
+	if (start == 0)
+		return rl_completion_matches (text, DebugUI_CommandMatch);
+	else
+		return NULL;
+}
+
+/**
  * Read a command line from the keyboard and return a pointer to the string.
  * @return	Pointer to the string which should be deallocated free()
  *              after use. Returns NULL when error occured.
@@ -1300,10 +1341,18 @@ static char *DebugUI_GetCommand(void)
 	char *input;
 
 #if HAVE_LIBREADLINE
+	/* Allow conditional parsing of the ~/.inputrc file. */
+	rl_readline_name = "Hatari";
+	
+	/* Tell the completer that we want a crack first. */
+	rl_attempted_completion_function = DebugUI_Completion;
+
 	input = readline("> ");
 	if (!input)
 		return NULL;
-	if (input[0] != 0)
+
+	input = Str_Trim(input);
+	if (input[0])
 		add_history(input);
 #else
 	fprintf(stderr, "> ");
@@ -1316,8 +1365,8 @@ static char *DebugUI_GetCommand(void)
 		free(input);
 		return NULL;
 	}
-#endif
 	input = Str_Trim(input);
+#endif
 
 	return input;
 }
