@@ -1290,6 +1290,9 @@ int DebugUI_ParseCommand(char *input)
 }
 
 
+#if HAVE_LIBREADLINE
+/* See "info:readline" e.g. in Konqueror for readline usage. */
+
 /**
  * Readline match callback for long command name completion.
  * STATE = 0 -> different text from previous one.
@@ -1316,19 +1319,24 @@ static char *DebugUI_CommandMatch(const char *text, int state)
 	return NULL;
 }
 
-
 /**
  * Readline completion callback. Returns matches.
  */
 static char **DebugUI_Completion(const char *text, int start, int end)
 {
-	/* If this word is at the start of the line, then it is a command
-	 * to complete, otherwise let readline to do its own completion.
-	 */
-	if (start == 0)
-		return rl_completion_matches (text, DebugUI_CommandMatch);
+	int i = 0;
+
+	/* ignore white space and check whether this is first word */
+	while (i < rl_point && isspace(rl_line_buffer[i]))
+		i++;
+	while (i < rl_point && !isspace(rl_line_buffer[i]))
+		i++;
+
+	if (i >= rl_point)
+		/* first word on line */
+		return rl_completion_matches(text, DebugUI_CommandMatch);
 	else
-		return NULL;
+		return rl_completion_matches(text, BreakCond_MatchVariable);
 }
 
 /**
@@ -1340,7 +1348,6 @@ static char *DebugUI_GetCommand(void)
 {
 	char *input;
 
-#if HAVE_LIBREADLINE
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "Hatari";
 	
@@ -1354,7 +1361,20 @@ static char *DebugUI_GetCommand(void)
 	input = Str_Trim(input);
 	if (input[0])
 		add_history(input);
-#else
+
+	return input;
+}
+
+#else /* !HAVE_LIBREADLINE */
+
+/**
+ * Read a command line from the keyboard and return a pointer to the string.
+ * @return	Pointer to the string which should be deallocated free()
+ *              after use. Returns NULL when error occured.
+ */
+static char *DebugUI_GetCommand(void)
+{
+	char *input;
 	fprintf(stderr, "> ");
 	input = malloc(256);
 	if (!input)
@@ -1365,11 +1385,10 @@ static char *DebugUI_GetCommand(void)
 		free(input);
 		return NULL;
 	}
-	input = Str_Trim(input);
-#endif
-
-	return input;
+	return Str_Trim(input);
 }
+
+#endif /* !HAVE_LIBREADLINE */
 
 
 /**

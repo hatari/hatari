@@ -372,6 +372,31 @@ static const var_addr_t hatari_vars[] = {
 
 
 /**
+ * Readline match callback for variable name completion.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char *BreakCond_MatchVariable(const char *text, int state)
+{
+	static int i, len;
+	const char *name;
+	
+	if (!state) {
+		/* first match */
+		len = strlen(text);
+		i = 0;
+	}
+	/* next match */
+	while (i < ARRAYSIZE(hatari_vars)) {
+		name = hatari_vars[i++].name;
+		if (strncasecmp(name, text, len) == 0)
+			return (strdup(name));
+	}
+	return NULL;
+}
+
+
+/**
  * If given string is a Hatari variable name, set bc_value
  * fields accordingly and return true, otherwise return false.
  */
@@ -383,7 +408,7 @@ static bool BreakCond_ParseVariable(const char *name, bc_value_t *bc_value)
 	ENTERFUNC(("BreakCond_ParseVariable('%s')\n", name));
 	/* bisect */
 	l = 0;
-	r = sizeof (hatari_vars) / sizeof (*hatari_vars) - 1;
+	r = ARRAYSIZE(hatari_vars) - 1;
 	do {
 		m = (l+r) >> 1;
 		dir = strcasecmp(name, hatari_vars[m].name);
