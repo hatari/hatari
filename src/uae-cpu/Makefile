@@ -4,7 +4,7 @@
 include ../../Makefile.cnf
 
 
-CFLAGS += -I. -I../.. $(CPPFLAGS) $(SDL_CFLAGS)
+CFLAGS += -I. -I../.. -I../debug $(CPPFLAGS) $(SDL_CFLAGS)
 # disable several warnings for the CPU emu code as it comes from elsewhere
 QUIETCFLAGS = $(CFLAGS) -Wno-unused -Wno-sign-compare -Wno-shadow
 

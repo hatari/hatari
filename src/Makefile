@@ -11,18 +11,18 @@ CPUDIR = uae-cpu
 include ../Makefile.cnf
 
 # Additional include directories:
-CPPFLAGS += -I.. -I./includes -I$(CPUDIR) -I./falcon
+CPPFLAGS += -I.. -I./includes -I$(CPUDIR) -I./debug -I./falcon
 CPPFLAGS += -DCONFDIR=\"$(CONFDIR)\" $(SDL_CFLAGS)
 
 ifeq ($(ENABLE_DSP_EMU),1)
 CPPFLAGS += -DENABLE_DSP_EMU=1
 endif
 
-SRCS = audio.c bios.c blitter.c breakcond.c cart.c cfgopts.c \
+SRCS = audio.c bios.c blitter.c cart.c cfgopts.c \
   configuration.c options.c  createBlankImage.c change.c control.c \
-  cycles.c debugui.c dialog.c dim.c dmaSnd.c fdc.c file.c floppy.c \
+  cycles.c dialog.c dim.c dmaSnd.c fdc.c file.c floppy.c \
   gemdos.c hdc.c ide.c ikbd.c int.c ioMem.c ioMemTabST.c ioMemTabSTE.c \
-  ioMemTabTT.c ioMemTabFalcon.c joy.c keymap.c log.c m68000.c main.c \
+  ioMemTabTT.c ioMemTabFalcon.c joy.c keymap.c m68000.c main.c \
   midi.c memorySnapShot.c mfp.c msa.c paths.c  psg.c printer.c rs232.c \
   reset.c rtc.c scandir.c st.c stMemory.c screen.c screenSnapShot.c \
   shortcut.c sound.c spec512.c statusbar.c str.c tos.c unzip.c utils.c \
@@ -30,7 +30,7 @@ SRCS = audio.c bios.c blitter.c breakcond.c cart.c cfgopts.c \
 
 OBJS = $(SRCS:.c=.o)
 
-SUBDIRLIBS = $(CPUDIR)/cpu68k.a falcon/falcon.a gui-sdl/gui-sdl.a
+SUBDIRLIBS = $(CPUDIR)/cpu68k.a debug/debug.a falcon/falcon.a gui-sdl/gui-sdl.a
 
 ifeq ($(SYS_WINDOWS),1)
   SUBDIRLIBS += gui-win/gui-win.a
@@ -65,6 +65,7 @@ clean:
 	$(MAKE) -C gui-win/ clean
 	$(MAKE) -C $(CPUDIR) clean
 	$(MAKE) -C falcon/ clean
+	$(MAKE) -C debug/ clean
 
 distclean:
 	$(RM) *.o hatari
@@ -74,6 +75,7 @@ distclean:
 	$(MAKE) -C gui-win/ distclean
 	$(MAKE) -C $(CPUDIR) distclean
 	$(MAKE) -C falcon/ distclean
+	$(MAKE) -C debug/ distclean
 
 
 # Use "make depend" to generate file dependencies:
@@ -87,6 +89,7 @@ depend:
 	$(MAKE) -C gui-sdl/ depend
 	$(MAKE) -C $(CPUDIR) depend
 	$(MAKE) -C falcon/ depend
+	$(MAKE) -C debug/ depend
 
 .PHONY : cleandeps
 cleandeps:

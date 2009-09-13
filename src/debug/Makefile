@@ -1,4 +1,4 @@
-# Makefile for Hatari's Falcon support.
+# Makefile for Hatari's debugging & tracing support.
 
 CPUDIR ?= uae-cpu
 
@@ -6,29 +6,22 @@ CPUDIR ?= uae-cpu
 include ../../Makefile.cnf
 
 # Additional include directories:
-INCFLAGS = -I../.. -I../includes -I../debug -I../$(CPUDIR) $(CPPFLAGS)
+INCFLAGS = -I. -I../.. -I../includes -I../$(CPUDIR) -I../falcon $(CPPFLAGS)
 
-
-# Set flags passed to the compiler (e.g. optimization flags)
-#CFLAGS := -g -O2 -Wall
-
-
+# Set extra flags passed to the compiler
 CFLAGS += $(INCFLAGS) $(SDL_CFLAGS)
 
-
-
-FALCSRCS = videl.c hostscreen.c nvram.c dsp.c
+SRCS = debugui.c breakcond.c log.c
 ifeq ($(ENABLE_DSP_EMU),1)
-FALCSRCS += dsp_core.c dsp_cpu.c dsp_disasm.c
+#SRCS += debugcpu.c debugdsp.c
 CPPFLAGS += -DENABLE_DSP_EMU=1
 endif
 
-FALCOBJS = $(FALCSRCS:.c=.o)
+OBJS = $(SRCS:.c=.o)
 
+all: debug.a
 
-all: falcon.a
-
-falcon.a: $(FALCOBJS)
+debug.a: $(OBJS)
 	$(AR) cru $@ $^
 	$(RANLIB) $@
 
@@ -42,7 +35,7 @@ distclean: clean
 
 # Use "make depend" to generate file dependencies:
 Makefile.dep: Makefile
-	$(CC) -M $(CFLAGS) $(FALCSRCS) > Makefile.dep
+	$(CC) -M $(CFLAGS) $(SRCS) > Makefile.dep
 
 depend: Makefile.dep
 
