@@ -418,7 +418,7 @@ static void dsp_core_hostport_update_hreq(dsp_core_t *dsp_core)
 {
 	int hreq;
 
-	hreq = (dsp_core->hostport[CPU_HOST_ICR] & 0x3) & (dsp_core->hostport[CPU_HOST_ISR] & 0x3);
+	hreq = (dsp_core->hostport[CPU_HOST_ICR] & dsp_core->hostport[CPU_HOST_ISR]) & 0x3;
 	dsp_core->hostport[CPU_HOST_ISR] &= 0x7f;
 	dsp_core->hostport[CPU_HOST_ISR] |= (hreq?1:0) << CPU_HOST_ISR_HREQ;
 } 
