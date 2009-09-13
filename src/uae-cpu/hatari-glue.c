@@ -12,16 +12,16 @@ const char HatariGlue_fileid[] = "Hatari hatari-glue.c : " __DATE__ " " __TIME__
 
 #include <stdio.h>
 
-#include "../includes/main.h"
-#include "../includes/configuration.h"
-#include "../includes/int.h"
-#include "../includes/tos.h"
-#include "../includes/gemdos.h"
-#include "../includes/cart.h"
-#include "../includes/vdi.h"
-#include "../includes/stMemory.h"
-#include "../includes/ikbd.h"
-#include "../includes/video.h"
+#include "main.h"
+#include "configuration.h"
+#include "int.h"
+#include "tos.h"
+#include "gemdos.h"
+#include "cart.h"
+#include "vdi.h"
+#include "stMemory.h"
+#include "ikbd.h"
+#include "video.h"
 
 #include "sysdeps.h"
 #include "maccess.h"
