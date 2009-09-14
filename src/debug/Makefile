@@ -11,9 +11,9 @@ INCFLAGS = -I. -I../.. -I../includes -I../$(CPUDIR) -I../falcon $(CPPFLAGS)
 # Set extra flags passed to the compiler
 CFLAGS += $(INCFLAGS) $(SDL_CFLAGS)
 
-SRCS = debugui.c breakcond.c log.c
+SRCS = log.c debugui.c breakcond.c debugcpu.c
 ifeq ($(ENABLE_DSP_EMU),1)
-#SRCS += debugcpu.c debugdsp.c
+SRCS += debugdsp.c
 CPPFLAGS += -DENABLE_DSP_EMU=1
 endif
 

@@ -42,7 +42,7 @@ struct regstruct regs;
 void MakeSR(void) { }
 
 /* fake AUE register accessors */
-int DebugUI_GetCpuRegisterAddress(const char *regname, Uint32 **addr)
+int DebugCpu_GetRegisterAddress(const char *regname, Uint32 **addr)
 {
 	const char *regnames[] = {
 		/* must be in same order as in struct above! */

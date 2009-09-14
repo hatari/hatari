@@ -20,7 +20,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "dsp.h"
-#include "debugui.h"
+#include "debugcpu.h"
 #include "stMemory.h"
 #include "str.h"
 #include "video.h"	/* for Hatari video variable addresses */
@@ -474,7 +474,7 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value, p
 		EXITFUNC(("-> false (DSP)\n"));
 		return false;
 	}
-	regsize = DebugUI_GetCpuRegisterAddress(regname, &(bc_value->value.reg32));
+	regsize = DebugCpu_GetRegisterAddress(regname, &(bc_value->value.reg32));
 	if (regsize) {
 		bc_value->bits = regsize;
 		bc_value->valuetype = regsize;

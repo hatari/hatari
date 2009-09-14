@@ -132,6 +132,7 @@ const char NewCpu_fileid[] = "Hatari newcpu.c : " __DATE__ " " __TIME__;
 #include "dsp.h"
 #include "log.h"
 #include "debugui.h"
+#include "debugcpu.h"
 
 //#define DEBUG_PREFETCH
 
@@ -1651,7 +1652,7 @@ static int do_specialties (void)
 #endif
 
     if (regs.spcflags & SPCFLAG_DEBUGGER)
-	DebugUI_CpuCheck();
+	DebugCpu_Check();
 
     if (regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE)) {
 	unset_special(SPCFLAG_MODE_CHANGE);

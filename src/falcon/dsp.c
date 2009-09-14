@@ -27,7 +27,7 @@
 #include "ioMem.h"
 #include "dsp.h"
 #if ENABLE_DSP_EMU
-#include "debugui.h"
+#include "debugdsp.h"
 #include "dsp_cpu.h"
 #include "dsp_disasm.h"
 #endif
@@ -116,7 +116,7 @@ void DSP_Run(int nHostCycles)
 	while (dsp_core.running == 1 && i >= dsp_cycle)
 	{
 		if (unlikely(bDspDebugging))
-			DebugUI_DspCheck();
+			DebugDsp_Check();
 
 		dsp56k_execute_instruction();
 		dsp_cycle += dsp_core.instr_cycle;

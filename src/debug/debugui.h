@@ -3,6 +3,8 @@
 
   This file is distributed under the GNU Public License, version 2 or at
   your option any later version. Read the file gpl.txt for details.
+
+  Public debugger UI header file.
 */
 
 #ifndef HATARI_DEBUGUI_H
@@ -20,9 +22,6 @@ extern int bExceptionDebugging;
 
 extern void DebugUI(void);
 extern int DebugUI_ParseCommand(char *input);
-extern int DebugUI_GetCpuRegisterAddress(const char *reg, Uint32 **addr);
-extern void DebugUI_CpuCheck(void);
-extern void DebugUI_DspCheck(void);
 extern void DebugUI_MemorySnapShot_Capture(bool bSave);
 
 #endif /* HATARI_DEBUGUI_H */
