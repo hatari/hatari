@@ -38,12 +38,6 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "debugcpu.h"
 #include "debugdsp.h"
 
-/*
-#include "reset.h"
-#include "sound.h"
-#include "tos.h"
-*/
-
 int bExceptionDebugging;
 
 FILE *debugOutput;
@@ -181,6 +175,25 @@ static int DebugUI_SetOptions(int argc, char *argv[])
 	{
 		ConfigureParams = current;
 	}
+
+	return DEBUGGER_CMDDONE;
+}
+
+
+/**
+ * Command: Set tracing
+ */
+static int DebugUI_SetTracing(int argc, char *argv[])
+{
+	const char *errstr;
+	if (argc != 2)
+	{
+		DebugUI_PrintCmdHelp(argv[0]);
+		return DEBUGGER_CMDDONE;
+	}
+	errstr = Log_SetTraceOptions(argv[1]);
+	if (errstr && errstr[0])
+		fprintf(stderr, "ERROR: %s\n", errstr);
 
 	return DEBUGGER_CMDDONE;
 }
@@ -458,8 +471,14 @@ static const dbgcommand_t uicommand[] =
 	{ DebugUI_SetOptions, "setopt", "o",
 	  "set Hatari command line options",
 	  "[command line parameters]\n"
-	  "\tSet options like command line parameters. For example to"
-	  "\tenable CPU disasm tracing:  setopt --trace cpu_disasm",
+	  "\tSet Hatari command like options. For example to enable\n"
+	  "\texception catching, use:  setopt --debug",
+	  false },
+	{ DebugUI_SetTracing, "trace", "t",
+	  "select Hatari tracing settings",
+	  "[set1,set2...]\n"
+	  "\tSelect Hatari tracing settings. For example to enable CPU\n"
+	  "\tdisassembly and VBL tracing, use:  trace cpu_disasm,video_hbl",
 	  false },
 	{ DebugUI_ShowValue, "value", "v",
 	  "set number base / show value in other number bases",

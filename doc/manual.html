@@ -2280,6 +2280,7 @@ Available commands:
       loadbin ( l) : load a file into memory
       savebin ( s) : save memory to a file
        setopt ( o) : set Hatari command line options
+        trace ( t) : select Hatari tracing settings
         value ( v) : set number base / show value in other number bases
          cont ( c) : continue emulation / CPU single-stepping
          quit ( q) : quit emulator
@@ -2305,7 +2306,7 @@ Usage:  d [address]
         position or from current PC if no last postition is available.
 </pre>
 <pre>
-&gt; d
+&gt; disasm
 0000aa6e: 2f08 0241 0fff 207c 00fe MOVE.L A0,-(A7)
 0000aa70: 0241 0fff 207c 00fe 78c0 AND.W #$0fff,D1
 0000aa74: 207c 00fe 78c0 2070 1000 MOVEA.L #$00fe78c0,A0
@@ -2348,8 +2349,8 @@ that on DSP only R0-R7 registers can be used for memory addressing.
 
 <p>Examples:</p>
 <pre>
-pc = $64543  &amp;&amp;  ($ff820).w &amp; 3 = (a0)  &amp;&amp;  d0 = %1100
-(r0).x = 1 &amp;&amp; (r0).y = 2
+b pc = $64543  &amp;&amp;  ($ff820).w &amp; 3 = (a0)  &amp;&amp;  d0 = %1100
+b (r0).x = 1 &amp;&amp; (r0).y = 2
 </pre>			      
 
 <p>
@@ -2369,21 +2370,22 @@ instruction count.
 
 <p>
 By the way, if you want to continue with real-time disassembling, you
-can enable it by typing &quot;setopt --trace cpu_disasm&quot; at the
-debugger prompt.  Disable it with &quot;setopt --trace none&quot; when
-you enter the debugger again. &quot;--trace help&quot; can be used to
-list all the supported trace points. (Similar things can be done even
-from a program within the emulation if you enable Hatari
-&quot;--bios-intercept&quot; option and call XBios 255 from
-the program with a suitable command line string.)
+can enable it with &quot;trace cpu_disasm&quot; at the debugger prompt.
+Disable it with &quot;trace none&quot; when you enter the debugger again.
+&quot;trace help&quot; (or TAB) can be used to list all the supported
+trace points.
+(Tracing options can be set even from a program within the emulation if
+you enable Hatari &quot;--bios-intercept&quot; option and call XBios 255
+from the program with a suitable command line string.)
 </p>
 
 <p>
-Lastly, the debugger is much nicer to use with the command line
-editing support. If you're building Hatari yourself, please make sure
-that you have the GNU readline development files installed (on Debian
-/ Ubuntu these come from the libreadline5-dev package).  Otherwise
-this doesn't get enabled when you configure Hatari.
+Lastly, the debugger is much nicer to use with the command line history,
+editing and command completion support. If you're building Hatari yourself,
+please make sure that you have the GNU readline development files
+installed (on Debian / Ubuntu these come from the libreadline5-dev
+package).  Otherwise this doesn't get enabled when you configure
+Hatari.
 </p>
 
 
