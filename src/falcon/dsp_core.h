@@ -192,7 +192,7 @@ struct dsp_core_s {
 	/* stack[0=ssh], stack[1=ssl] */
 	Uint16	stack[2][16];
 
-	/* External ram[0] is x:, ram[1] is y:, ram[2] is p: */
+	/* External ram[] (mapped to p:) */
 	Uint32	ramext[DSP_RAMSIZE];
 
 	/* rom[0] is x:, rom[1] is y: */
@@ -205,6 +205,7 @@ struct dsp_core_s {
 	volatile Uint32	periph[2][64];
 	volatile Uint32	dsp_host_htx;
 	volatile Uint32	dsp_host_rtx;
+	Uint16 dsp_host_isr_HREQ;
 
 
 	/* host port, CPU side */

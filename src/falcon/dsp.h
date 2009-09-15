@@ -58,5 +58,7 @@ extern void DSP_SsiReceive_SC2(Uint32 FrameCounter);
 /* Dsp Host interface commands */
 extern void DSP_HandleReadAccess(void);
 extern void DSP_HandleWriteAccess(void);
+extern Uint16 DSP_Get_HREQ(void);
+
 
 #endif /* DSP_H */

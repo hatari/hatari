@@ -549,46 +549,24 @@ void DSP_SsiReceive_SC2(Uint32 FrameCounter)
 }
 
 /**
- * Hardware IO address read by CPU
- */
-static Uint8 DSP_handleRead(Uint32 addr)
-{
-	Uint8 value;
-#if ENABLE_DSP_EMU
-	value = dsp_core_read_host(&dsp_core, addr-DSP_HW_OFFSET);
-#else
-	/* this value prevents TOS from hanging in the DSP init code */
-	value = 0xff;
-#endif
-
-	Dprintf(("HWget_b(0x%08x)=0x%02x at 0x%08x\n", addr, value, m68k_getpc()));
-	return value;
-}
-
-/**
  * Read access wrapper for ioMemTabFalcon
  */
 void DSP_HandleReadAccess(void)
 {
-	Uint32 a;
-	Uint8 v;
-	for (a = IoAccessBaseAddress; a < IoAccessBaseAddress+nIoMemAccessSize; a++)
+	Uint32 addr;
+	Uint8 value;
+	for (addr = IoAccessBaseAddress; addr < IoAccessBaseAddress+nIoMemAccessSize; addr++)
 	{
-		v = DSP_handleRead(a);
-		IoMem_WriteByte(a, v);
-	}
-}
-
-
-/**
- * Hardware IO address write by CPU
- */
-static void DSP_handleWrite(Uint32 addr, Uint8 value)
-{
-	Dprintf(("HWput_b(0x%08x,0x%02x) at 0x%08x\n", addr, value, m68k_getpc()));
 #if ENABLE_DSP_EMU
-	dsp_core_write_host(&dsp_core, addr-DSP_HW_OFFSET, value);
+		value = dsp_core_read_host(&dsp_core, addr-DSP_HW_OFFSET);
+#else
+		/* this value prevents TOS from hanging in the DSP init code */
+		value = 0xff;
 #endif
+
+		Dprintf(("HWget_b(0x%08x)=0x%02x at 0x%08x\n", addr, value, m68k_getpc()));
+		IoMem_WriteByte(addr, value);
+	}
 }
 
 /**
@@ -596,11 +574,22 @@ static void DSP_handleWrite(Uint32 addr, Uint8 value)
  */
 void DSP_HandleWriteAccess(void)
 {
-	Uint32 a;
-	Uint8 v;
-	for (a = IoAccessBaseAddress; a < IoAccessBaseAddress+nIoMemAccessSize; a++)
+	Uint32 addr;
+	Uint8 value;
+	for (addr = IoAccessBaseAddress; addr < IoAccessBaseAddress+nIoMemAccessSize; addr++)
 	{
-		v = IoMem_ReadByte(a);
-		DSP_handleWrite(a,v);
+		value = IoMem_ReadByte(addr);
+		Dprintf(("HWput_b(0x%08x,0x%02x) at 0x%08x\n", addr, value, m68k_getpc()));
+#if ENABLE_DSP_EMU
+		dsp_core_write_host(&dsp_core, addr-DSP_HW_OFFSET, value);
+#endif
 	}
+}
+
+/**
+ * Get HREQ interrupt for MFP/COMBEL
+ */
+Uint16  DSP_Get_HREQ(void)
+{
+	return dsp_core.hostport[CPU_HOST_ISR] & 0x80;
 }
