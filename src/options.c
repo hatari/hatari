@@ -1246,3 +1246,27 @@ bool Opt_ParseParameters(int argc, const char *argv[])
 
 	return true;
 }
+
+/**
+ * Readline match callback for option name completion.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char *Opt_MatchOption(const char *text, int state)
+{
+	static int i, len;
+	const char *name;
+	
+	if (!state) {
+		/* first match */
+		len = strlen(text);
+		i = 0;
+	}
+	/* next match */
+	while (i < ARRAYSIZE(HatariOptions)) {
+		name = HatariOptions[i++].str;
+		if (name && strncasecmp(name, text, len) == 0)
+			return (strdup(name));
+	}
+	return NULL;
+}

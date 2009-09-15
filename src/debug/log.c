@@ -214,6 +214,9 @@ LOGTYPE Log_ParseOptions(const char *arg)
 	return level;
 }
 
+
+#if ENABLE_TRACING
+
 /*-----------------------------------------------------------------------*/
 /**
  * Parse a list of comma separated strings.
@@ -226,15 +229,13 @@ LOGTYPE Log_ParseOptions(const char *arg)
  */
 const char* Log_SetTraceOptions (const char *OptionsStr)
 {
-#if ENABLE_TRACING
-
 	char *OptionsCopy;
 	char *cur, *sep;
 	int i;
 	int Mode;				/* 0=add, 1=del */
 	int MaxOptions;
 
-	MaxOptions = sizeof(TraceOptions) / sizeof(TraceOptions[0]);
+	MaxOptions = ARRAYSIZE(TraceOptions);
 	
 	/* special case for "help" : display the list of possible trace levels */
 	if (strcmp (OptionsStr, "help") == 0)
@@ -302,8 +303,45 @@ const char* Log_SetTraceOptions (const char *OptionsStr)
 	
 	free (OptionsCopy);
 	return NULL;
-
-#else	/* ENABLE_TRACING */
-	return "Hatari has been compiled without ENABLE_TRACING!";
-#endif
 }
+
+
+/**
+ * Readline match callback for trace type name completion.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char *Log_MatchTrace(const char *text, int state)
+{
+	static int i, len;
+	const char *name;
+	
+	if (!state) {
+		/* first match */
+		len = strlen(text);
+		i = 0;
+	}
+	/* next match */
+	while (i < ARRAYSIZE(TraceOptions)) {
+		name = TraceOptions[i++].Name;
+		if (strncasecmp(name, text, len) == 0)
+			return (strdup(name));
+	}
+	return NULL;
+}
+
+#else	/* !ENABLE_TRACING */
+
+/** dummy */
+const char* Log_SetTraceOptions (const char *OptionsStr)
+{
+	return "Hatari has been compiled without ENABLE_TRACING!";
+}
+
+/** dummy */
+char *Log_MatchTrace(const char *text, int state)
+{
+	return NULL;
+}
+
+#endif	/* !ENABLE_TRACING */

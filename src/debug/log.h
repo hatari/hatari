@@ -42,6 +42,7 @@ extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 	__attribute__ ((format (printf, 2, 3)));
 extern LOGTYPE Log_ParseOptions(const char *OptionStr);
 extern const char* Log_SetTraceOptions(const char *OptionsStr);
+extern char *Log_MatchTrace(const char *text, int state);
 
 #ifndef __GNUC__
 #undef __attribute__

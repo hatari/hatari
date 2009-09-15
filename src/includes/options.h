@@ -16,4 +16,7 @@ extern bool bBiosIntercept;
  */
 extern bool Opt_ParseParameters(int argc, const char *argv[]);
 
+/* readline callback function for the debugger setopt command */
+extern char *Opt_MatchOption(const char *text, int state);
+
 #endif /* HATARI_OPTIONS_H */

@@ -87,8 +87,6 @@ Other potential Hatari functionality improvements
 	  breakpoints
 	- Allow use of variable/register names instead of addresses
 	  everywhere in the debugger
-	- Context sensitive argument completion (variables for 'b',
-	  registers for 'r', files for 'l', options for 'o'...)
 	- Helper command for doing simple calculations
 
 - Improved screen handling:

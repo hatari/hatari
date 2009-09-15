@@ -343,7 +343,7 @@ int DebugUI_ParseCommand(char *input)
  * STATE = 0 -> different text from previous one.
  * Return next match or NULL if no matches.
  */
-static char *DebugUI_CommandMatch(const char *text, int state)
+static char *DebugUI_MatchCommand(const char *text, int state)
 {
 	static int i, len;
 	const char *name;
@@ -367,21 +367,55 @@ static char *DebugUI_CommandMatch(const char *text, int state)
 /**
  * Readline completion callback. Returns matches.
  */
-static char **DebugUI_Completion(const char *text, int start, int end)
+static char **DebugUI_Completion(const char *text, int a, int b)
 {
-	int i = 0;
+	struct {
+		const char *name;
+		char* (*match)(const char *, int);
+	} cmd[] = {
+		{ "b", BreakCond_MatchVariable },
+		{ "breakpoint", BreakCond_MatchVariable },
+		{ "f", rl_filename_completion_function },
+		{ "logfile", rl_filename_completion_function },
+		{ "l", rl_filename_completion_function },
+		{ "loadbin", rl_filename_completion_function },
+		{ "s", rl_filename_completion_function },
+		{ "savebin", rl_filename_completion_function },
+		{ "o", Opt_MatchOption },
+		{ "setopt", Opt_MatchOption },
+		{ "t", Log_MatchTrace },
+		{ "trace", Log_MatchTrace },
+		{ "h", DebugUI_MatchCommand },
+		{ "help", DebugUI_MatchCommand }
+	};
+	int i, end, start = 0;
+	char buf[32];
+	size_t len;
 
 	/* ignore white space and check whether this is first word */
-	while (i < rl_point && isspace(rl_line_buffer[i]))
-		i++;
-	while (i < rl_point && !isspace(rl_line_buffer[i]))
-		i++;
+	while (start < rl_point && isspace(rl_line_buffer[start]))
+		start++;
+	end = start;
+	while (end < rl_point && !isspace(rl_line_buffer[end]))
+		end++;
 
-	if (i >= rl_point)
+	if (end >= rl_point)
 		/* first word on line */
-		return rl_completion_matches(text, DebugUI_CommandMatch);
-	else
-		return rl_completion_matches(text, BreakCond_MatchVariable);
+		return rl_completion_matches(text, DebugUI_MatchCommand);
+
+	len = end - start;
+	if (len >= sizeof(buf))
+		len = sizeof(buf)-1;
+	memcpy(buf, &(rl_line_buffer[start]), len);
+	buf[len] = '\0';
+
+	for (i = 0; i < ARRAYSIZE(cmd); i++)
+	{
+		if (strcmp(buf, cmd[i].name) == 0)
+			return rl_completion_matches(text, cmd[i].match);
+	}
+	rl_attempted_completion_over = true;
+	return NULL;
 }
 
 /**
