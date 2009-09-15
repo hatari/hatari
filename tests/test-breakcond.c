@@ -10,7 +10,7 @@
 #include "stMemory.h"
 #include "memorySnapShot.h"
 #include "video.h"
-#include "debugui.h"
+#include "debugcpu.h"
 #include "breakcond.h"
 
 #define BITMASK(x)      ((1<<(x))-1)
@@ -64,7 +64,7 @@ static bool SetCpuRegister(const char *regname, Uint32 value)
 {
 	Uint32 *addr;
 	
-	switch (DebugUI_GetCpuRegisterAddress(regname, &addr)) {
+	switch (DebugCpu_GetRegisterAddress(regname, &addr)) {
 	case 32:
 		*addr = value;
 		break;
