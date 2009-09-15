@@ -8,7 +8,7 @@ HATARI_OBJS = msa.o dim.o st.o file.o unzip.o zip.o
 OBJS = $(HMSA_OBJS) $(HATARI_OBJS:%.o=../../src/%.o)
 
 # Additional include directories:
-CPPFLAGS += $(SDL_CFLAGS) -I../.. -I../../src/includes -I../../src/uae-cpu
+CPPFLAGS += $(SDL_CFLAGS) -I../.. -I../../src/includes -I../../src/debug -I../../src/uae-cpu
 
 all: hmsa
 
