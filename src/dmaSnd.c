@@ -557,7 +557,10 @@ void DmaSnd_SoundControl_WriteWord(void)
 	nDmaSoundControl = nNewSndCtrl;
 }
 
-void DmaSnd_GetsoundFromDAC(Sint16 value)
+/**
+ * DAC from falcon crossbar sends the sound to play here to the DMA sound.
+ */
+void DmaSnd_ReceiveSoundFromDAC(Sint16 value)
 {
 	/* Put last sample into buffer */
 	DspOutBuffer[nDspOutWrPos] = value;

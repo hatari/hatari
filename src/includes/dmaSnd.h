@@ -33,5 +33,5 @@ extern void DmaSnd_MicrowireData_WriteWord(void);
 extern void DmaSnd_MicrowireMask_ReadWord(void);
 extern void DmaSnd_MicrowireMask_WriteWord(void);
 
-extern void DmaSnd_GetsoundFromDAC(Sint16 value);
+extern void DmaSnd_ReceiveSoundFromDAC(Sint16 value);
 #endif /* HATARI_DMASND_H */

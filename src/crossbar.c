@@ -116,8 +116,8 @@ static void Crossbar_StartDspXmitHandler(void)
 		Int_AddRelativeInterrupt((8013000+nFreq/2)/nFreq/2, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 	}
 
-	/* Put last sample into buffer */
-	DmaSnd_GetsoundFromDAC(DSP_SsiReadTxValue());
+	/* Send sample to DMA sound */
+	DmaSnd_ReceiveSoundFromDAC(DSP_SsiReadTxValue());
 }
 
 
