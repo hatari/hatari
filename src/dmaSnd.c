@@ -373,34 +373,6 @@ void DmaSnd_SoundControl_ReadWord(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write word to sound control register (0xff8900).
- *
- * FIXME: add Falcon specific handler here...
- */
-void DmaSnd_SoundControl_WriteWord(void)
-{
-	Uint16 nNewSndCtrl;
-
-	LOG_TRACE(TRACE_DMASND, "DMA snd control write: 0x%04x\n", IoMem_ReadWord(0xff8900));
-
-	nNewSndCtrl = IoMem_ReadWord(0xff8900) & 3;
-
-	if (!(nDmaSoundControl & DMASNDCTRL_PLAY) && (nNewSndCtrl & DMASNDCTRL_PLAY))
-	{
-		//fprintf(stderr, "Turning on DMA sound emulation.\n");
-		DmaSnd_StartNewFrame();
-	}
-	else if ((nDmaSoundControl & DMASNDCTRL_PLAY) && !(nNewSndCtrl & DMASNDCTRL_PLAY))
-	{
-		//fprintf(stderr, "Turning off DMA sound emulation.\n");
-	}
-
-	nDmaSoundControl = nNewSndCtrl;
-}
-
-
-/*-----------------------------------------------------------------------*/
-/**
  * Read word from sound frame count high register (0xff8909).
  */
 void DmaSnd_FrameCountHigh_ReadByte(void)
@@ -431,38 +403,34 @@ void DmaSnd_FrameCountLow_ReadByte(void)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Read word from sound mode register (0xff8920).
+ * Read word from sound mode register (0xff8921).
  */
-void DmaSnd_SoundMode_ReadWord(void)
+void DmaSnd_SoundModeCtrl_ReadByte(void)
 {
-	IoMem_WriteWord(0xff8920, nDmaSoundMode);
+	IoMem_WriteByte(0xff8921, nDmaSoundMode);
 
-	LOG_TRACE(TRACE_DMASND, "DMA snd mode read: 0x%04x\n", nDmaSoundMode);
+	LOG_TRACE(TRACE_DMASND, "DMA snd mode read: 0x%02x\n", nDmaSoundMode);
 }
 
 
 /*-----------------------------------------------------------------------*/
 /**
- * Write word to sound mode register (0xff8920).
+ * Write word to sound mode register (0xff8921).
  */
-void DmaSnd_SoundMode_WriteWord(void)
+void DmaSnd_SoundModeCtrl_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "DMA snd mode write: 0x%04x\n", IoMem_ReadWord(0xff8920));
+	LOG_TRACE(TRACE_DMASND, "DMA snd mode write: 0x%02x\n", IoMem_ReadWord(0xff8921));
 
-	/* Falcon has meaning in almost all bits of SND_SMC */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 	{
-		nDmaSoundMode = IoMem_ReadWord(0xff8920);
-		/* FIXME: add code here to evaluate Falcon specific settings */
-
-
+		nDmaSoundMode = IoMem_ReadByte(0xff8921);
 	} else {
 		/* STE or TT - hopefully STFM emulation never gets here :)
 		 * we maskout the Falcon only bits so we only hit bits that exist on a real STE
 		 */
-		nDmaSoundMode = (IoMem_ReadWord(0xff8920)&0x008F);
+		nDmaSoundMode = (IoMem_ReadByte(0xff8921)&0x8F);
 		/* we also write the masked value back into the emulated hw registers so we have a correct value there */
-		IoMem_WriteWord(0xff8920,nDmaSoundMode);
+		IoMem_WriteByte(0xff8921,nDmaSoundMode);
 	}
 }
 
@@ -562,212 +530,38 @@ void DmaSnd_MicrowireMask_WriteWord(void)
 /* ---------------------- Falcon sound subsystem ---------------------- */
 
 
-static void DmaSnd_StartDspXmitHandler(void)
+/*-----------------------------------------------------------------------*/
+/**
+ * Write word to sound control register (0xff8900).
+ *
+ * FIXME: add Falcon specific handler here...
+ */
+void DmaSnd_SoundControl_WriteWord(void)
 {
-	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
-	int nFreq;
-	int nClkDiv;
+	Uint16 nNewSndCtrl;
 
-	/* Ignore when DSP XMIT is connected to external port */
-	if ((nCbSrc & 0x80) == 0x00)
-		return;
+	LOG_TRACE(TRACE_DMASND, "DMA snd control write: 0x%04x\n", IoMem_ReadWord(0xff8900));
 
-	nClkDiv = 256 * ((IoMem_ReadByte(0xff8935) & 0x0f) + 1);
+	nNewSndCtrl = IoMem_ReadWord(0xff8900) & 3;
 
-	if ((nCbSrc & 0x60) == 0x00)
+	if (!(nDmaSoundControl & DMASNDCTRL_PLAY) && (nNewSndCtrl & DMASNDCTRL_PLAY))
 	{
-		/* Internal 25.175 MHz clock */
-		nFreq = 25175000 / nClkDiv;
-		Int_AddRelativeInterrupt((8013000+nFreq/2)/nFreq/2, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
+		//fprintf(stderr, "Turning on DMA sound emulation.\n");
+		DmaSnd_StartNewFrame();
 	}
-	else if ((nCbSrc & 0x60) == 0x20)
+	else if ((nDmaSoundControl & DMASNDCTRL_PLAY) && !(nNewSndCtrl & DMASNDCTRL_PLAY))
 	{
-		/* Internal 32 MHz clock */
-		nFreq = 32000000 / nClkDiv;
-		Int_AddRelativeInterrupt((8013000+nFreq/2)/nFreq/2, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
+		//fprintf(stderr, "Turning off DMA sound emulation.\n");
 	}
 
+	nDmaSoundControl = nNewSndCtrl;
+}
+
+void DmaSnd_GetsoundFromDAC(Sint16 value)
+{
 	/* Put last sample into buffer */
-	DspOutBuffer[nDspOutWrPos] = DSP_SsiReadTxValue();
-
+	DspOutBuffer[nDspOutWrPos] = value;
 	nDspOutWrPos = (nDspOutWrPos + 1) % (MIXBUFFER_SIZE*2);
 	nDspBufSamples += 1;
 }
 
-
-void DmaSnd_InterruptHandler_DspXmit(void)
-{
-	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
-
-	/* TODO: Trigger SSI transmit interrupt in the DSP and fetch the data,
-	 *       then distribute the data to the destinations */
-
-	DSP_SsiReceive_SC2(FrameCounter);
-	DSP_SsiReceiveSerialClock();
-
-	/* Restart the Int event handler */
-	DmaSnd_StartDspXmitHandler();
-
-}
-
-
-/**
- * Read word from Falcon crossbar source register (0xff8930).
- */
-void DmaSnd_CrossbarSrc_ReadWord(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd crossbar src read: 0x%04x\n", IoMem_ReadWord(0xff8930));
-}
-
-/**
- * Write word to Falcon crossbar source register (0xff8930).
- */
-void DmaSnd_CrossbarSrc_WriteWord(void)
-{
-	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
-
-	LOG_TRACE(TRACE_DMASND, "Falcon snd crossbar src write: 0x%04x\n", nCbSrc);
-
-	DmaSnd_StartDspXmitHandler();
-}
-
-/**
- * Read word from Falcon crossbar destination register (0xff8932).
- */
-void DmaSnd_CrossbarDst_ReadWord(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd crossbar dst read: 0x%04x\n", IoMem_ReadWord(0xff8932));
-}
-
-/**
- * Write word to Falcon crossbar destination register (0xff8932).
- */
-void DmaSnd_CrossbarDst_WriteWord(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd crossbar dst write: 0x%04x\n", IoMem_ReadWord(0xff8932));
-}
-
-/**
- * Read byte from external clock divider register (0xff8934).
- */
-void DmaSnd_FreqDivExt_ReadByte(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd ext. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8934));
-}
-
-/**
- * Write byte to external clock divider register (0xff8934).
- */
-void DmaSnd_FreqDivExt_WriteByte(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd ext. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8934));
-}
-
-/**
- * Write byte to internal clock divider register (0xff8935).
- */
-void DmaSnd_FreqDivInt_ReadByte(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd int. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8935));
-}
-
-/**
- * Write byte to internal clock divider register (0xff8935).
- */
-void DmaSnd_FreqDivInt_WriteByte(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd int. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8935));
-}
-
-/**
- * Read byte from track record control register (0xff8936).
- */
-void DmaSnd_TrackRecCtrl_ReadByte(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd track record control read: 0x%02x\n", IoMem_ReadByte(0xff8936));
-}
-
-/**
- * Write byte to track record control register (0xff8936).
- */
-void DmaSnd_TrackRecCtrl_WriteByte(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd track record control write: 0x%02x\n", IoMem_ReadByte(0xff8936));
-}
-
-/**
- * Read byte from CODEC input register (0xff8937).
- */
-void DmaSnd_CodecInput_ReadByte(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC input read: 0x%02x\n", IoMem_ReadByte(0xff8937));
-}
-
-/**
- * Write byte to CODEC input register (0xff8937).
- */
-void DmaSnd_CodecInput_WriteByte(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC input write: 0x%02x\n", IoMem_ReadByte(0xff8937));
-}
-
-/**
- * Read byte from A/D converter input register (0xff8938).
- */
-void DmaSnd_AdcInput_ReadByte(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd ADC input read: 0x%02x\n", IoMem_ReadByte(0xff8938));
-}
-
-/**
- * Write byte to A/D converter input register (0xff8938).
- */
-void DmaSnd_AdcInput_WriteByte(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd ADC input write: 0x%02x\n", IoMem_ReadByte(0xff8938));
-}
-
-/**
- * Read byte from input amplifier register (0xff8939).
- */
-void DmaSnd_InputAmp_ReadByte(void)
-{
-}
-
-/**
- * Write byte to input amplifier register (0xff8939).
- */
-void DmaSnd_InputAmp_WriteByte(void)
-{
-}
-
-/**
- * Read word from output reduction register (0xff893a).
- */
-void DmaSnd_OutputReduct_ReadWord(void)
-{
-}
-
-/**
- * Write word to output reduction register (0xff893a).
- */
-void DmaSnd_OutputReduct_WriteWord(void)
-{
-}
-
-/**
- * Read word from CODEC status register (0xff893c).
- */
-void DmaSnd_CodecStatus_ReadWord(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC status read: 0x%04x\n", IoMem_ReadWord(0xff893c));
-}
-
-/**
- * Write word to CODEC status register (0xff893c).
- */
-void DmaSnd_CodecStatus_WriteWord(void)
-{
-	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC status write: 0x%04x\n", IoMem_ReadWord(0xff893c));
-}

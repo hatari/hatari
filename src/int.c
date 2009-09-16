@@ -71,6 +71,7 @@ const char Int_fileid[] = "Hatari int.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "blitter.h"
 #include "dmaSnd.h"
+#include "crossbar.h"
 #include "fdc.h"
 #include "ikbd.h"
 #include "int.h"
@@ -105,7 +106,7 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	IKBD_InterruptHandler_AutoSend,
 	DmaSnd_InterruptHandler,
 	DmaSnd_InterruptHandler_Microwire,
-	DmaSnd_InterruptHandler_DspXmit,
+	Crossbar_InterruptHandler_DspXmit,
 	FDC_InterruptHandler_Update,
 	Blitter_InterruptHandler,
 	Midi_InterruptHandler_Update
