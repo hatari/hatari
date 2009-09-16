@@ -105,6 +105,8 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define TRACE_DMASND		 (1<<30)
 
+#define TRACE_CROSSBAR		 (1<<31)
+
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
 

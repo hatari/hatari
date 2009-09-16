@@ -75,7 +75,7 @@ void Crossbar_DmaTrckCtrl_ReadByte(void)
 {
 //	IoMem_WriteByte(0xff8920, nDmaSoundMode);
 
-	LOG_TRACE(TRACE_DMASND, "DMA sound mode register read: 0x%02x\n", IoMem_ReadByte(0xff8920));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA track control register read: 0x%02x\n", IoMem_ReadByte(0xff8920));
 }
 
 /**
@@ -85,7 +85,7 @@ void Crossbar_DmaTrckCtrl_WriteByte(void)
 {
 //	IoMem_WriteByte(0xff8920, nDmaSoundMode);
 
-	LOG_TRACE(TRACE_DMASND, "DMA sound mode register write: 0x%02x\n", IoMem_ReadByte(0xff8920));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA track control register write: 0x%02x\n", IoMem_ReadByte(0xff8920));
 }
 
 /* ---------------------- Falcon sound subsystem ---------------------- */
@@ -173,7 +173,7 @@ void Crossbar_InterruptHandler_DspXmit(void)
  */
 void Crossbar_SrcControler_ReadWord(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd Crossbar src read: 0x%04x\n", IoMem_ReadWord(0xff8930));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd Crossbar src read: 0x%04x\n", IoMem_ReadWord(0xff8930));
 }
 
 /**
@@ -213,7 +213,7 @@ void Crossbar_SrcControler_WriteWord(void)
 {
 	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
 
-	LOG_TRACE(TRACE_DMASND, "Falcon snd Crossbar src write: 0x%04x\n", nCbSrc);
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd Crossbar src write: 0x%04x\n", nCbSrc);
 
 	Crossbar_StartDspXmitHandler();
 }
@@ -253,7 +253,7 @@ void Crossbar_SrcControler_WriteWord(void)
  */
 void Crossbar_DstControler_ReadWord(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd Crossbar dst read: 0x%04x\n", IoMem_ReadWord(0xff8932));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd Crossbar dst read: 0x%04x\n", IoMem_ReadWord(0xff8932));
 }
 
 /**
@@ -261,7 +261,7 @@ void Crossbar_DstControler_ReadWord(void)
  */
 void Crossbar_DstControler_WriteWord(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd Crossbar dst write: 0x%04x\n", IoMem_ReadWord(0xff8932));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd Crossbar dst write: 0x%04x\n", IoMem_ReadWord(0xff8932));
 }
 
 /**
@@ -269,7 +269,7 @@ void Crossbar_DstControler_WriteWord(void)
  */
 void Crossbar_FreqDivExt_ReadByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd ext. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8934));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd ext. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8934));
 }
 
 /**
@@ -277,7 +277,7 @@ void Crossbar_FreqDivExt_ReadByte(void)
  */
 void Crossbar_FreqDivExt_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd ext. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8934));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd ext. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8934));
 }
 
 /**
@@ -285,7 +285,7 @@ void Crossbar_FreqDivExt_WriteByte(void)
  */
 void Crossbar_FreqDivInt_ReadByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd int. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8935));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd int. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8935));
 }
 
 /**
@@ -293,7 +293,7 @@ void Crossbar_FreqDivInt_ReadByte(void)
  */
 void Crossbar_FreqDivInt_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd int. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8935));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd int. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8935));
 }
 
 /**
@@ -305,7 +305,7 @@ void Crossbar_FreqDivInt_WriteByte(void)
  */
 void Crossbar_TrackRecSelect_ReadByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd record track select read: 0x%02x\n", IoMem_ReadByte(0xff8936));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd record track select read: 0x%02x\n", IoMem_ReadByte(0xff8936));
 }
 
 /**
@@ -317,7 +317,7 @@ void Crossbar_TrackRecSelect_ReadByte(void)
  */
 void Crossbar_TrackRecSelect_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd record track select write: 0x%02x\n", IoMem_ReadByte(0xff8936));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd record track select write: 0x%02x\n", IoMem_ReadByte(0xff8936));
 }
 
 /**
@@ -327,7 +327,7 @@ void Crossbar_TrackRecSelect_WriteByte(void)
  */
 void Crossbar_CodecInput_ReadByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC input read: 0x%02x\n", IoMem_ReadByte(0xff8937));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC input read: 0x%02x\n", IoMem_ReadByte(0xff8937));
 }
 
 /**
@@ -337,7 +337,7 @@ void Crossbar_CodecInput_ReadByte(void)
  */
 void Crossbar_CodecInput_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC input write: 0x%02x\n", IoMem_ReadByte(0xff8937));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC input write: 0x%02x\n", IoMem_ReadByte(0xff8937));
 }
 
 /**
@@ -347,7 +347,7 @@ void Crossbar_CodecInput_WriteByte(void)
  */
 void Crossbar_AdcInput_ReadByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd ADC input read: 0x%02x\n", IoMem_ReadByte(0xff8938));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd ADC input read: 0x%02x\n", IoMem_ReadByte(0xff8938));
 }
 
 /**
@@ -357,7 +357,7 @@ void Crossbar_AdcInput_ReadByte(void)
  */
 void Crossbar_AdcInput_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd ADC input write: 0x%02x\n", IoMem_ReadByte(0xff8938));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd ADC input write: 0x%02x\n", IoMem_ReadByte(0xff8938));
 }
 
 /**
@@ -367,7 +367,7 @@ void Crossbar_AdcInput_WriteByte(void)
  */
 void Crossbar_InputAmp_ReadByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC channel amplification read: 0x%04x\n", IoMem_ReadWord(0xff8939));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC channel amplification read: 0x%04x\n", IoMem_ReadWord(0xff8939));
 }
 
 /**
@@ -377,7 +377,7 @@ void Crossbar_InputAmp_ReadByte(void)
  */
 void Crossbar_InputAmp_WriteByte(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC channel amplification write: 0x%04x\n", IoMem_ReadWord(0xff8939));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC channel amplification write: 0x%04x\n", IoMem_ReadWord(0xff8939));
 }
 
 /**
@@ -387,7 +387,7 @@ void Crossbar_InputAmp_WriteByte(void)
  */
 void Crossbar_OutputReduct_ReadWord(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC channel attenuation read: 0x%04x\n", IoMem_ReadWord(0xff893a));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC channel attenuation read: 0x%04x\n", IoMem_ReadWord(0xff893a));
 }
 
 /**
@@ -397,7 +397,7 @@ void Crossbar_OutputReduct_ReadWord(void)
  */
 void Crossbar_OutputReduct_WriteWord(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC channel attenuation write: 0x%04x\n", IoMem_ReadWord(0xff893a));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC channel attenuation write: 0x%04x\n", IoMem_ReadWord(0xff893a));
 }
 
 /**
@@ -407,7 +407,7 @@ void Crossbar_OutputReduct_WriteWord(void)
  */
 void Crossbar_CodecStatus_ReadWord(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC status read: 0x%04x\n", IoMem_ReadWord(0xff893c));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC status read: 0x%04x\n", IoMem_ReadWord(0xff893c));
 }
 
 /**
@@ -417,5 +417,5 @@ void Crossbar_CodecStatus_ReadWord(void)
  */
 void Crossbar_CodecStatus_WriteWord(void)
 {
-	LOG_TRACE(TRACE_DMASND, "Falcon snd CODEC status write: 0x%04x\n", IoMem_ReadWord(0xff893c));
+	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC status write: 0x%04x\n", IoMem_ReadWord(0xff893c));
 }

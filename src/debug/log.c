@@ -85,6 +85,8 @@ TraceOptions[] = {
 
 	{ TRACE_DMASND  	 , "dmasound" } ,
 
+	{ TRACE_CROSSBAR  	 , "crossbar" } ,
+
 	{ TRACE_ALL		 , "all" }
 };
 
