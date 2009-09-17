@@ -39,10 +39,7 @@ extern void Crossbar_OutputReduct_WriteWord(void);
 extern void Crossbar_CodecStatus_ReadWord(void);
 extern void Crossbar_CodecStatus_WriteWord(void);
 
-static double Crossbar_DetectSampleRate(void);
-static void Crossbar_StartDspXmitHandler(void);
-void Crossbar_InterruptHandler_DspXmit(void);
-
+extern void Crossbar_InterruptHandler_DspXmit(void);
 
 
 #endif /* HATARI_CROSSBAR_H */
