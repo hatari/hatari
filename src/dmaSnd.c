@@ -45,8 +45,6 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 #include "mfp.h"
 #include "sound.h"
 #include "stMemory.h"
-#include "falcon/dsp.h"
-#include "falcon/dsp_core.h"
 
 
 Uint16 nDmaSoundControl;                /* Sound control register */
