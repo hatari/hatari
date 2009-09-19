@@ -14,6 +14,8 @@
   MFP-i7) which are often used in ST programs for setting a new sound frame
   after the old one has finished.
 
+  Falcon sound emulation is all taken into account in crossbar.c
+
   The microwire interface is not emulated (yet).
 
   Hardware I/O registers:
@@ -46,11 +48,7 @@ const char DmaSnd_fileid[] = "Hatari dmaSnd.c : " __DATE__ " " __TIME__;
 #include "sound.h"
 #include "stMemory.h"
 
-
 Uint16 nDmaSoundControl;                /* Sound control register */
-
-static Sint16 DspOutBuffer[MIXBUFFER_SIZE*2];
-static int nDspOutRdPos, nDspOutWrPos, nDspBufSamples;
 
 static Uint16 nDmaSoundMode;            /* Sound mode register */
 static Uint16 nMicrowireData;           /* Microwire Data register */
@@ -71,26 +69,6 @@ static const double DmaSndSampleRates[4] =
 };
 
 
-static const double DmaSndFalcSampleRates[] =
-{
-	49170,
-	32780,
-	24585,
-	19668,
-	16390,
-	14049,
-	12292,
-	10927,
-	 9834,
-	 8940,
-	 8195,
-	 7565,
-	 7024,
-	 6556,
-	 6146,
-};
-
-
 /*-----------------------------------------------------------------------*/
 /**
  * Reset DMA sound variables.
@@ -105,8 +83,6 @@ void DmaSnd_Reset(bool bCold)
 	}
 
 	nMwTransferSteps = 0;
-
-	nDspOutRdPos = nDspOutWrPos = 0;
 }
 
 
@@ -131,16 +107,7 @@ void DmaSnd_MemorySnapShot_Capture(bool bSave)
 
 static double DmaSnd_DetectSampleRate(void)
 {
-	int nFalcClk = IoMem[0xff8935] & 0x0f;
-
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && nFalcClk != 0)
-	{
-		return DmaSndFalcSampleRates[nFalcClk-1];
-	}
-	else
-	{
-		return DmaSndSampleRates[nDmaSoundMode & 3];
-	}
+	return DmaSndSampleRates[nDmaSoundMode & 3];
 }
 
 
@@ -206,42 +173,6 @@ static inline int DmaSnd_CheckForEndOfFrame(int nFrameCounter)
 }
 
 
-/**
- * Mix DSP sound sample with the normal PSG sound samples.
- */
-static void DmaSnd_GenerateDspSamples(int nMixBufIdx, int nSamplesToGenerate)
-{
-	double FreqRatio, fDspBufSamples, fDspBufRdPos;
-	int i;
-	int nBufIdx;
-
-	FreqRatio = DmaSnd_DetectSampleRate() / (double)nAudioFrequency;
-	FreqRatio *= 2.0;  /* Stereo */
-
-	fDspBufSamples = (double)nDspBufSamples;
-	fDspBufRdPos = (double)nDspOutRdPos;
-
-	for (i = 0; i < nSamplesToGenerate &&  fDspBufSamples > 0.0; i++)
-	{
-		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-		nDspOutRdPos = (((int)fDspBufRdPos) & -2) % (MIXBUFFER_SIZE*2);
-
-		MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
-		                        + (int)(DspOutBuffer[nDspOutRdPos+0])) / 2;
-		MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
-		                        + (int)(DspOutBuffer[nDspOutRdPos+1])) / 2;
-
-		fDspBufRdPos += FreqRatio;
-		fDspBufSamples -= FreqRatio;
-	}
-
-	if (fDspBufSamples > 0.0)
-		nDspBufSamples = (int)fDspBufSamples;
-	else
-		nDspBufSamples = 0;
-}
-
-
 /*-----------------------------------------------------------------------*/
 /**
  * Mix DMA sound sample with the normal PSG sound samples.
@@ -258,38 +189,13 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	int nBufIdx, nFramePos;
 	Sint8 *pFrameStart;
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON
-	    && (IoMem_ReadWord(0xff8932) & 0x6000) == 0x2000)
-	{
-		DmaSnd_GenerateDspSamples(nMixBufIdx, nSamplesToGenerate);
-		return;
-	}
-
 	if (!(nDmaSoundControl & DMASNDCTRL_PLAY))
 		return;
 
 	pFrameStart = (Sint8 *)&STRam[nFrameStartAddr];
 	FreqRatio = DmaSnd_DetectSampleRate() / (double)nAudioFrequency;
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON
-	    && (nDmaSoundMode & DMASNDMODE_16BITSTEREO))
-	{
-		/* Stereo 16-bit */
-		FreqRatio *= 4.0;
-		for (i = 0; i < nSamplesToGenerate; i++)
-		{
-			nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-			nFramePos = ((int)FrameCounter) & ~3;
-			MixBuffer[nBufIdx][0] = (int)MixBuffer[nBufIdx][0]
-				+ ((int)(Sint16)do_get_mem_word(&pFrameStart[nFramePos]))/2;
-			MixBuffer[nBufIdx][1] = (int)MixBuffer[nBufIdx][1]
-				+ ((int)(Sint16)do_get_mem_word(&pFrameStart[nFramePos+2]))/2;
-			FrameCounter += FreqRatio;
-			if (DmaSnd_CheckForEndOfFrame(FrameCounter))
-				break;
-		}
-	}
-	else if (nDmaSoundMode & DMASNDMODE_MONO)  /* 8-bit stereo or mono? */
+	if (nDmaSoundMode & DMASNDMODE_MONO)  /* 8-bit stereo or mono? */
 	{
 		/* Mono 8-bit */
 		for (i = 0; i < nSamplesToGenerate; i++)
@@ -419,17 +325,12 @@ void DmaSnd_SoundModeCtrl_WriteByte(void)
 {
 	LOG_TRACE(TRACE_DMASND, "DMA snd mode write: 0x%02x\n", IoMem_ReadWord(0xff8921));
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
-	{
-		nDmaSoundMode = IoMem_ReadByte(0xff8921);
-	} else {
-		/* STE or TT - hopefully STFM emulation never gets here :)
-		 * we maskout the Falcon only bits so we only hit bits that exist on a real STE
-		 */
-		nDmaSoundMode = (IoMem_ReadByte(0xff8921)&0x8F);
-		/* we also write the masked value back into the emulated hw registers so we have a correct value there */
-		IoMem_WriteByte(0xff8921,nDmaSoundMode);
-	}
+	/* STE or TT - hopefully STFM emulation never gets here :)
+	 * We maskout to only hit bits that exist on a real STE
+	 */
+	nDmaSoundMode = (IoMem_ReadByte(0xff8921)&0x8F);
+	/* we also write the masked value back into the emulated hw registers so we have a correct value there */
+	IoMem_WriteByte(0xff8921,nDmaSoundMode);
 }
 
 
@@ -525,14 +426,9 @@ void DmaSnd_MicrowireMask_WriteWord(void)
 }
 
 
-/* ---------------------- Falcon sound subsystem ---------------------- */
-
-
 /*-----------------------------------------------------------------------*/
 /**
  * Write word to sound control register (0xff8900).
- *
- * FIXME: add Falcon specific handler here...
  */
 void DmaSnd_SoundControl_WriteWord(void)
 {
@@ -554,15 +450,3 @@ void DmaSnd_SoundControl_WriteWord(void)
 
 	nDmaSoundControl = nNewSndCtrl;
 }
-
-/**
- * DAC from falcon crossbar sends the sound to play here to the DMA sound.
- */
-void DmaSnd_ReceiveSoundFromDAC(Sint16 value)
-{
-	/* Put last sample into buffer */
-	DspOutBuffer[nDspOutWrPos] = value;
-	nDspOutWrPos = (nDspOutWrPos + 1) % (MIXBUFFER_SIZE*2);
-	nDspBufSamples += 1;
-}
-

@@ -10,8 +10,6 @@
 
 #define DMASNDCTRL_PLAY         0x01
 #define DMASNDCTRL_PLAYLOOP     0x02
-
-#define DMASNDMODE_16BITSTEREO  0x40
 #define DMASNDMODE_MONO         0x80
 
 extern Uint16 nDmaSoundControl;
@@ -33,5 +31,4 @@ extern void DmaSnd_MicrowireData_WriteWord(void);
 extern void DmaSnd_MicrowireMask_ReadWord(void);
 extern void DmaSnd_MicrowireMask_WriteWord(void);
 
-extern void DmaSnd_ReceiveSoundFromDAC(Sint16 value);
 #endif /* HATARI_DMASND_H */

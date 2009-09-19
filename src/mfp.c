@@ -98,6 +98,7 @@ const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "configuration.h"
 #include "dmaSnd.h"
+#include "crossbar.h"
 #include "dsp.h"
 #include "fdc.h"
 #include "ikbd.h"
@@ -967,8 +968,11 @@ void MFP_GPIP_ReadByte(void)
 		MFP_GPIP |= 0x80;   /* Color monitor -> set top bit */
 	else
 		MFP_GPIP &= ~0x80;
+	
 	if (nDmaSoundControl & DMASNDCTRL_PLAY)
-		MFP_GPIP ^= 0x80;   /* Top bit is XORed with DMA sound control play bit */
+		MFP_GPIP ^= 0x80;   /* Top bit is XORed with DMA sound control play bit (Ste/TT emulation mode)*/
+	if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY)
+		MFP_GPIP ^= 0x80;   /* Top bit is XORed with Falcon crossbar DMA sound control play bit (Falcon emulation mode) */
 
 	if (ConfigureParams.Printer.bEnablePrinting)
 	{

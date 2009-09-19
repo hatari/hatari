@@ -19,7 +19,7 @@
   speed, users will have to turn off the sound - that's it.
 
   The new version of the sound core uses some code/ideas from the following GPL projects :
-    - tone and noise steps computations are from StSound 1.2 by Arnaud Carré (Leonard/Oxygene)
+    - tone and noise steps computations are from StSound 1.2 by Arnaud Carre (Leonard/Oxygene)
     - 5 bits volume table and 16*16*16 combinations of all volume are from Sc68 by Benjamin Gerard
     - 4 bits to 5 bits volume interpolation from 16*16*16 to 32*32*32 from YM blep synthesis by Antti Lankila
 
@@ -72,7 +72,9 @@ const char Sound_fileid[] = "Hatari sound.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "audio.h"
 #include "cycles.h"
+#include "configuration.h"
 #include "dmaSnd.h"
+#include "crossbar.h"
 #include "file.h"
 #include "int.h"
 #include "log.h"
@@ -1031,7 +1033,13 @@ static void Sound_GenerateSamples(void)
 		MixBuffer[idx][0] = MixBuffer[idx][1] = YM2149_NextSample();
 	}
 
-	DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+		/* If Falcon emulation, crossbar does the job */
+		Crossbar_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
+	} else {
+		/* If Ste or TT emulation, DmaSnd does the job */
+		DmaSnd_GenerateSamples(ActiveSndBufIdx, nSamplesToGenerate);
+	}
 
 	ActiveSndBufIdx = (ActiveSndBufIdx + nSamplesToGenerate) % MIXBUFFER_SIZE;
 	nGeneratedSamples += nSamplesToGenerate;

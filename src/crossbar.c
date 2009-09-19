@@ -23,7 +23,31 @@
   Transfers between 2 devices can use handshaking or continuous mode 
 
   Hardware I/O registers:
-
+    $FF8900 (byte) : Sound DMA control
+    $FF8901 (byte) : Sound DMA control
+    $FF8903 (byte) : Frame Start Hi
+    $FF8905 (byte) : Frame Start Mi
+    $FF8907 (byte) : Frame Start Lo
+    $FF8909 (byte) : Frame Count Hi
+    $FF890B (byte) : Frame Count Mi
+    $FF890D (byte) : Frame Count Lo
+    $FF890F (byte) : Frame End Hi
+    $FF8911 (byte) : Frame End Mi
+    $FF8913 (byte) : Frame End Lo
+    $FF8920 (byte) : Sound Mode Control
+    $FF8921 (byte) : Sound Mode Control
+    $FF8930 (word) : DMA Crossbar Input Select Controller
+    $FF8932 (word) : DMA Crossbar Output Select Controller
+    $FF8934 (byte) : External Sync Frequency Divider
+    $FF8935 (byte) : Internal Sync Frequency Divider
+    $FF8936 (byte) : Record Track select
+    $FF8937 (byte) : Codec Input Source
+    $FF8938 (byte) : Codec ADC Input
+    $FF8939 (byte) : Gain Settings Per Channel
+    $FF893A (byte) : Attenuation Settings Per Channel
+    $FF893C (word) : Codec Status
+    $FF8940 (word) : GPIO Data Direction
+    $FF8942 (word) : GPIO Data
 */
 
 const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
@@ -37,10 +61,53 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "memorySnapShot.h"
 #include "mfp.h"
 #include "sound.h"
-#include "dmaSnd.h"
 #include "crossbar.h"
 #include "stMemory.h"
 #include "falcon/dsp.h"
+
+/* external data used by the MFP */
+Uint16 nCbar_DmaSoundControl;
+
+/* internal datas */
+static Sint16 DacOutBuffer[MIXBUFFER_SIZE*2];
+static int nDacOutRdPos, nDacOutWrPos, nDacBufSamples;
+
+static Uint16 nDmaSoundMode;            /* Sound mode register */
+
+
+//static Uint32 nFrameStartAddr;          /* Sound frame start */
+//static Uint32 nFrameEndAddr;            /* Sound frame end */
+//static double FrameCounter;             /* Counter in current sound frame */
+//static int nFrameLen;                   /* Length of the frame */
+
+
+static const double DmaSndSampleRates[4] =
+{
+	6258,
+	12517,
+	25033,
+	50066
+};
+
+
+static const double DmaSndFalcSampleRates[] =
+{
+	49170,
+	32780,
+	24585,
+	19668,
+	16390,
+	14049,
+	12292,
+	10927,
+	 9834,
+	 8940,
+	 8195,
+	 7565,
+	 7024,
+	 6556,
+	 6146,
+};
 
 
 /*-----------------------------------------------------------------------*/
@@ -49,11 +116,16 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
  */
 void Crossbar_Reset(bool bCold)
 {
+	nCbar_DmaSoundControl = 0;
+
 	if (bCold)
 	{
 	}
-}
 
+	/* Clear DAC buffer */
+	memset(DacOutBuffer, 0, sizeof(DacOutBuffer));
+	nDacOutRdPos = nDacOutWrPos = 0;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -62,8 +134,75 @@ void Crossbar_Reset(bool bCold)
 void Crossbar_MemorySnapShot_Capture(bool bSave)
 {
 	/* Save/Restore details */
-//	MemorySnapShot_Store(&nDmaSoundControl, sizeof(nDmaSoundControl));
-// 	MemorySnapShot_Store(&nDmaSoundMode, sizeof(nDmaSoundMode));
+	MemorySnapShot_Store(&nCbar_DmaSoundControl, sizeof(nCbar_DmaSoundControl));
+/*
+	MemorySnapShot_Store(&nDmaSoundMode, sizeof(nDmaSoundMode));
+	MemorySnapShot_Store(&nFrameStartAddr, sizeof(nFrameStartAddr));
+	MemorySnapShot_Store(&nFrameEndAddr, sizeof(nFrameEndAddr));
+	MemorySnapShot_Store(&FrameCounter, sizeof(FrameCounter));
+	MemorySnapShot_Store(&nFrameLen, sizeof(nFrameLen));
+	MemorySnapShot_Store(&nMicrowireData, sizeof(nMicrowireData));
+	MemorySnapShot_Store(&nMicrowireMask, sizeof(nMicrowireMask));
+*/
+	MemorySnapShot_Store(&DacOutBuffer, sizeof(DacOutBuffer));
+	MemorySnapShot_Store(&nDacOutRdPos, sizeof(nDacOutRdPos));
+	MemorySnapShot_Store(&nDacOutWrPos, sizeof(nDacOutWrPos));
+}
+
+/**
+ * Detect sample rate frequency
+ */
+static double Crossbar_DetectSampleRate(void)
+{
+	int nFalcClk = IoMem[0xff8935] & 0x0f;
+
+	if (nFalcClk != 0)
+	{
+		return DmaSndFalcSampleRates[nFalcClk-1];
+	}
+
+	return DmaSndSampleRates[nDmaSoundMode & 3];
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read byte from buffer interrupts (0xff8900).
+ */
+void Crossbar_BufferInter_ReadWord(void)
+{
+//	IoMem_WriteByte(0xff8920, nDmaSoundMode);
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA track control register read: 0x%02x\n", IoMem_ReadByte(0xff8900));
+}
+
+/**
+ * Write byte to buffer interrupts (0xff8900).
+ */
+void Crossbar_BufferInter_WriteWord(void)
+{
+//	IoMem_WriteByte(0xff8920, nDmaSoundMode);
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA track control register write: 0x%02x\n", IoMem_ReadByte(0xff8900));
+}
+
+/**
+ * Read byte from DMA control register (0xff8901).
+ */
+void Crossbar_DmaCtrlReg_ReadWord(void)
+{
+//	IoMem_WriteByte(0xff8920, nDmaSoundMode);
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA control register read: 0x%02x\n", IoMem_ReadByte(0xff8901));
+}
+
+/**
+ * Write byte from DMA control register (0xff8901).
+ */
+void Crossbar_DmaCtrlReg_WriteWord(void)
+{
+//	IoMem_WriteByte(0xff8920, nDmaSoundMode);
+
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA control register write: 0x%02x\n", IoMem_ReadByte(0xff8901));
 }
 
 
@@ -86,6 +225,31 @@ void Crossbar_DmaTrckCtrl_WriteByte(void)
 //	IoMem_WriteByte(0xff8920, nDmaSoundMode);
 
 	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA track control register write: 0x%02x\n", IoMem_ReadByte(0xff8920));
+}
+
+/**
+ * Read word from sound mode register (0xff8921).
+ */
+void Crossbar_SoundModeCtrl_ReadByte(void)
+{
+	IoMem_WriteByte(0xff8921, nDmaSoundMode);
+
+	LOG_TRACE(TRACE_CROSSBAR, "crossbar snd mode read: 0x%02x\n", nDmaSoundMode);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Write word to sound mode register (0xff8921).
+ */
+void Crossbar_SoundModeCtrl_WriteByte(void)
+{
+	LOG_TRACE(TRACE_CROSSBAR, "crossbar snd mode write: 0x%02x\n", IoMem_ReadWord(0xff8921));
+
+	nDmaSoundMode = IoMem_ReadByte(0xff8921);
+
+	/* we also write the masked value back into the emulated hw registers so we have a correct value there */
+	IoMem_WriteByte(0xff8921,nDmaSoundMode);
 }
 
 /* ---------------------- Falcon sound subsystem ---------------------- */
@@ -117,7 +281,7 @@ static void Crossbar_StartDspXmitHandler(void)
 	}
 
 	/* Send sample to DMA sound */
-	DmaSnd_ReceiveSoundFromDAC(DSP_SsiReadTxValue());
+	Crossbar_SendDataToDAC(DSP_SsiReadTxValue());
 }
 
 
@@ -419,3 +583,58 @@ void Crossbar_CodecStatus_WriteWord(void)
 {
 	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC status write: 0x%04x\n", IoMem_ReadWord(0xff893c));
 }
+
+
+
+
+/*----------------------------------------------------------------------*/
+/*			DAC processing 					*/
+/*----------------------------------------------------------------------*/
+
+/**
+ * Put sample from crossbar into the DAC buffer.
+ */
+void Crossbar_SendDataToDAC(Sint16 value)
+{
+	/* Put sample into DAC buffer */
+	DacOutBuffer[nDacOutWrPos] = value;
+	nDacOutWrPos = (nDacOutWrPos + 1) % (MIXBUFFER_SIZE*2);
+	nDacBufSamples += 1;
+}
+
+/**
+ * Mix DAC sound sample with the normal PSG sound samples.
+ * (Called by mfp.c)
+ */
+void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
+{
+	double FreqRatio, fDacBufSamples, fDacBufRdPos;
+	int i;
+	int nBufIdx;
+
+	FreqRatio = Crossbar_DetectSampleRate() / (double)nAudioFrequency;
+	FreqRatio *= 2.0;  /* Stereo */
+
+	fDacBufSamples = (double)nDacBufSamples;
+	fDacBufRdPos = (double)nDacOutRdPos;
+
+	for (i = 0; i < nSamplesToGenerate &&  fDacBufSamples > 0.0; i++)
+	{
+		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
+		nDacOutRdPos = (((int)fDacBufRdPos) & -2) % (MIXBUFFER_SIZE*2);
+
+		MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
+		                        + (int)(DacOutBuffer[nDacOutRdPos+0])) / 2;
+		MixBuffer[nBufIdx][1] = ((int)MixBuffer[nBufIdx][1]
+		                        + (int)(DacOutBuffer[nDacOutRdPos+1])) / 2;
+
+		fDacBufRdPos += FreqRatio;
+		fDacBufSamples -= FreqRatio;
+	}
+
+	if (fDacBufSamples > 0.0)
+		nDacBufSamples = (int)fDacBufSamples;
+	else
+		nDacBufSamples = 0;
+}
+

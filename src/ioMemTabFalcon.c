@@ -154,9 +154,8 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8802, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8802_WriteByte },
 	{ 0xff8803, SIZE_BYTE, PSG_ff880x_ReadByte, PSG_ff8803_WriteByte },
 
-//	{ 0xff8900, SIZE_BYTE, Crossbar_BufferInter_ReadWord, Crossbar_BufferInter_WriteWord }, /* Crossbar Buffer interrupts */
-//	{ 0xff8901, SIZE_BYTE, Crossbar_DmaCtrlReg_ReadWord, Crossbar_DmaCtrlReg_WriteWord },   /* Crossbar control register */
-	{ 0xff8900, SIZE_WORD, DmaSnd_SoundControl_ReadWord, DmaSnd_SoundControl_WriteWord },   /* DMA sound control */
+	{ 0xff8900, SIZE_BYTE, Crossbar_BufferInter_ReadWord, Crossbar_BufferInter_WriteWord }, /* Crossbar Buffer interrupts */
+	{ 0xff8901, SIZE_BYTE, Crossbar_DmaCtrlReg_ReadWord, Crossbar_DmaCtrlReg_WriteWord },   /* Crossbar control register */
 	{ 0xff8902, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8903, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame start high */
 	{ 0xff8904, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
@@ -176,9 +175,9 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8912, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8913, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame end low */
 	{ 0xff8920, SIZE_BYTE, Crossbar_DmaTrckCtrl_ReadByte, Crossbar_DmaTrckCtrl_WriteByte }, /* Crossbar track control */
-	{ 0xff8921, SIZE_BYTE, DmaSnd_SoundModeCtrl_ReadByte, DmaSnd_SoundModeCtrl_WriteByte }, /* DMA sound mode control */
-	{ 0xff8922, SIZE_WORD, DmaSnd_MicrowireData_ReadWord, DmaSnd_MicrowireData_WriteWord }, /* Microwire data */
-	{ 0xff8924, SIZE_WORD, DmaSnd_MicrowireMask_ReadWord, DmaSnd_MicrowireMask_WriteWord }, /* Microwire mask */
+	{ 0xff8921, SIZE_BYTE, Crossbar_SoundModeCtrl_ReadByte, Crossbar_SoundModeCtrl_WriteByte }, /* DMA sound mode control */
+	{ 0xff8922, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* Microwire data */
+	{ 0xff8924, SIZE_WORD, IoMem_VoidRead, IoMem_VoidWrite },                               /* Microwire mask */
 
 	{ 0xff8930, SIZE_WORD, Crossbar_SrcControler_ReadWord, Crossbar_SrcControler_WriteWord }, /* Crossbar source controler */
 	{ 0xff8932, SIZE_WORD, Crossbar_DstControler_ReadWord, Crossbar_DstControler_WriteWord }, /* Crossbar destination controler */
