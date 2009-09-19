@@ -842,7 +842,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     /*if( nr>=2 && nr<10 )  fprintf(stderr,"Exception (-> %i bombs)!\n",nr);*/
 
     /* Intercept VDI exception (Trap #2 with D0 = 0x73) */
-    if ( ExceptionSource != M68000_EXCEPTION_SRC_INT_MFP )
+    if (ExceptionSource == M68000_EXCEPTION_SRC_CPU)
       {
         if(bUseVDIRes && nr == 0x22 && regs.regs[0] == 0x73)
         {
@@ -887,7 +887,8 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     /* Build additional exception stack frame for 68010 and higher */
     /* (special case for MFP) */
     if (currprefs.cpu_level > 0) {
-        if (ExceptionSource == M68000_EXCEPTION_SRC_INT_MFP) {
+        if (ExceptionSource == M68000_EXCEPTION_SRC_INT_MFP
+		    || ExceptionSource == M68000_EXCEPTION_SRC_INT_DSP) {
 	    m68k_areg(regs, 7) -= 2;
 	    put_word (m68k_areg(regs, 7), nr * 4);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
         }
@@ -934,7 +935,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	nr, currpc, BusErrorPC, get_long (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3);
 
     /* 68000 bus/address errors: */
-    if (currprefs.cpu_level==0 && (nr==2 || nr==3) && (ExceptionSource != M68000_EXCEPTION_SRC_INT_MFP) ) {
+    if (currprefs.cpu_level==0 && (nr==2 || nr==3) && ExceptionSource == M68000_EXCEPTION_SRC_CPU) {
 	uae_u16 specialstatus = 1;
 
 	/* Special status word emulation isn't perfect yet... :-( */
@@ -1033,7 +1034,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
         if(nr < 64)
           M68000_AddCycles(4);			/* Coprocessor and unassigned exceptions (???) */
         else
-          M68000_AddCycles(44+12);		/* Must be a MFP interrupt, should be processed above */
+          M68000_AddCycles(44+12);		/* Must be a MFP or DSP interrupt */
         break;
     }
 

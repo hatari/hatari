@@ -27,6 +27,7 @@
 #include "ioMem.h"
 #include "dsp.h"
 #if ENABLE_DSP_EMU
+#include "m68000.h"
 #include "debugdsp.h"
 #include "dsp_cpu.h"
 #include "dsp_disasm.h"
@@ -49,6 +50,24 @@ static dsp_core_t dsp_core;
 static bool bDspDebugging;
 
 bool bDspEnabled = false;
+bool bDspHostInterruptPending = false;
+
+
+/**
+ * Trigger HREQ interrupt at the host CPU.
+ */
+#if ENABLE_DSP_EMU
+static void DSP_TriggerHostInterrupt(void)
+{
+	bDspHostInterruptPending = true;
+
+	/* Note: The DSP interrupt is not wired to the MFP on a real Falcon
+	 * (but to the COMBEL chip). But in Hatari we still handle it with
+	 * the SPCFLAG_MFP to avoid taking care of another special flag in
+	 * the CPU core! */
+	M68000_SetSpecial(SPCFLAG_MFP);
+}
+#endif
 
 
 /**
@@ -57,7 +76,7 @@ bool bDspEnabled = false;
 void DSP_Init(void)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_init(&dsp_core);
+	dsp_core_init(&dsp_core, DSP_TriggerHostInterrupt);
 	dsp56k_init_cpu(&dsp_core);
 	bDspEnabled = true;
 #endif
@@ -83,6 +102,7 @@ void DSP_Reset(void)
 {
 #if ENABLE_DSP_EMU
 	dsp_core_reset(&dsp_core);
+	bDspHostInterruptPending = false;
 #endif
 }
 
@@ -584,12 +604,4 @@ void DSP_HandleWriteAccess(void)
 		dsp_core_write_host(&dsp_core, addr-DSP_HW_OFFSET, value);
 #endif
 	}
-}
-
-/**
- * Get HREQ interrupt for MFP/COMBEL
- */
-Uint16  DSP_Get_HREQ(void)
-{
-	return dsp_core.hostport[CPU_HOST_ISR] & 0x80;
 }

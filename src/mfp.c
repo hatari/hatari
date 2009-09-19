@@ -98,6 +98,7 @@ const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "configuration.h"
 #include "dmaSnd.h"
+#include "dsp.h"
 #include "fdc.h"
 #include "ikbd.h"
 #include "int.h"
@@ -357,6 +358,15 @@ bool MFP_CheckPendingInterrupts(void)
 {
 	int	InterruptPossible;
 
+	/* Handle Falcon DSP interrupt. Note: This interrupt is not wired to
+	 * the MFP on a real Falcon, we just handle it with the SPCFLAG_MFP
+	 * to avoid taking care of another special flag in the CPU core! */
+	if (bDspHostInterruptPending && regs.intmask < 6)
+	{
+		M68000_Exception(IoMem_ReadByte(0xffa203)*4, M68000_EXCEPTION_SRC_INT_DSP);
+		bDspHostInterruptPending = false;
+		return true;
+	}
 
 	if ((MFP_IPRA & 0xb5) == 0 && (MFP_IPRB & 0xfb) == 0)
 	{

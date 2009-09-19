@@ -23,7 +23,7 @@
 #define M68000_EXCEPTION_SRC_CPU	1	/* exception is a direct CPU exception */
 #define M68000_EXCEPTION_SRC_INT_MFP	2	/* exception caused by an MFP interrupt */
 #define M68000_EXCEPTION_SRC_INT_VIDEO	3	/* exception caused by a video interrupt */
-
+#define M68000_EXCEPTION_SRC_INT_DSP    4   /* exception caused by DSP */
 
 
 /* Special flags */

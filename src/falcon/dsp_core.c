@@ -48,14 +48,20 @@
 static void dsp_core_dsp2host(dsp_core_t *dsp_core);
 static void dsp_core_host2dsp(dsp_core_t *dsp_core);
 
+
+void (*dsp_host_interrupt)();   /* Function to trigger host interrupt */
+
+
 /* Init DSP emulation */
-void dsp_core_init(dsp_core_t *dsp_core)
+void dsp_core_init(dsp_core_t *dsp_core,  void (*host_interrupt)())
 {
 	int i;
 
 #if DEBUG
 	fprintf(stderr, "Dsp: core init\n");
 #endif
+
+	dsp_host_interrupt = host_interrupt;
 
 	memset(dsp_core, 0, sizeof(dsp_core_t));
 
@@ -419,6 +425,13 @@ static void dsp_core_hostport_update_hreq(dsp_core_t *dsp_core)
 	int hreq;
 
 	hreq = (dsp_core->hostport[CPU_HOST_ICR] & dsp_core->hostport[CPU_HOST_ISR]) & 0x3;
+
+	/* Trigger host interrupt? */
+	if (hreq && (dsp_core->hostport[CPU_HOST_ISR] & (1<<CPU_HOST_ISR_HREQ)) == 0) {
+		dsp_host_interrupt();
+	}
+
+	/* Set HREQ bit in hostport */
 	dsp_core->hostport[CPU_HOST_ISR] &= 0x7f;
 	dsp_core->hostport[CPU_HOST_ISR] |= (hreq?1:0) << CPU_HOST_ISR_HREQ;
 } 

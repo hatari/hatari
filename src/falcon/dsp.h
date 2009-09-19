@@ -28,6 +28,7 @@
 #endif
 
 extern bool bDspEnabled;
+extern bool bDspHostInterruptPending;
 
 /* Dsp commands */
 extern void DSP_Init(void);

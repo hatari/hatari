@@ -410,17 +410,15 @@ void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource)
 
 		/* Set Status Register so interrupt can ONLY be stopped by another interrupt
 		 * of higher priority! */
-#if 0  /* VBL and HBL are handled in the UAE CPU core (see above). */
-		if (ExceptionVector == EXCEPTION_VBLANK)
-			SR = (SR&SR_CLEAR_IPL)|0x0400;  /* VBL, level 4 */
-		else if (ExceptionVector == EXCEPTION_HBLANK)
-			SR = (SR&SR_CLEAR_IPL)|0x0200;  /* HBL, level 2 */
-		else
-#endif
+		if (ExceptionSource == M68000_EXCEPTION_SRC_INT_MFP)
 		{
 			Uint32 MFPBaseVector = (unsigned int)(MFP_VR&0xf0)<<2;
 			if ( (ExceptionVector>=MFPBaseVector) && (ExceptionVector<=(MFPBaseVector+0x3c)) )
 				SR = (SR&SR_CLEAR_IPL)|0x0600; /* MFP, level 6 */
+		}
+		else if (ExceptionSource == M68000_EXCEPTION_SRC_INT_DSP)
+		{
+			SR = (SR&SR_CLEAR_IPL)|0x0600;     /* DSP, level 6 */
 		}
 
 		M68000_SetSR(SR);
