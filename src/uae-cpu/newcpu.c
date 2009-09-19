@@ -842,7 +842,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     /*if( nr>=2 && nr<10 )  fprintf(stderr,"Exception (-> %i bombs)!\n",nr);*/
 
     /* Intercept VDI exception (Trap #2 with D0 = 0x73) */
-    if (ExceptionSource == M68000_EXCEPTION_SRC_CPU)
+    if (ExceptionSource == M68000_EXC_SRC_CPU)
       {
         if(bUseVDIRes && nr == 0x22 && regs.regs[0] == 0x73)
         {
@@ -855,7 +855,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
             currpc = CART_VDI_OPCODE_ADDR;
           }
         }
-    
+
         if (bBiosIntercept)
         {
           /* Intercept BIOS or XBIOS trap (Trap #13 or #14) */
@@ -887,8 +887,8 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     /* Build additional exception stack frame for 68010 and higher */
     /* (special case for MFP) */
     if (currprefs.cpu_level > 0) {
-        if (ExceptionSource == M68000_EXCEPTION_SRC_INT_MFP
-		    || ExceptionSource == M68000_EXCEPTION_SRC_INT_DSP) {
+        if (ExceptionSource == M68000_EXC_SRC_INT_MFP
+		    || ExceptionSource == M68000_EXC_SRC_INT_DSP) {
 	    m68k_areg(regs, 7) -= 2;
 	    put_word (m68k_areg(regs, 7), nr * 4);	/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
         }
@@ -935,7 +935,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	nr, currpc, BusErrorPC, get_long (regs.vbr + 4*nr), last_fault_for_exception_3, last_op_for_exception_3, last_addr_for_exception_3);
 
     /* 68000 bus/address errors: */
-    if (currprefs.cpu_level==0 && (nr==2 || nr==3) && ExceptionSource == M68000_EXCEPTION_SRC_CPU) {
+    if (currprefs.cpu_level==0 && (nr==2 || nr==3) && ExceptionSource == M68000_EXC_SRC_CPU) {
 	uae_u16 specialstatus = 1;
 
 	/* Special status word emulation isn't perfect yet... :-( */
@@ -963,7 +963,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 
 	    /* [NP] PC stored in the stack frame is not necessarily pointing to the next instruction ! */
 	    /* FIXME : we should have a proper model for this, in the meantime we handle specific cases */
-	    if ( get_word(BusErrorPC) == 0x21f8 )			/* move.l $0.w,$24.w (Transbeauce 2 loader) */ 
+	    if ( get_word(BusErrorPC) == 0x21f8 )			/* move.l $0.w,$24.w (Transbeauce 2 loader) */
 	      put_long (m68k_areg(regs, 7)+10, currpc-2);		/* correct PC is 2 bytes less than usual value */
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {
@@ -996,7 +996,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
     exception_trace (nr);
 
     /* Handle exception cycles (special case for MFP) */
-    if ( ExceptionSource == M68000_EXCEPTION_SRC_INT_MFP ) 
+    if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
     {
       M68000_AddCycles(44+12);			/* MFP interrupt, 'nr' can be in a different range depending on $fffa17 */
     }
@@ -1047,10 +1047,8 @@ static void Interrupt(int nr , int Pending)
     /*lastint_regs = regs;*/
     /*lastint_no = nr;*/
 
-    /* [NP] On Hatari, only video ints are using SPCFLAG_INT (see m68000.c) */
-    /* TODO : to be really precise, we should use a global variable to store the last ExceptionSource */
-    /* passed to M68000_Exception, instead of hardcoding M68000_EXCEPTION_SRC_INT_VIDEO here */
-    Exception(nr+24, 0, M68000_EXCEPTION_SRC_INT_VIDEO);
+    /* On Hatari, only video ints are using SPCFLAG_INT (see m68000.c) */
+    Exception(nr+24, 0, M68000_EXC_SRC_AUTOVEC);
 
     regs.intmask = nr;
     set_special (SPCFLAG_INT);
@@ -1182,7 +1180,7 @@ void m68k_divl (uae_u32 opcode, uae_u32 src, uae_u16 extra, uaecptr oldpc)
 {
 #if defined(uae_s64)
     if (src == 0) {
-	Exception (5, oldpc,M68000_EXCEPTION_SRC_CPU);
+	Exception (5, oldpc,M68000_EXC_SRC_CPU);
 	return;
     }
     if (extra & 0x800) {
@@ -1237,7 +1235,7 @@ void m68k_divl (uae_u32 opcode, uae_u32 src, uae_u16 extra, uaecptr oldpc)
     }
 #else
     if (src == 0) {
-	Exception (5, oldpc,M68000_EXCEPTION_SRC_CPU);
+	Exception (5, oldpc,M68000_EXC_SRC_CPU);
 	return;
     }
     if (extra & 0x800) {
@@ -1435,17 +1433,17 @@ unsigned long REGPARAM2 op_illg (uae_u32 opcode)
     uaecptr pc = m68k_getpc ();
 #endif
     if ((opcode & 0xF000) == 0xF000) {
-	Exception(0xB,0,M68000_EXCEPTION_SRC_CPU);
+	Exception(0xB,0,M68000_EXC_SRC_CPU);
 	return 4;
     }
     if ((opcode & 0xF000) == 0xA000) {
-	Exception(0xA,0,M68000_EXCEPTION_SRC_CPU);
+	Exception(0xA,0,M68000_EXC_SRC_CPU);
 	return 4;
     }
 #if 0
     write_log ("Illegal instruction: %04x at %08lx\n", opcode, (long)pc);
 #endif
-    Exception (4,0,M68000_EXCEPTION_SRC_CPU);
+    Exception (4,0,M68000_EXC_SRC_CPU);
     return 4;
 }
 
@@ -1537,7 +1535,7 @@ static int do_specialties (void)
 	 * functions since the PC should point to the address of the next
 	 * instruction, so we're executing the bus errors here: */
 	unset_special(SPCFLAG_BUSERROR);
-	Exception(2,0,M68000_EXCEPTION_SRC_CPU);
+	Exception(2,0,M68000_EXC_SRC_CPU);
     }
 
     if(regs.spcflags & SPCFLAG_EXTRA_CYCLES) {
@@ -1548,7 +1546,7 @@ static int do_specialties (void)
     }
 
     if (regs.spcflags & SPCFLAG_DOTRACE) {
-	Exception (9,last_trace_ad,M68000_EXCEPTION_SRC_CPU);
+	Exception (9,last_trace_ad,M68000_EXC_SRC_CPU);
     }
 
 
@@ -1855,13 +1853,13 @@ static void m68k_verify (uaecptr addr, uaecptr *nextpc)
 
     if (dp->suse) {
 	if (!verify_ea (dp->sreg, dp->smode, dp->size, &val)) {
-	    Exception (3, 0,M68000_EXCEPTION_SRC_CPU);
+	    Exception (3, 0,M68000_EXC_SRC_CPU);
 	    return;
 	}
     }
     if (dp->duse) {
 	if (!verify_ea (dp->dreg, dp->dmode, dp->size, &val)) {
-	    Exception (3, 0,M68000_EXCEPTION_SRC_CPU);
+	    Exception (3, 0,M68000_EXC_SRC_CPU);
 	    return;
 	}
     }

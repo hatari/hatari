@@ -1308,7 +1308,7 @@ void Video_InterruptHandler_HBL ( void )
 	else
 	{
 		/* "normal" case, this HBL doesn't occur during the processing of a pending HBL */
-		M68000_Exception ( EXCEPTION_HBLANK , M68000_EXCEPTION_SRC_INT_VIDEO );	/* Horizontal blank interrupt, level 2! */
+		M68000_Exception(EXCEPTION_HBLANK , M68000_EXC_SRC_AUTOVEC);	/* Horizontal blank interrupt, level 2! */
 	}
 
 
@@ -2503,7 +2503,7 @@ void Video_InterruptHandler_VBL ( void )
 	LOG_TRACE(TRACE_VIDEO_VBL , "VBL %d video_cyc=%d pending_cyc=%d jitter=%d\n" ,
 	               nVBLs , Cycles_GetCounter(CYCLES_COUNTER_VIDEO) , PendingCyclesOver , VblJitterArray[ VblJitterIndex ] );
 
-	M68000_Exception ( EXCEPTION_VBLANK , M68000_EXCEPTION_SRC_INT_VIDEO );	/* Vertical blank interrupt, level 4! */
+	M68000_Exception(EXCEPTION_VBLANK, M68000_EXC_SRC_AUTOVEC);	/* Vertical blank interrupt, level 4! */
 
 	Main_WaitOnVbl();
 }

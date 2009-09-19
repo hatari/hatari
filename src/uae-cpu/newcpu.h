@@ -20,10 +20,10 @@
 
 
 /* Possible exceptions sources for M68000_Exception() and Exception() */
-#define M68000_EXCEPTION_SRC_CPU	1	/* exception is a direct CPU exception */
-#define M68000_EXCEPTION_SRC_INT_MFP	2	/* exception caused by an MFP interrupt */
-#define M68000_EXCEPTION_SRC_INT_VIDEO	3	/* exception caused by a video interrupt */
-#define M68000_EXCEPTION_SRC_INT_DSP    4   /* exception caused by DSP */
+#define M68000_EXC_SRC_CPU	    1  /* Direct CPU exception */
+#define M68000_EXC_SRC_AUTOVEC  2  /* Auto-vector exception (e.g. VBL) */
+#define M68000_EXC_SRC_INT_MFP	3  /* MFP interrupt exception */
+#define M68000_EXC_SRC_INT_DSP  4  /* DSP interrupt exception */
 
 
 /* Special flags */

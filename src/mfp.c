@@ -287,7 +287,7 @@ static void MFP_Exception(int Interrupt)
 			Interrupt, Vec, STMemory_ReadLong ( Vec ), FrameCycles, LineCycles, HblCounterVideo );
 	}
 
-	M68000_Exception ( Vec , M68000_EXCEPTION_SRC_INT_MFP );
+	M68000_Exception(Vec, M68000_EXC_SRC_INT_MFP);
 }
 
 
@@ -363,7 +363,7 @@ bool MFP_CheckPendingInterrupts(void)
 	 * to avoid taking care of another special flag in the CPU core! */
 	if (bDspHostInterruptPending && regs.intmask < 6)
 	{
-		M68000_Exception(IoMem_ReadByte(0xffa203)*4, M68000_EXCEPTION_SRC_INT_DSP);
+		M68000_Exception(IoMem_ReadByte(0xffa203)*4, M68000_EXC_SRC_INT_DSP);
 		bDspHostInterruptPending = false;
 		return true;
 	}

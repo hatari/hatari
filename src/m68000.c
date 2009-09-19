@@ -377,8 +377,8 @@ void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource)
 {
 	int exceptionNr = ExceptionVector/4;
 
-	if ( ( ExceptionSource == M68000_EXCEPTION_SRC_INT_VIDEO )
-		&& (exceptionNr>24 && exceptionNr<32) )	/* 68k autovector interrupt? */
+	if ((ExceptionSource == M68000_EXC_SRC_AUTOVEC)
+		&& (exceptionNr>24 && exceptionNr<32))	/* 68k autovector interrupt? */
 	{
 		/* Handle autovector interrupts the UAE's way
 		 * (see intlev() and do_specialties() in UAE CPU core) */
@@ -410,13 +410,13 @@ void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource)
 
 		/* Set Status Register so interrupt can ONLY be stopped by another interrupt
 		 * of higher priority! */
-		if (ExceptionSource == M68000_EXCEPTION_SRC_INT_MFP)
+		if (ExceptionSource == M68000_EXC_SRC_INT_MFP)
 		{
 			Uint32 MFPBaseVector = (unsigned int)(MFP_VR&0xf0)<<2;
 			if ( (ExceptionVector>=MFPBaseVector) && (ExceptionVector<=(MFPBaseVector+0x3c)) )
 				SR = (SR&SR_CLEAR_IPL)|0x0600; /* MFP, level 6 */
 		}
-		else if (ExceptionSource == M68000_EXCEPTION_SRC_INT_DSP)
+		else if (ExceptionSource == M68000_EXC_SRC_INT_DSP)
 		{
 			SR = (SR&SR_CLEAR_IPL)|0x0600;     /* DSP, level 6 */
 		}

@@ -658,7 +658,7 @@ void ftrapcc_opp (uae_u32 opcode, uaecptr oldpc)
 	op_illg (opcode);
     }
     if (cc)
-	Exception (7, oldpc - 2, M68000_EXCEPTION_SRC_CPU);
+	Exception (7, oldpc - 2, M68000_EXC_SRC_CPU);
 }
 
 void fbcc_opp (uae_u32 opcode, uaecptr pc, uae_u32 extra)
