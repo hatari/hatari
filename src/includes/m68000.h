@@ -140,9 +140,6 @@ static inline void M68000_SetSR(Uint16 v)
 #endif /* defined(UAE_NEWCPU_H) */
 
 
-#define FIND_IPL    ((regs.intmask)&0x7)
-
-
 /* bus error mode */
 #define BUS_ERROR_WRITE 0
 #define BUS_ERROR_READ 1

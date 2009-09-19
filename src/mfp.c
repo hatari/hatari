@@ -325,7 +325,7 @@ static bool MFP_InterruptRequest(int nMfpException, Uint8 Bit, Uint8 *pPendingRe
 		if (MaskRegister&Bit)
 		{
 			/* CPU allows interrupt of an MFP level? */
-			if (6 > FIND_IPL)
+			if (regs.intmask < 6)
 			{
 				*pPendingReg &= ~Bit;           /* Clear pending bit */
 				MFP_UpdateFlags();
