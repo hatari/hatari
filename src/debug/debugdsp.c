@@ -20,7 +20,6 @@ const char DebugDsp_fileid[] = "Hatari debugdsp.c : " __DATE__ " " __TIME__;
 #include "debugdsp.h"
 #include "dsp.h"
 #include "memorySnapShot.h"
-#include "str.h"
 
 
 static Uint16 dsp_disasm_addr;    /* DSP disasm address */
@@ -76,7 +75,7 @@ static int DebugDsp_Register(int nArgc, char *psArgs[])
 		goto error_msg;
 
 	*assign++ = '\0';
-	if (!Str_GetNumber(assign, &value))
+	if (!DebugUI_GetNumber(assign, &value))
 		goto error_msg;
 
 	for (i = 0; i < 3 && arg[i]; i++)
@@ -111,7 +110,7 @@ static int DebugDsp_DisAsm(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		switch (Str_ParseRange(psArgs[1], &lower, &upper))
+		switch (DebugUI_ParseRange(psArgs[1], &lower, &upper))
 		{
 			case -1:
 				/* invalid value(s) */
@@ -194,7 +193,7 @@ static int DebugDsp_MemDump(int nArgc, char *psArgs[])
 			fprintf(stderr,"Invalid DSP address space '%c'!\n", space);
 			return DEBUGGER_CMDDONE;
 		}
-		switch (Str_ParseRange(psArgs[2], &lower, &upper))
+		switch (DebugUI_ParseRange(psArgs[2], &lower, &upper))
 		{
 		case -1:
 			/* invalid value(s) */
@@ -291,7 +290,7 @@ static int DebugDsp_BreakPoint(int nArgc, char *psArgs[])
 	}
 
 	/* Parse parameter as breakpoint value */
-	if (!Str_GetNumber(psArgs[1], &BreakAddr) || BreakAddr > 0xFFFF)
+	if (!DebugUI_GetNumber(psArgs[1], &BreakAddr) || BreakAddr > 0xFFFF)
 	{
 		fputs("Not a valid value for a DSP breakpoint!\n", stderr);
 		return DEBUGGER_CMDDONE;

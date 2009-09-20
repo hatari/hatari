@@ -23,6 +23,9 @@ typedef struct
 /* Output file debugger output */
 extern FILE *debugOutput;
 
+extern bool DebugUI_GetNumber(const char *value, Uint32 *number);
+extern int DebugUI_ParseRange(char *str, Uint32 *lower, Uint32 *upper);
+
 extern void DebugUI_PrintCmdHelp(const char *psCmd);
 
 extern void DebugCpu_SetDebugging(void);
