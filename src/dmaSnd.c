@@ -136,7 +136,7 @@ static void DmaSnd_StartNewFrame(void)
 
 	/* To get smooth sound, set an "interrupt" for the end of the frame that
 	 * updates the sound mix buffer. */
-	nCyclesForFrame = nFrameLen * (8012800.0 / DmaSnd_DetectSampleRate());
+	nCyclesForFrame = nFrameLen * (((double)CPU_FREQ) / DmaSnd_DetectSampleRate());
 	if (!(nDmaSoundMode & DMASNDMODE_MONO))  /* Is it stereo? */
 		nCyclesForFrame = nCyclesForFrame / 2;
 	Int_AddRelativeInterrupt(nCyclesForFrame, INT_CPU_CYCLE, INTERRUPT_DMASOUND);

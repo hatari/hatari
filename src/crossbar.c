@@ -275,13 +275,13 @@ static void Crossbar_StartDspXmitHandler(void)
 	{
 		/* Internal 25.175 MHz clock */
 		nFreq = 25175000 / nClkDiv;
-		Int_AddRelativeInterrupt((8013000+nFreq/2)/nFreq/2, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
+		Int_AddRelativeInterrupt((CPU_FREQ+nFreq/2)/nFreq/2, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 	}
 	else if ((nCbSrc & 0x60) == 0x20)
 	{
 		/* Internal 32 MHz clock */
 		nFreq = 32000000 / nClkDiv;
-		Int_AddRelativeInterrupt((8013000+nFreq/2)/nFreq/2, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
+		Int_AddRelativeInterrupt((CPU_FREQ+nFreq/2)/nFreq/2, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 	}
 
 	/* Send sample to DMA sound */

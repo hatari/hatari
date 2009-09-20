@@ -47,6 +47,8 @@
 #define SIZE_WORD  2
 #define SIZE_LONG  4
 
+/* The 8 MHz CPU frequency */
+#define CPU_FREQ   8012800
 
 extern bool bQuitProgram;
 extern Uint32 nRunVBLs;
