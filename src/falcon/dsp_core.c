@@ -49,11 +49,11 @@ static void dsp_core_dsp2host(dsp_core_t *dsp_core);
 static void dsp_core_host2dsp(dsp_core_t *dsp_core);
 
 
-void (*dsp_host_interrupt)();   /* Function to trigger host interrupt */
+static void (*dsp_host_interrupt)(void);   /* Function to trigger host interrupt */
 
 
 /* Init DSP emulation */
-void dsp_core_init(dsp_core_t *dsp_core,  void (*host_interrupt)())
+void dsp_core_init(dsp_core_t *dsp_core,  void (*host_interrupt)(void))
 {
 	int i;
 
