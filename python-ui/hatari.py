@@ -327,6 +327,46 @@ class HatariConfigMapping(ConfigStore):
         self.set("[System]", "nMachineType", value)
         self._change_option("--machine %s" % ("st", "ste", "tt", "falcon")[value])
 
+    # ------------ CPU level ---------------
+    def get_cpulevel_types(self):
+        return ("68000", "68010", "68020", "68020+FPU", "68040") 
+
+    def get_cpulevel(self):
+        return self.get("[System]", "nCpuLevel")
+
+    def set_cpulevel(self, value):
+        self.set("[System]", "nCpuLevel", value)
+        self._change_option("--cpulevel %d" % value)
+
+    # ------------ CPU clock ---------------
+    def get_cpuclock_types(self):
+        return ("8 MHz", "16 MHz", "32 MHz") 
+
+    def get_cpuclock(self):
+        clocks = {8:0, 16: 1, 32:2}
+        return clocks[self.get("[System]", "nCpuFreq")]
+
+    def set_cpuclock(self, value):
+        clocks = [8, 16, 32]
+        if value < 0 or value > 2:
+            print "WARNING: CPU clock idx %d, clock fixed to 8 Mhz" % value
+            value = 8
+        else:
+            value = clocks[value]
+        self.set("[System]", "nCpuFreq", value)
+        self._change_option("--cpuclock %d" % value)
+
+    # ------------ DSP type ---------------
+    def get_dsp_types(self):
+        return ("None", "Dummy", "Emulated")
+
+    def get_dsp(self):
+        return self.get("[System]", "nDSPType")
+
+    def set_dsp(self, value):
+        self.set("[System]", "nDSPType", value)
+        self._change_option("--dsp %s" % ("none", "dummy", "emu")[value])
+
     # ------------ compatible ---------------
     def get_compatible(self):
         return self.get("[System]", "bCompatibleCpu")

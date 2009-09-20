@@ -4,8 +4,6 @@ TODO
 This lists potential TODO items that aren't listed in the Hatari/UI
 sources.
 
-* Supporting setting CPU level & clock and Falcon DSP type
-
 * Supporting ASCI / IDE hard disk image and whether to use these
   or GEMDOS HD dir
 

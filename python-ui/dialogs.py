@@ -23,7 +23,7 @@ import pango
 
 from uihelpers import UInfo, HatariTextInsert, create_table_dialog, \
      table_add_entry_row, table_add_widget_row, table_add_separator, \
-     create_button, FselEntry
+     table_add_radio_rows, table_set_col_offset, create_button, FselEntry
 
 
 # -----------------
@@ -268,7 +268,7 @@ class ResetDialog(HatariUIDialog):
 
 class DiskDialog(HatariUIDialog):
     def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Floppy images", 9)
+        table, self.dialog = create_table_dialog(self.parent, "Floppy images", 9, 2)
         
         row = 0
         self.floppy = []
@@ -390,7 +390,7 @@ class DisplayDialog(HatariUIDialog):
 
 class JoystickDialog(HatariUIDialog):
     def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Joystick settings", 9)
+        table, self.dialog = create_table_dialog(self.parent, "Joystick settings", 9, 2)
         
         joy = 0
         self.joy = []
@@ -469,7 +469,7 @@ class PeripheralDialog(HatariUIDialog):
 class PathDialog(HatariUIDialog):
     def _create_dialog(self, config):
         paths = config.get_paths()
-        table, self.dialog = create_table_dialog(self.parent, "File path settings", len(paths))
+        table, self.dialog = create_table_dialog(self.parent, "File path settings", len(paths), 2)
         paths.sort()
         row = 0
         self.paths = []
@@ -661,48 +661,80 @@ class TraceDialog(HatariUIDialog):
 # Machine dialog for settings needing reboot
 
 class MachineDialog(HatariUIDialog):
-    def _create_dialog(self, config):
-        table, self.dialog = create_table_dialog(self.parent, "Machine configuration", 9, "Set and reboot")
+    def _machine_cb(self, widget, data):
+        if not widget.get_active():
+            return
+        machine = data.lower()
+        if machine == "ste" or machine == "st":
+            self.clocks[0].set_active(True)
+            self.cpulevel.set_active(0)
+        elif machine == "falcon":
+            self.clocks[1].set_active(True)
+            self.cpulevel.set_active(3)
+        elif machine == "tt":
+            self.clocks[2].set_active(True)
+            self.cpulevel.set_active(3)
 
+    def _dsp_cb(self, widget, data):
+        if not widget.get_active():
+            return
+        if not self.machines[3].get_active():
+            NoteDialog(self.dialog).run("Only Falcon has DSP.")
+
+    def _create_dialog(self, config):
+        table, self.dialog = create_table_dialog(self.parent, "Machine configuration", 6, 4, "Set and reboot")
+        
         row = 0
-        combo = gtk.combo_box_new_text()
-        for text in config.get_machine_types():
-            combo.append_text(text)
-        self.machine = table_add_widget_row(table, row, "Machine type:", combo)
+        self.machines = table_add_radio_rows(table, row, "Machine:",
+                        config.get_machine_types(), self._machine_cb)
         row += 1
-        
-        combo = gtk.combo_box_new_text()
-        for text in config.get_monitor_types():
-            combo.append_text(text)
-        self.monitor = table_add_widget_row(table, row, "Monitor type:", combo)
+
+        self.dsps = table_add_radio_rows(table, row, "DSP type:",
+                    config.get_dsp_types(), self._dsp_cb)
         row += 1
-        
+
+        # start next table column
+        row = 0
+        table_set_col_offset(table, 2)
+        self.monitors = table_add_radio_rows(table, row, "Monitor:", config.get_monitor_types())
+        row += 1
+
+        self.clocks = table_add_radio_rows(table, row, "CPU clock:", config.get_cpuclock_types())
+        row += 1
+
+        # fullspan at bottom
+        fullspan = True
+
+        combo = gtk.combo_box_new_text()
+        for text in config.get_cpulevel_types():
+            combo.append_text(text)
+        self.cpulevel = table_add_widget_row(table, row, "CPU type:", combo, fullspan)
+        row += 1
+
         combo = gtk.combo_box_new_text()
         for text in config.get_memory_names():
             combo.append_text(text)
-        self.memory = table_add_widget_row(table, row, "Memory size:", combo)
+        self.memory = table_add_widget_row(table, row, "Memory:", combo, fullspan)
         row += 1
         
         label = "TOS image:"
         fsel = self._fsel(label, gtk.FILE_CHOOSER_ACTION_OPEN)
-        self.tos = table_add_widget_row(table, row, label, fsel)
+        self.tos = table_add_widget_row(table, row, label, fsel, fullspan)
         row += 1
         
         label = "Harddisk:"
         fsel = self._fsel(label, gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER)
-        self.harddisk = table_add_widget_row(table, row, label, fsel)       
+        self.harddisk = table_add_widget_row(table, row, label, fsel, fullspan)
         row += 1
 
-        widget = gtk.CheckButton("Use harddisk")
-        self.usehd = table_add_widget_row(table, row, None, widget)
-        row += 1
-
-        widget = gtk.CheckButton("Compatible CPU")
-        self.compatible = table_add_widget_row(table, row, None, widget)
-        row += 1
-
-        widget = gtk.CheckButton("Patch Timer-D")
-        self.timerd = table_add_widget_row(table, row, None, widget)
+        vbox = gtk.VBox()
+        self.compatible = gtk.CheckButton("Compatible CPU")
+        self.timerd = gtk.CheckButton("Patch Timer-D")
+        self.usehd = gtk.CheckButton("Use harddisk")
+        vbox.add(self.usehd)
+        vbox.add(self.compatible)
+        vbox.add(self.timerd)
+        table_add_widget_row(table, row, "Misc.:", vbox, fullspan)
         row += 1
 
         table.show_all()
@@ -716,8 +748,11 @@ class MachineDialog(HatariUIDialog):
         return fsel
     
     def _get_config(self, config):
-        self.machine.set_active(config.get_machine())
-        self.monitor.set_active(config.get_monitor())
+        self.machines[config.get_machine()].set_active(True)
+        self.monitors[config.get_monitor()].set_active(True)
+        self.clocks[config.get_cpuclock()].set_active(True)
+        self.dsps[config.get_dsp()].set_active(True)
+        self.cpulevel.set_active(config.get_cpulevel())
         self.memory.set_active(config.get_memory())
         tos = config.get_tos()
         hd = config.get_harddisk()
@@ -731,13 +766,23 @@ class MachineDialog(HatariUIDialog):
         self.compatible.set_active(config.get_compatible())
         self.timerd.set_active(config.get_timerd())
 
+    def _get_active_radio(self, radios):
+        idx = 0
+        for radio in radios:
+            if radio.get_active():
+                return idx
+            idx += 1
+        
     def _set_config(self, config):
         config.lock_updates()
-        config.set_machine(self.machine.get_active())
-        config.set_monitor(self.monitor.get_active())
+        config.set_machine(self._get_active_radio(self.machines))
+        config.set_monitor(self._get_active_radio(self.monitors))
+        config.set_cpuclock(self._get_active_radio(self.clocks))
+        config.set_dsp(self._get_active_radio(self.dsps))
+        config.set_cpulevel(self.cpulevel.get_active())
         config.set_memory(self.memory.get_active())
         config.set_tos(self.tos.get_filename())
-        # usehd has to be before before harddisk
+        # usehd has to be set before setting harddisk
         config.set_use_harddisk(self.usehd.get_active())
         config.set_harddisk(self.harddisk.get_filename())
         config.set_compatible(self.compatible.get_active())

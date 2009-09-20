@@ -216,54 +216,96 @@ def create_toggle(label, cb, data = None):
 # -----------------------------
 # Table dialog helper functions
 
-def create_table_dialog(parent, title, rows, oktext = gtk.STOCK_APPLY):
-    "create_table_dialog(parent,title,rows) -> (table,dialog)"
+def create_table_dialog(parent, title, rows, cols, oktext = gtk.STOCK_APPLY):
+    "create_table_dialog(parent,title,rows, cols, oktext) -> (table,dialog)"
     dialog = gtk.Dialog(title, parent,
         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
         (oktext,  gtk.RESPONSE_APPLY,
         gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
 
-    table = gtk.Table(rows, 2) # rows, cols
+    table = gtk.Table(rows, cols)
+    table.set_data("col_offset", 0)
     table.set_col_spacings(8)
     dialog.vbox.add(table)
     return (table, dialog)
 
+def table_set_col_offset(table, offset):
+    "set column offset for successive table_* ops on given table"
+    table.set_data("col_offset", offset)
+
 def table_add_entry_row(table, row, label, size = None):
     "table_add_entry_row(table,row,label,[entry size]) -> entry"
-    # adds given label to given row in given table
-    # returns entry for that line
+    # add given label to given row in given table
+    # return entry for that line
     label = gtk.Label(label)
     align = gtk.Alignment(1) # right aligned
     align.add(label)
-    table.attach(align, 0, 1, row, row+1, gtk.FILL)
+    col = table.get_data("col_offset")
+    table.attach(align, col, col+1, row, row+1, gtk.FILL)
+    col += 1
     if size:
         entry = gtk.Entry(size)
         entry.set_width_chars(size)
         align = gtk.Alignment(0) # left aligned (default is centered)
         align.add(entry)
-        table.attach(align, 1, 2, row, row+1)
+        table.attach(align, col, col+1, row, row+1)
     else:
         entry = gtk.Entry()
-        table.attach(entry, 1, 2, row, row+1)
+        table.attach(entry, col, col+1, row, row+1)
     return entry
 
-def table_add_widget_row(table, row, label, widget):
+def table_add_widget_row(table, row, label, widget, fullspan = False):
     "table_add_widget_row(table,row,label,widget) -> widget"
-    # adds given label right aligned to given row in given table
-    # adds given widget to the right column and returns it
-    # returns entry for that line
+    # add given label right aligned to given row in given table
+    # add given widget to the right column and returns it
+    # return entry for that line
+    if fullspan:
+        col = 0
+    else:
+        col = table.get_data("col_offset")
     if label:
         label = gtk.Label(label)
         align = gtk.Alignment(1)
         align.add(label)
-        table.attach(align, 0, 1, row, row+1, gtk.FILL)
-    table.attach(widget, 1, 2, row, row+1)
+        table.attach(align, col, col+1, row, row+1, gtk.FILL)
+    if fullspan:
+        col = table.get_data("col_offset")
+        table.attach(widget, 1, col+2, row, row+1)
+    else:
+        table.attach(widget, col+1, col+2, row, row+1)
     return widget
+
+def table_add_radio_rows(table, row, label, texts, cb = None):
+    "table_add_widget_row(table,row,label,texts[,cb]) -> [radios]"
+    # - add given label right aligned to given row in given table
+    # - create/add radio buttons with given texts to next row, set
+    #   the one given as "active" as active and set 'cb' as their
+    #   "toggled" callback handler
+    # - return array or radiobuttons
+    label = gtk.Label(label)
+    align = gtk.Alignment(1)
+    align.add(label)
+    col = table.get_data("col_offset")
+    table.attach(align, col, col+1, row, row+1, gtk.FILL)
+
+    radios = []
+    radio = None
+    box = gtk.VBox()
+    for text in texts:
+        radio = gtk.RadioButton(radio, text)
+        if cb:
+            radio.connect("toggled", cb, text)
+        radios.append(radio)
+        box.add(radio)
+    table.attach(box, col+1, col+2, row, row+1)
+    return radios
 
 def table_add_separator(table, row):
     "table_add_separator(table,row)"
     widget = gtk.HSeparator()
-    table.attach(widget, 0, 2, row, row+1, gtk.FILL)
+    endcol = table.get_data("n-columns")
+    # separator for whole table width
+    table.attach(widget, 0, endcol, row, row+1, gtk.FILL)
 
 
 # -----------------------------

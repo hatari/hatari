@@ -37,7 +37,7 @@ def dialog_apply_cb(widget, dialog):
 
 class SaveDialog:
     def __init__(self, parent):
-        table, self.dialog = create_table_dialog(parent, "Save from memory", 3)
+        table, self.dialog = create_table_dialog(parent, "Save from memory", 3, 2)
         self.file = FselEntry(self.dialog)
         table_add_widget_row(table, 0, "File name:", self.file.get_container())
         self.address = table_add_entry_row(table, 1, "Save address:", 6)
@@ -86,7 +86,7 @@ class LoadDialog:
         chooser = gtk.FileChooserButton('Select a File')
         chooser.set_local_only(True)  # Hatari cannot access URIs
         chooser.set_width_chars(12)
-        table, self.dialog = create_table_dialog(parent, "Load to memory", 2)
+        table, self.dialog = create_table_dialog(parent, "Load to memory", 2, 2)
         self.file = table_add_widget_row(table, 0, "File name:", chooser)
         self.address = table_add_entry_row(table, 1, "Load address:", 6)
         self.address.connect("activate", dialog_apply_cb, self.dialog)
@@ -119,7 +119,7 @@ class LoadDialog:
 
 class OptionsDialog:
     def __init__(self, parent):
-        table, self.dialog = create_table_dialog(parent, "Debugger UI options", 1)
+        table, self.dialog = create_table_dialog(parent, "Debugger UI options", 1, 2)
         self.lines = table_add_entry_row(table, 0, "Memdump/disasm lines:", 2)
         self.lines.connect("activate", dialog_apply_cb, self.dialog)
     
