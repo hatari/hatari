@@ -6,7 +6,7 @@ ST/STe/TT/Falcon emulator and its built-in debugger which can
 (optionally) embed the Hatari emulator window.
 
 Having the UI in another process allows doing it with a higher level
-language and avoiding adding GUI toolkit dependencies to Hatari
+language while avoiding adding GUI toolkit dependencies to Hatari
 itself. The UI is done with PyGtk i.e. in Python language, using the
 Gtk widget set.
 
@@ -25,14 +25,13 @@ My guess at the required versions for the dependencies are:
 - Python >=2.4
 - PyGtk >= 2.8   (on Ubuntu PyGtk is in python-gtk2 package)
 
-You will need also Hatari emulator version newer than v1.0.1.
-Currently (2008-07-10) you can get it only from its CVS, like
-you got Hatari UI itself.
+Hatari UI is included with the Hatari sources:
+	http://hg.berlios.de/repos/hatari/file/tip/
 
 Hatari UI has been tested only on Linux (Ubuntu v7.04) and Debian
-Etch.) I would assume it works also on other unix systems such as
-Apple OSX. It won't work on Windows (the required Windows socket
-support is missing from the Hatari emulator).
+Etch). I would assume it works also on other unix systems such as
+Apple OSX. It won't work on Windows as the required Windows socket
+support is missing from the Hatari emulator.
 
 Embedding the Hatari emulator window is currently supported only for
 systems using an X window system (from libSDL sources it would seem
@@ -51,13 +50,13 @@ external Hatari UI.
 
 Being a Python program, Hatari UI doesn't need to be built.
 You can just run it from where you extracted it (or checked
-it out of SF CVS) by calling its wrapper script:
+it out of BerliOS HG repo) by calling its wrapper script:
 	/path/to/script/hatariui
 
 Or you can run just the debugger:
 	/path/to/script/debugui.py
 
-But you can also install it to system directory by using:
+But you can also install it to system along with Hatari:
 	make install
 
 

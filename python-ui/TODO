@@ -9,16 +9,7 @@ sources.
 * Supporting ASCI / IDE hard disk image and whether to use these
   or GEMDOS HD dir
 
-* Hatari UI specific configuration which stores:
-  - disk image dir (uses Hatari config value as default)
-  - trace settings
-    - remove dialog specific load/save stuff
-  - list of memory snapshots (10?)
-  - screenshot name
-    - needs support also to Hatari src/screenSnapShot.c
-
 * Features for Help menu:
-  - README/TODO/Changelog viewer
   - Create empty floppy images (+ convert directories to hard disks?)
   - MSA converter
 
@@ -30,7 +21,20 @@ sources.
 
 * Put all configuration stuff into single notebook dialog?
 
-* Translation support for the UI
+* Translation support for the UI:
+  - use gettext
+  - build needs to build & install message catalogs
+  - some way for Hatari to forward dialog ID to the remote UI
+    with dialog string parameters (filenames etc) which then
+    need to be localized too & shown...
+
+* Hatari UI specific configuration which stores:
+  - disk image dir (uses Hatari config value as default)
+  - trace settings
+    - remove dialog specific load/save stuff
+  - list of memory snapshots (10?)
+  - screenshot name
+    - needs support also to Hatari src/screenSnapShot.c
 
 * Supporting other, less important Hatari configuration options:
   - toggling disk-b autoinsertion, write protection and slow FDC
