@@ -53,8 +53,4 @@ extern void Crossbar_CodecStatus_WriteWord(void);
 
 extern void Crossbar_InterruptHandler_DspXmit(void);
 
-
-static double Crossbar_DetectSampleRate(void);
-static void Crossbar_SendDataToDAC(Sint16 value);
-
 #endif /* HATARI_CROSSBAR_H */

@@ -110,6 +110,10 @@ static const double DmaSndFalcSampleRates[] =
 };
 
 
+static double Crossbar_DetectSampleRate(void);
+static void Crossbar_SendDataToDAC(Sint16 value);
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Reset Crossbar variables.
