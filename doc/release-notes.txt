@@ -10,6 +10,7 @@
 Emulator:
 - Debugger improvements:
   - trace command
+  - evaluate command for doing calculations
   - command and command argument completion support
 
 

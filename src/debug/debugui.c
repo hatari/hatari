@@ -22,6 +22,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "breakcond.h"
+#include "calculate.h"
 #include "change.h"
 #include "configuration.h"
 #include "dsp.h"
@@ -235,6 +236,31 @@ int DebugUI_ParseRange(char *str, Uint32 *lower, Uint32 *upper)
 
 
 /**
+ * Helper to print given value in all supported number bases
+ */
+static void DebugUI_PrintValue(const char *str, Uint32 value)
+{
+	bool one, ones;
+	int bit;
+
+	fprintf(stderr, "'%s' = %%", str);
+	ones = false;
+	for (bit = 31; bit >= 0; bit--)
+	{
+		one = value & (1<<bit);
+		if (one || ones)
+		{
+			fputc(one ? '1':'0', stderr);
+			ones = true;
+		}
+	}
+	if (!ones)
+		fputc('0', stderr);
+	fprintf(stderr, " (bin), #%u (dec), $%x (hex)\n", value, value);
+}
+
+
+/**
  * Command: Show given value in bin/dec/hex number bases or change number base
  */
 static int DebugUI_ShowValue(int argc, char *argv[])
@@ -247,9 +273,8 @@ static int DebugUI_ShowValue(int argc, char *argv[])
 		{ "dec", 10 },
 		{ "hex", 16 }
 	};
-	bool one, ones;
 	Uint32 value;
-	int bit, i;
+	int i;
 	
 	if (argc < 2)
 	{
@@ -277,20 +302,26 @@ static int DebugUI_ShowValue(int argc, char *argv[])
 	if (!DebugUI_GetNumber(argv[1], &value))
 		return DEBUGGER_CMDDONE;
 
-	fprintf(stderr, "'%s' = %%", argv[1]);
-	ones = false;
-	for (bit = 31; bit >= 0; bit--)
-	{
-		one = value & (1<<bit);
-		if (one || ones)
-		{
-			fputc(one ? '1':'0', stderr);
-			ones = true;
-		}
-	}
-	if (!ones)
-		fputc('0', stderr);
-	fprintf(stderr, " (bin), #%u (dec), $%x (hex)\n", value, value);
+	DebugUI_PrintValue(argv[1], value);
+	return DEBUGGER_CMDDONE;
+}
+
+
+/**
+ * Commmand: Evaluate an expression
+ */
+static int DebugUI_Evaluate(int nArgc, char *psArgs[])
+{
+	const char *errstr, *expression = (const char *)psArgs[1];
+	double result;
+	int offset;
+
+	errstr = calculate(expression, &result, &offset);
+	if (errstr)
+		fprintf(stderr, "ERROR in the expression:\n'%s'\n%*c-%s\n",
+			expression, offset+2, '^', errstr);
+	else
+		DebugUI_PrintValue(expression, result);
 	return DEBUGGER_CMDDONE;
 }
 
@@ -636,6 +667,21 @@ static void DebugUI_WelcomeText(void)
 
 static const dbgcommand_t uicommand[] =
 {
+	{ DebugUI_Evaluate, "evaluate", "e",
+	  "evaluate an expression",
+	  "<expression>\n"
+	  "\tEvaluate an expression and show result.  Doesn't take number\n"
+	  "\tbase into account so non-decimal numbers need to be always\n"
+	  "\tprefixed: $=Hexadecimal, :=Octal, '=Binary and \"=ascii.\n"
+	  "\tSupported operators in the decending order of precedence:\n"
+	  "\t\t(), +, -, ^, *, /, %, +, -, >, <, &, |\n"
+	  "\tFor example: $20 + 0x200 | '111",
+	  true },
+	{ DebugUI_Help, "help", "h",
+	  "print help",
+	  "[command]"
+	  "\tPrint help text for available commands.",
+	  false },
 	{ DebugUI_SetLogFile, "logfile", "f",
 	  "open or close log file",
 	  "[filename]\n"
@@ -654,22 +700,17 @@ static const dbgcommand_t uicommand[] =
 	  "\tSelect Hatari tracing settings. For example to enable CPU\n"
 	  "\tdisassembly and VBL tracing, use:  trace cpu_disasm,video_hbl",
 	  false },
-	{ DebugUI_ShowValue, "value", "v",
-	  "set number base / show value in other number bases",
-	  "<bin|dec|hex|value>\n"
-	  "\tHelper to change the default number base and to see given values\n"
-	  "\tin all the supported bin/dec/hex number bases.",
-	  false },
 	{ DebugUI_QuitEmu, "quit", "q",
 	  "quit emulator",
 	  "\n"
 	  "\tLeave debugger and quit emulator.",
 	  false },
-	{ DebugUI_Help, "help", "h",
-	  "print help",
-	  "[command]"
-	  "\tPrint help text for available commands.",
-	  false },
+	{ DebugUI_ShowValue, "value", "v",
+	  "set number base / show value in other number bases",
+	  "<bin|dec|hex|value>\n"
+	  "\tHelper to change the default number base and to see given values\n"
+	  "\tin all the supported bin/dec/hex number bases.",
+	  false }
 };
 
 

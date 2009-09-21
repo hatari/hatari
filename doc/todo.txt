@@ -87,7 +87,6 @@ Other potential Hatari functionality improvements
 	  breakpoints
 	- Allow use of variable/register names instead of addresses
 	  everywhere in the debugger
-	- Helper command for doing simple calculations
 
 - Improved screen handling:
 	- Direct 16-bit & 32-bit support for monochrome and VDI modes
