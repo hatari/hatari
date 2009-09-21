@@ -22,7 +22,6 @@ const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c : " __DATE__ " " __T
 #include "rtc.h"
 #include "video.h"
 #include "blitter.h"
-#include "dmaSnd.h"
 #include "crossbar.h"
 #include "falcon/videl.h"
 #if ENABLE_DSP_EMU
@@ -163,11 +162,11 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff8906, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff8907, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame start low */
 	{ 0xff8908, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8909, SIZE_BYTE, DmaSnd_FrameCountHigh_ReadByte, IoMem_VoidWrite },               /* DMA sound frame count high */
+	{ 0xff8909, SIZE_BYTE, Crossbar_FrameCountHigh_ReadByte, IoMem_VoidWrite },             /* DMA sound frame count high */
 	{ 0xff890a, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff890b, SIZE_BYTE, DmaSnd_FrameCountMed_ReadByte, IoMem_VoidWrite },                /* DMA sound frame count med */
+	{ 0xff890b, SIZE_BYTE, Crossbar_FrameCountMed_ReadByte, IoMem_VoidWrite },              /* DMA sound frame count med */
 	{ 0xff890c, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff890d, SIZE_BYTE, DmaSnd_FrameCountLow_ReadByte, IoMem_VoidWrite },                /* DMA sound frame count low */
+	{ 0xff890d, SIZE_BYTE, Crossbar_FrameCountLow_ReadByte, IoMem_VoidWrite },              /* DMA sound frame count low */
 	{ 0xff890e, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xff890f, SIZE_BYTE, IoMem_ReadWithoutInterception, IoMem_WriteWithoutInterception }, /* DMA sound frame end high */
 	{ 0xff8910, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */

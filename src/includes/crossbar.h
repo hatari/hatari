@@ -21,6 +21,10 @@ extern void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate);
 extern void Crossbar_Reset(bool bCold);
 extern void Crossbar_MemorySnapShot_Capture(bool bSave);
 
+extern void Crossbar_FrameCountHigh_ReadByte(void);
+extern void Crossbar_FrameCountMed_ReadByte(void);
+extern void Crossbar_FrameCountLow_ReadByte(void);
+
 extern void Crossbar_BufferInter_ReadWord(void);
 extern void Crossbar_BufferInter_WriteWord(void);
 extern void Crossbar_DmaCtrlReg_ReadWord(void);

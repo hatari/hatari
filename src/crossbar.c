@@ -70,7 +70,7 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "falcon/dsp.h"
 
 
-static inline int DmaSnd_CheckForEndOfFrame(int nFrameCounter);
+static inline int DmaSnd_CheckForEndOfFrame(void);
 static double Crossbar_DetectSampleRate(void);
 static void Crossbar_SendDataToDAC(Sint16 value);
 static void Crossbar_SendDataToDspReceive(Uint32 value);
@@ -86,13 +86,13 @@ Uint16 nCbar_DmaSoundControl;
 static Sint16 DacOutBuffer[MIXBUFFER_SIZE*2];
 static int nDacOutRdPos, nDacOutWrPos, nDacBufSamples;
 
-static Uint16 nDmaSoundMode;            /* Sound mode register ($ff8921.b) */
+static Uint16 nDmaSoundMode;		/* Sound mode register ($ff8921.b) */
 
 
-static Uint32 nFrameStartAddr;          /* Sound frame start */
-static Uint32 nFrameEndAddr;            /* Sound frame end */
-static Uint32 FrameCounter;             /* Counter in current sound frame */
-static int nFrameLen;                   /* Length of the frame */
+static Uint32 nFrameStartAddr;		/* Sound frame start */
+static Uint32 nFrameEndAddr;		/* Sound frame end */
+static Uint32 nFrameCounter;		/* Counter in current sound frame */
+static Uint32 nFrameLen;		/* Length of the frame */
 
 
 static const double DmaSndSampleRates[4] =
@@ -152,7 +152,7 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&nDmaSoundMode, sizeof(nDmaSoundMode));
 	MemorySnapShot_Store(&nFrameStartAddr, sizeof(nFrameStartAddr));
 	MemorySnapShot_Store(&nFrameEndAddr, sizeof(nFrameEndAddr));
-	MemorySnapShot_Store(&FrameCounter, sizeof(FrameCounter));
+	MemorySnapShot_Store(&nFrameCounter, sizeof(nFrameCounter));
 	MemorySnapShot_Store(&nFrameLen, sizeof(nFrameLen));
 	MemorySnapShot_Store(&DacOutBuffer, sizeof(DacOutBuffer));
 	MemorySnapShot_Store(&nDacOutRdPos, sizeof(nDacOutRdPos));
@@ -202,6 +202,7 @@ void Crossbar_DmaCtrlReg_WriteWord(void)
 	if (!(nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY) && (nNewSndCtrl & CROSSBAR_SNDCTRL_PLAY))
 	{
 		//fprintf(stderr, "Turning on DMA sound emulation.\n");
+		nFrameCounter = 0;
 		Crossbar_StartDmaXmitHandler();
 	}
 	else if ((nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY) && !(nNewSndCtrl & CROSSBAR_SNDCTRL_PLAY))
@@ -210,6 +211,36 @@ void Crossbar_DmaCtrlReg_WriteWord(void)
 	}
 
 	nCbar_DmaSoundControl = nNewSndCtrl;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read word from sound frame count high register (0xff8909).
+ */
+void Crossbar_FrameCountHigh_ReadByte(void)
+{
+	IoMem_WriteByte(0xff8909, (nFrameStartAddr + nFrameCounter) >> 16);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read word from sound frame count medium register (0xff890b).
+ */
+void Crossbar_FrameCountMed_ReadByte(void)
+{
+	IoMem_WriteByte(0xff890b, (nFrameStartAddr + nFrameCounter) >> 8);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Read word from sound frame count low register (0xff890d).
+ */
+void Crossbar_FrameCountLow_ReadByte(void)
+{
+	IoMem_WriteByte(0xff890d, (nFrameStartAddr + nFrameCounter));
 }
 
 
@@ -248,9 +279,6 @@ void Crossbar_SoundModeCtrl_WriteByte(void)
 {
 	nDmaSoundMode = IoMem_ReadByte(0xff8921);
 	LOG_TRACE(TRACE_CROSSBAR, "crossbar snd mode write: 0x%02x\n", nDmaSoundMode);
-
-	/* we also write the masked value back into the emulated hw registers so we have a correct value there */
-	IoMem_WriteByte(0xff8921, nDmaSoundMode);
 }
 
 
@@ -608,7 +636,7 @@ void Crossbar_SendDataToDspReceive(Uint32 value)
  * Returns true if DMA sound processing should be stopped now and false
  * if it continues.
  */
-static inline int DmaSnd_CheckForEndOfFrame(int nFrameCounter)
+static inline int DmaSnd_CheckForEndOfFrame()
 {
 	if (nFrameCounter >= nFrameLen)
 	{
@@ -619,6 +647,7 @@ static inline int DmaSnd_CheckForEndOfFrame(int nFrameCounter)
 
 		if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY)
 		{
+			nFrameCounter = 0;
 			Crossbar_StartDmaXmitHandler();
 		}
 		else
@@ -633,12 +662,12 @@ static inline int DmaSnd_CheckForEndOfFrame(int nFrameCounter)
 
 void Crossbar_StartDmaXmitHandler()
 {
-	double freq;
+	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
+	int freq = 1;
 
 	/* DMA setings */
 	nFrameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
 	nFrameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
-	FrameCounter = 0;
 	nFrameLen = nFrameEndAddr - nFrameStartAddr;
 	
 	if (nFrameLen <= 0)
@@ -649,9 +678,18 @@ void Crossbar_StartDmaXmitHandler()
 	}
 
 	/* Set an "interrupt" to get DMA value at correct time and send it to crossbar */
-	freq = 	Crossbar_DetectSampleRate();// / (double)nAudioFrequency;
+	if ((nCbSrc & 0x6) == 0x0)
+	{
+		/* Internal 25.175 MHz clock */
+		freq = 25175000 / Crossbar_DetectSampleRate();
+	}
+	else if ((nCbSrc & 0x6) == 0x4)
+	{
+		/* Internal 32 MHz clock */
+		freq = 32000000 / Crossbar_DetectSampleRate();
+	}
 
-	Int_AddRelativeInterrupt(8012800/freq, INT_CPU_CYCLE, INTERRUPT_DMAXMIT);
+	Int_AddRelativeInterrupt(CPU_FREQ/freq/256, INT_CPU_CYCLE, INTERRUPT_DMAXMIT);
 }
 
 void Crossbar_InterruptHandler_DmaXmit(void)
@@ -666,25 +704,25 @@ void Crossbar_InterruptHandler_DmaXmit(void)
 
 	/* if 16 bits stereo mode */
 	if (nDmaSoundMode & 0x40) {
-		value = (Sint16) do_get_mem_word(&pFrameStart[FrameCounter]);
-		FrameCounter ++;
-		DmaSnd_CheckForEndOfFrame(FrameCounter);
+		value = (Sint16) do_get_mem_word(&pFrameStart[nFrameCounter]);
+		nFrameCounter ++;
+		DmaSnd_CheckForEndOfFrame();
 	}
 	/* 8 bits stereo */
 	else if ((nDmaSoundMode & 0xc0) == 0) {
-		value = (Sint16) pFrameStart[FrameCounter];
-		FrameCounter ++;
-		DmaSnd_CheckForEndOfFrame(FrameCounter);
+		value = (Sint16) pFrameStart[nFrameCounter];
+		nFrameCounter ++;
+		DmaSnd_CheckForEndOfFrame();
 	}
 	/* 8 bits mono */
 	else {
-		value = (Sint16) pFrameStart[FrameCounter/2];
-		FrameCounter ++;
-		DmaSnd_CheckForEndOfFrame(FrameCounter/2);
+		value = (Sint16) pFrameStart[nFrameCounter/2];
+		nFrameCounter ++; /*todo: 1/2 */
+		DmaSnd_CheckForEndOfFrame();
 	}
 
 	/* Send sample to DAC */
-	Crossbar_SendDataToDAC(value);
+	Crossbar_SendDataToDAC(value*64);
 
 	/* Restart the Int event handler */
 	Crossbar_StartDmaXmitHandler();
@@ -709,7 +747,7 @@ void Crossbar_SendDataToDAC(Sint16 value)
 
 /**
  * Mix DAC sound sample with the normal PSG sound samples.
- * (Called by mfp.c)
+ * (Called by sound.c)
  */
 void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 {
@@ -723,7 +761,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	fDacBufSamples = (double)nDacBufSamples;
 	fDacBufRdPos = (double)nDacOutRdPos;
 
-	for (i = 0; i < nSamplesToGenerate &&  fDacBufSamples > 0.0; i++)
+	for (i = 0; (i < nSamplesToGenerate) && (fDacBufSamples > 0.0); i++)
 	{
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
 		nDacOutRdPos = (((int)fDacBufRdPos) & -2) % (MIXBUFFER_SIZE*2);
