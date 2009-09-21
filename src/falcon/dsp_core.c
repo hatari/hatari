@@ -243,8 +243,15 @@ Uint32 dsp_core_ssi_readRX(dsp_core_t *dsp_core)
 	return dsp_core->ssi.RX;
 }
 
+/* SSI generate internal clock */
+void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core)
+{
+	/* TODO : write an internal timer */
+}
+
+
 /* SSI receive serial clock */
-void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core)
+void dsp_core_ssi_Receive_SC0(dsp_core_t *dsp_core, Uint32 sc0_value)
 {
 	Uint32 value; // i, temp=0;
 
@@ -318,14 +325,14 @@ void dsp_core_ssi_receive_serial_clock(dsp_core_t *dsp_core)
 	dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= 1<<DSP_SSI_SR_RDF;
 }
 
-/* SSI generate internal clock */
-void dsp_core_ssi_generate_internal_clock(dsp_core_t *dsp_core)
+/* SSI receive SC1 bit : frame sync for receiver */
+void dsp_core_ssi_Receive_SC1(dsp_core_t *dsp_core, Uint32 value)
 {
-	/* TODO : write an internal timer */
+	/* Todo : */
 }
 
-/* SSI receive SC2 bit : frame sync */
-void dsp_core_ssi_receive_SC2(dsp_core_t *dsp_core, Uint32 value)
+/* SSI receive SC2 bit : frame sync for transmitter */
+void dsp_core_ssi_Receive_SC2(dsp_core_t *dsp_core, Uint32 value)
 {
 	dsp_core->ssi.slot_in_frame ++;
 	if (dsp_core->ssi.slot_in_frame >= dsp_core->ssi.cra_frame_rate_divider) {
@@ -346,6 +353,20 @@ void dsp_core_ssi_receive_SC2(dsp_core_t *dsp_core, Uint32 value)
 		dsp_core->periph[DSP_SPACE_X][DSP_SSI_SR] |= (1<<DSP_SSI_SR_TFS);
 	}
 }
+
+
+void dsp_core_ssi_Transmit_SC0(dsp_core_t *dsp_core, Uint32 value)
+{
+}
+
+void dsp_core_ssi_Transmit_SC1(dsp_core_t *dsp_core, Uint32 value)
+{
+}
+
+void dsp_core_ssi_Transmit_SC2(dsp_core_t *dsp_core, Uint32 value)
+{
+}
+
 
 /* SSI SSI initialisations and state management */
 void dsp_core_ssi_configure(dsp_core_t *dsp_core, Uint32 adress, Uint32 value)

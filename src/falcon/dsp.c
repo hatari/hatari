@@ -554,17 +554,46 @@ void DSP_SsiWriteRxValue(Uint32 value)
 /**
  * Signal SSI clock tick to DSP
  */
-void DSP_SsiReceiveSerialClock(void)
+
+void DSP_SsiReceive_SC0(Uint32 FrameCounter)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_ssi_receive_serial_clock(&dsp_core);
+	dsp_core_ssi_Receive_SC0(&dsp_core, FrameCounter);
+#endif
+}
+
+void DSP_SsiTransmit_SC0(Uint32 FrameCounter)
+{
+#if ENABLE_DSP_EMU
+	dsp_core_ssi_Transmit_SC0(&dsp_core, FrameCounter);
+#endif
+}
+
+void DSP_SsiReceive_SC1(Uint32 FrameCounter)
+{
+#if ENABLE_DSP_EMU
+	dsp_core_ssi_Receive_SC1(&dsp_core, FrameCounter);
+#endif
+}
+
+void DSP_SsiTransmit_SC1(Uint32 FrameCounter)
+{
+#if ENABLE_DSP_EMU
+	dsp_core_ssi_Transmit_SC1(&dsp_core, FrameCounter);
 #endif
 }
 
 void DSP_SsiReceive_SC2(Uint32 FrameCounter)
 {
 #if ENABLE_DSP_EMU
-	dsp_core_ssi_receive_SC2(&dsp_core, FrameCounter);
+	dsp_core_ssi_Receive_SC2(&dsp_core, FrameCounter);
+#endif
+}
+
+void DSP_SsiTransmit_SC2(Uint32 FrameCounter)
+{
+#if ENABLE_DSP_EMU
+	dsp_core_ssi_Transmit_SC2(&dsp_core, FrameCounter);
 #endif
 }
 
