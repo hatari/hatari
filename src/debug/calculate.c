@@ -34,16 +34,16 @@ const char Clac_fileid[] = "Hatari clac.c : " __DATE__ " " __TIME__;
 
 /* define error codes                                                   */
 #define CLAC_EXP_ERR "No expression given"
-#define	CLAC_GEN_ERR "Syntax error"
-#define	CLAC_PAR_ERR "Mismatched parenthesis"
-#define	CLAC_DEF_ERR "Undefined result (1/0)"
-#define	CLAC_STK_ERR "Operation/value stack full"
+#define CLAC_GEN_ERR "Syntax error"
+#define CLAC_PAR_ERR "Mismatched parenthesis"
+#define CLAC_DEF_ERR "Undefined result (1/0)"
+#define CLAC_STK_ERR "Operation/value stack full"
 #define CLAC_OVF_ERR "Overflow"
 #define CLAC_OVR_ERR "Mode overflow"
 #define CLAC_PRG_ERR "Internal program error"
 
 /* define internal allocation sizes (should be enough ;-)		*/
-#define	PARDEPTH_MAX	64		/* max. parenth. nesting depth	*/
+#define PARDEPTH_MAX	64		/* max. parenth. nesting depth	*/
 #define OSTACK_MAX	128		/* size of the operator stack	*/
 #define VSTACK_MAX	128		/* size of the value stack	*/
 
