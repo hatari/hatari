@@ -202,15 +202,26 @@ void Crossbar_DmaCtrlReg_WriteWord(void)
 	if (!(nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY) && (nNewSndCtrl & CROSSBAR_SNDCTRL_PLAY))
 	{
 		//fprintf(stderr, "Turning on DMA sound emulation.\n");
-		nFrameCounter = 0;
+		/* DMA setings */
+		nFrameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
+		nFrameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
+		nFrameLen = nFrameEndAddr - nFrameStartAddr;
+	
+		if (nFrameLen <= 0)
+		{
+			Log_Printf(LOG_WARN, "crossbar DMA snd: Illegal buffer size (from 0x%x to 0x%x)\n",
+				nFrameStartAddr, nFrameEndAddr);
+			return;
+		}
+		nCbar_DmaSoundControl = nNewSndCtrl;
 		Crossbar_StartDmaXmitHandler();
 	}
 	else if ((nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY) && !(nNewSndCtrl & CROSSBAR_SNDCTRL_PLAY))
 	{
+		nCbar_DmaSoundControl = nNewSndCtrl;
 		//fprintf(stderr, "Turning off DMA sound emulation.\n");
 	}
 
-	nCbar_DmaSoundControl = nNewSndCtrl;
 }
 
 
@@ -645,10 +656,21 @@ static inline int DmaSnd_CheckForEndOfFrame()
 		if (MFP_TACR == 0x08)       /* Is timer A in Event Count mode? */
 			MFP_TimerA_EventCount_Interrupt();
 
-		if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY)
+		if (nCbar_DmaSoundControl & 2)
 		{
 			nFrameCounter = 0;
+			nFrameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
+			nFrameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
+			nFrameLen = nFrameEndAddr - nFrameStartAddr;
+	
+			if (nFrameLen <= 0)
+			{
+				Log_Printf(LOG_WARN, "crossbar DMA snd: Illegal buffer size (from 0x%x to 0x%x)\n",
+					nFrameStartAddr, nFrameEndAddr);
+				return -1;
+			}
 			Crossbar_StartDmaXmitHandler();
+			return true;
 		}
 		else
 		{
@@ -664,18 +686,6 @@ void Crossbar_StartDmaXmitHandler()
 {
 	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
 	int freq = 1;
-
-	/* DMA setings */
-	nFrameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
-	nFrameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
-	nFrameLen = nFrameEndAddr - nFrameStartAddr;
-	
-	if (nFrameLen <= 0)
-	{
-		Log_Printf(LOG_WARN, "crossbar DMA snd: Illegal buffer size (from 0x%x to 0x%x)\n",
-		          nFrameStartAddr, nFrameEndAddr);
-		return;
-	}
 
 	/* Set an "interrupt" to get DMA value at correct time and send it to crossbar */
 	if ((nCbSrc & 0x6) == 0x0)
@@ -706,26 +716,25 @@ void Crossbar_InterruptHandler_DmaXmit(void)
 	if (nDmaSoundMode & 0x40) {
 		value = (Sint16) do_get_mem_word(&pFrameStart[nFrameCounter]);
 		nFrameCounter ++;
-		DmaSnd_CheckForEndOfFrame();
 	}
 	/* 8 bits stereo */
 	else if ((nDmaSoundMode & 0xc0) == 0) {
 		value = (Sint16) pFrameStart[nFrameCounter];
 		nFrameCounter ++;
-		DmaSnd_CheckForEndOfFrame();
 	}
 	/* 8 bits mono */
 	else {
 		value = (Sint16) pFrameStart[nFrameCounter/2];
 		nFrameCounter ++; /*todo: 1/2 */
-		DmaSnd_CheckForEndOfFrame();
 	}
 
 	/* Send sample to DAC */
 	Crossbar_SendDataToDAC(value*64);
 
 	/* Restart the Int event handler */
-	Crossbar_StartDmaXmitHandler();
+	value = DmaSnd_CheckForEndOfFrame();
+	if (value == false)
+		Crossbar_StartDmaXmitHandler();
 }
 
 
