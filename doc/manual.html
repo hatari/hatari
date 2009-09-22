@@ -2273,6 +2273,7 @@ Available commands:
       address ( a) : toggle or list (traditional) CPU address breakpoints
    breakpoint ( b) : set/remove/list register/RAM condition breakpoints
        disasm ( d) : disassemble from PC, or given address
+     evaluate ( e) : evaluate an expression
        cpureg ( r) : dump register values or set register to value
       memdump ( m) : dump memory
      memwrite ( w) : write bytes to memory
@@ -2358,7 +2359,9 @@ The debugger supports also setting breakpoints on values of some
 internal Hatari variables (listed by &quot;b help&quot;). For example
 if you want to stop at a specific cycle within a frame (that is, PC
 relative to the current VBL/HBL in cycles), set breakpoints to specific
-&quot;HBL&quot; and &quot;LineCycles&quot; variable values.
+&quot;HBL&quot; and &quot;LineCycles&quot; variable values.  The
+&quot;e&quot; command can be used to calculate suitable register
+and variable values.
 
 <p>
 After analyzing and/or setting new breakpoints, you can continue the emulation

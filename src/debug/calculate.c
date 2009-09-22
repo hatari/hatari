@@ -713,6 +713,9 @@ static double close_bracket (double value)
 			op.idx = par.opx[par.idx] - 1;	/* restore prev	*/
 			val.idx = par.vax[par.idx] - 1;
 			par.idx --;
+
+			/* next operator */
+			id.valid = TRUE;
 		} else
 			id.error = CLAC_PAR_ERR;
 	} else

@@ -238,12 +238,12 @@ int DebugUI_ParseRange(char *str, Uint32 *lower, Uint32 *upper)
 /**
  * Helper to print given value in all supported number bases
  */
-static void DebugUI_PrintValue(const char *str, Uint32 value)
+static void DebugUI_PrintValue(Uint32 value)
 {
 	bool one, ones;
 	int bit;
 
-	fprintf(stderr, "'%s' = %%", str);
+	fputs(" = %", stderr);
 	ones = false;
 	for (bit = 31; bit >= 0; bit--)
 	{
@@ -302,7 +302,7 @@ static int DebugUI_ShowValue(int argc, char *argv[])
 	if (!DebugUI_GetNumber(argv[1], &value))
 		return DEBUGGER_CMDDONE;
 
-	DebugUI_PrintValue(argv[1], value);
+	DebugUI_PrintValue(value);
 	return DEBUGGER_CMDDONE;
 }
 
@@ -321,7 +321,7 @@ static int DebugUI_Evaluate(int nArgc, char *psArgs[])
 		fprintf(stderr, "ERROR in the expression:\n'%s'\n%*c-%s\n",
 			expression, offset+2, '^', errstr);
 	else
-		DebugUI_PrintValue(expression, result);
+		DebugUI_PrintValue(result);
 	return DEBUGGER_CMDDONE;
 }
 
@@ -675,7 +675,7 @@ static const dbgcommand_t uicommand[] =
 	  "\tprefixed: $=Hexadecimal, :=Octal, '=Binary and \"=ascii.\n"
 	  "\tSupported operators in the decending order of precedence:\n"
 	  "\t\t(), +, -, ^, *, /, %, +, -, >, <, &, |\n"
-	  "\tFor example: $20 + 0x200 | '111",
+	  "\tFor example: 5 * ($20 + 0x200 + (-5)) | '111",
 	  true },
 	{ DebugUI_Help, "help", "h",
 	  "print help",
