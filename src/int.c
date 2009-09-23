@@ -107,7 +107,7 @@ static void (* const pIntHandlerFunctions[MAX_INTERRUPTS])(void) =
 	DmaSnd_InterruptHandler,
 	DmaSnd_InterruptHandler_Microwire,
 	Crossbar_InterruptHandler_DspXmit,
-	Crossbar_InterruptHandler_DmaXmit,
+	Crossbar_InterruptHandler_DmaSound,
 	FDC_InterruptHandler_Update,
 	Blitter_InterruptHandler,
 	Midi_InterruptHandler_Update

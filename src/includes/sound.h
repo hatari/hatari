@@ -14,7 +14,7 @@
 
 /* definitions common for all sound rendering engines */
 
-#define MIXBUFFER_SIZE    65536          /* Size of circular buffer to store sample to (44Khz) */
+#define MIXBUFFER_SIZE    16384          /* Size of circular buffer to store sample to (44Khz) */
 
 extern Uint8	SoundRegs[ 14 ];			/* store YM regs 0 to 13 */
 extern int	nGeneratedSamples;

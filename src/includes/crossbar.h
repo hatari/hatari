@@ -9,6 +9,9 @@
 #define HATARI_CROSSBAR_H
 
 #define CROSSBAR_SNDCTRL_PLAY         0x01
+#define CROSSBAR_SNDCTRL_PLAYLOOP     0x02
+#define CROSSBAR_SNDCTRL_RECORD       0x10
+#define CROSSBAR_SNDCTRL_RECORDLOOP   0x20
 
 #define CROSSBAR_SNDMODE_16BITSTEREO  0x40
 #define CROSSBAR_SNDMODE_MONO         0x80
@@ -55,6 +58,6 @@ extern void Crossbar_CodecStatus_ReadWord(void);
 extern void Crossbar_CodecStatus_WriteWord(void);
 
 extern void Crossbar_InterruptHandler_DspXmit(void);
-extern void Crossbar_InterruptHandler_DmaXmit(void);
+extern void Crossbar_InterruptHandler_DmaSound(void);
 
 #endif /* HATARI_CROSSBAR_H */

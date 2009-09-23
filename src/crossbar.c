@@ -69,14 +69,20 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "stMemory.h"
 #include "falcon/dsp.h"
 
-
-static inline int DmaSnd_CheckForEndOfFrame(void);
+/* Crossbar internal functions */
 static double Crossbar_DetectSampleRate(void);
-static void Crossbar_SendDataToDAC(Sint16 value);
-static void Crossbar_SendDataToDspReceive(Uint32 value);
 
+/* Dma sound functions */
+static void Crossbar_setDmaSound_Settings(void);
+static void Crossbar_StartDmaSound_Handler(void);
+static Uint32 Crossbar_DmaSnd_CheckForEndOfFrame(void);
+
+/* Dsp Xmit functions */
+static void Crossbar_SendDataToDspReceive(Uint32 value);
 static void Crossbar_StartDspXmitHandler(void);
-static void Crossbar_StartDmaXmitHandler(void);
+
+/* DAC functions */
+static void Crossbar_SendDataToDAC(Sint16 value);
 
 
 /* external data used by the MFP */
@@ -87,8 +93,6 @@ static Sint16 DacOutBuffer[MIXBUFFER_SIZE*2];
 static int nDacOutRdPos, nDacOutWrPos, nDacBufSamples;
 
 static Uint16 nDmaSoundMode;		/* Sound mode register ($ff8921.b) */
-
-
 static Uint32 nFrameStartAddr;		/* Sound frame start */
 static Uint32 nFrameEndAddr;		/* Sound frame end */
 static Uint32 nFrameCounter;		/* Counter in current sound frame */
@@ -135,6 +139,9 @@ void Crossbar_Reset(bool bCold)
 	if (bCold)
 	{
 	}
+	
+	/* Stop DMA sound playing/record */
+	IoMem_WriteByte(0xff8901,0);
 
 	/* Clear DAC buffer */
 	memset(DacOutBuffer, 0, sizeof(DacOutBuffer));
@@ -169,7 +176,7 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
  */
 void Crossbar_BufferInter_ReadWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA track control register read: 0x%02x\n", IoMem_ReadByte(0xff8900));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8900 DMA track control register read: 0x%02x\n", IoMem_ReadByte(0xff8900));
 }
 
 /**
@@ -177,7 +184,7 @@ void Crossbar_BufferInter_ReadWord(void)
  */
 void Crossbar_BufferInter_WriteWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA track control register write: 0x%02x\n", IoMem_ReadByte(0xff8900));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8900 DMA track control register write: 0x%02x\n", IoMem_ReadByte(0xff8900));
 }
 
 /**
@@ -185,7 +192,7 @@ void Crossbar_BufferInter_WriteWord(void)
  */
 void Crossbar_DmaCtrlReg_ReadWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA control register read: 0x%02x\n", IoMem_ReadByte(0xff8901));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 DMA control register read: 0x%02x\n", IoMem_ReadByte(0xff8901));
 }
 
 /**
@@ -195,28 +202,20 @@ void Crossbar_DmaCtrlReg_WriteWord(void)
 {
 	Uint16 nNewSndCtrl;
 
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA control register write: 0x%02x\n", IoMem_ReadByte(0xff8901));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 DMA control register write: 0x%02x\n", IoMem_ReadByte(0xff8901));
 
 	nNewSndCtrl = IoMem_ReadByte(0xff8901) & 3;
 
-	if (!(nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY) && (nNewSndCtrl & CROSSBAR_SNDCTRL_PLAY))
+	if ((!(nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY)   && (nNewSndCtrl & CROSSBAR_SNDCTRL_PLAY)) ||
+	    (!(nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD) && (nNewSndCtrl & CROSSBAR_SNDCTRL_RECORD)))
 	{
-		//fprintf(stderr, "Turning on DMA sound emulation.\n");
-		/* DMA setings */
-		nFrameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
-		nFrameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
-		nFrameLen = nFrameEndAddr - nFrameStartAddr;
-	
-		if (nFrameLen <= 0)
-		{
-			Log_Printf(LOG_WARN, "crossbar DMA snd: Illegal buffer size (from 0x%x to 0x%x)\n",
-				nFrameStartAddr, nFrameEndAddr);
-			return;
-		}
+		/* Turning on DMA sound emulation */
 		nCbar_DmaSoundControl = nNewSndCtrl;
-		Crossbar_StartDmaXmitHandler();
+		Crossbar_setDmaSound_Settings();
+		Crossbar_StartDmaSound_Handler();
 	}
-	else if ((nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY) && !(nNewSndCtrl & CROSSBAR_SNDCTRL_PLAY))
+	else if (((nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY)   && !(nNewSndCtrl & CROSSBAR_SNDCTRL_PLAY)) ||
+	         ((nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD) && !(nNewSndCtrl & CROSSBAR_SNDCTRL_RECORD)))
 	{
 		nCbar_DmaSoundControl = nNewSndCtrl;
 		//fprintf(stderr, "Turning off DMA sound emulation.\n");
@@ -261,7 +260,7 @@ void Crossbar_FrameCountLow_ReadByte(void)
  */
 void Crossbar_DmaTrckCtrl_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA track control register read: 0x%02x\n", IoMem_ReadByte(0xff8920));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8920 DMA track control register read: 0x%02x\n", IoMem_ReadByte(0xff8920));
 }
 
 /**
@@ -269,7 +268,7 @@ void Crossbar_DmaTrckCtrl_ReadByte(void)
  */
 void Crossbar_DmaTrckCtrl_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar DMA track control register write: 0x%02x\n", IoMem_ReadByte(0xff8920));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8920 DMA track control register write: 0x%02x\n", IoMem_ReadByte(0xff8920));
 }
 
 /**
@@ -278,7 +277,7 @@ void Crossbar_DmaTrckCtrl_WriteByte(void)
 void Crossbar_SoundModeCtrl_ReadByte(void)
 {
 	IoMem_WriteByte(0xff8921, nDmaSoundMode);
-	LOG_TRACE(TRACE_CROSSBAR, "crossbar snd mode read: 0x%02x\n", nDmaSoundMode);
+	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 snd mode read: 0x%02x\n", nDmaSoundMode);
 }
 
 
@@ -289,7 +288,7 @@ void Crossbar_SoundModeCtrl_ReadByte(void)
 void Crossbar_SoundModeCtrl_WriteByte(void)
 {
 	nDmaSoundMode = IoMem_ReadByte(0xff8921);
-	LOG_TRACE(TRACE_CROSSBAR, "crossbar snd mode write: 0x%02x\n", nDmaSoundMode);
+	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 snd mode write: 0x%02x\n", nDmaSoundMode);
 }
 
 
@@ -298,7 +297,7 @@ void Crossbar_SoundModeCtrl_WriteByte(void)
  */
 void Crossbar_SrcControler_ReadWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd Crossbar src read: 0x%04x\n", IoMem_ReadWord(0xff8930));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8930 Crossbar src read: 0x%04x\n", IoMem_ReadWord(0xff8930));
 }
 
 /**
@@ -337,7 +336,7 @@ void Crossbar_SrcControler_ReadWord(void)
 void Crossbar_SrcControler_WriteWord(void)
 {
 	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd Crossbar src write: 0x%04x\n", nCbSrc);
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8930 src write: 0x%04x\n", nCbSrc);
 
 	/* Start DSP External input Interrupt */
 	/* Todo : emulate the external port ? */
@@ -361,7 +360,7 @@ void Crossbar_SrcControler_WriteWord(void)
  */
 void Crossbar_DstControler_ReadWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd Crossbar dst read: 0x%04x\n", IoMem_ReadWord(0xff8932));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8932 dst read: 0x%04x\n", IoMem_ReadWord(0xff8932));
 }
 
 /**
@@ -401,7 +400,7 @@ void Crossbar_DstControler_WriteWord(void)
 {
 	Uint16 destCtrl = IoMem_ReadWord(0xff8932);
 
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd Crossbar dst write: 0x%04x\n", destCtrl);
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8932 dst write: 0x%04x\n", destCtrl);
 }
 
 /**
@@ -409,7 +408,7 @@ void Crossbar_DstControler_WriteWord(void)
  */
 void Crossbar_FreqDivExt_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd ext. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8934));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8934 ext. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8934));
 }
 
 /**
@@ -417,7 +416,7 @@ void Crossbar_FreqDivExt_ReadByte(void)
  */
 void Crossbar_FreqDivExt_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd ext. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8934));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8934 ext. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8934));
 }
 
 /**
@@ -425,7 +424,7 @@ void Crossbar_FreqDivExt_WriteByte(void)
  */
 void Crossbar_FreqDivInt_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd int. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8935));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8935 int. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8935));
 }
 
 /**
@@ -433,7 +432,7 @@ void Crossbar_FreqDivInt_ReadByte(void)
  */
 void Crossbar_FreqDivInt_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd int. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8935));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8935 int. clock divider write: 0x%02x\n", IoMem_ReadByte(0xff8935));
 }
 
 /**
@@ -445,7 +444,7 @@ void Crossbar_FreqDivInt_WriteByte(void)
  */
 void Crossbar_TrackRecSelect_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd record track select read: 0x%02x\n", IoMem_ReadByte(0xff8936));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8936 record track select read: 0x%02x\n", IoMem_ReadByte(0xff8936));
 }
 
 /**
@@ -457,7 +456,7 @@ void Crossbar_TrackRecSelect_ReadByte(void)
  */
 void Crossbar_TrackRecSelect_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd record track select write: 0x%02x\n", IoMem_ReadByte(0xff8936));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8936 record track select write: 0x%02x\n", IoMem_ReadByte(0xff8936));
 }
 
 /**
@@ -467,7 +466,7 @@ void Crossbar_TrackRecSelect_WriteByte(void)
  */
 void Crossbar_CodecInput_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC input read: 0x%02x\n", IoMem_ReadByte(0xff8937));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8937 CODEC input read: 0x%02x\n", IoMem_ReadByte(0xff8937));
 }
 
 /**
@@ -477,7 +476,7 @@ void Crossbar_CodecInput_ReadByte(void)
  */
 void Crossbar_CodecInput_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC input write: 0x%02x\n", IoMem_ReadByte(0xff8937));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8937 CODEC input write: 0x%02x\n", IoMem_ReadByte(0xff8937));
 }
 
 /**
@@ -487,7 +486,7 @@ void Crossbar_CodecInput_WriteByte(void)
  */
 void Crossbar_AdcInput_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd ADC input read: 0x%02x\n", IoMem_ReadByte(0xff8938));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8938 ADC input read: 0x%02x\n", IoMem_ReadByte(0xff8938));
 }
 
 /**
@@ -497,7 +496,7 @@ void Crossbar_AdcInput_ReadByte(void)
  */
 void Crossbar_AdcInput_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd ADC input write: 0x%02x\n", IoMem_ReadByte(0xff8938));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8938 ADC input write: 0x%02x\n", IoMem_ReadByte(0xff8938));
 }
 
 /**
@@ -507,7 +506,7 @@ void Crossbar_AdcInput_WriteByte(void)
  */
 void Crossbar_InputAmp_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC channel amplification read: 0x%04x\n", IoMem_ReadWord(0xff8939));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 CODEC channel amplification read: 0x%04x\n", IoMem_ReadWord(0xff8939));
 }
 
 /**
@@ -517,7 +516,7 @@ void Crossbar_InputAmp_ReadByte(void)
  */
 void Crossbar_InputAmp_WriteByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC channel amplification write: 0x%04x\n", IoMem_ReadWord(0xff8939));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 CODEC channel amplification write: 0x%04x\n", IoMem_ReadWord(0xff8939));
 }
 
 /**
@@ -527,7 +526,7 @@ void Crossbar_InputAmp_WriteByte(void)
  */
 void Crossbar_OutputReduct_ReadWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC channel attenuation read: 0x%04x\n", IoMem_ReadWord(0xff893a));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a CODEC channel attenuation read: 0x%04x\n", IoMem_ReadWord(0xff893a));
 }
 
 /**
@@ -537,7 +536,7 @@ void Crossbar_OutputReduct_ReadWord(void)
  */
 void Crossbar_OutputReduct_WriteWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC channel attenuation write: 0x%04x\n", IoMem_ReadWord(0xff893a));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a CODEC channel attenuation write: 0x%04x\n", IoMem_ReadWord(0xff893a));
 }
 
 /**
@@ -547,7 +546,7 @@ void Crossbar_OutputReduct_WriteWord(void)
  */
 void Crossbar_CodecStatus_ReadWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC status read: 0x%04x\n", IoMem_ReadWord(0xff893c));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893c CODEC status read: 0x%04x\n", IoMem_ReadWord(0xff893c));
 }
 
 /**
@@ -557,12 +556,137 @@ void Crossbar_CodecStatus_ReadWord(void)
  */
 void Crossbar_CodecStatus_WriteWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Falcon snd CODEC status write: 0x%04x\n", IoMem_ReadWord(0xff893c));
+	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893c CODEC status write: 0x%04x\n", IoMem_ReadWord(0xff893c));
+}
+
+
+
+/*----------------------------------------------------------------------*/
+/*--------------------- DMA sound processing ---------------------------*/
+/*----------------------------------------------------------------------*/
+
+/**
+ * Check if end-of-frame has been reached and raise interrupts if needed.
+ * Returns true if DMA sound processing should be stopped now and false
+ * if it continues.
+ */
+Uint32 Crossbar_DmaSnd_CheckForEndOfFrame()
+{
+	if (nFrameCounter >= nFrameLen)
+	{
+		/* Raise end-of-frame interrupts (MFP-i7 and Time-A) */
+
+		/* if MFP15_Int (I7) at end of replay/record buffer enabled */
+		if (IoMem[0xff8900] & 3) {
+			MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
+		}
+
+		/* if TimerA_Int at end of replay/record buffer enabled */
+		if (IoMem[0xff8900] & 0xc) {
+			if (MFP_TACR == 0x08)       /* Is timer A in Event Count mode? */
+				MFP_TimerA_EventCount_Interrupt();
+		}
+
+		if ((nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAYLOOP) ||
+		    (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORDLOOP))
+		{
+			Crossbar_setDmaSound_Settings();
+			Crossbar_StartDmaSound_Handler();
+			return true;
+		}
+		else
+		{
+			nCbar_DmaSoundControl &= ~CROSSBAR_SNDCTRL_PLAY;
+			nCbar_DmaSoundControl &= ~CROSSBAR_SNDCTRL_RECORD;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Set DMA sound start frame buffer, stop frame buffer, frame length
+ */
+void Crossbar_setDmaSound_Settings()
+{
+	/* DMA setings */
+	nFrameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
+	nFrameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
+	nFrameLen = nFrameEndAddr - nFrameStartAddr;
+	nFrameCounter = 0;
+	
+	if (nFrameLen <= 0)
+	{
+		Log_Printf(LOG_WARN, "crossbar DMA snd: Illegal buffer size (from 0x%x to 0x%x)\n",
+		          nFrameStartAddr, nFrameEndAddr);
+	}
+}
+
+/**
+ * start a DMA sound xmit or receive "interrupt" at frequency parametered in the crossbar
+ */
+void Crossbar_StartDmaSound_Handler()
+{
+	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
+	int freq = 1;
+
+	freq = 25175000 / DmaSndSampleRates[IoMem[0xff8921] & 3];
+	Int_AddRelativeInterrupt(CPU_FREQ/freq/256, INT_CPU_CYCLE, INTERRUPT_DMASOUND_XMIT_RECEIVE);
+}
+
+/**
+ * DMA sound xmit/receive interrupt processing
+ */
+void Crossbar_InterruptHandler_DmaSound(void)
+{
+	Sint16 value;
+	Sint8 *pFrameStart;
+
+	/* Remove this interrupt from list and re-order */
+	Int_AcknowledgeInterrupt();
+
+	/* process DMA sound replay or record */
+	if ((IoMem[0xff8901] & 0x80) == 0) {
+		/* DMA sound is in Replay mode */
+		pFrameStart = (Sint8 *)&STRam[nFrameStartAddr];
+
+		/* if 16 bits stereo mode */
+		if (nDmaSoundMode & 0x40) {
+			value = (Sint16) do_get_mem_word(&pFrameStart[nFrameCounter]);
+			nFrameCounter += 2;
+		}
+		/* 8 bits stereo */
+		else if ((nDmaSoundMode & 0xc0) == 0) {
+			value = (Sint16) pFrameStart[nFrameCounter];
+			nFrameCounter ++;
+		}
+		/* 8 bits mono */
+		else {
+			value = (Sint16) pFrameStart[nFrameCounter];
+			nFrameCounter ++;
+			/* Send sample to DAC (in mono mode, data is sent twice (for left and right channel) */
+			Crossbar_SendDataToDAC(value*64);
+		}
+		
+		/* Send sample to DAC */
+		/* Todo : It should be sent to DMA OUT in the crossbar */
+		Crossbar_SendDataToDAC(value*64);
+
+	} else {
+		/* DMA sound is in Record mode */
+		/* Todo : get value from DMA IN in the crossbar and write it into memory */
+	}
+
+	/* Restart the Int event handler */
+	value = Crossbar_DmaSnd_CheckForEndOfFrame();
+	if (value == false)
+		Crossbar_StartDmaSound_Handler();
 }
 
 
 /*----------------------------------------------------------------------*/
-/* ---------------------- Falcon sound subsystem ---------------------- */
+/*------------------------- Crossbar functions -------------------------*/
 /*----------------------------------------------------------------------*/
 
 /**
@@ -583,9 +707,12 @@ static double Crossbar_DetectSampleRate(void)
 
 
 /*----------------------------------------------------------------------*/
-/*			DSP Xmit processing				*/
+/*--------------------- DSP Xmit processing ----------------------------*/
 /*----------------------------------------------------------------------*/
 
+/**
+ * start a DSP xmit "interrupt" at frequency parametered in the crossbar
+ */
 static void Crossbar_StartDspXmitHandler(void)
 {
 	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
@@ -605,7 +732,9 @@ static void Crossbar_StartDspXmitHandler(void)
 	Int_AddRelativeInterrupt(CPU_FREQ/freq/256, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
 }
 
-
+/**
+ * DSP xmit interrupt processing
+ */
 void Crossbar_InterruptHandler_DspXmit(void)
 {
 	/* Remove this interrupt from list and re-order */
@@ -628,7 +757,7 @@ void Crossbar_InterruptHandler_DspXmit(void)
 }
 
 /*----------------------------------------------------------------------*/
-/*			DSP Receive processing				*/
+/*--------------------- DSP Receive processing -------------------------*/
 /*----------------------------------------------------------------------*/
 
 /**
@@ -638,108 +767,23 @@ void Crossbar_SendDataToDspReceive(Uint32 value)
 {
 }
 
+
 /*----------------------------------------------------------------------*/
-/*			DMA Playback processing				*/
+/*--------------------- DMA IN processing ------------------------------*/
 /*----------------------------------------------------------------------*/
-
-/**
- * Check if end-of-frame has been reached and raise interrupts if needed.
- * Returns true if DMA sound processing should be stopped now and false
- * if it continues.
- */
-static inline int DmaSnd_CheckForEndOfFrame()
-{
-	if (nFrameCounter >= nFrameLen)
-	{
-		/* Raise end-of-frame interrupts (MFP-i7 and Time-A) */
-		MFP_InputOnChannel(MFP_TIMER_GPIP7_BIT, MFP_IERA, &MFP_IPRA);
-		if (MFP_TACR == 0x08)       /* Is timer A in Event Count mode? */
-			MFP_TimerA_EventCount_Interrupt();
-
-		if (nCbar_DmaSoundControl & 2)
-		{
-			nFrameCounter = 0;
-			nFrameStartAddr = (IoMem[0xff8903] << 16) | (IoMem[0xff8905] << 8) | (IoMem[0xff8907] & ~1);
-			nFrameEndAddr = (IoMem[0xff890f] << 16) | (IoMem[0xff8911] << 8) | (IoMem[0xff8913] & ~1);
-			nFrameLen = nFrameEndAddr - nFrameStartAddr;
-	
-			if (nFrameLen <= 0)
-			{
-				Log_Printf(LOG_WARN, "crossbar DMA snd: Illegal buffer size (from 0x%x to 0x%x)\n",
-					nFrameStartAddr, nFrameEndAddr);
-				return -1;
-			}
-			Crossbar_StartDmaXmitHandler();
-			return true;
-		}
-		else
-		{
-			nCbar_DmaSoundControl &= ~CROSSBAR_SNDCTRL_PLAY;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-void Crossbar_StartDmaXmitHandler()
-{
-	Uint16 nCbSrc = IoMem_ReadWord(0xff8930);
-	int freq = 1;
-
-	/* Set an "interrupt" to get DMA value at correct time and send it to crossbar */
-	if ((nCbSrc & 0x6) == 0x0)
-	{
-		/* Internal 25.175 MHz clock */
-		freq = 25175000 / Crossbar_DetectSampleRate();
-	}
-	else if ((nCbSrc & 0x6) == 0x4)
-	{
-		/* Internal 32 MHz clock */
-		freq = 32000000 / Crossbar_DetectSampleRate();
-	}
-
-	Int_AddRelativeInterrupt(CPU_FREQ/freq/256, INT_CPU_CYCLE, INTERRUPT_DMAXMIT);
-}
-
-void Crossbar_InterruptHandler_DmaXmit(void)
-{
-	Sint16 value;
-	Sint8 *pFrameStart;
-
-	/* Remove this interrupt from list and re-order */
-	Int_AcknowledgeInterrupt();
-
-	pFrameStart = (Sint8 *)&STRam[nFrameStartAddr];
-
-	/* if 16 bits stereo mode */
-	if (nDmaSoundMode & 0x40) {
-		value = (Sint16) do_get_mem_word(&pFrameStart[nFrameCounter]);
-		nFrameCounter ++;
-	}
-	/* 8 bits stereo */
-	else if ((nDmaSoundMode & 0xc0) == 0) {
-		value = (Sint16) pFrameStart[nFrameCounter];
-		nFrameCounter ++;
-	}
-	/* 8 bits mono */
-	else {
-		value = (Sint16) pFrameStart[nFrameCounter/2];
-		nFrameCounter ++; /*todo: 1/2 */
-	}
-
-	/* Send sample to DAC */
-	Crossbar_SendDataToDAC(value*64);
-
-	/* Restart the Int event handler */
-	value = DmaSnd_CheckForEndOfFrame();
-	if (value == false)
-		Crossbar_StartDmaXmitHandler();
-}
 
 
 /*----------------------------------------------------------------------*/
-/*			DAC processing 					*/
+/*--------------------- DMA OUT processing -----------------------------*/
+/*----------------------------------------------------------------------*/
+
+
+/*----------------------------------------------------------------------*/
+/*-------------------------- ADC processing ----------------------------*/
+/*----------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------*/
+/*-------------------------- DAC processing ----------------------------*/
 /*----------------------------------------------------------------------*/
 
 /**
