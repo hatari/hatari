@@ -89,7 +89,7 @@ static void Crossbar_SendDataToDAC(Sint16 value);
 Uint16 nCbar_DmaSoundControl;
 
 /* internal datas */
-static Sint16 DacOutBuffer[MIXBUFFER_SIZE*2];
+static Sint16 DacOutBuffer[MIXBUFFER_SIZE*2*16];
 static int nDacOutRdPos, nDacOutWrPos, nDacBufSamples;
 
 static Uint16 nDmaSoundMode;		/* Sound mode register ($ff8921.b) */
@@ -794,7 +794,7 @@ void Crossbar_SendDataToDAC(Sint16 value)
 	/* Put sample into DAC buffer */
 	/* Todo : verify if data is in the monitored track */
 	DacOutBuffer[nDacOutWrPos] = value;
-	nDacOutWrPos = (nDacOutWrPos + 1) % (MIXBUFFER_SIZE*2);
+	nDacOutWrPos = (nDacOutWrPos + 1) % (MIXBUFFER_SIZE*2*16);
 	nDacBufSamples += 1;
 }
 
@@ -817,7 +817,7 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 	for (i = 0; (i < nSamplesToGenerate) && (fDacBufSamples > 0.0); i++)
 	{
 		nBufIdx = (nMixBufIdx + i) % MIXBUFFER_SIZE;
-		nDacOutRdPos = (((int)fDacBufRdPos) & -2) % (MIXBUFFER_SIZE*2);
+		nDacOutRdPos = (((int)fDacBufRdPos) & -2) % (MIXBUFFER_SIZE*2*16);
 
 		MixBuffer[nBufIdx][0] = ((int)MixBuffer[nBufIdx][0]
 		                        + (int)(DacOutBuffer[nDacOutRdPos+0])) / 2;
@@ -827,6 +827,8 @@ void Crossbar_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 		fDacBufRdPos += FreqRatio;
 		fDacBufSamples -= FreqRatio;
 	}
+
+	nDacOutRdPos = (((int)fDacBufRdPos) & -2) % (MIXBUFFER_SIZE*2*16);
 
 	if (fDacBufSamples > 0.0)
 		nDacBufSamples = (int)fDacBufSamples;
