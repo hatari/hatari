@@ -121,6 +121,7 @@ static inline void ScreenSnapShot_32to24Bits(Uint8 *dst, Uint8 *src, int w)
  */
 static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 {
+	bool do_lock;
 	int y, ret = -1;
 	int w = surface->w;
 	int h = surface->h;
@@ -138,9 +139,7 @@ static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 	/* Create and initialize the png_struct with error handler functions. */
 	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (!png_ptr) 
-	{
 		return ret;
-	}
 	
 	/* Allocate/initialize the image information data. */
 	info_ptr = png_create_info_struct(png_ptr);
@@ -179,7 +178,11 @@ static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 
 	/* write surface data row at the time */
 	src_ptr = surface->pixels;
+	do_lock = SDL_MUSTLOCK(surface);
 	for (y = 0; y < h; y++) {
+		/* need to lock the surface while accessing it directly */
+		if (do_lock)
+			SDL_LockSurface(surface);
 		switch (fmt->BytesPerPixel) {
 		case 1:
 			/* unpack 8-bit data with RGB palette */
@@ -201,8 +204,10 @@ static int ScreenSnapShot_SavePNG(SDL_Surface *surface, const char *filename)
 			ScreenSnapShot_32to24Bits(row_ptr, src_ptr, w);
 			break;
 		}
+		/* and unlock surface before syscalls */
+		if (do_lock)
+			SDL_UnlockSurface(surface);
 		src_ptr += surface->pitch;
-		SDL_UnlockSurface(surface);
 		png_write_row(png_ptr, rowbuf);
 	}
 	
