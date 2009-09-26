@@ -70,7 +70,7 @@ const char crossbar_fileid[] = "Hatari Crossbar.c : " __DATE__ " " __TIME__;
 #include "falcon/dsp.h"
 
 
-#define DACBUFFER_SIZE  (MIXBUFFER_SIZE*2*512)
+#define DACBUFFER_SIZE  (MIXBUFFER_SIZE*2*64)
 
 
 /* Crossbar internal functions */
@@ -149,7 +149,7 @@ void Crossbar_Reset(bool bCold)
 
 	/* Clear DAC buffer */
 	memset(DacOutBuffer, 0, sizeof(DacOutBuffer));
-	nDacOutRdPos = nDacOutWrPos = 0;
+	nDacOutRdPos = nDacOutWrPos = nDacBufSamples = 0;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -180,7 +180,7 @@ void Crossbar_MemorySnapShot_Capture(bool bSave)
  */
 void Crossbar_BufferInter_ReadWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8900 DMA track control register read: 0x%02x\n", IoMem_ReadByte(0xff8900));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8900 DMA track control register read: 0x%02x\n", IoMem_ReadByte(0xff8900));
 }
 
 /**
@@ -196,7 +196,7 @@ void Crossbar_BufferInter_WriteWord(void)
  */
 void Crossbar_DmaCtrlReg_ReadWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 DMA control register read: 0x%02x\n", IoMem_ReadByte(0xff8901));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8901 DMA control register read: 0x%02x\n", IoMem_ReadByte(0xff8901));
 }
 
 /**
@@ -264,7 +264,7 @@ void Crossbar_FrameCountLow_ReadByte(void)
  */
 void Crossbar_DmaTrckCtrl_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8920 DMA track control register read: 0x%02x\n", IoMem_ReadByte(0xff8920));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8920 DMA track control register read: 0x%02x\n", IoMem_ReadByte(0xff8920));
 }
 
 /**
@@ -281,7 +281,7 @@ void Crossbar_DmaTrckCtrl_WriteByte(void)
 void Crossbar_SoundModeCtrl_ReadByte(void)
 {
 	IoMem_WriteByte(0xff8921, nDmaSoundMode);
-	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 snd mode read: 0x%02x\n", nDmaSoundMode);
+//	LOG_TRACE(TRACE_CROSSBAR, "crossbar : $ff8921 snd mode read: 0x%02x\n", nDmaSoundMode);
 }
 
 
@@ -301,7 +301,7 @@ void Crossbar_SoundModeCtrl_WriteByte(void)
  */
 void Crossbar_SrcControler_ReadWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8930 Crossbar src read: 0x%04x\n", IoMem_ReadWord(0xff8930));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8930 Crossbar src read: 0x%04x\n", IoMem_ReadWord(0xff8930));
 }
 
 /**
@@ -364,7 +364,7 @@ void Crossbar_SrcControler_WriteWord(void)
  */
 void Crossbar_DstControler_ReadWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8932 dst read: 0x%04x\n", IoMem_ReadWord(0xff8932));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8932 dst read: 0x%04x\n", IoMem_ReadWord(0xff8932));
 }
 
 /**
@@ -412,7 +412,7 @@ void Crossbar_DstControler_WriteWord(void)
  */
 void Crossbar_FreqDivExt_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8934 ext. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8934));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8934 ext. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8934));
 }
 
 /**
@@ -428,7 +428,7 @@ void Crossbar_FreqDivExt_WriteByte(void)
  */
 void Crossbar_FreqDivInt_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8935 int. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8935));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8935 int. clock divider read: 0x%02x\n", IoMem_ReadByte(0xff8935));
 }
 
 /**
@@ -448,7 +448,7 @@ void Crossbar_FreqDivInt_WriteByte(void)
  */
 void Crossbar_TrackRecSelect_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8936 record track select read: 0x%02x\n", IoMem_ReadByte(0xff8936));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8936 record track select read: 0x%02x\n", IoMem_ReadByte(0xff8936));
 }
 
 /**
@@ -470,7 +470,7 @@ void Crossbar_TrackRecSelect_WriteByte(void)
  */
 void Crossbar_CodecInput_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8937 CODEC input read: 0x%02x\n", IoMem_ReadByte(0xff8937));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8937 CODEC input read: 0x%02x\n", IoMem_ReadByte(0xff8937));
 }
 
 /**
@@ -490,7 +490,7 @@ void Crossbar_CodecInput_WriteByte(void)
  */
 void Crossbar_AdcInput_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8938 ADC input read: 0x%02x\n", IoMem_ReadByte(0xff8938));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8938 ADC input read: 0x%02x\n", IoMem_ReadByte(0xff8938));
 }
 
 /**
@@ -510,7 +510,7 @@ void Crossbar_AdcInput_WriteByte(void)
  */
 void Crossbar_InputAmp_ReadByte(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 CODEC channel amplification read: 0x%04x\n", IoMem_ReadWord(0xff8939));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff8939 CODEC channel amplification read: 0x%04x\n", IoMem_ReadWord(0xff8939));
 }
 
 /**
@@ -530,7 +530,7 @@ void Crossbar_InputAmp_WriteByte(void)
  */
 void Crossbar_OutputReduct_ReadWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a CODEC channel attenuation read: 0x%04x\n", IoMem_ReadWord(0xff893a));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893a CODEC channel attenuation read: 0x%04x\n", IoMem_ReadWord(0xff893a));
 }
 
 /**
@@ -550,7 +550,7 @@ void Crossbar_OutputReduct_WriteWord(void)
  */
 void Crossbar_CodecStatus_ReadWord(void)
 {
-	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893c CODEC status read: 0x%04x\n", IoMem_ReadWord(0xff893c));
+//	LOG_TRACE(TRACE_CROSSBAR, "Crossbar : $ff893c CODEC status read: 0x%04x\n", IoMem_ReadWord(0xff893c));
 }
 
 /**
@@ -646,10 +646,7 @@ void Crossbar_StartDmaSound_Handler()
 		freq = 32000000 / Crossbar_DetectSampleRate();
 	}
 
-	Int_AddRelativeInterrupt(CPU_FREQ/freq/256, INT_CPU_CYCLE, INTERRUPT_DSPXMIT);
-
-//	freq = 25175000 / DmaSndSampleRates[IoMem[0xff8921] & 3];
-//	Int_AddRelativeInterrupt(CPU_FREQ/freq/256, INT_CPU_CYCLE, INTERRUPT_DMASOUND_XMIT_RECEIVE);
+	Int_AddRelativeInterrupt(CPU_FREQ/freq/256, INT_CPU_CYCLE, INTERRUPT_DMASOUND_XMIT_RECEIVE);
 }
 
 /**
@@ -690,7 +687,8 @@ void Crossbar_InterruptHandler_DmaSound(void)
 		/* Todo : It should be sent to DMA OUT in the crossbar */
 		Crossbar_SendDataToDAC(value*64);
 
-	} else {
+	} 
+	else {
 		/* DMA sound is in Record mode */
 		/* Todo : get value from DMA IN in the crossbar and write it into memory */
 	}

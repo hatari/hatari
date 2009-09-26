@@ -12,6 +12,7 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "configuration.h"
 #include "cart.h"
 #include "dmaSnd.h"
+#include "crossbar.h"
 #include "fdc.h"
 #include "floppy.h"
 #include "gemdos.h"
@@ -60,7 +61,11 @@ static int Reset_ST(bool bCold)
 		FDC_Reset();                /* Reset FDC */
 	}
 
-	DmaSnd_Reset(bCold);          /* Reset DMA sound */
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+		Crossbar_Reset(bCold);        /* Reset Crossbar sound */
+	else
+		DmaSnd_Reset(bCold);          /* Reset DMA sound */
+
 	PSG_Reset();                  /* Reset PSG */
 	Sound_Reset();                /* Reset Sound */
 	IKBD_Reset(bCold);            /* Keyboard */
